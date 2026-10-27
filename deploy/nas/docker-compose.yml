@@ -1,0 +1,33 @@
+# Vorlage für den Betrieb auf dem NAS.
+# Daneben eine Datei .env anlegen mit:  DB_PASSWORD=<langes zufälliges Passwort>
+# Pfade unter /volume1/docker/dms an den Docker-Ordner deines NAS anpassen.
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dms
+      POSTGRES_USER: dms
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD in .env setzen}
+    volumes:
+      - /volume1/docker/dms/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dms -d dms"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    image: ghcr.io/motom001/dms:main
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://dms:${DB_PASSWORD}@db:5432/dms
+      FILES_DIR: /data/files
+    volumes:
+      - /volume1/docker/dms/files:/data/files
+    ports:
+      - "8080:3000"

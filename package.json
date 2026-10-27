@@ -1,0 +1,23 @@
+{
+  "name": "dms",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Selbst gehostetes, persönliches Informations- und Dokumentenmanagementsystem",
+  "type": "module",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "npm run dev -w server & npm run dev -w web",
+    "build": "npm run build -w web && npm run build -w server",
+    "typecheck": "tsc -p shared && npm run typecheck -w server && npm run typecheck -w web",
+    "test": "npm run test -w server"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
