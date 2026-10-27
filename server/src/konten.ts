@@ -90,6 +90,46 @@ export class Konten {
     return b && b.aktiv ? b : undefined;
   }
 
+  /* ---------- Eigenes Profil ---------- */
+
+  private async bestaetige(ich: Benutzer, passwort: unknown) {
+    const t = await this.repo.holeHash(ich.email);
+    if (!t || !(await pruefePasswort(typeof passwort === 'string' ? passwort : '', t.hash))) {
+      throw new Fachfehler(403, 'Das aktuelle Passwort stimmt nicht.');
+    }
+  }
+
+  private async benachrichtige(an: string, m: { betreff: string; text: string }, log: (m: string) => void) {
+    if (!this.mailer) return;
+    try { await this.mailer.sende(an, m.betreff, m.text); } catch (e) { log(`Hinweis-Mail an ${an} fehlgeschlagen: ${(e as Error).message}`); }
+  }
+
+  async aendereProfil(ich: Benutzer, e: { name?: unknown }) {
+    const name = text(e.name);
+    if (!name) throw new Fachfehler(422, 'Bitte einen Namen angeben.');
+    return this.repo.aendereBenutzer(ich.id, { name: name.slice(0, 120) });
+  }
+
+  async aendereEmail(ich: Benutzer, e: { email?: unknown; passwort?: unknown }, log: (m: string) => void = () => {}) {
+    const email = pruefeEmail(e.email);
+    await this.bestaetige(ich, e.passwort);
+    if (email.toLowerCase() === ich.email.toLowerCase()) return ich;
+    if (await this.repo.holeHash(email)) throw new Fachfehler(409, 'Diese E-Mail-Adresse wird schon von einem anderen Benutzer verwendet.');
+    const neu = await this.repo.aendereBenutzer(ich.id, { email });
+    await this.benachrichtige(ich.email, mailtexte.emailGeaendert(ich.name, ich.email, email), log);
+    return neu;
+  }
+
+  /** Neues Passwort; beendet alle Sitzungen und gibt eine frische zurück. */
+  async aenderePasswort(ich: Benutzer, e: { passwortAlt?: unknown; passwortNeu?: unknown }, log: (m: string) => void = () => {}) {
+    await this.bestaetige(ich, e.passwortAlt);
+    const neu = pruefePasswortRegeln(e.passwortNeu);
+    await this.repo.setzeHash(ich.id, await hashePasswort(neu));
+    await this.repo.loescheSitzungenVon(ich.id);
+    await this.benachrichtige(ich.email, mailtexte.passwortGeaendert(ich.name, ich.email), log);
+    return { benutzer: (await this.repo.holeBenutzer(ich.id))!, schluessel: await this.neueSitzung(ich.id) };
+  }
+
   /* ---------- Benutzerverwaltung (nur Admin) ---------- */
 
   listeBenutzer() { return this.repo.listeBenutzer(); }

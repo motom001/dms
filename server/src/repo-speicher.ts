@@ -31,8 +31,8 @@ export function speicherRepo(): Repo {
 
     async listeMappen(typId) { return [...mappen.values()].filter((m) => !typId || m.typId === typId).map(kopie); },
     async holeMappe(id) { const m = mappen.get(id); return m && kopie(m); },
-    async legeMappeAn(id, typId, werte: Werte, vs, benutzerId) {
-      const m: Mappe = { id, typId, werte: kopie(werte), erstellt: jetzt(), erstelltVon: benutzerId, geaendert: jetzt(), geaendertVon: benutzerId };
+    async legeMappeAn(id, typId, werte: Werte, vs, benutzerId, demo = false) {
+      const m: Mappe = { id, typId, werte: kopie(werte), erstellt: jetzt(), erstelltVon: benutzerId, geaendert: jetzt(), geaendertVon: benutzerId, demo };
       mappen.set(id, m); verweise.set(id, kopie(vs));
       return kopie(m);
     },
@@ -67,6 +67,22 @@ export function speicherRepo(): Repo {
     async legeDokumentAn(d) { dokumente.set(d.id, kopie(d)); return kopie(d); },
     async loescheDokument(id) { dokumente.delete(id); },
     async dokumenteMitSha(sha) { return [...dokumente.values()].filter((d) => d.sha256 === sha).map(kopie); },
+    async zaehleDemo() {
+      const r = new Map<string, number>();
+      for (const m of mappen.values()) if (m.demo) r.set(m.typId, (r.get(m.typId) ?? 0) + 1);
+      return r;
+    },
+    async echteVerweiseAufDemo() {
+      const q = new Set<string>();
+      for (const [quelle, vs] of verweise) if (!mappen.get(quelle)?.demo && vs.some((v) => mappen.get(v.zielId)?.demo)) q.add(quelle);
+      return q.size;
+    },
+    async loescheDemo() {
+      const weg = [...mappen.values()].filter((m) => m.demo).map((m) => m.id);
+      const dateien = [...new Set([...dokumente.values()].filter((d) => weg.includes(d.mappeId)).map((d) => d.sha256))];
+      for (const id of weg) await this.loescheMappe(id);
+      return { anzahl: weg.length, dateien };
+    },
     async dokumenteJeRegister(typId) {
       const r = new Map<string, number>();
       for (const d of dokumente.values()) if (mappen.get(d.mappeId)?.typId === typId) r.set(d.registerKey, (r.get(d.registerKey) ?? 0) + 1);

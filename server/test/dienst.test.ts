@@ -181,3 +181,40 @@ describe('Register und Dokumente', () => {
     assert.equal(dateien.anzahl(), 0);
   });
 });
+
+describe('Demo-Daten', () => {
+  it('erzeugt gültige Demo-Mappen für alle Typen und entfernt sie wieder', async () => {
+    const { erzeugeDemo } = await import('../src/demo');
+    const d = new Dienst(speicherRepo(), speicherDateien());
+    await ladeBeispiele(d);
+    const vorher = (await d.listeMappen()).length;
+    const start = Date.now();
+    const r = await erzeugeDemo(d, 1000, null);
+    assert.ok(r.gesamt >= 990, `nur ${r.gesamt} erzeugt: ${JSON.stringify(r.uebersprungen)}`);
+    assert.deepEqual(r.uebersprungen, []);
+    assert.ok(Date.now() - start < 30_000);
+    const alle = await d.listeMappen();
+    assert.equal(alle.filter((m) => m.demo).length, r.gesamt);
+    const ueber = await d.demoUebersicht();
+    assert.equal(ueber.reduce((a, t) => a + t.demo, 0), r.gesamt);
+    // Rechnungen verweisen auf vorhandene Verträge, eindeutige Namen bleiben eindeutig
+    const partner = (await d.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
+    const namen = alle.filter((m) => m.typId === partner.id).map((m) => String(m.werte.name).toLowerCase());
+    assert.equal(new Set(namen).size, namen.length);
+    assert.deepEqual(await d.entferneDemo(), { entfernt: r.gesamt });
+    assert.equal((await d.listeMappen()).length, vorher);
+  });
+
+  it('verweigert das Entfernen, solange echte Mappen auf Demo-Mappen zeigen', async () => {
+    const { erzeugeDemo } = await import('../src/demo');
+    const d = new Dienst(speicherRepo(), speicherDateien());
+    await ladeBeispiele(d);
+    await erzeugeDemo(d, 50, null);
+    const typen = await d.listeTypen();
+    const partner = typen.find((t) => t.name === 'Vertragspartner')!;
+    const vertrag = typen.find((t) => t.name === 'Vertrag')!;
+    const demoPartner = (await d.listeMappen(partner.id)).find((m) => m.demo)!;
+    await d.legeMappeAn({ typId: vertrag.id, werte: { bezeichnung: 'Echt', vertragspartner: demoPartner.id } });
+    await wirft(d.entferneDemo(), 409);
+  });
+});

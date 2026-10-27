@@ -99,6 +99,8 @@ export interface Mappe {
   erstelltVon: string | null;
   geaendert: string;
   geaendertVon: string | null;
+  /** Mit dem Demo-Generator erzeugt; lässt sich gesammelt entfernen. */
+  demo?: boolean;
 }
 
 export type Rolle = 'admin' | 'mitglied';

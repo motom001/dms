@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { Ablage } from './ablage/Ablage';
-import { Benutzerverwaltung } from './benutzer/Benutzerverwaltung';
 import { useDaten } from './daten';
-import { Einrichtung } from './einrichtung/Einrichtung';
 import { useKonto } from './konto';
 import { geheZu, Link, useOrt } from './ort';
+import { Profil } from './profil/Profil';
+import { Werkbank } from './werkbank/Werkbank';
 
 export function App() {
   const { pfad, suche } = useOrt();
@@ -12,15 +12,20 @@ export function App() {
   const { ich, abmelden } = useKonto();
   const admin = ich.rolle === 'admin';
   const teile = pfad.split('/').filter(Boolean);
-  const bereich = teile[0] === 'einrichtung' || teile[0] === 'benutzer' ? teile[0] : 'ablage';
+  const bereich = teile[0] === 'werkbank' || teile[0] === 'profil' ? teile[0] : 'ablage';
 
-  useEffect(() => { if (pfad === '/' || pfad.startsWith('/passwort/')) geheZu('/ablage', true); }, [pfad]);
+  useEffect(() => {
+    if (pfad === '/' || pfad.startsWith('/passwort/')) geheZu('/ablage', true);
+    // Frühere Adressen
+    else if (teile[0] === 'einrichtung') geheZu(`/werkbank/typen${teile[1] ? `/${teile[1]}` : ''}`, true);
+    else if (teile[0] === 'benutzer') geheZu('/werkbank/benutzer', true);
+  }, [pfad]); // eslint-disable-line react-hooks/exhaustive-deps
 
   let inhalt;
   if (!d.geladen) inhalt = <p className="leise">Lade …</p>;
-  else if (bereich !== 'ablage' && !admin) inhalt = <div className="leer"><p>Dieser Bereich ist Administratoren vorbehalten.</p></div>;
-  else if (bereich === 'einrichtung') inhalt = <Einrichtung typId={teile[1]} />;
-  else if (bereich === 'benutzer') inhalt = <Benutzerverwaltung />;
+  else if (bereich === 'werkbank' && !admin) inhalt = <div className="leer"><p>Die Werkbank ist Administratoren vorbehalten.</p></div>;
+  else if (bereich === 'werkbank') inhalt = <Werkbank teile={teile} />;
+  else if (bereich === 'profil') inhalt = <Profil />;
   else inhalt = <Ablage teile={teile} suche={suche} />;
 
   return (
@@ -32,11 +37,10 @@ export function App() {
         </div>
         <nav className="bereiche" aria-label="Bereiche">
           <Link to="/ablage" className={bereich === 'ablage' ? 'an' : ''}>Ablage</Link>
-          {admin && <Link to="/einrichtung" className={bereich === 'einrichtung' ? 'an' : ''}>Einrichtung</Link>}
-          {admin && <Link to="/benutzer" className={bereich === 'benutzer' ? 'an' : ''}>Benutzer</Link>}
+          {admin && <Link to="/werkbank/typen" className={bereich === 'werkbank' ? 'an' : ''}>Werkbank</Link>}
         </nav>
         <div className="konto">
-          <span className="wer" title={ich.email}>{ich.name || ich.email}</span>
+          <Link to="/profil" className={`wer ${bereich === 'profil' ? 'an' : ''}`} title={`Profil von ${ich.email}`}>{ich.name || ich.email}</Link>
           <button className="textknopf" onClick={() => void abmelden()}>Abmelden</button>
           {/* AGPL: Wer das DMS über das Netz nutzt, soll an den Quellcode kommen. */}
           <a className="quelle" href="https://github.com/motom001/dms" target="_blank" rel="noreferrer">Quellcode</a>

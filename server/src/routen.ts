@@ -1,6 +1,7 @@
 import type { Readable } from 'node:stream';
 import { MAX_DATEIGROESSE, type Benutzer } from '../../shared/src/model';
 import { ladeBeispiele } from './beispiele';
+import { erzeugeDemo } from './demo';
 import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import { SITZUNG_TAGE, type Konten } from './konten';
@@ -83,6 +84,14 @@ export function routen(dienst: Dienst, konten: Konten, log: (m: string) => void 
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
 
+    /* ---------- Eigenes Profil ---------- */
+    { methode: 'PUT', pfad: '/api/konto/profil', zugang: 'angemeldet', handler: async (a) => ok(await konten.aendereProfil(ich(a), b(a))) },
+    { methode: 'PUT', pfad: '/api/konto/email', zugang: 'angemeldet', handler: async (a) => ok(await konten.aendereEmail(ich(a), b(a), log)) },
+    { methode: 'PUT', pfad: '/api/konto/passwort', zugang: 'angemeldet', handler: async (a) => {
+      const r = await konten.aenderePasswort(ich(a), b(a), log);
+      return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
+    } },
+
     /* ---------- Benutzer ---------- */
     { methode: 'GET', pfad: '/api/personen', zugang: 'angemeldet', handler: async () => ok(await konten.personen()) },
     { methode: 'GET', pfad: '/api/benutzer', zugang: 'admin', handler: async () => ok(await konten.listeBenutzer()) },
@@ -97,6 +106,9 @@ export function routen(dienst: Dienst, konten: Konten, log: (m: string) => void 
     { methode: 'PUT', pfad: '/api/typen/:id', zugang: 'admin', handler: async (a) => ok(await dienst.aendereTyp(a.params.id, a.body)) },
     { methode: 'DELETE', pfad: '/api/typen/:id', zugang: 'admin', handler: async (a) => { await dienst.loescheTyp(a.params.id); return leer; } },
     { methode: 'POST', pfad: '/api/beispiele', zugang: 'admin', handler: async (a) => { await ladeBeispiele(dienst, ich(a).id); return leer; } },
+    { methode: 'GET', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async () => ok(await dienst.demoUebersicht()) },
+    { methode: 'POST', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async (a) => ok(await erzeugeDemo(dienst, b(a).anzahl, ich(a).id), 201) },
+    { methode: 'DELETE', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async () => ok(await dienst.entferneDemo()) },
 
     /* ---------- Mappen ---------- */
     { methode: 'GET', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.listeMappen(a.query.typ)) },

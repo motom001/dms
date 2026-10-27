@@ -65,6 +65,12 @@ export const api = {
   mappeAendern: (id: string, m: unknown) => anfrage<Mappe>('PUT', `/api/mappen/${id}`, m),
   mappeLoeschen: (id: string) => anfrage<null>('DELETE', `/api/mappen/${id}`),
   beispiele: () => anfrage<null>('POST', '/api/beispiele'),
+  demoUebersicht: () => anfrage<Array<{ typId: string; name: string; demo: number; gesamt: number }>>('GET', '/api/werkbank/demo'),
+  demoErzeugen: (anzahl: number) => anfrage<{ gesamt: number; erzeugt: Record<string, number>; uebersprungen: Array<{ typ: string; grund: string }> }>('POST', '/api/werkbank/demo', { anzahl }),
+  demoEntfernen: () => anfrage<{ entfernt: number }>('DELETE', '/api/werkbank/demo'),
+  profil: (name: string) => anfrage<Benutzer>('PUT', '/api/konto/profil', { name }),
+  emailAendern: (email: string, passwort: string) => anfrage<Benutzer>('PUT', '/api/konto/email', { email, passwort }),
+  passwortAendern: (passwortAlt: string, passwortNeu: string) => anfrage<{ benutzer: Benutzer }>('PUT', '/api/konto/passwort', { passwortAlt, passwortNeu }),
   dokumentLoeschen: (id: string) => anfrage<null>('DELETE', `/api/dokumente/${id}`),
   async ladeHoch(mappeId: string, register: string, datei: File): Promise<Hochgeladen> {
     const q = new URLSearchParams({ register, name: datei.name, typ: datei.type || 'application/octet-stream' });

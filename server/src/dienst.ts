@@ -198,14 +198,14 @@ export class Dienst {
     if (!istOk(p)) throw new Fachfehler(422, 'Bitte die markierten Felder prüfen.', p);
   }
 
-  async legeMappeAn(eingabe: unknown, benutzerId: string | null = null): Promise<Mappe> {
+  async legeMappeAn(eingabe: unknown, benutzerId: string | null = null, demo = false): Promise<Mappe> {
     const e = (eingabe ?? {}) as { id?: unknown; typId?: unknown; werte?: unknown };
     const typ = istUuid(e.typId) ? await this.repo.holeTyp(e.typId) : undefined;
     if (!typ) throw new Fachfehler(422, 'Unbekannter Mappentyp.');
     const werte = bereinigeWerte(typ, e.werte);
     await this.pruefeWerte(typ, werte);
     const id = istUuid(e.id) && !(await this.repo.holeMappe(e.id)) ? e.id : randomUUID();
-    return this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), benutzerId);
+    return this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), benutzerId, demo);
   }
 
   async aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null): Promise<Mappe> {
@@ -227,6 +227,24 @@ export class Dienst {
     const dokumente = await this.repo.listeDokumente(id);
     await this.repo.loescheMappe(id);
     for (const sha of new Set(dokumente.map((d) => d.sha256))) await this.raeumeAuf(sha);
+  }
+
+  /* ---------- Demo-Daten ---------- */
+
+  async demoUebersicht() {
+    const demo = await this.repo.zaehleDemo();
+    const alle = await this.repo.listeMappen();
+    return (await this.repo.listeTypen()).map((t) => ({
+      typId: t.id, name: t.name, demo: demo.get(t.id) ?? 0, gesamt: alle.filter((m) => m.typId === t.id).length,
+    }));
+  }
+
+  async entferneDemo() {
+    const echte = await this.repo.echteVerweiseAufDemo();
+    if (echte) throw new Fachfehler(409, `${echte} echte ${echte === 1 ? 'Mappe verweist' : 'Mappen verweisen'} auf Demo-Mappen. Entferne zuerst diese Verweise.`);
+    const { anzahl, dateien } = await this.repo.loescheDemo();
+    for (const sha of dateien) await this.raeumeAuf(sha);
+    return { entfernt: anzahl };
   }
 
   /* ---------- Dokumente ---------- */

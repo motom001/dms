@@ -24,6 +24,7 @@ const alsMappe = (r: Zeile): Mappe => ({
   erstelltVon: (r.erstellt_von as string | null) ?? null,
   geaendert: iso(r.geaendert),
   geaendertVon: (r.geaendert_von as string | null) ?? null,
+  demo: !!r.demo,
 });
 const alsDokument = (r: Zeile): Dokument => ({
   id: r.id as string,
@@ -101,11 +102,11 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const [r] = await sql`SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       return r ? alsMappe(r) : undefined;
     },
-    async legeMappeAn(id, typId, werte, vs, benutzerId) {
+    async legeMappeAn(id, typId, werte, vs, benutzerId, demo = false) {
       return sql.begin(async (tx) => {
         const [r] = await tx`
-          INSERT INTO mappen (id, haushalt_id, typ_id, werte, erstellt_von, geaendert_von)
-          VALUES (${id}, ${haushaltId}, ${typId}, ${json(sql, werte)}, ${benutzerId}, ${benutzerId})
+          INSERT INTO mappen (id, haushalt_id, typ_id, werte, erstellt_von, geaendert_von, demo)
+          VALUES (${id}, ${haushaltId}, ${typId}, ${json(sql, werte)}, ${benutzerId}, ${benutzerId}, ${demo})
           RETURNING *`;
         await schreibeVerweise(tx, id, vs);
         return alsMappe(r);
@@ -172,6 +173,26 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     },
     async dokumenteMitSha(sha256) {
       return (await sql`SELECT * FROM dokumente WHERE haushalt_id = ${haushaltId} AND sha256 = ${sha256}`).map(alsDokument);
+    },
+    async zaehleDemo() {
+      const r = await sql`SELECT typ_id, count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} AND demo GROUP BY typ_id`;
+      return new Map(r.map((z) => [z.typ_id as string, z.n as number]));
+    },
+    async echteVerweiseAufDemo() {
+      const [r] = await sql`
+        SELECT count(DISTINCT q.id)::int AS n FROM verweise v
+        JOIN mappen q ON q.id = v.quelle_id JOIN mappen z ON z.id = v.ziel_id
+        WHERE z.demo AND NOT q.demo AND z.haushalt_id = ${haushaltId}`;
+      return r.n as number;
+    },
+    async loescheDemo() {
+      return sql.begin(async (tx) => {
+        const dateien = (await tx`
+          SELECT DISTINCT d.sha256 FROM dokumente d JOIN mappen m ON m.id = d.mappe_id
+          WHERE m.demo AND m.haushalt_id = ${haushaltId}`).map((z) => z.sha256 as string);
+        const r = await tx`DELETE FROM mappen WHERE demo AND haushalt_id = ${haushaltId}`;
+        return { anzahl: r.count, dateien };
+      });
     },
     async dokumenteJeRegister(typId) {
       const r = await sql`

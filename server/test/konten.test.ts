@@ -87,3 +87,27 @@ describe('Konten', () => {
     await k.aendereBenutzer(admin, admin.id, { rolle: 'mitglied' }); // jetzt gibt es einen anderen Admin
   });
 });
+
+describe('Profil', () => {
+  it('ändert Name, E-Mail und Passwort nur mit dem aktuellen Passwort', async () => {
+    const { mails, mailer } = postfach();
+    const k = new Konten(speicherKontoRepo(), mailer, 'http://nas:3000');
+    const { benutzer: ich, schluessel: alteSitzung } = await k.einrichten({ email: 'admin@example.org', passwort: 'ein-langes-passwort' });
+    assert.equal((await k.aendereProfil(ich, { name: 'Thomas' })).name, 'Thomas');
+    await wirft(k.aendereEmail(ich, { email: 'neu@example.org', passwort: 'falsch-falsch' }), 403);
+    const r = await k.legeBenutzerAn({ email: 'belegt@example.org' });
+    assert.ok(r);
+    await wirft(k.aendereEmail(ich, { email: 'BELEGT@example.org', passwort: 'ein-langes-passwort' }), 409);
+    const neu = await k.aendereEmail(ich, { email: 'neu@example.org', passwort: 'ein-langes-passwort' });
+    assert.equal(neu.email, 'neu@example.org');
+    assert.equal(mails.at(-1)!.an, 'admin@example.org'); // Hinweis an die alte Adresse
+
+    await wirft(k.aenderePasswort(neu, { passwortAlt: 'falsch-falsch', passwortNeu: 'noch-ein-passwort' }), 403);
+    await wirft(k.aenderePasswort(neu, { passwortAlt: 'ein-langes-passwort', passwortNeu: 'kurz' }), 422);
+    const p = await k.aenderePasswort(neu, { passwortAlt: 'ein-langes-passwort', passwortNeu: 'noch-ein-passwort' });
+    assert.equal(await k.benutzerZu(alteSitzung), undefined); // andere Sitzungen beendet
+    assert.ok(await k.benutzerZu(p.schluessel));
+    assert.ok(await k.anmelden({ email: 'neu@example.org', passwort: 'noch-ein-passwort' }, 'x'));
+    assert.match(mails.at(-1)!.betreff, /Passwort/);
+  });
+});

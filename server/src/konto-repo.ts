@@ -13,7 +13,7 @@ export interface KontoRepo {
   holeBenutzer(id: string): Promise<Benutzer | undefined>;
   holeHash(email: string): Promise<{ benutzer: Benutzer; hash: string | null } | undefined>;
   legeBenutzerAn(b: NeuerBenutzer): Promise<Benutzer>;
-  aendereBenutzer(id: string, d: Partial<Pick<Benutzer, 'name' | 'rolle' | 'aktiv'>>): Promise<Benutzer>;
+  aendereBenutzer(id: string, d: Partial<Pick<Benutzer, 'name' | 'rolle' | 'aktiv' | 'email'>>): Promise<Benutzer>;
   setzeHash(id: string, hash: string): Promise<void>;
   notiereAnmeldung(id: string): Promise<void>;
   loescheBenutzer(id: string): Promise<void>;
@@ -115,6 +115,7 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
       const [r] = await sql`
         UPDATE benutzer SET
           name = coalesce(${d.name ?? null}, name),
+          email = coalesce(${d.email ?? null}, email),
           rolle = coalesce(${d.rolle ?? null}, rolle),
           aktiv = coalesce(${d.aktiv ?? null}::boolean, aktiv)
         WHERE id = ${id} AND haushalt_id = ${haushaltId}

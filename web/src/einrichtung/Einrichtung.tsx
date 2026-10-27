@@ -7,68 +7,6 @@ import { api, ApiFehler } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
 
-/**
- * Einrichtung: hier wird festgelegt, welche Mappentypen es gibt und welche
- * Felder sie haben.
- *
- * /einrichtung          ersten Typ öffnen
- * /einrichtung/neu      neuer Mappentyp
- * /einrichtung/:typId   Mappentyp bearbeiten
- */
-export function Einrichtung({ typId }: { typId?: string }) {
-  const d = useDaten();
-  const [laedt, setLaedt] = useState(false);
-  const [meldung, setMeldung] = useState<string>();
-  const typ = d.typ(typId);
-
-  useEffect(() => {
-    if (!typId && d.typen.length) geheZu(`/einrichtung/${d.typen[0].id}`, true);
-  }, [typId, d.typen]);
-
-  async function beispieleLaden() {
-    setLaedt(true); setMeldung(undefined);
-    try { await api.beispiele(); await d.neuLaden(); geheZu('/einrichtung', true); }
-    catch (e) { setMeldung((e as Error).message); }
-    finally { setLaedt(false); }
-  }
-
-  let inhalt;
-  if (typId === 'neu') inhalt = <TypEditor key="neu" />;
-  else if (typ) inhalt = <TypEditor key={typ.id} typ={typ} />;
-  else if (typId) inhalt = <div className="leer"><p>Diesen Mappentyp gibt es nicht (mehr).</p></div>;
-  else inhalt = (
-    <div className="leer">
-      <h2>Noch keine Mappentypen</h2>
-      <p>Ein Mappentyp legt fest, welche Felder eine Mappe hat – etwa „Vertrag“ mit „Kündigung bis“ und „Zahlungszyklus“. Lege den ersten an oder lade vier Beispieltypen mit ein paar Mappen.</p>
-      <div className="knoepfe">
-        <Link to="/einrichtung/neu" className="knopf primaer">Ersten Mappentyp anlegen</Link>
-        <button className="knopf" disabled={laedt} onClick={() => void beispieleLaden()}>{laedt ? 'Lade …' : 'Beispiele laden'}</button>
-      </div>
-      {meldung && <p className="fehlertext">{meldung}</p>}
-    </div>
-  );
-
-  return (
-    <div className="zweispaltig">
-      <aside className="leiste">
-        <div className="leistenkopf">
-          <h2 className="ueber">Mappentypen</h2>
-          <Link to="/einrichtung/neu" className="knopf klein">+ Neu</Link>
-        </div>
-        <nav className="typliste" aria-label="Mappentypen">
-          {typId === 'neu' && <span className="typeintrag an"><span className="nm">Neuer Mappentyp</span><span className="chip warn">neu</span></span>}
-          {d.typen.map((t) => (
-            <Link key={t.id} to={`/einrichtung/${t.id}`} className={`typeintrag ${typ?.id === t.id ? 'an' : ''}`}>
-              <span className="nm">{t.name}</span><span className="zahl">{t.felder.length} Felder</span>
-            </Link>
-          ))}
-        </nav>
-      </aside>
-      <section className="inhalt">{inhalt}</section>
-    </div>
-  );
-}
-
 /* ---------------------------------------------------------------- */
 
 const ZAHLEN = ['minLen', 'maxLen', 'min', 'max', 'nachkomma'] as const;
@@ -122,7 +60,7 @@ function beispielWerte(felder: Feld[]): Werte {
   return w;
 }
 
-function TypEditor({ typ }: { typ?: Mappentyp }) {
+export function TypEditor({ typ }: { typ?: Mappentyp }) {
   const d = useDaten();
   const neu = !typ;
   const [basis, setBasis] = useState(() => JSON.stringify(entwurfAus(typ)));
@@ -190,7 +128,7 @@ function TypEditor({ typ }: { typ?: Mappentyp }) {
       setE(sauber); setBasis(JSON.stringify(sauber)); setFehler(null); setOffen(null);
       loeseWache();
       await d.neuLaden();
-      if (neu) geheZu(`/einrichtung/${t.id}`);
+      if (neu) geheZu(`/werkbank/typen/${t.id}`);
       else setMeldung('Mappentyp gespeichert.');
     } catch (err) {
       const f = err as ApiFehler;
@@ -204,11 +142,11 @@ function TypEditor({ typ }: { typ?: Mappentyp }) {
   }
 
   async function loeschen() {
-    if (neu) { loeseWache(); geheZu('/einrichtung'); return; }
+    if (neu) { loeseWache(); geheZu('/werkbank/typen'); return; }
     if (!confirm(`Mappentyp „${e.name}“ endgültig löschen?`)) return;
     try {
       await api.typLoeschen(e.id);
-      loeseWache(); await d.neuLaden(); geheZu('/einrichtung');
+      loeseWache(); await d.neuLaden(); geheZu('/werkbank/typen');
     } catch (err) {
       setMeldung((err as Error).message);
       setGruende((err as ApiFehler).gruende ?? []);

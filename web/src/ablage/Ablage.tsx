@@ -66,7 +66,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
             </Link>
           ))}
         </nav>
-        {!d.typen.length && <p className="leise klein">Noch keine Mappentypen. {ich.rolle === 'admin' ? <Link to="/einrichtung" className="verweis">Zur Einrichtung</Link> : 'Ein Administrator muss sie zuerst einrichten.'}</p>}
+        {!d.typen.length && <p className="leise klein">Noch keine Mappentypen. {ich.rolle === 'admin' ? <Link to="/werkbank/typen" className="verweis">Zur Werkbank</Link> : 'Ein Administrator muss sie zuerst einrichten.'}</p>}
       </aside>
 
       <section className="spalte liste" aria-label="Mappen">

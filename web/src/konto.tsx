@@ -3,7 +3,7 @@ import { PASSWORT_MINDESTLAENGE, type Benutzer } from '../../shared/src/model';
 import { ABGEMELDET, api, type KontoStatus } from './api';
 import { geheZu, useOrt } from './ort';
 
-interface Konto { ich: Benutzer; mail: boolean; abmelden(): Promise<void> }
+interface Konto { ich: Benutzer; mail: boolean; abmelden(): Promise<void>; aktualisieren(): Promise<void> }
 const Ctx = createContext<Konto | null>(null);
 
 export function useKonto(): Konto {
@@ -43,7 +43,7 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   if (!status) return <p className="leise mittig">Lade …</p>;
   if (status.einrichtungNoetig) return <Ersteinrichtung fertig={laden} />;
   if (!status.benutzer) return <Anmelden mail={status.mail} fertig={laden} />;
-  return <Ctx.Provider value={{ ich: status.benutzer, mail: status.mail, abmelden }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ ich: status.benutzer, mail: status.mail, abmelden, aktualisieren: laden }}>{children}</Ctx.Provider>;
 }
 
 function Karte({ titel, unter, children }: { titel: string; unter?: string; children: ReactNode }) {
@@ -82,7 +82,7 @@ function Ersteinrichtung({ fertig }: { fertig: () => Promise<void> }) {
     if (pw !== pw2) throw new Error('Die beiden Passwörter stimmen nicht überein.');
     await api.einrichten({ name, email, passwort: pw });
     await fertig();
-    geheZu('/einrichtung', true);
+    geheZu('/werkbank/typen', true);
   });
   return (
     <Karte titel="Willkommen" unter="Lege das Administrator-Konto an. Damit richtest du Mappentypen ein und verwaltest weitere Benutzer.">

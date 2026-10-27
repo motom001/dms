@@ -18,7 +18,7 @@ export interface Repo {
 
   listeMappen(typId?: string): Promise<Mappe[]>;
   holeMappe(id: string): Promise<Mappe | undefined>;
-  legeMappeAn(id: string, typId: string, werte: Werte, verweise: Verweis[], benutzerId: string | null): Promise<Mappe>;
+  legeMappeAn(id: string, typId: string, werte: Werte, verweise: Verweis[], benutzerId: string | null, demo?: boolean): Promise<Mappe>;
   aendereMappe(id: string, werte: Werte, verweise: Verweis[], benutzerId: string | null): Promise<Mappe>;
   loescheMappe(id: string): Promise<void>;
 
@@ -36,6 +36,13 @@ export interface Repo {
   dokumenteMitSha(sha256: string): Promise<Dokument[]>;
   /** Anzahl Dokumente je Register-Schlüssel in Mappen dieses Typs. */
   dokumenteJeRegister(typId: string): Promise<Map<string, number>>;
+
+  /** Demo-Mappen je Typ. */
+  zaehleDemo(): Promise<Map<string, number>>;
+  /** Anzahl echter Mappen, die auf Demo-Mappen verweisen. */
+  echteVerweiseAufDemo(): Promise<number>;
+  /** Löscht alle Demo-Mappen; liefert ihre Anzahl und die Prüfwerte ihrer Dateien. */
+  loescheDemo(): Promise<{ anzahl: number; dateien: string[] }>;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

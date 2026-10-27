@@ -162,4 +162,20 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('DELETE', `/api/dokumente/${html.body.dokument.id}`)).status, 204);
     assert.equal((await anfrage('DELETE', `/api/mappen/${rechnung.id}`)).status, 204);
   });
+
+  it('erzeugt Demo-Daten, entfernt sie und ändert das eigene Passwort', async () => {
+    const r = await anfrage('POST', '/api/werkbank/demo', { anzahl: 200 });
+    assert.equal(r.status, 201);
+    assert.deepEqual(r.body.uebersprungen, []);
+    const u = (await anfrage('GET', '/api/werkbank/demo')).body;
+    assert.equal(u.reduce((a: number, t: { demo: number }) => a + t.demo, 0), r.body.gesamt);
+    assert.equal((await anfrage('DELETE', '/api/werkbank/demo')).body.entfernt, r.body.gesamt);
+
+    assert.equal((await anfrage('PUT', '/api/konto/passwort', { passwortAlt: 'falsch-falsch', passwortNeu: 'neues-admin-passwort' })).status, 403);
+    const alt = cookie;
+    assert.equal((await anfrage('PUT', '/api/konto/passwort', { passwortAlt: 'ein-langes-passwort', passwortNeu: 'neues-admin-passwort' })).status, 200);
+    assert.notEqual(cookie, alt);
+    assert.equal((await app.inject({ method: 'GET', url: '/api/typen', headers: { cookie: alt } })).statusCode, 401);
+    assert.equal((await anfrage('GET', '/api/typen')).status, 200);
+  });
 });

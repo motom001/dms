@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
-import { istLeer, istOk, standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register } from '../../../shared/src/model';
+import { istLeer, istOk, MAX_DATEIGROESSE, standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register } from '../../../shared/src/model';
 import { api, ApiFehler, dokumentUrl, type MappeDetails } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
@@ -66,6 +66,23 @@ export function MappeAnsicht({ typ, mappe, sicht }: { typ: Mappentyp; mappe: Map
   );
 }
 
+/** Eine Datei, die erst beim Speichern der Mappe hochgeladen wird. */
+export interface NeueDatei { uid: string; datei: File; register: string }
+let zaehler = 0;
+
+/** Mappen, die laut Register hierher verweisen (alle oder nur gewählte Quellen). */
+function verknuepfungsGruppen(d: ReturnType<typeof useDaten>, mappe: Mappe | undefined, typId: string, register: Register, details?: MappeDetails | null) {
+  const gewaehlt = register.quellen ?? [];
+  return d.typen.flatMap((t) => t.felder
+    .filter((f) => f.typ === 'referenz' && f.zielTyp === typId)
+    .filter((f) => !gewaehlt.length || gewaehlt.some((q) => q.typId === t.id && q.feldKey === f.key))
+    .map((f) => ({
+      t, f,
+      treffer: !mappe || !details ? [] : details.rueckverweise.filter((r) => r.quelleTypId === t.id && r.feldKey === f.key)
+        .map((r) => d.mappe(r.quelleId)).filter((m): m is Mappe => !!m),
+    })));
+}
+
 function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
   typ: Mappentyp; mappe?: Mappe; start: RohWerte; sicht: string; details?: MappeDetails | null; neuLaden?: () => Promise<void>;
 }) {
@@ -74,11 +91,24 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
   const [aktiv, setAktiv] = useState(register[0]?.key);
   const [basis, setBasis] = useState(() => JSON.stringify(start));
   const [roh, setRoh] = useState<RohWerte>(start);
+  const [neueDateien, setNeueDateien] = useState<NeueDatei[]>([]);
+  const [entfernt, setEntfernt] = useState<string[]>([]);
   const [fehler, setFehler] = useState<Pruefergebnis | null>(null);
   const [meldung, setMeldung] = useState<string>();
+  const [hinweise, setHinweise] = useState<Array<{ art: 'warn' | 'schlecht'; text: ReactNode }>>([]);
   const [sendet, setSendet] = useState(false);
-  const geaendert = JSON.stringify(roh) !== basis || !mappe;
-  useUngespeichert(JSON.stringify(roh) !== basis);
+  const werteGeaendert = JSON.stringify(roh) !== basis;
+  const dokumenteGeaendert = neueDateien.length > 0 || entfernt.length > 0;
+  const geaendert = werteGeaendert || dokumenteGeaendert || !mappe;
+  useUngespeichert(werteGeaendert || dokumenteGeaendert);
+
+  const dokumenteIn = (key: string) => (details?.dokumente ?? []).filter((x) => x.registerKey === key);
+  const anzahl = (r: Register): number | undefined => {
+    if (r.art === 'dokumente') return dokumenteIn(r.key).filter((x) => !entfernt.includes(x.id)).length + neueDateien.filter((n) => n.register === r.key).length;
+    if (r.art === 'verknuepfungen') return verknuepfungsGruppen(d, mappe, typ.id, r, details).reduce((a, g) => a + g.treffer.length, 0);
+    return undefined;
+  };
+  const verwerfen = () => { setRoh(JSON.parse(basis)); setNeueDateien([]); setEntfernt([]); setFehler(null); setMeldung(undefined); setHinweise([]); };
 
   const reg = register.find((r) => r.key === aktiv) ?? register[0];
   const felderAuf = (r: Register) => typ.felder.filter((f) => r.felder?.includes(f.key));
@@ -102,18 +132,42 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
     const werte = werteAusRoh(typ, roh);
     const p = d.pruefe(typ, werte, mappe?.id);
     if (!istOk(p)) { zeigeFehler(p); setMeldung('Bitte die markierten Felder prüfen.'); return; }
-    setSendet(true);
+    setSendet(true); setHinweise([]);
+    let gespeichert: Mappe | undefined = mappe;
     try {
-      const m = mappe ? await api.mappeAendern(mappe.id, { werte }) : await api.mappeAnlegen({ typId: typ.id, werte });
-      setFehler(null); setBasis(JSON.stringify(roh)); loeseWache();
-      await d.neuLaden();
-      if (!mappe) geheZu(`/ablage/${sicht}/${m.id}`);
-      else setMeldung('Gespeichert.');
+      if (!mappe || werteGeaendert) gespeichert = mappe ? await api.mappeAendern(mappe.id, { werte }) : await api.mappeAnlegen({ typId: typ.id, werte });
+      setFehler(null); setBasis(JSON.stringify(roh));
     } catch (e) {
       const f = e as ApiFehler;
       if (f.pruefung) zeigeFehler(f.pruefung);
       setMeldung(f.message);
-    } finally { setSendet(false); }
+      setSendet(false);
+      return;
+    }
+    // Dokumente erst jetzt: hochladen, was neu ist, und entfernen, was markiert ist.
+    const neu: typeof hinweise = [];
+    const offen: NeueDatei[] = [];
+    for (const n of neueDateien) {
+      try {
+        const r = await api.ladeHoch(gespeichert!.id, n.register, n.datei);
+        const anderswo = r.gleicherInhalt.filter((g) => g.mappeId !== gespeichert!.id);
+        if (anderswo.length) neu.push({ art: 'warn', text: <>„{n.datei.name}“ hat denselben Inhalt wie {anderswo.map((g, j) => { const m = d.mappe(g.mappeId); return <span key={j}>{j > 0 && ', '}„{g.name}“ in {m ? <Link to={`/ablage/${m.typId}/${m.id}`} className="verweis">{d.titel(m)}</Link> : 'einer anderen Mappe'}</span>; })}. Gespeichert ist die Datei nur einmal.</> });
+      } catch (e) {
+        offen.push(n);
+        neu.push({ art: 'schlecht', text: `„${n.datei.name}“ wurde nicht hochgeladen: ${(e as Error).message}` });
+      }
+    }
+    const nichtEntfernt: string[] = [];
+    for (const id of entfernt) {
+      try { await api.dokumentLoeschen(id); } catch (e) { nichtEntfernt.push(id); neu.push({ art: 'schlecht', text: (e as Error).message }); }
+    }
+    setNeueDateien(offen); setEntfernt(nichtEntfernt); setHinweise(neu);
+    if (!offen.length && !nichtEntfernt.length) loeseWache();
+    await d.neuLaden();
+    await neuLaden?.();
+    setSendet(false);
+    if (!mappe) geheZu(`/ablage/${sicht}/${gespeichert!.id}`);
+    else setMeldung(offen.length || nichtEntfernt.length ? 'Teilweise gespeichert.' : 'Gespeichert.');
   }
 
   async function loeschen() {
@@ -133,14 +187,19 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
     inhalt = felder.length
       ? <div className="formular">{felder.map((f) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} />)}</div>
       : <p className="leise">Auf diesem Register liegen keine Felder.</p>;
+  } else if (reg.art === 'dokumente') {
+    inhalt = mappe && !details ? <p className="leise">Lade …</p> : (
+      <Dokumente register={reg} dokumente={dokumenteIn(reg.key)} neue={neueDateien.filter((n) => n.register === reg.key)} entfernt={entfernt}
+        hinzufuegen={(dateien) => setNeueDateien((x) => [...x, ...dateien.map((datei) => ({ uid: `n${++zaehler}`, datei, register: reg.key }))])}
+        entferne={(id) => setEntfernt((x) => (x.includes(id) ? x.filter((y) => y !== id) : [...x, id]))}
+        vergiss={(uid) => setNeueDateien((x) => x.filter((n) => n.uid !== uid))} />
+    );
   } else if (!mappe) {
-    inhalt = <p className="leise">Erst die Mappe speichern, dann gibt es hier {reg.art === 'dokumente' ? 'Dokumente' : 'Verknüpfungen'}.</p>;
+    inhalt = <p className="leise">Verknüpfungen entstehen, sobald andere Mappen auf diese verweisen – also nach dem ersten Speichern.</p>;
   } else if (!details) {
     inhalt = <p className="leise">Lade …</p>;
-  } else if (reg.art === 'dokumente') {
-    inhalt = <Dokumente mappe={mappe} register={reg} dokumente={details.dokumente.filter((x) => x.registerKey === reg.key)} neuLaden={neuLaden!} />;
   } else {
-    inhalt = <Verknuepfungen mappe={mappe} register={reg} details={details} />;
+    inhalt = <Verknuepfungen mappe={mappe} gruppen={verknuepfungsGruppen(d, mappe, typ.id, reg, details)} />;
   }
 
   return (
@@ -148,25 +207,26 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
       <div className="registertaben" role="tablist" aria-label="Register">
         {register.map((r) => {
           const n = fehlerAuf(r);
-          const zahl = r.art === 'dokumente' ? details?.dokumente.filter((x) => x.registerKey === r.key).length : undefined;
+          const zahl = anzahl(r);
           return (
             <button key={r.key} type="button" role="tab" aria-selected={r.key === reg?.key} className={`registertab art-${r.art} ${r.key === reg?.key ? 'an' : ''}`}
-              disabled={!mappe && r.art !== 'felder'} onClick={() => setAktiv(r.key)}>
+              onClick={() => setAktiv(r.key)}>
               {r.name}
               {n > 0 && <span className="fehlerpunkt" title={`${n} Feld${n === 1 ? '' : 'er'} mit Fehler`}>{n}</span>}
-              {!!zahl && <span className="anzahl">{zahl}</span>}
+              {zahl !== undefined && <span className="anzahl">{zahl}</span>}
             </button>
           );
         })}
       </div>
       {fehler?.allgemein.length ? <div className="hinweis schlecht"><p>{fehler.allgemein.join(' ')}</p></div> : null}
+      {hinweise.map((h, i) => <div key={i} className={`hinweis ${h.art}`}><p>{h.text}</p></div>)}
       <div className="registerinhalt" role="tabpanel">{inhalt}</div>
       <div className="speicherleiste">
         {mappe ? <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>Mappe löschen</button> : <span />}
-        <span className={`status ${meldung && fehler ? 'schlecht' : ''}`} role="status">{meldung ?? (geaendert && mappe ? 'Ungespeicherte Änderungen' : '')}</span>
+        <span className={`status ${meldung && fehler ? 'schlecht' : ''}`} role="status">{sendet ? 'Speichere …' : meldung ?? (mappe && (werteGeaendert || dokumenteGeaendert) ? 'Ungespeicherte Änderungen' : '')}</span>
         <div className="knoepfe">
           {mappe
-            ? <button type="button" className="knopf" disabled={!geaendert || sendet} onClick={() => { setRoh(JSON.parse(basis)); setFehler(null); setMeldung(undefined); }}>Verwerfen</button>
+            ? <button type="button" className="knopf" disabled={!(werteGeaendert || dokumenteGeaendert) || sendet} onClick={verwerfen}>Verwerfen</button>
             : <Link to={`/ablage/${sicht}`} className="knopf">Abbrechen</Link>}
           <button type="submit" className="knopf gruen" disabled={sendet}>{sendet ? 'Speichere …' : 'Mappe speichern'}</button>
         </div>
@@ -271,74 +331,64 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId }: { feld: Feld; ro
 
 /* ---------- Dokumentenregister ---------- */
 
-function Dokumente({ mappe, register, dokumente, neuLaden }: { mappe: Mappe; register: Register; dokumente: Dokument[]; neuLaden: () => Promise<void> }) {
+function Dokumente({ register, dokumente, neue, entfernt, hinzufuegen, entferne, vergiss }: {
+  register: Register; dokumente: Dokument[]; neue: NeueDatei[]; entfernt: string[];
+  hinzufuegen(d: File[]): void; entferne(id: string): void; vergiss(uid: string): void;
+}) {
   const d = useDaten();
   const auswahl = useRef<HTMLInputElement>(null);
-  const [laeuft, setLaeuft] = useState<string>();
-  const [meldungen, setMeldungen] = useState<Array<{ art: 'gut' | 'warn' | 'schlecht'; text: ReactNode }>>([]);
   const [ziehen, setZiehen] = useState(false);
+  const [zuGross, setZuGross] = useState<string[]>([]);
   const [ansicht, setAnsicht] = useState<string>();
-  const gewaehlt = dokumente.find((x) => x.id === ansicht);
+  const gewaehlt = dokumente.find((x) => x.id === ansicht && !entfernt.includes(x.id));
 
-  async function hochladen(dateien: FileList | File[]) {
-    const liste = [...dateien];
-    if (!liste.length) return;
-    const neu: typeof meldungen = [];
-    for (const [i, f] of liste.entries()) {
-      setLaeuft(liste.length > 1 ? `Lade hoch (${i + 1}/${liste.length}): ${f.name}` : `Lade hoch: ${f.name}`);
-      try {
-        const r = await api.ladeHoch(mappe.id, register.key, f);
-        if (r.gleicherInhalt.length) {
-          const anderswo = r.gleicherInhalt.filter((g) => g.mappeId !== mappe.id);
-          neu.push({ art: 'warn', text: <>„{f.name}“ hat denselben Inhalt wie {anderswo.length
-            ? anderswo.map((g, j) => { const m = d.mappe(g.mappeId); return <span key={j}>{j > 0 && ', '}„{g.name}“ in {m ? <Link to={`/ablage/${m.typId}/${m.id}`} className="verweis">{d.titel(m)}</Link> : 'einer anderen Mappe'}</span>; })
-            : `„${r.gleicherInhalt[0].name}“ in dieser Mappe`}. Gespeichert ist die Datei trotzdem nur einmal.</> });
-        }
-        if (r.dokument.anzeigbar) setAnsicht(r.dokument.id);
-      } catch (e) {
-        neu.push({ art: 'schlecht', text: `„${f.name}“: ${(e as Error).message}` });
-      }
-    }
-    setLaeuft(undefined);
-    setMeldungen(neu);
-    await neuLaden();
+  function nimm(liste: FileList | File[]) {
+    const alle = [...liste];
+    const gross = alle.filter((f) => f.size > MAX_DATEIGROESSE);
+    setZuGross(gross.map((f) => f.name));
+    hinzufuegen(alle.filter((f) => f.size <= MAX_DATEIGROESSE && f.size > 0));
   }
-
-  async function loeschen(x: Dokument) {
-    if (!confirm(`Dokument „${x.name}“ löschen?`)) return;
-    try { await api.dokumentLoeschen(x.id); if (ansicht === x.id) setAnsicht(undefined); await neuLaden(); }
-    catch (e) { setMeldungen([{ art: 'schlecht', text: (e as Error).message }]); }
-  }
-
-  const fallen = (e: DragEvent) => { e.preventDefault(); setZiehen(false); void hochladen(e.dataTransfer.files); };
+  const fallen = (e: DragEvent) => { e.preventDefault(); setZiehen(false); nimm(e.dataTransfer.files); };
 
   return (
     <div className="dokumente">
       <div className={`ablagezone ${ziehen ? 'zieht' : ''}`}
         onDragOver={(e) => { e.preventDefault(); setZiehen(true); }} onDragLeave={() => setZiehen(false)} onDrop={fallen}>
-        <p>{laeuft ?? <>Dateien hierher ziehen oder <button type="button" className="textknopf" onClick={() => auswahl.current?.click()}>auswählen</button></>}</p>
-        <p className="leise klein">Bis 100 MB je Datei. PDFs und Bilder lassen sich direkt ansehen.</p>
-        <input ref={auswahl} type="file" multiple hidden onChange={(e) => { if (e.target.files) void hochladen(e.target.files); e.target.value = ''; }} />
+        <p>Dateien hierher ziehen oder <button type="button" className="textknopf" onClick={() => auswahl.current?.click()}>auswählen</button></p>
+        <p className="leise klein">Bis 100 MB je Datei. Übernommen wird mit „Mappe speichern“.</p>
+        <input ref={auswahl} type="file" multiple hidden onChange={(e) => { if (e.target.files) nimm(e.target.files); e.target.value = ''; }} />
       </div>
-      {meldungen.map((m, i) => <div key={i} className={`hinweis ${m.art}`}><p>{m.text}</p></div>)}
-      {dokumente.length === 0
+      {zuGross.length > 0 && <div className="hinweis schlecht"><p>Zu groß (über 100 MB): {zuGross.join(', ')}</p></div>}
+      {dokumente.length + neue.length === 0
         ? <p className="leise">Noch keine Dokumente in „{register.name}“.</p>
         : <ul className="dokumentliste">
-            {dokumente.map((x) => (
-              <li key={x.id} className={x.id === ansicht ? 'an' : ''}>
+            {neue.map((n) => (
+              <li key={n.uid} className="neu">
                 <div className="dokname">
-                  {x.anzeigbar
-                    ? <button type="button" className="textknopf" onClick={() => setAnsicht(x.id === ansicht ? undefined : x.id)}>{x.name}</button>
-                    : <a className="verweis" href={dokumentUrl(x.id, true)}>{x.name}</a>}
-                  <span className="leise klein">{groesse(x.groesse)} · {zeit(x.erstellt)} · {d.person(x.erstelltVon)}</span>
+                  <span>{n.datei.name} <span className="chip gut">neu</span></span>
+                  <span className="leise klein">{groesse(n.datei.size)} · wird beim Speichern hochgeladen</span>
                 </div>
-                <div className="zeilenaktionen">
-                  {x.anzeigbar && <a className="textknopf" href={dokumentUrl(x.id)} target="_blank" rel="noreferrer">Öffnen</a>}
-                  <a className="textknopf" href={dokumentUrl(x.id, true)}>Herunterladen</a>
-                  <button type="button" className="textknopf gefahr" onClick={() => void loeschen(x)}>Löschen</button>
-                </div>
+                <div className="zeilenaktionen"><button type="button" className="textknopf" onClick={() => vergiss(n.uid)}>Entfernen</button></div>
               </li>
             ))}
+            {dokumente.map((x) => {
+              const weg = entfernt.includes(x.id);
+              return (
+                <li key={x.id} className={`${x.id === ansicht && !weg ? 'an' : ''} ${weg ? 'weg' : ''}`}>
+                  <div className="dokname">
+                    {x.anzeigbar && !weg
+                      ? <button type="button" className="textknopf" onClick={() => setAnsicht(x.id === ansicht ? undefined : x.id)}>{x.name}</button>
+                      : <span className="dateiname">{x.name}</span>}
+                    <span className="leise klein">{weg ? 'wird beim Speichern gelöscht' : `${groesse(x.groesse)} · ${zeit(x.erstellt)} · ${d.person(x.erstelltVon)}`}</span>
+                  </div>
+                  <div className="zeilenaktionen">
+                    {!weg && x.anzeigbar && <a className="textknopf" href={dokumentUrl(x.id)} target="_blank" rel="noreferrer">Öffnen</a>}
+                    {!weg && <a className="textknopf" href={dokumentUrl(x.id, true)}>Herunterladen</a>}
+                    <button type="button" className={`textknopf ${weg ? '' : 'gefahr'}`} onClick={() => entferne(x.id)}>{weg ? 'Behalten' : 'Löschen'}</button>
+                  </div>
+                </li>
+              );
+            })}
           </ul>}
       {gewaehlt && (
         <div className="dokansicht">
@@ -353,26 +403,15 @@ function Dokumente({ mappe, register, dokumente, neuLaden }: { mappe: Mappe; reg
 
 /* ---------- Verknüpfungsregister ---------- */
 
-function Verknuepfungen({ mappe, register, details }: { mappe: Mappe; register: Register; details: MappeDetails }) {
+function Verknuepfungen({ mappe, gruppen }: { mappe: Mappe; gruppen: ReturnType<typeof verknuepfungsGruppen> }) {
   const d = useDaten();
-  const gewaehlt = register.quellen ?? [];
-  // Jede Kombination aus Typ und Referenzfeld, die auf diesen Typ zeigt – eingeschränkt auf die gewählten Quellen.
-  const gruppen = d.typen.flatMap((t) => t.felder
-    .filter((f) => f.typ === 'referenz' && f.zielTyp === mappe.typId)
-    .filter((f) => !gewaehlt.length || gewaehlt.some((q) => q.typId === t.id && q.feldKey === f.key))
-    .map((f) => ({
-      t, f,
-      treffer: details.rueckverweise.filter((r) => r.quelleTypId === t.id && r.feldKey === f.key)
-        .map((r) => d.mappe(r.quelleId)).filter((m): m is Mappe => !!m),
-    })));
-
-  if (!gruppen.length) return <p className="leise">Kein Mappentyp verweist auf „{d.typ(mappe.typId)?.name}“. Lege dafür in der Einrichtung ein Referenzfeld an.</p>;
+  if (!gruppen.length) return <p className="leise">Kein Mappentyp verweist auf „{d.typ(mappe.typId)?.name}“. Lege dafür in der Werkbank ein Referenzfeld an.</p>;
   return (
     <div className="gruppen">
       {gruppen.map(({ t, f, treffer }) => (
         <section key={`${t.id}-${f.key}`} className="gruppe">
           <header>
-            <span><strong>{t.name}</strong> <span className="leise">über „{f.label}“</span> <span className="chip">{VERWEISARTEN[f.verweisart ?? 'bezug']}</span></span>
+            <span><strong>{t.name}</strong> <span className="leise">über „{f.label}“</span> <span className="chip">{VERWEISARTEN[f.verweisart ?? 'bezug']}</span> <span className="anzahl">{treffer.length}</span></span>
             <Link to={`/ablage/${t.id}/neu?verweis=${encodeURIComponent(`${f.key}:${mappe.id}`)}`} className="knopf klein">+ {t.name} anlegen</Link>
           </header>
           {treffer.length
