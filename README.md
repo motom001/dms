@@ -50,3 +50,9 @@ docs/     Entscheidungen und Konzept
 ```
 
 Wichtig: **Keine echten Dokumente oder persönlichen Daten committen** – nur Code und Beispieldaten.
+
+## Lizenz
+
+[GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-only).
+
+Jeder darf das DMS nutzen, verändern und weitergeben. Wer eine veränderte Fassung weitergibt oder anderen über ein Netzwerk zur Nutzung anbietet, muss deren Quellcode unter derselben Lizenz zugänglich machen.

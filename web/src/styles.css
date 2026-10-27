@@ -43,6 +43,8 @@ code, .mono { font-family: var(--mono); font-size: 12.5px; }
 .bereiche a { padding: 6px 12px; border-radius: 6px; color: var(--leise); text-decoration: none; font-weight: 600; }
 .bereiche a:hover { background: var(--senke); color: var(--tinte); }
 .bereiche a.an { background: var(--akzent-zart); color: var(--akzent); }
+.quelle { margin-left: auto; font-size: 12.5px; color: var(--leise); text-decoration: none; }
+.quelle:hover { color: var(--akzent); text-decoration: underline; }
 
 .rumpf { max-width: 1240px; margin: 0 auto; padding: 20px max(16px, env(safe-area-inset-right)) 48px max(16px, env(safe-area-inset-left)); display: flex; flex-direction: column; gap: 14px; }
 .zweispaltig { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 20px; align-items: start; }

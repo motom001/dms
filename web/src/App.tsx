@@ -23,6 +23,8 @@ export function App() {
           <Link to="/ablage" className={bereich === 'ablage' ? 'an' : ''}>Ablage</Link>
           <Link to="/einrichtung" className={bereich === 'einrichtung' ? 'an' : ''}>Einrichtung</Link>
         </nav>
+        {/* AGPL: Wer das DMS über das Netz nutzt, soll an den Quellcode kommen. */}
+        <a className="quelle" href="https://github.com/motom001/dms" target="_blank" rel="noreferrer">Quellcode</a>
       </header>
       <main className="rumpf">
         {d.fehler && <div className="hinweis schlecht"><p>{d.fehler}</p><button className="knopf klein" onClick={() => void d.neuLaden()}>Erneut versuchen</button></div>}
