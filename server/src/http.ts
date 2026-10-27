@@ -16,11 +16,10 @@ type MitId = { Params: { id: string } };
 export async function baueApp(dienst: Dienst, opt: Optionen = {}) {
   const app = Fastify({ logger: opt.logger ?? false, bodyLimit: 2 * 1024 * 1024 });
 
-  app.setErrorHandler((err, req, reply) => {
-    if (err instanceof Fachfehler) return reply.code(err.status).send({ fehler: err.message, details: err.details });
-    if ((err as { statusCode?: number }).statusCode && (err as { statusCode: number }).statusCode < 500) {
-      return reply.code((err as { statusCode: number }).statusCode).send({ fehler: err.message });
-    }
+  app.setErrorHandler((fehler: unknown, req, reply) => {
+    if (fehler instanceof Fachfehler) return reply.code(fehler.status).send({ fehler: fehler.message, details: fehler.details });
+    const err = fehler as Error & { statusCode?: number };
+    if (err.statusCode && err.statusCode < 500) return reply.code(err.statusCode).send({ fehler: err.message });
     req.log.error(err);
     return reply.code(500).send({ fehler: 'Interner Fehler. Details stehen im Server-Log.' });
   });
