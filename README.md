@@ -2,7 +2,7 @@
 
 Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsystem für Haushalte. Statt loser Dokumente in Ordnern ordnet es **Mappen**: Vertragspartner, Verträge, Rechnungen, Gegenstände – verbunden über Verweise, so dass man von jeder Mappe aus zu allem Zugehörigen findet.
 
-> **Stand: v0.2.** Anmeldung und Benutzer, Mappentypen mit Feldern, Mappen in drei Spalten mit Eingang. Dokumente, Register, Suche und feinere Rechte folgen.
+> **Stand: v0.3.** Anmeldung und Benutzer, Mappentypen mit Feldern und Registern, Dokumente, Mappen in drei Spalten mit Eingang. Suche, Texterkennung und feinere Rechte folgen.
 
 ## Bereiche
 
@@ -11,6 +11,15 @@ Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsyste
 - **Benutzer** (Administratoren) – Benutzer anlegen, Rollen vergeben, Einladungs- und Passwort-Links verschicken.
 
 Jede Mappe trägt feste Indexwerte: angelegt am/von, zuletzt geändert am/von.
+
+**Register** sind die Trennblätter einer Mappe und werden je Mappentyp festgelegt:
+- *Feldregister* – eine Gruppe von Feldern (jedes Feld liegt auf genau einem Feldregister),
+- *Dokumentenregister* – hochgeladene Dateien; PDFs und Bilder lassen sich direkt ansehen, alles andere wird nur heruntergeladen,
+- *Verknüpfungsregister* – Mappen, die hierher verweisen, auf Wunsch eingeschränkt (z. B. „Rechnungen“ nur über das Feld *Vertrag*).
+
+Der **Titel** einer Mappe entsteht aus einer Vorlage wie `{verwendungszweck} vom {zahlungsdatum}`; die Einrichtung zeigt dazu eine Vorschau.
+
+Dateien liegen unverändert im Dateiordner (`FILES_DIR`) unter ihrem SHA-256-Prüfwert. Gleicher Inhalt wird nur einmal gespeichert.
 
 Die Feldregeln gelten in der Oberfläche **und** auf dem Server (`shared/src/model.ts`), damit nichts Ungültiges in die Datenbank gelangt.
 

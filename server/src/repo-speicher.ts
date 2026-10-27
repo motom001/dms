@@ -1,4 +1,4 @@
-import type { Mappe, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
+import type { Dokument, Mappe, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
 import type { Repo, Rueckverweis, Verweis } from './repo';
 
 /** Repo im Arbeitsspeicher – für Tests und Oberflächenproben, nicht für den Betrieb. */
@@ -6,6 +6,7 @@ export function speicherRepo(): Repo {
   const typen = new Map<string, Mappentyp>();
   const mappen = new Map<string, Mappe>();
   const verweise = new Map<string, Verweis[]>();
+  const dokumente = new Map<string, Dokument>();
   const jetzt = () => new Date().toISOString();
   const kopie = <T>(x: T): T => structuredClone(x);
 
@@ -40,7 +41,10 @@ export function speicherRepo(): Repo {
       mappen.set(id, m); verweise.set(id, kopie(vs));
       return kopie(m);
     },
-    async loescheMappe(id) { mappen.delete(id); verweise.delete(id); },
+    async loescheMappe(id) {
+      mappen.delete(id); verweise.delete(id);
+      for (const [k, d] of dokumente) if (d.mappeId === id) dokumente.delete(k);
+    },
 
     async typenVon(ids) {
       const r = new Map<string, string>();
@@ -55,6 +59,17 @@ export function speicherRepo(): Repo {
     async rueckverweise(zielId) {
       const r: Rueckverweis[] = [];
       for (const [quelleId, vs] of verweise) for (const v of vs) if (v.zielId === zielId) r.push({ quelleId, quelleTypId: mappen.get(quelleId)!.typId, feldKey: v.feldKey });
+      return r;
+    },
+
+    async listeDokumente(mappeId) { return [...dokumente.values()].filter((d) => d.mappeId === mappeId).map(kopie).reverse(); },
+    async holeDokument(id) { const d = dokumente.get(id); return d && kopie(d); },
+    async legeDokumentAn(d) { dokumente.set(d.id, kopie(d)); return kopie(d); },
+    async loescheDokument(id) { dokumente.delete(id); },
+    async dokumenteMitSha(sha) { return [...dokumente.values()].filter((d) => d.sha256 === sha).map(kopie); },
+    async dokumenteJeRegister(typId) {
+      const r = new Map<string, number>();
+      for (const d of dokumente.values()) if (mappen.get(d.mappeId)?.typId === typId) r.set(d.registerKey, (r.get(d.registerKey) ?? 0) + 1);
       return r;
     },
   };

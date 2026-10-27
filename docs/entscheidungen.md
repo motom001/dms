@@ -35,6 +35,16 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Eingang:** Mappen, die nicht zur aktuellen Definition passen, beim Ersteller; ohne bekannten Ersteller beim Administrator. Später kommen Aufgaben dazu.
 - **Indexwerte** (erstellt/geändert am/von) sind feste Spalten, keine Felder eines Mappentyps.
 
+## Register und Dokumente
+
+- **Drei Registerarten** am Mappentyp: Feld-, Dokumenten- und Verknüpfungsregister. Jedes Feld liegt auf genau einem Feldregister; nicht zugeordnete Felder landen automatisch auf dem ersten.
+- **Register haben feste Schlüssel**, damit Dokumente ihr Register behalten, wenn es umbenannt wird. Ein Dokumentenregister mit Dokumenten lässt sich nicht entfernen.
+- **Verknüpfungsregister** zeigen alle Rückverweise oder nur gewählte Quellen (Typ + Referenzfeld).
+- **Titel-Vorlage** mit Platzhaltern `{feld}`; Server und Oberfläche nutzen dieselbe Funktion (`titelAus`).
+- **Dateien** unveränderlich unter ihrem SHA-256 im Dateiordner, gleicher Inhalt nur einmal; Hinweis beim Hochladen, wenn der Inhalt schon in einer anderen Mappe liegt.
+- **Anzeige im Browser nur für PDF und Bilder**, erkannt am Inhalt (nicht an Endung oder angegebenem Typ). Alles andere wird als Download ausgeliefert, mit `nosniff` und einer Sandbox-CSP – eine hochgeladene HTML-Datei kann so keinen Code in der Sitzung ausführen.
+- **Löschen einer Mappe** löscht ihre Dokumente nach Rückfrage mit; die Datei verschwindet, sobald kein Dokument mehr auf sie zeigt.
+
 ## Bewusst noch nicht drin
 
-Dokumente/Dateien, Register, Suche, Rechte pro Mappe, Fristen, Verschlüsselung, Backup-Funktion in der Anwendung, Zwei-Faktor-Anmeldung.
+Texterkennung (OCR), Suche, Papierkorb, Rechte pro Mappe, Fristen, Verschlüsselung, Backup-Funktion in der Anwendung, Zwei-Faktor-Anmeldung.

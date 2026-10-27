@@ -4,6 +4,9 @@
  * ACHTUNG: leert das Schema „public“ der angegebenen Datenbank.
  */
 import assert from 'node:assert/strict';
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, before, describe, it } from 'node:test';
 
@@ -21,12 +24,14 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const { pgRepo } = await import('../src/repo-pg');
     const { Konten } = await import('../src/konten');
     const { pgKontoRepo } = await import('../src/konto-repo');
+    const { ordnerSpeicher } = await import('../src/dateispeicher');
+    const ordner = await mkdtemp(join(tmpdir(), 'dms-test-'));
     sql = verbinde(url!);
     await sql.unsafe('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
     const dir = fileURLToPath(new URL('../migrations', import.meta.url));
     await migriere(sql, dir, () => {});
     await migriere(sql, dir, () => {}); // zweiter Lauf darf nichts tun
-    app = await baueApp(new Dienst(pgRepo(sql, HAUSHALT)), new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas:3000'));
+    app = await baueApp(new Dienst(pgRepo(sql, HAUSHALT), ordnerSpeicher(ordner, HAUSHALT)), new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas:3000'));
   });
   after(async () => { await app?.close(); await sql?.end(); });
 
@@ -125,5 +130,36 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('POST', '/api/konto/abmelden')).status, 204);
     assert.equal((await anfrage('GET', '/api/typen')).status, 401);
     cookie = adminCookie;
+  });
+
+  it('lädt Dokumente hoch und liefert sie sicher aus', async () => {
+    const mappen = (await anfrage('GET', '/api/mappen')).body;
+    const rechnung = mappen.find((m: { werte: { rechnungsnummer?: string } }) => m.werte.rechnungsnummer === 'R-2026-117');
+    const hoch = async (name: string, inhalt: Buffer, typ: string) => {
+      const r = await app.inject({ method: 'POST', url: `/api/mappen/${rechnung.id}/dokumente?register=dokumente&name=${encodeURIComponent(name)}&typ=${encodeURIComponent(typ)}`,
+        payload: inhalt, headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' } });
+      return { status: r.statusCode, body: JSON.parse(r.body) };
+    };
+    const pdf = await hoch('Rechnung März.pdf', Buffer.from('%PDF-1.7\n%%EOF'), 'application/pdf');
+    assert.equal(pdf.status, 201);
+    assert.equal(pdf.body.dokument.anzeigbar, true);
+    const html = await hoch('x.html', Buffer.from('<script>alert(1)</script>'), 'text/html');
+    assert.equal(html.body.dokument.anzeigbar, false);
+
+    const a = await app.inject({ method: 'GET', url: `/api/dokumente/${pdf.body.dokument.id}/inhalt`, headers: { cookie } });
+    assert.equal(a.statusCode, 200);
+    assert.equal(a.headers['content-type'], 'application/pdf');
+    assert.match(String(a.headers['content-disposition']), /^inline;.*filename\*=UTF-8''Rechnung%20M%C3%A4rz\.pdf/);
+    assert.equal(a.body, '%PDF-1.7\n%%EOF');
+    const b = await app.inject({ method: 'GET', url: `/api/dokumente/${html.body.dokument.id}/inhalt`, headers: { cookie } });
+    assert.equal(b.headers['content-type'], 'application/octet-stream');
+    assert.match(String(b.headers['content-disposition']), /^attachment/);
+    assert.match(String(b.headers['content-security-policy']), /sandbox/);
+    assert.equal((await app.inject({ method: 'GET', url: `/api/dokumente/${pdf.body.dokument.id}/inhalt` })).statusCode, 401);
+
+    const m = await anfrage('GET', `/api/mappen/${rechnung.id}`);
+    assert.equal(m.body.dokumente.length, 2);
+    assert.equal((await anfrage('DELETE', `/api/dokumente/${html.body.dokument.id}`)).status, 204);
+    assert.equal((await anfrage('DELETE', `/api/mappen/${rechnung.id}`)).status, 204);
   });
 });

@@ -13,47 +13,72 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
   if ((await dienst.listeTypen()).length) throw new Fachfehler(409, 'Beispiele lassen sich nur laden, solange es noch keine Mappentypen gibt.');
   const id = { partner: randomUUID(), vertrag: randomUUID(), rechnung: randomUUID(), zahlung: randomUUID() };
 
-  await dienst.legeTypAn({
-    id: id.partner, name: 'Vertragspartner', beschreibung: 'Firma, Behörde oder Person, mit der es Verträge oder Rechnungen gibt', titelFeld: 'name',
-    felder: [
-      feld('name', 'Name', 'text', { pflicht: true, eindeutig: true, maxLen: 120 }),
-      feld('art', 'Art', 'auswahl', { optionen: ['Unternehmen', 'Behörde', 'Privatperson'], standard: 'Unternehmen' }),
-      feld('kundennummer', 'Kundennummer', 'text', { hilfe: 'Deine Nummer beim Vertragspartner', maxLen: 40 }),
-    ],
-  });
-  await dienst.legeTypAn({
-    id: id.vertrag, name: 'Vertrag', beschreibung: 'Laufender Vertrag mit Fristen und Kosten', titelFeld: 'bezeichnung',
-    felder: [
-      feld('bezeichnung', 'Bezeichnung', 'text', { pflicht: true, hilfe: 'z. B. Stromvertrag Haus', maxLen: 120 }),
-      feld('vertragspartner', 'Vertragspartner', 'referenz', { pflicht: true, zielTyp: id.partner, verweisart: 'bezug' }),
-      feld('vertragsnummer', 'Vertragsnummer', 'text', { eindeutig: true, maxLen: 60 }),
-      feld('beginn', 'Vertragsbeginn', 'datum'),
-      feld('kuendigung_bis', 'Kündigung bis', 'datum', { hilfe: 'Letzter Tag, an dem die Kündigung eingehen muss' }),
-      feld('zahlungszyklus', 'Zahlungszyklus', 'auswahl', { optionen: ['monatlich', 'vierteljährlich', 'halbjährlich', 'jährlich'], standard: 'monatlich' }),
-      feld('betrag', 'Betrag je Zahlung', 'betrag', { min: 0, waehrung: 'EUR' }),
-    ],
-  });
-  await dienst.legeTypAn({
-    id: id.rechnung, name: 'Rechnung', beschreibung: 'Eingegangene Rechnung, gehört zu einem Vertrag oder steht für sich', titelFeld: 'rechnungsnummer',
-    felder: [
-      feld('rechnungsnummer', 'Rechnungsnummer', 'text', { pflicht: true, maxLen: 60 }),
-      feld('aussteller', 'Aussteller', 'referenz', { zielTyp: id.partner, verweisart: 'bezug' }),
-      feld('vertrag', 'Vertrag', 'referenz', { zielTyp: id.vertrag, verweisart: 'zugehoerigkeit', hilfe: 'Leer lassen bei einer einmaligen Rechnung' }),
-      feld('vertragsnummer_gedruckt', 'Vertragsnummer laut Rechnung', 'text', { hilfe: 'So wie sie auf der Rechnung steht', maxLen: 60 }),
-      feld('rechnungsdatum', 'Rechnungsdatum', 'datum', { pflicht: true }),
-      feld('betrag', 'Rechnungsbetrag', 'betrag', { pflicht: true, waehrung: 'EUR' }),
-      feld('bezahlt', 'Bezahlt', 'janein', { standard: false }),
-    ],
-  });
-  await dienst.legeTypAn({
-    id: id.zahlung, name: 'Zahlung', beschreibung: 'Überweisung oder Lastschrift, kann mehrere Rechnungen begleichen', titelFeld: 'verwendungszweck',
-    felder: [
-      feld('verwendungszweck', 'Verwendungszweck', 'text', { pflicht: true, maxLen: 140 }),
-      feld('zahlungsdatum', 'Zahlungsdatum', 'datum', { pflicht: true }),
-      feld('betrag', 'Betrag', 'betrag', { pflicht: true, waehrung: 'EUR' }),
-      feld('rechnungen', 'Für Rechnungen', 'referenz', { zielTyp: id.rechnung, verweisart: 'zugehoerigkeit', mehrfach: true }),
-    ],
-  });
+  const typen = {
+    partner: {
+      id: id.partner, name: 'Vertragspartner', beschreibung: 'Firma, Behörde oder Person, mit der es Verträge oder Rechnungen gibt', titelVorlage: '{name}',
+      register: [
+        { key: 'stammdaten', name: 'Stammdaten', art: 'felder' },
+        { key: 'vertraege', name: 'Verträge', art: 'verknuepfungen', quellen: [{ typId: id.vertrag, feldKey: 'vertragspartner' }] },
+        { key: 'rechnungen', name: 'Rechnungen', art: 'verknuepfungen', quellen: [{ typId: id.rechnung, feldKey: 'aussteller' }] },
+        { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
+      ],
+      felder: [
+        feld('name', 'Name', 'text', { pflicht: true, eindeutig: true, maxLen: 120 }),
+        feld('art', 'Art', 'auswahl', { optionen: ['Unternehmen', 'Behörde', 'Privatperson'], standard: 'Unternehmen' }),
+        feld('kundennummer', 'Kundennummer', 'text', { hilfe: 'Deine Nummer beim Vertragspartner', maxLen: 40 }),
+      ],
+    },
+    vertrag: {
+      id: id.vertrag, name: 'Vertrag', beschreibung: 'Laufender Vertrag mit Fristen und Kosten', titelVorlage: '{bezeichnung}',
+      register: [
+        { key: 'vertrag', name: 'Vertrag', art: 'felder' },
+        { key: 'rechnungen', name: 'Rechnungen', art: 'verknuepfungen', quellen: [{ typId: id.rechnung, feldKey: 'vertrag' }] },
+        { key: 'dokumente', name: 'Vertragsunterlagen', art: 'dokumente' },
+      ],
+      felder: [
+        feld('bezeichnung', 'Bezeichnung', 'text', { pflicht: true, hilfe: 'z. B. Stromvertrag Haus', maxLen: 120 }),
+        feld('vertragspartner', 'Vertragspartner', 'referenz', { pflicht: true, zielTyp: id.partner, verweisart: 'bezug' }),
+        feld('vertragsnummer', 'Vertragsnummer', 'text', { eindeutig: true, maxLen: 60 }),
+        feld('beginn', 'Vertragsbeginn', 'datum'),
+        feld('kuendigung_bis', 'Kündigung bis', 'datum', { hilfe: 'Letzter Tag, an dem die Kündigung eingehen muss' }),
+        feld('zahlungszyklus', 'Zahlungszyklus', 'auswahl', { optionen: ['monatlich', 'vierteljährlich', 'halbjährlich', 'jährlich'], standard: 'monatlich' }),
+        feld('betrag', 'Betrag je Zahlung', 'betrag', { min: 0, waehrung: 'EUR' }),
+      ],
+    },
+    rechnung: {
+      id: id.rechnung, name: 'Rechnung', beschreibung: 'Eingegangene Rechnung, gehört zu einem Vertrag oder steht für sich', titelVorlage: '{rechnungsnummer} vom {rechnungsdatum}',
+      register: [
+        { key: 'rechnung', name: 'Rechnung', art: 'felder' },
+        { key: 'dokumente', name: 'Rechnungsdokumente', art: 'dokumente' },
+        { key: 'zahlungen', name: 'Zahlungen', art: 'verknuepfungen', quellen: [{ typId: id.zahlung, feldKey: 'rechnungen' }] },
+      ],
+      felder: [
+        feld('rechnungsnummer', 'Rechnungsnummer', 'text', { pflicht: true, maxLen: 60 }),
+        feld('aussteller', 'Aussteller', 'referenz', { zielTyp: id.partner, verweisart: 'bezug' }),
+        feld('vertrag', 'Vertrag', 'referenz', { zielTyp: id.vertrag, verweisart: 'zugehoerigkeit', hilfe: 'Leer lassen bei einer einmaligen Rechnung' }),
+        feld('vertragsnummer_gedruckt', 'Vertragsnummer laut Rechnung', 'text', { hilfe: 'So wie sie auf der Rechnung steht', maxLen: 60 }),
+        feld('rechnungsdatum', 'Rechnungsdatum', 'datum', { pflicht: true }),
+        feld('betrag', 'Rechnungsbetrag', 'betrag', { pflicht: true, waehrung: 'EUR' }),
+        feld('bezahlt', 'Bezahlt', 'janein', { standard: false }),
+      ],
+    },
+    zahlung: {
+      id: id.zahlung, name: 'Zahlung', beschreibung: 'Überweisung oder Lastschrift, kann mehrere Rechnungen begleichen', titelVorlage: '{verwendungszweck} vom {zahlungsdatum}',
+      register: [
+        { key: 'zahlung', name: 'Zahlung', art: 'felder' },
+        { key: 'belege', name: 'Belege', art: 'dokumente' },
+      ],
+      felder: [
+        feld('verwendungszweck', 'Verwendungszweck', 'text', { pflicht: true, maxLen: 140 }),
+        feld('zahlungsdatum', 'Zahlungsdatum', 'datum', { pflicht: true }),
+        feld('betrag', 'Betrag', 'betrag', { pflicht: true, waehrung: 'EUR' }),
+        feld('rechnungen', 'Für Rechnungen', 'referenz', { zielTyp: id.rechnung, verweisart: 'zugehoerigkeit', mehrfach: true }),
+      ],
+    },
+  };
+  // Erst alle Typen anlegen (Register mit Verweisen brauchen die anderen Typen), dann die Register setzen.
+  for (const t of Object.values(typen)) await dienst.legeTypAn({ ...t, register: undefined });
+  for (const t of Object.values(typen)) if (t.register) await dienst.aendereTyp(t.id, t);
 
   const sw = await dienst.legeMappeAn({ typId: id.partner, werte: { name: 'Stadtwerke Musterstadt', art: 'Unternehmen', kundennummer: '100234' } }, benutzerId);
   const hb = await dienst.legeMappeAn({ typId: id.partner, werte: { name: 'Heizungsbau Beispiel GmbH', art: 'Unternehmen', kundennummer: 'K-5521' } }, benutzerId);

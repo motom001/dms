@@ -1,8 +1,10 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
-  FELDTYPEN, formatiere, istLeer, istOk, leseZahl, pruefeMappe, pruefeMappentyp, titelFeld, verweiseVon,
-  type Feld, type Mappe, type Mappentyp, type MappentypDaten, type Werte,
+  FELDTYPEN, istLeer, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp, REGISTERARTEN, schluesselAus,
+  standardRegister, titelAus, verweiseVon,
+  type Feld, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Werte,
 } from '../../shared/src/model';
+import type { Dateispeicher } from './dateispeicher';
 import { Fachfehler } from './fehler';
 import { istUuid, type Repo } from './repo';
 
@@ -40,14 +42,58 @@ export function bereinigeFeld(e: unknown): Feld {
   };
 }
 
+export function bereinigeRegister(e: unknown, felder: Feld[]): Register[] {
+  if (!Array.isArray(e) || !e.length) return standardRegister(felder);
+  const bekannt = new Set(felder.map((f) => f.key));
+  const reg = e.map((x: Record<string, unknown>): Register => {
+    const art = (String(x?.art) in REGISTERARTEN ? x.art : 'felder') as Register['art'];
+    const r: Register = { key: text(x?.key) || schluesselAus(text(x?.name)), name: text(x?.name), art };
+    if (art === 'felder') r.felder = (Array.isArray(x?.felder) ? x.felder.map(text) : []).filter((k) => bekannt.has(k));
+    if (art === 'verknuepfungen') {
+      r.quellen = (Array.isArray(x?.quellen) ? x.quellen : [])
+        .map((q: Record<string, unknown>) => ({ typId: text(q?.typId), feldKey: text(q?.feldKey) }))
+        .filter((q) => q.typId && q.feldKey);
+    }
+    return r;
+  });
+  // Felder ohne Register landen auf dem ersten Feldregister.
+  const erstes = reg.find((r) => r.art === 'felder');
+  if (erstes) {
+    const vergeben = new Set(reg.flatMap((r) => r.felder ?? []));
+    for (const f of felder) if (!vergeben.has(f.key)) erstes.felder!.push(f.key);
+  }
+  return reg;
+}
+
 export function bereinigeTyp(e: unknown): MappentypDaten {
   const t = (e ?? {}) as Record<string, unknown>;
+  const felder = Array.isArray(t.felder) ? t.felder.map(bereinigeFeld) : [];
   return {
     name: text(t.name),
     beschreibung: text(t.beschreibung),
-    titelFeld: text(t.titelFeld),
-    felder: Array.isArray(t.felder) ? t.felder.map(bereinigeFeld) : [],
+    // Altes Format: titelFeld → Vorlage {feld}
+    titelVorlage: text(t.titelVorlage) || (text(t.titelFeld) ? `{${text(t.titelFeld)}}` : ''),
+    felder,
+    register: bereinigeRegister(t.register, felder),
   };
+}
+
+/** Dateiname ohne Pfadanteile und Steuerzeichen. */
+function dateiname(v: unknown): string {
+  // eslint-disable-next-line no-control-regex
+  const s = text(v).split(/[\\/]/).pop()!.replace(/[\u0000-\u001f\u007f]/g, '').trim();
+  return (s || 'Dokument').slice(0, 200);
+}
+
+/** Nur PDF und gängige Bilder werden im Browser angezeigt – erkannt am Inhalt, nicht am Namen. */
+export function erkenneAnzeigbar(b: Buffer): string | null {
+  const kopf = b.subarray(0, 12).toString('latin1');
+  if (kopf.startsWith('%PDF-')) return 'application/pdf';
+  if (b[0] === 0x89 && kopf.slice(1, 4) === 'PNG') return 'image/png';
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
+  if (kopf.startsWith('GIF87a') || kopf.startsWith('GIF89a')) return 'image/gif';
+  if (kopf.startsWith('RIFF') && kopf.slice(8, 12) === 'WEBP') return 'image/webp';
+  return null;
 }
 
 /** Nur Werte zu bekannten Feldern; leere Eingaben werden zu null. */
@@ -67,16 +113,26 @@ function bereinigeWerte(typ: Mappentyp, eingabe: unknown, bisher: Werte = {}): W
 /* ---------- Fachlogik ---------- */
 
 export class Dienst {
-  constructor(private repo: Repo) {}
+  constructor(private repo: Repo, private dateien: Dateispeicher) {}
 
   listeTypen() { return this.repo.listeTypen(); }
 
   private async pruefeTyp(d: MappentypDaten, eigeneId: string) {
     const alle = await this.repo.listeTypen();
+    // Quellen von Verknüpfungsregistern, deren Feld es nicht mehr gibt, still entfernen.
+    for (const r of d.register) {
+      if (r.art !== 'verknuepfungen') continue;
+      r.quellen = (r.quellen ?? []).filter((q) => {
+        const felder = q.typId === eigeneId ? d.felder : alle.find((t) => t.id === q.typId)?.felder;
+        const f = felder?.find((x) => x.key === q.feldKey);
+        return f?.typ === 'referenz' && f.zielTyp === eigeneId;
+      });
+    }
     const p = pruefeMappentyp(d, {
       eigeneId,
       namenAndererTypen: alle.filter((t) => t.id !== eigeneId).map((t) => t.name),
       existiertTyp: (id) => alle.some((t) => t.id === id),
+      felderVon: (id) => alle.find((t) => t.id === id)?.felder,
     });
     if (!istOk(p)) throw new Fachfehler(422, 'Der Mappentyp ist so nicht gültig.', p);
   }
@@ -91,9 +147,16 @@ export class Dienst {
   }
 
   async aendereTyp(id: string, eingabe: unknown): Promise<Mappentyp> {
-    if (!(await this.repo.holeTyp(id))) throw new Fachfehler(404, 'Diesen Mappentyp gibt es nicht.');
+    const alt = await this.repo.holeTyp(id);
+    if (!alt) throw new Fachfehler(404, 'Diesen Mappentyp gibt es nicht.');
     const d = bereinigeTyp(eingabe);
     await this.pruefeTyp(d, id);
+    const bleiben = new Set(d.register.filter((r) => r.art === 'dokumente').map((r) => r.key));
+    for (const [key, n] of await this.repo.dokumenteJeRegister(id)) {
+      if (bleiben.has(key)) continue;
+      const name = alt.register.find((r) => r.key === key)?.name ?? key;
+      throw new Fachfehler(409, `Im Register „${name}“ liegen noch ${n} Dokument${n === 1 ? '' : 'e'}. Entferne oder verschiebe sie zuerst.`);
+    }
     return this.repo.aendereTyp(id, d);
   }
 
@@ -115,13 +178,11 @@ export class Dienst {
   async holeMappe(id: string) {
     const mappe = await this.repo.holeMappe(id);
     if (!mappe) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
-    return { mappe, rueckverweise: await this.repo.rueckverweise(id) };
+    return { mappe, rueckverweise: await this.repo.rueckverweise(id), dokumente: await this.repo.listeDokumente(id) };
   }
 
   private async titel(m: Mappe): Promise<string> {
-    const t = await this.repo.holeTyp(m.typId);
-    const f = titelFeld(t);
-    return (f && formatiere(f, m.werte[f.key])) || 'Ohne Titel';
+    return titelAus(await this.repo.holeTyp(m.typId), m.werte) || 'Ohne Titel';
   }
 
   private async pruefeWerte(typ: Mappentyp, werte: Werte, eigeneId?: string) {
@@ -163,6 +224,49 @@ export class Dienst {
     if (fremd.length) {
       throw new Fachfehler(409, `Auf diese Mappe ${fremd.length === 1 ? 'verweist noch eine andere Mappe' : `verweisen noch ${fremd.length} andere Mappen`}. Entferne erst diese Verweise.`, { rueckverweise: fremd });
     }
+    const dokumente = await this.repo.listeDokumente(id);
     await this.repo.loescheMappe(id);
+    for (const sha of new Set(dokumente.map((d) => d.sha256))) await this.raeumeAuf(sha);
+  }
+
+  /* ---------- Dokumente ---------- */
+
+  /** Löscht die Datei, wenn kein Dokument mehr auf sie zeigt. */
+  private async raeumeAuf(sha256: string) {
+    if (!(await this.repo.dokumenteMitSha(sha256)).length) await this.dateien.loesche(sha256);
+  }
+
+  async ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string }, inhalt: unknown, benutzerId: string | null) {
+    const m = await this.repo.holeMappe(mappeId);
+    if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    const typ = await this.repo.holeTyp(m.typId);
+    const reg = typ?.register.find((r) => r.key === e.register && r.art === 'dokumente');
+    if (!reg) throw new Fachfehler(422, 'Dieses Dokumentenregister gibt es an der Mappe nicht.');
+    if (!Buffer.isBuffer(inhalt) || inhalt.length === 0) throw new Fachfehler(422, 'Die Datei ist leer.');
+    if (inhalt.length > MAX_DATEIGROESSE) throw new Fachfehler(413, 'Die Datei ist zu groß.');
+
+    const sha256 = createHash('sha256').update(inhalt).digest('hex');
+    const erkannt = erkenneAnzeigbar(inhalt);
+    const angegeben = /^[\w.+-]+\/[\w.+-]+$/.test(e.typ ?? '') ? e.typ! : 'application/octet-stream';
+    const gleicherInhalt = await this.repo.dokumenteMitSha(sha256);
+    await this.dateien.schreibe(sha256, inhalt);
+    const dokument = await this.repo.legeDokumentAn({
+      id: randomUUID(), mappeId, registerKey: reg.key, name: dateiname(e.name), mime: erkannt ?? angegeben,
+      groesse: inhalt.length, sha256, anzeigbar: !!erkannt, erstellt: new Date().toISOString(), erstelltVon: benutzerId,
+    });
+    return { dokument, gleicherInhalt: gleicherInhalt.map((d) => ({ mappeId: d.mappeId, name: d.name })) };
+  }
+
+  async dokumentInhalt(id: string) {
+    const dokument = await this.repo.holeDokument(id);
+    if (!dokument) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    return { dokument, inhalt: await this.dateien.lies(dokument.sha256) };
+  }
+
+  async loescheDokument(id: string) {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    await this.repo.loescheDokument(id);
+    await this.raeumeAuf(d.sha256);
   }
 }

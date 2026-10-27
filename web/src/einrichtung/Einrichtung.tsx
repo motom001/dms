@@ -1,5 +1,8 @@
-import { useEffect, useState } from 'react';
-import { FELDTYPEN, istLeer, istOk, schluesselAus, VERWEISARTEN, type Feld, type Mappentyp } from '../../../shared/src/model';
+import { useEffect, useRef, useState } from 'react';
+import {
+  FELDTYPEN, istLeer, istOk, REGISTERARTEN, schluesselAus, standardRegister, titelAus, VERWEISARTEN, vorlageFelder, wirksameVorlage,
+  type Feld, type Mappentyp, type Register, type Registerart, type Werte,
+} from '../../../shared/src/model';
 import { api, ApiFehler } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
@@ -72,8 +75,10 @@ const ZAHLEN = ['minLen', 'maxLen', 'min', 'max', 'nachkomma'] as const;
 type Zahlprop = (typeof ZAHLEN)[number];
 
 /** Feld im Bearbeitungszustand: Zahlen als getippter Text, Merker für neue Felder. */
-type EntwurfFeld = Omit<Feld, Zahlprop> & Record<Zahlprop, string> & { _uid: string; _neu?: boolean; _schluesselGetippt?: boolean };
-interface Entwurf { id: string; name: string; beschreibung: string; titelFeld: string; felder: EntwurfFeld[] }
+type EntwurfFeld = Omit<Feld, Zahlprop> & Record<Zahlprop, string> & { _uid: string; _neu?: boolean; _schluesselGetippt?: boolean; _register: string };
+/** Register im Bearbeitungszustand; welche Felder darauf liegen, steht am Feld (_register). */
+type EntwurfRegister = Omit<Register, 'felder'> & { _uid: string; _neu?: boolean; _schluesselGetippt?: boolean };
+interface Entwurf { id: string; name: string; beschreibung: string; titelVorlage: string; felder: EntwurfFeld[]; register: EntwurfRegister[] }
 
 function neueId(): string {
   // crypto.randomUUID gibt es nur über HTTPS oder localhost; im Heimnetz oft nicht.
@@ -84,12 +89,37 @@ function neueId(): string {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }
 
+const alsEntwurfRegister = ({ felder: _f, ...r }: Register): EntwurfRegister => ({ ...r, _uid: neueId() });
+
 function entwurfAus(t?: Mappentyp): Entwurf {
-  if (!t) return { id: neueId(), name: '', beschreibung: '', titelFeld: '', felder: [] };
+  if (!t) return { id: neueId(), name: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister) };
+  const erstes = t.register.find((r) => r.art === 'felder')?.key ?? '';
   return {
-    id: t.id, name: t.name, beschreibung: t.beschreibung, titelFeld: t.titelFeld,
-    felder: t.felder.map((f) => ({ ...f, _uid: neueId(), ...Object.fromEntries(ZAHLEN.map((p) => [p, f[p] == null ? '' : String(f[p]).replace('.', ',')])) }) as unknown as EntwurfFeld),
+    id: t.id, name: t.name, beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '',
+    register: t.register.map(alsEntwurfRegister),
+    felder: t.felder.map((f) => ({
+      ...f, _uid: neueId(),
+      _register: t.register.find((r) => r.art === 'felder' && r.felder?.includes(f.key))?.key ?? erstes,
+      ...Object.fromEntries(ZAHLEN.map((p) => [p, f[p] == null ? '' : String(f[p]).replace('.', ',')])),
+    }) as unknown as EntwurfFeld),
   };
+}
+
+/** Für die Vorschau, solange es keine Mappe gibt. */
+function beispielWerte(felder: Feld[]): Werte {
+  const w: Werte = {};
+  for (const f of felder) {
+    switch (f.typ) {
+      case 'zahl': w[f.key] = 42; break;
+      case 'betrag': w[f.key] = { betrag: 123.45, waehrung: f.waehrung || 'EUR' }; break;
+      case 'datum': w[f.key] = new Date().toISOString().slice(0, 10); break;
+      case 'janein': w[f.key] = true; break;
+      case 'auswahl': w[f.key] = f.optionen?.[0] ?? ''; break;
+      case 'referenz': w[f.key] = 'beispiel'; break;
+      default: w[f.key] = f.label || f.key;
+    }
+  }
+  return w;
 }
 
 function TypEditor({ typ }: { typ?: Mappentyp }) {
@@ -123,6 +153,7 @@ function TypEditor({ typ }: { typ?: Mappentyp }) {
     const f: EntwurfFeld = {
       key: eindeutigerSchluessel('neues_feld', i), label: 'Neues Feld', typ: 'text', pflicht: false, eindeutig: false, hilfe: '', standard: '',
       minLen: '', maxLen: '', min: '', max: '', nachkomma: '', muster: '', optionen: [], mehrfach: false, zielTyp: '', verweisart: 'bezug', waehrung: 'EUR', _uid: neueId(), _neu: true,
+      _register: e.register.find((r) => r.art === 'felder')?.key ?? '',
     };
     setE((x) => ({ ...x, felder: [...x.felder, f] }));
     setOffen(i);
@@ -141,13 +172,18 @@ function TypEditor({ typ }: { typ?: Mappentyp }) {
       ? `${n} ${n === 1 ? 'Mappe hat' : 'Mappen haben'} in „${f.label}“ einen Wert. Die Werte bleiben gespeichert, werden aber nicht mehr angezeigt. Feld entfernen?`
       : `Feld „${f.label}“ entfernen?`;
     if (!confirm(frage)) return;
-    setE((x) => ({ ...x, titelFeld: x.titelFeld === f.key ? '' : x.titelFeld, felder: x.felder.filter((_, j) => j !== i) }));
+    setE((x) => ({ ...x, titelVorlage: x.titelVorlage.split(`{${f.key}}`).join('').trim(), felder: x.felder.filter((_, j) => j !== i) }));
     setOffen(null); setFehler(null);
   }
 
   async function speichern() {
     setSendet(true); setMeldung(undefined); setGruende([]);
-    const daten = { ...e, felder: e.felder.map(({ _uid, _neu, _schluesselGetippt, ...rest }) => rest) };
+    const daten = {
+      ...e,
+      felder: e.felder.map(({ _uid, _neu, _schluesselGetippt, _register, ...rest }) => rest),
+      register: e.register.map(({ _uid, _neu, _schluesselGetippt, ...r }) =>
+        (r.art === 'felder' ? { ...r, felder: e.felder.filter((f) => f._register === r.key).map((f) => f.key) } : r)),
+    };
     try {
       const t = neu ? await api.typAnlegen(daten) : await api.typAendern(e.id, daten);
       const sauber = entwurfAus(t);
@@ -179,7 +215,7 @@ function TypEditor({ typ }: { typ?: Mappentyp }) {
     }
   }
 
-  const titelOptionen = e.felder.filter((f) => ['text', 'zahl', 'datum'].includes(f.typ) || (f.typ === 'auswahl' && !f.mehrfach));
+  const feldregister = e.register.filter((r) => r.art === 'felder');
 
   return (
     <form onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} noValidate>
@@ -200,14 +236,10 @@ function TypEditor({ typ }: { typ?: Mappentyp }) {
         <div className="raster">
           <label className="eigenschaft"><span>Name</span><input value={e.name} placeholder="z. B. Vertrag" onChange={(ev) => setE({ ...e, name: ev.target.value })} autoFocus={neu} /></label>
           <label className="eigenschaft"><span>Beschreibung</span><input value={e.beschreibung} placeholder="Wofür ist dieser Typ?" onChange={(ev) => setE({ ...e, beschreibung: ev.target.value })} /></label>
-          <label className="eigenschaft"><span>Titel einer Mappe <small>welches Feld sie benennt</small></span>
-            <select value={e.titelFeld} onChange={(ev) => setE({ ...e, titelFeld: ev.target.value })}>
-              <option value="">Erstes Textfeld (automatisch)</option>
-              {titelOptionen.map((f) => <option key={f.key} value={f.key}>{f.label || f.key}</option>)}
-            </select>
-          </label>
         </div>
       </div>
+
+      <TitelEditor e={e} setze={(titelVorlage) => setE((x) => ({ ...x, titelVorlage }))} />
 
       <div className="blatt">
         <div className="blattkopf">
@@ -218,7 +250,7 @@ function TypEditor({ typ }: { typ?: Mappentyp }) {
           {e.felder.length === 0 && <div className="leer"><p>Noch keine Felder. Füge das erste hinzu, etwa „Bezeichnung“ als Text.</p></div>}
           {e.felder.map((f, i) => (
             <FeldZeile key={f._uid} f={f} i={i} anzahl={e.felder.length} offen={offen === i} fehler={fehler?.felder[String(i)]}
-              eigeneId={e.id} eigenerName={e.name} typen={d.typen}
+              eigeneId={e.id} eigenerName={e.name} typen={d.typen} feldregister={feldregister}
               umschalten={() => setOffen(offen === i ? null : i)}
               verschiebe={(r) => verschiebe(i, r)} entferne={() => entferne(i)}
               setze={(patch) => {
@@ -232,6 +264,8 @@ function TypEditor({ typ }: { typ?: Mappentyp }) {
         </div>
         <div><button type="button" className="knopf" onClick={feldHinzufuegen}>+ Feld hinzufügen</button></div>
       </div>
+
+      <RegisterEditor e={e} setE={setE} />
 
       <div className="speicherleiste">
         <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>{neu ? 'Entwurf verwerfen' : 'Mappentyp löschen'}</button>
@@ -247,7 +281,7 @@ function TypEditor({ typ }: { typ?: Mappentyp }) {
 
 function FeldZeile(p: {
   f: EntwurfFeld; i: number; anzahl: number; offen: boolean; fehler?: string[];
-  eigeneId: string; eigenerName: string; typen: Mappentyp[];
+  eigeneId: string; eigenerName: string; typen: Mappentyp[]; feldregister: EntwurfRegister[];
   umschalten(): void; verschiebe(r: number): void; entferne(): void; setze(patch: Partial<EntwurfFeld>): void;
 }) {
   const { f, i, offen, fehler, setze } = p;
@@ -259,6 +293,7 @@ function FeldZeile(p: {
   if (f.typ === 'referenz') chips.push(`→ ${zielName}`, VERWEISARTEN[f.verweisart ?? 'bezug']);
   if (f.typ === 'auswahl') chips.push(`${(f.optionen ?? []).length} Werte`);
   if (f.mehrfach && (f.typ === 'auswahl' || f.typ === 'referenz')) chips.push('mehrfach');
+  if (p.feldregister.length > 1) chips.push(`Register: ${p.feldregister.find((r) => r.key === f._register)?.name ?? '–'}`);
 
   const zahl = (prop: Zahlprop, label: string, platzhalter: string) => (
     <label className="eigenschaft" htmlFor={id(prop)}><span>{label}</span>
@@ -329,6 +364,12 @@ function FeldZeile(p: {
             <label className="eigenschaft" htmlFor={id('label')}><span>Bezeichnung</span><input id={id('label')} value={f.label} placeholder="z. B. Kündigung bis" onChange={(e) => setze({ label: e.target.value })} autoFocus={f._neu} /></label>
             <label className="eigenschaft" htmlFor={id('key')}><span>Schlüssel <small>{f._neu ? 'wird nach dem Speichern fest' : 'fest – schützt gespeicherte Werte'}</small></span>
               <input id={id('key')} className="mono" value={f.key} disabled={!f._neu} onChange={(e) => setze({ key: e.target.value })} /></label>
+            {p.feldregister.length > 1 && (
+              <label className="eigenschaft" htmlFor={id('reg')}><span>Register</span>
+                <select id={id('reg')} value={f._register} onChange={(e) => setze({ _register: e.target.value })}>
+                  {p.feldregister.map((r) => <option key={r._uid} value={r.key}>{r.name || r.key}</option>)}
+                </select></label>
+            )}
             <label className="eigenschaft" htmlFor={id('typ')}><span>Datentyp</span>
               <select id={id('typ')} value={f.typ} onChange={(e) => setze({ typ: e.target.value as Feld['typ'] })}>
                 {Object.entries(FELDTYPEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -347,6 +388,160 @@ function FeldZeile(p: {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+
+function TitelEditor({ e, setze }: { e: Entwurf; setze: (v: string) => void }) {
+  const d = useDaten();
+  const feld = useRef<HTMLInputElement>(null);
+  const mappen = d.mappenVon(e.id);
+  const [beispielId, setBeispielId] = useState<string>(mappen[0]?.id ?? '');
+  const felder = e.felder as unknown as Feld[];
+  const v = e.titelVorlage;
+  const unbekannt = vorlageFelder(v).filter((k) => !felder.some((f) => f.key === k));
+  const beispiel = mappen.find((m) => m.id === beispielId);
+  const werte = beispiel ? beispiel.werte : beispielWerte(felder);
+  const vorschau = titelAus({ felder, titelVorlage: v }, werte, (id) => (id === 'beispiel' ? '‹verwiesene Mappe›' : d.titel(d.mappe(id))));
+  const automatisch = wirksameVorlage({ felder, titelVorlage: '' });
+
+  function einsetzen(key: string) {
+    const el = feld.current;
+    const von = el?.selectionStart ?? v.length;
+    const bis = el?.selectionEnd ?? von;
+    const platz = `{${key}}`;
+    setze(v.slice(0, von) + platz + v.slice(bis));
+    requestAnimationFrame(() => { el?.focus(); el?.setSelectionRange(von + platz.length, von + platz.length); });
+  }
+
+  return (
+    <div className="blatt">
+      <div className="blattkopf">
+        <h2 className="h3">Titel einer Mappe</h2>
+        <p className="leise">So heißt eine Mappe in Listen und Verweisen. Felder in geschweiften Klammern werden eingesetzt, alles andere bleibt stehen.</p>
+      </div>
+      <label className="eigenschaft" htmlFor="titel-vorlage"><span>Vorlage</span>
+        <input id="titel-vorlage" ref={feld} className="mono" value={v} onChange={(ev) => setze(ev.target.value)}
+          placeholder={automatisch ? `leer = ${automatisch}` : 'z. B. {verwendungszweck} vom {zahlungsdatum}'} /></label>
+      {felder.length > 0 && (
+        <div className="chipwahl">
+          <span className="leise klein">Feld einsetzen:</span>
+          {felder.map((f) => <button key={f.key} type="button" className="chipknopf" onClick={() => einsetzen(f.key)}>{f.label || f.key}</button>)}
+        </div>
+      )}
+      {unbekannt.length > 0 && <p className="fehlertext">Diese Platzhalter passen zu keinem Feld: {unbekannt.map((k) => `{${k}}`).join(', ')}</p>}
+      <div className="vorschau">
+        <span className="ueber">Vorschau</span>
+        <strong className="vorschautitel">{vorschau || 'Ohne Titel'}</strong>
+        {mappen.length > 0
+          ? <label className="klein leise">mit den Werten von&nbsp;
+              <select value={beispielId} onChange={(ev) => setBeispielId(ev.target.value)}>
+                {mappen.map((m) => <option key={m.id} value={m.id}>{d.titel(m)}</option>)}
+              </select></label>
+          : <span className="klein leise">mit Beispielwerten</span>}
+      </div>
+    </div>
+  );
+}
+
+function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Entwurf) => void }) {
+  const d = useDaten();
+  const setzeReg = (i: number, patch: Partial<EntwurfRegister>) =>
+    setE((x) => ({ ...x, register: x.register.map((r, j) => (j === i ? { ...r, ...patch } : r)) }));
+
+  const eindeutig = (basis: string, i: number) => {
+    let k = basis || 'register'; let n = 2;
+    while (e.register.some((r, j) => j !== i && r.key === k)) k = `${basis}_${n++}`.slice(0, 40);
+    return k;
+  };
+
+  function hinzufuegen(art: Registerart) {
+    const name = { felder: 'Weitere Angaben', dokumente: 'Dokumente', verknuepfungen: 'Verknüpfungen' }[art];
+    const r: EntwurfRegister = { key: eindeutig(schluesselAus(name), -1), name, art, _uid: neueId(), _neu: true, ...(art === 'verknuepfungen' ? { quellen: [] } : {}) };
+    setE((x) => ({ ...x, register: [...x.register, r] }));
+  }
+  function verschiebe(i: number, rueck: number) {
+    const j = i + rueck;
+    if (j < 0 || j >= e.register.length) return;
+    setE((x) => { const rs = [...x.register]; [rs[i], rs[j]] = [rs[j], rs[i]]; return { ...x, register: rs }; });
+  }
+  function entferne(i: number) {
+    const r = e.register[i];
+    if (r.art === 'felder') {
+      const ziel = e.register.find((x, j) => j !== i && x.art === 'felder');
+      const betroffen = e.felder.filter((f) => f._register === r.key);
+      if (betroffen.length && !ziel) { alert('Auf diesem Register liegen Felder, und es gibt kein anderes Feldregister. Lege zuerst ein weiteres an.'); return; }
+      if (!confirm(betroffen.length ? `Register „${r.name}“ entfernen? Seine ${betroffen.length} Felder wandern auf „${ziel!.name}“.` : `Register „${r.name}“ entfernen?`)) return;
+      setE((x) => ({ ...x, register: x.register.filter((_, j) => j !== i), felder: x.felder.map((f) => (f._register === r.key ? { ...f, _register: ziel!.key } : f)) }));
+      return;
+    }
+    if (!confirm(`Register „${r.name}“ entfernen?${r.art === 'dokumente' ? ' Enthält es noch Dokumente, lässt sich der Mappentyp nicht speichern.' : ''}`)) return;
+    setE((x) => ({ ...x, register: x.register.filter((_, j) => j !== i) }));
+  }
+
+  // Mögliche Quellen: jedes Referenzfeld, das auf diesen Mappentyp zeigt (auch aus ihm selbst).
+  const quellen = [
+    ...d.typen.filter((t) => t.id !== e.id).flatMap((t) => t.felder.filter((f) => f.typ === 'referenz' && f.zielTyp === e.id).map((f) => ({ typId: t.id, feldKey: f.key, text: `${t.name} › ${f.label}` }))),
+    ...e.felder.filter((f) => f.typ === 'referenz' && f.zielTyp === e.id).map((f) => ({ typId: e.id, feldKey: f.key, text: `${e.name || 'Dieser Typ'} › ${f.label}` })),
+  ];
+
+  return (
+    <div className="blatt">
+      <div className="blattkopf">
+        <h2 className="h3">Register</h2>
+        <p className="leise">Die Trennblätter einer Mappe, in dieser Reihenfolge. Welche Felder auf welchem Feldregister liegen, stellst du am Feld ein.</p>
+      </div>
+      <div className="registerliste">
+        {e.register.map((r, i) => {
+          const anzahl = e.felder.filter((f) => f._register === r.key).length;
+          const gewaehlt = r.quellen ?? [];
+          return (
+            <div key={r._uid} className={`registerzeile art-${r.art}`}>
+              <div className="registerkopf">
+                <span className="chip">{REGISTERARTEN[r.art]}</span>
+                <input aria-label="Name des Registers" value={r.name} onChange={(ev) => {
+                  const name = ev.target.value;
+                  if (!r._neu) { setzeReg(i, { name }); return; }
+                  const key = eindeutig(schluesselAus(name), i);
+                  // Felder auf diesem Register wandern mit dem neuen Schlüssel mit.
+                  setE((x) => ({
+                    ...x,
+                    register: x.register.map((y, j) => (j === i ? { ...y, name, key } : y)),
+                    felder: x.felder.map((f) => (f._register === r.key ? { ...f, _register: key } : f)),
+                  }));
+                }} />
+                <code className="fkey" title="Schlüssel">{r.key}</code>
+                <div className="feldaktionen">
+                  <button type="button" className="symbol" disabled={i === 0} onClick={() => verschiebe(i, -1)} aria-label="Register nach vorn">↑</button>
+                  <button type="button" className="symbol" disabled={i === e.register.length - 1} onClick={() => verschiebe(i, 1)} aria-label="Register nach hinten">↓</button>
+                  <button type="button" className="symbol" onClick={() => entferne(i)} aria-label={`Register ${r.name} entfernen`}>×</button>
+                </div>
+              </div>
+              {r.art === 'felder' && <p className="leise klein">{anzahl ? `${anzahl} Feld${anzahl === 1 ? '' : 'er'}: ${e.felder.filter((f) => f._register === r.key).map((f) => f.label).join(', ')}` : 'Noch keine Felder.'}</p>}
+              {r.art === 'dokumente' && <p className="leise klein">Hier werden Dateien hochgeladen; PDFs und Bilder sind direkt ansehbar.</p>}
+              {r.art === 'verknuepfungen' && (
+                quellen.length === 0
+                  ? <p className="leise klein">Noch verweist kein Referenzfeld auf diesen Mappentyp. Das Register zeigt alle Verweise, sobald es welche gibt.</p>
+                  : <fieldset className="wahl"><legend className="klein">Zeigt Mappen, die so hierher verweisen <span className="leise">(keine Auswahl = alle)</span></legend>
+                      {quellen.map((q) => {
+                        const an = gewaehlt.some((g) => g.typId === q.typId && g.feldKey === q.feldKey);
+                        return <label key={`${q.typId}-${q.feldKey}`} className="haken"><input type="checkbox" checked={an}
+                          onChange={() => setzeReg(i, { quellen: an ? gewaehlt.filter((g) => !(g.typId === q.typId && g.feldKey === q.feldKey)) : [...gewaehlt, { typId: q.typId, feldKey: q.feldKey }] })} />
+                          <span>{q.text}</span></label>;
+                      })}
+                    </fieldset>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div className="knoepfe">
+        <button type="button" className="knopf klein" onClick={() => hinzufuegen('felder')}>+ Feldregister</button>
+        <button type="button" className="knopf klein" onClick={() => hinzufuegen('dokumente')}>+ Dokumentenregister</button>
+        <button type="button" className="knopf klein" onClick={() => hinzufuegen('verknuepfungen')}>+ Verknüpfungsregister</button>
+      </div>
     </div>
   );
 }

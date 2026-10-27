@@ -4,7 +4,7 @@ import Fastify, { type FastifyServerOptions } from 'fastify';
 import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import type { Konten } from './konten';
-import { leseCookie, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage } from './routen';
+import { dateiKoepfe, leseCookie, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage } from './routen';
 
 interface Optionen {
   /** Verzeichnis der gebauten Weboberfläche; fehlt es, gibt es nur die API. */
@@ -27,10 +27,14 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     return reply.code(500).send({ fehler: 'Interner Fehler. Details stehen im Server-Log.' });
   });
 
+  // Datei-Uploads kommen als rohe Bytes (application/octet-stream).
+  app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer' }, (_req, body, fertig) => fertig(null, body));
+
   for (const r of routen(dienst, konten, (m) => app.log.warn(m))) {
     app.route({
       method: r.methode,
       url: r.pfad,
+      ...(r.roh ? { bodyLimit: r.roh } : {}),
       handler: async (req, reply) => {
         const a: Anfrage = {
           body: req.body,
@@ -42,6 +46,10 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
         await pruefeZugang(r, a, (n) => req.headers[n] as string | undefined, konten);
         const antwort = await r.handler(a);
         if (antwort.sitzungSetzen !== undefined) reply.header('set-cookie', sitzungsCookie(antwort.sitzungSetzen, opt.sicher ?? false));
+        if (antwort.datei) {
+          for (const [k, v] of Object.entries(dateiKoepfe(antwort.datei))) reply.header(k, v);
+          return reply.send(antwort.datei.inhalt);
+        }
         reply.header('cache-control', 'no-store');
         reply.code(antwort.status ?? 200);
         return antwort.status === 204 || antwort.body === undefined ? reply.send() : reply.send(antwort.body);

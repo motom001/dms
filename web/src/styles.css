@@ -220,6 +220,51 @@ tbody tr:last-child > * { border-bottom: 0; }
 .index dd { margin: 0; }
 .nur-schmal { display: none; }
 
+
+/* ---------- Register an der Mappe (Trennblätter) ---------- */
+.blatt.mitregistern { padding-top: 0; gap: 14px; }
+.registertaben { display: flex; gap: 2px; margin: 0 -20px; padding: 10px 14px 0; border-bottom: 1px solid var(--linie); overflow-x: auto; background: var(--senke); border-radius: var(--r) var(--r) 0 0; }
+.registertab { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px 9px; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0; background: none; cursor: pointer; font-weight: 600; font-size: 13px; color: var(--leise); white-space: nowrap; margin-bottom: -1px; border-top: 3px solid transparent; }
+.registertab:hover:not(:disabled) { color: var(--tinte); }
+.registertab.an { background: var(--flaeche); border-color: var(--linie); color: var(--tinte); }
+.registertab.an.art-felder { border-top-color: var(--gruen); }
+.registertab.an.art-dokumente { border-top-color: var(--akzent); }
+.registertab.an.art-verknuepfungen { border-top-color: var(--warn); }
+.registertab:disabled { opacity: 0.45; cursor: default; }
+.fehlerpunkt { font-size: 11px; font-weight: 700; min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--schlecht); color: var(--flaeche); text-align: center; }
+.anzahl { font-size: 11px; font-weight: 600; padding: 0 6px; border-radius: 999px; background: var(--senke); color: var(--leise); }
+.registerinhalt { min-height: 120px; }
+
+/* Dokumente */
+.dokumente { display: flex; flex-direction: column; gap: 12px; }
+.ablagezone { border: 2px dashed var(--linie-stark); border-radius: var(--r); padding: 18px; text-align: center; display: flex; flex-direction: column; gap: 4px; }
+.ablagezone.zieht { border-color: var(--akzent); background: var(--akzent-zart); }
+.dokumentliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--linie); border-radius: var(--r); }
+.dokumentliste li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--linie); flex-wrap: wrap; }
+.dokumentliste li:last-child { border-bottom: 0; }
+.dokumentliste li.an { background: var(--akzent-zart); }
+.dokname { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dokname .textknopf, .dokname .verweis { text-align: left; overflow-wrap: anywhere; }
+.dokansicht { border: 1px solid var(--linie); border-radius: var(--r); overflow: hidden; background: var(--senke); }
+.dokansicht iframe { display: block; width: 100%; height: 75vh; border: 0; background: #fff; }
+.dokansicht img { display: block; max-width: 100%; margin: 0 auto; }
+a.textknopf { text-decoration: none; }
+
+/* Einrichtung: Titel und Register */
+.chipwahl { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chipknopf { border: 1px solid var(--linie-stark); background: var(--flaeche); border-radius: 999px; padding: 3px 10px; font-size: 12.5px; cursor: pointer; }
+.chipknopf:hover { border-color: var(--akzent); color: var(--akzent); }
+.vorschau { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 12px 14px; border-radius: var(--r); background: var(--senke); border: 1px solid var(--linie); }
+.vorschautitel { font-size: 16px; }
+.vorschau select { width: auto; max-width: 260px; padding: 3px 6px; }
+.registerliste { display: flex; flex-direction: column; gap: 8px; }
+.registerzeile { border: 1px solid var(--linie); border-left: 4px solid var(--linie-stark); border-radius: var(--r); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.registerzeile.art-felder { border-left-color: var(--gruen); }
+.registerzeile.art-dokumente { border-left-color: var(--akzent); }
+.registerzeile.art-verknuepfungen { border-left-color: var(--warn); }
+.registerkopf { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto auto; gap: 10px; align-items: center; }
+.registerkopf .chip { justify-content: center; }
+
 @media (max-width: 820px) {
   .zweispaltig { grid-template-columns: minmax(0, 1fr); }
   .leiste { position: static; }
@@ -237,6 +282,9 @@ tbody tr:last-child > * { border-bottom: 0; }
   .spalte.mappe { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
   .nur-schmal { display: inline; }
   .konto .wer { display: none; }
+  .registerkopf { grid-template-columns: minmax(0, 1fr) auto; }
+  .registerkopf .fkey { display: none; }
+  .registertaben { margin: 0 -14px; }
   .kopf { flex-wrap: wrap; row-gap: 4px; }
   .konto { gap: 12px; }
 }

@@ -1,5 +1,5 @@
 import type postgres from 'postgres';
-import type { Mappe, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
+import type { Dokument, Mappe, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
 import { istUuid, type Repo, type Verweis } from './repo';
 
 type Sql = postgres.Sql;
@@ -10,8 +10,9 @@ const alsTyp = (r: Zeile): Mappentyp => ({
   id: r.id as string,
   name: r.name as string,
   beschreibung: r.beschreibung as string,
-  titelFeld: r.titel_feld as string,
+  titelVorlage: r.titel_vorlage as string,
   felder: r.felder as Mappentyp['felder'],
+  register: r.register as Mappentyp['register'],
   erstellt: iso(r.erstellt),
   geaendert: iso(r.geaendert),
 });
@@ -23,6 +24,18 @@ const alsMappe = (r: Zeile): Mappe => ({
   erstelltVon: (r.erstellt_von as string | null) ?? null,
   geaendert: iso(r.geaendert),
   geaendertVon: (r.geaendert_von as string | null) ?? null,
+});
+const alsDokument = (r: Zeile): Dokument => ({
+  id: r.id as string,
+  mappeId: r.mappe_id as string,
+  registerKey: r.register_key as string,
+  name: r.name as string,
+  mime: r.mime as string,
+  groesse: Number(r.groesse),
+  sha256: r.sha256 as string,
+  anzeigbar: r.anzeigbar as boolean,
+  erstellt: iso(r.erstellt),
+  erstelltVon: (r.erstellt_von as string | null) ?? null,
 });
 // postgres.js erwartet für jsonb einen JSON-Wert; unsere Typen sind JSON-kompatibel.
 const json = (sql: Sql, v: unknown) => sql.json(v as postgres.JSONValue);
@@ -49,16 +62,16 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     },
     async legeTypAn(id, d: MappentypDaten) {
       const [r] = await sql`
-        INSERT INTO mappentypen (id, haushalt_id, name, beschreibung, titel_feld, felder)
-        VALUES (${id}, ${haushaltId}, ${d.name}, ${d.beschreibung}, ${d.titelFeld}, ${json(sql, d.felder)})
+        INSERT INTO mappentypen (id, haushalt_id, name, beschreibung, titel_vorlage, felder, register)
+        VALUES (${id}, ${haushaltId}, ${d.name}, ${d.beschreibung}, ${d.titelVorlage}, ${json(sql, d.felder)}, ${json(sql, d.register)})
         RETURNING *`;
       return alsTyp(r);
     },
     async aendereTyp(id, d) {
       return sql.begin(async (tx) => {
         const [r] = await tx`
-          UPDATE mappentypen SET name = ${d.name}, beschreibung = ${d.beschreibung}, titel_feld = ${d.titelFeld},
-            felder = ${json(sql, d.felder)}, geaendert = now()
+          UPDATE mappentypen SET name = ${d.name}, beschreibung = ${d.beschreibung}, titel_vorlage = ${d.titelVorlage},
+            felder = ${json(sql, d.felder)}, register = ${json(sql, d.register)}, geaendert = now()
           WHERE haushalt_id = ${haushaltId} AND id = ${id}
           RETURNING *`;
         const refKeys = d.felder.filter((f) => f.typ === 'referenz').map((f) => f.key);
@@ -136,6 +149,35 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         FROM verweise v JOIN mappen m ON m.id = v.quelle_id
         WHERE v.ziel_id = ${zielId} AND v.haushalt_id = ${haushaltId}`;
       return r.map((z) => ({ quelleId: z.quelle_id as string, quelleTypId: z.typ_id as string, feldKey: z.feld_key as string }));
+    },
+
+    async listeDokumente(mappeId) {
+      if (!istUuid(mappeId)) return [];
+      return (await sql`SELECT * FROM dokumente WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY erstellt DESC`).map(alsDokument);
+    },
+    async holeDokument(id) {
+      if (!istUuid(id)) return undefined;
+      const [r] = await sql`SELECT * FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      return r ? alsDokument(r) : undefined;
+    },
+    async legeDokumentAn(d) {
+      const [r] = await sql`
+        INSERT INTO dokumente (id, haushalt_id, mappe_id, register_key, name, mime, groesse, sha256, anzeigbar, erstellt_von)
+        VALUES (${d.id}, ${haushaltId}, ${d.mappeId}, ${d.registerKey}, ${d.name}, ${d.mime}, ${d.groesse}, ${d.sha256}, ${d.anzeigbar}, ${d.erstelltVon})
+        RETURNING *`;
+      return alsDokument(r);
+    },
+    async loescheDokument(id) {
+      await sql`DELETE FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+    },
+    async dokumenteMitSha(sha256) {
+      return (await sql`SELECT * FROM dokumente WHERE haushalt_id = ${haushaltId} AND sha256 = ${sha256}`).map(alsDokument);
+    },
+    async dokumenteJeRegister(typId) {
+      const r = await sql`
+        SELECT d.register_key, count(*)::int AS n FROM dokumente d JOIN mappen m ON m.id = d.mappe_id
+        WHERE m.typ_id = ${typId} AND d.haushalt_id = ${haushaltId} GROUP BY d.register_key`;
+      return new Map(r.map((z) => [z.register_key as string, z.n as number]));
     },
   };
 }

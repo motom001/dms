@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { formatiere, istOk, titelFeld, type Mappe, type Mappentyp } from '../../../shared/src/model';
+import { formatiere, istOk, vorlageFelder, wirksameVorlage, type Mappe, type Mappentyp } from '../../../shared/src/model';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { geheZu, Link } from '../ort';
@@ -86,8 +86,8 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
 
 function TypListe({ typ, offen }: { typ: Mappentyp; offen?: string }) {
   const d = useDaten();
-  const tf = titelFeld(typ);
-  const nebenfelder = typ.felder.filter((f) => f.key !== tf?.key && f.typ !== 'langtext').slice(0, 2);
+  const imTitel = new Set(vorlageFelder(wirksameVorlage(typ)));
+  const nebenfelder = typ.felder.filter((f) => !imTitel.has(f.key) && f.typ !== 'langtext').slice(0, 2);
   const titelVon = (id: string) => d.titel(d.mappe(id));
   const eintraege = d.mappenVon(typ.id).map((m) => ({
     mappe: m, typ, titel: d.titel(m),

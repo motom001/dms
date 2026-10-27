@@ -50,12 +50,35 @@ export interface Feld {
   verweisart?: Verweisart;
 }
 
+export const REGISTERARTEN = {
+  felder: 'Feldregister',
+  dokumente: 'Dokumentenregister',
+  verknuepfungen: 'Verknüpfungsregister',
+} as const;
+export type Registerart = keyof typeof REGISTERARTEN;
+
+/** Quelle eines Verknüpfungsregisters: Mappen vom Typ `typId`, die über `feldKey` hierher verweisen. */
+export interface Quelle { typId: string; feldKey: string }
+
+/** Ein Trennblatt an der Mappe. */
+export interface Register {
+  /** Fester Schlüssel (Dokumente merken sich ihr Register darüber). */
+  key: string;
+  name: string;
+  art: Registerart;
+  /** Feldregister: Schlüssel der Felder auf diesem Blatt. Jedes Feld liegt auf genau einem Feldregister. */
+  felder?: string[];
+  /** Verknüpfungsregister: welche Verweise es zeigt; leer = alle. */
+  quellen?: Quelle[];
+}
+
 export interface MappentypDaten {
   name: string;
   beschreibung: string;
-  /** Schlüssel des Feldes, das eine Mappe benennt; leer = erstes Textfeld. */
-  titelFeld: string;
+  /** Vorlage für den Titel einer Mappe, z. B. „{verwendungszweck} vom {zahlungsdatum}“. Leer = erstes Textfeld. */
+  titelVorlage: string;
   felder: Feld[];
+  register: Register[];
 }
 export interface Mappentyp extends MappentypDaten {
   id: string;
@@ -119,10 +142,46 @@ export function istLeer(v: unknown): boolean {
 }
 
 /** Prüft die Definition eines Mappentyps. */
-export function pruefeMappentyp(
-  t: MappentypDaten,
-  ctx: { eigeneId?: string; namenAndererTypen: string[]; existiertTyp: (id: string) => boolean },
-): Pruefergebnis {
+export interface TypKontext {
+  eigeneId?: string;
+  namenAndererTypen: string[];
+  existiertTyp: (id: string) => boolean;
+  /** Felder eines anderen Typs (für Quellen von Verknüpfungsregistern). */
+  felderVon?: (typId: string) => Feld[] | undefined;
+}
+
+function pruefeRegister(t: MappentypDaten, ctx: TypKontext, p: Pruefergebnis) {
+  const reg = t.register ?? [];
+  if (!reg.length) { p.allgemein.push('Der Mappentyp braucht mindestens ein Register.'); return; }
+  const keys = new Set<string>();
+  const feldAuf = new Map<string, string>();
+  for (const r of reg) {
+    const name = (r.name ?? '').trim() || r.key;
+    if (!(r.name ?? '').trim()) p.allgemein.push('Jedes Register braucht einen Namen.');
+    if (!SCHLUESSEL_MUSTER.test(r.key ?? '')) p.allgemein.push(`Register „${name}“: ungültiger Schlüssel.`);
+    else if (keys.has(r.key)) p.allgemein.push(`Der Register-Schlüssel „${r.key}“ kommt doppelt vor.`);
+    keys.add(r.key);
+    if (!(r.art in REGISTERARTEN)) p.allgemein.push(`Register „${name}“: unbekannte Art.`);
+    if (r.art === 'felder') {
+      for (const k of r.felder ?? []) {
+        if (feldAuf.has(k)) p.allgemein.push(`Das Feld „${t.felder.find((f) => f.key === k)?.label ?? k}“ liegt auf zwei Registern.`);
+        feldAuf.set(k, r.key);
+      }
+    }
+    if (r.art === 'verknuepfungen') {
+      for (const q of r.quellen ?? []) {
+        const felder = q.typId === ctx.eigeneId ? t.felder : ctx.felderVon?.(q.typId);
+        const f = felder?.find((x) => x.key === q.feldKey);
+        if (!f || f.typ !== 'referenz' || (f.zielTyp !== ctx.eigeneId)) p.allgemein.push(`Register „${name}“: Eine Quelle verweist nicht (mehr) auf diesen Mappentyp.`);
+      }
+    }
+  }
+  if (t.felder.length && !reg.some((r) => r.art === 'felder')) p.allgemein.push('Es gibt Felder, aber kein Feldregister.');
+  const ohne = t.felder.filter((f) => !feldAuf.has(f.key));
+  if (ohne.length && reg.some((r) => r.art === 'felder')) p.allgemein.push(`Diese Felder liegen auf keinem Register: ${ohne.map((f) => f.label || f.key).join(', ')}.`);
+}
+
+export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebnis {
   const p: Pruefergebnis = { allgemein: [], felder: {} };
   const name = (t.name ?? '').trim();
   if (!name) p.allgemein.push('Der Mappentyp braucht einen Namen.');
@@ -132,8 +191,9 @@ export function pruefeMappentyp(
     p.allgemein.push('Die Felder fehlen.');
     return p;
   }
-  if (t.titelFeld && !t.felder.some((f) => f.key === t.titelFeld))
-    p.allgemein.push('Das Titelfeld gibt es nicht.');
+  const unbekannt = vorlageFelder(t.titelVorlage ?? '').filter((k) => !t.felder.some((f) => f.key === k));
+  if (unbekannt.length) p.allgemein.push(`Die Titel-Vorlage nennt unbekannte Felder: ${unbekannt.map((k) => `{${k}}`).join(', ')}.`);
+  pruefeRegister(t, ctx, p);
 
   const gesehen = new Set<string>();
   t.felder.forEach((f, i) => {
@@ -242,11 +302,56 @@ export function verweiseVon(t: Pick<Mappentyp, 'felder'>, werte: Werte): Array<{
   return out;
 }
 
-/** Feld, das eine Mappe benennt. */
-export function titelFeld(t: Pick<Mappentyp, 'felder' | 'titelFeld'> | undefined): Feld | undefined {
-  if (!t) return undefined;
-  return t.felder.find((f) => f.key === t.titelFeld) ?? t.felder.find((f) => f.typ === 'text');
+const PLATZHALTER = /\{([a-z][a-z0-9_]*)\}/g;
+
+/** Feldschlüssel, die eine Titel-Vorlage verwendet. */
+export function vorlageFelder(vorlage: string): string[] {
+  return [...vorlage.matchAll(PLATZHALTER)].map((m) => m[1]);
 }
+
+/** Wirksame Vorlage: die eingestellte oder das erste Textfeld. */
+export function wirksameVorlage(t: Pick<Mappentyp, 'felder' | 'titelVorlage'>): string {
+  if (t.titelVorlage?.trim()) return t.titelVorlage;
+  const f = t.felder.find((x) => x.typ === 'text');
+  return f ? `{${f.key}}` : '';
+}
+
+/** Titel einer Mappe aus der Vorlage; Platzhalter werden formatiert eingesetzt. */
+export function titelAus(t: Pick<Mappentyp, 'felder' | 'titelVorlage'> | undefined, werte: Werte, titelVon: (id: string) => string = (id) => id): string {
+  if (!t) return '';
+  return wirksameVorlage(t)
+    .replace(PLATZHALTER, (_, k: string) => {
+      const f = t.felder.find((x) => x.key === k);
+      return f ? formatiere(f, werte[k], titelVon) : '';
+    })
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Register für einen neuen oder alten Mappentyp ohne Register. */
+export function standardRegister(felder: Feld[]): Register[] {
+  return [
+    { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: felder.map((f) => f.key) },
+    { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
+    { key: 'verknuepfungen', name: 'Verknüpfungen', art: 'verknuepfungen', quellen: [] },
+  ];
+}
+
+/** Ein hochgeladenes Dokument in einem Dokumentenregister. */
+export interface Dokument {
+  id: string;
+  mappeId: string;
+  registerKey: string;
+  name: string;
+  mime: string;
+  groesse: number;
+  sha256: string;
+  /** PDF oder Bild, das gefahrlos im Browser angezeigt werden kann. */
+  anzeigbar: boolean;
+  erstellt: string;
+  erstelltVon: string | null;
+}
+export const MAX_DATEIGROESSE = 100 * 1024 * 1024;
 
 /** Wert lesbar formatieren (deutsch). `titelVon` löst Referenzen auf. */
 export function formatiere(f: Feld, v: Wert | undefined, titelVon: (id: string) => string = (id) => id): string {

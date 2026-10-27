@@ -1,4 +1,4 @@
-import type { Mappe, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
+import type { Dokument, Mappe, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
 
 export interface Verweis { feldKey: string; zielId: string }
 export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string }
@@ -27,6 +27,15 @@ export interface Repo {
   /** Eine andere Mappe desselben Typs mit gleichem Wert (Groß-/Kleinschreibung egal). */
   findeDoppelt(typId: string, feldKey: string, wert: string, ausser?: string): Promise<Mappe | undefined>;
   rueckverweise(zielId: string): Promise<Rueckverweis[]>;
+
+  listeDokumente(mappeId: string): Promise<Dokument[]>;
+  holeDokument(id: string): Promise<Dokument | undefined>;
+  legeDokumentAn(d: Dokument): Promise<Dokument>;
+  loescheDokument(id: string): Promise<void>;
+  /** Andere Dokumente mit derselben Datei (gleicher Inhalt). */
+  dokumenteMitSha(sha256: string): Promise<Dokument[]>;
+  /** Anzahl Dokumente je Register-Schlüssel in Mappen dieses Typs. */
+  dokumenteJeRegister(typId: string): Promise<Map<string, number>>;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

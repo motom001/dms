@@ -1,4 +1,4 @@
-import type { Benutzer, Mappe, Mappentyp, Pruefergebnis, Rolle } from '../../shared/src/model';
+import type { Benutzer, Dokument, Mappe, Mappentyp, Pruefergebnis, Rolle } from '../../shared/src/model';
 
 export class ApiFehler extends Error {
   constructor(public status: number, message: string, public details?: unknown) { super(message); }
@@ -60,9 +60,28 @@ export const api = {
   typAendern: (id: string, t: unknown) => anfrage<Mappentyp>('PUT', `/api/typen/${id}`, t),
   typLoeschen: (id: string) => anfrage<null>('DELETE', `/api/typen/${id}`),
   mappen: () => anfrage<Mappe[]>('GET', '/api/mappen'),
-  mappe: (id: string) => anfrage<{ mappe: Mappe; rueckverweise: Rueckverweis[] }>('GET', `/api/mappen/${id}`),
+  mappe: (id: string) => anfrage<MappeDetails>('GET', `/api/mappen/${id}`),
   mappeAnlegen: (m: unknown) => anfrage<Mappe>('POST', '/api/mappen', m),
   mappeAendern: (id: string, m: unknown) => anfrage<Mappe>('PUT', `/api/mappen/${id}`, m),
   mappeLoeschen: (id: string) => anfrage<null>('DELETE', `/api/mappen/${id}`),
   beispiele: () => anfrage<null>('POST', '/api/beispiele'),
+  dokumentLoeschen: (id: string) => anfrage<null>('DELETE', `/api/dokumente/${id}`),
+  async ladeHoch(mappeId: string, register: string, datei: File): Promise<Hochgeladen> {
+    const q = new URLSearchParams({ register, name: datei.name, typ: datei.type || 'application/octet-stream' });
+    let r: Response;
+    try {
+      r = await fetch(`/api/mappen/${mappeId}/dokumente?${q}`, {
+        method: 'POST', credentials: 'same-origin', body: datei,
+        headers: { 'x-dms': '1', 'content-type': 'application/octet-stream' },
+      });
+    } catch { throw new ApiFehler(0, 'Der Server ist nicht erreichbar.'); }
+    const d = await r.json().catch(() => null);
+    if (r.status === 401) dispatchEvent(new Event(ABGEMELDET));
+    if (!r.ok) throw new ApiFehler(r.status, d?.fehler ?? (r.status === 413 ? 'Die Datei ist zu groß.' : `Fehler ${r.status}`), d?.details);
+    return d as Hochgeladen;
+  },
 };
+
+export interface MappeDetails { mappe: Mappe; rueckverweise: Rueckverweis[]; dokumente: Dokument[] }
+export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string }> }
+export const dokumentUrl = (id: string, herunterladen = false) => `/api/dokumente/${id}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;

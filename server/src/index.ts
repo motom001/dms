@@ -2,6 +2,7 @@ import { mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { migriere, verbinde } from './db';
 import { Dienst } from './dienst';
+import { ordnerSpeicher } from './dateispeicher';
 import { baueApp } from './http';
 import { Konten } from './konten';
 import { pgKontoRepo } from './konto-repo';
@@ -43,7 +44,7 @@ const mailer = erstelleMailer({
 });
 
 const konten = new Konten(pgKontoRepo(sql, cfg.haushalt), mailer, cfg.appUrl);
-const app = await baueApp(new Dienst(pgRepo(sql, cfg.haushalt)), konten, {
+const app = await baueApp(new Dienst(pgRepo(sql, cfg.haushalt), ordnerSpeicher(cfg.dateien, cfg.haushalt)), konten, {
   webDir: cfg.web,
   logger: { level: env.LOG_LEVEL ?? 'info' },
   sicher: cfg.appUrl.startsWith('https://'),

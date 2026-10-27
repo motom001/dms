@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { formatiere, pruefeMappe, titelFeld, type Mappe, type Mappentyp, type MappenKontext, type Pruefergebnis } from '../../shared/src/model';
+import { pruefeMappe, titelAus, type Mappe, type Mappentyp, type MappenKontext, type Pruefergebnis } from '../../shared/src/model';
 import { api } from './api';
 
 interface Daten {
@@ -47,9 +47,7 @@ export function DatenProvider({ children }: { children: ReactNode }) {
     const mappeNachId = new Map<string, Mappe>(mappen.map((m) => [m.id, m] as const));
     const titel = (m: Mappe | undefined, tiefe = 0): string => {
       if (!m) return '(gelöscht)';
-      const t = typNachId.get(m.typId);
-      const f = titelFeld(t);
-      const s = f ? formatiere(f, m.werte[f.key], (id) => (tiefe < 2 ? titel(mappeNachId.get(id), tiefe + 1) : '…')) : '';
+      const s = titelAus(typNachId.get(m.typId), m.werte, (id) => (tiefe < 2 ? titel(mappeNachId.get(id), tiefe + 1) : '…'));
       return s || 'Ohne Titel';
     };
     const sortiert = (liste: Mappe[]) => [...liste].sort((a, b) => titel(a).localeCompare(titel(b), 'de'));

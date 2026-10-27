@@ -1,4 +1,5 @@
-import type { Benutzer } from '../../shared/src/model';
+import type { Readable } from 'node:stream';
+import { MAX_DATEIGROESSE, type Benutzer } from '../../shared/src/model';
 import { ladeBeispiele } from './beispiele';
 import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
@@ -21,8 +22,23 @@ export interface Anfrage {
   sitzung?: string;
   ip: string;
 }
-export interface Antwort { status?: number; body?: unknown; sitzungSetzen?: string | null }
-export interface Route { methode: 'GET' | 'POST' | 'PUT' | 'DELETE'; pfad: string; zugang: Zugang; handler(a: Anfrage): Promise<Antwort> }
+export interface Datei {
+  inhalt: Readable | Buffer;
+  name: string;
+  /** Nur bei erkannten PDFs und Bildern wird im Browser angezeigt, sonst immer heruntergeladen. */
+  mime: string;
+  anzeigen: boolean;
+  groesse: number;
+}
+export interface Antwort { status?: number; body?: unknown; sitzungSetzen?: string | null; datei?: Datei }
+export interface Route {
+  methode: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  pfad: string;
+  zugang: Zugang;
+  /** Rohdaten statt JSON (Datei-Upload) mit dieser Obergrenze in Bytes. */
+  roh?: number;
+  handler(a: Anfrage): Promise<Antwort>;
+}
 
 export const SITZUNG_COOKIE = 'dms_sitzung';
 export const SITZUNG_SEKUNDEN = SITZUNG_TAGE * 24 * 60 * 60;
@@ -88,7 +104,32 @@ export function routen(dienst: Dienst, konten: Konten, log: (m: string) => void 
     { methode: 'POST', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.legeMappeAn(a.body, ich(a).id), 201) },
     { methode: 'PUT', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => ok(await dienst.aendereMappe(a.params.id, a.body, ich(a).id)) },
     { methode: 'DELETE', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => { await dienst.loescheMappe(a.params.id); return leer; } },
+
+    /* ---------- Dokumente ---------- */
+    { methode: 'POST', pfad: '/api/mappen/:id/dokumente', zugang: 'angemeldet', roh: MAX_DATEIGROESSE, handler: async (a) =>
+      ok(await dienst.ladeHoch(a.params.id, { register: a.query.register, name: a.query.name, typ: a.query.typ }, a.body, ich(a).id), 201) },
+    { methode: 'GET', pfad: '/api/dokumente/:id/inhalt', zugang: 'angemeldet', handler: async (a) => {
+      const { dokument: d, inhalt } = await dienst.dokumentInhalt(a.params.id);
+      const anzeigen = d.anzeigbar && a.query.herunterladen === undefined;
+      return { datei: { inhalt, name: d.name, mime: d.anzeigbar ? d.mime : 'application/octet-stream', anzeigen, groesse: d.groesse } };
+    } },
+    { methode: 'DELETE', pfad: '/api/dokumente/:id', zugang: 'angemeldet', handler: async (a) => { await dienst.loescheDokument(a.params.id); return leer; } },
   ];
+}
+
+/** Kopfzeilen für eine ausgelieferte Datei – so, dass sie nie als Teil der Anwendung ausgeführt wird. */
+export function dateiKoepfe(d: Datei): Record<string, string> {
+  const ascii = d.name.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
+  const k: Record<string, string> = {
+    'content-type': d.mime,
+    'content-length': String(d.groesse),
+    'content-disposition': `${d.anzeigen ? 'inline' : 'attachment'}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(d.name)}`,
+    'x-content-type-options': 'nosniff',
+    'cache-control': 'private, max-age=0, must-revalidate',
+  };
+  // PDFs brauchen den eingebauten Betrachter des Browsers; alles andere läuft in einer Sandbox.
+  if (d.mime !== 'application/pdf') k['content-security-policy'] = "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox";
+  return k;
 }
 
 /** Liest einen Cookie-Wert aus dem Cookie-Header. */
