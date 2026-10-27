@@ -18,8 +18,8 @@ export interface Repo {
 
   listeMappen(typId?: string): Promise<Mappe[]>;
   holeMappe(id: string): Promise<Mappe | undefined>;
-  legeMappeAn(id: string, typId: string, werte: Werte, verweise: Verweis[]): Promise<Mappe>;
-  aendereMappe(id: string, werte: Werte, verweise: Verweis[]): Promise<Mappe>;
+  legeMappeAn(id: string, typId: string, werte: Werte, verweise: Verweis[], benutzerId: string | null): Promise<Mappe>;
+  aendereMappe(id: string, werte: Werte, verweise: Verweis[], benutzerId: string | null): Promise<Mappe>;
   loescheMappe(id: string): Promise<void>;
 
   /** Typ-Id je existierender Mappe dieses Haushalts. */

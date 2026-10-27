@@ -1,20 +1,23 @@
 import { existsSync } from 'node:fs';
 import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyServerOptions } from 'fastify';
-import { ladeBeispiele } from './beispiele';
 import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
+import type { Konten } from './konten';
+import { leseCookie, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage } from './routen';
 
 interface Optionen {
   /** Verzeichnis der gebauten Weboberfläche; fehlt es, gibt es nur die API. */
   webDir?: string;
   logger?: FastifyServerOptions['logger'];
+  /** Secure-Flag am Cookie (nur bei HTTPS). */
+  sicher?: boolean;
+  /** Hinter einem Reverse-Proxy: X-Forwarded-For auswerten. */
+  proxy?: boolean;
 }
 
-type MitId = { Params: { id: string } };
-
-export async function baueApp(dienst: Dienst, opt: Optionen = {}) {
-  const app = Fastify({ logger: opt.logger ?? false, bodyLimit: 2 * 1024 * 1024 });
+export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}) {
+  const app = Fastify({ logger: opt.logger ?? false, bodyLimit: 2 * 1024 * 1024, trustProxy: opt.proxy ?? false });
 
   app.setErrorHandler((fehler: unknown, req, reply) => {
     if (fehler instanceof Fachfehler) return reply.code(fehler.status).send({ fehler: fehler.message, details: fehler.details });
@@ -24,20 +27,27 @@ export async function baueApp(dienst: Dienst, opt: Optionen = {}) {
     return reply.code(500).send({ fehler: 'Interner Fehler. Details stehen im Server-Log.' });
   });
 
-  app.get('/api/gesundheit', async () => ({ ok: true }));
-
-  app.get('/api/typen', async () => dienst.listeTypen());
-  app.post('/api/typen', async (req, reply) => reply.code(201).send(await dienst.legeTypAn(req.body)));
-  app.put<MitId>('/api/typen/:id', async (req) => dienst.aendereTyp(req.params.id, req.body));
-  app.delete<MitId>('/api/typen/:id', async (req, reply) => { await dienst.loescheTyp(req.params.id); return reply.code(204).send(); });
-
-  app.get<{ Querystring: { typ?: string } }>('/api/mappen', async (req) => dienst.listeMappen(req.query.typ));
-  app.get<MitId>('/api/mappen/:id', async (req) => dienst.holeMappe(req.params.id));
-  app.post('/api/mappen', async (req, reply) => reply.code(201).send(await dienst.legeMappeAn(req.body)));
-  app.put<MitId>('/api/mappen/:id', async (req) => dienst.aendereMappe(req.params.id, req.body));
-  app.delete<MitId>('/api/mappen/:id', async (req, reply) => { await dienst.loescheMappe(req.params.id); return reply.code(204).send(); });
-
-  app.post('/api/beispiele', async (_req, reply) => { await ladeBeispiele(dienst); return reply.code(204).send(); });
+  for (const r of routen(dienst, konten, (m) => app.log.warn(m))) {
+    app.route({
+      method: r.methode,
+      url: r.pfad,
+      handler: async (req, reply) => {
+        const a: Anfrage = {
+          body: req.body,
+          params: req.params as Record<string, string>,
+          query: req.query as Record<string, string | undefined>,
+          sitzung: leseCookie(req.headers.cookie, SITZUNG_COOKIE),
+          ip: req.ip,
+        };
+        await pruefeZugang(r, a, (n) => req.headers[n] as string | undefined, konten);
+        const antwort = await r.handler(a);
+        if (antwort.sitzungSetzen !== undefined) reply.header('set-cookie', sitzungsCookie(antwort.sitzungSetzen, opt.sicher ?? false));
+        reply.header('cache-control', 'no-store');
+        reply.code(antwort.status ?? 200);
+        return antwort.status === 204 || antwort.body === undefined ? reply.send() : reply.send(antwort.body);
+      },
+    });
+  }
 
   if (opt.webDir && existsSync(opt.webDir)) {
     await app.register(fastifyStatic, { root: opt.webDir, wildcard: false });

@@ -71,9 +71,30 @@ export interface Mappe {
   id: string;
   typId: string;
   werte: Werte;
+  /** Feste Indexwerte, unabhängig vom Mappentyp. */
   erstellt: string;
+  erstelltVon: string | null;
   geaendert: string;
+  geaendertVon: string | null;
 }
+
+export type Rolle = 'admin' | 'mitglied';
+export const ROLLEN: Record<Rolle, string> = { admin: 'Administrator', mitglied: 'Mitglied' };
+
+export interface Benutzer {
+  id: string;
+  email: string;
+  name: string;
+  rolle: Rolle;
+  aktiv: boolean;
+  /** false, solange der Benutzer sein Passwort noch nicht über den Link gesetzt hat. */
+  hatPasswort: boolean;
+  erstellt: string;
+  letzteAnmeldung: string | null;
+}
+
+export const PASSWORT_MINDESTLAENGE = 10;
+export const istEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 
 /** Ergebnis einer Prüfung: allgemeine Meldungen und Meldungen je Feld. */
 export interface Pruefergebnis {

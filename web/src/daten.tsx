@@ -13,6 +13,8 @@ interface Daten {
   typ(id: string | undefined): Mappentyp | undefined;
   mappe(id: string | undefined): Mappe | undefined;
   mappenVon(typId: string): Mappe[];
+  /** Anzeigename eines Benutzers (für „angelegt von“). */
+  person(id: string | null | undefined): string;
   titel(m: Mappe | undefined): string;
   /** Prüft eine Mappe gegen die aktuelle Definition ihres Typs (wie der Server). */
   pruefe(t: Mappentyp, werte: Mappe['werte'], eigeneId?: string): Pruefergebnis;
@@ -23,14 +25,15 @@ const Ctx = createContext<Daten | null>(null);
 export function DatenProvider({ children }: { children: ReactNode }) {
   const [typen, setTypen] = useState<Mappentyp[]>([]);
   const [mappen, setMappen] = useState<Mappe[]>([]);
+  const [personen, setPersonen] = useState<Array<{ id: string; name: string }>>([]);
   const [geladen, setGeladen] = useState(false);
   const [fehler, setFehler] = useState<string>();
   const [stand, setStand] = useState(0);
 
   const neuLaden = useCallback(async () => {
     try {
-      const [t, m] = await Promise.all([api.typen(), api.mappen()]);
-      setTypen(t); setMappen(m); setFehler(undefined);
+      const [t, m, p] = await Promise.all([api.typen(), api.mappen(), api.personen()]);
+      setTypen(t); setMappen(m); setPersonen(p); setFehler(undefined);
     } catch (e) {
       setFehler((e as Error).message);
     } finally {
@@ -55,6 +58,7 @@ export function DatenProvider({ children }: { children: ReactNode }) {
       typ: (id) => (id ? typNachId.get(id) : undefined),
       mappe: (id) => (id ? mappeNachId.get(id) : undefined),
       mappenVon: (typId) => sortiert(mappen.filter((m) => m.typId === typId)),
+      person: (id) => (id ? personen.find((p) => p.id === id)?.name ?? 'gelöschter Benutzer' : 'unbekannt'),
       titel: (m) => titel(m),
       pruefe: (t, werte, eigeneId) => {
         const ctx: MappenKontext = {
@@ -68,7 +72,7 @@ export function DatenProvider({ children }: { children: ReactNode }) {
         return pruefeMappe(t, werte, ctx);
       },
     };
-  }, [typen, mappen, geladen, fehler, stand, neuLaden]);
+  }, [typen, mappen, personen, geladen, fehler, stand, neuLaden]);
 
   return <Ctx.Provider value={wert}>{children}</Ctx.Provider>;
 }

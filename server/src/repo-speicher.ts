@@ -30,13 +30,13 @@ export function speicherRepo(): Repo {
 
     async listeMappen(typId) { return [...mappen.values()].filter((m) => !typId || m.typId === typId).map(kopie); },
     async holeMappe(id) { const m = mappen.get(id); return m && kopie(m); },
-    async legeMappeAn(id, typId, werte: Werte, vs) {
-      const m: Mappe = { id, typId, werte: kopie(werte), erstellt: jetzt(), geaendert: jetzt() };
+    async legeMappeAn(id, typId, werte: Werte, vs, benutzerId) {
+      const m: Mappe = { id, typId, werte: kopie(werte), erstellt: jetzt(), erstelltVon: benutzerId, geaendert: jetzt(), geaendertVon: benutzerId };
       mappen.set(id, m); verweise.set(id, kopie(vs));
       return kopie(m);
     },
-    async aendereMappe(id, werte, vs) {
-      const m = { ...mappen.get(id)!, werte: kopie(werte), geaendert: jetzt() };
+    async aendereMappe(id, werte, vs, benutzerId) {
+      const m = { ...mappen.get(id)!, werte: kopie(werte), geaendert: jetzt(), geaendertVon: benutzerId };
       mappen.set(id, m); verweise.set(id, kopie(vs));
       return kopie(m);
     },

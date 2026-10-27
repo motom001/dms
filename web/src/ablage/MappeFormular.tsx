@@ -5,7 +5,9 @@ import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
 import { rohAusWerten, standardRoh, werteAusRoh, type Roh, type RohBetrag, type RohWerte } from '../werte';
 
-export function NeueMappe({ typ, verweis }: { typ: Mappentyp; verweis?: string }) {
+const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
+
+export function NeueMappe({ typ, verweis, sicht }: { typ: Mappentyp; verweis?: string; sicht: string }) {
   const start = standardRoh(typ);
   // ?verweis=feldKey:mappeId belegt ein Referenzfeld vor („+ Vertrag anlegen“ beim Vertragspartner).
   if (verweis) {
@@ -15,30 +17,34 @@ export function NeueMappe({ typ, verweis }: { typ: Mappentyp; verweis?: string }
   }
   return (
     <>
-      <div className="seitenkopf"><div>
-        <p className="ueber"><Link to={`/ablage/${typ.id}`} className="verweis">← {typ.name}</Link></p>
+      <div className="mappenkopf">
+        <p className="ueber">{typ.name}</p>
         <h1>Neue Mappe</h1>
-      </div></div>
-      <Formular typ={typ} start={start} />
+      </div>
+      <Formular typ={typ} start={start} sicht={sicht} />
     </>
   );
 }
 
-export function MappeAnsicht({ typ, mappe }: { typ: Mappentyp; mappe: Mappe }) {
+export function MappeAnsicht({ typ, mappe, sicht }: { typ: Mappentyp; mappe: Mappe; sicht: string }) {
   const d = useDaten();
   const abweichung = d.pruefe(typ, mappe.werte, mappe.id);
   const bekannt = new Set(typ.felder.map((f) => f.key));
   const verwaist = Object.entries(mappe.werte).filter(([k, v]) => !bekannt.has(k) && !istLeer(v));
   return (
     <>
-      <div className="seitenkopf"><div>
-        <p className="ueber"><Link to={`/ablage/${typ.id}`} className="verweis">← {typ.name}</Link></p>
+      <div className="mappenkopf">
+        <p className="ueber">{typ.name}</p>
         <h1>{d.titel(mappe)}</h1>
-      </div></div>
+        <dl className="index">
+          <div><dt>Angelegt</dt><dd>{zeit(mappe.erstellt)} von {d.person(mappe.erstelltVon)}</dd></div>
+          <div><dt>Zuletzt geändert</dt><dd>{zeit(mappe.geaendert)} von {d.person(mappe.geaendertVon)}</dd></div>
+        </dl>
+      </div>
       {!istOk(abweichung) && (
         <div className="hinweis warn"><p>Diese Mappe passt nicht mehr zur aktuellen Definition von „{typ.name}“. Beim nächsten Speichern müssen die markierten Felder stimmen.</p></div>
       )}
-      <Formular typ={typ} mappe={mappe} start={rohAusWerten(typ, mappe.werte)} />
+      <Formular typ={typ} mappe={mappe} start={rohAusWerten(typ, mappe.werte)} sicht={sicht} />
       {verwaist.length > 0 && (
         <section className="blatt">
           <h2 className="h3">Werte ohne Felddefinition</h2>
@@ -51,7 +57,7 @@ export function MappeAnsicht({ typ, mappe }: { typ: Mappentyp; mappe: Mappe }) {
   );
 }
 
-function Formular({ typ, mappe, start }: { typ: Mappentyp; mappe?: Mappe; start: RohWerte }) {
+function Formular({ typ, mappe, start, sicht }: { typ: Mappentyp; mappe?: Mappe; start: RohWerte; sicht: string }) {
   const d = useDaten();
   const [basis, setBasis] = useState(() => JSON.stringify(start));
   const [roh, setRoh] = useState<RohWerte>(start);
@@ -76,7 +82,7 @@ function Formular({ typ, mappe, start }: { typ: Mappentyp; mappe?: Mappe; start:
       const m = mappe ? await api.mappeAendern(mappe.id, { werte }) : await api.mappeAnlegen({ typId: typ.id, werte });
       setFehler(null); setBasis(JSON.stringify(roh)); loeseWache();
       await d.neuLaden();
-      if (!mappe) geheZu(`/ablage/mappe/${m.id}`);
+      if (!mappe) geheZu(`/ablage/${sicht}/${m.id}`);
       else setMeldung('Gespeichert.');
     } catch (e) {
       const f = e as ApiFehler;
@@ -89,7 +95,7 @@ function Formular({ typ, mappe, start }: { typ: Mappentyp; mappe?: Mappe; start:
     if (!mappe || !confirm(`Mappe „${d.titel(mappe)}“ löschen?`)) return;
     try {
       await api.mappeLoeschen(mappe.id);
-      loeseWache(); await d.neuLaden(); geheZu(`/ablage/${typ.id}`);
+      loeseWache(); await d.neuLaden(); geheZu(`/ablage/${sicht}`);
     } catch (e) { setMeldung((e as Error).message); }
   }
 
@@ -107,7 +113,7 @@ function Formular({ typ, mappe, start }: { typ: Mappentyp; mappe?: Mappe; start:
         <div className="knoepfe">
           {mappe
             ? <button type="button" className="knopf" disabled={!geaendert || sendet} onClick={() => { setRoh(JSON.parse(basis)); setFehler(null); setMeldung(undefined); }}>Verwerfen</button>
-            : <Link to={`/ablage/${typ.id}`} className="knopf">Abbrechen</Link>}
+            : <Link to={`/ablage/${sicht}`} className="knopf">Abbrechen</Link>}
           <button type="submit" className="knopf gruen" disabled={sendet}>{sendet ? 'Speichere …' : 'Mappe speichern'}</button>
         </div>
       </div>
@@ -186,7 +192,7 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId }: { feld: Feld; ro
             {kandidaten.map((m) => <option key={m.id} value={m.id}>{d.titel(m)}</option>)}
             {r && !gewaehlt && <option value={r}>(gelöschte Mappe)</option>}
           </select>
-          <div className="zeile">{gewaehlt && <Link to={`/ablage/mappe/${gewaehlt.id}`} className="verweis klein">{d.titel(gewaehlt)} öffnen →</Link>}{anlegen}</div>
+          <div className="zeile">{gewaehlt && <Link to={`/ablage/${gewaehlt.typId}/${gewaehlt.id}`} className="verweis klein">{d.titel(gewaehlt)} öffnen →</Link>}{anlegen}</div>
         </div>;
       }
       break;
@@ -234,7 +240,7 @@ function Rueckverweise({ mappe }: { mappe: Mappe }) {
               <Link to={`/ablage/${t.id}/neu?verweis=${encodeURIComponent(`${f.key}:${mappe.id}`)}`} className="knopf klein">+ {t.name} anlegen</Link>
             </header>
             {rv === null ? <p className="leise">Lade …</p> : treffer.length
-              ? <ul>{treffer.map((m) => <li key={m.id}><Link to={`/ablage/mappe/${m.id}`} className="verweis">{d.titel(m)}</Link></li>)}</ul>
+              ? <ul>{treffer.map((m) => <li key={m.id}><Link to={`/ablage/${m.typId}/${m.id}`} className="verweis">{d.titel(m)}</Link></li>)}</ul>
               : <p className="leise">Noch keine.</p>}
           </section>
         ))}

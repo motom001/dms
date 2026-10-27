@@ -20,7 +20,9 @@ const alsMappe = (r: Zeile): Mappe => ({
   typId: r.typ_id as string,
   werte: r.werte as Werte,
   erstellt: iso(r.erstellt),
+  erstelltVon: (r.erstellt_von as string | null) ?? null,
   geaendert: iso(r.geaendert),
+  geaendertVon: (r.geaendert_von as string | null) ?? null,
 });
 // postgres.js erwartet für jsonb einen JSON-Wert; unsere Typen sind JSON-kompatibel.
 const json = (sql: Sql, v: unknown) => sql.json(v as postgres.JSONValue);
@@ -86,20 +88,20 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const [r] = await sql`SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       return r ? alsMappe(r) : undefined;
     },
-    async legeMappeAn(id, typId, werte, vs) {
+    async legeMappeAn(id, typId, werte, vs, benutzerId) {
       return sql.begin(async (tx) => {
         const [r] = await tx`
-          INSERT INTO mappen (id, haushalt_id, typ_id, werte)
-          VALUES (${id}, ${haushaltId}, ${typId}, ${json(sql, werte)})
+          INSERT INTO mappen (id, haushalt_id, typ_id, werte, erstellt_von, geaendert_von)
+          VALUES (${id}, ${haushaltId}, ${typId}, ${json(sql, werte)}, ${benutzerId}, ${benutzerId})
           RETURNING *`;
         await schreibeVerweise(tx, id, vs);
         return alsMappe(r);
       });
     },
-    async aendereMappe(id, werte, vs) {
+    async aendereMappe(id, werte, vs, benutzerId) {
       return sql.begin(async (tx) => {
         const [r] = await tx`
-          UPDATE mappen SET werte = ${json(sql, werte)}, geaendert = now()
+          UPDATE mappen SET werte = ${json(sql, werte)}, geaendert = now(), geaendert_von = ${benutzerId}
           WHERE haushalt_id = ${haushaltId} AND id = ${id}
           RETURNING *`;
         await schreibeVerweise(tx, id, vs);

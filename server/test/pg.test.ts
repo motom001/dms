@@ -19,19 +19,40 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const { baueApp } = await import('../src/http');
     const { Dienst } = await import('../src/dienst');
     const { pgRepo } = await import('../src/repo-pg');
+    const { Konten } = await import('../src/konten');
+    const { pgKontoRepo } = await import('../src/konto-repo');
     sql = verbinde(url!);
     await sql.unsafe('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
     const dir = fileURLToPath(new URL('../migrations', import.meta.url));
     await migriere(sql, dir, () => {});
     await migriere(sql, dir, () => {}); // zweiter Lauf darf nichts tun
-    app = await baueApp(new Dienst(pgRepo(sql, HAUSHALT)));
+    app = await baueApp(new Dienst(pgRepo(sql, HAUSHALT)), new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas:3000'));
   });
   after(async () => { await app?.close(); await sql?.end(); });
 
-  const anfrage = async (method: string, pfad: string, payload?: unknown) => {
-    const r = await app.inject({ method, url: pfad, payload });
+  let cookie = '';
+  const anfrage = async (method: string, pfad: string, payload?: unknown, mitCookie = true) => {
+    const headers: Record<string, string> = { 'x-dms': '1' };
+    if (mitCookie && cookie) headers.cookie = cookie;
+    const r = await app.inject({ method, url: pfad, payload, headers });
+    const gesetzt = r.headers['set-cookie'];
+    if (gesetzt && mitCookie) cookie = String(gesetzt).split(';')[0];
     return { status: r.statusCode as number, body: r.body ? JSON.parse(r.body) : null };
   };
+
+  it('verlangt eine Anmeldung und richtet den ersten Administrator ein', async () => {
+    assert.equal((await anfrage('GET', '/api/typen')).status, 401);
+    const st = await anfrage('GET', '/api/konto/status');
+    assert.equal(st.body.einrichtungNoetig, true);
+    const r = await anfrage('POST', '/api/konto/einrichten', { email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' });
+    assert.equal(r.status, 201);
+    assert.match(cookie, /^dms_sitzung=/);
+    assert.equal((await anfrage('GET', '/api/konto/status')).body.benutzer.email, 'admin@example.org');
+    assert.equal((await anfrage('POST', '/api/konto/einrichten', { email: 'x@example.org', passwort: 'ein-langes-passwort' }, false)).status, 409);
+    // Ohne Kennung der Oberfläche werden ändernde Anfragen abgelehnt (CSRF-Schutz).
+    const ohne = await app.inject({ method: 'POST', url: '/api/beispiele', headers: { cookie } });
+    assert.equal(ohne.statusCode, 403);
+  });
 
   it('lädt Beispiele und liefert Typen und Mappen', async () => {
     assert.equal((await anfrage('GET', '/api/gesundheit')).status, 200);
@@ -82,5 +103,27 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.ok(r.body.details.gruende.length >= 1);
     assert.equal((await anfrage('GET', '/api/mappen/gibt-es-nicht')).status, 404);
     assert.equal((await anfrage('GET', '/api/gibt-es-nicht')).status, 404);
+  });
+
+  it('lädt Mitglieder per Link ein und beschränkt sie auf ihre Rolle', async () => {
+    const r = await anfrage('POST', '/api/benutzer', { email: 'mitglied@example.org', name: 'Mitglied', rolle: 'mitglied' });
+    assert.equal(r.status, 201);
+    assert.equal(r.body.mailVerschickt, false);
+    const schluessel = r.body.link.split('/passwort/')[1];
+    assert.equal((await anfrage('GET', `/api/konto/link/${schluessel}`, undefined, false)).body.zweck, 'einladung');
+    const adminCookie = cookie;
+    const gesetzt = await anfrage('POST', '/api/konto/passwort-setzen', { schluessel, passwort: 'mitglied-passwort' });
+    assert.equal(gesetzt.status, 200);
+    assert.notEqual(cookie, adminCookie);
+    assert.equal((await anfrage('GET', '/api/benutzer')).status, 403);
+    assert.equal((await anfrage('GET', '/api/typen')).status, 200);
+    const typen = (await anfrage('GET', '/api/typen')).body;
+    const partner = typen.find((t: { name: string }) => t.name === 'Vertragspartner');
+    const m = await anfrage('POST', '/api/mappen', { typId: partner.id, werte: { name: 'Vom Mitglied' } });
+    assert.equal(m.body.erstelltVon, gesetzt.body.benutzer.id);
+    assert.equal((await anfrage('POST', '/api/typen', { name: 'Verboten', felder: [] })).status, 403);
+    assert.equal((await anfrage('POST', '/api/konto/abmelden')).status, 204);
+    assert.equal((await anfrage('GET', '/api/typen')).status, 401);
+    cookie = adminCookie;
   });
 });

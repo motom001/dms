@@ -137,24 +137,24 @@ export class Dienst {
     if (!istOk(p)) throw new Fachfehler(422, 'Bitte die markierten Felder prüfen.', p);
   }
 
-  async legeMappeAn(eingabe: unknown): Promise<Mappe> {
+  async legeMappeAn(eingabe: unknown, benutzerId: string | null = null): Promise<Mappe> {
     const e = (eingabe ?? {}) as { id?: unknown; typId?: unknown; werte?: unknown };
     const typ = istUuid(e.typId) ? await this.repo.holeTyp(e.typId) : undefined;
     if (!typ) throw new Fachfehler(422, 'Unbekannter Mappentyp.');
     const werte = bereinigeWerte(typ, e.werte);
     await this.pruefeWerte(typ, werte);
     const id = istUuid(e.id) && !(await this.repo.holeMappe(e.id)) ? e.id : randomUUID();
-    return this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte));
+    return this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), benutzerId);
   }
 
-  async aendereMappe(id: string, eingabe: unknown): Promise<Mappe> {
+  async aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null): Promise<Mappe> {
     const m = await this.repo.holeMappe(id);
     if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
     const typ = await this.repo.holeTyp(m.typId);
     if (!typ) throw new Fachfehler(500, 'Der Mappentyp dieser Mappe fehlt.');
     const werte = bereinigeWerte(typ, (eingabe as { werte?: unknown })?.werte, m.werte);
     await this.pruefeWerte(typ, werte, id);
-    return this.repo.aendereMappe(id, werte, verweiseVon(typ, werte));
+    return this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), benutzerId);
   }
 
   async loescheMappe(id: string): Promise<void> {

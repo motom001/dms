@@ -1,115 +1,133 @@
 import { useEffect, useMemo, useState } from 'react';
-import { formatiere, istOk, titelFeld, type Mappentyp } from '../../../shared/src/model';
+import { formatiere, istOk, titelFeld, type Mappe, type Mappentyp } from '../../../shared/src/model';
 import { useDaten } from '../daten';
+import { useKonto } from '../konto';
 import { geheZu, Link } from '../ort';
 import { MappeAnsicht, NeueMappe } from './MappeFormular';
 
 /**
- * Ablage: hier wird mit Mappen gearbeitet. Feldeigenschaften und Schlüssel
- * bleiben unsichtbar – die gehören in die Einrichtung.
+ * Ablage in drei Spalten, von groß nach klein:
+ *   Sichten  →  Mappen der Sicht  →  eine Mappe
  *
- * /ablage                      erste Ablage öffnen
- * /ablage/:typId               Mappen eines Typs
- * /ablage/:typId/neu?verweis=  neue Mappe, optional mit vorbelegtem Verweis
- * /ablage/mappe/:id            eine Mappe
+ * /ablage/:sicht                    Sicht „eingang“ oder die Id eines Mappentyps
+ * /ablage/:sicht/:mappeId           Mappe rechts geöffnet
+ * /ablage/:typId/neu?verweis=k:id   neue Mappe, optional mit vorbelegtem Verweis
  */
+interface Eintrag { mappe: Mappe; typ: Mappentyp; titel: string; unter: string; problem?: string }
+
 export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchParams }) {
   const d = useDaten();
-  const [, a, b] = teile;
-  const mappe = a === 'mappe' ? d.mappe(b) : undefined;
-  const typ = mappe ? d.typ(mappe.typId) : d.typ(a);
+  const { ich } = useKonto();
+  const [, sicht, dritt] = teile;
 
-  useEffect(() => {
-    if (!a && d.typen.length) geheZu(`/ablage/${d.typen[0].id}`, true);
-  }, [a, d.typen]);
+  useEffect(() => { if (!sicht) geheZu('/ablage/eingang', true); }, [sicht]);
 
-  let inhalt;
-  if (!d.typen.length) {
-    inhalt = (
-      <div className="leer">
-        <h2>Die Ablage ist noch leer</h2>
-        <p>Lege in der Einrichtung fest, welche Arten von Mappen es gibt – zum Beispiel Vertragspartner, Verträge und Rechnungen. Oder lade die Beispiele, um das System kennenzulernen.</p>
-        <Link to="/einrichtung" className="knopf primaer">Zur Einrichtung</Link>
-      </div>
-    );
-  } else if (a === 'mappe') {
-    inhalt = mappe && typ ? <MappeAnsicht key={mappe.id} typ={typ} mappe={mappe} /> : <div className="leer"><p>Diese Mappe gibt es nicht (mehr).</p></div>;
-  } else if (typ && b === 'neu') {
-    inhalt = <NeueMappe key={`${typ.id}-${suche.get('verweis') ?? ''}`} typ={typ} verweis={suche.get('verweis') ?? undefined} />;
-  } else if (typ) {
-    inhalt = <MappenListe key={typ.id} typ={typ} />;
-  } else if (a) {
-    inhalt = <div className="leer"><p>Diese Ablage gibt es nicht (mehr).</p></div>;
+  // Eingang: eigene Mappen, die nicht (mehr) zur Definition passen.
+  // Mappen ohne bekannten Ersteller landen beim Administrator.
+  const eingang = useMemo<Eintrag[]>(() => d.mappen.flatMap((m) => {
+    const zustaendig = m.erstelltVon === ich.id || (ich.rolle === 'admin' && !m.erstelltVon);
+    const typ = d.typ(m.typId);
+    if (!zustaendig || !typ) return [];
+    const p = d.pruefe(typ, m.werte, m.id);
+    if (istOk(p)) return [];
+    const [key, msg] = Object.entries(p.felder)[0] ?? [];
+    const feld = typ.felder.find((f) => f.key === key);
+    return [{ mappe: m, typ, titel: d.titel(m), unter: typ.name, problem: feld ? `${feld.label}: ${msg?.[0]}` : p.allgemein[0] }];
+  }), [d, ich]);
+
+  const typ = sicht && sicht !== 'eingang' ? d.typ(sicht) : undefined;
+  const offen = dritt && dritt !== 'neu' ? d.mappe(dritt) : undefined;
+  const ebene = dritt ? 'mappe' : 'liste';
+
+  let rechts;
+  if (dritt === 'neu' && typ) {
+    rechts = <NeueMappe key={`${typ.id}-${suche.get('verweis') ?? ''}`} typ={typ} sicht={sicht} verweis={suche.get('verweis') ?? undefined} />;
+  } else if (offen) {
+    const t = d.typ(offen.typId);
+    rechts = t ? <MappeAnsicht key={offen.id} typ={t} mappe={offen} sicht={sicht} /> : null;
+  } else if (dritt) {
+    rechts = <div className="leer"><p>Diese Mappe gibt es nicht (mehr).</p></div>;
+  } else {
+    rechts = <div className="platzhalter"><p>Wähle in der Liste eine Mappe aus{typ ? ' oder lege eine neue an' : ''}.</p></div>;
   }
 
   return (
-    <div className="zweispaltig">
-      <aside className="leiste">
-        <h2 className="ueber">Ablage</h2>
-        <nav className="typliste" aria-label="Mappentypen">
+    <div className="drei" data-ebene={ebene}>
+      <aside className="spalte sichten" aria-label="Sichten">
+        <h2 className="ueber">Sichten</h2>
+        <nav className="sichtliste">
+          <Link to="/ablage/eingang" className={`sicht ${sicht === 'eingang' ? 'an' : ''}`}>
+            <span className="nm">Eingang</span>{eingang.length > 0 && <span className="zaehler">{eingang.length}</span>}
+          </Link>
+          {d.typen.length > 0 && <hr />}
           {d.typen.map((t) => (
-            <Link key={t.id} to={`/ablage/${t.id}`} className={`typeintrag ${typ?.id === t.id ? 'an' : ''}`}>
+            <Link key={t.id} to={`/ablage/${t.id}`} className={`sicht ${sicht === t.id ? 'an' : ''}`}>
               <span className="nm">{t.name}</span><span className="zahl">{d.mappenVon(t.id).length}</span>
             </Link>
           ))}
         </nav>
+        {!d.typen.length && <p className="leise klein">Noch keine Mappentypen. {ich.rolle === 'admin' ? <Link to="/einrichtung" className="verweis">Zur Einrichtung</Link> : 'Ein Administrator muss sie zuerst einrichten.'}</p>}
       </aside>
-      <section className="inhalt">{inhalt}</section>
+
+      <section className="spalte liste" aria-label="Mappen">
+        {sicht === 'eingang'
+          ? <Liste titel="Eingang" beschreibung="Deine Mappen, die nicht zur aktuellen Definition ihres Mappentyps passen. Sie verschwinden von hier, sobald sie korrigiert sind." eintraege={eingang} sicht="eingang" offen={offen?.id} leerText="Nichts zu tun." />
+          : typ ? <TypListe typ={typ} offen={offen?.id} />
+          : sicht ? <div className="leer"><p>Diese Sicht gibt es nicht (mehr).</p></div> : null}
+      </section>
+
+      <section className="spalte mappe" aria-label="Mappe">
+        <Link to={`/ablage/${sicht ?? 'eingang'}`} className="verweis nur-schmal">← Zur Liste</Link>
+        {rechts}
+      </section>
     </div>
   );
 }
 
-function MappenListe({ typ }: { typ: Mappentyp }) {
+function TypListe({ typ, offen }: { typ: Mappentyp; offen?: string }) {
   const d = useDaten();
-  const [filter, setFilter] = useState('');
   const tf = titelFeld(typ);
-  const spalten = typ.felder.filter((f) => f.key !== tf?.key && f.typ !== 'langtext').slice(0, 3);
+  const nebenfelder = typ.felder.filter((f) => f.key !== tf?.key && f.typ !== 'langtext').slice(0, 2);
   const titelVon = (id: string) => d.titel(d.mappe(id));
+  const eintraege = d.mappenVon(typ.id).map((m) => ({
+    mappe: m, typ, titel: d.titel(m),
+    unter: nebenfelder.map((f) => formatiere(f, m.werte[f.key], titelVon)).filter(Boolean).join(' · '),
+    problem: istOk(d.pruefe(typ, m.werte, m.id)) ? undefined : 'passt nicht zur Definition',
+  }));
+  return <Liste titel={typ.name} beschreibung={typ.beschreibung} eintraege={eintraege} sicht={typ.id} offen={offen} neu leerText="Noch keine Mappen in dieser Sicht." />;
+}
 
-  const zeilen = useMemo(() => {
-    const q = filter.trim().toLowerCase();
-    return d.mappenVon(typ.id).filter((m) => !q || typ.felder.some((f) => formatiere(f, m.werte[f.key], titelVon).toLowerCase().includes(q)));
-  }, [d, typ, filter]);
-
+function Liste(p: { titel: string; beschreibung?: string; eintraege: Eintrag[]; sicht: string; offen?: string; neu?: boolean; leerText: string }) {
+  const [filter, setFilter] = useState('');
+  const q = filter.trim().toLowerCase();
+  const sichtbar = q ? p.eintraege.filter((e) => `${e.titel} ${e.unter}`.toLowerCase().includes(q)) : p.eintraege;
   return (
     <>
-      <div className="seitenkopf">
+      <div className="listenkopf">
         <div>
-          <p className="ueber">Ablage</p>
-          <h1>{typ.name}</h1>
-          {typ.beschreibung && <p className="leise">{typ.beschreibung}</p>}
+          <h1>{p.titel}</h1>
+          {p.beschreibung && <p className="leise klein">{p.beschreibung}</p>}
         </div>
-        <Link to={`/ablage/${typ.id}/neu`} className="knopf gruen">+ Neue Mappe</Link>
+        {p.neu && <Link to={`/ablage/${p.sicht}/neu`} className="knopf gruen klein">+ Neu</Link>}
       </div>
-      <div className="blatt">
-        <div className="werkzeug">
-          <label className="suche" htmlFor="filter"><span className="sr">Mappen filtern</span>
-            <input id="filter" type="search" placeholder={`In ${typ.name} suchen …`} value={filter} onChange={(e) => setFilter(e.target.value)} />
-          </label>
-          <span className="leise">{zeilen.length} von {d.mappenVon(typ.id).length}</span>
-        </div>
-        {!zeilen.length ? (
-          <div className="leer"><p>{filter ? 'Keine Mappe passt zum Filter.' : 'Noch keine Mappen in dieser Ablage.'}</p></div>
-        ) : (
-          <div className="tabellenrahmen">
-            <table>
-              <thead><tr><th scope="col">{tf?.label ?? 'Titel'}</th>{spalten.map((f) => <th key={f.key} scope="col">{f.label}</th>)}<th scope="col"><span className="sr">Prüfung</span></th></tr></thead>
-              <tbody>
-                {zeilen.map((m) => {
-                  const ok = istOk(d.pruefe(typ, m.werte, m.id));
-                  return (
-                    <tr key={m.id}>
-                      <th scope="row"><Link to={`/ablage/mappe/${m.id}`} className="verweis">{d.titel(m)}</Link></th>
-                      {spalten.map((f) => <td key={f.key} className={['zahl', 'betrag', 'datum'].includes(f.typ) ? 'ziffern' : ''}>{formatiere(f, m.werte[f.key], titelVon)}</td>)}
-                      <td>{!ok && <span className="chip warn" title="Passt nicht zur aktuellen Definition des Mappentyps">prüfen</span>}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {p.eintraege.length > 5 && (
+        <label className="suche"><span className="sr">Liste filtern</span>
+          <input type="search" placeholder="Filtern …" value={filter} onChange={(e) => setFilter(e.target.value)} />
+        </label>
+      )}
+      {!sichtbar.length
+        ? <p className="leise leerliste">{q ? 'Nichts passt zum Filter.' : p.leerText}</p>
+        : <ul className="mappenliste">
+            {sichtbar.map((e) => (
+              <li key={e.mappe.id}>
+                <Link to={`/ablage/${p.sicht}/${e.mappe.id}`} className={`eintrag ${p.offen === e.mappe.id ? 'an' : ''}`}>
+                  <span className="titel">{e.titel}</span>
+                  {e.unter && <span className="unter">{e.unter}</span>}
+                  {e.problem && <span className="problem">{e.problem}</span>}
+                </Link>
+              </li>
+            ))}
+          </ul>}
     </>
   );
 }

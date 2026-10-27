@@ -2,12 +2,15 @@
 
 Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsystem für Haushalte. Statt loser Dokumente in Ordnern ordnet es **Mappen**: Vertragspartner, Verträge, Rechnungen, Gegenstände – verbunden über Verweise, so dass man von jeder Mappe aus zu allem Zugehörigen findet.
 
-> **Stand: Grundgerüst (v0.1).** Mappentypen mit Feldern definieren und Mappen erfassen. Dokumente, Register, Suche, Benutzer und Rechte folgen.
+> **Stand: v0.2.** Anmeldung und Benutzer, Mappentypen mit Feldern, Mappen in drei Spalten mit Eingang. Dokumente, Register, Suche und feinere Rechte folgen.
 
-## Die zwei Bereiche
+## Bereiche
 
-- **Ablage** – hier wird gearbeitet: Mappen anlegen, ausfüllen, über Verweise navigieren. Rückverweise erscheinen automatisch: Die Mappe eines Vertragspartners zeigt alle Verträge und Rechnungen, die auf ihn verweisen.
-- **Einrichtung** – hier wird festgelegt, welche Mappentypen es gibt und welche Felder sie haben (Datentyp, Pflichtfeld, eindeutig, Längen, Wertebereiche, Auswahllisten, Referenzen).
+- **Ablage** – hier wird gearbeitet, in drei Spalten von groß nach klein: Sichten, Mappen der Sicht, die geöffnete Mappe. Die Sicht **Eingang** sammelt Mappen, die nicht (mehr) zur Definition ihres Mappentyps passen, beim Ersteller der Mappe. Rückverweise erscheinen automatisch: Die Mappe eines Vertragspartners zeigt alle Verträge und Rechnungen, die auf ihn verweisen.
+- **Einrichtung** (Administratoren) – welche Mappentypen es gibt und welche Felder sie haben (Datentyp, Pflichtfeld, eindeutig, Längen, Wertebereiche, Auswahllisten, Referenzen).
+- **Benutzer** (Administratoren) – Benutzer anlegen, Rollen vergeben, Einladungs- und Passwort-Links verschicken.
+
+Jede Mappe trägt feste Indexwerte: angelegt am/von, zuletzt geändert am/von.
 
 Die Feldregeln gelten in der Oberfläche **und** auf dem Server (`shared/src/model.ts`), damit nichts Ungültiges in die Datenbank gelangt.
 
@@ -19,6 +22,16 @@ Bei jedem Push auf `main` baut GitHub Actions ein Image und legt es unter `ghcr.
 2. Das NAS einmalig bei der Registry anmelden: `docker login ghcr.io -u motom001` und das Token als Passwort eingeben.
 3. Die Vorlage [`deploy/nas/docker-compose.yml`](deploy/nas/docker-compose.yml) als Projekt anlegen, Pfade anpassen und daneben eine `.env` mit `DB_PASSWORD=…` ablegen.
 4. Starten. Die Oberfläche läuft unter `http://<NAS>:8080`. Beim ersten Start legt der Server die Tabellen selbst an.
+5. **Erster Aufruf:** Wer die Seite als Erstes öffnet, legt das Administrator-Konto an. Deshalb direkt nach dem ersten Start selbst aufrufen.
+
+### Einstellungen
+
+| Variable | Bedeutung |
+| --- | --- |
+| `DATABASE_URL` | Verbindung zu PostgreSQL (Pflicht) |
+| `APP_URL` | Adresse, unter der Benutzer das DMS öffnen; steht in den Links der E-Mails |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_SECURE` | E-Mail-Versand (optional). Ohne `SMTP_HOST` zeigt die Benutzerverwaltung Einladungs- und Passwort-Links zum Kopieren an; „Passwort vergessen“ setzt dann der Administrator zurück. |
+| `TRUST_PROXY` | `true`, wenn ein Reverse-Proxy davor sitzt |
 
 **Aktualisieren:** Image neu ziehen und das Projekt neu starten. Datenbank-Migrationen laufen beim Start automatisch.
 
