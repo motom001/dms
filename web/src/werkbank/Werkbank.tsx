@@ -6,6 +6,7 @@ import { BenutzerDetail, BenutzerListe, BenutzerNeu, useBenutzer } from './Benut
 import { DatenbankPanel, LanglaeuferListe, useDatenbank } from './Datenbank';
 import { DemoListe, DemoPanel } from './Demo';
 import { ProtokollDetail, ProtokollListe, useProtokoll } from './Protokoll';
+import { TechnikListe, TechnikPanel, useTechnik } from './Technik';
 
 /**
  * Werkbank für Administratoren, aufgebaut wie die Ablage:
@@ -16,6 +17,7 @@ import { ProtokollDetail, ProtokollListe, useProtokoll } from './Protokoll';
  * /werkbank/demo
  * /werkbank/protokoll[/:nr]
  * /werkbank/datenbank[/:id]
+ * /werkbank/technik
  */
 export function Werkbank({ teile }: { teile: string[] }) {
   const d = useDaten();
@@ -23,6 +25,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const benutzer = useBenutzer();
   const protokoll = useProtokoll(bereich === 'protokoll');
   const datenbank = useDatenbank(bereich === 'datenbank');
+  const technik = useTechnik(bereich === 'technik');
   // Anmeldungen und Aktivität ändern sich laufend: beim Öffnen der Benutzer neu laden.
   useEffect(() => { if (bereich === 'benutzer') void benutzer.laden(); }, [bereich, id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -48,6 +51,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'demo') {
     liste = <DemoListe />;
     rechts = <DemoPanel />;
+  } else if (bereich === 'technik') {
+    liste = <TechnikListe t={technik} />;
+    rechts = <TechnikPanel t={technik} />;
   } else if (bereich === 'datenbank') {
     liste = <LanglaeuferListe z={datenbank} offen={id} />;
     rechts = <DatenbankPanel z={datenbank} id={id} />;
@@ -57,7 +63,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   }
 
   return (
-    <div className="drei" data-ebene={id || bereich === 'demo' ? 'mappe' : 'liste'}>
+    <div className="drei" data-ebene={id || bereich === 'demo' || bereich === 'technik' ? 'mappe' : 'liste'}>
       <aside className="spalte sichten" aria-label="Bereiche">
         <h2 className="ueber">Werkbank</h2>
         <nav className="sichtliste">
@@ -65,6 +71,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           <Link to="/werkbank/benutzer" className={`sicht ${bereich === 'benutzer' ? 'an' : ''}`}><span className="nm">Benutzer</span><span className="zahl">{benutzer.geladen ? benutzer.liste.length : ''}</span></Link>
           <Link to="/werkbank/protokoll" className={`sicht ${bereich === 'protokoll' ? 'an' : ''}`}><span className="nm">Protokoll</span>{protokoll.debug?.an && <span className="zaehler" title="Debug-Modus ist an">Debug</span>}</Link>
           <Link to="/werkbank/datenbank" className={`sicht ${bereich === 'datenbank' ? 'an' : ''}`}><span className="nm">Datenbank</span></Link>
+          <Link to="/werkbank/technik" className={`sicht ${bereich === 'technik' ? 'an' : ''}`}><span className="nm">Technik</span></Link>
           <Link to="/werkbank/demo" className={`sicht ${bereich === 'demo' ? 'an' : ''}`}><span className="nm">Demo-Daten</span><span className="zahl">{Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || ''}</span></Link>
         </nav>
         {/* Freiwillig, ohne Gebühren für beide Seiten (GitHub Sponsors von persönlichen Konten). */}

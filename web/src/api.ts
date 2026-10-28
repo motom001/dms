@@ -97,6 +97,8 @@ export const api = {
     anfrage<ProtokollAntwort>('GET', `/api/werkbank/protokoll?${new URLSearchParams(Object.entries(f).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]))}`),
   debug: (an: boolean) => anfrage<DebugStand>('PUT', '/api/werkbank/debug', { an }),
   datenbank: () => anfrage<DatenbankStand>('GET', '/api/werkbank/datenbank'),
+  system: () => anfrage<Systemuebersicht>('GET', '/api/werkbank/system'),
+  versionsabgleich: (browser: Record<string, string>) => anfrage<Vergleich[]>('POST', '/api/werkbank/system/abgleich', { browser }),
   datenbankEinstellen: (e: MessEinstellungen) => anfrage<MessEinstellungen>('PUT', '/api/werkbank/datenbank', e),
   profil: (name: string) => anfrage<Benutzer>('PUT', '/api/konto/profil', { name }),
   entwicklermodus: (an: boolean) => anfrage<Benutzer>('PUT', '/api/konto/profil', { entwicklermodus: an }),
@@ -137,3 +139,11 @@ export interface MessEinstellungen { schwelleMs: number; tage: number }
 export interface Langlaeufer { id: number; zeit: string; dauerMs: number; zugriff: string; anfrage: string; benutzer: string }
 export interface LaufendeAbfrage { pid: number; seitMs: number; zustand: string; abfrage: string; anwendung: string }
 export interface DatenbankStand { einstellungen: MessEinstellungen | null; langlaeufer: Langlaeufer[]; laufend: LaufendeAbfrage[] }
+export interface Systemuebersicht {
+  dms: { version: string; commit: string | null; gebaut: string | null };
+  laufzeit: { node: string; system: string; architektur: string; container: boolean; alpine: string | null; zeitzone: string; laeuftSeit: string };
+  datenbank: { version: string; groesseBytes: number; mappen: number; typen: number; benutzer: number; dokumente: number; dokumenteBytes: number } | { fehler: string };
+  bibliotheken: Record<string, string | null>;
+  einstellungen: Record<string, string>;
+}
+export interface Vergleich { komponente: string; installiert: string | null; aktuell: string | null; status: 'aktuell' | 'neuer' | 'veraltet' | 'unbekannt'; hinweis?: string; quelle: string }

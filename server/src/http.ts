@@ -6,6 +6,7 @@ import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import type { Konten } from './konten';
 import type { Messung } from './messung';
+import type { SystemQuelle } from './system';
 import { kontext, protokoll, type Kontext, type Stufe } from './protokoll';
 import { dateiKoepfe, leseCookie, modulAus, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage } from './routen';
 
@@ -25,6 +26,9 @@ interface Optionen {
   proxy?: boolean;
   /** Messung der Datenbankzugriffe (lange Zugriffe, Server-Timing). */
   messung?: Messung;
+  system?: SystemQuelle;
+  mailHost?: string;
+  abruf?: (url: string) => Promise<unknown>;
 }
 
 export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}) {
@@ -63,7 +67,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
   // Datei-Uploads kommen als rohe Bytes (application/octet-stream).
   app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer' }, (_req, body, fertig) => fertig(null, body));
 
-  for (const r of routen(dienst, konten, opt.messung)) {
+  for (const r of routen(dienst, konten, opt)) {
     app.route({
       method: r.methode,
       url: r.pfad,

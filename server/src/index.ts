@@ -8,6 +8,7 @@ import { Konten } from './konten';
 import { pgKontoRepo } from './konto-repo';
 import { Messung, pgMessSpeicher } from './messung';
 import { protokoll } from './protokoll';
+import { pgSystemQuelle } from './system';
 import { pgRepo } from './repo-pg';
 import { erstelleMailer } from './smtp';
 
@@ -64,6 +65,8 @@ const app = await baueApp(dienst, konten, {
   sicher: cfg.appUrl.startsWith('https://'),
   proxy: cfg.proxy,
   messung,
+  system: pgSystemQuelle(sql, cfg.haushalt),
+  mailHost: mailer ? env.SMTP_HOST : undefined,
 });
 
 log.info(`E-Mail-Versand: ${mailer ? `über ${env.SMTP_HOST}` : 'aus (SMTP_HOST nicht gesetzt) – Links werden in der Benutzerverwaltung angezeigt'}`);

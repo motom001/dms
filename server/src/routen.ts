@@ -7,6 +7,7 @@ import { Fachfehler } from './fehler';
 import { SITZUNG_TAGE, type Konten } from './konten';
 import type { SitzungIntern } from './konto-repo';
 import type { Messung } from './messung';
+import { uebersicht, versionsabgleich, type SystemQuelle } from './system';
 import { MODULE, protokoll, STUFEN, type Stufe } from './protokoll';
 
 const L = {
@@ -65,7 +66,20 @@ const ich = (a: Anfrage) => {
   return a.benutzer;
 };
 
-export function routen(dienst: Dienst, konten: Konten, messung?: Messung, log: (m: string) => void = (m) => L.mail.warn(m)): Route[] {
+export interface RoutenExtras {
+  messung?: Messung;
+  /** Datenbankangaben für die Versionsübersicht. */
+  system?: SystemQuelle;
+  /** SMTP-Host, wenn E-Mail eingerichtet ist (nur zur Anzeige). */
+  mailHost?: string;
+  /** Für Tests: Abruf fremder Adressen beim Versionsabgleich. */
+  abruf?: (url: string) => Promise<unknown>;
+  log?: (m: string) => void;
+}
+
+export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Route[] {
+  const { messung, system } = x;
+  const log = x.log ?? ((m: string) => L.mail.warn(m));
   const typName = async (id: string) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? id;
   return [
     { methode: 'GET', pfad: '/api/gesundheit', zugang: 'offen', handler: async () => ok({ ok: true }) },
@@ -230,6 +244,16 @@ export function routen(dienst: Dienst, konten: Konten, messung?: Messung, log: (
       const an = !!b(a).an;
       const r = protokoll.setzeDebug(an);
       L.system.warn(an ? `Debug-Modus eingeschaltet bis ${new Date(r.bis!).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin' })}` : 'Debug-Modus ausgeschaltet');
+      return ok(r);
+    } },
+
+    /* ---------- Technik und Versionen ---------- */
+    { methode: 'GET', pfad: '/api/werkbank/system', zugang: 'admin', handler: async () => ok(await uebersicht(system, x.mailHost)) },
+    { methode: 'POST', pfad: '/api/werkbank/system/abgleich', zugang: 'admin', handler: async (a) => {
+      const browser = Object.fromEntries(Object.entries((b(a).browser ?? {}) as Record<string, unknown>).map(([k, v]) => [k, String(v)]));
+      const start = Date.now();
+      const r = await versionsabgleich(await uebersicht(system, x.mailHost), browser, x.abruf);
+      L.werkbank.info('Versionsabgleich', { ms: Date.now() - start, neuer: r.filter((v) => v.status === 'neuer' || v.status === 'veraltet').map((v) => v.komponente).join(', ') || undefined });
       return ok(r);
     } },
 

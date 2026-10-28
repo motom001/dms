@@ -13,7 +13,12 @@ COPY web web
 RUN npm run build
 
 FROM node:22-alpine
-ENV NODE_ENV=production
+# Stand des Images für die Versionsübersicht in der Werkbank (setzt GitHub Actions).
+ARG DMS_COMMIT=""
+ARG DMS_GEBAUT=""
+ENV NODE_ENV=production \
+    DMS_COMMIT=$DMS_COMMIT \
+    DMS_GEBAUT=$DMS_GEBAUT
 WORKDIR /app
 COPY package.json ./
 COPY server/package.json server/

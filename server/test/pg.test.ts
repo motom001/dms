@@ -35,7 +35,11 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const messung = new Messung(pgMessSpeicher(sql, HAUSHALT));
     await messung.start();
     app = await baueApp(new Dienst(messung.umhuelle(pgRepo(sql, HAUSHALT), 'mappen'), ordnerSpeicher(ordner, HAUSHALT)),
-      new Konten(messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'), null, 'http://nas:3000'), { messung });
+      new Konten(messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'), null, 'http://nas:3000'), {
+        messung, system: (await import('../src/system')).pgSystemQuelle(sql, HAUSHALT),
+        // Kein Internet im Test: Abgleich mit festen Antworten.
+        abruf: async (url: string) => { if (url.includes('npmjs')) return { version: '99.0.0' }; throw new Error('offline'); },
+      });
   });
   after(async () => { await app?.close(); await sql?.end(); });
 
@@ -315,5 +319,17 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     // Entwicklermodus im Profil
     assert.equal((await anfrage('PUT', '/api/konto/profil', { entwicklermodus: true })).body.entwicklermodus, true);
     assert.equal((await anfrage('GET', '/api/konto/status')).body.benutzer.entwicklermodus, true);
+  });
+
+  it('zeigt Technik und Versionen und gleicht sie auf Knopfdruck ab', async () => {
+    const u = (await anfrage('GET', '/api/werkbank/system')).body;
+    assert.match(u.datenbank.version, /^17/);
+    assert.ok(u.datenbank.mappen >= 1);
+    assert.equal(u.bibliotheken.fastify?.split('.')[0], '5');
+    assert.ok(!JSON.stringify(u).includes('dms:dms'), 'keine Zugangsdaten');
+    const r = (await anfrage('POST', '/api/werkbank/system/abgleich', { browser: { react: '19.0.0' } })).body;
+    assert.equal(r.find((v: { komponente: string }) => v.komponente === 'fastify').status, 'neuer');
+    assert.equal(r.find((v: { komponente: string }) => v.komponente === 'Node.js').status, 'unbekannt');
+    assert.ok(r.some((v: { komponente: string }) => v.komponente === 'react'));
   });
 });

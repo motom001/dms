@@ -4,7 +4,7 @@
 
 Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsystem für Haushalte. Statt loser Dokumente in Ordnern ordnet es **Mappen**: Vertragspartner, Verträge, Rechnungen, Gegenstände – verbunden über Verweise, so dass man von jeder Mappe aus zu allem Zugehörigen findet.
 
-> **Stand: v0.4.** Anmeldung und Benutzer, Mappentypen mit Feldern und Registern, Dokumente, Mappen in drei Spalten mit Eingang. Suche, Texterkennung und feinere Rechte folgen.
+> **Stand: v0.5.** Anmeldung und Benutzer, Mappentypen mit Feldern und Registern, Dokumente, Mappen in drei Spalten mit Eingang, seitenweises Laden und Suche über Titel und Werte, Protokoll, Zeitmessung und Versionsübersicht. Volltextsuche in Dokumenten, Texterkennung und feinere Rechte folgen.
 
 ## Bereiche
 
@@ -12,6 +12,7 @@ Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsyste
 - **Werkbank** (Administratoren), ebenfalls dreigeteilt:
   - *Mappentypen* – Felder (Datentyp, Pflichtfeld, eindeutig, Längen, Wertebereiche, Auswahllisten, Referenzen), Register und Titel-Vorlage,
   - *Benutzer* – anlegen, Rollen vergeben, Einladungs- und Passwort-Links,
+  - *Technik* – installierte Versionen (DMS, Node.js, PostgreSQL, Bibliotheken), zum Kopieren in ein GitHub-Issue, und ein Abgleich mit neueren Versionen auf Knopfdruck,
   - *Datenbank* – lange Datenbankzugriffe (Schwelle und Aufbewahrung einstellbar, Standard 500 ms und 30 Tage) und was gerade in der Datenbank läuft,
   - *Protokoll* – was im System passiert, je Modul (konto, ablage, werkbank, dokumente, datenbank, mail, system, http), mit Filtern und Live-Aktualisierung; Debug-Modus für eine Stunde,
   - *Demo-Daten* – Beispiel-Mappentypen laden, beliebig viele Demo-Mappen für die vorhandenen Typen erzeugen und gesammelt wieder entfernen.
@@ -79,12 +80,14 @@ Tests: `npm test`. Mit `TEST_DATABASE_URL` laufen zusätzlich die Tests gegen Po
 
 ## Aufbau
 
+Technik im Überblick: [docs/technik.md](docs/technik.md).
+
 ```
 shared/   Fachmodell und Prüfregeln (Server und Oberfläche)
 server/   Fastify-API, PostgreSQL (postgres.js), SQL-Migrationen
 web/      React-Oberfläche (Vite)
 deploy/   Vorlagen für den Betrieb
-docs/     Entscheidungen und Konzept
+docs/     Technik, Entscheidungen und Konzept
 ```
 
 Wichtig: **Keine echten Dokumente oder persönlichen Daten committen** – nur Code und Beispieldaten.

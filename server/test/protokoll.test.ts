@@ -80,3 +80,35 @@ describe('Messung der Datenbankzugriffe', () => {
     await assert.rejects(m.setze({ schwelleMs: 0 }));
   });
 });
+
+describe('Versionsübersicht', () => {
+  it('vergleicht Versionen und meldet Neueres, Veraltetes und Fehler je Komponente', async () => {
+    const { uebersicht, versionsabgleich, vergleicheVersion } = await import('../src/system');
+    assert.ok(vergleicheVersion('22.11.0', '22.9.1') > 0);
+    assert.equal(vergleicheVersion('v17.4', '17.4.0'), 0);
+    process.env.DMS_COMMIT = 'aaaaaaa1111111';
+    const u = await uebersicht({ async datenbank() { return { version: '17.4 (Debian 17.4-1.pgdg120+2)', groesseBytes: 1, mappen: 1, typen: 1, benutzer: 1, dokumente: 0, dokumenteBytes: 0 }; } }, undefined);
+    delete process.env.DMS_COMMIT;
+    assert.equal(u.laufzeit.node, process.versions.node);
+    assert.ok('version' in u.datenbank);
+    const nodeReihe = process.versions.node.split('.')[0];
+    const abruf = async (url: string): Promise<unknown> => {
+      if (url.includes('/commits/main')) return { sha: 'bbbbbbb2222222', commit: { committer: { date: '2026-10-28T08:00:00Z' }, message: 'Neues\n\nDetails' } };
+      if (url.includes('/compare/')) return { ahead_by: 3 };
+      if (url.endsWith('/nodejs.json')) return [{ cycle: '99', latest: '99.0.0', eol: '2099-01-01', lts: '2098-01-01' }, { cycle: nodeReihe, latest: '999.0.0', eol: '2000-01-01', lts: true }];
+      if (url.endsWith('/postgresql.json')) return [{ cycle: '18', latest: '18.1', eol: '2030-11-14' }, { cycle: '17', latest: '17.4', eol: '2029-11-08' }];
+      if (url.includes('registry.npmjs.org/fastify')) throw new Error('503 Service Unavailable');
+      return { version: '0.0.1' };
+    };
+    const r = await versionsabgleich(u, { react: '19.1.0' }, abruf);
+    const v = (k: string) => r.find((x) => x.komponente === k)!;
+    assert.equal(v('DMS').status, 'neuer');
+    assert.match(v('DMS').hinweis!, /3 neuere Änderungen/);
+    assert.equal(v('Node.js').status, 'veraltet');
+    assert.equal(v('PostgreSQL').status, 'aktuell');
+    assert.match(v('PostgreSQL').hinweis!, /Neueste Reihe: 18/);
+    assert.equal(v('fastify').status, 'unbekannt');
+    assert.match(v('fastify').hinweis!, /503/);
+    assert.equal(v('react').status, 'aktuell');
+  });
+});

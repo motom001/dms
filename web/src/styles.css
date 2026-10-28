@@ -375,3 +375,10 @@ progress::-moz-progress-bar { background: var(--akzent); border-radius: 999px; }
 .messbalken .ausw, .messung li.ausw::before { background: var(--m-ausw); }
 .messbalken .darst, .messung li.darst::before { background: var(--m-darst); }
 .messung li::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: 0; }
+
+/* Technik */
+.technikgruppe { display: flex; flex-direction: column; gap: 4px; }
+.technikgruppe dl { margin: 0; display: flex; flex-direction: column; }
+.technikgruppe dl > div { display: grid; grid-template-columns: minmax(110px, 40%) 1fr; gap: 8px; padding: 5px 2px; border-bottom: 1px solid var(--linie); font-size: 13px; }
+.technikgruppe dt { color: var(--leise); }
+.technikgruppe dd { margin: 0; overflow-wrap: anywhere; }
