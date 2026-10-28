@@ -13,6 +13,7 @@ import { Designs, pgDesignRepo } from './designs';
 import { ApiSchluesselDienst, pgApiSchluesselRepo } from './apischluessel';
 import { pgRepo } from './repo-pg';
 import { Betrieb, pgBetriebSpeicher } from './betrieb';
+import { STANDARD_DATEI, Tresor } from './tresor';
 
 const pfad = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
 const env = process.env;
@@ -48,7 +49,10 @@ await mkdir(cfg.dateien, { recursive: true });
 
 // E-Mail-Versand und Adresse des DMS stehen in der Werkbank (#37); frühere Umgebungsvariablen
 // werden beim ersten Start nach dem Update einmalig übernommen.
-const betrieb = new Betrieb(pgBetriebSpeicher(sql, cfg.haushalt), `http://localhost:${cfg.port}`);
+// Schlüssel für verschlüsselte Zugangsdaten (#39): eine Datei, nie in der Datenbank.
+const tresor = new Tresor(pgBetriebSpeicher(sql, cfg.haushalt), env.DMS_SCHLUESSEL_DATEI || STANDARD_DATEI);
+await tresor.laden();
+const betrieb = new Betrieb(pgBetriebSpeicher(sql, cfg.haushalt), `http://localhost:${cfg.port}`, tresor);
 await betrieb.laden();
 await betrieb.uebernimmAlteVariablen(env);
 
@@ -67,6 +71,7 @@ const app = await baueApp(dienst, konten, {
   designs: new Designs(messung.umhuelle(pgDesignRepo(sql, cfg.haushalt), 'designs')),
   apiSchluessel: new ApiSchluesselDienst(messung.umhuelle(pgApiSchluesselRepo(sql), 'apischluessel')),
   betrieb,
+  tresor,
 });
 
 const kurz = betrieb.kurz();

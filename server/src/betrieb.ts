@@ -4,6 +4,7 @@ import { istEmail } from '../../shared/src/model';
 import { Fachfehler } from './fehler';
 import type { Mailer } from './mail';
 import { kontext, protokoll } from './protokoll';
+import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
 
 /**
  * Betriebseinstellungen, die früher Umgebungsvariablen waren (#37):
@@ -22,14 +23,24 @@ export interface MailEinstellungen {
   port: number;
   verbindung: Verbindung;
   benutzer: string;
-  /** Vorerst unverschlüsselt gespeichert (Verschlüsselung: #39). Geht nie an die Oberfläche. */
+  /**
+   * Mit dem Schlüssel aus der Werkbank verschlüsselt (#39), so wie gespeichert.
+   * Ältere Stände (bis 0.10) hielten es im Klartext; das wird verschlüsselt, sobald es einen Schlüssel gibt.
+   * Geht nie an die Oberfläche.
+   */
   passwort: string;
   absender: string;
   /** Selbstsigniertes Zertifikat des Mailservers erlauben (eigener Server im Heimnetz). */
   selbstsigniert: boolean;
 }
 /** So sieht die Oberfläche die Einstellungen: ohne Passwort. */
-export type MailAnsicht = Omit<MailEinstellungen, 'passwort'> & { passwortGesetzt: boolean };
+export type MailAnsicht = Omit<MailEinstellungen, 'passwort'> & {
+  passwortGesetzt: boolean;
+  /** false = mit einem verlorenen Schlüssel verschlüsselt; bitte neu eingeben. */
+  passwortLesbar: boolean;
+  /** Liegt noch im Klartext (aus einer älteren Version), bis es einen Schlüssel gibt. */
+  passwortUnverschluesselt: boolean;
+};
 
 const LEER: MailEinstellungen = { aktiv: false, host: '', port: 587, verbindung: 'starttls', benutzer: '', passwort: '', absender: '', selbstsigniert: false };
 
@@ -50,7 +61,7 @@ export function pruefeAdresse(e: unknown): string {
   return `${u.protocol}//${u.host}${u.pathname.replace(/\/+$/, '')}`;
 }
 
-function bereinige(e: unknown, alt: MailEinstellungen): MailEinstellungen {
+function bereinige(e: unknown, alt: MailEinstellungen, verschluessele: (klartext: string) => string): MailEinstellungen {
   const x = (e ?? {}) as Record<string, unknown>;
   const text = (v: unknown, max = 200) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
   const verbindung = (Object.keys(VERBINDUNGEN) as Verbindung[]).includes(x.verbindung as Verbindung) ? (x.verbindung as Verbindung) : 'starttls';
@@ -62,7 +73,7 @@ function bereinige(e: unknown, alt: MailEinstellungen): MailEinstellungen {
     verbindung,
     benutzer: text(x.benutzer),
     // Leeres Feld = bisheriges Passwort behalten; zum Löschen gibt es passwortLoeschen.
-    passwort: x.passwortLoeschen === true ? '' : typeof x.passwort === 'string' && x.passwort !== '' ? x.passwort.slice(0, 500) : alt.passwort,
+    passwort: x.passwortLoeschen === true ? '' : typeof x.passwort === 'string' && x.passwort !== '' ? verschluessele(x.passwort.slice(0, 500)) : alt.passwort,
     absender: text(x.absender),
     selbstsigniert: x.selbstsigniert === true,
   };
@@ -75,14 +86,14 @@ function bereinige(e: unknown, alt: MailEinstellungen): MailEinstellungen {
   return m;
 }
 
-function transport(m: MailEinstellungen) {
+function transport(m: MailEinstellungen, passwort: string) {
   return nodemailer.createTransport({
     host: m.host,
     port: m.port,
     secure: m.verbindung === 'ssl',
     requireTLS: m.verbindung === 'starttls',
     ignoreTLS: m.verbindung === 'keine',
-    auth: m.benutzer ? { user: m.benutzer, pass: m.passwort } : undefined,
+    auth: m.benutzer ? { user: m.benutzer, pass: passwort } : undefined,
     tls: { rejectUnauthorized: !m.selbstsigniert },
     connectionTimeout: 10_000,
     greetingTimeout: 10_000,
@@ -111,12 +122,49 @@ export class Betrieb {
   private adresse = '';
   private aktuellerMailer: Mailer | null = null;
 
-  constructor(private speicher: BetriebSpeicher, private standardAdresse = 'http://localhost:3000') {}
+  constructor(private speicher: BetriebSpeicher, private standardAdresse = 'http://localhost:3000', private tresor?: Tresor) {
+    tresor?.registriere(async () => this.betroffen(), async () => this.verschluesseleAltes());
+  }
+
+  /** Neues Passwort verschlüsseln; ohne Schlüssel wird nichts gespeichert. */
+  private verschluessele = (klartext: string): string => {
+    if (!this.tresor) throw new Fachfehler(409, 'Passwörter lassen sich erst speichern, wenn es einen Schlüssel gibt (Werkbank → Verschlüsselung).');
+    return this.tresor.verschluessele(klartext);
+  };
+
+  /** Passwort für die Anmeldung am Mailserver; leer, wenn es nicht lesbar ist. */
+  private klartext(gespeichert: string): string {
+    if (!gespeichert) return '';
+    if (!istVerschluesselt(gespeichert)) return gespeichert;
+    return this.tresor?.entschluessele(gespeichert) ?? '';
+  }
+
+  private betroffen(): Betroffen[] {
+    const p = this.mail.passwort;
+    if (!p) return [];
+    if (!istVerschluesselt(p)) return [{ bereich: 'E-Mail und Adresse', was: 'Passwort des Mailservers', wo: 'liegt noch unverschlüsselt und wird verschlüsselt, sobald es einen Schlüssel gibt' }];
+    return this.tresor?.lesbar(p) ? [] : [{ bereich: 'E-Mail und Adresse', was: 'Passwort des Mailservers', wo: 'bitte in der Werkbank unter „E-Mail und Adresse“ neu eingeben' }];
+  }
+
+  /** Passwort aus älteren Ständen (Klartext) verschlüsseln, sobald es einen Schlüssel gibt. */
+  async verschluesseleAltes() {
+    const p = this.mail.passwort;
+    if (!p || istVerschluesselt(p) || !this.tresor?.bereit) return;
+    this.mail = { ...this.mail, passwort: this.tresor.verschluessele(p) };
+    await this.speicher.schreibe('mail', this.mail);
+    protokoll.modul('system').info('Passwort des Mailservers verschlüsselt');
+  }
 
   /** Lädt die gespeicherten Einstellungen; einmal beim Start. */
   async laden() {
     this.mail = { ...LEER, ...((await this.speicher.lies('mail')) as Partial<MailEinstellungen> | null ?? {}) };
     this.adresse = String((await this.speicher.lies('adresse')) ?? '');
+    await this.verschluesseleAltes();
+    if (this.mail.passwort && !istVerschluesselt(this.mail.passwort)) {
+      protokoll.modul('system').warn('Das Passwort des Mailservers liegt noch unverschlüsselt in der Datenbank. Erzeuge in der Werkbank unter „Verschlüsselung“ einen Schlüssel.');
+    } else if (this.mail.passwort && !this.klartext(this.mail.passwort)) {
+      log.error('Das Passwort des Mailservers ist mit dem vorhandenen Schlüssel nicht lesbar. Bitte in der Werkbank neu eingeben.');
+    }
     this.baueMailer();
   }
 
@@ -134,7 +182,8 @@ export class Betrieb {
       this.mail = bereinige({
         aktiv: true, host: env.SMTP_HOST, port, verbindung: ssl ? 'ssl' : 'starttls',
         benutzer: env.SMTP_USER ?? '', passwort: env.SMTP_PASS ?? '', absender: env.SMTP_FROM ?? '',
-      }, LEER);
+        // Ohne Schlüssel bleibt es vorerst im Klartext und wird verschlüsselt, sobald es einen gibt.
+      }, LEER, (k) => (this.tresor?.bereit ? this.tresor.verschluessele(k) : k));
       await this.speicher.schreibe('mail', this.mail);
       this.baueMailer();
       sys.info('E-Mail-Einstellungen aus den Umgebungsvariablen übernommen', { server: this.mail.host });
@@ -152,7 +201,7 @@ export class Betrieb {
   private baueMailer() {
     if (!this.mail.aktiv || !this.mail.host) { this.aktuellerMailer = null; return; }
     const m = { ...this.mail };
-    const t = transport(m);
+    const t = transport(m, this.klartext(m.passwort));
     this.aktuellerMailer = {
       async sende(an, betreff, text) {
         const start = Date.now();
@@ -189,13 +238,21 @@ export class Betrieb {
 
   /* ---------- für die Werkbank ---------- */
 
-  ansicht(): { mail: MailAnsicht; adresse: string; vorschlag: string | null; verbindungen: typeof VERBINDUNGEN } {
+  ansicht(): { mail: MailAnsicht; adresse: string; vorschlag: string | null; verbindungen: typeof VERBINDUNGEN; passwoerterMoeglich: boolean } {
     const { passwort, ...ohne } = this.mail;
-    return { mail: { ...ohne, passwortGesetzt: !!passwort }, adresse: this.adresse, vorschlag: kontext.getStore()?.ursprung ?? null, verbindungen: VERBINDUNGEN };
+    return {
+      mail: {
+        ...ohne, passwortGesetzt: !!passwort,
+        passwortLesbar: !passwort || !istVerschluesselt(passwort) || !!this.tresor?.lesbar(passwort),
+        passwortUnverschluesselt: !!passwort && !istVerschluesselt(passwort),
+      },
+      adresse: this.adresse, vorschlag: kontext.getStore()?.ursprung ?? null, verbindungen: VERBINDUNGEN,
+      passwoerterMoeglich: !!this.tresor?.bereit,
+    };
   }
 
   async speichereMail(e: unknown) {
-    const neu = bereinige(e, this.mail);
+    const neu = bereinige(e, this.mail, this.verschluessele);
     const vorher = this.mail;
     await this.speicher.schreibe('mail', neu);
     this.mail = neu;
@@ -215,18 +272,21 @@ export class Betrieb {
   }
 
   /** Mit den Werten aus dem Formular (noch nicht gespeichert); leeres Passwort = gespeichertes. */
-  private probe(e: unknown): MailEinstellungen {
-    const m = bereinige({ ...(e as object), aktiv: false }, this.mail);
+  private probe(e: unknown): { m: MailEinstellungen; passwort: string } {
+    // Zum Prüfen wird nichts gespeichert: ein eingegebenes Passwort bleibt im Klartext.
+    const x = (e ?? {}) as Record<string, unknown>;
+    const eingegeben = typeof x.passwort === 'string' && x.passwort !== '' && x.passwortLoeschen !== true;
+    const m = bereinige({ ...x, aktiv: false }, this.mail, (k) => k);
     if (!m.host) throw new Fachfehler(422, 'Bitte zuerst den Server angeben.');
-    return m;
+    return { m, passwort: eingegeben ? m.passwort : this.klartext(m.passwort) };
   }
 
   /** Meldet sich am Mailserver an, ohne etwas zu senden. */
   async pruefeVerbindung(e: unknown): Promise<{ ok: boolean; meldung: string }> {
-    const m = this.probe(e);
+    const { m, passwort } = this.probe(e);
     const start = Date.now();
     try {
-      await transport(m).verify();
+      await transport(m, passwort).verify();
       log.info('Verbindung zum Mailserver geprüft', { server: m.host, ms: Date.now() - start });
       return { ok: true, meldung: `Verbindung zu ${m.host}:${m.port} steht${m.benutzer ? `, Anmeldung als ${m.benutzer} erfolgreich` : ''} (${Date.now() - start} ms).` };
     } catch (f) {
@@ -238,9 +298,9 @@ export class Betrieb {
   async sendeTestmail(e: unknown, an: unknown): Promise<{ ok: boolean; meldung: string }> {
     const ziel = typeof an === 'string' ? an.trim() : '';
     if (!istEmail(ziel)) throw new Fachfehler(422, 'Bitte eine gültige E-Mail-Adresse für die Testmail angeben.');
-    const m = this.probe(e);
+    const { m, passwort } = this.probe(e);
     try {
-      await transport(m).sendMail({
+      await transport(m, passwort).sendMail({
         from: absenderVon(m), to: ziel, subject: 'Testmail vom DMS',
         text: `Hallo,\n\ndiese Testmail kommt aus der Werkbank deines DMS. Der E-Mail-Versand über ${m.host} funktioniert.\n`,
       });

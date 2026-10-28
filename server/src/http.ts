@@ -12,6 +12,7 @@ import type { ApiSchluesselDienst } from './apischluessel';
 import { wer } from './api-v1';
 import { kontext, protokoll, type Kontext, type Stufe } from './protokoll';
 import type { Betrieb } from './betrieb';
+import type { Tresor } from './tresor';
 import { dateiKoepfe, leseCookie, modulAus, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage } from './routen';
 
 /** Häufige Abfragen, die das Protokoll sonst fluten würden. */
@@ -34,6 +35,7 @@ interface Optionen {
   designs?: Designs;
   apiSchluessel?: ApiSchluesselDienst;
   betrieb?: Betrieb;
+  tresor?: Tresor;
   abruf?: (url: string) => Promise<unknown>;
 }
 

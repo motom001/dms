@@ -127,6 +127,8 @@ export const api = {
   versionsabgleich: (browser: Record<string, string>) => anfrage<Vergleich[]>('POST', '/api/werkbank/system/abgleich', { browser }),
   datenbankEinstellen: (e: MessEinstellungen) => anfrage<MessEinstellungen>('PUT', '/api/werkbank/datenbank', e),
   /* E-Mail-Versand und Adresse des DMS (#37) */
+  tresor: () => anfrage<TresorStatus>('GET', '/api/werkbank/tresor'),
+  tresorErzeugen: () => anfrage<TresorStatus>('POST', '/api/werkbank/tresor/erzeugen'),
   betrieb: () => anfrage<BetriebAnsicht>('GET', '/api/werkbank/betrieb'),
   mailSpeichern: (m: MailEingabe) => anfrage<BetriebAnsicht>('PUT', '/api/werkbank/betrieb/mail', m),
   adresseSpeichern: (adresse: string) => anfrage<BetriebAnsicht>('PUT', '/api/werkbank/betrieb/adresse', { adresse }),
@@ -187,7 +189,17 @@ export interface MailAnsicht {
   aktiv: boolean; host: string; port: number; verbindung: Verbindung; benutzer: string; absender: string; selbstsigniert: boolean;
   /** Das Passwort selbst kommt nie zurück. */
   passwortGesetzt: boolean;
+  /** false = mit einem verlorenen Schlüssel verschlüsselt (#39). */
+  passwortLesbar: boolean;
+  /** Noch im Klartext aus einer älteren Version, bis es einen Schlüssel gibt. */
+  passwortUnverschluesselt: boolean;
 }
-export type MailEingabe = Omit<MailAnsicht, 'passwortGesetzt'> & { passwort?: string; passwortLoeschen?: boolean };
-export interface BetriebAnsicht { mail: MailAnsicht; adresse: string; vorschlag: string | null; verbindungen: Record<Verbindung, string> }
+export type MailEingabe = Omit<MailAnsicht, 'passwortGesetzt' | 'passwortLesbar' | 'passwortUnverschluesselt'> & { passwort?: string; passwortLoeschen?: boolean };
+export interface BetriebAnsicht { mail: MailAnsicht; adresse: string; vorschlag: string | null; verbindungen: Record<Verbindung, string>; passwoerterMoeglich: boolean }
+export interface TresorStatus {
+  zustand: 'vorhanden' | 'fehlt' | 'verloren' | 'falsch';
+  fingerabdruck: string | null; erwartet: string | null; erstellt: string | null; datei: string;
+  eingebunden: boolean | null;
+  betroffen: Array<{ bereich: string; was: string; wo?: string }>;
+}
 export interface Probe { ok: boolean; meldung: string }

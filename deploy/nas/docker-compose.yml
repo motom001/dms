@@ -33,5 +33,8 @@ services:
       # (Werkbank → E-Mail und Adresse), nicht mehr hier.
     volumes:
       - /volume1/docker/dms/files:/data/files
+      # Schlüssel für gespeicherte Passwörter (Werkbank → Verschlüsselung).
+      # Getrennt von der Datenbank sichern – ohne ihn sind Passwörter in einer Sicherung nicht lesbar.
+      - /volume1/docker/dms/geheim:/data/geheim
     ports:
       - "8080:3000"

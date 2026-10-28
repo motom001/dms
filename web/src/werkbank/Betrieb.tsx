@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, type BetriebAnsicht, type MailEingabe, type Probe, type Verbindung } from '../api';
 import { useKonto } from '../konto';
-import { useUngespeichert } from '../ort';
+import { Link, useUngespeichert } from '../ort';
 
 /**
  * E-Mail-Versand und Adresse des DMS (#37) – früher Umgebungsvariablen (SMTP_*, APP_URL),
@@ -130,13 +130,17 @@ function Mail({ b }: { b: BetriebZustand }) {
         <label className="eigenschaft"><span>Port</span><input type="number" min={1} max={65535} value={m.port} onChange={(e) => setze({ port: Number(e.target.value) })} /></label>
         <label className="eigenschaft"><span>Benutzer <small>leer = ohne Anmeldung</small></span><input value={m.benutzer} onChange={(e) => setze({ benutzer: e.target.value })} autoComplete="off" spellCheck={false} /></label>
         <label className="eigenschaft"><span>Passwort <small>{s.mail.passwortGesetzt && !loeschen ? 'gesetzt – leer lassen, um es zu behalten' : 'nicht gesetzt'}</small></span>
-          <input type="password" value={m.passwort} onChange={(e) => { setze({ passwort: e.target.value }); setLoeschen(false); }} autoComplete="new-password" placeholder={s.mail.passwortGesetzt && !loeschen ? '••••••••' : ''} /></label>
+          <input type="password" value={m.passwort} disabled={!s.passwoerterMoeglich} onChange={(e) => { setze({ passwort: e.target.value }); setLoeschen(false); }} autoComplete="new-password" placeholder={s.mail.passwortGesetzt && !loeschen ? '••••••••' : ''} /></label>
         <label className="eigenschaft"><span>Absender <small>z. B. DMS &lt;dms@example.org&gt;; leer = Benutzer</small></span><input value={m.absender} onChange={(e) => setze({ absender: e.target.value })} autoComplete="off" spellCheck={false} /></label>
       </div>
       {s.mail.passwortGesetzt && <label className="haken"><input type="checkbox" checked={loeschen} onChange={(e) => { setLoeschen(e.target.checked); if (e.target.checked) setze({ passwort: '' }); }} /><span>Gespeichertes Passwort entfernen</span></label>}
       <label className="haken"><input type="checkbox" checked={m.selbstsigniert} onChange={(e) => setze({ selbstsigniert: e.target.checked })} />
         <span>Selbstsigniertes Zertifikat erlauben<small className="hilfe">Nur für einen eigenen Mailserver im Heimnetz; sonst ausgeschaltet lassen.</small></span></label>
-      <div className="hinweis info"><p>Das Passwort wird vorerst <strong>unverschlüsselt</strong> in der Datenbank gespeichert und steht damit auch in Datenbanksicherungen. Nimm am besten ein eigenes Passwort nur für den Versand (z. B. ein App-Passwort deines Mailanbieters).</p></div>
+      {!s.passwoerterMoeglich
+        ? <div className="hinweis warn"><p>Ein Passwort lässt sich erst speichern, wenn es einen Schlüssel gibt. <Link to="/werkbank/verschluesselung" className="verweis">Schlüssel unter „Verschlüsselung“ erzeugen</Link>.{s.mail.passwortUnverschluesselt ? ' Das bisher gespeicherte Passwort liegt noch unverschlüsselt in der Datenbank.' : ''}</p></div>
+        : !s.mail.passwortLesbar
+          ? <div className="hinweis schlecht"><p>Das gespeicherte Passwort wurde mit einem anderen, nicht mehr vorhandenen Schlüssel verschlüsselt und ist nicht lesbar. Bitte neu eingeben.</p></div>
+          : <p className="leise klein">Das Passwort wird verschlüsselt gespeichert. Den Schlüssel dazu hält das DMS in einer eigenen Datei, nicht in der Datenbank.</p>}
 
       <h3 className="zwischen">Testen – mit den Werten oben, auch ungespeichert</h3>
       <div className="raster">

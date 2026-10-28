@@ -510,3 +510,9 @@ th[aria-sort] .spaltenknopf .pfeil { opacity: 1; }
 input.kurz { width: 7em; }
 .mappensuche { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .mappensuche .wahl { min-width: 12em; }
+
+/* Eigenschaften als Raster (Verschlüsselung, Papierkorb, Texterkennung) */
+.eigenschaften { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; margin: 0; }
+.eigenschaften dt { color: var(--leise); }
+.eigenschaften dd { margin: 0; overflow-wrap: anywhere; }
+.liste-einfach { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
