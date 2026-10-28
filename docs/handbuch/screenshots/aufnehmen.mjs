@@ -206,7 +206,13 @@ async function main() {
   await s.evaluate(([key]) => localStorage.removeItem(key), [breitSchluessel]);
 
   // Eingang: eine Pflichtfeld-Änderung macht Mappen unpassend
-  const kundennr = { ...partner, felder: partner.felder.map((f) => (f.key === 'kundennummer' ? { ...f, pflicht: true } : f)) };
+  // Ein neues Pflichtfeld trifft sicher alle Vertragspartner (Demo-Daten sind zufällig).
+  const stammdaten = partner.register.find((r) => r.art === 'felder');
+  const kundennr = {
+    ...partner,
+    felder: [...partner.felder, { key: 'steuernummer', label: 'Steuernummer', typ: 'text', pflicht: true }],
+    register: partner.register.map((r) => (r === stammdaten ? { ...r, felder: [...(r.felder ?? []), 'steuernummer'] } : r)),
+  };
   await api('PUT', `/api/typen/${partner.id}`, kundennr);
   await geheZu(s, '/ablage/eingang');
   await s.locator('.mappenliste .eintrag, .trefferliste tbody tr').first().click();
