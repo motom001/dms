@@ -488,8 +488,10 @@ function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze 
           {gewaehlt.map((x) => (
             <li key={x}>
               {bekannt[x]?.typId ? <Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis">{titelOder(bekannt[x].titel)}</Link> : <span className="leise">{bekannt[x]?.titel ?? 'Lade …'}</span>}
-              {!mehrfach && !aendern && <button type="button" className="textknopf klein" onClick={() => { setAendern(true); setOffen(true); }}>Ändern</button>}
-              <button type="button" className="textknopf klein gefahr" aria-label="Verweis entfernen" onClick={() => setze(mehrfach ? gewaehlt.filter((y) => y !== x) : '')}>Entfernen</button>
+              <span className="verweisaktionen">
+                {!mehrfach && !aendern && <button type="button" className="textknopf klein" onClick={() => { setAendern(true); setOffen(true); }}>Ändern</button>}
+                <button type="button" className="textknopf klein gefahr" aria-label="Verweis entfernen" onClick={() => setze(mehrfach ? gewaehlt.filter((y) => y !== x) : '')}>Entfernen</button>
+              </span>
             </li>
           ))}
         </ul>
