@@ -18,6 +18,8 @@ Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsyste
   - *Demo-Daten* – Beispiel-Mappentypen laden, beliebig viele Demo-Mappen für die vorhandenen Typen erzeugen und gesammelt wieder entfernen.
 - **Profil** – jeder Benutzer ändert Name, E-Mail-Adresse und Passwort selbst (mit dem aktuellen Passwort). Mit dem *Entwicklermodus* zeigt das DMS bei jedem Seitenaufruf, wie lange Netzwerk, Aufbereitung, Datenbankzugriffe, Übertragung und Darstellung gedauert haben.
 
+Die Breite der drei Bereiche lässt sich mit den Griffen auf den Trennlinien verschieben; ein kurzer Klick klappt die Sichten bzw. die Mappe ein. Das merkt sich jedes Gerät je Benutzer (zurücksetzen im Profil).
+
 Jede Mappe trägt feste Indexwerte: angelegt am/von, zuletzt geändert am/von. Listen laden je 100 Mappen nach Titel sortiert und beim Scrollen weitere; die Suche über einer Liste durchsucht Titel und Werte auf dem Server.
 
 **Register** sind die Trennblätter einer Mappe und werden je Mappentyp festgelegt:

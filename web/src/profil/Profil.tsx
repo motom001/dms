@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { PASSWORT_MINDESTLAENGE, ROLLEN } from '../../../shared/src/model';
 import { api } from '../api';
+import { bereicheZuruecksetzen } from '../bereiche';
 import { useKonto } from '../konto';
 
 function useFormular(fn: () => Promise<string>) {
@@ -24,6 +25,7 @@ export function Profil() {
   const [neu, setNeu] = useState('');
   const [neu2, setNeu2] = useState('');
   const [entwickler, setEntwickler] = useState(!!ich.entwicklermodus);
+  const [ansicht, setAnsicht] = useState(false);
 
   const fName = useFormular(async () => { await api.profil(name); await aktualisieren(); return 'Name gespeichert.'; });
   const fEmail = useFormular(async () => {
@@ -73,6 +75,13 @@ export function Profil() {
         {fPw.anzeige}
         <div className="knoepfe"><button className="knopf primaer" disabled={fPw.sendet || !alt || !neu}>Passwort ändern</button></div>
       </form>
+
+      <div className="blatt">
+        <h2 className="h3">Ansicht auf diesem Gerät</h2>
+        <p className="leise">Die Breite der Bereiche in Ablage und Werkbank und eingeklappte Bereiche merkt sich dieses Gerät für dich. Falls etwas nicht mehr zu finden ist:</p>
+        <div className="knoepfe"><button type="button" className="knopf" onClick={() => { bereicheZuruecksetzen(ich.id); setAnsicht(true); }}>Standard-Ansicht wiederherstellen</button></div>
+        {ansicht && <p className="gutertext" role="status">Breiten zurückgesetzt.</p>}
+      </div>
 
       <div className="blatt">
         <h2 className="h3">Entwicklermodus</h2>

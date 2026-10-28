@@ -4,6 +4,7 @@ import { api, type Bezuege, type MappeDetails } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { geheZu, Link } from '../ort';
+import { Dreiteilung } from '../bereiche';
 import { titelOder, useSeiten } from '../seiten';
 import { MappeAnsicht, NeueMappe } from './MappeFormular';
 
@@ -39,7 +40,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   }
 
   return (
-    <div className="drei" data-ebene={ebene}>
+    <Dreiteilung ort="ablage" ebene={ebene} offen={dritt}>
       <aside className="spalte sichten" aria-label="Sichten">
         <h2 className="ueber">Sichten</h2>
         <nav className="sichtliste">
@@ -69,7 +70,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
         <Link to={`/ablage/${sicht ?? 'eingang'}`} className="verweis nur-schmal">← Zur Liste</Link>
         {rechts}
       </section>
-    </div>
+    </Dreiteilung>
   );
 }
 

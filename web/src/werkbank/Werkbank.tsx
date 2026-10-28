@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { Dreiteilung } from '../bereiche';
 import { useDaten } from '../daten';
 import { TypEditor } from '../einrichtung/Einrichtung';
 import { Link } from '../ort';
@@ -63,7 +64,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   }
 
   return (
-    <div className="drei" data-ebene={id || bereich === 'demo' || bereich === 'technik' ? 'mappe' : 'liste'}>
+    <Dreiteilung ort="werkbank" ebene={id || bereich === 'demo' || bereich === 'technik' ? 'mappe' : 'liste'} offen={id}>
       <aside className="spalte sichten" aria-label="Bereiche">
         <h2 className="ueber">Werkbank</h2>
         <nav className="sichtliste">
@@ -85,7 +86,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
         <Link to={`/werkbank/${bereich}`} className="verweis nur-schmal">← Zur Liste</Link>
         {rechts}
       </section>
-    </div>
+    </Dreiteilung>
   );
 }
 

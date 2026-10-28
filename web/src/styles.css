@@ -382,3 +382,15 @@ progress::-moz-progress-bar { background: var(--akzent); border-radius: 999px; }
 .technikgruppe dl > div { display: grid; grid-template-columns: minmax(110px, 40%) 1fr; gap: 8px; padding: 5px 2px; border-bottom: 1px solid var(--linie); font-size: 13px; }
 .technikgruppe dt { color: var(--leise); }
 .technikgruppe dd { margin: 0; overflow-wrap: anywhere; }
+
+/* Verschiebbare Bereiche (#23) */
+.drei { position: relative; }
+.drei.links-zu .spalte.sichten, .drei.rechts-zu .spalte.mappe { visibility: hidden; overflow: hidden; padding: 0; border: 0; }
+.griff { position: absolute; top: 50%; z-index: 15; transform: translate(-50%, -50%); width: 14px; height: 56px; padding: 0; display: grid; place-items: center;
+  border: 1px solid var(--linie-stark); border-radius: 999px; background: var(--flaeche); color: var(--leise); cursor: col-resize; touch-action: none; }
+.griff:hover, .griff:focus-visible { color: var(--akzent); border-color: var(--akzent); outline: none; box-shadow: 0 0 0 3px var(--akzent-zart); }
+.griff svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.griff.griff-links.zu { transform: translate(0, -50%); border-radius: 0 999px 999px 0; cursor: pointer; }
+.griff.griff-rechts.zu { transform: translate(-100%, -50%); border-radius: 999px 0 0 999px; cursor: pointer; }
+body.zieht-bereich { cursor: col-resize; user-select: none; }
+body.zieht-bereich iframe { pointer-events: none; }
