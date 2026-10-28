@@ -104,6 +104,12 @@ export class Konten {
     return { benutzer: b, sitzung: s };
   }
 
+  /** Aktiver Benutzer zur Id (für API-Schlüssel). */
+  async benutzerMitId(id: string): Promise<Benutzer | undefined> {
+    const b = await this.repo.holeBenutzer(id);
+    return b?.aktiv ? b : undefined;
+  }
+
   async benutzerZu(schluessel?: string): Promise<Benutzer | undefined> {
     return (await this.anmeldungZu(schluessel))?.benutzer;
   }

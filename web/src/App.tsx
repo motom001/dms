@@ -6,6 +6,7 @@ import { useDaten } from './daten';
 import { useKonto } from './konto';
 import { geheZu, Link, useOrt } from './ort';
 import { Messpanel } from './Messpanel';
+import { ApiDoku } from './profil/ApiDoku';
 import { Profil } from './profil/Profil';
 import { Werkbank } from './werkbank/Werkbank';
 
@@ -15,7 +16,7 @@ export function App() {
   const { ich, abmelden, vertretung, hinweise, aktualisieren } = useKonto();
   const admin = ich.rolle === 'admin';
   const teile = pfad.split('/').filter(Boolean);
-  const bereich = teile[0] === 'werkbank' || teile[0] === 'profil' ? teile[0] : 'ablage';
+  const bereich = teile[0] === 'werkbank' || teile[0] === 'profil' ? teile[0] : teile[0] === 'api-doku' ? 'profil' : 'ablage';
 
   useEffect(() => {
     if (pfad === '/' || pfad.startsWith('/passwort/')) geheZu('/ablage', true);
@@ -28,6 +29,7 @@ export function App() {
   if (!d.geladen) inhalt = <p className="leise">Lade …</p>;
   else if (bereich === 'werkbank' && !admin) inhalt = <div className="leer"><p>Die Werkbank ist Administratoren vorbehalten.</p></div>;
   else if (bereich === 'werkbank') inhalt = <Werkbank teile={teile} />;
+  else if (teile[0] === 'api-doku') inhalt = <ApiDoku />;
   else if (bereich === 'profil') inhalt = <Profil />;
   else inhalt = <Ablage teile={teile} suche={suche} />;
 

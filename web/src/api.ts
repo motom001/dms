@@ -88,6 +88,11 @@ export const api = {
     })}`),
   einstellungen: () => anfrage<Record<string, unknown>>('GET', '/api/konto/einstellungen'),
   designs: () => anfrage<{ designs: Design[]; standard: string | null }>('GET', '/api/designs'),
+  apiSchluessel: () => anfrage<ApiSchluessel[]>('GET', '/api/konto/api-schluessel'),
+  apiSchluesselAnlegen: (d: ApiSchluesselEingabe) => anfrage<ApiSchluessel & { schluessel: string }>('POST', '/api/konto/api-schluessel', d),
+  apiSchluesselAendern: (id: string, d: ApiSchluesselEingabe) => anfrage<ApiSchluessel>('PUT', `/api/konto/api-schluessel/${id}`, d),
+  apiSchluesselLoeschen: (id: string) => anfrage<null>('DELETE', `/api/konto/api-schluessel/${id}`),
+  openapi: () => anfrage<Record<string, unknown>>('GET', '/api/openapi.json'),
   designAnlegen: (d: Omit<Design, 'id'>) => anfrage<Design>('POST', '/api/designs', d),
   designAendern: (id: string, d: Omit<Design, 'id'>) => anfrage<Design>('PUT', `/api/designs/${id}`, d),
   designLoeschen: (id: string) => anfrage<null>('DELETE', `/api/designs/${id}`),
@@ -158,3 +163,5 @@ export interface Systemuebersicht {
   einstellungen: Record<string, string>;
 }
 export interface Vergleich { komponente: string; installiert: string | null; aktuell: string | null; status: 'aktuell' | 'neuer' | 'veraltet' | 'unbekannt'; hinweis?: string; quelle: string }
+export interface ApiSchluessel { id: string; name: string; praefix: string; recht: 'lesen' | 'schreiben'; ablauf: string | null; erstellt: string; zuletztBenutzt: string | null }
+export interface ApiSchluesselEingabe { name: string; recht: 'lesen' | 'schreiben'; ablauf: string | null }

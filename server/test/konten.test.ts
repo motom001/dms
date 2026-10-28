@@ -188,3 +188,45 @@ describe('Designs', () => {
     assert.equal((await d.liste()).standard, neu.id);
   });
 });
+
+describe('API-Schlüssel und OpenAPI', () => {
+  it('erzeugt Schlüssel, zeigt danach nur den Anfang und prüft Ablauf', async () => {
+    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
+    const k = new Konten(speicherKontoRepo(), null, 'http://nas:3000');
+    const { benutzer } = await k.einrichten({ email: 'admin@example.org', passwort: 'ein-langes-passwort' });
+    const d = new ApiSchluesselDienst(speicherApiSchluesselRepo());
+    await wirft(d.lege(benutzer, { name: '' }), 422);
+    await wirft(d.lege(benutzer, { name: 'Alt', ablauf: '2000-01-01' }), 422);
+    const s = await d.lege(benutzer, { name: 'Scanner Büro', recht: 'schreiben' });
+    assert.match(s.schluessel, /^dms_[\w-]{40}$/);
+    assert.equal(s.praefix, `${s.schluessel.slice(0, 10)}…`);
+    const liste = await d.liste(benutzer);
+    assert.ok(!JSON.stringify(liste).includes(s.schluessel), 'Schlüssel nicht mehr lesbar');
+    assert.equal((await d.pruefe(`Bearer ${s.schluessel}`))?.id, s.id);
+    assert.ok(liste[0].zuletztBenutzt === null);
+    assert.equal(await d.pruefe(undefined), undefined);
+    await wirft(d.pruefe('Bearer dms_falsch'), 401);
+    await wirft(d.pruefe('Bearer abc'), 401);
+    const geaendert = await d.aendere(benutzer, s.id, { name: 'Scanner', recht: 'lesen' });
+    assert.equal(geaendert.recht, 'lesen');
+    await d.loesche(benutzer, s.id);
+    await wirft(d.pruefe(`Bearer ${s.schluessel}`), 401);
+  });
+
+  it('beschreibt jede Route von /api/v1 in OpenAPI', async () => {
+    const { openapi, V1_TABELLE, v1Routen } = await import('../src/api-v1');
+    const { routen } = await import('../src/routen');
+    const { Dienst } = await import('../src/dienst');
+    const { speicherRepo } = await import('../src/repo-speicher');
+    const { speicherDateien } = await import('../src/dateispeicher');
+    const alle = routen(new Dienst(speicherRepo(), speicherDateien()), new Konten(speicherKontoRepo(), null, 'x'));
+    const v1 = alle.filter((r) => r.pfad.startsWith('/api/v1/') && r.api);
+    assert.equal(v1.length, V1_TABELLE.length);
+    assert.ok(v1Routen(alle.filter((r) => !r.api)).length > 0);
+    const doc = openapi('0.0.0') as { paths: Record<string, Record<string, unknown>>; components: { schemas: Record<string, unknown> } };
+    const anzahl = Object.values(doc.paths).reduce((n, p) => n + Object.keys(p).length, 0);
+    assert.equal(anzahl, V1_TABELLE.length);
+    // Jede Referenz zeigt auf ein vorhandenes Schema.
+    for (const m of JSON.stringify(doc).matchAll(/"#\/components\/schemas\/(\w+)"/g)) assert.ok(doc.components.schemas[m[1]], m[1]);
+  });
+});

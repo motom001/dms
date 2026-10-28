@@ -10,6 +10,7 @@ import { Messung, pgMessSpeicher } from './messung';
 import { protokoll } from './protokoll';
 import { pgSystemQuelle } from './system';
 import { Designs, pgDesignRepo } from './designs';
+import { ApiSchluesselDienst, pgApiSchluesselRepo } from './apischluessel';
 import { pgRepo } from './repo-pg';
 import { erstelleMailer } from './smtp';
 
@@ -68,6 +69,7 @@ const app = await baueApp(dienst, konten, {
   messung,
   system: pgSystemQuelle(sql, cfg.haushalt),
   designs: new Designs(messung.umhuelle(pgDesignRepo(sql, cfg.haushalt), 'designs')),
+  apiSchluessel: new ApiSchluesselDienst(messung.umhuelle(pgApiSchluesselRepo(sql), 'apischluessel')),
   mailHost: mailer ? env.SMTP_HOST : undefined,
 });
 

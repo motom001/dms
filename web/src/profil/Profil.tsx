@@ -2,6 +2,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { PASSWORT_MINDESTLAENGE, ROLLEN } from '../../../shared/src/model';
 import { api } from '../api';
 import { bereicheZuruecksetzen } from '../bereiche';
+import { ApiSchluesselBlatt } from './ApiSchluessel';
 import { useDaten } from '../daten';
 import { GRUNDLAGEN } from '../design';
 import { Farbfelder } from '../werkbank/Designs';
@@ -96,6 +97,8 @@ export function Profil() {
           ))}
         </div>
       </div>
+
+      <ApiSchluesselBlatt />
 
       <div className="blatt">
         <h2 className="h3">Ansicht auf diesem Gerät</h2>

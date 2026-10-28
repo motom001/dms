@@ -8,6 +8,8 @@ import type { Konten } from './konten';
 import type { Messung } from './messung';
 import type { SystemQuelle } from './system';
 import type { Designs } from './designs';
+import type { ApiSchluesselDienst } from './apischluessel';
+import { wer } from './api-v1';
 import { kontext, protokoll, type Kontext, type Stufe } from './protokoll';
 import { dateiKoepfe, leseCookie, modulAus, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage } from './routen';
 
@@ -29,6 +31,7 @@ interface Optionen {
   messung?: Messung;
   system?: SystemQuelle;
   designs?: Designs;
+  apiSchluessel?: ApiSchluesselDienst;
   mailHost?: string;
   abruf?: (url: string) => Promise<unknown>;
 }
@@ -87,8 +90,8 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
         const k: Kontext = { anfrage: req.id, pfad: `${req.method} ${req.url.split('?')[0]}`, db: { anzahl: 0, ms: 0 } };
         (req as MitKontext).dms = k;
         const antwort = await kontext.run(k, async () => {
-          await pruefeZugang(r, a, (n) => req.headers[n] as string | undefined, konten);
-          k.benutzer = a.benutzer?.email;
+          await pruefeZugang(r, a, (n) => req.headers[n] as string | undefined, konten, opt.apiSchluessel);
+          k.benutzer = wer(a.benutzer, a.apiSchluessel);
           return r.handler(a);
         });
         // Für den Entwicklermodus: Dauer auf dem Server, davon Datenbank (Anzahl Zugriffe in desc).

@@ -38,6 +38,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
       new Konten(messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'), null, 'http://nas:3000'), {
         messung, system: (await import('../src/system')).pgSystemQuelle(sql, HAUSHALT),
         designs: new (await import('../src/designs')).Designs((await import('../src/designs')).pgDesignRepo(sql, HAUSHALT)),
+        apiSchluessel: new (await import('../src/apischluessel')).ApiSchluesselDienst((await import('../src/apischluessel')).pgApiSchluesselRepo(sql)),
         // Kein Internet im Test: Abgleich mit festen Antworten.
         abruf: async (url: string) => { if (url.includes('npmjs')) return { version: '99.0.0' }; throw new Error('offline'); },
       });
@@ -362,5 +363,51 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('DELETE', `/api/designs/${neu.id}`)).status, 409, 'Standard nicht löschbar');
     assert.equal((await anfrage('PUT', '/api/designs-standard', { id: r.standard })).status, 200);
     assert.equal((await anfrage('DELETE', `/api/designs/${neu.id}`)).status, 204);
+  });
+
+  it('bedient /api/v1 mit API-Schlüsseln und liefert die OpenAPI-Beschreibung', async () => {
+    const v1 = async (methode: string, pfad: string, schluessel: string, payload?: unknown) => {
+      const r = await app.inject({ method: methode, url: `/api/v1${pfad}`, payload, headers: { authorization: `Bearer ${schluessel}` } });
+      return { status: r.statusCode as number, body: r.body && r.headers['content-type']?.toString().includes('json') ? JSON.parse(r.body) : r.body };
+    };
+    const lesen = (await anfrage('POST', '/api/konto/api-schluessel', { name: 'Nur lesen' })).body;
+    const schreiben = (await anfrage('POST', '/api/konto/api-schluessel', { name: 'Scanner', recht: 'schreiben' })).body;
+    assert.equal(lesen.recht, 'lesen');
+    assert.ok(!JSON.stringify((await anfrage('GET', '/api/konto/api-schluessel')).body).includes(schreiben.schluessel));
+
+    const ich = await v1('GET', '/ich', lesen.schluessel);
+    assert.deepEqual([ich.status, ich.body.benutzer.email, ich.body.schluessel.recht], [200, 'admin@example.org', 'lesen']);
+    const typen = (await v1('GET', '/typen', lesen.schluessel)).body;
+    const partner = typen.find((t: { name: string }) => t.name === 'Vertragspartner');
+    assert.equal((await v1('GET', '/mappen', lesen.schluessel)).status, 422, 'sicht fehlt');
+    assert.ok((await v1('GET', `/mappen?sicht=${partner.id}&anzahl=2`, lesen.schluessel)).body.gesamt >= 1);
+    assert.equal((await v1('POST', '/mappen', lesen.schluessel, { typId: partner.id, werte: { name: 'API GmbH' } })).status, 403);
+    const neu = await v1('POST', '/mappen', schreiben.schluessel, { typId: partner.id, werte: { name: 'API GmbH' } });
+    assert.equal(neu.status, 201);
+    assert.equal(neu.body.titel, 'API GmbH');
+    const hoch = await app.inject({ method: 'POST', url: `/api/v1/mappen/${neu.body.id}/dokumente?register=dokumente&name=a.pdf`,
+      payload: Buffer.from('%PDF-1.7\n%%EOF'), headers: { authorization: `Bearer ${schreiben.schluessel}`, 'content-type': 'application/octet-stream' } });
+    assert.equal(hoch.statusCode, 201);
+    const dok = JSON.parse(hoch.body).dokument;
+    assert.equal((await v1('GET', `/dokumente/${dok.id}/inhalt`, lesen.schluessel)).body, '%PDF-1.7\n%%EOF');
+    assert.equal((await v1('DELETE', `/dokumente/${dok.id}`, schreiben.schluessel)).status, 204);
+    assert.equal((await v1('PUT', `/mappen/${neu.body.id}`, schreiben.schluessel, { werte: { name: 'API AG' } })).body.titel, 'API AG');
+    assert.equal((await v1('DELETE', `/mappen/${neu.body.id}`, schreiben.schluessel)).status, 204);
+    assert.equal((await v1('GET', '/benutzer', schreiben.schluessel)).status, 200, 'Admin-Schlüssel darf Werkbank');
+    // Interne Adressen nehmen keine Schlüssel an.
+    assert.equal((await app.inject({ method: 'GET', url: '/api/typen', headers: { authorization: `Bearer ${lesen.schluessel}` } })).statusCode, 401);
+    assert.equal((await v1('GET', '/ich', 'dms_falsch')).status, 401);
+    // Abgelaufen
+    assert.equal((await anfrage('PUT', `/api/konto/api-schluessel/${lesen.id}`, { name: 'Nur lesen', recht: 'lesen', ablauf: new Date(Date.now() + 1000).toISOString() })).status, 200);
+    await sql`UPDATE api_schluessel SET ablauf = now() - interval '1 minute' WHERE id = ${lesen.id}`;
+    assert.equal((await v1('GET', '/ich', lesen.schluessel)).status, 401);
+    assert.equal((await anfrage('DELETE', `/api/konto/api-schluessel/${lesen.id}`)).status, 204);
+    // OpenAPI ohne Anmeldung, passend zur Version
+    const doc = await app.inject({ method: 'GET', url: '/api/openapi.json' });
+    assert.equal(doc.statusCode, 200);
+    const j = JSON.parse(doc.body);
+    assert.equal(j.openapi, '3.1.0');
+    assert.ok(j.paths['/mappen/{id}'].put);
+    assert.ok(j.info.version);
   });
 });

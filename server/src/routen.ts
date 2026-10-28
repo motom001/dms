@@ -6,9 +6,11 @@ import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import { SITZUNG_TAGE, type Konten } from './konten';
 import type { SitzungIntern } from './konto-repo';
+import { openapi, v1Routen } from './api-v1';
+import type { ApiSchluessel, ApiSchluesselDienst } from './apischluessel';
 import type { Designs } from './designs';
 import type { Messung } from './messung';
-import { uebersicht, versionsabgleich, type SystemQuelle } from './system';
+import { eigeneVersion, uebersicht, versionsabgleich, type SystemQuelle } from './system';
 import { MODULE, protokoll, STUFEN, type Stufe } from './protokoll';
 
 const L = {
@@ -36,6 +38,8 @@ export interface Anfrage {
   ip: string;
   /** User-Agent des Browsers. */
   geraet?: string;
+  /** Angemeldet über einen API-Schlüssel (nur /api/v1). */
+  apiSchluessel?: ApiSchluessel;
 }
 export interface Datei {
   inhalt: Readable | Buffer;
@@ -52,6 +56,8 @@ export interface Route {
   zugang: Zugang;
   /** Rohdaten statt JSON (Datei-Upload) mit dieser Obergrenze in Bytes. */
   roh?: number;
+  /** Teil der öffentlichen API (/api/v1): API-Schlüssel erlaubt. */
+  api?: boolean;
   handler(a: Anfrage): Promise<Antwort>;
 }
 
@@ -75,6 +81,8 @@ export interface RoutenExtras {
   mailHost?: string;
   /** Designs der Oberfläche (#21). */
   designs?: Designs;
+  /** API-Schlüssel (#20). */
+  apiSchluessel?: ApiSchluesselDienst;
   /** Für Tests: Abruf fremder Adressen beim Versionsabgleich. */
   abruf?: (url: string) => Promise<unknown>;
   log?: (m: string) => void;
@@ -85,7 +93,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const designs = () => { if (!x.designs) throw new Fachfehler(404, 'Designs sind nicht eingerichtet.'); return x.designs; };
   const log = x.log ?? ((m: string) => L.mail.warn(m));
   const typName = async (id: string) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? id;
-  return [
+  const schluessel = () => { if (!x.apiSchluessel) throw new Fachfehler(404, 'API-Schlüssel sind nicht eingerichtet.'); return x.apiSchluessel; };
+  const intern: Route[] = [
     { methode: 'GET', pfad: '/api/gesundheit', zugang: 'offen', handler: async () => ok({ ok: true }) },
 
     /* ---------- Konto ---------- */
@@ -356,8 +365,35 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       L.dokumente.info('Dokument gelöscht', { id: a.params.id });
       return leer;
     } },
+
+    /* ---------- API-Schlüssel im eigenen Profil ---------- */
+    { methode: 'GET', pfad: '/api/konto/api-schluessel', zugang: 'angemeldet', handler: async (a) => ok(await schluessel().liste(ich(a))) },
+    { methode: 'POST', pfad: '/api/konto/api-schluessel', zugang: 'angemeldet', handler: async (a) => {
+      const r = await schluessel().lege(ich(a), a.body);
+      L.konto.info('API-Schlüssel erzeugt', { name: r.name, recht: r.recht, praefix: r.praefix });
+      return ok(r, 201);
+    } },
+    { methode: 'PUT', pfad: '/api/konto/api-schluessel/:id', zugang: 'angemeldet', handler: async (a) => {
+      const r = await schluessel().aendere(ich(a), a.params.id, a.body);
+      L.konto.info('API-Schlüssel geändert', { name: r.name, recht: r.recht });
+      return ok(r);
+    } },
+    { methode: 'DELETE', pfad: '/api/konto/api-schluessel/:id', zugang: 'angemeldet', handler: async (a) => {
+      await schluessel().loesche(ich(a), a.params.id);
+      L.konto.info('API-Schlüssel gelöscht', { id: a.params.id });
+      return leer;
+    } },
+  ];
+  // Öffentliche API /api/v1 und ihre Beschreibung (aus der installierten Version).
+  const doku = async () => ok(openapi(eigeneVersion()));
+  return [
+    ...intern,
+    ...v1Routen(intern),
+    { methode: 'GET', pfad: '/api/openapi.json', zugang: 'offen', handler: doku },
+    { methode: 'GET', pfad: '/api/v1/openapi.json', zugang: 'offen', handler: doku },
   ];
 }
+
 
 /** Zu welchem Modul eine Anfrage gehört (für das Protokoll). */
 export function modulAus(url: string): string {
@@ -403,7 +439,18 @@ export function sitzungsCookie(schluessel: string | null, sicher: boolean): stri
  * Prüft Zugang und Schutz vor fremden Seiten (CSRF): Ändernde Anfragen
  * müssen den Header X-DMS tragen, den nur die eigene Oberfläche setzt.
  */
-export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => string | undefined, konten: Konten) {
+export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => string | undefined, konten: Konten, schluessel?: ApiSchluesselDienst) {
+  // Öffentliche API: Anmeldung per API-Schlüssel statt Sitzung; kein X-DMS nötig (kein Cookie im Spiel).
+  const auth = kopf('authorization');
+  if (r.api && auth && schluessel) {
+    const s = await schluessel.pruefe(auth);
+    const b = s ? await konten.benutzerMitId(s.benutzerId) : undefined;
+    if (!s || !b) throw new Fachfehler(401, 'Der Benutzer dieses Schlüssels ist deaktiviert oder gelöscht.');
+    a.benutzer = b; a.apiSchluessel = s;
+    if (r.methode !== 'GET' && s.recht === 'lesen') throw new Fachfehler(403, 'Dieser API-Schlüssel darf nur lesen.');
+    if (r.zugang === 'admin' && b.rolle !== 'admin') throw new Fachfehler(403, 'Dafür sind Administratorrechte nötig.');
+    return;
+  }
   const anmeldung = await konten.anmeldungZu(a.sitzung);
   a.benutzer = anmeldung?.benutzer;
   a.sitzungsDaten = anmeldung?.sitzung;

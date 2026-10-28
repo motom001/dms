@@ -4,7 +4,7 @@
 
 Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsystem für Haushalte. Statt loser Dokumente in Ordnern ordnet es **Mappen**: Vertragspartner, Verträge, Rechnungen, Gegenstände – verbunden über Verweise, so dass man von jeder Mappe aus zu allem Zugehörigen findet.
 
-> **Stand: v0.5.** Anmeldung und Benutzer, Mappentypen mit Feldern und Registern, Dokumente, Mappen in drei Spalten mit Eingang, seitenweises Laden und Suche über Titel und Werte, Protokoll, Zeitmessung und Versionsübersicht. Volltextsuche in Dokumenten, Texterkennung und feinere Rechte folgen.
+> **Stand: v0.6.** Anmeldung und Benutzer, Mappentypen mit Feldern und Registern, Dokumente, Mappen in drei Spalten mit Eingang, seitenweises Laden und Suche über Titel und Werte, Protokoll, Zeitmessung und Versionsübersicht. Volltextsuche in Dokumenten, Texterkennung und feinere Rechte folgen.
 
 ## Bereiche
 
@@ -66,6 +66,16 @@ Bei jedem Push auf `main` baut GitHub Actions ein Image und legt es unter `ghcr.
 Die Werkbank zeigt zusätzlich die letzten 24 Stunden (höchstens 10.000 Einträge); diese Ansicht beginnt nach einem Neustart leer.
 
 **Sichern:** die Ordner `postgres` und `files` aus der Vorlage. Für eine konsistente Datenbanksicherung im laufenden Betrieb vorher `docker exec <db-container> pg_dump -U dms dms > dms.sql`.
+
+## Schnittstelle (API)
+
+Andere Programme greifen über `/api/v1` zu – Mappen anlegen, lesen, ändern, löschen, Dokumente hoch- und herunterladen; mit dem Schlüssel eines Administrators auch Mappentypen und Benutzer. Den Schlüssel erzeugt jeder Benutzer im Profil (nur lesen oder lesen und schreiben, optional mit Ablaufdatum); er hat höchstens die Rechte seines Benutzers.
+
+```sh
+curl -H "Authorization: Bearer dms_…" http://<NAS>:8080/api/v1/ich
+```
+
+Die Beschreibung im OpenAPI-Format liefert jede Installation selbst unter `/api/openapi.json` (passend zur installierten Version); lesbar im Profil unter „API-Dokumentation“.
 
 ## Wünsche und Fehler
 

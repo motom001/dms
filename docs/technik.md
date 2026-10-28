@@ -20,6 +20,10 @@ Browser ── HTTP ──▶ DMS-Container (Node.js) ──▶ PostgreSQL-Conta
 | Image | `node:22-alpine`, mehrstufig gebaut, für amd64 und arm64 | Läuft auf dem NAS neben dem PostgreSQL-Image |
 | Prüfungen | GitHub Actions: Typprüfung, Tests gegen PostgreSQL, Image-Bau | Jeder Push auf `main` |
 
+## Schnittstelle
+
+`/api/v1` für andere Programme (API-Schlüssel), Beschreibung unter `/api/openapi.json`. Die Oberfläche selbst nutzt interne Adressen unter `/api/…`, die sich ändern dürfen.
+
 ## Module
 
 Jede Protokollzeile gehört zu einem Modul:

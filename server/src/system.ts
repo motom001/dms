@@ -44,7 +44,7 @@ function suchwurzeln(): string[] {
   return [...new Set([process.cwd(), join(process.cwd(), '..'), join(hier, '..'), join(hier, '..', '..')])];
 }
 
-function eigeneVersion(): string {
+export function eigeneVersion(): string {
   if (env.DMS_VERSION) return env.DMS_VERSION;
   for (const w of suchwurzeln()) {
     const p = join(w, 'package.json');

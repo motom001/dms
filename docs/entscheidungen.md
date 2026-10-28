@@ -59,6 +59,12 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Design je Konto, Schriftgröße je Gerät** (`benutzer_einstellungen` bzw. localStorage). Schriftgrößen skalieren über `--skala`.
 - **Eigenes CSS** nur durch Administratoren, ohne `<style>`-Tags; Rettungsweg `?design=standard`.
 
+## Schnittstelle
+
+- **Eigener Namensraum `/api/v1`** mit festen Adressen; intern nutzt er dieselben Funktionen wie die Oberfläche. API-Schlüssel gelten nur dort, nicht an den internen Adressen der Oberfläche.
+- **Schlüssel** `dms_…` (240 Bit Zufall), gespeichert nur als SHA-256; sichtbar bleibt der Anfang. Rechte: höchstens die des Benutzers, dazu „nur lesen“ (nur GET); Werkbank-Funktionen nur mit dem Schlüssel eines Administrators.
+- **OpenAPI aus derselben Tabelle** wie die Routen (`api-v1.ts`), daher immer passend zur installierten Version; die lesbare Seite rendert sie selbst, ohne fremde Bibliothek.
+
 ## Betrieb und Fehlersuche
 
 - **Eigenes Protokoll** (`server/src/protokoll.ts`) statt Fastify/pino direkt: jede Meldung mit Modul, Benutzer und Anfrage-Kennung (über AsyncLocalStorage), lesbar in den Container-Logs, zusätzlich ein Ringpuffer (24 h, 10.000 Einträge) für die Werkbank. Fastify schreibt über einen pino-kompatiblen Adapter hinein.
