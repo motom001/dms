@@ -15,6 +15,7 @@ import { pgRepo } from './repo-pg';
 import { Betrieb, pgBetriebSpeicher } from './betrieb';
 import { STANDARD_DATEI, Tresor } from './tresor';
 import { Texterkennung } from './texterkennung';
+import { Aufgabenmail } from './aufgabenmail';
 
 const pfad = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
 const env = process.env;
@@ -69,6 +70,14 @@ dienst.verbindeKonten(konten.papierkorbHaken());
 // Texterkennung im Hintergrund (#45); dieselbe Datenbank, eigener Messbereich.
 const texterkennung = new Texterkennung(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'texterkennung'), ordnerSpeicher(cfg.dateien, cfg.haushalt), pgBetriebSpeicher(sql, cfg.haushalt));
 dienst.verbindeTexterkennung(texterkennung);
+// Tägliche Zusammenfassung der offenen Aufgaben (#54).
+const typName = async (id: string | undefined) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? '';
+const aufgabenmail = new Aufgabenmail({
+  benutzer: () => konten.listeBenutzer(),
+  einstellungenVon: (b) => konten.einstellungen(b),
+  aufgabenVon: (b) => dienst.meineAufgaben(b),
+  typName,
+}, () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), pgBetriebSpeicher(sql, cfg.haushalt));
 const app = await baueApp(dienst, konten, {
   webDir: cfg.web,
   sicher: () => betrieb.cookieNurHttps(),
@@ -80,6 +89,7 @@ const app = await baueApp(dienst, konten, {
   betrieb,
   tresor,
   texterkennung,
+  aufgabenmail,
 });
 
 const kurz = betrieb.kurz();
@@ -95,6 +105,7 @@ if (geprueft) log.info(`Mappen von ${geprueft} Mappentypen gegen ihre Definition
 const papierkorb = () => dienst.raeumePapierkorbAuf().catch((e) => log.error('Papierkorb aufräumen fehlgeschlagen', { fehler: (e as Error).message }));
 await papierkorb();
 setInterval(papierkorb, 60 * 60 * 1000).unref();
+setInterval(() => void aufgabenmail.pruefe().catch((e) => log.error('Aufgaben-Mail fehlgeschlagen', { fehler: (e as Error).message })), 5 * 60 * 1000).unref();
 if (await konten.einrichtungNoetig()) log.warn(`Noch kein Benutzer vorhanden: Der erste Aufruf des DMS im Browser (Port ${cfg.port}) legt den Administrator an.`);
 
 await texterkennung.start();

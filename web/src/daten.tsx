@@ -27,6 +27,8 @@ interface Daten {
   anzahl(typId: string): number;
   /** Anzeigename eines Benutzers (für „angelegt von“). */
   person(id: string | null | undefined): string;
+  /** Alle Benutzer (für Erwähnungen und Aufgaben). */
+  personen: Array<{ id: string; name: string; aktiv?: boolean }>;
   /** Prüft Werte gegen die Definition (wie der Server; eindeutige Werte prüft nur der Server). */
   pruefe(t: Mappentyp, werte: Werte, typVon: (mappeId: string) => string | undefined): Pruefergebnis;
   /** Persönliche Einstellungen (vom Server, für alle Geräte). */
@@ -47,7 +49,7 @@ export function DatenProvider({ children }: { children: ReactNode }) {
   const [typen, setTypen] = useState<Mappentyp[]>([]);
   const [sichten, setSichten] = useState<Sicht[]>([]);
   const [zaehler, setZaehler] = useState<Zaehler>(LEER);
-  const [personen, setPersonen] = useState<Array<{ id: string; name: string }>>([]);
+  const [personen, setPersonen] = useState<Array<{ id: string; name: string; aktiv?: boolean }>>([]);
   const [geladen, setGeladen] = useState(false);
   const [fehler, setFehler] = useState<string>();
   const [stand, setStand] = useState(0);
@@ -93,6 +95,7 @@ export function DatenProvider({ children }: { children: ReactNode }) {
       designs: designs.designs, standardDesign: designs.standard, meinDesign, designsLaden,
       typ: (id) => (id ? typNachId.get(id) : undefined),
       anzahl: (typId) => zaehler.typen[typId]?.anzahl ?? 0,
+      personen,
       person: (id) => (id ? personen.find((p) => p.id === id)?.name ?? 'gelöschter Benutzer' : 'unbekannt'),
       pruefe: (t, werte, typVon) => pruefeMappe(t, werte, { typVon, doppelt: () => undefined }),
     };

@@ -1,0 +1,96 @@
+import { useCallback, useEffect, useState } from 'react';
+import { AUFGABENARTEN, type Aufgabe } from '../../../shared/src/model';
+import { api } from '../api';
+import { BenutzerWahl } from '../ablage/Aufgaben';
+import { useDaten } from '../daten';
+import { Link } from '../ort';
+import { titelOder } from '../seiten';
+
+/** Werkbank → Aufgaben (#54): alle offenen (oder erledigten) Aufgaben, weitergeben, tägliche Mail. */
+const datum = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
+
+export function useAufgaben(aktiv: boolean) {
+  const [erledigt, setErledigt] = useState(false);
+  const [liste, setListe] = useState<Aufgabe[] | null>(null);
+  const [mail, setMail] = useState<{ aktiv: boolean; uhrzeit: string } | null>(null);
+  const [fehler, setFehler] = useState<string>();
+  const laden = useCallback(async () => {
+    try { const r = await api.aufgabenWerkbank(erledigt); setListe(r.aufgaben); setMail(r.mail); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+  }, [erledigt]);
+  useEffect(() => { if (aktiv) void laden(); }, [aktiv, laden]);
+  return { liste, mail, setMail, erledigt, setErledigt, fehler, laden };
+}
+export type AufgabenZustand = ReturnType<typeof useAufgaben>;
+
+export function AufgabenListe({ z }: { z: AufgabenZustand }) {
+  const d = useDaten();
+  const [fehler, setFehler] = useState<string>();
+  const liste = z.liste ?? [];
+  async function weiter(a: Aufgabe, an: string) {
+    setFehler(undefined);
+    try { await api.aufgabeDelegieren(a.id, an); await z.laden(); await d.neuLaden(); } catch (e) { setFehler((e as Error).message); }
+  }
+  return (
+    <>
+      <div className="listenkopf">
+        <div><h1>Aufgaben</h1><p className="leise klein">{z.erledigt ? 'Zuletzt erledigte Aufgaben.' : 'Was an welcher Mappe für wen zu tun ist.'}</p></div>
+        <button type="button" className="knopf klein" onClick={() => z.setErledigt(!z.erledigt)}>{z.erledigt ? 'Offene zeigen' : 'Erledigte zeigen'}</button>
+      </div>
+      {(z.fehler || fehler) && <div className="hinweis schlecht"><p>{z.fehler ?? fehler}</p></div>}
+      <div className="listenrumpf">
+        {z.liste === null ? <p className="leise">Lade …</p> : !liste.length ? <p className="leise leerliste">{z.erledigt ? 'Noch nichts erledigt.' : 'Keine offenen Aufgaben.'}</p> : (
+          <ul className="mappenliste">
+            {liste.map((a) => (
+              <li key={a.id}>
+                <Link to={`/ablage/${a.typId}/${a.mappeId}`} className="eintrag">
+                  <span className="titel">{titelOder(a.mappeTitel)}</span>
+                  <span className="unter">{d.typ(a.typId)?.name} · {AUFGABENARTEN[a.art]} · {datum(z.erledigt && a.erledigt ? a.erledigt : a.erstellt)}</span>
+                  <span className="unter">{a.text}</span>
+                </Link>
+                <div className="aufgabenzeile">
+                  {z.erledigt
+                    ? <span className="leise klein">erledigt von {a.erledigtVon ? d.person(a.erledigtVon) : 'selbst (Mappe passt wieder)'}</span>
+                    : <><span className="leise klein">für {a.empfaengerId ? d.person(a.empfaengerId) : 'Administratoren'} · weitergeben an</span>
+                        <BenutzerWahl label={`Aufgabe „${a.text}“ weitergeben an`} wert="" setze={(an) => { if (an) void weiter(a, an); }} ohne={a.empfaengerId} /></>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </>
+  );
+}
+
+export function AufgabenPanel({ z }: { z: AufgabenZustand }) {
+  const [e, setE] = useState(z.mail ?? { aktiv: true, uhrzeit: '07:00' });
+  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  useEffect(() => { if (z.mail) setE(z.mail); }, [z.mail]);
+  async function speichern() {
+    try { z.setMail(await api.aufgabenMailSpeichern(e)); setMeldung({ art: 'gut', text: 'Gespeichert.' }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+  }
+  async function senden() {
+    try { const r = await api.aufgabenMailSenden(); setMeldung({ art: 'gut', text: r.verschickt ? `${r.verschickt} ${r.verschickt === 1 ? 'Mail' : 'Mails'} verschickt.` : 'Niemand hat gerade offene Aufgaben (oder alle haben abbestellt).' }); }
+    catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+  }
+  return (
+    <div className="einspaltig">
+      <div className="mappenkopf">
+        <p className="ueber">Werkbank</p>
+        <h1>Aufgaben</h1>
+        <p className="leise">Aufgaben entstehen, wenn eine Mappe nicht mehr zur Definition passt (für ihren Ersteller), wenn jemand in einem formatierten Text erwähnt wird, oder von Hand an der Mappe. Jede Mappe mit offener Aufgabe steht im Eingang ihres Empfängers. Weitergeben dürfen der Empfänger und Administratoren; das steht im Protokoll.</p>
+      </div>
+      <form className="blatt" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }}>
+        <h2 className="h3">Tägliche Zusammenfassung</h2>
+        <p className="leise">Statt einer Mail je Aufgabe bekommt jeder mit offenen Aufgaben einmal am Tag eine Übersicht. Jeder kann sie im Profil abbestellen. Braucht den E-Mail-Versand (Werkbank → E-Mail und Adresse).</p>
+        <label className="haken"><input type="checkbox" checked={e.aktiv} onChange={(x) => setE({ ...e, aktiv: x.target.checked })} /><span>Zusammenfassung verschicken</span></label>
+        <label className="eigenschaft"><span>Uhrzeit</span><input type="time" value={e.uhrzeit} onChange={(x) => setE({ ...e, uhrzeit: x.target.value })} /></label>
+        {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
+        <div className="knoepfe">
+          <button type="button" className="knopf" onClick={() => void senden()}>Jetzt senden</button>
+          <button className="knopf primaer" disabled={JSON.stringify(e) === JSON.stringify(z.mail)}>Speichern</button>
+        </div>
+      </form>
+    </div>
+  );
+}

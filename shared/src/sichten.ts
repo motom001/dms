@@ -33,6 +33,7 @@ export type Operator = keyof typeof OPERATOREN;
 export const OPERATOREN_JE_ART: Record<Feldart, Operator[]> = {
   text: ['gleich', 'enthaelt', 'leer', 'nichtLeer'],
   langtext: ['enthaelt', 'leer', 'nichtLeer'],
+  formatiert: ['enthaelt', 'leer', 'nichtLeer'],
   zahl: ['gleich', 'kleiner', 'groesser', 'zwischen', 'ausserhalb', 'leer', 'nichtLeer'],
   betrag: ['gleich', 'kleiner', 'groesser', 'zwischen', 'ausserhalb', 'leer', 'nichtLeer'],
   datum: ['gleich', 'kleiner', 'groesser', 'zwischen', 'ausserhalb', 'imZeitraum', 'leer', 'nichtLeer'],
@@ -149,7 +150,7 @@ const SYSTEMFELDER: Bedingungsfeld[] = [
 export function bedingungsfelder(typen: Array<Pick<Mappentyp, 'felder'>>): Bedingungsfeld[] {
   if (!typen.length) return SYSTEMFELDER;
   const [erster, ...rest] = typen;
-  const gemeinsam = erster.felder.filter((f) => f.typ !== 'passwort' && rest.every((t) => t.felder.some((g) => g.key === f.key && g.typ === f.typ && (f.typ !== 'referenz' || g.zielTyp === f.zielTyp))));
+  const gemeinsam = erster.felder.filter((f) => f.typ !== 'passwort' && f.zielTyp !== '*' && rest.every((t) => t.felder.some((g) => g.key === f.key && g.typ === f.typ && (f.typ !== 'referenz' || g.zielTyp === f.zielTyp))));
   return [...gemeinsam.map((f) => ({ key: f.key, label: f.label, art: f.typ as Feldart, feld: f })), ...SYSTEMFELDER];
 }
 

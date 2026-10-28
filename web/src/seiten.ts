@@ -13,10 +13,12 @@ export const titelOder = (t: string | undefined) => t || 'Ohne Titel';
  * Nach einem Neuladen der Daten (stand) wird der bereits geladene Bereich erneuert,
  * damit die Liste nicht an den Anfang springt.
  */
-export function useSeiten(sicht: string | undefined, suche: string, stand: number, sortierung?: Sortierung | null, volltext = false) {
+export function useSeiten(sicht: string | undefined, suche: string, stand: number, sortierung?: Sortierung | null, volltext = false, notizen = false) {
   const [mappen, setMappen] = useState<Mappe[]>([]);
   /** Fundstellen im Volltext je Mappe (#45). */
   const [ausschnitte, setAusschnitte] = useState<Record<string, Ausschnitt>>({});
+  /** Eingang: offene Aufgaben je Mappe (#54). */
+  const [aufgaben, setAufgaben] = useState<Record<string, string>>({});
   const [bezuege, setBezuege] = useState<Bezuege>({});
   const [gesamt, setGesamt] = useState<number | null>(null);
   const [laedt, setLaedt] = useState(false);
@@ -29,12 +31,13 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
     const nr = ++lauf.current;
     setLaedt(true);
     try {
-      const s = await api.seite(sicht, von, anzahl, suche, sortierung, volltext);
+      const s = await api.seite(sicht, von, anzahl, suche, sortierung, volltext, notizen);
       if (nr !== lauf.current) return; // überholt
       setGesamt(s.gesamt);
       setMappen((alt) => (ersetzen ? s.mappen : [...alt, ...s.mappen]));
       setBezuege((alt) => (ersetzen ? s.bezuege : { ...alt, ...s.bezuege }));
       setAusschnitte((alt) => (ersetzen ? s.ausschnitte ?? {} : { ...alt, ...s.ausschnitte }));
+      setAufgaben((alt) => (ersetzen ? s.aufgaben ?? {} : { ...alt, ...s.aufgaben }));
       geladen.current = (ersetzen ? 0 : geladen.current) + s.mappen.length;
       setFehler(undefined);
     } catch (e) {
@@ -42,7 +45,7 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
     } finally {
       if (nr === lauf.current) setLaedt(false);
     }
-  }, [sicht, suche, sortierung?.spalte, sortierung?.absteigend, volltext]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sicht, suche, sortierung?.spalte, sortierung?.absteigend, volltext, notizen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Neue Sicht oder Suche: von vorn.
   useEffect(() => { setMappen([]); setGesamt(null); geladen.current = 0; void lade(0, SEITE, true); }, [lade]);
@@ -58,5 +61,5 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
     void lade(mappen.length, SEITE, false);
   }, [laedt, gesamt, mappen.length, lade]);
 
-  return { mappen, bezuege, ausschnitte, gesamt, laedt, fehler, mehr, alle: gesamt !== null && mappen.length >= gesamt };
+  return { mappen, bezuege, ausschnitte, aufgaben, gesamt, laedt, fehler, mehr, alle: gesamt !== null && mappen.length >= gesamt };
 }

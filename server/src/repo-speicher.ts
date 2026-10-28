@@ -1,4 +1,7 @@
-import { TREFFER_ANFANG, TREFFER_ENDE, type Ausschnitt, type Dokument, type Mappe, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
+import { randomUUID } from 'node:crypto';
+import { TREFFER_ANFANG, TREFFER_ENDE, type Aufgabe, type Ausschnitt, type Dokument, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
+import { alsText } from '../../shared/src/markdown';
+import { ausschnittAus } from './repo-pg';
 import { inSicht, type Sicht, type SichtDaten, type Zaehlquelle } from '../../shared/src/sichten';
 import type { PapierkorbEintrag, Repo, Rueckverweis, SortierungIntern, Verweis } from './repo';
 
@@ -9,13 +12,23 @@ export function speicherRepo(): Repo {
   const verweise = new Map<string, Verweis[]>();
   const dokumente = new Map<string, Dokument>();
   const sichten = new Map<string, Sicht>();
+  /** Aufgaben (#54). */
+  const aufgaben = new Map<string, Aufgabe>();
+  const offenFuer = (m: Mappe, benutzerId: string, admin: boolean) =>
+    [...aufgaben.values()].some((a) => a.mappeId === m.id && !a.erledigt && (a.empfaengerId === benutzerId || (admin && !a.empfaengerId)));
+  const mitMappe = (a: Aufgabe): Aufgabe => ({ ...kopie(a), mappeTitel: mappen.get(a.mappeId)?.titel ?? '', typId: mappen.get(a.mappeId)?.typId });
+  /** Notizen (#55). */
+  const notizen = new Map<string, Notiz>();
+  /** Änderungshistorie (#57). */
+  const historie: Historieneintrag[] = [];
+  let historieNr = 0;
   /** Volltext je Dokument (#45). */
   const texte = new Map<string, string | null>();
   /** Grob wie die deutsche Volltextsuche: alle Wörter kommen vor (ohne Groß-/Kleinschreibung). */
   const woerter = (q: string) => q.toLowerCase().split(/\s+/).filter(Boolean);
   const findet = (text: string | null | undefined, q: string) => !!text && woerter(q).every((w) => text.toLowerCase().includes(w));
   /** Papierkorb (#43): Mappe mit ihren Verweisen und Dokumenten, wie beim Löschen. */
-  const korb = new Map<string, { mappe: Mappe; verweise: Verweis[]; dokumente: Dokument[]; geloescht: string; geloeschtVon: string | null }>();
+  const korb = new Map<string, { mappe: Mappe; verweise: Verweis[]; dokumente: Dokument[]; notizen?: Notiz[]; aufgaben?: Aufgabe[]; geloescht: string; geloeschtVon: string | null }>();
   const alsEintrag = (k: { mappe: Mappe; dokumente: Dokument[]; geloescht: string; geloeschtVon: string | null }): PapierkorbEintrag => ({
     id: k.mappe.id, typId: k.mappe.typId, titel: k.mappe.titel ?? '', werte: kopie(k.mappe.werte), demo: !!k.mappe.demo,
     erstellt: k.mappe.erstellt, erstelltVon: k.mappe.erstelltVon, geaendert: k.mappe.geaendert, geaendertVon: k.mappe.geaendertVon,
@@ -96,6 +109,8 @@ export function speicherRepo(): Repo {
     async holeSystemMappe(kennung) { const m = [...mappen.values()].find((x) => x.systemKennung === kennung); return m && kopie(m); },
     async loescheMappe(id) {
       mappen.delete(id); verweise.delete(id);
+      for (const [k, n] of notizen) if (n.mappeId === id) notizen.delete(k);
+      for (const [k, a] of aufgaben) if (a.mappeId === id) aufgaben.delete(k);
       for (const [k, d] of dokumente) if (d.mappeId === id) dokumente.delete(k);
     },
 
@@ -120,14 +135,23 @@ export function speicherRepo(): Repo {
       const alle = [...mappen.values()]
         .filter((m) => !o.typId || m.typId === o.typId)
         .filter((m) => !o.klauseln || inSicht(m, o.klauseln, zaehl))
-        .filter((m) => !o.eingang || (m.passt !== true && (m.erstelltVon === o.eingang.benutzerId || (o.eingang.admin && !m.erstelltVon))))
+        .filter((m) => !o.eingang || offenFuer(m, o.eingang.benutzerId, o.eingang.admin))
         .filter((m) => !q || (m.titel ?? '').toLowerCase().includes(q) || Object.values(m.werte).some((v) => !(typeof v === 'string' && v.startsWith('dms1$')) && (typeof v === 'object' ? JSON.stringify(v) : String(v)).toLowerCase().includes(q))
-          || (!!o.volltext && [...dokumente.values()].some((d) => d.mappeId === m.id && findet(texte.get(d.id), q))))
+          || (!!o.volltext && [...dokumente.values()].some((d) => d.mappeId === m.id && findet(texte.get(d.id), q)))
+          || (!!o.notizen && [...notizen.values()].some((n) => n.mappeId === m.id && n.text.toLowerCase().includes(q))))
         .sort((a, b) => vergleiche(a, b, o.sortierung) || (a.titel ?? '').toLowerCase().localeCompare((b.titel ?? '').toLowerCase()) || a.id.localeCompare(b.id));
       const seite = alle.slice(o.von, o.von + o.anzahl).map(kopie);
-      if (!o.volltext || !q) return { gesamt: alle.length, mappen: seite };
+      if ((!o.volltext && !o.notizen) || !q) return { gesamt: alle.length, mappen: seite };
       const ausschnitte: Record<string, Ausschnitt> = {};
-      for (const m of seite) {
+      if (o.notizen) {
+        for (const m of seite) {
+          const n = [...notizen.values()].find((x) => x.mappeId === m.id && x.text.toLowerCase().includes(q));
+          const t = n ? ausschnittAus(alsText(n.text), q) : null;
+          if (t) ausschnitte[m.id] = { dokument: 'Notiz', text: t };
+        }
+      }
+      if (o.volltext) for (const m of seite) {
+        if (ausschnitte[m.id]) continue;
         const d = [...dokumente.values()].find((x) => x.mappeId === m.id && findet(texte.get(x.id), q));
         if (!d) continue;
         const text = texte.get(d.id)!;
@@ -143,7 +167,8 @@ export function speicherRepo(): Repo {
       for (const m of mappen.values()) {
         const z = typen.get(m.typId) ?? { anzahl: 0, unpassend: 0, demo: 0 };
         z.anzahl++;
-        if (m.passt !== true) { z.unpassend++; if (m.erstelltVon === benutzerId || (admin && !m.erstelltVon)) eingang++; }
+        if (m.passt !== true) z.unpassend++;
+        if (offenFuer(m, benutzerId, admin)) eingang++;
         if (m.demo) z.demo++;
         typen.set(m.typId, z);
       }
@@ -222,6 +247,50 @@ export function speicherRepo(): Repo {
         .map((d) => ({ id: d.id, typId: mappen.get(d.mappeId)!.typId, registerKey: d.registerKey }));
     },
     async volltext(id) { return texte.get(id) ?? null; },
+    async aufgabenZurPassung(liste) {
+      for (const { id, problem } of liste) {
+        const offen = [...aufgaben.values()].find((a) => a.mappeId === id && a.art === 'passung' && !a.erledigt);
+        if (problem) {
+          const text = `Passt nicht zur Definition: ${problem}`;
+          if (offen) offen.text = text;
+          else if (mappen.has(id)) {
+            const nid = randomUUID();
+            aufgaben.set(nid, { id: nid, mappeId: id, empfaengerId: mappen.get(id)!.erstelltVon, art: 'passung', text, erstellt: jetzt(), erstelltVon: null, erledigt: null, erledigtVon: null });
+          }
+        } else if (offen) offen.erledigt = jetzt();
+      }
+    },
+    async legeAufgabeAn(a) { const x = { ...kopie(a), erstellt: jetzt(), erledigt: null, erledigtVon: null }; aufgaben.set(a.id, x); return kopie(x); },
+    async holeAufgabe(id) { const a = aufgaben.get(id); return a && kopie(a); },
+    async aufgabenVon(mappeId) {
+      return [...aufgaben.values()].filter((a) => a.mappeId === mappeId)
+        .sort((a, b) => Number(!!a.erledigt) - Number(!!b.erledigt) || b.erstellt.localeCompare(a.erstellt)).map(kopie);
+    },
+    async offeneAufgaben(f = {}) {
+      return [...aufgaben.values()].filter((a) => !a.erledigt && mappen.has(a.mappeId)
+        && (!f.benutzerId || a.empfaengerId === f.benutzerId || (!!f.admin && !a.empfaengerId))
+        && (!f.mappeIds || f.mappeIds.includes(a.mappeId))).map(mitMappe);
+    },
+    async erledigteAufgaben(max) {
+      return [...aufgaben.values()].filter((a) => a.erledigt && mappen.has(a.mappeId)).sort((a, b) => b.erledigt!.localeCompare(a.erledigt!)).slice(0, max).map(mitMappe);
+    },
+    async erledigeAufgabe(id, von) { const a = aufgaben.get(id); if (a && !a.erledigt) { a.erledigt = jetzt(); a.erledigtVon = von; } },
+    async delegiereAufgabe(id, an) { const a = aufgaben.get(id); if (a) a.empfaengerId = an; },
+    async notizen(mappeId) { return [...notizen.values()].filter((n) => n.mappeId === mappeId).sort((a, b) => a.erstellt.localeCompare(b.erstellt)).map(kopie); },
+    async holeNotiz(id) { const n = notizen.get(id); return n && kopie(n); },
+    async legeNotizAn(n) { const x = { ...kopie(n), erstellt: jetzt(), geaendert: jetzt(), geaendertVon: n.erstelltVon }; notizen.set(n.id, x); return kopie(x); },
+    async aendereNotiz(id, text, von) { const n = notizen.get(id)!; n.text = text; n.geaendert = jetzt(); n.geaendertVon = von; return kopie(n); },
+    async loescheNotiz(id) { notizen.delete(id); },
+    async historieSchreibe(e) {
+      for (const x of e) historie.push({ id: ++historieNr, mappeId: x.mappeId, zeit: jetzt(), benutzerId: x.benutzerId, art: x.art, daten: kopie(x.daten ?? {}) });
+    },
+    async historie(mappeId) { return historie.filter((h) => h.mappeId === mappeId).map(kopie).reverse(); },
+    async historieAufraeumen(vor) {
+      const weg = new Set(historie.filter((h) => h.art === 'endgueltig' && h.zeit < vor && !mappen.has(h.mappeId) && !korb.has(h.mappeId)).map((h) => h.mappeId));
+      const vorher = historie.length;
+      for (let i = historie.length - 1; i >= 0; i--) if (weg.has(historie[i].mappeId)) historie.splice(i, 1);
+      return vorher - historie.length;
+    },
 
     async dokumenteMitSha(sha) { return [...dokumente.values()].filter((d) => d.sha256 === sha).map(kopie); },
     async zaehleDemo() {
@@ -248,6 +317,8 @@ export function speicherRepo(): Repo {
       if (!m) return;
       korb.set(id, {
         mappe: kopie(m), verweise: kopie(verweise.get(id) ?? []), dokumente: [...dokumente.values()].filter((d) => d.mappeId === id).map(kopie),
+        notizen: [...notizen.values()].filter((n) => n.mappeId === id).map(kopie),
+        aufgaben: [...aufgaben.values()].filter((a) => a.mappeId === id).map(kopie),
         geloescht: jetzt(), geloeschtVon: benutzerId,
       });
       await this.loescheMappe(id);
@@ -266,6 +337,8 @@ export function speicherRepo(): Repo {
       const bleiben = k.verweise.filter((v) => mappen.has(v.zielId));
       verweise.set(id, bleiben);
       for (const d of k.dokumente) dokumente.set(d.id, kopie(d));
+      for (const n of k.notizen ?? []) notizen.set(n.id, kopie(n));
+      for (const a of k.aufgaben ?? []) aufgaben.set(a.id, kopie(a));
       korb.delete(id);
       return { verweiseEntfallen: k.verweise.length - bleiben.length };
     },

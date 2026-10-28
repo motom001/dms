@@ -18,10 +18,11 @@ const basis = (werkbank: boolean) => (werkbank ? '/werkbank/papierkorb' : '/abla
 export function usePapierkorb(werkbank: boolean, aktiv = true) {
   const [eintraege, setEintraege] = useState<PapierkorbEintrag[] | null>(null);
   const [tage, setTage] = useState<number | null>(null);
+  const [historieTage, setHistorieTage] = useState<number | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
     try {
-      if (werkbank) { const r = await api.papierkorbWerkbank(); setEintraege(r.eintraege); setTage(r.tage); }
+      if (werkbank) { const r = await api.papierkorbWerkbank(); setEintraege(r.eintraege); setTage(r.tage); setHistorieTage(r.historieTage); }
       else setEintraege(await api.papierkorb());
       setFehler(undefined);
     } catch (e) { setFehler((e as Error).message); }
@@ -32,7 +33,7 @@ export function usePapierkorb(werkbank: boolean, aktiv = true) {
     addEventListener(GEAENDERT, laden);
     return () => removeEventListener(GEAENDERT, laden);
   }, [aktiv, laden]);
-  return { eintraege, tage, setTage, fehler, laden };
+  return { eintraege, tage, setTage, historieTage, setHistorieTage, fehler, laden };
 }
 export type PapierkorbZustand = ReturnType<typeof usePapierkorb>;
 
@@ -91,6 +92,7 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
       </div>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       {meldung && <div className="hinweis schlecht"><p>{meldung}</p></div>}
+      <div className="listenrumpf">
       {z.eintraege === null
         ? <p className="leise">Lade …</p>
         : !liste.length
@@ -129,6 +131,7 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
                 </table>
               </div>}
             </>}
+      </div>
     </>
   );
 }
@@ -202,15 +205,19 @@ export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boole
 export function PapierkorbEinstellungen({ z }: { z: PapierkorbZustand }) {
   const d = useDaten();
   const [tage, setTage] = useState(String(z.tage ?? ''));
+  const [hTage, setHTage] = useState(String(z.historieTage ?? ''));
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   useEffect(() => { if (z.tage !== null) setTage(String(z.tage)); }, [z.tage]);
+  useEffect(() => { if (z.historieTage !== null) setHTage(String(z.historieTage)); }, [z.historieTage]);
   const n = Number(tage);
+  const h = Number(hTage);
+  const geaendert = String(z.tage) !== tage || String(z.historieTage) !== hTage;
   async function speichern() {
     const anzahl = z.eintraege?.length ?? 0;
     if (n === 0 && anzahl && !confirm(`Papierkorb ausschalten? Die ${anzahl === 1 ? 'eine Mappe darin wird' : `${anzahl} Mappen darin werden`} sofort endgültig gelöscht.`)) return;
     try {
-      const r = await api.papierkorbTage(n);
-      z.setTage(r.tage); melde(); await d.neuLaden();
+      const r = await api.papierkorbTage({ tage: n, historieTage: h });
+      z.setTage(r.tage); z.setHistorieTage(r.historieTage); melde(); await d.neuLaden();
       setMeldung({ art: 'gut', text: `Gespeichert.${r.geleert ? ` ${r.geleert} ${r.geleert === 1 ? 'Mappe' : 'Mappen'} endgültig gelöscht.` : ''}` });
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
@@ -226,8 +233,10 @@ export function PapierkorbEinstellungen({ z }: { z: PapierkorbZustand }) {
         <label className="eigenschaft"><span>Tage <small>0 = kein Papierkorb, Löschen ist sofort endgültig</small></span>
           <input type="number" min={0} max={3650} value={tage} onChange={(ev) => { setTage(ev.target.value); setMeldung(undefined); }} /></label>
         <p className="leise klein">Einzeln gelöschte Dokumente und das Entfernen der Demo-Daten sind immer sofort endgültig.</p>
+        <label className="eigenschaft"><span>Protokoll endgültig gelöschter Mappen behalten <small>Tage, danach wird ihre Änderungshistorie gelöscht</small></span>
+          <input type="number" min={0} max={36500} value={hTage} onChange={(ev) => { setHTage(ev.target.value); setMeldung(undefined); }} /></label>
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
-        <div className="knoepfe"><button className="knopf primaer" disabled={!Number.isInteger(n) || n < 0 || String(z.tage) === tage}>Speichern</button></div>
+        <div className="knoepfe"><button className="knopf primaer" disabled={!Number.isInteger(n) || n < 0 || !Number.isInteger(h) || h < 0 || !geaendert}>Speichern</button></div>
       </form>
     </div>
   );

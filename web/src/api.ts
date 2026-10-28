@@ -1,6 +1,6 @@
 import type { Design } from './design';
 import { messung } from './messung';
-import type { Ausschnitt, Benutzer, Dokument, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
+import type { Aufgabe, Ausschnitt, Benutzer, Dokument, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Sicht, SichtDaten } from '../../shared/src/sichten';
 
 export class ApiFehler extends Error {
@@ -44,7 +44,7 @@ async function anfrage<T>(methode: string, url: string, body?: unknown): Promise
 
 export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string; titel: string }
 export type Bezuege = Record<string, MappenBezug>;
-export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt> }
+export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string> }
 /** Texterkennung (#45): Stand, Werkzeuge und Einstellungen für die Werkbank. */
 export interface OcrEinstellungen { aktiv: boolean; auftraege: number; maxSeiten: number; maxMB: number; sprachen: string; typen: Record<string, 'tesseract' | 'aus'> }
 export interface OcrStatus {
@@ -83,7 +83,7 @@ export const api = {
   linkPruefen: (s: string) => anfrage<{ email: string; name: string; zweck: 'einladung' | 'zuruecksetzen' }>('GET', `/api/konto/link/${encodeURIComponent(s)}`),
   passwortSetzen: (schluessel: string, passwort: string) => anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/passwort-setzen', { schluessel, passwort }),
 
-  personen: () => anfrage<Array<{ id: string; name: string }>>('GET', '/api/personen'),
+  personen: () => anfrage<Array<{ id: string; name: string; aktiv?: boolean }>>('GET', '/api/personen'),
   benutzer: () => anfrage<Benutzer[]>('GET', '/api/benutzer'),
   benutzerAnlegen: (d: { email: string; name: string; rolle: Rolle; rollen?: string[] }) => anfrage<LinkErgebnis>('POST', '/api/benutzer', d),
   benutzerAendern: (id: string, d: Partial<Pick<Benutzer, 'name' | 'rolle' | 'aktiv' | 'rollen'>>) => anfrage<Benutzer>('PUT', `/api/benutzer/${id}`, d),
@@ -103,9 +103,9 @@ export const api = {
   typAendern: (id: string, t: unknown) => anfrage<Mappentyp>('PUT', `/api/typen/${id}`, t),
   typLoeschen: (id: string) => anfrage<null>('DELETE', `/api/typen/${id}`),
   /** Eine Seite einer Sicht („eingang“ oder Typ-Id), nach Titel sortiert. */
-  seite: (sicht: string, von = 0, anzahl = 100, suche = '', sortierung?: Sortierung | null, volltext = false) =>
+  seite: (sicht: string, von = 0, anzahl = 100, suche = '', sortierung?: Sortierung | null, volltext = false, notizen = false) =>
     anfrage<Seite>('GET', `/api/mappen?${new URLSearchParams({
-      sicht, von: String(von), anzahl: String(anzahl), ...(suche ? { suche } : {}), ...(suche && volltext ? { volltext: 'true' } : {}),
+      sicht, von: String(von), anzahl: String(anzahl), ...(suche ? { suche } : {}), ...(suche && volltext ? { volltext: 'true' } : {}), ...(suche && notizen ? { notizen: 'true' } : {}),
       ...(sortierung ? { sortierung: sortierung.spalte, absteigend: String(sortierung.absteigend) } : {}),
     })}`),
   einstellungen: () => anfrage<Record<string, unknown>>('GET', '/api/konto/einstellungen'),
@@ -141,12 +141,25 @@ export const api = {
   volltextNachholen: () => anfrage<{ eingereiht: number }>('POST', '/api/werkbank/wartung/volltext'),
   /* Papierkorb (#43): Ablage = eigener, Werkbank = alle */
   papierkorb: () => anfrage<PapierkorbEintrag[]>('GET', '/api/papierkorb'),
-  papierkorbWerkbank: () => anfrage<{ tage: number; eintraege: PapierkorbEintrag[] }>('GET', '/api/werkbank/papierkorb'),
+  papierkorbWerkbank: () => anfrage<{ tage: number; historieTage: number; eintraege: PapierkorbEintrag[] }>('GET', '/api/werkbank/papierkorb'),
   papierkorbEintrag: (id: string, werkbank = false) => anfrage<PapierkorbEintrag>('GET', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}`),
   wiederherstellen: (id: string, werkbank = false) => anfrage<{ mappe: Mappe; verweiseEntfallen: number }>('POST', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}/wiederherstellen`),
   endgueltigLoeschen: (id: string, werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}`),
   papierkorbLeeren: (werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb`),
-  papierkorbTage: (tage: number) => anfrage<{ tage: number; geleert: number }>('PUT', '/api/werkbank/papierkorb/einstellungen', { tage }),
+  emailBereit: () => anfrage<{ bereit: boolean }>('GET', '/api/email/bereit'),
+  emailSenden: (mappeId: string, e: { an: string; betreff: string; nachricht: string; dokumente: string[] }) => anfrage<{ id: string; typId: string }>('POST', `/api/mappen/${mappeId}/email`, e),
+  papierkorbTage: (e: { tage?: number; historieTage?: number }) => anfrage<{ tage: number; geleert: number; historieTage: number }>('PUT', '/api/werkbank/papierkorb/einstellungen', e),
+  /* Aufgaben (#54) */
+  aufgabeAnlegen: (mappeId: string, empfaengerId: string, text: string) => anfrage<Aufgabe>('POST', `/api/mappen/${mappeId}/aufgaben`, { empfaengerId, text }),
+  aufgabeErledigt: (id: string) => anfrage<Aufgabe>('POST', `/api/aufgaben/${id}/erledigt`),
+  aufgabeDelegieren: (id: string, empfaengerId: string) => anfrage<Aufgabe>('POST', `/api/aufgaben/${id}/delegieren`, { empfaengerId }),
+  aufgabenWerkbank: (erledigt = false) => anfrage<{ aufgaben: Aufgabe[]; mail: { aktiv: boolean; uhrzeit: string } | null }>('GET', `/api/werkbank/aufgaben${erledigt ? '?erledigt' : ''}`),
+  aufgabenMailSpeichern: (e: { aktiv: boolean; uhrzeit: string }) => anfrage<{ aktiv: boolean; uhrzeit: string }>('PUT', '/api/werkbank/aufgaben/mail', e),
+  aufgabenMailSenden: () => anfrage<{ verschickt: number }>('POST', '/api/werkbank/aufgaben/mail/senden'),
+  notizAnlegen: (mappeId: string, text: string) => anfrage<Notiz>('POST', `/api/mappen/${mappeId}/notizen`, { text }),
+  notizAendern: (id: string, text: string) => anfrage<Notiz>('PUT', `/api/notizen/${id}`, { text }),
+  notizLoeschen: (id: string) => anfrage<null>('DELETE', `/api/notizen/${id}`),
+  historie: (mappeId: string) => anfrage<Historieneintrag[]>('GET', `/api/mappen/${mappeId}/historie`),
   /** Passwortfeld anzeigen (#46); steht im Protokoll. */
   passwortAnzeigen: (mappeId: string, feld: string) => anfrage<{ wert: string }>('POST', `/api/mappen/${mappeId}/passwoerter/${encodeURIComponent(feld)}`),
   beispiele: () => anfrage<null>('POST', '/api/beispiele'),
@@ -190,7 +203,7 @@ export const api = {
   },
 };
 
-export interface MappeDetails { mappe: Mappe; rueckverweise: Rueckverweis[]; dokumente: Dokument[]; bezuege: Bezuege }
+export interface MappeDetails { mappe: Mappe; rueckverweise: Rueckverweis[]; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 export const dokumentUrl = (id: string, herunterladen = false) => `/api/dokumente/${id}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
 

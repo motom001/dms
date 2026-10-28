@@ -257,7 +257,7 @@ function FeldZeile(p: {
 }) {
   const { f, i, offen, fehler, setze } = p;
   const id = (x: string) => `f${i}-${x}`;
-  const zielName = f.zielTyp === p.eigeneId ? (p.eigenerName || 'dieser Typ') : p.typen.find((t) => t.id === f.zielTyp)?.name ?? '–';
+  const zielName = f.zielTyp === p.eigeneId ? (p.eigenerName || 'dieser Typ') : f.zielTyp === '*' ? 'jede Mappe' : p.typen.find((t) => t.id === f.zielTyp)?.name ?? '–';
 
   const chips: string[] = [];
   if (f.system) chips.push('System');
@@ -276,7 +276,7 @@ function FeldZeile(p: {
   );
 
   let besonders = null;
-  if (f.typ === 'text' || f.typ === 'langtext') besonders = <div className="raster">
+  if (f.typ === 'text' || f.typ === 'langtext' || f.typ === 'formatiert') besonders = <div className="raster">
     {zahl('minLen', 'Mindestlänge', 'keine')}{zahl('maxLen', 'Höchstlänge', 'keine')}
     {f.typ === 'text' && <label className="eigenschaft" htmlFor={id('muster')}><span>Muster <small>regulärer Ausdruck</small></span><input id={id('muster')} className="mono" placeholder="z. B. [A-Z]{2}-\d+" value={f.muster ?? ''} onChange={(e) => setze({ muster: e.target.value })} /></label>}
   </div>;
@@ -293,6 +293,7 @@ function FeldZeile(p: {
     <label className="eigenschaft" htmlFor={id('ziel')}><span>Verweist auf Mappen vom Typ</span>
       <select id={id('ziel')} value={f.zielTyp ?? ''} onChange={(e) => setze({ zielTyp: e.target.value })}>
         <option value="">– bitte wählen –</option>
+        {f.zielTyp === '*' && <option value="*">jede Mappe</option>}
         {p.typen.filter((t) => t.id !== p.eigeneId).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         <option value={p.eigeneId}>{p.eigenerName || 'Dieser Typ'} (dieser Typ)</option>
       </select>
@@ -305,7 +306,7 @@ function FeldZeile(p: {
   </div>;
 
   let standard = null;
-  if (f.typ === 'text' || f.typ === 'langtext' || f.typ === 'zahl' || f.typ === 'betrag')
+  if (f.typ === 'text' || f.typ === 'langtext' || f.typ === 'formatiert' || f.typ === 'zahl' || f.typ === 'betrag')
     standard = <label className="eigenschaft" htmlFor={id('std')}><span>Standardwert</span><input id={id('std')} placeholder="leer" value={String(f.standard ?? '')} onChange={(e) => setze({ standard: e.target.value })} /></label>;
   else if (f.typ === 'datum')
     standard = <label className="eigenschaft" htmlFor={id('std')}><span>Standardwert</span><input id={id('std')} type="date" value={String(f.standard ?? '')} onChange={(e) => setze({ standard: e.target.value })} /></label>;
@@ -447,7 +448,7 @@ function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Ent
   };
 
   function hinzufuegen(art: Registerart) {
-    const name = { felder: 'Weitere Angaben', dokumente: 'Dokumente', verknuepfungen: 'Verknüpfungen' }[art];
+    const name = { felder: 'Weitere Angaben', dokumente: 'Dokumente', verknuepfungen: 'Verknüpfungen', protokoll: 'Protokoll' }[art];
     const r: EntwurfRegister = { key: eindeutig(schluesselAus(name), -1), name, art, _uid: neueId(), _neu: true, ...(art === 'verknuepfungen' ? { quellen: [] } : {}) };
     setE((x) => ({ ...x, register: [...x.register, r] }));
   }
@@ -472,7 +473,7 @@ function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Ent
 
   // Mögliche Quellen: jedes Referenzfeld, das auf diesen Mappentyp zeigt (auch aus ihm selbst).
   const quellen = [
-    ...d.typen.filter((t) => t.id !== e.id).flatMap((t) => t.felder.filter((f) => f.typ === 'referenz' && f.zielTyp === e.id).map((f) => ({ typId: t.id, feldKey: f.key, text: `${t.name} › ${f.label}` }))),
+    ...d.typen.filter((t) => t.id !== e.id).flatMap((t) => t.felder.filter((f) => f.typ === 'referenz' && (f.zielTyp === e.id || f.zielTyp === '*')).map((f) => ({ typId: t.id, feldKey: f.key, text: `${t.name} › ${f.label}` }))),
     ...e.felder.filter((f) => f.typ === 'referenz' && f.zielTyp === e.id).map((f) => ({ typId: e.id, feldKey: f.key, text: `${e.name || 'Dieser Typ'} › ${f.label}` })),
   ];
 
@@ -514,6 +515,7 @@ function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Ent
                 <label className="haken"><input type="checkbox" checked={r.volltext !== false} onChange={(ev) => setzeReg(i, { volltext: ev.target.checked ? undefined : false })} />
                   <span>Volltext erzeugen<small className="hilfe">Textebene von PDFs lesen und gescannte Seiten und Bilder durch die Texterkennung schicken, damit die Volltextsuche sie findet.</small></span></label>
               </>}
+              {r.art === 'protokoll' && <p className="leise klein">Zeigt, wer wann was an der Mappe geändert hat – je Speichern ein Eintrag mit allen geänderten Feldern, dazu Dokumente, Papierkorb, Notizen, Aufgaben und E-Mails. Einträge lassen sich nicht ändern.</p>}
               {r.art === 'verknuepfungen' && (
                 quellen.length === 0
                   ? <p className="leise klein">Noch verweist kein Referenzfeld auf diesen Mappentyp. Das Register zeigt alle Verweise, sobald es welche gibt.</p>
@@ -534,6 +536,7 @@ function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Ent
         <button type="button" className="knopf klein" onClick={() => hinzufuegen('felder')}>+ Feldregister</button>
         <button type="button" className="knopf klein" onClick={() => hinzufuegen('dokumente')}>+ Dokumentenregister</button>
         <button type="button" className="knopf klein" onClick={() => hinzufuegen('verknuepfungen')}>+ Verknüpfungsregister</button>
+        {!e.register.some((r) => r.art === 'protokoll') && <button type="button" className="knopf klein" onClick={() => hinzufuegen('protokoll')}>+ Protokollregister</button>}
       </div>
     </div>
   );

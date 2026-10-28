@@ -100,6 +100,13 @@ export function Profil() {
 
       <ApiSchluesselBlatt />
 
+      <div className="blatt">
+        <h2 className="h3">Aufgaben</h2>
+        <p className="leise">Mappen mit offenen Aufgaben für dich stehen im Eingang. Zusätzlich schickt das DMS einmal am Tag eine Übersicht per E-Mail, wenn der Versand eingerichtet ist.</p>
+        <label className="haken"><input type="checkbox" checked={d.einstellungen.aufgaben_mail !== false}
+          onChange={(e) => d.setzeEinstellung('aufgaben_mail', e.target.checked ? null : false)} /><span>Tägliche Zusammenfassung meiner Aufgaben per E-Mail</span></label>
+      </div>
+
       {(!!d.zaehler.papierkorbTage || d.einstellungen.papierkorb_beim_abmelden === true) && (
         <div className="blatt">
           <h2 className="h3">Papierkorb</h2>

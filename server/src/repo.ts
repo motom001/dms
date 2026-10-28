@@ -1,4 +1,4 @@
-import type { Ausschnitt, Dokument, Mappe, MappenBezug, Mappentyp, MappentypDaten, OcrStandArt, Systemtyp, Werte } from '../../shared/src/model';
+import type { Aufgabe, Ausschnitt, Dokument, Historienart, Historieneintrag, Mappe, Notiz, MappenBezug, Mappentyp, MappentypDaten, OcrStandArt, Systemtyp, Werte } from '../../shared/src/model';
 import type { Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 
 export interface Verweis { feldKey: string; zielId: string }
@@ -19,6 +19,8 @@ export interface SeitenAnfrage {
   suche?: string;
   /** Suche auch im Volltext der Dokumente (deutsche Volltextsuche, #45). */
   volltext?: boolean;
+  /** Suche auch in Notizen (#55). */
+  notizen?: boolean;
   /** Reihenfolge; ohne: nach Titel. */
   sortierung?: SortierungIntern;
   von: number;
@@ -154,6 +156,33 @@ export interface Repo {
   /** Dokumente ohne Volltext (noch nie erkannt) mit Typ und Register ihrer Mappe. */
   ocrOhneVolltext(): Promise<Array<{ id: string; typId: string; registerKey: string }>>;
   volltext(id: string): Promise<string | null>;
+
+  /* ---------- Aufgaben (#54) ---------- */
+  /** Passung → Aufgaben: offene „passt nicht“-Aufgabe anlegen oder Text nachziehen; passt sie, erledigt. */
+  aufgabenZurPassung(liste: Array<{ id: string; problem: string | null }>): Promise<void>;
+  legeAufgabeAn(a: Aufgabe): Promise<Aufgabe>;
+  holeAufgabe(id: string): Promise<Aufgabe | undefined>;
+  /** Aufgaben einer Mappe (offen und erledigt), neueste zuerst. */
+  aufgabenVon(mappeId: string): Promise<Aufgabe[]>;
+  /** Offene Aufgaben: alle, oder die eines Benutzers (mit admin auch die der Administratoren). */
+  offeneAufgaben(f?: { benutzerId?: string; admin?: boolean; mappeIds?: string[] }): Promise<Aufgabe[]>;
+  /** Erledigte Aufgaben (Werkbank), neueste zuerst. */
+  erledigteAufgaben(max: number): Promise<Aufgabe[]>;
+  erledigeAufgabe(id: string, von: string | null): Promise<void>;
+  delegiereAufgabe(id: string, an: string | null): Promise<void>;
+
+  /* ---------- Notizen (#55) ---------- */
+  notizen(mappeId: string): Promise<Notiz[]>;
+  holeNotiz(id: string): Promise<Notiz | undefined>;
+  legeNotizAn(n: Notiz): Promise<Notiz>;
+  aendereNotiz(id: string, text: string, von: string | null): Promise<Notiz>;
+  loescheNotiz(id: string): Promise<void>;
+
+  /* ---------- Änderungshistorie (#57) ---------- */
+  historieSchreibe(e: Array<{ mappeId: string; benutzerId: string | null; art: Historienart; daten?: Historieneintrag['daten'] }>): Promise<void>;
+  historie(mappeId: string): Promise<Historieneintrag[]>;
+  /** Löscht die Historie von Mappen, die vor diesem Zeitpunkt endgültig gelöscht wurden. */
+  historieAufraeumen(vor: string): Promise<number>;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

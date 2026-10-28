@@ -1,13 +1,15 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
-  darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
+  darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, ROLLEN, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
-  type Benutzer, type Feld, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Rolle, type Systemtyp, type Werte,
+  AUFGABE_MAX, istEmail, NOTIZ_MAX, type Aufgabe, type Benutzer, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
+import type { Mailer } from './mail';
 import { Auftraege } from './auftrag';
 import { protokoll } from './protokoll';
 import { Fachfehler } from './fehler';
+import { alsText, erwaehnungen } from '../../shared/src/markdown';
 import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
 import type { Einstellungen } from './einstellungen';
 import { istUuid, type NeueMappe, type PapierkorbEintrag, type Repo, type Rueckverweis, type SortierungIntern } from './repo';
@@ -117,6 +119,10 @@ export interface KontenHaken {
 }
 
 export const PAPIERKORB_STANDARD_TAGE = 30;
+/** Anhänge einer E-Mail zusammen höchstens (#58); die Oberfläche warnt schon ab 20 MB. */
+export const EMAIL_MAX_ANHAENGE = 50_000_000;
+export const EMAIL_MAX_EMPFAENGER = 20;
+export const HISTORIE_STANDARD_TAGE = 365;
 export interface DienstOptionen {
   /** Schlüssel für Passwortfelder (#39, #46). */
   tresor?: Tresor;
@@ -276,7 +282,7 @@ export class Dienst {
   }
 
   /** Klartext eines Passworts zum Anzeigen; jeder Aufruf steht im Protokoll (ohne den Wert). */
-  async zeigePasswort(mappeId: string, feldKey: string): Promise<{ wert: string }> {
+  async zeigePasswort(mappeId: string, feldKey: string, benutzerId: string | null = null): Promise<{ wert: string }> {
     const m = await this.repo.holeMappe(mappeId);
     if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
     const typ = await this.repo.holeTyp(m.typId);
@@ -287,6 +293,7 @@ export class Dienst {
     const klar = this.tresor?.entschluessele(v) ?? null;
     if (klar === null) throw new Fachfehler(409, 'Dieses Passwort ist nicht lesbar: Der Schlüssel, mit dem es gespeichert wurde, fehlt. Bitte neu eingeben.');
     protokoll.modul('ablage').info('Passwort angezeigt', { mappe: m.titel || m.id, mappeId: m.id, feld: f.label });
+    await this.notiere(m.id, benutzerId, 'passwort_angezeigt', { feld: f.label });
     return { wert: klar };
   }
 
@@ -294,16 +301,250 @@ export class Dienst {
    * Für die API mit dem Recht „Passwörter lesen“: Passwörter einer oder mehrerer Mappen
    * im Klartext; je Mappe ein Protokolleintrag (ohne die Werte).
    */
-  async entschluesselePasswoerter<T extends Mappe>(mappen: T[], wer: string): Promise<T[]> {
+  async entschluesselePasswoerter<T extends Mappe>(mappen: T[], wer: string, benutzerId: string | null = null): Promise<T[]> {
     const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t]));
-    return mappen.map((m) => {
+    const historie: Parameters<Repo['historieSchreibe']>[0] = [];
+    const ergebnis = mappen.map((m) => {
       const felder = typen.get(m.typId)?.felder.filter((f) => f.typ === 'passwort' && istVerschluesselt(m.werte[f.key])) ?? [];
       if (!felder.length) return m;
       const werte = { ...m.werte };
       for (const f of felder) werte[f.key] = this.tresor?.entschluessele(werte[f.key] as string) ?? null;
       protokoll.modul('ablage').info('Passwörter über die API abgerufen', { mappe: m.titel || m.id, mappeId: m.id, felder: felder.map((f) => f.label).join(', '), schluessel: wer });
+      historie.push({ mappeId: m.id, benutzerId, art: 'passwort_angezeigt', daten: { feld: felder.map((f) => f.label).join(', '), api: wer } });
       return { ...m, werte };
     });
+    await this.repo.historieSchreibe(historie);
+    return ergebnis;
+  }
+
+  /* ---------- Aufgaben (#54) und Erwähnungen (#56) ---------- */
+
+  private async name(benutzerId: string | null): Promise<string> {
+    if (!benutzerId) return 'Administratoren';
+    return (await this.repo.titelVon([benutzerId])).get(benutzerId)?.replace(/ \(ehemalig\)$/, '') || 'unbekannt';
+  }
+
+  /** Ein aktiver Benutzer (seine Benutzer-Mappe), sonst 422. */
+  private async pruefeEmpfaenger(id: unknown): Promise<string> {
+    const { benutzer } = await this.sichereSystem();
+    const m = istUuid(id) ? await this.repo.holeMappe(id) : undefined;
+    if (!m || m.typId !== benutzer.id) throw new Fachfehler(422, 'Bitte einen Benutzer als Empfänger wählen.');
+    if (m.werte.aktiv === false) throw new Fachfehler(422, 'Dieser Benutzer ist deaktiviert.');
+    return m.id;
+  }
+
+  /**
+   * Neue @-Erwähnungen in formatiertem Text werden Aufgaben (#56). Gibt es für Benutzer und Feld
+   * schon eine offene, entsteht keine zweite; entfernte Erwähnungen stehen nur in der Historie.
+   */
+  private async pruefeErwaehnungen(typ: Mappentyp, mappeId: string, alt: Werte, neu: Werte, von: string | null) {
+    if (!typ.felder.some((x) => x.typ === 'formatiert')) return;
+    const { benutzer } = await this.sichereSystem();
+    for (const f of typ.felder.filter((x) => x.typ === 'formatiert')) {
+      const vorher = new Set(erwaehnungen(String(alt[f.key] ?? '')));
+      const jetzt = new Set(erwaehnungen(String(neu[f.key] ?? '')));
+      const offen = (await this.repo.offeneAufgaben({ mappeIds: [mappeId] })).filter((a) => a.art === 'erwaehnung' && a.feldKey === f.key);
+      for (const id of jetzt) {
+        if (vorher.has(id) || id === von || offen.some((a) => a.empfaengerId === id)) continue;
+        const m = await this.repo.holeMappe(id);
+        if (!m || m.typId !== benutzer.id || m.werte.aktiv === false) continue;
+        const a = await this.repo.legeAufgabeAn({
+          id: randomUUID(), mappeId, empfaengerId: id, art: 'erwaehnung', feldKey: f.key,
+          text: `Erwähnt von ${await this.name(von)} in „${f.label}“`, erstellt: '', erstelltVon: von, erledigt: null, erledigtVon: null,
+        });
+        await this.notiere(mappeId, von, 'aufgabe', { text: `${await this.name(id)} erwähnt in „${f.label}“`, aufgabe: a.id });
+      }
+      for (const id of vorher) {
+        if (!jetzt.has(id)) await this.notiere(mappeId, von, 'aufgabe', { text: `Erwähnung von ${await this.name(id)} in „${f.label}“ entfernt` });
+      }
+    }
+  }
+
+  /** Aufgabe von Hand vergeben, z. B. „Bitte Rechnung prüfen“. */
+  async legeAufgabeAn(mappeId: string, e: unknown, von: string | null): Promise<Aufgabe> {
+    if (!(await this.repo.holeMappe(mappeId))) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    const x = (e ?? {}) as Record<string, unknown>;
+    const text = typeof x.text === 'string' ? x.text.trim() : '';
+    if (!text) throw new Fachfehler(422, 'Bitte beschreiben, was zu tun ist.');
+    if (text.length > AUFGABE_MAX) throw new Fachfehler(422, `Höchstens ${AUFGABE_MAX} Zeichen.`);
+    const an = await this.pruefeEmpfaenger(x.empfaengerId);
+    const a = await this.repo.legeAufgabeAn({ id: randomUUID(), mappeId, empfaengerId: an, art: 'manuell', text, erstellt: '', erstelltVon: von, erledigt: null, erledigtVon: null });
+    await this.notiere(mappeId, von, 'aufgabe', { text: `für ${await this.name(an)}: ${text}`, aufgabe: a.id });
+    protokoll.modul('ablage').info('Aufgabe vergeben', { mappeId, an: await this.name(an) });
+    return a;
+  }
+
+  private async eigeneAufgabe(id: string, ich: { id: string; rolle: string }) {
+    const a = await this.repo.holeAufgabe(id);
+    if (!a) throw new Fachfehler(404, 'Diese Aufgabe gibt es nicht.');
+    const meine = a.empfaengerId === ich.id || (!a.empfaengerId && ich.rolle === 'admin');
+    if (!meine && ich.rolle !== 'admin') throw new Fachfehler(403, 'Das ist nicht deine Aufgabe. Weitergeben oder erledigen kann sie nur ihr Empfänger oder ein Administrator.');
+    if (a.erledigt) throw new Fachfehler(409, 'Diese Aufgabe ist schon erledigt.');
+    return a;
+  }
+
+  /** Bestätigen (Erwähnungen, manuelle Aufgaben). „Passt nicht“ erledigt sich, sobald die Mappe passt. */
+  async erledigeAufgabe(id: string, ich: { id: string; rolle: string }) {
+    const a = await this.eigeneAufgabe(id, ich);
+    if (a.art === 'passung') throw new Fachfehler(409, 'Diese Aufgabe erledigt sich selbst, sobald die Mappe wieder zur Definition passt.');
+    await this.repo.erledigeAufgabe(id, ich.id);
+    await this.notiere(a.mappeId, ich.id, 'aufgabe', { text: `erledigt: ${a.text}`, aufgabe: id });
+    protokoll.modul('ablage').info('Aufgabe erledigt', { mappeId: a.mappeId, aufgabe: a.text });
+    return (await this.repo.holeAufgabe(id))!;
+  }
+
+  /** Weitergeben: durch den Empfänger selbst oder einen Administrator; steht im Protokoll. */
+  async delegiereAufgabe(id: string, an: unknown, ich: { id: string; rolle: string }) {
+    const a = await this.eigeneAufgabe(id, ich);
+    const ziel = await this.pruefeEmpfaenger(an);
+    if (ziel === a.empfaengerId) return a;
+    await this.repo.delegiereAufgabe(id, ziel);
+    const von = await this.name(a.empfaengerId), nach = await this.name(ziel);
+    await this.notiere(a.mappeId, ich.id, 'aufgabe', { text: `weitergegeben von ${von} an ${nach}: ${a.text}`, aufgabe: id });
+    protokoll.modul('ablage').info('Aufgabe weitergegeben', { mappeId: a.mappeId, von, an: nach, aufgabe: a.text });
+    return (await this.repo.holeAufgabe(id))!;
+  }
+
+  /** Meine offenen Aufgaben (mit denen der Administratoren, wenn ich einer bin). */
+  meineAufgaben(ich: { id: string; rolle: string }) { return this.repo.offeneAufgaben({ benutzerId: ich.id, admin: ich.rolle === 'admin' }); }
+  /** Werkbank: alle offenen oder die zuletzt erledigten. */
+  async alleAufgaben(erledigt = false) { return erledigt ? this.repo.erledigteAufgaben(500) : this.repo.offeneAufgaben(); }
+  aufgabenVon(mappeId: string) { return this.repo.aufgabenVon(mappeId); }
+
+  /* ---------- Notizen (#55) ---------- */
+
+  private static notiztext(e: unknown): string {
+    const t = typeof e === 'string' ? e.replace(/\r\n?/g, '\n').trim() : '';
+    if (!t) throw new Fachfehler(422, 'Die Notiz ist leer.');
+    if (t.length > NOTIZ_MAX) throw new Fachfehler(422, `Eine Notiz darf höchstens ${NOTIZ_MAX.toLocaleString('de-DE')} Zeichen haben.`);
+    return t;
+  }
+  private static vorschau(t: string) { const x = alsText(t); return x.length > 80 ? `${x.slice(0, 77)} …` : x; }
+
+  async notizen(mappeId: string): Promise<Notiz[]> {
+    if (!(await this.repo.holeMappe(mappeId))) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    return this.repo.notizen(mappeId);
+  }
+
+  /* ---------- E-Mail aus der Mappe (#58) ---------- */
+
+  /**
+   * Verschickt eine E-Mail mit ausgewählten Dokumenten der Mappe. Absender ist das DMS,
+   * „Antworten an“ der Benutzer. Danach gibt es eine Mappe vom Systemtyp „E-Mail“ mit den
+   * Anhängen (dieselbe Datei, kein zweiter Speicherplatz) und einen Eintrag im Protokoll.
+   */
+  async versendeMappe(mappeId: string, eingabe: unknown, ich: { id: string; name: string; email: string }, mailer: Mailer | null) {
+    if (!mailer) throw new Fachfehler(409, 'Der E-Mail-Versand ist nicht eingerichtet (Werkbank → E-Mail und Adresse).');
+    const m = await this.repo.holeMappe(mappeId);
+    if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const an = [...new Set(String(e.an ?? '').split(/[,;\s]+/).map((x) => x.trim()).filter(Boolean))];
+    const betreff = String(e.betreff ?? '').replace(/[\r\n]+/g, ' ').trim();
+    const nachricht = String(e.nachricht ?? '');
+    const fehler: Record<string, string> = {};
+    if (!an.length) fehler.an = 'Mindestens einen Empfänger angeben.';
+    else if (an.length > EMAIL_MAX_EMPFAENGER) fehler.an = `Höchstens ${EMAIL_MAX_EMPFAENGER} Empfänger.`;
+    else if (an.some((x) => !istEmail(x))) fehler.an = `Keine gültige Adresse: ${an.filter((x) => !istEmail(x)).join(', ')}`;
+    if (!betreff) fehler.betreff = 'Der Betreff fehlt.';
+    else if (betreff.length > 250) fehler.betreff = 'Der Betreff ist zu lang.';
+    if (nachricht.length > NOTIZ_MAX) fehler.nachricht = 'Die Nachricht ist zu lang.';
+    if (Object.keys(fehler).length) throw new Fachfehler(422, Object.values(fehler).join(' '), { felder: fehler });
+    const ids = Array.isArray(e.dokumente) ? [...new Set(e.dokumente.map(String))] : [];
+    const alle = await this.repo.listeDokumente(mappeId);
+    const dokumente = ids.map((id) => alle.find((d) => d.id === id));
+    if (dokumente.some((d) => !d)) throw new Fachfehler(422, 'Ein ausgewähltes Dokument gehört nicht (mehr) zu dieser Mappe.');
+    const groesse = dokumente.reduce((a, d) => a + d!.groesse, 0);
+    if (groesse > EMAIL_MAX_ANHAENGE) throw new Fachfehler(413, `Die Anhänge sind zusammen größer als ${Math.round(EMAIL_MAX_ANHAENGE / 1e6)} MB.`);
+    const anhaenge = await Promise.all(dokumente.map(async (d) => ({ name: d!.name, mime: d!.mime, inhalt: await this.dateien.lies(d!.sha256) })));
+    const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;
+    try {
+      await mailer.sende(an.join(', '), betreff, nachricht, { antwortAn, anhaenge });
+    } catch (x) {
+      throw new Fachfehler(502, `Die E-Mail wurde nicht verschickt: ${(x as Error).message}`);
+    }
+    const { email: typ } = await this.sichereSystem();
+    const id = randomUUID();
+    const datum = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(new Date());
+    await this.schreibeSystemMappe(typ, id, {
+      betreff, an: an.join(', '), absender: antwortAn.replace(/"/g, ''), datum, bezug: mappeId, ...(nachricht.trim() ? { nachricht } : {}),
+    }, ich.id);
+    const reg = typ.register.find((r) => r.art === 'dokumente');
+    if (reg) for (const d of dokumente) {
+      await this.repo.legeDokumentAn({ ...d!, id: randomUUID(), mappeId: id, registerKey: reg.key, erstellt: new Date().toISOString(), erstelltVon: ich.id });
+    }
+    await this.notiere(mappeId, ich.id, 'email', { text: `„${betreff}“ an ${an.join(', ')}${dokumente.length ? ` mit ${dokumente.length} ${dokumente.length === 1 ? 'Anhang' : 'Anhängen'}` : ''}`, email: id });
+    protokoll.modul('ablage').info('E-Mail aus Mappe verschickt', { mappe: mappeId, empfaenger: an.length, anhaenge: dokumente.length, bytes: groesse });
+    return { id, typId: typ.id };
+  }
+
+  async legeNotizAn(mappeId: string, text: unknown, von: string | null): Promise<Notiz> {
+    if (!(await this.repo.holeMappe(mappeId))) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    const t = Dienst.notiztext(text);
+    const n = await this.repo.legeNotizAn({ id: randomUUID(), mappeId, text: t, erstellt: '', erstelltVon: von, geaendert: '', geaendertVon: von });
+    await this.notiere(mappeId, von, 'notiz', { text: `angelegt: ${Dienst.vorschau(t)}` });
+    return n;
+  }
+
+  /** Bearbeiten und Löschen darf jeder (Abstimmung zu #55); die Historie hält fest, wer es war. */
+  async aendereNotiz(id: string, text: unknown, von: string | null): Promise<Notiz> {
+    const alt = await this.repo.holeNotiz(id);
+    if (!alt) throw new Fachfehler(404, 'Diese Notiz gibt es nicht.');
+    const t = Dienst.notiztext(text);
+    if (t === alt.text) return alt;
+    const n = await this.repo.aendereNotiz(id, t, von);
+    await this.notiere(alt.mappeId, von, 'notiz', { text: `geändert: ${Dienst.vorschau(t)}`, vorher: Dienst.vorschau(alt.text) });
+    return n;
+  }
+
+  async loescheNotiz(id: string, von: string | null) {
+    const alt = await this.repo.holeNotiz(id);
+    if (!alt) throw new Fachfehler(404, 'Diese Notiz gibt es nicht.');
+    await this.repo.loescheNotiz(id);
+    await this.notiere(alt.mappeId, von, 'notiz', { text: `gelöscht: ${Dienst.vorschau(alt.text)}` });
+  }
+
+  /* ---------- Änderungshistorie (#57) ---------- */
+
+  /** Ein Eintrag in die Historie einer Mappe. */
+  private notiere(mappeId: string, benutzerId: string | null, art: Historienart, daten?: Historieneintrag['daten']) {
+    return this.repo.historieSchreibe([{ mappeId, benutzerId, art, daten }]);
+  }
+
+  /** Was sich zwischen zwei Ständen geändert hat – lesbar, wie es zu diesem Zeitpunkt aussah. */
+  private async aenderungen(typ: Mappentyp, alt: Werte, neu: Werte): Promise<Feldaenderung[]> {
+    const gleich = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+    const felder = typ.felder.filter((f) => !gleich(alt[f.key], neu[f.key]) && !(istLeer(alt[f.key]) && istLeer(neu[f.key])));
+    if (!felder.length) return [];
+    const ids = felder.filter((f) => f.typ === 'referenz').flatMap((f) => [alt[f.key], neu[f.key]].flatMap((v) => (Array.isArray(v) ? v : v ? [v] : []))).map(String).filter(istUuid);
+    const titel = await this.repo.titelVon(ids);
+    const lesbar = (f: Feld, v: Werte[string] | undefined) => {
+      const t = formatiere(f, v, (id) => titel.get(id) || 'Ohne Titel');
+      return t.length > 500 ? `${t.slice(0, 497)} …` : t;
+    };
+    return felder.map((f) => (f.typ === 'passwort'
+      ? { feld: f.key, label: f.label, geheim: true }
+      : { feld: f.key, label: f.label, alt: lesbar(f, alt[f.key]), neu: lesbar(f, neu[f.key]) }));
+  }
+
+  /** Historie einer Mappe (auch im Papierkorb). */
+  async historie(mappeId: string): Promise<Historieneintrag[]> {
+    if (!(await this.repo.holeMappe(mappeId)) && !(await this.repo.holeAusPapierkorb(mappeId))) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    return this.repo.historie(mappeId);
+  }
+
+  /** Wie lange die Historie endgültig gelöschter Mappen bleibt (Tage). */
+  async historieTage(): Promise<number> {
+    const e = this.einstellungen ? ((await this.einstellungen.lies('historie')) as { tage?: number } | null) : null;
+    return typeof e?.tage === 'number' ? e.tage : HISTORIE_STANDARD_TAGE;
+  }
+
+  async setzeHistorieTage(eingabe: unknown): Promise<number> {
+    if (!this.einstellungen) throw new Fachfehler(404, 'Einstellungen sind nicht eingerichtet.');
+    const tage = Number(eingabe);
+    if (!Number.isInteger(tage) || tage < 0 || tage > 36500) throw new Fachfehler(422, 'Bitte eine ganze Zahl von 0 bis 36500 Tagen angeben.');
+    await this.einstellungen.schreibe('historie', { tage });
+    protokoll.modul('werkbank').info('Aufbewahrung der Historie gelöschter Mappen geändert', { tage });
+    return tage;
   }
 
   listeTypen() { return this.repo.listeTypen(); }
@@ -316,7 +557,7 @@ export class Dienst {
       r.quellen = (r.quellen ?? []).filter((q) => {
         const felder = q.typId === eigeneId ? d.felder : alle.find((t) => t.id === q.typId)?.felder;
         const f = felder?.find((x) => x.key === q.feldKey);
-        return f?.typ === 'referenz' && f.zielTyp === eigeneId;
+        return f?.typ === 'referenz' && (f.zielTyp === eigeneId || f.zielTyp === '*');
       });
     }
     const p = pruefeMappentyp(d, {
@@ -376,7 +617,7 @@ export class Dienst {
       const s = soll.find((x) => x.key === f.key);
       return s ? { ...s, label: f.label || s.label, hilfe: f.hilfe || s.hilfe } : f;
     });
-    return { ...d, felder, ...(system === 'benutzer' ? { erstellenErlaubt: false, loeschenErlaubt: false } : {}) };
+    return { ...d, felder, ...(system === 'benutzer' ? { erstellenErlaubt: false, loeschenErlaubt: false } : system === 'email' ? { erstellenErlaubt: false } : {}) };
   }
 
   async loescheTyp(id: string): Promise<void> {
@@ -414,6 +655,10 @@ export class Dienst {
       mappe,
       rueckverweise: await this.repo.rueckverweise(id),
       dokumente: await this.repo.listeDokumente(id),
+      /** Notizen an der Mappe (#55). */
+      notizen: await this.repo.notizen(id),
+      /** Aufgaben an der Mappe, offene zuerst (#54). */
+      aufgaben: await this.repo.aufgabenVon(id),
       /** Titel und Typ der Mappen, auf die diese verweist. */
       bezuege: Object.fromEntries(await this.repo.bezuege(ziele)),
     };
@@ -425,12 +670,13 @@ export class Dienst {
    * Eine Seite einer Sicht: „eingang“, eine verwaltete Sicht (#38) oder – für Links auf Mappen,
    * deren Typ keine eigene Sicht hat – eine Typ-Id. Mit den Bezügen für die Anzeige.
    */
-  async seite(ich: { id: string; rolle: string }, q: { sicht?: string; von?: unknown; anzahl?: unknown; suche?: unknown; sortierung?: unknown; absteigend?: unknown; volltext?: unknown }) {
+  async seite(ich: { id: string; rolle: string }, q: { sicht?: string; von?: unknown; anzahl?: unknown; suche?: unknown; sortierung?: unknown; absteigend?: unknown; volltext?: unknown; notizen?: unknown }) {
     const von = Math.max(0, Math.floor(Number(q.von) || 0));
     const anzahl = Math.min(500, Math.max(1, Math.floor(Number(q.anzahl) || 100)));
     const suche = text(q.suche).slice(0, 200) || undefined;
-    // Auch im Volltext der Dokumente suchen (#45).
+    // Auch im Volltext der Dokumente (#45) und in Notizen (#55) suchen.
     const volltext = q.volltext === true || q.volltext === 'true' || undefined;
+    const notizen = q.notizen === true || q.notizen === 'true' || undefined;
     const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
     const sichten = await this.repo.listeSichten();
     // „typ:<id>“: alle Mappen eines Typs, ohne Bedingungen einer Sicht (z. B. Auswahl eines Verweises).
@@ -440,12 +686,22 @@ export class Dienst {
     const einTyp = q.sicht === 'eingang' ? undefined : sicht ? (() => { const w = wirksameTypen(sichten, sicht.id); return w.length === 1 ? typen.get(w[0]) : undefined; })() : typen.get(nurTyp ?? String(q.sicht));
     const sortierung = sortierungAus(text(q.sortierung), q.absteigend === 'true' || q.absteigend === true, einTyp);
     const r = q.sicht === 'eingang'
-      ? await this.repo.seite({ eingang: { benutzerId: ich.id, admin: ich.rolle === 'admin' }, suche, volltext, von, anzahl, sortierung })
+      ? await this.repo.seite({ eingang: { benutzerId: ich.id, admin: ich.rolle === 'admin' }, suche, volltext, notizen, von, anzahl, sortierung })
       : sicht
-        ? await this.repo.seite({ klauseln: klauselnFuer(sichten, sicht.id, typen, await this.aufloesung(ich.id)), suche, volltext, von, anzahl, sortierung })
-        : await this.repo.seite({ typId: nurTyp ?? q.sicht, suche, volltext, von, anzahl, sortierung });
+        ? await this.repo.seite({ klauseln: klauselnFuer(sichten, sicht.id, typen, await this.aufloesung(ich.id)), suche, volltext, notizen, von, anzahl, sortierung })
+        : await this.repo.seite({ typId: nurTyp ?? q.sicht, suche, volltext, notizen, von, anzahl, sortierung });
     const ziele = r.mappen.flatMap((m) => { const t = typen.get(m.typId); return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []; });
-    return { gesamt: r.gesamt, von, mappen: r.mappen, bezuege: Object.fromEntries(await this.repo.bezuege(ziele)), ...(r.ausschnitte ? { ausschnitte: r.ausschnitte } : {}) };
+    // Eingang (#54): je Mappe, was für mich zu tun ist.
+    const aufgaben: Record<string, string> = {};
+    if (q.sicht === 'eingang' && r.mappen.length) {
+      for (const a of await this.repo.offeneAufgaben({ benutzerId: ich.id, admin: ich.rolle === 'admin', mappeIds: r.mappen.map((m) => m.id) })) {
+        aufgaben[a.mappeId] = aufgaben[a.mappeId] ? `${aufgaben[a.mappeId]} · ${a.text}` : a.text;
+      }
+    }
+    return {
+      gesamt: r.gesamt, von, mappen: r.mappen, bezuege: Object.fromEntries(await this.repo.bezuege(ziele)),
+      ...(r.ausschnitte ? { ausschnitte: r.ausschnitte } : {}), ...(q.sicht === 'eingang' ? { aufgaben } : {}),
+    };
   }
 
   /** Anzahl Mappen je Typ (davon unpassend, Demo), je Sicht und im Eingang des Benutzers. */
@@ -588,7 +844,10 @@ export class Dienst {
       });
       return { id: m.id, problem: ersterGrund(typ, p), alt: m.problem ?? null, passtAlt: m.passt };
     });
-    await this.repo.setzePassung(ergebnis.filter((e) => e.problem !== e.alt || e.passtAlt === undefined).map(({ id, problem }) => ({ id, problem })));
+    const geaendert = ergebnis.filter((e) => e.problem !== e.alt || e.passtAlt === undefined).map(({ id, problem }) => ({ id, problem }));
+    await this.repo.setzePassung(geaendert);
+    // Passt eine Mappe nicht, hat ihr Ersteller eine Aufgabe (#54); passt sie wieder, ist sie erledigt.
+    await this.repo.aufgabenZurPassung(geaendert);
     return ergebnis.filter((e) => e.problem).length;
   }
 
@@ -616,6 +875,7 @@ export class Dienst {
       if (problem !== m.problem) liste.push({ id: m.id, problem });
     }
     await this.repo.setzePassung(liste);
+    await this.repo.aufgabenZurPassung(liste);
   }
 
   /** Beim Start: Passung für Typen nachholen, deren Mappen noch nie geprüft wurden. */
@@ -689,6 +949,10 @@ export class Dienst {
     await this.pruefeWerte(typ, werte);
     const id = istUuid(e.id) && !(await this.repo.holeMappe(e.id)) ? e.id : randomUUID();
     const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), benutzerId, demo);
+    if (!demo) {
+      await this.notiere(m.id, benutzerId, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, werte) });
+      await this.pruefeErwaehnungen(typ, m.id, {}, werte, benutzerId);
+    }
     const titel = (await this.aktualisiereTitel([m.id])).get(m.id);
     if (typ.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
     return { ...m, titel };
@@ -707,7 +971,12 @@ export class Dienst {
       }
     }
     await this.pruefeWerte(typ, werte, id);
+    const aenderungen = await this.aenderungen(typ, m.werte, werte);
     const neu = await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), benutzerId);
+    if (aenderungen.length) await this.notiere(id, benutzerId, 'geaendert', { aenderungen });
+    // Gespeichert heißt: passt wieder – eine „passt nicht“-Aufgabe ist damit erledigt.
+    await this.repo.aufgabenZurPassung([{ id, problem: null }]);
+    await this.pruefeErwaehnungen(typ, id, m.werte, werte, benutzerId);
     const titel = (await this.aktualisiereTitel([id])).get(id);
     if (typ.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
     return { ...neu, titel };
@@ -726,7 +995,11 @@ export class Dienst {
     // Eine Rolle darf weg, auch wenn Benutzer sie haben: deren Zuordnung fällt weg.
     const benutzerTyp = typ?.system === 'rolle' ? (await this.repo.listeTypen()).find((t) => t.system === 'benutzer') : undefined;
     const zuordnungen = benutzerTyp ? rueck.filter((r) => r.quelleTypId === benutzerTyp.id && r.feldKey === 'rollen') : [];
-    const fremd = rueck.filter((r) => r.quelleId !== id && !zuordnungen.includes(r));
+    // Versendete E-Mails (#58) verweisen auf jede Mappe; sie halten das Löschen nicht auf, ihr Bezug wird leer.
+    const typen = rueck.length ? await this.repo.listeTypen() : [];
+    const emailTyp = typen.find((t) => t.system === 'email');
+    const emails = emailTyp ? rueck.filter((r) => r.quelleTypId === emailTyp.id && r.feldKey === 'bezug') : [];
+    const fremd = rueck.filter((r) => r.quelleId !== id && !zuordnungen.includes(r) && !emails.includes(r));
     if (fremd.length) {
       throw new Fachfehler(409, `Auf diese Mappe ${fremd.length === 1 ? 'verweist noch eine andere Mappe' : `verweisen noch ${fremd.length} andere Mappen`}. Entferne erst diese Verweise.`, { rueckverweise: fremd });
     }
@@ -734,26 +1007,32 @@ export class Dienst {
       const b = await this.repo.holeMappe(z.quelleId);
       if (b) await this.schreibeSystemMappe(benutzerTyp!, b.id, { ...b.werte, rollen: alsListe(b.werte.rollen).filter((r) => r !== id) }, benutzerId);
     }
+    for (const e of emails) {
+      const x = await this.repo.holeMappe(e.quelleId);
+      if (x) await this.schreibeSystemMappe(emailTyp!, x.id, { ...x.werte, bezug: null }, benutzerId);
+    }
     if (await this.papierkorbTage() > 0) await this.legeInPapierkorb(id, typ, benutzerId);
-    else await this.loescheMappeIntern(id, typ);
+    else await this.loescheMappeIntern(id, typ, benutzerId);
   }
 
   /** In den Papierkorb (#43): eindeutige Werte werden frei, Dateien bleiben bis zum Leeren. */
   private async legeInPapierkorb(id: string, typ: Mappentyp | undefined, von: string | null) {
     await this.repo.legeInPapierkorb(id, von);
+    await this.notiere(id, von, 'papierkorb');
     if (typ?.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
   }
 
-  private async loescheMappeIntern(id: string, typ: Mappentyp | undefined) {
+  private async loescheMappeIntern(id: string, typ: Mappentyp | undefined, von: string | null = null) {
     const dokumente = await this.repo.listeDokumente(id);
     await this.repo.loescheMappe(id);
+    await this.notiere(id, von, 'endgueltig');
     if (typ?.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
     for (const sha of new Set(dokumente.map((d) => d.sha256))) await this.raeumeAuf(sha);
   }
 
   /* ---------- Systemtypen: Benutzer und Rollen (#26, #27) ---------- */
 
-  private sichern?: Promise<{ benutzer: Mappentyp; rolle: Mappentyp; systemrollen: Map<Rolle, string> }>;
+  private sichern?: Promise<{ benutzer: Mappentyp; rolle: Mappentyp; email: Mappentyp; systemrollen: Map<Rolle, string> }>;
 
   /**
    * Legt die Systemtypen „Benutzer“ und „Rolle“ und die Systemrollen an, falls sie fehlen.
@@ -765,6 +1044,7 @@ export class Dienst {
       // Definitionen können sich seitdem geändert haben (Felder ergänzt, umbenannt).
       benutzer: (await this.repo.holeTyp(s.benutzer.id)) ?? s.benutzer,
       rolle: (await this.repo.holeTyp(s.rolle.id)) ?? s.rolle,
+      email: (await this.repo.holeTyp(s.email.id)) ?? s.email,
       systemrollen: s.systemrollen,
     }));
   }
@@ -773,6 +1053,7 @@ export class Dienst {
     const typen = await this.repo.listeTypen();
     let rolle = typen.find((t) => t.system === 'rolle');
     let benutzer = typen.find((t) => t.system === 'benutzer');
+    let email = typen.find((t) => t.system === 'email');
     const frei = (name: string) => (typen.some((t) => t.name.trim().toLowerCase() === name.toLowerCase()) ? `${name} (System)` : name);
     const ids = { rolle: rolle?.id ?? randomUUID(), benutzer: benutzer?.id ?? randomUUID() };
     if (!rolle) {
@@ -802,6 +1083,21 @@ export class Dienst {
       await this.sichtFuerTyp(benutzer);
       protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: benutzer.name });
     }
+    if (!email) {
+      // Versendete E-Mails (#58); später auch per IMAP abgeholte.
+      email = await this.repo.legeTypAn(randomUUID(), {
+        name: frei('E-Mail'), beschreibung: 'Aus dem DMS verschickte E-Mails mit Anhängen', titelVorlage: '{betreff}',
+        felder: systemfelder('email', rolle.id),
+        register: [
+          { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['betreff', 'an', 'absender', 'datum', 'bezug', 'nachricht'] },
+          { key: 'anhaenge', name: 'Anhänge', art: 'dokumente' },
+          { key: 'protokoll', name: 'Protokoll', art: 'protokoll' },
+        ],
+        trefferliste: ['datum', 'an', 'bezug'], erstellenErlaubt: false, loeschenErlaubt: true,
+      }, 'email');
+      await this.sichtFuerTyp(email);
+      protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: email.name });
+    }
     const systemrollen = new Map<Rolle, string>();
     for (const r of Object.keys(ROLLEN) as Rolle[]) {
       const kennung = systemrolleKennung(r);
@@ -812,7 +1108,7 @@ export class Dienst {
       }
       systemrollen.set(r, m.id);
     }
-    return { benutzer, rolle, systemrollen };
+    return { benutzer, rolle, email, systemrollen };
   }
 
   /** Schreibt eine Mappe, die das System pflegt – ohne die Sperren der Ablage; Titel und Passung wie sonst. */
@@ -820,8 +1116,11 @@ export class Dienst {
     const alt = await this.repo.holeMappe(id);
     const werte = bereinigeWerte(typ, eingabe, alt?.werte);
     if (alt && JSON.stringify(alt.werte) === JSON.stringify(werte)) return alt;
+    const aenderungen = await this.aenderungen(typ, alt?.werte ?? {}, werte);
     if (alt) await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), von);
     else await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), von, false, kennung);
+    if (aenderungen.length) await this.notiere(id, von, alt ? 'geaendert' : 'angelegt', { aenderungen });
+    if (alt) await this.repo.aufgabenZurPassung([{ id, problem: null }]);
     await this.aktualisiereTitel([id]);
     // Hat der Administrator den Typ um Pflichtfelder erweitert, landet die Mappe im Eingang.
     await this.passungFuer(typ, [id]);
@@ -905,6 +1204,7 @@ export class Dienst {
         const fremd = (await this.repo.rueckverweise(id)).filter((r) => r.quelleId !== id);
         if (fremd.length) throw new Fachfehler(409, `Auf diesen Benutzer ${fremd.length === 1 ? 'verweist noch eine Mappe' : `verweisen noch ${fremd.length} Mappen`}. Deaktiviere ihn statt ihn zu löschen.`, { rueckverweise: fremd });
         await this.repo.legeInPapierkorb(id, von);
+        await this.notiere(id, von, 'papierkorb');
       },
     };
   }
@@ -952,6 +1252,7 @@ export class Dienst {
     const typ = await this.repo.holeTyp(e.typId);
     if (!typ) throw new Fachfehler(409, 'Den Mappentyp dieser Mappe gibt es nicht mehr.');
     const { verweiseEntfallen } = await this.repo.stelleWiederHer(id);
+    await this.notiere(id, ich.id, 'wiederhergestellt', verweiseEntfallen ? { verweiseEntfallen } : undefined);
     await this.aktualisiereTitel([id]);
     await this.passungFuer(typ, [id]);
     if (typ.system === 'benutzer') await this.konten?.wiederda(id, ich.id);
@@ -961,8 +1262,9 @@ export class Dienst {
   }
 
   /** Endgültig löschen (ohne Rechteprüfung): Dateien, an denen nichts mehr hängt, und Konten von Benutzer-Mappen. */
-  private async leere(ids: string[]): Promise<number> {
+  private async leere(ids: string[], von: string | null = null): Promise<number> {
     if (!ids.length) return 0;
+    await this.repo.historieSchreibe(ids.map((mappeId) => ({ mappeId, benutzerId: von, art: 'endgueltig' as const })));
     const benutzerTyp = (await this.repo.listeTypen()).find((t) => t.system === 'benutzer');
     const benutzer = benutzerTyp ? (await this.repo.papierkorb({ typId: benutzerTyp.id })).filter((e) => ids.includes(e.id)).map((e) => e.id) : [];
     const dateien = await this.repo.leerePapierkorb(ids);
@@ -974,14 +1276,14 @@ export class Dienst {
   /** Einzelne Mappen endgültig löschen: eigene oder (in der Werkbank) alle. */
   async loescheEndgueltig(ids: string[], ich: { id: string; rolle: string }, alle = false): Promise<number> {
     for (const id of ids) await this.eintrag(id, ich, alle);
-    const n = await this.leere(ids);
+    const n = await this.leere(ids, ich.id);
     if (n) protokoll.modul('ablage').info('Aus dem Papierkorb endgültig gelöscht', { anzahl: n });
     return n;
   }
 
   /** Papierkorb leeren: eigener (Ablage) oder ganz (Werkbank). */
   async leerePapierkorb(ich: { id: string; rolle: string }, alle = false): Promise<number> {
-    const n = await this.leere((await this.papierkorb(ich, alle)).map((e) => e.id));
+    const n = await this.leere((await this.papierkorb(ich, alle)).map((e) => e.id), ich.id);
     if (n) protokoll.modul('ablage').info(alle ? 'Papierkorb aller Benutzer geleert' : 'Papierkorb geleert', { anzahl: n });
     return n;
   }
@@ -992,6 +1294,10 @@ export class Dienst {
     const vor = new Date(jetzt - tage * 24 * 60 * 60 * 1000).toISOString();
     const n = await this.leere((await this.repo.papierkorb(tage ? { vor } : {})).map((e) => e.id));
     if (n) protokoll.modul('system').info('Abgelaufene Mappen aus dem Papierkorb gelöscht', { anzahl: n, tage });
+    // Historie endgültig gelöschter Mappen nach ihrer Frist (#57).
+    const ht = await this.historieTage();
+    const weg = await this.repo.historieAufraeumen(new Date(jetzt - ht * 24 * 60 * 60 * 1000).toISOString());
+    if (weg) protokoll.modul('system').info('Historie endgültig gelöschter Mappen entfernt', { eintraege: weg, tage: ht });
     return n;
   }
 
@@ -1034,6 +1340,7 @@ export class Dienst {
     const angegeben = /^[\w.+-]+\/[\w.+-]+$/.test(e.typ ?? '') ? e.typ! : 'application/octet-stream';
     const gleicherInhalt = await this.repo.dokumenteMitSha(sha256);
     await this.dateien.schreibe(sha256, inhalt);
+    await this.notiere(mappeId, benutzerId, 'dokument_hochgeladen', { dokument: dateiname(e.name) });
     const dokument = await this.repo.legeDokumentAn({
       id: randomUUID(), mappeId, registerKey: reg.key, name: dateiname(e.name), mime: erkannt ?? angegeben,
       groesse: inhalt.length, sha256, anzeigbar: !!erkannt, erstellt: new Date().toISOString(), erstelltVon: benutzerId,
@@ -1055,10 +1362,11 @@ export class Dienst {
     return { dokument, inhalt: await this.dateien.lies(dokument.sha256) };
   }
 
-  async loescheDokument(id: string) {
+  async loescheDokument(id: string, benutzerId: string | null = null) {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
     await this.repo.loescheDokument(id);
+    await this.notiere(d.mappeId, benutzerId, 'dokument_geloescht', { dokument: d.name });
     await this.raeumeAuf(d.sha256);
   }
 }

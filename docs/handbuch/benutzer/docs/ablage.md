@@ -52,11 +52,15 @@ Sobald eine Sicht mehr als fünf Mappen hat, erscheint über der Liste ein Suchf
 
 ### Im Text der Dokumente suchen
 
-Setzt du unter dem Suchfeld den Haken **Volltext durchsuchen**, sucht das DMS auch im Text der hochgeladenen Dokumente – in PDFs und, dank Texterkennung, auch in Scans und Fotos. Unter jedem Treffer steht, in welchem Dokument die Stelle steht, mit dem gefundenen Wort hervorgehoben. Das DMS merkt sich den Haken für dich.
+Setzt du neben dem Suchfeld den Haken **Volltext durchsuchen**, sucht das DMS auch im Text der hochgeladenen Dokumente – in PDFs und, dank Texterkennung, auch in Scans und Fotos. Unter jedem Treffer steht, in welchem Dokument die Stelle steht, mit dem gefundenen Wort hervorgehoben. Das DMS merkt sich den Haken für dich.
 
 ![Volltextsuche: Treffer in einem Dokument](bilder/volltext-suche.png)
 
 Die Volltextsuche versteht Deutsch: „Rechnungen“ findet auch „Rechnung“, und mehrere Wörter müssen alle vorkommen. Mit Anführungszeichen suchst du eine genaue Wortfolge, z. B. `"Stadtwerke Musterstadt"`; ein Minus schließt ein Wort aus, z. B. `Strom -Gas`.
+
+### In Notizen suchen
+
+Mit dem Haken **Notizen** sucht das DMS auch in den [Notizen](zusammenarbeit.md#notizen) der Mappen. Unter einem Treffer steht dann die Stelle aus der Notiz.
 
 !!! note "Was die Suche (noch) nicht kann"
     - Frisch hochgeladene Dokumente findet sie erst, wenn ihr Text erkannt ist – meist nach Sekunden, bei langen Scans nach einigen Minuten (siehe [Dokumente](dokumente.md#volltext)).

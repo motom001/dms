@@ -253,8 +253,8 @@ button.aufklapper:hover { background: var(--flaeche); color: var(--tinte); }
 
 /* ---------- Register an der Mappe (Trennblätter) ---------- */
 .blatt.mitregistern { padding-top: 0; gap: 14px; }
-.registertaben { display: flex; gap: 2px; margin: 0 -20px; padding: 10px 14px 0; border-bottom: 1px solid var(--linie); overflow-x: auto; background: var(--senke); border-radius: var(--r) var(--r) 0 0; }
-.registertab { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px 9px; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0; background: none; cursor: pointer; font-weight: 600; font-size: calc(13px * var(--skala, 1)); color: var(--leise); white-space: nowrap; margin-bottom: -1px; border-top: 3px solid transparent; }
+.registertaben { display: flex; gap: 2px; margin: 0 -20px; padding: 10px 14px 0; box-shadow: inset 0 -1px 0 var(--linie); overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; background: var(--senke); border-radius: var(--r) var(--r) 0 0; }
+.registertab { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px 9px; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0; background: none; cursor: pointer; font-weight: 600; font-size: calc(13px * var(--skala, 1)); color: var(--leise); white-space: nowrap; border-top: 3px solid transparent; }
 .registertab:hover:not(:disabled) { color: var(--tinte); }
 .registertab.an { background: var(--flaeche); border-color: var(--linie); color: var(--tinte); }
 .registertab.an.art-felder { border-top-color: var(--gruen); }
@@ -354,7 +354,7 @@ progress::-moz-progress-bar { background: var(--akzent); border-radius: 999px; }
 .refbox .gewaehlt li > :first-child { flex: 1 1 10em; min-width: min(10em, 100%); overflow-wrap: break-word; }
 .verweisaktionen { display: flex; gap: 10px; margin-left: auto; }
 .wahl { position: relative; }
-.wahl input { width: 100%; }
+.wahl > input { width: 100%; }  /* nur das Suchfeld der Verweiswahl, nicht Haken/Optionen in fieldset.wahl (#51) */
 /* Haken für weitere Rollen in der Benutzerverwaltung: nicht wie das Suchfeld der Verweiswahl auf volle Breite ziehen. */
 .rollenwahl input { width: auto; }
 .rollenwahl .haken { align-self: flex-start; }
@@ -522,7 +522,8 @@ input.kurz { width: 7em; }
 .passwort > input, .passwort > .festwert { flex: 1 1 12em; min-width: 0; }
 .raster > .haken.breit { grid-column: 1 / -1; }
 /* Volltextsuche (#45) */
-.suchzeile { display: flex; flex-direction: column; gap: 4px; }
+.suchzeile { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+.suchzeile > .suche { flex: 1 1 100%; max-width: none; }
 .suchzeile .haken.klein { font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
 .fundstelle { display: block; font-size: calc(12px * var(--skala, 1)); color: var(--leise); line-height: 1.4; margin-top: 2px; overflow-wrap: anywhere; }
 .fundstelle .dok { font-weight: 600; }
@@ -530,3 +531,86 @@ input.kurz { width: 7em; }
 /* Stand der Texterkennung am Dokument */
 .ocrstand { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .volltext { white-space: pre-wrap; max-height: 260px; overflow: auto; font-size: calc(12px * var(--skala, 1)); background: var(--senke); border: 1px solid var(--linie); border-radius: 6px; padding: 8px 10px; margin: 6px 0 0; }
+
+/* Fester Listenkopf (#50): Kopf, Suche und Trefferzahl stehen, nur der Listenrumpf rollt. */
+.spalte.liste:has(> .listenrumpf) { overflow: hidden; padding-bottom: 0; }
+.listenrumpf { flex: 1 1 auto; min-height: 0; overflow: auto; margin: 0 -16px; padding: 0 16px 32px; display: flex; flex-direction: column; gap: 12px; }
+.listenrumpf > .trefferliste { overflow: visible; }
+.listenrumpf .trefferliste thead th { top: 0; }
+/* Listen der Werkbank: Kopf mit „+ Neu“ bleibt oben stehen. */
+.spalte.liste > .listenkopf { position: sticky; top: -18px; z-index: 3; background: var(--flaeche); margin: -18px -16px 0; padding: 18px 16px 8px; }
+/* Formatierter Text (#53) */
+.formatiert { line-height: 1.5; overflow-wrap: anywhere; }
+.formatiert > :first-child { margin-top: 0; }
+.formatiert > :last-child { margin-bottom: 0; }
+.formatiert p, .formatiert ul, .formatiert ol, .formatiert blockquote { margin: 0 0 8px; }
+.formatiert ul, .formatiert ol { padding-left: 22px; }
+.formatiert h3, .formatiert h4, .formatiert h5 { margin: 10px 0 6px; font-size: calc(15px * var(--skala, 1)); }
+.formatiert h3 { font-size: calc(17px * var(--skala, 1)); }
+.formatiert blockquote { border-left: 3px solid var(--linie-stark); padding: 2px 10px; color: var(--leise); }
+.formatiert code { font-family: ui-monospace, monospace; background: var(--senke); padding: 0 4px; border-radius: 4px; }
+.erwaehnung { color: var(--akzent); background: var(--akzent-zart); border-radius: 4px; padding: 0 3px; font-weight: 600; }
+.formateingabe { display: flex; flex-direction: column; gap: 4px; }
+.formatleiste { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.formatleiste .textknopf.an { font-weight: 700; text-decoration: underline; }
+.formatleiste .werkzeuge { display: inline-flex; gap: 2px; margin-left: auto; }
+.formatvorschau { min-height: 4.5em; padding: 8px 10px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche); }
+.formateingabe textarea { width: 100%; }
+/* Änderungshistorie (#57) */
+.historie { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.historie li { border-bottom: 1px solid var(--linie); padding: 8px 0; }
+.historie summary, .historie .zeile { display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: baseline; cursor: default; }
+.historie summary { cursor: pointer; }
+.historie .wann { color: var(--leise); font-variant-numeric: tabular-nums; font-size: calc(12.5px * var(--skala, 1)); min-width: 8.5em; }
+.historie .wer { color: var(--leise); font-size: calc(12.5px * var(--skala, 1)); min-width: 8em; }
+.historie .was { flex: 1 1 14em; min-width: 0; overflow-wrap: anywhere; }
+.historie .aenderungen { margin: 8px 0 4px; font-size: calc(13px * var(--skala, 1)); width: 100%; }
+.historie .aenderungen td { padding: 4px 8px; vertical-align: top; overflow-wrap: anywhere; }
+.registertab.an.art-protokoll { border-top-color: var(--leise); }
+/* Notizen (#55) und Werkzeugleiste der Mappe */
+.mappenleiste { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.zeile-zwischen { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.notizliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.notizliste li { border-left: 3px solid var(--warn); background: var(--warn-zart); padding: 8px 12px; border-radius: 0 6px 6px 0; display: flex; flex-direction: column; gap: 4px; }
+.notizkopf { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: space-between; }
+.neuenotiz { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--linie); padding-top: 10px; }
+/* Aufgaben (#54) */
+.aufgabenhinweis ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.aufgabenhinweis li { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; }
+.aufgabenhinweis li:not(.meine) { opacity: .85; }
+.aufgabentext { flex: 1 1 18em; min-width: 0; color: var(--tinte); }
+.aufgabenaktionen, .weitergeben { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.eigenschaft.breit { grid-column: 1 / -1; }
+
+/* Werkbank → Aufgaben (#54) */
+.aufgabenzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 2px 12px 10px; }
+.aufgabenzeile select { flex: 1 1 160px; min-width: 0; }
+
+/* Aktionen an der Mappe (#58) */
+.aktionsmenue { position: relative; }
+.aktionsmenue .menue { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 220px; display: flex; flex-direction: column; padding: 4px; background: var(--flaeche, #fff); border: 1px solid var(--linie); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+.aktionsmenue .menue button { text-align: left; background: none; border: 0; padding: 8px 10px; border-radius: 6px; font: inherit; color: inherit; cursor: pointer; }
+.aktionsmenue .menue button:hover, .aktionsmenue .menue button:focus-visible { background: var(--senke); }
+.mappenleiste .aktionsmenue { margin-left: auto; }
+.anhaenge { border: 0; padding: 0; margin: 12px 0; }
+.anhaenge legend { font-weight: 600; margin-bottom: 4px; }
+.anhaenge ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+
+/* Druckansicht / Als PDF exportieren (#58) */
+.druckansicht { display: none; }
+@media print {
+  body.druckt > *:not(.druckansicht) { display: none !important; }
+  body.druckt { background: #fff !important; }
+  body.druckt .druckansicht { display: block; color: #000; font: 11pt/1.45 system-ui, sans-serif; }
+  .druckansicht h1 { font-size: 18pt; margin: 0 0 4pt; }
+  .druckansicht h2 { font-size: 13pt; margin: 16pt 0 6pt; border-bottom: 1px solid #999; padding-bottom: 2pt; }
+  .druckansicht .ueber { text-transform: uppercase; letter-spacing: .06em; font-size: 9pt; color: #555; margin: 0; }
+  .druckansicht table { width: 100%; border-collapse: collapse; margin-top: 10pt; }
+  .druckansicht th, .druckansicht td { text-align: left; vertical-align: top; padding: 4pt 6pt; border-bottom: 1px solid #ddd; }
+  .druckansicht th { width: 32%; font-weight: 600; }
+  .druckansicht tr, .druckansicht .notiz { break-inside: avoid; }
+  .druckansicht .klein { font-size: 9pt; color: #444; }
+  .druckansicht .fuss { margin-top: 20pt; }
+  @page { margin: 18mm; }
+}
+.festwert .mehrzeilig { white-space: pre-wrap; }

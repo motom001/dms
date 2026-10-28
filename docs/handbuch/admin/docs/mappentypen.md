@@ -29,6 +29,7 @@ Jedes Feld hat eine **Bezeichnung** (änderbar), einen **Schlüssel** (fest, sob
 | --- | --- |
 | Text | Mindest- und Höchstlänge, Muster (regulärer Ausdruck, muss den ganzen Text treffen), eindeutig |
 | Langtext | Mindest- und Höchstlänge |
+| Formatierter Text | Mindest- und Höchstlänge (siehe unten) |
 | Zahl | Minimum, Maximum, Nachkommastellen, eindeutig |
 | Betrag | Minimum, Maximum, Standardwährung |
 | Datum | – |
@@ -63,12 +64,21 @@ Ein Feld vom Typ **Passwort** nimmt z. B. das Kennwort eines Online-Zugangs auf.
 - Passwortfelder erscheinen nie im Titel, in der Trefferliste, in der Suche, in Bedingungen von Sichten oder in Demo-Daten.
 - Über die [API](api.md) gibt es Passwörter nur mit einem Schlüssel, der das Recht „Passwörter lesen“ hat.
 
+### Formatierter Text
+
+Ein Feld vom Typ **Formatierter Text** nimmt längere Texte mit einfacher Formatierung auf: fett, kursiv, Überschriften, Listen, Zitate und Links. Benutzer schreiben mit einer kleinen Werkzeugleiste und sehen eine Vorschau; gespeichert wird der Text als Markdown.
+
+- Rohes HTML gibt es nicht, und Links sind nur mit `http(s)` oder `mailto` möglich – ein Text kann so nichts im Browser ausführen.
+- In Titel, Trefferliste und Suche erscheint der Text ohne Formatierung, in Listen gekürzt.
+- Mit **@** lässt sich ein Benutzer erwähnen; er bekommt dann eine [Aufgabe](aufgaben.md).
+- Ein bestehendes Langtextfeld kannst du auf *Formatierter Text* umstellen; die Texte bleiben, wie sie sind.
+
 ## Wenn sich ein Mappentyp ändert
 
 Du kannst Mappentypen jederzeit ändern, auch wenn es schon Mappen gibt:
 
 - **Felder entfernen** löscht keine Werte. Sie bleiben an der Mappe und erscheinen dort als „Werte ohne Felddefinition“. Fügst du das Feld mit demselben Schlüssel wieder hinzu, sind sie wieder da.
-- **Neue Pflichtfelder, strengere Regeln, entfernte Auswahlwerte:** Mappen, die nicht mehr passen, werden markiert und landen im [Eingang](https://motom001.github.io/dms/benutzer/eingang/) ihres Erstellers. Nichts wird stillschweigend geändert. Über dem Mappentyp steht, wie viele Mappen betroffen sind.
+- **Neue Pflichtfelder, strengere Regeln, entfernte Auswahlwerte:** Mappen, die nicht mehr passen, werden markiert und bekommen eine [Aufgabe](aufgaben.md) „Passt nicht“ für ihren Ersteller; so landen sie in seinem [Eingang](https://motom001.github.io/dms/benutzer/eingang/). Die Aufgabe erledigt sich, sobald die Mappe wieder passt. Nichts wird stillschweigend geändert. Über dem Mappentyp steht, wie viele Mappen betroffen sind.
 
 ![Eingang in der Ablage](bilder/eingang.png)
 
@@ -88,7 +98,8 @@ Register sind die Trennblätter einer Mappe, in der angegebenen Reihenfolge:
 | --- | --- |
 | **Feldregister** | eine Gruppe von Feldern; welches Feld auf welchem Register liegt, stellst du am Feld ein |
 | **Dokumentenregister** | hochgeladene Dateien; PDFs und Bilder sind direkt ansehbar. **Volltext erzeugen** (Standard: an) schickt neue Dokumente durch die [Texterkennung](texterkennung.md) |
-| **Verknüpfungsregister** | Mappen, die auf diese Mappe verweisen – alle oder nur bestimmte (z. B. „Rechnungen“ nur über das Feld *Vertrag*) |
+| **Verknüpfungsregister** | Mappen, die auf diese Mappe verweisen – alle oder nur bestimmte (z. B. „Rechnungen“ nur über das Feld *Vertrag*). Als Quelle lässt sich auch *E-Mail › Bezug* wählen: Dann stehen hier die aus der Mappe verschickten E-Mails |
+| **Protokollregister** | das Protokoll der Mappe: wer wann was geändert hat, mit altem und neuem Wert; dazu Dokumente, Papierkorb, Notizen, Aufgaben, E-Mails und angezeigte Passwörter (ohne Wert). Höchstens eins je Mappentyp |
 
 Register haben feste Schlüssel, damit Dokumente ihr Register behalten, wenn es umbenannt wird. Ein Dokumentenregister, in dem schon Dokumente liegen, lässt sich nicht entfernen.
 
@@ -103,15 +114,16 @@ Bleibt die Trefferliste leer, zeigt die Ablage den Titel und zwei weitere Felder
 
 ![Die Trefferliste als Tabelle in der Ablage](bilder/tabelle.png)
 
-## Systemmappentypen: Benutzer und Rolle
+## Systemmappentypen: Benutzer, Rolle und E-Mail
 
-*Benutzer* und *Rolle* sind **Systemmappentypen**, erkennbar am Kennzeichen *System*. Sie entstehen von selbst und lassen sich nicht löschen.
+*Benutzer*, *Rolle* und *E-Mail* sind **Systemmappentypen**, erkennbar am Kennzeichen *System*. Sie entstehen von selbst und lassen sich nicht löschen.
 
 ![Systemmappentyp Benutzer](bilder/werkbank-systemtyp.png)
 
 - Du kannst sie um eigene Felder und Register erweitern, z. B. eine Telefonnummer.
 - Ihre **Systemfelder** (Name, E-Mail-Adresse, Rollen, Aktiv bzw. Name der Rolle) sind fest: Bezeichnung, Hilfetext und Register darfst du ändern, Datentyp und Eigenschaften nicht.
 - Beim Typ *Benutzer* sind **Neue Mappen erlauben** und **Löschen erlauben** immer aus – Benutzer entstehen in der Benutzerverwaltung.
+- Mappen vom Typ *E-Mail* entstehen, wenn jemand eine Mappe [per E-Mail versendet](https://motom001.github.io/dms/benutzer/versenden/): mit Betreff, Empfängern, Absender, Datum, Nachricht, den Anhängen und dem **Bezug** auf die Mappe, aus der sie kam. **Neue Mappen erlauben** ist immer aus; löschen lassen sie sich wie andere Mappen. Der Bezug darf als einziges Feld auf Mappen *jedes* Typs zeigen. Wird die Ursprungsmappe gelöscht, bleibt die E-Mail erhalten und ihr Bezug wird leer. Später sollen hier auch E-Mails landen, die das DMS aus einem Postfach abholt.
 
 Mehr dazu in [Benutzer und Rollen](benutzer.md).
 

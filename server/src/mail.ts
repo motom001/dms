@@ -1,4 +1,9 @@
-export interface Mailer { sende(an: string, betreff: string, text: string): Promise<void> }
+import type { Readable } from 'node:stream';
+/** Anhang einer E-Mail (#58). */
+export interface MailAnhang { name: string; mime: string; inhalt: Buffer | Readable }
+/** Weitere Angaben einer E-Mail: „Antworten an“ und Anhänge (#58). */
+export interface MailOptionen { antwortAn?: string; anhaenge?: MailAnhang[] }
+export interface Mailer { sende(an: string, betreff: string, text: string, optionen?: MailOptionen): Promise<void> }
 
 export const mailtexte = {
   emailGeaendert: (name: string, alt: string, neu: string) => ({

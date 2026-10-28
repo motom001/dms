@@ -7,9 +7,13 @@
  * Fehler früh an, der Server lässt nichts Ungültiges in die Datenbank.
  */
 
+import { alsText } from './markdown';
+
 export const FELDTYPEN = {
   text: 'Text',
   langtext: 'Langtext',
+  /** Markdown (#53): fett, kursiv, Listen, Links, Überschriften, Zitate; nie als HTML ausgeführt. */
+  formatiert: 'Formatierter Text',
   zahl: 'Zahl',
   betrag: 'Betrag',
   datum: 'Datum',
@@ -58,6 +62,8 @@ export const REGISTERARTEN = {
   felder: 'Feldregister',
   dokumente: 'Dokumentenregister',
   verknuepfungen: 'Verknüpfungsregister',
+  /** Änderungshistorie der Mappe (#57). */
+  protokoll: 'Protokollregister',
 } as const;
 export type Registerart = keyof typeof REGISTERARTEN;
 
@@ -102,15 +108,26 @@ export interface Mappentyp extends MappentypDaten {
 
 /* ---------- Systemmappentypen: Benutzer und Rollen (#26, #27) ---------- */
 
-export const SYSTEMTYPEN = { benutzer: 'Benutzer', rolle: 'Rolle' } as const;
+export const SYSTEMTYPEN = { benutzer: 'Benutzer', rolle: 'Rolle', email: 'E-Mail' } as const;
 export type Systemtyp = keyof typeof SYSTEMTYPEN;
 
 /** Kennung der Mappe einer Systemrolle, z. B. rolle:admin. */
 export const systemrolleKennung = (r: Rolle) => `rolle:${r}`;
 export const istSystemrolle = (m: Pick<Mappe, 'systemKennung'> | undefined) => !!m?.systemKennung?.startsWith('rolle:');
 
+/** Ziel eines Referenzfelds, das auf Mappen jedes Typs zeigen darf – nur für Systemfelder (E-Mail → Bezug, #58). */
+export const BELIEBIGER_TYP = '*';
+
 /** Systemfelder je Systemtyp. Bezeichnung und Hilfetext darf der Administrator ändern, alles andere ist fest. */
 export function systemfelder(s: Systemtyp, rolleTypId: string): Feld[] {
+  if (s === 'email') return [
+    { key: 'betreff', label: 'Betreff', typ: 'text', pflicht: true, maxLen: 250, system: true },
+    { key: 'an', label: 'An', typ: 'text', pflicht: true, system: true },
+    { key: 'absender', label: 'Absender', typ: 'text', system: true, hilfe: 'Wer die E-Mail verschickt hat; Antworten gehen an diese Adresse' },
+    { key: 'datum', label: 'Datum', typ: 'datum', system: true },
+    { key: 'bezug', label: 'Bezug', typ: 'referenz', zielTyp: BELIEBIGER_TYP, verweisart: 'bezug', system: true, hilfe: 'Die Mappe, aus der die E-Mail verschickt wurde' },
+    { key: 'nachricht', label: 'Nachricht', typ: 'langtext', system: true },
+  ];
   if (s === 'rolle') return [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true, eindeutig: true, maxLen: 80, system: true },
   ];
@@ -137,6 +154,7 @@ export function geschuetzteFelder(t: Pick<Mappentyp, 'system' | 'felder'> | unde
     return Object.fromEntries(t.felder.filter((f) => f.system).map((f) => [f.key, 'Wird im Profil und in der Benutzerverwaltung gepflegt.']));
   }
   if (t?.system === 'rolle' && istSystemrolle(m)) return { name: 'Der Name einer Systemrolle ist fest.' };
+  if (t?.system === 'email') return Object.fromEntries(t.felder.filter((f) => f.system).map((f) => [f.key, 'Wird beim Versand festgehalten.']));
   return {};
 }
 
@@ -153,7 +171,7 @@ export const GEMISCHTE_SPALTEN: Systemspalte[] = ['_titel', '_typ', '_erstelltVo
 export function sortierbar(spalte: string, t?: Pick<Mappentyp, 'felder'>): boolean {
   if (istSystemspalte(spalte)) return true;
   const f = t?.felder.find((x) => x.key === spalte);
-  return !!f && f.typ !== 'referenz' && f.typ !== 'langtext' && f.typ !== 'passwort';
+  return !!f && f.typ !== 'referenz' && f.typ !== 'langtext' && f.typ !== 'formatiert' && f.typ !== 'passwort';
 }
 export interface Sortierung { spalte: string; absteigend: boolean }
 
@@ -309,7 +327,7 @@ function pruefeRegister(t: MappentypDaten, ctx: TypKontext, p: Pruefergebnis) {
       for (const q of r.quellen ?? []) {
         const felder = q.typId === ctx.eigeneId ? t.felder : ctx.felderVon?.(q.typId);
         const f = felder?.find((x) => x.key === q.feldKey);
-        if (!f || f.typ !== 'referenz' || (f.zielTyp !== ctx.eigeneId)) p.allgemein.push(`Register „${name}“: Eine Quelle verweist nicht (mehr) auf diesen Mappentyp.`);
+        if (!f || f.typ !== 'referenz' || (f.zielTyp !== ctx.eigeneId && f.zielTyp !== BELIEBIGER_TYP)) p.allgemein.push(`Register „${name}“: Eine Quelle verweist nicht (mehr) auf diesen Mappentyp.`);
       }
     }
   }
@@ -346,10 +364,11 @@ export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebn
     gesehen.add(f.key);
     if (f.typ === 'referenz') {
       if (!f.zielTyp) m.push('Ziel-Mappentyp auswählen.');
+      else if (f.zielTyp === BELIEBIGER_TYP) { if (!f.system) m.push('Ziel-Mappentyp auswählen.'); }
       else if (f.zielTyp !== ctx.eigeneId && !ctx.existiertTyp(f.zielTyp)) m.push('Der Ziel-Mappentyp existiert nicht.');
     }
     if (f.typ === 'auswahl' && !(f.optionen ?? []).length) m.push('Mindestens einen Auswahlwert eintragen.');
-    if ((f.typ === 'text' || f.typ === 'langtext') && f.minLen != null && f.maxLen != null && f.minLen > f.maxLen)
+    if ((f.typ === 'text' || f.typ === 'langtext' || f.typ === 'formatiert') && f.minLen != null && f.maxLen != null && f.minLen > f.maxLen)
       m.push('Mindestlänge ist größer als Höchstlänge.');
     if ((f.typ === 'zahl' || f.typ === 'betrag') && f.min != null && f.max != null && f.min > f.max)
       m.push('Minimum ist größer als Maximum.');
@@ -381,7 +400,8 @@ export function pruefeMappe(t: Pick<Mappentyp, 'felder'>, werte: Werte, ctx: Map
     }
     switch (f.typ) {
       case 'text':
-      case 'langtext': {
+      case 'langtext':
+      case 'formatiert': {
         if (typeof v !== 'string') { fehler(f.key, 'Text erwartet.'); break; }
         if (f.minLen != null && v.length < f.minLen) fehler(f.key, `Mindestens ${f.minLen} Zeichen.`);
         else if (f.maxLen != null && v.length > f.maxLen) fehler(f.key, `Höchstens ${f.maxLen} Zeichen.`);
@@ -423,7 +443,7 @@ export function pruefeMappe(t: Pick<Mappentyp, 'felder'>, werte: Werte, ctx: Map
         const ids = Array.isArray(v) ? v : [v];
         if (!f.mehrfach && Array.isArray(v)) { fehler(f.key, 'Nur ein Verweis erlaubt.'); break; }
         if (ids.some((id) => typeof id !== 'string' || ctx.typVon(id) === undefined)) fehler(f.key, 'Verweist auf eine Mappe, die es nicht gibt.');
-        else if (ids.some((id) => ctx.typVon(id as string) !== f.zielTyp)) fehler(f.key, 'Verweist auf eine Mappe eines anderen Typs.');
+        else if (f.zielTyp !== BELIEBIGER_TYP && ids.some((id) => ctx.typVon(id as string) !== f.zielTyp)) fehler(f.key, 'Verweist auf eine Mappe eines anderen Typs.');
         break;
       }
     }
@@ -524,6 +544,39 @@ export interface Dokument {
   ocr?: OcrStand;
 }
 
+/* ---------- Aufgaben (#54, #56) ---------- */
+export const AUFGABENARTEN = { passung: 'Passt nicht', erwaehnung: 'Erwähnung', manuell: 'Aufgabe' } as const;
+export type Aufgabenart = keyof typeof AUFGABENARTEN;
+export interface Aufgabe {
+  id: string; mappeId: string;
+  /** null = Administratoren. */
+  empfaengerId: string | null;
+  art: Aufgabenart; text: string; feldKey?: string | null;
+  erstellt: string; erstelltVon: string | null;
+  erledigt: string | null; erledigtVon: string | null;
+  /** Für Listen: Titel und Typ der Mappe. */
+  mappeTitel?: string; typId?: string;
+}
+export const AUFGABE_MAX = 2000;
+
+/* ---------- Notizen (#55) ---------- */
+export interface Notiz { id: string; mappeId: string; text: string; erstellt: string; erstelltVon: string | null; geaendert: string; geaendertVon: string | null }
+export const NOTIZ_MAX = 20_000;
+
+/* ---------- Änderungshistorie (#57) ---------- */
+export const HISTORIENARTEN = {
+  angelegt: 'angelegt', geaendert: 'geändert', dokument_hochgeladen: 'Dokument hochgeladen', dokument_geloescht: 'Dokument gelöscht',
+  papierkorb: 'in den Papierkorb gelegt', wiederhergestellt: 'wiederhergestellt', endgueltig: 'endgültig gelöscht',
+  passwort_angezeigt: 'Passwort angezeigt', notiz: 'Notiz', aufgabe: 'Aufgabe', email: 'E-Mail versendet',
+} as const;
+export type Historienart = keyof typeof HISTORIENARTEN;
+/** Eine Feldänderung: Werte lesbar zum Zeitpunkt der Änderung; Passwörter nur als „geändert“. */
+export interface Feldaenderung { feld: string; label: string; alt?: string; neu?: string; geheim?: boolean }
+export interface Historieneintrag {
+  id: number; mappeId: string; zeit: string; benutzerId: string | null; art: Historienart;
+  daten: { aenderungen?: Feldaenderung[]; dokument?: string; feld?: string; text?: string; [k: string]: unknown };
+}
+
 /* ---------- Texterkennung (#45) ---------- */
 /** Fundstelle im Volltext: Dokument und Textausschnitt; Treffer zwischen TREFFER_ANFANG und TREFFER_ENDE. */
 export interface Ausschnitt { dokument: string; text: string }
@@ -561,6 +614,7 @@ export function formatiere(f: Feld, v: Wert | undefined, titelVon: (id: string) 
     case 'auswahl': return Array.isArray(v) ? v.join(', ') : String(v);
     case 'referenz': return (Array.isArray(v) ? v : [String(v)]).map(titelVon).join(', ');
     case 'passwort': return istPasswortWert(v) && !v.gesetzt && !v.neu ? '' : '••••••••';
+    case 'formatiert': return alsText(String(v));
     default: return String(v);
   }
 }

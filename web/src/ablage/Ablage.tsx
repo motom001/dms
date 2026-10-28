@@ -76,7 +76,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           ? <PapierkorbListe z={papierkorb} werkbank={false} offen={dritt} />
           : sicht === 'eingang'
           ? <Liste key="eingang" sicht="eingang" titel="Eingang" offen={dritt}
-              beschreibung="Deine Mappen, die nicht zur aktuellen Definition ihres Mappentyps passen. Sie verschwinden von hier, sobald sie korrigiert sind."
+              beschreibung="Mappen, an denen du etwas tun sollst: Sie passen nicht mehr zur Definition, jemand hat dich erwähnt oder dir eine Aufgabe gegeben."
               leerText="Nichts zu tun." />
           : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} titel={verwaltet?.name ?? typ!.name} beschreibung={verwaltet ? verwaltet.beschreibung : typ?.beschreibung}
               offen={dritt} neu={!!typ && darfErstellen(typ)} leerText="Noch keine Mappen in dieser Sicht." />
@@ -109,7 +109,7 @@ function MappeLader({ id, sicht }: { id: string; sicht: string }) {
 /** Nebenzeile eines Listeneintrags: zwei Felder, die nicht schon im Titel stehen. */
 function unterzeile(typ: Mappentyp, m: Mappe, bezuege: Bezuege) {
   const imTitel = new Set(vorlageFelder(wirksameVorlage(typ)));
-  const neben = typ.felder.filter((f) => !imTitel.has(f.key) && f.typ !== 'langtext' && f.typ !== 'passwort').slice(0, 2);
+  const neben = typ.felder.filter((f) => !imTitel.has(f.key) && f.typ !== 'langtext' && f.typ !== 'formatiert' && f.typ !== 'passwort').slice(0, 2);
   return neben.map((f) => formatiere(f, m.werte[f.key], (id) => titelOder(bezuege[id]?.titel))).filter(Boolean).join(' · ');
 }
 
@@ -129,7 +129,8 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
   };
   // Volltextsuche (#45): je Benutzer gemerkt.
   const volltext = d.einstellungen.suche_volltext === true;
-  const s = useSeiten(p.sicht, suche, d.stand, sortierung, volltext);
+  const inNotizen = d.einstellungen.suche_notizen === true;
+  const s = useSeiten(p.sicht, suche, d.stand, sortierung, volltext, inNotizen);
 
   // Breite der Liste: schmal → kompakte Einträge, breit → Tabelle (#22).
   const mess = useRef<HTMLDivElement>(null);
@@ -179,6 +180,9 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
           <label className="haken klein" title="Auch im Text der Dokumente suchen (Textebene und Texterkennung). Findet auch Wortformen, z. B. „Rechnungen“ bei „Rechnung“.">
             <input type="checkbox" checked={volltext} onChange={(e) => d.setzeEinstellung('suche_volltext', e.target.checked || null)} /><span>Volltext durchsuchen</span>
           </label>
+          <label className="haken klein" title="Auch in den Notizen der Mappen suchen.">
+            <input type="checkbox" checked={inNotizen} onChange={(e) => d.setzeEinstellung('suche_notizen', e.target.checked || null)} /><span>Notizen</span>
+          </label>
         </div>
       )}
       {anzahlText && (
@@ -188,10 +192,11 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
         </p>
       )}
       {s.fehler && <div className="hinweis schlecht"><p>{s.fehler}</p></div>}
+      <div className="listenrumpf">
       {s.gesamt === 0
         ? <p className="leise leerliste">{suche ? 'Nichts gefunden.' : p.leerText}</p>
         : tabelle
-          ? <Tabelle sicht={p.sicht} typ={p.typ} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} ausschnitte={s.ausschnitte} offen={p.offen}
+          ? <Tabelle sicht={p.sicht} typ={p.typ} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} ausschnitte={s.ausschnitte} aufgaben={s.aufgaben} offen={p.offen}
               sortierung={sortierung} sortiere={sortiere} ende={nachladen ? (el) => { ende.current = el; } : undefined} nachladen={nachladen} />
           : <ul className="mappenliste">
               {s.mappen.map((m) => {
@@ -203,13 +208,16 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
                       <span className="titel">{k.titel}</span>
                       <Unter text={k.unter} />
                       {s.ausschnitte[m.id] && <Fundstelle a={s.ausschnitte[m.id]} />}
-                      {m.passt === false && <span className="problem">{p.typ ? 'passt nicht zur Definition' : m.problem}</span>}
+                      {p.sicht === 'eingang' && s.aufgaben[m.id]
+                        ? <span className="problem">{s.aufgaben[m.id]}</span>
+                        : m.passt === false && <span className="problem">{p.typ ? 'passt nicht zur Definition' : m.problem}</span>}
                     </Link>
                   </li>
                 );
               })}
               {nachladen && <li ref={(el) => { ende.current = el; }} className="nachladen leise klein">{nachladen}</li>}
             </ul>}
+      </div>
     </>
   );
 }
@@ -225,7 +233,7 @@ function kompakt(sichtTyp: Mappentyp | undefined, typ: Mappentyp | undefined, m:
 }
 
 function Tabelle(p: {
-  sicht: string; typ?: Mappentyp; spalten: string[]; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; offen?: string;
+  sicht: string; typ?: Mappentyp; spalten: string[]; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; offen?: string;
   sortierung: Sortierung | null; sortiere(spalte: string): void; ende?: (el: HTMLElement | null) => void; nachladen: ReactNode;
 }) {
   const d = useDaten();
@@ -251,7 +259,7 @@ function Tabelle(p: {
                 </th>
               );
             })}
-            {p.sicht === 'eingang' && <th>Problem</th>}
+            {p.sicht === 'eingang' && <th>Aufgabe</th>}
           </tr>
         </thead>
         <tbody>
@@ -264,7 +272,7 @@ function Tabelle(p: {
                   const text = zelle(k, m, typ, p.bezuege, d.person);
                   return <td key={k} className={rechts(k) ? 'rechts' : kurz(k) ? 'kurz' : ''}>{i === 0 ? <><Link to={ziel}>{text || titelOder(m.titel)}</Link>{p.ausschnitte?.[m.id] && <Fundstelle a={p.ausschnitte[m.id]} />}</> : text}</td>;
                 })}
-                {p.sicht === 'eingang' && <td className="problemzelle">{m.problem}</td>}
+                {p.sicht === 'eingang' && <td className="problemzelle">{p.aufgaben?.[m.id] ?? m.problem}</td>}
               </tr>
             );
           })}
@@ -294,7 +302,9 @@ export function zelle(k: string, m: Mappe, typ: Mappentyp | undefined, bezuege: 
     case '_geaendertVon': return person(m.geaendertVon);
   }
   const f = typ?.felder.find((x) => x.key === k);
-  return f ? formatiere(f, m.werte[k], (id) => titelOder(bezuege[id]?.titel)) : '';
+  const text = f ? formatiere(f, m.werte[k], (id) => titelOder(bezuege[id]?.titel)) : '';
+  // Formatierter Text (#53) in Listen: ohne Formatierung, gekürzt.
+  return f?.typ === 'formatiert' && text.length > 140 ? `${text.slice(0, 137).trimEnd()} …` : text;
 }
 
 const Unter = ({ text }: { text: string }) => (text ? <span className="unter">{text}</span> : null);
