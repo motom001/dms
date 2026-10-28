@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { pruefeMappe, type Mappentyp, type Pruefergebnis, type Werte } from '../../shared/src/model';
+import { wirksameTypen, type Sicht } from '../../shared/src/sichten';
 import { api, type Zaehler } from './api';
 import { rettungsweg, wendeAn, type Design } from './design';
 
@@ -10,6 +11,11 @@ import { rettungsweg, wendeAn, type Design } from './design';
  */
 interface Daten {
   typen: Mappentyp[];
+  /** Verwaltete Sichten der Ablage (#38). */
+  sichten: Sicht[];
+  sicht(id: string | undefined): Sicht | undefined;
+  /** Der eine Mappentyp, den eine Sicht (samt Untersichten) zeigt – oder für eine Typ-Id dieser Typ. Sonst undefined. */
+  typDerSicht(id: string | undefined): Mappentyp | undefined;
   zaehler: Zaehler;
   geladen: boolean;
   fehler?: string;
@@ -39,6 +45,7 @@ const LEER: Zaehler = { typen: {}, eingang: 0 };
 
 export function DatenProvider({ children }: { children: ReactNode }) {
   const [typen, setTypen] = useState<Mappentyp[]>([]);
+  const [sichten, setSichten] = useState<Sicht[]>([]);
   const [zaehler, setZaehler] = useState<Zaehler>(LEER);
   const [personen, setPersonen] = useState<Array<{ id: string; name: string }>>([]);
   const [geladen, setGeladen] = useState(false);
@@ -61,8 +68,8 @@ export function DatenProvider({ children }: { children: ReactNode }) {
 
   const neuLaden = useCallback(async () => {
     try {
-      const [t, z, p] = await Promise.all([api.typen(), api.sichten(), api.personen()]);
-      setTypen(t); setZaehler(z); setPersonen(p); setFehler(undefined);
+      const [t, z, p, s] = await Promise.all([api.typen(), api.sichten(), api.personen(), api.sichtDefinitionen()]);
+      setTypen(t); setZaehler(z); setPersonen(p); setSichten(s); setFehler(undefined);
     } catch (e) {
       setFehler((e as Error).message);
     } finally {
@@ -73,15 +80,23 @@ export function DatenProvider({ children }: { children: ReactNode }) {
 
   const wert = useMemo<Daten>(() => {
     const typNachId = new Map<string, Mappentyp>(typen.map((t) => [t.id, t] as const));
+    const sichtNachId = new Map<string, Sicht>(sichten.map((s) => [s.id, s] as const));
     return {
-      typen, zaehler, geladen, fehler, stand, neuLaden, einstellungen, setzeEinstellung,
+      typen, sichten, zaehler,
+      sicht: (id) => (id ? sichtNachId.get(id) : undefined),
+      typDerSicht: (id) => {
+        if (!id || id === 'eingang') return undefined;
+        if (!sichtNachId.has(id)) return typNachId.get(id);
+        const w = wirksameTypen(sichten, id);
+        return w.length === 1 ? typNachId.get(w[0]) : undefined;
+      }, geladen, fehler, stand, neuLaden, einstellungen, setzeEinstellung,
       designs: designs.designs, standardDesign: designs.standard, meinDesign, designsLaden,
       typ: (id) => (id ? typNachId.get(id) : undefined),
       anzahl: (typId) => zaehler.typen[typId]?.anzahl ?? 0,
       person: (id) => (id ? personen.find((p) => p.id === id)?.name ?? 'gelöschter Benutzer' : 'unbekannt'),
       pruefe: (t, werte, typVon) => pruefeMappe(t, werte, { typVon, doppelt: () => undefined }),
     };
-  }, [typen, zaehler, personen, geladen, fehler, stand, neuLaden, einstellungen, setzeEinstellung, designs, meinDesign, designsLaden]);
+  }, [typen, sichten, zaehler, personen, geladen, fehler, stand, neuLaden, einstellungen, setzeEinstellung, designs, meinDesign, designsLaden]);
 
   return <Ctx.Provider value={wert}>{children}</Ctx.Provider>;
 }

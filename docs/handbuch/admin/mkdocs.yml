@@ -58,6 +58,7 @@ nav:
       - Aktualisieren und Sichern: aktualisieren.md
   - Einrichten in der Werkbank:
       - Mappentypen: mappentypen.md
+      - Sichten: sichten.md
       - Benutzer und Rollen: benutzer.md
       - Designs: designs.md
       - Demo-Daten: demo.md

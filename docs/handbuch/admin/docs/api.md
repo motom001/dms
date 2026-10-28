@@ -42,6 +42,8 @@ curl -X POST -H "Authorization: Bearer dms_…" -H "Content-Type: application/js
 
 Die Ids der Mappentypen und die Schlüssel ihrer Felder liefert `GET /api/v1/typen`.
 
+Die Mappen einer Sicht liefert `GET /api/v1/mappen?sicht=<Id der Sicht>` – mit allen Bedingungen der Sicht. Alle Mappen eines Typs, ohne Bedingungen, gibt es mit `sicht=typ:<Id des Mappentyps>`. Die Sichten selbst (Baum, Mappentypen, Bedingungen) liefert `GET /api/v1/sichten/definitionen`.
+
 ## Regeln
 
 - Schlüssel gelten nur unter `/api/v1`, nicht an den internen Adressen der Oberfläche.

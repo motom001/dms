@@ -1,5 +1,6 @@
 import type postgres from 'postgres';
 import type { Dokument, Mappe, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
+import type { Filter, Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import { istUuid, type Repo, type Verweis } from './repo';
 
 type Sql = postgres.Sql;
@@ -48,6 +49,105 @@ const alsDokument = (r: Zeile): Dokument => ({
 });
 // postgres.js erwartet für jsonb einen JSON-Wert; unsere Typen sind JSON-kompatibel.
 const json = (sql: Sql, v: unknown) => sql.json(v as postgres.JSONValue);
+
+const alsSicht = (r: Zeile): Sicht => ({
+  id: r.id as string,
+  name: r.name as string,
+  beschreibung: r.beschreibung as string,
+  elternId: (r.eltern_id as string | null) ?? null,
+  position: r.position as number,
+  typen: (r.typen as string[]) ?? [],
+  bedingungen: (r.bedingungen as Sicht['bedingungen']) ?? [],
+  erstellt: iso(r.erstellt),
+  geaendert: iso(r.geaendert),
+});
+
+/* ---------- Bedingungen einer Sicht als SQL (#38, #40, #41) ---------- */
+
+type Teil = postgres.PendingQuery<postgres.Row[]> | postgres.Fragment;
+
+/** Wert eines Feldes als vergleichbarer SQL-Ausdruck; ungültige Werte werden NULL. */
+function ausdruck(sql: Sql, f: Extract<Filter, { art: 'feld' }>) {
+  const k = f.key;
+  switch (f.key) {
+    case '_erstellt': return sql`(mappen.erstellt AT TIME ZONE 'Europe/Berlin')::date`;
+    case '_geaendert': return sql`(mappen.geaendert AT TIME ZONE 'Europe/Berlin')::date`;
+    case '_erstelltVon': return sql`mappen.erstellt_von::text`;
+    case '_geaendertVon': return sql`mappen.geaendert_von::text`;
+  }
+  switch (f.feldart) {
+    case 'zahl': return sql`(CASE WHEN jsonb_typeof(mappen.werte -> ${k}::text) = 'number' THEN (mappen.werte ->> ${k}::text)::numeric END)`;
+    case 'betrag': return sql`(CASE WHEN jsonb_typeof(mappen.werte -> ${k}::text -> 'betrag') = 'number' THEN (mappen.werte -> ${k}::text ->> 'betrag')::numeric END)`;
+    case 'datum': return sql`(CASE WHEN mappen.werte ->> ${k}::text ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN (mappen.werte ->> ${k}::text)::date END)`;
+    default: return sql`nullif(mappen.werte ->> ${k}::text, '')`;
+  }
+}
+
+function feldBedingung(sql: Sql, f: Extract<Filter, { art: 'feld' }>): Teil {
+  const k = f.key;
+  const x = ausdruck(sql, f);
+  const zahl = f.feldart === 'zahl' || f.feldart === 'betrag';
+  const datum = f.feldart === 'datum' || f.feldart === 'zeit';
+  const wert = (v: unknown) => (zahl ? sql`${Number(v)}::numeric` : datum ? sql`${String(v)}::date` : sql`${String(v ?? '')}`);
+  const liste = (v: unknown) => (Array.isArray(v) ? v.map(String) : v == null ? [] : [String(v)]);
+  // Leer: auch leere Listen und Beträge ohne Zahl.
+  const leer = f.key.startsWith('_') ? sql`${x} IS NULL`
+    : f.feldart === 'referenz' ? sql`NOT EXISTS (SELECT 1 FROM verweise v WHERE v.quelle_id = mappen.id AND v.feld_key = ${k})`
+    : zahl || datum ? sql`${x} IS NULL`
+    : sql`(mappen.werte -> ${k}::text IS NULL OR mappen.werte -> ${k}::text IN ('null'::jsonb, '""'::jsonb, '[]'::jsonb))`;
+  switch (f.op) {
+    case 'leer': return leer;
+    case 'nichtLeer': return sql`NOT (${leer})`;
+    case 'ja': return sql`mappen.werte -> ${k}::text = 'true'::jsonb`;
+    case 'nein': return sql`coalesce(mappen.werte -> ${k}::text, 'false'::jsonb) <> 'true'::jsonb`;
+    case 'enthaelt': {
+      const muster = `%${String(f.a ?? '').replace(/[\\%_]/g, (c) => '\\' + c)}%`;
+      return sql`${x} ILIKE ${muster}`;
+    }
+    case 'einerVon': {
+      const l = liste(f.a);
+      return sql`(mappen.werte ->> ${k}::text = ANY(${l}::text[]) OR (jsonb_typeof(mappen.werte -> ${k}::text) = 'array' AND mappen.werte -> ${k}::text ?| ${l}::text[]))`;
+    }
+    case 'zeigtAuf': {
+      const l = liste(f.a);
+      if (f.feldart === 'person') return sql`${x} = ANY(${l}::text[])`;
+      return sql`EXISTS (SELECT 1 FROM verweise v WHERE v.quelle_id = mappen.id AND v.feld_key = ${k} AND v.ziel_id::text = ANY(${l}::text[]))`;
+    }
+    case 'gleich': return f.feldart === 'text' ? sql`lower(${x}) = lower(${String(f.a ?? '')})` : sql`${x} = ${wert(f.a)}`;
+    case 'kleiner': return sql`${x} < ${wert(f.a)}`;
+    case 'groesser': return sql`${x} > ${wert(f.a)}`;
+    case 'zwischen': return sql`${x} BETWEEN ${wert(f.a)} AND ${wert(f.b)}`;
+    case 'ausserhalb': return sql`(${x} < ${wert(f.a)} OR ${x} > ${wert(f.b)})`;
+  }
+  return sql`false`;
+}
+
+function zaehlBedingung(sql: Sql, anzahl: Teil, vergleich: string, n: number): Teil {
+  return vergleich === 'mehr' ? sql`(${anzahl}) > ${n}` : vergleich === 'weniger' ? sql`(${anzahl}) < ${n}` : sql`(${anzahl}) = ${n}`;
+}
+
+function filterSql(sql: Sql, f: Filter): Teil {
+  if (f.art === 'feld') return feldBedingung(sql, f);
+  if (f.art === 'dokumente') {
+    return zaehlBedingung(sql, sql`SELECT count(*) FROM dokumente d WHERE d.mappe_id = mappen.id AND d.register_key = ${f.register}`, f.vergleich, f.anzahl);
+  }
+  // Verknüpfungen wie im Register: alle Rückverweise oder nur die gewählten Quellen (Typ + Feld).
+  const quellen = f.quellen.length
+    ? sql`AND EXISTS (SELECT 1 FROM unnest(${f.quellen.map((x) => x.typId)}::text[], ${f.quellen.map((x) => x.feldKey)}::text[]) AS w(t, f) WHERE w.t = q.typ_id::text AND w.f = v.feld_key)`
+    : sql``;
+  return zaehlBedingung(sql, sql`SELECT count(DISTINCT v.quelle_id) FROM verweise v JOIN mappen q ON q.id = v.quelle_id WHERE v.ziel_id = mappen.id AND v.quelle_id <> mappen.id ${quellen}`, f.vergleich, f.anzahl);
+}
+
+/** ODER der Klauseln; jede Klausel: Typ passt UND alle Filter. Ohne Klauseln: nichts. */
+export function klauselnSql(sql: Sql, klauseln: Klausel[]): Teil {
+  const teile = klauseln.filter((k) => k.typen.some(istUuid)).map((k) => {
+    const typen = k.typen.filter(istUuid);
+    const und = k.filter.reduce<Teil>((acc, f) => sql`${acc} AND ${filterSql(sql, f)}`, sql`mappen.typ_id = ANY(${typen}::uuid[])`);
+    return sql`(${und})`;
+  });
+  if (!teile.length) return sql`false`;
+  return teile.slice(1).reduce<Teil>((acc, t) => sql`${acc} OR ${t}`, teile[0]);
+}
 
 /** PostgreSQL-Umsetzung für genau einen Haushalt. */
 export function pgRepo(sql: Sql, haushaltId: string): Repo {
@@ -191,7 +291,8 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       return r;
     },
     async seite(o) {
-      const typ = o.typId && istUuid(o.typId) ? sql`AND typ_id = ${o.typId}` : o.typId ? sql`AND false` : sql``;
+      const typ = o.klauseln ? sql`AND (${klauselnSql(sql, o.klauseln)})`
+        : o.typId && istUuid(o.typId) ? sql`AND typ_id = ${o.typId}` : o.typId ? sql`AND false` : sql``;
       const eingang = o.eingang
         ? sql`AND passt IS NOT TRUE AND (erstellt_von = ${istUuid(o.eingang.benutzerId) ? o.eingang.benutzerId : null}::uuid ${o.eingang.admin ? sql`OR erstellt_von IS NULL` : sql``})`
         : sql``;
@@ -229,6 +330,35 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         eingang: r.reduce((a, z) => a + (z.eingang as number), 0),
       };
     },
+    async zaehleKlauseln(liste) {
+      if (!liste.length) return [];
+      const spalten = liste.map((k, i) => sql`count(*) FILTER (WHERE ${klauselnSql(sql, k)})::int AS ${sql(`s${i}`)}`);
+      const sel = spalten.slice(1).reduce((acc, t) => sql`${acc}, ${t}`, spalten[0]);
+      const [r] = await sql`SELECT ${sel} FROM mappen WHERE haushalt_id = ${haushaltId}`;
+      return liste.map((_, i) => r[`s${i}`] as number);
+    },
+
+    async listeSichten() {
+      return (await sql`SELECT * FROM sichten WHERE haushalt_id = ${haushaltId} ORDER BY position, lower(name)`).map(alsSicht);
+    },
+    async legeSichtAn(id, d: SichtDaten) {
+      const [r] = await sql`
+        INSERT INTO sichten (id, haushalt_id, name, beschreibung, eltern_id, position, typen, bedingungen)
+        VALUES (${id}, ${haushaltId}, ${d.name}, ${d.beschreibung}, ${d.elternId}, ${d.position}, ${json(sql, d.typen)}, ${json(sql, d.bedingungen)})
+        RETURNING *`;
+      return alsSicht(r);
+    },
+    async aendereSicht(id, d: SichtDaten) {
+      const [r] = await sql`
+        UPDATE sichten SET name = ${d.name}, beschreibung = ${d.beschreibung}, eltern_id = ${d.elternId}, position = ${d.position},
+          typen = ${json(sql, d.typen)}, bedingungen = ${json(sql, d.bedingungen)}, geaendert = now()
+        WHERE haushalt_id = ${haushaltId} AND id = ${id} RETURNING *`;
+      return alsSicht(r);
+    },
+    async loescheSicht(id) {
+      await sql`DELETE FROM sichten WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+    },
+
     async setzePassung(liste) {
       for (let i = 0; i < liste.length; i += 1000) {
         const teil = liste.slice(i, i + 1000);

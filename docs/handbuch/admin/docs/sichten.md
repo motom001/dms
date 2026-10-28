@@ -1,0 +1,79 @@
+# Sichten
+
+Eine **Sicht** legt fest, was die Ablage links anbietet: welche Mappen eine Liste zeigt und wie die Sichten zu einem Baum geordnet sind. Eine Sicht ist eine gespeicherte Abfrage – die Benutzer sehen nur das Ergebnis.
+
+Sichten pflegst du unter **Werkbank → Sichten**. Links steht der Baum, rechts die gewählte Sicht. Wie Benutzer mit Sichten arbeiten, beschreibt das [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/ablage/).
+
+![Eine Sicht mit Bedingung in der Werkbank](bilder/werkbank-sichten.png)
+
+## Grunddaten
+
+- **Name** und **Beschreibung** – erscheinen in der Ablage links bzw. über der Liste.
+- **Liegt unter** – die Elternsicht im Baum, beliebig tief. Eine Sicht kann nicht unter sich selbst oder einer ihrer Untersichten liegen.
+- **Reihenfolge** – mit **↑ nach oben** und **↓ nach unten** unter den Sichten derselben Ebene.
+
+## Mappentypen
+
+Die Sicht zeigt Mappen der angehakten Typen, sofern sie alle Bedingungen erfüllen. Dazu kommen **immer** die Mappen ihrer Untersichten – jede mit ihren eigenen Bedingungen, ohne Doppelte.
+
+- Eine Sicht **ohne Typ** dient nur zum Gruppieren, etwa *Finanzen* über *Offene Rechnungen* und *Zahlungen dieses Jahr*.
+- Zeigt eine Sicht (mit Untersichten) **genau einen** Typ, verhält sich die Liste wie gewohnt: Trefferliste des Typs, Sortieren nach seinen Feldern, **+ Neu**, sofern neue Mappen erlaubt sind.
+- Zeigt sie **mehrere** Typen, verhält sie sich wie der Eingang: Systemspalten mit Spalte *Typ*, kein **+ Neu**.
+
+## Bedingungen
+
+Bedingungen gelten für die eigenen Mappentypen der Sicht und **alle zusammen** (UND). Unter jeder Bedingung steht, wie das DMS sie versteht, z. B. „Kündigung bis zwischen heute und heute + 12 Monate“. Unten zeigt die **Vorschau**, wie viele Mappen die Sicht mit dem aktuellen Entwurf zeigen würde – auch vor dem Speichern.
+
+### Auf Feldwerte
+
+| Datentyp | Vergleiche |
+| --- | --- |
+| Text | ist gleich (ohne Groß-/Kleinschreibung), enthält, ist leer, ist nicht leer |
+| Langtext | enthält, ist leer, ist nicht leer |
+| Zahl, Betrag | ist gleich, kleiner als, größer als, zwischen, außerhalb von, ist leer, ist nicht leer |
+| Datum | wie Zahl, dazu **im Zeitraum** (Jahr oder Monat) |
+| Ja/Nein | ja, nein (leer zählt als nein) |
+| Auswahlliste | ist einer von, ist leer, ist nicht leer |
+| Referenz | zeigt auf (eine oder mehrere bestimmte Mappen), ist leer, ist nicht leer |
+
+Dazu die **Systemwerte**: *angelegt am* und *zuletzt geändert am* (wie Datum) sowie *angelegt von* und *zuletzt geändert von* (zeigt auf einen Benutzer).
+
+Bei einer Sicht mit **mehreren** Mappentypen gibt es nur Felder, die alle Typen mit gleichem Schlüssel und gleichem Datentyp haben (bei Referenzen auch mit gleichem Ziel), und die Systemwerte.
+
+### Dynamische Werte
+
+Statt eines festen Werts kannst du einen nehmen, den das DMS bei **jedem Öffnen** neu berechnet:
+
+| Wert | Wofür | Beispiel |
+| --- | --- | --- |
+| **heute ± n** Tage, Wochen, Monate, Jahre | Datumsfelder | Kündigung bis zwischen heute und heute + 3 Monate |
+| **Jahr** / **Monat** (aktuell ± n), mit „im Zeitraum“ | Datumsfelder | Zahlungsdatum im Zeitraum aktuelles Jahr; Rechnungsdatum im letzten Monat (− 1) |
+| **aktueller Benutzer** | Verweise auf Benutzer, angelegt/geändert von | Verantwortlich zeigt auf aktueller Benutzer → „Meine Verträge“ |
+| **Rollen des aktuellen Benutzers** | Verweise auf Rollen | Verantwortliche Rolle zeigt auf Rollen des aktuellen Benutzers |
+
+So kann **eine** Sicht „Meine Aufgaben“ für jeden Benutzer etwas anderes zeigen.
+
+### Auf die Anzahl in Registern
+
+Bei einer Sicht mit genau einem Mappentyp gibt es zusätzlich:
+
+- **Dokumente in „…“** – mehr als, weniger als oder genau *n* Dokumente in einem Dokumentenregister. Beispiel: *Rechnungen ohne Beleg* = Dokumente in „Rechnungsdokumente“ genau 0.
+- **Verknüpfungen in „…“** – mehr als, weniger als oder genau *n* Mappen in einem Verknüpfungsregister, gezählt wie im Register (also nur über die dort gewählten Quellen). Beispiel: *Verträge ohne Rechnung* = Verknüpfungen in „Rechnungen“ genau 0.
+
+### Wenn sich ein Mappentyp ändert
+
+Entfernst du ein Feld oder Register, auf das eine Bedingung zielt, wird die Sicht nicht leer: Die Bedingung wird **ignoriert**, bis du sie korrigierst. In der Werkbank ist sie rot markiert, und die Liste der Sichten zeigt „Bedingung ohne Wirkung – bitte prüfen“.
+
+## Sichten und Mappentypen
+
+- Ein **neuer Mappentyp** bekommt eine eigene Sicht – außer du wählst beim Anlegen **Eigene Sicht in der Ablage anlegen** ab. Sie steht oben auf der ersten Ebene, vor *Benutzer* und *Rolle*.
+- **Umbenennen** eines Typs benennt seine eigene Sicht mit, solange sie noch genauso heißt wie er.
+- **Löschen** eines Typs entfernt ihn aus allen Sichten; eine Sicht, die nur ihn hatte und keine Untersichten, verschwindet mit.
+- Die Sichten aus Version 0.9 und früher (eine je Mappentyp) wurden beim Update übernommen. Sie haben dieselbe Adresse wie vorher, Lesezeichen und gemerkte Sortierungen bleiben also gültig.
+
+## Sicht löschen
+
+**Sicht löschen** entfernt nur die Sicht, keine Mappen. Ihre Untersichten rücken eine Ebene nach oben, an ihre Stelle. Ohne Sicht sind Mappen weiter über den Eingang, Verweise und die Suche in anderen Sichten erreichbar.
+
+!!! info "Sichten und Rechte"
+    Eine Sicht gibt nie Zugriff auf Mappen, die ein Benutzer sonst nicht sehen dürfte. Im Moment sehen alle angemeldeten Benutzer alle Sichten; die Sichtbarkeit je Rolle kommt mit der Berechtigungsverwaltung.

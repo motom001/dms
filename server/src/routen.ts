@@ -350,6 +350,26 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return ok(s);
     } },
     { methode: 'GET', pfad: '/api/sichten', zugang: 'angemeldet', handler: async (a) => ok(await dienst.zaehler(ich(a))) },
+
+    /* ---------- Sichten verwalten (#38, #40, #41) ---------- */
+    { methode: 'GET', pfad: '/api/sichten/definitionen', zugang: 'angemeldet', handler: async () => ok(await dienst.listeSichten()) },
+    { methode: 'POST', pfad: '/api/sichten/definitionen', zugang: 'admin', handler: async (a) => {
+      const s = await dienst.legeSichtAn(a.body);
+      L.werkbank.info('Sicht angelegt', { sicht: s.name, typen: s.typen.length, bedingungen: s.bedingungen.length });
+      return ok(s, 201);
+    } },
+    { methode: 'PUT', pfad: '/api/sichten/definitionen/:id', zugang: 'admin', handler: async (a) => {
+      const s = await dienst.aendereSicht(a.params.id, a.body);
+      L.werkbank.info('Sicht geändert', { sicht: s.name, typen: s.typen.length, bedingungen: s.bedingungen.length });
+      return ok(s);
+    } },
+    { methode: 'DELETE', pfad: '/api/sichten/definitionen/:id', zugang: 'admin', handler: async (a) => {
+      await dienst.loescheSicht(a.params.id);
+      L.werkbank.info('Sicht gelöscht', { id: a.params.id });
+      return leer;
+    } },
+    { methode: 'PUT', pfad: '/api/sichten/reihenfolge', zugang: 'admin', handler: async (a) => ok(await dienst.ordneSichten(b(a).elternId, b(a).ids)) },
+    { methode: 'POST', pfad: '/api/sichten/vorschau', zugang: 'admin', handler: async (a) => ok(await dienst.sichtVorschau(ich(a), b(a).id, b(a).sicht)) },
     { methode: 'GET', pfad: '/api/typen/:id/belegung', zugang: 'admin', handler: async (a) => ok(await dienst.belegung(a.params.id)) },
     { methode: 'GET', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => ok(await dienst.holeMappe(a.params.id)) },
     { methode: 'POST', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => {

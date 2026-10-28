@@ -1,6 +1,7 @@
 import type { Design } from './design';
 import { messung } from './messung';
 import type { Benutzer, Dokument, Mappe, MappenBezug, Mappentyp, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung } from '../../shared/src/model';
+import type { Sicht, SichtDaten } from '../../shared/src/sichten';
 
 export class ApiFehler extends Error {
   constructor(public status: number, message: string, public details?: unknown) { super(message); }
@@ -44,7 +45,7 @@ async function anfrage<T>(methode: string, url: string, body?: unknown): Promise
 export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string; titel: string }
 export type Bezuege = Record<string, MappenBezug>;
 export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege }
-export interface Zaehler { typen: Record<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number }
+export interface Zaehler { typen: Record<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number; sichten?: Record<string, number> }
 export interface KontoStatus {
   einrichtungNoetig: boolean; mail: boolean; benutzer: Benutzer | null;
   /** Ein Administrator agiert gerade als dieser Benutzer. */
@@ -101,6 +102,13 @@ export const api = {
   designStandard: (id: string) => anfrage<{ designs: Design[]; standard: string | null }>('PUT', '/api/designs-standard', { id }),
   einstellungSetzen: (schluessel: string, wert: unknown) => anfrage<null>('PUT', `/api/konto/einstellungen/${encodeURIComponent(schluessel)}`, { wert }),
   sichten: () => anfrage<Zaehler>('GET', '/api/sichten'),
+  /* Sichten verwalten (#38) */
+  sichtDefinitionen: () => anfrage<Sicht[]>('GET', '/api/sichten/definitionen'),
+  sichtAnlegen: (s: Partial<SichtDaten>) => anfrage<Sicht>('POST', '/api/sichten/definitionen', s),
+  sichtAendern: (id: string, s: Partial<SichtDaten>) => anfrage<Sicht>('PUT', `/api/sichten/definitionen/${id}`, s),
+  sichtLoeschen: (id: string) => anfrage<null>('DELETE', `/api/sichten/definitionen/${id}`),
+  sichtenOrdnen: (elternId: string | null, ids: string[]) => anfrage<Sicht[]>('PUT', '/api/sichten/reihenfolge', { elternId, ids }),
+  sichtVorschau: (id: string | null, sicht: Partial<SichtDaten>) => anfrage<{ anzahl: number }>('POST', '/api/sichten/vorschau', { id, sicht }),
   belegung: (typId: string) => anfrage<Record<string, number>>('GET', `/api/typen/${typId}/belegung`),
   mappe: (id: string) => anfrage<MappeDetails>('GET', `/api/mappen/${id}`),
   mappeAnlegen: (m: unknown) => anfrage<Mappe>('POST', '/api/mappen', m),

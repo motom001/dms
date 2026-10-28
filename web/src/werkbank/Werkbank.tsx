@@ -5,6 +5,7 @@ import { TypEditor } from '../einrichtung/Einrichtung';
 import { Link } from '../ort';
 import { BenutzerDetail, BenutzerListe, BenutzerNeu, useBenutzer } from './Benutzer';
 import { BetriebListe, BetriebPanel, useBetrieb } from './Betrieb';
+import { SichtEditor, SichtenListe } from './Sichten';
 import { DatenbankPanel, LanglaeuferListe, useDatenbank } from './Datenbank';
 import { DemoListe, DemoPanel } from './Demo';
 import { DesignEditor, DesignListe } from './Designs';
@@ -17,6 +18,7 @@ import { TechnikListe, TechnikPanel, useTechnik } from './Technik';
  *
  * /werkbank/typen[/:id|/neu]
  * /werkbank/benutzer[/:id|/neu]
+ * /werkbank/sichten[/:id|/neu]       Sichten der Ablage (#38)
  * /werkbank/demo
  * /werkbank/protokoll[/:nr]
  * /werkbank/datenbank[/:id]
@@ -47,6 +49,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
     } else if (!d.typen.length) {
       rechts = <div className="platzhalter"><p>Noch keine Mappentypen. Lege mit „+ Neu“ einen an oder lade unter <Link to="/werkbank/demo" className="verweis">Demo-Daten</Link> die Beispiele.</p></div>;
     }
+  } else if (bereich === 'sichten') {
+    liste = <SichtenListe offen={id} />;
+    rechts = id ? <SichtEditor key={`${id}-${d.sicht(id)?.geaendert ?? ''}`} id={id} /> : <div className="platzhalter"><p>Wähle links eine Sicht oder lege mit „+ Neu“ eine an.</p></div>;
   } else if (bereich === 'benutzer') {
     liste = <BenutzerListe liste={benutzer.liste} offen={id} />;
     if (id === 'neu') rechts = <BenutzerNeu key="neu" neuLaden={benutzer.laden} />;
@@ -80,6 +85,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
         <h2 className="ueber">Werkbank</h2>
         <nav className="sichtliste">
           <Link to="/werkbank/typen" className={`sicht ${bereich === 'typen' ? 'an' : ''}`}><span className="nm">Mappentypen</span><span className="zahl">{d.typen.length}</span></Link>
+          <Link to="/werkbank/sichten" className={`sicht ${bereich === 'sichten' ? 'an' : ''}`}><span className="nm">Sichten</span><span className="zahl">{d.sichten.length || ''}</span></Link>
           <Link to="/werkbank/benutzer" className={`sicht ${bereich === 'benutzer' ? 'an' : ''}`}><span className="nm">Benutzer</span><span className="zahl">{benutzer.geladen ? benutzer.liste.length : ''}</span></Link>
           <Link to="/werkbank/protokoll" className={`sicht ${bereich === 'protokoll' ? 'an' : ''}`}><span className="nm">Protokoll</span>{protokoll.debug?.an && <span className="zaehler" title="Debug-Modus ist an">Debug</span>}</Link>
           <Link to="/werkbank/designs" className={`sicht ${bereich === 'designs' ? 'an' : ''}`}><span className="nm">Designs</span><span className="zahl">{d.designs.length || ''}</span></Link>

@@ -15,7 +15,9 @@ Wie Benutzer mit den Mappen arbeiten, beschreibt das [Benutzerhandbuch](https://
 - **Neue Mappen erlauben** – ob Benutzer in der Ablage Mappen dieses Typs anlegen dürfen.
 - **Löschen erlauben** – ob Benutzer Mappen dieses Typs löschen dürfen.
 
-Beides ist standardmäßig an. Ist es aus, fehlen die Knöpfe in der Ablage, und auch der Server lehnt Anlegen bzw. Löschen ab – auch über die [Schnittstelle](api.md). Bearbeiten bleibt immer möglich.
+Beim **Anlegen** gibt es zusätzlich **Eigene Sicht in der Ablage anlegen** (standardmäßig an): Dann erscheint der neue Typ in der Ablage als eigene Sicht. Abwählen, wenn seine Mappen nur in einer bestehenden [Sicht](sichten.md) erscheinen sollen.
+
+Neue Mappen und Löschen sind standardmäßig erlaubt. Ist es aus, fehlen die Knöpfe in der Ablage, und auch der Server lehnt Anlegen bzw. Löschen ab – auch über die [Schnittstelle](api.md). Bearbeiten bleibt immer möglich.
 
 ## Felder
 

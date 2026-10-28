@@ -9,6 +9,10 @@ import { Auftraege } from './auftrag';
 import { protokoll } from './protokoll';
 import { Fachfehler } from './fehler';
 import { istUuid, type NeueMappe, type Repo, type Rueckverweis, type SortierungIntern } from './repo';
+import {
+  bereinigeBedingungen, heuteIn, kinderVon, klauselnFuer, waereKreis, wirksameTypen,
+  type Aufloesung, type Sicht, type SichtDaten,
+} from '../../shared/src/sichten';
 
 /* ---------- Eingaben bereinigen: nur bekannte Eigenschaften übernehmen ---------- */
 
@@ -177,7 +181,10 @@ export class Dienst {
     const id = istUuid(roh.id) && !(await this.repo.holeTyp(roh.id)) ? roh.id : randomUUID();
     const d = bereinigeTyp(eingabe);
     await this.pruefeTyp(d, id);
-    return this.repo.legeTypAn(id, d);
+    const typ = await this.repo.legeTypAn(id, d);
+    // Neue Mappentypen bekommen eine eigene Sicht (#38), außer der Administrator wählt das ab.
+    if ((roh as { sichtAnlegen?: unknown }).sichtAnlegen !== false) await this.sichtFuerTyp(typ);
+    return typ;
   }
 
   async aendereTyp(id: string, eingabe: unknown): Promise<Mappentyp> {
@@ -193,6 +200,9 @@ export class Dienst {
       throw new Fachfehler(409, `Im Register „${name}“ liegen noch ${n} Dokument${n === 1 ? '' : 'e'}. Entferne oder verschiebe sie zuerst.`);
     }
     const typ = await this.repo.aendereTyp(id, d);
+    // Die Sicht, die für diesen Typ entstanden ist, heißt weiter wie er – solange sie niemand umbenannt hat.
+    const eigene = (await this.repo.listeSichten()).find((x) => x.id === id);
+    if (eigene && eigene.name === alt.name && alt.name !== typ.name) await this.repo.aendereSicht(id, { ...eigene, name: typ.name });
     // Vorlage oder Felder können sich geändert haben: Titel aller Mappen dieses Typs neu berechnen.
     await this.aktualisiereTitel((await this.repo.listeMappen(id)).map((m) => m.id));
     await this.pruefePassung(id);
@@ -229,6 +239,13 @@ export class Dienst {
     }
     if (gruende.length) throw new Fachfehler(409, 'Dieser Mappentyp kann noch nicht gelöscht werden.', { gruende });
     await this.repo.loescheTyp(id);
+    // Aus den Sichten entfernen; Sichten, die nur diesen Typ hatten und keine Kinder, verschwinden mit.
+    const alle = await this.repo.listeSichten();
+    for (const x of alle.filter((v) => v.typen.includes(id))) {
+      const typen = x.typen.filter((t) => t !== id);
+      if (!typen.length && !kinderVon(alle, x.id).length) await this.repo.loescheSicht(x.id);
+      else await this.repo.aendereSicht(x.id, { ...x, typen });
+    }
   }
 
   listeMappen(typId?: string) { return this.repo.listeMappen(typId); }
@@ -249,24 +266,130 @@ export class Dienst {
 
   /* ---------- Sichten: seitenweise und gezählt ---------- */
 
-  /** Eine Seite einer Sicht („eingang“ oder Typ-Id), nach Titel sortiert, mit den Bezügen für die Anzeige. */
+  /**
+   * Eine Seite einer Sicht: „eingang“, eine verwaltete Sicht (#38) oder – für Links auf Mappen,
+   * deren Typ keine eigene Sicht hat – eine Typ-Id. Mit den Bezügen für die Anzeige.
+   */
   async seite(ich: { id: string; rolle: string }, q: { sicht?: string; von?: unknown; anzahl?: unknown; suche?: unknown; sortierung?: unknown; absteigend?: unknown }) {
     const von = Math.max(0, Math.floor(Number(q.von) || 0));
     const anzahl = Math.min(500, Math.max(1, Math.floor(Number(q.anzahl) || 100)));
     const suche = text(q.suche).slice(0, 200) || undefined;
     const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
-    const sortierung = sortierungAus(text(q.sortierung), q.absteigend === 'true' || q.absteigend === true, q.sicht === 'eingang' ? undefined : typen.get(String(q.sicht)));
+    const sichten = await this.repo.listeSichten();
+    // „typ:<id>“: alle Mappen eines Typs, ohne Bedingungen einer Sicht (z. B. Auswahl eines Verweises).
+    const nurTyp = String(q.sicht ?? '').startsWith('typ:') ? String(q.sicht).slice(4) : null;
+    const sicht = nurTyp ? undefined : sichten.find((x) => x.id === q.sicht);
+    // Sortieren nach Feldern geht, wenn die Sicht genau einen Mappentyp zeigt.
+    const einTyp = q.sicht === 'eingang' ? undefined : sicht ? (() => { const w = wirksameTypen(sichten, sicht.id); return w.length === 1 ? typen.get(w[0]) : undefined; })() : typen.get(nurTyp ?? String(q.sicht));
+    const sortierung = sortierungAus(text(q.sortierung), q.absteigend === 'true' || q.absteigend === true, einTyp);
     const r = q.sicht === 'eingang'
       ? await this.repo.seite({ eingang: { benutzerId: ich.id, admin: ich.rolle === 'admin' }, suche, von, anzahl, sortierung })
-      : await this.repo.seite({ typId: q.sicht, suche, von, anzahl, sortierung });
+      : sicht
+        ? await this.repo.seite({ klauseln: klauselnFuer(sichten, sicht.id, typen, await this.aufloesung(ich.id)), suche, von, anzahl, sortierung })
+        : await this.repo.seite({ typId: nurTyp ?? q.sicht, suche, von, anzahl, sortierung });
     const ziele = r.mappen.flatMap((m) => { const t = typen.get(m.typId); return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []; });
     return { gesamt: r.gesamt, von, mappen: r.mappen, bezuege: Object.fromEntries(await this.repo.bezuege(ziele)) };
   }
 
-  /** Anzahl Mappen je Typ (davon unpassend, Demo) und im Eingang des Benutzers. */
+  /** Anzahl Mappen je Typ (davon unpassend, Demo), je Sicht und im Eingang des Benutzers. */
   async zaehler(ich: { id: string; rolle: string }) {
     const z = await this.repo.zaehler(ich.id, ich.rolle === 'admin');
-    return { typen: Object.fromEntries(z.typen), eingang: z.eingang };
+    const sichten = await this.repo.listeSichten();
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    const a = await this.aufloesung(ich.id);
+    const n = await this.repo.zaehleKlauseln(sichten.map((x) => klauselnFuer(sichten, x.id, typen, a)));
+    return { typen: Object.fromEntries(z.typen), eingang: z.eingang, sichten: Object.fromEntries(sichten.map((x, i) => [x.id, n[i]])) };
+  }
+
+  /** Dynamische Werte für den angemeldeten Benutzer: heute, er selbst, seine Rollen. */
+  private async aufloesung(benutzerId: string): Promise<Aufloesung> {
+    const m = istUuid(benutzerId) ? await this.repo.holeMappe(benutzerId) : undefined;
+    return { heute: heuteIn(), ich: benutzerId, meineRollen: m ? alsListe(m.werte.rollen) : [] };
+  }
+
+  /* ---------- Sichten verwalten (#38) ---------- */
+
+  listeSichten() { return this.repo.listeSichten(); }
+
+  private async bereinigeSicht(e: unknown, id: string, alle: Sicht[]): Promise<SichtDaten> {
+    const x = (e ?? {}) as Record<string, unknown>;
+    const name = text(x.name).slice(0, 80);
+    if (!name) throw new Fachfehler(422, 'Bitte einen Namen für die Sicht angeben.');
+    const elternId = istUuid(x.elternId) ? x.elternId : null;
+    if (elternId && !alle.some((s) => s.id === elternId)) throw new Fachfehler(422, 'Die gewählte Elternsicht gibt es nicht.');
+    if (waereKreis(alle, id, elternId)) throw new Fachfehler(422, 'Eine Sicht kann nicht unter sich selbst oder einer ihrer Untersichten liegen.');
+    const vorhanden = new Set((await this.repo.listeTypen()).map((t) => t.id));
+    const typen = [...new Set((Array.isArray(x.typen) ? x.typen : []).map(String))].filter((t) => vorhanden.has(t));
+    const geschwister = kinderVon(alle.filter((s) => s.id !== id), elternId);
+    const position = Number.isFinite(Number(x.position)) && x.position !== null && x.position !== undefined
+      ? Math.trunc(Number(x.position))
+      : (geschwister.at(-1)?.position ?? 0) + 10;
+    return { name, beschreibung: text(x.beschreibung).slice(0, 500), elternId, position, typen, bedingungen: bereinigeBedingungen(x.bedingungen) };
+  }
+
+  async legeSichtAn(e: unknown): Promise<Sicht> {
+    const alle = await this.repo.listeSichten();
+    const id = randomUUID();
+    return this.repo.legeSichtAn(id, await this.bereinigeSicht(e, id, alle));
+  }
+
+  async aendereSicht(id: string, e: unknown): Promise<Sicht> {
+    const alle = await this.repo.listeSichten();
+    if (!alle.some((s) => s.id === id)) throw new Fachfehler(404, 'Diese Sicht gibt es nicht.');
+    return this.repo.aendereSicht(id, await this.bereinigeSicht(e, id, alle));
+  }
+
+  /** Untersichten rücken eine Ebene nach oben, an die Stelle der gelöschten. */
+  async loescheSicht(id: string): Promise<void> {
+    const alle = await this.repo.listeSichten();
+    const s = alle.find((x) => x.id === id);
+    if (!s) throw new Fachfehler(404, 'Diese Sicht gibt es nicht.');
+    // Neue Reihenfolge der Ebene: Geschwister davor, die Kinder, Geschwister danach.
+    const ebene = kinderVon(alle, s.elternId).flatMap((g) => (g.id === id ? kinderVon(alle, id) : [g]));
+    for (const [i, g] of ebene.entries()) {
+      if (g.elternId !== s.elternId || g.position !== (i + 1) * 10) await this.repo.aendereSicht(g.id, { ...g, elternId: s.elternId, position: (i + 1) * 10 });
+    }
+    await this.repo.loescheSicht(id);
+  }
+
+  /** Reihenfolge unter Geschwistern setzen: Ids in der gewünschten Reihenfolge. */
+  async ordneSichten(elternId: unknown, ids: unknown): Promise<Sicht[]> {
+    const alle = await this.repo.listeSichten();
+    const eltern = istUuid(elternId) ? elternId : null;
+    const geschwister = kinderVon(alle, eltern);
+    const liste = Array.isArray(ids) ? ids.map(String) : [];
+    if (liste.length !== geschwister.length || !geschwister.every((g) => liste.includes(g.id))) throw new Fachfehler(422, 'Die Reihenfolge muss genau die Sichten dieser Ebene enthalten.');
+    for (const [i, sid] of liste.entries()) {
+      const g = geschwister.find((x) => x.id === sid)!;
+      if (g.position !== (i + 1) * 10) await this.repo.aendereSicht(sid, { ...g, position: (i + 1) * 10 });
+    }
+    return this.repo.listeSichten();
+  }
+
+  /** Anzahl Treffer einer (noch nicht gespeicherten) Sicht – für die Vorschau in der Werkbank. */
+  async sichtVorschau(ich: { id: string }, id: unknown, e: unknown): Promise<{ anzahl: number }> {
+    const alle = await this.repo.listeSichten();
+    const sid = istUuid(id) && alle.some((s) => s.id === id) ? id : randomUUID();
+    const d = await this.bereinigeSicht(e, sid, alle);
+    const probe: Sicht[] = [...alle.filter((s) => s.id !== sid), { ...d, id: sid, erstellt: '', geaendert: '' }];
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    const [anzahl] = await this.repo.zaehleKlauseln([klauselnFuer(probe, sid, typen, await this.aufloesung(ich.id))]);
+    return { anzahl };
+  }
+
+  /**
+   * Eigene Sicht für einen Mappentyp, mit der Id des Typs (Lesezeichen bleiben gültig), auf der
+   * obersten Ebene angehängt. Benutzer und Rolle stehen dabei immer am Ende.
+   */
+  private async sichtFuerTyp(t: Mappentyp) {
+    const alle = await this.repo.listeSichten();
+    if (alle.some((s) => s.id === t.id)) return;
+    const SYSTEM_AB = 100_000;
+    const oben = kinderVon(alle, null).map((s) => s.position);
+    const position = t.system
+      ? Math.max(SYSTEM_AB, ...oben) + 10
+      : Math.max(0, ...oben.filter((p) => p < SYSTEM_AB)) + 10;
+    await this.repo.legeSichtAn(t.id, { name: t.name, beschreibung: t.beschreibung, elternId: null, position, typen: [t.id], bedingungen: [] });
   }
 
   async belegung(typId: string) {
@@ -494,6 +617,7 @@ export class Dienst {
         ],
         trefferliste: [], erstellenErlaubt: true, loeschenErlaubt: true,
       }, 'rolle');
+      await this.sichtFuerTyp(rolle);
       protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: rolle.name });
     }
     if (!benutzer) {
@@ -507,6 +631,7 @@ export class Dienst {
         ],
         trefferliste: ['name', 'email', 'rollen', 'aktiv'], erstellenErlaubt: false, loeschenErlaubt: false,
       }, 'benutzer');
+      await this.sichtFuerTyp(benutzer);
       protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: benutzer.name });
     }
     const systemrollen = new Map<Rolle, string>();

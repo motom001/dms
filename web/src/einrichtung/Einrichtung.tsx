@@ -80,6 +80,8 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
   const [basis, setBasis] = useState(() => JSON.stringify(entwurfAus(typ)));
   const [e, setE] = useState<Entwurf>(() => JSON.parse(basis));
   const [offen, setOffen] = useState<number | null>(null);
+  // Neue Typen bekommen eine eigene Sicht in der Ablage, außer man wählt das ab (#38).
+  const [sichtAnlegen, setSichtAnlegen] = useState(true);
   const [fehler, setFehler] = useState<{ allgemein: string[]; felder: Record<string, string[]> } | null>(null);
   const [meldung, setMeldung] = useState<string>();
   const [gruende, setGruende] = useState<string[]>([]);
@@ -138,7 +140,7 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
       trefferliste: e.trefferliste.flatMap((k) => (k.startsWith('feld:') ? e.felder.filter((f) => `feld:${f._uid}` === k).map((f) => f.key) : [k])),
     };
     try {
-      const t = neu ? await api.typAnlegen(daten) : await api.typAendern(e.id, daten);
+      const t = neu ? await api.typAnlegen({ ...daten, sichtAnlegen }) : await api.typAendern(e.id, daten);
       const sauber = entwurfAus(t);
       setE(sauber); setBasis(JSON.stringify(sauber)); setFehler(null); setOffen(null);
       loeseWache();
@@ -201,6 +203,8 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
           <div className="eigenschaft unten"><label className="haken"><input type="checkbox" checked={e.loeschenErlaubt} disabled={system === 'benutzer'} onChange={(ev) => setE({ ...e, loeschenErlaubt: ev.target.checked })} />
             <span>Löschen erlauben<small className="hilfe">In der Ablage dürfen Mappen dieses Typs gelöscht werden</small></span></label></div>
         </div>
+        {neu && <label className="haken"><input type="checkbox" checked={sichtAnlegen} onChange={(ev) => setSichtAnlegen(ev.target.checked)} />
+          <span>Eigene Sicht in der Ablage anlegen<small className="hilfe">Abwählen, wenn die Mappen in einer bestehenden Sicht erscheinen sollen – das stellst du unter Werkbank → Sichten ein.</small></span></label>}
       </div>
 
       <TitelEditor e={e} setze={(titelVorlage) => setE((x) => ({ ...x, titelVorlage }))} />
@@ -376,7 +380,7 @@ function TitelEditor({ e, setze }: { e: Entwurf; setze: (v: string) => void }) {
   const [beispielId, setBeispielId] = useState<string>('');
   useEffect(() => {
     if (!d.anzahl(e.id)) return;
-    api.seite(e.id, 0, 50).then((s) => { setMappen(s.mappen); setBezuege(s.bezuege); setBeispielId((b) => b || s.mappen[0]?.id || ''); }).catch(() => {});
+    api.seite(`typ:${e.id}`, 0, 50).then((s) => { setMappen(s.mappen); setBezuege(s.bezuege); setBeispielId((b) => b || s.mappen[0]?.id || ''); }).catch(() => {});
   }, [e.id, d.stand]); // eslint-disable-line react-hooks/exhaustive-deps
   const felder = e.felder as unknown as Feld[];
   const v = e.titelVorlage;
