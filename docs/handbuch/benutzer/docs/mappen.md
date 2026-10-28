@@ -78,7 +78,7 @@ Ein Klick auf einen gesetzten Verweis öffnet die andere Mappe.
 
 Willst du die Mappe mit ungespeicherten Änderungen verlassen, fragt das DMS nach.
 
-Über den Registern stehen außerdem **Notizen** und das Menü **Aktionen** (Aufgabe vergeben, per E-Mail versenden, als PDF exportieren) – siehe [Notizen, Erwähnungen, Protokoll](zusammenarbeit.md) und [E-Mail und PDF](versenden.md).
+Über den Registern stehen außerdem **Notizen** und das Menü **Aktionen** (Aufgabe vergeben, per E-Mail versenden, als PDF exportieren, Link kopieren) – siehe [Notizen, Erwähnungen, Protokoll](zusammenarbeit.md) und [E-Mail, PDF und Link](versenden.md).
 
 Manche Angaben sind nur zum Lesen da und haben einen gestrichelten Rahmen – zum Beispiel Name und E-Mail-Adresse in der Mappe eines Benutzers. Daneben steht, wo man sie ändert.
 

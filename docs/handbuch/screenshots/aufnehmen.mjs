@@ -284,6 +284,19 @@ async function main() {
   await s.getByRole('button', { name: 'Wiederherstellen' }).waitFor();
   await bild(s, 'papierkorb');
 
+  // Sprechender Link (#98): Trefferliste mit der ersten Mappe geöffnet, „Link kopieren“, Fehlermeldung
+  await geheZu(s, '/ablage/link?typ=Rechnung&bezahlt=nein&sortierung=-rechnungsdatum');
+  await s.locator('.spalte.mappe .mappenkopf h1').waitFor();
+  await bild(s, 'direktlink');
+  await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
+  await s.getByRole('button', { name: /Aktionen/ }).click();
+  await s.getByRole('menuitem', { name: /Link kopieren/ }).click();
+  await s.locator('.linkkopiert').waitFor();
+  await bild(s, 'link-kopieren');
+  await geheZu(s, '/ablage/link?typ=Rechnung&rechnungsnumer=R-2026-117');
+  await s.locator('.spalte.liste [role="alert"]').waitFor();
+  await bild(s, 'direktlink-fehler');
+
   // Breite Liste als Tabelle: Liste breit ziehen (gemerkt je Gerät), danach zurücksetzen
   const breitSchluessel = `dms:bereiche:ablage:${d.admin.id}`;
   await s.evaluate(([key]) => localStorage.setItem(key, JSON.stringify({ l: 220, m: 900, rechtsZu: true })), [breitSchluessel]);

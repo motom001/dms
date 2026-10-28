@@ -1,4 +1,4 @@
-# E-Mail und PDF
+# E-Mail, PDF und Link
 
 Rechts über den Registern einer Mappe steht das Menü **Aktionen**.
 
@@ -25,3 +25,20 @@ Steht dort „Der E-Mail-Versand ist nicht eingerichtet“, muss ein Administrat
 **Aktionen → Als PDF exportieren** öffnet den Druckdialog des Browsers mit einer aufgeräumten Fassung der Mappe: Titel, alle Angaben, die Liste der Dokumente und die Notizen. Wähle als Drucker **Als PDF speichern** (bzw. „Microsoft Print to PDF“ unter Windows) – oder drucke sie gleich auf Papier.
 
 Passwörter erscheinen auch dort nur als „••••••••“.
+
+## Link kopieren
+
+**Aktionen → Link kopieren** legt einen Link auf die Mappe in die Zwischenablage, den du per Mail oder Chat an jemanden mit eigenem Zugang zum DMS schicken kannst. Der Link nennt die Mappe nicht über eine Nummer, sondern über ihre Angaben, z. B.
+
+```
+http://nas:8080/ablage/link?typ=Vertrag&vertragsnummer=SV-4711
+```
+
+![Link kopiert](bilder/link-kopieren.png)
+
+- Das DMS nimmt dafür eine Angabe, die es nur einmal gibt (z. B. die Vertragsnummer). Gibt es keine, nimmt es die Angaben, aus denen der Titel entsteht. Passen dann mehrere Mappen, zeigt der Link die Liste und öffnet die erste.
+- Lässt sich nicht kopieren (manche Browser erlauben das ohne HTTPS nicht), steht der Link zum Markieren da.
+- Wer den Link öffnet und nicht angemeldet ist, meldet sich an und landet dann direkt bei der Mappe.
+- Fehlt der Menüpunkt, hat die Mappe keine Angabe, über die sich ein Link bilden lässt. Die Adresse im Browser funktioniert immer.
+
+Solche Links kannst du auch selbst schreiben, etwa für „alle offenen Rechnungen“. Wie, steht im [Administratorhandbuch](https://motom001.github.io/dms/admin/direktlinks/).

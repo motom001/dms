@@ -9,14 +9,14 @@ import { titelOder } from '../seiten';
 import { Formatiert } from './Formatiert';
 import { NamenOhneLinks } from '../Person';
 
-/** Aktionen an der Mappe (#58): per E-Mail versenden, als PDF exportieren. */
+/** Aktionen an der Mappe (#58): per E-Mail versenden, als PDF exportieren, Link kopieren (#98). */
 
 const groesse = (b: number) => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);
 /** Ab hier lehnen manche Mailserver ab; die Oberfläche warnt, der Server erlaubt bis 50 MB. */
 export const EMAIL_WARNUNG = 20 * 1024 * 1024;
 const EMAIL_HOECHSTENS = 50_000_000;
 
-export function Aktionsmenue({ aufgabe, email, drucken }: { aufgabe(): void; email(): void; drucken(): void }) {
+export function Aktionsmenue({ aufgabe, email, drucken, link }: { aufgabe(): void; email(): void; drucken(): void; link?: () => void }) {
   const [offen, setOffen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -38,6 +38,7 @@ export function Aktionsmenue({ aufgabe, email, drucken }: { aufgabe(): void; ema
           <button type="button" role="menuitem" onClick={waehle(aufgabe)}><span aria-hidden="true">✓</span> Aufgabe vergeben</button>
           <button type="button" role="menuitem" onClick={waehle(email)}><span aria-hidden="true">✉</span> Per E-Mail versenden</button>
           <button type="button" role="menuitem" onClick={waehle(drucken)}><span aria-hidden="true">⎙</span> Als PDF exportieren</button>
+          {link && <button type="button" role="menuitem" onClick={waehle(link)} title="Sprechender Link über Typ und Feldwerte, z. B. zum Weitergeben per Mail oder Chat"><span aria-hidden="true">🔗</span> Link kopieren</button>}
         </div>
       )}
     </div>
