@@ -109,7 +109,7 @@ function MappeLader({ id, sicht }: { id: string; sicht: string }) {
 /** Nebenzeile eines Listeneintrags: zwei Felder, die nicht schon im Titel stehen. */
 function unterzeile(typ: Mappentyp, m: Mappe, bezuege: Bezuege) {
   const imTitel = new Set(vorlageFelder(wirksameVorlage(typ)));
-  const neben = typ.felder.filter((f) => !imTitel.has(f.key) && f.typ !== 'langtext' && f.typ !== 'passwort').slice(0, 2);
+  const neben = typ.felder.filter((f) => !imTitel.has(f.key) && f.typ !== 'langtext' && f.typ !== 'formatiert' && f.typ !== 'passwort').slice(0, 2);
   return neben.map((f) => formatiere(f, m.werte[f.key], (id) => titelOder(bezuege[id]?.titel))).filter(Boolean).join(' · ');
 }
 
@@ -296,7 +296,9 @@ export function zelle(k: string, m: Mappe, typ: Mappentyp | undefined, bezuege: 
     case '_geaendertVon': return person(m.geaendertVon);
   }
   const f = typ?.felder.find((x) => x.key === k);
-  return f ? formatiere(f, m.werte[k], (id) => titelOder(bezuege[id]?.titel)) : '';
+  const text = f ? formatiere(f, m.werte[k], (id) => titelOder(bezuege[id]?.titel)) : '';
+  // Formatierter Text (#53) in Listen: ohne Formatierung, gekürzt.
+  return f?.typ === 'formatiert' && text.length > 140 ? `${text.slice(0, 137).trimEnd()} …` : text;
 }
 
 const Unter = ({ text }: { text: string }) => (text ? <span className="unter">{text}</span> : null);

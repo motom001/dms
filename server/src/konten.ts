@@ -260,7 +260,7 @@ export class Konten {
   listeBenutzer() { return this.repo.listeBenutzer(); }
 
   /** Für alle Angemeldeten: nur Id und Name, z. B. für „angelegt von“. */
-  async personen() { return (await this.repo.listeBenutzer()).map((b) => ({ id: b.id, name: b.name || b.email })); }
+  async personen() { return (await this.repo.listeBenutzer()).map((b) => ({ id: b.id, name: b.name || b.email, aktiv: b.aktiv })); }
 
   async legeBenutzerAn(e: { email?: unknown; name?: unknown; rolle?: unknown }, von: string | null = null): Promise<Ergebnis> {
     const email = pruefeEmail(e.email);

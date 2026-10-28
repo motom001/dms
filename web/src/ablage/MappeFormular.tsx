@@ -6,6 +6,7 @@ import { useKonto } from '../konto';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
 import { leeresPasswort, rohAusWerten, standardRoh, werteAusRoh, type Roh, type RohBetrag, type RohPasswort, type RohWerte } from '../werte';
 import { titelOder } from '../seiten';
+import { Formatiert, FormatiertEingabe } from './Formatiert';
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 const groesse = (b: number) => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);
@@ -261,7 +262,7 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
     ctl = <div className="festwert" title={gesperrt}>{
       f.typ === 'referenz'
         ? <ul>{ids.map((x) => <li key={x}>{bekannt[x]?.typId ? <Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis">{titelOder(bekannt[x].titel)}</Link> : titelOder(bekannt[x]?.titel)}</li>)}</ul>
-        : f.typ === 'janein' ? (roh ? 'Ja' : 'Nein') : String(roh ?? '')
+        : f.typ === 'janein' ? (roh ? 'Ja' : 'Nein') : f.typ === 'formatiert' ? <Formatiert text={String(roh ?? '')} /> : String(roh ?? '')
     }</div>;
     return (
       <div className="feld">
@@ -324,6 +325,11 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
         bekannt={bekannt} merke={merke} setze={setze} />;
       break;
     }
+    case 'formatiert':
+      breit = true;
+      mitLabelFor = false;
+      ctl = <FormatiertEingabe id={id} wert={String(roh ?? '')} setze={setze} />;
+      break;
     case 'passwort':
       ctl = <PasswortEingabe id={id} feld={f} roh={(roh ?? leeresPasswort) as RohPasswort} setze={setze} mappeId={eigeneId} />;
       break;

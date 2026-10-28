@@ -49,6 +49,7 @@ function textFuer(f: Feld, nr: number): string {
 /** Wert für ein Feld oder undefined, wenn sich nichts Passendes erzeugen lässt. */
 function wertFuer(f: Feld, nr: number, pools: Map<string, string[]>, vergeben: Set<string>): Wert | undefined {
   switch (f.typ) {
+    case 'formatiert': return `**${eins(SAETZE)}**\n\n- ${eins(SAETZE)}\n- ${eins(SAETZE)}`;
     case 'text':
     case 'langtext': {
       let s = f.typ === 'langtext' ? Array.from({ length: 1 + zufall(3) }, () => eins(SAETZE)).join(' ') : textFuer(f, nr);

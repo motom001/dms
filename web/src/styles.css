@@ -538,3 +538,20 @@ input.kurz { width: 7em; }
 .listenrumpf .trefferliste thead th { top: 0; }
 /* Listen der Werkbank: Kopf mit „+ Neu“ bleibt oben stehen. */
 .spalte.liste > .listenkopf { position: sticky; top: -18px; z-index: 3; background: var(--flaeche); margin: -18px -16px 0; padding: 18px 16px 8px; }
+/* Formatierter Text (#53) */
+.formatiert { line-height: 1.5; overflow-wrap: anywhere; }
+.formatiert > :first-child { margin-top: 0; }
+.formatiert > :last-child { margin-bottom: 0; }
+.formatiert p, .formatiert ul, .formatiert ol, .formatiert blockquote { margin: 0 0 8px; }
+.formatiert ul, .formatiert ol { padding-left: 22px; }
+.formatiert h3, .formatiert h4, .formatiert h5 { margin: 10px 0 6px; font-size: calc(15px * var(--skala, 1)); }
+.formatiert h3 { font-size: calc(17px * var(--skala, 1)); }
+.formatiert blockquote { border-left: 3px solid var(--linie-stark); padding: 2px 10px; color: var(--leise); }
+.formatiert code { font-family: ui-monospace, monospace; background: var(--senke); padding: 0 4px; border-radius: 4px; }
+.erwaehnung { color: var(--akzent); background: var(--akzent-zart); border-radius: 4px; padding: 0 3px; font-weight: 600; }
+.formateingabe { display: flex; flex-direction: column; gap: 4px; }
+.formatleiste { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.formatleiste .textknopf.an { font-weight: 700; text-decoration: underline; }
+.formatleiste .werkzeuge { display: inline-flex; gap: 2px; margin-left: auto; }
+.formatvorschau { min-height: 4.5em; padding: 8px 10px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche); }
+.formateingabe textarea { width: 100%; }

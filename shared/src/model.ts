@@ -7,9 +7,13 @@
  * Fehler früh an, der Server lässt nichts Ungültiges in die Datenbank.
  */
 
+import { alsText } from './markdown';
+
 export const FELDTYPEN = {
   text: 'Text',
   langtext: 'Langtext',
+  /** Markdown (#53): fett, kursiv, Listen, Links, Überschriften, Zitate; nie als HTML ausgeführt. */
+  formatiert: 'Formatierter Text',
   zahl: 'Zahl',
   betrag: 'Betrag',
   datum: 'Datum',
@@ -153,7 +157,7 @@ export const GEMISCHTE_SPALTEN: Systemspalte[] = ['_titel', '_typ', '_erstelltVo
 export function sortierbar(spalte: string, t?: Pick<Mappentyp, 'felder'>): boolean {
   if (istSystemspalte(spalte)) return true;
   const f = t?.felder.find((x) => x.key === spalte);
-  return !!f && f.typ !== 'referenz' && f.typ !== 'langtext' && f.typ !== 'passwort';
+  return !!f && f.typ !== 'referenz' && f.typ !== 'langtext' && f.typ !== 'formatiert' && f.typ !== 'passwort';
 }
 export interface Sortierung { spalte: string; absteigend: boolean }
 
@@ -349,7 +353,7 @@ export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebn
       else if (f.zielTyp !== ctx.eigeneId && !ctx.existiertTyp(f.zielTyp)) m.push('Der Ziel-Mappentyp existiert nicht.');
     }
     if (f.typ === 'auswahl' && !(f.optionen ?? []).length) m.push('Mindestens einen Auswahlwert eintragen.');
-    if ((f.typ === 'text' || f.typ === 'langtext') && f.minLen != null && f.maxLen != null && f.minLen > f.maxLen)
+    if ((f.typ === 'text' || f.typ === 'langtext' || f.typ === 'formatiert') && f.minLen != null && f.maxLen != null && f.minLen > f.maxLen)
       m.push('Mindestlänge ist größer als Höchstlänge.');
     if ((f.typ === 'zahl' || f.typ === 'betrag') && f.min != null && f.max != null && f.min > f.max)
       m.push('Minimum ist größer als Maximum.');
@@ -381,7 +385,8 @@ export function pruefeMappe(t: Pick<Mappentyp, 'felder'>, werte: Werte, ctx: Map
     }
     switch (f.typ) {
       case 'text':
-      case 'langtext': {
+      case 'langtext':
+      case 'formatiert': {
         if (typeof v !== 'string') { fehler(f.key, 'Text erwartet.'); break; }
         if (f.minLen != null && v.length < f.minLen) fehler(f.key, `Mindestens ${f.minLen} Zeichen.`);
         else if (f.maxLen != null && v.length > f.maxLen) fehler(f.key, `Höchstens ${f.maxLen} Zeichen.`);
@@ -561,6 +566,7 @@ export function formatiere(f: Feld, v: Wert | undefined, titelVon: (id: string) 
     case 'auswahl': return Array.isArray(v) ? v.join(', ') : String(v);
     case 'referenz': return (Array.isArray(v) ? v : [String(v)]).map(titelVon).join(', ');
     case 'passwort': return istPasswortWert(v) && !v.gesetzt && !v.neu ? '' : '••••••••';
+    case 'formatiert': return alsText(String(v));
     default: return String(v);
   }
 }

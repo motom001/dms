@@ -33,6 +33,7 @@ export type Operator = keyof typeof OPERATOREN;
 export const OPERATOREN_JE_ART: Record<Feldart, Operator[]> = {
   text: ['gleich', 'enthaelt', 'leer', 'nichtLeer'],
   langtext: ['enthaelt', 'leer', 'nichtLeer'],
+  formatiert: ['enthaelt', 'leer', 'nichtLeer'],
   zahl: ['gleich', 'kleiner', 'groesser', 'zwischen', 'ausserhalb', 'leer', 'nichtLeer'],
   betrag: ['gleich', 'kleiner', 'groesser', 'zwischen', 'ausserhalb', 'leer', 'nichtLeer'],
   datum: ['gleich', 'kleiner', 'groesser', 'zwischen', 'ausserhalb', 'imZeitraum', 'leer', 'nichtLeer'],

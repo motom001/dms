@@ -83,7 +83,7 @@ export const api = {
   linkPruefen: (s: string) => anfrage<{ email: string; name: string; zweck: 'einladung' | 'zuruecksetzen' }>('GET', `/api/konto/link/${encodeURIComponent(s)}`),
   passwortSetzen: (schluessel: string, passwort: string) => anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/passwort-setzen', { schluessel, passwort }),
 
-  personen: () => anfrage<Array<{ id: string; name: string }>>('GET', '/api/personen'),
+  personen: () => anfrage<Array<{ id: string; name: string; aktiv?: boolean }>>('GET', '/api/personen'),
   benutzer: () => anfrage<Benutzer[]>('GET', '/api/benutzer'),
   benutzerAnlegen: (d: { email: string; name: string; rolle: Rolle; rollen?: string[] }) => anfrage<LinkErgebnis>('POST', '/api/benutzer', d),
   benutzerAendern: (id: string, d: Partial<Pick<Benutzer, 'name' | 'rolle' | 'aktiv' | 'rollen'>>) => anfrage<Benutzer>('PUT', `/api/benutzer/${id}`, d),
