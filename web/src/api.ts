@@ -83,6 +83,12 @@ export interface KontoStatus {
 }
 /** Benutzer für Namen und Empfängerauswahl; abwesend, solange die Abwesenheit an ist (#78). */
 export interface Person { id: string; name: string; aktiv?: boolean; abwesend?: { wirkt: boolean; von: string | null; bis: string | null; vertreter: string } }
+/** Werkbank: tägliche Zusammenfassung (#54, #92, #94). */
+export interface MailEinstellung { aktiv: boolean; uhrzeit: string; bundesland: string | null }
+export interface Zusammenfassung {
+  aktiv: boolean; uhrzeit: string | null; tage: number[]; feiertage: boolean;
+  standard: { uhrzeit: string; tage: number[]; bundesland: string | null }; versand: boolean;
+}
 export interface LinkErgebnis { benutzer: Benutzer; mailVerschickt: boolean; link?: string; mailFehler?: string }
 
 export const api = {
@@ -185,8 +191,11 @@ export const api = {
   aufgabeAnlegen: (mappeId: string, empfaengerId: string, text: string) => anfrage<Aufgabe>('POST', `/api/mappen/${mappeId}/aufgaben`, { empfaengerId, text }),
   aufgabeErledigt: (id: string) => anfrage<Aufgabe>('POST', `/api/aufgaben/${id}/erledigt`),
   aufgabeDelegieren: (id: string, empfaengerId: string) => anfrage<Aufgabe>('POST', `/api/aufgaben/${id}/delegieren`, { empfaengerId }),
-  aufgabenWerkbank: (erledigt = false) => anfrage<{ aufgaben: Aufgabe[]; mail: { aktiv: boolean; uhrzeit: string } | null }>('GET', `/api/werkbank/aufgaben${erledigt ? '?erledigt' : ''}`),
-  aufgabenMailSpeichern: (e: { aktiv: boolean; uhrzeit: string }) => anfrage<{ aktiv: boolean; uhrzeit: string }>('PUT', '/api/werkbank/aufgaben/mail', e),
+  aufgabenWerkbank: (erledigt = false) => anfrage<{ aufgaben: Aufgabe[]; mail: MailEinstellung | null }>('GET', `/api/werkbank/aufgaben${erledigt ? '?erledigt' : ''}`),
+  aufgabenMailSpeichern: (e: MailEinstellung) => anfrage<MailEinstellung>('PUT', '/api/werkbank/aufgaben/mail', e),
+  /** Eigene tägliche Zusammenfassung (#92, #94). */
+  zusammenfassung: () => anfrage<Zusammenfassung>('GET', '/api/konto/zusammenfassung'),
+  zusammenfassungSetzen: (z: { aktiv: boolean; uhrzeit: string | null; tage: number[]; feiertage: boolean }) => anfrage<Zusammenfassung>('PUT', '/api/konto/zusammenfassung', z),
   aufgabenMailSenden: () => anfrage<{ verschickt: number }>('POST', '/api/werkbank/aufgaben/mail/senden'),
   notizAnlegen: (mappeId: string, text: string) => anfrage<Notiz>('POST', `/api/mappen/${mappeId}/notizen`, { text }),
   notizAendern: (id: string, text: string) => anfrage<Notiz>('PUT', `/api/notizen/${id}`, { text }),

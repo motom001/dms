@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
+import { BUNDESLAENDER } from '../../../shared/src/feiertage';
 import { AUFGABENARTEN, type Aufgabe } from '../../../shared/src/model';
-import { api } from '../api';
+import { api, type MailEinstellung } from '../api';
 import { BenutzerWahl } from '../ablage/Aufgaben';
 import { useDaten } from '../daten';
 import { Link } from '../ort';
@@ -13,7 +14,7 @@ const datum = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle
 export function useAufgaben(aktiv: boolean) {
   const [erledigt, setErledigt] = useState(false);
   const [liste, setListe] = useState<Aufgabe[] | null>(null);
-  const [mail, setMail] = useState<{ aktiv: boolean; uhrzeit: string } | null>(null);
+  const [mail, setMail] = useState<MailEinstellung | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
     try { const r = await api.aufgabenWerkbank(erledigt); setListe(r.aufgaben); setMail(r.mail); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
@@ -64,7 +65,7 @@ export function AufgabenListe({ z }: { z: AufgabenZustand }) {
 }
 
 export function AufgabenPanel({ z }: { z: AufgabenZustand }) {
-  const [e, setE] = useState(z.mail ?? { aktiv: true, uhrzeit: '07:00' });
+  const [e, setE] = useState<MailEinstellung>(z.mail ?? { aktiv: true, uhrzeit: '07:00', bundesland: null });
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   useEffect(() => { if (z.mail) setE(z.mail); }, [z.mail]);
   async function speichern() {
@@ -83,9 +84,17 @@ export function AufgabenPanel({ z }: { z: AufgabenZustand }) {
       </div>
       <form className="blatt" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }}>
         <h2 className="h3">Tägliche Zusammenfassung</h2>
-        <p className="leise">Statt einer Mail je Aufgabe bekommt jeder mit offenen Aufgaben einmal am Tag eine Übersicht. Jeder kann sie im Profil abbestellen. Braucht den E-Mail-Versand (Werkbank → E-Mail und Adresse).</p>
+        <p className="leise">Statt einer Mail je Aufgabe bekommt jeder mit offenen Aufgaben einmal am Tag eine Übersicht. Jeder kann sie im Profil anpassen oder abbestellen. Braucht den E-Mail-Versand (Werkbank → E-Mail und Adresse).</p>
         <label className="haken"><input type="checkbox" checked={e.aktiv} onChange={(x) => setE({ ...e, aktiv: x.target.checked })} /><span>Zusammenfassung verschicken</span></label>
-        <label className="eigenschaft"><span>Uhrzeit</span><input type="time" value={e.uhrzeit} onChange={(x) => setE({ ...e, uhrzeit: x.target.value })} /></label>
+        <div className="raster">
+          <label className="eigenschaft"><span>Standard-Uhrzeit <small>für alle, die im Profil keine eigene gewählt haben</small></span><input type="time" step={900} value={e.uhrzeit} onChange={(x) => setE({ ...e, uhrzeit: x.target.value })} /></label>
+          <label className="eigenschaft"><span>Bundesland <small>für Feiertage ohne Zusammenfassung</small></span>
+            <select value={e.bundesland ?? ''} onChange={(x) => setE({ ...e, bundesland: x.target.value || null })}>
+              <option value="">keins – Feiertage nicht berücksichtigen</option>
+              {Object.entries(BUNDESLAENDER).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select></label>
+        </div>
+        <p className="leise klein">Jeder wählt im Profil Uhrzeit und Wochentage selbst (Standard: Montag bis Freitag) und ob an Feiertagen keine kommt. Berücksichtigt werden die landesweiten gesetzlichen Feiertage; solche, die nur in einzelnen Gemeinden gelten (z. B. Mariä Himmelfahrt in Teilen Bayerns), nicht.</p>
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         <div className="knoepfe">
           <button type="button" className="knopf" onClick={() => void senden()}>Jetzt senden</button>

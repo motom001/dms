@@ -16,7 +16,7 @@ import { MODULE, protokoll, STUFEN, type Stufe } from './protokoll';
 import type { Betrieb } from './betrieb';
 import { maskiere, type Tresor } from './tresor';
 import type { Texterkennung } from './texterkennung';
-import type { Aufgabenmail } from './aufgabenmail';
+import { MAIL_STANDARD, pruefeZeit, STANDARD_TAGE, wirksameZeit, type Aufgabenmail, type MailZeit } from './aufgabenmail';
 
 const L = {
   konto: protokoll.modul('konto'), ablage: protokoll.modul('ablage'), werkbank: protokoll.modul('werkbank'),
@@ -108,6 +108,19 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const typName = async (id: string) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? id;
   const betrieb = () => { if (!x.betrieb) throw new Fachfehler(404, 'Betriebseinstellungen sind nicht eingerichtet.'); return x.betrieb; };
   const mail = () => { if (!x.aufgabenmail) throw new Fachfehler(404, 'Die Aufgaben-Mail ist nicht eingerichtet.'); return x.aufgabenmail; };
+  /** Eigene Einstellung der täglichen Zusammenfassung mit den Standards der Werkbank (#92, #94). */
+  const zusammenfassung = async (i: Benutzer) => {
+    const std = x.aufgabenmail ? await x.aufgabenmail.einstellung() : MAIL_STANDARD;
+    const e = await konten.einstellungen(i);
+    const eigen = e.aufgaben_mail_zeit && typeof e.aufgaben_mail_zeit === 'object' ? e.aufgaben_mail_zeit as Partial<MailZeit> : null;
+    return {
+      aktiv: e.aufgaben_mail !== false,
+      uhrzeit: typeof eigen?.uhrzeit === 'string' ? eigen.uhrzeit : null,
+      ...(({ tage, feiertage }) => ({ tage, feiertage }))(wirksameZeit(eigen, std)),
+      standard: { uhrzeit: std.uhrzeit, tage: STANDARD_TAGE, bundesland: std.bundesland },
+      versand: !!x.betrieb?.mailer() && std.aktiv,
+    };
+  };
   const ocr = () => { if (!x.texterkennung) throw new Fachfehler(404, 'Die Texterkennung ist nicht eingerichtet.'); return x.texterkennung; };
   const meldungen = () => { if (!x.fehlermeldungen) throw new Fachfehler(404, 'Fehlermeldungen sind nicht eingerichtet.'); return x.fehlermeldungen; };
   const tresor = () => { if (!x.tresor) throw new Fachfehler(404, 'Die Verschlüsselung ist nicht eingerichtet.'); return x.tresor; };
@@ -543,6 +556,15 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       aufgaben: await dienst.alleAufgaben(a.query.erledigt !== undefined),
       mail: x.aufgabenmail ? await x.aufgabenmail.einstellung() : null,
     }) },
+    // Tägliche Zusammenfassung je Benutzer: Uhrzeit, Wochentage, Feiertage (#92, #94)
+    { methode: 'GET', pfad: '/api/konto/zusammenfassung', zugang: 'angemeldet', handler: async (a) => ok(await zusammenfassung(ich(a))) },
+    { methode: 'PUT', pfad: '/api/konto/zusammenfassung', zugang: 'angemeldet', handler: async (a) => {
+      const z = pruefeZeit(b(a));
+      if (b(a).aktiv !== undefined) await konten.setzeEinstellung(ich(a), 'aufgaben_mail', b(a).aktiv === false ? false : null);
+      await konten.setzeEinstellung(ich(a), 'aufgaben_mail_zeit', z);
+      L.konto.info('Tägliche Zusammenfassung eingestellt', { uhrzeit: z.uhrzeit ?? 'Standard', tage: z.tage.join(','), feiertage: z.feiertage });
+      return ok(await zusammenfassung(ich(a)));
+    } },
     { methode: 'PUT', pfad: '/api/werkbank/aufgaben/mail', zugang: 'admin', handler: async (a) => ok(await mail().speichere(a.body)) },
     { methode: 'POST', pfad: '/api/werkbank/aufgaben/mail/senden', zugang: 'admin', handler: async () => ok({ verschickt: await mail().sende() }) },
     // Notizen (#55)
