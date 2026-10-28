@@ -19,6 +19,7 @@ Jeder Benutzer erzeugt seine Schlüssel selbst im **Profil** unter *API-Schlüss
 - **Name** – wofür der Schlüssel ist, z. B. „Scanner Arbeitszimmer“.
 - **Recht** – *nur lesen* oder *lesen und schreiben*.
 - **Ablaufdatum** – optional.
+- **Passwörter lesen** – eigenes Recht für [Passwortfelder](mappentypen.md#passwortfelder): Nur damit liefert `GET /api/v1/mappen…?passwoerter=anzeigen` sie im Klartext; jeder Abruf steht im Protokoll. Ohne den Parameter steht dort immer nur `{"gesetzt": true, "lesbar": true}`.
 
 Der Schlüssel ist **nur einmal vollständig sichtbar**, direkt nach dem Erzeugen; danach zeigt das DMS nur noch seinen Anfang. Gespeichert wird nur ein Prüfwert. Wer ihn verliert, erzeugt einen neuen und löscht den alten.
 
@@ -44,9 +45,14 @@ Die Ids der Mappentypen und die Schlüssel ihrer Felder liefert `GET /api/v1/typ
 
 Die Mappen einer Sicht liefert `GET /api/v1/mappen?sicht=<Id der Sicht>` – mit allen Bedingungen der Sicht. Alle Mappen eines Typs, ohne Bedingungen, gibt es mit `sicht=typ:<Id des Mappentyps>`. Die Sichten selbst (Baum, Mappentypen, Bedingungen) liefert `GET /api/v1/sichten/definitionen`.
 
+Mit `suche=…&volltext=true` sucht `GET /api/v1/mappen` auch im Volltext der Dokumente; die Fundstellen stehen in `ausschnitte` (Treffer zwischen den Steuerzeichen U+0002 und U+0003). Den ganzen Text eines Dokuments liefert `GET /api/v1/dokumente/<Id>/volltext`.
+
+Gelöschte Mappen liegen im [Papierkorb](papierkorb.md): `GET /api/v1/papierkorb` (eigener), `POST /api/v1/papierkorb/<Id>/wiederherstellen`, `DELETE /api/v1/papierkorb/<Id>` und `DELETE /api/v1/papierkorb` (leeren).
+
 ## Regeln
 
 - Schlüssel gelten nur unter `/api/v1`, nicht an den internen Adressen der Oberfläche.
 - Es gelten dieselben Prüfungen wie in der Oberfläche: Pflichtfelder, eindeutige Werte, geschützte Felder der Benutzer-Mappen, „Neue Mappen erlauben“ und „Löschen erlauben“.
 - Fehler kommen als JSON mit einer deutschen Meldung in `fehler`; bei ungültigen Eingaben (422) steht in `details` das Prüfergebnis je Feld.
+- Passwortfelder setzt man mit einem Text oder `{"neu": "…"}`, entfernt sie mit `null` und lässt sie unverändert, indem man sie weglässt.
 - Feldschlüssel ändern sich nie (siehe [Mappentypen](mappentypen.md#der-schlussel)) – Skripte, die mit ihnen arbeiten, bleiben gültig, auch wenn Bezeichnungen umbenannt werden.

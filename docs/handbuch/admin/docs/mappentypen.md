@@ -35,6 +35,7 @@ Jedes Feld hat eine **Bezeichnung** (änderbar), einen **Schlüssel** (fest, sob
 | Ja/Nein | – |
 | Auswahlliste | die Auswahlwerte (einer pro Zeile), Mehrfachauswahl |
 | Referenz | Ziel-Mappentyp, Art des Verweises, mehrere Mappen erlaubt |
+| Passwort | – (wird verschlüsselt gespeichert, siehe unten) |
 
 Für alle gilt: **Pflichtfeld** und ein **Hilfetext**, der beim Ausfüllen unter dem Feld steht; die meisten Typen haben außerdem einen **Standardwert** für neue Mappen. **Eindeutig** heißt: Den Wert darf es in diesem Mappentyp nur einmal geben – Groß- und Kleinschreibung zählen dabei nicht.
 
@@ -53,6 +54,14 @@ Ein Feld vom Typ **Referenz** verweist auf Mappen eines anderen Typs (oder desse
     - **Bezug** – „hat zu tun mit“: Die Rechnung kommt von diesem Aussteller. Nur eine Verknüpfung.
 
 Auf eine Mappe, auf die noch verwiesen wird, kann niemand sie löschen.
+
+### Passwortfelder
+
+Ein Feld vom Typ **Passwort** nimmt z. B. das Kennwort eines Online-Zugangs auf. Das DMS speichert es verschlüsselt mit dem Schlüssel aus **Werkbank → [Verschlüsselung](verschluesselung.md)**; solange es keinen gibt, lässt sich kein Wert speichern, und das Feld weist darauf hin.
+
+- In der Mappe steht nur „••••••••“. Das Auge zeigt das Passwort – und jedes Anzeigen steht im [Protokoll](fehlersuche.md) mit Benutzer, Mappe und Feld, nie mit dem Wert.
+- Passwortfelder erscheinen nie im Titel, in der Trefferliste, in der Suche, in Bedingungen von Sichten oder in Demo-Daten.
+- Über die [API](api.md) gibt es Passwörter nur mit einem Schlüssel, der das Recht „Passwörter lesen“ hat.
 
 ## Wenn sich ein Mappentyp ändert
 
@@ -78,7 +87,7 @@ Register sind die Trennblätter einer Mappe, in der angegebenen Reihenfolge:
 | Art | Inhalt |
 | --- | --- |
 | **Feldregister** | eine Gruppe von Feldern; welches Feld auf welchem Register liegt, stellst du am Feld ein |
-| **Dokumentenregister** | hochgeladene Dateien; PDFs und Bilder sind direkt ansehbar |
+| **Dokumentenregister** | hochgeladene Dateien; PDFs und Bilder sind direkt ansehbar. **Volltext erzeugen** (Standard: an) schickt neue Dokumente durch die [Texterkennung](texterkennung.md) |
 | **Verknüpfungsregister** | Mappen, die auf diese Mappe verweisen – alle oder nur bestimmte (z. B. „Rechnungen“ nur über das Feld *Vertrag*) |
 
 Register haben feste Schlüssel, damit Dokumente ihr Register behalten, wenn es umbenannt wird. Ein Dokumentenregister, in dem schon Dokumente liegen, lässt sich nicht entfernen.

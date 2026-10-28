@@ -18,8 +18,11 @@
 ??? question "Eine Mappe ist plötzlich im Eingang."
     Ihr Mappentyp wurde geändert, und die Mappe passt nicht mehr dazu. Siehe [Eingang](eingang.md).
 
+??? question "Ich habe versehentlich eine Mappe gelöscht."
+    Sie liegt im **Papierkorb** unter dem Eingang. Öffne sie dort und klicke auf **Wiederherstellen**.
+
 ??? question "Die Suche findet einen Text aus einem PDF nicht."
-    Gesucht wird bisher nur in den Angaben der Mappen, nicht im Inhalt der Dokumente.
+    Setze unter dem Suchfeld den Haken **Volltext durchsuchen**. Ist das Dokument gerade erst hochgeladen, steht daneben vielleicht noch *Volltext: wartet* – dann einen Moment warten. Bei *ausgelassen* gibt es für diesen Dateityp keinen Volltext.
 
 ??? question "Die Spalten sind verrutscht oder eine ist verschwunden."
     Im Profil unter **Ansicht auf diesem Gerät** → **Standard-Ansicht wiederherstellen**. Oder kurz auf den Griff zwischen den Spalten klicken – das klappt eingeklappte Bereiche wieder auf.

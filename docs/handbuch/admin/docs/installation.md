@@ -5,7 +5,7 @@ Das DMS läuft als zwei Container: die Anwendung (`ghcr.io/motom001/dms`) und Po
 ## Voraussetzungen
 
 - Ein NAS oder Server mit Docker und Docker Compose (z. B. UGREEN, Synology, Linux-Server), Architektur amd64 oder arm64.
-- Ein Ordner für die Daten, z. B. `/volume1/docker/dms`.
+- Ein Ordner für die Daten, z. B. `/volume1/docker/dms`, darin `postgres`, `files` und `geheim` (für den Schlüssel der gespeicherten Passwörter).
 - Optional ein Postfach für den E-Mail-Versand (Einladungen, Passwort-Links) – eingerichtet wird es später in der Werkbank.
 
 ## Schritt für Schritt
@@ -26,7 +26,7 @@ Das DMS läuft als zwei Container: die Anwendung (`ghcr.io/motom001/dms`) und Po
 !!! warning "Erst einrichten, dann freigeben"
     Mach das DMS erst über einen Reverse-Proxy oder Port-Freigabe erreichbar, wenn der Administrator angelegt ist.
 
-Danach: unter **Werkbank → E-Mail und Adresse** die Adresse des DMS und, falls gewünscht, den E-Mail-Versand einrichten (siehe unten); unter **Werkbank → Demo-Daten** die Beispiel-Mappentypen laden oder eigene [Mappentypen](mappentypen.md) anlegen und [Benutzer einladen](benutzer.md).
+Danach: unter **Werkbank → [Verschlüsselung](verschluesselung.md)** den Schlüssel für Passwörter erzeugen, unter **Werkbank → E-Mail und Adresse** die Adresse des DMS und, falls gewünscht, den E-Mail-Versand einrichten (siehe unten); unter **Werkbank → Demo-Daten** die Beispiel-Mappentypen laden oder eigene [Mappentypen](mappentypen.md) anlegen und [Benutzer einladen](benutzer.md).
 
 ## E-Mail und Adresse
 
@@ -39,8 +39,8 @@ Unter **Werkbank → E-Mail und Adresse** stellst du ein, was früher Umgebungsv
 - **Selbstsigniertes Zertifikat erlauben** – nur für einen eigenen Mailserver im Heimnetz.
 - Ohne E-Mail-Versand (Haken „E-Mails verschicken“ aus) zeigt die Benutzerverwaltung die Einladungs- und Passwort-Links zum Kopieren an; „Passwort vergessen“ setzt dann der Administrator zurück.
 
-!!! warning "Passwort im Klartext"
-    Das SMTP-Passwort steht vorerst unverschlüsselt in der Datenbank – und damit auch in jeder Datenbanksicherung. Nimm ein eigenes Passwort nur für den Versand, etwa ein App-Passwort deines Mailanbieters. Die Verschlüsselung ist geplant (#39). Das Passwort wird nie an die Oberfläche zurückgegeben.
+!!! note "Passwort verschlüsselt"
+    Das SMTP-Passwort speichert das DMS verschlüsselt; den Schlüssel dazu erzeugst du einmal unter **Werkbank → [Verschlüsselung](verschluesselung.md)**. Solange es keinen gibt, lässt sich kein Passwort speichern. Das Passwort wird nie an die Oberfläche zurückgegeben. Nimm trotzdem am besten ein eigenes Passwort nur für den Versand, etwa ein App-Passwort deines Mailanbieters.
 
 !!! note "Von einer älteren Version"
     Bis Version 0.8 waren das die Umgebungsvariablen `APP_URL` und `SMTP_*`. Beim ersten Start von 0.9 übernimmt das DMS ihre Werte einmalig in die Werkbank; danach werden sie ignoriert, und das Protokoll weist darauf hin, dass sie aus der Compose-Datei entfernt werden können.
@@ -53,6 +53,7 @@ Diese Einstellungen sind Umgebungsvariablen im Compose-Projekt:
 | --- | --- |
 | `DATABASE_URL` | Verbindung zu PostgreSQL (Pflicht) |
 | `FILES_DIR` | Ordner für hochgeladene Dateien im Container (Vorlage: `/data/files`) |
+| `DMS_SCHLUESSEL_DATEI` | Datei mit dem Schlüssel für gespeicherte Passwörter (Standard: `/data/geheim/dms.schluessel`); der Ordner muss ein eigenes Volume sein |
 | `TRUST_PROXY` | `true`, wenn ein Reverse-Proxy davor sitzt (richtige IP-Adressen im Protokoll, sichere Cookies über HTTPS) |
 | `LOG_LEVEL` | Grundstufe des Protokolls: `debug`, `info` (Standard), `warn`, `error` |
 

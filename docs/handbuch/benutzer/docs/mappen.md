@@ -42,6 +42,15 @@ Stimmt etwas nicht – ein Pflichtfeld ist leer, eine Zahl zu groß, eine Nummer
 | Ja/Nein | Haken setzen |
 | Auswahlliste | einen Wert (oder mehrere) aus der Liste wählen |
 | Verweis | eine andere Mappe suchen und wählen (siehe unten) |
+| Passwort | eintippen; gespeichert wird es verschlüsselt (siehe unten) |
+
+### Passwörter
+
+In einem **Passwortfeld** (z. B. das Kennwort eines Kundenportals) steht nach dem Speichern nur „••••••••“. Das **Auge** zeigt das Passwort; jedes Anzeigen hält das DMS im Protokoll fest (wer, wann, welche Mappe – nicht das Passwort). **Ändern** nimmt ein neues Passwort auf, **Entfernen** löscht es beim Speichern.
+
+![Passwortfeld](bilder/passwortfeld.png)
+
+Passwörter erscheinen nie im Titel, in Listen oder in der Suche. Steht am Feld „nicht möglich“, hat ein Administrator noch keinen Schlüssel für Passwörter eingerichtet.
 
 ### Auf andere Mappen verweisen
 
@@ -74,7 +83,7 @@ Bei einer neuen Mappe ist das Register noch leer: Verknüpfungen entstehen erst,
 
 ## Löschen
 
-Unten links in der Mappe steht **Mappe löschen**. Nach einer Rückfrage ist die Mappe weg – mit ihren Dokumenten.
+Unten links in der Mappe steht **Mappe löschen**. Nach einer Rückfrage kommt die Mappe mit ihren Dokumenten in den [Papierkorb](ablage.md#papierkorb); dort lässt sie sich eine Zeit lang wiederherstellen. Ist der Papierkorb ausgeschaltet, ist sie sofort endgültig weg.
 
 Eine Mappe, auf die noch andere verweisen, lässt sich nicht löschen. Das DMS zeigt dann, welche Mappen das sind; entferne zuerst dort den Verweis. So kann kein Vertrag verschwinden, zu dem noch Rechnungen gehören.
 

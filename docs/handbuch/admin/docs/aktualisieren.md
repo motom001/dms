@@ -15,6 +15,18 @@ Welche Version läuft und ob es neuere gibt, zeigt **Werkbank → Technik** (sie
 !!! tip "Auf einer festen Version bleiben"
     Statt `ghcr.io/motom001/dms:main` kannst du in der Compose-Datei eine Versionsnummer angeben, z. B. `ghcr.io/motom001/dms:0.8.0`. Dann ändert sich nichts, bis du die Nummer selbst erhöhst.
 
+### Auf 0.11 aktualisieren
+
+- In der Compose-Datei ein Volume für den Schlüssel ergänzen (siehe [Vorlage](https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml)):
+  ```yaml
+  volumes:
+    - /volume1/docker/dms/files:/data/files
+    - /volume1/docker/dms/geheim:/data/geheim
+  ```
+  Danach unter **Werkbank → Verschlüsselung** den Schlüssel erzeugen. Ein schon gespeichertes SMTP-Passwort wird dabei verschlüsselt; bis dahin funktioniert der Versand wie bisher.
+- Das Image enthält jetzt die Texterkennung und ist dadurch etwa 50 MB größer.
+- Vorhandene Dokumente bekommen ihren Volltext erst, wenn du unter **Werkbank → [Wartungsoperationen](texterkennung.md#wartungsoperationen)** „Volltext nachholen“ anstößt.
+
 ### PostgreSQL
 
 Kleinere Versionen (17.x) bekommst du durch Neuziehen des Images `postgres:17`. Ein Wechsel der Hauptversion (z. B. 17 → 18) braucht eine Sicherung und Wiederherstellung – PostgreSQL kann die Daten einer älteren Hauptversion nicht direkt öffnen.
@@ -36,6 +48,7 @@ Zu sichern sind zwei Ordner aus der Compose-Vorlage:
 | --- | --- |
 | `postgres` | die Datenbank: Mappentypen, Mappen, Benutzer, Einstellungen |
 | `files` | die hochgeladenen Dateien, je Datei unter ihrem SHA-256-Prüfwert |
+| `geheim` | der Schlüssel für gespeicherte Passwörter (SMTP, Passwortfelder) – **getrennt** von den beiden anderen aufbewahren |
 
 Für eine konsistente Datenbanksicherung im laufenden Betrieb vorher einen Abzug erstellen:
 
@@ -57,3 +70,6 @@ und `dms.sql` zusammen mit dem Ordner `files` sichern.
 
 !!! warning "Dateien und Datenbank gehören zusammen"
     Die Datenbank kennt jede Datei über ihren Prüfwert. Sichere und stelle beide immer vom selben Zeitpunkt wieder her.
+
+!!! warning "Ohne Schlüssel keine Passwörter"
+    Gespeicherte Passwörter lassen sich nur mit der Schlüsseldatei aus `geheim` lesen. Fehlt sie nach einer Wiederherstellung, zeigt **Werkbank → [Verschlüsselung](verschluesselung.md)**, welche Passwörter neu einzugeben sind. Bewahre die Schlüsseldatei getrennt von der Datenbanksicherung auf – liegen beide zusammen, schützt die Verschlüsselung die Sicherung nicht.

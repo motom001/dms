@@ -75,6 +75,8 @@ async function vorbereiten() {
   await warteAufServer();
   const admin = (await api('POST', '/api/konto/einrichten', ADMIN)).benutzer;
   const adminCookie = cookie;
+  // Schlüssel für Passwörter (#39) – sonst steht über der Werkbank ein Hinweis.
+  await api('POST', '/api/werkbank/tresor/erzeugen');
   await api('POST', '/api/beispiele');
   await api('POST', '/api/werkbank/demo', { anzahl: 120 });
   await warteAufAuftrag();
@@ -105,6 +107,29 @@ async function vorbereiten() {
   await api('PUT', `/api/mappen/${strom.id}`, { werte: { ...strom.werte, verantwortlich: admin.id } });
   await api('POST', `/api/mappen/${strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Stromvertrag 2022.pdf')}&typ=application/pdf`, beispielPdf('Stromvertrag Haus - Vertragsunterlagen'), true);
   await api('POST', `/api/mappen/${strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Preisanpassung 2026.pdf')}&typ=application/pdf`, beispielPdf('Preisanpassung 2026'), true);
+
+  // Passwortfeld (#46) beim Vertragspartner, gesetzt bei den Stadtwerken
+  const partnerTyp = typ('Vertragspartner');
+  const partnerReg = partnerTyp.register.find((r) => r.art === 'felder');
+  await api('PUT', `/api/typen/${partnerTyp.id}`, {
+    ...partnerTyp,
+    felder: [...partnerTyp.felder, { key: 'portal_kennwort', label: 'Kennwort Kundenportal', typ: 'passwort', hilfe: 'Wird verschlüsselt gespeichert' }],
+    register: partnerTyp.register.map((r) => (r === partnerReg ? { ...r, felder: [...(r.felder ?? []), 'portal_kennwort'] } : r)),
+  });
+  typen = await api('GET', '/api/typen');
+  const stadtwerkeVorher = mappe('name', 'Stadtwerke Musterstadt');
+  await api('PUT', `/api/mappen/${stadtwerkeVorher.id}`, { werte: { ...stadtwerkeVorher.werte, portal_kennwort: { neu: 'Sommer-2026!' } } });
+
+  // Papierkorb (#43): eine Zahlung aus den Demo-Daten löschen
+  const zahlung = alle.find((m) => m.typId === typ('Zahlung').id && m.demo) ?? alle.find((m) => m.typId === typ('Zahlung').id);
+  await api('DELETE', `/api/mappen/${zahlung.id}`);
+
+  // Texterkennung (#45): warten, bis die Beispieldokumente ihren Volltext haben
+  for (let i = 0; i < 120; i++) {
+    const z = (await api('GET', '/api/werkbank/texterkennung')).zaehler;
+    if (!z.wartet && !z.laeuft) break;
+    await new Promise((r) => setTimeout(r, 500));
+  }
 
   // Sichten (#38, #40): eine Gruppe „Finanzen“ mit Untersichten und eine mit Bedingungen
   const rechnungTyp = typ('Rechnung'); const zahlungTyp = typ('Zahlung'); const vertragTyp = typ('Vertrag');
@@ -197,6 +222,25 @@ async function main() {
   await s.waitForTimeout(600);
   await bild(s, 'suche');
 
+  // Volltextsuche (#45): Treffer im Text eines Dokuments
+  await api('PUT', '/api/konto/einstellungen/suche_volltext', { wert: true });
+  await geheZu(s, `/ablage/${vertrag.id}`);
+  await s.getByPlaceholder('Suchen in Titel, Werten und Dokumenten …').fill('Preisanpassung');
+  await s.locator('.fundstelle').first().waitFor();
+  await bild(s, 'volltext-suche');
+  await api('PUT', '/api/konto/einstellungen/suche_volltext', { wert: null });
+
+  // Passwortfeld (#46)
+  await geheZu(s, `/ablage/${partner.id}/${d.stadtwerke.id}`);
+  await s.locator('.passwort').first().waitFor();
+  await bild(s, 'passwortfeld');
+
+  // Papierkorb in der Ablage (#43)
+  await geheZu(s, '/ablage/papierkorb');
+  await s.locator('.spalte.liste .eintrag, .spalte.liste tbody tr').first().click();
+  await s.getByRole('button', { name: 'Wiederherstellen' }).waitFor();
+  await bild(s, 'papierkorb');
+
   // Breite Liste als Tabelle: Liste breit ziehen (gemerkt je Gerät), danach zurücksetzen
   const breitSchluessel = `dms:bereiche:ablage:${d.admin.id}`;
   await s.evaluate(([key]) => localStorage.setItem(key, JSON.stringify({ l: 220, m: 900, rechtsZu: true })), [breitSchluessel]);
@@ -269,6 +313,15 @@ async function main() {
   await geheZu(s, '/werkbank/betrieb');
   await s.getByRole('heading', { name: 'E-Mail-Versand' }).waitFor();
   await bild(s, 'werkbank-betrieb');
+  await geheZu(s, '/werkbank/verschluesselung');
+  await s.getByRole('heading', { name: 'Schlüssel', exact: true }).waitFor();
+  await bild(s, 'werkbank-verschluesselung');
+  await geheZu(s, '/werkbank/papierkorb');
+  await s.getByRole('heading', { name: 'Aufbewahrung', exact: true }).waitFor();
+  await bild(s, 'werkbank-papierkorb');
+  await geheZu(s, '/werkbank/texterkennung');
+  await s.getByRole('heading', { name: 'Werkzeuge', exact: true }).waitFor();
+  await bild(s, 'werkbank-texterkennung');
   await geheZu(s, '/werkbank/datenbank');
   await bild(s, 'werkbank-datenbank');
   await geheZu(s, '/werkbank/technik');
