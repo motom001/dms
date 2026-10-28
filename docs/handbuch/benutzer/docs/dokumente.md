@@ -20,10 +20,25 @@ Eine Datei darf bis zu 100 MB groß sein.
 
 ## Ansehen und herunterladen
 
-- **PDFs und Bilder:** Ein Klick auf den Namen zeigt das Dokument direkt in der Mappe an. **Öffnen** zeigt es in einem eigenen Browser-Tab.
+- **PDFs und Bilder:** Ein Klick irgendwo auf die Zeile zeigt das Dokument **direkt darunter** an, ein zweiter Klick schließt es. Es ist immer nur ein Dokument offen. Per Tastatur: mit Tab auf den Namen, dann Enter. Das Symbol **↗** öffnet es in einem neuen Browser-Tab.
 - **Alle anderen Dateien** (z. B. Word, Excel) lassen sich nur herunterladen und dann in ihrem Programm öffnen.
 
 **Herunterladen** speichert jede Datei unverändert auf deinem Gerät. Neben jedem Dokument steht, wie groß es ist und wer es wann hochgeladen hat.
+
+![Dokument direkt unter seiner Zeile](bilder/dokumente.png)
+
+## Sortieren
+
+Über der Liste wählst du die Reihenfolge: **Name A–Z** (Standard), **Name Z–A**, **Neueste zuerst**, **Älteste zuerst** (nach dem Hochladen) oder **Größte zuerst**. Namen werden „natürlich“ sortiert – „Rechnung 2“ vor „Rechnung 10“, ohne Rücksicht auf Groß- und Kleinschreibung. Die Wahl gilt für alle Dokumentenregister und für dich auf allen Geräten. Noch nicht gespeicherte Dateien stehen immer oben.
+
+## Mehrere auf einmal
+
+Jede Zeile hat ein Kästchen; **Alle auswählen** über der Liste wählt alle (und wieder ab). Mit **Umschalt + Klick** wählst du einen ganzen Bereich. Für die Auswahl gibt es dann:
+
+- **Herunterladen** – lädt die Dokumente nacheinander unter ihrem Namen herunter. Beim ersten Mal fragt der Browser womöglich, ob die Seite mehrere Dateien herunterladen darf – erlaube es.
+- **Löschen** – markiert sie zum Löschen, wie beim einzelnen Dokument (siehe unten).
+
+Die Auswahl gilt nur für das Register, in dem du gerade bist.
 
 ## Volltext
 
