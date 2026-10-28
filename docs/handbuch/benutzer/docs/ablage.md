@@ -2,7 +2,7 @@
 
 ## Sichten
 
-Links stehen die **Sichten**. Ganz oben der [Eingang](eingang.md) und der [Papierkorb](#papierkorb), darunter die Sichten, die ein Administrator eingerichtet hat – zum Beispiel *Vertrag*, *Rechnung*, *Vertragspartner* oder *Kündigung in den nächsten 12 Monaten*. Die Zahl dahinter sagt, wie viele Mappen die Sicht gerade zeigt.
+Links stehen die **Sichten**. Ganz oben der [Eingang](eingang.md), deine [Favoriten](#favoriten) und der [Papierkorb](#papierkorb), darunter die Sichten, die ein Administrator eingerichtet hat – zum Beispiel *Vertrag*, *Rechnung*, *Vertragspartner* oder *Kündigung in den nächsten 12 Monaten*. Die Zahl dahinter sagt, wie viele Mappen die Sicht gerade zeigt.
 
 Ein Klick auf eine Sicht zeigt ihre Mappen in der Liste.
 
@@ -11,7 +11,7 @@ Ein Klick auf eine Sicht zeigt ihre Mappen in der Liste.
 - **Sichten können Untersichten haben.** Ein Pfeil ▸ davor zeigt das; ein Klick darauf klappt sie auf oder zu. Dein Gerät merkt sich, was zugeklappt ist.
 - **Eine Sicht mit Untersichten zeigt alles zusammen:** *Finanzen* zeigt zum Beispiel alle offenen Rechnungen *und* die Zahlungen dieses Jahres.
 - **Manche Sichten filtern:** *Offene Rechnungen* zeigt nur Rechnungen, die noch nicht bezahlt sind. Werte wie „heute“ oder „du selbst“ rechnet das DMS bei jedem Öffnen neu – eine Sicht *Kündigung in den nächsten 12 Monaten* ist also immer aktuell.
-- **Zeigt eine Sicht mehrere Mappentypen**, sieht die Liste aus wie im Eingang: mit der Spalte *Typ* und ohne **+ Neu**. Neue Mappen legst du dann in der Sicht des einzelnen Typs an.
+- **Zeigt eine Sicht mehrere Mappentypen**, stehen *Titel* und *Typ* vorn, und es gibt kein **+ Neu**. Neue Mappen legst du dann in der Sicht des einzelnen Typs an.
 
 Welche Sichten es gibt, legt ein Administrator fest. Wünschst du dir eine, sag ihm Bescheid.
 
@@ -32,7 +32,7 @@ Zieh die Liste einfach am Griff zwischen Liste und Mappe breiter, oder klapp die
 
 ![Breite Liste als Tabelle](bilder/tabelle.png)
 
-Welche Angaben als Spalten erscheinen, legt der Administrator je Mappentyp fest.
+Welche Angaben als Spalten erscheinen, legt der Administrator fest – je Mappentyp, und eine Sicht kann eine eigene Auswahl zeigen (z. B. eine kurze Liste).
 
 ### Sortieren
 
@@ -65,6 +65,17 @@ Mit dem Haken **Notizen** sucht das DMS auch in den [Notizen](zusammenarbeit.md#
 !!! note "Was die Suche (noch) nicht kann"
     - Frisch hochgeladene Dokumente findet sie erst, wenn ihr Text erkannt ist – meist nach Sekunden, bei langen Scans nach einigen Minuten (siehe [Dokumente](dokumente.md#volltext)).
     - Verweise werden nicht nach dem Namen der anderen Mappe durchsucht: Die Rechnungen der Stadtwerke findest du nicht, indem du in den Rechnungen „Stadtwerke“ suchst. Öffne stattdessen die Stadtwerke – ihr Register *Rechnungen* zeigt alle.
+
+## Favoriten
+
+Mappen, die du oft brauchst, markierst du mit dem **Stern ☆** – oben rechts in der Mappe oder direkt in der Liste (rechts im Eintrag bzw. vorn in der Tabellenzeile). Der Stern wird gelb ★, und die Mappe steht in der Sicht **★ Favoriten** unter dem Eingang; die Zahl dahinter zeigt, wie viele es sind. Ein zweiter Klick entfernt sie wieder.
+
+![Die Sicht Favoriten mit geöffneter Mappe](bilder/favoriten.png)
+
+- Favoriten sind **persönlich**: Jeder Benutzer hat seine eigenen. Das Markieren ändert weder „zuletzt geändert“ noch das Protokoll der Mappe.
+- Die Sicht *Favoriten* zeigt Mappen aller Typen, mit Titel, Typ und Datum – wie der Eingang.
+- Löschst du eine Mappe, verschwindet sie aus den Favoriten; stellst du sie aus dem Papierkorb wieder her, ist sie wieder Favorit.
+- Ein Administrator kann Sichten mit der Bedingung **ist mein Favorit** einrichten, etwa *Meine wichtigen Verträge*. Jeder sieht darin seine eigenen Favoriten.
 
 ## Eine Mappe öffnen
 

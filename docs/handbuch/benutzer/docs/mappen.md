@@ -8,7 +8,7 @@ Eine Mappe sammelt alles zu einer Sache: die Angaben, die Dokumente und die Verb
 
 Oben steht der **Titel** der Mappe. Ihn musst du nicht selbst schreiben: Das DMS setzt ihn aus den Angaben zusammen, zum Beispiel aus Rechnungsnummer und Datum – „R-2026-117 vom 02.03.2026“. Ändert sich eine Angabe, ändert sich der Titel mit.
 
-Darunter stehen die **Indexwerte**, die jede Mappe hat: wann und von wem sie angelegt und zuletzt geändert wurde. Als Änderung zählen auch hochgeladene und entfernte Dokumente, nicht aber Notizen oder Aufgaben. Ein Klick auf einen Namen öffnet die Mappe dieses Benutzers.
+Darunter stehen die **Indexwerte**, die jede Mappe hat: wann und von wem sie angelegt und zuletzt geändert wurde. Als Änderung zählen auch hochgeladene und entfernte Dokumente, nicht aber Notizen oder Aufgaben. Ein Klick auf einen Namen öffnet die Mappe dieses Benutzers. Mit dem **Stern ☆** rechts neben dem Titel merkst du dir die Mappe als [Favorit](ablage.md#favoriten).
 
 Darunter folgen die **Register** – die Trennblätter der Mappe. Es gibt drei Arten:
 
@@ -87,6 +87,10 @@ Manche Angaben sind nur zum Lesen da und haben einen gestrichelten Rahmen – zu
 Das Register **Verknüpfungen** zeigt alle Mappen, die auf diese Mappe verweisen. Beim Vertragspartner siehst du so seine Verträge und Rechnungen, beim Vertrag seine Rechnungen – ohne dass du sie dort eintragen musst.
 
 ![Die Verträge eines Vertragspartners](bilder/verknuepfungen.png)
+
+Je nach Einrichtung erscheinen die Mappen einer Gruppe als einfache Liste der Titel oder als **Tabelle** mit Spalten, etwa die Rechnungen mit Betrag, Datum und *bezahlt*. Ein Klick auf eine Zeile öffnet die Mappe.
+
+![Rechnungen eines Vertragspartners als Tabelle](bilder/verknuepfungen-tabelle.png)
 
 Mit **+ … anlegen** in der Überschrift einer Gruppe legst du direkt eine neue Mappe an, die schon auf diese Mappe verweist – zum Beispiel eine neue Rechnung zu diesem Vertrag.
 

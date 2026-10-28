@@ -289,6 +289,28 @@ async function main() {
   await bild(s, 'tabelle');
   await s.evaluate(([key]) => localStorage.removeItem(key), [breitSchluessel]);
 
+  // Favoriten (#62): zwei Mappen mit Stern, Sicht „Favoriten“ mit geöffneter Mappe
+  await api('PUT', `/api/mappen/${d.strom.id}/favorit`);
+  await api('PUT', `/api/mappen/${d.stadtwerke.id}/favorit`);
+  await geheZu(s, `/ablage/favoriten/${d.strom.id}`);
+  await s.getByRole('heading', { name: 'Stromvertrag Haus' }).waitFor();
+  await bild(s, 'favoriten');
+
+  // Mehrere Trefferlisten (#75): „Kurz“ bei Rechnung, im Register des Vertragspartners als Tabelle
+  const rechnungAktuell = (await api('GET', '/api/typen')).find((t) => t.id === rechnung.id);
+  await api('PUT', `/api/typen/${rechnung.id}`, { ...rechnungAktuell, trefferliste: undefined,
+    trefferlisten: [...rechnungAktuell.trefferlisten, { key: 'kurz', name: 'Kurz', spalten: ['_titel', 'betrag', 'rechnungsdatum', 'bezahlt'] }] });
+  const partnerAktuell = (await api('GET', '/api/typen')).find((t) => t.id === partner.id);
+  await api('PUT', `/api/typen/${partner.id}`, { ...partnerAktuell, register: partnerAktuell.register.map((r) => (r.key === 'rechnungen'
+    ? { ...r, quellen: (r.quellen ?? []).map((q) => (q.typId === rechnung.id ? { ...q, trefferliste: 'kurz' } : q)) } : r)) });
+  await geheZu(s, `/werkbank/typen/${rechnung.id}`);
+  await s.locator('.trefferlistenblock').nth(1).scrollIntoViewIfNeeded();
+  await bild(s, 'werkbank-trefferlisten');
+  await geheZu(s, `/ablage/${partner.id}/${d.stadtwerke.id}`);
+  await s.getByRole('tab', { name: /Rechnungen/ }).click();
+  await s.locator('.verweistabelle table').waitFor();
+  await bild(s, 'verknuepfungen-tabelle');
+
   // Eingang: eine Pflichtfeld-Änderung macht Mappen unpassend
   // Ein neues Pflichtfeld trifft sicher alle Vertragspartner (Demo-Daten sind zufällig).
   const stammdaten = partner.register.find((r) => r.art === 'felder');

@@ -707,6 +707,32 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('GET', '/api/werkbank/texterkennung/auftraege?stand=fertig')).status, 200);
   });
 
+  it('Favoriten, Trefferlisten und Sichten verschieben über HTTP (#62, #73, #75)', async () => {
+    const typen = (await anfrage('GET', '/api/typen')).body as Array<{ id: string; name: string; trefferlisten: Array<{ key: string; spalten: string[]; standard?: boolean }> }>;
+    const t = typen.find((x) => x.name === 'Rechnung') ?? typen[0];
+    assert.ok(t.trefferlisten.some((l) => l.standard), 'Migration 024: Standardliste');
+    const neu = await anfrage('PUT', `/api/typen/${t.id}`, { ...t, trefferliste: undefined, trefferlisten: [...t.trefferlisten, { key: 'kurz', name: 'Kurz', spalten: ['_titel'] }] });
+    assert.equal(neu.status, 200, JSON.stringify(neu.body));
+    assert.deepEqual(neu.body.trefferlisten.map((l: { key: string }) => l.key).slice(-1), ['kurz']);
+    const seite = (await anfrage('GET', `/api/mappen?sicht=typ:${t.id}&anzahl=1`)).body;
+    const m = seite.mappen[0];
+    assert.equal((await anfrage('PUT', `/api/mappen/${m.id}/favorit`)).status, 200);
+    assert.equal((await anfrage('GET', `/api/mappen/${m.id}`)).body.favorit, true);
+    const fav = (await anfrage('GET', '/api/mappen?sicht=favoriten')).body;
+    assert.deepEqual(fav.favoriten, [m.id]);
+    assert.equal((await anfrage('GET', '/api/sichten')).body.favoriten, 1);
+    assert.equal((await anfrage('DELETE', `/api/mappen/${m.id}/favorit`)).status, 200);
+    assert.equal((await anfrage('GET', '/api/mappen?sicht=favoriten')).body.gesamt, 0);
+    const sichten = (await anfrage('GET', '/api/sichten/definitionen')).body as Array<{ id: string; elternId: string | null }>;
+    const oben = sichten.filter((x) => !x.elternId);
+    if (oben.length >= 2) {
+      const r = await anfrage('POST', `/api/sichten/definitionen/${oben[1].id}/verschieben`, { elternId: null, stelle: 0 });
+      assert.equal(r.status, 200);
+      assert.equal(r.body.filter((x: { elternId: string | null }) => !x.elternId).sort((a: { position: number }, b: { position: number }) => a.position - b.position)[0].id, oben[1].id);
+      assert.equal((await anfrage('POST', `/api/sichten/definitionen/${oben[0].id}/verschieben`, { elternId: oben[0].id, stelle: 0 })).status, 422, 'kein Kreis');
+    }
+  });
+
   it('erkennt Text in Dokumenten und findet ihn mit der Volltextsuche (#45)', async () => {
     const { pdfMitText } = await import('./hilfen');
     const st = (await anfrage('GET', '/api/werkbank/texterkennung')).body;

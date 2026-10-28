@@ -21,7 +21,7 @@ Neue Mappen und Löschen sind standardmäßig erlaubt. Ist es aus, fehlen die Kn
 
 ## Felder
 
-Jedes Feld hat eine **Bezeichnung** (änderbar), einen **Schlüssel** (fest, sobald gespeichert) und einen **Datentyp**. Ein Klick auf ein Feld öffnet es; mit den Pfeilen änderst du die Reihenfolge.
+Jedes Feld hat eine **Bezeichnung** (änderbar), einen **Schlüssel** (fest, sobald gespeichert) und einen **Datentyp**. Ein Klick auf ein Feld öffnet es. Die Reihenfolge änderst du mit den Pfeilen oder per **Drag & Drop** am Griff **⠿** (siehe [Ziehen statt klicken](#ziehen-statt-klicken)).
 
 ![Ein Feld bearbeiten](bilder/werkbank-feld.png)
 
@@ -103,16 +103,32 @@ Register sind die Trennblätter einer Mappe, in der angegebenen Reihenfolge:
 
 Register haben feste Schlüssel, damit Dokumente ihr Register behalten, wenn es umbenannt wird. Ein Dokumentenregister, in dem schon Dokumente liegen, lässt sich nicht entfernen.
 
-## Trefferliste
+**Verknüpfungsregister als Tabelle:** Hakst du eine Quelle an, kannst du daneben eine [Trefferliste](#trefferlisten) des Quelltyps wählen. Das Register zeigt die verweisenden Mappen dann als Tabelle mit deren Spalten (z. B. beim Vertragspartner die Rechnungen mit Betrag, Datum und *bezahlt*). Ohne Auswahl – oder wenn es die Liste nicht mehr gibt – bleibt es bei der einfachen Liste der Titel.
 
-Die **Trefferliste** legt fest, welche Angaben in der Liste der Ablage als Spalten erscheinen, und in welcher Reihenfolge – Felder und Systemwerte (Titel, angelegt/geändert am/von).
+## Trefferlisten
+
+Eine **Trefferliste** legt fest, welche Angaben in einer Liste als Spalten erscheinen, und in welcher Reihenfolge – Felder und Systemwerte (Titel, angelegt/geändert am/von).
 
 - Ist die Liste **breit**, wird sie zur sortierbaren Tabelle mit diesen Spalten.
 - Ist sie **schmal**, bilden die ersten drei Spalten den kompakten Eintrag: die erste fett, die zweite und dritte darunter.
 
-Bleibt die Trefferliste leer, zeigt die Ablage den Titel und zwei weitere Felder.
+Hat eine Trefferliste keine Spalten, zeigt die Ablage den Titel und zwei weitere Felder.
+
+Ein Mappentyp kann **mehrere** Trefferlisten haben, z. B. *Standard* mit allen Angaben und *Kurz* mit Titel, Betrag und *bezahlt*. Mit **+ Trefferliste** legst du eine weitere an (sie beginnt mit den Spalten der Standardliste).
+
+- Jede Liste hat einen **Namen** und einen festen **Schlüssel**; über ihn wählen [Sichten](sichten.md#trefferliste) und Verknüpfungsregister die Liste.
+- **Genau eine** ist **Standard**: Sie gilt überall, wo keine andere gewählt ist. Mindestens eine Liste bleibt immer.
+- Unter jeder Liste steht, **wo sie verwendet** wird (Sichten, Register). Entfernst du eine verwendete Liste, gilt dort die Standardliste.
+
+![Zwei Trefferlisten am Mappentyp Rechnung](bilder/werkbank-trefferlisten.png)
 
 ![Die Trefferliste als Tabelle in der Ablage](bilder/tabelle.png)
+
+## Ziehen statt klicken
+
+Felder, Register und die Spalten jeder Trefferliste haben einen **Griff ⠿**. Daran ziehst du einen Eintrag an eine andere Stelle; eine Linie zeigt, wo er landet. Ein **Feld** kannst du außerdem auf ein **Feldregister** ziehen – es liegt dann auf diesem Register.
+
+Das ändert nur den Entwurf; übernommen wird es wie alles andere mit **Mappentyp speichern**. Per Tastatur: Griff ansteuern und **Alt+↑/↓**. Am Smartphone den Griff lange antippen, dann ziehen. Die Pfeil-Knöpfe gibt es weiterhin.
 
 ## Systemmappentypen: Benutzer, Rolle und E-Mail
 

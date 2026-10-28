@@ -12,13 +12,34 @@ Sichten pflegst du unter **Werkbank → Sichten**. Links steht der Baum, rechts 
 - **Liegt unter** – die Elternsicht im Baum, beliebig tief. Eine Sicht kann nicht unter sich selbst oder einer ihrer Untersichten liegen.
 - **Reihenfolge** – mit **↑ nach oben** und **↓ nach unten** unter den Sichten derselben Ebene.
 
+### Ordnen per Drag & Drop
+
+Schneller geht es links im Baum: Jede Sicht hat einen **Griff ⠿**. Daran ziehst du sie
+
+- **zwischen zwei Sichten** – eine Linie zeigt die Einfügestelle, auch auf einer anderen Ebene;
+- **auf eine Sicht** – die Zielsicht wird umrandet, deine Sicht wird ihre **Untersicht**.
+
+Untersichten wandern mit. Eine Sicht lässt sich nicht in ihre eigene Untersicht ziehen. Die neue Ordnung gilt **sofort**, ohne Speichern – auch in der Ablage. *Eingang*, *Favoriten* und *Papierkorb* stehen fest oben und sind keine Sichten in diesem Baum.
+
+- **Tastatur:** Griff mit Tab ansteuern, dann **Alt+↑/↓** verschiebt innerhalb der Ebene, **Alt+→** macht die Sicht zur Untersicht der Sicht darüber, **Alt+←** hängt sie eine Ebene höher (hinter die bisherige Elternsicht).
+- **Smartphone/Tablet:** Griff **lange antippen**, dann ziehen. Die Knöpfe ↑/↓ in der geöffneten Sicht gibt es weiterhin.
+- **Esc** bricht das Ziehen ab.
+
 ## Mappentypen
 
 Die Sicht zeigt Mappen der angehakten Typen, sofern sie alle Bedingungen erfüllen. Dazu kommen **immer** die Mappen ihrer Untersichten – jede mit ihren eigenen Bedingungen, ohne Doppelte.
 
 - Eine Sicht **ohne Typ** dient nur zum Gruppieren, etwa *Finanzen* über *Offene Rechnungen* und *Zahlungen dieses Jahr*.
 - Zeigt eine Sicht (mit Untersichten) **genau einen** Typ, verhält sich die Liste wie gewohnt: Trefferliste des Typs, Sortieren nach seinen Feldern, **+ Neu**, sofern neue Mappen erlaubt sind.
-- Zeigt sie **mehrere** Typen, verhält sie sich wie der Eingang: Systemspalten mit Spalte *Typ*, kein **+ Neu**.
+- Zeigt sie **mehrere** Typen, gibt es kein **+ Neu**; sortieren lässt sich nach den Systemspalten.
+
+## Trefferliste
+
+Welche Spalten die Liste zeigt, wählst du unter **Trefferliste**. Ein Mappentyp kann [mehrere Trefferlisten](mappentypen.md#trefferlisten) haben, eine davon ist Standard.
+
+- **Ohne Auswahl** gilt die Standardliste des Typs.
+- Bei **mehreren** Mappentypen gibt es nur Trefferlisten, die **alle** Typen haben (gleicher Schlüssel), und darin nur die **gemeinsamen** Spalten – Felder mit gleichem Schlüssel und Datentyp. *Titel* und *Typ* stehen dann immer vorn. Haben die Typen keinen gemeinsamen Standard, zeigt die Sicht die Systemspalten (Titel, Typ, angelegt, geändert).
+- Gibt es die gewählte Liste nicht mehr (gelöscht oder ein Typ hinzugekommen, der sie nicht hat), zeigt die Sicht die **Standardliste**. In der Werkbank steht dann „Trefferliste fehlt – zeigt die Standardliste“.
 
 ## Bedingungen
 
@@ -53,12 +74,20 @@ Statt eines festen Werts kannst du einen nehmen, den das DMS bei **jedem Öffnen
 
 So kann **eine** Sicht „Meine Aufgaben“ für jeden Benutzer etwas anderes zeigen.
 
-### Auf die Anzahl in Registern
+### Auf Anzahlen
 
-Bei einer Sicht mit genau einem Mappentyp gibt es zusätzlich:
+Unter **Anzahl** gibt es – jeweils mehr als, weniger als oder genau *n*:
 
-- **Dokumente in „…“** – mehr als, weniger als oder genau *n* Dokumente in einem Dokumentenregister. Beispiel: *Rechnungen ohne Beleg* = Dokumente in „Rechnungsdokumente“ genau 0.
-- **Verknüpfungen in „…“** – mehr als, weniger als oder genau *n* Mappen in einem Verknüpfungsregister, gezählt wie im Register (also nur über die dort gewählten Quellen). Beispiel: *Verträge ohne Rechnung* = Verknüpfungen in „Rechnungen“ genau 0.
+- **Dokumente insgesamt** – alle Dokumente der Mappe, egal in welchem Register. Beispiel: *Mappen ohne Dokument* = Dokumente insgesamt genau 0.
+- **Verknüpfungen insgesamt** – wie viele andere Mappen auf diese verweisen, über alle Referenzfelder. Jede verweisende Mappe zählt einmal, auch wenn sie über mehrere Felder verweist; Verweise der Mappe auf sich selbst und Mappen im Papierkorb zählen nicht, E-Mails schon.
+- **Dokumente in „…“** – Dokumente in einem bestimmten Dokumentenregister. Beispiel: *Rechnungen ohne Beleg* = Dokumente in „Rechnungsdokumente“ genau 0.
+- **Verknüpfungen in „…“** – Mappen in einem Verknüpfungsregister, gezählt wie im Register (also nur über die dort gewählten Quellen). Beispiel: *Verträge ohne Rechnung* = Verknüpfungen in „Rechnungen“ genau 0.
+
+Register stehen zur Wahl, wenn **alle** Mappentypen der Sicht ein Register mit **gleichem Schlüssel und gleicher Art** haben – bei einem Typ also alle seine Dokumenten- und Verknüpfungsregister. Bei mehreren Typen zählt jedes Register über die **eigenen** Quellen seines Typs; der Name erscheint als „Rechnungen / Belege“, wenn er sich je Typ unterscheidet.
+
+### Persönlich
+
+- **ist mein Favorit** – Mappen, die der **jeweils angemeldete** Benutzer mit dem Stern markiert hat. So zeigt etwa eine Sicht *Meine wichtigen Verträge* (Vertrag + ist mein Favorit) jedem seine eigenen. Die feste Sicht *Favoriten* in der Ablage gibt es für jeden ohnehin.
 
 ### Wenn sich ein Mappentyp ändert
 
