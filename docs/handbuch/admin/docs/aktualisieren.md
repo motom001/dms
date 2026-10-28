@@ -19,6 +19,15 @@ Welche Version läuft und ob es neuere gibt, zeigt **Werkbank → Technik** (sie
 
 Kleinere Versionen (17.x) bekommst du durch Neuziehen des Images `postgres:17`. Ein Wechsel der Hauptversion (z. B. 17 → 18) braucht eine Sicherung und Wiederherstellung – PostgreSQL kann die Daten einer älteren Hauptversion nicht direkt öffnen.
 
+## Wie neue Versionen entstehen
+
+Jede Version des DMS hat eine Nummer wie `0.8.1`. Sobald auf `main` eine neue Nummer steht und alle Prüfungen bestanden sind, entsteht automatisch:
+
+- ein **Release** auf GitHub mit dem Changelog – [Releases](https://github.com/motom001/dms/releases),
+- ein **Image** mit dieser Nummer, z. B. `ghcr.io/motom001/dms:0.8.1`.
+
+Änderungen ohne neue Nummer (kleine Korrekturen, Doku) landen nur im Image `main`. Mehrere Wünsche lassen sich so zu einem Release bündeln: Die Nummer wird erst mit dem letzten erhöht.
+
 ## Sichern
 
 Zu sichern sind zwei Ordner aus der Compose-Vorlage:

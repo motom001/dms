@@ -49,9 +49,32 @@ jobs:
       - name: Bauen
         run: npm run build
 
-  image:
+  # Neue Versionsnummer in package.json auf main? Dann gibt es ein Release (#34).
+  version:
     needs: pruefen
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      neu: ${{ steps.v.outputs.neu }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          version=$(node -p "require('./package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null; then
+            echo "neu=false" >> "$GITHUB_OUTPUT"
+            echo "v$version gibt es schon – kein neues Release."
+          else
+            echo "neu=true" >> "$GITHUB_OUTPUT"
+            echo "Neue Version v$version – nach dem Image entsteht das Release."
+          fi
+
+  image:
+    needs: [pruefen, version]
+    # Läuft auch, wenn „version“ übersprungen wurde (Tags, manueller Start).
+    if: always() && needs.pruefen.result == 'success' && github.event_name != 'pull_request' && needs.version.result != 'failure'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -70,6 +93,7 @@ jobs:
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=sha,format=short
+            type=raw,value=${{ needs.version.outputs.version }},enable=${{ needs.version.outputs.neu == 'true' }}
       - id: zeit
         run: echo "jetzt=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
       - uses: docker/build-push-action@v6
@@ -84,3 +108,15 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # Tag und Release anlegen. Ein vom Workflow angelegter Tag startet keine weiteren
+  # Workflows; deshalb trägt das Image oben schon die Versionsnummer.
+  release:
+    needs: [version, image]
+    if: needs.version.outputs.neu == 'true'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: v${{ needs.version.outputs.version }}
+      ziel: ${{ github.sha }}
