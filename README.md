@@ -12,6 +12,7 @@ Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsyste
 - **Werkbank** (Administratoren), ebenfalls dreigeteilt:
   - *Mappentypen* – Felder (Datentyp, Pflichtfeld, eindeutig, Längen, Wertebereiche, Auswahllisten, Referenzen), Register und Titel-Vorlage,
   - *Benutzer* – anlegen, Rollen vergeben, Einladungs- und Passwort-Links,
+  - *Protokoll* – was im System passiert, je Modul (konto, ablage, werkbank, dokumente, datenbank, mail, system, http), mit Filtern und Live-Aktualisierung; Debug-Modus für eine Stunde,
   - *Demo-Daten* – Beispiel-Mappentypen laden, beliebig viele Demo-Mappen für die vorhandenen Typen erzeugen und gesammelt wieder entfernen.
 - **Profil** – jeder Benutzer ändert Name, E-Mail-Adresse und Passwort selbst (mit dem aktuellen Passwort).
 
@@ -46,8 +47,13 @@ Bei jedem Push auf `main` baut GitHub Actions ein Image und legt es unter `ghcr.
 | `APP_URL` | Adresse, unter der Benutzer das DMS öffnen; steht in den Links der E-Mails |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_SECURE` | E-Mail-Versand (optional). Ohne `SMTP_HOST` zeigt die Benutzerverwaltung Einladungs- und Passwort-Links zum Kopieren an; „Passwort vergessen“ setzt dann der Administrator zurück. |
 | `TRUST_PROXY` | `true`, wenn ein Reverse-Proxy davor sitzt |
+| `LOG_LEVEL` | Grundstufe des Protokolls: `debug`, `info` (Standard), `warn`, `error`. Der Debug-Modus in der Werkbank gilt zusätzlich für eine Stunde. |
 
 **Aktualisieren:** Image neu ziehen und das Projekt neu starten. Datenbank-Migrationen laufen beim Start automatisch.
+
+**Protokoll:** Jede Meldung steht als lesbare Zeile in den Container-Logs (`docker logs <app-container>`), z. B.
+`2026-10-28T09:12:33.120Z INFO  [ablage] Mappe angelegt benutzer=thomas@example.org typ=Rechnung titel="R-17 vom 01.10.2026"`.
+Die Werkbank zeigt zusätzlich die letzten 24 Stunden (höchstens 10.000 Einträge); diese Ansicht beginnt nach einem Neustart leer.
 
 **Sichern:** die Ordner `postgres` und `files` aus der Vorlage. Für eine konsistente Datenbanksicherung im laufenden Betrieb vorher `docker exec <db-container> pg_dump -U dms dms > dms.sql`.
 

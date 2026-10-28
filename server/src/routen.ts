@@ -6,6 +6,12 @@ import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import { SITZUNG_TAGE, type Konten } from './konten';
 import type { SitzungIntern } from './konto-repo';
+import { MODULE, protokoll, STUFEN, type Stufe } from './protokoll';
+
+const L = {
+  konto: protokoll.modul('konto'), ablage: protokoll.modul('ablage'), werkbank: protokoll.modul('werkbank'),
+  dokumente: protokoll.modul('dokumente'), system: protokoll.modul('system'), mail: protokoll.modul('mail'),
+};
 
 /**
  * Alle Schnittstellen an einem Ort, jede mit ihrer Zugriffsstufe:
@@ -58,7 +64,8 @@ const ich = (a: Anfrage) => {
   return a.benutzer;
 };
 
-export function routen(dienst: Dienst, konten: Konten, log: (m: string) => void = () => {}): Route[] {
+export function routen(dienst: Dienst, konten: Konten, log: (m: string) => void = (m) => L.mail.warn(m)): Route[] {
+  const typName = async (id: string) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? id;
   return [
     { methode: 'GET', pfad: '/api/gesundheit', zugang: 'offen', handler: async () => ok({ ok: true }) },
 
@@ -78,95 +85,211 @@ export function routen(dienst: Dienst, konten: Konten, log: (m: string) => void 
     } },
     { methode: 'POST', pfad: '/api/konto/vertretung-beenden', zugang: 'angemeldet', handler: async (a) => {
       const r = await konten.vertretungBeenden(a.sitzung, info(a));
+      L.konto.warn('Vertretung beendet, zurück im eigenen Konto', { als: a.benutzer?.email, admin: r.benutzer?.email });
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
     { methode: 'POST', pfad: '/api/konto/einrichten', zugang: 'offen', handler: async (a) => {
       const r = await konten.einrichten(b(a), info(a));
+      L.konto.info('Administrator eingerichtet', { email: r.benutzer.email });
       return { status: 201, body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
     { methode: 'POST', pfad: '/api/konto/anmelden', zugang: 'offen', handler: async (a) => {
-      const r = await konten.anmelden(b(a), a.ip, a.geraet);
+      let r;
+      try { r = await konten.anmelden(b(a), a.ip, a.geraet); } catch (e) {
+        L.konto.warn('Anmeldung fehlgeschlagen', { email: String(b(a).email ?? ''), ip: a.ip, grund: (e as Error).message });
+        throw e;
+      }
+      L.konto.info('Angemeldet', { email: r.benutzer.email, ip: a.ip, geraet: a.geraet });
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
     { methode: 'POST', pfad: '/api/konto/abmelden', zugang: 'offen', handler: async (a) => {
       await konten.abmelden(a.sitzung);
+      if (a.benutzer) L.konto.info('Abgemeldet', { email: a.benutzer.email });
       return { status: 204, sitzungSetzen: null };
     } },
     { methode: 'POST', pfad: '/api/konto/passwort-vergessen', zugang: 'offen', handler: async (a) => {
       await konten.passwortVergessen(b(a), log);
+      L.konto.info('Passwort vergessen angefordert', { email: String(b(a).email ?? '') });
       return leer;
     } },
     { methode: 'GET', pfad: '/api/konto/link/:schluessel', zugang: 'offen', handler: async (a) => ok(await konten.linkPruefen(a.params.schluessel)) },
     { methode: 'POST', pfad: '/api/konto/passwort-setzen', zugang: 'offen', handler: async (a) => {
       const r = await konten.passwortSetzen(b(a), info(a));
+      L.konto.info('Passwort über Link gesetzt', { email: r.benutzer.email });
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
 
     /* ---------- Eigenes Profil ---------- */
-    { methode: 'PUT', pfad: '/api/konto/profil', zugang: 'angemeldet', handler: async (a) => ok(await konten.aendereProfil(ich(a), b(a))) },
-    { methode: 'PUT', pfad: '/api/konto/email', zugang: 'angemeldet', handler: async (a) => ok(await konten.aendereEmail(ich(a), b(a), log)) },
+    { methode: 'PUT', pfad: '/api/konto/profil', zugang: 'angemeldet', handler: async (a) => {
+      const r = await konten.aendereProfil(ich(a), b(a));
+      L.konto.info('Eigenen Namen geändert', { name: r.name });
+      return ok(r);
+    } },
+    { methode: 'PUT', pfad: '/api/konto/email', zugang: 'angemeldet', handler: async (a) => {
+      const alt = ich(a).email;
+      const r = await konten.aendereEmail(ich(a), b(a), log);
+      if (r.email !== alt) L.konto.info('Eigene E-Mail-Adresse geändert', { alt, neu: r.email });
+      return ok(r);
+    } },
     { methode: 'PUT', pfad: '/api/konto/passwort', zugang: 'angemeldet', handler: async (a) => {
       const r = await konten.aenderePasswort(ich(a), b(a), log, info(a));
+      L.konto.info('Eigenes Passwort geändert, andere Sitzungen beendet');
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
 
     /* ---------- Benutzer ---------- */
     { methode: 'GET', pfad: '/api/personen', zugang: 'angemeldet', handler: async () => ok(await konten.personen()) },
     { methode: 'GET', pfad: '/api/benutzer', zugang: 'admin', handler: async () => ok(await konten.listeBenutzer()) },
-    { methode: 'POST', pfad: '/api/benutzer', zugang: 'admin', handler: async (a) => ok(await konten.legeBenutzerAn(b(a)), 201) },
-    { methode: 'PUT', pfad: '/api/benutzer/:id', zugang: 'admin', handler: async (a) => ok(await konten.aendereBenutzer(ich(a), a.params.id, b(a))) },
-    { methode: 'DELETE', pfad: '/api/benutzer/:id', zugang: 'admin', handler: async (a) => { await konten.loescheBenutzer(ich(a), a.params.id); return leer; } },
-    { methode: 'POST', pfad: '/api/benutzer/:id/link', zugang: 'admin', handler: async (a) => ok(await konten.neuerLink(a.params.id)) },
+    { methode: 'POST', pfad: '/api/benutzer', zugang: 'admin', handler: async (a) => {
+      const r = await konten.legeBenutzerAn(b(a));
+      L.konto.info('Benutzer angelegt', { email: r.benutzer.email, rolle: r.benutzer.rolle, mail: r.mailVerschickt });
+      if (r.mailFehler) L.mail.warn('Einladung nicht verschickt', { an: r.benutzer.email, fehler: r.mailFehler });
+      return ok(r, 201);
+    } },
+    { methode: 'PUT', pfad: '/api/benutzer/:id', zugang: 'admin', handler: async (a) => {
+      const r = await konten.aendereBenutzer(ich(a), a.params.id, b(a));
+      L.konto.info('Benutzer geändert', { email: r.email, aenderung: b(a) });
+      return ok(r);
+    } },
+    { methode: 'DELETE', pfad: '/api/benutzer/:id', zugang: 'admin', handler: async (a) => {
+      await konten.loescheBenutzer(ich(a), a.params.id);
+      L.konto.info('Benutzer gelöscht', { id: a.params.id });
+      return leer;
+    } },
+    { methode: 'POST', pfad: '/api/benutzer/:id/link', zugang: 'admin', handler: async (a) => {
+      const r = await konten.neuerLink(a.params.id);
+      L.konto.info('Passwort-Link erzeugt', { email: r.benutzer.email, mail: r.mailVerschickt });
+      return ok(r);
+    } },
     { methode: 'GET', pfad: '/api/benutzer/:id/sitzungen', zugang: 'admin', handler: async (a) => ok(await konten.sitzungenVon(a.params.id, a.sitzungsDaten?.id)) },
-    { methode: 'DELETE', pfad: '/api/benutzer/:id/sitzungen', zugang: 'admin', handler: async (a) => ok(await konten.beendeAlleSitzungen(a.params.id)) },
+    { methode: 'DELETE', pfad: '/api/benutzer/:id/sitzungen', zugang: 'admin', handler: async (a) => {
+      const r = await konten.beendeAlleSitzungen(a.params.id);
+      L.konto.info('Alle Sitzungen eines Benutzers beendet', { id: a.params.id, anzahl: r.beendet });
+      return ok(r);
+    } },
     { methode: 'DELETE', pfad: '/api/benutzer/:id/sitzungen/:sitzung', zugang: 'admin', handler: async (a) => {
-      await konten.beendeSitzung(a.params.id, a.params.sitzung); return leer;
+      await konten.beendeSitzung(a.params.id, a.params.sitzung);
+      L.konto.info('Sitzung beendet', { id: a.params.id, sitzung: a.params.sitzung });
+      return leer;
     } },
     { methode: 'POST', pfad: '/api/benutzer/:id/vertreten', zugang: 'admin', handler: async (a) => {
       const r = await konten.vertrete(ich(a), a.sitzung, a.params.id, info(a));
+      L.konto.warn('Administrator agiert als anderer Benutzer', { admin: ich(a).email, als: r.benutzer.email });
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
 
     /* ---------- Mappentypen ---------- */
     { methode: 'GET', pfad: '/api/typen', zugang: 'angemeldet', handler: async () => ok(await dienst.listeTypen()) },
-    { methode: 'POST', pfad: '/api/typen', zugang: 'admin', handler: async (a) => ok(await dienst.legeTypAn(a.body), 201) },
-    { methode: 'PUT', pfad: '/api/typen/:id', zugang: 'admin', handler: async (a) => ok(await dienst.aendereTyp(a.params.id, a.body)) },
-    { methode: 'DELETE', pfad: '/api/typen/:id', zugang: 'admin', handler: async (a) => { await dienst.loescheTyp(a.params.id); return leer; } },
-    { methode: 'POST', pfad: '/api/beispiele', zugang: 'admin', handler: async (a) => { await ladeBeispiele(dienst, ich(a).id); return leer; } },
+    { methode: 'POST', pfad: '/api/typen', zugang: 'admin', handler: async (a) => {
+      const t = await dienst.legeTypAn(a.body);
+      L.werkbank.info('Mappentyp angelegt', { typ: t.name, id: t.id, felder: t.felder.length });
+      return ok(t, 201);
+    } },
+    { methode: 'PUT', pfad: '/api/typen/:id', zugang: 'admin', handler: async (a) => {
+      const start = Date.now();
+      const t = await dienst.aendereTyp(a.params.id, a.body);
+      L.werkbank.info('Mappentyp geändert, Titel und Passung neu berechnet', { typ: t.name, id: t.id, ms: Date.now() - start });
+      return ok(t);
+    } },
+    { methode: 'DELETE', pfad: '/api/typen/:id', zugang: 'admin', handler: async (a) => {
+      const name = await typName(a.params.id);
+      await dienst.loescheTyp(a.params.id);
+      L.werkbank.info('Mappentyp gelöscht', { typ: name, id: a.params.id });
+      return leer;
+    } },
+    { methode: 'POST', pfad: '/api/beispiele', zugang: 'admin', handler: async (a) => {
+      await ladeBeispiele(dienst, ich(a).id);
+      L.werkbank.info('Beispiel-Mappentypen geladen');
+      return leer;
+    } },
     { methode: 'GET', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async () => ok(await dienst.demoUebersicht()) },
     // Erzeugen und Entfernen laufen im Hintergrund (202); den Stand liefert /api/werkbank/auftrag.
     { methode: 'POST', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async (a) => {
       const anzahl = pruefeAnzahl(b(a).anzahl);
       const benutzerId = ich(a).id;
+      L.werkbank.info('Demo-Mappen werden erzeugt', { anzahl });
       return ok(dienst.auftraege.starte('demo-erzeugen', `${anzahl} Demo-Mappen erzeugen`, (f) => erzeugeDemo(dienst, anzahl, benutzerId, f)), 202);
     } },
     { methode: 'DELETE', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async () =>
       ok(dienst.auftraege.starte('demo-entfernen', 'Demo-Mappen entfernen', () => dienst.entferneDemo()), 202) },
     { methode: 'GET', pfad: '/api/werkbank/auftrag', zugang: 'admin', handler: async () => ok(dienst.auftraege.aktuell()) },
 
+    /* ---------- Protokoll und Debug-Modus ---------- */
+    { methode: 'GET', pfad: '/api/werkbank/protokoll', zugang: 'admin', handler: async (a) => {
+      const q = a.query;
+      const stufe = (STUFEN as readonly string[]).includes(q.stufe ?? '') ? (q.stufe as Stufe) : undefined;
+      const eintraege = protokoll.eintraege({
+        seit: Number(q.seit) || undefined, stufe, modul: q.modul || undefined, benutzer: q.benutzer || undefined, anfrage: q.anfrage || undefined,
+        suche: q.suche?.slice(0, 200) || undefined, max: Math.min(2000, Number(q.max) || 500),
+      });
+      return ok({ eintraege, letzte: protokoll.letzteNr, gespeichert: protokoll.anzahl, debug: protokoll.debugStand, module: MODULE });
+    } },
+    { methode: 'PUT', pfad: '/api/werkbank/debug', zugang: 'admin', handler: async (a) => {
+      const an = !!b(a).an;
+      const r = protokoll.setzeDebug(an);
+      L.system.warn(an ? `Debug-Modus eingeschaltet bis ${new Date(r.bis!).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin' })}` : 'Debug-Modus ausgeschaltet');
+      return ok(r);
+    } },
+
     /* ---------- Mappen ---------- */
     // Mit ?sicht=… seitenweise (von, anzahl, suche); ohne: alle Mappen (für Skripte und Tests).
-    { methode: 'GET', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) =>
-      ok(a.query.sicht ? await dienst.seite(ich(a), a.query) : await dienst.listeMappen(a.query.typ)) },
+    { methode: 'GET', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => {
+      if (!a.query.sicht) return ok(await dienst.listeMappen(a.query.typ));
+      const start = Date.now();
+      const s = await dienst.seite(ich(a), a.query);
+      L.ablage.debug('Sicht geladen', { sicht: a.query.sicht, von: s.von, anzahl: s.mappen.length, gesamt: s.gesamt, suche: a.query.suche, ms: Date.now() - start });
+      return ok(s);
+    } },
     { methode: 'GET', pfad: '/api/sichten', zugang: 'angemeldet', handler: async (a) => ok(await dienst.zaehler(ich(a))) },
     { methode: 'GET', pfad: '/api/typen/:id/belegung', zugang: 'admin', handler: async (a) => ok(await dienst.belegung(a.params.id)) },
     { methode: 'GET', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => ok(await dienst.holeMappe(a.params.id)) },
-    { methode: 'POST', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.legeMappeAn(a.body, ich(a).id), 201) },
-    { methode: 'PUT', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => ok(await dienst.aendereMappe(a.params.id, a.body, ich(a).id)) },
-    { methode: 'DELETE', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => { await dienst.loescheMappe(a.params.id); return leer; } },
+    { methode: 'POST', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => {
+      const m = await dienst.legeMappeAn(a.body, ich(a).id);
+      L.ablage.info('Mappe angelegt', { typ: await typName(m.typId), titel: m.titel, id: m.id });
+      return ok(m, 201);
+    } },
+    { methode: 'PUT', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => {
+      const m = await dienst.aendereMappe(a.params.id, a.body, ich(a).id);
+      L.ablage.info('Mappe geändert', { typ: await typName(m.typId), titel: m.titel, id: m.id });
+      return ok(m);
+    } },
+    { methode: 'DELETE', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => {
+      await dienst.loescheMappe(a.params.id);
+      L.ablage.info('Mappe gelöscht', { id: a.params.id });
+      return leer;
+    } },
 
     /* ---------- Dokumente ---------- */
-    { methode: 'POST', pfad: '/api/mappen/:id/dokumente', zugang: 'angemeldet', roh: MAX_DATEIGROESSE, handler: async (a) =>
-      ok(await dienst.ladeHoch(a.params.id, { register: a.query.register, name: a.query.name, typ: a.query.typ }, a.body, ich(a).id), 201) },
+    { methode: 'POST', pfad: '/api/mappen/:id/dokumente', zugang: 'angemeldet', roh: MAX_DATEIGROESSE, handler: async (a) => {
+      const r = await dienst.ladeHoch(a.params.id, { register: a.query.register, name: a.query.name, typ: a.query.typ }, a.body, ich(a).id);
+      L.dokumente.info('Dokument hochgeladen', {
+        name: r.dokument.name, groesse: r.dokument.groesse, mime: r.dokument.mime, anzeigbar: r.dokument.anzeigbar,
+        mappe: a.params.id, gleicherInhalt: r.gleicherInhalt.length || undefined,
+      });
+      return ok(r, 201);
+    } },
     { methode: 'GET', pfad: '/api/dokumente/:id/inhalt', zugang: 'angemeldet', handler: async (a) => {
       const { dokument: d, inhalt } = await dienst.dokumentInhalt(a.params.id);
       const anzeigen = d.anzeigbar && a.query.herunterladen === undefined;
+      L.dokumente.debug(anzeigen ? 'Dokument angezeigt' : 'Dokument heruntergeladen', { name: d.name, id: d.id });
       return { datei: { inhalt, name: d.name, mime: d.anzeigbar ? d.mime : 'application/octet-stream', anzeigen, groesse: d.groesse } };
     } },
-    { methode: 'DELETE', pfad: '/api/dokumente/:id', zugang: 'angemeldet', handler: async (a) => { await dienst.loescheDokument(a.params.id); return leer; } },
+    { methode: 'DELETE', pfad: '/api/dokumente/:id', zugang: 'angemeldet', handler: async (a) => {
+      await dienst.loescheDokument(a.params.id);
+      L.dokumente.info('Dokument gelöscht', { id: a.params.id });
+      return leer;
+    } },
   ];
 }
 
+/** Zu welchem Modul eine Anfrage gehört (für das Protokoll). */
+export function modulAus(url: string): string {
+  if (/^\/api\/(konto|benutzer|personen)\b/.test(url)) return 'konto';
+  if (/^\/api\/(dokumente|mappen\/[^/]+\/dokumente)\b/.test(url)) return 'dokumente';
+  if (/^\/api\/(mappen|sichten)\b/.test(url)) return 'ablage';
+  if (/^\/api\/(typen|werkbank|beispiele)\b/.test(url)) return 'werkbank';
+  return 'http';
+}
 /** Kopfzeilen für eine ausgelieferte Datei – so, dass sie nie als Teil der Anwendung ausgeführt wird. */
 export function dateiKoepfe(d: Datei): Record<string, string> {
   const ascii = d.name.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');

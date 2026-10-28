@@ -6,6 +6,7 @@ import {
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import { Auftraege } from './auftrag';
+import { protokoll } from './protokoll';
 import { Fachfehler } from './fehler';
 import { istUuid, type NeueMappe, type Repo } from './repo';
 
@@ -115,7 +116,7 @@ function bereinigeWerte(typ: Mappentyp, eingabe: unknown, bisher: Werte = {}): W
 
 export class Dienst {
   /** Hintergrundaufträge, z. B. Demo-Daten erzeugen. */
-  readonly auftraege = new Auftraege();
+  readonly auftraege = new Auftraege((m) => protokoll.modul('werkbank').info(m));
 
   constructor(private repo: Repo, private dateien: Dateispeicher) {}
 

@@ -6,6 +6,7 @@ import { ordnerSpeicher } from './dateispeicher';
 import { baueApp } from './http';
 import { Konten } from './konten';
 import { pgKontoRepo } from './konto-repo';
+import { protokoll } from './protokoll';
 import { pgRepo } from './repo-pg';
 import { erstelleMailer } from './smtp';
 
@@ -25,13 +26,22 @@ const cfg = {
   proxy: env.TRUST_PROXY === 'true',
 };
 
+const log = protokoll.modul('system');
+const version = env.DMS_VERSION ?? 'Entwicklung';
+log.info(`DMS startet (Version ${version})`, { node: process.version, port: cfg.port, protokoll: protokoll.stufe });
+
+// Unerwartete Fehler außerhalb von Anfragen nicht verschlucken.
+process.on('unhandledRejection', (e) => protokoll.schreibe('error', 'system', 'Unbehandelter Fehler', { fehler: e instanceof Error ? e.stack : String(e) }));
+
 if (!cfg.datenbank) {
   console.error('DATABASE_URL fehlt, z. B. postgres://dms:geheim@localhost:5432/dms');
   process.exit(1);
 }
 
 const sql = verbinde(cfg.datenbank);
-await migriere(sql, cfg.migrationen);
+await migriere(sql, cfg.migrationen, (m) => protokoll.modul('datenbank').info(m));
+const [{ server_version: pgVersion }] = await sql`SHOW server_version`;
+protokoll.modul('datenbank').info('Datenbank verbunden', { postgres: pgVersion });
 await mkdir(cfg.dateien, { recursive: true });
 
 const mailer = erstelleMailer({
@@ -47,20 +57,20 @@ const konten = new Konten(pgKontoRepo(sql, cfg.haushalt), mailer, cfg.appUrl);
 const dienst = new Dienst(pgRepo(sql, cfg.haushalt), ordnerSpeicher(cfg.dateien, cfg.haushalt));
 const app = await baueApp(dienst, konten, {
   webDir: cfg.web,
-  logger: { level: env.LOG_LEVEL ?? 'info' },
   sicher: cfg.appUrl.startsWith('https://'),
   proxy: cfg.proxy,
 });
 
-app.log.info(`E-Mail-Versand: ${mailer ? `über ${env.SMTP_HOST}` : 'aus (SMTP_HOST nicht gesetzt) – Links werden in der Benutzerverwaltung angezeigt'}`);
-app.log.info(`Links in E-Mails zeigen auf ${cfg.appUrl}`);
+log.info(`E-Mail-Versand: ${mailer ? `über ${env.SMTP_HOST}` : 'aus (SMTP_HOST nicht gesetzt) – Links werden in der Benutzerverwaltung angezeigt'}`);
+log.info(`Links in E-Mails zeigen auf ${cfg.appUrl}`);
 const nachgezogen = await dienst.titelNachziehen();
-if (nachgezogen) app.log.info(`Titel von ${nachgezogen} Mappen berechnet`);
+if (nachgezogen) log.info(`Titel von ${nachgezogen} Mappen berechnet`);
 const geprueft = await dienst.passungNachziehen();
-if (geprueft) app.log.info(`Mappen von ${geprueft} Mappentypen gegen ihre Definition geprüft`);
-if (await konten.einrichtungNoetig()) app.log.warn(`Noch kein Benutzer vorhanden: Der erste Aufruf von ${cfg.appUrl} legt den Administrator an.`);
+if (geprueft) log.info(`Mappen von ${geprueft} Mappentypen gegen ihre Definition geprüft`);
+if (await konten.einrichtungNoetig()) log.warn(`Noch kein Benutzer vorhanden: Der erste Aufruf von ${cfg.appUrl} legt den Administrator an.`);
 
 const beenden = async () => {
+  log.info('DMS wird beendet');
   await app.close();
   await sql.end({ timeout: 5 });
   process.exit(0);

@@ -277,4 +277,18 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.deepEqual(JSON.parse((await app.inject({ method: 'GET', url: '/api/konto/status', headers: { cookie: mc } })).body).hinweise, []);
     assert.deepEqual((await anfrage('DELETE', `/api/benutzer/${mitglied.id}/sitzungen`)).body, { beendet: 1 });
   });
+
+  it('protokolliert Anfragen und Aktionen und schaltet den Debug-Modus', async () => {
+    const r = (await anfrage('GET', '/api/werkbank/protokoll?modul=ablage&suche=Titeltest')).body;
+    assert.ok(r.eintraege.some((e: { text: string; benutzer?: string }) => e.text === 'Mappe angelegt' && e.benutzer === 'admin@example.org'));
+    assert.ok(r.module.includes('konto'));
+    const fehl = (await anfrage('GET', '/api/werkbank/protokoll?modul=konto&stufe=warn')).body.eintraege;
+    assert.ok(fehl.some((e: { text: string }) => e.text === 'Administrator agiert als anderer Benutzer'));
+    const d = (await anfrage('PUT', '/api/werkbank/debug', { an: true })).body;
+    assert.equal(d.an, true);
+    await anfrage('GET', '/api/sichten');
+    const dbg = (await anfrage('GET', `/api/werkbank/protokoll?seit=${r.letzte}&stufe=debug`)).body.eintraege;
+    assert.ok(dbg.some((e: { text: string }) => e.text === 'GET /api/sichten 200'), 'Anfragen im Debug-Modus sichtbar');
+    assert.equal((await anfrage('PUT', '/api/werkbank/debug', { an: false })).body.an, false);
+  });
 });

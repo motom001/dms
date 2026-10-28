@@ -344,3 +344,18 @@ progress::-moz-progress-bar { background: var(--akzent); border-radius: 999px; }
 .sitzungsliste li:first-child { border-top: 0; }
 .blockzeile { display: block; margin-top: 2px; }
 .chip.punkt::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; margin-right: 5px; vertical-align: 1px; }
+
+/* Protokoll */
+.protokollfilter { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.protokollfilter select { max-width: 100%; }
+.protokollfilter .suche { flex: 1 1 140px; }
+.mappenliste.protokoll .eintrag { gap: 2px; }
+.mappenliste.protokoll .titel { font-weight: 500; font-size: 13.5px; overflow-wrap: anywhere; }
+.zeile1 { display: flex; gap: 6px; align-items: center; }
+.chip.stufe-warn { background: var(--warn-zart); color: var(--warn); border-color: transparent; }
+.chip.stufe-error, .chip.stufe-fatal { background: var(--schlecht-zart); color: var(--schlecht); border-color: transparent; }
+.chip.stufe-info { background: var(--akzent-zart); color: var(--akzent); border-color: transparent; }
+.eintrag.stufe-error, .eintrag.stufe-fatal { box-shadow: inset 3px 0 0 var(--schlecht); }
+.eintrag.stufe-warn { box-shadow: inset 3px 0 0 var(--warn); }
+.protokolldaten { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--mono); font-size: 12.5px; background: var(--senke); padding: 10px 12px; border-radius: 6px; max-height: 480px; overflow: auto; }
+.mono { font-family: var(--mono); }

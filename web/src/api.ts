@@ -88,6 +88,9 @@ export const api = {
   demoErzeugen: (anzahl: number) => anfrage<Auftrag>('POST', '/api/werkbank/demo', { anzahl }),
   demoEntfernen: () => anfrage<Auftrag>('DELETE', '/api/werkbank/demo'),
   auftrag: () => anfrage<Auftrag | null>('GET', '/api/werkbank/auftrag'),
+  protokoll: (f: Record<string, string | number | undefined>) =>
+    anfrage<ProtokollAntwort>('GET', `/api/werkbank/protokoll?${new URLSearchParams(Object.entries(f).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]))}`),
+  debug: (an: boolean) => anfrage<DebugStand>('PUT', '/api/werkbank/debug', { an }),
   profil: (name: string) => anfrage<Benutzer>('PUT', '/api/konto/profil', { name }),
   emailAendern: (email: string, passwort: string) => anfrage<Benutzer>('PUT', '/api/konto/email', { email, passwort }),
   passwortAendern: (passwortAlt: string, passwortNeu: string) => anfrage<{ benutzer: Benutzer }>('PUT', '/api/konto/passwort', { passwortAlt, passwortNeu }),
@@ -117,3 +120,8 @@ export interface Auftrag {
   fertig: number; gesamt: number; gestartet: string; beendet?: string; ergebnis?: unknown; fehler?: string;
 }
 export interface DemoErgebnis { gesamt: number; erzeugt: Record<string, number>; uebersprungen: Array<{ typ: string; grund: string }> }
+
+export type Stufe = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+export interface Protokolleintrag { nr: number; zeit: string; stufe: Stufe; modul: string; text: string; benutzer?: string; anfrage?: string; daten?: Record<string, unknown> }
+export interface DebugStand { an: boolean; bis: string | null; grundstufe: string }
+export interface ProtokollAntwort { eintraege: Protokolleintrag[]; letzte: number; gespeichert: number; debug: DebugStand; module: string[] }
