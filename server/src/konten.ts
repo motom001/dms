@@ -167,6 +167,16 @@ export class Konten {
     return v ? { adminName: v.adminName, beginn: v.beginn } : null;
   }
 
+  /* ---------- Persönliche Einstellungen ---------- */
+
+  einstellungen(ich: Benutzer) { return this.repo.einstellungen(ich.id); }
+
+  async setzeEinstellung(ich: Benutzer, schluessel: string, wert: unknown) {
+    if (!/^[a-z][a-z0-9:_-]{0,80}$/i.test(schluessel)) throw new Fachfehler(422, 'Ungültiger Name der Einstellung.');
+    if (wert !== null && JSON.stringify(wert ?? null).length > 4000) throw new Fachfehler(422, 'Die Einstellung ist zu groß.');
+    await this.repo.setzeEinstellung(ich.id, schluessel, wert ?? null);
+  }
+
   /** Hinweise für den Benutzer: Wer hat als er agiert? */
   hinweise(benutzerId: string) { return this.repo.ungeseheneVertretungen(benutzerId); }
   hinweiseGesehen(benutzerId: string) { return this.repo.markiereGesehen(benutzerId); }

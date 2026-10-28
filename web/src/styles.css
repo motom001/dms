@@ -394,3 +394,34 @@ progress::-moz-progress-bar { background: var(--akzent); border-radius: 999px; }
 .griff.griff-rechts.zu { transform: translate(-100%, -50%); border-radius: 999px 0 0 999px; cursor: pointer; }
 body.zieht-bereich { cursor: col-resize; user-select: none; }
 body.zieht-bereich iframe { pointer-events: none; }
+
+/* Trefferliste (#19, #22) */
+.breitenmesser { width: 100%; height: 0; margin-bottom: -12px; flex: none; }
+.trefferliste { margin: 0 -16px; overflow-x: auto; flex: none; }
+.trefferliste table { font-size: 13px; }
+.trefferliste thead th { position: sticky; top: -18px; z-index: 2; padding: 6px 10px; }
+.trefferliste th.rechts, .trefferliste td.rechts { text-align: right; font-variant-numeric: tabular-nums; }
+.trefferliste td { padding: 7px 10px; line-height: 1.35; }
+.trefferliste td.rechts, .trefferliste td.kurz { white-space: nowrap; }
+.trefferliste thead th { white-space: nowrap; }
+.trefferliste td:first-child, .trefferliste th:first-child { padding-left: 16px; }
+.trefferliste tbody tr { cursor: pointer; }
+.trefferliste tbody tr:hover { background: var(--senke); }
+.trefferliste tbody tr.an { background: var(--akzent-zart); box-shadow: inset 3px 0 0 var(--akzent); }
+.trefferliste tbody tr.unpassend td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
+.trefferliste td a { color: inherit; font-weight: 600; text-decoration: none; }
+.trefferliste td a:hover { text-decoration: underline; }
+.trefferliste .problemzelle { color: var(--warn); white-space: normal; }
+.trefferliste tr.nachladen { cursor: default; }
+.trefferliste tr.nachladen td { text-align: center; }
+.spaltenknopf { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; display: inline-flex; gap: 4px; align-items: center; }
+.spaltenknopf .pfeil { opacity: .45; }
+th[aria-sort] .spaltenknopf { color: var(--akzent); }
+th[aria-sort] .spaltenknopf .pfeil { opacity: 1; }
+.spaltenliste { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.spaltenliste li { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche); }
+.spaltenliste li.kompakt { border-left: 3px solid var(--akzent); }
+.spaltenliste .nr { width: 1.5em; color: var(--leise); font-variant-numeric: tabular-nums; }
+.spaltenliste .nm { flex: 1; display: flex; gap: 6px; align-items: center; }
+.spaltenliste .aktionen { display: flex; gap: 2px; }
+.eigenschaft.schmal { max-width: 320px; }

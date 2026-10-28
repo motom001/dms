@@ -232,6 +232,21 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const treffer = (await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&suche=${encodeURIComponent(such)}`)).body;
     assert.ok(treffer.mappen.some((m: { id: string }) => m.id === s1.mappen[5].id));
     assert.equal((await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&suche=${encodeURIComponent('%_\\')}`)).body.gesamt, 0);
+    // Sortierung auf dem Server
+    const nachBetrag = (await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&anzahl=50&sortierung=betrag&absteigend=true`)).body.mappen;
+    const betraege = nachBetrag.map((m: { werte: { betrag?: { betrag: number } } }) => m.werte.betrag?.betrag ?? -1);
+    assert.deepEqual(betraege, [...betraege].sort((a: number, b: number) => b - a), 'absteigend nach Betrag');
+    const nachDatum = (await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&anzahl=50&sortierung=rechnungsdatum`)).body.mappen.map((m: { werte: { rechnungsdatum: string } }) => m.werte.rechnungsdatum);
+    assert.deepEqual(nachDatum, [...nachDatum].sort());
+    for (const sp of ['_erstellt', '_geaendertVon', '_typ', 'bezahlt', 'gibts_nicht']) {
+      assert.equal((await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&anzahl=5&sortierung=${sp}`)).status, 200, sp);
+    }
+    assert.equal((await anfrage('GET', '/api/mappen?sicht=eingang&sortierung=_typ&absteigend=true')).status, 200);
+    assert.equal((await anfrage('PUT', '/api/konto/einstellungen/sortierung:test', { wert: { spalte: 'betrag', absteigend: true } })).status, 204);
+    assert.deepEqual((await anfrage('GET', '/api/konto/einstellungen')).body['sortierung:test'], { spalte: 'betrag', absteigend: true });
+    const typNeu = await anfrage('PUT', `/api/typen/${rechnungTyp.id}`, { ...rechnungTyp, trefferliste: ['betrag', '_titel', 'rechnungsdatum'] });
+    assert.deepEqual(typNeu.body.trefferliste, ['betrag', '_titel', 'rechnungsdatum']);
+
     const eingang = (await anfrage('GET', '/api/mappen?sicht=eingang')).body;
     assert.equal(eingang.gesamt, zaehler.eingang);
     const belegung = (await anfrage('GET', `/api/typen/${rechnungTyp.id}/belegung`)).body;

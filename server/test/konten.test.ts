@@ -159,3 +159,16 @@ describe('Sitzungen und Vertretung', () => {
     assert.equal((await k.hinweise(sabine.benutzer.id)).length, 0);
   });
 });
+
+describe('Persönliche Einstellungen', () => {
+  it('speichert, liest und löscht Einstellungen je Benutzer', async () => {
+    const k = new Konten(speicherKontoRepo(), null, 'http://nas:3000');
+    const { benutzer } = await k.einrichten({ email: 'admin@example.org', passwort: 'ein-langes-passwort' });
+    await k.setzeEinstellung(benutzer, 'sortierung:eingang', { spalte: '_erstellt', absteigend: true });
+    assert.deepEqual(await k.einstellungen(benutzer), { 'sortierung:eingang': { spalte: '_erstellt', absteigend: true } });
+    await wirft(k.setzeEinstellung(benutzer, '../böse', 1), 422);
+    await wirft(k.setzeEinstellung(benutzer, 'gross', 'x'.repeat(5000)), 422);
+    await k.setzeEinstellung(benutzer, 'sortierung:eingang', null);
+    assert.deepEqual(await k.einstellungen(benutzer), {});
+  });
+});

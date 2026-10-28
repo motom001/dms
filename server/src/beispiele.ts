@@ -15,7 +15,7 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
 
   const typen = {
     partner: {
-      id: id.partner, name: 'Vertragspartner', beschreibung: 'Firma, Behörde oder Person, mit der es Verträge oder Rechnungen gibt', titelVorlage: '{name}',
+      id: id.partner, name: 'Vertragspartner', beschreibung: 'Firma, Behörde oder Person, mit der es Verträge oder Rechnungen gibt', titelVorlage: '{name}', trefferliste: ['name', 'art', 'kundennummer', '_geaendert'],
       register: [
         { key: 'stammdaten', name: 'Stammdaten', art: 'felder' },
         { key: 'vertraege', name: 'Verträge', art: 'verknuepfungen', quellen: [{ typId: id.vertrag, feldKey: 'vertragspartner' }] },
@@ -29,7 +29,7 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
       ],
     },
     vertrag: {
-      id: id.vertrag, name: 'Vertrag', beschreibung: 'Laufender Vertrag mit Fristen und Kosten', titelVorlage: '{bezeichnung}',
+      id: id.vertrag, name: 'Vertrag', beschreibung: 'Laufender Vertrag mit Fristen und Kosten', titelVorlage: '{bezeichnung}', trefferliste: ['bezeichnung', 'vertragspartner', 'zahlungszyklus', 'betrag', 'kuendigung_bis', 'vertragsnummer'],
       register: [
         { key: 'vertrag', name: 'Vertrag', art: 'felder' },
         { key: 'rechnungen', name: 'Rechnungen', art: 'verknuepfungen', quellen: [{ typId: id.rechnung, feldKey: 'vertrag' }] },
@@ -46,7 +46,7 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
       ],
     },
     rechnung: {
-      id: id.rechnung, name: 'Rechnung', beschreibung: 'Eingegangene Rechnung, gehört zu einem Vertrag oder steht für sich', titelVorlage: '{rechnungsnummer} vom {rechnungsdatum}',
+      id: id.rechnung, name: 'Rechnung', beschreibung: 'Eingegangene Rechnung, gehört zu einem Vertrag oder steht für sich', titelVorlage: '{rechnungsnummer} vom {rechnungsdatum}', trefferliste: ['_titel', 'aussteller', 'vertrag', 'betrag', 'rechnungsdatum', 'bezahlt'],
       register: [
         { key: 'rechnung', name: 'Rechnung', art: 'felder' },
         { key: 'dokumente', name: 'Rechnungsdokumente', art: 'dokumente' },
@@ -63,7 +63,7 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
       ],
     },
     zahlung: {
-      id: id.zahlung, name: 'Zahlung', beschreibung: 'Überweisung oder Lastschrift, kann mehrere Rechnungen begleichen', titelVorlage: '{verwendungszweck} vom {zahlungsdatum}',
+      id: id.zahlung, name: 'Zahlung', beschreibung: 'Überweisung oder Lastschrift, kann mehrere Rechnungen begleichen', titelVorlage: '{verwendungszweck} vom {zahlungsdatum}', trefferliste: ['verwendungszweck', 'betrag', 'zahlungsdatum', 'rechnungen'],
       register: [
         { key: 'zahlung', name: 'Zahlung', art: 'felder' },
         { key: 'belege', name: 'Belege', art: 'dokumente' },

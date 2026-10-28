@@ -153,6 +153,14 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
 
+    { methode: 'GET', pfad: '/api/konto/einstellungen', zugang: 'angemeldet', handler: async (a) => ok(await konten.einstellungen(ich(a))) },
+    { methode: 'PUT', pfad: '/api/konto/einstellungen/:schluessel', zugang: 'angemeldet', handler: async (a) => {
+      let k = a.params.schluessel;
+      try { k = decodeURIComponent(k); } catch { /* bleibt, wie er ist */ }
+      await konten.setzeEinstellung(ich(a), k, b(a).wert);
+      return leer;
+    } },
+
     /* ---------- Benutzer ---------- */
     { methode: 'GET', pfad: '/api/personen', zugang: 'angemeldet', handler: async () => ok(await konten.personen()) },
     { methode: 'GET', pfad: '/api/benutzer', zugang: 'admin', handler: async () => ok(await konten.listeBenutzer()) },

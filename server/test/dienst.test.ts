@@ -319,3 +319,29 @@ describe('Sichten seitenweise', () => {
     assert.deepEqual([z.typen[t.id].unpassend, z.eingang], [0, 0], 'die andere passt jetzt auch wieder');
   });
 });
+
+describe('Trefferliste und Sortierung', () => {
+  it('bereinigt die Trefferliste und sortiert nach Feldern und Systemspalten', async () => {
+    const d = new Dienst(speicherRepo(), speicherDateien());
+    const t = await d.legeTypAn({ name: 'Beleg', titelVorlage: '{nr}', trefferliste: ['betrag', '_titel', 'gibts_nicht', 'betrag', '_typ', 'datum'], felder: [
+      { key: 'nr', label: 'Nr', typ: 'text', pflicht: true },
+      { key: 'betrag', label: 'Betrag', typ: 'betrag' },
+      { key: 'datum', label: 'Datum', typ: 'datum' },
+    ] });
+    assert.deepEqual(t.trefferliste, ['betrag', '_titel', 'datum'], 'unbekannte, doppelte und _typ fallen weg');
+    for (const [nr, b, dt] of [['A', 30, '2026-03-01'], ['B', 5, null], ['C', 120, '2025-01-01']] as const) {
+      await d.legeMappeAn({ typId: t.id, werte: { nr, ...(b !== null ? { betrag: { betrag: b, waehrung: 'EUR' } } : {}), ...(dt ? { datum: dt } : {}) } });
+    }
+    const titel = async (sortierung: string, absteigend = false) =>
+      (await d.seite({ id: 'x', rolle: 'admin' }, { sicht: t.id, sortierung, absteigend: String(absteigend) })).mappen.map((m) => m.titel).join('');
+    assert.equal(await titel('betrag'), 'BAC');
+    assert.equal(await titel('betrag', true), 'CAB');
+    assert.equal(await titel('datum'), 'CAB', 'leere Werte zuletzt');
+    assert.equal(await titel('datum', true), 'ACB', 'leere Werte auch absteigend zuletzt');
+    assert.equal(await titel('_titel', true), 'CBA');
+    assert.equal(await titel('gibts_nicht'), 'ABC', 'unbekannte Spalte → nach Titel');
+    // Feld entfernen: Spalte verschwindet aus der Trefferliste
+    const neu = await d.aendereTyp(t.id, { ...t, felder: t.felder.filter((f) => f.key !== 'datum') });
+    assert.deepEqual(neu.trefferliste, ['betrag', '_titel']);
+  });
+});

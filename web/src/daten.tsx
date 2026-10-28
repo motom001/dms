@@ -22,6 +22,9 @@ interface Daten {
   person(id: string | null | undefined): string;
   /** Prüft Werte gegen die Definition (wie der Server; eindeutige Werte prüft nur der Server). */
   pruefe(t: Mappentyp, werte: Werte, typVon: (mappeId: string) => string | undefined): Pruefergebnis;
+  /** Persönliche Einstellungen (vom Server, für alle Geräte). */
+  einstellungen: Record<string, unknown>;
+  setzeEinstellung(schluessel: string, wert: unknown): void;
 }
 
 const Ctx = createContext<Daten | null>(null);
@@ -34,6 +37,12 @@ export function DatenProvider({ children }: { children: ReactNode }) {
   const [geladen, setGeladen] = useState(false);
   const [fehler, setFehler] = useState<string>();
   const [stand, setStand] = useState(0);
+  const [einstellungen, setEinstellungen] = useState<Record<string, unknown>>({});
+  const setzeEinstellung = useCallback((k: string, w: unknown) => {
+    setEinstellungen((e) => { const n = { ...e }; if (w === null) delete n[k]; else n[k] = w; return n; });
+    void api.einstellungSetzen(k, w).catch(() => {});
+  }, []);
+  useEffect(() => { api.einstellungen().then(setEinstellungen).catch(() => {}); }, []);
 
   const neuLaden = useCallback(async () => {
     try {
@@ -50,13 +59,13 @@ export function DatenProvider({ children }: { children: ReactNode }) {
   const wert = useMemo<Daten>(() => {
     const typNachId = new Map<string, Mappentyp>(typen.map((t) => [t.id, t] as const));
     return {
-      typen, zaehler, geladen, fehler, stand, neuLaden,
+      typen, zaehler, geladen, fehler, stand, neuLaden, einstellungen, setzeEinstellung,
       typ: (id) => (id ? typNachId.get(id) : undefined),
       anzahl: (typId) => zaehler.typen[typId]?.anzahl ?? 0,
       person: (id) => (id ? personen.find((p) => p.id === id)?.name ?? 'gelöschter Benutzer' : 'unbekannt'),
       pruefe: (t, werte, typVon) => pruefeMappe(t, werte, { typVon, doppelt: () => undefined }),
     };
-  }, [typen, zaehler, personen, geladen, fehler, stand, neuLaden]);
+  }, [typen, zaehler, personen, geladen, fehler, stand, neuLaden, einstellungen, setzeEinstellung]);
 
   return <Ctx.Provider value={wert}>{children}</Ctx.Provider>;
 }

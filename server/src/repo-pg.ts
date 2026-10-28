@@ -13,6 +13,7 @@ const alsTyp = (r: Zeile): Mappentyp => ({
   titelVorlage: r.titel_vorlage as string,
   felder: r.felder as Mappentyp['felder'],
   register: r.register as Mappentyp['register'],
+  trefferliste: (r.trefferliste as string[] | null) ?? [],
   erstellt: iso(r.erstellt),
   geaendert: iso(r.geaendert),
 });
@@ -66,8 +67,8 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     },
     async legeTypAn(id, d: MappentypDaten) {
       const [r] = await sql`
-        INSERT INTO mappentypen (id, haushalt_id, name, beschreibung, titel_vorlage, felder, register)
-        VALUES (${id}, ${haushaltId}, ${d.name}, ${d.beschreibung}, ${d.titelVorlage}, ${json(sql, d.felder)}, ${json(sql, d.register)})
+        INSERT INTO mappentypen (id, haushalt_id, name, beschreibung, titel_vorlage, felder, register, trefferliste)
+        VALUES (${id}, ${haushaltId}, ${d.name}, ${d.beschreibung}, ${d.titelVorlage}, ${json(sql, d.felder)}, ${json(sql, d.register)}, ${json(sql, d.trefferliste ?? [])})
         RETURNING *`;
       return alsTyp(r);
     },
@@ -75,7 +76,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       return sql.begin(async (tx) => {
         const [r] = await tx`
           UPDATE mappentypen SET name = ${d.name}, beschreibung = ${d.beschreibung}, titel_vorlage = ${d.titelVorlage},
-            felder = ${json(sql, d.felder)}, register = ${json(sql, d.register)}, geaendert = now()
+            felder = ${json(sql, d.felder)}, register = ${json(sql, d.register)}, trefferliste = ${json(sql, d.trefferliste ?? [])}, geaendert = now()
           WHERE haushalt_id = ${haushaltId} AND id = ${id}
           RETURNING *`;
         const refKeys = d.felder.filter((f) => f.typ === 'referenz').map((f) => f.key);
@@ -189,9 +190,21 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         ? sql`AND (titel ILIKE ${muster} OR EXISTS (SELECT 1 FROM jsonb_each_text(werte) e WHERE e.value ILIKE ${muster}))`
         : sql``;
       const [{ n }] = await sql`SELECT count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} ${typ} ${eingang} ${suche}`;
+      const so = o.sortierung;
+      const k = so?.key ?? '';
+      const ausdruck = !so || so.art === 'titel' ? sql`lower(titel)`
+        : so.art === 'erstellt' ? sql`erstellt` : so.art === 'geaendert' ? sql`geaendert`
+        : so.art === 'erstelltVon' ? sql`(SELECT lower(coalesce(nullif(b.name, ''), b.email)) FROM benutzer b WHERE b.id = mappen.erstellt_von)`
+        : so.art === 'geaendertVon' ? sql`(SELECT lower(coalesce(nullif(b.name, ''), b.email)) FROM benutzer b WHERE b.id = mappen.geaendert_von)`
+        : so.art === 'typ' ? sql`(SELECT lower(t.name) FROM mappentypen t WHERE t.id = mappen.typ_id)`
+        : so.art === 'zahl' || so.art === 'janein' ? sql`(werte -> ${k}::text)`
+        : so.art === 'betrag' ? sql`((werte -> ${k}::text ->> 'betrag')::numeric)`
+        : so.art === 'datum' ? sql`(werte ->> ${k}::text)`
+        : sql`lower(werte ->> ${k}::text)`;
+      const richtung = so?.absteigend ? sql`DESC NULLS LAST` : sql`ASC NULLS LAST`;
       const r = await sql`
         SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} ${typ} ${eingang} ${suche}
-        ORDER BY lower(titel), id OFFSET ${o.von} LIMIT ${o.anzahl}`;
+        ORDER BY ${ausdruck} ${richtung}, lower(titel), id OFFSET ${o.von} LIMIT ${o.anzahl}`;
       return { gesamt: n as number, mappen: r.map(alsMappe) };
     },
     async zaehler(benutzerId, admin) {

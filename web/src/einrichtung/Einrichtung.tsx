@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  FELDTYPEN, INDEXPLATZHALTER, istIndexplatzhalter, REGISTERARTEN, schluesselAus, standardRegister, titelAus, VERWEISARTEN, vorlageFelder, wirksameVorlage,
+  FELDTYPEN, INDEXPLATZHALTER, istIndexplatzhalter, REGISTERARTEN, SYSTEMSPALTEN, type Systemspalte, schluesselAus, standardRegister, titelAus, VERWEISARTEN, vorlageFelder, wirksameVorlage,
   type Feld, type Mappe, type Mappentyp, type Register, type Registerart, type Werte,
 } from '../../../shared/src/model';
 import { api, ApiFehler, type Bezuege } from '../api';
@@ -17,7 +17,8 @@ type Zahlprop = (typeof ZAHLEN)[number];
 type EntwurfFeld = Omit<Feld, Zahlprop> & Record<Zahlprop, string> & { _uid: string; _neu?: boolean; _schluesselGetippt?: boolean; _register: string };
 /** Register im Bearbeitungszustand; welche Felder darauf liegen, steht am Feld (_register). */
 type EntwurfRegister = Omit<Register, 'felder'> & { _uid: string; _neu?: boolean; _schluesselGetippt?: boolean };
-interface Entwurf { id: string; name: string; beschreibung: string; titelVorlage: string; felder: EntwurfFeld[]; register: EntwurfRegister[] }
+/** Trefferliste im Entwurf: Systemspalten als _titel usw., Felder als feld:<_uid> – damit ein umbenannter Schlüssel nichts kaputt macht. */
+interface Entwurf { id: string; name: string; beschreibung: string; titelVorlage: string; felder: EntwurfFeld[]; register: EntwurfRegister[]; trefferliste: string[] }
 
 function neueId(): string {
   // crypto.randomUUID gibt es nur über HTTPS oder localhost; im Heimnetz oft nicht.
@@ -31,9 +32,9 @@ function neueId(): string {
 const alsEntwurfRegister = ({ felder: _f, ...r }: Register): EntwurfRegister => ({ ...r, _uid: neueId() });
 
 function entwurfAus(t?: Mappentyp): Entwurf {
-  if (!t) return { id: neueId(), name: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister) };
+  if (!t) return { id: neueId(), name: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferliste: [] };
   const erstes = t.register.find((r) => r.art === 'felder')?.key ?? '';
-  return {
+  const e: Entwurf = {
     id: t.id, name: t.name, beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '',
     register: t.register.map(alsEntwurfRegister),
     felder: t.felder.map((f) => ({
@@ -41,7 +42,14 @@ function entwurfAus(t?: Mappentyp): Entwurf {
       _register: t.register.find((r) => r.art === 'felder' && r.felder?.includes(f.key))?.key ?? erstes,
       ...Object.fromEntries(ZAHLEN.map((p) => [p, f[p] == null ? '' : String(f[p]).replace('.', ',')])),
     }) as unknown as EntwurfFeld),
+    trefferliste: [],
   };
+  e.trefferliste = (t.trefferliste ?? []).flatMap((k) => {
+    if (k.startsWith('_')) return [k];
+    const f = e.felder.find((x) => x.key === k);
+    return f ? [`feld:${f._uid}`] : [];
+  });
+  return e;
 }
 
 /** Für die Vorschau, solange es keine Mappe gibt. */
@@ -122,6 +130,7 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
       felder: e.felder.map(({ _uid, _neu, _schluesselGetippt, _register, ...rest }) => rest),
       register: e.register.map(({ _uid, _neu, _schluesselGetippt, ...r }) =>
         (r.art === 'felder' ? { ...r, felder: e.felder.filter((f) => f._register === r.key).map((f) => f.key) } : r)),
+      trefferliste: e.trefferliste.flatMap((k) => (k.startsWith('feld:') ? e.felder.filter((f) => `feld:${f._uid}` === k).map((f) => f.key) : [k])),
     };
     try {
       const t = neu ? await api.typAnlegen(daten) : await api.typAendern(e.id, daten);
@@ -179,6 +188,8 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
       </div>
 
       <TitelEditor e={e} setze={(titelVorlage) => setE((x) => ({ ...x, titelVorlage }))} />
+
+      <TrefferlisteEditor e={e} setze={(trefferliste) => setE((x) => ({ ...x, trefferliste }))} />
 
       <div className="blatt">
         <div className="blattkopf">
@@ -490,6 +501,55 @@ function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Ent
         <button type="button" className="knopf klein" onClick={() => hinzufuegen('dokumente')}>+ Dokumentenregister</button>
         <button type="button" className="knopf klein" onClick={() => hinzufuegen('verknuepfungen')}>+ Verknüpfungsregister</button>
       </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+
+/** Spalten der Trefferliste: auswählen und anordnen (#19). */
+function TrefferlisteEditor({ e, setze }: { e: Entwurf; setze: (t: string[]) => void }) {
+  const name = (k: string) => (k.startsWith('feld:') ? e.felder.find((f) => `feld:${f._uid}` === k)?.label || '(Feld ohne Namen)' : SYSTEMSPALTEN[k as Systemspalte] ?? k);
+  // Spalten gelöschter Felder fallen weg.
+  const liste = e.trefferliste.filter((k) => !k.startsWith('feld:') || e.felder.some((f) => `feld:${f._uid}` === k));
+  const verfuegbar = [
+    ...e.felder.map((f) => ({ k: `feld:${f._uid}`, n: f.label || f.key })),
+    ...(Object.keys(SYSTEMSPALTEN) as Systemspalte[]).filter((k) => k !== '_typ').map((k) => ({ k, n: SYSTEMSPALTEN[k] })),
+  ].filter((x) => !liste.includes(x.k));
+  const schiebe = (i: number, r: number) => {
+    const j = i + r;
+    if (j < 0 || j >= liste.length) return;
+    const n = [...liste]; [n[i], n[j]] = [n[j], n[i]]; setze(n);
+  };
+  return (
+    <div className="blatt">
+      <div className="blattkopf">
+        <h2 className="h3">Trefferliste</h2>
+        <p className="leise">Spalten, wenn die Liste breit genug ist, in dieser Reihenfolge. In schmalen Ansichten bilden die ersten drei den kompakten Eintrag: die erste fett, die zweite und dritte darunter. Leer = Titel und zwei Felder wie bisher.</p>
+      </div>
+      {liste.length > 0 && (
+        <ol className="spaltenliste">
+          {liste.map((k, i) => (
+            <li key={k} className={i < 3 ? 'kompakt' : ''}>
+              <span className="nr">{i + 1}</span>
+              <span className="nm">{name(k)}{k.startsWith('_') && <span className="chip">System</span>}</span>
+              <span className="aktionen">
+                <button type="button" className="symbol" disabled={i === 0} onClick={() => schiebe(i, -1)} aria-label={`${name(k)} nach vorn`}>↑</button>
+                <button type="button" className="symbol" disabled={i === liste.length - 1} onClick={() => schiebe(i, 1)} aria-label={`${name(k)} nach hinten`}>↓</button>
+                <button type="button" className="symbol" onClick={() => setze(liste.filter((x) => x !== k))} aria-label={`${name(k)} entfernen`}>×</button>
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+      {verfuegbar.length > 0 && (
+        <label className="eigenschaft schmal"><span>Spalte hinzufügen</span>
+          <select value="" onChange={(ev) => { if (ev.target.value) setze([...liste, ev.target.value]); }}>
+            <option value="">– wählen –</option>
+            {verfuegbar.map((x) => <option key={x.k} value={x.k}>{x.n}{x.k.startsWith('_') ? ' (System)' : ''}</option>)}
+          </select>
+        </label>
+      )}
     </div>
   );
 }

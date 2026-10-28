@@ -79,12 +79,31 @@ export interface MappentypDaten {
   titelVorlage: string;
   felder: Feld[];
   register: Register[];
+  /** Spalten der Trefferliste in ihrer Reihenfolge: Feldschlüssel oder Systemspalten (_titel, _erstellt, …). Leer = einfache Liste. */
+  trefferliste?: string[];
 }
 export interface Mappentyp extends MappentypDaten {
   id: string;
   erstellt: string;
   geaendert: string;
 }
+
+/** Systemeigene Spalten für Trefferlisten; beginnen mit _, damit sie nie mit Feldschlüsseln kollidieren. */
+export const SYSTEMSPALTEN = {
+  _titel: 'Titel', _typ: 'Mappentyp', _erstellt: 'Angelegt', _erstelltVon: 'Angelegt von', _geaendert: 'Zuletzt geändert', _geaendertVon: 'Zuletzt geändert von',
+} as const;
+export type Systemspalte = keyof typeof SYSTEMSPALTEN;
+export const istSystemspalte = (k: string): k is Systemspalte => Object.prototype.hasOwnProperty.call(SYSTEMSPALTEN, k);
+/** Spalten für Sichten mit gemischten Mappentypen (z. B. Eingang). */
+export const GEMISCHTE_SPALTEN: Systemspalte[] = ['_titel', '_typ', '_erstelltVon', '_erstellt', '_geaendertVon', '_geaendert'];
+
+/** Nach welchen Spalten der Server sortieren kann (Verweise und lange Texte nicht). */
+export function sortierbar(spalte: string, t?: Pick<Mappentyp, 'felder'>): boolean {
+  if (istSystemspalte(spalte)) return true;
+  const f = t?.felder.find((x) => x.key === spalte);
+  return !!f && f.typ !== 'referenz' && f.typ !== 'langtext';
+}
+export interface Sortierung { spalte: string; absteigend: boolean }
 
 export interface Betrag { betrag: number; waehrung: string }
 export type Wert = string | number | boolean | Betrag | string[] | null;

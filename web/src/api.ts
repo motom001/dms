@@ -1,5 +1,5 @@
 import { messung } from './messung';
-import type { Benutzer, Dokument, Mappe, MappenBezug, Mappentyp, Pruefergebnis, Rolle, Sitzung, Vertretung } from '../../shared/src/model';
+import type { Benutzer, Dokument, Mappe, MappenBezug, Mappentyp, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung } from '../../shared/src/model';
 
 export class ApiFehler extends Error {
   constructor(public status: number, message: string, public details?: unknown) { super(message); }
@@ -80,8 +80,13 @@ export const api = {
   typAendern: (id: string, t: unknown) => anfrage<Mappentyp>('PUT', `/api/typen/${id}`, t),
   typLoeschen: (id: string) => anfrage<null>('DELETE', `/api/typen/${id}`),
   /** Eine Seite einer Sicht („eingang“ oder Typ-Id), nach Titel sortiert. */
-  seite: (sicht: string, von = 0, anzahl = 100, suche = '') =>
-    anfrage<Seite>('GET', `/api/mappen?${new URLSearchParams({ sicht, von: String(von), anzahl: String(anzahl), ...(suche ? { suche } : {}) })}`),
+  seite: (sicht: string, von = 0, anzahl = 100, suche = '', sortierung?: Sortierung | null) =>
+    anfrage<Seite>('GET', `/api/mappen?${new URLSearchParams({
+      sicht, von: String(von), anzahl: String(anzahl), ...(suche ? { suche } : {}),
+      ...(sortierung ? { sortierung: sortierung.spalte, absteigend: String(sortierung.absteigend) } : {}),
+    })}`),
+  einstellungen: () => anfrage<Record<string, unknown>>('GET', '/api/konto/einstellungen'),
+  einstellungSetzen: (schluessel: string, wert: unknown) => anfrage<null>('PUT', `/api/konto/einstellungen/${encodeURIComponent(schluessel)}`, { wert }),
   sichten: () => anfrage<Zaehler>('GET', '/api/sichten'),
   belegung: (typId: string) => anfrage<Record<string, number>>('GET', `/api/typen/${typId}/belegung`),
   mappe: (id: string) => anfrage<MappeDetails>('GET', `/api/mappen/${id}`),

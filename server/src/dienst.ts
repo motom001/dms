@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
-  ersterGrund, FELDTYPEN, istLeer, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp, REGISTERARTEN, schluesselAus,
+  ersterGrund, FELDTYPEN, istLeer, istSystemspalte, sortierbar, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp, REGISTERARTEN, schluesselAus,
   standardRegister, titelAus, verweiseVon,
   type Feld, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Werte,
 } from '../../shared/src/model';
@@ -8,7 +8,7 @@ import type { Dateispeicher } from './dateispeicher';
 import { Auftraege } from './auftrag';
 import { protokoll } from './protokoll';
 import { Fachfehler } from './fehler';
-import { istUuid, type NeueMappe, type Repo } from './repo';
+import { istUuid, type NeueMappe, type Repo, type SortierungIntern } from './repo';
 
 /* ---------- Eingaben bereinigen: nur bekannte Eigenschaften übernehmen ---------- */
 
@@ -77,7 +77,23 @@ export function bereinigeTyp(e: unknown): MappentypDaten {
     titelVorlage: text(t.titelVorlage) || (text(t.titelFeld) ? `{${text(t.titelFeld)}}` : ''),
     felder,
     register: bereinigeRegister(t.register, felder),
+    // Nur bekannte Spalten, jede einmal; Spalten entfernter Felder fallen still weg.
+    trefferliste: [...new Set((Array.isArray(t.trefferliste) ? t.trefferliste : []).map(text))]
+      .filter((k) => (istSystemspalte(k) && k !== '_typ') || felder.some((f) => f.key === k)),
   };
+}
+
+const SYSTEMSORTIERUNG: Record<string, SortierungIntern['art']> = {
+  _titel: 'titel', _typ: 'typ', _erstellt: 'erstellt', _geaendert: 'geaendert', _erstelltVon: 'erstelltVon', _geaendertVon: 'geaendertVon',
+};
+/** Sortierung aus Spalte und Richtung; unbekannte oder nicht sortierbare Spalten → nach Titel. */
+export function sortierungAus(spalte: string, absteigend: boolean, typ?: Mappentyp): SortierungIntern | undefined {
+  if (!spalte) return undefined;
+  if (SYSTEMSORTIERUNG[spalte]) return { art: SYSTEMSORTIERUNG[spalte], absteigend };
+  const f = typ?.felder.find((x) => x.key === spalte);
+  if (!f || !sortierbar(spalte, typ)) return undefined;
+  const art = f.typ === 'zahl' || f.typ === 'betrag' || f.typ === 'datum' || f.typ === 'janein' ? f.typ : 'text';
+  return { art, key: f.key, absteigend };
 }
 
 /** Dateiname ohne Pfadanteile und Steuerzeichen. */
@@ -201,14 +217,15 @@ export class Dienst {
   /* ---------- Sichten: seitenweise und gezählt ---------- */
 
   /** Eine Seite einer Sicht („eingang“ oder Typ-Id), nach Titel sortiert, mit den Bezügen für die Anzeige. */
-  async seite(ich: { id: string; rolle: string }, q: { sicht?: string; von?: unknown; anzahl?: unknown; suche?: unknown }) {
+  async seite(ich: { id: string; rolle: string }, q: { sicht?: string; von?: unknown; anzahl?: unknown; suche?: unknown; sortierung?: unknown; absteigend?: unknown }) {
     const von = Math.max(0, Math.floor(Number(q.von) || 0));
     const anzahl = Math.min(500, Math.max(1, Math.floor(Number(q.anzahl) || 100)));
     const suche = text(q.suche).slice(0, 200) || undefined;
-    const r = q.sicht === 'eingang'
-      ? await this.repo.seite({ eingang: { benutzerId: ich.id, admin: ich.rolle === 'admin' }, suche, von, anzahl })
-      : await this.repo.seite({ typId: q.sicht, suche, von, anzahl });
     const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    const sortierung = sortierungAus(text(q.sortierung), q.absteigend === 'true' || q.absteigend === true, q.sicht === 'eingang' ? undefined : typen.get(String(q.sicht)));
+    const r = q.sicht === 'eingang'
+      ? await this.repo.seite({ eingang: { benutzerId: ich.id, admin: ich.rolle === 'admin' }, suche, von, anzahl, sortierung })
+      : await this.repo.seite({ typId: q.sicht, suche, von, anzahl, sortierung });
     const ziele = r.mappen.flatMap((m) => { const t = typen.get(m.typId); return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []; });
     return { gesamt: r.gesamt, von, mappen: r.mappen, bezuege: Object.fromEntries(await this.repo.bezuege(ziele)) };
   }

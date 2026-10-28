@@ -1,6 +1,12 @@
 import type { Dokument, Mappe, MappenBezug, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
 
 export interface Verweis { feldKey: string; zielId: string }
+/** Sortierung, wie sie das Repo braucht: Art der Spalte (für den richtigen Vergleich) und ggf. Feldschlüssel. */
+export interface SortierungIntern {
+  art: 'titel' | 'typ' | 'erstellt' | 'geaendert' | 'erstelltVon' | 'geaendertVon' | 'text' | 'zahl' | 'betrag' | 'datum' | 'janein';
+  key?: string;
+  absteigend: boolean;
+}
 export interface SeitenAnfrage {
   /** Mappen dieses Typs … */
   typId?: string;
@@ -8,6 +14,8 @@ export interface SeitenAnfrage {
   eingang?: { benutzerId: string; admin: boolean };
   /** Suche in Titel und Werten. */
   suche?: string;
+  /** Reihenfolge; ohne: nach Titel. */
+  sortierung?: SortierungIntern;
   von: number;
   anzahl: number;
 }

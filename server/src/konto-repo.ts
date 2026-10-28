@@ -38,6 +38,11 @@ export interface KontoRepo {
   ungeseheneVertretungen(benutzerId: string): Promise<Vertretung[]>;
   markiereGesehen(benutzerId: string): Promise<void>;
 
+  /** Persönliche Einstellungen (Sortierung, Design …). */
+  einstellungen(benutzerId: string): Promise<Record<string, unknown>>;
+  /** wert null löscht die Einstellung. */
+  setzeEinstellung(benutzerId: string, schluessel: string, wert: unknown): Promise<void>;
+
   legeLinkAn(hash: string, benutzerId: string, zweck: Zweck, ablauf: Date): Promise<void>;
   holeLink(hash: string): Promise<Link | undefined>;
   /** Markiert den Link als benutzt; false, wenn er schon benutzt war. */
@@ -51,6 +56,7 @@ export function speicherKontoRepo(): KontoRepo {
   const benutzer = new Map<string, Benutzer & { hash: string | null }>();
   const sitzungen = new Map<string, SitzungIntern & { erstellt: Date; geraet: string; ip: string }>();
   const vertretungen = new Map<string, Vertretung & { gesehen: Date | null }>();
+  const einstellungen = new Map<string, Record<string, unknown>>();
   const links = new Map<string, Link>();
   const ohneHash = ({ hash: _h, ...b }: Benutzer & { hash: string | null }): Benutzer => ({ ...b, hatPasswort: !!_h });
 
@@ -105,6 +111,12 @@ export function speicherKontoRepo(): KontoRepo {
         .map((v) => ({ id: v.id, benutzerId: v.benutzerId, adminId: v.adminId, adminName: v.adminName, beginn: v.beginn, ende: v.ende }));
     },
     async markiereGesehen(benutzerId) { for (const v of vertretungen.values()) if (v.benutzerId === benutzerId && !v.gesehen) v.gesehen = new Date(); },
+    async einstellungen(id) { return structuredClone(einstellungen.get(id) ?? {}); },
+    async setzeEinstellung(id, k, w) {
+      const e = einstellungen.get(id) ?? {};
+      if (w === null) delete e[k]; else e[k] = structuredClone(w);
+      einstellungen.set(id, e);
+    },
     async loescheSitzungenVon(id) { for (const [k, s] of sitzungen) if (s.benutzerId === id) sitzungen.delete(k); },
     async legeLinkAn(hash, benutzerId, zweck, ablauf) { links.set(hash, { benutzerId, zweck, ablauf, benutzt: null }); },
     async holeLink(hash) { return links.get(hash); },
@@ -219,6 +231,17 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
       return (await sql`SELECT * FROM vertretungen WHERE benutzer_id = ${benutzerId} AND gesehen IS NULL ORDER BY beginn`).map(alsVertretung);
     },
     async markiereGesehen(benutzerId) { await sql`UPDATE vertretungen SET gesehen = now() WHERE benutzer_id = ${benutzerId} AND gesehen IS NULL`; },
+    async einstellungen(id) {
+      if (!istUuid(id)) return {};
+      const r = await sql`SELECT schluessel, wert FROM benutzer_einstellungen WHERE benutzer_id = ${id}`;
+      return Object.fromEntries(r.map((z) => [z.schluessel as string, z.wert]));
+    },
+    async setzeEinstellung(id, k, w) {
+      if (w === null) { await sql`DELETE FROM benutzer_einstellungen WHERE benutzer_id = ${id} AND schluessel = ${k}`; return; }
+      await sql`
+        INSERT INTO benutzer_einstellungen (benutzer_id, schluessel, wert) VALUES (${id}, ${k}, ${sql.json(w as postgres.JSONValue)})
+        ON CONFLICT (benutzer_id, schluessel) DO UPDATE SET wert = EXCLUDED.wert`;
+    },
     async loescheSitzungenVon(id) { await sql`DELETE FROM sitzungen WHERE benutzer_id = ${id}`; },
 
     async legeLinkAn(hash, benutzerId, zweck, ablauf) {

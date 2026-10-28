@@ -1,5 +1,5 @@
 import type { Dokument, Mappe, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
-import type { Repo, Rueckverweis, Verweis } from './repo';
+import type { Repo, Rueckverweis, SortierungIntern, Verweis } from './repo';
 
 /** Repo im Arbeitsspeicher – für Tests und Oberflächenproben, nicht für den Betrieb. */
 export function speicherRepo(): Repo {
@@ -9,6 +9,30 @@ export function speicherRepo(): Repo {
   const dokumente = new Map<string, Dokument>();
   const jetzt = () => new Date().toISOString();
   const kopie = <T>(x: T): T => structuredClone(x);
+  /** Wie die Sortierung in PostgreSQL: leere Werte immer zuletzt. */
+  const wertFuer = (m: Mappe, so: SortierungIntern): string | number | boolean | null => {
+    const v = so.key ? m.werte[so.key] : undefined;
+    switch (so.art) {
+      case 'titel': return (m.titel ?? '').toLowerCase();
+      case 'erstellt': return m.erstellt;
+      case 'geaendert': return m.geaendert;
+      case 'erstelltVon': return m.erstelltVon;
+      case 'geaendertVon': return m.geaendertVon;
+      case 'typ': return typen.get(m.typId)?.name.toLowerCase() ?? null;
+      case 'betrag': return v && typeof v === 'object' && 'betrag' in v ? (v as { betrag: number }).betrag : null;
+      case 'zahl': case 'janein': return v == null || v === '' ? null : (v as number | boolean);
+      default: return v == null || v === '' ? null : String(v).toLowerCase();
+    }
+  };
+  const vergleiche = (a: Mappe, b: Mappe, so?: SortierungIntern) => {
+    if (!so) return 0;
+    const x = wertFuer(a, so), y = wertFuer(b, so);
+    if (x === y) return 0;
+    if (x === null) return 1;
+    if (y === null) return -1;
+    const r = x < y ? -1 : 1;
+    return so.absteigend ? -r : r;
+  };
 
   return {
     async listeTypen() { return [...typen.values()].map(kopie).sort((a, b) => a.name.localeCompare(b.name, 'de')); },
@@ -75,7 +99,7 @@ export function speicherRepo(): Repo {
         .filter((m) => !o.typId || m.typId === o.typId)
         .filter((m) => !o.eingang || (m.passt !== true && (m.erstelltVon === o.eingang.benutzerId || (o.eingang.admin && !m.erstelltVon))))
         .filter((m) => !q || (m.titel ?? '').toLowerCase().includes(q) || Object.values(m.werte).some((v) => (typeof v === 'object' ? JSON.stringify(v) : String(v)).toLowerCase().includes(q)))
-        .sort((a, b) => (a.titel ?? '').toLowerCase().localeCompare((b.titel ?? '').toLowerCase()) || a.id.localeCompare(b.id));
+        .sort((a, b) => vergleiche(a, b, o.sortierung) || (a.titel ?? '').toLowerCase().localeCompare((b.titel ?? '').toLowerCase()) || a.id.localeCompare(b.id));
       return { gesamt: alle.length, mappen: alle.slice(o.von, o.von + o.anzahl).map(kopie) };
     },
     async zaehler(benutzerId, admin) {
