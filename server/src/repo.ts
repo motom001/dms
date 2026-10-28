@@ -1,4 +1,5 @@
 import type { Dokument, Mappe, MappenBezug, Mappentyp, MappentypDaten, Systemtyp, Werte } from '../../shared/src/model';
+import type { Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 
 export interface Verweis { feldKey: string; zielId: string }
 /** Sortierung, wie sie das Repo braucht: Art der Spalte (für den richtigen Vergleich) und ggf. Feldschlüssel. */
@@ -12,6 +13,8 @@ export interface SeitenAnfrage {
   typId?: string;
   /** … oder der Eingang dieses Benutzers (nicht passende eigene Mappen; ohne Ersteller beim Admin). */
   eingang?: { benutzerId: string; admin: boolean };
+  /** … oder die Mappen einer Sicht (#38): ODER der Klauseln, Bedingungen aufgelöst. */
+  klauseln?: Klausel[];
   /** Suche in Titel und Werten. */
   suche?: string;
   /** Reihenfolge; ohne: nach Titel. */
@@ -61,6 +64,13 @@ export interface Repo {
   seite(o: SeitenAnfrage): Promise<{ gesamt: number; mappen: Mappe[] }>;
   /** Zähler für die Sichten. */
   zaehler(benutzerId: string, admin: boolean): Promise<{ typen: Map<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number }>;
+  /** Anzahl Mappen je Klauselliste (eine je Sicht), in derselben Reihenfolge. */
+  zaehleKlauseln(liste: Klausel[][]): Promise<number[]>;
+
+  listeSichten(): Promise<Sicht[]>;
+  legeSichtAn(id: string, d: SichtDaten): Promise<Sicht>;
+  aendereSicht(id: string, d: SichtDaten): Promise<Sicht>;
+  loescheSicht(id: string): Promise<void>;
   /** problem null = passt. */
   setzePassung(liste: Array<{ id: string; problem: string | null }>): Promise<void>;
   /** Ids der Mappen dieses Typs, die nicht passen. */

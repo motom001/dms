@@ -1,4 +1,5 @@
 import type { Dokument, Mappe, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
+import { inSicht, type Sicht, type SichtDaten, type Zaehlquelle } from '../../shared/src/sichten';
 import type { Repo, Rueckverweis, SortierungIntern, Verweis } from './repo';
 
 /** Repo im Arbeitsspeicher – für Tests und Oberflächenproben, nicht für den Betrieb. */
@@ -7,6 +8,14 @@ export function speicherRepo(): Repo {
   const mappen = new Map<string, Mappe>();
   const verweise = new Map<string, Verweis[]>();
   const dokumente = new Map<string, Dokument>();
+  const sichten = new Map<string, Sicht>();
+  /** Zählt wie PostgreSQL: Dokumente je Register, Rückverweise (ohne sich selbst) je Quelle. */
+  const zaehl: Zaehlquelle = {
+    dokumente: (id, register) => [...dokumente.values()].filter((d) => d.mappeId === id && d.registerKey === register).length,
+    verknuepfungen: (id, quellen) => new Set([...verweise.entries()]
+      .filter(([q, vs]) => q !== id && vs.some((v) => v.zielId === id && (!quellen.length || quellen.some((x) => x.typId === mappen.get(q)?.typId && x.feldKey === v.feldKey))))
+      .map(([q]) => q)).size,
+  };
   const jetzt = () => new Date().toISOString();
   const kopie = <T>(x: T): T => structuredClone(x);
   /** Wie die Sortierung in PostgreSQL: leere Werte immer zuletzt. */
@@ -98,6 +107,7 @@ export function speicherRepo(): Repo {
       const q = o.suche?.toLowerCase();
       const alle = [...mappen.values()]
         .filter((m) => !o.typId || m.typId === o.typId)
+        .filter((m) => !o.klauseln || inSicht(m, o.klauseln, zaehl))
         .filter((m) => !o.eingang || (m.passt !== true && (m.erstelltVon === o.eingang.benutzerId || (o.eingang.admin && !m.erstelltVon))))
         .filter((m) => !q || (m.titel ?? '').toLowerCase().includes(q) || Object.values(m.werte).some((v) => (typeof v === 'object' ? JSON.stringify(v) : String(v)).toLowerCase().includes(q)))
         .sort((a, b) => vergleiche(a, b, o.sortierung) || (a.titel ?? '').toLowerCase().localeCompare((b.titel ?? '').toLowerCase()) || a.id.localeCompare(b.id));
@@ -114,6 +124,14 @@ export function speicherRepo(): Repo {
         typen.set(m.typId, z);
       }
       return { typen, eingang };
+    },
+    async zaehleKlauseln(liste) { return liste.map((k) => [...mappen.values()].filter((m) => inSicht(m, k, zaehl)).length); },
+    async listeSichten() { return [...sichten.values()].map(kopie).sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, 'de')); },
+    async legeSichtAn(id, d: SichtDaten) { const x: Sicht = { id, ...kopie(d), erstellt: jetzt(), geaendert: jetzt() }; sichten.set(id, x); return kopie(x); },
+    async aendereSicht(id, d: SichtDaten) { const x: Sicht = { ...sichten.get(id)!, ...kopie(d), geaendert: jetzt() }; sichten.set(id, x); return kopie(x); },
+    async loescheSicht(id) {
+      sichten.delete(id);
+      for (const x of sichten.values()) if (x.elternId === id) x.elternId = null;
     },
     async setzePassung(liste) { for (const { id, problem } of liste) { const m = mappen.get(id); if (m) { m.passt = problem === null; m.problem = problem; } } },
     async unpassende(typId) { return [...mappen.values()].filter((m) => m.typId === typId && m.passt !== true).map((m) => m.id); },

@@ -11,6 +11,7 @@ Dieses Handbuch ist für alle, die das DMS **installieren, einrichten und betrei
 | DMS auf dem NAS installieren | Docker Compose | [Installation](installation.md) |
 | Neue Version einspielen, Daten sichern | NAS | [Aktualisieren und Sichern](aktualisieren.md) |
 | Festlegen, welche Mappen es gibt und was darin steht | Werkbank → Mappentypen | [Mappentypen](mappentypen.md) |
+| Festlegen, welche Sichten die Ablage anbietet | Werkbank → Sichten | [Sichten](sichten.md) |
 | Benutzer einladen, Rollen vergeben, Zugänge sperren | Werkbank → Benutzer | [Benutzer und Rollen](benutzer.md) |
 | Farben und Aussehen anpassen | Werkbank → Designs | [Designs](designs.md) |
 | Ausprobieren mit Beispieldaten | Werkbank → Demo-Daten | [Demo-Daten](demo.md) |

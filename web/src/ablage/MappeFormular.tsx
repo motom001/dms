@@ -468,7 +468,7 @@ function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze 
     if (!offen) return;
     let aktuell = true;
     const t = setTimeout(() => {
-      api.seite(ziel.id, 0, 20, eingabe.trim()).then((s) => { if (aktuell) { setTreffer(s.mappen); setGesamt(s.gesamt); } }).catch(() => aktuell && setTreffer([]));
+      api.seite(`typ:${ziel.id}`, 0, 20, eingabe.trim()).then((s) => { if (aktuell) { setTreffer(s.mappen); setGesamt(s.gesamt); } }).catch(() => aktuell && setTreffer([]));
     }, 200);
     return () => { aktuell = false; clearTimeout(t); };
   }, [offen, eingabe, ziel.id]);

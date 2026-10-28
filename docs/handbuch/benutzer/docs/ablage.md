@@ -2,9 +2,18 @@
 
 ## Sichten
 
-Links stehen die **Sichten**. Ganz oben der [Eingang](eingang.md), darunter eine Sicht je Mappentyp – zum Beispiel *Vertrag*, *Rechnung*, *Vertragspartner*. Die Zahl dahinter sagt, wie viele Mappen es von diesem Typ gibt.
+Links stehen die **Sichten**. Ganz oben der [Eingang](eingang.md), darunter die Sichten, die ein Administrator eingerichtet hat – zum Beispiel *Vertrag*, *Rechnung*, *Vertragspartner* oder *Kündigung in den nächsten 12 Monaten*. Die Zahl dahinter sagt, wie viele Mappen die Sicht gerade zeigt.
 
 Ein Klick auf eine Sicht zeigt ihre Mappen in der Liste.
+
+![Sichten als Baum: Finanzen mit Untersichten](bilder/sichten-baum.png)
+
+- **Sichten können Untersichten haben.** Ein Pfeil ▸ davor zeigt das; ein Klick darauf klappt sie auf oder zu. Dein Gerät merkt sich, was zugeklappt ist.
+- **Eine Sicht mit Untersichten zeigt alles zusammen:** *Finanzen* zeigt zum Beispiel alle offenen Rechnungen *und* die Zahlungen dieses Jahres.
+- **Manche Sichten filtern:** *Offene Rechnungen* zeigt nur Rechnungen, die noch nicht bezahlt sind. Werte wie „heute“ oder „du selbst“ rechnet das DMS bei jedem Öffnen neu – eine Sicht *Kündigung in den nächsten 12 Monaten* ist also immer aktuell.
+- **Zeigt eine Sicht mehrere Mappentypen**, sieht die Liste aus wie im Eingang: mit der Spalte *Typ* und ohne **+ Neu**. Neue Mappen legst du dann in der Sicht des einzelnen Typs an.
+
+Welche Sichten es gibt, legt ein Administrator fest. Wünschst du dir eine, sag ihm Bescheid.
 
 ## Die Liste
 

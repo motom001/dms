@@ -4,7 +4,7 @@
 
 Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsystem für Haushalte. Statt loser Dokumente in Ordnern ordnet es **Mappen**: Vertragspartner, Verträge, Rechnungen, Gegenstände – verbunden über Verweise, so dass man von jeder Mappe aus zu allem Zugehörigen findet.
 
-> **Stand: v0.9.** E-Mail-Versand und Adresse in der Werkbank, Handbücher für Benutzer und Administratoren, Anmeldung und Benutzer, Benutzer und Rollen als Mappen, Mappentypen mit Feldern und Registern, Dokumente, Mappen in drei Spalten mit Eingang, seitenweises Laden und Suche über Titel und Werte, Protokoll, Zeitmessung und Versionsübersicht. Volltextsuche in Dokumenten, Texterkennung und feinere Rechte folgen.
+> **Stand: v0.10.** Sichten als Baum mit Bedingungen, E-Mail-Versand und Adresse in der Werkbank, Handbücher für Benutzer und Administratoren, Anmeldung und Benutzer, Benutzer und Rollen als Mappen, Mappentypen mit Feldern und Registern, Dokumente, Mappen in drei Spalten mit Eingang, seitenweises Laden und Suche über Titel und Werte, Protokoll, Zeitmessung und Versionsübersicht. Volltextsuche in Dokumenten, Texterkennung und feinere Rechte folgen.
 
 ## Handbücher
 
@@ -16,8 +16,9 @@ Im DMS führt der Punkt **Hilfe** im Menü unter dem eigenen Namen dorthin. Die 
 
 ## Bereiche
 
-- **Ablage** – hier wird gearbeitet, in drei Spalten von groß nach klein: Sichten, Mappen der Sicht, die geöffnete Mappe. Die Sicht **Eingang** sammelt Mappen, die nicht (mehr) zur Definition ihres Mappentyps passen, beim Ersteller der Mappe. Rückverweise erscheinen automatisch: Die Mappe eines Vertragspartners zeigt alle Verträge und Rechnungen, die auf ihn verweisen.
+- **Ablage** – hier wird gearbeitet, in drei Spalten von groß nach klein: Sichten (als Baum, mit Bedingungen wie „Kündigung in den nächsten 12 Monaten“), Mappen der Sicht, die geöffnete Mappe. Die Sicht **Eingang** sammelt Mappen, die nicht (mehr) zur Definition ihres Mappentyps passen, beim Ersteller der Mappe. Rückverweise erscheinen automatisch: Die Mappe eines Vertragspartners zeigt alle Verträge und Rechnungen, die auf ihn verweisen.
 - **Werkbank** (Administratoren), ebenfalls dreigeteilt:
+  - *Sichten* – was die Ablage anbietet: Mappentypen, Bedingungen auf Feldwerte (auch „heute ± n“, „aktueller Benutzer“) und auf die Anzahl von Dokumenten und Verknüpfungen, angeordnet als Baum,
   - *Mappentypen* – Felder (Datentyp, Pflichtfeld, eindeutig, Längen, Wertebereiche, Auswahllisten, Referenzen), Register und Titel-Vorlage,
   - *Benutzer* – anlegen, Rolle (Administrator/Mitglied) und weitere Rollen vergeben, Einladungs- und Passwort-Links, deaktivieren (gelöscht werden nur nie angenommene Einladungen),
   - *Designs* – Grundlage (automatisch, hell, dunkel, hoher Kontrast), Primär- und Sekundärfarbe (Abstufungen werden abgeleitet), eigenes CSS; ein Design ist Standard,

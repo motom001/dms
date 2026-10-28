@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { kinderVon, mitNachkommen, type Sicht } from '../../../shared/src/sichten';
 import { darfErstellen, formatiere, GEMISCHTE_SPALTEN, istSystemspalte, sortierbar, SYSTEMSPALTEN, vorlageFelder, wirksameVorlage, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
 import { api, type Bezuege, type MappeDetails } from '../api';
 import { useDaten } from '../daten';
@@ -12,7 +13,7 @@ import { MappeAnsicht, NeueMappe } from './MappeFormular';
  * Ablage in drei Spalten, von groß nach klein:
  *   Sichten  →  Mappen der Sicht  →  eine Mappe
  *
- * /ablage/:sicht                    Sicht „eingang“ oder die Id eines Mappentyps
+ * /ablage/:sicht                    „eingang“, eine verwaltete Sicht (#38) oder die Id eines Mappentyps
  * /ablage/:sicht/:mappeId           Mappe rechts geöffnet
  * /ablage/:typId/neu?verweis=k:id   neue Mappe, optional mit vorbelegtem Verweis
  *
@@ -27,11 +28,15 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
 
   useEffect(() => { if (!sicht) geheZu('/ablage/eingang', true); }, [sicht]);
 
-  const typ = sicht && sicht !== 'eingang' ? d.typ(sicht) : undefined;
+  // Der eine Mappentyp der Sicht (für Trefferliste, Sortierung, „+ Neu“); bei mehreren Typen keiner.
+  const verwaltet = d.sicht(sicht);
+  const typ = d.typDerSicht(sicht);
   const ebene = dritt ? 'mappe' : 'liste';
 
   let rechts;
-  if (dritt === 'neu' && typ && !darfErstellen(typ)) {
+  if (dritt === 'neu' && !typ) {
+    rechts = <div className="leer"><p>Diese Sicht zeigt mehrere Mappentypen. Lege neue Mappen in der Sicht eines einzelnen Typs an.</p></div>;
+  } else if (dritt === 'neu' && typ && !darfErstellen(typ)) {
     rechts = <div className="leer"><p>Von „{typ.name}“ lassen sich in der Ablage keine neuen Mappen anlegen.{typ.system === 'benutzer' ? ' Benutzer legt ein Administrator in der Werkbank unter „Benutzer“ an.' : ''}</p></div>;
   } else if (dritt === 'neu' && typ) {
     rechts = <NeueMappe key={`${typ.id}-${suche.get('verweis') ?? ''}`} typ={typ} sicht={sicht} verweis={suche.get('verweis') ?? undefined} />;
@@ -49,14 +54,11 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           <Link to="/ablage/eingang" className={`sicht ${sicht === 'eingang' ? 'an' : ''}`}>
             <span className="nm">Eingang</span>{d.zaehler.eingang > 0 && <span className="zaehler">{zahl(d.zaehler.eingang)}</span>}
           </Link>
-          {d.typen.length > 0 && <hr />}
-          {d.typen.map((t) => (
-            <Link key={t.id} to={`/ablage/${t.id}`} className={`sicht ${sicht === t.id ? 'an' : ''}`}>
-              <span className="nm">{t.name}</span><span className="zahl">{zahl(d.anzahl(t.id))}</span>
-            </Link>
-          ))}
+          {d.sichten.length > 0 && <hr />}
+          <SichtBaum aktiv={sicht} />
         </nav>
         {!d.typen.length && <p className="leise klein">Noch keine Mappentypen. {ich.rolle === 'admin' ? <Link to="/werkbank/typen" className="verweis">Zur Werkbank</Link> : 'Ein Administrator muss sie zuerst einrichten.'}</p>}
+        {d.typen.length > 0 && !d.sichten.length && <p className="leise klein">Noch keine Sichten. {ich.rolle === 'admin' ? <Link to="/werkbank/sichten" className="verweis">Sichten einrichten</Link> : 'Ein Administrator muss sie zuerst einrichten.'}</p>}
       </aside>
 
       <section className="spalte liste" aria-label="Mappen">
@@ -64,7 +66,8 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           ? <Liste key="eingang" sicht="eingang" titel="Eingang" offen={dritt}
               beschreibung="Deine Mappen, die nicht zur aktuellen Definition ihres Mappentyps passen. Sie verschwinden von hier, sobald sie korrigiert sind."
               leerText="Nichts zu tun." />
-          : typ ? <Liste key={typ.id} sicht={typ.id} typ={typ} titel={typ.name} beschreibung={typ.beschreibung} offen={dritt} neu={darfErstellen(typ)} leerText="Noch keine Mappen in dieser Sicht." />
+          : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} titel={verwaltet?.name ?? typ!.name} beschreibung={verwaltet ? verwaltet.beschreibung : typ?.beschreibung}
+              offen={dritt} neu={!!typ && darfErstellen(typ)} leerText="Noch keine Mappen in dieser Sicht." />
           : sicht ? <div className="leer"><p>Diese Sicht gibt es nicht (mehr).</p></div> : null}
       </section>
 
@@ -137,7 +140,7 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
     return () => o.disconnect();
   }, [s.mehr, s.mappen.length, tabelle]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const gesamtSicht = p.typ ? d.anzahl(p.typ.id) : d.zaehler.eingang;
+  const gesamtSicht = p.sicht === 'eingang' ? d.zaehler.eingang : d.zaehler.sichten?.[p.sicht] ?? (p.typ ? d.anzahl(p.typ.id) : 0);
   const zeigeSuche = gesamtSicht > 5 || !!eingabe;
   const anzahlText = s.gesamt === null ? '' : suche
     ? `${zahl(s.gesamt)} Treffer`
@@ -228,7 +231,7 @@ function Tabelle(p: {
                 </th>
               );
             })}
-            {!p.typ && <th>Problem</th>}
+            {p.sicht === 'eingang' && <th>Problem</th>}
           </tr>
         </thead>
         <tbody>
@@ -241,11 +244,11 @@ function Tabelle(p: {
                   const text = zelle(k, m, typ, p.bezuege, d.person);
                   return <td key={k} className={rechts(k) ? 'rechts' : kurz(k) ? 'kurz' : ''}>{i === 0 ? <Link to={ziel}>{text || titelOder(m.titel)}</Link> : text}</td>;
                 })}
-                {!p.typ && <td className="problemzelle">{m.problem}</td>}
+                {p.sicht === 'eingang' && <td className="problemzelle">{m.problem}</td>}
               </tr>
             );
           })}
-          {p.nachladen && <tr ref={p.ende} className="nachladen"><td colSpan={p.spalten.length + (p.typ ? 0 : 1)} className="leise klein">{p.nachladen}</td></tr>}
+          {p.nachladen && <tr ref={p.ende} className="nachladen"><td colSpan={p.spalten.length + (p.sicht === 'eingang' ? 1 : 0)} className="leise klein">{p.nachladen}</td></tr>}
         </tbody>
       </table>
     </div>
@@ -275,3 +278,55 @@ export function zelle(k: string, m: Mappe, typ: Mappentyp | undefined, bezuege: 
 }
 
 const Unter = ({ text }: { text: string }) => (text ? <span className="unter">{text}</span> : null);
+
+/**
+ * Verwaltete Sichten als Baum (#38). Untersichten lassen sich zuklappen; gemerkt je Gerät
+ * und Benutzer. Die Vorfahren der geöffneten Sicht bleiben immer offen.
+ */
+function SichtBaum({ aktiv }: { aktiv?: string }) {
+  const d = useDaten();
+  const { ich } = useKonto();
+  const schluessel = `dms:sichten-zu:${ich.id}`;
+  const [zu, setZu] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(schluessel) ?? '[]') as string[]); } catch { return new Set(); }
+  });
+  const umschalten = (id: string) => {
+    const n = new Set(zu);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    setZu(n);
+    try { localStorage.setItem(schluessel, JSON.stringify([...n])); } catch { /* nur für diese Sitzung */ }
+  };
+  const vorfahren = new Set<string>();
+  for (let s = d.sicht(aktiv); s?.elternId && !vorfahren.has(s.elternId); s = d.sicht(s.elternId)) vorfahren.add(s.elternId);
+
+  const zeilen: Array<{ s: Sicht; tiefe: number; kinder: boolean; offen: boolean }> = [];
+  const gehe = (eltern: string | null, tiefe: number) => {
+    for (const s of kinderVon(d.sichten, eltern)) {
+      const kinder = kinderVon(d.sichten, s.id).length > 0;
+      const offen = kinder && (!zu.has(s.id) || vorfahren.has(s.id));
+      zeilen.push({ s, tiefe, kinder, offen });
+      if (offen) gehe(s.id, tiefe + 1);
+    }
+  };
+  gehe(null, 0);
+
+  return (
+    <>
+      {zeilen.map(({ s, tiefe, kinder, offen }) => {
+        const n = d.zaehler.sichten?.[s.id];
+        const unter = kinder ? mitNachkommen(d.sichten, s.id).length - 1 : 0;
+        return (
+          <div key={s.id} className="sichtzeile" style={{ '--tiefe': tiefe } as React.CSSProperties}>
+            {kinder
+              ? <button type="button" className="aufklapper" aria-expanded={offen} title={offen ? 'Untersichten zuklappen' : `${unter} Untersicht${unter === 1 ? '' : 'en'} aufklappen`}
+                  onClick={() => umschalten(s.id)}><span aria-hidden="true">{offen ? '▾' : '▸'}</span><span className="sr">{s.name} {offen ? 'zuklappen' : 'aufklappen'}</span></button>
+              : null}
+            <Link to={`/ablage/${s.id}`} className={`sicht ${aktiv === s.id ? 'an' : ''}`} title={s.beschreibung || undefined}>
+              <span className="nm">{s.name}</span>{n !== undefined && <span className="zahl">{zahl(n)}</span>}
+            </Link>
+          </div>
+        );
+      })}
+    </>
+  );
+}

@@ -507,4 +507,29 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const sys = (await anfrage('GET', '/api/werkbank/system')).body;
     assert.equal(sys.einstellungen.Adresse, 'http://nas:3000');
   });
+
+  it('verwaltet Sichten über HTTP; nur Administratoren ändern sie (#38)', async () => {
+    const typen = (await anfrage('GET', '/api/typen')).body;
+    const rechnung = typen.find((t: { name: string }) => t.name === 'Rechnung');
+    const alt = (await anfrage('GET', '/api/sichten/definitionen')).body;
+    assert.ok(alt.some((x: { id: string }) => x.id === rechnung.id), 'Sicht je Typ mit dessen Id');
+    const gruppe = await anfrage('POST', '/api/sichten/definitionen', { name: 'Gruppe', typen: [] });
+    assert.equal(gruppe.status, 201);
+    const offen = await anfrage('POST', '/api/sichten/definitionen', { name: 'Offen', elternId: gruppe.body.id, typen: [rechnung.id], bedingungen: [{ art: 'feld', feld: 'bezahlt', op: 'nein' }] });
+    const z = (await anfrage('GET', '/api/sichten')).body;
+    assert.equal(z.sichten[gruppe.body.id], z.sichten[offen.body.id]);
+    const seite = (await anfrage('GET', `/api/mappen?sicht=${gruppe.body.id}`)).body;
+    assert.equal(seite.gesamt, z.sichten[gruppe.body.id]);
+    assert.equal((await anfrage('POST', '/api/sichten/vorschau', { sicht: { name: 'x', typen: [rechnung.id] } })).body.anzahl, (await anfrage('GET', `/api/mappen?sicht=typ:${rechnung.id}`)).body.gesamt);
+    assert.equal((await anfrage('PUT', `/api/sichten/definitionen/${gruppe.body.id}`, { ...gruppe.body, elternId: offen.body.id })).status, 422, 'kein Kreis');
+    const login = await app.inject({ method: 'POST', url: '/api/konto/anmelden', headers: { 'x-dms': '1' }, payload: { email: 'mitglied@example.org', passwort: 'mitglied-passwort' } });
+    const mc = String(login.headers['set-cookie']).split(';')[0];
+    const alsMitglied = async (method: string, url: string, payload?: unknown) => (await app.inject({ method, url, payload, headers: { 'x-dms': '1', cookie: mc } })).statusCode;
+    assert.equal(await alsMitglied('GET', '/api/sichten/definitionen'), 200);
+    assert.equal(await alsMitglied('POST', '/api/sichten/definitionen', { name: 'Verboten', typen: [] }), 403);
+    assert.equal(await alsMitglied('DELETE', `/api/sichten/definitionen/${gruppe.body.id}`), 403);
+    assert.equal((await anfrage('DELETE', `/api/sichten/definitionen/${gruppe.body.id}`)).status, 204);
+    assert.equal((await anfrage('GET', '/api/sichten/definitionen')).body.find((x: { id: string }) => x.id === offen.body.id).elternId, null, 'Untersicht rückt hoch');
+    assert.equal((await anfrage('DELETE', `/api/sichten/definitionen/${offen.body.id}`)).status, 204);
+  });
 });

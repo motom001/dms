@@ -221,6 +221,12 @@ tbody tr:last-child > * { border-bottom: 0; }
 .sicht:hover { background: var(--flaeche); }
 .sicht.an { background: var(--akzent-zart); color: var(--akzent); font-weight: 600; }
 .sicht .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Sichten als Baum (#38): Einrückung je Ebene, Pfeil zum Auf- und Zuklappen. */
+.sichtzeile { position: relative; display: flex; align-items: center; padding-left: calc(var(--tiefe, 0) * 14px); }
+.sichtzeile .sicht { flex: 1; min-width: 0; }
+/* Der Pfeil hängt links vor dem Namen (auf der ersten Ebene im Rand), damit die Namen bündig mit „Eingang“ stehen. */
+.aufklapper { position: absolute; left: calc(var(--tiefe, 0) * 14px - 16px); width: 16px; height: 26px; padding: 0; border: 0; background: none; color: var(--leise); cursor: pointer; font: inherit; font-size: calc(11px * var(--skala, 1)); border-radius: 4px; }
+button.aufklapper:hover { background: var(--flaeche); color: var(--tinte); }
 .sicht .zahl { font-size: calc(12px * var(--skala, 1)); color: var(--leise); font-variant-numeric: tabular-nums; }
 .zaehler { font-size: calc(11.5px * var(--skala, 1)); font-weight: 700; min-width: 20px; text-align: center; padding: 1px 7px; border-radius: 999px; background: var(--warn); color: var(--flaeche); }
 .listenkopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
@@ -316,6 +322,8 @@ a.textknopf { text-decoration: none; }
   .sichtliste hr { display: none; }
   .unterstuetzen { margin-top: 8px; }
   .sicht { flex: none; border: 1px solid var(--linie); background: var(--flaeche); }
+  .sichtzeile { flex: none; padding-left: 0; }
+  .sichtzeile > .aufklapper { position: static; }
   .drei[data-ebene="liste"] { grid-template-rows: auto minmax(0, 1fr); }
   .spalte.mappe { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
   .nur-schmal { display: inline; }
@@ -488,3 +496,17 @@ th[aria-sort] .spaltenknopf .pfeil { opacity: 1; }
 .schema > summary { cursor: pointer; }
 .schemafelder { margin: 4px 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
 .antworten { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+
+/* ---------- Sichten in der Werkbank (#38, #40, #41) ---------- */
+.typwahl { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.bedingungen { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.bedingungen > li { border: 1px solid var(--linie); border-radius: var(--r); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; background: var(--flaeche); }
+.bedingungen > li.fehlerhaft { border-color: var(--schlecht); }
+.bedingungszeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.bedingungszeile select, .bedingungszeile input { width: auto; max-width: 100%; }
+.bedingungszeile > .textknopf { margin-left: auto; }
+.wertgruppe { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.wertgruppe.umbruch { flex-basis: 100%; }
+input.kurz { width: 7em; }
+.mappensuche { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.mappensuche .wahl { min-width: 12em; }

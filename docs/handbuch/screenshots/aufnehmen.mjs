@@ -106,7 +106,22 @@ async function vorbereiten() {
   await api('POST', `/api/mappen/${strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Stromvertrag 2022.pdf')}&typ=application/pdf`, beispielPdf('Stromvertrag Haus - Vertragsunterlagen'), true);
   await api('POST', `/api/mappen/${strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Preisanpassung 2026.pdf')}&typ=application/pdf`, beispielPdf('Preisanpassung 2026'), true);
 
+  // Sichten (#38, #40): eine Gruppe „Finanzen“ mit Untersichten und eine mit Bedingungen
+  const rechnungTyp = typ('Rechnung'); const zahlungTyp = typ('Zahlung'); const vertragTyp = typ('Vertrag');
+  const finanzen = await api('POST', '/api/sichten/definitionen', { name: 'Finanzen', beschreibung: 'Offene Rechnungen und Zahlungen', typen: [] });
+  await api('POST', '/api/sichten/definitionen', { name: 'Offene Rechnungen', elternId: finanzen.id, typen: [rechnungTyp.id], bedingungen: [{ art: 'feld', feld: 'bezahlt', op: 'nein' }] });
+  await api('POST', '/api/sichten/definitionen', { name: 'Zahlungen dieses Jahr', elternId: finanzen.id, typen: [zahlungTyp.id], bedingungen: [{ art: 'feld', feld: 'zahlungsdatum', op: 'imZeitraum', wert: { art: 'jahr', versatz: 0 } }] });
+  const fristen = await api('POST', '/api/sichten/definitionen', {
+    name: 'Kündigung in den nächsten 12 Monaten', beschreibung: 'Verträge, deren Kündigungsfrist bald endet', typen: [vertragTyp.id],
+    bedingungen: [{ art: 'feld', feld: 'kuendigung_bis', op: 'zwischen', wert: { art: 'heute' }, bis: { art: 'heute', versatz: 12, einheit: 'monate' } }],
+  });
+  await api('POST', '/api/sichten/definitionen', {
+    name: 'Rechnungen ohne Beleg', typen: [rechnungTyp.id],
+    bedingungen: [{ art: 'dokumente', register: 'dokumente', vergleich: 'gleich', anzahl: 0 }],
+  });
+
   return {
+    finanzen, fristen,
     admin, adminCookie,
     typ: (name) => typen.find((t) => t.name === name),
     benutzerTyp, rolleTyp,
@@ -191,12 +206,27 @@ async function main() {
   await s.evaluate(([key]) => localStorage.removeItem(key), [breitSchluessel]);
 
   // Eingang: eine Pflichtfeld-Änderung macht Mappen unpassend
-  const kundennr = { ...partner, felder: partner.felder.map((f) => (f.key === 'kundennummer' ? { ...f, pflicht: true } : f)) };
+  // Ein neues Pflichtfeld trifft sicher alle Vertragspartner (Demo-Daten sind zufällig).
+  const stammdaten = partner.register.find((r) => r.art === 'felder');
+  const kundennr = {
+    ...partner,
+    felder: [...partner.felder, { key: 'steuernummer', label: 'Steuernummer', typ: 'text', pflicht: true }],
+    register: partner.register.map((r) => (r === stammdaten ? { ...r, felder: [...(r.felder ?? []), 'steuernummer'] } : r)),
+  };
   await api('PUT', `/api/typen/${partner.id}`, kundennr);
   await geheZu(s, '/ablage/eingang');
   await s.locator('.mappenliste .eintrag, .trefferliste tbody tr').first().click();
   await bild(s, 'eingang');
   await api('PUT', `/api/typen/${partner.id}`, partner);
+
+  // Sichten als Baum in der Ablage und in der Werkbank (#38)
+  await geheZu(s, `/ablage/${d.finanzen.id}`);
+  await s.locator('.spalte.liste .eintrag, .spalte.liste tbody tr').first().waitFor();
+  await bild(s, 'sichten-baum');
+  await geheZu(s, `/werkbank/sichten/${d.fristen.id}`);
+  await s.getByRole('heading', { name: 'Bedingungen' }).waitFor();
+  await s.getByText('Diese Sicht zeigt zurzeit').waitFor();
+  await bild(s, 'werkbank-sichten');
 
   // Benutzer und Rollen in der Ablage
   await geheZu(s, `/ablage/${d.rolleTyp.id}`);

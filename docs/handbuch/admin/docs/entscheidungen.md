@@ -107,6 +107,16 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Passwort vorerst im Klartext** in der Datenbank, nie an die Oberfläche zurück; leeres Feld behält es. Verschlüsselung ist offen (#39).
 - **Testen mit ungespeicherten Werten:** Prüfen und Testmail nehmen die Werte aus dem Formular, damit man vor dem Speichern sieht, ob es geht.
 
+## Sichten (#38, #40, #41)
+
+- **Sicht = gespeicherte Abfrage**: Mappentypen und Bedingungen, die alle zusammen gelten (UND). Bedienbare Filter über der Liste sind bewusst ein späterer Schritt.
+- **Baum über `eltern_id`**; eine Sicht zeigt ihre eigenen Treffer und die aller Nachkommen. Technisch ist jede Sicht mit eigenen Typen eine **Klausel** (Typen + Filter); eine Sicht samt Untersichten ist das ODER ihrer Klauseln – so gibt es keine Doppelten, und Zähler, Suche, Sortierung und seitenweises Laden funktionieren unverändert auf dem Server.
+- **Dynamische Werte werden je Abfrage aufgelöst** (heute in Europe/Berlin, aktueller Benutzer, seine Rollen aus der Benutzer-Mappe). Das Repo bekommt nur feste Werte (`Filter`); `shared/src/sichten.ts` übersetzt Bedingungen → Filter, `repo-pg.ts` Filter → SQL. Dieselben Testfälle laufen im Arbeitsspeicher und gegen PostgreSQL.
+- **Ungültige Bedingungen werden ignoriert, nicht ausgewertet**: Ein entferntes Feld leert die Sicht nicht, die Werkbank markiert es.
+- **Umzug ohne Bruch**: Die bisherigen Sichten je Mappentyp wurden zu verwalteten Sichten mit der Id des Typs (Migration 013). Lesezeichen `/ablage/<id>` und gemerkte Sortierungen `sortierung:<id>` bleiben gültig. Eine Typ-Id ohne Sicht zeigt weiter alle Mappen des Typs, damit Links auf Mappen nie ins Leere gehen.
+- **`typ:<id>`** liefert alle Mappen eines Typs ohne Bedingungen – für die Auswahl von Verweisen, die Titel-Vorschau und die API. Sonst würde eine Sicht mit Bedingungen, die zufällig die Id des Typs trägt, die Auswahl einschränken.
+- **Benutzer und Rolle** bekommen bei neuen Installationen ihre Sichten am Ende der ersten Ebene.
+
 ## Bewusst noch nicht drin
 
 Texterkennung (OCR), Suche, Papierkorb, Rechte pro Mappe, Fristen, Verschlüsselung, Backup-Funktion in der Anwendung, Zwei-Faktor-Anmeldung.
