@@ -37,12 +37,13 @@ Nach Verweisen und langen Texten lässt sich nicht sortieren; diese Spalten habe
 
 Sobald eine Sicht mehr als fünf Mappen hat, erscheint über der Liste ein Suchfeld. Die Suche findet Mappen, deren **Titel oder Angaben** den eingegebenen Text enthalten – Groß- und Kleinschreibung spielt keine Rolle.
 
-![Suche in den Rechnungen](bilder/suche.png)
+![Suche in den Verträgen](bilder/suche.png)
 
 Über der Liste steht, wie viele Treffer es gibt. Ist das Suchfeld leer, siehst du wieder alle Mappen.
 
 !!! note "Was die Suche (noch) nicht kann"
-    Gesucht wird in den Angaben der Mappen, nicht im Text der hochgeladenen Dokumente. Eine Volltextsuche in Dokumenten ist geplant.
+    - Gesucht wird in den Angaben der Mappen, nicht im Text der hochgeladenen Dokumente. Eine Volltextsuche in Dokumenten ist geplant.
+    - Verweise werden nicht nach dem Namen der anderen Mappe durchsucht: Die Rechnungen der Stadtwerke findest du nicht, indem du in den Rechnungen „Stadtwerke“ suchst. Öffne stattdessen die Stadtwerke – ihr Register *Rechnungen* zeigt alle.
 
 ## Eine Mappe öffnen
 

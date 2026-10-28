@@ -122,7 +122,8 @@ async function vorbereiten() {
 async function main() {
   await mkdir(ZIEL, { recursive: true });
   const d = await vorbereiten();
-  const browser = await chromium.launch();
+  // Deutsche Oberfläche auch für Datumsfelder (Chromium richtet sich dafür nach --lang).
+  const browser = await chromium.launch({ args: ['--lang=de-DE'] });
   const kontext = async (mitCookie = true, breite = 1440, hoehe = 860) => {
     const k = await browser.newContext({ viewport: { width: breite, height: hoehe }, colorScheme: 'light', locale: 'de-DE', timezoneId: 'Europe/Berlin', deviceScaleFactor: 1 });
     if (mitCookie) {
@@ -176,15 +177,15 @@ async function main() {
   await bild(s, 'mappe-neu');
 
   // Suche in einer Liste
-  await geheZu(s, `/ablage/${rechnung.id}`);
-  await s.getByPlaceholder('Suchen in Titel und Werten …').fill('Stadtwerke');
+  await geheZu(s, `/ablage/${vertrag.id}`);
+  await s.getByPlaceholder('Suchen in Titel und Werten …').fill('Haus');
   await s.waitForTimeout(600);
   await bild(s, 'suche');
 
   // Breite Liste als Tabelle: Liste breit ziehen (gemerkt je Gerät), danach zurücksetzen
   const breitSchluessel = `dms:bereiche:ablage:${d.admin.id}`;
-  await s.evaluate(([key]) => localStorage.setItem(key, JSON.stringify({ l: 220, m: 1000 })), [breitSchluessel]);
-  await geheZu(s, `/ablage/${rechnung.id}/${d.rechnung.id}`);
+  await s.evaluate(([key]) => localStorage.setItem(key, JSON.stringify({ l: 220, m: 900, rechtsZu: true })), [breitSchluessel]);
+  await geheZu(s, `/ablage/${rechnung.id}`);
   await s.locator('.trefferliste table').waitFor();
   await bild(s, 'tabelle');
   await s.evaluate(([key]) => localStorage.removeItem(key), [breitSchluessel]);
