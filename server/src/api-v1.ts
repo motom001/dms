@@ -37,6 +37,8 @@ export const V1_TABELLE: V1[] = [
   { methode: 'GET', pfad: '/ich', gruppe: 'Konto', zusammenfassung: 'Wer bin ich?', beschreibung: 'Benutzer und Rechte des verwendeten Schlüssels.', antwort: 'Ich',
     handler: async (a) => ({ body: { benutzer: a.benutzer, schluessel: a.apiSchluessel ? { name: a.apiSchluessel.name, recht: a.apiSchluessel.recht, passwoerter: a.apiSchluessel.passwoerter, ablauf: a.apiSchluessel.ablauf } : null } }) },
 
+  { methode: 'GET', pfad: '/konto/abwesenheit', gruppe: 'Konto', zusammenfassung: 'Eigene Abwesenheit', beschreibung: 'Abwesenheit mit Vertreter und Anzahl eigener offener Aufgaben.', intern: { methode: 'GET', pfad: '/api/konto/abwesenheit' }, antwort: 'AbwesenheitStand' },
+  { methode: 'PUT', pfad: '/konto/abwesenheit', gruppe: 'Konto', zusammenfassung: 'Eigene Abwesenheit setzen', beschreibung: 'Solange sie wirkt (an, und heute im Zeitraum von–bis, beides optional), gehen neue Aufgaben an den Vertreter. Vertreter ist Pflicht, sobald an=true.', intern: { methode: 'PUT', pfad: '/api/konto/abwesenheit' }, body: 'Abwesenheit', antwort: 'Benutzer' },
   { methode: 'GET', pfad: '/typen', gruppe: 'Ablage', zusammenfassung: 'Alle Mappentypen', beschreibung: 'Felder, Register, Titel-Vorlage und Trefferliste je Typ. Feldschlüssel sind die Namen in `werte` einer Mappe.', intern: { methode: 'GET', pfad: '/api/typen' }, antwort: 'MappentypListe' },
   { methode: 'GET', pfad: '/sichten', gruppe: 'Ablage', zusammenfassung: 'Anzahl Mappen je Typ, je Sicht und im Eingang', intern: { methode: 'GET', pfad: '/api/sichten' }, antwort: 'Zaehler' },
   { methode: 'GET', pfad: '/sichten/definitionen', gruppe: 'Ablage', zusammenfassung: 'Alle Sichten', beschreibung: 'Sichten mit Elternsicht, Reihenfolge, Mappentypen und Bedingungen. Die Mappen einer Sicht liefert GET /mappen?sicht=<id>.', intern: { methode: 'GET', pfad: '/api/sichten/definitionen' }, antwort: 'SichtListe' },
@@ -214,7 +216,7 @@ const SCHEMAS: Record<string, Schema> = {
   Aufgabe: {
     type: 'object',
     properties: {
-      id: uuid, mappeId: uuid, empfaengerId: { ...uuid, nullable: true, description: 'null = Administratoren' }, art: { type: 'string', enum: ['passung', 'erwaehnung', 'manuell'] },
+      id: uuid, mappeId: uuid, empfaengerId: { ...uuid, nullable: true, description: 'null = Administratoren' }, art: { type: 'string', enum: ['passung', 'erwaehnung', 'manuell', 'vertretung'] },
       text: { type: 'string' }, feldKey: { type: 'string', nullable: true }, erstellt: zeit, erstelltVon: { ...uuid, nullable: true },
       erledigt: { ...zeit, nullable: true }, erledigtVon: { ...uuid, nullable: true }, mappeTitel: { type: 'string' }, typId: uuid,
     },
@@ -251,6 +253,8 @@ const SCHEMAS: Record<string, Schema> = {
   BenutzerAenderung: { type: 'object', properties: { name: { type: 'string' }, rolle: { type: 'string', enum: ['admin', 'mitglied'] }, aktiv: { type: 'boolean' }, rollen: weitereRollen } },
   RollenListe: { type: 'array', items: { type: 'object', properties: { id: uuid, name: { type: 'string' }, system: { type: 'boolean', description: 'Administrator oder Mitglied' } } } },
   LinkErgebnis: { type: 'object', properties: { benutzer: ref('Benutzer'), mailVerschickt: { type: 'boolean' }, link: { type: 'string', description: 'Nur ohne E-Mail-Versand' } } },
+  Abwesenheit: { type: 'object', required: ['an'], properties: { an: { type: 'boolean' }, von: { type: 'string', format: 'date', nullable: true }, bis: { type: 'string', format: 'date', nullable: true }, vertreterId: { ...uuid, nullable: true } } },
+  AbwesenheitStand: { type: 'object', properties: { abwesenheit: { ...ref('Abwesenheit'), nullable: true }, offeneAufgaben: { type: 'integer' } } },
   Ich: { type: 'object', properties: { benutzer: ref('Benutzer'), schluessel: { type: 'object', nullable: true, properties: { name: { type: 'string' }, recht: { type: 'string', enum: ['lesen', 'schreiben'] }, passwoerter: { type: 'boolean', description: 'Recht „Passwörter lesen“' }, ablauf: { ...zeit, nullable: true } } } } },
 };
 

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type postgres from 'postgres';
-import type { Benutzer, Rolle, Sitzung, Vertretung } from '../../shared/src/model';
+import { KEINE_ABWESENHEIT, type Abwesenheit, type Benutzer, type Rolle, type Sitzung, type Vertretung } from '../../shared/src/model';
 import { istUuid } from './repo';
 
 export type Zweck = 'einladung' | 'zuruecksetzen';
@@ -17,6 +17,8 @@ export interface KontoRepo {
   holeHash(email: string): Promise<{ benutzer: Benutzer; hash: string | null } | undefined>;
   legeBenutzerAn(b: NeuerBenutzer): Promise<Benutzer>;
   aendereBenutzer(id: string, d: Partial<Pick<Benutzer, 'name' | 'rolle' | 'aktiv' | 'email' | 'entwicklermodus'>>): Promise<Benutzer>;
+  /** Abwesenheit mit Vertreter setzen (#78). */
+  setzeAbwesenheit(id: string, a: Abwesenheit): Promise<Benutzer>;
   setzeHash(id: string, hash: string): Promise<void>;
   notiereAnmeldung(id: string): Promise<void>;
   loescheBenutzer(id: string): Promise<void>;
@@ -76,11 +78,16 @@ export function speicherKontoRepo(): KontoRepo {
     },
     async legeBenutzerAn(n) {
       if ([...benutzer.values()].some((x) => x.email.toLowerCase() === n.email.toLowerCase())) throw Object.assign(new Error('doppelt'), { code: '23505' });
-      const b = { id: n.id, email: n.email, name: n.name, rolle: n.rolle, aktiv: true, hatPasswort: !!n.passwortHash, erstellt: new Date().toISOString(), letzteAnmeldung: null, entwicklermodus: false, hash: n.passwortHash };
+      const b = { id: n.id, email: n.email, name: n.name, rolle: n.rolle, aktiv: true, hatPasswort: !!n.passwortHash, erstellt: new Date().toISOString(), letzteAnmeldung: null, entwicklermodus: false, hash: n.passwortHash, abwesenheit: { ...KEINE_ABWESENHEIT }, deaktiviert: null };
       benutzer.set(n.id, b);
       return ohneHash(b);
     },
-    async aendereBenutzer(id, d) { const b = { ...benutzer.get(id)!, ...d }; benutzer.set(id, b); return ohneHash(b); },
+    async aendereBenutzer(id, d) {
+      const alt = benutzer.get(id)!;
+      const deaktiviert = d.aktiv === undefined ? alt.deaktiviert ?? null : d.aktiv ? null : alt.aktiv ? new Date().toISOString() : alt.deaktiviert ?? null;
+      const b = { ...alt, ...d, deaktiviert }; benutzer.set(id, b); return ohneHash(b);
+    },
+    async setzeAbwesenheit(id, a) { const b = { ...benutzer.get(id)!, abwesenheit: { ...a } }; benutzer.set(id, b); return ohneHash(b); },
     async setzeHash(id, hash) { benutzer.get(id)!.hash = hash; },
     async notiereAnmeldung(id) { benutzer.get(id)!.letzteAnmeldung = new Date().toISOString(); },
     async loescheBenutzer(id) {
@@ -139,7 +146,15 @@ const alsBenutzer = (r: Zeile): Benutzer => ({
   erstellt: iso(r.erstellt)!,
   letzteAnmeldung: iso(r.letzte_anmeldung),
   entwicklermodus: !!r.entwicklermodus,
+  abwesenheit: { an: !!r.abwesend, von: tag(r.abwesend_von), bis: tag(r.abwesend_bis), vertreterId: (r.vertreter_id as string | null) ?? null },
+  deaktiviert: iso(r.deaktiviert),
 });
+/** date-Spalte als JJJJ-MM-TT (ohne Zeitzonenverschiebung). */
+const tag = (v: unknown): string | null => {
+  if (v == null) return null;
+  if (v instanceof Date) return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`;
+  return String(v).slice(0, 10);
+};
 
 const alsVertretung = (r: Zeile): Vertretung => ({
   id: r.id as string, benutzerId: r.benutzer_id as string, adminId: (r.admin_id as string | null) ?? null,
@@ -181,7 +196,17 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
           email = coalesce(${d.email ?? null}, email),
           rolle = coalesce(${d.rolle ?? null}, rolle),
           aktiv = coalesce(${d.aktiv ?? null}::boolean, aktiv),
-          entwicklermodus = coalesce(${d.entwicklermodus ?? null}::boolean, entwicklermodus)
+          entwicklermodus = coalesce(${d.entwicklermodus ?? null}::boolean, entwicklermodus),
+          deaktiviert = CASE WHEN ${d.aktiv ?? null}::boolean IS NULL THEN deaktiviert
+            WHEN ${d.aktiv ?? null}::boolean THEN NULL WHEN aktiv THEN now() ELSE deaktiviert END
+        WHERE id = ${id} AND haushalt_id = ${haushaltId}
+        RETURNING *`;
+      return alsBenutzer(r);
+    },
+    async setzeAbwesenheit(id, a) {
+      const [r] = await sql`
+        UPDATE benutzer SET abwesend = ${a.an}, abwesend_von = ${a.von}::date, abwesend_bis = ${a.bis}::date,
+          vertreter_id = ${istUuid(a.vertreterId) ? a.vertreterId : null}::uuid
         WHERE id = ${id} AND haushalt_id = ${haushaltId}
         RETURNING *`;
       return alsBenutzer(r);

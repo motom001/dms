@@ -204,6 +204,25 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
 
+    /* ---------- Abwesenheit mit Vertreter (#78) ---------- */
+    { methode: 'GET', pfad: '/api/konto/abwesenheit', zugang: 'angemeldet', handler: async (a) => {
+      const x = (await konten.listeBenutzer()).find((y) => y.id === ich(a).id);
+      const offen = (await dienst.meineAufgaben({ id: ich(a).id, rolle: 'mitglied' })).length;
+      return ok({ abwesenheit: x?.abwesenheit ?? null, offeneAufgaben: offen });
+    } },
+    { methode: 'PUT', pfad: '/api/konto/abwesenheit', zugang: 'angemeldet', handler: async (a) => {
+      const r = await konten.setzeAbwesenheit(ich(a), ich(a).id, b(a));
+      L.konto.info(r.abwesenheit?.an ? 'Abwesenheit eingetragen' : 'Abwesenheit ausgeschaltet', { von: r.abwesenheit?.von ?? null, bis: r.abwesenheit?.bis ?? null });
+      return ok(r);
+    } },
+    { methode: 'POST', pfad: '/api/konto/abwesenheit/aufgaben-uebergeben', zugang: 'angemeldet', handler: async (a) => ok(await konten.aufgabenAnVertreter(ich(a), ich(a).id)) },
+    { methode: 'PUT', pfad: '/api/benutzer/:id/abwesenheit', zugang: 'admin', handler: async (a) => {
+      const r = await konten.setzeAbwesenheit(ich(a), a.params.id, b(a));
+      L.konto.info('Abwesenheit eines Benutzers geändert', { email: r.email, an: !!r.abwesenheit?.an, von: r.abwesenheit?.von ?? null, bis: r.abwesenheit?.bis ?? null });
+      return ok(await mitRollen(r));
+    } },
+    { methode: 'POST', pfad: '/api/benutzer/:id/aufgaben-uebergeben', zugang: 'admin', handler: async (a) => ok(await konten.aufgabenAnVertreter(ich(a), a.params.id)) },
+
     { methode: 'GET', pfad: '/api/konto/einstellungen', zugang: 'angemeldet', handler: async (a) => ok(await konten.einstellungen(ich(a))) },
     { methode: 'PUT', pfad: '/api/konto/einstellungen/:schluessel', zugang: 'angemeldet', handler: async (a) => {
       let k = a.params.schluessel;
@@ -216,7 +235,10 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/personen', zugang: 'angemeldet', handler: async () => ok(await konten.personen()) },
     { methode: 'GET', pfad: '/api/benutzer', zugang: 'admin', handler: async () => {
       const rollen = await dienst.weitereRollen();
-      return ok((await konten.listeBenutzer()).map((x) => ({ ...x, rollen: rollen.get(x.id) ?? [] })));
+      // Offene Aufgaben je Benutzer (#77): Deaktivieren geht erst ohne.
+      const offen = new Map<string, number>();
+      for (const x of await dienst.alleAufgaben()) if (x.empfaengerId) offen.set(x.empfaengerId, (offen.get(x.empfaengerId) ?? 0) + 1);
+      return ok((await konten.listeBenutzer()).map((x) => ({ ...x, rollen: rollen.get(x.id) ?? [], offeneAufgaben: offen.get(x.id) ?? 0 })));
     } },
     { methode: 'POST', pfad: '/api/benutzer', zugang: 'admin', handler: async (a) => {
       if (b(a).rollen !== undefined) await dienst.pruefeRollen(b(a).rollen);

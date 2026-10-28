@@ -1,4 +1,5 @@
-import { ZEITZONE, type Aufgabe, type Benutzer } from '../../shared/src/model';
+import { abwesenheitWirkt, ZEITZONE, type Aufgabe, type Benutzer } from '../../shared/src/model';
+import { heuteIn } from '../../shared/src/sichten';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
 import type { Mailer } from './mail';
@@ -66,6 +67,8 @@ export class Aufgabenmail {
     let n = 0;
     for (const b of await this.quelle.benutzer()) {
       if (!b.aktiv || !b.email) continue;
+      // Abwesende bekommen keine Zusammenfassung (#78); ihr Vertreter sieht die weitergegebenen Aufgaben in seiner.
+      if (abwesenheitWirkt(b.abwesenheit, heuteIn())) continue;
       if ((await this.quelle.einstellungenVon(b)).aufgaben_mail === false) continue;
       const liste = await this.quelle.aufgabenVon(b);
       if (!liste.length) continue;

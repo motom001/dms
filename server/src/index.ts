@@ -108,6 +108,10 @@ if (geprueft) log.info(`Mappen von ${geprueft} Mappentypen gegen ihre Definition
 const papierkorb = () => dienst.raeumePapierkorbAuf().catch((e) => log.error('Papierkorb aufräumen fehlgeschlagen', { fehler: (e as Error).message }));
 await papierkorb();
 setInterval(papierkorb, 60 * 60 * 1000).unref();
+// Abwesenheit (#78): Abgelaufenes beenden, „abwesend“ an den Benutzer-Mappen nachziehen.
+const abwesenheiten = () => konten.abwesenheitenPruefen().catch((e) => log.error('Abwesenheiten prüfen fehlgeschlagen', { fehler: (e as Error).message }));
+await abwesenheiten();
+setInterval(abwesenheiten, 60 * 60 * 1000).unref();
 setInterval(() => void aufgabenmail.pruefe().catch((e) => log.error('Aufgaben-Mail fehlgeschlagen', { fehler: (e as Error).message })), 5 * 60 * 1000).unref();
 if (await konten.einrichtungNoetig()) log.warn(`Noch kein Benutzer vorhanden: Der erste Aufruf des DMS im Browser (Port ${cfg.port}) legt den Administrator an.`);
 
