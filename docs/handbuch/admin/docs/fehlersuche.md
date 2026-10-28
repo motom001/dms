@@ -4,7 +4,7 @@ Alles dazu steht in der Werkbank unter **Wartung und Fehlersuche**: Protokoll, F
 
 ## Fehlermeldungen von Benutzern
 
-Benutzer melden Fehler über **Fehler melden** in ihrem Menü – mit eigener Beschreibung, bis zu zwei Screenshots und technischen Angaben (Version, Browser, Bildschirmgröße, Sprache, Zeitzone, zuletzt besuchte Seiten, die letzten Fehler im Browser und fehlgeschlagene Anfragen). Passwörter, Inhalte von Mappen und Cookies gehen nicht mit.
+Benutzer melden Fehler über **Fehler melden** in ihrem Menü – mit eigener Beschreibung, bis zu zwei Screenshots und technischen Angaben (Version, Browser, Bildschirmgröße, Sprache, Zeitzone, die letzten 25 besuchten Seiten, die letzten 10 Fehler im Browser und fehlgeschlagenen Anfragen). Passwörter, Inhalte von Mappen und Cookies gehen nicht mit.
 
 ![Werkbank → Fehlermeldungen](bilder/werkbank-fehlermeldung.png)
 
