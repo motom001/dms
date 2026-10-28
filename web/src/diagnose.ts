@@ -4,11 +4,13 @@
  */
 export interface Ereignis { zeit: string; art: 'fehler' | 'anfrage' | 'seite'; text: string }
 
+/** Höchstens so viele Fehler und Anfragen; besuchte Seiten mehr, damit der Weg zum Fehler sichtbar bleibt (#93). */
 const MAX = 10;
+const MAX_SEITEN = 25;
 const fehler: Ereignis[] = [];
 const anfragen: Ereignis[] = [];
 const seiten: Ereignis[] = [];
-const merke = (liste: Ereignis[], e: Omit<Ereignis, 'zeit'>) => { liste.push({ zeit: new Date().toISOString(), ...e }); if (liste.length > MAX) liste.shift(); };
+const merke = (liste: Ereignis[], e: Omit<Ereignis, 'zeit'>, max = MAX) => { liste.push({ zeit: new Date().toISOString(), ...e }); if (liste.length > max) liste.shift(); };
 
 let aktiv = false;
 export function starteSammler() {
@@ -16,7 +18,7 @@ export function starteSammler() {
   aktiv = true;
   addEventListener('error', (e) => merke(fehler, { art: 'fehler', text: `${e.message}${e.filename ? ` (${e.filename.split('/').pop()}:${e.lineno})` : ''}`.slice(0, 500) }));
   addEventListener('unhandledrejection', (e) => merke(fehler, { art: 'fehler', text: String((e.reason as Error)?.message ?? e.reason).slice(0, 500) }));
-  const seite = () => { if (seiten[seiten.length - 1]?.text !== location.pathname) merke(seiten, { art: 'seite', text: location.pathname }); };
+  const seite = () => { if (seiten[seiten.length - 1]?.text !== location.pathname) merke(seiten, { art: 'seite', text: location.pathname }, MAX_SEITEN); };
   addEventListener('popstate', seite);
   seite();
 }
