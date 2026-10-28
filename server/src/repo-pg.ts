@@ -25,6 +25,7 @@ const alsMappe = (r: Zeile): Mappe => ({
   geaendert: iso(r.geaendert),
   geaendertVon: (r.geaendert_von as string | null) ?? null,
   demo: !!r.demo,
+  titel: (r.titel as string | null) ?? undefined,
 });
 const alsDokument = (r: Zeile): Dokument => ({
   id: r.id as string,
@@ -124,6 +125,39 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     },
     async loescheMappe(id) {
       await sql`DELETE FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+    },
+
+    async holeMappen(ids) {
+      const gueltig = [...new Set(ids.filter(istUuid))];
+      if (!gueltig.length) return [];
+      return (await sql`SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[])`).map(alsMappe);
+    },
+    async titelVon(ids) {
+      const r = new Map<string, string>();
+      const gueltig = [...new Set(ids.filter(istUuid))];
+      if (!gueltig.length) return r;
+      const zeilen = await sql`SELECT id, titel FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[])`;
+      for (const z of zeilen) r.set(z.id as string, (z.titel as string | null) ?? '');
+      return r;
+    },
+    async setzeTitel(liste) {
+      // In Paketen, damit auch zehntausende Mappen nicht eine riesige Anweisung ergeben.
+      for (let i = 0; i < liste.length; i += 1000) {
+        const teil = liste.slice(i, i + 1000);
+        await sql`
+          UPDATE mappen m SET titel = n.titel
+          FROM unnest(${teil.map((x) => x.id)}::uuid[], ${teil.map((x) => x.titel)}::text[]) AS n(id, titel)
+          WHERE m.id = n.id AND m.haushalt_id = ${haushaltId}`;
+      }
+    },
+    async quellenVon(zielIds) {
+      const gueltig = [...new Set(zielIds.filter(istUuid))];
+      if (!gueltig.length) return [];
+      const r = await sql`SELECT DISTINCT quelle_id FROM verweise WHERE haushalt_id = ${haushaltId} AND ziel_id = ANY(${gueltig}::uuid[])`;
+      return r.map((z) => z.quelle_id as string);
+    },
+    async ohneTitel() {
+      return (await sql`SELECT id FROM mappen WHERE haushalt_id = ${haushaltId} AND titel IS NULL`).map((z) => z.id as string);
     },
 
     async typenVon(ids) {

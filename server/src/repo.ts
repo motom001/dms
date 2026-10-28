@@ -22,6 +22,16 @@ export interface Repo {
   aendereMappe(id: string, werte: Werte, verweise: Verweis[], benutzerId: string | null): Promise<Mappe>;
   loescheMappe(id: string): Promise<void>;
 
+  /** Mehrere Mappen auf einmal (unbekannte Ids fehlen im Ergebnis). */
+  holeMappen(ids: string[]): Promise<Mappe[]>;
+  /** Gespeicherte Titel (leer, wenn noch nicht berechnet). */
+  titelVon(ids: string[]): Promise<Map<string, string>>;
+  setzeTitel(liste: Array<{ id: string; titel: string }>): Promise<void>;
+  /** Ids der Mappen, die auf eine der angegebenen verweisen. */
+  quellenVon(zielIds: string[]): Promise<string[]>;
+  /** Ids der Mappen, deren Titel noch nie berechnet wurde. */
+  ohneTitel(): Promise<string[]>;
+
   /** Typ-Id je existierender Mappe dieses Haushalts. */
   typenVon(ids: string[]): Promise<Map<string, string>>;
   /** Eine andere Mappe desselben Typs mit gleichem Wert (Groß-/Kleinschreibung egal). */

@@ -157,7 +157,10 @@ export class Dienst {
       const name = alt.register.find((r) => r.key === key)?.name ?? key;
       throw new Fachfehler(409, `Im Register „${name}“ liegen noch ${n} Dokument${n === 1 ? '' : 'e'}. Entferne oder verschiebe sie zuerst.`);
     }
-    return this.repo.aendereTyp(id, d);
+    const typ = await this.repo.aendereTyp(id, d);
+    // Vorlage oder Felder können sich geändert haben: Titel aller Mappen dieses Typs neu berechnen.
+    await this.aktualisiereTitel((await this.repo.listeMappen(id)).map((m) => m.id));
+    return typ;
   }
 
   async loescheTyp(id: string): Promise<void> {
@@ -182,7 +185,45 @@ export class Dienst {
   }
 
   private async titel(m: Mappe): Promise<string> {
-    return titelAus(await this.repo.holeTyp(m.typId), m.werte) || 'Ohne Titel';
+    return m.titel || titelAus(await this.repo.holeTyp(m.typId), m.werte, undefined, m) || 'Ohne Titel';
+  }
+
+  /* ---------- Titel ---------- */
+
+  /**
+   * Berechnet die gespeicherten Titel der angegebenen Mappen neu. Ändert sich ein Titel,
+   * werden die Mappen nachgezogen, die auf sie verweisen (deren Titel kann ihn enthalten).
+   * Bei Verweisen im Kreis endet das nach einigen Runden.
+   */
+  async aktualisiereTitel(ids: string[]): Promise<Map<string, string>> {
+    const neu = new Map<string, string>();
+    if (!ids.length) return neu;
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    let offen = [...new Set(ids)];
+    for (let runde = 0; offen.length && runde < 6; runde++) {
+      const geaendert: Array<{ id: string; titel: string }> = [];
+      for (let i = 0; i < offen.length; i += 2000) {
+        const mappen = await this.repo.holeMappen(offen.slice(i, i + 2000));
+        const ziele = mappen.flatMap((m) => { const t = typen.get(m.typId); return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []; });
+        const gespeichert = await this.repo.titelVon(ziele.filter((z) => !neu.has(z)));
+        const titelVon = (z: string) => neu.get(z) || gespeichert.get(z) || 'Ohne Titel';
+        for (const m of mappen) {
+          const t = titelAus(typen.get(m.typId), m.werte, titelVon, m);
+          neu.set(m.id, t);
+          if (t !== m.titel) geaendert.push({ id: m.id, titel: t });
+        }
+      }
+      await this.repo.setzeTitel(geaendert);
+      offen = geaendert.length ? await this.repo.quellenVon(geaendert.map((g) => g.id)) : [];
+    }
+    return neu;
+  }
+
+  /** Beim Start: Titel berechnen, die noch fehlen (z. B. nach dem Update auf eine Version mit gespeicherten Titeln). */
+  async titelNachziehen(): Promise<number> {
+    const ids = await this.repo.ohneTitel();
+    await this.aktualisiereTitel(ids);
+    return ids.length;
   }
 
   private async pruefeWerte(typ: Mappentyp, werte: Werte, eigeneId?: string) {
@@ -205,7 +246,8 @@ export class Dienst {
     const werte = bereinigeWerte(typ, e.werte);
     await this.pruefeWerte(typ, werte);
     const id = istUuid(e.id) && !(await this.repo.holeMappe(e.id)) ? e.id : randomUUID();
-    return this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), benutzerId, demo);
+    const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), benutzerId, demo);
+    return { ...m, titel: (await this.aktualisiereTitel([m.id])).get(m.id) };
   }
 
   async aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null): Promise<Mappe> {
@@ -215,7 +257,8 @@ export class Dienst {
     if (!typ) throw new Fachfehler(500, 'Der Mappentyp dieser Mappe fehlt.');
     const werte = bereinigeWerte(typ, (eingabe as { werte?: unknown })?.werte, m.werte);
     await this.pruefeWerte(typ, werte, id);
-    return this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), benutzerId);
+    const neu = await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), benutzerId);
+    return { ...neu, titel: (await this.aktualisiereTitel([id])).get(id) };
   }
 
   async loescheMappe(id: string): Promise<void> {

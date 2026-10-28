@@ -163,6 +163,28 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('DELETE', `/api/mappen/${rechnung.id}`)).status, 204);
   });
 
+  it('speichert Titel und zieht sie bei Änderungen nach', async () => {
+    const typen = (await anfrage('GET', '/api/typen')).body;
+    const partnerTyp = typen.find((t: { name: string }) => t.name === 'Vertragspartner');
+    const vertragTyp = typen.find((t: { name: string }) => t.name === 'Vertrag');
+    const p = (await anfrage('POST', '/api/mappen', { typId: partnerTyp.id, werte: { name: 'Titeltest GmbH' } })).body;
+    assert.equal(p.titel, 'Titeltest GmbH');
+    const pflicht = Object.fromEntries(vertragTyp.felder.filter((f: { pflicht?: boolean }) => f.pflicht).map((f: { key: string; typ: string }) =>
+      [f.key, f.typ === 'referenz' ? p.id : f.typ === 'datum' ? '2026-01-01' : f.typ === 'betrag' ? { betrag: 1, waehrung: 'EUR' } : f.typ === 'zahl' ? 1 : 'X']));
+    const ref = vertragTyp.felder.find((f: { typ: string; zielTyp?: string }) => f.typ === 'referenz' && f.zielTyp === partnerTyp.id);
+    const r = await anfrage('PUT', `/api/typen/${vertragTyp.id}`, { ...vertragTyp, titelVorlage: `{${ref.key}} seit {angelegt}` });
+    assert.equal(r.status, 200);
+    const v = await anfrage('POST', '/api/mappen', { typId: vertragTyp.id, werte: { ...pflicht, [ref.key]: p.id } });
+    assert.equal(v.status, 201);
+    assert.match(v.body.titel, /^Titeltest GmbH seit \d{2}\.\d{2}\.\d{4}$/);
+    await anfrage('PUT', `/api/mappen/${p.id}`, { werte: { name: 'Titeltest AG' } });
+    assert.match((await anfrage('GET', `/api/mappen/${v.body.id}`)).body.mappe.titel, /^Titeltest AG seit /);
+    assert.ok((await anfrage('GET', '/api/mappen')).body.every((m: { titel?: string }) => typeof m.titel === 'string'));
+    assert.equal((await anfrage('PUT', `/api/typen/${vertragTyp.id}`, vertragTyp)).status, 200);
+    assert.equal((await anfrage('DELETE', `/api/mappen/${v.body.id}`)).status, 204);
+    assert.equal((await anfrage('DELETE', `/api/mappen/${p.id}`)).status, 204);
+  });
+
   it('erzeugt Demo-Daten, entfernt sie und ändert das eigene Passwort', async () => {
     const r = await anfrage('POST', '/api/werkbank/demo', { anzahl: 200 });
     assert.equal(r.status, 201);

@@ -46,6 +46,19 @@ export function speicherRepo(): Repo {
       for (const [k, d] of dokumente) if (d.mappeId === id) dokumente.delete(k);
     },
 
+    async holeMappen(ids) { return [...new Set(ids)].map((id) => mappen.get(id)).filter((m): m is Mappe => !!m).map(kopie); },
+    async titelVon(ids) {
+      const r = new Map<string, string>();
+      for (const id of ids) { const m = mappen.get(id); if (m) r.set(id, m.titel ?? ''); }
+      return r;
+    },
+    async setzeTitel(liste) { for (const { id, titel } of liste) { const m = mappen.get(id); if (m) m.titel = titel; } },
+    async quellenVon(zielIds) {
+      const z = new Set(zielIds);
+      return [...verweise].filter(([q, vs]) => mappen.has(q) && vs.some((v) => z.has(v.zielId))).map(([q]) => q);
+    },
+    async ohneTitel() { return [...mappen.values()].filter((m) => m.titel === undefined).map((m) => m.id); },
+
     async typenVon(ids) {
       const r = new Map<string, string>();
       for (const id of ids) { const m = mappen.get(id); if (m) r.set(id, m.typId); }

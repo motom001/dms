@@ -101,6 +101,8 @@ export interface Mappe {
   geaendertVon: string | null;
   /** Mit dem Demo-Generator erzeugt; lässt sich gesammelt entfernen. */
   demo?: boolean;
+  /** Vom Server aus der Titel-Vorlage berechnet und gespeichert (leer = ohne Titel). */
+  titel?: string;
 }
 
 export type Rolle = 'admin' | 'mitglied';
@@ -193,7 +195,7 @@ export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebn
     p.allgemein.push('Die Felder fehlen.');
     return p;
   }
-  const unbekannt = vorlageFelder(t.titelVorlage ?? '').filter((k) => !t.felder.some((f) => f.key === k));
+  const unbekannt = vorlageFelder(t.titelVorlage ?? '').filter((k) => !istIndexplatzhalter(k) && !t.felder.some((f) => f.key === k));
   if (unbekannt.length) p.allgemein.push(`Die Titel-Vorlage nennt unbekannte Felder: ${unbekannt.map((k) => `{${k}}`).join(', ')}.`);
   pruefeRegister(t, ctx, p);
 
@@ -204,6 +206,7 @@ export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebn
     if (!(f.typ in FELDTYPEN)) m.push('Unbekannter Datentyp.');
     if (!SCHLUESSEL_MUSTER.test(f.key ?? '')) m.push('Schlüssel: nur Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben.');
     else if (gesehen.has(f.key)) m.push(`Schlüssel „${f.key}“ kommt doppelt vor.`);
+    else if (istIndexplatzhalter(f.key)) m.push(`Schlüssel „${f.key}“ ist für den Indexwert „${INDEXPLATZHALTER[f.key as Indexplatzhalter]}“ reserviert.`);
     gesehen.add(f.key);
     if (f.typ === 'referenz') {
       if (!f.zielTyp) m.push('Ziel-Mappentyp auswählen.');
@@ -306,6 +309,23 @@ export function verweiseVon(t: Pick<Mappentyp, 'felder'>, werte: Werte): Array<{
 
 const PLATZHALTER = /\{([a-z][a-z0-9_]*)\}/g;
 
+/** Feste Indexwerte, die jede Titel-Vorlage zusätzlich zu den Feldern verwenden kann. */
+export const INDEXPLATZHALTER = { angelegt: 'Angelegt', geaendert: 'Zuletzt geändert' } as const;
+export type Indexplatzhalter = keyof typeof INDEXPLATZHALTER;
+export const istIndexplatzhalter = (k: string): k is Indexplatzhalter => Object.prototype.hasOwnProperty.call(INDEXPLATZHALTER, k);
+export type Indexwerte = Partial<Pick<Mappe, 'erstellt' | 'geaendert'>>;
+
+/** Zeitzone für Datumsangaben aus Zeitstempeln (Server und Browser sollen denselben Tag zeigen). */
+export const ZEITZONE = 'Europe/Berlin';
+const TAG_FORMAT = new Intl.DateTimeFormat('de-DE', { timeZone: ZEITZONE, day: '2-digit', month: '2-digit', year: 'numeric' });
+
+/** Tag eines Zeitstempels als TT.MM.JJJJ in der Zeitzone des Haushalts. */
+export function tagVon(zeitstempel: string | undefined): string {
+  if (!zeitstempel) return '';
+  const d = new Date(zeitstempel);
+  return Number.isNaN(d.getTime()) ? '' : TAG_FORMAT.format(d);
+}
+
 /** Feldschlüssel, die eine Titel-Vorlage verwendet. */
 export function vorlageFelder(vorlage: string): string[] {
   return [...vorlage.matchAll(PLATZHALTER)].map((m) => m[1]);
@@ -319,10 +339,12 @@ export function wirksameVorlage(t: Pick<Mappentyp, 'felder' | 'titelVorlage'>): 
 }
 
 /** Titel einer Mappe aus der Vorlage; Platzhalter werden formatiert eingesetzt. */
-export function titelAus(t: Pick<Mappentyp, 'felder' | 'titelVorlage'> | undefined, werte: Werte, titelVon: (id: string) => string = (id) => id): string {
+export function titelAus(t: Pick<Mappentyp, 'felder' | 'titelVorlage'> | undefined, werte: Werte, titelVon: (id: string) => string = (id) => id, index: Indexwerte = {}): string {
   if (!t) return '';
   return wirksameVorlage(t)
     .replace(PLATZHALTER, (_, k: string) => {
+      if (k === 'angelegt') return tagVon(index.erstellt);
+      if (k === 'geaendert') return tagVon(index.geaendert);
       const f = t.felder.find((x) => x.key === k);
       return f ? formatiere(f, werte[k], titelVon) : '';
     })

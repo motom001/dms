@@ -260,6 +260,7 @@ a.textknopf { text-decoration: none; }
 .chipwahl { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .chipknopf { border: 1px solid var(--linie-stark); background: var(--flaeche); border-radius: 999px; padding: 3px 10px; font-size: 12.5px; cursor: pointer; }
 .chipknopf:hover { border-color: var(--akzent); color: var(--akzent); }
+.chipknopf.index { border-style: dashed; color: var(--leise); }
 .vorschau { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 12px 14px; border-radius: var(--r); background: var(--senke); border: 1px solid var(--linie); }
 .vorschautitel { font-size: 16px; }
 .vorschau select { width: auto; max-width: 260px; padding: 3px 6px; }

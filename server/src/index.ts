@@ -44,7 +44,8 @@ const mailer = erstelleMailer({
 });
 
 const konten = new Konten(pgKontoRepo(sql, cfg.haushalt), mailer, cfg.appUrl);
-const app = await baueApp(new Dienst(pgRepo(sql, cfg.haushalt), ordnerSpeicher(cfg.dateien, cfg.haushalt)), konten, {
+const dienst = new Dienst(pgRepo(sql, cfg.haushalt), ordnerSpeicher(cfg.dateien, cfg.haushalt));
+const app = await baueApp(dienst, konten, {
   webDir: cfg.web,
   logger: { level: env.LOG_LEVEL ?? 'info' },
   sicher: cfg.appUrl.startsWith('https://'),
@@ -53,6 +54,8 @@ const app = await baueApp(new Dienst(pgRepo(sql, cfg.haushalt), ordnerSpeicher(c
 
 app.log.info(`E-Mail-Versand: ${mailer ? `über ${env.SMTP_HOST}` : 'aus (SMTP_HOST nicht gesetzt) – Links werden in der Benutzerverwaltung angezeigt'}`);
 app.log.info(`Links in E-Mails zeigen auf ${cfg.appUrl}`);
+const nachgezogen = await dienst.titelNachziehen();
+if (nachgezogen) app.log.info(`Titel von ${nachgezogen} Mappen berechnet`);
 if (await konten.einrichtungNoetig()) app.log.warn(`Noch kein Benutzer vorhanden: Der erste Aufruf von ${cfg.appUrl} legt den Administrator an.`);
 
 const beenden = async () => {

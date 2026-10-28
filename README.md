@@ -22,7 +22,7 @@ Jede Mappe trägt feste Indexwerte: angelegt am/von, zuletzt geändert am/von.
 - *Dokumentenregister* – hochgeladene Dateien; PDFs und Bilder lassen sich direkt ansehen, alles andere wird nur heruntergeladen,
 - *Verknüpfungsregister* – Mappen, die hierher verweisen, auf Wunsch eingeschränkt (z. B. „Rechnungen“ nur über das Feld *Vertrag*).
 
-Der **Titel** einer Mappe entsteht aus einer Vorlage wie `{verwendungszweck} vom {zahlungsdatum}`; die Einrichtung zeigt dazu eine Vorschau.
+Der **Titel** einer Mappe entsteht aus einer Vorlage wie `{verwendungszweck} vom {zahlungsdatum}`; die Werkbank zeigt dazu eine Vorschau. Neben den Feldern stehen die Indexwerte `{angelegt}` und `{geaendert}` (jeweils das Datum) zur Verfügung. Der Server berechnet den Titel und speichert ihn; ändert sich eine verwiesene Mappe oder die Vorlage, werden die betroffenen Titel nachgezogen.
 
 Dateien liegen unverändert im Dateiordner (`FILES_DIR`) unter ihrem SHA-256-Prüfwert. Gleicher Inhalt wird nur einmal gespeichert.
 

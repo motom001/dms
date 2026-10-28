@@ -218,3 +218,61 @@ describe('Demo-Daten', () => {
     await wirft(d.entferneDemo(), 409);
   });
 });
+
+describe('Gespeicherte Titel', () => {
+  async function aufbau() {
+    const d = new Dienst(speicherRepo(), speicherDateien());
+    const partner = await d.legeTypAn({ name: 'Partner', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
+    const vertrag = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{art} bei {partner}', felder: [
+      { key: 'art', label: 'Art', typ: 'text', pflicht: true },
+      { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id },
+    ] });
+    return { d, partner, vertrag };
+  }
+
+  it('speichert den Titel beim Anlegen und setzt Angelegt/Zuletzt geändert ein', async () => {
+    const { d, partner } = await aufbau();
+    await d.aendereTyp(partner.id, { ...partner, titelVorlage: '{name} (angelegt {angelegt}, geändert {geaendert})' });
+    const m = await d.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke' } });
+    const heute = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date());
+    assert.equal(m.titel, `Stadtwerke (angelegt ${heute}, geändert ${heute})`);
+    assert.equal((await d.holeMappe(m.id)).mappe.titel, m.titel);
+  });
+
+  it('zieht Titel nach, wenn sich eine verwiesene Mappe oder die Vorlage ändert', async () => {
+    const { d, partner, vertrag } = await aufbau();
+    const p = await d.legeMappeAn({ typId: partner.id, werte: { name: 'Stadtwerke' } });
+    const v = await d.legeMappeAn({ typId: vertrag.id, werte: { art: 'Strom', partner: p.id } });
+    assert.equal(v.titel, 'Strom bei Stadtwerke');
+    await d.aendereMappe(p.id, { werte: { name: 'Stadtwerke Nord' } });
+    assert.equal((await d.holeMappe(v.id)).mappe.titel, 'Strom bei Stadtwerke Nord');
+    await d.aendereTyp(vertrag.id, { ...vertrag, titelVorlage: '{partner}: {art}' });
+    assert.equal((await d.holeMappe(v.id)).mappe.titel, 'Stadtwerke Nord: Strom');
+  });
+
+  it('behandelt Verweise im Kreis, ohne endlos zu rechnen', async () => {
+    const d = new Dienst(speicherRepo(), speicherDateien());
+    const id = '22222222-2222-4222-8222-222222222222';
+    await d.legeTypAn({ id, name: 'Knoten', titelVorlage: '{name} → {nach}', felder: [
+      { key: 'name', label: 'Name', typ: 'text', pflicht: true },
+      { key: 'nach', label: 'Nach', typ: 'referenz', zielTyp: id },
+    ] });
+    const a = await d.legeMappeAn({ typId: id, werte: { name: 'A' } });
+    const b = await d.legeMappeAn({ typId: id, werte: { name: 'B', nach: a.id } });
+    await d.aendereMappe(a.id, { werte: { name: 'A', nach: b.id } });
+    assert.match((await d.holeMappe(a.id)).mappe.titel!, /^A → B → A/);
+  });
+
+  it('reserviert die Schlüssel der Indexwerte und berechnet fehlende Titel nach', async () => {
+    const repo = speicherRepo();
+    const d = new Dienst(repo, speicherDateien());
+    await wirft(d.legeTypAn({ name: 'X', felder: [{ key: 'angelegt', label: 'Angelegt', typ: 'datum' }] }), 422);
+    const { partner } = await aufbau();
+    const t = await d.legeTypAn({ name: 'Partner', titelVorlage: '{name}', felder: partner.felder });
+    const m = await repo.legeMappeAn('33333333-3333-4333-8333-333333333333', t.id, { name: 'Alt' }, [], null);
+    assert.equal(m.titel, undefined);
+    assert.equal(await d.titelNachziehen(), 1);
+    assert.equal((await d.holeMappe(m.id)).mappe.titel, 'Alt');
+    assert.equal(await d.titelNachziehen(), 0);
+  });
+});

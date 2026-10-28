@@ -47,7 +47,8 @@ export function DatenProvider({ children }: { children: ReactNode }) {
     const mappeNachId = new Map<string, Mappe>(mappen.map((m) => [m.id, m] as const));
     const titel = (m: Mappe | undefined, tiefe = 0): string => {
       if (!m) return '(gelöscht)';
-      const s = titelAus(typNachId.get(m.typId), m.werte, (id) => (tiefe < 2 ? titel(mappeNachId.get(id), tiefe + 1) : '…'));
+      // Den Titel berechnet und speichert der Server; selbst rechnen nur, falls er fehlt.
+      const s = m.titel ?? titelAus(typNachId.get(m.typId), m.werte, (id) => (tiefe < 2 ? titel(mappeNachId.get(id), tiefe + 1) : '…'), m);
       return s || 'Ohne Titel';
     };
     const sortiert = (liste: Mappe[]) => [...liste].sort((a, b) => titel(a).localeCompare(titel(b), 'de'));

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  FELDTYPEN, istLeer, istOk, REGISTERARTEN, schluesselAus, standardRegister, titelAus, VERWEISARTEN, vorlageFelder, wirksameVorlage,
+  FELDTYPEN, INDEXPLATZHALTER, istIndexplatzhalter, istLeer, istOk, REGISTERARTEN, schluesselAus, standardRegister, titelAus, VERWEISARTEN, vorlageFelder, wirksameVorlage,
   type Feld, type Mappentyp, type Register, type Registerart, type Werte,
 } from '../../../shared/src/model';
 import { api, ApiFehler } from '../api';
@@ -339,10 +339,12 @@ function TitelEditor({ e, setze }: { e: Entwurf; setze: (v: string) => void }) {
   const [beispielId, setBeispielId] = useState<string>(mappen[0]?.id ?? '');
   const felder = e.felder as unknown as Feld[];
   const v = e.titelVorlage;
-  const unbekannt = vorlageFelder(v).filter((k) => !felder.some((f) => f.key === k));
+  const unbekannt = vorlageFelder(v).filter((k) => !istIndexplatzhalter(k) && !felder.some((f) => f.key === k));
   const beispiel = mappen.find((m) => m.id === beispielId);
   const werte = beispiel ? beispiel.werte : beispielWerte(felder);
-  const vorschau = titelAus({ felder, titelVorlage: v }, werte, (id) => (id === 'beispiel' ? '‹verwiesene Mappe›' : d.titel(d.mappe(id))));
+  const jetzt = new Date().toISOString();
+  const vorschau = titelAus({ felder, titelVorlage: v }, werte, (id) => (id === 'beispiel' ? '‹verwiesene Mappe›' : d.titel(d.mappe(id))),
+    beispiel ?? { erstellt: jetzt, geaendert: jetzt });
   const automatisch = wirksameVorlage({ felder, titelVorlage: '' });
 
   function einsetzen(key: string) {
@@ -363,12 +365,13 @@ function TitelEditor({ e, setze }: { e: Entwurf; setze: (v: string) => void }) {
       <label className="eigenschaft" htmlFor="titel-vorlage"><span>Vorlage</span>
         <input id="titel-vorlage" ref={feld} className="mono" value={v} onChange={(ev) => setze(ev.target.value)}
           placeholder={automatisch ? `leer = ${automatisch}` : 'z. B. {verwendungszweck} vom {zahlungsdatum}'} /></label>
-      {felder.length > 0 && (
-        <div className="chipwahl">
-          <span className="leise klein">Feld einsetzen:</span>
-          {felder.map((f) => <button key={f.key} type="button" className="chipknopf" onClick={() => einsetzen(f.key)}>{f.label || f.key}</button>)}
-        </div>
-      )}
+      <div className="chipwahl">
+        <span className="leise klein">Einsetzen:</span>
+        {felder.map((f) => <button key={f.key} type="button" className="chipknopf" onClick={() => einsetzen(f.key)}>{f.label || f.key}</button>)}
+        {Object.entries(INDEXPLATZHALTER).map(([k, name]) => (
+          <button key={k} type="button" className="chipknopf index" title={`Indexwert {${k}}: Datum, an dem die Mappe ${k === 'angelegt' ? 'angelegt' : 'zuletzt geändert'} wurde`} onClick={() => einsetzen(k)}>{name}</button>
+        ))}
+      </div>
       {unbekannt.length > 0 && <p className="fehlertext">Diese Platzhalter passen zu keinem Feld: {unbekannt.map((k) => `{${k}}`).join(', ')}</p>}
       <div className="vorschau">
         <span className="ueber">Vorschau</span>
