@@ -11,6 +11,7 @@ import { Historie } from './Historie';
 import { Notizen } from './Notizen';
 import { AufgabenHinweis, NeueAufgabe } from './Aufgaben';
 import { Aktionsmenue, Druckansicht, EmailMaske } from './Aktionen';
+import { Person } from '../Person';
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 const groesse = (b: number) => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);
@@ -55,8 +56,8 @@ export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp
         <p className="ueber">{typ.name}</p>
         <h1>{titelOder(mappe.titel)}</h1>
         <dl className="index">
-          <div><dt>Angelegt</dt><dd>{zeit(mappe.erstellt)} von {d.person(mappe.erstelltVon)}</dd></div>
-          <div><dt>Zuletzt geändert</dt><dd>{zeit(mappe.geaendert)} von {d.person(mappe.geaendertVon)}</dd></div>
+          <div><dt>Angelegt</dt><dd>{zeit(mappe.erstellt)} von <Person id={mappe.erstelltVon} /></dd></div>
+          <div><dt>Zuletzt geändert</dt><dd>{zeit(mappe.geaendert)} von <Person id={mappe.geaendertVon} /></dd></div>
         </dl>
         {typ.system === 'benutzer' && ich.rolle === 'admin' && <p className="leise klein"><Link to={`/werkbank/benutzer/${mappe.id}`} className="verweis">In der Benutzerverwaltung öffnen →</Link></p>}
         {mappe.systemKennung && <p className="leise klein"><span className="chip">Systemrolle</span> Wer sie hat, ergibt sich aus der Rolle in der Benutzerverwaltung.</p>}
@@ -64,10 +65,7 @@ export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp
           <button type="button" className={`knopf klein ${notizenOffen ? 'an' : ''}`} aria-expanded={notizenOffen} onClick={() => setNotizenOffen(!notizenOffen)} title="Notizen zu dieser Mappe">
             <span aria-hidden="true">🗒</span> Notizen{notizen.length ? ` (${notizen.length})` : ''}
           </button>
-          <button type="button" className={`knopf klein ${aufgabeOffen ? 'an' : ''}`} aria-expanded={aufgabeOffen} onClick={() => setAufgabeOffen(!aufgabeOffen)}>
-            <span aria-hidden="true">✓</span> Aufgabe vergeben
-          </button>
-          <Aktionsmenue email={() => setEmailOffen(true)} drucken={() => setDrucken(true)} />
+          <Aktionsmenue aufgabe={() => setAufgabeOffen(true)} email={() => setEmailOffen(true)} drucken={() => setDrucken(true)} />
         </div>
       </div>
       <AufgabenHinweis aufgaben={details.aufgaben ?? []} neuLaden={neuLaden} />
@@ -256,8 +254,12 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
       {fehler?.allgemein.length ? <div className="hinweis schlecht"><p>{fehler.allgemein.join(' ')}</p></div> : null}
       {hinweise.map((h, i) => <div key={i} className={`hinweis ${h.art}`}><p>{h.text}</p></div>)}
       <div className="registerinhalt" role="tabpanel">{inhalt}</div>
+      {mappe && darfLoeschen(typ, mappe) && details?.loeschbar && !details.loeschbar.ok && <LoeschHindernis l={details.loeschbar} />}
       <div className="speicherleiste">
-        {mappe && darfLoeschen(typ, mappe) ? <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>Mappe löschen</button> : <span />}
+        {mappe && darfLoeschen(typ, mappe)
+          ? <button type="button" className="textknopf gefahr" disabled={details?.loeschbar?.ok === false} title={details?.loeschbar?.ok === false ? details.loeschbar.grund : undefined}
+              aria-describedby={details?.loeschbar?.ok === false ? 'loeschhindernis' : undefined} onClick={() => void loeschen()}>Mappe löschen</button>
+          : <span />}
         <span className={`status ${meldung && fehler ? 'schlecht' : ''}`} role="status">{sendet ? 'Speichere …' : meldung ?? (mappe && (werteGeaendert || dokumenteGeaendert) ? 'Ungespeicherte Änderungen' : '')}</span>
         <div className="knoepfe">
           {mappe
@@ -507,7 +509,7 @@ function Dokumente({ register, dokumente, neue, entfernt, hinzufuegen, entferne,
                     {x.anzeigbar && !weg
                       ? <button type="button" className="textknopf" onClick={() => setAnsicht(x.id === ansicht ? undefined : x.id)}>{x.name}</button>
                       : <span className="dateiname">{x.name}</span>}
-                    <span className="leise klein">{weg ? 'wird beim Speichern gelöscht' : `${groesse(x.groesse)} · ${zeit(x.erstellt)} · ${d.person(x.erstelltVon)}`}</span>
+                    <span className="leise klein">{weg ? 'wird beim Speichern gelöscht' : <>{groesse(x.groesse)} · {zeit(x.erstellt)} · <Person id={x.erstelltVon} /></>}</span>
                     {!weg && <OcrAnzeige s={standVon(x)} erneut={() => void erneut(x.id)} text={() => void zeigeText(x.id)} textOffen={text?.id === x.id} />}
                     {!weg && text?.id === x.id && <pre className="volltext">{text.text ?? 'Kein Volltext vorhanden.'}</pre>}
                   </div>
@@ -546,6 +548,21 @@ function OcrAnzeige({ s, erneut, text, textOffen }: { s?: OcrStand; erneut(): vo
 }
 
 /* ---------- Verknüpfungsregister ---------- */
+
+/** Warum „Mappe löschen“ gerade nicht geht, mit Links zu den verweisenden Mappen (#79). */
+function LoeschHindernis({ l }: { l: NonNullable<MappeDetails['loeschbar']> }) {
+  const d = useDaten();
+  const quellen = [...new Map((l.rueckverweise ?? []).map((r) => [r.quelleId, r])).values()];
+  const zeige = quellen.slice(0, 8);
+  return (
+    <div className="loeschhindernis leise klein" id="loeschhindernis">
+      <strong>Löschen nicht möglich:</strong> {l.grund}
+      {zeige.length > 0 && <ul>{zeige.map((r) => (
+        <li key={r.quelleId}><Link to={`/ablage/${r.quelleTypId}/${r.quelleId}`} className="verweis">{titelOder(r.titel)}</Link> <span className="leise">({d.typ(r.quelleTypId)?.name ?? 'Mappe'})</span></li>
+      ))}{quellen.length > zeige.length && <li className="leise">und {quellen.length - zeige.length} weitere</li>}</ul>}
+    </div>
+  );
+}
 
 function Verknuepfungen({ mappe, gruppen }: { mappe: Mappe; gruppen: ReturnType<typeof verknuepfungsGruppen> }) {
   const d = useDaten();

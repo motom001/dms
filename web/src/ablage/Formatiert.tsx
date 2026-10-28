@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { erwaehnung, zerlege, type Block, type Inline } from '../../../shared/src/markdown';
 import { useDaten } from '../daten';
+import { Person } from '../Person';
 
 /**
  * Formatierter Text (#53): Anzeige und Eingabe.
@@ -8,7 +9,6 @@ import { useDaten } from '../daten';
  */
 
 function Teile({ teile }: { teile: Inline[] }) {
-  const d = useDaten();
   return <>{teile.map((t, i) => {
     switch (t.art) {
       case 'text': return <span key={i}>{t.text}</span>;
@@ -17,8 +17,7 @@ function Teile({ teile }: { teile: Inline[] }) {
       case 'code': return <code key={i}>{t.text}</code>;
       case 'link': return <a key={i} href={t.ziel} target="_blank" rel="noreferrer noopener">{<Teile teile={t.kinder} />}</a>;
       case 'erwaehnung': {
-        const p = d.personen.find((x) => x.id === t.benutzerId);
-        return <span key={i} className="erwaehnung" title="Erwähnung">@{p?.name ?? t.name}</span>;
+        return <Person key={i} id={t.benutzerId} ersatz={t.name} vor="@" className="erwaehnung" />;
       }
     }
   })}</>;
@@ -57,12 +56,35 @@ const WERKZEUGE: Werkzeug[] = [
   { titel: 'Link', zeichen: '🔗', vor: '[', nach: '](https://)', platzhalter: 'Linktext' },
 ];
 
+
+/** Position des Zeichens `pos` in einer textarea, relativ zu ihr (Spiegel-Element, #64). */
+function cursorPosition(el: HTMLTextAreaElement, pos: number): { top: number; left: number; hoehe: number } {
+  const stil = getComputedStyle(el);
+  const spiegel = document.createElement('div');
+  for (const k of ['boxSizing', 'width', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+    'fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'letterSpacing', 'lineHeight', 'textTransform', 'wordSpacing', 'tabSize', 'textIndent'] as const) {
+    spiegel.style[k] = stil[k];
+  }
+  Object.assign(spiegel.style, { position: 'absolute', visibility: 'hidden', top: '0', left: '-9999px', whiteSpace: 'pre-wrap', overflowWrap: 'break-word', borderStyle: 'solid' });
+  spiegel.textContent = el.value.slice(0, pos);
+  const marke = document.createElement('span');
+  marke.textContent = el.value.slice(pos) || '.';
+  spiegel.appendChild(marke);
+  document.body.appendChild(spiegel);
+  const hoehe = parseFloat(stil.lineHeight) || parseFloat(stil.fontSize) * 1.4;
+  const r = { top: marke.offsetTop - el.scrollTop, left: marke.offsetLeft - el.scrollLeft, hoehe };
+  document.body.removeChild(spiegel);
+  return r;
+}
+
 /** Eingabe: Werkzeugleiste, Schreiben/Vorschau und @-Erwähnungen (#56). */
 export function FormatiertEingabe({ id, wert, setze }: { id: string; wert: string; setze: (v: string) => void }) {
   const d = useDaten();
   const feld = useRef<HTMLTextAreaElement>(null);
   const [vorschau, setVorschau] = useState(!!wert);
   const [suche, setSuche] = useState<{ start: number; text: string } | null>(null);
+  const [aktiv, setAktiv] = useState(0);
+  const [ort, setOrt] = useState<{ top: number; left: number; oben: boolean } | null>(null);
 
   function einfuegen(w: Werkzeug) {
     const el = feld.current;
@@ -85,7 +107,17 @@ export function FormatiertEingabe({ id, wert, setze }: { id: string; wert: strin
   // @-Erwähnung: Wort nach @ bis zum Cursor.
   function pruefeErwaehnung(text: string, pos: number) {
     const m = /(^|\s)@([^\s@[\]]{0,30})$/.exec(text.slice(0, pos));
-    setSuche(m ? { start: pos - m[2].length - 1, text: m[2].toLowerCase() } : null);
+    const neu = m ? { start: pos - m[2].length - 1, text: m[2].toLowerCase() } : null;
+    setSuche(neu);
+    setAktiv(0);
+    const el = feld.current;
+    if (!neu || !el) { setOrt(null); return; }
+    // Liste unter dem @ öffnen; reicht der Platz im Fenster nicht, darüber (#64).
+    const p = cursorPosition(el, neu.start);
+    const r = el.getBoundingClientRect();
+    const unten = r.top + p.top + p.hoehe;
+    const oben = window.innerHeight - unten < 220 && r.top + p.top > 220;
+    setOrt({ top: el.offsetTop + p.top + (oben ? 0 : p.hoehe + 2), left: Math.max(0, Math.min(el.offsetLeft + p.left, el.offsetLeft + el.clientWidth - 200)), oben });
   }
   const vorschlaege = suche ? d.personen.filter((p) => p.aktiv !== false && p.name.toLowerCase().includes(suche.text)).slice(0, 6) : [];
   function waehle(p: { id: string; name: string }) {
@@ -112,12 +144,23 @@ export function FormatiertEingabe({ id, wert, setze }: { id: string; wert: strin
         : <div className="wahl">
             <textarea id={id} ref={feld} rows={6} value={wert}
               onChange={(e) => { setze(e.target.value); pruefeErwaehnung(e.target.value, e.target.selectionStart); }}
-              onKeyDown={(e) => { if (e.key === 'Escape') setSuche(null); if (e.key === 'Enter' && vorschlaege.length && suche) { e.preventDefault(); waehle(vorschlaege[0]); } }}
+              onKeyDown={(e) => {
+                if (!suche || !vorschlaege.length) return;
+                if (e.key === 'Escape') { e.preventDefault(); setSuche(null); }
+                else if (e.key === 'ArrowDown') { e.preventDefault(); setAktiv((i) => (i + 1) % vorschlaege.length); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); setAktiv((i) => (i - 1 + vorschlaege.length) % vorschlaege.length); }
+                else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); waehle(vorschlaege[Math.min(aktiv, vorschlaege.length - 1)]); }
+              }}
+              onScroll={() => { if (suche && feld.current) pruefeErwaehnung(feld.current.value, feld.current.selectionStart); }}
+              aria-autocomplete="list" aria-controls={suche ? `${id}-erw` : undefined}
+              aria-activedescendant={suche && vorschlaege.length ? `${id}-erw-${Math.min(aktiv, vorschlaege.length - 1)}` : undefined}
               onBlur={() => setTimeout(() => setSuche(null), 150)}
               placeholder="**fett**, *kursiv*, - Liste, [Link](https://…), @Name erwähnt jemanden" />
             {vorschlaege.length > 0 && (
-              <div className="wahlliste" role="listbox" aria-label="Benutzer erwähnen">
-                {vorschlaege.map((p) => <button key={p.id} type="button" role="option" aria-selected={false} onMouseDown={(e) => e.preventDefault()} onClick={() => waehle(p)}>@{p.name}</button>)}
+              <div className={`wahlliste am-cursor ${ort?.oben ? 'oben' : ''}`} role="listbox" id={`${id}-erw`} aria-label="Benutzer erwähnen"
+                style={ort ? { top: ort.top, left: ort.left } : undefined}>
+                {vorschlaege.map((p, i) => <button key={p.id} id={`${id}-erw-${i}`} type="button" role="option" aria-selected={i === aktiv} className={i === aktiv ? 'an' : ''}
+                  onMouseEnter={() => setAktiv(i)} onMouseDown={(e) => e.preventDefault()} onClick={() => waehle(p)}>@{p.name}</button>)}
               </div>
             )}
           </div>}

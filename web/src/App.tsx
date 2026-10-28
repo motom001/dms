@@ -45,10 +45,10 @@ export function App() {
       {!vertretung && hinweise.length > 0 && <Hinweise />}
       {admin && bereich === 'werkbank' && <TresorBanner />}
       <header className="kopf">
-        <div className="marke">
+        <Link to="/ablage/eingang" className="marke" title="Zur Startseite">
           <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><rect x="4" y="7" width="24" height="21" rx="3" className="m1" /><rect x="8" y="3" width="9" height="7" rx="2" className="m2" /></svg>
-          <span>DMS</span>
-        </div>
+          <span>DMS</span><span className="sr-only"> – Startseite</span>
+        </Link>
         <nav className="bereiche" aria-label="Bereiche">
           <Link to="/ablage" className={bereich === 'ablage' ? 'an' : ''}>Ablage</Link>
           {admin && <Link to="/werkbank/typen" className={bereich === 'werkbank' ? 'an' : ''}>Werkbank</Link>}

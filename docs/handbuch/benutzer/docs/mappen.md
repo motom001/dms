@@ -8,7 +8,7 @@ Eine Mappe sammelt alles zu einer Sache: die Angaben, die Dokumente und die Verb
 
 Oben steht der **Titel** der Mappe. Ihn musst du nicht selbst schreiben: Das DMS setzt ihn aus den Angaben zusammen, zum Beispiel aus Rechnungsnummer und Datum – „R-2026-117 vom 02.03.2026“. Ändert sich eine Angabe, ändert sich der Titel mit.
 
-Darunter stehen die **Indexwerte**, die jede Mappe hat: wann und von wem sie angelegt und zuletzt geändert wurde.
+Darunter stehen die **Indexwerte**, die jede Mappe hat: wann und von wem sie angelegt und zuletzt geändert wurde. Als Änderung zählen auch hochgeladene und entfernte Dokumente, nicht aber Notizen oder Aufgaben. Ein Klick auf einen Namen öffnet die Mappe dieses Benutzers.
 
 Darunter folgen die **Register** – die Trennblätter der Mappe. Es gibt drei Arten:
 
@@ -78,7 +78,7 @@ Ein Klick auf einen gesetzten Verweis öffnet die andere Mappe.
 
 Willst du die Mappe mit ungespeicherten Änderungen verlassen, fragt das DMS nach.
 
-Über den Registern stehen außerdem **Notizen**, **Aufgabe vergeben** und das Menü **Aktionen** – siehe [Notizen, Erwähnungen, Protokoll](zusammenarbeit.md) und [E-Mail und PDF](versenden.md).
+Über den Registern stehen außerdem **Notizen** und das Menü **Aktionen** (Aufgabe vergeben, per E-Mail versenden, als PDF exportieren) – siehe [Notizen, Erwähnungen, Protokoll](zusammenarbeit.md) und [E-Mail und PDF](versenden.md).
 
 Manche Angaben sind nur zum Lesen da und haben einen gestrichelten Rahmen – zum Beispiel Name und E-Mail-Adresse in der Mappe eines Benutzers. Daneben steht, wo man sie ändert.
 
@@ -99,6 +99,6 @@ Bei einer neuen Mappe ist das Register noch leer: Verknüpfungen entstehen erst,
 
 Unten links in der Mappe steht **Mappe löschen**. Nach einer Rückfrage kommt die Mappe mit ihren Dokumenten in den [Papierkorb](ablage.md#papierkorb); dort lässt sie sich eine Zeit lang wiederherstellen. Ist der Papierkorb ausgeschaltet, ist sie sofort endgültig weg.
 
-Eine Mappe, auf die noch andere verweisen, lässt sich nicht löschen. Das DMS zeigt dann, welche Mappen das sind; entferne zuerst dort den Verweis. So kann kein Vertrag verschwinden, zu dem noch Rechnungen gehören.
+Eine Mappe, auf die noch andere verweisen, lässt sich nicht löschen. Der Knopf ist dann ausgegraut, und darüber steht gleich, welche Mappen das sind – mit Links dorthin. Entferne zuerst dort den Verweis. So kann kein Vertrag verschwinden, zu dem noch Rechnungen gehören. Verschickte E-Mails halten das Löschen nicht auf.
 
 Fehlt der Knopf, dürfen Mappen dieses Typs nicht gelöscht werden.

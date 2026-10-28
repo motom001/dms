@@ -12,13 +12,13 @@ In der Liste steht bei jeder Mappe, was zu tun ist. In der Mappe selbst steht ob
 | --- | --- | --- |
 | **Passt nicht** | Ein Administrator hat den Mappentyp geändert – z. B. ein neues Pflichtfeld –, und deine Mappe passt nicht mehr dazu. | Ergänze oder korrigiere die markierten Angaben und speichere. Dann erledigt sie sich von selbst. |
 | **Erwähnung** | Jemand hat dich in einem formatierten Text mit **@** erwähnt. | Klicke im Hinweis auf **Erledigt**. |
-| **Aufgabe** | Jemand hat dir über **Aufgabe vergeben** etwas zu tun gegeben. | Klicke im Hinweis auf **Erledigt**. |
+| **Aufgabe** | Jemand hat dir über **Aktionen → Aufgabe vergeben** etwas zu tun gegeben. | Klicke im Hinweis auf **Erledigt**. |
 
 Bei „Passt nicht“ löscht oder ändert das DMS nichts von selbst; die betroffenen Felder sind in der Mappe markiert, und geprüft wird beim nächsten Speichern.
 
 ## Eine Aufgabe vergeben
 
-Über den Registern einer Mappe steht **Aufgabe vergeben**. Wähle, **für wen** sie ist, und schreibe, **was zu tun ist**. Die Mappe erscheint dann im Eingang dieses Benutzers.
+Rechts über den Registern einer Mappe steht das Menü **Aktionen**; darin **Aufgabe vergeben**. Wähle, **für wen** sie ist, und schreibe, **was zu tun ist**. Die Mappe erscheint dann im Eingang dieses Benutzers.
 
 ![Aufgabe vergeben](bilder/aufgabe-vergeben.png)
 
@@ -26,7 +26,7 @@ Aufgaben gehen immer an einen Benutzer, nicht an eine Rolle – damit klar ist, 
 
 ## Weitergeben
 
-Passt eine Aufgabe besser zu jemand anderem, wähle im Hinweis unter **Weitergeben** einen anderen Benutzer. Die Mappe wandert in dessen Eingang; im [Protokoll](zusammenarbeit.md#protokoll) steht, wer sie wann an wen gegeben hat.
+Passt eine Aufgabe besser zu jemand anderem, klicke im Hinweis auf **Weitergeben**, wähle den Benutzer und bestätige mit **Weitergeben** (**Esc** bricht ab). Die Mappe wandert in dessen Eingang; im [Protokoll](zusammenarbeit.md#protokoll) steht, wer sie wann an wen gegeben hat.
 
 ## Jeden Morgen eine Übersicht
 

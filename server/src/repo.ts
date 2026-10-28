@@ -72,6 +72,8 @@ export interface Repo {
   /** Die Mappe mit dieser Systemkennung (z. B. rolle:admin). */
   holeSystemMappe(kennung: string): Promise<Mappe | undefined>;
   aendereMappe(id: string, werte: Werte, verweise: Verweis[], benutzerId: string | null): Promise<Mappe>;
+  /** Setzt nur „zuletzt geändert“ (z. B. nach Dokumenten, #76); Werte, Verweise und Passung bleiben. */
+  beruehreMappe(id: string, benutzerId: string | null): Promise<void>;
   /** Viele neue Mappen auf einmal (Demo-Daten): eine Transaktion, Titel schon berechnet. */
   legeMappenAn(liste: NeueMappe[]): Promise<void>;
   loescheMappe(id: string): Promise<void>;

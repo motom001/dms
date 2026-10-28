@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import type { Notiz } from '../../../shared/src/model';
 import { api } from '../api';
-import { useDaten } from '../daten';
 import { Formatiert, FormatiertEingabe } from './Formatiert';
+import { Person } from '../Person';
 
 /** Notizen an einer Mappe (#55): lesen, anlegen, bearbeiten, löschen – jeder darf alles. */
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
 
 export function Notizen({ mappeId, notizen, neuLaden, schliessen }: { mappeId: string; notizen: Notiz[]; neuLaden: () => Promise<void>; schliessen: () => void }) {
-  const d = useDaten();
   const [neu, setNeu] = useState('');
   const [bearbeite, setBearbeite] = useState<{ id: string; text: string } | null>(null);
   const [laeuft, setLaeuft] = useState(false);
@@ -30,7 +29,7 @@ export function Notizen({ mappeId, notizen, neuLaden, schliessen }: { mappeId: s
         {notizen.map((n) => (
           <li key={n.id}>
             <div className="notizkopf leise klein">
-              {d.person(n.erstelltVon)} · {zeit(n.erstellt)}{n.geaendert !== n.erstellt && n.geaendert.slice(0, 16) !== n.erstellt.slice(0, 16) ? ` · geändert ${zeit(n.geaendert)}${n.geaendertVon !== n.erstelltVon ? ` von ${d.person(n.geaendertVon)}` : ''}` : ''}
+              <Person id={n.erstelltVon} /> · {zeit(n.erstellt)}{n.geaendert !== n.erstellt && n.geaendert.slice(0, 16) !== n.erstellt.slice(0, 16) && <> · geändert {zeit(n.geaendert)}{n.geaendertVon !== n.erstelltVon && <> von <Person id={n.geaendertVon} /></>}</>}
               {bearbeite?.id !== n.id && <span className="zeilenaktionen">
                 <button type="button" className="textknopf" onClick={() => setBearbeite({ id: n.id, text: n.text })}>Bearbeiten</button>
                 <button type="button" className="textknopf gefahr" disabled={laeuft} onClick={() => { if (confirm('Diese Notiz löschen?')) void tu(() => api.notizLoeschen(n.id)); }}>Löschen</button>

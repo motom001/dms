@@ -1,23 +1,24 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AUFGABENARTEN, type Aufgabe } from '../../../shared/src/model';
 import { api } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
+import { Person } from '../Person';
 
 /** Aufgaben an einer Mappe (#54): offene als Hinweis über der Mappe; eigene erledigen oder weitergeben. */
 const datum = (iso: string) => new Date(iso).toLocaleDateString('de-DE', { dateStyle: 'short' });
 
-export function BenutzerWahl({ wert, setze, ohne, label }: { wert: string; setze: (id: string) => void; ohne?: string | null; label: string }) {
+export function BenutzerWahl({ wert, setze, ohne, label, fokus }: { wert: string; setze: (id: string) => void; ohne?: string | null; label: string; fokus?: boolean }) {
   const d = useDaten();
   return (
-    <select aria-label={label} value={wert} onChange={(e) => setze(e.target.value)}>
+    <select aria-label={label} value={wert} autoFocus={fokus} onChange={(e) => setze(e.target.value)}>
       <option value="">– Benutzer wählen –</option>
       {d.personen.filter((p) => p.aktiv !== false && p.id !== ohne).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
     </select>
   );
 }
 
-function Zeile({ a, neuLaden }: { a: Aufgabe; neuLaden: () => Promise<void> }) {
+function Zeile({ a, neuLaden, setBestaetigt }: { a: Aufgabe; neuLaden: () => Promise<void>; setBestaetigt: (t: string) => void }) {
   const d = useDaten();
   const { ich } = useKonto();
   const [weiter, setWeiter] = useState(false);
@@ -25,27 +26,30 @@ function Zeile({ a, neuLaden }: { a: Aufgabe; neuLaden: () => Promise<void> }) {
   const [fehler, setFehler] = useState<string>();
   const meine = a.empfaengerId === ich.id || (!a.empfaengerId && ich.rolle === 'admin');
   const darf = meine || ich.rolle === 'admin';
-  async function tu(f: () => Promise<unknown>) {
+  async function tu(f: () => Promise<unknown>, meldung?: string) {
     setFehler(undefined);
-    try { await f(); setWeiter(false); await neuLaden(); await d.neuLaden(); } catch (e) { setFehler((e as Error).message); }
+    try { await f(); setWeiter(false); setAn(''); if (meldung) setBestaetigt(meldung); await neuLaden(); await d.neuLaden(); } catch (e) { setFehler((e as Error).message); }
   }
   return (
     <li className={meine ? 'meine' : ''}>
       <div className="aufgabentext">
-        <strong>{meine ? 'Für dich' : `Für ${a.empfaengerId ? d.person(a.empfaengerId) : 'Administratoren'}`}:</strong> {a.text}
-        <span className="leise klein"> · {AUFGABENARTEN[a.art]} seit {datum(a.erstellt)}{a.erstelltVon ? ` von ${d.person(a.erstelltVon)}` : ''}</span>
+        <strong>{meine ? 'Für dich' : <>Für {a.empfaengerId ? <Person id={a.empfaengerId} /> : 'Administratoren'}</>}:</strong> {a.text}
+        <span className="leise klein"> · {AUFGABENARTEN[a.art]} seit {datum(a.erstellt)}{a.erstelltVon && <> von <Person id={a.erstelltVon} /></>}</span>
       </div>
-      {darf && (
+      {darf && !weiter && (
         <div className="aufgabenaktionen">
           {a.art !== 'passung' && <button type="button" className="knopf klein" onClick={() => void tu(() => api.aufgabeErledigt(a.id))}>Erledigt</button>}
-          {!weiter
-            ? <button type="button" className="textknopf" onClick={() => setWeiter(true)}>Weitergeben</button>
-            : <span className="weitergeben">
-                <BenutzerWahl label="Weitergeben an" wert={an} setze={setAn} ohne={a.empfaengerId} />
-                <button type="button" className="knopf klein" disabled={!an} onClick={() => void tu(() => api.aufgabeDelegieren(a.id, an))}>Weitergeben</button>
-                <button type="button" className="textknopf" onClick={() => setWeiter(false)}>Abbrechen</button>
-              </span>}
+          <button type="button" className="knopf klein" onClick={() => setWeiter(true)}>Weitergeben</button>
         </div>
+      )}
+      {darf && weiter && (
+        <form className="weitergeben" onSubmit={(e) => { e.preventDefault(); if (an) void tu(() => api.aufgabeDelegieren(a.id, an), `An ${d.person(an)} weitergegeben.`); }}
+          onKeyDown={(e) => { if (e.key === 'Escape') { setWeiter(false); setAn(''); } }}>
+          <span className="leise klein">Weitergeben an</span>
+          <BenutzerWahl label="Weitergeben an" wert={an} setze={setAn} ohne={a.empfaengerId} fokus />
+          <button className="knopf klein primaer" disabled={!an}>Weitergeben</button>
+          <button type="button" className="textknopf" onClick={() => { setWeiter(false); setAn(''); }}>Abbrechen</button>
+        </form>
       )}
       {fehler && <p className="fehlertext">{fehler}</p>}
     </li>
@@ -55,10 +59,13 @@ function Zeile({ a, neuLaden }: { a: Aufgabe; neuLaden: () => Promise<void> }) {
 /** Hinweis über der Mappe mit allen offenen Aufgaben. */
 export function AufgabenHinweis({ aufgaben, neuLaden }: { aufgaben: Aufgabe[]; neuLaden: () => Promise<void> }) {
   const offen = aufgaben.filter((a) => !a.erledigt);
-  if (!offen.length) return null;
+  const [bestaetigt, setBestaetigt] = useState<string>();
+  useEffect(() => { if (!bestaetigt) return; const t = window.setTimeout(() => setBestaetigt(undefined), 6000); return () => window.clearTimeout(t); }, [bestaetigt]);
+  if (!offen.length) return bestaetigt ? <div className="hinweis gut" role="status"><p>{bestaetigt}</p></div> : null;
   return (
     <div className="hinweis warn stapel aufgabenhinweis" role="status">
-      <ul>{offen.map((a) => <Zeile key={a.id} a={a} neuLaden={neuLaden} />)}</ul>
+      <ul>{offen.map((a) => <Zeile key={a.id} a={a} neuLaden={neuLaden} setBestaetigt={setBestaetigt} />)}</ul>
+      {bestaetigt && <p className="gutertext klein">{bestaetigt}</p>}
     </div>
   );
 }
