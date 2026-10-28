@@ -94,7 +94,9 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Deutsche Suche** über das Suchplugin von MkDocs (`lang: de`, mit Wortstammbildung); läuft im Browser, ohne Server.
 - **Screenshots werden erzeugt, nicht gepflegt:** Der Workflow *Handbuch* startet das DMS mit leerer Datenbank, legt Beispiele und Demo-Daten an und nimmt die Seiten mit Playwright auf (`docs/handbuch/screenshots/aufnehmen.mjs`). So passen die Bilder immer zur Version auf `main`. Die Bilder liegen nicht im Repository.
 - **GitHub Pages** über GitHub Actions; Pull Requests bauen nur und legen die Screenshots als Artefakt ab.
-- **Changelog = GitHub Releases.** Ein Tag `v*` erzeugt das Release; der Text kommt aus `docs/releases/<tag>.md` oder, falls es die Datei nicht gibt, aus den Commit-Überschriften seit dem vorigen Tag.
+- **Changelog = GitHub Releases.** Der Text kommt aus `docs/releases/<tag>.md` oder, falls es die Datei nicht gibt, aus den Commit-Überschriften seit dem vorigen Tag.
+- **Release bei neuer Versionsnummer (#34).** Steht auf `main` eine Version in `package.json`, zu der es noch keinen Tag gibt, legt „Prüfen und Image bauen“ nach bestandenen Prüfungen das Image mit Versionsnummer und danach Tag und Release an (`release.yml` als wiederverwendbarer Workflow). Nicht bei jedem Commit: So bleibt die Versionsnummer aussagekräftig, und mehrere Wünsche lassen sich bündeln.
+- **Image-Tag im selben Lauf**, weil ein mit dem Workflow-Token angelegter Tag keine weiteren Workflows startet; so braucht es kein zusätzliches Token. Von Hand gepushte Tags und von Hand veröffentlichte Releases funktionieren weiter.
 - **Hilfe-Link** im Benutzermenü auf das Benutzerhandbuch, für Administratoren zusätzlich auf das Administratorhandbuch.
 
 ## Bewusst noch nicht drin

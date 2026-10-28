@@ -1,8 +1,10 @@
 name: Release
 
-# Ein Tag wie v0.8.0 erzeugt ein GitHub Release – das ist der Changelog des DMS.
-# Wird das Release auf GitHub von Hand angelegt (Tag beim Veröffentlichen erzeugen),
-# füllt dieser Workflow danach seinen Text.
+# GitHub Releases sind der Changelog des DMS. Dieser Workflow legt sie an oder füllt ihren Text:
+#  - automatisch: „Prüfen und Image bauen“ ruft ihn auf, wenn auf main eine neue
+#    Versionsnummer in package.json steht (#34) – Tag und Release entstehen dann hier,
+#  - bei einem von Hand gepushten Tag v*,
+#  - bei einem von Hand auf GitHub veröffentlichten Release (nur der Text wird gesetzt).
 # Liegt docs/releases/<tag>.md vor, wird es als Text übernommen; sonst die
 # Commit-Überschriften seit dem vorigen Tag.
 
@@ -11,13 +13,23 @@ on:
     tags: ['v*']
   release:
     types: [published]
+  workflow_call:
+    inputs:
+      tag:
+        description: Tag des Releases, z. B. v0.9.0
+        required: true
+        type: string
+      ziel:
+        description: Commit, auf den der neue Tag zeigen soll
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 # Tag-Push und veröffentlichtes Release kommen oft gleichzeitig: nacheinander laufen lassen.
 concurrency:
-  group: release-${{ github.event.release.tag_name || github.ref_name }}
+  group: release-${{ inputs.tag || github.event.release.tag_name || github.ref_name }}
 
 jobs:
   release:
@@ -28,16 +40,23 @@ jobs:
           fetch-depth: 0
       - name: Release-Notizen
         run: |
-          tag="${{ github.event.release.tag_name || github.ref_name }}"
+          tag="${{ inputs.tag || github.event.release.tag_name || github.ref_name }}"
+          ziel="${{ inputs.ziel || github.sha }}"
           echo "TAG=$tag" >> "$GITHUB_ENV"
+          echo "ZIEL=$ziel" >> "$GITHUB_ENV"
+          # Gibt es den Tag schon, reicht der Text bis zu ihm; sonst bis zum Ziel-Commit.
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            bis="$tag"; vorher=$(git describe --tags --abbrev=0 "${tag}^" 2>/dev/null || true)
+          else
+            bis="$ziel"; vorher=$(git describe --tags --abbrev=0 "$ziel" 2>/dev/null || true)
+          fi
           if [ -f "docs/releases/${tag}.md" ]; then
             cp "docs/releases/${tag}.md" notizen.md
           else
-            vorher=$(git describe --tags --abbrev=0 "${tag}^" 2>/dev/null || true)
             {
               echo "## Änderungen"
               echo
-              git log --no-merges --format='- %s' ${vorher:+$vorher..}"$tag"
+              git log --no-merges --format='- %s' ${vorher:+$vorher..}"$bis"
             } > notizen.md
           fi
           {
@@ -50,7 +69,7 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release edit "$TAG" --title "DMS ${TAG}" --notes-file notizen.md
           else
-            gh release create "$TAG" --title "DMS ${TAG}" --notes-file notizen.md --verify-tag
+            gh release create "$TAG" --title "DMS ${TAG}" --notes-file notizen.md --target "$ZIEL"
           fi
         env:
           GH_TOKEN: ${{ github.token }}
