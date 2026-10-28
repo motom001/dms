@@ -139,6 +139,12 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Deutsche Volltextsuche von PostgreSQL** (`to_tsvector('german', …)`, GIN-Index, `websearch_to_tsquery`): findet Wortformen; die Fundstelle kommt aus `ts_headline` mit Steuerzeichen als Markierung – nie als HTML.
 - Office-Dokumente und externe Dienste kommen später.
 
+## Image je Architektur nativ bauen (#88)
+
+- **Kein QEMU mehr:** Das arm64-Image entstand bisher emuliert auf Intel-Rechnern; die Emulation stürzte beim `npm install` mehrfach mit Fehler 132 ab (0.8.1, 0.13.0), und damit blieben Image, Tag und Release aus. Jetzt baut jede Architektur auf einem passenden Rechner von GitHub (`ubuntu-24.04` bzw. `ubuntu-24.04-arm`, für öffentliche Repos kostenlos).
+- **Hochladen nur unter dem Prüfwert, dann zusammenführen:** Jeder Teil wird ohne Tag hochgeladen; `image-zusammen` erzeugt daraus mit `docker buildx imagetools create` das gemeinsame Image mit allen Tags und prüft, dass beide Architekturen enthalten sind. Das Release entsteht erst danach.
+- **Pull Requests** bauen beide Architekturen ebenfalls nativ zur Probe (ohne Veröffentlichung).
+
 ## Bewusst noch nicht drin
 
 Rechte pro Mappe, Fristen, Schlüsselwechsel (#47), Backup-Funktion in der Anwendung (#48), Texterkennung für Office-Dokumente, Zwei-Faktor-Anmeldung.
