@@ -14,14 +14,15 @@ CREATE TABLE designs (
 );
 CREATE UNIQUE INDEX designs_name_uq ON designs (haushalt_id, lower(name));
 
-INSERT INTO designs (id, haushalt_id, name, grundlage, primaer, sekundaer)
-SELECT gen_random_uuid(), h.id, d.name, d.grundlage, d.primaer, d.sekundaer
+-- erstellt gestaffelt, damit die Reihenfolge in der Liste fest ist.
+INSERT INTO designs (id, haushalt_id, name, grundlage, primaer, sekundaer, erstellt)
+SELECT gen_random_uuid(), h.id, d.name, d.grundlage, d.primaer, d.sekundaer, now() + d.nr * interval '1 millisecond'
 FROM haushalte h, (VALUES
-  ('Automatisch', 'automatisch', '#1D5A8A', '#2B7656'),
-  ('Hell',        'hell',        '#1D5A8A', '#2B7656'),
-  ('Dunkel',      'dunkel',      '#1D5A8A', '#2B7656'),
-  ('Kontrast',    'kontrast',    '#0040A0', '#006B3C')
-) AS d(name, grundlage, primaer, sekundaer);
+  (1, 'Automatisch', 'automatisch', '#1D5A8A', '#2B7656'),
+  (2, 'Hell',        'hell',        '#1D5A8A', '#2B7656'),
+  (3, 'Dunkel',      'dunkel',      '#1D5A8A', '#2B7656'),
+  (4, 'Kontrast',    'kontrast',    '#0040A0', '#006B3C')
+) AS d(nr, name, grundlage, primaer, sekundaer);
 
 INSERT INTO einstellungen (haushalt_id, schluessel, wert)
 SELECT d.haushalt_id, 'design_standard', to_jsonb(d.id::text) FROM designs d WHERE d.name = 'Automatisch';
