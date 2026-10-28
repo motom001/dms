@@ -39,6 +39,10 @@ Mit einem API-Schlüssel können andere Programme in deinem Namen auf das DMS zu
 
 **Beim Abmelden leeren** löscht deine gelöschten Mappen endgültig, sobald du dich abmeldest. Ohne den Haken bleiben sie so lange im [Papierkorb](ablage.md#papierkorb), wie der Administrator es eingestellt hat.
 
+### Aufgaben
+
+Mappen mit offenen [Aufgaben](eingang.md) für dich stehen im Eingang. Zusätzlich schickt das DMS dir einmal am Tag eine Übersicht per E-Mail, solange du welche hast. **Tägliche Zusammenfassung meiner Aufgaben per E-Mail** bestellt sie ab oder wieder an.
+
 ### Ansicht zurücksetzen
 
 Die Breite der Spalten und eingeklappte Bereiche merkt sich jedes Gerät. Ist etwas nicht mehr zu finden, stellt **Standard-Ansicht wiederherstellen** die ursprüngliche Aufteilung her.

@@ -15,6 +15,10 @@ Rechts unter **Aufbewahrung** stellst du ein, wie viele Tage gelöschte Mappen b
 
 Jeder Benutzer kann in seinem Profil einstellen, dass sein Papierkorb **beim Abmelden geleert** wird.
 
+### Protokoll endgültig gelöschter Mappen
+
+Jede Mappe hat ein **Protokoll** (wer wann was geändert hat). Wird eine Mappe endgültig gelöscht, bleibt ihr Protokoll noch eine Weile in der Datenbank, damit sich nachvollziehen lässt, was mit ihr geschah. Wie lange, stellst du darunter unter **Protokoll endgültig gelöschter Mappen behalten** ein (Standard: 365 Tage; 0 löscht es sofort mit). Das Protokoll lebender Mappen bleibt immer.
+
 ## Was im Papierkorb gilt
 
 - Mappen im Papierkorb erscheinen nirgends sonst: nicht in Sichten, Zählern, Suche, Verweisauswahl oder der API.

@@ -17,6 +17,7 @@ Darunter folgen die **Register** – die Trennblätter der Mappe. Es gibt drei A
 | **Angaben** (z. B. „Vertrag“, „Stammdaten“) | Felder zum Ausfüllen |
 | **Dokumente** (z. B. „Vertragsunterlagen“) | Hochgeladene Dateien, siehe [Dokumente](dokumente.md) |
 | **Verknüpfungen** (z. B. „Rechnungen“) | Andere Mappen, die auf diese Mappe verweisen |
+| **Protokoll** | Wer wann was an der Mappe geändert hat, siehe [Protokoll](zusammenarbeit.md#protokoll) |
 
 Hinter Dokumenten- und Verknüpfungsregistern steht, wie viel darin liegt. Ein roter Punkt zeigt, auf welchem Register ein Feld noch nicht stimmt.
 
@@ -36,6 +37,7 @@ Stimmt etwas nicht – ein Pflichtfeld ist leer, eine Zahl zu groß, eine Nummer
 | Feld | So gibst du es ein |
 | --- | --- |
 | Text, Langtext | frei; manche Texte haben eine Höchstlänge oder müssen eindeutig sein |
+| Formatierter Text | mit Werkzeugleiste: fett, kursiv, Überschrift, Liste, Zitat, Link; **@** erwähnt jemanden (siehe unten) |
 | Zahl | mit Komma, z. B. `12,5` |
 | Betrag | Zahl und Währung, z. B. `98,00 EUR` |
 | Datum | über den Kalender oder als Datum |
@@ -43,6 +45,16 @@ Stimmt etwas nicht – ein Pflichtfeld ist leer, eine Zahl zu groß, eine Nummer
 | Auswahlliste | einen Wert (oder mehrere) aus der Liste wählen |
 | Verweis | eine andere Mappe suchen und wählen (siehe unten) |
 | Passwort | eintippen; gespeichert wird es verschlüsselt (siehe unten) |
+
+### Formatierter Text
+
+Manche längeren Texte lassen sich formatieren. Über dem Feld steht eine kleine **Werkzeugleiste**: Markiere Text und klicke auf **F** (fett), *K* (kursiv), eine Überschrift, eine Liste, ein Zitat oder einen Link. Im Feld steht dann eine einfache Schreibweise, z. B. `**fett**` – das ist richtig so. **Vorschau** zeigt, wie es aussieht.
+
+![Formatierter Text mit Werkzeugleiste](bilder/formatiert.png)
+
+Tippst du **@** oder klickst auf **@ Erwähnen**, wählst du einen Benutzer aus. Er bekommt dann eine [Aufgabe](eingang.md) zu dieser Mappe.
+
+In Listen und in der Suche erscheint der Text ohne Formatierung.
 
 ### Passwörter
 
@@ -65,6 +77,8 @@ Ein Klick auf einen gesetzten Verweis öffnet die andere Mappe.
 Öffne die Mappe, ändere die Angaben und klicke auf **Mappe speichern**. Solange etwas nicht gespeichert ist, steht unten „Ungespeicherte Änderungen“. **Verwerfen** stellt den gespeicherten Stand wieder her.
 
 Willst du die Mappe mit ungespeicherten Änderungen verlassen, fragt das DMS nach.
+
+Über den Registern stehen außerdem **Notizen**, **Aufgabe vergeben** und das Menü **Aktionen** – siehe [Notizen, Erwähnungen, Protokoll](zusammenarbeit.md) und [E-Mail und PDF](versenden.md).
 
 Manche Angaben sind nur zum Lesen da und haben einen gestrichelten Rahmen – zum Beispiel Name und E-Mail-Adresse in der Mappe eines Benutzers. Daneben steht, wo man sie ändert.
 

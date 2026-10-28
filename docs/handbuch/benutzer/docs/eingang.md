@@ -1,20 +1,33 @@
-# Eingang
+# Eingang und Aufgaben
 
-Der **Eingang** ist die oberste Sicht in der Ablage. Er sammelt deine Mappen, die gerade nicht zu den Regeln ihres Mappentyps passen – die Zahl daneben sagt, wie viele es sind.
+Der **Eingang** ist die oberste Sicht in der Ablage. Er zeigt die Mappen, an denen **du etwas tun sollst** – jede davon hat eine offene **Aufgabe** für dich. Die Zahl daneben sagt, wie viele es sind.
 
-![Eingang mit einer Mappe, der eine Angabe fehlt](bilder/eingang.png)
+![Eingang mit einer Aufgabe](bilder/eingang.png)
 
-## Wie kommt eine Mappe in den Eingang?
+In der Liste steht bei jeder Mappe, was zu tun ist. In der Mappe selbst steht oben ein Hinweis mit der Aufgabe.
 
-Ein Administrator kann einen Mappentyp jederzeit ändern – zum Beispiel ein neues Pflichtfeld hinzufügen oder einen Wert aus einer Auswahlliste streichen. Bestehende Mappen passen dann vielleicht nicht mehr dazu. Das DMS löscht oder ändert dabei nichts, sondern **markiert** diese Mappen und legt sie in den Eingang dessen, der sie angelegt hat.
+## Woher kommen Aufgaben?
 
-In der Liste steht bei jeder Mappe, was nicht passt. In der Mappe selbst erscheint oben ein gelber Hinweis, und die betroffenen Felder sind markiert.
+| Art | Wann | Wie wird sie erledigt? |
+| --- | --- | --- |
+| **Passt nicht** | Ein Administrator hat den Mappentyp geändert – z. B. ein neues Pflichtfeld –, und deine Mappe passt nicht mehr dazu. | Ergänze oder korrigiere die markierten Angaben und speichere. Dann erledigt sie sich von selbst. |
+| **Erwähnung** | Jemand hat dich in einem formatierten Text mit **@** erwähnt. | Klicke im Hinweis auf **Erledigt**. |
+| **Aufgabe** | Jemand hat dir über **Aufgabe vergeben** etwas zu tun gegeben. | Klicke im Hinweis auf **Erledigt**. |
 
-## Was tun?
+Bei „Passt nicht“ löscht oder ändert das DMS nichts von selbst; die betroffenen Felder sind in der Mappe markiert, und geprüft wird beim nächsten Speichern.
 
-Öffne die Mappe, ergänze oder korrigiere die markierten Angaben und speichere. Sobald die Mappe passt, verschwindet sie aus dem Eingang.
+## Eine Aufgabe vergeben
 
-Die übrigen Angaben der Mappe kannst du wie gewohnt ändern – geprüft wird beim nächsten Speichern.
+Über den Registern einer Mappe steht **Aufgabe vergeben**. Wähle, **für wen** sie ist, und schreibe, **was zu tun ist**. Die Mappe erscheint dann im Eingang dieses Benutzers.
 
-!!! note "Später mehr"
-    Der Eingang soll künftig auch Aufgaben und Abläufe sammeln, zum Beispiel anstehende Kündigungsfristen.
+![Aufgabe vergeben](bilder/aufgabe-vergeben.png)
+
+Aufgaben gehen immer an einen Benutzer, nicht an eine Rolle – damit klar ist, wer sich kümmert.
+
+## Weitergeben
+
+Passt eine Aufgabe besser zu jemand anderem, wähle im Hinweis unter **Weitergeben** einen anderen Benutzer. Die Mappe wandert in dessen Eingang; im [Protokoll](zusammenarbeit.md#protokoll) steht, wer sie wann an wen gegeben hat.
+
+## Jeden Morgen eine Übersicht
+
+Hast du offene Aufgaben, schickt dir das DMS einmal am Tag eine E-Mail mit der Liste und Links zu den Mappen – keine Mail bei jeder einzelnen Aufgabe. Abbestellen kannst du sie im [Profil](profil.md#aufgaben).

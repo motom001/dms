@@ -96,8 +96,12 @@ async function vorbereiten() {
 
   // Vertrag bekommt einen verantwortlichen Benutzer (#26)
   const vertrag = typ('Vertrag');
-  const felder = [...vertrag.felder, { key: 'verantwortlich', label: 'Verantwortlich', typ: 'referenz', zielTyp: benutzerTyp.id, verweisart: 'bezug', hilfe: 'Wer die Fristen im Blick behält' }];
-  const register = vertrag.register.map((r) => (r.art === 'felder' && r.key === 'vertrag' ? { ...r, felder: [...(r.felder ?? []), 'verantwortlich'] } : r));
+  // dazu eine formatierte Bemerkung (#53) und ein Protokollregister (#57)
+  const felder = [...vertrag.felder,
+    { key: 'verantwortlich', label: 'Verantwortlich', typ: 'referenz', zielTyp: benutzerTyp.id, verweisart: 'bezug', hilfe: 'Wer die Fristen im Blick behält' },
+    { key: 'bemerkung', label: 'Bemerkung', typ: 'formatiert' }];
+  const register = [...vertrag.register.map((r) => (r.art === 'felder' && r.key === 'vertrag' ? { ...r, felder: [...(r.felder ?? vertrag.felder.map((f) => f.key)), 'verantwortlich', 'bemerkung'] } : r)),
+    { key: 'protokoll', name: 'Protokoll', art: 'protokoll' }];
   await api('PUT', `/api/typen/${vertrag.id}`, { ...vertrag, felder, register });
   typen = await api('GET', '/api/typen');
 
@@ -105,6 +109,15 @@ async function vorbereiten() {
   const mappe = (feld, wert) => alle.find((m) => m.werte[feld] === wert);
   const strom = mappe('bezeichnung', 'Stromvertrag Haus');
   await api('PUT', `/api/mappen/${strom.id}`, { werte: { ...strom.werte, verantwortlich: admin.id } });
+  // Bemerkung mit Erwähnung (#56), Notizen (#55), eine Aufgabe (#54); dabei füllt sich das Protokoll (#57)
+  const mitgliedId = einladung.benutzer.id;
+  await api('PUT', `/api/mappen/${strom.id}`, { werte: { ...strom.werte, verantwortlich: admin.id,
+    bemerkung: `**Preisanpassung zum 1. April.** Bitte bis Ende März prüfen:\n\n- neuer Arbeitspreis\n- Grundgebühr\n\n@[${MITGLIED.name}](benutzer:${mitgliedId}), magst du die Angebote vergleichen?` } });
+  await api('POST', `/api/mappen/${strom.id}/notizen`, { text: 'Kundenservice angerufen: Sonderkündigung wegen Preisanpassung ist **bis 31. März** möglich.' });
+  await api('POST', `/api/mappen/${strom.id}/notizen`, { text: 'Zählerstand am 01.03.: 48 211 kWh' });
+  await api('POST', `/api/mappen/${strom.id}/aufgaben`, { empfaengerId: mitgliedId, text: 'Zählerstand an die Stadtwerke melden' });
+  // E-Mail-Versand eingerichtet (ohne zu senden), damit die Maske zum Versenden erscheint (#58)
+  await api('PUT', '/api/werkbank/betrieb/mail', { aktiv: true, host: 'smtp.example.org', port: 587, verbindung: 'starttls', benutzer: 'dms@example.org', passwort: 'nur-fuer-bilder', absender: 'DMS <dms@example.org>' });
   await api('POST', `/api/mappen/${strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Stromvertrag 2022.pdf')}&typ=application/pdf`, beispielPdf('Stromvertrag Haus - Vertragsunterlagen'), true);
   await api('POST', `/api/mappen/${strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Preisanpassung 2026.pdf')}&typ=application/pdf`, beispielPdf('Preisanpassung 2026'), true);
 
@@ -235,6 +248,32 @@ async function main() {
   await s.locator('.passwort').first().waitFor();
   await bild(s, 'passwortfeld');
 
+  // Formatierter Text, Notizen, Aufgabe, Protokoll, Aktionen (#53–#58)
+  await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
+  await s.locator('.formateingabe').first().evaluate((e) => e.scrollIntoView({ block: 'center' }));
+  await bild(s, 'formatiert');
+  await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
+  await s.getByRole('button', { name: /Notizen/ }).click();
+  await s.locator('.notizliste li').first().waitFor();
+  await bild(s, 'notizen');
+  await s.getByRole('button', { name: /Notizen/ }).click();
+  await s.getByRole('button', { name: /Aufgabe vergeben/ }).click();
+  const neueAufgabe = s.getByRole('region', { name: 'Aufgabe vergeben' });
+  await neueAufgabe.getByLabel('Empfänger').selectOption({ label: MITGLIED.name });
+  await neueAufgabe.getByPlaceholder(/Rechnung/).fill('Sonderkündigung vorbereiten');
+  await bild(s, 'aufgabe-vergeben');
+  await neueAufgabe.getByRole('button', { name: 'Schließen' }).click();
+  await s.getByRole('tab', { name: 'Protokoll' }).click();
+  await s.locator('.historie details').first().click();
+  await bild(s, 'protokoll');
+  await s.getByRole('button', { name: /Aktionen/ }).click();
+  await bild(s, 'aktionen');
+  await s.getByRole('menuitem', { name: /E-Mail/ }).click();
+  const email = s.getByRole('region', { name: 'Per E-Mail versenden' });
+  await email.getByLabel(/^An/).fill('steuerberater@example.org');
+  await email.getByLabel('Nachricht').fill('Hallo Frau Berger,\n\nanbei der Stromvertrag und die Preisanpassung.\n\nViele Grüße');
+  await bild(s, 'email');
+
   // Papierkorb in der Ablage (#43)
   await geheZu(s, '/ablage/papierkorb');
   await s.locator('.spalte.liste .eintrag, .spalte.liste tbody tr').first().click();
@@ -316,6 +355,9 @@ async function main() {
   await geheZu(s, '/werkbank/verschluesselung');
   await s.getByRole('heading', { name: 'Schlüssel', exact: true }).waitFor();
   await bild(s, 'werkbank-verschluesselung');
+  await geheZu(s, '/werkbank/aufgaben');
+  await s.getByRole('heading', { name: 'Tägliche Zusammenfassung' }).waitFor();
+  await bild(s, 'werkbank-aufgaben');
   await geheZu(s, '/werkbank/papierkorb');
   await s.getByRole('heading', { name: 'Aufbewahrung', exact: true }).waitFor();
   await bild(s, 'werkbank-papierkorb');
