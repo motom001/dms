@@ -190,6 +190,10 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         const dateien = (await tx`
           SELECT DISTINCT d.sha256 FROM dokumente d JOIN mappen m ON m.id = d.mappe_id
           WHERE m.demo AND m.haushalt_id = ${haushaltId}`).map((z) => z.sha256 as string);
+        // Demo-Mappen verweisen aufeinander. Erst die Verweise entfernen, sonst greift der
+        // Fremdschlüssel auf ziel_id je nach Reihenfolge der Prüfungen vor der Kaskade.
+        await tx`DELETE FROM verweise v USING mappen m
+          WHERE m.id = v.quelle_id AND m.demo AND m.haushalt_id = ${haushaltId}`;
         const r = await tx`DELETE FROM mappen WHERE demo AND haushalt_id = ${haushaltId}`;
         return { anzahl: r.count, dateien };
       });
