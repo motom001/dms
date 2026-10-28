@@ -65,8 +65,10 @@ export const api = {
 
   personen: () => anfrage<Array<{ id: string; name: string }>>('GET', '/api/personen'),
   benutzer: () => anfrage<Benutzer[]>('GET', '/api/benutzer'),
-  benutzerAnlegen: (d: { email: string; name: string; rolle: Rolle }) => anfrage<LinkErgebnis>('POST', '/api/benutzer', d),
-  benutzerAendern: (id: string, d: Partial<Pick<Benutzer, 'name' | 'rolle' | 'aktiv'>>) => anfrage<Benutzer>('PUT', `/api/benutzer/${id}`, d),
+  benutzerAnlegen: (d: { email: string; name: string; rolle: Rolle; rollen?: string[] }) => anfrage<LinkErgebnis>('POST', '/api/benutzer', d),
+  benutzerAendern: (id: string, d: Partial<Pick<Benutzer, 'name' | 'rolle' | 'aktiv' | 'rollen'>>) => anfrage<Benutzer>('PUT', `/api/benutzer/${id}`, d),
+  /** Alle Rollen (Systemrollen zuerst) für die Benutzerverwaltung. */
+  rollen: () => anfrage<Array<{ id: string; name: string; system: boolean }>>('GET', '/api/rollen'),
   benutzerLoeschen: (id: string) => anfrage<null>('DELETE', `/api/benutzer/${id}`),
   neuerLink: (id: string) => anfrage<LinkErgebnis>('POST', `/api/benutzer/${id}/link`),
   sitzungen: (id: string) => anfrage<Sitzung[]>('GET', `/api/benutzer/${id}/sitzungen`),

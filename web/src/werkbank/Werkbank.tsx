@@ -115,7 +115,7 @@ function TypenListe({ offen }: { offen?: string }) {
               return (
                 <li key={t.id}>
                   <Link to={`/werkbank/typen/${t.id}`} className={`eintrag werk ${offen === t.id ? 'an' : ''}`}>
-                    <span className="titel">{t.name}</span>
+                    <span className="titel">{t.name}{t.system && <span className="chip" title="Systemmappentyp: lässt sich erweitern, aber nicht löschen">System</span>}</span>
                     <span className="unter">{t.felder.length} Felder · {t.register.length} Register · {anzahl.toLocaleString('de-DE')} {anzahl === 1 ? 'Mappe' : 'Mappen'}</span>
                     {unpassend > 0 && <span className="problem">{unpassend} passen nicht zur Definition</span>}
                   </Link>

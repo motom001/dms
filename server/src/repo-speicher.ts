@@ -37,14 +37,14 @@ export function speicherRepo(): Repo {
   return {
     async listeTypen() { return [...typen.values()].map(kopie).sort((a, b) => a.name.localeCompare(b.name, 'de')); },
     async holeTyp(id) { const t = typen.get(id); return t && kopie(t); },
-    async legeTypAn(id, d: MappentypDaten) {
-      const t: Mappentyp = { id, ...kopie(d), erstellt: jetzt(), geaendert: jetzt() };
+    async legeTypAn(id, d: MappentypDaten, system) {
+      const t: Mappentyp = { id, ...kopie(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, system: system ?? null, erstellt: jetzt(), geaendert: jetzt() };
       typen.set(id, t);
       return kopie(t);
     },
     async aendereTyp(id, d) {
       const alt = typen.get(id)!;
-      const t: Mappentyp = { ...alt, ...kopie(d), geaendert: jetzt() };
+      const t: Mappentyp = { ...alt, ...kopie(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, geaendert: jetzt() };
       typen.set(id, t);
       const refKeys = new Set(t.felder.filter((f) => f.typ === 'referenz').map((f) => f.key));
       for (const m of mappen.values()) if (m.typId === id) verweise.set(m.id, (verweise.get(m.id) ?? []).filter((v) => refKeys.has(v.feldKey)));
@@ -55,8 +55,8 @@ export function speicherRepo(): Repo {
 
     async listeMappen(typId) { return [...mappen.values()].filter((m) => !typId || m.typId === typId).map(kopie); },
     async holeMappe(id) { const m = mappen.get(id); return m && kopie(m); },
-    async legeMappeAn(id, typId, werte: Werte, vs, benutzerId, demo = false) {
-      const m: Mappe = { id, typId, werte: kopie(werte), erstellt: jetzt(), erstelltVon: benutzerId, geaendert: jetzt(), geaendertVon: benutzerId, demo, passt: true, problem: null };
+    async legeMappeAn(id, typId, werte: Werte, vs, benutzerId, demo = false, systemKennung = null) {
+      const m: Mappe = { id, typId, werte: kopie(werte), erstellt: jetzt(), erstelltVon: benutzerId, geaendert: jetzt(), geaendertVon: benutzerId, demo, passt: true, problem: null, systemKennung };
       mappen.set(id, m); verweise.set(id, kopie(vs));
       return kopie(m);
     },
@@ -72,6 +72,7 @@ export function speicherRepo(): Repo {
       mappen.set(id, m); verweise.set(id, kopie(vs));
       return kopie(m);
     },
+    async holeSystemMappe(kennung) { const m = [...mappen.values()].find((x) => x.systemKennung === kennung); return m && kopie(m); },
     async loescheMappe(id) {
       mappen.delete(id); verweise.delete(id);
       for (const [k, d] of dokumente) if (d.mappeId === id) dokumente.delete(k);

@@ -48,6 +48,8 @@ export interface Feld {
   /** Referenz: Id des Ziel-Mappentyps (darf der eigene sein → Hierarchie). */
   zielTyp?: string;
   verweisart?: Verweisart;
+  /** Systemfeld eines Systemmappentyps: nicht entfernbar, Datentyp und Eigenschaften fest (vom Server gesetzt). */
+  system?: boolean;
 }
 
 export const REGISTERARTEN = {
@@ -81,11 +83,57 @@ export interface MappentypDaten {
   register: Register[];
   /** Spalten der Trefferliste in ihrer Reihenfolge: Feldschlüssel oder Systemspalten (_titel, _erstellt, …). Leer = einfache Liste. */
   trefferliste?: string[];
+  /** In der Ablage dürfen neue Mappen dieses Typs angelegt werden (Standard: ja). */
+  erstellenErlaubt?: boolean;
+  /** In der Ablage dürfen Mappen dieses Typs gelöscht werden (Standard: ja). */
+  loeschenErlaubt?: boolean;
 }
 export interface Mappentyp extends MappentypDaten {
   id: string;
   erstellt: string;
   geaendert: string;
+  /** Systemmappentyp (Benutzer, Rolle): lässt sich erweitern, aber nicht löschen. */
+  system?: Systemtyp | null;
+}
+
+/* ---------- Systemmappentypen: Benutzer und Rollen (#26, #27) ---------- */
+
+export const SYSTEMTYPEN = { benutzer: 'Benutzer', rolle: 'Rolle' } as const;
+export type Systemtyp = keyof typeof SYSTEMTYPEN;
+
+/** Kennung der Mappe einer Systemrolle, z. B. rolle:admin. */
+export const systemrolleKennung = (r: Rolle) => `rolle:${r}`;
+export const istSystemrolle = (m: Pick<Mappe, 'systemKennung'> | undefined) => !!m?.systemKennung?.startsWith('rolle:');
+
+/** Systemfelder je Systemtyp. Bezeichnung und Hilfetext darf der Administrator ändern, alles andere ist fest. */
+export function systemfelder(s: Systemtyp, rolleTypId: string): Feld[] {
+  if (s === 'rolle') return [
+    { key: 'name', label: 'Name', typ: 'text', pflicht: true, eindeutig: true, maxLen: 80, system: true },
+  ];
+  return [
+    { key: 'name', label: 'Name', typ: 'text', pflicht: true, system: true },
+    { key: 'email', label: 'E-Mail-Adresse', typ: 'text', pflicht: true, eindeutig: true, system: true },
+    { key: 'rollen', label: 'Rollen', typ: 'referenz', mehrfach: true, zielTyp: rolleTypId, verweisart: 'bezug', system: true, hilfe: 'Systemrolle und weitere Rollen; vergeben in der Benutzerverwaltung' },
+    { key: 'aktiv', label: 'Aktiv', typ: 'janein', system: true },
+  ];
+}
+
+export const darfErstellen = (t: Pick<MappentypDaten, 'erstellenErlaubt'> | undefined) => !!t && t.erstellenErlaubt !== false;
+export const darfLoeschen = (t: Pick<MappentypDaten, 'loeschenErlaubt'> | undefined, m?: Pick<Mappe, 'systemKennung'>) =>
+  !!t && t.loeschenErlaubt !== false && !m?.systemKennung;
+
+/**
+ * Felder, die in der Ablage nur lesbar sind, mit dem Grund.
+ * Benutzer: alle Systemfelder (gepflegt in Profil und Benutzerverwaltung) – sonst könnte
+ * z. B. ein Mitglied die E-Mail-Adresse eines Administrators ändern und dessen Konto übernehmen.
+ * Systemrollen: der Name.
+ */
+export function geschuetzteFelder(t: Pick<Mappentyp, 'system' | 'felder'> | undefined, m?: Pick<Mappe, 'systemKennung'>): Record<string, string> {
+  if (t?.system === 'benutzer') {
+    return Object.fromEntries(t.felder.filter((f) => f.system).map((f) => [f.key, 'Wird im Profil und in der Benutzerverwaltung gepflegt.']));
+  }
+  if (t?.system === 'rolle' && istSystemrolle(m)) return { name: 'Der Name einer Systemrolle ist fest.' };
+  return {};
 }
 
 /** Systemeigene Spalten für Trefferlisten; beginnen mit _, damit sie nie mit Feldschlüsseln kollidieren. */
@@ -125,6 +173,8 @@ export interface Mappe {
   /** Passt zur aktuellen Definition des Typs (vom Server geprüft); sonst steht in problem der erste Grund. */
   passt?: boolean;
   problem?: string | null;
+  /** Mappen, die das System pflegt: Systemrollen (rolle:admin, rolle:mitglied). */
+  systemKennung?: string | null;
 }
 
 /** Kurzangaben zu einer Mappe, auf die verwiesen wird oder die verweist. */
@@ -154,6 +204,8 @@ export interface Benutzer {
   zuletztAktiv?: string | null;
   /** Zeigt beim Aufruf einer Seite die Dauer der einzelnen Schritte (im eigenen Profil schaltbar). */
   entwicklermodus?: boolean;
+  /** Weitere (fachliche) Rollen: Ids der Rollen-Mappen (nur in der Benutzerverwaltung). */
+  rollen?: string[];
 }
 
 /** Als „gerade aktiv“ gilt, wer in den letzten so vielen Minuten etwas getan hat. */
@@ -406,9 +458,14 @@ export function wirksameVorlage(t: Pick<Mappentyp, 'felder' | 'titelVorlage'>): 
   return f ? `{${f.key}}` : '';
 }
 
-/** Titel einer Mappe aus der Vorlage; Platzhalter werden formatiert eingesetzt. */
-export function titelAus(t: Pick<Mappentyp, 'felder' | 'titelVorlage'> | undefined, werte: Werte, titelVon: (id: string) => string = (id) => id, index: Indexwerte = {}): string {
+/** Titel einer Mappe aus der Vorlage; Platzhalter werden formatiert eingesetzt. Deaktivierte Benutzer heißen „… (ehemalig)“. */
+export function titelAus(t: Pick<Mappentyp, 'felder' | 'titelVorlage'> & Pick<Partial<Mappentyp>, 'system'> | undefined, werte: Werte, titelVon: (id: string) => string = (id) => id, index: Indexwerte = {}): string {
   if (!t) return '';
+  const titel = titelAusVorlage(t, werte, titelVon, index);
+  return t.system === 'benutzer' && werte.aktiv === false ? `${titel} (ehemalig)`.trim() : titel;
+}
+
+function titelAusVorlage(t: Pick<Mappentyp, 'felder' | 'titelVorlage'>, werte: Werte, titelVon: (id: string) => string, index: Indexwerte): string {
   return wirksameVorlage(t)
     .replace(PLATZHALTER, (_, k: string) => {
       if (k === 'angelegt') return tagVon(index.erstellt);

@@ -18,7 +18,10 @@ type EntwurfFeld = Omit<Feld, Zahlprop> & Record<Zahlprop, string> & { _uid: str
 /** Register im Bearbeitungszustand; welche Felder darauf liegen, steht am Feld (_register). */
 type EntwurfRegister = Omit<Register, 'felder'> & { _uid: string; _neu?: boolean; _schluesselGetippt?: boolean };
 /** Trefferliste im Entwurf: Systemspalten als _titel usw., Felder als feld:<_uid> – damit ein umbenannter Schlüssel nichts kaputt macht. */
-interface Entwurf { id: string; name: string; beschreibung: string; titelVorlage: string; felder: EntwurfFeld[]; register: EntwurfRegister[]; trefferliste: string[] }
+interface Entwurf {
+  id: string; name: string; beschreibung: string; titelVorlage: string; felder: EntwurfFeld[]; register: EntwurfRegister[]; trefferliste: string[];
+  erstellenErlaubt: boolean; loeschenErlaubt: boolean;
+}
 
 function neueId(): string {
   // crypto.randomUUID gibt es nur über HTTPS oder localhost; im Heimnetz oft nicht.
@@ -32,10 +35,11 @@ function neueId(): string {
 const alsEntwurfRegister = ({ felder: _f, ...r }: Register): EntwurfRegister => ({ ...r, _uid: neueId() });
 
 function entwurfAus(t?: Mappentyp): Entwurf {
-  if (!t) return { id: neueId(), name: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferliste: [] };
+  if (!t) return { id: neueId(), name: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferliste: [], erstellenErlaubt: true, loeschenErlaubt: true };
   const erstes = t.register.find((r) => r.art === 'felder')?.key ?? '';
   const e: Entwurf = {
     id: t.id, name: t.name, beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '',
+    erstellenErlaubt: t.erstellenErlaubt !== false, loeschenErlaubt: t.loeschenErlaubt !== false,
     register: t.register.map(alsEntwurfRegister),
     felder: t.felder.map((f) => ({
       ...f, _uid: neueId(),
@@ -72,6 +76,7 @@ function beispielWerte(felder: Feld[]): Werte {
 export function TypEditor({ typ }: { typ?: Mappentyp }) {
   const d = useDaten();
   const neu = !typ;
+  const system = typ?.system;
   const [basis, setBasis] = useState(() => JSON.stringify(entwurfAus(typ)));
   const [e, setE] = useState<Entwurf>(() => JSON.parse(basis));
   const [offen, setOffen] = useState<number | null>(null);
@@ -169,10 +174,15 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
     <form onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} noValidate>
       <div className="seitenkopf"><div>
         <p className="ueber">Mappentyp</p>
-        <h1>{e.name || (neu ? 'Neuer Mappentyp' : 'Ohne Namen')}</h1>
+        <h1>{e.name || (neu ? 'Neuer Mappentyp' : 'Ohne Namen')}{system && <span className="chip">System</span>}</h1>
         {gespeichert && <p className="leise"><Link to={`/ablage/${gespeichert.id}`} className="verweis">{d.anzahl(gespeichert.id).toLocaleString('de-DE')} {d.anzahl(gespeichert.id) === 1 ? 'Mappe' : 'Mappen'} in der Ablage →</Link></p>}
       </div></div>
 
+      {system && (
+        <div className="hinweis info"><p>{system === 'benutzer'
+          ? 'Systemmappentyp: Jeder Benutzer hat hier seine Mappe. Du kannst Felder und Register ergänzen; die Systemfelder sind fest und werden im Profil und in der Benutzerverwaltung gepflegt. Anlegen und Löschen geschieht nur in der Benutzerverwaltung.'
+          : 'Systemmappentyp: Rollen, die Benutzer haben können. Du kannst Felder und Register ergänzen; das Systemfeld ist fest. Administrator und Mitglied sind Systemrollen und lassen sich nicht löschen.'}</p></div>
+      )}
       {unpassend > 0 && (
         <div className="hinweis warn"><p>{unpassend} {unpassend === 1 ? 'Mappe passt' : 'Mappen passen'} nicht zur aktuellen Definition. Sie sind in der Ablage markiert.</p></div>
       )}
@@ -184,6 +194,12 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
         <div className="raster">
           <label className="eigenschaft"><span>Name</span><input value={e.name} placeholder="z. B. Vertrag" onChange={(ev) => setE({ ...e, name: ev.target.value })} autoFocus={neu} /></label>
           <label className="eigenschaft"><span>Beschreibung</span><input value={e.beschreibung} placeholder="Wofür ist dieser Typ?" onChange={(ev) => setE({ ...e, beschreibung: ev.target.value })} /></label>
+        </div>
+        <div className="raster">
+          <div className="eigenschaft unten"><label className="haken"><input type="checkbox" checked={e.erstellenErlaubt} disabled={system === 'benutzer'} onChange={(ev) => setE({ ...e, erstellenErlaubt: ev.target.checked })} />
+            <span>Neue Mappen erlauben<small className="hilfe">In der Ablage dürfen Mappen dieses Typs angelegt werden</small></span></label></div>
+          <div className="eigenschaft unten"><label className="haken"><input type="checkbox" checked={e.loeschenErlaubt} disabled={system === 'benutzer'} onChange={(ev) => setE({ ...e, loeschenErlaubt: ev.target.checked })} />
+            <span>Löschen erlauben<small className="hilfe">In der Ablage dürfen Mappen dieses Typs gelöscht werden</small></span></label></div>
         </div>
       </div>
 
@@ -218,7 +234,7 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
       <RegisterEditor e={e} setE={setE} />
 
       <div className="speicherleiste">
-        <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>{neu ? 'Entwurf verwerfen' : 'Mappentyp löschen'}</button>
+        {system ? <span /> : <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>{neu ? 'Entwurf verwerfen' : 'Mappentyp löschen'}</button>}
         <span className={`status ${fehler ? 'schlecht' : ''}`} role="status">{meldung ?? (geaendert && !neu ? 'Ungespeicherte Änderungen' : '')}</span>
         <div className="knoepfe">
           {!neu && <button type="button" className="knopf" disabled={!geaendert || sendet} onClick={() => { setE(JSON.parse(basis)); setFehler(null); setMeldung(undefined); setOffen(null); }}>Verwerfen</button>}
@@ -239,6 +255,7 @@ function FeldZeile(p: {
   const zielName = f.zielTyp === p.eigeneId ? (p.eigenerName || 'dieser Typ') : p.typen.find((t) => t.id === f.zielTyp)?.name ?? '–';
 
   const chips: string[] = [];
+  if (f.system) chips.push('System');
   if (f.eindeutig && (f.typ === 'text' || f.typ === 'zahl')) chips.push('eindeutig');
   if (f.typ === 'referenz') chips.push(`→ ${zielName}`, VERWEISARTEN[f.verweisart ?? 'bezug']);
   if (f.typ === 'auswahl') chips.push(`${(f.optionen ?? []).length} Werte`);
@@ -310,16 +327,21 @@ function FeldZeile(p: {
       {offen && (
         <div className="feldeditor">
           {fehler && <div className="hinweis schlecht"><p>{fehler.join(' ')}</p></div>}
+          {f.system && <p className="leise klein">Systemfeld: Bezeichnung, Hilfetext und Register lassen sich ändern, Datentyp und Eigenschaften sind fest.</p>}
           <div className="raster">
             <label className="eigenschaft" htmlFor={id('label')}><span>Bezeichnung</span><input id={id('label')} value={f.label} placeholder="z. B. Kündigung bis" onChange={(e) => setze({ label: e.target.value })} autoFocus={f._neu} /></label>
-            <label className="eigenschaft" htmlFor={id('key')}><span>Schlüssel <small>{f._neu ? 'wird nach dem Speichern fest' : 'fest – schützt gespeicherte Werte'}</small></span>
-              <input id={id('key')} className="mono" value={f.key} disabled={!f._neu} onChange={(e) => setze({ key: e.target.value })} /></label>
             {p.feldregister.length > 1 && (
               <label className="eigenschaft" htmlFor={id('reg')}><span>Register</span>
                 <select id={id('reg')} value={f._register} onChange={(e) => setze({ _register: e.target.value })}>
                   {p.feldregister.map((r) => <option key={r._uid} value={r.key}>{r.name || r.key}</option>)}
                 </select></label>
             )}
+          </div>
+          {/* Bei Systemfeldern sind Schlüssel, Datentyp und Eigenschaften fest. */}
+          <fieldset className="ohnerahmen" disabled={f.system}>
+          <div className="raster">
+            <label className="eigenschaft" htmlFor={id('key')}><span>Schlüssel <small>{f._neu ? 'wird nach dem Speichern fest' : 'fest – schützt gespeicherte Werte'}</small></span>
+              <input id={id('key')} className="mono" value={f.key} disabled={!f._neu} onChange={(e) => setze({ key: e.target.value })} /></label>
             <label className="eigenschaft" htmlFor={id('typ')}><span>Datentyp</span>
               <select id={id('typ')} value={f.typ} onChange={(e) => setze({ typ: e.target.value as Feld['typ'] })}>
                 {Object.entries(FELDTYPEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -331,9 +353,10 @@ function FeldZeile(p: {
             {standard}
           </div>
           {besonders && <><h3 className="zwischen">Eigenschaften für {FELDTYPEN[f.typ]}</h3>{besonders}</>}
+          </fieldset>
           <label className="eigenschaft" htmlFor={id('hilfe')}><span>Hilfetext</span><input id={id('hilfe')} placeholder="Erklärung, die beim Ausfüllen erscheint" value={f.hilfe ?? ''} onChange={(e) => setze({ hilfe: e.target.value })} /></label>
           <div className="feldfuss">
-            <button type="button" className="textknopf gefahr" onClick={p.entferne}>Feld entfernen</button>
+            {f.system ? <span className="leise klein">Systemfelder lassen sich nicht entfernen.</span> : <button type="button" className="textknopf gefahr" onClick={p.entferne}>Feld entfernen</button>}
             <button type="button" className="knopf klein" onClick={p.umschalten}>Fertig</button>
           </div>
         </div>

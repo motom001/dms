@@ -7,10 +7,10 @@ const feld = (key: string, label: string, typ: Feld['typ'], extra: Partial<Feld>
 
 /**
  * Legt Beispiel-Mappentypen und ein paar Mappen an, damit eine frische
- * Installation nicht leer ist. Nur möglich, solange es noch keine Typen gibt.
+ * Installation nicht leer ist. Nur möglich, solange es außer Benutzer und Rolle noch keine Typen gibt.
  */
 export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = null) {
-  if ((await dienst.listeTypen()).length) throw new Fachfehler(409, 'Beispiele lassen sich nur laden, solange es noch keine Mappentypen gibt.');
+  if ((await dienst.listeTypen()).some((t) => !t.system)) throw new Fachfehler(409, 'Beispiele lassen sich nur laden, solange es noch keine Mappentypen gibt.');
   const id = { partner: randomUUID(), vertrag: randomUUID(), rechnung: randomUUID(), zahlung: randomUUID() };
 
   const typen = {

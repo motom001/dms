@@ -161,6 +161,12 @@ tbody tr:last-child > * { border-bottom: 0; }
 .symbol:hover:not(:disabled) { background: var(--senke); color: var(--tinte); }
 .symbol:disabled { opacity: 0.3; cursor: default; }
 .feldeditor { border-top: 1px dashed var(--linie); padding: 16px 12px 14px; display: flex; flex-direction: column; gap: 16px; }
+/* Gruppe ohne eigenen Rahmen, z. B. um die festen Eigenschaften eines Systemfelds gemeinsam zu sperren. */
+.ohnerahmen { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.ohnerahmen:disabled { opacity: .65; }
+/* Wert, der hier nur angezeigt wird (z. B. Systemfelder einer Benutzer-Mappe). */
+.festwert { padding: 7px 10px; border: 1px dashed var(--linie-stark); border-radius: 6px; background: var(--senke); min-height: 2.2em; overflow-wrap: anywhere; }
+.festwert ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .zwischen { font-size: calc(11.5px * var(--skala, 1)); text-transform: uppercase; letter-spacing: 0.07em; color: var(--leise); }
 .feldfuss { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 

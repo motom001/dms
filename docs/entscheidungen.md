@@ -74,6 +74,20 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Debug-Modus** nur im Arbeitsspeicher und höchstens eine Stunde; nach einem Neustart ist er aus.
 - **Als anderer Benutzer anmelden:** eigene Sitzung des Benutzers mit Verweis auf die Vertretung; der Benutzer sieht beim nächsten Mal, wer wann als er agiert hat. Ein manipulationssicheres Protokoll ist bewusst nicht Teil davon (#16).
 
+## Benutzer und Rollen als Mappen (#26, #27)
+
+- **Systemmappentypen** *Benutzer* und *Rolle* (Spalte `mappentypen.system`): erweiterbar, nie löschbar. Der Server legt sie beim Start an, falls sie fehlen; heißt schon ein eigener Typ so, bekommt der Systemtyp den Zusatz „(System)“.
+- **Systemfelder** (`Feld.system`) sind fest: Schlüssel, Datentyp und Eigenschaften gibt der Server vor, nur Bezeichnung, Hilfetext und Register darf der Administrator ändern.
+- **Das Konto ist führend, die Mappe spiegelt es.** Die Mappe eines Benutzers hat dieselbe Id wie sein Konto. Konten melden jede Änderung an Name, E-Mail, Rolle und „aktiv“ an die Mappe; beim Start werden alle Benutzer abgeglichen (auch nach einem Update).
+- **Sicherheit:** Die Systemfelder einer Benutzer-Mappe sind in der Ablage nur lesbar – der Server lehnt Änderungen ab. Sonst könnte ein Mitglied die E-Mail-Adresse eines Administrators ändern und dessen Konto über „Passwort vergessen“ übernehmen, oder sich selbst eine Systemrolle geben.
+- **Systemrollen** *Administrator* und *Mitglied* sind Rollen-Mappen mit fester Kennung (`mappen.system_kennung`, z. B. `rolle:admin`). Wer sie hat, folgt der Rolle des Kontos; sie lassen sich nicht löschen und nicht umbenennen. So kann das spätere Berechtigungskonzept Rechte an Rollen-Mappen hängen, ohne die bestehende Anmeldung umzubauen.
+- **Zuordnung Benutzer ↔ Rolle** ist das Systemfeld `rollen` der Benutzer-Mappe (Mehrfachverweis). Die Rolle zeigt ihre Benutzer als Rückverweise. Gesetzt wird es nur über die Benutzerverwaltung; ungültige Rollen werden geprüft, bevor sich etwas ändert.
+- **Rollen sind vorerst fachlich** und von jedem Benutzer in der Ablage anlegbar; Einschränkungen kommen mit der Berechtigungsverwaltung. Keine verschachtelten Rollen.
+- **Rolle löschen:** erlaubt, auch wenn Benutzer sie haben – deren Zuordnung fällt weg. Verweise aus normalen Feldern (z. B. „verantwortliche Rolle“) verhindern das Löschen wie bei jeder Mappe.
+- **Deaktivieren statt löschen:** Wer sich schon angemeldet hat, wird deaktiviert; seine Mappe heißt dann „… (ehemalig)“ und Verweise bleiben gültig. Löschen geht nur für nie angenommene Einladungen.
+- **Neue Mappen / Löschen erlauben** als Eigenschaft jedes Mappentyps (`erstellen_erlaubt`, `loeschen_erlaubt`); die Oberfläche blendet die Knöpfe aus, der Server prüft es. Beim Typ *Benutzer* ist beides fest aus.
+- Demo-Daten und Beispiele lassen die Systemtypen aus.
+
 ## Bewusst noch nicht drin
 
 Texterkennung (OCR), Suche, Papierkorb, Rechte pro Mappe, Fristen, Verschlüsselung, Backup-Funktion in der Anwendung, Zwei-Faktor-Anmeldung.

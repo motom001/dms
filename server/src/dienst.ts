@@ -1,14 +1,14 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
-  ersterGrund, FELDTYPEN, istLeer, istSystemspalte, sortierbar, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp, REGISTERARTEN, schluesselAus,
-  standardRegister, titelAus, verweiseVon,
-  type Feld, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Werte,
+  darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, geschuetzteFelder, istLeer, istSystemspalte, sortierbar, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
+  REGISTERARTEN, ROLLEN, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
+  type Benutzer, type Feld, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import { Auftraege } from './auftrag';
 import { protokoll } from './protokoll';
 import { Fachfehler } from './fehler';
-import { istUuid, type NeueMappe, type Repo, type SortierungIntern } from './repo';
+import { istUuid, type NeueMappe, type Repo, type Rueckverweis, type SortierungIntern } from './repo';
 
 /* ---------- Eingaben bereinigen: nur bekannte Eigenschaften übernehmen ---------- */
 
@@ -80,7 +80,20 @@ export function bereinigeTyp(e: unknown): MappentypDaten {
     // Nur bekannte Spalten, jede einmal; Spalten entfernter Felder fallen still weg.
     trefferliste: [...new Set((Array.isArray(t.trefferliste) ? t.trefferliste : []).map(text))]
       .filter((k) => (istSystemspalte(k) && k !== '_typ') || felder.some((f) => f.key === k)),
+    erstellenErlaubt: t.erstellenErlaubt !== false,
+    loeschenErlaubt: t.loeschenErlaubt !== false,
   };
+}
+
+/** Wert eines Mehrfachverweises als Liste. */
+const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
+
+/** Für die Benutzerverwaltung: Benutzer-Mappen anlegen, nachziehen und entfernen. */
+export interface Benutzerspiegel {
+  /** Legt die Mappe des Benutzers an oder zieht sie nach (Name, E-Mail, Systemrolle, aktiv). */
+  aktualisiere(b: Benutzer, von?: string | null): Promise<void>;
+  /** Entfernt die Mappe; wirft, wenn noch etwas auf sie verweist. */
+  entferne(id: string): Promise<void>;
 }
 
 const SYSTEMSORTIERUNG: Record<string, SortierungIntern['art']> = {
@@ -170,7 +183,8 @@ export class Dienst {
   async aendereTyp(id: string, eingabe: unknown): Promise<Mappentyp> {
     const alt = await this.repo.holeTyp(id);
     if (!alt) throw new Fachfehler(404, 'Diesen Mappentyp gibt es nicht.');
-    const d = bereinigeTyp(eingabe);
+    let d = bereinigeTyp(eingabe);
+    if (alt.system) d = await this.mitSystemfeldern(d, alt.system);
     await this.pruefeTyp(d, id);
     const bleiben = new Set(d.register.filter((r) => r.art === 'dokumente').map((r) => r.key));
     for (const [key, n] of await this.repo.dokumenteJeRegister(id)) {
@@ -185,8 +199,27 @@ export class Dienst {
     return typ;
   }
 
+  /**
+   * Systemtypen: Systemfelder müssen bleiben und behalten ihre feste Definition;
+   * Bezeichnung und Hilfetext darf der Administrator ändern. Benutzer-Mappen entstehen
+   * und verschwinden nur über die Benutzerverwaltung.
+   */
+  private async mitSystemfeldern(d: MappentypDaten, system: Systemtyp): Promise<MappentypDaten> {
+    const rolleTyp = (await this.repo.listeTypen()).find((t) => t.system === 'rolle');
+    const soll = systemfelder(system, rolleTyp?.id ?? '');
+    const fehlen = soll.filter((s) => !d.felder.some((f) => f.key === s.key));
+    if (fehlen.length) throw new Fachfehler(422, `Systemfelder lassen sich nicht entfernen: ${fehlen.map((f) => f.label).join(', ')}.`);
+    const felder = d.felder.map((f) => {
+      const s = soll.find((x) => x.key === f.key);
+      return s ? { ...s, label: f.label || s.label, hilfe: f.hilfe || s.hilfe } : f;
+    });
+    return { ...d, felder, ...(system === 'benutzer' ? { erstellenErlaubt: false, loeschenErlaubt: false } : {}) };
+  }
+
   async loescheTyp(id: string): Promise<void> {
-    if (!(await this.repo.holeTyp(id))) throw new Fachfehler(404, 'Diesen Mappentyp gibt es nicht.');
+    const t = await this.repo.holeTyp(id);
+    if (!t) throw new Fachfehler(404, 'Diesen Mappentyp gibt es nicht.');
+    if (t.system) throw new Fachfehler(409, `„${t.name}“ ist ein Systemmappentyp. Er lässt sich erweitern, aber nicht löschen.`);
     const gruende: string[] = [];
     const n = await this.repo.zaehleMappen(id);
     if (n) gruende.push(`${n} ${n === 1 ? 'Mappe gehört' : 'Mappen gehören'} zu diesem Typ.`);
@@ -281,7 +314,11 @@ export class Dienst {
    */
   private async pruefeUnpassende(typ: Mappentyp) {
     const ids = await this.repo.unpassende(typ.id);
-    if (!ids.length) return;
+    if (ids.length) await this.passungFuer(typ, ids);
+  }
+
+  /** Prüft einzelne Mappen eines Typs gegen seine Definition und speichert das Ergebnis. */
+  private async passungFuer(typ: Mappentyp, ids: string[]) {
     const liste: Array<{ id: string; problem: string | null }> = [];
     for (const m of await this.repo.holeMappen(ids)) {
       const typen = await this.repo.typenVon(verweiseVon(typ, m.werte).map((v) => v.zielId).filter(istUuid));
@@ -363,6 +400,7 @@ export class Dienst {
     const e = (eingabe ?? {}) as { id?: unknown; typId?: unknown; werte?: unknown };
     const typ = istUuid(e.typId) ? await this.repo.holeTyp(e.typId) : undefined;
     if (!typ) throw new Fachfehler(422, 'Unbekannter Mappentyp.');
+    if (!darfErstellen(typ)) throw new Fachfehler(403, `Mappen vom Typ „${typ.name}“ lassen sich in der Ablage nicht anlegen.${typ.system === 'benutzer' ? ' Benutzer legt ein Administrator in der Benutzerverwaltung an.' : ''}`);
     const werte = bereinigeWerte(typ, e.werte);
     await this.pruefeWerte(typ, werte);
     const id = istUuid(e.id) && !(await this.repo.holeMappe(e.id)) ? e.id : randomUUID();
@@ -378,6 +416,12 @@ export class Dienst {
     const typ = await this.repo.holeTyp(m.typId);
     if (!typ) throw new Fachfehler(500, 'Der Mappentyp dieser Mappe fehlt.');
     const werte = bereinigeWerte(typ, (eingabe as { werte?: unknown })?.werte, m.werte);
+    // Geschützte Felder (Benutzer, Name einer Systemrolle) ändert nur das System.
+    for (const [k, grund] of Object.entries(geschuetzteFelder(typ, m))) {
+      if (JSON.stringify(werte[k] ?? null) !== JSON.stringify(m.werte[k] ?? null)) {
+        throw new Fachfehler(403, `„${typ.felder.find((f) => f.key === k)?.label ?? k}“ lässt sich hier nicht ändern. ${grund}`);
+      }
+    }
     await this.pruefeWerte(typ, werte, id);
     const neu = await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), benutzerId);
     const titel = (await this.aktualisiereTitel([id])).get(id);
@@ -388,17 +432,175 @@ export class Dienst {
   /** Viele neue Mappen auf einmal (Demo-Daten); Werte sind bereits geprüft. */
   legeMappenAn(liste: NeueMappe[]) { return this.repo.legeMappenAn(liste); }
 
-  async loescheMappe(id: string): Promise<void> {
-    if (!(await this.repo.holeMappe(id))) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
-    const fremd = (await this.repo.rueckverweise(id)).filter((r) => r.quelleId !== id);
+  async loescheMappe(id: string, benutzerId: string | null = null): Promise<void> {
+    const m = await this.repo.holeMappe(id);
+    if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    const typ = await this.repo.holeTyp(m.typId);
+    if (m.systemKennung) throw new Fachfehler(409, 'Systemrollen lassen sich nicht löschen.');
+    if (typ && !darfLoeschen(typ)) throw new Fachfehler(403, `Mappen vom Typ „${typ.name}“ lassen sich in der Ablage nicht löschen.${typ.system === 'benutzer' ? ' Benutzer werden in der Benutzerverwaltung deaktiviert.' : ''}`);
+    const rueck = await this.repo.rueckverweise(id);
+    // Eine Rolle darf weg, auch wenn Benutzer sie haben: deren Zuordnung fällt weg.
+    const benutzerTyp = typ?.system === 'rolle' ? (await this.repo.listeTypen()).find((t) => t.system === 'benutzer') : undefined;
+    const zuordnungen = benutzerTyp ? rueck.filter((r) => r.quelleTypId === benutzerTyp.id && r.feldKey === 'rollen') : [];
+    const fremd = rueck.filter((r) => r.quelleId !== id && !zuordnungen.includes(r));
     if (fremd.length) {
       throw new Fachfehler(409, `Auf diese Mappe ${fremd.length === 1 ? 'verweist noch eine andere Mappe' : `verweisen noch ${fremd.length} andere Mappen`}. Entferne erst diese Verweise.`, { rueckverweise: fremd });
     }
+    for (const z of zuordnungen) {
+      const b = await this.repo.holeMappe(z.quelleId);
+      if (b) await this.schreibeSystemMappe(benutzerTyp!, b.id, { ...b.werte, rollen: alsListe(b.werte.rollen).filter((r) => r !== id) }, benutzerId);
+    }
+    await this.loescheMappeIntern(id, typ);
+  }
+
+  private async loescheMappeIntern(id: string, typ: Mappentyp | undefined) {
     const dokumente = await this.repo.listeDokumente(id);
-    const typ = await this.repo.holeTyp((await this.repo.holeMappe(id))!.typId);
     await this.repo.loescheMappe(id);
     if (typ?.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
     for (const sha of new Set(dokumente.map((d) => d.sha256))) await this.raeumeAuf(sha);
+  }
+
+  /* ---------- Systemtypen: Benutzer und Rollen (#26, #27) ---------- */
+
+  private sichern?: Promise<{ benutzer: Mappentyp; rolle: Mappentyp; systemrollen: Map<Rolle, string> }>;
+
+  /**
+   * Legt die Systemtypen „Benutzer“ und „Rolle“ und die Systemrollen an, falls sie fehlen.
+   * Läuft beim Start und vor jedem Spiegeln; gleichzeitige Aufrufe teilen sich einen Lauf.
+   */
+  sichereSystem() {
+    this.sichern ??= this.sichereSystemJetzt().catch((e) => { this.sichern = undefined; throw e; });
+    return this.sichern.then(async (s) => ({
+      // Definitionen können sich seitdem geändert haben (Felder ergänzt, umbenannt).
+      benutzer: (await this.repo.holeTyp(s.benutzer.id)) ?? s.benutzer,
+      rolle: (await this.repo.holeTyp(s.rolle.id)) ?? s.rolle,
+      systemrollen: s.systemrollen,
+    }));
+  }
+
+  private async sichereSystemJetzt() {
+    const typen = await this.repo.listeTypen();
+    let rolle = typen.find((t) => t.system === 'rolle');
+    let benutzer = typen.find((t) => t.system === 'benutzer');
+    const frei = (name: string) => (typen.some((t) => t.name.trim().toLowerCase() === name.toLowerCase()) ? `${name} (System)` : name);
+    const ids = { rolle: rolle?.id ?? randomUUID(), benutzer: benutzer?.id ?? randomUUID() };
+    if (!rolle) {
+      rolle = await this.repo.legeTypAn(ids.rolle, {
+        name: frei('Rolle'), beschreibung: 'Rollen, die Benutzer haben, z. B. als Verantwortliche', titelVorlage: '{name}',
+        felder: systemfelder('rolle', ids.rolle),
+        register: [
+          { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] },
+          { key: 'benutzer', name: 'Benutzer', art: 'verknuepfungen', quellen: [{ typId: ids.benutzer, feldKey: 'rollen' }] },
+        ],
+        trefferliste: [], erstellenErlaubt: true, loeschenErlaubt: true,
+      }, 'rolle');
+      protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: rolle.name });
+    }
+    if (!benutzer) {
+      benutzer = await this.repo.legeTypAn(ids.benutzer, {
+        name: frei('Benutzer'), beschreibung: 'Die Benutzer dieses DMS; gepflegt in der Benutzerverwaltung', titelVorlage: '{name}',
+        felder: systemfelder('benutzer', rolle.id),
+        register: [
+          { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name', 'email', 'rollen', 'aktiv'] },
+          { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
+          { key: 'verknuepfungen', name: 'Verknüpfungen', art: 'verknuepfungen', quellen: [] },
+        ],
+        trefferliste: ['name', 'email', 'rollen', 'aktiv'], erstellenErlaubt: false, loeschenErlaubt: false,
+      }, 'benutzer');
+      protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: benutzer.name });
+    }
+    const systemrollen = new Map<Rolle, string>();
+    for (const r of Object.keys(ROLLEN) as Rolle[]) {
+      const kennung = systemrolleKennung(r);
+      let m = await this.repo.holeSystemMappe(kennung);
+      if (!m) {
+        const name = (await this.repo.findeDoppelt(rolle.id, 'name', ROLLEN[r])) ? `${ROLLEN[r]} (System)` : ROLLEN[r];
+        m = await this.schreibeSystemMappe(rolle, randomUUID(), { name }, null, kennung);
+      }
+      systemrollen.set(r, m.id);
+    }
+    return { benutzer, rolle, systemrollen };
+  }
+
+  /** Schreibt eine Mappe, die das System pflegt – ohne die Sperren der Ablage; Titel und Passung wie sonst. */
+  private async schreibeSystemMappe(typ: Mappentyp, id: string, eingabe: Werte, von: string | null, kennung: string | null = null): Promise<Mappe> {
+    const alt = await this.repo.holeMappe(id);
+    const werte = bereinigeWerte(typ, eingabe, alt?.werte);
+    if (alt && JSON.stringify(alt.werte) === JSON.stringify(werte)) return alt;
+    if (alt) await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), von);
+    else await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), von, false, kennung);
+    await this.aktualisiereTitel([id]);
+    // Hat der Administrator den Typ um Pflichtfelder erweitert, landet die Mappe im Eingang.
+    await this.passungFuer(typ, [id]);
+    return (await this.repo.holeMappe(id))!;
+  }
+
+  /** Mappe eines Benutzers anlegen oder nachziehen. Weitere Rollen bleiben, die Systemrolle folgt dem Konto. */
+  async spiegleBenutzer(b: Benutzer, von: string | null = null) {
+    const { benutzer: typ, systemrollen } = await this.sichereSystem();
+    const alt = await this.repo.holeMappe(b.id);
+    const system = new Set(systemrollen.values());
+    const weitere = alt ? alsListe(alt.werte.rollen).filter((r) => !system.has(r)) : [];
+    await this.schreibeSystemMappe(typ, b.id, { name: b.name || b.email, email: b.email, rollen: [systemrollen.get(b.rolle)!, ...weitere], aktiv: b.aktiv }, von);
+  }
+
+  /** Beim Start: alle Benutzer haben ihre Mappe, und sie stimmt mit dem Konto überein. */
+  async gleicheBenutzerAb(liste: Benutzer[]) {
+    await this.sichereSystem();
+    for (const b of liste) await this.spiegleBenutzer(b);
+  }
+
+  /** Prüft eine Auswahl weiterer Rollen, bevor etwas geändert wird; liefert die bereinigten Ids. */
+  async pruefeRollen(eingabe: unknown): Promise<string[]> {
+    if (!Array.isArray(eingabe)) throw new Fachfehler(422, 'Rollen als Liste angeben.');
+    const ids = [...new Set(eingabe.map(String))];
+    const { rolle, systemrollen } = await this.sichereSystem();
+    const typVon = await this.repo.typenVon(ids.filter(istUuid));
+    if (ids.some((id) => typVon.get(id) !== rolle.id)) throw new Fachfehler(422, 'Mindestens eine dieser Rollen gibt es nicht.');
+    const system = new Set(systemrollen.values());
+    if (ids.some((id) => system.has(id))) throw new Fachfehler(422, 'Administrator und Mitglied werden über die Rolle des Benutzers vergeben.');
+    return ids;
+  }
+
+  /** Weitere (fachliche) Rollen eines Benutzers setzen – nur aus der Benutzerverwaltung. */
+  async setzeRollen(benutzerId: string, eingabe: unknown, von: string | null = null) {
+    const ids = await this.pruefeRollen(eingabe);
+    const { benutzer: typ, systemrollen } = await this.sichereSystem();
+    const m = await this.repo.holeMappe(benutzerId);
+    if (!m || m.typId !== typ.id) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');
+    const system = new Set(systemrollen.values());
+    const behalten = alsListe(m.werte.rollen).filter((r) => system.has(r));
+    await this.schreibeSystemMappe(typ, benutzerId, { ...m.werte, rollen: [...behalten, ...ids] }, von);
+  }
+
+  /** Alle Rollen für die Auswahl in der Benutzerverwaltung; Systemrollen zuerst. */
+  async listeRollen() {
+    const { rolle } = await this.sichereSystem();
+    return (await this.repo.listeMappen(rolle.id))
+      .map((m) => ({ id: m.id, name: m.titel || String(m.werte.name ?? ''), system: !!m.systemKennung }))
+      .sort((a, b) => Number(b.system) - Number(a.system) || a.name.localeCompare(b.name, 'de'));
+  }
+
+  /** Weitere (nicht System-)Rollen je Benutzer. */
+  async weitereRollen(): Promise<Map<string, string[]>> {
+    const { benutzer, systemrollen } = await this.sichereSystem();
+    const system = new Set(systemrollen.values());
+    return new Map((await this.repo.listeMappen(benutzer.id)).map((m) => [m.id, alsListe(m.werte.rollen).filter((r) => !system.has(r))]));
+  }
+
+  /** Benutzer werden deaktiviert statt gelöscht; gelöscht wird nur, worauf nichts verweist. */
+  async entferneBenutzerMappe(id: string) {
+    const m = await this.repo.holeMappe(id);
+    if (!m) return;
+    const fremd: Rueckverweis[] = (await this.repo.rueckverweise(id)).filter((r) => r.quelleId !== id);
+    if (fremd.length) {
+      throw new Fachfehler(409, `Auf diesen Benutzer ${fremd.length === 1 ? 'verweist noch eine Mappe' : `verweisen noch ${fremd.length} Mappen`}. Deaktiviere ihn statt ihn zu löschen.`, { rueckverweise: fremd });
+    }
+    await this.loescheMappeIntern(id, await this.repo.holeTyp(m.typId));
+  }
+
+  benutzerspiegel(): Benutzerspiegel {
+    return { aktualisiere: (b, von) => this.spiegleBenutzer(b, von ?? null), entferne: (id) => this.entferneBenutzerMappe(id) };
   }
 
   /* ---------- Demo-Daten ---------- */
@@ -406,7 +608,7 @@ export class Dienst {
   async demoUebersicht() {
     const demo = await this.repo.zaehleDemo();
     const z = (await this.repo.zaehler('', false)).typen;
-    return (await this.repo.listeTypen()).map((t) => ({
+    return (await this.repo.listeTypen()).filter((t) => !t.system).map((t) => ({
       typId: t.id, name: t.name, demo: demo.get(t.id) ?? 0, gesamt: z.get(t.id)?.anzahl ?? 0,
     }));
   }

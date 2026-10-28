@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
-import { istLeer, istOk, MAX_DATEIGROESSE, standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register } from '../../../shared/src/model';
+import { darfErstellen, darfLoeschen, geschuetzteFelder, istLeer, istOk, MAX_DATEIGROESSE, standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register } from '../../../shared/src/model';
 import { api, ApiFehler, dokumentUrl, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
+import { useKonto } from '../konto';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
 import { rohAusWerten, standardRoh, werteAusRoh, type Roh, type RohBetrag, type RohWerte } from '../werte';
 import { titelOder } from '../seiten';
@@ -33,6 +34,7 @@ export function NeueMappe({ typ, verweis, sicht }: { typ: Mappentyp; verweis?: s
 
 export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp; details: MappeDetails; sicht: string; neuLaden: () => Promise<void> }) {
   const d = useDaten();
+  const { ich } = useKonto();
   const mappe = details.mappe;
   const bekannt = new Set(typ.felder.map((f) => f.key));
   const verwaist = Object.entries(mappe.werte).filter(([k, v]) => !bekannt.has(k) && !istLeer(v));
@@ -45,6 +47,8 @@ export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp
           <div><dt>Angelegt</dt><dd>{zeit(mappe.erstellt)} von {d.person(mappe.erstelltVon)}</dd></div>
           <div><dt>Zuletzt geändert</dt><dd>{zeit(mappe.geaendert)} von {d.person(mappe.geaendertVon)}</dd></div>
         </dl>
+        {typ.system === 'benutzer' && ich.rolle === 'admin' && <p className="leise klein"><Link to={`/werkbank/benutzer/${mappe.id}`} className="verweis">In der Benutzerverwaltung öffnen →</Link></p>}
+        {mappe.systemKennung && <p className="leise klein"><span className="chip">Systemrolle</span> Wer sie hat, ergibt sich aus der Rolle in der Benutzerverwaltung.</p>}
       </div>
       {mappe.passt === false && (
         <div className="hinweis warn"><p>Diese Mappe passt nicht mehr zur aktuellen Definition von „{typ.name}“{mappe.problem ? ` (${mappe.problem})` : ''}. Beim nächsten Speichern müssen die markierten Felder stimmen.</p></div>
@@ -82,6 +86,8 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
 }) {
   const d = useDaten();
   const register = registerVon(typ);
+  // Nur lesbar: Systemfelder von Benutzern, Name einer Systemrolle (#26, #27).
+  const geschuetzt = geschuetzteFelder(typ, mappe);
   const [aktiv, setAktiv] = useState(register[0]?.key);
   const [basis, setBasis] = useState(() => JSON.stringify(start));
   const [roh, setRoh] = useState<RohWerte>(start);
@@ -183,7 +189,7 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
   else if (reg.art === 'felder') {
     const felder = felderAuf(reg);
     inhalt = felder.length
-      ? <div className="formular">{felder.map((f) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke} />)}</div>
+      ? <div className="formular">{felder.map((f) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke} gesperrt={geschuetzt[f.key]} />)}</div>
       : <p className="leise">Auf diesem Register liegen keine Felder.</p>;
   } else if (reg.art === 'dokumente') {
     inhalt = mappe && !details ? <p className="leise">Lade …</p> : (
@@ -220,7 +226,7 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
       {hinweise.map((h, i) => <div key={i} className={`hinweis ${h.art}`}><p>{h.text}</p></div>)}
       <div className="registerinhalt" role="tabpanel">{inhalt}</div>
       <div className="speicherleiste">
-        {mappe ? <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>Mappe löschen</button> : <span />}
+        {mappe && darfLoeschen(typ, mappe) ? <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>Mappe löschen</button> : <span />}
         <span className={`status ${meldung && fehler ? 'schlecht' : ''}`} role="status">{sendet ? 'Speichere …' : meldung ?? (mappe && (werteGeaendert || dokumenteGeaendert) ? 'Ungespeicherte Änderungen' : '')}</span>
         <div className="knoepfe">
           {mappe
@@ -233,15 +239,35 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
   );
 }
 
-function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke }: {
+function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, gesperrt }: {
   feld: Feld; roh: Roh | undefined; fehler?: string; setze: (v: Roh) => void; eigeneId?: string;
   bekannt: Bezuege; merke: (id: string, b: { titel: string; typId: string }) => void;
+  /** Grund, warum das Feld hier nur angezeigt wird. */
+  gesperrt?: string;
 }) {
   const d = useDaten();
   const id = `feld-${f.key}`;
   let ctl: ReactNode;
   let breit = false;
   let mitLabelFor = true;
+
+  if (gesperrt !== undefined) {
+    mitLabelFor = false;
+    const ids = f.typ === 'referenz' ? (Array.isArray(roh) ? roh as string[] : roh ? [String(roh)] : []) : [];
+    ctl = <div className="festwert" title={gesperrt}>{
+      f.typ === 'referenz'
+        ? <ul>{ids.map((x) => <li key={x}>{bekannt[x]?.typId ? <Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis">{titelOder(bekannt[x].titel)}</Link> : titelOder(bekannt[x]?.titel)}</li>)}</ul>
+        : f.typ === 'janein' ? (roh ? 'Ja' : 'Nein') : String(roh ?? '')
+    }</div>;
+    return (
+      <div className="feld">
+        <div className="feldkopf"><span className="label">{f.label}</span></div>
+        {ctl}
+        <span className="hilfe">{gesperrt}</span>
+        {fehler && <p className="fehlertext">{fehler}</p>}
+      </div>
+    );
+  }
 
   switch (f.typ) {
     case 'langtext':
@@ -395,7 +421,7 @@ function Verknuepfungen({ mappe, gruppen }: { mappe: Mappe; gruppen: ReturnType<
         <section key={`${t.id}-${f.key}`} className="gruppe">
           <header>
             <span><strong>{t.name}</strong> <span className="leise">über „{f.label}“</span> <span className="chip">{VERWEISARTEN[f.verweisart ?? 'bezug']}</span> <span className="anzahl">{treffer.length}</span></span>
-            <Link to={`/ablage/${t.id}/neu?verweis=${encodeURIComponent(`${f.key}:${mappe.id}`)}`} className="knopf klein">+ {t.name} anlegen</Link>
+            {darfErstellen(t) && <Link to={`/ablage/${t.id}/neu?verweis=${encodeURIComponent(`${f.key}:${mappe.id}`)}`} className="knopf klein">+ {t.name} anlegen</Link>}
           </header>
           {treffer.length ? <Trefferliste treffer={treffer} /> : <p className="leise">Noch keine.</p>}
         </section>
@@ -453,7 +479,7 @@ function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze 
     setEingabe(''); setOffen(false); setAendern(false);
   }
   const auswahl = (treffer ?? []).filter((m) => m.id !== eigeneId && !gewaehlt.includes(m.id));
-  const anlegen = <Link to={`/ablage/${ziel.id}/neu`} className="verweis klein">+ {ziel.name} anlegen</Link>;
+  const anlegen = darfErstellen(ziel) ? <Link to={`/ablage/${ziel.id}/neu`} className="verweis klein">+ {ziel.name} anlegen</Link> : null;
 
   return (
     <div className="refbox">
@@ -489,7 +515,7 @@ function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze 
           )}
         </div>
       )}
-      <div className="zeile">{anlegen}</div>
+      {anlegen && <div className="zeile">{anlegen}</div>}
     </div>
   );
 }

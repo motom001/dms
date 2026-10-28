@@ -14,6 +14,9 @@ const alsTyp = (r: Zeile): Mappentyp => ({
   felder: r.felder as Mappentyp['felder'],
   register: r.register as Mappentyp['register'],
   trefferliste: (r.trefferliste as string[] | null) ?? [],
+  erstellenErlaubt: r.erstellen_erlaubt !== false,
+  loeschenErlaubt: r.loeschen_erlaubt !== false,
+  system: (r.system as Mappentyp['system']) ?? null,
   erstellt: iso(r.erstellt),
   geaendert: iso(r.geaendert),
 });
@@ -29,6 +32,7 @@ const alsMappe = (r: Zeile): Mappe => ({
   titel: (r.titel as string | null) ?? undefined,
   passt: (r.passt as boolean | null) ?? undefined,
   problem: (r.problem as string | null) ?? null,
+  systemKennung: (r.system_kennung as string | null) ?? null,
 });
 const alsDokument = (r: Zeile): Dokument => ({
   id: r.id as string,
@@ -65,10 +69,11 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const [r] = await sql`SELECT * FROM mappentypen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       return r ? alsTyp(r) : undefined;
     },
-    async legeTypAn(id, d: MappentypDaten) {
+    async legeTypAn(id, d: MappentypDaten, system) {
       const [r] = await sql`
-        INSERT INTO mappentypen (id, haushalt_id, name, beschreibung, titel_vorlage, felder, register, trefferliste)
-        VALUES (${id}, ${haushaltId}, ${d.name}, ${d.beschreibung}, ${d.titelVorlage}, ${json(sql, d.felder)}, ${json(sql, d.register)}, ${json(sql, d.trefferliste ?? [])})
+        INSERT INTO mappentypen (id, haushalt_id, name, beschreibung, titel_vorlage, felder, register, trefferliste, erstellen_erlaubt, loeschen_erlaubt, system)
+        VALUES (${id}, ${haushaltId}, ${d.name}, ${d.beschreibung}, ${d.titelVorlage}, ${json(sql, d.felder)}, ${json(sql, d.register)}, ${json(sql, d.trefferliste ?? [])},
+          ${d.erstellenErlaubt !== false}, ${d.loeschenErlaubt !== false}, ${system ?? null})
         RETURNING *`;
       return alsTyp(r);
     },
@@ -76,7 +81,8 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       return sql.begin(async (tx) => {
         const [r] = await tx`
           UPDATE mappentypen SET name = ${d.name}, beschreibung = ${d.beschreibung}, titel_vorlage = ${d.titelVorlage},
-            felder = ${json(sql, d.felder)}, register = ${json(sql, d.register)}, trefferliste = ${json(sql, d.trefferliste ?? [])}, geaendert = now()
+            felder = ${json(sql, d.felder)}, register = ${json(sql, d.register)}, trefferliste = ${json(sql, d.trefferliste ?? [])},
+            erstellen_erlaubt = ${d.erstellenErlaubt !== false}, loeschen_erlaubt = ${d.loeschenErlaubt !== false}, geaendert = now()
           WHERE haushalt_id = ${haushaltId} AND id = ${id}
           RETURNING *`;
         const refKeys = d.felder.filter((f) => f.typ === 'referenz').map((f) => f.key);
@@ -106,11 +112,11 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const [r] = await sql`SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       return r ? alsMappe(r) : undefined;
     },
-    async legeMappeAn(id, typId, werte, vs, benutzerId, demo = false) {
+    async legeMappeAn(id, typId, werte, vs, benutzerId, demo = false, systemKennung = null) {
       return sql.begin(async (tx) => {
         const [r] = await tx`
-          INSERT INTO mappen (id, haushalt_id, typ_id, werte, erstellt_von, geaendert_von, demo)
-          VALUES (${id}, ${haushaltId}, ${typId}, ${json(sql, werte)}, ${benutzerId}, ${benutzerId}, ${demo})
+          INSERT INTO mappen (id, haushalt_id, typ_id, werte, erstellt_von, geaendert_von, demo, system_kennung)
+          VALUES (${id}, ${haushaltId}, ${typId}, ${json(sql, werte)}, ${benutzerId}, ${benutzerId}, ${demo}, ${systemKennung})
           RETURNING *`;
         await schreibeVerweise(tx, id, vs);
         return alsMappe(r);
@@ -137,6 +143,10 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         await schreibeVerweise(tx, id, vs);
         return alsMappe(r);
       });
+    },
+    async holeSystemMappe(kennung) {
+      const [r] = await sql`SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} AND system_kennung = ${kennung}`;
+      return r ? alsMappe(r) : undefined;
     },
     async loescheMappe(id) {
       await sql`DELETE FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;

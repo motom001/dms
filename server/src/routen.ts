@@ -94,6 +94,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const log = x.log ?? ((m: string) => L.mail.warn(m));
   const typName = async (id: string) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? id;
   const schluessel = () => { if (!x.apiSchluessel) throw new Fachfehler(404, 'API-Schlüssel sind nicht eingerichtet.'); return x.apiSchluessel; };
+  /** Benutzer mit ihren weiteren Rollen (#27). */
+  const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.weitereRollen()).get(b.id) ?? [] });
   const intern: Route[] = [
     { methode: 'GET', pfad: '/api/gesundheit', zugang: 'offen', handler: async () => ok({ ok: true }) },
 
@@ -176,18 +178,30 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
 
     /* ---------- Benutzer ---------- */
     { methode: 'GET', pfad: '/api/personen', zugang: 'angemeldet', handler: async () => ok(await konten.personen()) },
-    { methode: 'GET', pfad: '/api/benutzer', zugang: 'admin', handler: async () => ok(await konten.listeBenutzer()) },
+    { methode: 'GET', pfad: '/api/benutzer', zugang: 'admin', handler: async () => {
+      const rollen = await dienst.weitereRollen();
+      return ok((await konten.listeBenutzer()).map((x) => ({ ...x, rollen: rollen.get(x.id) ?? [] })));
+    } },
     { methode: 'POST', pfad: '/api/benutzer', zugang: 'admin', handler: async (a) => {
-      const r = await konten.legeBenutzerAn(b(a));
+      if (b(a).rollen !== undefined) await dienst.pruefeRollen(b(a).rollen);
+      const r = await konten.legeBenutzerAn(b(a), ich(a).id);
+      if (b(a).rollen !== undefined) await dienst.setzeRollen(r.benutzer.id, b(a).rollen, ich(a).id);
       L.konto.info('Benutzer angelegt', { email: r.benutzer.email, rolle: r.benutzer.rolle, mail: r.mailVerschickt });
       if (r.mailFehler) L.mail.warn('Einladung nicht verschickt', { an: r.benutzer.email, fehler: r.mailFehler });
-      return ok(r, 201);
+      return ok({ ...r, benutzer: await mitRollen(r.benutzer) }, 201);
     } },
     { methode: 'PUT', pfad: '/api/benutzer/:id', zugang: 'admin', handler: async (a) => {
+      // Weitere Rollen zuerst prüfen, damit eine ungültige Auswahl nichts halb ändert.
+      if (b(a).rollen !== undefined) {
+        if (!(await konten.listeBenutzer()).some((x) => x.id === a.params.id)) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');
+        await dienst.pruefeRollen(b(a).rollen);
+      }
       const r = await konten.aendereBenutzer(ich(a), a.params.id, b(a));
+      if (b(a).rollen !== undefined) await dienst.setzeRollen(r.id, b(a).rollen, ich(a).id);
       L.konto.info('Benutzer geändert', { email: r.email, aenderung: b(a) });
-      return ok(r);
+      return ok(await mitRollen(r));
     } },
+    { methode: 'GET', pfad: '/api/rollen', zugang: 'admin', handler: async () => ok(await dienst.listeRollen()) },
     { methode: 'DELETE', pfad: '/api/benutzer/:id', zugang: 'admin', handler: async (a) => {
       await konten.loescheBenutzer(ich(a), a.params.id);
       L.konto.info('Benutzer gelöscht', { id: a.params.id });
@@ -340,7 +354,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return ok(m);
     } },
     { methode: 'DELETE', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => {
-      await dienst.loescheMappe(a.params.id);
+      await dienst.loescheMappe(a.params.id, ich(a).id);
       L.ablage.info('Mappe gelöscht', { id: a.params.id });
       return leer;
     } },
@@ -397,7 +411,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
 
 /** Zu welchem Modul eine Anfrage gehört (für das Protokoll). */
 export function modulAus(url: string): string {
-  if (/^\/api\/(konto|benutzer|personen)\b/.test(url)) return 'konto';
+  if (/^\/api\/(konto|benutzer|personen|rollen)\b/.test(url)) return 'konto';
   if (/^\/api\/(dokumente|mappen\/[^/]+\/dokumente)\b/.test(url)) return 'dokumente';
   if (/^\/api\/(mappen|sichten)\b/.test(url)) return 'ablage';
   if (/^\/api\/(typen|werkbank|beispiele)\b/.test(url)) return 'werkbank';
