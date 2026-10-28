@@ -96,7 +96,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const typen = (await anfrage('GET', '/api/typen')).body;
     const eigene = typen.filter((t: { system?: string | null }) => !t.system);
     assert.deepEqual(eigene.map((t: { name: string }) => t.name), ['Rechnung', 'Vertrag', 'Vertragspartner', 'Zahlung']);
-    assert.deepEqual(typen.filter((t: { system?: string | null }) => t.system).map((t: { system: string }) => t.system).sort(), ['benutzer', 'rolle']);
+    assert.deepEqual(typen.filter((t: { system?: string | null }) => t.system).map((t: { system: string }) => t.system).sort(), ['benutzer', 'email', 'rolle']);
     const ids = new Set(eigene.map((t: { id: string }) => t.id));
     assert.equal((await anfrage('GET', '/api/mappen')).body.filter((m: { typId: string }) => ids.has(m.typId)).length, 7);
   });
@@ -649,9 +649,10 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal(auf.filter((a: { art: string }) => a.art === 'erwaehnung').length, 0, 'sich selbst erwähnen ergibt keine Aufgabe');
     const manuell = await anfrage('POST', `/api/mappen/${m.id}/aufgaben`, { empfaengerId: ich.id, text: 'Ablegen' });
     assert.equal(manuell.status, 201, JSON.stringify(manuell.body));
-    assert.equal((await anfrage('GET', '/api/mappen?sicht=eingang')).body.gesamt, 1);
+    const eingang = async () => (await anfrage('GET', '/api/mappen?sicht=eingang&suche=V-1a&anzahl=500')).body.mappen.some((x: { id: string }) => x.id === m.id);
+    assert.equal(await eingang(), true);
     assert.equal((await anfrage('POST', `/api/aufgaben/${manuell.body.id}/erledigt`)).status, 200);
-    assert.equal((await anfrage('GET', '/api/mappen?sicht=eingang')).body.gesamt, 0);
+    assert.equal(await eingang(), false);
     auf = (await anfrage('GET', '/api/werkbank/aufgaben?erledigt')).body.aufgaben;
     assert.equal(auf[0].id, manuell.body.id);
     // Notizen und Suche darin (#55)
