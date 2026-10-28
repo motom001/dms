@@ -77,7 +77,7 @@ describe('Mappentyp Benutzer (#26)', () => {
     assert.equal((await dienst.listeTypen()).length, 0);
     await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
     await dienst.gleicheBenutzerAb(await konten.listeBenutzer()); // zweiter Lauf ändert nichts
-    assert.equal((await dienst.listeTypen()).filter((t) => t.system).length, 2);
+    assert.equal((await dienst.listeTypen()).filter((t) => t.system).length, 3, 'Benutzer, Rolle, E-Mail');
     assert.equal((await dienst.holeMappe(benutzer.id)).mappe.werte.email, 'alt@example.org');
     assert.equal((await dienst.listeRollen()).length, 2);
   });

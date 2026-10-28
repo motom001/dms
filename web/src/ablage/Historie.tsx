@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { HISTORIENARTEN, type Historieneintrag } from '../../../shared/src/model';
 import { api } from '../api';
 import { useDaten } from '../daten';
+import { Link } from '../ort';
 
 /** Änderungshistorie einer Mappe (#57): je Speichern ein Eintrag, Einzelheiten zum Aufklappen. */
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
@@ -18,6 +19,7 @@ function kurz(e: Historieneintrag): string {
 export function Historie({ mappeId, stand }: { mappeId: string; stand?: string }) {
   const d = useDaten();
   const [liste, setListe] = useState<Historieneintrag[] | null>(null);
+  const emailTyp = d.typen.find((t) => t.system === 'email')?.id;
   const [fehler, setFehler] = useState<string>();
   useEffect(() => {
     api.historie(mappeId).then((h) => { setListe(h); setFehler(undefined); }, (e: Error) => setFehler(e.message));
@@ -33,7 +35,8 @@ export function Historie({ mappeId, stand }: { mappeId: string; stand?: string }
           <>
             <span className="wann">{zeit(e.zeit)}</span>
             <span className="wer">{d.person(e.benutzerId)}</span>
-            <span className="was"><strong>{HISTORIENARTEN[e.art] ?? e.art}</strong>{kurz(e) ? `: ${kurz(e)}` : ''}</span>
+            <span className="was"><strong>{HISTORIENARTEN[e.art] ?? e.art}</strong>{kurz(e) ? `: ${kurz(e)}` : ''}
+              {e.art === 'email' && typeof e.daten.email === 'string' && emailTyp && <> · <Link to={`/ablage/${emailTyp}/${e.daten.email}`} className="verweis">öffnen</Link></>}</span>
           </>
         );
         return (

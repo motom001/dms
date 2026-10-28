@@ -2,9 +2,10 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, ROLLEN, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
-  AUFGABE_MAX, NOTIZ_MAX, type Aufgabe, type Benutzer, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Rolle, type Systemtyp, type Werte,
+  AUFGABE_MAX, istEmail, NOTIZ_MAX, type Aufgabe, type Benutzer, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
+import type { Mailer } from './mail';
 import { Auftraege } from './auftrag';
 import { protokoll } from './protokoll';
 import { Fachfehler } from './fehler';
@@ -118,6 +119,9 @@ export interface KontenHaken {
 }
 
 export const PAPIERKORB_STANDARD_TAGE = 30;
+/** Anhänge einer E-Mail zusammen höchstens (#58); die Oberfläche warnt schon ab 20 MB. */
+export const EMAIL_MAX_ANHAENGE = 50_000_000;
+export const EMAIL_MAX_EMPFAENGER = 20;
 export const HISTORIE_STANDARD_TAGE = 365;
 export interface DienstOptionen {
   /** Schlüssel für Passwortfelder (#39, #46). */
@@ -422,6 +426,57 @@ export class Dienst {
     return this.repo.notizen(mappeId);
   }
 
+  /* ---------- E-Mail aus der Mappe (#58) ---------- */
+
+  /**
+   * Verschickt eine E-Mail mit ausgewählten Dokumenten der Mappe. Absender ist das DMS,
+   * „Antworten an“ der Benutzer. Danach gibt es eine Mappe vom Systemtyp „E-Mail“ mit den
+   * Anhängen (dieselbe Datei, kein zweiter Speicherplatz) und einen Eintrag im Protokoll.
+   */
+  async versendeMappe(mappeId: string, eingabe: unknown, ich: { id: string; name: string; email: string }, mailer: Mailer | null) {
+    if (!mailer) throw new Fachfehler(409, 'Der E-Mail-Versand ist nicht eingerichtet (Werkbank → E-Mail und Adresse).');
+    const m = await this.repo.holeMappe(mappeId);
+    if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const an = [...new Set(String(e.an ?? '').split(/[,;\s]+/).map((x) => x.trim()).filter(Boolean))];
+    const betreff = String(e.betreff ?? '').replace(/[\r\n]+/g, ' ').trim();
+    const nachricht = String(e.nachricht ?? '');
+    const fehler: Record<string, string> = {};
+    if (!an.length) fehler.an = 'Mindestens einen Empfänger angeben.';
+    else if (an.length > EMAIL_MAX_EMPFAENGER) fehler.an = `Höchstens ${EMAIL_MAX_EMPFAENGER} Empfänger.`;
+    else if (an.some((x) => !istEmail(x))) fehler.an = `Keine gültige Adresse: ${an.filter((x) => !istEmail(x)).join(', ')}`;
+    if (!betreff) fehler.betreff = 'Der Betreff fehlt.';
+    else if (betreff.length > 250) fehler.betreff = 'Der Betreff ist zu lang.';
+    if (nachricht.length > NOTIZ_MAX) fehler.nachricht = 'Die Nachricht ist zu lang.';
+    if (Object.keys(fehler).length) throw new Fachfehler(422, Object.values(fehler).join(' '), { felder: fehler });
+    const ids = Array.isArray(e.dokumente) ? [...new Set(e.dokumente.map(String))] : [];
+    const alle = await this.repo.listeDokumente(mappeId);
+    const dokumente = ids.map((id) => alle.find((d) => d.id === id));
+    if (dokumente.some((d) => !d)) throw new Fachfehler(422, 'Ein ausgewähltes Dokument gehört nicht (mehr) zu dieser Mappe.');
+    const groesse = dokumente.reduce((a, d) => a + d!.groesse, 0);
+    if (groesse > EMAIL_MAX_ANHAENGE) throw new Fachfehler(413, `Die Anhänge sind zusammen größer als ${Math.round(EMAIL_MAX_ANHAENGE / 1e6)} MB.`);
+    const anhaenge = await Promise.all(dokumente.map(async (d) => ({ name: d!.name, mime: d!.mime, inhalt: await this.dateien.lies(d!.sha256) })));
+    const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;
+    try {
+      await mailer.sende(an.join(', '), betreff, nachricht, { antwortAn, anhaenge });
+    } catch (x) {
+      throw new Fachfehler(502, `Die E-Mail wurde nicht verschickt: ${(x as Error).message}`);
+    }
+    const { email: typ } = await this.sichereSystem();
+    const id = randomUUID();
+    const datum = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(new Date());
+    await this.schreibeSystemMappe(typ, id, {
+      betreff, an: an.join(', '), absender: antwortAn.replace(/"/g, ''), datum, bezug: mappeId, ...(nachricht.trim() ? { nachricht } : {}),
+    }, ich.id);
+    const reg = typ.register.find((r) => r.art === 'dokumente');
+    if (reg) for (const d of dokumente) {
+      await this.repo.legeDokumentAn({ ...d!, id: randomUUID(), mappeId: id, registerKey: reg.key, erstellt: new Date().toISOString(), erstelltVon: ich.id });
+    }
+    await this.notiere(mappeId, ich.id, 'email', { text: `„${betreff}“ an ${an.join(', ')}${dokumente.length ? ` mit ${dokumente.length} ${dokumente.length === 1 ? 'Anhang' : 'Anhängen'}` : ''}`, email: id });
+    protokoll.modul('ablage').info('E-Mail aus Mappe verschickt', { mappe: mappeId, empfaenger: an.length, anhaenge: dokumente.length, bytes: groesse });
+    return { id, typId: typ.id };
+  }
+
   async legeNotizAn(mappeId: string, text: unknown, von: string | null): Promise<Notiz> {
     if (!(await this.repo.holeMappe(mappeId))) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
     const t = Dienst.notiztext(text);
@@ -502,7 +557,7 @@ export class Dienst {
       r.quellen = (r.quellen ?? []).filter((q) => {
         const felder = q.typId === eigeneId ? d.felder : alle.find((t) => t.id === q.typId)?.felder;
         const f = felder?.find((x) => x.key === q.feldKey);
-        return f?.typ === 'referenz' && f.zielTyp === eigeneId;
+        return f?.typ === 'referenz' && (f.zielTyp === eigeneId || f.zielTyp === '*');
       });
     }
     const p = pruefeMappentyp(d, {
@@ -562,7 +617,7 @@ export class Dienst {
       const s = soll.find((x) => x.key === f.key);
       return s ? { ...s, label: f.label || s.label, hilfe: f.hilfe || s.hilfe } : f;
     });
-    return { ...d, felder, ...(system === 'benutzer' ? { erstellenErlaubt: false, loeschenErlaubt: false } : {}) };
+    return { ...d, felder, ...(system === 'benutzer' ? { erstellenErlaubt: false, loeschenErlaubt: false } : system === 'email' ? { erstellenErlaubt: false } : {}) };
   }
 
   async loescheTyp(id: string): Promise<void> {
@@ -940,13 +995,21 @@ export class Dienst {
     // Eine Rolle darf weg, auch wenn Benutzer sie haben: deren Zuordnung fällt weg.
     const benutzerTyp = typ?.system === 'rolle' ? (await this.repo.listeTypen()).find((t) => t.system === 'benutzer') : undefined;
     const zuordnungen = benutzerTyp ? rueck.filter((r) => r.quelleTypId === benutzerTyp.id && r.feldKey === 'rollen') : [];
-    const fremd = rueck.filter((r) => r.quelleId !== id && !zuordnungen.includes(r));
+    // Versendete E-Mails (#58) verweisen auf jede Mappe; sie halten das Löschen nicht auf, ihr Bezug wird leer.
+    const typen = rueck.length ? await this.repo.listeTypen() : [];
+    const emailTyp = typen.find((t) => t.system === 'email');
+    const emails = emailTyp ? rueck.filter((r) => r.quelleTypId === emailTyp.id && r.feldKey === 'bezug') : [];
+    const fremd = rueck.filter((r) => r.quelleId !== id && !zuordnungen.includes(r) && !emails.includes(r));
     if (fremd.length) {
       throw new Fachfehler(409, `Auf diese Mappe ${fremd.length === 1 ? 'verweist noch eine andere Mappe' : `verweisen noch ${fremd.length} andere Mappen`}. Entferne erst diese Verweise.`, { rueckverweise: fremd });
     }
     for (const z of zuordnungen) {
       const b = await this.repo.holeMappe(z.quelleId);
       if (b) await this.schreibeSystemMappe(benutzerTyp!, b.id, { ...b.werte, rollen: alsListe(b.werte.rollen).filter((r) => r !== id) }, benutzerId);
+    }
+    for (const e of emails) {
+      const x = await this.repo.holeMappe(e.quelleId);
+      if (x) await this.schreibeSystemMappe(emailTyp!, x.id, { ...x.werte, bezug: null }, benutzerId);
     }
     if (await this.papierkorbTage() > 0) await this.legeInPapierkorb(id, typ, benutzerId);
     else await this.loescheMappeIntern(id, typ, benutzerId);
@@ -969,7 +1032,7 @@ export class Dienst {
 
   /* ---------- Systemtypen: Benutzer und Rollen (#26, #27) ---------- */
 
-  private sichern?: Promise<{ benutzer: Mappentyp; rolle: Mappentyp; systemrollen: Map<Rolle, string> }>;
+  private sichern?: Promise<{ benutzer: Mappentyp; rolle: Mappentyp; email: Mappentyp; systemrollen: Map<Rolle, string> }>;
 
   /**
    * Legt die Systemtypen „Benutzer“ und „Rolle“ und die Systemrollen an, falls sie fehlen.
@@ -981,6 +1044,7 @@ export class Dienst {
       // Definitionen können sich seitdem geändert haben (Felder ergänzt, umbenannt).
       benutzer: (await this.repo.holeTyp(s.benutzer.id)) ?? s.benutzer,
       rolle: (await this.repo.holeTyp(s.rolle.id)) ?? s.rolle,
+      email: (await this.repo.holeTyp(s.email.id)) ?? s.email,
       systemrollen: s.systemrollen,
     }));
   }
@@ -989,6 +1053,7 @@ export class Dienst {
     const typen = await this.repo.listeTypen();
     let rolle = typen.find((t) => t.system === 'rolle');
     let benutzer = typen.find((t) => t.system === 'benutzer');
+    let email = typen.find((t) => t.system === 'email');
     const frei = (name: string) => (typen.some((t) => t.name.trim().toLowerCase() === name.toLowerCase()) ? `${name} (System)` : name);
     const ids = { rolle: rolle?.id ?? randomUUID(), benutzer: benutzer?.id ?? randomUUID() };
     if (!rolle) {
@@ -1018,6 +1083,21 @@ export class Dienst {
       await this.sichtFuerTyp(benutzer);
       protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: benutzer.name });
     }
+    if (!email) {
+      // Versendete E-Mails (#58); später auch per IMAP abgeholte.
+      email = await this.repo.legeTypAn(randomUUID(), {
+        name: frei('E-Mail'), beschreibung: 'Aus dem DMS verschickte E-Mails mit Anhängen', titelVorlage: '{betreff}',
+        felder: systemfelder('email', rolle.id),
+        register: [
+          { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['betreff', 'an', 'absender', 'datum', 'bezug', 'nachricht'] },
+          { key: 'anhaenge', name: 'Anhänge', art: 'dokumente' },
+          { key: 'protokoll', name: 'Protokoll', art: 'protokoll' },
+        ],
+        trefferliste: ['datum', 'an', 'bezug'], erstellenErlaubt: false, loeschenErlaubt: true,
+      }, 'email');
+      await this.sichtFuerTyp(email);
+      protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: email.name });
+    }
     const systemrollen = new Map<Rolle, string>();
     for (const r of Object.keys(ROLLEN) as Rolle[]) {
       const kennung = systemrolleKennung(r);
@@ -1028,7 +1108,7 @@ export class Dienst {
       }
       systemrollen.set(r, m.id);
     }
-    return { benutzer, rolle, systemrollen };
+    return { benutzer, rolle, email, systemrollen };
   }
 
   /** Schreibt eine Mappe, die das System pflegt – ohne die Sperren der Ablage; Titel und Passung wie sonst. */

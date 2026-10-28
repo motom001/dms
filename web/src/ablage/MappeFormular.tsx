@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
-import { darfErstellen, darfLoeschen, geschuetzteFelder, istLeer, istOk, MAX_DATEIGROESSE, OCR_STAENDE, standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type OcrStand, type Pruefergebnis, type Register } from '../../../shared/src/model';
+import { useCallback, useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { darfErstellen, darfLoeschen, formatiere, geschuetzteFelder, istLeer, istOk, MAX_DATEIGROESSE, OCR_STAENDE, standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type OcrStand, type Pruefergebnis, type Register } from '../../../shared/src/model';
 import { api, ApiFehler, dokumentUrl, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -10,6 +10,7 @@ import { Formatiert, FormatiertEingabe } from './Formatiert';
 import { Historie } from './Historie';
 import { Notizen } from './Notizen';
 import { AufgabenHinweis, NeueAufgabe } from './Aufgaben';
+import { Aktionsmenue, Druckansicht, EmailMaske } from './Aktionen';
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 const groesse = (b: number) => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);
@@ -44,6 +45,9 @@ export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp
   const verwaist = Object.entries(mappe.werte).filter(([k, v]) => !bekannt.has(k) && !istLeer(v));
   const [notizenOffen, setNotizenOffen] = useState(false);
   const [aufgabeOffen, setAufgabeOffen] = useState(false);
+  const [emailOffen, setEmailOffen] = useState(false);
+  const [drucken, setDrucken] = useState(false);
+  const druckEnde = useCallback(() => setDrucken(false), []);
   const notizen = details.notizen ?? [];
   return (
     <>
@@ -63,10 +67,13 @@ export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp
           <button type="button" className={`knopf klein ${aufgabeOffen ? 'an' : ''}`} aria-expanded={aufgabeOffen} onClick={() => setAufgabeOffen(!aufgabeOffen)}>
             <span aria-hidden="true">✓</span> Aufgabe vergeben
           </button>
+          <Aktionsmenue email={() => setEmailOffen(true)} drucken={() => setDrucken(true)} />
         </div>
       </div>
       <AufgabenHinweis aufgaben={details.aufgaben ?? []} neuLaden={neuLaden} />
       {aufgabeOffen && <NeueAufgabe mappeId={mappe.id} neuLaden={neuLaden} schliessen={() => setAufgabeOffen(false)} />}
+      {emailOffen && <EmailMaske key={mappe.id} typ={typ} details={details} neuLaden={neuLaden} schliessen={() => setEmailOffen(false)} />}
+      {drucken && <Druckansicht typ={typ} details={details} fertig={druckEnde} />}
       {notizenOffen && <Notizen mappeId={mappe.id} notizen={notizen} neuLaden={neuLaden} schliessen={() => setNotizenOffen(false)} />}
       {mappe.passt === false && (
         <div className="hinweis warn"><p>Diese Mappe passt nicht mehr zur aktuellen Definition von „{typ.name}“{mappe.problem ? ` (${mappe.problem})` : ''}. Beim nächsten Speichern müssen die markierten Felder stimmen.</p></div>
@@ -91,7 +98,7 @@ let zaehler = 0;
 function verknuepfungsGruppen(d: ReturnType<typeof useDaten>, mappe: Mappe | undefined, typId: string, register: Register, details?: MappeDetails | null) {
   const gewaehlt = register.quellen ?? [];
   return d.typen.flatMap((t) => t.felder
-    .filter((f) => f.typ === 'referenz' && f.zielTyp === typId)
+    .filter((f) => f.typ === 'referenz' && (f.zielTyp === typId || f.zielTyp === '*'))
     .filter((f) => !gewaehlt.length || gewaehlt.some((q) => q.typId === t.id && q.feldKey === f.key))
     .map((f) => ({
       t, f,
@@ -281,10 +288,11 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
     ctl = <div className="festwert" title={gesperrt}>{
       f.typ === 'referenz'
         ? <ul>{ids.map((x) => <li key={x}>{bekannt[x]?.typId ? <Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis">{titelOder(bekannt[x].titel)}</Link> : titelOder(bekannt[x]?.titel)}</li>)}</ul>
-        : f.typ === 'janein' ? (roh ? 'Ja' : 'Nein') : f.typ === 'formatiert' ? <Formatiert text={String(roh ?? '')} /> : String(roh ?? '')
+        : f.typ === 'janein' ? (roh ? 'Ja' : 'Nein') : f.typ === 'formatiert' ? <Formatiert text={String(roh ?? '')} />
+        : f.typ === 'datum' ? formatiere(f, String(roh ?? '')) : f.typ === 'langtext' ? <span className="mehrzeilig">{String(roh ?? '')}</span> : String(roh ?? '')
     }</div>;
     return (
-      <div className="feld">
+      <div className={`feld ${f.typ === 'langtext' || f.typ === 'formatiert' ? 'breit' : ''}`}>
         <div className="feldkopf"><span className="label">{f.label}</span></div>
         {ctl}
         <span className="hilfe">{gesperrt}</span>

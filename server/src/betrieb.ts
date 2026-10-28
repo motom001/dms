@@ -203,10 +203,14 @@ export class Betrieb {
     const m = { ...this.mail };
     const t = transport(m, this.klartext(m.passwort));
     this.aktuellerMailer = {
-      async sende(an, betreff, text) {
+      async sende(an, betreff, text, o) {
         const start = Date.now();
         try {
-          await t.sendMail({ from: absenderVon(m), to: an, subject: betreff, text });
+          await t.sendMail({
+            from: absenderVon(m), to: an, subject: betreff, text,
+            ...(o?.antwortAn ? { replyTo: o.antwortAn } : {}),
+            ...(o?.anhaenge?.length ? { attachments: o.anhaenge.map((a) => ({ filename: a.name, content: a.inhalt, contentType: a.mime })) } : {}),
+          });
           log.info('E-Mail verschickt', { an, betreff, ms: Date.now() - start });
         } catch (e) {
           log.error('E-Mail nicht verschickt', { an, betreff, fehler: meldung(e) });

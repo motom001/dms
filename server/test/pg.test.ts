@@ -632,6 +632,62 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('DELETE', `/api/typen/${vertrag.id}`)).status, 204);
     assert.equal((await anfrage('DELETE', `/api/typen/${partner.id}`)).status, 204);
   });
+  it('Notizen, Aufgaben, Protokoll und E-Mail aus der Mappe (#54–#58)', async () => {
+    const ich = (await anfrage('GET', '/api/konto/status')).body.benutzer;
+    const typ = (await anfrage('POST', '/api/typen', { name: 'Vorgang', felder: [
+      { key: 'nr', label: 'Nr', typ: 'text', pflicht: true }, { key: 'text', label: 'Beschreibung', typ: 'formatiert' },
+    ], register: [
+      { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr', 'text'] }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
+      { key: 'protokoll', name: 'Protokoll', art: 'protokoll' },
+    ] })).body;
+    const m = (await anfrage('POST', '/api/mappen', { typId: typ.id, werte: { nr: 'V-1' } })).body;
+    // Formatierter Text mit Erwähnung → Aufgabe, nur einmal (#53, #56)
+    const mit = { nr: 'V-1', text: `**Bitte** prüfen, @[Ich](benutzer:${ich.id})` };
+    assert.equal((await anfrage('PUT', `/api/mappen/${m.id}`, { werte: mit })).status, 200);
+    assert.equal((await anfrage('PUT', `/api/mappen/${m.id}`, { werte: { ...mit, nr: 'V-1a' } })).status, 200);
+    let auf = (await anfrage('GET', `/api/mappen/${m.id}/aufgaben`)).body;
+    assert.equal(auf.filter((a: { art: string }) => a.art === 'erwaehnung').length, 0, 'sich selbst erwähnen ergibt keine Aufgabe');
+    const manuell = await anfrage('POST', `/api/mappen/${m.id}/aufgaben`, { empfaengerId: ich.id, text: 'Ablegen' });
+    assert.equal(manuell.status, 201, JSON.stringify(manuell.body));
+    assert.equal((await anfrage('GET', '/api/mappen?sicht=eingang')).body.gesamt, 1);
+    assert.equal((await anfrage('POST', `/api/aufgaben/${manuell.body.id}/erledigt`)).status, 200);
+    assert.equal((await anfrage('GET', '/api/mappen?sicht=eingang')).body.gesamt, 0);
+    auf = (await anfrage('GET', '/api/werkbank/aufgaben?erledigt')).body.aufgaben;
+    assert.equal(auf[0].id, manuell.body.id);
+    // Notizen und Suche darin (#55)
+    const n = await anfrage('POST', `/api/mappen/${m.id}/notizen`, { text: 'Rückruf bei Firma Zander' });
+    assert.equal(n.status, 201);
+    assert.equal((await anfrage('GET', `/api/mappen?sicht=typ:${typ.id}&suche=Zander`)).body.gesamt, 0);
+    assert.equal((await anfrage('GET', `/api/mappen?sicht=typ:${typ.id}&suche=Zander&notizen=true`)).body.gesamt, 1);
+    // Protokoll (#57)
+    const h = (await anfrage('GET', `/api/mappen/${m.id}/historie`)).body;
+    assert.deepEqual([...new Set(h.map((e: { art: string }) => e.art))].sort(), ['angelegt', 'aufgabe', 'geaendert', 'notiz']);
+    // E-Mail (#58): ohne Versand 409; mit Versand eine E-Mail-Mappe mit Anhang
+    const hoch = await app.inject({ method: 'POST', url: `/api/mappen/${m.id}/dokumente?register=dokumente&name=v.pdf`, payload: Buffer.from('%PDF-1.7 mail'), headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' } });
+    const dok = JSON.parse(hoch.body).dokument;
+    const email = { an: 'amt@example.org', betreff: 'Vorgang V-1a', nachricht: 'Anbei', dokumente: [dok.id] };
+    assert.equal((await anfrage('POST', `/api/mappen/${m.id}/email`, email)).status, 409);
+    const gesendet: unknown[] = [];
+    const vorher = betrieb.mailer;
+    betrieb.mailer = () => ({ async sende(...a: unknown[]) { gesendet.push(a); } });
+    try {
+      assert.equal((await anfrage('GET', '/api/email/bereit')).body.bereit, true);
+      const e = await anfrage('POST', `/api/mappen/${m.id}/email`, email);
+      assert.equal(e.status, 201, JSON.stringify(e.body));
+      assert.equal(gesendet.length, 1);
+      const em = (await anfrage('GET', `/api/mappen/${e.body.id}`)).body;
+      assert.equal(em.mappe.werte.bezug, m.id);
+      assert.equal(em.dokumente[0].sha256, dok.sha256);
+      assert.equal((await anfrage('GET', '/api/typen')).body.find((t: { id: string }) => t.id === e.body.typId).system, 'email');
+      assert.equal((await anfrage('GET', `/api/mappen/${m.id}/historie`)).body[0].art, 'email');
+      // Die Mappe lässt sich trotz E-Mail löschen; die Datei bleibt für die E-Mail.
+      assert.equal((await anfrage('DELETE', `/api/mappen/${m.id}`)).status, 204);
+      assert.equal((await app.inject({ method: 'GET', url: `/api/dokumente/${em.dokumente[0].id}/inhalt`, headers: { cookie } })).statusCode, 200);
+      assert.equal((await anfrage('DELETE', `/api/mappen/${e.body.id}`)).status, 204);
+    } finally { betrieb.mailer = vorher; }
+    assert.equal((await anfrage('DELETE', `/api/typen/${typ.id}`)).status, 204);
+  });
+
   it('erkennt Text in Dokumenten und findet ihn mit der Volltextsuche (#45)', async () => {
     const { pdfMitText } = await import('./hilfen');
     const st = (await anfrage('GET', '/api/werkbank/texterkennung')).body;

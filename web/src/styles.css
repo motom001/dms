@@ -585,3 +585,32 @@ input.kurz { width: 7em; }
 /* Werkbank → Aufgaben (#54) */
 .aufgabenzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 2px 12px 10px; }
 .aufgabenzeile select { flex: 1 1 160px; min-width: 0; }
+
+/* Aktionen an der Mappe (#58) */
+.aktionsmenue { position: relative; }
+.aktionsmenue .menue { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 220px; display: flex; flex-direction: column; padding: 4px; background: var(--flaeche, #fff); border: 1px solid var(--linie); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+.aktionsmenue .menue button { text-align: left; background: none; border: 0; padding: 8px 10px; border-radius: 6px; font: inherit; color: inherit; cursor: pointer; }
+.aktionsmenue .menue button:hover, .aktionsmenue .menue button:focus-visible { background: var(--senke); }
+.mappenleiste .aktionsmenue { margin-left: auto; }
+.anhaenge { border: 0; padding: 0; margin: 12px 0; }
+.anhaenge legend { font-weight: 600; margin-bottom: 4px; }
+.anhaenge ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+
+/* Druckansicht / Als PDF exportieren (#58) */
+.druckansicht { display: none; }
+@media print {
+  body.druckt > *:not(.druckansicht) { display: none !important; }
+  body.druckt { background: #fff !important; }
+  body.druckt .druckansicht { display: block; color: #000; font: 11pt/1.45 system-ui, sans-serif; }
+  .druckansicht h1 { font-size: 18pt; margin: 0 0 4pt; }
+  .druckansicht h2 { font-size: 13pt; margin: 16pt 0 6pt; border-bottom: 1px solid #999; padding-bottom: 2pt; }
+  .druckansicht .ueber { text-transform: uppercase; letter-spacing: .06em; font-size: 9pt; color: #555; margin: 0; }
+  .druckansicht table { width: 100%; border-collapse: collapse; margin-top: 10pt; }
+  .druckansicht th, .druckansicht td { text-align: left; vertical-align: top; padding: 4pt 6pt; border-bottom: 1px solid #ddd; }
+  .druckansicht th { width: 32%; font-weight: 600; }
+  .druckansicht tr, .druckansicht .notiz { break-inside: avoid; }
+  .druckansicht .klein { font-size: 9pt; color: #444; }
+  .druckansicht .fuss { margin-top: 20pt; }
+  @page { margin: 18mm; }
+}
+.festwert .mehrzeilig { white-space: pre-wrap; }

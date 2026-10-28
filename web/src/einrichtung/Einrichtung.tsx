@@ -257,7 +257,7 @@ function FeldZeile(p: {
 }) {
   const { f, i, offen, fehler, setze } = p;
   const id = (x: string) => `f${i}-${x}`;
-  const zielName = f.zielTyp === p.eigeneId ? (p.eigenerName || 'dieser Typ') : p.typen.find((t) => t.id === f.zielTyp)?.name ?? '–';
+  const zielName = f.zielTyp === p.eigeneId ? (p.eigenerName || 'dieser Typ') : f.zielTyp === '*' ? 'jede Mappe' : p.typen.find((t) => t.id === f.zielTyp)?.name ?? '–';
 
   const chips: string[] = [];
   if (f.system) chips.push('System');
@@ -293,6 +293,7 @@ function FeldZeile(p: {
     <label className="eigenschaft" htmlFor={id('ziel')}><span>Verweist auf Mappen vom Typ</span>
       <select id={id('ziel')} value={f.zielTyp ?? ''} onChange={(e) => setze({ zielTyp: e.target.value })}>
         <option value="">– bitte wählen –</option>
+        {f.zielTyp === '*' && <option value="*">jede Mappe</option>}
         {p.typen.filter((t) => t.id !== p.eigeneId).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         <option value={p.eigeneId}>{p.eigenerName || 'Dieser Typ'} (dieser Typ)</option>
       </select>
@@ -472,7 +473,7 @@ function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Ent
 
   // Mögliche Quellen: jedes Referenzfeld, das auf diesen Mappentyp zeigt (auch aus ihm selbst).
   const quellen = [
-    ...d.typen.filter((t) => t.id !== e.id).flatMap((t) => t.felder.filter((f) => f.typ === 'referenz' && f.zielTyp === e.id).map((f) => ({ typId: t.id, feldKey: f.key, text: `${t.name} › ${f.label}` }))),
+    ...d.typen.filter((t) => t.id !== e.id).flatMap((t) => t.felder.filter((f) => f.typ === 'referenz' && (f.zielTyp === e.id || f.zielTyp === '*')).map((f) => ({ typId: t.id, feldKey: f.key, text: `${t.name} › ${f.label}` }))),
     ...e.felder.filter((f) => f.typ === 'referenz' && f.zielTyp === e.id).map((f) => ({ typId: e.id, feldKey: f.key, text: `${e.name || 'Dieser Typ'} › ${f.label}` })),
   ];
 

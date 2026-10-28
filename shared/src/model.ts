@@ -108,15 +108,26 @@ export interface Mappentyp extends MappentypDaten {
 
 /* ---------- Systemmappentypen: Benutzer und Rollen (#26, #27) ---------- */
 
-export const SYSTEMTYPEN = { benutzer: 'Benutzer', rolle: 'Rolle' } as const;
+export const SYSTEMTYPEN = { benutzer: 'Benutzer', rolle: 'Rolle', email: 'E-Mail' } as const;
 export type Systemtyp = keyof typeof SYSTEMTYPEN;
 
 /** Kennung der Mappe einer Systemrolle, z. B. rolle:admin. */
 export const systemrolleKennung = (r: Rolle) => `rolle:${r}`;
 export const istSystemrolle = (m: Pick<Mappe, 'systemKennung'> | undefined) => !!m?.systemKennung?.startsWith('rolle:');
 
+/** Ziel eines Referenzfelds, das auf Mappen jedes Typs zeigen darf – nur für Systemfelder (E-Mail → Bezug, #58). */
+export const BELIEBIGER_TYP = '*';
+
 /** Systemfelder je Systemtyp. Bezeichnung und Hilfetext darf der Administrator ändern, alles andere ist fest. */
 export function systemfelder(s: Systemtyp, rolleTypId: string): Feld[] {
+  if (s === 'email') return [
+    { key: 'betreff', label: 'Betreff', typ: 'text', pflicht: true, maxLen: 250, system: true },
+    { key: 'an', label: 'An', typ: 'text', pflicht: true, system: true },
+    { key: 'absender', label: 'Absender', typ: 'text', system: true, hilfe: 'Wer die E-Mail verschickt hat; Antworten gehen an diese Adresse' },
+    { key: 'datum', label: 'Datum', typ: 'datum', system: true },
+    { key: 'bezug', label: 'Bezug', typ: 'referenz', zielTyp: BELIEBIGER_TYP, verweisart: 'bezug', system: true, hilfe: 'Die Mappe, aus der die E-Mail verschickt wurde' },
+    { key: 'nachricht', label: 'Nachricht', typ: 'langtext', system: true },
+  ];
   if (s === 'rolle') return [
     { key: 'name', label: 'Name', typ: 'text', pflicht: true, eindeutig: true, maxLen: 80, system: true },
   ];
@@ -143,6 +154,7 @@ export function geschuetzteFelder(t: Pick<Mappentyp, 'system' | 'felder'> | unde
     return Object.fromEntries(t.felder.filter((f) => f.system).map((f) => [f.key, 'Wird im Profil und in der Benutzerverwaltung gepflegt.']));
   }
   if (t?.system === 'rolle' && istSystemrolle(m)) return { name: 'Der Name einer Systemrolle ist fest.' };
+  if (t?.system === 'email') return Object.fromEntries(t.felder.filter((f) => f.system).map((f) => [f.key, 'Wird beim Versand festgehalten.']));
   return {};
 }
 
@@ -315,7 +327,7 @@ function pruefeRegister(t: MappentypDaten, ctx: TypKontext, p: Pruefergebnis) {
       for (const q of r.quellen ?? []) {
         const felder = q.typId === ctx.eigeneId ? t.felder : ctx.felderVon?.(q.typId);
         const f = felder?.find((x) => x.key === q.feldKey);
-        if (!f || f.typ !== 'referenz' || (f.zielTyp !== ctx.eigeneId)) p.allgemein.push(`Register „${name}“: Eine Quelle verweist nicht (mehr) auf diesen Mappentyp.`);
+        if (!f || f.typ !== 'referenz' || (f.zielTyp !== ctx.eigeneId && f.zielTyp !== BELIEBIGER_TYP)) p.allgemein.push(`Register „${name}“: Eine Quelle verweist nicht (mehr) auf diesen Mappentyp.`);
       }
     }
   }
@@ -352,6 +364,7 @@ export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebn
     gesehen.add(f.key);
     if (f.typ === 'referenz') {
       if (!f.zielTyp) m.push('Ziel-Mappentyp auswählen.');
+      else if (f.zielTyp === BELIEBIGER_TYP) { if (!f.system) m.push('Ziel-Mappentyp auswählen.'); }
       else if (f.zielTyp !== ctx.eigeneId && !ctx.existiertTyp(f.zielTyp)) m.push('Der Ziel-Mappentyp existiert nicht.');
     }
     if (f.typ === 'auswahl' && !(f.optionen ?? []).length) m.push('Mindestens einen Auswahlwert eintragen.');
@@ -430,7 +443,7 @@ export function pruefeMappe(t: Pick<Mappentyp, 'felder'>, werte: Werte, ctx: Map
         const ids = Array.isArray(v) ? v : [v];
         if (!f.mehrfach && Array.isArray(v)) { fehler(f.key, 'Nur ein Verweis erlaubt.'); break; }
         if (ids.some((id) => typeof id !== 'string' || ctx.typVon(id) === undefined)) fehler(f.key, 'Verweist auf eine Mappe, die es nicht gibt.');
-        else if (ids.some((id) => ctx.typVon(id as string) !== f.zielTyp)) fehler(f.key, 'Verweist auf eine Mappe eines anderen Typs.');
+        else if (f.zielTyp !== BELIEBIGER_TYP && ids.some((id) => ctx.typVon(id as string) !== f.zielTyp)) fehler(f.key, 'Verweist auf eine Mappe eines anderen Typs.');
         break;
       }
     }
