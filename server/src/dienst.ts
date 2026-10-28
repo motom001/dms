@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
-  darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, geschuetzteFelder, istLeer, istSystemspalte, sortierbar, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
+  darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, ROLLEN, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
   type Benutzer, type Feld, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
@@ -8,6 +8,7 @@ import type { Dateispeicher } from './dateispeicher';
 import { Auftraege } from './auftrag';
 import { protokoll } from './protokoll';
 import { Fachfehler } from './fehler';
+import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
 import { istUuid, type NeueMappe, type Repo, type Rueckverweis, type SortierungIntern } from './repo';
 import {
   bereinigeBedingungen, heuteIn, kinderVon, klauselnFuer, waereKreis, wirksameTypen,
@@ -33,7 +34,7 @@ export function bereinigeFeld(e: unknown): Feld {
     pflicht: !!f.pflicht,
     eindeutig: !!f.eindeutig && (typ === 'text' || typ === 'zahl'),
     hilfe: text(f.hilfe),
-    standard: std == null || std === '' ? null : typeof std === 'boolean' ? std : String(std),
+    standard: std == null || std === '' || typ === 'passwort' ? null : typeof std === 'boolean' ? std : String(std),
     minLen: zahlOderNull(f.minLen),
     maxLen: zahlOderNull(f.maxLen),
     muster: text(f.muster),
@@ -83,7 +84,7 @@ export function bereinigeTyp(e: unknown): MappentypDaten {
     register: bereinigeRegister(t.register, felder),
     // Nur bekannte Spalten, jede einmal; Spalten entfernter Felder fallen still weg.
     trefferliste: [...new Set((Array.isArray(t.trefferliste) ? t.trefferliste : []).map(text))]
-      .filter((k) => (istSystemspalte(k) && k !== '_typ') || felder.some((f) => f.key === k)),
+      .filter((k) => (istSystemspalte(k) && k !== '_typ') || felder.some((f) => f.key === k && f.typ !== 'passwort')),
     erstellenErlaubt: t.erstellenErlaubt !== false,
     loeschenErlaubt: t.loeschenErlaubt !== false,
   };
@@ -132,18 +133,45 @@ export function erkenneAnzeigbar(b: Buffer): string | null {
 }
 
 /** Nur Werte zu bekannten Feldern; leere Eingaben werden zu null. */
-function bereinigeWerte(typ: Mappentyp, eingabe: unknown, bisher: Werte = {}): Werte {
+/**
+ * Passwortfeld (#46): neues Passwort verschlüsseln, entfernen oder das bisherige behalten.
+ * - { neu: '…' } oder ein Text: neues Passwort
+ * - null, '' oder { entfernen: true }: entfernen
+ * - fehlt oder { gesetzt: true } (so, wie die Oberfläche es bekam): unverändert
+ */
+function passwortWert(eingabe: unknown, hatEingabe: boolean, bisher: unknown, verschluessele: (k: string) => string): Werte[string] {
+  // Ohne Eingabe oder unverändert durchgereicht (System, z. B. beim Nachziehen einer Benutzer-Mappe): behalten.
+  if (!hatEingabe || (eingabe === bisher && eingabe !== undefined)) return (bisher ?? null) as Werte[string];
+  if (eingabe === null || eingabe === '') return null;
+  if (typeof eingabe === 'string') {
+    if (eingabe.startsWith('dms1$')) throw new Fachfehler(422, 'Verschlüsselte Werte lassen sich nicht direkt setzen.');
+    return verschluessele(eingabe.slice(0, 1000));
+  }
+  if (istPasswortWert(eingabe)) {
+    if (eingabe.entfernen) return null;
+    if (typeof eingabe.neu === 'string' && eingabe.neu !== '') return verschluessele(eingabe.neu.slice(0, 1000));
+    return (eingabe.gesetzt ? bisher ?? null : null) as Werte[string];
+  }
+  throw new Fachfehler(422, 'Ungültiger Wert für ein Passwortfeld.');
+}
+
+function bereinigeWerte(typ: Mappentyp, eingabe: unknown, bisher: Werte = {}, verschluessele: (k: string) => string = keinSchluessel): Werte {
   const roh = (eingabe && typeof eingabe === 'object' ? eingabe : {}) as Record<string, unknown>;
   const bekannt = new Set(typ.felder.map((f) => f.key));
   const werte: Werte = {};
   // Werte aus entfernten Feldern bleiben erhalten.
   for (const [k, v] of Object.entries(bisher)) if (!bekannt.has(k)) werte[k] = v;
   for (const f of typ.felder) {
+    if (f.typ === 'passwort') { werte[f.key] = passwortWert(roh[f.key], f.key in roh, bisher[f.key], verschluessele); continue; }
     const v = f.key in roh ? roh[f.key] : bisher[f.key];
     werte[f.key] = istLeer(v) ? (f.typ === 'janein' ? false : null) : (v as Werte[string]);
   }
   return werte;
 }
+
+const keinSchluessel = (): never => {
+  throw new Fachfehler(409, 'Passwörter lassen sich erst speichern, wenn es einen Schlüssel gibt. Ein Administrator erzeugt ihn in der Werkbank unter „Verschlüsselung“.');
+};
 
 /* ---------- Fachlogik ---------- */
 
@@ -151,7 +179,63 @@ export class Dienst {
   /** Hintergrundaufträge, z. B. Demo-Daten erzeugen. */
   readonly auftraege = new Auftraege((m) => protokoll.modul('werkbank').info(m));
 
-  constructor(private repo: Repo, private dateien: Dateispeicher) {}
+  constructor(private repo: Repo, private dateien: Dateispeicher, private tresor?: Tresor) {
+    tresor?.registriere(() => this.unlesbarePasswoerter());
+  }
+
+  private verschluessele = (klartext: string) => (this.tresor ? this.tresor.verschluessele(klartext) : keinSchluessel());
+
+  /* ---------- Passwortfelder (#46) ---------- */
+
+  /** Lassen sich gerade Passwörter speichern? */
+  get passwoerterMoeglich() { return !!this.tresor?.bereit; }
+
+  /** Passwortfelder, die mit dem vorhandenen Schlüssel nicht lesbar sind (für die Werkbank). */
+  async unlesbarePasswoerter(): Promise<Betroffen[]> {
+    const out: Betroffen[] = [];
+    for (const t of await this.repo.listeTypen()) {
+      const felder = t.felder.filter((f) => f.typ === 'passwort');
+      if (!felder.length) continue;
+      for (const m of await this.repo.listeMappen(t.id)) {
+        for (const f of felder) {
+          const v = m.werte[f.key];
+          if (istVerschluesselt(v) && !this.tresor?.lesbar(v)) out.push({ bereich: t.name, was: `${m.titel || 'Mappe ohne Titel'}: ${f.label}`, wo: 'in der Ablage neu eingeben' });
+        }
+      }
+    }
+    return out;
+  }
+
+  /** Klartext eines Passworts zum Anzeigen; jeder Aufruf steht im Protokoll (ohne den Wert). */
+  async zeigePasswort(mappeId: string, feldKey: string): Promise<{ wert: string }> {
+    const m = await this.repo.holeMappe(mappeId);
+    if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    const typ = await this.repo.holeTyp(m.typId);
+    const f = typ?.felder.find((x) => x.key === feldKey && x.typ === 'passwort');
+    if (!f) throw new Fachfehler(404, 'Dieses Passwortfeld gibt es nicht.');
+    const v = m.werte[f.key];
+    if (!istVerschluesselt(v)) throw new Fachfehler(404, 'In diesem Feld ist kein Passwort gespeichert.');
+    const klar = this.tresor?.entschluessele(v) ?? null;
+    if (klar === null) throw new Fachfehler(409, 'Dieses Passwort ist nicht lesbar: Der Schlüssel, mit dem es gespeichert wurde, fehlt. Bitte neu eingeben.');
+    protokoll.modul('ablage').info('Passwort angezeigt', { mappe: m.titel || m.id, mappeId: m.id, feld: f.label });
+    return { wert: klar };
+  }
+
+  /**
+   * Für die API mit dem Recht „Passwörter lesen“: Passwörter einer oder mehrerer Mappen
+   * im Klartext; je Mappe ein Protokolleintrag (ohne die Werte).
+   */
+  async entschluesselePasswoerter<T extends Mappe>(mappen: T[], wer: string): Promise<T[]> {
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t]));
+    return mappen.map((m) => {
+      const felder = typen.get(m.typId)?.felder.filter((f) => f.typ === 'passwort' && istVerschluesselt(m.werte[f.key])) ?? [];
+      if (!felder.length) return m;
+      const werte = { ...m.werte };
+      for (const f of felder) werte[f.key] = this.tresor?.entschluessele(werte[f.key] as string) ?? null;
+      protokoll.modul('ablage').info('Passwörter über die API abgerufen', { mappe: m.titel || m.id, mappeId: m.id, felder: felder.map((f) => f.label).join(', '), schluessel: wer });
+      return { ...m, werte };
+    });
+  }
 
   listeTypen() { return this.repo.listeTypen(); }
 
@@ -524,7 +608,7 @@ export class Dienst {
     const typ = istUuid(e.typId) ? await this.repo.holeTyp(e.typId) : undefined;
     if (!typ) throw new Fachfehler(422, 'Unbekannter Mappentyp.');
     if (!darfErstellen(typ)) throw new Fachfehler(403, `Mappen vom Typ „${typ.name}“ lassen sich in der Ablage nicht anlegen.${typ.system === 'benutzer' ? ' Benutzer legt ein Administrator in der Benutzerverwaltung an.' : ''}`);
-    const werte = bereinigeWerte(typ, e.werte);
+    const werte = bereinigeWerte(typ, e.werte, {}, this.verschluessele);
     await this.pruefeWerte(typ, werte);
     const id = istUuid(e.id) && !(await this.repo.holeMappe(e.id)) ? e.id : randomUUID();
     const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), benutzerId, demo);
@@ -538,7 +622,7 @@ export class Dienst {
     if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
     const typ = await this.repo.holeTyp(m.typId);
     if (!typ) throw new Fachfehler(500, 'Der Mappentyp dieser Mappe fehlt.');
-    const werte = bereinigeWerte(typ, (eingabe as { werte?: unknown })?.werte, m.werte);
+    const werte = bereinigeWerte(typ, (eingabe as { werte?: unknown })?.werte, m.werte, this.verschluessele);
     // Geschützte Felder (Benutzer, Name einer Systemrolle) ändert nur das System.
     for (const [k, grund] of Object.entries(geschuetzteFelder(typ, m))) {
       if (JSON.stringify(werte[k] ?? null) !== JSON.stringify(m.werte[k] ?? null)) {

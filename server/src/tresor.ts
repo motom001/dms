@@ -148,7 +148,7 @@ export class Tresor {
     this.schluessel = k;
     this.gespeichert = { fingerabdruck: fingerabdruck(k), erstellt: new Date().toISOString() };
     await this.einstellungen.schreibe('tresor', this.gespeichert);
-    protokoll.modul('werkbank').warn('Schlüssel für Zugangsdaten erzeugt', { fingerabdruck: this.gespeichert.fingerabdruck, datei: this.datei, ersetzt: vorher ?? undefined });
+    protokoll.modul('werkbank').warn('Schlüssel für Zugangsdaten erzeugt', { fingerabdruck: this.gespeichert.fingerabdruck, datei: this.datei, ...(vorher ? { ersetzt: vorher } : {}) });
     for (const f of this.beiNeuemSchluessel) {
       try { await f(); } catch (e) { log.error('Nacharbeit nach neuem Schlüssel fehlgeschlagen', { fehler: (e as Error).message }); }
     }
@@ -185,4 +185,29 @@ export class Tresor {
 
   /** Lässt sich der Wert lesen? (Für Listen betroffener Werte.) */
   lesbar(wert: unknown): boolean { return istVerschluesselt(wert) && this.entschluessele(wert) !== null; }
+}
+
+/**
+ * Ersetzt in einer Antwort jeden verschlüsselten Wert durch { gesetzt, lesbar } –
+ * so verlässt kein Geheimtext den Server, egal über welche Schnittstelle (#46).
+ */
+export function maskiere<T>(wert: T, lesbar: (v: string) => boolean): T {
+  if (istVerschluesselt(wert)) return { gesetzt: true, lesbar: lesbar(wert) } as T;
+  if (Array.isArray(wert)) {
+    let neu: unknown[] | null = null;
+    wert.forEach((x, i) => {
+      const m = maskiere(x, lesbar);
+      if (m !== x) { neu ??= [...wert]; neu[i] = m; }
+    });
+    return (neu ?? wert) as T;
+  }
+  if (wert && typeof wert === 'object' && Object.getPrototypeOf(wert) === Object.prototype) {
+    let neu: Record<string, unknown> | null = null;
+    for (const [k, x] of Object.entries(wert)) {
+      const m = maskiere(x, lesbar);
+      if (m !== x) { neu ??= { ...(wert as Record<string, unknown>) }; neu[k] = m; }
+    }
+    return (neu ?? wert) as T;
+  }
+  return wert;
 }

@@ -97,7 +97,7 @@ function MappeLader({ id, sicht }: { id: string; sicht: string }) {
 /** Nebenzeile eines Listeneintrags: zwei Felder, die nicht schon im Titel stehen. */
 function unterzeile(typ: Mappentyp, m: Mappe, bezuege: Bezuege) {
   const imTitel = new Set(vorlageFelder(wirksameVorlage(typ)));
-  const neben = typ.felder.filter((f) => !imTitel.has(f.key) && f.typ !== 'langtext').slice(0, 2);
+  const neben = typ.felder.filter((f) => !imTitel.has(f.key) && f.typ !== 'langtext' && f.typ !== 'passwort').slice(0, 2);
   return neben.map((f) => formatiere(f, m.werte[f.key], (id) => titelOder(bezuege[id]?.titel))).filter(Boolean).join(' · ');
 }
 

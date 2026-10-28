@@ -48,6 +48,8 @@ export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: 
 export interface Zaehler { typen: Record<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number; sichten?: Record<string, number> }
 export interface KontoStatus {
   einrichtungNoetig: boolean; mail: boolean; benutzer: Benutzer | null;
+  /** Gibt es einen Schlüssel, um Passwörter zu speichern (#39, #46)? */
+  passwoerterMoeglich?: boolean;
   /** Ein Administrator agiert gerade als dieser Benutzer. */
   vertretung?: { adminName: string; beginn: string } | null;
   /** Wer hat als dieser Benutzer agiert (noch nicht gesehen)? */
@@ -114,6 +116,8 @@ export const api = {
   mappeAnlegen: (m: unknown) => anfrage<Mappe>('POST', '/api/mappen', m),
   mappeAendern: (id: string, m: unknown) => anfrage<Mappe>('PUT', `/api/mappen/${id}`, m),
   mappeLoeschen: (id: string) => anfrage<null>('DELETE', `/api/mappen/${id}`),
+  /** Passwortfeld anzeigen (#46); steht im Protokoll. */
+  passwortAnzeigen: (mappeId: string, feld: string) => anfrage<{ wert: string }>('POST', `/api/mappen/${mappeId}/passwoerter/${encodeURIComponent(feld)}`),
   beispiele: () => anfrage<null>('POST', '/api/beispiele'),
   demoUebersicht: () => anfrage<Array<{ typId: string; name: string; demo: number; gesamt: number }>>('GET', '/api/werkbank/demo'),
   demoErzeugen: (anzahl: number) => anfrage<Auftrag>('POST', '/api/werkbank/demo', { anzahl }),
@@ -181,8 +185,8 @@ export interface Systemuebersicht {
   einstellungen: Record<string, string>;
 }
 export interface Vergleich { komponente: string; installiert: string | null; aktuell: string | null; status: 'aktuell' | 'neuer' | 'veraltet' | 'unbekannt'; hinweis?: string; quelle: string }
-export interface ApiSchluessel { id: string; name: string; praefix: string; recht: 'lesen' | 'schreiben'; ablauf: string | null; erstellt: string; zuletztBenutzt: string | null }
-export interface ApiSchluesselEingabe { name: string; recht: 'lesen' | 'schreiben'; ablauf: string | null }
+export interface ApiSchluessel { id: string; name: string; praefix: string; recht: 'lesen' | 'schreiben'; passwoerter: boolean; ablauf: string | null; erstellt: string; zuletztBenutzt: string | null }
+export interface ApiSchluesselEingabe { name: string; recht: 'lesen' | 'schreiben'; passwoerter: boolean; ablauf: string | null }
 
 export type Verbindung = 'starttls' | 'ssl' | 'keine';
 export interface MailAnsicht {

@@ -38,6 +38,7 @@ export function ApiSchluesselBlatt() {
               <li key={s.id}>
                 <div>
                   <strong>{s.name}</strong> <span className="mono klein">{s.praefix}</span> <span className={`chip ${s.recht === 'schreiben' ? 'warn' : ''}`}>{RECHTE[s.recht]}</span>
+                  {s.passwoerter && <> <span className="chip warn" title="Darf mit ?passwoerter=anzeigen Passwortfelder im Klartext lesen">Passwörter lesen</span></>}
                   {s.ablauf && Date.parse(s.ablauf) < Date.now() && <> <span className="chip stufe-error">abgelaufen</span></>}
                   <span className="leise klein blockzeile">Erstellt {datum(s.erstellt)} · zuletzt benutzt {datum(s.zuletztBenutzt)}{s.ablauf ? ` · gültig bis ${new Date(s.ablauf).toLocaleDateString('de-DE')}` : ' · ohne Ablauf'}</span>
                 </div>
@@ -62,9 +63,10 @@ function SchluesselFormular({ start, knopf, senden, abbrechen }: { start?: ApiSc
   const [name, setName] = useState(start?.name ?? '');
   const [recht, setRecht] = useState<'lesen' | 'schreiben'>(start?.recht ?? 'lesen');
   const [ablauf, setAblauf] = useState(alsDatum(start?.ablauf ?? null));
+  const [passwoerter, setPasswoerter] = useState(start?.passwoerter ?? false);
   async function los(e: FormEvent) {
     e.preventDefault();
-    if (await senden({ name, recht, ablauf: ausDatum(ablauf) }) && !start) { setName(''); setAblauf(''); }
+    if (await senden({ name, recht, passwoerter, ablauf: ausDatum(ablauf) }) && !start) { setName(''); setAblauf(''); setPasswoerter(false); }
   }
   return (
     <form className="raster schluesselformular" onSubmit={los}>
@@ -74,6 +76,8 @@ function SchluesselFormular({ start, knopf, senden, abbrechen }: { start?: ApiSc
           <option value="lesen">nur lesen</option><option value="schreiben">lesen und schreiben</option>
         </select></label>
       <label className="eigenschaft"><span>Gültig bis <small>leer = ohne Ablauf</small></span><input type="date" value={ablauf} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setAblauf(e.target.value)} /></label>
+      <label className="haken breit"><input type="checkbox" checked={passwoerter} onChange={(e) => setPasswoerter(e.target.checked)} />
+        <span>Passwörter lesen<small className="hilfe">Mit <span className="mono">?passwoerter=anzeigen</span> liefert die API Passwortfelder im Klartext. Jeder Abruf steht im Protokoll. Nur einschalten, wenn das Programm die Passwörter wirklich braucht.</small></span></label>
       <div className="knoepfe">
         {abbrechen && <button type="button" className="knopf" onClick={abbrechen}>Abbrechen</button>}
         <button className="knopf primaer">{knopf}</button>

@@ -4,7 +4,7 @@ import { api, ApiFehler, dokumentUrl, type Bezuege, type MappeDetails, type Ruec
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
-import { rohAusWerten, standardRoh, werteAusRoh, type Roh, type RohBetrag, type RohWerte } from '../werte';
+import { leeresPasswort, rohAusWerten, standardRoh, werteAusRoh, type Roh, type RohBetrag, type RohPasswort, type RohWerte } from '../werte';
 import { titelOder } from '../seiten';
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
@@ -320,6 +320,9 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
         bekannt={bekannt} merke={merke} setze={setze} />;
       break;
     }
+    case 'passwort':
+      ctl = <PasswortEingabe id={id} feld={f} roh={(roh ?? leeresPasswort) as RohPasswort} setze={setze} mappeId={eigeneId} />;
+      break;
     default:
       ctl = <input id={id} value={String(roh ?? '')} onChange={(e) => setze(e.target.value)} />;
   }
@@ -337,6 +340,66 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
   );
 }
 
+
+/**
+ * Passwortfeld (#46): Das gespeicherte Passwort kommt nie mit der Mappe. Das Auge holt es
+ * einzeln vom Server (steht im Protokoll); zum Ändern wird ein neues eingegeben.
+ */
+function PasswortEingabe({ id, feld: f, roh: p, setze, mappeId }: { id: string; feld: Feld; roh: RohPasswort; setze: (v: Roh) => void; mappeId?: string }) {
+  const { passwoerterMoeglich } = useKonto();
+  const [klartext, setKlartext] = useState<string | null>(null);
+  const [zeigen, setZeigen] = useState(false);
+  const [laedt, setLaedt] = useState(false);
+  const [fehler, setFehler] = useState<string>();
+  const [aendern, setAendern] = useState(false);
+  // Nach dem Speichern (neuer Stand vom Server) die Anzeige zurücksetzen.
+  useEffect(() => { if (!p.neu) { setKlartext(null); setAendern(false); setZeigen(false); } }, [p.gesetzt, p.lesbar]); // eslint-disable-line react-hooks/exhaustive-deps
+  const auge = (an: boolean) => <span aria-hidden="true">{an ? '🙈' : '👁'}</span>;
+
+  if (p.entfernen) return (
+    <div className="passwort">
+      <span className="festwert leise">wird beim Speichern entfernt</span>
+      <button type="button" className="knopf klein" onClick={() => setze({ ...p, entfernen: false })}>Rückgängig</button>
+    </div>
+  );
+
+  if (p.gesetzt && !aendern && !p.neu) {
+    async function umschalten() {
+      if (klartext !== null) { setKlartext(null); return; }
+      if (!mappeId) return;
+      setLaedt(true); setFehler(undefined);
+      try { setKlartext((await api.passwortAnzeigen(mappeId, f.key)).wert); } catch (e) { setFehler((e as Error).message); } finally { setLaedt(false); }
+    }
+    return (
+      <>
+        <div className="passwort">
+          <span id={id} className={`festwert mono ${p.lesbar ? '' : 'leise'}`} aria-live="polite">{!p.lesbar ? 'nicht lesbar – bitte neu eingeben' : klartext ?? '••••••••'}</span>
+          {p.lesbar && mappeId && <button type="button" className="knopf klein" disabled={laedt} onClick={() => void umschalten()} title={klartext === null ? 'Passwort anzeigen (wird protokolliert)' : 'Passwort verbergen'} aria-label={klartext === null ? 'Passwort anzeigen' : 'Passwort verbergen'}>{auge(klartext !== null)}</button>}
+          <button type="button" className="knopf klein" disabled={!passwoerterMoeglich} onClick={() => { setKlartext(null); setAendern(true); }}>Ändern</button>
+          <button type="button" className="knopf klein" onClick={() => { setKlartext(null); setze({ ...p, entfernen: true }); }}>Entfernen</button>
+        </div>
+        {fehler && <p className="fehlertext">{fehler}</p>}
+        {!passwoerterMoeglich && <span className="hilfe">Ändern geht erst wieder, wenn ein Administrator den Schlüssel bereitstellt (Werkbank → Verschlüsselung).</span>}
+      </>
+    );
+  }
+
+  if (!passwoerterMoeglich) return (
+    <>
+      <input id={id} type="password" disabled placeholder="nicht möglich" />
+      <span className="hilfe">Passwörter lassen sich erst speichern, wenn ein Administrator in der Werkbank unter „Verschlüsselung“ einen Schlüssel erzeugt hat.</span>
+    </>
+  );
+
+  return (
+    <div className="passwort">
+      <input id={id} type={zeigen ? 'text' : 'password'} value={p.neu} autoComplete="new-password" spellCheck={false}
+        placeholder={p.gesetzt ? 'neues Passwort' : ''} onChange={(e) => setze({ ...p, neu: e.target.value })} />
+      <button type="button" className="knopf klein" onClick={() => setZeigen(!zeigen)} aria-label={zeigen ? 'Eingabe verbergen' : 'Eingabe anzeigen'} title={zeigen ? 'Eingabe verbergen' : 'Eingabe anzeigen'}>{auge(zeigen)}</button>
+      {p.gesetzt && <button type="button" className="knopf klein" onClick={() => { setze({ ...p, neu: '' }); setAendern(false); setZeigen(false); }}>Abbrechen</button>}
+    </div>
+  );
+}
 
 /* ---------- Dokumentenregister ---------- */
 

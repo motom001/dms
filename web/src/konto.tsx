@@ -5,6 +5,8 @@ import { geheZu, useOrt } from './ort';
 
 interface Konto {
   ich: Benutzer; mail: boolean; abmelden(): Promise<void>; aktualisieren(): Promise<void>;
+  /** Lassen sich Passwörter speichern (Schlüssel vorhanden)? */
+  passwoerterMoeglich: boolean;
   vertretung: KontoStatus['vertretung'];
   hinweise: NonNullable<KontoStatus['hinweise']>;
 }
@@ -49,7 +51,7 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   if (!status.benutzer) return <Anmelden mail={status.mail} fertig={laden} />;
   // key: Beim Wechsel des Benutzers (Vertretung) alles neu aufbauen und laden.
   return (
-    <Ctx.Provider key={status.benutzer.id} value={{ ich: status.benutzer, mail: status.mail, abmelden, aktualisieren: laden, vertretung: status.vertretung ?? null, hinweise: status.hinweise ?? [] }}>
+    <Ctx.Provider key={status.benutzer.id} value={{ ich: status.benutzer, mail: status.mail, passwoerterMoeglich: status.passwoerterMoeglich ?? false, abmelden, aktualisieren: laden, vertretung: status.vertretung ?? null, hinweise: status.hinweise ?? [] }}>
       {children}
     </Ctx.Provider>
   );

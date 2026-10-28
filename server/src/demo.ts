@@ -85,6 +85,8 @@ function wertFuer(f: Feld, nr: number, pools: Map<string, string[]>, vergeben: S
       if (!f.mehrfach) return eins(o);
       return [...new Set(Array.from({ length: 1 + zufall(Math.min(2, o.length)) }, () => eins(o)))];
     }
+    // Passwörter nie in Demo-Daten (#46).
+    case 'passwort': return undefined;
     case 'referenz': {
       const pool = pools.get(f.zielTyp ?? '') ?? [];
       if (!pool.length) return undefined;
@@ -151,7 +153,7 @@ export async function erzeugeDemo(dienst: Dienst, anzahl: unknown, benutzerId: s
       for (const f of t.felder) {
         if (!f.pflicht && Math.random() < 0.2) continue;
         const w = wertFuer(f, ok + 1, pools, vergeben.get(f.key) ?? new Set());
-        if (w === undefined) { if (f.pflicht) unmoeglich = `Für das Pflichtfeld „${f.label}“ lässt sich kein passender Wert erzeugen${f.typ === 'referenz' ? ' (es gibt noch keine Mappen des Zieltyps)' : ''}.`; continue; }
+        if (w === undefined) { if (f.pflicht) unmoeglich = `Für das Pflichtfeld „${f.label}“ lässt sich kein passender Wert erzeugen${f.typ === 'referenz' ? ' (es gibt noch keine Mappen des Zieltyps)' : f.typ === 'passwort' ? ' (Passwörter gibt es in Demo-Daten nie)' : ''}.`; continue; }
         werte[f.key] = w;
       }
       if (unmoeglich) { letzterFehler = unmoeglich; break; }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, type TresorStatus } from '../api';
+import { useKonto } from '../konto';
 import { Link } from '../ort';
 
 /**
@@ -74,6 +75,7 @@ export function TresorListe({ t }: { t: TresorZustand }) {
 }
 
 export function TresorPanel({ t }: { t: TresorZustand }) {
+  const { aktualisieren } = useKonto();
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   if (t.fehler) return <div className="hinweis schlecht"><p>{t.fehler}</p></div>;
@@ -82,7 +84,7 @@ export function TresorPanel({ t }: { t: TresorZustand }) {
 
   async function erzeugen() {
     setLaeuft(true); setMeldung(undefined);
-    try { t.setStand(await api.tresorErzeugen()); melde(); setMeldung({ art: 'gut', text: 'Schlüssel erzeugt. Passwörter lassen sich jetzt speichern.' }); }
+    try { t.setStand(await api.tresorErzeugen()); melde(); await aktualisieren(); setMeldung({ art: 'gut', text: 'Schlüssel erzeugt. Passwörter lassen sich jetzt speichern.' }); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
     finally { setLaeuft(false); }
   }

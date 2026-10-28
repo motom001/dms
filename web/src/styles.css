@@ -516,3 +516,7 @@ input.kurz { width: 7em; }
 .eigenschaften dt { color: var(--leise); }
 .eigenschaften dd { margin: 0; overflow-wrap: anywhere; }
 .liste-einfach { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+/* Passwortfeld (#46) */
+.passwort { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.passwort > input, .passwort > .festwert { flex: 1 1 12em; min-width: 0; }
+.raster > .haken.breit { grid-column: 1 / -1; }

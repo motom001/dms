@@ -16,6 +16,8 @@ export const FELDTYPEN = {
   janein: 'Ja/Nein',
   auswahl: 'Auswahlliste',
   referenz: 'Referenz',
+  /** Verschlüsselt gespeichert (#46); nie in Titel, Trefferliste, Suche, Protokoll oder Demo-Daten. */
+  passwort: 'Passwort',
 } as const;
 export type Feldtyp = keyof typeof FELDTYPEN;
 
@@ -149,12 +151,20 @@ export const GEMISCHTE_SPALTEN: Systemspalte[] = ['_titel', '_typ', '_erstelltVo
 export function sortierbar(spalte: string, t?: Pick<Mappentyp, 'felder'>): boolean {
   if (istSystemspalte(spalte)) return true;
   const f = t?.felder.find((x) => x.key === spalte);
-  return !!f && f.typ !== 'referenz' && f.typ !== 'langtext';
+  return !!f && f.typ !== 'referenz' && f.typ !== 'langtext' && f.typ !== 'passwort';
 }
 export interface Sortierung { spalte: string; absteigend: boolean }
 
 export interface Betrag { betrag: number; waehrung: string }
-export type Wert = string | number | boolean | Betrag | string[] | null;
+/**
+ * Wert eines Passwortfelds (#46), wie ihn Oberfläche und API sehen: nie das Passwort selbst.
+ * - gesetzt/lesbar: kommt vom Server (lesbar = false, wenn der Schlüssel dazu fehlt)
+ * - neu: zum Speichern eines neuen Passworts; entfernen: zum Löschen
+ */
+export interface PasswortWert { gesetzt?: boolean; lesbar?: boolean; neu?: string; entfernen?: boolean }
+export type Wert = string | number | boolean | Betrag | string[] | PasswortWert | null;
+export const istPasswortWert = (v: unknown): v is PasswortWert =>
+  !!v && typeof v === 'object' && !Array.isArray(v) && ('gesetzt' in v || 'neu' in v || 'entfernen' in v);
 export type Werte = Record<string, Wert>;
 
 export interface Mappe {
@@ -258,6 +268,7 @@ export const SCHLUESSEL_MUSTER = /^[a-z][a-z0-9_]{0,39}$/;
 export function istLeer(v: unknown): boolean {
   if (v == null || v === '') return true;
   if (Array.isArray(v)) return v.length === 0;
+  if (istPasswortWert(v)) return !!v.entfernen || (!v.gesetzt && !v.neu);
   if (typeof v === 'object' && 'betrag' in (v as object)) {
     const b = (v as Betrag).betrag;
     return b == null || (b as unknown) === '';
@@ -317,6 +328,9 @@ export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebn
   }
   const unbekannt = vorlageFelder(t.titelVorlage ?? '').filter((k) => !istIndexplatzhalter(k) && !t.felder.some((f) => f.key === k));
   if (unbekannt.length) p.allgemein.push(`Die Titel-Vorlage nennt unbekannte Felder: ${unbekannt.map((k) => `{${k}}`).join(', ')}.`);
+  const geheim = vorlageFelder(t.titelVorlage ?? '').filter((k) => t.felder.some((f) => f.key === k && f.typ === 'passwort'));
+  if (geheim.length) p.allgemein.push(`Passwortfelder dürfen nicht im Titel stehen: ${geheim.map((k) => `{${k}}`).join(', ')}.`);
+  if ((t.trefferliste ?? []).some((k) => t.felder.some((f) => f.key === k && f.typ === 'passwort'))) p.allgemein.push('Passwortfelder können keine Spalte der Trefferliste sein.');
   pruefeRegister(t, ctx, p);
 
   const gesehen = new Set<string>();
@@ -399,6 +413,10 @@ export function pruefeMappe(t: Pick<Mappentyp, 'felder'>, werte: Werte, ctx: Map
         if (falsch.length) fehler(f.key, `Nicht in der Auswahlliste: ${falsch.join(', ')}.`);
         break;
       }
+      case 'passwort':
+        // Auf dem Server verschlüsselt (Text), in der Oberfläche als PasswortWert.
+        if (typeof v !== 'string' && !istPasswortWert(v)) fehler(f.key, 'Ungültiger Wert für ein Passwort.');
+        break;
       case 'referenz': {
         const ids = Array.isArray(v) ? v : [v];
         if (!f.mehrfach && Array.isArray(v)) { fehler(f.key, 'Nur ein Verweis erlaubt.'); break; }
@@ -471,7 +489,8 @@ function titelAusVorlage(t: Pick<Mappentyp, 'felder' | 'titelVorlage'>, werte: W
       if (k === 'angelegt') return tagVon(index.erstellt);
       if (k === 'geaendert') return tagVon(index.geaendert);
       const f = t.felder.find((x) => x.key === k);
-      return f ? formatiere(f, werte[k], titelVon) : '';
+      // Passwörter nie im Titel – auch nicht, wenn eine ältere Vorlage sie noch nennt.
+      return f && f.typ !== 'passwort' ? formatiere(f, werte[k], titelVon) : '';
     })
     .replace(/\s+/g, ' ')
     .trim();
@@ -520,6 +539,7 @@ export function formatiere(f: Feld, v: Wert | undefined, titelVon: (id: string) 
     case 'zahl': return typeof v === 'number' ? v.toLocaleString('de-DE', { maximumFractionDigits: f.nachkomma ?? 10 }) : String(v);
     case 'auswahl': return Array.isArray(v) ? v.join(', ') : String(v);
     case 'referenz': return (Array.isArray(v) ? v : [String(v)]).map(titelVon).join(', ');
+    case 'passwort': return istPasswortWert(v) && !v.gesetzt && !v.neu ? '' : '••••••••';
     default: return String(v);
   }
 }
