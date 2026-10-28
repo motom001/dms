@@ -118,7 +118,11 @@ export function routen(dienst: Dienst, konten: Konten, log: (m: string) => void 
     { methode: 'GET', pfad: '/api/werkbank/auftrag', zugang: 'admin', handler: async () => ok(dienst.auftraege.aktuell()) },
 
     /* ---------- Mappen ---------- */
-    { methode: 'GET', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.listeMappen(a.query.typ)) },
+    // Mit ?sicht=… seitenweise (von, anzahl, suche); ohne: alle Mappen (für Skripte und Tests).
+    { methode: 'GET', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) =>
+      ok(a.query.sicht ? await dienst.seite(ich(a), a.query) : await dienst.listeMappen(a.query.typ)) },
+    { methode: 'GET', pfad: '/api/sichten', zugang: 'angemeldet', handler: async (a) => ok(await dienst.zaehler(ich(a))) },
+    { methode: 'GET', pfad: '/api/typen/:id/belegung', zugang: 'admin', handler: async (a) => ok(await dienst.belegung(a.params.id)) },
     { methode: 'GET', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => ok(await dienst.holeMappe(a.params.id)) },
     { methode: 'POST', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.legeMappeAn(a.body, ich(a).id), 201) },
     { methode: 'PUT', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => ok(await dienst.aendereMappe(a.params.id, a.body, ich(a).id)) },

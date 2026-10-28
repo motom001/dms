@@ -26,6 +26,8 @@ const alsMappe = (r: Zeile): Mappe => ({
   geaendertVon: (r.geaendert_von as string | null) ?? null,
   demo: !!r.demo,
   titel: (r.titel as string | null) ?? undefined,
+  passt: (r.passt as boolean | null) ?? undefined,
+  problem: (r.problem as string | null) ?? null,
 });
 const alsDokument = (r: Zeile): Dokument => ({
   id: r.id as string,
@@ -128,7 +130,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async aendereMappe(id, werte, vs, benutzerId) {
       return sql.begin(async (tx) => {
         const [r] = await tx`
-          UPDATE mappen SET werte = ${json(sql, werte)}, geaendert = now(), geaendert_von = ${benutzerId}
+          UPDATE mappen SET werte = ${json(sql, werte)}, geaendert = now(), geaendert_von = ${benutzerId}, passt = true, problem = NULL
           WHERE haushalt_id = ${haushaltId} AND id = ${id}
           RETURNING *`;
         await schreibeVerweise(tx, id, vs);
@@ -168,6 +170,67 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const r = await sql`SELECT DISTINCT quelle_id FROM verweise WHERE haushalt_id = ${haushaltId} AND ziel_id = ANY(${gueltig}::uuid[])`;
       return r.map((z) => z.quelle_id as string);
     },
+    async bezuege(ids) {
+      const r = new Map<string, { titel: string; typId: string }>();
+      const gueltig = [...new Set(ids.filter(istUuid))];
+      for (let i = 0; i < gueltig.length; i += 5000) {
+        const zeilen = await sql`SELECT id, typ_id, titel FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig.slice(i, i + 5000)}::uuid[])`;
+        for (const z of zeilen) r.set(z.id as string, { titel: (z.titel as string | null) ?? '', typId: z.typ_id as string });
+      }
+      return r;
+    },
+    async seite(o) {
+      const typ = o.typId && istUuid(o.typId) ? sql`AND typ_id = ${o.typId}` : o.typId ? sql`AND false` : sql``;
+      const eingang = o.eingang
+        ? sql`AND passt IS NOT TRUE AND (erstellt_von = ${o.eingang.benutzerId} ${o.eingang.admin ? sql`OR erstellt_von IS NULL` : sql``})`
+        : sql``;
+      const muster = o.suche ? `%${o.suche.replace(/[\\%_]/g, (c) => '\\' + c)}%` : null;
+      const suche = muster
+        ? sql`AND (titel ILIKE ${muster} OR EXISTS (SELECT 1 FROM jsonb_each_text(werte) e WHERE e.value ILIKE ${muster}))`
+        : sql``;
+      const [{ n }] = await sql`SELECT count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} ${typ} ${eingang} ${suche}`;
+      const r = await sql`
+        SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} ${typ} ${eingang} ${suche}
+        ORDER BY lower(titel), id OFFSET ${o.von} LIMIT ${o.anzahl}`;
+      return { gesamt: n as number, mappen: r.map(alsMappe) };
+    },
+    async zaehler(benutzerId, admin) {
+      const r = await sql`
+        SELECT typ_id, count(*)::int AS anzahl,
+          count(*) FILTER (WHERE passt IS NOT TRUE)::int AS unpassend,
+          count(*) FILTER (WHERE demo)::int AS demo,
+          count(*) FILTER (WHERE passt IS NOT TRUE AND (erstellt_von = ${benutzerId} OR (${admin} AND erstellt_von IS NULL)))::int AS eingang
+        FROM mappen WHERE haushalt_id = ${haushaltId} GROUP BY typ_id`;
+      return {
+        typen: new Map(r.map((z) => [z.typ_id as string, { anzahl: z.anzahl as number, unpassend: z.unpassend as number, demo: z.demo as number }])),
+        eingang: r.reduce((a, z) => a + (z.eingang as number), 0),
+      };
+    },
+    async setzePassung(liste) {
+      for (let i = 0; i < liste.length; i += 1000) {
+        const teil = liste.slice(i, i + 1000);
+        await sql`
+          UPDATE mappen m SET passt = n.problem IS NULL, problem = n.problem
+          FROM unnest(${teil.map((x) => x.id)}::uuid[], ${teil.map((x) => x.problem)}::text[]) AS n(id, problem)
+          WHERE m.id = n.id AND m.haushalt_id = ${haushaltId}`;
+      }
+    },
+    async unpassende(typId) {
+      if (!istUuid(typId)) return [];
+      return (await sql`SELECT id FROM mappen WHERE haushalt_id = ${haushaltId} AND typ_id = ${typId} AND passt IS NOT TRUE`).map((z) => z.id as string);
+    },
+    async typenOhnePassung() {
+      return (await sql`SELECT DISTINCT typ_id FROM mappen WHERE haushalt_id = ${haushaltId} AND passt IS NULL`).map((z) => z.typ_id as string);
+    },
+    async belegung(typId) {
+      if (!istUuid(typId)) return {};
+      const r = await sql`
+        SELECT e.key, count(*)::int AS n FROM mappen m, jsonb_each(m.werte) e
+        WHERE m.haushalt_id = ${haushaltId} AND m.typ_id = ${typId}
+          AND e.value NOT IN ('null'::jsonb, '""'::jsonb, '[]'::jsonb)
+        GROUP BY e.key`;
+      return Object.fromEntries(r.map((z) => [z.key as string, z.n as number]));
+    },
     async ohneTitel() {
       return (await sql`SELECT id FROM mappen WHERE haushalt_id = ${haushaltId} AND titel IS NULL`).map((z) => z.id as string);
     },
@@ -192,10 +255,11 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async rueckverweise(zielId) {
       if (!istUuid(zielId)) return [];
       const r = await sql`
-        SELECT v.quelle_id, v.feld_key, m.typ_id
+        SELECT v.quelle_id, v.feld_key, m.typ_id, m.titel
         FROM verweise v JOIN mappen m ON m.id = v.quelle_id
-        WHERE v.ziel_id = ${zielId} AND v.haushalt_id = ${haushaltId}`;
-      return r.map((z) => ({ quelleId: z.quelle_id as string, quelleTypId: z.typ_id as string, feldKey: z.feld_key as string }));
+        WHERE v.ziel_id = ${zielId} AND v.haushalt_id = ${haushaltId}
+        ORDER BY lower(m.titel), m.id`;
+      return r.map((z) => ({ quelleId: z.quelle_id as string, quelleTypId: z.typ_id as string, feldKey: z.feld_key as string, titel: (z.titel as string | null) ?? '' }));
     },
 
     async listeDokumente(mappeId) {

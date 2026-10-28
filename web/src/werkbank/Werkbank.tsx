@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { istOk } from '../../../shared/src/model';
 import { useDaten } from '../daten';
 import { TypEditor } from '../einrichtung/Einrichtung';
 import { Link } from '../ort';
@@ -50,7 +49,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
         <nav className="sichtliste">
           <Link to="/werkbank/typen" className={`sicht ${bereich === 'typen' ? 'an' : ''}`}><span className="nm">Mappentypen</span><span className="zahl">{d.typen.length}</span></Link>
           <Link to="/werkbank/benutzer" className={`sicht ${bereich === 'benutzer' ? 'an' : ''}`}><span className="nm">Benutzer</span><span className="zahl">{benutzer.geladen ? benutzer.liste.length : ''}</span></Link>
-          <Link to="/werkbank/demo" className={`sicht ${bereich === 'demo' ? 'an' : ''}`}><span className="nm">Demo-Daten</span><span className="zahl">{d.mappen.filter((m) => m.demo).length || ''}</span></Link>
+          <Link to="/werkbank/demo" className={`sicht ${bereich === 'demo' ? 'an' : ''}`}><span className="nm">Demo-Daten</span><span className="zahl">{Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || ''}</span></Link>
         </nav>
         {/* Freiwillig, ohne Gebühren für beide Seiten (GitHub Sponsors von persönlichen Konten). */}
         <a className="unterstuetzen" href="https://github.com/sponsors/motom001" target="_blank" rel="noreferrer">
@@ -80,13 +79,14 @@ function TypenListe({ offen }: { offen?: string }) {
         : <ul className="mappenliste">
             {offen === 'neu' && <li><span className="eintrag an werk"><span className="titel">Neuer Mappentyp</span><span className="unter">noch nicht gespeichert</span></span></li>}
             {d.typen.map((t) => {
-              const mappen = d.mappenVon(t.id);
-              const unpassend = mappen.filter((m) => !istOk(d.pruefe(t, m.werte, m.id))).length;
+              const z = d.zaehler.typen[t.id];
+              const anzahl = z?.anzahl ?? 0;
+              const unpassend = z?.unpassend ?? 0;
               return (
                 <li key={t.id}>
                   <Link to={`/werkbank/typen/${t.id}`} className={`eintrag werk ${offen === t.id ? 'an' : ''}`}>
                     <span className="titel">{t.name}</span>
-                    <span className="unter">{t.felder.length} Felder · {t.register.length} Register · {mappen.length} Mappen</span>
+                    <span className="unter">{t.felder.length} Felder · {t.register.length} Register · {anzahl.toLocaleString('de-DE')} {anzahl === 1 ? 'Mappe' : 'Mappen'}</span>
                     {unpassend > 0 && <span className="problem">{unpassend} passen nicht zur Definition</span>}
                   </Link>
                 </li>

@@ -207,6 +207,30 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal(u.reduce((a: number, t: { demo: number }) => a + t.demo, 0), r.gesamt);
     const mappen = (await anfrage('GET', '/api/mappen')).body;
     assert.ok(mappen.filter((m: { demo?: boolean }) => m.demo).every((m: { titel?: string }) => m.titel), 'Demo-Mappen haben Titel');
+    // Seitenweise laden, zählen, suchen
+    const typen = (await anfrage('GET', '/api/typen')).body;
+    const rechnungTyp = typen.find((t: { name: string }) => t.name === 'Rechnung');
+    const zaehler = (await anfrage('GET', '/api/sichten')).body;
+    const anzahlRechnungen = zaehler.typen[rechnungTyp.id].anzahl;
+    assert.ok(anzahlRechnungen > 300, `nur ${anzahlRechnungen} Rechnungen`);
+    assert.equal(zaehler.typen[rechnungTyp.id].unpassend, 0);
+    const s1 = (await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&von=0&anzahl=100`)).body;
+    assert.equal(s1.gesamt, anzahlRechnungen);
+    assert.equal(s1.mappen.length, 100);
+    assert.ok(Object.keys(s1.bezuege).length > 0, 'Bezüge für Verweise');
+    const s2 = (await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&von=100&anzahl=100`)).body;
+    assert.equal(new Set([...s1.mappen, ...s2.mappen].map((m: { id: string }) => m.id)).size, 200, 'keine Überschneidung');
+    const such = s1.mappen[5].werte.rechnungsnummer;
+    const treffer = (await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&suche=${encodeURIComponent(such)}`)).body;
+    assert.ok(treffer.mappen.some((m: { id: string }) => m.id === s1.mappen[5].id));
+    assert.equal((await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&suche=${encodeURIComponent('%_\\')}`)).body.gesamt, 0);
+    const eingang = (await anfrage('GET', '/api/mappen?sicht=eingang')).body;
+    assert.equal(eingang.gesamt, zaehler.eingang);
+    const belegung = (await anfrage('GET', `/api/typen/${rechnungTyp.id}/belegung`)).body;
+    assert.ok(belegung.rechnungsnummer > 0);
+    const detail = (await anfrage('GET', `/api/mappen/${s1.mappen[0].id}`)).body;
+    assert.ok(Object.values(detail.bezuege).every((b) => typeof (b as { titel: string }).titel === 'string'));
+
     assert.equal((await anfrage('DELETE', '/api/werkbank/demo')).status, 202);
     assert.equal((await auftrag()).ergebnis.entfernt, r.gesamt);
 

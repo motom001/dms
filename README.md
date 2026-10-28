@@ -15,7 +15,7 @@ Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsyste
   - *Demo-Daten* – Beispiel-Mappentypen laden, beliebig viele Demo-Mappen für die vorhandenen Typen erzeugen und gesammelt wieder entfernen.
 - **Profil** – jeder Benutzer ändert Name, E-Mail-Adresse und Passwort selbst (mit dem aktuellen Passwort).
 
-Jede Mappe trägt feste Indexwerte: angelegt am/von, zuletzt geändert am/von.
+Jede Mappe trägt feste Indexwerte: angelegt am/von, zuletzt geändert am/von. Listen laden je 100 Mappen nach Titel sortiert und beim Scrollen weitere; die Suche über einer Liste durchsucht Titel und Werte auf dem Server.
 
 **Register** sind die Trennblätter einer Mappe und werden je Mappentyp festgelegt:
 - *Feldregister* – eine Gruppe von Feldern (jedes Feld liegt auf genau einem Feldregister),

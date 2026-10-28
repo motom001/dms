@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
-  FELDTYPEN, istLeer, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp, REGISTERARTEN, schluesselAus,
+  ersterGrund, FELDTYPEN, istLeer, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp, REGISTERARTEN, schluesselAus,
   standardRegister, titelAus, verweiseVon,
   type Feld, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Werte,
 } from '../../shared/src/model';
@@ -164,6 +164,7 @@ export class Dienst {
     const typ = await this.repo.aendereTyp(id, d);
     // Vorlage oder Felder können sich geändert haben: Titel aller Mappen dieses Typs neu berechnen.
     await this.aktualisiereTitel((await this.repo.listeMappen(id)).map((m) => m.id));
+    await this.pruefePassung(id);
     return typ;
   }
 
@@ -185,7 +186,104 @@ export class Dienst {
   async holeMappe(id: string) {
     const mappe = await this.repo.holeMappe(id);
     if (!mappe) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
-    return { mappe, rueckverweise: await this.repo.rueckverweise(id), dokumente: await this.repo.listeDokumente(id) };
+    const typ = await this.repo.holeTyp(mappe.typId);
+    const ziele = typ ? verweiseVon(typ, mappe.werte).map((v) => v.zielId) : [];
+    return {
+      mappe,
+      rueckverweise: await this.repo.rueckverweise(id),
+      dokumente: await this.repo.listeDokumente(id),
+      /** Titel und Typ der Mappen, auf die diese verweist. */
+      bezuege: Object.fromEntries(await this.repo.bezuege(ziele)),
+    };
+  }
+
+  /* ---------- Sichten: seitenweise und gezählt ---------- */
+
+  /** Eine Seite einer Sicht („eingang“ oder Typ-Id), nach Titel sortiert, mit den Bezügen für die Anzeige. */
+  async seite(ich: { id: string; rolle: string }, q: { sicht?: string; von?: unknown; anzahl?: unknown; suche?: unknown }) {
+    const von = Math.max(0, Math.floor(Number(q.von) || 0));
+    const anzahl = Math.min(500, Math.max(1, Math.floor(Number(q.anzahl) || 100)));
+    const suche = text(q.suche).slice(0, 200) || undefined;
+    const r = q.sicht === 'eingang'
+      ? await this.repo.seite({ eingang: { benutzerId: ich.id, admin: ich.rolle === 'admin' }, suche, von, anzahl })
+      : await this.repo.seite({ typId: q.sicht, suche, von, anzahl });
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    const ziele = r.mappen.flatMap((m) => { const t = typen.get(m.typId); return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []; });
+    return { gesamt: r.gesamt, von, mappen: r.mappen, bezuege: Object.fromEntries(await this.repo.bezuege(ziele)) };
+  }
+
+  /** Anzahl Mappen je Typ (davon unpassend, Demo) und im Eingang des Benutzers. */
+  async zaehler(ich: { id: string; rolle: string }) {
+    const z = await this.repo.zaehler(ich.id, ich.rolle === 'admin');
+    return { typen: Object.fromEntries(z.typen), eingang: z.eingang };
+  }
+
+  async belegung(typId: string) {
+    if (!(await this.repo.holeTyp(typId))) throw new Fachfehler(404, 'Diesen Mappentyp gibt es nicht.');
+    return this.repo.belegung(typId);
+  }
+
+  /* ---------- Passung: passt eine Mappe zur aktuellen Definition? ---------- */
+
+  /** Prüft alle Mappen eines Typs (nach einer Änderung des Typs) und speichert das Ergebnis. */
+  async pruefePassung(typId: string): Promise<number> {
+    const typ = await this.repo.holeTyp(typId);
+    if (!typ) return 0;
+    const mappen = await this.repo.listeMappen(typId);
+    const typVon = await this.repo.typenVon(mappen.flatMap((m) => verweiseVon(typ, m.werte).map((v) => v.zielId)).filter(istUuid));
+    // Eindeutige Felder: gleiche Werte im Arbeitsspeicher suchen statt je Mappe in der Datenbank.
+    const gleiche = new Map<string, Map<string, Mappe[]>>();
+    for (const f of typ.felder) {
+      if (!f.eindeutig || (f.typ !== 'text' && f.typ !== 'zahl')) continue;
+      const nachWert = new Map<string, Mappe[]>();
+      for (const m of mappen) {
+        if (istLeer(m.werte[f.key])) continue;
+        const w = String(m.werte[f.key]).trim().toLowerCase();
+        nachWert.set(w, [...(nachWert.get(w) ?? []), m]);
+      }
+      gleiche.set(f.key, nachWert);
+    }
+    const ergebnis = mappen.map((m) => {
+      const p = pruefeMappe(typ, m.werte, {
+        typVon: (id) => typVon.get(id),
+        doppelt: (k, v) => {
+          const andere = gleiche.get(k)?.get(String(v).trim().toLowerCase())?.find((x) => x.id !== m.id);
+          return andere ? andere.titel || 'Ohne Titel' : undefined;
+        },
+      });
+      return { id: m.id, problem: ersterGrund(typ, p), alt: m.problem ?? null, passtAlt: m.passt };
+    });
+    await this.repo.setzePassung(ergebnis.filter((e) => e.problem !== e.alt || e.passtAlt === undefined).map(({ id, problem }) => ({ id, problem })));
+    return ergebnis.filter((e) => e.problem).length;
+  }
+
+  /**
+   * Nach dem Speichern einer Mappe: Andere Mappen desselben Typs, die bisher nicht passten,
+   * können jetzt passen (z. B. weil ein doppelter Wert geändert wurde). Das sind meist wenige.
+   */
+  private async pruefeUnpassende(typ: Mappentyp) {
+    const ids = await this.repo.unpassende(typ.id);
+    if (!ids.length) return;
+    const liste: Array<{ id: string; problem: string | null }> = [];
+    for (const m of await this.repo.holeMappen(ids)) {
+      const typen = await this.repo.typenVon(verweiseVon(typ, m.werte).map((v) => v.zielId).filter(istUuid));
+      const doppelt = new Map<string, string>();
+      for (const f of typ.felder) {
+        if (!f.eindeutig || istLeer(m.werte[f.key]) || (f.typ !== 'text' && f.typ !== 'zahl')) continue;
+        const d = await this.repo.findeDoppelt(typ.id, f.key, String(m.werte[f.key]), m.id);
+        if (d) doppelt.set(f.key, d.titel || 'Ohne Titel');
+      }
+      const problem = ersterGrund(typ, pruefeMappe(typ, m.werte, { typVon: (id) => typen.get(id), doppelt: (k) => doppelt.get(k) }));
+      if (problem !== m.problem) liste.push({ id: m.id, problem });
+    }
+    await this.repo.setzePassung(liste);
+  }
+
+  /** Beim Start: Passung für Typen nachholen, deren Mappen noch nie geprüft wurden. */
+  async passungNachziehen(): Promise<number> {
+    const typen = await this.repo.typenOhnePassung();
+    for (const t of typen) await this.pruefePassung(t);
+    return typen.length;
   }
 
   private async titel(m: Mappe): Promise<string> {
@@ -251,7 +349,9 @@ export class Dienst {
     await this.pruefeWerte(typ, werte);
     const id = istUuid(e.id) && !(await this.repo.holeMappe(e.id)) ? e.id : randomUUID();
     const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), benutzerId, demo);
-    return { ...m, titel: (await this.aktualisiereTitel([m.id])).get(m.id) };
+    const titel = (await this.aktualisiereTitel([m.id])).get(m.id);
+    if (typ.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
+    return { ...m, titel };
   }
 
   async aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null): Promise<Mappe> {
@@ -262,7 +362,9 @@ export class Dienst {
     const werte = bereinigeWerte(typ, (eingabe as { werte?: unknown })?.werte, m.werte);
     await this.pruefeWerte(typ, werte, id);
     const neu = await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), benutzerId);
-    return { ...neu, titel: (await this.aktualisiereTitel([id])).get(id) };
+    const titel = (await this.aktualisiereTitel([id])).get(id);
+    if (typ.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
+    return { ...neu, titel };
   }
 
   /** Viele neue Mappen auf einmal (Demo-Daten); Werte sind bereits geprüft. */
@@ -275,7 +377,9 @@ export class Dienst {
       throw new Fachfehler(409, `Auf diese Mappe ${fremd.length === 1 ? 'verweist noch eine andere Mappe' : `verweisen noch ${fremd.length} andere Mappen`}. Entferne erst diese Verweise.`, { rueckverweise: fremd });
     }
     const dokumente = await this.repo.listeDokumente(id);
+    const typ = await this.repo.holeTyp((await this.repo.holeMappe(id))!.typId);
     await this.repo.loescheMappe(id);
+    if (typ?.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
     for (const sha of new Set(dokumente.map((d) => d.sha256))) await this.raeumeAuf(sha);
   }
 
@@ -283,9 +387,9 @@ export class Dienst {
 
   async demoUebersicht() {
     const demo = await this.repo.zaehleDemo();
-    const alle = await this.repo.listeMappen();
+    const z = (await this.repo.zaehler('', false)).typen;
     return (await this.repo.listeTypen()).map((t) => ({
-      typId: t.id, name: t.name, demo: demo.get(t.id) ?? 0, gesamt: alle.filter((m) => m.typId === t.id).length,
+      typId: t.id, name: t.name, demo: demo.get(t.id) ?? 0, gesamt: z.get(t.id)?.anzahl ?? 0,
     }));
   }
 
@@ -322,7 +426,8 @@ export class Dienst {
       id: randomUUID(), mappeId, registerKey: reg.key, name: dateiname(e.name), mime: erkannt ?? angegeben,
       groesse: inhalt.length, sha256, anzeigbar: !!erkannt, erstellt: new Date().toISOString(), erstelltVon: benutzerId,
     });
-    return { dokument, gleicherInhalt: gleicherInhalt.map((d) => ({ mappeId: d.mappeId, name: d.name })) };
+    const bezuege = await this.repo.bezuege(gleicherInhalt.map((d) => d.mappeId));
+    return { dokument, gleicherInhalt: gleicherInhalt.map((d) => ({ mappeId: d.mappeId, name: d.name, ...bezuege.get(d.mappeId) })) };
   }
 
   async dokumentInhalt(id: string) {

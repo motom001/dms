@@ -103,6 +103,19 @@ export interface Mappe {
   demo?: boolean;
   /** Vom Server aus der Titel-Vorlage berechnet und gespeichert (leer = ohne Titel). */
   titel?: string;
+  /** Passt zur aktuellen Definition des Typs (vom Server geprüft); sonst steht in problem der erste Grund. */
+  passt?: boolean;
+  problem?: string | null;
+}
+
+/** Kurzangaben zu einer Mappe, auf die verwiesen wird oder die verweist. */
+export interface MappenBezug { titel: string; typId: string }
+
+/** Erster Grund, warum Werte nicht zur Definition passen (für Listen und den Eingang). */
+export function ersterGrund(t: Pick<Mappentyp, 'felder'>, p: Pruefergebnis): string | null {
+  const [key, msg] = Object.entries(p.felder)[0] ?? [];
+  if (key) return `${t.felder.find((f) => f.key === key)?.label ?? key}: ${msg?.[0] ?? 'ungültig'}`;
+  return p.allgemein[0] ?? null;
 }
 
 export type Rolle = 'admin' | 'mitglied';

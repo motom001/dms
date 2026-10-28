@@ -278,3 +278,44 @@ describe('Gespeicherte Titel', () => {
     assert.equal(await d.titelNachziehen(), 0);
   });
 });
+
+describe('Sichten seitenweise', () => {
+  const ich = { id: 'u1', rolle: 'mitglied' };
+  async function mitMappen(n: number) {
+    const d = new Dienst(speicherRepo(), speicherDateien());
+    const t = await d.legeTypAn({ name: 'Ding', titelVorlage: '{name}', felder: [
+      { key: 'name', label: 'Name', typ: 'text', pflicht: true },
+      { key: 'farbe', label: 'Farbe', typ: 'text' },
+    ] });
+    for (let i = 0; i < n; i++) await d.legeMappeAn({ typId: t.id, werte: { name: `Ding ${String(i).padStart(3, '0')}`, farbe: i % 2 ? 'rot' : 'blau' } }, 'u1');
+    return { d, t };
+  }
+
+  it('liefert Seiten nach Titel sortiert, mit Gesamtzahl und Suche', async () => {
+    const { d, t } = await mitMappen(250);
+    const s1 = await d.seite(ich, { sicht: t.id, von: 0, anzahl: 100 });
+    assert.equal(s1.gesamt, 250);
+    assert.equal(s1.mappen.length, 100);
+    assert.equal(s1.mappen[0].titel, 'Ding 000');
+    const s3 = await d.seite(ich, { sicht: t.id, von: 200, anzahl: 100 });
+    assert.deepEqual([s3.mappen.length, s3.mappen.at(-1)!.titel], [50, 'Ding 249']);
+    const rot = await d.seite(ich, { sicht: t.id, suche: 'ROT' });
+    assert.equal(rot.gesamt, 125);
+    assert.equal((await d.seite(ich, { sicht: t.id, suche: 'Ding 01' })).gesamt, 10);
+    assert.deepEqual((await d.zaehler(ich)).typen[t.id], { anzahl: 250, unpassend: 0, demo: 0 });
+  });
+
+  it('führt nicht passende Mappen im Eingang des Erstellers und gibt sie frei, sobald sie passen', async () => {
+    const { d, t } = await mitMappen(3);
+    await d.aendereTyp(t.id, { ...t, felder: t.felder.map((f) => (f.key === 'farbe' ? { ...f, eindeutig: true } : f)) });
+    // Ding 000 und Ding 002 sind beide „blau“
+    let z = await d.zaehler(ich);
+    assert.deepEqual([z.typen[t.id].unpassend, z.eingang], [2, 2]);
+    assert.equal((await d.zaehler({ id: 'jemand', rolle: 'admin' })).eingang, 0);
+    const eingang = await d.seite(ich, { sicht: 'eingang' });
+    assert.match(eingang.mappen[0].problem!, /^Farbe: Bereits vergeben/);
+    await d.aendereMappe(eingang.mappen[0].id, { werte: { name: 'Ding 000', farbe: 'grün' } });
+    z = await d.zaehler(ich);
+    assert.deepEqual([z.typen[t.id].unpassend, z.eingang], [0, 0], 'die andere passt jetzt auch wieder');
+  });
+});

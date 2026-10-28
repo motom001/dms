@@ -1,10 +1,20 @@
-import type { Dokument, Mappe, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
+import type { Dokument, Mappe, MappenBezug, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
 
 export interface Verweis { feldKey: string; zielId: string }
+export interface SeitenAnfrage {
+  /** Mappen dieses Typs … */
+  typId?: string;
+  /** … oder der Eingang dieses Benutzers (nicht passende eigene Mappen; ohne Ersteller beim Admin). */
+  eingang?: { benutzerId: string; admin: boolean };
+  /** Suche in Titel und Werten. */
+  suche?: string;
+  von: number;
+  anzahl: number;
+}
 export interface NeueMappe {
   id: string; typId: string; werte: Werte; verweise: Verweis[]; titel: string; benutzerId: string | null; demo: boolean;
 }
-export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string }
+export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string; titel: string }
 
 /**
  * Datenzugriff für einen Haushalt. Die Fachlogik (Dienst) kennt nur diese
@@ -34,6 +44,20 @@ export interface Repo {
   setzeTitel(liste: Array<{ id: string; titel: string }>): Promise<void>;
   /** Ids der Mappen, die auf eine der angegebenen verweisen. */
   quellenVon(zielIds: string[]): Promise<string[]>;
+  /** Titel und Typ je Mappe (unbekannte Ids fehlen). */
+  bezuege(ids: string[]): Promise<Map<string, MappenBezug>>;
+  /** Eine Seite einer Sicht, sortiert nach Titel. */
+  seite(o: SeitenAnfrage): Promise<{ gesamt: number; mappen: Mappe[] }>;
+  /** Zähler für die Sichten. */
+  zaehler(benutzerId: string, admin: boolean): Promise<{ typen: Map<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number }>;
+  /** problem null = passt. */
+  setzePassung(liste: Array<{ id: string; problem: string | null }>): Promise<void>;
+  /** Ids der Mappen dieses Typs, die nicht passen. */
+  unpassende(typId: string): Promise<string[]>;
+  /** Typen mit noch nicht geprüften Mappen. */
+  typenOhnePassung(): Promise<string[]>;
+  /** Anzahl Mappen mit Wert je Feldschlüssel. */
+  belegung(typId: string): Promise<Record<string, number>>;
   /** Ids der Mappen, deren Titel noch nie berechnet wurde. */
   ohneTitel(): Promise<string[]>;
 

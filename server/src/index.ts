@@ -56,6 +56,8 @@ app.log.info(`E-Mail-Versand: ${mailer ? `über ${env.SMTP_HOST}` : 'aus (SMTP_H
 app.log.info(`Links in E-Mails zeigen auf ${cfg.appUrl}`);
 const nachgezogen = await dienst.titelNachziehen();
 if (nachgezogen) app.log.info(`Titel von ${nachgezogen} Mappen berechnet`);
+const geprueft = await dienst.passungNachziehen();
+if (geprueft) app.log.info(`Mappen von ${geprueft} Mappentypen gegen ihre Definition geprüft`);
 if (await konten.einrichtungNoetig()) app.log.warn(`Noch kein Benutzer vorhanden: Der erste Aufruf von ${cfg.appUrl} legt den Administrator an.`);
 
 const beenden = async () => {

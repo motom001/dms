@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  FELDTYPEN, INDEXPLATZHALTER, istIndexplatzhalter, istLeer, istOk, REGISTERARTEN, schluesselAus, standardRegister, titelAus, VERWEISARTEN, vorlageFelder, wirksameVorlage,
-  type Feld, type Mappentyp, type Register, type Registerart, type Werte,
+  FELDTYPEN, INDEXPLATZHALTER, istIndexplatzhalter, REGISTERARTEN, schluesselAus, standardRegister, titelAus, VERWEISARTEN, vorlageFelder, wirksameVorlage,
+  type Feld, type Mappe, type Mappentyp, type Register, type Registerart, type Werte,
 } from '../../../shared/src/model';
-import { api, ApiFehler } from '../api';
+import { api, ApiFehler, type Bezuege } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
+import { titelOder } from '../seiten';
 
 /* ---------------------------------------------------------------- */
 
@@ -74,7 +75,7 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
   useUngespeichert(JSON.stringify(e) !== basis && (!neu || e.felder.length > 0 || e.name !== ''));
 
   const gespeichert = d.typ(e.id);
-  const unpassend = gespeichert ? d.mappenVon(gespeichert.id).filter((m) => !istOk(d.pruefe(gespeichert, m.werte, m.id))).length : 0;
+  const unpassend = gespeichert ? d.zaehler.typen[gespeichert.id]?.unpassend ?? 0 : 0;
 
   const setzeFeld = (i: number, patch: Partial<EntwurfFeld>) => setE((x) => {
     const felder = x.felder.map((f, j) => (j === i ? { ...f, ...patch } : f));
@@ -103,9 +104,9 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
     setOffen((o) => (o === i ? j : o === j ? i : o));
     setFehler(null);
   }
-  function entferne(i: number) {
+  async function entferne(i: number) {
     const f = e.felder[i];
-    const n = gespeichert ? d.mappenVon(gespeichert.id).filter((m) => !istLeer(m.werte[f.key])).length : 0;
+    const n = gespeichert && d.anzahl(gespeichert.id) ? (await api.belegung(gespeichert.id).catch(() => ({} as Record<string, number>)))[f.key] ?? 0 : 0;
     const frage = n
       ? `${n} ${n === 1 ? 'Mappe hat' : 'Mappen haben'} in „${f.label}“ einen Wert. Die Werte bleiben gespeichert, werden aber nicht mehr angezeigt. Feld entfernen?`
       : `Feld „${f.label}“ entfernen?`;
@@ -160,7 +161,7 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
       <div className="seitenkopf"><div>
         <p className="ueber">Mappentyp</p>
         <h1>{e.name || (neu ? 'Neuer Mappentyp' : 'Ohne Namen')}</h1>
-        {gespeichert && <p className="leise"><Link to={`/ablage/${gespeichert.id}`} className="verweis">{d.mappenVon(gespeichert.id).length} Mappen in der Ablage →</Link></p>}
+        {gespeichert && <p className="leise"><Link to={`/ablage/${gespeichert.id}`} className="verweis">{d.anzahl(gespeichert.id).toLocaleString('de-DE')} {d.anzahl(gespeichert.id) === 1 ? 'Mappe' : 'Mappen'} in der Ablage →</Link></p>}
       </div></div>
 
       {unpassend > 0 && (
@@ -190,7 +191,7 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
             <FeldZeile key={f._uid} f={f} i={i} anzahl={e.felder.length} offen={offen === i} fehler={fehler?.felder[String(i)]}
               eigeneId={e.id} eigenerName={e.name} typen={d.typen} feldregister={feldregister}
               umschalten={() => setOffen(offen === i ? null : i)}
-              verschiebe={(r) => verschiebe(i, r)} entferne={() => entferne(i)}
+              verschiebe={(r) => verschiebe(i, r)} entferne={() => void entferne(i)}
               setze={(patch) => {
                 const p = { ...patch };
                 if ('label' in p && f._neu && !f._schluesselGetippt) p.key = eindeutigerSchluessel(schluesselAus(p.label ?? ''), i);
@@ -335,15 +336,21 @@ function FeldZeile(p: {
 function TitelEditor({ e, setze }: { e: Entwurf; setze: (v: string) => void }) {
   const d = useDaten();
   const feld = useRef<HTMLInputElement>(null);
-  const mappen = d.mappenVon(e.id);
-  const [beispielId, setBeispielId] = useState<string>(mappen[0]?.id ?? '');
+  // Beispiele für die Vorschau: die ersten Mappen dieses Typs.
+  const [mappen, setMappen] = useState<Mappe[]>([]);
+  const [bezuege, setBezuege] = useState<Bezuege>({});
+  const [beispielId, setBeispielId] = useState<string>('');
+  useEffect(() => {
+    if (!d.anzahl(e.id)) return;
+    api.seite(e.id, 0, 50).then((s) => { setMappen(s.mappen); setBezuege(s.bezuege); setBeispielId((b) => b || s.mappen[0]?.id || ''); }).catch(() => {});
+  }, [e.id, d.stand]); // eslint-disable-line react-hooks/exhaustive-deps
   const felder = e.felder as unknown as Feld[];
   const v = e.titelVorlage;
   const unbekannt = vorlageFelder(v).filter((k) => !istIndexplatzhalter(k) && !felder.some((f) => f.key === k));
   const beispiel = mappen.find((m) => m.id === beispielId);
   const werte = beispiel ? beispiel.werte : beispielWerte(felder);
   const jetzt = new Date().toISOString();
-  const vorschau = titelAus({ felder, titelVorlage: v }, werte, (id) => (id === 'beispiel' ? '‹verwiesene Mappe›' : d.titel(d.mappe(id))),
+  const vorschau = titelAus({ felder, titelVorlage: v }, werte, (id) => (id === 'beispiel' ? '‹verwiesene Mappe›' : titelOder(bezuege[id]?.titel)),
     beispiel ?? { erstellt: jetzt, geaendert: jetzt });
   const automatisch = wirksameVorlage({ felder, titelVorlage: '' });
 
@@ -379,7 +386,7 @@ function TitelEditor({ e, setze }: { e: Entwurf; setze: (v: string) => void }) {
         {mappen.length > 0
           ? <label className="klein leise">mit den Werten von&nbsp;
               <select value={beispielId} onChange={(ev) => setBeispielId(ev.target.value)}>
-                {mappen.map((m) => <option key={m.id} value={m.id}>{d.titel(m)}</option>)}
+                {mappen.map((m) => <option key={m.id} value={m.id}>{titelOder(m.titel)}</option>)}
               </select></label>
           : <span className="klein leise">mit Beispielwerten</span>}
       </div>

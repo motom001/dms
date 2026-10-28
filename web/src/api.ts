@@ -1,4 +1,4 @@
-import type { Benutzer, Dokument, Mappe, Mappentyp, Pruefergebnis, Rolle } from '../../shared/src/model';
+import type { Benutzer, Dokument, Mappe, MappenBezug, Mappentyp, Pruefergebnis, Rolle } from '../../shared/src/model';
 
 export class ApiFehler extends Error {
   constructor(public status: number, message: string, public details?: unknown) { super(message); }
@@ -35,7 +35,10 @@ async function anfrage<T>(methode: string, url: string, body?: unknown): Promise
   return daten as T;
 }
 
-export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string }
+export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string; titel: string }
+export type Bezuege = Record<string, MappenBezug>;
+export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege }
+export interface Zaehler { typen: Record<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number }
 export interface KontoStatus { einrichtungNoetig: boolean; mail: boolean; benutzer: Benutzer | null }
 export interface LinkErgebnis { benutzer: Benutzer; mailVerschickt: boolean; link?: string; mailFehler?: string }
 
@@ -59,7 +62,11 @@ export const api = {
   typAnlegen: (t: unknown) => anfrage<Mappentyp>('POST', '/api/typen', t),
   typAendern: (id: string, t: unknown) => anfrage<Mappentyp>('PUT', `/api/typen/${id}`, t),
   typLoeschen: (id: string) => anfrage<null>('DELETE', `/api/typen/${id}`),
-  mappen: () => anfrage<Mappe[]>('GET', '/api/mappen'),
+  /** Eine Seite einer Sicht („eingang“ oder Typ-Id), nach Titel sortiert. */
+  seite: (sicht: string, von = 0, anzahl = 100, suche = '') =>
+    anfrage<Seite>('GET', `/api/mappen?${new URLSearchParams({ sicht, von: String(von), anzahl: String(anzahl), ...(suche ? { suche } : {}) })}`),
+  sichten: () => anfrage<Zaehler>('GET', '/api/sichten'),
+  belegung: (typId: string) => anfrage<Record<string, number>>('GET', `/api/typen/${typId}/belegung`),
   mappe: (id: string) => anfrage<MappeDetails>('GET', `/api/mappen/${id}`),
   mappeAnlegen: (m: unknown) => anfrage<Mappe>('POST', '/api/mappen', m),
   mappeAendern: (id: string, m: unknown) => anfrage<Mappe>('PUT', `/api/mappen/${id}`, m),
@@ -89,8 +96,8 @@ export const api = {
   },
 };
 
-export interface MappeDetails { mappe: Mappe; rueckverweise: Rueckverweis[]; dokumente: Dokument[] }
-export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string }> }
+export interface MappeDetails { mappe: Mappe; rueckverweise: Rueckverweis[]; dokumente: Dokument[]; bezuege: Bezuege }
+export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 export const dokumentUrl = (id: string, herunterladen = false) => `/api/dokumente/${id}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
 
 export interface Auftrag {

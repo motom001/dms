@@ -1,30 +1,35 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { pruefeMappe, titelAus, type Mappe, type Mappentyp, type MappenKontext, type Pruefergebnis } from '../../shared/src/model';
-import { api } from './api';
+import { pruefeMappe, type Mappentyp, type Pruefergebnis, type Werte } from '../../shared/src/model';
+import { api, type Zaehler } from './api';
 
+/**
+ * Gemeinsame Daten der Oberfläche: Mappentypen, Personen und die Zähler der Sichten.
+ * Mappen selbst werden nicht mehr alle geladen, sondern seitenweise je Sicht
+ * (siehe useSeiten) und einzeln beim Öffnen.
+ */
 interface Daten {
   typen: Mappentyp[];
-  mappen: Mappe[];
+  zaehler: Zaehler;
   geladen: boolean;
   fehler?: string;
   /** Zählt jedes Neuladen hoch; Ansichten können darauf reagieren. */
   stand: number;
   neuLaden(): Promise<void>;
   typ(id: string | undefined): Mappentyp | undefined;
-  mappe(id: string | undefined): Mappe | undefined;
-  mappenVon(typId: string): Mappe[];
+  /** Anzahl Mappen eines Typs (laut Server). */
+  anzahl(typId: string): number;
   /** Anzeigename eines Benutzers (für „angelegt von“). */
   person(id: string | null | undefined): string;
-  titel(m: Mappe | undefined): string;
-  /** Prüft eine Mappe gegen die aktuelle Definition ihres Typs (wie der Server). */
-  pruefe(t: Mappentyp, werte: Mappe['werte'], eigeneId?: string): Pruefergebnis;
+  /** Prüft Werte gegen die Definition (wie der Server; eindeutige Werte prüft nur der Server). */
+  pruefe(t: Mappentyp, werte: Werte, typVon: (mappeId: string) => string | undefined): Pruefergebnis;
 }
 
 const Ctx = createContext<Daten | null>(null);
+const LEER: Zaehler = { typen: {}, eingang: 0 };
 
 export function DatenProvider({ children }: { children: ReactNode }) {
   const [typen, setTypen] = useState<Mappentyp[]>([]);
-  const [mappen, setMappen] = useState<Mappe[]>([]);
+  const [zaehler, setZaehler] = useState<Zaehler>(LEER);
   const [personen, setPersonen] = useState<Array<{ id: string; name: string }>>([]);
   const [geladen, setGeladen] = useState(false);
   const [fehler, setFehler] = useState<string>();
@@ -32,8 +37,8 @@ export function DatenProvider({ children }: { children: ReactNode }) {
 
   const neuLaden = useCallback(async () => {
     try {
-      const [t, m, p] = await Promise.all([api.typen(), api.mappen(), api.personen()]);
-      setTypen(t); setMappen(m); setPersonen(p); setFehler(undefined);
+      const [t, z, p] = await Promise.all([api.typen(), api.sichten(), api.personen()]);
+      setTypen(t); setZaehler(z); setPersonen(p); setFehler(undefined);
     } catch (e) {
       setFehler((e as Error).message);
     } finally {
@@ -44,34 +49,14 @@ export function DatenProvider({ children }: { children: ReactNode }) {
 
   const wert = useMemo<Daten>(() => {
     const typNachId = new Map<string, Mappentyp>(typen.map((t) => [t.id, t] as const));
-    const mappeNachId = new Map<string, Mappe>(mappen.map((m) => [m.id, m] as const));
-    const titel = (m: Mappe | undefined, tiefe = 0): string => {
-      if (!m) return '(gelöscht)';
-      // Den Titel berechnet und speichert der Server; selbst rechnen nur, falls er fehlt.
-      const s = m.titel ?? titelAus(typNachId.get(m.typId), m.werte, (id) => (tiefe < 2 ? titel(mappeNachId.get(id), tiefe + 1) : '…'), m);
-      return s || 'Ohne Titel';
-    };
-    const sortiert = (liste: Mappe[]) => [...liste].sort((a, b) => titel(a).localeCompare(titel(b), 'de'));
     return {
-      typen, mappen, geladen, fehler, stand, neuLaden,
+      typen, zaehler, geladen, fehler, stand, neuLaden,
       typ: (id) => (id ? typNachId.get(id) : undefined),
-      mappe: (id) => (id ? mappeNachId.get(id) : undefined),
-      mappenVon: (typId) => sortiert(mappen.filter((m) => m.typId === typId)),
+      anzahl: (typId) => zaehler.typen[typId]?.anzahl ?? 0,
       person: (id) => (id ? personen.find((p) => p.id === id)?.name ?? 'gelöschter Benutzer' : 'unbekannt'),
-      titel: (m) => titel(m),
-      pruefe: (t, werte, eigeneId) => {
-        const ctx: MappenKontext = {
-          typVon: (id) => mappeNachId.get(id)?.typId,
-          doppelt: (key, v) => {
-            const w = String(v).trim().toLowerCase();
-            const d = mappen.find((m) => m.id !== eigeneId && m.typId === t.id && m.werte[key] != null && String(m.werte[key]).trim().toLowerCase() === w);
-            return d ? titel(d) : undefined;
-          },
-        };
-        return pruefeMappe(t, werte, ctx);
-      },
+      pruefe: (t, werte, typVon) => pruefeMappe(t, werte, { typVon, doppelt: () => undefined }),
     };
-  }, [typen, mappen, personen, geladen, fehler, stand, neuLaden]);
+  }, [typen, zaehler, personen, geladen, fehler, stand, neuLaden]);
 
   return <Ctx.Provider value={wert}>{children}</Ctx.Provider>;
 }

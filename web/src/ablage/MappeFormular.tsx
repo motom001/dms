@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
 import { istLeer, istOk, MAX_DATEIGROESSE, standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register } from '../../../shared/src/model';
-import { api, ApiFehler, dokumentUrl, type MappeDetails } from '../api';
+import { api, ApiFehler, dokumentUrl, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
 import { rohAusWerten, standardRoh, werteAusRoh, type Roh, type RohBetrag, type RohWerte } from '../werte';
+import { titelOder } from '../seiten';
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 const groesse = (b: number) => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);
@@ -30,31 +31,25 @@ export function NeueMappe({ typ, verweis, sicht }: { typ: Mappentyp; verweis?: s
   );
 }
 
-export function MappeAnsicht({ typ, mappe, sicht }: { typ: Mappentyp; mappe: Mappe; sicht: string }) {
+export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp; details: MappeDetails; sicht: string; neuLaden: () => Promise<void> }) {
   const d = useDaten();
-  const [details, setDetails] = useState<MappeDetails | null>(null);
-  const laden = useCallback(async () => {
-    try { setDetails(await api.mappe(mappe.id)); } catch { setDetails({ mappe, rueckverweise: [], dokumente: [] }); }
-  }, [mappe]);
-  useEffect(() => { void laden(); }, [laden, d.stand]);
-
-  const abweichung = d.pruefe(typ, mappe.werte, mappe.id);
+  const mappe = details.mappe;
   const bekannt = new Set(typ.felder.map((f) => f.key));
   const verwaist = Object.entries(mappe.werte).filter(([k, v]) => !bekannt.has(k) && !istLeer(v));
   return (
     <>
       <div className="mappenkopf">
         <p className="ueber">{typ.name}</p>
-        <h1>{d.titel(mappe)}</h1>
+        <h1>{titelOder(mappe.titel)}</h1>
         <dl className="index">
           <div><dt>Angelegt</dt><dd>{zeit(mappe.erstellt)} von {d.person(mappe.erstelltVon)}</dd></div>
           <div><dt>Zuletzt geändert</dt><dd>{zeit(mappe.geaendert)} von {d.person(mappe.geaendertVon)}</dd></div>
         </dl>
       </div>
-      {!istOk(abweichung) && (
-        <div className="hinweis warn"><p>Diese Mappe passt nicht mehr zur aktuellen Definition von „{typ.name}“. Beim nächsten Speichern müssen die markierten Felder stimmen.</p></div>
+      {mappe.passt === false && (
+        <div className="hinweis warn"><p>Diese Mappe passt nicht mehr zur aktuellen Definition von „{typ.name}“{mappe.problem ? ` (${mappe.problem})` : ''}. Beim nächsten Speichern müssen die markierten Felder stimmen.</p></div>
       )}
-      <Formular typ={typ} mappe={mappe} start={rohAusWerten(typ, mappe.werte)} sicht={sicht} details={details} neuLaden={laden} />
+      <Formular typ={typ} mappe={mappe} start={rohAusWerten(typ, mappe.werte)} sicht={sicht} details={details} neuLaden={neuLaden} />
       {verwaist.length > 0 && (
         <section className="blatt">
           <h2 className="h3">Werte ohne Felddefinition</h2>
@@ -78,8 +73,7 @@ function verknuepfungsGruppen(d: ReturnType<typeof useDaten>, mappe: Mappe | und
     .filter((f) => !gewaehlt.length || gewaehlt.some((q) => q.typId === t.id && q.feldKey === f.key))
     .map((f) => ({
       t, f,
-      treffer: !mappe || !details ? [] : details.rueckverweise.filter((r) => r.quelleTypId === t.id && r.feldKey === f.key)
-        .map((r) => d.mappe(r.quelleId)).filter((m): m is Mappe => !!m),
+      treffer: !mappe || !details ? [] as Rueckverweis[] : details.rueckverweise.filter((r) => r.quelleTypId === t.id && r.feldKey === f.key),
     })));
 }
 
@@ -97,6 +91,10 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
   const [meldung, setMeldung] = useState<string>();
   const [hinweise, setHinweise] = useState<Array<{ art: 'warn' | 'schlecht'; text: ReactNode }>>([]);
   const [sendet, setSendet] = useState(false);
+  // Titel und Typ der Mappen, auf die verwiesen wird (vom Server und aus der Auswahl).
+  const [bekannt, setBekannt] = useState<Bezuege>(details?.bezuege ?? {});
+  useEffect(() => { if (details) setBekannt((b) => ({ ...b, ...details.bezuege })); }, [details]);
+  const merke = (id: string, b: { titel: string; typId: string }) => setBekannt((x) => (x[id]?.titel === b.titel ? x : { ...x, [id]: b }));
   const werteGeaendert = JSON.stringify(roh) !== basis;
   const dokumenteGeaendert = neueDateien.length > 0 || entfernt.length > 0;
   const geaendert = werteGeaendert || dokumenteGeaendert || !mappe;
@@ -130,7 +128,7 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
   async function speichern() {
     setMeldung(undefined);
     const werte = werteAusRoh(typ, roh);
-    const p = d.pruefe(typ, werte, mappe?.id);
+    const p = d.pruefe(typ, werte, (id) => bekannt[id]?.typId);
     if (!istOk(p)) { zeigeFehler(p); setMeldung('Bitte die markierten Felder prüfen.'); return; }
     setSendet(true); setHinweise([]);
     let gespeichert: Mappe | undefined = mappe;
@@ -151,7 +149,7 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
       try {
         const r = await api.ladeHoch(gespeichert!.id, n.register, n.datei);
         const anderswo = r.gleicherInhalt.filter((g) => g.mappeId !== gespeichert!.id);
-        if (anderswo.length) neu.push({ art: 'warn', text: <>„{n.datei.name}“ hat denselben Inhalt wie {anderswo.map((g, j) => { const m = d.mappe(g.mappeId); return <span key={j}>{j > 0 && ', '}„{g.name}“ in {m ? <Link to={`/ablage/${m.typId}/${m.id}`} className="verweis">{d.titel(m)}</Link> : 'einer anderen Mappe'}</span>; })}. Gespeichert ist die Datei nur einmal.</> });
+        if (anderswo.length) neu.push({ art: 'warn', text: <>„{n.datei.name}“ hat denselben Inhalt wie {anderswo.map((g, j) => { return <span key={j}>{j > 0 && ', '}„{g.name}“ in {g.typId ? <Link to={`/ablage/${g.typId}/${g.mappeId}`} className="verweis">{titelOder(g.titel)}</Link> : 'einer anderen Mappe'}</span>; })}. Gespeichert ist die Datei nur einmal.</> });
       } catch (e) {
         offen.push(n);
         neu.push({ art: 'schlecht', text: `„${n.datei.name}“ wurde nicht hochgeladen: ${(e as Error).message}` });
@@ -173,7 +171,7 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
   async function loeschen() {
     if (!mappe) return;
     const n = details?.dokumente.length ?? 0;
-    if (!confirm(`Mappe „${d.titel(mappe)}“ löschen?${n ? ` Ihre ${n} Dokument${n === 1 ? '' : 'e'} werden mitgelöscht.` : ''}`)) return;
+    if (!confirm(`Mappe „${titelOder(mappe.titel)}“ löschen?${n ? ` Ihre ${n} Dokument${n === 1 ? '' : 'e'} werden mitgelöscht.` : ''}`)) return;
     try {
       await api.mappeLoeschen(mappe.id);
       loeseWache(); await d.neuLaden(); geheZu(`/ablage/${sicht}`);
@@ -185,7 +183,7 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
   else if (reg.art === 'felder') {
     const felder = felderAuf(reg);
     inhalt = felder.length
-      ? <div className="formular">{felder.map((f) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} />)}</div>
+      ? <div className="formular">{felder.map((f) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke} />)}</div>
       : <p className="leise">Auf diesem Register liegen keine Felder.</p>;
   } else if (reg.art === 'dokumente') {
     inhalt = mappe && !details ? <p className="leise">Lade …</p> : (
@@ -235,7 +233,10 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
   );
 }
 
-function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId }: { feld: Feld; roh: Roh | undefined; fehler?: string; setze: (v: Roh) => void; eigeneId?: string }) {
+function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke }: {
+  feld: Feld; roh: Roh | undefined; fehler?: string; setze: (v: Roh) => void; eigeneId?: string;
+  bekannt: Bezuege; merke: (id: string, b: { titel: string; typId: string }) => void;
+}) {
   const d = useDaten();
   const id = `feld-${f.key}`;
   let ctl: ReactNode;
@@ -288,27 +289,9 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId }: { feld: Feld; ro
     case 'referenz': {
       const ziel = d.typ(f.zielTyp);
       if (!ziel) { ctl = <p className="leise">Der Ziel-Mappentyp existiert nicht mehr.</p>; break; }
-      const kandidaten = d.mappenVon(ziel.id).filter((m) => m.id !== eigeneId);
-      const anlegen = <Link to={`/ablage/${ziel.id}/neu`} className="verweis klein">+ {ziel.name} anlegen</Link>;
-      if (!kandidaten.length) { mitLabelFor = false; ctl = <div className="refbox"><p className="leise">Noch keine Mappe in „{ziel.name}“.</p>{anlegen}</div>; break; }
-      if (f.mehrfach) {
-        mitLabelFor = false;
-        const gewaehlt = (roh as string[]) ?? [];
-        ctl = <div className="refbox"><div className="auswahlliste">{kandidaten.map((m) => (
-          <label key={m.id} className="haken"><input type="checkbox" checked={gewaehlt.includes(m.id)} onChange={(e) => setze(e.target.checked ? [...gewaehlt, m.id] : gewaehlt.filter((x) => x !== m.id))} /><span>{d.titel(m)}</span></label>
-        ))}</div>{anlegen}</div>;
-      } else {
-        const r = String(roh ?? '');
-        const gewaehlt = d.mappe(r);
-        ctl = <div className="refbox">
-          <select id={id} value={r} onChange={(e) => setze(e.target.value)}>
-            <option value="">– keine –</option>
-            {kandidaten.map((m) => <option key={m.id} value={m.id}>{d.titel(m)}</option>)}
-            {r && !gewaehlt && <option value={r}>(gelöschte Mappe)</option>}
-          </select>
-          <div className="zeile">{gewaehlt && <Link to={`/ablage/${gewaehlt.typId}/${gewaehlt.id}`} className="verweis klein">{d.titel(gewaehlt)} öffnen →</Link>}{anlegen}</div>
-        </div>;
-      }
+      mitLabelFor = !f.mehrfach;
+      ctl = <MappenWahl id={id} ziel={ziel} mehrfach={!!f.mehrfach} wert={roh as string | string[] | undefined} eigeneId={eigeneId}
+        bekannt={bekannt} merke={merke} setze={setze} />;
       break;
     }
     default:
@@ -414,11 +397,99 @@ function Verknuepfungen({ mappe, gruppen }: { mappe: Mappe; gruppen: ReturnType<
             <span><strong>{t.name}</strong> <span className="leise">über „{f.label}“</span> <span className="chip">{VERWEISARTEN[f.verweisart ?? 'bezug']}</span> <span className="anzahl">{treffer.length}</span></span>
             <Link to={`/ablage/${t.id}/neu?verweis=${encodeURIComponent(`${f.key}:${mappe.id}`)}`} className="knopf klein">+ {t.name} anlegen</Link>
           </header>
-          {treffer.length
-            ? <ul>{treffer.map((m) => <li key={m.id}><Link to={`/ablage/${m.typId}/${m.id}`} className="verweis">{d.titel(m)}</Link></li>)}</ul>
-            : <p className="leise">Noch keine.</p>}
+          {treffer.length ? <Trefferliste treffer={treffer} /> : <p className="leise">Noch keine.</p>}
         </section>
       ))}
+    </div>
+  );
+}
+
+/** Verweisende Mappen; bei sehr vielen erst die ersten 100. */
+function Trefferliste({ treffer }: { treffer: Rueckverweis[] }) {
+  const [alle, setAlle] = useState(false);
+  const sichtbar = alle ? treffer : treffer.slice(0, 100);
+  return (
+    <>
+      <ul>{sichtbar.map((r) => <li key={r.quelleId + r.feldKey}><Link to={`/ablage/${r.quelleTypId}/${r.quelleId}`} className="verweis">{titelOder(r.titel)}</Link></li>)}</ul>
+      {sichtbar.length < treffer.length && <button type="button" className="textknopf" onClick={() => setAlle(true)}>Alle {treffer.length.toLocaleString('de-DE')} zeigen</button>}
+    </>
+  );
+}
+
+/* ---------- Auswahl verwiesener Mappen (mit Suche statt langer Klappliste) ---------- */
+
+function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze }: {
+  id: string; ziel: Mappentyp; mehrfach: boolean; wert: string | string[] | undefined; eigeneId?: string;
+  bekannt: Bezuege; merke: (id: string, b: { titel: string; typId: string }) => void; setze: (v: Roh) => void;
+}) {
+  const gewaehlt = (Array.isArray(wert) ? wert : wert ? [wert] : []).filter(Boolean);
+  const [offen, setOffen] = useState(false);
+  const [eingabe, setEingabe] = useState('');
+  const [treffer, setTreffer] = useState<Mappe[] | null>(null);
+  const [gesamt, setGesamt] = useState(0);
+  const [aendern, setAendern] = useState(false);
+  const zeigeSuche = mehrfach || !gewaehlt.length || aendern;
+
+  // Titel unbekannter Verweise nachladen (z. B. vorbelegt über ?verweis=…).
+  const fehlend = gewaehlt.filter((x) => !bekannt[x]).join(',');
+  useEffect(() => {
+    for (const x of fehlend ? fehlend.split(',') : []) {
+      api.mappe(x).then((r) => merke(x, { titel: r.mappe.titel ?? '', typId: r.mappe.typId })).catch(() => merke(x, { titel: '(gelöschte Mappe)', typId: '' }));
+    }
+  }, [fehlend]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!offen) return;
+    let aktuell = true;
+    const t = setTimeout(() => {
+      api.seite(ziel.id, 0, 20, eingabe.trim()).then((s) => { if (aktuell) { setTreffer(s.mappen); setGesamt(s.gesamt); } }).catch(() => aktuell && setTreffer([]));
+    }, 200);
+    return () => { aktuell = false; clearTimeout(t); };
+  }, [offen, eingabe, ziel.id]);
+
+  function waehle(m: Mappe) {
+    merke(m.id, { titel: m.titel ?? '', typId: m.typId });
+    setze(mehrfach ? [...gewaehlt, m.id] : m.id);
+    setEingabe(''); setOffen(false); setAendern(false);
+  }
+  const auswahl = (treffer ?? []).filter((m) => m.id !== eigeneId && !gewaehlt.includes(m.id));
+  const anlegen = <Link to={`/ablage/${ziel.id}/neu`} className="verweis klein">+ {ziel.name} anlegen</Link>;
+
+  return (
+    <div className="refbox">
+      {gewaehlt.length > 0 && (
+        <ul className="gewaehlt">
+          {gewaehlt.map((x) => (
+            <li key={x}>
+              {bekannt[x]?.typId ? <Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis">{titelOder(bekannt[x].titel)}</Link> : <span className="leise">{bekannt[x]?.titel ?? 'Lade …'}</span>}
+              {!mehrfach && !aendern && <button type="button" className="textknopf klein" onClick={() => { setAendern(true); setOffen(true); }}>Ändern</button>}
+              <button type="button" className="textknopf klein gefahr" aria-label="Verweis entfernen" onClick={() => setze(mehrfach ? gewaehlt.filter((y) => y !== x) : '')}>Entfernen</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {zeigeSuche && (
+        <div className="wahl" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) { setOffen(false); setAendern(false); } }}>
+          <input id={id} type="search" role="combobox" aria-expanded={offen} aria-autocomplete="list" autoComplete="off"
+            placeholder={`${ziel.name} suchen …`} value={eingabe}
+            onFocus={() => setOffen(true)} onChange={(e) => { setEingabe(e.target.value); setOffen(true); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') { setOffen(false); setAendern(false); }
+              if (e.key === 'Enter') { e.preventDefault(); if (auswahl[0]) waehle(auswahl[0]); }
+            }} />
+          {offen && (
+            <div className="wahlliste" role="listbox">
+              {treffer === null ? <p className="leise klein">Lade …</p>
+                : !auswahl.length ? <p className="leise klein">{eingabe ? 'Nichts gefunden.' : `Noch keine Mappe in „${ziel.name}“.`}</p>
+                : <>
+                    {auswahl.map((m) => <button key={m.id} type="button" role="option" aria-selected={false} onClick={() => waehle(m)}>{titelOder(m.titel)}</button>)}
+                    {gesamt > (treffer?.length ?? 0) && <p className="leise klein">{gesamt.toLocaleString('de-DE')} insgesamt – tippe, um einzugrenzen.</p>}
+                  </>}
+            </div>
+          )}
+        </div>
+      )}
+      <div className="zeile">{anlegen}</div>
     </div>
   );
 }
