@@ -762,3 +762,12 @@ body:has(.gezogen) { cursor: grabbing; user-select: none; -webkit-user-select: n
 .registerchip .chip { min-width: 0; }
 .feldsumme > .ziehgriff { align-self: center; }
 .spaltenliste li > .ziehgriff { margin-right: -4px; }
+
+/* Abwesenheit (#78) */
+.abwesend-punkt { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); margin-left: 6px; vertical-align: middle; }
+.menuekopf a.chip { text-decoration: none; align-self: flex-start; }
+.gefahrenzone { border-color: var(--schlecht); }
+.gefahrenzone h2 { color: var(--schlecht); }
+.eintrag.werk.grau { opacity: .6; }
+.knopf.gefahr { background: var(--schlecht); border-color: var(--schlecht); color: #fff; }
+.knopf.gefahr:disabled { opacity: .45; }

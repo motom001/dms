@@ -488,7 +488,14 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('DELETE', `/api/mappen/${steuern.body.id}`)).status, 204);
     assert.deepEqual((await anfrage('GET', `/api/mappen/${mitglied.id}`)).body.mappe.werte.rollen, [sys.mitglied.id]);
     assert.equal((await anfrage('DELETE', `/api/benutzer/${mitglied.id}`)).status, 409);
-    assert.equal((await anfrage('PUT', `/api/benutzer/${mitglied.id}`, { aktiv: false })).status, 200);
+    assert.equal((await anfrage('PUT', `/api/benutzer/${mitglied.id}`, { aktiv: false })).status, 409, 'erst mit Vertreter (#77)');
+    const abw = await anfrage('PUT', `/api/benutzer/${mitglied.id}/abwesenheit`, { an: false, vertreterId: admin.id });
+    assert.equal(abw.status, 200, JSON.stringify(abw.body));
+    assert.equal((await anfrage('POST', `/api/benutzer/${mitglied.id}/aufgaben-uebergeben`)).status, 200);
+    const aus = await anfrage('PUT', `/api/benutzer/${mitglied.id}`, { aktiv: false });
+    assert.equal(aus.status, 200, JSON.stringify(aus.body));
+    assert.ok(aus.body.deaktiviert, 'Datum der Deaktivierung (Migration 025)');
+    assert.equal((await anfrage('GET', `/api/mappen/${mitglied.id}`)).body.mappe.werte.vertreter, admin.id);
     assert.match((await anfrage('GET', `/api/mappen/${mitglied.id}`)).body.mappe.titel, /\(ehemalig\)$/);
     assert.equal((await anfrage('PUT', `/api/benutzer/${mitglied.id}`, { aktiv: true })).status, 200);
     const doc = JSON.parse((await app.inject({ method: 'GET', url: '/api/openapi.json' })).body);

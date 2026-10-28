@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { istEmail, PASSWORT_MINDESTLAENGE, type Benutzer, type Rolle } from '../../shared/src/model';
+import { abwesenheitWirkt, istEmail, KEINE_ABWESENHEIT, PASSWORT_MINDESTLAENGE, type Abwesenheit, type Benutzer, type Rolle } from '../../shared/src/model';
+import { heuteIn } from '../../shared/src/sichten';
 import { Fachfehler } from './fehler';
 import type { KontoRepo, SitzungIntern, SitzungsInfo, Zweck } from './konto-repo';
 import type { Benutzerspiegel } from './dienst';
@@ -267,7 +268,70 @@ export class Konten {
   listeBenutzer() { return this.repo.listeBenutzer(); }
 
   /** Für alle Angemeldeten: nur Id und Name, z. B. für „angelegt von“. */
-  async personen() { return (await this.repo.listeBenutzer()).map((b) => ({ id: b.id, name: b.name || b.email, aktiv: b.aktiv })); }
+  /** Für Namen und Empfängerauswahl; mit Abwesenheit, solange sie an ist (#78). */
+  async personen() {
+    const alle = await this.repo.listeBenutzer();
+    const name = (id: string | null) => { const b = alle.find((x) => x.id === id); return b ? b.name || b.email : ''; };
+    const heute = heuteIn();
+    return alle.map((b) => {
+      const a = b.abwesenheit;
+      const abwesend = a?.an && (!a.bis || a.bis >= heute)
+        ? { wirkt: abwesenheitWirkt(a, heute), von: a.von, bis: a.bis, vertreter: name(a.vertreterId) } : undefined;
+      return { id: b.id, name: b.name || b.email, aktiv: b.aktiv, ...(abwesend ? { abwesend } : {}) };
+    });
+  }
+
+  /* ---------- Abwesenheit mit Vertreter (#78) ---------- */
+
+  /** Abwesenheit setzen – für sich selbst oder (Administrator) für andere. Vertreter ist Pflicht, sobald sie an ist. */
+  async setzeAbwesenheit(ich: Benutzer, id: string, e: { an?: unknown; von?: unknown; bis?: unknown; vertreterId?: unknown }) {
+    const b = await this.repo.holeBenutzer(id);
+    if (!b) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');
+    if (id !== ich.id && ich.rolle !== 'admin') throw new Fachfehler(403, 'Die Abwesenheit anderer pflegen nur Administratoren.');
+    const datum = (v: unknown, was: string): string | null => {
+      const t = text(v);
+      if (!t) return null;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(t) || Number.isNaN(Date.parse(t))) throw new Fachfehler(422, `Bitte ein gültiges Datum für „${was}“ angeben.`);
+      return t;
+    };
+    const a: Abwesenheit = { an: e.an === true || e.an === 'true', von: datum(e.von, 'von'), bis: datum(e.bis, 'bis'), vertreterId: text(e.vertreterId) || null };
+    if (a.von && a.bis && a.bis < a.von) throw new Fachfehler(422, '„bis“ liegt vor „von“.');
+    if (a.an && a.bis && a.bis < heuteIn()) throw new Fachfehler(422, '„bis“ liegt in der Vergangenheit.');
+    if (a.vertreterId) {
+      if (a.vertreterId === id) throw new Fachfehler(422, 'Als Vertreter bitte einen anderen Benutzer wählen.');
+      const v = await this.repo.holeBenutzer(a.vertreterId);
+      if (!v || !v.aktiv) throw new Fachfehler(422, 'Der Vertreter muss ein aktiver Benutzer sein.');
+    } else if (a.an || !b.aktiv) throw new Fachfehler(422, 'Bitte einen Vertreter wählen.');
+    const alt = b.abwesenheit ?? KEINE_ABWESENHEIT;
+    const neu = await this.repo.setzeAbwesenheit(id, a);
+    await this.spiegle(neu, ich.id);
+    await this.spiegel?.abwesenheitGeaendert?.(neu, alt, ich.id);
+    return neu;
+  }
+
+  /** Alle offenen Aufgaben an den hinterlegten Vertreter geben. */
+  async aufgabenAnVertreter(ich: Benutzer, id: string) {
+    if (id !== ich.id && ich.rolle !== 'admin') throw new Fachfehler(403, 'Nur für dich selbst oder als Administrator.');
+    const b = await this.repo.holeBenutzer(id);
+    if (!b) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');
+    const v = b.abwesenheit?.vertreterId;
+    if (!v) throw new Fachfehler(409, 'Es ist kein Vertreter hinterlegt.');
+    return { uebergeben: (await this.spiegel?.aufgabenUebergeben?.(id, v, ich.id)) ?? 0 };
+  }
+
+  /** Stündlich: abgelaufene Abwesenheiten beenden und „abwesend“ an den Mappen nachziehen. */
+  async abwesenheitenPruefen() {
+    const heute = heuteIn();
+    for (const b of await this.repo.listeBenutzer()) {
+      const a = b.abwesenheit;
+      if (!a) continue;
+      if (a.an && a.bis && a.bis < heute) {
+        const neu = await this.repo.setzeAbwesenheit(b.id, { ...a, an: false, von: null, bis: null });
+        await this.spiegle(neu);
+        await this.spiegel?.abwesenheitGeaendert?.(neu, a, null, `Zeitraum bis ${a.bis.split('-').reverse().join('.')} abgelaufen`);
+      } else if (a.an) await this.spiegle(b);
+    }
+  }
 
   async legeBenutzerAn(e: { email?: unknown; name?: unknown; rolle?: unknown }, von: string | null = null): Promise<Ergebnis> {
     const email = pruefeEmail(e.email);
@@ -291,6 +355,12 @@ export class Konten {
     const verliertAdmin = b.rolle === 'admin' && b.aktiv && (d.rolle === 'mitglied' || d.aktiv === false);
     if (verliertAdmin && (await this.anzahlAktiverAdmins(id)) === 0) throw new Fachfehler(409, 'Es muss mindestens einen aktiven Administrator geben.');
     if (id === ich.id && d.aktiv === false) throw new Fachfehler(409, 'Du kannst dich nicht selbst deaktivieren.');
+    // Deaktivieren nur mit Vertreter und ohne offene Aufgaben (#77, #78); der Vertreter wirkt danach dauerhaft.
+    if (d.aktiv === false && b.aktiv) {
+      if (!b.abwesenheit?.vertreterId) throw new Fachfehler(409, 'Bitte zuerst einen Vertreter hinterlegen.');
+      const offen = (await this.spiegel?.offeneAufgaben?.(id)) ?? 0;
+      if (offen) throw new Fachfehler(409, `${b.name || b.email} hat noch ${offen === 1 ? 'eine offene Aufgabe' : `${offen} offene Aufgaben`}. Bitte zuerst an den Vertreter geben.`);
+    }
     const neu = await this.repo.aendereBenutzer(id, d);
     if (d.aktiv === false) await this.repo.loescheSitzungenVon(id);
     return this.spiegle(neu, ich.id);
@@ -323,6 +393,7 @@ export class Konten {
         // Nur Einladungen, die nie angenommen wurden (wie beim Löschen); sonst bleibt das Konto deaktiviert.
         if (b && !b.aktiv && !b.hatPasswort && !b.letzteAnmeldung) await this.repo.loescheBenutzer(id);
       },
+      benutzer: () => this.repo.listeBenutzer(),
       wiederda: async (id: string, von: string | null) => {
         const b = await this.repo.holeBenutzer(id);
         if (b && !b.aktiv) await this.spiegle(await this.repo.aendereBenutzer(id, { aktiv: true }), von);

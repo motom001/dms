@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { MeineAbwesenheit } from './Abwesenheit';
 import { geraetText, istGeradeAktiv, PASSWORT_MINDESTLAENGE, ROLLEN, type Sitzung } from '../../../shared/src/model';
 import { api } from '../api';
 import { bereicheZuruecksetzen } from '../bereiche';
@@ -24,10 +25,10 @@ function useFormular(fn: () => Promise<string>) {
 
 /** Bereiche der Profilseite (#69); jeder mit eigener Adresse, /profil führt zu „Konto“. */
 const BEREICHE = { konto: 'Konto', sicherheit: 'Sicherheit', darstellung: 'Darstellung', benachrichtigungen: 'Benachrichtigungen und Ablage' } as const;
-type Bereich = keyof typeof BEREICHE | 'fehler-melden';
+type Bereich = keyof typeof BEREICHE | 'fehler-melden' | 'abwesenheit';
 
 export function Profil({ teile = [] }: { teile?: string[] }) {
-  const b = (teile[1] && (teile[1] in BEREICHE || teile[1] === 'fehler-melden') ? teile[1] : 'konto') as Bereich;
+  const b = (teile[1] && (teile[1] in BEREICHE || teile[1] === 'fehler-melden' || teile[1] === 'abwesenheit') ? teile[1] : 'konto') as Bereich;
   return (
     <div className="zweispaltig profil">
       <aside className="leiste" aria-label="Bereiche des Profils">
@@ -35,10 +36,11 @@ export function Profil({ teile = [] }: { teile?: string[] }) {
           {(Object.keys(BEREICHE) as Array<keyof typeof BEREICHE>).map((k) => (
             <Link key={k} to={`/profil/${k}`} className={`typeintrag ${b === k ? 'an' : ''}`}><span className="nm">{BEREICHE[k]}</span></Link>
           ))}
+          <Link to="/profil/abwesenheit" className={`typeintrag ${b === 'abwesenheit' ? 'an' : ''}`}><span className="nm">Abwesenheit</span></Link>
         </nav>
       </aside>
       <div className="inhalt">
-        {b === 'fehler-melden' ? <FehlerMelden /> : <ProfilBereich bereich={b} />}
+        {b === 'fehler-melden' ? <FehlerMelden /> : b === 'abwesenheit' ? <MeineAbwesenheit /> : <ProfilBereich bereich={b} />}
       </div>
     </div>
   );

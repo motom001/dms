@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { useDaten } from './daten';
+import { abwesenheitText, useDaten } from './daten';
 import { Link } from './ort';
 
 /** In der Druckansicht stehen Namen als reiner Text (#65). */
@@ -18,5 +18,5 @@ export function Person({ id, ersatz, vor = '', className }: { id: string | null 
   if (!p) return <span className={`person weg ${className ?? ''}`} title="Diesen Benutzer gibt es nicht mehr">{vor}{ersatz ?? 'gelöschter Benutzer'}</span>;
   const typ = d.typen.find((t) => t.system === 'benutzer');
   if (!typ || ohneLinks) return <span className={className}>{vor}{p.name}</span>;
-  return <Link to={`/ablage/${typ.id}/${id}`} className={`person ${className ?? ''}`} title={`Mappe von ${p.name} öffnen`}>{vor}{p.name}</Link>;
+  return <Link to={`/ablage/${typ.id}/${id}`} className={`person ${className ?? ''}`} title={`Mappe von ${p.name} öffnen${p.abwesend ? ` – ${abwesenheitText(p)}` : ''}`}>{vor}{p.name}</Link>;
 }

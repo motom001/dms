@@ -54,7 +54,7 @@ describe('Mappentyp Benutzer (#26)', () => {
     assert.equal(benutzerTyp.name, 'Benutzer');
     const m = (await dienst.holeMappe(admin.id)).mappe;
     assert.equal(m.typId, benutzerTyp.id);
-    assert.deepEqual(m.werte, { name: 'Anna Admin', email: 'admin@example.org', rollen: [sys.admin], aktiv: true });
+    assert.deepEqual(m.werte, { name: 'Anna Admin', email: 'admin@example.org', rollen: [sys.admin], aktiv: true, abwesend: false, abwesend_von: null, abwesend_bis: null, vertreter: null });
     assert.equal(m.titel, 'Anna Admin');
 
     const r = await konten.legeBenutzerAn({ email: 'bernd@example.org', rolle: 'mitglied' }, admin.id);
@@ -139,6 +139,8 @@ describe('Mappentyp Benutzer (#26)', () => {
     // Eine nie angenommene Einladung ließe sich löschen – aber nicht, solange auf sie verwiesen wird.
     await wirft(konten.loescheBenutzer(admin, r.benutzer.id), 409, /Deaktiviere/);
     await konten.passwortSetzen({ schluessel: linkSchluessel(r.link!), passwort: 'passwort-von-paul' });
+    await wirft(konten.aendereBenutzer(admin, r.benutzer.id, { aktiv: false }), 409, /Vertreter/);
+    await konten.setzeAbwesenheit(admin, r.benutzer.id, { an: false, vertreterId: admin.id });
     await konten.aendereBenutzer(admin, r.benutzer.id, { aktiv: false });
     const paul = (await dienst.holeMappe(r.benutzer.id)).mappe;
     assert.equal(paul.werte.aktiv, false);
@@ -222,6 +224,7 @@ describe('Mappentyp Rolle (#27)', () => {
     const adminRolle = await dienst.holeMappe(sys.admin);
     assert.deepEqual(adminRolle.rueckverweise.map((x) => x.titel).sort(), ['Anna Admin', 'Bea']);
     // Deaktiviert: bleibt in der Rolle sichtbar, als ehemalig.
+    await konten.setzeAbwesenheit(admin, r.benutzer.id, { vertreterId: admin.id });
     await konten.aendereBenutzer(admin, r.benutzer.id, { aktiv: false });
     assert.deepEqual((await dienst.holeMappe(steuer.id)).rueckverweise.map((x) => x.titel), ['Bea (ehemalig)']);
   });

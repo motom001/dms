@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AUFGABENARTEN, type Aufgabe } from '../../../shared/src/model';
 import { api } from '../api';
-import { useDaten } from '../daten';
+import { nameMitAbwesenheit, useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { Person } from '../Person';
 
@@ -13,7 +13,7 @@ export function BenutzerWahl({ wert, setze, ohne, label, fokus }: { wert: string
   return (
     <select aria-label={label} value={wert} autoFocus={fokus} onChange={(e) => setze(e.target.value)}>
       <option value="">– Benutzer wählen –</option>
-      {d.personen.filter((p) => p.aktiv !== false && p.id !== ohne).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+      {d.personen.filter((p) => p.aktiv !== false && p.id !== ohne).map((p) => <option key={p.id} value={p.id}>{nameMitAbwesenheit(p)}</option>)}
     </select>
   );
 }

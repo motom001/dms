@@ -13,6 +13,7 @@ In der Liste steht bei jeder Mappe, was zu tun ist. In der Mappe selbst steht ob
 | **Passt nicht** | Ein Administrator hat den Mappentyp geändert – z. B. ein neues Pflichtfeld –, und deine Mappe passt nicht mehr dazu. | Ergänze oder korrigiere die markierten Angaben und speichere. Dann erledigt sie sich von selbst. |
 | **Erwähnung** | Jemand hat dich in einem formatierten Text mit **@** erwähnt. | Klicke im Hinweis auf **Erledigt**. |
 | **Aufgabe** | Jemand hat dir über **Aktionen → Aufgabe vergeben** etwas zu tun gegeben. | Klicke im Hinweis auf **Erledigt**. |
+| **Vertretung** | Jemand hat dich als [Vertreter](profil.md#abwesenheit) für seine Abwesenheit eingetragen. Die Aufgabe steht an seiner Benutzer-Mappe und nennt den Zeitraum. | **Erledigt** heißt „zur Kenntnis genommen“. Ändert sich die Abwesenheit oder endet sie, erledigt sie sich von selbst. |
 
 Bei „Passt nicht“ löscht oder ändert das DMS nichts von selbst; die betroffenen Felder sind in der Mappe markiert, und geprüft wird beim nächsten Speichern.
 
@@ -27,6 +28,10 @@ Aufgaben gehen immer an einen Benutzer, nicht an eine Rolle – damit klar ist, 
 ## Weitergeben
 
 Passt eine Aufgabe besser zu jemand anderem, klicke im Hinweis auf **Weitergeben**, wähle den Benutzer und bestätige mit **Weitergeben** (**Esc** bricht ab). Die Mappe wandert in dessen Eingang; im [Protokoll](zusammenarbeit.md#protokoll) steht, wer sie wann an wen gegeben hat.
+
+## Wenn jemand abwesend ist
+
+Hat jemand eine [Abwesenheit](profil.md#abwesenheit) eingetragen, steht das in der Auswahl beim Vergeben und Weitergeben und bei den @-Vorschlägen, z. B. „Sabrina – abwesend bis 15.11., vertreten durch Thomas“. Neue Aufgaben für Abwesende gehen automatisch an deren Vertreter; im Protokoll der Mappe steht „weitergegeben wegen Abwesenheit von …“.
 
 ## Jeden Morgen eine Übersicht
 

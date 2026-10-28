@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { pruefeMappe, type Mappentyp, type Pruefergebnis, type Werte } from '../../shared/src/model';
 import { wirksameTypen, type Sicht } from '../../shared/src/sichten';
-import { api, type Zaehler } from './api';
+import { api, type Person, type Zaehler } from './api';
 import { rettungsweg, wendeAn, type Design } from './design';
 
 /**
@@ -28,7 +28,7 @@ interface Daten {
   /** Anzeigename eines Benutzers (für „angelegt von“). */
   person(id: string | null | undefined): string;
   /** Alle Benutzer (für Erwähnungen und Aufgaben). */
-  personen: Array<{ id: string; name: string; aktiv?: boolean }>;
+  personen: Person[];
   /** Prüft Werte gegen die Definition (wie der Server; eindeutige Werte prüft nur der Server). */
   pruefe(t: Mappentyp, werte: Werte, typVon: (mappeId: string) => string | undefined): Pruefergebnis;
   /** Persönliche Einstellungen (vom Server, für alle Geräte). */
@@ -49,7 +49,7 @@ export function DatenProvider({ children }: { children: ReactNode }) {
   const [typen, setTypen] = useState<Mappentyp[]>([]);
   const [sichten, setSichten] = useState<Sicht[]>([]);
   const [zaehler, setZaehler] = useState<Zaehler>(LEER);
-  const [personen, setPersonen] = useState<Array<{ id: string; name: string; aktiv?: boolean }>>([]);
+  const [personen, setPersonen] = useState<Person[]>([]);
   const [geladen, setGeladen] = useState(false);
   const [fehler, setFehler] = useState<string>();
   const [stand, setStand] = useState(0);
@@ -109,3 +109,14 @@ export function useDaten(): Daten {
   if (!d) throw new Error('DatenProvider fehlt');
   return d;
 }
+
+const tag = (t: string) => { const [, m, d] = t.split('-'); return `${d}.${m}.`; };
+/** „abwesend bis 15.11., vertreten durch Thomas“ – für Empfängerauswahl und Namen (#78). */
+export function abwesenheitText(p: Person | undefined): string {
+  const a = p?.abwesend;
+  if (!a) return '';
+  const wann = a.wirkt ? (a.bis ? `abwesend bis ${tag(a.bis)}` : 'abwesend') : `abwesend ab ${tag(a.von ?? '')}${a.bis ? ` bis ${tag(a.bis)}` : ''}`;
+  return `${wann}${a.vertreter ? `, vertreten durch ${a.vertreter}` : ''}`;
+}
+/** Name mit Abwesenheit, z. B. „Sabrina – abwesend bis 15.11., vertreten durch Thomas“. */
+export const nameMitAbwesenheit = (p: Person) => (p.abwesend ? `${p.name} – ${abwesenheitText(p)}` : p.name);

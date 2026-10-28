@@ -128,7 +128,7 @@ export const istSystemrolle = (m: Pick<Mappe, 'systemKennung'> | undefined) => !
 export const BELIEBIGER_TYP = '*';
 
 /** Systemfelder je Systemtyp. Bezeichnung und Hilfetext darf der Administrator ändern, alles andere ist fest. */
-export function systemfelder(s: Systemtyp, rolleTypId: string): Feld[] {
+export function systemfelder(s: Systemtyp, rolleTypId: string, benutzerTypId = ''): Feld[] {
   if (s === 'email') return [
     { key: 'betreff', label: 'Betreff', typ: 'text', pflicht: true, maxLen: 250, system: true },
     { key: 'an', label: 'An', typ: 'text', pflicht: true, system: true },
@@ -145,6 +145,11 @@ export function systemfelder(s: Systemtyp, rolleTypId: string): Feld[] {
     { key: 'email', label: 'E-Mail-Adresse', typ: 'text', pflicht: true, eindeutig: true, system: true },
     { key: 'rollen', label: 'Rollen', typ: 'referenz', mehrfach: true, zielTyp: rolleTypId, verweisart: 'bezug', system: true, hilfe: 'Systemrolle und weitere Rollen; vergeben in der Benutzerverwaltung' },
     { key: 'aktiv', label: 'Aktiv', typ: 'janein', system: true },
+    // Abwesenheit (#78): gespiegelt aus Profil bzw. Benutzerverwaltung; „Abwesend“ = wirkt gerade.
+    { key: 'abwesend', label: 'Abwesend', typ: 'janein', system: true, hilfe: 'Ob die Abwesenheit gerade wirkt' },
+    { key: 'abwesend_von', label: 'Abwesend von', typ: 'datum', system: true },
+    { key: 'abwesend_bis', label: 'Abwesend bis', typ: 'datum', system: true },
+    { key: 'vertreter', label: 'Vertreter', typ: 'referenz', zielTyp: benutzerTypId, verweisart: 'bezug', system: true, hilfe: 'Bekommt die Aufgaben, solange die Abwesenheit wirkt oder der Benutzer deaktiviert ist' },
   ];
 }
 
@@ -265,7 +270,22 @@ export interface Benutzer {
   entwicklermodus?: boolean;
   /** Weitere (fachliche) Rollen: Ids der Rollen-Mappen (nur in der Benutzerverwaltung). */
   rollen?: string[];
+  /** Abwesenheit mit Vertreter (#78). Der Vertreter bleibt nach dem Deaktivieren hinterlegt und wirkt dann dauerhaft. */
+  abwesenheit?: Abwesenheit;
+  /** Wann der Benutzer deaktiviert wurde (#77), sofern bekannt. */
+  deaktiviert?: string | null;
+  /** Offene Aufgaben (nur in der Benutzerverwaltung). */
+  offeneAufgaben?: number;
 }
+
+/** Abwesenheit (#78): an/aus, optionaler Zeitraum (JJJJ-MM-TT, jeweils einschließlich), Vertreter. */
+export interface Abwesenheit { an: boolean; von: string | null; bis: string | null; vertreterId: string | null }
+export const KEINE_ABWESENHEIT: Abwesenheit = { an: false, von: null, bis: null, vertreterId: null };
+/** Wirkt die Abwesenheit an diesem Tag (JJJJ-MM-TT)? */
+export const abwesenheitWirkt = (a: Abwesenheit | undefined, heute: string) =>
+  !!a?.an && (!a.von || a.von <= heute) && (!a.bis || a.bis >= heute);
+/** Höchstens so viele Schritte folgt die Umleitung einer Vertreterkette. */
+export const VERTRETER_SCHRITTE = 3;
 
 /** Als „gerade aktiv“ gilt, wer in den letzten so vielen Minuten etwas getan hat. */
 export const AKTIV_MINUTEN = 15;
@@ -574,7 +594,7 @@ export interface Dokument {
 }
 
 /* ---------- Aufgaben (#54, #56) ---------- */
-export const AUFGABENARTEN = { passung: 'Passt nicht', erwaehnung: 'Erwähnung', manuell: 'Aufgabe' } as const;
+export const AUFGABENARTEN = { passung: 'Passt nicht', erwaehnung: 'Erwähnung', manuell: 'Aufgabe', vertretung: 'Vertretung' } as const;
 export type Aufgabenart = keyof typeof AUFGABENARTEN;
 export interface Aufgabe {
   id: string; mappeId: string;
@@ -596,7 +616,7 @@ export const NOTIZ_MAX = 20_000;
 export const HISTORIENARTEN = {
   angelegt: 'angelegt', geaendert: 'geändert', dokument_hochgeladen: 'Dokument hochgeladen', dokument_geloescht: 'Dokument gelöscht',
   papierkorb: 'in den Papierkorb gelegt', wiederhergestellt: 'wiederhergestellt', endgueltig: 'endgültig gelöscht',
-  passwort_angezeigt: 'Passwort angezeigt', notiz: 'Notiz', aufgabe: 'Aufgabe', email: 'E-Mail versendet',
+  passwort_angezeigt: 'Passwort angezeigt', notiz: 'Notiz', aufgabe: 'Aufgabe', email: 'E-Mail versendet', abwesenheit: 'Abwesenheit',
 } as const;
 export type Historienart = keyof typeof HISTORIENARTEN;
 /** Eine Feldänderung: Werte lesbar zum Zeitpunkt der Änderung; Passwörter nur als „geändert“. */

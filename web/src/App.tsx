@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ROLLEN } from '../../shared/src/model';
+import { abwesenheitWirkt, ROLLEN } from '../../shared/src/model';
+import { heuteIn } from '../../shared/src/sichten';
 import { leseSchrift, setzeSchrift } from './design';
 import { api } from './api';
 import { Ablage } from './ablage/Ablage';
@@ -113,6 +114,7 @@ function Hinweise() {
 function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<void> }) {
   const { ich, vertretung, aktualisieren } = useKonto();
   const [offen, setOffen] = useState(false);
+  const abwesend = abwesenheitWirkt(ich.abwesenheit, heuteIn());
   const rahmen = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!offen) return;
@@ -125,7 +127,7 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
   return (
     <div className="benutzermenue" ref={rahmen}>
       <button type="button" className={`wer ${an ? 'an' : ''}`} aria-haspopup="menu" aria-expanded={offen} onClick={() => setOffen(!offen)}>
-        {ich.name || ich.email} <span aria-hidden="true">▾</span>
+        {ich.name || ich.email}{abwesend && <span className="abwesend-punkt" title="Du bist abwesend" aria-label="(abwesend)" />} <span aria-hidden="true">▾</span>
       </button>
       {offen && (
         <div className="menue" role="menu">
@@ -133,10 +135,12 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
             <strong>{ich.name || ich.email}</strong>
             <span className="leise klein">{ich.email} · {ROLLEN[ich.rolle]}</span>
             {vertretung && <span className="chip warn">Als {ich.name || ich.email} angemeldet</span>}
+            {abwesend && <Link to="/profil/abwesenheit" className="chip warn">Du bist abwesend{ich.abwesenheit?.bis ? ` (bis ${ich.abwesenheit.bis.split('-').reverse().join('.')})` : ''}</Link>}
           </div>
           {vertretung && <button type="button" className="menuepunkt" onClick={() => { setOffen(false); void api.vertretungBeenden().then(() => { geheZu('/werkbank/benutzer', true); return aktualisieren(); }); }}>Vertretung beenden</button>}
           <Link to="/profil/konto" className="menuepunkt">Mein Konto</Link>
           <Link to="/profil/darstellung" className="menuepunkt">Einstellungen</Link>
+          <Link to="/profil/abwesenheit" className="menuepunkt">Abwesenheit</Link>
           <a href={HANDBUCH.benutzer} target="_blank" rel="noreferrer" className="menuepunkt" onClick={() => setOffen(false)}>Hilfe <span aria-hidden="true">↗</span></a>
           <Link to="/profil/fehler-melden" className="menuepunkt">Fehler melden</Link>
           <button type="button" className="menuepunkt" onClick={() => void abmelden()}>Abmelden</button>

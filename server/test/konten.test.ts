@@ -81,6 +81,8 @@ describe('Konten', () => {
     const r = await k.legeBenutzerAn({ email: 'b@example.org', rolle: 'mitglied' });
     const { schluessel } = await k.passwortSetzen({ schluessel: linkSchluessel(r.link!), passwort: 'passwort-von-b' });
     assert.ok(await k.benutzerZu(schluessel));
+    await wirft(k.aendereBenutzer(admin, r.benutzer.id, { aktiv: false }), 409);
+    await k.setzeAbwesenheit(admin, r.benutzer.id, { vertreterId: admin.id });
     await k.aendereBenutzer(admin, r.benutzer.id, { aktiv: false });
     assert.equal(await k.benutzerZu(schluessel), undefined);
     await k.aendereBenutzer(admin, r.benutzer.id, { aktiv: true, rolle: 'admin' });

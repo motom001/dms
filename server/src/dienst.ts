@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, ROLLEN, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
-  AUFGABE_MAX, istEmail, NOTIZ_MAX, type Aufgabe, type Benutzer, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type Quelle, type Register, type Trefferliste, type Rolle, type Systemtyp, type Werte,
+  AUFGABE_MAX, istEmail, NOTIZ_MAX, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Benutzer, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type Quelle, type Register, type Trefferliste, trefferlistenVon, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
@@ -135,6 +135,12 @@ export interface Benutzerspiegel {
   papierkorbAn?(): Promise<boolean>;
   /** Legt die Mappe in den Papierkorb; wirft, wenn noch etwas auf sie verweist. */
   inPapierkorb?(id: string, von: string | null): Promise<void>;
+  /** Anzahl offener Aufgaben eines Benutzers (ohne die der Administratoren) – Deaktivieren nur ohne (#77). */
+  offeneAufgaben?(id: string): Promise<number>;
+  /** Alle offenen Aufgaben eines Benutzers an einen anderen geben (#78); Anzahl. */
+  aufgabenUebergeben?(id: string, an: string, von: string | null): Promise<number>;
+  /** Abwesenheit geändert: Protokoll an der Benutzer-Mappe und Aufgabe „Vertretung“ (#78). */
+  abwesenheitGeaendert?(b: Benutzer, alt: Abwesenheit, von: string | null, wegen?: string): Promise<void>;
 }
 
 /** Was mit dem Konto geschieht, wenn eine Benutzer-Mappe den Papierkorb verlässt (#43). */
@@ -143,6 +149,8 @@ export interface KontenHaken {
   endgueltig(id: string): Promise<void>;
   /** Wiederhergestellt: Konto wieder aktivieren. */
   wiederda(id: string, von: string | null): Promise<void>;
+  /** Alle Konten mit Abwesenheit und Vertreter – für die Umleitung von Aufgaben (#78). */
+  benutzer?(): Promise<Benutzer[]>;
 }
 
 export const PAPIERKORB_STANDARD_TAGE = 30;
@@ -383,19 +391,121 @@ export class Dienst {
     for (const id of jetzt) {
       if (vorher.has(id) || id === von || offen.some((a) => a.empfaengerId === id)) continue;
       const m = await this.repo.holeMappe(id);
-      if (!m || m.typId !== benutzer.id || m.werte.aktiv === false) continue;
+      if (!m || m.typId !== benutzer.id) continue;
+      // Deaktivierte nur, wenn ihr Vertreter übernimmt (#78).
+      if (m.werte.aktiv === false && (await this.empfaengerAufloesen(id)).ziel === id) continue;
       const a = await this.repo.legeAufgabeAn({
         id: randomUUID(), mappeId, empfaengerId: id, art: 'erwaehnung', feldKey: quelle.key,
         text: `Erwähnt von ${await this.name(von)} ${quelle.ort}${quelle.auszug ? `: ${quelle.auszug}` : ''}`.slice(0, AUFGABE_MAX),
         erstellt: '', erstelltVon: von, erledigt: null, erledigtVon: null,
       });
       await this.notiere(mappeId, von, 'aufgabe', { text: `${await this.name(id)} erwähnt ${quelle.ort}`, aufgabe: a.id, aufgabenart: 'erwaehnung', fuer: id, aufgabentext: a.text });
+      await this.leiteUm(a);
     }
     for (const id of vorher) {
       if (!jetzt.has(id)) await this.notiere(mappeId, von, 'aufgabe', { text: `Erwähnung von ${await this.name(id)} ${quelle.ort} entfernt` });
     }
   }
 
+
+  /* ---------- Abwesenheit und Vertretung (#77, #78) ---------- */
+
+  /**
+   * Wer eine Aufgabe für `id` bekommt: der Benutzer selbst – oder, solange seine Abwesenheit wirkt
+   * bzw. er deaktiviert ist, sein Vertreter. Ketten höchstens VERTRETER_SCHRITTE weit; bei einem
+   * Kreis oder einem deaktivierten Vertreter bleibt sie beim letzten erreichbaren Empfänger.
+   */
+  async empfaengerAufloesen(id: string | null): Promise<{ ziel: string | null; abwesende: string[] }> {
+    if (!id || !this.konten?.benutzer) return { ziel: id, abwesende: [] };
+    const alle = new Map((await this.konten.benutzer()).map((b) => [b.id, b] as const));
+    const heute = heuteIn();
+    let ziel = id;
+    const abwesende: string[] = [];
+    const gesehen = new Set([id]);
+    for (let i = 0; i < VERTRETER_SCHRITTE; i++) {
+      const b = alle.get(ziel);
+      if (!b || (b.aktiv && !abwesenheitWirkt(b.abwesenheit, heute))) break;
+      const v = b.abwesenheit?.vertreterId;
+      const vb = v ? alle.get(v) : undefined;
+      if (!v || !vb || !vb.aktiv || gesehen.has(v)) break;
+      abwesende.push(ziel); gesehen.add(v); ziel = v;
+    }
+    return { ziel, abwesende };
+  }
+
+  /** Neue Aufgabe eines Abwesenden an den Vertreter geben – wie „Weitergeben“, mit Protokolleintrag. Vertretungs-Aufgaben nie. */
+  private async leiteUm(a: Aufgabe): Promise<Aufgabe> {
+    if (a.art === 'vertretung' || !a.empfaengerId) return a;
+    const { ziel, abwesende } = await this.empfaengerAufloesen(a.empfaengerId);
+    if (!ziel || ziel === a.empfaengerId) return a;
+    await this.repo.delegiereAufgabe(a.id, ziel);
+    const namen = (await Promise.all(abwesende.map((x) => this.name(x)))).join(', ');
+    await this.notiere(a.mappeId, null, 'aufgabe', {
+      text: `weitergegeben wegen Abwesenheit von ${namen} an ${await this.name(ziel)}: ${a.text}`,
+      aufgabe: a.id, aufgabenart: a.art, vonId: a.empfaengerId, anId: ziel, aufgabentext: a.text,
+    });
+    protokoll.modul('ablage').info('Aufgabe wegen Abwesenheit weitergegeben', { mappeId: a.mappeId, von: namen, an: await this.name(ziel) });
+    return (await this.repo.holeAufgabe(a.id)) ?? a;
+  }
+
+  /** „Passt nicht“-Aufgaben anlegen bzw. erledigen; neue für Abwesende gehen an deren Vertreter. */
+  private async passungsAufgaben(liste: Array<{ id: string; problem: string | null }>) {
+    await this.repo.aufgabenZurPassung(liste);
+    const ids = liste.filter((x) => x.problem).map((x) => x.id);
+    if (!ids.length || !this.konten?.benutzer) return;
+    for (const a of await this.repo.offeneAufgaben({ mappeIds: ids })) if (a.art === 'passung') await this.leiteUm(a);
+  }
+
+  /** Alle offenen Aufgaben eines Benutzers (ohne die der Administratoren) an einen anderen geben. */
+  async aufgabenUebergeben(id: string, an: string, von: string | null): Promise<number> {
+    const ziel = await this.pruefeEmpfaenger(an);
+    if (!ziel || ziel === id) throw new Fachfehler(422, 'Bitte einen anderen Benutzer wählen.');
+    const offen = (await this.repo.offeneAufgaben({ benutzerId: id })).filter((a) => a.empfaengerId === id);
+    for (const a of offen) {
+      await this.repo.delegiereAufgabe(a.id, ziel);
+      await this.notiere(a.mappeId, von, 'aufgabe', {
+        text: `weitergegeben von ${await this.name(id)} an ${await this.name(ziel)}: ${a.text}`,
+        aufgabe: a.id, aufgabenart: a.art, vonId: id, anId: ziel, aufgabentext: a.text,
+      });
+    }
+    if (offen.length) protokoll.modul('ablage').info('Offene Aufgaben übergeben', { von: await this.name(id), an: await this.name(ziel), anzahl: offen.length });
+    return offen.length;
+  }
+
+  /**
+   * Abwesenheit geändert (#78): Klartext im Protokoll der Benutzer-Mappe; die Aufgabe „Vertretung“
+   * des bisherigen Vertreters erledigt sich, der aktuelle bekommt eine neue (nicht umgeleitet).
+   */
+  async abwesenheitGeaendert(b: Benutzer, alt: Abwesenheit, von: string | null, wegen?: string) {
+    const neu = b.abwesenheit;
+    if (!neu || JSON.stringify(neu) === JSON.stringify(alt)) return;
+    const { benutzer: typ } = await this.sichereSystem();
+    const m = await this.repo.holeMappe(b.id);
+    if (!m || m.typId !== typ.id) return;
+    const name = b.name || b.email;
+    const datum = (t: string) => t.split('-').reverse().join('.');
+    const zeitraum = (a: Abwesenheit) => (a.von && a.bis ? `vom ${datum(a.von)} bis ${datum(a.bis)}` : a.von ? `ab ${datum(a.von)}, bis die Abwesenheit endet`
+      : a.bis ? `ab sofort bis ${datum(a.bis)}` : 'ab sofort, bis die Abwesenheit endet');
+    const durch = von && von !== b.id ? ` (eingetragen von ${await this.name(von)})` : '';
+    const endet = alt.an && !neu.an;
+    const text = endet ? `Abwesenheit beendet${wegen ? ` (${wegen})` : ''}`
+      : neu.an ? `Abwesenheit ${alt.an ? 'geändert' : 'eingetragen'}: ${zeitraum(neu)}, Vertreter ${await this.name(neu.vertreterId)}${durch}`
+      : `Vertreter ${neu.vertreterId ? `hinterlegt: ${await this.name(neu.vertreterId)}` : 'entfernt'}${durch}`;
+    await this.notiere(b.id, von, 'abwesenheit', { text });
+    // Vertretungs-Aufgaben: alte erledigen sich, solange sich Vertreter oder Zeitraum ändert oder die Abwesenheit endet.
+    for (const a of (await this.repo.offeneAufgaben({ mappeIds: [b.id] })).filter((x) => x.art === 'vertretung')) {
+      await this.repo.erledigeAufgabe(a.id, null);
+      await this.notiere(b.id, null, 'aufgabe', { text: `erledigt (${endet ? 'Abwesenheit beendet' : 'Vertretung geändert'}): ${a.text}`, aufgabe: a.id, aufgabenart: 'vertretung', fuer: a.empfaengerId, aufgabentext: a.text });
+    }
+    if (neu.an && neu.vertreterId && (!neu.bis || neu.bis >= heuteIn())) {
+      const a = await this.repo.legeAufgabeAn({
+        id: randomUUID(), mappeId: b.id, empfaengerId: neu.vertreterId, art: 'vertretung',
+        text: `Du wurdest für ${name} als Vertreter hinterlegt – ${zeitraum(neu)}.`.slice(0, AUFGABE_MAX),
+        erstellt: '', erstelltVon: von, erledigt: null, erledigtVon: null,
+      });
+      await this.notiere(b.id, von, 'aufgabe', { text: `für ${await this.name(neu.vertreterId)}: Vertretung`, aufgabe: a.id, aufgabenart: 'vertretung', fuer: neu.vertreterId, aufgabentext: a.text });
+    }
+  }
 
   /** Aufgabe von Hand vergeben, z. B. „Bitte Rechnung prüfen“. */
   async legeAufgabeAn(mappeId: string, e: unknown, von: string | null): Promise<Aufgabe> {
@@ -408,7 +518,7 @@ export class Dienst {
     const a = await this.repo.legeAufgabeAn({ id: randomUUID(), mappeId, empfaengerId: an, art: 'manuell', text, erstellt: '', erstelltVon: von, erledigt: null, erledigtVon: null });
     await this.notiere(mappeId, von, 'aufgabe', { text: `für ${await this.name(an)}: ${text}`, aufgabe: a.id, aufgabenart: 'manuell', fuer: an, aufgabentext: text });
     protokoll.modul('ablage').info('Aufgabe vergeben', { mappeId, an: await this.name(an) });
-    return a;
+    return this.leiteUm(a);
   }
 
   private async eigeneAufgabe(id: string, ich: { id: string; rolle: string }) {
@@ -649,8 +759,8 @@ export class Dienst {
    * und verschwinden nur über die Benutzerverwaltung.
    */
   private async mitSystemfeldern(d: MappentypDaten, system: Systemtyp): Promise<MappentypDaten> {
-    const rolleTyp = (await this.repo.listeTypen()).find((t) => t.system === 'rolle');
-    const soll = systemfelder(system, rolleTyp?.id ?? '');
+    const typen = await this.repo.listeTypen();
+    const soll = systemfelder(system, typen.find((t) => t.system === 'rolle')?.id ?? '', typen.find((t) => t.system === 'benutzer')?.id ?? '');
     const fehlen = soll.filter((s) => !d.felder.some((f) => f.key === s.key));
     if (fehlen.length) throw new Fachfehler(422, `Systemfelder lassen sich nicht entfernen: ${fehlen.map((f) => f.label).join(', ')}.`);
     const felder = d.felder.map((f) => {
@@ -947,7 +1057,7 @@ export class Dienst {
     const geaendert = ergebnis.filter((e) => e.problem !== e.alt || e.passtAlt === undefined).map(({ id, problem }) => ({ id, problem }));
     await this.repo.setzePassung(geaendert);
     // Passt eine Mappe nicht, hat ihr Ersteller eine Aufgabe (#54); passt sie wieder, ist sie erledigt.
-    await this.repo.aufgabenZurPassung(geaendert);
+    await this.passungsAufgaben(geaendert);
     return ergebnis.filter((e) => e.problem).length;
   }
 
@@ -975,7 +1085,7 @@ export class Dienst {
       if (problem !== m.problem) liste.push({ id: m.id, problem });
     }
     await this.repo.setzePassung(liste);
-    await this.repo.aufgabenZurPassung(liste);
+    await this.passungsAufgaben(liste);
   }
 
   /** Beim Start: Passung für Typen nachholen, deren Mappen noch nie geprüft wurden. */
@@ -1075,7 +1185,7 @@ export class Dienst {
     const neu = await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), benutzerId);
     if (aenderungen.length) await this.notiere(id, benutzerId, 'geaendert', { aenderungen });
     // Gespeichert heißt: passt wieder – eine „passt nicht“-Aufgabe ist damit erledigt.
-    await this.repo.aufgabenZurPassung([{ id, problem: null }]);
+    await this.passungsAufgaben([{ id, problem: null }]);
     await this.pruefeErwaehnungen(typ, id, m.werte, werte, benutzerId);
     const titel = (await this.aktualisiereTitel([id])).get(id);
     if (typ.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
@@ -1183,9 +1293,9 @@ export class Dienst {
     if (!benutzer) {
       benutzer = await this.repo.legeTypAn(ids.benutzer, {
         name: frei('Benutzer'), beschreibung: 'Die Benutzer dieses DMS; gepflegt in der Benutzerverwaltung', titelVorlage: '{name}',
-        felder: systemfelder('benutzer', rolle.id),
+        felder: systemfelder('benutzer', rolle.id, ids.benutzer),
         register: [
-          { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name', 'email', 'rollen', 'aktiv'] },
+          { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name', 'email', 'rollen', 'aktiv', 'abwesend', 'abwesend_von', 'abwesend_bis', 'vertreter'] },
           { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
           { key: 'verknuepfungen', name: 'Verknüpfungen', art: 'verknuepfungen', quellen: [] },
         ],
@@ -1209,6 +1319,7 @@ export class Dienst {
       await this.sichtFuerTyp(email);
       protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: email.name });
     }
+    benutzer = await this.ergaenzeSystemfelder(benutzer, rolle.id);
     const systemrollen = new Map<Rolle, string>();
     for (const r of Object.keys(ROLLEN) as Rolle[]) {
       const kennung = systemrolleKennung(r);
@@ -1222,6 +1333,49 @@ export class Dienst {
     return { benutzer, rolle, email, systemrollen };
   }
 
+  /**
+   * Neue Systemfelder einer Version (z. B. Abwesenheit, #78) in einen vorhandenen Systemtyp aufnehmen.
+   * Hat der Administrator schon ein eigenes Feld mit diesem Schlüssel, wird seines umbenannt
+   * (z. B. vertreter → vertreter_alt) – samt Werten, Register, Trefferlisten und Titel-Vorlage.
+   */
+  private async ergaenzeSystemfelder(t: Mappentyp, rolleId: string): Promise<Mappentyp> {
+    if (!t.system) return t;
+    const soll = systemfelder(t.system, rolleId, t.id);
+    const fehlen = soll.filter((x) => !t.felder.some((f) => f.key === x.key && f.system));
+    if (!fehlen.length) return t;
+    const felder = [...t.felder];
+    const register = structuredClone(t.register);
+    let trefferlisten = trefferlistenVon(t);
+    let titelVorlage = t.titelVorlage;
+    const umbenannt: Array<[string, string]> = [];
+    for (const x of fehlen) {
+      const i = felder.findIndex((f) => f.key === x.key);
+      if (i >= 0) {
+        let neu = `${x.key}_alt`;
+        for (let n = 2; felder.some((f) => f.key === neu); n++) neu = `${x.key}_alt${n}`;
+        felder[i] = { ...felder[i], key: neu };
+        for (const r of register) if (r.felder) r.felder = r.felder.map((k) => (k === x.key ? neu : k));
+        trefferlisten = trefferlisten.map((l) => ({ ...l, spalten: l.spalten.map((k) => (k === x.key ? neu : k)) }));
+        titelVorlage = titelVorlage.split(`{${x.key}}`).join(`{${neu}}`);
+        umbenannt.push([x.key, neu]);
+      }
+      felder.push(x);
+      const allgemein = register.find((r) => r.art === 'felder');
+      if (allgemein) allgemein.felder = [...(allgemein.felder ?? []), x.key];
+    }
+    const neuTyp = await this.repo.aendereTyp(t.id, { ...t, felder, register, trefferlisten, trefferliste: undefined, titelVorlage });
+    if (umbenannt.length) {
+      for (const m of await this.repo.listeMappen(t.id)) {
+        const werte = { ...m.werte };
+        for (const [alt, neu] of umbenannt) if (alt in werte) { werte[neu] = werte[alt]; delete werte[alt]; }
+        await this.repo.aendereMappe(m.id, werte, verweiseVon(neuTyp, werte), null);
+      }
+      protokoll.modul('werkbank').warn('Eigene Felder wegen neuer Systemfelder umbenannt', { typ: t.name, felder: umbenannt.map(([a, b]) => `${a} → ${b}`).join(', ') });
+    }
+    protokoll.modul('werkbank').info('Systemfelder ergänzt', { typ: t.name, felder: fehlen.map((f) => f.label).join(', ') });
+    return neuTyp;
+  }
+
   /** Schreibt eine Mappe, die das System pflegt – ohne die Sperren der Ablage; Titel und Passung wie sonst. */
   private async schreibeSystemMappe(typ: Mappentyp, id: string, eingabe: Werte, von: string | null, kennung: string | null = null): Promise<Mappe> {
     const alt = await this.repo.holeMappe(id);
@@ -1231,7 +1385,7 @@ export class Dienst {
     if (alt) await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), von);
     else await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), von, false, kennung);
     if (aenderungen.length) await this.notiere(id, von, alt ? 'geaendert' : 'angelegt', { aenderungen });
-    if (alt) await this.repo.aufgabenZurPassung([{ id, problem: null }]);
+    if (alt) await this.passungsAufgaben([{ id, problem: null }]);
     await this.aktualisiereTitel([id]);
     // Hat der Administrator den Typ um Pflichtfelder erweitert, landet die Mappe im Eingang.
     await this.passungFuer(typ, [id]);
@@ -1246,7 +1400,15 @@ export class Dienst {
     const alt = await this.repo.holeMappe(b.id);
     const system = new Set(systemrollen.values());
     const weitere = alt ? alsListe(alt.werte.rollen).filter((r) => !system.has(r)) : [];
-    await this.schreibeSystemMappe(typ, b.id, { name: b.name || b.email, email: b.email, rollen: [systemrollen.get(b.rolle)!, ...weitere], aktiv: b.aktiv }, von);
+    const ab = b.abwesenheit;
+    // Abwesenheit (#78): „abwesend“ = wirkt heute; Zeitraum nur, solange sie an ist; der Vertreter auch nach dem Deaktivieren.
+    await this.schreibeSystemMappe(typ, b.id, {
+      ...(alt?.werte ?? {}),
+      name: b.name || b.email, email: b.email, rollen: [systemrollen.get(b.rolle)!, ...weitere], aktiv: b.aktiv,
+      abwesend: abwesenheitWirkt(ab, heuteIn()),
+      abwesend_von: ab?.an ? ab.von : null, abwesend_bis: ab?.an ? ab.bis : null,
+      vertreter: ab?.vertreterId && (ab.an || !b.aktiv) ? ab.vertreterId : null,
+    }, von);
   }
 
   /** Beim Start: alle Benutzer haben ihre Mappe, und sie stimmt mit dem Konto überein. */
@@ -1307,6 +1469,9 @@ export class Dienst {
   benutzerspiegel(): Benutzerspiegel {
     return {
       aktualisiere: (b, von) => this.spiegleBenutzer(b, von ?? null),
+      offeneAufgaben: async (id) => (await this.repo.offeneAufgaben({ benutzerId: id })).filter((a) => a.empfaengerId === id).length,
+      aufgabenUebergeben: (id, an, von) => this.aufgabenUebergeben(id, an, von),
+      abwesenheitGeaendert: (b, alt, von, wegen) => this.abwesenheitGeaendert(b, alt, von, wegen),
       entferne: (id) => this.entferneBenutzerMappe(id),
       papierkorbAn: async () => (await this.papierkorbTage()) > 0,
       inPapierkorb: async (id, von) => {
