@@ -67,6 +67,7 @@ function beispielWerte(felder: Feld[]): Werte {
       case 'janein': w[f.key] = true; break;
       case 'auswahl': w[f.key] = f.optionen?.[0] ?? ''; break;
       case 'referenz': w[f.key] = 'beispiel'; break;
+      case 'passwort': w[f.key] = null; break;
       default: w[f.key] = f.label || f.key;
     }
   }
@@ -137,7 +138,7 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
       felder: e.felder.map(({ _uid, _neu, _schluesselGetippt, _register, ...rest }) => rest),
       register: e.register.map(({ _uid, _neu, _schluesselGetippt, ...r }) =>
         (r.art === 'felder' ? { ...r, felder: e.felder.filter((f) => f._register === r.key).map((f) => f.key) } : r)),
-      trefferliste: e.trefferliste.flatMap((k) => (k.startsWith('feld:') ? e.felder.filter((f) => `feld:${f._uid}` === k).map((f) => f.key) : [k])),
+      trefferliste: e.trefferliste.flatMap((k) => (k.startsWith('feld:') ? e.felder.filter((f) => `feld:${f._uid}` === k && f.typ !== 'passwort').map((f) => f.key) : [k])),
     };
     try {
       const t = neu ? await api.typAnlegen({ ...daten, sichtAnlegen }) : await api.typAendern(e.id, daten);
@@ -287,6 +288,7 @@ function FeldZeile(p: {
       <textarea id={id('optionen')} rows={4} defaultValue={(f.optionen ?? []).join('\n')} onBlur={(e) => setze({ optionen: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) })} /></label>
     <div className="eigenschaft unten">{haken('mehrfach', 'Mehrfachauswahl', 'Mehrere Werte gleichzeitig wählbar')}</div>
   </div>;
+  else if (f.typ === 'passwort') besonders = <p className="leise klein">Wird verschlüsselt gespeichert und erscheint nie im Titel, in der Trefferliste, in der Suche oder in Demo-Daten. Anzeigen lässt es sich nur einzeln über das Auge; das steht im Protokoll.</p>;
   else if (f.typ === 'referenz') besonders = <div className="raster">
     <label className="eigenschaft" htmlFor={id('ziel')}><span>Verweist auf Mappen vom Typ</span>
       <select id={id('ziel')} value={f.zielTyp ?? ''} onChange={(e) => setze({ zielTyp: e.target.value })}>
@@ -412,7 +414,8 @@ function TitelEditor({ e, setze }: { e: Entwurf; setze: (v: string) => void }) {
           placeholder={automatisch ? `leer = ${automatisch}` : 'z. B. {verwendungszweck} vom {zahlungsdatum}'} /></label>
       <div className="chipwahl">
         <span className="leise klein">Einsetzen:</span>
-        {felder.map((f) => <button key={f.key} type="button" className="chipknopf" onClick={() => einsetzen(f.key)}>{f.label || f.key}</button>)}
+        {/* Passwörter nie im Titel (#46). */}
+        {felder.filter((f) => f.typ !== 'passwort').map((f) => <button key={f.key} type="button" className="chipknopf" onClick={() => einsetzen(f.key)}>{f.label || f.key}</button>)}
         {Object.entries(INDEXPLATZHALTER).map(([k, name]) => (
           <button key={k} type="button" className="chipknopf index" title={`Indexwert {${k}}: Datum, an dem die Mappe ${k === 'angelegt' ? 'angelegt' : 'zuletzt geändert'} wurde`} onClick={() => einsetzen(k)}>{name}</button>
         ))}
@@ -506,7 +509,11 @@ function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Ent
                 </div>
               </div>
               {r.art === 'felder' && <p className="leise klein">{anzahl ? `${anzahl} Feld${anzahl === 1 ? '' : 'er'}: ${e.felder.filter((f) => f._register === r.key).map((f) => f.label).join(', ')}` : 'Noch keine Felder.'}</p>}
-              {r.art === 'dokumente' && <p className="leise klein">Hier werden Dateien hochgeladen; PDFs und Bilder sind direkt ansehbar.</p>}
+              {r.art === 'dokumente' && <>
+                <p className="leise klein">Hier werden Dateien hochgeladen; PDFs und Bilder sind direkt ansehbar.</p>
+                <label className="haken"><input type="checkbox" checked={r.volltext !== false} onChange={(ev) => setzeReg(i, { volltext: ev.target.checked ? undefined : false })} />
+                  <span>Volltext erzeugen<small className="hilfe">Textebene von PDFs lesen und gescannte Seiten und Bilder durch die Texterkennung schicken, damit die Volltextsuche sie findet.</small></span></label>
+              </>}
               {r.art === 'verknuepfungen' && (
                 quellen.length === 0
                   ? <p className="leise klein">Noch verweist kein Referenzfeld auf diesen Mappentyp. Das Register zeigt alle Verweise, sobald es welche gibt.</p>
@@ -538,9 +545,10 @@ function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Ent
 function TrefferlisteEditor({ e, setze }: { e: Entwurf; setze: (t: string[]) => void }) {
   const name = (k: string) => (k.startsWith('feld:') ? e.felder.find((f) => `feld:${f._uid}` === k)?.label || '(Feld ohne Namen)' : SYSTEMSPALTEN[k as Systemspalte] ?? k);
   // Spalten gelöschter Felder fallen weg.
-  const liste = e.trefferliste.filter((k) => !k.startsWith('feld:') || e.felder.some((f) => `feld:${f._uid}` === k));
+  // Spalten gelöschter Felder und Passwortfelder (#46) fallen weg.
+  const liste = e.trefferliste.filter((k) => !k.startsWith('feld:') || e.felder.some((f) => `feld:${f._uid}` === k && f.typ !== 'passwort'));
   const verfuegbar = [
-    ...e.felder.map((f) => ({ k: `feld:${f._uid}`, n: f.label || f.key })),
+    ...e.felder.filter((f) => f.typ !== 'passwort').map((f) => ({ k: `feld:${f._uid}`, n: f.label || f.key })),
     ...(Object.keys(SYSTEMSPALTEN) as Systemspalte[]).filter((k) => k !== '_typ').map((k) => ({ k, n: SYSTEMSPALTEN[k] })),
   ].filter((x) => !liste.includes(x.k));
   const schiebe = (i: number, r: number) => {

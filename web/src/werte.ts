@@ -1,11 +1,14 @@
-import { leseZahl, type Betrag, type Feld, type Mappentyp, type Wert, type Werte } from '../../shared/src/model';
+import { istPasswortWert, leseZahl, type Betrag, type Feld, type Mappentyp, type Wert, type Werte } from '../../shared/src/model';
 
 /**
  * Formulare arbeiten mit Rohwerten (Texten, wie getippt). Erst beim Speichern
  * werden daraus die gespeicherten Werte: Zahlen, Beträge, Listen.
  */
 export type RohBetrag = { betrag: string; waehrung: string };
-export type Roh = string | boolean | string[] | RohBetrag;
+/** Passwortfeld (#46): gespeichert (ohne Wert), neu getippt oder zum Entfernen markiert. */
+export type RohPasswort = { gesetzt: boolean; lesbar: boolean; neu: string; entfernen: boolean };
+export type Roh = string | boolean | string[] | RohBetrag | RohPasswort;
+export const leeresPasswort: RohPasswort = { gesetzt: false, lesbar: true, neu: '', entfernen: false };
 export type RohWerte = Record<string, Roh>;
 
 const mitKomma = (n: number) => String(n).replace('.', ',');
@@ -18,6 +21,7 @@ export function zuRoh(f: Feld, v: Wert | undefined): Roh {
       return { betrag: b && typeof b.betrag === 'number' ? mitKomma(b.betrag) : '', waehrung: b?.waehrung || f.waehrung || 'EUR' };
     }
     case 'janein': return !!v;
+    case 'passwort': return istPasswortWert(v) ? { ...leeresPasswort, gesetzt: !!v.gesetzt, lesbar: v.lesbar !== false } : leeresPasswort;
     case 'auswahl':
     case 'referenz':
       if (f.mehrfach) return Array.isArray(v) ? v.map(String) : v ? [String(v)] : [];
@@ -36,6 +40,12 @@ export function ausRoh(f: Feld, r: Roh | undefined): Wert {
       return { betrag: n, waehrung: (b?.waehrung || 'EUR').trim().toUpperCase() };
     }
     case 'janein': return !!r;
+    case 'passwort': {
+      const p = (r ?? leeresPasswort) as RohPasswort;
+      if (p.neu) return { neu: p.neu };
+      if (p.entfernen || !p.gesetzt) return null;
+      return { gesetzt: true };
+    }
     case 'auswahl':
     case 'referenz':
       if (f.mehrfach) return (Array.isArray(r) ? r : []).filter(Boolean);
@@ -58,6 +68,7 @@ export function standardRoh(t: Mappentyp): RohWerte {
   for (const f of t.felder) {
     const s = f.standard;
     if (f.typ === 'janein') r[f.key] = s === true || s === 'true';
+    else if (f.typ === 'passwort') r[f.key] = leeresPasswort;
     else if (f.typ === 'betrag') r[f.key] = { betrag: s == null ? '' : String(s), waehrung: f.waehrung || 'EUR' };
     else if (f.mehrfach && (f.typ === 'auswahl' || f.typ === 'referenz')) r[f.key] = [];
     else r[f.key] = f.typ === 'referenz' || s == null ? '' : String(s);

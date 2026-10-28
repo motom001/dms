@@ -33,7 +33,11 @@ Wähle, wie das DMS für dich aussieht. **Standard** folgt dem Design, das der A
 
 ### API-Schlüssel
 
-Mit einem API-Schlüssel können andere Programme in deinem Namen auf das DMS zugreifen – etwa ein Scanner, der Dokumente direkt ablegt. Brauchst du das nicht, kannst du diesen Abschnitt übergehen. Wie das funktioniert, beschreibt das [Administratorhandbuch](https://motom001.github.io/dms/admin/api/).
+Mit einem API-Schlüssel können andere Programme in deinem Namen auf das DMS zugreifen – etwa ein Scanner, der Dokumente direkt ablegt. Brauchst du das nicht, kannst du diesen Abschnitt übergehen. Passwortfelder liefert ein Schlüssel nur, wenn du beim Erzeugen **Passwörter lesen** ankreuzt – setze das nur, wenn das Programm sie wirklich braucht. Wie das funktioniert, beschreibt das [Administratorhandbuch](https://motom001.github.io/dms/admin/api/).
+
+### Papierkorb
+
+**Beim Abmelden leeren** löscht deine gelöschten Mappen endgültig, sobald du dich abmeldest. Ohne den Haken bleiben sie so lange im [Papierkorb](ablage.md#papierkorb), wie der Administrator es eingestellt hat.
 
 ### Ansicht zurücksetzen
 

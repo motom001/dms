@@ -1,6 +1,6 @@
 import type { Design } from './design';
 import { messung } from './messung';
-import type { Benutzer, Dokument, Mappe, MappenBezug, Mappentyp, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung } from '../../shared/src/model';
+import type { Ausschnitt, Benutzer, Dokument, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Sicht, SichtDaten } from '../../shared/src/sichten';
 
 export class ApiFehler extends Error {
@@ -44,10 +44,29 @@ async function anfrage<T>(methode: string, url: string, body?: unknown): Promise
 
 export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string; titel: string }
 export type Bezuege = Record<string, MappenBezug>;
-export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege }
-export interface Zaehler { typen: Record<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number; sichten?: Record<string, number> }
+export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt> }
+/** Texterkennung (#45): Stand, Werkzeuge und Einstellungen für die Werkbank. */
+export interface OcrEinstellungen { aktiv: boolean; auftraege: number; maxSeiten: number; maxMB: number; sprachen: string; typen: Record<string, 'tesseract' | 'aus'> }
+export interface OcrStatus {
+  zaehler: Record<OcrStandArt, number>; laufend: number;
+  werkzeuge: { tesseract: string | null; sprachen: string[]; pdftotext: boolean; pdftoppm: boolean };
+  einstellungen: OcrEinstellungen; verfahren: Record<string, string>; dateitypen: Record<string, string>;
+}
+export interface Zaehler {
+  typen: Record<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number; sichten?: Record<string, number>;
+  /** Eigene Mappen im Papierkorb (#43); Tage 0 = kein Papierkorb. */
+  papierkorb?: number; papierkorbTage?: number;
+}
+/** Eine Mappe im Papierkorb (#43). */
+export interface PapierkorbEintrag {
+  id: string; typId: string; titel: string; werte: Werte; demo: boolean;
+  erstellt: string; erstelltVon: string | null; geaendert: string; geaendertVon: string | null;
+  geloescht: string; geloeschtVon: string | null; dokumente: number;
+}
 export interface KontoStatus {
   einrichtungNoetig: boolean; mail: boolean; benutzer: Benutzer | null;
+  /** Gibt es einen Schlüssel, um Passwörter zu speichern (#39, #46)? */
+  passwoerterMoeglich?: boolean;
   /** Ein Administrator agiert gerade als dieser Benutzer. */
   vertretung?: { adminName: string; beginn: string } | null;
   /** Wer hat als dieser Benutzer agiert (noch nicht gesehen)? */
@@ -84,9 +103,9 @@ export const api = {
   typAendern: (id: string, t: unknown) => anfrage<Mappentyp>('PUT', `/api/typen/${id}`, t),
   typLoeschen: (id: string) => anfrage<null>('DELETE', `/api/typen/${id}`),
   /** Eine Seite einer Sicht („eingang“ oder Typ-Id), nach Titel sortiert. */
-  seite: (sicht: string, von = 0, anzahl = 100, suche = '', sortierung?: Sortierung | null) =>
+  seite: (sicht: string, von = 0, anzahl = 100, suche = '', sortierung?: Sortierung | null, volltext = false) =>
     anfrage<Seite>('GET', `/api/mappen?${new URLSearchParams({
-      sicht, von: String(von), anzahl: String(anzahl), ...(suche ? { suche } : {}),
+      sicht, von: String(von), anzahl: String(anzahl), ...(suche ? { suche } : {}), ...(suche && volltext ? { volltext: 'true' } : {}),
       ...(sortierung ? { sortierung: sortierung.spalte, absteigend: String(sortierung.absteigend) } : {}),
     })}`),
   einstellungen: () => anfrage<Record<string, unknown>>('GET', '/api/konto/einstellungen'),
@@ -114,6 +133,22 @@ export const api = {
   mappeAnlegen: (m: unknown) => anfrage<Mappe>('POST', '/api/mappen', m),
   mappeAendern: (id: string, m: unknown) => anfrage<Mappe>('PUT', `/api/mappen/${id}`, m),
   mappeLoeschen: (id: string) => anfrage<null>('DELETE', `/api/mappen/${id}`),
+  /* Volltext und Texterkennung (#45) */
+  volltext: (id: string) => anfrage<{ id: string; name: string; text: string | null }>('GET', `/api/dokumente/${id}/volltext`),
+  texterkennungErneut: (id: string) => anfrage<Dokument>('POST', `/api/dokumente/${id}/texterkennung`),
+  texterkennung: (werkzeugeNeu = false) => anfrage<OcrStatus>('GET', `/api/werkbank/texterkennung${werkzeugeNeu ? '?neu' : ''}`),
+  texterkennungSpeichern: (e: Partial<OcrEinstellungen>) => anfrage<OcrStatus>('PUT', '/api/werkbank/texterkennung', e),
+  volltextNachholen: () => anfrage<{ eingereiht: number }>('POST', '/api/werkbank/wartung/volltext'),
+  /* Papierkorb (#43): Ablage = eigener, Werkbank = alle */
+  papierkorb: () => anfrage<PapierkorbEintrag[]>('GET', '/api/papierkorb'),
+  papierkorbWerkbank: () => anfrage<{ tage: number; eintraege: PapierkorbEintrag[] }>('GET', '/api/werkbank/papierkorb'),
+  papierkorbEintrag: (id: string, werkbank = false) => anfrage<PapierkorbEintrag>('GET', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}`),
+  wiederherstellen: (id: string, werkbank = false) => anfrage<{ mappe: Mappe; verweiseEntfallen: number }>('POST', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}/wiederherstellen`),
+  endgueltigLoeschen: (id: string, werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}`),
+  papierkorbLeeren: (werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb`),
+  papierkorbTage: (tage: number) => anfrage<{ tage: number; geleert: number }>('PUT', '/api/werkbank/papierkorb/einstellungen', { tage }),
+  /** Passwortfeld anzeigen (#46); steht im Protokoll. */
+  passwortAnzeigen: (mappeId: string, feld: string) => anfrage<{ wert: string }>('POST', `/api/mappen/${mappeId}/passwoerter/${encodeURIComponent(feld)}`),
   beispiele: () => anfrage<null>('POST', '/api/beispiele'),
   demoUebersicht: () => anfrage<Array<{ typId: string; name: string; demo: number; gesamt: number }>>('GET', '/api/werkbank/demo'),
   demoErzeugen: (anzahl: number) => anfrage<Auftrag>('POST', '/api/werkbank/demo', { anzahl }),
@@ -127,6 +162,8 @@ export const api = {
   versionsabgleich: (browser: Record<string, string>) => anfrage<Vergleich[]>('POST', '/api/werkbank/system/abgleich', { browser }),
   datenbankEinstellen: (e: MessEinstellungen) => anfrage<MessEinstellungen>('PUT', '/api/werkbank/datenbank', e),
   /* E-Mail-Versand und Adresse des DMS (#37) */
+  tresor: () => anfrage<TresorStatus>('GET', '/api/werkbank/tresor'),
+  tresorErzeugen: () => anfrage<TresorStatus>('POST', '/api/werkbank/tresor/erzeugen'),
   betrieb: () => anfrage<BetriebAnsicht>('GET', '/api/werkbank/betrieb'),
   mailSpeichern: (m: MailEingabe) => anfrage<BetriebAnsicht>('PUT', '/api/werkbank/betrieb/mail', m),
   adresseSpeichern: (adresse: string) => anfrage<BetriebAnsicht>('PUT', '/api/werkbank/betrieb/adresse', { adresse }),
@@ -179,15 +216,25 @@ export interface Systemuebersicht {
   einstellungen: Record<string, string>;
 }
 export interface Vergleich { komponente: string; installiert: string | null; aktuell: string | null; status: 'aktuell' | 'neuer' | 'veraltet' | 'unbekannt'; hinweis?: string; quelle: string }
-export interface ApiSchluessel { id: string; name: string; praefix: string; recht: 'lesen' | 'schreiben'; ablauf: string | null; erstellt: string; zuletztBenutzt: string | null }
-export interface ApiSchluesselEingabe { name: string; recht: 'lesen' | 'schreiben'; ablauf: string | null }
+export interface ApiSchluessel { id: string; name: string; praefix: string; recht: 'lesen' | 'schreiben'; passwoerter: boolean; ablauf: string | null; erstellt: string; zuletztBenutzt: string | null }
+export interface ApiSchluesselEingabe { name: string; recht: 'lesen' | 'schreiben'; passwoerter: boolean; ablauf: string | null }
 
 export type Verbindung = 'starttls' | 'ssl' | 'keine';
 export interface MailAnsicht {
   aktiv: boolean; host: string; port: number; verbindung: Verbindung; benutzer: string; absender: string; selbstsigniert: boolean;
   /** Das Passwort selbst kommt nie zurück. */
   passwortGesetzt: boolean;
+  /** false = mit einem verlorenen Schlüssel verschlüsselt (#39). */
+  passwortLesbar: boolean;
+  /** Noch im Klartext aus einer älteren Version, bis es einen Schlüssel gibt. */
+  passwortUnverschluesselt: boolean;
 }
-export type MailEingabe = Omit<MailAnsicht, 'passwortGesetzt'> & { passwort?: string; passwortLoeschen?: boolean };
-export interface BetriebAnsicht { mail: MailAnsicht; adresse: string; vorschlag: string | null; verbindungen: Record<Verbindung, string> }
+export type MailEingabe = Omit<MailAnsicht, 'passwortGesetzt' | 'passwortLesbar' | 'passwortUnverschluesselt'> & { passwort?: string; passwortLoeschen?: boolean };
+export interface BetriebAnsicht { mail: MailAnsicht; adresse: string; vorschlag: string | null; verbindungen: Record<Verbindung, string>; passwoerterMoeglich: boolean }
+export interface TresorStatus {
+  zustand: 'vorhanden' | 'fehlt' | 'verloren' | 'falsch';
+  fingerabdruck: string | null; erwartet: string | null; erstellt: string | null; datei: string;
+  eingebunden: boolean | null;
+  betroffen: Array<{ bereich: string; was: string; wo?: string }>;
+}
 export interface Probe { ok: boolean; meldung: string }

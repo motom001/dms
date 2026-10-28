@@ -16,6 +16,8 @@ import { istUuid } from './repo';
 export type Recht = 'lesen' | 'schreiben';
 export interface ApiSchluessel {
   id: string; benutzerId: string; name: string; praefix: string; recht: Recht;
+  /** Eigenes Recht „Passwörter lesen“ (#46): ?passwoerter=anzeigen liefert Passwortfelder im Klartext. */
+  passwoerter: boolean;
   ablauf: string | null; erstellt: string; zuletztBenutzt: string | null;
 }
 export interface ApiSchluesselRepo {
@@ -23,7 +25,7 @@ export interface ApiSchluesselRepo {
   hole(id: string): Promise<ApiSchluessel | undefined>;
   zuHash(hash: string): Promise<ApiSchluessel | undefined>;
   lege(s: ApiSchluessel & { hash: string }): Promise<void>;
-  aendere(id: string, d: Pick<ApiSchluessel, 'name' | 'recht' | 'ablauf'>): Promise<ApiSchluessel>;
+  aendere(id: string, d: Pick<ApiSchluessel, 'name' | 'recht' | 'ablauf' | 'passwoerter'>): Promise<ApiSchluessel>;
   loesche(id: string): Promise<void>;
   benutzt(id: string): Promise<void>;
 }
@@ -31,7 +33,7 @@ export interface ApiSchluesselRepo {
 export const PRAEFIX = 'dms_';
 const sichtbar = (s: string) => `${s.slice(0, PRAEFIX.length + 6)}…`;
 
-function daten(e: unknown): Pick<ApiSchluessel, 'name' | 'recht' | 'ablauf'> {
+function daten(e: unknown): Pick<ApiSchluessel, 'name' | 'recht' | 'ablauf' | 'passwoerter'> {
   const x = (e ?? {}) as Record<string, unknown>;
   const name = String(x.name ?? '').trim().slice(0, 80);
   if (!name) throw new Fachfehler(422, 'Bitte einen Namen angeben, z. B. „Scanner Büro“.');
@@ -44,7 +46,7 @@ function daten(e: unknown): Pick<ApiSchluessel, 'name' | 'recht' | 'ablauf'> {
     if (t < Date.now()) throw new Fachfehler(422, 'Das Ablaufdatum liegt in der Vergangenheit.');
     ablauf = new Date(t).toISOString();
   }
-  return { name, recht, ablauf };
+  return { name, recht, ablauf, passwoerter: x.passwoerter === true };
 }
 
 export class ApiSchluesselDienst {
@@ -113,18 +115,18 @@ export function pgApiSchluesselRepo(sql: postgres.Sql): ApiSchluesselRepo {
   const iso = (v: unknown) => (v ? (v as Date).toISOString() : null);
   const als = (r: Record<string, unknown>): ApiSchluessel => ({
     id: r.id as string, benutzerId: r.benutzer_id as string, name: r.name as string, praefix: r.praefix as string,
-    recht: r.recht as Recht, ablauf: iso(r.ablauf), erstellt: iso(r.erstellt)!, zuletztBenutzt: iso(r.zuletzt_benutzt),
+    recht: r.recht as Recht, passwoerter: r.passwoerter === true, ablauf: iso(r.ablauf), erstellt: iso(r.erstellt)!, zuletztBenutzt: iso(r.zuletzt_benutzt),
   });
   return {
     async liste(b) { return istUuid(b) ? (await sql`SELECT * FROM api_schluessel WHERE benutzer_id = ${b} ORDER BY erstellt`).map(als) : []; },
     async hole(id) { const [r] = await sql`SELECT * FROM api_schluessel WHERE id = ${id}`; return r ? als(r) : undefined; },
     async zuHash(h) { const [r] = await sql`SELECT * FROM api_schluessel WHERE hash = ${h}`; return r ? als(r) : undefined; },
     async lege(s) {
-      await sql`INSERT INTO api_schluessel (id, benutzer_id, name, praefix, hash, recht, ablauf)
-        VALUES (${s.id}, ${s.benutzerId}, ${s.name}, ${s.praefix}, ${s.hash}, ${s.recht}, ${s.ablauf})`;
+      await sql`INSERT INTO api_schluessel (id, benutzer_id, name, praefix, hash, recht, passwoerter, ablauf)
+        VALUES (${s.id}, ${s.benutzerId}, ${s.name}, ${s.praefix}, ${s.hash}, ${s.recht}, ${s.passwoerter}, ${s.ablauf})`;
     },
     async aendere(id, d) {
-      const [r] = await sql`UPDATE api_schluessel SET name = ${d.name}, recht = ${d.recht}, ablauf = ${d.ablauf} WHERE id = ${id} RETURNING *`;
+      const [r] = await sql`UPDATE api_schluessel SET name = ${d.name}, recht = ${d.recht}, passwoerter = ${d.passwoerter}, ablauf = ${d.ablauf} WHERE id = ${id} RETURNING *`;
       return als(r);
     },
     async loesche(id) { await sql`DELETE FROM api_schluessel WHERE id = ${id}`; },

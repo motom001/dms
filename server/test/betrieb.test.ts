@@ -9,6 +9,18 @@ import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { kontext } from '../src/protokoll';
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { Tresor } from '../src/tresor';
+
+/** Tresor mit eigener Schlüsseldatei in einem frischen Ordner. */
+async function tresorMit(schluessel: boolean, speicher = speicherBetrieb()) {
+  const t = new Tresor(speicher, join(await mkdtemp(join(tmpdir(), 'dms-tresor-')), 'geheim', 'dms.schluessel'), () => null);
+  await t.laden();
+  if (schluessel) await t.erzeuge();
+  return t;
+}
 
 /** Minimaler SMTP-Server: nimmt alles an, merkt sich die Mails; optional mit Anmeldung. */
 function smtpServer(opt: { passwort?: string } = {}) {
@@ -100,21 +112,71 @@ describe('E-Mail-Versand (#37)', () => {
     assert.match(ohne.link!, /^http:\/\/nas:8080\/passwort\//);
   });
 
-  it('gibt das Passwort nie heraus und behält es bei leerem Feld', async () => {
+  it('speichert Passwörter nur mit Schlüssel, verschlüsselt, gibt sie nie heraus und behält sie bei leerem Feld', async () => {
     const speicher = speicherBetrieb();
-    const b = new Betrieb(speicher);
+    const ohneSchluessel = new Betrieb(speicher, undefined, await tresorMit(false));
+    await ohneSchluessel.laden();
+    assert.equal(ohneSchluessel.ansicht().passwoerterMoeglich, false);
+    await assert.rejects(ohneSchluessel.speichereMail({ ...ohneAnmeldung(portPw), benutzer: 'dms', passwort: 'geheim' }), /Schlüssel/);
+    assert.equal(await speicher.lies('mail'), null, 'ohne Schlüssel wird nichts gespeichert');
+    assert.equal((await ohneSchluessel.pruefeVerbindung({ ...ohneAnmeldung(portPw), benutzer: 'dms', passwort: 'geheim' })).ok, true, 'Prüfen geht auch ohne Schlüssel');
+
+    const t = await tresorMit(true);
+    const b = new Betrieb(speicher, undefined, t);
     await b.laden();
     const a = await b.speichereMail({ ...ohneAnmeldung(portPw), verbindung: 'keine', benutzer: 'dms', passwort: 'geheim' });
     assert.equal(a.mail.passwortGesetzt, true);
+    assert.equal(a.passwoerterMoeglich, true);
     assert.ok(!JSON.stringify(a).includes('geheim'));
+    const gespeichert = ((await speicher.lies('mail')) as { passwort: string }).passwort;
+    assert.match(gespeichert, /^dms1\$/, 'verschlüsselt gespeichert');
+    assert.ok(!gespeichert.includes('geheim'));
     await b.speichereMail({ ...ohneAnmeldung(portPw), benutzer: 'dms', passwort: '' });
-    assert.equal(((await speicher.lies('mail')) as { passwort: string }).passwort, 'geheim', 'leeres Feld behält das Passwort');
+    assert.equal(((await speicher.lies('mail')) as { passwort: string }).passwort, gespeichert, 'leeres Feld behält das Passwort');
     assert.equal((await b.pruefeVerbindung({ ...ohneAnmeldung(portPw), benutzer: 'dms' })).ok, true, 'Prüfen nimmt das gespeicherte Passwort');
     const falsch = await b.pruefeVerbindung({ ...ohneAnmeldung(portPw), benutzer: 'dms', passwort: 'falsch' });
     assert.equal(falsch.ok, false);
     assert.match(falsch.meldung, /Anmeldung abgelehnt/);
     await b.speichereMail({ ...ohneAnmeldung(portPw), benutzer: 'dms', passwortLoeschen: true });
     assert.equal(b.ansicht().mail.passwortGesetzt, false);
+  });
+
+  it('verschlüsselt ein Klartext-Passwort aus älteren Ständen, sobald es einen Schlüssel gibt', async () => {
+    const speicher = speicherBetrieb();
+    await speicher.schreibe('mail', { ...ohneAnmeldung(portPw), aktiv: true, verbindung: 'keine', benutzer: 'dms', passwort: 'geheim' });
+    const t = await tresorMit(false);
+    const b = new Betrieb(speicher, undefined, t);
+    await b.laden();
+    assert.equal(b.ansicht().mail.passwortUnverschluesselt, true);
+    assert.equal((await t.status()).betroffen.length, 1, 'die Werkbank nennt das Passwort');
+    assert.equal((await b.pruefeVerbindung({ ...ohneAnmeldung(portPw), benutzer: 'dms' })).ok, true, 'funktioniert weiter');
+    await t.erzeuge();
+    const gespeichert = ((await speicher.lies('mail')) as { passwort: string }).passwort;
+    assert.match(gespeichert, /^dms1\$/);
+    assert.equal(b.ansicht().mail.passwortUnverschluesselt, false);
+    assert.deepEqual((await t.status()).betroffen, []);
+    assert.equal((await b.pruefeVerbindung({ ...ohneAnmeldung(portPw), benutzer: 'dms' })).ok, true, 'und weiter mit dem entschlüsselten Passwort');
+  });
+
+  it('meldet ein Passwort, das mit einem verlorenen Schlüssel verschlüsselt ist', async () => {
+    const speicher = speicherBetrieb();
+    const t = await tresorMit(true, speicher);
+    const b = new Betrieb(speicher, undefined, t);
+    await b.laden();
+    await b.speichereMail({ ...ohneAnmeldung(portPw), benutzer: 'dms', passwort: 'geheim' });
+    // Schlüsseldatei weg: neuer Tresor ohne Datei, aber mit dem Fingerabdruck in den Einstellungen.
+    const ohne = new Tresor(speicher, join(await mkdtemp(join(tmpdir(), 'dms-tresor-')), 'weg.schluessel'), () => null);
+    await ohne.laden();
+    assert.equal(ohne.zustand, 'verloren');
+    const b2 = new Betrieb(speicher, undefined, ohne);
+    await b2.laden();
+    await ohne.erzeuge();
+    assert.equal(b2.ansicht().mail.passwortLesbar, false);
+    const st = await ohne.status();
+    assert.equal(st.zustand, 'vorhanden');
+    assert.deepEqual(st.betroffen.map((x) => x.was), ['Passwort des Mailservers']);
+    await b2.speichereMail({ ...ohneAnmeldung(portPw), benutzer: 'dms', passwort: 'neu' });
+    assert.deepEqual((await ohne.status()).betroffen, []);
   });
 
   it('prüft die Verbindung und schickt Testmails mit den Werten aus dem Formular', async () => {

@@ -1,6 +1,6 @@
-import type { Dokument, Mappe, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
+import { TREFFER_ANFANG, TREFFER_ENDE, type Ausschnitt, type Dokument, type Mappe, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
 import { inSicht, type Sicht, type SichtDaten, type Zaehlquelle } from '../../shared/src/sichten';
-import type { Repo, Rueckverweis, SortierungIntern, Verweis } from './repo';
+import type { PapierkorbEintrag, Repo, Rueckverweis, SortierungIntern, Verweis } from './repo';
 
 /** Repo im Arbeitsspeicher – für Tests und Oberflächenproben, nicht für den Betrieb. */
 export function speicherRepo(): Repo {
@@ -9,6 +9,18 @@ export function speicherRepo(): Repo {
   const verweise = new Map<string, Verweis[]>();
   const dokumente = new Map<string, Dokument>();
   const sichten = new Map<string, Sicht>();
+  /** Volltext je Dokument (#45). */
+  const texte = new Map<string, string | null>();
+  /** Grob wie die deutsche Volltextsuche: alle Wörter kommen vor (ohne Groß-/Kleinschreibung). */
+  const woerter = (q: string) => q.toLowerCase().split(/\s+/).filter(Boolean);
+  const findet = (text: string | null | undefined, q: string) => !!text && woerter(q).every((w) => text.toLowerCase().includes(w));
+  /** Papierkorb (#43): Mappe mit ihren Verweisen und Dokumenten, wie beim Löschen. */
+  const korb = new Map<string, { mappe: Mappe; verweise: Verweis[]; dokumente: Dokument[]; geloescht: string; geloeschtVon: string | null }>();
+  const alsEintrag = (k: { mappe: Mappe; dokumente: Dokument[]; geloescht: string; geloeschtVon: string | null }): PapierkorbEintrag => ({
+    id: k.mappe.id, typId: k.mappe.typId, titel: k.mappe.titel ?? '', werte: kopie(k.mappe.werte), demo: !!k.mappe.demo,
+    erstellt: k.mappe.erstellt, erstelltVon: k.mappe.erstelltVon, geaendert: k.mappe.geaendert, geaendertVon: k.mappe.geaendertVon,
+    geloescht: k.geloescht, geloeschtVon: k.geloeschtVon, dokumente: k.dokumente.length,
+  });
   /** Zählt wie PostgreSQL: Dokumente je Register, Rückverweise (ohne sich selbst) je Quelle. */
   const zaehl: Zaehlquelle = {
     dokumente: (id, register) => [...dokumente.values()].filter((d) => d.mappeId === id && d.registerKey === register).length,
@@ -109,9 +121,21 @@ export function speicherRepo(): Repo {
         .filter((m) => !o.typId || m.typId === o.typId)
         .filter((m) => !o.klauseln || inSicht(m, o.klauseln, zaehl))
         .filter((m) => !o.eingang || (m.passt !== true && (m.erstelltVon === o.eingang.benutzerId || (o.eingang.admin && !m.erstelltVon))))
-        .filter((m) => !q || (m.titel ?? '').toLowerCase().includes(q) || Object.values(m.werte).some((v) => (typeof v === 'object' ? JSON.stringify(v) : String(v)).toLowerCase().includes(q)))
+        .filter((m) => !q || (m.titel ?? '').toLowerCase().includes(q) || Object.values(m.werte).some((v) => !(typeof v === 'string' && v.startsWith('dms1$')) && (typeof v === 'object' ? JSON.stringify(v) : String(v)).toLowerCase().includes(q))
+          || (!!o.volltext && [...dokumente.values()].some((d) => d.mappeId === m.id && findet(texte.get(d.id), q))))
         .sort((a, b) => vergleiche(a, b, o.sortierung) || (a.titel ?? '').toLowerCase().localeCompare((b.titel ?? '').toLowerCase()) || a.id.localeCompare(b.id));
-      return { gesamt: alle.length, mappen: alle.slice(o.von, o.von + o.anzahl).map(kopie) };
+      const seite = alle.slice(o.von, o.von + o.anzahl).map(kopie);
+      if (!o.volltext || !q) return { gesamt: alle.length, mappen: seite };
+      const ausschnitte: Record<string, Ausschnitt> = {};
+      for (const m of seite) {
+        const d = [...dokumente.values()].find((x) => x.mappeId === m.id && findet(texte.get(x.id), q));
+        if (!d) continue;
+        const text = texte.get(d.id)!;
+        const w = woerter(q)[0];
+        const i = text.toLowerCase().indexOf(w);
+        ausschnitte[m.id] = { dokument: d.name, text: `${text.slice(Math.max(0, i - 40), i)}${TREFFER_ANFANG}${text.slice(i, i + w.length)}${TREFFER_ENDE}${text.slice(i + w.length, i + w.length + 40)}` };
+      }
+      return { gesamt: alle.length, mappen: seite, ausschnitte };
     },
     async zaehler(benutzerId, admin) {
       const typen = new Map<string, { anzahl: number; unpassend: number; demo: number }>();
@@ -164,8 +188,41 @@ export function speicherRepo(): Repo {
 
     async listeDokumente(mappeId) { return [...dokumente.values()].filter((d) => d.mappeId === mappeId).map(kopie).reverse(); },
     async holeDokument(id) { const d = dokumente.get(id); return d && kopie(d); },
-    async legeDokumentAn(d) { dokumente.set(d.id, kopie(d)); return kopie(d); },
+    async legeDokumentAn(d) { const n = { ...kopie(d), ocr: d.ocr ?? { stand: 'keiner' as const } }; dokumente.set(d.id, n); return kopie(n); },
     async loescheDokument(id) { dokumente.delete(id); },
+    async ocrEinreihen(ids) { for (const id of ids) { const d = dokumente.get(id); if (d) d.ocr = { stand: 'wartet' }; } },
+    async ocrNaechster() {
+      const d = [...dokumente.values()].filter((x) => x.ocr?.stand === 'wartet').sort((a, b) => a.erstellt.localeCompare(b.erstellt))[0];
+      if (!d) return undefined;
+      d.ocr = { ...d.ocr!, stand: 'laeuft', zeit: jetzt() };
+      return kopie(d);
+    },
+    async ocrSetze(id, e) {
+      const d = dokumente.get(id);
+      if (!d) return;
+      d.ocr = { stand: e.stand, info: e.info ?? null, seiten: e.seiten ?? null, zeit: jetzt() };
+      if (e.text !== undefined) texte.set(id, e.text);
+    },
+    async ocrVonSha(sha, ausser) {
+      const d = [...dokumente.values()].find((x) => x.sha256 === sha && x.id !== ausser && x.ocr?.stand === 'fertig' && texte.get(x.id) != null);
+      return d ? { text: texte.get(d.id)!, seiten: d.ocr?.seiten ?? null, info: d.ocr?.info ?? null } : undefined;
+    },
+    async ocrZurueckstellen() {
+      let n = 0;
+      for (const d of dokumente.values()) if (d.ocr?.stand === 'laeuft') { d.ocr = { ...d.ocr, stand: 'wartet' }; n++; }
+      return n;
+    },
+    async ocrZaehler() {
+      const z = { keiner: 0, wartet: 0, laeuft: 0, fertig: 0, fehler: 0, ausgelassen: 0 };
+      for (const d of dokumente.values()) z[d.ocr?.stand ?? 'keiner']++;
+      return z;
+    },
+    async ocrOhneVolltext() {
+      return [...dokumente.values()].filter((d) => (d.ocr?.stand ?? 'keiner') === 'keiner' && mappen.has(d.mappeId))
+        .map((d) => ({ id: d.id, typId: mappen.get(d.mappeId)!.typId, registerKey: d.registerKey }));
+    },
+    async volltext(id) { return texte.get(id) ?? null; },
+
     async dokumenteMitSha(sha) { return [...dokumente.values()].filter((d) => d.sha256 === sha).map(kopie); },
     async zaehleDemo() {
       const r = new Map<string, number>();
@@ -181,7 +238,45 @@ export function speicherRepo(): Repo {
       const weg = [...mappen.values()].filter((m) => m.demo).map((m) => m.id);
       const dateien = [...new Set([...dokumente.values()].filter((d) => weg.includes(d.mappeId)).map((d) => d.sha256))];
       for (const id of weg) await this.loescheMappe(id);
-      return { anzahl: weg.length, dateien };
+      const imKorb = [...korb.values()].filter((k) => k.mappe.demo);
+      for (const k of imKorb) { korb.delete(k.mappe.id); for (const d of k.dokumente) if (!dateien.includes(d.sha256)) dateien.push(d.sha256); }
+      return { anzahl: weg.length + imKorb.length, dateien };
+    },
+
+    async legeInPapierkorb(id, benutzerId) {
+      const m = mappen.get(id);
+      if (!m) return;
+      korb.set(id, {
+        mappe: kopie(m), verweise: kopie(verweise.get(id) ?? []), dokumente: [...dokumente.values()].filter((d) => d.mappeId === id).map(kopie),
+        geloescht: jetzt(), geloeschtVon: benutzerId,
+      });
+      await this.loescheMappe(id);
+    },
+    async papierkorb(f = {}) {
+      return [...korb.values()]
+        .filter((k) => (!f.von || k.geloeschtVon === f.von) && (!f.vor || k.geloescht < f.vor) && (!f.typId || k.mappe.typId === f.typId))
+        .sort((a, b) => b.geloescht.localeCompare(a.geloescht) || a.mappe.id.localeCompare(b.mappe.id))
+        .map(alsEintrag);
+    },
+    async holeAusPapierkorb(id) { const k = korb.get(id); return k && alsEintrag(k); },
+    async stelleWiederHer(id) {
+      const k = korb.get(id);
+      if (!k) return { verweiseEntfallen: 0 };
+      mappen.set(id, kopie(k.mappe));
+      const bleiben = k.verweise.filter((v) => mappen.has(v.zielId));
+      verweise.set(id, bleiben);
+      for (const d of k.dokumente) dokumente.set(d.id, kopie(d));
+      korb.delete(id);
+      return { verweiseEntfallen: k.verweise.length - bleiben.length };
+    },
+    async leerePapierkorb(ids) {
+      const dateien = new Set<string>();
+      for (const id of ids) { const k = korb.get(id); if (!k) continue; for (const d of k.dokumente) dateien.add(d.sha256); korb.delete(id); }
+      return [...dateien];
+    },
+    async zaehlePapierkorb(von) { return [...korb.values()].filter((k) => !von || k.geloeschtVon === von).length; },
+    async dateiBenutzt(sha) {
+      return [...dokumente.values()].some((d) => d.sha256 === sha) || [...korb.values()].some((k) => k.dokumente.some((d) => d.sha256 === sha));
     },
     async dokumenteJeRegister(typId) {
       const r = new Map<string, number>();

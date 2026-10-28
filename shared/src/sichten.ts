@@ -41,6 +41,8 @@ export const OPERATOREN_JE_ART: Record<Feldart, Operator[]> = {
   auswahl: ['einerVon', 'leer', 'nichtLeer'],
   referenz: ['zeigtAuf', 'leer', 'nichtLeer'],
   person: ['zeigtAuf', 'leer'],
+  // Passwörter taugen nicht für Bedingungen (#46).
+  passwort: [],
 };
 
 export const EINHEITEN = { tage: 'Tage', wochen: 'Wochen', monate: 'Monate', jahre: 'Jahre' } as const;
@@ -147,7 +149,7 @@ const SYSTEMFELDER: Bedingungsfeld[] = [
 export function bedingungsfelder(typen: Array<Pick<Mappentyp, 'felder'>>): Bedingungsfeld[] {
   if (!typen.length) return SYSTEMFELDER;
   const [erster, ...rest] = typen;
-  const gemeinsam = erster.felder.filter((f) => rest.every((t) => t.felder.some((g) => g.key === f.key && g.typ === f.typ && (f.typ !== 'referenz' || g.zielTyp === f.zielTyp))));
+  const gemeinsam = erster.felder.filter((f) => f.typ !== 'passwort' && rest.every((t) => t.felder.some((g) => g.key === f.key && g.typ === f.typ && (f.typ !== 'referenz' || g.zielTyp === f.zielTyp))));
   return [...gemeinsam.map((f) => ({ key: f.key, label: f.label, art: f.typ as Feldart, feld: f })), ...SYSTEMFELDER];
 }
 

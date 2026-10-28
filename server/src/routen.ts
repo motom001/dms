@@ -13,6 +13,8 @@ import type { Messung } from './messung';
 import { eigeneVersion, uebersicht, versionsabgleich, type SystemQuelle } from './system';
 import { MODULE, protokoll, STUFEN, type Stufe } from './protokoll';
 import type { Betrieb } from './betrieb';
+import { maskiere, type Tresor } from './tresor';
+import type { Texterkennung } from './texterkennung';
 
 const L = {
   konto: protokoll.modul('konto'), ablage: protokoll.modul('ablage'), werkbank: protokoll.modul('werkbank'),
@@ -82,6 +84,10 @@ export interface RoutenExtras {
   betrieb?: Betrieb;
   /** Designs der Oberfläche (#21). */
   designs?: Designs;
+  /** Schlüssel für verschlüsselte Zugangsdaten (#39). */
+  tresor?: Tresor;
+  /** Texterkennung und Volltext (#45). */
+  texterkennung?: Texterkennung;
   /** API-Schlüssel (#20). */
   apiSchluessel?: ApiSchluesselDienst;
   /** Für Tests: Abruf fremder Adressen beim Versionsabgleich. */
@@ -95,7 +101,19 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const log = x.log ?? ((m: string) => L.mail.warn(m));
   const typName = async (id: string) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? id;
   const betrieb = () => { if (!x.betrieb) throw new Fachfehler(404, 'Betriebseinstellungen sind nicht eingerichtet.'); return x.betrieb; };
+  const ocr = () => { if (!x.texterkennung) throw new Fachfehler(404, 'Die Texterkennung ist nicht eingerichtet.'); return x.texterkennung; };
+  const tresor = () => { if (!x.tresor) throw new Fachfehler(404, 'Die Verschlüsselung ist nicht eingerichtet.'); return x.tresor; };
   const schluessel = () => { if (!x.apiSchluessel) throw new Fachfehler(404, 'API-Schlüssel sind nicht eingerichtet.'); return x.apiSchluessel; };
+  /**
+   * ?passwoerter=anzeigen (#46): nur mit einem API-Schlüssel, der das Recht „Passwörter lesen“ hat.
+   * Liefert den Namen des Schlüssels fürs Protokoll, sonst null.
+   */
+  const passwoerterAnzeigen = (a: Anfrage): string | null => {
+    if (a.query.passwoerter === undefined) return null;
+    if (a.query.passwoerter !== 'anzeigen') throw new Fachfehler(422, '„passwoerter“ kennt nur den Wert „anzeigen“.');
+    if (!a.apiSchluessel?.passwoerter) throw new Fachfehler(403, 'Passwörter liefert die API nur mit einem API-Schlüssel, der das Recht „Passwörter lesen“ hat.');
+    return a.apiSchluessel.name;
+  };
   /** Benutzer mit ihren weiteren Rollen (#27). */
   const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.weitereRollen()).get(b.id) ?? [] });
   const intern: Route[] = [
@@ -106,6 +124,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       einrichtungNoetig: await konten.einrichtungNoetig(),
       mail: konten.mailAktiv,
       benutzer: a.benutzer ?? null,
+      // Ohne Schlüssel (Werkbank → Verschlüsselung) lassen sich keine Passwörter speichern (#39, #46).
+      passwoerterMoeglich: dienst.passwoerterMoeglich,
       // Ein Administrator agiert gerade als dieser Benutzer:
       vertretung: await konten.vertretungZu(a.sitzungsDaten),
       // Hinweise für den Benutzer selbst (nicht, solange jemand als er agiert):
@@ -135,6 +155,10 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
     { methode: 'POST', pfad: '/api/konto/abmelden', zugang: 'offen', handler: async (a) => {
+      // Papierkorb beim Abmelden leeren, wenn im Profil so eingestellt (#43) – nicht, solange ein Administrator vertritt.
+      if (a.benutzer && !a.sitzungsDaten?.vertretungId && (await konten.einstellungen(a.benutzer)).papierkorb_beim_abmelden === true) {
+        await dienst.leerePapierkorb(a.benutzer).catch((e) => L.ablage.warn('Papierkorb beim Abmelden nicht geleert', { fehler: (e as Error).message }));
+      }
       await konten.abmelden(a.sitzung);
       if (a.benutzer) L.konto.info('Abgemeldet', { email: a.benutzer.email });
       return { status: 204, sitzungSetzen: null };
@@ -310,6 +334,14 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
 
     /* ---------- Technik und Versionen ---------- */
     /* ---------- E-Mail-Versand und Adresse (#37) ---------- */
+    /* ---------- Texterkennung und Wartungsoperationen (#45) ---------- */
+    { methode: 'GET', pfad: '/api/werkbank/texterkennung', zugang: 'admin', handler: async (a) => ok(await ocr().status(a.query.neu !== undefined)) },
+    { methode: 'PUT', pfad: '/api/werkbank/texterkennung', zugang: 'admin', handler: async (a) => { await ocr().speichere(a.body); return ok(await ocr().status()); } },
+    { methode: 'POST', pfad: '/api/werkbank/wartung/volltext', zugang: 'admin', handler: async () => ok({ eingereiht: await dienst.volltextNachholen() }) },
+
+    /* ---------- Verschlüsselung (#39) ---------- */
+    { methode: 'GET', pfad: '/api/werkbank/tresor', zugang: 'admin', handler: async () => ok(await tresor().status()) },
+    { methode: 'POST', pfad: '/api/werkbank/tresor/erzeugen', zugang: 'admin', handler: async () => ok(await tresor().erzeuge()) },
     { methode: 'GET', pfad: '/api/werkbank/betrieb', zugang: 'admin', handler: async () => ok(betrieb().ansicht()) },
     { methode: 'PUT', pfad: '/api/werkbank/betrieb/mail', zugang: 'admin', handler: async (a) => ok(await betrieb().speichereMail(b(a))) },
     { methode: 'PUT', pfad: '/api/werkbank/betrieb/adresse', zugang: 'admin', handler: async (a) => ok(await betrieb().speichereAdresse(b(a).adresse)) },
@@ -343,11 +375,15 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     /* ---------- Mappen ---------- */
     // Mit ?sicht=… seitenweise (von, anzahl, suche); ohne: alle Mappen (für Skripte und Tests).
     { methode: 'GET', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => {
-      if (!a.query.sicht) return ok(await dienst.listeMappen(a.query.typ));
+      const klartext = passwoerterAnzeigen(a);
+      if (!a.query.sicht) {
+        const liste = await dienst.listeMappen(a.query.typ);
+        return ok(klartext ? await dienst.entschluesselePasswoerter(liste, klartext) : liste);
+      }
       const start = Date.now();
       const s = await dienst.seite(ich(a), a.query);
       L.ablage.debug('Sicht geladen', { sicht: a.query.sicht, von: s.von, anzahl: s.mappen.length, gesamt: s.gesamt, suche: a.query.suche, ms: Date.now() - start });
-      return ok(s);
+      return ok(klartext ? { ...s, mappen: await dienst.entschluesselePasswoerter(s.mappen, klartext) } : s);
     } },
     { methode: 'GET', pfad: '/api/sichten', zugang: 'angemeldet', handler: async (a) => ok(await dienst.zaehler(ich(a))) },
 
@@ -371,7 +407,13 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'PUT', pfad: '/api/sichten/reihenfolge', zugang: 'admin', handler: async (a) => ok(await dienst.ordneSichten(b(a).elternId, b(a).ids)) },
     { methode: 'POST', pfad: '/api/sichten/vorschau', zugang: 'admin', handler: async (a) => ok(await dienst.sichtVorschau(ich(a), b(a).id, b(a).sicht)) },
     { methode: 'GET', pfad: '/api/typen/:id/belegung', zugang: 'admin', handler: async (a) => ok(await dienst.belegung(a.params.id)) },
-    { methode: 'GET', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => ok(await dienst.holeMappe(a.params.id)) },
+    { methode: 'GET', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => {
+      const klartext = passwoerterAnzeigen(a);
+      const d = await dienst.holeMappe(a.params.id);
+      return ok(klartext ? { ...d, mappe: (await dienst.entschluesselePasswoerter([d.mappe], klartext))[0] } : d);
+    } },
+    // Passwortfeld anzeigen (#46): einzeln, mit Protokolleintrag (ohne den Wert).
+    { methode: 'POST', pfad: '/api/mappen/:id/passwoerter/:feld', zugang: 'angemeldet', handler: async (a) => ok(await dienst.zeigePasswort(a.params.id, a.params.feld)) },
     { methode: 'POST', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => {
       const m = await dienst.legeMappeAn(a.body, ich(a).id);
       L.ablage.info('Mappe angelegt', { typ: await typName(m.typId), titel: m.titel, id: m.id });
@@ -383,10 +425,25 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return ok(m);
     } },
     { methode: 'DELETE', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => {
+      const papierkorb = (await dienst.papierkorbTage()) > 0;
       await dienst.loescheMappe(a.params.id, ich(a).id);
-      L.ablage.info('Mappe gelöscht', { id: a.params.id });
+      L.ablage.info(papierkorb ? 'Mappe in den Papierkorb gelegt' : 'Mappe gelöscht', { id: a.params.id });
       return leer;
     } },
+
+    /* ---------- Papierkorb (#43): in der Ablage nur, was ich gelöscht habe ---------- */
+    { methode: 'GET', pfad: '/api/papierkorb', zugang: 'angemeldet', handler: async (a) => ok(await dienst.papierkorb(ich(a))) },
+    { methode: 'DELETE', pfad: '/api/papierkorb', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.leerePapierkorb(ich(a)) }) },
+    { methode: 'GET', pfad: '/api/papierkorb/:id', zugang: 'angemeldet', handler: async (a) => ok(await dienst.papierkorbEintrag(a.params.id, ich(a))) },
+    { methode: 'POST', pfad: '/api/papierkorb/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.stelleWiederHer(a.params.id, ich(a))) },
+    { methode: 'DELETE', pfad: '/api/papierkorb/:id', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.loescheEndgueltig([a.params.id], ich(a)) }) },
+    /* … und in der Werkbank alles */
+    { methode: 'GET', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ tage: await dienst.papierkorbTage(), eintraege: await dienst.papierkorb(ich(a), true) }) },
+    { methode: 'PUT', pfad: '/api/werkbank/papierkorb/einstellungen', zugang: 'admin', handler: async (a) => ok(await dienst.setzePapierkorbTage(b(a).tage)) },
+    { methode: 'DELETE', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.leerePapierkorb(ich(a), true) }) },
+    { methode: 'GET', pfad: '/api/werkbank/papierkorb/:id', zugang: 'admin', handler: async (a) => ok(await dienst.papierkorbEintrag(a.params.id, ich(a), true)) },
+    { methode: 'POST', pfad: '/api/werkbank/papierkorb/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.stelleWiederHer(a.params.id, ich(a), true)) },
+    { methode: 'DELETE', pfad: '/api/werkbank/papierkorb/:id', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.loescheEndgueltig([a.params.id], ich(a), true) }) },
 
     /* ---------- Dokumente ---------- */
     { methode: 'POST', pfad: '/api/mappen/:id/dokumente', zugang: 'angemeldet', roh: MAX_DATEIGROESSE, handler: async (a) => {
@@ -402,6 +459,16 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const anzeigen = d.anzeigbar && a.query.herunterladen === undefined;
       L.dokumente.debug(anzeigen ? 'Dokument angezeigt' : 'Dokument heruntergeladen', { name: d.name, id: d.id });
       return { datei: { inhalt, name: d.name, mime: d.anzeigbar ? d.mime : 'application/octet-stream', anzeigen, groesse: d.groesse } };
+    } },
+    // Volltext und Texterkennung (#45)
+    { methode: 'GET', pfad: '/api/dokumente/:id/volltext', zugang: 'angemeldet', handler: async (a) => {
+      const r = await dienst.volltext(a.params.id);
+      return ok({ id: r.dokument.id, name: r.dokument.name, ocr: r.dokument.ocr, text: r.text });
+    } },
+    { methode: 'POST', pfad: '/api/dokumente/:id/texterkennung', zugang: 'angemeldet', handler: async (a) => {
+      const d = await dienst.texterkennungErneut(a.params.id);
+      L.dokumente.info('Texterkennung erneut angestoßen', { name: d.name, id: d.id });
+      return ok(d);
     } },
     { methode: 'DELETE', pfad: '/api/dokumente/:id', zugang: 'angemeldet', handler: async (a) => {
       await dienst.loescheDokument(a.params.id);
@@ -429,12 +496,21 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   ];
   // Öffentliche API /api/v1 und ihre Beschreibung (aus der installierten Version).
   const doku = async () => ok(openapi(eigeneVersion()));
-  return [
+  const alle: Route[] = [
     ...intern,
     ...v1Routen(intern),
     { methode: 'GET', pfad: '/api/openapi.json', zugang: 'offen', handler: doku },
     { methode: 'GET', pfad: '/api/v1/openapi.json', zugang: 'offen', handler: doku },
   ];
+  // Kein verschlüsselter Wert verlässt den Server: Passwortfelder erscheinen als { gesetzt, lesbar } (#46).
+  const lesbar = (v: string) => !!x.tresor?.lesbar(v);
+  return alle.map((r) => ({
+    ...r,
+    handler: async (a: Anfrage) => {
+      const antwort = await r.handler(a);
+      return antwort.body === undefined ? antwort : { ...antwort, body: maskiere(antwort.body, lesbar) };
+    },
+  }));
 }
 
 
@@ -442,7 +518,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
 export function modulAus(url: string): string {
   if (/^\/api\/(konto|benutzer|personen|rollen)\b/.test(url)) return 'konto';
   if (/^\/api\/(dokumente|mappen\/[^/]+\/dokumente)\b/.test(url)) return 'dokumente';
-  if (/^\/api\/(mappen|sichten)\b/.test(url)) return 'ablage';
+  if (/^\/api\/(mappen|sichten|papierkorb)\b/.test(url)) return 'ablage';
   if (/^\/api\/(typen|werkbank|beispiele)\b/.test(url)) return 'werkbank';
   return 'http';
 }

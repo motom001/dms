@@ -104,7 +104,7 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Keine Umgebungsvariablen mehr** für E-Mail-Versand und Adresse: gepflegt in der Werkbank, gespeichert in `einstellungen` (`mail`, `adresse`), wirksam ohne Neustart – Konten holen sich den Mailer und die Adresse bei jeder Verwendung (`Betrieb` in `server/src/betrieb.ts`).
 - **Einmalige Übernahme** der früheren Variablen `SMTP_*` und `APP_URL` beim ersten Start, nur solange nichts gespeichert ist; danach ignoriert, mit Hinweis im Protokoll. So fällt der Versand beim Update nicht aus.
 - **Ohne gepflegte Adresse** gilt die Adresse der aktuellen Anfrage (`req.protocol` und `req.host`, hinter einem Proxy über `TRUST_PROXY`). Sie steckt im Anfragekontext, damit Konten sie ohne zusätzlichen Parameter finden.
-- **Passwort vorerst im Klartext** in der Datenbank, nie an die Oberfläche zurück; leeres Feld behält es. Verschlüsselung ist offen (#39).
+- **Passwort verschlüsselt** (seit #39), nie an die Oberfläche zurück; leeres Feld behält es.
 - **Testen mit ungespeicherten Werten:** Prüfen und Testmail nehmen die Werte aus dem Formular, damit man vor dem Speichern sieht, ob es geht.
 
 ## Sichten (#38, #40, #41)
@@ -117,6 +117,28 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **`typ:<id>`** liefert alle Mappen eines Typs ohne Bedingungen – für die Auswahl von Verweisen, die Titel-Vorschau und die API. Sonst würde eine Sicht mit Bedingungen, die zufällig die Id des Typs trägt, die Auswahl einschränken.
 - **Benutzer und Rolle** bekommen bei neuen Installationen ihre Sichten am Ende der ersten Ebene.
 
+## Verschlüsselte Passwörter (#39, #46)
+
+- **Schlüssel als Datei, nie in der Datenbank**: 32 Byte, erzeugt auf Knopfdruck in der Werkbank (`/data/geheim/dms.schluessel`, Rechte 0600, eigenes Volume). In der Datenbank steht nur der Fingerabdruck – so erkennt das DMS einen fehlenden oder fremden Schlüssel und zeigt, welche Werte neu einzugeben sind. Eine Datenbanksicherung allein verrät damit keine Passwörter.
+- **AES-256-GCM je Wert** mit eigener Zufallszahl, gespeichert als `dms1$<nonce>:<geheimtext>`; das Präfix erlaubt später ein anderes Verfahren und den Schlüsselwechsel (#47).
+- **Kein Geheimtext verlässt den Server**: Jede Antwort läuft durch eine Maske, die verschlüsselte Werte durch `{gesetzt, lesbar}` ersetzt – unabhängig davon, welche Route sie liefert. Klartext gibt es nur einzeln (Auge, protokolliert) oder über die API mit eigenem Recht.
+- Ohne Schlüssel lässt sich kein Passwort speichern. Ein Klartext-Passwort aus älteren Ständen (SMTP) funktioniert weiter und wird verschlüsselt, sobald es einen Schlüssel gibt.
+
+## Papierkorb (#43)
+
+- **Eigene Tabelle statt Löschmarke**: Gelöschte Mappen ziehen samt Verweisen und Dokumenten als JSON nach `papierkorb`. Alle Abfragen auf `mappen` bleiben unverändert; eindeutige Werte werden frei; der Papierkorb taucht nirgends sonst auf.
+- **Wiederherstellen** legt die Zeilen wieder an. Verweise auf Mappen, die es nicht mehr gibt, entfallen; passt die Mappe danach nicht (z. B. eindeutiger Wert vergeben), zeigt der Eingang sie – nur sie, nicht die andere.
+- **Dateien bleiben**, bis der Papierkorb geleert wird; erst dann prüft das DMS, ob noch ein Dokument (auch im Papierkorb) an der Datei hängt.
+- **Benutzer-Einladungen** im Papierkorb sind deaktiviert; endgültig gelöscht wird das Konto erst beim Leeren. 0 Tage Aufbewahrung schaltet den Papierkorb aus.
+
+## Texterkennung (#45)
+
+- **Im eigenen Prozess, Warteschlange in der Datenbank** (`dokumente.ocr_stand`): kein zusätzlicher Container; nach einem Neustart geht es weiter. Gleichzeitige Aufträge sind einstellbar (Standard 1, für kleine NAS).
+- **Textebene zuerst**: `pdftotext` je Seite; nur Seiten mit kaum Text gehen durch `pdftoppm` und `tesseract` (deu+eng). So bleibt die Texterkennung schnell, wo sie nicht nötig ist.
+- **Gleicher Inhalt, gleicher Text**: Dateien sind über ihren Prüfwert bekannt; ein schon erkannter Text wird übernommen.
+- **Deutsche Volltextsuche von PostgreSQL** (`to_tsvector('german', …)`, GIN-Index, `websearch_to_tsquery`): findet Wortformen; die Fundstelle kommt aus `ts_headline` mit Steuerzeichen als Markierung – nie als HTML.
+- Office-Dokumente und externe Dienste kommen später.
+
 ## Bewusst noch nicht drin
 
-Texterkennung (OCR), Suche, Papierkorb, Rechte pro Mappe, Fristen, Verschlüsselung, Backup-Funktion in der Anwendung, Zwei-Faktor-Anmeldung.
+Rechte pro Mappe, Fristen, Schlüsselwechsel (#47), Backup-Funktion in der Anwendung (#48), Texterkennung für Office-Dokumente, Zwei-Faktor-Anmeldung.

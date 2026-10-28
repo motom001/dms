@@ -25,8 +25,21 @@ Eine Datei darf bis zu 100 MB groß sein.
 
 **Herunterladen** speichert jede Datei unverändert auf deinem Gerät. Neben jedem Dokument steht, wie groß es ist und wer es wann hochgeladen hat.
 
+## Volltext
+
+Damit die [Volltextsuche](ablage.md#im-text-der-dokumente-suchen) ein Dokument findet, liest das DMS nach dem Hochladen im Hintergrund seinen Text: bei PDFs die Textebene, bei Scans und Fotos per Texterkennung. Neben dem Dokument steht, wie weit es ist:
+
+| Anzeige | Bedeutung |
+| --- | --- |
+| *Volltext: wartet* / *läuft* | Der Text wird gerade gelesen; meist dauert das Sekunden, bei langen Scans einige Minuten. |
+| *Volltext: fertig* | Das Dokument ist durchsuchbar. **Text anzeigen** zeigt, was erkannt wurde. |
+| *Volltext: Fehler* | Etwas ging schief, z. B. eine beschädigte Datei. **Erneut versuchen** stellt es noch einmal an. |
+| *Volltext: ausgelassen* | Für diesen Dateityp (z. B. Word, Excel) oder diese Größe gibt es keinen Volltext. |
+
+Erkannter Text aus Scans ist nicht immer fehlerfrei – je besser die Vorlage, desto besser das Ergebnis.
+
 ## Entfernen
 
 Ein Klick auf **Löschen** neben einem Dokument markiert es mit „wird beim Speichern gelöscht“. Erst **Mappe speichern** löscht es; **Behalten** oder **Verwerfen** holt es zurück. Noch nicht gespeicherte Dateien nimmst du mit **Entfernen** wieder aus der Liste.
 
-Löschst du eine ganze Mappe, werden ihre Dokumente nach einer Rückfrage mitgelöscht.
+Ein einzeln gelöschtes Dokument ist sofort endgültig weg. Löschst du eine ganze Mappe, kommen ihre Dokumente mit ihr in den [Papierkorb](ablage.md#papierkorb).

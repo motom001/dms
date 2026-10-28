@@ -9,6 +9,7 @@ import { Messpanel } from './Messpanel';
 import { ApiDoku } from './profil/ApiDoku';
 import { Profil } from './profil/Profil';
 import { Werkbank } from './werkbank/Werkbank';
+import { TresorBanner } from './werkbank/Verschluesselung';
 
 export function App() {
   const { pfad, suche } = useOrt();
@@ -42,6 +43,7 @@ export function App() {
         </div>
       )}
       {!vertretung && hinweise.length > 0 && <Hinweise />}
+      {admin && bereich === 'werkbank' && <TresorBanner />}
       <header className="kopf">
         <div className="marke">
           <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><rect x="4" y="7" width="24" height="21" rx="3" className="m1" /><rect x="8" y="3" width="9" height="7" rx="2" className="m2" /></svg>

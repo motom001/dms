@@ -13,6 +13,8 @@ import { Designs, pgDesignRepo } from './designs';
 import { ApiSchluesselDienst, pgApiSchluesselRepo } from './apischluessel';
 import { pgRepo } from './repo-pg';
 import { Betrieb, pgBetriebSpeicher } from './betrieb';
+import { STANDARD_DATEI, Tresor } from './tresor';
+import { Texterkennung } from './texterkennung';
 
 const pfad = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
 const env = process.env;
@@ -48,16 +50,25 @@ await mkdir(cfg.dateien, { recursive: true });
 
 // E-Mail-Versand und Adresse des DMS stehen in der Werkbank (#37); frühere Umgebungsvariablen
 // werden beim ersten Start nach dem Update einmalig übernommen.
-const betrieb = new Betrieb(pgBetriebSpeicher(sql, cfg.haushalt), `http://localhost:${cfg.port}`);
+// Schlüssel für verschlüsselte Zugangsdaten (#39): eine Datei, nie in der Datenbank.
+const tresor = new Tresor(pgBetriebSpeicher(sql, cfg.haushalt), env.DMS_SCHLUESSEL_DATEI || STANDARD_DATEI);
+await tresor.laden();
+const betrieb = new Betrieb(pgBetriebSpeicher(sql, cfg.haushalt), `http://localhost:${cfg.port}`, tresor);
 await betrieb.laden();
 await betrieb.uebernimmAlteVariablen(env);
 
 // Jeder Datenbankzugriff der Repos wird gezählt und gestoppt (Entwicklermodus, lange Zugriffe).
 const messung = new Messung(pgMessSpeicher(sql, cfg.haushalt));
 await messung.start();
-const dienst = new Dienst(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'mappen'), ordnerSpeicher(cfg.dateien, cfg.haushalt));
+const dienst = new Dienst(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'mappen'), ordnerSpeicher(cfg.dateien, cfg.haushalt), {
+  tresor, einstellungen: pgBetriebSpeicher(sql, cfg.haushalt),
+});
 // Benutzer erscheinen als Mappen (#26); die Konten halten sie auf dem neuesten Stand.
 const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, cfg.haushalt), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.benutzerspiegel());
+dienst.verbindeKonten(konten.papierkorbHaken());
+// Texterkennung im Hintergrund (#45); dieselbe Datenbank, eigener Messbereich.
+const texterkennung = new Texterkennung(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'texterkennung'), ordnerSpeicher(cfg.dateien, cfg.haushalt), pgBetriebSpeicher(sql, cfg.haushalt));
+dienst.verbindeTexterkennung(texterkennung);
 const app = await baueApp(dienst, konten, {
   webDir: cfg.web,
   sicher: () => betrieb.cookieNurHttps(),
@@ -67,6 +78,8 @@ const app = await baueApp(dienst, konten, {
   designs: new Designs(messung.umhuelle(pgDesignRepo(sql, cfg.haushalt), 'designs')),
   apiSchluessel: new ApiSchluesselDienst(messung.umhuelle(pgApiSchluesselRepo(sql), 'apischluessel')),
   betrieb,
+  tresor,
+  texterkennung,
 });
 
 const kurz = betrieb.kurz();
@@ -78,10 +91,17 @@ if (nachgezogen) log.info(`Titel von ${nachgezogen} Mappen berechnet`);
 await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
 const geprueft = await dienst.passungNachziehen();
 if (geprueft) log.info(`Mappen von ${geprueft} Mappentypen gegen ihre Definition geprüft`);
+// Papierkorb (#43): Abgelaufenes stündlich endgültig löschen.
+const papierkorb = () => dienst.raeumePapierkorbAuf().catch((e) => log.error('Papierkorb aufräumen fehlgeschlagen', { fehler: (e as Error).message }));
+await papierkorb();
+setInterval(papierkorb, 60 * 60 * 1000).unref();
 if (await konten.einrichtungNoetig()) log.warn(`Noch kein Benutzer vorhanden: Der erste Aufruf des DMS im Browser (Port ${cfg.port}) legt den Administrator an.`);
+
+await texterkennung.start();
 
 const beenden = async () => {
   log.info('DMS wird beendet');
+  texterkennung.stop();
   await app.close();
   await sql.end({ timeout: 5 });
   process.exit(0);

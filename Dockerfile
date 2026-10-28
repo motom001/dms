@@ -13,6 +13,8 @@ COPY web web
 RUN npm run build
 
 FROM node:22-alpine
+# Texterkennung (#45): tesseract mit Deutsch (Englisch ist enthalten) und poppler für PDFs.
+RUN apk add --no-cache tesseract-ocr tesseract-ocr-data-deu poppler-utils
 # Stand des Images für die Versionsübersicht in der Werkbank (setzt GitHub Actions).
 ARG DMS_COMMIT=""
 ARG DMS_GEBAUT=""
@@ -29,7 +31,8 @@ COPY server/migrations server/migrations
 COPY --from=bau /app/web/dist web/dist
 
 ENV PORT=3000 \
-    FILES_DIR=/data/files
+    FILES_DIR=/data/files \
+    DMS_SCHLUESSEL_DATEI=/data/geheim/dms.schluessel
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
   CMD wget -qO- http://127.0.0.1:3000/api/gesundheit >/dev/null || exit 1

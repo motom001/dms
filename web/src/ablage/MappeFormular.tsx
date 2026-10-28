@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
-import { darfErstellen, darfLoeschen, geschuetzteFelder, istLeer, istOk, MAX_DATEIGROESSE, standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register } from '../../../shared/src/model';
+import { darfErstellen, darfLoeschen, geschuetzteFelder, istLeer, istOk, MAX_DATEIGROESSE, OCR_STAENDE, standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type OcrStand, type Pruefergebnis, type Register } from '../../../shared/src/model';
 import { api, ApiFehler, dokumentUrl, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
-import { rohAusWerten, standardRoh, werteAusRoh, type Roh, type RohBetrag, type RohWerte } from '../werte';
+import { leeresPasswort, rohAusWerten, standardRoh, werteAusRoh, type Roh, type RohBetrag, type RohPasswort, type RohWerte } from '../werte';
 import { titelOder } from '../seiten';
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
@@ -177,7 +177,11 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
   async function loeschen() {
     if (!mappe) return;
     const n = details?.dokumente.length ?? 0;
-    if (!confirm(`Mappe „${titelOder(mappe.titel)}“ löschen?${n ? ` Ihre ${n} Dokument${n === 1 ? '' : 'e'} werden mitgelöscht.` : ''}`)) return;
+    const korb = d.zaehler.papierkorbTage ?? 0;
+    const frage = korb
+      ? `Mappe „${titelOder(mappe.titel)}“ in den Papierkorb legen?${n ? ` Ihre ${n} Dokument${n === 1 ? '' : 'e'} kommen mit.` : ''} Dort lässt sie sich ${korb === 1 ? 'einen Tag' : `${korb} Tage`} lang wiederherstellen.`
+      : `Mappe „${titelOder(mappe.titel)}“ endgültig löschen?${n ? ` Ihre ${n} Dokument${n === 1 ? '' : 'e'} werden mitgelöscht.` : ''}`;
+    if (!confirm(frage)) return;
     try {
       await api.mappeLoeschen(mappe.id);
       loeseWache(); await d.neuLaden(); geheZu(`/ablage/${sicht}`);
@@ -320,6 +324,9 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
         bekannt={bekannt} merke={merke} setze={setze} />;
       break;
     }
+    case 'passwort':
+      ctl = <PasswortEingabe id={id} feld={f} roh={(roh ?? leeresPasswort) as RohPasswort} setze={setze} mappeId={eigeneId} />;
+      break;
     default:
       ctl = <input id={id} value={String(roh ?? '')} onChange={(e) => setze(e.target.value)} />;
   }
@@ -338,6 +345,66 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
 }
 
 
+/**
+ * Passwortfeld (#46): Das gespeicherte Passwort kommt nie mit der Mappe. Das Auge holt es
+ * einzeln vom Server (steht im Protokoll); zum Ändern wird ein neues eingegeben.
+ */
+function PasswortEingabe({ id, feld: f, roh: p, setze, mappeId }: { id: string; feld: Feld; roh: RohPasswort; setze: (v: Roh) => void; mappeId?: string }) {
+  const { passwoerterMoeglich } = useKonto();
+  const [klartext, setKlartext] = useState<string | null>(null);
+  const [zeigen, setZeigen] = useState(false);
+  const [laedt, setLaedt] = useState(false);
+  const [fehler, setFehler] = useState<string>();
+  const [aendern, setAendern] = useState(false);
+  // Nach dem Speichern (neuer Stand vom Server) die Anzeige zurücksetzen.
+  useEffect(() => { if (!p.neu) { setKlartext(null); setAendern(false); setZeigen(false); } }, [p.gesetzt, p.lesbar]); // eslint-disable-line react-hooks/exhaustive-deps
+  const auge = (an: boolean) => <span aria-hidden="true">{an ? '🙈' : '👁'}</span>;
+
+  if (p.entfernen) return (
+    <div className="passwort">
+      <span className="festwert leise">wird beim Speichern entfernt</span>
+      <button type="button" className="knopf klein" onClick={() => setze({ ...p, entfernen: false })}>Rückgängig</button>
+    </div>
+  );
+
+  if (p.gesetzt && !aendern && !p.neu) {
+    async function umschalten() {
+      if (klartext !== null) { setKlartext(null); return; }
+      if (!mappeId) return;
+      setLaedt(true); setFehler(undefined);
+      try { setKlartext((await api.passwortAnzeigen(mappeId, f.key)).wert); } catch (e) { setFehler((e as Error).message); } finally { setLaedt(false); }
+    }
+    return (
+      <>
+        <div className="passwort">
+          <span id={id} className={`festwert mono ${p.lesbar ? '' : 'leise'}`} aria-live="polite">{!p.lesbar ? 'nicht lesbar – bitte neu eingeben' : klartext ?? '••••••••'}</span>
+          {p.lesbar && mappeId && <button type="button" className="knopf klein" disabled={laedt} onClick={() => void umschalten()} title={klartext === null ? 'Passwort anzeigen (wird protokolliert)' : 'Passwort verbergen'} aria-label={klartext === null ? 'Passwort anzeigen' : 'Passwort verbergen'}>{auge(klartext !== null)}</button>}
+          <button type="button" className="knopf klein" disabled={!passwoerterMoeglich} onClick={() => { setKlartext(null); setAendern(true); }}>Ändern</button>
+          <button type="button" className="knopf klein" onClick={() => { setKlartext(null); setze({ ...p, entfernen: true }); }}>Entfernen</button>
+        </div>
+        {fehler && <p className="fehlertext">{fehler}</p>}
+        {!passwoerterMoeglich && <span className="hilfe">Ändern geht erst wieder, wenn ein Administrator den Schlüssel bereitstellt (Werkbank → Verschlüsselung).</span>}
+      </>
+    );
+  }
+
+  if (!passwoerterMoeglich) return (
+    <>
+      <input id={id} type="password" disabled placeholder="nicht möglich" />
+      <span className="hilfe">Passwörter lassen sich erst speichern, wenn ein Administrator in der Werkbank unter „Verschlüsselung“ einen Schlüssel erzeugt hat.</span>
+    </>
+  );
+
+  return (
+    <div className="passwort">
+      <input id={id} type={zeigen ? 'text' : 'password'} value={p.neu} autoComplete="new-password" spellCheck={false}
+        placeholder={p.gesetzt ? 'neues Passwort' : ''} onChange={(e) => setze({ ...p, neu: e.target.value })} />
+      <button type="button" className="knopf klein" onClick={() => setZeigen(!zeigen)} aria-label={zeigen ? 'Eingabe verbergen' : 'Eingabe anzeigen'} title={zeigen ? 'Eingabe verbergen' : 'Eingabe anzeigen'}>{auge(zeigen)}</button>
+      {p.gesetzt && <button type="button" className="knopf klein" onClick={() => { setze({ ...p, neu: '' }); setAendern(false); setZeigen(false); }}>Abbrechen</button>}
+    </div>
+  );
+}
+
 /* ---------- Dokumentenregister ---------- */
 
 function Dokumente({ register, dokumente, neue, entfernt, hinzufuegen, entferne, vergiss }: {
@@ -350,6 +417,25 @@ function Dokumente({ register, dokumente, neue, entfernt, hinzufuegen, entferne,
   const [zuGross, setZuGross] = useState<string[]>([]);
   const [ansicht, setAnsicht] = useState<string>();
   const gewaehlt = dokumente.find((x) => x.id === ansicht && !entfernt.includes(x.id));
+  // Texterkennung (#45): Stand nachladen, solange etwas wartet oder läuft.
+  const [ocr, setOcr] = useState<Record<string, OcrStand | undefined>>({});
+  const [text, setText] = useState<{ id: string; text: string | null } | null>(null);
+  const standVon = (x: Dokument) => ocr[x.id] ?? x.ocr;
+  const offen = dokumente.some((x) => { const s = standVon(x)?.stand; return s === 'wartet' || s === 'laeuft'; });
+  useEffect(() => {
+    if (!offen || !dokumente.length) return;
+    const t = setTimeout(() => {
+      void api.mappe(dokumente[0].mappeId).then((m) => setOcr(Object.fromEntries(m.dokumente.map((x) => [x.id, x.ocr]))), () => {});
+    }, 3000);
+    return () => clearTimeout(t);
+  }, [offen, ocr, dokumente]);
+  async function erneut(id: string) {
+    try { const x = await api.texterkennungErneut(id); setOcr((o) => ({ ...o, [id]: x.ocr })); } catch { /* bleibt */ }
+  }
+  async function zeigeText(id: string) {
+    if (text?.id === id) { setText(null); return; }
+    try { setText({ id, text: (await api.volltext(id)).text }); } catch { setText({ id, text: null }); }
+  }
 
   function nimm(liste: FileList | File[]) {
     const alle = [...liste];
@@ -389,6 +475,8 @@ function Dokumente({ register, dokumente, neue, entfernt, hinzufuegen, entferne,
                       ? <button type="button" className="textknopf" onClick={() => setAnsicht(x.id === ansicht ? undefined : x.id)}>{x.name}</button>
                       : <span className="dateiname">{x.name}</span>}
                     <span className="leise klein">{weg ? 'wird beim Speichern gelöscht' : `${groesse(x.groesse)} · ${zeit(x.erstellt)} · ${d.person(x.erstelltVon)}`}</span>
+                    {!weg && <OcrAnzeige s={standVon(x)} erneut={() => void erneut(x.id)} text={() => void zeigeText(x.id)} textOffen={text?.id === x.id} />}
+                    {!weg && text?.id === x.id && <pre className="volltext">{text.text ?? 'Kein Volltext vorhanden.'}</pre>}
                   </div>
                   <div className="zeilenaktionen">
                     {!weg && x.anzeigbar && <a className="textknopf" href={dokumentUrl(x.id)} target="_blank" rel="noreferrer">Öffnen</a>}
@@ -407,6 +495,20 @@ function Dokumente({ register, dokumente, neue, entfernt, hinzufuegen, entferne,
         </div>
       )}
     </div>
+  );
+}
+
+/** Stand der Texterkennung an einem Dokument (#45). */
+function OcrAnzeige({ s, erneut, text, textOffen }: { s?: OcrStand; erneut(): void; text(): void; textOffen: boolean }) {
+  if (!s || s.stand === 'keiner') return null;
+  const klasse = s.stand === 'fertig' ? 'gut' : s.stand === 'fehler' ? 'schlecht' : s.stand === 'ausgelassen' ? '' : 'warn';
+  return (
+    <span className="ocrstand klein">
+      <span className={`chip ${klasse}`} title={s.info ?? undefined}>Volltext: {OCR_STAENDE[s.stand]}{s.stand === 'fertig' && s.seiten ? ` · ${s.seiten} ${s.seiten === 1 ? 'Seite' : 'Seiten'}` : ''}</span>
+      {(s.stand === 'fehler' || s.stand === 'ausgelassen') && s.info && <span className="leise">{s.info}</span>}
+      {s.stand === 'fertig' && <button type="button" className="textknopf" onClick={text}>{textOffen ? 'Text ausblenden' : 'Text anzeigen'}</button>}
+      {(s.stand === 'fehler' || s.stand === 'ausgelassen') && <button type="button" className="textknopf" onClick={erneut}>Erneut versuchen</button>}
+    </span>
   );
 }
 

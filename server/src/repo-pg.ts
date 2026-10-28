@@ -1,7 +1,7 @@
 import type postgres from 'postgres';
-import type { Dokument, Mappe, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
+import { TREFFER_ANFANG, TREFFER_ENDE, type Ausschnitt, type Dokument, type Mappe, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
 import type { Filter, Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
-import { istUuid, type Repo, type Verweis } from './repo';
+import { istUuid, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
 
 type Sql = postgres.Sql;
 type Zeile = Record<string, unknown>;
@@ -46,7 +46,26 @@ const alsDokument = (r: Zeile): Dokument => ({
   anzeigbar: r.anzeigbar as boolean,
   erstellt: iso(r.erstellt),
   erstelltVon: (r.erstellt_von as string | null) ?? null,
+  ocr: {
+    stand: ((r.ocr_stand as OcrStandArt | null) ?? 'keiner'),
+    info: (r.ocr_info as string | null) ?? null,
+    seiten: (r.ocr_seiten as number | null) ?? null,
+    zeit: r.ocr_zeit ? iso(r.ocr_zeit) : null,
+  },
 });
+/** Ausschnitte aus dem Volltext: höchstens zwei Stellen, Treffer markiert (#45). */
+const AUSSCHNITT = `StartSel=${TREFFER_ANFANG}, StopSel=${TREFFER_ENDE}, MaxFragments=2, MaxWords=18, MinWords=6, FragmentDelimiter=" … "`;
+/** Eintrag im Papierkorb aus der Zeile; die Mappe steht als jsonb (Spaltennamen der Tabelle mappen) darin. */
+const alsPapierkorb = (r: Zeile): PapierkorbEintrag => {
+  const m = r.mappe as Zeile;
+  return {
+    id: r.id as string, typId: r.typ_id as string, titel: (m.titel as string | null) ?? '', werte: (m.werte as Werte) ?? {}, demo: !!m.demo,
+    erstellt: iso(m.erstellt), erstelltVon: (m.erstellt_von as string | null) ?? null,
+    geaendert: iso(m.geaendert), geaendertVon: (m.geaendert_von as string | null) ?? null,
+    geloescht: iso(r.geloescht), geloeschtVon: (r.geloescht_von as string | null) ?? null,
+    dokumente: Number(r.anzahl_dokumente ?? 0),
+  };
+};
 // postgres.js erwartet für jsonb einen JSON-Wert; unsere Typen sind JSON-kompatibel.
 const json = (sql: Sql, v: unknown) => sql.json(v as postgres.JSONValue);
 
@@ -298,7 +317,9 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         : sql``;
       const muster = o.suche ? `%${o.suche.replace(/[\\%_]/g, (c) => '\\' + c)}%` : null;
       const suche = muster
-        ? sql`AND (titel ILIKE ${muster} OR EXISTS (SELECT 1 FROM jsonb_each_text(werte) e WHERE e.value ILIKE ${muster}))`
+        ? sql`AND (titel ILIKE ${muster} OR EXISTS (SELECT 1 FROM jsonb_each_text(werte) e WHERE e.value ILIKE ${muster} AND e.value NOT LIKE 'dms1$%')
+            ${o.volltext ? sql`OR EXISTS (SELECT 1 FROM dokumente d WHERE d.mappe_id = mappen.id
+              AND to_tsvector('german', coalesce(d.volltext, '')) @@ websearch_to_tsquery('german', ${o.suche!}::text))` : sql``})`
         : sql``;
       const [{ n }] = await sql`SELECT count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} ${typ} ${eingang} ${suche}`;
       const so = o.sortierung;
@@ -316,7 +337,18 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const r = await sql`
         SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} ${typ} ${eingang} ${suche}
         ORDER BY ${ausdruck} ${richtung}, lower(titel), id OFFSET ${o.von} LIMIT ${o.anzahl}`;
-      return { gesamt: n as number, mappen: r.map(alsMappe) };
+      const mappen = r.map(alsMappe);
+      if (!o.volltext || !o.suche || !mappen.length) return { gesamt: n as number, mappen };
+      // Fundstellen im Volltext: je Mappe das Dokument mit dem besten Treffer.
+      const a = await sql`
+        SELECT DISTINCT ON (d.mappe_id) d.mappe_id, d.name, ts_headline('german', d.volltext, q, ${AUSSCHNITT}::text) AS text
+        FROM dokumente d, websearch_to_tsquery('german', ${o.suche}::text) q
+        WHERE d.haushalt_id = ${haushaltId} AND d.mappe_id = ANY(${mappen.map((m) => m.id)}::uuid[])
+          AND to_tsvector('german', coalesce(d.volltext, '')) @@ q
+        ORDER BY d.mappe_id, ts_rank(to_tsvector('german', coalesce(d.volltext, '')), q) DESC`;
+      const ausschnitte: Record<string, Ausschnitt> = {};
+      for (const z of a) ausschnitte[z.mappe_id as string] = { dokument: z.name as string, text: z.text as string };
+      return { gesamt: n as number, mappen, ausschnitte };
     },
     async zaehler(benutzerId, admin) {
       const r = await sql`
@@ -434,6 +466,131 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async loescheDokument(id) {
       await sql`DELETE FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
+    /* ---------- Papierkorb (#43) ---------- */
+    async legeInPapierkorb(id, benutzerId) {
+      await sql.begin(async (tx) => {
+        const r = await tx`
+          INSERT INTO papierkorb (id, haushalt_id, typ_id, mappe, verweise, dokumente, geloescht_von)
+          SELECT m.id, m.haushalt_id, m.typ_id, to_jsonb(m),
+            (SELECT coalesce(jsonb_agg(to_jsonb(v)), '[]'::jsonb) FROM verweise v WHERE v.quelle_id = m.id),
+            (SELECT coalesce(jsonb_agg(to_jsonb(d)), '[]'::jsonb) FROM dokumente d WHERE d.mappe_id = m.id),
+            ${istUuid(benutzerId) ? benutzerId : null}::uuid
+          FROM mappen m WHERE m.haushalt_id = ${haushaltId} AND m.id = ${id}`;
+        // Ausgehende Verweise und Dokumente folgen per Kaskade.
+        if (r.count) await tx`DELETE FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      });
+    },
+    async papierkorb(f = {}) {
+      return (await sql`
+        SELECT id, typ_id, mappe, geloescht, geloescht_von, jsonb_array_length(dokumente) AS anzahl_dokumente
+        FROM papierkorb WHERE haushalt_id = ${haushaltId}
+          ${f.von ? sql`AND geloescht_von = ${istUuid(f.von) ? f.von : null}::uuid` : sql``}
+          ${f.vor ? sql`AND geloescht < ${f.vor}` : sql``}
+          ${f.typId ? sql`AND typ_id = ${istUuid(f.typId) ? f.typId : null}::uuid` : sql``}
+        ORDER BY geloescht DESC, id`).map(alsPapierkorb);
+    },
+    async holeAusPapierkorb(id) {
+      if (!istUuid(id)) return undefined;
+      const [r] = await sql`
+        SELECT id, typ_id, mappe, geloescht, geloescht_von, jsonb_array_length(dokumente) AS anzahl_dokumente
+        FROM papierkorb WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      return r ? alsPapierkorb(r) : undefined;
+    },
+    async stelleWiederHer(id) {
+      return sql.begin(async (tx) => {
+        const [p] = await tx`SELECT verweise FROM papierkorb WHERE haushalt_id = ${haushaltId} AND id = ${id} FOR UPDATE`;
+        if (!p) return { verweiseEntfallen: 0 };
+        // Benutzer, die es nicht mehr gibt, werden zu „unbekannt“ (wie ON DELETE SET NULL).
+        await tx`
+          INSERT INTO mappen
+          SELECT (jsonb_populate_record(NULL::mappen, p.mappe || jsonb_build_object(
+            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = p.mappe ->> 'erstellt_von') THEN p.mappe -> 'erstellt_von' ELSE 'null'::jsonb END,
+            'geaendert_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = p.mappe ->> 'geaendert_von') THEN p.mappe -> 'geaendert_von' ELSE 'null'::jsonb END))).*
+          FROM papierkorb p WHERE p.id = ${id}`;
+        // Verweise nur auf Mappen, die es noch gibt; die übrigen bleiben als Wert stehen
+        // und lassen die Mappe „nicht passen“ (Eingang).
+        const v = await tx`
+          INSERT INTO verweise
+          SELECT r.* FROM papierkorb p, jsonb_populate_recordset(NULL::verweise, p.verweise) r
+          WHERE p.id = ${id} AND EXISTS (SELECT 1 FROM mappen z WHERE z.id = r.ziel_id)
+          ON CONFLICT DO NOTHING`;
+        await tx`
+          INSERT INTO dokumente
+          SELECT (jsonb_populate_record(NULL::dokumente, d.value || jsonb_build_object(
+            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = d.value ->> 'erstellt_von') THEN d.value -> 'erstellt_von' ELSE 'null'::jsonb END))).*
+          FROM papierkorb p, jsonb_array_elements(p.dokumente) d WHERE p.id = ${id}`;
+        await tx`DELETE FROM papierkorb WHERE id = ${id}`;
+        return { verweiseEntfallen: (p.verweise as unknown[]).length - v.count };
+      });
+    },
+    async leerePapierkorb(ids) {
+      const gueltig = ids.filter(istUuid);
+      if (!gueltig.length) return [];
+      const r = await sql`DELETE FROM papierkorb WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) RETURNING dokumente`;
+      return [...new Set<string>(r.flatMap((z: Zeile) => (z.dokumente as Zeile[]).map((d) => d.sha256 as string)))];
+    },
+    async zaehlePapierkorb(von) {
+      const [r] = await sql`SELECT count(*)::int AS n FROM papierkorb WHERE haushalt_id = ${haushaltId}
+        ${von ? sql`AND geloescht_von = ${istUuid(von) ? von : null}::uuid` : sql``}`;
+      return r.n as number;
+    },
+    async dateiBenutzt(sha256) {
+      const [r] = await sql`
+        SELECT EXISTS (SELECT 1 FROM dokumente WHERE haushalt_id = ${haushaltId} AND sha256 = ${sha256})
+          OR EXISTS (SELECT 1 FROM papierkorb p, jsonb_array_elements(p.dokumente) d WHERE p.haushalt_id = ${haushaltId} AND d.value ->> 'sha256' = ${sha256}) AS ja`;
+      return r.ja as boolean;
+    },
+
+    /* ---------- Texterkennung (#45) ---------- */
+    async ocrEinreihen(ids) {
+      const gueltig = ids.filter(istUuid);
+      if (!gueltig.length) return;
+      await sql`UPDATE dokumente SET ocr_stand = 'wartet', ocr_info = NULL WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[])`;
+    },
+    async ocrNaechster() {
+      // SKIP LOCKED: mehrere Aufträge nehmen sich nie dasselbe Dokument.
+      const [r] = await sql`
+        UPDATE dokumente SET ocr_stand = 'laeuft', ocr_zeit = now()
+        WHERE id = (SELECT id FROM dokumente WHERE haushalt_id = ${haushaltId} AND ocr_stand = 'wartet' ORDER BY erstellt, id LIMIT 1 FOR UPDATE SKIP LOCKED)
+        RETURNING *`;
+      return r ? alsDokument(r) : undefined;
+    },
+    async ocrSetze(id, e) {
+      await sql`
+        UPDATE dokumente SET ocr_stand = ${e.stand}, ocr_info = ${e.info ?? null}, ocr_seiten = ${e.seiten ?? null}, ocr_zeit = now()
+          ${e.text !== undefined ? sql`, volltext = ${e.text}` : sql``}
+        WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+    },
+    async ocrVonSha(sha256, ausser) {
+      const [r] = await sql`
+        SELECT volltext, ocr_seiten, ocr_info FROM dokumente
+        WHERE haushalt_id = ${haushaltId} AND sha256 = ${sha256} AND id IS DISTINCT FROM ${istUuid(ausser) ? ausser : null}::uuid AND ocr_stand = 'fertig' AND volltext IS NOT NULL
+        LIMIT 1`;
+      return r ? { text: r.volltext as string, seiten: (r.ocr_seiten as number | null) ?? null, info: (r.ocr_info as string | null) ?? null } : undefined;
+    },
+    async ocrZurueckstellen() {
+      const r = await sql`UPDATE dokumente SET ocr_stand = 'wartet' WHERE haushalt_id = ${haushaltId} AND ocr_stand = 'laeuft'`;
+      return r.count;
+    },
+    async ocrZaehler() {
+      const z = { keiner: 0, wartet: 0, laeuft: 0, fertig: 0, fehler: 0, ausgelassen: 0 };
+      for (const r of await sql`SELECT coalesce(ocr_stand, 'keiner') AS s, count(*)::int AS n FROM dokumente WHERE haushalt_id = ${haushaltId} GROUP BY 1`) {
+        z[r.s as OcrStandArt] = r.n as number;
+      }
+      return z;
+    },
+    async ocrOhneVolltext() {
+      return (await sql`
+        SELECT d.id, m.typ_id, d.register_key FROM dokumente d JOIN mappen m ON m.id = d.mappe_id
+        WHERE d.haushalt_id = ${haushaltId} AND coalesce(d.ocr_stand, 'keiner') = 'keiner'`)
+        .map((r: Zeile) => ({ id: r.id as string, typId: r.typ_id as string, registerKey: r.register_key as string }));
+    },
+    async volltext(id) {
+      if (!istUuid(id)) return null;
+      const [r] = await sql`SELECT volltext FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      return r ? ((r.volltext as string | null) ?? null) : null;
+    },
+
     async dokumenteMitSha(sha256) {
       return (await sql`SELECT * FROM dokumente WHERE haushalt_id = ${haushaltId} AND sha256 = ${sha256}`).map(alsDokument);
     },
@@ -458,7 +615,10 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         await tx`DELETE FROM verweise v USING mappen m
           WHERE m.id = v.quelle_id AND m.demo AND m.haushalt_id = ${haushaltId}`;
         const r = await tx`DELETE FROM mappen WHERE demo AND haushalt_id = ${haushaltId}`;
-        return { anzahl: r.count, dateien };
+        // Demo-Mappen im Papierkorb gehen gleich mit (#43).
+        const korb = await tx`DELETE FROM papierkorb WHERE haushalt_id = ${haushaltId} AND (mappe ->> 'demo')::boolean RETURNING dokumente`;
+        for (const z of korb) for (const d of z.dokumente as Zeile[]) dateien.push(d.sha256 as string);
+        return { anzahl: r.count + korb.count, dateien: [...new Set(dateien)] };
       });
     },
     async dokumenteJeRegister(typId) {
