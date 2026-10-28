@@ -23,6 +23,7 @@ export function Profil() {
   const [alt, setAlt] = useState('');
   const [neu, setNeu] = useState('');
   const [neu2, setNeu2] = useState('');
+  const [entwickler, setEntwickler] = useState(!!ich.entwicklermodus);
 
   const fName = useFormular(async () => { await api.profil(name); await aktualisieren(); return 'Name gespeichert.'; });
   const fEmail = useFormular(async () => {
@@ -72,6 +73,13 @@ export function Profil() {
         {fPw.anzeige}
         <div className="knoepfe"><button className="knopf primaer" disabled={fPw.sendet || !alt || !neu}>Passwort ändern</button></div>
       </form>
+
+      <div className="blatt">
+        <h2 className="h3">Entwicklermodus</h2>
+        <p className="leise">Zeigt unten rechts bei jedem Seitenaufruf, wie lange die einzelnen Schritte gedauert haben: Netzwerk, Aufbereitung auf dem Server, Datenbankzugriffe, Übertragung, Auswerten und Darstellung im Browser. Gilt nur für dich.</p>
+        <label className="haken"><input type="checkbox" checked={entwickler}
+          onChange={(e) => { const an = e.target.checked; setEntwickler(an); void api.entwicklermodus(an).then(aktualisieren).catch(() => setEntwickler(!an)); }} /><span>Zeitmessung anzeigen</span></label>
+      </div>
     </div>
   );
 }

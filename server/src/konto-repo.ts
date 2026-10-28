@@ -16,7 +16,7 @@ export interface KontoRepo {
   holeBenutzer(id: string): Promise<Benutzer | undefined>;
   holeHash(email: string): Promise<{ benutzer: Benutzer; hash: string | null } | undefined>;
   legeBenutzerAn(b: NeuerBenutzer): Promise<Benutzer>;
-  aendereBenutzer(id: string, d: Partial<Pick<Benutzer, 'name' | 'rolle' | 'aktiv' | 'email'>>): Promise<Benutzer>;
+  aendereBenutzer(id: string, d: Partial<Pick<Benutzer, 'name' | 'rolle' | 'aktiv' | 'email' | 'entwicklermodus'>>): Promise<Benutzer>;
   setzeHash(id: string, hash: string): Promise<void>;
   notiereAnmeldung(id: string): Promise<void>;
   loescheBenutzer(id: string): Promise<void>;
@@ -70,7 +70,7 @@ export function speicherKontoRepo(): KontoRepo {
     },
     async legeBenutzerAn(n) {
       if ([...benutzer.values()].some((x) => x.email.toLowerCase() === n.email.toLowerCase())) throw Object.assign(new Error('doppelt'), { code: '23505' });
-      const b = { id: n.id, email: n.email, name: n.name, rolle: n.rolle, aktiv: true, hatPasswort: !!n.passwortHash, erstellt: new Date().toISOString(), letzteAnmeldung: null, hash: n.passwortHash };
+      const b = { id: n.id, email: n.email, name: n.name, rolle: n.rolle, aktiv: true, hatPasswort: !!n.passwortHash, erstellt: new Date().toISOString(), letzteAnmeldung: null, entwicklermodus: false, hash: n.passwortHash };
       benutzer.set(n.id, b);
       return ohneHash(b);
     },
@@ -126,6 +126,7 @@ const alsBenutzer = (r: Zeile): Benutzer => ({
   hatPasswort: r.passwort_hash != null,
   erstellt: iso(r.erstellt)!,
   letzteAnmeldung: iso(r.letzte_anmeldung),
+  entwicklermodus: !!r.entwicklermodus,
 });
 
 const alsVertretung = (r: Zeile): Vertretung => ({
@@ -167,7 +168,8 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
           name = coalesce(${d.name ?? null}, name),
           email = coalesce(${d.email ?? null}, email),
           rolle = coalesce(${d.rolle ?? null}, rolle),
-          aktiv = coalesce(${d.aktiv ?? null}::boolean, aktiv)
+          aktiv = coalesce(${d.aktiv ?? null}::boolean, aktiv),
+          entwicklermodus = coalesce(${d.entwicklermodus ?? null}::boolean, entwicklermodus)
         WHERE id = ${id} AND haushalt_id = ${haushaltId}
         RETURNING *`;
       return alsBenutzer(r);

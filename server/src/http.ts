@@ -5,6 +5,7 @@ import Fastify, { type FastifyBaseLogger, type FastifyRequest } from 'fastify';
 import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import type { Konten } from './konten';
+import type { Messung } from './messung';
 import { kontext, protokoll, type Kontext, type Stufe } from './protokoll';
 import { dateiKoepfe, leseCookie, modulAus, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage } from './routen';
 
@@ -22,6 +23,8 @@ interface Optionen {
   sicher?: boolean;
   /** Hinter einem Reverse-Proxy: X-Forwarded-For auswerten. */
   proxy?: boolean;
+  /** Messung der Datenbankzugriffe (lange Zugriffe, Server-Timing). */
+  messung?: Messung;
 }
 
 export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}) {
@@ -60,7 +63,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
   // Datei-Uploads kommen als rohe Bytes (application/octet-stream).
   app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer' }, (_req, body, fertig) => fertig(null, body));
 
-  for (const r of routen(dienst, konten)) {
+  for (const r of routen(dienst, konten, opt.messung)) {
     app.route({
       method: r.methode,
       url: r.pfad,
@@ -74,13 +77,16 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
           ip: req.ip,
           geraet: String(req.headers['user-agent'] ?? ''),
         };
-        const k: Kontext = { anfrage: req.id, db: { anzahl: 0, ms: 0 } };
+        const start = performance.now();
+        const k: Kontext = { anfrage: req.id, pfad: `${req.method} ${req.url.split('?')[0]}`, db: { anzahl: 0, ms: 0 } };
         (req as MitKontext).dms = k;
         const antwort = await kontext.run(k, async () => {
           await pruefeZugang(r, a, (n) => req.headers[n] as string | undefined, konten);
           k.benutzer = a.benutzer?.email;
           return r.handler(a);
         });
+        // Für den Entwicklermodus: Dauer auf dem Server, davon Datenbank (Anzahl Zugriffe in desc).
+        reply.header('server-timing', `app;dur=${(performance.now() - start).toFixed(1)}, db;dur=${k.db.ms.toFixed(1)};desc="${k.db.anzahl}"`);
         if (antwort.sitzungSetzen !== undefined) reply.header('set-cookie', sitzungsCookie(antwort.sitzungSetzen, opt.sicher ?? false));
         if (antwort.datei) {
           for (const [k, v] of Object.entries(dateiKoepfe(antwort.datei))) reply.header(k, v);

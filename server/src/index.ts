@@ -6,6 +6,7 @@ import { ordnerSpeicher } from './dateispeicher';
 import { baueApp } from './http';
 import { Konten } from './konten';
 import { pgKontoRepo } from './konto-repo';
+import { Messung, pgMessSpeicher } from './messung';
 import { protokoll } from './protokoll';
 import { pgRepo } from './repo-pg';
 import { erstelleMailer } from './smtp';
@@ -53,12 +54,16 @@ const mailer = erstelleMailer({
   absender: env.SMTP_FROM,
 });
 
-const konten = new Konten(pgKontoRepo(sql, cfg.haushalt), mailer, cfg.appUrl);
-const dienst = new Dienst(pgRepo(sql, cfg.haushalt), ordnerSpeicher(cfg.dateien, cfg.haushalt));
+// Jeder Datenbankzugriff der Repos wird gezählt und gestoppt (Entwicklermodus, lange Zugriffe).
+const messung = new Messung(pgMessSpeicher(sql, cfg.haushalt));
+await messung.start();
+const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, cfg.haushalt), 'konto'), mailer, cfg.appUrl);
+const dienst = new Dienst(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'mappen'), ordnerSpeicher(cfg.dateien, cfg.haushalt));
 const app = await baueApp(dienst, konten, {
   webDir: cfg.web,
   sicher: cfg.appUrl.startsWith('https://'),
   proxy: cfg.proxy,
+  messung,
 });
 
 log.info(`E-Mail-Versand: ${mailer ? `über ${env.SMTP_HOST}` : 'aus (SMTP_HOST nicht gesetzt) – Links werden in der Benutzerverwaltung angezeigt'}`);

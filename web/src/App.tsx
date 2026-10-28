@@ -4,6 +4,7 @@ import { Ablage } from './ablage/Ablage';
 import { useDaten } from './daten';
 import { useKonto } from './konto';
 import { geheZu, Link, useOrt } from './ort';
+import { Messpanel } from './Messpanel';
 import { Profil } from './profil/Profil';
 import { Werkbank } from './werkbank/Werkbank';
 
@@ -58,6 +59,7 @@ export function App() {
         {d.fehler && <div className="hinweis schlecht"><p>{d.fehler}</p><button className="knopf klein" onClick={() => void d.neuLaden()}>Erneut versuchen</button></div>}
         {inhalt}
       </main>
+      {ich.entwicklermodus && <Messpanel />}
     </div>
   );
 }

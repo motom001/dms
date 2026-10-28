@@ -31,7 +31,11 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const dir = fileURLToPath(new URL('../migrations', import.meta.url));
     await migriere(sql, dir, () => {});
     await migriere(sql, dir, () => {}); // zweiter Lauf darf nichts tun
-    app = await baueApp(new Dienst(pgRepo(sql, HAUSHALT), ordnerSpeicher(ordner, HAUSHALT)), new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas:3000'));
+    const { Messung, pgMessSpeicher } = await import('../src/messung');
+    const messung = new Messung(pgMessSpeicher(sql, HAUSHALT));
+    await messung.start();
+    app = await baueApp(new Dienst(messung.umhuelle(pgRepo(sql, HAUSHALT), 'mappen'), ordnerSpeicher(ordner, HAUSHALT)),
+      new Konten(messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'), null, 'http://nas:3000'), { messung });
   });
   after(async () => { await app?.close(); await sql?.end(); });
 
@@ -290,5 +294,26 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const dbg = (await anfrage('GET', `/api/werkbank/protokoll?seit=${r.letzte}&stufe=debug`)).body.eintraege;
     assert.ok(dbg.some((e: { text: string }) => e.text === 'GET /api/sichten 200'), 'Anfragen im Debug-Modus sichtbar');
     assert.equal((await anfrage('PUT', '/api/werkbank/debug', { an: false })).body.an, false);
+  });
+
+  it('misst Datenbankzugriffe und merkt sich lange', async () => {
+    const r = await app.inject({ method: 'GET', url: '/api/sichten', headers: { cookie } });
+    assert.match(String(r.headers['server-timing']), /^app;dur=[\d.]+, db;dur=[\d.]+;desc="\d+"$/);
+    assert.ok(Number(/desc="(\d+)"/.exec(String(r.headers['server-timing']))![1]) >= 2, 'Sitzung und Zähler');
+    // Schwelle auf 1 ms: dann gilt praktisch jeder Zugriff als lang.
+    assert.equal((await anfrage('PUT', '/api/werkbank/datenbank', { schwelleMs: 0, tage: 7 })).status, 422);
+    assert.deepEqual((await anfrage('PUT', '/api/werkbank/datenbank', { schwelleMs: 1, tage: 7 })).body, { schwelleMs: 1, tage: 7 });
+    await anfrage('GET', '/api/mappen?sicht=eingang&suche=xyz');
+    await anfrage('PUT', `/api/typen/${(await anfrage('GET', '/api/typen')).body[0].id}`, (await anfrage('GET', '/api/typen')).body[0]);
+    await new Promise((x) => setTimeout(x, 100));
+    const d = (await anfrage('GET', '/api/werkbank/datenbank')).body;
+    assert.deepEqual(d.einstellungen, { schwelleMs: 1, tage: 7 });
+    assert.ok(Array.isArray(d.laufend));
+    assert.ok(d.langlaeufer.length >= 1, 'mindestens ein Zugriff über 1 ms');
+    assert.match(d.langlaeufer[0].zugriff, /^(mappen|konto)\./);
+    assert.equal((await anfrage('PUT', '/api/werkbank/datenbank', { schwelleMs: 500, tage: 30 })).status, 200);
+    // Entwicklermodus im Profil
+    assert.equal((await anfrage('PUT', '/api/konto/profil', { entwicklermodus: true })).body.entwicklermodus, true);
+    assert.equal((await anfrage('GET', '/api/konto/status')).body.benutzer.entwicklermodus, true);
   });
 });

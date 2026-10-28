@@ -133,6 +133,8 @@ export interface Benutzer {
   letzteAnmeldung: string | null;
   /** Letzte Aktivität in irgendeiner gültigen Sitzung (nur in der Benutzerverwaltung). */
   zuletztAktiv?: string | null;
+  /** Zeigt beim Aufruf einer Seite die Dauer der einzelnen Schritte (im eigenen Profil schaltbar). */
+  entwicklermodus?: boolean;
 }
 
 /** Als „gerade aktiv“ gilt, wer in den letzten so vielen Minuten etwas getan hat. */

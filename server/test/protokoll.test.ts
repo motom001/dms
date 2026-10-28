@@ -55,3 +55,28 @@ describe('Protokoll', () => {
     assert.match(zeile(e), /ERROR \[http\] fehlgeschlagen anfrage="GET \/api\/x"\n.*kaputt/);
   });
 });
+
+describe('Messung der Datenbankzugriffe', () => {
+  it('zählt Zugriffe je Anfrage und merkt sich lange', async () => {
+    const { Messung, speicherMessSpeicher } = await import('../src/messung');
+    const m = new Messung(speicherMessSpeicher());
+    await m.setze({ schwelleMs: 15, tage: 3 });
+    const repo = m.umhuelle({
+      async schnell() { return 1; },
+      async langsam() { await new Promise((r) => setTimeout(r, 30)); return 2; },
+      async kaputt() { throw new Error('nein'); },
+    }, 'test');
+    const k = { anfrage: 'x', pfad: 'GET /api/test', benutzer: 'a@example.org', db: { anzahl: 0, ms: 0 } };
+    await kontext.run(k, async () => {
+      assert.equal(await repo.schnell(), 1);
+      assert.equal(await repo.langsam(), 2);
+      await assert.rejects(repo.kaputt());
+    });
+    assert.equal(k.db.anzahl, 3);
+    assert.ok(k.db.ms >= 25);
+    const l = await m.speicher.liste(10);
+    assert.equal(l.length, 1);
+    assert.deepEqual([l[0].zugriff, l[0].anfrage, l[0].benutzer], ['test.langsam', 'GET /api/test', 'a@example.org']);
+    await assert.rejects(m.setze({ schwelleMs: 0 }));
+  });
+});

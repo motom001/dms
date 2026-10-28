@@ -37,6 +37,8 @@ export interface Eintrag {
 /** Was zur laufenden Anfrage gehört (Benutzer, Anfrage-Id, Messwerte der Datenbank). */
 export interface Kontext {
   anfrage: string;
+  /** Methode und Pfad, z. B. „GET /api/mappen“. */
+  pfad?: string;
   benutzer?: string;
   db: { anzahl: number; ms: number };
 }

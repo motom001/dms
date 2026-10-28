@@ -3,6 +3,7 @@ import { useDaten } from '../daten';
 import { TypEditor } from '../einrichtung/Einrichtung';
 import { Link } from '../ort';
 import { BenutzerDetail, BenutzerListe, BenutzerNeu, useBenutzer } from './Benutzer';
+import { DatenbankPanel, LanglaeuferListe, useDatenbank } from './Datenbank';
 import { DemoListe, DemoPanel } from './Demo';
 import { ProtokollDetail, ProtokollListe, useProtokoll } from './Protokoll';
 
@@ -14,12 +15,14 @@ import { ProtokollDetail, ProtokollListe, useProtokoll } from './Protokoll';
  * /werkbank/benutzer[/:id|/neu]
  * /werkbank/demo
  * /werkbank/protokoll[/:nr]
+ * /werkbank/datenbank[/:id]
  */
 export function Werkbank({ teile }: { teile: string[] }) {
   const d = useDaten();
   const [, bereich = 'typen', id] = teile;
   const benutzer = useBenutzer();
   const protokoll = useProtokoll(bereich === 'protokoll');
+  const datenbank = useDatenbank(bereich === 'datenbank');
   // Anmeldungen und Aktivität ändern sich laufend: beim Öffnen der Benutzer neu laden.
   useEffect(() => { if (bereich === 'benutzer') void benutzer.laden(); }, [bereich, id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -45,6 +48,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'demo') {
     liste = <DemoListe />;
     rechts = <DemoPanel />;
+  } else if (bereich === 'datenbank') {
+    liste = <LanglaeuferListe z={datenbank} offen={id} />;
+    rechts = <DatenbankPanel z={datenbank} id={id} />;
   } else if (bereich === 'protokoll') {
     liste = <ProtokollListe p={protokoll} offen={id} />;
     rechts = <ProtokollDetail p={protokoll} nr={id} />;
@@ -58,6 +64,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           <Link to="/werkbank/typen" className={`sicht ${bereich === 'typen' ? 'an' : ''}`}><span className="nm">Mappentypen</span><span className="zahl">{d.typen.length}</span></Link>
           <Link to="/werkbank/benutzer" className={`sicht ${bereich === 'benutzer' ? 'an' : ''}`}><span className="nm">Benutzer</span><span className="zahl">{benutzer.geladen ? benutzer.liste.length : ''}</span></Link>
           <Link to="/werkbank/protokoll" className={`sicht ${bereich === 'protokoll' ? 'an' : ''}`}><span className="nm">Protokoll</span>{protokoll.debug?.an && <span className="zaehler" title="Debug-Modus ist an">Debug</span>}</Link>
+          <Link to="/werkbank/datenbank" className={`sicht ${bereich === 'datenbank' ? 'an' : ''}`}><span className="nm">Datenbank</span></Link>
           <Link to="/werkbank/demo" className={`sicht ${bereich === 'demo' ? 'an' : ''}`}><span className="nm">Demo-Daten</span><span className="zahl">{Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || ''}</span></Link>
         </nav>
         {/* Freiwillig, ohne Gebühren für beide Seiten (GitHub Sponsors von persönlichen Konten). */}

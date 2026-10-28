@@ -6,6 +6,7 @@ import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import { SITZUNG_TAGE, type Konten } from './konten';
 import type { SitzungIntern } from './konto-repo';
+import type { Messung } from './messung';
 import { MODULE, protokoll, STUFEN, type Stufe } from './protokoll';
 
 const L = {
@@ -64,7 +65,7 @@ const ich = (a: Anfrage) => {
   return a.benutzer;
 };
 
-export function routen(dienst: Dienst, konten: Konten, log: (m: string) => void = (m) => L.mail.warn(m)): Route[] {
+export function routen(dienst: Dienst, konten: Konten, messung?: Messung, log: (m: string) => void = (m) => L.mail.warn(m)): Route[] {
   const typName = async (id: string) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? id;
   return [
     { methode: 'GET', pfad: '/api/gesundheit', zugang: 'offen', handler: async () => ok({ ok: true }) },
@@ -122,7 +123,8 @@ export function routen(dienst: Dienst, konten: Konten, log: (m: string) => void 
     /* ---------- Eigenes Profil ---------- */
     { methode: 'PUT', pfad: '/api/konto/profil', zugang: 'angemeldet', handler: async (a) => {
       const r = await konten.aendereProfil(ich(a), b(a));
-      L.konto.info('Eigenen Namen geändert', { name: r.name });
+      if (b(a).name !== undefined) L.konto.info('Eigenen Namen geändert', { name: r.name });
+      if (b(a).entwicklermodus !== undefined) L.konto.info(`Entwicklermodus ${r.entwicklermodus ? 'ein' : 'aus'}geschaltet`);
       return ok(r);
     } },
     { methode: 'PUT', pfad: '/api/konto/email', zugang: 'angemeldet', handler: async (a) => {
@@ -229,6 +231,21 @@ export function routen(dienst: Dienst, konten: Konten, log: (m: string) => void 
       const r = protokoll.setzeDebug(an);
       L.system.warn(an ? `Debug-Modus eingeschaltet bis ${new Date(r.bis!).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin' })}` : 'Debug-Modus ausgeschaltet');
       return ok(r);
+    } },
+
+    /* ---------- Datenbank: lange Zugriffe ---------- */
+    { methode: 'GET', pfad: '/api/werkbank/datenbank', zugang: 'admin', handler: async () => {
+      if (!messung) return ok({ einstellungen: null, langlaeufer: [], laufend: [] });
+      const [langlaeufer, laufend] = await Promise.all([messung.speicher.liste(500), messung.speicher.laufende()]);
+      return ok({ einstellungen: messung.einstellungen, langlaeufer, laufend });
+    } },
+    { methode: 'PUT', pfad: '/api/werkbank/datenbank', zugang: 'admin', handler: async (a) => {
+      if (!messung) throw new Fachfehler(404, 'Messung ist nicht aktiv.');
+      try {
+        const e = await messung.setze({ schwelleMs: b(a).schwelleMs as number, tage: b(a).tage as number });
+        L.werkbank.info('Einstellungen für lange Datenbankzugriffe geändert', { ...e });
+        return ok(e);
+      } catch (e) { throw new Fachfehler(422, (e as Error).message); }
     } },
 
     /* ---------- Mappen ---------- */

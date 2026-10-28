@@ -55,6 +55,8 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 
 - **Eigenes Protokoll** (`server/src/protokoll.ts`) statt Fastify/pino direkt: jede Meldung mit Modul, Benutzer und Anfrage-Kennung (über AsyncLocalStorage), lesbar in den Container-Logs, zusätzlich ein Ringpuffer (24 h, 10.000 Einträge) für die Werkbank. Fastify schreibt über einen pino-kompatiblen Adapter hinein.
 - **Live-Ansicht per Abfrage alle zwei Sekunden** statt Server-Sent Events: funktioniert hinter jedem Reverse-Proxy ohne Sonderkonfiguration (nginx puffert SSE sonst).
+- **Messung je Datenbankzugriff:** Jede Methode der Repos wird über einen Proxy gezählt und gestoppt (ein Zugriff kann mehrere SQL-Anweisungen umfassen). Die Summe je Anfrage geht im Header `Server-Timing` an die Oberfläche; die übrigen Schritte misst der Browser (Resource Timing). „Netzwerk“ ist dabei eine Näherung.
+- **Langläufer** stehen in der Datenbank (Tabelle `langlaeufer`), Schwelle und Aufbewahrung in `einstellungen`.
 - **Debug-Modus** nur im Arbeitsspeicher und höchstens eine Stunde; nach einem Neustart ist er aus.
 - **Als anderer Benutzer anmelden:** eigene Sitzung des Benutzers mit Verweis auf die Vertretung; der Benutzer sieht beim nächsten Mal, wer wann als er agiert hat. Ein manipulationssicheres Protokoll ist bewusst nicht Teil davon (#16).
 

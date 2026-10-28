@@ -1,3 +1,4 @@
+import { messung } from './messung';
 import type { Benutzer, Dokument, Mappe, MappenBezug, Mappentyp, Pruefergebnis, Rolle, Sitzung, Vertretung } from '../../shared/src/model';
 
 export class ApiFehler extends Error {
@@ -18,6 +19,8 @@ export const ABGEMELDET = 'dms:abgemeldet';
 
 async function anfrage<T>(methode: string, url: string, body?: unknown): Promise<T> {
   let r: Response;
+  const start = performance.now();
+  const seite = messung.seite;
   try {
     r = await fetch(url, {
       method: methode,
@@ -29,7 +32,9 @@ async function anfrage<T>(methode: string, url: string, body?: unknown): Promise
   } catch {
     throw new ApiFehler(0, 'Der Server ist nicht erreichbar.');
   }
+  const kopf = performance.now();
   const daten = r.status === 204 ? null : await r.json().catch(() => null);
+  messung.erfasse(seite, methode, url, r, start, kopf, performance.now());
   if (r.status === 401 && !url.startsWith('/api/konto/')) dispatchEvent(new Event(ABGEMELDET));
   if (!r.ok) throw new ApiFehler(r.status, daten?.fehler ?? `Fehler ${r.status}`, daten?.details);
   return daten as T;
@@ -91,7 +96,10 @@ export const api = {
   protokoll: (f: Record<string, string | number | undefined>) =>
     anfrage<ProtokollAntwort>('GET', `/api/werkbank/protokoll?${new URLSearchParams(Object.entries(f).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]))}`),
   debug: (an: boolean) => anfrage<DebugStand>('PUT', '/api/werkbank/debug', { an }),
+  datenbank: () => anfrage<DatenbankStand>('GET', '/api/werkbank/datenbank'),
+  datenbankEinstellen: (e: MessEinstellungen) => anfrage<MessEinstellungen>('PUT', '/api/werkbank/datenbank', e),
   profil: (name: string) => anfrage<Benutzer>('PUT', '/api/konto/profil', { name }),
+  entwicklermodus: (an: boolean) => anfrage<Benutzer>('PUT', '/api/konto/profil', { entwicklermodus: an }),
   emailAendern: (email: string, passwort: string) => anfrage<Benutzer>('PUT', '/api/konto/email', { email, passwort }),
   passwortAendern: (passwortAlt: string, passwortNeu: string) => anfrage<{ benutzer: Benutzer }>('PUT', '/api/konto/passwort', { passwortAlt, passwortNeu }),
   dokumentLoeschen: (id: string) => anfrage<null>('DELETE', `/api/dokumente/${id}`),
@@ -125,3 +133,7 @@ export type Stufe = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 export interface Protokolleintrag { nr: number; zeit: string; stufe: Stufe; modul: string; text: string; benutzer?: string; anfrage?: string; daten?: Record<string, unknown> }
 export interface DebugStand { an: boolean; bis: string | null; grundstufe: string }
 export interface ProtokollAntwort { eintraege: Protokolleintrag[]; letzte: number; gespeichert: number; debug: DebugStand; module: string[] }
+export interface MessEinstellungen { schwelleMs: number; tage: number }
+export interface Langlaeufer { id: number; zeit: string; dauerMs: number; zugriff: string; anfrage: string; benutzer: string }
+export interface LaufendeAbfrage { pid: number; seitMs: number; zustand: string; abfrage: string; anwendung: string }
+export interface DatenbankStand { einstellungen: MessEinstellungen | null; langlaeufer: Langlaeufer[]; laufend: LaufendeAbfrage[] }

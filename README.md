@@ -12,9 +12,10 @@ Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsyste
 - **Werkbank** (Administratoren), ebenfalls dreigeteilt:
   - *Mappentypen* – Felder (Datentyp, Pflichtfeld, eindeutig, Längen, Wertebereiche, Auswahllisten, Referenzen), Register und Titel-Vorlage,
   - *Benutzer* – anlegen, Rollen vergeben, Einladungs- und Passwort-Links,
+  - *Datenbank* – lange Datenbankzugriffe (Schwelle und Aufbewahrung einstellbar, Standard 500 ms und 30 Tage) und was gerade in der Datenbank läuft,
   - *Protokoll* – was im System passiert, je Modul (konto, ablage, werkbank, dokumente, datenbank, mail, system, http), mit Filtern und Live-Aktualisierung; Debug-Modus für eine Stunde,
   - *Demo-Daten* – Beispiel-Mappentypen laden, beliebig viele Demo-Mappen für die vorhandenen Typen erzeugen und gesammelt wieder entfernen.
-- **Profil** – jeder Benutzer ändert Name, E-Mail-Adresse und Passwort selbst (mit dem aktuellen Passwort).
+- **Profil** – jeder Benutzer ändert Name, E-Mail-Adresse und Passwort selbst (mit dem aktuellen Passwort). Mit dem *Entwicklermodus* zeigt das DMS bei jedem Seitenaufruf, wie lange Netzwerk, Aufbereitung, Datenbankzugriffe, Übertragung und Darstellung gedauert haben.
 
 Jede Mappe trägt feste Indexwerte: angelegt am/von, zuletzt geändert am/von. Listen laden je 100 Mappen nach Titel sortiert und beim Scrollen weitere; die Suche über einer Liste durchsucht Titel und Werte auf dem Server.
 

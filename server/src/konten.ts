@@ -185,10 +185,15 @@ export class Konten {
     try { await this.mailer.sende(an, m.betreff, m.text); } catch (e) { log(`Hinweis-Mail an ${an} fehlgeschlagen: ${(e as Error).message}`); }
   }
 
-  async aendereProfil(ich: Benutzer, e: { name?: unknown }) {
-    const name = text(e.name);
-    if (!name) throw new Fachfehler(422, 'Bitte einen Namen angeben.');
-    return this.repo.aendereBenutzer(ich.id, { name: name.slice(0, 120) });
+  async aendereProfil(ich: Benutzer, e: { name?: unknown; entwicklermodus?: unknown }) {
+    const d: { name?: string; entwicklermodus?: boolean } = {};
+    if (e.name !== undefined) {
+      const name = text(e.name);
+      if (!name) throw new Fachfehler(422, 'Bitte einen Namen angeben.');
+      d.name = name.slice(0, 120);
+    }
+    if (e.entwicklermodus !== undefined) d.entwicklermodus = !!e.entwicklermodus;
+    return this.repo.aendereBenutzer(ich.id, d);
   }
 
   async aendereEmail(ich: Benutzer, e: { email?: unknown; passwort?: unknown }, log: (m: string) => void = () => {}) {
