@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
-import { darfErstellen, darfLoeschen, geschuetzteFelder, istLeer, istOk, MAX_DATEIGROESSE, standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register } from '../../../shared/src/model';
+import { darfErstellen, darfLoeschen, geschuetzteFelder, istLeer, istOk, MAX_DATEIGROESSE, OCR_STAENDE, standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type OcrStand, type Pruefergebnis, type Register } from '../../../shared/src/model';
 import { api, ApiFehler, dokumentUrl, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -417,6 +417,25 @@ function Dokumente({ register, dokumente, neue, entfernt, hinzufuegen, entferne,
   const [zuGross, setZuGross] = useState<string[]>([]);
   const [ansicht, setAnsicht] = useState<string>();
   const gewaehlt = dokumente.find((x) => x.id === ansicht && !entfernt.includes(x.id));
+  // Texterkennung (#45): Stand nachladen, solange etwas wartet oder läuft.
+  const [ocr, setOcr] = useState<Record<string, OcrStand | undefined>>({});
+  const [text, setText] = useState<{ id: string; text: string | null } | null>(null);
+  const standVon = (x: Dokument) => ocr[x.id] ?? x.ocr;
+  const offen = dokumente.some((x) => { const s = standVon(x)?.stand; return s === 'wartet' || s === 'laeuft'; });
+  useEffect(() => {
+    if (!offen || !dokumente.length) return;
+    const t = setTimeout(() => {
+      void api.mappe(dokumente[0].mappeId).then((m) => setOcr(Object.fromEntries(m.dokumente.map((x) => [x.id, x.ocr]))), () => {});
+    }, 3000);
+    return () => clearTimeout(t);
+  }, [offen, ocr, dokumente]);
+  async function erneut(id: string) {
+    try { const x = await api.texterkennungErneut(id); setOcr((o) => ({ ...o, [id]: x.ocr })); } catch { /* bleibt */ }
+  }
+  async function zeigeText(id: string) {
+    if (text?.id === id) { setText(null); return; }
+    try { setText({ id, text: (await api.volltext(id)).text }); } catch { setText({ id, text: null }); }
+  }
 
   function nimm(liste: FileList | File[]) {
     const alle = [...liste];
@@ -456,6 +475,8 @@ function Dokumente({ register, dokumente, neue, entfernt, hinzufuegen, entferne,
                       ? <button type="button" className="textknopf" onClick={() => setAnsicht(x.id === ansicht ? undefined : x.id)}>{x.name}</button>
                       : <span className="dateiname">{x.name}</span>}
                     <span className="leise klein">{weg ? 'wird beim Speichern gelöscht' : `${groesse(x.groesse)} · ${zeit(x.erstellt)} · ${d.person(x.erstelltVon)}`}</span>
+                    {!weg && <OcrAnzeige s={standVon(x)} erneut={() => void erneut(x.id)} text={() => void zeigeText(x.id)} textOffen={text?.id === x.id} />}
+                    {!weg && text?.id === x.id && <pre className="volltext">{text.text ?? 'Kein Volltext vorhanden.'}</pre>}
                   </div>
                   <div className="zeilenaktionen">
                     {!weg && x.anzeigbar && <a className="textknopf" href={dokumentUrl(x.id)} target="_blank" rel="noreferrer">Öffnen</a>}
@@ -474,6 +495,20 @@ function Dokumente({ register, dokumente, neue, entfernt, hinzufuegen, entferne,
         </div>
       )}
     </div>
+  );
+}
+
+/** Stand der Texterkennung an einem Dokument (#45). */
+function OcrAnzeige({ s, erneut, text, textOffen }: { s?: OcrStand; erneut(): void; text(): void; textOffen: boolean }) {
+  if (!s || s.stand === 'keiner') return null;
+  const klasse = s.stand === 'fertig' ? 'gut' : s.stand === 'fehler' ? 'schlecht' : s.stand === 'ausgelassen' ? '' : 'warn';
+  return (
+    <span className="ocrstand klein">
+      <span className={`chip ${klasse}`} title={s.info ?? undefined}>Volltext: {OCR_STAENDE[s.stand]}{s.stand === 'fertig' && s.seiten ? ` · ${s.seiten} ${s.seiten === 1 ? 'Seite' : 'Seiten'}` : ''}</span>
+      {(s.stand === 'fehler' || s.stand === 'ausgelassen') && s.info && <span className="leise">{s.info}</span>}
+      {s.stand === 'fertig' && <button type="button" className="textknopf" onClick={text}>{textOffen ? 'Text ausblenden' : 'Text anzeigen'}</button>}
+      {(s.stand === 'fehler' || s.stand === 'ausgelassen') && <button type="button" className="textknopf" onClick={erneut}>Erneut versuchen</button>}
+    </span>
   );
 }
 

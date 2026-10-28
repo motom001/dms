@@ -62,6 +62,8 @@ export function bereinigeRegister(e: unknown, felder: Feld[]): Register[] {
         .map((q: Record<string, unknown>) => ({ typId: text(q?.typId), feldKey: text(q?.feldKey) }))
         .filter((q) => q.typId && q.feldKey);
     }
+    // Volltext (#45): nur das Abschalten wird gespeichert; Standard ist an.
+    if (art === 'dokumente' && x?.volltext === false) r.volltext = false;
     return r;
   });
   // Felder ohne Register landen auf dem ersten Feldregister.
@@ -212,6 +214,43 @@ export class Dienst {
 
   /** Konten anbinden: Benutzer-Mappen im Papierkorb (#43). */
   verbindeKonten(h: KontenHaken) { this.konten = h; }
+
+  /** Texterkennung anbinden (#45): neue Dokumente stoßen sie an. */
+  private ocr?: { anstossen(): void };
+  verbindeTexterkennung(t: { anstossen(): void }) { this.ocr = t; }
+
+  /* ---------- Volltext (#45) ---------- */
+
+  /** Erzeugt dieses Dokumentenregister einen Volltext? (Standard: ja) */
+  private static volltextAn(typ: Mappentyp | undefined, registerKey: string) {
+    const r = typ?.register.find((x) => x.key === registerKey);
+    return !r || r.art !== 'dokumente' || r.volltext !== false;
+  }
+
+  /** Volltext für vorhandene Dokumente nachholen (Werkbank → Wartungsoperationen). */
+  async volltextNachholen(): Promise<number> {
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t]));
+    const ids = (await this.repo.ocrOhneVolltext()).filter((d) => Dienst.volltextAn(typen.get(d.typId), d.registerKey)).map((d) => d.id);
+    await this.repo.ocrEinreihen(ids);
+    if (ids.length) protokoll.modul('werkbank').info('Volltext für vorhandene Dokumente nachholen', { dokumente: ids.length });
+    this.ocr?.anstossen();
+    return ids.length;
+  }
+
+  /** Texterkennung für ein Dokument erneut versuchen. */
+  async texterkennungErneut(id: string) {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    await this.repo.ocrEinreihen([id]);
+    this.ocr?.anstossen();
+    return (await this.repo.holeDokument(id))!;
+  }
+
+  async volltext(id: string) {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    return { dokument: d, text: await this.repo.volltext(id) };
+  }
 
   private verschluessele = (klartext: string) => (this.tresor ? this.tresor.verschluessele(klartext) : keinSchluessel());
 
@@ -386,10 +425,12 @@ export class Dienst {
    * Eine Seite einer Sicht: „eingang“, eine verwaltete Sicht (#38) oder – für Links auf Mappen,
    * deren Typ keine eigene Sicht hat – eine Typ-Id. Mit den Bezügen für die Anzeige.
    */
-  async seite(ich: { id: string; rolle: string }, q: { sicht?: string; von?: unknown; anzahl?: unknown; suche?: unknown; sortierung?: unknown; absteigend?: unknown }) {
+  async seite(ich: { id: string; rolle: string }, q: { sicht?: string; von?: unknown; anzahl?: unknown; suche?: unknown; sortierung?: unknown; absteigend?: unknown; volltext?: unknown }) {
     const von = Math.max(0, Math.floor(Number(q.von) || 0));
     const anzahl = Math.min(500, Math.max(1, Math.floor(Number(q.anzahl) || 100)));
     const suche = text(q.suche).slice(0, 200) || undefined;
+    // Auch im Volltext der Dokumente suchen (#45).
+    const volltext = q.volltext === true || q.volltext === 'true' || undefined;
     const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
     const sichten = await this.repo.listeSichten();
     // „typ:<id>“: alle Mappen eines Typs, ohne Bedingungen einer Sicht (z. B. Auswahl eines Verweises).
@@ -399,12 +440,12 @@ export class Dienst {
     const einTyp = q.sicht === 'eingang' ? undefined : sicht ? (() => { const w = wirksameTypen(sichten, sicht.id); return w.length === 1 ? typen.get(w[0]) : undefined; })() : typen.get(nurTyp ?? String(q.sicht));
     const sortierung = sortierungAus(text(q.sortierung), q.absteigend === 'true' || q.absteigend === true, einTyp);
     const r = q.sicht === 'eingang'
-      ? await this.repo.seite({ eingang: { benutzerId: ich.id, admin: ich.rolle === 'admin' }, suche, von, anzahl, sortierung })
+      ? await this.repo.seite({ eingang: { benutzerId: ich.id, admin: ich.rolle === 'admin' }, suche, volltext, von, anzahl, sortierung })
       : sicht
-        ? await this.repo.seite({ klauseln: klauselnFuer(sichten, sicht.id, typen, await this.aufloesung(ich.id)), suche, von, anzahl, sortierung })
-        : await this.repo.seite({ typId: nurTyp ?? q.sicht, suche, von, anzahl, sortierung });
+        ? await this.repo.seite({ klauseln: klauselnFuer(sichten, sicht.id, typen, await this.aufloesung(ich.id)), suche, volltext, von, anzahl, sortierung })
+        : await this.repo.seite({ typId: nurTyp ?? q.sicht, suche, volltext, von, anzahl, sortierung });
     const ziele = r.mappen.flatMap((m) => { const t = typen.get(m.typId); return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []; });
-    return { gesamt: r.gesamt, von, mappen: r.mappen, bezuege: Object.fromEntries(await this.repo.bezuege(ziele)) };
+    return { gesamt: r.gesamt, von, mappen: r.mappen, bezuege: Object.fromEntries(await this.repo.bezuege(ziele)), ...(r.ausschnitte ? { ausschnitte: r.ausschnitte } : {}) };
   }
 
   /** Anzahl Mappen je Typ (davon unpassend, Demo), je Sicht und im Eingang des Benutzers. */
@@ -997,8 +1038,15 @@ export class Dienst {
       id: randomUUID(), mappeId, registerKey: reg.key, name: dateiname(e.name), mime: erkannt ?? angegeben,
       groesse: inhalt.length, sha256, anzeigbar: !!erkannt, erstellt: new Date().toISOString(), erstelltVon: benutzerId,
     });
+    // Volltext (#45): neues Dokument in die Warteschlange, wenn das Register das will.
+    let neu = dokument;
+    if (Dienst.volltextAn(typ, reg.key)) {
+      await this.repo.ocrEinreihen([dokument.id]);
+      neu = (await this.repo.holeDokument(dokument.id)) ?? dokument;
+      this.ocr?.anstossen();
+    }
     const bezuege = await this.repo.bezuege(gleicherInhalt.map((d) => d.mappeId));
-    return { dokument, gleicherInhalt: gleicherInhalt.map((d) => ({ mappeId: d.mappeId, name: d.name, ...bezuege.get(d.mappeId) })) };
+    return { dokument: neu, gleicherInhalt: gleicherInhalt.map((d) => ({ mappeId: d.mappeId, name: d.name, ...bezuege.get(d.mappeId) })) };
   }
 
   async dokumentInhalt(id: string) {

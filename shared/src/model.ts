@@ -74,6 +74,8 @@ export interface Register {
   felder?: string[];
   /** Verknüpfungsregister: welche Verweise es zeigt; leer = alle. */
   quellen?: Quelle[];
+  /** Dokumentenregister: Volltext erzeugen (Texterkennung, #45); Standard: ja. */
+  volltext?: boolean;
 }
 
 export interface MappentypDaten {
@@ -518,6 +520,25 @@ export interface Dokument {
   anzeigbar: boolean;
   erstellt: string;
   erstelltVon: string | null;
+  /** Stand der Texterkennung (#45). */
+  ocr?: OcrStand;
+}
+
+/* ---------- Texterkennung (#45) ---------- */
+/** Fundstelle im Volltext: Dokument und Textausschnitt; Treffer zwischen TREFFER_ANFANG und TREFFER_ENDE. */
+export interface Ausschnitt { dokument: string; text: string }
+export const TREFFER_ANFANG = '\u0002';
+export const TREFFER_ENDE = '\u0003';
+export const OCR_STAENDE = {
+  keiner: 'ohne Volltext', wartet: 'wartet', laeuft: 'läuft', fertig: 'fertig', fehler: 'Fehler', ausgelassen: 'ausgelassen',
+} as const;
+export type OcrStandArt = keyof typeof OCR_STAENDE;
+export interface OcrStand {
+  stand: OcrStandArt;
+  /** Fehlermeldung, Grund fürs Auslassen oder Herkunft des Texts (Textebene/Texterkennung). */
+  info?: string | null;
+  seiten?: number | null;
+  zeit?: string | null;
 }
 export const MAX_DATEIGROESSE = 100 * 1024 * 1024;
 

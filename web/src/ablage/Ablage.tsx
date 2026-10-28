@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { kinderVon, mitNachkommen, type Sicht } from '../../../shared/src/sichten';
-import { darfErstellen, formatiere, GEMISCHTE_SPALTEN, istSystemspalte, sortierbar, SYSTEMSPALTEN, vorlageFelder, wirksameVorlage, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
+import { darfErstellen, formatiere, GEMISCHTE_SPALTEN, istSystemspalte, sortierbar, SYSTEMSPALTEN, TREFFER_ANFANG, TREFFER_ENDE, vorlageFelder, wirksameVorlage, type Ausschnitt, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
 import { api, type Bezuege, type MappeDetails } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -127,7 +127,9 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
     const n: Sortierung | null = sortierung?.spalte === spalte ? { spalte, absteigend: !sortierung.absteigend } : { spalte, absteigend: false };
     d.setzeEinstellung(sortSchluessel, n.spalte === '_titel' && !n.absteigend ? null : n);
   };
-  const s = useSeiten(p.sicht, suche, d.stand, sortierung);
+  // Volltextsuche (#45): je Benutzer gemerkt.
+  const volltext = d.einstellungen.suche_volltext === true;
+  const s = useSeiten(p.sicht, suche, d.stand, sortierung, volltext);
 
   // Breite der Liste: schmal → kompakte Einträge, breit → Tabelle (#22).
   const mess = useRef<HTMLDivElement>(null);
@@ -170,9 +172,14 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
         {p.neu && <Link to={`/ablage/${p.sicht}/neu`} className="knopf gruen klein">+ Neu</Link>}
       </div>
       {zeigeSuche && (
-        <label className="suche"><span className="sr">Suchen</span>
-          <input type="search" placeholder="Suchen in Titel und Werten …" value={eingabe} onChange={(e) => setEingabe(e.target.value)} />
-        </label>
+        <div className="suchzeile">
+          <label className="suche"><span className="sr">Suchen</span>
+            <input type="search" placeholder={volltext ? 'Suchen in Titel, Werten und Dokumenten …' : 'Suchen in Titel und Werten …'} value={eingabe} onChange={(e) => setEingabe(e.target.value)} />
+          </label>
+          <label className="haken klein" title="Auch im Text der Dokumente suchen (Textebene und Texterkennung). Findet auch Wortformen, z. B. „Rechnungen“ bei „Rechnung“.">
+            <input type="checkbox" checked={volltext} onChange={(e) => d.setzeEinstellung('suche_volltext', e.target.checked || null)} /><span>Volltext durchsuchen</span>
+          </label>
+        </div>
       )}
       {anzahlText && (
         <p className="listenzahl leise klein" aria-live="polite">
@@ -184,7 +191,7 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
       {s.gesamt === 0
         ? <p className="leise leerliste">{suche ? 'Nichts gefunden.' : p.leerText}</p>
         : tabelle
-          ? <Tabelle sicht={p.sicht} typ={p.typ} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} offen={p.offen}
+          ? <Tabelle sicht={p.sicht} typ={p.typ} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} ausschnitte={s.ausschnitte} offen={p.offen}
               sortierung={sortierung} sortiere={sortiere} ende={nachladen ? (el) => { ende.current = el; } : undefined} nachladen={nachladen} />
           : <ul className="mappenliste">
               {s.mappen.map((m) => {
@@ -195,6 +202,7 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
                     <Link to={`/ablage/${p.sicht}/${m.id}`} className={`eintrag ${p.offen === m.id ? 'an' : ''}`}>
                       <span className="titel">{k.titel}</span>
                       <Unter text={k.unter} />
+                      {s.ausschnitte[m.id] && <Fundstelle a={s.ausschnitte[m.id]} />}
                       {m.passt === false && <span className="problem">{p.typ ? 'passt nicht zur Definition' : m.problem}</span>}
                     </Link>
                   </li>
@@ -217,7 +225,7 @@ function kompakt(sichtTyp: Mappentyp | undefined, typ: Mappentyp | undefined, m:
 }
 
 function Tabelle(p: {
-  sicht: string; typ?: Mappentyp; spalten: string[]; mappen: Mappe[]; bezuege: Bezuege; offen?: string;
+  sicht: string; typ?: Mappentyp; spalten: string[]; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; offen?: string;
   sortierung: Sortierung | null; sortiere(spalte: string): void; ende?: (el: HTMLElement | null) => void; nachladen: ReactNode;
 }) {
   const d = useDaten();
@@ -254,7 +262,7 @@ function Tabelle(p: {
               <tr key={m.id} className={`${p.offen === m.id ? 'an' : ''} ${m.passt === false ? 'unpassend' : ''}`} onClick={(e) => { if (!(e.target as HTMLElement).closest('a')) geheZu(ziel); }}>
                 {p.spalten.map((k, i) => {
                   const text = zelle(k, m, typ, p.bezuege, d.person);
-                  return <td key={k} className={rechts(k) ? 'rechts' : kurz(k) ? 'kurz' : ''}>{i === 0 ? <Link to={ziel}>{text || titelOder(m.titel)}</Link> : text}</td>;
+                  return <td key={k} className={rechts(k) ? 'rechts' : kurz(k) ? 'kurz' : ''}>{i === 0 ? <><Link to={ziel}>{text || titelOder(m.titel)}</Link>{p.ausschnitte?.[m.id] && <Fundstelle a={p.ausschnitte[m.id]} />}</> : text}</td>;
                 })}
                 {p.sicht === 'eingang' && <td className="problemzelle">{m.problem}</td>}
               </tr>
@@ -290,6 +298,16 @@ export function zelle(k: string, m: Mappe, typ: Mappentyp | undefined, bezuege: 
 }
 
 const Unter = ({ text }: { text: string }) => (text ? <span className="unter">{text}</span> : null);
+
+/** Fundstelle im Volltext (#45): Dokumentname und Ausschnitt, Treffer hervorgehoben (ohne HTML vom Server). */
+function Fundstelle({ a }: { a: Ausschnitt }) {
+  const teile = a.text.split(TREFFER_ANFANG).flatMap((t, i) => {
+    if (i === 0) return [<span key={`t${i}`}>{t}</span>];
+    const [treffer, rest = ''] = t.split(TREFFER_ENDE);
+    return [<mark key={`m${i}`}>{treffer}</mark>, <span key={`r${i}`}>{rest}</span>];
+  });
+  return <span className="fundstelle"><span className="dok" title="Fundstelle im Dokument">{a.dokument}:</span> {teile}</span>;
+}
 
 /**
  * Verwaltete Sichten als Baum (#38). Untersichten lassen sich zuklappen; gemerkt je Gerät

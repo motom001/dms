@@ -15,7 +15,7 @@ const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 
 describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let sql: any; let app: any; let betrieb: any;
+  let sql: any; let app: any; let betrieb: any; let texterkennung: any;
 
   before(async () => {
     const { verbinde, migriere } = await import('../src/db');
@@ -48,9 +48,14 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     await betrieb.speichereAdresse('http://nas:3000');
     const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.benutzerspiegel());
     dienst.verbindeKonten(konten.papierkorbHaken());
+    // Texterkennung wie im Betrieb (#45); in GitHub Actions sind tesseract und poppler installiert.
+    const { Texterkennung } = await import('../src/texterkennung');
+    texterkennung = new Texterkennung(pgRepo(sql, HAUSHALT), ordnerSpeicher(ordner, HAUSHALT), pgBetriebSpeicher(sql, HAUSHALT));
+    dienst.verbindeTexterkennung(texterkennung);
+    await texterkennung.start();
     await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
     app = await baueApp(dienst, konten, {
-        betrieb, tresor, sicher: () => betrieb.cookieNurHttps(),
+        betrieb, tresor, texterkennung, sicher: () => betrieb.cookieNurHttps(),
         messung, system: (await import('../src/system')).pgSystemQuelle(sql, HAUSHALT),
         designs: new (await import('../src/designs')).Designs((await import('../src/designs')).pgDesignRepo(sql, HAUSHALT)),
         apiSchluessel: new (await import('../src/apischluessel')).ApiSchluesselDienst((await import('../src/apischluessel')).pgApiSchluesselRepo(sql)),
@@ -58,7 +63,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
         abruf: async (url: string) => { if (url.includes('npmjs')) return { version: '99.0.0' }; throw new Error('offline'); },
       });
   });
-  after(async () => { await app?.close(); await sql?.end(); });
+  after(async () => { texterkennung?.stop(); await app?.close(); await sql?.end(); });
 
   let cookie = '';
   const anfrage = async (method: string, pfad: string, payload?: unknown, mitCookie = true) => {
@@ -626,5 +631,38 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.deepEqual((await anfrage('PUT', '/api/werkbank/papierkorb/einstellungen', { tage: 0 })).body, { tage: 0, geleert: 0 });
     assert.equal((await anfrage('DELETE', `/api/typen/${vertrag.id}`)).status, 204);
     assert.equal((await anfrage('DELETE', `/api/typen/${partner.id}`)).status, 204);
+  });
+  it('erkennt Text in Dokumenten und findet ihn mit der Volltextsuche (#45)', async () => {
+    const { pdfMitText } = await import('./hilfen');
+    const st = (await anfrage('GET', '/api/werkbank/texterkennung')).body;
+    assert.equal(st.einstellungen.auftraege, 1);
+    assert.equal(st.einstellungen.maxSeiten, 50);
+    const typ = (await anfrage('POST', '/api/typen', { name: 'Beleg', felder: [{ key: 'nr', label: 'Nr', typ: 'text', pflicht: true }] })).body;
+    const m = (await anfrage('POST', '/api/mappen', { typId: typ.id, werte: { nr: 'B-1' } })).body;
+    const hoch = await app.inject({ method: 'POST', url: `/api/mappen/${m.id}/dokumente?register=dokumente&name=beleg.pdf&typ=application/pdf`,
+      payload: pdfMitText(['Jahresabrechnung der Stadtwerke Musterstadt', 'Abschlagszahlungen und Nachzahlung']), headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' } });
+    assert.equal(hoch.statusCode, 201);
+    const dok = JSON.parse(hoch.body).dokument;
+    assert.ok(['wartet', 'laeuft', 'fertig'].includes(dok.ocr.stand));
+    const ende = Date.now() + 60_000;
+    let stand = dok.ocr;
+    while (stand.stand !== 'fertig' && stand.stand !== 'fehler' && Date.now() < ende) {
+      await new Promise((r) => setTimeout(r, 200));
+      stand = (await anfrage('GET', `/api/mappen/${m.id}`)).body.dokumente[0].ocr;
+    }
+    assert.equal(stand.stand, 'fertig', JSON.stringify(stand));
+    assert.equal(stand.info, 'Textebene des PDFs');
+    const volltext = (await anfrage('GET', `/api/dokumente/${dok.id}/volltext`)).body;
+    assert.match(volltext.text, /Jahresabrechnung der Stadtwerke/);
+    const ohne = (await anfrage('GET', `/api/mappen?sicht=typ:${typ.id}&suche=${encodeURIComponent('Abrechnungen Stadtwerk')}`)).body;
+    assert.equal(ohne.gesamt, 0);
+    const mit = (await anfrage('GET', `/api/mappen?sicht=typ:${typ.id}&suche=${encodeURIComponent('stadtwerke nachzahlung')}&volltext=true`)).body;
+    assert.equal(mit.gesamt, 1);
+    assert.match(mit.ausschnitte[m.id].text, /\u0002Stadtwerke\u0003/);
+    // Wartungsoperation: nichts nachzuholen, alles hat schon einen Volltext.
+    assert.equal((await anfrage('POST', '/api/werkbank/wartung/volltext')).body.eingereiht >= 0, true);
+    assert.equal((await anfrage('PUT', '/api/werkbank/texterkennung', { auftraege: 7 })).status, 422);
+    assert.equal((await anfrage('PUT', '/api/werkbank/texterkennung', { auftraege: 2 })).body.einstellungen.auftraege, 2);
+    assert.equal((await anfrage('POST', `/api/dokumente/${dok.id}/texterkennung`)).body.ocr.stand, 'wartet');
   });
 });

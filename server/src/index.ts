@@ -14,6 +14,7 @@ import { ApiSchluesselDienst, pgApiSchluesselRepo } from './apischluessel';
 import { pgRepo } from './repo-pg';
 import { Betrieb, pgBetriebSpeicher } from './betrieb';
 import { STANDARD_DATEI, Tresor } from './tresor';
+import { Texterkennung } from './texterkennung';
 
 const pfad = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
 const env = process.env;
@@ -65,6 +66,9 @@ const dienst = new Dienst(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'mappen'),
 // Benutzer erscheinen als Mappen (#26); die Konten halten sie auf dem neuesten Stand.
 const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, cfg.haushalt), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.benutzerspiegel());
 dienst.verbindeKonten(konten.papierkorbHaken());
+// Texterkennung im Hintergrund (#45); dieselbe Datenbank, eigener Messbereich.
+const texterkennung = new Texterkennung(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'texterkennung'), ordnerSpeicher(cfg.dateien, cfg.haushalt), pgBetriebSpeicher(sql, cfg.haushalt));
+dienst.verbindeTexterkennung(texterkennung);
 const app = await baueApp(dienst, konten, {
   webDir: cfg.web,
   sicher: () => betrieb.cookieNurHttps(),
@@ -75,6 +79,7 @@ const app = await baueApp(dienst, konten, {
   apiSchluessel: new ApiSchluesselDienst(messung.umhuelle(pgApiSchluesselRepo(sql), 'apischluessel')),
   betrieb,
   tresor,
+  texterkennung,
 });
 
 const kurz = betrieb.kurz();
@@ -92,8 +97,11 @@ await papierkorb();
 setInterval(papierkorb, 60 * 60 * 1000).unref();
 if (await konten.einrichtungNoetig()) log.warn(`Noch kein Benutzer vorhanden: Der erste Aufruf des DMS im Browser (Port ${cfg.port}) legt den Administrator an.`);
 
+await texterkennung.start();
+
 const beenden = async () => {
   log.info('DMS wird beendet');
+  texterkennung.stop();
   await app.close();
   await sql.end({ timeout: 5 });
   process.exit(0);

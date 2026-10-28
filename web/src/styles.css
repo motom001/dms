@@ -86,6 +86,7 @@ input[type="checkbox"], input[type="radio"] { width: 16px; height: 16px; padding
 .chip { display: inline-flex; align-items: center; font-size: calc(11.5px * var(--skala, 1)); font-weight: 600; border-radius: 999px; padding: 2px 8px; background: var(--senke); color: var(--leise); border: 1px solid var(--linie); white-space: nowrap; }
 .chip.warn { background: var(--warn-zart); color: var(--warn); border-color: transparent; }
 .chip.gut { background: var(--gruen-zart); color: var(--gruen); border-color: transparent; }
+.chip.schlecht { background: var(--schlecht-zart); color: var(--schlecht); border-color: transparent; }
 
 .hinweis { border-radius: var(--r); padding: 10px 12px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; font-size: calc(13px * var(--skala, 1)); }
 .hinweis ul { margin: 0; padding-left: 18px; }
@@ -520,3 +521,12 @@ input.kurz { width: 7em; }
 .passwort { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .passwort > input, .passwort > .festwert { flex: 1 1 12em; min-width: 0; }
 .raster > .haken.breit { grid-column: 1 / -1; }
+/* Volltextsuche (#45) */
+.suchzeile { display: flex; flex-direction: column; gap: 4px; }
+.suchzeile .haken.klein { font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
+.fundstelle { display: block; font-size: calc(12px * var(--skala, 1)); color: var(--leise); line-height: 1.4; margin-top: 2px; overflow-wrap: anywhere; }
+.fundstelle .dok { font-weight: 600; }
+.fundstelle mark { background: var(--warn-zart); color: var(--tinte); border-radius: 2px; padding: 0 1px; }
+/* Stand der Texterkennung am Dokument */
+.ocrstand { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.volltext { white-space: pre-wrap; max-height: 260px; overflow: auto; font-size: calc(12px * var(--skala, 1)); background: var(--senke); border: 1px solid var(--linie); border-radius: 6px; padding: 8px 10px; margin: 6px 0 0; }

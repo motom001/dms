@@ -1,4 +1,4 @@
-import type { Dokument, Mappe, MappenBezug, Mappentyp, MappentypDaten, Systemtyp, Werte } from '../../shared/src/model';
+import type { Ausschnitt, Dokument, Mappe, MappenBezug, Mappentyp, MappentypDaten, OcrStandArt, Systemtyp, Werte } from '../../shared/src/model';
 import type { Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 
 export interface Verweis { feldKey: string; zielId: string }
@@ -17,6 +17,8 @@ export interface SeitenAnfrage {
   klauseln?: Klausel[];
   /** Suche in Titel und Werten. */
   suche?: string;
+  /** Suche auch im Volltext der Dokumente (deutsche Volltextsuche, #45). */
+  volltext?: boolean;
   /** Reihenfolge; ohne: nach Titel. */
   sortierung?: SortierungIntern;
   von: number;
@@ -25,6 +27,11 @@ export interface SeitenAnfrage {
 export interface NeueMappe {
   id: string; typId: string; werte: Werte; verweise: Verweis[]; titel: string; benutzerId: string | null; demo: boolean;
 }
+
+/** Ergebnis der Texterkennung für ein Dokument. */
+export interface OcrErgebnis { stand: OcrStandArt; text?: string | null; info?: string | null; seiten?: number | null }
+export type OcrZaehler = Record<OcrStandArt, number>;
+
 export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string; titel: string }
 
 /** Eine Mappe im Papierkorb (#43), mit ihren Werten, wie sie beim Löschen waren. */
@@ -77,7 +84,7 @@ export interface Repo {
   /** Titel und Typ je Mappe (unbekannte Ids fehlen). */
   bezuege(ids: string[]): Promise<Map<string, MappenBezug>>;
   /** Eine Seite einer Sicht, sortiert nach Titel. */
-  seite(o: SeitenAnfrage): Promise<{ gesamt: number; mappen: Mappe[] }>;
+  seite(o: SeitenAnfrage): Promise<{ gesamt: number; mappen: Mappe[]; ausschnitte?: Record<string, Ausschnitt> }>;
   /** Zähler für die Sichten. */
   zaehler(benutzerId: string, admin: boolean): Promise<{ typen: Map<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number }>;
   /** Anzahl Mappen je Klauselliste (eine je Sicht), in derselben Reihenfolge. */
@@ -132,6 +139,21 @@ export interface Repo {
   zaehlePapierkorb(von?: string): Promise<number>;
   /** Hängt noch ein Dokument (lebend oder im Papierkorb) an dieser Datei? */
   dateiBenutzt(sha256: string): Promise<boolean>;
+
+  /* ---------- Texterkennung (#45) ---------- */
+  /** Dokumente in die Warteschlange stellen. */
+  ocrEinreihen(ids: string[]): Promise<void>;
+  /** Nimmt das älteste wartende Dokument und setzt es auf „läuft“. */
+  ocrNaechster(): Promise<Dokument | undefined>;
+  ocrSetze(id: string, e: OcrErgebnis): Promise<void>;
+  /** Fertiger Volltext eines anderen Dokuments mit derselben Datei. */
+  ocrVonSha(sha256: string, ausser: string): Promise<{ text: string; seiten: number | null; info: string | null } | undefined>;
+  /** Nach einem Neustart: „läuft“ → „wartet“. */
+  ocrZurueckstellen(): Promise<number>;
+  ocrZaehler(): Promise<OcrZaehler>;
+  /** Dokumente ohne Volltext (noch nie erkannt) mit Typ und Register ihrer Mappe. */
+  ocrOhneVolltext(): Promise<Array<{ id: string; typId: string; registerKey: string }>>;
+  volltext(id: string): Promise<string | null>;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

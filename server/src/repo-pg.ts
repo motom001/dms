@@ -1,5 +1,5 @@
 import type postgres from 'postgres';
-import type { Dokument, Mappe, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
+import { TREFFER_ANFANG, TREFFER_ENDE, type Ausschnitt, type Dokument, type Mappe, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
 import type { Filter, Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import { istUuid, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
 
@@ -46,7 +46,15 @@ const alsDokument = (r: Zeile): Dokument => ({
   anzeigbar: r.anzeigbar as boolean,
   erstellt: iso(r.erstellt),
   erstelltVon: (r.erstellt_von as string | null) ?? null,
+  ocr: {
+    stand: ((r.ocr_stand as OcrStandArt | null) ?? 'keiner'),
+    info: (r.ocr_info as string | null) ?? null,
+    seiten: (r.ocr_seiten as number | null) ?? null,
+    zeit: r.ocr_zeit ? iso(r.ocr_zeit) : null,
+  },
 });
+/** Ausschnitte aus dem Volltext: höchstens zwei Stellen, Treffer markiert (#45). */
+const AUSSCHNITT = `StartSel=${TREFFER_ANFANG}, StopSel=${TREFFER_ENDE}, MaxFragments=2, MaxWords=18, MinWords=6, FragmentDelimiter=" … "`;
 /** Eintrag im Papierkorb aus der Zeile; die Mappe steht als jsonb (Spaltennamen der Tabelle mappen) darin. */
 const alsPapierkorb = (r: Zeile): PapierkorbEintrag => {
   const m = r.mappe as Zeile;
@@ -309,7 +317,9 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         : sql``;
       const muster = o.suche ? `%${o.suche.replace(/[\\%_]/g, (c) => '\\' + c)}%` : null;
       const suche = muster
-        ? sql`AND (titel ILIKE ${muster} OR EXISTS (SELECT 1 FROM jsonb_each_text(werte) e WHERE e.value ILIKE ${muster} AND e.value NOT LIKE 'dms1$%'))`
+        ? sql`AND (titel ILIKE ${muster} OR EXISTS (SELECT 1 FROM jsonb_each_text(werte) e WHERE e.value ILIKE ${muster} AND e.value NOT LIKE 'dms1$%')
+            ${o.volltext ? sql`OR EXISTS (SELECT 1 FROM dokumente d WHERE d.mappe_id = mappen.id
+              AND to_tsvector('german', coalesce(d.volltext, '')) @@ websearch_to_tsquery('german', ${o.suche!}::text))` : sql``})`
         : sql``;
       const [{ n }] = await sql`SELECT count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} ${typ} ${eingang} ${suche}`;
       const so = o.sortierung;
@@ -327,7 +337,18 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const r = await sql`
         SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} ${typ} ${eingang} ${suche}
         ORDER BY ${ausdruck} ${richtung}, lower(titel), id OFFSET ${o.von} LIMIT ${o.anzahl}`;
-      return { gesamt: n as number, mappen: r.map(alsMappe) };
+      const mappen = r.map(alsMappe);
+      if (!o.volltext || !o.suche || !mappen.length) return { gesamt: n as number, mappen };
+      // Fundstellen im Volltext: je Mappe das Dokument mit dem besten Treffer.
+      const a = await sql`
+        SELECT DISTINCT ON (d.mappe_id) d.mappe_id, d.name, ts_headline('german', d.volltext, q, ${AUSSCHNITT}::text) AS text
+        FROM dokumente d, websearch_to_tsquery('german', ${o.suche}::text) q
+        WHERE d.haushalt_id = ${haushaltId} AND d.mappe_id = ANY(${mappen.map((m) => m.id)}::uuid[])
+          AND to_tsvector('german', coalesce(d.volltext, '')) @@ q
+        ORDER BY d.mappe_id, ts_rank(to_tsvector('german', coalesce(d.volltext, '')), q) DESC`;
+      const ausschnitte: Record<string, Ausschnitt> = {};
+      for (const z of a) ausschnitte[z.mappe_id as string] = { dokument: z.name as string, text: z.text as string };
+      return { gesamt: n as number, mappen, ausschnitte };
     },
     async zaehler(benutzerId, admin) {
       const r = await sql`
@@ -518,6 +539,56 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         SELECT EXISTS (SELECT 1 FROM dokumente WHERE haushalt_id = ${haushaltId} AND sha256 = ${sha256})
           OR EXISTS (SELECT 1 FROM papierkorb p, jsonb_array_elements(p.dokumente) d WHERE p.haushalt_id = ${haushaltId} AND d.value ->> 'sha256' = ${sha256}) AS ja`;
       return r.ja as boolean;
+    },
+
+    /* ---------- Texterkennung (#45) ---------- */
+    async ocrEinreihen(ids) {
+      const gueltig = ids.filter(istUuid);
+      if (!gueltig.length) return;
+      await sql`UPDATE dokumente SET ocr_stand = 'wartet', ocr_info = NULL WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[])`;
+    },
+    async ocrNaechster() {
+      // SKIP LOCKED: mehrere Aufträge nehmen sich nie dasselbe Dokument.
+      const [r] = await sql`
+        UPDATE dokumente SET ocr_stand = 'laeuft', ocr_zeit = now()
+        WHERE id = (SELECT id FROM dokumente WHERE haushalt_id = ${haushaltId} AND ocr_stand = 'wartet' ORDER BY erstellt, id LIMIT 1 FOR UPDATE SKIP LOCKED)
+        RETURNING *`;
+      return r ? alsDokument(r) : undefined;
+    },
+    async ocrSetze(id, e) {
+      await sql`
+        UPDATE dokumente SET ocr_stand = ${e.stand}, ocr_info = ${e.info ?? null}, ocr_seiten = ${e.seiten ?? null}, ocr_zeit = now()
+          ${e.text !== undefined ? sql`, volltext = ${e.text}` : sql``}
+        WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+    },
+    async ocrVonSha(sha256, ausser) {
+      const [r] = await sql`
+        SELECT volltext, ocr_seiten, ocr_info FROM dokumente
+        WHERE haushalt_id = ${haushaltId} AND sha256 = ${sha256} AND id IS DISTINCT FROM ${istUuid(ausser) ? ausser : null}::uuid AND ocr_stand = 'fertig' AND volltext IS NOT NULL
+        LIMIT 1`;
+      return r ? { text: r.volltext as string, seiten: (r.ocr_seiten as number | null) ?? null, info: (r.ocr_info as string | null) ?? null } : undefined;
+    },
+    async ocrZurueckstellen() {
+      const r = await sql`UPDATE dokumente SET ocr_stand = 'wartet' WHERE haushalt_id = ${haushaltId} AND ocr_stand = 'laeuft'`;
+      return r.count;
+    },
+    async ocrZaehler() {
+      const z = { keiner: 0, wartet: 0, laeuft: 0, fertig: 0, fehler: 0, ausgelassen: 0 };
+      for (const r of await sql`SELECT coalesce(ocr_stand, 'keiner') AS s, count(*)::int AS n FROM dokumente WHERE haushalt_id = ${haushaltId} GROUP BY 1`) {
+        z[r.s as OcrStandArt] = r.n as number;
+      }
+      return z;
+    },
+    async ocrOhneVolltext() {
+      return (await sql`
+        SELECT d.id, m.typ_id, d.register_key FROM dokumente d JOIN mappen m ON m.id = d.mappe_id
+        WHERE d.haushalt_id = ${haushaltId} AND coalesce(d.ocr_stand, 'keiner') = 'keiner'`)
+        .map((r: Zeile) => ({ id: r.id as string, typId: r.typ_id as string, registerKey: r.register_key as string }));
+    },
+    async volltext(id) {
+      if (!istUuid(id)) return null;
+      const [r] = await sql`SELECT volltext FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      return r ? ((r.volltext as string | null) ?? null) : null;
     },
 
     async dokumenteMitSha(sha256) {
