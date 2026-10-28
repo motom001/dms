@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, ROLLEN, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
-  AUFGABE_MAX, istEmail, NOTIZ_MAX, type Aufgabe, type Benutzer, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Rolle, type Systemtyp, type Werte,
+  AUFGABE_MAX, istEmail, NOTIZ_MAX, type Aufgabe, type Benutzer, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type Quelle, type Register, type Trefferliste, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
@@ -61,7 +61,7 @@ export function bereinigeRegister(e: unknown, felder: Feld[]): Register[] {
     if (art === 'felder') r.felder = (Array.isArray(x?.felder) ? x.felder.map(text) : []).filter((k) => bekannt.has(k));
     if (art === 'verknuepfungen') {
       r.quellen = (Array.isArray(x?.quellen) ? x.quellen : [])
-        .map((q: Record<string, unknown>) => ({ typId: text(q?.typId), feldKey: text(q?.feldKey) }))
+        .map((q: Record<string, unknown>): Quelle => ({ typId: text(q?.typId), feldKey: text(q?.feldKey), ...(text(q?.trefferliste) ? { trefferliste: text(q?.trefferliste).slice(0, 40) } : {}) }))
         .filter((q) => q.typId && q.feldKey);
     }
     // Volltext (#45): nur das Abschalten wird gespeichert; Standard ist an.
@@ -77,6 +77,35 @@ export function bereinigeRegister(e: unknown, felder: Feld[]): Register[] {
   return reg;
 }
 
+/** Nur bekannte Spalten, jede einmal; Spalten entfernter Felder und Passwortfelder fallen still weg. */
+function bereinigeSpalten(e: unknown, felder: Feld[]): string[] {
+  return [...new Set((Array.isArray(e) ? e : []).map(text))]
+    .filter((k) => (istSystemspalte(k) && k !== '_typ') || felder.some((f) => f.key === k && f.typ !== 'passwort'));
+}
+
+/**
+ * Trefferlisten (#75): mindestens eine, Schlüssel eindeutig, genau eine ist Standard.
+ * Die ältere Angabe `trefferliste` (nur Spalten) ersetzt – falls angegeben – die Spalten der Standardliste.
+ */
+export function bereinigeTrefferlisten(t: Record<string, unknown>, felder: Feld[]): { trefferlisten: Trefferliste[]; trefferliste: string[] } {
+  const roh = Array.isArray(t.trefferlisten) ? (t.trefferlisten as Array<Record<string, unknown>>) : [];
+  const listen: Trefferliste[] = [];
+  for (const x of roh) {
+    const name = text(x?.name).slice(0, 80) || 'Trefferliste';
+    let key = (text(x?.key) || schluesselAus(name) || 'liste').slice(0, 40);
+    for (let i = 2; listen.some((l) => l.key === key); i++) key = `${(text(x?.key) || schluesselAus(name) || 'liste').slice(0, 36)}_${i}`;
+    listen.push({ key, name, spalten: bereinigeSpalten(x?.spalten, felder), ...(x?.standard === true ? { standard: true } : {}) });
+  }
+  if (!listen.length) listen.push({ key: 'standard', name: 'Standard', spalten: [], standard: true });
+  const std = listen.find((l) => l.standard) ?? listen[0];
+  for (const l of listen) { if (l === std) l.standard = true; else delete l.standard; }
+  if (Array.isArray(t.trefferliste) && (!roh.length || JSON.stringify(t.trefferliste) !== JSON.stringify(std.spalten))) {
+    // Nur die alte Form angegeben, oder sie weicht ab (z. B. { ...typ, trefferliste: [...] } über die API).
+    std.spalten = bereinigeSpalten(t.trefferliste, felder);
+  }
+  return { trefferlisten: listen, trefferliste: std.spalten };
+}
+
 export function bereinigeTyp(e: unknown): MappentypDaten {
   const t = (e ?? {}) as Record<string, unknown>;
   const felder = Array.isArray(t.felder) ? t.felder.map(bereinigeFeld) : [];
@@ -87,9 +116,7 @@ export function bereinigeTyp(e: unknown): MappentypDaten {
     titelVorlage: text(t.titelVorlage) || (text(t.titelFeld) ? `{${text(t.titelFeld)}}` : ''),
     felder,
     register: bereinigeRegister(t.register, felder),
-    // Nur bekannte Spalten, jede einmal; Spalten entfernter Felder fallen still weg.
-    trefferliste: [...new Set((Array.isArray(t.trefferliste) ? t.trefferliste : []).map(text))]
-      .filter((k) => (istSystemspalte(k) && k !== '_typ') || felder.some((f) => f.key === k && f.typ !== 'passwort')),
+    ...bereinigeTrefferlisten(t, felder),
     erstellenErlaubt: t.erstellenErlaubt !== false,
     loeschenErlaubt: t.loeschenErlaubt !== false,
   };
@@ -659,6 +686,20 @@ export class Dienst {
 
   listeMappen(typId?: string) { return this.repo.listeMappen(typId); }
 
+  /**
+   * Verweisende Mappen eines Typs über ein Feld, vollständig (für die Tabelle im
+   * Verknüpfungsregister, #75): höchstens 1000, nach Titel sortiert.
+   */
+  async verweisende(id: string, typId: string, feldKey: string) {
+    if (!(await this.repo.holeMappe(id))) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    const rv = (await this.repo.rueckverweise(id)).filter((r) => r.quelleTypId === typId && r.feldKey === feldKey);
+    const ids = [...new Set(rv.map((r) => r.quelleId))];
+    const mappen = (await this.repo.holeMappen(ids.slice(0, 1000))).sort((a, b) => (a.titel ?? '').localeCompare(b.titel ?? '', 'de'));
+    const typ = await this.repo.holeTyp(typId);
+    const ziele = typ ? mappen.flatMap((m) => verweiseVon(typ, m.werte).map((v) => v.zielId)) : [];
+    return { gesamt: ids.length, mappen, bezuege: Object.fromEntries(await this.repo.bezuege(ziele)) };
+  }
+
   async holeMappe(id: string) {
     const mappe = await this.repo.holeMappe(id);
     if (!mappe) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
@@ -774,7 +815,9 @@ export class Dienst {
     const position = Number.isFinite(Number(x.position)) && x.position !== null && x.position !== undefined
       ? Math.trunc(Number(x.position))
       : (geschwister.at(-1)?.position ?? 0) + 10;
-    return { name, beschreibung: text(x.beschreibung).slice(0, 500), elternId, position, typen, bedingungen: bereinigeBedingungen(x.bedingungen) };
+    // Trefferliste (#75): nur der Schlüssel; passt er nicht (mehr), gilt der Standard und die Werkbank zeigt es an.
+    const trefferliste = text(x.trefferliste).slice(0, 40) || null;
+    return { name, beschreibung: text(x.beschreibung).slice(0, 500), elternId, position, typen, bedingungen: bereinigeBedingungen(x.bedingungen), trefferliste };
   }
 
   async legeSichtAn(e: unknown): Promise<Sicht> {

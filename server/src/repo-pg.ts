@@ -1,6 +1,6 @@
 import type postgres from 'postgres';
 import { alsText } from '../../shared/src/markdown';
-import { TREFFER_ANFANG, TREFFER_ENDE, type Aufgabe, type Ausschnitt, type Dokument, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
+import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
 import type { Filter, Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Quelle } from '../../shared/src/model';
 import { istUuid, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
@@ -17,6 +17,7 @@ const alsTyp = (r: Zeile): Mappentyp => ({
   felder: r.felder as Mappentyp['felder'],
   register: r.register as Mappentyp['register'],
   trefferliste: (r.trefferliste as string[] | null) ?? [],
+  trefferlisten: (r.trefferlisten as Mappentyp['trefferlisten'] | null) ?? undefined,
   erstellenErlaubt: r.erstellen_erlaubt !== false,
   loeschenErlaubt: r.loeschen_erlaubt !== false,
   system: (r.system as Mappentyp['system']) ?? null,
@@ -98,6 +99,7 @@ const alsSicht = (r: Zeile): Sicht => ({
   position: r.position as number,
   typen: (r.typen as string[]) ?? [],
   bedingungen: (r.bedingungen as Sicht['bedingungen']) ?? [],
+  trefferliste: (r.trefferliste as string | null) ?? null,
   erstellt: iso(r.erstellt),
   geaendert: iso(r.geaendert),
 });
@@ -224,8 +226,8 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     },
     async legeTypAn(id, d: MappentypDaten, system) {
       const [r] = await sql`
-        INSERT INTO mappentypen (id, haushalt_id, name, beschreibung, titel_vorlage, felder, register, trefferliste, erstellen_erlaubt, loeschen_erlaubt, system)
-        VALUES (${id}, ${haushaltId}, ${d.name}, ${d.beschreibung}, ${d.titelVorlage}, ${json(sql, d.felder)}, ${json(sql, d.register)}, ${json(sql, d.trefferliste ?? [])},
+        INSERT INTO mappentypen (id, haushalt_id, name, beschreibung, titel_vorlage, felder, register, trefferliste, trefferlisten, erstellen_erlaubt, loeschen_erlaubt, system)
+        VALUES (${id}, ${haushaltId}, ${d.name}, ${d.beschreibung}, ${d.titelVorlage}, ${json(sql, d.felder)}, ${json(sql, d.register)}, ${json(sql, standardliste(d).spalten)}, ${json(sql, trefferlistenVon(d))},
           ${d.erstellenErlaubt !== false}, ${d.loeschenErlaubt !== false}, ${system ?? null})
         RETURNING *`;
       return alsTyp(r);
@@ -234,7 +236,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       return sql.begin(async (tx) => {
         const [r] = await tx`
           UPDATE mappentypen SET name = ${d.name}, beschreibung = ${d.beschreibung}, titel_vorlage = ${d.titelVorlage},
-            felder = ${json(sql, d.felder)}, register = ${json(sql, d.register)}, trefferliste = ${json(sql, d.trefferliste ?? [])},
+            felder = ${json(sql, d.felder)}, register = ${json(sql, d.register)}, trefferliste = ${json(sql, standardliste(d).spalten)}, trefferlisten = ${json(sql, trefferlistenVon(d))},
             erstellen_erlaubt = ${d.erstellenErlaubt !== false}, loeschen_erlaubt = ${d.loeschenErlaubt !== false}, geaendert = now()
           WHERE haushalt_id = ${haushaltId} AND id = ${id}
           RETURNING *`;
@@ -427,15 +429,15 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     },
     async legeSichtAn(id, d: SichtDaten) {
       const [r] = await sql`
-        INSERT INTO sichten (id, haushalt_id, name, beschreibung, eltern_id, position, typen, bedingungen)
-        VALUES (${id}, ${haushaltId}, ${d.name}, ${d.beschreibung}, ${d.elternId}, ${d.position}, ${json(sql, d.typen)}, ${json(sql, d.bedingungen)})
+        INSERT INTO sichten (id, haushalt_id, name, beschreibung, eltern_id, position, typen, bedingungen, trefferliste)
+        VALUES (${id}, ${haushaltId}, ${d.name}, ${d.beschreibung}, ${d.elternId}, ${d.position}, ${json(sql, d.typen)}, ${json(sql, d.bedingungen)}, ${d.trefferliste ?? null})
         RETURNING *`;
       return alsSicht(r);
     },
     async aendereSicht(id, d: SichtDaten) {
       const [r] = await sql`
         UPDATE sichten SET name = ${d.name}, beschreibung = ${d.beschreibung}, eltern_id = ${d.elternId}, position = ${d.position},
-          typen = ${json(sql, d.typen)}, bedingungen = ${json(sql, d.bedingungen)}, geaendert = now()
+          typen = ${json(sql, d.typen)}, bedingungen = ${json(sql, d.bedingungen)}, trefferliste = ${d.trefferliste ?? null}, geaendert = now()
         WHERE haushalt_id = ${haushaltId} AND id = ${id} RETURNING *`;
       return alsSicht(r);
     },

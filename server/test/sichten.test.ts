@@ -179,6 +179,19 @@ function faelle() {
     });
   });
 
+  describe('Trefferlisten (#75)', () => {
+    it('speichert mehrere Trefferlisten am Typ und die Wahl an der Sicht', async () => {
+      const { d, typ } = await mitBeispielen();
+      const r = typ('Rechnung');
+      const neu = await d.aendereTyp(r.id, { ...r, trefferliste: undefined, trefferlisten: [...(r.trefferlisten ?? []), { key: 'kurz', name: 'Kurz', spalten: ['_titel', 'betrag'] }] });
+      assert.deepEqual(neu.trefferlisten!.map((l) => l.key), ['standard', 'kurz']);
+      assert.deepEqual((await d.listeTypen()).find((t) => t.id === r.id)!.trefferlisten![1], { key: 'kurz', name: 'Kurz', spalten: ['_titel', 'betrag'] });
+      const s = await sicht(d, 'Kurz', [r.id]);
+      await d.aendereSicht(s.id, { ...s, trefferliste: 'kurz' });
+      assert.equal((await d.listeSichten()).find((x) => x.id === s.id)!.trefferliste, 'kurz');
+    });
+  });
+
   describe('Bedingungen auf Anzahl Dokumente und Verknüpfungen (#41)', () => {
     it('zählt Dokumente je Register und Verknüpfungen wie im Register', async () => {
       const { d, typ, mappe } = await mitBeispielen();

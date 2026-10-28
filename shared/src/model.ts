@@ -68,7 +68,11 @@ export const REGISTERARTEN = {
 export type Registerart = keyof typeof REGISTERARTEN;
 
 /** Quelle eines Verknüpfungsregisters: Mappen vom Typ `typId`, die über `feldKey` hierher verweisen. */
-export interface Quelle { typId: string; feldKey: string }
+export interface Quelle {
+  typId: string; feldKey: string;
+  /** Trefferliste des Quelltyps, mit der das Register die Mappen als Tabelle zeigt (#75); leer = einfache Liste. */
+  trefferliste?: string;
+}
 
 /** Ein Trennblatt an der Mappe. */
 export interface Register {
@@ -91,7 +95,12 @@ export interface MappentypDaten {
   titelVorlage: string;
   felder: Feld[];
   register: Register[];
-  /** Spalten der Trefferliste in ihrer Reihenfolge: Feldschlüssel oder Systemspalten (_titel, _erstellt, …). Leer = einfache Liste. */
+  /** Trefferlisten (#75): je Liste Spalten in ihrer Reihenfolge; genau eine ist Standard. */
+  trefferlisten?: Trefferliste[];
+  /**
+   * Spalten der Standard-Trefferliste (Feldschlüssel oder Systemspalten wie _titel). Leer = einfache Liste.
+   * Ältere Form; beim Speichern ersetzt sie die Spalten der Standardliste, wenn angegeben.
+   */
   trefferliste?: string[];
   /** In der Ablage dürfen neue Mappen dieses Typs angelegt werden (Standard: ja). */
   erstellenErlaubt?: boolean;
@@ -165,6 +174,26 @@ export const SYSTEMSPALTEN = {
 export type Systemspalte = keyof typeof SYSTEMSPALTEN;
 export const istSystemspalte = (k: string): k is Systemspalte => Object.prototype.hasOwnProperty.call(SYSTEMSPALTEN, k);
 /** Spalten für Sichten mit gemischten Mappentypen (z. B. Eingang). */
+/** Eine Trefferliste eines Mappentyps (#75). */
+export interface Trefferliste {
+  /** Fester Schlüssel; Sichten und Verknüpfungsregister wählen die Liste darüber. */
+  key: string;
+  name: string;
+  /** Spalten in ihrer Reihenfolge: Feldschlüssel oder Systemspalten (_titel, _erstellt, …). Leer = einfache Liste. */
+  spalten: string[];
+  standard?: boolean;
+}
+
+/** Trefferlisten eines Typs; Typen aus der Zeit vor #75 haben genau eine („Standard“). */
+export function trefferlistenVon(t: Pick<MappentypDaten, 'trefferlisten' | 'trefferliste'>): Trefferliste[] {
+  return t.trefferlisten?.length ? t.trefferlisten : [{ key: 'standard', name: 'Standard', spalten: t.trefferliste ?? [], standard: true }];
+}
+/** Die Standard-Trefferliste eines Typs. */
+export function standardliste(t: Pick<MappentypDaten, 'trefferlisten' | 'trefferliste'>): Trefferliste {
+  const l = trefferlistenVon(t);
+  return l.find((x) => x.standard) ?? l[0];
+}
+
 export const GEMISCHTE_SPALTEN: Systemspalte[] = ['_titel', '_typ', '_erstelltVon', '_erstellt', '_geaendertVon', '_geaendert'];
 
 /** Nach welchen Spalten der Server sortieren kann (Verweise und lange Texte nicht). */

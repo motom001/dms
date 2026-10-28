@@ -731,3 +731,16 @@ a.person:hover, a.person:focus-visible { text-decoration: underline; }
 .trefferliste tr:hover td.sternspalte .stern { opacity: 1; }
 .sternzeichen { color: var(--warn); }
 @media print { .stern { display: none; } }
+
+/* Mehrere Trefferlisten (#75) */
+.trefferlisten { display: flex; flex-direction: column; gap: 8px; }
+.trefferlistenblock { border: 1px solid var(--linie); border-left: 4px solid var(--linie-stark); border-radius: var(--r); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.trefferlistenblock.standard { border-left-color: var(--gruen); }
+.trefferlistenblock .registerkopf .haken { flex: none; }
+.quellzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.quellzeile select { max-width: 100%; }
+select.fehlerhaft { border-color: var(--schlecht); }
+.gruppe .verweistabelle { border: 0; border-radius: 0; margin: 0; max-height: none; }
+.gruppe .verweistabelle > p { padding: 6px 12px; }
+.trefferlistenblock .registerkopf { grid-template-columns: minmax(0, 1fr) auto auto auto; }
+@media (max-width: 520px) { .trefferlistenblock .registerkopf { grid-template-columns: minmax(0, 1fr) auto; } }

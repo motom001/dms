@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { kinderVon, mitNachkommen, type Sicht } from '../../../shared/src/sichten';
-import { darfErstellen, formatiere, GEMISCHTE_SPALTEN, istSystemspalte, sortierbar, SYSTEMSPALTEN, TREFFER_ANFANG, TREFFER_ENDE, vorlageFelder, wirksameVorlage, type Ausschnitt, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
+import { kinderVon, mitNachkommen, spaltenDerSicht, wirksameTypen, type Sicht } from '../../../shared/src/sichten';
+import { darfErstellen, formatiere, GEMISCHTE_SPALTEN, sortierbar, standardliste, TREFFER_ANFANG, TREFFER_ENDE, vorlageFelder, wirksameVorlage, type Ausschnitt, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
 import { api, type Bezuege, type MappeDetails } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -10,6 +10,7 @@ import { titelOder, useSeiten } from '../seiten';
 import { MappeAnsicht, NeueMappe } from './MappeFormular';
 import { PapierkorbDetail, PapierkorbListe, usePapierkorb } from './Papierkorb';
 import { Stern } from './Stern';
+import { spaltenName, zelle } from './spalten';
 
 /**
  * Ablage in drei Spalten, von groß nach klein:
@@ -34,6 +35,9 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   const verwaltet = d.sicht(sicht);
   const typ = d.typDerSicht(sicht);
   const ebene = dritt ? 'mappe' : 'liste';
+  // Spalten (#75): Trefferliste der Sicht, sonst Standard; bei mehreren Typen nur Gemeinsames.
+  const sichtTypen = verwaltet ? wirksameTypen(d.sichten, verwaltet.id).map((t) => d.typ(t)).filter((t): t is Mappentyp => !!t) : typ ? [typ] : [];
+  const wahl = verwaltet ? spaltenDerSicht(sichtTypen, verwaltet.trefferliste) : typ ? { key: 'standard', spalten: standardliste(typ).spalten } : { key: null, spalten: GEMISCHTE_SPALTEN };
   const papierkorb = usePapierkorb(false, sicht === 'papierkorb');
 
   let rechts;
@@ -86,7 +90,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           ? <Liste key="favoriten" sicht="favoriten" titel="Favoriten" offen={dritt}
               beschreibung="Mappen, die du mit einem Stern markiert hast."
               leerText="Noch keine Favoriten. Markiere eine Mappe mit dem Stern ☆, um sie hier zu finden." />
-          : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} titel={verwaltet?.name ?? typ!.name} beschreibung={verwaltet ? verwaltet.beschreibung : typ?.beschreibung}
+          : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} spaltenTyp={typ ?? sichtTypen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []} titel={verwaltet?.name ?? typ!.name} beschreibung={verwaltet ? verwaltet.beschreibung : typ?.beschreibung}
               offen={dritt} neu={!!typ && darfErstellen(typ)} leerText="Noch keine Mappen in dieser Sicht." />
           : sicht ? <div className="leer"><p>Diese Sicht gibt es nicht (mehr).</p></div> : null}
       </section>
@@ -121,7 +125,7 @@ function unterzeile(typ: Mappentyp, m: Mappe, bezuege: Bezuege) {
   return neben.map((f) => formatiere(f, m.werte[f.key], (id) => titelOder(bezuege[id]?.titel))).filter(Boolean).join(' · ');
 }
 
-function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?: string; offen?: string; neu?: boolean; leerText: string }) {
+function Liste(p: { sicht: string; typ?: Mappentyp; spaltenTyp?: Mappentyp; spalten?: string[]; listenSpalten?: string[]; titel: string; beschreibung?: string; offen?: string; neu?: boolean; leerText: string }) {
   const d = useDaten();
   const [eingabe, setEingabe] = useState('');
   const [suche, setSuche] = useState('');
@@ -150,7 +154,8 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
     o.observe(el);
     return () => o.disconnect();
   }, []);
-  const spalten = spaltenFuer(p.typ);
+  // Feste Sichten (Eingang, Favoriten): Systemspalten.
+  const spalten = p.spalten ?? GEMISCHTE_SPALTEN;
   const tabelle = spalten.length > 0 && breite >= Math.max(560, spalten.length * 120);
 
   // Ende der Liste erreicht → nächste Seite laden.
@@ -204,12 +209,12 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
       {s.gesamt === 0
         ? <p className="leise leerliste">{suche ? 'Nichts gefunden.' : p.leerText}</p>
         : tabelle
-          ? <Tabelle sicht={p.sicht} typ={p.typ} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} ausschnitte={s.ausschnitte} aufgaben={s.aufgaben} favoriten={s.favoriten} offen={p.offen}
+          ? <Tabelle sicht={p.sicht} typ={p.typ} spaltenTyp={p.spaltenTyp} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} ausschnitte={s.ausschnitte} aufgaben={s.aufgaben} favoriten={s.favoriten} offen={p.offen}
               sortierung={sortierung} sortiere={sortiere} ende={nachladen ? (el) => { ende.current = el; } : undefined} nachladen={nachladen} />
           : <ul className="mappenliste">
               {s.mappen.map((m) => {
                 const typ = d.typ(m.typId);
-                const k = kompakt(p.typ, typ, m, s.bezuege, d.person);
+                const k = kompakt(p.listenSpalten ?? [], !!p.typ, typ, m, s.bezuege, d.person);
                 return (
                   <li key={m.id} className="mit-stern">
                     <Stern mappeId={m.id} an={s.favoriten.has(m.id)} titel={k.titel} klein />
@@ -231,25 +236,24 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
   );
 }
 
-/** Kompakter Eintrag: mit Trefferliste Spalte 1 fett, 2 und 3 darunter; sonst Titel und zwei Nebenfelder. */
-function kompakt(sichtTyp: Mappentyp | undefined, typ: Mappentyp | undefined, m: Mappe, bezuege: Bezuege, person: (id: string | null) => string) {
-  const liste = sichtTyp?.trefferliste ?? [];
-  if (sichtTyp && liste.length) {
+/** Kompakter Eintrag: mit Trefferliste Spalte 1 fett, 2 und 3 darunter; sonst Titel und zwei Nebenfelder (bzw. der Typ). */
+function kompakt(liste: string[], einTyp: boolean, typ: Mappentyp | undefined, m: Mappe, bezuege: Bezuege, person: (id: string | null) => string) {
+  if (liste.length) {
     const [a, ...rest] = liste.slice(0, 3).map((k) => zelle(k, m, typ, bezuege, person));
     return { titel: a || titelOder(m.titel), unter: rest.filter(Boolean).join(' · ') };
   }
-  return { titel: titelOder(m.titel), unter: sichtTyp ? (typ ? unterzeile(typ, m, bezuege) : '') : typ?.name ?? '' };
+  return { titel: titelOder(m.titel), unter: einTyp ? (typ ? unterzeile(typ, m, bezuege) : '') : typ?.name ?? '' };
 }
 
 function Tabelle(p: {
-  sicht: string; typ?: Mappentyp; spalten: string[]; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; favoriten: Set<string>; offen?: string;
+  sicht: string; typ?: Mappentyp; spaltenTyp?: Mappentyp; spalten: string[]; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; favoriten: Set<string>; offen?: string;
   sortierung: Sortierung | null; sortiere(spalte: string): void; ende?: (el: HTMLElement | null) => void; nachladen: ReactNode;
 }) {
   const d = useDaten();
   const aktiv = p.sortierung ?? { spalte: '_titel', absteigend: false };
-  const rechts = (k: string) => { const f = p.typ?.felder.find((x) => x.key === k); return f?.typ === 'zahl' || f?.typ === 'betrag'; };
+  const rechts = (k: string) => { const f = p.spaltenTyp?.felder.find((x) => x.key === k); return f?.typ === 'zahl' || f?.typ === 'betrag'; };
   // Datum, Ja/Nein und Zeitstempel nicht umbrechen; Texte dürfen umbrechen, damit die Tabelle in die Liste passt.
-  const kurz = (k: string) => { const f = p.typ?.felder.find((x) => x.key === k); return k === '_erstellt' || k === '_geaendert' || f?.typ === 'datum' || f?.typ === 'janein'; };
+  const kurz = (k: string) => { const f = p.spaltenTyp?.felder.find((x) => x.key === k); return k === '_erstellt' || k === '_geaendert' || f?.typ === 'datum' || f?.typ === 'janein'; };
   return (
     <div className="trefferliste">
       <table>
@@ -262,10 +266,10 @@ function Tabelle(p: {
               return (
                 <th key={k} className={rechts(k) ? 'rechts' : ''} aria-sort={an ? (aktiv.absteigend ? 'descending' : 'ascending') : undefined}>
                   {kann
-                    ? <button type="button" className="spaltenknopf" onClick={() => p.sortiere(k)} title={`Nach ${spaltenName(k, p.typ)} sortieren`}>
-                        {spaltenName(k, p.typ)}<span className="pfeil" aria-hidden="true">{an ? (aktiv.absteigend ? '↓' : '↑') : '↕'}</span>
+                    ? <button type="button" className="spaltenknopf" onClick={() => p.sortiere(k)} title={`Nach ${spaltenName(k, p.spaltenTyp)} sortieren`}>
+                        {spaltenName(k, p.spaltenTyp)}<span className="pfeil" aria-hidden="true">{an ? (aktiv.absteigend ? '↓' : '↑') : '↕'}</span>
                       </button>
-                    : spaltenName(k, p.typ)}
+                    : spaltenName(k, p.spaltenTyp)}
                 </th>
               );
             })}
@@ -292,30 +296,6 @@ function Tabelle(p: {
       </table>
     </div>
   );
-}
-
-/** Spalten einer Sicht: Trefferliste des Typs; gemischte Sichten nur systemeigene Spalten. */
-export function spaltenFuer(typ?: Mappentyp): string[] {
-  return typ ? typ.trefferliste ?? [] : GEMISCHTE_SPALTEN;
-}
-export function spaltenName(k: string, typ?: Mappentyp): string {
-  return istSystemspalte(k) ? SYSTEMSPALTEN[k] : typ?.felder.find((f) => f.key === k)?.label ?? k;
-}
-const datumZeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
-/** Inhalt einer Zelle, formatiert wie in der Mappe. */
-export function zelle(k: string, m: Mappe, typ: Mappentyp | undefined, bezuege: Bezuege, person: (id: string | null) => string): string {
-  switch (k) {
-    case '_titel': return titelOder(m.titel);
-    case '_typ': return typ?.name ?? '';
-    case '_erstellt': return datumZeit(m.erstellt);
-    case '_geaendert': return datumZeit(m.geaendert);
-    case '_erstelltVon': return person(m.erstelltVon);
-    case '_geaendertVon': return person(m.geaendertVon);
-  }
-  const f = typ?.felder.find((x) => x.key === k);
-  const text = f ? formatiere(f, m.werte[k], (id) => titelOder(bezuege[id]?.titel)) : '';
-  // Formatierter Text (#53) in Listen: ohne Formatierung, gekürzt.
-  return f?.typ === 'formatiert' && text.length > 140 ? `${text.slice(0, 137).trimEnd()} …` : text;
 }
 
 const Unter = ({ text }: { text: string }) => (text ? <span className="unter">{text}</span> : null);

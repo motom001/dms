@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  FELDTYPEN, INDEXPLATZHALTER, istIndexplatzhalter, REGISTERARTEN, SYSTEMSPALTEN, type Systemspalte, schluesselAus, standardRegister, titelAus, VERWEISARTEN, vorlageFelder, wirksameVorlage,
+  FELDTYPEN, INDEXPLATZHALTER, istIndexplatzhalter, REGISTERARTEN, SYSTEMSPALTEN, type Systemspalte, schluesselAus, standardRegister, titelAus, trefferlistenVon, VERWEISARTEN, vorlageFelder, wirksameVorlage,
   type Feld, type Mappe, type Mappentyp, type Register, type Registerart, type Werte,
 } from '../../../shared/src/model';
+import { wirksameTypen } from '../../../shared/src/sichten';
 import { api, ApiFehler, type Bezuege } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
@@ -17,9 +18,10 @@ type Zahlprop = (typeof ZAHLEN)[number];
 type EntwurfFeld = Omit<Feld, Zahlprop> & Record<Zahlprop, string> & { _uid: string; _neu?: boolean; _schluesselGetippt?: boolean; _register: string };
 /** Register im Bearbeitungszustand; welche Felder darauf liegen, steht am Feld (_register). */
 type EntwurfRegister = Omit<Register, 'felder'> & { _uid: string; _neu?: boolean; _schluesselGetippt?: boolean };
-/** Trefferliste im Entwurf: Systemspalten als _titel usw., Felder als feld:<_uid> – damit ein umbenannter Schlüssel nichts kaputt macht. */
+/** Trefferliste im Entwurf (#75): Spalten als _titel usw. bzw. feld:<_uid> – damit ein umbenannter Schlüssel nichts kaputt macht. */
+interface EntwurfListe { _uid: string; _neu?: boolean; key: string; name: string; spalten: string[]; standard: boolean }
 interface Entwurf {
-  id: string; name: string; beschreibung: string; titelVorlage: string; felder: EntwurfFeld[]; register: EntwurfRegister[]; trefferliste: string[];
+  id: string; name: string; beschreibung: string; titelVorlage: string; felder: EntwurfFeld[]; register: EntwurfRegister[]; trefferlisten: EntwurfListe[];
   erstellenErlaubt: boolean; loeschenErlaubt: boolean;
 }
 
@@ -35,7 +37,7 @@ function neueId(): string {
 const alsEntwurfRegister = ({ felder: _f, ...r }: Register): EntwurfRegister => ({ ...r, _uid: neueId() });
 
 function entwurfAus(t?: Mappentyp): Entwurf {
-  if (!t) return { id: neueId(), name: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferliste: [], erstellenErlaubt: true, loeschenErlaubt: true };
+  if (!t) return { id: neueId(), name: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], erstellenErlaubt: true, loeschenErlaubt: true };
   const erstes = t.register.find((r) => r.art === 'felder')?.key ?? '';
   const e: Entwurf = {
     id: t.id, name: t.name, beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '',
@@ -46,13 +48,16 @@ function entwurfAus(t?: Mappentyp): Entwurf {
       _register: t.register.find((r) => r.art === 'felder' && r.felder?.includes(f.key))?.key ?? erstes,
       ...Object.fromEntries(ZAHLEN.map((p) => [p, f[p] == null ? '' : String(f[p]).replace('.', ',')])),
     }) as unknown as EntwurfFeld),
-    trefferliste: [],
+    trefferlisten: [],
   };
-  e.trefferliste = (t.trefferliste ?? []).flatMap((k) => {
-    if (k.startsWith('_')) return [k];
-    const f = e.felder.find((x) => x.key === k);
-    return f ? [`feld:${f._uid}`] : [];
-  });
+  e.trefferlisten = trefferlistenVon(t).map((l) => ({
+    _uid: neueId(), key: l.key, name: l.name, standard: !!l.standard,
+    spalten: l.spalten.flatMap((k) => {
+      if (k.startsWith('_')) return [k];
+      const f = e.felder.find((x) => x.key === k);
+      return f ? [`feld:${f._uid}`] : [];
+    }),
+  }));
   return e;
 }
 
@@ -133,12 +138,15 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
 
   async function speichern() {
     setSendet(true); setMeldung(undefined); setGruende([]);
+    const { trefferlisten: listen, ...ohneListen } = e;
     const daten = {
-      ...e,
+      ...ohneListen,
       felder: e.felder.map(({ _uid, _neu, _schluesselGetippt, _register, ...rest }) => rest),
       register: e.register.map(({ _uid, _neu, _schluesselGetippt, ...r }) =>
         (r.art === 'felder' ? { ...r, felder: e.felder.filter((f) => f._register === r.key).map((f) => f.key) } : r)),
-      trefferliste: e.trefferliste.flatMap((k) => (k.startsWith('feld:') ? e.felder.filter((f) => `feld:${f._uid}` === k && f.typ !== 'passwort').map((f) => f.key) : [k])),
+      trefferlisten: listen.map(({ _uid, _neu, ...l }) => ({
+        ...l, spalten: l.spalten.flatMap((k) => (k.startsWith('feld:') ? e.felder.filter((f) => `feld:${f._uid}` === k && f.typ !== 'passwort').map((f) => f.key) : [k])),
+      })),
     };
     try {
       const t = neu ? await api.typAnlegen({ ...daten, sichtAnlegen }) : await api.typAendern(e.id, daten);
@@ -210,7 +218,7 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
 
       <TitelEditor e={e} setze={(titelVorlage) => setE((x) => ({ ...x, titelVorlage }))} />
 
-      <TrefferlisteEditor e={e} setze={(trefferliste) => setE((x) => ({ ...x, trefferliste }))} />
+      <TrefferlisteEditor e={e} setE={setE} />
 
       <div className="blatt">
         <div className="blattkopf">
@@ -519,12 +527,28 @@ function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Ent
               {r.art === 'verknuepfungen' && (
                 quellen.length === 0
                   ? <p className="leise klein">Noch verweist kein Referenzfeld auf diesen Mappentyp. Das Register zeigt alle Verweise, sobald es welche gibt.</p>
-                  : <fieldset className="wahl"><legend className="klein">Zeigt Mappen, die so hierher verweisen <span className="leise">(keine Auswahl = alle)</span></legend>
+                  : <fieldset className="wahl"><legend className="klein">Zeigt Mappen, die so hierher verweisen <span className="leise">(keine Auswahl = alle, als einfache Liste; für eine Tabelle die Quelle auswählen und eine Trefferliste wählen)</span></legend>
                       {quellen.map((q) => {
                         const an = gewaehlt.some((g) => g.typId === q.typId && g.feldKey === q.feldKey);
-                        return <label key={`${q.typId}-${q.feldKey}`} className="haken"><input type="checkbox" checked={an}
-                          onChange={() => setzeReg(i, { quellen: an ? gewaehlt.filter((g) => !(g.typId === q.typId && g.feldKey === q.feldKey)) : [...gewaehlt, { typId: q.typId, feldKey: q.feldKey }] })} />
-                          <span>{q.text}</span></label>;
+                        const g = gewaehlt.find((x) => x.typId === q.typId && x.feldKey === q.feldKey);
+                        // Trefferliste je Quelle (#75): das Register zeigt die Mappen dann als Tabelle mit deren Spalten.
+                        const listen = q.typId === e.id ? e.trefferlisten.map((l) => ({ key: l.key, name: l.name })) : trefferlistenVon(d.typ(q.typId) ?? {}).map((l) => ({ key: l.key, name: l.name }));
+                        const fehlt = !!g?.trefferliste && !listen.some((l) => l.key === g.trefferliste);
+                        return (
+                          <div key={`${q.typId}-${q.feldKey}`} className="quellzeile">
+                            <label className="haken"><input type="checkbox" checked={an}
+                              onChange={() => setzeReg(i, { quellen: an ? gewaehlt.filter((x) => !(x.typId === q.typId && x.feldKey === q.feldKey)) : [...gewaehlt, { typId: q.typId, feldKey: q.feldKey }] })} />
+                              <span>{q.text}</span></label>
+                            {an && (
+                              <select aria-label={`Trefferliste für ${q.text}`} className={`klein ${fehlt ? 'fehlerhaft' : ''}`} value={g?.trefferliste ?? ''}
+                                onChange={(ev) => setzeReg(i, { quellen: gewaehlt.map((x) => (x === g ? { typId: x.typId, feldKey: x.feldKey, ...(ev.target.value ? { trefferliste: ev.target.value } : {}) } : x)) })}>
+                                <option value="">einfache Liste (Titel)</option>
+                                {fehlt && <option value={g!.trefferliste}>– {g!.trefferliste} (fehlt, einfache Liste) –</option>}
+                                {listen.map((l) => <option key={l.key} value={l.key}>Tabelle: {l.name}</option>)}
+                              </select>
+                            )}
+                          </div>
+                        );
                       })}
                     </fieldset>
               )}
@@ -544,12 +568,80 @@ function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Ent
 
 /* ---------------------------------------------------------------- */
 
-/** Spalten der Trefferliste: auswählen und anordnen (#19). */
-function TrefferlisteEditor({ e, setze }: { e: Entwurf; setze: (t: string[]) => void }) {
+/** Trefferlisten (#75): mehrere je Typ, eine ist Standard; je Liste Spalten auswählen und anordnen (#19). */
+function TrefferlisteEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Entwurf) => void }) {
+  const d = useDaten();
   const name = (k: string) => (k.startsWith('feld:') ? e.felder.find((f) => `feld:${f._uid}` === k)?.label || '(Feld ohne Namen)' : SYSTEMSPALTEN[k as Systemspalte] ?? k);
-  // Spalten gelöschter Felder fallen weg.
+  const setzeListe = (i: number, patch: Partial<EntwurfListe>) => setE((x) => ({ ...x, trefferlisten: x.trefferlisten.map((l, j) => (j === i ? { ...l, ...patch } : l)) }));
+  const eindeutig = (basis: string, i: number) => {
+    let k = basis || 'liste'; let n = 2;
+    while (e.trefferlisten.some((l, j) => j !== i && l.key === k)) k = `${basis || 'liste'}_${n++}`.slice(0, 40);
+    return k;
+  };
+  function hinzufuegen() {
+    const nm = `Liste ${e.trefferlisten.length + 1}`;
+    const vorlage = e.trefferlisten.find((l) => l.standard)?.spalten ?? [];
+    setE((x) => ({ ...x, trefferlisten: [...x.trefferlisten, { _uid: neueId(), _neu: true, key: eindeutig(schluesselAus(nm), -1), name: nm, spalten: [...vorlage], standard: false }] }));
+  }
+  function entferne(i: number) {
+    const l = e.trefferlisten[i];
+    const n = verwendung(l.key).length;
+    if (!confirm(`Trefferliste „${l.name}“ entfernen?${n ? ` Sie wird ${n === 1 ? 'an einer Stelle' : `an ${n} Stellen`} verwendet; dort gilt danach die Standardliste.` : ''}`)) return;
+    setE((x) => {
+      const rest = x.trefferlisten.filter((_, j) => j !== i);
+      if (l.standard && rest.length) rest[0] = { ...rest[0], standard: true };
+      return { ...x, trefferlisten: rest };
+    });
+  }
+  // Wo eine Liste verwendet wird: Sichten mit diesem Typ und Verknüpfungsregister mit diesem Typ als Quelle.
+  function verwendung(key: string): string[] {
+    const sichten = d.sichten.filter((s) => s.trefferliste === key && wirksameTypen(d.sichten, s.id).includes(e.id)).map((s) => `Sicht „${s.name}“`);
+    const register = [
+      ...d.typen.filter((t) => t.id !== e.id).map((t) => ({ typ: t.name, register: t.register })),
+      { typ: e.name || 'dieser Typ', register: e.register as Register[] },
+    ].flatMap(({ typ, register }) => register.filter((r) => r.quellen?.some((q) => q.typId === e.id && q.trefferliste === key)).map((r) => `Register „${r.name}“ (${typ})`));
+    return [...sichten, ...register];
+  }
+  return (
+    <div className="blatt">
+      <div className="blattkopf">
+        <h2 className="h3">Trefferlisten</h2>
+        <p className="leise">Spalten, wenn die Liste breit genug ist, in dieser Reihenfolge. In schmalen Ansichten bilden die ersten drei den kompakten Eintrag: die erste fett, die zweite und dritte darunter. Ohne Spalten: Titel und zwei Felder.
+          Eine Liste ist Standard; Sichten und Verknüpfungsregister können eine andere wählen.</p>
+      </div>
+      <div className="trefferlisten">
+        {e.trefferlisten.map((l, i) => {
+          const wo = verwendung(l.key);
+          return (
+            <section key={l._uid} className={`trefferlistenblock ${l.standard ? 'standard' : ''}`} aria-label={`Trefferliste ${l.name}`}>
+              <div className="registerkopf">
+                <input aria-label="Name der Trefferliste" value={l.name} onChange={(ev) => {
+                  const nm = ev.target.value;
+                  setzeListe(i, l._neu ? { name: nm, key: eindeutig(schluesselAus(nm), i) } : { name: nm });
+                }} />
+                <code className="fkey" title="Schlüssel">{l.key}</code>
+                <label className="haken klein"><input type="radio" name="standardliste" checked={l.standard}
+                  onChange={() => setE((x) => ({ ...x, trefferlisten: x.trefferlisten.map((y, j) => ({ ...y, standard: j === i })) }))} /><span>Standard</span></label>
+                <div className="feldaktionen">
+                  <button type="button" className="symbol" disabled={e.trefferlisten.length < 2} title={e.trefferlisten.length < 2 ? 'Eine Trefferliste braucht der Typ immer' : undefined}
+                    onClick={() => entferne(i)} aria-label={`Trefferliste ${l.name} entfernen`}>×</button>
+                </div>
+              </div>
+              <Spaltenwahl e={e} spalten={l.spalten} name={name} setze={(spalten) => setzeListe(i, { spalten })} />
+              <p className="leise klein">{wo.length ? `Verwendet in: ${wo.join(', ')}` : l.standard ? 'Gilt überall, wo keine andere Liste gewählt ist.' : 'Noch nirgends verwendet.'}</p>
+            </section>
+          );
+        })}
+      </div>
+      <div className="knoepfe"><button type="button" className="knopf klein" onClick={hinzufuegen}>+ Trefferliste</button></div>
+    </div>
+  );
+}
+
+/** Spalten einer Trefferliste: auswählen und anordnen. */
+function Spaltenwahl({ e, spalten, name, setze }: { e: Entwurf; spalten: string[]; name: (k: string) => string; setze: (t: string[]) => void }) {
   // Spalten gelöschter Felder und Passwortfelder (#46) fallen weg.
-  const liste = e.trefferliste.filter((k) => !k.startsWith('feld:') || e.felder.some((f) => `feld:${f._uid}` === k && f.typ !== 'passwort'));
+  const liste = spalten.filter((k) => !k.startsWith('feld:') || e.felder.some((f) => `feld:${f._uid}` === k && f.typ !== 'passwort'));
   const verfuegbar = [
     ...e.felder.filter((f) => f.typ !== 'passwort').map((f) => ({ k: `feld:${f._uid}`, n: f.label || f.key })),
     ...(Object.keys(SYSTEMSPALTEN) as Systemspalte[]).filter((k) => k !== '_typ').map((k) => ({ k, n: SYSTEMSPALTEN[k] })),
@@ -560,11 +652,7 @@ function TrefferlisteEditor({ e, setze }: { e: Entwurf; setze: (t: string[]) => 
     const n = [...liste]; [n[i], n[j]] = [n[j], n[i]]; setze(n);
   };
   return (
-    <div className="blatt">
-      <div className="blattkopf">
-        <h2 className="h3">Trefferliste</h2>
-        <p className="leise">Spalten, wenn die Liste breit genug ist, in dieser Reihenfolge. In schmalen Ansichten bilden die ersten drei den kompakten Eintrag: die erste fett, die zweite und dritte darunter. Leer = Titel und zwei Felder wie bisher.</p>
-      </div>
+    <>
       {liste.length > 0 && (
         <ol className="spaltenliste">
           {liste.map((k, i) => (
@@ -588,6 +676,6 @@ function TrefferlisteEditor({ e, setze }: { e: Entwurf; setze: (t: string[]) => 
           </select>
         </label>
       )}
-    </div>
+    </>
   );
 }

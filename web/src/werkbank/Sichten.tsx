@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { Mappe, Mappentyp } from '../../../shared/src/model';
+import { SYSTEMSPALTEN, istSystemspalte, type Mappe, type Mappentyp } from '../../../shared/src/model';
 import {
-  bedingungsfelder, bedingungsProblem, beschreibeBedingung, DYNAMISCH, EINHEITEN, kinderVon, mitNachkommen, OPERATOREN, OPERATOREN_JE_ART,
+  bedingungsfelder, bedingungsProblem, beschreibeBedingung, DYNAMISCH, EINHEITEN, gemeinsameTrefferlisten, kinderVon, mitNachkommen, OPERATOREN, OPERATOREN_JE_ART, spaltenDerSicht, trefferlistenProblem, wirksameTypen,
   ZAEHLVERGLEICHE, type Bedingung, type Bedingungsfeld, type Einheit, type Operator, type Sicht, type SichtDaten, type WertAngabe, type Zaehlvergleich,
 } from '../../../shared/src/sichten';
 import { api } from '../api';
@@ -39,6 +39,7 @@ export function SichtenListe({ offen }: { offen?: string }) {
             {zeilen.map(({ s, tiefe }) => {
               const t = typen(s);
               const probleme = s.bedingungen.filter((b) => bedingungsProblem(b, t)).length;
+              const listenProblem = trefferlistenProblem(s.trefferliste, wirksameTypen(d.sichten, s.id).map((x) => d.typ(x)).filter((x): x is Mappentyp => !!x));
               const kinder = kinderVon(d.sichten, s.id).length;
               return (
                 <li key={s.id} style={{ paddingLeft: tiefe * 16 }}>
@@ -51,6 +52,7 @@ export function SichtenListe({ offen }: { offen?: string }) {
                       {` · ${(d.zaehler.sichten?.[s.id] ?? 0).toLocaleString('de-DE')} Mappen`}
                     </span>
                     {probleme > 0 && <span className="problem">{probleme} Bedingung{probleme === 1 ? '' : 'en'} ohne Wirkung – bitte prüfen</span>}
+                    {listenProblem && <span className="problem">Trefferliste fehlt – zeigt die Standardliste</span>}
                   </Link>
                 </li>
               );
@@ -60,8 +62,8 @@ export function SichtenListe({ offen }: { offen?: string }) {
   );
 }
 
-const leer = (): SichtDaten => ({ name: '', beschreibung: '', elternId: null, position: 0, typen: [], bedingungen: [] });
-const datenVon = (s: Sicht): SichtDaten => ({ name: s.name, beschreibung: s.beschreibung, elternId: s.elternId, position: s.position, typen: s.typen, bedingungen: s.bedingungen });
+const leer = (): SichtDaten => ({ name: '', beschreibung: '', elternId: null, position: 0, typen: [], bedingungen: [], trefferliste: null });
+const datenVon = (s: Sicht): SichtDaten => ({ name: s.name, beschreibung: s.beschreibung, elternId: s.elternId, position: s.position, typen: s.typen, bedingungen: s.bedingungen, trefferliste: s.trefferliste ?? null });
 
 export function SichtEditor({ id }: { id: string }) {
   const d = useDaten();
@@ -82,6 +84,9 @@ export function SichtEditor({ id }: { id: string }) {
   const geschwister = kinderVon(d.sichten, vorhanden?.elternId ?? null);
   const stelle = vorhanden ? geschwister.findIndex((s) => s.id === id) : -1;
   const untersichten = neu ? 0 : mitNachkommen(d.sichten, id).length - 1;
+  // Wirksame Typen: eigene und die der Untersichten – sie bestimmen, welche Trefferlisten es gibt (#75).
+  const wirksam = [...new Set([...e.typen, ...(neu ? [] : mitNachkommen(d.sichten, id).filter((s) => s.id !== id).flatMap((s) => s.typen))])]
+    .map((t) => d.typ(t)).filter((t): t is Mappentyp => !!t);
 
   // Vorschau: Anzahl Treffer mit dem aktuellen Entwurf (kurz nach dem Tippen).
   const entwurf = JSON.stringify(e);
@@ -152,13 +157,15 @@ export function SichtEditor({ id }: { id: string }) {
 
       <div className="blatt">
         <h2 className="h3">Mappentypen</h2>
-        <p className="leise">Mappen dieser Typen zeigt die Sicht selbst. {untersichten > 0 ? `Dazu kommen die Mappen ihrer ${untersichten} Untersicht${untersichten === 1 ? '' : 'en'}.` : 'Ohne Typ dient sie nur zum Gruppieren von Untersichten.'} Zeigt sie mehrere Typen, verhält sich die Liste wie der Eingang (mit Spalte „Typ“, ohne „+ Neu“).</p>
+        <p className="leise">Mappen dieser Typen zeigt die Sicht selbst. {untersichten > 0 ? `Dazu kommen die Mappen ihrer ${untersichten} Untersicht${untersichten === 1 ? '' : 'en'}.` : 'Ohne Typ dient sie nur zum Gruppieren von Untersichten.'} Zeigt sie mehrere Typen, gibt es kein „+ Neu“; als Spalten bietet sie nur an, was alle Typen gemeinsam haben.</p>
         <div className="typwahl">
           {d.typen.map((t) => (
             <label key={t.id} className="haken"><input type="checkbox" checked={e.typen.includes(t.id)} onChange={(x) => setzeTyp(t.id, x.target.checked)} /><span>{t.name}</span></label>
           ))}
         </div>
       </div>
+
+      <TrefferlistenWahl e={e} setE={setE} typen={wirksam} />
 
       <Bedingungen e={e} setE={setE} typen={eigeneTypen} />
 
@@ -175,6 +182,36 @@ export function SichtEditor({ id }: { id: string }) {
         </div>
       </div>
     </form>
+  );
+}
+
+/* ---------- Trefferliste (#75) ---------- */
+
+function TrefferlistenWahl({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDaten) => SichtDaten) => void; typen: Mappentyp[] }) {
+  const listen = gemeinsameTrefferlisten(typen);
+  const wahl = spaltenDerSicht(typen, e.trefferliste);
+  const problem = trefferlistenProblem(e.trefferliste, typen);
+  const name = (k: string) => (istSystemspalte(k) ? SYSTEMSPALTEN[k] : typen[0]?.felder.find((f) => f.key === k)?.label ?? k);
+  const standard = listen.find((l) => l.standard);
+  return (
+    <div className="blatt">
+      <h2 className="h3">Trefferliste</h2>
+      {!typen.length
+        ? <p className="leise">Ohne Mappentypen zeigt die Sicht die Systemspalten (Titel, Typ, angelegt, geändert).</p>
+        : <>
+            <p className="leise">Welche Spalten die Liste in der Ablage zeigt. Die Trefferlisten richtest du am Mappentyp ein.
+              {typen.length > 1 && ' Bei mehreren Mappentypen gibt es nur Listen, die alle Typen haben, und darin nur die gemeinsamen Spalten; Titel und Typ stehen immer vorn.'}</p>
+            <label className="eigenschaft schmal"><span>Trefferliste</span>
+              <select value={e.trefferliste ?? ''} onChange={(x) => setE((y) => ({ ...y, trefferliste: x.target.value || null }))}>
+                <option value="">{standard ? `Standard („${standard.name}“)` : 'Standard (Systemspalten)'}</option>
+                {problem && <option value={e.trefferliste!}>– {e.trefferliste} (fehlt) –</option>}
+                {listen.map((l) => <option key={l.key} value={l.key}>{l.name}{l.standard ? ' – Standard' : ''}</option>)}
+              </select></label>
+            {problem
+              ? <p className="fehlertext klein">{problem}</p>
+              : <p className="leise klein">Spalten: {wahl.spalten.length ? wahl.spalten.map(name).join(', ') : 'keine – einfache Liste mit Titel und zwei Feldern'}</p>}
+          </>}
+    </div>
   );
 }
 

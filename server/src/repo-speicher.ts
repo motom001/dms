@@ -1,9 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { TREFFER_ANFANG, TREFFER_ENDE, type Aufgabe, type Ausschnitt, type Dokument, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
+import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
 import { alsText } from '../../shared/src/markdown';
 import { ausschnittAus } from './repo-pg';
 import { inSicht, type Sicht, type SichtDaten, type Zaehlquelle } from '../../shared/src/sichten';
 import type { PapierkorbEintrag, Repo, Rueckverweis, SortierungIntern, Verweis } from './repo';
+
+/** Trefferlisten (#75) immer in beiden Formen: Liste der Trefferlisten und Spalten der Standardliste. */
+const listen = (d: MappentypDaten) => ({ trefferlisten: structuredClone(trefferlistenVon(d)), trefferliste: [...standardliste(d).spalten] });
 
 /** Repo im Arbeitsspeicher – für Tests und Oberflächenproben, nicht für den Betrieb. */
 export function speicherRepo(): Repo {
@@ -76,13 +79,13 @@ export function speicherRepo(): Repo {
     async listeTypen() { return [...typen.values()].map(kopie).sort((a, b) => a.name.localeCompare(b.name, 'de')); },
     async holeTyp(id) { const t = typen.get(id); return t && kopie(t); },
     async legeTypAn(id, d: MappentypDaten, system) {
-      const t: Mappentyp = { id, ...kopie(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, system: system ?? null, erstellt: jetzt(), geaendert: jetzt() };
+      const t: Mappentyp = { id, ...kopie(d), ...listen(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, system: system ?? null, erstellt: jetzt(), geaendert: jetzt() };
       typen.set(id, t);
       return kopie(t);
     },
     async aendereTyp(id, d) {
       const alt = typen.get(id)!;
-      const t: Mappentyp = { ...alt, ...kopie(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, geaendert: jetzt() };
+      const t: Mappentyp = { ...alt, ...kopie(d), ...listen(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, geaendert: jetzt() };
       typen.set(id, t);
       const refKeys = new Set(t.felder.filter((f) => f.typ === 'referenz').map((f) => f.key));
       for (const m of mappen.values()) if (m.typId === id) verweise.set(m.id, (verweise.get(m.id) ?? []).filter((v) => refKeys.has(v.feldKey)));

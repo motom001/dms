@@ -149,6 +149,8 @@ export const api = {
   sichtVorschau: (id: string | null, sicht: Partial<SichtDaten>) => anfrage<{ anzahl: number }>('POST', '/api/sichten/vorschau', { id, sicht }),
   belegung: (typId: string) => anfrage<Record<string, number>>('GET', `/api/typen/${typId}/belegung`),
   mappe: (id: string) => anfrage<MappeDetails>('GET', `/api/mappen/${id}`),
+  /** Verweisende Mappen eines Typs über ein Feld, vollständig (Tabelle im Verknüpfungsregister, #75). */
+  verweisende: (id: string, typ: string, feld: string) => anfrage<{ gesamt: number; mappen: Mappe[]; bezuege: Bezuege }>('GET', `/api/mappen/${id}/verweisende?${new URLSearchParams({ typ, feld })}`),
   favorit: (id: string, an: boolean) => anfrage<null>(an ? 'PUT' : 'DELETE', `/api/mappen/${id}/favorit`),
   mappeAnlegen: (m: unknown) => anfrage<Mappe>('POST', '/api/mappen', m),
   mappeAendern: (id: string, m: unknown) => anfrage<Mappe>('PUT', `/api/mappen/${id}`, m),
