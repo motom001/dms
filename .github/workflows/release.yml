@@ -1,15 +1,23 @@
 name: Release
 
 # Ein Tag wie v0.8.0 erzeugt ein GitHub Release – das ist der Changelog des DMS.
+# Wird das Release auf GitHub von Hand angelegt (Tag beim Veröffentlichen erzeugen),
+# füllt dieser Workflow danach seinen Text.
 # Liegt docs/releases/<tag>.md vor, wird es als Text übernommen; sonst die
 # Commit-Überschriften seit dem vorigen Tag.
 
 on:
   push:
     tags: ['v*']
+  release:
+    types: [published]
 
 permissions:
   contents: write
+
+# Tag-Push und veröffentlichtes Release kommen oft gleichzeitig: nacheinander laufen lassen.
+concurrency:
+  group: release-${{ github.event.release.tag_name || github.ref_name }}
 
 jobs:
   release:
@@ -20,7 +28,8 @@ jobs:
           fetch-depth: 0
       - name: Release-Notizen
         run: |
-          tag="${GITHUB_REF_NAME}"
+          tag="${{ github.event.release.tag_name || github.ref_name }}"
+          echo "TAG=$tag" >> "$GITHUB_ENV"
           if [ -f "docs/releases/${tag}.md" ]; then
             cp "docs/releases/${tag}.md" notizen.md
           else
@@ -36,7 +45,12 @@ jobs:
             echo "---"
             echo "Aktualisieren: Image \`ghcr.io/motom001/dms:${tag#v}\` (oder \`:main\`) neu ziehen und neu starten. Anleitung im [Administratorhandbuch](https://motom001.github.io/dms/admin/aktualisieren/)."
           } >> notizen.md
-      - name: Release anlegen
-        run: gh release create "$GITHUB_REF_NAME" --title "DMS ${GITHUB_REF_NAME}" --notes-file notizen.md --verify-tag
+      - name: Release anlegen oder Text setzen
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "DMS ${TAG}" --notes-file notizen.md
+          else
+            gh release create "$TAG" --title "DMS ${TAG}" --notes-file notizen.md --verify-tag
+          fi
         env:
           GH_TOKEN: ${{ github.token }}
