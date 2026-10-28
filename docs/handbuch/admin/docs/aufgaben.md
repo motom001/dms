@@ -24,7 +24,9 @@ Links stehen alle offenen Aufgaben aller Benutzer mit Mappe, Art, Datum und Empf
 
 Statt bei jeder neuen Aufgabe eine E-Mail zu schicken, verschickt das DMS **einmal am Tag** eine Übersicht an jeden, der offene Aufgaben hat – mit Links zu den Mappen.
 
-- Rechts stellst du ein, ob und um welche **Uhrzeit** (deutsche Zeit) sie verschickt wird. Standard: an, 7:00 Uhr.
-- **Jetzt senden** verschickt sie sofort, z. B. zum Ausprobieren.
-- Jeder Benutzer kann sie in seinem **Profil** abbestellen.
+- Rechts stellst du ein, ob sie verschickt wird, und die **Standard-Uhrzeit** (deutsche Zeit). Standard: an, 7:00 Uhr.
+- **Jeder Benutzer** wählt in seinem **Profil** eine eigene Uhrzeit (im 15-Minuten-Raster) und die **Wochentage**; ohne eigene Wahl gelten die Standard-Uhrzeit und **Montag bis Freitag**. Änderst du die Standard-Uhrzeit, gilt sie für alle ohne eigene Uhrzeit. Abbestellen kann er sie dort auch.
+- Die Mail kommt höchstens einmal am Tag, frühestens zur gewählten Uhrzeit. War das DMS zu dieser Zeit aus, kommt sie nach dem Start noch am selben Tag; am nächsten Tag wird nichts nachgeholt. Wer abwesend ist oder nichts offen hat, bekommt keine.
+- **Bundesland** – damit niemand an gesetzlichen Feiertagen eine Zusammenfassung bekommt (jeder kann das im Profil abwählen). Das DMS berechnet die Feiertage selbst: die bundesweiten und die landesweiten des gewählten Landes, Ostern und die davon abhängigen Tage nach der Gaußschen Osterformel. Feiertage, die nur in einzelnen Gemeinden gelten – etwa Mariä Himmelfahrt in Teilen Bayerns oder das Augsburger Friedensfest –, und einmalige Feiertage werden nicht berücksichtigt. *Keins* schaltet das ab.
+- **Jetzt senden** verschickt sie sofort an alle mit offenen Aufgaben – unabhängig von Uhrzeit, Wochentag und Feiertag, z. B. zum Ausprobieren.
 - Voraussetzung ist der eingerichtete [E-Mail-Versand](installation.md#e-mail-und-adresse).

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { MeineAbwesenheit } from './Abwesenheit';
+import { ZusammenfassungEinstellen } from './Zusammenfassung';
 import { geraetText, istGeradeAktiv, PASSWORT_MINDESTLAENGE, ROLLEN, type Sitzung } from '../../../shared/src/model';
 import { api } from '../api';
 import { bereicheZuruecksetzen } from '../bereiche';
@@ -154,9 +155,8 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
       {bereich === 'benachrichtigungen' && <>
       <div className="blatt">
         <h2 className="h3">Aufgaben</h2>
-        <p className="leise">Mappen mit offenen Aufgaben für dich stehen im Eingang. Zusätzlich schickt das DMS einmal am Tag eine Übersicht per E-Mail, wenn der Versand eingerichtet ist.</p>
-        <label className="haken"><input type="checkbox" checked={d.einstellungen.aufgaben_mail !== false}
-          onChange={(e) => d.setzeEinstellung('aufgaben_mail', e.target.checked ? null : false)} /><span>Tägliche Zusammenfassung meiner Aufgaben per E-Mail</span></label>
+        <p className="leise">Mappen mit offenen Aufgaben für dich stehen im Eingang. Zusätzlich schickt das DMS einmal am Tag eine Übersicht per E-Mail – zu deiner Uhrzeit und an deinen Wochentagen, solange du offene Aufgaben hast und nicht abwesend bist.</p>
+        <ZusammenfassungEinstellen />
       </div>
 
       {(!!d.zaehler.papierkorbTage || d.einstellungen.papierkorb_beim_abmelden === true) && (

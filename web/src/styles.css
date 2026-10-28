@@ -787,3 +787,8 @@ body:has(.gezogen) { cursor: grabbing; user-select: none; -webkit-user-select: n
 .dokleiste { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .dokleiste .sortwahl { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 .dokleiste .sortwahl select { width: auto; }
+
+/* Tägliche Zusammenfassung im Profil (#92, #94) */
+.zusammenfassung { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; padding-left: 26px; }
+.tagewahl .tage { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.haken.aus { opacity: .6; }
