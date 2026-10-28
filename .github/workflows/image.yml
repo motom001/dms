@@ -52,26 +52,36 @@ jobs:
       - name: Bauen
         run: npm run build
 
-  # Pull Requests: Image für amd64 bauen (ohne Veröffentlichung) und prüfen, ob die
-  # Texterkennung im Image läuft – so fallen falsche Paketnamen vor dem Merge auf.
+  # Pull Requests: Image für beide Architekturen bauen (ohne Veröffentlichung), jeweils auf
+  # einem passenden Rechner (#88), und prüfen, ob die Texterkennung im Image läuft – so fallen
+  # falsche Paketnamen und Probleme mit arm64 vor dem Merge auf.
   image-probe:
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - plattform: linux/amd64
+            rechner: ubuntu-24.04
+          - plattform: linux/arm64
+            rechner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.rechner }}
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64
+          platforms: ${{ matrix.plattform }}
           load: true
           push: false
           tags: dms:probe
-          cache-from: type=gha
+          cache-from: type=gha,scope=${{ matrix.plattform }}
       - name: Texterkennung im Image
         run: |
-          docker run --rm --entrypoint sh dms:probe -c 'tesseract --version | head -1 && tesseract --list-langs && pdftotext -v 2>&1 | head -1'
+          docker run --rm --entrypoint sh dms:probe -c 'uname -m && tesseract --version | head -1 && tesseract --list-langs && pdftotext -v 2>&1 | head -1'
           docker run --rm --entrypoint sh dms:probe -c 'tesseract --list-langs' | grep -qx deu
+          docker run --rm --entrypoint node dms:probe -e "console.log('Node.js', process.version, process.arch)"
 
   # Neue Versionsnummer in package.json auf main? Dann gibt es ein Release (#34).
   version:
@@ -95,14 +105,69 @@ jobs:
             echo "Neue Version v$version – nach dem Image entsteht das Release."
           fi
 
+  # Image je Architektur auf einem passenden Rechner bauen (#88): arm64 auf einem echten
+  # ARM-Rechner statt emuliert (QEMU stürzte dort gelegentlich mit Fehler 132 ab). Jeder Teil
+  # wird nur unter seinem Prüfwert (Digest) hochgeladen; „image-zusammen“ setzt daraus das
+  # gemeinsame Image mit allen Tags zusammen.
   image:
     needs: [pruefen, version]
     # Läuft auch, wenn „version“ übersprungen wurde (Tags, manueller Start).
     if: always() && needs.pruefen.result == 'success' && github.event_name != 'pull_request' && needs.version.result != 'failure'
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - plattform: linux/amd64
+            rechner: ubuntu-24.04
+            name: amd64
+          - plattform: linux/arm64
+            rechner: ubuntu-24.04-arm
+            name: arm64
+    runs-on: ${{ matrix.rechner }}
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: zeit
+        run: echo "jetzt=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+      - id: bau
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          build-args: |
+            DMS_COMMIT=${{ github.sha }}
+            DMS_GEBAUT=${{ steps.zeit.outputs.jetzt }}
+          platforms: ${{ matrix.plattform }}
+          outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.plattform }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.plattform }}
+      - name: Prüfwert merken
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+        env:
+          DIGEST: ${{ steps.bau.outputs.digest }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.name }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  image-zusammen:
+    needs: [version, image]
+    if: always() && needs.image.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digest-*
+          merge-multiple: true
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -118,26 +183,22 @@ jobs:
             type=semver,pattern={{version}}
             type=sha,format=short
             type=raw,value=${{ needs.version.outputs.version }},enable=${{ needs.version.outputs.neu == 'true' }}
-      - id: zeit
-        run: echo "jetzt=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          build-args: |
-            DMS_COMMIT=${{ github.sha }}
-            DMS_GEBAUT=${{ steps.zeit.outputs.jetzt }}
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Gemeinsames Image mit allen Tags
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          test "$(ls | wc -l)" -eq 2 || { echo "::error::Es fehlt eine Architektur: $(ls)"; exit 1; }
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf 'ghcr.io/${{ github.repository }}@sha256:%s ' *)
+      - name: Prüfen
+        run: |
+          docker buildx imagetools inspect "ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.version }}"
+          docker buildx imagetools inspect --raw "ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.version }}" | jq -e '[.manifests[].platform.architecture] | (index("amd64") != null and index("arm64") != null)' >/dev/null
 
   # Tag und Release anlegen. Ein vom Workflow angelegter Tag startet keine weiteren
   # Workflows; deshalb trägt das Image oben schon die Versionsnummer.
   release:
-    needs: [version, image]
-    if: needs.version.outputs.neu == 'true'
+    needs: [version, image-zusammen]
+    if: needs.version.outputs.neu == 'true' && needs.image-zusammen.result == 'success'
     permissions:
       contents: write
     uses: ./.github/workflows/release.yml
