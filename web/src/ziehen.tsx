@@ -132,7 +132,7 @@ export function useZiehen(o: Optionen) {
     aktiv: zug !== null,
     griff: (id: string, name: string) => ({
       type: 'button' as const,
-      className: 'griff',
+      className: 'ziehgriff',
       'aria-label': `${name} verschieben`,
       title: 'Ziehen zum Verschieben (Touch: lange drücken) – per Tastatur mit Alt+Pfeiltasten',
       onPointerDown: (e: ReactPointerEvent<HTMLElement>) => onPointerDown(id, e),

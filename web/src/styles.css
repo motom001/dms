@@ -738,7 +738,7 @@ a.person:hover, a.person:focus-visible { text-decoration: underline; }
 .trefferlistenblock.standard { border-left-color: var(--gruen); }
 .trefferlistenblock .registerkopf .haken { flex: none; }
 .quellzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
-.quellzeile select { max-width: 100%; }
+.quellzeile select { max-width: 100%; width: auto; }
 select.fehlerhaft { border-color: var(--schlecht); }
 .gruppe .verweistabelle { border: 0; border-radius: 0; margin: 0; max-height: none; }
 .gruppe .verweistabelle > p { padding: 6px 12px; }
@@ -746,10 +746,10 @@ select.fehlerhaft { border-color: var(--schlecht); }
 @media (max-width: 520px) { .trefferlistenblock .registerkopf { grid-template-columns: minmax(0, 1fr) auto; } }
 
 /* Drag & Drop (#73, #74): Griff ⠿, Einfügelinie, Ziel „hinein“ */
-.griff { background: none; border: 0; margin: 0; padding: 4px 4px; cursor: grab; color: var(--leise); font-size: calc(15px * var(--skala, 1)); line-height: 1; border-radius: 4px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; flex: none; }
-.griff:hover { color: var(--tinte); background: var(--senke); }
-.griff:active { cursor: grabbing; }
-.griff:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
+.ziehgriff { background: none; border: 0; margin: 0; padding: 4px 4px; cursor: grab; color: var(--leise); font-size: calc(15px * var(--skala, 1)); line-height: 1; border-radius: 4px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; flex: none; }
+.ziehgriff:hover { color: var(--tinte); background: var(--senke); }
+.ziehgriff:active { cursor: grabbing; }
+.ziehgriff:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
 .ziehbar { display: flex; align-items: center; gap: 2px; position: relative; }
 .ziehbar > .eintrag { flex: 1; min-width: 0; }
 .gezogen { opacity: .45; }
@@ -758,3 +758,7 @@ select.fehlerhaft { border-color: var(--schlecht); }
 .zieh-in { outline: 2px dashed var(--akzent); outline-offset: -2px; background: var(--akzent-zart); border-radius: 6px; }
 .zieh-bereit { outline: 1px dashed var(--linie-stark); outline-offset: -1px; }
 body:has(.gezogen) { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+.registerchip { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.registerchip .chip { min-width: 0; }
+.feldsumme > .ziehgriff { align-self: center; }
+.spaltenliste li > .ziehgriff { margin-right: -4px; }

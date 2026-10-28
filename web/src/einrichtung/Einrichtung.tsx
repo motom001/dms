@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import {
   FELDTYPEN, INDEXPLATZHALTER, istIndexplatzhalter, REGISTERARTEN, SYSTEMSPALTEN, type Systemspalte, schluesselAus, standardRegister, titelAus, trefferlistenVon, VERWEISARTEN, vorlageFelder, wirksameVorlage,
   type Feld, type Mappe, type Mappentyp, type Register, type Registerart, type Werte,
@@ -86,6 +87,25 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
   const [basis, setBasis] = useState(() => JSON.stringify(entwurfAus(typ)));
   const [e, setE] = useState<Entwurf>(() => JSON.parse(basis));
   const [offen, setOffen] = useState<number | null>(null);
+  const [ansage, setAnsage] = useState('');
+  // Drag & Drop (#74): Felder umsortieren oder auf ein Feldregister ziehen; ändert nur den Entwurf.
+  const zf = useZiehen({
+    erlaubt: (_q, ziel, ort) => ort !== 'in' || ziel.startsWith('reg:'),
+    fertig: (quelle, ziel, ort) => {
+      if (ziel.startsWith('reg:')) {
+        const key = ziel.slice(4);
+        setE((x) => ({ ...x, felder: x.felder.map((f) => (f._uid === quelle ? { ...f, _register: key } : f)) }));
+        const f = e.felder.find((x) => x._uid === quelle);
+        setAnsage(`${f?.label || 'Feld'} liegt jetzt auf Register „${e.register.find((r) => r.key === key)?.name ?? key}“.`);
+        return;
+      }
+      setE((x) => {
+        const von = x.felder.findIndex((f) => f._uid === quelle), zu = x.felder.findIndex((f) => f._uid === ziel);
+        return { ...x, felder: umgestellt(x.felder, von, zu, ort === 'vor' ? 'vor' : 'nach') };
+      });
+      setOffen(null); setFehler(null);
+    },
+  });
   // Neue Typen bekommen eine eigene Sicht in der Ablage, außer man wählt das ab (#38).
   const [sichtAnlegen, setSichtAnlegen] = useState(true);
   const [fehler, setFehler] = useState<{ allgemein: string[]; felder: Record<string, string[]> } | null>(null);
@@ -229,6 +249,10 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
           {e.felder.length === 0 && <div className="leer"><p>Noch keine Felder. Füge das erste hinzu, etwa „Bezeichnung“ als Text.</p></div>}
           {e.felder.map((f, i) => (
             <FeldZeile key={f._uid} f={f} i={i} anzahl={e.felder.length} offen={offen === i} fehler={fehler?.felder[String(i)]}
+              zieh={zf.eintrag(f._uid)} griff={<button {...zf.griff(f._uid, f.label || 'Feld')} onKeyDown={(ev) => ziehTasten(ev, {
+                hoch: i > 0 ? () => { verschiebe(i, -1); setAnsage(`${f.label || 'Feld'} steht jetzt an Stelle ${i}.`); } : undefined,
+                runter: i < e.felder.length - 1 ? () => { verschiebe(i, 1); setAnsage(`${f.label || 'Feld'} steht jetzt an Stelle ${i + 2}.`); } : undefined,
+              })}><span aria-hidden="true">⠿</span></button>}
               eigeneId={e.id} eigenerName={e.name} typen={d.typen} feldregister={feldregister}
               umschalten={() => setOffen(offen === i ? null : i)}
               verschiebe={(r) => verschiebe(i, r)} entferne={() => void entferne(i)}
@@ -242,9 +266,10 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
           ))}
         </div>
         <div><button type="button" className="knopf" onClick={feldHinzufuegen}>+ Feld hinzufügen</button></div>
+        <Ansage text={ansage} />
       </div>
 
-      <RegisterEditor e={e} setE={setE} />
+      <RegisterEditor e={e} setE={setE} feldAblage={(key) => zf.ablage(`reg:${key}`)} />
 
       <div className="speicherleiste">
         {system ? <span /> : <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>{neu ? 'Entwurf verwerfen' : 'Mappentyp löschen'}</button>}
@@ -262,6 +287,7 @@ function FeldZeile(p: {
   f: EntwurfFeld; i: number; anzahl: number; offen: boolean; fehler?: string[];
   eigeneId: string; eigenerName: string; typen: Mappentyp[]; feldregister: EntwurfRegister[];
   umschalten(): void; verschiebe(r: number): void; entferne(): void; setze(patch: Partial<EntwurfFeld>): void;
+  zieh: { className: string }; griff: React.ReactNode;
 }) {
   const { f, i, offen, fehler, setze } = p;
   const id = (x: string) => `f${i}-${x}`;
@@ -325,8 +351,9 @@ function FeldZeile(p: {
       <option value="">– keiner –</option>{(f.optionen ?? []).map((o) => <option key={o}>{o}</option>)}</select></label>;
 
   return (
-    <div className={`feldzeile ${offen ? 'offen' : ''} ${fehler ? 'fehlerhaft' : ''}`}>
+    <div {...p.zieh} className={`feldzeile ${offen ? 'offen' : ''} ${fehler ? 'fehlerhaft' : ''} ${p.zieh.className}`}>
       <div className="feldsumme">
+        {p.griff}
         <button type="button" className="feldkopfknopf" aria-expanded={offen} onClick={p.umschalten}>
           <span className="flabel">{f.label || 'Ohne Bezeichnung'}{f.pflicht && <span className="pflicht">*</span>}</span>
           <code className="fkey">{f.key}</code>
@@ -444,8 +471,15 @@ function TitelEditor({ e, setze }: { e: Entwurf; setze: (v: string) => void }) {
   );
 }
 
-function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Entwurf) => void }) {
+function RegisterEditor({ e, setE, feldAblage }: { e: Entwurf; setE: (f: (x: Entwurf) => Entwurf) => void; feldAblage: (key: string) => { className: string } }) {
   const d = useDaten();
+  const [ansage, setAnsage] = useState('');
+  const zr = useZiehen({
+    fertig: (quelle, ziel, ort) => setE((x) => {
+      const von = x.register.findIndex((r) => r._uid === quelle), zu = x.register.findIndex((r) => r._uid === ziel);
+      return { ...x, register: umgestellt(x.register, von, zu, ort === 'vor' ? 'vor' : 'nach') };
+    }),
+  });
   const setzeReg = (i: number, patch: Partial<EntwurfRegister>) =>
     setE((x) => ({ ...x, register: x.register.map((r, j) => (j === i ? { ...r, ...patch } : r)) }));
 
@@ -496,9 +530,13 @@ function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Ent
           const anzahl = e.felder.filter((f) => f._register === r.key).length;
           const gewaehlt = r.quellen ?? [];
           return (
-            <div key={r._uid} className={`registerzeile art-${r.art}`}>
+            <div key={r._uid} {...zr.eintrag(r._uid)}>
+              <div {...(r.art === 'felder' ? feldAblage(r.key) : {})} className={`registerzeile art-${r.art} ${r.art === 'felder' ? feldAblage(r.key).className : ''}`}>
               <div className="registerkopf">
-                <span className="chip">{REGISTERARTEN[r.art]}</span>
+                <span className="registerchip"><button {...zr.griff(r._uid, r.name || 'Register')} onKeyDown={(ev) => ziehTasten(ev, {
+                  hoch: i > 0 ? () => { verschiebe(i, -1); setAnsage(`${r.name} steht jetzt an Stelle ${i}.`); } : undefined,
+                  runter: i < e.register.length - 1 ? () => { verschiebe(i, 1); setAnsage(`${r.name} steht jetzt an Stelle ${i + 2}.`); } : undefined,
+                })}><span aria-hidden="true">⠿</span></button><span className="chip">{REGISTERARTEN[r.art]}</span></span>
                 <input aria-label="Name des Registers" value={r.name} onChange={(ev) => {
                   const name = ev.target.value;
                   if (!r._neu) { setzeReg(i, { name }); return; }
@@ -552,10 +590,12 @@ function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Ent
                       })}
                     </fieldset>
               )}
+              </div>
             </div>
           );
         })}
       </div>
+      <Ansage text={ansage} />
       <div className="knoepfe">
         <button type="button" className="knopf klein" onClick={() => hinzufuegen('felder')}>+ Feldregister</button>
         <button type="button" className="knopf klein" onClick={() => hinzufuegen('dokumente')}>+ Dokumentenregister</button>
@@ -646,17 +686,23 @@ function Spaltenwahl({ e, spalten, name, setze }: { e: Entwurf; spalten: string[
     ...e.felder.filter((f) => f.typ !== 'passwort').map((f) => ({ k: `feld:${f._uid}`, n: f.label || f.key })),
     ...(Object.keys(SYSTEMSPALTEN) as Systemspalte[]).filter((k) => k !== '_typ').map((k) => ({ k, n: SYSTEMSPALTEN[k] })),
   ].filter((x) => !liste.includes(x.k));
+  const [ansage, setAnsage] = useState('');
   const schiebe = (i: number, r: number) => {
     const j = i + r;
     if (j < 0 || j >= liste.length) return;
     const n = [...liste]; [n[i], n[j]] = [n[j], n[i]]; setze(n);
+    setAnsage(`${name(liste[i])} steht jetzt an Stelle ${j + 1}.`);
   };
+  // Drag & Drop (#74)
+  const zs = useZiehen({ fertig: (quelle, ziel, ort) => setze(umgestellt(liste, liste.indexOf(quelle), liste.indexOf(ziel), ort === 'vor' ? 'vor' : 'nach')) });
   return (
     <>
+      <Ansage text={ansage} />
       {liste.length > 0 && (
         <ol className="spaltenliste">
           {liste.map((k, i) => (
-            <li key={k} className={i < 3 ? 'kompakt' : ''}>
+            <li key={k} {...zs.eintrag(k)} className={`${i < 3 ? 'kompakt' : ''} ${zs.eintrag(k).className}`}>
+              <button {...zs.griff(k, name(k))} onKeyDown={(ev) => ziehTasten(ev, { hoch: () => schiebe(i, -1), runter: () => schiebe(i, 1) })}><span aria-hidden="true">⠿</span></button>
               <span className="nr">{i + 1}</span>
               <span className="nm">{name(k)}{k.startsWith('_') && <span className="chip">System</span>}</span>
               <span className="aktionen">
