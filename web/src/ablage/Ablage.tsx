@@ -320,7 +320,7 @@ function SichtBaum({ aktiv }: { aktiv?: string }) {
             {kinder
               ? <button type="button" className="aufklapper" aria-expanded={offen} title={offen ? 'Untersichten zuklappen' : `${unter} Untersicht${unter === 1 ? '' : 'en'} aufklappen`}
                   onClick={() => umschalten(s.id)}><span aria-hidden="true">{offen ? '▾' : '▸'}</span><span className="sr">{s.name} {offen ? 'zuklappen' : 'aufklappen'}</span></button>
-              : <span className="aufklapper" aria-hidden="true" />}
+              : null}
             <Link to={`/ablage/${s.id}`} className={`sicht ${aktiv === s.id ? 'an' : ''}`} title={s.beschreibung || undefined}>
               <span className="nm">{s.name}</span>{n !== undefined && <span className="zahl">{zahl(n)}</span>}
             </Link>

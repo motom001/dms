@@ -222,9 +222,10 @@ tbody tr:last-child > * { border-bottom: 0; }
 .sicht.an { background: var(--akzent-zart); color: var(--akzent); font-weight: 600; }
 .sicht .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Sichten als Baum (#38): Einrückung je Ebene, Pfeil zum Auf- und Zuklappen. */
-.sichtzeile { display: flex; align-items: center; gap: 0; padding-left: calc(var(--tiefe, 0) * 14px); }
+.sichtzeile { position: relative; display: flex; align-items: center; padding-left: calc(var(--tiefe, 0) * 14px); }
 .sichtzeile .sicht { flex: 1; min-width: 0; }
-.aufklapper { flex: none; width: 18px; height: 26px; padding: 0; border: 0; background: none; color: var(--leise); cursor: pointer; font: inherit; font-size: calc(11px * var(--skala, 1)); border-radius: 4px; }
+/* Der Pfeil hängt links vor dem Namen (auf der ersten Ebene im Rand), damit die Namen bündig mit „Eingang“ stehen. */
+.aufklapper { position: absolute; left: calc(var(--tiefe, 0) * 14px - 16px); width: 16px; height: 26px; padding: 0; border: 0; background: none; color: var(--leise); cursor: pointer; font: inherit; font-size: calc(11px * var(--skala, 1)); border-radius: 4px; }
 button.aufklapper:hover { background: var(--flaeche); color: var(--tinte); }
 .sicht .zahl { font-size: calc(12px * var(--skala, 1)); color: var(--leise); font-variant-numeric: tabular-nums; }
 .zaehler { font-size: calc(11.5px * var(--skala, 1)); font-weight: 700; min-width: 20px; text-align: center; padding: 1px 7px; border-radius: 999px; background: var(--warn); color: var(--flaeche); }
@@ -322,7 +323,7 @@ a.textknopf { text-decoration: none; }
   .unterstuetzen { margin-top: 8px; }
   .sicht { flex: none; border: 1px solid var(--linie); background: var(--flaeche); }
   .sichtzeile { flex: none; padding-left: 0; }
-  .sichtzeile > span.aufklapper { display: none; }
+  .sichtzeile > .aufklapper { position: static; }
   .drei[data-ebene="liste"] { grid-template-rows: auto minmax(0, 1fr); }
   .spalte.mappe { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
   .nur-schmal { display: inline; }
