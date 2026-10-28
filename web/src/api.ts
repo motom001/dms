@@ -1,6 +1,6 @@
 import type { Design } from './design';
 import { messung } from './messung';
-import type { Benutzer, Dokument, Mappe, MappenBezug, Mappentyp, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung } from '../../shared/src/model';
+import type { Benutzer, Dokument, Mappe, MappenBezug, Mappentyp, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Sicht, SichtDaten } from '../../shared/src/sichten';
 
 export class ApiFehler extends Error {
@@ -45,7 +45,17 @@ async function anfrage<T>(methode: string, url: string, body?: unknown): Promise
 export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string; titel: string }
 export type Bezuege = Record<string, MappenBezug>;
 export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege }
-export interface Zaehler { typen: Record<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number; sichten?: Record<string, number> }
+export interface Zaehler {
+  typen: Record<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number; sichten?: Record<string, number>;
+  /** Eigene Mappen im Papierkorb (#43); Tage 0 = kein Papierkorb. */
+  papierkorb?: number; papierkorbTage?: number;
+}
+/** Eine Mappe im Papierkorb (#43). */
+export interface PapierkorbEintrag {
+  id: string; typId: string; titel: string; werte: Werte; demo: boolean;
+  erstellt: string; erstelltVon: string | null; geaendert: string; geaendertVon: string | null;
+  geloescht: string; geloeschtVon: string | null; dokumente: number;
+}
 export interface KontoStatus {
   einrichtungNoetig: boolean; mail: boolean; benutzer: Benutzer | null;
   /** Gibt es einen Schlüssel, um Passwörter zu speichern (#39, #46)? */
@@ -116,6 +126,14 @@ export const api = {
   mappeAnlegen: (m: unknown) => anfrage<Mappe>('POST', '/api/mappen', m),
   mappeAendern: (id: string, m: unknown) => anfrage<Mappe>('PUT', `/api/mappen/${id}`, m),
   mappeLoeschen: (id: string) => anfrage<null>('DELETE', `/api/mappen/${id}`),
+  /* Papierkorb (#43): Ablage = eigener, Werkbank = alle */
+  papierkorb: () => anfrage<PapierkorbEintrag[]>('GET', '/api/papierkorb'),
+  papierkorbWerkbank: () => anfrage<{ tage: number; eintraege: PapierkorbEintrag[] }>('GET', '/api/werkbank/papierkorb'),
+  papierkorbEintrag: (id: string, werkbank = false) => anfrage<PapierkorbEintrag>('GET', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}`),
+  wiederherstellen: (id: string, werkbank = false) => anfrage<{ mappe: Mappe; verweiseEntfallen: number }>('POST', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}/wiederherstellen`),
+  endgueltigLoeschen: (id: string, werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}`),
+  papierkorbLeeren: (werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb`),
+  papierkorbTage: (tage: number) => anfrage<{ tage: number; geleert: number }>('PUT', '/api/werkbank/papierkorb/einstellungen', { tage }),
   /** Passwortfeld anzeigen (#46); steht im Protokoll. */
   passwortAnzeigen: (mappeId: string, feld: string) => anfrage<{ wert: string }>('POST', `/api/mappen/${mappeId}/passwoerter/${encodeURIComponent(feld)}`),
   beispiele: () => anfrage<null>('POST', '/api/beispiele'),

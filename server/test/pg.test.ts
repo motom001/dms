@@ -34,16 +34,23 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const { Messung, pgMessSpeicher } = await import('../src/messung');
     const messung = new Messung(pgMessSpeicher(sql, HAUSHALT));
     await messung.start();
-    // Wie im Betrieb (index.ts): Konten spiegeln Benutzer in Mappen (#26).
-    const dienst = new Dienst(messung.umhuelle(pgRepo(sql, HAUSHALT), 'mappen'), ordnerSpeicher(ordner, HAUSHALT));
     const { Betrieb, pgBetriebSpeicher } = await import('../src/betrieb');
-    betrieb = new Betrieb(pgBetriebSpeicher(sql, HAUSHALT));
+    // Schlüssel für Passwörter (#39): eigene Datei, erst im Test erzeugt.
+    const { Tresor } = await import('../src/tresor');
+    const tresor = new Tresor(pgBetriebSpeicher(sql, HAUSHALT), join(ordner, 'geheim', 'dms.schluessel'), () => null);
+    await tresor.laden();
+    // Papierkorb (#43) zunächst aus, damit Löschen wie bisher sofort endgültig ist; der Test dazu schaltet ihn ein.
+    await pgBetriebSpeicher(sql, HAUSHALT).schreibe('papierkorb', { tage: 0 });
+    // Wie im Betrieb (index.ts): Konten spiegeln Benutzer in Mappen (#26).
+    const dienst = new Dienst(messung.umhuelle(pgRepo(sql, HAUSHALT), 'mappen'), ordnerSpeicher(ordner, HAUSHALT), { tresor, einstellungen: pgBetriebSpeicher(sql, HAUSHALT) });
+    betrieb = new Betrieb(pgBetriebSpeicher(sql, HAUSHALT), undefined, tresor);
     await betrieb.laden();
     await betrieb.speichereAdresse('http://nas:3000');
     const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.benutzerspiegel());
+    dienst.verbindeKonten(konten.papierkorbHaken());
     await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
     app = await baueApp(dienst, konten, {
-        betrieb, sicher: () => betrieb.cookieNurHttps(),
+        betrieb, tresor, sicher: () => betrieb.cookieNurHttps(),
         messung, system: (await import('../src/system')).pgSystemQuelle(sql, HAUSHALT),
         designs: new (await import('../src/designs')).Designs((await import('../src/designs')).pgDesignRepo(sql, HAUSHALT)),
         apiSchluessel: new (await import('../src/apischluessel')).ApiSchluesselDienst((await import('../src/apischluessel')).pgApiSchluesselRepo(sql)),
@@ -483,7 +490,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.ok(doc.paths['/rollen'].get);
   });
 
-  it('pflegt E-Mail-Versand und Adresse in der Werkbank (#37)', async () => {
+  it('pflegt E-Mail-Versand und Adresse in der Werkbank, Passwort verschlüsselt (#37, #39)', async () => {
     const st = (await anfrage('GET', '/api/werkbank/betrieb')).body;
     assert.deepEqual([st.mail.aktiv, st.adresse, st.mail.passwortGesetzt], [false, 'http://nas:3000', false]);
     assert.match(st.vorschlag, /^http:\/\//);
@@ -495,11 +502,24 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     await anfrage('PUT', '/api/werkbank/betrieb/adresse', { adresse: '' });
     const r = await app.inject({ method: 'POST', url: `/api/benutzer/${neu.body.benutzer.id}/link`, headers: { 'x-dms': '1', cookie, host: 'nas.local:8080' } });
     assert.match(JSON.parse(r.body).link, /^http:\/\/nas\.local:8080\/passwort\//);
-    const m = await anfrage('PUT', '/api/werkbank/betrieb/mail', { aktiv: true, host: 'smtp.example.org', port: 587, verbindung: 'starttls', benutzer: 'dms', passwort: 'geheim' });
+    const mail = { aktiv: true, host: 'smtp.example.org', port: 587, verbindung: 'starttls', benutzer: 'dms', passwort: 'geheim' };
+    // Ohne Schlüssel kein Passwort (#39); erzeugt wird er in der Werkbank.
+    assert.equal((await anfrage('GET', '/api/werkbank/tresor')).body.zustand, 'fehlt');
+    assert.equal((await anfrage('PUT', '/api/werkbank/betrieb/mail', mail)).status, 409);
+    assert.equal((await anfrage('GET', '/api/konto/status')).body.passwoerterMoeglich, false);
+    const t = await anfrage('POST', '/api/werkbank/tresor/erzeugen');
+    assert.deepEqual([t.status, t.body.zustand], [200, 'vorhanden']);
+    assert.equal((await anfrage('POST', '/api/werkbank/tresor/erzeugen')).status, 409, 'nie überschreiben');
+    assert.equal((await anfrage('GET', '/api/konto/status')).body.passwoerterMoeglich, true);
+    const tresorStand = JSON.stringify((await sql`SELECT wert FROM einstellungen WHERE schluessel = 'tresor'`)[0].wert);
+    assert.ok(tresorStand.includes(t.body.fingerabdruck) && !/[A-Za-z0-9_-]{43}/.test(tresorStand), 'in der Datenbank nur der Fingerabdruck');
+    const m = await anfrage('PUT', '/api/werkbank/betrieb/mail', mail);
     assert.equal(m.status, 200);
     assert.ok(!JSON.stringify(m.body).includes('geheim'));
     assert.equal((await anfrage('GET', '/api/konto/status')).body.mail, true, 'sofort wirksam');
-    assert.equal((await sql`SELECT wert FROM einstellungen WHERE schluessel = 'mail'`)[0].wert.passwort, 'geheim');
+    const gespeichert = (await sql`SELECT wert FROM einstellungen WHERE schluessel = 'mail'`)[0].wert.passwort;
+    assert.match(gespeichert, /^dms1\$/, 'verschlüsselt');
+    assert.ok(!gespeichert.includes('geheim'));
     await anfrage('PUT', '/api/werkbank/betrieb/mail', { ...m.body.mail, aktiv: false });
     assert.equal((await anfrage('GET', '/api/konto/status')).body.mail, false);
     await anfrage('PUT', '/api/werkbank/betrieb/adresse', { adresse: 'http://nas:3000' });
@@ -531,5 +551,80 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('DELETE', `/api/sichten/definitionen/${gruppe.body.id}`)).status, 204);
     assert.equal((await anfrage('GET', '/api/sichten/definitionen')).body.find((x: { id: string }) => x.id === offen.body.id).elternId, null, 'Untersicht rückt hoch');
     assert.equal((await anfrage('DELETE', `/api/sichten/definitionen/${offen.body.id}`)).status, 204);
+  });
+  it('speichert Passwortfelder verschlüsselt und gibt sie nur gezielt heraus (#46)', async () => {
+    const typ = (await anfrage('POST', '/api/typen', { name: 'Zugang', felder: [
+      { key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'kennwort', label: 'Kennwort', typ: 'passwort' },
+    ] })).body;
+    const m = await anfrage('POST', '/api/mappen', { typId: typ.id, werte: { name: 'Onlinebank', kennwort: { neu: 'sehr-geheim' } } });
+    assert.equal(m.status, 201);
+    assert.deepEqual(m.body.werte.kennwort, { gesetzt: true, lesbar: true });
+    const [roh] = await sql`SELECT werte ->> 'kennwort' AS k FROM mappen WHERE id = ${m.body.id}`;
+    assert.match(roh.k, /^dms1\$/);
+    assert.equal((await anfrage('GET', `/api/mappen?sicht=typ:${typ.id}&suche=${encodeURIComponent(roh.k.slice(5, 12))}`)).body.gesamt, 0, 'nicht durchsuchbar');
+    assert.ok(!JSON.stringify((await anfrage('GET', `/api/mappen/${m.body.id}`)).body).includes('dms1$'));
+    assert.deepEqual((await anfrage('POST', `/api/mappen/${m.body.id}/passwoerter/kennwort`)).body, { wert: 'sehr-geheim' });
+    // Unverändert zurückgeschickt bleibt es, wie es ist.
+    await anfrage('PUT', `/api/mappen/${m.body.id}`, { werte: { name: 'Onlinebank', kennwort: { gesetzt: true } } });
+    assert.equal((await sql`SELECT werte ->> 'kennwort' AS k FROM mappen WHERE id = ${m.body.id}`)[0].k, roh.k);
+
+    const ohne = (await anfrage('POST', '/api/konto/api-schluessel', { name: 'Ohne Passwörter' })).body;
+    const mit = (await anfrage('POST', '/api/konto/api-schluessel', { name: 'Mit Passwörtern', passwoerter: true })).body;
+    assert.equal(mit.passwoerter, true);
+    const v1 = async (pfad: string, s: string) => {
+      const r = await app.inject({ method: 'GET', url: `/api/v1${pfad}`, headers: { authorization: `Bearer ${s}` } });
+      return { status: r.statusCode as number, body: JSON.parse(r.body) };
+    };
+    assert.deepEqual((await v1(`/mappen/${m.body.id}`, mit.schluessel)).body.mappe.werte.kennwort, { gesetzt: true, lesbar: true });
+    assert.equal((await v1(`/mappen/${m.body.id}?passwoerter=anzeigen`, ohne.schluessel)).status, 403);
+    assert.equal((await v1(`/mappen/${m.body.id}?passwoerter=anzeigen`, mit.schluessel)).body.mappe.werte.kennwort, 'sehr-geheim');
+    const seite = await v1(`/mappen?sicht=typ:${typ.id}&passwoerter=anzeigen`, mit.schluessel);
+    assert.equal(seite.body.mappen[0].werte.kennwort, 'sehr-geheim');
+    assert.equal((await anfrage('DELETE', `/api/mappen/${m.body.id}`)).status, 204);
+    assert.equal((await anfrage('DELETE', `/api/typen/${typ.id}`)).status, 204);
+  });
+
+  it('legt Gelöschtes in den Papierkorb und stellt es samt Verweisen und Dokumenten wieder her (#43)', async () => {
+    assert.deepEqual((await anfrage('PUT', '/api/werkbank/papierkorb/einstellungen', { tage: 30 })).body, { tage: 30, geleert: 0 });
+    const partner = (await anfrage('POST', '/api/typen', { name: 'Korbpartner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] })).body;
+    const vertrag = (await anfrage('POST', '/api/typen', { name: 'Korbvertrag', felder: [
+      { key: 'nummer', label: 'Nummer', typ: 'text', pflicht: true, eindeutig: true }, { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id },
+    ] })).body;
+    const p = (await anfrage('POST', '/api/mappen', { typId: partner.id, werte: { name: 'Papierkorb GmbH' } })).body;
+    const v = await anfrage('POST', '/api/mappen', { typId: vertrag.id, werte: { nummer: 'K-1', partner: p.id } });
+    assert.equal(v.status, 201, JSON.stringify(v.body));
+    const hoch = await app.inject({ method: 'POST', url: `/api/mappen/${v.body.id}/dokumente?register=dokumente&name=k.pdf`, payload: Buffer.from('%PDF-1.7 korb'), headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' } });
+    assert.equal(hoch.statusCode, 201);
+    const sha = JSON.parse(hoch.body).dokument.sha256;
+
+    assert.equal((await anfrage('DELETE', `/api/mappen/${v.body.id}`)).status, 204);
+    assert.equal((await anfrage('GET', `/api/mappen/${v.body.id}`)).status, 404);
+    const korb = (await anfrage('GET', '/api/papierkorb')).body;
+    assert.deepEqual(korb.map((e: { id: string; dokumente: number }) => [e.id, e.dokumente]), [[v.body.id, 1]]);
+    assert.equal((await anfrage('GET', '/api/sichten')).body.papierkorb, 1);
+    assert.equal((await anfrage('GET', `/api/mappen/${p.id}`)).body.rueckverweise.length, 0, 'Verweis ist mit umgezogen');
+    assert.equal((await sql`SELECT count(*)::int AS n FROM dokumente WHERE sha256 = ${sha}`)[0].n, 0);
+
+    const w = await anfrage('POST', `/api/papierkorb/${v.body.id}/wiederherstellen`);
+    assert.equal(w.status, 200, JSON.stringify(w.body));
+    assert.equal(w.body.verweiseEntfallen, 0);
+    const zurueck = (await anfrage('GET', `/api/mappen/${v.body.id}`)).body;
+    assert.equal(zurueck.dokumente.length, 1);
+    assert.equal(zurueck.mappe.titel, v.body.titel);
+    assert.equal((await anfrage('GET', `/api/mappen/${p.id}`)).body.rueckverweise.length, 1);
+    assert.equal((await app.inject({ method: 'GET', url: `/api/dokumente/${zurueck.dokumente[0].id}/inhalt`, headers: { cookie } })).statusCode, 200, 'Datei ist noch da');
+
+    // Endgültig: Datei verschwindet erst jetzt; der Partner lässt sich danach löschen.
+    await anfrage('DELETE', `/api/mappen/${v.body.id}`);
+    await anfrage('DELETE', `/api/mappen/${p.id}`);
+    assert.equal((await anfrage('GET', '/api/werkbank/papierkorb')).body.eintraege.length, 2);
+    assert.equal((await anfrage('DELETE', `/api/werkbank/papierkorb/${p.id}`)).body.geloescht, 1);
+    assert.equal((await anfrage('DELETE', '/api/papierkorb')).body.geloescht, 1);
+    assert.equal((await anfrage('GET', '/api/papierkorb')).body.length, 0);
+    const v1 = await app.inject({ method: 'GET', url: '/api/v1/papierkorb', headers: { cookie } });
+    assert.deepEqual(JSON.parse(v1.body), []);
+    assert.deepEqual((await anfrage('PUT', '/api/werkbank/papierkorb/einstellungen', { tage: 0 })).body, { tage: 0, geleert: 0 });
+    assert.equal((await anfrage('DELETE', `/api/typen/${vertrag.id}`)).status, 204);
+    assert.equal((await anfrage('DELETE', `/api/typen/${partner.id}`)).status, 204);
   });
 });

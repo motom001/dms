@@ -34,7 +34,7 @@ const FELDER = [
   { key: 'kennwort', label: 'Kennwort', typ: 'passwort' },
 ];
 async function mitZugang(t?: Tresor) {
-  const d = new Dienst(speicherRepo(), speicherDateien(), t);
+  const d = new Dienst(speicherRepo(), speicherDateien(), { tresor: t });
   const typ = await d.legeTypAn({ name: 'Zugang', felder: FELDER });
   return { d, typ };
 }
@@ -120,7 +120,7 @@ describe('Passwortfeld (#46)', () => {
     const { d, typ } = await mitZugang(t);
     const m = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Bank', kennwort: { neu: 'geheim' } } });
     const fremd = await tresor();
-    const d2 = new Dienst((d as unknown as { repo: never }).repo, speicherDateien(), fremd);
+    const d2 = new Dienst((d as unknown as { repo: never }).repo, speicherDateien(), { tresor: fremd });
     const betroffen = await d2.unlesbarePasswoerter();
     assert.deepEqual(betroffen.map((b) => b.was), ['Bank: Kennwort']);
     const roh = (await d.holeMappe(m.id)).mappe.werte.kennwort;

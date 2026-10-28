@@ -59,9 +59,12 @@ await betrieb.uebernimmAlteVariablen(env);
 // Jeder Datenbankzugriff der Repos wird gezählt und gestoppt (Entwicklermodus, lange Zugriffe).
 const messung = new Messung(pgMessSpeicher(sql, cfg.haushalt));
 await messung.start();
-const dienst = new Dienst(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'mappen'), ordnerSpeicher(cfg.dateien, cfg.haushalt), tresor);
+const dienst = new Dienst(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'mappen'), ordnerSpeicher(cfg.dateien, cfg.haushalt), {
+  tresor, einstellungen: pgBetriebSpeicher(sql, cfg.haushalt),
+});
 // Benutzer erscheinen als Mappen (#26); die Konten halten sie auf dem neuesten Stand.
 const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, cfg.haushalt), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.benutzerspiegel());
+dienst.verbindeKonten(konten.papierkorbHaken());
 const app = await baueApp(dienst, konten, {
   webDir: cfg.web,
   sicher: () => betrieb.cookieNurHttps(),
@@ -83,6 +86,10 @@ if (nachgezogen) log.info(`Titel von ${nachgezogen} Mappen berechnet`);
 await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
 const geprueft = await dienst.passungNachziehen();
 if (geprueft) log.info(`Mappen von ${geprueft} Mappentypen gegen ihre Definition geprüft`);
+// Papierkorb (#43): Abgelaufenes stündlich endgültig löschen.
+const papierkorb = () => dienst.raeumePapierkorbAuf().catch((e) => log.error('Papierkorb aufräumen fehlgeschlagen', { fehler: (e as Error).message }));
+await papierkorb();
+setInterval(papierkorb, 60 * 60 * 1000).unref();
 if (await konten.einrichtungNoetig()) log.warn(`Noch kein Benutzer vorhanden: Der erste Aufruf des DMS im Browser (Port ${cfg.port}) legt den Administrator an.`);
 
 const beenden = async () => {

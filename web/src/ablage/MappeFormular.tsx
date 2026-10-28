@@ -177,7 +177,11 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
   async function loeschen() {
     if (!mappe) return;
     const n = details?.dokumente.length ?? 0;
-    if (!confirm(`Mappe „${titelOder(mappe.titel)}“ löschen?${n ? ` Ihre ${n} Dokument${n === 1 ? '' : 'e'} werden mitgelöscht.` : ''}`)) return;
+    const korb = d.zaehler.papierkorbTage ?? 0;
+    const frage = korb
+      ? `Mappe „${titelOder(mappe.titel)}“ in den Papierkorb legen?${n ? ` Ihre ${n} Dokument${n === 1 ? '' : 'e'} kommen mit.` : ''} Dort lässt sie sich ${korb === 1 ? 'einen Tag' : `${korb} Tage`} lang wiederherstellen.`
+      : `Mappe „${titelOder(mappe.titel)}“ endgültig löschen?${n ? ` Ihre ${n} Dokument${n === 1 ? '' : 'e'} werden mitgelöscht.` : ''}`;
+    if (!confirm(frage)) return;
     try {
       await api.mappeLoeschen(mappe.id);
       loeseWache(); await d.neuLaden(); geheZu(`/ablage/${sicht}`);

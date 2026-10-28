@@ -8,12 +8,13 @@ import { geheZu, Link } from '../ort';
 import { Dreiteilung } from '../bereiche';
 import { titelOder, useSeiten } from '../seiten';
 import { MappeAnsicht, NeueMappe } from './MappeFormular';
+import { PapierkorbDetail, PapierkorbListe, usePapierkorb } from './Papierkorb';
 
 /**
  * Ablage in drei Spalten, von groß nach klein:
  *   Sichten  →  Mappen der Sicht  →  eine Mappe
  *
- * /ablage/:sicht                    „eingang“, eine verwaltete Sicht (#38) oder die Id eines Mappentyps
+ * /ablage/:sicht                    „eingang“, „papierkorb“ (#43), eine verwaltete Sicht (#38) oder die Id eines Mappentyps
  * /ablage/:sicht/:mappeId           Mappe rechts geöffnet
  * /ablage/:typId/neu?verweis=k:id   neue Mappe, optional mit vorbelegtem Verweis
  *
@@ -32,6 +33,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   const verwaltet = d.sicht(sicht);
   const typ = d.typDerSicht(sicht);
   const ebene = dritt ? 'mappe' : 'liste';
+  const papierkorb = usePapierkorb(false, sicht === 'papierkorb');
 
   let rechts;
   if (dritt === 'neu' && !typ) {
@@ -40,6 +42,8 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
     rechts = <div className="leer"><p>Von „{typ.name}“ lassen sich in der Ablage keine neuen Mappen anlegen.{typ.system === 'benutzer' ? ' Benutzer legt ein Administrator in der Werkbank unter „Benutzer“ an.' : ''}</p></div>;
   } else if (dritt === 'neu' && typ) {
     rechts = <NeueMappe key={`${typ.id}-${suche.get('verweis') ?? ''}`} typ={typ} sicht={sicht} verweis={suche.get('verweis') ?? undefined} />;
+  } else if (dritt && sicht === 'papierkorb') {
+    rechts = <PapierkorbDetail key={dritt} id={dritt} werkbank={false} />;
   } else if (dritt) {
     rechts = <MappeLader key={dritt} id={dritt} sicht={sicht} />;
   } else {
@@ -54,6 +58,12 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           <Link to="/ablage/eingang" className={`sicht ${sicht === 'eingang' ? 'an' : ''}`}>
             <span className="nm">Eingang</span>{d.zaehler.eingang > 0 && <span className="zaehler">{zahl(d.zaehler.eingang)}</span>}
           </Link>
+          {/* Papierkorb (#43): sichtbar, solange er an ist oder noch etwas darin liegt. */}
+          {(!!d.zaehler.papierkorbTage || !!d.zaehler.papierkorb) && (
+            <Link to="/ablage/papierkorb" className={`sicht ${sicht === 'papierkorb' ? 'an' : ''}`}>
+              <span className="nm">Papierkorb</span>{!!d.zaehler.papierkorb && <span className="zahl">{zahl(d.zaehler.papierkorb)}</span>}
+            </Link>
+          )}
           {d.sichten.length > 0 && <hr />}
           <SichtBaum aktiv={sicht} />
         </nav>
@@ -62,7 +72,9 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
       </aside>
 
       <section className="spalte liste" aria-label="Mappen">
-        {sicht === 'eingang'
+        {sicht === 'papierkorb'
+          ? <PapierkorbListe z={papierkorb} werkbank={false} offen={dritt} />
+          : sicht === 'eingang'
           ? <Liste key="eingang" sicht="eingang" titel="Eingang" offen={dritt}
               beschreibung="Deine Mappen, die nicht zur aktuellen Definition ihres Mappentyps passen. Sie verschwinden von hier, sobald sie korrigiert sind."
               leerText="Nichts zu tun." />

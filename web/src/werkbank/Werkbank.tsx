@@ -12,6 +12,7 @@ import { DesignEditor, DesignListe } from './Designs';
 import { ProtokollDetail, ProtokollListe, useProtokoll } from './Protokoll';
 import { TechnikListe, TechnikPanel, useTechnik } from './Technik';
 import { TresorListe, TresorPanel, useTresor } from './Verschluesselung';
+import { PapierkorbDetail, PapierkorbEinstellungen, PapierkorbListe, usePapierkorb } from '../ablage/Papierkorb';
 
 /**
  * Werkbank für Administratoren, aufgebaut wie die Ablage:
@@ -27,6 +28,7 @@ import { TresorListe, TresorPanel, useTresor } from './Verschluesselung';
  * /werkbank/designs[/:id|/neu]
  * /werkbank/betrieb                 E-Mail-Versand und Adresse des DMS (#37)
  * /werkbank/verschluesselung        Schlüssel für Passwörter (#39)
+ * /werkbank/papierkorb[/:id]        Papierkorb aller Benutzer und Aufbewahrung (#43)
  */
 export function Werkbank({ teile }: { teile: string[] }) {
   const d = useDaten();
@@ -37,6 +39,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const technik = useTechnik(bereich === 'technik');
   const betrieb = useBetrieb();
   const tresor = useTresor();
+  const papierkorb = usePapierkorb(true, bereich === 'papierkorb');
   // Anmeldungen und Aktivität ändern sich laufend: beim Öffnen der Benutzer neu laden.
   useEffect(() => { if (bereich === 'benutzer') void benutzer.laden(); }, [bereich, id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -71,6 +74,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'betrieb') {
     liste = <BetriebListe b={betrieb} />;
     rechts = <BetriebPanel b={betrieb} />;
+  } else if (bereich === 'papierkorb') {
+    liste = <PapierkorbListe z={papierkorb} werkbank offen={id} />;
+    rechts = id ? <PapierkorbDetail key={id} id={id} werkbank /> : <PapierkorbEinstellungen z={papierkorb} />;
   } else if (bereich === 'verschluesselung') {
     liste = <TresorListe t={tresor} />;
     rechts = <TresorPanel t={tresor} />;
@@ -97,6 +103,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           <Link to="/werkbank/designs" className={`sicht ${bereich === 'designs' ? 'an' : ''}`}><span className="nm">Designs</span><span className="zahl">{d.designs.length || ''}</span></Link>
           <Link to="/werkbank/betrieb" className={`sicht ${bereich === 'betrieb' ? 'an' : ''}`}><span className="nm">E-Mail und Adresse</span></Link>
           <Link to="/werkbank/verschluesselung" className={`sicht ${bereich === 'verschluesselung' ? 'an' : ''}`}><span className="nm">Verschlüsselung</span>{tresor.stand && tresor.stand.zustand !== 'vorhanden' && <span className="zaehler" title="Kein Schlüssel für Passwörter">fehlt</span>}</Link>
+          <Link to="/werkbank/papierkorb" className={`sicht ${bereich === 'papierkorb' ? 'an' : ''}`}><span className="nm">Papierkorb</span><span className="zahl">{papierkorb.eintraege?.length || ''}</span></Link>
           <Link to="/werkbank/datenbank" className={`sicht ${bereich === 'datenbank' ? 'an' : ''}`}><span className="nm">Datenbank</span></Link>
           <Link to="/werkbank/technik" className={`sicht ${bereich === 'technik' ? 'an' : ''}`}><span className="nm">Technik</span></Link>
           <Link to="/werkbank/demo" className={`sicht ${bereich === 'demo' ? 'an' : ''}`}><span className="nm">Demo-Daten</span><span className="zahl">{Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || ''}</span></Link>

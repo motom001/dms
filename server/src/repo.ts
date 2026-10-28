@@ -27,6 +27,22 @@ export interface NeueMappe {
 }
 export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string; titel: string }
 
+/** Eine Mappe im Papierkorb (#43), mit ihren Werten, wie sie beim Löschen waren. */
+export interface PapierkorbEintrag {
+  id: string; typId: string; titel: string; werte: Werte; demo: boolean;
+  erstellt: string; erstelltVon: string | null; geaendert: string; geaendertVon: string | null;
+  geloescht: string; geloeschtVon: string | null;
+  /** Anzahl Dokumente, die mit ihr im Papierkorb liegen. */
+  dokumente: number;
+}
+export interface PapierkorbFilter {
+  /** Nur, was dieser Benutzer gelöscht hat. */
+  von?: string;
+  /** Nur, was vor diesem Zeitpunkt gelöscht wurde. */
+  vor?: string;
+  typId?: string;
+}
+
 /**
  * Datenzugriff für einen Haushalt. Die Fachlogik (Dienst) kennt nur diese
  * Schnittstelle; PostgreSQL und der Arbeitsspeicher (für Tests) setzen sie um.
@@ -101,8 +117,21 @@ export interface Repo {
   zaehleDemo(): Promise<Map<string, number>>;
   /** Anzahl echter Mappen, die auf Demo-Mappen verweisen. */
   echteVerweiseAufDemo(): Promise<number>;
-  /** Löscht alle Demo-Mappen; liefert ihre Anzahl und die Prüfwerte ihrer Dateien. */
+  /** Löscht alle Demo-Mappen (auch im Papierkorb); liefert ihre Anzahl und die Prüfwerte ihrer Dateien. */
   loescheDemo(): Promise<{ anzahl: number; dateien: string[] }>;
+
+  /* ---------- Papierkorb (#43) ---------- */
+  /** Zieht die Mappe samt Verweisen und Dokumenten in den Papierkorb. */
+  legeInPapierkorb(id: string, benutzerId: string | null): Promise<void>;
+  papierkorb(f?: PapierkorbFilter): Promise<PapierkorbEintrag[]>;
+  holeAusPapierkorb(id: string): Promise<PapierkorbEintrag | undefined>;
+  /** Legt die Mappe wieder an; Verweise auf Mappen, die es nicht mehr gibt, entfallen (Anzahl). */
+  stelleWiederHer(id: string): Promise<{ verweiseEntfallen: number }>;
+  /** Löscht endgültig; liefert die Prüfwerte der Dateien, die dabei frei werden könnten. */
+  leerePapierkorb(ids: string[]): Promise<string[]>;
+  zaehlePapierkorb(von?: string): Promise<number>;
+  /** Hängt noch ein Dokument (lebend oder im Papierkorb) an dieser Datei? */
+  dateiBenutzt(sha256: string): Promise<boolean>;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

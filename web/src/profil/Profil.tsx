@@ -100,6 +100,16 @@ export function Profil() {
 
       <ApiSchluesselBlatt />
 
+      {(!!d.zaehler.papierkorbTage || d.einstellungen.papierkorb_beim_abmelden === true) && (
+        <div className="blatt">
+          <h2 className="h3">Papierkorb</h2>
+          <p className="leise">Was du löschst, bleibt {d.zaehler.papierkorbTage === 1 ? 'einen Tag' : `${d.zaehler.papierkorbTage ?? 0} Tage`} im Papierkorb der Ablage, bevor es endgültig gelöscht wird.</p>
+          <label className="haken"><input type="checkbox" checked={d.einstellungen.papierkorb_beim_abmelden === true}
+            onChange={(e) => d.setzeEinstellung('papierkorb_beim_abmelden', e.target.checked || null)} />
+            <span>Beim Abmelden leeren<small className="hilfe">Deine gelöschten Mappen werden beim Abmelden endgültig gelöscht.</small></span></label>
+        </div>
+      )}
+
       <div className="blatt">
         <h2 className="h3">Ansicht auf diesem Gerät</h2>
         <p className="leise">Die Breite der Bereiche in Ablage und Werkbank und eingeklappte Bereiche merkt sich dieses Gerät für dich. Falls etwas nicht mehr zu finden ist:</p>

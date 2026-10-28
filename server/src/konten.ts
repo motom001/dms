@@ -297,8 +297,30 @@ export class Konten {
     // Wer schon angemeldet war, hat Spuren hinterlassen (angelegt von, Verweise): deaktivieren statt löschen (#26).
     // Löschen bleibt für Einladungen, die nie angenommen wurden, z. B. bei einer vertippten Adresse.
     if (b.hatPasswort || b.letzteAnmeldung) throw new Fachfehler(409, 'Wer sich schon angemeldet hat, wird deaktiviert statt gelöscht. So bleiben Verweise und „angelegt von“ erhalten.');
+    // Mit Papierkorb (#43): deaktivieren und die Mappe in den Papierkorb; das Konto wird erst beim Leeren gelöscht.
+    if (this.spiegel?.inPapierkorb && (await this.spiegel.papierkorbAn?.())) {
+      await this.spiegel.inPapierkorb(id, ich.id);
+      await this.repo.aendereBenutzer(id, { aktiv: false });
+      await this.repo.loescheSitzungenVon(id);
+      return;
+    }
     if (this.spiegel) await this.spiegel.entferne(id);
     await this.repo.loescheBenutzer(id);
+  }
+
+  /** Für den Papierkorb (#43): Konto einer Benutzer-Mappe löschen bzw. wieder aktivieren. */
+  papierkorbHaken() {
+    return {
+      endgueltig: async (id: string) => {
+        const b = await this.repo.holeBenutzer(id);
+        // Nur Einladungen, die nie angenommen wurden (wie beim Löschen); sonst bleibt das Konto deaktiviert.
+        if (b && !b.aktiv && !b.hatPasswort && !b.letzteAnmeldung) await this.repo.loescheBenutzer(id);
+      },
+      wiederda: async (id: string, von: string | null) => {
+        const b = await this.repo.holeBenutzer(id);
+        if (b && !b.aktiv) await this.spiegle(await this.repo.aendereBenutzer(id, { aktiv: true }), von);
+      },
+    };
   }
 
   /** Admin: neuen Link schicken (Einladung, wenn noch kein Passwort gesetzt ist, sonst Zurücksetzen). */

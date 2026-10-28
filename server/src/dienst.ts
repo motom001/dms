@@ -9,7 +9,8 @@ import { Auftraege } from './auftrag';
 import { protokoll } from './protokoll';
 import { Fachfehler } from './fehler';
 import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
-import { istUuid, type NeueMappe, type Repo, type Rueckverweis, type SortierungIntern } from './repo';
+import type { Einstellungen } from './einstellungen';
+import { istUuid, type NeueMappe, type PapierkorbEintrag, type Repo, type Rueckverweis, type SortierungIntern } from './repo';
 import {
   bereinigeBedingungen, heuteIn, kinderVon, klauselnFuer, waereKreis, wirksameTypen,
   type Aufloesung, type Sicht, type SichtDaten,
@@ -99,6 +100,26 @@ export interface Benutzerspiegel {
   aktualisiere(b: Benutzer, von?: string | null): Promise<void>;
   /** Entfernt die Mappe; wirft, wenn noch etwas auf sie verweist. */
   entferne(id: string): Promise<void>;
+  /** Ist der Papierkorb an (#43)? Dann wird ein Benutzer deaktiviert und seine Mappe kommt in den Papierkorb. */
+  papierkorbAn?(): Promise<boolean>;
+  /** Legt die Mappe in den Papierkorb; wirft, wenn noch etwas auf sie verweist. */
+  inPapierkorb?(id: string, von: string | null): Promise<void>;
+}
+
+/** Was mit dem Konto geschieht, wenn eine Benutzer-Mappe den Papierkorb verlässt (#43). */
+export interface KontenHaken {
+  /** Endgültig gelöscht: Konto löschen. */
+  endgueltig(id: string): Promise<void>;
+  /** Wiederhergestellt: Konto wieder aktivieren. */
+  wiederda(id: string, von: string | null): Promise<void>;
+}
+
+export const PAPIERKORB_STANDARD_TAGE = 30;
+export interface DienstOptionen {
+  /** Schlüssel für Passwortfelder (#39, #46). */
+  tresor?: Tresor;
+  /** Einstellungen des Haushalts (Papierkorb). Ohne: kein Papierkorb (Löschen sofort endgültig). */
+  einstellungen?: Einstellungen;
 }
 
 const SYSTEMSORTIERUNG: Record<string, SortierungIntern['art']> = {
@@ -179,9 +200,18 @@ export class Dienst {
   /** Hintergrundaufträge, z. B. Demo-Daten erzeugen. */
   readonly auftraege = new Auftraege((m) => protokoll.modul('werkbank').info(m));
 
-  constructor(private repo: Repo, private dateien: Dateispeicher, private tresor?: Tresor) {
-    tresor?.registriere(() => this.unlesbarePasswoerter());
+  private tresor?: Tresor;
+  private einstellungen?: Einstellungen;
+  private konten?: KontenHaken;
+
+  constructor(private repo: Repo, private dateien: Dateispeicher, opt: DienstOptionen = {}) {
+    this.tresor = opt.tresor;
+    this.einstellungen = opt.einstellungen;
+    this.tresor?.registriere(() => this.unlesbarePasswoerter());
   }
+
+  /** Konten anbinden: Benutzer-Mappen im Papierkorb (#43). */
+  verbindeKonten(h: KontenHaken) { this.konten = h; }
 
   private verschluessele = (klartext: string) => (this.tresor ? this.tresor.verschluessele(klartext) : keinSchluessel());
 
@@ -317,6 +347,8 @@ export class Dienst {
     const gruende: string[] = [];
     const n = await this.repo.zaehleMappen(id);
     if (n) gruende.push(`${n} ${n === 1 ? 'Mappe gehört' : 'Mappen gehören'} zu diesem Typ.`);
+    const imKorb = (await this.repo.papierkorb({ typId: id })).length;
+    if (imKorb) gruende.push(`${imKorb} ${imKorb === 1 ? 'Mappe' : 'Mappen'} dieses Typs ${imKorb === 1 ? 'liegt' : 'liegen'} im Papierkorb. Leere ihn oder stelle sie wieder her.`);
     for (const t of await this.repo.listeTypen()) {
       if (t.id === id) continue;
       for (const f of t.felder) if (f.typ === 'referenz' && f.zielTyp === id) gruende.push(`Das Feld ${t.name} › ${f.label} verweist auf diesen Typ.`);
@@ -382,7 +414,11 @@ export class Dienst {
     const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
     const a = await this.aufloesung(ich.id);
     const n = await this.repo.zaehleKlauseln(sichten.map((x) => klauselnFuer(sichten, x.id, typen, a)));
-    return { typen: Object.fromEntries(z.typen), eingang: z.eingang, sichten: Object.fromEntries(sichten.map((x, i) => [x.id, n[i]])) };
+    return {
+      typen: Object.fromEntries(z.typen), eingang: z.eingang, sichten: Object.fromEntries(sichten.map((x, i) => [x.id, n[i]])),
+      // Papierkorb (#43): eigene gelöschte Mappen; Tage 0 = aus.
+      papierkorb: await this.repo.zaehlePapierkorb(ich.id), papierkorbTage: await this.papierkorbTage(),
+    };
   }
 
   /** Dynamische Werte für den angemeldeten Benutzer: heute, er selbst, seine Rollen. */
@@ -657,7 +693,14 @@ export class Dienst {
       const b = await this.repo.holeMappe(z.quelleId);
       if (b) await this.schreibeSystemMappe(benutzerTyp!, b.id, { ...b.werte, rollen: alsListe(b.werte.rollen).filter((r) => r !== id) }, benutzerId);
     }
-    await this.loescheMappeIntern(id, typ);
+    if (await this.papierkorbTage() > 0) await this.legeInPapierkorb(id, typ, benutzerId);
+    else await this.loescheMappeIntern(id, typ);
+  }
+
+  /** In den Papierkorb (#43): eindeutige Werte werden frei, Dateien bleiben bis zum Leeren. */
+  private async legeInPapierkorb(id: string, typ: Mappentyp | undefined, von: string | null) {
+    await this.repo.legeInPapierkorb(id, von);
+    if (typ?.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
   }
 
   private async loescheMappeIntern(id: string, typ: Mappentyp | undefined) {
@@ -746,6 +789,8 @@ export class Dienst {
 
   /** Mappe eines Benutzers anlegen oder nachziehen. Weitere Rollen bleiben, die Systemrolle folgt dem Konto. */
   async spiegleBenutzer(b: Benutzer, von: string | null = null) {
+    // Liegt die Mappe im Papierkorb, bleibt sie dort (der Benutzer ist bis zum Leeren deaktiviert).
+    if (await this.repo.holeAusPapierkorb(b.id)) return;
     const { benutzer: typ, systemrollen } = await this.sichereSystem();
     const alt = await this.repo.holeMappe(b.id);
     const system = new Set(systemrollen.values());
@@ -809,7 +854,104 @@ export class Dienst {
   }
 
   benutzerspiegel(): Benutzerspiegel {
-    return { aktualisiere: (b, von) => this.spiegleBenutzer(b, von ?? null), entferne: (id) => this.entferneBenutzerMappe(id) };
+    return {
+      aktualisiere: (b, von) => this.spiegleBenutzer(b, von ?? null),
+      entferne: (id) => this.entferneBenutzerMappe(id),
+      papierkorbAn: async () => (await this.papierkorbTage()) > 0,
+      inPapierkorb: async (id, von) => {
+        const m = await this.repo.holeMappe(id);
+        if (!m) return;
+        const fremd = (await this.repo.rueckverweise(id)).filter((r) => r.quelleId !== id);
+        if (fremd.length) throw new Fachfehler(409, `Auf diesen Benutzer ${fremd.length === 1 ? 'verweist noch eine Mappe' : `verweisen noch ${fremd.length} Mappen`}. Deaktiviere ihn statt ihn zu löschen.`, { rueckverweise: fremd });
+        await this.repo.legeInPapierkorb(id, von);
+      },
+    };
+  }
+
+  /* ---------- Papierkorb (#43) ---------- */
+
+  /** Aufbewahrung in Tagen; 0 = kein Papierkorb (Löschen ist sofort endgültig). */
+  async papierkorbTage(): Promise<number> {
+    if (!this.einstellungen) return 0;
+    const e = (await this.einstellungen.lies('papierkorb')) as { tage?: number } | null;
+    return typeof e?.tage === 'number' ? e.tage : PAPIERKORB_STANDARD_TAGE;
+  }
+
+  /** Aufbewahrung ändern. 0 schaltet den Papierkorb aus und leert ihn sofort. */
+  async setzePapierkorbTage(eingabe: unknown): Promise<{ tage: number; geleert: number }> {
+    if (!this.einstellungen) throw new Fachfehler(404, 'Der Papierkorb ist nicht eingerichtet.');
+    const tage = Number(eingabe);
+    if (!Number.isInteger(tage) || tage < 0 || tage > 3650) throw new Fachfehler(422, 'Bitte eine ganze Zahl von 0 bis 3650 Tagen angeben (0 = kein Papierkorb).');
+    await this.einstellungen.schreibe('papierkorb', { tage });
+    protokoll.modul('werkbank').info(tage ? 'Aufbewahrung im Papierkorb geändert' : 'Papierkorb ausgeschaltet', { tage });
+    const geleert = tage ? await this.raeumePapierkorbAuf() : await this.leere((await this.repo.papierkorb()).map((e) => e.id));
+    return { tage, geleert };
+  }
+
+  /** Ablage: was ich gelöscht habe. Werkbank (alle): was alle gelöscht haben. */
+  async papierkorb(ich: { id: string; rolle: string }, alle = false): Promise<PapierkorbEintrag[]> {
+    return this.repo.papierkorb(alle && ich.rolle === 'admin' ? {} : { von: ich.id });
+  }
+
+  /** Eintrag, den dieser Benutzer sehen darf (eigener oder als Administrator in der Werkbank); sonst 404. */
+  private async eintrag(id: string, ich: { id: string; rolle: string }, alle: boolean) {
+    const e = await this.repo.holeAusPapierkorb(id);
+    if (!e || !(e.geloeschtVon === ich.id || (alle && ich.rolle === 'admin'))) throw new Fachfehler(404, 'Diese Mappe liegt nicht (mehr) im Papierkorb.');
+    return e;
+  }
+
+  async papierkorbEintrag(id: string, ich: { id: string; rolle: string }, alle = false) { return this.eintrag(id, ich, alle); }
+
+  /**
+   * Wiederherstellen. Verweise auf Mappen, die es nicht mehr gibt, und eindeutige Werte, die
+   * inzwischen eine andere Mappe hat, lassen die Mappe „nicht passen“: Sie erscheint im Eingang.
+   */
+  async stelleWiederHer(id: string, ich: { id: string; rolle: string }, alle = false) {
+    const e = await this.eintrag(id, ich, alle);
+    const typ = await this.repo.holeTyp(e.typId);
+    if (!typ) throw new Fachfehler(409, 'Den Mappentyp dieser Mappe gibt es nicht mehr.');
+    const { verweiseEntfallen } = await this.repo.stelleWiederHer(id);
+    await this.aktualisiereTitel([id]);
+    await this.passungFuer(typ, [id]);
+    if (typ.system === 'benutzer') await this.konten?.wiederda(id, ich.id);
+    const m = (await this.repo.holeMappe(id))!;
+    protokoll.modul('ablage').info('Mappe wiederhergestellt', { typ: typ.name, titel: m.titel, id, passt: m.passt !== false || undefined, verweiseEntfallen: verweiseEntfallen || undefined });
+    return { mappe: m, verweiseEntfallen };
+  }
+
+  /** Endgültig löschen (ohne Rechteprüfung): Dateien, an denen nichts mehr hängt, und Konten von Benutzer-Mappen. */
+  private async leere(ids: string[]): Promise<number> {
+    if (!ids.length) return 0;
+    const benutzerTyp = (await this.repo.listeTypen()).find((t) => t.system === 'benutzer');
+    const benutzer = benutzerTyp ? (await this.repo.papierkorb({ typId: benutzerTyp.id })).filter((e) => ids.includes(e.id)).map((e) => e.id) : [];
+    const dateien = await this.repo.leerePapierkorb(ids);
+    for (const sha of dateien) await this.raeumeAuf(sha);
+    for (const id of benutzer) await this.konten?.endgueltig(id);
+    return ids.length;
+  }
+
+  /** Einzelne Mappen endgültig löschen: eigene oder (in der Werkbank) alle. */
+  async loescheEndgueltig(ids: string[], ich: { id: string; rolle: string }, alle = false): Promise<number> {
+    for (const id of ids) await this.eintrag(id, ich, alle);
+    const n = await this.leere(ids);
+    if (n) protokoll.modul('ablage').info('Aus dem Papierkorb endgültig gelöscht', { anzahl: n });
+    return n;
+  }
+
+  /** Papierkorb leeren: eigener (Ablage) oder ganz (Werkbank). */
+  async leerePapierkorb(ich: { id: string; rolle: string }, alle = false): Promise<number> {
+    const n = await this.leere((await this.papierkorb(ich, alle)).map((e) => e.id));
+    if (n) protokoll.modul('ablage').info(alle ? 'Papierkorb aller Benutzer geleert' : 'Papierkorb geleert', { anzahl: n });
+    return n;
+  }
+
+  /** Abgelaufenes endgültig löschen; läuft stündlich. */
+  async raeumePapierkorbAuf(jetzt = Date.now()): Promise<number> {
+    const tage = await this.papierkorbTage();
+    const vor = new Date(jetzt - tage * 24 * 60 * 60 * 1000).toISOString();
+    const n = await this.leere((await this.repo.papierkorb(tage ? { vor } : {})).map((e) => e.id));
+    if (n) protokoll.modul('system').info('Abgelaufene Mappen aus dem Papierkorb gelöscht', { anzahl: n, tage });
+    return n;
   }
 
   /* ---------- Demo-Daten ---------- */
@@ -834,7 +976,7 @@ export class Dienst {
 
   /** Löscht die Datei, wenn kein Dokument mehr auf sie zeigt. */
   private async raeumeAuf(sha256: string) {
-    if (!(await this.repo.dokumenteMitSha(sha256)).length) await this.dateien.loesche(sha256);
+    if (!(await this.repo.dateiBenutzt(sha256))) await this.dateien.loesche(sha256);
   }
 
   async ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string }, inhalt: unknown, benutzerId: string | null) {
