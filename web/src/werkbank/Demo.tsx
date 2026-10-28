@@ -48,7 +48,7 @@ function meldungAus(a: Auftrag): Meldung {
 /** Stand des Hintergrundauftrags; fragt jede Sekunde nach, solange er läuft. */
 function useAuftrag(fertig: (a: Auftrag) => void) {
   const [a, setA] = useState<Auftrag | null>(null);
-  const zuletzt = useRef<string>();
+  const zuletzt = useRef<string | undefined>(undefined);
   const fertigRef = useRef(fertig);
   fertigRef.current = fertig;
   const abfragen = useCallback(async () => {
