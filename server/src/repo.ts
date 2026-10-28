@@ -1,6 +1,9 @@
 import type { Dokument, Mappe, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
 
 export interface Verweis { feldKey: string; zielId: string }
+export interface NeueMappe {
+  id: string; typId: string; werte: Werte; verweise: Verweis[]; titel: string; benutzerId: string | null; demo: boolean;
+}
 export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string }
 
 /**
@@ -20,6 +23,8 @@ export interface Repo {
   holeMappe(id: string): Promise<Mappe | undefined>;
   legeMappeAn(id: string, typId: string, werte: Werte, verweise: Verweis[], benutzerId: string | null, demo?: boolean): Promise<Mappe>;
   aendereMappe(id: string, werte: Werte, verweise: Verweis[], benutzerId: string | null): Promise<Mappe>;
+  /** Viele neue Mappen auf einmal (Demo-Daten): eine Transaktion, Titel schon berechnet. */
+  legeMappenAn(liste: NeueMappe[]): Promise<void>;
   loescheMappe(id: string): Promise<void>;
 
   /** Mehrere Mappen auf einmal (unbekannte Ids fehlen im Ergebnis). */

@@ -1,6 +1,8 @@
-import { type Feld, type Mappentyp, type Wert, type Werte } from '../../shared/src/model';
+import { randomUUID } from 'node:crypto';
+import { istOk, pruefeMappe, titelAus, verweiseVon, type Feld, type Mappentyp, type Wert, type Werte } from '../../shared/src/model';
 import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
+import type { NeueMappe } from './repo';
 
 /**
  * Erzeugt Demo-Mappen für die vorhandenen Mappentypen. Die Werte passen zu
@@ -103,9 +105,15 @@ function reihenfolge(typen: Mappentyp[]): Mappentyp[] {
   return fertig;
 }
 
-export async function erzeugeDemo(dienst: Dienst, anzahl: unknown, benutzerId: string | null) {
-  const n = Math.floor(Number(anzahl));
-  if (!Number.isFinite(n) || n < 1 || n > MAX_DEMO) throw new Fachfehler(422, `Bitte eine Anzahl zwischen 1 und ${MAX_DEMO} angeben.`);
+export interface Fortschritt { (fertig: number, gesamt: number): void }
+
+/**
+ * Erzeugt die Demo-Mappen im Arbeitsspeicher, prüft sie mit denselben Regeln wie
+ * beim Speichern und schreibt sie paketweise in die Datenbank. So dauern auch
+ * 5000 Mappen nur Sekunden statt tausender Einzelanfragen.
+ */
+export async function erzeugeDemo(dienst: Dienst, anzahl: unknown, benutzerId: string | null, fortschritt: Fortschritt = () => {}) {
+  const n = pruefeAnzahl(anzahl);
   const typen = reihenfolge(await dienst.listeTypen());
   if (!typen.length) throw new Fachfehler(409, 'Es gibt noch keine Mappentypen. Lege zuerst welche an oder lade die Beispiele.');
 
@@ -113,13 +121,25 @@ export async function erzeugeDemo(dienst: Dienst, anzahl: unknown, benutzerId: s
   const gewicht = (t: Mappentyp) => 1 + 2 * t.felder.filter((f) => f.typ === 'referenz' && f.zielTyp !== t.id).length;
   const summe = typen.reduce((a, t) => a + gewicht(t), 0);
   const ziel = new Map(typen.map((t) => [t.id, Math.max(1, Math.round((n * gewicht(t)) / summe))]));
+  const gesamtZiel = [...ziel.values()].reduce((a, b) => a + b, 0);
 
   const vorhanden = await dienst.listeMappen();
   const pools = new Map<string, string[]>();
-  for (const m of vorhanden) pools.set(m.typId, [...(pools.get(m.typId) ?? []), m.id]);
+  const typVon = new Map<string, string>();
+  const titel = new Map<string, string>();
+  for (const m of vorhanden) {
+    (pools.get(m.typId) ?? pools.set(m.typId, []).get(m.typId)!).push(m.id);
+    typVon.set(m.id, m.typId);
+    titel.set(m.id, m.titel ?? '');
+  }
 
   const erzeugt: Record<string, number> = {};
   const uebersprungen: Array<{ typ: string; grund: string }> = [];
+  let fertig = 0;
+  let paket: NeueMappe[] = [];
+  const schreibe = async () => { await dienst.legeMappenAn(paket); fertig += paket.length; paket = []; fortschritt(fertig, gesamtZiel); };
+  const jetzt = new Date().toISOString();
+
   for (const t of typen) {
     const vergeben = new Map<string, Set<string>>(t.felder.filter((f) => f.eindeutig).map((f) => [f.key, new Set(
       vorhanden.filter((m) => m.typId === t.id && m.werte[f.key] != null).map((m) => String(m.werte[f.key]).trim().toLowerCase()))]));
@@ -133,21 +153,35 @@ export async function erzeugeDemo(dienst: Dienst, anzahl: unknown, benutzerId: s
         if (w === undefined) { if (f.pflicht) unmoeglich = `Für das Pflichtfeld „${f.label}“ lässt sich kein passender Wert erzeugen${f.typ === 'referenz' ? ' (es gibt noch keine Mappen des Zieltyps)' : ''}.`; continue; }
         werte[f.key] = w;
       }
-      if (unmoeglich) { letzterFehler = unmoeglich; fehlversuche = 25; break; }
-      try {
-        const m = await dienst.legeMappeAn({ typId: t.id, werte }, benutzerId, true);
-        ok++; fehlversuche = 0;
-        pools.set(t.id, [...(pools.get(t.id) ?? []), m.id]);
-        for (const [k, s] of vergeben) if (m.werte[k] != null) s.add(String(m.werte[k]).trim().toLowerCase());
-      } catch (e) {
+      if (unmoeglich) { letzterFehler = unmoeglich; break; }
+      const p = pruefeMappe(t, werte, {
+        typVon: (id) => typVon.get(id),
+        doppelt: (k, v) => (vergeben.get(k)?.has(String(v).trim().toLowerCase()) ? 'eine andere Mappe' : undefined),
+      });
+      if (!istOk(p)) {
         fehlversuche++;
-        const d = e instanceof Fachfehler ? (e.details as { felder?: Record<string, string[]> } | undefined) : undefined;
-        const [k, msg] = Object.entries(d?.felder ?? {})[0] ?? [];
-        letzterFehler = k ? `${t.felder.find((f) => f.key === k)?.label ?? k}: ${msg?.[0]}` : e instanceof Error ? e.message : String(e);
+        const [k, msg] = Object.entries(p.felder)[0] ?? [];
+        letzterFehler = k ? `${t.felder.find((f) => f.key === k)?.label ?? k}: ${msg?.[0]}` : p.allgemein[0] ?? 'ungültig';
+        continue;
       }
+      const id = randomUUID();
+      const tt = titelAus(t, werte, (z) => titel.get(z) || 'Ohne Titel', { erstellt: jetzt, geaendert: jetzt });
+      paket.push({ id, typId: t.id, werte, verweise: verweiseVon(t, werte), titel: tt, benutzerId, demo: true });
+      ok++; fehlversuche = 0;
+      (pools.get(t.id) ?? pools.set(t.id, []).get(t.id)!).push(id);
+      typVon.set(id, t.id); titel.set(id, tt);
+      for (const [k, set] of vergeben) if (werte[k] != null) set.add(String(werte[k]).trim().toLowerCase());
+      if (paket.length >= 500) await schreibe();
     }
     erzeugt[t.name] = ok;
     if (ok < ziel.get(t.id)!) uebersprungen.push({ typ: t.name, grund: letzterFehler || 'unbekannt' });
   }
-  return { erzeugt, uebersprungen, gesamt: Object.values(erzeugt).reduce((a, b) => a + b, 0) };
+  await schreibe();
+  return { erzeugt, uebersprungen, gesamt: fertig };
+}
+
+export function pruefeAnzahl(anzahl: unknown): number {
+  const n = Math.floor(Number(anzahl));
+  if (!Number.isFinite(n) || n < 1 || n > MAX_DEMO) throw new Fachfehler(422, `Bitte eine Anzahl zwischen 1 und ${MAX_DEMO} angeben.`);
+  return n;
 }

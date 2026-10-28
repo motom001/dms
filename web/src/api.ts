@@ -66,8 +66,9 @@ export const api = {
   mappeLoeschen: (id: string) => anfrage<null>('DELETE', `/api/mappen/${id}`),
   beispiele: () => anfrage<null>('POST', '/api/beispiele'),
   demoUebersicht: () => anfrage<Array<{ typId: string; name: string; demo: number; gesamt: number }>>('GET', '/api/werkbank/demo'),
-  demoErzeugen: (anzahl: number) => anfrage<{ gesamt: number; erzeugt: Record<string, number>; uebersprungen: Array<{ typ: string; grund: string }> }>('POST', '/api/werkbank/demo', { anzahl }),
-  demoEntfernen: () => anfrage<{ entfernt: number }>('DELETE', '/api/werkbank/demo'),
+  demoErzeugen: (anzahl: number) => anfrage<Auftrag>('POST', '/api/werkbank/demo', { anzahl }),
+  demoEntfernen: () => anfrage<Auftrag>('DELETE', '/api/werkbank/demo'),
+  auftrag: () => anfrage<Auftrag | null>('GET', '/api/werkbank/auftrag'),
   profil: (name: string) => anfrage<Benutzer>('PUT', '/api/konto/profil', { name }),
   emailAendern: (email: string, passwort: string) => anfrage<Benutzer>('PUT', '/api/konto/email', { email, passwort }),
   passwortAendern: (passwortAlt: string, passwortNeu: string) => anfrage<{ benutzer: Benutzer }>('PUT', '/api/konto/passwort', { passwortAlt, passwortNeu }),
@@ -91,3 +92,9 @@ export const api = {
 export interface MappeDetails { mappe: Mappe; rueckverweise: Rueckverweis[]; dokumente: Dokument[] }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string }> }
 export const dokumentUrl = (id: string, herunterladen = false) => `/api/dokumente/${id}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
+
+export interface Auftrag {
+  id: string; art: string; titel: string; status: 'laeuft' | 'fertig' | 'fehler';
+  fertig: number; gesamt: number; gestartet: string; beendet?: string; ergebnis?: unknown; fehler?: string;
+}
+export interface DemoErgebnis { gesamt: number; erzeugt: Record<string, number>; uebersprungen: Array<{ typ: string; grund: string }> }

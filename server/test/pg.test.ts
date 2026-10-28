@@ -186,12 +186,29 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
   });
 
   it('erzeugt Demo-Daten, entfernt sie und ändert das eigene Passwort', async () => {
-    const r = await anfrage('POST', '/api/werkbank/demo', { anzahl: 200 });
-    assert.equal(r.status, 201);
-    assert.deepEqual(r.body.uebersprungen, []);
+    // Läuft im Hintergrund: sofort 202, dann den Auftrag abfragen, bis er fertig ist.
+    const auftrag = async () => {
+      for (;;) {
+        const a = (await anfrage('GET', '/api/werkbank/auftrag')).body;
+        if (a.status !== 'laeuft') return a;
+        await new Promise((x) => setTimeout(x, 50));
+      }
+    };
+    const start = await anfrage('POST', '/api/werkbank/demo', { anzahl: 1200 });
+    assert.equal(start.status, 202);
+    assert.equal(start.body.status, 'laeuft');
+    assert.equal((await anfrage('POST', '/api/werkbank/demo', { anzahl: 1 })).status, 409);
+    const fertig = await auftrag();
+    assert.equal(fertig.status, 'fertig', fertig.fehler);
+    const r = fertig.ergebnis;
+    assert.deepEqual(r.uebersprungen, []);
+    assert.equal(fertig.fertig, r.gesamt);
     const u = (await anfrage('GET', '/api/werkbank/demo')).body;
-    assert.equal(u.reduce((a: number, t: { demo: number }) => a + t.demo, 0), r.body.gesamt);
-    assert.equal((await anfrage('DELETE', '/api/werkbank/demo')).body.entfernt, r.body.gesamt);
+    assert.equal(u.reduce((a: number, t: { demo: number }) => a + t.demo, 0), r.gesamt);
+    const mappen = (await anfrage('GET', '/api/mappen')).body;
+    assert.ok(mappen.filter((m: { demo?: boolean }) => m.demo).every((m: { titel?: string }) => m.titel), 'Demo-Mappen haben Titel');
+    assert.equal((await anfrage('DELETE', '/api/werkbank/demo')).status, 202);
+    assert.equal((await auftrag()).ergebnis.entfernt, r.gesamt);
 
     assert.equal((await anfrage('PUT', '/api/konto/passwort', { passwortAlt: 'falsch-falsch', passwortNeu: 'neues-admin-passwort' })).status, 403);
     const alt = cookie;

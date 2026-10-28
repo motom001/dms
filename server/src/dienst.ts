@@ -5,8 +5,9 @@ import {
   type Feld, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
+import { Auftraege } from './auftrag';
 import { Fachfehler } from './fehler';
-import { istUuid, type Repo } from './repo';
+import { istUuid, type NeueMappe, type Repo } from './repo';
 
 /* ---------- Eingaben bereinigen: nur bekannte Eigenschaften übernehmen ---------- */
 
@@ -113,6 +114,9 @@ function bereinigeWerte(typ: Mappentyp, eingabe: unknown, bisher: Werte = {}): W
 /* ---------- Fachlogik ---------- */
 
 export class Dienst {
+  /** Hintergrundaufträge, z. B. Demo-Daten erzeugen. */
+  readonly auftraege = new Auftraege();
+
   constructor(private repo: Repo, private dateien: Dateispeicher) {}
 
   listeTypen() { return this.repo.listeTypen(); }
@@ -260,6 +264,9 @@ export class Dienst {
     const neu = await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), benutzerId);
     return { ...neu, titel: (await this.aktualisiereTitel([id])).get(id) };
   }
+
+  /** Viele neue Mappen auf einmal (Demo-Daten); Werte sind bereits geprüft. */
+  legeMappenAn(liste: NeueMappe[]) { return this.repo.legeMappenAn(liste); }
 
   async loescheMappe(id: string): Promise<void> {
     if (!(await this.repo.holeMappe(id))) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');

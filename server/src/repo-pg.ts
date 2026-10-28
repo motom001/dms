@@ -113,6 +113,18 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         return alsMappe(r);
       });
     },
+    async legeMappenAn(liste) {
+      if (!liste.length) return;
+      await sql.begin(async (tx) => {
+        await tx`INSERT INTO mappen ${tx(liste.map((m) => ({
+          id: m.id, haushalt_id: haushaltId, typ_id: m.typId, werte: json(sql, m.werte), titel: m.titel,
+          erstellt_von: m.benutzerId, geaendert_von: m.benutzerId, demo: m.demo,
+        })))}`;
+        const vs = liste.flatMap((m) => m.verweise.filter((v) => istUuid(v.zielId))
+          .map((v) => ({ quelle_id: m.id, feld_key: v.feldKey, ziel_id: v.zielId, haushalt_id: haushaltId })));
+        if (vs.length) await tx`INSERT INTO verweise ${tx(vs)} ON CONFLICT DO NOTHING`;
+      });
+    },
     async aendereMappe(id, werte, vs, benutzerId) {
       return sql.begin(async (tx) => {
         const [r] = await tx`

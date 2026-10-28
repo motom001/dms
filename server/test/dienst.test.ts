@@ -189,7 +189,9 @@ describe('Demo-Daten', () => {
     await ladeBeispiele(d);
     const vorher = (await d.listeMappen()).length;
     const start = Date.now();
-    const r = await erzeugeDemo(d, 1000, null);
+    const stände: number[] = [];
+    const r = await erzeugeDemo(d, 1000, null, (f) => stände.push(f));
+    assert.ok(stände.length >= 2 && stände.at(-1) === r.gesamt, 'meldet Fortschritt');
     assert.ok(r.gesamt >= 990, `nur ${r.gesamt} erzeugt: ${JSON.stringify(r.uebersprungen)}`);
     assert.deepEqual(r.uebersprungen, []);
     assert.ok(Date.now() - start < 30_000);

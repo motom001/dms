@@ -36,6 +36,13 @@ export function speicherRepo(): Repo {
       mappen.set(id, m); verweise.set(id, kopie(vs));
       return kopie(m);
     },
+    async legeMappenAn(liste) {
+      const t = jetzt();
+      for (const m of liste) {
+        mappen.set(m.id, { id: m.id, typId: m.typId, werte: kopie(m.werte), titel: m.titel, erstellt: t, erstelltVon: m.benutzerId, geaendert: t, geaendertVon: m.benutzerId, demo: m.demo });
+        verweise.set(m.id, kopie(m.verweise));
+      }
+    },
     async aendereMappe(id, werte, vs, benutzerId) {
       const m = { ...mappen.get(id)!, werte: kopie(werte), geaendert: jetzt(), geaendertVon: benutzerId };
       mappen.set(id, m); verweise.set(id, kopie(vs));

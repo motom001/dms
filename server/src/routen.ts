@@ -1,7 +1,7 @@
 import type { Readable } from 'node:stream';
 import { MAX_DATEIGROESSE, type Benutzer } from '../../shared/src/model';
 import { ladeBeispiele } from './beispiele';
-import { erzeugeDemo } from './demo';
+import { erzeugeDemo, pruefeAnzahl } from './demo';
 import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import { SITZUNG_TAGE, type Konten } from './konten';
@@ -107,8 +107,15 @@ export function routen(dienst: Dienst, konten: Konten, log: (m: string) => void 
     { methode: 'DELETE', pfad: '/api/typen/:id', zugang: 'admin', handler: async (a) => { await dienst.loescheTyp(a.params.id); return leer; } },
     { methode: 'POST', pfad: '/api/beispiele', zugang: 'admin', handler: async (a) => { await ladeBeispiele(dienst, ich(a).id); return leer; } },
     { methode: 'GET', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async () => ok(await dienst.demoUebersicht()) },
-    { methode: 'POST', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async (a) => ok(await erzeugeDemo(dienst, b(a).anzahl, ich(a).id), 201) },
-    { methode: 'DELETE', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async () => ok(await dienst.entferneDemo()) },
+    // Erzeugen und Entfernen laufen im Hintergrund (202); den Stand liefert /api/werkbank/auftrag.
+    { methode: 'POST', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async (a) => {
+      const anzahl = pruefeAnzahl(b(a).anzahl);
+      const benutzerId = ich(a).id;
+      return ok(dienst.auftraege.starte('demo-erzeugen', `${anzahl} Demo-Mappen erzeugen`, (f) => erzeugeDemo(dienst, anzahl, benutzerId, f)), 202);
+    } },
+    { methode: 'DELETE', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async () =>
+      ok(dienst.auftraege.starte('demo-entfernen', 'Demo-Mappen entfernen', () => dienst.entferneDemo()), 202) },
+    { methode: 'GET', pfad: '/api/werkbank/auftrag', zugang: 'admin', handler: async () => ok(dienst.auftraege.aktuell()) },
 
     /* ---------- Mappen ---------- */
     { methode: 'GET', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.listeMappen(a.query.typ)) },
