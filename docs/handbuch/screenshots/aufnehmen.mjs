@@ -190,6 +190,12 @@ async function main() {
   await bild(s, 'tabelle');
   await s.evaluate(([key]) => localStorage.removeItem(key), [breitSchluessel]);
 
+  // PRUEFUNG (temporär): schmale Mappen-Spalte
+  await s.evaluate(([key]) => localStorage.setItem(key, JSON.stringify({ l: 220, m: 860 })), [breitSchluessel]);
+  await geheZu(s, `/ablage/${rechnung.id}/${d.rechnung.id}`);
+  await bild(s, 'pruef-schmal');
+  await s.evaluate(([key]) => localStorage.removeItem(key), [breitSchluessel]);
+
   // Eingang: eine Pflichtfeld-Änderung macht Mappen unpassend
   const kundennr = { ...partner, felder: partner.felder.map((f) => (f.key === 'kundennummer' ? { ...f, pflicht: true } : f)) };
   await api('PUT', `/api/typen/${partner.id}`, kundennr);

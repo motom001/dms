@@ -101,6 +101,8 @@ input[type="checkbox"], input[type="radio"] { width: 16px; height: 16px; padding
 /* Liste */
 .werkzeug { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .suche { position: relative; flex: 1; max-width: 360px; }
+/* In einer Spalte (Flex-Spalte) nicht in die Höhe wachsen – sonst stehen wenige Treffer weit unten (#33). */
+.spalte > .suche { flex: none; }
 .tabellenrahmen { overflow-x: auto; border: 1px solid var(--linie); border-radius: var(--r); }
 table { border-collapse: collapse; width: 100%; font-size: calc(13.5px * var(--skala, 1)); }
 th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--linie); vertical-align: top; }
@@ -128,6 +130,15 @@ tbody tr:last-child > * { border-bottom: 0; }
 .verwaist { margin: 0; padding-left: 18px; font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
 
 .speicherleiste { position: sticky; bottom: 0; z-index: 3; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--r); }
+/* Knopfgruppe steht rechts; in einer schmalen Mappen-Spalte füllt sie eine eigene Zeile (#32). */
+.speicherleiste .knoepfe { margin-left: auto; }
+.spalte.mappe { container: mappe / inline-size; }
+@container mappe (max-width: 460px) {
+  .speicherleiste { padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); gap: 8px; }
+  .speicherleiste .knoepfe { flex: 1 1 100%; flex-wrap: nowrap; margin-left: 0; }
+  .speicherleiste .knoepfe > * { flex: 1 1 0; min-width: 0; padding-left: 8px; padding-right: 8px; white-space: normal; text-align: center; }
+}
+.speicherleiste .status:empty { display: none; }
 .speicherleiste .status { font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
 .speicherleiste .status.schlecht { color: var(--schlecht); font-weight: 600; }
 
@@ -165,7 +176,7 @@ tbody tr:last-child > * { border-bottom: 0; }
 .ohnerahmen { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
 .ohnerahmen:disabled { opacity: .65; }
 /* Wert, der hier nur angezeigt wird (z. B. Systemfelder einer Benutzer-Mappe). */
-.festwert { padding: 7px 10px; border: 1px dashed var(--linie-stark); border-radius: 6px; background: var(--senke); min-height: 2.2em; overflow-wrap: anywhere; }
+.festwert { padding: 7px 10px; border: 1px dashed var(--linie-stark); border-radius: 6px; background: var(--senke); min-height: 2.2em; overflow-wrap: break-word; }
 .festwert ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .zwischen { font-size: calc(11.5px * var(--skala, 1)); text-transform: uppercase; letter-spacing: 0.07em; color: var(--leise); }
 .feldfuss { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
@@ -330,7 +341,8 @@ progress::-moz-progress-bar { background: var(--akzent); border-radius: 999px; }
 /* Auswahl verwiesener Mappen */
 .refbox .gewaehlt { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .refbox .gewaehlt li { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; padding: 6px 10px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche); }
-.refbox .gewaehlt li > :first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+/* Titel bekommt mindestens 10em; reicht der Platz nicht, rutschen „Ändern“ und „Entfernen“ in die nächste Zeile (#31). */
+.refbox .gewaehlt li > :first-child { flex: 1 1 10em; min-width: min(10em, 100%); overflow-wrap: break-word; }
 .wahl { position: relative; }
 .wahl input { width: 100%; }
 /* Haken für weitere Rollen in der Benutzerverwaltung: nicht wie das Suchfeld der Verweiswahl auf volle Breite ziehen. */
