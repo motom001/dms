@@ -27,15 +27,10 @@ services:
     environment:
       DATABASE_URL: postgres://dms:${DB_PASSWORD}@db:5432/dms
       FILES_DIR: /data/files
-      # Adresse, unter der das DMS im Browser erreichbar ist (für Links in E-Mails).
-      APP_URL: http://nas.local:8080
-      # Optional: E-Mail-Versand. Ohne SMTP_HOST zeigt die Benutzerverwaltung
-      # die Links zum Kopieren an.
-      # SMTP_HOST: smtp.example.org
-      # SMTP_PORT: "587"
-      # SMTP_USER: dms@example.org
-      # SMTP_PASS: ${SMTP_PASS}
-      # SMTP_FROM: "DMS <dms@example.org>"
+      # Hinter einem Reverse-Proxy (nginx …):
+      # TRUST_PROXY: "true"
+      # E-Mail-Versand und die Adresse des DMS stellst du in der Werkbank ein
+      # (Werkbank → E-Mail und Adresse), nicht mehr hier.
     volumes:
       - /volume1/docker/dms/files:/data/files
     ports:

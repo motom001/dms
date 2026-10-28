@@ -6,7 +6,7 @@ Das DMS läuft als zwei Container: die Anwendung (`ghcr.io/motom001/dms`) und Po
 
 - Ein NAS oder Server mit Docker und Docker Compose (z. B. UGREEN, Synology, Linux-Server), Architektur amd64 oder arm64.
 - Ein Ordner für die Daten, z. B. `/volume1/docker/dms`.
-- Optional ein Postfach für den E-Mail-Versand (Einladungen, Passwort-Links).
+- Optional ein Postfach für den E-Mail-Versand (Einladungen, Passwort-Links) – eingerichtet wird es später in der Werkbank.
 
 ## Schritt für Schritt
 
@@ -26,24 +26,39 @@ Das DMS läuft als zwei Container: die Anwendung (`ghcr.io/motom001/dms`) und Po
 !!! warning "Erst einrichten, dann freigeben"
     Mach das DMS erst über einen Reverse-Proxy oder Port-Freigabe erreichbar, wenn der Administrator angelegt ist.
 
-Danach: unter **Werkbank → Demo-Daten** die Beispiel-Mappentypen laden oder eigene [Mappentypen](mappentypen.md) anlegen und [Benutzer einladen](benutzer.md).
+Danach: unter **Werkbank → E-Mail und Adresse** die Adresse des DMS und, falls gewünscht, den E-Mail-Versand einrichten (siehe unten); unter **Werkbank → Demo-Daten** die Beispiel-Mappentypen laden oder eigene [Mappentypen](mappentypen.md) anlegen und [Benutzer einladen](benutzer.md).
+
+## E-Mail und Adresse
+
+Unter **Werkbank → E-Mail und Adresse** stellst du ein, was früher Umgebungsvariablen waren. Änderungen gelten sofort, ohne Neustart.
+
+![E-Mail und Adresse in der Werkbank](bilder/werkbank-betrieb.png)
+
+- **Adresse des DMS** – unter dieser Adresse öffnen die Benutzer das DMS, z. B. `http://nas.local:8080` oder `https://dms.example.org`. Sie steht in den Links der E-Mails. Solange keine gepflegt ist, nimmt das DMS die Adresse, unter der es gerade aufgerufen wird; **Diese Adresse übernehmen** speichert sie. Beginnt sie mit `https://`, gilt die Anmeldung nur noch über HTTPS.
+- **E-Mail-Versand** – Server, Verbindungsart (STARTTLS, meist Port 587; SSL/TLS, meist 465; unverschlüsselt nur im Heimnetz), Benutzer, Passwort und Absender. **Verbindung prüfen** meldet sich am Server an, ohne etwas zu senden; **Testmail senden** schickt eine Mail an eine Adresse deiner Wahl – beides mit den Werten im Formular, auch bevor du speicherst. Schlägt etwas fehl, steht die Meldung des Mailservers darunter.
+- **Selbstsigniertes Zertifikat erlauben** – nur für einen eigenen Mailserver im Heimnetz.
+- Ohne E-Mail-Versand (Haken „E-Mails verschicken“ aus) zeigt die Benutzerverwaltung die Einladungs- und Passwort-Links zum Kopieren an; „Passwort vergessen“ setzt dann der Administrator zurück.
+
+!!! warning "Passwort im Klartext"
+    Das SMTP-Passwort steht vorerst unverschlüsselt in der Datenbank – und damit auch in jeder Datenbanksicherung. Nimm ein eigenes Passwort nur für den Versand, etwa ein App-Passwort deines Mailanbieters. Die Verschlüsselung ist geplant (#39). Das Passwort wird nie an die Oberfläche zurückgegeben.
+
+!!! note "Von einer älteren Version"
+    Bis Version 0.8 waren das die Umgebungsvariablen `APP_URL` und `SMTP_*`. Beim ersten Start von 0.9 übernimmt das DMS ihre Werte einmalig in die Werkbank; danach werden sie ignoriert, und das Protokoll weist darauf hin, dass sie aus der Compose-Datei entfernt werden können.
 
 ## Einstellungen
 
-Alle Einstellungen sind Umgebungsvariablen im Compose-Projekt:
+Diese Einstellungen sind Umgebungsvariablen im Compose-Projekt:
 
 | Variable | Bedeutung |
 | --- | --- |
 | `DATABASE_URL` | Verbindung zu PostgreSQL (Pflicht) |
-| `APP_URL` | Adresse, unter der Benutzer das DMS öffnen; steht in den Links der E-Mails |
 | `FILES_DIR` | Ordner für hochgeladene Dateien im Container (Vorlage: `/data/files`) |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_SECURE` | E-Mail-Versand (optional). Ohne `SMTP_HOST` zeigt die Benutzerverwaltung Einladungs- und Passwort-Links zum Kopieren an; „Passwort vergessen“ setzt dann der Administrator zurück. |
 | `TRUST_PROXY` | `true`, wenn ein Reverse-Proxy davor sitzt (richtige IP-Adressen im Protokoll, sichere Cookies über HTTPS) |
 | `LOG_LEVEL` | Grundstufe des Protokolls: `debug`, `info` (Standard), `warn`, `error` |
 
 ## Hinter einem Reverse-Proxy
 
-Läuft das DMS hinter nginx (oder einem anderen Proxy), setze `TRUST_PROXY: "true"` und `APP_URL` auf die öffentliche Adresse, z. B. `https://dms.example.org`. Beginnt `APP_URL` mit `https://`, setzt das DMS das Sitzungs-Cookie nur noch über HTTPS.
+Läuft das DMS hinter nginx (oder einem anderen Proxy), setze `TRUST_PROXY: "true"` und trage in der Werkbank unter **E-Mail und Adresse** die öffentliche Adresse ein, z. B. `https://dms.example.org`. Beginnt sie mit `https://`, setzt das DMS das Sitzungs-Cookie nur noch über HTTPS.
 
 Ein Beispiel für nginx:
 

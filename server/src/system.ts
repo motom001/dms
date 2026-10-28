@@ -59,7 +59,7 @@ export function eigeneVersion(): string {
 
 function lies(p: string) { try { return readFileSync(p, 'utf8').trim(); } catch { return null; } }
 
-export async function uebersicht(quelle: SystemQuelle | undefined, mailHost: string | undefined): Promise<Uebersicht> {
+export async function uebersicht(quelle: SystemQuelle | undefined, betrieb: { mail: string; adresse: string } | undefined): Promise<Uebersicht> {
   let datenbank: Uebersicht['datenbank'];
   try { datenbank = quelle ? await quelle.datenbank() : { fehler: 'keine Datenbank angebunden' }; }
   catch (e) { datenbank = { fehler: (e as Error).message }; }
@@ -78,8 +78,8 @@ export async function uebersicht(quelle: SystemQuelle | undefined, mailHost: str
     bibliotheken: Object.fromEntries(BIBLIOTHEKEN.map((b) => [b, installierteVersion(b)])),
     // Nur unkritische Einstellungen – keine Passwörter, keine Verbindungsdaten.
     einstellungen: {
-      APP_URL: env.APP_URL ?? '(nicht gesetzt)',
-      'E-Mail': mailHost ? `über ${mailHost}` : 'aus',
+      Adresse: betrieb?.adresse ?? '(nicht gepflegt)',
+      'E-Mail': betrieb?.mail ?? 'aus',
       TRUST_PROXY: env.TRUST_PROXY ?? 'false',
       LOG_LEVEL: env.LOG_LEVEL ?? 'info',
     },

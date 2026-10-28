@@ -63,11 +63,14 @@ Wie die Bausteine zusammenhängen, beschreibt [Technik](technik.md).
 ??? question "Nach dem Update startet der Container nicht."
     Im Container-Log steht der Grund, meist eine Migration oder eine fehlende Datenbankverbindung. Die Migrationen laufen in einer Transaktion – die Datenbank ist dabei unverändert geblieben. Notfalls auf die vorherige Version zurück (Image-Tag) und ein Issue mit dem Log anlegen.
 
+??? question "E-Mails kommen nicht an."
+    Unter **Werkbank → E-Mail und Adresse** zuerst **Verbindung prüfen**, dann **Testmail senden** – darunter steht die Meldung des Mailservers. Typisch: falsches Passwort (bei vielen Anbietern braucht es ein App-Passwort), Verbindungsart passt nicht zum Port (STARTTLS ↔ 587, SSL/TLS ↔ 465), Port vom Netz gesperrt. Im Protokoll (Modul `mail`) steht jeder Versand mit Fehler. Auch im Spam-Ordner nachsehen.
+
 ??? question "Links in E-Mails zeigen auf localhost."
-    `APP_URL` auf die Adresse setzen, unter der Benutzer das DMS aufrufen.
+    Unter **Werkbank → E-Mail und Adresse** die Adresse eintragen, unter der Benutzer das DMS aufrufen.
 
 ??? question "Anmeldung klappt hinter dem Proxy nicht."
-    Ist `APP_URL` eine `https://`-Adresse, wird das Sitzungs-Cookie nur über HTTPS gesetzt. Rufe das DMS dann auch über HTTPS auf und setze `TRUST_PROXY: "true"`.
+    Ist die Adresse des DMS (Werkbank → E-Mail und Adresse) eine `https://`-Adresse, wird das Sitzungs-Cookie nur über HTTPS gesetzt. Rufe das DMS dann auch über HTTPS auf und setze `TRUST_PROXY: "true"`.
 
 ??? question "Hochladen großer Dateien bricht ab."
     Den Reverse-Proxy größere Anfragen erlauben, z. B. bei nginx `client_max_body_size 110m;`.

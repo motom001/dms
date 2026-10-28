@@ -118,6 +118,12 @@ export const api = {
   system: () => anfrage<Systemuebersicht>('GET', '/api/werkbank/system'),
   versionsabgleich: (browser: Record<string, string>) => anfrage<Vergleich[]>('POST', '/api/werkbank/system/abgleich', { browser }),
   datenbankEinstellen: (e: MessEinstellungen) => anfrage<MessEinstellungen>('PUT', '/api/werkbank/datenbank', e),
+  /* E-Mail-Versand und Adresse des DMS (#37) */
+  betrieb: () => anfrage<BetriebAnsicht>('GET', '/api/werkbank/betrieb'),
+  mailSpeichern: (m: MailEingabe) => anfrage<BetriebAnsicht>('PUT', '/api/werkbank/betrieb/mail', m),
+  adresseSpeichern: (adresse: string) => anfrage<BetriebAnsicht>('PUT', '/api/werkbank/betrieb/adresse', { adresse }),
+  mailPruefen: (m: MailEingabe) => anfrage<Probe>('POST', '/api/werkbank/betrieb/mail/pruefen', m),
+  testmail: (m: MailEingabe, an: string) => anfrage<Probe>('POST', '/api/werkbank/betrieb/mail/testmail', { mail: m, an }),
   profil: (name: string) => anfrage<Benutzer>('PUT', '/api/konto/profil', { name }),
   entwicklermodus: (an: boolean) => anfrage<Benutzer>('PUT', '/api/konto/profil', { entwicklermodus: an }),
   emailAendern: (email: string, passwort: string) => anfrage<Benutzer>('PUT', '/api/konto/email', { email, passwort }),
@@ -167,3 +173,13 @@ export interface Systemuebersicht {
 export interface Vergleich { komponente: string; installiert: string | null; aktuell: string | null; status: 'aktuell' | 'neuer' | 'veraltet' | 'unbekannt'; hinweis?: string; quelle: string }
 export interface ApiSchluessel { id: string; name: string; praefix: string; recht: 'lesen' | 'schreiben'; ablauf: string | null; erstellt: string; zuletztBenutzt: string | null }
 export interface ApiSchluesselEingabe { name: string; recht: 'lesen' | 'schreiben'; ablauf: string | null }
+
+export type Verbindung = 'starttls' | 'ssl' | 'keine';
+export interface MailAnsicht {
+  aktiv: boolean; host: string; port: number; verbindung: Verbindung; benutzer: string; absender: string; selbstsigniert: boolean;
+  /** Das Passwort selbst kommt nie zurück. */
+  passwortGesetzt: boolean;
+}
+export type MailEingabe = Omit<MailAnsicht, 'passwortGesetzt'> & { passwort?: string; passwortLoeschen?: boolean };
+export interface BetriebAnsicht { mail: MailAnsicht; adresse: string; vorschlag: string | null; verbindungen: Record<Verbindung, string> }
+export interface Probe { ok: boolean; meldung: string }

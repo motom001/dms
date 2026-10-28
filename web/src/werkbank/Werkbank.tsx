@@ -4,6 +4,7 @@ import { useDaten } from '../daten';
 import { TypEditor } from '../einrichtung/Einrichtung';
 import { Link } from '../ort';
 import { BenutzerDetail, BenutzerListe, BenutzerNeu, useBenutzer } from './Benutzer';
+import { BetriebListe, BetriebPanel, useBetrieb } from './Betrieb';
 import { DatenbankPanel, LanglaeuferListe, useDatenbank } from './Datenbank';
 import { DemoListe, DemoPanel } from './Demo';
 import { DesignEditor, DesignListe } from './Designs';
@@ -21,6 +22,7 @@ import { TechnikListe, TechnikPanel, useTechnik } from './Technik';
  * /werkbank/datenbank[/:id]
  * /werkbank/technik
  * /werkbank/designs[/:id|/neu]
+ * /werkbank/betrieb                 E-Mail-Versand und Adresse des DMS (#37)
  */
 export function Werkbank({ teile }: { teile: string[] }) {
   const d = useDaten();
@@ -29,6 +31,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const protokoll = useProtokoll(bereich === 'protokoll');
   const datenbank = useDatenbank(bereich === 'datenbank');
   const technik = useTechnik(bereich === 'technik');
+  const betrieb = useBetrieb();
   // Anmeldungen und Aktivität ändern sich laufend: beim Öffnen der Benutzer neu laden.
   useEffect(() => { if (bereich === 'benutzer') void benutzer.laden(); }, [bereich, id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -57,6 +60,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'designs') {
     liste = <DesignListe offen={id} />;
     rechts = id ? <DesignEditor key={id} id={id} /> : <div className="platzhalter"><p>Wähle ein Design zum Bearbeiten oder lege mit „+ Neu“ ein eigenes an.</p></div>;
+  } else if (bereich === 'betrieb') {
+    liste = <BetriebListe b={betrieb} />;
+    rechts = <BetriebPanel b={betrieb} />;
   } else if (bereich === 'technik') {
     liste = <TechnikListe t={technik} />;
     rechts = <TechnikPanel t={technik} />;
@@ -69,7 +75,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   }
 
   return (
-    <Dreiteilung ort="werkbank" ebene={id || bereich === 'demo' || bereich === 'technik' ? 'mappe' : 'liste'} offen={id}>
+    <Dreiteilung ort="werkbank" ebene={id || bereich === 'demo' || bereich === 'technik' || bereich === 'betrieb' ? 'mappe' : 'liste'} offen={id}>
       <aside className="spalte sichten" aria-label="Bereiche">
         <h2 className="ueber">Werkbank</h2>
         <nav className="sichtliste">
@@ -77,6 +83,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           <Link to="/werkbank/benutzer" className={`sicht ${bereich === 'benutzer' ? 'an' : ''}`}><span className="nm">Benutzer</span><span className="zahl">{benutzer.geladen ? benutzer.liste.length : ''}</span></Link>
           <Link to="/werkbank/protokoll" className={`sicht ${bereich === 'protokoll' ? 'an' : ''}`}><span className="nm">Protokoll</span>{protokoll.debug?.an && <span className="zaehler" title="Debug-Modus ist an">Debug</span>}</Link>
           <Link to="/werkbank/designs" className={`sicht ${bereich === 'designs' ? 'an' : ''}`}><span className="nm">Designs</span><span className="zahl">{d.designs.length || ''}</span></Link>
+          <Link to="/werkbank/betrieb" className={`sicht ${bereich === 'betrieb' ? 'an' : ''}`}><span className="nm">E-Mail und Adresse</span></Link>
           <Link to="/werkbank/datenbank" className={`sicht ${bereich === 'datenbank' ? 'an' : ''}`}><span className="nm">Datenbank</span></Link>
           <Link to="/werkbank/technik" className={`sicht ${bereich === 'technik' ? 'an' : ''}`}><span className="nm">Technik</span></Link>
           <Link to="/werkbank/demo" className={`sicht ${bereich === 'demo' ? 'an' : ''}`}><span className="nm">Demo-Daten</span><span className="zahl">{Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || ''}</span></Link>
