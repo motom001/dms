@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { formatiere, GEMISCHTE_SPALTEN, istSystemspalte, sortierbar, SYSTEMSPALTEN, vorlageFelder, wirksameVorlage, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
+import { darfErstellen, formatiere, GEMISCHTE_SPALTEN, istSystemspalte, sortierbar, SYSTEMSPALTEN, vorlageFelder, wirksameVorlage, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
 import { api, type Bezuege, type MappeDetails } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -31,7 +31,9 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   const ebene = dritt ? 'mappe' : 'liste';
 
   let rechts;
-  if (dritt === 'neu' && typ) {
+  if (dritt === 'neu' && typ && !darfErstellen(typ)) {
+    rechts = <div className="leer"><p>Von „{typ.name}“ lassen sich in der Ablage keine neuen Mappen anlegen.{typ.system === 'benutzer' ? ' Benutzer legt ein Administrator in der Werkbank unter „Benutzer“ an.' : ''}</p></div>;
+  } else if (dritt === 'neu' && typ) {
     rechts = <NeueMappe key={`${typ.id}-${suche.get('verweis') ?? ''}`} typ={typ} sicht={sicht} verweis={suche.get('verweis') ?? undefined} />;
   } else if (dritt) {
     rechts = <MappeLader key={dritt} id={dritt} sicht={sicht} />;
@@ -62,7 +64,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           ? <Liste key="eingang" sicht="eingang" titel="Eingang" offen={dritt}
               beschreibung="Deine Mappen, die nicht zur aktuellen Definition ihres Mappentyps passen. Sie verschwinden von hier, sobald sie korrigiert sind."
               leerText="Nichts zu tun." />
-          : typ ? <Liste key={typ.id} sicht={typ.id} typ={typ} titel={typ.name} beschreibung={typ.beschreibung} offen={dritt} neu leerText="Noch keine Mappen in dieser Sicht." />
+          : typ ? <Liste key={typ.id} sicht={typ.id} typ={typ} titel={typ.name} beschreibung={typ.beschreibung} offen={dritt} neu={darfErstellen(typ)} leerText="Noch keine Mappen in dieser Sicht." />
           : sicht ? <div className="leer"><p>Diese Sicht gibt es nicht (mehr).</p></div> : null}
       </section>
 

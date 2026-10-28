@@ -114,7 +114,8 @@ export interface Fortschritt { (fertig: number, gesamt: number): void }
  */
 export async function erzeugeDemo(dienst: Dienst, anzahl: unknown, benutzerId: string | null, fortschritt: Fortschritt = () => {}) {
   const n = pruefeAnzahl(anzahl);
-  const typen = reihenfolge(await dienst.listeTypen());
+  // Benutzer und Rollen pflegt das System; Demo-Mappen dürfen aber auf sie verweisen.
+  const typen = reihenfolge((await dienst.listeTypen()).filter((t) => !t.system));
   if (!typen.length) throw new Fachfehler(409, 'Es gibt noch keine Mappentypen. Lege zuerst welche an oder lade die Beispiele.');
 
   // Stammdaten (wenig Verweise) bekommen weniger Mappen als Belege (viele Verweise).

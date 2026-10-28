@@ -1,11 +1,38 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { AKTIV_MINUTEN, geraetText, istGeradeAktiv, ROLLEN, type Benutzer, type Rolle, type Sitzung } from '../../../shared/src/model';
 import { api, type LinkErgebnis } from '../api';
+import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { geheZu, Link } from '../ort';
 
 const datumZeit = (iso: string | null) => (iso ? new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }) : 'noch nie');
 const status = (b: Benutzer) => (!b.aktiv ? { text: 'deaktiviert', art: '' } : !b.hatPasswort ? { text: 'eingeladen', art: 'warn' } : { text: 'aktiv', art: 'gut' });
+
+type RolleEintrag = { id: string; name: string; system: boolean };
+
+/** Rollen für die Auswahl; „weitere“ sind die selbst angelegten (ohne Administrator und Mitglied). */
+function useRollen() {
+  const d = useDaten();
+  const [rollen, setRollen] = useState<RolleEintrag[] | null>(null);
+  useEffect(() => { api.rollen().then(setRollen).catch(() => setRollen([])); }, [d.stand]);
+  return { weitere: (rollen ?? []).filter((r) => !r.system), geladen: rollen !== null, typ: d.typen.find((t) => t.system === 'rolle') };
+}
+
+/** Weitere Rollen als Haken; Administrator und Mitglied stehen in der Auswahl „Rolle“. */
+function WeitereRollen({ gewaehlt, setze, sperre }: { gewaehlt: string[]; setze: (ids: string[]) => void; sperre?: boolean }) {
+  const r = useRollen();
+  return (
+    <fieldset className="wahl eigenschaft">
+      <legend>Weitere Rollen <small className="leise">z. B. als Verantwortliche in Verträgen</small></legend>
+      {r.geladen && !r.weitere.length && <p className="leise klein">Noch keine weiteren Rollen angelegt.</p>}
+      {r.weitere.map((x) => (
+        <label key={x.id} className="haken"><input type="checkbox" disabled={sperre} checked={gewaehlt.includes(x.id)}
+          onChange={(e) => setze(e.target.checked ? [...gewaehlt, x.id] : gewaehlt.filter((y) => y !== x.id))} /><span>{x.name}</span></label>
+      ))}
+      {r.typ && <Link to={`/ablage/${r.typ.id}`} className="verweis klein">Rollen in der Ablage verwalten →</Link>}
+    </fieldset>
+  );
+}
 
 export function useBenutzer() {
   const [liste, setListe] = useState<Benutzer[]>([]);
@@ -46,6 +73,10 @@ export function BenutzerListe({ liste, offen }: { liste: Benutzer[]; offen?: str
 
 export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => Promise<void> }) {
   const { ich, aktualisieren } = useKonto();
+  const d = useDaten();
+  const benutzerTyp = d.typen.find((t) => t.system === 'benutzer');
+  // Löschen nur, solange eine Einladung nie angenommen wurde; sonst deaktivieren (#26).
+  const loeschbar = !b.hatPasswort && !b.letzteAnmeldung;
   const [name, setName] = useState(b.name);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [ergebnis, setErgebnis] = useState<LinkErgebnis>();
@@ -69,6 +100,7 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
           <div><dt>Letzte Anmeldung</dt><dd>{datumZeit(b.letzteAnmeldung)}</dd></div>
           <div><dt>Zuletzt aktiv</dt><dd>{datumZeit(b.zuletztAktiv ?? null)}{istGeradeAktiv(b.zuletztAktiv) && <> <span className="chip gut punkt">gerade aktiv</span></>}</dd></div>
         </dl>
+        {benutzerTyp && <p className="leise klein"><Link to={`/ablage/${benutzerTyp.id}/${b.id}`} className="verweis">Mappe in der Ablage →</Link></p>}
       </div>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       {ergebnis && <LinkAnzeige e={ergebnis} schliessen={() => setErgebnis(undefined)} />}
@@ -82,6 +114,7 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
               {Object.entries(ROLLEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select></label>
         </div>
+        <WeitereRollen gewaehlt={b.rollen ?? []} setze={(rollen) => void aktion(() => api.benutzerAendern(b.id, { rollen }), 'Rollen gespeichert.')} />
         <div className="knoepfe"><button className="knopf primaer" disabled={name === b.name}>Name speichern</button></div>
       </form>
 
@@ -89,12 +122,13 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
         <h2 className="h3">Zugang</h2>
         <p className="leise">{b.hatPasswort
           ? 'Ein Passwort-Link ist eine Stunde gültig und funktioniert einmal. Das bisherige Passwort gilt, bis ein neues gesetzt ist.'
-          : 'Der Benutzer hat sein Passwort noch nicht festgelegt. Eine neue Einladung macht die alte ungültig.'}</p>
+          : 'Der Benutzer hat sein Passwort noch nicht festgelegt. Eine neue Einladung macht die alte ungültig.'}
+          {' '}{loeschbar ? 'Solange die Einladung nicht angenommen ist, lässt sich der Benutzer löschen.' : 'Wer schon angemeldet war, wird deaktiviert statt gelöscht – Verweise und „angelegt von“ bleiben so erhalten.'}</p>
         <div className="knoepfe">
           <button className="knopf" onClick={() => void aktion(async () => setErgebnis(await api.neuerLink(b.id)))}>{b.hatPasswort ? 'Passwort-Link erzeugen' : 'Einladung erneut senden'}</button>
           {!selbst && <button className="knopf" onClick={() => void aktion(() => api.benutzerAendern(b.id, { aktiv: !b.aktiv }), b.aktiv ? 'Deaktiviert – alle Sitzungen beendet.' : 'Aktiviert.')}>{b.aktiv ? 'Deaktivieren' : 'Aktivieren'}</button>}
-          {!selbst && <button className="knopf gefahr-rand" onClick={() => {
-            if (confirm(`Benutzer ${b.email} löschen? Seine Mappen bleiben erhalten.`)) void aktion(async () => { await api.benutzerLoeschen(b.id); geheZu('/werkbank/benutzer'); });
+          {!selbst && loeschbar && <button className="knopf gefahr-rand" onClick={() => {
+            if (confirm(`Einladung an ${b.email} zurückziehen und den Benutzer löschen?`)) void aktion(async () => { await api.benutzerLoeschen(b.id); geheZu('/werkbank/benutzer'); });
           }}>Löschen</button>}
         </div>
       </div>
@@ -161,6 +195,7 @@ export function BenutzerNeu({ neuLaden }: { neuLaden: () => Promise<void> }) {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [rolle, setRolle] = useState<Rolle>('mitglied');
+  const [rollen, setRollen] = useState<string[]>([]);
   const [sendet, setSendet] = useState(false);
   const [fehler, setFehler] = useState<string>();
   const [ergebnis, setErgebnis] = useState<LinkErgebnis>();
@@ -168,7 +203,7 @@ export function BenutzerNeu({ neuLaden }: { neuLaden: () => Promise<void> }) {
   async function anlegen(e: FormEvent) {
     e.preventDefault();
     setSendet(true); setFehler(undefined);
-    try { setErgebnis(await api.benutzerAnlegen({ email, name, rolle })); await neuLaden(); }
+    try { setErgebnis(await api.benutzerAnlegen({ email, name, rolle, rollen })); await neuLaden(); }
     catch (err) { setFehler((err as Error).message); }
     finally { setSendet(false); }
   }
@@ -194,6 +229,7 @@ export function BenutzerNeu({ neuLaden }: { neuLaden: () => Promise<void> }) {
               {Object.entries(ROLLEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select></label>
         </div>
+        <WeitereRollen gewaehlt={rollen} setze={setRollen} />
         {fehler && <p className="fehlertext">{fehler}</p>}
         <div className="knoepfe"><button className="knopf primaer" disabled={sendet}>{sendet ? 'Lege an …' : mail ? 'Anlegen und einladen' : 'Anlegen'}</button></div>
       </div>

@@ -34,8 +34,11 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const { Messung, pgMessSpeicher } = await import('../src/messung');
     const messung = new Messung(pgMessSpeicher(sql, HAUSHALT));
     await messung.start();
-    app = await baueApp(new Dienst(messung.umhuelle(pgRepo(sql, HAUSHALT), 'mappen'), ordnerSpeicher(ordner, HAUSHALT)),
-      new Konten(messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'), null, 'http://nas:3000'), {
+    // Wie im Betrieb (index.ts): Konten spiegeln Benutzer in Mappen (#26).
+    const dienst = new Dienst(messung.umhuelle(pgRepo(sql, HAUSHALT), 'mappen'), ordnerSpeicher(ordner, HAUSHALT));
+    const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'), null, 'http://nas:3000', dienst.benutzerspiegel());
+    await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
+    app = await baueApp(dienst, konten, {
         messung, system: (await import('../src/system')).pgSystemQuelle(sql, HAUSHALT),
         designs: new (await import('../src/designs')).Designs((await import('../src/designs')).pgDesignRepo(sql, HAUSHALT)),
         apiSchluessel: new (await import('../src/apischluessel')).ApiSchluesselDienst((await import('../src/apischluessel')).pgApiSchluesselRepo(sql)),
@@ -74,8 +77,11 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('POST', '/api/beispiele')).status, 204);
     assert.equal((await anfrage('POST', '/api/beispiele')).status, 409);
     const typen = (await anfrage('GET', '/api/typen')).body;
-    assert.deepEqual(typen.map((t: { name: string }) => t.name), ['Rechnung', 'Vertrag', 'Vertragspartner', 'Zahlung']);
-    assert.equal((await anfrage('GET', '/api/mappen')).body.length, 7);
+    const eigene = typen.filter((t: { system?: string | null }) => !t.system);
+    assert.deepEqual(eigene.map((t: { name: string }) => t.name), ['Rechnung', 'Vertrag', 'Vertragspartner', 'Zahlung']);
+    assert.deepEqual(typen.filter((t: { system?: string | null }) => t.system).map((t: { system: string }) => t.system).sort(), ['benutzer', 'rolle']);
+    const ids = new Set(eigene.map((t: { id: string }) => t.id));
+    assert.equal((await anfrage('GET', '/api/mappen')).body.filter((m: { typId: string }) => ids.has(m.typId)).length, 7);
   });
 
   it('liefert Rückverweise und schützt referenzierte Mappen vor dem Löschen', async () => {
@@ -409,5 +415,66 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal(j.openapi, '3.1.0');
     assert.ok(j.paths['/mappen/{id}'].put);
     assert.ok(j.info.version);
+  });
+
+  it('führt Benutzer und Rollen als geschützte Mappentypen (#26, #27)', async () => {
+    const typen = (await anfrage('GET', '/api/typen')).body;
+    const benutzerTyp = typen.find((t: { system?: string }) => t.system === 'benutzer');
+    const rolleTyp = typen.find((t: { system?: string }) => t.system === 'rolle');
+    const benutzer = (await anfrage('GET', '/api/benutzer')).body;
+    const admin = benutzer.find((x: { email: string }) => x.email === 'admin@example.org');
+    const mitglied = benutzer.find((x: { email: string }) => x.email === 'mitglied@example.org');
+    const rollen = (await anfrage('GET', '/api/rollen')).body;
+    const sys = { admin: rollen.find((r: { name: string }) => r.name === 'Administrator'), mitglied: rollen.find((r: { name: string }) => r.name === 'Mitglied') };
+    assert.ok(sys.admin.system && sys.mitglied.system);
+
+    // Jeder Benutzer hat seine Mappe; der Typ lässt sich erweitern, aber nicht löschen.
+    const am = (await anfrage('GET', `/api/mappen/${admin.id}`)).body.mappe;
+    assert.deepEqual([am.typId, am.werte.email, am.werte.rollen], [benutzerTyp.id, 'admin@example.org', [sys.admin.id]]);
+    assert.equal((await anfrage('DELETE', `/api/typen/${benutzerTyp.id}`)).status, 409);
+    assert.equal((await anfrage('DELETE', `/api/typen/${rolleTyp.id}`)).status, 409);
+    const ohneEmail = { ...benutzerTyp, felder: benutzerTyp.felder.filter((f: { key: string }) => f.key !== 'email') };
+    assert.equal((await anfrage('PUT', `/api/typen/${benutzerTyp.id}`, ohneEmail)).status, 422);
+    const erweitert = await anfrage('PUT', `/api/typen/${benutzerTyp.id}`, { ...benutzerTyp, erstellenErlaubt: true, felder: [...benutzerTyp.felder, { key: 'telefon', label: 'Telefon', typ: 'text' }] });
+    assert.equal(erweitert.status, 200);
+    assert.equal(erweitert.body.erstellenErlaubt, false, 'Benutzer-Mappen entstehen nur in der Benutzerverwaltung');
+    assert.equal((await anfrage('POST', '/api/mappen', { typId: benutzerTyp.id, werte: { name: 'X', email: 'x@example.org' } })).status, 403);
+    assert.equal((await anfrage('DELETE', `/api/mappen/${mitglied.id}`)).status, 403);
+    assert.equal((await anfrage('DELETE', `/api/mappen/${sys.admin.id}`)).status, 409, 'Systemrolle');
+
+    // Rollen: jeder darf sie anlegen; die Zuordnung vergibt nur die Benutzerverwaltung.
+    const steuern = await anfrage('POST', '/api/mappen', { typId: rolleTyp.id, werte: { name: 'Steuern' } });
+    assert.equal(steuern.status, 201);
+    assert.equal((await anfrage('PUT', `/api/benutzer/${mitglied.id}`, { name: 'Geändert', rollen: ['gibt-es-nicht'] })).status, 422);
+    assert.equal((await anfrage('GET', '/api/benutzer')).body.find((x: { id: string }) => x.id === mitglied.id).name, 'Mitglied', 'ungültige Rollen ändern nichts');
+    assert.equal((await anfrage('PUT', `/api/benutzer/${mitglied.id}`, { rollen: [sys.admin.id] })).status, 422);
+    const zugeordnet = await anfrage('PUT', `/api/benutzer/${mitglied.id}`, { rollen: [steuern.body.id] });
+    assert.deepEqual(zugeordnet.body.rollen, [steuern.body.id]);
+    const mm = (await anfrage('GET', `/api/mappen/${mitglied.id}`)).body.mappe;
+    assert.deepEqual(mm.werte.rollen, [sys.mitglied.id, steuern.body.id]);
+    assert.equal((await anfrage('GET', `/api/mappen/${steuern.body.id}`)).body.rueckverweise.length, 1, 'die Rolle zeigt ihre Benutzer');
+
+    // Sicherheit: ein Mitglied ändert weder fremde E-Mail-Adressen noch die eigenen Rollen über die Ablage.
+    const login = await app.inject({ method: 'POST', url: '/api/konto/anmelden', headers: { 'x-dms': '1' }, payload: { email: 'mitglied@example.org', passwort: 'mitglied-passwort' } });
+    const mc = String(login.headers['set-cookie']).split(';')[0];
+    const alsMitglied = async (method: string, url: string, payload?: unknown) => (await app.inject({ method, url, payload, headers: { 'x-dms': '1', cookie: mc } })).statusCode;
+    assert.equal(await alsMitglied('PUT', `/api/mappen/${admin.id}`, { werte: { ...am.werte, email: 'boese@example.org' } }), 403);
+    assert.equal(await alsMitglied('PUT', `/api/mappen/${mitglied.id}`, { werte: { ...mm.werte, rollen: [sys.admin.id, sys.mitglied.id] } }), 403);
+    assert.equal(await alsMitglied('PUT', `/api/mappen/${sys.admin.id}`, { werte: { name: 'Chef' } }), 403);
+    assert.equal(await alsMitglied('PUT', `/api/mappen/${mitglied.id}`, { werte: { ...mm.werte, telefon: '0351 123' } }), 200, 'eigene Felder bleiben bearbeitbar');
+    assert.equal(await alsMitglied('POST', '/api/mappen', { typId: rolleTyp.id, werte: { name: 'Garten' } }), 201);
+    assert.equal(await alsMitglied('GET', '/api/rollen'), 403);
+    assert.equal((await anfrage('GET', '/api/konto/status')).body.benutzer.email, 'admin@example.org');
+    assert.equal((await anfrage('GET', `/api/mappen/${admin.id}`)).body.mappe.werte.email, 'admin@example.org');
+
+    // Rolle mit Benutzern löschen: die Zuordnung fällt weg. Benutzer, die schon angemeldet waren, werden deaktiviert.
+    assert.equal((await anfrage('DELETE', `/api/mappen/${steuern.body.id}`)).status, 204);
+    assert.deepEqual((await anfrage('GET', `/api/mappen/${mitglied.id}`)).body.mappe.werte.rollen, [sys.mitglied.id]);
+    assert.equal((await anfrage('DELETE', `/api/benutzer/${mitglied.id}`)).status, 409);
+    assert.equal((await anfrage('PUT', `/api/benutzer/${mitglied.id}`, { aktiv: false })).status, 200);
+    assert.match((await anfrage('GET', `/api/mappen/${mitglied.id}`)).body.mappe.titel, /\(ehemalig\)$/);
+    assert.equal((await anfrage('PUT', `/api/benutzer/${mitglied.id}`, { aktiv: true })).status, 200);
+    const doc = JSON.parse((await app.inject({ method: 'GET', url: '/api/openapi.json' })).body);
+    assert.ok(doc.paths['/rollen'].get);
   });
 });

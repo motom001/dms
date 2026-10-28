@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { istEmail, PASSWORT_MINDESTLAENGE, type Benutzer, type Rolle } from '../../shared/src/model';
 import { Fachfehler } from './fehler';
 import type { KontoRepo, SitzungIntern, SitzungsInfo, Zweck } from './konto-repo';
+import type { Benutzerspiegel } from './dienst';
 import { mailtexte, type Mailer } from './mail';
 import { hashePasswort, hasheSchluessel, neuerSchluessel, pruefePasswort } from './passwort';
 
@@ -42,7 +43,16 @@ export interface Ergebnis { benutzer: Benutzer; mailVerschickt: boolean; link?: 
 export class Konten {
   private fehlversuche = new Map<string, { anzahl: number; bis: number }>();
 
-  constructor(private repo: KontoRepo, private mailer: Mailer | null, private appUrl: string) {}
+  /**
+   * `spiegel` hält die Benutzer-Mappen (#26) auf dem Stand der Konten: Das Konto ist führend,
+   * die Mappe zeigt Name, E-Mail, Rolle und ob der Benutzer aktiv ist.
+   */
+  constructor(private repo: KontoRepo, private mailer: Mailer | null, private appUrl: string, private spiegel: Benutzerspiegel | null = null) {}
+
+  private async spiegle(b: Benutzer, von: string | null = null) {
+    if (this.spiegel) await this.spiegel.aktualisiere(b, von);
+    return b;
+  }
 
   get mailAktiv() { return !!this.mailer; }
 
@@ -55,6 +65,7 @@ export class Konten {
     const passwort = pruefePasswortRegeln(e.passwort);
     const benutzer = await this.repo.legeBenutzerAn({ id: randomUUID(), email, name: text(e.name) || email, rolle: 'admin', passwortHash: await hashePasswort(passwort) });
     await this.repo.notiereAnmeldung(benutzer.id);
+    await this.spiegle(benutzer, benutzer.id);
     return { benutzer, schluessel: await this.neueSitzung(benutzer.id, info) };
   }
 
@@ -209,7 +220,8 @@ export class Konten {
       d.name = name.slice(0, 120);
     }
     if (e.entwicklermodus !== undefined) d.entwicklermodus = !!e.entwicklermodus;
-    return this.repo.aendereBenutzer(ich.id, d);
+    const neu = await this.repo.aendereBenutzer(ich.id, d);
+    return d.name !== undefined ? this.spiegle(neu, ich.id) : neu;
   }
 
   async aendereEmail(ich: Benutzer, e: { email?: unknown; passwort?: unknown }, log: (m: string) => void = () => {}) {
@@ -218,6 +230,7 @@ export class Konten {
     if (email.toLowerCase() === ich.email.toLowerCase()) return ich;
     if (await this.repo.holeHash(email)) throw new Fachfehler(409, 'Diese E-Mail-Adresse wird schon von einem anderen Benutzer verwendet.');
     const neu = await this.repo.aendereBenutzer(ich.id, { email });
+    await this.spiegle(neu, ich.id);
     await this.benachrichtige(ich.email, mailtexte.emailGeaendert(ich.name, ich.email, email), log);
     return neu;
   }
@@ -239,10 +252,11 @@ export class Konten {
   /** Für alle Angemeldeten: nur Id und Name, z. B. für „angelegt von“. */
   async personen() { return (await this.repo.listeBenutzer()).map((b) => ({ id: b.id, name: b.name || b.email })); }
 
-  async legeBenutzerAn(e: { email?: unknown; name?: unknown; rolle?: unknown }): Promise<Ergebnis> {
+  async legeBenutzerAn(e: { email?: unknown; name?: unknown; rolle?: unknown }, von: string | null = null): Promise<Ergebnis> {
     const email = pruefeEmail(e.email);
     if (await this.repo.holeHash(email)) throw new Fachfehler(409, 'Für diese E-Mail-Adresse gibt es schon einen Benutzer.');
     const benutzer = await this.repo.legeBenutzerAn({ id: randomUUID(), email, name: text(e.name), rolle: rolleAus(e.rolle), passwortHash: null });
+    await this.spiegle(benutzer, von);
     return this.verschickeLink(benutzer, 'einladung');
   }
 
@@ -262,7 +276,7 @@ export class Konten {
     if (id === ich.id && d.aktiv === false) throw new Fachfehler(409, 'Du kannst dich nicht selbst deaktivieren.');
     const neu = await this.repo.aendereBenutzer(id, d);
     if (d.aktiv === false) await this.repo.loescheSitzungenVon(id);
-    return neu;
+    return this.spiegle(neu, ich.id);
   }
 
   async loescheBenutzer(ich: Benutzer, id: string) {
@@ -270,6 +284,10 @@ export class Konten {
     if (!b) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');
     if (id === ich.id) throw new Fachfehler(409, 'Du kannst dich nicht selbst löschen.');
     if (b.rolle === 'admin' && b.aktiv && (await this.anzahlAktiverAdmins(id)) === 0) throw new Fachfehler(409, 'Es muss mindestens einen aktiven Administrator geben.');
+    // Wer schon angemeldet war, hat Spuren hinterlassen (angelegt von, Verweise): deaktivieren statt löschen (#26).
+    // Löschen bleibt für Einladungen, die nie angenommen wurden, z. B. bei einer vertippten Adresse.
+    if (b.hatPasswort || b.letzteAnmeldung) throw new Fachfehler(409, 'Wer sich schon angemeldet hat, wird deaktiviert statt gelöscht. So bleiben Verweise und „angelegt von“ erhalten.');
+    if (this.spiegel) await this.spiegel.entferne(id);
     await this.repo.loescheBenutzer(id);
   }
 

@@ -1,4 +1,4 @@
-import type { Dokument, Mappe, MappenBezug, Mappentyp, MappentypDaten, Werte } from '../../shared/src/model';
+import type { Dokument, Mappe, MappenBezug, Mappentyp, MappentypDaten, Systemtyp, Werte } from '../../shared/src/model';
 
 export interface Verweis { feldKey: string; zielId: string }
 /** Sortierung, wie sie das Repo braucht: Art der Spalte (für den richtigen Vergleich) und ggf. Feldschlüssel. */
@@ -31,7 +31,8 @@ export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: 
 export interface Repo {
   listeTypen(): Promise<Mappentyp[]>;
   holeTyp(id: string): Promise<Mappentyp | undefined>;
-  legeTypAn(id: string, d: MappentypDaten): Promise<Mappentyp>;
+  /** `system` nur für die Systemtypen, die der Server selbst anlegt. */
+  legeTypAn(id: string, d: MappentypDaten, system?: Systemtyp): Promise<Mappentyp>;
   /** Aktualisiert den Typ und entfernt Verweise aus Feldern, die keine Referenzfelder mehr sind. */
   aendereTyp(id: string, d: MappentypDaten): Promise<Mappentyp>;
   loescheTyp(id: string): Promise<void>;
@@ -39,7 +40,9 @@ export interface Repo {
 
   listeMappen(typId?: string): Promise<Mappe[]>;
   holeMappe(id: string): Promise<Mappe | undefined>;
-  legeMappeAn(id: string, typId: string, werte: Werte, verweise: Verweis[], benutzerId: string | null, demo?: boolean): Promise<Mappe>;
+  legeMappeAn(id: string, typId: string, werte: Werte, verweise: Verweis[], benutzerId: string | null, demo?: boolean, systemKennung?: string | null): Promise<Mappe>;
+  /** Die Mappe mit dieser Systemkennung (z. B. rolle:admin). */
+  holeSystemMappe(kennung: string): Promise<Mappe | undefined>;
   aendereMappe(id: string, werte: Werte, verweise: Verweis[], benutzerId: string | null): Promise<Mappe>;
   /** Viele neue Mappen auf einmal (Demo-Daten): eine Transaktion, Titel schon berechnet. */
   legeMappenAn(liste: NeueMappe[]): Promise<void>;

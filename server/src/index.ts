@@ -60,8 +60,9 @@ const mailer = erstelleMailer({
 // Jeder Datenbankzugriff der Repos wird gezählt und gestoppt (Entwicklermodus, lange Zugriffe).
 const messung = new Messung(pgMessSpeicher(sql, cfg.haushalt));
 await messung.start();
-const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, cfg.haushalt), 'konto'), mailer, cfg.appUrl);
 const dienst = new Dienst(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'mappen'), ordnerSpeicher(cfg.dateien, cfg.haushalt));
+// Benutzer erscheinen als Mappen (#26); die Konten halten sie auf dem neuesten Stand.
+const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, cfg.haushalt), 'konto'), mailer, cfg.appUrl, dienst.benutzerspiegel());
 const app = await baueApp(dienst, konten, {
   webDir: cfg.web,
   sicher: cfg.appUrl.startsWith('https://'),
@@ -77,6 +78,8 @@ log.info(`E-Mail-Versand: ${mailer ? `über ${env.SMTP_HOST}` : 'aus (SMTP_HOST 
 log.info(`Links in E-Mails zeigen auf ${cfg.appUrl}`);
 const nachgezogen = await dienst.titelNachziehen();
 if (nachgezogen) log.info(`Titel von ${nachgezogen} Mappen berechnet`);
+// Systemtypen Benutzer und Rolle anlegen und jedem Benutzer seine Mappe geben (auch nach einem Update).
+await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
 const geprueft = await dienst.passungNachziehen();
 if (geprueft) log.info(`Mappen von ${geprueft} Mappentypen gegen ihre Definition geprüft`);
 if (await konten.einrichtungNoetig()) log.warn(`Noch kein Benutzer vorhanden: Der erste Aufruf von ${cfg.appUrl} legt den Administrator an.`);

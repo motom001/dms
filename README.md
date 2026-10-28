@@ -4,14 +4,14 @@
 
 Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsystem für Haushalte. Statt loser Dokumente in Ordnern ordnet es **Mappen**: Vertragspartner, Verträge, Rechnungen, Gegenstände – verbunden über Verweise, so dass man von jeder Mappe aus zu allem Zugehörigen findet.
 
-> **Stand: v0.6.** Anmeldung und Benutzer, Mappentypen mit Feldern und Registern, Dokumente, Mappen in drei Spalten mit Eingang, seitenweises Laden und Suche über Titel und Werte, Protokoll, Zeitmessung und Versionsübersicht. Volltextsuche in Dokumenten, Texterkennung und feinere Rechte folgen.
+> **Stand: v0.7.** Anmeldung und Benutzer, Benutzer und Rollen als Mappen, Mappentypen mit Feldern und Registern, Dokumente, Mappen in drei Spalten mit Eingang, seitenweises Laden und Suche über Titel und Werte, Protokoll, Zeitmessung und Versionsübersicht. Volltextsuche in Dokumenten, Texterkennung und feinere Rechte folgen.
 
 ## Bereiche
 
 - **Ablage** – hier wird gearbeitet, in drei Spalten von groß nach klein: Sichten, Mappen der Sicht, die geöffnete Mappe. Die Sicht **Eingang** sammelt Mappen, die nicht (mehr) zur Definition ihres Mappentyps passen, beim Ersteller der Mappe. Rückverweise erscheinen automatisch: Die Mappe eines Vertragspartners zeigt alle Verträge und Rechnungen, die auf ihn verweisen.
 - **Werkbank** (Administratoren), ebenfalls dreigeteilt:
   - *Mappentypen* – Felder (Datentyp, Pflichtfeld, eindeutig, Längen, Wertebereiche, Auswahllisten, Referenzen), Register und Titel-Vorlage,
-  - *Benutzer* – anlegen, Rollen vergeben, Einladungs- und Passwort-Links,
+  - *Benutzer* – anlegen, Rolle (Administrator/Mitglied) und weitere Rollen vergeben, Einladungs- und Passwort-Links, deaktivieren (gelöscht werden nur nie angenommene Einladungen),
   - *Designs* – Grundlage (automatisch, hell, dunkel, hoher Kontrast), Primär- und Sekundärfarbe (Abstufungen werden abgeleitet), eigenes CSS; ein Design ist Standard,
   - *Technik* – installierte Versionen (DMS, Node.js, PostgreSQL, Bibliotheken), zum Kopieren in ein GitHub-Issue, und ein Abgleich mit neueren Versionen auf Knopfdruck,
   - *Datenbank* – lange Datenbankzugriffe (Schwelle und Aufbewahrung einstellbar, Standard 500 ms und 30 Tage) und was gerade in der Datenbank läuft,
@@ -25,6 +25,10 @@ Am Mappentyp legt eine **Trefferliste** fest, welche Felder und Systemwerte (Tit
 Die Breite der drei Bereiche lässt sich mit den Griffen auf den Trennlinien verschieben; ein kurzer Klick klappt die Sichten bzw. die Mappe ein. Das merkt sich jedes Gerät je Benutzer (zurücksetzen im Profil).
 
 Jede Mappe trägt feste Indexwerte: angelegt am/von, zuletzt geändert am/von. Listen laden je 100 Mappen nach Titel sortiert und beim Scrollen weitere; die Suche über einer Liste durchsucht Titel und Werte auf dem Server.
+
+**Benutzer und Rollen als Mappen:** Jeder Benutzer hat eine Mappe des Systemmappentyps *Benutzer*, Rollen sind Mappen des Systemmappentyps *Rolle*. So kann ein Mappentyp z. B. ein Feld „verantwortlicher Benutzer“ oder „verantwortliche Rolle“ bekommen. Beide Typen lassen sich um eigene Felder erweitern, aber nicht löschen. Name, E-Mail-Adresse, Rollen und „aktiv“ einer Benutzer-Mappe sind in der Ablage nur lesbar; sie werden im Profil und in der Benutzerverwaltung gepflegt. Rollen legt man in der Ablage an; *Administrator* und *Mitglied* sind Systemrollen, die der Rolle des Kontos folgen. Vorerst sind Rollen fachlich – Rechte hängen noch nicht daran.
+
+Je Mappentyp lässt sich festlegen, ob in der Ablage **neue Mappen angelegt** und **Mappen gelöscht** werden dürfen.
 
 **Register** sind die Trennblätter einer Mappe und werden je Mappentyp festgelegt:
 - *Feldregister* – eine Gruppe von Feldern (jedes Feld liegt auf genau einem Feldregister),
