@@ -1,6 +1,6 @@
 import type { Design } from './design';
 import { messung } from './messung';
-import type { Ausschnitt, Benutzer, Dokument, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
+import type { Aufgabe, Ausschnitt, Benutzer, Dokument, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Sicht, SichtDaten } from '../../shared/src/sichten';
 
 export class ApiFehler extends Error {
@@ -44,7 +44,7 @@ async function anfrage<T>(methode: string, url: string, body?: unknown): Promise
 
 export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string; titel: string }
 export type Bezuege = Record<string, MappenBezug>;
-export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt> }
+export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string> }
 /** Texterkennung (#45): Stand, Werkzeuge und Einstellungen für die Werkbank. */
 export interface OcrEinstellungen { aktiv: boolean; auftraege: number; maxSeiten: number; maxMB: number; sprachen: string; typen: Record<string, 'tesseract' | 'aus'> }
 export interface OcrStatus {
@@ -147,6 +147,13 @@ export const api = {
   endgueltigLoeschen: (id: string, werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}`),
   papierkorbLeeren: (werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb`),
   papierkorbTage: (e: { tage?: number; historieTage?: number }) => anfrage<{ tage: number; geleert: number; historieTage: number }>('PUT', '/api/werkbank/papierkorb/einstellungen', e),
+  /* Aufgaben (#54) */
+  aufgabeAnlegen: (mappeId: string, empfaengerId: string, text: string) => anfrage<Aufgabe>('POST', `/api/mappen/${mappeId}/aufgaben`, { empfaengerId, text }),
+  aufgabeErledigt: (id: string) => anfrage<Aufgabe>('POST', `/api/aufgaben/${id}/erledigt`),
+  aufgabeDelegieren: (id: string, empfaengerId: string) => anfrage<Aufgabe>('POST', `/api/aufgaben/${id}/delegieren`, { empfaengerId }),
+  aufgabenWerkbank: (erledigt = false) => anfrage<{ aufgaben: Aufgabe[]; mail: { aktiv: boolean; uhrzeit: string } | null }>('GET', `/api/werkbank/aufgaben${erledigt ? '?erledigt' : ''}`),
+  aufgabenMailSpeichern: (e: { aktiv: boolean; uhrzeit: string }) => anfrage<{ aktiv: boolean; uhrzeit: string }>('PUT', '/api/werkbank/aufgaben/mail', e),
+  aufgabenMailSenden: () => anfrage<{ verschickt: number }>('POST', '/api/werkbank/aufgaben/mail/senden'),
   notizAnlegen: (mappeId: string, text: string) => anfrage<Notiz>('POST', `/api/mappen/${mappeId}/notizen`, { text }),
   notizAendern: (id: string, text: string) => anfrage<Notiz>('PUT', `/api/notizen/${id}`, { text }),
   notizLoeschen: (id: string) => anfrage<null>('DELETE', `/api/notizen/${id}`),
@@ -194,7 +201,7 @@ export const api = {
   },
 };
 
-export interface MappeDetails { mappe: Mappe; rueckverweise: Rueckverweis[]; dokumente: Dokument[]; notizen: Notiz[]; bezuege: Bezuege }
+export interface MappeDetails { mappe: Mappe; rueckverweise: Rueckverweis[]; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 export const dokumentUrl = (id: string, herunterladen = false) => `/api/dokumente/${id}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
 

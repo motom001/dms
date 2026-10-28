@@ -1,6 +1,6 @@
 import type postgres from 'postgres';
 import { alsText } from '../../shared/src/markdown';
-import { TREFFER_ANFANG, TREFFER_ENDE, type Ausschnitt, type Dokument, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
+import { TREFFER_ANFANG, TREFFER_ENDE, type Aufgabe, type Ausschnitt, type Dokument, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
 import type { Filter, Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import { istUuid, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
 
@@ -56,6 +56,13 @@ const alsDokument = (r: Zeile): Dokument => ({
 });
 /** Ausschnitte aus dem Volltext: höchstens zwei Stellen, Treffer markiert (#45). */
 const AUSSCHNITT = `StartSel=${TREFFER_ANFANG}, StopSel=${TREFFER_ENDE}, MaxFragments=2, MaxWords=18, MinWords=6, FragmentDelimiter=" … "`;
+const alsAufgabe = (r: Zeile): Aufgabe => ({
+  id: r.id as string, mappeId: r.mappe_id as string, empfaengerId: (r.empfaenger_id as string | null) ?? null,
+  art: r.art as Aufgabe['art'], text: r.text as string, feldKey: (r.feld_key as string | null) ?? null,
+  erstellt: iso(r.erstellt), erstelltVon: (r.erstellt_von as string | null) ?? null,
+  erledigt: r.erledigt ? iso(r.erledigt) : null, erledigtVon: (r.erledigt_von as string | null) ?? null,
+  ...(r.mappe_titel !== undefined ? { mappeTitel: (r.mappe_titel as string | null) ?? '', typId: r.typ_id as string } : {}),
+});
 const alsNotiz = (r: Zeile): Notiz => ({
   id: r.id as string, mappeId: r.mappe_id as string, text: r.text as string,
   erstellt: iso(r.erstellt), erstelltVon: (r.erstellt_von as string | null) ?? null,
@@ -326,7 +333,8 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const typ = o.klauseln ? sql`AND (${klauselnSql(sql, o.klauseln)})`
         : o.typId && istUuid(o.typId) ? sql`AND typ_id = ${o.typId}` : o.typId ? sql`AND false` : sql``;
       const eingang = o.eingang
-        ? sql`AND passt IS NOT TRUE AND (erstellt_von = ${istUuid(o.eingang.benutzerId) ? o.eingang.benutzerId : null}::uuid ${o.eingang.admin ? sql`OR erstellt_von IS NULL` : sql``})`
+        ? sql`AND EXISTS (SELECT 1 FROM aufgaben a WHERE a.mappe_id = mappen.id AND a.erledigt IS NULL
+            AND (a.empfaenger_id = ${istUuid(o.eingang.benutzerId) ? o.eingang.benutzerId : null}::uuid ${o.eingang.admin ? sql`OR a.empfaenger_id IS NULL` : sql``}))`
         : sql``;
       const muster = o.suche ? `%${o.suche.replace(/[\\%_]/g, (c) => '\\' + c)}%` : null;
       const suche = muster
@@ -377,7 +385,8 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         SELECT typ_id, count(*)::int AS anzahl,
           count(*) FILTER (WHERE passt IS NOT TRUE)::int AS unpassend,
           count(*) FILTER (WHERE demo)::int AS demo,
-          count(*) FILTER (WHERE passt IS NOT TRUE AND (erstellt_von = ${istUuid(benutzerId) ? benutzerId : null}::uuid OR (${admin} AND erstellt_von IS NULL)))::int AS eingang
+          count(*) FILTER (WHERE EXISTS (SELECT 1 FROM aufgaben a WHERE a.mappe_id = mappen.id AND a.erledigt IS NULL
+            AND (a.empfaenger_id = ${istUuid(benutzerId) ? benutzerId : null}::uuid OR (${admin} AND a.empfaenger_id IS NULL))))::int AS eingang
         FROM mappen WHERE haushalt_id = ${haushaltId} GROUP BY typ_id`;
       return {
         typen: new Map(r.map((z) => [z.typ_id as string, { anzahl: z.anzahl as number, unpassend: z.unpassend as number, demo: z.demo as number }])),
@@ -492,12 +501,13 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async legeInPapierkorb(id, benutzerId) {
       await sql.begin(async (tx) => {
         const r = await tx`
-          INSERT INTO papierkorb (id, haushalt_id, typ_id, mappe, verweise, dokumente, geloescht_von, notizen)
+          INSERT INTO papierkorb (id, haushalt_id, typ_id, mappe, verweise, dokumente, geloescht_von, notizen, aufgaben)
           SELECT m.id, m.haushalt_id, m.typ_id, to_jsonb(m),
             (SELECT coalesce(jsonb_agg(to_jsonb(v)), '[]'::jsonb) FROM verweise v WHERE v.quelle_id = m.id),
             (SELECT coalesce(jsonb_agg(to_jsonb(d)), '[]'::jsonb) FROM dokumente d WHERE d.mappe_id = m.id),
             ${istUuid(benutzerId) ? benutzerId : null}::uuid,
-            (SELECT coalesce(jsonb_agg(to_jsonb(n)), '[]'::jsonb) FROM notizen n WHERE n.mappe_id = m.id)
+            (SELECT coalesce(jsonb_agg(to_jsonb(n)), '[]'::jsonb) FROM notizen n WHERE n.mappe_id = m.id),
+            (SELECT coalesce(jsonb_agg(to_jsonb(a)), '[]'::jsonb) FROM aufgaben a WHERE a.mappe_id = m.id)
           FROM mappen m WHERE m.haushalt_id = ${haushaltId} AND m.id = ${id}`;
         // Ausgehende Verweise und Dokumente folgen per Kaskade.
         if (r.count) await tx`DELETE FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
@@ -548,6 +558,14 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
             'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = n.value ->> 'erstellt_von') THEN n.value -> 'erstellt_von' ELSE 'null'::jsonb END,
             'geaendert_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = n.value ->> 'geaendert_von') THEN n.value -> 'geaendert_von' ELSE 'null'::jsonb END))).*
           FROM papierkorb p, jsonb_array_elements(p.notizen) n WHERE p.id = ${id}`;
+        // Aufgaben: Empfänger und Beteiligte nur, wenn es sie noch gibt.
+        await tx`
+          INSERT INTO aufgaben
+          SELECT (jsonb_populate_record(NULL::aufgaben, x.value || jsonb_build_object(
+            'empfaenger_id', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'empfaenger_id') THEN x.value -> 'empfaenger_id' ELSE 'null'::jsonb END,
+            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'erstellt_von') THEN x.value -> 'erstellt_von' ELSE 'null'::jsonb END,
+            'erledigt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'erledigt_von') THEN x.value -> 'erledigt_von' ELSE 'null'::jsonb END))).*
+          FROM papierkorb p, jsonb_array_elements(p.aufgaben) x WHERE p.id = ${id}`;
         await tx`DELETE FROM papierkorb WHERE id = ${id}`;
         return { verweiseEntfallen: (p.verweise as unknown[]).length - v.count };
       });
@@ -618,6 +636,65 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       if (!istUuid(id)) return null;
       const [r] = await sql`SELECT volltext FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       return r ? ((r.volltext as string | null) ?? null) : null;
+    },
+
+    /* ---------- Aufgaben (#54) ---------- */
+    async aufgabenZurPassung(liste) {
+      const offen = liste.filter((x) => x.problem && istUuid(x.id));
+      const fertig = liste.filter((x) => !x.problem && istUuid(x.id)).map((x) => x.id);
+      if (offen.length) {
+        const ids = offen.map((x) => x.id);
+        const texte = offen.map((x) => `Passt nicht zur Definition: ${x.problem}`);
+        await sql`
+          UPDATE aufgaben a SET text = n.text FROM unnest(${ids}::uuid[], ${texte}::text[]) AS n(mappe_id, text)
+          WHERE a.mappe_id = n.mappe_id AND a.art = 'passung' AND a.erledigt IS NULL AND a.text <> n.text`;
+        await sql`
+          INSERT INTO aufgaben (id, haushalt_id, mappe_id, empfaenger_id, art, text)
+          SELECT gen_random_uuid(), ${haushaltId}, n.mappe_id, m.erstellt_von, 'passung', n.text
+          FROM unnest(${ids}::uuid[], ${texte}::text[]) AS n(mappe_id, text) JOIN mappen m ON m.id = n.mappe_id
+          WHERE NOT EXISTS (SELECT 1 FROM aufgaben a WHERE a.mappe_id = n.mappe_id AND a.art = 'passung' AND a.erledigt IS NULL)`;
+      }
+      if (fertig.length) {
+        await sql`UPDATE aufgaben SET erledigt = now() WHERE mappe_id = ANY(${fertig}::uuid[]) AND art = 'passung' AND erledigt IS NULL`;
+      }
+    },
+    async legeAufgabeAn(a) {
+      const [r] = await sql`
+        INSERT INTO aufgaben (id, haushalt_id, mappe_id, empfaenger_id, art, text, feld_key, erstellt_von)
+        VALUES (${a.id}, ${haushaltId}, ${a.mappeId}, ${istUuid(a.empfaengerId) ? a.empfaengerId : null}::uuid, ${a.art}, ${a.text}, ${a.feldKey ?? null},
+          ${istUuid(a.erstelltVon) ? a.erstelltVon : null}::uuid)
+        RETURNING *`;
+      return alsAufgabe(r);
+    },
+    async holeAufgabe(id) {
+      if (!istUuid(id)) return undefined;
+      const [r] = await sql`SELECT * FROM aufgaben WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      return r ? alsAufgabe(r) : undefined;
+    },
+    async aufgabenVon(mappeId) {
+      if (!istUuid(mappeId)) return [];
+      return (await sql`SELECT * FROM aufgaben WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY erledigt IS NOT NULL, erstellt DESC, id`).map(alsAufgabe);
+    },
+    async offeneAufgaben(f = {}) {
+      const wer = f.benutzerId
+        ? sql`AND (a.empfaenger_id = ${istUuid(f.benutzerId) ? f.benutzerId : null}::uuid ${f.admin ? sql`OR a.empfaenger_id IS NULL` : sql``})`
+        : sql``;
+      const welche = f.mappeIds ? sql`AND a.mappe_id = ANY(${f.mappeIds.filter(istUuid)}::uuid[])` : sql``;
+      return (await sql`
+        SELECT a.*, m.titel AS mappe_titel, m.typ_id FROM aufgaben a JOIN mappen m ON m.id = a.mappe_id
+        WHERE a.haushalt_id = ${haushaltId} AND a.erledigt IS NULL ${wer} ${welche}
+        ORDER BY a.erstellt, a.id`).map(alsAufgabe);
+    },
+    async erledigteAufgaben(max) {
+      return (await sql`
+        SELECT a.*, m.titel AS mappe_titel, m.typ_id FROM aufgaben a JOIN mappen m ON m.id = a.mappe_id
+        WHERE a.haushalt_id = ${haushaltId} AND a.erledigt IS NOT NULL ORDER BY a.erledigt DESC, a.id LIMIT ${max}`).map(alsAufgabe);
+    },
+    async erledigeAufgabe(id, von) {
+      await sql`UPDATE aufgaben SET erledigt = now(), erledigt_von = ${istUuid(von) ? von : null}::uuid WHERE haushalt_id = ${haushaltId} AND id = ${id} AND erledigt IS NULL`;
+    },
+    async delegiereAufgabe(id, an) {
+      await sql`UPDATE aufgaben SET empfaenger_id = ${istUuid(an) ? an : null}::uuid WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
 
     /* ---------- Notizen (#55) ---------- */

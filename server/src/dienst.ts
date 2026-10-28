@@ -2,13 +2,13 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, ROLLEN, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
-  NOTIZ_MAX, type Benutzer, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Rolle, type Systemtyp, type Werte,
+  AUFGABE_MAX, NOTIZ_MAX, type Aufgabe, type Benutzer, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import { Auftraege } from './auftrag';
 import { protokoll } from './protokoll';
 import { Fachfehler } from './fehler';
-import { alsText } from '../../shared/src/markdown';
+import { alsText, erwaehnungen } from '../../shared/src/markdown';
 import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
 import type { Einstellungen } from './einstellungen';
 import { istUuid, type NeueMappe, type PapierkorbEintrag, type Repo, type Rueckverweis, type SortierungIntern } from './repo';
@@ -313,6 +313,100 @@ export class Dienst {
     return ergebnis;
   }
 
+  /* ---------- Aufgaben (#54) und Erwähnungen (#56) ---------- */
+
+  private async name(benutzerId: string | null): Promise<string> {
+    if (!benutzerId) return 'Administratoren';
+    return (await this.repo.titelVon([benutzerId])).get(benutzerId)?.replace(/ \(ehemalig\)$/, '') || 'unbekannt';
+  }
+
+  /** Ein aktiver Benutzer (seine Benutzer-Mappe), sonst 422. */
+  private async pruefeEmpfaenger(id: unknown): Promise<string> {
+    const { benutzer } = await this.sichereSystem();
+    const m = istUuid(id) ? await this.repo.holeMappe(id) : undefined;
+    if (!m || m.typId !== benutzer.id) throw new Fachfehler(422, 'Bitte einen Benutzer als Empfänger wählen.');
+    if (m.werte.aktiv === false) throw new Fachfehler(422, 'Dieser Benutzer ist deaktiviert.');
+    return m.id;
+  }
+
+  /**
+   * Neue @-Erwähnungen in formatiertem Text werden Aufgaben (#56). Gibt es für Benutzer und Feld
+   * schon eine offene, entsteht keine zweite; entfernte Erwähnungen stehen nur in der Historie.
+   */
+  private async pruefeErwaehnungen(typ: Mappentyp, mappeId: string, alt: Werte, neu: Werte, von: string | null) {
+    if (!typ.felder.some((x) => x.typ === 'formatiert')) return;
+    const { benutzer } = await this.sichereSystem();
+    for (const f of typ.felder.filter((x) => x.typ === 'formatiert')) {
+      const vorher = new Set(erwaehnungen(String(alt[f.key] ?? '')));
+      const jetzt = new Set(erwaehnungen(String(neu[f.key] ?? '')));
+      const offen = (await this.repo.offeneAufgaben({ mappeIds: [mappeId] })).filter((a) => a.art === 'erwaehnung' && a.feldKey === f.key);
+      for (const id of jetzt) {
+        if (vorher.has(id) || id === von || offen.some((a) => a.empfaengerId === id)) continue;
+        const m = await this.repo.holeMappe(id);
+        if (!m || m.typId !== benutzer.id || m.werte.aktiv === false) continue;
+        const a = await this.repo.legeAufgabeAn({
+          id: randomUUID(), mappeId, empfaengerId: id, art: 'erwaehnung', feldKey: f.key,
+          text: `Erwähnt von ${await this.name(von)} in „${f.label}“`, erstellt: '', erstelltVon: von, erledigt: null, erledigtVon: null,
+        });
+        await this.notiere(mappeId, von, 'aufgabe', { text: `${await this.name(id)} erwähnt in „${f.label}“`, aufgabe: a.id });
+      }
+      for (const id of vorher) {
+        if (!jetzt.has(id)) await this.notiere(mappeId, von, 'aufgabe', { text: `Erwähnung von ${await this.name(id)} in „${f.label}“ entfernt` });
+      }
+    }
+  }
+
+  /** Aufgabe von Hand vergeben, z. B. „Bitte Rechnung prüfen“. */
+  async legeAufgabeAn(mappeId: string, e: unknown, von: string | null): Promise<Aufgabe> {
+    if (!(await this.repo.holeMappe(mappeId))) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    const x = (e ?? {}) as Record<string, unknown>;
+    const text = typeof x.text === 'string' ? x.text.trim() : '';
+    if (!text) throw new Fachfehler(422, 'Bitte beschreiben, was zu tun ist.');
+    if (text.length > AUFGABE_MAX) throw new Fachfehler(422, `Höchstens ${AUFGABE_MAX} Zeichen.`);
+    const an = await this.pruefeEmpfaenger(x.empfaengerId);
+    const a = await this.repo.legeAufgabeAn({ id: randomUUID(), mappeId, empfaengerId: an, art: 'manuell', text, erstellt: '', erstelltVon: von, erledigt: null, erledigtVon: null });
+    await this.notiere(mappeId, von, 'aufgabe', { text: `für ${await this.name(an)}: ${text}`, aufgabe: a.id });
+    protokoll.modul('ablage').info('Aufgabe vergeben', { mappeId, an: await this.name(an) });
+    return a;
+  }
+
+  private async eigeneAufgabe(id: string, ich: { id: string; rolle: string }) {
+    const a = await this.repo.holeAufgabe(id);
+    if (!a) throw new Fachfehler(404, 'Diese Aufgabe gibt es nicht.');
+    const meine = a.empfaengerId === ich.id || (!a.empfaengerId && ich.rolle === 'admin');
+    if (!meine && ich.rolle !== 'admin') throw new Fachfehler(403, 'Das ist nicht deine Aufgabe. Weitergeben oder erledigen kann sie nur ihr Empfänger oder ein Administrator.');
+    if (a.erledigt) throw new Fachfehler(409, 'Diese Aufgabe ist schon erledigt.');
+    return a;
+  }
+
+  /** Bestätigen (Erwähnungen, manuelle Aufgaben). „Passt nicht“ erledigt sich, sobald die Mappe passt. */
+  async erledigeAufgabe(id: string, ich: { id: string; rolle: string }) {
+    const a = await this.eigeneAufgabe(id, ich);
+    if (a.art === 'passung') throw new Fachfehler(409, 'Diese Aufgabe erledigt sich selbst, sobald die Mappe wieder zur Definition passt.');
+    await this.repo.erledigeAufgabe(id, ich.id);
+    await this.notiere(a.mappeId, ich.id, 'aufgabe', { text: `erledigt: ${a.text}`, aufgabe: id });
+    protokoll.modul('ablage').info('Aufgabe erledigt', { mappeId: a.mappeId, aufgabe: a.text });
+    return (await this.repo.holeAufgabe(id))!;
+  }
+
+  /** Weitergeben: durch den Empfänger selbst oder einen Administrator; steht im Protokoll. */
+  async delegiereAufgabe(id: string, an: unknown, ich: { id: string; rolle: string }) {
+    const a = await this.eigeneAufgabe(id, ich);
+    const ziel = await this.pruefeEmpfaenger(an);
+    if (ziel === a.empfaengerId) return a;
+    await this.repo.delegiereAufgabe(id, ziel);
+    const von = await this.name(a.empfaengerId), nach = await this.name(ziel);
+    await this.notiere(a.mappeId, ich.id, 'aufgabe', { text: `weitergegeben von ${von} an ${nach}: ${a.text}`, aufgabe: id });
+    protokoll.modul('ablage').info('Aufgabe weitergegeben', { mappeId: a.mappeId, von, an: nach, aufgabe: a.text });
+    return (await this.repo.holeAufgabe(id))!;
+  }
+
+  /** Meine offenen Aufgaben (mit denen der Administratoren, wenn ich einer bin). */
+  meineAufgaben(ich: { id: string; rolle: string }) { return this.repo.offeneAufgaben({ benutzerId: ich.id, admin: ich.rolle === 'admin' }); }
+  /** Werkbank: alle offenen oder die zuletzt erledigten. */
+  async alleAufgaben(erledigt = false) { return erledigt ? this.repo.erledigteAufgaben(500) : this.repo.offeneAufgaben(); }
+  aufgabenVon(mappeId: string) { return this.repo.aufgabenVon(mappeId); }
+
   /* ---------- Notizen (#55) ---------- */
 
   private static notiztext(e: unknown): string {
@@ -508,6 +602,8 @@ export class Dienst {
       dokumente: await this.repo.listeDokumente(id),
       /** Notizen an der Mappe (#55). */
       notizen: await this.repo.notizen(id),
+      /** Aufgaben an der Mappe, offene zuerst (#54). */
+      aufgaben: await this.repo.aufgabenVon(id),
       /** Titel und Typ der Mappen, auf die diese verweist. */
       bezuege: Object.fromEntries(await this.repo.bezuege(ziele)),
     };
@@ -540,7 +636,17 @@ export class Dienst {
         ? await this.repo.seite({ klauseln: klauselnFuer(sichten, sicht.id, typen, await this.aufloesung(ich.id)), suche, volltext, notizen, von, anzahl, sortierung })
         : await this.repo.seite({ typId: nurTyp ?? q.sicht, suche, volltext, notizen, von, anzahl, sortierung });
     const ziele = r.mappen.flatMap((m) => { const t = typen.get(m.typId); return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []; });
-    return { gesamt: r.gesamt, von, mappen: r.mappen, bezuege: Object.fromEntries(await this.repo.bezuege(ziele)), ...(r.ausschnitte ? { ausschnitte: r.ausschnitte } : {}) };
+    // Eingang (#54): je Mappe, was für mich zu tun ist.
+    const aufgaben: Record<string, string> = {};
+    if (q.sicht === 'eingang' && r.mappen.length) {
+      for (const a of await this.repo.offeneAufgaben({ benutzerId: ich.id, admin: ich.rolle === 'admin', mappeIds: r.mappen.map((m) => m.id) })) {
+        aufgaben[a.mappeId] = aufgaben[a.mappeId] ? `${aufgaben[a.mappeId]} · ${a.text}` : a.text;
+      }
+    }
+    return {
+      gesamt: r.gesamt, von, mappen: r.mappen, bezuege: Object.fromEntries(await this.repo.bezuege(ziele)),
+      ...(r.ausschnitte ? { ausschnitte: r.ausschnitte } : {}), ...(q.sicht === 'eingang' ? { aufgaben } : {}),
+    };
   }
 
   /** Anzahl Mappen je Typ (davon unpassend, Demo), je Sicht und im Eingang des Benutzers. */
@@ -683,7 +789,10 @@ export class Dienst {
       });
       return { id: m.id, problem: ersterGrund(typ, p), alt: m.problem ?? null, passtAlt: m.passt };
     });
-    await this.repo.setzePassung(ergebnis.filter((e) => e.problem !== e.alt || e.passtAlt === undefined).map(({ id, problem }) => ({ id, problem })));
+    const geaendert = ergebnis.filter((e) => e.problem !== e.alt || e.passtAlt === undefined).map(({ id, problem }) => ({ id, problem }));
+    await this.repo.setzePassung(geaendert);
+    // Passt eine Mappe nicht, hat ihr Ersteller eine Aufgabe (#54); passt sie wieder, ist sie erledigt.
+    await this.repo.aufgabenZurPassung(geaendert);
     return ergebnis.filter((e) => e.problem).length;
   }
 
@@ -711,6 +820,7 @@ export class Dienst {
       if (problem !== m.problem) liste.push({ id: m.id, problem });
     }
     await this.repo.setzePassung(liste);
+    await this.repo.aufgabenZurPassung(liste);
   }
 
   /** Beim Start: Passung für Typen nachholen, deren Mappen noch nie geprüft wurden. */
@@ -784,7 +894,10 @@ export class Dienst {
     await this.pruefeWerte(typ, werte);
     const id = istUuid(e.id) && !(await this.repo.holeMappe(e.id)) ? e.id : randomUUID();
     const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), benutzerId, demo);
-    if (!demo) await this.notiere(m.id, benutzerId, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, werte) });
+    if (!demo) {
+      await this.notiere(m.id, benutzerId, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, werte) });
+      await this.pruefeErwaehnungen(typ, m.id, {}, werte, benutzerId);
+    }
     const titel = (await this.aktualisiereTitel([m.id])).get(m.id);
     if (typ.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
     return { ...m, titel };
@@ -806,6 +919,9 @@ export class Dienst {
     const aenderungen = await this.aenderungen(typ, m.werte, werte);
     const neu = await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), benutzerId);
     if (aenderungen.length) await this.notiere(id, benutzerId, 'geaendert', { aenderungen });
+    // Gespeichert heißt: passt wieder – eine „passt nicht“-Aufgabe ist damit erledigt.
+    await this.repo.aufgabenZurPassung([{ id, problem: null }]);
+    await this.pruefeErwaehnungen(typ, id, m.werte, werte, benutzerId);
     const titel = (await this.aktualisiereTitel([id])).get(id);
     if (typ.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
     return { ...neu, titel };
@@ -924,6 +1040,7 @@ export class Dienst {
     if (alt) await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), von);
     else await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), von, false, kennung);
     if (aenderungen.length) await this.notiere(id, von, alt ? 'geaendert' : 'angelegt', { aenderungen });
+    if (alt) await this.repo.aufgabenZurPassung([{ id, problem: null }]);
     await this.aktualisiereTitel([id]);
     // Hat der Administrator den Typ um Pflichtfelder erweitert, landet die Mappe im Eingang.
     await this.passungFuer(typ, [id]);

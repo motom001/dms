@@ -15,6 +15,7 @@ import { MODULE, protokoll, STUFEN, type Stufe } from './protokoll';
 import type { Betrieb } from './betrieb';
 import { maskiere, type Tresor } from './tresor';
 import type { Texterkennung } from './texterkennung';
+import type { Aufgabenmail } from './aufgabenmail';
 
 const L = {
   konto: protokoll.modul('konto'), ablage: protokoll.modul('ablage'), werkbank: protokoll.modul('werkbank'),
@@ -88,6 +89,8 @@ export interface RoutenExtras {
   tresor?: Tresor;
   /** Texterkennung und Volltext (#45). */
   texterkennung?: Texterkennung;
+  /** Tägliche Zusammenfassung der Aufgaben (#54). */
+  aufgabenmail?: Aufgabenmail;
   /** API-Schlüssel (#20). */
   apiSchluessel?: ApiSchluesselDienst;
   /** Für Tests: Abruf fremder Adressen beim Versionsabgleich. */
@@ -101,6 +104,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const log = x.log ?? ((m: string) => L.mail.warn(m));
   const typName = async (id: string) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? id;
   const betrieb = () => { if (!x.betrieb) throw new Fachfehler(404, 'Betriebseinstellungen sind nicht eingerichtet.'); return x.betrieb; };
+  const mail = () => { if (!x.aufgabenmail) throw new Fachfehler(404, 'Die Aufgaben-Mail ist nicht eingerichtet.'); return x.aufgabenmail; };
   const ocr = () => { if (!x.texterkennung) throw new Fachfehler(404, 'Die Texterkennung ist nicht eingerichtet.'); return x.texterkennung; };
   const tresor = () => { if (!x.tresor) throw new Fachfehler(404, 'Die Verschlüsselung ist nicht eingerichtet.'); return x.tresor; };
   const schluessel = () => { if (!x.apiSchluessel) throw new Fachfehler(404, 'API-Schlüssel sind nicht eingerichtet.'); return x.apiSchluessel; };
@@ -412,6 +416,18 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const d = await dienst.holeMappe(a.params.id);
       return ok(klartext ? { ...d, mappe: (await dienst.entschluesselePasswoerter([d.mappe], klartext, ich(a).id))[0] } : d);
     } },
+    // Aufgaben (#54, #56)
+    { methode: 'GET', pfad: '/api/aufgaben', zugang: 'angemeldet', handler: async (a) => ok(await dienst.meineAufgaben(ich(a))) },
+    { methode: 'GET', pfad: '/api/mappen/:id/aufgaben', zugang: 'angemeldet', handler: async (a) => ok(await dienst.aufgabenVon(a.params.id)) },
+    { methode: 'POST', pfad: '/api/mappen/:id/aufgaben', zugang: 'angemeldet', handler: async (a) => ok(await dienst.legeAufgabeAn(a.params.id, a.body, ich(a).id), 201) },
+    { methode: 'POST', pfad: '/api/aufgaben/:id/erledigt', zugang: 'angemeldet', handler: async (a) => ok(await dienst.erledigeAufgabe(a.params.id, ich(a))) },
+    { methode: 'POST', pfad: '/api/aufgaben/:id/delegieren', zugang: 'angemeldet', handler: async (a) => ok(await dienst.delegiereAufgabe(a.params.id, b(a).empfaengerId, ich(a))) },
+    { methode: 'GET', pfad: '/api/werkbank/aufgaben', zugang: 'admin', handler: async (a) => ok({
+      aufgaben: await dienst.alleAufgaben(a.query.erledigt !== undefined),
+      mail: x.aufgabenmail ? await x.aufgabenmail.einstellung() : null,
+    }) },
+    { methode: 'PUT', pfad: '/api/werkbank/aufgaben/mail', zugang: 'admin', handler: async (a) => ok(await mail().speichere(a.body)) },
+    { methode: 'POST', pfad: '/api/werkbank/aufgaben/mail/senden', zugang: 'admin', handler: async () => ok({ verschickt: await mail().sende() }) },
     // Notizen (#55)
     { methode: 'GET', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.notizen(a.params.id)) },
     { methode: 'POST', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.legeNotizAn(a.params.id, b(a).text, ich(a).id), 201) },

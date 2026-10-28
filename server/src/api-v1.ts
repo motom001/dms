@@ -65,6 +65,10 @@ export const V1_TABELLE: V1[] = [
   { methode: 'POST', pfad: '/papierkorb/{id}/wiederherstellen', gruppe: 'Ablage', zusammenfassung: 'Mappe aus dem Papierkorb wiederherstellen', beschreibung: 'Verweise auf Mappen, die es nicht mehr gibt, entfallen; passt die Mappe danach nicht zur Definition (z. B. ein eindeutiger Wert ist inzwischen vergeben), erscheint sie im Eingang.', intern: { methode: 'POST', pfad: '/api/papierkorb/:id/wiederherstellen' }, parameter: [id('der Mappe')], antwort: 'Wiederhergestellt' },
   { methode: 'DELETE', pfad: '/papierkorb/{id}', gruppe: 'Ablage', zusammenfassung: 'Mappe endgültig löschen', intern: { methode: 'DELETE', pfad: '/api/papierkorb/:id' }, parameter: [id('der Mappe')], antwort: 'Geloescht' },
   { methode: 'DELETE', pfad: '/papierkorb', gruppe: 'Ablage', zusammenfassung: 'Eigenen Papierkorb leeren', intern: { methode: 'DELETE', pfad: '/api/papierkorb' }, antwort: 'Geloescht' },
+  { methode: 'GET', pfad: '/aufgaben', gruppe: 'Ablage', zusammenfassung: 'Meine offenen Aufgaben', beschreibung: 'Aufgaben für den Benutzer des Schlüssels (Administratoren: auch die für alle Administratoren), mit Titel und Typ der Mappe.', intern: { methode: 'GET', pfad: '/api/aufgaben' }, antwort: 'AufgabenListe' },
+  { methode: 'POST', pfad: '/mappen/{id}/aufgaben', gruppe: 'Ablage', zusammenfassung: 'Aufgabe vergeben', intern: { methode: 'POST', pfad: '/api/mappen/:id/aufgaben' }, parameter: [id('der Mappe')], body: 'AufgabeEingabe', antwort: 'Aufgabe', status: 201 },
+  { methode: 'POST', pfad: '/aufgaben/{id}/erledigt', gruppe: 'Ablage', zusammenfassung: 'Aufgabe erledigen', beschreibung: '„Passt nicht“-Aufgaben erledigen sich selbst (409).', intern: { methode: 'POST', pfad: '/api/aufgaben/:id/erledigt' }, parameter: [id('der Aufgabe')], antwort: 'Aufgabe' },
+  { methode: 'POST', pfad: '/aufgaben/{id}/delegieren', gruppe: 'Ablage', zusammenfassung: 'Aufgabe weitergeben', intern: { methode: 'POST', pfad: '/api/aufgaben/:id/delegieren' }, parameter: [id('der Aufgabe')], body: 'Delegieren', antwort: 'Aufgabe' },
   { methode: 'GET', pfad: '/mappen/{id}/notizen', gruppe: 'Ablage', zusammenfassung: 'Notizen einer Mappe', intern: { methode: 'GET', pfad: '/api/mappen/:id/notizen' }, parameter: [id('der Mappe')], antwort: 'NotizListe' },
   { methode: 'POST', pfad: '/mappen/{id}/notizen', gruppe: 'Ablage', zusammenfassung: 'Notiz anlegen', beschreibung: 'text als formatierter Text (Markdown).', intern: { methode: 'POST', pfad: '/api/mappen/:id/notizen' }, parameter: [id('der Mappe')], body: 'NotizEingabe', antwort: 'Notiz', status: 201 },
   { methode: 'PUT', pfad: '/notizen/{id}', gruppe: 'Ablage', zusammenfassung: 'Notiz ändern', intern: { methode: 'PUT', pfad: '/api/notizen/:id' }, parameter: [id('der Notiz')], body: 'NotizEingabe', antwort: 'Notiz' },
@@ -188,7 +192,7 @@ const SCHEMAS: Record<string, Schema> = {
   MappeDetails: {
     type: 'object',
     properties: {
-      mappe: ref('Mappe'), dokumente: liste('Dokument'), notizen: liste('Notiz'), bezuege: { type: 'object', additionalProperties: ref('Bezug') },
+      mappe: ref('Mappe'), dokumente: liste('Dokument'), notizen: liste('Notiz'), aufgaben: liste('Aufgabe'), bezuege: { type: 'object', additionalProperties: ref('Bezug') },
       rueckverweise: { type: 'array', items: { type: 'object', properties: { quelleId: uuid, quelleTypId: uuid, feldKey: { type: 'string' }, titel: { type: 'string' } } } },
     },
   },
@@ -196,9 +200,21 @@ const SCHEMAS: Record<string, Schema> = {
     type: 'object',
     properties: {
       gesamt: { type: 'integer' }, von: { type: 'integer' }, mappen: liste('Mappe'), bezuege: { type: 'object', additionalProperties: ref('Bezug') },
+      aufgaben: { type: 'object', description: 'Nur im Eingang: offene Aufgaben je Mappen-Id', additionalProperties: { type: 'string' } },
       ausschnitte: { type: 'object', description: 'Nur mit volltext=true: Fundstelle je Mappen-Id; Treffer zwischen den Steuerzeichen U+0002 und U+0003', additionalProperties: { type: 'object', properties: { dokument: { type: 'string' }, text: { type: 'string' } } } },
     },
   },
+  Aufgabe: {
+    type: 'object',
+    properties: {
+      id: uuid, mappeId: uuid, empfaengerId: { ...uuid, nullable: true, description: 'null = Administratoren' }, art: { type: 'string', enum: ['passung', 'erwaehnung', 'manuell'] },
+      text: { type: 'string' }, feldKey: { type: 'string', nullable: true }, erstellt: zeit, erstelltVon: { ...uuid, nullable: true },
+      erledigt: { ...zeit, nullable: true }, erledigtVon: { ...uuid, nullable: true }, mappeTitel: { type: 'string' }, typId: uuid,
+    },
+  },
+  AufgabenListe: liste('Aufgabe'),
+  AufgabeEingabe: { type: 'object', required: ['empfaengerId', 'text'], properties: { empfaengerId: uuid, text: { type: 'string' } } },
+  Delegieren: { type: 'object', required: ['empfaengerId'], properties: { empfaengerId: uuid } },
   Notiz: { type: 'object', properties: { id: uuid, mappeId: uuid, text: { type: 'string', description: 'Markdown' }, erstellt: zeit, erstelltVon: { ...uuid, nullable: true }, geaendert: zeit, geaendertVon: { ...uuid, nullable: true } } },
   NotizListe: liste('Notiz'),
   NotizEingabe: { type: 'object', required: ['text'], properties: { text: { type: 'string' } } },

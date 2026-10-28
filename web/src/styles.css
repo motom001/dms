@@ -574,3 +574,14 @@ input.kurz { width: 7em; }
 .notizliste li { border-left: 3px solid var(--warn); background: var(--warn-zart); padding: 8px 12px; border-radius: 0 6px 6px 0; display: flex; flex-direction: column; gap: 4px; }
 .notizkopf { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: space-between; }
 .neuenotiz { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--linie); padding-top: 10px; }
+/* Aufgaben (#54) */
+.aufgabenhinweis ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.aufgabenhinweis li { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; }
+.aufgabenhinweis li:not(.meine) { opacity: .85; }
+.aufgabentext { flex: 1 1 18em; min-width: 0; color: var(--tinte); }
+.aufgabenaktionen, .weitergeben { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.eigenschaft.breit { grid-column: 1 / -1; }
+
+/* Werkbank → Aufgaben (#54) */
+.aufgabenzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 2px 12px 10px; }
+.aufgabenzeile select { flex: 1 1 160px; min-width: 0; }

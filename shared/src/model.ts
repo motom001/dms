@@ -531,6 +531,21 @@ export interface Dokument {
   ocr?: OcrStand;
 }
 
+/* ---------- Aufgaben (#54, #56) ---------- */
+export const AUFGABENARTEN = { passung: 'Passt nicht', erwaehnung: 'Erwähnung', manuell: 'Aufgabe' } as const;
+export type Aufgabenart = keyof typeof AUFGABENARTEN;
+export interface Aufgabe {
+  id: string; mappeId: string;
+  /** null = Administratoren. */
+  empfaengerId: string | null;
+  art: Aufgabenart; text: string; feldKey?: string | null;
+  erstellt: string; erstelltVon: string | null;
+  erledigt: string | null; erledigtVon: string | null;
+  /** Für Listen: Titel und Typ der Mappe. */
+  mappeTitel?: string; typId?: string;
+}
+export const AUFGABE_MAX = 2000;
+
 /* ---------- Notizen (#55) ---------- */
 export interface Notiz { id: string; mappeId: string; text: string; erstellt: string; erstelltVon: string | null; geaendert: string; geaendertVon: string | null }
 export const NOTIZ_MAX = 20_000;

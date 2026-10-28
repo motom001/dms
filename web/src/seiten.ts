@@ -17,6 +17,8 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
   const [mappen, setMappen] = useState<Mappe[]>([]);
   /** Fundstellen im Volltext je Mappe (#45). */
   const [ausschnitte, setAusschnitte] = useState<Record<string, Ausschnitt>>({});
+  /** Eingang: offene Aufgaben je Mappe (#54). */
+  const [aufgaben, setAufgaben] = useState<Record<string, string>>({});
   const [bezuege, setBezuege] = useState<Bezuege>({});
   const [gesamt, setGesamt] = useState<number | null>(null);
   const [laedt, setLaedt] = useState(false);
@@ -35,6 +37,7 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
       setMappen((alt) => (ersetzen ? s.mappen : [...alt, ...s.mappen]));
       setBezuege((alt) => (ersetzen ? s.bezuege : { ...alt, ...s.bezuege }));
       setAusschnitte((alt) => (ersetzen ? s.ausschnitte ?? {} : { ...alt, ...s.ausschnitte }));
+      setAufgaben((alt) => (ersetzen ? s.aufgaben ?? {} : { ...alt, ...s.aufgaben }));
       geladen.current = (ersetzen ? 0 : geladen.current) + s.mappen.length;
       setFehler(undefined);
     } catch (e) {
@@ -58,5 +61,5 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
     void lade(mappen.length, SEITE, false);
   }, [laedt, gesamt, mappen.length, lade]);
 
-  return { mappen, bezuege, ausschnitte, gesamt, laedt, fehler, mehr, alle: gesamt !== null && mappen.length >= gesamt };
+  return { mappen, bezuege, ausschnitte, aufgaben, gesamt, laedt, fehler, mehr, alle: gesamt !== null && mappen.length >= gesamt };
 }

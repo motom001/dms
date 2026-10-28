@@ -76,7 +76,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           ? <PapierkorbListe z={papierkorb} werkbank={false} offen={dritt} />
           : sicht === 'eingang'
           ? <Liste key="eingang" sicht="eingang" titel="Eingang" offen={dritt}
-              beschreibung="Deine Mappen, die nicht zur aktuellen Definition ihres Mappentyps passen. Sie verschwinden von hier, sobald sie korrigiert sind."
+              beschreibung="Mappen, an denen du etwas tun sollst: Sie passen nicht mehr zur Definition, jemand hat dich erwähnt oder dir eine Aufgabe gegeben."
               leerText="Nichts zu tun." />
           : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} titel={verwaltet?.name ?? typ!.name} beschreibung={verwaltet ? verwaltet.beschreibung : typ?.beschreibung}
               offen={dritt} neu={!!typ && darfErstellen(typ)} leerText="Noch keine Mappen in dieser Sicht." />
@@ -196,7 +196,7 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
       {s.gesamt === 0
         ? <p className="leise leerliste">{suche ? 'Nichts gefunden.' : p.leerText}</p>
         : tabelle
-          ? <Tabelle sicht={p.sicht} typ={p.typ} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} ausschnitte={s.ausschnitte} offen={p.offen}
+          ? <Tabelle sicht={p.sicht} typ={p.typ} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} ausschnitte={s.ausschnitte} aufgaben={s.aufgaben} offen={p.offen}
               sortierung={sortierung} sortiere={sortiere} ende={nachladen ? (el) => { ende.current = el; } : undefined} nachladen={nachladen} />
           : <ul className="mappenliste">
               {s.mappen.map((m) => {
@@ -208,7 +208,9 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
                       <span className="titel">{k.titel}</span>
                       <Unter text={k.unter} />
                       {s.ausschnitte[m.id] && <Fundstelle a={s.ausschnitte[m.id]} />}
-                      {m.passt === false && <span className="problem">{p.typ ? 'passt nicht zur Definition' : m.problem}</span>}
+                      {p.sicht === 'eingang' && s.aufgaben[m.id]
+                        ? <span className="problem">{s.aufgaben[m.id]}</span>
+                        : m.passt === false && <span className="problem">{p.typ ? 'passt nicht zur Definition' : m.problem}</span>}
                     </Link>
                   </li>
                 );
@@ -231,7 +233,7 @@ function kompakt(sichtTyp: Mappentyp | undefined, typ: Mappentyp | undefined, m:
 }
 
 function Tabelle(p: {
-  sicht: string; typ?: Mappentyp; spalten: string[]; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; offen?: string;
+  sicht: string; typ?: Mappentyp; spalten: string[]; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; offen?: string;
   sortierung: Sortierung | null; sortiere(spalte: string): void; ende?: (el: HTMLElement | null) => void; nachladen: ReactNode;
 }) {
   const d = useDaten();
@@ -257,7 +259,7 @@ function Tabelle(p: {
                 </th>
               );
             })}
-            {p.sicht === 'eingang' && <th>Problem</th>}
+            {p.sicht === 'eingang' && <th>Aufgabe</th>}
           </tr>
         </thead>
         <tbody>
@@ -270,7 +272,7 @@ function Tabelle(p: {
                   const text = zelle(k, m, typ, p.bezuege, d.person);
                   return <td key={k} className={rechts(k) ? 'rechts' : kurz(k) ? 'kurz' : ''}>{i === 0 ? <><Link to={ziel}>{text || titelOder(m.titel)}</Link>{p.ausschnitte?.[m.id] && <Fundstelle a={p.ausschnitte[m.id]} />}</> : text}</td>;
                 })}
-                {p.sicht === 'eingang' && <td className="problemzelle">{m.problem}</td>}
+                {p.sicht === 'eingang' && <td className="problemzelle">{p.aufgaben?.[m.id] ?? m.problem}</td>}
               </tr>
             );
           })}
