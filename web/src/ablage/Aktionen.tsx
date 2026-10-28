@@ -7,6 +7,7 @@ import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { Formatiert } from './Formatiert';
+import { NamenOhneLinks } from '../Person';
 
 /** Aktionen an der Mappe (#58): per E-Mail versenden, als PDF exportieren. */
 
@@ -15,7 +16,7 @@ const groesse = (b: number) => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 
 export const EMAIL_WARNUNG = 20 * 1024 * 1024;
 const EMAIL_HOECHSTENS = 50_000_000;
 
-export function Aktionsmenue({ email, drucken }: { email(): void; drucken(): void }) {
+export function Aktionsmenue({ aufgabe, email, drucken }: { aufgabe(): void; email(): void; drucken(): void }) {
   const [offen, setOffen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -34,6 +35,7 @@ export function Aktionsmenue({ email, drucken }: { email(): void; drucken(): voi
       </button>
       {offen && (
         <div className="menue" role="menu">
+          <button type="button" role="menuitem" onClick={waehle(aufgabe)}><span aria-hidden="true">✓</span> Aufgabe vergeben</button>
           <button type="button" role="menuitem" onClick={waehle(email)}><span aria-hidden="true">✉</span> Per E-Mail versenden</button>
           <button type="button" role="menuitem" onClick={waehle(drucken)}><span aria-hidden="true">⎙</span> Als PDF exportieren</button>
         </div>
@@ -124,7 +126,7 @@ export function Druckansicht({ typ, details, fertig }: { typ: Mappentyp; details
   const register = typ.register?.length ? typ.register : standardRegister(typ.felder);
   const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
   return createPortal(
-    <article className="druckansicht">
+    <NamenOhneLinks><article className="druckansicht">
       <p className="ueber">{typ.name}</p>
       <h1>{titelOder(mappe.titel)}</h1>
       <p className="klein">Angelegt {zeit(mappe.erstellt)} von {d.person(mappe.erstelltVon)} · zuletzt geändert {zeit(mappe.geaendert)} von {d.person(mappe.geaendertVon)}</p>
@@ -144,7 +146,7 @@ export function Druckansicht({ typ, details, fertig }: { typ: Mappentyp; details
       {details.dokumente.length > 0 && <section><h2>Dokumente</h2><ul>{details.dokumente.map((x) => <li key={x.id}>{x.name} ({groesse(x.groesse)})</li>)}</ul></section>}
       {(details.notizen ?? []).length > 0 && <section><h2>Notizen</h2>{details.notizen.map((n) => <div key={n.id} className="notiz"><p className="klein">{zeit(n.erstellt)} · {d.person(n.erstelltVon)}</p><Formatiert text={n.text} /></div>)}</section>}
       <p className="klein fuss">Gedruckt am {new Date().toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}</p>
-    </article>,
+    </article></NamenOhneLinks>,
     document.body,
   );
 }

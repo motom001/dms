@@ -106,6 +106,10 @@ export function speicherRepo(): Repo {
       mappen.set(id, m); verweise.set(id, kopie(vs));
       return kopie(m);
     },
+    async beruehreMappe(id, benutzerId) {
+      const m = mappen.get(id);
+      if (m) mappen.set(id, { ...m, geaendert: jetzt(), geaendertVon: benutzerId });
+    },
     async holeSystemMappe(kennung) { const m = [...mappen.values()].find((x) => x.systemKennung === kennung); return m && kopie(m); },
     async loescheMappe(id) {
       mappen.delete(id); verweise.delete(id);

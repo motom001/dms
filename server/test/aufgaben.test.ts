@@ -76,6 +76,22 @@ describe('Aufgaben (#54, #56)', () => {
     assert.equal((await d.meineAufgaben(B)).length, 0);
   });
 
+  it('Erwähnungen in Notizen werden Aufgaben (#81)', async () => {
+    const { d, t, A, B, ben, anna } = await aufbau();
+    const m = await d.legeMappeAn({ typId: t.id, werte: { nr: '11' } }, A.id);
+    const n = await d.legeNotizAn(m.id, `Bitte Rückruf, ${erwaehnung('Ben', ben.id)}`, A.id);
+    let meine = await d.meineAufgaben(B);
+    assert.deepEqual(meine.map((x) => [x.art, x.text]), [['erwaehnung', 'Erwähnt von Anna in einer Notiz: Bitte Rückruf, @Ben']]);
+    await d.aendereNotiz(n.id, `Bitte Rückruf heute, ${erwaehnung('Ben', ben.id)}`, A.id);
+    assert.equal((await d.meineAufgaben(B)).length, 1, 'keine zweite Aufgabe');
+    await d.legeNotizAn(m.id, `Ich selbst: ${erwaehnung('Anna', anna.id)}`, A.id);
+    assert.equal((await d.meineAufgaben(A)).length, 0, 'keine Aufgabe für sich selbst');
+    await d.aendereNotiz(n.id, 'ohne Erwähnung', A.id);
+    meine = await d.meineAufgaben(B);
+    assert.equal(meine.length, 1, 'bleibt offen');
+    assert.ok((await d.historie(m.id)).some((x) => x.daten.text === 'Erwähnung von Ben in einer Notiz entfernt'));
+  });
+
   it('schickt einmal am Tag eine Zusammenfassung an alle mit offenen Aufgaben', async () => {
     const { d, konten, t, A, ben } = await aufbau();
     const m = await d.legeMappeAn({ typId: t.id, werte: { nr: '11' } }, A.id);

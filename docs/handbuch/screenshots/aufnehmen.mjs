@@ -257,7 +257,8 @@ async function main() {
   await s.locator('.notizliste li').first().waitFor();
   await bild(s, 'notizen');
   await s.getByRole('button', { name: /Notizen/ }).click();
-  await s.getByRole('button', { name: /Aufgabe vergeben/ }).click();
+  await s.getByRole('button', { name: /Aktionen/ }).click();
+  await s.getByRole('menuitem', { name: /Aufgabe vergeben/ }).click();
   const neueAufgabe = s.getByRole('region', { name: 'Aufgabe vergeben' });
   await neueAufgabe.getByLabel('Empfänger').selectOption({ label: MITGLIED.name });
   await neueAufgabe.getByPlaceholder(/Rechnung/).fill('Sonderkündigung vorbereiten');

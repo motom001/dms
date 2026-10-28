@@ -14,7 +14,7 @@ Notizen sind kurze, formatierte Texte an einer Mappe – „Mit Herrn Müller te
 
 ## Erwähnungen
 
-In formatierten Texten und Notizen erwähnst du mit **@** einen Benutzer. Er bekommt eine [Aufgabe](eingang.md), und die Mappe steht in seinem Eingang, bis er sie erledigt.
+In formatierten Texten und Notizen erwähnst du mit **@** einen Benutzer: Tippe **@** und die ersten Buchstaben, die Vorschläge erscheinen direkt an der Schreibstelle; mit ↑/↓ wählen, Enter oder Tab übernehmen, Esc schließt. Er bekommt eine [Aufgabe](eingang.md), und die Mappe steht in seinem Eingang, bis er sie erledigt.
 
 - Speicherst du den Text noch einmal, entsteht keine zweite Aufgabe.
 - Nimmst du die Erwähnung wieder heraus, bleibt die Aufgabe offen; im Protokoll steht, dass sie entfernt wurde.
@@ -33,4 +33,6 @@ Hat der Mappentyp ein Register **Protokoll**, zeigt es die Geschichte der Mappe,
 
 ![Protokoll einer Mappe](bilder/protokoll.png)
 
-Einträge lassen sich nicht ändern oder löschen. Das Protokoll beginnt mit Version 0.12; ältere Änderungen sind nicht erfasst.
+Einträge mit einem **▸** davor lassen sich aufklappen; hinten steht, was dahinter steckt (z. B. „3 Felder“, „vorher/nachher“, „2 Anhänge“). **Alle aufklappen** öffnet alle auf einmal. Namen führen zur Mappe des Benutzers.
+
+Einträge lassen sich nicht ändern oder löschen. Das Protokoll beginnt mit Version 0.12; ältere Änderungen sind nicht erfasst, und Einträge vor Version 0.12.1 haben teils weniger Einzelheiten.

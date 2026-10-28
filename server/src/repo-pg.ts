@@ -283,6 +283,9 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         return alsMappe(r);
       });
     },
+    async beruehreMappe(id, benutzerId) {
+      await sql`UPDATE mappen SET geaendert = now(), geaendert_von = ${benutzerId} WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+    },
     async holeSystemMappe(kennung) {
       const [r] = await sql`SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} AND system_kennung = ${kennung}`;
       return r ? alsMappe(r) : undefined;

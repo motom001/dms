@@ -5,6 +5,7 @@ import { BenutzerWahl } from '../ablage/Aufgaben';
 import { useDaten } from '../daten';
 import { Link } from '../ort';
 import { titelOder } from '../seiten';
+import { Person } from '../Person';
 
 /** Werkbank → Aufgaben (#54): alle offenen (oder erledigten) Aufgaben, weitergeben, tägliche Mail. */
 const datum = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
@@ -49,8 +50,8 @@ export function AufgabenListe({ z }: { z: AufgabenZustand }) {
                 </Link>
                 <div className="aufgabenzeile">
                   {z.erledigt
-                    ? <span className="leise klein">erledigt von {a.erledigtVon ? d.person(a.erledigtVon) : 'selbst (Mappe passt wieder)'}</span>
-                    : <><span className="leise klein">für {a.empfaengerId ? d.person(a.empfaengerId) : 'Administratoren'} · weitergeben an</span>
+                    ? <span className="leise klein">erledigt von {a.erledigtVon ? <Person id={a.erledigtVon} /> : 'selbst (Mappe passt wieder)'}</span>
+                    : <><span className="leise klein">für {a.empfaengerId ? <Person id={a.empfaengerId} /> : 'Administratoren'} · weitergeben an</span>
                         <BenutzerWahl label={`Aufgabe „${a.text}“ weitergeben an`} wert="" setze={(an) => { if (an) void weiter(a, an); }} ohne={a.empfaengerId} /></>}
                 </div>
               </li>

@@ -23,6 +23,9 @@
 }
 
 * { box-sizing: border-box; }
+/* iPhone (#60): Seite nie breiter als der Bildschirm; keine automatische Schriftvergrößerung im Querformat. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html, body { max-width: 100%; overflow-x: clip; }
 body { margin: 0; background: var(--grund); color: var(--tinte); font: calc(14px * var(--skala, 1))/1.45 var(--schrift); }
 h1, h2, h3 { margin: 0; line-height: 1.2; text-wrap: balance; }
 h1 { font-size: calc(24px * var(--skala, 1)); font-weight: 700; letter-spacing: -0.015em; }
@@ -38,6 +41,9 @@ code, .mono { font-family: var(--mono); font-size: calc(12.5px * var(--skala, 1)
 /* Kopf */
 .kopf { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 24px; padding: 10px max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left)); background: var(--flaeche); border-bottom: 1px solid var(--linie); }
 .marke { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: calc(16px * var(--skala, 1)); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+a.marke { color: inherit; text-decoration: none; border-radius: 6px; }
+a.marke:focus-visible { outline: 2px solid var(--akzent); outline-offset: 3px; }
 .marke .m1 { fill: var(--akzent); } .marke .m2 { fill: var(--gruen); }
 .bereiche { display: flex; gap: 4px; }
 .bereiche a { padding: 6px 12px; border-radius: 6px; color: var(--leise); text-decoration: none; font-weight: 600; }
@@ -207,7 +213,7 @@ tbody tr:last-child > * { border-bottom: 0; }
 /* ---------- Ablage: drei Spalten ---------- */
 .rahmen.ablage, .rahmen.werkbank { height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
 .rahmen.ablage .rumpf, .rahmen.werkbank .rumpf { flex: 1; min-height: 0; max-width: none; width: 100%; padding-top: 0; padding-bottom: 0; }
-.drei { flex: 1; min-height: 0; display: grid; grid-template-columns: 220px minmax(260px, 360px) minmax(0, 1fr); gap: 0; margin: 0 calc(-1 * max(16px, env(safe-area-inset-left))) 0 calc(-1 * max(16px, env(safe-area-inset-right))); }
+.drei { flex: 1; min-height: 0; min-width: 0; display: grid; grid-template-columns: 220px minmax(260px, 360px) minmax(0, 1fr); gap: 0; margin: 0 calc(-1 * max(16px, env(safe-area-inset-right))) 0 calc(-1 * max(16px, env(safe-area-inset-left))); }
 .spalte { min-width: 0; min-height: 0; overflow-y: auto; padding: 18px 16px 32px; display: flex; flex-direction: column; gap: 12px; }
 .spalte.sichten { border-right: 1px solid var(--linie); padding-left: max(16px, env(safe-area-inset-left)); }
 .spalte.liste { border-right: 1px solid var(--linie); background: var(--flaeche); }
@@ -319,7 +325,11 @@ a.textknopf { text-decoration: none; }
   .drei { grid-template-columns: minmax(0, 1fr); }
   .drei[data-ebene="liste"] .spalte.mappe, .drei[data-ebene="mappe"] .spalte.sichten, .drei[data-ebene="mappe"] .spalte.liste { display: none; }
   .spalte.sichten { border-right: 0; border-bottom: 1px solid var(--linie); overflow: visible; padding-bottom: 12px; }
-  .sichtliste { flex-direction: row; overflow-x: auto; }
+  .sichtliste { flex-direction: row; overflow-x: auto; min-width: 0; max-width: 100%; }
+  .spalte.sichten { overflow-x: clip; }
+  .typliste { min-width: 0; max-width: 100%; }
+  .kopf { min-width: 0; max-width: 100%; }
+  .kopf > * { min-width: 0; }
   .sichtliste hr { display: none; }
   .unterstuetzen { margin-top: 8px; }
   .sicht { flex: none; border: 1px solid var(--linie); background: var(--flaeche); }
@@ -560,7 +570,20 @@ input.kurz { width: 7em; }
 .historie { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .historie li { border-bottom: 1px solid var(--linie); padding: 8px 0; }
 .historie summary, .historie .zeile { display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: baseline; cursor: default; }
-.historie summary { cursor: pointer; }
+.historie summary { cursor: pointer; list-style: none; border-radius: 6px; }
+.historie summary::-webkit-details-marker { display: none; }
+.historie summary:hover { background: var(--senke); }
+.historie summary:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+/* Aufklappbar erkennbar (#80): Zeichen vorne, Hinweis hinten; nicht aufklappbare bleiben bündig. */
+.historie .zeichen { flex: none; width: 1em; color: var(--akzent); font-size: calc(11px * var(--skala, 1)); }
+.historie details > summary .zeichen::before { content: '▸'; }
+.historie details[open] > summary .zeichen::before { content: '▾'; }
+.historie .mehr { flex: none; font-size: calc(11.5px * var(--skala, 1)); }
+.historie .einzelheiten { padding: 6px 0 4px 1.6em; }
+.historie .einzeln { margin: 4px 0; }
+.historie .vergleich { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.historie .mehrzeilig { white-space: pre-wrap; }
+.historie-kopf { display: flex; gap: 12px; justify-content: flex-end; margin-bottom: 4px; }
 .historie .wann { color: var(--leise); font-variant-numeric: tabular-nums; font-size: calc(12.5px * var(--skala, 1)); min-width: 8.5em; }
 .historie .wer { color: var(--leise); font-size: calc(12.5px * var(--skala, 1)); min-width: 8em; }
 .historie .was { flex: 1 1 14em; min-width: 0; overflow-wrap: anywhere; }
@@ -614,3 +637,24 @@ input.kurz { width: 7em; }
   @page { margin: 18mm; }
 }
 .festwert .mehrzeilig { white-space: pre-wrap; }
+
+/* Aufgabe weitergeben (#82) */
+.aufgabenaktionen { display: flex; gap: 8px; align-items: center; flex: none; }
+.aufgabenhinweis .weitergeben { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 2px; }
+.weitergeben select, .aufgabenzeile select { width: auto; min-width: 180px; max-width: 260px; flex: 0 1 260px; padding-top: 4px; padding-bottom: 4px; }
+@media (max-width: 560px) { .weitergeben select { flex: 1 1 100%; max-width: none; } }
+
+/* @-Vorschläge an der Schreibposition (#64) */
+.wahlliste.am-cursor { right: auto; width: max-content; min-width: 180px; max-width: min(320px, 100%); }
+.wahlliste.am-cursor.oben { transform: translateY(-100%); margin-top: -4px; }
+.wahlliste button.an { background: var(--akzent-zart); }
+
+/* Löschen vorab prüfen (#79) */
+.loeschhindernis { padding: 8px 2px 0; }
+.loeschhindernis ul { margin: 4px 0 0; padding-left: 18px; }
+.textknopf.gefahr:disabled { color: var(--leise); cursor: not-allowed; text-decoration: none; }
+
+/* Benutzernamen als Link (#65) */
+a.person { color: var(--akzent); text-decoration: none; }
+a.person:hover, a.person:focus-visible { text-decoration: underline; }
+.person.weg { color: var(--leise); }

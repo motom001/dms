@@ -4,6 +4,7 @@ import { api, type PapierkorbEintrag } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link } from '../ort';
 import { titelOder } from '../seiten';
+import { Person } from '../Person';
 
 /**
  * Papierkorb (#43). In der Ablage sieht jeder, was er selbst gelöscht hat; in der Werkbank
@@ -174,9 +175,9 @@ export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boole
         <p className="ueber">{typ?.name ?? 'Mappe'} · im Papierkorb</p>
         <h1>{titelOder(e.titel)}</h1>
         <dl className="index">
-          <div><dt>Gelöscht</dt><dd>{datumZeit(e.geloescht)}{werkbank ? ` von ${d.person(e.geloeschtVon)}` : ''}</dd></div>
-          <div><dt>Angelegt</dt><dd>{datumZeit(e.erstellt)} von {d.person(e.erstelltVon)}</dd></div>
-          <div><dt>Zuletzt geändert</dt><dd>{datumZeit(e.geaendert)} von {d.person(e.geaendertVon)}</dd></div>
+          <div><dt>Gelöscht</dt><dd>{datumZeit(e.geloescht)}{werkbank && <> von <Person id={e.geloeschtVon} /></>}</dd></div>
+          <div><dt>Angelegt</dt><dd>{datumZeit(e.erstellt)} von <Person id={e.erstelltVon} /></dd></div>
+          <div><dt>Zuletzt geändert</dt><dd>{datumZeit(e.geaendert)} von <Person id={e.geaendertVon} /></dd></div>
         </dl>
       </div>
       <section className="blatt">

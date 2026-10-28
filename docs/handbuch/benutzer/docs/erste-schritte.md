@@ -36,6 +36,8 @@ Die Ablage ist in **drei Spalten** geteilt, von groß nach klein:
 
 ![Drei Spalten: Sichten, Liste, Mappe](bilder/ablage.png)
 
+Ein Klick auf **DMS** oben links bringt dich von überall zurück zur Startseite, dem [Eingang](eingang.md).
+
 ### Spalten anpassen
 
 Zwischen den Spalten liegen schmale Griffe:
