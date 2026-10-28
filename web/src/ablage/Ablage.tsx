@@ -188,6 +188,7 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
         </p>
       )}
       {s.fehler && <div className="hinweis schlecht"><p>{s.fehler}</p></div>}
+      <div className="listenrumpf">
       {s.gesamt === 0
         ? <p className="leise leerliste">{suche ? 'Nichts gefunden.' : p.leerText}</p>
         : tabelle
@@ -210,6 +211,7 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
               })}
               {nachladen && <li ref={(el) => { ende.current = el; }} className="nachladen leise klein">{nachladen}</li>}
             </ul>}
+      </div>
     </>
   );
 }

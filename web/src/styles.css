@@ -253,8 +253,8 @@ button.aufklapper:hover { background: var(--flaeche); color: var(--tinte); }
 
 /* ---------- Register an der Mappe (Trennblätter) ---------- */
 .blatt.mitregistern { padding-top: 0; gap: 14px; }
-.registertaben { display: flex; gap: 2px; margin: 0 -20px; padding: 10px 14px 0; border-bottom: 1px solid var(--linie); overflow-x: auto; background: var(--senke); border-radius: var(--r) var(--r) 0 0; }
-.registertab { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px 9px; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0; background: none; cursor: pointer; font-weight: 600; font-size: calc(13px * var(--skala, 1)); color: var(--leise); white-space: nowrap; margin-bottom: -1px; border-top: 3px solid transparent; }
+.registertaben { display: flex; gap: 2px; margin: 0 -20px; padding: 10px 14px 0; box-shadow: inset 0 -1px 0 var(--linie); overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; background: var(--senke); border-radius: var(--r) var(--r) 0 0; }
+.registertab { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px 9px; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0; background: none; cursor: pointer; font-weight: 600; font-size: calc(13px * var(--skala, 1)); color: var(--leise); white-space: nowrap; border-top: 3px solid transparent; }
 .registertab:hover:not(:disabled) { color: var(--tinte); }
 .registertab.an { background: var(--flaeche); border-color: var(--linie); color: var(--tinte); }
 .registertab.an.art-felder { border-top-color: var(--gruen); }
@@ -354,7 +354,7 @@ progress::-moz-progress-bar { background: var(--akzent); border-radius: 999px; }
 .refbox .gewaehlt li > :first-child { flex: 1 1 10em; min-width: min(10em, 100%); overflow-wrap: break-word; }
 .verweisaktionen { display: flex; gap: 10px; margin-left: auto; }
 .wahl { position: relative; }
-.wahl input { width: 100%; }
+.wahl > input { width: 100%; }  /* nur das Suchfeld der Verweiswahl, nicht Haken/Optionen in fieldset.wahl (#51) */
 /* Haken für weitere Rollen in der Benutzerverwaltung: nicht wie das Suchfeld der Verweiswahl auf volle Breite ziehen. */
 .rollenwahl input { width: auto; }
 .rollenwahl .haken { align-self: flex-start; }
@@ -530,3 +530,11 @@ input.kurz { width: 7em; }
 /* Stand der Texterkennung am Dokument */
 .ocrstand { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .volltext { white-space: pre-wrap; max-height: 260px; overflow: auto; font-size: calc(12px * var(--skala, 1)); background: var(--senke); border: 1px solid var(--linie); border-radius: 6px; padding: 8px 10px; margin: 6px 0 0; }
+
+/* Fester Listenkopf (#50): Kopf, Suche und Trefferzahl stehen, nur der Listenrumpf rollt. */
+.spalte.liste:has(> .listenrumpf) { overflow: hidden; padding-bottom: 0; }
+.listenrumpf { flex: 1 1 auto; min-height: 0; overflow: auto; margin: 0 -16px; padding: 0 16px 32px; display: flex; flex-direction: column; gap: 12px; }
+.listenrumpf > .trefferliste { overflow: visible; }
+.listenrumpf .trefferliste thead th { top: 0; }
+/* Listen der Werkbank: Kopf mit „+ Neu“ bleibt oben stehen. */
+.spalte.liste > .listenkopf { position: sticky; top: -18px; z-index: 3; background: var(--flaeche); margin: -18px -16px 0; padding: 18px 16px 8px; }

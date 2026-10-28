@@ -91,6 +91,7 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
       </div>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       {meldung && <div className="hinweis schlecht"><p>{meldung}</p></div>}
+      <div className="listenrumpf">
       {z.eintraege === null
         ? <p className="leise">Lade …</p>
         : !liste.length
@@ -129,6 +130,7 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
                 </table>
               </div>}
             </>}
+      </div>
     </>
   );
 }
