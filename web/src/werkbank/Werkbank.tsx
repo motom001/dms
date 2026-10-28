@@ -14,12 +14,15 @@ import { TechnikListe, TechnikPanel, useTechnik } from './Technik';
 import { TresorListe, TresorPanel, useTresor } from './Verschluesselung';
 import { AufgabenListe, AufgabenPanel, useAufgaben } from './Aufgaben';
 import { TexterkennungListe, TexterkennungPanel, useTexterkennung, WartungListe, WartungPanel } from './Texterkennung';
+import { ADMIN_HANDBUCH, UebersichtListe, UebersichtPanel, useUebersicht, WerkbankNavigation } from './Uebersicht';
+import { FehlermeldungDetail, FehlermeldungenListe, useFehlermeldungen } from './Fehlermeldungen';
 import { PapierkorbDetail, PapierkorbEinstellungen, PapierkorbListe, usePapierkorb } from '../ablage/Papierkorb';
 
 /**
  * Werkbank für Administratoren, aufgebaut wie die Ablage:
  *   Bereiche  →  Elemente des Bereichs  →  Bearbeitung
  *
+ * /werkbank                        Übersicht: was zu tun ist (#68)
  * /werkbank/typen[/:id|/neu]
  * /werkbank/benutzer[/:id|/neu]
  * /werkbank/sichten[/:id|/neu]       Sichten der Ablage (#38)
@@ -34,10 +37,11 @@ import { PapierkorbDetail, PapierkorbEinstellungen, PapierkorbListe, usePapierko
  * /werkbank/texterkennung           Texterkennung und Volltext (#45)
  * /werkbank/aufgaben               Aufgaben aller Benutzer, tägliche Zusammenfassung (#54)
  * /werkbank/wartung                 Wartungsoperationen, z. B. Volltext nachholen (#45)
+ * /werkbank/fehlermeldungen[/:id]  Fehlermeldungen der Benutzer (#70)
  */
 export function Werkbank({ teile }: { teile: string[] }) {
   const d = useDaten();
-  const [, bereich = 'typen', id] = teile;
+  const [, bereich = 'uebersicht', id] = teile;
   const benutzer = useBenutzer();
   const protokoll = useProtokoll(bereich === 'protokoll');
   const datenbank = useDatenbank(bereich === 'datenbank');
@@ -47,13 +51,21 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const papierkorb = usePapierkorb(true, bereich === 'papierkorb');
   const aufgaben = useAufgaben(bereich === 'aufgaben');
   const ocr = useTexterkennung(bereich === 'texterkennung' || bereich === 'wartung');
+  const uebersicht = useUebersicht();
+  const meldungen = useFehlermeldungen(bereich === 'fehlermeldungen');
   // Anmeldungen und Aktivität ändern sich laufend: beim Öffnen der Benutzer neu laden.
   useEffect(() => { if (bereich === 'benutzer') void benutzer.laden(); }, [bereich, id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   let liste: ReactNode = null;
   let rechts: ReactNode = <div className="platzhalter"><p>Wähle in der Liste ein Element aus.</p></div>;
 
-  if (bereich === 'typen') {
+  if (bereich === 'uebersicht') {
+    liste = <UebersichtListe u={uebersicht} />;
+    rechts = <UebersichtPanel u={uebersicht} />;
+  } else if (bereich === 'fehlermeldungen') {
+    liste = <FehlermeldungenListe z={meldungen} offen={id} />;
+    rechts = id ? <FehlermeldungDetail key={id} id={id} z={meldungen} neuLaden={async () => { await meldungen.laden(); await uebersicht.laden(); }} /> : <div className="platzhalter"><p>Wähle links eine Meldung.</p></div>;
+  } else if (bereich === 'typen') {
     liste = <TypenListe offen={id} />;
     if (id === 'neu') rechts = <TypEditor key="neu" />;
     else if (id) {
@@ -108,30 +120,33 @@ export function Werkbank({ teile }: { teile: string[] }) {
   }
 
   return (
-    <Dreiteilung ort="werkbank" ebene={id || bereich === 'demo' || bereich === 'technik' || bereich === 'betrieb' || bereich === 'verschluesselung' || bereich === 'texterkennung' || bereich === 'wartung' ? 'mappe' : 'liste'} offen={id}>
+    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung'].includes(bereich) ? 'mappe' : 'liste'} offen={id}>
       <aside className="spalte sichten" aria-label="Bereiche">
         <h2 className="ueber">Werkbank</h2>
-        <nav className="sichtliste">
-          <Link to="/werkbank/typen" className={`sicht ${bereich === 'typen' ? 'an' : ''}`}><span className="nm">Mappentypen</span><span className="zahl">{d.typen.length}</span></Link>
-          <Link to="/werkbank/sichten" className={`sicht ${bereich === 'sichten' ? 'an' : ''}`}><span className="nm">Sichten</span><span className="zahl">{d.sichten.length || ''}</span></Link>
-          <Link to="/werkbank/benutzer" className={`sicht ${bereich === 'benutzer' ? 'an' : ''}`}><span className="nm">Benutzer</span><span className="zahl">{benutzer.geladen ? benutzer.liste.length : ''}</span></Link>
-          <Link to="/werkbank/protokoll" className={`sicht ${bereich === 'protokoll' ? 'an' : ''}`}><span className="nm">Protokoll</span>{protokoll.debug?.an && <span className="zaehler" title="Debug-Modus ist an">Debug</span>}</Link>
-          <Link to="/werkbank/designs" className={`sicht ${bereich === 'designs' ? 'an' : ''}`}><span className="nm">Designs</span><span className="zahl">{d.designs.length || ''}</span></Link>
-          <Link to="/werkbank/betrieb" className={`sicht ${bereich === 'betrieb' ? 'an' : ''}`}><span className="nm">E-Mail und Adresse</span></Link>
-          <Link to="/werkbank/verschluesselung" className={`sicht ${bereich === 'verschluesselung' ? 'an' : ''}`}><span className="nm">Verschlüsselung</span>{tresor.stand && tresor.stand.zustand !== 'vorhanden' && <span className="zaehler" title="Kein Schlüssel für Passwörter">fehlt</span>}</Link>
-          <Link to="/werkbank/aufgaben" className={`sicht ${bereich === 'aufgaben' ? 'an' : ''}`}><span className="nm">Aufgaben</span><span className="zahl">{aufgaben.liste && !aufgaben.erledigt ? aufgaben.liste.length || '' : ''}</span></Link>
-          <Link to="/werkbank/papierkorb" className={`sicht ${bereich === 'papierkorb' ? 'an' : ''}`}><span className="nm">Papierkorb</span><span className="zahl">{papierkorb.eintraege?.length || ''}</span></Link>
-          <Link to="/werkbank/texterkennung" className={`sicht ${bereich === 'texterkennung' ? 'an' : ''}`}><span className="nm">Texterkennung</span></Link>
-          <Link to="/werkbank/wartung" className={`sicht ${bereich === 'wartung' ? 'an' : ''}`}><span className="nm">Wartungsoperationen</span></Link>
-          <Link to="/werkbank/datenbank" className={`sicht ${bereich === 'datenbank' ? 'an' : ''}`}><span className="nm">Datenbank</span></Link>
-          <Link to="/werkbank/technik" className={`sicht ${bereich === 'technik' ? 'an' : ''}`}><span className="nm">Technik</span></Link>
-          <Link to="/werkbank/demo" className={`sicht ${bereich === 'demo' ? 'an' : ''}`}><span className="nm">Demo-Daten</span><span className="zahl">{Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || ''}</span></Link>
-        </nav>
+        <WerkbankNavigation bereich={bereich} eintraege={[
+          { pfad: 'uebersicht', name: 'Übersicht', gruppe: null, warn: uebersicht.hinweise || undefined },
+          { pfad: 'typen', name: 'Mappentypen', gruppe: 'ablage', zahl: d.typen.length },
+          { pfad: 'sichten', name: 'Sichten', gruppe: 'ablage', zahl: d.sichten.length || undefined },
+          { pfad: 'benutzer', name: 'Benutzer', gruppe: 'benutzer', zahl: benutzer.geladen ? benutzer.liste.length : undefined },
+          { pfad: 'aufgaben', name: 'Aufgaben', gruppe: 'benutzer', zahl: uebersicht.stand?.aufgaben.offen || undefined },
+          { pfad: 'betrieb', name: 'E-Mail und Adresse', gruppe: 'einstellungen', warn: uebersicht.stand && !uebersicht.stand.mail ? 'aus' : undefined },
+          { pfad: 'verschluesselung', name: 'Verschlüsselung', gruppe: 'einstellungen', warn: tresor.stand && tresor.stand.zustand !== 'vorhanden' ? 'fehlt' : undefined },
+          { pfad: 'designs', name: 'Designs', gruppe: 'einstellungen', zahl: d.designs.length || undefined },
+          { pfad: 'papierkorb', name: 'Papierkorb', gruppe: 'einstellungen', zahl: papierkorb.eintraege?.length || uebersicht.stand?.papierkorb.anzahl || undefined },
+          { pfad: 'texterkennung', name: 'Texterkennung', gruppe: 'einstellungen', warn: uebersicht.stand?.texterkennung?.fehler ? String(uebersicht.stand.texterkennung.fehler) : undefined, warnTitel: 'Dokumente mit Fehler' },
+          { pfad: 'protokoll', name: 'Protokoll', gruppe: 'wartung', warn: protokoll.debug?.an ? 'Debug' : undefined, warnTitel: 'Debug-Modus ist an' },
+          { pfad: 'fehlermeldungen', name: 'Fehlermeldungen', gruppe: 'wartung', warn: uebersicht.stand?.fehlermeldungen ? String(uebersicht.stand.fehlermeldungen) : undefined, warnTitel: 'offene Meldungen' },
+          { pfad: 'wartung', name: 'Wartungsoperationen', gruppe: 'wartung' },
+          { pfad: 'datenbank', name: 'Datenbank', gruppe: 'wartung' },
+          { pfad: 'technik', name: 'Technik', gruppe: 'wartung' },
+          { pfad: 'demo', name: 'Demo-Daten', gruppe: 'wartung', zahl: Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || undefined },
+        ]} />
         {/* Freiwillig, ohne Gebühren für beide Seiten (GitHub Sponsors von persönlichen Konten). */}
         <a className="unterstuetzen" href="https://github.com/sponsors/motom001" target="_blank" rel="noreferrer">
           <span aria-hidden="true">♥</span> Projekt unterstützen
           <span className="leise klein">freiwillig, Betrag frei wählbar</span>
         </a>
+        <a className="unterstuetzen handbuchlink" href={ADMIN_HANDBUCH} target="_blank" rel="noreferrer">Administratorhandbuch ↗</a>
       </aside>
       <section className="spalte liste" aria-label="Elemente">{liste}</section>
       <section className="spalte mappe" aria-label="Bearbeitung">

@@ -5,7 +5,12 @@
  * entstehen hier, damit jede Farbe auf jeder Grundlage lesbar bleibt.
  */
 export type Grundlage = 'automatisch' | 'hell' | 'dunkel' | 'kontrast';
-export interface Design { id: string; name: string; grundlage: Grundlage; primaer: string; sekundaer: string; css: string }
+export interface Design {
+  id: string; name: string; grundlage: Grundlage; primaer: string; sekundaer: string; css: string;
+  /** Text neben dem Logo (#72): null = „DMS“, leer = nur das Logo. */
+  schriftzug?: string | null;
+  logo?: { sha256: string; mime: string; groesse: number } | null;
+}
 export const GRUNDLAGEN: Record<Grundlage, string> = { automatisch: 'Automatisch (nach Gerät)', hell: 'Hell', dunkel: 'Dunkel', kontrast: 'Hoher Kontrast' };
 
 type Palette = Record<string, string>;

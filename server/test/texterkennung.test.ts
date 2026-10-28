@@ -132,3 +132,37 @@ describe('Texterkennung (#45)', () => {
     assert.ok((await readFile(join(dir, 'bild.png'))).length > 0);
   });
 });
+
+describe('Aufträge der Texterkennung in der Werkbank (#61)', () => {
+  it('listet je Stand, startet neu, bricht ab; Passwort-PDFs werden ausgelassen', async () => {
+    let modus: 'fehler' | 'passwort' | 'haengt' | 'ok' = 'fehler';
+    const { d, t, repo, typ } = await aufbau(async (_p, _m, o) => {
+      if (modus === 'fehler') throw new Error('kaputt');
+      if (modus === 'passwort') throw new Error('Command Line Error: Incorrect password');
+      if (modus === 'haengt') await new Promise((_r, nein) => o.signal?.addEventListener('abort', () => nein(new Error('abgebrochen'))));
+      return { text: 'ok', seiten: 1, info: 'Ersatz' };
+    });
+    const m = await d.legeMappeAn({ typId: typ.id, werte: { nr: 'R-1' } });
+    const hoch = async (name: string, i: string) => (await d.ladeHoch(m.id, { register: 'dokumente', name, typ: 'application/pdf' }, pdfMitText([i]), null)).dokument.id;
+    const a = await hoch('a.pdf', 'a');
+    await warte(async () => (await repo.holeDokument(a))?.ocr?.stand === 'fehler');
+    const liste = await t.auftraege({ stand: 'fehler' });
+    assert.equal(liste.gesamt, 1);
+    assert.deepEqual([liste.eintraege[0].dokument.name, liste.eintraege[0].mappeTitel, liste.eintraege[0].typId], ['a.pdf', 'R-1', typ.id]);
+    modus = 'ok';
+    assert.equal((await t.fehlerNeuStarten('admin')).eingereiht, 1);
+    await warte(async () => (await repo.holeDokument(a))?.ocr?.stand === 'fertig');
+
+    modus = 'passwort';
+    const p = await hoch('p.pdf', 'p');
+    await warte(async () => (await repo.holeDokument(p))?.ocr?.stand === 'ausgelassen');
+    assert.equal((await repo.holeDokument(p))!.ocr!.info, 'Das PDF ist mit einem Passwort geschützt.');
+
+    modus = 'haengt';
+    const h = await hoch('h.pdf', 'h');
+    await warte(async () => (await repo.holeDokument(h))?.ocr?.stand === 'laeuft');
+    assert.equal((await t.abbrechen([h], 'admin')).abgebrochen, 1);
+    await warte(async () => (await repo.holeDokument(h))?.ocr?.stand === 'ausgelassen');
+    assert.equal((await repo.holeDokument(h))!.ocr!.info, 'Vom Administrator abgebrochen.');
+  });
+});

@@ -26,7 +26,7 @@ Oben siehst du die Bereiche:
 
 - **Ablage** – hier arbeitest du mit Mappen. Das ist für die meisten Benutzer der einzige Bereich.
 - **Werkbank** – nur für Administratoren; hier wird das DMS eingerichtet.
-- **Dein Name** – öffnet ein Menü mit Profil, Hilfe, Schriftgröße und Abmelden.
+- **Dein Name** – öffnet ein Menü mit deinem Konto, den Einstellungen, der Hilfe, *Fehler melden* und Abmelden.
 
 Die Ablage ist in **drei Spalten** geteilt, von groß nach klein:
 

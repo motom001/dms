@@ -16,6 +16,7 @@ import { Betrieb, pgBetriebSpeicher } from './betrieb';
 import { STANDARD_DATEI, Tresor } from './tresor';
 import { Texterkennung } from './texterkennung';
 import { Aufgabenmail } from './aufgabenmail';
+import { Fehlermeldungen, pgFehlerRepo } from './fehlermeldungen';
 
 const pfad = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
 const env = process.env;
@@ -84,12 +85,14 @@ const app = await baueApp(dienst, konten, {
   proxy: cfg.proxy,
   messung,
   system: pgSystemQuelle(sql, cfg.haushalt),
-  designs: new Designs(messung.umhuelle(pgDesignRepo(sql, cfg.haushalt), 'designs')),
+  designs: new Designs(messung.umhuelle(pgDesignRepo(sql, cfg.haushalt), 'designs'), ordnerSpeicher(cfg.dateien, `${cfg.haushalt}/designs`)),
   apiSchluessel: new ApiSchluesselDienst(messung.umhuelle(pgApiSchluesselRepo(sql), 'apischluessel')),
   betrieb,
   tresor,
   texterkennung,
   aufgabenmail,
+  // Screenshots der Fehlermeldungen getrennt von den Dokumenten (#70).
+  fehlermeldungen: new Fehlermeldungen(pgFehlerRepo(sql, cfg.haushalt), ordnerSpeicher(cfg.dateien, `${cfg.haushalt}/fehlermeldungen`)),
 });
 
 const kurz = betrieb.kurz();

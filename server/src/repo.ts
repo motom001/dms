@@ -34,6 +34,8 @@ export interface NeueMappe {
 export interface OcrErgebnis { stand: OcrStandArt; text?: string | null; info?: string | null; seiten?: number | null }
 export type OcrZaehler = Record<OcrStandArt, number>;
 
+/** Ein Dokument in der Liste der Texterkennung (#61). */
+export interface OcrAuftrag { dokument: Dokument; mappeTitel: string; typId: string }
 export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string; titel: string }
 
 /** Eine Mappe im Papierkorb (#43), mit ihren Werten, wie sie beim Löschen waren. */
@@ -155,6 +157,8 @@ export interface Repo {
   /** Nach einem Neustart: „läuft“ → „wartet“. */
   ocrZurueckstellen(): Promise<number>;
   ocrZaehler(): Promise<OcrZaehler>;
+  /** Aufträge der Texterkennung für die Werkbank (#61): Dokumente eines Stands mit Mappe, neueste zuerst. */
+  ocrAuftraege(f: { stand: OcrStandArt; von: number; anzahl: number }): Promise<{ gesamt: number; eintraege: OcrAuftrag[] }>;
   /** Dokumente ohne Volltext (noch nie erkannt) mit Typ und Register ihrer Mappe. */
   ocrOhneVolltext(): Promise<Array<{ id: string; typId: string; registerKey: string }>>;
   volltext(id: string): Promise<string | null>;

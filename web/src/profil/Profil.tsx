@@ -1,10 +1,12 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
-import { PASSWORT_MINDESTLAENGE, ROLLEN } from '../../../shared/src/model';
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { geraetText, istGeradeAktiv, PASSWORT_MINDESTLAENGE, ROLLEN, type Sitzung } from '../../../shared/src/model';
 import { api } from '../api';
 import { bereicheZuruecksetzen } from '../bereiche';
 import { ApiSchluesselBlatt } from './ApiSchluessel';
 import { useDaten } from '../daten';
-import { GRUNDLAGEN } from '../design';
+import { GRUNDLAGEN, leseSchrift, SCHRIFTEN, setzeSchrift, type Schrift } from '../design';
+import { Link } from '../ort';
+import { FehlerMelden } from './FehlerMelden';
 import { Farbfelder } from '../werkbank/Designs';
 import { useKonto } from '../konto';
 
@@ -20,7 +22,29 @@ function useFormular(fn: () => Promise<string>) {
   return { sendet, absenden, anzeige };
 }
 
-export function Profil() {
+/** Bereiche der Profilseite (#69); jeder mit eigener Adresse, /profil führt zu „Konto“. */
+const BEREICHE = { konto: 'Konto', sicherheit: 'Sicherheit', darstellung: 'Darstellung', benachrichtigungen: 'Benachrichtigungen und Ablage' } as const;
+type Bereich = keyof typeof BEREICHE | 'fehler-melden';
+
+export function Profil({ teile = [] }: { teile?: string[] }) {
+  const b = (teile[1] && (teile[1] in BEREICHE || teile[1] === 'fehler-melden') ? teile[1] : 'konto') as Bereich;
+  return (
+    <div className="zweispaltig profil">
+      <aside className="leiste" aria-label="Bereiche des Profils">
+        <nav className="typliste">
+          {(Object.keys(BEREICHE) as Array<keyof typeof BEREICHE>).map((k) => (
+            <Link key={k} to={`/profil/${k}`} className={`typeintrag ${b === k ? 'an' : ''}`}><span className="nm">{BEREICHE[k]}</span></Link>
+          ))}
+        </nav>
+      </aside>
+      <div className="inhalt">
+        {b === 'fehler-melden' ? <FehlerMelden /> : <ProfilBereich bereich={b} />}
+      </div>
+    </div>
+  );
+}
+
+function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
   const { ich, mail, aktualisieren } = useKonto();
   const d = useDaten();
   const [name, setName] = useState(ich.name);
@@ -46,11 +70,12 @@ export function Profil() {
   return (
     <div className="einspaltig schmal">
       <div className="mappenkopf">
-        <p className="ueber">Profil</p>
+        <p className="ueber">Profil · {BEREICHE[bereich]}</p>
         <h1>{ich.name || ich.email}</h1>
-        <dl className="index"><div><dt>Rolle</dt><dd>{ROLLEN[ich.rolle]}</dd></div></dl>
+        <dl className="index"><div><dt>Rolle</dt><dd>{ROLLEN[ich.rolle]}</dd></div><div><dt>E-Mail</dt><dd>{ich.email}</dd></div></dl>
       </div>
 
+      {bereich === 'konto' && <>
       <form className="blatt" onSubmit={fName.absenden}>
         <h2 className="h3">Name</h2>
         <label className="eigenschaft"><span>So erscheinst du bei „angelegt von“</span><input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></label>
@@ -69,6 +94,9 @@ export function Profil() {
         <div className="knoepfe"><button className="knopf primaer" disabled={fEmail.sendet || email === ich.email || !pwEmail}>Adresse ändern</button></div>
       </form>
 
+      </>}
+
+      {bereich === 'sicherheit' && <>
       <form className="blatt" onSubmit={fPw.absenden}>
         <h2 className="h3">Passwort</h2>
         <input type="email" value={ich.email} autoComplete="username" readOnly hidden />
@@ -81,9 +109,15 @@ export function Profil() {
         <div className="knoepfe"><button className="knopf primaer" disabled={fPw.sendet || !alt || !neu}>Passwort ändern</button></div>
       </form>
 
+      <MeineGeraete />
+
+      <ApiSchluesselBlatt />
+      </>}
+
+      {bereich === 'darstellung' && <>
       <div className="blatt">
         <h2 className="h3">Design</h2>
-        <p className="leise">Gilt für dein Konto auf allen Geräten und wird sofort angewendet. Die Schriftgröße stellst du im Menü unter deinem Namen ein – je Gerät.</p>
+        <p className="leise">Gilt für dein Konto auf allen Geräten und wird sofort angewendet.</p>
         <div className="designwahl" role="radiogroup" aria-label="Design">
           <label>
             <input type="radio" name="design" checked={!d.einstellungen.design || !d.designs.some((x) => x.id === d.einstellungen.design)} onChange={() => d.setzeEinstellung('design', null)} />
@@ -98,8 +132,24 @@ export function Profil() {
         </div>
       </div>
 
-      <ApiSchluesselBlatt />
+      <SchriftWahl />
 
+      <div className="blatt">
+        <h2 className="h3">Ansicht auf diesem Gerät</h2>
+        <p className="leise">Die Breite der Bereiche in Ablage und Werkbank und eingeklappte Bereiche merkt sich dieses Gerät für dich. Falls etwas nicht mehr zu finden ist:</p>
+        <div className="knoepfe"><button type="button" className="knopf" onClick={() => { bereicheZuruecksetzen(ich.id); setAnsicht(true); }}>Standard-Ansicht wiederherstellen</button></div>
+        {ansicht && <p className="gutertext" role="status">Breiten zurückgesetzt.</p>}
+      </div>
+
+      <div className="blatt">
+        <h2 className="h3">Entwicklermodus</h2>
+        <p className="leise">Zeigt unten rechts bei jedem Seitenaufruf, wie lange die einzelnen Schritte gedauert haben: Netzwerk, Aufbereitung auf dem Server, Datenbankzugriffe, Übertragung, Auswerten und Darstellung im Browser. Gilt nur für dich.</p>
+        <label className="haken"><input type="checkbox" checked={entwickler}
+          onChange={(e) => { const an = e.target.checked; setEntwickler(an); void api.entwicklermodus(an).then(aktualisieren).catch(() => setEntwickler(!an)); }} /><span>Zeitmessung anzeigen</span></label>
+      </div>
+      </>}
+
+      {bereich === 'benachrichtigungen' && <>
       <div className="blatt">
         <h2 className="h3">Aufgaben</h2>
         <p className="leise">Mappen mit offenen Aufgaben für dich stehen im Eingang. Zusätzlich schickt das DMS einmal am Tag eine Übersicht per E-Mail, wenn der Versand eingerichtet ist.</p>
@@ -117,19 +167,69 @@ export function Profil() {
         </div>
       )}
 
-      <div className="blatt">
-        <h2 className="h3">Ansicht auf diesem Gerät</h2>
-        <p className="leise">Die Breite der Bereiche in Ablage und Werkbank und eingeklappte Bereiche merkt sich dieses Gerät für dich. Falls etwas nicht mehr zu finden ist:</p>
-        <div className="knoepfe"><button type="button" className="knopf" onClick={() => { bereicheZuruecksetzen(ich.id); setAnsicht(true); }}>Standard-Ansicht wiederherstellen</button></div>
-        {ansicht && <p className="gutertext" role="status">Breiten zurückgesetzt.</p>}
-      </div>
+      </>}
+    </div>
+  );
+}
 
-      <div className="blatt">
-        <h2 className="h3">Entwicklermodus</h2>
-        <p className="leise">Zeigt unten rechts bei jedem Seitenaufruf, wie lange die einzelnen Schritte gedauert haben: Netzwerk, Aufbereitung auf dem Server, Datenbankzugriffe, Übertragung, Auswerten und Darstellung im Browser. Gilt nur für dich.</p>
-        <label className="haken"><input type="checkbox" checked={entwickler}
-          onChange={(e) => { const an = e.target.checked; setEntwickler(an); void api.entwicklermodus(an).then(aktualisieren).catch(() => setEntwickler(!an)); }} /><span>Zeitmessung anzeigen</span></label>
+/** Schriftgröße je Gerät (#69: aus dem Benutzermenü hierher). */
+function SchriftWahl() {
+  const { ich } = useKonto();
+  const [schrift, setSchrift] = useState<Schrift>(() => leseSchrift(ich.id));
+  return (
+    <div className="blatt">
+      <h2 className="h3">Schriftgröße auf diesem Gerät</h2>
+      <p className="leise">Gilt nur für das Gerät, an dem du gerade sitzt – am Smartphone kannst du eine andere wählen als am PC.</p>
+      <div className="segmente" role="radiogroup" aria-label="Schriftgröße">
+        {(Object.keys(SCHRIFTEN) as Schrift[]).map((k) => (
+          <button key={k} type="button" role="radio" aria-checked={schrift === k} className={schrift === k ? 'an' : ''} onClick={() => { setSchrift(k); setzeSchrift(ich.id, k); }}
+            style={{ fontSize: `${13 * SCHRIFTEN[k].skala}px` }}>{SCHRIFTEN[k].name}</button>
+        ))}
       </div>
+    </div>
+  );
+}
+
+const datumZeit = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }) : '–');
+
+/** Meine angemeldeten Geräte (#69): ansehen, einzeln oder alle anderen abmelden. */
+function MeineGeraete() {
+  const { vertretung } = useKonto();
+  const [liste, setListe] = useState<Sitzung[] | null>(null);
+  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const laden = useCallback(async () => { try { setListe(await api.meineSitzungen()); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } }, []);
+  useEffect(() => { void laden(); }, [laden]);
+  async function tu(f: () => Promise<string>) {
+    setMeldung(undefined);
+    try { setMeldung({ art: 'gut', text: await f() }); await laden(); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
+  }
+  const andere = (liste ?? []).filter((s) => !s.aktuell);
+  return (
+    <div className="blatt">
+      <h2 className="h3">Meine angemeldeten Geräte</h2>
+      <p className="leise">Überall, wo du gerade angemeldet bist. Erkennst du ein Gerät nicht oder hast eines verloren, melde es hier ab – und ändere am besten dein Passwort.</p>
+      {liste === null ? <p className="leise">Lade …</p> : (
+        <ul className="sitzungsliste">
+          {liste.map((s) => (
+            <li key={s.id}>
+              <div>
+                <strong>{geraetText(s.geraet)}</strong>
+                {s.aktuell && <> <span className="chip">dieses Gerät</span></>}
+                {s.vertretungId && <> <span className="chip warn">Administrator agiert als du</span></>}
+                {istGeradeAktiv(s.zuletztAktiv) && <> <span className="chip gut punkt">gerade aktiv</span></>}
+                <span className="leise klein blockzeile">Zuletzt aktiv {datumZeit(s.zuletztAktiv)} · angemeldet seit {datumZeit(s.erstellt)}{s.ip ? ` · ${s.ip}` : ''}</span>
+              </div>
+              {!s.aktuell && !vertretung && <button type="button" className="textknopf gefahr" onClick={() => void tu(async () => { await api.meineSitzungBeenden(s.id); return 'Gerät abgemeldet.'; })}>Abmelden</button>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
+      {andere.length > 0 && !vertretung && (
+        <div className="knoepfe"><button type="button" className="knopf gefahr-rand" onClick={() => {
+          if (confirm(`Auf ${andere.length === 1 ? 'dem anderen Gerät' : `allen ${andere.length} anderen Geräten`} abmelden?`)) void tu(async () => { const r = await api.andereSitzungenBeenden(); return `${r.beendet} ${r.beendet === 1 ? 'Gerät' : 'Geräte'} abgemeldet.`; });
+        }}>Alle anderen abmelden</button></div>
+      )}
     </div>
   );
 }

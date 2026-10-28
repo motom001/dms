@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { leseSchrift, SCHRIFTEN, setzeSchrift, type Schrift } from './design';
+import { ROLLEN } from '../../shared/src/model';
+import { leseSchrift, setzeSchrift } from './design';
 import { api } from './api';
 import { Ablage } from './ablage/Ablage';
 import { useDaten } from './daten';
 import { useKonto } from './konto';
 import { geheZu, Link, useOrt } from './ort';
 import { Messpanel } from './Messpanel';
+import { logoUrl, Marke, schriftzugVon } from './Marke';
 import { ApiDoku } from './profil/ApiDoku';
 import { Profil } from './profil/Profil';
 import { Werkbank } from './werkbank/Werkbank';
-import { TresorBanner } from './werkbank/Verschluesselung';
 
 export function App() {
   const { pfad, suche } = useOrt();
@@ -18,6 +19,15 @@ export function App() {
   const admin = ich.rolle === 'admin';
   const teile = pfad.split('/').filter(Boolean);
   const bereich = teile[0] === 'werkbank' || teile[0] === 'profil' ? teile[0] : teile[0] === 'api-doku' ? 'profil' : 'ablage';
+  // Titel und Symbol im Browser-Tab aus dem Design (#72).
+  const marke = schriftzugVon(d.meinDesign) || 'DMS';
+  const symbol = logoUrl(d.meinDesign);
+  useEffect(() => {
+    document.title = `${marke} – ${{ ablage: 'Ablage', werkbank: 'Werkbank', profil: 'Profil' }[bereich]}`;
+    setzeSymbol(symbol);
+  }, [marke, symbol, bereich]);
+  // Schriftgröße dieses Geräts (#69: gewählt in Profil → Darstellung).
+  useEffect(() => { setzeSchrift(ich.id, leseSchrift(ich.id)); }, [ich.id]);
 
   useEffect(() => {
     if (pfad === '/' || pfad.startsWith('/passwort/')) geheZu('/ablage', true);
@@ -31,7 +41,7 @@ export function App() {
   else if (bereich === 'werkbank' && !admin) inhalt = <div className="leer"><p>Die Werkbank ist Administratoren vorbehalten.</p></div>;
   else if (bereich === 'werkbank') inhalt = <Werkbank teile={teile} />;
   else if (teile[0] === 'api-doku') inhalt = <ApiDoku />;
-  else if (bereich === 'profil') inhalt = <Profil />;
+  else if (bereich === 'profil') inhalt = <Profil teile={teile} />;
   else inhalt = <Ablage teile={teile} suche={suche} />;
 
   return (
@@ -43,11 +53,9 @@ export function App() {
         </div>
       )}
       {!vertretung && hinweise.length > 0 && <Hinweise />}
-      {admin && bereich === 'werkbank' && <TresorBanner />}
       <header className="kopf">
         <Link to="/ablage/eingang" className="marke" title="Zur Startseite">
-          <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><rect x="4" y="7" width="24" height="21" rx="3" className="m1" /><rect x="8" y="3" width="9" height="7" rx="2" className="m2" /></svg>
-          <span>DMS</span><span className="sr-only"> – Startseite</span>
+          <Marke logo={logoUrl(d.meinDesign)} schriftzug={schriftzugVon(d.meinDesign)} /><span className="sr-only">{schriftzugVon(d.meinDesign) ? '' : schriftzugVon(null)} – Startseite</span>
         </Link>
         <nav className="bereiche" aria-label="Bereiche">
           <Link to="/ablage" className={bereich === 'ablage' ? 'an' : ''}>Ablage</Link>
@@ -66,6 +74,15 @@ export function App() {
       {ich.entwicklermodus && <Messpanel />}
     </div>
   );
+}
+
+/** Symbol im Browser-Tab: eigenes Logo oder das ursprüngliche (#72). */
+let ursprungsSymbol: string | null = null;
+export function setzeSymbol(url: string | null) {
+  const el = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+  if (!el) return;
+  ursprungsSymbol ??= el.href;
+  el.href = url ?? ursprungsSymbol;
 }
 
 /** Handbücher auf GitHub Pages (#25). */
@@ -92,13 +109,11 @@ function Hinweise() {
   );
 }
 
-/** Menü unter dem eigenen Namen: Profil, Hilfe, Schriftgröße (je Gerät), Abmelden. */
+/** Menü unter dem eigenen Namen (#69): Konto, Einstellungen, Hilfe, Fehler melden, Abmelden. */
 function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<void> }) {
-  const { ich } = useKonto();
+  const { ich, vertretung, aktualisieren } = useKonto();
   const [offen, setOffen] = useState(false);
-  const [schrift, setSchrift] = useState<Schrift>(() => leseSchrift(ich.id));
   const rahmen = useRef<HTMLDivElement>(null);
-  useEffect(() => { setzeSchrift(ich.id, schrift); }, [ich.id, schrift]);
   useEffect(() => {
     if (!offen) return;
     const zu = (e: Event) => { if (!rahmen.current?.contains(e.target as Node)) setOffen(false); };
@@ -114,19 +129,16 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
       </button>
       {offen && (
         <div className="menue" role="menu">
-          <p className="leise klein">{ich.email}</p>
-          <Link to="/profil" className="menuepunkt">Profil und Design</Link>
-          <a href={HANDBUCH.benutzer} target="_blank" rel="noreferrer" className="menuepunkt" onClick={() => setOffen(false)}>Hilfe <span aria-hidden="true">↗</span></a>
-          {ich.rolle === 'admin' && <a href={HANDBUCH.admin} target="_blank" rel="noreferrer" className="menuepunkt" onClick={() => setOffen(false)}>Administratorhandbuch <span aria-hidden="true">↗</span></a>}
-          <div className="menuegruppe">
-            <span className="leise klein">Schriftgröße auf diesem Gerät</span>
-            <div className="segmente" role="radiogroup" aria-label="Schriftgröße">
-              {(Object.keys(SCHRIFTEN) as Schrift[]).map((k) => (
-                <button key={k} type="button" role="radio" aria-checked={schrift === k} className={schrift === k ? 'an' : ''} onClick={() => setSchrift(k)}
-                  style={{ fontSize: `${13 * SCHRIFTEN[k].skala}px` }}>{SCHRIFTEN[k].name}</button>
-              ))}
-            </div>
+          <div className="menuekopf">
+            <strong>{ich.name || ich.email}</strong>
+            <span className="leise klein">{ich.email} · {ROLLEN[ich.rolle]}</span>
+            {vertretung && <span className="chip warn">Als {ich.name || ich.email} angemeldet</span>}
           </div>
+          {vertretung && <button type="button" className="menuepunkt" onClick={() => { setOffen(false); void api.vertretungBeenden().then(() => { geheZu('/werkbank/benutzer', true); return aktualisieren(); }); }}>Vertretung beenden</button>}
+          <Link to="/profil/konto" className="menuepunkt">Mein Konto</Link>
+          <Link to="/profil/darstellung" className="menuepunkt">Einstellungen</Link>
+          <a href={HANDBUCH.benutzer} target="_blank" rel="noreferrer" className="menuepunkt" onClick={() => setOffen(false)}>Hilfe <span aria-hidden="true">↗</span></a>
+          <Link to="/profil/fehler-melden" className="menuepunkt">Fehler melden</Link>
           <button type="button" className="menuepunkt" onClick={() => void abmelden()}>Abmelden</button>
         </div>
       )}

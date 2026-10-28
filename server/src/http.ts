@@ -15,6 +15,7 @@ import type { Betrieb } from './betrieb';
 import type { Tresor } from './tresor';
 import type { Texterkennung } from './texterkennung';
 import type { Aufgabenmail } from './aufgabenmail';
+import type { Fehlermeldungen } from './fehlermeldungen';
 import { dateiKoepfe, leseCookie, modulAus, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage } from './routen';
 
 /** Häufige Abfragen, die das Protokoll sonst fluten würden. */
@@ -40,6 +41,7 @@ interface Optionen {
   tresor?: Tresor;
   texterkennung?: Texterkennung;
   aufgabenmail?: Aufgabenmail;
+  fehlermeldungen?: Fehlermeldungen;
   abruf?: (url: string) => Promise<unknown>;
 }
 

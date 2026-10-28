@@ -4,6 +4,9 @@ import { App } from './App';
 import { DatenProvider } from './daten';
 import { KontoProvider } from './konto';
 import './styles.css';
+import { starteSammler } from './diagnose';
+
+starteSammler();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

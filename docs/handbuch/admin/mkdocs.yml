@@ -58,6 +58,7 @@ nav:
       - Aktualisieren und Sichern: aktualisieren.md
       - Verschlüsselung: verschluesselung.md
   - Einrichten in der Werkbank:
+      - Werkbank und Übersicht: uebersicht.md
       - Mappentypen: mappentypen.md
       - Sichten: sichten.md
       - Benutzer und Rollen: benutzer.md

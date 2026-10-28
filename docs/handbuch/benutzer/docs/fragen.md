@@ -28,10 +28,10 @@
     Im Profil unter **Ansicht auf diesem Gerät** → **Standard-Ansicht wiederherstellen**. Oder kurz auf den Griff zwischen den Spalten klicken – das klappt eingeklappte Bereiche wieder auf.
 
 ??? question "Die Schrift ist zu klein."
-    Menü unter deinem Namen → **Schriftgröße auf diesem Gerät** → *groß*.
+    Menü unter deinem Namen → **Einstellungen** → **Schriftgröße auf diesem Gerät** → *groß*.
 
 ??? question "Ich habe mein Passwort vergessen."
     **Passwort vergessen?** unter der Anmeldung. Verschickt das DMS keine E-Mails, erzeugt dir ein Administrator einen Link.
 
 ??? question "Ich habe einen Fehler gefunden oder einen Wunsch."
-    Sag einem Administrator Bescheid – oder beschreib es direkt als [Issue auf GitHub](https://github.com/motom001/dms/issues/new?template=wunsch.md).
+    Im Menü unter deinem Namen → **Fehler melden** (siehe [Profil und Einstellungen](profil.md#fehler-melden)). Wünsche gern auch direkt als [Issue auf GitHub](https://github.com/motom001/dms/issues/new?template=wunsch.md).

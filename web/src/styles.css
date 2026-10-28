@@ -658,3 +658,57 @@ input.kurz { width: 7em; }
 a.person { color: var(--akzent); text-decoration: none; }
 a.person:hover, a.person:focus-visible { text-decoration: underline; }
 .person.weg { color: var(--leise); }
+
+/* Werkbank: Gruppen in der Leiste und Übersicht (#68) */
+.gruppenwahl { display: none; }
+.wbgruppe { display: flex; flex-direction: column; gap: 2px; }
+.wbgruppe + .wbgruppe { margin-top: 10px; }
+.gruppentitel { margin: 4px 10px 2px; font-size: calc(11px * var(--skala, 1)); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--leise); }
+.handbuchlink { margin-top: 0; }
+.uebersicht .hinweiszeile { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.uebersicht .hinweiszeile p { flex: 1 1 22em; margin: 0; }
+.uebersicht .hinweis:not(.warn):not(.schlecht):not(.gut) { background: var(--senke); }
+.kacheln { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-top: 6px; }
+.kachel { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--r); color: inherit; text-decoration: none; }
+.kachel:hover, .kachel:focus-visible { border-color: var(--akzent); }
+.kachel .wert { font-size: calc(24px * var(--skala, 1)); font-weight: 700; font-variant-numeric: tabular-nums; }
+@media (max-width: 820px) {
+  /* Am Handy zweistufig: Gruppen oben, darunter die Einträge der gewählten Gruppe. */
+  .gruppenwahl { display: flex; gap: 6px; overflow-x: auto; min-width: 0; max-width: 100%; padding-bottom: 6px; }
+  .gruppenwahl .sicht { flex: none; font: inherit; cursor: pointer; }
+  .werkbankleiste .wbgruppe { display: none; }
+  .werkbankleiste .wbgruppe.gewaehlt { display: contents; }
+  .werkbankleiste .gruppentitel { display: none; }
+}
+
+/* Fehlermeldungen (#70) */
+.fehlerbilder { display: flex; flex-wrap: wrap; gap: 12px; }
+.fehlerbilder img { max-width: 100%; max-height: 360px; border: 1px solid var(--linie); border-radius: 6px; display: block; }
+.angaben { font-size: calc(13px * var(--skala, 1)); }
+.angaben .angaben { margin: 2px 0 6px; }
+.angabenliste { margin: 0; padding-left: 18px; }
+.mehrzeilig { white-space: pre-wrap; }
+
+/* Aufträge der Texterkennung (#61) */
+.registertaben.klein { margin: 0; padding: 0; background: none; border-radius: 0; }
+.auftraege { width: 100%; border-collapse: collapse; font-size: calc(13px * var(--skala, 1)); }
+.auftraege th, .auftraege td { padding: 6px 8px; border-bottom: 1px solid var(--linie); text-align: left; vertical-align: top; }
+.auftraege tr.an td { background: var(--akzent-zart); }
+.auftraege .zahlzelle { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Benutzermenü (#69) */
+.menuekopf { display: flex; flex-direction: column; gap: 2px; padding: 6px 10px 8px; border-bottom: 1px solid var(--linie); margin-bottom: 4px; }
+.menuekopf .chip { align-self: flex-start; margin-top: 4px; }
+.profil .inhalt > .einspaltig { max-width: 760px; }
+.bildliste { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; }
+.bildliste li { display: flex; flex-direction: column; gap: 4px; max-width: 200px; }
+.bildliste img { max-width: 200px; max-height: 140px; object-fit: contain; border: 1px solid var(--linie); border-radius: 6px; }
+.angabentext { white-space: pre-wrap; overflow-wrap: anywhere; font-size: calc(12px * var(--skala, 1)); background: var(--senke); padding: 10px 12px; border-radius: 6px; margin: 8px 0 0; }
+
+/* Logo und Schriftzug (#72) */
+.markenlogo { display: block; width: auto; max-width: 160px; object-fit: contain; }
+.markenvorschau { padding: 8px 12px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche); align-self: flex-start; }
+.knoepfe.links { justify-content: flex-start; align-items: center; flex-wrap: wrap; }
+.nur-schmal-block { display: none; }
+@media (max-width: 820px) { .nur-schmal-block { display: block; margin-top: 12px; } }
+.profil .typeintrag .nm { white-space: normal; }
