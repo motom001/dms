@@ -498,6 +498,11 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       L.werkbank.info('Sicht gelöscht', { id: a.params.id });
       return leer;
     } },
+    { methode: 'POST', pfad: '/api/sichten/definitionen/:id/verschieben', zugang: 'admin', handler: async (a) => {
+      const r = await dienst.verschiebeSicht(a.params.id, b(a).elternId, b(a).stelle);
+      L.werkbank.info('Sicht verschoben', { id: a.params.id, elternId: b(a).elternId ?? null, stelle: b(a).stelle });
+      return ok(r);
+    } },
     { methode: 'PUT', pfad: '/api/sichten/reihenfolge', zugang: 'admin', handler: async (a) => ok(await dienst.ordneSichten(b(a).elternId, b(a).ids)) },
     { methode: 'POST', pfad: '/api/sichten/vorschau', zugang: 'admin', handler: async (a) => ok(await dienst.sichtVorschau(ich(a), b(a).id, b(a).sicht)) },
     { methode: 'GET', pfad: '/api/typen/:id/belegung', zugang: 'admin', handler: async (a) => ok(await dienst.belegung(a.params.id)) },

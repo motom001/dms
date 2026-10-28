@@ -97,6 +97,24 @@ function faelle() {
       assert.deepEqual(nachher.filter((s) => s.elternId === finanzen.id).sort((a, b) => a.position - b.position).map((s) => s.name), ['Alle Rechnungen', 'Zahlungen']);
     });
 
+    it('verschiebt Sichten per Drag & Drop: umsortieren, umhängen, keine Kreise (#73)', async () => {
+      const { d, typ } = await mitBeispielen();
+      for (const s of await d.listeSichten()) await d.loescheSicht(s.id);
+      const a = await sicht(d, 'A', [typ('Rechnung').id]);
+      const b = await sicht(d, 'B', []);
+      const c = await sicht(d, 'C', [], [], b.id);
+      const namen = async (eltern: string | null) => (await d.listeSichten()).filter((s) => s.elternId === eltern).sort((x, y) => x.position - y.position).map((s) => s.name);
+      await d.verschiebeSicht(b.id, null, 0);
+      assert.deepEqual(await namen(null), ['B', 'A']);
+      await d.verschiebeSicht(a.id, b.id, 0);
+      assert.deepEqual(await namen(b.id), ['A', 'C']);
+      await assert.rejects(d.verschiebeSicht(b.id, c.id, 0), /unter sich selbst/);
+      await d.verschiebeSicht(b.id, null, 5);
+      await d.verschiebeSicht(c.id, null, 99);
+      assert.deepEqual(await namen(null), ['B', 'C']);
+      assert.deepEqual(await namen(b.id), ['A'], 'Untersichten wandern mit');
+    });
+
     it('ordnet Geschwister neu und lehnt unvollständige Reihenfolgen ab', async () => {
       const { d } = await mitBeispielen();
       const oben = (await d.listeSichten()).filter((s) => !s.elternId);

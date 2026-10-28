@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Ansage, useZiehen, ziehTasten, type Ort } from '../ziehen';
 import { SYSTEMSPALTEN, istSystemspalte, type Mappe, type Mappentyp } from '../../../shared/src/model';
 import {
   bedingungsfelder, bedingungsProblem, beschreibeBedingung, DYNAMISCH, EINHEITEN, gemeinsameTrefferlisten, kinderVon, mitNachkommen, OPERATOREN, OPERATOREN_JE_ART, spaltenDerSicht, trefferlistenProblem, wirksameTypen,
@@ -26,23 +27,68 @@ export function SichtenListe({ offen }: { offen?: string }) {
   const d = useDaten();
   const zeilen = baumzeilen(d.sichten);
   const typen = (s: Sicht) => s.typen.map((t) => d.typ(t)).filter((t): t is Mappentyp => !!t);
+  const [ansage, setAnsage] = useState('');
+  const [fehler, setFehler] = useState<string>();
+  const name = (id: string | null) => (id ? d.sicht(id)?.name ?? '' : '');
+
+  // Drag & Drop (#73): sofort gespeichert; Untersichten wandern mit, Kreise sind unmöglich.
+  async function verschiebe(id: string, elternId: string | null, stelle: number) {
+    setFehler(undefined);
+    try {
+      await api.sichtVerschieben(id, elternId, stelle);
+      await d.neuLaden();
+      setAnsage(`${name(id)} liegt jetzt ${elternId ? `unter „${name(elternId)}“` : 'auf der obersten Ebene'} an Stelle ${stelle + 1}.`);
+    } catch (x) { setFehler((x as Error).message); }
+  }
+  const z = useZiehen({
+    hinein: true,
+    erlaubt: (quelle, ziel) => !mitNachkommen(d.sichten, quelle).some((s) => s.id === ziel),
+    fertig: (quelle, ziel, ort: Ort) => {
+      const zs = d.sicht(ziel);
+      if (!zs) return;
+      if (ort === 'in') { void verschiebe(quelle, ziel, kinderVon(d.sichten, ziel).filter((s) => s.id !== quelle).length); return; }
+      const geschwister = kinderVon(d.sichten, zs.elternId).filter((s) => s.id !== quelle);
+      const i = geschwister.findIndex((s) => s.id === ziel);
+      void verschiebe(quelle, zs.elternId, ort === 'vor' ? i : i + 1);
+    },
+  });
+  // Tastatur: Alt+↑/↓ in der Ebene, Alt+→ unter die vorherige Sicht, Alt+← eine Ebene höher.
+  const tasten = (s: Sicht) => {
+    const geschwister = kinderVon(d.sichten, s.elternId);
+    const i = geschwister.findIndex((x) => x.id === s.id);
+    return {
+      hoch: i > 0 ? () => void verschiebe(s.id, s.elternId, i - 1) : undefined,
+      runter: i < geschwister.length - 1 ? () => void verschiebe(s.id, s.elternId, i + 1) : undefined,
+      rein: i > 0 ? () => void verschiebe(s.id, geschwister[i - 1].id, kinderVon(d.sichten, geschwister[i - 1].id).length) : undefined,
+      raus: s.elternId ? () => {
+        const eltern = d.sicht(s.elternId!)!;
+        const ebene = kinderVon(d.sichten, eltern.elternId);
+        void verschiebe(s.id, eltern.elternId, ebene.findIndex((x) => x.id === eltern.id) + 1);
+      } : undefined,
+    };
+  };
   return (
     <>
       <div className="listenkopf">
         <div><h1>Sichten</h1><p className="leise klein">Was die Ablage links anbietet: Mappentypen, Bedingungen und die Ordnung als Baum.</p></div>
         <Link to="/werkbank/sichten/neu" className="knopf primaer klein">+ Neu</Link>
       </div>
+      {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
+      <Ansage text={ansage} />
+      {zeilen.length > 1 && <p className="leise klein">Zum Ordnen am Griff ⠿ ziehen: zwischen zwei Sichten oder auf eine Sicht (wird Untersicht).</p>}
       {!zeilen.length && offen !== 'neu'
         ? <p className="leise leerliste">Noch keine Sichten. Ohne Sicht erscheinen Mappen nur im Eingang und über Verweise.</p>
         : <ul className="mappenliste">
             {offen === 'neu' && <li><span className="eintrag an werk"><span className="titel">Neue Sicht</span><span className="unter">noch nicht gespeichert</span></span></li>}
             {zeilen.map(({ s, tiefe }) => {
+              const e = z.eintrag(s.id);
               const t = typen(s);
               const probleme = s.bedingungen.filter((b) => bedingungsProblem(b, t)).length;
               const listenProblem = trefferlistenProblem(s.trefferliste, wirksameTypen(d.sichten, s.id).map((x) => d.typ(x)).filter((x): x is Mappentyp => !!x));
               const kinder = kinderVon(d.sichten, s.id).length;
               return (
-                <li key={s.id} style={{ paddingLeft: tiefe * 16 }}>
+                <li key={s.id} {...e} className={`ziehbar ${e.className}`} style={{ paddingLeft: tiefe * 16 }}>
+                  <button {...z.griff(s.id, s.name)} onKeyDown={(ev) => ziehTasten(ev, tasten(s))}><span aria-hidden="true">⠿</span></button>
                   <Link to={`/werkbank/sichten/${s.id}`} className={`eintrag werk ${offen === s.id ? 'an' : ''}`}>
                     <span className="titel">{tiefe > 0 && <span className="leise" aria-hidden="true">└ </span>}{s.name}</span>
                     <span className="unter">

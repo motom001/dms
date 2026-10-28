@@ -859,6 +859,30 @@ export class Dienst {
     return this.repo.listeSichten();
   }
 
+  /**
+   * Sicht verschieben (Drag & Drop, #73): unter `elternId` (null = oberste Ebene) an die Stelle `stelle`
+   * (0 = zuerst). Untersichten wandern mit; Kreise sind unmöglich.
+   */
+  async verschiebeSicht(id: string, elternId: unknown, stelle: unknown): Promise<Sicht[]> {
+    const alle = await this.repo.listeSichten();
+    const s = alle.find((x) => x.id === id);
+    if (!s) throw new Fachfehler(404, 'Diese Sicht gibt es nicht.');
+    const eltern = istUuid(elternId) ? elternId : null;
+    if (eltern && !alle.some((x) => x.id === eltern)) throw new Fachfehler(422, 'Die gewählte Elternsicht gibt es nicht.');
+    if (waereKreis(alle, id, eltern)) throw new Fachfehler(422, 'Eine Sicht kann nicht unter sich selbst oder einer ihrer Untersichten liegen.');
+    const geschwister = kinderVon(alle.filter((x) => x.id !== id), eltern);
+    const n = Number(stelle);
+    const i = Number.isFinite(n) ? Math.max(0, Math.min(geschwister.length, Math.trunc(n))) : geschwister.length;
+    const neu = [...geschwister.slice(0, i), s, ...geschwister.slice(i)];
+    for (const [j, g] of neu.entries()) {
+      const position = (j + 1) * 10;
+      if (g.id === id ? g.elternId !== eltern || g.position !== position : g.position !== position) {
+        await this.repo.aendereSicht(g.id, { ...g, elternId: g.id === id ? eltern : g.elternId, position });
+      }
+    }
+    return this.repo.listeSichten();
+  }
+
   /** Anzahl Treffer einer (noch nicht gespeicherten) Sicht – für die Vorschau in der Werkbank. */
   async sichtVorschau(ich: { id: string }, id: unknown, e: unknown): Promise<{ anzahl: number }> {
     const alle = await this.repo.listeSichten();
