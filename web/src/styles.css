@@ -333,6 +333,9 @@ progress::-moz-progress-bar { background: var(--akzent); border-radius: 999px; }
 .refbox .gewaehlt li > :first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .wahl { position: relative; }
 .wahl input { width: 100%; }
+/* Haken für weitere Rollen in der Benutzerverwaltung: nicht wie das Suchfeld der Verweiswahl auf volle Breite ziehen. */
+.rollenwahl input { width: auto; }
+.rollenwahl .haken { align-self: flex-start; }
 .wahlliste { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; right: 0; max-height: 280px; overflow-y: auto; background: var(--flaeche); border: 1px solid var(--linie-stark); border-radius: var(--r); box-shadow: 0 8px 24px rgba(15, 23, 42, .14); padding: 4px; display: flex; flex-direction: column; }
 .wahlliste button { text-align: left; background: none; border: 0; padding: 7px 10px; border-radius: 6px; font: inherit; color: inherit; cursor: pointer; }
 .wahlliste button:hover, .wahlliste button:focus-visible { background: var(--akzent-zart); outline: none; }

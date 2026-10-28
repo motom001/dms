@@ -22,7 +22,7 @@ function useRollen() {
 function WeitereRollen({ gewaehlt, setze, sperre }: { gewaehlt: string[]; setze: (ids: string[]) => void; sperre?: boolean }) {
   const r = useRollen();
   return (
-    <fieldset className="wahl eigenschaft">
+    <fieldset className="wahl rollenwahl">
       <legend>Weitere Rollen <small className="leise">z. B. als Verantwortliche in Verträgen</small></legend>
       {r.geladen && !r.weitere.length && <p className="leise klein">Noch keine weiteren Rollen angelegt.</p>}
       {r.weitere.map((x) => (

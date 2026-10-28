@@ -1,0 +1,109 @@
+name: Handbuch
+
+# Baut Benutzer- und Administratorhandbuch mit aktuellen Screenshots und
+# veröffentlicht sie auf GitHub Pages (nur von main). Pull Requests bauen nur
+# und legen die Screenshots als Artefakt ab, damit man sie vorher ansehen kann.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: handbuch-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bauen:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: dms
+          POSTGRES_PASSWORD: dms
+          POSTGRES_DB: dms
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U dms -d dms"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: DMS bauen
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
+      - name: DMS starten (leere Datenbank)
+        run: |
+          mkdir -p "$RUNNER_TEMP/dateien"
+          nohup node server/dist/index.js > "$RUNNER_TEMP/dms.log" 2>&1 &
+        env:
+          DATABASE_URL: postgres://dms:dms@localhost:5432/dms
+          FILES_DIR: ${{ runner.temp }}/dateien
+          PORT: '3000'
+          APP_URL: http://localhost:3000
+          DMS_VERSION: handbuch
+
+      - name: Screenshots aufnehmen
+        working-directory: docs/handbuch/screenshots
+        run: |
+          npm install --no-audit --no-fund --no-save playwright@1
+          npx playwright install --with-deps chromium
+          node aufnehmen.mjs "$GITHUB_WORKSPACE/docs/handbuch/bilder"
+        env:
+          DMS_URL: http://localhost:3000
+
+      - name: Protokoll des DMS bei Fehlern
+        if: failure()
+        run: tail -n 200 "$RUNNER_TEMP/dms.log"
+
+      - name: Handbücher bauen
+        run: |
+          pip install --quiet 'mkdocs-material>=9.5,<10'
+          for h in benutzer admin; do
+            cp -r docs/handbuch/bilder "docs/handbuch/$h/docs/bilder"
+          done
+          mkdir -p docs/handbuch/admin/docs/api
+          mv docs/handbuch/admin/docs/bilder/openapi.json docs/handbuch/admin/docs/api/openapi.json
+          rm -f docs/handbuch/benutzer/docs/bilder/openapi.json
+          mkdir -p site
+          cp docs/handbuch/start/index.html site/index.html
+          mkdocs build --strict -f docs/handbuch/benutzer/mkdocs.yml -d "$GITHUB_WORKSPACE/site/benutzer"
+          mkdocs build --strict -f docs/handbuch/admin/mkdocs.yml -d "$GITHUB_WORKSPACE/site/admin"
+
+      - name: Screenshots zum Ansehen
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: docs/handbuch/bilder
+          retention-days: 7
+
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
+        with:
+          path: site
+
+  veroeffentlichen:
+    needs: bauen
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - id: pages
+        uses: actions/deploy-pages@v4

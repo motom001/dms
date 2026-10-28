@@ -4,3 +4,8 @@ dist/
 *.log
 .DS_Store
 /data/
+# Erzeugt vom Workflow „Handbuch“
+/docs/handbuch/bilder/
+/docs/handbuch/*/docs/bilder/
+/docs/handbuch/admin/docs/api/
+/site/
