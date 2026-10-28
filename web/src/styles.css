@@ -343,6 +343,7 @@ progress::-moz-progress-bar { background: var(--akzent); border-radius: 999px; }
 .refbox .gewaehlt li { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; padding: 6px 10px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche); }
 /* Titel bekommt mindestens 10em; reicht der Platz nicht, rutschen „Ändern“ und „Entfernen“ in die nächste Zeile (#31). */
 .refbox .gewaehlt li > :first-child { flex: 1 1 10em; min-width: min(10em, 100%); overflow-wrap: break-word; }
+.verweisaktionen { display: flex; gap: 10px; margin-left: auto; }
 .wahl { position: relative; }
 .wahl input { width: 100%; }
 /* Haken für weitere Rollen in der Benutzerverwaltung: nicht wie das Suchfeld der Verweiswahl auf volle Breite ziehen. */
