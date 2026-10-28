@@ -9,12 +9,13 @@ import { Dreiteilung } from '../bereiche';
 import { titelOder, useSeiten } from '../seiten';
 import { MappeAnsicht, NeueMappe } from './MappeFormular';
 import { PapierkorbDetail, PapierkorbListe, usePapierkorb } from './Papierkorb';
+import { Stern } from './Stern';
 
 /**
  * Ablage in drei Spalten, von groß nach klein:
  *   Sichten  →  Mappen der Sicht  →  eine Mappe
  *
- * /ablage/:sicht                    „eingang“, „papierkorb“ (#43), eine verwaltete Sicht (#38) oder die Id eines Mappentyps
+ * /ablage/:sicht                    „eingang“, „favoriten“ (#62), „papierkorb“ (#43), eine verwaltete Sicht (#38) oder die Id eines Mappentyps
  * /ablage/:sicht/:mappeId           Mappe rechts geöffnet
  * /ablage/:typId/neu?verweis=k:id   neue Mappe, optional mit vorbelegtem Verweis
  *
@@ -58,6 +59,9 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           <Link to="/ablage/eingang" className={`sicht ${sicht === 'eingang' ? 'an' : ''}`}>
             <span className="nm">Eingang</span>{d.zaehler.eingang > 0 && <span className="zaehler">{zahl(d.zaehler.eingang)}</span>}
           </Link>
+          <Link to="/ablage/favoriten" className={`sicht ${sicht === 'favoriten' ? 'an' : ''}`}>
+            <span className="nm"><span aria-hidden="true" className="sternzeichen">★</span> Favoriten</span>{!!d.zaehler.favoriten && <span className="zahl">{zahl(d.zaehler.favoriten)}</span>}
+          </Link>
           {/* Papierkorb (#43): sichtbar, solange er an ist oder noch etwas darin liegt. */}
           {(!!d.zaehler.papierkorbTage || !!d.zaehler.papierkorb) && (
             <Link to="/ablage/papierkorb" className={`sicht ${sicht === 'papierkorb' ? 'an' : ''}`}>
@@ -78,6 +82,10 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           ? <Liste key="eingang" sicht="eingang" titel="Eingang" offen={dritt}
               beschreibung="Mappen, an denen du etwas tun sollst: Sie passen nicht mehr zur Definition, jemand hat dich erwähnt oder dir eine Aufgabe gegeben."
               leerText="Nichts zu tun." />
+          : sicht === 'favoriten'
+          ? <Liste key="favoriten" sicht="favoriten" titel="Favoriten" offen={dritt}
+              beschreibung="Mappen, die du mit einem Stern markiert hast."
+              leerText="Noch keine Favoriten. Markiere eine Mappe mit dem Stern ☆, um sie hier zu finden." />
           : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} titel={verwaltet?.name ?? typ!.name} beschreibung={verwaltet ? verwaltet.beschreibung : typ?.beschreibung}
               offen={dritt} neu={!!typ && darfErstellen(typ)} leerText="Noch keine Mappen in dieser Sicht." />
           : sicht ? <div className="leer"><p>Diese Sicht gibt es nicht (mehr).</p></div> : null}
@@ -155,7 +163,7 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
     return () => o.disconnect();
   }, [s.mehr, s.mappen.length, tabelle]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const gesamtSicht = p.sicht === 'eingang' ? d.zaehler.eingang : d.zaehler.sichten?.[p.sicht] ?? (p.typ ? d.anzahl(p.typ.id) : 0);
+  const gesamtSicht = p.sicht === 'eingang' ? d.zaehler.eingang : p.sicht === 'favoriten' ? d.zaehler.favoriten ?? 0 : d.zaehler.sichten?.[p.sicht] ?? (p.typ ? d.anzahl(p.typ.id) : 0);
   const zeigeSuche = gesamtSicht > 5 || !!eingabe;
   const anzahlText = s.gesamt === null ? '' : suche
     ? `${zahl(s.gesamt)} Treffer`
@@ -196,14 +204,15 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
       {s.gesamt === 0
         ? <p className="leise leerliste">{suche ? 'Nichts gefunden.' : p.leerText}</p>
         : tabelle
-          ? <Tabelle sicht={p.sicht} typ={p.typ} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} ausschnitte={s.ausschnitte} aufgaben={s.aufgaben} offen={p.offen}
+          ? <Tabelle sicht={p.sicht} typ={p.typ} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} ausschnitte={s.ausschnitte} aufgaben={s.aufgaben} favoriten={s.favoriten} offen={p.offen}
               sortierung={sortierung} sortiere={sortiere} ende={nachladen ? (el) => { ende.current = el; } : undefined} nachladen={nachladen} />
           : <ul className="mappenliste">
               {s.mappen.map((m) => {
                 const typ = d.typ(m.typId);
                 const k = kompakt(p.typ, typ, m, s.bezuege, d.person);
                 return (
-                  <li key={m.id}>
+                  <li key={m.id} className="mit-stern">
+                    <Stern mappeId={m.id} an={s.favoriten.has(m.id)} titel={k.titel} klein />
                     <Link to={`/ablage/${p.sicht}/${m.id}`} className={`eintrag ${p.offen === m.id ? 'an' : ''}`}>
                       <span className="titel">{k.titel}</span>
                       <Unter text={k.unter} />
@@ -233,7 +242,7 @@ function kompakt(sichtTyp: Mappentyp | undefined, typ: Mappentyp | undefined, m:
 }
 
 function Tabelle(p: {
-  sicht: string; typ?: Mappentyp; spalten: string[]; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; offen?: string;
+  sicht: string; typ?: Mappentyp; spalten: string[]; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; favoriten: Set<string>; offen?: string;
   sortierung: Sortierung | null; sortiere(spalte: string): void; ende?: (el: HTMLElement | null) => void; nachladen: ReactNode;
 }) {
   const d = useDaten();
@@ -246,6 +255,7 @@ function Tabelle(p: {
       <table>
         <thead>
           <tr>
+            <th className="sternspalte"><span className="sr">Favorit</span></th>
             {p.spalten.map((k) => {
               const kann = sortierbar(k, p.typ);
               const an = aktiv.spalte === k;
@@ -267,7 +277,8 @@ function Tabelle(p: {
             const typ = d.typ(m.typId);
             const ziel = `/ablage/${p.sicht}/${m.id}`;
             return (
-              <tr key={m.id} className={`${p.offen === m.id ? 'an' : ''} ${m.passt === false ? 'unpassend' : ''}`} onClick={(e) => { if (!(e.target as HTMLElement).closest('a')) geheZu(ziel); }}>
+              <tr key={m.id} className={`${p.offen === m.id ? 'an' : ''} ${m.passt === false ? 'unpassend' : ''}`} onClick={(e) => { if (!(e.target as HTMLElement).closest('a, button')) geheZu(ziel); }}>
+                <td className="sternspalte"><Stern mappeId={m.id} an={p.favoriten.has(m.id)} titel={titelOder(m.titel)} klein /></td>
                 {p.spalten.map((k, i) => {
                   const text = zelle(k, m, typ, p.bezuege, d.person);
                   return <td key={k} className={rechts(k) ? 'rechts' : kurz(k) ? 'kurz' : ''}>{i === 0 ? <><Link to={ziel}>{text || titelOder(m.titel)}</Link>{p.ausschnitte?.[m.id] && <Fundstelle a={p.ausschnitte[m.id]} />}</> : text}</td>;
@@ -276,7 +287,7 @@ function Tabelle(p: {
               </tr>
             );
           })}
-          {p.nachladen && <tr ref={p.ende} className="nachladen"><td colSpan={p.spalten.length + (p.sicht === 'eingang' ? 1 : 0)} className="leise klein">{p.nachladen}</td></tr>}
+          {p.nachladen && <tr ref={p.ende} className="nachladen"><td colSpan={p.spalten.length + 1 + (p.sicht === 'eingang' ? 1 : 0)} className="leise klein">{p.nachladen}</td></tr>}
         </tbody>
       </table>
     </div>

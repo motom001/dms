@@ -49,7 +49,7 @@ async function anfrage<T>(methode: string, url: string, body?: unknown): Promise
 
 export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string; titel: string }
 export type Bezuege = Record<string, MappenBezug>;
-export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string> }
+export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; /** Favoriten des Benutzers unter den Mappen dieser Seite (#62). */ favoriten?: string[] }
 /** Texterkennung (#45): Stand, Werkzeuge und Einstellungen für die Werkbank. */
 export interface OcrEinstellungen { aktiv: boolean; auftraege: number; maxSeiten: number; maxMB: number; sprachen: string; typen: Record<string, 'tesseract' | 'aus'> }
 export interface OcrStatus {
@@ -59,6 +59,8 @@ export interface OcrStatus {
 }
 export interface Zaehler {
   typen: Record<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number; sichten?: Record<string, number>;
+  /** Eigene Favoriten (#62). */
+  favoriten?: number;
   /** Eigene Mappen im Papierkorb (#43); Tage 0 = kein Papierkorb. */
   papierkorb?: number; papierkorbTage?: number;
 }
@@ -147,6 +149,7 @@ export const api = {
   sichtVorschau: (id: string | null, sicht: Partial<SichtDaten>) => anfrage<{ anzahl: number }>('POST', '/api/sichten/vorschau', { id, sicht }),
   belegung: (typId: string) => anfrage<Record<string, number>>('GET', `/api/typen/${typId}/belegung`),
   mappe: (id: string) => anfrage<MappeDetails>('GET', `/api/mappen/${id}`),
+  favorit: (id: string, an: boolean) => anfrage<null>(an ? 'PUT' : 'DELETE', `/api/mappen/${id}/favorit`),
   mappeAnlegen: (m: unknown) => anfrage<Mappe>('POST', '/api/mappen', m),
   mappeAendern: (id: string, m: unknown) => anfrage<Mappe>('PUT', `/api/mappen/${id}`, m),
   mappeLoeschen: (id: string) => anfrage<null>('DELETE', `/api/mappen/${id}`),
@@ -233,7 +236,7 @@ export const api = {
   },
 };
 
-export interface MappeDetails { mappe: Mappe; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege }
+export interface MappeDetails { mappe: Mappe; favorit?: boolean; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 export const dokumentUrl = (id: string, herunterladen = false) => `/api/dokumente/${id}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
 

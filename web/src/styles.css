@@ -712,3 +712,22 @@ a.person:hover, a.person:focus-visible { text-decoration: underline; }
 .nur-schmal-block { display: none; }
 @media (max-width: 820px) { .nur-schmal-block { display: block; margin-top: 12px; } }
 .profil .typeintrag .nm { white-space: normal; }
+
+/* Favoriten (#62): Stern in Mappenkopf, Listen und Tabellen. */
+.stern { background: none; border: 0; padding: 2px 4px; margin: 0; cursor: pointer; color: var(--leise); font-size: calc(22px * var(--skala, 1)); line-height: 1; border-radius: 6px; flex: none; }
+.stern.klein { font-size: calc(16px * var(--skala, 1)); }
+.stern:hover { color: var(--warn); background: var(--senke); }
+.stern.an { color: var(--warn); }
+.stern:focus-visible { outline: 2px solid var(--gruen); outline-offset: 1px; }
+.titelzeile { display: flex; align-items: flex-start; gap: 8px; justify-content: space-between; }
+.titelzeile h1 { min-width: 0; overflow-wrap: anywhere; }
+.mit-stern { position: relative; }
+.mit-stern > .stern { position: absolute; right: 4px; top: 6px; z-index: 1; }
+.mit-stern > .eintrag { padding-right: 34px; }
+.mit-stern > .stern:not(.an) { opacity: .45; }
+.mit-stern:hover > .stern, .mit-stern > .stern:focus-visible { opacity: 1; }
+.trefferliste th.sternspalte, .trefferliste td.sternspalte { width: 1%; padding-right: 0; white-space: nowrap; }
+.trefferliste td.sternspalte .stern:not(.an) { opacity: .45; }
+.trefferliste tr:hover td.sternspalte .stern { opacity: 1; }
+.sternzeichen { color: var(--warn); }
+@media print { .stern { display: none; } }

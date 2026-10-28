@@ -2,6 +2,7 @@ import type postgres from 'postgres';
 import { alsText } from '../../shared/src/markdown';
 import { TREFFER_ANFANG, TREFFER_ENDE, type Aufgabe, type Ausschnitt, type Dokument, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
 import type { Filter, Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
+import type { Quelle } from '../../shared/src/model';
 import { istUuid, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
 
 type Sql = postgres.Sql;
@@ -167,14 +168,27 @@ function zaehlBedingung(sql: Sql, anzahl: Teil, vergleich: string, n: number): T
 
 function filterSql(sql: Sql, f: Filter): Teil {
   if (f.art === 'feld') return feldBedingung(sql, f);
+  if (f.art === 'favorit') {
+    return sql`EXISTS (SELECT 1 FROM favoriten fav WHERE fav.mappe_id = mappen.id AND fav.benutzer_id = ${istUuid(f.benutzer) ? f.benutzer : null}::uuid)`;
+  }
   if (f.art === 'dokumente') {
-    return zaehlBedingung(sql, sql`SELECT count(*) FROM dokumente d WHERE d.mappe_id = mappen.id AND d.register_key = ${f.register}`, f.vergleich, f.anzahl);
+    // register null = alle Dokumente der Mappe (#67).
+    const reg = f.register === null ? sql`` : sql`AND d.register_key = ${f.register}`;
+    return zaehlBedingung(sql, sql`SELECT count(*) FROM dokumente d WHERE d.mappe_id = mappen.id ${reg}`, f.vergleich, f.anzahl);
   }
   // Verknüpfungen wie im Register: alle Rückverweise oder nur die gewählten Quellen (Typ + Feld).
-  const quellen = f.quellen.length
-    ? sql`AND EXISTS (SELECT 1 FROM unnest(${f.quellen.map((x) => x.typId)}::text[], ${f.quellen.map((x) => x.feldKey)}::text[]) AS w(t, f) WHERE w.t = q.typ_id::text AND w.f = v.feld_key)`
-    : sql``;
-  return zaehlBedingung(sql, sql`SELECT count(DISTINCT v.quelle_id) FROM verweise v JOIN mappen q ON q.id = v.quelle_id WHERE v.ziel_id = mappen.id AND v.quelle_id <> mappen.id ${quellen}`, f.vergleich, f.anzahl);
+  const zaehle = (quellen: Quelle[]) => {
+    const q = quellen.length
+      ? sql`AND EXISTS (SELECT 1 FROM unnest(${quellen.map((x) => x.typId)}::text[], ${quellen.map((x) => x.feldKey)}::text[]) AS w(t, f) WHERE w.t = q.typ_id::text AND w.f = v.feld_key)`
+      : sql``;
+    return zaehlBedingung(sql, sql`SELECT count(DISTINCT v.quelle_id) FROM verweise v JOIN mappen q ON q.id = v.quelle_id WHERE v.ziel_id = mappen.id AND v.quelle_id <> mappen.id ${q}`, f.vergleich, f.anzahl);
+  };
+  if (f.quellenJeTyp) {
+    // Gemeinsames Register mehrerer Typen (#66): je Typ über die Quellen seines eigenen Registers.
+    const teile = Object.entries(f.quellenJeTyp).filter(([t]) => istUuid(t)).map(([t, q]) => sql`(mappen.typ_id = ${t}::uuid AND ${zaehle(q)})`);
+    return teile.length ? teile.slice(1).reduce<Teil>((acc, x) => sql`${acc} OR ${x}`, teile[0]) : sql`false`;
+  }
+  return zaehle(f.quellen);
 }
 
 /** ODER der Klauseln; jede Klausel: Typ passt UND alle Filter. Ohne Klauseln: nichts. */
@@ -338,6 +352,8 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const eingang = o.eingang
         ? sql`AND EXISTS (SELECT 1 FROM aufgaben a WHERE a.mappe_id = mappen.id AND a.erledigt IS NULL
             AND (a.empfaenger_id = ${istUuid(o.eingang.benutzerId) ? o.eingang.benutzerId : null}::uuid ${o.eingang.admin ? sql`OR a.empfaenger_id IS NULL` : sql``}))`
+        : o.favoriten
+        ? sql`AND EXISTS (SELECT 1 FROM favoriten fav WHERE fav.mappe_id = mappen.id AND fav.benutzer_id = ${istUuid(o.favoriten.benutzerId) ? o.favoriten.benutzerId : null}::uuid)`
         : sql``;
       const muster = o.suche ? `%${o.suche.replace(/[\\%_]/g, (c) => '\\' + c)}%` : null;
       const suche = muster
@@ -391,7 +407,9 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
           count(*) FILTER (WHERE EXISTS (SELECT 1 FROM aufgaben a WHERE a.mappe_id = mappen.id AND a.erledigt IS NULL
             AND (a.empfaenger_id = ${istUuid(benutzerId) ? benutzerId : null}::uuid OR (${admin} AND a.empfaenger_id IS NULL))))::int AS eingang
         FROM mappen WHERE haushalt_id = ${haushaltId} GROUP BY typ_id`;
+      const [f] = await sql`SELECT count(*)::int AS n FROM favoriten WHERE haushalt_id = ${haushaltId} AND benutzer_id = ${istUuid(benutzerId) ? benutzerId : null}::uuid`;
       return {
+        favoriten: f.n as number,
         typen: new Map(r.map((z) => [z.typ_id as string, { anzahl: z.anzahl as number, unpassend: z.unpassend as number, demo: z.demo as number }])),
         eingang: r.reduce((a, z) => a + (z.eingang as number), 0),
       };
@@ -500,17 +518,28 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async loescheDokument(id) {
       await sql`DELETE FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
+    async setzeFavorit(benutzerId, mappeId, an) {
+      if (!istUuid(benutzerId) || !istUuid(mappeId)) return;
+      if (an) await sql`INSERT INTO favoriten (benutzer_id, mappe_id, haushalt_id) VALUES (${benutzerId}, ${mappeId}, ${haushaltId}) ON CONFLICT DO NOTHING`;
+      else await sql`DELETE FROM favoriten WHERE benutzer_id = ${benutzerId} AND mappe_id = ${mappeId}`;
+    },
+    async favoritenVon(benutzerId, mappeIds) {
+      const ids = mappeIds.filter(istUuid);
+      if (!istUuid(benutzerId) || !ids.length) return new Set();
+      return new Set((await sql`SELECT mappe_id FROM favoriten WHERE benutzer_id = ${benutzerId} AND mappe_id = ANY(${ids}::uuid[])`).map((r) => r.mappe_id as string));
+    },
     /* ---------- Papierkorb (#43) ---------- */
     async legeInPapierkorb(id, benutzerId) {
       await sql.begin(async (tx) => {
         const r = await tx`
-          INSERT INTO papierkorb (id, haushalt_id, typ_id, mappe, verweise, dokumente, geloescht_von, notizen, aufgaben)
+          INSERT INTO papierkorb (id, haushalt_id, typ_id, mappe, verweise, dokumente, geloescht_von, notizen, aufgaben, favoriten)
           SELECT m.id, m.haushalt_id, m.typ_id, to_jsonb(m),
             (SELECT coalesce(jsonb_agg(to_jsonb(v)), '[]'::jsonb) FROM verweise v WHERE v.quelle_id = m.id),
             (SELECT coalesce(jsonb_agg(to_jsonb(d)), '[]'::jsonb) FROM dokumente d WHERE d.mappe_id = m.id),
             ${istUuid(benutzerId) ? benutzerId : null}::uuid,
             (SELECT coalesce(jsonb_agg(to_jsonb(n)), '[]'::jsonb) FROM notizen n WHERE n.mappe_id = m.id),
-            (SELECT coalesce(jsonb_agg(to_jsonb(a)), '[]'::jsonb) FROM aufgaben a WHERE a.mappe_id = m.id)
+            (SELECT coalesce(jsonb_agg(to_jsonb(a)), '[]'::jsonb) FROM aufgaben a WHERE a.mappe_id = m.id),
+            (SELECT coalesce(jsonb_agg(to_jsonb(f)), '[]'::jsonb) FROM favoriten f WHERE f.mappe_id = m.id)
           FROM mappen m WHERE m.haushalt_id = ${haushaltId} AND m.id = ${id}`;
         // Ausgehende Verweise und Dokumente folgen per Kaskade.
         if (r.count) await tx`DELETE FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
@@ -569,6 +598,12 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
             'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'erstellt_von') THEN x.value -> 'erstellt_von' ELSE 'null'::jsonb END,
             'erledigt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'erledigt_von') THEN x.value -> 'erledigt_von' ELSE 'null'::jsonb END))).*
           FROM papierkorb p, jsonb_array_elements(p.aufgaben) x WHERE p.id = ${id}`;
+        // Favoriten (#62): wieder da – für Benutzer, die es noch gibt.
+        await tx`
+          INSERT INTO favoriten
+          SELECT r.* FROM papierkorb p, jsonb_populate_recordset(NULL::favoriten, coalesce(p.favoriten, '[]'::jsonb)) r
+          WHERE p.id = ${id} AND EXISTS (SELECT 1 FROM benutzer b WHERE b.id = r.benutzer_id)
+          ON CONFLICT DO NOTHING`;
         await tx`DELETE FROM papierkorb WHERE id = ${id}`;
         return { verweiseEntfallen: (p.verweise as unknown[]).length - v.count };
       });

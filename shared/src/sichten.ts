@@ -79,8 +79,14 @@ export type Bedingung =
   | { art: 'feld'; feld: string; op: Operator; wert?: WertAngabe; bis?: WertAngabe }
   /** Anzahl Dokumente in einem Dokumentenregister (#41). */
   | { art: 'dokumente'; register: string; vergleich: Zaehlvergleich; anzahl: number }
-  /** Anzahl Mappen in einem Verknüpfungsregister (#41). */
-  | { art: 'verknuepfungen'; register: string; vergleich: Zaehlvergleich; anzahl: number };
+  /** Anzahl Mappen in einem Verknüpfungsregister (#41); bei mehreren Typen ein gemeinsames Register (#66). */
+  | { art: 'verknuepfungen'; register: string; vergleich: Zaehlvergleich; anzahl: number }
+  /** Anzahl aller Dokumente der Mappe, unabhängig vom Register (#67). */
+  | { art: 'dokumenteGesamt'; vergleich: Zaehlvergleich; anzahl: number }
+  /** Anzahl aller anderen Mappen, die auf diese verweisen (#67). */
+  | { art: 'verknuepfungenGesamt'; vergleich: Zaehlvergleich; anzahl: number }
+  /** Die Mappe ist ein Favorit des aktuellen Benutzers (#62). */
+  | { art: 'favorit' };
 
 /* ---------- Sichten ---------- */
 
@@ -170,11 +176,15 @@ export function bedingungsProblem(b: Bedingung, typen: Mappentyp[]): string | nu
     if (b.op === 'zeigtAuf' && b.wert?.art === 'meineRollen' && f.art === 'person') return `„Rollen des aktuellen Benutzers“ geht nicht bei „${f.label}“.`;
     return null;
   }
-  if (typen.length !== 1) return 'Bedingungen auf Register gehen nur bei Sichten mit genau einem Mappentyp.';
-  const r = typen[0].register.find((x) => x.key === b.register);
-  const art = b.art === 'dokumente' ? 'dokumente' : 'verknuepfungen';
-  if (!r || r.art !== art) return `Das ${art === 'dokumente' ? 'Dokumenten' : 'Verknüpfungs'}register „${b.register}“ gibt es nicht (mehr).`;
+  if (b.art === 'favorit') return null;
   if (!Number.isInteger(b.anzahl) || b.anzahl < 0) return 'Die Anzahl muss eine ganze Zahl ab 0 sein.';
+  if (b.art === 'dokumenteGesamt' || b.art === 'verknuepfungenGesamt') return null;
+  if (!typen.length) return 'Bedingungen auf Register brauchen mindestens einen Mappentyp.';
+  // Bei mehreren Typen: gleicher Schlüssel und gleiche Art in allen (#66).
+  const art = b.art === 'dokumente' ? 'dokumente' : 'verknuepfungen';
+  if (typen.some((t) => t.register.find((x) => x.key === b.register)?.art !== art)) {
+    return `Das ${art === 'dokumente' ? 'Dokumenten' : 'Verknüpfungs'}register „${b.register}“ gibt es ${typen.length > 1 ? 'nicht in allen Mappentypen dieser Sicht' : 'nicht (mehr)'}.`;
+  }
   return null;
 }
 
@@ -190,8 +200,11 @@ export interface Aufloesung {
 /** Bedingung, wie das Repo sie braucht: Art des Feldes, Operator und feste Werte. */
 export type Filter =
   | { art: 'feld'; key: string; feldart: Feldart; op: Operator; a?: unknown; b?: unknown }
-  | { art: 'dokumente'; register: string; vergleich: Zaehlvergleich; anzahl: number }
-  | { art: 'verknuepfungen'; quellen: Quelle[]; vergleich: Zaehlvergleich; anzahl: number };
+  /** register null = alle Dokumente der Mappe (#67). */
+  | { art: 'dokumente'; register: string | null; vergleich: Zaehlvergleich; anzahl: number }
+  /** quellen [] = alle Rückverweise; quellenJeTyp: je Mappentyp die Quellen seines Registers (#66). */
+  | { art: 'verknuepfungen'; quellen: Quelle[]; quellenJeTyp?: Record<string, Quelle[]>; vergleich: Zaehlvergleich; anzahl: number }
+  | { art: 'favorit'; benutzer: string };
 
 /** Eine Klausel: Mappen dieser Typen, die alle Filter erfüllen. Eine Sicht = ODER ihrer Klauseln. */
 export interface Klausel { typen: string[]; filter: Filter[] }
@@ -256,9 +269,19 @@ export function filterFuer(s: Pick<SichtDaten, 'bedingungen'>, typen: Mappentyp[
       }
     } else if (b.art === 'dokumente') {
       erg.push({ art: 'dokumente', register: b.register, vergleich: b.vergleich, anzahl: b.anzahl });
-    } else {
+    } else if (b.art === 'dokumenteGesamt') {
+      erg.push({ art: 'dokumente', register: null, vergleich: b.vergleich, anzahl: b.anzahl });
+    } else if (b.art === 'verknuepfungenGesamt') {
+      erg.push({ art: 'verknuepfungen', quellen: [], vergleich: b.vergleich, anzahl: b.anzahl });
+    } else if (b.art === 'favorit') {
+      erg.push({ art: 'favorit', benutzer: a.ich });
+    } else if (typen.length === 1) {
       const r = typen[0].register.find((x) => x.key === b.register)!;
       erg.push({ art: 'verknuepfungen', quellen: r.quellen ?? [], vergleich: b.vergleich, anzahl: b.anzahl });
+    } else {
+      // Je Typ über die Quellen seines eigenen Registers, genau wie im Register an der Mappe (#66).
+      const quellenJeTyp = Object.fromEntries(typen.map((t) => [t.id, t.register.find((x) => x.key === b.register)!.quellen ?? []]));
+      erg.push({ art: 'verknuepfungen', quellen: [], quellenJeTyp, vergleich: b.vergleich, anzahl: b.anzahl });
     }
   }
   return erg;
@@ -277,8 +300,10 @@ export function klauselnFuer(alle: Sicht[], id: string, typen: Map<string, Mappe
 /* ---------- Auswerten im Arbeitsspeicher (Tests, Repo ohne Datenbank) ---------- */
 
 export interface Zaehlquelle {
-  dokumente(mappeId: string, register: string): number;
+  /** register null = alle Dokumente der Mappe. */
+  dokumente(mappeId: string, register: string | null): number;
   verknuepfungen(mappeId: string, quellen: Quelle[]): number;
+  favorit?(mappeId: string, benutzer: string): boolean;
 }
 
 function vergleichswert(m: Mappe, f: Extract<Filter, { art: 'feld' }>): unknown {
@@ -300,7 +325,8 @@ function zaehltWie(n: number, v: Zaehlvergleich, soll: number) {
 export function erfuellt(m: Mappe, filter: Filter[], z: Zaehlquelle): boolean {
   return filter.every((f) => {
     if (f.art === 'dokumente') return zaehltWie(z.dokumente(m.id, f.register), f.vergleich, f.anzahl);
-    if (f.art === 'verknuepfungen') return zaehltWie(z.verknuepfungen(m.id, f.quellen), f.vergleich, f.anzahl);
+    if (f.art === 'verknuepfungen') return zaehltWie(z.verknuepfungen(m.id, f.quellenJeTyp ? f.quellenJeTyp[m.typId] ?? [] : f.quellen), f.vergleich, f.anzahl);
+    if (f.art === 'favorit') return !!z.favorit?.(m.id, f.benutzer);
     const v = vergleichswert(m, f);
     const leer = istLeer(v);
     switch (f.op) {
@@ -374,6 +400,11 @@ export function bereinigeBedingungen(e: unknown): Bedingung[] {
     } else if ((b.art === 'dokumente' || b.art === 'verknuepfungen') && typeof b.register === 'string') {
       const vergleich = Object.prototype.hasOwnProperty.call(ZAEHLVERGLEICHE, String(b.vergleich)) ? (b.vergleich as Zaehlvergleich) : 'gleich';
       erg.push({ art: b.art, register: b.register.slice(0, 60), vergleich, anzahl: Math.max(0, Math.trunc(Number(b.anzahl) || 0)) });
+    } else if (b.art === 'dokumenteGesamt' || b.art === 'verknuepfungenGesamt') {
+      const vergleich = Object.prototype.hasOwnProperty.call(ZAEHLVERGLEICHE, String(b.vergleich)) ? (b.vergleich as Zaehlvergleich) : 'gleich';
+      erg.push({ art: b.art, vergleich, anzahl: Math.max(0, Math.trunc(Number(b.anzahl) || 0)) });
+    } else if (b.art === 'favorit') {
+      erg.push({ art: 'favorit' });
     }
   }
   return erg;
@@ -381,8 +412,12 @@ export function bereinigeBedingungen(e: unknown): Bedingung[] {
 
 /** Bedingung lesbar, z. B. „Kündigung bis zwischen heute und heute + 90 Tage“. */
 export function beschreibeBedingung(b: Bedingung, typen: Mappentyp[], titelVon: (id: string) => string = (id) => id): string {
+  if (b.art === 'favorit') return 'ist mein Favorit';
+  if (b.art === 'dokumenteGesamt') return `Dokumente insgesamt: ${ZAEHLVERGLEICHE[b.vergleich]} ${b.anzahl} ${b.anzahl === 1 ? 'Dokument' : 'Dokumente'}`;
+  if (b.art === 'verknuepfungenGesamt') return `Verknüpfungen insgesamt: ${ZAEHLVERGLEICHE[b.vergleich]} ${b.anzahl} ${b.anzahl === 1 ? 'Verknüpfung' : 'Verknüpfungen'}`;
   if (b.art !== 'feld') {
-    const r = typen[0]?.register.find((x) => x.key === b.register);
+    const namen = [...new Set(typen.map((t) => t.register.find((x) => x.key === b.register)?.name).filter(Boolean))];
+    const r = { name: namen.length ? namen.join(' / ') : undefined };
     return `${r?.name ?? b.register}: ${ZAEHLVERGLEICHE[b.vergleich]} ${b.anzahl} ${b.art === 'dokumente' ? (b.anzahl === 1 ? 'Dokument' : 'Dokumente') : (b.anzahl === 1 ? 'Verknüpfung' : 'Verknüpfungen')}`;
   }
   const f = bedingungsfelder(typen).find((x) => x.key === b.feld);

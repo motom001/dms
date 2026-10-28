@@ -9,6 +9,7 @@ import { beschreibeBedingung, bedingungsfelder, bedingungsProblem, heuteIn, vers
 import { ladeBeispiele } from '../src/beispiele';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
+import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo-speicher';
@@ -19,7 +20,7 @@ const ICH = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin' };
 let neuesRepo: () => Promise<Repo> = async () => speicherRepo();
 
 async function mitBeispielen() {
-  const d = new Dienst(await neuesRepo(), speicherDateien());
+  const d = new Dienst(await neuesRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
   await ladeBeispiele(d, null);
   const typen = await d.listeTypen();
   const typ = (n: string) => typen.find((t) => t.name === n)!;
@@ -51,7 +52,7 @@ function faelle() {
       assert.match(bedingungsProblem({ art: 'feld', feld: 'gibtsnicht', op: 'leer' }, [r])!, /gibt es nicht/);
       assert.match(bedingungsProblem({ art: 'feld', feld: 'betrag', op: 'enthaelt', wert: { art: 'fest', wert: 'x' } }, [r])!, /passt nicht/);
       assert.match(bedingungsProblem({ art: 'feld', feld: 'rechnungsdatum', op: 'gleich', wert: { art: 'jahr' } }, [r])!, /im Zeitraum/);
-      assert.match(bedingungsProblem({ art: 'dokumente', register: 'dokumente', vergleich: 'gleich', anzahl: 0 }, [r, z])!, /genau einem Mappentyp/);
+      assert.match(bedingungsProblem({ art: 'dokumente', register: 'dokumente', vergleich: 'gleich', anzahl: 0 }, [r, z])!, /nicht in allen Mappentypen/);
       assert.equal(bedingungsProblem({ art: 'dokumente', register: 'dokumente', vergleich: 'gleich', anzahl: 0 }, [r]), null);
       assert.equal(beschreibeBedingung({ art: 'feld', feld: 'rechnungsdatum', op: 'zwischen', wert: { art: 'heute' }, bis: { art: 'heute', versatz: 90, einheit: 'tage' } }, [r]),
         'Rechnungsdatum zwischen heute und heute + 90 Tage');
@@ -193,6 +194,62 @@ function faelle() {
       assert.equal(await n(p.id, { art: 'verknuepfungen', register: 'rechnungen', vergleich: 'gleich', anzahl: 1 }), 2);
       assert.equal(await n(p.id, { art: 'verknuepfungen', register: 'vertraege', vergleich: 'mehr', anzahl: 0 }), 2);
       assert.equal(await n(v.id, { art: 'verknuepfungen', register: 'rechnungen', vergleich: 'gleich', anzahl: 0 }), 0, 'jeder Vertrag hat eine Rechnung');
+    });
+
+    it('zählt gemeinsame Register mehrerer Typen je Typ über die eigenen Quellen (#66)', async () => {
+      const { d, typ } = await mitBeispielen();
+      const p = typ('Vertragspartner'); const v = typ('Vertrag'); const r = typ('Rechnung');
+      const n = async (typen: string[], b: Bedingung) => (await d.seite(ICH, { sicht: (await sicht(d, 'x', typen, [b])).id })).gesamt;
+      const b: Bedingung = { art: 'verknuepfungen', register: 'rechnungen', vergleich: 'mehr', anzahl: 0 };
+      assert.equal(bedingungsProblem(b, [p, v]), null);
+      assert.equal(await n([p.id, v.id], b), await n([p.id], b) + await n([v.id], b));
+      const dok: Bedingung = { art: 'dokumente', register: 'dokumente', vergleich: 'gleich', anzahl: 0 };
+      assert.equal(await n([p.id, v.id, r.id], dok), await n([p.id], dok) + await n([v.id], dok) + await n([r.id], dok));
+      assert.match(bedingungsProblem({ art: 'verknuepfungen', register: 'rechnungen', vergleich: 'mehr', anzahl: 0 }, [p, r])!, /nicht in allen/);
+      assert.match(beschreibeBedingung(b, [p, v]), /Rechnungen/);
+    });
+
+    it('zählt Dokumente und Verknüpfungen insgesamt, auch über mehrere Typen (#67)', async () => {
+      const { d, typ, mappe } = await mitBeispielen();
+      const r = typ('Rechnung'); const z = typ('Zahlung'); const p = typ('Vertragspartner');
+      const rechnung = mappe('rechnungsnummer', 'R-2026-117');
+      await d.ladeHoch(rechnung.id, { register: 'dokumente', name: 'r.pdf' }, Buffer.from('%PDF-1.4 a'), null);
+      const n = async (typen: string[], b: Bedingung) => (await d.seite(ICH, { sicht: (await sicht(d, 'x', typen, [b])).id })).gesamt;
+      const alle = (await d.seite(ICH, { sicht: (await sicht(d, 'alle', [r.id, z.id])).id })).gesamt;
+      const mit = await n([r.id, z.id], { art: 'dokumenteGesamt', vergleich: 'mehr', anzahl: 0 });
+      const ohne = await n([r.id, z.id], { art: 'dokumenteGesamt', vergleich: 'gleich', anzahl: 0 });
+      assert.equal(mit, 1); assert.equal(mit + ohne, alle);
+      // Jeder Vertragspartner wird von mindestens einem Vertrag oder einer Rechnung verwiesen.
+      assert.equal(await n([p.id], { art: 'verknuepfungenGesamt', vergleich: 'gleich', anzahl: 0 }), 0);
+      assert.ok(await n([p.id], { art: 'verknuepfungenGesamt', vergleich: 'mehr', anzahl: 1 }) > 0);
+      assert.equal(bedingungsProblem({ art: 'dokumenteGesamt', vergleich: 'mehr', anzahl: -1 }, [r]) !== null, true);
+    });
+
+    it('merkt Favoriten je Benutzer, zeigt sie als Sicht und hält sie über den Papierkorb (#62)', async () => {
+      const { d, typ, mappe } = await mitBeispielen();
+      const r = typ('Rechnung');
+      const rechnung = mappe('rechnungsnummer', 'R-2026-117');
+      const vorher = (await d.holeMappe(rechnung.id)).mappe.geaendert;
+      await d.setzeFavorit(ICH, rechnung.id, true);
+      await d.setzeFavorit(ICH, rechnung.id, true);
+      assert.equal(await d.istFavorit(ICH, rechnung.id), true);
+      assert.equal((await d.holeMappe(rechnung.id)).mappe.geaendert, vorher, 'persönlich: ändert „zuletzt geändert“ nicht');
+      const fav = await d.seite(ICH, { sicht: 'favoriten' });
+      assert.deepEqual(fav.mappen.map((m) => m.id), [rechnung.id]);
+      assert.deepEqual(fav.favoriten, [rechnung.id]);
+      assert.equal((await d.zaehler(ICH)).favoriten, 1);
+      assert.equal((await d.seite(ICH, { sicht: (await sicht(d, 'f', [r.id], [{ art: 'favorit' }])).id })).gesamt, 1);
+      const zahlung = (await d.listeMappen()).find((m) => m.typId === typ('Zahlung').id)!;
+      await d.setzeFavorit(ICH, zahlung.id, true);
+      assert.equal((await d.zaehler(ICH)).favoriten, 2);
+      await d.setzePapierkorbTage(30);
+      await d.loescheMappe(zahlung.id, ICH.id);
+      assert.equal((await d.zaehler(ICH)).favoriten, 1, 'verschwindet beim Löschen');
+      await d.stelleWiederHer(zahlung.id, ICH);
+      assert.equal(await d.istFavorit(ICH, zahlung.id), true, 'kommt mit dem Wiederherstellen zurück');
+      await d.setzeFavorit(ICH, zahlung.id, false);
+      await d.setzeFavorit(ICH, rechnung.id, false);
+      assert.equal((await d.seite(ICH, { sicht: 'favoriten' })).gesamt, 0);
     });
   });
 }

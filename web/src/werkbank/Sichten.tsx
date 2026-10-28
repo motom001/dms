@@ -180,22 +180,42 @@ export function SichtEditor({ id }: { id: string }) {
 
 /* ---------- Bedingungen ---------- */
 
-type Ziel = { wert: 'feld'; feld: Bedingungsfeld } | { wert: 'dokumente' | 'verknuepfungen'; register: string; name: string };
+type Ziel = { wert: 'feld'; feld: Bedingungsfeld } | { wert: 'dokumente' | 'verknuepfungen'; register: string; name: string }
+  | { wert: 'dokumenteGesamt' | 'verknuepfungenGesamt' | 'favorit' };
+const ZIEL_GESAMT: Record<'dokumenteGesamt' | 'verknuepfungenGesamt' | 'favorit', string> = {
+  dokumenteGesamt: 'Dokumente insgesamt', verknuepfungenGesamt: 'Verknüpfungen insgesamt', favorit: 'ist mein Favorit',
+};
+
+/** Register, die alle Typen der Sicht mit gleichem Schlüssel und gleicher Art haben (#66). */
+function gemeinsameRegister(typen: Mappentyp[]): Array<{ wert: 'dokumente' | 'verknuepfungen'; register: string; name: string }> {
+  if (!typen.length) return [];
+  return typen[0].register.filter((r) => (r.art === 'dokumente' || r.art === 'verknuepfungen')
+    && typen.every((t) => t.register.some((x) => x.key === r.key && x.art === r.art)))
+    .map((r) => ({
+      wert: r.art as 'dokumente' | 'verknuepfungen', register: r.key,
+      name: [...new Set(typen.map((t) => t.register.find((x) => x.key === r.key)!.name))].join(' / '),
+    }));
+}
 
 function Bedingungen({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDaten) => SichtDaten) => void; typen: Mappentyp[] }) {
   const d = useDaten();
   const felder = useMemo(() => bedingungsfelder(typen), [typen]);
   const ziele: Ziel[] = [
     ...felder.map((f) => ({ wert: 'feld' as const, feld: f })),
-    ...(typen.length === 1 ? typen[0].register.filter((r) => r.art === 'dokumente' || r.art === 'verknuepfungen')
-      .map((r) => ({ wert: r.art as 'dokumente' | 'verknuepfungen', register: r.key, name: r.name })) : []),
+    { wert: 'dokumenteGesamt' }, { wert: 'verknuepfungenGesamt' },
+    ...gemeinsameRegister(typen),
+    { wert: 'favorit' },
   ];
-  const zielKey = (z: Ziel) => (z.wert === 'feld' ? `feld:${z.feld.key}` : `${z.wert}:${z.register}`);
+  const zielKey = (z: Ziel) => (z.wert === 'feld' ? `feld:${z.feld.key}` : 'register' in z ? `${z.wert}:${z.register}` : z.wert);
+  const bKey = (b: Bedingung) => (b.art === 'feld' ? `feld:${b.feld}` : b.art === 'dokumente' || b.art === 'verknuepfungen' ? `${b.art}:${b.register}` : b.art);
+  const zielName = (z: Ziel) => (z.wert === 'feld' ? z.feld.label : 'register' in z ? `${z.wert === 'dokumente' ? 'Dokumente' : 'Verknüpfungen'} in „${z.name}“` : ZIEL_GESAMT[z.wert]);
   const setze = (i: number, b: Bedingung) => setE((x) => ({ ...x, bedingungen: x.bedingungen.map((y, j) => (j === i ? b : y)) }));
   const weg = (i: number) => setE((x) => ({ ...x, bedingungen: x.bedingungen.filter((_, j) => j !== i) }));
   const neu = (z: Ziel): Bedingung => (z.wert === 'feld'
     ? { art: 'feld', feld: z.feld.key, op: OPERATOREN_JE_ART[z.feld.art][0] }
-    : { art: z.wert, register: z.register, vergleich: z.wert === 'dokumente' ? 'gleich' : 'mehr', anzahl: 0 });
+    : z.wert === 'favorit' ? { art: 'favorit' }
+    : 'register' in z ? { art: z.wert, register: z.register, vergleich: z.wert === 'dokumente' ? 'gleich' : 'mehr', anzahl: 0 }
+    : { art: z.wert, vergleich: z.wert === 'dokumenteGesamt' ? 'gleich' : 'mehr', anzahl: 0 });
   const [titel, setTitel] = useState<Record<string, string>>({});
   const merke = (mid: string, t: string) => setTitel((x) => ({ ...x, [mid]: t }));
 
@@ -206,24 +226,25 @@ function Bedingungen({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDat
         ? <p className="leise">Bedingungen gelten für die eigenen Mappentypen der Sicht – wähle oben mindestens einen.</p>
         : <>
             <p className="leise">Die Sicht zeigt nur Mappen, die <strong>alle</strong> Bedingungen erfüllen. Werte wie „heute“ oder „aktueller Benutzer“ werden bei jedem Öffnen neu berechnet.
-              {typen.length > 1 && ' Bei mehreren Mappentypen gibt es nur Felder, die alle Typen gleich haben, und die Systemwerte; Register erst bei einem Typ.'}</p>
+              {typen.length > 1 && ' Bei mehreren Mappentypen gibt es nur Felder und Register, die alle Typen gleich haben, und die Systemwerte. Ein gemeinsames Register zählt je Typ über dessen eigene Quellen.'}</p>
             {e.bedingungen.length > 0 && (
               <ol className="bedingungen">
                 {e.bedingungen.map((b, i) => {
                   const problem = bedingungsProblem(b, typen);
-                  const ziel = ziele.find((z) => zielKey(z) === (b.art === 'feld' ? `feld:${b.feld}` : `${b.art}:${b.register}`));
+                  const ziel = ziele.find((z) => zielKey(z) === bKey(b));
                   return (
                     <li key={i} className={problem ? 'fehlerhaft' : ''}>
                       <div className="bedingungszeile">
                         <select aria-label="Feld oder Register" value={ziel ? zielKey(ziel) : ''} onChange={(x) => { const z = ziele.find((y) => zielKey(y) === x.target.value); if (z) setze(i, neu(z)); }}>
-                          {!ziel && <option value="">– {b.art === 'feld' ? b.feld : b.register} (fehlt) –</option>}
+                          {!ziel && <option value="">– {b.art === 'feld' ? b.feld : 'register' in b ? b.register : b.art} (fehlt) –</option>}
                           <optgroup label="Felder">{ziele.filter((z) => z.wert === 'feld' && !z.feld.key.startsWith('_')).map((z) => <option key={zielKey(z)} value={zielKey(z)}>{(z as { feld: Bedingungsfeld }).feld.label}</option>)}</optgroup>
                           <optgroup label="Systemwerte">{ziele.filter((z) => z.wert === 'feld' && z.feld.key.startsWith('_')).map((z) => <option key={zielKey(z)} value={zielKey(z)}>{(z as { feld: Bedingungsfeld }).feld.label}</option>)}</optgroup>
-                          {ziele.some((z) => z.wert !== 'feld') && <optgroup label="Anzahl in Registern">{ziele.filter((z) => z.wert !== 'feld').map((z) => <option key={zielKey(z)} value={zielKey(z)}>{z.wert === 'dokumente' ? 'Dokumente' : 'Verknüpfungen'} in „{(z as { name: string }).name}“</option>)}</optgroup>}
+                          <optgroup label="Anzahl">{ziele.filter((z) => z.wert !== 'feld' && z.wert !== 'favorit').map((z) => <option key={zielKey(z)} value={zielKey(z)}>{zielName(z)}</option>)}</optgroup>
+                          <optgroup label="Persönlich"><option value="favorit">{ZIEL_GESAMT.favorit}</option></optgroup>
                         </select>
                         {b.art === 'feld' && ziel?.wert === 'feld'
                           ? <FeldBedingung b={b} feld={ziel.feld} setze={(n) => setze(i, n)} titel={titel} merke={merke} />
-                          : b.art !== 'feld' && <>
+                          : b.art !== 'feld' && b.art !== 'favorit' && <>
                               <select aria-label="Vergleich" value={b.vergleich} onChange={(x) => setze(i, { ...b, vergleich: x.target.value as Zaehlvergleich })}>
                                 {Object.entries(ZAEHLVERGLEICHE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                               </select>

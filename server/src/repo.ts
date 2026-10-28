@@ -13,6 +13,8 @@ export interface SeitenAnfrage {
   typId?: string;
   /** … oder der Eingang dieses Benutzers (nicht passende eigene Mappen; ohne Ersteller beim Admin). */
   eingang?: { benutzerId: string; admin: boolean };
+  /** … oder die Favoriten dieses Benutzers (#62). */
+  favoriten?: { benutzerId: string };
   /** … oder die Mappen einer Sicht (#38): ODER der Klauseln, Bedingungen aufgelöst. */
   klauseln?: Klausel[];
   /** Suche in Titel und Werten. */
@@ -92,7 +94,10 @@ export interface Repo {
   /** Eine Seite einer Sicht, sortiert nach Titel. */
   seite(o: SeitenAnfrage): Promise<{ gesamt: number; mappen: Mappe[]; ausschnitte?: Record<string, Ausschnitt> }>;
   /** Zähler für die Sichten. */
-  zaehler(benutzerId: string, admin: boolean): Promise<{ typen: Map<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number }>;
+  zaehler(benutzerId: string, admin: boolean): Promise<{ typen: Map<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number; favoriten: number }>;
+  /** Favoriten (#62): setzen/entfernen; welche der Mappen Favoriten des Benutzers sind. */
+  setzeFavorit(benutzerId: string, mappeId: string, an: boolean): Promise<void>;
+  favoritenVon(benutzerId: string, mappeIds: string[]): Promise<Set<string>>;
   /** Anzahl Mappen je Klauselliste (eine je Sicht), in derselben Reihenfolge. */
   zaehleKlauseln(liste: Klausel[][]): Promise<number[]>;
 

@@ -700,10 +700,13 @@ export class Dienst {
     const nurTyp = String(q.sicht ?? '').startsWith('typ:') ? String(q.sicht).slice(4) : null;
     const sicht = nurTyp ? undefined : sichten.find((x) => x.id === q.sicht);
     // Sortieren nach Feldern geht, wenn die Sicht genau einen Mappentyp zeigt.
-    const einTyp = q.sicht === 'eingang' ? undefined : sicht ? (() => { const w = wirksameTypen(sichten, sicht.id); return w.length === 1 ? typen.get(w[0]) : undefined; })() : typen.get(nurTyp ?? String(q.sicht));
+    const fest = q.sicht === 'eingang' || q.sicht === 'favoriten';
+    const einTyp = fest ? undefined : sicht ? (() => { const w = wirksameTypen(sichten, sicht.id); return w.length === 1 ? typen.get(w[0]) : undefined; })() : typen.get(nurTyp ?? String(q.sicht));
     const sortierung = sortierungAus(text(q.sortierung), q.absteigend === 'true' || q.absteigend === true, einTyp);
     const r = q.sicht === 'eingang'
       ? await this.repo.seite({ eingang: { benutzerId: ich.id, admin: ich.rolle === 'admin' }, suche, volltext, notizen, von, anzahl, sortierung })
+      : q.sicht === 'favoriten'
+        ? await this.repo.seite({ favoriten: { benutzerId: ich.id }, suche, volltext, notizen, von, anzahl, sortierung })
       : sicht
         ? await this.repo.seite({ klauseln: klauselnFuer(sichten, sicht.id, typen, await this.aufloesung(ich.id)), suche, volltext, notizen, von, anzahl, sortierung })
         : await this.repo.seite({ typId: nurTyp ?? q.sicht, suche, volltext, notizen, von, anzahl, sortierung });
@@ -718,6 +721,8 @@ export class Dienst {
     return {
       gesamt: r.gesamt, von, mappen: r.mappen, bezuege: Object.fromEntries(await this.repo.bezuege(ziele)),
       ...(r.ausschnitte ? { ausschnitte: r.ausschnitte } : {}), ...(q.sicht === 'eingang' ? { aufgaben } : {}),
+      /** Welche Mappen dieser Seite Favoriten des Benutzers sind (#62). */
+      favoriten: [...await this.repo.favoritenVon(ich.id, r.mappen.map((m) => m.id))],
     };
   }
 
@@ -729,11 +734,22 @@ export class Dienst {
     const a = await this.aufloesung(ich.id);
     const n = await this.repo.zaehleKlauseln(sichten.map((x) => klauselnFuer(sichten, x.id, typen, a)));
     return {
-      typen: Object.fromEntries(z.typen), eingang: z.eingang, sichten: Object.fromEntries(sichten.map((x, i) => [x.id, n[i]])),
+      typen: Object.fromEntries(z.typen), eingang: z.eingang, favoriten: z.favoriten, sichten: Object.fromEntries(sichten.map((x, i) => [x.id, n[i]])),
       // Papierkorb (#43): eigene gelöschte Mappen; Tage 0 = aus.
       papierkorb: await this.repo.zaehlePapierkorb(ich.id), papierkorbTage: await this.papierkorbTage(),
     };
   }
+
+  /* ---------- Favoriten (#62) ---------- */
+
+  /** Persönlich: ändert weder „zuletzt geändert“ noch das Protokoll der Mappe. */
+  async setzeFavorit(ich: { id: string }, mappeId: string, an: boolean) {
+    if (!(await this.repo.holeMappe(mappeId))) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    await this.repo.setzeFavorit(ich.id, mappeId, an);
+    return { favorit: an };
+  }
+
+  async istFavorit(ich: { id: string }, mappeId: string) { return (await this.repo.favoritenVon(ich.id, [mappeId])).has(mappeId); }
 
   /** Dynamische Werte für den angemeldeten Benutzer: heute, er selbst, seine Rollen. */
   private async aufloesung(benutzerId: string): Promise<Aufloesung> {

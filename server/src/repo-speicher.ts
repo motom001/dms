@@ -14,6 +14,9 @@ export function speicherRepo(): Repo {
   const sichten = new Map<string, Sicht>();
   /** Aufgaben (#54). */
   const aufgaben = new Map<string, Aufgabe>();
+  /** Favoriten (#62): Benutzer → Mappen. */
+  const favoriten = new Map<string, Set<string>>();
+  const istFavorit = (mappeId: string, benutzerId: string) => !!favoriten.get(benutzerId)?.has(mappeId);
   const offenFuer = (m: Mappe, benutzerId: string, admin: boolean) =>
     [...aufgaben.values()].some((a) => a.mappeId === m.id && !a.erledigt && (a.empfaengerId === benutzerId || (admin && !a.empfaengerId)));
   const mitMappe = (a: Aufgabe): Aufgabe => ({ ...kopie(a), mappeTitel: mappen.get(a.mappeId)?.titel ?? '', typId: mappen.get(a.mappeId)?.typId });
@@ -36,7 +39,8 @@ export function speicherRepo(): Repo {
   });
   /** Zählt wie PostgreSQL: Dokumente je Register, Rückverweise (ohne sich selbst) je Quelle. */
   const zaehl: Zaehlquelle = {
-    dokumente: (id, register) => [...dokumente.values()].filter((d) => d.mappeId === id && d.registerKey === register).length,
+    dokumente: (id, register) => [...dokumente.values()].filter((d) => d.mappeId === id && (register === null || d.registerKey === register)).length,
+    favorit: (id, benutzer) => istFavorit(id, benutzer),
     verknuepfungen: (id, quellen) => new Set([...verweise.entries()]
       .filter(([q, vs]) => q !== id && vs.some((v) => v.zielId === id && (!quellen.length || quellen.some((x) => x.typId === mappen.get(q)?.typId && x.feldKey === v.feldKey))))
       .map(([q]) => q)).size,
@@ -140,6 +144,7 @@ export function speicherRepo(): Repo {
         .filter((m) => !o.typId || m.typId === o.typId)
         .filter((m) => !o.klauseln || inSicht(m, o.klauseln, zaehl))
         .filter((m) => !o.eingang || offenFuer(m, o.eingang.benutzerId, o.eingang.admin))
+        .filter((m) => !o.favoriten || istFavorit(m.id, o.favoriten.benutzerId))
         .filter((m) => !q || (m.titel ?? '').toLowerCase().includes(q) || Object.values(m.werte).some((v) => !(typeof v === 'string' && v.startsWith('dms1$')) && (typeof v === 'object' ? JSON.stringify(v) : String(v)).toLowerCase().includes(q))
           || (!!o.volltext && [...dokumente.values()].some((d) => d.mappeId === m.id && findet(texte.get(d.id), q)))
           || (!!o.notizen && [...notizen.values()].some((n) => n.mappeId === m.id && n.text.toLowerCase().includes(q))))
@@ -176,7 +181,7 @@ export function speicherRepo(): Repo {
         if (m.demo) z.demo++;
         typen.set(m.typId, z);
       }
-      return { typen, eingang };
+      return { typen, eingang, favoriten: [...(favoriten.get(benutzerId) ?? [])].filter((id) => mappen.has(id)).length };
     },
     async zaehleKlauseln(liste) { return liste.map((k) => [...mappen.values()].filter((m) => inSicht(m, k, zaehl)).length); },
     async listeSichten() { return [...sichten.values()].map(kopie).sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, 'de')); },
@@ -321,6 +326,12 @@ export function speicherRepo(): Repo {
       return { anzahl: weg.length + imKorb.length, dateien };
     },
 
+    async setzeFavorit(benutzerId, mappeId, an) {
+      const s = favoriten.get(benutzerId) ?? new Set<string>();
+      if (an) s.add(mappeId); else s.delete(mappeId);
+      favoriten.set(benutzerId, s);
+    },
+    async favoritenVon(benutzerId, mappeIds) { return new Set(mappeIds.filter((id) => istFavorit(id, benutzerId) && mappen.has(id))); },
     async legeInPapierkorb(id, benutzerId) {
       const m = mappen.get(id);
       if (!m) return;

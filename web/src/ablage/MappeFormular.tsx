@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { Stern } from './Stern';
 import { darfErstellen, darfLoeschen, formatiere, geschuetzteFelder, istLeer, istOk, MAX_DATEIGROESSE, OCR_STAENDE, standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type OcrStand, type Pruefergebnis, type Register } from '../../../shared/src/model';
 import { api, ApiFehler, dokumentUrl, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
@@ -54,7 +55,7 @@ export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp
     <>
       <div className="mappenkopf">
         <p className="ueber">{typ.name}</p>
-        <h1>{titelOder(mappe.titel)}</h1>
+        <div className="titelzeile"><h1>{titelOder(mappe.titel)}</h1><Stern mappeId={mappe.id} an={!!details.favorit} /></div>
         <dl className="index">
           <div><dt>Angelegt</dt><dd>{zeit(mappe.erstellt)} von <Person id={mappe.erstelltVon} /></dd></div>
           <div><dt>Zuletzt geändert</dt><dd>{zeit(mappe.geaendert)} von <Person id={mappe.geaendertVon} /></dd></div>

@@ -44,7 +44,7 @@ export const V1_TABELLE: V1[] = [
     methode: 'GET', pfad: '/mappen', gruppe: 'Ablage', zusammenfassung: 'Mappen einer Sicht, seitenweise',
     beschreibung: 'Mappen eines Typs (oder des eigenen Eingangs), sortiert und seitenweise. `bezuege` enthält Titel und Typ der Mappen, auf die die gelieferten Mappen verweisen.',
     parameter: [
-      { name: 'sicht', wo: 'query', typ: 'string', pflicht: true, beschreibung: 'Id einer Sicht, „eingang“ oder „typ:<Id eines Mappentyps>“ (alle Mappen dieses Typs, ohne Bedingungen)' },
+      { name: 'sicht', wo: 'query', typ: 'string', pflicht: true, beschreibung: 'Id einer Sicht, „eingang“, „favoriten“ (eigene Favoriten) oder „typ:<Id eines Mappentyps>“ (alle Mappen dieses Typs, ohne Bedingungen)' },
       { name: 'von', wo: 'query', typ: 'integer', beschreibung: 'Erster Eintrag (ab 0), Standard 0' },
       { name: 'anzahl', wo: 'query', typ: 'integer', beschreibung: 'Anzahl, 1–500, Standard 100' },
       { name: 'suche', wo: 'query', typ: 'string', beschreibung: 'Text in Titel oder Werten' },
@@ -61,6 +61,8 @@ export const V1_TABELLE: V1[] = [
     },
   },
   { methode: 'GET', pfad: '/mappen/{id}', gruppe: 'Ablage', zusammenfassung: 'Eine Mappe mit Dokumenten und Rückverweisen', intern: { methode: 'GET', pfad: '/api/mappen/:id' }, parameter: [id('der Mappe'), passwoerter], antwort: 'MappeDetails' },
+  { methode: 'PUT', pfad: '/mappen/{id}/favorit', gruppe: 'Ablage', zusammenfassung: 'Mappe als Favorit markieren', beschreibung: 'Persönlich für den Benutzer des Schlüssels; ändert weder „zuletzt geändert“ noch die Historie. Mehrfaches Markieren schadet nicht.', intern: { methode: 'PUT', pfad: '/api/mappen/:id/favorit' }, parameter: [id('der Mappe')], antwort: 'Favorit' },
+  { methode: 'DELETE', pfad: '/mappen/{id}/favorit', gruppe: 'Ablage', zusammenfassung: 'Favorit entfernen', intern: { methode: 'DELETE', pfad: '/api/mappen/:id/favorit' }, parameter: [id('der Mappe')], antwort: 'Favorit' },
   { methode: 'GET', pfad: '/papierkorb', gruppe: 'Ablage', zusammenfassung: 'Eigener Papierkorb', beschreibung: 'Mappen, die der Benutzer dieses Schlüssels gelöscht hat, neueste zuerst. Nach der eingestellten Aufbewahrung werden sie endgültig gelöscht.', intern: { methode: 'GET', pfad: '/api/papierkorb' }, antwort: 'PapierkorbListe' },
   { methode: 'POST', pfad: '/papierkorb/{id}/wiederherstellen', gruppe: 'Ablage', zusammenfassung: 'Mappe aus dem Papierkorb wiederherstellen', beschreibung: 'Verweise auf Mappen, die es nicht mehr gibt, entfallen; passt die Mappe danach nicht zur Definition (z. B. ein eindeutiger Wert ist inzwischen vergeben), erscheint sie im Eingang.', intern: { methode: 'POST', pfad: '/api/papierkorb/:id/wiederherstellen' }, parameter: [id('der Mappe')], antwort: 'Wiederhergestellt' },
   { methode: 'DELETE', pfad: '/papierkorb/{id}', gruppe: 'Ablage', zusammenfassung: 'Mappe endgültig löschen', intern: { methode: 'DELETE', pfad: '/api/papierkorb/:id' }, parameter: [id('der Mappe')], antwort: 'Geloescht' },
@@ -193,7 +195,7 @@ const SCHEMAS: Record<string, Schema> = {
   MappeDetails: {
     type: 'object',
     properties: {
-      mappe: ref('Mappe'), dokumente: liste('Dokument'), notizen: liste('Notiz'), aufgaben: liste('Aufgabe'), bezuege: { type: 'object', additionalProperties: ref('Bezug') },
+      mappe: ref('Mappe'), favorit: { type: 'boolean', description: 'Favorit des Benutzers dieses Schlüssels' }, dokumente: liste('Dokument'), notizen: liste('Notiz'), aufgaben: liste('Aufgabe'), bezuege: { type: 'object', additionalProperties: ref('Bezug') },
       rueckverweise: { type: 'array', items: { type: 'object', properties: { quelleId: uuid, quelleTypId: uuid, feldKey: { type: 'string' }, titel: { type: 'string' } } } },
       loeschbar: { type: 'object', description: 'Ob die Mappe gelöscht werden kann; sonst Grund und die Mappen, die das verhindern', properties: { ok: { type: 'boolean' }, grund: { type: 'string' }, rueckverweise: { type: 'array', items: { type: 'object', properties: { quelleId: uuid, quelleTypId: uuid, feldKey: { type: 'string' }, titel: { type: 'string' } } } } } },
     },
@@ -203,6 +205,7 @@ const SCHEMAS: Record<string, Schema> = {
     properties: {
       gesamt: { type: 'integer' }, von: { type: 'integer' }, mappen: liste('Mappe'), bezuege: { type: 'object', additionalProperties: ref('Bezug') },
       aufgaben: { type: 'object', description: 'Nur im Eingang: offene Aufgaben je Mappen-Id', additionalProperties: { type: 'string' } },
+      favoriten: { type: 'array', items: uuid, description: 'Ids der gelieferten Mappen, die Favoriten des Benutzers sind' },
       ausschnitte: { type: 'object', description: 'Nur mit volltext=true: Fundstelle je Mappen-Id; Treffer zwischen den Steuerzeichen U+0002 und U+0003', additionalProperties: { type: 'object', properties: { dokument: { type: 'string' }, text: { type: 'string' } } } },
     },
   },
@@ -216,6 +219,7 @@ const SCHEMAS: Record<string, Schema> = {
   },
   AufgabenListe: liste('Aufgabe'),
   AufgabeEingabe: { type: 'object', required: ['empfaengerId', 'text'], properties: { empfaengerId: uuid, text: { type: 'string' } } },
+  Favorit: { type: 'object', properties: { favorit: { type: 'boolean' } } },
   Delegieren: { type: 'object', required: ['empfaengerId'], properties: { empfaengerId: uuid } },
   Notiz: { type: 'object', properties: { id: uuid, mappeId: uuid, text: { type: 'string', description: 'Markdown' }, erstellt: zeit, erstelltVon: { ...uuid, nullable: true }, geaendert: zeit, geaendertVon: { ...uuid, nullable: true } } },
   NotizListe: liste('Notiz'),
@@ -233,7 +237,7 @@ const SCHEMAS: Record<string, Schema> = {
     },
   },
   SichtListe: liste('Sicht'),
-  Zaehler: { type: 'object', properties: { sichten: { type: 'object', additionalProperties: { type: 'integer' }, description: 'Anzahl Mappen je Sicht (mit Untersichten)' }, typen: { type: 'object', additionalProperties: { type: 'object', properties: { anzahl: { type: 'integer' }, unpassend: { type: 'integer' }, demo: { type: 'integer' } } } }, eingang: { type: 'integer' } } },
+  Zaehler: { type: 'object', properties: { sichten: { type: 'object', additionalProperties: { type: 'integer' }, description: 'Anzahl Mappen je Sicht (mit Untersichten)' }, typen: { type: 'object', additionalProperties: { type: 'object', properties: { anzahl: { type: 'integer' }, unpassend: { type: 'integer' }, demo: { type: 'integer' } } } }, eingang: { type: 'integer' }, favoriten: { type: 'integer', description: 'Eigene Favoriten' } } },
   Hochgeladen: { type: 'object', properties: { dokument: ref('Dokument'), gleicherInhalt: { type: 'array', items: { type: 'object', properties: { mappeId: uuid, name: { type: 'string' }, titel: { type: 'string' }, typId: uuid } } } } },
   Benutzer: {
     type: 'object',
