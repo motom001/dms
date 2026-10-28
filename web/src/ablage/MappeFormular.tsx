@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
-import { darfErstellen, darfLoeschen, formatiere, trefferlistenVon, geschuetzteFelder, istLeer, istOk, MAX_DATEIGROESSE, OCR_STAENDE, standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type OcrStand, type Pruefergebnis, type Register } from '../../../shared/src/model';
-import { api, ApiFehler, dokumentUrl, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
+import { darfErstellen, darfLoeschen, formatiere, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register } from '../../../shared/src/model';
+import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
@@ -14,9 +14,9 @@ import { Notizen } from './Notizen';
 import { AufgabenHinweis, NeueAufgabe } from './Aufgaben';
 import { Aktionsmenue, Druckansicht, EmailMaske } from './Aktionen';
 import { Person } from '../Person';
+import { Dokumente, type NeueDatei } from './Dokumente';
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
-const groesse = (b: number) => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);
 
 /** Register des Typs; ältere Typen ohne Register bekommen die Standardregister. */
 const registerVon = (t: Mappentyp): Register[] => (t.register?.length ? t.register : standardRegister(t.felder));
@@ -90,8 +90,6 @@ export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp
   );
 }
 
-/** Eine Datei, die erst beim Speichern der Mappe hochgeladen wird. */
-export interface NeueDatei { uid: string; datei: File; register: string }
 let zaehler = 0;
 
 /** Mappen, die laut Register hierher verweisen (alle oder nur gewählte Quellen). */
@@ -224,9 +222,10 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
       : <p className="leise">Auf diesem Register liegen keine Felder.</p>;
   } else if (reg.art === 'dokumente') {
     inhalt = mappe && !details ? <p className="leise">Lade …</p> : (
-      <Dokumente register={reg} dokumente={dokumenteIn(reg.key)} neue={neueDateien.filter((n) => n.register === reg.key)} entfernt={entfernt}
+      <Dokumente key={reg.key} register={reg} dokumente={dokumenteIn(reg.key)} neue={neueDateien.filter((n) => n.register === reg.key)} entfernt={entfernt}
         hinzufuegen={(dateien) => setNeueDateien((x) => [...x, ...dateien.map((datei) => ({ uid: `n${++zaehler}`, datei, register: reg.key }))])}
         entferne={(id) => setEntfernt((x) => (x.includes(id) ? x.filter((y) => y !== id) : [...x, id]))}
+        entferneMehrere={(ids) => setEntfernt((x) => [...x, ...ids.filter((id) => !x.includes(id))])}
         vergiss={(uid) => setNeueDateien((x) => x.filter((n) => n.uid !== uid))} />
     );
   } else if (reg.art === 'protokoll') {
@@ -441,113 +440,6 @@ function PasswortEingabe({ id, feld: f, roh: p, setze, mappeId }: { id: string; 
       <button type="button" className="knopf klein" onClick={() => setZeigen(!zeigen)} aria-label={zeigen ? 'Eingabe verbergen' : 'Eingabe anzeigen'} title={zeigen ? 'Eingabe verbergen' : 'Eingabe anzeigen'}>{auge(zeigen)}</button>
       {p.gesetzt && <button type="button" className="knopf klein" onClick={() => { setze({ ...p, neu: '' }); setAendern(false); setZeigen(false); }}>Abbrechen</button>}
     </div>
-  );
-}
-
-/* ---------- Dokumentenregister ---------- */
-
-function Dokumente({ register, dokumente, neue, entfernt, hinzufuegen, entferne, vergiss }: {
-  register: Register; dokumente: Dokument[]; neue: NeueDatei[]; entfernt: string[];
-  hinzufuegen(d: File[]): void; entferne(id: string): void; vergiss(uid: string): void;
-}) {
-  const d = useDaten();
-  const auswahl = useRef<HTMLInputElement>(null);
-  const [ziehen, setZiehen] = useState(false);
-  const [zuGross, setZuGross] = useState<string[]>([]);
-  const [ansicht, setAnsicht] = useState<string>();
-  const gewaehlt = dokumente.find((x) => x.id === ansicht && !entfernt.includes(x.id));
-  // Texterkennung (#45): Stand nachladen, solange etwas wartet oder läuft.
-  const [ocr, setOcr] = useState<Record<string, OcrStand | undefined>>({});
-  const [text, setText] = useState<{ id: string; text: string | null } | null>(null);
-  const standVon = (x: Dokument) => ocr[x.id] ?? x.ocr;
-  const offen = dokumente.some((x) => { const s = standVon(x)?.stand; return s === 'wartet' || s === 'laeuft'; });
-  useEffect(() => {
-    if (!offen || !dokumente.length) return;
-    const t = setTimeout(() => {
-      void api.mappe(dokumente[0].mappeId).then((m) => setOcr(Object.fromEntries(m.dokumente.map((x) => [x.id, x.ocr]))), () => {});
-    }, 3000);
-    return () => clearTimeout(t);
-  }, [offen, ocr, dokumente]);
-  async function erneut(id: string) {
-    try { const x = await api.texterkennungErneut(id); setOcr((o) => ({ ...o, [id]: x.ocr })); } catch { /* bleibt */ }
-  }
-  async function zeigeText(id: string) {
-    if (text?.id === id) { setText(null); return; }
-    try { setText({ id, text: (await api.volltext(id)).text }); } catch { setText({ id, text: null }); }
-  }
-
-  function nimm(liste: FileList | File[]) {
-    const alle = [...liste];
-    const gross = alle.filter((f) => f.size > MAX_DATEIGROESSE);
-    setZuGross(gross.map((f) => f.name));
-    hinzufuegen(alle.filter((f) => f.size <= MAX_DATEIGROESSE && f.size > 0));
-  }
-  const fallen = (e: DragEvent) => { e.preventDefault(); setZiehen(false); nimm(e.dataTransfer.files); };
-
-  return (
-    <div className="dokumente">
-      <div className={`ablagezone ${ziehen ? 'zieht' : ''}`}
-        onDragOver={(e) => { e.preventDefault(); setZiehen(true); }} onDragLeave={() => setZiehen(false)} onDrop={fallen}>
-        <p>Dateien hierher ziehen oder <button type="button" className="textknopf" onClick={() => auswahl.current?.click()}>auswählen</button></p>
-        <p className="leise klein">Bis 100 MB je Datei. Übernommen wird mit „Mappe speichern“.</p>
-        <input ref={auswahl} type="file" multiple hidden onChange={(e) => { if (e.target.files) nimm(e.target.files); e.target.value = ''; }} />
-      </div>
-      {zuGross.length > 0 && <div className="hinweis schlecht"><p>Zu groß (über 100 MB): {zuGross.join(', ')}</p></div>}
-      {dokumente.length + neue.length === 0
-        ? <p className="leise">Noch keine Dokumente in „{register.name}“.</p>
-        : <ul className="dokumentliste">
-            {neue.map((n) => (
-              <li key={n.uid} className="neu">
-                <div className="dokname">
-                  <span>{n.datei.name} <span className="chip gut">neu</span></span>
-                  <span className="leise klein">{groesse(n.datei.size)} · wird beim Speichern hochgeladen</span>
-                </div>
-                <div className="zeilenaktionen"><button type="button" className="textknopf" onClick={() => vergiss(n.uid)}>Entfernen</button></div>
-              </li>
-            ))}
-            {dokumente.map((x) => {
-              const weg = entfernt.includes(x.id);
-              return (
-                <li key={x.id} className={`${x.id === ansicht && !weg ? 'an' : ''} ${weg ? 'weg' : ''}`}>
-                  <div className="dokname">
-                    {x.anzeigbar && !weg
-                      ? <button type="button" className="textknopf" onClick={() => setAnsicht(x.id === ansicht ? undefined : x.id)}>{x.name}</button>
-                      : <span className="dateiname">{x.name}</span>}
-                    <span className="leise klein">{weg ? 'wird beim Speichern gelöscht' : <>{groesse(x.groesse)} · {zeit(x.erstellt)} · <Person id={x.erstelltVon} /></>}</span>
-                    {!weg && <OcrAnzeige s={standVon(x)} erneut={() => void erneut(x.id)} text={() => void zeigeText(x.id)} textOffen={text?.id === x.id} />}
-                    {!weg && text?.id === x.id && <pre className="volltext">{text.text ?? 'Kein Volltext vorhanden.'}</pre>}
-                  </div>
-                  <div className="zeilenaktionen">
-                    {!weg && x.anzeigbar && <a className="textknopf" href={dokumentUrl(x.id)} target="_blank" rel="noreferrer">Öffnen</a>}
-                    {!weg && <a className="textknopf" href={dokumentUrl(x.id, true)}>Herunterladen</a>}
-                    <button type="button" className={`textknopf ${weg ? '' : 'gefahr'}`} onClick={() => entferne(x.id)}>{weg ? 'Behalten' : 'Löschen'}</button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>}
-      {gewaehlt && (
-        <div className="dokansicht">
-          {gewaehlt.mime === 'application/pdf'
-            ? <iframe src={dokumentUrl(gewaehlt.id)} title={gewaehlt.name} />
-            : <img src={dokumentUrl(gewaehlt.id)} alt={gewaehlt.name} />}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Stand der Texterkennung an einem Dokument (#45). */
-function OcrAnzeige({ s, erneut, text, textOffen }: { s?: OcrStand; erneut(): void; text(): void; textOffen: boolean }) {
-  if (!s || s.stand === 'keiner') return null;
-  const klasse = s.stand === 'fertig' ? 'gut' : s.stand === 'fehler' ? 'schlecht' : s.stand === 'ausgelassen' ? '' : 'warn';
-  return (
-    <span className="ocrstand klein">
-      <span className={`chip ${klasse}`} title={s.info ?? undefined}>Volltext: {OCR_STAENDE[s.stand]}{s.stand === 'fertig' && s.seiten ? ` · ${s.seiten} ${s.seiten === 1 ? 'Seite' : 'Seiten'}` : ''}</span>
-      {(s.stand === 'fehler' || s.stand === 'ausgelassen') && s.info && <span className="leise">{s.info}</span>}
-      {s.stand === 'fertig' && <button type="button" className="textknopf" onClick={text}>{textOffen ? 'Text ausblenden' : 'Text anzeigen'}</button>}
-      {(s.stand === 'fehler' || s.stand === 'ausgelassen') && <button type="button" className="textknopf" onClick={erneut}>Erneut versuchen</button>}
-    </span>
   );
 }
 

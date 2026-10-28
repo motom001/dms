@@ -218,6 +218,9 @@ async function main() {
 
   // Register mit Dokumenten
   await s.getByRole('tab', { name: 'Vertragsunterlagen' }).click();
+  // Erstes anzeigbares Dokument öffnen: die Anzeige steht direkt unter seiner Zeile (#85).
+  const anzeigbar = s.locator('.dokumentliste li.klickbar').first();
+  if (await anzeigbar.count()) { await anzeigbar.locator('.dokname button').click(); await s.waitForTimeout(800); }
   await bild(s, 'dokumente');
 
   // Verknüpfungsregister beim Vertragspartner
