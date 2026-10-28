@@ -123,7 +123,7 @@ async function main() {
   await mkdir(ZIEL, { recursive: true });
   const d = await vorbereiten();
   // Deutsche Oberfläche auch für Datumsfelder (Chromium richtet sich dafür nach --lang).
-  const browser = await chromium.launch({ args: ['--lang=de-DE'] });
+  const browser = await chromium.launch({ channel: 'chromium', args: ['--lang=de-DE'], env: { ...process.env, LANG: 'de_DE.UTF-8', LANGUAGE: 'de' } });
   const kontext = async (mitCookie = true, breite = 1440, hoehe = 860) => {
     const k = await browser.newContext({ viewport: { width: breite, height: hoehe }, colorScheme: 'light', locale: 'de-DE', timezoneId: 'Europe/Berlin', deviceScaleFactor: 1 });
     if (mitCookie) {
