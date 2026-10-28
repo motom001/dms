@@ -182,7 +182,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async seite(o) {
       const typ = o.typId && istUuid(o.typId) ? sql`AND typ_id = ${o.typId}` : o.typId ? sql`AND false` : sql``;
       const eingang = o.eingang
-        ? sql`AND passt IS NOT TRUE AND (erstellt_von = ${o.eingang.benutzerId} ${o.eingang.admin ? sql`OR erstellt_von IS NULL` : sql``})`
+        ? sql`AND passt IS NOT TRUE AND (erstellt_von = ${istUuid(o.eingang.benutzerId) ? o.eingang.benutzerId : null}::uuid ${o.eingang.admin ? sql`OR erstellt_von IS NULL` : sql``})`
         : sql``;
       const muster = o.suche ? `%${o.suche.replace(/[\\%_]/g, (c) => '\\' + c)}%` : null;
       const suche = muster
@@ -199,7 +199,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         SELECT typ_id, count(*)::int AS anzahl,
           count(*) FILTER (WHERE passt IS NOT TRUE)::int AS unpassend,
           count(*) FILTER (WHERE demo)::int AS demo,
-          count(*) FILTER (WHERE passt IS NOT TRUE AND (erstellt_von = ${benutzerId} OR (${admin} AND erstellt_von IS NULL)))::int AS eingang
+          count(*) FILTER (WHERE passt IS NOT TRUE AND (erstellt_von = ${istUuid(benutzerId) ? benutzerId : null}::uuid OR (${admin} AND erstellt_von IS NULL)))::int AS eingang
         FROM mappen WHERE haushalt_id = ${haushaltId} GROUP BY typ_id`;
       return {
         typen: new Map(r.map((z) => [z.typ_id as string, { anzahl: z.anzahl as number, unpassend: z.unpassend as number, demo: z.demo as number }])),
