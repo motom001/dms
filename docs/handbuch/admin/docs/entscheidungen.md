@@ -88,6 +88,15 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Neue Mappen / Löschen erlauben** als Eigenschaft jedes Mappentyps (`erstellen_erlaubt`, `loeschen_erlaubt`); die Oberfläche blendet die Knöpfe aus, der Server prüft es. Beim Typ *Benutzer* ist beides fest aus.
 - Demo-Daten und Beispiele lassen die Systemtypen aus.
 
+## Handbuch und Releases (#25)
+
+- **Zwei getrennte Handbücher** (MkDocs Material, je eine eigene Seite mit eigener Suche): Benutzer sollen sich auf ihre Möglichkeiten konzentrieren und nicht in Technik suchen müssen. Sie verweisen aufeinander, statt Inhalte doppelt zu pflegen. Technik und Entscheidungen gehören zum Administratorhandbuch.
+- **Deutsche Suche** über das Suchplugin von MkDocs (`lang: de`, mit Wortstammbildung); läuft im Browser, ohne Server.
+- **Screenshots werden erzeugt, nicht gepflegt:** Der Workflow *Handbuch* startet das DMS mit leerer Datenbank, legt Beispiele und Demo-Daten an und nimmt die Seiten mit Playwright auf (`docs/handbuch/screenshots/aufnehmen.mjs`). So passen die Bilder immer zur Version auf `main`. Die Bilder liegen nicht im Repository.
+- **GitHub Pages** über GitHub Actions; Pull Requests bauen nur und legen die Screenshots als Artefakt ab.
+- **Changelog = GitHub Releases.** Ein Tag `v*` erzeugt das Release; der Text kommt aus `docs/releases/<tag>.md` oder, falls es die Datei nicht gibt, aus den Commit-Überschriften seit dem vorigen Tag.
+- **Hilfe-Link** im Benutzermenü auf das Benutzerhandbuch, für Administratoren zusätzlich auf das Administratorhandbuch.
+
 ## Bewusst noch nicht drin
 
 Texterkennung (OCR), Suche, Papierkorb, Rechte pro Mappe, Fristen, Verschlüsselung, Backup-Funktion in der Anwendung, Zwei-Faktor-Anmeldung.

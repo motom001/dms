@@ -1,0 +1,72 @@
+site_name: DMS – Administratorhandbuch
+site_description: Einrichten, betreiben und erweitern des DMS
+site_url: https://motom001.github.io/dms/admin/
+repo_url: https://github.com/motom001/dms
+repo_name: motom001/dms
+edit_uri: edit/main/docs/handbuch/admin/docs/
+docs_dir: docs
+copyright: DMS steht unter der AGPL-3.0 · <a href="https://github.com/sponsors/motom001">Projekt unterstützen</a>
+
+theme:
+  name: material
+  language: de
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle: { icon: material/weather-night, name: Dunkle Darstellung }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle: { icon: material/weather-sunny, name: Helle Darstellung }
+
+plugins:
+  - search:
+      lang: de
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.keys
+
+extra:
+  social:
+    - icon: fontawesome/solid/heart
+      link: https://github.com/sponsors/motom001
+      name: Projekt unterstützen (GitHub Sponsors)
+    - icon: fontawesome/brands/github
+      link: https://github.com/motom001/dms
+      name: Quellcode auf GitHub
+
+nav:
+  - Überblick: index.md
+  - Installation und Betrieb:
+      - Installation auf dem NAS: installation.md
+      - Aktualisieren und Sichern: aktualisieren.md
+  - Einrichten in der Werkbank:
+      - Mappentypen: mappentypen.md
+      - Benutzer und Rollen: benutzer.md
+      - Designs: designs.md
+      - Demo-Daten: demo.md
+  - Fehlersuche und Support:
+      - Protokoll, Datenbank, Technik: fehlersuche.md
+  - Schnittstelle (API): api.md
+  - Hintergrund:
+      - Technik: technik.md
+      - Entscheidungen: entscheidungen.md
+  - Weiteres:
+      - Was ist neu? (Changelog): https://github.com/motom001/dms/releases
+      - Benutzerhandbuch: https://motom001.github.io/dms/benutzer/

@@ -101,7 +101,7 @@ export function TechnikPanel({ t }: { t: TechnikZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Technik und Versionen</h1>
-        <p className="leise">Für Fragen an den Support: Übersicht kopieren und in ein <a className="verweis" href="https://github.com/motom001/dms/issues/new?template=wunsch.md" target="_blank" rel="noreferrer">GitHub-Issue</a> einfügen. Passwörter und Zugangsdaten stehen nicht darin. Wie alles zusammenhängt, beschreibt <a className="verweis" href="https://github.com/motom001/dms/blob/main/docs/technik.md" target="_blank" rel="noreferrer">docs/technik.md</a>.</p>
+        <p className="leise">Für Fragen an den Support: Übersicht kopieren und in ein <a className="verweis" href="https://github.com/motom001/dms/issues/new?template=wunsch.md" target="_blank" rel="noreferrer">GitHub-Issue</a> einfügen. Passwörter und Zugangsdaten stehen nicht darin. Wie alles zusammenhängt, beschreibt <a className="verweis" href="https://motom001.github.io/dms/admin/technik/" target="_blank" rel="noreferrer">das Administratorhandbuch</a>.</p>
       </div>
       <div className="blatt">
         <h2 className="h3">Für den Support</h2>

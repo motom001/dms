@@ -66,6 +66,12 @@ export function App() {
   );
 }
 
+/** Handbücher auf GitHub Pages (#25). */
+export const HANDBUCH = {
+  benutzer: 'https://motom001.github.io/dms/benutzer/',
+  admin: 'https://motom001.github.io/dms/admin/',
+};
+
 const uhrzeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
 
 /** Hinweis an den Benutzer: Ein Administrator hat als er agiert. */
@@ -84,7 +90,7 @@ function Hinweise() {
   );
 }
 
-/** Menü unter dem eigenen Namen: Profil, Schriftgröße (je Gerät), Abmelden. */
+/** Menü unter dem eigenen Namen: Profil, Hilfe, Schriftgröße (je Gerät), Abmelden. */
 function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<void> }) {
   const { ich } = useKonto();
   const [offen, setOffen] = useState(false);
@@ -108,6 +114,8 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
         <div className="menue" role="menu">
           <p className="leise klein">{ich.email}</p>
           <Link to="/profil" className="menuepunkt">Profil und Design</Link>
+          <a href={HANDBUCH.benutzer} target="_blank" rel="noreferrer" className="menuepunkt" onClick={() => setOffen(false)}>Hilfe <span aria-hidden="true">↗</span></a>
+          {ich.rolle === 'admin' && <a href={HANDBUCH.admin} target="_blank" rel="noreferrer" className="menuepunkt" onClick={() => setOffen(false)}>Administratorhandbuch <span aria-hidden="true">↗</span></a>}
           <div className="menuegruppe">
             <span className="leise klein">Schriftgröße auf diesem Gerät</span>
             <div className="segmente" role="radiogroup" aria-label="Schriftgröße">

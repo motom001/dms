@@ -1,0 +1,42 @@
+name: Release
+
+# Ein Tag wie v0.8.0 erzeugt ein GitHub Release – das ist der Changelog des DMS.
+# Liegt docs/releases/<tag>.md vor, wird es als Text übernommen; sonst die
+# Commit-Überschriften seit dem vorigen Tag.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Release-Notizen
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          if [ -f "docs/releases/${tag}.md" ]; then
+            cp "docs/releases/${tag}.md" notizen.md
+          else
+            vorher=$(git describe --tags --abbrev=0 "${tag}^" 2>/dev/null || true)
+            {
+              echo "## Änderungen"
+              echo
+              git log --no-merges --format='- %s' ${vorher:+$vorher..}"$tag"
+            } > notizen.md
+          fi
+          {
+            echo
+            echo "---"
+            echo "Aktualisieren: Image \`ghcr.io/motom001/dms:${tag#v}\` (oder \`:main\`) neu ziehen und neu starten. Anleitung im [Administratorhandbuch](https://motom001.github.io/dms/admin/aktualisieren/)."
+          } >> notizen.md
+      - name: Release anlegen
+        run: gh release create "$GITHUB_REF_NAME" --title "DMS ${GITHUB_REF_NAME}" --notes-file notizen.md --verify-tag
+        env:
+          GH_TOKEN: ${{ github.token }}

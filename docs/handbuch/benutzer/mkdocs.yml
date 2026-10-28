@@ -1,0 +1,67 @@
+site_name: DMS – Benutzerhandbuch
+site_description: Arbeiten mit dem DMS – Mappen, Dokumente, Suche und Profil
+site_url: https://motom001.github.io/dms/benutzer/
+repo_url: https://github.com/motom001/dms
+repo_name: motom001/dms
+edit_uri: edit/main/docs/handbuch/benutzer/docs/
+docs_dir: docs
+copyright: DMS steht unter der AGPL-3.0 · <a href="https://github.com/sponsors/motom001">Projekt unterstützen</a>
+
+theme:
+  name: material
+  language: de
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      toggle: { icon: material/weather-night, name: Dunkle Darstellung }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      toggle: { icon: material/weather-sunny, name: Helle Darstellung }
+
+plugins:
+  - search:
+      lang: de
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.keys
+
+extra:
+  social:
+    - icon: fontawesome/solid/heart
+      link: https://github.com/sponsors/motom001
+      name: Projekt unterstützen (GitHub Sponsors)
+    - icon: fontawesome/brands/github
+      link: https://github.com/motom001/dms
+      name: Quellcode auf GitHub
+
+nav:
+  - Willkommen: index.md
+  - Erste Schritte: erste-schritte.md
+  - Arbeiten in der Ablage:
+      - Sichten und Listen: ablage.md
+      - Mappen: mappen.md
+      - Dokumente: dokumente.md
+      - Eingang: eingang.md
+      - Benutzer und Rollen: benutzer-und-rollen.md
+  - Profil und Einstellungen: profil.md
+  - Häufige Fragen: fragen.md
+  - Weiteres:
+      - Was ist neu? (Changelog): https://github.com/motom001/dms/releases
+      - Administratorhandbuch: https://motom001.github.io/dms/admin/

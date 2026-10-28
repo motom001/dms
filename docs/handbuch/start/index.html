@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DMS – Handbücher</title>
+  <meta name="description" content="Handbücher zum DMS, dem selbst gehosteten Informations- und Dokumentenmanagement für Haushalte">
+  <style>
+    :root { --grund: #f6f7f8; --flaeche: #fff; --tinte: #1c2328; --leise: #5b6670; --linie: #dde2e6; --a: #00796b; --b: #3f51b5; }
+    @media (prefers-color-scheme: dark) { :root { --grund: #14181b; --flaeche: #1d2226; --tinte: #e8ecef; --leise: #9aa5ae; --linie: #2e353a; --a: #4db6ac; --b: #8c9eff; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--grund); color: var(--tinte); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 860px; margin: 0 auto; padding: 56px 16px 40px; }
+    h1 { font-size: 2rem; margin: 0 0 8px; }
+    p.leise { color: var(--leise); margin: 0 0 32px; }
+    .karten { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    a.karte { display: block; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 10px; padding: 22px; color: inherit; text-decoration: none; border-top: 4px solid var(--a); }
+    a.karte.admin { border-top-color: var(--b); }
+    a.karte:hover, a.karte:focus-visible { border-color: var(--a); }
+    a.karte.admin:hover, a.karte.admin:focus-visible { border-color: var(--b); }
+    a.karte h2 { margin: 0 0 6px; font-size: 1.25rem; }
+    a.karte p { margin: 0; color: var(--leise); }
+    footer { margin-top: 40px; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; color: var(--leise); font-size: .9rem; }
+    footer a { color: inherit; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>DMS – Handbücher</h1>
+    <p class="leise">Ein selbst gehostetes Informations- und Dokumentenmanagement für Haushalte: Mappen statt Ordner, verbunden über Verweise.</p>
+    <div class="karten">
+      <a class="karte" href="benutzer/">
+        <h2>Benutzerhandbuch</h2>
+        <p>Mappen anlegen, Dokumente ablegen, suchen und finden – alles für die tägliche Arbeit in der Ablage.</p>
+      </a>
+      <a class="karte admin" href="admin/">
+        <h2>Administratorhandbuch</h2>
+        <p>Installation, Mappentypen, Benutzer und Rollen, Designs, Fehlersuche und die Schnittstelle (API).</p>
+      </a>
+    </div>
+    <footer>
+      <a href="https://github.com/motom001/dms/releases">Was ist neu? (Changelog)</a>
+      <a href="https://github.com/motom001/dms">Quellcode</a>
+      <a href="https://github.com/sponsors/motom001"><img src="https://img.shields.io/badge/Projekt_unterst%C3%BCtzen-GitHub_Sponsors-ea4aaa?logo=githubsponsors&logoColor=white" alt="Projekt unterstützen (GitHub Sponsors)" height="20"></a>
+    </footer>
+  </main>
+</body>
+</html>

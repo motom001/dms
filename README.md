@@ -4,7 +4,15 @@
 
 Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsystem für Haushalte. Statt loser Dokumente in Ordnern ordnet es **Mappen**: Vertragspartner, Verträge, Rechnungen, Gegenstände – verbunden über Verweise, so dass man von jeder Mappe aus zu allem Zugehörigen findet.
 
-> **Stand: v0.7.** Anmeldung und Benutzer, Benutzer und Rollen als Mappen, Mappentypen mit Feldern und Registern, Dokumente, Mappen in drei Spalten mit Eingang, seitenweises Laden und Suche über Titel und Werte, Protokoll, Zeitmessung und Versionsübersicht. Volltextsuche in Dokumenten, Texterkennung und feinere Rechte folgen.
+> **Stand: v0.8.** Handbücher für Benutzer und Administratoren, Anmeldung und Benutzer, Benutzer und Rollen als Mappen, Mappentypen mit Feldern und Registern, Dokumente, Mappen in drei Spalten mit Eingang, seitenweises Laden und Suche über Titel und Werte, Protokoll, Zeitmessung und Versionsübersicht. Volltextsuche in Dokumenten, Texterkennung und feinere Rechte folgen.
+
+## Handbücher
+
+- **[Benutzerhandbuch](https://motom001.github.io/dms/benutzer/)** – arbeiten in der Ablage: Mappen, Dokumente, Suche, Profil.
+- **[Administratorhandbuch](https://motom001.github.io/dms/admin/)** – Installation, Mappentypen, Benutzer und Rollen, Fehlersuche, API, Technik und Entscheidungen.
+- **[Was ist neu? (Releases)](https://github.com/motom001/dms/releases)**
+
+Im DMS führt der Punkt **Hilfe** im Menü unter dem eigenen Namen dorthin. Die Handbücher liegen unter `docs/handbuch/`; der Workflow *Handbuch* baut sie bei jedem Push auf `main` mit frischen Screenshots neu.
 
 ## Bereiche
 
@@ -102,14 +110,14 @@ Tests: `npm test`. Mit `TEST_DATABASE_URL` laufen zusätzlich die Tests gegen Po
 
 ## Aufbau
 
-Technik im Überblick: [docs/technik.md](docs/technik.md).
+Technik im Überblick: [Administratorhandbuch → Technik](https://motom001.github.io/dms/admin/technik/), Entscheidungen: [Administratorhandbuch → Entscheidungen](https://motom001.github.io/dms/admin/entscheidungen/).
 
 ```
 shared/   Fachmodell und Prüfregeln (Server und Oberfläche)
 server/   Fastify-API, PostgreSQL (postgres.js), SQL-Migrationen
 web/      React-Oberfläche (Vite)
 deploy/   Vorlagen für den Betrieb
-docs/     Technik, Entscheidungen und Konzept
+docs/     Handbücher (MkDocs) mit Screenshot-Skript, Release-Notizen
 ```
 
 Wichtig: **Keine echten Dokumente oder persönlichen Daten committen** – nur Code und Beispieldaten.
