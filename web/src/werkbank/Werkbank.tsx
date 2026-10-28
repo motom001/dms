@@ -6,6 +6,7 @@ import { Link } from '../ort';
 import { BenutzerDetail, BenutzerListe, BenutzerNeu, useBenutzer } from './Benutzer';
 import { DatenbankPanel, LanglaeuferListe, useDatenbank } from './Datenbank';
 import { DemoListe, DemoPanel } from './Demo';
+import { DesignEditor, DesignListe } from './Designs';
 import { ProtokollDetail, ProtokollListe, useProtokoll } from './Protokoll';
 import { TechnikListe, TechnikPanel, useTechnik } from './Technik';
 
@@ -19,6 +20,7 @@ import { TechnikListe, TechnikPanel, useTechnik } from './Technik';
  * /werkbank/protokoll[/:nr]
  * /werkbank/datenbank[/:id]
  * /werkbank/technik
+ * /werkbank/designs[/:id|/neu]
  */
 export function Werkbank({ teile }: { teile: string[] }) {
   const d = useDaten();
@@ -52,6 +54,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'demo') {
     liste = <DemoListe />;
     rechts = <DemoPanel />;
+  } else if (bereich === 'designs') {
+    liste = <DesignListe offen={id} />;
+    rechts = id ? <DesignEditor key={id} id={id} /> : <div className="platzhalter"><p>Wähle ein Design zum Bearbeiten oder lege mit „+ Neu“ ein eigenes an.</p></div>;
   } else if (bereich === 'technik') {
     liste = <TechnikListe t={technik} />;
     rechts = <TechnikPanel t={technik} />;
@@ -71,6 +76,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           <Link to="/werkbank/typen" className={`sicht ${bereich === 'typen' ? 'an' : ''}`}><span className="nm">Mappentypen</span><span className="zahl">{d.typen.length}</span></Link>
           <Link to="/werkbank/benutzer" className={`sicht ${bereich === 'benutzer' ? 'an' : ''}`}><span className="nm">Benutzer</span><span className="zahl">{benutzer.geladen ? benutzer.liste.length : ''}</span></Link>
           <Link to="/werkbank/protokoll" className={`sicht ${bereich === 'protokoll' ? 'an' : ''}`}><span className="nm">Protokoll</span>{protokoll.debug?.an && <span className="zaehler" title="Debug-Modus ist an">Debug</span>}</Link>
+          <Link to="/werkbank/designs" className={`sicht ${bereich === 'designs' ? 'an' : ''}`}><span className="nm">Designs</span><span className="zahl">{d.designs.length || ''}</span></Link>
           <Link to="/werkbank/datenbank" className={`sicht ${bereich === 'datenbank' ? 'an' : ''}`}><span className="nm">Datenbank</span></Link>
           <Link to="/werkbank/technik" className={`sicht ${bereich === 'technik' ? 'an' : ''}`}><span className="nm">Technik</span></Link>
           <Link to="/werkbank/demo" className={`sicht ${bereich === 'demo' ? 'an' : ''}`}><span className="nm">Demo-Daten</span><span className="zahl">{Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || ''}</span></Link>

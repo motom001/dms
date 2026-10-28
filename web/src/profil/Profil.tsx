@@ -2,6 +2,9 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { PASSWORT_MINDESTLAENGE, ROLLEN } from '../../../shared/src/model';
 import { api } from '../api';
 import { bereicheZuruecksetzen } from '../bereiche';
+import { useDaten } from '../daten';
+import { GRUNDLAGEN } from '../design';
+import { Farbfelder } from '../werkbank/Designs';
 import { useKonto } from '../konto';
 
 function useFormular(fn: () => Promise<string>) {
@@ -18,6 +21,7 @@ function useFormular(fn: () => Promise<string>) {
 
 export function Profil() {
   const { ich, mail, aktualisieren } = useKonto();
+  const d = useDaten();
   const [name, setName] = useState(ich.name);
   const [email, setEmail] = useState(ich.email);
   const [pwEmail, setPwEmail] = useState('');
@@ -75,6 +79,23 @@ export function Profil() {
         {fPw.anzeige}
         <div className="knoepfe"><button className="knopf primaer" disabled={fPw.sendet || !alt || !neu}>Passwort ändern</button></div>
       </form>
+
+      <div className="blatt">
+        <h2 className="h3">Design</h2>
+        <p className="leise">Gilt für dein Konto auf allen Geräten und wird sofort angewendet. Die Schriftgröße stellst du im Menü unter deinem Namen ein – je Gerät.</p>
+        <div className="designwahl" role="radiogroup" aria-label="Design">
+          <label>
+            <input type="radio" name="design" checked={!d.einstellungen.design || !d.designs.some((x) => x.id === d.einstellungen.design)} onChange={() => d.setzeEinstellung('design', null)} />
+            <span className="nm"><strong>Standard</strong><span className="leise klein">zurzeit {d.designs.find((x) => x.id === d.standardDesign)?.name ?? '–'}</span></span>
+          </label>
+          {d.designs.map((x) => (
+            <label key={x.id}>
+              <input type="radio" name="design" checked={d.einstellungen.design === x.id} onChange={() => d.setzeEinstellung('design', x.id)} />
+              <span className="nm"><strong>{x.name}</strong><span className="leise klein"><Farbfelder d={x} /> {GRUNDLAGEN[x.grundlage]}</span></span>
+            </label>
+          ))}
+        </div>
+      </div>
 
       <div className="blatt">
         <h2 className="h3">Ansicht auf diesem Gerät</h2>

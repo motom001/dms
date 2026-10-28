@@ -9,6 +9,7 @@ import { pgKontoRepo } from './konto-repo';
 import { Messung, pgMessSpeicher } from './messung';
 import { protokoll } from './protokoll';
 import { pgSystemQuelle } from './system';
+import { Designs, pgDesignRepo } from './designs';
 import { pgRepo } from './repo-pg';
 import { erstelleMailer } from './smtp';
 
@@ -66,6 +67,7 @@ const app = await baueApp(dienst, konten, {
   proxy: cfg.proxy,
   messung,
   system: pgSystemQuelle(sql, cfg.haushalt),
+  designs: new Designs(messung.umhuelle(pgDesignRepo(sql, cfg.haushalt), 'designs')),
   mailHost: mailer ? env.SMTP_HOST : undefined,
 });
 

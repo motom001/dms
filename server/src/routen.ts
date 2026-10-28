@@ -6,6 +6,7 @@ import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import { SITZUNG_TAGE, type Konten } from './konten';
 import type { SitzungIntern } from './konto-repo';
+import type { Designs } from './designs';
 import type { Messung } from './messung';
 import { uebersicht, versionsabgleich, type SystemQuelle } from './system';
 import { MODULE, protokoll, STUFEN, type Stufe } from './protokoll';
@@ -72,6 +73,8 @@ export interface RoutenExtras {
   system?: SystemQuelle;
   /** SMTP-Host, wenn E-Mail eingerichtet ist (nur zur Anzeige). */
   mailHost?: string;
+  /** Designs der Oberfläche (#21). */
+  designs?: Designs;
   /** Für Tests: Abruf fremder Adressen beim Versionsabgleich. */
   abruf?: (url: string) => Promise<unknown>;
   log?: (m: string) => void;
@@ -79,6 +82,7 @@ export interface RoutenExtras {
 
 export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Route[] {
   const { messung, system } = x;
+  const designs = () => { if (!x.designs) throw new Fachfehler(404, 'Designs sind nicht eingerichtet.'); return x.designs; };
   const log = x.log ?? ((m: string) => L.mail.warn(m));
   const typName = async (id: string) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? id;
   return [
@@ -252,6 +256,30 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const an = !!b(a).an;
       const r = protokoll.setzeDebug(an);
       L.system.warn(an ? `Debug-Modus eingeschaltet bis ${new Date(r.bis!).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin' })}` : 'Debug-Modus ausgeschaltet');
+      return ok(r);
+    } },
+
+    /* ---------- Designs ---------- */
+    // Alle Angemeldeten lesen (zum Anwenden und Auswählen), nur Administratoren ändern.
+    { methode: 'GET', pfad: '/api/designs', zugang: 'angemeldet', handler: async () => ok(x.designs ? await x.designs.liste() : { designs: [], standard: null }) },
+    { methode: 'POST', pfad: '/api/designs', zugang: 'admin', handler: async (a) => {
+      const d = await designs().lege(a.body);
+      L.werkbank.info('Design angelegt', { name: d.name });
+      return ok(d, 201);
+    } },
+    { methode: 'PUT', pfad: '/api/designs/:id', zugang: 'admin', handler: async (a) => {
+      const d = await designs().aendere(a.params.id, a.body);
+      L.werkbank.info('Design geändert', { name: d.name });
+      return ok(d);
+    } },
+    { methode: 'DELETE', pfad: '/api/designs/:id', zugang: 'admin', handler: async (a) => {
+      await designs().loesche(a.params.id);
+      L.werkbank.info('Design gelöscht', { id: a.params.id });
+      return leer;
+    } },
+    { methode: 'PUT', pfad: '/api/designs-standard', zugang: 'admin', handler: async (a) => {
+      const r = await designs().setzeStandard(String(b(a).id ?? ''));
+      L.werkbank.info('Standard-Design festgelegt', { id: r.standard });
       return ok(r);
     } },
 

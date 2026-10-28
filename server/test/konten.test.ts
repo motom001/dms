@@ -172,3 +172,19 @@ describe('Persönliche Einstellungen', () => {
     assert.deepEqual(await k.einstellungen(benutzer), {});
   });
 });
+
+describe('Designs', () => {
+  it('legt an, prüft Farben und schützt das Standard-Design', async () => {
+    const { Designs, speicherDesignRepo } = await import('../src/designs');
+    const d = new Designs(speicherDesignRepo());
+    const { designs, standard } = await d.liste();
+    assert.equal(designs.length, 4);
+    await wirft(d.lege({ name: 'kontrast', grundlage: 'hell', primaer: '#000000', sekundaer: '#FFFFFF' }), 409);
+    await wirft(d.lege({ name: 'Neu', grundlage: 'hell', primaer: '#12345', sekundaer: '#FFFFFF' }), 422);
+    const neu = await d.lege({ name: 'Neu', grundlage: 'hell', primaer: '#aa0000', sekundaer: '#00aa00' });
+    await wirft(d.loesche(standard!), 409);
+    await d.setzeStandard(neu.id);
+    await d.loesche(standard!);
+    assert.equal((await d.liste()).standard, neu.id);
+  });
+});

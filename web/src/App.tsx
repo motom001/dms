@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { leseSchrift, SCHRIFTEN, setzeSchrift, type Schrift } from './design';
 import { api } from './api';
 import { Ablage } from './ablage/Ablage';
 import { useDaten } from './daten';
@@ -49,8 +50,7 @@ export function App() {
           {admin && <Link to="/werkbank/typen" className={bereich === 'werkbank' ? 'an' : ''}>Werkbank</Link>}
         </nav>
         <div className="konto">
-          <Link to="/profil" className={`wer ${bereich === 'profil' ? 'an' : ''}`} title={`Profil von ${ich.email}`}>{ich.name || ich.email}</Link>
-          <button className="textknopf" onClick={() => void abmelden()}>Abmelden</button>
+          <Benutzermenue an={bereich === 'profil'} abmelden={abmelden} />
           {/* AGPL: Wer das DMS über das Netz nutzt, soll an den Quellcode kommen. */}
           <a className="quelle" href="https://github.com/motom001/dms" target="_blank" rel="noreferrer">Quellcode</a>
         </div>
@@ -78,6 +78,46 @@ function Hinweise() {
         <ul>{hinweise.map((h) => <li key={h.id}>{h.adminName}: {uhrzeit(h.beginn)} bis {h.ende ? uhrzeit(h.ende) : 'jetzt (noch nicht beendet)'}</li>)}</ul>
       </div>
       <button className="knopf klein" onClick={() => { setWeg(true); void api.hinweiseGesehen().then(aktualisieren); }}>Verstanden</button>
+    </div>
+  );
+}
+
+/** Menü unter dem eigenen Namen: Profil, Schriftgröße (je Gerät), Abmelden. */
+function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<void> }) {
+  const { ich } = useKonto();
+  const [offen, setOffen] = useState(false);
+  const [schrift, setSchrift] = useState<Schrift>(() => leseSchrift(ich.id));
+  const rahmen = useRef<HTMLDivElement>(null);
+  useEffect(() => { setzeSchrift(ich.id, schrift); }, [ich.id, schrift]);
+  useEffect(() => {
+    if (!offen) return;
+    const zu = (e: Event) => { if (!rahmen.current?.contains(e.target as Node)) setOffen(false); };
+    const taste = (e: KeyboardEvent) => { if (e.key === 'Escape') setOffen(false); };
+    const weg = () => setOffen(false);
+    addEventListener('pointerdown', zu); addEventListener('keydown', taste); addEventListener('popstate', weg);
+    return () => { removeEventListener('pointerdown', zu); removeEventListener('keydown', taste); removeEventListener('popstate', weg); };
+  }, [offen]);
+  return (
+    <div className="benutzermenue" ref={rahmen}>
+      <button type="button" className={`wer ${an ? 'an' : ''}`} aria-haspopup="menu" aria-expanded={offen} onClick={() => setOffen(!offen)}>
+        {ich.name || ich.email} <span aria-hidden="true">▾</span>
+      </button>
+      {offen && (
+        <div className="menue" role="menu">
+          <p className="leise klein">{ich.email}</p>
+          <Link to="/profil" className="menuepunkt">Profil und Design</Link>
+          <div className="menuegruppe">
+            <span className="leise klein">Schriftgröße auf diesem Gerät</span>
+            <div className="segmente" role="radiogroup" aria-label="Schriftgröße">
+              {(Object.keys(SCHRIFTEN) as Schrift[]).map((k) => (
+                <button key={k} type="button" role="radio" aria-checked={schrift === k} className={schrift === k ? 'an' : ''} onClick={() => setSchrift(k)}
+                  style={{ fontSize: `${13 * SCHRIFTEN[k].skala}px` }}>{SCHRIFTEN[k].name}</button>
+              ))}
+            </div>
+          </div>
+          <button type="button" className="menuepunkt" onClick={() => void abmelden()}>Abmelden</button>
+        </div>
+      )}
     </div>
   );
 }

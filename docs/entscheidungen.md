@@ -53,6 +53,12 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Anzeige im Browser nur für PDF und Bilder**, erkannt am Inhalt (nicht an Endung oder angegebenem Typ). Alles andere wird als Download ausgeliefert, mit `nosniff` und einer Sandbox-CSP – eine hochgeladene HTML-Datei kann so keinen Code in der Sitzung ausführen.
 - **Löschen einer Mappe** löscht ihre Dokumente nach Rückfrage mit; die Datei verschwindet, sobald kein Dokument mehr auf sie zeigt.
 
+## Designs
+
+- **Farben werden abgeleitet, nicht einzeln gepflegt:** Aus Grundlage, Primär- und Sekundärfarbe entstehen alle CSS-Variablen (`design.ts`). Farben werden bei Bedarf aufgehellt oder abgedunkelt, bis sie auf dem Hintergrund lesbar sind (WCAG 4,5:1, beim Kontrast-Design 7:1).
+- **Design je Konto, Schriftgröße je Gerät** (`benutzer_einstellungen` bzw. localStorage). Schriftgrößen skalieren über `--skala`.
+- **Eigenes CSS** nur durch Administratoren, ohne `<style>`-Tags; Rettungsweg `?design=standard`.
+
 ## Betrieb und Fehlersuche
 
 - **Eigenes Protokoll** (`server/src/protokoll.ts`) statt Fastify/pino direkt: jede Meldung mit Modul, Benutzer und Anfrage-Kennung (über AsyncLocalStorage), lesbar in den Container-Logs, zusätzlich ein Ringpuffer (24 h, 10.000 Einträge) für die Werkbank. Fastify schreibt über einen pino-kompatiblen Adapter hinein.

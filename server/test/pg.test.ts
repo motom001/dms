@@ -37,6 +37,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     app = await baueApp(new Dienst(messung.umhuelle(pgRepo(sql, HAUSHALT), 'mappen'), ordnerSpeicher(ordner, HAUSHALT)),
       new Konten(messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'), null, 'http://nas:3000'), {
         messung, system: (await import('../src/system')).pgSystemQuelle(sql, HAUSHALT),
+        designs: new (await import('../src/designs')).Designs((await import('../src/designs')).pgDesignRepo(sql, HAUSHALT)),
         // Kein Internet im Test: Abgleich mit festen Antworten.
         abruf: async (url: string) => { if (url.includes('npmjs')) return { version: '99.0.0' }; throw new Error('offline'); },
       });
@@ -346,5 +347,20 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal(r.find((v: { komponente: string }) => v.komponente === 'fastify').status, 'neuer');
     assert.equal(r.find((v: { komponente: string }) => v.komponente === 'Node.js').status, 'unbekannt');
     assert.ok(r.some((v: { komponente: string }) => v.komponente === 'react'));
+  });
+
+  it('verwaltet Designs mit Standard und Rückfall', async () => {
+    const r = (await anfrage('GET', '/api/designs')).body;
+    assert.deepEqual(r.designs.map((d: { name: string }) => d.name), ['Automatisch', 'Hell', 'Dunkel', 'Kontrast']);
+    assert.equal(r.designs.find((d: { id: string }) => d.id === r.standard).name, 'Automatisch');
+    assert.equal((await anfrage('POST', '/api/designs', { name: 'Hell', grundlage: 'hell', primaer: '#112233', sekundaer: '#445566' })).status, 409);
+    assert.equal((await anfrage('POST', '/api/designs', { name: 'X', grundlage: 'bunt', primaer: 'rot', sekundaer: '#445566' })).status, 422);
+    assert.equal((await anfrage('POST', '/api/designs', { name: 'X', grundlage: 'hell', primaer: '#112233', sekundaer: '#445566', css: '</style><script>' })).status, 422);
+    const neu = (await anfrage('POST', '/api/designs', { name: 'Waldgrün', grundlage: 'dunkel', primaer: '#1e5e3b', sekundaer: '#b26b00', css: '.kopf { border-bottom-width: 3px; }' })).body;
+    assert.equal(neu.primaer, '#1E5E3B');
+    assert.equal((await anfrage('PUT', '/api/designs-standard', { id: neu.id })).body.standard, neu.id);
+    assert.equal((await anfrage('DELETE', `/api/designs/${neu.id}`)).status, 409, 'Standard nicht löschbar');
+    assert.equal((await anfrage('PUT', '/api/designs-standard', { id: r.standard })).status, 200);
+    assert.equal((await anfrage('DELETE', `/api/designs/${neu.id}`)).status, 204);
   });
 });

@@ -1,3 +1,4 @@
+import type { Design } from './design';
 import { messung } from './messung';
 import type { Benutzer, Dokument, Mappe, MappenBezug, Mappentyp, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung } from '../../shared/src/model';
 
@@ -86,6 +87,11 @@ export const api = {
       ...(sortierung ? { sortierung: sortierung.spalte, absteigend: String(sortierung.absteigend) } : {}),
     })}`),
   einstellungen: () => anfrage<Record<string, unknown>>('GET', '/api/konto/einstellungen'),
+  designs: () => anfrage<{ designs: Design[]; standard: string | null }>('GET', '/api/designs'),
+  designAnlegen: (d: Omit<Design, 'id'>) => anfrage<Design>('POST', '/api/designs', d),
+  designAendern: (id: string, d: Omit<Design, 'id'>) => anfrage<Design>('PUT', `/api/designs/${id}`, d),
+  designLoeschen: (id: string) => anfrage<null>('DELETE', `/api/designs/${id}`),
+  designStandard: (id: string) => anfrage<{ designs: Design[]; standard: string | null }>('PUT', '/api/designs-standard', { id }),
   einstellungSetzen: (schluessel: string, wert: unknown) => anfrage<null>('PUT', `/api/konto/einstellungen/${encodeURIComponent(schluessel)}`, { wert }),
   sichten: () => anfrage<Zaehler>('GET', '/api/sichten'),
   belegung: (typId: string) => anfrage<Record<string, number>>('GET', `/api/typen/${typId}/belegung`),

@@ -7,6 +7,7 @@ import { Fachfehler } from './fehler';
 import type { Konten } from './konten';
 import type { Messung } from './messung';
 import type { SystemQuelle } from './system';
+import type { Designs } from './designs';
 import { kontext, protokoll, type Kontext, type Stufe } from './protokoll';
 import { dateiKoepfe, leseCookie, modulAus, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage } from './routen';
 
@@ -27,6 +28,7 @@ interface Optionen {
   /** Messung der Datenbankzugriffe (lange Zugriffe, Server-Timing). */
   messung?: Messung;
   system?: SystemQuelle;
+  designs?: Designs;
   mailHost?: string;
   abruf?: (url: string) => Promise<unknown>;
 }

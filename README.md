@@ -12,10 +12,12 @@ Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsyste
 - **Werkbank** (Administratoren), ebenfalls dreigeteilt:
   - *Mappentypen* – Felder (Datentyp, Pflichtfeld, eindeutig, Längen, Wertebereiche, Auswahllisten, Referenzen), Register und Titel-Vorlage,
   - *Benutzer* – anlegen, Rollen vergeben, Einladungs- und Passwort-Links,
+  - *Designs* – Grundlage (automatisch, hell, dunkel, hoher Kontrast), Primär- und Sekundärfarbe (Abstufungen werden abgeleitet), eigenes CSS; ein Design ist Standard,
   - *Technik* – installierte Versionen (DMS, Node.js, PostgreSQL, Bibliotheken), zum Kopieren in ein GitHub-Issue, und ein Abgleich mit neueren Versionen auf Knopfdruck,
   - *Datenbank* – lange Datenbankzugriffe (Schwelle und Aufbewahrung einstellbar, Standard 500 ms und 30 Tage) und was gerade in der Datenbank läuft,
   - *Protokoll* – was im System passiert, je Modul (konto, ablage, werkbank, dokumente, datenbank, mail, system, http), mit Filtern und Live-Aktualisierung; Debug-Modus für eine Stunde,
   - *Demo-Daten* – Beispiel-Mappentypen laden, beliebig viele Demo-Mappen für die vorhandenen Typen erzeugen und gesammelt wieder entfernen.
+- **Benutzermenü** (Klick auf den eigenen Namen): Profil, Schriftgröße klein/normal/groß (je Gerät), Abmelden.
 - **Profil** – jeder Benutzer ändert Name, E-Mail-Adresse und Passwort selbst (mit dem aktuellen Passwort). Mit dem *Entwicklermodus* zeigt das DMS bei jedem Seitenaufruf, wie lange Netzwerk, Aufbereitung, Datenbankzugriffe, Übertragung und Darstellung gedauert haben.
 
 Am Mappentyp legt eine **Trefferliste** fest, welche Felder und Systemwerte (Titel, angelegt/geändert am/von) als Spalten erscheinen und in welcher Reihenfolge. Ist die Liste schmal, zeigen die ersten drei Spalten einen kompakten Eintrag; zieht man sie breit, wird daraus eine Tabelle, sortierbar per Klick auf den Spaltenkopf (gemerkt je Benutzer und Mappentyp).
@@ -56,6 +58,8 @@ Bei jedem Push auf `main` baut GitHub Actions ein Image und legt es unter `ghcr.
 | `LOG_LEVEL` | Grundstufe des Protokolls: `debug`, `info` (Standard), `warn`, `error`. Der Debug-Modus in der Werkbank gilt zusätzlich für eine Stunde. |
 
 **Aktualisieren:** Image neu ziehen und das Projekt neu starten. Datenbank-Migrationen laufen beim Start automatisch.
+
+**Design kaputt?** Macht ein eigenes CSS die Oberfläche unbedienbar, `?design=standard` an die Adresse hängen – dann lädt das Standard-Design ohne eigenes CSS.
 
 **Protokoll:** Jede Meldung steht als lesbare Zeile in den Container-Logs (`docker logs <app-container>`), z. B.
 `2026-10-28T09:12:33.120Z INFO  [ablage] Mappe angelegt benutzer=thomas@example.org typ=Rechnung titel="R-17 vom 01.10.2026"`.

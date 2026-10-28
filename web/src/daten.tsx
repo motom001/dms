@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { pruefeMappe, type Mappentyp, type Pruefergebnis, type Werte } from '../../shared/src/model';
 import { api, type Zaehler } from './api';
+import { rettungsweg, wendeAn, type Design } from './design';
 
 /**
  * Gemeinsame Daten der Oberfläche: Mappentypen, Personen und die Zähler der Sichten.
@@ -25,6 +26,12 @@ interface Daten {
   /** Persönliche Einstellungen (vom Server, für alle Geräte). */
   einstellungen: Record<string, unknown>;
   setzeEinstellung(schluessel: string, wert: unknown): void;
+  /** Designs der Oberfläche und welches Standard ist (#21). */
+  designs: Design[];
+  standardDesign: string | null;
+  /** Das Design, das gerade gilt (eigene Wahl, sonst Standard). */
+  meinDesign: Design | null;
+  designsLaden(): Promise<void>;
 }
 
 const Ctx = createContext<Daten | null>(null);
@@ -43,6 +50,14 @@ export function DatenProvider({ children }: { children: ReactNode }) {
     void api.einstellungSetzen(k, w).catch(() => {});
   }, []);
   useEffect(() => { api.einstellungen().then(setEinstellungen).catch(() => {}); }, []);
+  const [designs, setDesigns] = useState<{ designs: Design[]; standard: string | null }>({ designs: [], standard: null });
+  const designsLaden = useCallback(async () => { try { setDesigns(await api.designs()); } catch { /* altes bleibt */ } }, []);
+  useEffect(() => { void designsLaden(); }, [designsLaden]);
+  // Eigenes Design, sonst Standard; gelöschte Designs fallen auf den Standard zurück.
+  const rettung = rettungsweg();
+  const gewaehlt = rettung ? null : (einstellungen.design as string | undefined);
+  const meinDesign = designs.designs.find((x) => x.id === gewaehlt) ?? designs.designs.find((x) => x.id === designs.standard) ?? null;
+  useEffect(() => { if (meinDesign) wendeAn(meinDesign, !rettung); }, [meinDesign, rettung]);
 
   const neuLaden = useCallback(async () => {
     try {
@@ -60,12 +75,13 @@ export function DatenProvider({ children }: { children: ReactNode }) {
     const typNachId = new Map<string, Mappentyp>(typen.map((t) => [t.id, t] as const));
     return {
       typen, zaehler, geladen, fehler, stand, neuLaden, einstellungen, setzeEinstellung,
+      designs: designs.designs, standardDesign: designs.standard, meinDesign, designsLaden,
       typ: (id) => (id ? typNachId.get(id) : undefined),
       anzahl: (typId) => zaehler.typen[typId]?.anzahl ?? 0,
       person: (id) => (id ? personen.find((p) => p.id === id)?.name ?? 'gelöschter Benutzer' : 'unbekannt'),
       pruefe: (t, werte, typVon) => pruefeMappe(t, werte, { typVon, doppelt: () => undefined }),
     };
-  }, [typen, zaehler, personen, geladen, fehler, stand, neuLaden, einstellungen, setzeEinstellung]);
+  }, [typen, zaehler, personen, geladen, fehler, stand, neuLaden, einstellungen, setzeEinstellung, designs, meinDesign, designsLaden]);
 
   return <Ctx.Provider value={wert}>{children}</Ctx.Provider>;
 }
