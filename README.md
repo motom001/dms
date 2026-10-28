@@ -4,7 +4,7 @@
 
 Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsystem für Haushalte. Statt loser Dokumente in Ordnern ordnet es **Mappen**: Vertragspartner, Verträge, Rechnungen, Gegenstände – verbunden über Verweise, so dass man von jeder Mappe aus zu allem Zugehörigen findet.
 
-> **Stand: v0.8.** Handbücher für Benutzer und Administratoren, Anmeldung und Benutzer, Benutzer und Rollen als Mappen, Mappentypen mit Feldern und Registern, Dokumente, Mappen in drei Spalten mit Eingang, seitenweises Laden und Suche über Titel und Werte, Protokoll, Zeitmessung und Versionsübersicht. Volltextsuche in Dokumenten, Texterkennung und feinere Rechte folgen.
+> **Stand: v0.9.** E-Mail-Versand und Adresse in der Werkbank, Handbücher für Benutzer und Administratoren, Anmeldung und Benutzer, Benutzer und Rollen als Mappen, Mappentypen mit Feldern und Registern, Dokumente, Mappen in drei Spalten mit Eingang, seitenweises Laden und Suche über Titel und Werte, Protokoll, Zeitmessung und Versionsübersicht. Volltextsuche in Dokumenten, Texterkennung und feinere Rechte folgen.
 
 ## Handbücher
 
@@ -64,8 +64,6 @@ Bei jedem Push auf `main` baut GitHub Actions ein Image und legt es unter `ghcr.
 | Variable | Bedeutung |
 | --- | --- |
 | `DATABASE_URL` | Verbindung zu PostgreSQL (Pflicht) |
-| `APP_URL` | Adresse, unter der Benutzer das DMS öffnen; steht in den Links der E-Mails |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_SECURE` | E-Mail-Versand (optional). Ohne `SMTP_HOST` zeigt die Benutzerverwaltung Einladungs- und Passwort-Links zum Kopieren an; „Passwort vergessen“ setzt dann der Administrator zurück. |
 | `TRUST_PROXY` | `true`, wenn ein Reverse-Proxy davor sitzt |
 | `LOG_LEVEL` | Grundstufe des Protokolls: `debug`, `info` (Standard), `warn`, `error`. Der Debug-Modus in der Werkbank gilt zusätzlich für eine Stunde. |
 

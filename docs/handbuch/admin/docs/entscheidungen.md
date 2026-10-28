@@ -99,6 +99,14 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Image-Tag im selben Lauf**, weil ein mit dem Workflow-Token angelegter Tag keine weiteren Workflows startet; so braucht es kein zusätzliches Token. Von Hand gepushte Tags und von Hand veröffentlichte Releases funktionieren weiter.
 - **Hilfe-Link** im Benutzermenü auf das Benutzerhandbuch, für Administratoren zusätzlich auf das Administratorhandbuch.
 
+## E-Mail und Adresse in der Werkbank (#37)
+
+- **Keine Umgebungsvariablen mehr** für E-Mail-Versand und Adresse: gepflegt in der Werkbank, gespeichert in `einstellungen` (`mail`, `adresse`), wirksam ohne Neustart – Konten holen sich den Mailer und die Adresse bei jeder Verwendung (`Betrieb` in `server/src/betrieb.ts`).
+- **Einmalige Übernahme** der früheren Variablen `SMTP_*` und `APP_URL` beim ersten Start, nur solange nichts gespeichert ist; danach ignoriert, mit Hinweis im Protokoll. So fällt der Versand beim Update nicht aus.
+- **Ohne gepflegte Adresse** gilt die Adresse der aktuellen Anfrage (`req.protocol` und `req.host`, hinter einem Proxy über `TRUST_PROXY`). Sie steckt im Anfragekontext, damit Konten sie ohne zusätzlichen Parameter finden.
+- **Passwort vorerst im Klartext** in der Datenbank, nie an die Oberfläche zurück; leeres Feld behält es. Verschlüsselung ist offen (#39).
+- **Testen mit ungespeicherten Werten:** Prüfen und Testmail nehmen die Werte aus dem Formular, damit man vor dem Speichern sieht, ob es geht.
+
 ## Bewusst noch nicht drin
 
 Texterkennung (OCR), Suche, Papierkorb, Rechte pro Mappe, Fristen, Verschlüsselung, Backup-Funktion in der Anwendung, Zwei-Faktor-Anmeldung.

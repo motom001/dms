@@ -11,6 +11,7 @@ import type { Designs } from './designs';
 import type { ApiSchluesselDienst } from './apischluessel';
 import { wer } from './api-v1';
 import { kontext, protokoll, type Kontext, type Stufe } from './protokoll';
+import type { Betrieb } from './betrieb';
 import { dateiKoepfe, leseCookie, modulAus, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage } from './routen';
 
 /** Häufige Abfragen, die das Protokoll sonst fluten würden. */
@@ -23,8 +24,8 @@ interface Optionen {
   webDir?: string;
   /** @deprecated Protokoll läuft immer über protokoll.ts; bleibt für ältere Aufrufer. */
   logger?: unknown;
-  /** Secure-Flag am Cookie (nur bei HTTPS). */
-  sicher?: boolean;
+  /** Secure-Flag am Cookie (nur bei HTTPS); als Funktion je Anfrage ausgewertet (#37). */
+  sicher?: boolean | (() => boolean);
   /** Hinter einem Reverse-Proxy: X-Forwarded-For auswerten. */
   proxy?: boolean;
   /** Messung der Datenbankzugriffe (lange Zugriffe, Server-Timing). */
@@ -32,7 +33,7 @@ interface Optionen {
   system?: SystemQuelle;
   designs?: Designs;
   apiSchluessel?: ApiSchluesselDienst;
-  mailHost?: string;
+  betrieb?: Betrieb;
   abruf?: (url: string) => Promise<unknown>;
 }
 
@@ -87,7 +88,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
           geraet: String(req.headers['user-agent'] ?? ''),
         };
         const start = performance.now();
-        const k: Kontext = { anfrage: req.id, pfad: `${req.method} ${req.url.split('?')[0]}`, db: { anzahl: 0, ms: 0 } };
+        const k: Kontext = { anfrage: req.id, pfad: `${req.method} ${req.url.split('?')[0]}`, db: { anzahl: 0, ms: 0 }, ursprung: `${req.protocol}://${req.host}` };
         (req as MitKontext).dms = k;
         const antwort = await kontext.run(k, async () => {
           await pruefeZugang(r, a, (n) => req.headers[n] as string | undefined, konten, opt.apiSchluessel);
@@ -96,7 +97,10 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
         });
         // Für den Entwicklermodus: Dauer auf dem Server, davon Datenbank (Anzahl Zugriffe in desc).
         reply.header('server-timing', `app;dur=${(performance.now() - start).toFixed(1)}, db;dur=${k.db.ms.toFixed(1)};desc="${k.db.anzahl}"`);
-        if (antwort.sitzungSetzen !== undefined) reply.header('set-cookie', sitzungsCookie(antwort.sitzungSetzen, opt.sicher ?? false));
+        if (antwort.sitzungSetzen !== undefined) {
+          const sicher = typeof opt.sicher === 'function' ? kontext.run(k, opt.sicher) : opt.sicher ?? false;
+          reply.header('set-cookie', sitzungsCookie(antwort.sitzungSetzen, sicher));
+        }
         if (antwort.datei) {
           for (const [k, v] of Object.entries(dateiKoepfe(antwort.datei))) reply.header(k, v);
           return reply.send(antwort.datei.inhalt);

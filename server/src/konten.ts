@@ -47,7 +47,17 @@ export class Konten {
    * `spiegel` hält die Benutzer-Mappen (#26) auf dem Stand der Konten: Das Konto ist führend,
    * die Mappe zeigt Name, E-Mail, Rolle und ob der Benutzer aktiv ist.
    */
-  constructor(private repo: KontoRepo, private mailer: Mailer | null, private appUrl: string, private spiegel: Benutzerspiegel | null = null) {}
+  constructor(
+    private repo: KontoRepo,
+    /** Mailer oder – seit #37 – eine Funktion, die den gerade eingestellten liefert (Werkbank, ohne Neustart). */
+    private mailQuelle: Mailer | null | (() => Mailer | null),
+    /** Adresse für Links; als Funktion je Anfrage (gepflegt oder Adresse der Anfrage). */
+    private adresse: string | (() => string),
+    private spiegel: Benutzerspiegel | null = null,
+  ) {}
+
+  private get mailer(): Mailer | null { return typeof this.mailQuelle === 'function' ? this.mailQuelle() : this.mailQuelle; }
+  private get appUrl(): string { return typeof this.adresse === 'function' ? this.adresse() : this.adresse; }
 
   private async spiegle(b: Benutzer, von: string | null = null) {
     if (this.spiegel) await this.spiegel.aktualisiere(b, von);

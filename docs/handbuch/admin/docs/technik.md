@@ -16,7 +16,7 @@ Browser ── HTTP ──▶ DMS-Container (Node.js) ──▶ PostgreSQL-Conta
 | Server | Node.js 22, Fastify 5, TypeScript (mit esbuild gebündelt) | Schnittstelle unter `/api`, liefert auch die Oberfläche aus |
 | Datenbank | PostgreSQL 17, Zugriff mit postgres.js, SQL-Migrationen in `server/migrations` | Alle Daten außer den Dateien |
 | Dateien | Ordner `FILES_DIR`, je Datei ihr SHA-256 als Name | Hochgeladene Dokumente, gleicher Inhalt nur einmal |
-| E-Mail | nodemailer über SMTP (optional) | Einladungen, Passwort-Links, Hinweise |
+| E-Mail | nodemailer über SMTP (optional, eingestellt in der Werkbank) | Einladungen, Passwort-Links, Hinweise |
 | Image | `node:22-alpine`, mehrstufig gebaut, für amd64 und arm64 | Läuft auf dem NAS neben dem PostgreSQL-Image |
 | Prüfungen | GitHub Actions: Typprüfung, Tests gegen PostgreSQL, Image-Bau | Jeder Push auf `main` |
 

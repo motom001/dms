@@ -41,6 +41,8 @@ export interface Kontext {
   pfad?: string;
   benutzer?: string;
   db: { anzahl: number; ms: number };
+  /** Adresse, unter der die Anfrage kam, z. B. https://dms.example.org (für Links, solange keine Adresse gepflegt ist). */
+  ursprung?: string;
 }
 export const kontext = new AsyncLocalStorage<Kontext>();
 

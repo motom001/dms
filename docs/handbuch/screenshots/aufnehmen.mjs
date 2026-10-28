@@ -236,6 +236,9 @@ async function main() {
   await bild(s, 'werkbank-designs');
   await geheZu(s, '/werkbank/protokoll');
   await bild(s, 'werkbank-protokoll');
+  await geheZu(s, '/werkbank/betrieb');
+  await s.getByRole('heading', { name: 'E-Mail-Versand' }).waitFor();
+  await bild(s, 'werkbank-betrieb');
   await geheZu(s, '/werkbank/datenbank');
   await bild(s, 'werkbank-datenbank');
   await geheZu(s, '/werkbank/technik');

@@ -15,7 +15,7 @@ const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 
 describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let sql: any; let app: any;
+  let sql: any; let app: any; let betrieb: any;
 
   before(async () => {
     const { verbinde, migriere } = await import('../src/db');
@@ -36,9 +36,14 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     await messung.start();
     // Wie im Betrieb (index.ts): Konten spiegeln Benutzer in Mappen (#26).
     const dienst = new Dienst(messung.umhuelle(pgRepo(sql, HAUSHALT), 'mappen'), ordnerSpeicher(ordner, HAUSHALT));
-    const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'), null, 'http://nas:3000', dienst.benutzerspiegel());
+    const { Betrieb, pgBetriebSpeicher } = await import('../src/betrieb');
+    betrieb = new Betrieb(pgBetriebSpeicher(sql, HAUSHALT));
+    await betrieb.laden();
+    await betrieb.speichereAdresse('http://nas:3000');
+    const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, HAUSHALT), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.benutzerspiegel());
     await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
     app = await baueApp(dienst, konten, {
+        betrieb, sicher: () => betrieb.cookieNurHttps(),
         messung, system: (await import('../src/system')).pgSystemQuelle(sql, HAUSHALT),
         designs: new (await import('../src/designs')).Designs((await import('../src/designs')).pgDesignRepo(sql, HAUSHALT)),
         apiSchluessel: new (await import('../src/apischluessel')).ApiSchluesselDienst((await import('../src/apischluessel')).pgApiSchluesselRepo(sql)),
@@ -476,5 +481,30 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('PUT', `/api/benutzer/${mitglied.id}`, { aktiv: true })).status, 200);
     const doc = JSON.parse((await app.inject({ method: 'GET', url: '/api/openapi.json' })).body);
     assert.ok(doc.paths['/rollen'].get);
+  });
+
+  it('pflegt E-Mail-Versand und Adresse in der Werkbank (#37)', async () => {
+    const st = (await anfrage('GET', '/api/werkbank/betrieb')).body;
+    assert.deepEqual([st.mail.aktiv, st.adresse, st.mail.passwortGesetzt], [false, 'http://nas:3000', false]);
+    assert.match(st.vorschlag, /^http:\/\//);
+    assert.equal((await anfrage('PUT', '/api/werkbank/betrieb/adresse', { adresse: 'ftp://x' })).status, 422);
+    assert.equal((await anfrage('PUT', '/api/werkbank/betrieb/adresse', { adresse: 'dms.example.org' })).body.adresse, 'http://dms.example.org');
+    const neu = await anfrage('POST', '/api/benutzer', { email: 'link@example.org', rolle: 'mitglied' });
+    assert.match(neu.body.link, /^http:\/\/dms\.example\.org\/passwort\//);
+    // Ohne gepflegte Adresse: die der Anfrage
+    await anfrage('PUT', '/api/werkbank/betrieb/adresse', { adresse: '' });
+    const r = await app.inject({ method: 'POST', url: `/api/benutzer/${neu.body.benutzer.id}/link`, headers: { 'x-dms': '1', cookie, host: 'nas.local:8080' } });
+    assert.match(JSON.parse(r.body).link, /^http:\/\/nas\.local:8080\/passwort\//);
+    const m = await anfrage('PUT', '/api/werkbank/betrieb/mail', { aktiv: true, host: 'smtp.example.org', port: 587, verbindung: 'starttls', benutzer: 'dms', passwort: 'geheim' });
+    assert.equal(m.status, 200);
+    assert.ok(!JSON.stringify(m.body).includes('geheim'));
+    assert.equal((await anfrage('GET', '/api/konto/status')).body.mail, true, 'sofort wirksam');
+    assert.equal((await sql`SELECT wert FROM einstellungen WHERE schluessel = 'mail'`)[0].wert.passwort, 'geheim');
+    await anfrage('PUT', '/api/werkbank/betrieb/mail', { ...m.body.mail, aktiv: false });
+    assert.equal((await anfrage('GET', '/api/konto/status')).body.mail, false);
+    await anfrage('PUT', '/api/werkbank/betrieb/adresse', { adresse: 'http://nas:3000' });
+    assert.equal((await anfrage('DELETE', `/api/benutzer/${neu.body.benutzer.id}`)).status, 204);
+    const sys = (await anfrage('GET', '/api/werkbank/system')).body;
+    assert.equal(sys.einstellungen.Adresse, 'http://nas:3000');
   });
 });
