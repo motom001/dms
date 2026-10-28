@@ -1,6 +1,6 @@
 import type { Design } from './design';
 import { messung } from './messung';
-import type { Aufgabe, Ausschnitt, Benutzer, Dokument, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
+import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Sicht, SichtDaten } from '../../shared/src/sichten';
 import { merkeAnfrage } from './diagnose';
 
@@ -81,6 +81,8 @@ export interface KontoStatus {
   /** Logo und Schriftzug des Standard-Designs (#72) für die Anmeldeseite. */
   marke?: { schriftzug: string | null; logo: string | null } | null;
 }
+/** Benutzer für Namen und Empfängerauswahl; abwesend, solange die Abwesenheit an ist (#78). */
+export interface Person { id: string; name: string; aktiv?: boolean; abwesend?: { wirkt: boolean; von: string | null; bis: string | null; vertreter: string } }
 export interface LinkErgebnis { benutzer: Benutzer; mailVerschickt: boolean; link?: string; mailFehler?: string }
 
 export const api = {
@@ -92,7 +94,13 @@ export const api = {
   linkPruefen: (s: string) => anfrage<{ email: string; name: string; zweck: 'einladung' | 'zuruecksetzen' }>('GET', `/api/konto/link/${encodeURIComponent(s)}`),
   passwortSetzen: (schluessel: string, passwort: string) => anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/passwort-setzen', { schluessel, passwort }),
 
-  personen: () => anfrage<Array<{ id: string; name: string; aktiv?: boolean }>>('GET', '/api/personen'),
+  personen: () => anfrage<Person[]>('GET', '/api/personen'),
+  /* Abwesenheit mit Vertreter (#78) */
+  abwesenheit: () => anfrage<{ abwesenheit: Abwesenheit | null; offeneAufgaben: number }>('GET', '/api/konto/abwesenheit'),
+  abwesenheitSetzen: (a: Abwesenheit) => anfrage<Benutzer>('PUT', '/api/konto/abwesenheit', a),
+  aufgabenAnVertreter: () => anfrage<{ uebergeben: number }>('POST', '/api/konto/abwesenheit/aufgaben-uebergeben'),
+  benutzerAbwesenheit: (id: string, a: Abwesenheit) => anfrage<Benutzer>('PUT', `/api/benutzer/${id}/abwesenheit`, a),
+  benutzerAufgabenAnVertreter: (id: string) => anfrage<{ uebergeben: number }>('POST', `/api/benutzer/${id}/aufgaben-uebergeben`),
   benutzer: () => anfrage<Benutzer[]>('GET', '/api/benutzer'),
   benutzerAnlegen: (d: { email: string; name: string; rolle: Rolle; rollen?: string[] }) => anfrage<LinkErgebnis>('POST', '/api/benutzer', d),
   benutzerAendern: (id: string, d: Partial<Pick<Benutzer, 'name' | 'rolle' | 'aktiv' | 'rollen'>>) => anfrage<Benutzer>('PUT', `/api/benutzer/${id}`, d),

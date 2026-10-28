@@ -274,6 +274,8 @@ export interface Benutzer {
   abwesenheit?: Abwesenheit;
   /** Wann der Benutzer deaktiviert wurde (#77), sofern bekannt. */
   deaktiviert?: string | null;
+  /** Offene Aufgaben (nur in der Benutzerverwaltung). */
+  offeneAufgaben?: number;
 }
 
 /** Abwesenheit (#78): an/aus, optionaler Zeitraum (JJJJ-MM-TT, jeweils einschließlich), Vertreter. */

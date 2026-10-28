@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { AKTIV_MINUTEN, geraetText, istGeradeAktiv, ROLLEN, type Benutzer, type Rolle, type Sitzung } from '../../../shared/src/model';
+import { abwesenheitWirkt, AKTIV_MINUTEN, geraetText, istGeradeAktiv, KEINE_ABWESENHEIT, ROLLEN, type Benutzer, type Rolle, type Sitzung } from '../../../shared/src/model';
+import { heuteIn } from '../../../shared/src/sichten';
+import { AbwesenheitFormular, zeitraumText } from '../profil/Abwesenheit';
 import { api, type LinkErgebnis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -42,26 +44,38 @@ export function useBenutzer() {
   return { liste, geladen, laden };
 }
 
-export function BenutzerListe({ liste, offen }: { liste: Benutzer[]; offen?: string }) {
+export function BenutzerListe({ liste: alle, offen }: { liste: Benutzer[]; offen?: string }) {
   const { ich } = useKonto();
-  const aktiv = liste.filter((b) => istGeradeAktiv(b.zuletztAktiv)).length;
+  const d = useDaten();
+  // Deaktivierte standardmäßig ausblenden (#77); die Wahl merkt sich die Werkbank je Benutzer.
+  const zeigeDeaktivierte = d.einstellungen.benutzer_deaktivierte === true;
+  const deaktiviert = alle.filter((b) => !b.aktiv);
+  const liste = [...alle.filter((b) => b.aktiv), ...(zeigeDeaktivierte || deaktiviert.some((b) => b.id === offen) ? deaktiviert : [])];
+  const aktiv = alle.filter((b) => istGeradeAktiv(b.zuletztAktiv)).length;
+  const heute = heuteIn();
   return (
     <>
       <div className="listenkopf">
         <div><h1>Benutzer</h1><p className="leise klein">Wer sich anmelden darf und mit welcher Rolle. {aktiv} gerade aktiv (in den letzten {AKTIV_MINUTEN} Minuten).</p></div>
         <Link to="/werkbank/benutzer/neu" className="knopf primaer klein">+ Neu</Link>
       </div>
+      {deaktiviert.length > 0 && (
+        <label className="haken klein"><input type="checkbox" checked={zeigeDeaktivierte} onChange={(e) => d.setzeEinstellung('benutzer_deaktivierte', e.target.checked || null)} />
+          <span>Deaktivierte zeigen ({deaktiviert.length})</span></label>
+      )}
       <ul className="mappenliste">
         {offen === 'neu' && <li><span className="eintrag an werk"><span className="titel">Neuer Benutzer</span><span className="unter">noch nicht angelegt</span></span></li>}
         {liste.map((b) => {
           const s = status(b);
           return (
             <li key={b.id}>
-              <Link to={`/werkbank/benutzer/${b.id}`} className={`eintrag werk ${offen === b.id ? 'an' : ''}`}>
+              <Link to={`/werkbank/benutzer/${b.id}`} className={`eintrag werk ${offen === b.id ? 'an' : ''} ${b.aktiv ? '' : 'grau'}`}>
                 <span className="titel">{b.name || b.email}{b.id === ich.id && <span className="chip">du</span>}</span>
                 <span className="unter">{b.email} · {ROLLEN[b.rolle]}</span>
                 <span className="unter">Letzte Anmeldung: {datumZeit(b.letzteAnmeldung)}</span>
-                <span><span className={`chip ${s.art}`}>{s.text}</span>{istGeradeAktiv(b.zuletztAktiv) && <> <span className="chip gut punkt">gerade aktiv</span></>}</span>
+                <span><span className={`chip ${s.art}`}>{s.text}</span>{istGeradeAktiv(b.zuletztAktiv) && <> <span className="chip gut punkt">gerade aktiv</span></>}
+                  {b.aktiv && b.abwesenheit?.an && <> <span className="chip warn">{abwesenheitWirkt(b.abwesenheit, heute) ? 'abwesend' : 'demnächst abwesend'}{b.abwesenheit.bis ? ` bis ${b.abwesenheit.bis.split('-').reverse().join('.')}` : ''}</span></>}</span>
+                {b.aktiv && b.abwesenheit?.an && <span className="unter">vertreten durch {d.person(b.abwesenheit.vertreterId)}</span>}
               </Link>
             </li>
           );
@@ -126,12 +140,12 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
           {' '}{loeschbar ? 'Solange die Einladung nicht angenommen ist, lässt sich der Benutzer löschen.' : 'Wer schon angemeldet war, wird deaktiviert statt gelöscht – Verweise und „angelegt von“ bleiben so erhalten.'}</p>
         <div className="knoepfe">
           <button className="knopf" onClick={() => void aktion(async () => setErgebnis(await api.neuerLink(b.id)))}>{b.hatPasswort ? 'Passwort-Link erzeugen' : 'Einladung erneut senden'}</button>
-          {!selbst && <button className="knopf" onClick={() => void aktion(() => api.benutzerAendern(b.id, { aktiv: !b.aktiv }), b.aktiv ? 'Deaktiviert – alle Sitzungen beendet.' : 'Aktiviert.')}>{b.aktiv ? 'Deaktivieren' : 'Aktivieren'}</button>}
-          {!selbst && loeschbar && <button className="knopf gefahr-rand" onClick={() => {
-            if (confirm(`Einladung an ${b.email} zurückziehen und den Benutzer löschen?`)) void aktion(async () => { await api.benutzerLoeschen(b.id); geheZu('/werkbank/benutzer'); });
-          }}>Löschen</button>}
         </div>
       </div>
+
+      <AbwesenheitFormular benutzerId={b.id} wer={selbst ? 'du' : b.name || b.email} wert={b.abwesenheit ?? KEINE_ABWESENHEIT} offeneAufgaben={b.offeneAufgaben ?? 0}
+        speichern={(a) => api.benutzerAbwesenheit(b.id, a)} uebergeben={() => api.benutzerAufgabenAnVertreter(b.id)}
+        nachSpeichern={async () => { await neuLaden(); if (selbst) await aktualisieren(); }} />
 
       <Sitzungen b={b} neuLaden={neuLaden} />
 
@@ -146,6 +160,50 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
           }}>Als {b.name || b.email} anmelden</button></div>
         </div>
       )}
+
+      <ZugangSperren b={b} selbst={selbst} loeschbar={loeschbar} aktion={aktion} />
+    </div>
+  );
+}
+
+/**
+ * Zugang sperren (#77): deaktivieren nur mit Vertreter und ohne offene Aufgaben (#78); der Vertreter
+ * wirkt danach dauerhaft. Löschen bleibt für Einladungen, die nie angenommen wurden.
+ */
+function ZugangSperren({ b, selbst, loeschbar, aktion }: { b: Benutzer; selbst: boolean; loeschbar: boolean; aktion: (fn: () => Promise<unknown>, gut?: string) => Promise<void> }) {
+  const d = useDaten();
+  const name = b.name || b.email;
+  const vertreter = b.abwesenheit?.vertreterId ? d.person(b.abwesenheit.vertreterId) : null;
+  const offen = b.offeneAufgaben ?? 0;
+  if (!b.aktiv) return (
+    <div className="blatt">
+      <h2 className="h3">Zugang wieder freigeben</h2>
+      <p className="leise">{name} ist deaktiviert{b.deaktiviert ? ` seit ${datumZeit(b.deaktiviert)}` : ''}{vertreter ? `; Aufgaben, die noch für ${name} entstehen, gehen an ${vertreter}` : ''}. Aktivieren gibt den Zugang wieder frei; das Passwort gilt weiter.</p>
+      <div className="knoepfe"><button className="knopf primaer" onClick={() => void aktion(() => api.benutzerAendern(b.id, { aktiv: true }), 'Aktiviert.')}>Benutzer aktivieren</button></div>
+    </div>
+  );
+  if (selbst) return null;
+  const gruende = [!vertreter && 'Es ist kein Vertreter hinterlegt – wähle oben unter „Abwesenheit“ einen.', offen > 0 && `${name} hat noch ${offen === 1 ? 'eine offene Aufgabe' : `${offen} offene Aufgaben`}${vertreter ? ` – gib sie oben an ${vertreter}.` : '.'}`].filter(Boolean) as string[];
+  return (
+    <div className="blatt gefahrenzone">
+      <h2 className="h3">Zugang sperren</h2>
+      <ul className="leise">
+        <li>Der Zugang ist sofort gesperrt, alle Sitzungen werden beendet.</li>
+        <li>Die Mappe bleibt erhalten und heißt „{name} (ehemalig)“; Verweise und „angelegt von“ bleiben gültig.</li>
+        <li>Der Vertreter bleibt hinterlegt und bekommt dauerhaft, was noch für {name} entsteht (z. B. „passt nicht“ an Mappen, die {name} angelegt hat).</li>
+        <li><strong>Aktivieren</strong> macht es jederzeit rückgängig.</li>
+      </ul>
+      {gruende.length > 0 && <div className="hinweis warn"><p>Deaktivieren geht erst, wenn ein Vertreter hinterlegt ist und keine Aufgaben mehr offen sind.</p><ul>{gruende.map((g) => <li key={g}>{g}</li>)}</ul></div>}
+      <div className="knoepfe">
+        {loeschbar && <button className="knopf gefahr-rand" onClick={() => {
+          if (confirm(`Einladung an ${b.email} zurückziehen und den Benutzer löschen?`)) void aktion(async () => { await api.benutzerLoeschen(b.id); geheZu('/werkbank/benutzer'); });
+        }}>Einladung löschen</button>}
+        <button className="knopf gefahr" disabled={gruende.length > 0} onClick={() => {
+          if (confirm(`${name} deaktivieren? Der Zugang ist sofort gesperrt, alle Sitzungen enden. Aufgaben, die noch für ${name} entstehen, gehen an ${vertreter}.`)) {
+            void aktion(() => api.benutzerAendern(b.id, { aktiv: false }), 'Deaktiviert – alle Sitzungen beendet.');
+          }
+        }}>Benutzer deaktivieren</button>
+      </div>
     </div>
   );
 }

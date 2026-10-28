@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { erwaehnung, zerlege, type Block, type Inline } from '../../../shared/src/markdown';
-import { useDaten } from '../daten';
+import { abwesenheitText, useDaten } from '../daten';
 import { Person } from '../Person';
 
 /**
@@ -160,7 +160,7 @@ export function FormatiertEingabe({ id, wert, setze }: { id: string; wert: strin
               <div className={`wahlliste am-cursor ${ort?.oben ? 'oben' : ''}`} role="listbox" id={`${id}-erw`} aria-label="Benutzer erwähnen"
                 style={ort ? { top: ort.top, left: ort.left } : undefined}>
                 {vorschlaege.map((p, i) => <button key={p.id} id={`${id}-erw-${i}`} type="button" role="option" aria-selected={i === aktiv} className={i === aktiv ? 'an' : ''}
-                  onMouseEnter={() => setAktiv(i)} onMouseDown={(e) => e.preventDefault()} onClick={() => waehle(p)}>@{p.name}</button>)}
+                  onMouseEnter={() => setAktiv(i)} onMouseDown={(e) => e.preventDefault()} onClick={() => waehle(p)}>@{p.name}{p.abwesend && <span className="leise klein"> – {abwesenheitText(p)}</span>}</button>)}
               </div>
             )}
           </div>}

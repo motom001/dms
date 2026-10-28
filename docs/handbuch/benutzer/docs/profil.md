@@ -9,13 +9,14 @@ Ein Klick auf deinen Namen oben rechts öffnet ein Menü:
 - Oben stehen dein Name, deine E-Mail-Adresse und deine Rolle.
 - **Mein Konto** – Name und E-Mail-Adresse, siehe unten.
 - **Einstellungen** – Design, Schriftgröße und Ansicht.
+- **Abwesenheit** – Urlaub oder Krankheit eintragen, siehe [Abwesenheit](#abwesenheit). Solange sie wirkt, steht oben im Menü „Du bist abwesend“, und neben deinem Namen ist ein Punkt.
 - **Hilfe** – öffnet dieses Handbuch.
 - **Fehler melden** – siehe [Fehler melden](#fehler-melden).
 - **Abmelden**.
 
 ## Profil
 
-Das Profil hat links vier Bereiche (am Smartphone oben als Knöpfe):
+Das Profil hat links fünf Bereiche (am Smartphone oben als Knöpfe):
 
 ![Profil](bilder/profil.png){ loading=lazy }
 
@@ -41,6 +42,16 @@ Das Profil hat links vier Bereiche (am Smartphone oben als Knöpfe):
 
 - **Aufgaben** – Mappen mit offenen [Aufgaben](eingang.md) für dich stehen im Eingang. Zusätzlich schickt das DMS dir einmal am Tag eine Übersicht per E-Mail, solange du welche hast. **Tägliche Zusammenfassung meiner Aufgaben per E-Mail** bestellt sie ab oder wieder an.
 - **Papierkorb** – **Beim Abmelden leeren** löscht deine gelöschten Mappen endgültig, sobald du dich abmeldest. Ohne den Haken bleiben sie so lange im [Papierkorb](ablage.md#papierkorb), wie der Administrator es eingestellt hat.
+
+### Abwesenheit
+
+Damit während deines Urlaubs nichts liegen bleibt, trägst du unter **Abwesenheit** einen **Vertreter** ein:
+
+- **Abwesend** an, **Vertreter** wählen (Pflicht), optional **von** und **bis** (jeweils einschließlich). Ohne Datum gilt die Abwesenheit, bis du sie ausschaltest; mit „bis“ endet sie danach von selbst.
+- Solange sie wirkt, gehen **neue** Aufgaben für dich – von Hand vergebene, Erwähnungen und „passt nicht“ – an deinen Vertreter. Im Protokoll der Mappe steht „weitergegeben wegen Abwesenheit“. Ist dein Vertreter selbst abwesend, geht sie an dessen Vertreter weiter.
+- **Alle offenen Aufgaben an ‹Vertreter› geben** gibt auch die schon vorhandenen ab. Nach deiner Rückkehr bleiben sie beim Vertreter.
+- Dein Vertreter bekommt einen Hinweis in seinen Eingang („Du wurdest für … als Vertreter hinterlegt“). Abwesende bekommen keine tägliche Zusammenfassung.
+- Ein Administrator kann deine Abwesenheit auch für dich eintragen, etwa bei Krankheit. Eintragen, Ändern und Beenden stehen im Protokoll deiner Benutzer-Mappe.
 
 ## Fehler melden
 
