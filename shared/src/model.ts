@@ -62,6 +62,8 @@ export const REGISTERARTEN = {
   felder: 'Feldregister',
   dokumente: 'Dokumentenregister',
   verknuepfungen: 'Verknüpfungsregister',
+  /** Änderungshistorie der Mappe (#57). */
+  protokoll: 'Protokollregister',
 } as const;
 export type Registerart = keyof typeof REGISTERARTEN;
 
@@ -527,6 +529,20 @@ export interface Dokument {
   erstelltVon: string | null;
   /** Stand der Texterkennung (#45). */
   ocr?: OcrStand;
+}
+
+/* ---------- Änderungshistorie (#57) ---------- */
+export const HISTORIENARTEN = {
+  angelegt: 'angelegt', geaendert: 'geändert', dokument_hochgeladen: 'Dokument hochgeladen', dokument_geloescht: 'Dokument gelöscht',
+  papierkorb: 'in den Papierkorb gelegt', wiederhergestellt: 'wiederhergestellt', endgueltig: 'endgültig gelöscht',
+  passwort_angezeigt: 'Passwort angezeigt', notiz: 'Notiz', aufgabe: 'Aufgabe', email: 'E-Mail versendet',
+} as const;
+export type Historienart = keyof typeof HISTORIENARTEN;
+/** Eine Feldänderung: Werte lesbar zum Zeitpunkt der Änderung; Passwörter nur als „geändert“. */
+export interface Feldaenderung { feld: string; label: string; alt?: string; neu?: string; geheim?: boolean }
+export interface Historieneintrag {
+  id: number; mappeId: string; zeit: string; benutzerId: string | null; art: Historienart;
+  daten: { aenderungen?: Feldaenderung[]; dokument?: string; feld?: string; text?: string; [k: string]: unknown };
 }
 
 /* ---------- Texterkennung (#45) ---------- */

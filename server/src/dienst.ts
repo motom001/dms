@@ -1,8 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
-  darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
+  darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, ROLLEN, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
-  type Benutzer, type Feld, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Rolle, type Systemtyp, type Werte,
+  type Benutzer, type Feld, type Feldaenderung, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import { Auftraege } from './auftrag';
@@ -117,6 +117,7 @@ export interface KontenHaken {
 }
 
 export const PAPIERKORB_STANDARD_TAGE = 30;
+export const HISTORIE_STANDARD_TAGE = 365;
 export interface DienstOptionen {
   /** Schlüssel für Passwortfelder (#39, #46). */
   tresor?: Tresor;
@@ -276,7 +277,7 @@ export class Dienst {
   }
 
   /** Klartext eines Passworts zum Anzeigen; jeder Aufruf steht im Protokoll (ohne den Wert). */
-  async zeigePasswort(mappeId: string, feldKey: string): Promise<{ wert: string }> {
+  async zeigePasswort(mappeId: string, feldKey: string, benutzerId: string | null = null): Promise<{ wert: string }> {
     const m = await this.repo.holeMappe(mappeId);
     if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
     const typ = await this.repo.holeTyp(m.typId);
@@ -287,6 +288,7 @@ export class Dienst {
     const klar = this.tresor?.entschluessele(v) ?? null;
     if (klar === null) throw new Fachfehler(409, 'Dieses Passwort ist nicht lesbar: Der Schlüssel, mit dem es gespeichert wurde, fehlt. Bitte neu eingeben.');
     protokoll.modul('ablage').info('Passwort angezeigt', { mappe: m.titel || m.id, mappeId: m.id, feld: f.label });
+    await this.notiere(m.id, benutzerId, 'passwort_angezeigt', { feld: f.label });
     return { wert: klar };
   }
 
@@ -294,16 +296,64 @@ export class Dienst {
    * Für die API mit dem Recht „Passwörter lesen“: Passwörter einer oder mehrerer Mappen
    * im Klartext; je Mappe ein Protokolleintrag (ohne die Werte).
    */
-  async entschluesselePasswoerter<T extends Mappe>(mappen: T[], wer: string): Promise<T[]> {
+  async entschluesselePasswoerter<T extends Mappe>(mappen: T[], wer: string, benutzerId: string | null = null): Promise<T[]> {
     const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t]));
-    return mappen.map((m) => {
+    const historie: Parameters<Repo['historieSchreibe']>[0] = [];
+    const ergebnis = mappen.map((m) => {
       const felder = typen.get(m.typId)?.felder.filter((f) => f.typ === 'passwort' && istVerschluesselt(m.werte[f.key])) ?? [];
       if (!felder.length) return m;
       const werte = { ...m.werte };
       for (const f of felder) werte[f.key] = this.tresor?.entschluessele(werte[f.key] as string) ?? null;
       protokoll.modul('ablage').info('Passwörter über die API abgerufen', { mappe: m.titel || m.id, mappeId: m.id, felder: felder.map((f) => f.label).join(', '), schluessel: wer });
+      historie.push({ mappeId: m.id, benutzerId, art: 'passwort_angezeigt', daten: { feld: felder.map((f) => f.label).join(', '), api: wer } });
       return { ...m, werte };
     });
+    await this.repo.historieSchreibe(historie);
+    return ergebnis;
+  }
+
+  /* ---------- Änderungshistorie (#57) ---------- */
+
+  /** Ein Eintrag in die Historie einer Mappe. */
+  private notiere(mappeId: string, benutzerId: string | null, art: Historienart, daten?: Historieneintrag['daten']) {
+    return this.repo.historieSchreibe([{ mappeId, benutzerId, art, daten }]);
+  }
+
+  /** Was sich zwischen zwei Ständen geändert hat – lesbar, wie es zu diesem Zeitpunkt aussah. */
+  private async aenderungen(typ: Mappentyp, alt: Werte, neu: Werte): Promise<Feldaenderung[]> {
+    const gleich = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+    const felder = typ.felder.filter((f) => !gleich(alt[f.key], neu[f.key]) && !(istLeer(alt[f.key]) && istLeer(neu[f.key])));
+    if (!felder.length) return [];
+    const ids = felder.filter((f) => f.typ === 'referenz').flatMap((f) => [alt[f.key], neu[f.key]].flatMap((v) => (Array.isArray(v) ? v : v ? [v] : []))).map(String).filter(istUuid);
+    const titel = await this.repo.titelVon(ids);
+    const lesbar = (f: Feld, v: Werte[string] | undefined) => {
+      const t = formatiere(f, v, (id) => titel.get(id) || 'Ohne Titel');
+      return t.length > 500 ? `${t.slice(0, 497)} …` : t;
+    };
+    return felder.map((f) => (f.typ === 'passwort'
+      ? { feld: f.key, label: f.label, geheim: true }
+      : { feld: f.key, label: f.label, alt: lesbar(f, alt[f.key]), neu: lesbar(f, neu[f.key]) }));
+  }
+
+  /** Historie einer Mappe (auch im Papierkorb). */
+  async historie(mappeId: string): Promise<Historieneintrag[]> {
+    if (!(await this.repo.holeMappe(mappeId)) && !(await this.repo.holeAusPapierkorb(mappeId))) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    return this.repo.historie(mappeId);
+  }
+
+  /** Wie lange die Historie endgültig gelöschter Mappen bleibt (Tage). */
+  async historieTage(): Promise<number> {
+    const e = this.einstellungen ? ((await this.einstellungen.lies('historie')) as { tage?: number } | null) : null;
+    return typeof e?.tage === 'number' ? e.tage : HISTORIE_STANDARD_TAGE;
+  }
+
+  async setzeHistorieTage(eingabe: unknown): Promise<number> {
+    if (!this.einstellungen) throw new Fachfehler(404, 'Einstellungen sind nicht eingerichtet.');
+    const tage = Number(eingabe);
+    if (!Number.isInteger(tage) || tage < 0 || tage > 36500) throw new Fachfehler(422, 'Bitte eine ganze Zahl von 0 bis 36500 Tagen angeben.');
+    await this.einstellungen.schreibe('historie', { tage });
+    protokoll.modul('werkbank').info('Aufbewahrung der Historie gelöschter Mappen geändert', { tage });
+    return tage;
   }
 
   listeTypen() { return this.repo.listeTypen(); }
@@ -689,6 +739,7 @@ export class Dienst {
     await this.pruefeWerte(typ, werte);
     const id = istUuid(e.id) && !(await this.repo.holeMappe(e.id)) ? e.id : randomUUID();
     const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), benutzerId, demo);
+    if (!demo) await this.notiere(m.id, benutzerId, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, werte) });
     const titel = (await this.aktualisiereTitel([m.id])).get(m.id);
     if (typ.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
     return { ...m, titel };
@@ -707,7 +758,9 @@ export class Dienst {
       }
     }
     await this.pruefeWerte(typ, werte, id);
+    const aenderungen = await this.aenderungen(typ, m.werte, werte);
     const neu = await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), benutzerId);
+    if (aenderungen.length) await this.notiere(id, benutzerId, 'geaendert', { aenderungen });
     const titel = (await this.aktualisiereTitel([id])).get(id);
     if (typ.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
     return { ...neu, titel };
@@ -735,18 +788,20 @@ export class Dienst {
       if (b) await this.schreibeSystemMappe(benutzerTyp!, b.id, { ...b.werte, rollen: alsListe(b.werte.rollen).filter((r) => r !== id) }, benutzerId);
     }
     if (await this.papierkorbTage() > 0) await this.legeInPapierkorb(id, typ, benutzerId);
-    else await this.loescheMappeIntern(id, typ);
+    else await this.loescheMappeIntern(id, typ, benutzerId);
   }
 
   /** In den Papierkorb (#43): eindeutige Werte werden frei, Dateien bleiben bis zum Leeren. */
   private async legeInPapierkorb(id: string, typ: Mappentyp | undefined, von: string | null) {
     await this.repo.legeInPapierkorb(id, von);
+    await this.notiere(id, von, 'papierkorb');
     if (typ?.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
   }
 
-  private async loescheMappeIntern(id: string, typ: Mappentyp | undefined) {
+  private async loescheMappeIntern(id: string, typ: Mappentyp | undefined, von: string | null = null) {
     const dokumente = await this.repo.listeDokumente(id);
     await this.repo.loescheMappe(id);
+    await this.notiere(id, von, 'endgueltig');
     if (typ?.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
     for (const sha of new Set(dokumente.map((d) => d.sha256))) await this.raeumeAuf(sha);
   }
@@ -820,8 +875,10 @@ export class Dienst {
     const alt = await this.repo.holeMappe(id);
     const werte = bereinigeWerte(typ, eingabe, alt?.werte);
     if (alt && JSON.stringify(alt.werte) === JSON.stringify(werte)) return alt;
+    const aenderungen = await this.aenderungen(typ, alt?.werte ?? {}, werte);
     if (alt) await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), von);
     else await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), von, false, kennung);
+    if (aenderungen.length) await this.notiere(id, von, alt ? 'geaendert' : 'angelegt', { aenderungen });
     await this.aktualisiereTitel([id]);
     // Hat der Administrator den Typ um Pflichtfelder erweitert, landet die Mappe im Eingang.
     await this.passungFuer(typ, [id]);
@@ -905,6 +962,7 @@ export class Dienst {
         const fremd = (await this.repo.rueckverweise(id)).filter((r) => r.quelleId !== id);
         if (fremd.length) throw new Fachfehler(409, `Auf diesen Benutzer ${fremd.length === 1 ? 'verweist noch eine Mappe' : `verweisen noch ${fremd.length} Mappen`}. Deaktiviere ihn statt ihn zu löschen.`, { rueckverweise: fremd });
         await this.repo.legeInPapierkorb(id, von);
+        await this.notiere(id, von, 'papierkorb');
       },
     };
   }
@@ -952,6 +1010,7 @@ export class Dienst {
     const typ = await this.repo.holeTyp(e.typId);
     if (!typ) throw new Fachfehler(409, 'Den Mappentyp dieser Mappe gibt es nicht mehr.');
     const { verweiseEntfallen } = await this.repo.stelleWiederHer(id);
+    await this.notiere(id, ich.id, 'wiederhergestellt', verweiseEntfallen ? { verweiseEntfallen } : undefined);
     await this.aktualisiereTitel([id]);
     await this.passungFuer(typ, [id]);
     if (typ.system === 'benutzer') await this.konten?.wiederda(id, ich.id);
@@ -961,8 +1020,9 @@ export class Dienst {
   }
 
   /** Endgültig löschen (ohne Rechteprüfung): Dateien, an denen nichts mehr hängt, und Konten von Benutzer-Mappen. */
-  private async leere(ids: string[]): Promise<number> {
+  private async leere(ids: string[], von: string | null = null): Promise<number> {
     if (!ids.length) return 0;
+    await this.repo.historieSchreibe(ids.map((mappeId) => ({ mappeId, benutzerId: von, art: 'endgueltig' as const })));
     const benutzerTyp = (await this.repo.listeTypen()).find((t) => t.system === 'benutzer');
     const benutzer = benutzerTyp ? (await this.repo.papierkorb({ typId: benutzerTyp.id })).filter((e) => ids.includes(e.id)).map((e) => e.id) : [];
     const dateien = await this.repo.leerePapierkorb(ids);
@@ -974,14 +1034,14 @@ export class Dienst {
   /** Einzelne Mappen endgültig löschen: eigene oder (in der Werkbank) alle. */
   async loescheEndgueltig(ids: string[], ich: { id: string; rolle: string }, alle = false): Promise<number> {
     for (const id of ids) await this.eintrag(id, ich, alle);
-    const n = await this.leere(ids);
+    const n = await this.leere(ids, ich.id);
     if (n) protokoll.modul('ablage').info('Aus dem Papierkorb endgültig gelöscht', { anzahl: n });
     return n;
   }
 
   /** Papierkorb leeren: eigener (Ablage) oder ganz (Werkbank). */
   async leerePapierkorb(ich: { id: string; rolle: string }, alle = false): Promise<number> {
-    const n = await this.leere((await this.papierkorb(ich, alle)).map((e) => e.id));
+    const n = await this.leere((await this.papierkorb(ich, alle)).map((e) => e.id), ich.id);
     if (n) protokoll.modul('ablage').info(alle ? 'Papierkorb aller Benutzer geleert' : 'Papierkorb geleert', { anzahl: n });
     return n;
   }
@@ -992,6 +1052,10 @@ export class Dienst {
     const vor = new Date(jetzt - tage * 24 * 60 * 60 * 1000).toISOString();
     const n = await this.leere((await this.repo.papierkorb(tage ? { vor } : {})).map((e) => e.id));
     if (n) protokoll.modul('system').info('Abgelaufene Mappen aus dem Papierkorb gelöscht', { anzahl: n, tage });
+    // Historie endgültig gelöschter Mappen nach ihrer Frist (#57).
+    const ht = await this.historieTage();
+    const weg = await this.repo.historieAufraeumen(new Date(jetzt - ht * 24 * 60 * 60 * 1000).toISOString());
+    if (weg) protokoll.modul('system').info('Historie endgültig gelöschter Mappen entfernt', { eintraege: weg, tage: ht });
     return n;
   }
 
@@ -1034,6 +1098,7 @@ export class Dienst {
     const angegeben = /^[\w.+-]+\/[\w.+-]+$/.test(e.typ ?? '') ? e.typ! : 'application/octet-stream';
     const gleicherInhalt = await this.repo.dokumenteMitSha(sha256);
     await this.dateien.schreibe(sha256, inhalt);
+    await this.notiere(mappeId, benutzerId, 'dokument_hochgeladen', { dokument: dateiname(e.name) });
     const dokument = await this.repo.legeDokumentAn({
       id: randomUUID(), mappeId, registerKey: reg.key, name: dateiname(e.name), mime: erkannt ?? angegeben,
       groesse: inhalt.length, sha256, anzeigbar: !!erkannt, erstellt: new Date().toISOString(), erstelltVon: benutzerId,
@@ -1055,10 +1120,11 @@ export class Dienst {
     return { dokument, inhalt: await this.dateien.lies(dokument.sha256) };
   }
 
-  async loescheDokument(id: string) {
+  async loescheDokument(id: string, benutzerId: string | null = null) {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
     await this.repo.loescheDokument(id);
+    await this.notiere(d.mappeId, benutzerId, 'dokument_geloescht', { dokument: d.name });
     await this.raeumeAuf(d.sha256);
   }
 }

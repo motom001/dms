@@ -378,12 +378,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const klartext = passwoerterAnzeigen(a);
       if (!a.query.sicht) {
         const liste = await dienst.listeMappen(a.query.typ);
-        return ok(klartext ? await dienst.entschluesselePasswoerter(liste, klartext) : liste);
+        return ok(klartext ? await dienst.entschluesselePasswoerter(liste, klartext, ich(a).id) : liste);
       }
       const start = Date.now();
       const s = await dienst.seite(ich(a), a.query);
       L.ablage.debug('Sicht geladen', { sicht: a.query.sicht, von: s.von, anzahl: s.mappen.length, gesamt: s.gesamt, suche: a.query.suche, ms: Date.now() - start });
-      return ok(klartext ? { ...s, mappen: await dienst.entschluesselePasswoerter(s.mappen, klartext) } : s);
+      return ok(klartext ? { ...s, mappen: await dienst.entschluesselePasswoerter(s.mappen, klartext, ich(a).id) } : s);
     } },
     { methode: 'GET', pfad: '/api/sichten', zugang: 'angemeldet', handler: async (a) => ok(await dienst.zaehler(ich(a))) },
 
@@ -410,10 +410,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => {
       const klartext = passwoerterAnzeigen(a);
       const d = await dienst.holeMappe(a.params.id);
-      return ok(klartext ? { ...d, mappe: (await dienst.entschluesselePasswoerter([d.mappe], klartext))[0] } : d);
+      return ok(klartext ? { ...d, mappe: (await dienst.entschluesselePasswoerter([d.mappe], klartext, ich(a).id))[0] } : d);
     } },
+    // Änderungshistorie (#57)
+    { methode: 'GET', pfad: '/api/mappen/:id/historie', zugang: 'angemeldet', handler: async (a) => ok(await dienst.historie(a.params.id)) },
     // Passwortfeld anzeigen (#46): einzeln, mit Protokolleintrag (ohne den Wert).
-    { methode: 'POST', pfad: '/api/mappen/:id/passwoerter/:feld', zugang: 'angemeldet', handler: async (a) => ok(await dienst.zeigePasswort(a.params.id, a.params.feld)) },
+    { methode: 'POST', pfad: '/api/mappen/:id/passwoerter/:feld', zugang: 'angemeldet', handler: async (a) => ok(await dienst.zeigePasswort(a.params.id, a.params.feld, ich(a).id)) },
     { methode: 'POST', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => {
       const m = await dienst.legeMappeAn(a.body, ich(a).id);
       L.ablage.info('Mappe angelegt', { typ: await typName(m.typId), titel: m.titel, id: m.id });
@@ -438,8 +440,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/papierkorb/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.stelleWiederHer(a.params.id, ich(a))) },
     { methode: 'DELETE', pfad: '/api/papierkorb/:id', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.loescheEndgueltig([a.params.id], ich(a)) }) },
     /* … und in der Werkbank alles */
-    { methode: 'GET', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ tage: await dienst.papierkorbTage(), eintraege: await dienst.papierkorb(ich(a), true) }) },
-    { methode: 'PUT', pfad: '/api/werkbank/papierkorb/einstellungen', zugang: 'admin', handler: async (a) => ok(await dienst.setzePapierkorbTage(b(a).tage)) },
+    { methode: 'GET', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ tage: await dienst.papierkorbTage(), historieTage: await dienst.historieTage(), eintraege: await dienst.papierkorb(ich(a), true) }) },
+    { methode: 'PUT', pfad: '/api/werkbank/papierkorb/einstellungen', zugang: 'admin', handler: async (a) => {
+      const historieTage = b(a).historieTage === undefined ? await dienst.historieTage() : await dienst.setzeHistorieTage(b(a).historieTage);
+      const r = b(a).tage === undefined ? { tage: await dienst.papierkorbTage(), geleert: 0 } : await dienst.setzePapierkorbTage(b(a).tage);
+      return ok({ ...r, historieTage });
+    } },
     { methode: 'DELETE', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.leerePapierkorb(ich(a), true) }) },
     { methode: 'GET', pfad: '/api/werkbank/papierkorb/:id', zugang: 'admin', handler: async (a) => ok(await dienst.papierkorbEintrag(a.params.id, ich(a), true)) },
     { methode: 'POST', pfad: '/api/werkbank/papierkorb/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.stelleWiederHer(a.params.id, ich(a), true)) },
@@ -471,7 +477,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return ok(d);
     } },
     { methode: 'DELETE', pfad: '/api/dokumente/:id', zugang: 'angemeldet', handler: async (a) => {
-      await dienst.loescheDokument(a.params.id);
+      await dienst.loescheDokument(a.params.id, ich(a).id);
       L.dokumente.info('Dokument gelöscht', { id: a.params.id });
       return leer;
     } },

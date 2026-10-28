@@ -1,5 +1,5 @@
 import type postgres from 'postgres';
-import { TREFFER_ANFANG, TREFFER_ENDE, type Ausschnitt, type Dokument, type Mappe, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
+import { TREFFER_ANFANG, TREFFER_ENDE, type Ausschnitt, type Dokument, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
 import type { Filter, Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import { istUuid, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
 
@@ -589,6 +589,29 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       if (!istUuid(id)) return null;
       const [r] = await sql`SELECT volltext FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       return r ? ((r.volltext as string | null) ?? null) : null;
+    },
+
+    /* ---------- Änderungshistorie (#57) ---------- */
+    async historieSchreibe(e) {
+      if (!e.length) return;
+      await sql`INSERT INTO historie ${sql(e.map((x) => ({
+        haushalt_id: haushaltId, mappe_id: x.mappeId, benutzer_id: istUuid(x.benutzerId) ? x.benutzerId : null, art: x.art, daten: json(sql, x.daten ?? {}),
+      })), 'haushalt_id', 'mappe_id', 'benutzer_id', 'art', 'daten')}`;
+    },
+    async historie(mappeId) {
+      if (!istUuid(mappeId)) return [];
+      return (await sql`SELECT * FROM historie WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY zeit DESC, id DESC`).map((r: Zeile) => ({
+        id: Number(r.id), mappeId: r.mappe_id as string, zeit: iso(r.zeit), benutzerId: (r.benutzer_id as string | null) ?? null,
+        art: r.art as Historienart, daten: (r.daten as Historieneintrag['daten']) ?? {},
+      }));
+    },
+    async historieAufraeumen(vor) {
+      const r = await sql`
+        DELETE FROM historie WHERE haushalt_id = ${haushaltId} AND mappe_id IN (
+          SELECT mappe_id FROM historie WHERE haushalt_id = ${haushaltId} AND art = 'endgueltig' AND zeit < ${vor})
+          AND NOT EXISTS (SELECT 1 FROM mappen m WHERE m.id = historie.mappe_id)
+          AND NOT EXISTS (SELECT 1 FROM papierkorb p WHERE p.id = historie.mappe_id)`;
+      return r.count;
     },
 
     async dokumenteMitSha(sha256) {

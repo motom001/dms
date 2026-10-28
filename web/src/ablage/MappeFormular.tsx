@@ -7,6 +7,7 @@ import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
 import { leeresPasswort, rohAusWerten, standardRoh, werteAusRoh, type Roh, type RohBetrag, type RohPasswort, type RohWerte } from '../werte';
 import { titelOder } from '../seiten';
 import { Formatiert, FormatiertEingabe } from './Formatiert';
+import { Historie } from './Historie';
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 const groesse = (b: number) => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);
@@ -203,6 +204,8 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
         entferne={(id) => setEntfernt((x) => (x.includes(id) ? x.filter((y) => y !== id) : [...x, id]))}
         vergiss={(uid) => setNeueDateien((x) => x.filter((n) => n.uid !== uid))} />
     );
+  } else if (reg.art === 'protokoll') {
+    inhalt = mappe ? <Historie mappeId={mappe.id} stand={mappe.geaendert} /> : <p className="leise">Das Protokoll beginnt mit dem ersten Speichern.</p>;
   } else if (!mappe) {
     inhalt = <p className="leise">Verknüpfungen entstehen, sobald andere Mappen auf diese verweisen – also nach dem ersten Speichern.</p>;
   } else if (!details) {

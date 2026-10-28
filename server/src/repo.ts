@@ -1,4 +1,4 @@
-import type { Ausschnitt, Dokument, Mappe, MappenBezug, Mappentyp, MappentypDaten, OcrStandArt, Systemtyp, Werte } from '../../shared/src/model';
+import type { Ausschnitt, Dokument, Historienart, Historieneintrag, Mappe, MappenBezug, Mappentyp, MappentypDaten, OcrStandArt, Systemtyp, Werte } from '../../shared/src/model';
 import type { Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 
 export interface Verweis { feldKey: string; zielId: string }
@@ -154,6 +154,12 @@ export interface Repo {
   /** Dokumente ohne Volltext (noch nie erkannt) mit Typ und Register ihrer Mappe. */
   ocrOhneVolltext(): Promise<Array<{ id: string; typId: string; registerKey: string }>>;
   volltext(id: string): Promise<string | null>;
+
+  /* ---------- Änderungshistorie (#57) ---------- */
+  historieSchreibe(e: Array<{ mappeId: string; benutzerId: string | null; art: Historienart; daten?: Historieneintrag['daten'] }>): Promise<void>;
+  historie(mappeId: string): Promise<Historieneintrag[]>;
+  /** Löscht die Historie von Mappen, die vor diesem Zeitpunkt endgültig gelöscht wurden. */
+  historieAufraeumen(vor: string): Promise<number>;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

@@ -447,7 +447,7 @@ function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Ent
   };
 
   function hinzufuegen(art: Registerart) {
-    const name = { felder: 'Weitere Angaben', dokumente: 'Dokumente', verknuepfungen: 'Verknüpfungen' }[art];
+    const name = { felder: 'Weitere Angaben', dokumente: 'Dokumente', verknuepfungen: 'Verknüpfungen', protokoll: 'Protokoll' }[art];
     const r: EntwurfRegister = { key: eindeutig(schluesselAus(name), -1), name, art, _uid: neueId(), _neu: true, ...(art === 'verknuepfungen' ? { quellen: [] } : {}) };
     setE((x) => ({ ...x, register: [...x.register, r] }));
   }
@@ -514,6 +514,7 @@ function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Ent
                 <label className="haken"><input type="checkbox" checked={r.volltext !== false} onChange={(ev) => setzeReg(i, { volltext: ev.target.checked ? undefined : false })} />
                   <span>Volltext erzeugen<small className="hilfe">Textebene von PDFs lesen und gescannte Seiten und Bilder durch die Texterkennung schicken, damit die Volltextsuche sie findet.</small></span></label>
               </>}
+              {r.art === 'protokoll' && <p className="leise klein">Zeigt, wer wann was an der Mappe geändert hat – je Speichern ein Eintrag mit allen geänderten Feldern, dazu Dokumente, Papierkorb, Notizen, Aufgaben und E-Mails. Einträge lassen sich nicht ändern.</p>}
               {r.art === 'verknuepfungen' && (
                 quellen.length === 0
                   ? <p className="leise klein">Noch verweist kein Referenzfeld auf diesen Mappentyp. Das Register zeigt alle Verweise, sobald es welche gibt.</p>
@@ -534,6 +535,7 @@ function RegisterEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Ent
         <button type="button" className="knopf klein" onClick={() => hinzufuegen('felder')}>+ Feldregister</button>
         <button type="button" className="knopf klein" onClick={() => hinzufuegen('dokumente')}>+ Dokumentenregister</button>
         <button type="button" className="knopf klein" onClick={() => hinzufuegen('verknuepfungen')}>+ Verknüpfungsregister</button>
+        {!e.register.some((r) => r.art === 'protokoll') && <button type="button" className="knopf klein" onClick={() => hinzufuegen('protokoll')}>+ Protokollregister</button>}
       </div>
     </div>
   );

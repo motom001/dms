@@ -590,7 +590,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
   });
 
   it('legt Gelöschtes in den Papierkorb und stellt es samt Verweisen und Dokumenten wieder her (#43)', async () => {
-    assert.deepEqual((await anfrage('PUT', '/api/werkbank/papierkorb/einstellungen', { tage: 30 })).body, { tage: 30, geleert: 0 });
+    assert.deepEqual((await anfrage('PUT', '/api/werkbank/papierkorb/einstellungen', { tage: 30 })).body, { tage: 30, geleert: 0, historieTage: 365 });
     const partner = (await anfrage('POST', '/api/typen', { name: 'Korbpartner', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] })).body;
     const vertrag = (await anfrage('POST', '/api/typen', { name: 'Korbvertrag', felder: [
       { key: 'nummer', label: 'Nummer', typ: 'text', pflicht: true, eindeutig: true }, { key: 'partner', label: 'Partner', typ: 'referenz', zielTyp: partner.id },
@@ -628,7 +628,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('GET', '/api/papierkorb')).body.length, 0);
     const v1 = await app.inject({ method: 'GET', url: '/api/v1/papierkorb', headers: { cookie } });
     assert.deepEqual(JSON.parse(v1.body), []);
-    assert.deepEqual((await anfrage('PUT', '/api/werkbank/papierkorb/einstellungen', { tage: 0 })).body, { tage: 0, geleert: 0 });
+    assert.deepEqual((await anfrage('PUT', '/api/werkbank/papierkorb/einstellungen', { tage: 0 })).body, { tage: 0, geleert: 0, historieTage: 365 });
     assert.equal((await anfrage('DELETE', `/api/typen/${vertrag.id}`)).status, 204);
     assert.equal((await anfrage('DELETE', `/api/typen/${partner.id}`)).status, 204);
   });

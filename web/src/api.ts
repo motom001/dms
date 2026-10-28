@@ -1,6 +1,6 @@
 import type { Design } from './design';
 import { messung } from './messung';
-import type { Ausschnitt, Benutzer, Dokument, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
+import type { Ausschnitt, Benutzer, Dokument, Historieneintrag, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Sicht, SichtDaten } from '../../shared/src/sichten';
 
 export class ApiFehler extends Error {
@@ -141,12 +141,13 @@ export const api = {
   volltextNachholen: () => anfrage<{ eingereiht: number }>('POST', '/api/werkbank/wartung/volltext'),
   /* Papierkorb (#43): Ablage = eigener, Werkbank = alle */
   papierkorb: () => anfrage<PapierkorbEintrag[]>('GET', '/api/papierkorb'),
-  papierkorbWerkbank: () => anfrage<{ tage: number; eintraege: PapierkorbEintrag[] }>('GET', '/api/werkbank/papierkorb'),
+  papierkorbWerkbank: () => anfrage<{ tage: number; historieTage: number; eintraege: PapierkorbEintrag[] }>('GET', '/api/werkbank/papierkorb'),
   papierkorbEintrag: (id: string, werkbank = false) => anfrage<PapierkorbEintrag>('GET', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}`),
   wiederherstellen: (id: string, werkbank = false) => anfrage<{ mappe: Mappe; verweiseEntfallen: number }>('POST', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}/wiederherstellen`),
   endgueltigLoeschen: (id: string, werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}`),
   papierkorbLeeren: (werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb`),
-  papierkorbTage: (tage: number) => anfrage<{ tage: number; geleert: number }>('PUT', '/api/werkbank/papierkorb/einstellungen', { tage }),
+  papierkorbTage: (e: { tage?: number; historieTage?: number }) => anfrage<{ tage: number; geleert: number; historieTage: number }>('PUT', '/api/werkbank/papierkorb/einstellungen', e),
+  historie: (mappeId: string) => anfrage<Historieneintrag[]>('GET', `/api/mappen/${mappeId}/historie`),
   /** Passwortfeld anzeigen (#46); steht im Protokoll. */
   passwortAnzeigen: (mappeId: string, feld: string) => anfrage<{ wert: string }>('POST', `/api/mappen/${mappeId}/passwoerter/${encodeURIComponent(feld)}`),
   beispiele: () => anfrage<null>('POST', '/api/beispiele'),

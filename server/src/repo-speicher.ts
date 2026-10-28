@@ -1,4 +1,4 @@
-import { TREFFER_ANFANG, TREFFER_ENDE, type Ausschnitt, type Dokument, type Mappe, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
+import { TREFFER_ANFANG, TREFFER_ENDE, type Ausschnitt, type Dokument, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
 import { inSicht, type Sicht, type SichtDaten, type Zaehlquelle } from '../../shared/src/sichten';
 import type { PapierkorbEintrag, Repo, Rueckverweis, SortierungIntern, Verweis } from './repo';
 
@@ -9,6 +9,9 @@ export function speicherRepo(): Repo {
   const verweise = new Map<string, Verweis[]>();
   const dokumente = new Map<string, Dokument>();
   const sichten = new Map<string, Sicht>();
+  /** Änderungshistorie (#57). */
+  const historie: Historieneintrag[] = [];
+  let historieNr = 0;
   /** Volltext je Dokument (#45). */
   const texte = new Map<string, string | null>();
   /** Grob wie die deutsche Volltextsuche: alle Wörter kommen vor (ohne Groß-/Kleinschreibung). */
@@ -222,6 +225,16 @@ export function speicherRepo(): Repo {
         .map((d) => ({ id: d.id, typId: mappen.get(d.mappeId)!.typId, registerKey: d.registerKey }));
     },
     async volltext(id) { return texte.get(id) ?? null; },
+    async historieSchreibe(e) {
+      for (const x of e) historie.push({ id: ++historieNr, mappeId: x.mappeId, zeit: jetzt(), benutzerId: x.benutzerId, art: x.art, daten: kopie(x.daten ?? {}) });
+    },
+    async historie(mappeId) { return historie.filter((h) => h.mappeId === mappeId).map(kopie).reverse(); },
+    async historieAufraeumen(vor) {
+      const weg = new Set(historie.filter((h) => h.art === 'endgueltig' && h.zeit < vor && !mappen.has(h.mappeId) && !korb.has(h.mappeId)).map((h) => h.mappeId));
+      const vorher = historie.length;
+      for (let i = historie.length - 1; i >= 0; i--) if (weg.has(historie[i].mappeId)) historie.splice(i, 1);
+      return vorher - historie.length;
+    },
 
     async dokumenteMitSha(sha) { return [...dokumente.values()].filter((d) => d.sha256 === sha).map(kopie); },
     async zaehleDemo() {
