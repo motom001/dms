@@ -241,4 +241,40 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await app.inject({ method: 'GET', url: '/api/typen', headers: { cookie: alt } })).statusCode, 401);
     assert.equal((await anfrage('GET', '/api/typen')).status, 200);
   });
+
+  it('zeigt Sitzungen, beendet sie und lässt den Admin als Mitglied agieren', async () => {
+    const mitglied = (await anfrage('GET', '/api/benutzer')).body.find((x: { email: string }) => x.email === 'mitglied@example.org');
+    const login = await app.inject({ method: 'POST', url: '/api/konto/anmelden', headers: { 'x-dms': '1', 'user-agent': 'Mozilla/5.0 (iPhone) Safari/604.1' },
+      payload: { email: 'mitglied@example.org', passwort: 'mitglied-passwort' } });
+    assert.equal(login.statusCode, 200);
+    const mitgliedCookie = String(login.headers['set-cookie']).split(';')[0];
+    const sitzungen = (await anfrage('GET', `/api/benutzer/${mitglied.id}/sitzungen`)).body;
+    assert.equal(sitzungen.length, 1);
+    assert.match(sitzungen[0].geraet, /iPhone/);
+    assert.ok((await anfrage('GET', '/api/benutzer')).body.find((x: { id: string }) => x.id === mitglied.id).zuletztAktiv);
+    assert.equal((await anfrage('DELETE', `/api/benutzer/${mitglied.id}/sitzungen/${sitzungen[0].id}`)).status, 204);
+    assert.equal((await app.inject({ method: 'GET', url: '/api/typen', headers: { cookie: mitgliedCookie } })).statusCode, 401);
+
+    const adminCookie = cookie;
+    const v = await anfrage('POST', `/api/benutzer/${mitglied.id}/vertreten`);
+    assert.equal(v.status, 200);
+    assert.notEqual(cookie, adminCookie);
+    const st = (await anfrage('GET', '/api/konto/status')).body;
+    assert.equal(st.benutzer.id, mitglied.id);
+    assert.equal(st.vertretung.adminName, 'Admin');
+    assert.deepEqual(st.hinweise, []);
+    assert.equal((await anfrage('GET', '/api/benutzer')).status, 403, 'nur die Rechte des Mitglieds');
+    const z = await anfrage('POST', '/api/konto/vertretung-beenden');
+    assert.equal(z.body.benutzer.email, 'admin@example.org');
+    assert.equal((await anfrage('GET', '/api/benutzer')).status, 200);
+
+    const wieder = await app.inject({ method: 'POST', url: '/api/konto/anmelden', headers: { 'x-dms': '1' }, payload: { email: 'mitglied@example.org', passwort: 'mitglied-passwort' } });
+    const mc = String(wieder.headers['set-cookie']).split(';')[0];
+    const hinweise = JSON.parse((await app.inject({ method: 'GET', url: '/api/konto/status', headers: { cookie: mc } })).body).hinweise;
+    assert.equal(hinweise.length, 1);
+    assert.equal(hinweise[0].adminName, 'Admin');
+    assert.equal((await app.inject({ method: 'POST', url: '/api/konto/hinweise/gesehen', headers: { cookie: mc, 'x-dms': '1' } })).statusCode, 204);
+    assert.deepEqual(JSON.parse((await app.inject({ method: 'GET', url: '/api/konto/status', headers: { cookie: mc } })).body).hinweise, []);
+    assert.deepEqual((await anfrage('DELETE', `/api/benutzer/${mitglied.id}/sitzungen`)).body, { beendet: 1 });
+  });
 });

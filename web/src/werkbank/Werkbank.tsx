@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useDaten } from '../daten';
 import { TypEditor } from '../einrichtung/Einrichtung';
 import { Link } from '../ort';
@@ -17,6 +17,8 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const d = useDaten();
   const [, bereich = 'typen', id] = teile;
   const benutzer = useBenutzer();
+  // Anmeldungen und Aktivität ändern sich laufend: beim Öffnen der Benutzer neu laden.
+  useEffect(() => { if (bereich === 'benutzer') void benutzer.laden(); }, [bereich, id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   let liste: ReactNode = null;
   let rechts: ReactNode = <div className="platzhalter"><p>Wähle in der Liste ein Element aus.</p></div>;

@@ -3,7 +3,11 @@ import { PASSWORT_MINDESTLAENGE, type Benutzer } from '../../shared/src/model';
 import { ABGEMELDET, api, type KontoStatus } from './api';
 import { geheZu, useOrt } from './ort';
 
-interface Konto { ich: Benutzer; mail: boolean; abmelden(): Promise<void>; aktualisieren(): Promise<void> }
+interface Konto {
+  ich: Benutzer; mail: boolean; abmelden(): Promise<void>; aktualisieren(): Promise<void>;
+  vertretung: KontoStatus['vertretung'];
+  hinweise: NonNullable<KontoStatus['hinweise']>;
+}
 const Ctx = createContext<Konto | null>(null);
 
 export function useKonto(): Konto {
@@ -43,7 +47,12 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   if (!status) return <p className="leise mittig">Lade …</p>;
   if (status.einrichtungNoetig) return <Ersteinrichtung fertig={laden} />;
   if (!status.benutzer) return <Anmelden mail={status.mail} fertig={laden} />;
-  return <Ctx.Provider value={{ ich: status.benutzer, mail: status.mail, abmelden, aktualisieren: laden }}>{children}</Ctx.Provider>;
+  // key: Beim Wechsel des Benutzers (Vertretung) alles neu aufbauen und laden.
+  return (
+    <Ctx.Provider key={status.benutzer.id} value={{ ich: status.benutzer, mail: status.mail, abmelden, aktualisieren: laden, vertretung: status.vertretung ?? null, hinweise: status.hinweise ?? [] }}>
+      {children}
+    </Ctx.Provider>
+  );
 }
 
 function Karte({ titel, unter, children }: { titel: string; unter?: string; children: ReactNode }) {

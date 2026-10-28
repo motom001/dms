@@ -42,6 +42,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
           query: req.query as Record<string, string | undefined>,
           sitzung: leseCookie(req.headers.cookie, SITZUNG_COOKIE),
           ip: req.ip,
+          geraet: String(req.headers['user-agent'] ?? ''),
         };
         await pruefeZugang(r, a, (n) => req.headers[n] as string | undefined, konten);
         const antwort = await r.handler(a);

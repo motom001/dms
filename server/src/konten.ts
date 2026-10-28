@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { istEmail, PASSWORT_MINDESTLAENGE, type Benutzer, type Rolle } from '../../shared/src/model';
 import { Fachfehler } from './fehler';
-import type { KontoRepo, Zweck } from './konto-repo';
+import type { KontoRepo, SitzungIntern, SitzungsInfo, Zweck } from './konto-repo';
 import { mailtexte, type Mailer } from './mail';
 import { hashePasswort, hasheSchluessel, neuerSchluessel, pruefePasswort } from './passwort';
 
@@ -27,6 +27,12 @@ function pruefeEmail(v: unknown): string {
   return e;
 }
 
+/** Gerät und Adresse, von denen eine Anmeldung kommt. */
+export type Geraet = Pick<SitzungsInfo, 'geraet' | 'ip'>;
+const OHNE_GERAET: Geraet = { geraet: '', ip: '' };
+/** Letzte Aktivität höchstens einmal je Minute schreiben. */
+const BERUEHREN_MS = 60_000;
+
 export interface Ergebnis { benutzer: Benutzer; mailVerschickt: boolean; link?: string; mailFehler?: string }
 
 /**
@@ -43,15 +49,16 @@ export class Konten {
   async einrichtungNoetig() { return (await this.repo.anzahlBenutzer()) === 0; }
 
   /** Erster Aufruf: legt den Administrator an und meldet ihn an. */
-  async einrichten(e: { email?: unknown; name?: unknown; passwort?: unknown }) {
+  async einrichten(e: { email?: unknown; name?: unknown; passwort?: unknown }, info: Geraet = OHNE_GERAET) {
     if (!(await this.einrichtungNoetig())) throw new Fachfehler(409, 'Die Einrichtung ist bereits abgeschlossen.');
     const email = pruefeEmail(e.email);
     const passwort = pruefePasswortRegeln(e.passwort);
     const benutzer = await this.repo.legeBenutzerAn({ id: randomUUID(), email, name: text(e.name) || email, rolle: 'admin', passwortHash: await hashePasswort(passwort) });
-    return { benutzer, schluessel: await this.neueSitzung(benutzer.id) };
+    await this.repo.notiereAnmeldung(benutzer.id);
+    return { benutzer, schluessel: await this.neueSitzung(benutzer.id, info) };
   }
 
-  async anmelden(e: { email?: unknown; passwort?: unknown }, ip: string) {
+  async anmelden(e: { email?: unknown; passwort?: unknown }, ip: string, geraet = '') {
     const email = text(e.email).toLowerCase();
     const passwort = typeof e.passwort === 'string' ? e.passwort : '';
     const key = `${email}|${ip}`;
@@ -68,27 +75,101 @@ export class Konten {
     }
     this.fehlversuche.delete(key);
     await this.repo.notiereAnmeldung(treffer.benutzer.id);
-    return { benutzer: treffer.benutzer, schluessel: await this.neueSitzung(treffer.benutzer.id) };
+    return { benutzer: treffer.benutzer, schluessel: await this.neueSitzung(treffer.benutzer.id, { ip, geraet }) };
   }
 
-  private async neueSitzung(benutzerId: string) {
+  private async neueSitzung(benutzerId: string, info: Geraet, vertretungId: string | null = null) {
     const schluessel = neuerSchluessel();
-    await this.repo.legeSitzungAn(hasheSchluessel(schluessel), benutzerId, new Date(Date.now() + SITZUNG_TAGE * TAG));
+    await this.repo.legeSitzungAn(hasheSchluessel(schluessel), benutzerId, new Date(Date.now() + SITZUNG_TAGE * TAG), { ...info, vertretungId });
     return schluessel;
   }
 
   async abmelden(schluessel?: string) {
-    if (schluessel) await this.repo.loescheSitzung(hasheSchluessel(schluessel));
+    if (!schluessel) return;
+    const hash = hasheSchluessel(schluessel);
+    const s = await this.repo.holeSitzung(hash);
+    if (s?.vertretungId) await this.repo.beendeVertretung(s.vertretungId);
+    await this.repo.loescheSitzung(hash);
   }
 
-  /** Benutzer zur Sitzung, oder undefined, wenn sie ungültig, abgelaufen oder der Benutzer deaktiviert ist. */
-  async benutzerZu(schluessel?: string): Promise<Benutzer | undefined> {
+  /** Benutzer und Sitzung zum Schlüssel, oder undefined, wenn sie ungültig, abgelaufen oder der Benutzer deaktiviert ist. */
+  async anmeldungZu(schluessel?: string): Promise<{ benutzer: Benutzer; sitzung: SitzungIntern } | undefined> {
     if (!schluessel) return undefined;
-    const s = await this.repo.holeSitzung(hasheSchluessel(schluessel));
+    const hash = hasheSchluessel(schluessel);
+    const s = await this.repo.holeSitzung(hash);
     if (!s || s.ablauf.getTime() < Date.now()) return undefined;
     const b = await this.repo.holeBenutzer(s.benutzerId);
-    return b && b.aktiv ? b : undefined;
+    if (!b || !b.aktiv) return undefined;
+    if (Date.now() - s.zuletztAktiv.getTime() > BERUEHREN_MS) await this.repo.beruehreSitzung(hash);
+    return { benutzer: b, sitzung: s };
   }
+
+  async benutzerZu(schluessel?: string): Promise<Benutzer | undefined> {
+    return (await this.anmeldungZu(schluessel))?.benutzer;
+  }
+
+  /* ---------- Sitzungen (Admin) ---------- */
+
+  async sitzungenVon(benutzerId: string, aktuelleId?: string) {
+    if (!(await this.repo.holeBenutzer(benutzerId))) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');
+    return (await this.repo.listeSitzungen(benutzerId)).map(({ hash: _h, ...x }) => ({ ...x, aktuell: x.id === aktuelleId }));
+  }
+
+  async beendeSitzung(benutzerId: string, id: string) {
+    const s = (await this.repo.listeSitzungen(benutzerId)).find((x) => x.id === id);
+    if (!s) throw new Fachfehler(404, 'Diese Sitzung gibt es nicht (mehr).');
+    if (s.vertretungId) await this.repo.beendeVertretung(s.vertretungId);
+    await this.repo.loescheSitzungMitId(benutzerId, id);
+  }
+
+  async beendeAlleSitzungen(benutzerId: string) {
+    const liste = await this.repo.listeSitzungen(benutzerId);
+    for (const s of liste) if (s.vertretungId) await this.repo.beendeVertretung(s.vertretungId);
+    await this.repo.loescheSitzungenVon(benutzerId);
+    return { beendet: liste.length };
+  }
+
+  /* ---------- Als anderer Benutzer anmelden (Admin) ---------- */
+
+  /**
+   * Der Administrator wechselt in eine Sitzung des Benutzers. Seine eigene Sitzung endet;
+   * zurück geht es mit vertretungBeenden. Der Benutzer erfährt davon bei seiner nächsten Anmeldung.
+   */
+  async vertrete(admin: Benutzer, adminSchluessel: string | undefined, zielId: string, info: Geraet) {
+    if (admin.rolle !== 'admin') throw new Fachfehler(403, 'Dafür sind Administratorrechte nötig.');
+    const ziel = await this.repo.holeBenutzer(zielId);
+    if (!ziel) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');
+    if (ziel.id === admin.id) throw new Fachfehler(409, 'Du bist bereits du selbst.');
+    if (!ziel.aktiv) throw new Fachfehler(409, 'Der Benutzer ist deaktiviert.');
+    const id = randomUUID();
+    await this.repo.legeVertretungAn({ id, benutzerId: ziel.id, adminId: admin.id, adminName: admin.name || admin.email });
+    const schluessel = await this.neueSitzung(ziel.id, info, id);
+    if (adminSchluessel) await this.repo.loescheSitzung(hasheSchluessel(adminSchluessel));
+    return { benutzer: ziel, schluessel };
+  }
+
+  /** Zurück ins eigene Konto: beendet die Vertretung und meldet den Administrator wieder an. */
+  async vertretungBeenden(schluessel: string | undefined, info: Geraet) {
+    const a = await this.anmeldungZu(schluessel);
+    if (!a?.sitzung.vertretungId) throw new Fachfehler(409, 'Du agierst gerade nicht als anderer Benutzer.');
+    const v = await this.repo.holeVertretung(a.sitzung.vertretungId);
+    await this.repo.beendeVertretung(a.sitzung.vertretungId);
+    await this.repo.loescheSitzung(hasheSchluessel(schluessel!));
+    const admin = v?.adminId ? await this.repo.holeBenutzer(v.adminId) : undefined;
+    if (!admin || !admin.aktiv || admin.rolle !== 'admin') return { benutzer: null, schluessel: null };
+    return { benutzer: admin, schluessel: await this.neueSitzung(admin.id, info) };
+  }
+
+  /** Läuft in dieser Sitzung eine Vertretung, wer ist der Administrator? */
+  async vertretungZu(sitzung?: SitzungIntern) {
+    if (!sitzung?.vertretungId) return null;
+    const v = await this.repo.holeVertretung(sitzung.vertretungId);
+    return v ? { adminName: v.adminName, beginn: v.beginn } : null;
+  }
+
+  /** Hinweise für den Benutzer: Wer hat als er agiert? */
+  hinweise(benutzerId: string) { return this.repo.ungeseheneVertretungen(benutzerId); }
+  hinweiseGesehen(benutzerId: string) { return this.repo.markiereGesehen(benutzerId); }
 
   /* ---------- Eigenes Profil ---------- */
 
@@ -121,13 +202,13 @@ export class Konten {
   }
 
   /** Neues Passwort; beendet alle Sitzungen und gibt eine frische zurück. */
-  async aenderePasswort(ich: Benutzer, e: { passwortAlt?: unknown; passwortNeu?: unknown }, log: (m: string) => void = () => {}) {
+  async aenderePasswort(ich: Benutzer, e: { passwortAlt?: unknown; passwortNeu?: unknown }, log: (m: string) => void = () => {}, info: Geraet = OHNE_GERAET) {
     await this.bestaetige(ich, e.passwortAlt);
     const neu = pruefePasswortRegeln(e.passwortNeu);
     await this.repo.setzeHash(ich.id, await hashePasswort(neu));
     await this.repo.loescheSitzungenVon(ich.id);
     await this.benachrichtige(ich.email, mailtexte.passwortGeaendert(ich.name, ich.email), log);
-    return { benutzer: (await this.repo.holeBenutzer(ich.id))!, schluessel: await this.neueSitzung(ich.id) };
+    return { benutzer: (await this.repo.holeBenutzer(ich.id))!, schluessel: await this.neueSitzung(ich.id, info) };
   }
 
   /* ---------- Benutzerverwaltung (nur Admin) ---------- */
@@ -216,7 +297,7 @@ export class Konten {
     return { email: b.email, name: b.name, zweck: l.zweck };
   }
 
-  async passwortSetzen(e: { schluessel?: unknown; passwort?: unknown }) {
+  async passwortSetzen(e: { schluessel?: unknown; passwort?: unknown }, info: Geraet = OHNE_GERAET) {
     const schluessel = text(e.schluessel);
     const passwort = pruefePasswortRegeln(e.passwort);
     await this.linkPruefen(schluessel);
@@ -227,6 +308,6 @@ export class Konten {
     await this.repo.loescheSitzungenVon(l.benutzerId);
     await this.repo.notiereAnmeldung(l.benutzerId);
     const benutzer = (await this.repo.holeBenutzer(l.benutzerId))!;
-    return { benutzer, schluessel: await this.neueSitzung(l.benutzerId) };
+    return { benutzer, schluessel: await this.neueSitzung(l.benutzerId, info) };
   }
 }

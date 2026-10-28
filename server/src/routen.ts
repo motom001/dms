@@ -5,6 +5,7 @@ import { erzeugeDemo, pruefeAnzahl } from './demo';
 import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import { SITZUNG_TAGE, type Konten } from './konten';
+import type { SitzungIntern } from './konto-repo';
 
 /**
  * Alle Schnittstellen an einem Ort, jede mit ihrer Zugriffsstufe:
@@ -21,7 +22,11 @@ export interface Anfrage {
   query: Record<string, string | undefined>;
   benutzer?: Benutzer;
   sitzung?: string;
+  /** Daten der Sitzung (nach pruefeZugang). */
+  sitzungsDaten?: SitzungIntern;
   ip: string;
+  /** User-Agent des Browsers. */
+  geraet?: string;
 }
 export interface Datei {
   inhalt: Readable | Buffer;
@@ -47,6 +52,7 @@ export const SITZUNG_SEKUNDEN = SITZUNG_TAGE * 24 * 60 * 60;
 const ok = (body: unknown, status = 200): Antwort => ({ status, body });
 const leer: Antwort = { status: 204 };
 const b = (a: Anfrage) => (a.body ?? {}) as Record<string, unknown>;
+const info = (a: Anfrage) => ({ ip: a.ip, geraet: a.geraet ?? '' });
 const ich = (a: Anfrage) => {
   if (!a.benutzer) throw new Fachfehler(401, 'Bitte anmelden.');
   return a.benutzer;
@@ -61,13 +67,25 @@ export function routen(dienst: Dienst, konten: Konten, log: (m: string) => void 
       einrichtungNoetig: await konten.einrichtungNoetig(),
       mail: konten.mailAktiv,
       benutzer: a.benutzer ?? null,
+      // Ein Administrator agiert gerade als dieser Benutzer:
+      vertretung: await konten.vertretungZu(a.sitzungsDaten),
+      // Hinweise für den Benutzer selbst (nicht, solange jemand als er agiert):
+      hinweise: a.benutzer && !a.sitzungsDaten?.vertretungId ? await konten.hinweise(a.benutzer.id) : [],
     }) },
+    { methode: 'POST', pfad: '/api/konto/hinweise/gesehen', zugang: 'angemeldet', handler: async (a) => {
+      if (!a.sitzungsDaten?.vertretungId) await konten.hinweiseGesehen(ich(a).id);
+      return leer;
+    } },
+    { methode: 'POST', pfad: '/api/konto/vertretung-beenden', zugang: 'angemeldet', handler: async (a) => {
+      const r = await konten.vertretungBeenden(a.sitzung, info(a));
+      return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
+    } },
     { methode: 'POST', pfad: '/api/konto/einrichten', zugang: 'offen', handler: async (a) => {
-      const r = await konten.einrichten(b(a));
+      const r = await konten.einrichten(b(a), info(a));
       return { status: 201, body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
     { methode: 'POST', pfad: '/api/konto/anmelden', zugang: 'offen', handler: async (a) => {
-      const r = await konten.anmelden(b(a), a.ip);
+      const r = await konten.anmelden(b(a), a.ip, a.geraet);
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
     { methode: 'POST', pfad: '/api/konto/abmelden', zugang: 'offen', handler: async (a) => {
@@ -80,7 +98,7 @@ export function routen(dienst: Dienst, konten: Konten, log: (m: string) => void 
     } },
     { methode: 'GET', pfad: '/api/konto/link/:schluessel', zugang: 'offen', handler: async (a) => ok(await konten.linkPruefen(a.params.schluessel)) },
     { methode: 'POST', pfad: '/api/konto/passwort-setzen', zugang: 'offen', handler: async (a) => {
-      const r = await konten.passwortSetzen(b(a));
+      const r = await konten.passwortSetzen(b(a), info(a));
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
 
@@ -88,7 +106,7 @@ export function routen(dienst: Dienst, konten: Konten, log: (m: string) => void 
     { methode: 'PUT', pfad: '/api/konto/profil', zugang: 'angemeldet', handler: async (a) => ok(await konten.aendereProfil(ich(a), b(a))) },
     { methode: 'PUT', pfad: '/api/konto/email', zugang: 'angemeldet', handler: async (a) => ok(await konten.aendereEmail(ich(a), b(a), log)) },
     { methode: 'PUT', pfad: '/api/konto/passwort', zugang: 'angemeldet', handler: async (a) => {
-      const r = await konten.aenderePasswort(ich(a), b(a), log);
+      const r = await konten.aenderePasswort(ich(a), b(a), log, info(a));
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
 
@@ -99,6 +117,15 @@ export function routen(dienst: Dienst, konten: Konten, log: (m: string) => void 
     { methode: 'PUT', pfad: '/api/benutzer/:id', zugang: 'admin', handler: async (a) => ok(await konten.aendereBenutzer(ich(a), a.params.id, b(a))) },
     { methode: 'DELETE', pfad: '/api/benutzer/:id', zugang: 'admin', handler: async (a) => { await konten.loescheBenutzer(ich(a), a.params.id); return leer; } },
     { methode: 'POST', pfad: '/api/benutzer/:id/link', zugang: 'admin', handler: async (a) => ok(await konten.neuerLink(a.params.id)) },
+    { methode: 'GET', pfad: '/api/benutzer/:id/sitzungen', zugang: 'admin', handler: async (a) => ok(await konten.sitzungenVon(a.params.id, a.sitzungsDaten?.id)) },
+    { methode: 'DELETE', pfad: '/api/benutzer/:id/sitzungen', zugang: 'admin', handler: async (a) => ok(await konten.beendeAlleSitzungen(a.params.id)) },
+    { methode: 'DELETE', pfad: '/api/benutzer/:id/sitzungen/:sitzung', zugang: 'admin', handler: async (a) => {
+      await konten.beendeSitzung(a.params.id, a.params.sitzung); return leer;
+    } },
+    { methode: 'POST', pfad: '/api/benutzer/:id/vertreten', zugang: 'admin', handler: async (a) => {
+      const r = await konten.vertrete(ich(a), a.sitzung, a.params.id, info(a));
+      return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
+    } },
 
     /* ---------- Mappentypen ---------- */
     { methode: 'GET', pfad: '/api/typen', zugang: 'angemeldet', handler: async () => ok(await dienst.listeTypen()) },
@@ -177,7 +204,9 @@ export function sitzungsCookie(schluessel: string | null, sicher: boolean): stri
  * müssen den Header X-DMS tragen, den nur die eigene Oberfläche setzt.
  */
 export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => string | undefined, konten: Konten) {
-  a.benutzer = await konten.benutzerZu(a.sitzung);
+  const anmeldung = await konten.anmeldungZu(a.sitzung);
+  a.benutzer = anmeldung?.benutzer;
+  a.sitzungsDaten = anmeldung?.sitzung;
   if (r.methode !== 'GET' && kopf('x-dms') !== '1') throw new Fachfehler(403, 'Anfrage ohne Kennung der Oberfläche abgelehnt.');
   if (r.zugang === 'offen') return;
   if (!a.benutzer) throw new Fachfehler(401, 'Bitte anmelden.');

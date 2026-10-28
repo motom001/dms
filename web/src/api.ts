@@ -1,4 +1,4 @@
-import type { Benutzer, Dokument, Mappe, MappenBezug, Mappentyp, Pruefergebnis, Rolle } from '../../shared/src/model';
+import type { Benutzer, Dokument, Mappe, MappenBezug, Mappentyp, Pruefergebnis, Rolle, Sitzung, Vertretung } from '../../shared/src/model';
 
 export class ApiFehler extends Error {
   constructor(public status: number, message: string, public details?: unknown) { super(message); }
@@ -39,7 +39,13 @@ export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: 
 export type Bezuege = Record<string, MappenBezug>;
 export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege }
 export interface Zaehler { typen: Record<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number }
-export interface KontoStatus { einrichtungNoetig: boolean; mail: boolean; benutzer: Benutzer | null }
+export interface KontoStatus {
+  einrichtungNoetig: boolean; mail: boolean; benutzer: Benutzer | null;
+  /** Ein Administrator agiert gerade als dieser Benutzer. */
+  vertretung?: { adminName: string; beginn: string } | null;
+  /** Wer hat als dieser Benutzer agiert (noch nicht gesehen)? */
+  hinweise?: Vertretung[];
+}
 export interface LinkErgebnis { benutzer: Benutzer; mailVerschickt: boolean; link?: string; mailFehler?: string }
 
 export const api = {
@@ -57,6 +63,12 @@ export const api = {
   benutzerAendern: (id: string, d: Partial<Pick<Benutzer, 'name' | 'rolle' | 'aktiv'>>) => anfrage<Benutzer>('PUT', `/api/benutzer/${id}`, d),
   benutzerLoeschen: (id: string) => anfrage<null>('DELETE', `/api/benutzer/${id}`),
   neuerLink: (id: string) => anfrage<LinkErgebnis>('POST', `/api/benutzer/${id}/link`),
+  sitzungen: (id: string) => anfrage<Sitzung[]>('GET', `/api/benutzer/${id}/sitzungen`),
+  sitzungBeenden: (id: string, sitzung: string) => anfrage<null>('DELETE', `/api/benutzer/${id}/sitzungen/${sitzung}`),
+  alleSitzungenBeenden: (id: string) => anfrage<{ beendet: number }>('DELETE', `/api/benutzer/${id}/sitzungen`),
+  vertreten: (id: string) => anfrage<{ benutzer: Benutzer }>('POST', `/api/benutzer/${id}/vertreten`),
+  vertretungBeenden: () => anfrage<{ benutzer: Benutzer | null }>('POST', '/api/konto/vertretung-beenden'),
+  hinweiseGesehen: () => anfrage<null>('POST', '/api/konto/hinweise/gesehen'),
 
   typen: () => anfrage<Mappentyp[]>('GET', '/api/typen'),
   typAnlegen: (t: unknown) => anfrage<Mappentyp>('POST', '/api/typen', t),

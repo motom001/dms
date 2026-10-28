@@ -131,6 +131,40 @@ export interface Benutzer {
   hatPasswort: boolean;
   erstellt: string;
   letzteAnmeldung: string | null;
+  /** Letzte Aktivität in irgendeiner gültigen Sitzung (nur in der Benutzerverwaltung). */
+  zuletztAktiv?: string | null;
+}
+
+/** Als „gerade aktiv“ gilt, wer in den letzten so vielen Minuten etwas getan hat. */
+export const AKTIV_MINUTEN = 15;
+export const istGeradeAktiv = (zuletzt: string | null | undefined, jetzt = Date.now()) =>
+  !!zuletzt && jetzt - new Date(zuletzt).getTime() < AKTIV_MINUTEN * 60_000;
+
+/** Eine Anmeldung auf einem Gerät. */
+export interface Sitzung {
+  id: string;
+  benutzerId: string;
+  erstellt: string;
+  zuletztAktiv: string;
+  ablauf: string;
+  /** User-Agent des Browsers. */
+  geraet: string;
+  ip: string;
+  /** Gesetzt, wenn ein Administrator in dieser Sitzung als der Benutzer agiert. */
+  vertretungId: string | null;
+  /** Die Sitzung der aktuellen Anfrage. */
+  aktuell?: boolean;
+}
+
+/** Ein Administrator hat als ein anderer Benutzer agiert. */
+export interface Vertretung { id: string; benutzerId: string; adminId: string | null; adminName: string; beginn: string; ende: string | null }
+
+/** Kurzbeschreibung eines Browsers aus dem User-Agent, z. B. „Firefox auf Windows“. */
+export function geraetText(ua: string): string {
+  if (!ua) return 'Unbekanntes Gerät';
+  const browser = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : /curl|node|undici/i.test(ua) ? 'Programm' : 'Browser';
+  const system = /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac OS X|Macintosh/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : '';
+  return system ? `${browser} auf ${system}` : browser;
 }
 
 export const PASSWORT_MINDESTLAENGE = 10;

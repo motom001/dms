@@ -111,3 +111,51 @@ describe('Profil', () => {
     assert.match(mails.at(-1)!.betreff, /Passwort/);
   });
 });
+
+describe('Sitzungen und Vertretung', () => {
+  async function zwei() {
+    const k = new Konten(speicherKontoRepo(), null, 'http://nas:3000');
+    const admin = await k.einrichten({ email: 'admin@example.org', name: 'Admin', passwort: 'ein-langes-passwort' }, { ip: '10.0.0.1', geraet: 'Mozilla/5.0 (Windows NT 10.0) Firefox/130.0' });
+    const neu = await k.legeBenutzerAn({ email: 'sabine@example.org', name: 'Sabine' });
+    const s = await k.passwortSetzen({ schluessel: linkSchluessel(neu.link!), passwort: 'sabines-passwort' }, { ip: '10.0.0.2', geraet: 'Mozilla/5.0 (iPhone) Safari/604.1' });
+    return { k, admin, sabine: s };
+  }
+
+  it('zeigt Sitzungen mit Gerät und letzter Aktivität und beendet sie gezielt', async () => {
+    const { k, sabine } = await zwei();
+    const zweite = await k.anmelden({ email: 'sabine@example.org', passwort: 'sabines-passwort' }, '10.0.0.3', 'Mozilla/5.0 (Macintosh; Mac OS X) Chrome/129.0');
+    const liste = await k.sitzungenVon(sabine.benutzer.id);
+    assert.equal(liste.length, 2);
+    assert.ok(liste.every((s) => s.zuletztAktiv && s.geraet && s.ip));
+    const benutzer = (await k.listeBenutzer()).find((b) => b.id === sabine.benutzer.id)!;
+    assert.ok(benutzer.zuletztAktiv, 'zuletzt aktiv');
+    assert.ok(benutzer.letzteAnmeldung, 'letzte Anmeldung');
+    const iphone = liste.find((s) => s.geraet.includes('iPhone'))!;
+    await k.beendeSitzung(sabine.benutzer.id, iphone.id);
+    assert.equal(await k.benutzerZu(sabine.schluessel), undefined, 'iPhone abgemeldet');
+    assert.ok(await k.benutzerZu(zweite.schluessel), 'Mac bleibt angemeldet');
+    assert.deepEqual(await k.beendeAlleSitzungen(sabine.benutzer.id), { beendet: 1 });
+    assert.equal(await k.benutzerZu(zweite.schluessel), undefined);
+  });
+
+  it('lässt den Admin als Benutzer agieren und zurückkehren; der Benutzer erfährt davon', async () => {
+    const { k, admin, sabine } = await zwei();
+    await wirft(k.vertrete(sabine.benutzer, sabine.schluessel, admin.benutzer.id, { ip: '', geraet: '' }), 403);
+    const v = await k.vertrete(admin.benutzer, admin.schluessel, sabine.benutzer.id, { ip: '10.0.0.1', geraet: 'Firefox' });
+    assert.equal(await k.benutzerZu(admin.schluessel), undefined, 'Admin-Sitzung beendet');
+    const a = (await k.anmeldungZu(v.schluessel))!;
+    assert.equal(a.benutzer.id, sabine.benutzer.id);
+    assert.deepEqual((await k.vertretungZu(a.sitzung))?.adminName, 'Admin');
+    assert.equal((await k.hinweise(sabine.benutzer.id)).length, 1);
+    const zurueck = await k.vertretungBeenden(v.schluessel, { ip: '10.0.0.1', geraet: 'Firefox' });
+    assert.equal(zurueck.benutzer?.id, admin.benutzer.id);
+    assert.equal(await k.benutzerZu(v.schluessel), undefined);
+    assert.equal((await k.benutzerZu(zurueck.schluessel!))?.id, admin.benutzer.id);
+    await wirft(k.vertretungBeenden(zurueck.schluessel!, { ip: '', geraet: '' }), 409);
+    const h = await k.hinweise(sabine.benutzer.id);
+    assert.equal(h.length, 1);
+    assert.ok(h[0].ende, 'Ende vermerkt');
+    await k.hinweiseGesehen(sabine.benutzer.id);
+    assert.equal((await k.hinweise(sabine.benutzer.id)).length, 0);
+  });
+});

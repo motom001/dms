@@ -331,3 +331,16 @@ progress::-moz-progress-bar { background: var(--akzent); border-radius: 999px; }
 .wahlliste button { text-align: left; background: none; border: 0; padding: 7px 10px; border-radius: 6px; font: inherit; color: inherit; cursor: pointer; }
 .wahlliste button:hover, .wahlliste button:focus-visible { background: var(--akzent-zart); outline: none; }
 .wahlliste p { margin: 6px 10px; }
+
+/* Als anderer Benutzer agieren */
+.vertretungsbanner, .hinweisbanner { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 10px max(16px, env(safe-area-inset-left)); font-size: 13.5px; }
+.vertretungsbanner { background: var(--warn); color: #fff; }
+.vertretungsbanner .knopf { background: #fff; color: var(--warn); border-color: #fff; }
+.hinweisbanner { background: var(--warn-zart); color: var(--tinte); border-bottom: 1px solid var(--linie); }
+.vertretungsbanner p, .hinweisbanner p { margin: 0; }
+.hinweisbanner ul { margin: 4px 0 0; padding-left: 18px; }
+.sitzungsliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.sitzungsliste li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--linie); }
+.sitzungsliste li:first-child { border-top: 0; }
+.blockzeile { display: block; margin-top: 2px; }
+.chip.punkt::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; margin-right: 5px; vertical-align: 1px; }

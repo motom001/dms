@@ -1,10 +1,13 @@
+import { randomUUID } from 'node:crypto';
 import type postgres from 'postgres';
-import type { Benutzer, Rolle } from '../../shared/src/model';
+import type { Benutzer, Rolle, Sitzung, Vertretung } from '../../shared/src/model';
 import { istUuid } from './repo';
 
 export type Zweck = 'einladung' | 'zuruecksetzen';
 export interface NeuerBenutzer { id: string; email: string; name: string; rolle: Rolle; passwortHash: string | null }
 export interface Link { benutzerId: string; zweck: Zweck; ablauf: Date; benutzt: Date | null }
+export interface SitzungsInfo { geraet: string; ip: string; vertretungId?: string | null }
+export interface SitzungIntern { id: string; benutzerId: string; ablauf: Date; zuletztAktiv: Date; vertretungId: string | null }
 
 /** Datenzugriff für Benutzer, Sitzungen und Passwort-Links. */
 export interface KontoRepo {
@@ -18,10 +21,22 @@ export interface KontoRepo {
   notiereAnmeldung(id: string): Promise<void>;
   loescheBenutzer(id: string): Promise<void>;
 
-  legeSitzungAn(hash: string, benutzerId: string, ablauf: Date): Promise<void>;
-  holeSitzung(hash: string): Promise<{ benutzerId: string; ablauf: Date } | undefined>;
+  legeSitzungAn(hash: string, benutzerId: string, ablauf: Date, info: SitzungsInfo): Promise<void>;
+  holeSitzung(hash: string): Promise<SitzungIntern | undefined>;
+  /** Letzte Aktivität auf jetzt setzen. */
+  beruehreSitzung(hash: string): Promise<void>;
+  /** Gültige Sitzungen eines Benutzers, neueste Aktivität zuerst. */
+  listeSitzungen(benutzerId: string): Promise<Array<Sitzung & { hash: string }>>;
   loescheSitzung(hash: string): Promise<void>;
+  loescheSitzungMitId(benutzerId: string, id: string): Promise<boolean>;
   loescheSitzungenVon(benutzerId: string): Promise<void>;
+
+  legeVertretungAn(v: { id: string; benutzerId: string; adminId: string; adminName: string }): Promise<void>;
+  beendeVertretung(id: string): Promise<void>;
+  holeVertretung(id: string): Promise<Vertretung | undefined>;
+  /** Vertretungen, die der Benutzer noch nicht gesehen hat. */
+  ungeseheneVertretungen(benutzerId: string): Promise<Vertretung[]>;
+  markiereGesehen(benutzerId: string): Promise<void>;
 
   legeLinkAn(hash: string, benutzerId: string, zweck: Zweck, ablauf: Date): Promise<void>;
   holeLink(hash: string): Promise<Link | undefined>;
@@ -34,13 +49,20 @@ export interface KontoRepo {
 
 export function speicherKontoRepo(): KontoRepo {
   const benutzer = new Map<string, Benutzer & { hash: string | null }>();
-  const sitzungen = new Map<string, { benutzerId: string; ablauf: Date }>();
+  const sitzungen = new Map<string, SitzungIntern & { erstellt: Date; geraet: string; ip: string }>();
+  const vertretungen = new Map<string, Vertretung & { gesehen: Date | null }>();
   const links = new Map<string, Link>();
   const ohneHash = ({ hash: _h, ...b }: Benutzer & { hash: string | null }): Benutzer => ({ ...b, hatPasswort: !!_h });
 
   return {
     async anzahlBenutzer() { return benutzer.size; },
-    async listeBenutzer() { return [...benutzer.values()].map(ohneHash).sort((a, b) => a.name.localeCompare(b.name, 'de')); },
+    async listeBenutzer() {
+      const zuletzt = (id: string) => {
+        const t = [...sitzungen.values()].filter((x) => x.benutzerId === id && x.ablauf.getTime() > Date.now()).map((x) => x.zuletztAktiv.getTime());
+        return t.length ? new Date(Math.max(...t)).toISOString() : null;
+      };
+      return [...benutzer.values()].map((b) => ({ ...ohneHash(b), zuletztAktiv: zuletzt(b.id) })).sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    },
     async holeBenutzer(id) { const b = benutzer.get(id); return b && ohneHash(b); },
     async holeHash(email) {
       const b = [...benutzer.values()].find((x) => x.email.toLowerCase() === email.toLowerCase());
@@ -60,9 +82,29 @@ export function speicherKontoRepo(): KontoRepo {
       for (const [k, s] of sitzungen) if (s.benutzerId === id) sitzungen.delete(k);
       for (const [k, l] of links) if (l.benutzerId === id) links.delete(k);
     },
-    async legeSitzungAn(hash, benutzerId, ablauf) { sitzungen.set(hash, { benutzerId, ablauf }); },
-    async holeSitzung(hash) { return sitzungen.get(hash); },
+    async legeSitzungAn(hash, benutzerId, ablauf, info) {
+      sitzungen.set(hash, { id: randomUUID(), benutzerId, ablauf, zuletztAktiv: new Date(), erstellt: new Date(), geraet: info.geraet, ip: info.ip, vertretungId: info.vertretungId ?? null });
+    },
+    async holeSitzung(hash) { const x = sitzungen.get(hash); return x && { ...x }; },
+    async beruehreSitzung(hash) { const x = sitzungen.get(hash); if (x) x.zuletztAktiv = new Date(); },
+    async listeSitzungen(benutzerId) {
+      return [...sitzungen].filter(([, x]) => x.benutzerId === benutzerId && x.ablauf.getTime() > Date.now())
+        .map(([hash, x]) => ({ hash, id: x.id, benutzerId, erstellt: x.erstellt.toISOString(), zuletztAktiv: x.zuletztAktiv.toISOString(), ablauf: x.ablauf.toISOString(), geraet: x.geraet, ip: x.ip, vertretungId: x.vertretungId }))
+        .sort((a, b) => b.zuletztAktiv.localeCompare(a.zuletztAktiv));
+    },
     async loescheSitzung(hash) { sitzungen.delete(hash); },
+    async loescheSitzungMitId(benutzerId, id) {
+      for (const [k, x] of sitzungen) if (x.id === id && x.benutzerId === benutzerId) { sitzungen.delete(k); return true; }
+      return false;
+    },
+    async legeVertretungAn(v) { vertretungen.set(v.id, { ...v, beginn: new Date().toISOString(), ende: null, gesehen: null }); },
+    async beendeVertretung(id) { const v = vertretungen.get(id); if (v && !v.ende) v.ende = new Date().toISOString(); },
+    async holeVertretung(id) { const v = vertretungen.get(id); return v && { id: v.id, benutzerId: v.benutzerId, adminId: v.adminId, adminName: v.adminName, beginn: v.beginn, ende: v.ende }; },
+    async ungeseheneVertretungen(benutzerId) {
+      return [...vertretungen.values()].filter((v) => v.benutzerId === benutzerId && !v.gesehen)
+        .map((v) => ({ id: v.id, benutzerId: v.benutzerId, adminId: v.adminId, adminName: v.adminName, beginn: v.beginn, ende: v.ende }));
+    },
+    async markiereGesehen(benutzerId) { for (const v of vertretungen.values()) if (v.benutzerId === benutzerId && !v.gesehen) v.gesehen = new Date(); },
     async loescheSitzungenVon(id) { for (const [k, s] of sitzungen) if (s.benutzerId === id) sitzungen.delete(k); },
     async legeLinkAn(hash, benutzerId, zweck, ablauf) { links.set(hash, { benutzerId, zweck, ablauf, benutzt: null }); },
     async holeLink(hash) { return links.get(hash); },
@@ -86,6 +128,11 @@ const alsBenutzer = (r: Zeile): Benutzer => ({
   letzteAnmeldung: iso(r.letzte_anmeldung),
 });
 
+const alsVertretung = (r: Zeile): Vertretung => ({
+  id: r.id as string, benutzerId: r.benutzer_id as string, adminId: (r.admin_id as string | null) ?? null,
+  adminName: r.admin_name as string, beginn: iso(r.beginn)!, ende: iso(r.ende),
+});
+
 export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
   return {
     async anzahlBenutzer() {
@@ -93,7 +140,10 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
       return r.n as number;
     },
     async listeBenutzer() {
-      return (await sql`SELECT * FROM benutzer WHERE haushalt_id = ${haushaltId} ORDER BY lower(name), lower(email)`).map(alsBenutzer);
+      const r = await sql`
+        SELECT b.*, (SELECT max(s.zuletzt_aktiv) FROM sitzungen s WHERE s.benutzer_id = b.id AND s.ablauf > now()) AS zuletzt_aktiv
+        FROM benutzer b WHERE b.haushalt_id = ${haushaltId} ORDER BY lower(b.name), lower(b.email)`;
+      return r.map((z) => ({ ...alsBenutzer(z), zuletztAktiv: iso(z.zuletzt_aktiv) }));
     },
     async holeBenutzer(id) {
       if (!istUuid(id)) return undefined;
@@ -126,16 +176,47 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
     async notiereAnmeldung(id) { await sql`UPDATE benutzer SET letzte_anmeldung = now() WHERE id = ${id}`; },
     async loescheBenutzer(id) { await sql`DELETE FROM benutzer WHERE id = ${id} AND haushalt_id = ${haushaltId}`; },
 
-    async legeSitzungAn(hash, benutzerId, ablauf) {
-      await sql`INSERT INTO sitzungen (schluessel_hash, benutzer_id, ablauf) VALUES (${hash}, ${benutzerId}, ${ablauf})`;
+    async legeSitzungAn(hash, benutzerId, ablauf, info) {
+      await sql`
+        INSERT INTO sitzungen (schluessel_hash, benutzer_id, ablauf, geraet, ip, vertretung_id)
+        VALUES (${hash}, ${benutzerId}, ${ablauf}, ${info.geraet.slice(0, 400)}, ${info.ip.slice(0, 64)}, ${info.vertretungId ?? null})`;
       // Abgelaufene Sitzungen bei der Gelegenheit aufräumen.
       await sql`DELETE FROM sitzungen WHERE ablauf < now()`;
     },
     async holeSitzung(hash) {
-      const [r] = await sql`SELECT benutzer_id, ablauf FROM sitzungen WHERE schluessel_hash = ${hash}`;
-      return r ? { benutzerId: r.benutzer_id as string, ablauf: new Date(r.ablauf as string) } : undefined;
+      const [r] = await sql`SELECT id, benutzer_id, ablauf, zuletzt_aktiv, vertretung_id FROM sitzungen WHERE schluessel_hash = ${hash}`;
+      return r ? {
+        id: r.id as string, benutzerId: r.benutzer_id as string, ablauf: new Date(r.ablauf as string),
+        zuletztAktiv: new Date(r.zuletzt_aktiv as string), vertretungId: (r.vertretung_id as string | null) ?? null,
+      } : undefined;
+    },
+    async beruehreSitzung(hash) { await sql`UPDATE sitzungen SET zuletzt_aktiv = now() WHERE schluessel_hash = ${hash}`; },
+    async listeSitzungen(benutzerId) {
+      if (!istUuid(benutzerId)) return [];
+      const r = await sql`SELECT * FROM sitzungen WHERE benutzer_id = ${benutzerId} AND ablauf > now() ORDER BY zuletzt_aktiv DESC`;
+      return r.map((z) => ({
+        hash: z.schluessel_hash as string, id: z.id as string, benutzerId, erstellt: iso(z.erstellt)!, zuletztAktiv: iso(z.zuletzt_aktiv)!,
+        ablauf: iso(z.ablauf)!, geraet: z.geraet as string, ip: z.ip as string, vertretungId: (z.vertretung_id as string | null) ?? null,
+      }));
     },
     async loescheSitzung(hash) { await sql`DELETE FROM sitzungen WHERE schluessel_hash = ${hash}`; },
+    async loescheSitzungMitId(benutzerId, id) {
+      if (!istUuid(id) || !istUuid(benutzerId)) return false;
+      return (await sql`DELETE FROM sitzungen WHERE id = ${id} AND benutzer_id = ${benutzerId} RETURNING 1`).length === 1;
+    },
+    async legeVertretungAn(v) {
+      await sql`INSERT INTO vertretungen (id, benutzer_id, admin_id, admin_name) VALUES (${v.id}, ${v.benutzerId}, ${v.adminId}, ${v.adminName})`;
+    },
+    async beendeVertretung(id) { await sql`UPDATE vertretungen SET ende = now() WHERE id = ${id} AND ende IS NULL`; },
+    async holeVertretung(id) {
+      if (!istUuid(id)) return undefined;
+      const [r] = await sql`SELECT * FROM vertretungen WHERE id = ${id}`;
+      return r ? alsVertretung(r) : undefined;
+    },
+    async ungeseheneVertretungen(benutzerId) {
+      return (await sql`SELECT * FROM vertretungen WHERE benutzer_id = ${benutzerId} AND gesehen IS NULL ORDER BY beginn`).map(alsVertretung);
+    },
+    async markiereGesehen(benutzerId) { await sql`UPDATE vertretungen SET gesehen = now() WHERE benutzer_id = ${benutzerId} AND gesehen IS NULL`; },
     async loescheSitzungenVon(id) { await sql`DELETE FROM sitzungen WHERE benutzer_id = ${id}`; },
 
     async legeLinkAn(hash, benutzerId, zweck, ablauf) {

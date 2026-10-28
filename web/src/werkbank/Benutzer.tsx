@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { ROLLEN, type Benutzer, type Rolle } from '../../../shared/src/model';
+import { AKTIV_MINUTEN, geraetText, istGeradeAktiv, ROLLEN, type Benutzer, type Rolle, type Sitzung } from '../../../shared/src/model';
 import { api, type LinkErgebnis } from '../api';
 import { useKonto } from '../konto';
 import { geheZu, Link } from '../ort';
@@ -17,10 +17,11 @@ export function useBenutzer() {
 
 export function BenutzerListe({ liste, offen }: { liste: Benutzer[]; offen?: string }) {
   const { ich } = useKonto();
+  const aktiv = liste.filter((b) => istGeradeAktiv(b.zuletztAktiv)).length;
   return (
     <>
       <div className="listenkopf">
-        <div><h1>Benutzer</h1><p className="leise klein">Wer sich anmelden darf und mit welcher Rolle.</p></div>
+        <div><h1>Benutzer</h1><p className="leise klein">Wer sich anmelden darf und mit welcher Rolle. {aktiv} gerade aktiv (in den letzten {AKTIV_MINUTEN} Minuten).</p></div>
         <Link to="/werkbank/benutzer/neu" className="knopf primaer klein">+ Neu</Link>
       </div>
       <ul className="mappenliste">
@@ -32,7 +33,8 @@ export function BenutzerListe({ liste, offen }: { liste: Benutzer[]; offen?: str
               <Link to={`/werkbank/benutzer/${b.id}`} className={`eintrag werk ${offen === b.id ? 'an' : ''}`}>
                 <span className="titel">{b.name || b.email}{b.id === ich.id && <span className="chip">du</span>}</span>
                 <span className="unter">{b.email} · {ROLLEN[b.rolle]}</span>
-                <span><span className={`chip ${s.art}`}>{s.text}</span></span>
+                <span className="unter">Letzte Anmeldung: {datumZeit(b.letzteAnmeldung)}</span>
+                <span><span className={`chip ${s.art}`}>{s.text}</span>{istGeradeAktiv(b.zuletztAktiv) && <> <span className="chip gut punkt">gerade aktiv</span></>}</span>
               </Link>
             </li>
           );
@@ -65,6 +67,7 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
           <div><dt>Status</dt><dd><span className={`chip ${s.art}`}>{s.text}</span></dd></div>
           <div><dt>Angelegt</dt><dd>{datumZeit(b.erstellt)}</dd></div>
           <div><dt>Letzte Anmeldung</dt><dd>{datumZeit(b.letzteAnmeldung)}</dd></div>
+          <div><dt>Zuletzt aktiv</dt><dd>{datumZeit(b.zuletztAktiv ?? null)}{istGeradeAktiv(b.zuletztAktiv) && <> <span className="chip gut punkt">gerade aktiv</span></>}</dd></div>
         </dl>
       </div>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
@@ -95,6 +98,60 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
           }}>Löschen</button>}
         </div>
       </div>
+
+      <Sitzungen b={b} neuLaden={neuLaden} />
+
+      {!selbst && b.aktiv && (
+        <div className="blatt">
+          <h2 className="h3">Fehler nachstellen</h2>
+          <p className="leise">Du siehst und bedienst das DMS dann genau so wie {b.name || b.email}, mit den Rechten dieses Kontos. Oben steht die ganze Zeit ein Warnhinweis mit dem Weg zurück. {b.name || b.email} erfährt bei der nächsten Anmeldung, dass und wann du unter diesem Konto gearbeitet hast.</p>
+          <div className="knoepfe"><button className="knopf" onClick={() => {
+            if (confirm(`Als ${b.name || b.email} anmelden? Deine eigene Sitzung endet dabei; zurück geht es über den Warnhinweis oben.`)) {
+              void aktion(async () => { await api.vertreten(b.id); geheZu('/ablage', true); await aktualisieren(); });
+            }
+          }}>Als {b.name || b.email} anmelden</button></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Angemeldete Geräte des Benutzers; einzeln oder alle abmelden. */
+function Sitzungen({ b, neuLaden }: { b: Benutzer; neuLaden: () => Promise<void> }) {
+  const [liste, setListe] = useState<Sitzung[] | null>(null);
+  const [fehler, setFehler] = useState<string>();
+  const laden = useCallback(async () => { try { setListe(await api.sitzungen(b.id)); } catch (e) { setFehler((e as Error).message); } }, [b.id]);
+  useEffect(() => { void laden(); }, [laden]);
+  async function beende(fn: () => Promise<unknown>, eigene: boolean) {
+    try { await fn(); } catch (e) { setFehler((e as Error).message); }
+    if (eigene) location.reload(); else { await laden(); await neuLaden(); }
+  }
+  return (
+    <div className="blatt">
+      <h2 className="h3">Angemeldet auf {liste?.length ?? '…'} {liste?.length === 1 ? 'Gerät' : 'Geräten'}</h2>
+      {fehler && <p className="fehlertext">{fehler}</p>}
+      {liste && !liste.length && <p className="leise">Gerade nirgends angemeldet.</p>}
+      {liste && liste.length > 0 && (
+        <ul className="sitzungsliste">
+          {liste.map((s) => (
+            <li key={s.id}>
+              <div>
+                <strong>{geraetText(s.geraet)}</strong>
+                {s.aktuell && <> <span className="chip">diese Sitzung</span></>}
+                {s.vertretungId && <> <span className="chip warn">Administrator agiert als Benutzer</span></>}
+                {istGeradeAktiv(s.zuletztAktiv) && <> <span className="chip gut punkt">gerade aktiv</span></>}
+                <span className="leise klein blockzeile">Zuletzt aktiv {datumZeit(s.zuletztAktiv)} · angemeldet seit {datumZeit(s.erstellt)}{s.ip ? ` · ${s.ip}` : ''}</span>
+              </div>
+              <button className="textknopf gefahr" onClick={() => void beende(() => api.sitzungBeenden(b.id, s.id), !!s.aktuell)}>Abmelden</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {liste && liste.length > 1 && (
+        <div className="knoepfe"><button className="knopf gefahr-rand" onClick={() => {
+          if (confirm(`${b.name || b.email} auf allen ${liste.length} Geräten abmelden?`)) void beende(() => api.alleSitzungenBeenden(b.id), liste.some((s) => s.aktuell));
+        }}>Überall abmelden</button></div>
+      )}
     </div>
   );
 }
