@@ -129,7 +129,8 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
   };
   // Volltextsuche (#45): je Benutzer gemerkt.
   const volltext = d.einstellungen.suche_volltext === true;
-  const s = useSeiten(p.sicht, suche, d.stand, sortierung, volltext);
+  const inNotizen = d.einstellungen.suche_notizen === true;
+  const s = useSeiten(p.sicht, suche, d.stand, sortierung, volltext, inNotizen);
 
   // Breite der Liste: schmal → kompakte Einträge, breit → Tabelle (#22).
   const mess = useRef<HTMLDivElement>(null);
@@ -178,6 +179,9 @@ function Liste(p: { sicht: string; typ?: Mappentyp; titel: string; beschreibung?
           </label>
           <label className="haken klein" title="Auch im Text der Dokumente suchen (Textebene und Texterkennung). Findet auch Wortformen, z. B. „Rechnungen“ bei „Rechnung“.">
             <input type="checkbox" checked={volltext} onChange={(e) => d.setzeEinstellung('suche_volltext', e.target.checked || null)} /><span>Volltext durchsuchen</span>
+          </label>
+          <label className="haken klein" title="Auch in den Notizen der Mappen suchen.">
+            <input type="checkbox" checked={inNotizen} onChange={(e) => d.setzeEinstellung('suche_notizen', e.target.checked || null)} /><span>Notizen</span>
           </label>
         </div>
       )}

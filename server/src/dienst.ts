@@ -2,12 +2,13 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, ROLLEN, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
-  type Benutzer, type Feld, type Feldaenderung, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Rolle, type Systemtyp, type Werte,
+  NOTIZ_MAX, type Benutzer, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type Register, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import { Auftraege } from './auftrag';
 import { protokoll } from './protokoll';
 import { Fachfehler } from './fehler';
+import { alsText } from '../../shared/src/markdown';
 import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
 import type { Einstellungen } from './einstellungen';
 import { istUuid, type NeueMappe, type PapierkorbEintrag, type Repo, type Rueckverweis, type SortierungIntern } from './repo';
@@ -312,6 +313,47 @@ export class Dienst {
     return ergebnis;
   }
 
+  /* ---------- Notizen (#55) ---------- */
+
+  private static notiztext(e: unknown): string {
+    const t = typeof e === 'string' ? e.replace(/\r\n?/g, '\n').trim() : '';
+    if (!t) throw new Fachfehler(422, 'Die Notiz ist leer.');
+    if (t.length > NOTIZ_MAX) throw new Fachfehler(422, `Eine Notiz darf höchstens ${NOTIZ_MAX.toLocaleString('de-DE')} Zeichen haben.`);
+    return t;
+  }
+  private static vorschau(t: string) { const x = alsText(t); return x.length > 80 ? `${x.slice(0, 77)} …` : x; }
+
+  async notizen(mappeId: string): Promise<Notiz[]> {
+    if (!(await this.repo.holeMappe(mappeId))) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    return this.repo.notizen(mappeId);
+  }
+
+  async legeNotizAn(mappeId: string, text: unknown, von: string | null): Promise<Notiz> {
+    if (!(await this.repo.holeMappe(mappeId))) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    const t = Dienst.notiztext(text);
+    const n = await this.repo.legeNotizAn({ id: randomUUID(), mappeId, text: t, erstellt: '', erstelltVon: von, geaendert: '', geaendertVon: von });
+    await this.notiere(mappeId, von, 'notiz', { text: `angelegt: ${Dienst.vorschau(t)}` });
+    return n;
+  }
+
+  /** Bearbeiten und Löschen darf jeder (Abstimmung zu #55); die Historie hält fest, wer es war. */
+  async aendereNotiz(id: string, text: unknown, von: string | null): Promise<Notiz> {
+    const alt = await this.repo.holeNotiz(id);
+    if (!alt) throw new Fachfehler(404, 'Diese Notiz gibt es nicht.');
+    const t = Dienst.notiztext(text);
+    if (t === alt.text) return alt;
+    const n = await this.repo.aendereNotiz(id, t, von);
+    await this.notiere(alt.mappeId, von, 'notiz', { text: `geändert: ${Dienst.vorschau(t)}`, vorher: Dienst.vorschau(alt.text) });
+    return n;
+  }
+
+  async loescheNotiz(id: string, von: string | null) {
+    const alt = await this.repo.holeNotiz(id);
+    if (!alt) throw new Fachfehler(404, 'Diese Notiz gibt es nicht.');
+    await this.repo.loescheNotiz(id);
+    await this.notiere(alt.mappeId, von, 'notiz', { text: `gelöscht: ${Dienst.vorschau(alt.text)}` });
+  }
+
   /* ---------- Änderungshistorie (#57) ---------- */
 
   /** Ein Eintrag in die Historie einer Mappe. */
@@ -464,6 +506,8 @@ export class Dienst {
       mappe,
       rueckverweise: await this.repo.rueckverweise(id),
       dokumente: await this.repo.listeDokumente(id),
+      /** Notizen an der Mappe (#55). */
+      notizen: await this.repo.notizen(id),
       /** Titel und Typ der Mappen, auf die diese verweist. */
       bezuege: Object.fromEntries(await this.repo.bezuege(ziele)),
     };
@@ -475,12 +519,13 @@ export class Dienst {
    * Eine Seite einer Sicht: „eingang“, eine verwaltete Sicht (#38) oder – für Links auf Mappen,
    * deren Typ keine eigene Sicht hat – eine Typ-Id. Mit den Bezügen für die Anzeige.
    */
-  async seite(ich: { id: string; rolle: string }, q: { sicht?: string; von?: unknown; anzahl?: unknown; suche?: unknown; sortierung?: unknown; absteigend?: unknown; volltext?: unknown }) {
+  async seite(ich: { id: string; rolle: string }, q: { sicht?: string; von?: unknown; anzahl?: unknown; suche?: unknown; sortierung?: unknown; absteigend?: unknown; volltext?: unknown; notizen?: unknown }) {
     const von = Math.max(0, Math.floor(Number(q.von) || 0));
     const anzahl = Math.min(500, Math.max(1, Math.floor(Number(q.anzahl) || 100)));
     const suche = text(q.suche).slice(0, 200) || undefined;
-    // Auch im Volltext der Dokumente suchen (#45).
+    // Auch im Volltext der Dokumente (#45) und in Notizen (#55) suchen.
     const volltext = q.volltext === true || q.volltext === 'true' || undefined;
+    const notizen = q.notizen === true || q.notizen === 'true' || undefined;
     const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
     const sichten = await this.repo.listeSichten();
     // „typ:<id>“: alle Mappen eines Typs, ohne Bedingungen einer Sicht (z. B. Auswahl eines Verweises).
@@ -490,10 +535,10 @@ export class Dienst {
     const einTyp = q.sicht === 'eingang' ? undefined : sicht ? (() => { const w = wirksameTypen(sichten, sicht.id); return w.length === 1 ? typen.get(w[0]) : undefined; })() : typen.get(nurTyp ?? String(q.sicht));
     const sortierung = sortierungAus(text(q.sortierung), q.absteigend === 'true' || q.absteigend === true, einTyp);
     const r = q.sicht === 'eingang'
-      ? await this.repo.seite({ eingang: { benutzerId: ich.id, admin: ich.rolle === 'admin' }, suche, volltext, von, anzahl, sortierung })
+      ? await this.repo.seite({ eingang: { benutzerId: ich.id, admin: ich.rolle === 'admin' }, suche, volltext, notizen, von, anzahl, sortierung })
       : sicht
-        ? await this.repo.seite({ klauseln: klauselnFuer(sichten, sicht.id, typen, await this.aufloesung(ich.id)), suche, volltext, von, anzahl, sortierung })
-        : await this.repo.seite({ typId: nurTyp ?? q.sicht, suche, volltext, von, anzahl, sortierung });
+        ? await this.repo.seite({ klauseln: klauselnFuer(sichten, sicht.id, typen, await this.aufloesung(ich.id)), suche, volltext, notizen, von, anzahl, sortierung })
+        : await this.repo.seite({ typId: nurTyp ?? q.sicht, suche, volltext, notizen, von, anzahl, sortierung });
     const ziele = r.mappen.flatMap((m) => { const t = typen.get(m.typId); return t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []; });
     return { gesamt: r.gesamt, von, mappen: r.mappen, bezuege: Object.fromEntries(await this.repo.bezuege(ziele)), ...(r.ausschnitte ? { ausschnitte: r.ausschnitte } : {}) };
   }

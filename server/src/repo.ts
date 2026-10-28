@@ -1,4 +1,4 @@
-import type { Ausschnitt, Dokument, Historienart, Historieneintrag, Mappe, MappenBezug, Mappentyp, MappentypDaten, OcrStandArt, Systemtyp, Werte } from '../../shared/src/model';
+import type { Ausschnitt, Dokument, Historienart, Historieneintrag, Mappe, Notiz, MappenBezug, Mappentyp, MappentypDaten, OcrStandArt, Systemtyp, Werte } from '../../shared/src/model';
 import type { Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 
 export interface Verweis { feldKey: string; zielId: string }
@@ -19,6 +19,8 @@ export interface SeitenAnfrage {
   suche?: string;
   /** Suche auch im Volltext der Dokumente (deutsche Volltextsuche, #45). */
   volltext?: boolean;
+  /** Suche auch in Notizen (#55). */
+  notizen?: boolean;
   /** Reihenfolge; ohne: nach Titel. */
   sortierung?: SortierungIntern;
   von: number;
@@ -154,6 +156,13 @@ export interface Repo {
   /** Dokumente ohne Volltext (noch nie erkannt) mit Typ und Register ihrer Mappe. */
   ocrOhneVolltext(): Promise<Array<{ id: string; typId: string; registerKey: string }>>;
   volltext(id: string): Promise<string | null>;
+
+  /* ---------- Notizen (#55) ---------- */
+  notizen(mappeId: string): Promise<Notiz[]>;
+  holeNotiz(id: string): Promise<Notiz | undefined>;
+  legeNotizAn(n: Notiz): Promise<Notiz>;
+  aendereNotiz(id: string, text: string, von: string | null): Promise<Notiz>;
+  loescheNotiz(id: string): Promise<void>;
 
   /* ---------- Änderungshistorie (#57) ---------- */
   historieSchreibe(e: Array<{ mappeId: string; benutzerId: string | null; art: Historienart; daten?: Historieneintrag['daten'] }>): Promise<void>;

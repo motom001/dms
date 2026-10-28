@@ -1,5 +1,6 @@
 import type postgres from 'postgres';
-import { TREFFER_ANFANG, TREFFER_ENDE, type Ausschnitt, type Dokument, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
+import { alsText } from '../../shared/src/markdown';
+import { TREFFER_ANFANG, TREFFER_ENDE, type Ausschnitt, type Dokument, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
 import type { Filter, Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import { istUuid, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
 
@@ -55,6 +56,18 @@ const alsDokument = (r: Zeile): Dokument => ({
 });
 /** Ausschnitte aus dem Volltext: höchstens zwei Stellen, Treffer markiert (#45). */
 const AUSSCHNITT = `StartSel=${TREFFER_ANFANG}, StopSel=${TREFFER_ENDE}, MaxFragments=2, MaxWords=18, MinWords=6, FragmentDelimiter=" … "`;
+const alsNotiz = (r: Zeile): Notiz => ({
+  id: r.id as string, mappeId: r.mappe_id as string, text: r.text as string,
+  erstellt: iso(r.erstellt), erstelltVon: (r.erstellt_von as string | null) ?? null,
+  geaendert: iso(r.geaendert), geaendertVon: (r.geaendert_von as string | null) ?? null,
+});
+/** Fundstelle in einem Text: ein Ausschnitt um den ersten Treffer, markiert (#55). */
+export function ausschnittAus(text: string, suche: string): string | null {
+  const i = text.toLowerCase().indexOf(suche.toLowerCase());
+  if (i < 0) return null;
+  const vor = text.slice(Math.max(0, i - 50), i);
+  return `${i > 50 ? '… ' : ''}${vor}${TREFFER_ANFANG}${text.slice(i, i + suche.length)}${TREFFER_ENDE}${text.slice(i + suche.length, i + suche.length + 60)}${i + suche.length + 60 < text.length ? ' …' : ''}`.replace(/\s+/g, ' ');
+}
 /** Eintrag im Papierkorb aus der Zeile; die Mappe steht als jsonb (Spaltennamen der Tabelle mappen) darin. */
 const alsPapierkorb = (r: Zeile): PapierkorbEintrag => {
   const m = r.mappe as Zeile;
@@ -318,6 +331,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const muster = o.suche ? `%${o.suche.replace(/[\\%_]/g, (c) => '\\' + c)}%` : null;
       const suche = muster
         ? sql`AND (titel ILIKE ${muster} OR EXISTS (SELECT 1 FROM jsonb_each_text(werte) e WHERE e.value ILIKE ${muster} AND e.value NOT LIKE 'dms1$%')
+            ${o.notizen ? sql`OR EXISTS (SELECT 1 FROM notizen n WHERE n.mappe_id = mappen.id AND n.text ILIKE ${muster})` : sql``}
             ${o.volltext ? sql`OR EXISTS (SELECT 1 FROM dokumente d WHERE d.mappe_id = mappen.id
               AND to_tsvector('german', coalesce(d.volltext, '')) @@ websearch_to_tsquery('german', ${o.suche!}::text))` : sql``})`
         : sql``;
@@ -338,7 +352,16 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} ${typ} ${eingang} ${suche}
         ORDER BY ${ausdruck} ${richtung}, lower(titel), id OFFSET ${o.von} LIMIT ${o.anzahl}`;
       const mappen = r.map(alsMappe);
-      if (!o.volltext || !o.suche || !mappen.length) return { gesamt: n as number, mappen };
+      if ((!o.volltext && !o.notizen) || !o.suche || !mappen.length) return { gesamt: n as number, mappen };
+      const ausschnitte: Record<string, Ausschnitt> = {};
+      if (o.notizen) {
+        const nz = await sql`SELECT mappe_id, text FROM notizen WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${mappen.map((m) => m.id)}::uuid[]) AND text ILIKE ${muster} ORDER BY erstellt`;
+        for (const z of nz) {
+          const t = ausschnittAus(alsText(z.text as string), o.suche);
+          if (t && !ausschnitte[z.mappe_id as string]) ausschnitte[z.mappe_id as string] = { dokument: 'Notiz', text: t };
+        }
+      }
+      if (!o.volltext) return { gesamt: n as number, mappen, ausschnitte };
       // Fundstellen im Volltext: je Mappe das Dokument mit dem besten Treffer.
       const a = await sql`
         SELECT DISTINCT ON (d.mappe_id) d.mappe_id, d.name, ts_headline('german', d.volltext, q, ${AUSSCHNITT}::text) AS text
@@ -346,8 +369,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         WHERE d.haushalt_id = ${haushaltId} AND d.mappe_id = ANY(${mappen.map((m) => m.id)}::uuid[])
           AND to_tsvector('german', coalesce(d.volltext, '')) @@ q
         ORDER BY d.mappe_id, ts_rank(to_tsvector('german', coalesce(d.volltext, '')), q) DESC`;
-      const ausschnitte: Record<string, Ausschnitt> = {};
-      for (const z of a) ausschnitte[z.mappe_id as string] = { dokument: z.name as string, text: z.text as string };
+      for (const z of a) ausschnitte[z.mappe_id as string] ??= { dokument: z.name as string, text: z.text as string };
       return { gesamt: n as number, mappen, ausschnitte };
     },
     async zaehler(benutzerId, admin) {
@@ -470,11 +492,12 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async legeInPapierkorb(id, benutzerId) {
       await sql.begin(async (tx) => {
         const r = await tx`
-          INSERT INTO papierkorb (id, haushalt_id, typ_id, mappe, verweise, dokumente, geloescht_von)
+          INSERT INTO papierkorb (id, haushalt_id, typ_id, mappe, verweise, dokumente, geloescht_von, notizen)
           SELECT m.id, m.haushalt_id, m.typ_id, to_jsonb(m),
             (SELECT coalesce(jsonb_agg(to_jsonb(v)), '[]'::jsonb) FROM verweise v WHERE v.quelle_id = m.id),
             (SELECT coalesce(jsonb_agg(to_jsonb(d)), '[]'::jsonb) FROM dokumente d WHERE d.mappe_id = m.id),
-            ${istUuid(benutzerId) ? benutzerId : null}::uuid
+            ${istUuid(benutzerId) ? benutzerId : null}::uuid,
+            (SELECT coalesce(jsonb_agg(to_jsonb(n)), '[]'::jsonb) FROM notizen n WHERE n.mappe_id = m.id)
           FROM mappen m WHERE m.haushalt_id = ${haushaltId} AND m.id = ${id}`;
         // Ausgehende Verweise und Dokumente folgen per Kaskade.
         if (r.count) await tx`DELETE FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
@@ -519,6 +542,12 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
           SELECT (jsonb_populate_record(NULL::dokumente, d.value || jsonb_build_object(
             'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = d.value ->> 'erstellt_von') THEN d.value -> 'erstellt_von' ELSE 'null'::jsonb END))).*
           FROM papierkorb p, jsonb_array_elements(p.dokumente) d WHERE p.id = ${id}`;
+        await tx`
+          INSERT INTO notizen
+          SELECT (jsonb_populate_record(NULL::notizen, n.value || jsonb_build_object(
+            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = n.value ->> 'erstellt_von') THEN n.value -> 'erstellt_von' ELSE 'null'::jsonb END,
+            'geaendert_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = n.value ->> 'geaendert_von') THEN n.value -> 'geaendert_von' ELSE 'null'::jsonb END))).*
+          FROM papierkorb p, jsonb_array_elements(p.notizen) n WHERE p.id = ${id}`;
         await tx`DELETE FROM papierkorb WHERE id = ${id}`;
         return { verweiseEntfallen: (p.verweise as unknown[]).length - v.count };
       });
@@ -590,6 +619,30 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const [r] = await sql`SELECT volltext FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       return r ? ((r.volltext as string | null) ?? null) : null;
     },
+
+    /* ---------- Notizen (#55) ---------- */
+    async notizen(mappeId) {
+      if (!istUuid(mappeId)) return [];
+      return (await sql`SELECT * FROM notizen WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY erstellt, id`).map(alsNotiz);
+    },
+    async holeNotiz(id) {
+      if (!istUuid(id)) return undefined;
+      const [r] = await sql`SELECT * FROM notizen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      return r ? alsNotiz(r) : undefined;
+    },
+    async legeNotizAn(n) {
+      const [r] = await sql`
+        INSERT INTO notizen (id, haushalt_id, mappe_id, text, erstellt_von, geaendert_von)
+        VALUES (${n.id}, ${haushaltId}, ${n.mappeId}, ${n.text}, ${istUuid(n.erstelltVon) ? n.erstelltVon : null}::uuid, ${istUuid(n.erstelltVon) ? n.erstelltVon : null}::uuid)
+        RETURNING *`;
+      return alsNotiz(r);
+    },
+    async aendereNotiz(id, text, von) {
+      const [r] = await sql`UPDATE notizen SET text = ${text}, geaendert = now(), geaendert_von = ${istUuid(von) ? von : null}::uuid
+        WHERE haushalt_id = ${haushaltId} AND id = ${id} RETURNING *`;
+      return alsNotiz(r);
+    },
+    async loescheNotiz(id) { await sql`DELETE FROM notizen WHERE haushalt_id = ${haushaltId} AND id = ${id}`; },
 
     /* ---------- Änderungshistorie (#57) ---------- */
     async historieSchreibe(e) {

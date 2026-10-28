@@ -8,6 +8,7 @@ import { leeresPasswort, rohAusWerten, standardRoh, werteAusRoh, type Roh, type 
 import { titelOder } from '../seiten';
 import { Formatiert, FormatiertEingabe } from './Formatiert';
 import { Historie } from './Historie';
+import { Notizen } from './Notizen';
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 const groesse = (b: number) => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);
@@ -40,6 +41,8 @@ export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp
   const mappe = details.mappe;
   const bekannt = new Set(typ.felder.map((f) => f.key));
   const verwaist = Object.entries(mappe.werte).filter(([k, v]) => !bekannt.has(k) && !istLeer(v));
+  const [notizenOffen, setNotizenOffen] = useState(false);
+  const notizen = details.notizen ?? [];
   return (
     <>
       <div className="mappenkopf">
@@ -51,7 +54,13 @@ export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp
         </dl>
         {typ.system === 'benutzer' && ich.rolle === 'admin' && <p className="leise klein"><Link to={`/werkbank/benutzer/${mappe.id}`} className="verweis">In der Benutzerverwaltung öffnen →</Link></p>}
         {mappe.systemKennung && <p className="leise klein"><span className="chip">Systemrolle</span> Wer sie hat, ergibt sich aus der Rolle in der Benutzerverwaltung.</p>}
+        <div className="mappenleiste">
+          <button type="button" className={`knopf klein ${notizenOffen ? 'an' : ''}`} aria-expanded={notizenOffen} onClick={() => setNotizenOffen(!notizenOffen)} title="Notizen zu dieser Mappe">
+            <span aria-hidden="true">🗒</span> Notizen{notizen.length ? ` (${notizen.length})` : ''}
+          </button>
+        </div>
       </div>
+      {notizenOffen && <Notizen mappeId={mappe.id} notizen={notizen} neuLaden={neuLaden} schliessen={() => setNotizenOffen(false)} />}
       {mappe.passt === false && (
         <div className="hinweis warn"><p>Diese Mappe passt nicht mehr zur aktuellen Definition von „{typ.name}“{mappe.problem ? ` (${mappe.problem})` : ''}. Beim nächsten Speichern müssen die markierten Felder stimmen.</p></div>
       )}

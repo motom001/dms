@@ -531,6 +531,10 @@ export interface Dokument {
   ocr?: OcrStand;
 }
 
+/* ---------- Notizen (#55) ---------- */
+export interface Notiz { id: string; mappeId: string; text: string; erstellt: string; erstelltVon: string | null; geaendert: string; geaendertVon: string | null }
+export const NOTIZ_MAX = 20_000;
+
 /* ---------- Änderungshistorie (#57) ---------- */
 export const HISTORIENARTEN = {
   angelegt: 'angelegt', geaendert: 'geändert', dokument_hochgeladen: 'Dokument hochgeladen', dokument_geloescht: 'Dokument gelöscht',

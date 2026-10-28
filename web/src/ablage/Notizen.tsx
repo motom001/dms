@@ -1,0 +1,60 @@
+import { useState } from 'react';
+import type { Notiz } from '../../../shared/src/model';
+import { api } from '../api';
+import { useDaten } from '../daten';
+import { Formatiert, FormatiertEingabe } from './Formatiert';
+
+/** Notizen an einer Mappe (#55): lesen, anlegen, bearbeiten, löschen – jeder darf alles. */
+const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
+
+export function Notizen({ mappeId, notizen, neuLaden, schliessen }: { mappeId: string; notizen: Notiz[]; neuLaden: () => Promise<void>; schliessen: () => void }) {
+  const d = useDaten();
+  const [neu, setNeu] = useState('');
+  const [bearbeite, setBearbeite] = useState<{ id: string; text: string } | null>(null);
+  const [laeuft, setLaeuft] = useState(false);
+  const [fehler, setFehler] = useState<string>();
+
+  async function tu(f: () => Promise<unknown>) {
+    setLaeuft(true); setFehler(undefined);
+    try { await f(); await neuLaden(); return true; } catch (e) { setFehler((e as Error).message); return false; } finally { setLaeuft(false); }
+  }
+
+  return (
+    <section className="blatt notizen" aria-label="Notizen">
+      <div className="blattkopf zeile-zwischen">
+        <h2 className="h3">Notizen {notizen.length > 0 && <span className="leise">({notizen.length})</span>}</h2>
+        <button type="button" className="textknopf" onClick={schliessen}>Schließen</button>
+      </div>
+      {!notizen.length && <p className="leise">Noch keine Notizen. Notizen ergänzen die Mappe, ohne ihre Angaben zu ändern.</p>}
+      <ul className="notizliste">
+        {notizen.map((n) => (
+          <li key={n.id}>
+            <div className="notizkopf leise klein">
+              {d.person(n.erstelltVon)} · {zeit(n.erstellt)}{n.geaendert !== n.erstellt && n.geaendert.slice(0, 16) !== n.erstellt.slice(0, 16) ? ` · geändert ${zeit(n.geaendert)}${n.geaendertVon !== n.erstelltVon ? ` von ${d.person(n.geaendertVon)}` : ''}` : ''}
+              {bearbeite?.id !== n.id && <span className="zeilenaktionen">
+                <button type="button" className="textknopf" onClick={() => setBearbeite({ id: n.id, text: n.text })}>Bearbeiten</button>
+                <button type="button" className="textknopf gefahr" disabled={laeuft} onClick={() => { if (confirm('Diese Notiz löschen?')) void tu(() => api.notizLoeschen(n.id)); }}>Löschen</button>
+              </span>}
+            </div>
+            {bearbeite?.id === n.id
+              ? <>
+                  <FormatiertEingabe id={`notiz-${n.id}`} wert={bearbeite.text} setze={(text) => setBearbeite({ id: n.id, text })} />
+                  <div className="knoepfe">
+                    <button type="button" className="knopf" onClick={() => setBearbeite(null)}>Abbrechen</button>
+                    <button type="button" className="knopf primaer" disabled={laeuft || !bearbeite.text.trim()} onClick={() => void tu(() => api.notizAendern(n.id, bearbeite.text)).then((ok) => { if (ok) setBearbeite(null); })}>Speichern</button>
+                  </div>
+                </>
+              : <Formatiert text={n.text} />}
+          </li>
+        ))}
+      </ul>
+      <div className="neuenotiz">
+        <FormatiertEingabe id="neue-notiz" wert={neu} setze={setNeu} />
+        <div className="knoepfe">
+          <button type="button" className="knopf primaer" disabled={laeuft || !neu.trim()} onClick={() => void tu(() => api.notizAnlegen(mappeId, neu)).then((ok) => { if (ok) setNeu(''); })}>Notiz hinzufügen</button>
+        </div>
+      </div>
+      {fehler && <p className="fehlertext">{fehler}</p>}
+    </section>
+  );
+}

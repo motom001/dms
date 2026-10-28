@@ -522,7 +522,8 @@ input.kurz { width: 7em; }
 .passwort > input, .passwort > .festwert { flex: 1 1 12em; min-width: 0; }
 .raster > .haken.breit { grid-column: 1 / -1; }
 /* Volltextsuche (#45) */
-.suchzeile { display: flex; flex-direction: column; gap: 4px; }
+.suchzeile { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+.suchzeile > .suche { flex: 1 1 100%; max-width: none; }
 .suchzeile .haken.klein { font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
 .fundstelle { display: block; font-size: calc(12px * var(--skala, 1)); color: var(--leise); line-height: 1.4; margin-top: 2px; overflow-wrap: anywhere; }
 .fundstelle .dok { font-weight: 600; }
@@ -566,3 +567,10 @@ input.kurz { width: 7em; }
 .historie .aenderungen { margin: 8px 0 4px; font-size: calc(13px * var(--skala, 1)); width: 100%; }
 .historie .aenderungen td { padding: 4px 8px; vertical-align: top; overflow-wrap: anywhere; }
 .registertab.an.art-protokoll { border-top-color: var(--leise); }
+/* Notizen (#55) und Werkzeugleiste der Mappe */
+.mappenleiste { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.zeile-zwischen { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.notizliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.notizliste li { border-left: 3px solid var(--warn); background: var(--warn-zart); padding: 8px 12px; border-radius: 0 6px 6px 0; display: flex; flex-direction: column; gap: 4px; }
+.notizkopf { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: space-between; }
+.neuenotiz { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--linie); padding-top: 10px; }
