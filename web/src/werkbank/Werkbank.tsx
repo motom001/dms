@@ -52,6 +52,11 @@ export function Werkbank({ teile }: { teile: string[] }) {
           <Link to="/werkbank/benutzer" className={`sicht ${bereich === 'benutzer' ? 'an' : ''}`}><span className="nm">Benutzer</span><span className="zahl">{benutzer.geladen ? benutzer.liste.length : ''}</span></Link>
           <Link to="/werkbank/demo" className={`sicht ${bereich === 'demo' ? 'an' : ''}`}><span className="nm">Demo-Daten</span><span className="zahl">{d.mappen.filter((m) => m.demo).length || ''}</span></Link>
         </nav>
+        {/* Freiwillig, ohne Gebühren für beide Seiten (GitHub Sponsors von persönlichen Konten). */}
+        <a className="unterstuetzen" href="https://github.com/sponsors/motom001" target="_blank" rel="noreferrer">
+          <span aria-hidden="true">♥</span> Projekt unterstützen
+          <span className="leise klein">freiwillig, Betrag frei wählbar</span>
+        </a>
       </aside>
       <section className="spalte liste" aria-label="Elemente">{liste}</section>
       <section className="spalte mappe" aria-label="Bearbeitung">

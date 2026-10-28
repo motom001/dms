@@ -196,6 +196,10 @@ tbody tr:last-child > * { border-bottom: 0; }
 .spalte.mappe { padding-right: max(20px, env(safe-area-inset-right)); padding-left: 24px; }
 .sichtliste { display: flex; flex-direction: column; gap: 2px; }
 .sichtliste hr { border: 0; border-top: 1px solid var(--linie); margin: 8px 4px; width: auto; }
+.unterstuetzen { display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: baseline; margin-top: auto; padding: 8px 10px; border-top: 1px solid var(--linie); color: var(--leise); text-decoration: none; font-size: 13px; }
+.unterstuetzen > span:first-child { color: var(--schlecht); }
+.unterstuetzen .klein { flex-basis: 100%; }
+.unterstuetzen:hover { color: var(--akzent); }
 .sicht { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; color: inherit; text-decoration: none; }
 .sicht:hover { background: var(--flaeche); }
 .sicht.an { background: var(--akzent-zart); color: var(--akzent); font-weight: 600; }
@@ -292,6 +296,7 @@ a.textknopf { text-decoration: none; }
   .spalte.sichten { border-right: 0; border-bottom: 1px solid var(--linie); overflow: visible; padding-bottom: 12px; }
   .sichtliste { flex-direction: row; overflow-x: auto; }
   .sichtliste hr { display: none; }
+  .unterstuetzen { margin-top: 8px; }
   .sicht { flex: none; border: 1px solid var(--linie); background: var(--flaeche); }
   .drei[data-ebene="liste"] { grid-template-rows: auto minmax(0, 1fr); }
   .spalte.mappe { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
