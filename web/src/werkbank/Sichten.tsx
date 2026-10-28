@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { Mappe, Mappentyp } from '../../../shared/src/model';
+import { Ansage, useZiehen, ziehTasten, type Ort } from '../ziehen';
+import { SYSTEMSPALTEN, istSystemspalte, type Mappe, type Mappentyp } from '../../../shared/src/model';
 import {
-  bedingungsfelder, bedingungsProblem, beschreibeBedingung, DYNAMISCH, EINHEITEN, kinderVon, mitNachkommen, OPERATOREN, OPERATOREN_JE_ART,
+  bedingungsfelder, bedingungsProblem, beschreibeBedingung, DYNAMISCH, EINHEITEN, gemeinsameTrefferlisten, kinderVon, mitNachkommen, OPERATOREN, OPERATOREN_JE_ART, spaltenDerSicht, trefferlistenProblem, wirksameTypen,
   ZAEHLVERGLEICHE, type Bedingung, type Bedingungsfeld, type Einheit, type Operator, type Sicht, type SichtDaten, type WertAngabe, type Zaehlvergleich,
 } from '../../../shared/src/sichten';
 import { api } from '../api';
@@ -26,22 +27,68 @@ export function SichtenListe({ offen }: { offen?: string }) {
   const d = useDaten();
   const zeilen = baumzeilen(d.sichten);
   const typen = (s: Sicht) => s.typen.map((t) => d.typ(t)).filter((t): t is Mappentyp => !!t);
+  const [ansage, setAnsage] = useState('');
+  const [fehler, setFehler] = useState<string>();
+  const name = (id: string | null) => (id ? d.sicht(id)?.name ?? '' : '');
+
+  // Drag & Drop (#73): sofort gespeichert; Untersichten wandern mit, Kreise sind unmöglich.
+  async function verschiebe(id: string, elternId: string | null, stelle: number) {
+    setFehler(undefined);
+    try {
+      await api.sichtVerschieben(id, elternId, stelle);
+      await d.neuLaden();
+      setAnsage(`${name(id)} liegt jetzt ${elternId ? `unter „${name(elternId)}“` : 'auf der obersten Ebene'} an Stelle ${stelle + 1}.`);
+    } catch (x) { setFehler((x as Error).message); }
+  }
+  const z = useZiehen({
+    hinein: true,
+    erlaubt: (quelle, ziel) => !mitNachkommen(d.sichten, quelle).some((s) => s.id === ziel),
+    fertig: (quelle, ziel, ort: Ort) => {
+      const zs = d.sicht(ziel);
+      if (!zs) return;
+      if (ort === 'in') { void verschiebe(quelle, ziel, kinderVon(d.sichten, ziel).filter((s) => s.id !== quelle).length); return; }
+      const geschwister = kinderVon(d.sichten, zs.elternId).filter((s) => s.id !== quelle);
+      const i = geschwister.findIndex((s) => s.id === ziel);
+      void verschiebe(quelle, zs.elternId, ort === 'vor' ? i : i + 1);
+    },
+  });
+  // Tastatur: Alt+↑/↓ in der Ebene, Alt+→ unter die vorherige Sicht, Alt+← eine Ebene höher.
+  const tasten = (s: Sicht) => {
+    const geschwister = kinderVon(d.sichten, s.elternId);
+    const i = geschwister.findIndex((x) => x.id === s.id);
+    return {
+      hoch: i > 0 ? () => void verschiebe(s.id, s.elternId, i - 1) : undefined,
+      runter: i < geschwister.length - 1 ? () => void verschiebe(s.id, s.elternId, i + 1) : undefined,
+      rein: i > 0 ? () => void verschiebe(s.id, geschwister[i - 1].id, kinderVon(d.sichten, geschwister[i - 1].id).length) : undefined,
+      raus: s.elternId ? () => {
+        const eltern = d.sicht(s.elternId!)!;
+        const ebene = kinderVon(d.sichten, eltern.elternId);
+        void verschiebe(s.id, eltern.elternId, ebene.findIndex((x) => x.id === eltern.id) + 1);
+      } : undefined,
+    };
+  };
   return (
     <>
       <div className="listenkopf">
         <div><h1>Sichten</h1><p className="leise klein">Was die Ablage links anbietet: Mappentypen, Bedingungen und die Ordnung als Baum.</p></div>
         <Link to="/werkbank/sichten/neu" className="knopf primaer klein">+ Neu</Link>
       </div>
+      {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
+      <Ansage text={ansage} />
+      {zeilen.length > 1 && <p className="leise klein">Zum Ordnen am Griff ⠿ ziehen: zwischen zwei Sichten oder auf eine Sicht (wird Untersicht).</p>}
       {!zeilen.length && offen !== 'neu'
         ? <p className="leise leerliste">Noch keine Sichten. Ohne Sicht erscheinen Mappen nur im Eingang und über Verweise.</p>
         : <ul className="mappenliste">
             {offen === 'neu' && <li><span className="eintrag an werk"><span className="titel">Neue Sicht</span><span className="unter">noch nicht gespeichert</span></span></li>}
             {zeilen.map(({ s, tiefe }) => {
+              const e = z.eintrag(s.id);
               const t = typen(s);
               const probleme = s.bedingungen.filter((b) => bedingungsProblem(b, t)).length;
+              const listenProblem = trefferlistenProblem(s.trefferliste, wirksameTypen(d.sichten, s.id).map((x) => d.typ(x)).filter((x): x is Mappentyp => !!x));
               const kinder = kinderVon(d.sichten, s.id).length;
               return (
-                <li key={s.id} style={{ paddingLeft: tiefe * 16 }}>
+                <li key={s.id} {...e} className={`ziehbar ${e.className}`} style={{ paddingLeft: tiefe * 16 }}>
+                  <button {...z.griff(s.id, s.name)} onKeyDown={(ev) => ziehTasten(ev, tasten(s))}><span aria-hidden="true">⠿</span></button>
                   <Link to={`/werkbank/sichten/${s.id}`} className={`eintrag werk ${offen === s.id ? 'an' : ''}`}>
                     <span className="titel">{tiefe > 0 && <span className="leise" aria-hidden="true">└ </span>}{s.name}</span>
                     <span className="unter">
@@ -51,6 +98,7 @@ export function SichtenListe({ offen }: { offen?: string }) {
                       {` · ${(d.zaehler.sichten?.[s.id] ?? 0).toLocaleString('de-DE')} Mappen`}
                     </span>
                     {probleme > 0 && <span className="problem">{probleme} Bedingung{probleme === 1 ? '' : 'en'} ohne Wirkung – bitte prüfen</span>}
+                    {listenProblem && <span className="problem">Trefferliste fehlt – zeigt die Standardliste</span>}
                   </Link>
                 </li>
               );
@@ -60,8 +108,8 @@ export function SichtenListe({ offen }: { offen?: string }) {
   );
 }
 
-const leer = (): SichtDaten => ({ name: '', beschreibung: '', elternId: null, position: 0, typen: [], bedingungen: [] });
-const datenVon = (s: Sicht): SichtDaten => ({ name: s.name, beschreibung: s.beschreibung, elternId: s.elternId, position: s.position, typen: s.typen, bedingungen: s.bedingungen });
+const leer = (): SichtDaten => ({ name: '', beschreibung: '', elternId: null, position: 0, typen: [], bedingungen: [], trefferliste: null });
+const datenVon = (s: Sicht): SichtDaten => ({ name: s.name, beschreibung: s.beschreibung, elternId: s.elternId, position: s.position, typen: s.typen, bedingungen: s.bedingungen, trefferliste: s.trefferliste ?? null });
 
 export function SichtEditor({ id }: { id: string }) {
   const d = useDaten();
@@ -82,6 +130,9 @@ export function SichtEditor({ id }: { id: string }) {
   const geschwister = kinderVon(d.sichten, vorhanden?.elternId ?? null);
   const stelle = vorhanden ? geschwister.findIndex((s) => s.id === id) : -1;
   const untersichten = neu ? 0 : mitNachkommen(d.sichten, id).length - 1;
+  // Wirksame Typen: eigene und die der Untersichten – sie bestimmen, welche Trefferlisten es gibt (#75).
+  const wirksam = [...new Set([...e.typen, ...(neu ? [] : mitNachkommen(d.sichten, id).filter((s) => s.id !== id).flatMap((s) => s.typen))])]
+    .map((t) => d.typ(t)).filter((t): t is Mappentyp => !!t);
 
   // Vorschau: Anzahl Treffer mit dem aktuellen Entwurf (kurz nach dem Tippen).
   const entwurf = JSON.stringify(e);
@@ -152,13 +203,15 @@ export function SichtEditor({ id }: { id: string }) {
 
       <div className="blatt">
         <h2 className="h3">Mappentypen</h2>
-        <p className="leise">Mappen dieser Typen zeigt die Sicht selbst. {untersichten > 0 ? `Dazu kommen die Mappen ihrer ${untersichten} Untersicht${untersichten === 1 ? '' : 'en'}.` : 'Ohne Typ dient sie nur zum Gruppieren von Untersichten.'} Zeigt sie mehrere Typen, verhält sich die Liste wie der Eingang (mit Spalte „Typ“, ohne „+ Neu“).</p>
+        <p className="leise">Mappen dieser Typen zeigt die Sicht selbst. {untersichten > 0 ? `Dazu kommen die Mappen ihrer ${untersichten} Untersicht${untersichten === 1 ? '' : 'en'}.` : 'Ohne Typ dient sie nur zum Gruppieren von Untersichten.'} Zeigt sie mehrere Typen, gibt es kein „+ Neu“; als Spalten bietet sie nur an, was alle Typen gemeinsam haben.</p>
         <div className="typwahl">
           {d.typen.map((t) => (
             <label key={t.id} className="haken"><input type="checkbox" checked={e.typen.includes(t.id)} onChange={(x) => setzeTyp(t.id, x.target.checked)} /><span>{t.name}</span></label>
           ))}
         </div>
       </div>
+
+      <TrefferlistenWahl e={e} setE={setE} typen={wirksam} />
 
       <Bedingungen e={e} setE={setE} typen={eigeneTypen} />
 
@@ -178,24 +231,74 @@ export function SichtEditor({ id }: { id: string }) {
   );
 }
 
+/* ---------- Trefferliste (#75) ---------- */
+
+function TrefferlistenWahl({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDaten) => SichtDaten) => void; typen: Mappentyp[] }) {
+  const listen = gemeinsameTrefferlisten(typen);
+  const wahl = spaltenDerSicht(typen, e.trefferliste);
+  const problem = trefferlistenProblem(e.trefferliste, typen);
+  const name = (k: string) => (istSystemspalte(k) ? SYSTEMSPALTEN[k] : typen[0]?.felder.find((f) => f.key === k)?.label ?? k);
+  const standard = listen.find((l) => l.standard);
+  return (
+    <div className="blatt">
+      <h2 className="h3">Trefferliste</h2>
+      {!typen.length
+        ? <p className="leise">Ohne Mappentypen zeigt die Sicht die Systemspalten (Titel, Typ, angelegt, geändert).</p>
+        : <>
+            <p className="leise">Welche Spalten die Liste in der Ablage zeigt. Die Trefferlisten richtest du am Mappentyp ein.
+              {typen.length > 1 && ' Bei mehreren Mappentypen gibt es nur Listen, die alle Typen haben, und darin nur die gemeinsamen Spalten; Titel und Typ stehen immer vorn.'}</p>
+            <label className="eigenschaft schmal"><span>Trefferliste</span>
+              <select value={e.trefferliste ?? ''} onChange={(x) => setE((y) => ({ ...y, trefferliste: x.target.value || null }))}>
+                <option value="">{standard ? `Standard („${standard.name}“)` : 'Standard (Systemspalten)'}</option>
+                {problem && <option value={e.trefferliste!}>– {e.trefferliste} (fehlt) –</option>}
+                {listen.map((l) => <option key={l.key} value={l.key}>{l.name}{l.standard ? ' – Standard' : ''}</option>)}
+              </select></label>
+            {problem
+              ? <p className="fehlertext klein">{problem}</p>
+              : <p className="leise klein">Spalten: {wahl.spalten.length ? wahl.spalten.map(name).join(', ') : 'keine – einfache Liste mit Titel und zwei Feldern'}</p>}
+          </>}
+    </div>
+  );
+}
+
 /* ---------- Bedingungen ---------- */
 
-type Ziel = { wert: 'feld'; feld: Bedingungsfeld } | { wert: 'dokumente' | 'verknuepfungen'; register: string; name: string };
+type Ziel = { wert: 'feld'; feld: Bedingungsfeld } | { wert: 'dokumente' | 'verknuepfungen'; register: string; name: string }
+  | { wert: 'dokumenteGesamt' | 'verknuepfungenGesamt' | 'favorit' };
+const ZIEL_GESAMT: Record<'dokumenteGesamt' | 'verknuepfungenGesamt' | 'favorit', string> = {
+  dokumenteGesamt: 'Dokumente insgesamt', verknuepfungenGesamt: 'Verknüpfungen insgesamt', favorit: 'ist mein Favorit',
+};
+
+/** Register, die alle Typen der Sicht mit gleichem Schlüssel und gleicher Art haben (#66). */
+function gemeinsameRegister(typen: Mappentyp[]): Array<{ wert: 'dokumente' | 'verknuepfungen'; register: string; name: string }> {
+  if (!typen.length) return [];
+  return typen[0].register.filter((r) => (r.art === 'dokumente' || r.art === 'verknuepfungen')
+    && typen.every((t) => t.register.some((x) => x.key === r.key && x.art === r.art)))
+    .map((r) => ({
+      wert: r.art as 'dokumente' | 'verknuepfungen', register: r.key,
+      name: [...new Set(typen.map((t) => t.register.find((x) => x.key === r.key)!.name))].join(' / '),
+    }));
+}
 
 function Bedingungen({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDaten) => SichtDaten) => void; typen: Mappentyp[] }) {
   const d = useDaten();
   const felder = useMemo(() => bedingungsfelder(typen), [typen]);
   const ziele: Ziel[] = [
     ...felder.map((f) => ({ wert: 'feld' as const, feld: f })),
-    ...(typen.length === 1 ? typen[0].register.filter((r) => r.art === 'dokumente' || r.art === 'verknuepfungen')
-      .map((r) => ({ wert: r.art as 'dokumente' | 'verknuepfungen', register: r.key, name: r.name })) : []),
+    { wert: 'dokumenteGesamt' }, { wert: 'verknuepfungenGesamt' },
+    ...gemeinsameRegister(typen),
+    { wert: 'favorit' },
   ];
-  const zielKey = (z: Ziel) => (z.wert === 'feld' ? `feld:${z.feld.key}` : `${z.wert}:${z.register}`);
+  const zielKey = (z: Ziel) => (z.wert === 'feld' ? `feld:${z.feld.key}` : 'register' in z ? `${z.wert}:${z.register}` : z.wert);
+  const bKey = (b: Bedingung) => (b.art === 'feld' ? `feld:${b.feld}` : b.art === 'dokumente' || b.art === 'verknuepfungen' ? `${b.art}:${b.register}` : b.art);
+  const zielName = (z: Ziel) => (z.wert === 'feld' ? z.feld.label : 'register' in z ? `${z.wert === 'dokumente' ? 'Dokumente' : 'Verknüpfungen'} in „${z.name}“` : ZIEL_GESAMT[z.wert]);
   const setze = (i: number, b: Bedingung) => setE((x) => ({ ...x, bedingungen: x.bedingungen.map((y, j) => (j === i ? b : y)) }));
   const weg = (i: number) => setE((x) => ({ ...x, bedingungen: x.bedingungen.filter((_, j) => j !== i) }));
   const neu = (z: Ziel): Bedingung => (z.wert === 'feld'
     ? { art: 'feld', feld: z.feld.key, op: OPERATOREN_JE_ART[z.feld.art][0] }
-    : { art: z.wert, register: z.register, vergleich: z.wert === 'dokumente' ? 'gleich' : 'mehr', anzahl: 0 });
+    : z.wert === 'favorit' ? { art: 'favorit' }
+    : 'register' in z ? { art: z.wert, register: z.register, vergleich: z.wert === 'dokumente' ? 'gleich' : 'mehr', anzahl: 0 }
+    : { art: z.wert, vergleich: z.wert === 'dokumenteGesamt' ? 'gleich' : 'mehr', anzahl: 0 });
   const [titel, setTitel] = useState<Record<string, string>>({});
   const merke = (mid: string, t: string) => setTitel((x) => ({ ...x, [mid]: t }));
 
@@ -206,24 +309,25 @@ function Bedingungen({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDat
         ? <p className="leise">Bedingungen gelten für die eigenen Mappentypen der Sicht – wähle oben mindestens einen.</p>
         : <>
             <p className="leise">Die Sicht zeigt nur Mappen, die <strong>alle</strong> Bedingungen erfüllen. Werte wie „heute“ oder „aktueller Benutzer“ werden bei jedem Öffnen neu berechnet.
-              {typen.length > 1 && ' Bei mehreren Mappentypen gibt es nur Felder, die alle Typen gleich haben, und die Systemwerte; Register erst bei einem Typ.'}</p>
+              {typen.length > 1 && ' Bei mehreren Mappentypen gibt es nur Felder und Register, die alle Typen gleich haben, und die Systemwerte. Ein gemeinsames Register zählt je Typ über dessen eigene Quellen.'}</p>
             {e.bedingungen.length > 0 && (
               <ol className="bedingungen">
                 {e.bedingungen.map((b, i) => {
                   const problem = bedingungsProblem(b, typen);
-                  const ziel = ziele.find((z) => zielKey(z) === (b.art === 'feld' ? `feld:${b.feld}` : `${b.art}:${b.register}`));
+                  const ziel = ziele.find((z) => zielKey(z) === bKey(b));
                   return (
                     <li key={i} className={problem ? 'fehlerhaft' : ''}>
                       <div className="bedingungszeile">
                         <select aria-label="Feld oder Register" value={ziel ? zielKey(ziel) : ''} onChange={(x) => { const z = ziele.find((y) => zielKey(y) === x.target.value); if (z) setze(i, neu(z)); }}>
-                          {!ziel && <option value="">– {b.art === 'feld' ? b.feld : b.register} (fehlt) –</option>}
+                          {!ziel && <option value="">– {b.art === 'feld' ? b.feld : 'register' in b ? b.register : b.art} (fehlt) –</option>}
                           <optgroup label="Felder">{ziele.filter((z) => z.wert === 'feld' && !z.feld.key.startsWith('_')).map((z) => <option key={zielKey(z)} value={zielKey(z)}>{(z as { feld: Bedingungsfeld }).feld.label}</option>)}</optgroup>
                           <optgroup label="Systemwerte">{ziele.filter((z) => z.wert === 'feld' && z.feld.key.startsWith('_')).map((z) => <option key={zielKey(z)} value={zielKey(z)}>{(z as { feld: Bedingungsfeld }).feld.label}</option>)}</optgroup>
-                          {ziele.some((z) => z.wert !== 'feld') && <optgroup label="Anzahl in Registern">{ziele.filter((z) => z.wert !== 'feld').map((z) => <option key={zielKey(z)} value={zielKey(z)}>{z.wert === 'dokumente' ? 'Dokumente' : 'Verknüpfungen'} in „{(z as { name: string }).name}“</option>)}</optgroup>}
+                          <optgroup label="Anzahl">{ziele.filter((z) => z.wert !== 'feld' && z.wert !== 'favorit').map((z) => <option key={zielKey(z)} value={zielKey(z)}>{zielName(z)}</option>)}</optgroup>
+                          <optgroup label="Persönlich"><option value="favorit">{ZIEL_GESAMT.favorit}</option></optgroup>
                         </select>
                         {b.art === 'feld' && ziel?.wert === 'feld'
                           ? <FeldBedingung b={b} feld={ziel.feld} setze={(n) => setze(i, n)} titel={titel} merke={merke} />
-                          : b.art !== 'feld' && <>
+                          : b.art !== 'feld' && b.art !== 'favorit' && <>
                               <select aria-label="Vergleich" value={b.vergleich} onChange={(x) => setze(i, { ...b, vergleich: x.target.value as Zaehlvergleich })}>
                                 {Object.entries(ZAEHLVERGLEICHE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                               </select>

@@ -5,7 +5,7 @@
  * gespeicherte Abfrage. Sichten bilden einen Baum: Eine Elternsicht zeigt ihre eigenen
  * Treffer und die aller Kinder (ohne Doppelte). Server und Oberfläche teilen diese Datei.
  */
-import { istLeer, SYSTEMSPALTEN, ZEITZONE, type Feld, type Feldtyp, type Mappe, type Mappentyp, type Quelle } from './model';
+import { GEMISCHTE_SPALTEN, istLeer, istSystemspalte, SYSTEMSPALTEN, trefferlistenVon, ZEITZONE, type Feld, type Feldtyp, type Mappe, type Mappentyp, type Quelle } from './model';
 
 /* ---------- Bedingungen ---------- */
 
@@ -79,8 +79,14 @@ export type Bedingung =
   | { art: 'feld'; feld: string; op: Operator; wert?: WertAngabe; bis?: WertAngabe }
   /** Anzahl Dokumente in einem Dokumentenregister (#41). */
   | { art: 'dokumente'; register: string; vergleich: Zaehlvergleich; anzahl: number }
-  /** Anzahl Mappen in einem Verknüpfungsregister (#41). */
-  | { art: 'verknuepfungen'; register: string; vergleich: Zaehlvergleich; anzahl: number };
+  /** Anzahl Mappen in einem Verknüpfungsregister (#41); bei mehreren Typen ein gemeinsames Register (#66). */
+  | { art: 'verknuepfungen'; register: string; vergleich: Zaehlvergleich; anzahl: number }
+  /** Anzahl aller Dokumente der Mappe, unabhängig vom Register (#67). */
+  | { art: 'dokumenteGesamt'; vergleich: Zaehlvergleich; anzahl: number }
+  /** Anzahl aller anderen Mappen, die auf diese verweisen (#67). */
+  | { art: 'verknuepfungenGesamt'; vergleich: Zaehlvergleich; anzahl: number }
+  /** Die Mappe ist ein Favorit des aktuellen Benutzers (#62). */
+  | { art: 'favorit' };
 
 /* ---------- Sichten ---------- */
 
@@ -95,6 +101,8 @@ export interface SichtDaten {
   typen: string[];
   /** Gelten zusammen (UND), für die eigenen Mappentypen dieser Sicht. */
   bedingungen: Bedingung[];
+  /** Schlüssel der Trefferliste (#75); null/fehlt = Standard. */
+  trefferliste?: string | null;
 }
 export interface Sicht extends SichtDaten { id: string; erstellt: string; geaendert: string }
 
@@ -170,11 +178,15 @@ export function bedingungsProblem(b: Bedingung, typen: Mappentyp[]): string | nu
     if (b.op === 'zeigtAuf' && b.wert?.art === 'meineRollen' && f.art === 'person') return `„Rollen des aktuellen Benutzers“ geht nicht bei „${f.label}“.`;
     return null;
   }
-  if (typen.length !== 1) return 'Bedingungen auf Register gehen nur bei Sichten mit genau einem Mappentyp.';
-  const r = typen[0].register.find((x) => x.key === b.register);
-  const art = b.art === 'dokumente' ? 'dokumente' : 'verknuepfungen';
-  if (!r || r.art !== art) return `Das ${art === 'dokumente' ? 'Dokumenten' : 'Verknüpfungs'}register „${b.register}“ gibt es nicht (mehr).`;
+  if (b.art === 'favorit') return null;
   if (!Number.isInteger(b.anzahl) || b.anzahl < 0) return 'Die Anzahl muss eine ganze Zahl ab 0 sein.';
+  if (b.art === 'dokumenteGesamt' || b.art === 'verknuepfungenGesamt') return null;
+  if (!typen.length) return 'Bedingungen auf Register brauchen mindestens einen Mappentyp.';
+  // Bei mehreren Typen: gleicher Schlüssel und gleiche Art in allen (#66).
+  const art = b.art === 'dokumente' ? 'dokumente' : 'verknuepfungen';
+  if (typen.some((t) => t.register.find((x) => x.key === b.register)?.art !== art)) {
+    return `Das ${art === 'dokumente' ? 'Dokumenten' : 'Verknüpfungs'}register „${b.register}“ gibt es ${typen.length > 1 ? 'nicht in allen Mappentypen dieser Sicht' : 'nicht (mehr)'}.`;
+  }
   return null;
 }
 
@@ -190,8 +202,11 @@ export interface Aufloesung {
 /** Bedingung, wie das Repo sie braucht: Art des Feldes, Operator und feste Werte. */
 export type Filter =
   | { art: 'feld'; key: string; feldart: Feldart; op: Operator; a?: unknown; b?: unknown }
-  | { art: 'dokumente'; register: string; vergleich: Zaehlvergleich; anzahl: number }
-  | { art: 'verknuepfungen'; quellen: Quelle[]; vergleich: Zaehlvergleich; anzahl: number };
+  /** register null = alle Dokumente der Mappe (#67). */
+  | { art: 'dokumente'; register: string | null; vergleich: Zaehlvergleich; anzahl: number }
+  /** quellen [] = alle Rückverweise; quellenJeTyp: je Mappentyp die Quellen seines Registers (#66). */
+  | { art: 'verknuepfungen'; quellen: Quelle[]; quellenJeTyp?: Record<string, Quelle[]>; vergleich: Zaehlvergleich; anzahl: number }
+  | { art: 'favorit'; benutzer: string };
 
 /** Eine Klausel: Mappen dieser Typen, die alle Filter erfüllen. Eine Sicht = ODER ihrer Klauseln. */
 export interface Klausel { typen: string[]; filter: Filter[] }
@@ -256,9 +271,19 @@ export function filterFuer(s: Pick<SichtDaten, 'bedingungen'>, typen: Mappentyp[
       }
     } else if (b.art === 'dokumente') {
       erg.push({ art: 'dokumente', register: b.register, vergleich: b.vergleich, anzahl: b.anzahl });
-    } else {
+    } else if (b.art === 'dokumenteGesamt') {
+      erg.push({ art: 'dokumente', register: null, vergleich: b.vergleich, anzahl: b.anzahl });
+    } else if (b.art === 'verknuepfungenGesamt') {
+      erg.push({ art: 'verknuepfungen', quellen: [], vergleich: b.vergleich, anzahl: b.anzahl });
+    } else if (b.art === 'favorit') {
+      erg.push({ art: 'favorit', benutzer: a.ich });
+    } else if (typen.length === 1) {
       const r = typen[0].register.find((x) => x.key === b.register)!;
       erg.push({ art: 'verknuepfungen', quellen: r.quellen ?? [], vergleich: b.vergleich, anzahl: b.anzahl });
+    } else {
+      // Je Typ über die Quellen seines eigenen Registers, genau wie im Register an der Mappe (#66).
+      const quellenJeTyp = Object.fromEntries(typen.map((t) => [t.id, t.register.find((x) => x.key === b.register)!.quellen ?? []]));
+      erg.push({ art: 'verknuepfungen', quellen: [], quellenJeTyp, vergleich: b.vergleich, anzahl: b.anzahl });
     }
   }
   return erg;
@@ -277,8 +302,10 @@ export function klauselnFuer(alle: Sicht[], id: string, typen: Map<string, Mappe
 /* ---------- Auswerten im Arbeitsspeicher (Tests, Repo ohne Datenbank) ---------- */
 
 export interface Zaehlquelle {
-  dokumente(mappeId: string, register: string): number;
+  /** register null = alle Dokumente der Mappe. */
+  dokumente(mappeId: string, register: string | null): number;
   verknuepfungen(mappeId: string, quellen: Quelle[]): number;
+  favorit?(mappeId: string, benutzer: string): boolean;
 }
 
 function vergleichswert(m: Mappe, f: Extract<Filter, { art: 'feld' }>): unknown {
@@ -300,7 +327,8 @@ function zaehltWie(n: number, v: Zaehlvergleich, soll: number) {
 export function erfuellt(m: Mappe, filter: Filter[], z: Zaehlquelle): boolean {
   return filter.every((f) => {
     if (f.art === 'dokumente') return zaehltWie(z.dokumente(m.id, f.register), f.vergleich, f.anzahl);
-    if (f.art === 'verknuepfungen') return zaehltWie(z.verknuepfungen(m.id, f.quellen), f.vergleich, f.anzahl);
+    if (f.art === 'verknuepfungen') return zaehltWie(z.verknuepfungen(m.id, f.quellenJeTyp ? f.quellenJeTyp[m.typId] ?? [] : f.quellen), f.vergleich, f.anzahl);
+    if (f.art === 'favorit') return !!z.favorit?.(m.id, f.benutzer);
     const v = vergleichswert(m, f);
     const leer = istLeer(v);
     switch (f.op) {
@@ -374,6 +402,11 @@ export function bereinigeBedingungen(e: unknown): Bedingung[] {
     } else if ((b.art === 'dokumente' || b.art === 'verknuepfungen') && typeof b.register === 'string') {
       const vergleich = Object.prototype.hasOwnProperty.call(ZAEHLVERGLEICHE, String(b.vergleich)) ? (b.vergleich as Zaehlvergleich) : 'gleich';
       erg.push({ art: b.art, register: b.register.slice(0, 60), vergleich, anzahl: Math.max(0, Math.trunc(Number(b.anzahl) || 0)) });
+    } else if (b.art === 'dokumenteGesamt' || b.art === 'verknuepfungenGesamt') {
+      const vergleich = Object.prototype.hasOwnProperty.call(ZAEHLVERGLEICHE, String(b.vergleich)) ? (b.vergleich as Zaehlvergleich) : 'gleich';
+      erg.push({ art: b.art, vergleich, anzahl: Math.max(0, Math.trunc(Number(b.anzahl) || 0)) });
+    } else if (b.art === 'favorit') {
+      erg.push({ art: 'favorit' });
     }
   }
   return erg;
@@ -381,8 +414,12 @@ export function bereinigeBedingungen(e: unknown): Bedingung[] {
 
 /** Bedingung lesbar, z. B. „Kündigung bis zwischen heute und heute + 90 Tage“. */
 export function beschreibeBedingung(b: Bedingung, typen: Mappentyp[], titelVon: (id: string) => string = (id) => id): string {
+  if (b.art === 'favorit') return 'ist mein Favorit';
+  if (b.art === 'dokumenteGesamt') return `Dokumente insgesamt: ${ZAEHLVERGLEICHE[b.vergleich]} ${b.anzahl} ${b.anzahl === 1 ? 'Dokument' : 'Dokumente'}`;
+  if (b.art === 'verknuepfungenGesamt') return `Verknüpfungen insgesamt: ${ZAEHLVERGLEICHE[b.vergleich]} ${b.anzahl} ${b.anzahl === 1 ? 'Verknüpfung' : 'Verknüpfungen'}`;
   if (b.art !== 'feld') {
-    const r = typen[0]?.register.find((x) => x.key === b.register);
+    const namen = [...new Set(typen.map((t) => t.register.find((x) => x.key === b.register)?.name).filter(Boolean))];
+    const r = { name: namen.length ? namen.join(' / ') : undefined };
     return `${r?.name ?? b.register}: ${ZAEHLVERGLEICHE[b.vergleich]} ${b.anzahl} ${b.art === 'dokumente' ? (b.anzahl === 1 ? 'Dokument' : 'Dokumente') : (b.anzahl === 1 ? 'Verknüpfung' : 'Verknüpfungen')}`;
   }
   const f = bedingungsfelder(typen).find((x) => x.key === b.feld);
@@ -407,4 +444,57 @@ export function beschreibeBedingung(b: Bedingung, typen: Mappentyp[], titelVon: 
   if (b.op === 'leer' || b.op === 'nichtLeer' || b.op === 'ja' || b.op === 'nein') return `${name} ${OPERATOREN[b.op]}`;
   if (b.op === 'zwischen' || b.op === 'ausserhalb') return `${name} ${OPERATOREN[b.op]} ${wert(b.wert)} und ${wert(b.bis)}`;
   return `${name} ${OPERATOREN[b.op]} ${wert(b.wert)}`;
+}
+
+/* ---------- Trefferlisten einer Sicht (#75) ---------- */
+
+/** Eine Trefferliste, wie sie eine Sicht verwenden kann. */
+export interface Sichtliste { key: string; name: string; spalten: string[]; standard: boolean }
+
+/**
+ * Trefferlisten, die alle Typen haben (gleicher Schlüssel), mit nur den Spalten, die alle
+ * diese Listen haben – Felder zudem mit gleichem Datentyp. Reihenfolge wie beim ersten Typ.
+ * Standard ist eine Liste, wenn sie es bei allen Typen ist.
+ */
+export function gemeinsameTrefferlisten(typen: Mappentyp[]): Sichtliste[] {
+  if (!typen.length) return [];
+  const je = typen.map((t) => trefferlistenVon(t));
+  return je[0].flatMap((l) => {
+    const andere = je.map((ls) => ls.find((x) => x.key === l.key));
+    if (andere.some((x) => !x)) return [];
+    const feld = (t: Mappentyp, k: string) => t.felder.find((f) => f.key === k);
+    const spalten = l.spalten.filter((k) => andere.every((x) => x!.spalten.includes(k))
+      && (istSystemspalte(k) || typen.every((t) => feld(t, k) && feld(t, k)!.typ === feld(typen[0], k)!.typ)));
+    return [{ key: l.key, name: [...new Set(andere.map((x) => x!.name))].join(' / '), spalten, standard: andere.every((x) => x!.standard) }];
+  });
+}
+
+/** Spalten, die eine Sicht zeigt; ungueltig = die gewählte Liste gibt es nicht (mehr), es gilt der Standard. */
+export interface Spaltenwahl { key: string | null; name: string; spalten: string[]; ungueltig: boolean }
+
+/**
+ * Welche Spalten eine Sicht mit diesen (wirksamen) Typen zeigt: die gewählte Trefferliste,
+ * sonst die Standardliste (bei mehreren Typen die gemeinsame), sonst die Systemspalten.
+ */
+export function spaltenDerSicht(typen: Mappentyp[], wahl?: string | null): Spaltenwahl {
+  const system: Spaltenwahl = { key: null, name: 'Systemspalten', spalten: GEMISCHTE_SPALTEN, ungueltig: false };
+  if (!typen.length) return { ...system, ungueltig: !!wahl };
+  const listen = gemeinsameTrefferlisten(typen);
+  const gewaehlt = wahl ? listen.find((l) => l.key === wahl) : undefined;
+  const ungueltig = !!wahl && !gewaehlt;
+  const l = gewaehlt ?? listen.find((x) => x.standard);
+  if (!l) return { ...system, ungueltig };
+  if (typen.length === 1) return { key: l.key, name: l.name, spalten: l.spalten, ungueltig };
+  // Mehrere Typen: Titel und Typ stehen immer vorn, damit jede Zeile erkennbar bleibt.
+  const rest = l.spalten.filter((k) => k !== '_titel' && k !== '_typ');
+  return { key: l.key, name: l.name, spalten: ['_titel', '_typ', ...rest], ungueltig };
+}
+
+/** Hinweis für die Werkbank, wenn die gewählte Trefferliste nicht (mehr) passt. */
+export function trefferlistenProblem(wahl: string | null | undefined, typen: Mappentyp[]): string | null {
+  if (!wahl) return null;
+  if (!typen.length) return 'Die Sicht hat keine Mappentypen; eine Trefferliste lässt sich erst mit Mappentypen wählen.';
+  return spaltenDerSicht(typen, wahl).ungueltig
+    ? `Die Trefferliste „${wahl}“ gibt es nicht (mehr) in ${typen.length === 1 ? 'diesem Mappentyp' : 'allen Mappentypen dieser Sicht'}. Die Sicht zeigt stattdessen die Standardliste.`
+    : null;
 }

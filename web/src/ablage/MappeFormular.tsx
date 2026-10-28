@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
-import { darfErstellen, darfLoeschen, formatiere, geschuetzteFelder, istLeer, istOk, MAX_DATEIGROESSE, OCR_STAENDE, standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type OcrStand, type Pruefergebnis, type Register } from '../../../shared/src/model';
+import { Stern } from './Stern';
+import { spaltenName, zelle } from './spalten';
+import { darfErstellen, darfLoeschen, formatiere, trefferlistenVon, geschuetzteFelder, istLeer, istOk, MAX_DATEIGROESSE, OCR_STAENDE, standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type OcrStand, type Pruefergebnis, type Register } from '../../../shared/src/model';
 import { api, ApiFehler, dokumentUrl, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -54,7 +56,7 @@ export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp
     <>
       <div className="mappenkopf">
         <p className="ueber">{typ.name}</p>
-        <h1>{titelOder(mappe.titel)}</h1>
+        <div className="titelzeile"><h1>{titelOder(mappe.titel)}</h1><Stern mappeId={mappe.id} an={!!details.favorit} /></div>
         <dl className="index">
           <div><dt>Angelegt</dt><dd>{zeit(mappe.erstellt)} von <Person id={mappe.erstelltVon} /></dd></div>
           <div><dt>Zuletzt geändert</dt><dd>{zeit(mappe.geaendert)} von <Person id={mappe.geaendertVon} /></dd></div>
@@ -100,6 +102,8 @@ function verknuepfungsGruppen(d: ReturnType<typeof useDaten>, mappe: Mappe | und
     .filter((f) => !gewaehlt.length || gewaehlt.some((q) => q.typId === t.id && q.feldKey === f.key))
     .map((f) => ({
       t, f,
+      // Trefferliste dieser Quelle (#75); fehlt sie (mehr), einfache Liste.
+      liste: trefferlistenVon(t).find((l) => l.key === gewaehlt.find((q) => q.typId === t.id && q.feldKey === f.key)?.trefferliste),
       treffer: !mappe || !details ? [] as Rueckverweis[] : details.rueckverweise.filter((r) => r.quelleTypId === t.id && r.feldKey === f.key),
     })));
 }
@@ -569,15 +573,49 @@ function Verknuepfungen({ mappe, gruppen }: { mappe: Mappe; gruppen: ReturnType<
   if (!gruppen.length) return <p className="leise">Kein Mappentyp verweist auf „{d.typ(mappe.typId)?.name}“. Lege dafür in der Werkbank ein Referenzfeld an.</p>;
   return (
     <div className="gruppen">
-      {gruppen.map(({ t, f, treffer }) => (
+      {gruppen.map(({ t, f, treffer, liste }) => (
         <section key={`${t.id}-${f.key}`} className="gruppe">
           <header>
             <span><strong>{t.name}</strong> <span className="leise">über „{f.label}“</span> <span className="chip">{VERWEISARTEN[f.verweisart ?? 'bezug']}</span> <span className="anzahl">{treffer.length}</span></span>
             {darfErstellen(t) && <Link to={`/ablage/${t.id}/neu?verweis=${encodeURIComponent(`${f.key}:${mappe.id}`)}`} className="knopf klein">+ {t.name} anlegen</Link>}
           </header>
-          {treffer.length ? <Trefferliste treffer={treffer} /> : <p className="leise">Noch keine.</p>}
+          {!treffer.length ? <p className="leise">Noch keine.</p>
+            : liste?.spalten.length ? <VerweisTabelle mappeId={mappe.id} typ={t} feldKey={f.key} spalten={liste.spalten} anzahl={treffer.length} />
+            : <Trefferliste treffer={treffer} />}
         </section>
       ))}
+    </div>
+  );
+}
+
+/** Verweisende Mappen als Tabelle mit den Spalten einer Trefferliste (#75). */
+function VerweisTabelle({ mappeId, typ, feldKey, spalten, anzahl }: { mappeId: string; typ: Mappentyp; feldKey: string; spalten: string[]; anzahl: number }) {
+  const d = useDaten();
+  const [daten, setDaten] = useState<{ gesamt: number; mappen: Mappe[]; bezuege: Bezuege } | null>(null);
+  const [fehler, setFehler] = useState<string>();
+  useEffect(() => { api.verweisende(mappeId, typ.id, feldKey).then(setDaten, (e: Error) => setFehler(e.message)); }, [mappeId, typ.id, feldKey, anzahl, d.stand]);
+  if (fehler) return <p className="fehlertext klein">{fehler}</p>;
+  if (!daten) return <p className="leise klein">Lade …</p>;
+  const rechts = (k: string) => { const f = typ.felder.find((x) => x.key === k); return f?.typ === 'zahl' || f?.typ === 'betrag'; };
+  return (
+    <div className="trefferliste verweistabelle">
+      <table>
+        <thead><tr>{spalten.map((k) => <th key={k} className={rechts(k) ? 'rechts' : ''}>{spaltenName(k, typ)}</th>)}</tr></thead>
+        <tbody>
+          {daten.mappen.map((m) => {
+            const ziel = `/ablage/${typ.id}/${m.id}`;
+            return (
+              <tr key={m.id} onClick={(e) => { if (!(e.target as HTMLElement).closest('a, button')) geheZu(ziel); }}>
+                {spalten.map((k, i) => {
+                  const text = zelle(k, m, typ, daten.bezuege, d.person);
+                  return <td key={k} className={rechts(k) ? 'rechts' : ''}>{i === 0 ? <Link to={ziel}>{text || titelOder(m.titel)}</Link> : text}</td>;
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {daten.gesamt > daten.mappen.length && <p className="leise klein">Die ersten {daten.mappen.length.toLocaleString('de-DE')} von {daten.gesamt.toLocaleString('de-DE')}.</p>}
     </div>
   );
 }

@@ -87,7 +87,7 @@ export function DatenProvider({ children }: { children: ReactNode }) {
       typen, sichten, zaehler,
       sicht: (id) => (id ? sichtNachId.get(id) : undefined),
       typDerSicht: (id) => {
-        if (!id || id === 'eingang') return undefined;
+        if (!id || id === 'eingang' || id === 'favoriten') return undefined;
         if (!sichtNachId.has(id)) return typNachId.get(id);
         const w = wirksameTypen(sichten, id);
         return w.length === 1 ? typNachId.get(w[0]) : undefined;

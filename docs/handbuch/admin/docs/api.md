@@ -43,7 +43,9 @@ curl -X POST -H "Authorization: Bearer dms_…" -H "Content-Type: application/js
 
 Die Ids der Mappentypen und die Schlüssel ihrer Felder liefert `GET /api/v1/typen`.
 
-Die Mappen einer Sicht liefert `GET /api/v1/mappen?sicht=<Id der Sicht>` – mit allen Bedingungen der Sicht. Alle Mappen eines Typs, ohne Bedingungen, gibt es mit `sicht=typ:<Id des Mappentyps>`. Die Sichten selbst (Baum, Mappentypen, Bedingungen) liefert `GET /api/v1/sichten/definitionen`.
+Die Mappen einer Sicht liefert `GET /api/v1/mappen?sicht=<Id der Sicht>` – mit allen Bedingungen der Sicht. Alle Mappen eines Typs, ohne Bedingungen, gibt es mit `sicht=typ:<Id des Mappentyps>`. Die Sichten selbst (Baum, Mappentypen, Bedingungen, gewählte Trefferliste) liefert `GET /api/v1/sichten/definitionen`. Die eigenen Favoriten gibt es mit `sicht=favoriten`; markieren und entfernen mit `PUT` bzw. `DELETE /api/v1/mappen/{id}/favorit`.
+
+Mappentypen haben seit 0.14 **mehrere Trefferlisten** (`trefferlisten`, eine mit `standard: true`). Das Feld `trefferliste` gibt es weiter: Es enthält die Spalten der Standardliste, und wer es beim Ändern angibt, ersetzt damit deren Spalten.
 
 Mit `suche=…&volltext=true` sucht `GET /api/v1/mappen` auch im Volltext der Dokumente; die Fundstellen stehen in `ausschnitte` (Treffer zwischen den Steuerzeichen U+0002 und U+0003). Den ganzen Text eines Dokuments liefert `GET /api/v1/dokumente/<Id>/volltext`.
 

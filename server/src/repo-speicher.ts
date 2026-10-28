@@ -1,9 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { TREFFER_ANFANG, TREFFER_ENDE, type Aufgabe, type Ausschnitt, type Dokument, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
+import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
 import { alsText } from '../../shared/src/markdown';
 import { ausschnittAus } from './repo-pg';
 import { inSicht, type Sicht, type SichtDaten, type Zaehlquelle } from '../../shared/src/sichten';
 import type { PapierkorbEintrag, Repo, Rueckverweis, SortierungIntern, Verweis } from './repo';
+
+/** Trefferlisten (#75) immer in beiden Formen: Liste der Trefferlisten und Spalten der Standardliste. */
+const listen = (d: MappentypDaten) => ({ trefferlisten: structuredClone(trefferlistenVon(d)), trefferliste: [...standardliste(d).spalten] });
 
 /** Repo im Arbeitsspeicher – für Tests und Oberflächenproben, nicht für den Betrieb. */
 export function speicherRepo(): Repo {
@@ -14,6 +17,9 @@ export function speicherRepo(): Repo {
   const sichten = new Map<string, Sicht>();
   /** Aufgaben (#54). */
   const aufgaben = new Map<string, Aufgabe>();
+  /** Favoriten (#62): Benutzer → Mappen. */
+  const favoriten = new Map<string, Set<string>>();
+  const istFavorit = (mappeId: string, benutzerId: string) => !!favoriten.get(benutzerId)?.has(mappeId);
   const offenFuer = (m: Mappe, benutzerId: string, admin: boolean) =>
     [...aufgaben.values()].some((a) => a.mappeId === m.id && !a.erledigt && (a.empfaengerId === benutzerId || (admin && !a.empfaengerId)));
   const mitMappe = (a: Aufgabe): Aufgabe => ({ ...kopie(a), mappeTitel: mappen.get(a.mappeId)?.titel ?? '', typId: mappen.get(a.mappeId)?.typId });
@@ -36,7 +42,8 @@ export function speicherRepo(): Repo {
   });
   /** Zählt wie PostgreSQL: Dokumente je Register, Rückverweise (ohne sich selbst) je Quelle. */
   const zaehl: Zaehlquelle = {
-    dokumente: (id, register) => [...dokumente.values()].filter((d) => d.mappeId === id && d.registerKey === register).length,
+    dokumente: (id, register) => [...dokumente.values()].filter((d) => d.mappeId === id && (register === null || d.registerKey === register)).length,
+    favorit: (id, benutzer) => istFavorit(id, benutzer),
     verknuepfungen: (id, quellen) => new Set([...verweise.entries()]
       .filter(([q, vs]) => q !== id && vs.some((v) => v.zielId === id && (!quellen.length || quellen.some((x) => x.typId === mappen.get(q)?.typId && x.feldKey === v.feldKey))))
       .map(([q]) => q)).size,
@@ -72,13 +79,13 @@ export function speicherRepo(): Repo {
     async listeTypen() { return [...typen.values()].map(kopie).sort((a, b) => a.name.localeCompare(b.name, 'de')); },
     async holeTyp(id) { const t = typen.get(id); return t && kopie(t); },
     async legeTypAn(id, d: MappentypDaten, system) {
-      const t: Mappentyp = { id, ...kopie(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, system: system ?? null, erstellt: jetzt(), geaendert: jetzt() };
+      const t: Mappentyp = { id, ...kopie(d), ...listen(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, system: system ?? null, erstellt: jetzt(), geaendert: jetzt() };
       typen.set(id, t);
       return kopie(t);
     },
     async aendereTyp(id, d) {
       const alt = typen.get(id)!;
-      const t: Mappentyp = { ...alt, ...kopie(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, geaendert: jetzt() };
+      const t: Mappentyp = { ...alt, ...kopie(d), ...listen(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, geaendert: jetzt() };
       typen.set(id, t);
       const refKeys = new Set(t.felder.filter((f) => f.typ === 'referenz').map((f) => f.key));
       for (const m of mappen.values()) if (m.typId === id) verweise.set(m.id, (verweise.get(m.id) ?? []).filter((v) => refKeys.has(v.feldKey)));
@@ -140,6 +147,7 @@ export function speicherRepo(): Repo {
         .filter((m) => !o.typId || m.typId === o.typId)
         .filter((m) => !o.klauseln || inSicht(m, o.klauseln, zaehl))
         .filter((m) => !o.eingang || offenFuer(m, o.eingang.benutzerId, o.eingang.admin))
+        .filter((m) => !o.favoriten || istFavorit(m.id, o.favoriten.benutzerId))
         .filter((m) => !q || (m.titel ?? '').toLowerCase().includes(q) || Object.values(m.werte).some((v) => !(typeof v === 'string' && v.startsWith('dms1$')) && (typeof v === 'object' ? JSON.stringify(v) : String(v)).toLowerCase().includes(q))
           || (!!o.volltext && [...dokumente.values()].some((d) => d.mappeId === m.id && findet(texte.get(d.id), q)))
           || (!!o.notizen && [...notizen.values()].some((n) => n.mappeId === m.id && n.text.toLowerCase().includes(q))))
@@ -176,7 +184,7 @@ export function speicherRepo(): Repo {
         if (m.demo) z.demo++;
         typen.set(m.typId, z);
       }
-      return { typen, eingang };
+      return { typen, eingang, favoriten: [...(favoriten.get(benutzerId) ?? [])].filter((id) => mappen.has(id)).length };
     },
     async zaehleKlauseln(liste) { return liste.map((k) => [...mappen.values()].filter((m) => inSicht(m, k, zaehl)).length); },
     async listeSichten() { return [...sichten.values()].map(kopie).sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, 'de')); },
@@ -321,6 +329,12 @@ export function speicherRepo(): Repo {
       return { anzahl: weg.length + imKorb.length, dateien };
     },
 
+    async setzeFavorit(benutzerId, mappeId, an) {
+      const s = favoriten.get(benutzerId) ?? new Set<string>();
+      if (an) s.add(mappeId); else s.delete(mappeId);
+      favoriten.set(benutzerId, s);
+    },
+    async favoritenVon(benutzerId, mappeIds) { return new Set(mappeIds.filter((id) => istFavorit(id, benutzerId) && mappen.has(id))); },
     async legeInPapierkorb(id, benutzerId) {
       const m = mappen.get(id);
       if (!m) return;
