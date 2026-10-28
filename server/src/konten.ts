@@ -149,6 +149,13 @@ export class Konten {
     await this.repo.loescheSitzungMitId(benutzerId, id);
   }
 
+  /** Alle anderen eigenen Sitzungen beenden, z. B. nach einem verlorenen Handy (#69). */
+  async beendeAndereSitzungen(benutzerId: string, aktuelleId: string | undefined) {
+    const liste = (await this.repo.listeSitzungen(benutzerId)).filter((s) => s.id !== aktuelleId);
+    for (const s of liste) await this.beendeSitzung(benutzerId, s.id);
+    return { beendet: liste.length };
+  }
+
   async beendeAlleSitzungen(benutzerId: string) {
     const liste = await this.repo.listeSitzungen(benutzerId);
     for (const s of liste) if (s.vertretungId) await this.repo.beendeVertretung(s.vertretungId);

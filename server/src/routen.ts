@@ -11,6 +11,7 @@ import type { ApiSchluessel, ApiSchluesselDienst } from './apischluessel';
 import type { Designs } from './designs';
 import type { Messung } from './messung';
 import { eigeneVersion, uebersicht, versionsabgleich, type SystemQuelle } from './system';
+import type { Fehlermeldungen } from './fehlermeldungen';
 import { MODULE, protokoll, STUFEN, type Stufe } from './protokoll';
 import type { Betrieb } from './betrieb';
 import { maskiere, type Tresor } from './tresor';
@@ -91,6 +92,8 @@ export interface RoutenExtras {
   texterkennung?: Texterkennung;
   /** Tägliche Zusammenfassung der Aufgaben (#54). */
   aufgabenmail?: Aufgabenmail;
+  /** Fehlermeldungen von Benutzern (#70). */
+  fehlermeldungen?: Fehlermeldungen;
   /** API-Schlüssel (#20). */
   apiSchluessel?: ApiSchluesselDienst;
   /** Für Tests: Abruf fremder Adressen beim Versionsabgleich. */
@@ -106,6 +109,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const betrieb = () => { if (!x.betrieb) throw new Fachfehler(404, 'Betriebseinstellungen sind nicht eingerichtet.'); return x.betrieb; };
   const mail = () => { if (!x.aufgabenmail) throw new Fachfehler(404, 'Die Aufgaben-Mail ist nicht eingerichtet.'); return x.aufgabenmail; };
   const ocr = () => { if (!x.texterkennung) throw new Fachfehler(404, 'Die Texterkennung ist nicht eingerichtet.'); return x.texterkennung; };
+  const meldungen = () => { if (!x.fehlermeldungen) throw new Fachfehler(404, 'Fehlermeldungen sind nicht eingerichtet.'); return x.fehlermeldungen; };
   const tresor = () => { if (!x.tresor) throw new Fachfehler(404, 'Die Verschlüsselung ist nicht eingerichtet.'); return x.tresor; };
   const schluessel = () => { if (!x.apiSchluessel) throw new Fachfehler(404, 'API-Schlüssel sind nicht eingerichtet.'); return x.apiSchluessel; };
   /**
@@ -130,6 +134,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       benutzer: a.benutzer ?? null,
       // Ohne Schlüssel (Werkbank → Verschlüsselung) lassen sich keine Passwörter speichern (#39, #46).
       passwoerterMoeglich: dienst.passwoerterMoeglich,
+      // Logo und Schriftzug des Standard-Designs für die Anmeldeseite (#72).
+      marke: x.designs ? await x.designs.marke() : null,
       // Ein Administrator agiert gerade als dieser Benutzer:
       vertretung: await konten.vertretungZu(a.sitzungsDaten),
       // Hinweise für den Benutzer selbst (nicht, solange jemand als er agiert):
@@ -242,6 +248,21 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       L.konto.info('Passwort-Link erzeugt', { email: r.benutzer.email, mail: r.mailVerschickt });
       return ok(r);
     } },
+    // Eigene angemeldete Geräte (#69): ansehen und beenden – nicht während einer Vertretung.
+    { methode: 'GET', pfad: '/api/konto/sitzungen', zugang: 'angemeldet', handler: async (a) => ok(await konten.sitzungenVon(ich(a).id, a.sitzungsDaten?.id)) },
+    { methode: 'DELETE', pfad: '/api/konto/sitzungen/:sitzung', zugang: 'angemeldet', handler: async (a) => {
+      if (a.sitzungsDaten?.vertretungId) throw new Fachfehler(403, 'In einer Vertretung lassen sich Sitzungen nicht beenden.');
+      if (a.params.sitzung === a.sitzungsDaten?.id) throw new Fachfehler(409, 'Das ist dieses Gerät. Zum Beenden bitte abmelden.');
+      await konten.beendeSitzung(ich(a).id, a.params.sitzung);
+      L.konto.info('Eigene Sitzung beendet', { sitzung: a.params.sitzung.slice(0, 8) });
+      return leer;
+    } },
+    { methode: 'POST', pfad: '/api/konto/sitzungen/andere-beenden', zugang: 'angemeldet', handler: async (a) => {
+      if (a.sitzungsDaten?.vertretungId) throw new Fachfehler(403, 'In einer Vertretung lassen sich Sitzungen nicht beenden.');
+      const r = await konten.beendeAndereSitzungen(ich(a).id, a.sitzungsDaten?.id);
+      L.konto.info('Andere eigene Sitzungen beendet', { anzahl: r.beendet });
+      return ok(r);
+    } },
     { methode: 'GET', pfad: '/api/benutzer/:id/sitzungen', zugang: 'admin', handler: async (a) => ok(await konten.sitzungenVon(a.params.id, a.sitzungsDaten?.id)) },
     { methode: 'DELETE', pfad: '/api/benutzer/:id/sitzungen', zugang: 'admin', handler: async (a) => {
       const r = await konten.beendeAlleSitzungen(a.params.id);
@@ -330,6 +351,21 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       L.werkbank.info('Design gelöscht', { id: a.params.id });
       return leer;
     } },
+    // Logo je Design (#72): hochladen als rohe Bytes, entfernen, ausliefern (ohne Anmeldung nur das des Standard-Designs).
+    { methode: 'PUT', pfad: '/api/designs/:id/logo', zugang: 'admin', roh: 1024 * 1024 + 1024, handler: async (a) => {
+      const d = await designs().setzeLogo(a.params.id, a.body);
+      L.werkbank.info('Logo eines Designs geändert', { design: d.name, bytes: d.logo?.groesse });
+      return ok(d);
+    } },
+    { methode: 'DELETE', pfad: '/api/designs/:id/logo', zugang: 'admin', handler: async (a) => {
+      const d = await designs().entferneLogo(a.params.id);
+      L.werkbank.info('Logo eines Designs entfernt', { design: d.name });
+      return ok(d);
+    } },
+    { methode: 'GET', pfad: '/api/designs/:id/logo', zugang: 'offen', handler: async (a) => {
+      const { logo, inhalt } = await designs().logo(a.params.id, !!a.benutzer);
+      return { datei: { inhalt, name: 'logo', mime: logo.mime, anzeigen: true, groesse: logo.groesse } };
+    } },
     { methode: 'PUT', pfad: '/api/designs-standard', zugang: 'admin', handler: async (a) => {
       const r = await designs().setzeStandard(String(b(a).id ?? ''));
       L.werkbank.info('Standard-Design festgelegt', { id: r.standard });
@@ -340,6 +376,11 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     /* ---------- E-Mail-Versand und Adresse (#37) ---------- */
     /* ---------- Texterkennung und Wartungsoperationen (#45) ---------- */
     { methode: 'GET', pfad: '/api/werkbank/texterkennung', zugang: 'admin', handler: async (a) => ok(await ocr().status(a.query.neu !== undefined)) },
+    // Aufträge der Texterkennung einsehen, neu starten, abbrechen (#61)
+    { methode: 'GET', pfad: '/api/werkbank/texterkennung/auftraege', zugang: 'admin', handler: async (a) => ok(await ocr().auftraege(a.query)) },
+    { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/neu', zugang: 'admin', handler: async (a) => ok(await ocr().neuStarten(b(a).ids, ich(a).email)) },
+    { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/fehler-neu', zugang: 'admin', handler: async (a) => ok(await ocr().fehlerNeuStarten(ich(a).email)) },
+    { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/abbrechen', zugang: 'admin', handler: async (a) => ok(await ocr().abbrechen(b(a).ids, ich(a).email)) },
     { methode: 'PUT', pfad: '/api/werkbank/texterkennung', zugang: 'admin', handler: async (a) => { await ocr().speichere(a.body); return ok(await ocr().status()); } },
     { methode: 'POST', pfad: '/api/werkbank/wartung/volltext', zugang: 'admin', handler: async () => ok({ eingereiht: await dienst.volltextNachholen() }) },
 
@@ -352,6 +393,52 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/werkbank/betrieb/mail/pruefen', zugang: 'admin', handler: async (a) => ok(await betrieb().pruefeVerbindung(b(a))) },
     { methode: 'POST', pfad: '/api/werkbank/betrieb/mail/testmail', zugang: 'admin', handler: async (a) => ok(await betrieb().sendeTestmail(b(a).mail, b(a).an)) },
 
+    // Fehler melden (#70): technische Angaben des Servers für jeden angemeldeten Benutzer – ohne Betriebsgeheimnisse.
+    { methode: 'GET', pfad: '/api/konto/diagnose', zugang: 'angemeldet', handler: async (a) => {
+      const i = ich(a);
+      let postgresVersion: string | null = null;
+      try { postgresVersion = system ? (await system.datenbank()).version : null; } catch { /* ohne */ }
+      let ocr: boolean | null = null;
+      try { ocr = x.texterkennung ? (await x.texterkennung.status()).einstellungen.aktiv !== false : null; } catch { /* ohne */ }
+      return ok({
+        dms: { version: eigeneVersion(), commit: process.env.DMS_COMMIT || null, gebaut: process.env.DMS_GEBAUT || null },
+        serverzeit: new Date().toISOString(), zeitzone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        node: process.versions.node, postgres: postgresVersion,
+        texterkennung: ocr, mail: !!x.betrieb?.mailer(),
+        benutzer: { name: i.name, rolle: i.rolle }, sitzung: a.sitzungsDaten?.id ? String(a.sitzungsDaten.id).slice(0, 8) : null,
+        vertretung: !!a.sitzungsDaten?.vertretungId,
+      });
+    } },
+    { methode: 'POST', pfad: '/api/konto/fehlermeldung', zugang: 'angemeldet', roh: 30 * 1024 * 1024, handler: async (a) => ok(await meldungen().melde(ich(a).id, b(a)), 201) },
+    { methode: 'GET', pfad: '/api/werkbank/fehlermeldungen', zugang: 'admin', handler: async (a) => ok(await meldungen().liste(a.query.erledigt !== undefined)) },
+    { methode: 'GET', pfad: '/api/werkbank/fehlermeldungen/:id', zugang: 'admin', handler: async (a) => ok(await meldungen().hole(a.params.id)) },
+    { methode: 'GET', pfad: '/api/werkbank/fehlermeldungen/:id/bilder/:nr', zugang: 'admin', handler: async (a) => {
+      const { bild, inhalt } = await meldungen().bild(a.params.id, Number(a.params.nr));
+      return { datei: { inhalt, name: bild.name, mime: bild.mime, anzeigen: true, groesse: bild.groesse } };
+    } },
+    { methode: 'POST', pfad: '/api/werkbank/fehlermeldungen/:id/erledigt', zugang: 'admin', handler: async (a) => ok(await meldungen().erledigt(a.params.id, b(a).erledigt !== false, ich(a).id)) },
+    { methode: 'DELETE', pfad: '/api/werkbank/fehlermeldungen/:id', zugang: 'admin', handler: async (a) => { await meldungen().loesche(a.params.id); return leer; } },
+    // Übersicht als Startseite der Werkbank (#68): was zu tun ist, auf einen Blick.
+    { methode: 'GET', pfad: '/api/werkbank/uebersicht', zugang: 'admin', handler: async (a) => {
+      const sicher = async <T>(f: () => Promise<T>): Promise<T | null> => { try { return await f(); } catch { return null; } };
+      const ts = x.tresor ? await sicher(() => x.tresor!.status()) : null;
+      const z = await dienst.zaehler(ich(a));
+      const aufgaben = await dienst.alleAufgaben(false);
+      const korb = await dienst.papierkorb(ich(a), true);
+      const sys = await uebersicht(system, x.betrieb?.kurz());
+      return ok({
+        tresor: ts ? { zustand: ts.zustand, eingebunden: ts.eingebunden, betroffen: ts.betroffen.length } : null,
+        mail: !!x.betrieb?.mailer(),
+        adresse: x.betrieb ? !!x.betrieb.ansicht().adresse : true,
+        texterkennung: x.texterkennung ? await sicher(() => x.texterkennung!.zaehler()) : null,
+        aufgaben: { offen: aufgaben.length, ohneEmpfaenger: aufgaben.filter((y) => !y.empfaengerId).length },
+        unpassend: Object.values(z.typen).reduce((s, t) => s + (t.unpassend ?? 0), 0),
+        papierkorb: { anzahl: korb.length, aeltester: korb.reduce<string | null>((m, e) => (!m || e.geloescht < m ? e.geloescht : m), null), tage: await dienst.papierkorbTage() },
+        version: sys.dms,
+        bestand: 'fehler' in sys.datenbank ? null : sys.datenbank,
+        fehlermeldungen: x.fehlermeldungen ? await sicher(() => x.fehlermeldungen!.offen()) : null,
+      });
+    } },
     { methode: 'GET', pfad: '/api/werkbank/system', zugang: 'admin', handler: async () => ok(await uebersicht(system, x.betrieb?.kurz())) },
     { methode: 'POST', pfad: '/api/werkbank/system/abgleich', zugang: 'admin', handler: async (a) => {
       const browser = Object.fromEntries(Object.entries((b(a).browser ?? {}) as Record<string, unknown>).map(([k, v]) => [k, String(v)]));

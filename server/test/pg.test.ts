@@ -689,6 +689,24 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('DELETE', `/api/typen/${typ.id}`)).status, 204);
   });
 
+  it('Übersicht der Werkbank, Diagnose und eigene Geräte (#68, #69, #70)', async () => {
+    const u = await anfrage('GET', '/api/werkbank/uebersicht');
+    assert.equal(u.status, 200, JSON.stringify(u.body));
+    assert.equal(typeof u.body.aufgaben.offen, 'number');
+    assert.ok(u.body.bestand && u.body.bestand.mappen >= 0);
+    assert.equal(u.body.version.version, (await anfrage('GET', '/api/werkbank/system')).body.dms.version);
+    const dg = await anfrage('GET', '/api/konto/diagnose');
+    assert.equal(dg.status, 200);
+    assert.match(dg.body.postgres ?? '', /\d/);
+    assert.ok(!JSON.stringify(dg.body).includes('passwort'));
+    const geraete = await anfrage('GET', '/api/konto/sitzungen');
+    assert.ok(geraete.body.some((x: { aktuell: boolean }) => x.aktuell));
+    const eigene = geraete.body.find((x: { aktuell: boolean }) => x.aktuell);
+    assert.equal((await anfrage('DELETE', `/api/konto/sitzungen/${eigene.id}`)).status, 409, 'nicht das eigene Gerät');
+    assert.equal((await anfrage('POST', '/api/konto/sitzungen/andere-beenden')).status, 200);
+    assert.equal((await anfrage('GET', '/api/werkbank/texterkennung/auftraege?stand=fertig')).status, 200);
+  });
+
   it('erkennt Text in Dokumenten und findet ihn mit der Volltextsuche (#45)', async () => {
     const { pdfMitText } = await import('./hilfen');
     const st = (await anfrage('GET', '/api/werkbank/texterkennung')).body;

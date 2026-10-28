@@ -3,6 +3,7 @@ import { api } from '../api';
 import { useDaten } from '../daten';
 import { designCss, GRUNDLAGEN, palette, rettungsweg, wendeAn, type Design, type Grundlage } from '../design';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
+import { logoUrl, Marke } from '../Marke';
 
 /**
  * Designs in der Werkbank (#21): Mitte die Designs, rechts Bearbeiten mit Vorschau.
@@ -43,13 +44,13 @@ export function Farbfelder({ d }: { d: Pick<Design, 'primaer' | 'sekundaer' | 'g
   );
 }
 
-const LEER: Omit<Design, 'id'> = { name: '', grundlage: 'automatisch', primaer: '#1D5A8A', sekundaer: '#2B7656', css: '' };
+const LEER: Omit<Design, 'id' | 'logo'> = { name: '', grundlage: 'automatisch', primaer: '#1D5A8A', sekundaer: '#2B7656', css: '', schriftzug: null };
 
 export function DesignEditor({ id }: { id: string }) {
   const d = useDaten();
   const neu = id === 'neu';
   const vorhanden = d.designs.find((x) => x.id === id);
-  const start = vorhanden ? { name: vorhanden.name, grundlage: vorhanden.grundlage, primaer: vorhanden.primaer, sekundaer: vorhanden.sekundaer, css: vorhanden.css } : LEER;
+  const start = vorhanden ? { name: vorhanden.name, grundlage: vorhanden.grundlage, primaer: vorhanden.primaer, sekundaer: vorhanden.sekundaer, css: vorhanden.css, schriftzug: vorhanden.schriftzug ?? null } : LEER;
   const [e, setE] = useState(start);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const geaendert = JSON.stringify(e) !== JSON.stringify(start);
@@ -95,6 +96,27 @@ export function DesignEditor({ id }: { id: string }) {
           <Farbwahl name="Sekundärfarbe" hilfe="Speichern, „+ Neu“, geöffnete Mappe" wert={e.sekundaer} setze={(sekundaer) => setze({ sekundaer })} />
         </div>
         <p className="leise klein">Aus beiden Farben werden Abstufungen abgeleitet (zarte Hintergründe, lesbare Schrift auf der Farbe). Auf dunklen Grundlagen werden zu dunkle Farben automatisch aufgehellt, damit sie lesbar bleiben.</p>
+      </div>
+      <div className="blatt">
+        <h2 className="h3">Logo und Schriftzug</h2>
+        <p className="leise">Stehen oben links in der Kopfzeile, im Titel und Symbol des Browser-Tabs und – beim Standard-Design – auf der Anmeldeseite. Wähle zu jedem Design ein Logo, das auf seinem Hintergrund gut zu sehen ist. In E-Mails erscheinen sie nicht.</p>
+        <div className="raster">
+          <label className="eigenschaft"><span>Schriftzug <small>höchstens 30 Zeichen; leer = nur das Logo</small></span>
+            <input value={e.schriftzug ?? 'DMS'} maxLength={30} onChange={(x) => setze({ schriftzug: x.target.value === 'DMS' ? null : x.target.value })} /></label>
+          <div className="eigenschaft"><span>Vorschau</span>
+            <div className="markenvorschau marke"><Marke logo={logoUrl(vorhanden)} schriftzug={e.schriftzug === null || e.schriftzug === undefined ? 'DMS' : e.schriftzug} /></div></div>
+        </div>
+        {neu ? <p className="leise klein">Ein Logo lässt sich hochladen, sobald das Design gespeichert ist.</p> : (
+          <div className="knoepfe links">
+            <label className="knopf klein">{vorhanden?.logo ? 'Anderes Logo wählen' : 'Logo hochladen'}
+              <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden onChange={(x) => {
+                const f = x.target.files?.[0]; x.target.value = '';
+                if (f) void aktion(async () => { await api.designLogo(id, f); await d.designsLaden(); }, 'Logo gespeichert.');
+              }} /></label>
+            {vorhanden?.logo && <button type="button" className="textknopf" onClick={() => void aktion(async () => { await api.designLogoEntfernen(id); await d.designsLaden(); }, 'Standard-Logo wiederhergestellt.')}>Standard wiederherstellen</button>}
+            <span className="leise klein">PNG, JPEG, WebP oder SVG, höchstens 1 MB</span>
+          </div>
+        )}
       </div>
       <div className="blatt">
         <h2 className="h3">Vorschau</h2>

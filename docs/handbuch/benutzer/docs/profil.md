@@ -6,47 +6,55 @@ Ein Klick auf deinen Namen oben rechts öffnet ein Menü:
 
 ![Benutzermenü](bilder/benutzermenue.png)
 
-- **Profil und Design** – deine Angaben, siehe unten.
-- **Hilfe** – öffnet dieses Handbuch. Administratoren finden dort auch das Administratorhandbuch.
-- **Schriftgröße auf diesem Gerät** – klein, normal oder groß. Gilt nur für das Gerät, an dem du gerade sitzt; am Smartphone kannst du eine andere Größe wählen als am PC.
+- Oben stehen dein Name, deine E-Mail-Adresse und deine Rolle.
+- **Mein Konto** – Name und E-Mail-Adresse, siehe unten.
+- **Einstellungen** – Design, Schriftgröße und Ansicht.
+- **Hilfe** – öffnet dieses Handbuch.
+- **Fehler melden** – siehe [Fehler melden](#fehler-melden).
 - **Abmelden**.
 
 ## Profil
 
+Das Profil hat links vier Bereiche (am Smartphone oben als Knöpfe):
+
 ![Profil](bilder/profil.png){ loading=lazy }
 
-### Name
+### Konto
 
-So erscheinst du bei „angelegt von“ und „zuletzt geändert von“ – und als Titel deiner Benutzer-Mappe.
+- **Name** – so erscheinst du bei „angelegt von“ und „zuletzt geändert von“ – und als Titel deiner Benutzer-Mappe.
+- **E-Mail-Adresse** – damit meldest du dich an. Zum Ändern brauchst du dein aktuelles Passwort. Verschickt das DMS E-Mails, bekommt die bisherige Adresse einen Hinweis – falls jemand anderes die Adresse geändert hat, merkst du es so.
 
-### E-Mail-Adresse
+### Sicherheit
 
-Damit meldest du dich an. Zum Ändern brauchst du dein aktuelles Passwort. Verschickt das DMS E-Mails, bekommt die bisherige Adresse einen Hinweis – falls jemand anderes die Adresse geändert hat, merkst du es so.
+- **Passwort** – gib dein aktuelles und zweimal das neue Passwort ein (mindestens 10 Zeichen). Nach dem Ändern sind alle anderen Anmeldungen beendet.
+- **Meine angemeldeten Geräte** – überall, wo du gerade angemeldet bist, mit Browser, Gerät und letzter Aktivität; *dieses Gerät* ist markiert. **Abmelden** beendet eine einzelne Anmeldung, **Alle anderen abmelden** alle außer dieser – etwa wenn du ein Handy verloren hast. Ändere dann am besten auch dein Passwort.
+- **API-Schlüssel** – damit können andere Programme in deinem Namen auf das DMS zugreifen, etwa ein Scanner. Brauchst du das nicht, kannst du diesen Abschnitt übergehen. Passwortfelder liefert ein Schlüssel nur, wenn du beim Erzeugen **Passwörter lesen** ankreuzt. Wie das funktioniert, beschreibt das [Administratorhandbuch](https://motom001.github.io/dms/admin/api/).
 
-### Passwort
+### Darstellung
 
-Gib dein aktuelles und zweimal das neue Passwort ein (mindestens 10 Zeichen). Nach dem Ändern sind alle anderen Anmeldungen beendet – an anderen Geräten meldest du dich neu an.
+- **Design** – wie das DMS für dich aussieht. **Standard** folgt dem Design, das der Administrator festgelegt hat. Gilt für dein Konto auf allen Geräten.
+- **Schriftgröße auf diesem Gerät** – klein, normal oder groß. Gilt nur für das Gerät, an dem du gerade sitzt; am Smartphone kannst du eine andere Größe wählen als am PC.
+- **Ansicht auf diesem Gerät** – die Breite der Spalten und eingeklappte Bereiche merkt sich jedes Gerät. Ist etwas nicht mehr zu finden, stellt **Standard-Ansicht wiederherstellen** die ursprüngliche Aufteilung her.
+- **Entwicklermodus** – zeigt unten rechts, wie lange ein Seitenaufruf gedauert hat.
 
-### Design
+### Benachrichtigungen und Ablage
 
-Wähle, wie das DMS für dich aussieht. **Standard** folgt dem Design, das der Administrator festgelegt hat. Deine Wahl gilt für dein Konto auf allen Geräten und wirkt sofort.
+- **Aufgaben** – Mappen mit offenen [Aufgaben](eingang.md) für dich stehen im Eingang. Zusätzlich schickt das DMS dir einmal am Tag eine Übersicht per E-Mail, solange du welche hast. **Tägliche Zusammenfassung meiner Aufgaben per E-Mail** bestellt sie ab oder wieder an.
+- **Papierkorb** – **Beim Abmelden leeren** löscht deine gelöschten Mappen endgültig, sobald du dich abmeldest. Ohne den Haken bleiben sie so lange im [Papierkorb](ablage.md#papierkorb), wie der Administrator es eingestellt hat.
 
-### API-Schlüssel
+## Fehler melden
 
-Mit einem API-Schlüssel können andere Programme in deinem Namen auf das DMS zugreifen – etwa ein Scanner, der Dokumente direkt ablegt. Brauchst du das nicht, kannst du diesen Abschnitt übergehen. Passwortfelder liefert ein Schlüssel nur, wenn du beim Erzeugen **Passwörter lesen** ankreuzt – setze das nur, wenn das Programm sie wirklich braucht. Wie das funktioniert, beschreibt das [Administratorhandbuch](https://motom001.github.io/dms/admin/api/).
+Funktioniert etwas nicht, wähle im Menü **Fehler melden**:
 
-### Papierkorb
+![Fehler melden](bilder/fehler-melden.png)
 
-**Beim Abmelden leeren** löscht deine gelöschten Mappen endgültig, sobald du dich abmeldest. Ohne den Haken bleiben sie so lange im [Papierkorb](ablage.md#papierkorb), wie der Administrator es eingestellt hat.
+1. Beschreibe kurz, was passiert ist und was du erwartet hättest.
+2. Füge bei Bedarf bis zu zwei **Screenshots** hinzu (PNG, JPEG oder WebP, je höchstens 10 MB) – auch direkt mit Strg+V ins Textfeld.
+3. Unter **Technische Angaben ansehen** steht, was mitgeschickt wird: Version des DMS, Browser und Gerät, Bildschirm- und Fenstergröße, Sprache und Zeitzone, die zuletzt besuchten Seiten und die letzten Fehler im Browser. Passwörter, Inhalte von Mappen und Dokumente gehen nicht mit.
+4. **An die Administratoren senden** – oder **In die Zwischenablage kopieren**, um es z. B. per E-Mail zu schicken.
 
-### Aufgaben
-
-Mappen mit offenen [Aufgaben](eingang.md) für dich stehen im Eingang. Zusätzlich schickt das DMS dir einmal am Tag eine Übersicht per E-Mail, solange du welche hast. **Tägliche Zusammenfassung meiner Aufgaben per E-Mail** bestellt sie ab oder wieder an.
-
-### Ansicht zurücksetzen
-
-Die Breite der Spalten und eingeklappte Bereiche merkt sich jedes Gerät. Ist etwas nicht mehr zu finden, stellt **Standard-Ansicht wiederherstellen** die ursprüngliche Aufteilung her.
+Die Administratoren sehen deine Meldung in der Werkbank und melden sich, falls sie Fragen haben.
 
 ## Hinweis „Ein Administrator hat in deinem Namen gearbeitet“
 
-Um einen Fehler nachzustellen, kann sich ein Administrator als du anmelden. Er sieht dann genau, was du siehst. Danach zeigt dir das DMS beim nächsten Mal oben einen Hinweis, wer das wann getan hat. Mit **Verstanden** blendest du ihn aus.
+Um einen Fehler nachzustellen, kann sich ein Administrator als du anmelden. Er sieht dann genau, was du siehst. Danach zeigt dir das DMS beim nächsten Mal oben einen Hinweis, wer das wann getan hat. Mit **Verstanden** blendest du ihn aus. Solange er als du arbeitet, steht das auch in deinem Menü und unter *Meine angemeldeten Geräte*.

@@ -246,6 +246,11 @@ export function speicherRepo(): Repo {
       for (const d of dokumente.values()) z[d.ocr?.stand ?? 'keiner']++;
       return z;
     },
+    async ocrAuftraege({ stand, von, anzahl }) {
+      const alle = [...dokumente.values()].filter((d) => (d.ocr?.stand ?? 'keiner') === stand && mappen.has(d.mappeId))
+        .sort((a, b) => (b.ocr?.zeit ?? b.erstellt).localeCompare(a.ocr?.zeit ?? a.erstellt));
+      return { gesamt: alle.length, eintraege: alle.slice(von, von + anzahl).map((d) => ({ dokument: kopie(d), mappeTitel: mappen.get(d.mappeId)!.titel ?? '', typId: mappen.get(d.mappeId)!.typId })) };
+    },
     async ocrOhneVolltext() {
       return [...dokumente.values()].filter((d) => (d.ocr?.stand ?? 'keiner') === 'keiner' && mappen.has(d.mappeId))
         .map((d) => ({ id: d.id, typId: mappen.get(d.mappeId)!.typId, registerKey: d.registerKey }));

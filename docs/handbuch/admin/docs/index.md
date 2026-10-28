@@ -13,9 +13,10 @@ Dieses Handbuch ist für alle, die das DMS **installieren, einrichten und betrei
 | Festlegen, welche Mappen es gibt und was darin steht | Werkbank → Mappentypen | [Mappentypen](mappentypen.md) |
 | Festlegen, welche Sichten die Ablage anbietet | Werkbank → Sichten | [Sichten](sichten.md) |
 | Benutzer einladen, Rollen vergeben, Zugänge sperren | Werkbank → Benutzer | [Benutzer und Rollen](benutzer.md) |
-| Farben und Aussehen anpassen | Werkbank → Designs | [Designs](designs.md) |
+| Farben, Logo und Schriftzug anpassen | Werkbank → Designs | [Designs](designs.md) |
 | Ausprobieren mit Beispieldaten | Werkbank → Demo-Daten | [Demo-Daten](demo.md) |
-| Fehler finden, Support anfragen | Werkbank → Protokoll, Datenbank, Technik | [Fehlersuche](fehlersuche.md) |
+| Überblick, was zu tun ist | Werkbank → Übersicht | [Werkbank und Übersicht](uebersicht.md) |
+| Fehler finden, Meldungen der Benutzer bearbeiten | Werkbank → Wartung und Fehlersuche | [Fehlersuche](fehlersuche.md) |
 | Andere Programme anbinden | Profil → API-Schlüssel | [Schnittstelle](api.md) |
 
 Wie das DMS technisch aufgebaut ist und warum, beschreiben [Technik](technik.md) und [Entscheidungen](entscheidungen.md).

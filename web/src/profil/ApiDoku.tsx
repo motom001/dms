@@ -22,7 +22,7 @@ export function ApiDoku() {
   return (
     <div className="einspaltig apidoku">
       <div className="mappenkopf">
-        <p className="ueber"><Link to="/profil" className="verweis">Profil</Link> › API</p>
+        <p className="ueber"><Link to="/profil/sicherheit" className="verweis">Profil</Link> › API</p>
         <h1>{doc.info.title} <span className="chip">Version {doc.info.version}</span></h1>
         <p className="leise">{doc.info.description}</p>
         <p className="klein">Adresse: <span className="mono">{basis}</span> · Beschreibung als Datei: <a className="verweis" href="/api/openapi.json" target="_blank" rel="noreferrer">openapi.json</a> (OpenAPI {doc.openapi}) – lässt sich z. B. in Postman oder Bruno importieren.</p>

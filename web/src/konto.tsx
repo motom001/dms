@@ -2,6 +2,10 @@ import { createContext, useCallback, useContext, useEffect, useState, type FormE
 import { PASSWORT_MINDESTLAENGE, type Benutzer } from '../../shared/src/model';
 import { ABGEMELDET, api, type KontoStatus } from './api';
 import { geheZu, useOrt } from './ort';
+import { Marke } from './Marke';
+
+/** Logo und Schriftzug des Standard-Designs für Anmeldung und Passwortseiten (#72). */
+let MARKE: { schriftzug: string | null; logo: string | null } = { schriftzug: null, logo: null };
 
 interface Konto {
   ich: Benutzer; mail: boolean; abmelden(): Promise<void>; aktualisieren(): Promise<void>;
@@ -28,7 +32,18 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   const [fehler, setFehler] = useState<string>();
 
   const laden = useCallback(async () => {
-    try { setStatus(await api.status()); setFehler(undefined); }
+    try {
+      const st = await api.status();
+      if (st.marke) {
+        MARKE = st.marke;
+        if (!st.benutzer) {
+          document.title = st.marke.schriftzug || 'DMS';
+          const el = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+          if (el && st.marke.logo) el.href = st.marke.logo;
+        }
+      }
+      setStatus(st); setFehler(undefined);
+    }
     catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => { void laden(); }, [laden]);
@@ -62,8 +77,7 @@ function Karte({ titel, unter, children }: { titel: string; unter?: string; chil
     <div className="kartenseite">
       <div className="karte">
         <div className="marke gross">
-          <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect x="4" y="7" width="24" height="21" rx="3" className="m1" /><rect x="8" y="3" width="9" height="7" rx="2" className="m2" /></svg>
-          <span>DMS</span>
+          <Marke logo={MARKE.logo} schriftzug={MARKE.schriftzug ?? 'DMS'} gross />
         </div>
         <h1>{titel}</h1>
         {unter && <p className="leise">{unter}</p>}

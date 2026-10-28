@@ -1,5 +1,15 @@
 # Fehlersuche und Support
 
+Alles dazu steht in der Werkbank unter **Wartung und Fehlersuche**: Protokoll, Fehlermeldungen, Wartungsoperationen, Datenbank, Technik und Demo-Daten.
+
+## Fehlermeldungen von Benutzern
+
+Benutzer melden Fehler über **Fehler melden** in ihrem Menü – mit eigener Beschreibung, bis zu zwei Screenshots und technischen Angaben (Version, Browser, Bildschirmgröße, Sprache, Zeitzone, zuletzt besuchte Seiten, die letzten Fehler im Browser und fehlgeschlagene Anfragen). Passwörter, Inhalte von Mappen und Cookies gehen nicht mit.
+
+![Werkbank → Fehlermeldungen](bilder/werkbank-fehlermeldung.png)
+
+Unter **Werkbank → Fehlermeldungen** stehen die Meldungen, neueste zuerst; der Zähler in der Leiste und in der Übersicht nennt die offenen. In der Meldung siehst du Beschreibung, Screenshots und Angaben und kannst sie **als erledigt markieren** (und wieder öffnen) oder **löschen** – endgültig, samt Bildern. Eine Rückmeldung an den Benutzer gibt es im DMS bewusst nicht; die erledigst du auf deinem Weg.
+
 ## Protokoll
 
 **Werkbank → Protokoll** zeigt, was im DMS passiert – die letzten 24 Stunden, höchstens 10.000 Einträge, die neuesten oben. Nach einem Neustart beginnt die Ansicht leer; dauerhaft steht alles in den Container-Logs.
@@ -16,6 +26,7 @@ Jeder Eintrag gehört zu einem **Modul**:
 | `ablage` | Mappen anlegen, ändern, löschen; Sichten |
 | `werkbank` | Mappentypen, Demo-Daten, Einstellungen, Versionsabgleich |
 | `dokumente` | Hochladen, Anzeigen, Löschen |
+| `texterkennung` | Texterkennung: abgeschlossen, ausgelassen, fehlgeschlagen, neu gestartet, abgebrochen; Einstellungen |
 | `datenbank` | Migrationen, Verbindung, lange Zugriffe |
 | `mail` | Versand und Fehler beim Versand |
 

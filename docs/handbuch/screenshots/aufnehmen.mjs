@@ -324,15 +324,30 @@ async function main() {
   await geheZu(s, '/ablage');
   await s.locator('.benutzermenue .wer').click();
   await s.locator('.benutzermenue .menue').waitFor();
-  await bild(s, 'benutzermenue', { clip: { x: 1440 - 420, y: 0, width: 420, height: 380 } });
+  await bild(s, 'benutzermenue', { clip: { x: 1440 - 420, y: 0, width: 420, height: 360 } });
   await s.keyboard.press('Escape');
 
-  // Profil
-  await geheZu(s, '/profil');
+  // Profil (#69) und Fehler melden (#70)
+  await geheZu(s, '/profil/sicherheit');
+  await s.getByRole('heading', { name: 'Meine angemeldeten Geräte' }).waitFor();
   await bild(s, 'profil', { fullPage: true });
+  await geheZu(s, '/profil/fehler-melden');
+  await s.getByPlaceholder(/Beim Speichern/).fill('Beim Speichern einer Rechnung kam „Fehler 500“, nachdem ich ein Dokument hinzugefügt hatte.');
+  await s.getByText('Technische Angaben ansehen').click();
+  await bild(s, 'fehler-melden');
+  await s.getByRole('button', { name: 'An die Administratoren senden' }).click();
+  await s.getByText('Deine Meldung ist bei den Administratoren angekommen.').waitFor();
   await geheZu(s, '/api-doku');
   await bild(s, 'api-doku');
 
+  // Werkbank: Übersicht (#68) und Fehlermeldungen (#70)
+  await geheZu(s, '/werkbank');
+  await s.locator('.uebersicht .kacheln').waitFor();
+  await bild(s, 'werkbank-uebersicht');
+  await geheZu(s, '/werkbank/fehlermeldungen');
+  await s.locator('.spalte.liste .eintrag').first().click();
+  await s.getByRole('heading', { name: 'Technische Angaben' }).waitFor();
+  await bild(s, 'werkbank-fehlermeldung');
   // Werkbank
   await geheZu(s, `/werkbank/typen/${vertrag.id}`);
   await bild(s, 'werkbank-mappentyp');
@@ -364,6 +379,7 @@ async function main() {
   await bild(s, 'werkbank-papierkorb');
   await geheZu(s, '/werkbank/texterkennung');
   await s.getByRole('heading', { name: 'Werkzeuge', exact: true }).waitFor();
+  await s.getByRole('heading', { name: 'Aufträge', exact: true }).waitFor();
   await bild(s, 'werkbank-texterkennung');
   await geheZu(s, '/werkbank/datenbank');
   await bild(s, 'werkbank-datenbank');

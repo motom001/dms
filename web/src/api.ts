@@ -2,6 +2,7 @@ import type { Design } from './design';
 import { messung } from './messung';
 import type { Aufgabe, Ausschnitt, Benutzer, Dokument, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Sicht, SichtDaten } from '../../shared/src/sichten';
+import { merkeAnfrage } from './diagnose';
 
 export class ApiFehler extends Error {
   constructor(public status: number, message: string, public details?: unknown) { super(message); }
@@ -32,13 +33,17 @@ async function anfrage<T>(methode: string, url: string, body?: unknown): Promise
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
+    merkeAnfrage(methode, url, 0, 'Der Server ist nicht erreichbar.');
     throw new ApiFehler(0, 'Der Server ist nicht erreichbar.');
   }
   const kopf = performance.now();
   const daten = r.status === 204 ? null : await r.json().catch(() => null);
   messung.erfasse(seite, methode, url, r, start, kopf, performance.now());
   if (r.status === 401 && !url.startsWith('/api/konto/')) dispatchEvent(new Event(ABGEMELDET));
-  if (!r.ok) throw new ApiFehler(r.status, daten?.fehler ?? `Fehler ${r.status}`, daten?.details);
+  if (!r.ok) {
+    merkeAnfrage(methode, url, r.status, daten?.fehler ?? `Fehler ${r.status}`);
+    throw new ApiFehler(r.status, daten?.fehler ?? `Fehler ${r.status}`, daten?.details);
+  }
   return daten as T;
 }
 
@@ -71,6 +76,8 @@ export interface KontoStatus {
   vertretung?: { adminName: string; beginn: string } | null;
   /** Wer hat als dieser Benutzer agiert (noch nicht gesehen)? */
   hinweise?: Vertretung[];
+  /** Logo und Schriftzug des Standard-Designs (#72) für die Anmeldeseite. */
+  marke?: { schriftzug: string | null; logo: string | null } | null;
 }
 export interface LinkErgebnis { benutzer: Benutzer; mailVerschickt: boolean; link?: string; mailFehler?: string }
 
@@ -92,6 +99,9 @@ export const api = {
   benutzerLoeschen: (id: string) => anfrage<null>('DELETE', `/api/benutzer/${id}`),
   neuerLink: (id: string) => anfrage<LinkErgebnis>('POST', `/api/benutzer/${id}/link`),
   sitzungen: (id: string) => anfrage<Sitzung[]>('GET', `/api/benutzer/${id}/sitzungen`),
+  meineSitzungen: () => anfrage<Sitzung[]>('GET', '/api/konto/sitzungen'),
+  meineSitzungBeenden: (sitzung: string) => anfrage<null>('DELETE', `/api/konto/sitzungen/${sitzung}`),
+  andereSitzungenBeenden: () => anfrage<{ beendet: number }>('POST', '/api/konto/sitzungen/andere-beenden'),
   sitzungBeenden: (id: string, sitzung: string) => anfrage<null>('DELETE', `/api/benutzer/${id}/sitzungen/${sitzung}`),
   alleSitzungenBeenden: (id: string) => anfrage<{ beendet: number }>('DELETE', `/api/benutzer/${id}/sitzungen`),
   vertreten: (id: string) => anfrage<{ benutzer: Benutzer }>('POST', `/api/benutzer/${id}/vertreten`),
@@ -118,6 +128,13 @@ export const api = {
   designAnlegen: (d: Omit<Design, 'id'>) => anfrage<Design>('POST', '/api/designs', d),
   designAendern: (id: string, d: Omit<Design, 'id'>) => anfrage<Design>('PUT', `/api/designs/${id}`, d),
   designLoeschen: (id: string) => anfrage<null>('DELETE', `/api/designs/${id}`),
+  designLogo: async (id: string, f: File) => {
+    const r = await fetch(`/api/designs/${id}/logo`, { method: 'PUT', credentials: 'same-origin', headers: { 'x-dms': '1', 'content-type': 'application/octet-stream' }, body: f });
+    const daten = await r.json().catch(() => null);
+    if (!r.ok) throw new ApiFehler(r.status, daten?.fehler ?? `Fehler ${r.status}`);
+    return daten as Design;
+  },
+  designLogoEntfernen: (id: string) => anfrage<Design>('DELETE', `/api/designs/${id}/logo`),
   designStandard: (id: string) => anfrage<{ designs: Design[]; standard: string | null }>('PUT', '/api/designs-standard', { id }),
   einstellungSetzen: (schluessel: string, wert: unknown) => anfrage<null>('PUT', `/api/konto/einstellungen/${encodeURIComponent(schluessel)}`, { wert }),
   sichten: () => anfrage<Zaehler>('GET', '/api/sichten'),
@@ -176,6 +193,19 @@ export const api = {
   datenbankEinstellen: (e: MessEinstellungen) => anfrage<MessEinstellungen>('PUT', '/api/werkbank/datenbank', e),
   /* E-Mail-Versand und Adresse des DMS (#37) */
   tresor: () => anfrage<TresorStatus>('GET', '/api/werkbank/tresor'),
+  uebersicht: () => anfrage<WerkbankUebersicht>('GET', '/api/werkbank/uebersicht'),
+  // Fehler melden (#70)
+  diagnose: () => anfrage<Diagnose>('GET', '/api/konto/diagnose'),
+  fehlerMelden: (e: { text: string; angaben: Record<string, unknown>; bilder: Array<{ name: string; daten: string }> }) => anfrage<{ id: string }>('POST', '/api/konto/fehlermeldung', e),
+  fehlermeldungen: (erledigt = false) => anfrage<Fehlermeldung[]>('GET', `/api/werkbank/fehlermeldungen${erledigt ? '?erledigt' : ''}`),
+  fehlermeldung: (id: string) => anfrage<Fehlermeldung>('GET', `/api/werkbank/fehlermeldungen/${id}`),
+  fehlermeldungErledigt: (id: string, erledigt: boolean) => anfrage<Fehlermeldung>('POST', `/api/werkbank/fehlermeldungen/${id}/erledigt`, { erledigt }),
+  fehlermeldungLoeschen: (id: string) => anfrage<void>('DELETE', `/api/werkbank/fehlermeldungen/${id}`),
+  // Aufträge der Texterkennung (#61)
+  ocrAuftraege: (stand: string, von = 0) => anfrage<{ gesamt: number; eintraege: Array<{ dokument: Dokument; mappeTitel: string; typId: string }> }>('GET', `/api/werkbank/texterkennung/auftraege?stand=${stand}&von=${von}&anzahl=100`),
+  ocrNeu: (ids: string[]) => anfrage<{ eingereiht: number }>('POST', '/api/werkbank/texterkennung/auftraege/neu', { ids }),
+  ocrFehlerNeu: () => anfrage<{ eingereiht: number }>('POST', '/api/werkbank/texterkennung/auftraege/fehler-neu'),
+  ocrAbbrechen: (ids: string[]) => anfrage<{ abgebrochen: number }>('POST', '/api/werkbank/texterkennung/auftraege/abbrechen', { ids }),
   tresorErzeugen: () => anfrage<TresorStatus>('POST', '/api/werkbank/tresor/erzeugen'),
   betrieb: () => anfrage<BetriebAnsicht>('GET', '/api/werkbank/betrieb'),
   mailSpeichern: (m: MailEingabe) => anfrage<BetriebAnsicht>('PUT', '/api/werkbank/betrieb/mail', m),
@@ -221,6 +251,25 @@ export interface MessEinstellungen { schwelleMs: number; tage: number }
 export interface Langlaeufer { id: number; zeit: string; dauerMs: number; zugriff: string; anfrage: string; benutzer: string }
 export interface LaufendeAbfrage { pid: number; seitMs: number; zustand: string; abfrage: string; anwendung: string }
 export interface DatenbankStand { einstellungen: MessEinstellungen | null; langlaeufer: Langlaeufer[]; laufend: LaufendeAbfrage[] }
+export interface WerkbankUebersicht {
+  tresor: { zustand: string; eingebunden: boolean | null; betroffen: number } | null;
+  mail: boolean; adresse: boolean;
+  texterkennung: Record<'keiner' | 'wartet' | 'laeuft' | 'fertig' | 'fehler' | 'ausgelassen', number> | null;
+  aufgaben: { offen: number; ohneEmpfaenger: number };
+  unpassend: number;
+  papierkorb: { anzahl: number; aeltester: string | null; tage: number };
+  version: { version: string; commit: string | null; gebaut: string | null };
+  bestand: { version: string; groesseBytes: number; mappen: number; typen: number; benutzer: number; dokumente: number; dokumenteBytes: number } | null;
+  fehlermeldungen: number | null;
+}
+export interface Diagnose {
+  dms: { version: string; commit: string | null; gebaut: string | null }; serverzeit: string; zeitzone: string; node: string; postgres: string | null;
+  texterkennung: boolean | null; mail: boolean; benutzer: { name: string; rolle: string }; sitzung: string | null; vertretung: boolean;
+}
+export interface Fehlermeldung {
+  id: string; benutzerId: string | null; erstellt: string; text: string; angaben: Record<string, unknown>;
+  bilder: Array<{ nr: number; name: string; mime: string; groesse: number }>; erledigt: string | null; erledigtVon: string | null;
+}
 export interface Systemuebersicht {
   dms: { version: string; commit: string | null; gebaut: string | null };
   laufzeit: { node: string; system: string; architektur: string; container: boolean; alpine: string | null; zeitzone: string; laeuftSeit: string };

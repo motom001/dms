@@ -27,6 +27,18 @@ Ob ein Dokumentenregister überhaupt einen Volltext erzeugt, stellst du am [Mapp
 
 Darunter zeigt die Seite, welche Werkzeuge installiert sind, und die **Warteschlange**: wie viele Dokumente warten, gerade laufen, fertig sind, einen Fehler hatten oder ausgelassen wurden.
 
+## Aufträge
+
+Unter **Aufträge** siehst du die Dokumente je Stand (*Fehler*, *wartet*, *läuft*, *ausgelassen*, *fertig*) – mit Mappe (als Link), Größe, Zeitpunkt und dem **Grund** bei Fehlern oder ausgelassenen Dokumenten.
+
+- Dokumente auswählen und **Neu starten**: Sie kommen wieder in die Warteschlange.
+- Wartende **aus der Warteschlange nehmen** bzw. laufende **abbrechen**: Sie gelten dann als *ausgelassen* („Vom Administrator abgebrochen“); ein laufender Vorgang (tesseract, pdftoppm) wird beendet.
+- **Alle Fehler neu starten** reiht alle Dokumente mit Fehler wieder ein.
+
+**Passwortgeschützte PDFs** erkennt das DMS und lässt sie mit dem Grund „Das PDF ist mit einem Passwort geschützt“ aus, statt einen Fehler zu melden – ein neuer Versuch würde nichts ändern.
+
+Alle Meldungen der Texterkennung stehen im [Protokoll](fehlersuche.md) unter dem Modul `texterkennung`.
+
 Am Dokument sehen alle Benutzer den Stand (*wartet*, *läuft*, *fertig*, *Fehler*, *ausgelassen*); bei einem Fehler lässt sich die Texterkennung dort **erneut versuchen**, und ein fertiger Text lässt sich anzeigen. Liegt dieselbe Datei schon mit Volltext in einer anderen Mappe, übernimmt das DMS diesen Text.
 
 ## Wartungsoperationen

@@ -19,6 +19,21 @@ Alle übrigen Farben leitet das DMS aus diesen beiden ab. Ist eine Farbe auf dem
 
 **Als Standard festlegen** macht ein Design zum Standard für alle. Das Standard-Design lässt sich nicht löschen.
 
+## Logo und Schriftzug
+
+Jedes Design hat ein eigenes **Logo** und einen **Schriftzug** (Standard: das Mappen-Symbol und „DMS“). Sie erscheinen
+
+- oben links in der Kopfzeile,
+- im Titel und Symbol des Browser-Tabs (z. B. „Familie Muster – Ablage“),
+- beim **Standard-Design** auch auf der Anmeldeseite.
+
+In E-Mails erscheinen sie nicht.
+
+- **Logo hochladen:** PNG, JPEG, WebP oder SVG, höchstens 1 MB. **Standard wiederherstellen** bringt das Mappen-Symbol zurück. SVGs mit Skripten, Ereignissen oder Verweisen auf andere Dateien lehnt das DMS ab.
+- **Schriftzug:** höchstens 30 Zeichen; leer = nur das Logo.
+
+Weil Logo und Schriftzug zum Design gehören, wähle zu jedem Design ein Logo, das auf dessen Hintergrund gut zu sehen ist – etwa ein helles Logo für *Dunkel*.
+
 ## Eigenes CSS
 
 Unter **Eigenes CSS** kannst du die Oberfläche weiter anpassen, etwa `.kopf { border-bottom-width: 3px; }`. `<style>`-Tags sind nicht erlaubt.
@@ -28,4 +43,4 @@ Unter **Eigenes CSS** kannst du die Oberfläche weiter anpassen, etwa `.kopf { b
 
 ## Schriftgröße
 
-Die Schriftgröße ist kein Teil des Designs: Jeder Benutzer stellt sie im Menü unter seinem Namen ein, je Gerät.
+Die Schriftgröße ist kein Teil des Designs: Jeder Benutzer stellt sie im Profil unter **Darstellung** ein, je Gerät.

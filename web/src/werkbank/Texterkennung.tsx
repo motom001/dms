@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { OCR_STAENDE, type OcrStandArt } from '../../../shared/src/model';
 import { api, type OcrEinstellungen, type OcrStatus } from '../api';
+import { Link } from '../ort';
 
 /**
  * Werkbank → Texterkennung (#45): Werkzeuge, Einstellungen, Warteschlange.
@@ -53,6 +54,7 @@ export function TexterkennungListe({ t }: { t: TexterkennungZustand }) {
             <span className="unter">{s.einstellungen.aktiv ? `${s.einstellungen.auftraege} ${s.einstellungen.auftraege === 1 ? 'Auftrag' : 'Aufträge'} gleichzeitig · höchstens ${s.einstellungen.maxSeiten} Seiten` : 'ausgeschaltet'}</span>
             <span><span className={`chip ${s.einstellungen.aktiv ? 'gut' : ''}`}>{s.einstellungen.aktiv ? 'an' : 'aus'}</span></span>
           </a></li>
+          <li><a className="eintrag werk" href="#auftraege"><span className="titel">Aufträge</span><span className="unter">einsehen, neu starten, abbrechen</span>{s.zaehler.fehler > 0 && <span><span className="chip schlecht">{zahl(s.zaehler.fehler)} Fehler</span></span>}</a></li>
           <li><a className="eintrag werk" href="#warteschlange"><span className="titel">Warteschlange</span><span className="unter">{zahl(s.zaehler.wartet + s.zaehler.laeuft)} offen · {zahl(s.zaehler.fehler)} mit Fehler</span></a></li>
         </ul>
       )}
@@ -88,8 +90,10 @@ export function TexterkennungPanel({ t }: { t: TexterkennungZustand }) {
       <section className="blatt" id="warteschlange">
         <h2 className="h3">Warteschlange</h2>
         <Warteschlange s={s} />
-        <p className="leise klein">Dokumente ohne Volltext aus der Zeit vor der Texterkennung holst du unter „Wartungsoperationen“ nach. Bei einem Fehler lässt sich die Texterkennung am Dokument erneut anstoßen.</p>
+        <p className="leise klein">Dokumente ohne Volltext aus der Zeit vor der Texterkennung holst du unter „Wartungsoperationen“ nach.</p>
       </section>
+
+      <Auftraege t={t} />
     </div>
   );
 }
@@ -196,3 +200,74 @@ export function WartungPanel({ t }: { t: TexterkennungZustand }) {
     </div>
   );
 }
+
+/** Aufträge der Texterkennung (#61): je Stand die Dokumente mit Mappe, neu starten, abbrechen. */
+const STAENDE_LISTE: OcrStandArt[] = ['fehler', 'wartet', 'laeuft', 'ausgelassen', 'fertig'];
+type Auftrag = Awaited<ReturnType<typeof api.ocrAuftraege>>['eintraege'][number];
+
+function Auftraege({ t }: { t: TexterkennungZustand }) {
+  const s = t.stand!;
+  const [stand, setStand] = useState<OcrStandArt>(s.zaehler.fehler ? 'fehler' : s.zaehler.wartet || s.zaehler.laeuft ? 'wartet' : 'fehler');
+  const [liste, setListe] = useState<{ gesamt: number; eintraege: Auftrag[] } | null>(null);
+  const [auswahl, setAuswahl] = useState<Set<string>>(new Set());
+  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const zaehlerText = JSON.stringify(s.zaehler);
+  const laden = useCallback(async () => {
+    try { setListe(await api.ocrAuftraege(stand)); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
+  }, [stand]);
+  useEffect(() => { void laden(); setAuswahl(new Set()); }, [laden, zaehlerText]);
+  const ids = [...auswahl];
+  async function tu(f: () => Promise<string>) {
+    setMeldung(undefined);
+    try { const text = await f(); setMeldung({ art: 'gut', text }); setAuswahl(new Set()); await t.laden(); await laden(); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
+  }
+  const umschalten = (id: string) => setAuswahl((x) => { const n = new Set(x); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const alle = liste?.eintraege ?? [];
+  const abbrechbar = stand === 'wartet' || stand === 'laeuft';
+  return (
+    <section className="blatt" id="auftraege">
+      <div className="blattkopf zeile-zwischen"><h2 className="h3">Aufträge</h2>
+        {s.zaehler.fehler > 0 && <button type="button" className="knopf klein" onClick={() => void tu(async () => { const r = await api.ocrFehlerNeu(); return `${zahl(r.eingereiht)} ${r.eingereiht === 1 ? 'Dokument steht' : 'Dokumente stehen'} wieder in der Warteschlange.`; })}>Alle Fehler neu starten</button>}
+      </div>
+      <div className="registertaben klein" role="tablist" aria-label="Stand">
+        {STAENDE_LISTE.map((k) => (
+          <button key={k} type="button" role="tab" aria-selected={stand === k} className={`registertab ${stand === k ? 'an' : ''}`} onClick={() => setStand(k)}>
+            {OCR_STAENDE[k]} <span className="anzahl">{zahl(s.zaehler[k])}</span>
+          </button>
+        ))}
+      </div>
+      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
+      {liste === null ? <p className="leise">Lade …</p> : !alle.length ? <p className="leise">Keine Dokumente in diesem Stand.</p> : (
+        <>
+          <div className="tabellenrahmen">
+            <table className="auftraege">
+              <thead><tr>
+                <th><input type="checkbox" aria-label="Alle wählen" checked={auswahl.size === alle.length} onChange={(e) => setAuswahl(e.target.checked ? new Set(alle.map((a) => a.dokument.id)) : new Set())} /></th>
+                <th>Dokument</th><th>Mappe</th><th>Größe</th><th>{stand === 'fertig' ? 'Seiten' : 'Grund / Stand'}</th><th>seit</th>
+              </tr></thead>
+              <tbody>{alle.map((a) => {
+                const o = a.dokument.ocr;
+                return (
+                  <tr key={a.dokument.id} className={auswahl.has(a.dokument.id) ? 'an' : ''}>
+                    <td><input type="checkbox" aria-label={`${a.dokument.name} wählen`} checked={auswahl.has(a.dokument.id)} onChange={() => umschalten(a.dokument.id)} /></td>
+                    <td>{a.dokument.name}</td>
+                    <td><Link to={`/ablage/${a.typId}/${a.dokument.mappeId}`} className="verweis">{a.mappeTitel || 'Ohne Titel'}</Link></td>
+                    <td className="zahlzelle">{groesse(a.dokument.groesse)}</td>
+                    <td>{stand === 'fertig' ? (o?.seiten ?? '–') : (o?.info || OCR_STAENDE[o?.stand ?? 'keiner'])}</td>
+                    <td className="leise">{o?.zeit ? new Date(o.zeit).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' }) : '–'}</td>
+                  </tr>
+                );
+              })}</tbody>
+            </table>
+          </div>
+          {liste.gesamt > alle.length && <p className="leise klein">Gezeigt werden die neuesten {zahl(alle.length)} von {zahl(liste.gesamt)}.</p>}
+          <div className="knoepfe">
+            {abbrechbar && <button type="button" className="knopf gefahr-rand" disabled={!ids.length} onClick={() => void tu(async () => { const r = await api.ocrAbbrechen(ids); return `${zahl(r.abgebrochen)} abgebrochen.`; })}>{stand === 'laeuft' ? 'Abbrechen' : 'Aus der Warteschlange nehmen'}</button>}
+            <button type="button" className="knopf primaer" disabled={!ids.length} onClick={() => void tu(async () => { const r = await api.ocrNeu(ids); return `${zahl(r.eingereiht)} neu gestartet.`; })}>Neu starten{ids.length ? ` (${ids.length})` : ''}</button>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+const groesse = (b: number) => (b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);

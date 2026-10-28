@@ -3,7 +3,7 @@ import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Readable } from 'node:stream';
-import type { Dokument } from '../../shared/src/model';
+import { OCR_STAENDE, type Dokument, type OcrStandArt } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
@@ -21,7 +21,7 @@ import type { OcrErgebnis, Repo } from './repo';
  * - Gleiche Datei schon erkannt? Dann wird der Text übernommen.
  */
 
-const log = protokoll.modul('dokumente');
+const log = protokoll.modul('texterkennung');
 
 export const VERFAHREN = { tesseract: 'Tesseract (im DMS enthalten)', aus: 'keine Texterkennung' } as const;
 export type Verfahren = keyof typeof VERFAHREN;
@@ -86,11 +86,12 @@ export function bereinigeOcr(e: unknown, alt: OcrEinstellungen = OCR_STANDARD): 
 /* ---------- Werkzeuge ---------- */
 
 interface Lauf { stdout: string; stderr: string }
-function starte(cmd: string, args: string[], ms: number): Promise<Lauf> {
+function starte(cmd: string, args: string[], ms: number, signal?: AbortSignal): Promise<Lauf> {
   return new Promise((ok, fehler) => {
-    execFile(cmd, args, { timeout: ms, maxBuffer: 64 * 1024 * 1024, encoding: 'utf8' }, (e, stdout, stderr) => {
+    execFile(cmd, args, { timeout: ms, maxBuffer: 64 * 1024 * 1024, encoding: 'utf8', signal }, (e, stdout, stderr) => {
       if (e) {
         const f = e as NodeJS.ErrnoException & { killed?: boolean };
+        if (signal?.aborted) { fehler(new Error('abgebrochen')); return; }
         fehler(new Error(f.code === 'ENOENT' ? `${cmd} ist nicht installiert.` : f.killed ? `${cmd} brauchte zu lange (über ${Math.round(ms / 1000)} s).` : (stderr || f.message).trim().split('\n').slice(-2).join(' ')));
       } else ok({ stdout, stderr });
     });
@@ -115,7 +116,7 @@ export async function pruefeWerkzeuge(): Promise<Werkzeuge> {
 }
 
 /** Text eines Dokuments (Datei liegt unter pfad). */
-export type Engine = (pfad: string, mime: string, o: { maxSeiten: number; sprachen: string; werkzeuge: Werkzeuge }) => Promise<{ text: string; seiten: number; info: string }>;
+export type Engine = (pfad: string, mime: string, o: { maxSeiten: number; sprachen: string; werkzeuge: Werkzeuge; signal?: AbortSignal }) => Promise<{ text: string; seiten: number; info: string }>;
 
 const sauber = (t: string) => t.replace(/\r/g, '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
 /** Seite mit nennenswertem Text (sonst: gescannt). */
@@ -125,17 +126,17 @@ export const tesseractEngine: Engine = async (pfad, mime, o) => {
   const sprachen = o.sprachen.split('+').filter((s) => o.werkzeuge.sprachen.includes(s)).join('+') || o.werkzeuge.sprachen[0] || 'eng';
   const ocr = async (bild: string) => {
     if (!o.werkzeuge.tesseract) throw new Error('Die Texterkennung (tesseract) ist nicht installiert.');
-    return (await starte('tesseract', [bild, 'stdout', '-l', sprachen], 180_000)).stdout;
+    return (await starte('tesseract', [bild, 'stdout', '-l', sprachen], 180_000, o.signal)).stdout;
   };
   if (mime !== 'application/pdf') {
     return { text: sauber(await ocr(pfad)), seiten: 1, info: `Texterkennung (${sprachen})` };
   }
   if (!o.werkzeuge.pdftotext) throw new Error('pdftotext (poppler) ist nicht installiert.');
-  const info = await starte('pdfinfo', [pfad], 30_000).then((r) => r.stdout, () => '');
+  const info = await starte('pdfinfo', [pfad], 30_000, o.signal).then((r) => r.stdout, () => '');
   const gesamt = Number(/^Pages:\s+(\d+)/m.exec(info)?.[1] ?? 1);
   const seiten = Math.min(gesamt, o.maxSeiten);
   // Ganze Textebene auf einmal; Seiten sind durch Seitenvorschub (\f) getrennt.
-  const ebene = (await starte('pdftotext', ['-f', '1', '-l', String(seiten), '-layout', '-enc', 'UTF-8', pfad, '-'], 120_000)).stdout.split('\f');
+  const ebene = (await starte('pdftotext', ['-f', '1', '-l', String(seiten), '-layout', '-enc', 'UTF-8', pfad, '-'], 120_000, o.signal)).stdout.split('\f');
   let erkannt = 0;
   const texte: string[] = [];
   for (let i = 0; i < seiten; i++) {
@@ -143,7 +144,7 @@ export const tesseractEngine: Engine = async (pfad, mime, o) => {
     if (hatText(t) || !o.werkzeuge.tesseract || !o.werkzeuge.pdftoppm) { texte.push(t); continue; }
     const dir = await mkdtemp(join(tmpdir(), 'dms-seite-'));
     try {
-      await starte('pdftoppm', ['-f', String(i + 1), '-l', String(i + 1), '-r', '300', '-gray', '-png', pfad, join(dir, 's')], 120_000);
+      await starte('pdftoppm', ['-f', String(i + 1), '-l', String(i + 1), '-r', '300', '-gray', '-png', pfad, join(dir, 's')], 120_000, o.signal);
       const [bild] = (await readdir(dir)).filter((f) => f.endsWith('.png'));
       texte.push(bild ? await ocr(join(dir, bild)) : '');
       erkannt++;
@@ -165,6 +166,8 @@ const alsBuffer = async (x: Readable | Buffer): Promise<Buffer> => {
 
 export class Texterkennung {
   private laufend = 0;
+  /** Laufende Aufträge je Dokument, damit Administratoren sie abbrechen können (#61). */
+  private laeufe = new Map<string, AbortController>();
   private werkzeuge?: Promise<Werkzeuge>;
   private aus = false;
 
@@ -185,7 +188,7 @@ export class Texterkennung {
     if (!this.einstellungen) throw new Fachfehler(404, 'Die Texterkennung ist nicht eingerichtet.');
     const neu = bereinigeOcr(e, await this.optionen());
     await this.einstellungen.schreibe('ocr', neu);
-    protokoll.modul('werkbank').info('Einstellungen der Texterkennung geändert', { aktiv: neu.aktiv, auftraege: neu.auftraege, maxSeiten: neu.maxSeiten, maxMB: neu.maxMB, sprachen: neu.sprachen });
+    log.info('Einstellungen der Texterkennung geändert', { aktiv: neu.aktiv, auftraege: neu.auftraege, maxSeiten: neu.maxSeiten, maxMB: neu.maxMB, sprachen: neu.sprachen });
     this.anstossen();
     return neu;
   }
@@ -229,17 +232,23 @@ export class Texterkennung {
   private async verarbeite(d: Dokument, o: OcrEinstellungen) {
     const start = Date.now();
     let e: OcrErgebnis;
+    const abbruch = new AbortController();
+    this.laeufe.set(d.id, abbruch);
     try {
-      e = await this.ergebnis(d, o);
+      e = await this.ergebnis(d, o, abbruch.signal);
     } catch (f) {
-      e = { stand: 'fehler', info: (f as Error).message.slice(0, 500) };
-    }
+      const m = (f as Error).message;
+      e = abbruch.signal.aborted ? { stand: 'ausgelassen', info: 'Vom Administrator abgebrochen.', text: null }
+        // Ein erneuter Versuch ändert nichts: als ausgelassen mit klarem Grund (#61).
+        : /password|passwort|encrypt/i.test(m) ? { stand: 'ausgelassen', info: 'Das PDF ist mit einem Passwort geschützt.', text: null }
+        : { stand: 'fehler', info: m.slice(0, 500) };
+    } finally { this.laeufe.delete(d.id); }
     try { await this.repo.ocrSetze(d.id, e); } catch (f) { log.error('Ergebnis der Texterkennung nicht gespeichert', { dokument: d.name, fehler: (f as Error).message }); return; }
     const daten = { dokument: d.name, id: d.id, stand: e.stand, seiten: e.seiten ?? undefined, ms: Date.now() - start, info: e.info ?? undefined };
-    if (e.stand === 'fehler') log.warn('Texterkennung fehlgeschlagen', daten); else log.info('Texterkennung abgeschlossen', daten);
+    if (e.stand === 'fehler') log.warn('Texterkennung fehlgeschlagen', daten); else if (e.stand === 'ausgelassen') log.info('Texterkennung ausgelassen', daten); else log.info('Texterkennung abgeschlossen', daten);
   }
 
-  private async ergebnis(d: Dokument, o: OcrEinstellungen): Promise<OcrErgebnis> {
+  private async ergebnis(d: Dokument, o: OcrEinstellungen, signal?: AbortSignal): Promise<OcrErgebnis> {
     const verfahren = o.typen[d.mime];
     if (!verfahren) return { stand: 'ausgelassen', info: `Dateityp ${d.mime} wird nicht erkannt.`, text: null };
     if (verfahren === 'aus') return { stand: 'ausgelassen', info: `Für ${DATEITYPEN[d.mime] ?? d.mime} ist die Texterkennung ausgeschaltet.`, text: null };
@@ -250,12 +259,62 @@ export class Texterkennung {
     try {
       const pfad = join(dir, 'datei');
       await writeFile(pfad, await alsBuffer(await this.dateien.lies(d.sha256)));
-      const r = await this.engine(pfad, d.mime, { maxSeiten: o.maxSeiten, sprachen: o.sprachen, werkzeuge: await this.werkzeugeLaden() });
+      if (signal?.aborted) throw new Error('abgebrochen');
+      const r = await this.engine(pfad, d.mime, { maxSeiten: o.maxSeiten, sprachen: o.sprachen, werkzeuge: await this.werkzeugeLaden(), signal });
       return { stand: 'fertig', text: r.text, seiten: r.seiten, info: r.info };
     } finally { await rm(dir, { recursive: true, force: true }); }
   }
 
   /** Für die Werkbank: Stand der Warteschlange und der Werkzeuge. */
+  /** Liste der Aufträge eines Stands für die Werkbank (#61). */
+  auftraege(q: { stand?: unknown; von?: unknown; anzahl?: unknown }) {
+    const stand = (typeof q.stand === 'string' && q.stand in OCR_STAENDE ? q.stand : 'fehler') as OcrStandArt;
+    const von = Math.max(0, Math.floor(Number(q.von) || 0));
+    const anzahl = Math.min(200, Math.max(1, Math.floor(Number(q.anzahl) || 100)));
+    return this.repo.ocrAuftraege({ stand, von, anzahl });
+  }
+
+  /** Neu starten: zurück in die Warteschlange (#61). */
+  async neuStarten(ids: unknown, von: string) {
+    const liste = Array.isArray(ids) ? ids.filter((x): x is string => typeof x === 'string') : [];
+    if (!liste.length) throw new Fachfehler(422, 'Keine Dokumente gewählt.');
+    for (const id of liste) this.laeufe.get(id)?.abort();
+    await this.repo.ocrEinreihen(liste);
+    log.info('Texterkennung neu gestartet', { dokumente: liste.length, von });
+    this.anstossen();
+    return { eingereiht: liste.length };
+  }
+
+  /** „Fehler“ insgesamt neu starten. */
+  async fehlerNeuStarten(von: string) {
+    const ids: string[] = [];
+    for (let seite = 0; ; seite += 200) {
+      const r = await this.repo.ocrAuftraege({ stand: 'fehler', von: seite, anzahl: 200 });
+      ids.push(...r.eintraege.map((e) => e.dokument.id));
+      if (r.eintraege.length < 200) break;
+    }
+    if (!ids.length) return { eingereiht: 0 };
+    return this.neuStarten(ids, von);
+  }
+
+  /** Abbrechen bzw. aus der Warteschlange nehmen: wartende werden ausgelassen, laufende beendet (#61). */
+  async abbrechen(ids: unknown, von: string) {
+    const liste = Array.isArray(ids) ? ids.filter((x): x is string => typeof x === 'string') : [];
+    if (!liste.length) throw new Fachfehler(422, 'Keine Dokumente gewählt.');
+    let n = 0;
+    for (const id of liste) {
+      const lauf = this.laeufe.get(id);
+      if (lauf) { lauf.abort(); n++; continue; }
+      const d = await this.repo.holeDokument(id);
+      if (d?.ocr?.stand === 'wartet') { await this.repo.ocrSetze(id, { stand: 'ausgelassen', info: 'Vom Administrator abgebrochen.', text: null }); n++; }
+    }
+    log.info('Texterkennung abgebrochen', { dokumente: n, von });
+    return { abgebrochen: n };
+  }
+
+  /** Nur die Zähler, z. B. für die Übersicht der Werkbank (#68). */
+  zaehler() { return this.repo.ocrZaehler(); }
+
   async status(werkzeugeNeu = false) {
     return { zaehler: await this.repo.ocrZaehler(), laufend: this.laufend, werkzeuge: await this.werkzeugeLaden(werkzeugeNeu), einstellungen: await this.optionen(), verfahren: VERFAHREN, dateitypen: DATEITYPEN };
   }

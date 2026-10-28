@@ -629,6 +629,15 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       }
       return z;
     },
+    async ocrAuftraege({ stand, von, anzahl }) {
+      const bed = stand === 'keiner' ? sql`coalesce(d.ocr_stand, 'keiner') = 'keiner'` : sql`d.ocr_stand = ${stand}`;
+      const [{ n }] = await sql`SELECT count(*)::int AS n FROM dokumente d JOIN mappen m ON m.id = d.mappe_id WHERE d.haushalt_id = ${haushaltId} AND ${bed}`;
+      const r = await sql`
+        SELECT d.*, m.titel AS mappe_titel, m.typ_id AS mappe_typ FROM dokumente d JOIN mappen m ON m.id = d.mappe_id
+        WHERE d.haushalt_id = ${haushaltId} AND ${bed}
+        ORDER BY coalesce(d.ocr_zeit, d.erstellt) DESC, d.id LIMIT ${anzahl} OFFSET ${von}`;
+      return { gesamt: n as number, eintraege: r.map((x) => ({ dokument: alsDokument(x), mappeTitel: (x.mappe_titel as string) ?? '', typId: x.mappe_typ as string })) };
+    },
     async ocrOhneVolltext() {
       return (await sql`
         SELECT d.id, m.typ_id, d.register_key FROM dokumente d JOIN mappen m ON m.id = d.mappe_id
