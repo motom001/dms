@@ -54,7 +54,8 @@ Gelöschte Mappen liegen im [Papierkorb](papierkorb.md): `GET /api/v1/papierkorb
 ## Regeln
 
 - Schlüssel gelten nur unter `/api/v1`, nicht an den internen Adressen der Oberfläche.
-- Es gelten dieselben Prüfungen wie in der Oberfläche: Pflichtfelder, eindeutige Werte, geschützte Felder der Benutzer-Mappen, „Neue Mappen erlauben“ und „Löschen erlauben“.
+- Es gelten dieselben Prüfungen wie in der Oberfläche: Pflichtfelder, eindeutige Werte, geschützte Felder der Benutzer-Mappen, „Neue Mappen erlauben“ und „Löschen erlauben“ – und die [Berechtigungen](berechtigungen.md) des Benutzers, dem der Schlüssel gehört. Mappen, die er nicht lesen darf, liefert die Schnittstelle nicht; Passwörter nur mit dem Recht „Passwörter sehen“.
+- Benutzer wählt man auch über die Schnittstelle nur aus denen, deren Benutzer-Mappe man sehen darf (Verantwortlich, Aufgaben, Vertreter). Wie man so ein Programm sauber abgrenzt, zeigt das Beispiel [Ein Programm, das nur Rechnungen sieht](berechtigungen.md#beispiel-ein-programm-das-nur-rechnungen-sieht).
 - Im aktiven [Wartungsmodus](wartungsmodus.md) antwortet die Schnittstelle mit `503` und `Retry-After` (Sekunden bis zum erwarteten Ende).
 - Fehler kommen als JSON mit einer deutschen Meldung in `fehler`; bei ungültigen Eingaben (422) steht in `details` das Prüfergebnis je Feld.
 - Passwortfelder setzt man mit einem Text oder `{"neu": "…"}`, entfernt sie mit `null` und lässt sie unverändert, indem man sie weglässt.

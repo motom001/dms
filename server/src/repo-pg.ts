@@ -2,6 +2,7 @@ import type postgres from 'postgres';
 import { alsText } from '../../shared/src/markdown';
 import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
 import type { Filter, Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
+import type { Ausdruck, Lesefilter } from '../../shared/src/rechte';
 import type { Quelle } from '../../shared/src/model';
 import { istUuid, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
 
@@ -21,6 +22,7 @@ const alsTyp = (r: Zeile): Mappentyp => ({
   erstellenErlaubt: r.erstellen_erlaubt !== false,
   loeschenErlaubt: r.loeschen_erlaubt !== false,
   system: (r.system as Mappentyp['system']) ?? null,
+  berechtigungen: (r.berechtigungen as Mappentyp['berechtigungen']) ?? null,
   erstellt: iso(r.erstellt),
   geaendert: iso(r.geaendert),
 });
@@ -170,6 +172,10 @@ function zaehlBedingung(sql: Sql, anzahl: Teil, vergleich: string, n: number): T
 
 function filterSql(sql: Sql, f: Filter): Teil {
   if (f.art === 'feld') return feldBedingung(sql, f);
+  if (f.art === 'aufgabe') {
+    return sql`EXISTS (SELECT 1 FROM aufgaben auf WHERE auf.mappe_id = mappen.id AND auf.erledigt IS NULL AND auf.empfaenger_id = ${istUuid(f.benutzer) ? f.benutzer : null}::uuid)`;
+  }
+  if (f.art === 'id') return sql`mappen.id = ANY(${f.ids.filter(istUuid)}::uuid[])`;
   if (f.art === 'favorit') {
     return sql`EXISTS (SELECT 1 FROM favoriten fav WHERE fav.mappe_id = mappen.id AND fav.benutzer_id = ${istUuid(f.benutzer) ? f.benutzer : null}::uuid)`;
   }
@@ -202,6 +208,30 @@ export function klauselnSql(sql: Sql, klauseln: Klausel[]): Teil {
   });
   if (!teile.length) return sql`false`;
   return teile.slice(1).reduce<Teil>((acc, t) => sql`${acc} OR ${t}`, teile[0]);
+}
+
+/** Ausdruck der Berechtigungen (#123) als SQL über `mappen`. */
+export function ausdruckSql(sql: Sql, x: Ausdruck): Teil {
+  switch (x.k) {
+    case 'wahr': return sql`true`;
+    case 'falsch': return sql`false`;
+    case 'filter': return sql`(${filterSql(sql, x.f)})`;
+    case 'nicht': return sql`NOT (${ausdruckSql(sql, x.a)})`;
+    case 'und': return x.teile.slice(1).reduce<Teil>((acc, t) => sql`${acc} AND ${ausdruckSql(sql, t)}`, sql`(${ausdruckSql(sql, x.teile[0])})`);
+    case 'oder': return sql`(${x.teile.slice(1).reduce<Teil>((acc, t) => sql`${acc} OR ${ausdruckSql(sql, t)}`, ausdruckSql(sql, x.teile[0]))})`;
+    case 'wenn': return sql`(CASE WHEN ${ausdruckSql(sql, x.bed)} THEN ${ausdruckSql(sql, x.dann)} ELSE ${ausdruckSql(sql, x.sonst)} END)`;
+  }
+}
+
+/** Lesefilter (#124): Mappen offener Typen und je Typ sein Ausdruck; null/undefined = alles. */
+export function lesefilterSql(sql: Sql, f: Lesefilter | null | undefined): Teil {
+  if (!f) return sql`true`;
+  const teile: Teil[] = [];
+  const offen = f.offen.filter(istUuid);
+  if (offen.length) teile.push(sql`mappen.typ_id = ANY(${offen}::uuid[])`);
+  for (const j of f.je) if (istUuid(j.typId)) teile.push(sql`(mappen.typ_id = ${j.typId}::uuid AND ${ausdruckSql(sql, j.ausdruck)})`);
+  if (!teile.length) return sql`false`;
+  return sql`(${teile.slice(1).reduce<Teil>((acc, t) => sql`${acc} OR ${t}`, teile[0])})`;
 }
 
 /** PostgreSQL-Umsetzung für genau einen Haushalt. */
@@ -364,7 +394,9 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
             ${o.volltext ? sql`OR EXISTS (SELECT 1 FROM dokumente d WHERE d.mappe_id = mappen.id
               AND to_tsvector('german', coalesce(d.volltext, '')) @@ websearch_to_tsquery('german', ${o.suche!}::text))` : sql``})`
         : sql``;
-      const [{ n }] = await sql`SELECT count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} ${typ} ${eingang} ${suche}`;
+      // Berechtigungen (#124): nur, was der Benutzer lesen darf.
+      const lesen = o.lesen ? sql`AND ${lesefilterSql(sql, o.lesen)}` : sql``;
+      const [{ n }] = await sql`SELECT count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} ${typ} ${eingang} ${suche} ${lesen}`;
       const so = o.sortierung;
       const k = so?.key ?? '';
       const ausdruck = !so || so.art === 'titel' ? sql`lower(titel)`
@@ -378,7 +410,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         : sql`lower(werte ->> ${k}::text)`;
       const richtung = so?.absteigend ? sql`DESC NULLS LAST` : sql`ASC NULLS LAST`;
       const r = await sql`
-        SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} ${typ} ${eingang} ${suche}
+        SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} ${typ} ${eingang} ${suche} ${lesen}
         ORDER BY ${ausdruck} ${richtung}, lower(titel), id OFFSET ${o.von} LIMIT ${o.anzahl}`;
       const mappen = r.map(alsMappe);
       if ((!o.volltext && !o.notizen) || !o.suche || !mappen.length) return { gesamt: n as number, mappen };
@@ -401,26 +433,29 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       for (const z of a) ausschnitte[z.mappe_id as string] ??= { dokument: z.name as string, text: z.text as string };
       return { gesamt: n as number, mappen, ausschnitte };
     },
-    async zaehler(benutzerId, admin) {
+    async zaehler(benutzerId, admin, lesefilter) {
+      const lesen = lesefilter ? sql`AND ${lesefilterSql(sql, lesefilter)}` : sql``;
       const r = await sql`
         SELECT typ_id, count(*)::int AS anzahl,
           count(*) FILTER (WHERE passt IS NOT TRUE)::int AS unpassend,
           count(*) FILTER (WHERE demo)::int AS demo,
           count(*) FILTER (WHERE EXISTS (SELECT 1 FROM aufgaben a WHERE a.mappe_id = mappen.id AND a.erledigt IS NULL
             AND (a.empfaenger_id = ${istUuid(benutzerId) ? benutzerId : null}::uuid OR (${admin} AND a.empfaenger_id IS NULL))))::int AS eingang
-        FROM mappen WHERE haushalt_id = ${haushaltId} GROUP BY typ_id`;
-      const [f] = await sql`SELECT count(*)::int AS n FROM favoriten WHERE haushalt_id = ${haushaltId} AND benutzer_id = ${istUuid(benutzerId) ? benutzerId : null}::uuid`;
+        FROM mappen WHERE haushalt_id = ${haushaltId} ${lesen} GROUP BY typ_id`;
+      const [f] = await sql`SELECT count(*)::int AS n FROM favoriten f JOIN mappen ON mappen.id = f.mappe_id
+        WHERE f.haushalt_id = ${haushaltId} AND f.benutzer_id = ${istUuid(benutzerId) ? benutzerId : null}::uuid ${lesen}`;
       return {
         favoriten: f.n as number,
         typen: new Map(r.map((z) => [z.typ_id as string, { anzahl: z.anzahl as number, unpassend: z.unpassend as number, demo: z.demo as number }])),
         eingang: r.reduce((a, z) => a + (z.eingang as number), 0),
       };
     },
-    async zaehleKlauseln(liste) {
+    async zaehleKlauseln(liste, lesefilter) {
       if (!liste.length) return [];
       const spalten = liste.map((k, i) => sql`count(*) FILTER (WHERE ${klauselnSql(sql, k)})::int AS ${sql(`s${i}`)}`);
       const sel = spalten.slice(1).reduce((acc, t) => sql`${acc}, ${t}`, spalten[0]);
-      const [r] = await sql`SELECT ${sel} FROM mappen WHERE haushalt_id = ${haushaltId}`;
+      const lesen = lesefilter ? sql`AND ${lesefilterSql(sql, lesefilter)}` : sql``;
+      const [r] = await sql`SELECT ${sel} FROM mappen WHERE haushalt_id = ${haushaltId} ${lesen}`;
       return liste.map((_, i) => r[`s${i}`] as number);
     },
 
@@ -490,6 +525,21 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
           AND lower(trim(werte ->> ${feldKey})) = lower(trim(${wert}))
         LIMIT 1`;
       return r ? alsMappe(r) : undefined;
+    },
+    async lesbare(ids, lesefilter) {
+      const gueltig = [...new Set(ids.filter(istUuid))];
+      if (!gueltig.length) return new Set();
+      const r = await sql`SELECT id FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) AND ${lesefilterSql(sql, lesefilter)}`;
+      return new Set(r.map((z) => z.id as string));
+    },
+    async zaehleAusdruck(typId, x) {
+      if (!istUuid(typId)) return 0;
+      const [r] = await sql`SELECT count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} AND typ_id = ${typId} AND ${ausdruckSql(sql, x)}`;
+      return r.n as number;
+    },
+    async setzeBerechtigungen(typId, rw) {
+      const [r] = await sql`UPDATE mappentypen SET berechtigungen = ${rw ? json(sql, rw) : null}, geaendert = now() WHERE haushalt_id = ${haushaltId} AND id = ${typId} RETURNING *`;
+      return alsTyp(r);
     },
     async rueckverweise(zielId) {
       if (!istUuid(zielId)) return [];

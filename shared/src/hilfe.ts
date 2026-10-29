@@ -19,6 +19,10 @@ export const HILFE = {
   'werkbank.typen': admin('mappentypen/', 'Mappentypen'),
   'werkbank.sichten': admin('sichten/', 'Sichten'),
   'werkbank.benutzer': admin('benutzer/', 'Benutzern und Rollen'),
+  'werkbank.berechtigungen': admin('berechtigungen/', 'Berechtigungen'),
+  'berechtigungen.grund': admin('berechtigungen/', 'Grundeinstellung', 'grundeinstellung'),
+  'berechtigungen.regeln': admin('berechtigungen/', 'Regeln', 'regeln'),
+  'berechtigungen.testlauf': admin('berechtigungen/', 'Testlauf', 'testlauf'),
   'werkbank.aufgaben': admin('aufgaben/', 'Aufgaben', 'tagliche-zusammenfassung'),
   'werkbank.betrieb': admin('installation/', 'E-Mail und Adresse', 'e-mail-und-adresse'),
   'werkbank.verschluesselung': admin('verschluesselung/', 'Verschlüsselung'),
@@ -58,6 +62,7 @@ export const HILFE = {
   'ablage.sicht': benutzer('ablage/', 'Sichten und Listen', 'die-liste'),
   'dokumente.sortieren': benutzer('dokumente/', 'Sortieren von Dokumenten', 'sortieren'),
   'dokumente.mehrere': benutzer('dokumente/', 'mehreren Dokumenten auf einmal', 'mehrere-auf-einmal'),
+  'profil.rechte': benutzer('profil/', 'deinen Rechten', 'meine-rechte'),
   'profil.abwesenheit': benutzer('profil/', 'Abwesenheit', 'abwesenheit'),
   'profil.benachrichtigungen': benutzer('profil/', 'Benachrichtigungen', 'benachrichtigungen-und-ablage'),
 } as const satisfies Record<string, Hilfeziel>;

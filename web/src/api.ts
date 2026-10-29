@@ -2,6 +2,7 @@ import type { Design } from './design';
 import { messung } from './messung';
 import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Sicht, SichtDaten } from '../../shared/src/sichten';
+import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
 import { merkeAnfrage } from './diagnose';
 import { erreichbarkeit, NICHT_ERREICHBAR } from './erreichbar';
 import { istAusfall } from '../../shared/src/erreichbarkeit';
@@ -69,7 +70,7 @@ async function anfrage<T>(methode: string, url: string, body?: unknown): Promise
   return daten as T;
 }
 
-export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string; titel: string }
+export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string; titel: string; /** Nicht lesbar (#126): ohne Link. */ verborgen?: boolean }
 export type Bezuege = Record<string, MappenBezug>;
 export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; /** Favoriten des Benutzers unter den Mappen dieser Seite (#62). */ favoriten?: string[] }
 /** Texterkennung (#45): Stand, Werkzeuge und Einstellungen für die Werkbank. */
@@ -283,11 +284,19 @@ export const api = {
   sichtVorschau: (id: string | null, sicht: Partial<SichtDaten>) => anfrage<{ anzahl: number }>('POST', '/api/sichten/vorschau', { id, sicht }),
   belegung: (typId: string) => anfrage<Record<string, number>>('GET', `/api/typen/${typId}/belegung`),
   mappe: (id: string) => anfrage<MappeDetails>('GET', `/api/mappen/${id}`),
+  /* Berechtigungen (#123–#127) */
+  rechteVorschau: (id: string, werte: unknown) => anfrage<Rechte>('POST', `/api/mappen/${id}/rechte-vorschau`, { werte }),
+  meineRechte: () => anfrage<Array<{ typId: string; name: string; rechte: Record<Recht, RechtStufe> }>>('GET', '/api/konto/rechte'),
+  berechtigungen: () => anfrage<BerechtigungEintrag[]>('GET', '/api/werkbank/berechtigungen'),
+  berechtigungenSetzen: (typId: string, berechtigungen: Regelwerk, bestaetigt = false) => anfrage<{ typ: Mappentyp; niemand: number }>('PUT', `/api/werkbank/berechtigungen/${typId}`, { berechtigungen, bestaetigt }),
+  regelKopieren: (typId: string, regelId: string, ziele: string[]) => anfrage<{ kopiert: number; ausgelassen: number }>('POST', `/api/werkbank/berechtigungen/${typId}/kopieren`, { regelId, ziele }),
+  testlauf: (e: { mappeId: string; benutzerId: string; berechtigungen?: Regelwerk }) => anfrage<Testlauf>('POST', '/api/werkbank/berechtigungen/testlauf', e),
+  wasSieht: (benutzerId: string) => anfrage<{ admin: boolean; typen: Array<{ typId: string; name: string; gesamt: number; lesbar: number; beispiele: Array<{ id: string; titel: string }> }> }>('GET', `/api/werkbank/berechtigungen/sicht/${benutzerId}`),
   /** Verweisende Mappen eines Typs über ein Feld, vollständig (Tabelle im Verknüpfungsregister, #75). */
   verweisende: (id: string, typ: string, feld: string) => anfrage<{ gesamt: number; mappen: Mappe[]; bezuege: Bezuege }>('GET', `/api/mappen/${id}/verweisende?${new URLSearchParams({ typ, feld })}`),
   favorit: (id: string, an: boolean) => anfrage<null>(an ? 'PUT' : 'DELETE', `/api/mappen/${id}/favorit`),
-  mappeAnlegen: (m: unknown) => anfrage<Mappe>('POST', '/api/mappen', m),
-  mappeAendern: (id: string, m: unknown) => anfrage<Mappe>('PUT', `/api/mappen/${id}`, m),
+  mappeAnlegen: (m: unknown) => anfrage<Mappe & { hinweis?: string }>('POST', '/api/mappen', m),
+  mappeAendern: (id: string, m: unknown) => anfrage<Mappe & { hinweis?: string }>('PUT', `/api/mappen/${id}`, m),
   mappeLoeschen: (id: string) => anfrage<null>('DELETE', `/api/mappen/${id}`),
   /* Volltext und Texterkennung (#45) */
   volltext: (id: string) => anfrage<{ id: string; name: string; text: string | null }>('GET', `/api/dokumente/${id}/volltext`),
@@ -299,16 +308,16 @@ export const api = {
   papierkorb: () => anfrage<PapierkorbEintrag[]>('GET', '/api/papierkorb'),
   papierkorbWerkbank: () => anfrage<{ tage: number; historieTage: number; eintraege: PapierkorbEintrag[] }>('GET', '/api/werkbank/papierkorb'),
   papierkorbEintrag: (id: string, werkbank = false) => anfrage<PapierkorbEintrag>('GET', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}`),
-  wiederherstellen: (id: string, werkbank = false) => anfrage<{ mappe: Mappe; verweiseEntfallen: number }>('POST', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}/wiederherstellen`),
+  wiederherstellen: (id: string, werkbank = false) => anfrage<{ mappe: Mappe; verweiseEntfallen: number; hinweis?: string }>('POST', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}/wiederherstellen`),
   endgueltigLoeschen: (id: string, werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}`),
   papierkorbLeeren: (werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb`),
   emailBereit: () => anfrage<{ bereit: boolean }>('GET', '/api/email/bereit'),
   emailSenden: (mappeId: string, e: { an: string; betreff: string; nachricht: string; dokumente: string[] }) => anfrage<{ id: string; typId: string }>('POST', `/api/mappen/${mappeId}/email`, e),
   papierkorbTage: (e: { tage?: number; historieTage?: number }) => anfrage<{ tage: number; geleert: number; historieTage: number }>('PUT', '/api/werkbank/papierkorb/einstellungen', e),
   /* Aufgaben (#54) */
-  aufgabeAnlegen: (mappeId: string, empfaengerId: string, text: string) => anfrage<Aufgabe>('POST', `/api/mappen/${mappeId}/aufgaben`, { empfaengerId, text }),
+  aufgabeAnlegen: (mappeId: string, empfaengerId: string, text: string) => anfrage<Aufgabe & { hinweis?: string }>('POST', `/api/mappen/${mappeId}/aufgaben`, { empfaengerId, text }),
   aufgabeErledigt: (id: string) => anfrage<Aufgabe>('POST', `/api/aufgaben/${id}/erledigt`),
-  aufgabeDelegieren: (id: string, empfaengerId: string) => anfrage<Aufgabe>('POST', `/api/aufgaben/${id}/delegieren`, { empfaengerId }),
+  aufgabeDelegieren: (id: string, empfaengerId: string) => anfrage<Aufgabe & { hinweis?: string }>('POST', `/api/aufgaben/${id}/delegieren`, { empfaengerId }),
   aufgabenWerkbank: (erledigt = false) => anfrage<{ aufgaben: Aufgabe[]; mail: MailEinstellung | null }>('GET', `/api/werkbank/aufgaben${erledigt ? '?erledigt' : ''}`),
   aufgabenMailSpeichern: (e: MailEinstellung) => anfrage<MailEinstellung>('PUT', '/api/werkbank/aufgaben/mail', e),
   /** Eigene tägliche Zusammenfassung (#92, #94). */
@@ -378,7 +387,15 @@ export const api = {
   },
 };
 
-export interface MappeDetails { mappe: Mappe; favorit?: boolean; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege }
+export type RechtStufe = 'immer' | 'nie' | 'teils';
+export interface BerechtigungEintrag { typId: string; name: string; system: string | null; berechtigungen: Regelwerk }
+export interface Testlauf extends Ergebnis { admin: boolean; mappe: { id: string; titel: string; typId: string }; benutzer: { id: string; name: string } }
+/** 404 ohne Leserecht (#124): eigene offene Aufgaben an der Mappe, zum Erledigen oder Weitergeben. */
+export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
+  const d = x instanceof ApiFehler && x.status === 404 ? x.details as { verborgen?: boolean; aufgaben?: Aufgabe[] } | undefined : undefined;
+  return d?.verborgen ? d.aufgaben ?? [] : null;
+};
+export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 export const dokumentUrl = (id: string, herunterladen = false) => `/api/dokumente/${id}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
 

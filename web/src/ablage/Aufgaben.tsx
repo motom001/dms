@@ -28,7 +28,13 @@ function Zeile({ a, neuLaden, setBestaetigt }: { a: Aufgabe; neuLaden: () => Pro
   const darf = meine || ich.rolle === 'admin';
   async function tu(f: () => Promise<unknown>, meldung?: string) {
     setFehler(undefined);
-    try { await f(); setWeiter(false); setAn(''); if (meldung) setBestaetigt(meldung); await neuLaden(); await d.neuLaden(); } catch (e) { setFehler((e as Error).message); }
+    try {
+      const r = await f() as { hinweis?: string } | null;
+      setWeiter(false); setAn('');
+      // Empfänger darf die Mappe nicht lesen (#127): trotzdem vergeben, aber Bescheid sagen.
+      if (meldung || r?.hinweis) setBestaetigt([meldung, r?.hinweis].filter(Boolean).join(' '));
+      await neuLaden(); await d.neuLaden();
+    } catch (e) { setFehler((e as Error).message); }
   }
   return (
     <li className={meine ? 'meine' : ''}>
@@ -76,9 +82,15 @@ export function NeueAufgabe({ mappeId, neuLaden, schliessen }: { mappeId: string
   const [an, setAn] = useState('');
   const [text, setText] = useState('');
   const [fehler, setFehler] = useState<string>();
+  const [hinweis, setHinweis] = useState<string>();
   async function senden() {
     setFehler(undefined);
-    try { await api.aufgabeAnlegen(mappeId, an, text); await neuLaden(); await d.neuLaden(); schliessen(); } catch (e) { setFehler((e as Error).message); }
+    try {
+      const r = await api.aufgabeAnlegen(mappeId, an, text);
+      await neuLaden(); await d.neuLaden();
+      // Empfänger darf die Mappe nicht lesen (#127): Maske offen lassen, Hinweis zeigen.
+      if (r.hinweis) { setHinweis(r.hinweis); setText(''); setAn(''); } else schliessen();
+    } catch (e) { setFehler((e as Error).message); }
   }
   return (
     <section className="blatt" aria-label="Aufgabe vergeben">
@@ -89,6 +101,7 @@ export function NeueAufgabe({ mappeId, neuLaden, schliessen }: { mappeId: string
       </div>
       <p className="leise klein">Die Mappe erscheint im Eingang des Empfängers, bis er die Aufgabe erledigt oder weitergibt.</p>
       {fehler && <p className="fehlertext">{fehler}</p>}
+      {hinweis && <div className="hinweis warn" role="status"><p>{hinweis}</p></div>}
       <div className="knoepfe"><button type="button" className="knopf primaer" disabled={!an || !text.trim()} onClick={() => void senden()}>Aufgabe vergeben</button></div>
     </section>
   );

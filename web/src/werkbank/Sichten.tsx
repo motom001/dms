@@ -350,7 +350,7 @@ function Bedingungen({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDat
 
 type WertArt = WertAngabe['art'];
 
-function FeldBedingung({ b, feld, setze, titel, merke }: {
+export function FeldBedingung({ b, feld, setze, titel, merke }: {
   b: Extract<Bedingung, { art: 'feld' }>; feld: Bedingungsfeld; setze: (b: Bedingung) => void;
   titel: Record<string, string>; merke: (id: string, t: string) => void;
 }) {
@@ -477,7 +477,7 @@ function Verweisziel({ feld, w, setze, titel, merke, system }: {
   );
 }
 
-function MappenSuche({ typId, gewaehlt, titel, merke, setze }: { typId: string; gewaehlt: string[]; titel: Record<string, string>; merke: (id: string, t: string) => void; setze: (ids: string[]) => void }) {
+export function MappenSuche({ typId, gewaehlt, titel, merke, setze }: { typId: string; gewaehlt: string[]; titel: Record<string, string>; merke: (id: string, t: string) => void; setze: (ids: string[]) => void }) {
   const [eingabe, setEingabe] = useState('');
   const [treffer, setTreffer] = useState<Mappe[]>([]);
   const fehlend = gewaehlt.filter((x) => !titel[x]).join(',');

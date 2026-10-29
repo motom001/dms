@@ -232,9 +232,9 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
         </div>
         <div className="raster">
           <div className="eigenschaft unten"><label className="haken"><input type="checkbox" checked={e.erstellenErlaubt} disabled={system === 'benutzer'} onChange={(ev) => setE({ ...e, erstellenErlaubt: ev.target.checked })} />
-            <span>Neue Mappen erlauben<small className="hilfe">In der Ablage dürfen Mappen dieses Typs angelegt werden</small></span></label></div>
+            <span>Neue Mappen erlauben<small className="hilfe">In der Ablage dürfen Mappen dieses Typs angelegt werden – wer genau, regeln die Berechtigungen</small></span></label></div>
           <div className="eigenschaft unten"><label className="haken"><input type="checkbox" checked={e.loeschenErlaubt} disabled={system === 'benutzer'} onChange={(ev) => setE({ ...e, loeschenErlaubt: ev.target.checked })} />
-            <span>Löschen erlauben<small className="hilfe">In der Ablage dürfen Mappen dieses Typs gelöscht werden</small></span></label></div>
+            <span>Löschen erlauben<small className="hilfe">In der Ablage dürfen Mappen dieses Typs gelöscht werden – wer genau, regeln die Berechtigungen</small></span></label></div>
         </div>
         {neu && <label className="haken"><input type="checkbox" checked={sichtAnlegen} onChange={(ev) => setSichtAnlegen(ev.target.checked)} />
           <span>Eigene Sicht in der Ablage anlegen<small className="hilfe">Abwählen, wenn die Mappen in einer bestehenden Sicht erscheinen sollen – das stellst du unter Werkbank → Sichten ein.</small></span></label>}

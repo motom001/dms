@@ -136,9 +136,14 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden }: 
   typ: Mappentyp; mappe?: Mappe; start: RohWerte; sicht: string; anhang?: string; details?: MappeDetails | null; neuLaden?: () => Promise<void>;
 }) {
   const d = useDaten();
+  const { ich } = useKonto();
   const register = registerVon(typ);
   // Nur lesbar: Systemfelder von Benutzern, Name einer Systemrolle (#26, #27).
   const geschuetzt = geschuetzteFelder(typ, mappe);
+  // Berechtigungen (#126): ohne „Bearbeiten“ nur ansehen; Löschen und Passwörter je nach Recht.
+  const rechte = mappe ? details?.rechte : undefined;
+  const nurLesen = !!rechte && !rechte.U;
+  const darfLoeschenHier = !rechte || rechte.D;
   const [aktiv, setAktiv] = useState(register[0]?.key);
   const [basis, setBasis] = useState(() => JSON.stringify(start));
   const [roh, setRoh] = useState<RohWerte>(start);
@@ -187,8 +192,14 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden }: 
     const werte = werteAusRoh(typ, roh);
     const p = d.pruefe(typ, werte, (id) => bekannt[id]?.typId);
     if (!istOk(p)) { zeigeFehler(p); setMeldung('Bitte die markierten Felder prüfen.'); return; }
+    // Würde man sich mit diesen Werten selbst das Lesen oder Bearbeiten entziehen? Dann erst fragen (#126).
+    if (mappe && werteGeaendert && ich.rolle !== 'admin') {
+      const r = await api.rechteVorschau(mappe.id, werte).catch(() => null);
+      if (r && !r.R && !confirm('Nach dem Speichern kannst du diese Mappe nach den Berechtigungen nicht mehr sehen. Trotzdem speichern?')) return;
+      if (r && r.R && !r.U && !confirm('Nach dem Speichern kannst du diese Mappe nach den Berechtigungen nicht mehr bearbeiten. Trotzdem speichern?')) return;
+    }
     setSendet(true); setHinweise([]);
-    let gespeichert: Mappe | undefined = mappe;
+    let gespeichert: (Mappe & { hinweis?: string }) | undefined = mappe;
     try {
       if (!mappe || werteGeaendert) gespeichert = mappe ? await api.mappeAendern(mappe.id, { werte }) : await api.mappeAnlegen({ typId: typ.id, werte });
       setFehler(null); setBasis(JSON.stringify(roh));
@@ -218,11 +229,14 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden }: 
     }
     setNeueDateien(offen); setEntfernt(nichtEntfernt); setHinweise(neu);
     if (!offen.length && !nichtEntfernt.length) loeseWache();
+    // Lesen verloren (#126): zurück zur Liste, mit Hinweis.
+    const verloren = gespeichert?.hinweis?.includes('nicht mehr sehen');
+    if (verloren) { loeseWache(); alert(gespeichert!.hinweis); await d.neuLaden(); geheZu(`/ablage/${sicht}${anhang}`); return; }
     await d.neuLaden();
     await neuLaden?.();
     setSendet(false);
     if (!mappe) geheZu(`/ablage/${sicht}/${gespeichert!.id}`);
-    else setMeldung(offen.length || nichtEntfernt.length ? 'Teilweise gespeichert.' : 'Gespeichert.');
+    else setMeldung(gespeichert?.hinweis ?? (offen.length || nichtEntfernt.length ? 'Teilweise gespeichert.' : 'Gespeichert.'));
   }
 
   async function loeschen() {
@@ -244,7 +258,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden }: 
   else if (reg.art === 'felder') {
     const felder = felderAuf(reg);
     inhalt = felder.length
-      ? <div className="formular">{felder.map((f) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke} gesperrt={geschuetzt[f.key]} />)}</div>
+      ? <div className="formular">{felder.map((f) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke}
+          gesperrt={geschuetzt[f.key] ?? (nurLesen && f.typ !== 'passwort' ? '' : undefined)} nurLesen={nurLesen} passwortSehen={!rechte || rechte.P} />)}</div>
       : <p className="leise">Auf diesem Register liegen keine Felder.</p>;
   } else if (reg.art === 'dokumente') {
     inhalt = mappe && !details ? <p className="leise">Lade …</p> : (
@@ -252,7 +267,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden }: 
         hinzufuegen={(dateien) => setNeueDateien((x) => [...x, ...dateien.map((datei) => ({ uid: `n${++zaehler}`, datei, register: reg.key }))])}
         entferne={(id) => setEntfernt((x) => (x.includes(id) ? x.filter((y) => y !== id) : [...x, id]))}
         entferneMehrere={(ids) => setEntfernt((x) => [...x, ...ids.filter((id) => !x.includes(id))])}
-        vergiss={(uid) => setNeueDateien((x) => x.filter((n) => n.uid !== uid))} />
+        vergiss={(uid) => setNeueDateien((x) => x.filter((n) => n.uid !== uid))} nurLesen={nurLesen} />
     );
   } else if (reg.art === 'protokoll') {
     inhalt = mappe ? <Historie mappeId={mappe.id} stand={mappe.geaendert} /> : <p className="leise">Das Protokoll beginnt mit dem ersten Speichern.</p>;
@@ -283,9 +298,15 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden }: 
       {fehler?.allgemein.length ? <div className="hinweis schlecht"><p>{fehler.allgemein.join(' ')}</p></div> : null}
       {hinweise.map((h, i) => <div key={i} className={`hinweis ${h.art}`}><p>{h.text}</p></div>)}
       <div className="registerinhalt" role="tabpanel">{inhalt}</div>
-      {mappe && darfLoeschen(typ, mappe) && details?.loeschbar && !details.loeschbar.ok && <LoeschHindernis l={details.loeschbar} />}
-      <div className="speicherleiste">
-        {mappe && darfLoeschen(typ, mappe)
+      {mappe && darfLoeschen(typ, mappe) && darfLoeschenHier && details?.loeschbar && !details.loeschbar.ok && <LoeschHindernis l={details.loeschbar} />}
+      {nurLesen ? <div className="speicherleiste">
+        {mappe && darfLoeschen(typ, mappe) && darfLoeschenHier
+          ? <button type="button" className="textknopf gefahr" disabled={details?.loeschbar?.ok === false} title={details?.loeschbar?.ok === false ? details.loeschbar.grund : undefined} onClick={() => void loeschen()}>Mappe löschen</button>
+          : <span />}
+        <span className="status" role="status">{meldung ?? 'Nur lesen – bearbeiten darfst du diese Mappe nach den Berechtigungen nicht.'}</span>
+        <span />
+      </div> : <div className="speicherleiste">
+        {mappe && darfLoeschen(typ, mappe) && darfLoeschenHier
           ? <button type="button" className="textknopf gefahr" disabled={details?.loeschbar?.ok === false} title={details?.loeschbar?.ok === false ? details.loeschbar.grund : undefined}
               aria-describedby={details?.loeschbar?.ok === false ? 'loeschhindernis' : undefined} onClick={() => void loeschen()}>Mappe löschen</button>
           : <span />}
@@ -296,16 +317,18 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden }: 
             : <Link to={`/ablage/${sicht}`} className="knopf">Abbrechen</Link>}
           <button type="submit" className="knopf gruen" disabled={sendet}>{sendet ? 'Speichere …' : 'Mappe speichern'}</button>
         </div>
-      </div>
+      </div>}
     </form>
   );
 }
 
-function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, gesperrt }: {
+function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, gesperrt, nurLesen, passwortSehen = true }: {
   feld: Feld; roh: Roh | undefined; fehler?: string; setze: (v: Roh) => void; eigeneId?: string;
   bekannt: Bezuege; merke: (id: string, b: { titel: string; typId: string }) => void;
   /** Grund, warum das Feld hier nur angezeigt wird. */
   gesperrt?: string;
+  /** Berechtigungen (#126): ohne „Bearbeiten“ bzw. ohne „Passwörter sehen“. */
+  nurLesen?: boolean; passwortSehen?: boolean;
 }) {
   const d = useDaten();
   const id = `feld-${f.key}`;
@@ -318,7 +341,7 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
     const ids = f.typ === 'referenz' ? (Array.isArray(roh) ? roh as string[] : roh ? [String(roh)] : []) : [];
     ctl = <div className="festwert" title={gesperrt}>{
       f.typ === 'referenz'
-        ? <ul>{ids.map((x) => <li key={x}>{bekannt[x]?.typId ? <Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis">{titelOder(bekannt[x].titel)}</Link> : titelOder(bekannt[x]?.titel)}</li>)}</ul>
+        ? <ul>{ids.map((x) => <li key={x}>{bekannt[x]?.typId && !bekannt[x].verborgen ? <Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis">{titelOder(bekannt[x].titel)}</Link> : <span className={bekannt[x]?.verborgen ? 'verborgen-titel' : ''}>{titelOder(bekannt[x]?.titel)}</span>}</li>)}</ul>
         : f.typ === 'janein' ? (roh ? 'Ja' : 'Nein') : f.typ === 'formatiert' ? <Formatiert text={String(roh ?? '')} />
         : f.typ === 'datum' ? formatiere(f, String(roh ?? '')) : f.typ === 'langtext' ? <span className="mehrzeilig">{String(roh ?? '')}</span> : String(roh ?? '')
     }</div>;
@@ -389,7 +412,7 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
       ctl = <FormatiertEingabe id={id} wert={String(roh ?? '')} setze={setze} />;
       break;
     case 'passwort':
-      ctl = <PasswortEingabe id={id} feld={f} roh={(roh ?? leeresPasswort) as RohPasswort} setze={setze} mappeId={eigeneId} />;
+      ctl = <PasswortEingabe id={id} feld={f} roh={(roh ?? leeresPasswort) as RohPasswort} setze={setze} mappeId={eigeneId} nurLesen={nurLesen} sehen={passwortSehen} />;
       break;
     default:
       ctl = <input id={id} value={String(roh ?? '')} onChange={(e) => setze(e.target.value)} />;
@@ -413,7 +436,7 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
  * Passwortfeld (#46): Das gespeicherte Passwort kommt nie mit der Mappe. Das Auge holt es
  * einzeln vom Server (steht im Protokoll); zum Ändern wird ein neues eingegeben.
  */
-function PasswortEingabe({ id, feld: f, roh: p, setze, mappeId }: { id: string; feld: Feld; roh: RohPasswort; setze: (v: Roh) => void; mappeId?: string }) {
+function PasswortEingabe({ id, feld: f, roh: p, setze, mappeId, nurLesen, sehen = true }: { id: string; feld: Feld; roh: RohPasswort; setze: (v: Roh) => void; mappeId?: string; nurLesen?: boolean; sehen?: boolean }) {
   const { passwoerterMoeglich } = useKonto();
   const [klartext, setKlartext] = useState<string | null>(null);
   const [zeigen, setZeigen] = useState(false);
@@ -431,7 +454,8 @@ function PasswortEingabe({ id, feld: f, roh: p, setze, mappeId }: { id: string; 
     </div>
   );
 
-  if (p.gesetzt && !aendern && !p.neu) {
+  if (nurLesen && !p.gesetzt) return <span id={id} className="festwert leise">kein Passwort gespeichert</span>;
+  if (p.gesetzt && (!aendern || nurLesen) && !p.neu) {
     async function umschalten() {
       if (klartext !== null) { setKlartext(null); return; }
       if (!mappeId) return;
@@ -442,12 +466,13 @@ function PasswortEingabe({ id, feld: f, roh: p, setze, mappeId }: { id: string; 
       <>
         <div className="passwort">
           <span id={id} className={`festwert mono ${p.lesbar ? '' : 'leise'}`} aria-live="polite">{!p.lesbar ? 'nicht lesbar – bitte neu eingeben' : klartext ?? '••••••••'}</span>
-          {p.lesbar && mappeId && <button type="button" className="knopf klein" disabled={laedt} onClick={() => void umschalten()} title={klartext === null ? 'Passwort anzeigen (wird protokolliert)' : 'Passwort verbergen'} aria-label={klartext === null ? 'Passwort anzeigen' : 'Passwort verbergen'}>{auge(klartext !== null)}</button>}
-          <button type="button" className="knopf klein" disabled={!passwoerterMoeglich} onClick={() => { setKlartext(null); setAendern(true); }}>Ändern</button>
-          <button type="button" className="knopf klein" onClick={() => { setKlartext(null); setze({ ...p, entfernen: true }); }} title="Wird erst mit „Mappe speichern“ wirksam">Passwort entfernen</button>
+          {p.lesbar && mappeId && sehen && <button type="button" className="knopf klein" disabled={laedt} onClick={() => void umschalten()} title={klartext === null ? 'Passwort anzeigen (wird protokolliert)' : 'Passwort verbergen'} aria-label={klartext === null ? 'Passwort anzeigen' : 'Passwort verbergen'}>{auge(klartext !== null)}</button>}
+          {!nurLesen && <button type="button" className="knopf klein" disabled={!passwoerterMoeglich} onClick={() => { setKlartext(null); setAendern(true); }}>Ändern</button>}
+          {!nurLesen && <button type="button" className="knopf klein" onClick={() => { setKlartext(null); setze({ ...p, entfernen: true }); }} title="Wird erst mit „Mappe speichern“ wirksam">Passwort entfernen</button>}
         </div>
         {fehler && <p className="fehlertext">{fehler}</p>}
-        {!passwoerterMoeglich && <span className="hilfe">Ändern geht erst wieder, wenn ein Administrator den Schlüssel bereitstellt (Werkbank → Verschlüsselung).</span>}
+        {!sehen && p.lesbar && <span className="hilfe">Passwörter dieser Mappe darfst du nach den Berechtigungen nicht sehen.</span>}
+        {!passwoerterMoeglich && !nurLesen && <span className="hilfe">Ändern geht erst wieder, wenn ein Administrator den Schlüssel bereitstellt (Werkbank → Verschlüsselung).</span>}
       </>
     );
   }
@@ -480,7 +505,7 @@ function LoeschHindernis({ l }: { l: NonNullable<MappeDetails['loeschbar']> }) {
     <div className="loeschhindernis leise klein" id="loeschhindernis">
       <strong>Löschen nicht möglich:</strong> {l.grund}
       {zeige.length > 0 && <ul>{zeige.map((r) => (
-        <li key={r.quelleId}><Link to={`/ablage/${r.quelleTypId}/${r.quelleId}`} className="verweis">{titelOder(r.titel)}</Link> <span className="leise">({d.typ(r.quelleTypId)?.name ?? 'Mappe'})</span></li>
+        <li key={r.quelleId}>{r.verborgen ? <span className="verborgen-titel">{r.titel}</span> : <Link to={`/ablage/${r.quelleTypId}/${r.quelleId}`} className="verweis">{titelOder(r.titel)}</Link>} <span className="leise">({d.typ(r.quelleTypId)?.name ?? 'Mappe'})</span></li>
       ))}{quellen.length > zeige.length && <li className="leise">und {quellen.length - zeige.length} weitere</li>}</ul>}
     </div>
   );
@@ -595,7 +620,7 @@ function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze 
         <ul className="gewaehlt">
           {gewaehlt.map((x) => (
             <li key={x}>
-              {bekannt[x]?.typId ? <Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis">{titelOder(bekannt[x].titel)}</Link> : <span className="leise">{bekannt[x]?.titel ?? 'Lade …'}</span>}
+              {bekannt[x]?.typId && !bekannt[x].verborgen ? <Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis">{titelOder(bekannt[x].titel)}</Link> : <span className={bekannt[x]?.verborgen ? 'verborgen-titel' : 'leise'}>{bekannt[x]?.titel ?? 'Lade …'}</span>}
               <span className="verweisaktionen">
                 {!mehrfach && !aendern && <button type="button" className="textknopf klein" onClick={() => { setAendern(true); setOffen(true); }}>Ändern</button>}
                 <button type="button" className="textknopf klein gefahr" aria-label="Verweis entfernen" onClick={() => setze(mehrfach ? gewaehlt.filter((y) => y !== x) : '')}>Entfernen</button>

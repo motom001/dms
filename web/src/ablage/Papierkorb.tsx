@@ -158,6 +158,8 @@ export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boole
     try {
       const r = await api.wiederherstellen(id, werkbank);
       melde(); await d.neuLaden();
+      // Nach den Berechtigungen nicht mehr sichtbar (#126): Bescheid sagen und in den Papierkorb zurück.
+      if (r.hinweis) { alert(r.hinweis); geheZu(basis(werkbank)); return; }
       // Passt sie nicht mehr (z. B. eindeutiger Wert inzwischen vergeben), zeigt die Mappe selbst den Grund.
       geheZu(`/ablage/${r.mappe.passt === false ? 'eingang' : r.mappe.typId}/${r.mappe.id}`);
     } catch (x) { setMeldung((x as Error).message); setLaeuft(null); }

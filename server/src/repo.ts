@@ -1,5 +1,6 @@
 import type { Aufgabe, Ausschnitt, Dokument, Historienart, Historieneintrag, Mappe, Notiz, MappenBezug, Mappentyp, MappentypDaten, OcrStandArt, Systemtyp, Werte } from '../../shared/src/model';
 import type { Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
+import type { Ausdruck, Lesefilter, Regelwerk } from '../../shared/src/rechte';
 
 export interface Verweis { feldKey: string; zielId: string }
 /** Sortierung, wie sie das Repo braucht: Art der Spalte (für den richtigen Vergleich) und ggf. Feldschlüssel. */
@@ -25,6 +26,8 @@ export interface SeitenAnfrage {
   notizen?: boolean;
   /** Reihenfolge; ohne: nach Titel. */
   sortierung?: SortierungIntern;
+  /** Berechtigungen (#124): nur lesbare Mappen; fehlt/null = alle. */
+  lesen?: Lesefilter | null;
   von: number;
   anzahl: number;
 }
@@ -94,12 +97,18 @@ export interface Repo {
   /** Eine Seite einer Sicht, sortiert nach Titel. */
   seite(o: SeitenAnfrage): Promise<{ gesamt: number; mappen: Mappe[]; ausschnitte?: Record<string, Ausschnitt> }>;
   /** Zähler für die Sichten. */
-  zaehler(benutzerId: string, admin: boolean): Promise<{ typen: Map<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number; favoriten: number }>;
+  zaehler(benutzerId: string, admin: boolean, lesen?: Lesefilter | null): Promise<{ typen: Map<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number; favoriten: number }>;
   /** Favoriten (#62): setzen/entfernen; welche der Mappen Favoriten des Benutzers sind. */
   setzeFavorit(benutzerId: string, mappeId: string, an: boolean): Promise<void>;
   favoritenVon(benutzerId: string, mappeIds: string[]): Promise<Set<string>>;
   /** Anzahl Mappen je Klauselliste (eine je Sicht), in derselben Reihenfolge. */
-  zaehleKlauseln(liste: Klausel[][]): Promise<number[]>;
+  zaehleKlauseln(liste: Klausel[][], lesen?: Lesefilter | null): Promise<number[]>;
+  /** Berechtigungen (#124): welche dieser Mappen der Filter durchlässt. */
+  lesbare(ids: string[], lesen: Lesefilter | null): Promise<Set<string>>;
+  /** Anzahl Mappen eines Typs, für die der Ausdruck gilt (z. B. „niemand kann lesen“, #125). */
+  zaehleAusdruck(typId: string, x: Ausdruck): Promise<number>;
+  /** Regelwerk eines Mappentyps speichern; null = alles erteilt, keine Regeln. */
+  setzeBerechtigungen(typId: string, rw: Regelwerk | null): Promise<Mappentyp>;
 
   listeSichten(): Promise<Sicht[]>;
   legeSichtAn(id: string, d: SichtDaten): Promise<Sicht>;

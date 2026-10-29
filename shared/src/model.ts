@@ -113,6 +113,10 @@ export interface Mappentyp extends MappentypDaten {
   geaendert: string;
   /** Systemmappentyp (Benutzer, Rolle): lässt sich erweitern, aber nicht löschen. */
   system?: Systemtyp | null;
+  /** Berechtigungen (#123): Grundeinstellung und Regeln; fehlt = alles erteilt. Nur für Administratoren geliefert. */
+  berechtigungen?: import('./rechte').Regelwerk | null;
+  /** Nur für Nicht-Administratoren (#126): Darf man nach den Berechtigungen überhaupt Mappen dieses Typs anlegen? */
+  darfAnlegen?: boolean;
 }
 
 /* ---------- Systemmappentypen: Benutzer und Rollen (#26, #27) ---------- */
@@ -153,7 +157,7 @@ export function systemfelder(s: Systemtyp, rolleTypId: string, benutzerTypId = '
   ];
 }
 
-export const darfErstellen = (t: Pick<MappentypDaten, 'erstellenErlaubt'> | undefined) => !!t && t.erstellenErlaubt !== false;
+export const darfErstellen = (t: (Pick<MappentypDaten, 'erstellenErlaubt'> & { darfAnlegen?: boolean }) | undefined) => !!t && t.erstellenErlaubt !== false && t.darfAnlegen !== false;
 export const darfLoeschen = (t: Pick<MappentypDaten, 'loeschenErlaubt'> | undefined, m?: Pick<Mappe, 'systemKennung'>) =>
   !!t && t.loeschenErlaubt !== false && !m?.systemKennung;
 
@@ -239,10 +243,12 @@ export interface Mappe {
   problem?: string | null;
   /** Mappen, die das System pflegt: Systemrollen (rolle:admin, rolle:mitglied). */
   systemKennung?: string | null;
+  /** Berechtigungen (#124): im Eingang wegen einer Aufgabe, aber nicht lesbar – ohne Titel und Werte. */
+  verborgen?: boolean;
 }
 
 /** Kurzangaben zu einer Mappe, auf die verwiesen wird oder die verweist. */
-export interface MappenBezug { titel: string; typId: string }
+export interface MappenBezug { titel: string; typId: string; /** Berechtigungen (#124): nicht lesbar, Titel ausgeblendet. */ verborgen?: boolean }
 
 /** Erster Grund, warum Werte nicht zur Definition passen (für Listen und den Eingang). */
 export function ersterGrund(t: Pick<Mappentyp, 'felder'>, p: Pruefergebnis): string | null {

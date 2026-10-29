@@ -88,7 +88,7 @@ async function vorbereiten() {
 
   // Rollen und ein Mitglied, das sie hat
   const steuern = await api('POST', '/api/mappen', { typId: rolleTyp.id, werte: { name: 'Steuern und Finanzen' } });
-  await api('POST', '/api/mappen', { typId: rolleTyp.id, werte: { name: 'Haus und Garten' } });
+  const garten = await api('POST', '/api/mappen', { typId: rolleTyp.id, werte: { name: 'Haus und Garten' } });
   const einladung = await api('POST', '/api/benutzer', { email: MITGLIED.email, name: MITGLIED.name, rolle: 'mitglied', rollen: [steuern.id] });
   const schluessel = einladung.link.split('/passwort/')[1];
   await api('POST', '/api/konto/passwort-setzen', { schluessel, passwort: MITGLIED.passwort });
@@ -162,7 +162,7 @@ async function vorbereiten() {
     finanzen, fristen,
     admin, adminCookie,
     typ: (name) => typen.find((t) => t.name === name),
-    benutzerTyp, rolleTyp,
+    benutzerTyp, rolleTyp, garten,
     mitglied: (await api('GET', '/api/benutzer')).find((b) => b.email === MITGLIED.email),
     strom,
     stadtwerke: mappe('name', 'Stadtwerke Musterstadt'),
@@ -435,6 +435,38 @@ async function main() {
   await bild(s, 'rolle');
   await geheZu(s, `/ablage/${d.benutzerTyp.id}/${d.mitglied.id}`);
   await bild(s, 'benutzer-mappe');
+
+  // Berechtigungen (#123–#127): Regeln am Vertrag, Testlauf und „Meine Rechte“ eines Mitglieds
+  await api('PUT', `/api/werkbank/berechtigungen/${vertrag.id}`, { bestaetigt: true, berechtigungen: { grund: 'erteilt', regeln: [
+    { id: 'garten', name: 'Haus und Garten darf alles', wenn: [{ art: 'rolle', rollen: [d.garten.id] }], dann: { C: 'erteilen', R: 'erteilen', U: 'erteilen', D: 'erteilen', P: 'erteilen' }, stopp: true },
+    { id: 'andere', name: 'Sonst bearbeitet nur, wer verantwortlich ist', wenn: [{ art: 'feld', nicht: true, bedingung: { art: 'feld', feld: 'verantwortlich', op: 'zeigtAuf', wert: { art: 'ich' } } }], dann: { U: 'entziehen', D: 'entziehen', P: 'entziehen' }, stopp: false },
+  ] } });
+  await geheZu(s, `/werkbank/berechtigungen/${vertrag.id}`);
+  await s.locator('.regel').first().waitFor();
+  await bild(s, 'werkbank-berechtigungen', { fullPage: true });
+  {
+    const test = s.locator('.blatt', { hasText: 'Testlauf' });
+    await test.getByLabel('Benutzer', { exact: true }).selectOption({ label: MITGLIED.name });
+    await test.getByLabel('Mappe suchen').fill('Stromvertrag');
+    await test.locator('.wahlliste button').first().click();
+    await test.getByRole('button', { name: 'Prüfen' }).click();
+    await s.locator('.testlauf table').waitFor();
+    await test.evaluate((e) => e.scrollIntoView({ block: 'start' }));
+    await bild(s, 'werkbank-berechtigungen-testlauf');
+  }
+  {
+    const anm = await fetch(`${BASIS}/api/konto/anmelden`, { method: 'POST', headers: { 'x-dms': '1', 'content-type': 'application/json' }, body: JSON.stringify({ email: MITGLIED.email, passwort: MITGLIED.passwort }) });
+    const [name, wert] = (anm.headers.get('set-cookie') ?? '').split(';')[0].split('=');
+    const km = await browser.newContext({ viewport: { width: 1100, height: 900 }, colorScheme: 'light', locale: 'de-DE', timezoneId: 'Europe/Berlin' });
+    await km.addCookies([{ name, value: wert, url: BASIS }]);
+    const sm = await km.newPage();
+    await geheZu(sm, '/profil/konto');
+    const blatt = sm.locator('.blatt', { hasText: 'Meine Rechte' });
+    await blatt.locator('table').waitFor();
+    const box = await blatt.boundingBox();
+    await bild(sm, 'meine-rechte', { clip: { x: box.x - 8, y: box.y - 8, width: box.width + 16, height: box.height + 16 } });
+    await km.close();
+  }
 
   // Benutzermenü
   await geheZu(s, '/ablage');

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { lesbar, werte } from '../../shared/src/rechte';
 import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
 import { alsText } from '../../shared/src/markdown';
 import { ausschnittAus } from './repo-pg';
@@ -44,6 +45,7 @@ export function speicherRepo(): Repo {
   const zaehl: Zaehlquelle = {
     dokumente: (id, register) => [...dokumente.values()].filter((d) => d.mappeId === id && (register === null || d.registerKey === register)).length,
     favorit: (id, benutzer) => istFavorit(id, benutzer),
+    aufgabe: (id, benutzer) => [...aufgaben.values()].some((a) => a.mappeId === id && !a.erledigt && a.empfaengerId === benutzer),
     verknuepfungen: (id, quellen) => new Set([...verweise.entries()]
       .filter(([q, vs]) => q !== id && vs.some((v) => v.zielId === id && (!quellen.length || quellen.some((x) => x.typId === mappen.get(q)?.typId && x.feldKey === v.feldKey))))
       .map(([q]) => q)).size,
@@ -148,6 +150,7 @@ export function speicherRepo(): Repo {
         .filter((m) => !o.klauseln || inSicht(m, o.klauseln, zaehl))
         .filter((m) => !o.eingang || offenFuer(m, o.eingang.benutzerId, o.eingang.admin))
         .filter((m) => !o.favoriten || istFavorit(m.id, o.favoriten.benutzerId))
+        .filter((m) => lesbar(o.lesen ?? null, m, zaehl))
         .filter((m) => !q || (m.titel ?? '').toLowerCase().includes(q) || Object.values(m.werte).some((v) => !(typeof v === 'string' && v.startsWith('dms1$')) && (typeof v === 'object' ? JSON.stringify(v) : String(v)).toLowerCase().includes(q))
           || (!!o.volltext && [...dokumente.values()].some((d) => d.mappeId === m.id && findet(texte.get(d.id), q)))
           || (!!o.notizen && [...notizen.values()].some((n) => n.mappeId === m.id && n.text.toLowerCase().includes(q))))
@@ -173,10 +176,11 @@ export function speicherRepo(): Repo {
       }
       return { gesamt: alle.length, mappen: seite, ausschnitte };
     },
-    async zaehler(benutzerId, admin) {
+    async zaehler(benutzerId, admin, lesen) {
       const typen = new Map<string, { anzahl: number; unpassend: number; demo: number }>();
       let eingang = 0;
       for (const m of mappen.values()) {
+        if (!lesbar(lesen ?? null, m, zaehl)) continue;
         const z = typen.get(m.typId) ?? { anzahl: 0, unpassend: 0, demo: 0 };
         z.anzahl++;
         if (m.passt !== true) z.unpassend++;
@@ -184,9 +188,12 @@ export function speicherRepo(): Repo {
         if (m.demo) z.demo++;
         typen.set(m.typId, z);
       }
-      return { typen, eingang, favoriten: [...(favoriten.get(benutzerId) ?? [])].filter((id) => mappen.has(id)).length };
+      return { typen, eingang, favoriten: [...(favoriten.get(benutzerId) ?? [])].filter((id) => mappen.has(id) && lesbar(lesen ?? null, mappen.get(id)!, zaehl)).length };
     },
-    async zaehleKlauseln(liste) { return liste.map((k) => [...mappen.values()].filter((m) => inSicht(m, k, zaehl)).length); },
+    async zaehleKlauseln(liste, lesen) { return liste.map((k) => [...mappen.values()].filter((m) => inSicht(m, k, zaehl) && lesbar(lesen ?? null, m, zaehl)).length); },
+    async lesbare(ids, lesen) { return new Set(ids.filter((id) => mappen.has(id) && lesbar(lesen, mappen.get(id)!, zaehl))); },
+    async zaehleAusdruck(typId, x) { return [...mappen.values()].filter((m) => m.typId === typId && werte(x, m, zaehl)).length; },
+    async setzeBerechtigungen(typId, rw) { const t = typen.get(typId)!; t.berechtigungen = rw ? kopie(rw) : null; t.geaendert = jetzt(); return kopie(t); },
     async listeSichten() { return [...sichten.values()].map(kopie).sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, 'de')); },
     async legeSichtAn(id, d: SichtDaten) { const x: Sicht = { id, ...kopie(d), erstellt: jetzt(), geaendert: jetzt() }; sichten.set(id, x); return kopie(x); },
     async aendereSicht(id, d: SichtDaten) { const x: Sicht = { ...sichten.get(id)!, ...kopie(d), geaendert: jetzt() }; sichten.set(id, x); return kopie(x); },

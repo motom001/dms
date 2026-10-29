@@ -175,7 +175,8 @@ const typName = async (id: string | undefined) => (await dienst.listeTypen()).fi
 const aufgabenmail = new Aufgabenmail({
   benutzer: () => konten.listeBenutzer(),
   einstellungenVon: (b) => konten.einstellungen(b),
-  aufgabenVon: (b) => dienst.meineAufgaben(b),
+  // Aufgaben zu Mappen, die der Empfänger nicht lesen darf, ohne Titel (#127).
+  aufgabenVon: async (b) => dienst.meineAufgaben(b, await dienst.zugriff(b)),
   typName,
 }, () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), pgBetriebSpeicher(sql, cfg.haushalt));
 const designs = new Designs(messung.umhuelle(pgDesignRepo(sql, cfg.haushalt), 'designs'), mitPruefung(ordnerSpeicher(ordner.dateien, `${cfg.haushalt}/designs`), hochladen));
