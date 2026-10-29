@@ -5,7 +5,7 @@ Das DMS läuft als zwei Container: die Anwendung (`ghcr.io/motom001/dms`) und Po
 ## Voraussetzungen
 
 - Ein NAS oder Server mit Docker und Docker Compose (z. B. UGREEN, Synology, Linux-Server), Architektur amd64 oder arm64.
-- Ein Ordner für die Daten, z. B. `/volume1/docker/dms`, darin `postgres`, `files` und `geheim` (für den Schlüssel der gespeicherten Passwörter).
+- Ein Ordner für die Daten, z. B. `/volume1/docker/dms`, darin `postgres`, `files`, `geheim` (für den Schlüssel der gespeicherten Passwörter) und `sicherung` (für die [Sicherungen](sicherung.md), am besten auf einer anderen Platte).
 - Optional ein Postfach für den E-Mail-Versand (Einladungen, Passwort-Links) – eingerichtet wird es später in der Werkbank.
 
 ## Schritt für Schritt
@@ -22,7 +22,7 @@ Das Image ist öffentlich; eine Anmeldung bei der Registry (`docker login`) ist 
 !!! warning "Erst einrichten, dann freigeben"
     Mach das DMS erst über einen Reverse-Proxy oder Port-Freigabe erreichbar, wenn der Administrator angelegt ist.
 
-Danach: unter **Werkbank → [Verschlüsselung](verschluesselung.md)** den Schlüssel für Passwörter erzeugen, unter **Werkbank → E-Mail und Adresse** die Adresse des DMS und, falls gewünscht, den E-Mail-Versand einrichten (siehe unten); unter **Werkbank → Demo-Daten** die Beispiel-Mappentypen laden oder eigene [Mappentypen](mappentypen.md) anlegen und [Benutzer einladen](benutzer.md).
+Danach: unter **Werkbank → [Verschlüsselung](verschluesselung.md)** den Schlüssel erzeugen und das **Notfallblatt** herunterladen, unter **Werkbank → [Sicherung](sicherung.md)** den Zeitplan einschalten, unter **Werkbank → E-Mail und Adresse** die Adresse des DMS und, falls gewünscht, den E-Mail-Versand einrichten (siehe unten); unter **Werkbank → Demo-Daten** die Beispiel-Mappentypen laden oder eigene [Mappentypen](mappentypen.md) anlegen und [Benutzer einladen](benutzer.md).
 
 ## E-Mail und Adresse
 
@@ -50,6 +50,7 @@ Diese Einstellungen sind Umgebungsvariablen im Compose-Projekt:
 | --- | --- |
 | `DATABASE_URL` | Verbindung zu PostgreSQL (Pflicht) |
 | `FILES_DIR` | Ordner für hochgeladene Dateien im Container (Vorlage: `/data/files`) |
+| `DMS_SICHERUNG_DIR` | Ordner der [Sicherungen](sicherung.md) (Standard: `/data/sicherung`); soll ein eigenes Volume sein |
 | `DMS_SCHLUESSEL_DATEI` | Datei mit dem Schlüssel für gespeicherte Passwörter (Standard: `/data/geheim/dms.schluessel`); der Ordner muss ein eigenes Volume sein |
 | `TRUST_PROXY` | `true`, wenn ein Reverse-Proxy davor sitzt (richtige IP-Adressen im Protokoll, sichere Cookies über HTTPS) |
 | `LOG_LEVEL` | Grundstufe des Protokolls: `debug`, `info` (Standard), `warn`, `error` |

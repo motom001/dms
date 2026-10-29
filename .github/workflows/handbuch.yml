@@ -58,6 +58,7 @@ jobs:
           DATABASE_URL: postgres://dms:dms@localhost:5432/dms
           FILES_DIR: ${{ runner.temp }}/dateien
           DMS_SCHLUESSEL_DATEI: ${{ runner.temp }}/geheim/dms.schluessel
+          DMS_SICHERUNG_DIR: ${{ runner.temp }}/sicherung
           PORT: '3000'
           DMS_VERSION: handbuch
 

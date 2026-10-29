@@ -30,7 +30,7 @@ Im DMS führt **Hilfe** im Menü unter dem eigenen Namen dorthin.
 
 Das Image `ghcr.io/motom001/dms` ist öffentlich (amd64 und arm64) – eine Anmeldung bei der Registry ist nicht nötig.
 
-1. Die Vorlage [`deploy/nas/docker-compose.yml`](deploy/nas/docker-compose.yml) als Compose-Projekt anlegen und die Pfade anpassen (Ordner `postgres`, `files` und `geheim`).
+1. Die Vorlage [`deploy/nas/docker-compose.yml`](deploy/nas/docker-compose.yml) als Compose-Projekt anlegen und die Pfade anpassen (Ordner `postgres`, `files`, `geheim` und `sicherung`).
 2. Daneben eine Datei `.env` mit `DB_PASSWORD=<langes zufälliges Passwort>` ablegen.
 3. Starten und **sofort selbst** `http://<NAS>:8080` aufrufen: Wer die Seite als Erstes öffnet, legt das Administrator-Konto an.
 

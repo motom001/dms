@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, type TresorStatus } from '../api';
 import { useKonto } from '../konto';
 import { Link } from '../ort';
+import { Notfallblatt } from './Sicherung';
 
 /**
  * Schlüssel für verschlüsselte Zugangsdaten (#39): Status, Fingerabdruck, Erzeugen
@@ -135,6 +136,8 @@ export function TresorPanel({ t }: { t: TresorZustand }) {
           </div>
         )}
       </section>
+
+      <Notfallblatt stand={s.notfallblatt} schluessel={s.zustand === 'vorhanden'} geladen={() => void t.laden()} />
 
       <section className="blatt" id="betroffen">
         <h2 className="h3">Nicht lesbare oder unverschlüsselte Werte</h2>

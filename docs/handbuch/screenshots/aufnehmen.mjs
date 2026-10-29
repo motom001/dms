@@ -10,7 +10,8 @@
  * Braucht Playwright mit Chromium (npm install playwright; npx playwright install chromium).
  * Jedes Bild hat einen festen Namen; die Handbücher binden sie über bilder/<name>.png ein.
  */
-import { mkdir, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 
@@ -425,6 +426,26 @@ async function main() {
   await bild(s, 'werkbank-technik');
   await geheZu(s, '/werkbank/demo');
   await bild(s, 'werkbank-demo');
+
+  // Sicherung (#103–#106): jetzt sichern, Notfallblatt herunterladen (als Bild fürs Handbuch), Zeitplan
+  await geheZu(s, '/werkbank/sicherung');
+  await s.getByRole('button', { name: 'Jetzt sichern' }).click();
+  await s.getByText(/Sicherung fertig/).waitFor({ timeout: 120_000 });
+  const download = s.waitForEvent('download');
+  await s.locator('#notfallblatt').getByRole('link', { name: /Notfallblatt herunterladen/ }).click();
+  const pdf = join(ZIEL, 'notfallblatt.pdf');
+  await (await download).saveAs(pdf);
+  try {
+    execFileSync('pdftoppm', ['-png', '-r', '80', '-singlefile', pdf, join(ZIEL, 'notfallblatt')]);
+    erstellt.push('notfallblatt');
+    console.log('  notfallblatt.png');
+  } catch (e) { console.warn(`Notfallblatt nicht als Bild: ${e.message}`); }
+  await rm(pdf, { force: true });
+  await geheZu(s, '/werkbank/sicherung');
+  await s.locator('#liste tbody tr').first().waitFor();
+  await bild(s, 'werkbank-sicherung');
+  await s.locator('#zeitplan').evaluate((e) => e.scrollIntoView({ block: 'start' }));
+  await bild(s, 'werkbank-sicherung-zeitplan');
 
   // Wartungsmodus (#102): ankündigen, Banner bei einem Mitglied, danach beenden – ganz am Ende,
   // weil die Wartung Anmeldungen sperrt.

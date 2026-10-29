@@ -21,6 +21,11 @@ import { Fehlermeldungen, pgFehlerRepo } from './fehlermeldungen';
 import { Wartung } from './wartung';
 import { Notfallzugang } from './notfall';
 import { anAlleAdmins } from './mail';
+import { arch, release, type } from 'node:os';
+import { pgDatenquelle } from './datenbankabzug';
+import { pgEinstellungen } from './einstellungen';
+import { Sicherung, STANDARD_ORDNER } from './sicherung';
+import { eigeneVersion } from './system';
 
 const pfad = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
 const env = process.env;
@@ -80,6 +85,12 @@ wartung.start();
 // Notfallzugang über eine RESCUE-Datei neben der Schlüsseldatei (#108).
 const anAdmins = async (betreff: string, text: string) => { await anAlleAdmins(await konten.listeBenutzer(), betrieb.mailer(), betreff, text); };
 const notfall = new Notfallzugang(join(dirname(tresor.datei), 'RESCUE'), konten, pgBetriebSpeicher(sql, cfg.haushalt), anAdmins);
+// Sicherungen (#103–#105): eigenes Volume, verschlüsselt mit dem Schlüssel der Werkbank.
+const sicherung = new Sicherung(env.DMS_SICHERUNG_DIR || (env.FILES_DIR ? STANDARD_ORDNER : join(dirname(cfg.dateien), 'sicherung')), cfg.dateien, cfg.haushalt, {
+  tresor, einstellungen: pgEinstellungen(sql, cfg.haushalt), daten: pgDatenquelle(sql),
+  umgebung: async () => ({ dms: eigeneVersion(), node: process.versions.node, system: `${type()} ${release()}`, architektur: arch() }),
+  wartungAktiv: () => wartung.aktiv, anAdmins,
+});
 const texterkennung = new Texterkennung(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'texterkennung'), ordnerSpeicher(cfg.dateien, cfg.haushalt), pgBetriebSpeicher(sql, cfg.haushalt));
 dienst.verbindeTexterkennung(texterkennung);
 texterkennung.pause = () => wartung.aktiv;
@@ -107,6 +118,7 @@ const app = await baueApp(dienst, konten, {
   // Screenshots der Fehlermeldungen getrennt von den Dokumenten (#70).
   wartung,
   notfall,
+  sicherung,
   fehlermeldungen: new Fehlermeldungen(pgFehlerRepo(sql, cfg.haushalt), ordnerSpeicher(cfg.dateien, `${cfg.haushalt}/fehlermeldungen`)),
 });
 
@@ -133,12 +145,14 @@ if (await konten.einrichtungNoetig()) log.warn(`Noch kein Benutzer vorhanden: De
 
 await texterkennung.start();
 notfall.start();
+sicherung.start();
 
 const beenden = async () => {
   log.info('DMS wird beendet');
   texterkennung.stop();
   wartung.stop();
   notfall.stop();
+  sicherung.stop();
   await app.close();
   await sql.end({ timeout: 5 });
   process.exit(0);

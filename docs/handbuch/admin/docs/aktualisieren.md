@@ -44,13 +44,16 @@ Jede Version des DMS hat eine Nummer wie `0.8.1`. Sobald auf `main` eine neue Nu
 
 ## Sichern
 
-Zu sichern sind zwei Ordner aus der Compose-Vorlage:
+Am einfachsten sichert das DMS sich selbst: **Werkbank → [Sicherung](sicherung.md)** – Datenbank und Dateien zum selben Zeitpunkt, verschlüsselt, auf Wunsch nach Zeitplan. Der Rest dieses Abschnitts beschreibt den Weg von Hand, z. B. für eine zusätzliche Kopie.
+
+Von Hand zu sichern sind diese Ordner aus der Compose-Vorlage:
 
 | Ordner | Inhalt |
 | --- | --- |
 | `postgres` | die Datenbank: Mappentypen, Mappen, Benutzer, Einstellungen |
 | `files` | die hochgeladenen Dateien, je Datei unter ihrem SHA-256-Prüfwert |
-| `geheim` | der Schlüssel für gespeicherte Passwörter (SMTP, Passwortfelder) – **getrennt** von den beiden anderen aufbewahren |
+| `geheim` | der Schlüssel für gespeicherte Passwörter (SMTP, Passwortfelder) und Sicherungen – **getrennt** von den anderen aufbewahren |
+| `sicherung` | die Sicherungen des DMS (verschlüsselt) |
 
 Für eine konsistente Datenbanksicherung im laufenden Betrieb vorher einen Abzug erstellen:
 

@@ -27,5 +27,7 @@ services:
       DATABASE_URL: postgres://dms:dms@db:5432/dms
     volumes:
       - ./data/files:/data/files
+      - ./data/geheim:/data/geheim
+      - ./data/sicherung:/data/sicherung
     ports:
       - "8080:3000"
