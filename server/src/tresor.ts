@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHash, hkdfSync, randomBytes } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -45,6 +45,34 @@ export interface TresorStatus {
 
 interface Gespeichert { fingerabdruck: string; erstellt: string }
 
+/** Bekanntes Wort, verschlüsselt in der Datenbank: zeigt nach einer Wiederherstellung, ob der Schlüssel passt (#103). */
+export const PRUEFWORT = 'DMS';
+
+/** Schlüssel für einen bestimmten Zweck aus dem Hauptschlüssel ableiten (HKDF-SHA256), z. B. „dms-sicherung“. */
+export const leiteAb = (k: Buffer, zweck: string) => Buffer.from(hkdfSync('sha256', k, Buffer.alloc(0), zweck, 32));
+
+/** Schlüssel aus seiner Textform (Datei oder Notfallblatt; Leerzeichen zählen nicht); null = ungültig. */
+export function schluesselAusText(text: string): Buffer | null {
+  const roh = text.replace(/\s+/g, '');
+  if (!/^[A-Za-z0-9_-]{43}$/.test(roh)) return null;
+  const k = Buffer.from(roh, 'base64url');
+  return k.length === 32 ? k : null;
+}
+
+/** Einen Wert „dms1$…“ mit einem bestimmten Schlüssel entschlüsseln; null = nicht lesbar. */
+export function entschluesseleMit(k: Buffer, wert: string): string | null {
+  if (!istVerschluesselt(wert)) return null;
+  const [n, g] = wert.slice(PRAEFIX.length).split(':');
+  try {
+    const nonce = Buffer.from(n, 'base64url');
+    const geheim = Buffer.from(g ?? '', 'base64url');
+    if (nonce.length !== 12 || geheim.length < 16) return null;
+    const d = createDecipheriv('aes-256-gcm', k, nonce);
+    d.setAuthTag(geheim.subarray(geheim.length - 16));
+    return Buffer.concat([d.update(geheim.subarray(0, geheim.length - 16)), d.final()]).toString('utf8');
+  } catch { return null; }
+}
+
 export const fingerabdruck = (k: Buffer) => createHash('sha256').update(k).digest('hex').slice(0, 16).toUpperCase().match(/.{4}/g)!.join('-');
 export const istVerschluesselt = (v: unknown): v is string => typeof v === 'string' && v.startsWith(PRAEFIX);
 
@@ -57,6 +85,18 @@ export function aufVolume(pfad: string, mountinfo = '/proc/self/mountinfo'): boo
   let text: string;
   try { text = readFileSync(mountinfo, 'utf8'); } catch { return null; }
   return punktFuer(pfad, text) !== '/';
+}
+
+/**
+ * Gerät (major:minor) des Einhängepunkts, unter dem ein Pfad liegt – gleich heißt: dieselbe Platte
+ * bzw. dasselbe Volume des NAS (#105). null = nicht feststellbar.
+ */
+export function geraetVon(pfad: string, mountinfo = '/proc/self/mountinfo'): string | null {
+  let text: string;
+  try { text = readFileSync(mountinfo, 'utf8'); } catch { return null; }
+  const punkt = punktFuer(pfad, text);
+  const zeile = text.split('\n').find((z) => z.split(' ')[4]?.replace(/\\040/g, ' ') === punkt);
+  return zeile?.split(' ')[2] ?? null;
 }
 
 /** Der Einhängepunkt, unter dem ein Pfad liegt (längster passender Präfix). */
@@ -93,6 +133,7 @@ export class Tresor {
       if (f.code !== 'ENOENT') log.error('Schlüsseldatei nicht lesbar', { datei: this.datei, fehler: f.message });
     }
     const z = this.zustand;
+    if (z === 'vorhanden') await this.pruefwort().catch(() => null);
     if (z === 'vorhanden') log.info('Schlüssel für Zugangsdaten geladen', { fingerabdruck: this.fingerabdruck });
     else if (z === 'verloren') log.error(`Schlüssel für Zugangsdaten fehlt (${this.datei}). Gespeicherte Passwörter sind nicht lesbar – siehe Werkbank → Verschlüsselung.`);
     else if (z === 'falsch') log.error(`Die Schlüsseldatei ${this.datei} passt nicht zu den gespeicherten Passwörtern (erwartet ${this.gespeichert?.fingerabdruck}).`);
@@ -148,6 +189,8 @@ export class Tresor {
     this.schluessel = k;
     this.gespeichert = { fingerabdruck: fingerabdruck(k), erstellt: new Date().toISOString() };
     await this.einstellungen.schreibe('tresor', this.gespeichert);
+    // Neues Prüfwort zum neuen Schlüssel (#103).
+    await this.einstellungen.schreibe('pruefwort', this.verschluessele(PRUEFWORT));
     protokoll.modul('werkbank').warn('Schlüssel für Zugangsdaten erzeugt', { fingerabdruck: this.gespeichert.fingerabdruck, datei: this.datei, ...(vorher ? { ersetzt: vorher } : {}) });
     for (const f of this.beiNeuemSchluessel) {
       try { await f(); } catch (e) { log.error('Nacharbeit nach neuem Schlüssel fehlgeschlagen', { fehler: (e as Error).message }); }
@@ -171,16 +214,28 @@ export class Tresor {
 
   /** Klartext oder null, wenn der Wert mit diesem Schlüssel nicht lesbar ist. */
   entschluessele(wert: string): string | null {
-    if (!this.schluessel || !istVerschluesselt(wert)) return null;
-    const [n, g] = wert.slice(PRAEFIX.length).split(':');
-    try {
-      const nonce = Buffer.from(n, 'base64url');
-      const geheim = Buffer.from(g ?? '', 'base64url');
-      if (nonce.length !== 12 || geheim.length < 16) return null;
-      const d = createDecipheriv('aes-256-gcm', this.schluessel, nonce);
-      d.setAuthTag(geheim.subarray(geheim.length - 16));
-      return Buffer.concat([d.update(geheim.subarray(0, geheim.length - 16)), d.final()]).toString('utf8');
-    } catch { return null; }
+    return this.schluessel ? entschluesseleMit(this.schluessel, wert) : null;
+  }
+
+  /** Abgeleiteter Schlüssel für einen Zweck (z. B. Sicherungen); null ohne passenden Schlüssel. */
+  abgeleitet(zweck: string): Buffer | null { return this.bereit && this.schluessel ? leiteAb(this.schluessel, zweck) : null; }
+
+  /** Der Schlüssel als Text – nur für das Notfallblatt (#106). */
+  alsText(): string | null { return this.bereit && this.schluessel ? this.schluessel.toString('base64url') : null; }
+
+  /**
+   * Prüfwort (#103): ein bekanntes Wort verschlüsselt in der Datenbank. Fehlt es, wird es angelegt.
+   * true = mit dem vorhandenen Schlüssel lesbar, false = nicht, null = kein Schlüssel.
+   */
+  async pruefwort(): Promise<boolean | null> {
+    if (!this.schluessel) return null;
+    const w = await this.einstellungen.lies('pruefwort');
+    if (typeof w !== 'string') {
+      if (!this.bereit) return null;
+      await this.einstellungen.schreibe('pruefwort', this.verschluessele(PRUEFWORT));
+      return true;
+    }
+    return entschluesseleMit(this.schluessel, w) === PRUEFWORT;
   }
 
   /** Lässt sich der Wert lesen? (Für Listen betroffener Werte.) */

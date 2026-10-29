@@ -36,5 +36,8 @@ services:
       # Schlüssel für gespeicherte Passwörter (Werkbank → Verschlüsselung).
       # Getrennt von der Datenbank sichern – ohne ihn sind Passwörter in einer Sicherung nicht lesbar.
       - /volume1/docker/dms/geheim:/data/geheim
+      # Sicherungen (Werkbank → Sicherung), verschlüsselt. Am besten auf einer anderen Platte
+      # als Datenbank und Dateien – und vom NAS weiterkopiert (3-2-1-Regel).
+      - /volume1/docker/dms/sicherung:/data/sicherung
     ports:
       - "8080:3000"

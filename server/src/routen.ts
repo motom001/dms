@@ -18,6 +18,9 @@ import { maskiere, type Tresor } from './tresor';
 import type { Texterkennung } from './texterkennung';
 import type { Wartung } from './wartung';
 import type { Notfallzugang } from './notfall';
+import type { Sicherung } from './sicherung';
+import { notfallblatt } from './notfallblatt';
+import { dirname } from 'node:path';
 import { WartungFehler } from './wartung';
 import { MAIL_STANDARD, pruefeZeit, STANDARD_TAGE, wirksameZeit, type Aufgabenmail, type MailZeit } from './aufgabenmail';
 
@@ -103,6 +106,8 @@ export interface RoutenExtras {
   wartung?: Wartung;
   /** Notfallzugang über eine RESCUE-Datei (#108). */
   notfall?: Notfallzugang;
+  /** Sicherungen (#103–#105). */
+  sicherung?: Sicherung;
   /** Für Tests: Abruf fremder Adressen beim Versionsabgleich. */
   abruf?: (url: string) => Promise<unknown>;
   log?: (m: string) => void;
@@ -144,6 +149,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   };
   /** Benutzer mit ihren weiteren Rollen (#27). */
   const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.weitereRollen()).get(b.id) ?? [] });
+  const sicherung = () => { if (!x.sicherung) throw new Fachfehler(404, 'Sicherungen sind nicht eingerichtet.'); return x.sicherung; };
   const wartung = () => { if (!x.wartung) throw new Fachfehler(404, 'Der Wartungsmodus ist nicht eingerichtet.'); return x.wartung; };
   /** Ab der Ankündigung kommen nur Administratoren hinein (#102): eine neue Sitzung gleich wieder beenden. */
   const nurAdminsInWartung = async (r: { benutzer: Benutzer; schluessel: string }) => {
@@ -449,7 +455,34 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/werkbank/wartung/jetzt', zugang: 'admin', handler: async (a) => ok(await wartung().jetztAktiv(ich(a), a.sitzungsDaten?.id ?? null)) },
     { methode: 'POST', pfad: '/api/werkbank/wartung/aus', zugang: 'admin', handler: async (a) => ok(await wartung().ausschalten(ich(a).email)) },
 
-    { methode: 'GET', pfad: '/api/werkbank/tresor', zugang: 'admin', handler: async () => ok(await tresor().status()) },
+    /* ---------- Sicherung (#103–#105) und Notfallblatt (#106) ---------- */
+    { methode: 'GET', pfad: '/api/werkbank/sicherung', zugang: 'admin', handler: async () => {
+      const s = sicherung();
+      return ok({ lauf: s.aktuellerLauf(), liste: await s.liste(), plan: await s.plan(), speicher: await s.speicher(), zustand: await s.zustand() });
+    } },
+    { methode: 'GET', pfad: '/api/werkbank/sicherung/lauf', zugang: 'admin', handler: async () => ok(sicherung().aktuellerLauf()) },
+    { methode: 'POST', pfad: '/api/werkbank/sicherung/jetzt', zugang: 'admin', handler: async (a) => ok((await sicherung().starte('manuell', ich(a).email)).lauf) },
+    { methode: 'PUT', pfad: '/api/werkbank/sicherung/plan', zugang: 'admin', handler: async (a) => ok(await sicherung().speicherePlan(a.body, ich(a).email)) },
+    { methode: 'POST', pfad: '/api/werkbank/sicherung/:name/pruefen', zugang: 'admin', handler: async (a) => ok(sicherung().pruefe(a.params.name, ich(a).email)) },
+    { methode: 'DELETE', pfad: '/api/werkbank/sicherung/:name', zugang: 'admin', handler: async (a) => { await sicherung().loesche(a.params.name, ich(a).email); return leer; } },
+    { methode: 'GET', pfad: '/api/werkbank/notfallblatt', zugang: 'admin', handler: async (a) => {
+      const t = tresor();
+      const text = t.alsText();
+      if (!text || !t.fingerabdruck) throw new Fachfehler(409, 'Es gibt noch keinen passenden Schlüssel. Erzeuge ihn zuerst unter Werkbank → Verschlüsselung.');
+      const jetzt = new Date();
+      const inhalt = notfallblatt({
+        name: (x.designs ? (await x.designs.marke()).schriftzug : null) || 'DMS',
+        haushaltId: x.sicherung?.haushaltId ?? '–',
+        adresse: x.betrieb ? x.betrieb.ansicht().adresse || x.betrieb.adresseFuerLinks() : '',
+        version: eigeneVersion(), erstellt: jetzt, schluessel: text, fingerabdruck: t.fingerabdruck,
+        sicherungsordner: x.sicherung?.ordner ?? '/data/sicherung', schluesselordner: dirname(t.datei),
+      });
+      if (x.sicherung) await x.sicherung.notfallblattErstellt(ich(a).email);
+      else L.system.warn('Notfallblatt heruntergeladen', { von: ich(a).email, fingerabdruck: t.fingerabdruck });
+      return { datei: { inhalt, name: `DMS-Notfallblatt-${jetzt.toISOString().slice(0, 10)}.pdf`, mime: 'application/pdf', anzeigen: false, groesse: inhalt.length } };
+    } },
+
+    { methode: 'GET', pfad: '/api/werkbank/tresor', zugang: 'admin', handler: async () => ok({ ...await tresor().status(), notfallblatt: x.sicherung ? await x.sicherung.notfallblatt() : null }) },
     { methode: 'POST', pfad: '/api/werkbank/tresor/erzeugen', zugang: 'admin', handler: async () => ok(await tresor().erzeuge()) },
     { methode: 'GET', pfad: '/api/werkbank/betrieb', zugang: 'admin', handler: async () => ok(betrieb().ansicht()) },
     { methode: 'PUT', pfad: '/api/werkbank/betrieb/mail', zugang: 'admin', handler: async (a) => ok(await betrieb().speichereMail(b(a))) },
@@ -504,6 +537,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
         // Notfallzugänge (#108), bis sie umbenannt oder deaktiviert sind.
         notfallzugaenge: x.notfall ? await sicher(() => x.notfall!.offen()) ?? [] : [],
         wartung: x.wartung?.oeffentlich() ?? null,
+        // Sicherung (#105): fehlgeschlagen, zu alt, Speicherort, Notfallblatt.
+        sicherung: x.sicherung ? await sicher(() => x.sicherung!.zustand()) : null,
       });
     } },
     { methode: 'GET', pfad: '/api/werkbank/system', zugang: 'admin', handler: async () => ok(await uebersicht(system, x.betrieb?.kurz())) },
@@ -724,6 +759,7 @@ export function modulAus(url: string): string {
   if (/^\/api\/(konto|benutzer|personen|rollen)\b/.test(url)) return 'konto';
   if (/^\/api\/(dokumente|mappen\/[^/]+\/dokumente)\b/.test(url)) return 'dokumente';
   if (/^\/api\/(mappen|sichten|papierkorb|notizen|aufgaben)\b/.test(url)) return 'ablage';
+  if (/^\/api\/(werkbank\/(sicherung|notfallblatt|wiederherstellung)|wiederherstellung)\b/.test(url)) return 'sicherung';
   if (/^\/api\/(typen|werkbank|beispiele)\b/.test(url)) return 'werkbank';
   return 'http';
 }

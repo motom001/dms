@@ -86,6 +86,29 @@ export interface KontoStatus {
 /** Wartungsmodus (#102), wie ihn jeder sieht; sekunden = bis zur aktiven Stufe. */
 export interface WartungOeffentlich { stufe: 'aus' | 'angekuendigt' | 'aktiv'; text: string; ende: string | null; aktivAb: string | null; sekunden: number | null }
 export interface WartungSitzung { id: string; benutzerId: string; name: string; email: string; rolle: string; geraet: string; ip: string; zuletztAktiv: string; erstellt: string; aktuell: boolean }
+/** Sicherungen (#103–#105). */
+export interface SicherungsMeta {
+  format: number; datei: string; haushaltId: string;
+  umgebung: { dms: string; datenbankStand: string | null; postgres: string; node: string; system: string; architektur: string };
+  art: 'manuell' | 'automatisch' | 'vor-wiederherstellung'; ausgeloestVon: string; beginn: string; ende: string; dauerSekunden: number;
+  anzahl: { mappen: number; dokumente: number; benutzer: number; dateien: number; tabellen: number };
+  groessen: { datenbankBytes: number; dateienBytes: number; sicherungBytes: number };
+  verschluesselung: { verfahren: string; fingerabdruck: string }; sha256: string; migrationen: string[];
+}
+export interface SicherungEintrag { name: string; meta: SicherungsMeta | null; bytes: number; pruefung?: { am: string; ok: boolean } }
+export interface SicherungsPlan { aktiv: boolean; uhrzeit: string; haeufigkeit: 'taeglich' | 'woechentlich'; wochentag: number; aufbewahrung: { taeglich: number; woechentlich: number; monatlich: number }; mindestFreiGB: number; aktivSeit: string | null }
+export interface SicherungsLauf { art: string; titel: string; status: 'laeuft' | 'fertig' | 'fehler'; schritt: string; bytes: number; gesamt: number; gestartet: string; beendet?: string; fehler?: string; ergebnis?: unknown }
+export interface Notfallblattstand { am: string | null; von: string | null; fingerabdruck: string | null; aktuell: boolean }
+export interface SicherungsZustand {
+  letzte: { name: string; ende: string; art: string } | null;
+  fehler: { am: string; art: string; grund: string } | null;
+  zuAlt: boolean; planAktiv: boolean; notfallblatt: Notfallblattstand; schluessel: boolean;
+  ort: { ordner: string; volume: boolean | null; gleichePlatte: boolean | null };
+}
+export interface SicherungStand {
+  lauf: SicherungsLauf | null; liste: SicherungEintrag[]; plan: SicherungsPlan; zustand: SicherungsZustand;
+  speicher: { dateienBytes: number; dateien: number; datenbankBytes: number; sicherungenBytes: number; anzahl: number; frei: number | null; gesamt: number | null; hochrechnung: { stueck: number; bytes: number }; mindestBytes: number; knapp: boolean };
+}
 export interface WartungWerkbank extends WartungOeffentlich { beginn: string | null; von: string | null; sitzungen: WartungSitzung[] }
 /** Benutzer für Namen und Empfängerauswahl; abwesend, solange die Abwesenheit an ist (#78). */
 export interface Person { id: string; name: string; aktiv?: boolean; abwesend?: { wirkt: boolean; von: string | null; bis: string | null; vertreter: string } }
@@ -100,6 +123,12 @@ export interface LinkErgebnis { benutzer: Benutzer; mailVerschickt: boolean; lin
 export const api = {
   status: () => anfrage<KontoStatus>('GET', '/api/konto/status'),
   wartung: () => anfrage<WartungOeffentlich>('GET', '/api/wartung'),
+  sicherung: () => anfrage<SicherungStand>('GET', '/api/werkbank/sicherung'),
+  sicherungLauf: () => anfrage<SicherungsLauf | null>('GET', '/api/werkbank/sicherung/lauf'),
+  sicherungJetzt: () => anfrage<SicherungsLauf>('POST', '/api/werkbank/sicherung/jetzt'),
+  sicherungPlan: (p: Partial<SicherungsPlan>) => anfrage<SicherungsPlan>('PUT', '/api/werkbank/sicherung/plan', p),
+  sicherungPruefen: (name: string) => anfrage<SicherungsLauf>('POST', `/api/werkbank/sicherung/${encodeURIComponent(name)}/pruefen`),
+  sicherungLoeschen: (name: string) => anfrage<null>('DELETE', `/api/werkbank/sicherung/${encodeURIComponent(name)}`),
   werkbankWartung: () => anfrage<WartungWerkbank>('GET', '/api/werkbank/wartung'),
   wartungEin: (d: { text: string; ende: string | null; vorlauf: number }) => anfrage<unknown>('POST', '/api/werkbank/wartung/ein', d),
   wartungJetzt: () => anfrage<unknown>('POST', '/api/werkbank/wartung/jetzt'),
@@ -300,6 +329,8 @@ export interface WerkbankUebersicht {
   notfallzugaenge?: Array<{ id: string; name: string; erstellt: string }>;
   /** Wartungsmodus (#102). */
   wartung?: WartungOeffentlich | null;
+  /** Sicherung (#105). */
+  sicherung?: SicherungsZustand | null;
 }
 export interface Diagnose {
   dms: { version: string; commit: string | null; gebaut: string | null }; serverzeit: string; zeitzone: string; node: string; postgres: string | null;
@@ -337,5 +368,7 @@ export interface TresorStatus {
   fingerabdruck: string | null; erwartet: string | null; erstellt: string | null; datei: string;
   eingebunden: boolean | null;
   betroffen: Array<{ bereich: string; was: string; wo?: string }>;
+  /** Notfallblatt zum aktuellen Schlüssel (#106). */
+  notfallblatt?: Notfallblattstand | null;
 }
 export interface Probe { ok: boolean; meldung: string }
