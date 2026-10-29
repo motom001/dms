@@ -84,6 +84,8 @@ export interface KontoStatus {
   wartung?: WartungOeffentlich | null;
   /** Wiederherstellung (#107): läuft eine, oder steht eine Abschlussmeldung aus? */
   wiederherstellung?: { laeuft: boolean; abschluss: boolean };
+  /** Version der Installation (#111), nur angemeldet. */
+  version?: string | null;
 }
 /** Wartungsmodus (#102), wie ihn jeder sieht; sekunden = bis zur aktiven Stufe. */
 export interface WartungOeffentlich { stufe: 'aus' | 'angekuendigt' | 'aktiv'; text: string; ende: string | null; aktivAb: string | null; sekunden: number | null }

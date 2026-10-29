@@ -188,6 +188,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       marke: x.designs ? await x.designs.marke() : null,
       // Wartungsmodus (#102): Hinweis auf der Anmeldeseite.
       wartung: x.wartung?.oeffentlich() ?? null,
+      // Version der Installation für Hilfe-Links ins passende Handbuch (#110, #111); nur angemeldet.
+      version: a.benutzer ? eigeneVersion() : null,
       // Wiederherstellung (#107): läuft eine, oder gibt es eine Abschlussmeldung?
       wiederherstellung: await (async () => { const s = await whStand(); return { laeuft: !!s.lauf && s.lauf.status !== 'fehler', abschluss: !!s.abschluss }; })(),
       // Ein Administrator agiert gerade als dieser Benutzer:

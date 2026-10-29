@@ -7,6 +7,7 @@ import { useDaten } from '../daten';
 import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { Person } from '../Person';
+import { Hilfe } from '../Hilfe';
 
 /** Werkbank → Aufgaben (#54): alle offenen (oder erledigten) Aufgaben, weitergeben, tägliche Mail. */
 const datum = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
@@ -35,7 +36,7 @@ export function AufgabenListe({ z }: { z: AufgabenZustand }) {
   return (
     <>
       <div className="listenkopf">
-        <div><h1>Aufgaben</h1><p className="leise klein">{z.erledigt ? 'Zuletzt erledigte Aufgaben.' : 'Was an welcher Mappe für wen zu tun ist.'}</p></div>
+        <div><h1>Aufgaben</h1><p className="leise klein">{z.erledigt ? 'Zuletzt erledigte Aufgaben.' : 'Was an welcher Mappe für wen zu tun ist.'} <Hilfe ort="werkbank.aufgaben" /></p></div>
         <button type="button" className="knopf klein" onClick={() => z.setErledigt(!z.erledigt)}>{z.erledigt ? 'Offene zeigen' : 'Erledigte zeigen'}</button>
       </div>
       {(z.fehler || fehler) && <div className="hinweis schlecht"><p>{z.fehler ?? fehler}</p></div>}

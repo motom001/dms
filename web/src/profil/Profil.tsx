@@ -11,6 +11,7 @@ import { Link } from '../ort';
 import { FehlerMelden } from './FehlerMelden';
 import { Farbfelder } from '../werkbank/Designs';
 import { useKonto } from '../konto';
+import { Hilfe } from '../Hilfe';
 
 function useFormular(fn: () => Promise<string>) {
   const [sendet, setSendet] = useState(false);
@@ -154,7 +155,7 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
 
       {bereich === 'benachrichtigungen' && <>
       <div className="blatt">
-        <h2 className="h3">Aufgaben</h2>
+        <h2 className="h3">Aufgaben <Hilfe ort="profil.benachrichtigungen" /></h2>
         <p className="leise">Mappen mit offenen Aufgaben für dich stehen im Eingang. Zusätzlich schickt das DMS einmal am Tag eine Übersicht per E-Mail – zu deiner Uhrzeit und an deinen Wochentagen, solange du offene Aufgaben hast und nicht abwesend bist.</p>
         <ZusammenfassungEinstellen />
       </div>

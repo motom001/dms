@@ -2,12 +2,13 @@ import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { useWartung } from '../wartung';
 import { WiederherstellungsAssistent } from '../wiederherstellen';
+import { Hilfe } from '../Hilfe';
 
 /** Werkbank → Wiederherstellen (#107): nur im aktiven Wartungsmodus. */
 
 export function WiederherstellungListe() {
   return (
-    <div className="listenkopf"><div><h1>Wiederherstellen</h1><p className="leise klein">Eine Sicherung einspielen – mit Abgleich und Fortschritt.</p></div></div>
+    <div className="listenkopf"><div><h1>Wiederherstellen</h1><p className="leise klein">Eine Sicherung einspielen – mit Abgleich und Fortschritt. <Hilfe ort="werkbank.wiederherstellung" /></p></div></div>
   );
 }
 

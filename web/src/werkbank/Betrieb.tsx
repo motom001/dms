@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, type BetriebAnsicht, type MailEingabe, type Probe, type Verbindung } from '../api';
 import { useKonto } from '../konto';
 import { Link, useUngespeichert } from '../ort';
+import { Hilfe } from '../Hilfe';
 
 /**
  * E-Mail-Versand und Adresse des DMS (#37) – früher Umgebungsvariablen (SMTP_*, APP_URL),
@@ -21,7 +22,7 @@ export function BetriebListe({ b }: { b: BetriebZustand }) {
   const s = b.stand;
   return (
     <>
-      <div className="listenkopf"><div><h1>E-Mail und Adresse</h1><p className="leise klein">Wie das DMS E-Mails verschickt und unter welcher Adresse es erreichbar ist.</p></div></div>
+      <div className="listenkopf"><div><h1>E-Mail und Adresse</h1><p className="leise klein">Wie das DMS E-Mails verschickt und unter welcher Adresse es erreichbar ist. <Hilfe ort="werkbank.betrieb" /></p></div></div>
       {s && (
         <ul className="mappenliste">
           <li><a className="eintrag werk" href="#adresse"><span className="titel">Adresse des DMS</span><span className="unter">{s.adresse || 'nicht gepflegt – Adresse der Anfrage'}</span></a></li>

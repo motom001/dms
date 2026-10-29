@@ -4,6 +4,7 @@ import { useDaten } from '../daten';
 import { designCss, GRUNDLAGEN, palette, rettungsweg, wendeAn, type Design, type Grundlage } from '../design';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
 import { logoUrl, Marke } from '../Marke';
+import { Hilfe } from '../Hilfe';
 
 /**
  * Designs in der Werkbank (#21): Mitte die Designs, rechts Bearbeiten mit Vorschau.
@@ -15,7 +16,7 @@ export function DesignListe({ offen }: { offen?: string }) {
   return (
     <>
       <div className="listenkopf">
-        <div><h1>Designs</h1><p className="leise klein">Farben und eigenes CSS der Oberfläche. Jeder Benutzer wählt sein Design im Profil.</p></div>
+        <div><h1>Designs</h1><p className="leise klein">Farben und eigenes CSS der Oberfläche. Jeder Benutzer wählt sein Design im Profil. <Hilfe ort="werkbank.designs" /></p></div>
         <Link to="/werkbank/designs/neu" className="knopf primaer klein">+ Neu</Link>
       </div>
       <ul className="mappenliste">

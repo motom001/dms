@@ -3,6 +3,7 @@ import { MAX_DATEIGROESSE, OCR_STAENDE, type Dokument, type OcrStand, type Regis
 import { api, dokumentUrl } from '../api';
 import { useDaten } from '../daten';
 import { Person } from '../Person';
+import { Hilfe } from '../Hilfe';
 
 /**
  * Dokumentenregister: hochladen (übernommen mit „Mappe speichern“), ansehen direkt unter der
@@ -138,6 +139,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                   ref={(el) => { if (el) el.indeterminate = auswahl.length > 0 && !alleAn; }}
                   onChange={() => setGewaehlt(alleAn ? new Set() : new Set(waehlbar.map((x) => x.id)))} />
                   <span>{auswahl.length ? `${auswahl.length} von ${waehlbar.length} ausgewählt` : 'Alle auswählen'}</span></label>
+                <Hilfe ort="dokumente.mehrere" />
                 {auswahl.length > 0 && <>
                   <button type="button" className="knopf klein" onClick={alleHerunterladen}>Herunterladen</button>
                   <button type="button" className="knopf klein gefahr-rand" onClick={auswahlLoeschen}>Löschen</button>
@@ -146,6 +148,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                   <select value={sortierung} onChange={(e) => d.setzeEinstellung('dokumente_sortierung', e.target.value === 'name' ? null : e.target.value)}>
                     {Object.entries(DOKUMENT_SORTIERUNGEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select></label>
+                <Hilfe ort="dokumente.sortieren" />
               </div>
             )}
             {hinweis && <div className="hinweis info"><p>{hinweis}</p></div>}

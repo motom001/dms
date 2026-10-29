@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, type DatenbankStand } from '../api';
 import { Link } from '../ort';
+import { Hilfe } from '../Hilfe';
 
 /**
  * Lange Datenbankzugriffe (#12): Mitte die gespeicherten Langläufer, rechts
@@ -32,7 +33,7 @@ export function LanglaeuferListe({ z, offen }: { z: DatenbankZustand; offen?: st
     <>
       <div className="listenkopf">
         <div><h1>Lange Datenbankzugriffe</h1>
-          <p className="leise klein">{e ? `Ab ${dauer(e.schwelleMs)}, aufbewahrt ${e.tage} Tage.` : ''} Neueste oben.</p></div>
+          <p className="leise klein">{e ? `Ab ${dauer(e.schwelleMs)}, aufbewahrt ${e.tage} Tage.` : ''} Neueste oben. <Hilfe ort="werkbank.datenbank" /></p></div>
       </div>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       {!z.stand ? <p className="leise">Lade …</p> : !liste.length

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, type WartungWerkbank } from '../api';
 import { dauerText, WARTUNG_GEAENDERT, zeitpunkt } from '../wartung';
+import { Hilfe } from '../Hilfe';
 
 /**
  * Werkbank → Wartungsmodus (#102): ankündigen, sofort beginnen, alle abmelden, beenden;
@@ -44,7 +45,7 @@ export function WartungsmodusListe({ w }: { w: WartungsmodusZustand }) {
   const s = w.stand;
   return (
     <>
-      <div className="listenkopf"><div><h1>Wartungsmodus</h1><p className="leise klein">Vor Updates und Wiederherstellungen: niemand arbeitet gleichzeitig.</p></div></div>
+      <div className="listenkopf"><div><h1>Wartungsmodus</h1><p className="leise klein">Vor Updates und Wiederherstellungen: niemand arbeitet gleichzeitig. <Hilfe ort="werkbank.wartungsmodus" /></p></div></div>
       {s && (
         <ul className="mappenliste">
           <li><a className="eintrag werk" href="#stand">

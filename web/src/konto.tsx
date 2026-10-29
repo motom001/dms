@@ -15,6 +15,8 @@ interface Konto {
   passwoerterMoeglich: boolean;
   vertretung: KontoStatus['vertretung'];
   hinweise: NonNullable<KontoStatus['hinweise']>;
+  /** Version der Installation – für Links ins passende Handbuch (#111). */
+  version: string | null;
 }
 const Ctx = createContext<Konto | null>(null);
 
@@ -70,7 +72,7 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   if (!status.benutzer) return <Anmelden mail={status.mail} wartung={status.wartung} fertig={laden} />;
   // key: Beim Wechsel des Benutzers (Vertretung) alles neu aufbauen und laden.
   return (
-    <Ctx.Provider key={status.benutzer.id} value={{ ich: status.benutzer, mail: status.mail, passwoerterMoeglich: status.passwoerterMoeglich ?? false, abmelden, aktualisieren: laden, vertretung: status.vertretung ?? null, hinweise: status.hinweise ?? [] }}>
+    <Ctx.Provider key={status.benutzer.id} value={{ ich: status.benutzer, mail: status.mail, passwoerterMoeglich: status.passwoerterMoeglich ?? false, abmelden, aktualisieren: laden, vertretung: status.vertretung ?? null, hinweise: status.hinweise ?? [], version: status.version ?? null }}>
       {children}
     </Ctx.Provider>
   );

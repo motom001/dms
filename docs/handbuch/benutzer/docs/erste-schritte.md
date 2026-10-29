@@ -38,6 +38,8 @@ Die Ablage ist in **drei Spalten** geteilt, von groß nach klein:
 
 Ein Klick auf **DMS** oben links bringt dich von überall zurück zur Startseite, dem [Eingang](eingang.md).
 
+Steht neben einer Überschrift ein kleines **?**, öffnet es in einem neuen Tab genau den passenden Abschnitt dieses Handbuchs – passend zur Version deines DMS. Was neu ist, steht unter [Neu in dieser Version](neu.md).
+
 ### Spalten anpassen
 
 Zwischen den Spalten liegen schmale Griffe:

@@ -9,6 +9,7 @@ import { api } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
 import { titelOder } from '../seiten';
+import { Hilfe } from '../Hilfe';
 
 /**
  * Sichten verwalten (#38) mit Bedingungen (#40, #41): Baum links, Bearbeitung rechts.
@@ -70,7 +71,7 @@ export function SichtenListe({ offen }: { offen?: string }) {
   return (
     <>
       <div className="listenkopf">
-        <div><h1>Sichten</h1><p className="leise klein">Was die Ablage links anbietet: Mappentypen, Bedingungen und die Ordnung als Baum.</p></div>
+        <div><h1>Sichten</h1><p className="leise klein">Was die Ablage links anbietet: Mappentypen, Bedingungen und die Ordnung als Baum. <Hilfe ort="werkbank.sichten" /></p></div>
         <Link to="/werkbank/sichten/neu" className="knopf primaer klein">+ Neu</Link>
       </div>
       {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
@@ -241,7 +242,7 @@ function TrefferlistenWahl({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: Si
   const standard = listen.find((l) => l.standard);
   return (
     <div className="blatt">
-      <h2 className="h3">Trefferliste</h2>
+      <h2 className="h3">Trefferliste <Hilfe ort="sicht.trefferliste" /></h2>
       {!typen.length
         ? <p className="leise">Ohne Mappentypen zeigt die Sicht die Systemspalten (Titel, Typ, angelegt, geändert).</p>
         : <>
@@ -304,7 +305,7 @@ function Bedingungen({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDat
 
   return (
     <div className="blatt">
-      <h2 className="h3">Bedingungen</h2>
+      <h2 className="h3">Bedingungen <Hilfe ort="sicht.bedingungen" /></h2>
       {!typen.length
         ? <p className="leise">Bedingungen gelten für die eigenen Mappentypen der Sicht – wähle oben mindestens einen.</p>
         : <>

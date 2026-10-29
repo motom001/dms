@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { OCR_STAENDE, type OcrStandArt } from '../../../shared/src/model';
 import { api, type OcrEinstellungen, type OcrStatus } from '../api';
 import { Link } from '../ort';
+import { Hilfe } from '../Hilfe';
 
 /**
  * Werkbank → Texterkennung (#45): Werkzeuge, Einstellungen, Warteschlange.
@@ -45,7 +46,7 @@ export function TexterkennungListe({ t }: { t: TexterkennungZustand }) {
   const s = t.stand;
   return (
     <>
-      <div className="listenkopf"><div><h1>Texterkennung</h1><p className="leise klein">Volltext für die Suche: Textebene von PDFs und Texterkennung für Scans und Bilder.</p></div></div>
+      <div className="listenkopf"><div><h1>Texterkennung</h1><p className="leise klein">Volltext für die Suche: Textebene von PDFs und Texterkennung für Scans und Bilder. <Hilfe ort="werkbank.texterkennung" /></p></div></div>
       {s && (
         <ul className="mappenliste">
           <li><a className="eintrag werk" href="#werkzeuge"><span className="titel">Werkzeuge</span><span className="unter">{s.werkzeuge.tesseract ?? 'Texterkennung nicht installiert'}</span></a></li>
@@ -154,7 +155,7 @@ function Einstellungen({ t }: { t: TexterkennungZustand }) {
 export function WartungListe({ t }: { t: TexterkennungZustand }) {
   return (
     <>
-      <div className="listenkopf"><div><h1>Wartungsoperationen</h1><p className="leise klein">Einmalige Arbeiten am Bestand.</p></div></div>
+      <div className="listenkopf"><div><h1>Wartungsoperationen</h1><p className="leise klein">Einmalige Arbeiten am Bestand. <Hilfe ort="werkbank.wartung" /></p></div></div>
       <ul className="mappenliste">
         <li><a className="eintrag werk" href="#volltext">
           <span className="titel">Volltext nachholen</span>
