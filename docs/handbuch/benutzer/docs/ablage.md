@@ -44,7 +44,7 @@ Nach Verweisen und langen Texten lässt sich nicht sortieren; diese Spalten habe
 
 ## Suchen
 
-Sobald eine Sicht mehr als fünf Mappen hat, erscheint über der Liste ein Suchfeld. Die Suche findet Mappen, deren **Titel oder Angaben** den eingegebenen Text enthalten – Groß- und Kleinschreibung spielt keine Rolle.
+Über der Liste jeder Sicht mit Mappen steht ein Suchfeld. Die Suche findet Mappen, deren **Titel oder Angaben** den eingegebenen Text enthalten – Groß- und Kleinschreibung spielt keine Rolle.
 
 ![Suche in den Verträgen](bilder/suche.png)
 
@@ -56,7 +56,9 @@ Setzt du neben dem Suchfeld den Haken **Volltext durchsuchen**, sucht das DMS au
 
 ![Volltextsuche: Treffer in einem Dokument](bilder/volltext-suche.png)
 
-Die Volltextsuche versteht Deutsch: „Rechnungen“ findet auch „Rechnung“, und mehrere Wörter müssen alle vorkommen. Mit Anführungszeichen suchst du eine genaue Wortfolge, z. B. `"Stadtwerke Musterstadt"`; ein Minus schließt ein Wort aus, z. B. `Strom -Gas`.
+Die Volltextsuche versteht Deutsch: „Rechnungen“ findet auch „Rechnung“, und mehrere Wörter müssen alle vorkommen. Sie findet einen Begriff auch **als Teil eines Wortes**: „Ofen“ findet „Backofen“, „Ofenrohr“ und „Kachelofen“ – ohne dass du ein Sternchen o. Ä. eingeben musst. Das gilt für Begriffe ab drei Buchstaben.
+
+Mit Anführungszeichen suchst du nur **ganze Wörter** bzw. eine genaue Wortfolge, z. B. `"Ofen"` oder `"Stadtwerke Musterstadt"`; ein Minus schließt ein Wort aus, z. B. `Strom -Gas`.
 
 ### In Notizen suchen
 

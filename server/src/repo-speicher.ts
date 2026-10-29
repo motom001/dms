@@ -5,6 +5,7 @@ import { umschluesseleTief } from './tresor';
 import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
 import { alsText } from '../../shared/src/markdown';
 import { ausschnittAus } from './repo-pg';
+import { teilwoerter, woerterIn } from '../../shared/src/suche';
 import { inSicht, type Sicht, type SichtDaten, type Zaehlquelle } from '../../shared/src/sichten';
 import type { PapierkorbEintrag, Repo, Rueckverweis, SortierungIntern, Verweis } from './repo';
 
@@ -37,8 +38,15 @@ export function speicherRepo(): Repo {
   /** Volltext je Dokument (#45). */
   const texte = new Map<string, string | null>();
   /** Grob wie die deutsche Volltextsuche: alle Wörter kommen vor (ohne Groß-/Kleinschreibung). */
-  const woerter = (q: string) => q.toLowerCase().split(/\s+/).filter(Boolean);
-  const findet = (text: string | null | undefined, q: string) => !!text && woerter(q).every((w) => text.toLowerCase().includes(w));
+  const woerter = (q: string) => q.toLowerCase().replace(/["„“”]/g, ' ').split(/\s+/).filter(Boolean);
+  // Teilwörter (#161): „Ofen“ findet „Backofen“; in Anführungszeichen nur ganze Wörter.
+  const findet = (text: string | null | undefined, q: string) => {
+    if (!text) return false;
+    const teil = teilwoerter(q);
+    if (teil) return teil.every((w) => text.toLowerCase().includes(w));
+    const im = woerterIn(text);
+    return woerter(q).every((w) => im.has(w));
+  };
   /** Papierkorb (#43): Mappe mit ihren Verweisen und Dokumenten, wie beim Löschen. */
   const korb = new Map<string, { mappe: Mappe; verweise: Verweis[]; dokumente: Dokument[]; notizen?: Notiz[]; aufgaben?: Aufgabe[]; erinnerungen?: Erinnerung[]; geloescht: string; geloeschtVon: string | null }>();
   const alsEintrag = (k: { mappe: Mappe; dokumente: Dokument[]; geloescht: string; geloeschtVon: string | null }): PapierkorbEintrag => ({

@@ -1,4 +1,5 @@
 import type postgres from 'postgres';
+import { teilwoerter } from '../../shared/src/suche';
 import { alsText } from '../../shared/src/markdown';
 import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
 import type { Filter, Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
@@ -414,11 +415,15 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         ? sql`AND EXISTS (SELECT 1 FROM favoriten fav WHERE fav.mappe_id = mappen.id AND fav.benutzer_id = ${istUuid(o.favoriten.benutzerId) ? o.favoriten.benutzerId : null}::uuid)`
         : sql``;
       const muster = o.suche ? `%${o.suche.replace(/[\\%_]/g, (c) => '\\' + c)}%` : null;
+      // Teilwörter im Volltext (#161): „Ofen“ findet „Backofen“ – zusätzlich zu den Wortformen.
+      const teil = o.suche && o.volltext ? teilwoerter(o.suche) : null;
+      const teilSql = (spalte: string) => teil!.map((w) => sql`${sql.unsafe(spalte)} ILIKE ${`%${w.replace(/[\\%_]/g, (c) => '\\' + c)}%`}`)
+        .reduce((a, b) => sql`${a} AND ${b}`);
       const suche = muster
         ? sql`AND (titel ILIKE ${muster} OR EXISTS (SELECT 1 FROM jsonb_each_text(werte) e WHERE e.value ILIKE ${muster} AND e.value NOT LIKE 'dms1$%')
             ${o.notizen ? sql`OR EXISTS (SELECT 1 FROM notizen n WHERE n.mappe_id = mappen.id AND n.text ILIKE ${muster})` : sql``}
             ${o.volltext ? sql`OR EXISTS (SELECT 1 FROM dokumente d WHERE d.mappe_id = mappen.id
-              AND to_tsvector('german', coalesce(d.volltext, '')) @@ websearch_to_tsquery('german', ${o.suche!}::text))` : sql``})`
+              AND (to_tsvector('german', coalesce(d.volltext, '')) @@ websearch_to_tsquery('german', ${o.suche!}::text)${teil ? sql` OR (${teilSql('d.volltext')})` : sql``}))` : sql``})`
         : sql``;
       // Berechtigungen (#124): nur, was der Benutzer lesen darf.
       const lesen = o.lesen ? sql`AND ${lesefilterSql(sql, o.lesen)}` : sql``;
@@ -457,6 +462,19 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
           AND to_tsvector('german', coalesce(d.volltext, '')) @@ q
         ORDER BY d.mappe_id, ts_rank(to_tsvector('german', coalesce(d.volltext, '')), q) DESC`;
       for (const z of a) ausschnitte[z.mappe_id as string] ??= { dokument: z.name as string, text: z.text as string };
+      // Nur als Teilwort gefunden: Ausschnitt um die erste Fundstelle.
+      const ohne = mappen.filter((m) => !ausschnitte[m.id]).map((m) => m.id);
+      if (teil && ohne.length) {
+        const b = await sql`
+          SELECT DISTINCT ON (d.mappe_id) d.mappe_id, d.name, substr(d.volltext, greatest(1, strpos(lower(d.volltext), ${teil[0]}) - 80), 240 + ${teil[0].length}) AS text
+          FROM dokumente d
+          WHERE d.haushalt_id = ${haushaltId} AND d.mappe_id = ANY(${ohne}::uuid[]) AND ${teilSql('d.volltext')}
+          ORDER BY d.mappe_id, d.erstellt`;
+        for (const z of b) {
+          const t = ausschnittAus(String(z.text ?? ''), teil[0]);
+          if (t) ausschnitte[z.mappe_id as string] ??= { dokument: z.name as string, text: t };
+        }
+      }
       return { gesamt: n as number, mappen, ausschnitte };
     },
     async zaehler(benutzerId, admin, lesefilter) {

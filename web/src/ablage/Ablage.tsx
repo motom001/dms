@@ -293,7 +293,8 @@ function Liste(p: {
   }, [s.mehr, s.mappen.length, tabelle]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const gesamtSicht = p.sicht === 'eingang' ? d.zaehler.eingang : p.sicht === 'favoriten' ? d.zaehler.favoriten ?? 0 : d.zaehler.sichten?.[p.sicht] ?? (p.typ ? d.anzahl(p.typ.id) : 0);
-  const zeigeSuche = gesamtSicht > 5 || !!eingabe;
+  // Suche immer, sobald es Mappen gibt (#160) – der Volltext lohnt auch bei wenigen.
+  const zeigeSuche = gesamtSicht > 0 || !!eingabe;
   const anzahlText = s.gesamt === null ? '' : suche
     ? `${zahl(s.gesamt)} Treffer`
     : `${zahl(s.gesamt)} ${s.gesamt === 1 ? 'Mappe' : 'Mappen'}`;
