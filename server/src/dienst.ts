@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_AUSWAHL, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, ROLLEN, freierSchluessel, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
-  AUFGABE_MAX, istEmail, NOTIZ_MAX, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Benutzer, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, type Rolle, type Systemtyp, type Werte,
+  AUFGABE_MAX, istEmail, NOTIZ_MAX, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Benutzer, type Dokument, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
@@ -17,6 +17,10 @@ import {
   bereinigeBedingungen, filterFuer, heuteIn, kinderVon, klauselnFuer, verschiebe, waereKreis, wirksameTypen,
   type Aufloesung, type Sicht, type SichtDaten,
 } from '../../shared/src/sichten';
+import type { Readable } from 'node:stream';
+import { csvAus, xlsxAus } from './xlsx';
+import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile } from './export';
+import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
 import { alleSichtRechte, bereinigeSichtRegelwerk, sichtRegelProblem, sichtTestlauf, type SichtRegelwerk } from '../../shared/src/sichtrechte';
 import { liesDirektlink } from '../../shared/src/direktlink';
 import type { Lesefilter } from '../../shared/src/rechte';
@@ -1839,6 +1843,64 @@ export class Dienst {
       return { ok: false as const, status: 409, grund: `Auf diese Mappe ${ids.size === 1 ? 'verweist noch eine andere Mappe' : `verweisen noch ${ids.size} andere Mappen`}. Entferne erst diese Verweise.`, fremd, zuordnungen, emails, benutzerTyp, emailTyp };
     }
     return { ok: true as const, status: 200, grund: undefined, fremd, zuordnungen, emails, benutzerTyp, emailTyp };
+  }
+
+  /**
+   * Export mehrerer Mappen (#152, #153): Tabelle (csv, xlsx), ZIP mit Dokumenten oder ein PDF.
+   * Recht E an der Sicht, Lesen je Mappe; Reihenfolge wie in der Liste. Passwörter nie.
+   */
+  async exportiere(ich: { id: string; rolle: string }, e: unknown, z: Zugriff): Promise<{ name: string; mime: string; inhalt: Buffer | Readable; groesse: number; mappen: number }> {
+    const x = (e ?? {}) as Record<string, unknown>;
+    const format = String(x.format ?? '');
+    if (!['csv', 'xlsx', 'zip', 'pdf'].includes(format)) throw new Fachfehler(422, 'Unbekanntes Format.');
+    const q = { sicht: text(x.sicht), link: x.link, suche: x.suche, volltext: x.volltext, notizen: x.notizen, sortierung: x.sortierung, absteigend: x.absteigend };
+    const alle = await this.repo.listeSichten();
+    const sicht = alle.find((s) => s.id === q.sicht);
+    if (sicht && !z.admin) {
+      const r = alleSichtRechte(alle, z.wer, false).get(sicht.id);
+      if (!r?.R) throw new Fachfehler(404, 'Diese Sicht gibt es nicht.');
+      if (!r.E) throw new Fachfehler(403, 'Aus dieser Sicht darfst du nicht exportieren.');
+    }
+    const treffer = (await this.trefferIds(ich, q, z)).ids;
+    const gewaehlt = Array.isArray(x.ids) ? new Set(x.ids.map(String)) : null;
+    const ids = gewaehlt ? treffer.filter((id) => gewaehlt.has(id)) : treffer;
+    if (!ids.length) throw new Fachfehler(422, 'Keine Mappen zum Exportieren.');
+    const mappen = (await this.repo.holeMappen(ids)).sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
+    const typen = [...new Set(mappen.map((m) => m.typId))].map((t) => z.typen.get(t)).filter((t): t is Mappentyp => !!t);
+    const spalten = exportSpalten(typen, x.spalten === 'alle' ? 'alle' : 'liste', sicht?.trefferliste ?? null);
+    const verweise = mappen.flatMap((m) => { const t = z.typen.get(m.typId); return [...(t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []), m.erstelltVon, m.geaendertVon].filter((v): v is string => !!v); });
+    const bezuege = await this.maskiereBezuege(z, await this.repo.bezuege([...new Set(verweise)]));
+    const quelle = { typen: z.typen, titel: (id: string | null | undefined) => (id ? bezuege[id]?.titel || NICHT_SICHTBAR : '') };
+    const titel = sicht?.name ?? typen[0]?.name ?? 'Export';
+    const datei = `${sichererName(titel, 60)} ${new Date().toISOString().slice(0, 10)}`;
+    const tabelle = () => {
+      const kopf = spalten.map((k) => spaltenKopf(k, typen));
+      const zeilen = mappen.map((m) => zeile(m, spalten, quelle));
+      return { kopf, text: zeilen.map((r) => r.text), werte: zeilen.map((r) => r.werte) };
+    };
+    if (format === 'csv') { const t = tabelle(); const b = csvAus(t.kopf, t.text); return { name: `${datei}.csv`, mime: 'text/csv; charset=utf-8', inhalt: b, groesse: b.length, mappen: mappen.length }; }
+    if (format === 'xlsx') { const t = tabelle(); const b = xlsxAus(titel, t.kopf, t.werte); return { name: `${datei}.xlsx`, mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', inhalt: b, groesse: b.length, mappen: mappen.length }; }
+    if (format === 'pdf') {
+      const b = await mappenPdf(titel, await Promise.all(mappen.map(async (m) => ({
+        mappe: m, typ: z.typen.get(m.typId), dokumente: await this.repo.listeDokumente(m.id),
+        inhalt: async (d: Dokument) => { const s = await this.dateien.lies(d.sha256); return Buffer.isBuffer(s) ? s : Buffer.concat(await s.toArray() as Buffer[]); },
+      }))), quelle, x.uebersicht === true ? { spalten, typen } : null);
+      return { name: `${datei}.pdf`, mime: 'application/pdf', inhalt: b, groesse: b.length, mappen: mappen.length };
+    }
+    // ZIP: Tabelle als Excel und CSV, je Mappe ein Ordner mit ihren Dokumenten.
+    const t = tabelle();
+    const eintraege: ZipEintrag[] = [
+      { name: 'Mappen.xlsx', daten: xlsxAus(titel, t.kopf, t.werte) }, { name: 'Mappen.csv', daten: csvAus(t.kopf, t.text) },
+    ].map((d) => ({ name: d.name, groesse: d.daten.length, inhalt: async () => d.daten }));
+    const ordner = eindeutig(mappen.map((m) => sichererName(m.titel || 'Ohne Titel')));
+    for (const [i, m] of mappen.entries()) {
+      const docs = await this.repo.listeDokumente(m.id);
+      const namen = eindeutig(docs.map((d) => sichererName(d.name, 120)));
+      docs.forEach((d, j) => eintraege.push({ name: `${ordner[i]}/${namen[j]}`, groesse: d.groesse, inhalt: () => this.dateien.lies(d.sha256) }));
+    }
+    const groesse = zipGroesse(eintraege);
+    if (groesse > ZIP_MAX) throw new Fachfehler(422, 'Der Export wäre größer als 4 GB. Bitte weniger Mappen auswählen.');
+    return { name: `${datei}.zip`, mime: 'application/zip', inhalt: zipStrom(eintraege), groesse, mappen: mappen.length };
   }
 
   /** Alle Treffer einer Sicht mit Suche (#149): nur die Ids der lesbaren Mappen, höchstens MAX_AUSWAHL. */

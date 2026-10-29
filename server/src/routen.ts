@@ -844,6 +844,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       L.ablage.info('Mappe geändert', { typ: await typName(m.typId), titel: m.titel, id: m.id });
       return ok(m);
     } },
+    // Export (#152, #153): Tabelle, ZIP mit Dokumenten oder PDF – Recht E an der Sicht, Lesen je Mappe.
+    { methode: 'POST', pfad: '/api/export', zugang: 'angemeldet', handler: async (a) => {
+      const r = await dienst.exportiere(ich(a), b(a), await zg(a));
+      L.ablage.info('Mappen exportiert', { von: ich(a).email, sicht: b(a).sicht, format: b(a).format, mappen: r.mappen, auswahl: Array.isArray(b(a).ids) });
+      return { datei: { inhalt: r.inhalt, name: r.name, mime: r.mime, anzeigen: false, groesse: r.groesse } };
+    } },
     // Auswahl (#149): alle Treffer einer Sicht (mit Suche) als Ids; mehrere Mappen löschen (#150).
     { methode: 'GET', pfad: '/api/mappen/auswahl', zugang: 'angemeldet', handler: async (a) => ok(await dienst.trefferIds(ich(a), a.query, await zg(a))) },
     { methode: 'POST', pfad: '/api/mappen/loeschen', zugang: 'angemeldet', handler: async (a) => {

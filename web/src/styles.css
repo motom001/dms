@@ -946,3 +946,7 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
   .listenrumpf:not(.mit-auswahl) .hakenspalte { display: none; }
   .mit-haken { -webkit-touch-callout: none; user-select: none; }
 }
+
+/* Export (#153) */
+.exportdialog { margin: 4px 0 10px; border-color: var(--akzent); }
+.exportdialog fieldset.wahl { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }

@@ -33,6 +33,26 @@ export function setzeEinrichtungscode(c: string | null) {
 }
 export const hatEinrichtungscode = () => !!einrichtungscode;
 
+/** Datei vom Server holen und im Browser speichern (#153) – POST mit JSON, Antwort als Datei. */
+export async function speichereDatei(url: string, body: unknown, ersatzname: string): Promise<{ name: string; bytes: number }> {
+  let r: Response;
+  try {
+    r = await fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'x-dms': '1', 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  } catch { throw new ApiFehler(0, NICHT_ERREICHBAR); }
+  if (!r.ok) {
+    const d = await r.json().catch(() => null) as { fehler?: string; details?: unknown } | null;
+    throw new ApiFehler(r.status, d?.fehler ?? `Fehler ${r.status}`, d?.details);
+  }
+  const kopf = r.headers.get('content-disposition') ?? '';
+  const m = /filename\*=UTF-8''([^;]+)/i.exec(kopf);
+  const name = m ? decodeURIComponent(m[1]) : ersatzname;
+  const blob = await r.blob();
+  const link = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
+  document.body.append(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 60_000);
+  return { name, bytes: blob.size };
+}
+
 async function anfrage<T>(methode: string, url: string, body?: unknown): Promise<T> {
   let r: Response;
   const start = performance.now();

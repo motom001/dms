@@ -80,6 +80,17 @@ In der Liste einer Sicht wählst du mehrere Mappen aus, um sie in einem Schritt 
 
 **Löschen** in der Aktionsleiste fragt erst nach, z. B. „12 Mappen mit 30 Dokumenten in den Papierkorb legen?“, und legt sie dann in den [Papierkorb](#papierkorb) – mit je einem Eintrag im Protokoll der Mappe. Mappen, die du nicht löschen darfst oder auf die noch eine andere Mappe verweist, werden ausgelassen und danach mit Grund aufgelistet. Verweisen ausgewählte Mappen nur aufeinander, hält das nicht auf.
 
+### Exportieren
+
+**Exportieren …** gibt Mappen aus der Sicht heraus – die Auswahl oder, ohne Auswahl bzw. auf Wunsch, alle Treffer (mit deiner Suche und Sortierung):
+
+- **Excel (.xlsx)** – eine Tabelle, in der Datum und Beträge echte Werte sind: Excel kann danach sortieren und rechnen.
+- **CSV** – dieselbe Tabelle für jede Tabellenkalkulation, im deutschen Format (Semikolon, Datum TT.MM.JJJJ, Beträge mit Komma).
+- **ZIP mit Dokumenten** – die Tabelle als Excel und CSV und je Mappe ein Ordner mit ihren Dokumenten.
+- **PDF** – je Mappe eine Seite mit ihren Feldern und der Liste der Dokumente, wahlweise vorne eine Übersicht als Tabelle. PDF-Dokumente werden danach eingebunden, Bilder (JPEG, PNG) als eigene Seite; andere Dateien werden nur genannt.
+
+Als Spalten nimmst du die der Liste oder alle Felder. Verweise erscheinen mit dem Titel der Mappe. **Passwörter werden nie exportiert.** Jeder Export steht im Protokoll. Ob du aus einer Sicht exportieren darfst, legt der Administrator fest; fehlt das Recht, gibt es den Knopf nicht.
+
 ## Favoriten
 
 Mappen, die du oft brauchst, markierst du mit dem **Stern ☆** – oben rechts in der Mappe oder direkt in der Liste (rechts im Eintrag bzw. vorn in der Tabellenzeile). Der Stern wird gelb ★, und die Mappe steht in der Sicht **★ Favoriten** unter dem Eingang; die Zahl dahinter zeigt, wie viele es sind. Ein zweiter Klick entfernt sie wieder.

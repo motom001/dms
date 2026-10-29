@@ -81,7 +81,7 @@ Was ein Benutzer über alle Mappentypen hinweg lesen darf, zeigt [Was sieht ein 
 
 ## Berechtigungen an Sichten
 
-Wer eine **Sicht** im Baum sieht und dort „+ Neu“ bekommt, regelst du an der Sicht selbst – mit Vererbung an die Untersichten. Das steht unter [Sichten → Berechtigungen](sichten.md#berechtigungen). Ob eine Mappe lesbar ist, entscheidet weiter allein der Mappentyp.
+Wer eine **Sicht** im Baum sieht, dort „+ Neu“ bekommt und aus ihr exportieren darf, regelst du an der Sicht selbst – mit Vererbung an die Untersichten. Das steht unter [Sichten → Berechtigungen](sichten.md#berechtigungen). Ob eine Mappe lesbar ist, entscheidet weiter allein der Mappentyp.
 
 ## Was Benutzer davon merken
 
