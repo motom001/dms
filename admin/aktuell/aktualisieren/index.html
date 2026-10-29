@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.24/aktualisieren/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.25/aktualisieren/">
       
       
         <link rel="prev" href="../installation/">
@@ -1655,6 +1655,7 @@
 <li>Datenbank-Migrationen laufen beim Start automatisch und in einer Transaktion: Schlägt eine fehl, bleibt die Datenbank unverändert, und der Container startet nicht. Im Container-Log steht dann der Grund.</li>
 <li>Kurz prüfen, ob alles läuft, dann den Wartungsmodus beenden.</li>
 </ol>
+<p>Während des Neustarts ist das DMS kurz nicht erreichbar. Offene Seiten zeigen dann oben „Das DMS ist gerade nicht erreichbar“ und fragen mit wachsendem Abstand (2 bis 30 Sekunden) nach, bis es wieder antwortet. Eingaben bleiben stehen; gespeichert wird nichts automatisch. Läuft danach eine andere Version, bittet die Leiste darum, die Seite neu zu laden – sonst arbeitet der Browser mit der alten Oberfläche gegen den neuen Server weiter. Erkannt wird das an <code>/api/gesundheit</code>, das neben <code>ok</code> eine Kennung des laufenden Stands liefert (ein Hash aus Version, Commit und Build-Zeit, damit ohne Anmeldung keine Version sichtbar ist).</p>
 <p>Welche Version läuft und ob es neuere gibt, zeigt <strong>Werkbank → Technik</strong> (siehe <a href="../fehlersuche/#technik">Fehlersuche</a>).</p>
 <div class="admonition tip">
 <p class="admonition-title">Auf einer festen Version bleiben</p>
