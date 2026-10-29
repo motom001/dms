@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.31/berechtigungen/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.32/berechtigungen/">
       
       
         <link rel="prev" href="../benutzer/">
@@ -738,10 +738,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#grundeinstellung" class="md-nav__link">
+  <a href="#standard" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Grundeinstellung
+        Standard
       
     </span>
   </a>
@@ -799,18 +799,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#berechtigungen-prufen" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Berechtigungen prüfen
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Berechtigungen prüfen">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#testlauf" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -818,22 +806,6 @@
       
     </span>
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#was-sieht-ein-benutzer" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Was sieht ein Benutzer?
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1646,10 +1618,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#grundeinstellung" class="md-nav__link">
+  <a href="#standard" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Grundeinstellung
+        Standard
       
     </span>
   </a>
@@ -1707,18 +1679,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#berechtigungen-prufen" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Berechtigungen prüfen
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Berechtigungen prüfen">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#testlauf" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1726,22 +1686,6 @@
       
     </span>
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#was-sieht-ein-benutzer" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Was sieht ein Benutzer?
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1838,7 +1782,7 @@
 
 
 <h1 id="berechtigungen">Berechtigungen<a class="headerlink" href="#berechtigungen" title="Permanent link">&para;</a></h1>
-<p>Mit Berechtigungen legst du je Mappentyp fest, <strong>wer welche Mappen anlegen, lesen, bearbeiten, löschen und wessen Passwörter sehen</strong> darf. Du pflegst sie am <strong>Mappentyp</strong> selbst, im Abschnitt <strong>Berechtigungen</strong> unter den Registern, und speicherst sie mit <strong>Mappentyp speichern</strong>. Prüfen lassen sie sich unter <strong>Wartung und Fehlersuche → <a href="#berechtigungen-prufen">Berechtigungen prüfen</a></strong>.</p>
+<p>Mit Berechtigungen legst du je Mappentyp fest, <strong>wer welche Mappen anlegen, lesen, bearbeiten, löschen und wessen Passwörter sehen</strong> darf. Du pflegst sie am <strong>Mappentyp</strong> selbst, im Abschnitt <strong>Berechtigungen</strong> unter den Registern, und speicherst sie mit <strong>Mappentyp speichern</strong>. Direkt darunter prüfst du sie im <a href="#testlauf">Testlauf</a>; was ein Benutzer insgesamt sieht, zeigt die <a href="../benutzer/#was-sieht-ein-benutzer">Benutzerverwaltung</a>.</p>
 <p><img alt="Berechtigungen am Mappentyp Vertrag" src="../bilder/werkbank-berechtigungen.png" /></p>
 <div class="admonition info">
 <p class="admonition-title">Für Administratoren gelten die Regeln nicht</p>
@@ -1883,22 +1827,28 @@
 </table>
 <ul>
 <li><strong>Ohne Lesen wirkt nichts außer Anlegen.</strong> Wer eine Mappe nicht lesen darf, darf sie auch nicht bearbeiten, löschen oder ihre Passwörter sehen – egal was die Regeln sonst sagen.</li>
-<li>Die Haken <strong>Neue Mappen erlauben</strong> und <strong>Löschen erlauben</strong> am <a href="../mappentypen/">Mappentyp</a> bleiben die <strong>Obergrenze</strong>: Ist ein Haken aus, hilft auch keine Regel – das gilt auch für Administratoren.</li>
+<li><strong>Systemregeln</strong> gelten für alle, auch für Administratoren, und lassen sich nicht ändern: Benutzer-Mappen entstehen und verschwinden nur über die Benutzerverwaltung (kein C, kein D), E-Mail-Mappen entstehen nur beim <a href="https://motom001.github.io/dms/benutzer/versenden/">Versenden</a> (kein C). In der Standard-Zeile sind diese Rechte deshalb gesperrt.</li>
 <li><strong>Systemfelder</strong> von Benutzern (Rolle, weitere Rollen, Aktiv) ändern sich weiterhin nur in der Benutzerverwaltung und im eigenen Profil.</li>
 <li>Den <strong>eigenen Papierkorb</strong> sieht jeder Benutzer immer und kann daraus wiederherstellen – auch wenn er die Mappe danach nach den Regeln nicht mehr sehen darf. Er bekommt dann einen Hinweis.</li>
 </ul>
-<h2 id="grundeinstellung">Grundeinstellung<a class="headerlink" href="#grundeinstellung" title="Permanent link">&para;</a></h2>
-<p>Jeder Mappentyp hat eine Grundeinstellung, die gilt, solange keine Regel etwas anderes sagt:</p>
+<h2 id="standard">Standard<a class="headerlink" href="#standard" title="Permanent link">&para;</a></h2>
+<p>Über den Regeln steht die Zeile <strong>Standard</strong> mit den fünf Rechten <strong>C R U D P</strong>. Sie gilt, solange keine Regel etwas anderes sagt; ein Klick schaltet ein Recht zwischen <strong>✓</strong> (erteilt) und <strong>✗</strong> (entzogen).</p>
 <ul>
-<li><strong>Alle Rechte erteilt</strong> – jeder darf alles; Regeln <em>schränken ein</em>. So verhält sich ein Mappentyp ohne Regeln, also auch jeder Typ nach dem Update auf diese Version.</li>
-<li><strong>Alle Rechte entzogen</strong> – niemand darf etwas; Regeln <em>geben frei</em>. Das passt für vertrauliche Typen wie Gehaltsabrechnungen.</li>
+<li><strong>✓ C R U D P</strong> – jeder darf alles; Regeln <em>schränken ein</em>. So startet jeder neue Mappentyp.</li>
+<li><strong>✗ C R U D P</strong> – niemand darf etwas; Regeln <em>geben frei</em>. Das passt für vertrauliche Typen wie Gehaltsabrechnungen.</li>
+<li>Auch gemischt, z. B. <strong>✓ R U P, ✗ C D</strong>: Jeder darf lesen und bearbeiten, anlegen und löschen nur, wem eine Regel es erlaubt.</li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Früher: Haken am Mappentyp</p>
+<p>Bis Version 0.31 gab es am Mappentyp die Haken <em>Neue Mappen erlauben</em> und <em>Löschen erlauben</em>. Beim Update wurden sie in die Berechtigungen übernommen: War ein Haken aus, steht im Standard <strong>✗ C</strong> bzw. <strong>✗ D</strong>, und Regeln erteilen dieses Recht nicht mehr. Niemand bekommt dadurch mehr Rechte als vorher.</p>
+</div>
 <h2 id="regeln">Regeln<a class="headerlink" href="#regeln" title="Permanent link">&para;</a></h2>
 <p>Eine Regel heißt: <strong>Wenn</strong> alle Bedingungen zutreffen, <strong>dann</strong> setze diese Rechte.</p>
 <ul>
 <li>Je Recht gibt es drei Stellungen: <strong>✓</strong> erteilen, <strong>✗</strong> entziehen, <strong>–</strong> unverändert lassen. Ein Klick auf den Knopf schaltet weiter.</li>
 <li>Die Regeln werden <strong>von oben nach unten</strong> geprüft. Jede zutreffende Regel setzt ihre ✓ und ✗ – eine spätere Regel kann also überschreiben, was eine frühere gesetzt hat.</li>
 <li><strong>Stopp</strong>: Trifft die Regel zu, werden die folgenden Regeln nicht mehr geprüft. So setzt du Ausnahmen an den Anfang, z. B. „Buchhaltung darf alles“ mit Stopp.</li>
+<li>Jede Regel lässt sich <strong>zuklappen</strong>; eingeklappt zeigt sie Name, Rechte und Bedingungen in einer Zeile. Neue Regeln sind offen.</li>
 <li>Die Reihenfolge änderst du durch <strong>Ziehen am Griff</strong> ⠿ oder mit <strong>Alt+↑/↓</strong>.</li>
 <li>Eine Regel braucht einen Namen, mindestens eine Bedingung und muss etwas bewirken (ein Recht oder Stopp).</li>
 </ul>
@@ -1943,14 +1893,11 @@
 <h3 id="speichern">Speichern<a class="headerlink" href="#speichern" title="Permanent link">&para;</a></h3>
 <p>Die Regeln werden mit <strong>Mappentyp speichern</strong> gespeichert, zusammen mit Feldern, Registern und Trefferlisten. Eine Regel darf deshalb auch ein Feld nutzen, das du im selben Zug neu anlegst. Passt eine Regel nicht (z. B. auf ein Feld, das du gerade entfernst), speichert das DMS nichts und nennt die Regel.</p>
 <p>Beim Speichern prüft das DMS außerdem, ob danach Mappen dieses Typs <strong>niemand mehr lesen</strong> könnte (außer Administratoren), und fragt in diesem Fall nach. Jede Änderung steht im <a href="../fehlersuche/">Protokoll</a> mit der vollständigen Regelliste.</p>
-<h2 id="berechtigungen-prufen">Berechtigungen prüfen<a class="headerlink" href="#berechtigungen-prufen" title="Permanent link">&para;</a></h2>
-<p>Unter <strong>Wartung und Fehlersuche → Berechtigungen prüfen</strong> testest du die <strong>gespeicherten</strong> Regeln. Am Abschnitt <em>Berechtigungen</em> eines Mappentyps öffnet <strong>Regeln prüfen ↗</strong> diese Seite in einem <strong>neuen Fenster</strong>, mit dem Mappentyp schon ausgewählt. So bearbeitest du die Regeln in einem Fenster und prüfst sie im anderen: ändern, <em>Mappentyp speichern</em>, im anderen Fenster noch einmal <strong>Prüfen</strong>.</p>
-<p>Links listet die Seite alle Mappentypen mit Grundeinstellung und Anzahl der Regeln; ein Klick springt zu ihren Regeln.</p>
-<h3 id="testlauf">Testlauf<a class="headerlink" href="#testlauf" title="Permanent link">&para;</a></h3>
-<p>Welche Rechte hätte ein bestimmter Benutzer an einer bestimmten Mappe? Wähle Mappentyp, Benutzer und Mappe und klicke auf <strong>Prüfen</strong>. Die Tabelle zeigt Schritt für Schritt, welche Regel zutraf, was sie gesetzt hat und wie der Stand danach war.</p>
+<h2 id="testlauf">Testlauf<a class="headerlink" href="#testlauf" title="Permanent link">&para;</a></h2>
+<p>Unter den Regeln steht der <strong>Testlauf</strong>: Welche Rechte hätte ein bestimmter Benutzer an einer bestimmten Mappe? Wähle Benutzer und Mappe und klicke auf <strong>Prüfen</strong>. Die Tabelle zeigt Schritt für Schritt, welche Regel zutraf, was sie gesetzt hat und wie der Stand danach war.</p>
+<p>Der Testlauf nutzt die Regeln, <strong>wie sie gerade im Editor stehen</strong> – auch ungespeicherte. So probierst du eine Änderung aus, bevor du <em>Mappentyp speichern</em> klickst. Ändert sich eine Regel, verschwindet das alte Ergebnis. Den Testlauf gibt es, sobald der Mappentyp einmal gespeichert ist.</p>
 <p><img alt="Testlauf: Ben an „Stromvertrag Haus“" src="../bilder/werkbank-berechtigungen-testlauf.png" /></p>
-<h3 id="was-sieht-ein-benutzer">Was sieht ein Benutzer?<a class="headerlink" href="#was-sieht-ein-benutzer" title="Permanent link">&para;</a></h3>
-<p>Zeigt je Mappentyp, wie viele Mappen ein Benutzer nach den gespeicherten Regeln lesen darf, mit einigen Beispielen.</p>
+<p>Was ein Benutzer über alle Mappentypen hinweg lesen darf, zeigt <a href="../benutzer/#was-sieht-ein-benutzer">Was sieht ein Benutzer?</a> in der Benutzerverwaltung.</p>
 <h2 id="was-benutzer-davon-merken">Was Benutzer davon merken<a class="headerlink" href="#was-benutzer-davon-merken" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Mappen ohne Leserecht fehlen in Listen, Suche, Zählern, Favoriten und Trefferlisten. Verweist eine sichtbare Mappe auf eine unsichtbare, steht dort „nicht sichtbare Mappe“ ohne Link.</li>
@@ -1961,12 +1908,12 @@
 </ul>
 <h2 id="beispiele">Beispiele<a class="headerlink" href="#beispiele" title="Permanent link">&para;</a></h2>
 <h3 id="vertrauliche-mappen-nur-fur-verantwortliche">Vertrauliche Mappen nur für Verantwortliche<a class="headerlink" href="#vertrauliche-mappen-nur-fur-verantwortliche" title="Permanent link">&para;</a></h3>
-<p>Mappentyp <em>Gehalt</em>, Grundeinstellung <strong>Alle Rechte entzogen</strong>:</p>
+<p>Mappentyp <em>Gehalt</em>, Standard <strong>✗ C R U D P</strong>:</p>
 <ol>
 <li><strong>Verantwortliche</strong> – wenn <em>Verantwortlich zeigt auf aktueller Benutzer</em> → ✓ R U D P</li>
 </ol>
 <h3 id="eine-rolle-darf-alles-alle-anderen-nur-lesen">Eine Rolle darf alles, alle anderen nur lesen<a class="headerlink" href="#eine-rolle-darf-alles-alle-anderen-nur-lesen" title="Permanent link">&para;</a></h3>
-<p>Mappentyp <em>Rechnung</em>, Grundeinstellung <strong>Alle Rechte erteilt</strong>:</p>
+<p>Mappentyp <em>Rechnung</em>, Standard <strong>✓ C R U D P</strong>:</p>
 <ol>
 <li><strong>Buchhaltung darf alles</strong> – wenn <em>Benutzer hat Rolle Buchhaltung</em> → ✓ C R U D P, <strong>Stopp</strong></li>
 <li><strong>Alle anderen nur lesen</strong> – wenn <em>Benutzer hat nicht Rolle Buchhaltung</em> → ✗ C U D P</li>
@@ -1983,7 +1930,7 @@
 <li>Mappentyp <em>Rechnung</em>: Regel <strong>ERP legt Rechnungen an</strong> – wenn <em>Benutzer hat Rolle ERP</em> → ✓ C R U.</li>
 <li>Mappentyp <em>Benutzer</em>: Regel <strong>ERP sieht nur die Buchhaltung</strong> – wenn <em>Benutzer hat Rolle ERP</em> und <em>nicht: Rollen zeigt auf Buchhaltung</em> (das Feld der Benutzer-Mappe) → ✗ R. So kann das Programm als „Verantwortlich“ nur Mitglieder der Buchhaltung eintragen.</li>
 <li>Alle übrigen Mappentypen: Regel <strong>ERP sieht nichts</strong> – wenn <em>Benutzer hat Rolle ERP</em> → ✗ C R U D P (einmal anlegen, dann in die anderen Typen kopieren).</li>
-<li>Mit <strong>Was sieht ein Benutzer?</strong> kontrollierst du das Ergebnis.</li>
+<li>Mit <a href="../benutzer/#was-sieht-ein-benutzer">Was sieht ein Benutzer?</a> am Benutzer <em>ERP-Schnittstelle</em> kontrollierst du das Ergebnis.</li>
 </ol>
 
 

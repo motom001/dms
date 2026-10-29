@@ -3333,7 +3333,8 @@
           "erstellenErlaubt": {
             "type": "boolean",
             "default": true,
-            "description": "Neue Mappen dieses Typs dürfen angelegt werden"
+            "deprecated": true,
+            "description": "Ohne Wirkung seit 0.32 – wer anlegen darf, regeln die Berechtigungen (Recht C)"
           },
           "sichtAnlegen": {
             "type": "boolean",
@@ -3344,7 +3345,8 @@
           "loeschenErlaubt": {
             "type": "boolean",
             "default": true,
-            "description": "Mappen dieses Typs dürfen gelöscht werden"
+            "deprecated": true,
+            "description": "Ohne Wirkung seit 0.32 – wer löschen darf, regeln die Berechtigungen (Recht D)"
           }
         }
       },

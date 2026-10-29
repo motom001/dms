@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.31/api/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.32/api/">
       
       
         <link rel="prev" href="../fehlersuche/">
@@ -1594,7 +1594,7 @@
 <h2 id="regeln">Regeln<a class="headerlink" href="#regeln" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Schlüssel gelten nur unter <code>/api/v1</code>, nicht an den internen Adressen der Oberfläche.</li>
-<li>Es gelten dieselben Prüfungen wie in der Oberfläche: Pflichtfelder, eindeutige Werte, geschützte Felder der Benutzer-Mappen, „Neue Mappen erlauben“ und „Löschen erlauben“ – und die <a href="../berechtigungen/">Berechtigungen</a> des Benutzers, dem der Schlüssel gehört. Mappen, die er nicht lesen darf, liefert die Schnittstelle nicht; Passwörter nur mit dem Recht „Passwörter sehen“.</li>
+<li>Es gelten dieselben Prüfungen wie in der Oberfläche: Pflichtfelder, eindeutige Werte, geschützte Felder der Benutzer-Mappen – und die <a href="../berechtigungen/">Berechtigungen</a> des Benutzers, dem der Schlüssel gehört. Mappen, die er nicht lesen darf, liefert die Schnittstelle nicht; Passwörter nur mit dem Recht „Passwörter sehen“.</li>
 <li>Benutzer wählt man auch über die Schnittstelle nur aus denen, deren Benutzer-Mappe man sehen darf (Verantwortlich, Aufgaben, Vertreter). Wie man so ein Programm sauber abgrenzt, zeigt das Beispiel <a href="../berechtigungen/#beispiel-ein-programm-das-nur-rechnungen-sieht">Ein Programm, das nur Rechnungen sieht</a>.</li>
 <li>Im aktiven <a href="../wartungsmodus/">Wartungsmodus</a> antwortet die Schnittstelle mit <code>503</code> und <code>Retry-After</code> (Sekunden bis zum erwarteten Ende).</li>
 <li>Fehler kommen als JSON mit einer deutschen Meldung in <code>fehler</code>; bei ungültigen Eingaben (422) steht in <code>details</code> das Prüfergebnis je Feld.</li>
