@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, type Auftrag, type DemoErgebnis } from '../api';
 import { useDaten } from '../daten';
+import { Hilfe } from '../Hilfe';
 
 type Uebersicht = Array<{ typId: string; name: string; demo: number; gesamt: number }>;
 
@@ -16,7 +17,7 @@ export function DemoListe() {
   const u = useUebersicht();
   return (
     <>
-      <div className="listenkopf"><div><h1>Demo-Daten</h1><p className="leise klein">Mappen je Typ, davon Demo-Mappen.</p></div></div>
+      <div className="listenkopf"><div><h1>Demo-Daten</h1><p className="leise klein">Mappen je Typ, davon Demo-Mappen. <Hilfe ort="werkbank.demo" /></p></div></div>
       {!u.length
         ? <p className="leise leerliste">Noch keine Mappentypen.</p>
         : <ul className="mappenliste">

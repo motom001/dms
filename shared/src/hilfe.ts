@@ -1,0 +1,81 @@
+/**
+ * Kontextbezogene Hilfe (#110) und Handbuch je Version (#111).
+ *
+ * Eine Tabelle: welche Stelle der Oberfläche auf welche Seite und welchen Abschnitt im Handbuch
+ * zeigt. Die CI prüft gegen das gebaute Handbuch, dass jede Seite und jeder Anker existiert
+ * (docs/handbuch/werkzeuge/hilfe-pruefen.ts) – eine umbenannte Überschrift fällt sofort auf.
+ */
+
+export const HANDBUCH_BASIS = 'https://motom001.github.io/dms';
+export type Handbuch = 'admin' | 'benutzer';
+export interface Hilfeziel { handbuch: Handbuch; /** Seite mit Schrägstrich am Ende, z. B. „aufgaben/“. */ seite: string; anker?: string; /** „Hilfe zu …“ */ titel: string }
+
+const admin = (seite: string, titel: string, anker?: string): Hilfeziel => ({ handbuch: 'admin', seite, titel, anker });
+const benutzer = (seite: string, titel: string, anker?: string): Hilfeziel => ({ handbuch: 'benutzer', seite, titel, anker });
+
+export const HILFE = {
+  // Werkbank: Bereiche
+  'werkbank.uebersicht': admin('uebersicht/', 'Übersicht', 'ubersicht'),
+  'werkbank.typen': admin('mappentypen/', 'Mappentypen'),
+  'werkbank.sichten': admin('sichten/', 'Sichten'),
+  'werkbank.benutzer': admin('benutzer/', 'Benutzern und Rollen'),
+  'werkbank.aufgaben': admin('aufgaben/', 'Aufgaben', 'tagliche-zusammenfassung'),
+  'werkbank.betrieb': admin('installation/', 'E-Mail und Adresse', 'e-mail-und-adresse'),
+  'werkbank.verschluesselung': admin('verschluesselung/', 'Verschlüsselung'),
+  'werkbank.designs': admin('designs/', 'Designs'),
+  'werkbank.papierkorb': admin('papierkorb/', 'Papierkorb'),
+  'werkbank.texterkennung': admin('texterkennung/', 'Texterkennung'),
+  'werkbank.wartung': admin('texterkennung/', 'Wartungsoperationen', 'wartungsoperationen'),
+  'werkbank.protokoll': admin('fehlersuche/', 'Protokoll', 'protokoll'),
+  'werkbank.fehlermeldungen': admin('fehlersuche/', 'Fehlermeldungen', 'fehlermeldungen-von-benutzern'),
+  'werkbank.datenbank': admin('fehlersuche/', 'Datenbank', 'datenbank'),
+  'werkbank.technik': admin('fehlersuche/', 'Technik', 'technik'),
+  'werkbank.demo': admin('demo/', 'Demo-Daten'),
+  'werkbank.sicherung': admin('sicherung/', 'Sicherung'),
+  'werkbank.wiederherstellung': admin('wiederherstellen/', 'Wiederherstellen'),
+  'werkbank.wartungsmodus': admin('wartungsmodus/', 'Wartungsmodus'),
+  // Werkbank: Zwischenüberschriften langer Seiten
+  'mappentyp.felder': admin('mappentypen/', 'Feldern', 'felder'),
+  'mappentyp.register': admin('mappentypen/', 'Registern', 'register'),
+  'mappentyp.trefferlisten': admin('mappentypen/', 'Trefferlisten', 'trefferlisten'),
+  'mappentyp.ziehen': admin('mappentypen/', 'Ziehen statt klicken', 'ziehen-statt-klicken'),
+  'sicht.trefferliste': admin('sichten/', 'der Trefferliste einer Sicht', 'trefferliste'),
+  'sicht.bedingungen': admin('sichten/', 'Bedingungen', 'bedingungen'),
+  'benutzer.abwesenheit': admin('benutzer/', 'Abwesenheit', 'abwesenheit'),
+  'benutzer.sperren': admin('benutzer/', 'Zugang sperren', 'zugang-sperren'),
+  'verschluesselung.schluessel': admin('verschluesselung/', 'Schlüssel', 'schlussel-erzeugen'),
+  'sicherung.zeitplan': admin('sicherung/', 'Zeitplan und Aufbewahrung', 'zeitplan-und-aufbewahrung'),
+  'sicherung.speicher': admin('sicherung/', 'Speicherplatz', 'speicherplatz'),
+  'sicherung.ort': admin('sicherung/', 'Speicherort', 'speicherort'),
+  'sicherung.notfallblatt': admin('sicherung/', 'Notfallblatt', 'notfallblatt'),
+  'sicherung.probe': admin('wiederherstellen/', 'Probe-Wiederherstellung', 'probe-wiederherstellung'),
+  // Ablage und Profil: Benutzerhandbuch
+  'ablage.eingang': benutzer('eingang/', 'Eingang und Aufgaben'),
+  'ablage.favoriten': benutzer('ablage/', 'Favoriten', 'favoriten'),
+  'ablage.papierkorb': benutzer('ablage/', 'Papierkorb', 'papierkorb'),
+  'ablage.sicht': benutzer('ablage/', 'Sichten und Listen', 'die-liste'),
+  'dokumente.sortieren': benutzer('dokumente/', 'Sortieren von Dokumenten', 'sortieren'),
+  'dokumente.mehrere': benutzer('dokumente/', 'mehreren Dokumenten auf einmal', 'mehrere-auf-einmal'),
+  'profil.abwesenheit': benutzer('profil/', 'Abwesenheit', 'abwesenheit'),
+  'profil.benachrichtigungen': benutzer('profil/', 'Benachrichtigungen', 'benachrichtigungen-und-ablage'),
+} as const satisfies Record<string, Hilfeziel>;
+export type Hilfeort = keyof typeof HILFE;
+
+/**
+ * Ordner der Version im Handbuch: „v0.22“ für 0.22.x; sonst (Entwicklung, unbekannt) „aktuell“.
+ * Gibt es die Version dort (noch) nicht, leitet die 404-Seite des Handbuchs auf „aktuell“ um.
+ */
+export function handbuchVersion(version: string | null | undefined): string {
+  const m = /^(\d+)\.(\d+)\.\d+$/.exec(version ?? '');
+  return m ? `v${m[1]}.${m[2]}` : 'aktuell';
+}
+
+export function handbuchUrl(handbuch: Handbuch, version: string | null | undefined, seite = ''): string {
+  return `${HANDBUCH_BASIS}/${handbuch}/${handbuchVersion(version)}/${seite}`;
+}
+
+export function hilfeUrl(ziel: Hilfeziel, version: string | null | undefined): string {
+  return `${handbuchUrl(ziel.handbuch, version, ziel.seite)}${ziel.anker ? `#${ziel.anker}` : ''}`;
+}
+
+export const HANDBUCH_NAME: Record<Handbuch, string> = { admin: 'Administratorhandbuch', benutzer: 'Benutzerhandbuch' };

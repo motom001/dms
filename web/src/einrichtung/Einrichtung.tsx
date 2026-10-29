@@ -9,6 +9,7 @@ import { api, ApiFehler, type Bezuege } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
 import { titelOder } from '../seiten';
+import { Hilfe } from '../Hilfe';
 
 /* ---------------------------------------------------------------- */
 
@@ -242,8 +243,8 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
 
       <div className="blatt">
         <div className="blattkopf">
-          <h2 className="h3">Felder</h2>
-          <p className="leise">Feld anklicken, um Datentyp und Eigenschaften festzulegen. Die Reihenfolge gilt auch im Formular.</p>
+          <h2 className="h3">Felder <Hilfe ort="mappentyp.felder" /></h2>
+          <p className="leise">Feld anklicken, um Datentyp und Eigenschaften festzulegen. Die Reihenfolge gilt auch im Formular; ändern per Pfeil oder am Griff ⠿ ziehen. <Hilfe ort="mappentyp.ziehen" /></p>
         </div>
         <div className="feldliste">
           {e.felder.length === 0 && <div className="leer"><p>Noch keine Felder. Füge das erste hinzu, etwa „Bezeichnung“ als Text.</p></div>}
@@ -522,7 +523,7 @@ function RegisterEditor({ e, setE, feldAblage }: { e: Entwurf; setE: (f: (x: Ent
   return (
     <div className="blatt">
       <div className="blattkopf">
-        <h2 className="h3">Register</h2>
+        <h2 className="h3">Register <Hilfe ort="mappentyp.register" /></h2>
         <p className="leise">Die Trennblätter einer Mappe, in dieser Reihenfolge. Welche Felder auf welchem Feldregister liegen, stellst du am Feld ein.</p>
       </div>
       <div className="registerliste">
@@ -645,7 +646,7 @@ function TrefferlisteEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) =>
   return (
     <div className="blatt">
       <div className="blattkopf">
-        <h2 className="h3">Trefferlisten</h2>
+        <h2 className="h3">Trefferlisten <Hilfe ort="mappentyp.trefferlisten" /></h2>
         <p className="leise">Spalten, wenn die Liste breit genug ist, in dieser Reihenfolge. In schmalen Ansichten bilden die ersten drei den kompakten Eintrag: die erste fett, die zweite und dritte darunter. Ohne Spalten: Titel und zwei Felder.
           Eine Liste ist Standard; Sichten und Verknüpfungsregister können eine andere wählen.</p>
       </div>

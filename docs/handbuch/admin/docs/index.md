@@ -33,7 +33,22 @@ Daneben gibt es frei anlegbare, fachliche Rollen (etwa „Steuern und Finanzen�
 
 ## Neue Versionen
 
-Was sich in welcher Version geändert hat, steht auf GitHub unter [Releases (Changelog)](https://github.com/motom001/dms/releases). Die installierte Version zeigt die Werkbank unter **Technik**.
+Was sich in welcher Version geändert hat, steht unter [Neu in dieser Version](neu.md) und auf GitHub unter [Releases (Changelog)](https://github.com/motom001/dms/releases). Die installierte Version zeigt die Werkbank unter **Technik**; dort steht auch ein Link auf alle Änderungen seit deiner Version.
+
+### Das Handbuch zu deiner Version
+
+Zu jeder Version gibt es ein eigenes Handbuch – je Minor-Version, z. B. 0.22 (Korrekturen wie 0.22.1 aktualisieren es):
+
+| Adresse | Inhalt |
+| --- | --- |
+| `…/dms/admin/aktuell/` | neueste Version (Standard) |
+| `…/dms/admin/v0.22/` | Version 0.22 |
+| `…/dms/admin/entwicklung/` | Stand von `main`, noch nicht veröffentlicht |
+
+Oben im Handbuch wählst du die Version; liest du eine ältere, steht das darüber. Am einfachsten kommst du **aus dem DMS** hin: Die Hilfe im Menü, der Link in der Werkbank und jedes **?** öffnen das Handbuch zur installierten Version. Ältere Adressen ohne Version (z. B. `…/dms/admin/sicherung/`) führen zur neuesten.
+
+!!! tip "Das ? neben Überschriften"
+    In der Werkbank steht an jedem Bereich und an vielen Zwischenüberschriften ein kleines **?**. Es öffnet in einem neuen Tab genau den passenden Abschnitt dieses Handbuchs.
 
 Wünsche und Fehler bitte als [Issue](https://github.com/motom001/dms/issues/new?template=wunsch.md) im Format einer User Story mit Abnahmekriterien; umgesetzt wird, was das Label `freigegeben` trägt.
 

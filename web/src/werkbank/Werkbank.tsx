@@ -14,7 +14,8 @@ import { TechnikListe, TechnikPanel, useTechnik } from './Technik';
 import { TresorListe, TresorPanel, useTresor } from './Verschluesselung';
 import { AufgabenListe, AufgabenPanel, useAufgaben } from './Aufgaben';
 import { TexterkennungListe, TexterkennungPanel, useTexterkennung, WartungListe, WartungPanel } from './Texterkennung';
-import { ADMIN_HANDBUCH, UebersichtListe, UebersichtPanel, useUebersicht, WerkbankNavigation } from './Uebersicht';
+import { Hilfe, useHandbuch } from '../Hilfe';
+import { UebersichtListe, UebersichtPanel, useUebersicht, WerkbankNavigation } from './Uebersicht';
 import { useWartungsmodus, WartungsmodusListe, WartungsmodusPanel } from './Wartungsmodus';
 import { SicherungListe, SicherungPanel, useSicherung } from './Sicherung';
 import { WiederherstellungListe, WiederherstellungPanel } from './Wiederherstellung';
@@ -47,6 +48,7 @@ import { PapierkorbDetail, PapierkorbEinstellungen, PapierkorbListe, usePapierko
  */
 export function Werkbank({ teile }: { teile: string[] }) {
   const d = useDaten();
+  const handbuch = useHandbuch();
   const [, bereich = 'uebersicht', id] = teile;
   const benutzer = useBenutzer();
   const protokoll = useProtokoll(bereich === 'protokoll');
@@ -166,7 +168,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           <span aria-hidden="true">♥</span> Projekt unterstützen
           <span className="leise klein">freiwillig, Betrag frei wählbar</span>
         </a>
-        <a className="unterstuetzen handbuchlink" href={ADMIN_HANDBUCH} target="_blank" rel="noreferrer">Administratorhandbuch ↗</a>
+        <a className="unterstuetzen handbuchlink" href={handbuch('admin')} target="_blank" rel="noreferrer">Administratorhandbuch ↗</a>
       </aside>
       <section className="spalte liste" aria-label="Elemente">{liste}</section>
       <section className="spalte mappe" aria-label="Bearbeitung">
@@ -182,7 +184,7 @@ function TypenListe({ offen }: { offen?: string }) {
   return (
     <>
       <div className="listenkopf">
-        <div><h1>Mappentypen</h1><p className="leise klein">Welche Arten von Mappen es gibt, mit Feldern, Registern und Titel.</p></div>
+        <div><h1>Mappentypen</h1><p className="leise klein">Welche Arten von Mappen es gibt, mit Feldern, Registern und Titel. <Hilfe ort="werkbank.typen" /></p></div>
         <Link to="/werkbank/typen/neu" className="knopf primaer klein">+ Neu</Link>
       </div>
       {!d.typen.length

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { api, type WerkbankUebersicht } from '../api';
 import { Link } from '../ort';
+import { Hilfe, useHandbuch } from '../Hilfe';
 import { sicherungsHinweise } from './Sicherung';
 
 /** Werkbank → Übersicht (#68): was zu tun ist, auf einen Blick; Gruppen der Leiste. */
 
-export const ADMIN_HANDBUCH = 'https://motom001.github.io/dms/admin/';
+
 
 const zahl = (n: number) => n.toLocaleString('de-DE');
 const datum = (iso: string) => new Date(iso).toLocaleDateString('de-DE', { dateStyle: 'medium' });
@@ -51,7 +52,7 @@ export function UebersichtListe({ u }: { u: UebersichtZustand }) {
   const h = u.stand ? hinweiseAus(u.stand) : [];
   return (
     <>
-      <div className="listenkopf"><div><h1>Übersicht</h1><p className="leise klein">Was in diesem DMS gerade zu tun ist.</p></div>
+      <div className="listenkopf"><div><h1>Übersicht</h1><p className="leise klein">Was in diesem DMS gerade zu tun ist. <Hilfe ort="werkbank.uebersicht" /></p></div>
         <button type="button" className="knopf klein" onClick={() => void u.laden()}>Neu laden</button></div>
       {u.fehler && <div className="hinweis schlecht"><p>{u.fehler}</p></div>}
       {!u.stand ? <p className="leise">Lade …</p> : !h.length ? <p className="leise leerliste">Alles eingerichtet – nichts zu tun.</p> : (
@@ -66,6 +67,7 @@ export function UebersichtListe({ u }: { u: UebersichtZustand }) {
 }
 
 export function UebersichtPanel({ u }: { u: UebersichtZustand }) {
+  const handbuch = useHandbuch();
   const s = u.stand;
   const h = s ? hinweiseAus(s) : [];
   return (
@@ -73,7 +75,7 @@ export function UebersichtPanel({ u }: { u: UebersichtZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Übersicht</h1>
-        <p className="leise">Hinweise, Stand und Bestand auf einen Blick. Mehr steht im <a href={ADMIN_HANDBUCH} target="_blank" rel="noreferrer" className="verweis">Administratorhandbuch ↗</a>.</p>
+        <p className="leise">Hinweise, Stand und Bestand auf einen Blick. Mehr steht im <a href={handbuch('admin')} target="_blank" rel="noreferrer" className="verweis">Administratorhandbuch ↗</a>.</p>
       </div>
       {!s ? <p className="leise">Lade …</p> : (
         <>

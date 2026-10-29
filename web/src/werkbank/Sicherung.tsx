@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { api, type ProbeStand, type SicherungsPlan, type SicherungStand, type SicherungsZustand, type WhLauf } from '../api';
 import { Schritte } from '../wiederherstellen';
+import { Hilfe, useHandbuch } from '../Hilfe';
 import { Link } from '../ort';
 
 /**
@@ -9,7 +10,6 @@ import { Link } from '../ort';
  */
 
 export const NOTFALLBLATT_URL = '/api/werkbank/notfallblatt';
-const ADMIN_HANDBUCH = 'https://motom001.github.io/dms/admin/';
 const GEAENDERT = 'dms:sicherung';
 export const meldeSicherung = () => dispatchEvent(new Event(GEAENDERT));
 
@@ -78,7 +78,7 @@ export function SicherungListe({ z }: { z: SicherungZustand }) {
   const s = z.stand;
   return (
     <>
-      <div className="listenkopf"><div><h1>Sicherung</h1><p className="leise klein">Datenbank und Dokumente, verschlüsselt, zum selben Zeitpunkt.</p></div></div>
+      <div className="listenkopf"><div><h1>Sicherung</h1><p className="leise klein">Datenbank und Dokumente, verschlüsselt, zum selben Zeitpunkt. <Hilfe ort="werkbank.sicherung" /></p></div></div>
       {s && (
         <ul className="mappenliste">
           <li><a className="eintrag werk" href="#jetzt"><span className="titel">Letzte Sicherung</span>
@@ -96,6 +96,7 @@ export function SicherungListe({ z }: { z: SicherungZustand }) {
 
 export function SicherungPanel({ z }: { z: SicherungZustand }) {
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const handbuch = useHandbuch();
   const s = z.stand;
   if (z.fehler) return <div className="hinweis schlecht"><p>{z.fehler}</p></div>;
   if (!s) return <p className="leise">Lade …</p>;
@@ -113,7 +114,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Sicherung</h1>
-        <p className="leise">Eine Sicherung enthält die ganze Datenbank und alle Dateien zum selben Zeitpunkt – verschlüsselt mit dem Schlüssel aus <Link to="/werkbank/verschluesselung" className="verweis">Verschlüsselung</Link>. Daneben liegt eine lesbare Datei (.json) mit Version, Umfang und Prüfsumme. Mehr im <a href={`${ADMIN_HANDBUCH}sicherung/`} target="_blank" rel="noreferrer" className="verweis">Administratorhandbuch ↗</a>.</p>
+        <p className="leise">Eine Sicherung enthält die ganze Datenbank und alle Dateien zum selben Zeitpunkt – verschlüsselt mit dem Schlüssel aus <Link to="/werkbank/verschluesselung" className="verweis">Verschlüsselung</Link>. Daneben liegt eine lesbare Datei (.json) mit Version, Umfang und Prüfsumme. Mehr im <a href={handbuch('admin', 'sicherung/')} target="_blank" rel="noreferrer" className="verweis">Administratorhandbuch ↗</a>.</p>
       </div>
 
       {!s.zustand.schluessel && <div className="hinweis warn"><p><strong>Ohne Schlüssel keine Sicherung.</strong> Erzeuge ihn zuerst unter Verschlüsselung.</p><Link to="/werkbank/verschluesselung" className="knopf klein">Zur Verschlüsselung</Link></div>}
@@ -167,7 +168,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
       <Zeitplan key={JSON.stringify(s.plan)} plan={s.plan} notfallblatt={s.zustand.notfallblatt.aktuell} gespeichert={() => void z.laden()} />
 
       <section className="blatt" id="speicher">
-        <h2 className="h3">Speicherplatz</h2>
+        <h2 className="h3">Speicherplatz <Hilfe ort="sicherung.speicher" /></h2>
         <dl className="eigenschaften">
           <dt>Dokumente und Dateien heute</dt><dd>{bytes(s.speicher.dateienBytes)} ({s.speicher.dateien.toLocaleString('de-DE')} Dateien)</dd>
           <dt>Datenbank heute</dt><dd>{bytes(s.speicher.datenbankBytes)}</dd>
@@ -179,13 +180,13 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
       </section>
 
       <section className="blatt" id="ort">
-        <h2 className="h3">Speicherort</h2>
+        <h2 className="h3">Speicherort <Hilfe ort="sicherung.ort" /></h2>
         <dl className="eigenschaften">
           <dt>Ordner</dt><dd className="mono">{s.zustand.ort.ordner}</dd>
           <dt>Eigenes Volume</dt><dd>{s.zustand.ort.volume === null ? 'nicht feststellbar' : s.zustand.ort.volume ? 'ja' : 'nein'}</dd>
           <dt>Andere Platte als die Dokumente</dt><dd>{s.zustand.ort.gleichePlatte === null ? 'nicht feststellbar' : s.zustand.ort.gleichePlatte ? 'nein – dieselbe Platte' : 'ja'}</dd>
         </dl>
-        <p className="leise klein">Faustregel 3-2-1: drei Kopien, auf zwei verschiedenen Medien, eine davon außer Haus. Lass das NAS den Sicherungsordner weiterkopieren, z. B. auf eine USB-Platte oder in die Cloud – siehe <a href={`${ADMIN_HANDBUCH}sicherung/#speicherort`} target="_blank" rel="noreferrer" className="verweis">Handbuch ↗</a>.</p>
+        <p className="leise klein">Faustregel 3-2-1: drei Kopien, auf zwei verschiedenen Medien, eine davon außer Haus. Lass das NAS den Sicherungsordner weiterkopieren, z. B. auf eine USB-Platte oder in die Cloud – siehe <a href={`${handbuch('admin', 'sicherung/')}#speicherort`} target="_blank" rel="noreferrer" className="verweis">Handbuch ↗</a>.</p>
       </section>
 
       <Notfallblatt stand={s.zustand.notfallblatt} schluessel={s.zustand.schluessel} geladen={() => void z.laden()} />
@@ -206,7 +207,7 @@ function Zeitplan({ plan, notfallblatt, gespeichert }: { plan: SicherungsPlan; n
   }
   return (
     <section className="blatt" id="zeitplan">
-      <h2 className="h3">Zeitplan und Aufbewahrung</h2>
+      <h2 className="h3">Zeitplan und Aufbewahrung <Hilfe ort="sicherung.zeitplan" /></h2>
       <label className="haken"><input type="checkbox" checked={p.aktiv} disabled={!p.aktiv && !notfallblatt} onChange={(e) => setP({ ...p, aktiv: e.target.checked })} /><span>Automatisch sichern</span></label>
       {!notfallblatt && !p.aktiv && <p className="leise klein">Erst einschaltbar, wenn du das <a href="#notfallblatt" className="verweis">Notfallblatt</a> heruntergeladen hast – ohne den Schlüssel darauf ist eine Sicherung wertlos.</p>}
       <div className="raster">
@@ -235,7 +236,7 @@ function Zeitplan({ plan, notfallblatt, gespeichert }: { plan: SicherungsPlan; n
 export function Notfallblatt({ stand, schluessel, geladen }: { stand: SicherungsZustand['notfallblatt'] | null | undefined; schluessel: boolean; geladen(): void }) {
   return (
     <section className="blatt" id="notfallblatt">
-      <h2 className="h3">Notfallblatt</h2>
+      <h2 className="h3">Notfallblatt <Hilfe ort="sicherung.notfallblatt" /></h2>
       <p>Ein PDF mit allem, was du nach einem Ausfall brauchst: den <strong>Schlüssel</strong> (in Vierergruppen zum Abschreiben), seinen Fingerabdruck, die Haushalt-Id, wo die Sicherungen liegen, und die Schritte zur Wiederherstellung. Der Schlüssel steht in keiner Sicherung – bewahre das Blatt in einem Passwortsafe oder ausgedruckt an einem sicheren Ort auf, getrennt vom NAS.</p>
       {stand?.am && <p className="leise klein">Zuletzt heruntergeladen {zeit(stand.am)}{stand.von ? ` von ${stand.von}` : ''}.</p>}
       {stand && !stand.aktuell && stand.am && <div className="hinweis warn"><p><strong>Der Schlüssel hat sich seitdem geändert.</strong> Lade ein neues Notfallblatt herunter. Bewahre das alte auf, solange du ältere Sicherungen hast – sie brauchen den alten Schlüssel.</p></div>}
@@ -262,7 +263,7 @@ function Probe({ stand, lauf, sicherungen, gesperrt, neuLaden }: { stand: ProbeS
   }
   return (
     <section className="blatt" id="probe">
-      <h2 className="h3">Probe-Wiederherstellung</h2>
+      <h2 className="h3">Probe-Wiederherstellung <Hilfe ort="sicherung.probe" /></h2>
       <p>Spielt die neueste Sicherung in einen eigenen, vorübergehenden Bereich der Datenbank ein und prüft sie: Prüfsumme, Entschlüsselung, Prüfwort, Anzahl Mappen, Dokumente und Benutzer, Prüfwerte von bis zu 20 Dateien. Das laufende DMS bleibt unberührt; der Bereich wird danach entfernt.</p>
       <dl className="eigenschaften">
         <dt>Ampel</dt><dd>{stand.ampel ? <span className={`chip ${AMPEL[stand.ampel][0]}`}>{AMPEL[stand.ampel][1]}</span> : <span className="leise">noch keine Sicherung</span>}</dd>

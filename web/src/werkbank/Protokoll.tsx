@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api, type DebugStand, type Protokolleintrag, type Stufe } from '../api';
 import { Link } from '../ort';
+import { Hilfe } from '../Hilfe';
 
 /**
  * Protokoll in der Werkbank: Mitte die Einträge (neueste oben, mit Filtern und
@@ -59,7 +60,7 @@ export function ProtokollListe({ p, offen }: { p: ProtokollZustand; offen?: stri
   return (
     <>
       <div className="listenkopf">
-        <div><h1>Protokoll</h1><p className="leise klein">Letzte 24 Stunden, höchstens 10.000 Einträge ({p.gespeichert.toLocaleString('de-DE')} gespeichert). Neueste oben.</p></div>
+        <div><h1>Protokoll</h1><p className="leise klein">Letzte 24 Stunden, höchstens 10.000 Einträge ({p.gespeichert.toLocaleString('de-DE')} gespeichert). Neueste oben. <Hilfe ort="werkbank.protokoll" /></p></div>
       </div>
       <div className="protokollfilter">
         <label><span className="sr">Stufe</span>

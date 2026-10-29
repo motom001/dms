@@ -12,6 +12,8 @@ import { MappeAnsicht, NeueMappe } from './MappeFormular';
 import { PapierkorbDetail, PapierkorbListe, usePapierkorb } from './Papierkorb';
 import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
+import { Hilfe } from '../Hilfe';
+import type { Hilfeort } from '../../../shared/src/hilfe';
 
 /**
  * Ablage in drei Spalten, von groß nach klein:
@@ -99,15 +101,15 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           : sicht === 'papierkorb'
           ? <PapierkorbListe z={papierkorb} werkbank={false} offen={dritt} />
           : sicht === 'eingang'
-          ? <Liste key="eingang" sicht="eingang" titel="Eingang" offen={dritt}
+          ? <Liste key="eingang" sicht="eingang" titel="Eingang" offen={dritt} hilfe="ablage.eingang"
               beschreibung="Mappen, an denen du etwas tun sollst: Sie passen nicht mehr zur Definition, jemand hat dich erwähnt oder dir eine Aufgabe gegeben."
               leerText="Nichts zu tun." />
           : sicht === 'favoriten'
-          ? <Liste key="favoriten" sicht="favoriten" titel="Favoriten" offen={dritt}
+          ? <Liste key="favoriten" sicht="favoriten" titel="Favoriten" offen={dritt} hilfe="ablage.favoriten"
               beschreibung="Mappen, die du mit einem Stern markiert hast."
               leerText="Noch keine Favoriten. Markiere eine Mappe mit dem Stern ☆, um sie hier zu finden." />
           : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} spaltenTyp={typ ?? sichtTypen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []} titel={verwaltet?.name ?? typ!.name} beschreibung={verwaltet ? verwaltet.beschreibung : typ?.beschreibung}
-              offen={dritt} neu={!!typ && darfErstellen(typ)} leerText="Noch keine Mappen in dieser Sicht." />
+              offen={dritt} neu={!!typ && darfErstellen(typ)} leerText="Noch keine Mappen in dieser Sicht." hilfe="ablage.sicht" />
           : sicht ? <div className="leer"><p>Diese Sicht gibt es nicht (mehr).</p></div> : null}
       </section>
 
@@ -164,6 +166,8 @@ function LinkListe({ link, suche, offen }: { link: Direktlink; suche: URLSearchP
 
 function Liste(p: {
   sicht: string; typ?: Mappentyp; spaltenTyp?: Mappentyp; spalten?: string[]; listenSpalten?: string[]; titel: string; beschreibung?: string; offen?: string; neu?: boolean; leerText: string;
+  /** Kontextbezogene Hilfe (#110). */
+  hilfe?: Hilfeort;
   /** Sprechender Link (#98): seine Parameter, der Zusatz für Adressen, Sortierung aus der Adresse, erste Mappe öffnen. */
   link?: string; anhang?: string; sortierungFest?: { wert: Sortierung | null; setze(n: Sortierung | null): void }; zuerstOeffnen?: boolean;
 }) {
@@ -234,7 +238,7 @@ function Liste(p: {
       <div className="listenkopf">
         <div>
           <h1>{p.titel}</h1>
-          {p.beschreibung && <p className="leise klein">{p.beschreibung}</p>}
+          {(p.beschreibung || p.hilfe) && <p className="leise klein">{p.beschreibung}{p.hilfe && <> <Hilfe ort={p.hilfe} /></>}</p>}
         </div>
         {p.neu && <Link to={`/ablage/${p.sicht}/neu`} className="knopf gruen klein">+ Neu</Link>}
       </div>

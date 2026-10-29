@@ -1,6 +1,6 @@
 site_name: DMS – Benutzerhandbuch
 site_description: Arbeiten mit dem DMS – Mappen, Dokumente, Suche und Profil
-site_url: https://motom001.github.io/dms/benutzer/
+site_url: !ENV [SITE_URL, 'https://motom001.github.io/dms/benutzer/aktuell/']
 repo_url: https://github.com/motom001/dms
 repo_name: motom001/dms
 edit_uri: edit/main/docs/handbuch/benutzer/docs/
@@ -9,6 +9,8 @@ copyright: DMS steht unter der AGPL-3.0 · <a href="https://github.com/sponsors/
 
 theme:
   name: material
+  # Hinweis auf ältere Versionen (#111)
+  custom_dir: ../overrides
   language: de
   features:
     - navigation.sections
@@ -43,6 +45,11 @@ markdown_extensions:
   - pymdownx.keys
 
 extra:
+  # Versionsauswahl (#111): versions.json wie bei „mike“, „aktuell“ = neuestes Release
+  version:
+    provider: mike
+    default: aktuell
+    alias: true
   social:
     - icon: fontawesome/solid/heart
       link: https://github.com/sponsors/motom001
@@ -53,6 +60,7 @@ extra:
 
 nav:
   - Willkommen: index.md
+  - Neu in dieser Version: neu.md
   - Erste Schritte: erste-schritte.md
   - Arbeiten in der Ablage:
       - Sichten und Listen: ablage.md

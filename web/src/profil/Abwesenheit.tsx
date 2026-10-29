@@ -4,6 +4,8 @@ import { heuteIn } from '../../../shared/src/sichten';
 import { api } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
+import { Hilfe } from '../Hilfe';
+import type { Hilfeort } from '../../../shared/src/hilfe';
 
 /** Abwesenheit mit Vertreter (#78): Formular für das eigene Profil und für Administratoren in der Werkbank. */
 const datum = (t: string | null) => (t ? t.split('-').reverse().join('.') : '');
@@ -12,8 +14,8 @@ export function zeitraumText(a: Abwesenheit): string {
   return a.von && a.bis ? `vom ${datum(a.von)} bis ${datum(a.bis)}` : a.von ? `ab ${datum(a.von)}` : a.bis ? `bis ${datum(a.bis)}` : 'ohne Enddatum';
 }
 
-export function AbwesenheitFormular({ benutzerId, wer, wert, offeneAufgaben, speichern, uebergeben, nachSpeichern }: {
-  benutzerId: string; wer: 'du' | string; wert: Abwesenheit; offeneAufgaben: number;
+export function AbwesenheitFormular({ benutzerId, wer, wert, offeneAufgaben, speichern, uebergeben, nachSpeichern, hilfe = 'profil.abwesenheit' }: {
+  benutzerId: string; wer: 'du' | string; wert: Abwesenheit; offeneAufgaben: number; hilfe?: Hilfeort;
   speichern: (a: Abwesenheit) => Promise<unknown>; uebergeben: () => Promise<{ uebergeben: number }>; nachSpeichern?: () => Promise<void>;
 }) {
   const d = useDaten();
@@ -36,7 +38,7 @@ export function AbwesenheitFormular({ benutzerId, wer, wert, offeneAufgaben, spe
 
   return (
     <form className="blatt" onSubmit={(e) => { e.preventDefault(); void tu(async () => { await speichern(a); return a.an ? 'Abwesenheit gespeichert.' : 'Abwesenheit ausgeschaltet.'; }); }}>
-      <h2 className="h3">Abwesenheit</h2>
+      <h2 className="h3">Abwesenheit <Hilfe ort={hilfe} /></h2>
       <p className="leise">Solange {du ? 'du' : wer} abwesend {du ? 'bist' : 'ist'}, gehen neue Aufgaben – von Hand vergebene, Erwähnungen und „passt nicht“ – an den Vertreter. Er bekommt dazu einen Hinweis im Eingang. Mit Zeitraum wirkt sie nur von–bis (jeweils einschließlich) und endet danach von selbst; ohne Datum, bis du sie ausschaltest.</p>
       {wert.an && <div className={`hinweis ${wirkt ? 'warn' : 'info'}`}><p>{du ? 'Du bist' : `${wer} ist`} {wirkt ? 'abwesend' : 'demnächst abwesend'} – {zeitraumText(wert)}, vertreten durch {vertreter?.name ?? '–'}.</p></div>}
       <label className="haken"><input type="checkbox" checked={a.an} onChange={(e) => setA({ ...a, an: e.target.checked })} /><span>Abwesend</span></label>

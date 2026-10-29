@@ -3,6 +3,7 @@ import { api, type TresorStatus } from '../api';
 import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { Notfallblatt } from './Sicherung';
+import { Hilfe } from '../Hilfe';
 
 /**
  * Schlüssel für verschlüsselte Zugangsdaten (#39): Status, Fingerabdruck, Erzeugen
@@ -57,7 +58,7 @@ export function TresorListe({ t }: { t: TresorZustand }) {
   const s = t.stand;
   return (
     <>
-      <div className="listenkopf"><div><h1>Verschlüsselung</h1><p className="leise klein">Schlüssel für Passwörter, die das DMS speichert.</p></div></div>
+      <div className="listenkopf"><div><h1>Verschlüsselung</h1><p className="leise klein">Schlüssel für Passwörter, die das DMS speichert. <Hilfe ort="werkbank.verschluesselung" /></p></div></div>
       {s && (
         <ul className="mappenliste">
           <li><a className="eintrag werk" href="#schluessel">
@@ -100,7 +101,7 @@ export function TresorPanel({ t }: { t: TresorZustand }) {
       </div>
 
       <section className="blatt" id="schluessel">
-        <h2 className="h3">Schlüssel</h2>
+        <h2 className="h3">Schlüssel <Hilfe ort="verschluesselung.schluessel" /></h2>
         <dl className="eigenschaften">
           <dt>Zustand</dt><dd><span className={`chip ${s.zustand === 'vorhanden' ? 'gut' : 'schlecht'}`}>{TEXT[s.zustand]}</span></dd>
           <dt>Fingerabdruck</dt><dd className="mono">{s.fingerabdruck ?? '–'}</dd>

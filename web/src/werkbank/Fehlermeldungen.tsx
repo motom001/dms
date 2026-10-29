@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, type Fehlermeldung } from '../api';
 import { geheZu, Link } from '../ort';
 import { Person } from '../Person';
+import { Hilfe } from '../Hilfe';
 
 /** Werkbank → Wartung und Fehlersuche → Fehlermeldungen (#70). */
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
@@ -23,7 +24,7 @@ export function FehlermeldungenListe({ z, offen }: { z: FehlermeldungenZustand; 
   return (
     <>
       <div className="listenkopf">
-        <div><h1>Fehlermeldungen</h1><p className="leise klein">{z.erledigt ? 'Erledigte Meldungen der Benutzer.' : 'Was Benutzer gemeldet haben, mit technischen Angaben.'}</p></div>
+        <div><h1>Fehlermeldungen</h1><p className="leise klein">{z.erledigt ? 'Erledigte Meldungen der Benutzer.' : 'Was Benutzer gemeldet haben, mit technischen Angaben.'} <Hilfe ort="werkbank.fehlermeldungen" /></p></div>
         <button type="button" className="knopf klein" onClick={() => z.setErledigt(!z.erledigt)}>{z.erledigt ? 'Offene zeigen' : 'Erledigte zeigen'}</button>
       </div>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}

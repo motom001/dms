@@ -2,6 +2,8 @@ import { version as reactVersion } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { geraetText } from '../../../shared/src/model';
 import { api, type Systemuebersicht, type Vergleich } from '../api';
+import { Hilfe, useHandbuch } from '../Hilfe';
+import { useKonto } from '../konto';
 
 /**
  * Technik und Versionen (#15): installierte Komponenten, als Text für ein
@@ -69,7 +71,7 @@ export type TechnikZustand = ReturnType<typeof useTechnik>;
 export function TechnikListe({ t }: { t: TechnikZustand }) {
   return (
     <>
-      <div className="listenkopf"><div><h1>Technik</h1><p className="leise klein">Was auf diesem System installiert ist.</p></div></div>
+      <div className="listenkopf"><div><h1>Technik</h1><p className="leise klein">Was auf diesem System installiert ist. <Hilfe ort="werkbank.technik" /></p></div></div>
       {t.fehler && <div className="hinweis schlecht"><p>{t.fehler}</p></div>}
       {!t.u ? <p className="leise">Lade …</p> : zeilenAus(t.u).map(([gruppe, liste]) => (
         <section key={gruppe} className="technikgruppe">
@@ -82,6 +84,9 @@ export function TechnikListe({ t }: { t: TechnikZustand }) {
 }
 
 export function TechnikPanel({ t }: { t: TechnikZustand }) {
+  const handbuch = useHandbuch();
+  const { version } = useKonto();
+  const release = /^\d+\.\d+\.\d+$/.test(version ?? '');
   const [laeuft, setLaeuft] = useState(false);
   const [fehler, setFehler] = useState<string>();
   const [kopiert, setKopiert] = useState(false);
@@ -101,7 +106,7 @@ export function TechnikPanel({ t }: { t: TechnikZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Technik und Versionen</h1>
-        <p className="leise">Für Fragen an den Support: Übersicht kopieren und in ein <a className="verweis" href="https://github.com/motom001/dms/issues/new?template=wunsch.md" target="_blank" rel="noreferrer">GitHub-Issue</a> einfügen. Passwörter und Zugangsdaten stehen nicht darin. Wie alles zusammenhängt, beschreibt <a className="verweis" href="https://motom001.github.io/dms/admin/technik/" target="_blank" rel="noreferrer">das Administratorhandbuch</a>.</p>
+        <p className="leise">Für Fragen an den Support: Übersicht kopieren und in ein <a className="verweis" href="https://github.com/motom001/dms/issues/new?template=wunsch.md" target="_blank" rel="noreferrer">GitHub-Issue</a> einfügen. Passwörter und Zugangsdaten stehen nicht darin. Wie alles zusammenhängt, beschreibt <a className="verweis" href={handbuch('admin', 'technik/')} target="_blank" rel="noreferrer">das Administratorhandbuch</a>.</p>
       </div>
       <div className="blatt">
         <h2 className="h3">Für den Support</h2>
@@ -112,6 +117,7 @@ export function TechnikPanel({ t }: { t: TechnikZustand }) {
       </div>
       <div className="blatt">
         <h2 className="h3">Neuere Versionen</h2>
+        {release && <p>Was sich seit deiner Version {version} geändert hat: <a className="verweis" href={handbuch('admin', 'neu/')} target="_blank" rel="noreferrer">Neu in dieser Version</a> im Handbuch, <a className="verweis" href="https://github.com/motom001/dms/releases" target="_blank" rel="noreferrer">alle Releases</a> und <a className="verweis" href={`https://github.com/motom001/dms/compare/v${version}...main`} target="_blank" rel="noreferrer">alle Änderungen seit {version}</a> auf GitHub.</p>}
         <p className="leise">Fragt GitHub (DMS), endoflife.date (Node.js, PostgreSQL, Alpine) und npm (Bibliotheken). Das DMS verbindet sich dafür nur jetzt, auf Knopfdruck, mit dem Internet.</p>
         <div className="knoepfe"><button className="knopf" disabled={laeuft} onClick={() => void pruefen()}>{laeuft ? 'Prüfe …' : t.abgleich ? 'Erneut prüfen' : 'Jetzt prüfen'}</button></div>
         {fehler && !fehler.startsWith('Kopieren') && <p className="fehlertext">{fehler}</p>}

@@ -13,6 +13,7 @@ import { ApiDoku } from './profil/ApiDoku';
 import { Profil } from './profil/Profil';
 import { Werkbank } from './werkbank/Werkbank';
 import { WartungsBanner } from './wartung';
+import { useHandbuch } from './Hilfe';
 
 export function App() {
   const { pfad, suche } = useOrt();
@@ -88,11 +89,6 @@ export function setzeSymbol(url: string | null) {
   el.href = url ?? ursprungsSymbol;
 }
 
-/** Handbücher auf GitHub Pages (#25). */
-export const HANDBUCH = {
-  benutzer: 'https://motom001.github.io/dms/benutzer/',
-  admin: 'https://motom001.github.io/dms/admin/',
-};
 
 const uhrzeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
 
@@ -115,6 +111,7 @@ function Hinweise() {
 /** Menü unter dem eigenen Namen (#69): Konto, Einstellungen, Hilfe, Fehler melden, Abmelden. */
 function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<void> }) {
   const { ich, vertretung, aktualisieren } = useKonto();
+  const handbuch = useHandbuch();
   const [offen, setOffen] = useState(false);
   const abwesend = abwesenheitWirkt(ich.abwesenheit, heuteIn());
   const rahmen = useRef<HTMLDivElement>(null);
@@ -143,7 +140,7 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
           <Link to="/profil/konto" className="menuepunkt">Mein Konto</Link>
           <Link to="/profil/darstellung" className="menuepunkt">Einstellungen</Link>
           <Link to="/profil/abwesenheit" className="menuepunkt">Abwesenheit</Link>
-          <a href={HANDBUCH.benutzer} target="_blank" rel="noreferrer" className="menuepunkt" onClick={() => setOffen(false)}>Hilfe <span aria-hidden="true">↗</span></a>
+          <a href={handbuch('benutzer')} target="_blank" rel="noreferrer" className="menuepunkt" onClick={() => setOffen(false)}>Hilfe <span aria-hidden="true">↗</span></a>
           <Link to="/profil/fehler-melden" className="menuepunkt">Fehler melden</Link>
           <button type="button" className="menuepunkt" onClick={() => void abmelden()}>Abmelden</button>
         </div>

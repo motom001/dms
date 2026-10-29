@@ -1,27 +1,44 @@
 name: Handbuch
 
-# Baut Benutzer- und Administratorhandbuch mit aktuellen Screenshots und
-# veröffentlicht sie auf GitHub Pages (nur von main). Pull Requests bauen nur
-# und legen die Screenshots als Artefakt ab, damit man sie vorher ansehen kann.
+# Baut Benutzer- und Administratorhandbuch mit aktuellen Screenshots und legt sie auf dem
+# Branch gh-pages ab – je Version ein eigener Ordner (#111):
+#   push auf main         → entwicklung/
+#   Release (image.yml)    → vX.Y/ und, wenn es die neueste ist, aktuell/
+#   von Hand               → wahlweise eine Version (z. B. v0.22) oder entwicklung
+# Pull Requests bauen nur und legen die Screenshots als Artefakt ab.
 
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version des Handbuchs, z. B. v0.22 (leer = entwicklung)'
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version des Handbuchs, z. B. v0.22'
+        required: true
+        type: string
+      ref:
+        description: 'Commit, aus dem gebaut wird'
+        required: true
+        type: string
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: handbuch-${{ github.ref }}
-  cancel-in-progress: true
+  contents: write
 
 jobs:
   bauen:
     runs-on: ubuntu-latest
+    concurrency:
+      group: handbuch-bauen-${{ inputs.version || github.ref }}
+      cancel-in-progress: true
+    env:
+      ZIEL: ${{ inputs.version || 'entwicklung' }}
     services:
       postgres:
         image: postgres:17
@@ -35,6 +52,8 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -81,6 +100,9 @@ jobs:
           tail -n 40 "$RUNNER_TEMP/aufnahme.log" 2>/dev/null | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}' | sed 's/^/::error title=Screenshots::/'; echo
           grep -E "ERROR|WARN|error" "$RUNNER_TEMP/dms.log" | tail -n 30 | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}' | sed 's/^/::error title=DMS-Protokoll::/'; echo
 
+      - name: Neu in dieser Version
+        run: python3 docs/handbuch/werkzeuge/neu.py "$ZIEL"
+
       - name: Handbücher bauen
         run: |
           pip install --quiet 'mkdocs-material>=9.5,<10'
@@ -90,10 +112,13 @@ jobs:
           mkdir -p docs/handbuch/admin/docs/api
           mv docs/handbuch/admin/docs/bilder/openapi.json docs/handbuch/admin/docs/api/openapi.json
           rm -f docs/handbuch/benutzer/docs/bilder/openapi.json
-          mkdir -p site
-          cp docs/handbuch/start/index.html site/index.html
-          mkdocs build --strict -f docs/handbuch/benutzer/mkdocs.yml -d "$GITHUB_WORKSPACE/site/benutzer"
-          mkdocs build --strict -f docs/handbuch/admin/mkdocs.yml -d "$GITHUB_WORKSPACE/site/admin"
+          for h in benutzer admin; do
+            SITE_URL="https://motom001.github.io/dms/$h/$ZIEL/" mkdocs build --strict -f "docs/handbuch/$h/mkdocs.yml" -d "$GITHUB_WORKSPACE/site/$h"
+          done
+
+      # Jede Stelle der kontextbezogenen Hilfe (#110) muss im gebauten Handbuch existieren.
+      - name: Hilfe-Links prüfen
+        run: npx tsx docs/handbuch/werkzeuge/hilfe-pruefen.ts site
 
       - name: Screenshots zum Ansehen
         uses: actions/upload-artifact@v4
@@ -102,18 +127,51 @@ jobs:
           path: docs/handbuch/bilder
           retention-days: 7
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: github.event_name != 'pull_request'
         with:
+          name: handbuch
           path: site
+          retention-days: 3
 
+  # Auf dem Branch gh-pages ablegen. Immer nur ein Lauf zur Zeit, damit nichts verloren geht.
   veroeffentlichen:
     needs: bauen
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || inputs.version != '')
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.pages.outputs.page_url }}
+    concurrency:
+      group: gh-pages
+      cancel-in-progress: false
+    env:
+      ZIEL: ${{ inputs.version || 'entwicklung' }}
     steps:
-      - id: pages
-        uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          path: quelle
+      - uses: actions/download-artifact@v4
+        with:
+          name: handbuch
+          path: gebaut
+      - name: Auf gh-pages ablegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          url="https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for versuch in 1 2 3; do
+            rm -rf pages
+            if git ls-remote --exit-code --heads "$url" gh-pages >/dev/null; then
+              git clone --quiet --depth 1 --branch gh-pages "$url" pages
+            else
+              git init --quiet -b gh-pages pages && git -C pages remote add origin "$url"
+            fi
+            python3 quelle/docs/handbuch/werkzeuge/veroeffentlichen.py pages gebaut "$ZIEL" quelle/docs/handbuch/start/index.html
+            git -C pages add -A
+            if git -C pages diff --cached --quiet; then echo "Nichts geändert."; exit 0; fi
+            git -C pages commit --quiet -m "Handbuch $ZIEL (${{ inputs.ref || github.sha }})"
+            if git -C pages push --quiet origin gh-pages; then exit 0; fi
+            echo "Push abgelehnt – neuer Versuch"; sleep 5
+          done
+          exit 1

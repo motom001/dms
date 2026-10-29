@@ -5,6 +5,7 @@ import { useDaten } from '../daten';
 import { geheZu, Link } from '../ort';
 import { titelOder } from '../seiten';
 import { Person } from '../Person';
+import { Hilfe } from '../Hilfe';
 
 /**
  * Papierkorb (#43). In der Ablage sieht jeder, was er selbst gelöscht hat; in der Werkbank
@@ -87,7 +88,7 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
       <div className="listenkopf">
         <div>
           <h1>Papierkorb</h1>
-          <p className="leise klein">{werkbank ? 'Was alle Benutzer gelöscht haben. ' : 'Was du gelöscht hast. '}{aufbewahrung(tage)}</p>
+          <p className="leise klein">{werkbank ? 'Was alle Benutzer gelöscht haben. ' : 'Was du gelöscht hast. '}{aufbewahrung(tage)} <Hilfe ort={werkbank ? 'werkbank.papierkorb' : 'ablage.papierkorb'} /></p>
         </div>
         {liste.length > 0 && <button type="button" className="knopf klein gefahr-rand" disabled={laeuft} onClick={() => void leeren()}>{laeuft ? 'Leere …' : 'Papierkorb leeren'}</button>}
       </div>

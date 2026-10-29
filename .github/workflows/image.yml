@@ -91,12 +91,15 @@ jobs:
     outputs:
       version: ${{ steps.v.outputs.version }}
       neu: ${{ steps.v.outputs.neu }}
+      # Ordner des Handbuchs zu dieser Version (#111): je Minor-Version, z. B. v0.22.
+      handbuch: ${{ steps.v.outputs.handbuch }}
     steps:
       - uses: actions/checkout@v4
       - id: v
         run: |
           version=$(node -p "require('./package.json').version")
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "handbuch=v$(echo "$version" | cut -d. -f1,2)" >> "$GITHUB_OUTPUT"
           if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null; then
             echo "neu=false" >> "$GITHUB_OUTPUT"
             echo "v$version gibt es schon – kein neues Release."
@@ -205,3 +208,14 @@ jobs:
     with:
       tag: v${{ needs.version.outputs.version }}
       ziel: ${{ github.sha }}
+
+  # Handbuch zu dieser Version (#111): vX.Y auf gh-pages, bei der neuesten auch „aktuell“.
+  handbuch:
+    needs: [version, release]
+    if: needs.release.result == 'success'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/handbuch.yml
+    with:
+      version: ${{ needs.version.outputs.handbuch }}
+      ref: ${{ github.sha }}

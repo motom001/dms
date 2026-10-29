@@ -408,7 +408,7 @@ async function main() {
   await s.getByRole('heading', { name: 'E-Mail-Versand' }).waitFor();
   await bild(s, 'werkbank-betrieb');
   await geheZu(s, '/werkbank/verschluesselung');
-  await s.getByRole('heading', { name: 'Schlüssel', exact: true }).waitFor();
+  await s.getByRole('heading', { name: /^Schlüssel\b/ }).waitFor();
   await bild(s, 'werkbank-verschluesselung');
   await geheZu(s, '/werkbank/aufgaben');
   await s.getByRole('heading', { name: 'Tägliche Zusammenfassung' }).waitFor();

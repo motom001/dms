@@ -6,6 +6,7 @@ import { api, type LinkErgebnis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { geheZu, Link } from '../ort';
+import { Hilfe } from '../Hilfe';
 
 const datumZeit = (iso: string | null) => (iso ? new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }) : 'noch nie');
 const status = (b: Benutzer) => (!b.aktiv ? { text: 'deaktiviert', art: '' } : !b.hatPasswort ? { text: 'eingeladen', art: 'warn' } : { text: 'aktiv', art: 'gut' });
@@ -56,7 +57,7 @@ export function BenutzerListe({ liste: alle, offen }: { liste: Benutzer[]; offen
   return (
     <>
       <div className="listenkopf">
-        <div><h1>Benutzer</h1><p className="leise klein">Wer sich anmelden darf und mit welcher Rolle. {aktiv} gerade aktiv (in den letzten {AKTIV_MINUTEN} Minuten).</p></div>
+        <div><h1>Benutzer</h1><p className="leise klein">Wer sich anmelden darf und mit welcher Rolle. {aktiv} gerade aktiv (in den letzten {AKTIV_MINUTEN} Minuten). <Hilfe ort="werkbank.benutzer" /></p></div>
         <Link to="/werkbank/benutzer/neu" className="knopf primaer klein">+ Neu</Link>
       </div>
       {deaktiviert.length > 0 && (
@@ -143,7 +144,7 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
         </div>
       </div>
 
-      <AbwesenheitFormular benutzerId={b.id} wer={selbst ? 'du' : b.name || b.email} wert={b.abwesenheit ?? KEINE_ABWESENHEIT} offeneAufgaben={b.offeneAufgaben ?? 0}
+      <AbwesenheitFormular hilfe="benutzer.abwesenheit" benutzerId={b.id} wer={selbst ? 'du' : b.name || b.email} wert={b.abwesenheit ?? KEINE_ABWESENHEIT} offeneAufgaben={b.offeneAufgaben ?? 0}
         speichern={(a) => api.benutzerAbwesenheit(b.id, a)} uebergeben={() => api.benutzerAufgabenAnVertreter(b.id)}
         nachSpeichern={async () => { await neuLaden(); if (selbst) await aktualisieren(); }} />
 
@@ -186,7 +187,7 @@ function ZugangSperren({ b, selbst, loeschbar, aktion }: { b: Benutzer; selbst: 
   const gruende = [!vertreter && 'Es ist kein Vertreter hinterlegt – wähle oben unter „Abwesenheit“ einen.', offen > 0 && `${name} hat noch ${offen === 1 ? 'eine offene Aufgabe' : `${offen} offene Aufgaben`}${vertreter ? ` – gib sie oben an ${vertreter}.` : '.'}`].filter(Boolean) as string[];
   return (
     <div className="blatt gefahrenzone">
-      <h2 className="h3">Zugang sperren</h2>
+      <h2 className="h3">Zugang sperren <Hilfe ort="benutzer.sperren" /></h2>
       <ul className="leise">
         <li>Der Zugang ist sofort gesperrt, alle Sitzungen werden beendet.</li>
         <li>Die Mappe bleibt erhalten und heißt „{name} (ehemalig)“; Verweise und „angelegt von“ bleiben gültig.</li>
