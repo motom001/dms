@@ -416,6 +416,8 @@ export interface WerkbankUebersicht {
   speicherplatz?: SpeicherplatzStand | null;
   /** Frühere Variablen, die aus der Compose-Datei entfernt werden können (#115). */
   variablen?: string[];
+  /** API-Schlüssel von Administratoren (#128). */
+  adminSchluessel?: number;
   /** Datenbank-Anbindung (#119): DATABASE_URL abweichend, Neustart nötig. */
   anbindung?: { umgebung: 'fehlt' | 'gleich' | 'abweichend'; neustartNoetig: boolean } | null;
   /** Einrichtungsassistent (#119): übersprungene Schritte. */

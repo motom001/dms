@@ -160,7 +160,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                       <span>{n.datei.name} <span className="chip gut">neu</span></span>
                       <span className="leise klein">{groesse(n.datei.size)} · wird beim Speichern hochgeladen</span>
                     </div>
-                    <div className="zeilenaktionen"><button type="button" className="textknopf" onClick={() => vergiss(n.uid)}>Entfernen</button></div>
+                    <div className="zeilenaktionen"><button type="button" className="textknopf" onClick={() => vergiss(n.uid)}>Nicht hochladen</button></div>
                   </div>
                 </li>
               ))}

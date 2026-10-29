@@ -155,7 +155,7 @@ function Mail({ b }: { b: BetriebZustand }) {
 
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <div className="knoepfe">
-        {geaendert && <button type="button" className="knopf" onClick={() => { setM(start()); setLoeschen(false); setMeldung(undefined); }}>Verwerfen</button>}
+        {geaendert && <button type="button" className="knopf" onClick={() => { setM(start()); setLoeschen(false); setMeldung(undefined); }}>Änderungen verwerfen</button>}
         <button className="knopf primaer" disabled={!geaendert || laeuft === 'speichern'}>{laeuft === 'speichern' ? 'Speichere …' : 'E-Mail-Einstellungen speichern'}</button>
       </div>
     </form>

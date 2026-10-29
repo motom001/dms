@@ -11,7 +11,7 @@ export function Hilfe({ ort }: { ort: Hilfeort }) {
   const z = HILFE[ort];
   const text = `Hilfe zu ${z.titel} im ${HANDBUCH_NAME[z.handbuch]}`;
   return (
-    <a className="hilfe" href={hilfeUrl(z, version)} target="_blank" rel="noreferrer" title={text} aria-label={`${text} (öffnet in neuem Tab)`}>
+    <a className="hilfesymbol" href={hilfeUrl(z, version)} target="_blank" rel="noreferrer" title={text} aria-label={`${text} (öffnet in neuem Tab)`}>
       <span aria-hidden="true">?</span>
     </a>
   );

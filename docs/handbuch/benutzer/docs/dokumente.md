@@ -55,6 +55,6 @@ Erkannter Text aus Scans ist nicht immer fehlerfrei – je besser die Vorlage, d
 
 ## Entfernen
 
-Ein Klick auf **Löschen** neben einem Dokument markiert es mit „wird beim Speichern gelöscht“. Erst **Mappe speichern** löscht es; **Behalten** oder **Verwerfen** holt es zurück. Noch nicht gespeicherte Dateien nimmst du mit **Entfernen** wieder aus der Liste.
+Ein Klick auf **Löschen** neben einem Dokument markiert es mit „wird beim Speichern gelöscht“. Erst **Mappe speichern** löscht es; **Behalten** oder **Änderungen verwerfen** holt es zurück. Noch nicht gespeicherte Dateien nimmst du mit **Nicht hochladen** wieder aus der Liste.
 
 Ein einzeln gelöschtes Dokument ist sofort endgültig weg. Löschst du eine ganze Mappe, kommen ihre Dokumente mit ihr in den [Papierkorb](ablage.md#papierkorb).

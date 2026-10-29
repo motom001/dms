@@ -144,7 +144,7 @@ export function DesignEditor({ id }: { id: string }) {
         <div className="knoepfe">
           {!neu && !standard && <button type="button" className="knopf" disabled={geaendert} title={geaendert ? 'Erst speichern' : undefined}
             onClick={() => void aktion(async () => { await api.designStandard(id); await d.designsLaden(); }, 'Als Standard festgelegt.')}>Als Standard festlegen</button>}
-          {geaendert && <button type="button" className="knopf" onClick={() => setE(start)}>Verwerfen</button>}
+          {geaendert && <button type="button" className="knopf" onClick={() => setE(start)}>Änderungen verwerfen</button>}
           <button className="knopf gruen" disabled={!geaendert && !neu}>Design speichern</button>
         </div>
       </div>

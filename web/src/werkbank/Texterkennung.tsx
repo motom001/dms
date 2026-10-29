@@ -143,7 +143,7 @@ function Einstellungen({ t }: { t: TexterkennungZustand }) {
       <p className="leise klein">Andere Dateitypen (z. B. Office-Dokumente) bekommen vorerst keinen Volltext. Externe Dienste für die Texterkennung kommen später dazu.</p>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <div className="knoepfe">
-        {geaendert && <button type="button" className="knopf" onClick={() => { setE(s.einstellungen); setMeldung(undefined); }}>Verwerfen</button>}
+        {geaendert && <button type="button" className="knopf" onClick={() => { setE(s.einstellungen); setMeldung(undefined); }}>Änderungen verwerfen</button>}
         <button className="knopf primaer" disabled={!geaendert}>Speichern</button>
       </div>
     </form>

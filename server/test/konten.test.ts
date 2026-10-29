@@ -195,8 +195,10 @@ describe('API-Schlüssel und OpenAPI', () => {
   it('erzeugt Schlüssel, zeigt danach nur den Anfang und prüft Ablauf', async () => {
     const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
     const k = new Konten(speicherKontoRepo(), null, 'http://nas:3000');
-    const { benutzer } = await k.einrichten({ email: 'admin@example.org', passwort: 'ein-langes-passwort' });
+    const { benutzer: admin } = await k.einrichten({ email: 'admin@example.org', passwort: 'ein-langes-passwort' });
+    const { benutzer } = await k.legeBenutzerAn({ email: 'scanner@example.org', name: 'Scanner', rolle: 'mitglied' });
     const d = new ApiSchluesselDienst(speicherApiSchluesselRepo());
+    await wirft(d.lege(admin, { name: 'Admin' }), 403); // #128: keine Schlüssel für Administratoren
     await wirft(d.lege(benutzer, { name: '' }), 422);
     await wirft(d.lege(benutzer, { name: 'Alt', ablauf: '2000-01-01' }), 422);
     const s = await d.lege(benutzer, { name: 'Scanner Büro', recht: 'schreiben' });

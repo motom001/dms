@@ -30,6 +30,11 @@ Mit E-Mail-Versand fordern Benutzer den Link selbst an. Ohne E-Mail-Versand erze
 
 Es muss immer mindestens einen aktiven Administrator geben; du kannst dich auch nicht selbst deaktivieren.
 
+!!! warning "Administratoren arbeiten nicht in der Ablage"
+    Ein Administrator richtet das DMS ein. Für die tägliche Arbeit nimmt jeder – auch du selbst – einen normalen Benutzer. Öffnet ein Administrator die Ablage, steht oben ein roter Hinweis; er sieht dort alle Mappen. Administratoren bekommen auch keine [API-Schlüssel](api.md#api-schlussel).
+
+![Hinweis für Administratoren in der Ablage](bilder/admin-hinweis.png)
+
 ## Sitzungen
 
 Beim Benutzer steht, auf welchen Geräten er angemeldet ist – mit Gerät, Browser und letzter Aktivität. Einzelne Sitzungen lassen sich beenden, etwa wenn ein Gerät verloren ging.
