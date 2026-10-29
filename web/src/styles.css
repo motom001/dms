@@ -101,6 +101,9 @@ input[type="checkbox"], input[type="radio"] { width: 16px; height: 16px; padding
 .hinweis.gut { background: var(--gruen-zart); color: var(--gruen); }
 .hinweis.info { background: var(--akzent-zart); color: var(--tinte); }
 .hinweis.stapel { flex-direction: column; align-items: stretch; }
+/* „Link kopieren“ (#98) */
+.linkkopiert { margin-top: 8px; }
+.linkkopiert input { flex: 1 1 260px; min-width: 0; font: inherit; }
 .leer { border: 1px dashed var(--linie-stark); border-radius: var(--r); padding: 24px; text-align: center; color: var(--leise); display: flex; flex-direction: column; gap: 12px; align-items: center; }
 .leer h2 { color: var(--tinte); font-size: calc(17px * var(--skala, 1)); }
 .leer p { max-width: 56ch; }

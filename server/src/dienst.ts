@@ -14,9 +14,10 @@ import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
 import type { Einstellungen } from './einstellungen';
 import { istUuid, type NeueMappe, type PapierkorbEintrag, type Repo, type Rueckverweis, type SortierungIntern } from './repo';
 import {
-  bereinigeBedingungen, heuteIn, kinderVon, klauselnFuer, waereKreis, wirksameTypen,
+  bereinigeBedingungen, filterFuer, heuteIn, kinderVon, klauselnFuer, waereKreis, wirksameTypen,
   type Aufloesung, type Sicht, type SichtDaten,
 } from '../../shared/src/sichten';
+import { liesDirektlink } from '../../shared/src/direktlink';
 
 /* ---------- Eingaben bereinigen: nur bekannte Eigenschaften übernehmen ---------- */
 
@@ -838,7 +839,7 @@ export class Dienst {
    * Eine Seite einer Sicht: „eingang“, eine verwaltete Sicht (#38) oder – für Links auf Mappen,
    * deren Typ keine eigene Sicht hat – eine Typ-Id. Mit den Bezügen für die Anzeige.
    */
-  async seite(ich: { id: string; rolle: string }, q: { sicht?: string; von?: unknown; anzahl?: unknown; suche?: unknown; sortierung?: unknown; absteigend?: unknown; volltext?: unknown; notizen?: unknown }) {
+  async seite(ich: { id: string; rolle: string }, q: { sicht?: string; link?: unknown; von?: unknown; anzahl?: unknown; suche?: unknown; sortierung?: unknown; absteigend?: unknown; volltext?: unknown; notizen?: unknown }) {
     const von = Math.max(0, Math.floor(Number(q.von) || 0));
     const anzahl = Math.min(500, Math.max(1, Math.floor(Number(q.anzahl) || 100)));
     const suche = text(q.suche).slice(0, 200) || undefined;
@@ -850,14 +851,22 @@ export class Dienst {
     // „typ:<id>“: alle Mappen eines Typs, ohne Bedingungen einer Sicht (z. B. Auswahl eines Verweises).
     const nurTyp = String(q.sicht ?? '').startsWith('typ:') ? String(q.sicht).slice(4) : null;
     const sicht = nurTyp ? undefined : sichten.find((x) => x.id === q.sicht);
+    // Sprechender Link (#98): „link“ mit den Parametern des Links in `link`.
+    const gelesen = q.sicht === 'link' ? liesDirektlink(new URLSearchParams(text(q.link).slice(0, 4000)), [...typen.values()]) : null;
+    if (gelesen && !gelesen.ok) throw new Fachfehler(422, gelesen.fehler.join(' '));
+    const link = gelesen?.ok ? gelesen.link : null;
     // Sortieren nach Feldern geht, wenn die Sicht genau einen Mappentyp zeigt.
     const fest = q.sicht === 'eingang' || q.sicht === 'favoriten';
-    const einTyp = fest ? undefined : sicht ? (() => { const w = wirksameTypen(sichten, sicht.id); return w.length === 1 ? typen.get(w[0]) : undefined; })() : typen.get(nurTyp ?? String(q.sicht));
-    const sortierung = sortierungAus(text(q.sortierung), q.absteigend === 'true' || q.absteigend === true, einTyp);
+    const einTyp = link ? link.typ : fest ? undefined : sicht ? (() => { const w = wirksameTypen(sichten, sicht.id); return w.length === 1 ? typen.get(w[0]) : undefined; })() : typen.get(nurTyp ?? String(q.sicht));
+    const sortierung = link && !text(q.sortierung)
+      ? (link.sortierung ? sortierungAus(link.sortierung.spalte, link.sortierung.absteigend, einTyp) : undefined)
+      : sortierungAus(text(q.sortierung), q.absteigend === 'true' || q.absteigend === true, einTyp);
     const r = q.sicht === 'eingang'
       ? await this.repo.seite({ eingang: { benutzerId: ich.id, admin: ich.rolle === 'admin' }, suche, volltext, notizen, von, anzahl, sortierung })
       : q.sicht === 'favoriten'
         ? await this.repo.seite({ favoriten: { benutzerId: ich.id }, suche, volltext, notizen, von, anzahl, sortierung })
+      : link
+        ? await this.repo.seite({ klauseln: [{ typen: [link.typ.id], filter: filterFuer(link, [link.typ], await this.aufloesung(ich.id)) }], suche, volltext, notizen, von, anzahl, sortierung })
       : sicht
         ? await this.repo.seite({ klauseln: klauselnFuer(sichten, sicht.id, typen, await this.aufloesung(ich.id)), suche, volltext, notizen, von, anzahl, sortierung })
         : await this.repo.seite({ typId: nurTyp ?? q.sicht, suche, volltext, notizen, von, anzahl, sortierung });

@@ -128,10 +128,10 @@ export const api = {
   typAnlegen: (t: unknown) => anfrage<Mappentyp>('POST', '/api/typen', t),
   typAendern: (id: string, t: unknown) => anfrage<Mappentyp>('PUT', `/api/typen/${id}`, t),
   typLoeschen: (id: string) => anfrage<null>('DELETE', `/api/typen/${id}`),
-  /** Eine Seite einer Sicht („eingang“ oder Typ-Id), nach Titel sortiert. */
-  seite: (sicht: string, von = 0, anzahl = 100, suche = '', sortierung?: Sortierung | null, volltext = false, notizen = false) =>
+  /** Eine Seite einer Sicht („eingang“, Sicht- oder Typ-Id; „link“ mit den Parametern eines sprechenden Links, #98). */
+  seite: (sicht: string, von = 0, anzahl = 100, suche = '', sortierung?: Sortierung | null, volltext = false, notizen = false, link?: string) =>
     anfrage<Seite>('GET', `/api/mappen?${new URLSearchParams({
-      sicht, von: String(von), anzahl: String(anzahl), ...(suche ? { suche } : {}), ...(suche && volltext ? { volltext: 'true' } : {}), ...(suche && notizen ? { notizen: 'true' } : {}),
+      sicht, ...(link !== undefined ? { link } : {}), von: String(von), anzahl: String(anzahl), ...(suche ? { suche } : {}), ...(suche && volltext ? { volltext: 'true' } : {}), ...(suche && notizen ? { notizen: 'true' } : {}),
       ...(sortierung ? { sortierung: sortierung.spalte, absteigend: String(sortierung.absteigend) } : {}),
     })}`),
   einstellungen: () => anfrage<Record<string, unknown>>('GET', '/api/konto/einstellungen'),

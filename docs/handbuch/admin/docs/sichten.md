@@ -106,3 +106,6 @@ Entfernst du ein Feld oder Register, auf das eine Bedingung zielt, wird die Sich
 
 !!! info "Sichten und Rechte"
     Eine Sicht gibt nie Zugriff auf Mappen, die ein Benutzer sonst nicht sehen dürfte. Im Moment sehen alle angemeldeten Benutzer alle Sichten; die Sichtbarkeit je Rolle kommt mit der Berechtigungsverwaltung.
+
+!!! tip "Ohne Sicht auf Mappen zeigen"
+    Dieselben Bedingungen gehen auch in einem [sprechenden Link](direktlinks.md), z. B. `/ablage/link?typ=Rechnung&bezahlt=nein` – ganz ohne Sicht einzurichten.

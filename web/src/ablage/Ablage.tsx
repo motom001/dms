@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { kinderVon, mitNachkommen, spaltenDerSicht, wirksameTypen, type Sicht } from '../../../shared/src/sichten';
+import { beschreibeBedingung, kinderVon, mitNachkommen, spaltenDerSicht, wirksameTypen, type Sicht } from '../../../shared/src/sichten';
+import { liesDirektlink, type Direktlink } from '../../../shared/src/direktlink';
 import { darfErstellen, formatiere, GEMISCHTE_SPALTEN, sortierbar, standardliste, TREFFER_ANFANG, TREFFER_ENDE, vorlageFelder, wirksameVorlage, type Ausschnitt, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
 import { api, type Bezuege, type MappeDetails } from '../api';
 import { useDaten } from '../daten';
@@ -19,6 +20,7 @@ import { spaltenName, zelle } from './spalten';
  * /ablage/:sicht                    „eingang“, „favoriten“ (#62), „papierkorb“ (#43), eine verwaltete Sicht (#38) oder die Id eines Mappentyps
  * /ablage/:sicht/:mappeId           Mappe rechts geöffnet
  * /ablage/:typId/neu?verweis=k:id   neue Mappe, optional mit vorbelegtem Verweis
+ * /ablage/link?typ=…&feld=…         sprechender Link (#98); geöffnet: /ablage/link/:mappeId?typ=…
  *
  * Die Liste lädt je 100 Mappen nach Titel sortiert und beim Scrollen die nächsten.
  */
@@ -39,6 +41,10 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   const sichtTypen = verwaltet ? wirksameTypen(d.sichten, verwaltet.id).map((t) => d.typ(t)).filter((t): t is Mappentyp => !!t) : typ ? [typ] : [];
   const wahl = verwaltet ? spaltenDerSicht(sichtTypen, verwaltet.trefferliste) : typ ? { key: 'standard', spalten: standardliste(typ).spalten } : { key: null, spalten: GEMISCHTE_SPALTEN };
   const papierkorb = usePapierkorb(false, sicht === 'papierkorb');
+  // Sprechender Link (#98): die Adresse ist der Link; beim Öffnen einer Mappe bleibt sie erhalten.
+  const istLink = sicht === 'link';
+  const anhang = istLink ? `?${suche.toString()}` : '';
+  const link = istLink ? liesDirektlink(suche, d.typen) : null;
 
   let rechts;
   if (dritt === 'neu' && !typ) {
@@ -50,7 +56,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   } else if (dritt && sicht === 'papierkorb') {
     rechts = <PapierkorbDetail key={dritt} id={dritt} werkbank={false} />;
   } else if (dritt) {
-    rechts = <MappeLader key={dritt} id={dritt} sicht={sicht} />;
+    rechts = <MappeLader key={dritt} id={dritt} sicht={sicht} anhang={anhang} />;
   } else {
     rechts = <div className="platzhalter"><p>Wähle in der Liste eine Mappe aus{typ ? ' oder lege eine neue an' : ''}.</p></div>;
   }
@@ -80,7 +86,17 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
       </aside>
 
       <section className="spalte liste" aria-label="Mappen">
-        {sicht === 'papierkorb'
+        {link
+          ? link.ok
+            ? <LinkListe key={`${link.link.typ.id}:${JSON.stringify(link.link.bedingungen)}`} link={link.link} suche={suche} offen={dritt} />
+            : <>
+                <div className="listenkopf"><div><h1>Link</h1></div></div>
+                <div className="hinweis schlecht stapel" role="alert">
+                  <p>Dieser Link lässt sich nicht auflösen:</p>
+                  <ul>{link.fehler.map((f) => <li key={f}>{f}</li>)}</ul>
+                </div>
+              </>
+          : sicht === 'papierkorb'
           ? <PapierkorbListe z={papierkorb} werkbank={false} offen={dritt} />
           : sicht === 'eingang'
           ? <Liste key="eingang" sicht="eingang" titel="Eingang" offen={dritt}
@@ -96,7 +112,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
       </section>
 
       <section className="spalte mappe" aria-label="Mappe">
-        <Link to={`/ablage/${sicht ?? 'eingang'}`} className="verweis nur-schmal">← Zur Liste</Link>
+        <Link to={`/ablage/${sicht ?? 'eingang'}${anhang}`} className="verweis nur-schmal">← Zur Liste</Link>
         {rechts}
       </section>
     </Dreiteilung>
@@ -104,7 +120,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
 }
 
 /** Lädt eine Mappe mit Rückverweisen, Dokumenten und Bezügen und zeigt sie an. */
-function MappeLader({ id, sicht }: { id: string; sicht: string }) {
+function MappeLader({ id, sicht, anhang = '' }: { id: string; sicht: string; anhang?: string }) {
   const d = useDaten();
   const [details, setDetails] = useState<MappeDetails | null | 'fehlt'>(null);
   const laden = useCallback(async () => {
@@ -115,7 +131,7 @@ function MappeLader({ id, sicht }: { id: string; sicht: string }) {
   if (details === 'fehlt') return <div className="leer"><p>Diese Mappe gibt es nicht (mehr).</p></div>;
   const t = d.typ(details.mappe.typId);
   if (!t) return <div className="leer"><p>Der Mappentyp dieser Mappe fehlt.</p></div>;
-  return <MappeAnsicht key={details.mappe.id} typ={t} details={details} sicht={sicht} neuLaden={laden} />;
+  return <MappeAnsicht key={details.mappe.id} typ={t} details={details} sicht={sicht} anhang={anhang} neuLaden={laden} />;
 }
 
 /** Nebenzeile eines Listeneintrags: zwei Felder, die nicht schon im Titel stehen. */
@@ -125,8 +141,34 @@ function unterzeile(typ: Mappentyp, m: Mappe, bezuege: Bezuege) {
   return neben.map((f) => formatiere(f, m.werte[f.key], (id) => titelOder(bezuege[id]?.titel))).filter(Boolean).join(' · ');
 }
 
-function Liste(p: { sicht: string; typ?: Mappentyp; spaltenTyp?: Mappentyp; spalten?: string[]; listenSpalten?: string[]; titel: string; beschreibung?: string; offen?: string; neu?: boolean; leerText: string }) {
+/**
+ * Trefferliste eines sprechenden Links (#98): vorübergehende Sicht, nicht im Baum.
+ * Die erste Mappe öffnet sich von selbst; die Sortierung steht in der Adresse.
+ */
+function LinkListe({ link, suche, offen }: { link: Direktlink; suche: URLSearchParams; offen?: string }) {
+  const sortierung = link.sortierung;
+  const setze = (n: Sortierung | null) => {
+    const q = new URLSearchParams(suche);
+    if (!n || (n.spalte === '_titel' && !n.absteigend)) q.delete('sortierung');
+    else q.set('sortierung', `${n.absteigend ? '-' : ''}${n.spalte}`);
+    geheZu(`/ablage/link${offen ? `/${offen}` : ''}?${q.toString()}`, true);
+  };
+  const bedingungen = link.bedingungen.map((b) => beschreibeBedingung(b, [link.typ]));
+  return (
+    <Liste sicht="link" link={suche.toString()} anhang={`?${suche.toString()}`} typ={link.typ} spaltenTyp={link.typ}
+      spalten={standardliste(link.typ).spalten} listenSpalten={standardliste(link.typ).spalten}
+      titel={`Link: ${link.typ.name}`} beschreibung={bedingungen.length ? bedingungen.join(' · ') : 'Alle Mappen dieses Typs'}
+      offen={offen} zuerstOeffnen sortierungFest={{ wert: sortierung, setze }} leerText="Keine Mappe passt zu diesem Link." />
+  );
+}
+
+function Liste(p: {
+  sicht: string; typ?: Mappentyp; spaltenTyp?: Mappentyp; spalten?: string[]; listenSpalten?: string[]; titel: string; beschreibung?: string; offen?: string; neu?: boolean; leerText: string;
+  /** Sprechender Link (#98): seine Parameter, der Zusatz für Adressen, Sortierung aus der Adresse, erste Mappe öffnen. */
+  link?: string; anhang?: string; sortierungFest?: { wert: Sortierung | null; setze(n: Sortierung | null): void }; zuerstOeffnen?: boolean;
+}) {
   const d = useDaten();
+  const anhang = p.anhang ?? '';
   const [eingabe, setEingabe] = useState('');
   const [suche, setSuche] = useState('');
   // Suche erst nach einer kurzen Tipppause an den Server schicken.
@@ -134,15 +176,26 @@ function Liste(p: { sicht: string; typ?: Mappentyp; spaltenTyp?: Mappentyp; spal
 
   // Sortierung je Benutzer und Mappentyp (bzw. Eingang), auf dem Server gespeichert.
   const sortSchluessel = `sortierung:${p.sicht}`;
-  const sortierung = (d.einstellungen[sortSchluessel] as Sortierung | undefined) ?? null;
+  const sortierung = p.sortierungFest ? p.sortierungFest.wert : (d.einstellungen[sortSchluessel] as Sortierung | undefined) ?? null;
+  const setzeSortierung = (n: Sortierung | null) => (p.sortierungFest ? p.sortierungFest.setze(n) : d.setzeEinstellung(sortSchluessel, n));
   const sortiere = (spalte: string) => {
     const n: Sortierung | null = sortierung?.spalte === spalte ? { spalte, absteigend: !sortierung.absteigend } : { spalte, absteigend: false };
-    d.setzeEinstellung(sortSchluessel, n.spalte === '_titel' && !n.absteigend ? null : n);
+    setzeSortierung(n.spalte === '_titel' && !n.absteigend ? null : n);
   };
   // Volltextsuche (#45): je Benutzer gemerkt.
   const volltext = d.einstellungen.suche_volltext === true;
   const inNotizen = d.einstellungen.suche_notizen === true;
-  const s = useSeiten(p.sicht, suche, d.stand, sortierung, volltext, inNotizen);
+  const s = useSeiten(p.sicht, suche, d.stand, sortierung, volltext, inNotizen, p.link);
+
+  // Link (#98): die erste Mappe öffnen – einmal, nicht nach „Zur Liste“.
+  const geoeffnet = useRef(false);
+  useEffect(() => {
+    if (p.offen) { geoeffnet.current = true; return; }
+    if (p.zuerstOeffnen && !geoeffnet.current && s.mappen.length) {
+      geoeffnet.current = true;
+      geheZu(`/ablage/${p.sicht}/${s.mappen[0].id}${anhang}`, true);
+    }
+  }, [p.offen, p.zuerstOeffnen, s.mappen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Breite der Liste: schmal → kompakte Einträge, breit → Tabelle (#22).
   const mess = useRef<HTMLDivElement>(null);
@@ -201,7 +254,7 @@ function Liste(p: { sicht: string; typ?: Mappentyp; spaltenTyp?: Mappentyp; spal
       {anzahlText && (
         <p className="listenzahl leise klein" aria-live="polite">
           {anzahlText}{s.mappen.length < (s.gesamt ?? 0) ? `, ${zahl(s.mappen.length)} geladen` : ''}
-          {sortierung && <> · sortiert nach {spaltenName(sortierung.spalte, p.typ)} {sortierung.absteigend ? '↓' : '↑'} <button type="button" className="textknopf" onClick={() => d.setzeEinstellung(sortSchluessel, null)}>nach Titel</button></>}
+          {sortierung && <> · sortiert nach {spaltenName(sortierung.spalte, p.typ)} {sortierung.absteigend ? '↓' : '↑'} <button type="button" className="textknopf" onClick={() => setzeSortierung(null)}>nach Titel</button></>}
         </p>
       )}
       {s.fehler && <div className="hinweis schlecht"><p>{s.fehler}</p></div>}
@@ -209,7 +262,7 @@ function Liste(p: { sicht: string; typ?: Mappentyp; spaltenTyp?: Mappentyp; spal
       {s.gesamt === 0
         ? <p className="leise leerliste">{suche ? 'Nichts gefunden.' : p.leerText}</p>
         : tabelle
-          ? <Tabelle sicht={p.sicht} typ={p.typ} spaltenTyp={p.spaltenTyp} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} ausschnitte={s.ausschnitte} aufgaben={s.aufgaben} favoriten={s.favoriten} offen={p.offen}
+          ? <Tabelle sicht={p.sicht} anhang={anhang} typ={p.typ} spaltenTyp={p.spaltenTyp} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} ausschnitte={s.ausschnitte} aufgaben={s.aufgaben} favoriten={s.favoriten} offen={p.offen}
               sortierung={sortierung} sortiere={sortiere} ende={nachladen ? (el) => { ende.current = el; } : undefined} nachladen={nachladen} />
           : <ul className="mappenliste">
               {s.mappen.map((m) => {
@@ -218,7 +271,7 @@ function Liste(p: { sicht: string; typ?: Mappentyp; spaltenTyp?: Mappentyp; spal
                 return (
                   <li key={m.id} className="mit-stern">
                     <Stern mappeId={m.id} an={s.favoriten.has(m.id)} titel={k.titel} klein />
-                    <Link to={`/ablage/${p.sicht}/${m.id}`} className={`eintrag ${p.offen === m.id ? 'an' : ''}`}>
+                    <Link to={`/ablage/${p.sicht}/${m.id}${anhang}`} className={`eintrag ${p.offen === m.id ? 'an' : ''}`}>
                       <span className="titel">{k.titel}</span>
                       <Unter text={k.unter} />
                       {s.ausschnitte[m.id] && <Fundstelle a={s.ausschnitte[m.id]} />}
@@ -246,7 +299,7 @@ function kompakt(liste: string[], einTyp: boolean, typ: Mappentyp | undefined, m
 }
 
 function Tabelle(p: {
-  sicht: string; typ?: Mappentyp; spaltenTyp?: Mappentyp; spalten: string[]; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; favoriten: Set<string>; offen?: string;
+  sicht: string; anhang?: string; typ?: Mappentyp; spaltenTyp?: Mappentyp; spalten: string[]; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; favoriten: Set<string>; offen?: string;
   sortierung: Sortierung | null; sortiere(spalte: string): void; ende?: (el: HTMLElement | null) => void; nachladen: ReactNode;
 }) {
   const d = useDaten();
@@ -279,7 +332,7 @@ function Tabelle(p: {
         <tbody>
           {p.mappen.map((m) => {
             const typ = d.typ(m.typId);
-            const ziel = `/ablage/${p.sicht}/${m.id}`;
+            const ziel = `/ablage/${p.sicht}/${m.id}${p.anhang ?? ''}`;
             return (
               <tr key={m.id} className={`${p.offen === m.id ? 'an' : ''} ${m.passt === false ? 'unpassend' : ''}`} onClick={(e) => { if (!(e.target as HTMLElement).closest('a, button')) geheZu(ziel); }}>
                 <td className="sternspalte"><Stern mappeId={m.id} an={p.favoriten.has(m.id)} titel={titelOder(m.titel)} klein /></td>

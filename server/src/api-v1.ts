@@ -48,7 +48,8 @@ export const V1_TABELLE: V1[] = [
     methode: 'GET', pfad: '/mappen', gruppe: 'Ablage', zusammenfassung: 'Mappen einer Sicht, seitenweise',
     beschreibung: 'Mappen eines Typs (oder des eigenen Eingangs), sortiert und seitenweise. `bezuege` enthält Titel und Typ der Mappen, auf die die gelieferten Mappen verweisen.',
     parameter: [
-      { name: 'sicht', wo: 'query', typ: 'string', pflicht: true, beschreibung: 'Id einer Sicht, „eingang“, „favoriten“ (eigene Favoriten) oder „typ:<Id eines Mappentyps>“ (alle Mappen dieses Typs, ohne Bedingungen)' },
+      { name: 'sicht', wo: 'query', typ: 'string', pflicht: true, beschreibung: 'Id einer Sicht, „eingang“, „favoriten“ (eigene Favoriten) oder „typ:<Id eines Mappentyps>“ (alle Mappen dieses Typs, ohne Bedingungen) oder „link“ (sprechender Link, siehe link)' },
+      { name: 'link', wo: 'query', typ: 'string', beschreibung: 'Nur mit sicht=link: die Parameter eines sprechenden Links als ein kodierter Wert, z. B. typ%3DRechnung%26bezahlt%3Dnein (#98). Fehler im Link: 422.' },
       { name: 'von', wo: 'query', typ: 'integer', beschreibung: 'Erster Eintrag (ab 0), Standard 0' },
       { name: 'anzahl', wo: 'query', typ: 'integer', beschreibung: 'Anzahl, 1–500, Standard 100' },
       { name: 'suche', wo: 'query', typ: 'string', beschreibung: 'Text in Titel oder Werten' },

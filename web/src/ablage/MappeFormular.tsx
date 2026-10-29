@@ -13,6 +13,7 @@ import { Historie } from './Historie';
 import { Notizen } from './Notizen';
 import { AufgabenHinweis, NeueAufgabe } from './Aufgaben';
 import { Aktionsmenue, Druckansicht, EmailMaske } from './Aktionen';
+import { linkZuMappe } from '../../../shared/src/direktlink';
 import { Person } from '../Person';
 import { Dokumente, type NeueDatei } from './Dokumente';
 
@@ -40,7 +41,7 @@ export function NeueMappe({ typ, verweis, sicht }: { typ: Mappentyp; verweis?: s
   );
 }
 
-export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp; details: MappeDetails; sicht: string; neuLaden: () => Promise<void> }) {
+export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { typ: Mappentyp; details: MappeDetails; sicht: string; anhang?: string; neuLaden: () => Promise<void> }) {
   const d = useDaten();
   const { ich } = useKonto();
   const mappe = details.mappe;
@@ -52,6 +53,9 @@ export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp
   const [drucken, setDrucken] = useState(false);
   const druckEnde = useCallback(() => setDrucken(false), []);
   const notizen = details.notizen ?? [];
+  // Sprechender Link (#98) über ein eindeutiges Feld oder die Titelfelder.
+  const direktlink = linkZuMappe(typ, mappe);
+  const [kopiert, setKopiert] = useState<{ link: string; ok: boolean } | null>(null);
   return (
     <>
       <div className="mappenkopf">
@@ -67,8 +71,10 @@ export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp
           <button type="button" className={`knopf klein ${notizenOffen ? 'an' : ''}`} aria-expanded={notizenOffen} onClick={() => setNotizenOffen(!notizenOffen)} title="Notizen zu dieser Mappe">
             <span aria-hidden="true">🗒</span> Notizen{notizen.length ? ` (${notizen.length})` : ''}
           </button>
-          <Aktionsmenue aufgabe={() => setAufgabeOffen(true)} email={() => setEmailOffen(true)} drucken={() => setDrucken(true)} />
+          <Aktionsmenue aufgabe={() => setAufgabeOffen(true)} email={() => setEmailOffen(true)} drucken={() => setDrucken(true)}
+            link={direktlink ? () => { const l = location.origin + direktlink; void kopiere(l).then((ok) => setKopiert({ link: l, ok })); } : undefined} />
         </div>
+        {kopiert && <LinkKopiert {...kopiert} schliessen={() => setKopiert(null)} />}
       </div>
       <AufgabenHinweis aufgaben={details.aufgaben ?? []} neuLaden={neuLaden} />
       {aufgabeOffen && <NeueAufgabe mappeId={mappe.id} neuLaden={neuLaden} schliessen={() => setAufgabeOffen(false)} />}
@@ -78,7 +84,7 @@ export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp
       {mappe.passt === false && (
         <div className="hinweis warn"><p>Diese Mappe passt nicht mehr zur aktuellen Definition von „{typ.name}“{mappe.problem ? ` (${mappe.problem})` : ''}. Beim nächsten Speichern müssen die markierten Felder stimmen.</p></div>
       )}
-      <Formular typ={typ} mappe={mappe} start={rohAusWerten(typ, mappe.werte)} sicht={sicht} details={details} neuLaden={neuLaden} />
+      <Formular typ={typ} mappe={mappe} start={rohAusWerten(typ, mappe.werte)} sicht={sicht} anhang={anhang} details={details} neuLaden={neuLaden} />
       {verwaist.length > 0 && (
         <section className="blatt">
           <h2 className="h3">Werte ohne Felddefinition</h2>
@@ -87,6 +93,26 @@ export function MappeAnsicht({ typ, details, sicht, neuLaden }: { typ: Mappentyp
         </section>
       )}
     </>
+  );
+}
+
+/** In die Zwischenablage; ohne HTTPS (z. B. http://nas:8080) über ein unsichtbares Textfeld. */
+async function kopiere(text: string): Promise<boolean> {
+  try { await navigator.clipboard.writeText(text); return true; } catch { /* weiter mit dem Rückfall */ }
+  const t = document.createElement('textarea');
+  t.value = text; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+  document.body.appendChild(t); t.select();
+  try { return document.execCommand('copy'); } catch { return false; } finally { t.remove(); }
+}
+
+/** Rückmeldung zu „Link kopieren“ (#98); klappt das Kopieren nicht, steht der Link markiert zum Kopieren da. */
+function LinkKopiert({ link, ok, schliessen }: { link: string; ok: boolean; schliessen(): void }) {
+  return (
+    <div className={`hinweis ${ok ? 'gut' : 'warn'} linkkopiert`} role="status">
+      <p>{ok ? 'Link kopiert:' : 'Kopieren ging nicht – markiere den Link und kopiere ihn selbst:'}</p>
+      <input type="text" readOnly value={link} aria-label="Link auf diese Mappe" onFocus={(e) => e.target.select()} autoFocus={!ok} />
+      <button type="button" className="textknopf" onClick={schliessen}>Schließen</button>
+    </div>
   );
 }
 
@@ -106,8 +132,8 @@ function verknuepfungsGruppen(d: ReturnType<typeof useDaten>, mappe: Mappe | und
     })));
 }
 
-function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
-  typ: Mappentyp; mappe?: Mappe; start: RohWerte; sicht: string; details?: MappeDetails | null; neuLaden?: () => Promise<void>;
+function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden }: {
+  typ: Mappentyp; mappe?: Mappe; start: RohWerte; sicht: string; anhang?: string; details?: MappeDetails | null; neuLaden?: () => Promise<void>;
 }) {
   const d = useDaten();
   const register = registerVon(typ);
@@ -209,7 +235,7 @@ function Formular({ typ, mappe, start, sicht, details, neuLaden }: {
     if (!confirm(frage)) return;
     try {
       await api.mappeLoeschen(mappe.id);
-      loeseWache(); await d.neuLaden(); geheZu(`/ablage/${sicht}`);
+      loeseWache(); await d.neuLaden(); geheZu(`/ablage/${sicht}${anhang}`);
     } catch (e) { setMeldung((e as Error).message); }
   }
 
