@@ -1,7 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { PASSWORT_MINDESTLAENGE, type Benutzer } from '../../shared/src/model';
 import { ABGEMELDET, api, type KontoStatus, type WartungOeffentlich } from './api';
 import { WartungsHinweis } from './wartung';
+import { WIEDER_ERREICHBAR } from './erreichbar';
 import { Wiederherstellungsbildschirm } from './wiederherstellen';
 import { AssistentAngemeldet, Einrichtungsassistent } from './einrichtung';
 import { geheZu, useOrt } from './ort';
@@ -35,6 +36,9 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   const { pfad } = useOrt();
   const [status, setStatus] = useState<KontoStatus | null>(null);
   const [fehler, setFehler] = useState<string>();
+  // Ist die Anwendung schon offen, ersetzt ein Ausfall (#122) sie nicht durch „Keine Verbindung“ –
+  // die Leiste oben meldet ihn, Eingaben bleiben stehen.
+  const geladen = useRef(false);
 
   const laden = useCallback(async () => {
     try {
@@ -47,11 +51,17 @@ export function KontoProvider({ children }: { children: ReactNode }) {
           if (el && st.marke.logo) el.href = st.marke.logo;
         }
       }
-      setStatus(st); setFehler(undefined);
+      setStatus(st); setFehler(undefined); geladen.current = true;
     }
-    catch (e) { setFehler((e as Error).message); }
+    catch (e) { if (!geladen.current) setFehler((e as Error).message); }
   }, []);
   useEffect(() => { void laden(); }, [laden]);
+  // Wieder erreichbar: Sitzung und Version neu holen (nach einem Update ist es eine neue).
+  useEffect(() => {
+    const f = () => void laden();
+    addEventListener(WIEDER_ERREICHBAR, f);
+    return () => removeEventListener(WIEDER_ERREICHBAR, f);
+  }, [laden]);
   useEffect(() => {
     const f = () => setStatus((s) => (s ? { ...s, benutzer: null } : s));
     addEventListener(ABGEMELDET, f);

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api, type DebugStand, type Protokolleintrag, type Stufe } from '../api';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
+import { istWeg } from '../erreichbar';
 
 /**
  * Protokoll in der Werkbank: Mitte die Einträge (neueste oben, mit Filtern und
@@ -45,7 +46,7 @@ export function useProtokoll(sichtbar = true) {
   useEffect(() => { if (sichtbar) void laden(false); }, [laden, sichtbar]);
   useEffect(() => {
     if (!live || !sichtbar) return;
-    const t = setInterval(() => void laden(true), 2000);
+    const t = setInterval(() => { if (!istWeg()) void laden(true); }, 2000);
     return () => clearInterval(t);
   }, [live, laden, sichtbar]);
 

@@ -3,6 +3,8 @@ import { messung } from './messung';
 import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Sicht, SichtDaten } from '../../shared/src/sichten';
 import { merkeAnfrage } from './diagnose';
+import { erreichbarkeit, NICHT_ERREICHBAR } from './erreichbar';
+import { istAusfall } from '../../shared/src/erreichbarkeit';
 
 export class ApiFehler extends Error {
   constructor(public status: number, message: string, public details?: unknown) { super(message); }
@@ -45,12 +47,20 @@ async function anfrage<T>(methode: string, url: string, body?: unknown): Promise
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
-    merkeAnfrage(methode, url, 0, 'Der Server ist nicht erreichbar.');
-    throw new ApiFehler(0, 'Der Server ist nicht erreichbar.');
+    erreichbarkeit.ausfall();
+    merkeAnfrage(methode, url, 0, NICHT_ERREICHBAR);
+    throw new ApiFehler(0, NICHT_ERREICHBAR);
   }
   const kopf = performance.now();
   const daten = r.status === 204 ? null : await r.json().catch(() => null);
   messung.erfasse(seite, methode, url, r, start, kopf, performance.now());
+  // Update, Neustart (#122): Antwort vom Proxy statt vom DMS.
+  if (istAusfall(r.status, daten)) {
+    erreichbarkeit.ausfall();
+    merkeAnfrage(methode, url, r.status, NICHT_ERREICHBAR);
+    throw new ApiFehler(r.status, NICHT_ERREICHBAR);
+  }
+  erreichbarkeit.antwort();
   if (r.status === 401 && !url.startsWith('/api/konto/')) dispatchEvent(new Event(ABGEMELDET));
   if (!r.ok) {
     merkeAnfrage(methode, url, r.status, daten?.fehler ?? `Fehler ${r.status}`);
@@ -254,6 +264,7 @@ export const api = {
   designLogo: async (id: string, f: File) => {
     const r = await fetch(`/api/designs/${id}/logo`, { method: 'PUT', credentials: 'same-origin', headers: { 'x-dms': '1', 'content-type': 'application/octet-stream' }, body: f });
     const daten = await r.json().catch(() => null);
+    if (istAusfall(r.status, daten)) { erreichbarkeit.ausfall(); throw new ApiFehler(r.status, NICHT_ERREICHBAR); }
     if (!r.ok) throw new ApiFehler(r.status, daten?.fehler ?? `Fehler ${r.status}`);
     return daten as Design;
   },
@@ -358,8 +369,9 @@ export const api = {
         method: 'POST', credentials: 'same-origin', body: datei,
         headers: { 'x-dms': '1', 'content-type': 'application/octet-stream' },
       });
-    } catch { throw new ApiFehler(0, 'Der Server ist nicht erreichbar.'); }
+    } catch { erreichbarkeit.ausfall(); throw new ApiFehler(0, NICHT_ERREICHBAR); }
     const d = await r.json().catch(() => null);
+    if (istAusfall(r.status, d)) { erreichbarkeit.ausfall(); throw new ApiFehler(r.status, NICHT_ERREICHBAR); }
     if (r.status === 401) dispatchEvent(new Event(ABGEMELDET));
     if (!r.ok) throw new ApiFehler(r.status, d?.fehler ?? (r.status === 413 ? 'Die Datei ist zu groß.' : `Fehler ${r.status}`), d?.details);
     return d as Hochgeladen;

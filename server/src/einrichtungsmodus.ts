@@ -5,6 +5,7 @@ import { ansicht, anbindungAus, legeDatenbankAn, pruefeAnbindung, schreibeAnbind
 import type { Einrichtungscode } from './einrichtungscode';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
+import { standKennung } from './system';
 
 /**
  * Einrichtungsmodus (#119): Das DMS läuft ohne erreichbare Datenbank und liefert nur den
@@ -77,7 +78,7 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
     };
   });
   // Der Container läuft (Healthcheck im Image), wartet aber auf die Einrichtung.
-  app.get('/api/gesundheit', async () => ({ ok: true, einrichtung: true }));
+  app.get('/api/gesundheit', async () => ({ ok: true, einrichtung: true, stand: standKennung() }));
   app.post('/api/einrichtung/code', async (req) => { schutz(req); return { ok: true }; });
   app.post('/api/einrichtung/datenbank/pruefen', async (req) => { schutz(req); return pruefe(eingabe(req.body)); });
   app.post('/api/einrichtung/datenbank/anlegen', async (req) => {

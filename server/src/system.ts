@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { arch, release, type } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -55,6 +56,15 @@ export function eigeneVersion(): string {
     } catch { /* weiter */ }
   }
   return 'unbekannt';
+}
+
+/**
+ * Kennung des laufenden Stands (#122): ändert sich mit Version, Commit oder Build-Zeit. Die
+ * Oberfläche merkt sich die Kennung beim Laden und erkennt so nach einem Update, dass sie neu
+ * geladen werden sollte. Ein Hash, damit /api/gesundheit ohne Anmeldung keine Version verrät.
+ */
+export function standKennung(): string {
+  return createHash('sha256').update(`${eigeneVersion()}|${env.DMS_COMMIT ?? ''}|${env.DMS_GEBAUT ?? ''}`).digest('hex').slice(0, 12);
 }
 
 function lies(p: string) { try { return readFileSync(p, 'utf8').trim(); } catch { return null; } }

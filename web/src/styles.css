@@ -848,3 +848,14 @@ h2 .hilfe, h3 .hilfe { font-size: .6em; vertical-align: .25em; }
 .anleitung li.erledigt { color: var(--leise); }
 .linkliste { padding-left: 1.1em; display: grid; gap: 6px; margin: 10px 0 16px; }
 .karte.assistent details.blatt > summary { cursor: pointer; }
+
+/* Erreichbarkeit (#122): DMS weg, wieder da, neue Version. */
+.erreichbarkeit.weg { background: var(--schlecht); }
+.erreichbarkeit.weg .knopf { color: var(--schlecht); }
+.erreichbarkeit.neu { background: var(--akzent); }
+.erreichbarkeit.neu .knopf { color: var(--akzent); }
+.erreichbarkeit.zurueck { background: var(--gruen); }
+.erreichbarkeit.zurueck .knopf { color: var(--gruen); }
+.erreichbarkeit { color: var(--akzent-tinte); }
+.erreichbarkeit .knopf { background: var(--akzent-tinte); border-color: var(--akzent-tinte); }
+.erreichbarkeit .knoepfe { display: inline-flex; gap: 8px; }
