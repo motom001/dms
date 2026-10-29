@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>DMS – Handbuch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{font:16px/1.5 system-ui,sans-serif;max-width:640px;margin:15vh auto;padding:0 16px;color:#1c2328}a{color:#00796b}</style>
+<script>
+// Alte Adressen (/dms/benutzer/mappen/) und unbekannte Versionen (/dms/admin/v0.9/…) auf die
+// passende Seite der neuesten Version umleiten (#111).
+(async () => {
+  const m = location.pathname.match(/^(.*?\/)(benutzer|admin)\/(.*)$/);
+  if (!m) return;
+  const [, basis, h, rest] = m;
+  let versionen = [];
+  try { versionen = await (await fetch(basis + h + '/versions.json')).json(); } catch { return; }
+  const bekannt = new Set(versionen.flatMap((v) => [v.version, ...(v.aliases || [])]));
+  const standard = bekannt.has('aktuell') ? 'aktuell' : (versionen[0] && versionen[0].version);
+  if (!standard) return;
+  const teile = rest.split('/');
+  let ziel;
+  if (bekannt.has(teile[0])) ziel = teile[0] + '/';                          // Seite fehlt in dieser Version
+  else if (/^v\d+\.\d+$/.test(teile[0])) ziel = standard + '/' + teile.slice(1).join('/'); // Version gibt es nicht
+  else ziel = standard + '/' + rest;                                       // alte Adresse ohne Version
+  if (ziel === rest) return;
+  location.replace(basis + h + '/' + ziel + location.hash);
+})();
+</script></head>
+<body><h1>Seite nicht gefunden</h1><p>Weiter zum <a href="/dms/benutzer/">Benutzerhandbuch</a> oder zum <a href="/dms/admin/">Administratorhandbuch</a>.</p></body></html>
