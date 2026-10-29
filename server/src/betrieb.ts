@@ -2,6 +2,7 @@ import type postgres from 'postgres';
 import nodemailer from 'nodemailer';
 import { istEmail } from '../../shared/src/model';
 import { Fachfehler } from './fehler';
+import { pgEinstellungen } from './einstellungen';
 import type { Mailer } from './mail';
 import { kontext, protokoll } from './protokoll';
 import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
@@ -334,23 +335,13 @@ export class Betrieb {
 /* ---------- Speicher ---------- */
 
 export function pgBetriebSpeicher(sql: postgres.Sql, haushaltId: string): BetriebSpeicher {
-  return {
-    async lies(k) {
-      const [r] = await sql`SELECT wert FROM einstellungen WHERE haushalt_id = ${haushaltId} AND schluessel = ${k}`;
-      return r ? r.wert : null;
-    },
-    async schreibe(k, w) {
-      await sql`
-        INSERT INTO einstellungen (haushalt_id, schluessel, wert) VALUES (${haushaltId}, ${k}, ${sql.json(w as postgres.JSONValue)})
-        ON CONFLICT (haushalt_id, schluessel) DO UPDATE SET wert = EXCLUDED.wert`;
-    },
-  };
+  return pgEinstellungen(sql, haushaltId);
 }
 
 export function speicherBetrieb(): BetriebSpeicher {
   const m = new Map<string, unknown>();
   return {
     async lies(k) { return m.has(k) ? structuredClone(m.get(k)) : null; },
-    async schreibe(k, w) { m.set(k, structuredClone(w)); },
+    async schreibe(k, w) { if (w === null || w === undefined) m.delete(k); else m.set(k, structuredClone(w)); },
   };
 }
