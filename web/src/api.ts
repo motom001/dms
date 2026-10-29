@@ -82,6 +82,8 @@ export interface KontoStatus {
   marke?: { schriftzug: string | null; logo: string | null } | null;
   /** Wartungsmodus (#102). */
   wartung?: WartungOeffentlich | null;
+  /** Wiederherstellung (#107): läuft eine, oder steht eine Abschlussmeldung aus? */
+  wiederherstellung?: { laeuft: boolean; abschluss: boolean };
 }
 /** Wartungsmodus (#102), wie ihn jeder sieht; sekunden = bis zur aktiven Stufe. */
 export interface WartungOeffentlich { stufe: 'aus' | 'angekuendigt' | 'aktiv'; text: string; ende: string | null; aktivAb: string | null; sekunden: number | null }
@@ -95,7 +97,7 @@ export interface SicherungsMeta {
   groessen: { datenbankBytes: number; dateienBytes: number; sicherungBytes: number };
   verschluesselung: { verfahren: string; fingerabdruck: string }; sha256: string; migrationen: string[];
 }
-export interface SicherungEintrag { name: string; meta: SicherungsMeta | null; bytes: number; pruefung?: { am: string; ok: boolean } }
+export interface SicherungEintrag { name: string; meta: SicherungsMeta | null; bytes: number; pruefung?: { am: string; ok: boolean }; probe?: { am: string; ok: boolean; info: string } }
 export interface SicherungsPlan { aktiv: boolean; uhrzeit: string; haeufigkeit: 'taeglich' | 'woechentlich'; wochentag: number; aufbewahrung: { taeglich: number; woechentlich: number; monatlich: number }; mindestFreiGB: number; aktivSeit: string | null }
 export interface SicherungsLauf { art: string; titel: string; status: 'laeuft' | 'fertig' | 'fehler'; schritt: string; bytes: number; gesamt: number; gestartet: string; beendet?: string; fehler?: string; ergebnis?: unknown }
 export interface Notfallblattstand { am: string | null; von: string | null; fingerabdruck: string | null; aktuell: boolean }
@@ -104,11 +106,25 @@ export interface SicherungsZustand {
   fehler: { am: string; art: string; grund: string } | null;
   zuAlt: boolean; planAktiv: boolean; notfallblatt: Notfallblattstand; schluessel: boolean;
   ort: { ordner: string; volume: boolean | null; gleichePlatte: boolean | null };
+  /** Probe-Wiederherstellung (#109). */
+  probe?: ProbeStand;
 }
 export interface SicherungStand {
   lauf: SicherungsLauf | null; liste: SicherungEintrag[]; plan: SicherungsPlan; zustand: SicherungsZustand;
+  /** Laufende oder letzte Probe-Wiederherstellung (#109). */
+  probe?: WhLauf | null;
   speicher: { dateienBytes: number; dateien: number; datenbankBytes: number; sicherungenBytes: number; anzahl: number; frei: number | null; gesamt: number | null; hochrechnung: { stueck: number; bytes: number }; mindestBytes: number; knapp: boolean };
 }
+/** Wiederherstellen (#107) und Probe (#109). */
+export interface WhSchritt { name: string; status: 'offen' | 'laeuft' | 'ok' | 'fehler' | 'hinweis' | 'ausgelassen'; info?: string }
+export interface WhLauf { art: 'wiederherstellung' | 'probe'; sicherung: string; von: string; status: 'laeuft' | 'fertig' | 'fehler' | 'neustart'; schritte: WhSchritt[]; bytes: number; gesamt: number; gestartet: string; beendet?: string; fehler?: string }
+export interface WhAbschluss { am: string; sicherung: string; von: string; schritte: WhSchritt[]; hinweise: string[] }
+export interface WhAbgleich {
+  name: string; meta: SicherungsMeta;
+  vergleich: Array<{ was: string; damals: string; heute: string; urteil: 'gleich' | 'ok' | 'hinweis' | 'fehler'; info?: string }>;
+  probleme: string[]; hinweise: string[]; schluesselNoetig: boolean;
+}
+export interface ProbeStand { ampel: 'gruen' | 'gelb' | 'rot' | null; letzte: { name: string; am: string; ok: boolean; info: string } | null; plan: { aktiv: boolean; wochentag: number; uhrzeit: string } }
 export interface WartungWerkbank extends WartungOeffentlich { beginn: string | null; von: string | null; sitzungen: WartungSitzung[] }
 /** Benutzer für Namen und Empfängerauswahl; abwesend, solange die Abwesenheit an ist (#78). */
 export interface Person { id: string; name: string; aktiv?: boolean; abwesend?: { wirkt: boolean; von: string | null; bis: string | null; vertreter: string } }
@@ -128,6 +144,14 @@ export const api = {
   sicherungJetzt: () => anfrage<SicherungsLauf>('POST', '/api/werkbank/sicherung/jetzt'),
   sicherungPlan: (p: Partial<SicherungsPlan>) => anfrage<SicherungsPlan>('PUT', '/api/werkbank/sicherung/plan', p),
   sicherungPruefen: (name: string) => anfrage<SicherungsLauf>('POST', `/api/werkbank/sicherung/${encodeURIComponent(name)}/pruefen`),
+  whStatus: () => anfrage<{ lauf: WhLauf | null; abschluss: WhAbschluss | null }>('GET', '/api/wiederherstellung/status'),
+  whAbschlussGesehen: () => anfrage<null>('POST', '/api/wiederherstellung/abschluss-gesehen'),
+  whSicherungen: () => anfrage<{ art: 'frisch' | 'laufend'; ordner: string; liste: Array<{ name: string; bytes: number; meta: SicherungsMeta | null }> }>('GET', '/api/wiederherstellung/sicherungen'),
+  whAbgleich: (name: string, schluessel?: string) => anfrage<WhAbgleich>('POST', '/api/wiederherstellung/abgleich', { name, ...(schluessel ? { schluessel } : {}) }),
+  whStart: (d: { name: string; schluessel?: string; bestaetigt?: boolean }) => anfrage<WhLauf>('POST', '/api/wiederherstellung/start', d),
+  probeStarten: (name?: string) => anfrage<WhLauf>('POST', '/api/werkbank/sicherung/probe', name ? { name } : {}),
+  probeLauf: () => anfrage<WhLauf | null>('GET', '/api/werkbank/sicherung/probe'),
+  probePlan: (p: { aktiv?: boolean; wochentag?: number; uhrzeit?: string }) => anfrage<unknown>('PUT', '/api/werkbank/sicherung/probe-plan', p),
   sicherungLoeschen: (name: string) => anfrage<null>('DELETE', `/api/werkbank/sicherung/${encodeURIComponent(name)}`),
   werkbankWartung: () => anfrage<WartungWerkbank>('GET', '/api/werkbank/wartung'),
   wartungEin: (d: { text: string; ende: string | null; vorlauf: number }) => anfrage<unknown>('POST', '/api/werkbank/wartung/ein', d),

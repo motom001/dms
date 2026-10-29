@@ -134,6 +134,8 @@ tbody tr:last-child > * { border-bottom: 0; }
 .betrag { display: grid; grid-template-columns: minmax(0, 1fr) 72px; gap: 6px; }
 .haken { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
 .haken > span { display: flex; flex-direction: column; gap: 1px; font-weight: 500; }
+.trenner { display: flex; align-items: center; gap: 10px; color: var(--leise); font-size: calc(12px * var(--skala, 1)); }
+.trenner::before, .trenner::after { content: ''; flex: 1; border-top: 1px solid var(--linie); }
 .auswahlliste { display: flex; flex-direction: column; gap: 6px; max-height: 190px; overflow: auto; border: 1px solid var(--linie); border-radius: 6px; padding: 8px; }
 .refbox { display: flex; flex-direction: column; gap: 6px; }
 .zeile { display: flex; gap: 14px; flex-wrap: wrap; }
@@ -209,6 +211,18 @@ tbody tr:last-child > * { border-bottom: 0; }
 .kartenseite { min-height: 100vh; display: grid; place-items: center; padding: 24px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left)); }
 .karte { width: 100%; max-width: 420px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 12px; padding: 28px; display: flex; flex-direction: column; gap: 16px; }
 .karte h1 { font-size: calc(22px * var(--skala, 1)); }
+/* Wiederherstellen (#107) */
+.karte.breit { max-width: 760px; }
+.karte .wiederherstellen .knopf.primaer { width: auto; }
+.schrittliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.schritt { display: flex; gap: 10px; align-items: baseline; }
+.schritt .zeichen { width: 1.2em; text-align: center; font-weight: 700; color: var(--leise); }
+.schritt.ok .zeichen { color: var(--gruen); }
+.schritt.fehler .zeichen, .schritt.fehler strong { color: var(--schlecht); }
+.schritt.hinweis .zeichen { color: var(--warn); }
+.schritt.laeuft .zeichen { color: var(--akzent); }
+.schritt.offen, .schritt.ausgelassen { color: var(--leise); }
+.auswahlliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .marke.gross { font-size: calc(18px * var(--skala, 1)); }
 .karte .knopf.primaer { width: 100%; padding: 10px; }
 .karte .textknopf { align-self: flex-start; font-size: calc(13px * var(--skala, 1)); }

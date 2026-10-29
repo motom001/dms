@@ -446,6 +446,11 @@ async function main() {
   await bild(s, 'werkbank-sicherung');
   await s.locator('#zeitplan').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-sicherung-zeitplan');
+  // Probe-Wiederherstellung (#109)
+  await s.getByRole('button', { name: 'Jetzt probeweise wiederherstellen' }).click();
+  await s.locator('#probe .chip.gut').first().waitFor({ timeout: 120_000 });
+  await s.locator('#probe').evaluate((e) => e.scrollIntoView({ block: 'start' }));
+  await bild(s, 'werkbank-sicherung-probe');
 
   // Wartungsmodus (#102): ankündigen, Banner bei einem Mitglied, danach beenden – ganz am Ende,
   // weil die Wartung Anmeldungen sperrt.
@@ -466,6 +471,15 @@ async function main() {
     await bild(sm, 'wartung-banner', { clip: { x: 0, y: 0, width: 1100, height: 220 } });
     await km.close();
   }
+  // Wiederherstellen (#107): nur im aktiven Wartungsmodus – Abgleich einer Sicherung, ohne zu starten.
+  s.once('dialog', (dialog) => void dialog.accept());
+  await s.getByRole('button', { name: 'Alle jetzt abmelden' }).click();
+  await s.getByText('Wartungsmodus aktiv', { exact: false }).first().waitFor();
+  await geheZu(s, '/werkbank/wiederherstellung');
+  await s.locator('.auswahlliste input[type=radio]').first().check();
+  await s.getByRole('heading', { name: /Abgleich/ }).waitFor();
+  await bild(s, 'werkbank-wiederherstellen');
+  await geheZu(s, '/werkbank/wartungsmodus');
   await s.getByRole('button', { name: 'Wartung beenden' }).click();
   await s.locator('.wartungsbanner').waitFor({ state: 'detached' });
 

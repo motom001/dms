@@ -1,4 +1,4 @@
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { migriere, verbinde } from './db';
@@ -26,6 +26,7 @@ import { pgDatenquelle } from './datenbankabzug';
 import { pgEinstellungen } from './einstellungen';
 import { Sicherung, STANDARD_ORDNER } from './sicherung';
 import { eigeneVersion } from './system';
+import { Wiederherstellung } from './wiederherstellung';
 
 const pfad = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
 const env = process.env;
@@ -91,6 +92,20 @@ const sicherung = new Sicherung(env.DMS_SICHERUNG_DIR || (env.FILES_DIR ? STANDA
   umgebung: async () => ({ dms: eigeneVersion(), node: process.versions.node, system: `${type()} ${release()}`, architektur: arch() }),
   wartungAktiv: () => wartung.aktiv, anAdmins,
 });
+// Wiederherstellen und Probe (#107, #109): eigenes Schema, erst nach allen Prüfungen umschalten.
+const wiederherstellung = new Wiederherstellung({
+  url: cfg.datenbank, sql, migrationen: cfg.migrationen, dateiWurzel: cfg.dateien, sicherung, tresor,
+  laufzeit: async () => ({ dms: eigeneVersion(), postgres: String(pgVersion), architektur: arch(), haushaltId: cfg.haushalt, migrationen: (await readdir(cfg.migrationen)).filter((f) => f.endsWith('.sql')).sort() }),
+  wartungAktiv: () => wartung.aktiv,
+  einrichtungNoetig: () => konten.einrichtungNoetig(),
+  // Im Container startet Docker (restart: unless-stopped) das DMS gleich wieder.
+  neustart: () => { log.warn('Neustart nach der Wiederherstellung'); void beenden(); },
+  anAdmins,
+});
+sicherung.sperre = () => wiederherstellung.laeuft();
+await wiederherstellung.raeumeAuf();
+const abschluss = await pgEinstellungen(sql, cfg.haushalt).lies('wiederherstellung_abschluss') as { sicherung?: string } | null;
+if (abschluss) log.warn('Gestartet nach einer Wiederherstellung', { sicherung: abschluss.sicherung });
 const texterkennung = new Texterkennung(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'texterkennung'), ordnerSpeicher(cfg.dateien, cfg.haushalt), pgBetriebSpeicher(sql, cfg.haushalt));
 dienst.verbindeTexterkennung(texterkennung);
 texterkennung.pause = () => wartung.aktiv;
@@ -119,6 +134,7 @@ const app = await baueApp(dienst, konten, {
   wartung,
   notfall,
   sicherung,
+  wiederherstellung,
   fehlermeldungen: new Fehlermeldungen(pgFehlerRepo(sql, cfg.haushalt), ordnerSpeicher(cfg.dateien, `${cfg.haushalt}/fehlermeldungen`)),
 });
 
@@ -146,6 +162,7 @@ if (await konten.einrichtungNoetig()) log.warn(`Noch kein Benutzer vorhanden: De
 await texterkennung.start();
 notfall.start();
 sicherung.start();
+setInterval(() => void wiederherstellung.tick().catch((e) => log.error('Zeitplan der Probe gestört', { fehler: (e as Error).message })), 60_000).unref();
 
 const beenden = async () => {
   log.info('DMS wird beendet');

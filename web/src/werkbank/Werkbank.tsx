@@ -17,6 +17,7 @@ import { TexterkennungListe, TexterkennungPanel, useTexterkennung, WartungListe,
 import { ADMIN_HANDBUCH, UebersichtListe, UebersichtPanel, useUebersicht, WerkbankNavigation } from './Uebersicht';
 import { useWartungsmodus, WartungsmodusListe, WartungsmodusPanel } from './Wartungsmodus';
 import { SicherungListe, SicherungPanel, useSicherung } from './Sicherung';
+import { WiederherstellungListe, WiederherstellungPanel } from './Wiederherstellung';
 import { FehlermeldungDetail, FehlermeldungenListe, useFehlermeldungen } from './Fehlermeldungen';
 import { PapierkorbDetail, PapierkorbEinstellungen, PapierkorbListe, usePapierkorb } from '../ablage/Papierkorb';
 
@@ -41,7 +42,8 @@ import { PapierkorbDetail, PapierkorbEinstellungen, PapierkorbListe, usePapierko
  * /werkbank/wartung                 Wartungsoperationen, z. B. Volltext nachholen (#45)
  * /werkbank/fehlermeldungen[/:id]  Fehlermeldungen der Benutzer (#70)
  * /werkbank/wartungsmodus          Wartungsmodus (#102)
- * /werkbank/sicherung              Sicherung, Zeitplan, Notfallblatt (#103–#106)
+ * /werkbank/sicherung              Sicherung, Zeitplan, Notfallblatt, Probe (#103–#106, #109)
+ * /werkbank/wiederherstellung      Sicherung einspielen (#107)
  */
 export function Werkbank({ teile }: { teile: string[] }) {
   const d = useDaten();
@@ -108,6 +110,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'wartung') {
     liste = <WartungListe t={ocr} />;
     rechts = <WartungPanel t={ocr} />;
+  } else if (bereich === 'wiederherstellung') {
+    liste = <WiederherstellungListe />;
+    rechts = <WiederherstellungPanel />;
   } else if (bereich === 'sicherung') {
     liste = <SicherungListe z={sicherung} />;
     rechts = <SicherungPanel z={sicherung} />;
@@ -132,7 +137,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   }
 
   return (
-    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung'].includes(bereich) ? 'mappe' : 'liste'} offen={id}>
+    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung'].includes(bereich) ? 'mappe' : 'liste'} offen={id}>
       <aside className="spalte sichten" aria-label="Bereiche">
         <h2 className="ueber">Werkbank</h2>
         <WerkbankNavigation bereich={bereich} eintraege={[
@@ -149,6 +154,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'protokoll', name: 'Protokoll', gruppe: 'wartung', warn: protokoll.debug?.an ? 'Debug' : undefined, warnTitel: 'Debug-Modus ist an' },
           { pfad: 'fehlermeldungen', name: 'Fehlermeldungen', gruppe: 'wartung', warn: uebersicht.stand?.fehlermeldungen ? String(uebersicht.stand.fehlermeldungen) : undefined, warnTitel: 'offene Meldungen' },
           { pfad: 'sicherung', name: 'Sicherung', gruppe: 'wartung', warn: uebersicht.stand?.sicherung && (uebersicht.stand.sicherung.fehler || (uebersicht.stand.sicherung.schluessel && uebersicht.stand.sicherung.zuAlt)) ? '!' : undefined, warnTitel: 'Sicherung fehlgeschlagen oder zu alt' },
+          { pfad: 'wiederherstellung', name: 'Wiederherstellen', gruppe: 'wartung' },
           { pfad: 'wartungsmodus', name: 'Wartungsmodus', gruppe: 'wartung', warn: wartungsmodus.stand && wartungsmodus.stand.stufe !== 'aus' ? (wartungsmodus.stand.stufe === 'aktiv' ? 'aktiv' : 'an') : undefined, warnTitel: 'Wartungsmodus ist an' },
           { pfad: 'wartung', name: 'Wartungsoperationen', gruppe: 'wartung' },
           { pfad: 'datenbank', name: 'Datenbank', gruppe: 'wartung' },
