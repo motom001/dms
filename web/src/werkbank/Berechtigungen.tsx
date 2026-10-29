@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import type { Mappentyp } from '../../../shared/src/model';
 import { bedingungsfelder, beschreibeBedingung, OPERATOREN_JE_ART, type Bedingung, type Bedingungsfeld } from '../../../shared/src/sichten';
 import {
-  beschreibeRegelBedingung, kurz, RECHTE, RECHTE_LISTE, regelProblem, systemSperre,
+  beschreibeRegelBedingung, kurz, kurzStandard, RECHTE, RECHTE_LISTE, regelProblem, systemSperre,
   type Recht, type Regel, type RegelBedingung, type Regelwerk, type Wirkung,
 } from '../../../shared/src/rechte';
 import { api, type Testlauf } from '../api';
@@ -11,6 +11,7 @@ import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import { FeldBedingung, MappenSuche } from './Sichten';
+import { Bereich, type Klappe } from '../einrichtung/Bereich';
 import type { Benutzer } from '../../../shared/src/model';
 
 /**
@@ -38,8 +39,8 @@ const ARTEN: Array<{ art: Art; name: string; nurBenutzerTyp?: boolean }> = [
  * Abschnitt „Berechtigungen“ im Mappentyp-Editor (#142, #146). `typ` ist der Entwurf (Felder wie gerade bearbeitet),
  * `gespeichert` die Regeln, wie sie gespeichert sind – Kopieren in andere Typen geht nur mit gespeicherten Regeln.
  */
-export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu }: {
-  rw: Regelwerk; setRw: (f: (x: Regelwerk) => Regelwerk) => void; typ: Mappentyp; gespeichert: Regelwerk | null; neu: boolean;
+export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu, klappe }: {
+  rw: Regelwerk; setRw: (f: (x: Regelwerk) => Regelwerk) => void; typ: Mappentyp; gespeichert: Regelwerk | null; neu: boolean; klappe: Klappe;
 }) {
   const [ansage, setAnsage] = useState('');
   const [titel, setTitel] = useState<Record<string, string>>({});
@@ -74,9 +75,9 @@ export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu }: {
   const sperre = systemSperre(typ);
 
   return (
-    <div className="blatt" id="berechtigungen">
-      <h2 className="h3">Berechtigungen <Hilfe ort="werkbank.berechtigungen" /></h2>
-      <p className="leise">Wer Mappen dieses Typs anlegen (C), lesen (R), bearbeiten (U – Felder und Dokumente), löschen (D) und Passwörter sehen (P) darf. Für <strong>Administratoren</strong> gelten die Regeln nicht.</p>
+    <Bereich id="berechtigungen" titel="Berechtigungen" hilfe={<Hilfe ort="werkbank.berechtigungen" />} klappe={klappe}
+      kurz={`Standard: ${kurzStandard(Object.fromEntries(RECHTE_LISTE.map((k) => [k, rw.grund[k] && !((k === 'C' && sperre.C) || (k === 'D' && sperre.D))])) as Record<Recht, boolean>)} · ${rw.regeln.length === 1 ? '1 Regel' : `${rw.regeln.length || 'keine'} Regeln`}`}
+      beschreibung={<>Wer Mappen dieses Typs anlegen (C), lesen (R), bearbeiten (U – Felder und Dokumente), löschen (D) und Passwörter sehen (P) darf. Für <strong>Administratoren</strong> gelten die Regeln nicht.</>}>
 
       <h3 className="zwischen">Standard <Hilfe ort="berechtigungen.grund" /></h3>
       <p className="leise klein">Gilt, solange keine Regel etwas anderes sagt. Klicken schaltet zwischen ✓ erteilt und ✗ entzogen.</p>
@@ -113,7 +114,7 @@ export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu }: {
       )}
       <Ansage text={ansage} />
       <div className="knoepfe"><button type="button" className="knopf klein" onClick={neueRegel}>+ Regel</button></div>
-    </div>
+    </Bereich>
   );
 }
 
@@ -263,7 +264,7 @@ function RechteZeile({ r }: { r: Record<Recht, boolean> }) {
 }
 
 /** Testlauf am Mappentyp (#146): mit den Regeln, wie sie gerade im Editor stehen – auch ungespeichert. */
-export function TestlaufBlatt({ typId, entwurf }: { typId: string; entwurf: Regelwerk }) {
+export function TestlaufBlatt({ typId, entwurf, klappe }: { typId: string; entwurf: Regelwerk; klappe: Klappe }) {
   const benutzer = useRegelBenutzer();
   const [b, setB] = useState('');
   const [mappe, setMappe] = useState<string[]>([]);
@@ -278,9 +279,10 @@ export function TestlaufBlatt({ typId, entwurf }: { typId: string; entwurf: Rege
   const stand = JSON.stringify(entwurf);
   useEffect(() => { setErg(undefined); }, [stand]);
   return (
-    <div className="blatt" id="testlauf">
-      <h2 className="h3">Testlauf <Hilfe ort="berechtigungen.testlauf" /></h2>
-      <p className="leise">Welche Rechte hätte ein Benutzer an einer bestimmten Mappe – und welche Regel hat das entschieden? Geprüft werden die Regeln, wie sie oben stehen, auch wenn sie noch nicht gespeichert sind.</p>
+    <Bereich id="testlauf" titel="Testlauf" hilfe={<Hilfe ort="berechtigungen.testlauf" />} klappe={klappe}
+      kurz={typId ? 'Rechte eines Benutzers an einer Mappe ausprobieren – auch mit ungespeicherten Regeln' : 'Gibt es, sobald der Mappentyp gespeichert ist'}
+      beschreibung="Welche Rechte hätte ein Benutzer an einer bestimmten Mappe – und welche Regel hat das entschieden? Geprüft werden die Regeln, wie sie oben stehen, auch wenn sie noch nicht gespeichert sind.">
+      {!typId ? <p className="leise klein">Den Testlauf gibt es, sobald der Mappentyp gespeichert ist und Mappen hat.</p> : <>
       <div className="bedingungszeile">
         <select aria-label="Benutzer" value={b} onChange={(x) => setB(x.target.value)}>
           <option value="">– Benutzer wählen –</option>
@@ -316,7 +318,8 @@ export function TestlaufBlatt({ typId, entwurf }: { typId: string; entwurf: Rege
               </>}
         </div>
       )}
-    </div>
+      </>}
+    </Bereich>
   );
 }
 

@@ -339,6 +339,8 @@ export interface Pruefergebnis {
   allgemein: string[];
   /** Mappen: je Feldschlüssel. Mappentypen: je Feldposition. */
   felder: Record<string, string[]>;
+  /** Mappentypen (#144): zu jeder allgemeinen Meldung der Bereich im Editor (grunddaten, titel, trefferlisten, register). */
+  orte?: string[];
 }
 export const istOk = (p: Pruefergebnis) => p.allgemein.length === 0 && Object.keys(p.felder).length === 0;
 
@@ -368,21 +370,24 @@ export interface TypKontext {
   felderVon?: (typId: string) => Feld[] | undefined;
 }
 
+/** Allgemeine Meldung mit Bereich des Editors (#144). */
+function melde(p: Pruefergebnis, ort: string, text: string) { p.allgemein.push(text); (p.orte ??= []).push(ort); }
+
 function pruefeRegister(t: MappentypDaten, ctx: TypKontext, p: Pruefergebnis) {
   const reg = t.register ?? [];
-  if (!reg.length) { p.allgemein.push('Der Mappentyp braucht mindestens ein Register.'); return; }
+  if (!reg.length) { melde(p, 'register', 'Der Mappentyp braucht mindestens ein Register.'); return; }
   const keys = new Set<string>();
   const feldAuf = new Map<string, string>();
   for (const r of reg) {
     const name = (r.name ?? '').trim() || r.key;
-    if (!(r.name ?? '').trim()) p.allgemein.push('Jedes Register braucht einen Namen.');
-    if (!SCHLUESSEL_MUSTER.test(r.key ?? '')) p.allgemein.push(`Register „${name}“: ungültiger Schlüssel.`);
-    else if (keys.has(r.key)) p.allgemein.push(`Der Register-Schlüssel „${r.key}“ kommt doppelt vor.`);
+    if (!(r.name ?? '').trim()) melde(p, 'register', 'Jedes Register braucht einen Namen.');
+    if (!SCHLUESSEL_MUSTER.test(r.key ?? '')) melde(p, 'register', `Register „${name}“: ungültiger Schlüssel.`);
+    else if (keys.has(r.key)) melde(p, 'register', `Der Register-Schlüssel „${r.key}“ kommt doppelt vor.`);
     keys.add(r.key);
-    if (!(r.art in REGISTERARTEN)) p.allgemein.push(`Register „${name}“: unbekannte Art.`);
+    if (!(r.art in REGISTERARTEN)) melde(p, 'register', `Register „${name}“: unbekannte Art.`);
     if (r.art === 'felder') {
       for (const k of r.felder ?? []) {
-        if (feldAuf.has(k)) p.allgemein.push(`Das Feld „${t.felder.find((f) => f.key === k)?.label ?? k}“ liegt auf zwei Registern.`);
+        if (feldAuf.has(k)) melde(p, 'register', `Das Feld „${t.felder.find((f) => f.key === k)?.label ?? k}“ liegt auf zwei Registern.`);
         feldAuf.set(k, r.key);
       }
     }
@@ -390,34 +395,34 @@ function pruefeRegister(t: MappentypDaten, ctx: TypKontext, p: Pruefergebnis) {
       for (const q of r.quellen ?? []) {
         const felder = q.typId === ctx.eigeneId ? t.felder : ctx.felderVon?.(q.typId);
         const f = felder?.find((x) => x.key === q.feldKey);
-        if (!f || f.typ !== 'referenz' || (f.zielTyp !== ctx.eigeneId && f.zielTyp !== BELIEBIGER_TYP)) p.allgemein.push(`Register „${name}“: Eine Quelle verweist nicht (mehr) auf diesen Mappentyp.`);
+        if (!f || f.typ !== 'referenz' || (f.zielTyp !== ctx.eigeneId && f.zielTyp !== BELIEBIGER_TYP)) melde(p, 'register', `Register „${name}“: Eine Quelle verweist nicht (mehr) auf diesen Mappentyp.`);
       }
     }
   }
-  if (t.felder.length && !reg.some((r) => r.art === 'felder')) p.allgemein.push('Es gibt Felder, aber kein Feldregister.');
+  if (t.felder.length && !reg.some((r) => r.art === 'felder')) melde(p, 'register', 'Es gibt Felder, aber kein Feldregister.');
   const ohne = t.felder.filter((f) => !feldAuf.has(f.key));
-  if (ohne.length && reg.some((r) => r.art === 'felder')) p.allgemein.push(`Diese Felder liegen auf keinem Register: ${ohne.map((f) => f.label || f.key).join(', ')}.`);
+  if (ohne.length && reg.some((r) => r.art === 'felder')) melde(p, 'register', `Diese Felder liegen auf keinem Register: ${ohne.map((f) => f.label || f.key).join(', ')}.`);
 }
 
 export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebnis {
   const p: Pruefergebnis = { allgemein: [], felder: {} };
   const name = (t.name ?? '').trim();
-  if (!name) p.allgemein.push('Der Mappentyp braucht einen Namen.');
+  if (!name) melde(p, 'grunddaten', 'Der Mappentyp braucht einen Namen.');
   else if (ctx.namenAndererTypen.some((n) => n.trim().toLowerCase() === name.toLowerCase()))
-    p.allgemein.push(`Es gibt bereits einen Mappentyp „${name}“.`);
+    melde(p, 'grunddaten', `Es gibt bereits einen Mappentyp „${name}“.`);
   if (t.schluessel !== undefined) {
-    if (!SCHLUESSEL_MUSTER.test(t.schluessel)) p.allgemein.push('Schlüssel des Mappentyps: nur Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben.');
-    else if ((ctx.schluesselAndererTypen ?? []).includes(t.schluessel)) p.allgemein.push(`Den Schlüssel „${t.schluessel}“ hat schon ein anderer Mappentyp.`);
+    if (!SCHLUESSEL_MUSTER.test(t.schluessel)) melde(p, 'grunddaten', 'Schlüssel des Mappentyps: nur Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben.');
+    else if ((ctx.schluesselAndererTypen ?? []).includes(t.schluessel)) melde(p, 'grunddaten', `Den Schlüssel „${t.schluessel}“ hat schon ein anderer Mappentyp.`);
   }
   if (!Array.isArray(t.felder)) {
-    p.allgemein.push('Die Felder fehlen.');
+    melde(p, 'felder', 'Die Felder fehlen.');
     return p;
   }
   const unbekannt = vorlageFelder(t.titelVorlage ?? '').filter((k) => !istIndexplatzhalter(k) && !t.felder.some((f) => f.key === k));
-  if (unbekannt.length) p.allgemein.push(`Die Titel-Vorlage nennt unbekannte Felder: ${unbekannt.map((k) => `{${k}}`).join(', ')}.`);
+  if (unbekannt.length) melde(p, 'titel', `Die Titel-Vorlage nennt unbekannte Felder: ${unbekannt.map((k) => `{${k}}`).join(', ')}.`);
   const geheim = vorlageFelder(t.titelVorlage ?? '').filter((k) => t.felder.some((f) => f.key === k && f.typ === 'passwort'));
-  if (geheim.length) p.allgemein.push(`Passwortfelder dürfen nicht im Titel stehen: ${geheim.map((k) => `{${k}}`).join(', ')}.`);
-  if ((t.trefferliste ?? []).some((k) => t.felder.some((f) => f.key === k && f.typ === 'passwort'))) p.allgemein.push('Passwortfelder können keine Spalte der Trefferliste sein.');
+  if (geheim.length) melde(p, 'titel', `Passwortfelder dürfen nicht im Titel stehen: ${geheim.map((k) => `{${k}}`).join(', ')}.`);
+  if ((t.trefferliste ?? []).some((k) => t.felder.some((f) => f.key === k && f.typ === 'passwort'))) melde(p, 'trefferlisten', 'Passwortfelder können keine Spalte der Trefferliste sein.');
   pruefeRegister(t, ctx, p);
 
   const gesehen = new Set<string>();

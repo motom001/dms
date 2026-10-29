@@ -894,3 +894,32 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
 .erinnerungen li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
 .erinnerungformular { display: flex; flex-direction: column; gap: 8px; width: 100%; }
 .folgetermin .knoepfe { margin-top: 6px; }
+
+/* Regeln zuklappen (#146) */
+.regel.zu { padding-block: 8px; }
+.regelsumme { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; background: none; border: 0; padding: 4px 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.regelsumme:hover strong { color: var(--akzent); }
+.rechtknopf:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Mappentyp-Editor: einklappbare Bereiche und Sprungleiste (#144) */
+.bereich { scroll-margin-top: 110px; }
+.bereich.zu { gap: 4px; padding-block: 12px; }
+.bereichkopf { display: flex; flex-direction: column; gap: 2px; }
+.bereichkopf h2 { display: flex; align-items: center; gap: 8px; margin: 0; }
+.bereichknopf { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+.bereichknopf:hover { color: var(--akzent); }
+.bereichknopf .pfeil { display: inline-block; width: 1em; color: var(--leise); transition: transform .15s; }
+.bereich:not(.zu) .bereichknopf .pfeil { transform: rotate(90deg); }
+.bereichkurz { margin: 0 0 0 calc(1em + 8px); font-size: calc(12.5px * var(--skala, 1)); overflow-wrap: anywhere; }
+.bereichinhalt { display: flex; flex-direction: column; gap: 14px; }
+.bereichinhalt[hidden] { display: none; }
+.bereichtext { font-size: calc(12.5px * var(--skala, 1)); max-width: 75ch; margin: 0; }
+.bereich.mitfehler { border-color: var(--schlecht); }
+.sprungleiste { position: sticky; top: 52px; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--r); }
+.sprungleiste .sprung { background: var(--senke); border: 1px solid var(--linie); border-radius: 999px; padding: 3px 10px; font-size: calc(12.5px * var(--skala, 1)); color: var(--tinte); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.sprungleiste .sprung.an { border-color: var(--linie-stark); font-weight: 600; }
+.sprungleiste .sprung.fehler { border-color: var(--schlecht); color: var(--schlecht); background: var(--schlecht-zart); }
+.sprungleiste .fehlerpunkt { font-weight: 700; }
+.sprungleiste .luecke { flex: 1; }
+.verwendetliste { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
+@media (max-width: 700px) { .sprungleiste { position: static; } }

@@ -95,7 +95,12 @@ export function Werkbank({ teile }: { teile: string[] }) {
     rechts = id ? <FehlermeldungDetail key={id} id={id} z={meldungen} neuLaden={async () => { await meldungen.laden(); await uebersicht.laden(); }} /> : <div className="platzhalter"><p>Wähle links eine Meldung.</p></div>;
   } else if (bereich === 'typen') {
     liste = <TypenListe offen={id} />;
-    if (id === 'neu') rechts = <TypEditor key="neu" />;
+    if (id === 'neu') {
+      // Mappentyp kopieren (#147): /werkbank/typen/neu?kopie=<id>
+      const kopie = new URLSearchParams(location.search).get('kopie');
+      const vorlage = kopie ? d.typ(kopie) : undefined;
+      rechts = <TypEditor key={`neu-${vorlage?.id ?? ''}`} vorlage={vorlage && !vorlage.system ? vorlage : undefined} />;
+    }
     else if (id) {
       const t = d.typ(id);
       rechts = t ? <TypEditor key={t.id} typ={t} /> : <div className="leer"><p>Diesen Mappentyp gibt es nicht (mehr).</p></div>;
