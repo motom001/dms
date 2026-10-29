@@ -30,10 +30,8 @@ COPY --from=bau /app/server/dist server/dist
 COPY server/migrations server/migrations
 COPY --from=bau /app/web/dist web/dist
 
-ENV PORT=3000 \
-    FILES_DIR=/data/files \
-    DMS_SCHLUESSEL_DATEI=/data/geheim/dms.schluessel \
-    DMS_SICHERUNG_DIR=/data/sicherung
+# Feste Ordner (#115): /data/files, /data/geheim, /data/sicherung – zugeordnet nur über Volumes.
+ENV PORT=3000
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
   CMD wget -qO- http://127.0.0.1:3000/api/gesundheit >/dev/null || exit 1

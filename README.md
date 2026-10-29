@@ -53,6 +53,8 @@ DATABASE_URL=postgres://dms:dms@localhost:5432/dms npm run dev -w server
 npm run dev -w web              # Oberfläche auf http://localhost:5173
 ```
 
+Ohne Docker legt der Server seine festen Ordner (`files`, `geheim`, `sicherung`) unter `./data` im Projekt an; `DMS_DATENWURZEL=/anderer/ordner` verlegt sie (z. B. für Tests oder die CI). Im Image sind es immer `/data/…`, zugeordnet über Volumes.
+
 Oder alles zusammen als Container: `docker compose up --build` → http://localhost:8080
 
 Tests: `npm test`. Mit `TEST_DATABASE_URL` laufen zusätzlich die Tests gegen PostgreSQL (**leert das Schema der angegebenen Datenbank**).

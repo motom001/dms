@@ -88,7 +88,7 @@ export interface KontoStatus {
   version?: string | null;
 }
 /** Wartungsmodus (#102), wie ihn jeder sieht; sekunden = bis zur aktiven Stufe. */
-export interface WartungOeffentlich { stufe: 'aus' | 'angekuendigt' | 'aktiv'; text: string; ende: string | null; aktivAb: string | null; sekunden: number | null }
+export interface WartungOeffentlich { stufe: 'aus' | 'angekuendigt' | 'aktiv'; text: string; ende: string | null; aktivAb: string | null; sekunden: number | null; ausloeser?: 'speicherplatz' | null }
 export interface WartungSitzung { id: string; benutzerId: string; name: string; email: string; rolle: string; geraet: string; ip: string; zuletztAktiv: string; erstellt: string; aktuell: boolean }
 /** Sicherungen (#103–#105). */
 export interface SicherungsMeta {
@@ -279,6 +279,8 @@ export const api = {
   debug: (an: boolean) => anfrage<DebugStand>('PUT', '/api/werkbank/debug', { an }),
   datenbank: () => anfrage<DatenbankStand>('GET', '/api/werkbank/datenbank'),
   system: () => anfrage<Systemuebersicht>('GET', '/api/werkbank/system'),
+  speicherplatz: () => anfrage<SpeicherplatzStand>('GET', '/api/werkbank/speicherplatz'),
+  speicherplatzSetzen: (e: SpeicherplatzEinstellung) => anfrage<SpeicherplatzStand>('PUT', '/api/werkbank/speicherplatz', e),
   versionsabgleich: (browser: Record<string, string>) => anfrage<Vergleich[]>('POST', '/api/werkbank/system/abgleich', { browser }),
   datenbankEinstellen: (e: MessEinstellungen) => anfrage<MessEinstellungen>('PUT', '/api/werkbank/datenbank', e),
   /* E-Mail-Versand und Adresse des DMS (#37) */
@@ -357,7 +359,17 @@ export interface WerkbankUebersicht {
   wartung?: WartungOeffentlich | null;
   /** Sicherung (#105). */
   sicherung?: SicherungsZustand | null;
+  /** Speicherplatz (#116). */
+  speicherplatz?: SpeicherplatzStand | null;
+  /** Frühere Variablen, die aus der Compose-Datei entfernt werden können (#115). */
+  variablen?: string[];
 }
+/* Feste Ordner (#115) und Speicherplatz (#116) */
+export type OrdnerArt = 'dateien' | 'geheim' | 'sicherung';
+export interface OrdnerStand { art: OrdnerArt; pfad: string; text: string; gesamt: number | null; frei: number | null; belegt: number | null; volume: boolean | null; geraet: string | null; zustand?: 'ok' | 'warnung' | 'grenze' | null; warnBytes?: number | null; grenzBytes?: number | null }
+export interface Schwelle { wert: number; einheit: 'prozent' | 'gb' }
+export interface SpeicherplatzEinstellung { warnung: Schwelle; grenze: Schwelle }
+export interface SpeicherplatzStand { zustand: 'ok' | 'warnung' | 'grenze'; gemessen: string; ordner: OrdnerStand[]; einstellung: SpeicherplatzEinstellung; seit: string | null; wartungBeenden: boolean }
 export interface Diagnose {
   dms: { version: string; commit: string | null; gebaut: string | null }; serverzeit: string; zeitzone: string; node: string; postgres: string | null;
   texterkennung: boolean | null; mail: boolean; benutzer: { name: string; rolle: string }; sitzung: string | null; vertretung: boolean;
@@ -372,6 +384,9 @@ export interface Systemuebersicht {
   datenbank: { version: string; groesseBytes: number; mappen: number; typen: number; benutzer: number; dokumente: number; dokumenteBytes: number } | { fehler: string };
   bibliotheken: Record<string, string | null>;
   einstellungen: Record<string, string>;
+  /** Feste Ordner mit belegtem und freiem Platz (#115). */
+  ordner?: OrdnerStand[] | null;
+  variablen?: string[];
 }
 export interface Vergleich { komponente: string; installiert: string | null; aktuell: string | null; status: 'aktuell' | 'neuer' | 'veraltet' | 'unbekannt'; hinweis?: string; quelle: string }
 export interface ApiSchluessel { id: string; name: string; praefix: string; recht: 'lesen' | 'schreiben'; passwoerter: boolean; ablauf: string | null; erstellt: string; zuletztBenutzt: string | null }

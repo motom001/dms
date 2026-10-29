@@ -1,3 +1,5 @@
+import type { Speicherplatz } from './speicherplatz';
+import type { OrdnerPruefung } from './ordner';
 import { existsSync } from 'node:fs';
 import fastifyStatic from '@fastify/static';
 import { randomBytes } from 'node:crypto';
@@ -54,6 +56,9 @@ interface Optionen {
   sicherung?: Sicherung;
   /** Wiederherstellen und Probe (#107, #109). */
   wiederherstellung?: Wiederherstellung;
+  /** Speicherplatz-Überwachung (#116) und feste Ordner (#115). */
+  speicherplatz?: Speicherplatz;
+  ordner?: OrdnerPruefung;
   abruf?: (url: string) => Promise<unknown>;
 }
 

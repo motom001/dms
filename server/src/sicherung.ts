@@ -189,7 +189,7 @@ export class Sicherung {
   constructor(
     /** Ordner der Sicherungen (eigenes Volume). */
     readonly ordner: string,
-    /** Wurzel der Dateien (FILES_DIR) und Haushalt: gesichert wird <wurzel>/<haushalt>. */
+    /** Wurzel der Dateien (/data/files) und Haushalt: gesichert wird <wurzel>/<haushalt>. */
     readonly dateiWurzel: string,
     readonly haushaltId: string,
     private q: SicherungsQuellen,
