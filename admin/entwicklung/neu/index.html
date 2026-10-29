@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-026" class="md-skip">
+        <a href="#neu-in-version-027" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0260" class="md-nav__link">
+  <a href="#0270" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.26.0
+        0.27.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.26.0">
+    <nav class="md-nav" aria-label="0.27.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -379,17 +379,6 @@
     <span class="md-ellipsis">
       
         Neu
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#behoben" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Behoben
       
     </span>
   </a>
@@ -753,6 +742,34 @@
     
   
     Benutzer und Rollen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../berechtigungen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Berechtigungen
   
 
     
@@ -1483,15 +1500,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0260" class="md-nav__link">
+  <a href="#0270" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.26.0
+        0.27.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.26.0">
+    <nav class="md-nav" aria-label="0.27.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1499,17 +1516,6 @@
     <span class="md-ellipsis">
       
         Neu
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#behoben" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Behoben
       
     </span>
   </a>
@@ -1563,35 +1569,39 @@
   
 
 
-<h1 id="neu-in-version-026">Neu in Version 0.26<a class="headerlink" href="#neu-in-version-026" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-027">Neu in Version 0.27<a class="headerlink" href="#neu-in-version-027" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0260">0.26.0<a class="headerlink" href="#0260" title="Permanent link">&para;</a></h2>
+<h2 id="0270">0.27.0<a class="headerlink" href="#0270" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Administratoren arbeiten nicht in der Ablage</strong> (#128):</li>
-<li>Öffnet ein Administrator die Ablage, steht oben ein roter Hinweis mit dem Knopf „Benutzer anlegen“: Der Administrator sieht dort alle Mappen und sollte nicht für die tägliche Arbeit verwendet werden.</li>
-<li>Administratoren bekommen keine API-Schlüssel mehr; über die Schnittstelle arbeitet ein normaler Benutzer.</li>
-<li><strong>Verständlichere Knöpfe</strong> (#136):</li>
-<li>„Verwerfen“ heißt jetzt <strong>„Änderungen verwerfen“</strong>, ein neuer Entwurf überall <strong>„Entwurf verwerfen“</strong>.</li>
-<li>Im Mappentyp-Editor klappt <strong>„Zuklappen“</strong> (früher „Fertig“) ein Feld nur zu.</li>
-<li>Rückfragen beim Entfernen von Feldern, Registern und Trefferlisten sagen, dass es erst mit „Mappentyp speichern“ wirkt.</li>
-<li>Genauer benannt: <strong>„Passwort entfernen“</strong>, <strong>„Nicht hochladen“</strong> (noch nicht gespeicherte Dateien) und <strong>„Bedingung entfernen“</strong>.</li>
-</ul>
-<h3 id="behoben">Behoben<a class="headerlink" href="#behoben" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Erklärtexte unter Haken (z. B. „Neue Mappen erlauben“, „Volltext erzeugen“) und unter Feldern wurden seit 0.22 nach fast jedem Wort umgebrochen und überdeckten andere Angaben (#134).</li>
+<li><strong>Berechtigungen je Mappentyp</strong> (#123, #124, #125):</li>
+<li>In der Werkbank unter <em>Berechtigungen</em> legst du je Mappentyp fest, wer Mappen <strong>anlegen, lesen, bearbeiten, löschen</strong> und <strong>Passwörter sehen</strong> darf (C R U D P).</li>
+<li>Jeder Typ hat eine <strong>Grundeinstellung</strong> („alle Rechte erteilt“ oder „entzogen“) und <strong>Regeln</strong> in fester Reihenfolge: <em>wenn</em> der Benutzer eine Rolle hat, ein bestimmter Benutzer ist, ein Feld der Mappe passt (z. B. „Verantwortlich ist der aktuelle Benutzer“), er eine offene Aufgabe an der Mappe hat oder es seine eigene Benutzer-Mappe ist – <em>dann</em> ✓ erteilen, ✗ entziehen oder – unverändert. Jede Bedingung lässt sich mit „nicht“ umkehren; „Stopp“ beendet die Prüfung.</li>
+<li>Regeln per Ziehen sortieren und <strong>in andere Mappentypen kopieren</strong>.</li>
+<li><strong>Testlauf</strong>: Welche Rechte hätte Benutzer X an Mappe Y – und welche Regel hat das entschieden? Auch für noch nicht gespeicherte Regeln. Dazu <strong>„Was sieht ein Benutzer?“</strong> je Mappentyp.</li>
+<li>Beim Speichern warnt das DMS, wenn Mappen danach niemand mehr lesen könnte.</li>
+<li><strong>Die Ablage hält sich daran</strong> (#124, #126):</li>
+<li>Nicht lesbare Mappen fehlen in Listen, Suche, Zählern, Favoriten und Verweisen („nicht sichtbare Mappe“, ohne Link).</li>
+<li>Ohne Bearbeiten zeigt eine Mappe nur an, ohne Löschen fehlt „Mappe löschen“, ohne Anlegen „+ Neu“, ohne Passwortrecht das Auge.</li>
+<li>Vor dem Speichern fragt das DMS nach, wenn man sich mit einer Änderung selbst das Lesen oder Bearbeiten nehmen würde.</li>
+<li>Im Profil zeigt <strong>Meine Rechte</strong> je Mappentyp: ja, nein oder je nach Mappe.</li>
+<li><strong>Aufgaben an nicht lesbaren Mappen</strong> (#127): Sie bleiben im Eingang (ohne Titel) und lassen sich erledigen oder weitergeben. Wer eine Aufgabe vergibt, bekommt einen Hinweis, wenn der Empfänger die Mappe nicht lesen darf.</li>
+<li><strong>Benutzer auswählen nur unter sichtbaren Benutzern</strong> (#137): Verantwortlich, Erwähnungen, Vertreter und Aufgaben-Empfänger bieten nur Benutzer an, deren Benutzer-Mappe man sehen darf – so lässt sich etwa ein ERP-Programm über die API auf seinen Ausschnitt begrenzen.</li>
 </ul>
 <h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Schlüssel, die Administratoren schon haben, funktionieren weiter. Die Werkbank-Übersicht erinnert daran, sie durch den Schlüssel eines normalen Benutzers zu ersetzen.</li>
-<li>Über die API lassen sich damit keine Werkbank-Funktionen mehr aufrufen.</li>
+<li>Für Administratoren gelten die Regeln nicht; „Neue Mappen erlauben“ und „Löschen erlauben“ am Mappentyp bleiben die Obergrenze für alle.</li>
+<li>Ohne Regeln ändert sich nichts: Jeder Mappentyp startet mit „alle Rechte erteilt“.</li>
+<li>Die API wendet dieselben Regeln an – für den Benutzer, dem der Schlüssel gehört.</li>
+<li>Jede Änderung der Berechtigungen steht mit der vollständigen Regelliste im Protokoll.</li>
+<li>Neues Kapitel <em>Berechtigungen</em> im Administratorhandbuch, mit Beispielen und dem ERP-Fall.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.25.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.25.0...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.26.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.26.0...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
