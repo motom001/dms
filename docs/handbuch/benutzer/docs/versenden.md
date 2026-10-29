@@ -31,7 +31,7 @@ Passwörter erscheinen auch dort nur als „••••••••“.
 **Aktionen → Link kopieren** legt einen Link auf die Mappe in die Zwischenablage, den du per Mail oder Chat an jemanden mit eigenem Zugang zum DMS schicken kannst. Der Link nennt die Mappe nicht über eine Nummer, sondern über ihre Angaben, z. B.
 
 ```
-http://nas:8080/ablage/link?typ=Vertrag&vertragsnummer=SV-4711
+http://nas:8080/ablage/link?typ=vertrag&vertragsnummer=SV-4711
 ```
 
 ![Link kopiert](bilder/link-kopieren.png)

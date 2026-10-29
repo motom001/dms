@@ -97,10 +97,10 @@ describe('Sprechende Links (#98)', () => {
     const mappen = await d.listeMappen();
     const vertrag = mappen.find((m) => m.werte.vertragsnummer === 'SV-4711')!;
     const l = linkZuMappe(typ('Vertrag'), vertrag)!;
-    assert.equal(l, `${LINK_PFAD}?typ=Vertrag&vertragsnummer=SV-4711`, 'eindeutiges Feld');
+    assert.equal(l, `${LINK_PFAD}?typ=vertrag&vertragsnummer=SV-4711`, 'eindeutiges Feld');
     const rechnung = mappen.find((m) => m.werte.rechnungsnummer === 'R-2026-117')!;
     const lr = linkZuMappe(typ('Rechnung'), rechnung)!;
-    assert.equal(lr, `${LINK_PFAD}?typ=Rechnung&rechnungsnummer=R-2026-117&rechnungsdatum=2026-03-02`, 'Titelfelder');
+    assert.equal(lr, `${LINK_PFAD}?typ=rechnung&rechnungsnummer=R-2026-117&rechnungsdatum=2026-03-02`, 'Titelfelder');
     for (const m of mappen) {
       const t = (await d.listeTypen()).find((x) => x.id === m.typId)!;
       const link = linkZuMappe(t, m);
@@ -112,7 +112,7 @@ describe('Sprechende Links (#98)', () => {
     const t = await d.legeTypAn({ name: 'Ding', felder: [{ key: 'typ', label: 'Typ', typ: 'text', eindeutig: true }] });
     const m = await d.legeMappeAn({ typId: t.id, werte: { typ: 'Laptop' } });
     const ld = linkZuMappe(t, m)!;
-    assert.equal(ld, `${LINK_PFAD}?typ=Ding&typ.gleich=Laptop`);
+    assert.equal(ld, `${LINK_PFAD}?typ=ding&typ.gleich=Laptop`);
     assert.deepEqual((await d.seite(ICH, { sicht: 'link', link: ld.split('?')[1] })).mappen.map((x) => x.id), [m.id]);
   });
 });

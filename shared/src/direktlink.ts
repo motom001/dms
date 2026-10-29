@@ -5,7 +5,7 @@
  *   /ablage/link?typ=Rechnung&rechnungsnummer=A-2020-11380
  *   /ablage/link?typ=Rechnung&bezahlt=nein&rechnungsdatum.groesser=heute-30tage&sortierung=-rechnungsdatum
  *
- * - typ: Name des Mappentyps (ohne Groß-/Kleinschreibung)
+ * - typ: Schlüssel des Mappentyps (#145); auch sein Name geht (ohne Groß-/Kleinschreibung), für ältere Links
  * - feld=wert: „ist gleich“ (Ja/Nein: ja/nein, Auswahlliste: ist einer von, Langtext: enthält)
  * - feld.operator=wert: die übrigen Operatoren der Sichtbedingungen
  * - sortierung=feld bzw. -feld; Standard: nach Titel
@@ -119,10 +119,10 @@ function standardOperator(f: Bedingungsfeld, wert: string): { op: Operator; ohne
   }
 }
 
-/** Mappentyp über seinen Namen (ohne Groß-/Kleinschreibung); notfalls über die Id. */
+/** Mappentyp über seinen Schlüssel (#145), sonst über den Namen (ohne Groß-/Kleinschreibung); notfalls über die Id. */
 export function typImLink(name: string, typen: Mappentyp[]): Mappentyp | undefined {
   const n = name.trim().toLowerCase();
-  return typen.find((t) => t.name.trim().toLowerCase() === n) ?? typen.find((t) => t.id === name.trim());
+  return typen.find((t) => t.schluessel === n) ?? typen.find((t) => t.name.trim().toLowerCase() === n) ?? typen.find((t) => t.id === name.trim());
 }
 
 /** Liest einen Link; Fehler werden gesammelt und nie stillschweigend übergangen. */
@@ -232,5 +232,5 @@ export function linkZuMappe(typ: Mappentyp, m: Mappe): string | null {
   const teile = eindeutig ? [eindeutig] : [...new Set(vorlageFelder(wirksameVorlage(typ)))]
     .filter((k) => !istIndexplatzhalter(k)).map((k) => linkwert(typ, k, m)).filter((x): x is { name: string; wert: string } => !!x);
   if (!teile.length) return null;
-  return `${LINK_PFAD}?${[{ name: 'typ', wert: typ.name }, ...teile].map((t) => `${kodiere(t.name)}=${kodiere(t.wert)}`).join('&')}`;
+  return `${LINK_PFAD}?${[{ name: 'typ', wert: typ.schluessel ?? typ.name }, ...teile].map((t) => `${kodiere(t.name)}=${kodiere(t.wert)}`).join('&')}`;
 }
