@@ -106,3 +106,16 @@ Unten links in der Mappe steht **Mappe löschen**. Nach einer Rückfrage kommt d
 Eine Mappe, auf die noch andere verweisen, lässt sich nicht löschen. Der Knopf ist dann ausgegraut, und darüber steht gleich, welche Mappen das sind – mit Links dorthin. Entferne zuerst dort den Verweis. So kann kein Vertrag verschwinden, zu dem noch Rechnungen gehören. Verschickte E-Mails halten das Löschen nicht auf.
 
 Fehlt der Knopf, dürfen Mappen dieses Typs nicht gelöscht werden.
+
+## Was du sehen und ändern darfst
+
+Ein Administrator kann je Mappentyp festlegen, wer Mappen anlegen, lesen, bearbeiten, löschen und Passwörter darin sehen darf – zum Beispiel, dass nur die Buchhaltung Rechnungen bearbeitet oder dass vertrauliche Mappen nur ihre Verantwortlichen sehen. Was für dich gilt, steht in deinem Profil unter [Meine Rechte](profil.md#meine-rechte).
+
+Das merkst du so:
+
+- **Mappen, die du nicht lesen darfst**, tauchen in Listen, Suche, Zählern und Favoriten nicht auf. Verweist eine Mappe auf eine solche, steht dort *nicht sichtbare Mappe* ohne Link.
+- **Ohne Bearbeiten** zeigt eine Mappe ihre Felder und Dokumente nur an; unten steht „Nur lesen“. Notizen und Aufgaben gehen trotzdem.
+- **Ohne Löschen** fehlt „Mappe löschen“, **ohne Anlegen** fehlt „+ Neu“, **ohne Passwörter sehen** fehlt das Auge an Passwortfeldern.
+- Hängen deine Rechte von einem Feld ab (etwa „Verantwortlich“) und würdest du dir mit einer Änderung selbst das Lesen oder Bearbeiten nehmen, fragt das DMS vor dem Speichern nach.
+- Bei der Auswahl von Benutzern (Verantwortlich, Erwähnungen, Vertretung, Aufgaben) erscheinen nur die, die du sehen darfst.
+- Deinen **Papierkorb** siehst du immer; was du daraus wiederherstellst, siehst du danach aber nur, wenn du die Mappe lesen darfst.

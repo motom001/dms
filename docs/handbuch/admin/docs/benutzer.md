@@ -61,7 +61,7 @@ Jeder Benutzer hat eine Mappe des [Systemmappentyps](mappentypen.md#systemmappen
 
 Neben der **Rolle** des Zugangs (*Administrator* oder *Mitglied*) kann ein Benutzer beliebig viele **weitere Rollen** haben – fachliche Zuständigkeiten wie „Steuern und Finanzen“.
 
-- **Rollen anlegen, umbenennen, löschen** geschieht in der Ablage in der Sicht *Rolle* – vorerst darf das jeder Benutzer. Rollennamen sind eindeutig.
+- **Rollen anlegen, umbenennen, löschen** geschieht in der Ablage in der Sicht *Rolle* – wer das darf, regeln die [Berechtigungen](berechtigungen.md) am Mappentyp *Rolle* (ohne Regeln: jeder Benutzer). Rollennamen sind eindeutig.
 - **Zuordnen** geht nur hier in der Benutzerverwaltung (Haken bei *Weitere Rollen*). Die Mappe einer Rolle zeigt im Register *Benutzer*, wer sie hat.
 - **Administrator** und **Mitglied** sind **Systemrollen**: Sie erscheinen ebenfalls als Rollen-Mappen, folgen aber der Rolle des Zugangs und lassen sich weder umbenennen noch löschen.
 - **Rolle löschen**, die Benutzer haben: erlaubt – die Zuordnung fällt weg. Verweist noch ein Feld auf die Rolle (z. B. „verantwortliche Rolle“), muss dieser Verweis zuerst weg.
@@ -70,7 +70,7 @@ Neben der **Rolle** des Zugangs (*Administrator* oder *Mitglied*) kann ein Benut
 ![Eine Rolle mit ihren Benutzern](bilder/rolle.png)
 
 !!! info "Rollen und Rechte"
-    Rollen geben derzeit keine zusätzlichen Rechte – außer der Systemrolle *Administrator*, die die Werkbank freischaltet. Die geplante Berechtigungsverwaltung wird Rechte an genau diese Rollen hängen.
+    Rollen geben von sich aus keine Rechte – außer der Systemrolle *Administrator*, die die Werkbank freischaltet. Was eine Rolle in der Ablage darf, legst du in den [Berechtigungen](berechtigungen.md) fest, etwa „Rolle *Buchhaltung* darf alle Rechnungen lesen und bearbeiten“.
 
 ## Verantwortliche: Felder auf Benutzer und Rollen
 

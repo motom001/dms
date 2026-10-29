@@ -12,6 +12,31 @@ import { FehlerMelden } from './FehlerMelden';
 import { Farbfelder } from '../werkbank/Designs';
 import { useKonto } from '../konto';
 import { Hilfe } from '../Hilfe';
+import { RECHTE, RECHTE_LISTE } from '../../../shared/src/rechte';
+
+const STUFE = { immer: 'ja', nie: 'nein', teils: 'je nach Mappe' } as const;
+
+/** Was darf ich? (#126) Je Mappentyp und Recht: ja, nein oder je nach Mappe – ohne die Regeln selbst. */
+function MeineRechte({ admin }: { admin: boolean }) {
+  const [liste, setListe] = useState<Awaited<ReturnType<typeof api.meineRechte>>>();
+  useEffect(() => { api.meineRechte().then(setListe).catch(() => setListe([])); }, []);
+  return (
+    <section className="blatt">
+      <h2 className="h3">Meine Rechte <Hilfe ort="profil.rechte" /></h2>
+      {admin
+        ? <p className="leise">Als Administrator siehst und darfst du alles – für dich gelten die Berechtigungen nicht. Einschränken können dich nur die Haken „Neue Mappen erlauben“ und „Löschen erlauben“ am Mappentyp.</p>
+        : <p className="leise">Was du je Mappentyp darfst. „Je nach Mappe“ heißt: Es hängt von der Mappe ab, zum Beispiel davon, ob du verantwortlich bist oder eine Aufgabe dazu hast.</p>}
+      {!liste ? <p className="leise">Lade …</p> : (
+        <div className="tabellenrahmen"><table>
+          <thead><tr><th>Mappentyp</th>{RECHTE_LISTE.map((k) => <th key={k} title={RECHTE[k]}>{RECHTE[k]}</th>)}</tr></thead>
+          <tbody>{liste.map((t) => (
+            <tr key={t.typId}><td>{t.name}</td>{RECHTE_LISTE.map((k) => <td key={k} className={t.rechte[k] === 'nie' ? 'leise' : ''}>{STUFE[t.rechte[k]]}</td>)}</tr>
+          ))}</tbody>
+        </table></div>
+      )}
+    </section>
+  );
+}
 
 function useFormular(fn: () => Promise<string>) {
   const [sendet, setSendet] = useState(false);
@@ -80,6 +105,7 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
       </div>
 
       {bereich === 'konto' && <>
+      <MeineRechte admin={ich.rolle === 'admin'} />
       <form className="blatt" onSubmit={fName.absenden}>
         <h2 className="h3">Name</h2>
         <label className="eigenschaft"><span>So erscheinst du bei „angelegt von“</span><input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></label>

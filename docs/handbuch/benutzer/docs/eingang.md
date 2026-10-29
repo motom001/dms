@@ -23,7 +23,9 @@ Rechts über den Registern einer Mappe steht das Menü **Aktionen**; darin **Auf
 
 ![Aufgabe vergeben](bilder/aufgabe-vergeben.png)
 
-Aufgaben gehen immer an einen Benutzer, nicht an eine Rolle – damit klar ist, wer sich kümmert.
+Aufgaben gehen immer an einen Benutzer, nicht an eine Rolle – damit klar ist, wer sich kümmert. Darf der Empfänger die Mappe nach den [Berechtigungen](mappen.md#was-du-sehen-und-andern-darfst) nicht lesen, bekommt er die Aufgabe trotzdem – du erhältst dazu einen Hinweis.
+
+Steht in deinem Eingang eine **nicht sichtbare Mappe**, hast du eine Aufgabe an einer Mappe, die du nicht lesen darfst. Öffnest du sie, kannst du die Aufgabe erledigen oder an jemanden weitergeben, der die Mappe sehen darf.
 
 ## Weitergeben
 

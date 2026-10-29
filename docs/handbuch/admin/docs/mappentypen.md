@@ -12,8 +12,8 @@ Wie Benutzer mit den Mappen arbeiten, beschreibt das [Benutzerhandbuch](https://
 
 - **Name** – so heißt die Sicht in der Ablage, z. B. „Vertrag“.
 - **Beschreibung** – steht über der Liste und hilft beim Einordnen.
-- **Neue Mappen erlauben** – ob Benutzer in der Ablage Mappen dieses Typs anlegen dürfen.
-- **Löschen erlauben** – ob Benutzer Mappen dieses Typs löschen dürfen.
+- **Neue Mappen erlauben** – ob in der Ablage überhaupt Mappen dieses Typs angelegt werden dürfen. *Wer* genau, regeln die [Berechtigungen](berechtigungen.md); der Haken ist die Obergrenze – auch für Administratoren.
+- **Löschen erlauben** – ob Mappen dieses Typs überhaupt gelöscht werden dürfen; wer genau, regeln ebenfalls die [Berechtigungen](berechtigungen.md).
 
 Beim **Anlegen** gibt es zusätzlich **Eigene Sicht in der Ablage anlegen** (standardmäßig an): Dann erscheint der neue Typ in der Ablage als eigene Sicht. Abwählen, wenn seine Mappen nur in einer bestehenden [Sicht](sichten.md) erscheinen sollen.
 

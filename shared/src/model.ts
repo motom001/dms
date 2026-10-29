@@ -115,6 +115,8 @@ export interface Mappentyp extends MappentypDaten {
   system?: Systemtyp | null;
   /** Berechtigungen (#123): Grundeinstellung und Regeln; fehlt = alles erteilt. Nur für Administratoren geliefert. */
   berechtigungen?: import('./rechte').Regelwerk | null;
+  /** Nur für Nicht-Administratoren (#126): Darf man nach den Berechtigungen überhaupt Mappen dieses Typs anlegen? */
+  darfAnlegen?: boolean;
 }
 
 /* ---------- Systemmappentypen: Benutzer und Rollen (#26, #27) ---------- */
@@ -155,7 +157,7 @@ export function systemfelder(s: Systemtyp, rolleTypId: string, benutzerTypId = '
   ];
 }
 
-export const darfErstellen = (t: Pick<MappentypDaten, 'erstellenErlaubt'> | undefined) => !!t && t.erstellenErlaubt !== false;
+export const darfErstellen = (t: (Pick<MappentypDaten, 'erstellenErlaubt'> & { darfAnlegen?: boolean }) | undefined) => !!t && t.erstellenErlaubt !== false && t.darfAnlegen !== false;
 export const darfLoeschen = (t: Pick<MappentypDaten, 'loeschenErlaubt'> | undefined, m?: Pick<Mappe, 'systemKennung'>) =>
   !!t && t.loeschenErlaubt !== false && !m?.systemKennung;
 

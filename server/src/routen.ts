@@ -656,7 +656,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
         liste: rw?.regeln.map((x, i) => `${i + 1}. ${x.name} ${kurz(x.dann)}${x.stopp ? ' ■' : ''}`).join(' · ') || undefined,
         ...(r.niemand ? { niemandLesbar: r.niemand } : {}),
       });
-      return ok(r.typ);
+      return ok({ typ: r.typ, niemand: r.niemand });
     } },
     { methode: 'POST', pfad: '/api/werkbank/berechtigungen/:typId/kopieren', zugang: 'admin', handler: async (a) => {
       const r = await dienst.kopiereRegel(a.params.typId, String(b(a).regelId ?? ''), b(a).ziele);

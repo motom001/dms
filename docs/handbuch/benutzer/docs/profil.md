@@ -25,6 +25,12 @@ Das Profil hat links fünf Bereiche (am Smartphone oben als Knöpfe):
 - **Name** – so erscheinst du bei „angelegt von“ und „zuletzt geändert von“ – und als Titel deiner Benutzer-Mappe.
 - **E-Mail-Adresse** – damit meldest du dich an. Zum Ändern brauchst du dein aktuelles Passwort. Verschickt das DMS E-Mails, bekommt die bisherige Adresse einen Hinweis – falls jemand anderes die Adresse geändert hat, merkst du es so.
 
+### Meine Rechte
+
+Ganz oben im Bereich *Konto* steht, was du je Mappentyp darfst: **anlegen, lesen, bearbeiten, löschen** und **Passwörter sehen** – jeweils mit „ja“, „nein“ oder „je nach Mappe“. „Je nach Mappe“ heißt: Es hängt von der einzelnen Mappe ab, zum Beispiel davon, ob du dort verantwortlich bist oder eine Aufgabe dazu hast. Festgelegt werden die Rechte von einem Administrator; mehr unter [Was du sehen und ändern darfst](mappen.md#was-du-sehen-und-andern-darfst).
+
+![Meine Rechte](bilder/meine-rechte.png){ loading=lazy }
+
 ### Sicherheit
 
 - **Passwort** – gib dein aktuelles und zweimal das neue Passwort ein (mindestens 10 Zeichen). Nach dem Ändern sind alle anderen Anmeldungen beendet.

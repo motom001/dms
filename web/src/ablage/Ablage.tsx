@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { beschreibeBedingung, kinderVon, mitNachkommen, spaltenDerSicht, wirksameTypen, type Sicht } from '../../../shared/src/sichten';
 import { liesDirektlink, type Direktlink } from '../../../shared/src/direktlink';
 import { darfErstellen, formatiere, GEMISCHTE_SPALTEN, sortierbar, standardliste, TREFFER_ANFANG, TREFFER_ENDE, vorlageFelder, wirksameVorlage, type Ausschnitt, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
-import { api, type Bezuege, type MappeDetails } from '../api';
+import { api, verborgeneAufgaben, type Bezuege, type MappeDetails } from '../api';
+import type { Aufgabe } from '../../../shared/src/model';
+import { AufgabenHinweis } from './Aufgaben';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { geheZu, Link } from '../ort';
@@ -124,13 +126,21 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
 /** Lädt eine Mappe mit Rückverweisen, Dokumenten und Bezügen und zeigt sie an. */
 function MappeLader({ id, sicht, anhang = '' }: { id: string; sicht: string; anhang?: string }) {
   const d = useDaten();
-  const [details, setDetails] = useState<MappeDetails | null | 'fehlt'>(null);
+  const [details, setDetails] = useState<MappeDetails | null | 'fehlt' | { verborgen: Aufgabe[] }>(null);
   const laden = useCallback(async () => {
-    try { setDetails(await api.mappe(id)); } catch { setDetails('fehlt'); }
+    try { setDetails(await api.mappe(id)); } catch (x) { const v = verborgeneAufgaben(x); setDetails(v ? { verborgen: v } : 'fehlt'); }
   }, [id]);
   useEffect(() => { void laden(); }, [laden, d.stand]);
   if (details === null) return <p className="leise">Lade …</p>;
   if (details === 'fehlt') return <div className="leer"><p>Diese Mappe gibt es nicht (mehr).</p></div>;
+  // Ohne Leserecht (#124): nur die eigenen Aufgaben dazu – erledigen oder weitergeben.
+  if ('verborgen' in details) return (
+    <div className="einspaltig">
+      <div className="mappenkopf"><p className="ueber">Mappe</p><h1 className="verborgen-titel">Nicht sichtbare Mappe</h1></div>
+      <div className="hinweis info"><p>Diese Mappe darfst du nach den Berechtigungen nicht sehen. {details.verborgen.length ? 'Deine Aufgabe dazu kannst du trotzdem erledigen oder an jemanden weitergeben, der sie sehen darf.' : 'Du hast hier keine offene Aufgabe mehr.'}</p></div>
+      <AufgabenHinweis aufgaben={details.verborgen} neuLaden={laden} />
+    </div>
+  );
   const t = d.typ(details.mappe.typId);
   if (!t) return <div className="leer"><p>Der Mappentyp dieser Mappe fehlt.</p></div>;
   return <MappeAnsicht key={details.mappe.id} typ={t} details={details} sicht={sicht} anhang={anhang} neuLaden={laden} />;
@@ -274,9 +284,9 @@ function Liste(p: {
                 const k = kompakt(p.listenSpalten ?? [], !!p.typ, typ, m, s.bezuege, d.person);
                 return (
                   <li key={m.id} className="mit-stern">
-                    <Stern mappeId={m.id} an={s.favoriten.has(m.id)} titel={k.titel} klein />
+                    {m.verborgen ? <span /> : <Stern mappeId={m.id} an={s.favoriten.has(m.id)} titel={k.titel} klein />}
                     <Link to={`/ablage/${p.sicht}/${m.id}${anhang}`} className={`eintrag ${p.offen === m.id ? 'an' : ''}`}>
-                      <span className="titel">{k.titel}</span>
+                      <span className={`titel ${m.verborgen ? 'verborgen-titel' : ''}`}>{m.verborgen ? 'Nicht sichtbare Mappe' : k.titel}</span>
                       <Unter text={k.unter} />
                       {s.ausschnitte[m.id] && <Fundstelle a={s.ausschnitte[m.id]} />}
                       {p.sicht === 'eingang' && s.aufgaben[m.id]

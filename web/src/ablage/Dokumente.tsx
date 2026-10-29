@@ -37,8 +37,10 @@ export function sortiereDokumente(liste: Dokument[], s: Dokumentsortierung): Dok
 
 const HINWEIS_MEHRFACH = 'dms:mehrere-herunterladen-gesehen';
 
-export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuegen, entferne, entferneMehrere, vergiss }: {
+export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuegen, entferne, entferneMehrere, vergiss, nurLesen }: {
   register: Register; dokumente: Dokument[]; neue: NeueDatei[]; entfernt: string[];
+  /** Ohne Recht „Bearbeiten“ (#126): nur ansehen und herunterladen. */
+  nurLesen?: boolean;
   hinzufuegen(d: File[]): void; entferne(id: string): void; entferneMehrere(ids: string[]): void; vergiss(uid: string): void;
 }) {
   const d = useDaten();
@@ -123,12 +125,12 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
 
   return (
     <div className="dokumente">
-      <div className={`ablagezone ${ziehen ? 'zieht' : ''}`}
+      {!nurLesen && <div className={`ablagezone ${ziehen ? 'zieht' : ''}`}
         onDragOver={(e) => { e.preventDefault(); setZiehen(true); }} onDragLeave={() => setZiehen(false)} onDrop={fallen}>
         <p>Dateien hierher ziehen oder <button type="button" className="textknopf" onClick={() => auswahlFeld.current?.click()}>auswählen</button></p>
         <p className="leise klein">Bis 100 MB je Datei. Übernommen wird mit „Mappe speichern“.</p>
         <input ref={auswahlFeld} type="file" multiple hidden onChange={(e) => { if (e.target.files) nimm(e.target.files); e.target.value = ''; }} />
-      </div>
+      </div>}
       {zuGross.length > 0 && <div className="hinweis schlecht"><p>Zu groß (über 100 MB): {zuGross.join(', ')}</p></div>}
       {dokumente.length + neue.length === 0
         ? <p className="leise">Noch keine Dokumente in „{register.name}“.</p>
@@ -142,7 +144,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                 <Hilfe ort="dokumente.mehrere" />
                 {auswahl.length > 0 && <>
                   <button type="button" className="knopf klein" onClick={alleHerunterladen}>Herunterladen</button>
-                  <button type="button" className="knopf klein gefahr-rand" onClick={auswahlLoeschen}>Löschen</button>
+                  {!nurLesen && <button type="button" className="knopf klein gefahr-rand" onClick={auswahlLoeschen}>Löschen</button>}
                 </>}
                 <label className="sortwahl klein"><span className="leise">Sortieren:</span>
                   <select value={sortierung} onChange={(e) => d.setzeEinstellung('dokumente_sortierung', e.target.value === 'name' ? null : e.target.value)}>
@@ -185,7 +187,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                       <div className="zeilenaktionen">
                         {klickbar && <a className="symbolverweis" href={dokumentUrl(x.id)} target="_blank" rel="noreferrer" title="In neuem Tab öffnen" aria-label={`${x.name} in neuem Tab öffnen`}>↗</a>}
                         {!weg && <a className="textknopf" href={dokumentUrl(x.id, true)}>Herunterladen</a>}
-                        <button type="button" className={`textknopf ${weg ? '' : 'gefahr'}`} onClick={() => entferne(x.id)}>{weg ? 'Behalten' : 'Löschen'}</button>
+                        {!nurLesen && <button type="button" className={`textknopf ${weg ? '' : 'gefahr'}`} onClick={() => entferne(x.id)}>{weg ? 'Behalten' : 'Löschen'}</button>}
                       </div>
                     </div>
                     {auf && (

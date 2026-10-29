@@ -863,3 +863,25 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
 .erreichbarkeit { color: var(--akzent-tinte); }
 .erreichbarkeit .knopf { background: var(--akzent-tinte); border-color: var(--akzent-tinte); }
 .erreichbarkeit .knoepfe { display: inline-flex; gap: 8px; }
+
+/* Berechtigungen (#123–#127) */
+.regeln { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.regeln > li { border-radius: var(--r); }
+.regel { border: 1px solid var(--linie); border-radius: var(--r); padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--flaeche); }
+.regel.fehlerhaft { border-color: var(--schlecht); }
+.regel .bedingungen > li { background: var(--senke); }
+.regelkopf { display: flex; align-items: center; gap: 8px; }
+.regelkopf input { flex: 1; min-width: 0; font-weight: 600; }
+.rechtewahl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.rechtknopf { display: inline-flex; align-items: center; gap: 4px; min-width: 52px; justify-content: center; padding: 5px 8px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche); color: var(--leise); font: inherit; font-weight: 600; cursor: pointer; }
+.rechtknopf .buchstabe { font-family: ui-monospace, monospace; }
+.rechtknopf.erteilen { background: var(--gruen-zart); color: var(--gruen); border-color: transparent; }
+.rechtknopf.entziehen { background: var(--schlecht-zart); color: var(--schlecht); border-color: transparent; }
+.rechtknopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
+.rechtezeile { display: inline-flex; gap: 4px; flex-wrap: wrap; vertical-align: middle; }
+.recht { font-family: ui-monospace, monospace; font-size: calc(12px * var(--skala, 1)); font-weight: 600; padding: 1px 5px; border-radius: 4px; }
+.recht.ja { background: var(--gruen-zart); color: var(--gruen); }
+.recht.nein { background: var(--senke); color: var(--leise); }
+.testlauf { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; overflow-x: auto; }
+.testlauf tr.traf td:first-child { font-weight: 600; }
+.verborgen-titel { color: var(--leise); font-style: italic; }

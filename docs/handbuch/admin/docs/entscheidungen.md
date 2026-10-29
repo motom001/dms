@@ -148,6 +148,15 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Hochladen nur unter dem Prüfwert, dann zusammenführen:** Jeder Teil wird ohne Tag hochgeladen; `image-zusammen` erzeugt daraus mit `docker buildx imagetools create` das gemeinsame Image mit allen Tags und prüft, dass beide Architekturen enthalten sind. Das Release entsteht erst danach.
 - **Pull Requests** bauen beide Architekturen ebenfalls nativ zur Probe (ohne Veröffentlichung).
 
+## Berechtigungen (#123–#127, #137)
+
+- **Regeln nur am Mappentyp**, mit Grundeinstellung (erteilt/entzogen) und geordneten Regeln „wenn … dann ✓/✗/– je Recht“ mit Stopp – wie eine Firewall. Keine Rechte an einzelnen Mappen: Was eine Mappe besonders macht, steht in ihren Feldern, und darauf zielen die Bedingungen.
+- **CRUDP**: Anlegen, Lesen, Bearbeiten (Felder und Dokumente), Löschen, Passwörter sehen. Notizen, Aufgaben und E-Mail brauchen nur Lesen. Ohne Lesen wirkt nichts außer Anlegen.
+- **Ein Ausdruck, zwei Auswertungen**: Bedingungen über den Benutzer sind beim Anmelden schon entschieden; was bleibt, sind Filter über die Mappe – im Arbeitsspeicher für eine einzelne Mappe und als SQL für Listen, Suche und Zähler. So stimmen Liste und Mappe immer überein, und Seiten bleiben schnell.
+- **Administratoren** unterliegen keinen Regeln, arbeiten aber auch nicht in der Ablage (#128). Die Haken am Mappentyp bleiben Obergrenze für alle.
+- **Benutzerauswahl nur unter sichtbaren Benutzern** (#137): So lässt sich ein Programm über die API sauber auf seinen Ausschnitt begrenzen.
+- **Feldrechte** (einzelne Felder ausblenden) kommen bei Bedarf später.
+
 ## Bewusst noch nicht drin
 
-Rechte pro Mappe, Fristen, Schlüsselwechsel (#47), Backup-Funktion in der Anwendung (#48), Texterkennung für Office-Dokumente, Zwei-Faktor-Anmeldung.
+Feldrechte, Fristen, Schlüsselwechsel (#47), Backup-Funktion in der Anwendung (#48), Texterkennung für Office-Dokumente, Zwei-Faktor-Anmeldung.
