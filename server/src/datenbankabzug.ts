@@ -80,7 +80,20 @@ export function pgDatenquelle(sql: postgres.Sql, schema = 'public'): Datenquelle
         const zaehler = { mappen: await anzahl('mappen'), dokumente: await anzahl('dokumente'), benutzer: await anzahl('benutzer') };
         return f({
           postgres: pg as string, migrationen, tabellen, zaehler,
-          inhalt: async (t) => (await tx.unsafe(`COPY ${bezeichner(schema)}.${bezeichner(t.name)} (${t.spalten.map(bezeichner).join(', ')}) TO STDOUT`).readable()) as AsyncIterable<Buffer>,
+          inhalt: async (t) => {
+            const strom = await tx.unsafe(`COPY ${bezeichner(schema)}.${bezeichner(t.name)} (${t.spalten.map(bezeichner).join(', ')}) TO STDOUT`).readable();
+            // Bricht der Leser ab (z. B. Platte voll), muss das COPY trotzdem zu Ende gelesen werden:
+            // Ein zerstörter Strom lässt die Verbindung hängen, und die Transaktion endet nie.
+            return (async function* () {
+              let fertig = false;
+              try {
+                for await (const c of strom.iterator({ destroyOnReturn: false })) yield c as Buffer;
+                fertig = true;
+              } finally {
+                if (!fertig) for await (const _ of strom) { /* Rest verwerfen */ }
+              }
+            })();
+          },
         });
       })) as Awaited<ReturnType<typeof f>>;
     },

@@ -534,7 +534,8 @@ export class Sicherung {
   async tick(): Promise<'gestartet' | 'nichts'> {
     let gestartet: 'gestartet' | 'nichts' = 'nichts';
     const plan = await this.plan();
-    if (plan.aktiv && !this.q.wartungAktiv?.() && !this.laeuft()) {
+    // Läuft gerade eine Probe oder Wiederherstellung, in der nächsten Minute noch einmal versuchen.
+    if (plan.aktiv && !this.q.wartungAktiv?.() && !this.laeuft() && !this.sperre()) {
       const o = ortszeit(this.jetzt());
       const tagPasst = plan.haeufigkeit === 'taeglich' || o.wochentag === plan.wochentag;
       if (tagPasst && o.uhr >= plan.uhrzeit && (await this.q.einstellungen.lies('sicherung_zuletzt_auto')) !== o.datum) {

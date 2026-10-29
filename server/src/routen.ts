@@ -155,10 +155,15 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const sicherung = () => { if (!x.sicherung) throw new Fachfehler(404, 'Sicherungen sind nicht eingerichtet.'); return x.sicherung; };
   const wh = () => { if (!x.wiederherstellung) throw new Fachfehler(404, 'Die Wiederherstellung ist nicht eingerichtet.'); return x.wiederherstellung; };
   /** Stand für den Wiederherstellungsbildschirm: läuft etwas, oder gibt es eine Abschlussmeldung? */
-  const whStand = async () => ({
-    lauf: x.wiederherstellung?.aktuellerLauf()?.art === 'wiederherstellung' ? x.wiederherstellung.aktuellerLauf() : null,
-    abschluss: x.sicherung ? await x.sicherung.einstellungen.lies('wiederherstellung_abschluss') : null,
-  });
+  const whStand = async () => {
+    const lauf = x.wiederherstellung?.aktuellerLauf();
+    const abschluss = x.sicherung ? (await x.sicherung.einstellungen.lies('wiederherstellung_abschluss')) as Record<string, unknown> | null : null;
+    // Ohne Anmeldung lesbar: ohne die Adresse dessen, der sie gestartet hat.
+    return {
+      lauf: lauf?.art === 'wiederherstellung' ? { ...lauf, von: '' } : null,
+      abschluss: abschluss ? { ...abschluss, von: '' } : null,
+    };
+  };
   const wartung = () => { if (!x.wartung) throw new Fachfehler(404, 'Der Wartungsmodus ist nicht eingerichtet.'); return x.wartung; };
   /** Ab der Ankündigung kommen nur Administratoren hinein (#102): eine neue Sitzung gleich wieder beenden. */
   const nurAdminsInWartung = async (r: { benutzer: Benutzer; schluessel: string }) => {

@@ -1,6 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { once } from 'node:events';
+import { createWriteStream } from 'node:fs';
 import { mkdir, readdir, readFile, rename, rm, stat, statfs, writeFile } from 'node:fs/promises';
+import type { Writable } from 'node:stream';
 import { dirname, join, normalize, sep } from 'node:path';
 import postgres from 'postgres';
 import { migriere, verbinde } from './db';
@@ -24,6 +26,9 @@ import { entschluesseleMit, fingerabdruck, leiteAb, PRUEFWORT, schluesselAusText
 const log = protokoll.modul('sicherung');
 const STAGING = 'dms_wh_';
 const ALT = 'dms_alt_';
+/** Altes Schema, wenn vorher keine Sicherung möglich war: bleibt 7 Tage. */
+const BEHALTEN = 'dms_alt_behalten_';
+const BEHALTEN_TAGE = 7;
 
 export type Schrittstatus = 'offen' | 'laeuft' | 'ok' | 'fehler' | 'hinweis' | 'ausgelassen';
 export interface Schritt { name: string; status: Schrittstatus; info?: string }
@@ -92,12 +97,20 @@ function vergleicheVersion(a: string, b: string): number {
 
 export class Wiederherstellung {
   private lauf: Wiederherstellungslauf | null = null;
+  /** Belegt ab dem ersten Prüfen eines Starts – verhindert zwei gleichzeitige Läufe. */
+  private belegt = false;
   private jetzt: () => Date;
 
   constructor(private q: WiederherstellungsQuellen) { this.jetzt = q.jetzt ?? (() => new Date()); }
 
   aktuellerLauf(): Wiederherstellungslauf | null { return this.lauf ? structuredClone(this.lauf) : null; }
-  laeuft() { return this.lauf?.status === 'laeuft' || this.lauf?.status === 'neustart'; }
+  laeuft() { return this.belegt || this.lauf?.status === 'laeuft' || this.lauf?.status === 'neustart'; }
+
+  /** Belegen (synchron, vor jedem await) – sonst könnten zwei Starts gleichzeitig durchrutschen. */
+  private belege() {
+    if (this.laeuft() || this.q.sicherung.laeuft()) throw new Fachfehler(409, 'Es läuft bereits eine Sicherung, Prüfung oder Wiederherstellung.');
+    this.belegt = true;
+  }
 
   /** Wer darf? Frisches System: jeder (wie die Ersteinrichtung). Laufendes System: Admin im aktiven Wartungsmodus. */
   async pruefeZugang(admin: boolean) {
@@ -116,6 +129,10 @@ export class Wiederherstellung {
     const m = eintrag.meta;
     const heute = await this.q.laufzeit();
     const probleme: string[] = []; const hinweise: string[] = [];
+    // Die .json liegt unverschlüsselt daneben: was in Pfade einfließt, streng prüfen.
+    if (m.datei !== `${name}.dms-sicherung` || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(m.haushaltId ?? '') || !Array.isArray(m.migrationen) || m.migrationen.some((x) => !/^[\w.-]+\.sql$/.test(String(x)))) {
+      throw new Fachfehler(422, 'Die Metadaten-Datei (.json) dieser Sicherung ist ungültig oder verändert.');
+    }
     const vergleich: Abgleich['vergleich'] = [];
 
     const unbekannt = m.migrationen.filter((x) => !heute.migrationen.includes(x));
@@ -160,7 +177,11 @@ export class Wiederherstellung {
 
   async starte(e: { name?: unknown; schluessel?: unknown; bestaetigt?: unknown }, admin: { email: string } | null): Promise<Wiederherstellungslauf> {
     const art = await this.pruefeZugang(!!admin);
-    if (this.laeuft() || this.q.sicherung.laeuft()) throw new Fachfehler(409, 'Es läuft bereits eine Sicherung, Prüfung oder Wiederherstellung.');
+    this.belege();
+    try { return await this.starteBelegt(e, admin, art); } catch (x) { this.belegt = false; throw x; }
+  }
+
+  private async starteBelegt(e: { name?: unknown; schluessel?: unknown; bestaetigt?: unknown }, admin: { email: string } | null, art: 'frisch' | 'laufend'): Promise<Wiederherstellungslauf> {
     const name = String(e.name ?? '');
     const text = typeof e.schluessel === 'string' ? e.schluessel : undefined;
     const a = await this.abgleich(name, text);
@@ -171,16 +192,20 @@ export class Wiederherstellung {
     const von = admin?.email ?? 'Einrichtung (frisches System)';
     const lauf = this.neuerLauf('wiederherstellung', name, von, [
       ...(art === 'laufend' ? ['Sicherung des jetzigen Stands'] : []),
-      'Prüfsumme der Datei', 'Entschlüsseln und Einspielen', 'Prüfwort', 'Anzahl Mappen, Dokumente, Benutzer', 'Auf den heutigen Stand bringen', 'Schlüsseldatei', 'Dateien übernehmen', 'Umschalten', 'Neustart',
+      'Prüfsumme der Datei', 'Entschlüsseln und Einspielen', 'Prüfwort', 'Anzahl Mappen, Dokumente, Benutzer', 'Auf den heutigen Stand bringen', 'Dateien übernehmen', 'Schlüsseldatei', 'Umschalten', 'Neustart',
     ]);
     log.warn('Wiederherstellung begonnen', { sicherung: name, von, art });
-    void this.fuehreAus(lauf, a, k, art).catch(() => {});
+    void this.fuehreAus(lauf, a, k, art).catch(() => {}).finally(() => { this.belegt = false; });
     return this.aktuellerLauf()!;
   }
 
   /** Probe (#109): wie eine Wiederherstellung, aber ohne Umschalten; danach aufräumen. */
   async starteProbe(name: string | null, von: string): Promise<{ lauf: Wiederherstellungslauf; fertig: Promise<boolean> }> {
-    if (this.laeuft() || this.q.sicherung.laeuft()) throw new Fachfehler(409, 'Es läuft bereits eine Sicherung, Prüfung oder Wiederherstellung.');
+    this.belege();
+    try { return await this.starteProbeBelegt(name, von); } catch (x) { this.belegt = false; throw x; }
+  }
+
+  private async starteProbeBelegt(name: string | null, von: string): Promise<{ lauf: Wiederherstellungslauf; fertig: Promise<boolean> }> {
     const liste = (await this.q.sicherung.liste()).filter((x) => x.meta);
     const ziel = name ? liste.find((x) => x.name === name) : liste[0];
     if (!ziel) throw new Fachfehler(404, name ? 'Diese Sicherung gibt es nicht (mehr).' : 'Es gibt noch keine Sicherung zum Prüfen.');
@@ -196,7 +221,7 @@ export class Wiederherstellung {
       }
       const a: Abgleich = { name: ziel.name, meta: m, vergleich: [], probleme: [], hinweise: [], schluesselNoetig: false };
       return this.fuehreAus(lauf, a, k, 'probe');
-    })();
+    })().finally(() => { this.belegt = false; });
     return { lauf: this.aktuellerLauf()!, fertig };
   }
 
@@ -234,13 +259,18 @@ export class Wiederherstellung {
     const staging = join(this.q.dateiWurzel, `.wiederherstellung-${stempel}`);
     const probe = art === 'probe';
     let neu: postgres.Sql | null = null;
+    let w: Writable | null = null;
+    let schluesselZurueck: (() => Promise<void>) | null = null;
+    let behalten = false;
     let aktuell: string | null = null;
     const schritt = (name: string) => { aktuell = name; this.schritt(lauf, name, 'laeuft'); };
     const ok = (info?: string) => { if (aktuell) this.schritt(lauf, aktuell, 'ok', info); };
     try {
       if (art === 'laufend' && !this.q.tresor.alsText()) {
         // Ohne (passenden) Schlüssel lässt sich der jetzige Stand nicht sichern – z. B. wenn er verloren ist.
-        this.schritt(lauf, 'Sicherung des jetzigen Stands', 'hinweis', 'nicht möglich: Dieses DMS hat keinen passenden Schlüssel (Werkbank → Verschlüsselung).');
+        // Dann bleibt das alte Schema nach dem Umschalten noch eine Weile in der Datenbank.
+        behalten = true;
+        this.schritt(lauf, 'Sicherung des jetzigen Stands', 'hinweis', `nicht möglich: Dieses DMS hat keinen passenden Schlüssel. Der bisherige Stand bleibt ${BEHALTEN_TAGE} Tage in der Datenbank.`);
       } else if (art === 'laufend') {
         schritt('Sicherung des jetzigen Stands');
         const { fertig } = await this.q.sicherung.starte('vor-wiederherstellung', lauf.von);
@@ -272,7 +302,7 @@ export class Wiederherstellung {
       const leeren = (await neu`SELECT tablename FROM pg_tables WHERE schemaname = ${schema} AND tablename <> 'schema_migrationen'`).map((r) => bezeichner(r.tablename as string));
       if (leeren.length) await neu.unsafe(`TRUNCATE ${leeren.join(', ')} CASCADE`);
       if (!probe) await mkdir(staging, { recursive: true });
-      let tabellen = 0; let dateien = 0; let stichprobe = 0; let iDatei = 0;
+      let tabellen = 0; let dateien = 0; let stichprobe = 0; let iDatei = 0; let endeTabellen: number | null = null;
       const jede = Math.max(1, Math.ceil(m.anzahl.dateien / 20));
       let zaehlerSicherung: Record<string, number> | null = null;
       lauf.bytes = 0;
@@ -284,10 +314,11 @@ export class Wiederherstellung {
           const t = { name: String(e.kopf.tabelle), spalten: (e.kopf.spalten as string[]).map(String) } as Tabelle;
           if (OHNE_INHALT.has(t.name)) { for await (const _ of e.daten) { /* übergehen */ } continue; }
           this.schritt(lauf, 'Entschlüsseln und Einspielen', 'laeuft', `Tabelle ${t.name}`);
-          const w = await neu.unsafe(`COPY ${bezeichner(schema)}.${bezeichner(t.name)} (${t.spalten.map(bezeichner).join(', ')}) FROM STDIN`).writable();
+          w = await neu.unsafe(`COPY ${bezeichner(schema)}.${bezeichner(t.name)} (${t.spalten.map(bezeichner).join(', ')}) FROM STDIN`).writable();
           for await (const c of e.daten) if (!w.write(c)) await once(w, 'drain');
           w.end();
           await once(w, 'finish');
+          w = null;
           tabellen++;
         } else if (e.art === 'D') {
           const rel = String(e.kopf.pfad);
@@ -295,21 +326,30 @@ export class Wiederherstellung {
           const pruefen = iDatei++ % jede === 0;
           const name = rel.split('/').pop()!;
           const h = pruefen && /^[0-9a-f]{64}$/.test(name) ? createHash('sha256') : null;
-          const teile: Buffer[] = [];
-          for await (const c of e.daten) { h?.update(c); if (!probe) teile.push(c); }
+          // Streamen statt puffern: auch große Dokumente brauchen kaum Arbeitsspeicher.
+          let ausgabe: Writable | null = null;
+          if (!probe) {
+            const ziel = join(staging, m.haushaltId, ...rel.split('/'));
+            await mkdir(dirname(ziel), { recursive: true });
+            ausgabe = createWriteStream(ziel, { flags: 'wx', flush: true });
+            w = ausgabe;
+          }
+          for await (const c of e.daten) {
+            h?.update(c);
+            if (ausgabe && !ausgabe.write(c)) await once(ausgabe, 'drain');
+          }
+          if (ausgabe) { ausgabe.end(); await once(ausgabe, 'close'); w = null; }
           if (h) {
             if (h.digest('hex') !== name) throw new Error(`Die Datei ${rel} in der Sicherung ist beschädigt (Prüfwert stimmt nicht).`);
             stichprobe++;
           }
-          if (!probe) {
-            const ziel = join(staging, m.haushaltId, ...rel.split('/'));
-            await mkdir(dirname(ziel), { recursive: true });
-            await writeFile(ziel, Buffer.concat(teile));
-          }
           dateien++;
+        } else if (e.art === 'E') {
+          endeTabellen = Number(e.kopf.tabellen);
         }
       }
       // Erst hier ist der GCM-Prüfwert geprüft: Die Datei ist echt und vollständig.
+      if (endeTabellen === null || tabellen !== endeTabellen || tabellen !== m.anzahl.tabellen) throw new Error(`Die Sicherung ist unvollständig: ${tabellen} Tabellen eingespielt, erwartet ${m.anzahl.tabellen}.`);
       ok(`${tabellen} Tabellen, ${dateien} Dateien${stichprobe ? `, Prüfwerte von ${stichprobe} Dateien nachgerechnet` : ''}`);
       // Zähler der Sequenzen nachziehen.
       for (const r of await neu`SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = ${schema} AND column_default LIKE 'nextval(%'`) {
@@ -358,20 +398,6 @@ export class Wiederherstellung {
       };
       await neu`DELETE FROM einstellungen WHERE schluessel = 'wartung'`;
 
-      schritt('Schlüsseldatei');
-      const datei = this.q.tresor.datei;
-      const vorhanden = await readFile(datei, 'utf8').then((t) => t.trim(), () => null);
-      let alteDatei: string | null = null;
-      if (vorhanden && vorhanden !== k.toString('base64url')) {
-        alteDatei = `${datei}.alt-${stempel}`;
-        await rename(datei, alteDatei);
-      }
-      if (vorhanden !== k.toString('base64url')) {
-        await mkdir(dirname(datei), { recursive: true, mode: 0o700 });
-        await writeFile(datei, `${k.toString('base64url')}\n`, { mode: 0o600, flag: 'wx' });
-        ok(alteDatei ? `ersetzt; die bisherige liegt daneben (${alteDatei.split('/').pop()})` : 'angelegt');
-      } else ok('passt schon');
-
       schritt('Dateien übernehmen');
       let uebernommen = 0;
       for (const d of await readdir(staging, { recursive: true, withFileTypes: true })) {
@@ -386,19 +412,31 @@ export class Wiederherstellung {
       await rm(staging, { recursive: true, force: true });
       ok(`${uebernommen} neu, ${dateien - uebernommen} schon vorhanden`);
 
+      // Die Schlüsseldatei erst ganz zum Schluss – und bei jedem späteren Fehler wieder zurück.
+      schritt('Schlüsseldatei');
+      const datei = this.q.tresor.datei;
+      const schluesselText = k.toString('base64url');
+      const vorhanden = await readFile(datei, 'utf8').then((t) => t.trim(), () => null);
+      if (vorhanden !== schluesselText) {
+        const alteDatei = vorhanden !== null ? `${datei}.alt-${stempel}` : null;
+        if (alteDatei) await rename(datei, alteDatei);
+        schluesselZurueck = async () => { await rm(datei, { force: true }); if (alteDatei) await rename(alteDatei, datei); };
+        await mkdir(dirname(datei), { recursive: true, mode: 0o700 });
+        await writeFile(datei, `${schluesselText}\n`, { mode: 0o600, flag: 'wx' });
+        ok(alteDatei ? `ersetzt; die bisherige liegt daneben (${alteDatei.split('/').pop()})` : 'angelegt');
+      } else ok('passt schon');
+
       schritt('Umschalten');
+      const altSchema = `${behalten ? BEHALTEN : ALT}${stempel}`;
+      if (behalten) abschluss.hinweise.push(`Der bisherige Stand liegt noch ${BEHALTEN_TAGE} Tage als Schema ${altSchema} in der Datenbank (es gab vorher keine Sicherung).`);
       abschluss.schritte = lauf.schritte.map((s) => ({ ...s, ...(s.name === 'Umschalten' ? { status: 'ok' as const } : {}) }));
       await setze('wiederherstellung_abschluss', abschluss);
       await neu.end(); neu = null;
-      try {
-        await this.q.sql.begin(async (tx) => {
-          await tx.unsafe(`ALTER SCHEMA public RENAME TO ${bezeichner(`${ALT}${stempel}`)}`);
-          await tx.unsafe(`ALTER SCHEMA ${bezeichner(schema)} RENAME TO public`);
-        });
-      } catch (e) {
-        if (alteDatei) { await rm(datei, { force: true }); await rename(alteDatei, datei).catch(() => {}); }
-        throw e;
-      }
+      await this.q.sql.begin(async (tx) => {
+        await tx.unsafe(`ALTER SCHEMA public RENAME TO ${bezeichner(altSchema)}`);
+        await tx.unsafe(`ALTER SCHEMA ${bezeichner(schema)} RENAME TO public`);
+      });
+      schluesselZurueck = null;
       ok();
       this.schritt(lauf, 'Neustart', 'laeuft', 'Das DMS startet neu …');
       lauf.status = 'neustart';
@@ -407,12 +445,15 @@ export class Wiederherstellung {
       return true;
     } catch (e) {
       const grund = (e as Error).message;
-      this.fehlschlag(lauf, aktuell, grund);
       log.error(probe ? 'Probe-Wiederherstellung fehlgeschlagen' : 'Wiederherstellung abgebrochen – der bisherige Stand ist unverändert', { sicherung: lauf.sicherung, schritt: aktuell, grund });
-      await neu?.end().catch(() => {});
-      await this.q.sql.unsafe(`DROP SCHEMA IF EXISTS ${bezeichner(schema)} CASCADE`).catch(() => {});
+      // Erst aufräumen, dann „fehlgeschlagen“ melden: Wer auf das Ende wartet, sieht den alten Stand.
+      w?.destroy(e as Error);
+      await neu?.end({ timeout: 5 }).catch(() => {});
+      if (schluesselZurueck) await schluesselZurueck().catch((x) => log.error('Bisherige Schlüsseldatei nicht zurückgelegt', { fehler: (x as Error).message }));
+      await this.q.sql.unsafe(`DROP SCHEMA IF EXISTS ${bezeichner(schema)} CASCADE`).catch((x) => log.warn("Bereich der Wiederherstellung nicht entfernt", { schema, fehler: (x as Error).message }));
       await rm(staging, { recursive: true, force: true }).catch(() => {});
       if (probe) await this.merkeProbe(lauf.sicherung, false, grund);
+      this.fehlschlag(lauf, aktuell, grund);
       return false;
     }
   }
@@ -452,6 +493,13 @@ export class Wiederherstellung {
   /** Nach einem Neustart: Reste abgebrochener Läufe und das alte Schema entfernen. */
   async raeumeAuf() {
     for (const r of await this.q.sql`SELECT nspname FROM pg_namespace WHERE nspname LIKE ${`${STAGING}%`} OR nspname LIKE ${`${ALT}%`}`) {
+      const name = r.nspname as string;
+      if (name.startsWith(BEHALTEN)) {
+        // Ohne vorherige Sicherung: 7 Tage aufheben (Zeitstempel JJJJMMTTHHMMSS im Namen).
+        const z = /^(\d{4})(\d{2})(\d{2})/.exec(name.slice(BEHALTEN.length));
+        const alter = z ? this.jetzt().getTime() - Date.UTC(Number(z[1]), Number(z[2]) - 1, Number(z[3])) : Infinity;
+        if (alter < BEHALTEN_TAGE * 24 * 3600 * 1000) continue;
+      }
       await this.q.sql.unsafe(`DROP SCHEMA ${bezeichner(r.nspname as string)} CASCADE`).catch((e) => log.warn('Altes Schema nicht entfernt', { schema: r.nspname, fehler: (e as Error).message }));
       log.info('Bereich einer früheren Wiederherstellung entfernt', { schema: r.nspname });
     }
