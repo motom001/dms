@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.27/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.28/neu/">
       
       
         <link rel="prev" href="..">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-027" class="md-skip">
+        <a href="#neu-in-version-028" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0270" class="md-nav__link">
+  <a href="#0280" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.27.0
+        0.28.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.27.0">
+    <nav class="md-nav" aria-label="0.28.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1500,15 +1500,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0270" class="md-nav__link">
+  <a href="#0280" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.27.0
+        0.28.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.27.0">
+    <nav class="md-nav" aria-label="0.28.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1569,35 +1569,29 @@
   
 
 
-<h1 id="neu-in-version-027">Neu in Version 0.27<a class="headerlink" href="#neu-in-version-027" title="Permanent link">&para;</a></h1>
-<h2 id="0270">0.27.0<a class="headerlink" href="#0270" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-028">Neu in Version 0.28<a class="headerlink" href="#neu-in-version-028" title="Permanent link">&para;</a></h1>
+<h2 id="0280">0.28.0<a class="headerlink" href="#0280" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Berechtigungen je Mappentyp</strong> (#123, #124, #125):</li>
-<li>In der Werkbank unter <em>Berechtigungen</em> legst du je Mappentyp fest, wer Mappen <strong>anlegen, lesen, bearbeiten, löschen</strong> und <strong>Passwörter sehen</strong> darf (C R U D P).</li>
-<li>Jeder Typ hat eine <strong>Grundeinstellung</strong> („alle Rechte erteilt“ oder „entzogen“) und <strong>Regeln</strong> in fester Reihenfolge: <em>wenn</em> der Benutzer eine Rolle hat, ein bestimmter Benutzer ist, ein Feld der Mappe passt (z. B. „Verantwortlich ist der aktuelle Benutzer“), er eine offene Aufgabe an der Mappe hat oder es seine eigene Benutzer-Mappe ist – <em>dann</em> ✓ erteilen, ✗ entziehen oder – unverändert. Jede Bedingung lässt sich mit „nicht“ umkehren; „Stopp“ beendet die Prüfung.</li>
-<li>Regeln per Ziehen sortieren und <strong>in andere Mappentypen kopieren</strong>.</li>
-<li><strong>Testlauf</strong>: Welche Rechte hätte Benutzer X an Mappe Y – und welche Regel hat das entschieden? Auch für noch nicht gespeicherte Regeln. Dazu <strong>„Was sieht ein Benutzer?“</strong> je Mappentyp.</li>
-<li>Beim Speichern warnt das DMS, wenn Mappen danach niemand mehr lesen könnte.</li>
-<li><strong>Die Ablage hält sich daran</strong> (#124, #126):</li>
-<li>Nicht lesbare Mappen fehlen in Listen, Suche, Zählern, Favoriten und Verweisen („nicht sichtbare Mappe“, ohne Link).</li>
-<li>Ohne Bearbeiten zeigt eine Mappe nur an, ohne Löschen fehlt „Mappe löschen“, ohne Anlegen „+ Neu“, ohne Passwortrecht das Auge.</li>
-<li>Vor dem Speichern fragt das DMS nach, wenn man sich mit einer Änderung selbst das Lesen oder Bearbeiten nehmen würde.</li>
-<li>Im Profil zeigt <strong>Meine Rechte</strong> je Mappentyp: ja, nein oder je nach Mappe.</li>
-<li><strong>Aufgaben an nicht lesbaren Mappen</strong> (#127): Sie bleiben im Eingang (ohne Titel) und lassen sich erledigen oder weitergeben. Wer eine Aufgabe vergibt, bekommt einen Hinweis, wenn der Empfänger die Mappe nicht lesen darf.</li>
-<li><strong>Benutzer auswählen nur unter sichtbaren Benutzern</strong> (#137): Verantwortlich, Erwähnungen, Vertreter und Aufgaben-Empfänger bieten nur Benutzer an, deren Benutzer-Mappe man sehen darf – so lässt sich etwa ein ERP-Programm über die API auf seinen Ausschnitt begrenzen.</li>
+<li><strong>Fristen an Datumsfeldern</strong> (#129): Am Mappentyp lässt sich je Datumsfeld <strong>Erinnern</strong> einschalten – mit <strong>Vorlauf</strong> (Tage, Wochen, Monate), <strong>Empfänger</strong> (Ersteller der Mappe oder der Benutzer in einem Feld wie „Verantwortlich“) und <strong>Text</strong> mit Platzhaltern. Rechtzeitig vor dem Datum steht die Mappe als <strong>Frist</strong> im Eingang, z. B. „Kündigung bis 30.09.2027 – noch 12 Tage“, und damit auch in der täglichen Zusammenfassung.</li>
+<li>Ändert sich das Datum oder wird es geleert, erledigt sich die Frist von selbst (mit Eintrag im Protokoll der Mappe).</li>
+<li>Je Mappe, Feld und Datum entsteht höchstens eine Frist – auch bei mehreren Läufen am Tag oder nach einem Neustart.</li>
+<li>Abwesenheit, Vertretung und Weitergeben gelten wie bei allen Aufgaben. Eine eigene Mail am Stichtag gibt es nicht.</li>
+<li><strong>Wiederkehrende Termine</strong> (#130): Ein Datumsfeld kann monatlich, viertel-, halbjährlich, jährlich oder alle paar Jahre wiederkehren. Beim Erledigen der Frist schlägt das DMS „Datum auf … setzen“ vor; geändert wird nur auf Klick (Monatsende richtig: 31.01. + 1 Monat = 28./29.02.).</li>
+<li><strong>Erinnern</strong> (#131): Über <em>Aktionen → Erinnern</em> erinnert man sich oder jemand anderen an einem bestimmten Tag an eine Mappe. Bis dahin steht die Erinnerung oben in der Mappe (ändern, löschen), am Tag selbst im Eingang.</li>
+<li><strong>Sicht „Anstehend“</strong> (#132) unter dem Eingang: eigene Fristen und Erinnerungen der nächsten 30 Tage – auch die noch nicht fälligen –, nach Datum, mit Zähler. Den Zeitraum stellt jeder im Profil ein.</li>
+<li><strong>Sichtbedingung „hat Frist in den nächsten n Tagen“</strong> (#133): für ein Datumsfeld oder alle mit Erinnerung, wahlweise nur die eigenen – z. B. „Verträge mit Frist im nächsten Quartal“.</li>
 </ul>
 <h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Für Administratoren gelten die Regeln nicht; „Neue Mappen erlauben“ und „Löschen erlauben“ am Mappentyp bleiben die Obergrenze für alle.</li>
-<li>Ohne Regeln ändert sich nichts: Jeder Mappentyp startet mit „alle Rechte erteilt“.</li>
-<li>Die API wendet dieselben Regeln an – für den Benutzer, dem der Schlüssel gehört.</li>
-<li>Jede Änderung der Berechtigungen steht mit der vollständigen Regelliste im Protokoll.</li>
-<li>Neues Kapitel <em>Berechtigungen</em> im Administratorhandbuch, mit Beispielen und dem ERP-Fall.</li>
+<li>In den Beispieldaten erinnert „Kündigung bis“ am Vertrag drei Monate vorher, jährlich wiederkehrend.</li>
+<li><em>Werkbank → Aufgaben</em> weist auf Fristen und Erinnerungen hin, deren Empfänger die Mappe nach den Berechtigungen nicht lesen darf.</li>
+<li>Neu in der API: <code>GET /anstehend</code>, Erinnerungen anlegen, ändern und löschen, <code>POST /aufgaben/{id}/folgetermin</code>; Aufgaben haben ein <code>datum</code>.</li>
+<li>Datenbank: Migration 027 (Spalte <code>datum</code> an Aufgaben, Tabelle <code>erinnerungen</code>).</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.26.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.26.0...v0.27.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.27.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.27.0...v0.28.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
