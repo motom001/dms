@@ -23,6 +23,7 @@ import { FehlermeldungDetail, FehlermeldungenListe, useFehlermeldungen } from '.
 import { AnbindungListe, AnbindungPanel, useAnbindung } from './Anbindung';
 import { SpeicherplatzListe, SpeicherplatzPanel, useSpeicherplatz } from './Speicherplatz';
 import { PapierkorbDetail, PapierkorbEinstellungen, PapierkorbListe, usePapierkorb } from '../ablage/Papierkorb';
+import { useBeiWiederErreichbar } from '../erreichbar';
 
 /**
  * Werkbank für Administratoren, aufgebaut wie die Ablage:
@@ -69,6 +70,17 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const sicherung = useSicherung(bereich === 'sicherung');
   const speicherplatz = useSpeicherplatz(bereich === 'speicherplatz');
   const anbindung = useAnbindung(bereich === 'anbindung');
+  // Wieder erreichbar nach Update oder Neustart (#122): Übersicht und offenen Bereich neu laden.
+  useBeiWiederErreichbar(() => {
+    void uebersicht.laden();
+    const offen: Record<string, (() => Promise<unknown>) | undefined> = {
+      protokoll: protokoll.neu, datenbank: datenbank.laden, technik: technik.laden, betrieb: betrieb.laden,
+      verschluesselung: tresor.laden, papierkorb: papierkorb.laden, aufgaben: aufgaben.laden, texterkennung: ocr.laden,
+      wartung: ocr.laden, fehlermeldungen: meldungen.laden, wartungsmodus: wartungsmodus.laden, sicherung: sicherung.laden,
+      speicherplatz: speicherplatz.laden, anbindung: anbindung.laden, benutzer: benutzer.laden,
+    };
+    void offen[bereich]?.();
+  });
   // Anmeldungen und Aktivität ändern sich laufend: beim Öffnen der Benutzer neu laden.
   useEffect(() => { if (bereich === 'benutzer') void benutzer.laden(); }, [bereich, id]); // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -66,7 +66,7 @@ export function useTechnik(sichtbar: boolean) {
   const [abgleich, setAbgleich] = useState<Vergleich[] | null>(null);
   const laden = useCallback(async () => { try { setU(await api.system()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { if (sichtbar) void laden(); }, [sichtbar, laden]);
-  return { u, fehler, abgleich, setAbgleich };
+  return { u, fehler, abgleich, setAbgleich, laden };
 }
 export type TechnikZustand = ReturnType<typeof useTechnik>;
 

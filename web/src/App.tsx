@@ -13,12 +13,16 @@ import { ApiDoku } from './profil/ApiDoku';
 import { Profil } from './profil/Profil';
 import { Werkbank } from './werkbank/Werkbank';
 import { WartungsBanner } from './wartung';
+import { ErreichbarkeitsBanner, useBeiWiederErreichbar } from './erreichbar';
 import { useHandbuch } from './Hilfe';
 
 export function App() {
   const { pfad, suche } = useOrt();
   const d = useDaten();
-  const { ich, abmelden, vertretung, hinweise, aktualisieren } = useKonto();
+  const { ich, abmelden, vertretung, hinweise, aktualisieren, version } = useKonto();
+  // Nach einem Ausfall (#122): gemeinsame Daten neu holen; „Ansicht neu laden“ baut den Inhalt neu auf.
+  const [ansicht, setAnsicht] = useState(0);
+  useBeiWiederErreichbar(() => void d.neuLaden());
   const admin = ich.rolle === 'admin';
   const teile = pfad.split('/').filter(Boolean);
   const bereich = teile[0] === 'werkbank' || teile[0] === 'profil' ? teile[0] : teile[0] === 'api-doku' ? 'profil' : 'ablage';
@@ -56,6 +60,7 @@ export function App() {
         </div>
       )}
       {!vertretung && hinweise.length > 0 && <Hinweise />}
+      <ErreichbarkeitsBanner version={version} ansichtNeuLaden={() => { setAnsicht((n) => n + 1); void d.neuLaden(); }} />
       <WartungsBanner admin={admin} abgemeldet={() => void aktualisieren()} />
       <header className="kopf">
         <Link to="/ablage/eingang" className="marke" title="Zur Startseite">
@@ -71,7 +76,7 @@ export function App() {
           <a className="quelle" href="https://github.com/motom001/dms" target="_blank" rel="noreferrer">Quellcode</a>
         </div>
       </header>
-      <main className="rumpf">
+      <main className="rumpf" key={ansicht}>
         {d.fehler && <div className="hinweis schlecht"><p>{d.fehler}</p><button className="knopf klein" onClick={() => void d.neuLaden()}>Erneut versuchen</button></div>}
         {inhalt}
       </main>

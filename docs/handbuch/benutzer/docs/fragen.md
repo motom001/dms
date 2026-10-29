@@ -33,6 +33,12 @@
 ??? question "Ich sehe einen Hinweis „Wartung“."
     Ein Administrator wartet das DMS, z. B. für ein Update. Speichere deine Arbeit, bevor der Countdown abläuft – dann wirst du abgemeldet. Anmelden kannst du dich wieder, sobald die Wartung vorbei ist; die Anmeldeseite sagt, wie lange es voraussichtlich dauert.
 
+??? question "Oben steht „Das DMS ist gerade nicht erreichbar“."
+    Das DMS startet gerade neu, meist wegen eines Updates. Lass die Seite offen: Der Browser fragt selbst nach und zeigt „Das DMS ist wieder erreichbar“, sobald es weitergeht. Was du eingetragen hast, bleibt stehen. Speichere danach noch einmal, falls Speichern während der Pause nicht geklappt hat. Zeigt die Ansicht danach noch Fehler, wähle in der Leiste „Ansicht neu laden“.
+
+??? question "Oben steht „Neue Version ist da“."
+    Das DMS wurde aktualisiert, während die Seite offen war. Sichere ungespeicherte Eingaben und wähle „Seite neu laden“ – erst dann passt die Oberfläche zur neuen Version.
+
 ??? question "Ich bin abgemeldet und meine letzten Änderungen fehlen."
     Ein Administrator hat vermutlich eine Sicherung wiederhergestellt. Dann gilt der Stand der Sicherung – auch das Passwort aus dieser Zeit. Frag ihn, von wann die Sicherung ist; was danach geändert wurde, musst du ggf. noch einmal eintragen.
 

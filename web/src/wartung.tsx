@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, type WartungOeffentlich } from './api';
 import { Link } from './ort';
+import { istWeg, WIEDER_ERREICHBAR } from './erreichbar';
 
 /**
  * Wartungsmodus (#102) in der Oberfläche: Stand regelmäßig abfragen (auch ohne Neuladen der Seite)
@@ -19,11 +20,13 @@ export function useWartung(start?: WartungOeffentlich | null) {
     let aus = false;
     const hole = () => api.wartung().then((w) => { if (!aus) { setStand(w); setGeholt(Date.now()); } }, () => {});
     void hole();
-    const t = setInterval(hole, ABFRAGE_MS);
+    // Solange das DMS nicht erreichbar ist (#122), pausiert die Abfrage.
+    const t = setInterval(() => { if (!istWeg()) void hole(); }, ABFRAGE_MS);
     const sofort = () => void hole();
     addEventListener(WARTUNG_GEAENDERT, sofort);
+    addEventListener(WIEDER_ERREICHBAR, sofort);
     addEventListener('focus', sofort);
-    return () => { aus = true; clearInterval(t); removeEventListener(WARTUNG_GEAENDERT, sofort); removeEventListener('focus', sofort); };
+    return () => { aus = true; clearInterval(t); removeEventListener(WARTUNG_GEAENDERT, sofort); removeEventListener(WIEDER_ERREICHBAR, sofort); removeEventListener('focus', sofort); };
   }, []);
   useEffect(() => {
     if (stand?.stufe !== 'angekuendigt') return;

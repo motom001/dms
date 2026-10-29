@@ -10,7 +10,7 @@ import { openapi, v1Routen } from './api-v1';
 import type { ApiSchluessel, ApiSchluesselDienst } from './apischluessel';
 import type { Designs } from './designs';
 import type { Messung } from './messung';
-import { eigeneVersion, uebersicht, versionsabgleich, type SystemQuelle } from './system';
+import { eigeneVersion, standKennung, uebersicht, versionsabgleich, type SystemQuelle } from './system';
 import type { Fehlermeldungen } from './fehlermeldungen';
 import { MODULE, protokoll, STUFEN, type Stufe } from './protokoll';
 import type { Betrieb } from './betrieb';
@@ -190,7 +190,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     throw new WartungFehler(x.wartung.meldung(), x.wartung.retryAfter());
   };
   const intern: Route[] = [
-    { methode: 'GET', pfad: '/api/gesundheit', zugang: 'offen', handler: async () => ok({ ok: true }) },
+    { methode: 'GET', pfad: '/api/gesundheit', zugang: 'offen', handler: async () => ok({ ok: true, stand: standKennung() }) },
     // Wartungsmodus (#102): für Banner und Anmeldeseite, auch ohne Anmeldung.
     { methode: 'GET', pfad: '/api/wartung', zugang: 'offen', handler: async () => ok(x.wartung?.oeffentlich() ?? { stufe: 'aus', text: '', ende: null, aktivAb: null, sekunden: null }) },
 

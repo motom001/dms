@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, type WartungWerkbank } from '../api';
 import { dauerText, WARTUNG_GEAENDERT, zeitpunkt } from '../wartung';
 import { Hilfe } from '../Hilfe';
+import { istWeg } from '../erreichbar';
 
 /**
  * Werkbank → Wartungsmodus (#102): ankündigen, sofort beginnen, alle abmelden, beenden;
@@ -19,7 +20,7 @@ export function useWartungsmodus(offen: boolean) {
     void laden();
     addEventListener(WARTUNG_GEAENDERT, laden);
     if (!offen) return () => removeEventListener(WARTUNG_GEAENDERT, laden);
-    const t = setInterval(() => void laden(), 10_000);
+    const t = setInterval(() => { if (!istWeg()) void laden(); }, 10_000);
     return () => { clearInterval(t); removeEventListener(WARTUNG_GEAENDERT, laden); };
   }, [offen, laden]);
   return { stand, fehler, laden };
