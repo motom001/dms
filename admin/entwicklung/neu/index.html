@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-023" class="md-skip">
+        <a href="#neu-in-version-024" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0230" class="md-nav__link">
+  <a href="#0240" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.23.0
+        0.24.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.23.0">
+    <nav class="md-nav" aria-label="0.24.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1472,15 +1472,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0230" class="md-nav__link">
+  <a href="#0240" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.23.0
+        0.24.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.23.0">
+    <nav class="md-nav" aria-label="0.24.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1541,27 +1541,40 @@
   
 
 
-<h1 id="neu-in-version-023">Neu in Version 0.23<a class="headerlink" href="#neu-in-version-023" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-024">Neu in Version 0.24<a class="headerlink" href="#neu-in-version-024" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0230">0.23.0<a class="headerlink" href="#0230" title="Permanent link">&para;</a></h2>
+<h2 id="0240">0.24.0<a class="headerlink" href="#0240" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Speicherplatz-Überwachung</strong> (#116): <em>Werkbank → Speicherplatz</em> zeigt belegt und frei je Ordner. Unter der <strong>Warnschwelle</strong> (Standard 10 % frei) gibt es einen Hinweis und eine Mail an alle Administratoren. Unter der <strong>Grenze</strong> (Standard 2 GB frei) ist das Hochladen sofort gesperrt, und der Wartungsmodus startet mit 5 Minuten Vorlauf und dem Text „Speicherplatzlimit erreicht“. Ist wieder genug Platz da, bietet die Werkbank „Wartung beenden?“ an – von selbst endet er nicht. Beide Schwellen in GB oder Prozent.</li>
-<li><strong>Feste Ordner</strong> (#115): Die Ordner im Container sind jetzt fest – <code>/data/files</code>, <code>/data/geheim</code>, <code>/data/sicherung</code>. Wohin sie auf dem NAS zeigen, bestimmen nur die Volumes der Compose-Datei. <em>Werkbank → Technik</em> zeigt die drei Ordner mit belegtem und freiem Platz.</li>
+<li><strong>Einrichtungsassistent</strong> (#119): Beim ersten Aufruf führt ein Assistent in neun Schritten durch die Einrichtung:</li>
+<li>Einrichtungscode</li>
+<li>Datenbank</li>
+<li>neu oder aus einer Sicherung</li>
+<li>Mandant</li>
+<li>Administrator</li>
+<li>erster normaler Benutzer</li>
+<li>Schlüssel und Notfallblatt</li>
+<li>Optionales (Adresse, Bundesland, Beispiele, E-Mail)</li>
+<li>Fertig, mit Links zu den Handbüchern, „Problem melden“ und GitHub Sponsors</li>
 </ul>
+<p>Übersprungenes lässt sich in der Werkbank nachholen.
+- <strong>Einrichtungscode:</strong> Er steht im Protokoll des Containers und in <code>geheim/EINRICHTUNGSCODE</code>. Er schützt davor, dass ein Fremder die Einrichtung übernimmt. Nach dem Anlegen des Administrators löscht das DMS ihn. <em>Versuchsweise – Rückmeldung zur Bedienbarkeit willkommen.</em>
+- <strong>Datenbank im Browser einrichten:</strong> Das DMS startet auch ohne <code>DATABASE_URL</code> oder mit einer fehlerhaften. Der Assistent fragt die Verbindung ab und erklärt Fehler verständlich, etwa „Passwort falsch“ oder „Datenbank fehlt“ (mit Knopf zum Anlegen). Danach legt er die Tabellen an – ohne Neustart des Containers.
+- <strong>Werkbank → Datenbank-Anbindung:</strong> Anbindung ansehen und ändern, mit Test vor dem Übernehmen und „Jetzt neu starten“.
+- <strong>Mandant statt Haushalt:</strong> Der Name aus der Einrichtung, z. B. „Familie Mustermann“, ist zugleich der Schriftzug des Standard-Designs. Auf dem Notfallblatt und im Abgleich der Wiederherstellung heißt es jetzt „Mandanten-Id“.
+- Beim Wiederherstellen einer Sicherung eines anderen Mandanten übernimmt das DMS dessen Id selbst. <code>HAUSHALT_ID</code> muss dafür nicht mehr eingetragen werden.</p>
 <h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Bitte prüfen:</strong> Die Variablen <code>FILES_DIR</code>, <code>DMS_SCHLUESSEL_DATEI</code> und <code>DMS_SICHERUNG_DIR</code> entfallen.</li>
-<li>Steht <code>FILES_DIR: /data/files</code> in deiner Compose-Datei (wie in der bisherigen Vorlage), läuft alles weiter; entferne die Zeile beim nächsten Update. Die Werkbank-Übersicht erinnert daran.</li>
-<li>Zeigte eine davon auf einen <strong>anderen</strong> Ordner, startet das DMS nicht und nennt im Protokoll des Containers das Volume, das stattdessen auf den festen Ordner zeigen muss. Siehe <em>Aktualisieren → Feste Ordner</em> im Administratorhandbuch.</li>
-<li>Die Datenbank läuft in ihrem eigenen Container und wird nicht mitgemessen; liegt alles auf derselben Platte, reicht die Messung.</li>
+<li><strong>Bestehende Installationen laufen ohne Zutun weiter.</strong> Beim ersten Start übernimmt das DMS <code>DATABASE_URL</code> und <code>HAUSHALT_ID</code> in die Datei <code>/data/geheim/datenbank.json</code>. Danach sind beide Variablen überflüssig; die Werkbank-Übersicht weist darauf hin.</li>
+<li>Die Anbindung in <code>/data/geheim</code> ist führend. Eine abweichende <code>DATABASE_URL</code> wird ignoriert und in der Übersicht gemeldet.</li>
+<li>Die NAS-Vorlage enthält <code>DATABASE_URL</code> nicht mehr; der Assistent fragt die Verbindung ab.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.22.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.22.0...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.23.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.23.0...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
