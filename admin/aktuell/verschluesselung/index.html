@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.28/verschluesselung/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.29/verschluesselung/">
       
       
         <link rel="prev" href="../aktualisieren/">
@@ -504,6 +504,17 @@
     <span class="md-ellipsis">
       
         Schlüssel erzeugen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schlussel-wechseln" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schlüssel wechseln
       
     </span>
   </a>
@@ -1485,6 +1496,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#schlussel-wechseln" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schlüssel wechseln
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#zustande" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1531,6 +1553,27 @@
 <p>Kopiere die Datei <code>geheim/dms.schluessel</code> an einen sicheren Ort, getrennt von der Datenbanksicherung. Eine Datenbank lässt sich nur mit diesem Schlüssel vollständig wiederherstellen – ohne ihn sind die Passwörter darin nicht mehr lesbar.</p>
 </div>
 <p>Die Seite prüft auch, ob der Ordner wirklich ein eigenes Volume ist. Wenn nicht, weist sie darauf hin: Ohne Volume wäre die Datei weg, sobald der Container neu erstellt wird (z. B. beim Update).</p>
+<h2 id="schlussel-wechseln">Schlüssel wechseln<a class="headerlink" href="#schlussel-wechseln" title="Permanent link">&para;</a></h2>
+<p>Könnte der Schlüssel bekannt geworden sein – etwa weil ein ausgedrucktes Notfallblatt verloren ging – oder willst du ihn turnusmäßig erneuern: <strong>Werkbank → Verschlüsselung → Schlüssel wechseln.</strong></p>
+<p><img alt="Schlüssel gewechselt" src="../bilder/werkbank-schluesselwechsel.png" /></p>
+<p>Nach einer Rückfrage</p>
+<ol>
+<li>erzeugt das DMS einen neuen Schlüssel,</li>
+<li>verschlüsselt alle Passwörter – in Mappen, im Papierkorb und den des Mailservers – <strong>ganz oder gar nicht</strong> neu; bricht dabei etwas ab, gilt weiter der bisherige Schlüssel,</li>
+<li>setzt das Prüfwort neu und</li>
+<li>ersetzt die Schlüsseldatei. Der alte Schlüssel wird nicht aufbewahrt.</li>
+</ol>
+<p>Werte, die schon vorher nicht lesbar waren, bleiben, wie sie sind; das DMS sagt, wie viele es sind. Der Wechsel steht im Protokoll mit altem und neuem Fingerabdruck (ohne Schlüssel). Während einer Sicherung lässt sich nicht wechseln.</p>
+<p><strong>Danach:</strong></p>
+<ul>
+<li><strong>Neues Notfallblatt herunterladen.</strong> Bis dahin weisen Übersicht und Sicherung darauf hin.</li>
+<li><strong>Neue Sicherung anlegen</strong> – der Knopf steht gleich auf der Seite.</li>
+<li><strong>Ältere Sicherungen</strong> bleiben mit dem alten Schlüssel verschlüsselt. Die Liste unter <a href="../sicherung/">Sicherung</a> kennzeichnet sie mit „früherer Schlüssel“. Zum <a href="../wiederherstellen/">Wiederherstellen</a> einer solchen Sicherung fragt das DMS nach dem Schlüssel vom alten Notfallblatt. Bewahre es auf, solange du diese Sicherungen brauchst – oder lösche sie mit <strong>Sicherungen mit früherem Schlüssel löschen</strong>.</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Schlüsseldatei-Kopien</p>
+<p>Hast du die Datei <code>geheim/dms.schluessel</code> irgendwo kopiert, ersetze die Kopie durch die neue Datei.</p>
+</div>
 <h2 id="zustande">Zustände<a class="headerlink" href="#zustande" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
