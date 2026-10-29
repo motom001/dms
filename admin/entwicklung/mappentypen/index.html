@@ -1823,11 +1823,9 @@
 <li><strong>Name</strong> – so heißt die Sicht in der Ablage, z. B. „Vertrag“. Er lässt sich jederzeit ändern.</li>
 <li><strong>Schlüssel</strong> – fester, technischer Name, z. B. <code>vertrag</code>. Er wird aus dem Namen vorgeschlagen, lässt sich beim Anlegen ändern und ist nach dem ersten Speichern <strong>fest</strong>. <a href="../direktlinks/">Sprechende Links</a> und Skripte über die <a href="../api/">Schnittstelle</a> können ihn nutzen – so bleiben sie gültig, auch wenn der Mappentyp umbenannt wird. Die Systemtypen heißen <code>benutzer</code>, <code>rolle</code> und <code>email</code>.</li>
 <li><strong>Beschreibung</strong> – steht über der Liste und hilft beim Einordnen.</li>
-<li><strong>Neue Mappen erlauben</strong> – ob in der Ablage überhaupt Mappen dieses Typs angelegt werden dürfen. <em>Wer</em> genau, regeln die <a href="../berechtigungen/">Berechtigungen</a>; der Haken ist die Obergrenze – auch für Administratoren.</li>
-<li><strong>Löschen erlauben</strong> – ob Mappen dieses Typs überhaupt gelöscht werden dürfen; wer genau, regeln ebenfalls die <a href="../berechtigungen/">Berechtigungen</a>.</li>
 </ul>
 <p>Beim <strong>Anlegen</strong> gibt es zusätzlich <strong>Eigene Sicht in der Ablage anlegen</strong> (standardmäßig an): Dann erscheint der neue Typ in der Ablage als eigene Sicht. Abwählen, wenn seine Mappen nur in einer bestehenden <a href="../sichten/">Sicht</a> erscheinen sollen.</p>
-<p>Neue Mappen und Löschen sind standardmäßig erlaubt. Ist es aus, fehlen die Knöpfe in der Ablage, und auch der Server lehnt Anlegen bzw. Löschen ab – auch über die <a href="../api/">Schnittstelle</a>. Bearbeiten bleibt immer möglich.</p>
+<p>Wer Mappen anlegen oder löschen darf, regeln die <a href="../berechtigungen/">Berechtigungen</a> (Rechte C und D). Die früheren Haken <em>Neue Mappen erlauben</em> und <em>Löschen erlauben</em> gibt es seit Version 0.32 nicht mehr; sie wurden beim Update in die Berechtigungen übernommen.</p>
 <h2 id="felder">Felder<a class="headerlink" href="#felder" title="Permanent link">&para;</a></h2>
 <p>Jedes Feld hat eine <strong>Bezeichnung</strong> (änderbar), einen <strong>Schlüssel</strong> (fest, sobald gespeichert) und einen <strong>Datentyp</strong>. Ein Klick auf ein Feld öffnet es. Die Reihenfolge änderst du mit den Pfeilen oder per <strong>Drag &amp; Drop</strong> am Griff <strong>⠿</strong> (siehe <a href="#ziehen-statt-klicken">Ziehen statt klicken</a>).</p>
 <p><img alt="Ein Feld bearbeiten" src="../bilder/werkbank-feld.png" /></p>
@@ -1993,12 +1991,12 @@
 <ul>
 <li>Du kannst sie um eigene Felder und Register erweitern, z. B. eine Telefonnummer.</li>
 <li>Ihre <strong>Systemfelder</strong> (Name, E-Mail-Adresse, Rollen, Aktiv bzw. Name der Rolle) sind fest: Bezeichnung, Hilfetext und Register darfst du ändern, Datentyp und Eigenschaften nicht.</li>
-<li>Beim Typ <em>Benutzer</em> sind <strong>Neue Mappen erlauben</strong> und <strong>Löschen erlauben</strong> immer aus – Benutzer entstehen in der Benutzerverwaltung.</li>
-<li>Mappen vom Typ <em>E-Mail</em> entstehen, wenn jemand eine Mappe <a href="https://motom001.github.io/dms/benutzer/versenden/">per E-Mail versendet</a>: mit Betreff, Empfängern, Absender, Datum, Nachricht, den Anhängen und dem <strong>Bezug</strong> auf die Mappe, aus der sie kam. <strong>Neue Mappen erlauben</strong> ist immer aus; löschen lassen sie sich wie andere Mappen. Der Bezug darf als einziges Feld auf Mappen <em>jedes</em> Typs zeigen. Wird die Ursprungsmappe gelöscht, bleibt die E-Mail erhalten und ihr Bezug wird leer. Später sollen hier auch E-Mails landen, die das DMS aus einem Postfach abholt.</li>
+<li>Mappen vom Typ <em>Benutzer</em> lassen sich in der Ablage weder anlegen noch löschen (Systemregel) – Benutzer entstehen in der Benutzerverwaltung.</li>
+<li>Mappen vom Typ <em>E-Mail</em> entstehen, wenn jemand eine Mappe <a href="https://motom001.github.io/dms/benutzer/versenden/">per E-Mail versendet</a>: mit Betreff, Empfängern, Absender, Datum, Nachricht, den Anhängen und dem <strong>Bezug</strong> auf die Mappe, aus der sie kam. Anlegen lassen sie sich in der Ablage nicht (Systemregel); löschen lassen sie sich wie andere Mappen. Der Bezug darf als einziges Feld auf Mappen <em>jedes</em> Typs zeigen. Wird die Ursprungsmappe gelöscht, bleibt die E-Mail erhalten und ihr Bezug wird leer. Später sollen hier auch E-Mails landen, die das DMS aus einem Postfach abholt.</li>
 </ul>
 <p>Mehr dazu in <a href="../benutzer/">Benutzer und Rollen</a>.</p>
 <h2 id="berechtigungen">Berechtigungen<a class="headerlink" href="#berechtigungen" title="Permanent link">&para;</a></h2>
-<p>Unter den Registern legst du fest, wer Mappen dieses Typs anlegen, lesen, bearbeiten, löschen und Passwörter darin sehen darf – mit Grundeinstellung und Regeln. Gespeichert wird mit <strong>Mappentyp speichern</strong>; <strong>Regeln prüfen ↗</strong> öffnet die Prüfung in einem neuen Fenster. Alles Weitere steht unter <a href="../berechtigungen/">Berechtigungen</a>.</p>
+<p>Unter den Registern legst du fest, wer Mappen dieses Typs anlegen, lesen, bearbeiten, löschen und Passwörter darin sehen darf – mit der Zeile <strong>Standard</strong> und Regeln. Gespeichert wird mit <strong>Mappentyp speichern</strong>; darunter probierst du die Regeln im <strong>Testlauf</strong> aus – auch ungespeicherte. Alles Weitere steht unter <a href="../berechtigungen/">Berechtigungen</a>.</p>
 <h2 id="mappentyp-loschen">Mappentyp löschen<a class="headerlink" href="#mappentyp-loschen" title="Permanent link">&para;</a></h2>
 <p><strong>Mappentyp löschen</strong> geht nur, solange es keine Mappen dieses Typs gibt und kein anderer Typ auf ihn verweist. Sonst nennt das DMS die Gründe.</p>
 
