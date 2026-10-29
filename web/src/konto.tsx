@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useState, type FormE
 import { PASSWORT_MINDESTLAENGE, type Benutzer } from '../../shared/src/model';
 import { ABGEMELDET, api, type KontoStatus, type WartungOeffentlich } from './api';
 import { WartungsHinweis } from './wartung';
-import { WiederherstellungsAssistent, Wiederherstellungsbildschirm } from './wiederherstellen';
+import { Wiederherstellungsbildschirm } from './wiederherstellen';
+import { AssistentAngemeldet, Einrichtungsassistent } from './einrichtung';
 import { geheZu, useOrt } from './ort';
 import { Marke } from './Marke';
 
@@ -68,12 +69,14 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   if (!status) return <p className="leise mittig">Lade …</p>;
   // Wiederherstellung (#107): eigener Bildschirm, auch nach Neuladen und Neustart.
   if (status.wiederherstellung?.laeuft || status.wiederherstellung?.abschluss) return <Wiederherstellungsbildschirm fertig={() => void laden()} />;
-  if (status.einrichtungNoetig) return <Ersteinrichtung fertig={laden} />;
+  // Einrichtungsassistent (#119): ohne Datenbank, mit Code, Mandant und Administrator …
+  if (status.einrichtungNoetig || status.einrichtung?.phase === 'datenbank' || status.einrichtung?.phase === 'startet') return <Einrichtungsassistent status={status} fertig={laden} />;
   if (!status.benutzer) return <Anmelden mail={status.mail} wartung={status.wartung} fertig={laden} />;
   // key: Beim Wechsel des Benutzers (Vertretung) alles neu aufbauen und laden.
   return (
     <Ctx.Provider key={status.benutzer.id} value={{ ich: status.benutzer, mail: status.mail, passwoerterMoeglich: status.passwoerterMoeglich ?? false, abmelden, aktualisieren: laden, vertretung: status.vertretung ?? null, hinweise: status.hinweise ?? [], version: status.version ?? null }}>
-      {children}
+      {/* … danach als Administrator: Benutzer, Schlüssel, Optionales, Fertig. */}
+      {status.einrichtung?.assistent ? <AssistentAngemeldet /> : children}
     </Ctx.Provider>
   );
 }
@@ -102,44 +105,6 @@ function useAbsenden(fn: () => Promise<void>) {
     try { await fn(); } catch (err) { setFehler((err as Error).message); } finally { setSendet(false); }
   };
   return { sendet, fehler, absenden };
-}
-
-function Ersteinrichtung({ fertig }: { fertig: () => Promise<void> }) {
-  const [wiederherstellen, setWiederherstellen] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [pw, setPw] = useState('');
-  const [pw2, setPw2] = useState('');
-  const f = useAbsenden(async () => {
-    if (pw !== pw2) throw new Error('Die beiden Passwörter stimmen nicht überein.');
-    await api.einrichten({ name, email, passwort: pw });
-    await fertig();
-    geheZu('/werkbank/typen', true);
-  });
-  if (wiederherstellen) return (
-    <div className="kartenseite">
-      <div className="karte breit">
-        <h1>Aus Sicherung wiederherstellen</h1>
-        <p className="leise">Wähle eine Sicherung aus dem Sicherungsordner. Danach meldest du dich mit den Zugangsdaten an, die zur Zeit der Sicherung galten – ein neuer Administrator ist nicht nötig.</p>
-        <WiederherstellungsAssistent frisch gestartet={() => void fertig()} abbrechen={() => setWiederherstellen(false)} />
-      </div>
-    </div>
-  );
-  return (
-    <Karte titel="Willkommen" unter="Lege das Administrator-Konto an. Damit richtest du Mappentypen ein und verwaltest weitere Benutzer.">
-      <form className="stapel" onSubmit={f.absenden}>
-        <label className="eigenschaft"><span>Name</span><input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" autoFocus /></label>
-        <label className="eigenschaft"><span>E-Mail-Adresse <small>damit meldest du dich an</small></span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></label>
-        <label className="eigenschaft"><span>Passwort <small>mindestens {PASSWORT_MINDESTLAENGE} Zeichen</small></span><input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" required /></label>
-        <label className="eigenschaft"><span>Passwort wiederholen</span><input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" required /></label>
-        {f.fehler && <p className="fehlertext">{f.fehler}</p>}
-        <button className="knopf primaer" disabled={f.sendet}>{f.sendet ? 'Lege an …' : 'Administrator anlegen'}</button>
-      </form>
-      <div className="trenner"><span>oder</span></div>
-      <button type="button" className="knopf" onClick={() => setWiederherstellen(true)}>Aus Sicherung wiederherstellen</button>
-      <p className="leise klein">Neues NAS, alte Sicherung? Lege die Sicherung in den Sicherungsordner und halte das Notfallblatt bereit.</p>
-    </Karte>
-  );
 }
 
 function Anmelden({ mail, wartung, fertig }: { mail: boolean; wartung?: WartungOeffentlich | null; fertig: () => Promise<void> }) {

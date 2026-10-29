@@ -22,7 +22,10 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 
 ## Anmeldung
 
-- **Erster Aufruf legt den Administrator an** (bewusst ohne Einrichtungscode). Nach dem ersten Start daher sofort selbst aufrufen.
+- **Einrichtungsassistent mit Einrichtungscode** (#119, zuvor: erster Aufruf ohne Code). Der Code steht im Protokoll des Containers und in `/data/geheim/EINRICHTUNGSCODE`; er schützt die Einrichtung und den Datenbanktest (der sonst Rechner im Netz abfragen könnte). Versuchsweise – ob der Code den Einstieg zu umständlich macht, zeigt die Rückmeldung aus der Praxis.
+- **Datenbank-Anbindung als Datei unter `/data/geheim`**, führend vor `DATABASE_URL` (#119): So lässt sich das DMS ohne Bearbeiten von Umgebungsvariablen in Betrieb nehmen; ohne erreichbare Datenbank startet es im Einrichtungsmodus und danach im selben Prozess das eigentliche DMS.
+- **Mandant statt Haushalt** in Oberfläche und Handbuch (#119), damit das DMS auch für kleine Firmen passt. Intern heißt es weiter `haushalt_id`; ein Umbau brächte keinen sichtbaren Nutzen. Frische Installationen nutzen den Mandanten, den die erste Migration anlegt (mit Designs und Einstellungen).
+- **Administratoren arbeiten nicht in der Ablage:** Der Assistent legt deshalb gleich einen ersten normalen Benutzer an.
 - **Rollen:** Administrator (Einrichtung, Benutzer) und Mitglied (Ablage). Vorerst sehen alle angemeldeten Benutzer alle Mappen.
 - **Passwörter** mit scrypt aus Node (keine native Bibliothek). **Sitzungen** als HttpOnly-Cookie, in der Datenbank nur als SHA-256-Hash. Gleiches gilt für Einladungs- und Passwort-Links (Einladung 7 Tage, Zurücksetzen 1 Stunde, jeweils nur einmal nutzbar).
 - **Schutz vor fremden Seiten:** Ändernde Anfragen brauchen den Header `X-DMS`, den nur die eigene Oberfläche setzt; dazu `SameSite=Lax`.

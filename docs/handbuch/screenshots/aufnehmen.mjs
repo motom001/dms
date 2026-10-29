@@ -11,7 +11,7 @@
  * Jedes Bild hat einen festen Namen; die Handbücher binden sie über bilder/<name>.png ein.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 
@@ -38,7 +38,8 @@ async function api(methode, pfad, body, roh) {
 
 async function warteAufServer() {
   for (let i = 0; i < 120; i++) {
-    try { if ((await fetch(`${BASIS}/api/gesundheit`)).ok) return; } catch { /* startet noch */ }
+    // Auch im Einrichtungsmodus (#119) erreichbar; /api/gesundheit gibt es erst danach.
+    try { if ((await fetch(`${BASIS}/api/konto/status`)).ok) return; } catch { /* startet noch */ }
     await new Promise((r) => setTimeout(r, 500));
   }
   throw new Error(`DMS unter ${BASIS} antwortet nicht.`);
@@ -73,11 +74,9 @@ function beispielPdf(zeile) {
 }
 
 async function vorbereiten() {
-  await warteAufServer();
-  const admin = (await api('POST', '/api/konto/einrichten', ADMIN)).benutzer;
+  // Administrator und Schlüssel hat der Einrichtungsassistent angelegt (einrichtenImBrowser).
+  const admin = (await api('GET', '/api/konto/status')).benutzer;
   const adminCookie = cookie;
-  // Schlüssel für Passwörter (#39) – sonst steht über der Werkbank ein Hinweis.
-  await api('POST', '/api/werkbank/tresor/erzeugen');
   await api('POST', '/api/beispiele');
   await api('POST', '/api/werkbank/demo', { anzahl: 120 });
   await warteAufAuftrag();
@@ -173,19 +172,74 @@ async function vorbereiten() {
 
 /* ---------- Seiten aufnehmen ---------- */
 
+/** Einrichtungscode (#119): aus DMS_EINRICHTUNGSCODE oder der Datei unter DMS_DATENWURZEL/geheim. */
+async function einrichtungscode() {
+  if (process.env.DMS_EINRICHTUNGSCODE) return process.env.DMS_EINRICHTUNGSCODE;
+  const datei = join(process.env.DMS_DATENWURZEL ?? join(import.meta.dirname, '../../../data'), 'geheim', 'EINRICHTUNGSCODE');
+  for (let i = 0; i < 60; i++) {
+    try { return (await readFile(datei, 'utf8')).trim(); } catch { await new Promise((r) => setTimeout(r, 500)); }
+  }
+  throw new Error(`Einrichtungscode nicht gefunden (${datei}).`);
+}
+
+/** Einrichtungsassistent (#119) im Browser durchgehen – mit Bildern jedes Schritts. */
+async function einrichtenImBrowser(browser, bild) {
+  const k = await browser.newContext({ viewport: { width: 1100, height: 900 }, colorScheme: 'light', locale: 'de-DE', timezoneId: 'Europe/Berlin', deviceScaleFactor: 1 });
+  const s = await k.newPage();
+  await s.goto(BASIS + '/');
+  await s.getByRole('heading', { name: 'Einrichtungscode' }).waitFor();
+  await bild(s, 'einrichtung-code');
+  await s.getByLabel('Einrichtungscode').fill(await einrichtungscode());
+  await s.getByRole('button', { name: 'Weiter' }).click();
+  const ohneDb = await s.getByRole('heading', { name: 'Datenbank', exact: true }).waitFor({ timeout: 5000 }).then(() => true, () => false);
+  if (ohneDb) {
+    await s.getByLabel(/^Server/).fill(process.env.DB_HOST ?? 'db');
+    await s.getByLabel(/^Passwort/).fill(process.env.DB_PASSWORT ?? 'dms');
+    await s.getByRole('button', { name: 'Verbindung prüfen' }).click();
+    await s.getByRole('button', { name: 'Übernehmen und weiter' }).waitFor();
+    await bild(s, 'einrichtung-datenbank');
+    await s.getByRole('button', { name: 'Übernehmen und weiter' }).click();
+  }
+  await s.getByRole('heading', { name: 'Neu einrichten oder wiederherstellen?' }).waitFor({ timeout: 90_000 });
+  await bild(s, 'einrichtung-wahl');
+  await s.getByRole('button', { name: /^Neu einrichten/ }).click();
+  await s.getByLabel(/Name des Mandanten/).fill('Familie Beispiel');
+  await bild(s, 'einrichtung-mandant');
+  await s.getByRole('button', { name: 'Weiter' }).click();
+  await s.getByLabel('Name', { exact: true }).fill(ADMIN.name);
+  await s.getByLabel(/E-Mail-Adresse/).fill(ADMIN.email);
+  await s.getByLabel(/^Passwort mindestens/).fill(ADMIN.passwort);
+  await s.getByLabel('Passwort wiederholen').fill(ADMIN.passwort);
+  await bild(s, 'einrichtung-administrator');
+  await s.getByRole('button', { name: 'Administrator anlegen' }).click();
+  // Den ersten normalen Benutzer legt das Skript danach mit Rolle an.
+  await s.getByRole('heading', { name: 'Erster Benutzer' }).waitFor();
+  await s.getByLabel('Name', { exact: true }).fill(MITGLIED.name);
+  await s.getByLabel(/E-Mail-Adresse/).fill(MITGLIED.email);
+  await bild(s, 'einrichtung-benutzer');
+  await s.getByRole('button', { name: 'Überspringen' }).click();
+  await s.getByRole('heading', { name: 'Schlüssel und Notfallblatt' }).waitFor();
+  await s.getByRole('button', { name: 'Schlüssel erzeugen' }).click();
+  await s.getByText(/Erledigt – Fingerabdruck/).waitFor();
+  await bild(s, 'einrichtung-schluessel');
+  await s.getByRole('button', { name: 'Weiter' }).click();
+  await s.getByRole('heading', { name: 'Optionales' }).waitFor();
+  await bild(s, 'einrichtung-optional', { fullPage: true });
+  await s.getByRole('button', { name: 'Überspringen' }).click();
+  await s.getByRole('heading', { name: /ist eingerichtet/ }).waitFor();
+  await bild(s, 'einrichtung-fertig');
+  await s.getByRole('button', { name: 'Zur Werkbank' }).click();
+  await s.waitForURL(/\/werkbank/);
+  const sitzung = (await k.cookies()).find((c) => c.name === 'dms_sitzung');
+  if (!sitzung) throw new Error('Nach der Einrichtung keine Sitzung im Browser.');
+  cookie = `${sitzung.name}=${sitzung.value}`;
+  await k.close();
+}
+
 async function main() {
   await mkdir(ZIEL, { recursive: true });
-  const d = await vorbereiten();
   // Deutsche Oberfläche auch für Datumsfelder (Chromium richtet sich dafür nach --lang).
   const browser = await chromium.launch({ channel: 'chromium', args: ['--lang=de-DE'], env: { ...process.env, LANG: 'de_DE.UTF-8', LANGUAGE: 'de' } });
-  const kontext = async (mitCookie = true, breite = 1440, hoehe = 860) => {
-    const k = await browser.newContext({ viewport: { width: breite, height: hoehe }, colorScheme: 'light', locale: 'de-DE', timezoneId: 'Europe/Berlin', deviceScaleFactor: 1 });
-    if (mitCookie) {
-      const [name, wert] = d.adminCookie.split('=');
-      await k.addCookies([{ name, value: wert, url: BASIS }]);
-    }
-    return k;
-  };
   const erstellt = [];
   const bild = async (seite, name, optionen = {}) => {
     await seite.waitForLoadState('networkidle');
@@ -193,6 +247,17 @@ async function main() {
     await seite.screenshot({ path: join(ZIEL, `${name}.png`), ...optionen });
     erstellt.push(name);
     console.log(`  ${name}.png`);
+  };
+  await warteAufServer();
+  await einrichtenImBrowser(browser, bild);
+  const d = await vorbereiten();
+  const kontext = async (mitCookie = true, breite = 1440, hoehe = 860) => {
+    const k = await browser.newContext({ viewport: { width: breite, height: hoehe }, colorScheme: 'light', locale: 'de-DE', timezoneId: 'Europe/Berlin', deviceScaleFactor: 1 });
+    if (mitCookie) {
+      const [name, wert] = d.adminCookie.split('=');
+      await k.addCookies([{ name, value: wert, url: BASIS }]);
+    }
+    return k;
   };
   const geheZu = async (seite, pfad) => { await seite.goto(BASIS + pfad); await seite.waitForLoadState('networkidle'); };
 

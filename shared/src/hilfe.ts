@@ -35,6 +35,7 @@ export const HILFE = {
   'werkbank.wiederherstellung': admin('wiederherstellen/', 'Wiederherstellen'),
   'werkbank.wartungsmodus': admin('wartungsmodus/', 'Wartungsmodus'),
   'werkbank.speicherplatz': admin('speicherplatz/', 'Speicherplatz'),
+  'werkbank.anbindung': admin('installation/', 'der Datenbank-Anbindung', 'datenbank-anbindung'),
   // Werkbank: Zwischenüberschriften langer Seiten
   'mappentyp.felder': admin('mappentypen/', 'Feldern', 'felder'),
   'mappentyp.register': admin('mappentypen/', 'Registern', 'register'),

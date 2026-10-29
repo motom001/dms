@@ -237,7 +237,7 @@ export function Notfallblatt({ stand, schluessel, geladen }: { stand: Sicherungs
   return (
     <section className="blatt" id="notfallblatt">
       <h2 className="h3">Notfallblatt <Hilfe ort="sicherung.notfallblatt" /></h2>
-      <p>Ein PDF mit allem, was du nach einem Ausfall brauchst: den <strong>Schlüssel</strong> (in Vierergruppen zum Abschreiben), seinen Fingerabdruck, die Haushalt-Id, wo die Sicherungen liegen, und die Schritte zur Wiederherstellung. Der Schlüssel steht in keiner Sicherung – bewahre das Blatt in einem Passwortsafe oder ausgedruckt an einem sicheren Ort auf, getrennt vom NAS.</p>
+      <p>Ein PDF mit allem, was du nach einem Ausfall brauchst: den <strong>Schlüssel</strong> (in Vierergruppen zum Abschreiben), seinen Fingerabdruck, die Mandanten-Id, wo die Sicherungen liegen, und die Schritte zur Wiederherstellung. Der Schlüssel steht in keiner Sicherung – bewahre das Blatt in einem Passwortsafe oder ausgedruckt an einem sicheren Ort auf, getrennt vom NAS.</p>
       {stand?.am && <p className="leise klein">Zuletzt heruntergeladen {zeit(stand.am)}{stand.von ? ` von ${stand.von}` : ''}.</p>}
       {stand && !stand.aktuell && stand.am && <div className="hinweis warn"><p><strong>Der Schlüssel hat sich seitdem geändert.</strong> Lade ein neues Notfallblatt herunter. Bewahre das alte auf, solange du ältere Sicherungen hast – sie brauchen den alten Schlüssel.</p></div>}
       <div className="knoepfe">

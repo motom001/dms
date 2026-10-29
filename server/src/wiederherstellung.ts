@@ -78,6 +78,10 @@ export interface WiederherstellungsQuellen {
   einrichtungNoetig(): Promise<boolean>;
   /** Nach dem Umschalten: neu starten (im Container: Prozess beenden, Docker startet neu). */
   neustart(): void;
+  /** Gehört die Sicherung zu einem anderen Mandanten: dessen Id für den Neustart übernehmen (#119). */
+  mandantUebernehmen?: (id: string) => Promise<void>;
+  /** Einrichtungscode prüfen (frisches System, #119); wirft bei falschem Code. */
+  pruefeCode?: (code: unknown) => void;
   anAdmins?: (betreff: string, text: string) => Promise<void>;
   jetzt?: () => Date;
 }
@@ -113,8 +117,12 @@ export class Wiederherstellung {
   }
 
   /** Wer darf? Frisches System: jeder (wie die Ersteinrichtung). Laufendes System: Admin im aktiven Wartungsmodus. */
-  async pruefeZugang(admin: boolean) {
-    if (await this.q.einrichtungNoetig()) return 'frisch' as const;
+  async pruefeZugang(admin: boolean, einrichtungscode?: unknown) {
+    if (await this.q.einrichtungNoetig()) {
+      // Frisches System (#119): nur mit dem Einrichtungscode.
+      this.q.pruefeCode?.(einrichtungscode);
+      return 'frisch' as const;
+    }
     if (!admin) throw new Fachfehler(403, 'Dafür sind Administratorrechte nötig.');
     if (!this.q.wartungAktiv()) throw new Fachfehler(409, 'Wiederherstellen geht nur im aktiven Wartungsmodus – schalte ihn unter Werkbank → Wartungsmodus ein und melde alle ab.');
     return 'laufend' as const;
@@ -146,8 +154,12 @@ export class Wiederherstellung {
     const pgDamals = m.umgebung.postgres.split('.')[0]; const pgHeute = heute.postgres.split('.')[0];
     vergleich.push({ was: 'PostgreSQL', damals: m.umgebung.postgres, heute: heute.postgres, urteil: pgDamals === pgHeute ? 'gleich' : 'ok', info: pgDamals !== pgHeute ? 'andere Hauptversion – geht, die Daten werden neu eingelesen' : undefined });
     vergleich.push({ was: 'Architektur', damals: m.umgebung.architektur, heute: heute.architektur, urteil: m.umgebung.architektur === heute.architektur ? 'gleich' : 'ok' });
-    vergleich.push({ was: 'Haushalt-Id', damals: m.haushaltId, heute: heute.haushaltId, urteil: m.haushaltId === heute.haushaltId ? 'gleich' : 'hinweis', info: m.haushaltId !== heute.haushaltId ? 'abweichend – siehe Hinweis' : undefined });
-    if (m.haushaltId !== heute.haushaltId) hinweise.push(`Die Sicherung gehört zum Haushalt ${m.haushaltId}, dieses DMS ist auf ${heute.haushaltId} eingestellt. Trage danach in der Compose-Datei HAUSHALT_ID=${m.haushaltId} ein und starte neu – sonst sind die Daten nicht zu sehen.`);
+    vergleich.push({ was: 'Mandanten-Id', damals: m.haushaltId, heute: heute.haushaltId, urteil: m.haushaltId === heute.haushaltId ? 'gleich' : 'hinweis', info: m.haushaltId !== heute.haushaltId ? 'abweichend – siehe Hinweis' : undefined });
+    if (m.haushaltId !== heute.haushaltId) {
+      hinweise.push(this.q.mandantUebernehmen
+        ? `Die Sicherung gehört zum Mandanten ${m.haushaltId}, dieses DMS ist bisher auf ${heute.haushaltId} eingestellt. Das DMS übernimmt die Id der Sicherung beim Wiederherstellen.`
+        : `Die Sicherung gehört zum Mandanten ${m.haushaltId}, dieses DMS ist auf ${heute.haushaltId} eingestellt – sonst sind die Daten nicht zu sehen.`);
+    }
 
     let schluesselNoetig = this.q.tresor.fingerabdruck !== m.verschluesselung.fingerabdruck;
     if (schluesselText !== undefined && schluesselText.trim()) {
@@ -175,8 +187,8 @@ export class Wiederherstellung {
 
   /* ---------- Starten ---------- */
 
-  async starte(e: { name?: unknown; schluessel?: unknown; bestaetigt?: unknown }, admin: { email: string } | null): Promise<Wiederherstellungslauf> {
-    const art = await this.pruefeZugang(!!admin);
+  async starte(e: { name?: unknown; schluessel?: unknown; bestaetigt?: unknown }, admin: { email: string } | null, einrichtungscode?: unknown): Promise<Wiederherstellungslauf> {
+    const art = await this.pruefeZugang(!!admin, einrichtungscode);
     this.belege();
     try { return await this.starteBelegt(e, admin, art); } catch (x) { this.belegt = false; throw x; }
   }
@@ -298,7 +310,7 @@ export class Wiederherstellung {
           await tx`INSERT INTO schema_migrationen (name) VALUES (${datei})`;
         }
       });
-      // Was die Migrationen selbst angelegt haben (z. B. den Haushalt), kommt aus der Sicherung.
+      // Was die Migrationen selbst angelegt haben (z. B. den Mandanten), kommt aus der Sicherung.
       const leeren = (await neu`SELECT tablename FROM pg_tables WHERE schemaname = ${schema} AND tablename <> 'schema_migrationen'`).map((r) => bezeichner(r.tablename as string));
       if (leeren.length) await neu.unsafe(`TRUNCATE ${leeren.join(', ')} CASCADE`);
       if (!probe) await mkdir(staging, { recursive: true });
@@ -308,7 +320,7 @@ export class Wiederherstellung {
       lauf.bytes = 0;
       for await (const e of liesSicherung(pfad, leiteAb(k, ZWECK), (n) => { lauf.bytes = n; })) {
         if (e.art === 'M') {
-          if (e.kopf.haushaltId !== m.haushaltId) throw new Error('Inhalt und Metadaten der Sicherung passen nicht zusammen (Haushalt).');
+          if (e.kopf.haushaltId !== m.haushaltId) throw new Error('Inhalt und Metadaten der Sicherung passen nicht zusammen (Mandant).');
           zaehlerSicherung = (e.kopf.zaehler as Record<string, number>) ?? null;
         } else if (e.art === 'T') {
           const t = { name: String(e.kopf.tabelle), spalten: (e.kopf.spalten as string[]).map(String) } as Tabelle;
@@ -437,6 +449,11 @@ export class Wiederherstellung {
         await tx.unsafe(`ALTER SCHEMA ${bezeichner(schema)} RENAME TO public`);
       });
       schluesselZurueck = null;
+      // Anderer Mandant (#119): seine Id gilt ab dem Neustart.
+      if (this.q.mandantUebernehmen && m.haushaltId !== (await this.q.laufzeit()).haushaltId) {
+        await this.q.mandantUebernehmen(m.haushaltId);
+        log.warn('Mandant der Sicherung übernommen', { mandant: m.haushaltId });
+      }
       ok();
       this.schritt(lauf, 'Neustart', 'laeuft', 'Das DMS startet neu …');
       lauf.status = 'neustart';

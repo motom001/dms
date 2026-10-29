@@ -69,11 +69,12 @@ jobs:
           npm install --no-audit --no-fund
           npm run build
 
-      - name: DMS starten (leere Datenbank)
+      # Ohne DATABASE_URL: Das DMS startet im Einrichtungsmodus, das Screenshot-Skript geht den
+      # Assistenten im Browser durch (#119) – inklusive Datenbank-Schritt und Start ohne Neustart.
+      - name: DMS starten (ohne Datenbank-Anbindung)
         run: |
           nohup node server/dist/index.js > "$RUNNER_TEMP/dms.log" 2>&1 &
         env:
-          DATABASE_URL: postgres://dms:dms@localhost:5432/dms
           # Feste Ordner (#115) außerhalb von Docker: files, geheim, sicherung unter dieser Wurzel.
           DMS_DATENWURZEL: ${{ runner.temp }}/daten
           PORT: '3000'
@@ -89,6 +90,10 @@ jobs:
         shell: bash
         env:
           DMS_URL: http://localhost:3000
+          # Einrichtungscode liegt unter <Wurzel>/geheim/EINRICHTUNGSCODE; Datenbank für den Assistenten.
+          DMS_DATENWURZEL: ${{ runner.temp }}/daten
+          DB_HOST: localhost
+          DB_PASSWORT: dms
 
       # Fehler als Anmerkungen ausgeben – die Job-Logs sind nicht überall abrufbar.
       - name: Fehler bei den Screenshots melden

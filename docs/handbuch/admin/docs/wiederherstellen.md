@@ -16,15 +16,15 @@ Eine [Sicherung](sicherung.md) spielst du in der Werkbank ein – ohne Kommandoz
 Du brauchst: die beiden Sicherungsdateien (`.dms-sicherung` und `.json`) und das [Notfallblatt](sicherung.md#notfallblatt).
 
 1. Auf dem neuen NAS den Ordner für das DMS anlegen, darin `postgres`, `files`, `geheim` und `sicherung` (siehe [Installation](installation.md)).
-2. Die [Compose-Vorlage](https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml) als Projekt anlegen, Pfade anpassen und eine `.env` mit einem neuen `DB_PASSWORD` ablegen. Weicht die **Haushalt-Id** auf dem Notfallblatt von `00000000-0000-4000-8000-000000000001` ab, trage sie als `HAUSHALT_ID` ein.
+2. Die [Compose-Vorlage](https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml) als Projekt anlegen, Pfade anpassen und eine `.env` mit einem neuen `DB_PASSWORD` ablegen.
 3. Die beiden Sicherungsdateien in den Ordner `sicherung` kopieren.
-4. Das Projekt starten und das DMS im Browser öffnen. Auf dem Willkommensbildschirm **Aus Sicherung wiederherstellen** wählen – einen „Wegwerf-Admin“ brauchst du nicht.
-5. Die Sicherung auswählen. Der **Abgleich** zeigt, mit welcher Version sie entstand und was heute läuft (DMS, Datenbank-Stand, PostgreSQL, Architektur, Haushalt-Id).
+4. Das Projekt starten und das DMS im Browser öffnen. Der [Einrichtungsassistent](installation.md#der-einrichtungsassistent) fragt nach dem **Einrichtungscode** und – falls nötig – nach der Datenbank. Dann **Aus einer Sicherung wiederherstellen** wählen; einen „Wegwerf-Admin“ brauchst du nicht.
+5. Die Sicherung auswählen. Der **Abgleich** zeigt, mit welcher Version sie entstand und was heute läuft (DMS, Datenbank-Stand, PostgreSQL, Architektur, Mandanten-Id). Gehört die Sicherung zu einem anderen Mandanten, übernimmt das DMS dessen Id.
 6. Den **Schlüssel vom Notfallblatt** eingeben (Leerzeichen zählen nicht) und **Schlüssel prüfen** – das DMS vergleicht ihn mit dem Fingerabdruck aus den Metadaten.
 7. **Wiederherstellen**. Der Bildschirm zeigt jeden Schritt; du kannst die Seite neu laden. Am Ende startet das DMS neu.
 8. **Weiter zur Anmeldung** und mit den bisherigen Zugangsdaten anmelden. Die Schlüsseldatei hat das DMS dabei selbst angelegt.
 
-Dieser Weg ist nur offen, solange es noch keinen Benutzer gibt – genau wie die Ersteinrichtung.
+Dieser Weg ist nur offen, solange es noch keinen Benutzer gibt, und nur mit dem Einrichtungscode – genau wie die Einrichtung.
 
 ## Auf dem laufenden System
 
