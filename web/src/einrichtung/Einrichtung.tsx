@@ -667,8 +667,8 @@ function TrefferlisteEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) =>
                 <label className="haken klein"><input type="radio" name="standardliste" checked={l.standard}
                   onChange={() => setE((x) => ({ ...x, trefferlisten: x.trefferlisten.map((y, j) => ({ ...y, standard: j === i })) }))} /><span>Standard</span></label>
                 <div className="feldaktionen">
-                  <button type="button" className="symbol" disabled={e.trefferlisten.length < 2} title={e.trefferlisten.length < 2 ? 'Eine Trefferliste braucht der Typ immer' : undefined}
-                    onClick={() => entferne(i)} aria-label={`Trefferliste ${l.name} entfernen`} title={`Trefferliste entfernen –${ERST_BEIM_SPEICHERN}`}>×</button>
+                  <button type="button" className="symbol" disabled={e.trefferlisten.length < 2} title={e.trefferlisten.length < 2 ? 'Eine Trefferliste braucht der Typ immer' : `Trefferliste entfernen –${ERST_BEIM_SPEICHERN}`}
+                    onClick={() => entferne(i)} aria-label={`Trefferliste ${l.name} entfernen`}>×</button>
                 </div>
               </div>
               <Spaltenwahl e={e} spalten={l.spalten} name={name} setze={(spalten) => setzeListe(i, { spalten })} />
