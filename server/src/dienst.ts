@@ -20,7 +20,7 @@ import {
 import { liesDirektlink } from '../../shared/src/direktlink';
 import type { Lesefilter } from '../../shared/src/rechte';
 import { ANSTEHEND_MAX, ANSTEHEND_TAGE, bereinigeFrist, datumDe, empfaengerFelder, ERINNERUNG_TEXT_MAX, fristAb, fristEmpfaenger, fristFelder, fristText, istDatum, naechsterTermin, type Anstehend, type Erinnerung } from '../../shared/src/fristen';
-import { ALLES, bereinigeRegelwerk, FALSCH, istOffen, kopiereRegel, leseAusdruck, lesefilter, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, wirksamVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../shared/src/rechte';
+import { ALLES, bereinigeRegelwerk, FALSCH, istOffen, kopiereRegel, kurz, leseAusdruck, lesefilter, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, wirksamVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../shared/src/rechte';
 
 /* ---------- Eingaben bereinigen: nur bekannte Eigenschaften übernehmen ---------- */
 
@@ -974,7 +974,9 @@ export class Dienst {
     const id = istUuid(roh.id) && !(await this.repo.holeTyp(roh.id)) ? roh.id : randomUUID();
     const d = bereinigeTyp(eingabe);
     await this.pruefeTyp(d, id);
-    const typ = await this.repo.legeTypAn(id, d);
+    const rechte = await this.berechtigungenAusEingabe({ ...d, id, erstellt: '', geaendert: '', berechtigungen: null }, eingabe);
+    let typ = await this.repo.legeTypAn(id, d);
+    if (rechte) { typ = await this.repo.setzeBerechtigungen(id, istOffen(rechte.rw) ? null : rechte.rw); Dienst.protokolliereBerechtigungen(typ, 0); }
     // Neue Mappentypen bekommen eine eigene Sicht (#38), außer der Administrator wählt das ab.
     if ((roh as { sichtAnlegen?: unknown }).sichtAnlegen !== false) await this.sichtFuerTyp(typ);
     return typ;
@@ -986,6 +988,8 @@ export class Dienst {
     let d = bereinigeTyp(eingabe);
     if (alt.system) d = await this.mitSystemfeldern(d, alt.system);
     await this.pruefeTyp(d, id);
+    // Berechtigungen (#142) gegen die neuen Felder prüfen, bevor etwas gespeichert ist.
+    const rechte = await this.berechtigungenAusEingabe({ ...alt, ...d }, eingabe);
     const bleiben = new Set(d.register.filter((r) => r.art === 'dokumente').map((r) => r.key));
     for (const [key, n] of await this.repo.dokumenteJeRegister(id)) {
       if (bleiben.has(key)) continue;
@@ -1001,6 +1005,11 @@ export class Dienst {
     await this.pruefePassung(id);
     // Fristen (#129): Erinnerung neu an oder aus, Vorlauf geändert → gleich abgleichen.
     await this.fristenAbgleichen({ typId: id });
+    if (rechte) {
+      const mit = await this.repo.setzeBerechtigungen(id, istOffen(rechte.rw) ? null : rechte.rw);
+      Dienst.protokolliereBerechtigungen(mit, rechte.niemand);
+      return mit;
+    }
     return typ;
   }
 
@@ -1274,14 +1283,42 @@ export class Dienst {
   async setzeBerechtigungen(typId: string, eingabe: unknown, bestaetigt: boolean): Promise<{ typ: Mappentyp; niemand: number }> {
     const typ = await this.repo.holeTyp(typId);
     if (!typ) throw new Fachfehler(404, 'Diesen Mappentyp gibt es nicht.');
+    const { rw, niemand } = await this.pruefeBerechtigungen(typ, eingabe, bestaetigt);
+    const neu = await this.repo.setzeBerechtigungen(typId, istOffen(rw) ? null : rw);
+    Dienst.protokolliereBerechtigungen(neu, niemand);
+    return { typ: neu, niemand };
+  }
+
+  /** Regeln prüfen (Probleme → 422) und warnen, wenn Mappen danach niemand mehr lesen könnte (409 ohne Bestätigung). */
+  private async pruefeBerechtigungen(typ: Mappentyp, eingabe: unknown, bestaetigt: boolean): Promise<{ rw: Regelwerk; niemand: number }> {
     const rw = bereinigeRegelwerk(eingabe);
     const probleme = rw.regeln.map((r) => regelProblem(r, typ)).filter((x): x is string => !!x);
-    if (probleme.length) throw new Fachfehler(422, probleme.join(' '), { gruende: probleme });
+    if (probleme.length) throw new Fachfehler(422, `Berechtigungen: ${probleme.join(' ')}`, { gruende: probleme, berechtigungen: true });
     const niemand = await this.niemandLesbar(typ, rw);
     if (niemand && !bestaetigt) {
       throw new Fachfehler(409, `${niemand === 1 ? 'Eine Mappe' : `${niemand} Mappen`} vom Typ „${typ.name}“ könnte danach niemand mehr lesen (außer Administratoren). Trotzdem speichern?`, { niemand });
     }
-    return { typ: await this.repo.setzeBerechtigungen(typId, istOffen(rw) ? null : rw), niemand };
+    return { rw, niemand };
+  }
+
+  private static protokolliereBerechtigungen(typ: Mappentyp, niemand: number) {
+    const rw = typ.berechtigungen;
+    protokoll.modul('werkbank').warn('Berechtigungen geändert', {
+      typ: typ.name, grund: rw?.grund ?? 'erteilt', regeln: rw?.regeln.length ?? 0,
+      liste: rw?.regeln.map((x, i) => `${i + 1}. ${x.name} ${kurz(x.dann)}${x.stopp ? ' ■' : ''}`).join(' · ') || undefined,
+      ...(niemand ? { niemandLesbar: niemand } : {}),
+    });
+  }
+
+  /**
+   * Berechtigungen mit dem Mappentyp speichern (#142): `berechtigungen` in der Eingabe (fehlt = unverändert),
+   * `bestaetigt` für die Rückfrage „niemand kann lesen“. Geprüft wird gegen die neuen Felder – vor dem Speichern.
+   */
+  private async berechtigungenAusEingabe(typ: Mappentyp, eingabe: unknown): Promise<{ rw: Regelwerk; niemand: number } | null> {
+    const e = (eingabe ?? {}) as { berechtigungen?: unknown; bestaetigt?: unknown };
+    if (e.berechtigungen === undefined) return null;
+    const r = await this.pruefeBerechtigungen(typ, e.berechtigungen, e.bestaetigt === true);
+    return JSON.stringify(istOffen(r.rw) ? null : r.rw) === JSON.stringify(typ.berechtigungen ?? null) ? null : r;
   }
 
   /** Eine Regel in andere Mappentypen kopieren (ans Ende); Feldbedingungen nur, wo das Feld passt. */

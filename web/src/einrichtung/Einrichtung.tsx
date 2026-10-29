@@ -5,6 +5,8 @@ import {
   type Feld, type Mappe, type Mappentyp, type Register, type Registerart, type Werte,
 } from '../../../shared/src/model';
 import { wirksameTypen } from '../../../shared/src/sichten';
+import { regelwerkVon, type Regelwerk } from '../../../shared/src/rechte';
+import { RegelwerkAbschnitt } from '../werkbank/Berechtigungen';
 import { FRIST_STANDARD, FRIST_TEXT, fristText, VORLAUF_EINHEITEN, wiederholungText, type FristEinstellung } from '../../../shared/src/fristen';
 import { api, ApiFehler, type Bezuege } from '../api';
 import { useDaten } from '../daten';
@@ -29,6 +31,8 @@ interface EntwurfListe { _uid: string; _neu?: boolean; key: string; name: string
 interface Entwurf {
   id: string; name: string; beschreibung: string; titelVorlage: string; felder: EntwurfFeld[]; register: EntwurfRegister[]; trefferlisten: EntwurfListe[];
   erstellenErlaubt: boolean; loeschenErlaubt: boolean;
+  /** Berechtigungen (#142): mit dem Mappentyp gespeichert. */
+  berechtigungen: Regelwerk;
 }
 
 function neueId(): string {
@@ -43,11 +47,12 @@ function neueId(): string {
 const alsEntwurfRegister = ({ felder: _f, ...r }: Register): EntwurfRegister => ({ ...r, _uid: neueId() });
 
 function entwurfAus(t?: Mappentyp): Entwurf {
-  if (!t) return { id: neueId(), name: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], erstellenErlaubt: true, loeschenErlaubt: true };
+  if (!t) return { id: neueId(), name: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], erstellenErlaubt: true, loeschenErlaubt: true, berechtigungen: { grund: 'erteilt', regeln: [] } };
   const erstes = t.register.find((r) => r.art === 'felder')?.key ?? '';
   const e: Entwurf = {
     id: t.id, name: t.name, beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '',
     erstellenErlaubt: t.erstellenErlaubt !== false, loeschenErlaubt: t.loeschenErlaubt !== false,
+    berechtigungen: structuredClone(regelwerkVon(t)),
     register: t.register.map(alsEntwurfRegister),
     felder: t.felder.map((f) => ({
       ...f, _uid: neueId(),
@@ -93,6 +98,8 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
   const [e, setE] = useState<Entwurf>(() => JSON.parse(basis));
   const [offen, setOffen] = useState<number | null>(null);
   const [ansage, setAnsage] = useState('');
+  // Von „Berechtigungen prüfen“ aus (#142): gleich zum Abschnitt springen.
+  useEffect(() => { if (location.hash === '#berechtigungen') setTimeout(() => document.getElementById('berechtigungen')?.scrollIntoView({ block: 'start' }), 50); }, []);
   // Drag & Drop (#74): Felder umsortieren oder auf ein Feldregister ziehen; ändert nur den Entwurf.
   const zf = useZiehen({
     erlaubt: (_q, ziel, ort) => ort !== 'in' || ziel.startsWith('reg:'),
@@ -161,7 +168,7 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
     setOffen(null); setFehler(null);
   }
 
-  async function speichern() {
+  async function speichern(bestaetigt = false) {
     setSendet(true); setMeldung(undefined); setGruende([]);
     const { trefferlisten: listen, ...ohneListen } = e;
     const daten = {
@@ -174,7 +181,7 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
       })),
     };
     try {
-      const t = neu ? await api.typAnlegen({ ...daten, sichtAnlegen }) : await api.typAendern(e.id, daten);
+      const t = neu ? await api.typAnlegen({ ...daten, sichtAnlegen }) : await api.typAendern(e.id, { ...daten, bestaetigt });
       const sauber = entwurfAus(t);
       setE(sauber); setBasis(JSON.stringify(sauber)); setFehler(null); setOffen(null);
       loeseWache();
@@ -183,6 +190,8 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
       else setMeldung('Mappentyp gespeichert.');
     } catch (err) {
       const f = err as ApiFehler;
+      // Berechtigungen (#142): Danach könnte niemand mehr Mappen dieses Typs lesen – nachfragen.
+      if (f.status === 409 && (f.details as { niemand?: number } | undefined)?.niemand && !bestaetigt && confirm(f.message)) { setSendet(false); await speichern(true); return; }
       if (f.pruefung) {
         setFehler(f.pruefung);
         const erstes = Object.keys(f.pruefung.felder)[0];
@@ -276,6 +285,10 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
       </div>
 
       <RegisterEditor e={e} setE={setE} feldAblage={(key) => zf.ablage(`reg:${key}`)} />
+
+      <RegelwerkAbschnitt rw={e.berechtigungen} setRw={(f) => setE((x) => ({ ...x, berechtigungen: f(x.berechtigungen) }))} neu={neu}
+        gespeichert={gespeichert ? regelwerkVon(gespeichert) : null}
+        typ={{ id: e.id, name: e.name, beschreibung: e.beschreibung, system: system ?? null, felder: e.felder as unknown as Feld[], register: [], erstellt: '', geaendert: '' } as unknown as Mappentyp} />
 
       <div className="speicherleiste">
         {system ? <span /> : <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>{neu ? 'Entwurf verwerfen' : 'Mappentyp löschen'}</button>}

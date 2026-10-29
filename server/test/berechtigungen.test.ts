@@ -236,6 +236,36 @@ describe('Werkbank (#123, #125)', () => {
   });
 });
 
+describe('Berechtigungen am Mappentyp (#142)', () => {
+  it('werden mit „Mappentyp speichern“ gespeichert, dürfen neue Felder nutzen, fragen bei „niemand kann lesen“', async () => {
+    const { d, fibu, max, R, rechnung, rufe, admin } = await aufbau();
+    await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } }, fibu.id);
+    const t = (await d.listeTypen()).find((x) => x.id === rechnung.id)!;
+    const geheim = { key: 'geheim', label: 'Geheim', typ: 'janein' };
+    const rw = { grund: 'erteilt', regeln: [{ id: 'g', name: 'Geheimes nur FiBu', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'geheim', op: 'ja' } }, { art: 'rolle', nicht: true, rollen: [R.fibu] }], dann: { R: 'entziehen' }, stopp: false }] };
+    // Neues Feld und Regel darauf in einem Zug.
+    const neu = (await rufe(admin, 'PUT', '/api/typen/:id', { params: { id: rechnung.id }, body: { ...t, felder: [...t.felder, geheim], berechtigungen: rw } })).body as typeof t;
+    assert.equal(neu.berechtigungen?.regeln[0].name, 'Geheimes nur FiBu');
+    assert.ok(neu.felder.some((f) => f.key === 'geheim'));
+    const m = await d.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2', geheim: true } }, fibu.id);
+    await assert.rejects(rufe(max, 'GET', '/api/mappen/:id', { params: { id: m.id } }), status(404));
+    // Ohne berechtigungen in der Eingabe bleiben die Regeln (z. B. API-Skripte).
+    const ohne = (await rufe(admin, 'PUT', '/api/typen/:id', { params: { id: rechnung.id }, body: { ...neu, berechtigungen: undefined, beschreibung: 'x' } })).body as typeof t;
+    assert.equal(ohne.berechtigungen?.regeln.length, 1);
+    // Regel auf ein Feld, das gleichzeitig entfernt wird: 422, nichts gespeichert.
+    await assert.rejects(rufe(admin, 'PUT', '/api/typen/:id', { params: { id: rechnung.id }, body: { ...neu, felder: t.felder, berechtigungen: rw } }), status(422));
+    assert.ok((await d.listeTypen()).find((x) => x.id === rechnung.id)!.felder.some((f) => f.key === 'geheim'), 'Typ unverändert');
+    // Niemand kann lesen → 409, mit bestaetigt gespeichert.
+    const zu = { grund: 'entzogen', regeln: [] };
+    await assert.rejects(rufe(admin, 'PUT', '/api/typen/:id', { params: { id: rechnung.id }, body: { ...neu, berechtigungen: zu } }), status(409));
+    const ok = (await rufe(admin, 'PUT', '/api/typen/:id', { params: { id: rechnung.id }, body: { ...neu, berechtigungen: zu, bestaetigt: true } })).body as typeof t;
+    assert.equal(ok.berechtigungen?.grund, 'entzogen');
+    // Neuer Typ gleich mit Regeln.
+    const n = (await rufe(admin, 'POST', '/api/typen', { body: { name: 'Gehalt', felder: [{ key: 'name', label: 'Name', typ: 'text' }], berechtigungen: zu } })).body as typeof t;
+    assert.equal(n.berechtigungen?.grund, 'entzogen');
+  });
+});
+
 describe('Berechtigungen in PostgreSQL (#124)', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
   it('Lesefilter als SQL: Listen, Zähler, Suche, Eingang wie im Arbeitsspeicher', async () => {
     const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');

@@ -6,7 +6,7 @@ import { Link } from '../ort';
 import { BenutzerDetail, BenutzerListe, BenutzerNeu, useBenutzer } from './Benutzer';
 import { BetriebListe, BetriebPanel, useBetrieb } from './Betrieb';
 import { SichtEditor, SichtenListe } from './Sichten';
-import { BerechtigungEditor, BerechtigungenListe, useBerechtigungen, WasSiehtPanel } from './Berechtigungen';
+import { PruefenListe, PruefenPanel } from './Berechtigungen';
 import { DatenbankPanel, LanglaeuferListe, useDatenbank } from './Datenbank';
 import { DemoListe, DemoPanel } from './Demo';
 import { DesignEditor, DesignListe } from './Designs';
@@ -33,7 +33,7 @@ import { useBeiWiederErreichbar } from '../erreichbar';
  * /werkbank                        Übersicht: was zu tun ist (#68)
  * /werkbank/typen[/:id|/neu]
  * /werkbank/benutzer[/:id|/neu]
- * /werkbank/berechtigungen[/:typId|/sicht]  Berechtigungen je Mappentyp (#123–#127)
+ * /werkbank/rechtepruefung[?typ=]  Berechtigungen prüfen: Testlauf, „Was sieht ein Benutzer?“ (#125, #142)
  * /werkbank/sichten[/:id|/neu]       Sichten der Ablage (#38)
  * /werkbank/demo
  * /werkbank/protokoll[/:nr]
@@ -72,7 +72,6 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const sicherung = useSicherung(bereich === 'sicherung');
   const speicherplatz = useSpeicherplatz(bereich === 'speicherplatz');
   const anbindung = useAnbindung(bereich === 'anbindung');
-  const berechtigungen = useBerechtigungen(bereich === 'berechtigungen');
   // Wieder erreichbar nach Update oder Neustart (#122): Übersicht und offenen Bereich neu laden.
   useBeiWiederErreichbar(() => {
     void uebersicht.laden();
@@ -80,7 +79,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
       protokoll: protokoll.neu, datenbank: datenbank.laden, technik: technik.laden, betrieb: betrieb.laden,
       verschluesselung: tresor.laden, papierkorb: papierkorb.laden, aufgaben: aufgaben.laden, texterkennung: ocr.laden,
       wartung: ocr.laden, fehlermeldungen: meldungen.laden, wartungsmodus: wartungsmodus.laden, sicherung: sicherung.laden,
-      speicherplatz: speicherplatz.laden, anbindung: anbindung.laden, benutzer: benutzer.laden, berechtigungen: berechtigungen.laden,
+      speicherplatz: speicherplatz.laden, anbindung: anbindung.laden, benutzer: benutzer.laden,
     };
     void offen[bereich]?.();
   });
@@ -115,11 +114,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
       const b = benutzer.liste.find((x) => x.id === id);
       rechts = b ? <BenutzerDetail key={b.id} b={b} neuLaden={benutzer.laden} /> : benutzer.geladen ? <div className="leer"><p>Diesen Benutzer gibt es nicht (mehr).</p></div> : <p className="leise">Lade …</p>;
     }
-  } else if (bereich === 'berechtigungen') {
-    liste = <BerechtigungenListe z={berechtigungen} offen={id} />;
-    if (id === 'sicht') rechts = <WasSiehtPanel />;
-    else if (id) rechts = berechtigungen.liste ? <BerechtigungEditor key={id} typId={id} z={berechtigungen} /> : <p className="leise">Lade …</p>;
-    else rechts = <div className="platzhalter"><p>Wähle links einen Mappentyp. Für Administratoren gelten die Regeln nicht.</p></div>;
+  } else if (bereich === 'rechtepruefung') {
+    liste = <PruefenListe />;
+    rechts = <PruefenPanel />;
   } else if (bereich === 'demo') {
     liste = <DemoListe />;
     rechts = <DemoPanel />;
@@ -171,7 +168,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   }
 
   return (
-    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung'].includes(bereich) ? 'mappe' : 'liste'} offen={id}>
+    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung', 'rechtepruefung'].includes(bereich) ? 'mappe' : 'liste'} offen={id}>
       <aside className="spalte sichten" aria-label="Bereiche">
         <h2 className="ueber">Werkbank</h2>
         <WerkbankNavigation bereich={bereich} eintraege={[
@@ -179,7 +176,6 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'typen', name: 'Mappentypen', gruppe: 'ablage', zahl: d.typen.length },
           { pfad: 'sichten', name: 'Sichten', gruppe: 'ablage', zahl: d.sichten.length || undefined },
           { pfad: 'benutzer', name: 'Benutzer', gruppe: 'benutzer', zahl: benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined },
-          { pfad: 'berechtigungen', name: 'Berechtigungen', gruppe: 'benutzer' },
           { pfad: 'aufgaben', name: 'Aufgaben', gruppe: 'benutzer', zahl: uebersicht.stand?.aufgaben.offen || undefined },
           { pfad: 'betrieb', name: 'E-Mail und Adresse', gruppe: 'einstellungen', warn: uebersicht.stand && !uebersicht.stand.mail ? 'aus' : undefined },
           { pfad: 'verschluesselung', name: 'Verschlüsselung', gruppe: 'einstellungen', warn: tresor.stand && tresor.stand.zustand !== 'vorhanden' ? 'fehlt' : undefined },
@@ -194,6 +190,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'wiederherstellung', name: 'Wiederherstellen', gruppe: 'wartung' },
           { pfad: 'wartungsmodus', name: 'Wartungsmodus', gruppe: 'wartung', warn: wartungsmodus.stand && wartungsmodus.stand.stufe !== 'aus' ? (wartungsmodus.stand.stufe === 'aktiv' ? 'aktiv' : 'an') : undefined, warnTitel: 'Wartungsmodus ist an' },
           { pfad: 'wartung', name: 'Wartungsoperationen', gruppe: 'wartung' },
+          { pfad: 'rechtepruefung', name: 'Berechtigungen prüfen', gruppe: 'wartung' },
           { pfad: 'datenbank', name: 'Datenbank', gruppe: 'wartung' },
           { pfad: 'technik', name: 'Technik', gruppe: 'wartung' },
           { pfad: 'demo', name: 'Demo-Daten', gruppe: 'wartung', zahl: Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || undefined },

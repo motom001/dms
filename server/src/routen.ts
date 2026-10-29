@@ -1,6 +1,6 @@
 import type { Readable } from 'node:stream';
 import { MAX_DATEIGROESSE, type Benutzer, type Mappe } from '../../shared/src/model';
-import { kurz, type Recht } from '../../shared/src/rechte';
+import { type Recht } from '../../shared/src/rechte';
 import { ladeBeispiele } from './beispiele';
 import { erzeugeDemo, pruefeAnzahl } from './demo';
 import type { Dienst } from './dienst';
@@ -658,12 +658,6 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/werkbank/berechtigungen', zugang: 'admin', handler: async () => ok(await dienst.berechtigungenListe()) },
     { methode: 'PUT', pfad: '/api/werkbank/berechtigungen/:typId', zugang: 'admin', handler: async (a) => {
       const r = await dienst.setzeBerechtigungen(a.params.typId, b(a).berechtigungen, b(a).bestaetigt === true);
-      const rw = r.typ.berechtigungen;
-      L.werkbank.warn('Berechtigungen geändert', {
-        typ: r.typ.name, von: ich(a).email, grund: rw?.grund ?? 'erteilt', regeln: rw?.regeln.length ?? 0,
-        liste: rw?.regeln.map((x, i) => `${i + 1}. ${x.name} ${kurz(x.dann)}${x.stopp ? ' ■' : ''}`).join(' · ') || undefined,
-        ...(r.niemand ? { niemandLesbar: r.niemand } : {}),
-      });
       return ok({ typ: r.typ, niemand: r.niemand });
     } },
     { methode: 'POST', pfad: '/api/werkbank/berechtigungen/:typId/kopieren', zugang: 'admin', handler: async (a) => {
