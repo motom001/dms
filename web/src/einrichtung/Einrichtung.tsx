@@ -288,7 +288,7 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
 
       <RegelwerkAbschnitt rw={e.berechtigungen} setRw={(f) => setE((x) => ({ ...x, berechtigungen: f(x.berechtigungen) }))} neu={neu}
         gespeichert={gespeichert ? regelwerkVon(gespeichert) : null}
-        typ={{ id: e.id, name: e.name, beschreibung: e.beschreibung, system: system ?? null, felder: e.felder as unknown as Feld[], register: [], erstellt: '', geaendert: '' } as Mappentyp} />
+        typ={{ id: e.id, name: e.name, beschreibung: e.beschreibung, system: system ?? null, felder: e.felder as unknown as Feld[], register: [], erstellt: '', geaendert: '' } as unknown as Mappentyp} />
 
       <div className="speicherleiste">
         {system ? <span /> : <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>{neu ? 'Entwurf verwerfen' : 'Mappentyp löschen'}</button>}
