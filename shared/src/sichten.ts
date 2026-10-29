@@ -206,7 +206,11 @@ export type Filter =
   | { art: 'dokumente'; register: string | null; vergleich: Zaehlvergleich; anzahl: number }
   /** quellen [] = alle Rückverweise; quellenJeTyp: je Mappentyp die Quellen seines Registers (#66). */
   | { art: 'verknuepfungen'; quellen: Quelle[]; quellenJeTyp?: Record<string, Quelle[]>; vergleich: Zaehlvergleich; anzahl: number }
-  | { art: 'favorit'; benutzer: string };
+  | { art: 'favorit'; benutzer: string }
+  /** Berechtigungen (#123): offene Aufgabe für diesen Benutzer an der Mappe. */
+  | { art: 'aufgabe'; benutzer: string }
+  /** Berechtigungen (#123): die Mappe ist eine dieser (z. B. die eigene Benutzer-Mappe). */
+  | { art: 'id'; ids: string[] };
 
 /** Eine Klausel: Mappen dieser Typen, die alle Filter erfüllen. Eine Sicht = ODER ihrer Klauseln. */
 export interface Klausel { typen: string[]; filter: Filter[] }
@@ -306,6 +310,7 @@ export interface Zaehlquelle {
   dokumente(mappeId: string, register: string | null): number;
   verknuepfungen(mappeId: string, quellen: Quelle[]): number;
   favorit?(mappeId: string, benutzer: string): boolean;
+  aufgabe?(mappeId: string, benutzer: string): boolean;
 }
 
 function vergleichswert(m: Mappe, f: Extract<Filter, { art: 'feld' }>): unknown {
@@ -329,6 +334,8 @@ export function erfuellt(m: Mappe, filter: Filter[], z: Zaehlquelle): boolean {
     if (f.art === 'dokumente') return zaehltWie(z.dokumente(m.id, f.register), f.vergleich, f.anzahl);
     if (f.art === 'verknuepfungen') return zaehltWie(z.verknuepfungen(m.id, f.quellenJeTyp ? f.quellenJeTyp[m.typId] ?? [] : f.quellen), f.vergleich, f.anzahl);
     if (f.art === 'favorit') return !!z.favorit?.(m.id, f.benutzer);
+    if (f.art === 'aufgabe') return !!z.aufgabe?.(m.id, f.benutzer);
+    if (f.art === 'id') return f.ids.includes(m.id);
     const v = vergleichswert(m, f);
     const leer = istLeer(v);
     switch (f.op) {

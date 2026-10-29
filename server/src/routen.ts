@@ -1,5 +1,6 @@
 import type { Readable } from 'node:stream';
-import { MAX_DATEIGROESSE, type Benutzer } from '../../shared/src/model';
+import { MAX_DATEIGROESSE, type Benutzer, type Mappe } from '../../shared/src/model';
+import { kurz, type Recht } from '../../shared/src/rechte';
 import { ladeBeispiele } from './beispiele';
 import { erzeugeDemo, pruefeAnzahl } from './demo';
 import type { Dienst } from './dienst';
@@ -165,6 +166,23 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     if (!a.apiSchluessel?.passwoerter) throw new Fachfehler(403, 'Passwörter liefert die API nur mit einem API-Schlüssel, der das Recht „Passwörter lesen“ hat.');
     return a.apiSchluessel.name;
   };
+  /** Berechtigungen (#124): Zugriff des Benutzers, einmal je Anfrage. */
+  const zg = (a: Anfrage) => dienst.zugriff(ich(a));
+  /** #137: Empfänger von Aufgaben nur unter den Benutzern, die man sieht. */
+  const empfaengerSichtbar = async (a: Anfrage, id: unknown) => {
+    if (typeof id !== 'string' || !id) return;
+    if (!(await dienst.lesbare(await zg(a), [id])).has(id)) throw new Fachfehler(422, 'Diesen Benutzer gibt es nicht.');
+  };
+  /** #127: Darf der Empfänger die Mappe lesen? Sonst ein Hinweis in der Antwort. */
+  const leseHinweis = async (empfaengerId: string | null, mappeId: string) =>
+    (empfaengerId && !(await dienst.kannLesen(empfaengerId, mappeId)) ? { hinweis: 'Die Aufgabe ist vergeben – der Empfänger darf diese Mappe nach den Berechtigungen aber nicht lesen.' } : {});
+  const darf = async (a: Anfrage, mappeId: string, recht: Recht) => dienst.pruefeRecht(await zg(a), mappeId, recht);
+  /** Klartext von Passwörtern nur für Mappen mit Recht P; die anderen bleiben verdeckt. */
+  const entschluessele = async <T extends Mappe>(a: Anfrage, mappen: T[], klartext: string): Promise<T[]> => {
+    const { mit } = await dienst.mitPasswortRecht(await zg(a), mappen);
+    const klar = new Map((await dienst.entschluesselePasswoerter(mit, klartext, ich(a).id)).map((m) => [m.id, m]));
+    return mappen.map((m) => klar.get(m.id) ?? m);
+  };
   /** Benutzer mit ihren weiteren Rollen (#27). */
   const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.weitereRollen()).get(b.id) ?? [] });
   const sicherung = () => { if (!x.sicherung) throw new Fachfehler(404, 'Sicherungen sind nicht eingerichtet.'); return x.sicherung; };
@@ -293,6 +311,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return ok({ abwesenheit: x?.abwesenheit ?? null, offeneAufgaben: offen });
     } },
     { methode: 'PUT', pfad: '/api/konto/abwesenheit', zugang: 'angemeldet', handler: async (a) => {
+      await empfaengerSichtbar(a, b(a).vertreterId); // #137
       const r = await konten.setzeAbwesenheit(ich(a), ich(a).id, b(a));
       L.konto.info(r.abwesenheit?.an ? 'Abwesenheit eingetragen' : 'Abwesenheit ausgeschaltet', { von: r.abwesenheit?.von ?? null, bis: r.abwesenheit?.bis ?? null });
       return ok(r);
@@ -314,7 +333,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     } },
 
     /* ---------- Benutzer ---------- */
-    { methode: 'GET', pfad: '/api/personen', zugang: 'angemeldet', handler: async () => ok(await konten.personen()) },
+    // #137: nur Benutzer, deren Benutzer-Mappe man lesen darf (Administratoren: alle).
+    { methode: 'GET', pfad: '/api/personen', zugang: 'angemeldet', handler: async (a) => {
+      const alle = await konten.personen();
+      const sichtbar = await dienst.lesbare(await zg(a), alle.map((p) => p.id));
+      return ok(alle.filter((p) => sichtbar.has(p.id)));
+    } },
     { methode: 'GET', pfad: '/api/benutzer', zugang: 'admin', handler: async () => {
       const rollen = await dienst.weitereRollen();
       // Offene Aufgaben je Benutzer (#77): Deaktivieren geht erst ohne.
@@ -385,7 +409,9 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     } },
 
     /* ---------- Mappentypen ---------- */
-    { methode: 'GET', pfad: '/api/typen', zugang: 'angemeldet', handler: async () => ok(await dienst.listeTypen()) },
+    // Regeln (#123) sehen nur Administratoren; alle anderen erfahren, ob sie anlegen dürfen.
+    { methode: 'GET', pfad: '/api/typen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.typenFuer(await zg(a))) },
+    { methode: 'GET', pfad: '/api/konto/rechte', zugang: 'angemeldet', handler: async (a) => ok(await dienst.rechteUebersicht(await zg(a))) },
     { methode: 'POST', pfad: '/api/typen', zugang: 'admin', handler: async (a) => {
       const t = await dienst.legeTypAn(a.body);
       L.werkbank.info('Mappentyp angelegt', { typ: t.name, id: t.id, felder: t.felder.length });
@@ -620,6 +646,26 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const sp = x.speicherplatz ? await sicher(() => x.speicherplatz!.stand()) : null;
       return ok({ ...await uebersicht(system, x.betrieb?.kurz()), ordner: sp?.ordner ?? null, variablen: x.ordner?.ueberfluessig ?? [] });
     } },
+    /* ---------- Berechtigungen (#123, #125) ---------- */
+    { methode: 'GET', pfad: '/api/werkbank/berechtigungen', zugang: 'admin', handler: async () => ok(await dienst.berechtigungenListe()) },
+    { methode: 'PUT', pfad: '/api/werkbank/berechtigungen/:typId', zugang: 'admin', handler: async (a) => {
+      const r = await dienst.setzeBerechtigungen(a.params.typId, b(a).berechtigungen, b(a).bestaetigt === true);
+      const rw = r.typ.berechtigungen;
+      L.werkbank.warn('Berechtigungen geändert', {
+        typ: r.typ.name, von: ich(a).email, grund: rw?.grund ?? 'erteilt', regeln: rw?.regeln.length ?? 0,
+        liste: rw?.regeln.map((x, i) => `${i + 1}. ${x.name} ${kurz(x.dann)}${x.stopp ? ' ■' : ''}`).join(' · ') || undefined,
+        ...(r.niemand ? { niemandLesbar: r.niemand } : {}),
+      });
+      return ok(r.typ);
+    } },
+    { methode: 'POST', pfad: '/api/werkbank/berechtigungen/:typId/kopieren', zugang: 'admin', handler: async (a) => {
+      const r = await dienst.kopiereRegel(a.params.typId, String(b(a).regelId ?? ''), b(a).ziele);
+      L.werkbank.info('Regel kopiert', { typ: a.params.typId, regel: String(b(a).regelId ?? ''), kopiert: r.kopiert, ausgelassen: r.ausgelassen, von: ich(a).email });
+      return ok(r);
+    } },
+    { methode: 'POST', pfad: '/api/werkbank/berechtigungen/testlauf', zugang: 'admin', handler: async (a) => ok(await dienst.testlauf(b(a))) },
+    { methode: 'GET', pfad: '/api/werkbank/berechtigungen/sicht/:benutzerId', zugang: 'admin', handler: async (a) => ok(await dienst.wasSieht(a.params.benutzerId)) },
+
     /* ---------- Einrichtungsassistent (#119) ---------- */
     { methode: 'GET', pfad: '/api/werkbank/einrichtung', zugang: 'admin', handler: async () => {
       if (!x.einrichtung) throw new Fachfehler(404, 'Kein Einrichtungsassistent.');
@@ -664,19 +710,22 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     // Mit ?sicht=… seitenweise (von, anzahl, suche); ohne: alle Mappen (für Skripte und Tests).
     { methode: 'GET', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => {
       const klartext = passwoerterAnzeigen(a);
+      const z = await zg(a);
       if (!a.query.sicht) {
-        const liste = await dienst.listeMappen(a.query.typ);
-        return ok(klartext ? await dienst.entschluesselePasswoerter(liste, klartext, ich(a).id) : liste);
+        const alle = await dienst.listeMappen(a.query.typ);
+        const sichtbar = await dienst.lesbare(z, alle.map((m) => m.id));
+        const liste = alle.filter((m) => sichtbar.has(m.id));
+        return ok(klartext ? await entschluessele(a, liste, klartext) : liste);
       }
       const start = Date.now();
-      const s = await dienst.seite(ich(a), a.query);
+      const s = await dienst.seite(ich(a), a.query, z);
       L.ablage.debug('Sicht geladen', { sicht: a.query.sicht, von: s.von, anzahl: s.mappen.length, gesamt: s.gesamt, suche: a.query.suche, ms: Date.now() - start });
-      return ok(klartext ? { ...s, mappen: await dienst.entschluesselePasswoerter(s.mappen, klartext, ich(a).id) } : s);
+      return ok(klartext ? { ...s, mappen: await entschluessele(a, s.mappen.filter((m) => !m.verborgen), klartext) } : s);
     } },
     // Favoriten (#62)
-    { methode: 'PUT', pfad: '/api/mappen/:id/favorit', zugang: 'angemeldet', handler: async (a) => ok(await dienst.setzeFavorit(ich(a), a.params.id, true)) },
+    { methode: 'PUT', pfad: '/api/mappen/:id/favorit', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.setzeFavorit(ich(a), a.params.id, true)); } },
     { methode: 'DELETE', pfad: '/api/mappen/:id/favorit', zugang: 'angemeldet', handler: async (a) => ok(await dienst.setzeFavorit(ich(a), a.params.id, false)) },
-    { methode: 'GET', pfad: '/api/sichten', zugang: 'angemeldet', handler: async (a) => ok(await dienst.zaehler(ich(a))) },
+    { methode: 'GET', pfad: '/api/sichten', zugang: 'angemeldet', handler: async (a) => ok(await dienst.zaehler(ich(a), await zg(a))) },
 
     /* ---------- Sichten verwalten (#38, #40, #41) ---------- */
     { methode: 'GET', pfad: '/api/sichten/definitionen', zugang: 'angemeldet', handler: async () => ok(await dienst.listeSichten()) },
@@ -705,15 +754,25 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/typen/:id/belegung', zugang: 'admin', handler: async (a) => ok(await dienst.belegung(a.params.id)) },
     { methode: 'GET', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => {
       const klartext = passwoerterAnzeigen(a);
-      const d = { ...await dienst.holeMappe(a.params.id), favorit: await dienst.istFavorit(ich(a), a.params.id) };
+      const d = { ...await dienst.holeMappe(a.params.id, await zg(a)), favorit: await dienst.istFavorit(ich(a), a.params.id) };
+      if (klartext && !d.rechte.P) throw new Fachfehler(403, 'Passwörter dieser Mappe darfst du nicht sehen.');
       return ok(klartext ? { ...d, mappe: (await dienst.entschluesselePasswoerter([d.mappe], klartext, ich(a).id))[0] } : d);
     } },
     // Aufgaben (#54, #56)
-    { methode: 'GET', pfad: '/api/aufgaben', zugang: 'angemeldet', handler: async (a) => ok(await dienst.meineAufgaben(ich(a))) },
-    { methode: 'GET', pfad: '/api/mappen/:id/aufgaben', zugang: 'angemeldet', handler: async (a) => ok(await dienst.aufgabenVon(a.params.id)) },
-    { methode: 'POST', pfad: '/api/mappen/:id/aufgaben', zugang: 'angemeldet', handler: async (a) => ok(await dienst.legeAufgabeAn(a.params.id, a.body, ich(a).id), 201) },
+    { methode: 'GET', pfad: '/api/aufgaben', zugang: 'angemeldet', handler: async (a) => ok(await dienst.meineAufgaben(ich(a), await zg(a))) },
+    { methode: 'GET', pfad: '/api/mappen/:id/aufgaben', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.aufgabenVon(a.params.id)); } },
+    { methode: 'POST', pfad: '/api/mappen/:id/aufgaben', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, a.params.id, 'R');
+      await empfaengerSichtbar(a, b(a).empfaengerId);
+      const auf = await dienst.legeAufgabeAn(a.params.id, a.body, ich(a).id);
+      return ok({ ...auf, ...await leseHinweis(auf.empfaengerId, a.params.id) }, 201);
+    } },
     { methode: 'POST', pfad: '/api/aufgaben/:id/erledigt', zugang: 'angemeldet', handler: async (a) => ok(await dienst.erledigeAufgabe(a.params.id, ich(a))) },
-    { methode: 'POST', pfad: '/api/aufgaben/:id/delegieren', zugang: 'angemeldet', handler: async (a) => ok(await dienst.delegiereAufgabe(a.params.id, b(a).empfaengerId, ich(a))) },
+    { methode: 'POST', pfad: '/api/aufgaben/:id/delegieren', zugang: 'angemeldet', handler: async (a) => {
+      await empfaengerSichtbar(a, b(a).empfaengerId);
+      const auf = await dienst.delegiereAufgabe(a.params.id, b(a).empfaengerId, ich(a));
+      return ok({ ...auf, ...await leseHinweis(auf.empfaengerId, auf.mappeId) });
+    } },
     { methode: 'GET', pfad: '/api/werkbank/aufgaben', zugang: 'admin', handler: async (a) => ok({
       aufgaben: await dienst.alleAufgaben(a.query.erledigt !== undefined),
       mail: x.aufgabenmail ? await x.aufgabenmail.einstellung() : null,
@@ -734,30 +793,34 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/email/bereit', zugang: 'angemeldet', handler: async () => ok({ bereit: !!x.betrieb?.mailer() }) },
     { methode: 'POST', pfad: '/api/mappen/:id/email', zugang: 'angemeldet', handler: async (a) => {
       const i = ich(a);
+      await darf(a, a.params.id, 'R');
       return ok(await dienst.versendeMappe(a.params.id, b(a), { id: i.id, name: i.name, email: i.email }, x.betrieb?.mailer() ?? null), 201);
     } },
-    { methode: 'GET', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.notizen(a.params.id)) },
-    { methode: 'POST', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.legeNotizAn(a.params.id, b(a).text, ich(a).id), 201) },
-    { methode: 'PUT', pfad: '/api/notizen/:id', zugang: 'angemeldet', handler: async (a) => ok(await dienst.aendereNotiz(a.params.id, b(a).text, ich(a).id)) },
-    { methode: 'DELETE', pfad: '/api/notizen/:id', zugang: 'angemeldet', handler: async (a) => { await dienst.loescheNotiz(a.params.id, ich(a).id); return leer; } },
+    // Notizen brauchen nur Lesen (#124).
+    { methode: 'GET', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.notizen(a.params.id)); } },
+    { methode: 'POST', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.legeNotizAn(a.params.id, b(a).text, ich(a).id), 201); } },
+    { methode: 'PUT', pfad: '/api/notizen/:id', zugang: 'angemeldet', handler: async (a) => { await darf(a, await dienst.mappeVon('notiz', a.params.id), 'R'); return ok(await dienst.aendereNotiz(a.params.id, b(a).text, ich(a).id)); } },
+    { methode: 'DELETE', pfad: '/api/notizen/:id', zugang: 'angemeldet', handler: async (a) => { await darf(a, await dienst.mappeVon('notiz', a.params.id), 'R'); await dienst.loescheNotiz(a.params.id, ich(a).id); return leer; } },
     // Änderungshistorie (#57)
-    { methode: 'GET', pfad: '/api/mappen/:id/verweisende', zugang: 'angemeldet', handler: async (a) => ok(await dienst.verweisende(a.params.id, String(a.query.typ ?? ''), String(a.query.feld ?? ''))) },
-    { methode: 'GET', pfad: '/api/mappen/:id/historie', zugang: 'angemeldet', handler: async (a) => ok(await dienst.historie(a.params.id)) },
+    { methode: 'GET', pfad: '/api/mappen/:id/verweisende', zugang: 'angemeldet', handler: async (a) => ok(await dienst.verweisende(a.params.id, String(a.query.typ ?? ''), String(a.query.feld ?? ''), await zg(a))) },
+    { methode: 'GET', pfad: '/api/mappen/:id/historie', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.historie(a.params.id)); } },
     // Passwortfeld anzeigen (#46): einzeln, mit Protokolleintrag (ohne den Wert).
-    { methode: 'POST', pfad: '/api/mappen/:id/passwoerter/:feld', zugang: 'angemeldet', handler: async (a) => ok(await dienst.zeigePasswort(a.params.id, a.params.feld, ich(a).id)) },
+    { methode: 'POST', pfad: '/api/mappen/:id/passwoerter/:feld', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'P'); return ok(await dienst.zeigePasswort(a.params.id, a.params.feld, ich(a).id)); } },
+    // Vor dem Speichern (#126): Rechte mit den neuen Werten – für die Warnung beim Selbst-Entziehen.
+    { methode: 'POST', pfad: '/api/mappen/:id/rechte-vorschau', zugang: 'angemeldet', handler: async (a) => ok(await dienst.rechteVorschau(a.params.id, a.body, await zg(a))) },
     { methode: 'POST', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => {
-      const m = await dienst.legeMappeAn(a.body, ich(a).id);
+      const m = await dienst.legeMappeAn(a.body, ich(a).id, false, await zg(a));
       L.ablage.info('Mappe angelegt', { typ: await typName(m.typId), titel: m.titel, id: m.id });
       return ok(m, 201);
     } },
     { methode: 'PUT', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => {
-      const m = await dienst.aendereMappe(a.params.id, a.body, ich(a).id);
+      const m = await dienst.aendereMappe(a.params.id, a.body, ich(a).id, await zg(a));
       L.ablage.info('Mappe geändert', { typ: await typName(m.typId), titel: m.titel, id: m.id });
       return ok(m);
     } },
     { methode: 'DELETE', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => {
       const papierkorb = (await dienst.papierkorbTage()) > 0;
-      await dienst.loescheMappe(a.params.id, ich(a).id);
+      await dienst.loescheMappe(a.params.id, ich(a).id, await zg(a));
       L.ablage.info(papierkorb ? 'Mappe in den Papierkorb gelegt' : 'Mappe gelöscht', { id: a.params.id });
       return leer;
     } },
@@ -766,7 +829,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/papierkorb', zugang: 'angemeldet', handler: async (a) => ok(await dienst.papierkorb(ich(a))) },
     { methode: 'DELETE', pfad: '/api/papierkorb', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.leerePapierkorb(ich(a)) }) },
     { methode: 'GET', pfad: '/api/papierkorb/:id', zugang: 'angemeldet', handler: async (a) => ok(await dienst.papierkorbEintrag(a.params.id, ich(a))) },
-    { methode: 'POST', pfad: '/api/papierkorb/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.stelleWiederHer(a.params.id, ich(a))) },
+    { methode: 'POST', pfad: '/api/papierkorb/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => {
+      const r = await dienst.stelleWiederHer(a.params.id, ich(a));
+      // Eigener Papierkorb (#126): immer wiederherstellbar; danach gelten wieder die Regeln.
+      const sichtbar = (await dienst.lesbare(await zg(a), [a.params.id])).has(a.params.id);
+      return ok(sichtbar ? r : { ...r, hinweis: 'Wiederhergestellt. Diese Mappe kannst du nach den Berechtigungen aber nicht mehr sehen.' });
+    } },
     { methode: 'DELETE', pfad: '/api/papierkorb/:id', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.loescheEndgueltig([a.params.id], ich(a)) }) },
     /* … und in der Werkbank alles */
     { methode: 'GET', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ tage: await dienst.papierkorbTage(), historieTage: await dienst.historieTage(), eintraege: await dienst.papierkorb(ich(a), true) }) },
@@ -782,6 +850,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
 
     /* ---------- Dokumente ---------- */
     { methode: 'POST', pfad: '/api/mappen/:id/dokumente', zugang: 'angemeldet', roh: MAX_DATEIGROESSE, handler: async (a) => {
+      await darf(a, a.params.id, 'U');
       const r = await dienst.ladeHoch(a.params.id, { register: a.query.register, name: a.query.name, typ: a.query.typ }, a.body, ich(a).id);
       L.dokumente.info('Dokument hochgeladen', {
         name: r.dokument.name, groesse: r.dokument.groesse, mime: r.dokument.mime, anzeigbar: r.dokument.anzeigbar,
@@ -790,6 +859,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return ok(r, 201);
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/inhalt', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
       const { dokument: d, inhalt } = await dienst.dokumentInhalt(a.params.id);
       const anzeigen = d.anzeigbar && a.query.herunterladen === undefined;
       L.dokumente.debug(anzeigen ? 'Dokument angezeigt' : 'Dokument heruntergeladen', { name: d.name, id: d.id });
@@ -797,15 +867,18 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     } },
     // Volltext und Texterkennung (#45)
     { methode: 'GET', pfad: '/api/dokumente/:id/volltext', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
       const r = await dienst.volltext(a.params.id);
       return ok({ id: r.dokument.id, name: r.dokument.name, ocr: r.dokument.ocr, text: r.text });
     } },
     { methode: 'POST', pfad: '/api/dokumente/:id/texterkennung', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
       const d = await dienst.texterkennungErneut(a.params.id);
       L.dokumente.info('Texterkennung erneut angestoßen', { name: d.name, id: d.id });
       return ok(d);
     } },
     { methode: 'DELETE', pfad: '/api/dokumente/:id', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
       await dienst.loescheDokument(a.params.id, ich(a).id);
       L.dokumente.info('Dokument gelöscht', { id: a.params.id });
       return leer;
