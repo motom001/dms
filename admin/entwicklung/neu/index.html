@@ -363,6 +363,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0372" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.37.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.37.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fur-administratoren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Für Administratoren
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0371" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -414,7 +453,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fur-administratoren" class="md-nav__link">
+  <a href="#fur-administratoren_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Für Administratoren
@@ -1528,6 +1567,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0372" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.37.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.37.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fur-administratoren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Für Administratoren
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0371" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1579,7 +1657,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fur-administratoren" class="md-nav__link">
+  <a href="#fur-administratoren_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Für Administratoren
@@ -1630,6 +1708,17 @@
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
+<h2 id="0372">0.37.2<a class="headerlink" href="#0372" title="Permanent link">&para;</a></h2>
+<h3 id="behoben">Behoben<a class="headerlink" href="#behoben" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>„Wartung beenden“ schlug fehl</strong> (#165): Im Protokoll stand <code>null value in column "wert" of relation "einstellungen" violates not-null constraint</code>. Im laufenden DMS war der Wartungsmodus trotzdem aus, in der Datenbank blieb er aber aktiv. Nach dem nächsten Neustart oder Update war er deshalb wieder an, und nur Administratoren kamen hinein. Außerdem liefen Texterkennung, tägliche Zusammenfassung und Papierkorb danach nicht wieder an.</li>
+<li>Dieselbe Ursache betraf „Abschlussmeldung gesehen“ nach einer Wiederherstellung: Die Meldung erschien immer wieder.</li>
+</ul>
+<h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Einstellungen, die auf „leer“ gesetzt werden, löscht das DMS jetzt, statt <code>NULL</code> zu speichern.</li>
+<li>Ist der Wartungsmodus bei dir nach einem Neustart wieder an, beende ihn nach dem Update einfach unter <strong>Werkbank → Wartungsmodus</strong>. Ein Eingriff in die Datenbank ist nicht nötig.</li>
+</ul>
 <h2 id="0371">0.37.1<a class="headerlink" href="#0371" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
@@ -1643,7 +1732,7 @@
 <li><strong>Suchfeld in jeder Sicht</strong> (#160): Die Suche steht über jeder Liste mit Mappen, nicht erst ab sechs Mappen – die Volltextsuche lohnt auch bei wenigen.</li>
 <li><strong>Volltext findet Wortteile</strong> (#161): „Ofen“ findet im Text der Dokumente auch „Backofen“, „Ofenrohr“ und „Kachelofen“ – zusätzlich zu den Wortformen („Rechnungen“ findet „Rechnung“). Unter dem Treffer steht die Stelle, der Begriff im Wort hervorgehoben. In Anführungszeichen sucht die Suche nur ganze Wörter; Begriffe unter drei Buchstaben ebenfalls.</li>
 </ul>
-<h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
+<h3 id="fur-administratoren_1">Für Administratoren<a class="headerlink" href="#fur-administratoren_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Migration 030 legt die PostgreSQL-Erweiterung <code>pg_trgm</code> und einen Index für die Teilwortsuche an. Fehlt dem Datenbankbenutzer das Recht dazu, läuft die Suche trotzdem, bei sehr vielen Dokumenten aber langsamer; das Protokoll der Datenbank nennt den Grund.</li>
 </ul>

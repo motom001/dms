@@ -392,6 +392,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0372" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.37.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.37.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0371" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -944,6 +972,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0372" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.37.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.37.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0371" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1035,6 +1091,12 @@
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
+<h2 id="0372">0.37.2<a class="headerlink" href="#0372" title="Permanent link">&para;</a></h2>
+<h3 id="behoben">Behoben<a class="headerlink" href="#behoben" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>„Wartung beenden“ schlug fehl</strong> (#165): Im Protokoll stand <code>null value in column "wert" of relation "einstellungen" violates not-null constraint</code>. Im laufenden DMS war der Wartungsmodus trotzdem aus, in der Datenbank blieb er aber aktiv. Nach dem nächsten Neustart oder Update war er deshalb wieder an, und nur Administratoren kamen hinein. Außerdem liefen Texterkennung, tägliche Zusammenfassung und Papierkorb danach nicht wieder an.</li>
+<li>Dieselbe Ursache betraf „Abschlussmeldung gesehen“ nach einer Wiederherstellung: Die Meldung erschien immer wieder.</li>
+</ul>
 <h2 id="0371">0.37.1<a class="headerlink" href="#0371" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
