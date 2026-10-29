@@ -199,6 +199,48 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     assert.ok(existsSync(datei));
   });
 
+  it('nur ein Lauf zur Zeit; scheitert das Umschalten, liegt die bisherige Schlüsseldatei wieder da', async () => {
+    const ziel = await system(dbs[1]);
+    const { cp } = await import('node:fs/promises');
+    await cp(quelle.sicherung.ordner, ziel.sicherung.ordner, { recursive: true, force: true });
+    ziel.setzeWartung(true);
+    const schluessel = quelle.tresor.alsText()!;
+    const { mkdir } = await import('node:fs/promises');
+    await mkdir(join(ziel.wurzel, 'geheim'), { recursive: true });
+    await writeFile(ziel.tresor.datei, 'ein-anderer-schluessel\n');
+    // Umschalten scheitert (z. B. fehlendes Recht): sql.begin wirft.
+    const q = (ziel.w as unknown as { q: { sql: Sql } }).q;
+    const echt = q.sql;
+    q.sql = new Proxy(echt, { get: (t, p) => (p === 'begin' ? async () => { throw new Error('keine Berechtigung zum Umbenennen'); } : Reflect.get(t, p)) });
+    const vorher = await zaehle(echt);
+    const [a, b] = await Promise.allSettled([
+      ziel.w.starte({ name: sicherungsName, schluessel, bestaetigt: true }, { email: 'x' }),
+      ziel.w.starte({ name: sicherungsName, schluessel, bestaetigt: true }, { email: 'x' }),
+    ]);
+    assert.ok([a.status, b.status].includes('rejected') && [a.status, b.status].includes('fulfilled'), 'zwei Starts gleichzeitig: nur einer läuft');
+    const lauf = await warte(ziel.w);
+    assert.equal(lauf.status, 'fehler', JSON.stringify(lauf, null, 1));
+    assert.match(lauf.fehler!, /Umbenennen/);
+    assert.equal(await readFile(ziel.tresor.datei, 'utf8'), 'ein-anderer-schluessel\n', 'bisherige Schlüsseldatei zurück');
+    q.sql = echt;
+    assert.deepEqual(await zaehle(echt), vorher);
+    assert.equal((await echt`SELECT nspname FROM pg_namespace WHERE nspname LIKE 'dms_wh_%'`).length, 0);
+  });
+
+  it('bricht der Leser einer Tabelle ab, endet der Schnappschuss trotzdem', async () => {
+    const { pgDatenquelle } = await import('../src/datenbankabzug');
+    const s = await frisch(dbs[0]);
+    const r = await Promise.race([
+      pgDatenquelle(s).imSchnappschuss(async (x) => {
+        const t = x.tabellen.find((y) => y.name === 'mappen')!;
+        for await (const _ of await x.inhalt(t)) break;
+        return 'fertig';
+      }),
+      new Promise((res) => setTimeout(() => res('hängt'), 10_000)),
+    ]);
+    assert.equal(r, 'fertig');
+  });
+
   it('Probe-Wiederherstellung: spielt ein, prüft, räumt auf, merkt sich das Ergebnis (#109)', async () => {
     const q = await system(dbs[0]);
     // Der Schlüssel der Quelle liegt in ihrem Ordner; dieses „System“ nimmt ihn mit.

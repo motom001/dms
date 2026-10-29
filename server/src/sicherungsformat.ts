@@ -75,7 +75,14 @@ export async function schreibeSicherung(ziel: string, schluessel: Buffer, finger
     const gzip = createGzip({ level: 3 });
     quelle.pipe(gzip);
     quelle.on('error', (e) => gzip.destroy(e));
-    for await (const z of gzip) await schreibe(cipher.update(z as Buffer));
+    try {
+      for await (const z of gzip) await schreibe(cipher.update(z as Buffer));
+    } catch (e) {
+      // Quelle schließen: beendet die Generatoren und damit offene COPY-Abfragen.
+      quelle.destroy(); gzip.destroy();
+      await new Promise((r) => setImmediate(r));
+      throw e;
+    }
     await schreibe(cipher.final());
     await schreibe(cipher.getAuthTag());
     await datei.sync();
