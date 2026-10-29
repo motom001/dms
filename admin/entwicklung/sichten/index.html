@@ -2015,7 +2015,7 @@
 <h3 id="wenn-sich-ein-mappentyp-andert">Wenn sich ein Mappentyp ändert<a class="headerlink" href="#wenn-sich-ein-mappentyp-andert" title="Permanent link">&para;</a></h3>
 <p>Entfernst du ein Feld oder Register, auf das eine Bedingung zielt, wird die Sicht nicht leer: Die Bedingung wird <strong>ignoriert</strong>, bis du sie korrigierst. In der Werkbank ist sie rot markiert, und die Liste der Sichten zeigt „Bedingung ohne Wirkung – bitte prüfen“.</p>
 <h2 id="berechtigungen">Berechtigungen<a class="headerlink" href="#berechtigungen" title="Permanent link">&para;</a></h2>
-<p>Mit Berechtigungen legst du fest, <strong>wer eine Sicht sieht</strong> und <strong>wer dort neue Mappen anlegen</strong> kann – etwa damit die Sicht <em>Haus</em> mit allem darunter nur bei den Eltern im Baum erscheint.</p>
+<p>Mit Berechtigungen legst du fest, <strong>wer eine Sicht sieht</strong>, <strong>wer dort neue Mappen anlegen</strong> und <strong>wer aus ihr exportieren</strong> kann – etwa damit die Sicht <em>Haus</em> mit allem darunter nur bei den Eltern im Baum erscheint.</p>
 <table>
 <thead>
 <tr>
@@ -2031,6 +2031,10 @@
 <tr>
 <td><strong>C</strong> Anlegen</td>
 <td>In der Sicht gibt es „+ Neu“. Anlegen dürfen muss man zusätzlich am <a href="../berechtigungen/">Mappentyp</a> – beide müssen es erlauben.</td>
+</tr>
+<tr>
+<td><strong>E</strong> Exportieren</td>
+<td>Mappen der Sicht als Excel, CSV, ZIP mit Dokumenten oder PDF ausgeben – alles, was Daten aus dem DMS hinausgibt. Lesen muss man jede Mappe zusätzlich am Mappentyp.</td>
 </tr>
 </tbody>
 </table>
@@ -2054,7 +2058,7 @@
 <h3 id="beispiel-haus-nur-fur-die-eltern">Beispiel: „Haus“ nur für die Eltern<a class="headerlink" href="#beispiel-haus-nur-fur-die-eltern" title="Permanent link">&para;</a></h3>
 <ol>
 <li>Lege eine Rolle <strong>Kinder</strong> an und gib sie den Kindern.</li>
-<li>Sicht <em>Haus</em> (oberste Ebene): Regel <strong>Kinder sehen das nicht</strong> – wenn <em>Benutzer hat Rolle Kinder</em> → ✗ R C.</li>
+<li>Sicht <em>Haus</em> (oberste Ebene): Regel <strong>Kinder sehen das nicht</strong> – wenn <em>Benutzer hat Rolle Kinder</em> → ✗ R C E.</li>
 <li><em>Heizung</em>, <em>Garten</em> usw. unter <em>Haus</em> erben die Regel – für die Kinder fehlt der ganze Ast.</li>
 <li>Sollen die Kinder etwa <em>Garten</em> doch sehen, lege <em>Garten</em> auf die oberste Ebene oder unter eine andere Sicht: Untersichten können nur einschränken.</li>
 </ol>

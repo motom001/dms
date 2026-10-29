@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-035" class="md-skip">
+        <a href="#neu-in-version-036" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0350" class="md-nav__link">
+  <a href="#0360" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.35.0
+        0.36.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.35.0">
+    <nav class="md-nav" aria-label="0.36.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1500,15 +1500,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0350" class="md-nav__link">
+  <a href="#0360" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.35.0
+        0.36.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.35.0">
+    <nav class="md-nav" aria-label="0.36.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1569,24 +1569,30 @@
   
 
 
-<h1 id="neu-in-version-035">Neu in Version 0.35<a class="headerlink" href="#neu-in-version-035" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-036">Neu in Version 0.36<a class="headerlink" href="#neu-in-version-036" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0350">0.35.0<a class="headerlink" href="#0350" title="Permanent link">&para;</a></h2>
+<h2 id="0360">0.36.0<a class="headerlink" href="#0360" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Mehrere Mappen auswählen</strong> (#149): In der Liste einer Sicht gibt es Haken je Mappe, mit Shift einen ganzen Bereich und in der Tabelle „alle geladenen“. Darüber erscheint eine Aktionsleiste („3 von 120 ausgewählt“). <strong>Alle Treffer auswählen</strong> nimmt auch noch nicht geladene Mappen mit, passend zur Suche. Die Auswahl bleibt beim Öffnen einer Mappe und verschwindet beim Wechsel der Sicht. Am Handy beginnt sie mit langem Drücken.</li>
-<li><strong>Mehrere Mappen löschen</strong> (#150): mit Rückfrage („12 Mappen mit 30 Dokumenten in den Papierkorb legen?“) und Ergebnisliste. Je Mappe gilt das Löschrecht am Mappentyp; was nicht geht (kein Recht, noch verwiesen), wird ausgelassen und mit Grund genannt. Verweise innerhalb der Auswahl halten nicht auf.</li>
+<li><strong>Exportieren</strong> (#153): Aus einer Sicht gibst du die Auswahl oder alle Treffer (mit Suche und Sortierung) heraus:</li>
+<li><strong>Excel (.xlsx)</strong> mit echten Datums- und Betragswerten, Kopfzeile fixiert und mit Filter,</li>
+<li><strong>CSV</strong> im deutschen Format (Semikolon, UTF-8),</li>
+<li><strong>ZIP</strong> mit der Tabelle (Excel und CSV) und je Mappe einem Ordner mit ihren Dokumenten.</li>
+<li>Spalten wie die Liste oder alle Felder; Verweise als Titel. Passwörter werden nie exportiert.</li>
+<li><strong>Mehrere Mappen als ein PDF</strong> (#152): je Mappe eine Seite mit ihren Feldern und der Liste der Dokumente, optional vorne eine Übersicht als Tabelle. PDF-Dokumente werden eingebunden, Bilder (JPEG, PNG) als eigene Seite, andere Dateien genannt.</li>
+<li><strong>Recht E an Sichten</strong> (#153): wer exportieren darf – für alles, was Daten aus dem DMS hinausgibt. Vererbt wie R und C; ohne Regeln dürfen alle.</li>
 </ul>
 <h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Neue Schnittstellen der Oberfläche: <code>GET /api/mappen/auswahl</code> (Ids aller Treffer einer Sicht, höchstens 5000) und <code>POST /api/mappen/loeschen</code> (mit <code>probe</code> nur zählen).</li>
+<li>Jeder Export steht im Protokoll: wer, welche Sicht, welches Format, wie viele Mappen.</li>
+<li>Neue Abhängigkeit <code>pdf-lib</code> (MIT) zum Einbinden von PDF-Dokumenten.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.34.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.34.0...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.35.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.35.0...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
