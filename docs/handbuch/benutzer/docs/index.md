@@ -1,6 +1,6 @@
 # Willkommen beim DMS
 
-Das DMS ordnet die Unterlagen eines Haushalts: Verträge, Rechnungen, Zahlungen, Versicherungen, Geräte – und die Dokumente dazu. Dieses Handbuch zeigt dir, wie du damit arbeitest.
+Das DMS ordnet die Unterlagen eines Haushalts: Verträge, Rechnungen, Zahlungen, Versicherungen, Geräte – und die Dokumente dazu. Dieses Handbuch zeigt dir, wie du damit arbeitest. Wofür sich das lohnt – mit einem kleinen Selbstcheck –, steht unter [Wofür ein DMS?](wofuer.md).
 
 ![Die Ablage mit Sichten, Liste und geöffneter Mappe](bilder/ablage.png)
 
