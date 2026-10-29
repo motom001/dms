@@ -21,6 +21,7 @@ Was das DMS kann, steht in den Handbüchern; was in welcher Version dazukam, in 
 
 ## Handbücher
 
+- **[Wofür ein DMS?](https://motom001.github.io/dms/benutzer/aktuell/wofuer/)** – wann es im Alltag hilft, mit Selbstcheck.
 - **[Benutzerhandbuch](https://motom001.github.io/dms/benutzer/)** – arbeiten in der Ablage: Mappen, Dokumente, Suche, Aufgaben, Profil.
 - **[Administratorhandbuch](https://motom001.github.io/dms/admin/)** – Installation, Aktualisieren und Sichern, Werkbank, Fehlersuche, API, Technik und Entscheidungen.
 

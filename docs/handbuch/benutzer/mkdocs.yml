@@ -33,6 +33,11 @@ plugins:
   - search:
       lang: de
 
+extra_css:
+  - stylesheets/selbstcheck.css
+extra_javascript:
+  - javascripts/selbstcheck.js
+
 markdown_extensions:
   - admonition
   - attr_list
@@ -60,6 +65,7 @@ extra:
 
 nav:
   - Willkommen: index.md
+  - Wofür ein DMS?: wofuer.md
   - Neu in dieser Version: neu.md
   - Erste Schritte: erste-schritte.md
   - Arbeiten in der Ablage:
