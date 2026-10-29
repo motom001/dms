@@ -584,8 +584,10 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     await anfrage('PUT', `/api/mappen/${m.body.id}`, { werte: { name: 'Onlinebank', kennwort: { gesetzt: true } } });
     assert.equal((await sql`SELECT werte ->> 'kennwort' AS k FROM mappen WHERE id = ${m.body.id}`)[0].k, roh.k);
 
-    const ohne = (await anfrage('POST', '/api/konto/api-schluessel', { name: 'Ohne Passwörter' })).body;
-    const mit = (await anfrage('POST', '/api/konto/api-schluessel', { name: 'Mit Passwörtern', passwoerter: true })).body;
+    // Schlüssel gehören einem normalen Benutzer (#128); er ist im API-Test angelegt.
+    const programm = (await anfrage('GET', '/api/benutzer')).body.find((b: { email: string }) => b.email === 'api-programm@example.org');
+    const ohne = await schluesselDienst.lege(programm, { name: 'Ohne Passwörter' });
+    const mit = await schluesselDienst.lege(programm, { name: 'Mit Passwörtern', passwoerter: true });
     assert.equal(mit.passwoerter, true);
     const v1 = async (pfad: string, s: string) => {
       const r = await app.inject({ method: 'GET', url: `/api/v1${pfad}`, headers: { authorization: `Bearer ${s}` } });
