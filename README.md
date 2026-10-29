@@ -1,92 +1,42 @@
 # DMS
 
+[![Neuestes Release](https://img.shields.io/github/v/release/motom001/dms?label=Release&sort=semver)](https://github.com/motom001/dms/releases/latest)
+[![Prüfen und Image bauen](https://github.com/motom001/dms/actions/workflows/image.yml/badge.svg?branch=main)](https://github.com/motom001/dms/actions/workflows/image.yml)
+[![Handbuch](https://github.com/motom001/dms/actions/workflows/handbuch.yml/badge.svg?branch=main)](https://github.com/motom001/dms/actions/workflows/handbuch.yml)
+[![Lizenz: AGPL-3.0](https://img.shields.io/badge/Lizenz-AGPL--3.0-blue)](LICENSE)
 [![Projekt unterstützen](https://img.shields.io/badge/Projekt_unterst%C3%BCtzen-GitHub_Sponsors-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/motom001)
 
 Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsystem für Haushalte. Statt loser Dokumente in Ordnern ordnet es **Mappen**: Vertragspartner, Verträge, Rechnungen, Gegenstände – verbunden über Verweise, so dass man von jeder Mappe aus zu allem Zugehörigen findet.
 
-> **Stand: v0.10.** Sichten als Baum mit Bedingungen, E-Mail-Versand und Adresse in der Werkbank, Handbücher für Benutzer und Administratoren, Anmeldung und Benutzer, Benutzer und Rollen als Mappen, Mappentypen mit Feldern und Registern, Dokumente, Mappen in drei Spalten mit Eingang, seitenweises Laden und Suche über Titel und Werte, Protokoll, Zeitmessung und Versionsübersicht. Volltextsuche in Dokumenten, Texterkennung und feinere Rechte folgen.
+Was das DMS kann, steht in den Handbüchern; was in welcher Version dazukam, in den **[Releases](https://github.com/motom001/dms/releases)**.
+
+## Was es kann – in Kürze
+
+- **Mappentypen selbst gestalten:** Felder mit Prüfregeln, Verweise auf andere Mappen, Register, Titel-Vorlagen und Trefferlisten – alles in der Werkbank, ohne Programmieren.
+- **Ablage in drei Spalten:** Sichten als Baum mit Bedingungen wie „Kündigung in den nächsten 12 Monaten“, Favoriten, Eingang mit Aufgaben, Papierkorb.
+- **Dokumente** direkt in der Mappe ansehen; **Volltextsuche** auch in Scans dank Texterkennung.
+- **Zusammenarbeit:** Benutzer und Rollen, Notizen, Erwähnungen, Aufgaben mit täglicher Zusammenfassung, Abwesenheit mit Vertretung, Protokoll jeder Änderung.
+- **Weitergeben:** Mappen per E-Mail versenden, als PDF exportieren, sprechende Links wie `/ablage/link?typ=Rechnung&rechnungsnummer=R-17`.
+- **Passwortfelder**, verschlüsselt gespeichert; eigene **Designs** mit Logo; **Schnittstelle** `/api/v1` mit API-Schlüsseln.
 
 ## Handbücher
 
-- **[Benutzerhandbuch](https://motom001.github.io/dms/benutzer/)** – arbeiten in der Ablage: Mappen, Dokumente, Suche, Profil.
-- **[Administratorhandbuch](https://motom001.github.io/dms/admin/)** – Installation, Mappentypen, Benutzer und Rollen, Fehlersuche, API, Technik und Entscheidungen.
-- **[Was ist neu? (Releases)](https://github.com/motom001/dms/releases)**
+- **[Benutzerhandbuch](https://motom001.github.io/dms/benutzer/)** – arbeiten in der Ablage: Mappen, Dokumente, Suche, Aufgaben, Profil.
+- **[Administratorhandbuch](https://motom001.github.io/dms/admin/)** – Installation, Aktualisieren und Sichern, Werkbank, Fehlersuche, API, Technik und Entscheidungen.
 
-Im DMS führt der Punkt **Hilfe** im Menü unter dem eigenen Namen dorthin. Die Handbücher liegen unter `docs/handbuch/`; der Workflow *Handbuch* baut sie bei jedem Push auf `main` mit frischen Screenshots neu.
+Im DMS führt **Hilfe** im Menü unter dem eigenen Namen dorthin.
 
-## Bereiche
+## Schnellstart auf dem NAS
 
-- **Ablage** – hier wird gearbeitet, in drei Spalten von groß nach klein: Sichten (als Baum, mit Bedingungen wie „Kündigung in den nächsten 12 Monaten“), Mappen der Sicht, die geöffnete Mappe. Die Sicht **Eingang** sammelt Mappen, die nicht (mehr) zur Definition ihres Mappentyps passen, beim Ersteller der Mappe. Rückverweise erscheinen automatisch: Die Mappe eines Vertragspartners zeigt alle Verträge und Rechnungen, die auf ihn verweisen.
-- **Werkbank** (Administratoren), ebenfalls dreigeteilt:
-  - *Sichten* – was die Ablage anbietet: Mappentypen, Bedingungen auf Feldwerte (auch „heute ± n“, „aktueller Benutzer“) und auf die Anzahl von Dokumenten und Verknüpfungen, angeordnet als Baum,
-  - *Mappentypen* – Felder (Datentyp, Pflichtfeld, eindeutig, Längen, Wertebereiche, Auswahllisten, Referenzen), Register und Titel-Vorlage,
-  - *Benutzer* – anlegen, Rolle (Administrator/Mitglied) und weitere Rollen vergeben, Einladungs- und Passwort-Links, deaktivieren (gelöscht werden nur nie angenommene Einladungen),
-  - *Designs* – Grundlage (automatisch, hell, dunkel, hoher Kontrast), Primär- und Sekundärfarbe (Abstufungen werden abgeleitet), eigenes CSS; ein Design ist Standard,
-  - *Technik* – installierte Versionen (DMS, Node.js, PostgreSQL, Bibliotheken), zum Kopieren in ein GitHub-Issue, und ein Abgleich mit neueren Versionen auf Knopfdruck,
-  - *Datenbank* – lange Datenbankzugriffe (Schwelle und Aufbewahrung einstellbar, Standard 500 ms und 30 Tage) und was gerade in der Datenbank läuft,
-  - *Protokoll* – was im System passiert, je Modul (konto, ablage, werkbank, dokumente, datenbank, mail, system, http), mit Filtern und Live-Aktualisierung; Debug-Modus für eine Stunde,
-  - *Demo-Daten* – Beispiel-Mappentypen laden, beliebig viele Demo-Mappen für die vorhandenen Typen erzeugen und gesammelt wieder entfernen.
-- **Benutzermenü** (Klick auf den eigenen Namen): Profil, Schriftgröße klein/normal/groß (je Gerät), Abmelden.
-- **Profil** – jeder Benutzer ändert Name, E-Mail-Adresse und Passwort selbst (mit dem aktuellen Passwort). Mit dem *Entwicklermodus* zeigt das DMS bei jedem Seitenaufruf, wie lange Netzwerk, Aufbereitung, Datenbankzugriffe, Übertragung und Darstellung gedauert haben.
+Das Image `ghcr.io/motom001/dms` ist öffentlich (amd64 und arm64) – eine Anmeldung bei der Registry ist nicht nötig.
 
-Am Mappentyp legt eine **Trefferliste** fest, welche Felder und Systemwerte (Titel, angelegt/geändert am/von) als Spalten erscheinen und in welcher Reihenfolge. Ist die Liste schmal, zeigen die ersten drei Spalten einen kompakten Eintrag; zieht man sie breit, wird daraus eine Tabelle, sortierbar per Klick auf den Spaltenkopf (gemerkt je Benutzer und Mappentyp).
+1. Die Vorlage [`deploy/nas/docker-compose.yml`](deploy/nas/docker-compose.yml) als Compose-Projekt anlegen und die Pfade anpassen (Ordner `postgres`, `files` und `geheim`).
+2. Daneben eine Datei `.env` mit `DB_PASSWORD=<langes zufälliges Passwort>` ablegen.
+3. Starten und **sofort selbst** `http://<NAS>:8080` aufrufen: Wer die Seite als Erstes öffnet, legt das Administrator-Konto an.
 
-Die Breite der drei Bereiche lässt sich mit den Griffen auf den Trennlinien verschieben; ein kurzer Klick klappt die Sichten bzw. die Mappe ein. Das merkt sich jedes Gerät je Benutzer (zurücksetzen im Profil).
+Danach in der Werkbank den Schlüssel für Passwörter erzeugen und E-Mail-Versand und Adresse einrichten. Alles Weitere – Einstellungen, Reverse-Proxy, Aktualisieren, **Sichern** – steht im Administratorhandbuch unter [Installation](https://motom001.github.io/dms/admin/installation/) und [Aktualisieren und Sichern](https://motom001.github.io/dms/admin/aktualisieren/).
 
-Jede Mappe trägt feste Indexwerte: angelegt am/von, zuletzt geändert am/von. Listen laden je 100 Mappen nach Titel sortiert und beim Scrollen weitere; die Suche über einer Liste durchsucht Titel und Werte auf dem Server.
-
-**Benutzer und Rollen als Mappen:** Jeder Benutzer hat eine Mappe des Systemmappentyps *Benutzer*, Rollen sind Mappen des Systemmappentyps *Rolle*. So kann ein Mappentyp z. B. ein Feld „verantwortlicher Benutzer“ oder „verantwortliche Rolle“ bekommen. Beide Typen lassen sich um eigene Felder erweitern, aber nicht löschen. Name, E-Mail-Adresse, Rollen und „aktiv“ einer Benutzer-Mappe sind in der Ablage nur lesbar; sie werden im Profil und in der Benutzerverwaltung gepflegt. Rollen legt man in der Ablage an; *Administrator* und *Mitglied* sind Systemrollen, die der Rolle des Kontos folgen. Vorerst sind Rollen fachlich – Rechte hängen noch nicht daran.
-
-Je Mappentyp lässt sich festlegen, ob in der Ablage **neue Mappen angelegt** und **Mappen gelöscht** werden dürfen.
-
-**Register** sind die Trennblätter einer Mappe und werden je Mappentyp festgelegt:
-- *Feldregister* – eine Gruppe von Feldern (jedes Feld liegt auf genau einem Feldregister),
-- *Dokumentenregister* – hochgeladene Dateien; PDFs und Bilder lassen sich direkt ansehen, alles andere wird nur heruntergeladen,
-- *Verknüpfungsregister* – Mappen, die hierher verweisen, auf Wunsch eingeschränkt (z. B. „Rechnungen“ nur über das Feld *Vertrag*).
-
-Der **Titel** einer Mappe entsteht aus einer Vorlage wie `{verwendungszweck} vom {zahlungsdatum}`; die Werkbank zeigt dazu eine Vorschau. Neben den Feldern stehen die Indexwerte `{angelegt}` und `{geaendert}` (jeweils das Datum) zur Verfügung. Der Server berechnet den Titel und speichert ihn; ändert sich eine verwiesene Mappe oder die Vorlage, werden die betroffenen Titel nachgezogen.
-
-Dateien liegen unverändert im Dateiordner (`FILES_DIR`) unter ihrem SHA-256-Prüfwert. Gleicher Inhalt wird nur einmal gespeichert.
-
-Die Feldregeln gelten in der Oberfläche **und** auf dem Server (`shared/src/model.ts`), damit nichts Ungültiges in die Datenbank gelangt.
-
-## Betrieb auf dem NAS
-
-Bei jedem Push auf `main` baut GitHub Actions ein Image und legt es unter `ghcr.io/motom001/dms` ab (Tag `main`, zusätzlich je Commit ein Kurz-Hash).
-
-1. Auf GitHub ein Token anlegen (*Settings → Developer settings → Personal access tokens → Tokens (classic)*), nur mit dem Recht `read:packages`.
-2. Das NAS einmalig bei der Registry anmelden: `docker login ghcr.io -u motom001` und das Token als Passwort eingeben.
-3. Die Vorlage [`deploy/nas/docker-compose.yml`](deploy/nas/docker-compose.yml) als Projekt anlegen, Pfade anpassen und daneben eine `.env` mit `DB_PASSWORD=…` ablegen.
-4. Starten. Die Oberfläche läuft unter `http://<NAS>:8080`. Beim ersten Start legt der Server die Tabellen selbst an.
-5. **Erster Aufruf:** Wer die Seite als Erstes öffnet, legt das Administrator-Konto an. Deshalb direkt nach dem ersten Start selbst aufrufen.
-
-### Einstellungen
-
-| Variable | Bedeutung |
-| --- | --- |
-| `DATABASE_URL` | Verbindung zu PostgreSQL (Pflicht) |
-| `TRUST_PROXY` | `true`, wenn ein Reverse-Proxy davor sitzt |
-| `LOG_LEVEL` | Grundstufe des Protokolls: `debug`, `info` (Standard), `warn`, `error`. Der Debug-Modus in der Werkbank gilt zusätzlich für eine Stunde. |
-
-**Aktualisieren:** Image neu ziehen und das Projekt neu starten. Datenbank-Migrationen laufen beim Start automatisch.
-
-**Design kaputt?** Macht ein eigenes CSS die Oberfläche unbedienbar, `?design=standard` an die Adresse hängen – dann lädt das Standard-Design ohne eigenes CSS.
-
-**Protokoll:** Jede Meldung steht als lesbare Zeile in den Container-Logs (`docker logs <app-container>`), z. B.
-`2026-10-28T09:12:33.120Z INFO  [ablage] Mappe angelegt benutzer=thomas@example.org typ=Rechnung titel="R-17 vom 01.10.2026"`.
-Die Werkbank zeigt zusätzlich die letzten 24 Stunden (höchstens 10.000 Einträge); diese Ansicht beginnt nach einem Neustart leer.
-
-**Sichern:** die Ordner `postgres` und `files` aus der Vorlage. Für eine konsistente Datenbanksicherung im laufenden Betrieb vorher `docker exec <db-container> pg_dump -U dms dms > dms.sql`.
-
-## Schnittstelle (API)
-
-Andere Programme greifen über `/api/v1` zu – Mappen anlegen, lesen, ändern, löschen, Dokumente hoch- und herunterladen; mit dem Schlüssel eines Administrators auch Mappentypen und Benutzer. Den Schlüssel erzeugt jeder Benutzer im Profil (nur lesen oder lesen und schreiben, optional mit Ablaufdatum); er hat höchstens die Rechte seines Benutzers.
-
-```sh
-curl -H "Authorization: Bearer dms_…" http://<NAS>:8080/api/v1/ich
-```
-
-Die Beschreibung im OpenAPI-Format liefert jede Installation selbst unter `/api/openapi.json` (passend zur installierten Version); lesbar im Profil unter „API-Dokumentation“.
+`ghcr.io/motom001/dms:main` folgt jedem Stand auf `main`; mit einer Versionsnummer wie `ghcr.io/motom001/dms:0.18.0` bleibt die Installation auf einem Release.
 
 ## Wünsche und Fehler
 
@@ -107,10 +57,6 @@ Oder alles zusammen als Container: `docker compose up --build` → http://localh
 
 Tests: `npm test`. Mit `TEST_DATABASE_URL` laufen zusätzlich die Tests gegen PostgreSQL (**leert das Schema der angegebenen Datenbank**).
 
-## Aufbau
-
-Technik im Überblick: [Administratorhandbuch → Technik](https://motom001.github.io/dms/admin/technik/), Entscheidungen: [Administratorhandbuch → Entscheidungen](https://motom001.github.io/dms/admin/entscheidungen/).
-
 ```
 shared/   Fachmodell und Prüfregeln (Server und Oberfläche)
 server/   Fastify-API, PostgreSQL (postgres.js), SQL-Migrationen
@@ -118,6 +64,10 @@ web/      React-Oberfläche (Vite)
 deploy/   Vorlagen für den Betrieb
 docs/     Handbücher (MkDocs) mit Screenshot-Skript, Release-Notizen
 ```
+
+Technik und Entscheidungen: [Administratorhandbuch → Technik](https://motom001.github.io/dms/admin/technik/) und [Entscheidungen](https://motom001.github.io/dms/admin/entscheidungen/).
+
+**Neue Version:** Versionsnummer in den drei `package.json` erhöhen und `docs/releases/v<version>.md` schreiben – Release und Image entstehen nach dem Merge automatisch. Dabei kurz prüfen, ob „Was es kann – in Kürze“ und der Schnellstart noch stimmen; alles Ausführliche gehört ins Handbuch, nicht hierher.
 
 Wichtig: **Keine echten Dokumente oder persönlichen Daten committen** – nur Code und Beispieldaten.
 
