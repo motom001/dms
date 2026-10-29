@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.29/berechtigungen/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.30/berechtigungen/">
       
       
         <link rel="prev" href="../benutzer/">
@@ -799,6 +799,18 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#berechtigungen-prufen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Berechtigungen prüfen
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Berechtigungen prüfen">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#testlauf" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -806,6 +818,22 @@
       
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#was-sieht-ein-benutzer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Was sieht ein Benutzer?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1679,6 +1707,18 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#berechtigungen-prufen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Berechtigungen prüfen
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Berechtigungen prüfen">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#testlauf" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1686,6 +1726,22 @@
       
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#was-sieht-ein-benutzer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Was sieht ein Benutzer?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1782,7 +1838,7 @@
 
 
 <h1 id="berechtigungen">Berechtigungen<a class="headerlink" href="#berechtigungen" title="Permanent link">&para;</a></h1>
-<p>Mit Berechtigungen legst du je Mappentyp fest, <strong>wer welche Mappen anlegen, lesen, bearbeiten, löschen und wessen Passwörter sehen</strong> darf. Du findest sie in der Werkbank unter <strong>Benutzer und Zusammenarbeit → Berechtigungen</strong>.</p>
+<p>Mit Berechtigungen legst du je Mappentyp fest, <strong>wer welche Mappen anlegen, lesen, bearbeiten, löschen und wessen Passwörter sehen</strong> darf. Du pflegst sie am <strong>Mappentyp</strong> selbst, im Abschnitt <strong>Berechtigungen</strong> unter den Registern, und speicherst sie mit <strong>Mappentyp speichern</strong>. Prüfen lassen sie sich unter <strong>Wartung und Fehlersuche → <a href="#berechtigungen-prufen">Berechtigungen prüfen</a></strong>.</p>
 <p><img alt="Berechtigungen am Mappentyp Vertrag" src="../bilder/werkbank-berechtigungen.png" /></p>
 <div class="admonition info">
 <p class="admonition-title">Für Administratoren gelten die Regeln nicht</p>
@@ -1883,13 +1939,18 @@
 <p>Ändert jemand ein Feld, von dem seine Rechte abhängen (etwa „Verantwortlich“), fragt das DMS vor dem Speichern nach, wenn er sich damit selbst das Lesen oder Bearbeiten entziehen würde.</p>
 </div>
 <h3 id="regel-in-andere-mappentypen-kopieren">Regel in andere Mappentypen kopieren<a class="headerlink" href="#regel-in-andere-mappentypen-kopieren" title="Permanent link">&para;</a></h3>
-<p>Mit <strong>In andere Mappentypen kopieren …</strong> an einer gespeicherten Regel übernimmst du sie in weitere Typen; sie landet dort am Ende. Bedingungen auf Felder, die es im Zieltyp nicht gibt, fallen weg – das DMS sagt, wie viele.</p>
+<p>Mit <strong>In andere Mappentypen kopieren …</strong> an einer gespeicherten Regel übernimmst du sie in weitere Typen (bei ungespeicherten Änderungen erst speichern); sie landet dort am Ende. Bedingungen auf Felder, die es im Zieltyp nicht gibt, fallen weg – das DMS sagt, wie viele.</p>
 <h3 id="speichern">Speichern<a class="headerlink" href="#speichern" title="Permanent link">&para;</a></h3>
-<p>Beim Speichern prüft das DMS, ob danach Mappen dieses Typs <strong>niemand mehr lesen</strong> könnte (außer Administratoren), und fragt in diesem Fall nach. Jede Änderung steht im <a href="../fehlersuche/">Protokoll</a> mit der vollständigen Regelliste.</p>
-<h2 id="testlauf">Testlauf<a class="headerlink" href="#testlauf" title="Permanent link">&para;</a></h2>
-<p>Unter den Regeln prüfst du, welche Rechte ein bestimmter Benutzer an einer bestimmten Mappe hätte – auch mit <strong>noch nicht gespeicherten</strong> Regeln. Die Tabelle zeigt Schritt für Schritt, welche Regel zutraf, was sie gesetzt hat und wie der Stand danach war.</p>
+<p>Die Regeln werden mit <strong>Mappentyp speichern</strong> gespeichert, zusammen mit Feldern, Registern und Trefferlisten. Eine Regel darf deshalb auch ein Feld nutzen, das du im selben Zug neu anlegst. Passt eine Regel nicht (z. B. auf ein Feld, das du gerade entfernst), speichert das DMS nichts und nennt die Regel.</p>
+<p>Beim Speichern prüft das DMS außerdem, ob danach Mappen dieses Typs <strong>niemand mehr lesen</strong> könnte (außer Administratoren), und fragt in diesem Fall nach. Jede Änderung steht im <a href="../fehlersuche/">Protokoll</a> mit der vollständigen Regelliste.</p>
+<h2 id="berechtigungen-prufen">Berechtigungen prüfen<a class="headerlink" href="#berechtigungen-prufen" title="Permanent link">&para;</a></h2>
+<p>Unter <strong>Wartung und Fehlersuche → Berechtigungen prüfen</strong> testest du die <strong>gespeicherten</strong> Regeln. Am Abschnitt <em>Berechtigungen</em> eines Mappentyps öffnet <strong>Regeln prüfen ↗</strong> diese Seite in einem <strong>neuen Fenster</strong>, mit dem Mappentyp schon ausgewählt. So bearbeitest du die Regeln in einem Fenster und prüfst sie im anderen: ändern, <em>Mappentyp speichern</em>, im anderen Fenster noch einmal <strong>Prüfen</strong>.</p>
+<p>Links listet die Seite alle Mappentypen mit Grundeinstellung und Anzahl der Regeln; ein Klick springt zu ihren Regeln.</p>
+<h3 id="testlauf">Testlauf<a class="headerlink" href="#testlauf" title="Permanent link">&para;</a></h3>
+<p>Welche Rechte hätte ein bestimmter Benutzer an einer bestimmten Mappe? Wähle Mappentyp, Benutzer und Mappe und klicke auf <strong>Prüfen</strong>. Die Tabelle zeigt Schritt für Schritt, welche Regel zutraf, was sie gesetzt hat und wie der Stand danach war.</p>
 <p><img alt="Testlauf: Ben an „Stromvertrag Haus“" src="../bilder/werkbank-berechtigungen-testlauf.png" /></p>
-<p><strong>Was sieht ein Benutzer?</strong> (ganz oben in der Liste) zeigt je Mappentyp, wie viele Mappen ein Benutzer nach den gespeicherten Regeln lesen darf, mit einigen Beispielen.</p>
+<h3 id="was-sieht-ein-benutzer">Was sieht ein Benutzer?<a class="headerlink" href="#was-sieht-ein-benutzer" title="Permanent link">&para;</a></h3>
+<p>Zeigt je Mappentyp, wie viele Mappen ein Benutzer nach den gespeicherten Regeln lesen darf, mit einigen Beispielen.</p>
 <h2 id="was-benutzer-davon-merken">Was Benutzer davon merken<a class="headerlink" href="#was-benutzer-davon-merken" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Mappen ohne Leserecht fehlen in Listen, Suche, Zählern, Favoriten und Trefferlisten. Verweist eine sichtbare Mappe auf eine unsichtbare, steht dort „nicht sichtbare Mappe“ ohne Link.</li>
