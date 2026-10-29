@@ -59,7 +59,7 @@ describe('Auswahl und Mehrfach-Löschen (#149, #150)', () => {
     const ja = await loesche(anna, [r[1].id, r[2].id]);
     assert.equal(ja.geloescht, 2);
     // In den Papierkorb, je Mappe ein Eintrag.
-    assert.equal((await d.papierkorb({ id: anna.id })).length, 2);
+    assert.equal((await d.papierkorb({ id: anna.id, rolle: 'mitglied' })).length, 2);
   });
 
   it('Verweise: innerhalb der Auswahl kein Hindernis, sonst ausgelassen', async () => {
