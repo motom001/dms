@@ -4,6 +4,7 @@ import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Auf
 import type { Filter, Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ausdruck, Lesefilter } from '../../shared/src/rechte';
 import type { Erinnerung } from '../../shared/src/fristen';
+import { umschluesseleTief } from './tresor';
 import type { Quelle } from '../../shared/src/model';
 import { istUuid, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
 
@@ -831,6 +832,32 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       return (await sql`
         SELECT a.*, m.titel AS mappe_titel, m.typ_id FROM aufgaben a JOIN mappen m ON m.id = a.mappe_id
         WHERE a.haushalt_id = ${haushaltId} AND a.art = 'frist' ${welche} ORDER BY a.erstellt, a.id`).map(alsAufgabe);
+    },
+
+    async umschluesseln(um, einstellungen) {
+      return sql.begin(async (tx) => {
+        let umgeschluesselt = 0; let unlesbar = 0;
+        const zaehle = (x: { geaendert: number; unlesbar: number }) => { umgeschluesselt += x.geaendert; unlesbar += x.unlesbar; };
+        const muster = '%dms1$%';
+        for (const r of await tx`SELECT id, werte FROM mappen WHERE haushalt_id = ${haushaltId} AND werte::text LIKE ${muster} FOR UPDATE`) {
+          const x = umschluesseleTief(r.werte, um); zaehle(x);
+          if (x.geaendert) await tx`UPDATE mappen SET werte = ${tx.json(x.wert as postgres.JSONValue)} WHERE id = ${r.id}`;
+        }
+        for (const r of await tx`SELECT id, mappe FROM papierkorb WHERE haushalt_id = ${haushaltId} AND mappe::text LIKE ${muster} FOR UPDATE`) {
+          const x = umschluesseleTief(r.mappe, um); zaehle(x);
+          if (x.geaendert) await tx`UPDATE papierkorb SET mappe = ${tx.json(x.wert as postgres.JSONValue)} WHERE id = ${r.id}`;
+        }
+        const gesetzt = Object.keys(einstellungen);
+        for (const r of await tx`SELECT schluessel, wert FROM einstellungen WHERE haushalt_id = ${haushaltId} AND wert::text LIKE ${muster} AND NOT (schluessel = ANY(${gesetzt}::text[])) FOR UPDATE`) {
+          const x = umschluesseleTief(r.wert, um); zaehle(x);
+          if (x.geaendert) await tx`UPDATE einstellungen SET wert = ${tx.json(x.wert as postgres.JSONValue)} WHERE haushalt_id = ${haushaltId} AND schluessel = ${r.schluessel}`;
+        }
+        for (const [k, w] of Object.entries(einstellungen)) {
+          await tx`INSERT INTO einstellungen (haushalt_id, schluessel, wert) VALUES (${haushaltId}, ${k}, ${tx.json(w as postgres.JSONValue)})
+            ON CONFLICT (haushalt_id, schluessel) DO UPDATE SET wert = EXCLUDED.wert`;
+        }
+        return { umgeschluesselt, unlesbar };
+      });
     },
 
     /* ---------- Freie Erinnerungen (#131) ---------- */

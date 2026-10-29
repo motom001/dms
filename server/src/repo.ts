@@ -194,6 +194,12 @@ export interface Repo {
   /** Fristen (#129): alle Aufgaben der Art „frist“ (offen und erledigt), ggf. nur dieser Mappen. */
   fristAufgaben(mappeIds?: string[]): Promise<Aufgabe[]>;
 
+  /**
+   * Schlüsselwechsel (#47): alle verschlüsselten Werte (Mappen, Papierkorb, Einstellungen) umschlüsseln
+   * und die angegebenen Einstellungen setzen – in einer Transaktion.
+   */
+  umschluesseln(um: (wert: string) => string | null, einstellungen: Record<string, unknown>): Promise<{ umgeschluesselt: number; unlesbar: number }>;
+
   /* ---------- Freie Erinnerungen (#131), solange nicht fällig ---------- */
   erinnerungen(f?: { mappeId?: string; empfaengerId?: string; bis?: string }): Promise<Erinnerung[]>;
   holeErinnerung(id: string): Promise<Erinnerung | undefined>;

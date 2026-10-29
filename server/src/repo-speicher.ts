@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { lesbar, werte } from '../../shared/src/rechte';
 import type { Erinnerung } from '../../shared/src/fristen';
+import { umschluesseleTief } from './tresor';
 import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
 import { alsText } from '../../shared/src/markdown';
 import { ausschnittAus } from './repo-pg';
@@ -308,6 +309,15 @@ export function speicherRepo(): Repo {
     async fristAufgaben(mappeIds) {
       return [...aufgaben.values()].filter((a) => a.art === 'frist' && mappen.has(a.mappeId) && (!mappeIds || mappeIds.includes(a.mappeId)))
         .sort((a, b) => a.erstellt.localeCompare(b.erstellt)).map(mitMappe);
+    },
+    async umschluesseln(um) {
+      // Arbeitsspeicher: Mappen und Papierkorb (Einstellungen liegen anderswo); erst rechnen, dann schreiben.
+      let umgeschluesselt = 0; let unlesbar = 0;
+      const neu = [...mappen.values()].map((m) => { const x = umschluesseleTief(m.werte, um); umgeschluesselt += x.geaendert; unlesbar += x.unlesbar; return [m, x.wert] as const; });
+      const korbNeu = [...korb.values()].map((k) => { const x = umschluesseleTief(k.mappe.werte, um); umgeschluesselt += x.geaendert; unlesbar += x.unlesbar; return [k, x.wert] as const; });
+      for (const [m, w] of neu) m.werte = w;
+      for (const [k, w] of korbNeu) k.mappe.werte = w;
+      return { umgeschluesselt, unlesbar };
     },
     async erinnerungen(f = {}) {
       return [...erinnerungen.values()].filter((e) => mappen.has(e.mappeId) && (!f.mappeId || e.mappeId === f.mappeId)

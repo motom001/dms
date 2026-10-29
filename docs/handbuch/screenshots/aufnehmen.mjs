@@ -532,7 +532,7 @@ async function main() {
   await s.getByRole('heading', { name: 'E-Mail-Versand' }).waitFor();
   await bild(s, 'werkbank-betrieb');
   await geheZu(s, '/werkbank/verschluesselung');
-  await s.getByRole('heading', { name: /^Schlüssel\b/ }).waitFor();
+  await s.getByRole('heading', { name: /^Schlüssel\b/ }).first().waitFor();
   await bild(s, 'werkbank-verschluesselung');
   await geheZu(s, '/werkbank/aufgaben');
   await s.getByRole('heading', { name: 'Tägliche Zusammenfassung' }).waitFor();
@@ -609,6 +609,14 @@ async function main() {
   await geheZu(s, '/werkbank/wartungsmodus');
   await s.getByRole('button', { name: 'Wartung beenden' }).click();
   await s.locator('.wartungsbanner').waitFor({ state: 'detached' });
+
+  // Schlüssel wechseln (#47) – ganz am Ende, weil danach Notfallblatt und Sicherungen auf den alten Schlüssel zeigen.
+  await geheZu(s, '/werkbank/verschluesselung');
+  s.once('dialog', (dialog) => void dialog.accept());
+  await s.getByRole('button', { name: 'Schlüssel wechseln' }).click();
+  await s.locator('#wechseln .hinweis.gut').waitFor();
+  await s.locator('#wechseln').evaluate((e) => e.scrollIntoView({ block: 'start' }));
+  await bild(s, 'werkbank-schluesselwechsel');
 
   // Die API-Beschreibung dieser Version für das Administratorhandbuch
   await writeFile(join(ZIEL, 'openapi.json'), JSON.stringify(await (await fetch(`${BASIS}/api/openapi.json`)).json(), null, 2));

@@ -65,7 +65,7 @@ export function sicherungsHinweise(z: SicherungsZustand): Array<{ art: 'schlecht
   if (z.fehler) h.push({ art: 'schlecht', text: <><strong>Die letzte Sicherung ist fehlgeschlagen</strong> ({zeit(z.fehler.am)}): {z.fehler.grund}</> });
   if (!z.letzte) h.push({ art: 'warn', text: <><strong>Es gibt noch keine Sicherung.</strong> Lege eine an und schalte den Zeitplan ein.</> });
   else if (z.zuAlt) h.push({ art: 'warn', text: <><strong>Die letzte Sicherung ist älter als 2 Tage</strong> ({zeit(z.letzte.ende)}).</> });
-  if (!z.notfallblatt.aktuell && (z.letzte || z.planAktiv)) h.push({ art: 'warn', text: <><strong>{z.notfallblatt.am ? 'Das Notfallblatt gehört zu einem früheren Schlüssel.' : 'Das Notfallblatt fehlt.'}</strong> Ohne den Schlüssel darauf lassen sich die Sicherungen nicht wiederherstellen.</> });
+  if (!z.notfallblatt.aktuell && (z.letzte || z.planAktiv || z.notfallblatt.am)) h.push({ art: 'warn', text: <><strong>{z.notfallblatt.am ? 'Das Notfallblatt gehört zu einem früheren Schlüssel.' : 'Das Notfallblatt fehlt.'}</strong> Ohne den Schlüssel darauf lassen sich die Sicherungen nicht wiederherstellen.</> });
   // Probe-Wiederherstellung (#109): Ampel.
   if (z.probe?.ampel === 'rot') h.push({ art: 'schlecht', text: <><strong>Die letzte Probe-Wiederherstellung ist fehlgeschlagen</strong> ({zeit(z.probe.letzte!.am)}): {z.probe.letzte!.info}</> });
   else if (z.probe?.ampel === 'gelb' && z.letzte) h.push({ art: 'info', text: <><strong>{z.probe.letzte ? `Die letzte Probe-Wiederherstellung ist vom ${zeit(z.probe.letzte.am)}.` : 'Noch keine Sicherung wurde probeweise wiederhergestellt.'}</strong> Erst eine Probe zeigt, dass sich eine Sicherung im Ernstfall einspielen lässt.</> });
@@ -103,6 +103,8 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
   const lauf = s.lauf;
   const laeuft = lauf?.status === 'laeuft';
   const hinweise = sicherungsHinweise(s.zustand);
+  // Sicherungen mit einem früheren Schlüssel (#47).
+  const alte = s.liste.filter((x) => x.meta && s.zustand.fingerabdruck && x.meta.verschluesselung.fingerabdruck !== s.zustand.fingerabdruck);
 
   async function tu(f: () => Promise<unknown>, gut?: string) {
     setMeldung(undefined);
@@ -141,13 +143,22 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
 
       <section className="blatt" id="liste">
         <h2 className="h3">Sicherungen</h2>
+        {alte.length > 0 && (
+          <div className="hinweis info">
+            <p><strong>{alte.length === 1 ? 'Eine Sicherung ist' : `${alte.length} Sicherungen sind`} mit einem früheren Schlüssel verschlüsselt.</strong> Zum Wiederherstellen brauchst du das Notfallblatt zu diesem Schlüssel – bewahre es auf, solange es solche Sicherungen gibt.</p>
+            <div className="knoepfe"><button type="button" className="knopf klein gefahr-rand" disabled={laeuft}
+              onClick={() => { if (confirm(`${alte.length === 1 ? 'Die Sicherung' : `Alle ${alte.length} Sicherungen`} mit früherem Schlüssel endgültig löschen? Danach brauchst du das alte Notfallblatt nicht mehr.`)) void tu(async () => { for (const x of alte) await api.sicherungLoeschen(x.name); }, 'Sicherungen mit früherem Schlüssel gelöscht.'); }}>
+              Sicherungen mit früherem Schlüssel löschen</button></div>
+          </div>
+        )}
         {!s.liste.length ? <p className="leise">Noch keine Sicherung im Ordner <span className="mono">{s.zustand.ort.ordner}</span>.</p> : (
           <div className="trefferliste"><table>
             <thead><tr><th>Zeitpunkt</th><th>Art</th><th className="rechts">Größe</th><th>Inhalt</th><th>Prüfsumme</th><th>Probe</th><th><span className="sr">Aktionen</span></th></tr></thead>
             <tbody>{s.liste.map((x) => (
               <tr key={x.name}>
                 <td className="kurz" title={x.name}>{x.meta ? zeit(x.meta.beginn) : x.name}</td>
-                <td>{x.meta ? ART[x.meta.art] ?? x.meta.art : <span className="fehlertext">Metadaten fehlen</span>}</td>
+                <td>{x.meta ? ART[x.meta.art] ?? x.meta.art : <span className="fehlertext">Metadaten fehlen</span>}
+                  {x.meta && s.zustand.fingerabdruck && x.meta.verschluesselung.fingerabdruck !== s.zustand.fingerabdruck && <> <span className="chip warn" title={`Schlüssel ${x.meta.verschluesselung.fingerabdruck} – braucht das Notfallblatt zu diesem Schlüssel`}>früherer Schlüssel</span></>}</td>
                 <td className="rechts kurz">{bytes(x.bytes)}</td>
                 <td>{x.meta ? `${x.meta.anzahl.mappen.toLocaleString('de-DE')} Mappen, ${x.meta.anzahl.dateien.toLocaleString('de-DE')} Dateien` : '–'}{x.meta && <span className="leise klein"> · DMS {x.meta.umgebung.dms}</span>}</td>
                 <td>{x.pruefung ? <span className={`chip ${x.pruefung.ok ? 'gut' : 'schlecht'}`} title={`geprüft ${zeit(x.pruefung.am)}`}>{x.pruefung.ok ? 'unverändert' : 'weicht ab'}</span> : <span className="leise">–</span>}</td>

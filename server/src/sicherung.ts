@@ -492,6 +492,8 @@ export class Sicherung {
       planAktiv: plan.aktiv,
       notfallblatt: await this.notfallblatt(),
       schluessel: this.q.tresor.bereit,
+      /** Fingerabdruck des aktuellen Schlüssels: Sicherungen mit anderem brauchen ein älteres Notfallblatt (#47). */
+      fingerabdruck: this.q.tresor.fingerabdruck,
       ort: this.ort(),
       probe: await this.probeAmpel(letzte !== null),
     };

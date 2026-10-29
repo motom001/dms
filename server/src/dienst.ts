@@ -277,6 +277,12 @@ export class Dienst {
     this.tresor?.registriere(() => this.unlesbarePasswoerter());
   }
 
+  /** Schlüssel wechseln (#47): alle Passwortfelder, der Papierkorb und die Einstellungen in einer Transaktion. */
+  async schluesselWechseln(von: string) {
+    if (!this.tresor) throw new Fachfehler(404, 'Die Verschlüsselung ist nicht eingerichtet.');
+    return this.tresor.wechsle((um, einstellungen) => this.repo.umschluesseln(um, einstellungen), von);
+  }
+
   /** Konten anbinden: Benutzer-Mappen im Papierkorb (#43). */
   verbindeKonten(h: KontenHaken) { this.konten = h; }
 

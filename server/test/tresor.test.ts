@@ -95,3 +95,101 @@ describe('Tresor (#39)', () => {
     assert.equal(punktFuer('/data', info), '/');
   });
 });
+
+describe('Schlüssel wechseln (#47)', () => {
+  async function aufbau() {
+    const { Dienst } = await import('../src/dienst');
+    const { speicherRepo } = await import('../src/repo-speicher');
+    const { speicherDateien } = await import('../src/dateispeicher');
+    const { Betrieb } = await import('../src/betrieb');
+    const einst = speicherBetrieb();
+    const datei = join(await ordner(), 'dms.schluessel');
+    const t = new Tresor(einst, datei, () => null);
+    await t.laden(); await t.erzeuge();
+    const repo = speicherRepo();
+    const d = new Dienst(repo, speicherDateien(), { tresor: t, einstellungen: einst });
+    const betrieb = new Betrieb(einst, 'http://nas', t);
+    await betrieb.laden();
+    await betrieb.speichereMail({ aktiv: true, host: 'smtp.example.org', port: 587, verbindung: 'starttls', benutzer: 'dms', passwort: 'mail-geheim', absender: 'dms@example.org' });
+    const typ = await d.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
+    const m1 = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Bank', pw: { neu: 'bank-geheim' } } });
+    const m2 = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Alt', pw: { neu: 'weg-geheim' } } });
+    await d.loescheMappe(m2.id);
+    return { t, einst, datei, d, repo, betrieb, m1, m2 };
+  }
+
+  it('verschlüsselt Mappen, Papierkorb und Mailserver neu, ersetzt Datei, Fingerabdruck und Prüfwort', async () => {
+    const { t, einst, datei, d, betrieb, m1, m2 } = await aufbau();
+    const alt = t.fingerabdruck!;
+    const altDatei = await readFile(datei, 'utf8');
+    const vorher = (await d.holeMappe(m1.id)).mappe.werte.pw;
+    const w = await d.schluesselWechseln('admin@example.org');
+    assert.equal(w.alt, alt);
+    assert.notEqual(w.neu, alt);
+    assert.equal(w.umgeschluesselt, 2, 'Mappe und Papierkorb (Mail-Passwort liegt in den Einstellungen)');
+    assert.equal(t.fingerabdruck, w.neu);
+    assert.equal(t.zustand, 'vorhanden');
+    assert.notEqual(await readFile(datei, 'utf8'), altDatei);
+    await assert.rejects(stat(`${datei}.neu`), 'keine .neu-Datei übrig');
+    assert.notEqual((await d.holeMappe(m1.id)).mappe.werte.pw, vorher);
+    assert.equal((await d.zeigePasswort(m1.id, 'pw')).wert, 'bank-geheim');
+    assert.equal(await t.pruefwort(), true);
+    assert.equal(((await einst.lies('tresor')) as { fingerabdruck: string }).fingerabdruck, w.neu);
+    // Mailserver: Passwort mit dem neuen Schlüssel lesbar.
+    const mail = (await einst.lies('mail')) as { passwort: string };
+    assert.equal(t.entschluessele(mail.passwort), 'mail-geheim');
+    assert.ok(betrieb.ansicht().mail.passwortLesbar);
+    // Papierkorb: wiederhergestellt und lesbar.
+    await d.stelleWiederHer(m2.id, { id: 'x', rolle: 'admin' }, true);
+    assert.equal((await d.zeigePasswort(m2.id, 'pw')).wert, 'weg-geheim');
+    // Neu geladen (Neustart): derselbe Schlüssel.
+    const t2 = new Tresor(einst, datei, () => null);
+    await t2.laden();
+    assert.equal(t2.zustand, 'vorhanden');
+    assert.equal(t2.fingerabdruck, w.neu);
+  });
+
+  it('ganz oder gar nicht: Abbruch mittendrin lässt alten Schlüssel und alle Werte', async () => {
+    const { t, datei, d, repo, m1 } = await aufbau();
+    const alt = t.fingerabdruck;
+    const altDatei = await readFile(datei, 'utf8');
+    const vorher = (await d.holeMappe(m1.id)).mappe.werte.pw;
+    await assert.rejects(t.wechsle(async (um) => { um(String(vorher)); throw new Error('Verbindung weg'); }, 'admin'), /abgebrochen.*bisherige Schlüssel/);
+    assert.equal(t.fingerabdruck, alt);
+    assert.equal(await readFile(datei, 'utf8'), altDatei);
+    await assert.rejects(stat(`${datei}.neu`));
+    assert.equal((await d.holeMappe(m1.id)).mappe.werte.pw, vorher);
+    assert.equal((await d.zeigePasswort(m1.id, 'pw')).wert, 'bank-geheim');
+    // Danach klappt es normal.
+    await t.wechsle((um, e) => repo.umschluesseln(um, e), 'admin');
+    assert.equal((await d.zeigePasswort(m1.id, 'pw')).wert, 'bank-geheim');
+  });
+
+  it('Neustart zwischen Datenbank und Datei: die .neu-Datei wird übernommen; ein Überbleibsel gelöscht', async () => {
+    const { t, einst, datei } = await aufbau();
+    // Zustand wie nach einem Absturz: Datenbank kennt den neuen Fingerabdruck, die Datei ist noch die alte.
+    const { randomBytes } = await import('node:crypto');
+    const { fingerabdruck } = await import('../src/tresor');
+    const k = randomBytes(32);
+    await writeFile(`${datei}.neu`, k.toString('base64url'));
+    await einst.schreibe('tresor', { fingerabdruck: fingerabdruck(k), erstellt: new Date().toISOString() });
+    const t2 = new Tresor(einst, datei, () => null);
+    await t2.laden();
+    assert.equal(t2.fingerabdruck, fingerabdruck(k));
+    assert.equal(t2.zustand, 'vorhanden');
+    assert.equal((await readFile(datei, 'utf8')).trim(), k.toString('base64url'));
+    // Überbleibsel eines Abbruchs: passt nicht zur Datenbank → weg, alte Datei bleibt.
+    await writeFile(`${datei}.neu`, randomBytes(32).toString('base64url'));
+    const t3 = new Tresor(einst, datei, () => null);
+    await t3.laden();
+    assert.equal(t3.fingerabdruck, fingerabdruck(k));
+    await assert.rejects(stat(`${datei}.neu`));
+    assert.ok(t.fingerabdruck);
+  });
+
+  it('nur mit passendem Schlüssel', async () => {
+    const t = new Tresor(speicherBetrieb(), join(await ordner(), 'dms.schluessel'), () => null);
+    await t.laden();
+    await assert.rejects(t.wechsle(async () => ({ umgeschluesselt: 0, unlesbar: 0 }), 'admin'), (e: unknown) => e instanceof Fachfehler && e.status === 409);
+  });
+});
