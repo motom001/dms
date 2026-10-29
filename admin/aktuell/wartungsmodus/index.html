@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.22/wartungsmodus/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.23/wartungsmodus/">
       
       
         <link rel="prev" href="../wiederherstellen/">
       
       
-        <link rel="next" href="../notfall/">
+        <link rel="next" href="../speicherplatz/">
       
       
         
@@ -1041,6 +1041,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../speicherplatz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Speicherplatz
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../notfall/" class="md-nav__link">
         
   
@@ -1530,6 +1558,10 @@
 <p>Unter <strong>Angemeldete Sitzungen</strong> siehst du, wer gerade mit welchem Gerät angemeldet ist und wann zuletzt aktiv.</p>
 <h2 id="ausschalten">Ausschalten<a class="headerlink" href="#ausschalten" title="Permanent link">&para;</a></h2>
 <p><strong>Wartung beenden</strong> schaltet den Modus aus; alle können sich wieder anmelden, und die Hintergrundarbeiten laufen weiter. Der Modus überdauert einen Neustart des DMS – nach einem Update ist er also noch an, bis du ihn beendest.</p>
+<div class="admonition note">
+<p class="admonition-title">Automatisch bei vollem Speicher</p>
+<p>Erreicht der freie Platz die eingestellte Grenze, schaltet das DMS den Wartungsmodus selbst ein – mit 5 Minuten Vorlauf und dem Text „Speicherplatzlimit erreicht“. Beenden musst du ihn selbst, sobald wieder Platz ist (siehe <a href="../speicherplatz/#im-ernstfall">Speicherplatz</a>).</p>
+</div>
 <p>Ein, Aus und das Abmelden stehen im <a href="../fehlersuche/#protokoll">Protokoll</a> (Modul <em>system</em>).</p>
 <div class="admonition tip">
 <p class="admonition-title">Vor jedem Update</p>
@@ -1587,13 +1619,13 @@
         
         
           
-          <a href="../notfall/" class="md-footer__link md-footer__link--next" aria-label="Weiter: Notfall: kein Admin mehr">
+          <a href="../speicherplatz/" class="md-footer__link md-footer__link--next" aria-label="Weiter: Speicherplatz">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Weiter
               </span>
               <div class="md-ellipsis">
-                Notfall: kein Admin mehr
+                Speicherplatz
               </div>
             </div>
             <div class="md-footer__button md-icon">

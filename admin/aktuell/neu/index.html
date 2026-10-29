@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.22/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.23/neu/">
       
       
         <link rel="prev" href="..">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-022" class="md-skip">
+        <a href="#neu-in-version-023" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0220" class="md-nav__link">
+  <a href="#0230" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.22.0
+        0.23.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.22.0">
+    <nav class="md-nav" aria-label="0.23.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1045,6 +1045,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../speicherplatz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Speicherplatz
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../notfall/" class="md-nav__link">
         
   
@@ -1444,15 +1472,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0220" class="md-nav__link">
+  <a href="#0230" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.22.0
+        0.23.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.22.0">
+    <nav class="md-nav" aria-label="0.23.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1513,22 +1541,23 @@
   
 
 
-<h1 id="neu-in-version-022">Neu in Version 0.22<a class="headerlink" href="#neu-in-version-022" title="Permanent link">&para;</a></h1>
-<h2 id="0220">0.22.0<a class="headerlink" href="#0220" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-023">Neu in Version 0.23<a class="headerlink" href="#neu-in-version-023" title="Permanent link">&para;</a></h1>
+<h2 id="0230">0.23.0<a class="headerlink" href="#0230" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Hilfe genau da, wo du sie brauchst</strong> (#110): Ein kleines <strong>?</strong> an jedem Bereich der Werkbank und an vielen Zwischenüberschriften (Felder, Register, Trefferlisten, Bedingungen, Abwesenheit, Zugang sperren, Sicherung …), in der Ablage (Eingang, Favoriten, Papierkorb, Sichten, Dokumente) und im Profil öffnet in einem neuen Tab genau den passenden Abschnitt im Handbuch.</li>
-<li><strong>Handbuch je Version</strong> (#111): Zu jeder Version gibt es ein eigenes Handbuch mit Versionsauswahl. Hilfe-Links aus dem DMS führen zum Handbuch der installierten Version. Neue Seite <strong>Neu in dieser Version</strong> in beiden Handbüchern.</li>
+<li><strong>Speicherplatz-Überwachung</strong> (#116): <em>Werkbank → Speicherplatz</em> zeigt belegt und frei je Ordner. Unter der <strong>Warnschwelle</strong> (Standard 10 % frei) gibt es einen Hinweis und eine Mail an alle Administratoren. Unter der <strong>Grenze</strong> (Standard 2 GB frei) ist das Hochladen sofort gesperrt, und der Wartungsmodus startet mit 5 Minuten Vorlauf und dem Text „Speicherplatzlimit erreicht“. Ist wieder genug Platz da, bietet die Werkbank „Wartung beenden?“ an – von selbst endet er nicht. Beide Schwellen in GB oder Prozent.</li>
+<li><strong>Feste Ordner</strong> (#115): Die Ordner im Container sind jetzt fest – <code>/data/files</code>, <code>/data/geheim</code>, <code>/data/sicherung</code>. Wohin sie auf dem NAS zeigen, bestimmen nur die Volumes der Compose-Datei. <em>Werkbank → Technik</em> zeigt die drei Ordner mit belegtem und freiem Platz.</li>
 </ul>
 <h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Neue Adressen: <code>…/dms/benutzer/aktuell/</code> und <code>…/dms/admin/aktuell/</code> (neueste Version), <code>…/v0.22/</code> (diese Version), <code>…/entwicklung/</code> (Stand von <code>main</code>). Alte Adressen ohne Version leiten auf die neueste.</li>
-<li><em>Werkbank → Technik</em> verlinkt alle Änderungen seit der installierten Version.</li>
-<li>Die CI prüft, dass jeder Hilfe-Link auf eine vorhandene Seite und Überschrift zeigt.</li>
+<li><strong>Bitte prüfen:</strong> Die Variablen <code>FILES_DIR</code>, <code>DMS_SCHLUESSEL_DATEI</code> und <code>DMS_SICHERUNG_DIR</code> entfallen.</li>
+<li>Steht <code>FILES_DIR: /data/files</code> in deiner Compose-Datei (wie in der bisherigen Vorlage), läuft alles weiter; entferne die Zeile beim nächsten Update. Die Werkbank-Übersicht erinnert daran.</li>
+<li>Zeigte eine davon auf einen <strong>anderen</strong> Ordner, startet das DMS nicht und nennt im Protokoll des Containers das Volume, das stattdessen auf den festen Ordner zeigen muss. Siehe <em>Aktualisieren → Feste Ordner</em> im Administratorhandbuch.</li>
+<li>Die Datenbank läuft in ihrem eigenen Container und wird nicht mitgemessen; liegt alles auf derselben Platte, reicht die Messung.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.21.1 im Detail: <a href="https://github.com/motom001/dms/compare/v0.21.1...v0.22.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.22.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.22.0...v0.23.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
