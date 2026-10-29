@@ -17,6 +17,10 @@ Welche Version läuft und ob es neuere gibt, zeigt **Werkbank → Technik** (sie
 !!! tip "Auf einer festen Version bleiben"
     Statt `ghcr.io/motom001/dms:main` kannst du in der Compose-Datei eine Versionsnummer angeben, z. B. `ghcr.io/motom001/dms:0.8.0`. Dann ändert sich nichts, bis du die Nummer selbst erhöhst.
 
+### Datenbank-Anbindung und Mandant (ab 0.24)
+
+Beim ersten Start übernimmt das DMS `DATABASE_URL` und – falls gesetzt – `HAUSHALT_ID` in die Datei `/data/geheim/datenbank.json` (siehe [Datenbank-Anbindung](installation.md#datenbank-anbindung)). Es läuft ohne Zutun weiter. Danach sind beide Variablen überflüssig; die Werkbank-Übersicht weist darauf hin, und du kannst sie beim nächsten Update aus der Compose-Datei entfernen. Ändern lässt sich die Anbindung dann unter **Werkbank → Datenbank-Anbindung**.
+
 ### Feste Ordner (ab 0.23)
 
 Die Ordner im Container sind jetzt fest: `/data/files`, `/data/geheim` und `/data/sicherung` (siehe [Ordner und Volumes](installation.md#ordner-und-volumes)). Die Variablen `FILES_DIR`, `DMS_SCHLUESSEL_DATEI` und `DMS_SICHERUNG_DIR` entfallen.

@@ -16,13 +16,49 @@ Das Image ist öffentlich; eine Anmeldung bei der Registry (`docker login`) ist 
    ```sh
    DB_PASSWORD=<langes zufälliges Passwort>
    ```
-2. **Starten.** Die Oberfläche läuft unter `http://<NAS>:8080`. Beim ersten Start legt der Server die Tabellen selbst an.
-3. **Erster Aufruf.** Wer die Seite als Erstes öffnet, legt das Administrator-Konto an – ohne Einrichtungscode. Rufe sie deshalb direkt nach dem ersten Start selbst auf.
+2. **Starten.** Die Oberfläche läuft unter `http://<NAS>:8080`.
+3. **Browser öffnen.** Der Einrichtungsassistent führt durch den Rest – siehe unten.
 
 !!! warning "Erst einrichten, dann freigeben"
-    Mach das DMS erst über einen Reverse-Proxy oder Port-Freigabe erreichbar, wenn der Administrator angelegt ist.
+    Mach das DMS erst über einen Reverse-Proxy oder Port-Freigabe erreichbar, wenn die Einrichtung abgeschlossen ist. Der Einrichtungscode schützt zwar davor, dass ein Fremder sie übernimmt – sicherer ist es trotzdem.
 
-Danach: unter **Werkbank → [Verschlüsselung](verschluesselung.md)** den Schlüssel erzeugen und das **Notfallblatt** herunterladen, unter **Werkbank → [Sicherung](sicherung.md)** den Zeitplan einschalten, unter **Werkbank → E-Mail und Adresse** die Adresse des DMS und, falls gewünscht, den E-Mail-Versand einrichten (siehe unten); unter **Werkbank → Demo-Daten** die Beispiel-Mappentypen laden oder eigene [Mappentypen](mappentypen.md) anlegen und [Benutzer einladen](benutzer.md).
+## Der Einrichtungsassistent
+
+Beim ersten Aufruf führt ein Assistent in neun Schritten durch die Einrichtung. Übersprungenes lässt sich in der Werkbank nachholen; die Übersicht erinnert daran.
+
+![Einrichtungscode](bilder/einrichtung-code.png)
+
+1. **Einrichtungscode.** Damit niemand sonst im Netz das DMS einrichtet, fragt es zuerst nach einem Code wie `K7PX-3MNA-Q9TR`. Er steht
+    - im **Protokoll des Containers** – in der Docker-Oberfläche des NAS den Container `app` des Projekts öffnen und das Protokoll ansehen (bei UGREEN *Docker → Container → dms-app → Protokoll*, bei Synology *Container Manager → Container → Details → Protokoll*) oder `docker compose logs app`;
+    - in der Datei **`EINRICHTUNGSCODE`** im Ordner `geheim` (in der Vorlage `/volume1/docker/dms/geheim`).
+
+    Nach dem Anlegen des Administrators ist der Code wertlos; das DMS löscht die Datei. Nach zehn falschen Versuchen sperrt es die Eingabe für zehn Minuten.
+2. **Datenbank.** Server (in der Vorlage `db`), Port `5432`, Datenbank und Benutzer `dms` und das Passwort aus der `.env`. **Verbindung prüfen** meldet verständlich, was nicht stimmt – Server nicht erreichbar, Passwort falsch, Datenbank fehlt (mit Knopf zum Anlegen, wenn der Benutzer das darf). **Übernehmen** speichert die Anbindung und startet das DMS – ohne Neustart des Containers; die Tabellen legt es selbst an. Der Schritt entfällt, wenn eine Anbindung schon funktioniert (siehe [Datenbank-Anbindung](#datenbank-anbindung)).
+   ![Datenbank](bilder/einrichtung-datenbank.png)
+3. **Neu einrichten oder aus einer Sicherung wiederherstellen.** Wiederherstellen führt in den Ablauf unter [Wiederherstellen](wiederherstellen.md#neues-nas-alte-sicherung) und endet bei der Anmeldung mit den bisherigen Zugangsdaten.
+4. **Mandant.** Der Name des DMS, meist der Name der Familie („Familie Mustermann“) oder der Firma. Er erscheint als Schriftzug in der Kopfzeile, im Browser-Tab und auf der Anmeldeseite (änderbar unter **Werkbank → [Designs](designs.md)**).
+5. **Administrator** mit Name, E-Mail-Adresse und Passwort. Danach bist du als Administrator angemeldet.
+   ![Administrator](bilder/einrichtung-administrator.png)
+6. **Erster Benutzer.** Administratoren richten ein, arbeiten aber nicht in der Ablage. Lege deshalb einen normalen Benutzer an – zum Beispiel dich selbst mit einer zweiten Adresse. Ohne E-Mail-Versand zeigt der Assistent den Einladungslink zum Kopieren.
+7. **Schlüssel und Notfallblatt.** Der Schlüssel verschlüsselt gespeicherte Passwörter und alle Sicherungen (siehe [Verschlüsselung](verschluesselung.md)); das [Notfallblatt](sicherung.md#notfallblatt) enthält ihn zum Ausdrucken.
+   ![Schlüssel und Notfallblatt](bilder/einrichtung-schluessel.png)
+8. **Optionales:** Adresse des DMS (vorbelegt mit der Adresse im Browser), Bundesland für Feiertage, Beispiel-Mappentypen und der E-Mail-Versand.
+9. **Fertig** – mit Links zu beiden Handbüchern, „Problem melden“ als vorbereitetes GitHub-Issue und dem Hinweis auf GitHub Sponsors.
+   ![Fertig](bilder/einrichtung-fertig.png)
+
+Danach: unter **Werkbank → [Sicherung](sicherung.md)** den Zeitplan einschalten, eigene [Mappentypen](mappentypen.md) anlegen und weitere [Benutzer einladen](benutzer.md).
+
+## Datenbank-Anbindung
+
+Die Anbindung an PostgreSQL steht in der Datei `datenbank.json` im Ordner `/data/geheim` (nur für den Container lesbar, mit Passwort). Sie ist **führend**:
+
+- **Gibt es die Datei**, nimmt das DMS sie – auch wenn in der Compose-Datei `DATABASE_URL` gesetzt ist. Weicht die Variable ab, weist die Werkbank-Übersicht darauf hin; sie wird ignoriert und kann entfernt werden.
+- **Gibt es sie nicht, aber `DATABASE_URL`** (bisherige Installationen), prüft das DMS die Variable beim Start und übernimmt sie in die Datei. Danach ist die Variable überflüssig.
+- **Gibt es beides nicht** – oder klappt die Verbindung nicht –, startet das DMS im **Einrichtungsmodus**: Es liefert nur den Assistenten aus und fragt die Anbindung ab (mit Einrichtungscode). Alle anderen Schnittstellen antworten bis dahin mit 503. Eine gespeicherte Anbindung, deren Datenbank nur noch nicht erreichbar ist (der Datenbank-Container startet noch), versucht es alle zehn Sekunden weiter.
+
+Unter **Werkbank → Datenbank-Anbindung** siehst und änderst du die Anbindung: erst **Verbindung prüfen**, dann **Übernehmen**. Die neue Anbindung gilt nach einem Neustart (**Jetzt neu starten** – im Container startet Docker das DMS gleich wieder). Die Daten wandern dabei nicht mit; für einen Umzug in eine andere Datenbank nimm eine [Sicherung](sicherung.md).
+
+In der Datei steht auch die interne Id des **Mandanten** (früher die Umgebungsvariable `HAUSHALT_ID`). Bisherige Installationen übernehmen sie beim ersten Start; die Variable kann danach entfernt werden.
 
 ## E-Mail und Adresse
 
@@ -70,7 +106,7 @@ Diese Einstellungen sind Umgebungsvariablen im Compose-Projekt:
 
 | Variable | Bedeutung |
 | --- | --- |
-| `DATABASE_URL` | Verbindung zu PostgreSQL (Pflicht) |
+| `DATABASE_URL` | Nur noch für den Umstieg: wird beim ersten Start in die [Datenbank-Anbindung](#datenbank-anbindung) übernommen und danach ignoriert |
 | `TRUST_PROXY` | `true`, wenn ein Reverse-Proxy davor sitzt (richtige IP-Adressen im Protokoll, sichere Cookies über HTTPS) |
 | `LOG_LEVEL` | Grundstufe des Protokolls: `debug`, `info` (Standard), `warn`, `error` |
 

@@ -32,9 +32,9 @@ Das Image `ghcr.io/motom001/dms` ist öffentlich (amd64 und arm64) – eine Anme
 
 1. Die Vorlage [`deploy/nas/docker-compose.yml`](deploy/nas/docker-compose.yml) als Compose-Projekt anlegen und die Pfade anpassen (Ordner `postgres`, `files`, `geheim` und `sicherung`).
 2. Daneben eine Datei `.env` mit `DB_PASSWORD=<langes zufälliges Passwort>` ablegen.
-3. Starten und **sofort selbst** `http://<NAS>:8080` aufrufen: Wer die Seite als Erstes öffnet, legt das Administrator-Konto an.
+3. Starten und `http://<NAS>:8080` aufrufen. Ein Assistent führt durch die Einrichtung: Einrichtungscode (steht im Protokoll des Containers und in `geheim/EINRICHTUNGSCODE`), Datenbank, Mandant, Administrator, erster Benutzer, Schlüssel und Notfallblatt.
 
-Danach in der Werkbank den Schlüssel für Passwörter erzeugen und E-Mail-Versand und Adresse einrichten. Alles Weitere – Einstellungen, Reverse-Proxy, Aktualisieren, **Sichern** – steht im Administratorhandbuch unter [Installation](https://motom001.github.io/dms/admin/installation/) und [Aktualisieren und Sichern](https://motom001.github.io/dms/admin/aktualisieren/).
+Alles Weitere – Einstellungen, Reverse-Proxy, Aktualisieren, **Sichern** – steht im Administratorhandbuch unter [Installation](https://motom001.github.io/dms/admin/installation/) und [Aktualisieren und Sichern](https://motom001.github.io/dms/admin/aktualisieren/).
 
 `ghcr.io/motom001/dms:main` folgt jedem Stand auf `main`; mit einer Versionsnummer wie `ghcr.io/motom001/dms:0.18.0` bleibt die Installation auf einem Release.
 

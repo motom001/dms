@@ -22,6 +22,8 @@ import type { Sicherung } from './sicherung';
 import type { Wiederherstellung } from './wiederherstellung';
 import type { Speicherplatz } from './speicherplatz';
 import type { OrdnerPruefung } from './ordner';
+import type { Einrichtung } from './einrichtung';
+import type { AnbindungVerwaltung } from './anbindung';
 import { notfallblatt } from './notfallblatt';
 import { dirname } from 'node:path';
 import { WartungFehler } from './wartung';
@@ -54,6 +56,8 @@ export interface Anfrage {
   geraet?: string;
   /** Angemeldet über einen API-Schlüssel (nur /api/v1). */
   apiSchluessel?: ApiSchluessel;
+  /** Kopf X-Einrichtungscode (#119), solange das DMS nicht eingerichtet ist. */
+  einrichtungscode?: string;
 }
 export interface Datei {
   inhalt: Readable | Buffer;
@@ -117,6 +121,11 @@ export interface RoutenExtras {
   speicherplatz?: Speicherplatz;
   /** Feste Ordner und überflüssige frühere Variablen (#115). */
   ordner?: OrdnerPruefung;
+  /** Einrichtungsassistent und Datenbank-Anbindung (#119). */
+  einrichtung?: Einrichtung;
+  anbindung?: AnbindungVerwaltung;
+  /** Hinweis zu HAUSHALT_ID (übernommen oder abweichend). */
+  mandantHinweis?: string | null;
   /** Für Tests: Abruf fremder Adressen beim Versionsabgleich. */
   abruf?: (url: string) => Promise<unknown>;
   log?: (m: string) => void;
@@ -160,6 +169,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.weitereRollen()).get(b.id) ?? [] });
   const sicherung = () => { if (!x.sicherung) throw new Fachfehler(404, 'Sicherungen sind nicht eingerichtet.'); return x.sicherung; };
   const wh = () => { if (!x.wiederherstellung) throw new Fachfehler(404, 'Die Wiederherstellung ist nicht eingerichtet.'); return x.wiederherstellung; };
+  const anbindung = () => { if (!x.anbindung) throw new Fachfehler(404, 'Die Datenbank-Anbindung ist hier nicht einstellbar.'); return x.anbindung; };
   const speicherplatz = () => { if (!x.speicherplatz) throw new Fachfehler(404, 'Die Speicherplatz-Überwachung ist nicht eingerichtet.'); return x.speicherplatz; };
   /** Stand für den Wiederherstellungsbildschirm: läuft etwas, oder gibt es eine Abschlussmeldung? */
   const whStand = async () => {
@@ -187,6 +197,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     /* ---------- Konto ---------- */
     { methode: 'GET', pfad: '/api/konto/status', zugang: 'offen', handler: async (a) => ok({
       einrichtungNoetig: await konten.einrichtungNoetig(),
+      // Einrichtungsassistent (#119): Code nötig? Weitere Schritte für den Administrator offen?
+      einrichtung: x.einrichtung ? { phase: 'konto', code: x.einrichtung.codeNoetig, assistent: a.benutzer?.rolle === 'admin' && !a.sitzungsDaten?.vertretungId ? (await x.einrichtung.stand()).offen : false } : null,
       mail: konten.mailAktiv,
       benutzer: a.benutzer ?? null,
       // Ohne Schlüssel (Werkbank → Verschlüsselung) lassen sich keine Passwörter speichern (#39, #46).
@@ -213,8 +225,13 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       L.konto.warn('Vertretung beendet, zurück im eigenen Konto', { als: a.benutzer?.email, admin: r.benutzer?.email });
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
+    { methode: 'POST', pfad: '/api/einrichtung/code', zugang: 'offen', handler: async (a) => {
+      if (!x.einrichtung) throw new Fachfehler(404, 'Kein Einrichtungsassistent.');
+      await x.einrichtung.pruefeCode(a.einrichtungscode);
+      return ok({ ok: true });
+    } },
     { methode: 'POST', pfad: '/api/konto/einrichten', zugang: 'offen', handler: async (a) => {
-      const r = await konten.einrichten(b(a), info(a));
+      const r = x.einrichtung ? await x.einrichtung.einrichten(b(a), a.einrichtungscode, info(a)) : await konten.einrichten(b(a), info(a));
       L.konto.info('Administrator eingerichtet', { email: r.benutzer.email });
       return { status: 201, body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
@@ -487,14 +504,14 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return leer;
     } },
     { methode: 'GET', pfad: '/api/wiederherstellung/sicherungen', zugang: 'offen', handler: async (a) => {
-      const art = await wh().pruefeZugang(a.benutzer?.rolle === 'admin');
+      const art = await wh().pruefeZugang(a.benutzer?.rolle === 'admin', a.einrichtungscode);
       return ok({ art, ordner: sicherung().ordner, liste: (await sicherung().liste()).map((e) => ({ name: e.name, bytes: e.bytes, meta: e.meta })) });
     } },
     { methode: 'POST', pfad: '/api/wiederherstellung/abgleich', zugang: 'offen', handler: async (a) => {
-      await wh().pruefeZugang(a.benutzer?.rolle === 'admin');
+      await wh().pruefeZugang(a.benutzer?.rolle === 'admin', a.einrichtungscode);
       return ok(await wh().abgleich(String(b(a).name ?? ''), typeof b(a).schluessel === 'string' ? b(a).schluessel as string : undefined));
     } },
-    { methode: 'POST', pfad: '/api/wiederherstellung/start', zugang: 'offen', handler: async (a) => ok(await wh().starte(b(a), a.benutzer?.rolle === 'admin' ? a.benutzer : null)) },
+    { methode: 'POST', pfad: '/api/wiederherstellung/start', zugang: 'offen', handler: async (a) => ok(await wh().starte(b(a), a.benutzer?.rolle === 'admin' ? a.benutzer : null, a.einrichtungscode)) },
     // Probe-Wiederherstellung (#109)
     { methode: 'POST', pfad: '/api/werkbank/sicherung/probe', zugang: 'admin', handler: async (a) => ok((await wh().starteProbe(typeof b(a).name === 'string' ? b(a).name as string : null, ich(a).email)).lauf) },
     { methode: 'GET', pfad: '/api/werkbank/sicherung/probe', zugang: 'admin', handler: async () => ok(x.wiederherstellung?.aktuellerLauf() ?? null) },
@@ -586,7 +603,10 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
         sicherung: x.sicherung ? await sicher(() => x.sicherung!.zustand()) : null,
         // Speicherplatz (#116) und frühere Variablen, die entfernt werden können (#115).
         speicherplatz: x.speicherplatz ? await sicher(() => x.speicherplatz!.stand()) : null,
-        variablen: x.ordner?.ueberfluessig ?? [],
+        variablen: [...(x.ordner?.ueberfluessig ?? []), ...(x.anbindung?.stand().umgebung === 'gleich' ? ['DATABASE_URL'] : []), ...(x.mandantHinweis && process.env.HAUSHALT_ID ? ['HAUSHALT_ID'] : [])],
+        // DATABASE_URL weicht von der Anbindung in /data/geheim ab und wird ignoriert (#119).
+        anbindung: x.anbindung ? { umgebung: x.anbindung.stand().umgebung, neustartNoetig: x.anbindung.stand().neustartNoetig } : null,
+        einrichtung: x.einrichtung ? await sicher(() => x.einrichtung!.stand()) : null,
       });
     } },
     { methode: 'GET', pfad: '/api/werkbank/system', zugang: 'admin', handler: async () => {
@@ -594,6 +614,20 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const sp = x.speicherplatz ? await sicher(() => x.speicherplatz!.stand()) : null;
       return ok({ ...await uebersicht(system, x.betrieb?.kurz()), ordner: sp?.ordner ?? null, variablen: x.ordner?.ueberfluessig ?? [] });
     } },
+    /* ---------- Einrichtungsassistent (#119) ---------- */
+    { methode: 'GET', pfad: '/api/werkbank/einrichtung', zugang: 'admin', handler: async () => {
+      if (!x.einrichtung) throw new Fachfehler(404, 'Kein Einrichtungsassistent.');
+      return ok(await x.einrichtung.stand());
+    } },
+    { methode: 'POST', pfad: '/api/werkbank/einrichtung/schritt', zugang: 'admin', handler: async (a) => {
+      if (!x.einrichtung) throw new Fachfehler(404, 'Kein Einrichtungsassistent.');
+      return ok(await x.einrichtung.merke(b(a).schritt, b(a).uebersprungen === true, ich(a).email));
+    } },
+    /* ---------- Datenbank-Anbindung (#119) ---------- */
+    { methode: 'GET', pfad: '/api/werkbank/anbindung', zugang: 'admin', handler: async () => ok(anbindung().stand()) },
+    { methode: 'POST', pfad: '/api/werkbank/anbindung/pruefen', zugang: 'admin', handler: async (a) => ok(await anbindung().pruefe(b(a).anbindung)) },
+    { methode: 'PUT', pfad: '/api/werkbank/anbindung', zugang: 'admin', handler: async (a) => ok(await anbindung().speichere({ ...(b(a).anbindung as object ?? {}), leerBestaetigt: b(a).leerBestaetigt }, ich(a).email)) },
+    { methode: 'POST', pfad: '/api/werkbank/neustart', zugang: 'admin', handler: async (a) => { anbindung().neustart(ich(a).email); return leer; } },
     /* ---------- Speicherplatz (#116) ---------- */
     { methode: 'GET', pfad: '/api/werkbank/speicherplatz', zugang: 'admin', handler: async () => ok(await speicherplatz().pruefe()) },
     { methode: 'PUT', pfad: '/api/werkbank/speicherplatz', zugang: 'admin', handler: async (a) => ok(await speicherplatz().speichere(a.body, ich(a).email)) },

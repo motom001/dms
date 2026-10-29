@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { mkdir, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,6 +18,11 @@ import { pgRepo } from './repo-pg';
 import { Betrieb, pgBetriebSpeicher } from './betrieb';
 import { Tresor } from './tresor';
 import { pruefeOrdner, SCHLUESSELDATEI } from './ordner';
+import { alsUrl, ANBINDUNG_DATEI, AnbindungVerwaltung, ausUrl, liesAnbindung, pruefeAnbindung, schreibeAnbindung, type Anbindung } from './anbindung';
+import { Einrichtungscode } from './einrichtungscode';
+import { einrichtungsmodus } from './einrichtungsmodus';
+import { Einrichtung } from './einrichtung';
+import { bestimmeMandant, mandantNamen } from './mandant';
 import { Texterkennung } from './texterkennung';
 import { Aufgabenmail } from './aufgabenmail';
 import { Fehlermeldungen, pgFehlerRepo } from './fehlermeldungen';
@@ -34,12 +40,12 @@ const pfad = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
 const env = process.env;
 
 const cfg = {
-  datenbank: env.DATABASE_URL,
   port: Number(env.PORT ?? 3000),
   host: env.HOST ?? '0.0.0.0',
   web: env.WEB_DIR ?? pfad('../../web/dist'),
   migrationen: env.MIGRATIONS_DIR ?? pfad('../migrations'),
-  haushalt: env.HAUSHALT_ID ?? '00000000-0000-4000-8000-000000000001',
+  /** Mandant (früher HAUSHALT_ID): steht nach dem Verbinden fest (#119). */
+  haushalt: '',
   proxy: env.TRUST_PROXY === 'true',
 };
 
@@ -60,16 +66,50 @@ if (ordnerPruefung.fehler.length) {
 }
 for (const v of ordnerPruefung.ueberfluessig) log.warn(`${v} ist nicht mehr nötig und kann aus der Compose-Datei entfernt werden (die Ordner im Container sind fest).`);
 
-if (!cfg.datenbank) {
-  console.error('DATABASE_URL fehlt, z. B. postgres://dms:geheim@localhost:5432/dms');
-  process.exit(1);
-}
+for (const o of Object.values(ordner)) await mkdir(o, { recursive: true });
 
-const sql = verbinde(cfg.datenbank);
+// Datenbank-Anbindung (#119): Datei unter /data/geheim, führend; sonst DATABASE_URL übernehmen;
+// sonst (oder wenn sie nicht funktioniert) der Einrichtungsassistent im Browser.
+const einrichtungscode = new Einrichtungscode(ordner.geheim);
+const umgebung = ausUrl(env.DATABASE_URL);
+if (env.DATABASE_URL && !umgebung) log.error('DATABASE_URL ist keine gültige postgres://-Adresse und wird ignoriert');
+let anbindung: Anbindung | null = null;
+try { anbindung = await liesAnbindung(ordner.geheim); } catch (e) { log.error('Datei der Datenbank-Anbindung nicht lesbar', { fehler: (e as Error).message }); }
+const quelle = anbindung ? 'datei' as const : umgebung ? 'umgebung' as const : null;
+const kandidat = anbindung ?? umgebung;
+let verbunden = false;
+let startfehler: string | null = null;
+if (kandidat) {
+  // Der Datenbank-Container braucht nach dem Start manchmal einen Moment.
+  for (let versuch = 1; versuch <= 5; versuch++) {
+    const p = await pruefeAnbindung(kandidat);
+    if (p.ok) { verbunden = true; break; }
+    startfehler = p.text;
+    log.warn(`Datenbank nicht verbunden (Versuch ${versuch}/5): ${p.text}`, { technisch: p.technisch });
+    if (p.art !== 'nicht_erreichbar') break;
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+}
+if (verbunden && !anbindung && umgebung) {
+  await schreibeAnbindung(ordner.geheim, umgebung);
+  anbindung = umgebung;
+  log.info(`DATABASE_URL in ${ANBINDUNG_DATEI} übernommen – die Variable ist nicht mehr nötig und kann aus der Compose-Datei entfernt werden`);
+}
+if (!verbunden) {
+  anbindung = await einrichtungsmodus({
+    geheim: ordner.geheim, code: einrichtungscode, vorbelegt: kandidat, quelle, fehler: startfehler,
+    port: cfg.port, host: cfg.host, webDir: cfg.web, proxy: cfg.proxy, wiederholenMs: kandidat ? 10_000 : undefined,
+  });
+}
+const db = anbindung!;
+const datenbankUrl = alsUrl(db);
+const sql = verbinde(datenbankUrl);
 await migriere(sql, cfg.migrationen, (m) => protokoll.modul('datenbank').info(m));
 const [{ server_version: pgVersion }] = await sql`SHOW server_version`;
-protokoll.modul('datenbank').info('Datenbank verbunden', { postgres: pgVersion });
-for (const o of Object.values(ordner)) await mkdir(o, { recursive: true });
+protokoll.modul('datenbank').info('Datenbank verbunden', { postgres: pgVersion, host: db.host, datenbank: db.datenbank });
+const mandant = await bestimmeMandant(sql, db, env, (a) => schreibeAnbindung(ordner.geheim, a));
+cfg.haushalt = mandant.id;
+if (mandant.hinweis) log.warn(mandant.hinweis);
 
 // E-Mail-Versand und Adresse des DMS stehen in der Werkbank (#37); frühere Umgebungsvariablen
 // werden beim ersten Start nach dem Update einmalig übernommen.
@@ -111,12 +151,15 @@ const sicherung = new Sicherung(ordner.sicherung, ordner.dateien, cfg.haushalt, 
 });
 // Wiederherstellen und Probe (#107, #109): eigenes Schema, erst nach allen Prüfungen umschalten.
 const wiederherstellung = new Wiederherstellung({
-  url: cfg.datenbank, sql, migrationen: cfg.migrationen, dateiWurzel: ordner.dateien, sicherung, tresor,
+  url: datenbankUrl, sql, migrationen: cfg.migrationen, dateiWurzel: ordner.dateien, sicherung, tresor,
   laufzeit: async () => ({ dms: eigeneVersion(), postgres: String(pgVersion), architektur: arch(), haushaltId: cfg.haushalt, migrationen: (await readdir(cfg.migrationen)).filter((f) => f.endsWith('.sql')).sort() }),
   wartungAktiv: () => wartung.aktiv,
   einrichtungNoetig: () => konten.einrichtungNoetig(),
   // Im Container startet Docker (restart: unless-stopped) das DMS gleich wieder.
   neustart: () => { log.warn('Neustart nach der Wiederherstellung'); void beenden(); },
+  // Gehört die Sicherung zu einem anderen Mandanten, gilt nach dem Neustart dessen Id (#119).
+  mandantUebernehmen: async (id) => { await schreibeAnbindung(ordner.geheim, { ...db, mandant: id }); },
+  pruefeCode: (c) => einrichtungscode.pruefe(c),
   anAdmins,
 });
 sicherung.sperre = () => wiederherstellung.laeuft();
@@ -135,13 +178,26 @@ const aufgabenmail = new Aufgabenmail({
   aufgabenVon: (b) => dienst.meineAufgaben(b),
   typName,
 }, () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), pgBetriebSpeicher(sql, cfg.haushalt));
+const designs = new Designs(messung.umhuelle(pgDesignRepo(sql, cfg.haushalt), 'designs'), mitPruefung(ordnerSpeicher(ordner.dateien, `${cfg.haushalt}/designs`), hochladen));
+// Einrichtungsassistent (#119): Mandant und Administrator mit Code, danach die weiteren Schritte.
+const einrichtungNoetig = await konten.einrichtungNoetig();
+if (einrichtungNoetig) await einrichtungscode.bereitstellen();
+else if (existsSync(einrichtungscode.datei)) await einrichtungscode.entfernen();
+const einrichtung = new Einrichtung({
+  konten, code: einrichtungNoetig ? einrichtungscode : null, einstellungen: pgEinstellungen(sql, cfg.haushalt),
+  mandant: mandantNamen(sql, cfg.haushalt), schriftzug: (t) => designs.setzeSchriftzug(t),
+});
+const anbindungVerwaltung = new AnbindungVerwaltung(ordner.geheim, db, umgebung, () => { void beenden(); });
 const app = await baueApp(dienst, konten, {
   webDir: cfg.web,
   sicher: () => betrieb.cookieNurHttps(),
   proxy: cfg.proxy,
   messung,
   system: pgSystemQuelle(sql, cfg.haushalt),
-  designs: new Designs(messung.umhuelle(pgDesignRepo(sql, cfg.haushalt), 'designs'), mitPruefung(ordnerSpeicher(ordner.dateien, `${cfg.haushalt}/designs`), hochladen)),
+  designs,
+  einrichtung,
+  anbindung: anbindungVerwaltung,
+  mandantHinweis: mandant.hinweis,
   apiSchluessel: new ApiSchluesselDienst(messung.umhuelle(pgApiSchluesselRepo(sql), 'apischluessel')),
   betrieb,
   tresor,
@@ -176,7 +232,7 @@ const abwesenheiten = () => konten.abwesenheitenPruefen().catch((e) => log.error
 await abwesenheiten();
 setInterval(abwesenheiten, 60 * 60 * 1000).unref();
 setInterval(() => void (wartung.aktiv ? Promise.resolve(0) : aufgabenmail.pruefe()).catch((e) => log.error('Aufgaben-Mail fehlgeschlagen', { fehler: (e as Error).message })), 5 * 60 * 1000).unref();
-if (await konten.einrichtungNoetig()) log.warn(`Noch kein Benutzer vorhanden: Der erste Aufruf des DMS im Browser (Port ${cfg.port}) legt den Administrator an.`);
+if (einrichtungNoetig) log.warn(`Noch kein Benutzer vorhanden: Öffne das DMS im Browser (Port ${cfg.port}) und richte es mit dem Einrichtungscode ein.`);
 
 await texterkennung.start();
 notfall.start();

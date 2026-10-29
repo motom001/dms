@@ -13,7 +13,7 @@ Jede Sicherung besteht aus zwei Dateien im Sicherungsordner, z. B.:
 | Datei | Inhalt |
 | --- | --- |
 | `2026-10-29_0200-automatisch.dms-sicherung` | Datenbank und alle Dateien (Dokumente, Logos, Bilder von Fehlermeldungen), gepackt und **verschlüsselt** |
-| `2026-10-29_0200-automatisch.json` | Metadaten, lesbar: Haushalt-Id, Versionen (DMS, Datenbank-Stand, PostgreSQL, Node.js, Betriebssystem, Architektur), Art, Beginn und Dauer, Anzahl Mappen, Dokumente und Benutzer, Größen, Verschlüsselung mit Fingerabdruck des Schlüssels und die **SHA-256-Prüfsumme** der Sicherungsdatei |
+| `2026-10-29_0200-automatisch.json` | Metadaten, lesbar: Mandanten-Id (Feld `haushaltId`), Versionen (DMS, Datenbank-Stand, PostgreSQL, Node.js, Betriebssystem, Architektur), Art, Beginn und Dauer, Anzahl Mappen, Dokumente und Benutzer, Größen, Verschlüsselung mit Fingerabdruck des Schlüssels und die **SHA-256-Prüfsumme** der Sicherungsdatei |
 
 - Verschlüsselt wird mit AES-256-GCM. Der Schlüssel dafür wird aus dem Schlüssel unter **Werkbank → [Verschlüsselung](verschluesselung.md)** abgeleitet – derselbe wie für Passwortfelder. **Ohne diesen Schlüssel ist eine Sicherung nicht lesbar.** Er steht nie in der Sicherung, nur in der Schlüsseldatei und auf dem [Notfallblatt](#notfallblatt).
 - Angemeldete Sitzungen gehören nicht dazu: Nach einer Wiederherstellung meldet sich jeder neu an.
@@ -83,7 +83,7 @@ Da die Sicherungen verschlüsselt sind, dürfen sie auch in eine Cloud. Das [Not
 
 **Notfallblatt herunterladen** (hier und unter *Verschlüsselung*) erzeugt ein PDF mit allem, was du nach einem Ausfall brauchst:
 
-- Name des DMS, **Haushalt-Id**, Adresse, DMS-Version und Datum,
+- Name des DMS (Mandant), **Mandanten-Id**, Adresse, DMS-Version und Datum,
 - den **Schlüssel** in Vierergruppen zum Abschreiben und seinen **Fingerabdruck**,
 - wo die Sicherungen und die Schlüsseldatei liegen,
 - die Schritte zur Wiederherstellung auf einem neuen System – auch: „Startet das DMS nicht mehr, ein älteres Image ziehen“,

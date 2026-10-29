@@ -38,6 +38,15 @@ export function hinweiseAus(u: WerkbankUebersicht): Hinweis[] {
   else if (t && t.betroffen) h.push({ art: 'warn', text: <><strong>{t.betroffen === 1 ? 'Ein Passwort ist' : `${t.betroffen} Passwörter sind`} nicht lesbar oder unverschlüsselt.</strong></>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
   // Sicherung (#105): fehlgeschlagen, zu alt, Notfallblatt, Speicherort.
   if (u.sicherung) for (const x of sicherungsHinweise(u.sicherung)) h.push({ ...x, ziel: '/werkbank/sicherung', knopf: 'Zur Sicherung' });
+  // Datenbank-Anbindung (#119)
+  if (u.anbindung?.umgebung === 'abweichend') h.push({ art: 'warn', text: <><strong>DATABASE_URL weicht von der Datenbank-Anbindung ab und wird ignoriert.</strong> Führend ist die Anbindung unter /data/geheim; entferne die Variable aus der Compose-Datei.</>, ziel: '/werkbank/anbindung', knopf: 'Zur Anbindung' });
+  if (u.anbindung?.neustartNoetig) h.push({ art: 'warn', text: <><strong>Die Datenbank-Anbindung ist geändert</strong> und gilt erst nach einem Neustart des DMS.</>, ziel: '/werkbank/anbindung', knopf: 'Zur Anbindung' });
+  // Im Einrichtungsassistenten übersprungen (#119): hier nachholen.
+  const nachholen: Record<string, { text: string; ziel: string; knopf: string }> = {
+    benutzer: { text: 'einen normalen Benutzer für die Ablage anlegen – Administratoren arbeiten nicht in der Ablage', ziel: '/werkbank/benutzer/neu', knopf: 'Benutzer anlegen' },
+    optional: { text: 'Adresse, E-Mail-Versand und Bundesland einstellen', ziel: '/werkbank/betrieb', knopf: 'Zu E-Mail und Adresse' },
+  };
+  for (const x of u.einrichtung?.uebersprungen ?? []) if (nachholen[x] && !(x === 'optional' && u.mail) && !(x === 'benutzer' && (u.bestand?.benutzer ?? 0) > 1)) h.push({ art: 'info', text: <><strong>Aus der Einrichtung übersprungen:</strong> {nachholen[x].text}.</>, ziel: nachholen[x].ziel, knopf: nachholen[x].knopf });
   // Feste Ordner (#115): frühere Variablen mit dem festen Wert sind überflüssig.
   if (u.variablen?.length) h.push({ art: 'info', text: <><strong>{u.variablen.length === 1 ? 'Eine Umgebungsvariable ist' : `${u.variablen.length} Umgebungsvariablen sind`} nicht mehr nötig:</strong> <span className="mono">{u.variablen.join(', ')}</span>. Die Ordner im Container sind fest – entferne sie beim nächsten Update aus der Compose-Datei.</>, ziel: '/werkbank/technik', knopf: 'Zur Technik' });
   if (!u.mail) h.push({ art: 'warn', text: <><strong>Der E-Mail-Versand ist nicht eingerichtet.</strong> Einladungen, die tägliche Zusammenfassung der Aufgaben und „Per E-Mail versenden“ gehen erst danach.</>, ziel: '/werkbank/betrieb', knopf: 'E-Mail einrichten' });

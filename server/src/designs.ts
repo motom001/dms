@@ -90,6 +90,14 @@ export class Designs {
     return neu;
   }
 
+  /** Schriftzug des Standard-Designs, z. B. der Name des Mandanten aus der Einrichtung (#119). */
+  async setzeSchriftzug(text: string) {
+    const { designs, standard } = await this.liste();
+    const d = designs.find((x) => x.id === standard);
+    if (!d) return;
+    await this.repo.speichere({ ...d, schriftzug: text.slice(0, SCHRIFTZUG_MAX) || null }, false);
+  }
+
   async entferneLogo(id: string) {
     const d = (await this.repo.liste()).find((x) => x.id === id);
     if (!d) throw new Fachfehler(404, 'Dieses Design gibt es nicht.');

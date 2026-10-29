@@ -20,6 +20,7 @@ import { useWartungsmodus, WartungsmodusListe, WartungsmodusPanel } from './Wart
 import { SicherungListe, SicherungPanel, useSicherung } from './Sicherung';
 import { WiederherstellungListe, WiederherstellungPanel } from './Wiederherstellung';
 import { FehlermeldungDetail, FehlermeldungenListe, useFehlermeldungen } from './Fehlermeldungen';
+import { AnbindungListe, AnbindungPanel, useAnbindung } from './Anbindung';
 import { SpeicherplatzListe, SpeicherplatzPanel, useSpeicherplatz } from './Speicherplatz';
 import { PapierkorbDetail, PapierkorbEinstellungen, PapierkorbListe, usePapierkorb } from '../ablage/Papierkorb';
 
@@ -46,6 +47,7 @@ import { PapierkorbDetail, PapierkorbEinstellungen, PapierkorbListe, usePapierko
  * /werkbank/wartungsmodus          Wartungsmodus (#102)
  * /werkbank/sicherung              Sicherung, Zeitplan, Notfallblatt, Probe (#103–#106, #109)
  * /werkbank/wiederherstellung      Sicherung einspielen (#107)
+ * /werkbank/anbindung            Datenbank-Anbindung (#119)
  * /werkbank/speicherplatz         Speicherplatz je Ordner, Warnschwelle und Grenze (#115, #116)
  */
 export function Werkbank({ teile }: { teile: string[] }) {
@@ -66,6 +68,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const wartungsmodus = useWartungsmodus(bereich === 'wartungsmodus');
   const sicherung = useSicherung(bereich === 'sicherung');
   const speicherplatz = useSpeicherplatz(bereich === 'speicherplatz');
+  const anbindung = useAnbindung(bereich === 'anbindung');
   // Anmeldungen und Aktivität ändern sich laufend: beim Öffnen der Benutzer neu laden.
   useEffect(() => { if (bereich === 'benutzer') void benutzer.laden(); }, [bereich, id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -121,6 +124,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'sicherung') {
     liste = <SicherungListe z={sicherung} />;
     rechts = <SicherungPanel z={sicherung} />;
+  } else if (bereich === 'anbindung') {
+    liste = <AnbindungListe z={anbindung} />;
+    rechts = <AnbindungPanel z={anbindung} nachAenderung={() => void uebersicht.laden()} />;
   } else if (bereich === 'speicherplatz') {
     liste = <SpeicherplatzListe z={speicherplatz} />;
     rechts = <SpeicherplatzPanel z={speicherplatz} nachAenderung={() => { void uebersicht.laden(); void wartungsmodus.laden(); }} />;
@@ -145,7 +151,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   }
 
   return (
-    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz'].includes(bereich) ? 'mappe' : 'liste'} offen={id}>
+    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung'].includes(bereich) ? 'mappe' : 'liste'} offen={id}>
       <aside className="spalte sichten" aria-label="Bereiche">
         <h2 className="ueber">Werkbank</h2>
         <WerkbankNavigation bereich={bereich} eintraege={[
@@ -158,6 +164,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'verschluesselung', name: 'Verschlüsselung', gruppe: 'einstellungen', warn: tresor.stand && tresor.stand.zustand !== 'vorhanden' ? 'fehlt' : undefined },
           { pfad: 'designs', name: 'Designs', gruppe: 'einstellungen', zahl: d.designs.length || undefined },
           { pfad: 'papierkorb', name: 'Papierkorb', gruppe: 'einstellungen', zahl: papierkorb.eintraege?.length || uebersicht.stand?.papierkorb.anzahl || undefined },
+          { pfad: 'anbindung', name: 'Datenbank-Anbindung', gruppe: 'einstellungen', warn: uebersicht.stand?.anbindung && (uebersicht.stand.anbindung.umgebung === 'abweichend' || uebersicht.stand.anbindung.neustartNoetig) ? '!' : undefined, warnTitel: 'DATABASE_URL weicht ab oder Neustart nötig' },
           { pfad: 'speicherplatz', name: 'Speicherplatz', gruppe: 'einstellungen', warn: uebersicht.stand?.speicherplatz && uebersicht.stand.speicherplatz.zustand !== 'ok' ? (uebersicht.stand.speicherplatz.zustand === 'grenze' ? 'voll' : 'knapp') : undefined, warnTitel: 'Speicherplatz knapp' },
           { pfad: 'texterkennung', name: 'Texterkennung', gruppe: 'einstellungen', warn: uebersicht.stand?.texterkennung?.fehler ? String(uebersicht.stand.texterkennung.fehler) : undefined, warnTitel: 'Dokumente mit Fehler' },
           { pfad: 'protokoll', name: 'Protokoll', gruppe: 'wartung', warn: protokoll.debug?.an ? 'Debug' : undefined, warnTitel: 'Debug-Modus ist an' },

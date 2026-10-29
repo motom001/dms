@@ -1,4 +1,6 @@
 import type { Speicherplatz } from './speicherplatz';
+import type { Einrichtung } from './einrichtung';
+import type { AnbindungVerwaltung } from './anbindung';
 import type { OrdnerPruefung } from './ordner';
 import { existsSync } from 'node:fs';
 import fastifyStatic from '@fastify/static';
@@ -59,6 +61,10 @@ interface Optionen {
   /** Speicherplatz-Überwachung (#116) und feste Ordner (#115). */
   speicherplatz?: Speicherplatz;
   ordner?: OrdnerPruefung;
+  /** Einrichtungsassistent und Datenbank-Anbindung (#119). */
+  einrichtung?: Einrichtung;
+  anbindung?: AnbindungVerwaltung;
+  mandantHinweis?: string | null;
   abruf?: (url: string) => Promise<unknown>;
 }
 
@@ -112,6 +118,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
           sitzung: leseCookie(req.headers.cookie, SITZUNG_COOKIE),
           ip: req.ip,
           geraet: String(req.headers['user-agent'] ?? ''),
+          einrichtungscode: typeof req.headers['x-einrichtungscode'] === 'string' ? req.headers['x-einrichtungscode'] : undefined,
         };
         const start = performance.now();
         const k: Kontext = { anfrage: req.id, pfad: `${req.method} ${req.url.split('?')[0]}`, db: { anzahl: 0, ms: 0 }, ursprung: `${req.protocol}://${req.host}` };

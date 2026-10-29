@@ -20,6 +20,14 @@ export class ApiFehler extends Error {
 /** Wird ausgelöst, wenn der Server die Sitzung nicht (mehr) kennt. */
 export const ABGEMELDET = 'dms:abgemeldet';
 
+/** Einrichtungscode (#119): solange das DMS nicht eingerichtet ist, bei jeder Anfrage mitschicken. */
+let einrichtungscode: string | null = (() => { try { return sessionStorage.getItem('dms:einrichtungscode'); } catch { return null; } })();
+export function setzeEinrichtungscode(c: string | null) {
+  einrichtungscode = c;
+  try { if (c) sessionStorage.setItem('dms:einrichtungscode', c); else sessionStorage.removeItem('dms:einrichtungscode'); } catch { /* egal */ }
+}
+export const hatEinrichtungscode = () => !!einrichtungscode;
+
 async function anfrage<T>(methode: string, url: string, body?: unknown): Promise<T> {
   let r: Response;
   const start = performance.now();
@@ -29,7 +37,11 @@ async function anfrage<T>(methode: string, url: string, body?: unknown): Promise
       method: methode,
       credentials: 'same-origin',
       // X-DMS kennzeichnet Anfragen der eigenen Oberfläche (Schutz vor fremden Seiten).
-      headers: body === undefined ? { 'x-dms': '1' } : { 'x-dms': '1', 'content-type': 'application/json' },
+      headers: {
+        'x-dms': '1',
+        ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+        ...(einrichtungscode ? { 'x-einrichtungscode': einrichtungscode } : {}),
+      },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
@@ -86,7 +98,25 @@ export interface KontoStatus {
   wiederherstellung?: { laeuft: boolean; abschluss: boolean };
   /** Version der Installation (#111), nur angemeldet. */
   version?: string | null;
+  /** Einrichtungsassistent (#119). */
+  einrichtung?: EinrichtungStatus | null;
 }
+export interface AnbindungAnsicht { host: string; port: number; datenbank: string; benutzer: string; passwortGesetzt: boolean }
+export interface AnbindungEingabe { host: string; port: number; datenbank: string; benutzer: string; passwort: string }
+export type AnbindungPruefung = { ok: true; postgres: string; eingerichtet: boolean; benutzer: number } | { ok: false; art: 'nicht_erreichbar' | 'anmeldung' | 'datenbank_fehlt' | 'sonst'; text: string; anlegenMoeglich?: boolean; technisch: string };
+export interface EinrichtungStatus {
+  /** datenbank: noch keine Verbindung (Einrichtungsmodus); startet: gleich da; konto: Mandant und Administrator. */
+  phase: 'datenbank' | 'startet' | 'konto';
+  code: boolean;
+  /** Angemeldeter Administrator: weitere Schritte offen. */
+  assistent?: boolean;
+  anbindung?: AnbindungAnsicht | null;
+  quelle?: 'datei' | 'umgebung' | null;
+  fehler?: string | null;
+}
+export type EinrichtungSchritt = 'benutzer' | 'schluessel' | 'optional' | 'fertig';
+export interface EinrichtungStand { offen: boolean; erledigt: EinrichtungSchritt[]; uebersprungen: EinrichtungSchritt[]; mandant: string | null }
+export interface AnbindungStand { anbindung: AnbindungAnsicht; datei: string; umgebung: 'fehlt' | 'gleich' | 'abweichend'; neustartNoetig: boolean }
 /** Wartungsmodus (#102), wie ihn jeder sieht; sekunden = bis zur aktiven Stufe. */
 export interface WartungOeffentlich { stufe: 'aus' | 'angekuendigt' | 'aktiv'; text: string; ende: string | null; aktivAb: string | null; sekunden: number | null; ausloeser?: 'speicherplatz' | null }
 export interface WartungSitzung { id: string; benutzerId: string; name: string; email: string; rolle: string; geraet: string; ip: string; zuletztAktiv: string; erstellt: string; aktuell: boolean }
@@ -140,6 +170,17 @@ export interface LinkErgebnis { benutzer: Benutzer; mailVerschickt: boolean; lin
 
 export const api = {
   status: () => anfrage<KontoStatus>('GET', '/api/konto/status'),
+  /* Einrichtungsassistent (#119) */
+  einrichtungCode: () => anfrage<{ ok: true }>('POST', '/api/einrichtung/code'),
+  einrichtungDbPruefen: (anbindung: AnbindungEingabe) => anfrage<AnbindungPruefung>('POST', '/api/einrichtung/datenbank/pruefen', { anbindung }),
+  einrichtungDbAnlegen: (anbindung: AnbindungEingabe) => anfrage<AnbindungPruefung>('POST', '/api/einrichtung/datenbank/anlegen', { anbindung }),
+  einrichtungDbUebernehmen: (anbindung: AnbindungEingabe) => anfrage<{ ok: true }>('POST', '/api/einrichtung/datenbank/uebernehmen', { anbindung }),
+  einrichtungStand: () => anfrage<EinrichtungStand>('GET', '/api/werkbank/einrichtung'),
+  einrichtungSchritt: (schritt: EinrichtungSchritt, uebersprungen = false) => anfrage<EinrichtungStand>('POST', '/api/werkbank/einrichtung/schritt', { schritt, uebersprungen }),
+  anbindung: () => anfrage<AnbindungStand>('GET', '/api/werkbank/anbindung'),
+  anbindungPruefen: (anbindung: AnbindungEingabe) => anfrage<AnbindungPruefung>('POST', '/api/werkbank/anbindung/pruefen', { anbindung }),
+  anbindungSpeichern: (anbindung: AnbindungEingabe, leerBestaetigt = false) => anfrage<AnbindungStand>('PUT', '/api/werkbank/anbindung', { anbindung, leerBestaetigt }),
+  neustart: () => anfrage<null>('POST', '/api/werkbank/neustart'),
   wartung: () => anfrage<WartungOeffentlich>('GET', '/api/wartung'),
   sicherung: () => anfrage<SicherungStand>('GET', '/api/werkbank/sicherung'),
   sicherungLauf: () => anfrage<SicherungsLauf | null>('GET', '/api/werkbank/sicherung/lauf'),
@@ -159,7 +200,7 @@ export const api = {
   wartungEin: (d: { text: string; ende: string | null; vorlauf: number }) => anfrage<unknown>('POST', '/api/werkbank/wartung/ein', d),
   wartungJetzt: () => anfrage<unknown>('POST', '/api/werkbank/wartung/jetzt'),
   wartungAus: () => anfrage<unknown>('POST', '/api/werkbank/wartung/aus'),
-  einrichten: (d: { email: string; name: string; passwort: string }) => anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/einrichten', d),
+  einrichten: (d: { mandant?: string; email: string; name: string; passwort: string }) => anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/einrichten', d),
   anmelden: (d: { email: string; passwort: string }) => anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/anmelden', d),
   abmelden: () => anfrage<null>('POST', '/api/konto/abmelden'),
   passwortVergessen: (email: string) => anfrage<null>('POST', '/api/konto/passwort-vergessen', { email }),
@@ -363,6 +404,10 @@ export interface WerkbankUebersicht {
   speicherplatz?: SpeicherplatzStand | null;
   /** Frühere Variablen, die aus der Compose-Datei entfernt werden können (#115). */
   variablen?: string[];
+  /** Datenbank-Anbindung (#119): DATABASE_URL abweichend, Neustart nötig. */
+  anbindung?: { umgebung: 'fehlt' | 'gleich' | 'abweichend'; neustartNoetig: boolean } | null;
+  /** Einrichtungsassistent (#119): übersprungene Schritte. */
+  einrichtung?: EinrichtungStand | null;
 }
 /* Feste Ordner (#115) und Speicherplatz (#116) */
 export type OrdnerArt = 'dateien' | 'geheim' | 'sicherung';
