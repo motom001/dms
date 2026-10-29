@@ -79,6 +79,10 @@ Der Testlauf nutzt die Regeln, **wie sie gerade im Editor stehen** – auch unge
 
 Was ein Benutzer über alle Mappentypen hinweg lesen darf, zeigt [Was sieht ein Benutzer?](benutzer.md#was-sieht-ein-benutzer) in der Benutzerverwaltung.
 
+## Berechtigungen an Sichten
+
+Wer eine **Sicht** im Baum sieht und dort „+ Neu“ bekommt, regelst du an der Sicht selbst – mit Vererbung an die Untersichten. Das steht unter [Sichten → Berechtigungen](sichten.md#berechtigungen). Ob eine Mappe lesbar ist, entscheidet weiter allein der Mappentyp.
+
 ## Was Benutzer davon merken
 
 - Mappen ohne Leserecht fehlen in Listen, Suche, Zählern, Favoriten und Trefferlisten. Verweist eine sichtbare Mappe auf eine unsichtbare, steht dort „nicht sichtbare Mappe“ ohne Link.

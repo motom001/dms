@@ -10,6 +10,9 @@ import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
 import { titelOder } from '../seiten';
 import { Hilfe } from '../Hilfe';
+import { Bereich, SICHT_BEREICHE, useBereiche, type Klappe, type SichtBereich } from '../einrichtung/Bereich';
+import { elternkette, SichtBerechtigungen, SichtTestlauf } from './SichtRechte';
+import { sichtRegelProblem, sichtRegelwerkVon } from '../../../shared/src/sichtrechte';
 
 /**
  * Sichten verwalten (#38) mit Bedingungen (#40, #41): Baum links, Bearbeitung rechts.
@@ -30,15 +33,27 @@ export function SichtenListe({ offen }: { offen?: string }) {
   const typen = (s: Sicht) => s.typen.map((t) => d.typ(t)).filter((t): t is Mappentyp => !!t);
   const [ansage, setAnsage] = useState('');
   const [fehler, setFehler] = useState<string>();
+  const [hinweis, setHinweis] = useState<string>();
   const name = (id: string | null) => (id ? d.sicht(id)?.name ?? '' : '');
+  /** „Heizung erbt jetzt von „Haus“: Standard R, 2 Regeln.“ bzw. „… erbt keine Regeln mehr.“ */
+  const vererbtHinweis = (n: string, elternId: string | null) => {
+    if (!elternId) return `„${n}“ liegt jetzt auf der obersten Ebene und erbt keine Berechtigungen mehr; es gelten nur ihre eigenen.`;
+    const kette = elternkette(d.sichten, elternId);
+    const regeln = kette.reduce((x, s) => x + sichtRegelwerkVon(s).regeln.length, 0);
+    const standard = sichtRegelwerkVon(kette[0]).grund;
+    return `„${n}“ erbt jetzt die Berechtigungen von „${name(elternId)}“: Standard ${Object.entries(standard).filter(([, v]) => v).map(([k]) => k).join('') || '–'}${regeln ? `, ${regeln} Regel${regeln === 1 ? '' : 'n'}` : ', keine Regeln'}. Ihr eigener Standard und ✓ in ihren Regeln wirken jetzt nicht mehr.`;
+  };
 
   // Drag & Drop (#73): sofort gespeichert; Untersichten wandern mit, Kreise sind unmöglich.
   async function verschiebe(id: string, elternId: string | null, stelle: number) {
     setFehler(undefined);
     try {
+      const vorher = d.sicht(id)?.elternId ?? null;
       await api.sichtVerschieben(id, elternId, stelle);
       await d.neuLaden();
       setAnsage(`${name(id)} liegt jetzt ${elternId ? `unter „${name(elternId)}“` : 'auf der obersten Ebene'} an Stelle ${stelle + 1}.`);
+      // Berechtigungen (#148): Mit der neuen Elternsicht gelten sofort deren Regeln.
+      if (vorher !== elternId) setHinweis(vererbtHinweis(name(id), elternId));
     } catch (x) { setFehler((x as Error).message); }
   }
   const z = useZiehen({
@@ -75,6 +90,7 @@ export function SichtenListe({ offen }: { offen?: string }) {
         <Link to="/werkbank/sichten/neu" className="knopf primaer klein">+ Neu</Link>
       </div>
       {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
+      {hinweis && <div className="hinweis info"><p>{hinweis}</p><button type="button" className="textknopf klein" onClick={() => setHinweis(undefined)}>Ausblenden</button></div>}
       <Ansage text={ansage} />
       {zeilen.length > 1 && <p className="leise klein">Zum Ordnen am Griff ⠿ ziehen: zwischen zwei Sichten oder auf eine Sicht (wird Untersicht).</p>}
       {!zeilen.length && offen !== 'neu'
@@ -97,6 +113,7 @@ export function SichtenListe({ offen }: { offen?: string }) {
                       {s.bedingungen.length > 0 && ` · ${s.bedingungen.length} Bedingung${s.bedingungen.length === 1 ? '' : 'en'}`}
                       {kinder > 0 && ` · ${kinder} Untersicht${kinder === 1 ? '' : 'en'}`}
                       {` · ${(d.zaehler.sichten?.[s.id] ?? 0).toLocaleString('de-DE')} Mappen`}
+                      {s.berechtigungen?.regeln.length ? ` · ${s.berechtigungen.regeln.length} Regel${s.berechtigungen.regeln.length === 1 ? '' : 'n'}` : ''}
                     </span>
                     {probleme > 0 && <span className="problem">{probleme} Bedingung{probleme === 1 ? '' : 'en'} ohne Wirkung – bitte prüfen</span>}
                     {listenProblem && <span className="problem">Trefferliste fehlt – zeigt die Standardliste</span>}
@@ -109,8 +126,8 @@ export function SichtenListe({ offen }: { offen?: string }) {
   );
 }
 
-const leer = (): SichtDaten => ({ name: '', beschreibung: '', elternId: null, position: 0, typen: [], bedingungen: [], trefferliste: null });
-const datenVon = (s: Sicht): SichtDaten => ({ name: s.name, beschreibung: s.beschreibung, elternId: s.elternId, position: s.position, typen: s.typen, bedingungen: s.bedingungen, trefferliste: s.trefferliste ?? null });
+const leer = (): SichtDaten => ({ name: '', beschreibung: '', elternId: null, position: 0, typen: [], bedingungen: [], trefferliste: null, berechtigungen: null });
+const datenVon = (s: Sicht): SichtDaten => ({ name: s.name, beschreibung: s.beschreibung, elternId: s.elternId, position: s.position, typen: s.typen, bedingungen: s.bedingungen, trefferliste: s.trefferliste ?? null, berechtigungen: s.berechtigungen ?? null });
 
 export function SichtEditor({ id }: { id: string }) {
   const d = useDaten();
@@ -123,6 +140,14 @@ export function SichtEditor({ id }: { id: string }) {
   const [vorschau, setVorschau] = useState<number | null>(null);
   const geaendert = JSON.stringify(e) !== basis;
   useUngespeichert(geaendert);
+  // Bereiche (#148) wie am Mappentyp: neu offen, bestehend eingeklappt bzw. wie zuletzt.
+  const b = useBereiche(SICHT_BEREICHE, 'sicht', neu ? null : id);
+  const [fehlerOrte, setFehlerOrte] = useState<Set<SichtBereich>>(new Set());
+  const untersicht = !!e.elternId;
+  const liveFehler = (k: SichtBereich) => (k === 'berechtigungen' && (e.berechtigungen?.regeln ?? []).some((r) => !!sichtRegelProblem(r, untersicht)))
+    || (k === 'bedingungen' && e.bedingungen.some((x) => !!bedingungsProblem(x, e.typen.map((t) => d.typ(t)).filter((t): t is Mappentyp => !!t))));
+  const hatFehler = (k: SichtBereich) => fehlerOrte.has(k) || liveFehler(k);
+  const klappe = (k: SichtBereich): Klappe => b.klappe(k, hatFehler(k));
 
   const eigeneTypen = e.typen.map((t) => d.typ(t)).filter((t): t is Mappentyp => !!t);
   // Eine neue Sicht ist im Baum noch nicht da; für die Auswahl der Elternsicht zählt sie als Blatt.
@@ -151,12 +176,18 @@ export function SichtEditor({ id }: { id: string }) {
     setSendet(true); setMeldung(undefined);
     try {
       const s = neu ? await api.sichtAnlegen({ ...e, position: undefined }) : await api.sichtAendern(id, e.elternId !== vorhanden!.elternId ? { ...e, position: undefined } : e);
-      const b = JSON.stringify(datenVon(s));
-      setBasis(b); setE(JSON.parse(b));
+      const neuBasis = JSON.stringify(datenVon(s));
+      setBasis(neuBasis); setE(JSON.parse(neuBasis)); setFehlerOrte(new Set());
       loeseWache();
+      if (neu) b.merke(s.id);
       await d.neuLaden();
       if (neu) geheZu(`/werkbank/sichten/${s.id}`); else setMeldung({ art: 'gut', text: 'Sicht gespeichert.' });
-    } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    } catch (x) {
+      setMeldung({ art: 'schlecht', text: (x as Error).message });
+      // Fehler in den Berechtigungen (#148): Bereich markieren und aufklappen; sonst die Grunddaten.
+      const ort: SichtBereich = ((x as { details?: { berechtigungen?: boolean } }).details?.berechtigungen) ? 'berechtigungen' : 'grunddaten';
+      setFehlerOrte(new Set([ort])); b.oeffne([ort]);
+    }
     finally { setSendet(false); }
   }
   async function loeschen() {
@@ -182,8 +213,10 @@ export function SichtEditor({ id }: { id: string }) {
         {!neu && <p className="leise"><Link to={`/ablage/${id}`} className="verweis">In der Ablage öffnen →</Link></p>}
       </div></div>
 
-      <div className="blatt">
-        <h2 className="h3">Grunddaten</h2>
+      {b.leiste(hatFehler, 'Bereiche der Sicht')}
+
+      <Bereich id="grunddaten" titel="Grunddaten" klappe={klappe('grunddaten')}
+        kurz={e.elternId ? `unter „${d.sicht(e.elternId)?.name ?? '…'}“` : 'oberste Ebene'}>
         <div className="raster">
           <label className="eigenschaft"><span>Name</span><input value={e.name} placeholder="z. B. Verträge mit Kündigungsfrist" onChange={(x) => setE({ ...e, name: x.target.value })} autoFocus={neu} /></label>
           <label className="eigenschaft"><span>Liegt unter <small>Elternsicht im Baum</small></span>
@@ -200,21 +233,28 @@ export function SichtEditor({ id }: { id: string }) {
             <button type="button" className="knopf klein" disabled={stelle >= geschwister.length - 1 || geaendert} title={geaendert ? 'Erst speichern' : undefined} onClick={() => void verschiebe(1)}>↓ nach unten</button>
           </div>
         )}
-      </div>
+        {!neu && vorhanden && e.elternId !== vorhanden.elternId && (
+          <p className="hinweis info klein">{e.elternId ? `Nach dem Speichern erbt die Sicht die Berechtigungen von „${d.sicht(e.elternId)?.name ?? '…'}“.` : 'Nach dem Speichern erbt die Sicht keine Berechtigungen mehr.'}</p>
+        )}
+      </Bereich>
 
-      <div className="blatt">
-        <h2 className="h3">Mappentypen</h2>
-        <p className="leise">Mappen dieser Typen zeigt die Sicht selbst. {untersichten > 0 ? `Dazu kommen die Mappen ihrer ${untersichten} Untersicht${untersichten === 1 ? '' : 'en'}.` : 'Ohne Typ dient sie nur zum Gruppieren von Untersichten.'} Zeigt sie mehrere Typen, gibt es kein „+ Neu“; als Spalten bietet sie nur an, was alle Typen gemeinsam haben.</p>
+      <Bereich id="mappentypen" titel="Mappentypen" klappe={klappe('mappentypen')}
+        kurz={eigeneTypen.length ? `${eigeneTypen.length}: ${eigeneTypen.map((t) => t.name).join(', ')}` : 'nur zum Gruppieren'}
+        beschreibung={<>Mappen dieser Typen zeigt die Sicht selbst. {untersichten > 0 ? `Dazu kommen die Mappen ihrer ${untersichten} Untersicht${untersichten === 1 ? '' : 'en'}.` : 'Ohne Typ dient sie nur zum Gruppieren von Untersichten.'} Zeigt sie mehrere Typen, gibt es kein „+ Neu“; als Spalten bietet sie nur an, was alle Typen gemeinsam haben.</>}>
         <div className="typwahl">
           {d.typen.map((t) => (
             <label key={t.id} className="haken"><input type="checkbox" checked={e.typen.includes(t.id)} onChange={(x) => setzeTyp(t.id, x.target.checked)} /><span>{t.name}</span></label>
           ))}
         </div>
-      </div>
+      </Bereich>
 
-      <TrefferlistenWahl e={e} setE={setE} typen={wirksam} />
+      <TrefferlistenWahl e={e} setE={setE} typen={wirksam} klappe={klappe('trefferliste')} />
 
-      <Bedingungen e={e} setE={setE} typen={eigeneTypen} />
+      <Bedingungen e={e} setE={setE} typen={eigeneTypen} klappe={klappe('bedingungen')} />
+
+      <SichtBerechtigungen e={e} setE={setE} alle={d.sichten.filter((s) => !ausgeschlossen.has(s.id))} klappe={klappe('berechtigungen')} />
+
+      <SichtTestlauf id={neu ? null : id} e={e} klappe={klappe('testlauf')} />
 
       <div className="hinweis info" role="status">
         <p>{vorschau === null ? 'Vorschau wird berechnet …' : <>Diese Sicht zeigt zurzeit <strong>{vorschau.toLocaleString('de-DE')} {vorschau === 1 ? 'Mappe' : 'Mappen'}</strong>{untersichten > 0 ? ' (mit Untersichten)' : ''}.</>}</p>
@@ -234,15 +274,15 @@ export function SichtEditor({ id }: { id: string }) {
 
 /* ---------- Trefferliste (#75) ---------- */
 
-function TrefferlistenWahl({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDaten) => SichtDaten) => void; typen: Mappentyp[] }) {
+function TrefferlistenWahl({ e, setE, typen, klappe }: { e: SichtDaten; setE: (f: (x: SichtDaten) => SichtDaten) => void; typen: Mappentyp[]; klappe: Klappe }) {
   const listen = gemeinsameTrefferlisten(typen);
   const wahl = spaltenDerSicht(typen, e.trefferliste);
   const problem = trefferlistenProblem(e.trefferliste, typen);
   const name = (k: string) => (istSystemspalte(k) ? SYSTEMSPALTEN[k] : typen[0]?.felder.find((f) => f.key === k)?.label ?? k);
   const standard = listen.find((l) => l.standard);
   return (
-    <div className="blatt">
-      <h2 className="h3">Trefferliste <Hilfe ort="sicht.trefferliste" /></h2>
+    <Bereich id="trefferliste" titel="Trefferliste" hilfe={<Hilfe ort="sicht.trefferliste" />} klappe={klappe}
+      kurz={!typen.length ? 'Systemspalten' : problem ? 'Trefferliste fehlt – Standard' : (listen.find((l) => l.key === e.trefferliste)?.name ?? (standard ? `Standard („${standard.name}“)` : 'Standard'))}>
       {!typen.length
         ? <p className="leise">Ohne Mappentypen zeigt die Sicht die Systemspalten (Titel, Typ, angelegt, geändert).</p>
         : <>
@@ -258,7 +298,7 @@ function TrefferlistenWahl({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: Si
               ? <p className="fehlertext klein">{problem}</p>
               : <p className="leise klein">Spalten: {wahl.spalten.length ? wahl.spalten.map(name).join(', ') : 'keine – einfache Liste mit Titel und zwei Feldern'}</p>}
           </>}
-    </div>
+    </Bereich>
   );
 }
 
@@ -281,7 +321,7 @@ function gemeinsameRegister(typen: Mappentyp[]): Array<{ wert: 'dokumente' | 've
     }));
 }
 
-function Bedingungen({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDaten) => SichtDaten) => void; typen: Mappentyp[] }) {
+function Bedingungen({ e, setE, typen, klappe }: { e: SichtDaten; setE: (f: (x: SichtDaten) => SichtDaten) => void; typen: Mappentyp[]; klappe: Klappe }) {
   const d = useDaten();
   const felder = useMemo(() => bedingungsfelder(typen), [typen]);
   const ziele: Ziel[] = [
@@ -306,8 +346,8 @@ function Bedingungen({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDat
   const merke = (mid: string, t: string) => setTitel((x) => ({ ...x, [mid]: t }));
 
   return (
-    <div className="blatt">
-      <h2 className="h3">Bedingungen <Hilfe ort="sicht.bedingungen" /></h2>
+    <Bereich id="bedingungen" titel="Bedingungen" hilfe={<Hilfe ort="sicht.bedingungen" />} klappe={klappe}
+      kurz={e.bedingungen.length ? `${e.bedingungen.length} Bedingung${e.bedingungen.length === 1 ? '' : 'en'}` : 'keine'}>
       {!typen.length
         ? <p className="leise">Bedingungen gelten für die eigenen Mappentypen der Sicht – wähle oben mindestens einen.</p>
         : <>
@@ -348,7 +388,7 @@ function Bedingungen({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDat
             )}
             <div className="knoepfe"><button type="button" className="knopf klein" onClick={() => setE((x) => ({ ...x, bedingungen: [...x.bedingungen, neu(ziele[0])] }))}>+ Bedingung</button></div>
           </>}
-    </div>
+    </Bereich>
   );
 }
 

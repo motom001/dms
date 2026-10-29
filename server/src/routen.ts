@@ -666,6 +666,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return ok(r);
     } },
     { methode: 'POST', pfad: '/api/werkbank/berechtigungen/testlauf', zugang: 'admin', handler: async (a) => ok(await dienst.testlauf(b(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/sichten/testlauf', zugang: 'admin', handler: async (a) => ok(await dienst.sichtTestlauf(b(a))) },
     { methode: 'GET', pfad: '/api/werkbank/berechtigungen/sicht/:benutzerId', zugang: 'admin', handler: async (a) => ok(await dienst.wasSieht(a.params.benutzerId)) },
 
     /* ---------- Einrichtungsassistent (#119) ---------- */
@@ -730,7 +731,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/sichten', zugang: 'angemeldet', handler: async (a) => ok(await dienst.zaehler(ich(a), await zg(a))) },
 
     /* ---------- Sichten verwalten (#38, #40, #41) ---------- */
-    { methode: 'GET', pfad: '/api/sichten/definitionen', zugang: 'angemeldet', handler: async () => ok(await dienst.listeSichten()) },
+    { methode: 'GET', pfad: '/api/sichten/definitionen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.listeSichten(await zg(a))) },
     { methode: 'POST', pfad: '/api/sichten/definitionen', zugang: 'admin', handler: async (a) => {
       const s = await dienst.legeSichtAn(a.body);
       L.werkbank.info('Sicht angelegt', { sicht: s.name, typen: s.typen.length, bedingungen: s.bedingungen.length });

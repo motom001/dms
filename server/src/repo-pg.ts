@@ -116,6 +116,7 @@ const alsSicht = (r: Zeile): Sicht => ({
   typen: (r.typen as string[]) ?? [],
   bedingungen: (r.bedingungen as Sicht['bedingungen']) ?? [],
   trefferliste: (r.trefferliste as string | null) ?? null,
+  berechtigungen: (r.berechtigungen as Sicht['berechtigungen']) ?? null,
   erstellt: iso(r.erstellt),
   geaendert: iso(r.geaendert),
 });
@@ -489,15 +490,16 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     },
     async legeSichtAn(id, d: SichtDaten) {
       const [r] = await sql`
-        INSERT INTO sichten (id, haushalt_id, name, beschreibung, eltern_id, position, typen, bedingungen, trefferliste)
-        VALUES (${id}, ${haushaltId}, ${d.name}, ${d.beschreibung}, ${d.elternId}, ${d.position}, ${json(sql, d.typen)}, ${json(sql, d.bedingungen)}, ${d.trefferliste ?? null})
+        INSERT INTO sichten (id, haushalt_id, name, beschreibung, eltern_id, position, typen, bedingungen, trefferliste, berechtigungen)
+        VALUES (${id}, ${haushaltId}, ${d.name}, ${d.beschreibung}, ${d.elternId}, ${d.position}, ${json(sql, d.typen)}, ${json(sql, d.bedingungen)}, ${d.trefferliste ?? null}, ${d.berechtigungen ? json(sql, d.berechtigungen) : null})
         RETURNING *`;
       return alsSicht(r);
     },
     async aendereSicht(id, d: SichtDaten) {
       const [r] = await sql`
         UPDATE sichten SET name = ${d.name}, beschreibung = ${d.beschreibung}, eltern_id = ${d.elternId}, position = ${d.position},
-          typen = ${json(sql, d.typen)}, bedingungen = ${json(sql, d.bedingungen)}, trefferliste = ${d.trefferliste ?? null}, geaendert = now()
+          typen = ${json(sql, d.typen)}, bedingungen = ${json(sql, d.bedingungen)}, trefferliste = ${d.trefferliste ?? null},
+          berechtigungen = ${d.berechtigungen ? json(sql, d.berechtigungen) : null}, geaendert = now()
         WHERE haushalt_id = ${haushaltId} AND id = ${id} RETURNING *`;
       return alsSicht(r);
     },

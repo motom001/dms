@@ -435,7 +435,7 @@ async function main() {
   await geheZu(s, `/ablage/${d.finanzen.id}`);
   await s.locator('.spalte.liste .eintrag, .spalte.liste tbody tr').first().waitFor();
   await bild(s, 'sichten-baum');
-  await geheZu(s, `/werkbank/sichten/${d.fristen.id}`);
+  await geheZu(s, `/werkbank/sichten/${d.fristen.id}#bedingungen`);
   await s.getByRole('heading', { name: 'Bedingungen' }).waitFor();
   await s.getByText('Diese Sicht zeigt zurzeit').waitFor();
   await bild(s, 'werkbank-sichten');

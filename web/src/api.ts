@@ -3,6 +3,7 @@ import { messung } from './messung';
 import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
+import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src/sichtrechte';
 import type { Anstehend, Erinnerung } from '../../shared/src/fristen';
 import { merkeAnfrage } from './diagnose';
 import { erreichbarkeit, NICHT_ERREICHBAR } from './erreichbar';
@@ -294,6 +295,9 @@ export const api = {
   berechtigungenSetzen: (typId: string, berechtigungen: Regelwerk, bestaetigt = false) => anfrage<{ typ: Mappentyp; niemand: number }>('PUT', `/api/werkbank/berechtigungen/${typId}`, { berechtigungen, bestaetigt }),
   regelKopieren: (typId: string, regelId: string, ziele: string[]) => anfrage<{ kopiert: number; ausgelassen: number }>('POST', `/api/werkbank/berechtigungen/${typId}/kopieren`, { regelId, ziele }),
   testlauf: (e: { mappeId: string; benutzerId: string; berechtigungen?: Regelwerk }) => anfrage<Testlauf>('POST', '/api/werkbank/berechtigungen/testlauf', e),
+  /** Testlauf an einer Sicht (#148), auch mit ungespeicherten Regeln und Elternsicht. */
+  sichtTestlauf: (e: { sichtId: string | null; benutzerId: string; elternId: string | null; berechtigungen: SichtRegelwerk | null }) =>
+    anfrage<{ admin: boolean; benutzer: { id: string; name: string }; kette: Array<{ sicht: string; name: string; untersicht: boolean; grund: SichtRechte | null; spur: SichtSchritt[]; eigene: SichtRechte; stand: SichtRechte }>; wirksam?: SichtRechte }>('POST', '/api/werkbank/sichten/testlauf', e),
   wasSieht: (benutzerId: string) => anfrage<{ admin: boolean; typen: Array<{ typId: string; name: string; gesamt: number; lesbar: number; beispiele: Array<{ id: string; titel: string }> }> }>('GET', `/api/werkbank/berechtigungen/sicht/${benutzerId}`),
   /** Verweisende Mappen eines Typs über ein Feld, vollständig (Tabelle im Verknüpfungsregister, #75). */
   verweisende: (id: string, typ: string, feld: string) => anfrage<{ gesamt: number; mappen: Mappe[]; bezuege: Bezuege }>('GET', `/api/mappen/${id}/verweisende?${new URLSearchParams({ typ, feld })}`),

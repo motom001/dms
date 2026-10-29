@@ -4,7 +4,7 @@
 
 Links stehen die **Sichten**. Ganz oben der [Eingang](eingang.md), deine [Favoriten](#favoriten) und der [Papierkorb](#papierkorb), darunter die Sichten, die ein Administrator eingerichtet hat – zum Beispiel *Vertrag*, *Rechnung*, *Vertragspartner* oder *Kündigung in den nächsten 12 Monaten*. Die Zahl dahinter sagt, wie viele Mappen die Sicht gerade zeigt.
 
-Ein Klick auf eine Sicht zeigt ihre Mappen in der Liste.
+Ein Klick auf eine Sicht zeigt ihre Mappen in der Liste. Welche Sichten du siehst, kann ein Administrator festlegen; eine Sicht, die für dich verborgen ist, fehlt samt ihrer Mappen auch in der Elternsicht. Mappen findest du trotzdem über die Suche, wenn du sie lesen darfst.
 
 ![Sichten als Baum: Finanzen mit Untersichten](bilder/sichten-baum.png)
 
