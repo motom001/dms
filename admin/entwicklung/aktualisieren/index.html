@@ -484,6 +484,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#feste-ordner-ab-023" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feste Ordner (ab 0.23)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#auf-011-aktualisieren" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1075,6 +1086,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../speicherplatz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Speicherplatz
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../notfall/" class="md-nav__link">
         
   
@@ -1486,6 +1525,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#feste-ordner-ab-023" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feste Ordner (ab 0.23)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#auf-011-aktualisieren" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1588,6 +1638,13 @@
 <p class="admonition-title">Auf einer festen Version bleiben</p>
 <p>Statt <code>ghcr.io/motom001/dms:main</code> kannst du in der Compose-Datei eine Versionsnummer angeben, z. B. <code>ghcr.io/motom001/dms:0.8.0</code>. Dann ändert sich nichts, bis du die Nummer selbst erhöhst.</p>
 </div>
+<h3 id="feste-ordner-ab-023">Feste Ordner (ab 0.23)<a class="headerlink" href="#feste-ordner-ab-023" title="Permanent link">&para;</a></h3>
+<p>Die Ordner im Container sind jetzt fest: <code>/data/files</code>, <code>/data/geheim</code> und <code>/data/sicherung</code> (siehe <a href="../installation/#ordner-und-volumes">Ordner und Volumes</a>). Die Variablen <code>FILES_DIR</code>, <code>DMS_SCHLUESSEL_DATEI</code> und <code>DMS_SICHERUNG_DIR</code> entfallen.</p>
+<ul>
+<li><strong>Steht <code>FILES_DIR: /data/files</code> in deiner Compose-Datei</strong> (so war es in der Vorlage), läuft alles weiter. Entferne die Zeile beim nächsten Update; bis dahin erinnert die Werkbank-Übersicht daran.</li>
+<li><strong>Zeigte eine der Variablen auf einen anderen Ordner</strong>, startet das DMS nicht und nennt im Protokoll des Containers das Volume, das stattdessen auf den festen Ordner zeigen muss. Beispiel: Stand bisher <code>FILES_DIR: /dokumente</code> mit dem Volume <code>/volume1/dms-daten:/dokumente</code>, wird daraus <code>/volume1/dms-daten:/data/files</code> – und die Variable fällt weg. Die Dateien selbst bleiben, wo sie sind.</li>
+<li>Prüfe nach dem Start unter <strong>Werkbank → Technik</strong>, dass alle drei Ordner auf einem eigenen Volume liegen.</li>
+</ul>
 <h3 id="auf-011-aktualisieren">Auf 0.11 aktualisieren<a class="headerlink" href="#auf-011-aktualisieren" title="Permanent link">&para;</a></h3>
 <ul>
 <li>In der Compose-Datei ein Volume für den Schlüssel ergänzen (siehe <a href="https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml">Vorlage</a>):

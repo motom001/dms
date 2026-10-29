@@ -477,6 +477,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ordner-und-volumes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ordner und Volumes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#einstellungen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1052,6 +1063,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../speicherplatz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Speicherplatz
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../notfall/" class="md-nav__link">
         
   
@@ -1484,6 +1523,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ordner-und-volumes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ordner und Volumes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#einstellungen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1565,6 +1615,44 @@
 <p class="admonition-title">Von einer älteren Version</p>
 <p>Bis Version 0.8 waren das die Umgebungsvariablen <code>APP_URL</code> und <code>SMTP_*</code>. Beim ersten Start von 0.9 übernimmt das DMS ihre Werte einmalig in die Werkbank; danach werden sie ignoriert, und das Protokoll weist darauf hin, dass sie aus der Compose-Datei entfernt werden können.</p>
 </div>
+<h2 id="ordner-und-volumes">Ordner und Volumes<a class="headerlink" href="#ordner-und-volumes" title="Permanent link">&para;</a></h2>
+<p>Die Ordner im Container sind fest. Wohin sie auf dem NAS zeigen, bestimmst du allein über die Volumes der Compose-Datei – dafür gibt es keine Umgebungsvariablen.</p>
+<table>
+<thead>
+<tr>
+<th>Ordner im Container</th>
+<th>Inhalt</th>
+<th>Volume in der Vorlage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/data/files</code></td>
+<td>hochgeladene Dokumente, Logos, Bilder der Fehlermeldungen</td>
+<td><code>/volume1/docker/dms/files</code></td>
+</tr>
+<tr>
+<td><code>/data/geheim</code></td>
+<td>Schlüssel für gespeicherte Passwörter (<code>dms.schluessel</code>), <a href="../notfall/">RESCUE-Datei</a></td>
+<td><code>/volume1/docker/dms/geheim</code></td>
+</tr>
+<tr>
+<td><code>/data/sicherung</code></td>
+<td><a href="../sicherung/">Sicherungen</a>, verschlüsselt</td>
+<td><code>/volume1/docker/dms/sicherung</code></td>
+</tr>
+</tbody>
+</table>
+<p>Jeder der drei Ordner muss ein eigenes Volume sein; sonst ist sein Inhalt weg, sobald der Container neu erstellt wird (z. B. beim Update). Die Datenbank liegt im Volume des PostgreSQL-Containers. Wie viel Platz in jedem Ordner frei ist, zeigen <strong>Werkbank → <a href="../speicherplatz/">Speicherplatz</a></strong> und <strong>Werkbank → Technik</strong>.</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/volume1/docker/dms/files:/data/files</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/volume1/docker/dms/geheim:/data/geheim</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/volume1/docker/dms/sicherung:/data/sicherung</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Von einer älteren Version (bis 0.22)</p>
+<p>Früher legten <code>FILES_DIR</code>, <code>DMS_SCHLUESSEL_DATEI</code> und <code>DMS_SICHERUNG_DIR</code> die Ordner fest. Steht eine davon noch mit dem festen Wert in der Compose-Datei (z. B. <code>FILES_DIR: /data/files</code>), läuft alles weiter; das Protokoll und die Werkbank-Übersicht weisen darauf hin, dass du sie entfernen kannst. Zeigt sie auf einen <strong>anderen</strong> Ordner, startet das DMS nicht – sonst sähe es plötzlich einen leeren Dateiordner. Die Meldung im Protokoll des Containers nennt dann, welches Volume stattdessen auf den festen Ordner zeigen muss. Siehe <a href="../aktualisieren/#feste-ordner-ab-023">Aktualisieren</a>.</p>
+</div>
 <h2 id="einstellungen">Einstellungen<a class="headerlink" href="#einstellungen" title="Permanent link">&para;</a></h2>
 <p>Diese Einstellungen sind Umgebungsvariablen im Compose-Projekt:</p>
 <table>
@@ -1578,18 +1666,6 @@
 <tr>
 <td><code>DATABASE_URL</code></td>
 <td>Verbindung zu PostgreSQL (Pflicht)</td>
-</tr>
-<tr>
-<td><code>FILES_DIR</code></td>
-<td>Ordner für hochgeladene Dateien im Container (Vorlage: <code>/data/files</code>)</td>
-</tr>
-<tr>
-<td><code>DMS_SICHERUNG_DIR</code></td>
-<td>Ordner der <a href="../sicherung/">Sicherungen</a> (Standard: <code>/data/sicherung</code>); soll ein eigenes Volume sein</td>
-</tr>
-<tr>
-<td><code>DMS_SCHLUESSEL_DATEI</code></td>
-<td>Datei mit dem Schlüssel für gespeicherte Passwörter (Standard: <code>/data/geheim/dms.schluessel</code>); der Ordner muss ein eigenes Volume sein</td>
 </tr>
 <tr>
 <td><code>TRUST_PROXY</code></td>

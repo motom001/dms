@@ -948,6 +948,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../speicherplatz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Speicherplatz
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../notfall/" class="md-nav__link">
         
   
@@ -1530,7 +1558,7 @@
 <h2 id="bausteine">Bausteine<a class="headerlink" href="#bausteine" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>Browser ── HTTP ──▶ DMS-Container (Node.js) ──▶ PostgreSQL-Container
    React-Oberfläche        Fastify-API              Mappen, Typen, Benutzer,
-   (im Image enthalten)    Dateien unter FILES_DIR  Sitzungen, Protokolle
+   (im Image enthalten)    Dateien unter /data/…    Sitzungen, Protokolle
 </code></pre></div>
 <table>
 <thead>
@@ -1558,8 +1586,8 @@
 </tr>
 <tr>
 <td>Dateien</td>
-<td>Ordner <code>FILES_DIR</code>, je Datei ihr SHA-256 als Name</td>
-<td>Hochgeladene Dokumente, gleicher Inhalt nur einmal</td>
+<td>Feste Ordner <code>/data/files</code>, <code>/data/geheim</code>, <code>/data/sicherung</code> (Volumes, siehe <a href="../installation/#ordner-und-volumes">Installation</a>); je Datei ihr SHA-256 als Name</td>
+<td>Hochgeladene Dokumente, gleicher Inhalt nur einmal; Schlüssel; Sicherungen</td>
 </tr>
 <tr>
 <td>E-Mail</td>
