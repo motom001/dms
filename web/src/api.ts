@@ -256,6 +256,14 @@ export const api = {
       sicht, ...(link !== undefined ? { link } : {}), von: String(von), anzahl: String(anzahl), ...(suche ? { suche } : {}), ...(suche && volltext ? { volltext: 'true' } : {}), ...(suche && notizen ? { notizen: 'true' } : {}),
       ...(sortierung ? { sortierung: sortierung.spalte, absteigend: String(sortierung.absteigend) } : {}),
     })}`),
+  /** Alle Treffer einer Sicht als Ids (#149) – mit derselben Suche wie die Liste. */
+  auswahl: (sicht: string, suche = '', volltext = false, notizen = false, link?: string) =>
+    anfrage<{ ids: string[]; gesamt: number }>('GET', `/api/mappen/auswahl?${new URLSearchParams({
+      sicht, ...(link !== undefined ? { link } : {}), ...(suche ? { suche } : {}), ...(suche && volltext ? { volltext: 'true' } : {}), ...(suche && notizen ? { notizen: 'true' } : {}),
+    })}`),
+  /** Mehrere Mappen löschen (#150); probe = nur zählen. */
+  mappenLoeschen: (ids: string[], probe = false) =>
+    anfrage<{ mappen: number; dokumente: number; geloescht: number; ausgelassen: Array<{ id: string; titel: string; grund: string }> }>('POST', '/api/mappen/loeschen', { ids, probe }),
   einstellungen: () => anfrage<Record<string, unknown>>('GET', '/api/konto/einstellungen'),
   designs: () => anfrage<{ designs: Design[]; standard: string | null }>('GET', '/api/designs'),
   apiSchluessel: () => anfrage<ApiSchluessel[]>('GET', '/api/konto/api-schluessel'),

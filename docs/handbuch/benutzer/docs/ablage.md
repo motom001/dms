@@ -66,6 +66,20 @@ Mit dem Haken **Notizen** sucht das DMS auch in den [Notizen](zusammenarbeit.md#
     - Frisch hochgeladene Dokumente findet sie erst, wenn ihr Text erkannt ist – meist nach Sekunden, bei langen Scans nach einigen Minuten (siehe [Dokumente](dokumente.md#volltext)).
     - Verweise werden nicht nach dem Namen der anderen Mappe durchsucht: Die Rechnungen der Stadtwerke findest du nicht, indem du in den Rechnungen „Stadtwerke“ suchst. Öffne stattdessen die Stadtwerke – ihr Register *Rechnungen* zeigt alle.
 
+## Mehrere Mappen auswählen
+
+In der Liste einer Sicht wählst du mehrere Mappen aus, um sie in einem Schritt zu bearbeiten.
+
+- **Haken** vor einer Mappe setzen; mit gedrückter **Shift**-Taste wählt der nächste Haken alles dazwischen mit. In der Tabelle wählt der Haken im Kopf alle geladenen Mappen.
+- Sobald etwas gewählt ist, steht über der Liste eine **Aktionsleiste**: „3 von 120 ausgewählt“, die Aktionen und **Auswahl aufheben**.
+- **Alle 120 auswählen** nimmt alle Treffer der Sicht – auch die, die noch nicht geladen sind, und mit deiner Suche.
+- Die Auswahl bleibt, während du Mappen öffnest; wechselst du die Sicht oder die Suche, ist sie weg.
+- **Am Handy** hält man eine Mappe kurz gedrückt, um die Auswahl zu beginnen; danach schaltet Tippen den Haken um.
+
+### Mehrere Mappen löschen
+
+**Löschen** in der Aktionsleiste fragt erst nach, z. B. „12 Mappen mit 30 Dokumenten in den Papierkorb legen?“, und legt sie dann in den [Papierkorb](#papierkorb) – mit je einem Eintrag im Protokoll der Mappe. Mappen, die du nicht löschen darfst oder auf die noch eine andere Mappe verweist, werden ausgelassen und danach mit Grund aufgelistet. Verweisen ausgewählte Mappen nur aufeinander, hält das nicht auf.
+
 ## Favoriten
 
 Mappen, die du oft brauchst, markierst du mit dem **Stern ☆** – oben rechts in der Mappe oder direkt in der Liste (rechts im Eintrag bzw. vorn in der Tabellenzeile). Der Stern wird gelb ★, und die Mappe steht in der Sicht **★ Favoriten** unter dem Eingang; die Zahl dahinter zeigt, wie viele es sind. Ein zweiter Klick entfernt sie wieder.
