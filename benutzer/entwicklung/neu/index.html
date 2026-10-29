@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-024" class="md-skip">
+        <a href="#neu-in-version-025" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0240" class="md-nav__link">
+  <a href="#0250" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.24.0
+        0.25.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.24.0">
+    <nav class="md-nav" aria-label="0.25.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -887,15 +887,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0240" class="md-nav__link">
+  <a href="#0250" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.24.0
+        0.25.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.24.0">
+    <nav class="md-nav" aria-label="0.25.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -945,34 +945,25 @@
   
 
 
-<h1 id="neu-in-version-024">Neu in Version 0.24<a class="headerlink" href="#neu-in-version-024" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-025">Neu in Version 0.25<a class="headerlink" href="#neu-in-version-025" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0240">0.24.0<a class="headerlink" href="#0240" title="Permanent link">&para;</a></h2>
+<h2 id="0250">0.25.0<a class="headerlink" href="#0250" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Einrichtungsassistent</strong> (#119): Beim ersten Aufruf führt ein Assistent in neun Schritten durch die Einrichtung:</li>
-<li>Einrichtungscode</li>
-<li>Datenbank</li>
-<li>neu oder aus einer Sicherung</li>
-<li>Mandant</li>
-<li>Administrator</li>
-<li>erster normaler Benutzer</li>
-<li>Schlüssel und Notfallblatt</li>
-<li>Optionales (Adresse, Bundesland, Beispiele, E-Mail)</li>
-<li>Fertig, mit Links zu den Handbüchern, „Problem melden“ und GitHub Sponsors</li>
+<li><strong>Hinweis, wenn das DMS nicht erreichbar ist</strong> (#122): Startet das DMS neu, etwa bei einem Update, zeigt eine offene Seite oben „Das DMS ist gerade nicht erreichbar – vermutlich ein Update oder Neustart“. Bisher stand stattdessen an mehreren Stellen „Fehler 502“.</li>
+<li>Der Browser fragt mit wachsendem Abstand nach, alle 2 bis 30 Sekunden. Mit „Jetzt prüfen“ geht es sofort, ebenso beim Zurückkehren ins Fenster.</li>
+<li>Ist das DMS wieder da, erscheint kurz „Das DMS ist wieder erreichbar“. Übersicht und geöffneter Bereich laden dabei neu; „Ansicht neu laden“ baut bei Bedarf den ganzen Inhalt neu auf.</li>
+<li>Eingaben bleiben stehen. Speichern wird nicht automatisch wiederholt, damit nichts doppelt angelegt wird.</li>
+<li>Regelmäßige Abfragen (Wartungsmodus, Protokoll live) pausieren während des Ausfalls.</li>
+<li><strong>Neue Version erkannt:</strong> Läuft nach dem Neustart eine andere Version als beim Laden der Seite, bittet eine Leiste mit „Seite neu laden“ darum, die Seite neu zu laden. Das gilt auch, wenn das Update geschah, während das Fenster im Hintergrund lag.</li>
+<li>Eine offene Anwendung wird bei einem Ausfall nicht mehr durch die Seite „Keine Verbindung“ ersetzt.</li>
 </ul>
-<p>Übersprungenes lässt sich in der Werkbank nachholen.
-- <strong>Einrichtungscode:</strong> Er steht im Protokoll des Containers und in <code>geheim/EINRICHTUNGSCODE</code>. Er schützt davor, dass ein Fremder die Einrichtung übernimmt. Nach dem Anlegen des Administrators löscht das DMS ihn. <em>Versuchsweise – Rückmeldung zur Bedienbarkeit willkommen.</em>
-- <strong>Datenbank im Browser einrichten:</strong> Das DMS startet auch ohne <code>DATABASE_URL</code> oder mit einer fehlerhaften. Der Assistent fragt die Verbindung ab und erklärt Fehler verständlich, etwa „Passwort falsch“ oder „Datenbank fehlt“ (mit Knopf zum Anlegen). Danach legt er die Tabellen an – ohne Neustart des Containers.
-- <strong>Werkbank → Datenbank-Anbindung:</strong> Anbindung ansehen und ändern, mit Test vor dem Übernehmen und „Jetzt neu starten“.
-- <strong>Mandant statt Haushalt:</strong> Der Name aus der Einrichtung, z. B. „Familie Mustermann“, ist zugleich der Schriftzug des Standard-Designs. Auf dem Notfallblatt und im Abgleich der Wiederherstellung heißt es jetzt „Mandanten-Id“.
-- Beim Wiederherstellen einer Sicherung eines anderen Mandanten übernimmt das DMS dessen Id selbst. <code>HAUSHALT_ID</code> muss dafür nicht mehr eingetragen werden.</p>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.23.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.23.0...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.24.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.24.0...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 
