@@ -41,10 +41,19 @@ export interface Regel {
   stopp: boolean;
 }
 
-export interface Regelwerk { grund: 'erteilt' | 'entzogen'; regeln: Regel[] }
-export const OFFENES_REGELWERK: Regelwerk = { grund: 'erteilt', regeln: [] };
+/** grund: Standard je Recht (#146), gilt, solange keine Regel etwas anderes sagt. */
+export interface Regelwerk { grund: Rechte; regeln: Regel[] }
+export const OFFENES_REGELWERK: Regelwerk = { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [] };
 export const regelwerkVon = (t: Pick<Mappentyp, 'berechtigungen'> | undefined): Regelwerk => t?.berechtigungen ?? OFFENES_REGELWERK;
-export const istOffen = (r: Regelwerk) => r.grund === 'erteilt' && !r.regeln.length;
+export const istOffen = (r: Regelwerk) => RECHTE_LISTE.every((k) => r.grund[k]) && !r.regeln.length;
+/** Standard kurz, z. B. „CRUDP“, „R“ oder „–“. */
+export const kurzStandard = (g: Rechte) => RECHTE_LISTE.filter((k) => g[k]).join('') || '–';
+/**
+ * Systemregeln (#146), auch für Administratoren und durch keine Regel aufzuheben: Benutzer entstehen
+ * und verschwinden nur in der Benutzerverwaltung, E-Mail-Mappen nur beim Versenden.
+ */
+export const systemSperre = (t: Pick<Mappentyp, 'system'> | undefined): { C: boolean; D: boolean } =>
+  ({ C: t?.system === 'benutzer' || t?.system === 'email', D: t?.system === 'benutzer' });
 
 /** Wer gerade fragt. */
 export interface Wer { id: string; rollen: string[] }
@@ -110,7 +119,7 @@ function bedingungAusdruck(b: RegelBedingung, typ: Mappentyp, wer: Wer, a: Auflo
  */
 export function rechtAusdruck(typ: Mappentyp, recht: Recht, wer: Wer, a: Aufloesung): Ausdruck {
   const rw = regelwerkVon(typ);
-  let e = bool(rw.grund === 'erteilt');
+  let e = bool(rw.grund[recht]);
   let aktiv: Ausdruck = WAHR;
   for (const r of rw.regeln) {
     let bed = und(...r.wenn.map((b) => (recht === 'C' && b.art === 'aufgabe' ? (b.nicht ? WAHR : FALSCH) : bedingungAusdruck(b, typ, wer, a))));
@@ -186,7 +195,7 @@ export interface Ergebnis { rechte: Rechte; wirksam: Rechte; spur: Spurschritt[]
  */
 export function rechteAn(typ: Mappentyp, m: Mappe, wer: Wer, a: Aufloesung, z: Mappenquelle, neu = false): Ergebnis {
   const rw = regelwerkVon(typ);
-  const grund = rw.grund === 'erteilt' ? { ...ALLES } : { ...NICHTS };
+  const grund = { ...rw.grund };
   const r: Rechte = { ...grund };
   const spur: Spurschritt[] = [];
   let gestoppt = false;
@@ -207,13 +216,14 @@ export function rechteAn(typ: Mappentyp, m: Mappe, wer: Wer, a: Aufloesung, z: M
   return { rechte: r, wirksam: wirksamVon(r, typ), spur, grund };
 }
 
-/** Ohne R wirkt nichts außer C; die Haken am Mappentyp sind eine Obergrenze für C und D. */
-export function wirksamVon(r: Rechte, typ: Pick<Mappentyp, 'erstellenErlaubt' | 'loeschenErlaubt'>): Rechte {
+/** Ohne R wirkt nichts außer C; die Systemregeln sperren C und D bei Benutzer und E-Mail. */
+export function wirksamVon(r: Rechte, typ: Pick<Mappentyp, 'system'>): Rechte {
+  const sperre = systemSperre(typ);
   return {
-    C: r.C && typ.erstellenErlaubt !== false,
+    C: r.C && !sperre.C,
     R: r.R,
     U: r.R && r.U,
-    D: r.R && r.D && typ.loeschenErlaubt !== false,
+    D: r.R && r.D && !sperre.D,
     P: r.R && r.P,
   };
 }
@@ -235,8 +245,8 @@ export function rechteUebersicht(typ: Mappentyp, wer: Wer, a: Aufloesung): Recor
   for (const k of RECHTE_LISTE) {
     let x = rechtAusdruck(typ, k, wer, a);
     if (k !== 'C') x = und(lesen, x);
-    if (k === 'C' && typ.erstellenErlaubt === false) x = FALSCH;
-    if (k === 'D' && typ.loeschenErlaubt === false) x = FALSCH;
+    if (k === 'C' && systemSperre(typ).C) x = FALSCH;
+    if (k === 'D' && systemSperre(typ).D) x = FALSCH;
     erg[k] = x.k === 'wahr' ? 'immer' : x.k === 'falsch' ? 'nie' : 'teils';
   }
   return erg;
@@ -248,7 +258,11 @@ const neueId = () => Math.random().toString(36).slice(2, 10);
 
 export function bereinigeRegelwerk(e: unknown): Regelwerk {
   const x = (e && typeof e === 'object' ? e : {}) as Record<string, unknown>;
-  const grund = x.grund === 'entzogen' ? 'entzogen' : 'erteilt';
+  // Standard je Recht (#146); ältere Form: „erteilt“/„entzogen“ für alle.
+  const g = x.grund;
+  const grund: Rechte = g === 'entzogen' ? { ...NICHTS } : g && typeof g === 'object'
+    ? Object.fromEntries(RECHTE_LISTE.map((k) => [k, (g as Record<string, unknown>)[k] !== false])) as Rechte
+    : { ...ALLES };
   const regeln = (Array.isArray(x.regeln) ? x.regeln : []).slice(0, 100).map((r): Regel => {
     const o = (r && typeof r === 'object' ? r : {}) as Record<string, unknown>;
     const dann: Regel['dann'] = {};

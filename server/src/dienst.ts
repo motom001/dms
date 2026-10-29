@@ -20,7 +20,7 @@ import {
 import { liesDirektlink } from '../../shared/src/direktlink';
 import type { Lesefilter } from '../../shared/src/rechte';
 import { ANSTEHEND_MAX, ANSTEHEND_TAGE, bereinigeFrist, datumDe, empfaengerFelder, ERINNERUNG_TEXT_MAX, fristAb, fristEmpfaenger, fristFelder, fristText, istDatum, naechsterTermin, type Anstehend, type Erinnerung } from '../../shared/src/fristen';
-import { ALLES, bereinigeRegelwerk, FALSCH, istOffen, kopiereRegel, kurz, leseAusdruck, lesefilter, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, wirksamVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../shared/src/rechte';
+import { ALLES, RECHTE_LISTE, kurzStandard, systemSperre, bereinigeRegelwerk, FALSCH, istOffen, kopiereRegel, kurz, leseAusdruck, lesefilter, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, wirksamVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../shared/src/rechte';
 
 /* ---------- Eingaben bereinigen: nur bekannte Eigenschaften übernehmen ---------- */
 
@@ -142,8 +142,9 @@ export function bereinigeTyp(e: unknown): MappentypDaten {
     felder,
     register: bereinigeRegister(t.register, felder),
     ...bereinigeTrefferlisten(t, felder),
-    erstellenErlaubt: t.erstellenErlaubt !== false,
-    loeschenErlaubt: t.loeschenErlaubt !== false,
+    // Die Haken „Neue Mappen/Löschen erlauben“ gibt es nicht mehr (#146): das regeln die Berechtigungen.
+    erstellenErlaubt: true,
+    loeschenErlaubt: true,
   };
 }
 
@@ -941,7 +942,7 @@ export class Dienst {
   async rechteUebersicht(z: Zugriff) {
     return [...z.typen.values()].sort((a, b) => a.name.localeCompare(b.name, 'de')).map((t) => ({
       typId: t.id, name: t.name,
-      rechte: z.admin ? Object.fromEntries((['C', 'R', 'U', 'D', 'P'] as Recht[]).map((k) => [k, (k === 'C' && t.erstellenErlaubt === false) || (k === 'D' && t.loeschenErlaubt === false) ? 'nie' : 'immer'])) : rechteUebersicht(t, z.wer, z.a),
+      rechte: z.admin ? Object.fromEntries((['C', 'R', 'U', 'D', 'P'] as Recht[]).map((k) => [k, (k === 'C' && systemSperre(t).C) || (k === 'D' && systemSperre(t).D) ? 'nie' : 'immer'])) : rechteUebersicht(t, z.wer, z.a),
     }));
   }
 
@@ -1622,6 +1623,36 @@ export class Dienst {
   }
 
   /** Beim Start: Titel berechnen, die noch fehlen (z. B. nach dem Update auf eine Version mit gespeicherten Titeln). */
+  /**
+   * Die Haken „Neue Mappen erlauben“ und „Löschen erlauben“ in die Berechtigungen überführen (#146),
+   * ohne dass Benutzer danach mehr dürfen: Standard C bzw. D ✗, Regeln verlieren genau dieses ✓.
+   */
+  async hakenUeberfuehren(): Promise<number> {
+    let n = 0;
+    for (const t of await this.repo.listeTypen()) {
+      if (t.system || (t.erstellenErlaubt !== false && t.loeschenErlaubt !== false)) continue;
+      const rw = structuredClone(regelwerkVon(t));
+      const ohneC = t.erstellenErlaubt === false; const ohneD = t.loeschenErlaubt === false;
+      if (ohneC) rw.grund.C = false;
+      if (ohneD) rw.grund.D = false;
+      const geaendert: string[] = [];
+      for (const r of rw.regeln) {
+        if (ohneC && r.dann.C === 'erteilen') { delete r.dann.C; geaendert.push(`${r.name}: ohne +C`); }
+        if (ohneD && r.dann.D === 'erteilen') { delete r.dann.D; geaendert.push(`${r.name}: ohne +D`); }
+      }
+      // Regeln, die danach nichts mehr tun, fallen weg.
+      const weg = rw.regeln.filter((r) => !RECHTE_LISTE.some((k) => r.dann[k]) && !r.stopp).map((r) => r.name);
+      rw.regeln = rw.regeln.filter((r) => RECHTE_LISTE.some((k) => r.dann[k]) || r.stopp);
+      await this.repo.aendereTyp(t.id, { ...t, erstellenErlaubt: true, loeschenErlaubt: true });
+      await this.repo.setzeBerechtigungen(t.id, istOffen(rw) ? null : rw);
+      protokoll.modul('werkbank').warn('Haken „Neue Mappen/Löschen erlauben“ in die Berechtigungen übernommen', {
+        typ: t.name, standard: kurzStandard(rw.grund), ...(geaendert.length ? { regeln: geaendert.join(' · ') } : {}), ...(weg.length ? { entfallen: weg.join(', ') } : {}),
+      });
+      n++;
+    }
+    return n;
+  }
+
   /** Schlüssel für Mappentypen ohne (nach dem Update auf 0.31, #145): Systemtypen zuerst, dann aus dem Namen. */
   async typSchluesselNachziehen(): Promise<number> {
     const typen = await this.repo.listeTypen();

@@ -1,3 +1,4 @@
+import { WasSiehtBlatt } from './Berechtigungen';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { abwesenheitWirkt, AKTIV_MINUTEN, geraetText, istGeradeAktiv, KEINE_ABWESENHEIT, ROLLEN, type Benutzer, type Rolle, type Sitzung } from '../../../shared/src/model';
 import { heuteIn } from '../../../shared/src/sichten';
@@ -149,6 +150,8 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
         nachSpeichern={async () => { await neuLaden(); if (selbst) await aktualisieren(); }} />
 
       <Sitzungen b={b} neuLaden={neuLaden} />
+
+      <WasSiehtBlatt key={b.id} benutzerId={b.id} admin={b.rolle === 'admin'} />
 
       {!selbst && b.aktiv && (
         <div className="blatt">

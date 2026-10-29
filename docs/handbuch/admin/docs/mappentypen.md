@@ -13,12 +13,10 @@ Wie Benutzer mit den Mappen arbeiten, beschreibt das [Benutzerhandbuch](https://
 - **Name** – so heißt die Sicht in der Ablage, z. B. „Vertrag“. Er lässt sich jederzeit ändern.
 - **Schlüssel** – fester, technischer Name, z. B. `vertrag`. Er wird aus dem Namen vorgeschlagen, lässt sich beim Anlegen ändern und ist nach dem ersten Speichern **fest**. [Sprechende Links](direktlinks.md) und Skripte über die [Schnittstelle](api.md) können ihn nutzen – so bleiben sie gültig, auch wenn der Mappentyp umbenannt wird. Die Systemtypen heißen `benutzer`, `rolle` und `email`.
 - **Beschreibung** – steht über der Liste und hilft beim Einordnen.
-- **Neue Mappen erlauben** – ob in der Ablage überhaupt Mappen dieses Typs angelegt werden dürfen. *Wer* genau, regeln die [Berechtigungen](berechtigungen.md); der Haken ist die Obergrenze – auch für Administratoren.
-- **Löschen erlauben** – ob Mappen dieses Typs überhaupt gelöscht werden dürfen; wer genau, regeln ebenfalls die [Berechtigungen](berechtigungen.md).
 
 Beim **Anlegen** gibt es zusätzlich **Eigene Sicht in der Ablage anlegen** (standardmäßig an): Dann erscheint der neue Typ in der Ablage als eigene Sicht. Abwählen, wenn seine Mappen nur in einer bestehenden [Sicht](sichten.md) erscheinen sollen.
 
-Neue Mappen und Löschen sind standardmäßig erlaubt. Ist es aus, fehlen die Knöpfe in der Ablage, und auch der Server lehnt Anlegen bzw. Löschen ab – auch über die [Schnittstelle](api.md). Bearbeiten bleibt immer möglich.
+Wer Mappen anlegen oder löschen darf, regeln die [Berechtigungen](berechtigungen.md) (Rechte C und D). Die früheren Haken *Neue Mappen erlauben* und *Löschen erlauben* gibt es seit Version 0.32 nicht mehr; sie wurden beim Update in die Berechtigungen übernommen.
 
 ## Felder
 
@@ -158,14 +156,14 @@ Das ändert nur den Entwurf; übernommen wird es wie alles andere mit **Mappenty
 
 - Du kannst sie um eigene Felder und Register erweitern, z. B. eine Telefonnummer.
 - Ihre **Systemfelder** (Name, E-Mail-Adresse, Rollen, Aktiv bzw. Name der Rolle) sind fest: Bezeichnung, Hilfetext und Register darfst du ändern, Datentyp und Eigenschaften nicht.
-- Beim Typ *Benutzer* sind **Neue Mappen erlauben** und **Löschen erlauben** immer aus – Benutzer entstehen in der Benutzerverwaltung.
-- Mappen vom Typ *E-Mail* entstehen, wenn jemand eine Mappe [per E-Mail versendet](https://motom001.github.io/dms/benutzer/versenden/): mit Betreff, Empfängern, Absender, Datum, Nachricht, den Anhängen und dem **Bezug** auf die Mappe, aus der sie kam. **Neue Mappen erlauben** ist immer aus; löschen lassen sie sich wie andere Mappen. Der Bezug darf als einziges Feld auf Mappen *jedes* Typs zeigen. Wird die Ursprungsmappe gelöscht, bleibt die E-Mail erhalten und ihr Bezug wird leer. Später sollen hier auch E-Mails landen, die das DMS aus einem Postfach abholt.
+- Mappen vom Typ *Benutzer* lassen sich in der Ablage weder anlegen noch löschen (Systemregel) – Benutzer entstehen in der Benutzerverwaltung.
+- Mappen vom Typ *E-Mail* entstehen, wenn jemand eine Mappe [per E-Mail versendet](https://motom001.github.io/dms/benutzer/versenden/): mit Betreff, Empfängern, Absender, Datum, Nachricht, den Anhängen und dem **Bezug** auf die Mappe, aus der sie kam. Anlegen lassen sie sich in der Ablage nicht (Systemregel); löschen lassen sie sich wie andere Mappen. Der Bezug darf als einziges Feld auf Mappen *jedes* Typs zeigen. Wird die Ursprungsmappe gelöscht, bleibt die E-Mail erhalten und ihr Bezug wird leer. Später sollen hier auch E-Mails landen, die das DMS aus einem Postfach abholt.
 
 Mehr dazu in [Benutzer und Rollen](benutzer.md).
 
 ## Berechtigungen
 
-Unter den Registern legst du fest, wer Mappen dieses Typs anlegen, lesen, bearbeiten, löschen und Passwörter darin sehen darf – mit Grundeinstellung und Regeln. Gespeichert wird mit **Mappentyp speichern**; **Regeln prüfen ↗** öffnet die Prüfung in einem neuen Fenster. Alles Weitere steht unter [Berechtigungen](berechtigungen.md).
+Unter den Registern legst du fest, wer Mappen dieses Typs anlegen, lesen, bearbeiten, löschen und Passwörter darin sehen darf – mit der Zeile **Standard** und Regeln. Gespeichert wird mit **Mappentyp speichern**; darunter probierst du die Regeln im **Testlauf** aus – auch ungespeicherte. Alles Weitere steht unter [Berechtigungen](berechtigungen.md).
 
 ## Mappentyp löschen
 

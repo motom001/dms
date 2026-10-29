@@ -31,20 +31,30 @@ async function aufbau() {
 }
 const ohneTyp = ({ id: _i, erstellt: _e, geaendert: _g, system: _s, ...rest }: Mappentyp) => rest;
 
-describe('Neue Mappen und Löschen je Mappentyp (#26)', () => {
-  it('erlaubt standardmäßig beides und sperrt es, wenn abgeschaltet', async () => {
-    const d = new Dienst(speicherRepo(), speicherDateien());
+describe('Haken „Neue Mappen/Löschen erlauben“ → Berechtigungen (#146)', () => {
+  it('überführt ohne Mehrrechte für Benutzer; Admins ohne Sperre; Systemregeln bleiben', async () => {
+    const repo = speicherRepo();
+    const d = new Dienst(repo, speicherDateien());
     const t = await d.legeTypAn({ name: 'Notiz', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }] });
     assert.equal(t.erstellenErlaubt, true);
-    assert.equal(t.loeschenErlaubt, true);
+    // Stand wie vor dem Update: Haken aus, eine Regel erteilt C und R, eine nur C.
+    await repo.aendereTyp(t.id, { ...t, erstellenErlaubt: false, loeschenErlaubt: false });
+    await repo.setzeBerechtigungen(t.id, { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [
+      { id: 'a', name: 'Alle', wenn: [{ art: 'aufgabe' }], dann: { C: 'erteilen', R: 'erteilen' }, stopp: false },
+      { id: 'b', name: 'Nur anlegen', wenn: [{ art: 'aufgabe' }], dann: { C: 'erteilen' }, stopp: false },
+    ] });
+    assert.equal(await d.hakenUeberfuehren(), 1);
+    const neu = (await d.listeTypen()).find((x) => x.id === t.id)!;
+    assert.deepEqual(neu.berechtigungen!.grund, { C: false, R: true, U: true, D: false, P: true });
+    assert.deepEqual(neu.berechtigungen!.regeln.map((r) => [r.name, r.dann]), [['Alle', { R: 'erteilen' }]]);
+    assert.equal(neu.erstellenErlaubt, true);
+    assert.equal(await d.hakenUeberfuehren(), 0, 'nur einmal');
+    // Ohne Zugriff (Admin, System): Anlegen und Löschen gehen.
     const m = await d.legeMappeAn({ typId: t.id, werte: { titel: 'a' } });
-    const gesperrt = await d.aendereTyp(t.id, { ...ohneTyp(t), erstellenErlaubt: false, loeschenErlaubt: false });
-    assert.equal(gesperrt.erstellenErlaubt, false);
-    await wirft(d.legeMappeAn({ typId: t.id, werte: { titel: 'b' } }), 403);
-    await wirft(d.loescheMappe(m.id), 403);
-    await d.aendereMappe(m.id, { werte: { titel: 'geändert' } }); // Bearbeiten bleibt erlaubt
-    await d.aendereTyp(t.id, { ...ohneTyp(gesperrt), loeschenErlaubt: true });
     await d.loescheMappe(m.id);
+    // Eingaben mit Haken haben keine Wirkung mehr.
+    const x = await d.aendereTyp(t.id, { ...ohneTyp(neu), erstellenErlaubt: false });
+    assert.equal(x.erstellenErlaubt, true);
   });
 });
 
