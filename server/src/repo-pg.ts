@@ -15,6 +15,7 @@ const iso = (v: unknown) => (v instanceof Date ? v.toISOString() : String(v));
 const alsTyp = (r: Zeile): Mappentyp => ({
   id: r.id as string,
   name: r.name as string,
+  ...(r.schluessel ? { schluessel: r.schluessel as string } : {}),
   beschreibung: r.beschreibung as string,
   titelVorlage: r.titel_vorlage as string,
   felder: r.felder as Mappentyp['felder'],
@@ -280,8 +281,8 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     },
     async legeTypAn(id, d: MappentypDaten, system) {
       const [r] = await sql`
-        INSERT INTO mappentypen (id, haushalt_id, name, beschreibung, titel_vorlage, felder, register, trefferliste, trefferlisten, erstellen_erlaubt, loeschen_erlaubt, system)
-        VALUES (${id}, ${haushaltId}, ${d.name}, ${d.beschreibung}, ${d.titelVorlage}, ${json(sql, d.felder)}, ${json(sql, d.register)}, ${json(sql, standardliste(d).spalten)}, ${json(sql, trefferlistenVon(d))},
+        INSERT INTO mappentypen (id, haushalt_id, name, schluessel, beschreibung, titel_vorlage, felder, register, trefferliste, trefferlisten, erstellen_erlaubt, loeschen_erlaubt, system)
+        VALUES (${id}, ${haushaltId}, ${d.name}, ${d.schluessel ?? null}, ${d.beschreibung}, ${d.titelVorlage}, ${json(sql, d.felder)}, ${json(sql, d.register)}, ${json(sql, standardliste(d).spalten)}, ${json(sql, trefferlistenVon(d))},
           ${d.erstellenErlaubt !== false}, ${d.loeschenErlaubt !== false}, ${system ?? null})
         RETURNING *`;
       return alsTyp(r);
@@ -289,7 +290,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async aendereTyp(id, d) {
       return sql.begin(async (tx) => {
         const [r] = await tx`
-          UPDATE mappentypen SET name = ${d.name}, beschreibung = ${d.beschreibung}, titel_vorlage = ${d.titelVorlage},
+          UPDATE mappentypen SET name = ${d.name}, schluessel = coalesce(schluessel, ${d.schluessel ?? null}), beschreibung = ${d.beschreibung}, titel_vorlage = ${d.titelVorlage},
             felder = ${json(sql, d.felder)}, register = ${json(sql, d.register)}, trefferliste = ${json(sql, standardliste(d).spalten)}, trefferlisten = ${json(sql, trefferlistenVon(d))},
             erstellen_erlaubt = ${d.erstellenErlaubt !== false}, loeschen_erlaubt = ${d.loeschenErlaubt !== false}, geaendert = now()
           WHERE haushalt_id = ${haushaltId} AND id = ${id}
@@ -560,6 +561,9 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       if (!istUuid(typId)) return 0;
       const [r] = await sql`SELECT count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} AND typ_id = ${typId} AND ${ausdruckSql(sql, x)}`;
       return r.n as number;
+    },
+    async setzeTypSchluessel(typId, schluessel) {
+      await sql`UPDATE mappentypen SET schluessel = ${schluessel} WHERE haushalt_id = ${haushaltId} AND id = ${typId} AND schluessel IS NULL`;
     },
     async setzeBerechtigungen(typId, rw) {
       const [r] = await sql`UPDATE mappentypen SET berechtigungen = ${rw ? json(sql, rw) : null}, geaendert = now() WHERE haushalt_id = ${haushaltId} AND id = ${typId} RETURNING *`;

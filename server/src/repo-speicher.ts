@@ -92,7 +92,7 @@ export function speicherRepo(): Repo {
     },
     async aendereTyp(id, d) {
       const alt = typen.get(id)!;
-      const t: Mappentyp = { ...alt, ...kopie(d), ...listen(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, geaendert: jetzt() };
+      const t: Mappentyp = { ...alt, ...kopie(d), schluessel: alt.schluessel ?? d.schluessel, ...listen(d), erstellenErlaubt: d.erstellenErlaubt !== false, loeschenErlaubt: d.loeschenErlaubt !== false, geaendert: jetzt() };
       typen.set(id, t);
       const refKeys = new Set(t.felder.filter((f) => f.typ === 'referenz').map((f) => f.key));
       for (const m of mappen.values()) if (m.typId === id) verweise.set(m.id, (verweise.get(m.id) ?? []).filter((v) => refKeys.has(v.feldKey)));
@@ -199,6 +199,7 @@ export function speicherRepo(): Repo {
     async zaehleKlauseln(liste, lesen) { return liste.map((k) => [...mappen.values()].filter((m) => inSicht(m, k, zaehl) && lesbar(lesen ?? null, m, zaehl)).length); },
     async lesbare(ids, lesen) { return new Set(ids.filter((id) => mappen.has(id) && lesbar(lesen, mappen.get(id)!, zaehl))); },
     async zaehleAusdruck(typId, x) { return [...mappen.values()].filter((m) => m.typId === typId && werte(x, m, zaehl)).length; },
+    async setzeTypSchluessel(typId, schluessel) { const t = typen.get(typId); if (t && !t.schluessel) t.schluessel = schluessel; },
     async setzeBerechtigungen(typId, rw) { const t = typen.get(typId)!; t.berechtigungen = rw ? kopie(rw) : null; t.geaendert = jetzt(); return kopie(t); },
     async listeSichten() { return [...sichten.values()].map(kopie).sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, 'de')); },
     async legeSichtAn(id, d: SichtDaten) { const x: Sicht = { id, ...kopie(d), erstellt: jetzt(), geaendert: jetzt() }; sichten.set(id, x); return kopie(x); },

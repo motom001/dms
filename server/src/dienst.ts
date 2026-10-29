@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
-  REGISTERARTEN, ROLLEN, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
+  REGISTERARTEN, ROLLEN, freierSchluessel, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
   AUFGABE_MAX, istEmail, NOTIZ_MAX, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Benutzer, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
@@ -135,6 +135,7 @@ export function bereinigeTyp(e: unknown): MappentypDaten {
   const felder = Array.isArray(t.felder) ? t.felder.map(bereinigeFeld) : [];
   return {
     name: text(t.name),
+    ...(text(t.schluessel) ? { schluessel: text(t.schluessel) } : {}),
     beschreibung: text(t.beschreibung),
     // Altes Format: titelFeld → Vorlage {feld}
     titelVorlage: text(t.titelVorlage) || (text(t.titelFeld) ? `{${text(t.titelFeld)}}` : ''),
@@ -962,6 +963,7 @@ export class Dienst {
     const p = pruefeMappentyp(d, {
       eigeneId,
       namenAndererTypen: alle.filter((t) => t.id !== eigeneId).map((t) => t.name),
+      schluesselAndererTypen: alle.filter((t) => t.id !== eigeneId && t.schluessel).map((t) => t.schluessel!),
       existiertTyp: (id) => alle.some((t) => t.id === id),
       felderVon: (id) => alle.find((t) => t.id === id)?.felder,
     });
@@ -973,6 +975,8 @@ export class Dienst {
     // Die Oberfläche darf die Id vorgeben, damit ein neuer Typ auf sich selbst verweisen kann.
     const id = istUuid(roh.id) && !(await this.repo.holeTyp(roh.id)) ? roh.id : randomUUID();
     const d = bereinigeTyp(eingabe);
+    // Schlüssel (#145): ohne Angabe aus dem Namen, eindeutig.
+    if (!d.schluessel) d.schluessel = freierSchluessel(d.name || 'mappentyp', (await this.repo.listeTypen()).map((t) => t.schluessel ?? ''));
     await this.pruefeTyp(d, id);
     const rechte = await this.berechtigungenAusEingabe({ ...d, id, erstellt: '', geaendert: '', berechtigungen: null }, eingabe);
     let typ = await this.repo.legeTypAn(id, d);
@@ -987,6 +991,8 @@ export class Dienst {
     if (!alt) throw new Fachfehler(404, 'Diesen Mappentyp gibt es nicht.');
     let d = bereinigeTyp(eingabe);
     if (alt.system) d = await this.mitSystemfeldern(d, alt.system);
+    // Der Schlüssel ist fest (#145); fehlt er noch, gilt der eingegebene bzw. einer aus dem Namen.
+    d.schluessel = alt.schluessel ?? d.schluessel ?? freierSchluessel(d.name || 'mappentyp', (await this.repo.listeTypen()).filter((t) => t.id !== id).map((t) => t.schluessel ?? ''));
     await this.pruefeTyp(d, id);
     // Berechtigungen (#142) gegen die neuen Felder prüfen, bevor etwas gespeichert ist.
     const rechte = await this.berechtigungenAusEingabe({ ...alt, ...d }, eingabe);
@@ -1616,6 +1622,21 @@ export class Dienst {
   }
 
   /** Beim Start: Titel berechnen, die noch fehlen (z. B. nach dem Update auf eine Version mit gespeicherten Titeln). */
+  /** Schlüssel für Mappentypen ohne (nach dem Update auf 0.31, #145): Systemtypen zuerst, dann aus dem Namen. */
+  async typSchluesselNachziehen(): Promise<number> {
+    const typen = await this.repo.listeTypen();
+    const vergeben = new Set(typen.map((t) => t.schluessel ?? '').filter(Boolean));
+    let n = 0;
+    for (const t of typen.filter((x) => !x.schluessel).sort((a, b) => Number(!a.system) - Number(!b.system))) {
+      const k = freierSchluessel(t.system ?? t.name, vergeben);
+      vergeben.add(k);
+      await this.repo.setzeTypSchluessel(t.id, k);
+      n++;
+    }
+    if (n) protokoll.modul('werkbank').info('Schlüssel für Mappentypen vergeben', { anzahl: n });
+    return n;
+  }
+
   async titelNachziehen(): Promise<number> {
     const ids = await this.repo.ohneTitel();
     await this.aktualisiereTitel(ids);
@@ -1804,10 +1825,12 @@ export class Dienst {
     let benutzer = typen.find((t) => t.system === 'benutzer');
     let email = typen.find((t) => t.system === 'email');
     const frei = (name: string) => (typen.some((t) => t.name.trim().toLowerCase() === name.toLowerCase()) ? `${name} (System)` : name);
+    // Feste Schlüssel der Systemtypen (#145): benutzer, rolle, email.
+    const sk = (k: string) => freierSchluessel(k, typen.map((t) => t.schluessel ?? ''));
     const ids = { rolle: rolle?.id ?? randomUUID(), benutzer: benutzer?.id ?? randomUUID() };
     if (!rolle) {
       rolle = await this.repo.legeTypAn(ids.rolle, {
-        name: frei('Rolle'), beschreibung: 'Rollen, die Benutzer haben, z. B. als Verantwortliche', titelVorlage: '{name}',
+        name: frei('Rolle'), schluessel: sk('rolle'), beschreibung: 'Rollen, die Benutzer haben, z. B. als Verantwortliche', titelVorlage: '{name}',
         felder: systemfelder('rolle', ids.rolle),
         register: [
           { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name'] },
@@ -1820,7 +1843,7 @@ export class Dienst {
     }
     if (!benutzer) {
       benutzer = await this.repo.legeTypAn(ids.benutzer, {
-        name: frei('Benutzer'), beschreibung: 'Die Benutzer dieses DMS; gepflegt in der Benutzerverwaltung', titelVorlage: '{name}',
+        name: frei('Benutzer'), schluessel: sk('benutzer'), beschreibung: 'Die Benutzer dieses DMS; gepflegt in der Benutzerverwaltung', titelVorlage: '{name}',
         felder: systemfelder('benutzer', rolle.id, ids.benutzer),
         register: [
           { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name', 'email', 'rollen', 'aktiv', 'abwesend', 'abwesend_von', 'abwesend_bis', 'vertreter'] },
@@ -1835,7 +1858,7 @@ export class Dienst {
     if (!email) {
       // Versendete E-Mails (#58); später auch per IMAP abgeholte.
       email = await this.repo.legeTypAn(randomUUID(), {
-        name: frei('E-Mail'), beschreibung: 'Aus dem DMS verschickte E-Mails mit Anhängen', titelVorlage: '{betreff}',
+        name: frei('E-Mail'), schluessel: sk('email'), beschreibung: 'Aus dem DMS verschickte E-Mails mit Anhängen', titelVorlage: '{betreff}',
         felder: systemfelder('email', rolle.id),
         register: [
           { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['betreff', 'an', 'absender', 'datum', 'bezug', 'nachricht'] },

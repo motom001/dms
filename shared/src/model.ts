@@ -92,6 +92,8 @@ export interface Register {
 
 export interface MappentypDaten {
   name: string;
+  /** Fester Schlüssel (#145): nach dem Anlegen unveränderlich, z. B. für sprechende Links. */
+  schluessel?: string;
   beschreibung: string;
   /** Vorlage für den Titel einer Mappe, z. B. „{verwendungszweck} vom {zahlungsdatum}“. Leer = erstes Textfeld. */
   titelVorlage: string;
@@ -357,6 +359,8 @@ export function istLeer(v: unknown): boolean {
 export interface TypKontext {
   eigeneId?: string;
   namenAndererTypen: string[];
+  /** Schlüssel der anderen Mappentypen (#145). */
+  schluesselAndererTypen?: string[];
   existiertTyp: (id: string) => boolean;
   /** Felder eines anderen Typs (für Quellen von Verknüpfungsregistern). */
   felderVon?: (typId: string) => Feld[] | undefined;
@@ -399,6 +403,10 @@ export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebn
   if (!name) p.allgemein.push('Der Mappentyp braucht einen Namen.');
   else if (ctx.namenAndererTypen.some((n) => n.trim().toLowerCase() === name.toLowerCase()))
     p.allgemein.push(`Es gibt bereits einen Mappentyp „${name}“.`);
+  if (t.schluessel !== undefined) {
+    if (!SCHLUESSEL_MUSTER.test(t.schluessel)) p.allgemein.push('Schlüssel des Mappentyps: nur Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben.');
+    else if ((ctx.schluesselAndererTypen ?? []).includes(t.schluessel)) p.allgemein.push(`Den Schlüssel „${t.schluessel}“ hat schon ein anderer Mappentyp.`);
+  }
   if (!Array.isArray(t.felder)) {
     p.allgemein.push('Die Felder fehlen.');
     return p;
@@ -690,6 +698,15 @@ export function leseZahl(s: unknown): number | null {
 }
 
 /** Schlüssel aus einer Bezeichnung ableiten: „Kündigung bis“ → kuendigung_bis. */
+/** Ein Schlüssel, den es unter `vergeben` noch nicht gibt: „rechnung“, sonst „rechnung_2“ … */
+export function freierSchluessel(basis: string, vergeben: Iterable<string>): string {
+  const belegt = new Set(vergeben);
+  const b = schluesselAus(basis);
+  let k = b; let n = 2;
+  while (belegt.has(k)) k = `${b.slice(0, 36)}_${n++}`;
+  return k;
+}
+
 export function schluesselAus(label: string): string {
   let k = String(label || '').toLowerCase()
     .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')

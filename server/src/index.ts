@@ -222,6 +222,8 @@ const nachgezogen = await dienst.titelNachziehen();
 if (nachgezogen) log.info(`Titel von ${nachgezogen} Mappen berechnet`);
 // Systemtypen Benutzer und Rolle anlegen und jedem Benutzer seine Mappe geben (auch nach einem Update).
 await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
+// Schlüssel für Mappentypen (#145), einmalig nach dem Update.
+await dienst.typSchluesselNachziehen();
 const geprueft = await dienst.passungNachziehen();
 if (geprueft) log.info(`Mappen von ${geprueft} Mappentypen gegen ihre Definition geprüft`);
 // Papierkorb (#43): Abgelaufenes stündlich endgültig löschen.

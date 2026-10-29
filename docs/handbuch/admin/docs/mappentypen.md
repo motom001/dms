@@ -10,7 +10,8 @@ Wie Benutzer mit den Mappen arbeiten, beschreibt das [Benutzerhandbuch](https://
 
 ## Grunddaten
 
-- **Name** – so heißt die Sicht in der Ablage, z. B. „Vertrag“.
+- **Name** – so heißt die Sicht in der Ablage, z. B. „Vertrag“. Er lässt sich jederzeit ändern.
+- **Schlüssel** – fester, technischer Name, z. B. `vertrag`. Er wird aus dem Namen vorgeschlagen, lässt sich beim Anlegen ändern und ist nach dem ersten Speichern **fest**. [Sprechende Links](direktlinks.md) und Skripte über die [Schnittstelle](api.md) können ihn nutzen – so bleiben sie gültig, auch wenn der Mappentyp umbenannt wird. Die Systemtypen heißen `benutzer`, `rolle` und `email`.
 - **Beschreibung** – steht über der Liste und hilft beim Einordnen.
 - **Neue Mappen erlauben** – ob in der Ablage überhaupt Mappen dieses Typs angelegt werden dürfen. *Wer* genau, regeln die [Berechtigungen](berechtigungen.md); der Haken ist die Obergrenze – auch für Administratoren.
 - **Löschen erlauben** – ob Mappen dieses Typs überhaupt gelöscht werden dürfen; wer genau, regeln ebenfalls die [Berechtigungen](berechtigungen.md).

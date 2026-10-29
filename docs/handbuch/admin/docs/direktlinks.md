@@ -3,7 +3,7 @@
 Ein sprechender Link findet eine Mappe über ihren **Mappentyp** und ihre **Angaben** statt über ihre technische Id. Den Link kannst du einem Kollegen mit eigenem Konto per Mail oder Chat schicken oder in anderen Programmen hinterlegen, etwa:
 
 ```
-http://<NAS>:8080/ablage/link?typ=Rechnung&rechnungsnummer=A-2020-11380
+http://<NAS>:8080/ablage/link?typ=rechnung&rechnungsnummer=A-2020-11380
 ```
 
 Eingerichtet wird dafür nichts: Jeder Link, der dem Aufbau unten folgt, funktioniert sofort. In jeder Mappe erzeugt **Aktionen → Link kopieren** einen passenden Link (siehe [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/versenden/#link-kopieren)).
@@ -27,7 +27,7 @@ Die Adresse im Browser bleibt der Link, auch wenn eine Mappe geöffnet ist oder 
 
 | Teil | Bedeutung |
 | --- | --- |
-| `typ=Rechnung` | **Name** des Mappentyps; Groß- und Kleinschreibung zählen nicht. |
+| `typ=rechnung` | **Schlüssel** des Mappentyps (siehe [Mappentypen](mappentypen.md#grunddaten)). Auch der **Name** geht (Groß- und Kleinschreibung zählen nicht) – aber nur der Schlüssel bleibt gültig, wenn der Mappentyp umbenannt wird. „Link kopieren“ nutzt den Schlüssel. |
 | `rechnungsnummer=A-2020-11380` | **Schlüssel** eines Feldes und der Wert: „ist gleich“. |
 | `betrag.groesser=100` | Feld mit **Operator**. |
 | `sortierung=-rechnungsdatum` | Reihenfolge der Trefferliste; `-` = absteigend. Ohne: nach Titel. |
@@ -84,11 +84,11 @@ Verweise auf andere Mappen (etwa „Vertrag = …“), Passwortfelder sowie Bedi
 
 | Link | Zeigt |
 | --- | --- |
-| `/ablage/link?typ=Rechnung&rechnungsnummer=R-2026-117` | genau diese Rechnung |
-| `/ablage/link?typ=Rechnung&bezahlt=nein&sortierung=-rechnungsdatum` | offene Rechnungen, neueste zuerst |
-| `/ablage/link?typ=Rechnung&rechnungsdatum.groesser=heute-30tage` | Rechnungen der letzten 30 Tage |
-| `/ablage/link?typ=Vertrag&kuendigung_bis.zwischen=heute..heute+12monate` | Verträge, die in den nächsten 12 Monaten gekündigt werden müssen |
-| `/ablage/link?typ=Vertragspartner&name=Stadtwerke+Musterstadt` | den Vertragspartner „Stadtwerke Musterstadt“ |
+| `/ablage/link?typ=rechnung&rechnungsnummer=R-2026-117` | genau diese Rechnung |
+| `/ablage/link?typ=rechnung&bezahlt=nein&sortierung=-rechnungsdatum` | offene Rechnungen, neueste zuerst |
+| `/ablage/link?typ=rechnung&rechnungsdatum.groesser=heute-30tage` | Rechnungen der letzten 30 Tage |
+| `/ablage/link?typ=vertrag&kuendigung_bis.zwischen=heute..heute+12monate` | Verträge, die in den nächsten 12 Monaten gekündigt werden müssen |
+| `/ablage/link?typ=vertragspartner&name=Stadtwerke+Musterstadt` | den Vertragspartner „Stadtwerke Musterstadt“ |
 
 Ein Link mit Fehler zeigt, was nicht stimmt:
 

@@ -110,6 +110,8 @@ export interface Repo {
   zaehleAusdruck(typId: string, x: Ausdruck): Promise<number>;
   /** Regelwerk eines Mappentyps speichern; null = alles erteilt, keine Regeln. */
   setzeBerechtigungen(typId: string, rw: Regelwerk | null): Promise<Mappentyp>;
+  /** Schlüssel nachtragen (#145; nur für Typen ohne). */
+  setzeTypSchluessel(typId: string, schluessel: string): Promise<void>;
 
   listeSichten(): Promise<Sicht[]>;
   legeSichtAn(id: string, d: SichtDaten): Promise<Sicht>;

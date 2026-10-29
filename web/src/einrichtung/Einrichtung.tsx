@@ -29,7 +29,9 @@ type EntwurfRegister = Omit<Register, 'felder'> & { _uid: string; _neu?: boolean
 /** Trefferliste im Entwurf (#75): Spalten als _titel usw. bzw. feld:<_uid> – damit ein umbenannter Schlüssel nichts kaputt macht. */
 interface EntwurfListe { _uid: string; _neu?: boolean; key: string; name: string; spalten: string[]; standard: boolean }
 interface Entwurf {
-  id: string; name: string; beschreibung: string; titelVorlage: string; felder: EntwurfFeld[]; register: EntwurfRegister[]; trefferlisten: EntwurfListe[];
+  id: string; name: string;
+  /** Fester Schlüssel (#145); bei neuen Typen aus dem Namen, bis man ihn selbst tippt. */
+  schluessel: string; _schluesselGetippt?: boolean; beschreibung: string; titelVorlage: string; felder: EntwurfFeld[]; register: EntwurfRegister[]; trefferlisten: EntwurfListe[];
   erstellenErlaubt: boolean; loeschenErlaubt: boolean;
   /** Berechtigungen (#142): mit dem Mappentyp gespeichert. */
   berechtigungen: Regelwerk;
@@ -47,10 +49,10 @@ function neueId(): string {
 const alsEntwurfRegister = ({ felder: _f, ...r }: Register): EntwurfRegister => ({ ...r, _uid: neueId() });
 
 function entwurfAus(t?: Mappentyp): Entwurf {
-  if (!t) return { id: neueId(), name: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], erstellenErlaubt: true, loeschenErlaubt: true, berechtigungen: { grund: 'erteilt', regeln: [] } };
+  if (!t) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], erstellenErlaubt: true, loeschenErlaubt: true, berechtigungen: { grund: 'erteilt', regeln: [] } };
   const erstes = t.register.find((r) => r.art === 'felder')?.key ?? '';
   const e: Entwurf = {
-    id: t.id, name: t.name, beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '',
+    id: t.id, name: t.name, schluessel: t.schluessel ?? '', beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '',
     erstellenErlaubt: t.erstellenErlaubt !== false, loeschenErlaubt: t.loeschenErlaubt !== false,
     berechtigungen: structuredClone(regelwerkVon(t)),
     register: t.register.map(alsEntwurfRegister),
@@ -170,7 +172,7 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
 
   async function speichern(bestaetigt = false) {
     setSendet(true); setMeldung(undefined); setGruende([]);
-    const { trefferlisten: listen, ...ohneListen } = e;
+    const { trefferlisten: listen, _schluesselGetippt: _sg, ...ohneListen } = e;
     const daten = {
       ...ohneListen,
       felder: e.felder.map(({ _uid, _neu, _schluesselGetippt, _register, ...rest }) => rest),
@@ -237,9 +239,13 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
       <div className="blatt">
         <h2 className="h3">Grunddaten</h2>
         <div className="raster">
-          <label className="eigenschaft"><span>Name</span><input value={e.name} placeholder="z. B. Vertrag" onChange={(ev) => setE({ ...e, name: ev.target.value })} autoFocus={neu} /></label>
-          <label className="eigenschaft"><span>Beschreibung</span><input value={e.beschreibung} placeholder="Wofür ist dieser Typ?" onChange={(ev) => setE({ ...e, beschreibung: ev.target.value })} /></label>
+          <label className="eigenschaft"><span>Name</span><input value={e.name} placeholder="z. B. Vertrag" autoFocus={neu}
+            onChange={(ev) => setE({ ...e, name: ev.target.value, ...(neu && !e._schluesselGetippt ? { schluessel: schluesselAus(ev.target.value) } : {}) })} /></label>
+          <label className="eigenschaft"><span>Schlüssel <small>{neu || !gespeichert?.schluessel ? 'wird nach dem Speichern fest' : 'fest – Name lässt sich ändern, Links bleiben gültig'}</small></span>
+            <input className="mono" value={e.schluessel} placeholder="z. B. vertrag" disabled={!neu && !!gespeichert?.schluessel}
+              onChange={(ev) => setE({ ...e, schluessel: ev.target.value, _schluesselGetippt: true })} /></label>
         </div>
+        <label className="eigenschaft"><span>Beschreibung</span><input value={e.beschreibung} placeholder="Wofür ist dieser Typ?" onChange={(ev) => setE({ ...e, beschreibung: ev.target.value })} /></label>
         <div className="raster">
           <div className="eigenschaft unten"><label className="haken"><input type="checkbox" checked={e.erstellenErlaubt} disabled={system === 'benutzer'} onChange={(ev) => setE({ ...e, erstellenErlaubt: ev.target.checked })} />
             <span>Neue Mappen erlauben<small className="hilfe">In der Ablage dürfen Mappen dieses Typs angelegt werden – wer genau, regeln die Berechtigungen</small></span></label></div>
