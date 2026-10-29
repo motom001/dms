@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.34/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.35/neu/">
       
       
         <link rel="prev" href="..">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-034" class="md-skip">
+        <a href="#neu-in-version-035" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0340" class="md-nav__link">
+  <a href="#0350" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.34.0
+        0.35.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.34.0">
+    <nav class="md-nav" aria-label="0.35.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1500,15 +1500,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0340" class="md-nav__link">
+  <a href="#0350" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.34.0
+        0.35.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.34.0">
+    <nav class="md-nav" aria-label="0.35.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1569,27 +1569,20 @@
   
 
 
-<h1 id="neu-in-version-034">Neu in Version 0.34<a class="headerlink" href="#neu-in-version-034" title="Permanent link">&para;</a></h1>
-<h2 id="0340">0.34.0<a class="headerlink" href="#0340" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-035">Neu in Version 0.35<a class="headerlink" href="#neu-in-version-035" title="Permanent link">&para;</a></h1>
+<h2 id="0350">0.35.0<a class="headerlink" href="#0350" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Berechtigungen an Sichten</strong> (#148):</li>
-<li>An jeder Sicht legst du fest, wer sie sieht (<strong>R</strong>) und wer dort „+ Neu“ bekommt (<strong>C</strong>) – mit Standard und Regeln „wenn Benutzer hat Rolle / ist Benutzer … dann ✓/✗“, wie am Mappentyp.</li>
-<li><strong>Vererbung</strong>: Untersichten erben die Regeln ihrer Elternsichten (schreibgeschützt angezeigt) und können mit eigenen Regeln nur weiter einschränken. So verschwindet z. B. der ganze Ast <em>Haus</em> für die Kinder.</li>
-<li>Ist eine Untersicht verborgen, fehlen ihre Mappen auch in der Elternsicht; die Zahlen im Baum passen dazu.</li>
-<li>Beim Verschieben im Baum sagt das DMS, von wem die Sicht jetzt erbt.</li>
-<li><strong>Testlauf</strong> direkt an der Sicht, auch mit ungespeicherten Regeln.</li>
-<li>Ob eine Mappe lesbar ist, regelt weiter allein der Mappentyp. Für Administratoren gelten die Regeln nicht.</li>
-<li><strong>Sicht-Editor einklappbar</strong> wie der Mappentyp-Editor: Bereiche mit Kurzinfos, Sprungleiste, das Gerät merkt sich den Zustand.</li>
+<li><strong>Mehrere Mappen auswählen</strong> (#149): In der Liste einer Sicht gibt es Haken je Mappe, mit Shift einen ganzen Bereich und in der Tabelle „alle geladenen“. Darüber erscheint eine Aktionsleiste („3 von 120 ausgewählt“). <strong>Alle Treffer auswählen</strong> nimmt auch noch nicht geladene Mappen mit, passend zur Suche. Die Auswahl bleibt beim Öffnen einer Mappe und verschwindet beim Wechsel der Sicht. Am Handy beginnt sie mit langem Drücken.</li>
+<li><strong>Mehrere Mappen löschen</strong> (#150): mit Rückfrage („12 Mappen mit 30 Dokumenten in den Papierkorb legen?“) und Ergebnisliste. Je Mappe gilt das Löschrecht am Mappentyp; was nicht geht (kein Recht, noch verwiesen), wird ausgelassen und mit Grund genannt. Verweise innerhalb der Auswahl halten nicht auf.</li>
 </ul>
 <h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Neue Spalte <code>sichten.berechtigungen</code> (Migration 029). Ohne Regeln ändert sich nichts.</li>
-<li>Schnittstelle: <code>GET /sichten/definitionen</code> liefert Benutzern nur die sichtbaren Sichten, mit <code>rechte</code> (R, C) und ohne die Regeln. Ändern über die Schnittstelle lässt vorhandene Regeln stehen, wenn <code>berechtigungen</code> fehlt.</li>
+<li>Neue Schnittstellen der Oberfläche: <code>GET /api/mappen/auswahl</code> (Ids aller Treffer einer Sicht, höchstens 5000) und <code>POST /api/mappen/loeschen</code> (mit <code>probe</code> nur zählen).</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.33.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.33.0...v0.34.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.34.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.34.0...v0.35.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
