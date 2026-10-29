@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-028" class="md-skip">
+        <a href="#neu-in-version-029" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0280" class="md-nav__link">
+  <a href="#0290" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.28.0
+        0.29.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.28.0">
+    <nav class="md-nav" aria-label="0.29.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1500,15 +1500,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0280" class="md-nav__link">
+  <a href="#0290" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.28.0
+        0.29.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.28.0">
+    <nav class="md-nav" aria-label="0.29.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1569,33 +1569,28 @@
   
 
 
-<h1 id="neu-in-version-028">Neu in Version 0.28<a class="headerlink" href="#neu-in-version-028" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-029">Neu in Version 0.29<a class="headerlink" href="#neu-in-version-029" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0280">0.28.0<a class="headerlink" href="#0280" title="Permanent link">&para;</a></h2>
+<h2 id="0290">0.29.0<a class="headerlink" href="#0290" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Fristen an Datumsfeldern</strong> (#129): Am Mappentyp lässt sich je Datumsfeld <strong>Erinnern</strong> einschalten – mit <strong>Vorlauf</strong> (Tage, Wochen, Monate), <strong>Empfänger</strong> (Ersteller der Mappe oder der Benutzer in einem Feld wie „Verantwortlich“) und <strong>Text</strong> mit Platzhaltern. Rechtzeitig vor dem Datum steht die Mappe als <strong>Frist</strong> im Eingang, z. B. „Kündigung bis 30.09.2027 – noch 12 Tage“, und damit auch in der täglichen Zusammenfassung.</li>
-<li>Ändert sich das Datum oder wird es geleert, erledigt sich die Frist von selbst (mit Eintrag im Protokoll der Mappe).</li>
-<li>Je Mappe, Feld und Datum entsteht höchstens eine Frist – auch bei mehreren Läufen am Tag oder nach einem Neustart.</li>
-<li>Abwesenheit, Vertretung und Weitergeben gelten wie bei allen Aufgaben. Eine eigene Mail am Stichtag gibt es nicht.</li>
-<li><strong>Wiederkehrende Termine</strong> (#130): Ein Datumsfeld kann monatlich, viertel-, halbjährlich, jährlich oder alle paar Jahre wiederkehren. Beim Erledigen der Frist schlägt das DMS „Datum auf … setzen“ vor; geändert wird nur auf Klick (Monatsende richtig: 31.01. + 1 Monat = 28./29.02.).</li>
-<li><strong>Erinnern</strong> (#131): Über <em>Aktionen → Erinnern</em> erinnert man sich oder jemand anderen an einem bestimmten Tag an eine Mappe. Bis dahin steht die Erinnerung oben in der Mappe (ändern, löschen), am Tag selbst im Eingang.</li>
-<li><strong>Sicht „Anstehend“</strong> (#132) unter dem Eingang: eigene Fristen und Erinnerungen der nächsten 30 Tage – auch die noch nicht fälligen –, nach Datum, mit Zähler. Den Zeitraum stellt jeder im Profil ein.</li>
-<li><strong>Sichtbedingung „hat Frist in den nächsten n Tagen“</strong> (#133): für ein Datumsfeld oder alle mit Erinnerung, wahlweise nur die eigenen – z. B. „Verträge mit Frist im nächsten Quartal“.</li>
+<li><strong>Schlüssel wechseln</strong> (#47): <em>Werkbank → Verschlüsselung → Schlüssel wechseln</em> erzeugt nach einer Rückfrage einen neuen Schlüssel und verschlüsselt alle Passwörter – in Mappen, im Papierkorb und den des Mailservers – <strong>ganz oder gar nicht</strong> neu. Bricht etwas ab, gilt weiter der bisherige Schlüssel. Prüfwort und Schlüsseldatei werden ersetzt; der alte Schlüssel wird nicht aufbewahrt.</li>
+<li><strong>Danach</strong> führt die Seite durch die nächsten Schritte: neues Notfallblatt herunterladen (Übersicht und Sicherung erinnern daran, bis es geschehen ist) und gleich eine neue Sicherung anlegen.</li>
+<li><strong>Ältere Sicherungen</strong> tragen in der Liste den Hinweis „früherer Schlüssel“; zum Wiederherstellen fragt das DMS nach dem Schlüssel vom alten Notfallblatt. Mit <strong>Sicherungen mit früherem Schlüssel löschen</strong> lassen sie sich nach einer Rückfrage auf einmal entfernen.</li>
 </ul>
 <h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
 <ul>
-<li>In den Beispieldaten erinnert „Kündigung bis“ am Vertrag drei Monate vorher, jährlich wiederkehrend.</li>
-<li><em>Werkbank → Aufgaben</em> weist auf Fristen und Erinnerungen hin, deren Empfänger die Mappe nach den Berechtigungen nicht lesen darf.</li>
-<li>Neu in der API: <code>GET /anstehend</code>, Erinnerungen anlegen, ändern und löschen, <code>POST /aufgaben/{id}/folgetermin</code>; Aufgaben haben ein <code>datum</code>.</li>
-<li>Datenbank: Migration 027 (Spalte <code>datum</code> an Aufgaben, Tabelle <code>erinnerungen</code>).</li>
+<li>Der Wechsel steht im Protokoll mit altem und neuem Fingerabdruck (nie mit dem Schlüssel).</li>
+<li>Startet das DMS genau zwischen dem Umschlüsseln der Datenbank und dem Ersetzen der Datei neu, übernimmt es die neue Schlüsseldatei beim nächsten Start selbst.</li>
+<li>Während einer Sicherung lässt sich der Schlüssel nicht wechseln.</li>
+<li>Hast du die Datei <code>geheim/dms.schluessel</code> irgendwo kopiert, ersetze die Kopie nach dem Wechsel.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.27.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.27.0...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.28.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.28.0...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
