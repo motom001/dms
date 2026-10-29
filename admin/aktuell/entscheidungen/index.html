@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.26/entscheidungen/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.27/entscheidungen/">
       
       
         <link rel="prev" href="../technik/">
@@ -643,6 +643,34 @@
     
   
     Benutzer und Rollen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../berechtigungen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Berechtigungen
   
 
     
@@ -1441,6 +1469,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#berechtigungen-123127-137" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Berechtigungen (#123–#127, #137)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#bewusst-noch-nicht-drin" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1785,6 +1824,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#berechtigungen-123127-137" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Berechtigungen (#123–#127, #137)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#bewusst-noch-nicht-drin" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1966,8 +2016,17 @@
 <li><strong>Hochladen nur unter dem Prüfwert, dann zusammenführen:</strong> Jeder Teil wird ohne Tag hochgeladen; <code>image-zusammen</code> erzeugt daraus mit <code>docker buildx imagetools create</code> das gemeinsame Image mit allen Tags und prüft, dass beide Architekturen enthalten sind. Das Release entsteht erst danach.</li>
 <li><strong>Pull Requests</strong> bauen beide Architekturen ebenfalls nativ zur Probe (ohne Veröffentlichung).</li>
 </ul>
+<h2 id="berechtigungen-123127-137">Berechtigungen (#123–#127, #137)<a class="headerlink" href="#berechtigungen-123127-137" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Regeln nur am Mappentyp</strong>, mit Grundeinstellung (erteilt/entzogen) und geordneten Regeln „wenn … dann ✓/✗/– je Recht“ mit Stopp – wie eine Firewall. Keine Rechte an einzelnen Mappen: Was eine Mappe besonders macht, steht in ihren Feldern, und darauf zielen die Bedingungen.</li>
+<li><strong>CRUDP</strong>: Anlegen, Lesen, Bearbeiten (Felder und Dokumente), Löschen, Passwörter sehen. Notizen, Aufgaben und E-Mail brauchen nur Lesen. Ohne Lesen wirkt nichts außer Anlegen.</li>
+<li><strong>Ein Ausdruck, zwei Auswertungen</strong>: Bedingungen über den Benutzer sind beim Anmelden schon entschieden; was bleibt, sind Filter über die Mappe – im Arbeitsspeicher für eine einzelne Mappe und als SQL für Listen, Suche und Zähler. So stimmen Liste und Mappe immer überein, und Seiten bleiben schnell.</li>
+<li><strong>Administratoren</strong> unterliegen keinen Regeln, arbeiten aber auch nicht in der Ablage (#128). Die Haken am Mappentyp bleiben Obergrenze für alle.</li>
+<li><strong>Benutzerauswahl nur unter sichtbaren Benutzern</strong> (#137): So lässt sich ein Programm über die API sauber auf seinen Ausschnitt begrenzen.</li>
+<li><strong>Feldrechte</strong> (einzelne Felder ausblenden) kommen bei Bedarf später.</li>
+</ul>
 <h2 id="bewusst-noch-nicht-drin">Bewusst noch nicht drin<a class="headerlink" href="#bewusst-noch-nicht-drin" title="Permanent link">&para;</a></h2>
-<p>Rechte pro Mappe, Fristen, Schlüsselwechsel (#47), Backup-Funktion in der Anwendung (#48), Texterkennung für Office-Dokumente, Zwei-Faktor-Anmeldung.</p>
+<p>Feldrechte, Fristen, Schlüsselwechsel (#47), Backup-Funktion in der Anwendung (#48), Texterkennung für Office-Dokumente, Zwei-Faktor-Anmeldung.</p>
 
 
 
