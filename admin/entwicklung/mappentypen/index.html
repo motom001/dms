@@ -681,6 +681,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#fristen-erinnerungen-an-datumsfeldern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fristen: Erinnerungen an Datumsfeldern
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1667,6 +1678,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#fristen-erinnerungen-an-datumsfeldern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fristen: Erinnerungen an Datumsfeldern
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1865,6 +1887,23 @@
 <li>In Titel, Trefferliste und Suche erscheint der Text ohne Formatierung, in Listen gekürzt.</li>
 <li>Mit <strong>@</strong> lässt sich ein Benutzer erwähnen; er bekommt dann eine <a href="../aufgaben/">Aufgabe</a>.</li>
 <li>Ein bestehendes Langtextfeld kannst du auf <em>Formatierter Text</em> umstellen; die Texte bleiben, wie sie sind.</li>
+</ul>
+<h3 id="fristen-erinnerungen-an-datumsfeldern">Fristen: Erinnerungen an Datumsfeldern<a class="headerlink" href="#fristen-erinnerungen-an-datumsfeldern" title="Permanent link">&para;</a></h3>
+<p>An einem <strong>Datumsfeld</strong> wie „Kündigung bis“ oder „TÜV fällig“ kannst du <strong>Erinnern</strong> einschalten. Dann steht die Mappe rechtzeitig vor dem Datum als <strong>Frist</strong> im Eingang – und damit auch in der täglichen Zusammenfassung.</p>
+<p><img alt="Erinnerung an einem Datumsfeld" src="../bilder/werkbank-frist.png" /></p>
+<ul>
+<li><strong>Vorlauf</strong> – wie lange vorher, in Tagen, Wochen oder Monaten. Bei 4 Wochen und dem 30.09. erscheint die Frist am 02.09.</li>
+<li><strong>Für</strong> – der <strong>Ersteller der Mappe</strong> oder der Benutzer in einem Feld, das auf Benutzer verweist (z. B. „Verantwortlich“). Ist dieses Feld leer, bekommt der Ersteller die Erinnerung. Abwesenheit und Vertretung gelten wie bei allen <a href="../aufgaben/">Aufgaben</a>.</li>
+<li><strong>Text</strong> – mit den Platzhaltern <code>{feld}</code>, <code>{datum}</code> und <code>{titel}</code>; Standard ist „{feld} {datum}“, also z. B. „Kündigung bis 30.09.2027“.</li>
+<li><strong>Wiederkehrend</strong> – monatlich, vierteljährlich, halbjährlich, jährlich oder alle paar Jahre. Wer die Frist erledigt, bekommt den Vorschlag „Datum auf 30.09.2028 setzen“; das Datum ändert sich <strong>nie von selbst</strong>, und die Änderung steht wie jede andere im Protokoll der Mappe.</li>
+</ul>
+<p>So verhalten sich Fristen:</p>
+<ul>
+<li>Das DMS prüft die Fristen beim Speichern einer Mappe, nach Änderungen am Mappentyp und jeden Tag kurz nach Mitternacht. Je Mappe, Feld und Datum entsteht <strong>höchstens eine</strong> Frist – auch nach dem Erledigen nicht noch einmal.</li>
+<li>Wird das Datum <strong>geändert oder geleert</strong>, erledigt sich eine offene Frist von selbst (mit Eintrag im Protokoll der Mappe); für das neue Datum entsteht zur rechten Zeit eine neue.</li>
+<li>Daten, die schon vorbei sind, erzeugen keine Frist mehr.</li>
+<li>Darf der Empfänger die Mappe nach den <a href="../berechtigungen/">Berechtigungen</a> nicht lesen, bekommt er die Frist trotzdem; unter <em>Werkbank → Aufgaben</em> steht dann ein Hinweis.</li>
+<li>Eine zusätzliche E-Mail am Stichtag gibt es nicht – die Fristen stehen in der täglichen Zusammenfassung.</li>
 </ul>
 <h2 id="wenn-sich-ein-mappentyp-andert">Wenn sich ein Mappentyp ändert<a class="headerlink" href="#wenn-sich-ein-mappentyp-andert" title="Permanent link">&para;</a></h2>
 <p>Du kannst Mappentypen jederzeit ändern, auch wenn es schon Mappen gibt:</p>

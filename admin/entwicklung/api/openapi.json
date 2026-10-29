@@ -1506,6 +1506,350 @@
         }
       }
     },
+    "/anstehend": {
+      "get": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Anstehende Fristen und Erinnerungen",
+        "description": "Fristen und Erinnerungen des Benutzers dieses Schlüssels bis heute + tage (Standard 30), fällige und kommende, nach Datum.",
+        "operationId": "getAnstehend",
+        "parameters": [
+          {
+            "name": "tage",
+            "in": "query",
+            "required": false,
+            "description": "Zeitraum in Tagen ab heute (0–366)",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Anstehend"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mappen/{id}/erinnerungen": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Erinnerung anlegen",
+        "description": "Am Datum wird daraus eine Aufgabe der Art „erinnerung“; liegt es heute oder früher, sofort.",
+        "operationId": "postMappenMitidErinnerungen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErinnerungEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erinnerung"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/erinnerungen/{id}": {
+      "put": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Erinnerung ändern",
+        "operationId": "putErinnerungenMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Erinnerung (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErinnerungEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erinnerung"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Erinnerung löschen",
+        "operationId": "deleteErinnerungenMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Erinnerung (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Erledigt"
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Kann (noch) nicht gelöscht werden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/aufgaben/{id}/folgetermin": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Nächsten Termin einer wiederkehrenden Frist setzen",
+        "description": "Nur solange das Datumsfeld noch das Datum der Frist hat (sonst 409). Braucht das Recht „Bearbeiten“.",
+        "operationId": "postAufgabenMitidFolgetermin",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Aufgabe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mappe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/mappen/{id}/notizen": {
       "get": {
         "tags": [
@@ -3464,7 +3808,9 @@
               "passung",
               "erwaehnung",
               "manuell",
-              "vertretung"
+              "vertretung",
+              "frist",
+              "erinnerung"
             ]
           },
           "text": {
@@ -3473,6 +3819,12 @@
           "feldKey": {
             "type": "string",
             "nullable": true
+          },
+          "datum": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "Frist und Erinnerung: das Datum, um das es geht"
           },
           "erstellt": {
             "type": "string",
@@ -3634,6 +3986,123 @@
         "properties": {
           "text": {
             "type": "string"
+          }
+        }
+      },
+      "Erinnerung": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mappeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "empfaengerId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "datum": {
+            "type": "string",
+            "format": "date"
+          },
+          "text": {
+            "type": "string"
+          },
+          "erstellt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "erstelltVon": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "hinweis": {
+            "type": "string",
+            "description": "Wenn der Empfänger die Mappe nicht lesen darf"
+          }
+        }
+      },
+      "ErinnerungEingabe": {
+        "type": "object",
+        "required": [
+          "datum",
+          "text"
+        ],
+        "properties": {
+          "datum": {
+            "type": "string",
+            "format": "date"
+          },
+          "text": {
+            "type": "string"
+          },
+          "empfaengerId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Benutzer; fehlt = der Benutzer des Schlüssels"
+          }
+        }
+      },
+      "Anstehend": {
+        "type": "object",
+        "properties": {
+          "tage": {
+            "type": "integer"
+          },
+          "eintraege": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "art": {
+                  "type": "string",
+                  "enum": [
+                    "frist",
+                    "erinnerung"
+                  ]
+                },
+                "datum": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "ab": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "ab wann im Eingang"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "mappeId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "mappeTitel": {
+                  "type": "string"
+                },
+                "typId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "faellig": {
+                  "type": "boolean",
+                  "description": "steht schon im Eingang"
+                },
+                "feldKey": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "erinnerungId": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
           }
         }
       },
