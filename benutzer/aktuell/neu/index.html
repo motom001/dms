@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.25/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.26/neu/">
       
       
         <link rel="prev" href="..">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-025" class="md-skip">
+        <a href="#neu-in-version-026" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0250" class="md-nav__link">
+  <a href="#0260" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.25.0
+        0.26.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.25.0">
+    <nav class="md-nav" aria-label="0.26.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -379,6 +379,17 @@
     <span class="md-ellipsis">
       
         Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
       
     </span>
   </a>
@@ -887,15 +898,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0250" class="md-nav__link">
+  <a href="#0260" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.25.0
+        0.26.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.25.0">
+    <nav class="md-nav" aria-label="0.26.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -903,6 +914,17 @@
     <span class="md-ellipsis">
       
         Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
       
     </span>
   </a>
@@ -945,21 +967,26 @@
   
 
 
-<h1 id="neu-in-version-025">Neu in Version 0.25<a class="headerlink" href="#neu-in-version-025" title="Permanent link">&para;</a></h1>
-<h2 id="0250">0.25.0<a class="headerlink" href="#0250" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-026">Neu in Version 0.26<a class="headerlink" href="#neu-in-version-026" title="Permanent link">&para;</a></h1>
+<h2 id="0260">0.26.0<a class="headerlink" href="#0260" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Hinweis, wenn das DMS nicht erreichbar ist</strong> (#122): Startet das DMS neu, etwa bei einem Update, zeigt eine offene Seite oben „Das DMS ist gerade nicht erreichbar – vermutlich ein Update oder Neustart“. Bisher stand stattdessen an mehreren Stellen „Fehler 502“.</li>
-<li>Der Browser fragt mit wachsendem Abstand nach, alle 2 bis 30 Sekunden. Mit „Jetzt prüfen“ geht es sofort, ebenso beim Zurückkehren ins Fenster.</li>
-<li>Ist das DMS wieder da, erscheint kurz „Das DMS ist wieder erreichbar“. Übersicht und geöffneter Bereich laden dabei neu; „Ansicht neu laden“ baut bei Bedarf den ganzen Inhalt neu auf.</li>
-<li>Eingaben bleiben stehen. Speichern wird nicht automatisch wiederholt, damit nichts doppelt angelegt wird.</li>
-<li>Regelmäßige Abfragen (Wartungsmodus, Protokoll live) pausieren während des Ausfalls.</li>
-<li><strong>Neue Version erkannt:</strong> Läuft nach dem Neustart eine andere Version als beim Laden der Seite, bittet eine Leiste mit „Seite neu laden“ darum, die Seite neu zu laden. Das gilt auch, wenn das Update geschah, während das Fenster im Hintergrund lag.</li>
-<li>Eine offene Anwendung wird bei einem Ausfall nicht mehr durch die Seite „Keine Verbindung“ ersetzt.</li>
+<li><strong>Administratoren arbeiten nicht in der Ablage</strong> (#128):</li>
+<li>Öffnet ein Administrator die Ablage, steht oben ein roter Hinweis mit dem Knopf „Benutzer anlegen“: Der Administrator sieht dort alle Mappen und sollte nicht für die tägliche Arbeit verwendet werden.</li>
+<li>Administratoren bekommen keine API-Schlüssel mehr; über die Schnittstelle arbeitet ein normaler Benutzer.</li>
+<li><strong>Verständlichere Knöpfe</strong> (#136):</li>
+<li>„Verwerfen“ heißt jetzt <strong>„Änderungen verwerfen“</strong>, ein neuer Entwurf überall <strong>„Entwurf verwerfen“</strong>.</li>
+<li>Im Mappentyp-Editor klappt <strong>„Zuklappen“</strong> (früher „Fertig“) ein Feld nur zu.</li>
+<li>Rückfragen beim Entfernen von Feldern, Registern und Trefferlisten sagen, dass es erst mit „Mappentyp speichern“ wirkt.</li>
+<li>Genauer benannt: <strong>„Passwort entfernen“</strong>, <strong>„Nicht hochladen“</strong> (noch nicht gespeicherte Dateien) und <strong>„Bedingung entfernen“</strong>.</li>
+</ul>
+<h3 id="behoben">Behoben<a class="headerlink" href="#behoben" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Erklärtexte unter Haken (z. B. „Neue Mappen erlauben“, „Volltext erzeugen“) und unter Feldern wurden seit 0.22 nach fast jedem Wort umgebrochen und überdeckten andere Angaben (#134).</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.24.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.24.0...v0.25.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.25.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.25.0...v0.26.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 

@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.25/api/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.26/api/">
       
       
         <link rel="prev" href="../fehlersuche/">
@@ -1530,7 +1530,7 @@
 
 
 <h1 id="schnittstelle-api">Schnittstelle (API)<a class="headerlink" href="#schnittstelle-api" title="Permanent link">&para;</a></h1>
-<p>Andere Programme – ein Scanner, ein Skript, eine Haushalts-App – greifen über die Schnittstelle unter <code>/api/v1</code> auf das DMS zu. Sie können Mappen anlegen, lesen, ändern und löschen und Dokumente hoch- und herunterladen; mit dem Schlüssel eines Administrators auch Mappentypen, Benutzer und Rollen verwalten.</p>
+<p>Andere Programme – ein Scanner, ein Skript, eine Haushalts-App – greifen über die Schnittstelle unter <code>/api/v1</code> auf das DMS zu. Sie können Mappen anlegen, lesen, ändern und löschen und Dokumente hoch- und herunterladen.</p>
 <h2 id="api-beschreibung">API-Beschreibung<a class="headerlink" href="#api-beschreibung" title="Permanent link">&para;</a></h2>
 <p>Die vollständige Beschreibung im <strong>OpenAPI-Format</strong> (Version 3.1):</p>
 <ul>
@@ -1540,7 +1540,7 @@
 </ul>
 <p><img alt="API-Dokumentation im DMS" src="../bilder/api-doku.png" /></p>
 <h2 id="api-schlussel">API-Schlüssel<a class="headerlink" href="#api-schlussel" title="Permanent link">&para;</a></h2>
-<p>Jeder Benutzer erzeugt seine Schlüssel selbst im <strong>Profil</strong> unter <em>API-Schlüssel</em>:</p>
+<p>Jeder Benutzer erzeugt seine Schlüssel selbst im <strong>Profil</strong> unter <em>API-Schlüssel</em> – <strong>außer Administratoren</strong> (ab 0.26): Über die Schnittstelle arbeitet immer ein normaler Benutzer. Lege für ein Programm am besten einen eigenen Benutzer an (z. B. „Scanner“), melde dich als dieser an und erzeuge den Schlüssel dort. Schlüssel, die Administratoren schon vorher hatten, funktionieren weiter; die Werkbank-Übersicht erinnert daran, sie so zu ersetzen.</p>
 <ul>
 <li><strong>Name</strong> – wofür der Schlüssel ist, z. B. „Scanner Arbeitszimmer“.</li>
 <li><strong>Recht</strong> – <em>nur lesen</em> oder <em>lesen und schreiben</em>.</li>
@@ -1548,7 +1548,7 @@
 <li><strong>Passwörter lesen</strong> – eigenes Recht für <a href="../mappentypen/#passwortfelder">Passwortfelder</a>: Nur damit liefert <code>GET /api/v1/mappen…?passwoerter=anzeigen</code> sie im Klartext; jeder Abruf steht im Protokoll. Ohne den Parameter steht dort immer nur <code>{"gesetzt": true, "lesbar": true}</code>.</li>
 </ul>
 <p>Der Schlüssel ist <strong>nur einmal vollständig sichtbar</strong>, direkt nach dem Erzeugen; danach zeigt das DMS nur noch seinen Anfang. Gespeichert wird nur ein Prüfwert. Wer ihn verliert, erzeugt einen neuen und löscht den alten.</p>
-<p>Ein Schlüssel hat höchstens die Rechte seines Benutzers: Der Schlüssel eines Mitglieds kommt nicht an die Werkbank-Funktionen. Ist der Benutzer deaktiviert, gilt auch sein Schlüssel nicht mehr.</p>
+<p>Ein Schlüssel hat höchstens die Rechte seines Benutzers und kommt damit nicht an die Werkbank-Funktionen. Ist der Benutzer deaktiviert, gilt auch sein Schlüssel nicht mehr.</p>
 <h2 id="erster-aufruf">Erster Aufruf<a class="headerlink" href="#erster-aufruf" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer dms_…"</span><span class="w"> </span>http://&lt;NAS&gt;:8080/api/v1/ich
 </code></pre></div>
