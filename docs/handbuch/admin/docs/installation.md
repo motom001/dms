@@ -10,18 +10,14 @@ Das DMS läuft als zwei Container: die Anwendung (`ghcr.io/motom001/dms`) und Po
 
 ## Schritt für Schritt
 
-1. **Token anlegen.** Auf GitHub unter *Settings → Developer settings → Personal access tokens → Tokens (classic)* ein Token nur mit dem Recht `read:packages` erzeugen.
-2. **NAS bei der Registry anmelden** (einmalig):
-   ```sh
-   docker login ghcr.io -u motom001
-   ```
-   Als Passwort das Token eingeben.
-3. **Projekt anlegen.** Die Vorlage [`deploy/nas/docker-compose.yml`](https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml) als Compose-Projekt anlegen und die Pfade an den Docker-Ordner des NAS anpassen. Daneben eine Datei `.env`:
+Das Image ist öffentlich; eine Anmeldung bei der Registry (`docker login`) ist nicht nötig.
+
+1. **Projekt anlegen.** Die Vorlage [`deploy/nas/docker-compose.yml`](https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml) als Compose-Projekt anlegen und die Pfade an den Docker-Ordner des NAS anpassen. Daneben eine Datei `.env`:
    ```sh
    DB_PASSWORD=<langes zufälliges Passwort>
    ```
-4. **Starten.** Die Oberfläche läuft unter `http://<NAS>:8080`. Beim ersten Start legt der Server die Tabellen selbst an.
-5. **Erster Aufruf.** Wer die Seite als Erstes öffnet, legt das Administrator-Konto an – ohne Einrichtungscode. Rufe sie deshalb direkt nach dem ersten Start selbst auf.
+2. **Starten.** Die Oberfläche läuft unter `http://<NAS>:8080`. Beim ersten Start legt der Server die Tabellen selbst an.
+3. **Erster Aufruf.** Wer die Seite als Erstes öffnet, legt das Administrator-Konto an – ohne Einrichtungscode. Rufe sie deshalb direkt nach dem ersten Start selbst auf.
 
 !!! warning "Erst einrichten, dann freigeben"
     Mach das DMS erst über einen Reverse-Proxy oder Port-Freigabe erreichbar, wenn der Administrator angelegt ist.
