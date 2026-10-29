@@ -164,6 +164,11 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Das Datum ändert sich nie von selbst**: Wiederkehrende Termine schlagen den nächsten nur vor.
 - **Freie Erinnerungen** liegen bis zu ihrem Tag in einer eigenen Tabelle und werden dann zu Aufgaben; im Papierkorb ziehen sie mit um.
 
+## Schlüsselwechsel (#47)
+
+- **Eine Transaktion** für alle verschlüsselten Werte (Mappen, Papierkorb, Einstellungen) samt Fingerabdruck und Prüfwort; die neue Schlüsseldatei liegt bis dahin als `dms.schluessel.neu` daneben und ersetzt die alte erst danach. Ein Neustart dazwischen wird beim Start erkannt und abgeschlossen.
+- **Kein Aufbewahren des alten Schlüssels**: Ältere Sicherungen nennen ihren Fingerabdruck; zum Wiederherstellen dient das alte Notfallblatt.
+
 ## Bewusst noch nicht drin
 
-Feldrechte, Kalender-Export (ICS), Schlüsselwechsel (#47), Backup-Funktion in der Anwendung (#48), Texterkennung für Office-Dokumente, Zwei-Faktor-Anmeldung.
+Feldrechte, Kalender-Export (ICS), Backup-Funktion in der Anwendung (#48), Texterkennung für Office-Dokumente, Zwei-Faktor-Anmeldung.

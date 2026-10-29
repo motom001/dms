@@ -149,6 +149,8 @@ export interface SicherungsZustand {
   letzte: { name: string; ende: string; art: string } | null;
   fehler: { am: string; art: string; grund: string } | null;
   zuAlt: boolean; planAktiv: boolean; notfallblatt: Notfallblattstand; schluessel: boolean;
+  /** Aktueller Schlüssel (#47). */
+  fingerabdruck?: string | null;
   ort: { ordner: string; volume: boolean | null; gleichePlatte: boolean | null };
   /** Probe-Wiederherstellung (#109). */
   probe?: ProbeStand;
@@ -368,6 +370,8 @@ export const api = {
   ocrFehlerNeu: () => anfrage<{ eingereiht: number }>('POST', '/api/werkbank/texterkennung/auftraege/fehler-neu'),
   ocrAbbrechen: (ids: string[]) => anfrage<{ abgebrochen: number }>('POST', '/api/werkbank/texterkennung/auftraege/abbrechen', { ids }),
   tresorErzeugen: () => anfrage<TresorStatus>('POST', '/api/werkbank/tresor/erzeugen'),
+  /** Schlüssel wechseln (#47). */
+  tresorWechseln: () => anfrage<TresorStatus & { alt: string; neu: string; umgeschluesselt: number; unlesbar: number; alteSicherungen: number }>('POST', '/api/werkbank/tresor/wechseln', { bestaetigt: true }),
   betrieb: () => anfrage<BetriebAnsicht>('GET', '/api/werkbank/betrieb'),
   mailSpeichern: (m: MailEingabe) => anfrage<BetriebAnsicht>('PUT', '/api/werkbank/betrieb/mail', m),
   adresseSpeichern: (adresse: string) => anfrage<BetriebAnsicht>('PUT', '/api/werkbank/betrieb/adresse', { adresse }),

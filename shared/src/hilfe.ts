@@ -50,6 +50,7 @@ export const HILFE = {
   'benutzer.abwesenheit': admin('benutzer/', 'Abwesenheit', 'abwesenheit'),
   'benutzer.sperren': admin('benutzer/', 'Zugang sperren', 'zugang-sperren'),
   'verschluesselung.schluessel': admin('verschluesselung/', 'Schlüssel', 'schlussel-erzeugen'),
+  'verschluesselung.wechseln': admin('verschluesselung/', 'Schlüssel wechseln', 'schlussel-wechseln'),
   'sicherung.zeitplan': admin('sicherung/', 'Zeitplan und Aufbewahrung', 'zeitplan-und-aufbewahrung'),
   'sicherung.speicher': admin('sicherung/', 'Speicherplatz', 'speicherplatz'),
   'sicherung.ort': admin('sicherung/', 'Speicherort', 'speicherort'),

@@ -572,6 +572,14 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
 
     { methode: 'GET', pfad: '/api/werkbank/tresor', zugang: 'admin', handler: async () => ok({ ...await tresor().status(), notfallblatt: x.sicherung ? await x.sicherung.notfallblatt() : null }) },
     { methode: 'POST', pfad: '/api/werkbank/tresor/erzeugen', zugang: 'admin', handler: async () => ok(await tresor().erzeuge()) },
+    // Schlüssel wechseln (#47): nur mit Bestätigung; danach neues Notfallblatt und neue Sicherung.
+    { methode: 'POST', pfad: '/api/werkbank/tresor/wechseln', zugang: 'admin', handler: async (a) => {
+      if (b(a).bestaetigt !== true) throw new Fachfehler(400, 'Bitte den Wechsel bestätigen.');
+      if (x.sicherung?.laeuft()) throw new Fachfehler(409, 'Gerade läuft eine Sicherung. Bitte warten, bis sie fertig ist.');
+      const w = await dienst.schluesselWechseln(ich(a).email);
+      const alte = x.sicherung ? (await x.sicherung.liste()).filter((s) => s.meta && s.meta.verschluesselung.fingerabdruck !== w.neu).length : 0;
+      return ok({ ...w, alteSicherungen: alte, ...await tresor().status(), notfallblatt: x.sicherung ? await x.sicherung.notfallblatt() : null });
+    } },
     { methode: 'GET', pfad: '/api/werkbank/betrieb', zugang: 'admin', handler: async () => ok(betrieb().ansicht()) },
     { methode: 'PUT', pfad: '/api/werkbank/betrieb/mail', zugang: 'admin', handler: async (a) => ok(await betrieb().speichereMail(b(a))) },
     { methode: 'PUT', pfad: '/api/werkbank/betrieb/adresse', zugang: 'admin', handler: async (a) => ok(await betrieb().speichereAdresse(b(a).adresse)) },

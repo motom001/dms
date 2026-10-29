@@ -123,7 +123,7 @@ export class Betrieb {
   private aktuellerMailer: Mailer | null = null;
 
   constructor(private speicher: BetriebSpeicher, private standardAdresse = 'http://localhost:3000', private tresor?: Tresor) {
-    tresor?.registriere(async () => this.betroffen(), async () => this.verschluesseleAltes());
+    tresor?.registriere(async () => this.betroffen(), async () => this.verschluesseleAltes(), async (um) => this.nachWechsel(um));
   }
 
   /** Neues Passwort verschlüsseln; ohne Schlüssel wird nichts gespeichert. */
@@ -153,6 +153,20 @@ export class Betrieb {
     this.mail = { ...this.mail, passwort: this.tresor.verschluessele(p) };
     await this.speicher.schreibe('mail', this.mail);
     protokoll.modul('system').info('Passwort des Mailservers verschlüsselt');
+  }
+
+  /**
+   * Nach dem Schlüsselwechsel (#47): Einstellungen neu laden – in PostgreSQL sind sie schon umgeschlüsselt.
+   * Liegen sie woanders (Tests, Arbeitsspeicher), hier umschlüsseln.
+   */
+  private async nachWechsel(um: (wert: string) => string | null) {
+    this.mail = { ...LEER, ...((await this.speicher.lies('mail')) as Partial<MailEinstellungen> | null ?? {}) };
+    const p = this.mail.passwort;
+    if (p && istVerschluesselt(p) && !this.tresor?.lesbar(p)) {
+      const neu = um(p);
+      if (neu) { this.mail = { ...this.mail, passwort: neu }; await this.speicher.schreibe('mail', this.mail); }
+    }
+    this.baueMailer();
   }
 
   /** Lädt die gespeicherten Einstellungen; einmal beim Start. */

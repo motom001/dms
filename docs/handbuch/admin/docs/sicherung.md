@@ -93,4 +93,4 @@ Da die Sicherungen verschlüsselt sind, dürfen sie auch in eine Cloud. Das [Not
 
 **Aufbewahren:** ausgedruckt an einem sicheren Ort (z. B. bei den Familienunterlagen) oder als PDF in einem Passwortsafe – auf jeden Fall **getrennt vom NAS** und nicht neben den Sicherungen. Wer das Blatt hat, kann die Sicherungen lesen.
 
-Jeder Download steht im Protokoll (ohne den Schlüssel). Ändert sich der Schlüssel, weist die Werkbank darauf hin, ein neues Notfallblatt zu erstellen; ältere Sicherungen brauchen weiterhin das alte – bewahre es auf, solange es solche Sicherungen gibt.
+Jeder Download steht im Protokoll (ohne den Schlüssel). Ändert sich der Schlüssel ([Schlüssel wechseln](verschluesselung.md#schlussel-wechseln)), weist die Werkbank darauf hin, ein neues Notfallblatt zu erstellen; ältere Sicherungen brauchen weiterhin das alte – bewahre es auf, solange es solche Sicherungen gibt. In der Liste tragen sie den Hinweis „früherer Schlüssel“; mit **Sicherungen mit früherem Schlüssel löschen** entfernst du sie alle auf einmal.

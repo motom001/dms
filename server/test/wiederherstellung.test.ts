@@ -21,7 +21,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
   type Sql = any;
   let haupt: Sql;
   const offen: Sql[] = [];
-  const dbs = [`dms_wh_quelle_${process.pid}`, `dms_wh_ziel_${process.pid}`];
+  const dbs = [`dms_wh_quelle_${process.pid}`, `dms_wh_ziel_${process.pid}`, `dms_wh_wechsel_${process.pid}`];
   const urlVon = (db: string) => { const u = new URL(url!); u.pathname = `/${db}`; return u.toString(); };
 
   before(async () => {
@@ -260,5 +260,44 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     assert.equal(e.probe?.ok, true);
     const ampel = await q.sicherung.probeAmpel(true);
     assert.equal(ampel.ampel, 'gruen');
+  });
+
+  it('Schlüsselwechsel (#47): ganz oder gar nicht in PostgreSQL; ältere Sicherungen brauchen den alten Schlüssel', async () => {
+    const x = await system(dbs[2], { mitDaten: true, mitSchluessel: true });
+    const { pgRepo } = await import('../src/repo-pg');
+    const repo = pgRepo(x.sql, HAUSHALT);
+    const typ = await x.dienst.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
+    const a = await x.dienst.legeMappeAn({ typId: typ.id, werte: { name: 'A', pw: { neu: 'geheim-a' } } });
+    const b = await x.dienst.legeMappeAn({ typId: typ.id, werte: { name: 'B', pw: { neu: 'geheim-b' } } });
+    await x.dienst.loescheMappe(b.id);
+    const meta = (await (await x.sicherung.starte('manuell', 'anna@example.org')).fertig)!;
+    const name = meta.datei.replace('.dms-sicherung', '');
+    const altText = x.tresor.alsText()!;
+    const roh = async () => ({
+      a: (await x.sql`SELECT werte FROM mappen WHERE id = ${a.id}`)[0].werte.pw,
+      b: (await x.sql`SELECT mappe FROM papierkorb WHERE id = ${b.id}`)[0].mappe.werte.pw,
+      pruefwort: (await x.sql`SELECT wert FROM einstellungen WHERE schluessel = 'pruefwort'`)[0].wert,
+    });
+    const vorher = await roh();
+    // Abbruch nach dem ersten Wert: alles bleibt beim alten (Transaktion).
+    let n = 0;
+    await assert.rejects(x.tresor.wechsle((um, e) => repo.umschluesseln((v) => { if (++n > 1) throw new Error('Abbruch'); return um(v); }, e), 'anna'), /abgebrochen/);
+    assert.deepEqual(await roh(), vorher);
+    assert.equal(x.tresor.fingerabdruck, meta.verschluesselung.fingerabdruck);
+    // Richtig wechseln.
+    const w = await x.dienst.schluesselWechseln('anna@example.org');
+    assert.equal(w.umgeschluesselt, 2);
+    const nachher = await roh();
+    assert.notEqual(nachher.a, vorher.a); assert.notEqual(nachher.b, vorher.b); assert.notEqual(nachher.pruefwort, vorher.pruefwort);
+    assert.equal((await x.dienst.zeigePasswort(a.id, 'pw')).wert, 'geheim-a');
+    assert.equal((await x.sql`SELECT wert FROM einstellungen WHERE schluessel = 'tresor'`)[0].wert.fingerabdruck, w.neu);
+    // Die Sicherung von vorher: früherer Schlüssel, Wiederherstellen fragt nach dem alten.
+    const eintrag = (await x.sicherung.liste()).find((e) => e.name === name)!;
+    assert.notEqual(eintrag.meta!.verschluesselung.fingerabdruck, (await x.sicherung.zustand()).fingerabdruck);
+    assert.equal((await x.sicherung.notfallblatt()).aktuell, false);
+    const ohne = await x.w.abgleich(name);
+    assert.equal(ohne.schluesselNoetig, true);
+    const mit = await x.w.abgleich(name, altText);
+    assert.deepEqual(mit.probleme, []);
   });
 });
