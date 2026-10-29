@@ -39,6 +39,10 @@ Es muss immer mindestens einen aktiven Administrator geben; du kannst dich auch 
 
 Beim Benutzer steht, auf welchen Geräten er angemeldet ist – mit Gerät, Browser und letzter Aktivität. Einzelne Sitzungen lassen sich beenden, etwa wenn ein Gerät verloren ging.
 
+## Was sieht ein Benutzer?
+
+Mit **Anzeigen** unter *Was sieht ein Benutzer?* siehst du je Mappentyp, wie viele Mappen der Benutzer nach den gespeicherten [Berechtigungen](berechtigungen.md) lesen darf, mit einigen Beispielen. Für einen Administrator gilt: alles. Willst du wissen, *warum* er eine bestimmte Mappe sieht oder nicht, nutze den [Testlauf](berechtigungen.md#testlauf) am Mappentyp.
+
 ## Fehler nachstellen
 
 Meldet ein Benutzer einen Fehler, kannst du dich mit **Als … anmelden** als dieser Benutzer anmelden und siehst das DMS genau so wie er – mit seinen Rechten. Oben steht die ganze Zeit ein Warnhinweis mit **Zurück zu meinem Konto**.

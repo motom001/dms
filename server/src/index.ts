@@ -224,6 +224,8 @@ if (nachgezogen) log.info(`Titel von ${nachgezogen} Mappen berechnet`);
 await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
 // Schlüssel für Mappentypen (#145), einmalig nach dem Update.
 await dienst.typSchluesselNachziehen();
+// Haken „Neue Mappen/Löschen erlauben“ → Berechtigungen (#146), einmalig nach dem Update.
+await dienst.hakenUeberfuehren();
 const geprueft = await dienst.passungNachziehen();
 if (geprueft) log.info(`Mappen von ${geprueft} Mappentypen gegen ihre Definition geprüft`);
 // Papierkorb (#43): Abgelaufenes stündlich endgültig löschen.

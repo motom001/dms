@@ -88,7 +88,7 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Rollen sind vorerst fachlich** und von jedem Benutzer in der Ablage anlegbar; Einschränkungen kommen mit der Berechtigungsverwaltung. Keine verschachtelten Rollen.
 - **Rolle löschen:** erlaubt, auch wenn Benutzer sie haben – deren Zuordnung fällt weg. Verweise aus normalen Feldern (z. B. „verantwortliche Rolle“) verhindern das Löschen wie bei jeder Mappe.
 - **Deaktivieren statt löschen:** Wer sich schon angemeldet hat, wird deaktiviert; seine Mappe heißt dann „… (ehemalig)“ und Verweise bleiben gültig. Löschen geht nur für nie angenommene Einladungen.
-- **Neue Mappen / Löschen erlauben** als Eigenschaft jedes Mappentyps (`erstellen_erlaubt`, `loeschen_erlaubt`); die Oberfläche blendet die Knöpfe aus, der Server prüft es. Beim Typ *Benutzer* ist beides fest aus.
+- **Neue Mappen / Löschen erlauben** als Eigenschaft jedes Mappentyps (`erstellen_erlaubt`, `loeschen_erlaubt`); die Oberfläche blendet die Knöpfe aus, der Server prüft es. Beim Typ *Benutzer* ist beides fest aus. *Seit 0.32 (#146) abgelöst: Anlegen und Löschen regeln die Berechtigungen (C, D); fest bleiben nur die Systemregeln für Benutzer- und E-Mail-Mappen.*
 - Demo-Daten und Beispiele lassen die Systemtypen aus.
 
 ## Handbuch und Releases (#25)
@@ -150,10 +150,10 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 
 ## Berechtigungen (#123–#127, #137)
 
-- **Regeln nur am Mappentyp**, mit Grundeinstellung (erteilt/entzogen) und geordneten Regeln „wenn … dann ✓/✗/– je Recht“ mit Stopp – wie eine Firewall. Keine Rechte an einzelnen Mappen: Was eine Mappe besonders macht, steht in ihren Feldern, und darauf zielen die Bedingungen.
+- **Regeln nur am Mappentyp**, mit Standard (seit 0.32 je Recht ✓/✗, vorher erteilt/entzogen) und geordneten Regeln „wenn … dann ✓/✗/– je Recht“ mit Stopp – wie eine Firewall. Keine Rechte an einzelnen Mappen: Was eine Mappe besonders macht, steht in ihren Feldern, und darauf zielen die Bedingungen.
 - **CRUDP**: Anlegen, Lesen, Bearbeiten (Felder und Dokumente), Löschen, Passwörter sehen. Notizen, Aufgaben und E-Mail brauchen nur Lesen. Ohne Lesen wirkt nichts außer Anlegen.
 - **Ein Ausdruck, zwei Auswertungen**: Bedingungen über den Benutzer sind beim Anmelden schon entschieden; was bleibt, sind Filter über die Mappe – im Arbeitsspeicher für eine einzelne Mappe und als SQL für Listen, Suche und Zähler. So stimmen Liste und Mappe immer überein, und Seiten bleiben schnell.
-- **Administratoren** unterliegen keinen Regeln, arbeiten aber auch nicht in der Ablage (#128). Die Haken am Mappentyp bleiben Obergrenze für alle.
+- **Administratoren** unterliegen keinen Regeln, arbeiten aber auch nicht in der Ablage (#128). Seit 0.32 (#146) gibt es keine Haken als Obergrenze mehr: Admins sollen nicht in der Ablage arbeiten, aber wenn sie es müssen, ohne unnötige Hürden. Die Haken wurden ohne Mehrrechte für Benutzer in den Standard (✗ C/D) überführt; nur die Systemregeln (Benutzer: kein C/D, E-Mail: kein C) gelten für alle. Den Testlauf gibt es direkt am Mappentyp, auch für ungespeicherte Regeln; „Was sieht ein Benutzer?“ steht am Benutzer.
 - **Benutzerauswahl nur unter sichtbaren Benutzern** (#137): So lässt sich ein Programm über die API sauber auf seinen Ausschnitt begrenzen.
 - **Feldrechte** (einzelne Felder ausblenden) kommen bei Bedarf später.
 

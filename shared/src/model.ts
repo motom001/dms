@@ -161,9 +161,11 @@ export function systemfelder(s: Systemtyp, rolleTypId: string, benutzerTypId = '
   ];
 }
 
-export const darfErstellen = (t: (Pick<MappentypDaten, 'erstellenErlaubt'> & { darfAnlegen?: boolean }) | undefined) => !!t && t.erstellenErlaubt !== false && t.darfAnlegen !== false;
-export const darfLoeschen = (t: Pick<MappentypDaten, 'loeschenErlaubt'> | undefined, m?: Pick<Mappe, 'systemKennung'>) =>
-  !!t && t.loeschenErlaubt !== false && !m?.systemKennung;
+/** Lassen sich in der Ablage Mappen anlegen? Systemregeln (#146) und – für Nicht-Admins – die Berechtigungen. */
+export const darfErstellen = (t: { system?: Systemtyp | null; darfAnlegen?: boolean } | undefined) => !!t && t.system !== 'benutzer' && t.system !== 'email' && t.darfAnlegen !== false;
+/** Lässt sich die Mappe überhaupt löschen? Benutzer nur in der Benutzerverwaltung, Systemrollen nie (#146). */
+export const darfLoeschen = (t: { system?: Systemtyp | null } | undefined, m?: Pick<Mappe, 'systemKennung'>) =>
+  !!t && t.system !== 'benutzer' && !m?.systemKennung;
 
 /**
  * Felder, die in der Ablage nur lesbar sind, mit dem Grund.

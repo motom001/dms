@@ -6,7 +6,6 @@ import { Link } from '../ort';
 import { BenutzerDetail, BenutzerListe, BenutzerNeu, useBenutzer } from './Benutzer';
 import { BetriebListe, BetriebPanel, useBetrieb } from './Betrieb';
 import { SichtEditor, SichtenListe } from './Sichten';
-import { PruefenListe, PruefenPanel } from './Berechtigungen';
 import { DatenbankPanel, LanglaeuferListe, useDatenbank } from './Datenbank';
 import { DemoListe, DemoPanel } from './Demo';
 import { DesignEditor, DesignListe } from './Designs';
@@ -33,7 +32,6 @@ import { useBeiWiederErreichbar } from '../erreichbar';
  * /werkbank                        Übersicht: was zu tun ist (#68)
  * /werkbank/typen[/:id|/neu]
  * /werkbank/benutzer[/:id|/neu]
- * /werkbank/rechtepruefung[?typ=]  Berechtigungen prüfen: Testlauf, „Was sieht ein Benutzer?“ (#125, #142)
  * /werkbank/sichten[/:id|/neu]       Sichten der Ablage (#38)
  * /werkbank/demo
  * /werkbank/protokoll[/:nr]
@@ -114,9 +112,6 @@ export function Werkbank({ teile }: { teile: string[] }) {
       const b = benutzer.liste.find((x) => x.id === id);
       rechts = b ? <BenutzerDetail key={b.id} b={b} neuLaden={benutzer.laden} /> : benutzer.geladen ? <div className="leer"><p>Diesen Benutzer gibt es nicht (mehr).</p></div> : <p className="leise">Lade …</p>;
     }
-  } else if (bereich === 'rechtepruefung') {
-    liste = <PruefenListe />;
-    rechts = <PruefenPanel />;
   } else if (bereich === 'demo') {
     liste = <DemoListe />;
     rechts = <DemoPanel />;
@@ -168,7 +163,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   }
 
   return (
-    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung', 'rechtepruefung'].includes(bereich) ? 'mappe' : 'liste'} offen={id}>
+    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung'].includes(bereich) ? 'mappe' : 'liste'} offen={id}>
       <aside className="spalte sichten" aria-label="Bereiche">
         <h2 className="ueber">Werkbank</h2>
         <WerkbankNavigation bereich={bereich} eintraege={[
@@ -190,7 +185,6 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'wiederherstellung', name: 'Wiederherstellen', gruppe: 'wartung' },
           { pfad: 'wartungsmodus', name: 'Wartungsmodus', gruppe: 'wartung', warn: wartungsmodus.stand && wartungsmodus.stand.stufe !== 'aus' ? (wartungsmodus.stand.stufe === 'aktiv' ? 'aktiv' : 'an') : undefined, warnTitel: 'Wartungsmodus ist an' },
           { pfad: 'wartung', name: 'Wartungsoperationen', gruppe: 'wartung' },
-          { pfad: 'rechtepruefung', name: 'Berechtigungen prüfen', gruppe: 'wartung' },
           { pfad: 'datenbank', name: 'Datenbank', gruppe: 'wartung' },
           { pfad: 'technik', name: 'Technik', gruppe: 'wartung' },
           { pfad: 'demo', name: 'Demo-Daten', gruppe: 'wartung', zahl: Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || undefined },

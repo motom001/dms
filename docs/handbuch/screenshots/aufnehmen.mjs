@@ -449,7 +449,7 @@ async function main() {
   await bild(s, 'benutzer-mappe');
 
   // Berechtigungen (#123–#127, #142): Regeln am Mappentyp Vertrag, Prüfung, „Meine Rechte“ eines Mitglieds
-  await api('PUT', `/api/werkbank/berechtigungen/${vertrag.id}`, { bestaetigt: true, berechtigungen: { grund: 'erteilt', regeln: [
+  await api('PUT', `/api/werkbank/berechtigungen/${vertrag.id}`, { bestaetigt: true, berechtigungen: { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [
     { id: 'garten', name: 'Haus und Garten darf alles', wenn: [{ art: 'rolle', rollen: [d.garten.id] }], dann: { C: 'erteilen', R: 'erteilen', U: 'erteilen', D: 'erteilen', P: 'erteilen' }, stopp: true },
     { id: 'andere', name: 'Sonst bearbeitet nur, wer verantwortlich ist', wenn: [{ art: 'feld', nicht: true, bedingung: { art: 'feld', feld: 'verantwortlich', op: 'zeigtAuf', wert: { art: 'ich' } } }], dann: { U: 'entziehen', D: 'entziehen', P: 'entziehen' }, stopp: false },
   ] } });
@@ -458,8 +458,7 @@ async function main() {
   await s.locator('#berechtigungen').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-berechtigungen');
   {
-    await geheZu(s, `/werkbank/rechtepruefung?typ=${vertrag.id}`);
-    const test = s.locator('.blatt', { hasText: 'Testlauf' });
+    const test = s.locator('#testlauf');
     await test.getByLabel('Benutzer', { exact: true }).selectOption({ label: MITGLIED.name });
     await test.getByLabel('Mappe suchen').fill('Stromvertrag');
     await test.locator('.wahlliste button').first().click();

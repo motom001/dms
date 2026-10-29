@@ -25,7 +25,7 @@ function MeineRechte({ admin }: { admin: boolean }) {
     <section className="blatt">
       <h2 className="h3">Meine Rechte <Hilfe ort="profil.rechte" /></h2>
       {admin
-        ? <p className="leise">Als Administrator siehst und darfst du alles – für dich gelten die Berechtigungen nicht. Einschränken können dich nur die Haken „Neue Mappen erlauben“ und „Löschen erlauben“ am Mappentyp.</p>
+        ? <p className="leise">Als Administrator siehst und darfst du alles – für dich gelten die Berechtigungen nicht. Benutzer legst du in der Benutzerverwaltung an, E-Mail-Mappen entstehen beim Versenden.</p>
         : <p className="leise">Was du je Mappentyp darfst. „Je nach Mappe“ heißt: Es hängt von der Mappe ab, zum Beispiel davon, ob du verantwortlich bist oder eine Aufgabe dazu hast.</p>}
       {!liste ? <p className="leise">Lade …</p> : (
         <div className="tabellenrahmen"><table>

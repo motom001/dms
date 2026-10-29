@@ -5,8 +5,8 @@ import {
   type Feld, type Mappe, type Mappentyp, type Register, type Registerart, type Werte,
 } from '../../../shared/src/model';
 import { wirksameTypen } from '../../../shared/src/sichten';
-import { regelwerkVon, type Regelwerk } from '../../../shared/src/rechte';
-import { RegelwerkAbschnitt } from '../werkbank/Berechtigungen';
+import { OFFENES_REGELWERK, regelwerkVon, type Regelwerk } from '../../../shared/src/rechte';
+import { RegelwerkAbschnitt, TestlaufBlatt } from '../werkbank/Berechtigungen';
 import { FRIST_STANDARD, FRIST_TEXT, fristText, VORLAUF_EINHEITEN, wiederholungText, type FristEinstellung } from '../../../shared/src/fristen';
 import { api, ApiFehler, type Bezuege } from '../api';
 import { useDaten } from '../daten';
@@ -32,7 +32,6 @@ interface Entwurf {
   id: string; name: string;
   /** Fester Schlüssel (#145); bei neuen Typen aus dem Namen, bis man ihn selbst tippt. */
   schluessel: string; _schluesselGetippt?: boolean; beschreibung: string; titelVorlage: string; felder: EntwurfFeld[]; register: EntwurfRegister[]; trefferlisten: EntwurfListe[];
-  erstellenErlaubt: boolean; loeschenErlaubt: boolean;
   /** Berechtigungen (#142): mit dem Mappentyp gespeichert. */
   berechtigungen: Regelwerk;
 }
@@ -49,11 +48,10 @@ function neueId(): string {
 const alsEntwurfRegister = ({ felder: _f, ...r }: Register): EntwurfRegister => ({ ...r, _uid: neueId() });
 
 function entwurfAus(t?: Mappentyp): Entwurf {
-  if (!t) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], erstellenErlaubt: true, loeschenErlaubt: true, berechtigungen: { grund: 'erteilt', regeln: [] } };
+  if (!t) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], berechtigungen: structuredClone(OFFENES_REGELWERK) };
   const erstes = t.register.find((r) => r.art === 'felder')?.key ?? '';
   const e: Entwurf = {
     id: t.id, name: t.name, schluessel: t.schluessel ?? '', beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '',
-    erstellenErlaubt: t.erstellenErlaubt !== false, loeschenErlaubt: t.loeschenErlaubt !== false,
     berechtigungen: structuredClone(regelwerkVon(t)),
     register: t.register.map(alsEntwurfRegister),
     felder: t.felder.map((f) => ({
@@ -246,12 +244,6 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
               onChange={(ev) => setE({ ...e, schluessel: ev.target.value, _schluesselGetippt: true })} /></label>
         </div>
         <label className="eigenschaft"><span>Beschreibung</span><input value={e.beschreibung} placeholder="Wofür ist dieser Typ?" onChange={(ev) => setE({ ...e, beschreibung: ev.target.value })} /></label>
-        <div className="raster">
-          <div className="eigenschaft unten"><label className="haken"><input type="checkbox" checked={e.erstellenErlaubt} disabled={system === 'benutzer'} onChange={(ev) => setE({ ...e, erstellenErlaubt: ev.target.checked })} />
-            <span>Neue Mappen erlauben<small className="hilfe">In der Ablage dürfen Mappen dieses Typs angelegt werden – wer genau, regeln die Berechtigungen</small></span></label></div>
-          <div className="eigenschaft unten"><label className="haken"><input type="checkbox" checked={e.loeschenErlaubt} disabled={system === 'benutzer'} onChange={(ev) => setE({ ...e, loeschenErlaubt: ev.target.checked })} />
-            <span>Löschen erlauben<small className="hilfe">In der Ablage dürfen Mappen dieses Typs gelöscht werden – wer genau, regeln die Berechtigungen</small></span></label></div>
-        </div>
         {neu && <label className="haken"><input type="checkbox" checked={sichtAnlegen} onChange={(ev) => setSichtAnlegen(ev.target.checked)} />
           <span>Eigene Sicht in der Ablage anlegen<small className="hilfe">Abwählen, wenn die Mappen in einer bestehenden Sicht erscheinen sollen – das stellst du unter Werkbank → Sichten ein.</small></span></label>}
       </div>
@@ -295,6 +287,7 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
       <RegelwerkAbschnitt rw={e.berechtigungen} setRw={(f) => setE((x) => ({ ...x, berechtigungen: f(x.berechtigungen) }))} neu={neu}
         gespeichert={gespeichert ? regelwerkVon(gespeichert) : null}
         typ={{ id: e.id, name: e.name, beschreibung: e.beschreibung, system: system ?? null, felder: e.felder as unknown as Feld[], register: [], erstellt: '', geaendert: '' } as unknown as Mappentyp} />
+      {gespeichert && <TestlaufBlatt typId={gespeichert.id} entwurf={e.berechtigungen} />}
 
       <div className="speicherleiste">
         {system ? <span /> : <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>{neu ? 'Entwurf verwerfen' : 'Mappentyp löschen'}</button>}

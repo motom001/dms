@@ -1,6 +1,6 @@
 # Berechtigungen
 
-Mit Berechtigungen legst du je Mappentyp fest, **wer welche Mappen anlegen, lesen, bearbeiten, löschen und wessen Passwörter sehen** darf. Du pflegst sie am **Mappentyp** selbst, im Abschnitt **Berechtigungen** unter den Registern, und speicherst sie mit **Mappentyp speichern**. Prüfen lassen sie sich unter **Wartung und Fehlersuche → [Berechtigungen prüfen](#berechtigungen-prufen)**.
+Mit Berechtigungen legst du je Mappentyp fest, **wer welche Mappen anlegen, lesen, bearbeiten, löschen und wessen Passwörter sehen** darf. Du pflegst sie am **Mappentyp** selbst, im Abschnitt **Berechtigungen** unter den Registern, und speicherst sie mit **Mappentyp speichern**. Direkt darunter prüfst du sie im [Testlauf](#testlauf); was ein Benutzer insgesamt sieht, zeigt die [Benutzerverwaltung](benutzer.md#was-sieht-ein-benutzer).
 
 ![Berechtigungen am Mappentyp Vertrag](bilder/werkbank-berechtigungen.png)
 
@@ -18,16 +18,20 @@ Mit Berechtigungen legst du je Mappentyp fest, **wer welche Mappen anlegen, lese
 | **P** | Passwörter sehen | den Klartext von Passwortfeldern anzeigen (das „Auge“) |
 
 - **Ohne Lesen wirkt nichts außer Anlegen.** Wer eine Mappe nicht lesen darf, darf sie auch nicht bearbeiten, löschen oder ihre Passwörter sehen – egal was die Regeln sonst sagen.
-- Die Haken **Neue Mappen erlauben** und **Löschen erlauben** am [Mappentyp](mappentypen.md) bleiben die **Obergrenze**: Ist ein Haken aus, hilft auch keine Regel – das gilt auch für Administratoren.
+- **Systemregeln** gelten für alle, auch für Administratoren, und lassen sich nicht ändern: Benutzer-Mappen entstehen und verschwinden nur über die Benutzerverwaltung (kein C, kein D), E-Mail-Mappen entstehen nur beim [Versenden](https://motom001.github.io/dms/benutzer/versenden/) (kein C). In der Standard-Zeile sind diese Rechte deshalb gesperrt.
 - **Systemfelder** von Benutzern (Rolle, weitere Rollen, Aktiv) ändern sich weiterhin nur in der Benutzerverwaltung und im eigenen Profil.
 - Den **eigenen Papierkorb** sieht jeder Benutzer immer und kann daraus wiederherstellen – auch wenn er die Mappe danach nach den Regeln nicht mehr sehen darf. Er bekommt dann einen Hinweis.
 
-## Grundeinstellung
+## Standard
 
-Jeder Mappentyp hat eine Grundeinstellung, die gilt, solange keine Regel etwas anderes sagt:
+Über den Regeln steht die Zeile **Standard** mit den fünf Rechten **C R U D P**. Sie gilt, solange keine Regel etwas anderes sagt; ein Klick schaltet ein Recht zwischen **✓** (erteilt) und **✗** (entzogen).
 
-- **Alle Rechte erteilt** – jeder darf alles; Regeln *schränken ein*. So verhält sich ein Mappentyp ohne Regeln, also auch jeder Typ nach dem Update auf diese Version.
-- **Alle Rechte entzogen** – niemand darf etwas; Regeln *geben frei*. Das passt für vertrauliche Typen wie Gehaltsabrechnungen.
+- **✓ C R U D P** – jeder darf alles; Regeln *schränken ein*. So startet jeder neue Mappentyp.
+- **✗ C R U D P** – niemand darf etwas; Regeln *geben frei*. Das passt für vertrauliche Typen wie Gehaltsabrechnungen.
+- Auch gemischt, z. B. **✓ R U P, ✗ C D**: Jeder darf lesen und bearbeiten, anlegen und löschen nur, wem eine Regel es erlaubt.
+
+!!! note "Früher: Haken am Mappentyp"
+    Bis Version 0.31 gab es am Mappentyp die Haken *Neue Mappen erlauben* und *Löschen erlauben*. Beim Update wurden sie in die Berechtigungen übernommen: War ein Haken aus, steht im Standard **✗ C** bzw. **✗ D**, und Regeln erteilen dieses Recht nicht mehr. Niemand bekommt dadurch mehr Rechte als vorher.
 
 ## Regeln
 
@@ -36,6 +40,7 @@ Eine Regel heißt: **Wenn** alle Bedingungen zutreffen, **dann** setze diese Rec
 - Je Recht gibt es drei Stellungen: **✓** erteilen, **✗** entziehen, **–** unverändert lassen. Ein Klick auf den Knopf schaltet weiter.
 - Die Regeln werden **von oben nach unten** geprüft. Jede zutreffende Regel setzt ihre ✓ und ✗ – eine spätere Regel kann also überschreiben, was eine frühere gesetzt hat.
 - **Stopp**: Trifft die Regel zu, werden die folgenden Regeln nicht mehr geprüft. So setzt du Ausnahmen an den Anfang, z. B. „Buchhaltung darf alles“ mit Stopp.
+- Jede Regel lässt sich **zuklappen**; eingeklappt zeigt sie Name, Rechte und Bedingungen in einer Zeile. Neue Regeln sind offen.
 - Die Reihenfolge änderst du durch **Ziehen am Griff** ⠿ oder mit **Alt+↑/↓**.
 - Eine Regel braucht einen Namen, mindestens eine Bedingung und muss etwas bewirken (ein Recht oder Stopp).
 
@@ -64,21 +69,15 @@ Die Regeln werden mit **Mappentyp speichern** gespeichert, zusammen mit Feldern,
 
 Beim Speichern prüft das DMS außerdem, ob danach Mappen dieses Typs **niemand mehr lesen** könnte (außer Administratoren), und fragt in diesem Fall nach. Jede Änderung steht im [Protokoll](fehlersuche.md) mit der vollständigen Regelliste.
 
-## Berechtigungen prüfen
+## Testlauf
 
-Unter **Wartung und Fehlersuche → Berechtigungen prüfen** testest du die **gespeicherten** Regeln. Am Abschnitt *Berechtigungen* eines Mappentyps öffnet **Regeln prüfen ↗** diese Seite in einem **neuen Fenster**, mit dem Mappentyp schon ausgewählt. So bearbeitest du die Regeln in einem Fenster und prüfst sie im anderen: ändern, *Mappentyp speichern*, im anderen Fenster noch einmal **Prüfen**.
+Unter den Regeln steht der **Testlauf**: Welche Rechte hätte ein bestimmter Benutzer an einer bestimmten Mappe? Wähle Benutzer und Mappe und klicke auf **Prüfen**. Die Tabelle zeigt Schritt für Schritt, welche Regel zutraf, was sie gesetzt hat und wie der Stand danach war.
 
-Links listet die Seite alle Mappentypen mit Grundeinstellung und Anzahl der Regeln; ein Klick springt zu ihren Regeln.
-
-### Testlauf
-
-Welche Rechte hätte ein bestimmter Benutzer an einer bestimmten Mappe? Wähle Mappentyp, Benutzer und Mappe und klicke auf **Prüfen**. Die Tabelle zeigt Schritt für Schritt, welche Regel zutraf, was sie gesetzt hat und wie der Stand danach war.
+Der Testlauf nutzt die Regeln, **wie sie gerade im Editor stehen** – auch ungespeicherte. So probierst du eine Änderung aus, bevor du *Mappentyp speichern* klickst. Ändert sich eine Regel, verschwindet das alte Ergebnis. Den Testlauf gibt es, sobald der Mappentyp einmal gespeichert ist.
 
 ![Testlauf: Ben an „Stromvertrag Haus“](bilder/werkbank-berechtigungen-testlauf.png)
 
-### Was sieht ein Benutzer?
-
-Zeigt je Mappentyp, wie viele Mappen ein Benutzer nach den gespeicherten Regeln lesen darf, mit einigen Beispielen.
+Was ein Benutzer über alle Mappentypen hinweg lesen darf, zeigt [Was sieht ein Benutzer?](benutzer.md#was-sieht-ein-benutzer) in der Benutzerverwaltung.
 
 ## Was Benutzer davon merken
 
@@ -92,13 +91,13 @@ Zeigt je Mappentyp, wie viele Mappen ein Benutzer nach den gespeicherten Regeln 
 
 ### Vertrauliche Mappen nur für Verantwortliche
 
-Mappentyp *Gehalt*, Grundeinstellung **Alle Rechte entzogen**:
+Mappentyp *Gehalt*, Standard **✗ C R U D P**:
 
 1. **Verantwortliche** – wenn *Verantwortlich zeigt auf aktueller Benutzer* → ✓ R U D P
 
 ### Eine Rolle darf alles, alle anderen nur lesen
 
-Mappentyp *Rechnung*, Grundeinstellung **Alle Rechte erteilt**:
+Mappentyp *Rechnung*, Standard **✓ C R U D P**:
 
 1. **Buchhaltung darf alles** – wenn *Benutzer hat Rolle Buchhaltung* → ✓ C R U D P, **Stopp**
 2. **Alle anderen nur lesen** – wenn *Benutzer hat nicht Rolle Buchhaltung* → ✗ C U D P
@@ -117,4 +116,4 @@ Ein Programm (etwa ein ERP-System) soll über die [Schnittstelle](api.md) Rechnu
 2. Mappentyp *Rechnung*: Regel **ERP legt Rechnungen an** – wenn *Benutzer hat Rolle ERP* → ✓ C R U.
 3. Mappentyp *Benutzer*: Regel **ERP sieht nur die Buchhaltung** – wenn *Benutzer hat Rolle ERP* und *nicht: Rollen zeigt auf Buchhaltung* (das Feld der Benutzer-Mappe) → ✗ R. So kann das Programm als „Verantwortlich“ nur Mitglieder der Buchhaltung eintragen.
 4. Alle übrigen Mappentypen: Regel **ERP sieht nichts** – wenn *Benutzer hat Rolle ERP* → ✗ C R U D P (einmal anlegen, dann in die anderen Typen kopieren).
-5. Mit **Was sieht ein Benutzer?** kontrollierst du das Ergebnis.
+5. Mit [Was sieht ein Benutzer?](benutzer.md#was-sieht-ein-benutzer) am Benutzer *ERP-Schnittstelle* kontrollierst du das Ergebnis.

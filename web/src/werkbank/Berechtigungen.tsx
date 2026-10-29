@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import type { Mappentyp } from '../../../shared/src/model';
 import { bedingungsfelder, beschreibeBedingung, OPERATOREN_JE_ART, type Bedingung, type Bedingungsfeld } from '../../../shared/src/sichten';
 import {
-  beschreibeRegelBedingung, istOffen, kurz, RECHTE, RECHTE_LISTE, regelProblem, regelwerkVon,
+  beschreibeRegelBedingung, kurz, RECHTE, RECHTE_LISTE, regelProblem, systemSperre,
   type Recht, type Regel, type RegelBedingung, type Regelwerk, type Wirkung,
 } from '../../../shared/src/rechte';
 import { api, type Testlauf } from '../api';
@@ -18,7 +18,7 @@ import type { Benutzer } from '../../../shared/src/model';
  * „wenn … dann erteile/entziehe CRUDP“, in Reihenfolge, mit Stopp. Für Administratoren gelten sie nicht.
  *
  * Gepflegt im Mappentyp-Editor (Abschnitt „Berechtigungen“), gespeichert mit „Mappentyp speichern“.
- * Geprüft unter /werkbank/rechtepruefung[?typ=…] (Wartung und Fehlersuche): Testlauf und „Was sieht ein Benutzer?“.
+ * Getestet am Mappentyp selbst (Testlauf mit dem Entwurf, #146); „Was sieht ein Benutzer?“ in der Benutzerverwaltung.
  */
 
 const neueId = () => Math.random().toString(36).slice(2, 10);
@@ -34,10 +34,8 @@ const ARTEN: Array<{ art: Art; name: string; nurBenutzerTyp?: boolean }> = [
   { art: 'eigeneMappe', name: 'Mappe ist die des Benutzers', nurBenutzerTyp: true },
 ];
 
-export const PRUEFEN_PFAD = '/werkbank/rechtepruefung';
-
 /**
- * Abschnitt „Berechtigungen“ im Mappentyp-Editor (#142). `typ` ist der Entwurf (Felder wie gerade bearbeitet),
+ * Abschnitt „Berechtigungen“ im Mappentyp-Editor (#142, #146). `typ` ist der Entwurf (Felder wie gerade bearbeitet),
  * `gespeichert` die Regeln, wie sie gespeichert sind – Kopieren in andere Typen geht nur mit gespeicherten Regeln.
  */
 export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu }: {
@@ -45,6 +43,8 @@ export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu }: {
 }) {
   const [ansage, setAnsage] = useState('');
   const [titel, setTitel] = useState<Record<string, string>>({});
+  const [offen, setOffen] = useState<Set<string>>(new Set());
+  const umschalten = (id: string) => setOffen((x) => { const n = new Set(x); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const merke = useCallback((id: string, t: string) => setTitel((x) => ({ ...x, [id]: t })), []);
   const zieh = useZiehen({
     fertig: (quelle, ziel, ort) => {
@@ -66,21 +66,34 @@ export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu }: {
     setAnsage(`${x.regeln[i].name || 'Regel'} steht jetzt an Stelle ${j + 1}.`);
     return { ...x, regeln: umgestellt(x.regeln, i, j, r < 0 ? 'vor' : 'nach') };
   });
-  const neueRegel = () => setRw((x) => ({ ...x, regeln: [...x.regeln, { id: neueId(), name: '', wenn: [{ art: 'rolle', rollen: [] }], dann: {}, stopp: false }] }));
+  const neueRegel = () => {
+    const id = neueId();
+    setOffen((x) => new Set([...x, id]));
+    setRw((x) => ({ ...x, regeln: [...x.regeln, { id, name: '', wenn: [{ art: 'rolle', rollen: [] }], dann: {}, stopp: false }] }));
+  };
+  const sperre = systemSperre(typ);
 
   return (
     <div className="blatt" id="berechtigungen">
-      <div className="blattkopf zeile-zwischen">
-        <h2 className="h3">Berechtigungen <Hilfe ort="werkbank.berechtigungen" /></h2>
-        {!neu && <a href={`${PRUEFEN_PFAD}?typ=${encodeURIComponent(typ.id)}`} target="_blank" rel="noreferrer" className="knopf klein" title="Öffnet die Prüfung in einem neuen Fenster – Regeln hier ändern und speichern, dort prüfen">Regeln prüfen ↗</a>}
-      </div>
-      <p className="leise">Wer Mappen dieses Typs anlegen (C), lesen (R), bearbeiten (U – Felder und Dokumente), löschen (D) und Passwörter sehen (P) darf. Für <strong>Administratoren</strong> gelten die Regeln nicht. „Neue Mappen erlauben“ und „Löschen erlauben“ oben bleiben die Obergrenze. Geprüft wird, was gespeichert ist – also erst „Mappentyp speichern“, dann im anderen Fenster prüfen.</p>
+      <h2 className="h3">Berechtigungen <Hilfe ort="werkbank.berechtigungen" /></h2>
+      <p className="leise">Wer Mappen dieses Typs anlegen (C), lesen (R), bearbeiten (U – Felder und Dokumente), löschen (D) und Passwörter sehen (P) darf. Für <strong>Administratoren</strong> gelten die Regeln nicht.</p>
 
-      <h3 className="zwischen">Grundeinstellung <Hilfe ort="berechtigungen.grund" /></h3>
-      <div className="typwahl">
-        <label className="haken"><input type="radio" name="grund" checked={rw.grund === 'erteilt'} onChange={() => setRw((x) => ({ ...x, grund: 'erteilt' }))} /><span>Alle Rechte erteilt <small className="leise">– Regeln schränken ein</small></span></label>
-        <label className="haken"><input type="radio" name="grund" checked={rw.grund === 'entzogen'} onChange={() => setRw((x) => ({ ...x, grund: 'entzogen' }))} /><span>Alle Rechte entzogen <small className="leise">– Regeln geben frei</small></span></label>
+      <h3 className="zwischen">Standard <Hilfe ort="berechtigungen.grund" /></h3>
+      <p className="leise klein">Gilt, solange keine Regel etwas anderes sagt. Klicken schaltet zwischen ✓ erteilt und ✗ entzogen.</p>
+      <div className="rechtewahl" role="group" aria-label="Standard je Recht">
+        {RECHTE_LISTE.map((k) => {
+          const fest = (k === 'C' && sperre.C) || (k === 'D' && sperre.D);
+          const an = rw.grund[k] && !fest;
+          return (
+            <button key={k} type="button" className={`rechtknopf ${an ? 'erteilen' : 'entziehen'}`} disabled={fest}
+              aria-label={`Standard ${RECHTE[k]}: ${an ? 'erteilt' : 'entzogen'}`} title={fest ? `${RECHTE[k]}: geht bei diesem Systemtyp nur über die Benutzerverwaltung bzw. den Versand` : `${RECHTE[k]}: ${an ? 'erteilt' : 'entzogen'} – klicken zum Wechseln`}
+              onClick={() => setRw((x) => ({ ...x, grund: { ...x.grund, [k]: !x.grund[k] } }))}>
+              <span className="buchstabe">{k}</span><span aria-hidden="true">{an ? '✓' : '✗'}</span>
+            </button>
+          );
+        })}
       </div>
+      {(sperre.C || sperre.D) && <p className="leise klein">{typ.system === 'benutzer' ? 'Benutzer entstehen und verschwinden nur in der Benutzerverwaltung – auch für Administratoren.' : 'E-Mail-Mappen entstehen nur beim Versenden.'}</p>}
 
       <h3 className="zwischen">Regeln <Hilfe ort="berechtigungen.regeln" /></h3>
       <p className="leise">Von oben nach unten: Jede zutreffende Regel setzt ihre ✓ und ✗, „–“ lässt das Recht, wie es ist; „Stopp“ beendet die Prüfung. Ohne Lesen wirkt nur Anlegen; für Notizen und Aufgaben reicht Lesen. Reihenfolge per Ziehen am Griff oder mit Alt+↑/↓.</p>
@@ -89,6 +102,7 @@ export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu }: {
           {rw.regeln.map((r, i) => (
             <li key={r.id} {...zieh.eintrag(r.id)}>
               <RegelKarte r={r} typ={typ} problem={probleme[i]} setze={(n) => setzeRegel(i, n)} titel={titel} merke={merke}
+                offen={offen.has(r.id)} umschalten={() => umschalten(r.id)}
                 griff={<button {...zieh.griff(r.id, r.name || 'Regel')} onKeyDown={(ev) => ziehTasten(ev, { hoch: () => verschiebe(i, -1), runter: () => verschiebe(i, 1) })}><span aria-hidden="true">⠿</span></button>}
                 weg={() => setRw((x) => ({ ...x, regeln: x.regeln.filter((y) => y.id !== r.id) }))}
                 gespeichert={unveraendert && !neu}
@@ -103,9 +117,11 @@ export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu }: {
   );
 }
 
-function RegelKarte({ r, typ, problem, setze, weg, griff, titel, merke, gespeichert, nachKopie }: {
+function RegelKarte({ r, typ, problem, setze, weg, griff, titel, merke, gespeichert, nachKopie, offen, umschalten }: {
   r: Regel; typ: Mappentyp; problem: string | null; setze: (r: Regel) => void; weg: () => void; griff: ReactNode;
   titel: Record<string, string>; merke: (id: string, t: string) => void; gespeichert: boolean; nachKopie: () => void;
+  /** Zuklappen wie bei Feldern (#146). */
+  offen: boolean; umschalten: () => void;
 }) {
   const d = useDaten();
   const felder = useMemo(() => bedingungsfelder([typ]), [typ]);
@@ -121,6 +137,28 @@ function RegelKarte({ r, typ, problem, setze, weg, griff, titel, merke, gespeich
   const rollenTyp = d.typen.find((t) => t.system === 'rolle')?.id;
   const benutzerTyp = d.typen.find((t) => t.system === 'benutzer')?.id;
   const feldName = (b: Extract<Bedingung, { art: 'feld' }>) => beschreibeBedingung(b, [typ], (id) => titel[id] ?? d.person(id));
+
+  const bedText = (b: RegelBedingung) => beschreibeRegelBedingung(b, { benutzer: (id) => titel[id] ?? d.person(id), rolle: (id) => titel[id] ?? '…', feld: feldName });
+  // Rollen- und Benutzernamen für die Kurzform nachladen.
+  const fehlend = r.wenn.flatMap((b) => (b.art === 'rolle' ? b.rollen : b.art === 'benutzer' ? b.benutzer : [])).filter((x) => !titel[x]).join(',');
+  useEffect(() => {
+    if (offen) return;
+    for (const x of fehlend ? fehlend.split(',') : []) api.mappe(x).then((m) => merke(x, m.mappe.titel ?? '')).catch(() => merke(x, '(gelöscht)'));
+  }, [fehlend, offen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!offen) return (
+    <div className={`regel zu ${problem ? 'fehlerhaft' : ''}`}>
+      <div className="regelkopf">
+        {griff}
+        <button type="button" className="regelsumme" aria-expanded={false} onClick={umschalten}>
+          <strong>{r.name || 'Ohne Namen'}</strong>
+          <span className="chip">{kurz(r.dann)}{r.stopp ? ' · Stopp' : ''}</span>
+          <span className="leise klein">wenn {r.wenn.map(bedText).join(' und ') || '…'}</span>
+        </button>
+      </div>
+      {problem && <p className="fehlertext klein">{problem}</p>}
+    </div>
+  );
 
   return (
     <div className={`regel ${problem ? 'fehlerhaft' : ''}`}>
@@ -151,7 +189,7 @@ function RegelKarte({ r, typ, problem, setze, weg, griff, titel, merke, gespeich
                 </>}
                 <button type="button" className="textknopf gefahr klein" onClick={() => setze({ ...r, wenn: r.wenn.filter((_, j) => j !== i) })}>Bedingung entfernen</button>
               </div>
-              <p className="leise klein">{beschreibeRegelBedingung(b, { benutzer: (id) => titel[id] ?? d.person(id), rolle: (id) => titel[id] ?? '…', feld: feldName })}</p>
+              <p className="leise klein">{bedText(b)}</p>
             </li>
           );
         })}
@@ -174,6 +212,7 @@ function RegelKarte({ r, typ, problem, setze, weg, griff, titel, merke, gespeich
       <div className="knoepfe">
         <button type="button" className="knopf klein" disabled={!gespeichert} title={gespeichert ? undefined : 'Erst speichern'} onClick={() => setKopie((x) => !x)}>In andere Mappentypen kopieren …</button>
         <button type="button" className="textknopf gefahr klein" onClick={weg}>Regel entfernen</button>
+        <button type="button" className="knopf klein" onClick={umschalten}>Zuklappen</button>
       </div>
       {kopie && <Kopieren typ={typ} regel={r} fertig={() => { setKopie(false); nachKopie(); }} />}
     </div>
@@ -223,8 +262,8 @@ function RechteZeile({ r }: { r: Record<Recht, boolean> }) {
   );
 }
 
-function TestlaufBlatt({ typId, setTypId }: { typId: string; setTypId: (id: string) => void }) {
-  const d = useDaten();
+/** Testlauf am Mappentyp (#146): mit den Regeln, wie sie gerade im Editor stehen – auch ungespeichert. */
+export function TestlaufBlatt({ typId, entwurf }: { typId: string; entwurf: Regelwerk }) {
   const benutzer = useRegelBenutzer();
   const [b, setB] = useState('');
   const [mappe, setMappe] = useState<string[]>([]);
@@ -233,18 +272,16 @@ function TestlaufBlatt({ typId, setTypId }: { typId: string; setTypId: (id: stri
   const [fehler, setFehler] = useState<string>();
   async function los() {
     setFehler(undefined);
-    try { setErg(await api.testlauf({ mappeId: mappe[0], benutzerId: b })); } catch (x) { setFehler((x as Error).message); setErg(undefined); }
+    try { setErg(await api.testlauf({ mappeId: mappe[0], benutzerId: b, berechtigungen: entwurf })); } catch (x) { setFehler((x as Error).message); setErg(undefined); }
   }
-  useEffect(() => { setMappe([]); setErg(undefined); }, [typId]);
+  // Nach jeder Änderung an den Regeln: altes Ergebnis ausblenden.
+  const stand = JSON.stringify(entwurf);
+  useEffect(() => { setErg(undefined); }, [stand]);
   return (
-    <div className="blatt">
+    <div className="blatt" id="testlauf">
       <h2 className="h3">Testlauf <Hilfe ort="berechtigungen.testlauf" /></h2>
-      <p className="leise">Welche Rechte hätte ein Benutzer an einer bestimmten Mappe – und welche Regel hat das entschieden? Geprüft werden die gespeicherten Regeln; nach „Mappentyp speichern“ einfach noch einmal auf „Prüfen“.</p>
+      <p className="leise">Welche Rechte hätte ein Benutzer an einer bestimmten Mappe – und welche Regel hat das entschieden? Geprüft werden die Regeln, wie sie oben stehen, auch wenn sie noch nicht gespeichert sind.</p>
       <div className="bedingungszeile">
-        <select aria-label="Mappentyp" value={typId} onChange={(x) => setTypId(x.target.value)}>
-          <option value="">– Mappentyp wählen –</option>
-          {d.typen.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-        </select>
         <select aria-label="Benutzer" value={b} onChange={(x) => setB(x.target.value)}>
           <option value="">– Benutzer wählen –</option>
           {benutzer.map((x) => <option key={x.id} value={x.id}>{x.name || x.email}{x.rolle === 'admin' ? ' (Administrator)' : ''}</option>)}
@@ -262,7 +299,7 @@ function TestlaufBlatt({ typId, setTypId }: { typId: string; setTypId: (id: stri
                 <table className="tabelle klein">
                   <thead><tr><th>Schritt</th><th>trifft zu?</th><th>setzt</th><th>Stand danach</th></tr></thead>
                   <tbody>
-                    <tr><td>Grundeinstellung</td><td>–</td><td>–</td><td><RechteZeile r={erg.grund} /></td></tr>
+                    <tr><td>Standard</td><td>–</td><td>–</td><td><RechteZeile r={erg.grund} /></td></tr>
                     {erg.spur.map((s) => (
                       <tr key={s.regel} className={s.traf ? 'traf' : ''}>
                         <td>{s.name || 'Regel'}{s.stopp && s.traf ? ' · Stopp' : ''}</td>
@@ -274,7 +311,7 @@ function TestlaufBlatt({ typId, setTypId }: { typId: string; setTypId: (id: stri
                   </tbody>
                 </table>
                 {RECHTE_LISTE.some((k) => erg.rechte[k] !== erg.wirksam[k]) && (
-                  <p className="leise klein">Wirksam weicht ab: ohne Lesen wirkt nur Anlegen; Anlegen und Löschen begrenzen außerdem die Haken am Mappentyp.</p>
+                  <p className="leise klein">Wirksam weicht ab: ohne Lesen wirkt nur Anlegen; außerdem gelten die Systemregeln des Mappentyps.</p>
                 )}
               </>}
         </div>
@@ -285,88 +322,43 @@ function TestlaufBlatt({ typId, setTypId }: { typId: string; setTypId: (id: stri
 
 /* ---------- Was sieht Benutzer X? (#125) ---------- */
 
-/* ---------- Seite „Berechtigungen prüfen“ (Wartung und Fehlersuche, #142) ---------- */
+/* ---------- Was sieht ein Benutzer? (#125, #146: in der Benutzerverwaltung) ---------- */
 
-export function PruefenListe() {
-  const d = useDaten();
-  return (
-    <>
-      <div className="listenkopf"><div><h1>Berechtigungen prüfen</h1><p className="leise klein">Testlauf und „Was sieht ein Benutzer?“. Die Regeln selbst stehen am Mappentyp. <Hilfe ort="werkbank.rechtepruefung" /></p></div></div>
-      <ul className="mappenliste">
-        {d.typen.map((t) => (
-          <li key={t.id}>
-            <Link to={`/werkbank/typen/${t.id}#berechtigungen`} className="eintrag werk">
-              <span className="titel">{t.name}</span>
-              <span className="unter">{zusammenfassung(regelwerkVon(t))} – Regeln bearbeiten</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </>
-  );
-}
-
-const zusammenfassung = (rw: Regelwerk) => (istOffen(rw)
-  ? 'keine Regeln – alle dürfen alles'
-  : `Grundeinstellung ${rw.grund} · ${rw.regeln.length} ${rw.regeln.length === 1 ? 'Regel' : 'Regeln'}`);
-
-export function PruefenPanel() {
-  const d = useDaten();
-  const [typId, setTypId] = useState(() => new URLSearchParams(location.search).get('typ') ?? '');
-  // Das Fenster daneben (#142): nach dem Speichern im Editor beim Zurückkehren den neuen Stand holen.
-  useEffect(() => {
-    const zurueck = () => { if (document.visibilityState === 'visible') void d.neuLaden(); };
-    document.addEventListener('visibilitychange', zurueck);
-    return () => document.removeEventListener('visibilitychange', zurueck);
-  }, [d]);
-  return (
-    <div>
-      <div className="seitenkopf"><div><p className="ueber">Wartung und Fehlersuche</p><h1>Berechtigungen prüfen</h1>
-        {typId && d.typ(typId) && <p className="leise"><Link to={`/werkbank/typen/${typId}#berechtigungen`} className="verweis">Regeln von „{d.typ(typId)!.name}“ bearbeiten →</Link></p>}
-      </div></div>
-      <TestlaufBlatt typId={typId} setTypId={setTypId} />
-      <WasSiehtBlatt />
-    </div>
-  );
-}
-
-function WasSiehtBlatt() {
-  const benutzer = useRegelBenutzer();
-  const [b, setB] = useState('');
+export function WasSiehtBlatt({ benutzerId, admin }: { benutzerId: string; admin: boolean }) {
   const [erg, setErg] = useState<Awaited<ReturnType<typeof api.wasSieht>>>();
   const [fehler, setFehler] = useState<string>();
+  const [an, setAn] = useState(false);
   useEffect(() => {
-    if (!b) { setErg(undefined); return; }
+    if (!an || admin) return;
     let aktuell = true;
-    api.wasSieht(b).then((x) => aktuell && setErg(x)).catch((x) => aktuell && setFehler((x as Error).message));
+    api.wasSieht(benutzerId).then((x) => aktuell && setErg(x)).catch((x) => aktuell && setFehler((x as Error).message));
     return () => { aktuell = false; };
-  }, [b]);
+  }, [an, benutzerId, admin]);
   return (
-    <div>
-      <div className="blatt">
-        <h2 className="h3">Was sieht ein Benutzer?</h2>
-        <p className="leise">Je Mappentyp: wie viele Mappen der Benutzer nach den gespeicherten Regeln lesen darf, mit einigen Beispielen.</p>
-        <select aria-label="Benutzer" value={b} onChange={(x) => { setFehler(undefined); setB(x.target.value); }}>
-          <option value="">– Benutzer wählen –</option>
-          {benutzer.map((x) => <option key={x.id} value={x.id}>{x.name || x.email}{x.rolle === 'admin' ? ' (Administrator)' : ''}</option>)}
-        </select>
-        {fehler && <p className="fehlertext klein">{fehler}</p>}
-        {erg?.admin && <p className="hinweis info">Administratoren sehen alles – für sie gelten die Regeln nicht.</p>}
-        {erg && !erg.admin && (
-          <table className="tabelle">
-            <thead><tr><th>Mappentyp</th><th>lesbar</th><th>Beispiele</th></tr></thead>
-            <tbody>
-              {erg.typen.map((t) => (
-                <tr key={t.typId}>
-                  <td><Link to={`/werkbank/typen/${t.typId}#berechtigungen`} className="verweis">{t.name}</Link></td>
-                  <td>{t.lesbar.toLocaleString('de-DE')} von {t.gesamt.toLocaleString('de-DE')}</td>
-                  <td className="klein">{t.beispiele.map((x) => x.titel || 'ohne Titel').join(' · ') || '–'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
+    <section className="blatt" id="was-sieht">
+      <h2 className="h3">Was sieht dieser Benutzer? <Hilfe ort="benutzer.wasSieht" /></h2>
+      {admin
+        ? <p className="leise">Administratoren sehen alles – für sie gelten die Berechtigungen nicht.</p>
+        : <>
+            <p className="leise">Je Mappentyp: wie viele Mappen er nach den gespeicherten Regeln lesen darf, mit einigen Beispielen.</p>
+            {!an && <div className="knoepfe"><button type="button" className="knopf klein" onClick={() => setAn(true)}>Anzeigen</button></div>}
+            {fehler && <p className="fehlertext klein">{fehler}</p>}
+            {an && !erg && !fehler && <p className="leise">Lade …</p>}
+            {erg && (
+              <div className="tabellenrahmen"><table>
+                <thead><tr><th>Mappentyp</th><th>lesbar</th><th>Beispiele</th></tr></thead>
+                <tbody>
+                  {erg.typen.map((t) => (
+                    <tr key={t.typId}>
+                      <td><Link to={`/werkbank/typen/${t.typId}#berechtigungen`} className="verweis">{t.name}</Link></td>
+                      <td>{t.lesbar.toLocaleString('de-DE')} von {t.gesamt.toLocaleString('de-DE')}</td>
+                      <td className="klein">{t.beispiele.map((x) => x.titel || 'ohne Titel').join(' · ') || '–'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table></div>
+            )}
+          </>}
+    </section>
   );
 }
