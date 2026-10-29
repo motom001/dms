@@ -668,6 +668,8 @@ export interface OcrStand {
   zeit?: string | null;
 }
 export const MAX_DATEIGROESSE = 100 * 1024 * 1024;
+/** Höchstens so viele Mappen in einer Auswahl (#149). */
+export const MAX_AUSWAHL = 5000;
 
 /** Wert lesbar formatieren (deutsch). `titelVon` löst Referenzen auf. */
 export function formatiere(f: Feld, v: Wert | undefined, titelVon: (id: string) => string = (id) => id): string {

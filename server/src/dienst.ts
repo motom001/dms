@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
-  darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
+  darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_AUSWAHL, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, ROLLEN, freierSchluessel, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
   AUFGABE_MAX, istEmail, NOTIZ_MAX, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Benutzer, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
@@ -1121,11 +1121,11 @@ export class Dienst {
    * Eine Seite einer Sicht: „eingang“, eine verwaltete Sicht (#38) oder – für Links auf Mappen,
    * deren Typ keine eigene Sicht hat – eine Typ-Id. Mit den Bezügen für die Anzeige.
    */
-  async seite(ich: { id: string; rolle: string }, q: { sicht?: string; link?: unknown; von?: unknown; anzahl?: unknown; suche?: unknown; sortierung?: unknown; absteigend?: unknown; volltext?: unknown; notizen?: unknown }, z?: Zugriff) {
+  async seite(ich: { id: string; rolle: string }, q: { sicht?: string; link?: unknown; von?: unknown; anzahl?: unknown; suche?: unknown; sortierung?: unknown; absteigend?: unknown; volltext?: unknown; notizen?: unknown }, z?: Zugriff, grenze = 500) {
     // Berechtigungen (#124): nur lesbare Mappen; der Eingang zeigt Aufgaben auch zu nicht lesbaren – ohne Inhalt.
     const lesen = z?.lesen ?? null;
     const von = Math.max(0, Math.floor(Number(q.von) || 0));
-    const anzahl = Math.min(500, Math.max(1, Math.floor(Number(q.anzahl) || 100)));
+    const anzahl = Math.min(grenze, Math.max(1, Math.floor(Number(q.anzahl) || 100)));
     const suche = text(q.suche).slice(0, 200) || undefined;
     // Auch im Volltext der Dokumente (#45) und in Notizen (#55) suchen.
     const volltext = q.volltext === true || q.volltext === 'true' || undefined;
@@ -1839,6 +1839,55 @@ export class Dienst {
       return { ok: false as const, status: 409, grund: `Auf diese Mappe ${ids.size === 1 ? 'verweist noch eine andere Mappe' : `verweisen noch ${ids.size} andere Mappen`}. Entferne erst diese Verweise.`, fremd, zuordnungen, emails, benutzerTyp, emailTyp };
     }
     return { ok: true as const, status: 200, grund: undefined, fremd, zuordnungen, emails, benutzerTyp, emailTyp };
+  }
+
+  /** Alle Treffer einer Sicht mit Suche (#149): nur die Ids der lesbaren Mappen, höchstens MAX_AUSWAHL. */
+  async trefferIds(ich: { id: string; rolle: string }, q: Parameters<Dienst['seite']>[1], z?: Zugriff): Promise<{ ids: string[]; gesamt: number }> {
+    const s = await this.seite(ich, { ...q, von: 0, anzahl: MAX_AUSWAHL }, z, MAX_AUSWAHL);
+    return { ids: s.mappen.filter((m) => !m.verborgen).map((m) => m.id), gesamt: s.gesamt };
+  }
+
+  /**
+   * Mehrere Mappen löschen (#150): je Mappe das Recht D am Mappentyp; Verweise innerhalb der Auswahl halten
+   * nicht auf. `probe`: nur zählen, nichts löschen. Was nicht geht, steht mit Grund in `ausgelassen`.
+   */
+  async loescheMappen(e: unknown, benutzerId: string, z: Zugriff): Promise<{ mappen: number; dokumente: number; geloescht: number; ausgelassen: Array<{ id: string; titel: string; grund: string }> }> {
+    const x = (e ?? {}) as { ids?: unknown; probe?: unknown };
+    const ids = [...new Set((Array.isArray(x.ids) ? x.ids : []).map(String).filter(istUuid))];
+    if (!ids.length) throw new Fachfehler(422, 'Keine Mappen ausgewählt.');
+    if (ids.length > MAX_AUSWAHL) throw new Fachfehler(422, `Höchstens ${MAX_AUSWAHL.toLocaleString('de-DE')} Mappen auf einmal.`);
+    const auswahl = new Set(ids);
+    const ausgelassen: Array<{ id: string; titel: string; grund: string }> = [];
+    const kandidaten: Mappe[] = [];
+    let dokumente = 0;
+    for (const id of ids) {
+      const m = await this.repo.holeMappe(id);
+      if (!m) { ausgelassen.push({ id, titel: '', grund: 'gibt es nicht mehr' }); continue; }
+      const r = await this.rechteAn(z, m);
+      if (!r.R) { ausgelassen.push({ id, titel: NICHT_SICHTBAR, grund: 'nicht sichtbar' }); continue; }
+      if (!r.D) { ausgelassen.push({ id, titel: m.titel ?? '', grund: 'kein Recht zum Löschen' }); continue; }
+      const p = await this.loeschPruefung(m, z.typen.get(m.typId), (await this.repo.rueckverweise(id)).filter((v) => !auswahl.has(v.quelleId)));
+      if (!p.ok) { ausgelassen.push({ id, titel: m.titel ?? '', grund: p.fremd.length ? 'es wird noch auf sie verwiesen' : p.grund }); continue; }
+      kandidaten.push(m);
+      dokumente += (await this.repo.listeDokumente(id)).length;
+    }
+    if (x.probe === true) return { mappen: kandidaten.length, dokumente, geloescht: 0, ausgelassen };
+    // Verweise innerhalb der Auswahl: in Runden, bis keine Mappe mehr dazukommt.
+    let offen = kandidaten;
+    let geloescht = 0;
+    while (offen.length) {
+      const rest: Mappe[] = [];
+      for (const m of offen) {
+        try { await this.loescheMappe(m.id, benutzerId, z); geloescht++; }
+        catch (err) {
+          if (err instanceof Fachfehler && err.status === 409) rest.push(m);
+          else ausgelassen.push({ id: m.id, titel: m.titel ?? '', grund: (err as Error).message });
+        }
+      }
+      if (rest.length === offen.length) { for (const m of rest) ausgelassen.push({ id: m.id, titel: m.titel ?? '', grund: 'es wird noch auf sie verwiesen' }); break; }
+      offen = rest;
+    }
+    return { mappen: kandidaten.length, dokumente, geloescht, ausgelassen };
   }
 
   async loescheMappe(id: string, benutzerId: string | null = null, z?: Zugriff): Promise<void> {

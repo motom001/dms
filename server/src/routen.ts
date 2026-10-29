@@ -844,6 +844,13 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       L.ablage.info('Mappe geändert', { typ: await typName(m.typId), titel: m.titel, id: m.id });
       return ok(m);
     } },
+    // Auswahl (#149): alle Treffer einer Sicht (mit Suche) als Ids; mehrere Mappen löschen (#150).
+    { methode: 'GET', pfad: '/api/mappen/auswahl', zugang: 'angemeldet', handler: async (a) => ok(await dienst.trefferIds(ich(a), a.query, await zg(a))) },
+    { methode: 'POST', pfad: '/api/mappen/loeschen', zugang: 'angemeldet', handler: async (a) => {
+      const r = await dienst.loescheMappen(b(a), ich(a).id, await zg(a));
+      if (b(a).probe !== true) L.ablage.info('Mehrere Mappen gelöscht', { geloescht: r.geloescht, ausgelassen: r.ausgelassen.length });
+      return ok(r);
+    } },
     { methode: 'DELETE', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => {
       const papierkorb = (await dienst.papierkorbTage()) > 0;
       await dienst.loescheMappe(a.params.id, ich(a).id, await zg(a));

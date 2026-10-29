@@ -120,7 +120,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
               beschreibung="Mappen, die du mit einem Stern markiert hast."
               leerText="Noch keine Favoriten. Markiere eine Mappe mit dem Stern ☆, um sie hier zu finden." />
           : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} spaltenTyp={typ ?? sichtTypen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []} titel={verwaltet?.name ?? typ!.name} beschreibung={verwaltet ? verwaltet.beschreibung : typ?.beschreibung}
-              offen={dritt} neu={!!typ && darfErstellen(typ) && verwaltet?.rechte?.C !== false} leerText="Noch keine Mappen in dieser Sicht." hilfe="ablage.sicht" />
+              offen={dritt} neu={!!typ && darfErstellen(typ) && verwaltet?.rechte?.C !== false} leerText="Noch keine Mappen in dieser Sicht." hilfe="ablage.sicht" auswahl />
           : sicht ? <div className="leer"><p>Diese Sicht gibt es nicht (mehr).</p></div> : null}
       </section>
 
@@ -232,6 +232,8 @@ function Liste(p: {
   hilfe?: Hilfeort;
   /** Sprechender Link (#98): seine Parameter, der Zusatz für Adressen, Sortierung aus der Adresse, erste Mappe öffnen. */
   link?: string; anhang?: string; sortierungFest?: { wert: Sortierung | null; setze(n: Sortierung | null): void }; zuerstOeffnen?: boolean;
+  /** Mehrere Mappen auswählen (#149) – in Sichten, nicht im Eingang oder bei Favoriten. */
+  auswahl?: boolean;
 }) {
   const d = useDaten();
   const anhang = p.anhang ?? '';
@@ -293,6 +295,31 @@ function Liste(p: {
     ? `${zahl(s.gesamt)} Treffer`
     : `${zahl(s.gesamt)} ${s.gesamt === 1 ? 'Mappe' : 'Mappen'}`;
   const nachladen = !s.alle && (s.laedt ? 'Lade …' : <button type="button" className="textknopf" onClick={s.mehr}>Weitere laden</button>);
+  const w = useAuswahl(s.mappen, s.gesamt, [p.sicht, suche, volltext, inNotizen, p.link ?? '']);
+  const wahl = p.auswahl ? w : undefined;
+  const [ergebnis, setErgebnis] = useState<{ text: string; liste: Array<{ id: string; titel: string; grund: string }> }>();
+  async function alleWaehlen() {
+    try { const r = await api.auswahl(p.sicht, suche, volltext, inNotizen, p.link); w.setze(r.ids, true); }
+    catch (x) { setErgebnis({ text: (x as Error).message, liste: [] }); }
+  }
+  // Mehrere Mappen löschen (#150): erst zählen und fragen, dann löschen; was nicht ging, mit Grund.
+  async function loeschen() {
+    setErgebnis(undefined);
+    try {
+      const ids = [...w.gewaehlt];
+      const probe = await api.mappenLoeschen(ids, true);
+      if (!probe.mappen) { setErgebnis({ text: 'Keine der ausgewählten Mappen lässt sich löschen.', liste: probe.ausgelassen }); return; }
+      const korb = (d.zaehler.papierkorbTage ?? 0) > 0;
+      const frage = `${zahl(probe.mappen)} ${probe.mappen === 1 ? 'Mappe' : 'Mappen'}${probe.dokumente ? ` mit ${zahl(probe.dokumente)} ${probe.dokumente === 1 ? 'Dokument' : 'Dokumenten'}` : ''} ${korb ? 'in den Papierkorb legen' : 'endgültig löschen'}?`
+        + (probe.ausgelassen.length ? `\n\n${zahl(probe.ausgelassen.length)} ${probe.ausgelassen.length === 1 ? 'Mappe wird' : 'Mappen werden'} ausgelassen (kein Recht oder noch verwiesen).` : '');
+      if (!confirm(frage)) return;
+      const r = await api.mappenLoeschen(ids, false);
+      w.leeren();
+      await d.neuLaden();
+      setErgebnis({ text: `${zahl(r.geloescht)} ${r.geloescht === 1 ? 'Mappe' : 'Mappen'} ${korb ? 'in den Papierkorb gelegt' : 'gelöscht'}.${r.ausgelassen.length ? ` ${zahl(r.ausgelassen.length)} ausgelassen:` : ''}`, liste: r.ausgelassen });
+      if (p.offen && ids.includes(p.offen) && !r.ausgelassen.some((x) => x.id === p.offen)) geheZu(`/ablage/${p.sicht}${anhang}`);
+    } catch (x) { setErgebnis({ text: (x as Error).message, liste: [] }); }
+  }
 
   return (
     <>
@@ -324,18 +351,35 @@ function Liste(p: {
         </p>
       )}
       {s.fehler && <div className="hinweis schlecht"><p>{s.fehler}</p></div>}
-      <div className="listenrumpf">
+      {wahl && wahl.gewaehlt.size > 0 && (
+        <div className="aktionsleiste" role="region" aria-label="Auswahl">
+          <span className="klein"><strong>{zahl(wahl.gewaehlt.size)}</strong> von {zahl(s.gesamt ?? 0)} ausgewählt</span>
+          {!wahl.alle && (s.gesamt ?? 0) > wahl.gewaehlt.size && <button type="button" className="textknopf klein" onClick={() => void alleWaehlen()}>Alle {zahl(s.gesamt ?? 0)} auswählen</button>}
+          <span className="luecke" aria-hidden="true" />
+          <button type="button" className="knopf klein gefahr" onClick={() => void loeschen()}>Löschen</button>
+          <button type="button" className="textknopf klein" onClick={wahl.leeren}>Auswahl aufheben</button>
+        </div>
+      )}
+      {ergebnis && (
+        <div className={`hinweis ${ergebnis.liste.length ? 'warn' : 'info'}`} role="status">
+          <p>{ergebnis.text}</p>
+          {ergebnis.liste.length > 0 && <ul className="klein">{ergebnis.liste.slice(0, 50).map((x) => <li key={x.id}>{titelOder(x.titel)}: {x.grund}</li>)}{ergebnis.liste.length > 50 && <li>… und {zahl(ergebnis.liste.length - 50)} weitere</li>}</ul>}
+          <button type="button" className="textknopf klein" onClick={() => setErgebnis(undefined)}>Ausblenden</button>
+        </div>
+      )}
+      <div className={`listenrumpf${wahl?.gewaehlt.size ? ' mit-auswahl' : ''}`}>
       {s.gesamt === 0
         ? <p className="leise leerliste">{suche ? 'Nichts gefunden.' : p.leerText}</p>
         : tabelle
-          ? <Tabelle sicht={p.sicht} anhang={anhang} typ={p.typ} spaltenTyp={p.spaltenTyp} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} ausschnitte={s.ausschnitte} aufgaben={s.aufgaben} favoriten={s.favoriten} offen={p.offen}
+          ? <Tabelle sicht={p.sicht} anhang={anhang} typ={p.typ} spaltenTyp={p.spaltenTyp} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} ausschnitte={s.ausschnitte} aufgaben={s.aufgaben} favoriten={s.favoriten} offen={p.offen} wahl={wahl}
               sortierung={sortierung} sortiere={sortiere} ende={nachladen ? (el) => { ende.current = el; } : undefined} nachladen={nachladen} />
           : <ul className="mappenliste">
-              {s.mappen.map((m) => {
+              {s.mappen.map((m, i) => {
                 const typ = d.typ(m.typId);
                 const k = kompakt(p.listenSpalten ?? [], !!p.typ, typ, m, s.bezuege, d.person);
                 return (
-                  <li key={m.id} className="mit-stern">
+                  <li key={m.id} className={`mit-stern${wahl ? ' mit-haken' : ''}${wahl?.gewaehlt.has(m.id) ? ' gewaehlt' : ''}`} {...(wahl && !m.verborgen ? wahl.druck(i) : {})}>
+                    {wahl && !m.verborgen && <Wahlhaken an={wahl.gewaehlt.has(m.id)} titel={k.titel} waehle={(an, bereich) => wahl.waehle(i, an, bereich)} />}
                     {m.verborgen ? <span /> : <Stern mappeId={m.id} an={s.favoriten.has(m.id)} titel={k.titel} klein />}
                     <Link to={`/ablage/${p.sicht}/${m.id}${anhang}`} className={`eintrag ${p.offen === m.id ? 'an' : ''}`}>
                       <span className={`titel ${m.verborgen ? 'verborgen-titel' : ''}`}>{m.verborgen ? 'Nicht sichtbare Mappe' : k.titel}</span>
@@ -367,8 +411,12 @@ function kompakt(liste: string[], einTyp: boolean, typ: Mappentyp | undefined, m
 function Tabelle(p: {
   sicht: string; anhang?: string; typ?: Mappentyp; spaltenTyp?: Mappentyp; spalten: string[]; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; favoriten: Set<string>; offen?: string;
   sortierung: Sortierung | null; sortiere(spalte: string): void; ende?: (el: HTMLElement | null) => void; nachladen: ReactNode;
+  wahl?: Auswahl;
 }) {
   const d = useDaten();
+  const geladen = p.mappen.filter((m) => !m.verborgen);
+  const alleGeladen = !!p.wahl && geladen.length > 0 && geladen.every((m) => p.wahl!.gewaehlt.has(m.id));
+  const einige = !!p.wahl && !alleGeladen && geladen.some((m) => p.wahl!.gewaehlt.has(m.id));
   const aktiv = p.sortierung ?? { spalte: '_titel', absteigend: false };
   const rechts = (k: string) => { const f = p.spaltenTyp?.felder.find((x) => x.key === k); return f?.typ === 'zahl' || f?.typ === 'betrag'; };
   // Datum, Ja/Nein und Zeitstempel nicht umbrechen; Texte dürfen umbrechen, damit die Tabelle in die Liste passt.
@@ -378,6 +426,8 @@ function Tabelle(p: {
       <table>
         <thead>
           <tr>
+            {p.wahl && <th className="hakenspalte"><input type="checkbox" className="wahlhaken" aria-label="Alle geladenen auswählen" checked={alleGeladen}
+              ref={(el) => { if (el) el.indeterminate = einige; }} onChange={(e) => p.wahl!.setze(e.target.checked ? [...new Set([...p.wahl!.gewaehlt, ...geladen.map((m) => m.id)])] : [], false)} /></th>}
             <th className="sternspalte"><span className="sr">Favorit</span></th>
             {p.spalten.map((k) => {
               const kann = sortierbar(k, p.typ);
@@ -396,11 +446,13 @@ function Tabelle(p: {
           </tr>
         </thead>
         <tbody>
-          {p.mappen.map((m) => {
+          {p.mappen.map((m, i) => {
             const typ = d.typ(m.typId);
             const ziel = `/ablage/${p.sicht}/${m.id}${p.anhang ?? ''}`;
             return (
-              <tr key={m.id} className={`${p.offen === m.id ? 'an' : ''} ${m.passt === false ? 'unpassend' : ''}`} onClick={(e) => { if (!(e.target as HTMLElement).closest('a, button')) geheZu(ziel); }}>
+              <tr key={m.id} className={`${p.offen === m.id ? 'an' : ''} ${m.passt === false ? 'unpassend' : ''}${p.wahl?.gewaehlt.has(m.id) ? ' gewaehlt' : ''}`} {...(p.wahl && !m.verborgen ? p.wahl.druck(i) : {})}
+                onClick={(e) => { if (!(e.target as HTMLElement).closest('a, button, input')) geheZu(ziel); }}>
+                {p.wahl && <td className="hakenspalte">{!m.verborgen && <Wahlhaken an={p.wahl.gewaehlt.has(m.id)} titel={titelOder(m.titel)} waehle={(an, bereich) => p.wahl!.waehle(i, an, bereich)} />}</td>}
                 <td className="sternspalte"><Stern mappeId={m.id} an={p.favoriten.has(m.id)} titel={titelOder(m.titel)} klein /></td>
                 {p.spalten.map((k, i) => {
                   const text = zelle(k, m, typ, p.bezuege, d.person);
@@ -410,7 +462,7 @@ function Tabelle(p: {
               </tr>
             );
           })}
-          {p.nachladen && <tr ref={p.ende} className="nachladen"><td colSpan={p.spalten.length + 1 + (p.sicht === 'eingang' ? 1 : 0)} className="leise klein">{p.nachladen}</td></tr>}
+          {p.nachladen && <tr ref={p.ende} className="nachladen"><td colSpan={p.spalten.length + 1 + (p.wahl ? 1 : 0) + (p.sicht === 'eingang' ? 1 : 0)} className="leise klein">{p.nachladen}</td></tr>}
         </tbody>
       </table>
     </div>
@@ -418,6 +470,62 @@ function Tabelle(p: {
 }
 
 const Unter = ({ text }: { text: string }) => (text ? <span className="unter">{text}</span> : null);
+
+/* ---------- Auswahl mehrerer Mappen (#149) ---------- */
+
+type Auswahl = ReturnType<typeof useAuswahl>;
+
+/**
+ * Auswahl in einer Liste: Haken je Zeile, Bereich mit Shift, „Alle Treffer“ über Seiten hinweg.
+ * Am Handy wählt langes Drücken; solange etwas gewählt ist, schaltet Tippen um. Neue Sicht oder Suche → leer.
+ */
+function useAuswahl(mappen: Mappe[], gesamt: number | null, abhaengig: unknown[]) {
+  const [gewaehlt, setGewaehlt] = useState<Set<string>>(new Set());
+  const [alle, setAlle] = useState(false);
+  const anker = useRef<number | null>(null);
+  const lang = useRef<{ t?: number; ausgeloest?: boolean }>({});
+  const schluessel = JSON.stringify(abhaengig);
+  useEffect(() => { setGewaehlt(new Set()); setAlle(false); anker.current = null; }, [schluessel]);
+  const waehle = (i: number, an: boolean, bereich: boolean) => {
+    const von = bereich && anker.current !== null ? Math.min(anker.current, i) : i;
+    const bis = bereich && anker.current !== null ? Math.max(anker.current, i) : i;
+    setGewaehlt((x) => {
+      const n = new Set(x);
+      for (let j = von; j <= bis; j++) { const m = mappen[j]; if (m && !m.verborgen) { if (an) n.add(m.id); else n.delete(m.id); } }
+      return n;
+    });
+    anker.current = i;
+    setAlle(false);
+  };
+  const setze = (ids: string[], alleTreffer: boolean) => { setGewaehlt(new Set(ids)); setAlle(alleTreffer && ids.length >= (gesamt ?? 0)); };
+  const leeren = () => { setGewaehlt(new Set()); setAlle(false); anker.current = null; };
+  /** Langes Drücken (Handy) wählt; mit Auswahl schaltet Tippen um statt die Mappe zu öffnen. */
+  const druck = (i: number) => ({
+    onTouchStart: () => {
+      window.clearTimeout(lang.current.t);
+      lang.current = { t: window.setTimeout(() => { lang.current.ausgeloest = true; const m = mappen[i]; if (m) waehle(i, !gewaehlt.has(m.id), false); navigator.vibrate?.(20); }, 500) };
+    },
+    onTouchMove: () => window.clearTimeout(lang.current.t),
+    onTouchEnd: () => window.clearTimeout(lang.current.t),
+    onClickCapture: (e: React.MouseEvent) => {
+      if ((e.target as HTMLElement).closest('input, button')) return;
+      const beruehrung = window.matchMedia?.('(pointer: coarse)').matches;
+      if (lang.current.ausgeloest || (beruehrung && gewaehlt.size > 0)) {
+        e.preventDefault(); e.stopPropagation();
+        if (!lang.current.ausgeloest) { const m = mappen[i]; if (m) waehle(i, !gewaehlt.has(m.id), false); }
+        lang.current.ausgeloest = false;
+      }
+    },
+    onContextMenu: (e: React.MouseEvent) => { if (lang.current.ausgeloest) e.preventDefault(); },
+  });
+  return { gewaehlt, alle, waehle, setze, leeren, druck };
+}
+
+function Wahlhaken({ an, titel, waehle }: { an: boolean; titel: string; waehle(an: boolean, bereich: boolean): void }) {
+  // onClick statt onChange: nur dort gibt es die Shift-Taste.
+  return <input type="checkbox" className="wahlhaken" checked={an} aria-label={`${titel} auswählen`}
+    onClick={(e) => waehle((e.target as HTMLInputElement).checked, e.shiftKey)} onChange={() => {}} />;
+}
 
 /** Fundstelle im Volltext (#45): Dokumentname und Ausschnitt, Treffer hervorgehoben (ohne HTML vom Server). */
 function Fundstelle({ a }: { a: Ausschnitt }) {
