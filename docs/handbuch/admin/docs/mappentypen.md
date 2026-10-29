@@ -8,6 +8,15 @@ Mappentypen pflegst du unter **Werkbank → Mappentypen**. Mit **+ Neu** legst d
 
 Wie Benutzer mit den Mappen arbeiten, beschreibt das [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/mappen/).
 
+## Aufbau des Editors
+
+Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: **Grunddaten → Felder → Titel → Trefferlisten → Register → Berechtigungen → Testlauf**.
+
+- Jeder Bereich lässt sich mit einem Klick auf seine Überschrift **ein- und ausklappen**. Eingeklappt zeigt er das Wichtigste in einer Zeile, z. B. „8 Felder, 2 Pflicht, 1 mit Erinnerung“, die Titel-Vorlage mit einem Beispiel oder „Standard: R · 3 Regeln“.
+- Ein **neuer** Mappentyp ist ganz aufgeklappt, ein **bestehender** startet eingeklappt. Was du auf- oder zuklappst, merkt sich dein Gerät je Mappentyp.
+- Die **Sprungleiste** oben führt zu jedem Bereich und klappt ihn auf; **Alle aufklappen** bzw. **Alle zuklappen** schaltet alle auf einmal.
+- Bereiche mit einem **Fehler** sind in der Sprungleiste und am Rand rot markiert. Ein unbekannter Platzhalter im Titel oder eine unvollständige Regel fällt schon beim Tippen auf; was erst beim Speichern auffällt, klappt seinen Bereich von selbst auf.
+
 ## Grunddaten
 
 - **Name** – so heißt die Sicht in der Ablage, z. B. „Vertrag“. Er lässt sich jederzeit ändern.
@@ -17,6 +26,8 @@ Wie Benutzer mit den Mappen arbeiten, beschreibt das [Benutzerhandbuch](https://
 Beim **Anlegen** gibt es zusätzlich **Eigene Sicht in der Ablage anlegen** (standardmäßig an): Dann erscheint der neue Typ in der Ablage als eigene Sicht. Abwählen, wenn seine Mappen nur in einer bestehenden [Sicht](sichten.md) erscheinen sollen.
 
 Wer Mappen anlegen oder löschen darf, regeln die [Berechtigungen](berechtigungen.md) (Rechte C und D). Die früheren Haken *Neue Mappen erlauben* und *Löschen erlauben* gibt es seit Version 0.32 nicht mehr; sie wurden beim Update in die Berechtigungen übernommen.
+
+**Verwendet in** (bei gespeicherten Typen) zeigt, wo der Mappentyp genutzt wird, jeweils mit Link: Sichten, die ihn zeigen, Referenzfelder anderer Mappentypen, die auf ihn verweisen, und Verknüpfungsregister anderer Typen, die seine Felder als Quelle nutzen. So siehst du vor einer Änderung, was davon betroffen ist. Steht dort „Nirgends verwendet“, hängt nichts an ihm.
 
 ## Felder
 
@@ -108,21 +119,6 @@ Verweist der Titel auf eine andere Mappe (`{vertragspartner}`), wird der Titel n
 
 Ohne Vorlage verwendet das DMS das erste Textfeld.
 
-## Register
-
-Register sind die Trennblätter einer Mappe, in der angegebenen Reihenfolge:
-
-| Art | Inhalt |
-| --- | --- |
-| **Feldregister** | eine Gruppe von Feldern; welches Feld auf welchem Register liegt, stellst du am Feld ein |
-| **Dokumentenregister** | hochgeladene Dateien; PDFs und Bilder sind direkt ansehbar. **Volltext erzeugen** (Standard: an) schickt neue Dokumente durch die [Texterkennung](texterkennung.md) |
-| **Verknüpfungsregister** | Mappen, die auf diese Mappe verweisen – alle oder nur bestimmte (z. B. „Rechnungen“ nur über das Feld *Vertrag*). Als Quelle lässt sich auch *E-Mail › Bezug* wählen: Dann stehen hier die aus der Mappe verschickten E-Mails |
-| **Protokollregister** | das Protokoll der Mappe: wer wann was geändert hat, mit altem und neuem Wert; dazu Dokumente, Papierkorb, Notizen, Aufgaben, E-Mails und angezeigte Passwörter (ohne Wert). Höchstens eins je Mappentyp |
-
-Register haben feste Schlüssel, damit Dokumente ihr Register behalten, wenn es umbenannt wird. Ein Dokumentenregister, in dem schon Dokumente liegen, lässt sich nicht entfernen.
-
-**Verknüpfungsregister als Tabelle:** Hakst du eine Quelle an, kannst du daneben eine [Trefferliste](#trefferlisten) des Quelltyps wählen. Das Register zeigt die verweisenden Mappen dann als Tabelle mit deren Spalten (z. B. beim Vertragspartner die Rechnungen mit Betrag, Datum und *bezahlt*). Ohne Auswahl – oder wenn es die Liste nicht mehr gibt – bleibt es bei der einfachen Liste der Titel.
-
 ## Trefferlisten
 
 Eine **Trefferliste** legt fest, welche Angaben in einer Liste als Spalten erscheinen, und in welcher Reihenfolge – Felder und Systemwerte (Titel, angelegt/geändert am/von).
@@ -141,6 +137,21 @@ Ein Mappentyp kann **mehrere** Trefferlisten haben, z. B. *Standard* mit allen A
 ![Zwei Trefferlisten am Mappentyp Rechnung](bilder/werkbank-trefferlisten.png)
 
 ![Die Trefferliste als Tabelle in der Ablage](bilder/tabelle.png)
+
+## Register
+
+Register sind die Trennblätter einer Mappe, in der angegebenen Reihenfolge:
+
+| Art | Inhalt |
+| --- | --- |
+| **Feldregister** | eine Gruppe von Feldern; welches Feld auf welchem Register liegt, stellst du am Feld ein |
+| **Dokumentenregister** | hochgeladene Dateien; PDFs und Bilder sind direkt ansehbar. **Volltext erzeugen** (Standard: an) schickt neue Dokumente durch die [Texterkennung](texterkennung.md) |
+| **Verknüpfungsregister** | Mappen, die auf diese Mappe verweisen – alle oder nur bestimmte (z. B. „Rechnungen“ nur über das Feld *Vertrag*). Als Quelle lässt sich auch *E-Mail › Bezug* wählen: Dann stehen hier die aus der Mappe verschickten E-Mails |
+| **Protokollregister** | das Protokoll der Mappe: wer wann was geändert hat, mit altem und neuem Wert; dazu Dokumente, Papierkorb, Notizen, Aufgaben, E-Mails und angezeigte Passwörter (ohne Wert). Höchstens eins je Mappentyp |
+
+Register haben feste Schlüssel, damit Dokumente ihr Register behalten, wenn es umbenannt wird. Ein Dokumentenregister, in dem schon Dokumente liegen, lässt sich nicht entfernen.
+
+**Verknüpfungsregister als Tabelle:** Hakst du eine Quelle an, kannst du daneben eine [Trefferliste](#trefferlisten) des Quelltyps wählen. Das Register zeigt die verweisenden Mappen dann als Tabelle mit deren Spalten (z. B. beim Vertragspartner die Rechnungen mit Betrag, Datum und *bezahlt*). Ohne Auswahl – oder wenn es die Liste nicht mehr gibt – bleibt es bei der einfachen Liste der Titel.
 
 ## Ziehen statt klicken
 
@@ -164,6 +175,10 @@ Mehr dazu in [Benutzer und Rollen](benutzer.md).
 ## Berechtigungen
 
 Unter den Registern legst du fest, wer Mappen dieses Typs anlegen, lesen, bearbeiten, löschen und Passwörter darin sehen darf – mit der Zeile **Standard** und Regeln. Gespeichert wird mit **Mappentyp speichern**; darunter probierst du die Regeln im **Testlauf** aus – auch ungespeicherte. Alles Weitere steht unter [Berechtigungen](berechtigungen.md).
+
+## Mappentyp kopieren
+
+**Mappentyp kopieren** oben rechts legt einen neuen Mappentyp als **Entwurf** an – mit denselben Feldern, Titel, Trefferlisten, Registern und Berechtigungen. Er heißt „Kopie von …“ und bekommt einen eigenen Schlüssel; beides kannst du vor dem Speichern ändern. Angelegt wird er erst mit **Mappentyp speichern**. Mappen werden nicht kopiert. Felder, die auf den Typ selbst verweisen, zeigen in der Kopie auf die Kopie. Systemtypen lassen sich nicht kopieren.
 
 ## Mappentyp löschen
 

@@ -409,7 +409,7 @@ async function main() {
   const partnerAktuell = (await api('GET', '/api/typen')).find((t) => t.id === partner.id);
   await api('PUT', `/api/typen/${partner.id}`, { ...partnerAktuell, register: partnerAktuell.register.map((r) => (r.key === 'rechnungen'
     ? { ...r, quellen: (r.quellen ?? []).map((q) => (q.typId === rechnung.id ? { ...q, trefferliste: 'kurz' } : q)) } : r)) });
-  await geheZu(s, `/werkbank/typen/${rechnung.id}`);
+  await geheZu(s, `/werkbank/typen/${rechnung.id}#trefferlisten`);
   await s.locator('.trefferlistenblock').nth(1).scrollIntoViewIfNeeded();
   await bild(s, 'werkbank-trefferlisten');
   await geheZu(s, `/ablage/${partner.id}/${d.stadtwerke.id}`);
@@ -458,6 +458,7 @@ async function main() {
   await s.locator('#berechtigungen').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-berechtigungen');
   {
+    await s.locator('.sprungleiste').getByRole('button', { name: 'Testlauf' }).click();
     const test = s.locator('#testlauf');
     await test.getByLabel('Benutzer', { exact: true }).selectOption({ label: MITGLIED.name });
     await test.getByLabel('Mappe suchen').fill('Stromvertrag');
@@ -510,8 +511,11 @@ async function main() {
   await s.getByRole('heading', { name: 'Technische Angaben' }).waitFor();
   await bild(s, 'werkbank-fehlermeldung');
   // Werkbank
+  // Bestehende Typen starten eingeklappt (#144): Übersicht mit Kurzinfos, dann „Felder“ aufklappen.
+  await s.evaluate(() => { try { localStorage.removeItem('dms.typeditor.offen'); } catch { /* egal */ } });
   await geheZu(s, `/werkbank/typen/${vertrag.id}`);
   await bild(s, 'werkbank-mappentyp');
+  await s.locator('.sprungleiste').getByRole('button', { name: 'Felder' }).click();
   await s.locator('button.feldkopfknopf').filter({ hasText: 'Kündigung bis' }).click();
   await s.locator('.feldzeile.offen').scrollIntoViewIfNeeded();
   await bild(s, 'werkbank-feld');
