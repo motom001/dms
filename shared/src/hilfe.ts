@@ -48,6 +48,7 @@ export const HILFE = {
   'mappentyp.ziehen': admin('mappentypen/', 'Ziehen statt klicken', 'ziehen-statt-klicken'),
   'sicht.trefferliste': admin('sichten/', 'der Trefferliste einer Sicht', 'trefferliste'),
   'sicht.bedingungen': admin('sichten/', 'Bedingungen', 'bedingungen'),
+  'sicht.berechtigungen': admin('sichten/', 'Berechtigungen an Sichten', 'berechtigungen'),
   'benutzer.abwesenheit': admin('benutzer/', 'Abwesenheit', 'abwesenheit'),
   'benutzer.sperren': admin('benutzer/', 'Zugang sperren', 'zugang-sperren'),
   'verschluesselung.schluessel': admin('verschluesselung/', 'Schlüssel', 'schlussel-erzeugen'),

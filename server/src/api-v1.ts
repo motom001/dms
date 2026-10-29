@@ -253,6 +253,7 @@ const SCHEMAS: Record<string, Schema> = {
       typen: { type: 'array', items: uuid, description: 'Mappentypen, deren Mappen die Sicht selbst zeigt; dazu kommen die ihrer Untersichten' },
       bedingungen: { type: 'array', items: { type: 'object', additionalProperties: true }, description: 'Gelten zusammen (UND): {art:"feld", feld, op, wert?, bis?}, {art:"dokumente"|"verknuepfungen", register, vergleich, anzahl}, {art:"dokumenteGesamt"|"verknuepfungenGesamt", vergleich, anzahl}, {art:"favorit"}' },
       trefferliste: { type: 'string', nullable: true, description: 'Schlüssel der Trefferliste; null = Standard' },
+      rechte: { type: 'object', readOnly: true, properties: { R: { type: 'boolean' }, C: { type: 'boolean' } }, description: 'Nur für Benutzer (#148): wirksame Rechte an der Sicht. Verborgene Sichten fehlen in der Liste.' },
     },
   },
   SichtListe: liste('Sicht'),

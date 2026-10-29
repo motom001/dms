@@ -5,6 +5,7 @@
  * gespeicherte Abfrage. Sichten bilden einen Baum: Eine Elternsicht zeigt ihre eigenen
  * Treffer und die aller Kinder (ohne Doppelte). Server und Oberfläche teilen diese Datei.
  */
+import type { SichtRechte, SichtRegelwerk } from './sichtrechte';
 import { GEMISCHTE_SPALTEN, istLeer, istSystemspalte, SYSTEMSPALTEN, trefferlistenVon, ZEITZONE, type Feld, type Feldtyp, type Mappe, type Mappentyp, type Quelle } from './model';
 
 /* ---------- Bedingungen ---------- */
@@ -109,8 +110,14 @@ export interface SichtDaten {
   bedingungen: Bedingung[];
   /** Schlüssel der Trefferliste (#75); null/fehlt = Standard. */
   trefferliste?: string | null;
+  /** Berechtigungen an der Sicht (#148); null/fehlt = keine eigenen Regeln. */
+  berechtigungen?: SichtRegelwerk | null;
 }
-export interface Sicht extends SichtDaten { id: string; erstellt: string; geaendert: string }
+export interface Sicht extends SichtDaten {
+  id: string; erstellt: string; geaendert: string;
+  /** Nur für Benutzer (#148): wirksame Rechte an der Sicht; die Regeln selbst sehen nur Administratoren. */
+  rechte?: SichtRechte;
+}
 
 /** Kinder einer Sicht in ihrer Reihenfolge. */
 export function kinderVon(alle: Sicht[], id: string | null): Sicht[] {
@@ -321,8 +328,10 @@ export function filterFuer(s: Pick<SichtDaten, 'bedingungen'>, typen: Mappentyp[
 }
 
 /** Klauseln einer Sicht samt Nachkommen; jede Sicht mit eigenen Typen ergibt eine Klausel. */
-export function klauselnFuer(alle: Sicht[], id: string, typen: Map<string, Mappentyp>, a: Aufloesung): Klausel[] {
+export function klauselnFuer(alle: Sicht[], id: string, typen: Map<string, Mappentyp>, a: Aufloesung, verborgen?: Set<string>): Klausel[] {
+  // Verborgene Untersichten (#148): ihre Mappen fehlen auch in der Elternsicht.
   return mitNachkommen(alle, id)
+    .filter((s) => !verborgen?.has(s.id))
     .filter((s) => s.typen.some((t) => typen.has(t)))
     .map((s) => {
       const eigene = s.typen.map((t) => typen.get(t)).filter((t): t is Mappentyp => !!t);

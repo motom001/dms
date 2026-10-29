@@ -6,6 +6,8 @@ Sichten pflegst du unter **Werkbank → Sichten**. Links steht der Baum, rechts 
 
 ![Eine Sicht mit Bedingung in der Werkbank](bilder/werkbank-sichten.png)
 
+Der Editor ist wie beim [Mappentyp](mappentypen.md#aufbau-des-editors) in Bereiche gegliedert: **Grunddaten → Mappentypen → Trefferliste → Bedingungen → Berechtigungen → Testlauf**. Jeder Bereich lässt sich einklappen und zeigt dann eine Kurzinfo, z. B. die Elternsicht, die Mappentypen oder „erbt von „Haus“ · 1 eigene Regel“. Eine neue Sicht ist ganz aufgeklappt, eine bestehende startet eingeklappt; dein Gerät merkt sich, was du aufklappst. Die Sprungleiste oben führt zu jedem Bereich und markiert Bereiche mit Fehler.
+
 ## Grunddaten
 
 - **Name** und **Beschreibung** – erscheinen in der Ablage links bzw. über der Liste.
@@ -96,6 +98,39 @@ Register stehen zur Wahl, wenn **alle** Mappentypen der Sicht ein Register mit *
 ### Wenn sich ein Mappentyp ändert
 
 Entfernst du ein Feld oder Register, auf das eine Bedingung zielt, wird die Sicht nicht leer: Die Bedingung wird **ignoriert**, bis du sie korrigierst. In der Werkbank ist sie rot markiert, und die Liste der Sichten zeigt „Bedingung ohne Wirkung – bitte prüfen“.
+
+## Berechtigungen
+
+Mit Berechtigungen legst du fest, **wer eine Sicht sieht** und **wer dort neue Mappen anlegen** kann – etwa damit die Sicht *Haus* mit allem darunter nur bei den Eltern im Baum erscheint.
+
+| Recht | Bedeutung |
+|---|---|
+| **R** Sehen | Die Sicht erscheint im Baum der Ablage und lässt sich öffnen. |
+| **C** Anlegen | In der Sicht gibt es „+ Neu“. Anlegen dürfen muss man zusätzlich am [Mappentyp](berechtigungen.md) – beide müssen es erlauben. |
+
+!!! info "Sichtregeln regeln die Sicht, nicht die Mappen"
+    Ob jemand eine **Mappe** lesen darf, entscheiden allein die [Berechtigungen am Mappentyp](berechtigungen.md). Eine Mappe aus einer verborgenen Sicht kann also über die Suche, eine andere Sicht oder einen Link weiter auftauchen. Wer Mappen verbergen will, regelt das am Mappentyp. Für Administratoren gelten die Regeln an Sichten nicht.
+
+- **Standard** – an einer Sicht auf oberster Ebene eine Zeile mit ✓/✗ je Recht; ohne Regeln dürfen alle alles.
+- **Regeln** – wie am Mappentyp: *wenn* der Benutzer eine Rolle hat oder ein bestimmter Benutzer ist (jeweils auch mit *nicht*), *dann* ✓ erteilen oder ✗ entziehen; von oben nach unten, mit **Stopp**. Bedingungen auf Felder gibt es an Sichten nicht. Regeln lassen sich zuklappen und per Griff ⠿ sortieren.
+
+### Vererbung an Untersichten
+
+- Eine Untersicht **erbt** die Regeln ihrer Elternsicht und deren Eltern. Sie stehen oben unter **Geerbt**, schreibgeschützt und mit dem Namen der Sicht, von der sie kommen; ändern lassen sie sich nur dort.
+- **Eigene Regeln** einer Untersicht können nur weiter **einschränken** (✗). Ein Recht gilt an der Untersicht nur, wenn es an der Elternsicht gilt **und** keine eigene Regel es entzieht. Einen eigenen Standard hat eine Untersicht nicht.
+- **Ist eine Untersicht für jemanden verborgen, fehlen ihre Mappen auch in der Elternsicht**, und die Zahlen im Baum passen dazu.
+- **Verschieben** (Ziehen im Baum oder *Liegt unter* ändern): Sofort gelten die Regeln der neuen Eltern. Das DMS sagt beim Ablegen, von wem die Sicht jetzt erbt. Wandert sie auf die oberste Ebene, entfallen die geerbten Regeln, und ihr eigener Standard gilt wieder.
+
+### Testlauf
+
+Unter den Berechtigungen prüfst du, was ein Benutzer an der Sicht darf – mit den Regeln, wie sie gerade im Editor stehen, auch ungespeichert und mit einer geänderten Elternsicht. Die Tabelle zeigt je Sicht der Kette, welche Regel zutraf und wie der Stand danach war.
+
+### Beispiel: „Haus“ nur für die Eltern
+
+1. Lege eine Rolle **Kinder** an und gib sie den Kindern.
+2. Sicht *Haus* (oberste Ebene): Regel **Kinder sehen das nicht** – wenn *Benutzer hat Rolle Kinder* → ✗ R C.
+3. *Heizung*, *Garten* usw. unter *Haus* erben die Regel – für die Kinder fehlt der ganze Ast.
+4. Sollen die Kinder etwa *Garten* doch sehen, lege *Garten* auf die oberste Ebene oder unter eine andere Sicht: Untersichten können nur einschränken.
 
 ## Sichten und Mappentypen
 

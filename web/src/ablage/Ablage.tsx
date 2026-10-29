@@ -55,6 +55,8 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   let rechts;
   if (dritt === 'neu' && !typ) {
     rechts = <div className="leer"><p>Diese Sicht zeigt mehrere Mappentypen. Lege neue Mappen in der Sicht eines einzelnen Typs an.</p></div>;
+  } else if (dritt === 'neu' && typ && verwaltet?.rechte?.C === false) {
+    rechts = <div className="leer"><p>In der Sicht „{verwaltet.name}“ lassen sich keine neuen Mappen anlegen.</p></div>;
   } else if (dritt === 'neu' && typ && !darfErstellen(typ)) {
     rechts = <div className="leer"><p>Von „{typ.name}“ lassen sich in der Ablage keine neuen Mappen anlegen.{typ.system === 'benutzer' ? ' Benutzer legt ein Administrator in der Werkbank unter „Benutzer“ an.' : ''}</p></div>;
   } else if (dritt === 'neu' && typ) {
@@ -118,7 +120,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
               beschreibung="Mappen, die du mit einem Stern markiert hast."
               leerText="Noch keine Favoriten. Markiere eine Mappe mit dem Stern ☆, um sie hier zu finden." />
           : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} spaltenTyp={typ ?? sichtTypen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []} titel={verwaltet?.name ?? typ!.name} beschreibung={verwaltet ? verwaltet.beschreibung : typ?.beschreibung}
-              offen={dritt} neu={!!typ && darfErstellen(typ)} leerText="Noch keine Mappen in dieser Sicht." hilfe="ablage.sicht" />
+              offen={dritt} neu={!!typ && darfErstellen(typ) && verwaltet?.rechte?.C !== false} leerText="Noch keine Mappen in dieser Sicht." hilfe="ablage.sicht" />
           : sicht ? <div className="leer"><p>Diese Sicht gibt es nicht (mehr).</p></div> : null}
       </section>
 

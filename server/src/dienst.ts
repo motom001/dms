@@ -17,6 +17,7 @@ import {
   bereinigeBedingungen, filterFuer, heuteIn, kinderVon, klauselnFuer, verschiebe, waereKreis, wirksameTypen,
   type Aufloesung, type Sicht, type SichtDaten,
 } from '../../shared/src/sichten';
+import { alleSichtRechte, bereinigeSichtRegelwerk, sichtRegelProblem, sichtTestlauf, type SichtRegelwerk } from '../../shared/src/sichtrechte';
 import { liesDirektlink } from '../../shared/src/direktlink';
 import type { Lesefilter } from '../../shared/src/rechte';
 import { ANSTEHEND_MAX, ANSTEHEND_TAGE, bereinigeFrist, datumDe, empfaengerFelder, ERINNERUNG_TEXT_MAX, fristAb, fristEmpfaenger, fristFelder, fristText, istDatum, naechsterTermin, type Anstehend, type Erinnerung } from '../../shared/src/fristen';
@@ -1133,7 +1134,9 @@ export class Dienst {
     const sichten = await this.repo.listeSichten();
     // „typ:<id>“: alle Mappen eines Typs, ohne Bedingungen einer Sicht (z. B. Auswahl eines Verweises).
     const nurTyp = String(q.sicht ?? '').startsWith('typ:') ? String(q.sicht).slice(4) : null;
-    const sicht = nurTyp ? undefined : sichten.find((x) => x.id === q.sicht);
+    // Verborgene Sichten (#148) gibt es für den Benutzer nicht; ihre Mappen fehlen auch in der Elternsicht.
+    const verborgen = this.verborgeneSichten(sichten, z);
+    const sicht = nurTyp ? undefined : sichten.find((x) => x.id === q.sicht && !verborgen.has(x.id));
     // Sprechender Link (#98): „link“ mit den Parametern des Links in `link`.
     const gelesen = q.sicht === 'link' ? liesDirektlink(new URLSearchParams(text(q.link).slice(0, 4000)), [...typen.values()]) : null;
     if (gelesen && !gelesen.ok) throw new Fachfehler(422, gelesen.fehler.join(' '));
@@ -1151,7 +1154,7 @@ export class Dienst {
       : link
         ? await this.repo.seite({ klauseln: [{ typen: [link.typ.id], filter: filterFuer(link, [link.typ], await this.aufloesung(ich.id)) }], suche, volltext, notizen, von, anzahl, sortierung, lesen })
       : sicht
-        ? await this.repo.seite({ klauseln: klauselnFuer(sichten, sicht.id, typen, await this.aufloesung(ich.id)), suche, volltext, notizen, von, anzahl, sortierung, lesen })
+        ? await this.repo.seite({ klauseln: klauselnFuer(sichten, sicht.id, typen, await this.aufloesung(ich.id), verborgen), suche, volltext, notizen, von, anzahl, sortierung, lesen })
         : await this.repo.seite({ typId: nurTyp ?? q.sicht, suche, volltext, notizen, von, anzahl, sortierung, lesen });
     if (q.sicht === 'eingang' && lesen) {
       const ok = await this.repo.lesbare(r.mappen.map((m) => m.id), lesen);
@@ -1179,10 +1182,13 @@ export class Dienst {
     const z = await this.repo.zaehler(ich.id, ich.rolle === 'admin', lesen);
     // Der Eingang zählt auch Aufgaben zu Mappen, die man nicht lesen darf (#127).
     const eingang = lesen ? (await this.repo.zaehler(ich.id, ich.rolle === 'admin')).eingang : z.eingang;
-    const sichten = await this.repo.listeSichten();
+    const alleSichten = await this.repo.listeSichten();
+    // Verborgene Sichten (#148): kein Zähler, und ihre Mappen zählen auch in der Elternsicht nicht.
+    const verborgen = this.verborgeneSichten(alleSichten, zg);
+    const sichten = alleSichten.filter((x) => !verborgen.has(x.id));
     const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
     const a = await this.aufloesung(ich.id);
-    const n = await this.repo.zaehleKlauseln(sichten.map((x) => klauselnFuer(sichten, x.id, typen, a)), lesen);
+    const n = await this.repo.zaehleKlauseln(sichten.map((x) => klauselnFuer(alleSichten, x.id, typen, a, verborgen)), lesen);
     return {
       typen: Object.fromEntries(z.typen), eingang, favoriten: z.favoriten, sichten: Object.fromEntries(sichten.map((x, i) => [x.id, n[i]])),
       // Papierkorb (#43): eigene gelöschte Mappen; Tage 0 = aus.
@@ -1402,7 +1408,42 @@ export class Dienst {
 
   /* ---------- Sichten verwalten (#38) ---------- */
 
-  listeSichten() { return this.repo.listeSichten(); }
+  /**
+   * Sichten für die Ablage (#148): Administratoren alle mit Regeln; Benutzer nur die sichtbaren,
+   * mit ihren Rechten daran und ohne die Regeln selbst.
+   */
+  async listeSichten(z?: Zugriff): Promise<Sicht[]> {
+    const alle = await this.repo.listeSichten();
+    if (!z || z.admin) return alle;
+    const rechte = alleSichtRechte(alle, z.wer, false);
+    return alle.filter((s) => rechte.get(s.id)?.R).map(({ berechtigungen: _b, ...s }) => ({ ...s, rechte: rechte.get(s.id)! }));
+  }
+
+  /** Ids der Sichten, die ein Benutzer nicht sehen darf (#148); Administratoren und ohne Zugriff: keine. */
+  verborgeneSichten(alle: Sicht[], z?: Zugriff): Set<string> {
+    if (!z || z.admin) return new Set();
+    const rechte = alleSichtRechte(alle, z.wer, false);
+    return new Set(alle.filter((s) => !rechte.get(s.id)?.R).map((s) => s.id));
+  }
+
+  /** Testlauf an einer Sicht (#148), auch mit ungespeicherten Regeln und Elternsicht. */
+  async sichtTestlauf(e: unknown): Promise<unknown> {
+    const x = (e ?? {}) as { sichtId?: unknown; benutzerId?: unknown; berechtigungen?: unknown; elternId?: unknown };
+    const alle = await this.repo.listeSichten();
+    const id = istUuid(x.sichtId) && alle.some((s) => s.id === x.sichtId) ? x.sichtId : randomUUID();
+    const b = this.konten?.benutzer ? (await this.konten.benutzer()).find((y) => y.id === x.benutzerId) : undefined;
+    if (!b) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');
+    const elternId = istUuid(x.elternId) && alle.some((s) => s.id === x.elternId) && !waereKreis(alle, id, x.elternId) ? x.elternId : null;
+    const alt = alle.find((s) => s.id === id);
+    const probe: Sicht[] = [...alle.filter((s) => s.id !== id), {
+      ...(alt ?? { name: 'Neue Sicht', beschreibung: '', position: 0, typen: [], bedingungen: [], erstellt: '', geaendert: '' }),
+      id, elternId, berechtigungen: bereinigeSichtRegelwerk(x.berechtigungen),
+    }];
+    const a = await this.aufloesung(b.id);
+    if (b.rolle === 'admin') return { admin: true, benutzer: { id: b.id, name: b.name || b.email }, kette: [] };
+    const kette = sichtTestlauf(probe, id, { id: b.id, rollen: a.meineRollen });
+    return { admin: false, benutzer: { id: b.id, name: b.name || b.email }, kette, wirksam: kette.at(-1)?.stand };
+  }
 
   private async bereinigeSicht(e: unknown, id: string, alle: Sicht[]): Promise<SichtDaten> {
     const x = (e ?? {}) as Record<string, unknown>;
@@ -1419,7 +1460,11 @@ export class Dienst {
       : (geschwister.at(-1)?.position ?? 0) + 10;
     // Trefferliste (#75): nur der Schlüssel; passt er nicht (mehr), gilt der Standard und die Werkbank zeigt es an.
     const trefferliste = text(x.trefferliste).slice(0, 40) || null;
-    return { name, beschreibung: text(x.beschreibung).slice(0, 500), elternId, position, typen, bedingungen: bereinigeBedingungen(x.bedingungen), trefferliste };
+    // Berechtigungen (#148): fehlt die Angabe, bleiben sie, wie sie sind.
+    const berechtigungen: SichtRegelwerk | null = 'berechtigungen' in x ? bereinigeSichtRegelwerk(x.berechtigungen) : alle.find((s) => s.id === id)?.berechtigungen ?? null;
+    const probleme = (berechtigungen?.regeln ?? []).map((r) => sichtRegelProblem(r, !!elternId)).filter((p): p is string => !!p);
+    if (probleme.length) throw new Fachfehler(422, `Berechtigungen: ${probleme.join(' ')}`, { gruende: probleme, berechtigungen: true });
+    return { name, beschreibung: text(x.beschreibung).slice(0, 500), elternId, position, typen, bedingungen: bereinigeBedingungen(x.bedingungen), trefferliste, berechtigungen };
   }
 
   async legeSichtAn(e: unknown): Promise<Sicht> {
