@@ -3269,6 +3269,11 @@
           "name": {
             "type": "string"
           },
+          "schluessel": {
+            "type": "string",
+            "example": "rechnung",
+            "description": "Fester Schlüssel; beim Anlegen frei wählbar (sonst aus dem Namen), danach unveränderlich"
+          },
           "beschreibung": {
             "type": "string"
           },

@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.30/direktlinks/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.31/direktlinks/">
       
       
         <link rel="prev" href="../sichten/">
@@ -1661,7 +1661,7 @@
 
 <h1 id="sprechende-links">Sprechende Links<a class="headerlink" href="#sprechende-links" title="Permanent link">&para;</a></h1>
 <p>Ein sprechender Link findet eine Mappe über ihren <strong>Mappentyp</strong> und ihre <strong>Angaben</strong> statt über ihre technische Id. Den Link kannst du einem Kollegen mit eigenem Konto per Mail oder Chat schicken oder in anderen Programmen hinterlegen, etwa:</p>
-<div class="highlight"><pre><span></span><code>http://&lt;NAS&gt;:8080/ablage/link?typ=Rechnung&amp;rechnungsnummer=A-2020-11380
+<div class="highlight"><pre><span></span><code>http://&lt;NAS&gt;:8080/ablage/link?typ=rechnung&amp;rechnungsnummer=A-2020-11380
 </code></pre></div>
 <p>Eingerichtet wird dafür nichts: Jeder Link, der dem Aufbau unten folgt, funktioniert sofort. In jeder Mappe erzeugt <strong>Aktionen → Link kopieren</strong> einen passenden Link (siehe <a href="https://motom001.github.io/dms/benutzer/versenden/#link-kopieren">Benutzerhandbuch</a>).</p>
 <h2 id="was-der-link-zeigt">Was der Link zeigt<a class="headerlink" href="#was-der-link-zeigt" title="Permanent link">&para;</a></h2>
@@ -1685,8 +1685,8 @@
 </thead>
 <tbody>
 <tr>
-<td><code>typ=Rechnung</code></td>
-<td><strong>Name</strong> des Mappentyps; Groß- und Kleinschreibung zählen nicht.</td>
+<td><code>typ=rechnung</code></td>
+<td><strong>Schlüssel</strong> des Mappentyps (siehe <a href="../mappentypen/#grunddaten">Mappentypen</a>). Auch der <strong>Name</strong> geht (Groß- und Kleinschreibung zählen nicht) – aber nur der Schlüssel bleibt gültig, wenn der Mappentyp umbenannt wird. „Link kopieren“ nutzt den Schlüssel.</td>
 </tr>
 <tr>
 <td><code>rechnungsnummer=A-2020-11380</code></td>
@@ -1820,23 +1820,23 @@
 </thead>
 <tbody>
 <tr>
-<td><code>/ablage/link?typ=Rechnung&amp;rechnungsnummer=R-2026-117</code></td>
+<td><code>/ablage/link?typ=rechnung&amp;rechnungsnummer=R-2026-117</code></td>
 <td>genau diese Rechnung</td>
 </tr>
 <tr>
-<td><code>/ablage/link?typ=Rechnung&amp;bezahlt=nein&amp;sortierung=-rechnungsdatum</code></td>
+<td><code>/ablage/link?typ=rechnung&amp;bezahlt=nein&amp;sortierung=-rechnungsdatum</code></td>
 <td>offene Rechnungen, neueste zuerst</td>
 </tr>
 <tr>
-<td><code>/ablage/link?typ=Rechnung&amp;rechnungsdatum.groesser=heute-30tage</code></td>
+<td><code>/ablage/link?typ=rechnung&amp;rechnungsdatum.groesser=heute-30tage</code></td>
 <td>Rechnungen der letzten 30 Tage</td>
 </tr>
 <tr>
-<td><code>/ablage/link?typ=Vertrag&amp;kuendigung_bis.zwischen=heute..heute+12monate</code></td>
+<td><code>/ablage/link?typ=vertrag&amp;kuendigung_bis.zwischen=heute..heute+12monate</code></td>
 <td>Verträge, die in den nächsten 12 Monaten gekündigt werden müssen</td>
 </tr>
 <tr>
-<td><code>/ablage/link?typ=Vertragspartner&amp;name=Stadtwerke+Musterstadt</code></td>
+<td><code>/ablage/link?typ=vertragspartner&amp;name=Stadtwerke+Musterstadt</code></td>
 <td>den Vertragspartner „Stadtwerke Musterstadt“</td>
 </tr>
 </tbody>
