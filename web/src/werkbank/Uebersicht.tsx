@@ -12,6 +12,11 @@ const zahl = (n: number) => n.toLocaleString('de-DE');
 const datum = (iso: string) => new Date(iso).toLocaleDateString('de-DE', { dateStyle: 'medium' });
 const bytes = (b: number) => (b < 1024 ** 3 ? `${(b / 1024 ** 2).toFixed(0)} MB` : `${(b / 1024 ** 3).toFixed(1).replace('.', ',')} GB`);
 
+const platzText = (o: Array<{ frei: number | null }>) => {
+  const f = Math.min(...o.map((x) => x.frei ?? Infinity));
+  return Number.isFinite(f) ? bytes(f) : 'genug Platz';
+};
+
 export interface Hinweis { art: 'schlecht' | 'warn' | 'info'; text: ReactNode; ziel: string; knopf: string }
 
 /** Die Hinweise, die in der Übersicht oben stehen (auch Zähler in der Leiste). */
@@ -20,7 +25,12 @@ export function hinweiseAus(u: WerkbankUebersicht): Hinweis[] {
   const t = u.tresor;
   // Notfallzugang (#108): bis er umbenannt oder deaktiviert ist.
   for (const n of u.notfallzugaenge ?? []) h.push({ art: 'schlecht', text: <><strong>Notfallzugang „{n.name}“ ist aktiv.</strong> Er entstand über eine RESCUE-Datei am {datum(n.erstellt)}. Gib ihm einen richtigen Namen oder deaktiviere ihn – warst du das nicht, sofort deaktivieren.</>, ziel: `/werkbank/benutzer/${n.id}`, knopf: 'Zum Benutzer' });
-  if (u.wartung && u.wartung.stufe !== 'aus') h.push({ art: 'warn', text: <><strong>Der Wartungsmodus ist {u.wartung.stufe === 'aktiv' ? 'aktiv' : 'angekündigt'}.</strong> {u.wartung.stufe === 'aktiv' ? 'Nur Administratoren können arbeiten.' : 'Bald werden alle anderen abgemeldet.'}</>, ziel: '/werkbank/wartungsmodus', knopf: 'Zum Wartungsmodus' });
+  // Speicherplatz (#116): Grenze, Warnschwelle, wieder genug Platz bei laufender Wartung.
+  const sp = u.speicherplatz;
+  if (sp?.zustand === 'grenze') h.push({ art: 'schlecht', text: <><strong>Speicherplatzlimit erreicht.</strong> Hochladen ist gesperrt{u.wartung?.ausloeser === 'speicherplatz' ? (u.wartung.stufe === 'aktiv' ? ', der Wartungsmodus läuft' : ', der Wartungsmodus beginnt gleich') : ''}. Schaffe Platz und beende danach den Wartungsmodus.</>, ziel: '/werkbank/speicherplatz', knopf: 'Zum Speicherplatz' });
+  else if (sp?.zustand === 'warnung') h.push({ art: 'warn', text: <><strong>Der Speicherplatz wird knapp.</strong> Noch {platzText(sp.ordner)} frei – unter der Grenze wird das Hochladen gesperrt.</>, ziel: '/werkbank/speicherplatz', knopf: 'Zum Speicherplatz' });
+  if (sp?.wartungBeenden) h.push({ art: 'warn', text: <><strong>Wieder {platzText(sp.ordner)} frei.</strong> Der Wartungsmodus wegen des Speicherplatzes endet nicht von selbst – Wartung beenden?</>, ziel: '/werkbank/speicherplatz', knopf: 'Wartung beenden' });
+  if (u.wartung && u.wartung.stufe !== 'aus' && !sp?.wartungBeenden) h.push({ art: 'warn', text: <><strong>Der Wartungsmodus ist {u.wartung.stufe === 'aktiv' ? 'aktiv' : 'angekündigt'}.</strong> {u.wartung.stufe === 'aktiv' ? 'Nur Administratoren können arbeiten.' : 'Bald werden alle anderen abgemeldet.'}</>, ziel: '/werkbank/wartungsmodus', knopf: 'Zum Wartungsmodus' });
   if (t && t.zustand === 'fehlt') h.push({ art: 'warn', text: <><strong>Es gibt noch keinen Schlüssel für Passwörter.</strong> Bis dahin lassen sich keine Passwörter speichern (E-Mail-Versand, Passwortfelder).</>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
   else if (t && t.zustand === 'verloren') h.push({ art: 'schlecht', text: <><strong>Der Schlüssel für Passwörter fehlt.</strong> Gespeicherte Passwörter sind nicht lesbar.</>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
   else if (t && t.zustand === 'falsch') h.push({ art: 'schlecht', text: <><strong>Die Schlüsseldatei passt nicht zu den gespeicherten Passwörtern.</strong></>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
@@ -28,6 +38,8 @@ export function hinweiseAus(u: WerkbankUebersicht): Hinweis[] {
   else if (t && t.betroffen) h.push({ art: 'warn', text: <><strong>{t.betroffen === 1 ? 'Ein Passwort ist' : `${t.betroffen} Passwörter sind`} nicht lesbar oder unverschlüsselt.</strong></>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
   // Sicherung (#105): fehlgeschlagen, zu alt, Notfallblatt, Speicherort.
   if (u.sicherung) for (const x of sicherungsHinweise(u.sicherung)) h.push({ ...x, ziel: '/werkbank/sicherung', knopf: 'Zur Sicherung' });
+  // Feste Ordner (#115): frühere Variablen mit dem festen Wert sind überflüssig.
+  if (u.variablen?.length) h.push({ art: 'info', text: <><strong>{u.variablen.length === 1 ? 'Eine Umgebungsvariable ist' : `${u.variablen.length} Umgebungsvariablen sind`} nicht mehr nötig:</strong> <span className="mono">{u.variablen.join(', ')}</span>. Die Ordner im Container sind fest – entferne sie beim nächsten Update aus der Compose-Datei.</>, ziel: '/werkbank/technik', knopf: 'Zur Technik' });
   if (!u.mail) h.push({ art: 'warn', text: <><strong>Der E-Mail-Versand ist nicht eingerichtet.</strong> Einladungen, die tägliche Zusammenfassung der Aufgaben und „Per E-Mail versenden“ gehen erst danach.</>, ziel: '/werkbank/betrieb', knopf: 'E-Mail einrichten' });
   if (u.fehlermeldungen) h.push({ art: 'warn', text: <><strong>{u.fehlermeldungen === 1 ? 'Eine offene Fehlermeldung' : `${zahl(u.fehlermeldungen)} offene Fehlermeldungen`}</strong> von Benutzern.</>, ziel: '/werkbank/fehlermeldungen', knopf: 'Ansehen' });
   if (u.texterkennung?.fehler) h.push({ art: 'warn', text: <><strong>{u.texterkennung.fehler === 1 ? 'Ein Dokument' : `${zahl(u.texterkennung.fehler)} Dokumente`}</strong> mit Fehler in der Texterkennung.</>, ziel: '/werkbank/texterkennung', knopf: 'Zur Texterkennung' });

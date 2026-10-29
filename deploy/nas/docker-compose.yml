@@ -26,12 +26,13 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://dms:${DB_PASSWORD}@db:5432/dms
-      FILES_DIR: /data/files
       # Hinter einem Reverse-Proxy (nginx …):
       # TRUST_PROXY: "true"
       # E-Mail-Versand und die Adresse des DMS stellst du in der Werkbank ein
       # (Werkbank → E-Mail und Adresse), nicht mehr hier.
+    # Die Ordner im Container sind fest; wohin sie auf dem NAS zeigen, bestimmst du nur hier.
     volumes:
+      # Hochgeladene Dateien, Logos, Fehlerbilder.
       - /volume1/docker/dms/files:/data/files
       # Schlüssel für gespeicherte Passwörter (Werkbank → Verschlüsselung).
       # Getrennt von der Datenbank sichern – ohne ihn sind Passwörter in einer Sicherung nicht lesbar.

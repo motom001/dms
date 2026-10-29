@@ -20,6 +20,8 @@ import type { Wartung } from './wartung';
 import type { Notfallzugang } from './notfall';
 import type { Sicherung } from './sicherung';
 import type { Wiederherstellung } from './wiederherstellung';
+import type { Speicherplatz } from './speicherplatz';
+import type { OrdnerPruefung } from './ordner';
 import { notfallblatt } from './notfallblatt';
 import { dirname } from 'node:path';
 import { WartungFehler } from './wartung';
@@ -111,6 +113,10 @@ export interface RoutenExtras {
   sicherung?: Sicherung;
   /** Wiederherstellen und Probe (#107, #109). */
   wiederherstellung?: Wiederherstellung;
+  /** Speicherplatz-Überwachung (#116). */
+  speicherplatz?: Speicherplatz;
+  /** Feste Ordner und überflüssige frühere Variablen (#115). */
+  ordner?: OrdnerPruefung;
   /** Für Tests: Abruf fremder Adressen beim Versionsabgleich. */
   abruf?: (url: string) => Promise<unknown>;
   log?: (m: string) => void;
@@ -154,6 +160,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.weitereRollen()).get(b.id) ?? [] });
   const sicherung = () => { if (!x.sicherung) throw new Fachfehler(404, 'Sicherungen sind nicht eingerichtet.'); return x.sicherung; };
   const wh = () => { if (!x.wiederherstellung) throw new Fachfehler(404, 'Die Wiederherstellung ist nicht eingerichtet.'); return x.wiederherstellung; };
+  const speicherplatz = () => { if (!x.speicherplatz) throw new Fachfehler(404, 'Die Speicherplatz-Überwachung ist nicht eingerichtet.'); return x.speicherplatz; };
   /** Stand für den Wiederherstellungsbildschirm: läuft etwas, oder gibt es eine Abschlussmeldung? */
   const whStand = async () => {
     const lauf = x.wiederherstellung?.aktuellerLauf();
@@ -577,9 +584,19 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
         wartung: x.wartung?.oeffentlich() ?? null,
         // Sicherung (#105): fehlgeschlagen, zu alt, Speicherort, Notfallblatt.
         sicherung: x.sicherung ? await sicher(() => x.sicherung!.zustand()) : null,
+        // Speicherplatz (#116) und frühere Variablen, die entfernt werden können (#115).
+        speicherplatz: x.speicherplatz ? await sicher(() => x.speicherplatz!.stand()) : null,
+        variablen: x.ordner?.ueberfluessig ?? [],
       });
     } },
-    { methode: 'GET', pfad: '/api/werkbank/system', zugang: 'admin', handler: async () => ok(await uebersicht(system, x.betrieb?.kurz())) },
+    { methode: 'GET', pfad: '/api/werkbank/system', zugang: 'admin', handler: async () => {
+      const sicher = async <T>(f: () => Promise<T>): Promise<T | null> => { try { return await f(); } catch { return null; } };
+      const sp = x.speicherplatz ? await sicher(() => x.speicherplatz!.stand()) : null;
+      return ok({ ...await uebersicht(system, x.betrieb?.kurz()), ordner: sp?.ordner ?? null, variablen: x.ordner?.ueberfluessig ?? [] });
+    } },
+    /* ---------- Speicherplatz (#116) ---------- */
+    { methode: 'GET', pfad: '/api/werkbank/speicherplatz', zugang: 'admin', handler: async () => ok(await speicherplatz().pruefe()) },
+    { methode: 'PUT', pfad: '/api/werkbank/speicherplatz', zugang: 'admin', handler: async (a) => ok(await speicherplatz().speichere(a.body, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/system/abgleich', zugang: 'admin', handler: async (a) => {
       const browser = Object.fromEntries(Object.entries((b(a).browser ?? {}) as Record<string, unknown>).map(([k, v]) => [k, String(v)]));
       const start = Date.now();

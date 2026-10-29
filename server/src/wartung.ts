@@ -32,10 +32,12 @@ export interface WartungStand {
   von: string | null;
   /** Diese Sitzung bleibt beim Abmelden aller anderen bestehen. */
   sitzungId: string | null;
+  /** Vom DMS selbst eingeschaltet (#116), z. B. bei vollem Speicherplatz; null = von Hand. */
+  ausloeser?: 'speicherplatz' | null;
 }
 
 /** Was jeder sehen darf (auch ohne Anmeldung). */
-export interface WartungOeffentlich { stufe: Stufe; text: string; ende: string | null; aktivAb: string | null; sekunden: number | null }
+export interface WartungOeffentlich { stufe: Stufe; text: string; ende: string | null; aktivAb: string | null; sekunden: number | null; ausloeser: 'speicherplatz' | null }
 
 export interface WartungKonten {
   /** Beendet alle Sitzungen außer dieser; liefert die Anzahl. */
@@ -47,7 +49,7 @@ export class WartungFehler extends Fachfehler {
   constructor(message: string, public retryAfter: number) { super(503, message); }
 }
 
-const AUS: WartungStand = { stufe: 'aus', text: '', ende: null, aktivAb: null, beginn: null, von: null, sitzungId: null };
+const AUS: WartungStand = { stufe: 'aus', text: '', ende: null, aktivAb: null, beginn: null, von: null, sitzungId: null, ausloeser: null };
 
 export class Wartung {
   private s: WartungStand = { ...AUS };
@@ -82,7 +84,7 @@ export class Wartung {
     const s = this.s;
     const ab = s.aktivAb ? Date.parse(s.aktivAb) : NaN;
     return {
-      stufe: s.stufe, text: s.text, ende: s.ende, aktivAb: s.aktivAb,
+      stufe: s.stufe, text: s.text, ende: s.ende, aktivAb: s.aktivAb, ausloeser: s.ausloeser ?? null,
       sekunden: s.stufe === 'angekuendigt' && Number.isFinite(ab) ? Math.max(0, Math.round((ab - this.jetzt().getTime()) / 1000)) : null,
     };
   }
@@ -140,6 +142,20 @@ export class Wartung {
     log.warn(vorlauf ? 'Wartungsmodus angekündigt' : 'Wartungsmodus eingeschaltet', { von: admin.email, text, ende, aktivAb, vorlaufMinuten: vorlauf });
     if (!vorlauf) await this.aktiviere('sofort');
     return this.stand;
+  }
+
+  /**
+   * Vom DMS selbst eingeschaltet (#116): nur, wenn die Wartung aus ist – eine laufende Wartung
+   * eines Administrators bleibt unverändert. Endet nicht von selbst.
+   */
+  async automatisch(ausloeser: 'speicherplatz', text: string, vorlaufMin: number): Promise<boolean> {
+    if (this.s.stufe !== 'aus') return false;
+    const jetzt = this.jetzt();
+    this.s = { ...AUS, stufe: 'angekuendigt', text, aktivAb: new Date(jetzt.getTime() + vorlaufMin * 60_000).toISOString(), beginn: jetzt.toISOString(), von: 'DMS (automatisch)', ausloeser };
+    await this.speichere();
+    log.warn('Wartungsmodus automatisch angekündigt', { ausloeser, text, aktivAb: this.s.aktivAb, vorlaufMinuten: vorlaufMin });
+    if (!vorlaufMin) await this.aktiviere(ausloeser);
+    return true;
   }
 
   /** „Alle jetzt abmelden“: sofort aktiv, alle Sitzungen außer der eigenen enden. */

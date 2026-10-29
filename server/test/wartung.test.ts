@@ -43,7 +43,7 @@ describe('Wartungsmodus (#102)', () => {
     const vorher = protokoll.letzteNr;
     await wartung.einschalten({ text: 'Wiederherstellung', ende: '2026-10-29T12:00:00Z' }, admin.benutzer, adminSitzung.id);
     assert.equal(wartung.stand.stufe, 'angekuendigt');
-    assert.deepEqual(wartung.oeffentlich(), { stufe: 'angekuendigt', text: 'Wiederherstellung', ende: '2026-10-29T12:00:00.000Z', aktivAb: '2026-10-29T10:30:00.000Z', sekunden: 1800 });
+    assert.deepEqual(wartung.oeffentlich(), { stufe: 'angekuendigt', text: 'Wiederherstellung', ende: '2026-10-29T12:00:00.000Z', aktivAb: '2026-10-29T10:30:00.000Z', sekunden: 1800, ausloeser: null });
     assert.ok(await konten.anmeldungZu(m1.schluessel), 'angekündigt: Arbeiten und Speichern gehen weiter');
     wartung.pruefeAnfrage({ pfad: '/api/v1/mappen', zugang: 'angemeldet' }, { rolle: 'mitglied' });
 

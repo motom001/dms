@@ -815,3 +815,16 @@ body:has(.gezogen) { cursor: grabbing; user-select: none; -webkit-user-select: n
 .hilfe:hover, .hilfe:focus-visible { color: var(--akzent); border-color: var(--akzent); }
 h2 .hilfe, h3 .hilfe { font-size: .6em; vertical-align: .25em; }
 @media (pointer: coarse) { .hilfe { width: 1.6em; height: 1.6em; } }
+
+/* Speicherplatz (#116): belegt je Ordner mit Marken für Warnschwelle und Grenze */
+.ordnerzeile { padding: 10px 0; border-top: 1px solid var(--linie); }
+.ordnerzeile:first-of-type { border-top: 0; }
+.platzbalken { position: relative; height: 10px; border-radius: 999px; background: var(--linie); margin: 8px 0 4px; }
+.platzbalken > span { display: block; height: 100%; border-radius: 999px; background: var(--gruen); }
+.platzbalken > span.warnung { background: var(--warn); }
+.platzbalken > span.grenze { background: var(--schlecht); }
+.platzbalken .marke { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--warn); }
+.platzbalken .marke.grenze { background: var(--schlecht); }
+.schwellenfeld { display: flex; gap: 8px; align-items: center; }
+.schwellenfeld input { max-width: 7em; }
+.schwellenfeld select { width: auto; }

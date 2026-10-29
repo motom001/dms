@@ -424,6 +424,9 @@ async function main() {
   await bild(s, 'werkbank-datenbank');
   await geheZu(s, '/werkbank/technik');
   await bild(s, 'werkbank-technik');
+  await geheZu(s, '/werkbank/speicherplatz');
+  await s.getByRole('heading', { name: 'Schwellen', exact: true }).waitFor();
+  await bild(s, 'werkbank-speicherplatz');
   await geheZu(s, '/werkbank/demo');
   await bild(s, 'werkbank-demo');
 

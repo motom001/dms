@@ -71,13 +71,11 @@ jobs:
 
       - name: DMS starten (leere Datenbank)
         run: |
-          mkdir -p "$RUNNER_TEMP/dateien"
           nohup node server/dist/index.js > "$RUNNER_TEMP/dms.log" 2>&1 &
         env:
           DATABASE_URL: postgres://dms:dms@localhost:5432/dms
-          FILES_DIR: ${{ runner.temp }}/dateien
-          DMS_SCHLUESSEL_DATEI: ${{ runner.temp }}/geheim/dms.schluessel
-          DMS_SICHERUNG_DIR: ${{ runner.temp }}/sicherung
+          # Feste Ordner (#115) außerhalb von Docker: files, geheim, sicherung unter dieser Wurzel.
+          DMS_DATENWURZEL: ${{ runner.temp }}/daten
           PORT: '3000'
           DMS_VERSION: handbuch
 

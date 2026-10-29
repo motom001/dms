@@ -45,3 +45,12 @@ export function speicherDateien(): Dateispeicher & { anzahl(): number } {
     anzahl: () => m.size,
   };
 }
+
+/** Vor jedem Schreiben prüfen, z. B. ob noch genug Speicherplatz frei ist (#116). */
+export function mitPruefung(s: Dateispeicher, vorher: () => Promise<void>): Dateispeicher {
+  return {
+    async schreibe(sha, inhalt) { await vorher(); await s.schreibe(sha, inhalt); },
+    lies: (sha) => s.lies(sha),
+    loesche: (sha) => s.loesche(sha),
+  };
+}

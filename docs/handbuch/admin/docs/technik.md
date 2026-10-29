@@ -7,7 +7,7 @@
 ```
 Browser ── HTTP ──▶ DMS-Container (Node.js) ──▶ PostgreSQL-Container
    React-Oberfläche        Fastify-API              Mappen, Typen, Benutzer,
-   (im Image enthalten)    Dateien unter FILES_DIR  Sitzungen, Protokolle
+   (im Image enthalten)    Dateien unter /data/…    Sitzungen, Protokolle
 ```
 
 | Baustein | Technik | Wozu |
@@ -15,7 +15,7 @@ Browser ── HTTP ──▶ DMS-Container (Node.js) ──▶ PostgreSQL-Conta
 | Oberfläche | React 19, gebaut mit Vite | Ablage, Werkbank, Profil – alles im Browser |
 | Server | Node.js 22, Fastify 5, TypeScript (mit esbuild gebündelt) | Schnittstelle unter `/api`, liefert auch die Oberfläche aus |
 | Datenbank | PostgreSQL 17, Zugriff mit postgres.js, SQL-Migrationen in `server/migrations` | Alle Daten außer den Dateien |
-| Dateien | Ordner `FILES_DIR`, je Datei ihr SHA-256 als Name | Hochgeladene Dokumente, gleicher Inhalt nur einmal |
+| Dateien | Feste Ordner `/data/files`, `/data/geheim`, `/data/sicherung` (Volumes, siehe [Installation](installation.md#ordner-und-volumes)); je Datei ihr SHA-256 als Name | Hochgeladene Dokumente, gleicher Inhalt nur einmal; Schlüssel; Sicherungen |
 | E-Mail | nodemailer über SMTP (optional, eingestellt in der Werkbank) | Einladungen, Passwort-Links, Hinweise |
 | Texterkennung | Tesseract (deu, eng) und poppler (pdftotext, pdftoppm) im Image; deutsche Volltextsuche von PostgreSQL | Volltext von PDFs, Scans und Bildern (#45) |
 | Verschlüsselung | AES-256-GCM (Node.js crypto), Schlüssel als Datei unter `/data/geheim` | Gespeicherte Passwörter (#39, #46) |

@@ -42,7 +42,9 @@ function zeilenAus(u: Systemuebersicht): Zeilen {
     ] : [['Fehler', (u.datenbank as { fehler: string }).fehler]]],
     ['Bibliotheken (Server)', Object.entries(u.bibliotheken).map(([k, v]) => [k, v ?? 'nicht gefunden'])],
     ['Oberfläche', [['React', reactVersion], ['Browser', geraetText(navigator.userAgent)]]],
-    ['Einstellungen', Object.entries(u.einstellungen)],
+    // Feste Ordner im Container (#115); wohin sie zeigen, bestimmen die Volumes der Compose-Datei.
+    ['Ordner', (u.ordner ?? []).map((o): [string, string] => [o.pfad, o.gesamt === null || o.frei === null ? 'nicht messbar' : `${groesse(o.belegt ?? 0)} belegt, ${groesse(o.frei)} frei von ${groesse(o.gesamt)}${o.volume === false ? ' – kein eigenes Volume!' : ''}`])],
+    ['Einstellungen', [...Object.entries(u.einstellungen), ...(u.variablen ?? []).map((v): [string, string] => [v, 'überflüssig – aus der Compose-Datei entfernen'])]],
   ];
 }
 

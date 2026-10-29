@@ -17,6 +17,14 @@ Welche Version läuft und ob es neuere gibt, zeigt **Werkbank → Technik** (sie
 !!! tip "Auf einer festen Version bleiben"
     Statt `ghcr.io/motom001/dms:main` kannst du in der Compose-Datei eine Versionsnummer angeben, z. B. `ghcr.io/motom001/dms:0.8.0`. Dann ändert sich nichts, bis du die Nummer selbst erhöhst.
 
+### Feste Ordner (ab 0.23)
+
+Die Ordner im Container sind jetzt fest: `/data/files`, `/data/geheim` und `/data/sicherung` (siehe [Ordner und Volumes](installation.md#ordner-und-volumes)). Die Variablen `FILES_DIR`, `DMS_SCHLUESSEL_DATEI` und `DMS_SICHERUNG_DIR` entfallen.
+
+- **Steht `FILES_DIR: /data/files` in deiner Compose-Datei** (so war es in der Vorlage), läuft alles weiter. Entferne die Zeile beim nächsten Update; bis dahin erinnert die Werkbank-Übersicht daran.
+- **Zeigte eine der Variablen auf einen anderen Ordner**, startet das DMS nicht und nennt im Protokoll des Containers das Volume, das stattdessen auf den festen Ordner zeigen muss. Beispiel: Stand bisher `FILES_DIR: /dokumente` mit dem Volume `/volume1/dms-daten:/dokumente`, wird daraus `/volume1/dms-daten:/data/files` – und die Variable fällt weg. Die Dateien selbst bleiben, wo sie sind.
+- Prüfe nach dem Start unter **Werkbank → Technik**, dass alle drei Ordner auf einem eigenen Volume liegen.
+
 ### Auf 0.11 aktualisieren
 
 - In der Compose-Datei ein Volume für den Schlüssel ergänzen (siehe [Vorlage](https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml)):

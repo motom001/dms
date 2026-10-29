@@ -42,6 +42,28 @@ Unter **Werkbank → E-Mail und Adresse** stellst du ein, was früher Umgebungsv
 !!! note "Von einer älteren Version"
     Bis Version 0.8 waren das die Umgebungsvariablen `APP_URL` und `SMTP_*`. Beim ersten Start von 0.9 übernimmt das DMS ihre Werte einmalig in die Werkbank; danach werden sie ignoriert, und das Protokoll weist darauf hin, dass sie aus der Compose-Datei entfernt werden können.
 
+## Ordner und Volumes
+
+Die Ordner im Container sind fest. Wohin sie auf dem NAS zeigen, bestimmst du allein über die Volumes der Compose-Datei – dafür gibt es keine Umgebungsvariablen.
+
+| Ordner im Container | Inhalt | Volume in der Vorlage |
+| --- | --- | --- |
+| `/data/files` | hochgeladene Dokumente, Logos, Bilder der Fehlermeldungen | `/volume1/docker/dms/files` |
+| `/data/geheim` | Schlüssel für gespeicherte Passwörter (`dms.schluessel`), [RESCUE-Datei](notfall.md) | `/volume1/docker/dms/geheim` |
+| `/data/sicherung` | [Sicherungen](sicherung.md), verschlüsselt | `/volume1/docker/dms/sicherung` |
+
+Jeder der drei Ordner muss ein eigenes Volume sein; sonst ist sein Inhalt weg, sobald der Container neu erstellt wird (z. B. beim Update). Die Datenbank liegt im Volume des PostgreSQL-Containers. Wie viel Platz in jedem Ordner frei ist, zeigen **Werkbank → [Speicherplatz](speicherplatz.md)** und **Werkbank → Technik**.
+
+```yaml
+    volumes:
+      - /volume1/docker/dms/files:/data/files
+      - /volume1/docker/dms/geheim:/data/geheim
+      - /volume1/docker/dms/sicherung:/data/sicherung
+```
+
+!!! note "Von einer älteren Version (bis 0.22)"
+    Früher legten `FILES_DIR`, `DMS_SCHLUESSEL_DATEI` und `DMS_SICHERUNG_DIR` die Ordner fest. Steht eine davon noch mit dem festen Wert in der Compose-Datei (z. B. `FILES_DIR: /data/files`), läuft alles weiter; das Protokoll und die Werkbank-Übersicht weisen darauf hin, dass du sie entfernen kannst. Zeigt sie auf einen **anderen** Ordner, startet das DMS nicht – sonst sähe es plötzlich einen leeren Dateiordner. Die Meldung im Protokoll des Containers nennt dann, welches Volume stattdessen auf den festen Ordner zeigen muss. Siehe [Aktualisieren](aktualisieren.md#feste-ordner-ab-023).
+
 ## Einstellungen
 
 Diese Einstellungen sind Umgebungsvariablen im Compose-Projekt:
@@ -49,9 +71,6 @@ Diese Einstellungen sind Umgebungsvariablen im Compose-Projekt:
 | Variable | Bedeutung |
 | --- | --- |
 | `DATABASE_URL` | Verbindung zu PostgreSQL (Pflicht) |
-| `FILES_DIR` | Ordner für hochgeladene Dateien im Container (Vorlage: `/data/files`) |
-| `DMS_SICHERUNG_DIR` | Ordner der [Sicherungen](sicherung.md) (Standard: `/data/sicherung`); soll ein eigenes Volume sein |
-| `DMS_SCHLUESSEL_DATEI` | Datei mit dem Schlüssel für gespeicherte Passwörter (Standard: `/data/geheim/dms.schluessel`); der Ordner muss ein eigenes Volume sein |
 | `TRUST_PROXY` | `true`, wenn ein Reverse-Proxy davor sitzt (richtige IP-Adressen im Protokoll, sichere Cookies über HTTPS) |
 | `LOG_LEVEL` | Grundstufe des Protokolls: `debug`, `info` (Standard), `warn`, `error` |
 
