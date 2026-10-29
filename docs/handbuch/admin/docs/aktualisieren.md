@@ -65,6 +65,8 @@ und `dms.sql` zusammen mit dem Ordner `files` sichern.
 
 ### Wiederherstellen
 
+Sicherungen des DMS spielst du in der Werkbank ein: [Wiederherstellen](wiederherstellen.md). Für einen Abzug von Hand:
+
 1. Projekt stoppen, Ordner `files` zurückkopieren.
 2. Datenbank leeren und einspielen:
    ```sh

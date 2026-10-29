@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type FormE
 import { PASSWORT_MINDESTLAENGE, type Benutzer } from '../../shared/src/model';
 import { ABGEMELDET, api, type KontoStatus, type WartungOeffentlich } from './api';
 import { WartungsHinweis } from './wartung';
+import { WiederherstellungsAssistent, Wiederherstellungsbildschirm } from './wiederherstellen';
 import { geheZu, useOrt } from './ort';
 import { Marke } from './Marke';
 
@@ -63,6 +64,8 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   if (pfad.startsWith('/passwort/')) return <PasswortSetzen schluessel={decodeURIComponent(pfad.slice('/passwort/'.length))} fertig={laden} />;
   if (fehler) return <Karte titel="Keine Verbindung"><p className="hinweis schlecht">{fehler}</p><button className="knopf" onClick={() => void laden()}>Erneut versuchen</button></Karte>;
   if (!status) return <p className="leise mittig">Lade …</p>;
+  // Wiederherstellung (#107): eigener Bildschirm, auch nach Neuladen und Neustart.
+  if (status.wiederherstellung?.laeuft || status.wiederherstellung?.abschluss) return <Wiederherstellungsbildschirm fertig={() => void laden()} />;
   if (status.einrichtungNoetig) return <Ersteinrichtung fertig={laden} />;
   if (!status.benutzer) return <Anmelden mail={status.mail} wartung={status.wartung} fertig={laden} />;
   // key: Beim Wechsel des Benutzers (Vertretung) alles neu aufbauen und laden.
@@ -100,6 +103,7 @@ function useAbsenden(fn: () => Promise<void>) {
 }
 
 function Ersteinrichtung({ fertig }: { fertig: () => Promise<void> }) {
+  const [wiederherstellen, setWiederherstellen] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
@@ -110,6 +114,15 @@ function Ersteinrichtung({ fertig }: { fertig: () => Promise<void> }) {
     await fertig();
     geheZu('/werkbank/typen', true);
   });
+  if (wiederherstellen) return (
+    <div className="kartenseite">
+      <div className="karte breit">
+        <h1>Aus Sicherung wiederherstellen</h1>
+        <p className="leise">Wähle eine Sicherung aus dem Sicherungsordner. Danach meldest du dich mit den Zugangsdaten an, die zur Zeit der Sicherung galten – ein neuer Administrator ist nicht nötig.</p>
+        <WiederherstellungsAssistent frisch gestartet={() => void fertig()} abbrechen={() => setWiederherstellen(false)} />
+      </div>
+    </div>
+  );
   return (
     <Karte titel="Willkommen" unter="Lege das Administrator-Konto an. Damit richtest du Mappentypen ein und verwaltest weitere Benutzer.">
       <form className="stapel" onSubmit={f.absenden}>
@@ -120,6 +133,9 @@ function Ersteinrichtung({ fertig }: { fertig: () => Promise<void> }) {
         {f.fehler && <p className="fehlertext">{f.fehler}</p>}
         <button className="knopf primaer" disabled={f.sendet}>{f.sendet ? 'Lege an …' : 'Administrator anlegen'}</button>
       </form>
+      <div className="trenner"><span>oder</span></div>
+      <button type="button" className="knopf" onClick={() => setWiederherstellen(true)}>Aus Sicherung wiederherstellen</button>
+      <p className="leise klein">Neues NAS, alte Sicherung? Lege die Sicherung in den Sicherungsordner und halte das Notfallblatt bereit.</p>
     </Karte>
   );
 }

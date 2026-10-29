@@ -19,6 +19,7 @@ import type { Fehlermeldungen } from './fehlermeldungen';
 import { WartungFehler, type Wartung } from './wartung';
 import type { Notfallzugang } from './notfall';
 import type { Sicherung } from './sicherung';
+import type { Wiederherstellung } from './wiederherstellung';
 import { dateiKoepfe, leseCookie, modulAus, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage } from './routen';
 
 /** Häufige Abfragen, die das Protokoll sonst fluten würden. */
@@ -51,6 +52,8 @@ interface Optionen {
   notfall?: Notfallzugang;
   /** Sicherungen (#103–#105). */
   sicherung?: Sicherung;
+  /** Wiederherstellen und Probe (#107, #109). */
+  wiederherstellung?: Wiederherstellung;
   abruf?: (url: string) => Promise<unknown>;
 }
 

@@ -33,6 +33,9 @@
 ??? question "Ich sehe einen Hinweis „Wartung“."
     Ein Administrator wartet das DMS, z. B. für ein Update. Speichere deine Arbeit, bevor der Countdown abläuft – dann wirst du abgemeldet. Anmelden kannst du dich wieder, sobald die Wartung vorbei ist; die Anmeldeseite sagt, wie lange es voraussichtlich dauert.
 
+??? question "Ich bin abgemeldet und meine letzten Änderungen fehlen."
+    Ein Administrator hat vermutlich eine Sicherung wiederhergestellt. Dann gilt der Stand der Sicherung – auch das Passwort aus dieser Zeit. Frag ihn, von wann die Sicherung ist; was danach geändert wurde, musst du ggf. noch einmal eintragen.
+
 ??? question "Ich habe mein Passwort vergessen."
     **Passwort vergessen?** unter der Anmeldung. Verschickt das DMS keine E-Mails, erzeugt dir ein Administrator einen Link.
 

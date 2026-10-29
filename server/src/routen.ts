@@ -19,6 +19,7 @@ import type { Texterkennung } from './texterkennung';
 import type { Wartung } from './wartung';
 import type { Notfallzugang } from './notfall';
 import type { Sicherung } from './sicherung';
+import type { Wiederherstellung } from './wiederherstellung';
 import { notfallblatt } from './notfallblatt';
 import { dirname } from 'node:path';
 import { WartungFehler } from './wartung';
@@ -108,6 +109,8 @@ export interface RoutenExtras {
   notfall?: Notfallzugang;
   /** Sicherungen (#103–#105). */
   sicherung?: Sicherung;
+  /** Wiederherstellen und Probe (#107, #109). */
+  wiederherstellung?: Wiederherstellung;
   /** Für Tests: Abruf fremder Adressen beim Versionsabgleich. */
   abruf?: (url: string) => Promise<unknown>;
   log?: (m: string) => void;
@@ -150,6 +153,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   /** Benutzer mit ihren weiteren Rollen (#27). */
   const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.weitereRollen()).get(b.id) ?? [] });
   const sicherung = () => { if (!x.sicherung) throw new Fachfehler(404, 'Sicherungen sind nicht eingerichtet.'); return x.sicherung; };
+  const wh = () => { if (!x.wiederherstellung) throw new Fachfehler(404, 'Die Wiederherstellung ist nicht eingerichtet.'); return x.wiederherstellung; };
+  /** Stand für den Wiederherstellungsbildschirm: läuft etwas, oder gibt es eine Abschlussmeldung? */
+  const whStand = async () => ({
+    lauf: x.wiederherstellung?.aktuellerLauf()?.art === 'wiederherstellung' ? x.wiederherstellung.aktuellerLauf() : null,
+    abschluss: x.sicherung ? await x.sicherung.einstellungen.lies('wiederherstellung_abschluss') : null,
+  });
   const wartung = () => { if (!x.wartung) throw new Fachfehler(404, 'Der Wartungsmodus ist nicht eingerichtet.'); return x.wartung; };
   /** Ab der Ankündigung kommen nur Administratoren hinein (#102): eine neue Sitzung gleich wieder beenden. */
   const nurAdminsInWartung = async (r: { benutzer: Benutzer; schluessel: string }) => {
@@ -174,6 +183,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       marke: x.designs ? await x.designs.marke() : null,
       // Wartungsmodus (#102): Hinweis auf der Anmeldeseite.
       wartung: x.wartung?.oeffentlich() ?? null,
+      // Wiederherstellung (#107): läuft eine, oder gibt es eine Abschlussmeldung?
+      wiederherstellung: await (async () => { const s = await whStand(); return { laeuft: !!s.lauf && s.lauf.status !== 'fehler', abschluss: !!s.abschluss }; })(),
       // Ein Administrator agiert gerade als dieser Benutzer:
       vertretung: await konten.vertretungZu(a.sitzungsDaten),
       // Hinweise für den Benutzer selbst (nicht, solange jemand als er agiert):
@@ -455,10 +466,30 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/werkbank/wartung/jetzt', zugang: 'admin', handler: async (a) => ok(await wartung().jetztAktiv(ich(a), a.sitzungsDaten?.id ?? null)) },
     { methode: 'POST', pfad: '/api/werkbank/wartung/aus', zugang: 'admin', handler: async (a) => ok(await wartung().ausschalten(ich(a).email)) },
 
+    /* ---------- Wiederherstellen (#107): frisches System ohne Anmeldung, sonst Admin im Wartungsmodus ---------- */
+    { methode: 'GET', pfad: '/api/wiederherstellung/status', zugang: 'offen', handler: async () => ok(await whStand()) },
+    { methode: 'POST', pfad: '/api/wiederherstellung/abschluss-gesehen', zugang: 'offen', handler: async () => {
+      if (x.sicherung && !x.wiederherstellung?.laeuft()) await x.sicherung.einstellungen.schreibe('wiederherstellung_abschluss', null);
+      return leer;
+    } },
+    { methode: 'GET', pfad: '/api/wiederherstellung/sicherungen', zugang: 'offen', handler: async (a) => {
+      const art = await wh().pruefeZugang(a.benutzer?.rolle === 'admin');
+      return ok({ art, ordner: sicherung().ordner, liste: (await sicherung().liste()).map((e) => ({ name: e.name, bytes: e.bytes, meta: e.meta })) });
+    } },
+    { methode: 'POST', pfad: '/api/wiederherstellung/abgleich', zugang: 'offen', handler: async (a) => {
+      await wh().pruefeZugang(a.benutzer?.rolle === 'admin');
+      return ok(await wh().abgleich(String(b(a).name ?? ''), typeof b(a).schluessel === 'string' ? b(a).schluessel as string : undefined));
+    } },
+    { methode: 'POST', pfad: '/api/wiederherstellung/start', zugang: 'offen', handler: async (a) => ok(await wh().starte(b(a), a.benutzer?.rolle === 'admin' ? a.benutzer : null)) },
+    // Probe-Wiederherstellung (#109)
+    { methode: 'POST', pfad: '/api/werkbank/sicherung/probe', zugang: 'admin', handler: async (a) => ok((await wh().starteProbe(typeof b(a).name === 'string' ? b(a).name as string : null, ich(a).email)).lauf) },
+    { methode: 'GET', pfad: '/api/werkbank/sicherung/probe', zugang: 'admin', handler: async () => ok(x.wiederherstellung?.aktuellerLauf() ?? null) },
+    { methode: 'PUT', pfad: '/api/werkbank/sicherung/probe-plan', zugang: 'admin', handler: async (a) => ok(await sicherung().speichereProbePlan(a.body, ich(a).email)) },
+
     /* ---------- Sicherung (#103–#105) und Notfallblatt (#106) ---------- */
     { methode: 'GET', pfad: '/api/werkbank/sicherung', zugang: 'admin', handler: async () => {
       const s = sicherung();
-      return ok({ lauf: s.aktuellerLauf(), liste: await s.liste(), plan: await s.plan(), speicher: await s.speicher(), zustand: await s.zustand() });
+      return ok({ lauf: s.aktuellerLauf(), liste: await s.liste(), plan: await s.plan(), speicher: await s.speicher(), zustand: await s.zustand(), probe: x.wiederherstellung?.aktuellerLauf() ?? null });
     } },
     { methode: 'GET', pfad: '/api/werkbank/sicherung/lauf', zugang: 'admin', handler: async () => ok(sicherung().aktuellerLauf()) },
     { methode: 'POST', pfad: '/api/werkbank/sicherung/jetzt', zugang: 'admin', handler: async (a) => ok((await sicherung().starte('manuell', ich(a).email)).lauf) },

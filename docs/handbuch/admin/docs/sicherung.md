@@ -1,5 +1,7 @@
 # Sicherung
 
+Wie du eine Sicherung wieder einspielst und wie das DMS sie wöchentlich probeweise einspielt, steht unter [Wiederherstellen](wiederherstellen.md).
+
 Unter **Werkbank → Sicherung** legt das DMS Sicherungen selbst an: die ganze Datenbank und alle Dateien zum **selben Zeitpunkt**, verschlüsselt, ohne dass jemand aufhören muss zu arbeiten.
 
 ![Sicherung in der Werkbank](bilder/werkbank-sicherung.png)

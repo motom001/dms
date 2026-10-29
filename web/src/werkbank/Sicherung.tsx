@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { api, type SicherungsPlan, type SicherungStand, type SicherungsZustand } from '../api';
+import { api, type ProbeStand, type SicherungsPlan, type SicherungStand, type SicherungsZustand, type WhLauf } from '../api';
+import { Schritte } from '../wiederherstellen';
 import { Link } from '../ort';
 
 /**
@@ -41,6 +42,18 @@ export function useSicherung(offen: boolean) {
     }, 1000);
     return () => clearInterval(t);
   }, [laeuft, laden]);
+  // Probe-Wiederherstellung (#109): Schritte live.
+  const probeLaeuft = stand?.probe?.art === 'probe' && stand.probe.status === 'laeuft';
+  useEffect(() => {
+    if (!probeLaeuft) return;
+    const t = setInterval(() => {
+      void api.probeLauf().then((probe) => {
+        setStand((s) => (s ? { ...s, probe } : s));
+        if (probe?.status !== 'laeuft') void laden();
+      }, () => {});
+    }, 1000);
+    return () => clearInterval(t);
+  }, [probeLaeuft, laden]);
   return { stand, setStand, fehler, laden };
 }
 export type SicherungZustand = ReturnType<typeof useSicherung>;
@@ -53,6 +66,9 @@ export function sicherungsHinweise(z: SicherungsZustand): Array<{ art: 'schlecht
   if (!z.letzte) h.push({ art: 'warn', text: <><strong>Es gibt noch keine Sicherung.</strong> Lege eine an und schalte den Zeitplan ein.</> });
   else if (z.zuAlt) h.push({ art: 'warn', text: <><strong>Die letzte Sicherung ist älter als 2 Tage</strong> ({zeit(z.letzte.ende)}).</> });
   if (!z.notfallblatt.aktuell && (z.letzte || z.planAktiv)) h.push({ art: 'warn', text: <><strong>{z.notfallblatt.am ? 'Das Notfallblatt gehört zu einem früheren Schlüssel.' : 'Das Notfallblatt fehlt.'}</strong> Ohne den Schlüssel darauf lassen sich die Sicherungen nicht wiederherstellen.</> });
+  // Probe-Wiederherstellung (#109): Ampel.
+  if (z.probe?.ampel === 'rot') h.push({ art: 'schlecht', text: <><strong>Die letzte Probe-Wiederherstellung ist fehlgeschlagen</strong> ({zeit(z.probe.letzte!.am)}): {z.probe.letzte!.info}</> });
+  else if (z.probe?.ampel === 'gelb' && z.letzte) h.push({ art: 'info', text: <><strong>{z.probe.letzte ? `Die letzte Probe-Wiederherstellung ist vom ${zeit(z.probe.letzte.am)}.` : 'Noch keine Sicherung wurde probeweise wiederhergestellt.'}</strong> Erst eine Probe zeigt, dass sich eine Sicherung im Ernstfall einspielen lässt.</> });
   if (z.ort.volume === false) h.push({ art: 'warn', text: <><strong>Der Sicherungsordner ist kein eigenes Volume.</strong> Die Sicherungen liegen im Container und sind beim nächsten Update weg.</> });
   else if (z.ort.gleichePlatte) h.push({ art: 'info', text: <><strong>Die Sicherungen liegen auf derselben Platte wie die Dokumente.</strong> Fällt sie aus, sind beide weg – kopiere den Sicherungsordner auf eine andere Platte oder außer Haus.</> });
   return h;
@@ -126,7 +142,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
         <h2 className="h3">Sicherungen</h2>
         {!s.liste.length ? <p className="leise">Noch keine Sicherung im Ordner <span className="mono">{s.zustand.ort.ordner}</span>.</p> : (
           <div className="trefferliste"><table>
-            <thead><tr><th>Zeitpunkt</th><th>Art</th><th className="rechts">Größe</th><th>Inhalt</th><th>Prüfsumme</th><th><span className="sr">Aktionen</span></th></tr></thead>
+            <thead><tr><th>Zeitpunkt</th><th>Art</th><th className="rechts">Größe</th><th>Inhalt</th><th>Prüfsumme</th><th>Probe</th><th><span className="sr">Aktionen</span></th></tr></thead>
             <tbody>{s.liste.map((x) => (
               <tr key={x.name}>
                 <td className="kurz" title={x.name}>{x.meta ? zeit(x.meta.beginn) : x.name}</td>
@@ -134,6 +150,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
                 <td className="rechts kurz">{bytes(x.bytes)}</td>
                 <td>{x.meta ? `${x.meta.anzahl.mappen.toLocaleString('de-DE')} Mappen, ${x.meta.anzahl.dateien.toLocaleString('de-DE')} Dateien` : '–'}{x.meta && <span className="leise klein"> · DMS {x.meta.umgebung.dms}</span>}</td>
                 <td>{x.pruefung ? <span className={`chip ${x.pruefung.ok ? 'gut' : 'schlecht'}`} title={`geprüft ${zeit(x.pruefung.am)}`}>{x.pruefung.ok ? 'unverändert' : 'weicht ab'}</span> : <span className="leise">–</span>}</td>
+                <td>{x.probe ? <span className={`chip ${x.probe.ok ? 'gut' : 'schlecht'}`} title={`${zeit(x.probe.am)}: ${x.probe.info}`}>{x.probe.ok ? 'in Ordnung' : 'Fehler'}</span> : <span className="leise">–</span>}</td>
                 <td className="kurz">
                   <button type="button" className="textknopf" disabled={laeuft || !x.meta} onClick={() => void tu(() => api.sicherungPruefen(x.name))}>Prüfen</button>{' · '}
                   <button type="button" className="textknopf" disabled={laeuft} onClick={() => { if (confirm(`Sicherung vom ${x.meta ? zeit(x.meta.beginn) : x.name} endgültig löschen?`)) void tu(() => api.sicherungLoeschen(x.name), 'Sicherung gelöscht.'); }}>Löschen</button>
@@ -144,6 +161,8 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
         )}
         <p className="leise klein">„Prüfen“ rechnet die Prüfsumme der Datei nach und vergleicht sie mit der in den Metadaten: So siehst du, ob die Datei seit dem Anlegen unverändert ist.</p>
       </section>
+
+      {s.zustand.probe && <Probe stand={s.zustand.probe} lauf={s.probe ?? null} sicherungen={s.liste.some((x) => x.meta)} gesperrt={laeuft} neuLaden={() => void z.laden()} />}
 
       <Zeitplan key={JSON.stringify(s.plan)} plan={s.plan} notfallblatt={s.zustand.notfallblatt.aktuell} gespeichert={() => void z.laden()} />
 
@@ -224,6 +243,42 @@ export function Notfallblatt({ stand, schluessel, geladen }: { stand: Sicherungs
         {schluessel
           ? <a className="knopf primaer" href={NOTFALLBLATT_URL} download onClick={() => { setTimeout(geladen, 1500); setTimeout(meldeSicherung, 1500); }}>Notfallblatt herunterladen (PDF)</a>
           : <span className="leise">Erst möglich, wenn es einen Schlüssel gibt.</span>}
+      </div>
+    </section>
+  );
+}
+
+const AMPEL = { gruen: ['gut', 'in Ordnung'], gelb: ['warn', 'zu alt oder noch nie'], rot: ['schlecht', 'fehlgeschlagen'] } as const;
+
+/** Probe-Wiederherstellung (#109): Ampel, letzte Probe, Zeitplan, jetzt prüfen. */
+function Probe({ stand, lauf, sicherungen, gesperrt, neuLaden }: { stand: ProbeStand; lauf: WhLauf | null; sicherungen: boolean; gesperrt: boolean; neuLaden(): void }) {
+  const [plan, setPlan] = useState(stand.plan);
+  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const geaendert = JSON.stringify(plan) !== JSON.stringify(stand.plan);
+  const laeuft = lauf?.art === 'probe' && lauf.status === 'laeuft';
+  async function tu(f: () => Promise<unknown>, gut?: string) {
+    setMeldung(undefined);
+    try { await f(); neuLaden(); if (gut) setMeldung({ art: 'gut', text: gut }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+  }
+  return (
+    <section className="blatt" id="probe">
+      <h2 className="h3">Probe-Wiederherstellung</h2>
+      <p>Spielt die neueste Sicherung in einen eigenen, vorübergehenden Bereich der Datenbank ein und prüft sie: Prüfsumme, Entschlüsselung, Prüfwort, Anzahl Mappen, Dokumente und Benutzer, Prüfwerte von bis zu 20 Dateien. Das laufende DMS bleibt unberührt; der Bereich wird danach entfernt.</p>
+      <dl className="eigenschaften">
+        <dt>Ampel</dt><dd>{stand.ampel ? <span className={`chip ${AMPEL[stand.ampel][0]}`}>{AMPEL[stand.ampel][1]}</span> : <span className="leise">noch keine Sicherung</span>}</dd>
+        {stand.letzte && <><dt>Letzte Probe</dt><dd>{zeit(stand.letzte.am)} · {stand.letzte.name}{!stand.letzte.ok && <div className="fehlertext klein">{stand.letzte.info}</div>}</dd></>}
+      </dl>
+      {lauf?.art === 'probe' && (laeuft || lauf.status === 'fehler') && <Schritte schritte={lauf.schritte} />}
+      <div className="raster">
+        <label className="haken"><input type="checkbox" checked={plan.aktiv} onChange={(e) => setPlan({ ...plan, aktiv: e.target.checked })} /><span>Wöchentlich automatisch</span></label>
+        <label className="eigenschaft"><span>Wochentag</span>
+          <select value={plan.wochentag} onChange={(e) => setPlan({ ...plan, wochentag: Number(e.target.value) })}>{TAGE.slice(1).map((t, i) => <option key={t} value={i + 1}>{t}</option>)}</select></label>
+        <label className="eigenschaft"><span>Uhrzeit</span><input type="time" value={plan.uhrzeit} onChange={(e) => setPlan({ ...plan, uhrzeit: e.target.value })} /></label>
+      </div>
+      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
+      <div className="knoepfe">
+        <button className="knopf" disabled={!geaendert} onClick={() => void tu(() => api.probePlan(plan), 'Gespeichert.')}>Zeitplan speichern</button>
+        <button className="knopf primaer" disabled={!sicherungen || laeuft || gesperrt} onClick={() => void tu(() => api.probeStarten())}>{laeuft ? 'Probe läuft …' : 'Jetzt probeweise wiederherstellen'}</button>
       </div>
     </section>
   );

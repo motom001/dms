@@ -70,7 +70,14 @@ export interface Lauf {
   ergebnis?: unknown;
 }
 
-export interface Eintragsliste { name: string; meta: Metadaten | null; bytes: number; pruefung?: { am: string; ok: boolean } }
+export interface Probeergebnis { am: string; ok: boolean; info: string }
+export interface Eintragsliste { name: string; meta: Metadaten | null; bytes: number; pruefung?: { am: string; ok: boolean }; probe?: Probeergebnis }
+
+/** Zeitplan der Probe-Wiederherstellung (#109), Standard sonntags 04:00. */
+export interface ProbePlan { aktiv: boolean; wochentag: number; uhrzeit: string }
+export const PROBE_STANDARD: ProbePlan = { aktiv: true, wochentag: 7, uhrzeit: '04:00' };
+/** Ab hier ist die letzte erfolgreiche Probe zu alt (gelb). */
+export const PROBE_TAGE = 8;
 
 export interface Fehlerstand { am: string; art: Sicherungsart; grund: string }
 
@@ -176,6 +183,8 @@ export class Sicherung {
   private lauf: Lauf | null = null;
   private zeitgeber?: NodeJS.Timeout;
   private jetzt: () => Date;
+  /** Läuft gerade eine Wiederherstellung (#107)? Dann keine Sicherung (außer der davor). */
+  sperre: () => boolean = () => false;
 
   constructor(
     /** Ordner der Sicherungen (eigenes Volume). */
@@ -189,12 +198,14 @@ export class Sicherung {
   }
 
   get dateiOrdner() { return join(this.dateiWurzel, this.haushaltId); }
+  get einstellungen() { return this.q.einstellungen; }
   aktuellerLauf(): Lauf | null { return this.lauf ? { ...this.lauf } : null; }
   laeuft() { return this.lauf?.status === 'laeuft'; }
 
   /** Ein einziger Lauf zur Zeit (Sicherung, Prüfung, später Wiederherstellung). */
   belege(art: Lauf['art'], titel: string): Lauf {
     if (this.laeuft()) throw new Fachfehler(409, `Es läuft bereits: ${this.lauf!.titel}. Bitte warten, bis das fertig ist.`);
+    if (titel !== 'Sicherung vor der Wiederherstellung' && this.sperre()) throw new Fachfehler(409, 'Gerade läuft eine Wiederherstellung oder Probe. Bitte warten, bis sie fertig ist.');
     this.lauf = { art, titel, status: 'laeuft', schritt: 'Vorbereiten', bytes: 0, gesamt: 0, gestartet: this.jetzt().toISOString() };
     return this.lauf;
   }
@@ -218,6 +229,29 @@ export class Sicherung {
     return neu;
   }
 
+  async probePlan(): Promise<ProbePlan> {
+    const g = (await this.q.einstellungen.lies('sicherung_probe_plan')) as Partial<ProbePlan> | null;
+    return { ...PROBE_STANDARD, ...(g ?? {}) };
+  }
+
+  async speichereProbePlan(e: unknown, von: string): Promise<ProbePlan> {
+    const x = (e ?? {}) as Record<string, unknown>;
+    const alt = await this.probePlan();
+    const uhrzeit = x.uhrzeit === undefined ? alt.uhrzeit : String(x.uhrzeit);
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(uhrzeit)) throw new Fachfehler(422, 'Die Uhrzeit bitte als HH:MM angeben, z. B. 04:00.');
+    const wochentag = x.wochentag === undefined ? alt.wochentag : Number(x.wochentag);
+    if (!Number.isInteger(wochentag) || wochentag < 1 || wochentag > 7) throw new Fachfehler(422, 'Wochentag: 1 (Montag) bis 7 (Sonntag).');
+    const neu: ProbePlan = { aktiv: x.aktiv === undefined ? alt.aktiv : x.aktiv === true, wochentag, uhrzeit };
+    await this.q.einstellungen.schreibe('sicherung_probe_plan', neu);
+    log.info('Zeitplan der Probe-Wiederherstellung geändert', { von, ...neu });
+    return neu;
+  }
+
+  /** Ist mindestens der eingestellte Mindest-Speicherplatz frei? */
+  async genugPlatz(): Promise<boolean> {
+    try { const f = await statfs(this.ordner); return f.bavail * f.bsize >= (await this.plan()).mindestFreiGB * 1024 ** 3; } catch { return true; }
+  }
+
   /** Wurde das Notfallblatt zum aktuellen Schlüssel heruntergeladen (#106)? */
   async notfallblatt(): Promise<{ am: string | null; von: string | null; fingerabdruck: string | null; aktuell: boolean }> {
     const n = (await this.q.einstellungen.lies('notfallblatt')) as { am: string; von: string; fingerabdruck: string } | null;
@@ -238,6 +272,7 @@ export class Sicherung {
       throw e;
     }
     const pruefungen = ((await this.q.einstellungen.lies('sicherung_pruefungen')) as Record<string, { am: string; ok: boolean }> | null) ?? {};
+    const proben = ((await this.q.einstellungen.lies('sicherung_proben')) as Record<string, Probeergebnis> | null) ?? {};
     const erg: Eintragsliste[] = [];
     for (const n of namen.filter((x) => x.endsWith(ENDUNG) && !x.startsWith('.'))) {
       const name = n.slice(0, -ENDUNG.length);
@@ -245,7 +280,7 @@ export class Sicherung {
       if (!s) continue;
       let meta: Metadaten | null = null;
       try { meta = JSON.parse(await readFile(join(this.ordner, `${name}.json`), 'utf8')) as Metadaten; } catch { /* fehlt oder unlesbar */ }
-      erg.push({ name, meta, bytes: s.size, ...(pruefungen[name] ? { pruefung: pruefungen[name] } : {}) });
+      erg.push({ name, meta, bytes: s.size, ...(pruefungen[name] ? { pruefung: pruefungen[name] } : {}), ...(proben[name] ? { probe: proben[name] } : {}) });
     }
     return erg.sort((a, b) => (b.meta?.beginn ?? b.name).localeCompare(a.meta?.beginn ?? a.name));
   }
@@ -458,7 +493,17 @@ export class Sicherung {
       notfallblatt: await this.notfallblatt(),
       schluessel: this.q.tresor.bereit,
       ort: this.ort(),
+      probe: await this.probeAmpel(letzte !== null),
     };
+  }
+
+  /** Ampel der Probe-Wiederherstellung (#109): grün ≤ 8 Tage erfolgreich, gelb älter oder nie, rot fehlgeschlagen. */
+  async probeAmpel(gibtSicherungen: boolean): Promise<{ ampel: 'gruen' | 'gelb' | 'rot' | null; letzte: (Probeergebnis & { name: string }) | null; plan: ProbePlan }> {
+    const letzte = (await this.q.einstellungen.lies('sicherung_probe_letzte')) as (Probeergebnis & { name: string }) | null;
+    const plan = await this.probePlan();
+    if (!gibtSicherungen && !letzte) return { ampel: null, letzte: null, plan };
+    const ampel = !letzte ? 'gelb' : !letzte.ok ? 'rot' : this.jetzt().getTime() - Date.parse(letzte.am) > PROBE_TAGE * TAG_MS ? 'gelb' : 'gruen';
+    return { ampel, letzte, plan };
   }
 
   /** Einmal je Vorfall eine Mail an alle Administratoren (#105). */
