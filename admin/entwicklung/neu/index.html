@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-033" class="md-skip">
+        <a href="#neu-in-version-034" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0330" class="md-nav__link">
+  <a href="#0340" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.33.0
+        0.34.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.33.0">
+    <nav class="md-nav" aria-label="0.34.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1500,15 +1500,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0330" class="md-nav__link">
+  <a href="#0340" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.33.0
+        0.34.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.33.0">
+    <nav class="md-nav" aria-label="0.34.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1569,29 +1569,31 @@
   
 
 
-<h1 id="neu-in-version-033">Neu in Version 0.33<a class="headerlink" href="#neu-in-version-033" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-034">Neu in Version 0.34<a class="headerlink" href="#neu-in-version-034" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0330">0.33.0<a class="headerlink" href="#0330" title="Permanent link">&para;</a></h2>
+<h2 id="0340">0.34.0<a class="headerlink" href="#0340" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Mappentyp-Editor aufgeräumt</strong> (#144):</li>
-<li>Neue Reihenfolge, so wie man einen Mappentyp anlegt: Grunddaten → Felder → Titel → Trefferlisten → Register → Berechtigungen → Testlauf.</li>
-<li>Jeder Bereich lässt sich <strong>einklappen</strong> und zeigt dann das Wichtigste in einer Zeile, z. B. „8 Felder, 2 Pflicht, 1 mit Erinnerung“, die Titel-Vorlage mit Beispiel oder „Standard: R · 3 Regeln“.</li>
-<li>Ein neuer Mappentyp ist ganz aufgeklappt, ein bestehender startet eingeklappt; was du auf- und zuklappst, merkt sich dein Gerät.</li>
-<li>Eine <strong>Sprungleiste</strong> oben führt zu jedem Bereich. Bereiche mit Fehler sind dort rot markiert und klappen beim Speichern von selbst auf.</li>
-<li><strong>„Verwendet in“</strong> (#147): Bei den Grunddaten steht, welche Sichten den Mappentyp zeigen und welche Felder und Verknüpfungsregister anderer Typen ihn nutzen – mit Links.</li>
-<li><strong>Mappentyp kopieren</strong> (#147): legt einen neuen Entwurf mit denselben Feldern, Titel, Trefferlisten, Registern und Berechtigungen an. Gespeichert wird erst mit „Mappentyp speichern“; Mappen werden nicht kopiert.</li>
+<li><strong>Berechtigungen an Sichten</strong> (#148):</li>
+<li>An jeder Sicht legst du fest, wer sie sieht (<strong>R</strong>) und wer dort „+ Neu“ bekommt (<strong>C</strong>) – mit Standard und Regeln „wenn Benutzer hat Rolle / ist Benutzer … dann ✓/✗“, wie am Mappentyp.</li>
+<li><strong>Vererbung</strong>: Untersichten erben die Regeln ihrer Elternsichten (schreibgeschützt angezeigt) und können mit eigenen Regeln nur weiter einschränken. So verschwindet z. B. der ganze Ast <em>Haus</em> für die Kinder.</li>
+<li>Ist eine Untersicht verborgen, fehlen ihre Mappen auch in der Elternsicht; die Zahlen im Baum passen dazu.</li>
+<li>Beim Verschieben im Baum sagt das DMS, von wem die Sicht jetzt erbt.</li>
+<li><strong>Testlauf</strong> direkt an der Sicht, auch mit ungespeicherten Regeln.</li>
+<li>Ob eine Mappe lesbar ist, regelt weiter allein der Mappentyp. Für Administratoren gelten die Regeln nicht.</li>
+<li><strong>Sicht-Editor einklappbar</strong> wie der Mappentyp-Editor: Bereiche mit Kurzinfos, Sprungleiste, das Gerät merkt sich den Zustand.</li>
 </ul>
 <h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Prüfmeldungen zu Mappentypen nennen über die Schnittstelle zusätzlich den Bereich (<code>orte</code>), zu dem sie gehören.</li>
+<li>Neue Spalte <code>sichten.berechtigungen</code> (Migration 029). Ohne Regeln ändert sich nichts.</li>
+<li>Schnittstelle: <code>GET /sichten/definitionen</code> liefert Benutzern nur die sichtbaren Sichten, mit <code>rechte</code> (R, C) und ohne die Regeln. Ändern über die Schnittstelle lässt vorhandene Regeln stehen, wenn <code>berechtigungen</code> fehlt.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.32.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.32.0...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.33.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.33.0...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>

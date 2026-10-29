@@ -776,6 +776,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#berechtigungen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Berechtigungen
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Berechtigungen">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vererbung-an-untersichten" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vererbung an Untersichten
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testlauf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testlauf
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#beispiel-haus-nur-fur-die-eltern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Beispiel: „Haus“ nur für die Eltern
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#sichten-und-mappentypen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1740,6 +1790,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#berechtigungen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Berechtigungen
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Berechtigungen">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vererbung-an-untersichten" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vererbung an Untersichten
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testlauf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testlauf
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#beispiel-haus-nur-fur-die-eltern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Beispiel: „Haus“ nur für die Eltern
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#sichten-und-mappentypen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1785,6 +1885,7 @@
 <p>Eine <strong>Sicht</strong> legt fest, was die Ablage links anbietet: welche Mappen eine Liste zeigt und wie die Sichten zu einem Baum geordnet sind. Eine Sicht ist eine gespeicherte Abfrage – die Benutzer sehen nur das Ergebnis.</p>
 <p>Sichten pflegst du unter <strong>Werkbank → Sichten</strong>. Links steht der Baum, rechts die gewählte Sicht. Wie Benutzer mit Sichten arbeiten, beschreibt das <a href="https://motom001.github.io/dms/benutzer/ablage/">Benutzerhandbuch</a>.</p>
 <p><img alt="Eine Sicht mit Bedingung in der Werkbank" src="../bilder/werkbank-sichten.png" /></p>
+<p>Der Editor ist wie beim <a href="../mappentypen/#aufbau-des-editors">Mappentyp</a> in Bereiche gegliedert: <strong>Grunddaten → Mappentypen → Trefferliste → Bedingungen → Berechtigungen → Testlauf</strong>. Jeder Bereich lässt sich einklappen und zeigt dann eine Kurzinfo, z. B. die Elternsicht, die Mappentypen oder „erbt von „Haus“ · 1 eigene Regel“. Eine neue Sicht ist ganz aufgeklappt, eine bestehende startet eingeklappt; dein Gerät merkt sich, was du aufklappst. Die Sprungleiste oben führt zu jedem Bereich und markiert Bereiche mit Fehler.</p>
 <h2 id="grunddaten">Grunddaten<a class="headerlink" href="#grunddaten" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Name</strong> und <strong>Beschreibung</strong> – erscheinen in der Ablage links bzw. über der Liste.</li>
@@ -1913,6 +2014,50 @@
 </ul>
 <h3 id="wenn-sich-ein-mappentyp-andert">Wenn sich ein Mappentyp ändert<a class="headerlink" href="#wenn-sich-ein-mappentyp-andert" title="Permanent link">&para;</a></h3>
 <p>Entfernst du ein Feld oder Register, auf das eine Bedingung zielt, wird die Sicht nicht leer: Die Bedingung wird <strong>ignoriert</strong>, bis du sie korrigierst. In der Werkbank ist sie rot markiert, und die Liste der Sichten zeigt „Bedingung ohne Wirkung – bitte prüfen“.</p>
+<h2 id="berechtigungen">Berechtigungen<a class="headerlink" href="#berechtigungen" title="Permanent link">&para;</a></h2>
+<p>Mit Berechtigungen legst du fest, <strong>wer eine Sicht sieht</strong> und <strong>wer dort neue Mappen anlegen</strong> kann – etwa damit die Sicht <em>Haus</em> mit allem darunter nur bei den Eltern im Baum erscheint.</p>
+<table>
+<thead>
+<tr>
+<th>Recht</th>
+<th>Bedeutung</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>R</strong> Sehen</td>
+<td>Die Sicht erscheint im Baum der Ablage und lässt sich öffnen.</td>
+</tr>
+<tr>
+<td><strong>C</strong> Anlegen</td>
+<td>In der Sicht gibt es „+ Neu“. Anlegen dürfen muss man zusätzlich am <a href="../berechtigungen/">Mappentyp</a> – beide müssen es erlauben.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition info">
+<p class="admonition-title">Sichtregeln regeln die Sicht, nicht die Mappen</p>
+<p>Ob jemand eine <strong>Mappe</strong> lesen darf, entscheiden allein die <a href="../berechtigungen/">Berechtigungen am Mappentyp</a>. Eine Mappe aus einer verborgenen Sicht kann also über die Suche, eine andere Sicht oder einen Link weiter auftauchen. Wer Mappen verbergen will, regelt das am Mappentyp. Für Administratoren gelten die Regeln an Sichten nicht.</p>
+</div>
+<ul>
+<li><strong>Standard</strong> – an einer Sicht auf oberster Ebene eine Zeile mit ✓/✗ je Recht; ohne Regeln dürfen alle alles.</li>
+<li><strong>Regeln</strong> – wie am Mappentyp: <em>wenn</em> der Benutzer eine Rolle hat oder ein bestimmter Benutzer ist (jeweils auch mit <em>nicht</em>), <em>dann</em> ✓ erteilen oder ✗ entziehen; von oben nach unten, mit <strong>Stopp</strong>. Bedingungen auf Felder gibt es an Sichten nicht. Regeln lassen sich zuklappen und per Griff ⠿ sortieren.</li>
+</ul>
+<h3 id="vererbung-an-untersichten">Vererbung an Untersichten<a class="headerlink" href="#vererbung-an-untersichten" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Eine Untersicht <strong>erbt</strong> die Regeln ihrer Elternsicht und deren Eltern. Sie stehen oben unter <strong>Geerbt</strong>, schreibgeschützt und mit dem Namen der Sicht, von der sie kommen; ändern lassen sie sich nur dort.</li>
+<li><strong>Eigene Regeln</strong> einer Untersicht können nur weiter <strong>einschränken</strong> (✗). Ein Recht gilt an der Untersicht nur, wenn es an der Elternsicht gilt <strong>und</strong> keine eigene Regel es entzieht. Einen eigenen Standard hat eine Untersicht nicht.</li>
+<li><strong>Ist eine Untersicht für jemanden verborgen, fehlen ihre Mappen auch in der Elternsicht</strong>, und die Zahlen im Baum passen dazu.</li>
+<li><strong>Verschieben</strong> (Ziehen im Baum oder <em>Liegt unter</em> ändern): Sofort gelten die Regeln der neuen Eltern. Das DMS sagt beim Ablegen, von wem die Sicht jetzt erbt. Wandert sie auf die oberste Ebene, entfallen die geerbten Regeln, und ihr eigener Standard gilt wieder.</li>
+</ul>
+<h3 id="testlauf">Testlauf<a class="headerlink" href="#testlauf" title="Permanent link">&para;</a></h3>
+<p>Unter den Berechtigungen prüfst du, was ein Benutzer an der Sicht darf – mit den Regeln, wie sie gerade im Editor stehen, auch ungespeichert und mit einer geänderten Elternsicht. Die Tabelle zeigt je Sicht der Kette, welche Regel zutraf und wie der Stand danach war.</p>
+<h3 id="beispiel-haus-nur-fur-die-eltern">Beispiel: „Haus“ nur für die Eltern<a class="headerlink" href="#beispiel-haus-nur-fur-die-eltern" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Lege eine Rolle <strong>Kinder</strong> an und gib sie den Kindern.</li>
+<li>Sicht <em>Haus</em> (oberste Ebene): Regel <strong>Kinder sehen das nicht</strong> – wenn <em>Benutzer hat Rolle Kinder</em> → ✗ R C.</li>
+<li><em>Heizung</em>, <em>Garten</em> usw. unter <em>Haus</em> erben die Regel – für die Kinder fehlt der ganze Ast.</li>
+<li>Sollen die Kinder etwa <em>Garten</em> doch sehen, lege <em>Garten</em> auf die oberste Ebene oder unter eine andere Sicht: Untersichten können nur einschränken.</li>
+</ol>
 <h2 id="sichten-und-mappentypen">Sichten und Mappentypen<a class="headerlink" href="#sichten-und-mappentypen" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Ein <strong>neuer Mappentyp</strong> bekommt eine eigene Sicht – außer du wählst beim Anlegen <strong>Eigene Sicht in der Ablage anlegen</strong> ab. Sie steht oben auf der ersten Ebene, vor <em>Benutzer</em> und <em>Rolle</em>.</li>

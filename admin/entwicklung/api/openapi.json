@@ -4205,6 +4205,19 @@
             "type": "string",
             "nullable": true,
             "description": "Schlüssel der Trefferliste; null = Standard"
+          },
+          "rechte": {
+            "type": "object",
+            "readOnly": true,
+            "properties": {
+              "R": {
+                "type": "boolean"
+              },
+              "C": {
+                "type": "boolean"
+              }
+            },
+            "description": "Nur für Benutzer (#148): wirksame Rechte an der Sicht. Verborgene Sichten fehlen in der Liste."
           }
         }
       },
