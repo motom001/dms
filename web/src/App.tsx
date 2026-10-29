@@ -12,6 +12,7 @@ import { logoUrl, Marke, schriftzugVon } from './Marke';
 import { ApiDoku } from './profil/ApiDoku';
 import { Profil } from './profil/Profil';
 import { Werkbank } from './werkbank/Werkbank';
+import { WartungsBanner } from './wartung';
 
 export function App() {
   const { pfad, suche } = useOrt();
@@ -54,6 +55,7 @@ export function App() {
         </div>
       )}
       {!vertretung && hinweise.length > 0 && <Hinweise />}
+      <WartungsBanner admin={admin} abgemeldet={() => void aktualisieren()} />
       <header className="kopf">
         <Link to="/ablage/eingang" className="marke" title="Zur Startseite">
           <Marke logo={logoUrl(d.meinDesign)} schriftzug={schriftzugVon(d.meinDesign)} /><span className="sr-only">{schriftzugVon(d.meinDesign) ? '' : schriftzugVon(null)} – Startseite</span>

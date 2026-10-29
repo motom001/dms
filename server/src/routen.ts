@@ -16,6 +16,9 @@ import { MODULE, protokoll, STUFEN, type Stufe } from './protokoll';
 import type { Betrieb } from './betrieb';
 import { maskiere, type Tresor } from './tresor';
 import type { Texterkennung } from './texterkennung';
+import type { Wartung } from './wartung';
+import type { Notfallzugang } from './notfall';
+import { WartungFehler } from './wartung';
 import { MAIL_STANDARD, pruefeZeit, STANDARD_TAGE, wirksameZeit, type Aufgabenmail, type MailZeit } from './aufgabenmail';
 
 const L = {
@@ -96,6 +99,10 @@ export interface RoutenExtras {
   fehlermeldungen?: Fehlermeldungen;
   /** API-Schlüssel (#20). */
   apiSchluessel?: ApiSchluesselDienst;
+  /** Wartungsmodus (#102). */
+  wartung?: Wartung;
+  /** Notfallzugang über eine RESCUE-Datei (#108). */
+  notfall?: Notfallzugang;
   /** Für Tests: Abruf fremder Adressen beim Versionsabgleich. */
   abruf?: (url: string) => Promise<unknown>;
   log?: (m: string) => void;
@@ -137,8 +144,18 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   };
   /** Benutzer mit ihren weiteren Rollen (#27). */
   const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.weitereRollen()).get(b.id) ?? [] });
+  const wartung = () => { if (!x.wartung) throw new Fachfehler(404, 'Der Wartungsmodus ist nicht eingerichtet.'); return x.wartung; };
+  /** Ab der Ankündigung kommen nur Administratoren hinein (#102): eine neue Sitzung gleich wieder beenden. */
+  const nurAdminsInWartung = async (r: { benutzer: Benutzer; schluessel: string }) => {
+    if (!x.wartung?.sperrtAnmeldung(r.benutzer)) return;
+    await konten.abmelden(r.schluessel);
+    L.konto.info('Anmeldung im Wartungsmodus abgewiesen', { email: r.benutzer.email });
+    throw new WartungFehler(x.wartung.meldung(), x.wartung.retryAfter());
+  };
   const intern: Route[] = [
     { methode: 'GET', pfad: '/api/gesundheit', zugang: 'offen', handler: async () => ok({ ok: true }) },
+    // Wartungsmodus (#102): für Banner und Anmeldeseite, auch ohne Anmeldung.
+    { methode: 'GET', pfad: '/api/wartung', zugang: 'offen', handler: async () => ok(x.wartung?.oeffentlich() ?? { stufe: 'aus', text: '', ende: null, aktivAb: null, sekunden: null }) },
 
     /* ---------- Konto ---------- */
     { methode: 'GET', pfad: '/api/konto/status', zugang: 'offen', handler: async (a) => ok({
@@ -149,6 +166,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       passwoerterMoeglich: dienst.passwoerterMoeglich,
       // Logo und Schriftzug des Standard-Designs für die Anmeldeseite (#72).
       marke: x.designs ? await x.designs.marke() : null,
+      // Wartungsmodus (#102): Hinweis auf der Anmeldeseite.
+      wartung: x.wartung?.oeffentlich() ?? null,
       // Ein Administrator agiert gerade als dieser Benutzer:
       vertretung: await konten.vertretungZu(a.sitzungsDaten),
       // Hinweise für den Benutzer selbst (nicht, solange jemand als er agiert):
@@ -174,6 +193,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
         L.konto.warn('Anmeldung fehlgeschlagen', { email: String(b(a).email ?? ''), ip: a.ip, grund: (e as Error).message });
         throw e;
       }
+      await nurAdminsInWartung(r);
       L.konto.info('Angemeldet', { email: r.benutzer.email, ip: a.ip, geraet: a.geraet });
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
@@ -195,6 +215,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/konto/passwort-setzen', zugang: 'offen', handler: async (a) => {
       const r = await konten.passwortSetzen(b(a), info(a));
       L.konto.info('Passwort über Link gesetzt', { email: r.benutzer.email });
+      await nurAdminsInWartung(r);
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
 
@@ -420,6 +441,14 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/werkbank/wartung/volltext', zugang: 'admin', handler: async () => ok({ eingereiht: await dienst.volltextNachholen() }) },
 
     /* ---------- Verschlüsselung (#39) ---------- */
+    /* ---------- Wartungsmodus (#102) ---------- */
+    { methode: 'GET', pfad: '/api/werkbank/wartung', zugang: 'admin', handler: async (a) => ok({
+      ...wartung().stand, ...wartung().oeffentlich(), sitzungen: await konten.alleSitzungen(a.sitzungsDaten?.id),
+    }) },
+    { methode: 'POST', pfad: '/api/werkbank/wartung/ein', zugang: 'admin', handler: async (a) => ok(await wartung().einschalten(b(a), ich(a), a.sitzungsDaten?.id ?? null)) },
+    { methode: 'POST', pfad: '/api/werkbank/wartung/jetzt', zugang: 'admin', handler: async (a) => ok(await wartung().jetztAktiv(ich(a), a.sitzungsDaten?.id ?? null)) },
+    { methode: 'POST', pfad: '/api/werkbank/wartung/aus', zugang: 'admin', handler: async (a) => ok(await wartung().ausschalten(ich(a).email)) },
+
     { methode: 'GET', pfad: '/api/werkbank/tresor', zugang: 'admin', handler: async () => ok(await tresor().status()) },
     { methode: 'POST', pfad: '/api/werkbank/tresor/erzeugen', zugang: 'admin', handler: async () => ok(await tresor().erzeuge()) },
     { methode: 'GET', pfad: '/api/werkbank/betrieb', zugang: 'admin', handler: async () => ok(betrieb().ansicht()) },
@@ -472,6 +501,9 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
         version: sys.dms,
         bestand: 'fehler' in sys.datenbank ? null : sys.datenbank,
         fehlermeldungen: x.fehlermeldungen ? await sicher(() => x.fehlermeldungen!.offen()) : null,
+        // Notfallzugänge (#108), bis sie umbenannt oder deaktiviert sind.
+        notfallzugaenge: x.notfall ? await sicher(() => x.notfall!.offen()) ?? [] : [],
+        wartung: x.wartung?.oeffentlich() ?? null,
       });
     } },
     { methode: 'GET', pfad: '/api/werkbank/system', zugang: 'admin', handler: async () => ok(await uebersicht(system, x.betrieb?.kurz())) },

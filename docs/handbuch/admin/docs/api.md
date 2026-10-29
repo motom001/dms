@@ -55,6 +55,7 @@ Gelöschte Mappen liegen im [Papierkorb](papierkorb.md): `GET /api/v1/papierkorb
 
 - Schlüssel gelten nur unter `/api/v1`, nicht an den internen Adressen der Oberfläche.
 - Es gelten dieselben Prüfungen wie in der Oberfläche: Pflichtfelder, eindeutige Werte, geschützte Felder der Benutzer-Mappen, „Neue Mappen erlauben“ und „Löschen erlauben“.
+- Im aktiven [Wartungsmodus](wartungsmodus.md) antwortet die Schnittstelle mit `503` und `Retry-After` (Sekunden bis zum erwarteten Ende).
 - Fehler kommen als JSON mit einer deutschen Meldung in `fehler`; bei ungültigen Eingaben (422) steht in `details` das Prüfergebnis je Feld.
 - Passwortfelder setzt man mit einem Text oder `{"neu": "…"}`, entfernt sie mit `null` und lässt sie unverändert, indem man sie weglässt.
 - Feldschlüssel ändern sich nie (siehe [Mappentypen](mappentypen.md#der-schlussel)) – Skripte, die mit ihnen arbeiten, bleiben gültig, auch wenn Bezeichnungen umbenannt werden.

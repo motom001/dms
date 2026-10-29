@@ -170,6 +170,8 @@ export class Texterkennung {
   private laeufe = new Map<string, AbortController>();
   private werkzeuge?: Promise<Werkzeuge>;
   private aus = false;
+  /** Im aktiven Wartungsmodus (#102) keine neuen Aufträge; danach anstossen(). */
+  pause: () => boolean = () => false;
 
   constructor(
     private repo: Repo,
@@ -218,7 +220,7 @@ export class Texterkennung {
 
   private async pumpe() {
     const o = await this.optionen();
-    if (!o.aktiv) return;
+    if (!o.aktiv || this.pause()) return;
     while (!this.aus && this.laufend < o.auftraege) {
       // Platz vor dem Warten reservieren, sonst nehmen sich zwei Durchläufe zu viele Aufträge.
       this.laufend++;

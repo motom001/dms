@@ -30,6 +30,9 @@
 ??? question "Die Schrift ist zu klein."
     Menü unter deinem Namen → **Einstellungen** → **Schriftgröße auf diesem Gerät** → *groß*.
 
+??? question "Ich sehe einen Hinweis „Wartung“."
+    Ein Administrator wartet das DMS, z. B. für ein Update. Speichere deine Arbeit, bevor der Countdown abläuft – dann wirst du abgemeldet. Anmelden kannst du dich wieder, sobald die Wartung vorbei ist; die Anmeldeseite sagt, wie lange es voraussichtlich dauert.
+
 ??? question "Ich habe mein Passwort vergessen."
     **Passwort vergessen?** unter der Anmeldung. Verschickt das DMS keine E-Mails, erzeugt dir ein Administrator einen Link.
 

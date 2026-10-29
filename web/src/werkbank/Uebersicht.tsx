@@ -16,6 +16,9 @@ export interface Hinweis { art: 'schlecht' | 'warn' | 'info'; text: ReactNode; z
 export function hinweiseAus(u: WerkbankUebersicht): Hinweis[] {
   const h: Hinweis[] = [];
   const t = u.tresor;
+  // Notfallzugang (#108): bis er umbenannt oder deaktiviert ist.
+  for (const n of u.notfallzugaenge ?? []) h.push({ art: 'schlecht', text: <><strong>Notfallzugang „{n.name}“ ist aktiv.</strong> Er entstand über eine RESCUE-Datei am {datum(n.erstellt)}. Gib ihm einen richtigen Namen oder deaktiviere ihn – warst du das nicht, sofort deaktivieren.</>, ziel: `/werkbank/benutzer/${n.id}`, knopf: 'Zum Benutzer' });
+  if (u.wartung && u.wartung.stufe !== 'aus') h.push({ art: 'warn', text: <><strong>Der Wartungsmodus ist {u.wartung.stufe === 'aktiv' ? 'aktiv' : 'angekündigt'}.</strong> {u.wartung.stufe === 'aktiv' ? 'Nur Administratoren können arbeiten.' : 'Bald werden alle anderen abgemeldet.'}</>, ziel: '/werkbank/wartungsmodus', knopf: 'Zum Wartungsmodus' });
   if (t && t.zustand === 'fehlt') h.push({ art: 'warn', text: <><strong>Es gibt noch keinen Schlüssel für Passwörter.</strong> Bis dahin lassen sich keine Passwörter speichern (E-Mail-Versand, Passwortfelder).</>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
   else if (t && t.zustand === 'verloren') h.push({ art: 'schlecht', text: <><strong>Der Schlüssel für Passwörter fehlt.</strong> Gespeicherte Passwörter sind nicht lesbar.</>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
   else if (t && t.zustand === 'falsch') h.push({ art: 'schlecht', text: <><strong>Die Schlüsseldatei passt nicht zu den gespeicherten Passwörtern.</strong></>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
