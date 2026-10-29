@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.23/wiederherstellen/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.24/wiederherstellen/">
       
       
         <link rel="prev" href="../sicherung/">
@@ -1568,15 +1568,15 @@
 <p>Du brauchst: die beiden Sicherungsdateien (<code>.dms-sicherung</code> und <code>.json</code>) und das <a href="../sicherung/#notfallblatt">Notfallblatt</a>.</p>
 <ol>
 <li>Auf dem neuen NAS den Ordner für das DMS anlegen, darin <code>postgres</code>, <code>files</code>, <code>geheim</code> und <code>sicherung</code> (siehe <a href="../installation/">Installation</a>).</li>
-<li>Die <a href="https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml">Compose-Vorlage</a> als Projekt anlegen, Pfade anpassen und eine <code>.env</code> mit einem neuen <code>DB_PASSWORD</code> ablegen. Weicht die <strong>Haushalt-Id</strong> auf dem Notfallblatt von <code>00000000-0000-4000-8000-000000000001</code> ab, trage sie als <code>HAUSHALT_ID</code> ein.</li>
+<li>Die <a href="https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml">Compose-Vorlage</a> als Projekt anlegen, Pfade anpassen und eine <code>.env</code> mit einem neuen <code>DB_PASSWORD</code> ablegen.</li>
 <li>Die beiden Sicherungsdateien in den Ordner <code>sicherung</code> kopieren.</li>
-<li>Das Projekt starten und das DMS im Browser öffnen. Auf dem Willkommensbildschirm <strong>Aus Sicherung wiederherstellen</strong> wählen – einen „Wegwerf-Admin“ brauchst du nicht.</li>
-<li>Die Sicherung auswählen. Der <strong>Abgleich</strong> zeigt, mit welcher Version sie entstand und was heute läuft (DMS, Datenbank-Stand, PostgreSQL, Architektur, Haushalt-Id).</li>
+<li>Das Projekt starten und das DMS im Browser öffnen. Der <a href="../installation/#der-einrichtungsassistent">Einrichtungsassistent</a> fragt nach dem <strong>Einrichtungscode</strong> und – falls nötig – nach der Datenbank. Dann <strong>Aus einer Sicherung wiederherstellen</strong> wählen; einen „Wegwerf-Admin“ brauchst du nicht.</li>
+<li>Die Sicherung auswählen. Der <strong>Abgleich</strong> zeigt, mit welcher Version sie entstand und was heute läuft (DMS, Datenbank-Stand, PostgreSQL, Architektur, Mandanten-Id). Gehört die Sicherung zu einem anderen Mandanten, übernimmt das DMS dessen Id.</li>
 <li>Den <strong>Schlüssel vom Notfallblatt</strong> eingeben (Leerzeichen zählen nicht) und <strong>Schlüssel prüfen</strong> – das DMS vergleicht ihn mit dem Fingerabdruck aus den Metadaten.</li>
 <li><strong>Wiederherstellen</strong>. Der Bildschirm zeigt jeden Schritt; du kannst die Seite neu laden. Am Ende startet das DMS neu.</li>
 <li><strong>Weiter zur Anmeldung</strong> und mit den bisherigen Zugangsdaten anmelden. Die Schlüsseldatei hat das DMS dabei selbst angelegt.</li>
 </ol>
-<p>Dieser Weg ist nur offen, solange es noch keinen Benutzer gibt – genau wie die Ersteinrichtung.</p>
+<p>Dieser Weg ist nur offen, solange es noch keinen Benutzer gibt, und nur mit dem Einrichtungscode – genau wie die Einrichtung.</p>
 <h2 id="auf-dem-laufenden-system">Auf dem laufenden System<a class="headerlink" href="#auf-dem-laufenden-system" title="Permanent link">&para;</a></h2>
 <p><img alt="Wiederherstellen in der Werkbank" src="../bilder/werkbank-wiederherstellen.png" /></p>
 <ol>

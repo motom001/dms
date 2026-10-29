@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.23/installation/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.24/installation/">
       
       
         <link rel="prev" href="../neu/">
@@ -459,6 +459,28 @@
     <span class="md-ellipsis">
       
         Schritt für Schritt
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#der-einrichtungsassistent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Der Einrichtungsassistent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#datenbank-anbindung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Datenbank-Anbindung
       
     </span>
   </a>
@@ -1512,6 +1534,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#der-einrichtungsassistent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Der Einrichtungsassistent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#datenbank-anbindung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Datenbank-Anbindung
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#e-mail-und-adresse" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1589,14 +1633,48 @@
 <li><strong>Projekt anlegen.</strong> Die Vorlage <a href="https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml"><code>deploy/nas/docker-compose.yml</code></a> als Compose-Projekt anlegen und die Pfade an den Docker-Ordner des NAS anpassen. Daneben eine Datei <code>.env</code>:
    <div class="highlight"><pre><span></span><code><span class="nv">DB_PASSWORD</span><span class="o">=</span>&lt;langes<span class="w"> </span>zufälliges<span class="w"> </span>Passwort&gt;
 </code></pre></div></li>
-<li><strong>Starten.</strong> Die Oberfläche läuft unter <code>http://&lt;NAS&gt;:8080</code>. Beim ersten Start legt der Server die Tabellen selbst an.</li>
-<li><strong>Erster Aufruf.</strong> Wer die Seite als Erstes öffnet, legt das Administrator-Konto an – ohne Einrichtungscode. Rufe sie deshalb direkt nach dem ersten Start selbst auf.</li>
+<li><strong>Starten.</strong> Die Oberfläche läuft unter <code>http://&lt;NAS&gt;:8080</code>.</li>
+<li><strong>Browser öffnen.</strong> Der Einrichtungsassistent führt durch den Rest – siehe unten.</li>
 </ol>
 <div class="admonition warning">
 <p class="admonition-title">Erst einrichten, dann freigeben</p>
-<p>Mach das DMS erst über einen Reverse-Proxy oder Port-Freigabe erreichbar, wenn der Administrator angelegt ist.</p>
+<p>Mach das DMS erst über einen Reverse-Proxy oder Port-Freigabe erreichbar, wenn die Einrichtung abgeschlossen ist. Der Einrichtungscode schützt zwar davor, dass ein Fremder sie übernimmt – sicherer ist es trotzdem.</p>
 </div>
-<p>Danach: unter <strong>Werkbank → <a href="../verschluesselung/">Verschlüsselung</a></strong> den Schlüssel erzeugen und das <strong>Notfallblatt</strong> herunterladen, unter <strong>Werkbank → <a href="../sicherung/">Sicherung</a></strong> den Zeitplan einschalten, unter <strong>Werkbank → E-Mail und Adresse</strong> die Adresse des DMS und, falls gewünscht, den E-Mail-Versand einrichten (siehe unten); unter <strong>Werkbank → Demo-Daten</strong> die Beispiel-Mappentypen laden oder eigene <a href="../mappentypen/">Mappentypen</a> anlegen und <a href="../benutzer/">Benutzer einladen</a>.</p>
+<h2 id="der-einrichtungsassistent">Der Einrichtungsassistent<a class="headerlink" href="#der-einrichtungsassistent" title="Permanent link">&para;</a></h2>
+<p>Beim ersten Aufruf führt ein Assistent in neun Schritten durch die Einrichtung. Übersprungenes lässt sich in der Werkbank nachholen; die Übersicht erinnert daran.</p>
+<p><img alt="Einrichtungscode" src="../bilder/einrichtung-code.png" /></p>
+<ol>
+<li>
+<p><strong>Einrichtungscode.</strong> Damit niemand sonst im Netz das DMS einrichtet, fragt es zuerst nach einem Code wie <code>K7PX-3MNA-Q9TR</code>. Er steht</p>
+<ul>
+<li>im <strong>Protokoll des Containers</strong> – in der Docker-Oberfläche des NAS den Container <code>app</code> des Projekts öffnen und das Protokoll ansehen (bei UGREEN <em>Docker → Container → dms-app → Protokoll</em>, bei Synology <em>Container Manager → Container → Details → Protokoll</em>) oder <code>docker compose logs app</code>;</li>
+<li>in der Datei <strong><code>EINRICHTUNGSCODE</code></strong> im Ordner <code>geheim</code> (in der Vorlage <code>/volume1/docker/dms/geheim</code>).</li>
+</ul>
+<p>Nach dem Anlegen des Administrators ist der Code wertlos; das DMS löscht die Datei. Nach zehn falschen Versuchen sperrt es die Eingabe für zehn Minuten.
+2. <strong>Datenbank.</strong> Server (in der Vorlage <code>db</code>), Port <code>5432</code>, Datenbank und Benutzer <code>dms</code> und das Passwort aus der <code>.env</code>. <strong>Verbindung prüfen</strong> meldet verständlich, was nicht stimmt – Server nicht erreichbar, Passwort falsch, Datenbank fehlt (mit Knopf zum Anlegen, wenn der Benutzer das darf). <strong>Übernehmen</strong> speichert die Anbindung und startet das DMS – ohne Neustart des Containers; die Tabellen legt es selbst an. Der Schritt entfällt, wenn eine Anbindung schon funktioniert (siehe <a href="#datenbank-anbindung">Datenbank-Anbindung</a>).
+   <img alt="Datenbank" src="../bilder/einrichtung-datenbank.png" />
+3. <strong>Neu einrichten oder aus einer Sicherung wiederherstellen.</strong> Wiederherstellen führt in den Ablauf unter <a href="../wiederherstellen/#neues-nas-alte-sicherung">Wiederherstellen</a> und endet bei der Anmeldung mit den bisherigen Zugangsdaten.
+4. <strong>Mandant.</strong> Der Name des DMS, meist der Name der Familie („Familie Mustermann“) oder der Firma. Er erscheint als Schriftzug in der Kopfzeile, im Browser-Tab und auf der Anmeldeseite (änderbar unter <strong>Werkbank → <a href="../designs/">Designs</a></strong>).
+5. <strong>Administrator</strong> mit Name, E-Mail-Adresse und Passwort. Danach bist du als Administrator angemeldet.
+   <img alt="Administrator" src="../bilder/einrichtung-administrator.png" />
+6. <strong>Erster Benutzer.</strong> Administratoren richten ein, arbeiten aber nicht in der Ablage. Lege deshalb einen normalen Benutzer an – zum Beispiel dich selbst mit einer zweiten Adresse. Ohne E-Mail-Versand zeigt der Assistent den Einladungslink zum Kopieren.
+7. <strong>Schlüssel und Notfallblatt.</strong> Der Schlüssel verschlüsselt gespeicherte Passwörter und alle Sicherungen (siehe <a href="../verschluesselung/">Verschlüsselung</a>); das <a href="../sicherung/#notfallblatt">Notfallblatt</a> enthält ihn zum Ausdrucken.
+   <img alt="Schlüssel und Notfallblatt" src="../bilder/einrichtung-schluessel.png" />
+8. <strong>Optionales:</strong> Adresse des DMS (vorbelegt mit der Adresse im Browser), Bundesland für Feiertage, Beispiel-Mappentypen und der E-Mail-Versand.
+9. <strong>Fertig</strong> – mit Links zu beiden Handbüchern, „Problem melden“ als vorbereitetes GitHub-Issue und dem Hinweis auf GitHub Sponsors.
+   <img alt="Fertig" src="../bilder/einrichtung-fertig.png" /></p>
+</li>
+</ol>
+<p>Danach: unter <strong>Werkbank → <a href="../sicherung/">Sicherung</a></strong> den Zeitplan einschalten, eigene <a href="../mappentypen/">Mappentypen</a> anlegen und weitere <a href="../benutzer/">Benutzer einladen</a>.</p>
+<h2 id="datenbank-anbindung">Datenbank-Anbindung<a class="headerlink" href="#datenbank-anbindung" title="Permanent link">&para;</a></h2>
+<p>Die Anbindung an PostgreSQL steht in der Datei <code>datenbank.json</code> im Ordner <code>/data/geheim</code> (nur für den Container lesbar, mit Passwort). Sie ist <strong>führend</strong>:</p>
+<ul>
+<li><strong>Gibt es die Datei</strong>, nimmt das DMS sie – auch wenn in der Compose-Datei <code>DATABASE_URL</code> gesetzt ist. Weicht die Variable ab, weist die Werkbank-Übersicht darauf hin; sie wird ignoriert und kann entfernt werden.</li>
+<li><strong>Gibt es sie nicht, aber <code>DATABASE_URL</code></strong> (bisherige Installationen), prüft das DMS die Variable beim Start und übernimmt sie in die Datei. Danach ist die Variable überflüssig.</li>
+<li><strong>Gibt es beides nicht</strong> – oder klappt die Verbindung nicht –, startet das DMS im <strong>Einrichtungsmodus</strong>: Es liefert nur den Assistenten aus und fragt die Anbindung ab (mit Einrichtungscode). Alle anderen Schnittstellen antworten bis dahin mit 503. Eine gespeicherte Anbindung, deren Datenbank nur noch nicht erreichbar ist (der Datenbank-Container startet noch), versucht es alle zehn Sekunden weiter.</li>
+</ul>
+<p>Unter <strong>Werkbank → Datenbank-Anbindung</strong> siehst und änderst du die Anbindung: erst <strong>Verbindung prüfen</strong>, dann <strong>Übernehmen</strong>. Die neue Anbindung gilt nach einem Neustart (<strong>Jetzt neu starten</strong> – im Container startet Docker das DMS gleich wieder). Die Daten wandern dabei nicht mit; für einen Umzug in eine andere Datenbank nimm eine <a href="../sicherung/">Sicherung</a>.</p>
+<p>In der Datei steht auch die interne Id des <strong>Mandanten</strong> (früher die Umgebungsvariable <code>HAUSHALT_ID</code>). Bisherige Installationen übernehmen sie beim ersten Start; die Variable kann danach entfernt werden.</p>
 <h2 id="e-mail-und-adresse">E-Mail und Adresse<a class="headerlink" href="#e-mail-und-adresse" title="Permanent link">&para;</a></h2>
 <p>Unter <strong>Werkbank → E-Mail und Adresse</strong> stellst du ein, was früher Umgebungsvariablen waren. Änderungen gelten sofort, ohne Neustart.</p>
 <p><img alt="E-Mail und Adresse in der Werkbank" src="../bilder/werkbank-betrieb.png" /></p>
@@ -1665,7 +1743,7 @@
 <tbody>
 <tr>
 <td><code>DATABASE_URL</code></td>
-<td>Verbindung zu PostgreSQL (Pflicht)</td>
+<td>Nur noch für den Umstieg: wird beim ersten Start in die <a href="#datenbank-anbindung">Datenbank-Anbindung</a> übernommen und danach ignoriert</td>
 </tr>
 <tr>
 <td><code>TRUST_PROXY</code></td>

@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.23/entscheidungen/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.24/entscheidungen/">
       
       
         <link rel="prev" href="../technik/">
@@ -1837,7 +1837,10 @@
 </ul>
 <h2 id="anmeldung">Anmeldung<a class="headerlink" href="#anmeldung" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Erster Aufruf legt den Administrator an</strong> (bewusst ohne Einrichtungscode). Nach dem ersten Start daher sofort selbst aufrufen.</li>
+<li><strong>Einrichtungsassistent mit Einrichtungscode</strong> (#119, zuvor: erster Aufruf ohne Code). Der Code steht im Protokoll des Containers und in <code>/data/geheim/EINRICHTUNGSCODE</code>; er schützt die Einrichtung und den Datenbanktest (der sonst Rechner im Netz abfragen könnte). Versuchsweise – ob der Code den Einstieg zu umständlich macht, zeigt die Rückmeldung aus der Praxis.</li>
+<li><strong>Datenbank-Anbindung als Datei unter <code>/data/geheim</code></strong>, führend vor <code>DATABASE_URL</code> (#119): So lässt sich das DMS ohne Bearbeiten von Umgebungsvariablen in Betrieb nehmen; ohne erreichbare Datenbank startet es im Einrichtungsmodus und danach im selben Prozess das eigentliche DMS.</li>
+<li><strong>Mandant statt Haushalt</strong> in Oberfläche und Handbuch (#119), damit das DMS auch für kleine Firmen passt. Intern heißt es weiter <code>haushalt_id</code>; ein Umbau brächte keinen sichtbaren Nutzen. Frische Installationen nutzen den Mandanten, den die erste Migration anlegt (mit Designs und Einstellungen).</li>
+<li><strong>Administratoren arbeiten nicht in der Ablage:</strong> Der Assistent legt deshalb gleich einen ersten normalen Benutzer an.</li>
 <li><strong>Rollen:</strong> Administrator (Einrichtung, Benutzer) und Mitglied (Ablage). Vorerst sehen alle angemeldeten Benutzer alle Mappen.</li>
 <li><strong>Passwörter</strong> mit scrypt aus Node (keine native Bibliothek). <strong>Sitzungen</strong> als HttpOnly-Cookie, in der Datenbank nur als SHA-256-Hash. Gleiches gilt für Einladungs- und Passwort-Links (Einladung 7 Tage, Zurücksetzen 1 Stunde, jeweils nur einmal nutzbar).</li>
 <li><strong>Schutz vor fremden Seiten:</strong> Ändernde Anfragen brauchen den Header <code>X-DMS</code>, den nur die eigene Oberfläche setzt; dazu <code>SameSite=Lax</code>.</li>
