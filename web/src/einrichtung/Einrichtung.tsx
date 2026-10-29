@@ -5,6 +5,7 @@ import {
   type Feld, type Mappe, type Mappentyp, type Register, type Registerart, type Werte,
 } from '../../../shared/src/model';
 import { wirksameTypen } from '../../../shared/src/sichten';
+import { FRIST_STANDARD, FRIST_TEXT, fristText, VORLAUF_EINHEITEN, wiederholungText, type FristEinstellung } from '../../../shared/src/fristen';
 import { api, ApiFehler, type Bezuege } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
@@ -258,6 +259,7 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
                 runter: i < e.felder.length - 1 ? () => { verschiebe(i, 1); setAnsage(`${f.label || 'Feld'} steht jetzt an Stelle ${i + 2}.`); } : undefined,
               })}><span aria-hidden="true">⠿</span></button>}
               eigeneId={e.id} eigenerName={e.name} typen={d.typen} feldregister={feldregister}
+              benutzerFelder={e.felder.filter((x) => x.typ === 'referenz' && !x.mehrfach && x.zielTyp && x.zielTyp === d.typen.find((t) => t.system === 'benutzer')?.id).map((x) => ({ key: x.key, label: x.label || x.key }))}
               umschalten={() => setOffen(offen === i ? null : i)}
               verschiebe={(r) => verschiebe(i, r)} entferne={() => void entferne(i)}
               setze={(patch) => {
@@ -290,6 +292,8 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
 function FeldZeile(p: {
   f: EntwurfFeld; i: number; anzahl: number; offen: boolean; fehler?: string[];
   eigeneId: string; eigenerName: string; typen: Mappentyp[]; feldregister: EntwurfRegister[];
+  /** Fristen (#129): Benutzerfelder dieses Typs als möglicher Empfänger. */
+  benutzerFelder: Array<{ key: string; label: string }>;
   umschalten(): void; verschiebe(r: number): void; entferne(): void; setze(patch: Partial<EntwurfFeld>): void;
   zieh: { className: string }; griff: React.ReactNode;
 }) {
@@ -304,6 +308,7 @@ function FeldZeile(p: {
   if (f.typ === 'auswahl') chips.push(`${(f.optionen ?? []).length} Werte`);
   if (f.mehrfach && (f.typ === 'auswahl' || f.typ === 'referenz')) chips.push('mehrfach');
   if (p.feldregister.length > 1) chips.push(`Register: ${p.feldregister.find((r) => r.key === f._register)?.name ?? '–'}`);
+  if (f.typ === 'datum' && f.frist) chips.push(`erinnert ${f.frist.vorlauf} ${VORLAUF_EINHEITEN[f.frist.einheit]} vorher${f.frist.wiederholung ? ` · ${wiederholungText(f.frist.wiederholung)}` : ''}`);
 
   const zahl = (prop: Zahlprop, label: string, platzhalter: string) => (
     <label className="eigenschaft" htmlFor={id(prop)}><span>{label}</span>
@@ -326,6 +331,7 @@ function FeldZeile(p: {
       <textarea id={id('optionen')} rows={4} defaultValue={(f.optionen ?? []).join('\n')} onBlur={(e) => setze({ optionen: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) })} /></label>
     <div className="eigenschaft unten">{haken('mehrfach', 'Mehrfachauswahl', 'Mehrere Werte gleichzeitig wählbar')}</div>
   </div>;
+  else if (f.typ === 'datum') besonders = <FristEditor f={f} id={id} setze={setze} benutzerFelder={p.benutzerFelder} />;
   else if (f.typ === 'passwort') besonders = <p className="leise klein">Wird verschlüsselt gespeichert und erscheint nie im Titel, in der Trefferliste, in der Suche oder in Demo-Daten. Anzeigen lässt es sich nur einzeln über das Auge; das steht im Protokoll.</p>;
   else if (f.typ === 'referenz') besonders = <div className="raster">
     <label className="eigenschaft" htmlFor={id('ziel')}><span>Verweist auf Mappen vom Typ</span>
@@ -407,6 +413,45 @@ function FeldZeile(p: {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Erinnerung an einem Datumsfeld (#129) und wiederkehrende Termine (#130). */
+function FristEditor({ f, id, setze, benutzerFelder }: { f: EntwurfFeld; id: (x: string) => string; setze(p: Partial<EntwurfFeld>): void; benutzerFelder: Array<{ key: string; label: string }> }) {
+  const fr = f.frist;
+  const aendere = (p: Partial<FristEinstellung>) => setze({ frist: { ...(fr ?? FRIST_STANDARD), ...p } });
+  return (
+    <div className="fristeditor">
+      <label className="haken"><input type="checkbox" checked={!!fr} onChange={(e) => setze({ frist: e.target.checked ? { ...FRIST_STANDARD } : null })} />
+        <span>Erinnern <Hilfe ort="mappentyp.frist" /><small className="hilfe">Rechtzeitig vor dem Datum steht die Mappe als Frist im Eingang – auch in der täglichen Zusammenfassung</small></span></label>
+      {fr && <>
+        <div className="raster">
+          <label className="eigenschaft" htmlFor={id('vorlauf')}><span>Vorlauf <small>so lange vorher</small></span>
+            <span className="wertgruppe"><input id={id('vorlauf')} type="number" min={0} max={999} className="kurz" value={fr.vorlauf} onChange={(e) => aendere({ vorlauf: Math.max(0, Math.trunc(Number(e.target.value) || 0)) })} />
+              <select aria-label="Einheit des Vorlaufs" value={fr.einheit} onChange={(e) => aendere({ einheit: e.target.value as FristEinstellung['einheit'] })}>
+                {Object.entries(VORLAUF_EINHEITEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select></span></label>
+          <label className="eigenschaft" htmlFor={id('empf')}><span>Für</span>
+            <select id={id('empf')} value={fr.empfaengerFeld ?? ''} onChange={(e) => aendere({ empfaengerFeld: e.target.value || null })}>
+              <option value="">Ersteller der Mappe</option>
+              {benutzerFelder.map((b) => <option key={b.key} value={b.key}>Benutzer im Feld „{b.label}“</option>)}
+            </select>
+            <small className="hilfe">{benutzerFelder.length ? 'Ist das Feld leer, bekommt der Ersteller die Erinnerung.' : 'Mit einem Feld, das auf Benutzer verweist (z. B. „Verantwortlich“), lässt sich ein anderer Empfänger wählen.'}</small></label>
+        </div>
+        <div className="raster">
+          <label className="eigenschaft" htmlFor={id('ftext')}><span>Text <small>Platzhalter {'{feld}'}, {'{datum}'}, {'{titel}'}</small></span>
+            <input id={id('ftext')} value={fr.text} maxLength={200} placeholder={FRIST_TEXT} onChange={(e) => aendere({ text: e.target.value })} />
+            <small className="hilfe">Ergibt z. B. „{fristText({ ...fr, text: fr.text || FRIST_TEXT }, { label: f.label || 'Datum' }, '2027-09-30', 'Stromvertrag Haus')}“</small></label>
+          <label className="eigenschaft" htmlFor={id('wdh')}><span>Wiederkehrend</span>
+            <select id={id('wdh')} value={fr.wiederholung ?? ''} onChange={(e) => aendere({ wiederholung: e.target.value ? Number(e.target.value) : null })}>
+              <option value="">einmalig</option>
+              {[1, 3, 6, 12, 24, 36, 60].map((m) => <option key={m} value={m}>{wiederholungText(m)}</option>)}
+              {fr.wiederholung && ![1, 3, 6, 12, 24, 36, 60].includes(fr.wiederholung) && <option value={fr.wiederholung}>{wiederholungText(fr.wiederholung)}</option>}
+            </select>
+            <small className="hilfe">Beim Erledigen schlägt das DMS den nächsten Termin vor; das Datum ändert sich nie von selbst.</small></label>
+        </div>
+      </>}
     </div>
   );
 }

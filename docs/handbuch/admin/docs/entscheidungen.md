@@ -157,6 +157,13 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Benutzerauswahl nur unter sichtbaren Benutzern** (#137): So lässt sich ein Programm über die API sauber auf seinen Ausschnitt begrenzen.
 - **Feldrechte** (einzelne Felder ausblenden) kommen bei Bedarf später.
 
+## Fristen (#129–#133)
+
+- **Fristen sind Aufgaben** – keine eigene Liste: Eingang, Zusammenfassung, Abwesenheit, Vertretung und Weitergeben gelten ohne Sonderwege. Eine zusätzliche Stichtags-Mail gibt es bewusst nicht.
+- **Angelegt erst ab „Datum − Vorlauf“**, je Mappe, Feld und Datum einmal (eindeutiger Index). Was davor liegt, berechnet die Sicht *Anstehend* aus den Datumsfeldern; so bleibt der Eingang die Liste dessen, was jetzt zu tun ist.
+- **Das Datum ändert sich nie von selbst**: Wiederkehrende Termine schlagen den nächsten nur vor.
+- **Freie Erinnerungen** liegen bis zu ihrem Tag in einer eigenen Tabelle und werden dann zu Aufgaben; im Papierkorb ziehen sie mit um.
+
 ## Bewusst noch nicht drin
 
-Feldrechte, Fristen, Schlüsselwechsel (#47), Backup-Funktion in der Anwendung (#48), Texterkennung für Office-Dokumente, Zwei-Faktor-Anmeldung.
+Feldrechte, Kalender-Export (ICS), Schlüsselwechsel (#47), Backup-Funktion in der Anwendung (#48), Texterkennung für Office-Dokumente, Zwei-Faktor-Anmeldung.

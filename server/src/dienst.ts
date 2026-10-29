@@ -14,11 +14,12 @@ import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
 import type { Einstellungen } from './einstellungen';
 import { istUuid, type NeueMappe, type PapierkorbEintrag, type Repo, type Rueckverweis, type SortierungIntern } from './repo';
 import {
-  bereinigeBedingungen, filterFuer, heuteIn, kinderVon, klauselnFuer, waereKreis, wirksameTypen,
+  bereinigeBedingungen, filterFuer, heuteIn, kinderVon, klauselnFuer, verschiebe, waereKreis, wirksameTypen,
   type Aufloesung, type Sicht, type SichtDaten,
 } from '../../shared/src/sichten';
 import { liesDirektlink } from '../../shared/src/direktlink';
 import type { Lesefilter } from '../../shared/src/rechte';
+import { ANSTEHEND_MAX, ANSTEHEND_TAGE, bereinigeFrist, datumDe, empfaengerFelder, ERINNERUNG_TEXT_MAX, fristAb, fristEmpfaenger, fristFelder, fristText, istDatum, naechsterTermin, type Anstehend, type Erinnerung } from '../../shared/src/fristen';
 import { ALLES, bereinigeRegelwerk, FALSCH, istOffen, kopiereRegel, leseAusdruck, lesefilter, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, wirksamVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../shared/src/rechte';
 
 /* ---------- Eingaben bereinigen: nur bekannte Eigenschaften übernehmen ---------- */
@@ -70,6 +71,8 @@ export function bereinigeFeld(e: unknown): Feld {
     mehrfach: !!f.mehrfach && (typ === 'auswahl' || typ === 'referenz'),
     zielTyp: typ === 'referenz' ? text(f.zielTyp) : '',
     verweisart: f.verweisart === 'zugehoerigkeit' ? 'zugehoerigkeit' : 'bezug',
+    // Fristen (#129): nur an Datumsfeldern.
+    ...(typ === 'datum' && bereinigeFrist(f.frist) ? { frist: bereinigeFrist(f.frist) } : {}),
   };
 }
 
@@ -560,7 +563,8 @@ export class Dienst {
     await this.repo.erledigeAufgabe(id, ich.id);
     await this.notiere(a.mappeId, ich.id, 'aufgabe', { text: `erledigt: ${a.text}`, aufgabe: id, aufgabenart: a.art, fuer: a.empfaengerId, aufgabentext: a.text });
     protokoll.modul('ablage').info('Aufgabe erledigt', { mappeId: a.mappeId, aufgabe: a.text });
-    return (await this.repo.holeAufgabe(id))!;
+    const folgetermin = await this.folgeterminVon(a);
+    return { ...(await this.repo.holeAufgabe(id))!, ...(folgetermin ? { folgetermin } : {}) };
   }
 
   /** Weitergeben: durch den Empfänger selbst oder einen Administrator; steht im Protokoll. */
@@ -585,6 +589,198 @@ export class Dienst {
   /** Werkbank: alle offenen oder die zuletzt erledigten. */
   async alleAufgaben(erledigt = false) { return erledigt ? this.repo.erledigteAufgaben(500) : this.repo.offeneAufgaben(); }
   aufgabenVon(mappeId: string) { return this.repo.aufgabenVon(mappeId); }
+
+  /* ---------- Fristen (#129–#133) ---------- */
+
+  /**
+   * Frist-Aufgaben abgleichen: ab „Datum − Vorlauf“ eine Aufgabe je Mappe, Feld und Datum (nie doppelt,
+   * auch nicht nach dem Erledigen); offene Fristen erledigen sich, sobald das Datum nicht mehr stimmt.
+   * Nach dem Speichern einer Mappe, nach Änderungen am Mappentyp und regelmäßig (täglicher Lauf).
+   */
+  async fristenAbgleichen(f: { typId?: string; mappeIds?: string[] } = {}, heute = heuteIn()): Promise<{ angelegt: number; erledigt: number }> {
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    let mappen: Mappe[];
+    if (f.mappeIds) mappen = await this.repo.holeMappen(f.mappeIds);
+    else {
+      // Typen mit Erinnerung – und solche, an denen noch offene Fristen hängen (Erinnerung abgeschaltet).
+      const offen = new Set((await this.repo.fristAufgaben()).filter((a) => !a.erledigt).map((a) => a.typId));
+      const welche = [...typen.values()].filter((t) => (!f.typId || t.id === f.typId) && (fristFelder(t).length || offen.has(t.id)));
+      mappen = (await Promise.all(welche.map((t) => this.repo.listeMappen(t.id)))).flat();
+    }
+    if (!mappen.length) return { angelegt: 0, erledigt: 0 };
+    const vorhanden = await this.repo.fristAufgaben(f.mappeIds ?? (f.typId ? mappen.map((m) => m.id) : undefined));
+    const schon = new Set(vorhanden.map((a) => `${a.mappeId}|${a.feldKey}|${a.datum}`));
+    let angelegt = 0; let erledigt = 0;
+    for (const m of mappen) {
+      const typ = typen.get(m.typId);
+      if (!typ) continue;
+      // Offene Fristen, deren Datum sich geändert hat oder leer ist: erledigt.
+      for (const a of vorhanden.filter((x) => x.mappeId === m.id && !x.erledigt)) {
+        const feld = typ.felder.find((x) => x.key === a.feldKey);
+        const wert = a.feldKey ? m.werte[a.feldKey] : null;
+        if (feld?.frist && wert === a.datum) continue;
+        const grund = !feld?.frist ? 'keine Erinnerung mehr' : !istDatum(wert) ? 'Datum leer' : wert > (a.datum ?? '') ? `verschoben auf ${datumDe(wert)}` : `geändert auf ${datumDe(wert)}`;
+        await this.repo.erledigeAufgabe(a.id, null);
+        await this.notiere(m.id, null, 'aufgabe', { text: `erledigt (${grund}): ${a.text}`, aufgabe: a.id, aufgabenart: 'frist', fuer: a.empfaengerId, aufgabentext: a.text });
+        erledigt++;
+      }
+      for (const feld of fristFelder(typ)) {
+        const wert = m.werte[feld.key];
+        const fr = feld.frist!;
+        if (!istDatum(wert) || wert < heute || fristAb(wert, fr) > heute || schon.has(`${m.id}|${feld.key}|${wert}`)) continue;
+        const text = fristText(fr, feld, wert, m.titel ?? '');
+        const an = fristEmpfaenger(fr, m);
+        let a: Aufgabe;
+        try {
+          a = await this.repo.legeAufgabeAn({ id: randomUUID(), mappeId: m.id, empfaengerId: an, art: 'frist', text, feldKey: feld.key, datum: wert, erstellt: '', erstelltVon: null, erledigt: null, erledigtVon: null });
+        } catch { continue; } // gleichzeitiger Lauf hat sie schon angelegt (eindeutiger Index)
+        schon.add(`${m.id}|${feld.key}|${wert}`);
+        await this.notiere(m.id, null, 'aufgabe', { text: `Frist für ${await this.name(an)}: ${text}`, aufgabe: a.id, aufgabenart: 'frist', fuer: an, aufgabentext: text });
+        await this.leiteUm(a);
+        angelegt++;
+      }
+    }
+    if (angelegt || erledigt) protokoll.modul('ablage').info('Fristen abgeglichen', { angelegt, erledigt });
+    return { angelegt, erledigt };
+  }
+
+  /** Offene Fristen und Erinnerungen, deren Empfänger die Mappe nicht lesen darf – Hinweis in der Werkbank. */
+  async unlesbareFristen(): Promise<string[]> {
+    const erg: string[] = [];
+    for (const a of await this.repo.offeneAufgaben()) {
+      if ((a.art === 'frist' || a.art === 'erinnerung') && a.empfaengerId && !(await this.kannLesen(a.empfaengerId, a.mappeId))) erg.push(a.id);
+    }
+    return erg;
+  }
+
+  /** Fällige freie Erinnerungen (#131) werden zu Aufgaben. */
+  async erinnerungenFaellig(heute = heuteIn()): Promise<number> {
+    let n = 0;
+    for (const e of await this.repo.erinnerungen({ bis: heute })) {
+      const a = await this.repo.legeAufgabeAn({ id: randomUUID(), mappeId: e.mappeId, empfaengerId: e.empfaengerId, art: 'erinnerung', text: e.text, datum: e.datum, erstellt: '', erstelltVon: e.erstelltVon, erledigt: null, erledigtVon: null });
+      await this.repo.loescheErinnerung(e.id);
+      await this.notiere(e.mappeId, null, 'aufgabe', { text: `Erinnerung fällig für ${await this.name(e.empfaengerId)}: ${e.text}`, aufgabe: a.id, aufgabenart: 'erinnerung', fuer: e.empfaengerId, aufgabentext: e.text });
+      await this.leiteUm(a);
+      n++;
+    }
+    return n;
+  }
+
+  /** Täglicher (bzw. stündlicher) Lauf: Fristen und fällige Erinnerungen. */
+  async fristenLauf(heute = heuteIn()) {
+    const f = await this.fristenAbgleichen({}, heute);
+    return { ...f, erinnerungen: await this.erinnerungenFaellig(heute) };
+  }
+
+  private static erinnerungEingabe(e: unknown): { datum: string; text: string; empfaengerId?: unknown } {
+    const x = (e ?? {}) as Record<string, unknown>;
+    if (!istDatum(x.datum)) throw new Fachfehler(422, 'Bitte ein Datum angeben.');
+    const text = typeof x.text === 'string' ? x.text.replace(/\s+/g, ' ').trim() : '';
+    if (!text) throw new Fachfehler(422, 'Woran soll erinnert werden?');
+    if (text.length > ERINNERUNG_TEXT_MAX) throw new Fachfehler(422, `Höchstens ${ERINNERUNG_TEXT_MAX} Zeichen.`);
+    return { datum: x.datum, text, empfaengerId: x.empfaengerId };
+  }
+
+  /** Erinnerung an einer Mappe (#131): für mich oder einen anderen Benutzer; ist das Datum schon da, gleich als Aufgabe. */
+  async legeErinnerungAn(mappeId: string, e: unknown, von: string): Promise<Erinnerung | Aufgabe> {
+    const x = Dienst.erinnerungEingabe(e);
+    const an = x.empfaengerId ? await this.pruefeEmpfaenger(x.empfaengerId) : von;
+    const r = await this.repo.legeErinnerungAn({ id: randomUUID(), mappeId, empfaengerId: an, datum: x.datum, text: x.text, erstellt: '', erstelltVon: von });
+    await this.notiere(mappeId, von, 'aufgabe', { text: `Erinnerung für ${await this.name(an)} am ${datumDe(x.datum)}: ${x.text}`, aufgabenart: 'erinnerung', fuer: an, aufgabentext: x.text });
+    if (x.datum <= heuteIn()) await this.erinnerungenFaellig();
+    return r;
+  }
+
+  /** Ändern und Löschen: Ersteller, Empfänger oder ein Administrator. */
+  private async eigeneErinnerung(id: string, ich: { id: string; rolle: string }): Promise<Erinnerung> {
+    const e = await this.repo.holeErinnerung(id);
+    if (!e) throw new Fachfehler(404, 'Diese Erinnerung gibt es nicht (mehr) – vielleicht ist sie schon fällig und steht im Eingang.');
+    if (e.erstelltVon !== ich.id && e.empfaengerId !== ich.id && ich.rolle !== 'admin') throw new Fachfehler(403, 'Ändern kann eine Erinnerung nur, wer sie angelegt hat oder sie bekommt.');
+    return e;
+  }
+  async erinnerungMappe(id: string) { const e = await this.repo.holeErinnerung(id); if (!e) throw new Fachfehler(404, 'Diese Erinnerung gibt es nicht (mehr).'); return e.mappeId; }
+
+  async aendereErinnerung(id: string, e: unknown, ich: { id: string; rolle: string }): Promise<Erinnerung> {
+    const alt = await this.eigeneErinnerung(id, ich);
+    const x = Dienst.erinnerungEingabe(e);
+    const an = x.empfaengerId ? await this.pruefeEmpfaenger(x.empfaengerId) : alt.empfaengerId;
+    const neu = (await this.repo.aendereErinnerung(id, { datum: x.datum, text: x.text, empfaengerId: an }))!;
+    await this.notiere(alt.mappeId, ich.id, 'aufgabe', { text: `Erinnerung geändert: für ${await this.name(an)} am ${datumDe(x.datum)}: ${x.text}`, aufgabenart: 'erinnerung', fuer: an, aufgabentext: x.text });
+    if (x.datum <= heuteIn()) await this.erinnerungenFaellig();
+    return neu;
+  }
+
+  async loescheErinnerung(id: string, ich: { id: string; rolle: string }) {
+    const e = await this.eigeneErinnerung(id, ich);
+    await this.repo.loescheErinnerung(id);
+    await this.notiere(e.mappeId, ich.id, 'aufgabe', { text: `Erinnerung gelöscht: ${e.text}`, aufgabenart: 'erinnerung', fuer: e.empfaengerId, aufgabentext: e.text });
+  }
+
+  /**
+   * Sicht „Anstehend“ (#132): eigene Fristen und Erinnerungen bis heute + tage – fällige (schon im Eingang)
+   * und kommende –, nur an Mappen, die man lesen darf; nach Datum.
+   */
+  async anstehend(z: Zugriff, tageEingabe?: unknown): Promise<{ tage: number; eintraege: Anstehend[] }> {
+    const t = Math.trunc(Number(tageEingabe));
+    const tage = Number.isFinite(t) && t >= 0 ? Math.min(ANSTEHEND_MAX, t) : ANSTEHEND_TAGE;
+    const heute = heuteIn();
+    const bis = verschiebe(heute, tage);
+    const ich = z.ich.id;
+    const meins = (empf: string | null) => empf === ich || (!empf && z.admin);
+    const erg: Anstehend[] = [];
+    // Schon fällig: offene Aufgaben der Arten Frist und Erinnerung.
+    const offen = (await this.repo.offeneAufgaben({ benutzerId: ich, admin: z.admin })).filter((a) => (a.art === 'frist' || a.art === 'erinnerung') && a.datum);
+    const lesbar = await this.lesbare(z, offen.map((a) => a.mappeId));
+    for (const a of offen) {
+      if (!lesbar.has(a.mappeId) || a.datum! > bis) continue;
+      erg.push({ art: a.art as 'frist' | 'erinnerung', datum: a.datum!, ab: a.erstellt.slice(0, 10), text: a.text, mappeId: a.mappeId, mappeTitel: a.mappeTitel ?? '', typId: a.typId ?? '', faellig: true, feldKey: a.feldKey ?? null });
+    }
+    // Kommende Fristen: Datumsfelder mit Erinnerung, die noch keine Aufgabe sind.
+    for (const typ of [...z.typen.values()].filter((x) => fristFelder(x).length)) {
+      const kandidaten = (await this.repo.listeMappen(typ.id)).filter((m) => fristFelder(typ).some((f) => {
+        const w = m.werte[f.key];
+        return istDatum(w) && w >= heute && w <= bis && meins(fristEmpfaenger(f.frist!, m));
+      }));
+      if (!kandidaten.length) continue;
+      const ok = await this.lesbare(z, kandidaten.map((m) => m.id));
+      const schon = new Set((await this.repo.fristAufgaben(kandidaten.map((m) => m.id))).map((a) => `${a.mappeId}|${a.feldKey}|${a.datum}`));
+      for (const m of kandidaten) {
+        if (!ok.has(m.id)) continue;
+        for (const f of fristFelder(typ)) {
+          const w = m.werte[f.key];
+          if (!istDatum(w) || w < heute || w > bis || !meins(fristEmpfaenger(f.frist!, m)) || schon.has(`${m.id}|${f.key}|${w}`)) continue;
+          erg.push({ art: 'frist', datum: w, ab: fristAb(w, f.frist!), text: fristText(f.frist!, f, w, m.titel ?? ''), mappeId: m.id, mappeTitel: m.titel ?? '', typId: m.typId, faellig: false, feldKey: f.key });
+        }
+      }
+    }
+    // Kommende freie Erinnerungen.
+    const erinnerungen = await this.repo.erinnerungen({ empfaengerId: ich, bis });
+    const ok = await this.lesbare(z, erinnerungen.map((e) => e.mappeId));
+    for (const e of erinnerungen) {
+      if (!ok.has(e.mappeId)) continue;
+      erg.push({ art: 'erinnerung', datum: e.datum, ab: e.datum, text: e.text, mappeId: e.mappeId, mappeTitel: e.mappeTitel ?? '', typId: e.typId ?? '', faellig: false, erinnerungId: e.id });
+    }
+    erg.sort((a, b) => a.datum.localeCompare(b.datum) || a.mappeTitel.localeCompare(b.mappeTitel, 'de'));
+    return { tage, eintraege: erg };
+  }
+
+  /** Wiederkehrende Frist (#130): Vorschlag für den nächsten Termin, solange das Datum noch das der Frist ist. */
+  private async folgeterminVon(a: Aufgabe): Promise<string | null> {
+    if (a.art !== 'frist' || !a.feldKey || !a.datum) return null;
+    const m = await this.repo.holeMappe(a.mappeId);
+    const typ = m ? await this.repo.holeTyp(m.typId) : undefined;
+    const w = typ?.felder.find((f) => f.key === a.feldKey)?.frist?.wiederholung;
+    return w && m && m.werte[a.feldKey] === a.datum ? naechsterTermin(a.datum, w) : null;
+  }
+
+  /** „Datum auf … setzen“ (#130): nie automatisch, nur auf Klick – mit Eintrag im Protokoll wie jede Änderung. */
+  async setzeFolgetermin(aufgabeId: string, ich: { id: string; rolle: string }, z?: Zugriff) {
+    const a = await this.repo.holeAufgabe(aufgabeId);
+    if (!a) throw new Fachfehler(404, 'Diese Aufgabe gibt es nicht.');
+    const naechster = await this.folgeterminVon(a);
+    if (!naechster) throw new Fachfehler(409, 'Das Datum hat sich schon geändert – es gibt keinen Vorschlag mehr.');
+    return this.aendereMappe(a.mappeId, { werte: { [a.feldKey!]: naechster } }, ich.id, z);
+  }
 
   /* ---------- Notizen (#55) ---------- */
 
@@ -753,6 +949,10 @@ export class Dienst {
         return f?.typ === 'referenz' && (f.zielTyp === eigeneId || f.zielTyp === '*');
       });
     }
+    // Fristen (#129): Empfängerfeld nur, wenn es ein einfaches Benutzerfeld dieses Typs ist.
+    const benutzerTyp = alle.find((t) => t.system === 'benutzer')?.id;
+    const taugt = new Set(empfaengerFelder(d, benutzerTyp).map((f) => f.key));
+    for (const f of d.felder) if (f.frist?.empfaengerFeld && !taugt.has(f.frist.empfaengerFeld)) f.frist.empfaengerFeld = null;
     const p = pruefeMappentyp(d, {
       eigeneId,
       namenAndererTypen: alle.filter((t) => t.id !== eigeneId).map((t) => t.name),
@@ -793,6 +993,8 @@ export class Dienst {
     // Vorlage oder Felder können sich geändert haben: Titel aller Mappen dieses Typs neu berechnen.
     await this.aktualisiereTitel((await this.repo.listeMappen(id)).map((m) => m.id));
     await this.pruefePassung(id);
+    // Fristen (#129): Erinnerung neu an oder aus, Vorlauf geändert → gleich abgleichen.
+    await this.fristenAbgleichen({ typId: id });
     return typ;
   }
 
@@ -883,6 +1085,8 @@ export class Dienst {
       notizen: await this.repo.notizen(id),
       /** Aufgaben an der Mappe, offene zuerst (#54). */
       aufgaben: await this.repo.aufgabenVon(id),
+      /** Noch nicht fällige Erinnerungen (#131). */
+      erinnerungen: await this.repo.erinnerungen({ mappeId: id }),
       /** Titel und Typ der Mappen, auf die diese verweist (nicht lesbare ohne Titel). */
       bezuege: await this.maskiereBezuege(z, await this.repo.bezuege(ziele)),
     };
@@ -1409,6 +1613,7 @@ export class Dienst {
     }
     const titel = (await this.aktualisiereTitel([m.id])).get(m.id);
     if (typ.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
+    if (!demo && fristFelder(typ).length) await this.fristenAbgleichen({ mappeIds: [m.id] });
     const hinweis = z ? await this.hinweisDanach(z, m.id) : undefined;
     return { ...m, titel, ...(hinweis ? { hinweis } : {}) };
   }
@@ -1465,6 +1670,8 @@ export class Dienst {
     await this.pruefeErwaehnungen(typ, id, m.werte, werte, benutzerId);
     const titel = (await this.aktualisiereTitel([id])).get(id);
     if (typ.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
+    // Fristen (#129): neues Datum → neue Aufgabe, verschobenes oder leeres → alte erledigt.
+    await this.fristenAbgleichen({ mappeIds: [id] });
     const hinweis = z ? await this.hinweisDanach(z, id) : undefined;
     return { ...neu, titel, ...(hinweis ? { hinweis } : {}) };
   }

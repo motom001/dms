@@ -73,6 +73,25 @@ Ein Feld vom Typ **Formatierter Text** nimmt längere Texte mit einfacher Format
 - Mit **@** lässt sich ein Benutzer erwähnen; er bekommt dann eine [Aufgabe](aufgaben.md).
 - Ein bestehendes Langtextfeld kannst du auf *Formatierter Text* umstellen; die Texte bleiben, wie sie sind.
 
+### Fristen: Erinnerungen an Datumsfeldern
+
+An einem **Datumsfeld** wie „Kündigung bis“ oder „TÜV fällig“ kannst du **Erinnern** einschalten. Dann steht die Mappe rechtzeitig vor dem Datum als **Frist** im Eingang – und damit auch in der täglichen Zusammenfassung.
+
+![Erinnerung an einem Datumsfeld](bilder/werkbank-frist.png)
+
+- **Vorlauf** – wie lange vorher, in Tagen, Wochen oder Monaten. Bei 4 Wochen und dem 30.09. erscheint die Frist am 02.09.
+- **Für** – der **Ersteller der Mappe** oder der Benutzer in einem Feld, das auf Benutzer verweist (z. B. „Verantwortlich“). Ist dieses Feld leer, bekommt der Ersteller die Erinnerung. Abwesenheit und Vertretung gelten wie bei allen [Aufgaben](aufgaben.md).
+- **Text** – mit den Platzhaltern `{feld}`, `{datum}` und `{titel}`; Standard ist „{feld} {datum}“, also z. B. „Kündigung bis 30.09.2027“.
+- **Wiederkehrend** – monatlich, vierteljährlich, halbjährlich, jährlich oder alle paar Jahre. Wer die Frist erledigt, bekommt den Vorschlag „Datum auf 30.09.2028 setzen“; das Datum ändert sich **nie von selbst**, und die Änderung steht wie jede andere im Protokoll der Mappe.
+
+So verhalten sich Fristen:
+
+- Das DMS prüft die Fristen beim Speichern einer Mappe, nach Änderungen am Mappentyp und jeden Tag kurz nach Mitternacht. Je Mappe, Feld und Datum entsteht **höchstens eine** Frist – auch nach dem Erledigen nicht noch einmal.
+- Wird das Datum **geändert oder geleert**, erledigt sich eine offene Frist von selbst (mit Eintrag im Protokoll der Mappe); für das neue Datum entsteht zur rechten Zeit eine neue.
+- Daten, die schon vorbei sind, erzeugen keine Frist mehr.
+- Darf der Empfänger die Mappe nach den [Berechtigungen](berechtigungen.md) nicht lesen, bekommt er die Frist trotzdem; unter *Werkbank → Aufgaben* steht dann ein Hinweis.
+- Eine zusätzliche E-Mail am Stichtag gibt es nicht – die Fristen stehen in der täglichen Zusammenfassung.
+
 ## Wenn sich ein Mappentyp ändert
 
 Du kannst Mappentypen jederzeit ändern, auch wenn es schon Mappen gibt:

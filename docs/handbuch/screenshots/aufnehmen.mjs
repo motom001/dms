@@ -345,6 +345,18 @@ async function main() {
   await neueAufgabe.getByPlaceholder(/Rechnung/).fill('Sonderkündigung vorbereiten');
   await bild(s, 'aufgabe-vergeben');
   await neueAufgabe.getByRole('button', { name: 'Schließen' }).click();
+  // Erinnern (#131) und Anstehend (#132)
+  await s.getByRole('button', { name: /Aktionen/ }).click();
+  await s.getByRole('menuitem', { name: /Erinnern/ }).click();
+  const erinnern = s.getByRole('region', { name: 'Erinnern' });
+  await erinnern.getByPlaceholder(/Angebote/).fill('Angebote der anderen Stromanbieter vergleichen');
+  await erinnern.getByRole('button', { name: 'Erinnern' }).click();
+  await s.locator('.erinnerungen').waitFor();
+  await bild(s, 'erinnerung');
+  await geheZu(s, '/ablage/anstehend');
+  await s.locator('.spalte.liste .mappenliste .eintrag').first().waitFor();
+  await bild(s, 'anstehend');
+  await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
   await s.getByRole('tab', { name: 'Protokoll' }).click();
   await s.locator('.historie details').first().click();
   await bild(s, 'protokoll');
@@ -502,6 +514,9 @@ async function main() {
   await s.locator('button.feldkopfknopf').filter({ hasText: 'Kündigung bis' }).click();
   await s.locator('.feldzeile.offen').scrollIntoViewIfNeeded();
   await bild(s, 'werkbank-feld');
+  // Fristen (#129): Erinnerung am Datumsfeld
+  await s.locator('.fristeditor').evaluate((e) => e.scrollIntoView({ block: 'center' }));
+  await bild(s, 'werkbank-frist');
   await geheZu(s, `/werkbank/typen/${d.benutzerTyp.id}`);
   await bild(s, 'werkbank-systemtyp');
   await geheZu(s, `/werkbank/benutzer/${d.mitglied.id}`);

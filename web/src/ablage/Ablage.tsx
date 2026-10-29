@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { beschreibeBedingung, kinderVon, mitNachkommen, spaltenDerSicht, wirksameTypen, type Sicht } from '../../../shared/src/sichten';
+import { beschreibeBedingung, heuteIn, kinderVon, mitNachkommen, spaltenDerSicht, wirksameTypen, type Sicht } from '../../../shared/src/sichten';
+import { ANSTEHEND_TAGE, datumDe, type Anstehend } from '../../../shared/src/fristen';
 import { liesDirektlink, type Direktlink } from '../../../shared/src/direktlink';
 import { darfErstellen, formatiere, GEMISCHTE_SPALTEN, sortierbar, standardliste, TREFFER_ANFANG, TREFFER_ENDE, vorlageFelder, wirksameVorlage, type Ausschnitt, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
 import { api, verborgeneAufgaben, type Bezuege, type MappeDetails } from '../api';
@@ -45,6 +46,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   const sichtTypen = verwaltet ? wirksameTypen(d.sichten, verwaltet.id).map((t) => d.typ(t)).filter((t): t is Mappentyp => !!t) : typ ? [typ] : [];
   const wahl = verwaltet ? spaltenDerSicht(sichtTypen, verwaltet.trefferliste) : typ ? { key: 'standard', spalten: standardliste(typ).spalten } : { key: null, spalten: GEMISCHTE_SPALTEN };
   const papierkorb = usePapierkorb(false, sicht === 'papierkorb');
+  const anstehend = useAnstehend();
   // Sprechender Link (#98): die Adresse ist der Link; beim Öffnen einer Mappe bleibt sie erhalten.
   const istLink = sicht === 'link';
   const anhang = istLink ? `?${suche.toString()}` : '';
@@ -72,6 +74,9 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
         <nav className="sichtliste">
           <Link to="/ablage/eingang" className={`sicht ${sicht === 'eingang' ? 'an' : ''}`}>
             <span className="nm">Eingang</span>{d.zaehler.eingang > 0 && <span className="zaehler">{zahl(d.zaehler.eingang)}</span>}
+          </Link>
+          <Link to="/ablage/anstehend" className={`sicht ${sicht === 'anstehend' ? 'an' : ''}`} title="Fristen und Erinnerungen der nächsten Tage">
+            <span className="nm">Anstehend</span>{!!anstehend.liste?.eintraege.length && <span className="zahl">{zahl(anstehend.liste.eintraege.length)}</span>}
           </Link>
           <Link to="/ablage/favoriten" className={`sicht ${sicht === 'favoriten' ? 'an' : ''}`}>
             <span className="nm"><span aria-hidden="true" className="sternzeichen">★</span> Favoriten</span>{!!d.zaehler.favoriten && <span className="zahl">{zahl(d.zaehler.favoriten)}</span>}
@@ -106,6 +111,8 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           ? <Liste key="eingang" sicht="eingang" titel="Eingang" offen={dritt} hilfe="ablage.eingang"
               beschreibung="Mappen, an denen du etwas tun sollst: Sie passen nicht mehr zur Definition, jemand hat dich erwähnt oder dir eine Aufgabe gegeben."
               leerText="Nichts zu tun." />
+          : sicht === 'anstehend'
+          ? <AnstehendListe z={anstehend} offen={dritt} />
           : sicht === 'favoriten'
           ? <Liste key="favoriten" sicht="favoriten" titel="Favoriten" offen={dritt} hilfe="ablage.favoriten"
               beschreibung="Mappen, die du mit einem Stern markiert hast."
@@ -120,6 +127,49 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
         {rechts}
       </section>
     </Dreiteilung>
+  );
+}
+
+/** Sicht „Anstehend“ (#132): eigene Fristen und Erinnerungen der nächsten Tage (Zeitraum im Profil). */
+function useAnstehend() {
+  const d = useDaten();
+  const tage = Number(d.einstellungen.anstehend_tage ?? ANSTEHEND_TAGE);
+  const [liste, setListe] = useState<{ tage: number; eintraege: Anstehend[] }>();
+  const [fehler, setFehler] = useState<string>();
+  useEffect(() => {
+    let aktuell = true;
+    api.anstehend(tage).then((x) => { if (aktuell) { setListe(x); setFehler(undefined); } }).catch((x) => aktuell && setFehler((x as Error).message));
+    return () => { aktuell = false; };
+  }, [tage, d.stand]);
+  return { liste, fehler };
+}
+
+const WOCHENTAG = new Intl.DateTimeFormat('de-DE', { weekday: 'short', timeZone: 'UTC' });
+const tagText = (iso: string) => `${WOCHENTAG.format(new Date(`${iso}T00:00:00Z`))} ${datumDe(iso)}`;
+
+function AnstehendListe({ z, offen }: { z: ReturnType<typeof useAnstehend>; offen?: string }) {
+  const l = z.liste;
+  return (
+    <>
+      <div className="listenkopf">
+        <div><h1>Anstehend</h1>
+          <p className="leise klein">Deine Fristen und Erinnerungen der nächsten {l?.tage ?? ANSTEHEND_TAGE} Tage – auch die, die noch nicht im Eingang stehen. Den Zeitraum stellst du im <Link to="/profil/benachrichtigungen" className="verweis">Profil</Link> ein. <Hilfe ort="ablage.anstehend" /></p></div>
+      </div>
+      {z.fehler && <p className="fehlertext">{z.fehler}</p>}
+      {!l ? <p className="leise leerliste">Lade …</p> : !l.eintraege.length ? <p className="leise leerliste">Nichts in Sicht.</p> : (
+        <ul className="mappenliste">
+          {l.eintraege.map((x, i) => (
+            <li key={`${x.mappeId}-${x.feldKey ?? x.erinnerungId ?? i}-${x.datum}`}>
+              <Link to={`/ablage/anstehend/${x.mappeId}`} className={`eintrag ${offen === x.mappeId ? 'an' : ''}`}>
+                <span className="titel">{tagText(x.datum)} · {titelOder(x.mappeTitel)}</span>
+                <span className="unter">{x.art === 'frist' ? 'Frist' : 'Erinnerung'}: {x.text}</span>
+                {x.faellig ? <span className="problem">steht im Eingang</span> : x.art === 'frist' && x.ab > heuteIn() ? <span className="unter leise">im Eingang ab {datumDe(x.ab)}</span> : null}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
 

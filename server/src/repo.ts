@@ -1,6 +1,7 @@
 import type { Aufgabe, Ausschnitt, Dokument, Historienart, Historieneintrag, Mappe, Notiz, MappenBezug, Mappentyp, MappentypDaten, OcrStandArt, Systemtyp, Werte } from '../../shared/src/model';
 import type { Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ausdruck, Lesefilter, Regelwerk } from '../../shared/src/rechte';
+import type { Erinnerung } from '../../shared/src/fristen';
 
 export interface Verweis { feldKey: string; zielId: string }
 /** Sortierung, wie sie das Repo braucht: Art der Spalte (für den richtigen Vergleich) und ggf. Feldschlüssel. */
@@ -190,6 +191,15 @@ export interface Repo {
   erledigteAufgaben(max: number): Promise<Aufgabe[]>;
   erledigeAufgabe(id: string, von: string | null): Promise<void>;
   delegiereAufgabe(id: string, an: string | null): Promise<void>;
+  /** Fristen (#129): alle Aufgaben der Art „frist“ (offen und erledigt), ggf. nur dieser Mappen. */
+  fristAufgaben(mappeIds?: string[]): Promise<Aufgabe[]>;
+
+  /* ---------- Freie Erinnerungen (#131), solange nicht fällig ---------- */
+  erinnerungen(f?: { mappeId?: string; empfaengerId?: string; bis?: string }): Promise<Erinnerung[]>;
+  holeErinnerung(id: string): Promise<Erinnerung | undefined>;
+  legeErinnerungAn(e: Erinnerung): Promise<Erinnerung>;
+  aendereErinnerung(id: string, e: { datum: string; text: string; empfaengerId: string | null }): Promise<Erinnerung | undefined>;
+  loescheErinnerung(id: string): Promise<void>;
 
   /* ---------- Notizen (#55) ---------- */
   notizen(mappeId: string): Promise<Notiz[]>;

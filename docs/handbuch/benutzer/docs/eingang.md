@@ -13,6 +13,8 @@ In der Liste steht bei jeder Mappe, was zu tun ist. In der Mappe selbst steht ob
 | **Passt nicht** | Ein Administrator hat den Mappentyp geändert – z. B. ein neues Pflichtfeld –, und deine Mappe passt nicht mehr dazu. | Ergänze oder korrigiere die markierten Angaben und speichere. Dann erledigt sie sich von selbst. |
 | **Erwähnung** | Jemand hat dich in einem formatierten Text mit **@** erwähnt. | Klicke im Hinweis auf **Erledigt**. |
 | **Aufgabe** | Jemand hat dir über **Aktionen → Aufgabe vergeben** etwas zu tun gegeben. | Klicke im Hinweis auf **Erledigt**. |
+| **Frist** | Ein Datum in einer deiner Mappen rückt näher, z. B. „Kündigung bis 30.09.2027“. Daneben steht, wie viele Tage noch bleiben. | Klicke auf **Erledigt**. Ändert sich das Datum oder wird es geleert, erledigt sie sich von selbst. Wiederholt sich der Termin (z. B. jährlich), schlägt das DMS den nächsten vor: **Datum auf … setzen**. |
+| **Erinnerung** | Du oder jemand anderes hat über **Aktionen → Erinnern** an diese Mappe erinnert, und der Tag ist da. | Klicke auf **Erledigt**. |
 | **Vertretung** | Jemand hat dich als [Vertreter](profil.md#abwesenheit) für seine Abwesenheit eingetragen. Die Aufgabe steht an seiner Benutzer-Mappe und nennt den Zeitraum. | **Erledigt** heißt „zur Kenntnis genommen“. Ändert sich die Abwesenheit oder endet sie, erledigt sie sich von selbst. |
 
 Bei „Passt nicht“ löscht oder ändert das DMS nichts von selbst; die betroffenen Felder sind in der Mappe markiert, und geprüft wird beim nächsten Speichern.
@@ -26,6 +28,18 @@ Rechts über den Registern einer Mappe steht das Menü **Aktionen**; darin **Auf
 Aufgaben gehen immer an einen Benutzer, nicht an eine Rolle – damit klar ist, wer sich kümmert. Darf der Empfänger die Mappe nach den [Berechtigungen](mappen.md#was-du-sehen-und-andern-darfst) nicht lesen, bekommt er die Aufgabe trotzdem – du erhältst dazu einen Hinweis.
 
 Steht in deinem Eingang eine **nicht sichtbare Mappe**, hast du eine Aufgabe an einer Mappe, die du nicht lesen darfst. Öffnest du sie, kannst du die Aufgabe erledigen oder an jemanden weitergeben, der die Mappe sehen darf.
+
+## Erinnern
+
+Über **Aktionen → Erinnern** in einer Mappe lässt du dich – oder jemand anderen – an einem bestimmten Tag an die Mappe erinnern, z. B. „am 15.11.: Angebote vergleichen“. Bis dahin steht die Erinnerung oben in der Mappe und unter [Anstehend](#anstehend); wer sie angelegt hat und wer sie bekommt, kann sie dort ändern oder löschen. Am gewählten Tag landet die Mappe im Eingang.
+
+![Erinnerung an einer Mappe](bilder/erinnerung.png)
+
+## Anstehend
+
+Direkt unter dem Eingang zeigt **Anstehend** deine Fristen und Erinnerungen der nächsten 30 Tage nach Datum – auch die, die noch nicht im Eingang stehen. So siehst du, was auf dich zukommt. Den Zeitraum stellst du im [Profil](profil.md#benachrichtigungen-und-ablage) ein. Ein Klick öffnet die Mappe.
+
+![Anstehend](bilder/anstehend.png)
 
 ## Weitergeben
 

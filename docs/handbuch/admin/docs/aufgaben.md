@@ -2,13 +2,15 @@
 
 Eine **Aufgabe** sagt, dass an einer Mappe jemand etwas tun soll. Jede Mappe mit einer offenen Aufgabe steht im **Eingang** ihres Empfängers – der Eingang ist damit die Liste der eigenen Aufgaben. Wie Benutzer damit arbeiten, beschreibt das [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/zusammenarbeit/).
 
-Aufgaben entstehen auf drei Wegen:
+Aufgaben entstehen auf diesen Wegen:
 
 | Art | Entsteht | Empfänger | Erledigt |
 | --- | --- | --- | --- |
 | **Passt nicht** | wenn eine Mappe nach einer Änderung am [Mappentyp](mappentypen.md#wenn-sich-ein-mappentyp-andert) nicht mehr passt | wer die Mappe angelegt hat (sonst die Administratoren) | von selbst, sobald die Mappe wieder passt |
 | **Erwähnung** | wenn jemand in einem formatierten Text mit **@** einen Benutzer erwähnt | der Erwähnte | per Knopf *Erledigt* |
 | **Aufgabe** | von Hand über *Aktionen →* **Aufgabe vergeben** an der Mappe | ein gewählter Benutzer | per Knopf *Erledigt* |
+| **Frist** | vor dem Datum eines Datumsfelds mit [Erinnerung](mappentypen.md#fristen-erinnerungen-an-datumsfeldern) | Benutzer im gewählten Feld, sonst wer die Mappe angelegt hat | per Knopf *Erledigt*, oder von selbst, wenn sich das Datum ändert |
+| **Erinnerung** | am gewählten Tag nach *Aktionen →* **Erinnern** an der Mappe | der gewählte Benutzer | per Knopf *Erledigt* |
 
 - Empfänger sind immer **Benutzer**, keine Rollen – eine Aufgabe für alle bleibt sonst gern liegen.
 - Wer sich selbst erwähnt, bekommt keine Aufgabe; erneutes Speichern erzeugt keine zweite. Wird eine Erwähnung wieder entfernt, bleibt die Aufgabe offen; im Protokoll der Mappe steht, dass sie entfernt wurde.
@@ -19,6 +21,8 @@ Aufgaben entstehen auf drei Wegen:
 ![Werkbank → Aufgaben](bilder/werkbank-aufgaben.png)
 
 Links stehen alle offenen Aufgaben aller Benutzer mit Mappe, Art, Datum und Empfänger. Über die Auswahl darunter gibst du eine Aufgabe an jemand anderen weiter. **Erledigte zeigen** schaltet auf die zuletzt erledigten Aufgaben um.
+
+Ging eine Frist oder Erinnerung an jemanden, der die Mappe nach den [Berechtigungen](berechtigungen.md) nicht lesen darf, steht oben ein Hinweis und an der Aufgabe „Empfänger darf die Mappe nicht lesen“. Gib sie weiter oder passe die Berechtigungen an.
 
 ## Tägliche Zusammenfassung
 

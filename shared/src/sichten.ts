@@ -86,7 +86,13 @@ export type Bedingung =
   /** Anzahl aller anderen Mappen, die auf diese verweisen (#67). */
   | { art: 'verknuepfungenGesamt'; vergleich: Zaehlvergleich; anzahl: number }
   /** Die Mappe ist ein Favorit des aktuellen Benutzers (#62). */
-  | { art: 'favorit' };
+  | { art: 'favorit' }
+  /** Frist in den nächsten n Tagen (#133): ein Datumsfeld oder (null) alle Datumsfelder mit Erinnerung; optional nur meine. */
+  | { art: 'frist'; feld: string | null; tage: number; nurMeine?: boolean };
+
+/** Datumsfelder mit Erinnerung (#129) – gleich wie fristFelder in fristen.ts, hier ohne Kreisimport. */
+const mitFrist = (t: Pick<Mappentyp, 'felder'>) => t.felder.filter((f) => f.typ === 'datum' && f.frist);
+export const FRIST_TAGE_MAX = 3650;
 
 /* ---------- Sichten ---------- */
 
@@ -179,6 +185,16 @@ export function bedingungsProblem(b: Bedingung, typen: Mappentyp[]): string | nu
     return null;
   }
   if (b.art === 'favorit') return null;
+  if (b.art === 'frist') {
+    if (!Number.isInteger(b.tage) || b.tage < 0 || b.tage > FRIST_TAGE_MAX) return `Die Anzahl Tage muss zwischen 0 und ${FRIST_TAGE_MAX} liegen.`;
+    if (!typen.length) return 'Fristen brauchen mindestens einen Mappentyp.';
+    if (b.feld) {
+      if (typen.some((t) => t.felder.find((f) => f.key === b.feld)?.typ !== 'datum')) return `Das Datumsfeld „${b.feld}“ gibt es ${typen.length > 1 ? 'nicht in allen Mappentypen dieser Sicht' : 'nicht (mehr)'}.`;
+      return null;
+    }
+    if (!typen.some((t) => mitFrist(t).length)) return 'Keiner der Mappentypen hat ein Datumsfeld mit Erinnerung.';
+    return null;
+  }
   if (!Number.isInteger(b.anzahl) || b.anzahl < 0) return 'Die Anzahl muss eine ganze Zahl ab 0 sein.';
   if (b.art === 'dokumenteGesamt' || b.art === 'verknuepfungenGesamt') return null;
   if (!typen.length) return 'Bedingungen auf Register brauchen mindestens einen Mappentyp.';
@@ -210,7 +226,9 @@ export type Filter =
   /** Berechtigungen (#123): offene Aufgabe für diesen Benutzer an der Mappe. */
   | { art: 'aufgabe'; benutzer: string }
   /** Berechtigungen (#123): die Mappe ist eine dieser (z. B. die eigene Benutzer-Mappe). */
-  | { art: 'id'; ids: string[] };
+  | { art: 'id'; ids: string[] }
+  /** Frist (#133): eines der Datumsfelder liegt zwischen von und bis; mit ich nur Fristen dieses Empfängers. */
+  | { art: 'frist'; felder: Array<{ key: string; empfaengerFeld: string | null }>; von: string; bis: string; ich?: string };
 
 /** Eine Klausel: Mappen dieser Typen, die alle Filter erfüllen. Eine Sicht = ODER ihrer Klauseln. */
 export interface Klausel { typen: string[]; filter: Filter[] }
@@ -281,6 +299,15 @@ export function filterFuer(s: Pick<SichtDaten, 'bedingungen'>, typen: Mappentyp[
       erg.push({ art: 'verknuepfungen', quellen: [], vergleich: b.vergleich, anzahl: b.anzahl });
     } else if (b.art === 'favorit') {
       erg.push({ art: 'favorit', benutzer: a.ich });
+    } else if (b.art === 'frist') {
+      // Je Feldschlüssel das Empfängerfeld des ersten Typs, der dort erinnert.
+      const felder = new Map<string, string | null>();
+      for (const t of typen) {
+        for (const f of b.feld ? t.felder.filter((x) => x.key === b.feld) : mitFrist(t)) {
+          if (!felder.has(f.key) || (felder.get(f.key) === null && f.frist?.empfaengerFeld)) felder.set(f.key, f.frist?.empfaengerFeld ?? null);
+        }
+      }
+      erg.push({ art: 'frist', felder: [...felder].map(([key, empfaengerFeld]) => ({ key, empfaengerFeld })), von: a.heute, bis: verschiebe(a.heute, b.tage), ...(b.nurMeine ? { ich: a.ich } : {}) });
     } else if (typen.length === 1) {
       const r = typen[0].register.find((x) => x.key === b.register)!;
       erg.push({ art: 'verknuepfungen', quellen: r.quellen ?? [], vergleich: b.vergleich, anzahl: b.anzahl });
@@ -336,6 +363,15 @@ export function erfuellt(m: Mappe, filter: Filter[], z: Zaehlquelle): boolean {
     if (f.art === 'favorit') return !!z.favorit?.(m.id, f.benutzer);
     if (f.art === 'aufgabe') return !!z.aufgabe?.(m.id, f.benutzer);
     if (f.art === 'id') return f.ids.includes(m.id);
+    if (f.art === 'frist') {
+      return f.felder.some((x) => {
+        const d = m.werte[x.key];
+        if (typeof d !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(d) || d < f.von || d > f.bis) return false;
+        if (!f.ich) return true;
+        const e = x.empfaengerFeld ? m.werte[x.empfaengerFeld] : null;
+        return (typeof e === 'string' && e ? e : m.erstelltVon) === f.ich;
+      });
+    }
     const v = vergleichswert(m, f);
     const leer = istLeer(v);
     switch (f.op) {
@@ -414,6 +450,8 @@ export function bereinigeBedingungen(e: unknown): Bedingung[] {
       erg.push({ art: b.art, vergleich, anzahl: Math.max(0, Math.trunc(Number(b.anzahl) || 0)) });
     } else if (b.art === 'favorit') {
       erg.push({ art: 'favorit' });
+    } else if (b.art === 'frist') {
+      erg.push({ art: 'frist', feld: typeof b.feld === 'string' && b.feld ? b.feld.slice(0, 60) : null, tage: Math.max(0, Math.min(FRIST_TAGE_MAX, Math.trunc(Number(b.tage) || 0))), ...(b.nurMeine === true ? { nurMeine: true } : {}) });
     }
   }
   return erg;
@@ -422,6 +460,10 @@ export function bereinigeBedingungen(e: unknown): Bedingung[] {
 /** Bedingung lesbar, z. B. „Kündigung bis zwischen heute und heute + 90 Tage“. */
 export function beschreibeBedingung(b: Bedingung, typen: Mappentyp[], titelVon: (id: string) => string = (id) => id): string {
   if (b.art === 'favorit') return 'ist mein Favorit';
+  if (b.art === 'frist') {
+    const feld = b.feld ? typen.flatMap((t) => t.felder).find((f) => f.key === b.feld)?.label ?? b.feld : null;
+    return `hat Frist in den nächsten ${b.tage} ${b.tage === 1 ? 'Tag' : 'Tagen'}${feld ? ` („${feld}“)` : ''}${b.nurMeine ? ', nur meine' : ''}`;
+  }
   if (b.art === 'dokumenteGesamt') return `Dokumente insgesamt: ${ZAEHLVERGLEICHE[b.vergleich]} ${b.anzahl} ${b.anzahl === 1 ? 'Dokument' : 'Dokumente'}`;
   if (b.art === 'verknuepfungenGesamt') return `Verknüpfungen insgesamt: ${ZAEHLVERGLEICHE[b.vergleich]} ${b.anzahl} ${b.anzahl === 1 ? 'Verknüpfung' : 'Verknüpfungen'}`;
   if (b.art !== 'feld') {

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { lesbar, werte } from '../../shared/src/rechte';
+import type { Erinnerung } from '../../shared/src/fristen';
 import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
 import { alsText } from '../../shared/src/markdown';
 import { ausschnittAus } from './repo-pg';
@@ -26,6 +27,9 @@ export function speicherRepo(): Repo {
   const mitMappe = (a: Aufgabe): Aufgabe => ({ ...kopie(a), mappeTitel: mappen.get(a.mappeId)?.titel ?? '', typId: mappen.get(a.mappeId)?.typId });
   /** Notizen (#55). */
   const notizen = new Map<string, Notiz>();
+  /** Freie Erinnerungen (#131). */
+  const erinnerungen = new Map<string, Erinnerung>();
+  const mitMappeE = (e: Erinnerung): Erinnerung => ({ ...kopie(e), mappeTitel: mappen.get(e.mappeId)?.titel ?? '', typId: mappen.get(e.mappeId)?.typId });
   /** Änderungshistorie (#57). */
   const historie: Historieneintrag[] = [];
   let historieNr = 0;
@@ -35,7 +39,7 @@ export function speicherRepo(): Repo {
   const woerter = (q: string) => q.toLowerCase().split(/\s+/).filter(Boolean);
   const findet = (text: string | null | undefined, q: string) => !!text && woerter(q).every((w) => text.toLowerCase().includes(w));
   /** Papierkorb (#43): Mappe mit ihren Verweisen und Dokumenten, wie beim Löschen. */
-  const korb = new Map<string, { mappe: Mappe; verweise: Verweis[]; dokumente: Dokument[]; notizen?: Notiz[]; aufgaben?: Aufgabe[]; geloescht: string; geloeschtVon: string | null }>();
+  const korb = new Map<string, { mappe: Mappe; verweise: Verweis[]; dokumente: Dokument[]; notizen?: Notiz[]; aufgaben?: Aufgabe[]; erinnerungen?: Erinnerung[]; geloescht: string; geloeschtVon: string | null }>();
   const alsEintrag = (k: { mappe: Mappe; dokumente: Dokument[]; geloescht: string; geloeschtVon: string | null }): PapierkorbEintrag => ({
     id: k.mappe.id, typId: k.mappe.typId, titel: k.mappe.titel ?? '', werte: kopie(k.mappe.werte), demo: !!k.mappe.demo,
     erstellt: k.mappe.erstellt, erstelltVon: k.mappe.erstelltVon, geaendert: k.mappe.geaendert, geaendertVon: k.mappe.geaendertVon,
@@ -124,6 +128,7 @@ export function speicherRepo(): Repo {
       mappen.delete(id); verweise.delete(id);
       for (const [k, n] of notizen) if (n.mappeId === id) notizen.delete(k);
       for (const [k, a] of aufgaben) if (a.mappeId === id) aufgaben.delete(k);
+      for (const [k, e] of erinnerungen) if (e.mappeId === id) erinnerungen.delete(k);
       for (const [k, d] of dokumente) if (d.mappeId === id) dokumente.delete(k);
     },
 
@@ -300,6 +305,19 @@ export function speicherRepo(): Repo {
     },
     async erledigeAufgabe(id, von) { const a = aufgaben.get(id); if (a && !a.erledigt) { a.erledigt = jetzt(); a.erledigtVon = von; } },
     async delegiereAufgabe(id, an) { const a = aufgaben.get(id); if (a) a.empfaengerId = an; },
+    async fristAufgaben(mappeIds) {
+      return [...aufgaben.values()].filter((a) => a.art === 'frist' && mappen.has(a.mappeId) && (!mappeIds || mappeIds.includes(a.mappeId)))
+        .sort((a, b) => a.erstellt.localeCompare(b.erstellt)).map(mitMappe);
+    },
+    async erinnerungen(f = {}) {
+      return [...erinnerungen.values()].filter((e) => mappen.has(e.mappeId) && (!f.mappeId || e.mappeId === f.mappeId)
+        && (!f.empfaengerId || e.empfaengerId === f.empfaengerId) && (!f.bis || e.datum <= f.bis))
+        .sort((a, b) => a.datum.localeCompare(b.datum) || a.erstellt.localeCompare(b.erstellt)).map(mitMappeE);
+    },
+    async holeErinnerung(id) { const e = erinnerungen.get(id); return e && kopie(e); },
+    async legeErinnerungAn(e) { const x = { ...kopie(e), erstellt: jetzt() }; erinnerungen.set(e.id, x); return kopie(x); },
+    async aendereErinnerung(id, e) { const x = erinnerungen.get(id); if (!x) return undefined; Object.assign(x, e); return kopie(x); },
+    async loescheErinnerung(id) { erinnerungen.delete(id); },
     async notizen(mappeId) { return [...notizen.values()].filter((n) => n.mappeId === mappeId).sort((a, b) => a.erstellt.localeCompare(b.erstellt)).map(kopie); },
     async holeNotiz(id) { const n = notizen.get(id); return n && kopie(n); },
     async legeNotizAn(n) { const x = { ...kopie(n), erstellt: jetzt(), geaendert: jetzt(), geaendertVon: n.erstelltVon }; notizen.set(n.id, x); return kopie(x); },
@@ -349,6 +367,7 @@ export function speicherRepo(): Repo {
         mappe: kopie(m), verweise: kopie(verweise.get(id) ?? []), dokumente: [...dokumente.values()].filter((d) => d.mappeId === id).map(kopie),
         notizen: [...notizen.values()].filter((n) => n.mappeId === id).map(kopie),
         aufgaben: [...aufgaben.values()].filter((a) => a.mappeId === id).map(kopie),
+        erinnerungen: [...erinnerungen.values()].filter((e) => e.mappeId === id).map(kopie),
         geloescht: jetzt(), geloeschtVon: benutzerId,
       });
       await this.loescheMappe(id);
@@ -369,6 +388,7 @@ export function speicherRepo(): Repo {
       for (const d of k.dokumente) dokumente.set(d.id, kopie(d));
       for (const n of k.notizen ?? []) notizen.set(n.id, kopie(n));
       for (const a of k.aufgaben ?? []) aufgaben.set(a.id, kopie(a));
+      for (const e of k.erinnerungen ?? []) erinnerungen.set(e.id, kopie(e));
       korb.delete(id);
       return { verweiseEntfallen: k.verweise.length - bleiben.length };
     },

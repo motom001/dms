@@ -50,6 +50,7 @@ Ganz oben im Bereich *Konto* steht, was du je Mappentyp darfst: **anlegen, lesen
     - **Uhrzeit** – im 15-Minuten-Raster; *Standard* ist die Uhrzeit, die der Administrator eingestellt hat.
     - **Wochentage** – Standard Montag bis Freitag. Ohne Wochentag kommt keine Zusammenfassung.
     - **Nicht an Feiertagen** – an gesetzlichen Feiertagen des Bundeslands, das der Administrator gewählt hat, kommt keine (Standard: an). Ohne Bundesland ist der Haken ausgegraut.
+- **Anstehend** – wie viele Tage im Voraus die Sicht [Anstehend](eingang.md#anstehend) deine Fristen und Erinnerungen zeigt (Standard: 30).
 - **Papierkorb** – **Beim Abmelden leeren** löscht deine gelöschten Mappen endgültig, sobald du dich abmeldest. Ohne den Haken bleiben sie so lange im [Papierkorb](ablage.md#papierkorb), wie der Administrator es eingestellt hat.
 
 ### Abwesenheit

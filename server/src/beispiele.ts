@@ -40,7 +40,9 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
         feld('vertragspartner', 'Vertragspartner', 'referenz', { pflicht: true, zielTyp: id.partner, verweisart: 'bezug' }),
         feld('vertragsnummer', 'Vertragsnummer', 'text', { eindeutig: true, maxLen: 60 }),
         feld('beginn', 'Vertragsbeginn', 'datum'),
-        feld('kuendigung_bis', 'Kündigung bis', 'datum', { hilfe: 'Letzter Tag, an dem die Kündigung eingehen muss' }),
+        feld('kuendigung_bis', 'Kündigung bis', 'datum', { hilfe: 'Letzter Tag, an dem die Kündigung eingehen muss',
+          // Fristen (#129, #130): drei Monate vorher erinnern; verlängert sich der Vertrag, jährlich.
+          frist: { vorlauf: 3, einheit: 'monate', empfaengerFeld: null, text: '{feld} {datum}', wiederholung: 12 } }),
         feld('zahlungszyklus', 'Zahlungszyklus', 'auswahl', { optionen: ['monatlich', 'vierteljährlich', 'halbjährlich', 'jährlich'], standard: 'monatlich' }),
         feld('betrag', 'Betrag je Zahlung', 'betrag', { min: 0, waehrung: 'EUR' }),
       ],
