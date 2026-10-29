@@ -11,6 +11,9 @@ import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
 import { titelOder } from '../seiten';
 import { Hilfe } from '../Hilfe';
 
+/** Entfernen im Editor wirkt erst beim Speichern (#136). */
+const ERST_BEIM_SPEICHERN = ' Das wird erst mit „Mappentyp speichern“ wirksam.';
+
 /* ---------------------------------------------------------------- */
 
 const ZAHLEN = ['minLen', 'maxLen', 'min', 'max', 'nachkomma'] as const;
@@ -150,8 +153,8 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
     const f = e.felder[i];
     const n = gespeichert && d.anzahl(gespeichert.id) ? (await api.belegung(gespeichert.id).catch(() => ({} as Record<string, number>)))[f.key] ?? 0 : 0;
     const frage = n
-      ? `${n} ${n === 1 ? 'Mappe hat' : 'Mappen haben'} in „${f.label}“ einen Wert. Die Werte bleiben gespeichert, werden aber nicht mehr angezeigt. Feld entfernen?`
-      : `Feld „${f.label}“ entfernen?`;
+      ? `${n} ${n === 1 ? 'Mappe hat' : 'Mappen haben'} in „${f.label}“ einen Wert. Die Werte bleiben gespeichert, werden aber nicht mehr angezeigt. Feld entfernen?${ERST_BEIM_SPEICHERN}`
+      : `Feld „${f.label}“ entfernen?${ERST_BEIM_SPEICHERN}`;
     if (!confirm(frage)) return;
     setE((x) => ({ ...x, titelVorlage: x.titelVorlage.split(`{${f.key}}`).join('').trim(), felder: x.felder.filter((_, j) => j !== i) }));
     setOffen(null); setFehler(null);
@@ -276,7 +279,7 @@ export function TypEditor({ typ }: { typ?: Mappentyp }) {
         {system ? <span /> : <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>{neu ? 'Entwurf verwerfen' : 'Mappentyp löschen'}</button>}
         <span className={`status ${fehler ? 'schlecht' : ''}`} role="status">{meldung ?? (geaendert && !neu ? 'Ungespeicherte Änderungen' : '')}</span>
         <div className="knoepfe">
-          {!neu && <button type="button" className="knopf" disabled={!geaendert || sendet} onClick={() => { setE(JSON.parse(basis)); setFehler(null); setMeldung(undefined); setOffen(null); }}>Verwerfen</button>}
+          {!neu && <button type="button" className="knopf" disabled={!geaendert || sendet} onClick={() => { setE(JSON.parse(basis)); setFehler(null); setMeldung(undefined); setOffen(null); }}>Änderungen verwerfen</button>}
           <button type="submit" className="knopf primaer" disabled={sendet}>{sendet ? 'Speichere …' : 'Mappentyp speichern'}</button>
         </div>
       </div>
@@ -400,7 +403,7 @@ function FeldZeile(p: {
           <label className="eigenschaft" htmlFor={id('hilfe')}><span>Hilfetext</span><input id={id('hilfe')} placeholder="Erklärung, die beim Ausfüllen erscheint" value={f.hilfe ?? ''} onChange={(e) => setze({ hilfe: e.target.value })} /></label>
           <div className="feldfuss">
             {f.system ? <span className="leise klein">Systemfelder lassen sich nicht entfernen.</span> : <button type="button" className="textknopf gefahr" onClick={p.entferne}>Feld entfernen</button>}
-            <button type="button" className="knopf klein" onClick={p.umschalten}>Fertig</button>
+            <button type="button" className="knopf klein" onClick={p.umschalten}>Zuklappen</button>
           </div>
         </div>
       )}
@@ -506,11 +509,11 @@ function RegisterEditor({ e, setE, feldAblage }: { e: Entwurf; setE: (f: (x: Ent
       const ziel = e.register.find((x, j) => j !== i && x.art === 'felder');
       const betroffen = e.felder.filter((f) => f._register === r.key);
       if (betroffen.length && !ziel) { alert('Auf diesem Register liegen Felder, und es gibt kein anderes Feldregister. Lege zuerst ein weiteres an.'); return; }
-      if (!confirm(betroffen.length ? `Register „${r.name}“ entfernen? Seine ${betroffen.length} Felder wandern auf „${ziel!.name}“.` : `Register „${r.name}“ entfernen?`)) return;
+      if (!confirm(`${betroffen.length ? `Register „${r.name}“ entfernen? Seine ${betroffen.length} Felder wandern auf „${ziel!.name}“.` : `Register „${r.name}“ entfernen?`}${ERST_BEIM_SPEICHERN}`)) return;
       setE((x) => ({ ...x, register: x.register.filter((_, j) => j !== i), felder: x.felder.map((f) => (f._register === r.key ? { ...f, _register: ziel!.key } : f)) }));
       return;
     }
-    if (!confirm(`Register „${r.name}“ entfernen?${r.art === 'dokumente' ? ' Enthält es noch Dokumente, lässt sich der Mappentyp nicht speichern.' : ''}`)) return;
+    if (!confirm(`Register „${r.name}“ entfernen?${r.art === 'dokumente' ? ' Enthält es noch Dokumente, lässt sich der Mappentyp nicht speichern.' : ''}${ERST_BEIM_SPEICHERN}`)) return;
     setE((x) => ({ ...x, register: x.register.filter((_, j) => j !== i) }));
   }
 
@@ -553,7 +556,7 @@ function RegisterEditor({ e, setE, feldAblage }: { e: Entwurf; setE: (f: (x: Ent
                 <div className="feldaktionen">
                   <button type="button" className="symbol" disabled={i === 0} onClick={() => verschiebe(i, -1)} aria-label="Register nach vorn">↑</button>
                   <button type="button" className="symbol" disabled={i === e.register.length - 1} onClick={() => verschiebe(i, 1)} aria-label="Register nach hinten">↓</button>
-                  <button type="button" className="symbol" onClick={() => entferne(i)} aria-label={`Register ${r.name} entfernen`}>×</button>
+                  <button type="button" className="symbol" onClick={() => entferne(i)} aria-label={`Register ${r.name} entfernen`} title={`Register entfernen –${ERST_BEIM_SPEICHERN}`}>×</button>
                 </div>
               </div>
               {r.art === 'felder' && <p className="leise klein">{anzahl ? `${anzahl} Feld${anzahl === 1 ? '' : 'er'}: ${e.felder.filter((f) => f._register === r.key).map((f) => f.label).join(', ')}` : 'Noch keine Felder.'}</p>}
@@ -627,7 +630,7 @@ function TrefferlisteEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) =>
   function entferne(i: number) {
     const l = e.trefferlisten[i];
     const n = verwendung(l.key).length;
-    if (!confirm(`Trefferliste „${l.name}“ entfernen?${n ? ` Sie wird ${n === 1 ? 'an einer Stelle' : `an ${n} Stellen`} verwendet; dort gilt danach die Standardliste.` : ''}`)) return;
+    if (!confirm(`Trefferliste „${l.name}“ entfernen?${n ? ` Sie wird ${n === 1 ? 'an einer Stelle' : `an ${n} Stellen`} verwendet; dort gilt danach die Standardliste.` : ''}${ERST_BEIM_SPEICHERN}`)) return;
     setE((x) => {
       const rest = x.trefferlisten.filter((_, j) => j !== i);
       if (l.standard && rest.length) rest[0] = { ...rest[0], standard: true };
@@ -665,7 +668,7 @@ function TrefferlisteEditor({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) =>
                   onChange={() => setE((x) => ({ ...x, trefferlisten: x.trefferlisten.map((y, j) => ({ ...y, standard: j === i })) }))} /><span>Standard</span></label>
                 <div className="feldaktionen">
                   <button type="button" className="symbol" disabled={e.trefferlisten.length < 2} title={e.trefferlisten.length < 2 ? 'Eine Trefferliste braucht der Typ immer' : undefined}
-                    onClick={() => entferne(i)} aria-label={`Trefferliste ${l.name} entfernen`}>×</button>
+                    onClick={() => entferne(i)} aria-label={`Trefferliste ${l.name} entfernen`} title={`Trefferliste entfernen –${ERST_BEIM_SPEICHERN}`}>×</button>
                 </div>
               </div>
               <Spaltenwahl e={e} spalten={l.spalten} name={name} setze={(spalten) => setzeListe(i, { spalten })} />

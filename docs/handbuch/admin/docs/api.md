@@ -1,6 +1,6 @@
 # Schnittstelle (API)
 
-Andere Programme – ein Scanner, ein Skript, eine Haushalts-App – greifen über die Schnittstelle unter `/api/v1` auf das DMS zu. Sie können Mappen anlegen, lesen, ändern und löschen und Dokumente hoch- und herunterladen; mit dem Schlüssel eines Administrators auch Mappentypen, Benutzer und Rollen verwalten.
+Andere Programme – ein Scanner, ein Skript, eine Haushalts-App – greifen über die Schnittstelle unter `/api/v1` auf das DMS zu. Sie können Mappen anlegen, lesen, ändern und löschen und Dokumente hoch- und herunterladen.
 
 ## API-Beschreibung
 
@@ -14,7 +14,7 @@ Die vollständige Beschreibung im **OpenAPI-Format** (Version 3.1):
 
 ## API-Schlüssel
 
-Jeder Benutzer erzeugt seine Schlüssel selbst im **Profil** unter *API-Schlüssel*:
+Jeder Benutzer erzeugt seine Schlüssel selbst im **Profil** unter *API-Schlüssel* – **außer Administratoren** (ab 0.26): Über die Schnittstelle arbeitet immer ein normaler Benutzer. Lege für ein Programm am besten einen eigenen Benutzer an (z. B. „Scanner“), melde dich als dieser an und erzeuge den Schlüssel dort. Schlüssel, die Administratoren schon vorher hatten, funktionieren weiter; die Werkbank-Übersicht erinnert daran, sie so zu ersetzen.
 
 - **Name** – wofür der Schlüssel ist, z. B. „Scanner Arbeitszimmer“.
 - **Recht** – *nur lesen* oder *lesen und schreiben*.
@@ -23,7 +23,7 @@ Jeder Benutzer erzeugt seine Schlüssel selbst im **Profil** unter *API-Schlüss
 
 Der Schlüssel ist **nur einmal vollständig sichtbar**, direkt nach dem Erzeugen; danach zeigt das DMS nur noch seinen Anfang. Gespeichert wird nur ein Prüfwert. Wer ihn verliert, erzeugt einen neuen und löscht den alten.
 
-Ein Schlüssel hat höchstens die Rechte seines Benutzers: Der Schlüssel eines Mitglieds kommt nicht an die Werkbank-Funktionen. Ist der Benutzer deaktiviert, gilt auch sein Schlüssel nicht mehr.
+Ein Schlüssel hat höchstens die Rechte seines Benutzers und kommt damit nicht an die Werkbank-Funktionen. Ist der Benutzer deaktiviert, gilt auch sein Schlüssel nicht mehr.
 
 ## Erster Aufruf
 

@@ -251,12 +251,14 @@ async function main() {
   await warteAufServer();
   await einrichtenImBrowser(browser, bild);
   const d = await vorbereiten();
-  const kontext = async (mitCookie = true, breite = 1440, hoehe = 860) => {
+  const kontext = async (mitCookie = true, breite = 1440, hoehe = 860, adminHinweis = false) => {
     const k = await browser.newContext({ viewport: { width: breite, height: hoehe }, colorScheme: 'light', locale: 'de-DE', timezoneId: 'Europe/Berlin', deviceScaleFactor: 1 });
     if (mitCookie) {
       const [name, wert] = d.adminCookie.split('=');
       await k.addCookies([{ name, value: wert, url: BASIS }]);
     }
+    // Die Bilder der Ablage zeigen, was ein normaler Benutzer sieht: ohne den roten Admin-Hinweis (#128).
+    if (!adminHinweis) await k.addInitScript(() => addEventListener('DOMContentLoaded', () => { const st = document.createElement('style'); st.textContent = '.adminbanner{display:none!important}'; document.head.appendChild(st); }));
     return k;
   };
   const geheZu = async (seite, pfad) => { await seite.goto(BASIS + pfad); await seite.waitForLoadState('networkidle'); };
@@ -268,6 +270,16 @@ async function main() {
     await geheZu(s, '/');
     await s.getByRole('button', { name: 'Anmelden' }).waitFor();
     await bild(s, 'anmelden');
+    await k.close();
+  }
+
+  // Roter Hinweis für Administratoren in der Ablage (#128)
+  {
+    const k = await kontext(true, 1440, 420, true);
+    const s = await k.newPage();
+    await geheZu(s, '/ablage/eingang');
+    await s.locator('.adminbanner').waitFor();
+    await bild(s, 'admin-hinweis');
     await k.close();
   }
 

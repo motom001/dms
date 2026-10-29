@@ -40,7 +40,7 @@ export function useUngespeichert(ungespeichert: boolean) {
   useEffect(() => {
     if (!ungespeichert) return;
     const vorher = wache;
-    wache = () => confirm('Es gibt ungespeicherte Änderungen. Verwerfen und weiter?');
+    wache = () => confirm('Es gibt ungespeicherte Änderungen. Änderungen verwerfen und die Seite verlassen?');
     const unload = (e: BeforeUnloadEvent) => { e.preventDefault(); };
     addEventListener('beforeunload', unload);
     return () => { wache = vorher; removeEventListener('beforeunload', unload); };

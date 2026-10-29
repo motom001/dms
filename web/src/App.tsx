@@ -62,6 +62,13 @@ export function App() {
       {!vertretung && hinweise.length > 0 && <Hinweise />}
       <ErreichbarkeitsBanner version={version} ansichtNeuLaden={() => { setAnsicht((n) => n + 1); void d.neuLaden(); }} />
       <WartungsBanner admin={admin} abgemeldet={() => void aktualisieren()} />
+      {/* #128: Administratoren richten ein, arbeiten aber nicht in der Ablage. */}
+      {admin && !vertretung && bereich === 'ablage' && (
+        <div className="adminbanner" role="alert">
+          <p><strong>Du bist als Administrator in der Ablage.</strong> Ein Administrator sollte nicht für die tägliche Arbeit verwendet werden – du siehst hier alle Mappen, auch solche, die für andere gesperrt sind. Für den Alltag ist ein normaler Benutzer schnell angelegt.</p>
+          <Link to="/werkbank/benutzer/neu" className="knopf klein">Benutzer anlegen</Link>
+        </div>
+      )}
       <header className="kopf">
         <Link to="/ablage/eingang" className="marke" title="Zur Startseite">
           <Marke logo={logoUrl(d.meinDesign)} schriftzug={schriftzugVon(d.meinDesign)} /><span className="sr-only">{schriftzugVon(d.meinDesign) ? '' : schriftzugVon(null)} – Startseite</span>

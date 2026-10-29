@@ -221,10 +221,10 @@ export function SichtEditor({ id }: { id: string }) {
       </div>
 
       <div className="speicherleiste">
-        {neu ? <Link to="/werkbank/sichten" className="textknopf">Verwerfen</Link> : <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>Sicht löschen</button>}
+        {neu ? <Link to="/werkbank/sichten" className="textknopf">Entwurf verwerfen</Link> : <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>Sicht löschen</button>}
         <span className={`status ${meldung?.art === 'schlecht' ? 'schlecht' : ''}`} role="status">{meldung?.text ?? (geaendert && !neu ? 'Ungespeicherte Änderungen' : '')}</span>
         <div className="knoepfe">
-          {!neu && <button type="button" className="knopf" disabled={!geaendert || sendet} onClick={() => { setE(JSON.parse(basis)); setMeldung(undefined); }}>Verwerfen</button>}
+          {!neu && <button type="button" className="knopf" disabled={!geaendert || sendet} onClick={() => { setE(JSON.parse(basis)); setMeldung(undefined); }}>Änderungen verwerfen</button>}
           <button className="knopf primaer" disabled={sendet || (!geaendert && !neu)}>{sendet ? 'Speichere …' : 'Sicht speichern'}</button>
         </div>
       </div>
@@ -334,7 +334,7 @@ function Bedingungen({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDat
                               </select>
                               <input aria-label="Anzahl" type="number" min={0} className="kurz" value={b.anzahl} onChange={(x) => setze(i, { ...b, anzahl: Math.max(0, Math.trunc(Number(x.target.value) || 0)) })} />
                             </>}
-                        <button type="button" className="textknopf gefahr klein" onClick={() => weg(i)}>Entfernen</button>
+                        <button type="button" className="textknopf gefahr klein" onClick={() => weg(i)}>Bedingung entfernen</button>
                       </div>
                       <p className={problem ? 'fehlertext klein' : 'leise klein'}>{problem ?? beschreibeBedingung(b, typen, (mid) => titel[mid] ?? d.person(mid))}</p>
                     </li>

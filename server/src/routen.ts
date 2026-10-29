@@ -603,6 +603,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
         sicherung: x.sicherung ? await sicher(() => x.sicherung!.zustand()) : null,
         // Speicherplatz (#116) und frühere Variablen, die entfernt werden können (#115).
         speicherplatz: x.speicherplatz ? await sicher(() => x.speicherplatz!.stand()) : null,
+        // #128: Schlüssel, die Administratoren gehören (aus der Zeit vor 0.26), durch die eines normalen Benutzers ersetzen.
+        adminSchluessel: x.apiSchluessel ? await sicher(async () => {
+          let n = 0;
+          for (const b of (await konten.listeBenutzer()).filter((y) => y.rolle === 'admin')) n += (await x.apiSchluessel!.liste(b)).length;
+          return n;
+        }) ?? 0 : 0,
         variablen: [...(x.ordner?.ueberfluessig ?? []), ...(x.anbindung?.stand().umgebung === 'gleich' ? ['DATABASE_URL'] : []), ...(x.mandantHinweis && process.env.HAUSHALT_ID ? ['HAUSHALT_ID'] : [])],
         // DATABASE_URL weicht von der Anbindung in /data/geheim ab und wird ignoriert (#119).
         anbindung: x.anbindung ? { umgebung: x.anbindung.stand().umgebung, neustartNoetig: x.anbindung.stand().neustartNoetig } : null,

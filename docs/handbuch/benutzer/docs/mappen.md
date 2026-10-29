@@ -58,7 +58,7 @@ In Listen und in der Suche erscheint der Text ohne Formatierung.
 
 ### Passwörter
 
-In einem **Passwortfeld** (z. B. das Kennwort eines Kundenportals) steht nach dem Speichern nur „••••••••“. Das **Auge** zeigt das Passwort; jedes Anzeigen hält das DMS im Protokoll fest (wer, wann, welche Mappe – nicht das Passwort). **Ändern** nimmt ein neues Passwort auf, **Entfernen** löscht es beim Speichern.
+In einem **Passwortfeld** (z. B. das Kennwort eines Kundenportals) steht nach dem Speichern nur „••••••••“. Das **Auge** zeigt das Passwort; jedes Anzeigen hält das DMS im Protokoll fest (wer, wann, welche Mappe – nicht das Passwort). **Ändern** nimmt ein neues Passwort auf, **Passwort entfernen** löscht es beim Speichern (bis dahin geht **Rückgängig**).
 
 ![Passwortfeld](bilder/passwortfeld.png)
 
@@ -74,7 +74,7 @@ Ein Klick auf einen gesetzten Verweis öffnet die andere Mappe.
 
 ## Ändern
 
-Öffne die Mappe, ändere die Angaben und klicke auf **Mappe speichern**. Solange etwas nicht gespeichert ist, steht unten „Ungespeicherte Änderungen“. **Verwerfen** stellt den gespeicherten Stand wieder her.
+Öffne die Mappe, ändere die Angaben und klicke auf **Mappe speichern**. Solange etwas nicht gespeichert ist, steht unten „Ungespeicherte Änderungen“. **Änderungen verwerfen** stellt den gespeicherten Stand wieder her.
 
 Willst du die Mappe mit ungespeicherten Änderungen verlassen, fragt das DMS nach.
 

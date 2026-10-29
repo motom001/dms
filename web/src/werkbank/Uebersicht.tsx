@@ -38,6 +38,8 @@ export function hinweiseAus(u: WerkbankUebersicht): Hinweis[] {
   else if (t && t.betroffen) h.push({ art: 'warn', text: <><strong>{t.betroffen === 1 ? 'Ein Passwort ist' : `${t.betroffen} Passwörter sind`} nicht lesbar oder unverschlüsselt.</strong></>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
   // Sicherung (#105): fehlgeschlagen, zu alt, Notfallblatt, Speicherort.
   if (u.sicherung) for (const x of sicherungsHinweise(u.sicherung)) h.push({ ...x, ziel: '/werkbank/sicherung', knopf: 'Zur Sicherung' });
+  // #128: API-Schlüssel gehören zu normalen Benutzern.
+  if (u.adminSchluessel) h.push({ art: 'warn', text: <><strong>{u.adminSchluessel === 1 ? 'Ein API-Schlüssel gehört' : `${u.adminSchluessel} API-Schlüssel gehören`} einem Administrator.</strong> Administratoren bekommen keine neuen Schlüssel mehr. Lege für das Programm einen normalen Benutzer an, erzeuge damit einen neuen Schlüssel und lösche den alten (Profil → API-Schlüssel des Administrators).</>, ziel: '/werkbank/benutzer/neu', knopf: 'Benutzer anlegen' });
   // Datenbank-Anbindung (#119)
   if (u.anbindung?.umgebung === 'abweichend') h.push({ art: 'warn', text: <><strong>DATABASE_URL weicht von der Datenbank-Anbindung ab und wird ignoriert.</strong> Führend ist die Anbindung unter /data/geheim; entferne die Variable aus der Compose-Datei.</>, ziel: '/werkbank/anbindung', knopf: 'Zur Anbindung' });
   if (u.anbindung?.neustartNoetig) h.push({ art: 'warn', text: <><strong>Die Datenbank-Anbindung ist geändert</strong> und gilt erst nach einem Neustart des DMS.</>, ziel: '/werkbank/anbindung', knopf: 'Zur Anbindung' });

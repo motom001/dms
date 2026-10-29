@@ -151,7 +151,7 @@ export function SpeicherplatzPanel({ z, nachAenderung }: { z: SpeicherplatzZusta
         <p className="leise klein">Gilt für jeden Ordner einzeln; Prozent beziehen sich auf die Größe seines Datenträgers. Standard: Warnung unter 10 % frei, Grenze unter 2 GB frei.</p>
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         <div className="knoepfe">
-          {geaendert && <button type="button" className="knopf" onClick={() => setE(s.einstellung)}>Verwerfen</button>}
+          {geaendert && <button type="button" className="knopf" onClick={() => setE(s.einstellung)}>Änderungen verwerfen</button>}
           <button className="knopf primaer" disabled={!geaendert || laeuft}>{laeuft ? 'Speichere …' : 'Speichern'}</button>
         </div>
       </form>

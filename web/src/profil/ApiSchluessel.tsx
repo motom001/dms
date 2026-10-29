@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, type ApiSchluessel, type ApiSchluesselEingabe } from '../api';
 import { Link } from '../ort';
+import { useKonto } from '../konto';
 
 /** API-Schlüssel im eigenen Profil (#20): erzeugen, ändern, löschen; ganz sichtbar nur beim Erzeugen. */
 const datum = (iso: string | null) => (iso ? new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }) : '–');
@@ -9,6 +10,8 @@ const alsDatum = (iso: string | null) => (iso ? iso.slice(0, 10) : '');
 const ausDatum = (t: string) => (t ? new Date(`${t}T23:59:59`).toISOString() : null);
 
 export function ApiSchluesselBlatt() {
+  const { ich } = useKonto();
+  const admin = ich.rolle === 'admin';
   const [liste, setListe] = useState<ApiSchluessel[] | null>(null);
   const [neu, setNeu] = useState<(ApiSchluessel & { schluessel: string }) | null>(null);
   const [fehler, setFehler] = useState<string>();
@@ -51,10 +54,14 @@ export function ApiSchluesselBlatt() {
         </ul>
       )}
       {liste && !liste.length && !neu && <p className="leise">Noch keine Schlüssel.</p>}
-      <details className="neuerschluessel">
-        <summary className="knopf">Neuen Schlüssel erzeugen</summary>
-        <SchluesselFormular knopf="Erzeugen" senden={(d) => aktion(async () => setNeu(await api.apiSchluesselAnlegen(d)))} />
-      </details>
+      {admin ? (
+        <div className="hinweis warn"><p><strong>Administratoren bekommen keine API-Schlüssel.</strong> Über die Schnittstelle arbeitet ein normaler Benutzer, für den die Berechtigungen gelten. Lege für das Programm einen Benutzer an (<Link to="/werkbank/benutzer/neu" className="verweis">Werkbank → Benutzer</Link>), melde dich als dieser an und erzeuge den Schlüssel dort.{liste?.length ? ' Ersetze die Schlüssel oben auf diesem Weg und lösche sie danach.' : ''}</p></div>
+      ) : (
+        <details className="neuerschluessel">
+          <summary className="knopf">Neuen Schlüssel erzeugen</summary>
+          <SchluesselFormular knopf="Erzeugen" senden={(d) => aktion(async () => setNeu(await api.apiSchluesselAnlegen(d)))} />
+        </details>
+      )}
     </div>
   );
 }

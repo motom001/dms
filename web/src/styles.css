@@ -394,6 +394,9 @@ progress::-moz-progress-bar { background: var(--akzent); border-radius: 999px; }
 .vertretungsbanner, .hinweisbanner { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 10px max(16px, env(safe-area-inset-left)); font-size: calc(13.5px * var(--skala, 1)); }
 .vertretungsbanner { background: var(--warn); color: #fff; }
 .vertretungsbanner .knopf { background: #fff; color: var(--warn); border-color: #fff; }
+.adminbanner { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 10px max(16px, env(safe-area-inset-left)); font-size: calc(13.5px * var(--skala, 1)); background: #A61B1B; color: #fff; }
+.adminbanner p { margin: 0; }
+.adminbanner .knopf { background: #fff; color: #A61B1B; border-color: #fff; }
 .hinweisbanner { background: var(--warn-zart); color: var(--tinte); border-bottom: 1px solid var(--linie); }
 .vertretungsbanner p, .hinweisbanner p { margin: 0; }
 .hinweisbanner ul { margin: 4px 0 0; padding-left: 18px; }
@@ -811,10 +814,11 @@ body:has(.gezogen) { cursor: grabbing; user-select: none; -webkit-user-select: n
 .haken.aus { opacity: .6; }
 
 /* Kontextbezogene Hilfe (#110): dezentes ? am Ende eines Untertitels oder einer Überschrift */
-.hilfe { display: inline-grid; place-items: center; width: 1.25em; height: 1.25em; margin-left: .35em; border: 1px solid var(--linie-stark); border-radius: 50%; font-size: .8em; font-weight: 700; line-height: 1; color: var(--leise); text-decoration: none; vertical-align: .1em; }
-.hilfe:hover, .hilfe:focus-visible { color: var(--akzent); border-color: var(--akzent); }
-h2 .hilfe, h3 .hilfe { font-size: .6em; vertical-align: .25em; }
-@media (pointer: coarse) { .hilfe { width: 1.6em; height: 1.6em; } }
+/* ?-Symbol der kontextbezogenen Hilfe (#110); .hilfe ist der Kleintext unter Feldern (#134) */
+.hilfesymbol { display: inline-grid; place-items: center; width: 1.25em; height: 1.25em; margin-left: .35em; border: 1px solid var(--linie-stark); border-radius: 50%; font-size: .8em; font-weight: 700; line-height: 1; color: var(--leise); text-decoration: none; vertical-align: .1em; }
+.hilfesymbol:hover, .hilfesymbol:focus-visible { color: var(--akzent); border-color: var(--akzent); }
+h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
+@media (pointer: coarse) { .hilfesymbol { width: 1.6em; height: 1.6em; } }
 
 /* Speicherplatz (#116): belegt je Ordner mit Marken für Warnschwelle und Grenze */
 .ordnerzeile { padding: 10px 0; border-top: 1px solid var(--linie); }

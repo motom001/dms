@@ -58,13 +58,14 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
         betrieb, tresor, texterkennung, sicher: () => betrieb.cookieNurHttps(),
         messung, system: (await import('../src/system')).pgSystemQuelle(sql, HAUSHALT),
         designs: new (await import('../src/designs')).Designs((await import('../src/designs')).pgDesignRepo(sql, HAUSHALT)),
-        apiSchluessel: new (await import('../src/apischluessel')).ApiSchluesselDienst((await import('../src/apischluessel')).pgApiSchluesselRepo(sql)),
+        apiSchluessel: schluesselDienst = new (await import('../src/apischluessel')).ApiSchluesselDienst((await import('../src/apischluessel')).pgApiSchluesselRepo(sql)),
         // Kein Internet im Test: Abgleich mit festen Antworten.
         abruf: async (url: string) => { if (url.includes('npmjs')) return { version: '99.0.0' }; throw new Error('offline'); },
       });
   });
   after(async () => { texterkennung?.stop(); await app?.close(); await sql?.end(); });
 
+  let schluesselDienst!: import('../src/apischluessel').ApiSchluesselDienst;
   let cookie = '';
   const anfrage = async (method: string, pfad: string, payload?: unknown, mitCookie = true) => {
     const headers: Record<string, string> = { 'x-dms': '1' };
@@ -393,13 +394,16 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
       const r = await app.inject({ method: methode, url: `/api/v1${pfad}`, payload, headers: { authorization: `Bearer ${schluessel}` } });
       return { status: r.statusCode as number, body: r.body && r.headers['content-type']?.toString().includes('json') ? JSON.parse(r.body) : r.body };
     };
-    const lesen = (await anfrage('POST', '/api/konto/api-schluessel', { name: 'Nur lesen' })).body;
-    const schreiben = (await anfrage('POST', '/api/konto/api-schluessel', { name: 'Scanner', recht: 'schreiben' })).body;
+    // #128: Administratoren bekommen keine API-Schlüssel – das Programm arbeitet als normaler Benutzer.
+    assert.equal((await anfrage('POST', '/api/konto/api-schluessel', { name: 'Admin' })).status, 403);
+    const programm = (await anfrage('POST', '/api/benutzer', { email: 'api-programm@example.org', name: 'Scanner', rolle: 'mitglied' })).body.benutzer;
+    const lesen = await schluesselDienst.lege(programm, { name: 'Nur lesen' });
+    const schreiben = await schluesselDienst.lege(programm, { name: 'Scanner', recht: 'schreiben' });
     assert.equal(lesen.recht, 'lesen');
-    assert.ok(!JSON.stringify((await anfrage('GET', '/api/konto/api-schluessel')).body).includes(schreiben.schluessel));
+    assert.ok(!JSON.stringify(await schluesselDienst.liste(programm)).includes(schreiben.schluessel));
 
     const ich = await v1('GET', '/ich', lesen.schluessel);
-    assert.deepEqual([ich.status, ich.body.benutzer.email, ich.body.schluessel.recht], [200, 'admin@example.org', 'lesen']);
+    assert.deepEqual([ich.status, ich.body.benutzer.email, ich.body.schluessel.recht], [200, 'api-programm@example.org', 'lesen']);
     const typen = (await v1('GET', '/typen', lesen.schluessel)).body;
     const partner = typen.find((t: { name: string }) => t.name === 'Vertragspartner');
     assert.equal((await v1('GET', '/mappen', lesen.schluessel)).status, 422, 'sicht fehlt');
@@ -416,15 +420,15 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await v1('DELETE', `/dokumente/${dok.id}`, schreiben.schluessel)).status, 204);
     assert.equal((await v1('PUT', `/mappen/${neu.body.id}`, schreiben.schluessel, { werte: { name: 'API AG' } })).body.titel, 'API AG');
     assert.equal((await v1('DELETE', `/mappen/${neu.body.id}`, schreiben.schluessel)).status, 204);
-    assert.equal((await v1('GET', '/benutzer', schreiben.schluessel)).status, 200, 'Admin-Schlüssel darf Werkbank');
+    assert.equal((await v1('GET', '/benutzer', schreiben.schluessel)).status, 403, 'Schlüssel eines Mitglieds darf keine Werkbank');
     // Interne Adressen nehmen keine Schlüssel an.
     assert.equal((await app.inject({ method: 'GET', url: '/api/typen', headers: { authorization: `Bearer ${lesen.schluessel}` } })).statusCode, 401);
     assert.equal((await v1('GET', '/ich', 'dms_falsch')).status, 401);
     // Abgelaufen
-    assert.equal((await anfrage('PUT', `/api/konto/api-schluessel/${lesen.id}`, { name: 'Nur lesen', recht: 'lesen', ablauf: new Date(Date.now() + 1000).toISOString() })).status, 200);
+    await schluesselDienst.aendere(programm, lesen.id, { name: 'Nur lesen', recht: 'lesen', ablauf: new Date(Date.now() + 1000).toISOString() });
     await sql`UPDATE api_schluessel SET ablauf = now() - interval '1 minute' WHERE id = ${lesen.id}`;
     assert.equal((await v1('GET', '/ich', lesen.schluessel)).status, 401);
-    assert.equal((await anfrage('DELETE', `/api/konto/api-schluessel/${lesen.id}`)).status, 204);
+    await schluesselDienst.loesche(programm, lesen.id);
     // OpenAPI ohne Anmeldung, passend zur Version
     const doc = await app.inject({ method: 'GET', url: '/api/openapi.json' });
     assert.equal(doc.statusCode, 200);
