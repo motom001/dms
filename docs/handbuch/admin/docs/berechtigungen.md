@@ -1,6 +1,6 @@
 # Berechtigungen
 
-Mit Berechtigungen legst du je Mappentyp fest, **wer welche Mappen anlegen, lesen, bearbeiten, löschen und wessen Passwörter sehen** darf. Du findest sie in der Werkbank unter **Benutzer und Zusammenarbeit → Berechtigungen**.
+Mit Berechtigungen legst du je Mappentyp fest, **wer welche Mappen anlegen, lesen, bearbeiten, löschen und wessen Passwörter sehen** darf. Du pflegst sie am **Mappentyp** selbst, im Abschnitt **Berechtigungen** unter den Registern, und speicherst sie mit **Mappentyp speichern**. Prüfen lassen sie sich unter **Wartung und Fehlersuche → [Berechtigungen prüfen](#berechtigungen-prufen)**.
 
 ![Berechtigungen am Mappentyp Vertrag](bilder/werkbank-berechtigungen.png)
 
@@ -56,19 +56,29 @@ Jede Bedingung lässt sich mit **nicht** umkehren. Mehrere Bedingungen einer Reg
 
 ### Regel in andere Mappentypen kopieren
 
-Mit **In andere Mappentypen kopieren …** an einer gespeicherten Regel übernimmst du sie in weitere Typen; sie landet dort am Ende. Bedingungen auf Felder, die es im Zieltyp nicht gibt, fallen weg – das DMS sagt, wie viele.
+Mit **In andere Mappentypen kopieren …** an einer gespeicherten Regel übernimmst du sie in weitere Typen (bei ungespeicherten Änderungen erst speichern); sie landet dort am Ende. Bedingungen auf Felder, die es im Zieltyp nicht gibt, fallen weg – das DMS sagt, wie viele.
 
 ### Speichern
 
-Beim Speichern prüft das DMS, ob danach Mappen dieses Typs **niemand mehr lesen** könnte (außer Administratoren), und fragt in diesem Fall nach. Jede Änderung steht im [Protokoll](fehlersuche.md) mit der vollständigen Regelliste.
+Die Regeln werden mit **Mappentyp speichern** gespeichert, zusammen mit Feldern, Registern und Trefferlisten. Eine Regel darf deshalb auch ein Feld nutzen, das du im selben Zug neu anlegst. Passt eine Regel nicht (z. B. auf ein Feld, das du gerade entfernst), speichert das DMS nichts und nennt die Regel.
 
-## Testlauf
+Beim Speichern prüft das DMS außerdem, ob danach Mappen dieses Typs **niemand mehr lesen** könnte (außer Administratoren), und fragt in diesem Fall nach. Jede Änderung steht im [Protokoll](fehlersuche.md) mit der vollständigen Regelliste.
 
-Unter den Regeln prüfst du, welche Rechte ein bestimmter Benutzer an einer bestimmten Mappe hätte – auch mit **noch nicht gespeicherten** Regeln. Die Tabelle zeigt Schritt für Schritt, welche Regel zutraf, was sie gesetzt hat und wie der Stand danach war.
+## Berechtigungen prüfen
+
+Unter **Wartung und Fehlersuche → Berechtigungen prüfen** testest du die **gespeicherten** Regeln. Am Abschnitt *Berechtigungen* eines Mappentyps öffnet **Regeln prüfen ↗** diese Seite in einem **neuen Fenster**, mit dem Mappentyp schon ausgewählt. So bearbeitest du die Regeln in einem Fenster und prüfst sie im anderen: ändern, *Mappentyp speichern*, im anderen Fenster noch einmal **Prüfen**.
+
+Links listet die Seite alle Mappentypen mit Grundeinstellung und Anzahl der Regeln; ein Klick springt zu ihren Regeln.
+
+### Testlauf
+
+Welche Rechte hätte ein bestimmter Benutzer an einer bestimmten Mappe? Wähle Mappentyp, Benutzer und Mappe und klicke auf **Prüfen**. Die Tabelle zeigt Schritt für Schritt, welche Regel zutraf, was sie gesetzt hat und wie der Stand danach war.
 
 ![Testlauf: Ben an „Stromvertrag Haus“](bilder/werkbank-berechtigungen-testlauf.png)
 
-**Was sieht ein Benutzer?** (ganz oben in der Liste) zeigt je Mappentyp, wie viele Mappen ein Benutzer nach den gespeicherten Regeln lesen darf, mit einigen Beispielen.
+### Was sieht ein Benutzer?
+
+Zeigt je Mappentyp, wie viele Mappen ein Benutzer nach den gespeicherten Regeln lesen darf, mit einigen Beispielen.
 
 ## Was Benutzer davon merken
 

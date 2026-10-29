@@ -2,68 +2,24 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import type { Mappentyp } from '../../../shared/src/model';
 import { bedingungsfelder, beschreibeBedingung, OPERATOREN_JE_ART, type Bedingung, type Bedingungsfeld } from '../../../shared/src/sichten';
 import {
-  beschreibeRegelBedingung, istOffen, kurz, RECHTE, RECHTE_LISTE, regelProblem,
+  beschreibeRegelBedingung, istOffen, kurz, RECHTE, RECHTE_LISTE, regelProblem, regelwerkVon,
   type Recht, type Regel, type RegelBedingung, type Regelwerk, type Wirkung,
 } from '../../../shared/src/rechte';
-import { api, ApiFehler, type BerechtigungEintrag, type Testlauf } from '../api';
+import { api, type Testlauf } from '../api';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
-import { Link, loeseWache, useUngespeichert } from '../ort';
+import { Link } from '../ort';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import { FeldBedingung, MappenSuche } from './Sichten';
 import type { Benutzer } from '../../../shared/src/model';
 
 /**
- * Berechtigungen (#123–#127, #137): je Mappentyp eine Grundeinstellung und Regeln
+ * Berechtigungen (#123–#127, #137, #142): je Mappentyp eine Grundeinstellung und Regeln
  * „wenn … dann erteile/entziehe CRUDP“, in Reihenfolge, mit Stopp. Für Administratoren gelten sie nicht.
  *
- * /werkbank/berechtigungen/:typId   Regeln eines Mappentyps, mit Testlauf
- * /werkbank/berechtigungen/sicht    „Was sieht Benutzer X?“
+ * Gepflegt im Mappentyp-Editor (Abschnitt „Berechtigungen“), gespeichert mit „Mappentyp speichern“.
+ * Geprüft unter /werkbank/rechtepruefung[?typ=…] (Wartung und Fehlersuche): Testlauf und „Was sieht ein Benutzer?“.
  */
-
-export function useBerechtigungen(aktiv: boolean) {
-  const [liste, setListe] = useState<BerechtigungEintrag[] | null>(null);
-  const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => {
-    try { setListe(await api.berechtigungen()); setFehler(undefined); } catch (x) { setFehler((x as Error).message); }
-  }, []);
-  useEffect(() => { if (aktiv) void laden(); }, [aktiv, laden]);
-  return { liste, fehler, laden };
-}
-export type BerechtigungenZustand = ReturnType<typeof useBerechtigungen>;
-
-const zusammenfassung = (rw: Regelwerk) => (istOffen(rw)
-  ? 'keine Regeln – alle dürfen alles'
-  : `Grundeinstellung ${rw.grund} · ${rw.regeln.length} ${rw.regeln.length === 1 ? 'Regel' : 'Regeln'}`);
-
-export function BerechtigungenListe({ z, offen }: { z: BerechtigungenZustand; offen?: string }) {
-  return (
-    <>
-      <div className="listenkopf">
-        <div><h1>Berechtigungen</h1><p className="leise klein">Wer welche Mappen anlegen, lesen, bearbeiten, löschen und welche Passwörter sehen darf. <Hilfe ort="werkbank.berechtigungen" /></p></div>
-      </div>
-      {z.fehler && <p className="fehlertext">{z.fehler}</p>}
-      <ul className="mappenliste">
-        <li>
-          <Link to="/werkbank/berechtigungen/sicht" className={`eintrag werk ${offen === 'sicht' ? 'an' : ''}`}>
-            <span className="titel">Was sieht ein Benutzer?</span>
-            <span className="unter">je Mappentyp: wie viele Mappen jemand lesen darf</span>
-          </Link>
-        </li>
-        {!z.liste ? <li className="leise leerliste">Lade …</li> : z.liste.map((t) => (
-          <li key={t.typId}>
-            <Link to={`/werkbank/berechtigungen/${t.typId}`} className={`eintrag werk ${offen === t.typId ? 'an' : ''}`}>
-              <span className="titel">{t.name}{t.system && <span className="chip">System</span>}</span>
-              <span className="unter">{zusammenfassung(t.berechtigungen)}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </>
-  );
-}
-
-/* ---------- Regeln eines Mappentyps ---------- */
 
 const neueId = () => Math.random().toString(36).slice(2, 10);
 const WIRKUNG_TEXT: Record<'' | Wirkung, string> = { '': '–', erteilen: '✓', entziehen: '✗' };
@@ -78,116 +34,72 @@ const ARTEN: Array<{ art: Art; name: string; nurBenutzerTyp?: boolean }> = [
   { art: 'eigeneMappe', name: 'Mappe ist die des Benutzers', nurBenutzerTyp: true },
 ];
 
-export function BerechtigungEditor({ typId, z }: { typId: string; z: BerechtigungenZustand }) {
-  const d = useDaten();
-  const typ = d.typ(typId);
-  const eintrag = z.liste?.find((x) => x.typId === typId);
-  const [basis, setBasis] = useState(() => JSON.stringify(eintrag?.berechtigungen ?? { grund: 'erteilt', regeln: [] }));
-  const [e, setE] = useState<Regelwerk>(() => JSON.parse(basis));
-  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const [sendet, setSendet] = useState(false);
+export const PRUEFEN_PFAD = '/werkbank/rechtepruefung';
+
+/**
+ * Abschnitt „Berechtigungen“ im Mappentyp-Editor (#142). `typ` ist der Entwurf (Felder wie gerade bearbeitet),
+ * `gespeichert` die Regeln, wie sie gespeichert sind – Kopieren in andere Typen geht nur mit gespeicherten Regeln.
+ */
+export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu }: {
+  rw: Regelwerk; setRw: (f: (x: Regelwerk) => Regelwerk) => void; typ: Mappentyp; gespeichert: Regelwerk | null; neu: boolean;
+}) {
   const [ansage, setAnsage] = useState('');
   const [titel, setTitel] = useState<Record<string, string>>({});
   const merke = useCallback((id: string, t: string) => setTitel((x) => ({ ...x, [id]: t })), []);
-  const geaendert = JSON.stringify(e) !== basis;
-  useUngespeichert(geaendert);
-  // Liste kam erst nach dem ersten Zeichnen: Stand übernehmen, solange nichts geändert ist.
-  useEffect(() => {
-    if (!eintrag || geaendert) return;
-    const b = JSON.stringify(eintrag.berechtigungen);
-    if (b !== basis) { setBasis(b); setE(JSON.parse(b)); }
-  }, [eintrag]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const zieh = useZiehen({
     fertig: (quelle, ziel, ort) => {
-      const von = e.regeln.findIndex((r) => r.id === quelle);
-      const nach = e.regeln.findIndex((r) => r.id === ziel);
       if (ort === 'in') return;
-      setE((x) => ({ ...x, regeln: umgestellt(x.regeln, von, nach, ort) }));
-      setAnsage(`${e.regeln[von]?.name || 'Regel'} steht jetzt ${ort === 'vor' ? 'vor' : 'nach'} „${e.regeln[nach]?.name || 'Regel'}“.`);
+      setRw((x) => {
+        const von = x.regeln.findIndex((r) => r.id === quelle);
+        const nach = x.regeln.findIndex((r) => r.id === ziel);
+        setAnsage(`${x.regeln[von]?.name || 'Regel'} steht jetzt ${ort === 'vor' ? 'vor' : 'nach'} „${x.regeln[nach]?.name || 'Regel'}“.`);
+        return { ...x, regeln: umgestellt(x.regeln, von, nach, ort) };
+      });
     },
   });
-
-  if (!typ) return <div className="leer"><p>Diesen Mappentyp gibt es nicht (mehr).</p></div>;
-  const probleme = e.regeln.map((r) => regelProblem(r, typ));
-
-  const setzeRegel = (i: number, r: Regel) => setE((x) => ({ ...x, regeln: x.regeln.map((y, j) => (j === i ? r : y)) }));
-  const verschiebe = (i: number, r: number) => setE((x) => {
+  const probleme = rw.regeln.map((r) => regelProblem(r, typ));
+  const unveraendert = !!gespeichert && JSON.stringify(gespeichert) === JSON.stringify(rw);
+  const setzeRegel = (i: number, r: Regel) => setRw((x) => ({ ...x, regeln: x.regeln.map((y, j) => (j === i ? r : y)) }));
+  const verschiebe = (i: number, r: number) => setRw((x) => {
     const j = i + r;
     if (j < 0 || j >= x.regeln.length) return x;
     setAnsage(`${x.regeln[i].name || 'Regel'} steht jetzt an Stelle ${j + 1}.`);
     return { ...x, regeln: umgestellt(x.regeln, i, j, r < 0 ? 'vor' : 'nach') };
   });
-  const neueRegel = () => setE((x) => ({
-    ...x, regeln: [...x.regeln, { id: neueId(), name: '', wenn: [{ art: 'rolle', rollen: [] }], dann: {}, stopp: false }],
-  }));
-
-  async function speichern(bestaetigt = false) {
-    setSendet(true); setMeldung(undefined);
-    try {
-      const r = await api.berechtigungenSetzen(typId, e, bestaetigt);
-      const b = JSON.stringify(r.typ.berechtigungen ?? { grund: 'erteilt', regeln: [] });
-      setBasis(b); setE(JSON.parse(b)); loeseWache();
-      await Promise.all([z.laden(), d.neuLaden()]);
-      setMeldung({ art: 'gut', text: r.niemand ? `Gespeichert. ${r.niemand} ${r.niemand === 1 ? 'Mappe kann' : 'Mappen können'} nur Administratoren lesen.` : 'Berechtigungen gespeichert.' });
-    } catch (x) {
-      if (x instanceof ApiFehler && x.status === 409 && !bestaetigt && confirm(x.message)) { setSendet(false); await speichern(true); return; }
-      setMeldung({ art: 'schlecht', text: (x as Error).message });
-    } finally { setSendet(false); }
-  }
+  const neueRegel = () => setRw((x) => ({ ...x, regeln: [...x.regeln, { id: neueId(), name: '', wenn: [{ art: 'rolle', rollen: [] }], dann: {}, stopp: false }] }));
 
   return (
-    <form onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} noValidate>
-      <div className="seitenkopf"><div>
-        <p className="ueber">Berechtigungen</p>
-        <h1>{typ.name}</h1>
-        <p className="leise"><Link to={`/werkbank/typen/${typ.id}`} className="verweis">Mappentyp bearbeiten →</Link></p>
-      </div></div>
+    <div className="blatt" id="berechtigungen">
+      <div className="blattkopf zeile-zwischen">
+        <h2 className="h3">Berechtigungen <Hilfe ort="werkbank.berechtigungen" /></h2>
+        {!neu && <a href={`${PRUEFEN_PFAD}?typ=${encodeURIComponent(typ.id)}`} target="_blank" rel="noreferrer" className="knopf klein" title="Öffnet die Prüfung in einem neuen Fenster – Regeln hier ändern und speichern, dort prüfen">Regeln prüfen ↗</a>}
+      </div>
+      <p className="leise">Wer Mappen dieses Typs anlegen (C), lesen (R), bearbeiten (U – Felder und Dokumente), löschen (D) und Passwörter sehen (P) darf. Für <strong>Administratoren</strong> gelten die Regeln nicht. „Neue Mappen erlauben“ und „Löschen erlauben“ oben bleiben die Obergrenze. Geprüft wird, was gespeichert ist – also erst „Mappentyp speichern“, dann im anderen Fenster prüfen.</p>
 
-      <div className="hinweis info">
-        <p>Für <strong>Administratoren</strong> gelten diese Regeln nicht – sie sehen und dürfen alles. Die Haken „Neue Mappen erlauben“ und „Löschen erlauben“ am Mappentyp bleiben die Obergrenze für Anlegen und Löschen.</p>
+      <h3 className="zwischen">Grundeinstellung <Hilfe ort="berechtigungen.grund" /></h3>
+      <div className="typwahl">
+        <label className="haken"><input type="radio" name="grund" checked={rw.grund === 'erteilt'} onChange={() => setRw((x) => ({ ...x, grund: 'erteilt' }))} /><span>Alle Rechte erteilt <small className="leise">– Regeln schränken ein</small></span></label>
+        <label className="haken"><input type="radio" name="grund" checked={rw.grund === 'entzogen'} onChange={() => setRw((x) => ({ ...x, grund: 'entzogen' }))} /><span>Alle Rechte entzogen <small className="leise">– Regeln geben frei</small></span></label>
       </div>
 
-      <div className="blatt">
-        <h2 className="h3">Grundeinstellung <Hilfe ort="berechtigungen.grund" /></h2>
-        <p className="leise">Gilt, solange keine Regel etwas anderes sagt. Dann prüft das DMS die Regeln von oben nach unten: Jede zutreffende Regel setzt ihre ✓ und ✗, „–“ lässt das Recht, wie es ist. „Stopp“ beendet die Prüfung.</p>
-        <div className="typwahl">
-          <label className="haken"><input type="radio" name="grund" checked={e.grund === 'erteilt'} onChange={() => setE({ ...e, grund: 'erteilt' })} /><span>Alle Rechte erteilt <small className="leise">– Regeln schränken ein</small></span></label>
-          <label className="haken"><input type="radio" name="grund" checked={e.grund === 'entzogen'} onChange={() => setE({ ...e, grund: 'entzogen' })} /><span>Alle Rechte entzogen <small className="leise">– Regeln geben frei</small></span></label>
-        </div>
-      </div>
-
-      <div className="blatt">
-        <h2 className="h3">Regeln <Hilfe ort="berechtigungen.regeln" /></h2>
-        <p className="leise">C Anlegen · R Lesen · U Bearbeiten (Felder und Dokumente) · D Löschen · P Passwörter sehen. Ohne Lesen wirkt nur Anlegen; für Notizen und Aufgaben reicht Lesen. Reihenfolge per Ziehen am Griff oder mit Alt+↑/↓.</p>
-        {e.regeln.length > 0 && (
-          <ol className="regeln">
-            {e.regeln.map((r, i) => (
-              <li key={r.id} {...zieh.eintrag(r.id)}>
-                <RegelKarte r={r} typ={typ} problem={probleme[i]} setze={(n) => setzeRegel(i, n)} titel={titel} merke={merke}
-                  griff={<button {...zieh.griff(r.id, r.name || 'Regel')} onKeyDown={(ev) => ziehTasten(ev, { hoch: () => verschiebe(i, -1), runter: () => verschiebe(i, 1) })}><span aria-hidden="true">⠿</span></button>}
-                  weg={() => setE((x) => ({ ...x, regeln: x.regeln.filter((y) => y.id !== r.id) }))}
-                  gespeichert={!geaendert && JSON.parse(basis).regeln.some((y: Regel) => y.id === r.id)}
-                  nachKopie={() => void z.laden()} />
-              </li>
-            ))}
-          </ol>
-        )}
-        <Ansage text={ansage} />
-        <div className="knoepfe"><button type="button" className="knopf klein" onClick={neueRegel}>+ Regel</button></div>
-      </div>
-
-      <TestlaufBlatt typ={typ} entwurf={geaendert ? e : undefined} />
-
-      <div className="speicherleiste">
-        <span />
-        <span className={`status ${meldung?.art === 'schlecht' ? 'schlecht' : ''}`} role="status">{meldung?.text ?? (geaendert ? 'Ungespeicherte Änderungen' : '')}</span>
-        <div className="knoepfe">
-          <button type="button" className="knopf" disabled={!geaendert || sendet} onClick={() => { setE(JSON.parse(basis)); setMeldung(undefined); }}>Änderungen verwerfen</button>
-          <button className="knopf primaer" disabled={sendet || !geaendert || probleme.some(Boolean)} title={probleme.find(Boolean) ?? undefined}>{sendet ? 'Speichere …' : 'Berechtigungen speichern'}</button>
-        </div>
-      </div>
-    </form>
+      <h3 className="zwischen">Regeln <Hilfe ort="berechtigungen.regeln" /></h3>
+      <p className="leise">Von oben nach unten: Jede zutreffende Regel setzt ihre ✓ und ✗, „–“ lässt das Recht, wie es ist; „Stopp“ beendet die Prüfung. Ohne Lesen wirkt nur Anlegen; für Notizen und Aufgaben reicht Lesen. Reihenfolge per Ziehen am Griff oder mit Alt+↑/↓.</p>
+      {rw.regeln.length > 0 && (
+        <ol className="regeln">
+          {rw.regeln.map((r, i) => (
+            <li key={r.id} {...zieh.eintrag(r.id)}>
+              <RegelKarte r={r} typ={typ} problem={probleme[i]} setze={(n) => setzeRegel(i, n)} titel={titel} merke={merke}
+                griff={<button {...zieh.griff(r.id, r.name || 'Regel')} onKeyDown={(ev) => ziehTasten(ev, { hoch: () => verschiebe(i, -1), runter: () => verschiebe(i, 1) })}><span aria-hidden="true">⠿</span></button>}
+                weg={() => setRw((x) => ({ ...x, regeln: x.regeln.filter((y) => y.id !== r.id) }))}
+                gespeichert={unveraendert && !neu}
+                nachKopie={() => {}} />
+            </li>
+          ))}
+        </ol>
+      )}
+      <Ansage text={ansage} />
+      <div className="knoepfe"><button type="button" className="knopf klein" onClick={neueRegel}>+ Regel</button></div>
+    </div>
   );
 }
 
@@ -277,6 +189,7 @@ function Kopieren({ typ, regel, fertig }: { typ: Mappentyp; regel: Regel; fertig
       const r = await api.regelKopieren(typ.id, regel.id, ziele);
       setMeldung(`In ${r.kopiert} ${r.kopiert === 1 ? 'Mappentyp' : 'Mappentypen'} ans Ende kopiert.${r.ausgelassen ? ` ${r.ausgelassen} Bedingung${r.ausgelassen === 1 ? '' : 'en'} passte${r.ausgelassen === 1 ? '' : 'n'} dort nicht (Feld fehlt) und ${r.ausgelassen === 1 ? 'fehlt' : 'fehlen'}.` : ''}`);
       setZiele([]);
+      void d.neuLaden();
       setTimeout(fertig, 2500);
     } catch (x) { setMeldung((x as Error).message); }
   }
@@ -310,7 +223,8 @@ function RechteZeile({ r }: { r: Record<Recht, boolean> }) {
   );
 }
 
-function TestlaufBlatt({ typ, entwurf }: { typ: Mappentyp; entwurf?: Regelwerk }) {
+function TestlaufBlatt({ typId, setTypId }: { typId: string; setTypId: (id: string) => void }) {
+  const d = useDaten();
   const benutzer = useRegelBenutzer();
   const [b, setB] = useState('');
   const [mappe, setMappe] = useState<string[]>([]);
@@ -319,19 +233,24 @@ function TestlaufBlatt({ typ, entwurf }: { typ: Mappentyp; entwurf?: Regelwerk }
   const [fehler, setFehler] = useState<string>();
   async function los() {
     setFehler(undefined);
-    try { setErg(await api.testlauf({ mappeId: mappe[0], benutzerId: b, berechtigungen: entwurf })); } catch (x) { setFehler((x as Error).message); setErg(undefined); }
+    try { setErg(await api.testlauf({ mappeId: mappe[0], benutzerId: b })); } catch (x) { setFehler((x as Error).message); setErg(undefined); }
   }
+  useEffect(() => { setMappe([]); setErg(undefined); }, [typId]);
   return (
     <div className="blatt">
       <h2 className="h3">Testlauf <Hilfe ort="berechtigungen.testlauf" /></h2>
-      <p className="leise">Welche Rechte hätte ein Benutzer an einer bestimmten Mappe – und welche Regel hat das entschieden? {entwurf ? 'Geprüft wird der ungespeicherte Entwurf.' : 'Geprüft werden die gespeicherten Regeln.'}</p>
+      <p className="leise">Welche Rechte hätte ein Benutzer an einer bestimmten Mappe – und welche Regel hat das entschieden? Geprüft werden die gespeicherten Regeln; nach „Mappentyp speichern“ einfach noch einmal auf „Prüfen“.</p>
       <div className="bedingungszeile">
+        <select aria-label="Mappentyp" value={typId} onChange={(x) => setTypId(x.target.value)}>
+          <option value="">– Mappentyp wählen –</option>
+          {d.typen.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+        </select>
         <select aria-label="Benutzer" value={b} onChange={(x) => setB(x.target.value)}>
           <option value="">– Benutzer wählen –</option>
           {benutzer.map((x) => <option key={x.id} value={x.id}>{x.name || x.email}{x.rolle === 'admin' ? ' (Administrator)' : ''}</option>)}
         </select>
-        <MappenSuche typId={typ.id} gewaehlt={mappe} titel={titel} merke={(id, t) => setTitel((x) => ({ ...x, [id]: t }))} setze={(ids) => setMappe(ids.slice(-1))} />
-        <button type="button" className="knopf klein" disabled={!b || !mappe.length} onClick={() => void los()}>Prüfen</button>
+        {typId && <MappenSuche key={typId} typId={typId} gewaehlt={mappe} titel={titel} merke={(id, t) => setTitel((x) => ({ ...x, [id]: t }))} setze={(ids) => setMappe(ids.slice(-1))} />}
+        <button type="button" className="knopf klein primaer" disabled={!b || !mappe.length} onClick={() => void los()}>Prüfen</button>
       </div>
       {fehler && <p className="fehlertext klein">{fehler}</p>}
       {erg && (
@@ -366,7 +285,52 @@ function TestlaufBlatt({ typ, entwurf }: { typ: Mappentyp; entwurf?: Regelwerk }
 
 /* ---------- Was sieht Benutzer X? (#125) ---------- */
 
-export function WasSiehtPanel() {
+/* ---------- Seite „Berechtigungen prüfen“ (Wartung und Fehlersuche, #142) ---------- */
+
+export function PruefenListe() {
+  const d = useDaten();
+  return (
+    <>
+      <div className="listenkopf"><div><h1>Berechtigungen prüfen</h1><p className="leise klein">Testlauf und „Was sieht ein Benutzer?“. Die Regeln selbst stehen am Mappentyp. <Hilfe ort="werkbank.rechtepruefung" /></p></div></div>
+      <ul className="mappenliste">
+        {d.typen.map((t) => (
+          <li key={t.id}>
+            <Link to={`/werkbank/typen/${t.id}#berechtigungen`} className="eintrag werk">
+              <span className="titel">{t.name}</span>
+              <span className="unter">{zusammenfassung(regelwerkVon(t))} – Regeln bearbeiten</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+const zusammenfassung = (rw: Regelwerk) => (istOffen(rw)
+  ? 'keine Regeln – alle dürfen alles'
+  : `Grundeinstellung ${rw.grund} · ${rw.regeln.length} ${rw.regeln.length === 1 ? 'Regel' : 'Regeln'}`);
+
+export function PruefenPanel() {
+  const d = useDaten();
+  const [typId, setTypId] = useState(() => new URLSearchParams(location.search).get('typ') ?? '');
+  // Das Fenster daneben (#142): nach dem Speichern im Editor beim Zurückkehren den neuen Stand holen.
+  useEffect(() => {
+    const zurueck = () => { if (document.visibilityState === 'visible') void d.neuLaden(); };
+    document.addEventListener('visibilitychange', zurueck);
+    return () => document.removeEventListener('visibilitychange', zurueck);
+  }, [d]);
+  return (
+    <div>
+      <div className="seitenkopf"><div><p className="ueber">Wartung und Fehlersuche</p><h1>Berechtigungen prüfen</h1>
+        {typId && d.typ(typId) && <p className="leise"><Link to={`/werkbank/typen/${typId}#berechtigungen`} className="verweis">Regeln von „{d.typ(typId)!.name}“ bearbeiten →</Link></p>}
+      </div></div>
+      <TestlaufBlatt typId={typId} setTypId={setTypId} />
+      <WasSiehtBlatt />
+    </div>
+  );
+}
+
+function WasSiehtBlatt() {
   const benutzer = useRegelBenutzer();
   const [b, setB] = useState('');
   const [erg, setErg] = useState<Awaited<ReturnType<typeof api.wasSieht>>>();
@@ -379,8 +343,8 @@ export function WasSiehtPanel() {
   }, [b]);
   return (
     <div>
-      <div className="seitenkopf"><div><p className="ueber">Berechtigungen</p><h1>Was sieht ein Benutzer?</h1></div></div>
       <div className="blatt">
+        <h2 className="h3">Was sieht ein Benutzer?</h2>
         <p className="leise">Je Mappentyp: wie viele Mappen der Benutzer nach den gespeicherten Regeln lesen darf, mit einigen Beispielen.</p>
         <select aria-label="Benutzer" value={b} onChange={(x) => { setFehler(undefined); setB(x.target.value); }}>
           <option value="">– Benutzer wählen –</option>
@@ -394,7 +358,7 @@ export function WasSiehtPanel() {
             <tbody>
               {erg.typen.map((t) => (
                 <tr key={t.typId}>
-                  <td><Link to={`/werkbank/berechtigungen/${t.typId}`} className="verweis">{t.name}</Link></td>
+                  <td><Link to={`/werkbank/typen/${t.typId}#berechtigungen`} className="verweis">{t.name}</Link></td>
                   <td>{t.lesbar.toLocaleString('de-DE')} von {t.gesamt.toLocaleString('de-DE')}</td>
                   <td className="klein">{t.beispiele.map((x) => x.titel || 'ohne Titel').join(' · ') || '–'}</td>
                 </tr>

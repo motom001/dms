@@ -162,6 +162,10 @@ Das ändert nur den Entwurf; übernommen wird es wie alles andere mit **Mappenty
 
 Mehr dazu in [Benutzer und Rollen](benutzer.md).
 
+## Berechtigungen
+
+Unter den Registern legst du fest, wer Mappen dieses Typs anlegen, lesen, bearbeiten, löschen und Passwörter darin sehen darf – mit Grundeinstellung und Regeln. Gespeichert wird mit **Mappentyp speichern**; **Regeln prüfen ↗** öffnet die Prüfung in einem neuen Fenster. Alles Weitere steht unter [Berechtigungen](berechtigungen.md).
+
 ## Mappentyp löschen
 
 **Mappentyp löschen** geht nur, solange es keine Mappen dieses Typs gibt und kein anderer Typ auf ihn verweist. Sonst nennt das DMS die Gründe.

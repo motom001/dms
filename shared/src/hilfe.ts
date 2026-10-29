@@ -20,6 +20,7 @@ export const HILFE = {
   'werkbank.sichten': admin('sichten/', 'Sichten'),
   'werkbank.benutzer': admin('benutzer/', 'Benutzern und Rollen'),
   'werkbank.berechtigungen': admin('berechtigungen/', 'Berechtigungen'),
+  'werkbank.rechtepruefung': admin('berechtigungen/', 'Berechtigungen prüfen', 'berechtigungen-prufen'),
   'berechtigungen.grund': admin('berechtigungen/', 'Grundeinstellung', 'grundeinstellung'),
   'berechtigungen.regeln': admin('berechtigungen/', 'Regeln', 'regeln'),
   'berechtigungen.testlauf': admin('berechtigungen/', 'Testlauf', 'testlauf'),

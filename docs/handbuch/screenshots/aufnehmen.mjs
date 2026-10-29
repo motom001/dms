@@ -448,15 +448,17 @@ async function main() {
   await geheZu(s, `/ablage/${d.benutzerTyp.id}/${d.mitglied.id}`);
   await bild(s, 'benutzer-mappe');
 
-  // Berechtigungen (#123–#127): Regeln am Vertrag, Testlauf und „Meine Rechte“ eines Mitglieds
+  // Berechtigungen (#123–#127, #142): Regeln am Mappentyp Vertrag, Prüfung, „Meine Rechte“ eines Mitglieds
   await api('PUT', `/api/werkbank/berechtigungen/${vertrag.id}`, { bestaetigt: true, berechtigungen: { grund: 'erteilt', regeln: [
     { id: 'garten', name: 'Haus und Garten darf alles', wenn: [{ art: 'rolle', rollen: [d.garten.id] }], dann: { C: 'erteilen', R: 'erteilen', U: 'erteilen', D: 'erteilen', P: 'erteilen' }, stopp: true },
     { id: 'andere', name: 'Sonst bearbeitet nur, wer verantwortlich ist', wenn: [{ art: 'feld', nicht: true, bedingung: { art: 'feld', feld: 'verantwortlich', op: 'zeigtAuf', wert: { art: 'ich' } } }], dann: { U: 'entziehen', D: 'entziehen', P: 'entziehen' }, stopp: false },
   ] } });
-  await geheZu(s, `/werkbank/berechtigungen/${vertrag.id}`);
-  await s.locator('.regel').first().waitFor();
-  await bild(s, 'werkbank-berechtigungen', { fullPage: true });
+  await geheZu(s, `/werkbank/typen/${vertrag.id}#berechtigungen`);
+  await s.locator('#berechtigungen .regel').first().waitFor();
+  await s.locator('#berechtigungen').evaluate((e) => e.scrollIntoView({ block: 'start' }));
+  await bild(s, 'werkbank-berechtigungen');
   {
+    await geheZu(s, `/werkbank/rechtepruefung?typ=${vertrag.id}`);
     const test = s.locator('.blatt', { hasText: 'Testlauf' });
     await test.getByLabel('Benutzer', { exact: true }).selectOption({ label: MITGLIED.name });
     await test.getByLabel('Mappe suchen').fill('Stromvertrag');
