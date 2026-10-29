@@ -426,6 +426,28 @@ async function main() {
   await geheZu(s, '/werkbank/demo');
   await bild(s, 'werkbank-demo');
 
+  // Wartungsmodus (#102): ankündigen, Banner bei einem Mitglied, danach beenden – ganz am Ende,
+  // weil die Wartung Anmeldungen sperrt.
+  const mitgliedAnmeldung = await fetch(`${BASIS}/api/konto/anmelden`, { method: 'POST', headers: { 'x-dms': '1', 'content-type': 'application/json' }, body: JSON.stringify({ email: MITGLIED.email, passwort: MITGLIED.passwort }) });
+  const mitgliedCookie = (mitgliedAnmeldung.headers.get('set-cookie') ?? '').split(';')[0];
+  await geheZu(s, '/werkbank/wartungsmodus');
+  await s.getByLabel(/Text für alle/).fill('Update auf die neue Version');
+  await s.getByRole('button', { name: 'Wartung ankündigen' }).click();
+  await s.locator('.wartungsbanner').waitFor();
+  await bild(s, 'werkbank-wartungsmodus');
+  if (mitgliedCookie) {
+    const km = await browser.newContext({ viewport: { width: 1100, height: 620 }, colorScheme: 'light', locale: 'de-DE', timezoneId: 'Europe/Berlin' });
+    const [name, wert] = mitgliedCookie.split('=');
+    await km.addCookies([{ name, value: wert, url: BASIS }]);
+    const sm = await km.newPage();
+    await geheZu(sm, '/ablage/eingang');
+    await sm.locator('.wartungsbanner').waitFor();
+    await bild(sm, 'wartung-banner', { clip: { x: 0, y: 0, width: 1100, height: 220 } });
+    await km.close();
+  }
+  await s.getByRole('button', { name: 'Wartung beenden' }).click();
+  await s.locator('.wartungsbanner').waitFor({ state: 'detached' });
+
   // Die API-Beschreibung dieser Version für das Administratorhandbuch
   await writeFile(join(ZIEL, 'openapi.json'), JSON.stringify(await (await fetch(`${BASIS}/api/openapi.json`)).json(), null, 2));
 

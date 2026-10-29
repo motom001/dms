@@ -3,12 +3,14 @@
 ## Aktualisieren
 
 1. Lies unter [Releases](https://github.com/motom001/dms/releases), was sich geändert hat.
-2. Image neu ziehen und das Projekt neu starten – auf der Kommandozeile:
+2. Schalte den [Wartungsmodus](wartungsmodus.md) ein, damit niemand mitten im Update arbeitet.
+3. Image neu ziehen und das Projekt neu starten – auf der Kommandozeile:
    ```sh
    docker compose pull && docker compose up -d
    ```
    oder in der Container-Verwaltung des NAS „Projekt neu erstellen“.
-3. Datenbank-Migrationen laufen beim Start automatisch und in einer Transaktion: Schlägt eine fehl, bleibt die Datenbank unverändert, und der Container startet nicht. Im Container-Log steht dann der Grund.
+4. Datenbank-Migrationen laufen beim Start automatisch und in einer Transaktion: Schlägt eine fehl, bleibt die Datenbank unverändert, und der Container startet nicht. Im Container-Log steht dann der Grund.
+5. Kurz prüfen, ob alles läuft, dann den Wartungsmodus beenden.
 
 Welche Version läuft und ob es neuere gibt, zeigt **Werkbank → Technik** (siehe [Fehlersuche](fehlersuche.md#technik)).
 

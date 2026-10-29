@@ -5,6 +5,21 @@ export interface MailAnhang { name: string; mime: string; inhalt: Buffer | Reada
 export interface MailOptionen { antwortAn?: string; anhaenge?: MailAnhang[] }
 export interface Mailer { sende(an: string, betreff: string, text: string, optionen?: MailOptionen): Promise<void> }
 
+/**
+ * Mail an alle aktiven Administratoren mit echter Adresse (Notfallzugang #108, Sicherung #105).
+ * Ohne eingerichteten Versand geschieht nichts; liefert die Anzahl verschickter Mails.
+ */
+export async function anAlleAdmins(benutzer: Array<{ email: string; rolle: string; aktiv: boolean }>, mailer: Mailer | null, betreff: string, text: string): Promise<number> {
+  if (!mailer) return 0;
+  let n = 0;
+  for (const b of benutzer) {
+    if (!b.aktiv || b.rolle !== 'admin' || !b.email || b.email.endsWith('.invalid')) continue;
+    await mailer.sende(b.email, betreff, text);
+    n++;
+  }
+  return n;
+}
+
 export const mailtexte = {
   emailGeaendert: (name: string, alt: string, neu: string) => ({
     betreff: 'Deine E-Mail-Adresse im DMS wurde geändert',

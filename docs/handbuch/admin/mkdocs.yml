@@ -68,6 +68,9 @@ nav:
       - Papierkorb: papierkorb.md
       - Texterkennung und Wartung: texterkennung.md
       - Demo-Daten: demo.md
+  - Wartung und Notfall:
+      - Wartungsmodus: wartungsmodus.md
+      - "Notfall: kein Admin mehr": notfall.md
   - Fehlersuche und Support:
       - Protokoll, Datenbank, Technik: fehlersuche.md
   - Schnittstelle (API): api.md

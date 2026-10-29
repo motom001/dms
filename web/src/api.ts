@@ -80,7 +80,13 @@ export interface KontoStatus {
   hinweise?: Vertretung[];
   /** Logo und Schriftzug des Standard-Designs (#72) für die Anmeldeseite. */
   marke?: { schriftzug: string | null; logo: string | null } | null;
+  /** Wartungsmodus (#102). */
+  wartung?: WartungOeffentlich | null;
 }
+/** Wartungsmodus (#102), wie ihn jeder sieht; sekunden = bis zur aktiven Stufe. */
+export interface WartungOeffentlich { stufe: 'aus' | 'angekuendigt' | 'aktiv'; text: string; ende: string | null; aktivAb: string | null; sekunden: number | null }
+export interface WartungSitzung { id: string; benutzerId: string; name: string; email: string; rolle: string; geraet: string; ip: string; zuletztAktiv: string; erstellt: string; aktuell: boolean }
+export interface WartungWerkbank extends WartungOeffentlich { beginn: string | null; von: string | null; sitzungen: WartungSitzung[] }
 /** Benutzer für Namen und Empfängerauswahl; abwesend, solange die Abwesenheit an ist (#78). */
 export interface Person { id: string; name: string; aktiv?: boolean; abwesend?: { wirkt: boolean; von: string | null; bis: string | null; vertreter: string } }
 /** Werkbank: tägliche Zusammenfassung (#54, #92, #94). */
@@ -93,6 +99,11 @@ export interface LinkErgebnis { benutzer: Benutzer; mailVerschickt: boolean; lin
 
 export const api = {
   status: () => anfrage<KontoStatus>('GET', '/api/konto/status'),
+  wartung: () => anfrage<WartungOeffentlich>('GET', '/api/wartung'),
+  werkbankWartung: () => anfrage<WartungWerkbank>('GET', '/api/werkbank/wartung'),
+  wartungEin: (d: { text: string; ende: string | null; vorlauf: number }) => anfrage<unknown>('POST', '/api/werkbank/wartung/ein', d),
+  wartungJetzt: () => anfrage<unknown>('POST', '/api/werkbank/wartung/jetzt'),
+  wartungAus: () => anfrage<unknown>('POST', '/api/werkbank/wartung/aus'),
   einrichten: (d: { email: string; name: string; passwort: string }) => anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/einrichten', d),
   anmelden: (d: { email: string; passwort: string }) => anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/anmelden', d),
   abmelden: () => anfrage<null>('POST', '/api/konto/abmelden'),
@@ -285,6 +296,10 @@ export interface WerkbankUebersicht {
   version: { version: string; commit: string | null; gebaut: string | null };
   bestand: { version: string; groesseBytes: number; mappen: number; typen: number; benutzer: number; dokumente: number; dokumenteBytes: number } | null;
   fehlermeldungen: number | null;
+  /** Notfallzugänge (#108), bis sie umbenannt oder deaktiviert sind. */
+  notfallzugaenge?: Array<{ id: string; name: string; erstellt: string }>;
+  /** Wartungsmodus (#102). */
+  wartung?: WartungOeffentlich | null;
 }
 export interface Diagnose {
   dms: { version: string; commit: string | null; gebaut: string | null }; serverzeit: string; zeitzone: string; node: string; postgres: string | null;

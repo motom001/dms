@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { PASSWORT_MINDESTLAENGE, type Benutzer } from '../../shared/src/model';
-import { ABGEMELDET, api, type KontoStatus } from './api';
+import { ABGEMELDET, api, type KontoStatus, type WartungOeffentlich } from './api';
+import { WartungsHinweis } from './wartung';
 import { geheZu, useOrt } from './ort';
 import { Marke } from './Marke';
 
@@ -63,7 +64,7 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   if (fehler) return <Karte titel="Keine Verbindung"><p className="hinweis schlecht">{fehler}</p><button className="knopf" onClick={() => void laden()}>Erneut versuchen</button></Karte>;
   if (!status) return <p className="leise mittig">Lade …</p>;
   if (status.einrichtungNoetig) return <Ersteinrichtung fertig={laden} />;
-  if (!status.benutzer) return <Anmelden mail={status.mail} fertig={laden} />;
+  if (!status.benutzer) return <Anmelden mail={status.mail} wartung={status.wartung} fertig={laden} />;
   // key: Beim Wechsel des Benutzers (Vertretung) alles neu aufbauen und laden.
   return (
     <Ctx.Provider key={status.benutzer.id} value={{ ich: status.benutzer, mail: status.mail, passwoerterMoeglich: status.passwoerterMoeglich ?? false, abmelden, aktualisieren: laden, vertretung: status.vertretung ?? null, hinweise: status.hinweise ?? [] }}>
@@ -123,7 +124,7 @@ function Ersteinrichtung({ fertig }: { fertig: () => Promise<void> }) {
   );
 }
 
-function Anmelden({ mail, fertig }: { mail: boolean; fertig: () => Promise<void> }) {
+function Anmelden({ mail, wartung, fertig }: { mail: boolean; wartung?: WartungOeffentlich | null; fertig: () => Promise<void> }) {
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
   const [vergessen, setVergessen] = useState(false);
@@ -149,6 +150,7 @@ function Anmelden({ mail, fertig }: { mail: boolean; fertig: () => Promise<void>
 
   return (
     <Karte titel="Anmelden">
+      <WartungsHinweis start={wartung} />
       <form className="stapel" onSubmit={f.absenden}>
         <label className="eigenschaft"><span>E-Mail-Adresse</span><input id="anmelden-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" autoFocus required /></label>
         <label className="eigenschaft"><span>Passwort</span><input id="anmelden-passwort" type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" required /></label>

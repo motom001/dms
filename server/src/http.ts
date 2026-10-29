@@ -16,6 +16,8 @@ import type { Tresor } from './tresor';
 import type { Texterkennung } from './texterkennung';
 import type { Aufgabenmail } from './aufgabenmail';
 import type { Fehlermeldungen } from './fehlermeldungen';
+import { WartungFehler, type Wartung } from './wartung';
+import type { Notfallzugang } from './notfall';
 import { dateiKoepfe, leseCookie, modulAus, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage } from './routen';
 
 /** Häufige Abfragen, die das Protokoll sonst fluten würden. */
@@ -42,6 +44,10 @@ interface Optionen {
   texterkennung?: Texterkennung;
   aufgabenmail?: Aufgabenmail;
   fehlermeldungen?: Fehlermeldungen;
+  /** Wartungsmodus (#102). */
+  wartung?: Wartung;
+  /** Notfallzugang (#108). */
+  notfall?: Notfallzugang;
   abruf?: (url: string) => Promise<unknown>;
 }
 
@@ -56,6 +62,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
   });
 
   app.setErrorHandler((fehler: unknown, req, reply) => {
+    if (fehler instanceof WartungFehler) reply.header('retry-after', String(fehler.retryAfter));
     if (fehler instanceof Fachfehler) return reply.code(fehler.status).send({ fehler: fehler.message, details: fehler.details });
     const err = fehler as Error & { statusCode?: number };
     if (err.statusCode && err.statusCode < 500) return reply.code(err.statusCode).send({ fehler: err.message });
@@ -101,6 +108,8 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
         const antwort = await kontext.run(k, async () => {
           await pruefeZugang(r, a, (n) => req.headers[n] as string | undefined, konten, opt.apiSchluessel);
           k.benutzer = wer(a.benutzer, a.apiSchluessel);
+          // Wartungsmodus (#102): API 503, in der aktiven Stufe nur Administratoren.
+          opt.wartung?.pruefeAnfrage(r, a.benutzer);
           return r.handler(a);
         });
         // Für den Entwicklermodus: Dauer auf dem Server, davon Datenbank (Anzahl Zugriffe in desc).

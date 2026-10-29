@@ -164,6 +164,28 @@ export class Konten {
     return { beendet: liste.length };
   }
 
+  /** Alle angemeldeten Sitzungen aller Benutzer, für den Wartungsmodus (#102). */
+  async alleSitzungen(aktuelleId?: string) {
+    const erg: Array<{ id: string; benutzerId: string; name: string; email: string; rolle: string; geraet: string; ip: string; zuletztAktiv: string; erstellt: string; aktuell: boolean }> = [];
+    for (const b of await this.repo.listeBenutzer()) {
+      for (const s of await this.repo.listeSitzungen(b.id)) {
+        erg.push({ id: s.id, benutzerId: b.id, name: b.name, email: b.email, rolle: b.rolle, geraet: s.geraet, ip: s.ip, zuletztAktiv: s.zuletztAktiv, erstellt: s.erstellt, aktuell: s.id === aktuelleId });
+      }
+    }
+    return erg.sort((a, b) => b.zuletztAktiv.localeCompare(a.zuletztAktiv));
+  }
+
+  /** Beendet alle Sitzungen außer dieser einen (Wartungsmodus, #102). */
+  async beendeAlleSitzungenAusser(sitzungId: string | null): Promise<number> {
+    let n = 0;
+    for (const s of await this.alleSitzungen()) {
+      if (s.id === sitzungId) continue;
+      await this.beendeSitzung(s.benutzerId, s.id).catch(() => {});
+      n++;
+    }
+    return n;
+  }
+
   /* ---------- Als anderer Benutzer anmelden (Admin) ---------- */
 
   /**
@@ -402,6 +424,23 @@ export class Konten {
   }
 
   /** Admin: neuen Link schicken (Einladung, wenn noch kein Passwort gesetzt ist, sonst Zurücksetzen). */
+  /**
+   * Notfallzugang (#108): neuer Administrator ohne Passwort und ein Einmal-Link, der nur
+   * `minuten` gilt; beim Öffnen legt man ein eigenes Passwort fest. Der Link wird nicht verschickt.
+   */
+  async notfallzugang(minuten: number, jetzt = new Date()): Promise<{ benutzer: Benutzer; link: string; ablauf: Date }> {
+    const teile = Object.fromEntries(new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+      .formatToParts(jetzt).map((x) => [x.type, x.value]));
+    const name = `Notfall-Admin ${teile.day}.${teile.month}.${teile.year} ${teile.hour}:${teile.minute}`;
+    const email = `notfall-${teile.year}${teile.month}${teile.day}-${teile.hour}${teile.minute}${teile.second}@notfall.invalid`;
+    const benutzer = await this.repo.legeBenutzerAn({ id: randomUUID(), email, name, rolle: 'admin', passwortHash: null });
+    await this.spiegle(benutzer);
+    const schluessel = neuerSchluessel();
+    const ablauf = new Date(jetzt.getTime() + minuten * 60_000);
+    await this.repo.legeLinkAn(hasheSchluessel(schluessel), benutzer.id, 'einladung', ablauf);
+    return { benutzer, link: `${this.appUrl.replace(/\/$/, '')}/passwort/${schluessel}`, ablauf };
+  }
+
   async neuerLink(id: string): Promise<Ergebnis> {
     const b = await this.repo.holeBenutzer(id);
     if (!b) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');

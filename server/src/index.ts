@@ -1,4 +1,5 @@
 import { mkdir } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { migriere, verbinde } from './db';
 import { Dienst } from './dienst';
@@ -17,6 +18,9 @@ import { STANDARD_DATEI, Tresor } from './tresor';
 import { Texterkennung } from './texterkennung';
 import { Aufgabenmail } from './aufgabenmail';
 import { Fehlermeldungen, pgFehlerRepo } from './fehlermeldungen';
+import { Wartung } from './wartung';
+import { Notfallzugang } from './notfall';
+import { anAlleAdmins } from './mail';
 
 const pfad = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
 const env = process.env;
@@ -69,8 +73,17 @@ const dienst = new Dienst(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'mappen'),
 const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, cfg.haushalt), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.benutzerspiegel());
 dienst.verbindeKonten(konten.papierkorbHaken());
 // Texterkennung im Hintergrund (#45); dieselbe Datenbank, eigener Messbereich.
+// Wartungsmodus (#102): überdauert einen Neustart; pausiert die Hintergrundarbeiten.
+const wartung = new Wartung(pgBetriebSpeicher(sql, cfg.haushalt), konten);
+await wartung.laden();
+wartung.start();
+// Notfallzugang über eine RESCUE-Datei neben der Schlüsseldatei (#108).
+const anAdmins = async (betreff: string, text: string) => { await anAlleAdmins(await konten.listeBenutzer(), betrieb.mailer(), betreff, text); };
+const notfall = new Notfallzugang(join(dirname(tresor.datei), 'RESCUE'), konten, pgBetriebSpeicher(sql, cfg.haushalt), anAdmins);
 const texterkennung = new Texterkennung(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'texterkennung'), ordnerSpeicher(cfg.dateien, cfg.haushalt), pgBetriebSpeicher(sql, cfg.haushalt));
 dienst.verbindeTexterkennung(texterkennung);
+texterkennung.pause = () => wartung.aktiv;
+wartung.beimAusschalten(() => texterkennung.anstossen());
 // Tägliche Zusammenfassung der offenen Aufgaben (#54).
 const typName = async (id: string | undefined) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? '';
 const aufgabenmail = new Aufgabenmail({
@@ -92,6 +105,8 @@ const app = await baueApp(dienst, konten, {
   texterkennung,
   aufgabenmail,
   // Screenshots der Fehlermeldungen getrennt von den Dokumenten (#70).
+  wartung,
+  notfall,
   fehlermeldungen: new Fehlermeldungen(pgFehlerRepo(sql, cfg.haushalt), ordnerSpeicher(cfg.dateien, `${cfg.haushalt}/fehlermeldungen`)),
 });
 
@@ -105,21 +120,25 @@ await dienst.gleicheBenutzerAb(await konten.listeBenutzer());
 const geprueft = await dienst.passungNachziehen();
 if (geprueft) log.info(`Mappen von ${geprueft} Mappentypen gegen ihre Definition geprüft`);
 // Papierkorb (#43): Abgelaufenes stündlich endgültig löschen.
-const papierkorb = () => dienst.raeumePapierkorbAuf().catch((e) => log.error('Papierkorb aufräumen fehlgeschlagen', { fehler: (e as Error).message }));
-await papierkorb();
-setInterval(papierkorb, 60 * 60 * 1000).unref();
+const papierkorb = async () => { if (!wartung.aktiv) await dienst.raeumePapierkorbAuf(); };
+const papierkorbLauf = () => papierkorb().catch((e) => log.error('Papierkorb aufräumen fehlgeschlagen', { fehler: (e as Error).message }));
+await papierkorbLauf();
+setInterval(papierkorbLauf, 60 * 60 * 1000).unref();
 // Abwesenheit (#78): Abgelaufenes beenden, „abwesend“ an den Benutzer-Mappen nachziehen.
 const abwesenheiten = () => konten.abwesenheitenPruefen().catch((e) => log.error('Abwesenheiten prüfen fehlgeschlagen', { fehler: (e as Error).message }));
 await abwesenheiten();
 setInterval(abwesenheiten, 60 * 60 * 1000).unref();
-setInterval(() => void aufgabenmail.pruefe().catch((e) => log.error('Aufgaben-Mail fehlgeschlagen', { fehler: (e as Error).message })), 5 * 60 * 1000).unref();
+setInterval(() => void (wartung.aktiv ? Promise.resolve(0) : aufgabenmail.pruefe()).catch((e) => log.error('Aufgaben-Mail fehlgeschlagen', { fehler: (e as Error).message })), 5 * 60 * 1000).unref();
 if (await konten.einrichtungNoetig()) log.warn(`Noch kein Benutzer vorhanden: Der erste Aufruf des DMS im Browser (Port ${cfg.port}) legt den Administrator an.`);
 
 await texterkennung.start();
+notfall.start();
 
 const beenden = async () => {
   log.info('DMS wird beendet');
   texterkennung.stop();
+  wartung.stop();
+  notfall.stop();
   await app.close();
   await sql.end({ timeout: 5 });
   process.exit(0);
