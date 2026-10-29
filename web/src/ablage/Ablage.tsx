@@ -16,6 +16,7 @@ import { PapierkorbDetail, PapierkorbListe, usePapierkorb } from './Papierkorb';
 import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
 import { Hilfe } from '../Hilfe';
+import { ExportDialog } from './Export';
 import type { Hilfeort } from '../../../shared/src/hilfe';
 
 /**
@@ -120,7 +121,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
               beschreibung="Mappen, die du mit einem Stern markiert hast."
               leerText="Noch keine Favoriten. Markiere eine Mappe mit dem Stern ☆, um sie hier zu finden." />
           : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} spaltenTyp={typ ?? sichtTypen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []} titel={verwaltet?.name ?? typ!.name} beschreibung={verwaltet ? verwaltet.beschreibung : typ?.beschreibung}
-              offen={dritt} neu={!!typ && darfErstellen(typ) && verwaltet?.rechte?.C !== false} leerText="Noch keine Mappen in dieser Sicht." hilfe="ablage.sicht" auswahl />
+              offen={dritt} neu={!!typ && darfErstellen(typ) && verwaltet?.rechte?.C !== false} leerText="Noch keine Mappen in dieser Sicht." hilfe="ablage.sicht" auswahl export={verwaltet?.rechte?.E !== false} />
           : sicht ? <div className="leer"><p>Diese Sicht gibt es nicht (mehr).</p></div> : null}
       </section>
 
@@ -234,6 +235,8 @@ function Liste(p: {
   link?: string; anhang?: string; sortierungFest?: { wert: Sortierung | null; setze(n: Sortierung | null): void }; zuerstOeffnen?: boolean;
   /** Mehrere Mappen auswählen (#149) – in Sichten, nicht im Eingang oder bei Favoriten. */
   auswahl?: boolean;
+  /** Export erlaubt (#153: Recht E an der Sicht). */
+  export?: boolean;
 }) {
   const d = useDaten();
   const anhang = p.anhang ?? '';
@@ -298,6 +301,7 @@ function Liste(p: {
   const w = useAuswahl(s.mappen, s.gesamt, [p.sicht, suche, volltext, inNotizen, p.link ?? '']);
   const wahl = p.auswahl ? w : undefined;
   const [ergebnis, setErgebnis] = useState<{ text: string; liste: Array<{ id: string; titel: string; grund: string }> }>();
+  const [exportOffen, setExportOffen] = useState(false);
   async function alleWaehlen() {
     try { const r = await api.auswahl(p.sicht, suche, volltext, inNotizen, p.link); w.setze(r.ids, true); }
     catch (x) { setErgebnis({ text: (x as Error).message, liste: [] }); }
@@ -348,7 +352,13 @@ function Liste(p: {
         <p className="listenzahl leise klein" aria-live="polite">
           {anzahlText}{s.mappen.length < (s.gesamt ?? 0) ? `, ${zahl(s.mappen.length)} geladen` : ''}
           {sortierung && <> · sortiert nach {spaltenName(sortierung.spalte, p.typ)} {sortierung.absteigend ? '↓' : '↑'} <button type="button" className="textknopf" onClick={() => setzeSortierung(null)}>nach Titel</button></>}
+          {p.export && !wahl?.gewaehlt.size && !!s.gesamt && <> · <button type="button" className="textknopf" onClick={() => setExportOffen(true)}>Exportieren …</button></>}
         </p>
+      )}
+      {exportOffen && (
+        <ExportDialog sicht={p.sicht} link={p.link} ids={wahl?.gewaehlt.size ? [...wahl.gewaehlt] : null} anzahl={wahl?.gewaehlt.size ?? 0} gesamt={s.gesamt ?? 0}
+          suche={suche} volltext={volltext} notizen={inNotizen} sortierung={sortierung}
+          fertig={(meldung) => { setExportOffen(false); if (meldung) setErgebnis({ text: meldung, liste: [] }); }} />
       )}
       {s.fehler && <div className="hinweis schlecht"><p>{s.fehler}</p></div>}
       {wahl && wahl.gewaehlt.size > 0 && (
@@ -356,6 +366,7 @@ function Liste(p: {
           <span className="klein"><strong>{zahl(wahl.gewaehlt.size)}</strong> von {zahl(s.gesamt ?? 0)} ausgewählt</span>
           {!wahl.alle && (s.gesamt ?? 0) > wahl.gewaehlt.size && <button type="button" className="textknopf klein" onClick={() => void alleWaehlen()}>Alle {zahl(s.gesamt ?? 0)} auswählen</button>}
           <span className="luecke" aria-hidden="true" />
+          {p.export && <button type="button" className="knopf klein" onClick={() => setExportOffen(true)}>Exportieren …</button>}
           <button type="button" className="knopf klein gefahr" onClick={() => void loeschen()}>Löschen</button>
           <button type="button" className="textknopf klein" onClick={wahl.leeren}>Auswahl aufheben</button>
         </div>

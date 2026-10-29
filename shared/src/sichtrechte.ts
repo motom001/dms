@@ -1,7 +1,8 @@
 /**
  * Berechtigungen an Sichten (#148). Server und Oberfläche teilen diese Datei.
  *
- * Sichtregeln steuern nur die Sicht: ob sie im Baum erscheint (R) und ob es dort „+ Neu“ gibt (C).
+ * Sichtregeln steuern nur die Sicht: ob sie im Baum erscheint (R), ob es dort „+ Neu“ gibt (C) und ob
+ * man aus ihr exportieren darf (E: Tabelle, ZIP, PDF).
  * Ob eine Mappe lesbar ist, regelt weiter allein der Mappentyp. Für Administratoren gelten sie nicht.
  *
  * Vererbung: Eine Untersicht erbt die Regeln ihrer Elternsicht (und deren Eltern). Ihre eigenen Regeln
@@ -11,8 +12,8 @@
 import type { RegelBedingung, Wer, Wirkung } from './rechte';
 import type { Sicht } from './sichten';
 
-/** Rechte an einer Sicht; später kommen E (Export) und Aktionen dazu. */
-export const SICHT_RECHTE = { R: 'Sehen', C: 'Anlegen' } as const;
+/** Rechte an einer Sicht: sehen, anlegen und E für alles, was Daten hinausgibt (Export, PDF; #153). */
+export const SICHT_RECHTE = { R: 'Sehen', C: 'Anlegen', E: 'Exportieren' } as const;
 export type SichtRecht = keyof typeof SICHT_RECHTE;
 export const SICHT_RECHTE_LISTE = Object.keys(SICHT_RECHTE) as SichtRecht[];
 export type SichtRechte = Record<SichtRecht, boolean>;

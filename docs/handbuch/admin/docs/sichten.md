@@ -101,12 +101,13 @@ Entfernst du ein Feld oder Register, auf das eine Bedingung zielt, wird die Sich
 
 ## Berechtigungen
 
-Mit Berechtigungen legst du fest, **wer eine Sicht sieht** und **wer dort neue Mappen anlegen** kann – etwa damit die Sicht *Haus* mit allem darunter nur bei den Eltern im Baum erscheint.
+Mit Berechtigungen legst du fest, **wer eine Sicht sieht**, **wer dort neue Mappen anlegen** und **wer aus ihr exportieren** kann – etwa damit die Sicht *Haus* mit allem darunter nur bei den Eltern im Baum erscheint.
 
 | Recht | Bedeutung |
 |---|---|
 | **R** Sehen | Die Sicht erscheint im Baum der Ablage und lässt sich öffnen. |
 | **C** Anlegen | In der Sicht gibt es „+ Neu“. Anlegen dürfen muss man zusätzlich am [Mappentyp](berechtigungen.md) – beide müssen es erlauben. |
+| **E** Exportieren | Mappen der Sicht als Excel, CSV, ZIP mit Dokumenten oder PDF ausgeben – alles, was Daten aus dem DMS hinausgibt. Lesen muss man jede Mappe zusätzlich am Mappentyp. |
 
 !!! info "Sichtregeln regeln die Sicht, nicht die Mappen"
     Ob jemand eine **Mappe** lesen darf, entscheiden allein die [Berechtigungen am Mappentyp](berechtigungen.md). Eine Mappe aus einer verborgenen Sicht kann also über die Suche, eine andere Sicht oder einen Link weiter auftauchen. Wer Mappen verbergen will, regelt das am Mappentyp. Für Administratoren gelten die Regeln an Sichten nicht.
@@ -128,7 +129,7 @@ Unter den Berechtigungen prüfst du, was ein Benutzer an der Sicht darf – mit 
 ### Beispiel: „Haus“ nur für die Eltern
 
 1. Lege eine Rolle **Kinder** an und gib sie den Kindern.
-2. Sicht *Haus* (oberste Ebene): Regel **Kinder sehen das nicht** – wenn *Benutzer hat Rolle Kinder* → ✗ R C.
+2. Sicht *Haus* (oberste Ebene): Regel **Kinder sehen das nicht** – wenn *Benutzer hat Rolle Kinder* → ✗ R C E.
 3. *Heizung*, *Garten* usw. unter *Haus* erben die Regel – für die Kinder fehlt der ganze Ast.
 4. Sollen die Kinder etwa *Garten* doch sehen, lege *Garten* auf die oberste Ebene oder unter eine andere Sicht: Untersichten können nur einschränken.
 

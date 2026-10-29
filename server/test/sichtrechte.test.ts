@@ -66,15 +66,15 @@ describe('Sichtrechte auswerten (#148)', () => {
   const s = (id: string, elternId: string | null, berechtigungen: SichtRegelwerk | null): Sicht => ({ id, elternId, berechtigungen, name: id, beschreibung: '', position: 0, typen: [], bedingungen: [], erstellt: '', geaendert: '' });
   it('Untersicht: Standard gilt nicht, ✓ wirkt nicht, Eltern UND eigene', () => {
     const alle = [
-      s('a', null, { grund: { R: true, C: false }, regeln: [regel('r1 darf anlegen', [{ art: 'rolle', rollen: ['r1'] }], { C: 'erteilen' })] }),
-      s('b', 'a', { grund: { R: false, C: false }, regeln: [regel('versuch', [{ art: 'benutzer', benutzer: ['u1'] }], { R: 'erteilen' })] }),
-      s('c', 'b', { grund: { R: true, C: true }, regeln: [regel('kein C', [{ art: 'rolle', rollen: ['r1'] }], { C: 'entziehen' })] }),
+      s('a', null, { grund: { R: true, C: false, E: true }, regeln: [regel('r1 darf anlegen', [{ art: 'rolle', rollen: ['r1'] }], { C: 'erteilen' })] }),
+      s('b', 'a', { grund: { R: false, C: false, E: true }, regeln: [regel('versuch', [{ art: 'benutzer', benutzer: ['u1'] }], { R: 'erteilen' })] }),
+      s('c', 'b', { grund: { R: true, C: true, E: true }, regeln: [regel('kein C', [{ art: 'rolle', rollen: ['r1'] }], { C: 'entziehen' })] }),
     ];
-    assert.deepEqual(sichtRechte(alle, 'a', wer), { R: true, C: true });
-    assert.deepEqual(sichtRechte(alle, 'b', wer), { R: true, C: true });
-    assert.deepEqual(sichtRechte(alle, 'c', wer), { R: true, C: false });
-    assert.deepEqual(eigeneSichtRechte(alle[1].berechtigungen!, wer, true).rechte, { R: true, C: true });
-    assert.deepEqual(sichtRechte(alle, 'c', { id: 'u2', rollen: [] }), { R: true, C: false });
+    assert.deepEqual(sichtRechte(alle, 'a', wer), { R: true, C: true, E: true });
+    assert.deepEqual(sichtRechte(alle, 'b', wer), { R: true, C: true, E: true });
+    assert.deepEqual(sichtRechte(alle, 'c', wer), { R: true, C: false, E: true });
+    assert.deepEqual(eigeneSichtRechte(alle[1].berechtigungen!, wer, true).rechte, { R: true, C: true, E: true });
+    assert.deepEqual(sichtRechte(alle, 'c', { id: 'u2', rollen: [] }), { R: true, C: false, E: true });
   });
 });
 
@@ -82,7 +82,7 @@ function faelle(pg: boolean) {
 describe(`Berechtigungen an Sichten (#148)${pg ? ' – PostgreSQL' : ''}`, { skip: pg && !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
   it('verborgene Untersicht: weder im Baum noch ihre Mappen in der Elternsicht, Zähler passend', async () => {
     const { admin, kind, eltern, kinderRolle, haus, heizung, garten, sichten, zaehler, seite, setze } = await aufbau(pg);
-    await setze(heizung, { grund: { R: true, C: true }, regeln: [regel('Kinder nicht', [{ art: 'rolle', rollen: [kinderRolle] }], { R: 'entziehen' })] });
+    await setze(heizung, { grund: { R: true, C: true, E: true }, regeln: [regel('Kinder nicht', [{ art: 'rolle', rollen: [kinderRolle] }], { R: 'entziehen' })] });
     assert.deepEqual((await sichten(kind)).map((s) => s.name).sort(), ['Garten', 'Haus']);
     assert.equal((await sichten(kind))[0].berechtigungen, undefined, 'Regeln bleiben verborgen');
     assert.deepEqual((await sichten(eltern)).map((s) => s.name).sort(), ['Garten', 'Haus', 'Heizung']);
@@ -98,7 +98,7 @@ describe(`Berechtigungen an Sichten (#148)${pg ? ' – PostgreSQL' : ''}`, { ski
 
   it('vererbt: Elternsicht verborgen → Untersichten auch; Admins ohne Regeln', async () => {
     const { admin, kind, haus, d, sichten, zaehler } = await aufbau(pg);
-    await d.aendereSicht(haus.id, { ...haus, berechtigungen: { grund: { R: true, C: true }, regeln: [regel('Kind nicht', [{ art: 'benutzer', benutzer: [kind.id] }], { R: 'entziehen' })] } });
+    await d.aendereSicht(haus.id, { ...haus, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [regel('Kind nicht', [{ art: 'benutzer', benutzer: [kind.id] }], { R: 'entziehen' })] } });
     assert.deepEqual(await sichten(kind), []);
     assert.deepEqual(await zaehler(kind), {});
     assert.equal((await sichten(admin)).length, 3);
@@ -107,16 +107,16 @@ describe(`Berechtigungen an Sichten (#148)${pg ? ' – PostgreSQL' : ''}`, { ski
 
   it('C an der Sicht; Untersicht nur ✗; ohne Angabe bleiben Regeln', async () => {
     const { kind, eltern, kinderRolle, garten, haus, sichten, setze, d } = await aufbau(pg);
-    await setze(garten, { grund: { R: true, C: true }, regeln: [regel('Kinder legen nicht an', [{ art: 'rolle', rollen: [kinderRolle] }], { C: 'entziehen' })] });
-    assert.deepEqual((await sichten(kind)).find((s) => s.id === garten.id)?.rechte, { R: true, C: false });
-    assert.deepEqual((await sichten(eltern)).find((s) => s.id === garten.id)?.rechte, { R: true, C: true });
-    await assert.rejects(setze(garten, { grund: { R: true, C: true }, regeln: [regel('Eltern dürfen', [{ art: 'benutzer', benutzer: [eltern.id] }], { C: 'erteilen' })] }), status(422));
+    await setze(garten, { grund: { R: true, C: true, E: true }, regeln: [regel('Kinder legen nicht an', [{ art: 'rolle', rollen: [kinderRolle] }], { C: 'entziehen' })] });
+    assert.deepEqual((await sichten(kind)).find((s) => s.id === garten.id)?.rechte, { R: true, C: false, E: true });
+    assert.deepEqual((await sichten(eltern)).find((s) => s.id === garten.id)?.rechte, { R: true, C: true, E: true });
+    await assert.rejects(setze(garten, { grund: { R: true, C: true, E: true }, regeln: [regel('Eltern dürfen', [{ art: 'benutzer', benutzer: [eltern.id] }], { C: 'erteilen' })] }), status(422));
     // Ohne „berechtigungen“ in der Eingabe bleiben sie (z. B. über die Schnittstelle).
     const { berechtigungen: _b, ...ohne } = (await d.listeSichten()).find((s) => s.id === garten.id)!;
     await d.aendereSicht(garten.id, { ...ohne, name: 'Garten neu' });
     assert.equal((await d.listeSichten()).find((s) => s.id === garten.id)?.berechtigungen?.regeln.length, 1);
     // Oberste Sicht darf ✓ und Standard ✗.
-    await setze(haus, { grund: { R: false, C: false }, regeln: [regel('Eltern sehen', [{ art: 'benutzer', benutzer: [eltern.id] }], { R: 'erteilen' })] });
+    await setze(haus, { grund: { R: false, C: false, E: true }, regeln: [regel('Eltern sehen', [{ art: 'benutzer', benutzer: [eltern.id] }], { R: 'erteilen' })] });
     assert.deepEqual((await sichten(kind)).map((s) => s.name), []);
     assert.deepEqual((await sichten(eltern)).map((s) => s.name).sort(), ['Garten neu', 'Haus', 'Heizung']);
   });
@@ -124,7 +124,7 @@ describe(`Berechtigungen an Sichten (#148)${pg ? ' – PostgreSQL' : ''}`, { ski
   it('Testlauf mit ungespeicherten Regeln und Elternsicht', async () => {
     const { admin, kind, kinderRolle, haus, heizung, rufe } = await aufbau(pg);
     const r = (await rufe(admin, 'POST', '/api/werkbank/sichten/testlauf', { body: { sichtId: heizung.id, benutzerId: kind.id, elternId: haus.id,
-      berechtigungen: { grund: { R: true, C: true }, regeln: [regel('Kinder nicht', [{ art: 'rolle', rollen: [kinderRolle] }], { R: 'entziehen' })] } } })).body as { kette: Array<{ name: string; stand: { R: boolean } }>; wirksam: { R: boolean } };
+      berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [regel('Kinder nicht', [{ art: 'rolle', rollen: [kinderRolle] }], { R: 'entziehen' })] } } })).body as { kette: Array<{ name: string; stand: { R: boolean } }>; wirksam: { R: boolean } };
     assert.deepEqual(r.kette.map((k) => k.name), ['Haus', 'Heizung']);
     assert.equal(r.wirksam.R, false);
     const ohne = (await rufe(admin, 'POST', '/api/werkbank/sichten/testlauf', { body: { sichtId: heizung.id, benutzerId: kind.id, elternId: null, berechtigungen: null } })).body as { kette: unknown[]; wirksam: { R: boolean } };
