@@ -3,6 +3,7 @@ import { messung } from './messung';
 import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
+import type { Anstehend, Erinnerung } from '../../shared/src/fristen';
 import { merkeAnfrage } from './diagnose';
 import { erreichbarkeit, NICHT_ERREICHBAR } from './erreichbar';
 import { istAusfall } from '../../shared/src/erreichbarkeit';
@@ -316,9 +317,16 @@ export const api = {
   papierkorbTage: (e: { tage?: number; historieTage?: number }) => anfrage<{ tage: number; geleert: number; historieTage: number }>('PUT', '/api/werkbank/papierkorb/einstellungen', e),
   /* Aufgaben (#54) */
   aufgabeAnlegen: (mappeId: string, empfaengerId: string, text: string) => anfrage<Aufgabe & { hinweis?: string }>('POST', `/api/mappen/${mappeId}/aufgaben`, { empfaengerId, text }),
-  aufgabeErledigt: (id: string) => anfrage<Aufgabe>('POST', `/api/aufgaben/${id}/erledigt`),
+  /** Mit folgetermin bei wiederkehrenden Fristen (#130). */
+  aufgabeErledigt: (id: string) => anfrage<Aufgabe & { folgetermin?: string }>('POST', `/api/aufgaben/${id}/erledigt`),
+  folgetermin: (id: string) => anfrage<Mappe & { hinweis?: string }>('POST', `/api/aufgaben/${id}/folgetermin`),
+  /* Fristen und Erinnerungen (#129–#132) */
+  anstehend: (tage?: number) => anfrage<{ tage: number; eintraege: Anstehend[] }>('GET', `/api/anstehend${tage === undefined ? '' : `?tage=${tage}`}`),
+  erinnerungAnlegen: (mappeId: string, e: { datum: string; text: string; empfaengerId?: string }) => anfrage<Erinnerung & { hinweis?: string }>('POST', `/api/mappen/${mappeId}/erinnerungen`, e),
+  erinnerungAendern: (id: string, e: { datum: string; text: string; empfaengerId?: string }) => anfrage<Erinnerung & { hinweis?: string }>('PUT', `/api/erinnerungen/${id}`, e),
+  erinnerungLoeschen: (id: string) => anfrage<null>('DELETE', `/api/erinnerungen/${id}`),
   aufgabeDelegieren: (id: string, empfaengerId: string) => anfrage<Aufgabe & { hinweis?: string }>('POST', `/api/aufgaben/${id}/delegieren`, { empfaengerId }),
-  aufgabenWerkbank: (erledigt = false) => anfrage<{ aufgaben: Aufgabe[]; mail: MailEinstellung | null }>('GET', `/api/werkbank/aufgaben${erledigt ? '?erledigt' : ''}`),
+  aufgabenWerkbank: (erledigt = false) => anfrage<{ aufgaben: Aufgabe[]; mail: MailEinstellung | null; unlesbar?: string[] }>('GET', `/api/werkbank/aufgaben${erledigt ? '?erledigt' : ''}`),
   aufgabenMailSpeichern: (e: MailEinstellung) => anfrage<MailEinstellung>('PUT', '/api/werkbank/aufgaben/mail', e),
   /** Eigene tägliche Zusammenfassung (#92, #94). */
   zusammenfassung: () => anfrage<Zusammenfassung>('GET', '/api/konto/zusammenfassung'),
@@ -395,7 +403,7 @@ export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
   const d = x instanceof ApiFehler && x.status === 404 ? x.details as { verborgen?: boolean; aufgaben?: Aufgabe[] } | undefined : undefined;
   return d?.verborgen ? d.aufgaben ?? [] : null;
 };
-export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege }
+export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 export const dokumentUrl = (id: string, herunterladen = false) => `/api/dokumente/${id}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
 

@@ -16,12 +16,13 @@ export function useAufgaben(aktiv: boolean) {
   const [erledigt, setErledigt] = useState(false);
   const [liste, setListe] = useState<Aufgabe[] | null>(null);
   const [mail, setMail] = useState<MailEinstellung | null>(null);
+  const [unlesbar, setUnlesbar] = useState<Set<string>>(new Set());
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { const r = await api.aufgabenWerkbank(erledigt); setListe(r.aufgaben); setMail(r.mail); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { const r = await api.aufgabenWerkbank(erledigt); setListe(r.aufgaben); setMail(r.mail); setUnlesbar(new Set(r.unlesbar ?? [])); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, [erledigt]);
   useEffect(() => { if (aktiv) void laden(); }, [aktiv, laden]);
-  return { liste, mail, setMail, erledigt, setErledigt, fehler, laden };
+  return { liste, mail, setMail, erledigt, setErledigt, fehler, laden, unlesbar };
 }
 export type AufgabenZustand = ReturnType<typeof useAufgaben>;
 
@@ -40,6 +41,7 @@ export function AufgabenListe({ z }: { z: AufgabenZustand }) {
         <button type="button" className="knopf klein" onClick={() => z.setErledigt(!z.erledigt)}>{z.erledigt ? 'Offene zeigen' : 'Erledigte zeigen'}</button>
       </div>
       {(z.fehler || fehler) && <div className="hinweis schlecht"><p>{z.fehler ?? fehler}</p></div>}
+      {!z.erledigt && z.unlesbar.size > 0 && <div className="hinweis warn"><p>{z.unlesbar.size === 1 ? 'Eine Frist oder Erinnerung ging' : `${z.unlesbar.size} Fristen oder Erinnerungen gingen`} an jemanden, der die Mappe nach den Berechtigungen nicht lesen darf. Gib sie weiter oder passe die Berechtigungen an.</p></div>}
       <div className="listenrumpf">
         {z.liste === null ? <p className="leise">Lade …</p> : !liste.length ? <p className="leise leerliste">{z.erledigt ? 'Noch nichts erledigt.' : 'Keine offenen Aufgaben.'}</p> : (
           <ul className="mappenliste">
@@ -49,6 +51,7 @@ export function AufgabenListe({ z }: { z: AufgabenZustand }) {
                   <span className="titel">{titelOder(a.mappeTitel)}</span>
                   <span className="unter">{d.typ(a.typId)?.name} · {AUFGABENARTEN[a.art]} · {datum(z.erledigt && a.erledigt ? a.erledigt : a.erstellt)}</span>
                   <span className="unter">{a.text}</span>
+                  {!z.erledigt && z.unlesbar.has(a.id) && <span className="problem">Empfänger darf die Mappe nicht lesen</span>}
                 </Link>
                 <div className="aufgabenzeile">
                   {z.erledigt

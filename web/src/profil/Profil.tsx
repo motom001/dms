@@ -13,6 +13,7 @@ import { Farbfelder } from '../werkbank/Designs';
 import { useKonto } from '../konto';
 import { Hilfe } from '../Hilfe';
 import { RECHTE, RECHTE_LISTE } from '../../../shared/src/rechte';
+import { ANSTEHEND_MAX, ANSTEHEND_TAGE } from '../../../shared/src/fristen';
 
 const STUFE = { immer: 'ja', nie: 'nein', teils: 'je nach Mappe' } as const;
 
@@ -184,6 +185,14 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
         <h2 className="h3">Aufgaben <Hilfe ort="profil.benachrichtigungen" /></h2>
         <p className="leise">Mappen mit offenen Aufgaben für dich stehen im Eingang. Zusätzlich schickt das DMS einmal am Tag eine Übersicht per E-Mail – zu deiner Uhrzeit und an deinen Wochentagen, solange du offene Aufgaben hast und nicht abwesend bist.</p>
         <ZusammenfassungEinstellen />
+      </div>
+
+      <div className="blatt">
+        <h2 className="h3">Anstehend <Hilfe ort="ablage.anstehend" /></h2>
+        <p className="leise">Die Sicht „Anstehend“ unter dem Eingang zeigt deine Fristen und Erinnerungen, die bald fällig sind – auch die, die noch nicht im Eingang stehen.</p>
+        <label className="eigenschaft schmal"><span>Zeitraum <small>Tage ab heute</small></span>
+          <input type="number" min={1} max={ANSTEHEND_MAX} className="kurz" defaultValue={Number(d.einstellungen.anstehend_tage ?? ANSTEHEND_TAGE)}
+            onBlur={(e) => { const n = Math.min(ANSTEHEND_MAX, Math.max(1, Math.trunc(Number(e.target.value) || ANSTEHEND_TAGE))); e.target.value = String(n); d.setzeEinstellung('anstehend_tage', n === ANSTEHEND_TAGE ? null : n); }} /></label>
       </div>
 
       {(!!d.zaehler.papierkorbTage || d.einstellungen.papierkorb_beim_abmelden === true) && (

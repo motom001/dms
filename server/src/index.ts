@@ -35,6 +35,7 @@ import { pgEinstellungen } from './einstellungen';
 import { Sicherung } from './sicherung';
 import { eigeneVersion } from './system';
 import { Wiederherstellung } from './wiederherstellung';
+import { heuteIn } from '../../shared/src/sichten';
 
 const pfad = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
 const env = process.env;
@@ -232,7 +233,18 @@ setInterval(papierkorbLauf, 60 * 60 * 1000).unref();
 const abwesenheiten = () => konten.abwesenheitenPruefen().catch((e) => log.error('Abwesenheiten prüfen fehlgeschlagen', { fehler: (e as Error).message }));
 await abwesenheiten();
 setInterval(abwesenheiten, 60 * 60 * 1000).unref();
-setInterval(() => void (wartung.aktiv ? Promise.resolve(0) : aufgabenmail.pruefe()).catch((e) => log.error('Aufgaben-Mail fehlgeschlagen', { fehler: (e as Error).message })), 5 * 60 * 1000).unref();
+// Fristen und Erinnerungen (#129, #131): einmal am Tag – gleich nach Mitternacht bzw. beim Start –, vor der Zusammenfassung.
+let fristenTag = '';
+const fristen = async () => {
+  const heute = heuteIn();
+  if (wartung.aktiv || heute === fristenTag) return;
+  const r = await dienst.fristenLauf(heute);
+  fristenTag = heute;
+  if (r.angelegt || r.erledigt || r.erinnerungen) log.info('Fristen und Erinnerungen geprüft', r);
+};
+await fristen().catch((e) => log.error('Fristen prüfen fehlgeschlagen', { fehler: (e as Error).message }));
+setInterval(() => void fristen().then(() => (wartung.aktiv ? 0 : aufgabenmail.pruefe()))
+  .catch((e) => log.error('Fristen oder Aufgaben-Mail fehlgeschlagen', { fehler: (e as Error).message })), 5 * 60 * 1000).unref();
 if (einrichtungNoetig) log.warn(`Noch kein Benutzer vorhanden: Öffne das DMS im Browser (Port ${cfg.port}) und richte es mit dem Einrichtungscode ein.`);
 
 await texterkennung.start();

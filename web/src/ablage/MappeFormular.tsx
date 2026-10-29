@@ -11,7 +11,7 @@ import { titelOder } from '../seiten';
 import { Formatiert, FormatiertEingabe } from './Formatiert';
 import { Historie } from './Historie';
 import { Notizen } from './Notizen';
-import { AufgabenHinweis, NeueAufgabe } from './Aufgaben';
+import { AufgabenHinweis, ErinnerungFormular, Erinnerungen, NeueAufgabe } from './Aufgaben';
 import { Aktionsmenue, Druckansicht, EmailMaske } from './Aktionen';
 import { linkZuMappe } from '../../../shared/src/direktlink';
 import { Person } from '../Person';
@@ -49,6 +49,7 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { t
   const verwaist = Object.entries(mappe.werte).filter(([k, v]) => !bekannt.has(k) && !istLeer(v));
   const [notizenOffen, setNotizenOffen] = useState(false);
   const [aufgabeOffen, setAufgabeOffen] = useState(false);
+  const [erinnernOffen, setErinnernOffen] = useState(false);
   const [emailOffen, setEmailOffen] = useState(false);
   const [drucken, setDrucken] = useState(false);
   const druckEnde = useCallback(() => setDrucken(false), []);
@@ -71,13 +72,15 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { t
           <button type="button" className={`knopf klein ${notizenOffen ? 'an' : ''}`} aria-expanded={notizenOffen} onClick={() => setNotizenOffen(!notizenOffen)} title="Notizen zu dieser Mappe">
             <span aria-hidden="true">🗒</span> Notizen{notizen.length ? ` (${notizen.length})` : ''}
           </button>
-          <Aktionsmenue aufgabe={() => setAufgabeOffen(true)} email={() => setEmailOffen(true)} drucken={() => setDrucken(true)}
+          <Aktionsmenue aufgabe={() => setAufgabeOffen(true)} erinnern={() => setErinnernOffen(true)} email={() => setEmailOffen(true)} drucken={() => setDrucken(true)}
             link={direktlink ? () => { const l = location.origin + direktlink; void kopiere(l).then((ok) => setKopiert({ link: l, ok })); } : undefined} />
         </div>
         {kopiert && <LinkKopiert {...kopiert} schliessen={() => setKopiert(null)} />}
       </div>
       <AufgabenHinweis aufgaben={details.aufgaben ?? []} neuLaden={neuLaden} />
+      <Erinnerungen liste={details.erinnerungen ?? []} neuLaden={neuLaden} />
       {aufgabeOffen && <NeueAufgabe mappeId={mappe.id} neuLaden={neuLaden} schliessen={() => setAufgabeOffen(false)} />}
+      {erinnernOffen && <ErinnerungFormular mappeId={mappe.id} neuLaden={neuLaden} schliessen={() => setErinnernOffen(false)} />}
       {emailOffen && <EmailMaske key={mappe.id} typ={typ} details={details} neuLaden={neuLaden} schliessen={() => setEmailOffen(false)} />}
       {drucken && <Druckansicht typ={typ} details={details} fertig={druckEnde} />}
       {notizenOffen && <Notizen mappeId={mappe.id} notizen={notizen} neuLaden={neuLaden} schliessen={() => setNotizenOffen(false)} />}
@@ -158,6 +161,11 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden }: 
   useEffect(() => { if (details) setBekannt((b) => ({ ...b, ...details.bezuege })); }, [details]);
   const merke = (id: string, b: { titel: string; typId: string }) => setBekannt((x) => (x[id]?.titel === b.titel ? x : { ...x, [id]: b }));
   const werteGeaendert = JSON.stringify(roh) !== basis;
+  // Hat sich die Mappe anderswo geändert (z. B. „Datum auf … setzen“, #130) und ist hier nichts ungespeichert: übernehmen.
+  const startJson = JSON.stringify(start);
+  useEffect(() => {
+    if (mappe && !werteGeaendert && startJson !== basis) { setBasis(startJson); setRoh(JSON.parse(startJson)); }
+  }, [startJson]); // eslint-disable-line react-hooks/exhaustive-deps
   const dokumenteGeaendert = neueDateien.length > 0 || entfernt.length > 0;
   const geaendert = werteGeaendert || dokumenteGeaendert || !mappe;
   useUngespeichert(werteGeaendert || dokumenteGeaendert);

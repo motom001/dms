@@ -175,7 +175,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   };
   /** #127: Darf der Empfänger die Mappe lesen? Sonst ein Hinweis in der Antwort. */
   const leseHinweis = async (empfaengerId: string | null, mappeId: string) =>
-    (empfaengerId && !(await dienst.kannLesen(empfaengerId, mappeId)) ? { hinweis: 'Die Aufgabe ist vergeben – der Empfänger darf diese Mappe nach den Berechtigungen aber nicht lesen.' } : {});
+    (empfaengerId && !(await dienst.kannLesen(empfaengerId, mappeId)) ? { hinweis: 'Gespeichert – der Empfänger darf diese Mappe nach den Berechtigungen aber nicht lesen.' } : {});
   const darf = async (a: Anfrage, mappeId: string, recht: Recht) => dienst.pruefeRecht(await zg(a), mappeId, recht);
   /** Klartext von Passwörtern nur für Mappen mit Recht P; die anderen bleiben verdeckt. */
   const entschluessele = async <T extends Mappe>(a: Anfrage, mappen: T[], klartext: string): Promise<T[]> => {
@@ -776,7 +776,30 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/werkbank/aufgaben', zugang: 'admin', handler: async (a) => ok({
       aufgaben: await dienst.alleAufgaben(a.query.erledigt !== undefined),
       mail: x.aufgabenmail ? await x.aufgabenmail.einstellung() : null,
+      // Fristen und Erinnerungen, deren Empfänger die Mappe nicht lesen darf (#129, #131).
+      unlesbar: await dienst.unlesbareFristen(),
     }) },
+    // Fristen (#129–#132)
+    { methode: 'POST', pfad: '/api/aufgaben/:id/folgetermin', zugang: 'angemeldet', handler: async (a) => ok(await dienst.setzeFolgetermin(a.params.id, ich(a), await zg(a))) },
+    { methode: 'GET', pfad: '/api/anstehend', zugang: 'angemeldet', handler: async (a) => ok(await dienst.anstehend(await zg(a), a.query.tage)) },
+    { methode: 'POST', pfad: '/api/mappen/:id/erinnerungen', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, a.params.id, 'R');
+      await empfaengerSichtbar(a, b(a).empfaengerId);
+      const e = await dienst.legeErinnerungAn(a.params.id, a.body, ich(a).id);
+      return ok({ ...e, ...await leseHinweis(e.empfaengerId, a.params.id) }, 201);
+    } },
+    { methode: 'PUT', pfad: '/api/erinnerungen/:id', zugang: 'angemeldet', handler: async (a) => {
+      const mappeId = await dienst.erinnerungMappe(a.params.id);
+      await darf(a, mappeId, 'R');
+      await empfaengerSichtbar(a, b(a).empfaengerId);
+      const e = await dienst.aendereErinnerung(a.params.id, a.body, ich(a));
+      return ok({ ...e, ...await leseHinweis(e.empfaengerId, mappeId) });
+    } },
+    { methode: 'DELETE', pfad: '/api/erinnerungen/:id', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.erinnerungMappe(a.params.id), 'R');
+      await dienst.loescheErinnerung(a.params.id, ich(a));
+      return leer;
+    } },
     // Tägliche Zusammenfassung je Benutzer: Uhrzeit, Wochentage, Feiertage (#92, #94)
     { methode: 'GET', pfad: '/api/konto/zusammenfassung', zugang: 'angemeldet', handler: async (a) => ok(await zusammenfassung(ich(a))) },
     { methode: 'PUT', pfad: '/api/konto/zusammenfassung', zugang: 'angemeldet', handler: async (a) => {

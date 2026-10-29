@@ -265,9 +265,9 @@ function TrefferlistenWahl({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: Si
 /* ---------- Bedingungen ---------- */
 
 type Ziel = { wert: 'feld'; feld: Bedingungsfeld } | { wert: 'dokumente' | 'verknuepfungen'; register: string; name: string }
-  | { wert: 'dokumenteGesamt' | 'verknuepfungenGesamt' | 'favorit' };
-const ZIEL_GESAMT: Record<'dokumenteGesamt' | 'verknuepfungenGesamt' | 'favorit', string> = {
-  dokumenteGesamt: 'Dokumente insgesamt', verknuepfungenGesamt: 'Verknüpfungen insgesamt', favorit: 'ist mein Favorit',
+  | { wert: 'dokumenteGesamt' | 'verknuepfungenGesamt' | 'favorit' | 'frist' };
+const ZIEL_GESAMT: Record<'dokumenteGesamt' | 'verknuepfungenGesamt' | 'favorit' | 'frist', string> = {
+  dokumenteGesamt: 'Dokumente insgesamt', verknuepfungenGesamt: 'Verknüpfungen insgesamt', favorit: 'ist mein Favorit', frist: 'hat Frist in den nächsten Tagen',
 };
 
 /** Register, die alle Typen der Sicht mit gleichem Schlüssel und gleicher Art haben (#66). */
@@ -289,6 +289,7 @@ function Bedingungen({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDat
     { wert: 'dokumenteGesamt' }, { wert: 'verknuepfungenGesamt' },
     ...gemeinsameRegister(typen),
     { wert: 'favorit' },
+    { wert: 'frist' },
   ];
   const zielKey = (z: Ziel) => (z.wert === 'feld' ? `feld:${z.feld.key}` : 'register' in z ? `${z.wert}:${z.register}` : z.wert);
   const bKey = (b: Bedingung) => (b.art === 'feld' ? `feld:${b.feld}` : b.art === 'dokumente' || b.art === 'verknuepfungen' ? `${b.art}:${b.register}` : b.art);
@@ -298,6 +299,7 @@ function Bedingungen({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDat
   const neu = (z: Ziel): Bedingung => (z.wert === 'feld'
     ? { art: 'feld', feld: z.feld.key, op: OPERATOREN_JE_ART[z.feld.art][0] }
     : z.wert === 'favorit' ? { art: 'favorit' }
+    : z.wert === 'frist' ? { art: 'frist', feld: null, tage: 30 }
     : 'register' in z ? { art: z.wert, register: z.register, vergleich: z.wert === 'dokumente' ? 'gleich' : 'mehr', anzahl: 0 }
     : { art: z.wert, vergleich: z.wert === 'dokumenteGesamt' ? 'gleich' : 'mehr', anzahl: 0 });
   const [titel, setTitel] = useState<Record<string, string>>({});
@@ -323,11 +325,13 @@ function Bedingungen({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDat
                           {!ziel && <option value="">– {b.art === 'feld' ? b.feld : 'register' in b ? b.register : b.art} (fehlt) –</option>}
                           <optgroup label="Felder">{ziele.filter((z) => z.wert === 'feld' && !z.feld.key.startsWith('_')).map((z) => <option key={zielKey(z)} value={zielKey(z)}>{(z as { feld: Bedingungsfeld }).feld.label}</option>)}</optgroup>
                           <optgroup label="Systemwerte">{ziele.filter((z) => z.wert === 'feld' && z.feld.key.startsWith('_')).map((z) => <option key={zielKey(z)} value={zielKey(z)}>{(z as { feld: Bedingungsfeld }).feld.label}</option>)}</optgroup>
-                          <optgroup label="Anzahl">{ziele.filter((z) => z.wert !== 'feld' && z.wert !== 'favorit').map((z) => <option key={zielKey(z)} value={zielKey(z)}>{zielName(z)}</option>)}</optgroup>
+                          <optgroup label="Anzahl">{ziele.filter((z) => z.wert !== 'feld' && z.wert !== 'favorit' && z.wert !== 'frist').map((z) => <option key={zielKey(z)} value={zielKey(z)}>{zielName(z)}</option>)}</optgroup>
+                          <optgroup label="Fristen"><option value="frist">{ZIEL_GESAMT.frist}</option></optgroup>
                           <optgroup label="Persönlich"><option value="favorit">{ZIEL_GESAMT.favorit}</option></optgroup>
                         </select>
                         {b.art === 'feld' && ziel?.wert === 'feld'
                           ? <FeldBedingung b={b} feld={ziel.feld} setze={(n) => setze(i, n)} titel={titel} merke={merke} />
+                          : b.art === 'frist' ? <FristBedingung b={b} typen={typen} setze={(n) => setze(i, n)} />
                           : b.art !== 'feld' && b.art !== 'favorit' && <>
                               <select aria-label="Vergleich" value={b.vergleich} onChange={(x) => setze(i, { ...b, vergleich: x.target.value as Zaehlvergleich })}>
                                 {Object.entries(ZAEHLVERGLEICHE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -345,6 +349,24 @@ function Bedingungen({ e, setE, typen }: { e: SichtDaten; setE: (f: (x: SichtDat
             <div className="knoepfe"><button type="button" className="knopf klein" onClick={() => setE((x) => ({ ...x, bedingungen: [...x.bedingungen, neu(ziele[0])] }))}>+ Bedingung</button></div>
           </>}
     </div>
+  );
+}
+
+/** „hat Frist in den nächsten n Tagen“ (#133): ein Datumsfeld oder alle mit Erinnerung, optional nur meine. */
+function FristBedingung({ b, typen, setze }: { b: Extract<Bedingung, { art: 'frist' }>; typen: Mappentyp[]; setze: (b: Bedingung) => void }) {
+  const datumsfelder = typen.length ? typen[0].felder.filter((f) => f.typ === 'datum' && typen.every((t) => t.felder.some((g) => g.key === f.key && g.typ === 'datum'))) : [];
+  return (
+    <span className="wertgruppe umbruch">
+      <select aria-label="Datumsfeld" value={b.feld ?? ''} onChange={(x) => setze({ ...b, feld: x.target.value || null })}>
+        <option value="">alle Datumsfelder mit Erinnerung</option>
+        {datumsfelder.map((f) => <option key={f.key} value={f.key}>{f.label}{f.frist ? ' (erinnert)' : ''}</option>)}
+        {b.feld && !datumsfelder.some((f) => f.key === b.feld) && <option value={b.feld}>{b.feld} (fehlt)</option>}
+      </select>
+      <span className="leise">in den nächsten</span>
+      <input aria-label="Tage" type="number" min={0} max={3650} className="kurz" value={b.tage} onChange={(x) => setze({ ...b, tage: Math.max(0, Math.min(3650, Math.trunc(Number(x.target.value) || 0))) })} />
+      <span className="leise">Tagen</span>
+      <label className="haken klein"><input type="checkbox" checked={!!b.nurMeine} onChange={(x) => setze({ ...b, nurMeine: x.target.checked || undefined })} /><span>nur meine</span></label>
+    </span>
   );
 }
 

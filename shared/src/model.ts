@@ -56,6 +56,8 @@ export interface Feld {
   verweisart?: Verweisart;
   /** Systemfeld eines Systemmappentyps: nicht entfernbar, Datentyp und Eigenschaften fest (vom Server gesetzt). */
   system?: boolean;
+  /** Datumsfeld (#129): Erinnerung als Aufgabe „Frist“ im Eingang; fehlt/null = keine. */
+  frist?: import('./fristen').FristEinstellung | null;
 }
 
 export const REGISTERARTEN = {
@@ -600,13 +602,15 @@ export interface Dokument {
 }
 
 /* ---------- Aufgaben (#54, #56) ---------- */
-export const AUFGABENARTEN = { passung: 'Passt nicht', erwaehnung: 'Erwähnung', manuell: 'Aufgabe', vertretung: 'Vertretung' } as const;
+export const AUFGABENARTEN = { passung: 'Passt nicht', erwaehnung: 'Erwähnung', manuell: 'Aufgabe', vertretung: 'Vertretung', frist: 'Frist', erinnerung: 'Erinnerung' } as const;
 export type Aufgabenart = keyof typeof AUFGABENARTEN;
 export interface Aufgabe {
   id: string; mappeId: string;
   /** null = Administratoren. */
   empfaengerId: string | null;
   art: Aufgabenart; text: string; feldKey?: string | null;
+  /** Frist und Erinnerung (#129, #131): das Datum, um das es geht. */
+  datum?: string | null;
   erstellt: string; erstelltVon: string | null;
   erledigt: string | null; erledigtVon: string | null;
   /** Für Listen: Titel und Typ der Mappe. */

@@ -85,6 +85,10 @@ Unter **Anzahl** gibt es – jeweils mehr als, weniger als oder genau *n*:
 
 Register stehen zur Wahl, wenn **alle** Mappentypen der Sicht ein Register mit **gleichem Schlüssel und gleicher Art** haben – bei einem Typ also alle seine Dokumenten- und Verknüpfungsregister. Bei mehreren Typen zählt jedes Register über die **eigenen** Quellen seines Typs; der Name erscheint als „Rechnungen / Belege“, wenn er sich je Typ unterscheidet.
 
+### Fristen
+
+- **hat Frist in den nächsten n Tagen** – Mappen, bei denen ein Datumsfeld in den nächsten n Tagen liegt: wahlweise ein bestimmtes Datumsfeld oder **alle Datumsfelder mit Erinnerung** (siehe [Fristen](mappentypen.md#fristen-erinnerungen-an-datumsfeldern)). Mit **nur meine** zählen nur Fristen, die der angemeldete Benutzer bekommt. So zeigt etwa *Verträge mit Frist im nächsten Quartal* (Vertrag + hat Frist in den nächsten 90 Tagen) genau die passenden Verträge.
+
 ### Persönlich
 
 - **ist mein Favorit** – Mappen, die der **jeweils angemeldete** Benutzer mit dem Stern markiert hat. So zeigt etwa eine Sicht *Meine wichtigen Verträge* (Vertrag + ist mein Favorit) jedem seine eigenen. Die feste Sicht *Favoriten* in der Ablage gibt es für jeden ohnehin.

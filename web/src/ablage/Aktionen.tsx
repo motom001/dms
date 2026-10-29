@@ -16,7 +16,7 @@ const groesse = (b: number) => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 
 export const EMAIL_WARNUNG = 20 * 1024 * 1024;
 const EMAIL_HOECHSTENS = 50_000_000;
 
-export function Aktionsmenue({ aufgabe, email, drucken, link }: { aufgabe(): void; email(): void; drucken(): void; link?: () => void }) {
+export function Aktionsmenue({ aufgabe, erinnern, email, drucken, link }: { aufgabe(): void; erinnern?: () => void; email(): void; drucken(): void; link?: () => void }) {
   const [offen, setOffen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -36,6 +36,7 @@ export function Aktionsmenue({ aufgabe, email, drucken, link }: { aufgabe(): voi
       {offen && (
         <div className="menue" role="menu">
           <button type="button" role="menuitem" onClick={waehle(aufgabe)}><span aria-hidden="true">✓</span> Aufgabe vergeben</button>
+          {erinnern && <button type="button" role="menuitem" onClick={waehle(erinnern)} title="Zu einem Datum an diese Mappe erinnern – dich oder jemand anderen"><span aria-hidden="true">⏰</span> Erinnern</button>}
           <button type="button" role="menuitem" onClick={waehle(email)}><span aria-hidden="true">✉</span> Per E-Mail versenden</button>
           <button type="button" role="menuitem" onClick={waehle(drucken)}><span aria-hidden="true">⎙</span> Als PDF exportieren</button>
           {link && <button type="button" role="menuitem" onClick={waehle(link)} title="Sprechender Link über Typ und Feldwerte, z. B. zum Weitergeben per Mail oder Chat"><span aria-hidden="true">🔗</span> Link kopieren</button>}

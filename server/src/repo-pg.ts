@@ -3,6 +3,7 @@ import { alsText } from '../../shared/src/markdown';
 import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
 import type { Filter, Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ausdruck, Lesefilter } from '../../shared/src/rechte';
+import type { Erinnerung } from '../../shared/src/fristen';
 import type { Quelle } from '../../shared/src/model';
 import { istUuid, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
 
@@ -63,8 +64,19 @@ const AUSSCHNITT = `StartSel=${TREFFER_ANFANG}, StopSel=${TREFFER_ENDE}, MaxFrag
 const alsAufgabe = (r: Zeile): Aufgabe => ({
   id: r.id as string, mappeId: r.mappe_id as string, empfaengerId: (r.empfaenger_id as string | null) ?? null,
   art: r.art as Aufgabe['art'], text: r.text as string, feldKey: (r.feld_key as string | null) ?? null,
+  ...(r.datum ? { datum: tag(r.datum) } : {}),
   erstellt: iso(r.erstellt), erstelltVon: (r.erstellt_von as string | null) ?? null,
   erledigt: r.erledigt ? iso(r.erledigt) : null, erledigtVon: (r.erledigt_von as string | null) ?? null,
+  ...(r.mappe_titel !== undefined ? { mappeTitel: (r.mappe_titel as string | null) ?? '', typId: r.typ_id as string } : {}),
+});
+/** date-Spalte → JJJJ-MM-TT (postgres.js liest „2027-09-30“ als Mitternacht UTC). */
+const tag = (v: unknown): string => {
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  return String(v).slice(0, 10);
+};
+const alsErinnerung = (r: Zeile): Erinnerung => ({
+  id: r.id as string, mappeId: r.mappe_id as string, empfaengerId: (r.empfaenger_id as string | null) ?? null,
+  datum: tag(r.datum), text: r.text as string, erstellt: iso(r.erstellt), erstelltVon: (r.erstellt_von as string | null) ?? null,
   ...(r.mappe_titel !== undefined ? { mappeTitel: (r.mappe_titel as string | null) ?? '', typId: r.typ_id as string } : {}),
 });
 const alsNotiz = (r: Zeile): Notiz => ({
@@ -176,6 +188,17 @@ function filterSql(sql: Sql, f: Filter): Teil {
     return sql`EXISTS (SELECT 1 FROM aufgaben auf WHERE auf.mappe_id = mappen.id AND auf.erledigt IS NULL AND auf.empfaenger_id = ${istUuid(f.benutzer) ? f.benutzer : null}::uuid)`;
   }
   if (f.art === 'id') return sql`mappen.id = ANY(${f.ids.filter(istUuid)}::uuid[])`;
+  if (f.art === 'frist') {
+    // Eines der Datumsfelder in [von, bis]; mit ich nur Fristen dieses Empfängers (Benutzerfeld, sonst Ersteller).
+    const teile = f.felder.map((x) => {
+      const d = sql`(CASE WHEN mappen.werte ->> ${x.key}::text ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN (mappen.werte ->> ${x.key}::text)::date END)`;
+      const wer = !f.ich ? sql``
+        : x.empfaengerFeld ? sql`AND coalesce(nullif(mappen.werte ->> ${x.empfaengerFeld}::text, ''), mappen.erstellt_von::text) = ${f.ich}`
+        : sql`AND mappen.erstellt_von::text = ${f.ich}`;
+      return sql`(${d} BETWEEN ${f.von}::date AND ${f.bis}::date ${wer})`;
+    });
+    return teile.length ? sql`(${teile.reduce((a, b) => sql`${a} OR ${b}`)})` : sql`false`;
+  }
   if (f.art === 'favorit') {
     return sql`EXISTS (SELECT 1 FROM favoriten fav WHERE fav.mappe_id = mappen.id AND fav.benutzer_id = ${istUuid(f.benutzer) ? f.benutzer : null}::uuid)`;
   }
@@ -584,14 +607,15 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async legeInPapierkorb(id, benutzerId) {
       await sql.begin(async (tx) => {
         const r = await tx`
-          INSERT INTO papierkorb (id, haushalt_id, typ_id, mappe, verweise, dokumente, geloescht_von, notizen, aufgaben, favoriten)
+          INSERT INTO papierkorb (id, haushalt_id, typ_id, mappe, verweise, dokumente, geloescht_von, notizen, aufgaben, favoriten, erinnerungen)
           SELECT m.id, m.haushalt_id, m.typ_id, to_jsonb(m),
             (SELECT coalesce(jsonb_agg(to_jsonb(v)), '[]'::jsonb) FROM verweise v WHERE v.quelle_id = m.id),
             (SELECT coalesce(jsonb_agg(to_jsonb(d)), '[]'::jsonb) FROM dokumente d WHERE d.mappe_id = m.id),
             ${istUuid(benutzerId) ? benutzerId : null}::uuid,
             (SELECT coalesce(jsonb_agg(to_jsonb(n)), '[]'::jsonb) FROM notizen n WHERE n.mappe_id = m.id),
             (SELECT coalesce(jsonb_agg(to_jsonb(a)), '[]'::jsonb) FROM aufgaben a WHERE a.mappe_id = m.id),
-            (SELECT coalesce(jsonb_agg(to_jsonb(f)), '[]'::jsonb) FROM favoriten f WHERE f.mappe_id = m.id)
+            (SELECT coalesce(jsonb_agg(to_jsonb(f)), '[]'::jsonb) FROM favoriten f WHERE f.mappe_id = m.id),
+            (SELECT coalesce(jsonb_agg(to_jsonb(e)), '[]'::jsonb) FROM erinnerungen e WHERE e.mappe_id = m.id)
           FROM mappen m WHERE m.haushalt_id = ${haushaltId} AND m.id = ${id}`;
         // Ausgehende Verweise und Dokumente folgen per Kaskade.
         if (r.count) await tx`DELETE FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
@@ -656,6 +680,13 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
           SELECT r.* FROM papierkorb p, jsonb_populate_recordset(NULL::favoriten, coalesce(p.favoriten, '[]'::jsonb)) r
           WHERE p.id = ${id} AND EXISTS (SELECT 1 FROM benutzer b WHERE b.id = r.benutzer_id)
           ON CONFLICT DO NOTHING`;
+        // Erinnerungen (#131): wie Aufgaben.
+        await tx`
+          INSERT INTO erinnerungen
+          SELECT (jsonb_populate_record(NULL::erinnerungen, x.value || jsonb_build_object(
+            'empfaenger_id', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'empfaenger_id') THEN x.value -> 'empfaenger_id' ELSE 'null'::jsonb END,
+            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'erstellt_von') THEN x.value -> 'erstellt_von' ELSE 'null'::jsonb END))).*
+          FROM papierkorb p, jsonb_array_elements(coalesce(p.erinnerungen, '[]'::jsonb)) x WHERE p.id = ${id}`;
         await tx`DELETE FROM papierkorb WHERE id = ${id}`;
         return { verweiseEntfallen: (p.verweise as unknown[]).length - v.count };
       });
@@ -759,9 +790,9 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     },
     async legeAufgabeAn(a) {
       const [r] = await sql`
-        INSERT INTO aufgaben (id, haushalt_id, mappe_id, empfaenger_id, art, text, feld_key, erstellt_von)
+        INSERT INTO aufgaben (id, haushalt_id, mappe_id, empfaenger_id, art, text, feld_key, erstellt_von, datum)
         VALUES (${a.id}, ${haushaltId}, ${a.mappeId}, ${istUuid(a.empfaengerId) ? a.empfaengerId : null}::uuid, ${a.art}, ${a.text}, ${a.feldKey ?? null},
-          ${istUuid(a.erstelltVon) ? a.erstelltVon : null}::uuid)
+          ${istUuid(a.erstelltVon) ? a.erstelltVon : null}::uuid, ${a.datum ?? null}::date)
         RETURNING *`;
       return alsAufgabe(r);
     },
@@ -794,6 +825,46 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     },
     async delegiereAufgabe(id, an) {
       await sql`UPDATE aufgaben SET empfaenger_id = ${istUuid(an) ? an : null}::uuid WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+    },
+    async fristAufgaben(mappeIds) {
+      const welche = mappeIds ? sql`AND a.mappe_id = ANY(${mappeIds.filter(istUuid)}::uuid[])` : sql``;
+      return (await sql`
+        SELECT a.*, m.titel AS mappe_titel, m.typ_id FROM aufgaben a JOIN mappen m ON m.id = a.mappe_id
+        WHERE a.haushalt_id = ${haushaltId} AND a.art = 'frist' ${welche} ORDER BY a.erstellt, a.id`).map(alsAufgabe);
+    },
+
+    /* ---------- Freie Erinnerungen (#131) ---------- */
+    async erinnerungen(f = {}) {
+      return (await sql`
+        SELECT e.*, m.titel AS mappe_titel, m.typ_id FROM erinnerungen e JOIN mappen m ON m.id = e.mappe_id
+        WHERE e.haushalt_id = ${haushaltId}
+          ${f.mappeId ? sql`AND e.mappe_id = ${istUuid(f.mappeId) ? f.mappeId : null}::uuid` : sql``}
+          ${f.empfaengerId ? sql`AND e.empfaenger_id = ${istUuid(f.empfaengerId) ? f.empfaengerId : null}::uuid` : sql``}
+          ${f.bis ? sql`AND e.datum <= ${f.bis}::date` : sql``}
+        ORDER BY e.datum, e.erstellt, e.id`).map(alsErinnerung);
+    },
+    async holeErinnerung(id) {
+      if (!istUuid(id)) return undefined;
+      const [r] = await sql`SELECT * FROM erinnerungen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      return r ? alsErinnerung(r) : undefined;
+    },
+    async legeErinnerungAn(e) {
+      const [r] = await sql`
+        INSERT INTO erinnerungen (id, haushalt_id, mappe_id, empfaenger_id, datum, text, erstellt_von)
+        VALUES (${e.id}, ${haushaltId}, ${e.mappeId}, ${istUuid(e.empfaengerId) ? e.empfaengerId : null}::uuid, ${e.datum}::date, ${e.text},
+          ${istUuid(e.erstelltVon) ? e.erstelltVon : null}::uuid)
+        RETURNING *`;
+      return alsErinnerung(r);
+    },
+    async aendereErinnerung(id, e) {
+      if (!istUuid(id)) return undefined;
+      const [r] = await sql`
+        UPDATE erinnerungen SET datum = ${e.datum}::date, text = ${e.text}, empfaenger_id = ${istUuid(e.empfaengerId) ? e.empfaengerId : null}::uuid
+        WHERE haushalt_id = ${haushaltId} AND id = ${id} RETURNING *`;
+      return r ? alsErinnerung(r) : undefined;
+    },
+    async loescheErinnerung(id) {
+      if (istUuid(id)) await sql`DELETE FROM erinnerungen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
 
     /* ---------- Notizen (#55) ---------- */

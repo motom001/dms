@@ -76,6 +76,11 @@ export const V1_TABELLE: V1[] = [
   { methode: 'POST', pfad: '/mappen/{id}/aufgaben', gruppe: 'Ablage', zusammenfassung: 'Aufgabe vergeben', intern: { methode: 'POST', pfad: '/api/mappen/:id/aufgaben' }, parameter: [id('der Mappe')], body: 'AufgabeEingabe', antwort: 'Aufgabe', status: 201 },
   { methode: 'POST', pfad: '/aufgaben/{id}/erledigt', gruppe: 'Ablage', zusammenfassung: 'Aufgabe erledigen', beschreibung: '„Passt nicht“-Aufgaben erledigen sich selbst (409).', intern: { methode: 'POST', pfad: '/api/aufgaben/:id/erledigt' }, parameter: [id('der Aufgabe')], antwort: 'Aufgabe' },
   { methode: 'POST', pfad: '/aufgaben/{id}/delegieren', gruppe: 'Ablage', zusammenfassung: 'Aufgabe weitergeben', intern: { methode: 'POST', pfad: '/api/aufgaben/:id/delegieren' }, parameter: [id('der Aufgabe')], body: 'Delegieren', antwort: 'Aufgabe' },
+  { methode: 'GET', pfad: '/anstehend', gruppe: 'Ablage', zusammenfassung: 'Anstehende Fristen und Erinnerungen', beschreibung: 'Fristen und Erinnerungen des Benutzers dieses Schlüssels bis heute + tage (Standard 30), fällige und kommende, nach Datum.', intern: { methode: 'GET', pfad: '/api/anstehend' }, parameter: [{ name: 'tage', wo: 'query', typ: 'integer', beschreibung: 'Zeitraum in Tagen ab heute (0–366)' }], antwort: 'Anstehend' },
+  { methode: 'POST', pfad: '/mappen/{id}/erinnerungen', gruppe: 'Ablage', zusammenfassung: 'Erinnerung anlegen', beschreibung: 'Am Datum wird daraus eine Aufgabe der Art „erinnerung“; liegt es heute oder früher, sofort.', intern: { methode: 'POST', pfad: '/api/mappen/:id/erinnerungen' }, parameter: [id('der Mappe')], body: 'ErinnerungEingabe', antwort: 'Erinnerung', status: 201 },
+  { methode: 'PUT', pfad: '/erinnerungen/{id}', gruppe: 'Ablage', zusammenfassung: 'Erinnerung ändern', intern: { methode: 'PUT', pfad: '/api/erinnerungen/:id' }, parameter: [id('der Erinnerung')], body: 'ErinnerungEingabe', antwort: 'Erinnerung' },
+  { methode: 'DELETE', pfad: '/erinnerungen/{id}', gruppe: 'Ablage', zusammenfassung: 'Erinnerung löschen', intern: { methode: 'DELETE', pfad: '/api/erinnerungen/:id' }, parameter: [id('der Erinnerung')], antwort: null, status: 204 },
+  { methode: 'POST', pfad: '/aufgaben/{id}/folgetermin', gruppe: 'Ablage', zusammenfassung: 'Nächsten Termin einer wiederkehrenden Frist setzen', beschreibung: 'Nur solange das Datumsfeld noch das Datum der Frist hat (sonst 409). Braucht das Recht „Bearbeiten“.', intern: { methode: 'POST', pfad: '/api/aufgaben/:id/folgetermin' }, parameter: [id('der Aufgabe')], antwort: 'Mappe' },
   { methode: 'GET', pfad: '/mappen/{id}/notizen', gruppe: 'Ablage', zusammenfassung: 'Notizen einer Mappe', intern: { methode: 'GET', pfad: '/api/mappen/:id/notizen' }, parameter: [id('der Mappe')], antwort: 'NotizListe' },
   { methode: 'POST', pfad: '/mappen/{id}/notizen', gruppe: 'Ablage', zusammenfassung: 'Notiz anlegen', beschreibung: 'text als formatierter Text (Markdown).', intern: { methode: 'POST', pfad: '/api/mappen/:id/notizen' }, parameter: [id('der Mappe')], body: 'NotizEingabe', antwort: 'Notiz', status: 201 },
   { methode: 'PUT', pfad: '/notizen/{id}', gruppe: 'Ablage', zusammenfassung: 'Notiz ändern', intern: { methode: 'PUT', pfad: '/api/notizen/:id' }, parameter: [id('der Notiz')], body: 'NotizEingabe', antwort: 'Notiz' },
@@ -219,8 +224,8 @@ const SCHEMAS: Record<string, Schema> = {
   Aufgabe: {
     type: 'object',
     properties: {
-      id: uuid, mappeId: uuid, empfaengerId: { ...uuid, nullable: true, description: 'null = Administratoren' }, art: { type: 'string', enum: ['passung', 'erwaehnung', 'manuell', 'vertretung'] },
-      text: { type: 'string' }, feldKey: { type: 'string', nullable: true }, erstellt: zeit, erstelltVon: { ...uuid, nullable: true },
+      id: uuid, mappeId: uuid, empfaengerId: { ...uuid, nullable: true, description: 'null = Administratoren' }, art: { type: 'string', enum: ['passung', 'erwaehnung', 'manuell', 'vertretung', 'frist', 'erinnerung'] },
+      text: { type: 'string' }, feldKey: { type: 'string', nullable: true }, datum: { type: 'string', format: 'date', nullable: true, description: 'Frist und Erinnerung: das Datum, um das es geht' }, erstellt: zeit, erstelltVon: { ...uuid, nullable: true },
       erledigt: { ...zeit, nullable: true }, erledigtVon: { ...uuid, nullable: true }, mappeTitel: { type: 'string' }, typId: uuid,
     },
   },
@@ -233,6 +238,12 @@ const SCHEMAS: Record<string, Schema> = {
   EmailEingabe: { type: 'object', required: ['an', 'betreff'], properties: { an: { type: 'string', description: 'Eine oder mehrere Adressen, durch Komma getrennt' }, betreff: { type: 'string' }, nachricht: { type: 'string' }, dokumente: { type: 'array', items: uuid, description: 'Ids von Dokumenten dieser Mappe' } } },
   EmailVersendet: { type: 'object', properties: { id: { ...uuid, description: 'Id der neuen E-Mail-Mappe' }, typId: uuid } },
   NotizEingabe: { type: 'object', required: ['text'], properties: { text: { type: 'string' } } },
+  Erinnerung: { type: 'object', properties: { id: uuid, mappeId: uuid, empfaengerId: { ...uuid, nullable: true }, datum: { type: 'string', format: 'date' }, text: { type: 'string' }, erstellt: zeit, erstelltVon: { ...uuid, nullable: true }, hinweis: { type: 'string', description: 'Wenn der Empfänger die Mappe nicht lesen darf' } } },
+  ErinnerungEingabe: { type: 'object', required: ['datum', 'text'], properties: { datum: { type: 'string', format: 'date' }, text: { type: 'string' }, empfaengerId: { ...uuid, description: 'Benutzer; fehlt = der Benutzer des Schlüssels' } } },
+  Anstehend: { type: 'object', properties: { tage: { type: 'integer' }, eintraege: { type: 'array', items: { type: 'object', properties: {
+    art: { type: 'string', enum: ['frist', 'erinnerung'] }, datum: { type: 'string', format: 'date' }, ab: { type: 'string', format: 'date', description: 'ab wann im Eingang' }, text: { type: 'string' },
+    mappeId: uuid, mappeTitel: { type: 'string' }, typId: uuid, faellig: { type: 'boolean', description: 'steht schon im Eingang' }, feldKey: { type: 'string', nullable: true }, erinnerungId: uuid,
+  } } } } },
   Historie: { type: 'array', items: { type: 'object', properties: { id: { type: 'integer' }, mappeId: uuid, zeit: zeit, benutzerId: { ...uuid, nullable: true }, art: { type: 'string' }, daten: { type: 'object', additionalProperties: true, description: 'Je nach Art, z. B. aenderungen: [{feld, label, alt, neu}] oder dokument' } } } },
   Volltext: { type: 'object', properties: { id: uuid, name: { type: 'string' }, ocr: { type: 'object' }, text: { type: 'string', nullable: true } } },
   Sicht: {
