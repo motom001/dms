@@ -102,6 +102,16 @@ Diese Einstellungen sind Umgebungsvariablen im Compose-Projekt:
 
 Läuft das DMS hinter einem Reverse-Proxy (Nginx Proxy Manager, nginx, Caddy, Traefik, der Proxy deines NAS …), ist nur **eines** zu tun: In der Werkbank unter **E-Mail und Adresse** die öffentliche Adresse eintragen, z. B. `https://dms.example.org`. Beginnt sie mit `https://`, setzt das DMS das Sitzungs-Cookie nur noch über HTTPS, und Links in E-Mails führen auf diese Adresse.
 
+### HTTPS und Zertifikate
+
+Das DMS spricht selbst nur HTTP und verwaltet keine Zertifikate. Das übernimmt der Reverse-Proxy: Er nimmt die HTTPS-Verbindung an, kümmert sich um das Zertifikat und dessen Erneuerung und reicht die Anfrage an das DMS weiter. Übliche Wege:
+
+- **Nginx Proxy Manager** als zusätzlicher Container: Zertifikat von Let's Encrypt per Mausklick. So läuft es beim Entwickler, siehe [Beispielaufbau](https://motom001.github.io/dms/installieren/aktuell/beispiel/).
+- **Der Proxy deines NAS:** Synology, UGREEN und QNAP bringen einen Reverse-Proxy samt Let's-Encrypt-Zertifikaten mit.
+- **Caddy:** holt und erneuert Zertifikate von selbst, die Konfiguration ist wenige Zeilen lang.
+
+Für Let's Encrypt braucht es eine eigene Domain, die auf deinen Anschluss zeigt. Soll das DMS nur zu Hause erreichbar sein, reicht HTTP im Heimnetz.
+
 ### Was der Proxy dem DMS mitteilt
 
 Der Proxy leitet jede Anfrage an das DMS weiter. Für das DMS sieht sie deshalb so aus, als käme sie vom Proxy. Was das Gerät dahinter ist, schreibt der Proxy in Zusatzangaben (`X-Forwarded-For`, `X-Forwarded-Proto`). Das DMS braucht sie für:
