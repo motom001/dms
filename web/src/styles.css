@@ -176,6 +176,8 @@ tbody tr:last-child > * { border-bottom: 0; }
 .eigenschaft { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .eigenschaft > span { font-size: calc(12.5px * var(--skala, 1)); font-weight: 600; }
 .eigenschaft small { font-weight: 400; color: var(--leise); }
+/* Im Raster stehen die Felder einer Zeile unten bündig, auch wenn eine Beschriftung umbricht (#245). */
+.raster > .eigenschaft > span:first-child { flex-grow: 1; }
 .eigenschaft.unten { justify-content: flex-end; }
 .wahl { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .wahl legend { font-size: calc(12.5px * var(--skala, 1)); font-weight: 600; padding: 0; margin-bottom: 6px; }
