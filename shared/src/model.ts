@@ -125,24 +125,39 @@ export interface Mappentyp extends MappentypDaten {
 
 /* ---------- Systemmappentypen: Benutzer und Rollen (#26, #27) ---------- */
 
-export const SYSTEMTYPEN = { benutzer: 'Benutzer', rolle: 'Rolle', email: 'E-Mail' } as const;
+export const SYSTEMTYPEN = { benutzer: 'Benutzer', rolle: 'Rolle', post: 'Post' } as const;
 export type Systemtyp = keyof typeof SYSTEMTYPEN;
 
 /** Kennung der Mappe einer Systemrolle, z. B. rolle:admin. */
 export const systemrolleKennung = (r: Rolle) => `rolle:${r}`;
 export const istSystemrolle = (m: Pick<Mappe, 'systemKennung'> | undefined) => !!m?.systemKennung?.startsWith('rolle:');
 
-/** Ziel eines Referenzfelds, das auf Mappen jedes Typs zeigen darf – nur für Systemfelder (E-Mail → Bezug, #58). */
+/** Ziel eines Referenzfelds, das auf Mappen jedes Typs zeigen darf – nur für Systemfelder (Post → Zugeordnet zu, #58, #192). */
 export const BELIEBIGER_TYP = '*';
+
+/* ---------- Post (#192): alles, was hinein- oder hinausgeht ---------- */
+
+/** Werte der Auswahlfelder von Post; gespeichert wird der Text. */
+export const POST_KANAL = { hochgeladen: 'Hochgeladen', email: 'E-Mail', scan: 'Scan', ordner: 'Ordner', import: 'Import', api: 'API', webdav: 'WebDAV' } as const;
+export const POST_RICHTUNG = { eingehend: 'Eingehend', ausgehend: 'Ausgehend' } as const;
+export const POST_STAND = { neu: 'Neu', zugeordnet: 'Zugeordnet', erledigt: 'Erledigt' } as const;
+/** Ein Wert eines Auswahlfelds als Text (einfach oder erster einer Liste). */
+export const auswahlText = (v: unknown) => (Array.isArray(v) ? String(v[0] ?? '') : v == null ? '' : String(v));
+/** Eine versendete E-Mail: festgehalten wie verschickt, ihre Felder ändert niemand. */
+export const istVersendet = (w: Werte | undefined) => !!w && auswahlText(w.kanal) === POST_KANAL.email && auswahlText(w.richtung) === POST_RICHTUNG.ausgehend;
 
 /** Systemfelder je Systemtyp. Bezeichnung und Hilfetext darf der Administrator ändern, alles andere ist fest. */
 export function systemfelder(s: Systemtyp, rolleTypId: string, benutzerTypId = ''): Feld[] {
-  if (s === 'email') return [
+  if (s === 'post') return [
     { key: 'betreff', label: 'Betreff', typ: 'text', pflicht: true, maxLen: 250, system: true },
-    { key: 'an', label: 'An', typ: 'text', pflicht: true, system: true },
-    { key: 'absender', label: 'Absender', typ: 'text', system: true, hilfe: 'Wer die E-Mail verschickt hat; Antworten gehen an diese Adresse' },
+    { key: 'stand', label: 'Stand', typ: 'auswahl', pflicht: true, optionen: Object.values(POST_STAND), system: true, hilfe: 'Neu: noch nicht bearbeitet. Zugeordnet: liegt bei einer passenden Mappe. Erledigt: nichts mehr zu tun.' },
+    { key: 'kanal', label: 'Kanal', typ: 'auswahl', pflicht: true, optionen: Object.values(POST_KANAL), system: true, hilfe: 'Wie die Post ins DMS kam bzw. hinausging' },
+    { key: 'richtung', label: 'Richtung', typ: 'auswahl', pflicht: true, optionen: Object.values(POST_RICHTUNG), system: true },
     { key: 'datum', label: 'Datum', typ: 'datum', system: true },
-    { key: 'bezug', label: 'Bezug', typ: 'referenz', zielTyp: BELIEBIGER_TYP, verweisart: 'bezug', system: true, hilfe: 'Die Mappe, aus der die E-Mail verschickt wurde' },
+    { key: 'absender', label: 'Absender', typ: 'text', system: true },
+    { key: 'an', label: 'Empfänger', typ: 'text', system: true },
+    { key: 'fuer', label: 'Für', typ: 'referenz', zielTyp: benutzerTypId, verweisart: 'bezug', system: true, hilfe: 'Wer sich darum kümmern soll; solange die Post neu ist, steht sie in dessen Eingang' },
+    { key: 'bezug', label: 'Zugeordnet zu', typ: 'referenz', mehrfach: true, zielTyp: BELIEBIGER_TYP, verweisart: 'bezug', system: true, hilfe: 'Die Mappen, zu denen diese Post gehört; gesetzt über „Zuordnen“' },
     { key: 'nachricht', label: 'Nachricht', typ: 'langtext', system: true },
   ];
   if (s === 'rolle') return [
@@ -162,7 +177,9 @@ export function systemfelder(s: Systemtyp, rolleTypId: string, benutzerTypId = '
 }
 
 /** Lassen sich in der Ablage Mappen anlegen? Systemregeln (#146) und – für Nicht-Admins – die Berechtigungen. */
-export const darfErstellen = (t: { system?: Systemtyp | null; darfAnlegen?: boolean } | undefined) => !!t && t.system !== 'benutzer' && t.system !== 'email' && t.darfAnlegen !== false;
+export const darfErstellen = (t: { system?: Systemtyp | null; darfAnlegen?: boolean } | undefined) => !!t && t.system !== 'benutzer' && t.system !== 'post' && t.darfAnlegen !== false;
+/** Neue Post (#192) über „+ Post“ bzw. die API – nicht über das allgemeine Formular. */
+export const darfPostAnlegen = (t: { system?: Systemtyp | null; darfAnlegen?: boolean } | undefined) => !!t && t.system === 'post' && t.darfAnlegen !== false;
 /** Lässt sich die Mappe überhaupt löschen? Benutzer nur in der Benutzerverwaltung, Systemrollen nie (#146). */
 export const darfLoeschen = (t: { system?: Systemtyp | null } | undefined, m?: Pick<Mappe, 'systemKennung'>) =>
   !!t && t.system !== 'benutzer' && !m?.systemKennung;
@@ -173,12 +190,17 @@ export const darfLoeschen = (t: { system?: Systemtyp | null } | undefined, m?: P
  * z. B. ein Mitglied die E-Mail-Adresse eines Administrators ändern und dessen Konto übernehmen.
  * Systemrollen: der Name.
  */
-export function geschuetzteFelder(t: Pick<Mappentyp, 'system' | 'felder'> | undefined, m?: Pick<Mappe, 'systemKennung'>): Record<string, string> {
+export function geschuetzteFelder(t: Pick<Mappentyp, 'system' | 'felder'> | undefined, m?: Pick<Mappe, 'systemKennung'> & { werte?: Werte }): Record<string, string> {
   if (t?.system === 'benutzer') {
     return Object.fromEntries(t.felder.filter((f) => f.system).map((f) => [f.key, 'Wird im Profil und in der Benutzerverwaltung gepflegt.']));
   }
   if (t?.system === 'rolle' && istSystemrolle(m)) return { name: 'Der Name einer Systemrolle ist fest.' };
-  if (t?.system === 'email') return Object.fromEntries(t.felder.filter((f) => f.system).map((f) => [f.key, 'Wird beim Versand festgehalten.']));
+  if (t?.system === 'post') {
+    // Post (#192): Kanal hält das System fest, „Zugeordnet zu“ setzt „Zuordnen“; eine versendete E-Mail bleibt, wie sie verschickt wurde.
+    const fest: Record<string, string> = { kanal: 'Wird beim Eingang festgehalten.', bezug: 'Wird über „Zuordnen“ gesetzt.' };
+    if (istVersendet(m?.werte)) for (const k of ['betreff', 'an', 'absender', 'datum', 'nachricht', 'richtung']) fest[k] = 'Wird beim Versand festgehalten.';
+    return fest;
+  }
   return {};
 }
 
@@ -617,7 +639,7 @@ export interface Dokument {
 }
 
 /* ---------- Aufgaben (#54, #56) ---------- */
-export const AUFGABENARTEN = { passung: 'Passt nicht', erwaehnung: 'Erwähnung', manuell: 'Aufgabe', vertretung: 'Vertretung', frist: 'Frist', erinnerung: 'Erinnerung' } as const;
+export const AUFGABENARTEN = { passung: 'Passt nicht', erwaehnung: 'Erwähnung', manuell: 'Aufgabe', vertretung: 'Vertretung', frist: 'Frist', erinnerung: 'Erinnerung', post: 'Neue Post' } as const;
 export type Aufgabenart = keyof typeof AUFGABENARTEN;
 export interface Aufgabe {
   id: string; mappeId: string;
@@ -642,6 +664,7 @@ export const HISTORIENARTEN = {
   angelegt: 'angelegt', geaendert: 'geändert', dokument_hochgeladen: 'Dokument hochgeladen', dokument_geloescht: 'Dokument gelöscht',
   papierkorb: 'in den Papierkorb gelegt', wiederhergestellt: 'wiederhergestellt', endgueltig: 'endgültig gelöscht',
   passwort_angezeigt: 'Passwort angezeigt', notiz: 'Notiz', aufgabe: 'Aufgabe', email: 'E-Mail versendet', abwesenheit: 'Abwesenheit',
+  zugeordnet: 'Post zugeordnet',
 } as const;
 export type Historienart = keyof typeof HISTORIENARTEN;
 /** Eine Feldänderung: Werte lesbar zum Zeitpunkt der Änderung; Passwörter nur als „geändert“. */

@@ -1,5 +1,5 @@
 import type { Readable } from 'node:stream';
-import { MAX_DATEIGROESSE, type Benutzer, type Mappe } from '../../shared/src/model';
+import { MAX_DATEIGROESSE, POST_KANAL, type Benutzer, type Mappe } from '../../shared/src/model';
 import { type Recht } from '../../shared/src/rechte';
 import { ladeBeispiele } from './beispiele';
 import { erzeugeDemo, pruefeAnzahl } from './demo';
@@ -822,6 +822,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       await darf(a, a.params.id, 'R');
       return ok(await dienst.versendeMappe(a.params.id, b(a), { id: i.id, name: i.name, email: i.email }, x.betrieb?.mailer() ?? null), 201);
     } },
+    // Post (#192): anlegen („+ Post“, Dokumente danach über das Hochladen) und einer Mappe zuordnen.
+    { methode: 'POST', pfad: '/api/post', zugang: 'angemeldet', handler: async (a) => {
+      const i = ich(a);
+      return ok(await dienst.legePostAn(b(a), { id: i.id, name: i.name }, await zg(a), a.apiSchluessel ? POST_KANAL.api : POST_KANAL.hochgeladen), 201);
+    } },
+    { methode: 'POST', pfad: '/api/mappen/:id/zuordnen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.ordneZu(a.params.id, b(a), ich(a).id, await zg(a))) },
     // Notizen brauchen nur Lesen (#124).
     { methode: 'GET', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.notizen(a.params.id)); } },
     { methode: 'POST', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.legeNotizAn(a.params.id, b(a).text, ich(a).id), 201); } },

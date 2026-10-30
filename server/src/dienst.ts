@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_AUSWAHL, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, ROLLEN, freierSchluessel, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
-  AUFGABE_MAX, istEmail, NOTIZ_MAX, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Benutzer, type Dokument, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, type Rolle, type Systemtyp, type Werte,
+  AUFGABE_MAX, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Benutzer, type Dokument, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
@@ -154,6 +154,10 @@ export function bereinigeTyp(e: unknown): MappentypDaten {
 }
 
 /** Wert eines Mehrfachverweises als Liste. */
+/** Post (#192): Beschreibung und Spalten der Standard-Trefferliste. */
+const POST_BESCHREIBUNG = 'Alles, was ins DMS kommt oder hinausgeht: Hochgeladenes, Scans, E-Mails. Von hier aus ordnest du es passenden Mappen zu.';
+const POST_SPALTEN = ['datum', 'stand', 'kanal', 'absender'];
+
 const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
 
 /** Für die Benutzerverwaltung: Benutzer-Mappen anlegen, nachziehen und entfernen. */
@@ -814,8 +818,9 @@ export class Dienst {
 
   /**
    * Verschickt eine E-Mail mit ausgewählten Dokumenten der Mappe. Absender ist das DMS,
-   * „Antworten an“ der Benutzer. Danach gibt es eine Mappe vom Systemtyp „E-Mail“ mit den
-   * Anhängen (dieselbe Datei, kein zweiter Speicherplatz) und einen Eintrag im Protokoll.
+   * „Antworten an“ der Benutzer. Danach gibt es eine Post-Mappe (#192: Kanal E-Mail, ausgehend,
+   * erledigt, zugeordnet zur Mappe) mit den Anhängen (dieselbe Datei, kein zweiter Speicherplatz)
+   * und einen Eintrag im Protokoll.
    */
   async versendeMappe(mappeId: string, eingabe: unknown, ich: { id: string; name: string; email: string }, mailer: Mailer | null) {
     if (!mailer) throw new Fachfehler(409, 'Der E-Mail-Versand ist nicht eingerichtet (Werkbank → E-Mail und Adresse).');
@@ -846,11 +851,12 @@ export class Dienst {
     } catch (x) {
       throw new Fachfehler(502, `Die E-Mail wurde nicht verschickt: ${(x as Error).message}`);
     }
-    const { email: typ } = await this.sichereSystem();
+    const { post: typ } = await this.sichereSystem();
     const id = randomUUID();
-    const datum = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(new Date());
+    const datum = heuteIn();
     await this.schreibeSystemMappe(typ, id, {
-      betreff, an: an.join(', '), absender: antwortAn.replace(/"/g, ''), datum, bezug: mappeId, ...(nachricht.trim() ? { nachricht } : {}),
+      betreff, an: an.join(', '), absender: antwortAn.replace(/"/g, ''), datum, bezug: [mappeId], ...(nachricht.trim() ? { nachricht } : {}),
+      kanal: POST_KANAL.email, richtung: POST_RICHTUNG.ausgehend, stand: POST_STAND.erledigt,
     }, ich.id);
     const reg = typ.register.find((r) => r.art === 'dokumente');
     if (reg) for (const d of dokumente) {
@@ -1039,7 +1045,7 @@ export class Dienst {
       const s = soll.find((x) => x.key === f.key);
       return s ? { ...s, label: f.label || s.label, hilfe: f.hilfe || s.hilfe } : f;
     });
-    return { ...d, felder, ...(system === 'benutzer' ? { erstellenErlaubt: false, loeschenErlaubt: false } : system === 'email' ? { erstellenErlaubt: false } : {}) };
+    return { ...d, felder, ...(system === 'benutzer' ? { erstellenErlaubt: false, loeschenErlaubt: false } : system === 'post' ? { erstellenErlaubt: false } : {}) };
   }
 
   async loescheTyp(id: string): Promise<void> {
@@ -1197,6 +1203,8 @@ export class Dienst {
       typen: Object.fromEntries(z.typen), eingang, favoriten: z.favoriten, sichten: Object.fromEntries(sichten.map((x, i) => [x.id, n[i]])),
       // Papierkorb (#43): eigene gelöschte Mappen; Tage 0 = aus.
       papierkorb: await this.repo.zaehlePapierkorb(ich.id), papierkorbTage: await this.papierkorbTage(),
+      // Post (#192): Zahl der Sicht „Neue Post“ hervorheben wie im Eingang.
+      neuePost: await this.neuePostSicht(),
     };
   }
 
@@ -1816,6 +1824,8 @@ export class Dienst {
     if (typ.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
     // Fristen (#129): neues Datum → neue Aufgabe, verschobenes oder leeres → alte erledigt.
     await this.fristenAbgleichen({ mappeIds: [id] });
+    // Post (#192): „Für“ und Stand bestimmen die Aufgabe „Neue Post“.
+    if (typ.system === 'post') await this.postAufgaben(id, benutzerId);
     const hinweis = z ? await this.hinweisDanach(z, id) : undefined;
     return { ...neu, titel, ...(hinweis ? { hinweis } : {}) };
   }
@@ -1834,8 +1844,8 @@ export class Dienst {
     // Eine Rolle darf weg, auch wenn Benutzer sie haben: deren Zuordnung fällt weg.
     const benutzerTyp = typ?.system === 'rolle' ? typen.find((t) => t.system === 'benutzer') : undefined;
     const zuordnungen = benutzerTyp ? rueck.filter((r) => r.quelleTypId === benutzerTyp.id && r.feldKey === 'rollen') : [];
-    // Versendete E-Mails (#58) verweisen auf jede Mappe; sie halten das Löschen nicht auf, ihr Bezug wird leer.
-    const emailTyp = typen.find((t) => t.system === 'email');
+    // Post (#58, #192) verweist auf jede Mappe; sie hält das Löschen nicht auf, der Verweis entfällt.
+    const emailTyp = typen.find((t) => t.system === 'post');
     const emails = emailTyp ? rueck.filter((r) => r.quelleTypId === emailTyp.id && r.feldKey === 'bezug') : [];
     const fremd = rueck.filter((r) => r.quelleId !== m.id && !zuordnungen.includes(r) && !emails.includes(r));
     if (fremd.length) {
@@ -1966,7 +1976,7 @@ export class Dienst {
     }
     for (const e of emails) {
       const x = await this.repo.holeMappe(e.quelleId);
-      if (x) await this.schreibeSystemMappe(emailTyp!, x.id, { ...x.werte, bezug: null }, benutzerId);
+      if (x) await this.schreibeSystemMappe(emailTyp!, x.id, { ...x.werte, bezug: alsListe(x.werte.bezug).filter((b) => b !== id) }, benutzerId);
     }
     if (await this.papierkorbTage() > 0) await this.legeInPapierkorb(id, typ, benutzerId);
     else await this.loescheMappeIntern(id, typ, benutzerId);
@@ -1989,7 +1999,7 @@ export class Dienst {
 
   /* ---------- Systemtypen: Benutzer und Rollen (#26, #27) ---------- */
 
-  private sichern?: Promise<{ benutzer: Mappentyp; rolle: Mappentyp; email: Mappentyp; systemrollen: Map<Rolle, string> }>;
+  private sichern?: Promise<{ benutzer: Mappentyp; rolle: Mappentyp; post: Mappentyp; systemrollen: Map<Rolle, string> }>;
 
   /**
    * Legt die Systemtypen „Benutzer“ und „Rolle“ und die Systemrollen an, falls sie fehlen.
@@ -2001,7 +2011,7 @@ export class Dienst {
       // Definitionen können sich seitdem geändert haben (Felder ergänzt, umbenannt).
       benutzer: (await this.repo.holeTyp(s.benutzer.id)) ?? s.benutzer,
       rolle: (await this.repo.holeTyp(s.rolle.id)) ?? s.rolle,
-      email: (await this.repo.holeTyp(s.email.id)) ?? s.email,
+      post: (await this.repo.holeTyp(s.post.id)) ?? s.post,
       systemrollen: s.systemrollen,
     }));
   }
@@ -2010,9 +2020,9 @@ export class Dienst {
     const typen = await this.repo.listeTypen();
     let rolle = typen.find((t) => t.system === 'rolle');
     let benutzer = typen.find((t) => t.system === 'benutzer');
-    let email = typen.find((t) => t.system === 'email');
+    let post = typen.find((t) => t.system === 'post');
     const frei = (name: string) => (typen.some((t) => t.name.trim().toLowerCase() === name.toLowerCase()) ? `${name} (System)` : name);
-    // Feste Schlüssel der Systemtypen (#145): benutzer, rolle, email.
+    // Feste Schlüssel der Systemtypen (#145): benutzer, rolle, post.
     const sk = (k: string) => freierSchluessel(k, typen.map((t) => t.schluessel ?? ''));
     const ids = { rolle: rolle?.id ?? randomUUID(), benutzer: benutzer?.id ?? randomUUID() };
     if (!rolle) {
@@ -2042,21 +2052,23 @@ export class Dienst {
       await this.sichtFuerTyp(benutzer);
       protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: benutzer.name });
     }
-    if (!email) {
-      // Versendete E-Mails (#58); später auch per IMAP abgeholte.
-      email = await this.repo.legeTypAn(randomUUID(), {
-        name: frei('E-Mail'), schluessel: sk('email'), beschreibung: 'Aus dem DMS verschickte E-Mails mit Anhängen', titelVorlage: '{betreff}',
-        felder: systemfelder('email', rolle.id),
+    if (!post) {
+      // Post (#192): alles, was hinein- oder hinausgeht; ersetzt den früheren Typ E-Mail (#58).
+      post = await this.repo.legeTypAn(randomUUID(), {
+        name: frei('Post'), schluessel: sk('post'), beschreibung: POST_BESCHREIBUNG, titelVorlage: '{betreff}',
+        felder: systemfelder('post', rolle.id, benutzer.id),
         register: [
-          { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['betreff', 'an', 'absender', 'datum', 'bezug', 'nachricht'] },
-          { key: 'anhaenge', name: 'Anhänge', art: 'dokumente' },
+          { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: systemfelder('post', rolle.id, benutzer.id).map((f) => f.key) },
+          { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
           { key: 'protokoll', name: 'Protokoll', art: 'protokoll' },
         ],
-        trefferliste: ['datum', 'an', 'bezug'], erstellenErlaubt: false, loeschenErlaubt: true,
-      }, 'email');
-      await this.sichtFuerTyp(email);
-      protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: email.name });
+        trefferliste: POST_SPALTEN, erstellenErlaubt: false, loeschenErlaubt: true,
+      }, 'post');
+      await this.sichtFuerTyp(post);
+      protokoll.modul('werkbank').info('Systemmappentyp angelegt', { typ: post.name });
     }
+    post = await this.wandleZuPost(post, rolle.id, benutzer.id);
+    await this.sicherePostSichten(post);
     benutzer = await this.ergaenzeSystemfelder(benutzer, rolle.id);
     const systemrollen = new Map<Rolle, string>();
     for (const r of Object.keys(ROLLEN) as Rolle[]) {
@@ -2068,7 +2080,188 @@ export class Dienst {
       }
       systemrollen.set(r, m.id);
     }
-    return { benutzer, rolle, email, systemrollen };
+    return { benutzer, rolle, post, systemrollen };
+  }
+
+  /**
+   * Aus dem früheren Typ E-Mail (#58) wird Post (#192). Die Migration 031 hat Kennung, Schlüssel und
+   * Werte umgestellt; hier folgt die Definition: Systemfelder mit ihrer festen Form (z. B. „Zugeordnet zu“
+   * mehrfach), neue Felder, Name und Register, solange der Administrator sie nicht geändert hat.
+   * Läuft bei jedem Start und ändert nur, was noch nicht passt.
+   */
+  private async wandleZuPost(t: Mappentyp, rolleId: string, benutzerId: string): Promise<Mappentyp> {
+    const soll = systemfelder('post', rolleId, benutzerId);
+    // Alte Standardbezeichnungen weichen den neuen; eigene des Administrators bleiben.
+    const alteNamen: Record<string, string[]> = { an: ['An'], bezug: ['Bezug'] };
+    const alteHilfen = ['Wer die E-Mail verschickt hat; Antworten gehen an diese Adresse', 'Die Mappe, aus der die E-Mail verschickt wurde'];
+    let geaendert = false;
+    const felder = t.felder.map((f) => {
+      const s = soll.find((x) => x.key === f.key);
+      if (!s || !f.system) return f;
+      const label = alteNamen[f.key]?.includes(f.label) ? s.label : f.label || s.label;
+      const hilfe = !f.hilfe || alteHilfen.includes(f.hilfe) ? s.hilfe : f.hilfe;
+      const neu: Feld = { ...s, label, ...(hilfe ? { hilfe } : {}) };
+      if (!hilfe) delete neu.hilfe;
+      if (JSON.stringify(neu) !== JSON.stringify(f)) geaendert = true;
+      return neu;
+    });
+    const altName = t.name === 'E-Mail' || t.name === 'E-Mail (System)';
+    const register = t.register.map((r) => (r.art === 'dokumente' && r.name === 'Anhänge' ? { ...r, name: 'Dokumente' } : r));
+    const altListe = JSON.stringify(standardliste(t).spalten) === JSON.stringify(['datum', 'an', 'bezug']);
+    if (geaendert || altName || JSON.stringify(register) !== JSON.stringify(t.register) || altListe || t.beschreibung === 'Aus dem DMS verschickte E-Mails mit Anhängen') {
+      const typen = await this.repo.listeTypen();
+      const name = altName ? (typen.some((x) => x.id !== t.id && x.name.trim().toLowerCase() === 'post') ? 'Post (System)' : 'Post') : t.name;
+      const beschreibung = t.beschreibung === 'Aus dem DMS verschickte E-Mails mit Anhängen' ? POST_BESCHREIBUNG : t.beschreibung;
+      const trefferlisten = altListe ? trefferlistenVon(t).map((l) => (l.standard ? { ...l, spalten: POST_SPALTEN } : l)) : trefferlistenVon(t);
+      t = await this.repo.aendereTyp(t.id, { ...t, name, beschreibung, felder, register, trefferlisten, trefferliste: undefined });
+      protokoll.modul('werkbank').info('Systemmappentyp Post nachgezogen', { typ: t.name });
+    }
+    // Neue Systemfelder (Stand, Kanal, Richtung, Für) ergänzen – wie bei jedem Systemtyp.
+    return this.ergaenzeSystemfelder(t, rolleId, benutzerId);
+  }
+
+  /**
+   * Sichten für Post (#192), einmal angelegt: „Neue Post“ ganz oben (Stand „Neu“), unter „Post“
+   * „Eingegangen“ und „Versendet“. Löscht der Administrator sie, kommen sie nicht wieder.
+   */
+  private async sicherePostSichten(post: Mappentyp) {
+    const merk = this.einstellungen ? ((await this.einstellungen.lies('post')) as { sichten?: boolean; neu?: string } | null) : null;
+    if (merk?.sichten) return;
+    const alle = await this.repo.listeSichten();
+    const typSicht = alle.find((s) => s.id === post.id);
+    if (typSicht && (typSicht.name === 'E-Mail' || typSicht.name === 'E-Mail (System)')) {
+      await this.repo.aendereSicht(typSicht.id, { ...typSicht, name: post.name, beschreibung: post.beschreibung });
+    }
+    const bed = (feld: string, wert: string) => [{ art: 'feld' as const, feld, op: 'einerVon' as const, wert: { art: 'fest' as const, wert: [wert] } }];
+    let neu = alle.find((s) => s.typen.length === 1 && s.typen[0] === post.id && s.bedingungen.some((b) => b.art === 'feld' && b.feld === 'stand'));
+    if (!neu) {
+      const oben = kinderVon(alle, null).map((s) => s.position);
+      neu = await this.repo.legeSichtAn(randomUUID(), {
+        name: 'Neue Post', beschreibung: 'Post, die noch niemand zugeordnet oder erledigt hat', elternId: null,
+        position: Math.min(10, ...oben) - 10, typen: [post.id], bedingungen: bed('stand', POST_STAND.neu),
+      });
+    }
+    if (typSicht && !kinderVon(alle, typSicht.id).length) {
+      await this.repo.legeSichtAn(randomUUID(), { name: 'Eingegangen', beschreibung: 'Post, die ins DMS gekommen ist', elternId: typSicht.id, position: 10, typen: [post.id], bedingungen: bed('richtung', POST_RICHTUNG.eingehend) });
+      await this.repo.legeSichtAn(randomUUID(), { name: 'Versendet', beschreibung: 'Aus dem DMS verschickte E-Mails', elternId: typSicht.id, position: 20, typen: [post.id], bedingungen: bed('richtung', POST_RICHTUNG.ausgehend) });
+    }
+    await this.einstellungen?.schreibe('post', { sichten: true, neu: neu.id });
+    protokoll.modul('werkbank').info('Sichten für Post angelegt', { neu: neu.id });
+  }
+
+  /** Id der Sicht „Neue Post“ (#192), damit die Oberfläche ihre Zahl hervorhebt. */
+  async neuePostSicht(): Promise<string | null> {
+    const merk = this.einstellungen ? ((await this.einstellungen.lies('post')) as { neu?: string } | null) : null;
+    const alle = await this.repo.listeSichten();
+    return alle.find((s) => s.id === merk?.neu)?.id ?? null;
+  }
+
+  /* ---------- Post (#192) ---------- */
+
+  /**
+   * Neue Post anlegen (Oberfläche „+ Post“, API): Stand Neu, eingehend, heute. Die Dokumente kommen
+   * danach über das Hochladen ins Dokumentenregister. Ob man Post anlegen darf, regeln die Berechtigungen.
+   */
+  async legePostAn(eingabe: unknown, ich: { id: string; name: string }, z?: Zugriff, kanal: string = POST_KANAL.hochgeladen): Promise<Mappe> {
+    const { post: typ } = await this.sichereSystem();
+    if (!darfPostAnlegen(typ)) throw new Fachfehler(403, 'Post lässt sich nicht anlegen.');
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const betreff = text(e.betreff).replace(/[\r\n]+/g, ' ').trim().slice(0, 250) || 'Neue Post';
+    const datum = istDatum(text(e.datum)) ? text(e.datum) : heuteIn();
+    const werte = bereinigeWerte(typ, {
+      ...(e.werte && typeof e.werte === 'object' ? e.werte as Record<string, unknown> : {}),
+      betreff, datum, kanal: Object.values(POST_KANAL).includes(text(e.kanal) as never) ? text(e.kanal) : kanal,
+      richtung: POST_RICHTUNG.eingehend, stand: POST_STAND.neu,
+      absender: text(e.absender).slice(0, 250) || ich.name || null, bezug: null,
+      ...(e.fuer !== undefined ? { fuer: e.fuer || null } : {}), ...(typeof e.nachricht === 'string' ? { nachricht: e.nachricht.slice(0, NOTIZ_MAX) } : {}),
+    }, {}, this.verschluessele);
+    if (z && !z.admin) {
+      const entwurf: Mappe = { id: '00000000-0000-4000-8000-000000000000', typId: typ.id, werte, erstellt: new Date().toISOString(), erstelltVon: ich.id, geaendert: new Date().toISOString(), geaendertVon: ich.id };
+      if (!(await this.rechteAn(z, entwurf, true)).C) throw new Fachfehler(403, 'Post anlegen darfst du nicht.');
+    }
+    await this.pruefeVerweisziele(z, typ, werte, {});
+    await this.pruefeWerte(typ, werte);
+    const m = await this.repo.legeMappeAn(randomUUID(), typ.id, werte, verweiseVon(typ, werte), ich.id);
+    await this.notiere(m.id, ich.id, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, werte) });
+    const titel = (await this.aktualisiereTitel([m.id])).get(m.id);
+    await this.postAufgaben(m.id, ich.id);
+    protokoll.modul('ablage').info('Post angelegt', { mappe: m.id, kanal: werte.kanal });
+    return { ...m, titel };
+  }
+
+  /**
+   * Zuordnen (#192): Post gehört zu einer Mappe. Die gewählten Dokumente wandern in ein
+   * Dokumentenregister der Zielmappe (oder werden kopiert – dieselbe Datei, kein zweiter Platz),
+   * die Post verweist auf die Mappe und hat danach Stand „Zugeordnet“. Mehrmals möglich.
+   */
+  async ordneZu(postId: string, eingabe: unknown, von: string | null, z?: Zugriff) {
+    const post = z ? await this.pruefeRecht(z, postId, 'U') : await this.repo.holeMappe(postId);
+    if (!post) throw new Fachfehler(404, 'Diese Post gibt es nicht.');
+    const typ = await this.repo.holeTyp(post.typId);
+    if (typ?.system !== 'post') throw new Fachfehler(422, 'Zuordnen geht nur mit Post.');
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const zielId = text(e.ziel);
+    if (!istUuid(zielId) || zielId === postId) throw new Fachfehler(422, 'Bitte eine Mappe wählen, zu der die Post gehört.');
+    const ziel = z ? await this.pruefeRecht(z, zielId, 'U') : await this.repo.holeMappe(zielId);
+    if (!ziel) throw new Fachfehler(404, 'Die gewählte Mappe gibt es nicht.');
+    const zielTyp = await this.repo.holeTyp(ziel.typId);
+    if (!zielTyp) throw new Fachfehler(500, 'Der Mappentyp der Zielmappe fehlt.');
+    if (zielTyp.system === 'post') throw new Fachfehler(422, 'Post lässt sich nicht anderer Post zuordnen.');
+    const alle = await this.repo.listeDokumente(postId);
+    const ids = Array.isArray(e.dokumente) ? [...new Set(e.dokumente.map(String))] : alle.map((d) => d.id);
+    const dokumente = ids.map((id) => alle.find((d) => d.id === id));
+    if (dokumente.some((d) => !d)) throw new Fachfehler(422, 'Ein ausgewähltes Dokument gehört nicht (mehr) zu dieser Post.');
+    const regs = zielTyp.register.filter((r) => r.art === 'dokumente');
+    const reg = regs.find((r) => r.key === text(e.register)) ?? (e.register ? undefined : regs[0]);
+    if (dokumente.length && !reg) throw new Fachfehler(422, regs.length ? 'Dieses Dokumentenregister gibt es an der Zielmappe nicht.' : `„${zielTyp.name}“ hat kein Dokumentenregister. Ordne ohne Dokumente zu oder wähle eine andere Mappe.`);
+    const kopieren = e.kopieren === true;
+    for (const d of dokumente as Dokument[]) {
+      if (kopieren) {
+        const neu = await this.repo.legeDokumentAn({ ...d, id: randomUUID(), mappeId: ziel.id, registerKey: reg!.key, erstellt: new Date().toISOString(), erstelltVon: von });
+        const fertig = await this.repo.ocrVonSha(d.sha256, neu.id);
+        if (fertig) await this.repo.ocrSetze(neu.id, { stand: 'fertig', text: fertig.text, seiten: fertig.seiten, info: fertig.info });
+        else if (Dienst.volltextAn(zielTyp, reg!.key)) { await this.repo.ocrEinreihen([neu.id]); this.ocr?.anstossen(); }
+      } else {
+        await this.repo.verschiebeDokument(d.id, ziel.id, reg!.key);
+        // Im neuen Register ist die Texterkennung vielleicht aus oder an.
+        if (Dienst.volltextAn(zielTyp, reg!.key) && (d.ocr?.stand === 'keiner' || d.ocr?.stand === 'ausgelassen')) { await this.repo.ocrEinreihen([d.id]); this.ocr?.anstossen(); }
+      }
+    }
+    const betreff = auswahlText(post.werte.betreff) || 'Post';
+    const zielTitel = await this.titel(ziel);
+    const n = dokumente.length;
+    const doks = n ? ` mit ${n} ${n === 1 ? 'Dokument' : 'Dokumenten'}${kopieren ? ' (kopiert)' : ''} ins Register „${reg!.name}“` : '';
+    const bezug = [...new Set([...alsListe(post.werte.bezug), ziel.id])];
+    await this.schreibeSystemMappe(typ, post.id, { ...post.werte, bezug, stand: POST_STAND.zugeordnet }, von);
+    await this.notiere(post.id, von, 'zugeordnet', { text: `zugeordnet zu „${zielTitel}“${doks}`, ziel: ziel.id, zielTyp: ziel.typId, dokumente: n, kopiert: kopieren });
+    await this.notiere(ziel.id, von, 'zugeordnet', { text: `Post „${betreff}“ zugeordnet${doks}`, post: post.id, postTyp: typ.id, dokumente: n, kopiert: kopieren });
+    if (n) {
+      await this.beruehre(ziel.id, zielTyp, von);
+      await this.beruehre(post.id, typ, von);
+    }
+    await this.postAufgaben(post.id, von);
+    protokoll.modul('ablage').info('Post zugeordnet', { post: post.id, ziel: ziel.id, dokumente: n, kopiert: kopieren });
+    return { post: (await this.repo.holeMappe(post.id))!, ziel: (await this.repo.holeMappe(ziel.id))! };
+  }
+
+  /**
+   * „Für“ (#192): Solange Post neu ist und jemandem gilt, hat dieser eine Aufgabe „Neue Post“ im Eingang
+   * (bei Abwesenheit sein Vertreter). Zugeordnet, erledigt oder an jemand anderen → die Aufgabe ist erledigt.
+   */
+  private async postAufgaben(mappeId: string, von: string | null) {
+    const m = await this.repo.holeMappe(mappeId);
+    const offen = (await this.repo.offeneAufgaben({ mappeIds: [mappeId] })).filter((a) => a.art === 'post');
+    const fuer = m && auswahlText(m.werte.stand) === POST_STAND.neu ? alsListe(m.werte.fuer)[0] ?? null : null;
+    const schluessel = fuer ? `fuer:${fuer}` : null;
+    for (const a of offen) if (a.feldKey !== schluessel) await this.repo.erledigeAufgabe(a.id, von);
+    if (!fuer || offen.some((a) => a.feldKey === schluessel)) return;
+    // Aufgaben gehen an Konten; ohne Kontenverwaltung (Tests) genügt der Verweis.
+    if (this.konten?.benutzer && !(await this.konten.benutzer()).some((b) => b.id === fuer)) return;
+    const a = await this.repo.legeAufgabeAn({
+      id: randomUUID(), mappeId, empfaengerId: fuer, art: 'post', text: 'Neue Post für dich', feldKey: schluessel,
+      erstellt: new Date().toISOString(), erstelltVon: von, erledigt: null, erledigtVon: null,
+    });
+    await this.leiteUm(a);
   }
 
   /**
@@ -2076,9 +2269,9 @@ export class Dienst {
    * Hat der Administrator schon ein eigenes Feld mit diesem Schlüssel, wird seines umbenannt
    * (z. B. vertreter → vertreter_alt) – samt Werten, Register, Trefferlisten und Titel-Vorlage.
    */
-  private async ergaenzeSystemfelder(t: Mappentyp, rolleId: string): Promise<Mappentyp> {
+  private async ergaenzeSystemfelder(t: Mappentyp, rolleId: string, benutzerId = t.id): Promise<Mappentyp> {
     if (!t.system) return t;
-    const soll = systemfelder(t.system, rolleId, t.id);
+    const soll = systemfelder(t.system, rolleId, benutzerId);
     const fehlen = soll.filter((x) => !t.felder.some((f) => f.key === x.key && f.system));
     if (!fehlen.length) return t;
     const felder = [...t.felder];

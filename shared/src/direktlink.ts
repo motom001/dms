@@ -122,7 +122,9 @@ function standardOperator(f: Bedingungsfeld, wert: string): { op: Operator; ohne
 /** Mappentyp über seinen Schlüssel (#145), sonst über den Namen (ohne Groß-/Kleinschreibung); notfalls über die Id. */
 export function typImLink(name: string, typen: Mappentyp[]): Mappentyp | undefined {
   const n = name.trim().toLowerCase();
-  return typen.find((t) => t.schluessel === n) ?? typen.find((t) => t.name.trim().toLowerCase() === n) ?? typen.find((t) => t.id === name.trim());
+  return typen.find((t) => t.schluessel === n) ?? typen.find((t) => t.name.trim().toLowerCase() === n) ?? typen.find((t) => t.id === name.trim())
+    // Bis 0.40 hieß Post „E-Mail“ mit dem Schlüssel email (#192); ältere Links gelten weiter.
+    ?? (n === 'email' || n === 'e-mail' ? typen.find((t) => t.system === 'post') : undefined);
 }
 
 /** Liest einen Link; Fehler werden gesammelt und nie stillschweigend übergangen. */

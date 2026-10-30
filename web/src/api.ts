@@ -108,6 +108,8 @@ export interface Zaehler {
   favoriten?: number;
   /** Eigene Mappen im Papierkorb (#43); Tage 0 = kein Papierkorb. */
   papierkorb?: number; papierkorbTage?: number;
+  /** Post (#192): Id der Sicht „Neue Post“, deren Zahl hervorgehoben wird. */
+  neuePost?: string | null;
 }
 /** Eine Mappe im Papierkorb (#43). */
 export interface PapierkorbEintrag {
@@ -347,6 +349,10 @@ export const api = {
   endgueltigLoeschen: (id: string, werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}`),
   papierkorbLeeren: (werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb`),
   emailBereit: () => anfrage<{ bereit: boolean }>('GET', '/api/email/bereit'),
+  /** Post (#192): anlegen (Dokumente danach mit ladeHoch) und einer Mappe zuordnen. */
+  postAnlegen: (e: { betreff?: string; fuer?: string | null }) => anfrage<Mappe>('POST', '/api/post', e),
+  zuordnen: (postId: string, e: { ziel: string; register?: string; dokumente?: string[]; kopieren?: boolean }) =>
+    anfrage<{ post: Mappe; ziel: Mappe }>('POST', `/api/mappen/${postId}/zuordnen`, e),
   emailSenden: (mappeId: string, e: { an: string; betreff: string; nachricht: string; dokumente: string[] }) => anfrage<{ id: string; typId: string }>('POST', `/api/mappen/${mappeId}/email`, e),
   papierkorbTage: (e: { tage?: number; historieTage?: number }) => anfrage<{ tage: number; geleert: number; historieTage: number }>('PUT', '/api/werkbank/papierkorb/einstellungen', e),
   /* Aufgaben (#54) */

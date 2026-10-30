@@ -13,6 +13,7 @@ import { Historie } from './Historie';
 import { Notizen } from './Notizen';
 import { AufgabenHinweis, ErinnerungFormular, Erinnerungen, NeueAufgabe } from './Aufgaben';
 import { Aktionsmenue, Druckansicht, EmailMaske } from './Aktionen';
+import { PostLeiste } from './Post';
 import { linkZuMappe } from '../../../shared/src/direktlink';
 import { Person } from '../Person';
 import { Dokumente, type NeueDatei } from './Dokumente';
@@ -22,8 +23,16 @@ const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle:
 /** Register des Typs; ältere Typen ohne Register bekommen die Standardregister. */
 const registerVon = (t: Mappentyp): Register[] => (t.register?.length ? t.register : standardRegister(t.felder));
 
-export function NeueMappe({ typ, verweis, sicht }: { typ: Mappentyp; verweis?: string; sicht: string }) {
+/** Neue Mappe als Ziel von „Zuordnen“ (#192): danach wird die Post ihr zugeordnet. */
+export interface ZuordnenNachher { post: string; register?: string; dokumente: string[]; kopieren: boolean; vorschlag: Record<string, string> }
+
+export function NeueMappe({ typ, verweis, sicht, zuordnen }: { typ: Mappentyp; verweis?: string; sicht: string; zuordnen?: ZuordnenNachher }) {
   const start = standardRoh(typ);
+  // Vorschläge aus der Post (Betreff, Datum) für Text- und Datumsfelder.
+  for (const [k, v] of Object.entries(zuordnen?.vorschlag ?? {})) {
+    const f = typ.felder.find((x) => x.key === k);
+    if (f && (f.typ === 'text' || f.typ === 'datum') && typeof v === 'string') start[k] = v;
+  }
   // ?verweis=feldKey:mappeId belegt ein Referenzfeld vor („+ Vertrag anlegen“ beim Vertragspartner).
   if (verweis) {
     const [k, id] = verweis.split(':');
@@ -36,7 +45,8 @@ export function NeueMappe({ typ, verweis, sicht }: { typ: Mappentyp; verweis?: s
         <p className="ueber">{typ.name}</p>
         <h1>Neue Mappe</h1>
       </div>
-      <Formular typ={typ} start={start} sicht={sicht} />
+      {zuordnen && <div className="hinweis info"><p>Nach dem Speichern wird die Post dieser Mappe zugeordnet{zuordnen.dokumente.length ? `, ${zuordnen.dokumente.length === 1 ? 'ihr Dokument kommt' : `ihre ${zuordnen.dokumente.length} Dokumente kommen`} hierher` : ''}.</p></div>}
+      <Formular typ={typ} start={start} sicht={sicht} zuordnen={zuordnen} />
     </>
   );
 }
@@ -77,6 +87,7 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { t
         </div>
         {kopiert && <LinkKopiert {...kopiert} schliessen={() => setKopiert(null)} />}
       </div>
+      {typ.system === 'post' && <PostLeiste typ={typ} details={details} neuLaden={neuLaden} />}
       <AufgabenHinweis aufgaben={details.aufgaben ?? []} neuLaden={neuLaden} />
       <Erinnerungen liste={details.erinnerungen ?? []} neuLaden={neuLaden} />
       {aufgabeOffen && <NeueAufgabe mappeId={mappe.id} neuLaden={neuLaden} schliessen={() => setAufgabeOffen(false)} />}
@@ -135,8 +146,8 @@ function verknuepfungsGruppen(d: ReturnType<typeof useDaten>, mappe: Mappe | und
     })));
 }
 
-function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden }: {
-  typ: Mappentyp; mappe?: Mappe; start: RohWerte; sicht: string; anhang?: string; details?: MappeDetails | null; neuLaden?: () => Promise<void>;
+function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zuordnen }: {
+  typ: Mappentyp; mappe?: Mappe; start: RohWerte; sicht: string; anhang?: string; details?: MappeDetails | null; neuLaden?: () => Promise<void>; zuordnen?: ZuordnenNachher;
 }) {
   const d = useDaten();
   const { ich } = useKonto();
@@ -230,6 +241,11 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden }: 
         offen.push(n);
         neu.push({ art: 'schlecht', text: `„${n.datei.name}“ wurde nicht hochgeladen: ${(e as Error).message}` });
       }
+    }
+    // Zuordnen (#192): Die Post gehört jetzt zu dieser neuen Mappe.
+    if (!mappe && zuordnen) {
+      try { await api.zuordnen(zuordnen.post, { ziel: gespeichert!.id, register: zuordnen.register, dokumente: zuordnen.dokumente, kopieren: zuordnen.kopieren }); }
+      catch (e) { alert(`Die Mappe ist angelegt, aber das Zuordnen der Post ging nicht: ${(e as Error).message}`); }
     }
     const nichtEntfernt: string[] = [];
     for (const id of entfernt) {

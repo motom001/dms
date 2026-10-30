@@ -138,6 +138,8 @@ export interface Repo {
   holeDokument(id: string): Promise<Dokument | undefined>;
   legeDokumentAn(d: Dokument): Promise<Dokument>;
   loescheDokument(id: string): Promise<void>;
+  /** Zuordnen (#192): Dokument samt Volltext in eine andere Mappe und ein anderes Register. */
+  verschiebeDokument(id: string, mappeId: string, registerKey: string): Promise<void>;
   /** Andere Dokumente mit derselben Datei (gleicher Inhalt). */
   dokumenteMitSha(sha256: string): Promise<Dokument[]>;
   /** Anzahl Dokumente je Register-Schlüssel in Mappen dieses Typs. */

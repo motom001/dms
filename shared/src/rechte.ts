@@ -50,10 +50,11 @@ export const istOffen = (r: Regelwerk) => RECHTE_LISTE.every((k) => r.grund[k]) 
 export const kurzStandard = (g: Rechte) => RECHTE_LISTE.filter((k) => g[k]).join('') || '–';
 /**
  * Systemregeln (#146), auch für Administratoren und durch keine Regel aufzuheben: Benutzer entstehen
- * und verschwinden nur in der Benutzerverwaltung, E-Mail-Mappen nur beim Versenden.
+ * und verschwinden nur in der Benutzerverwaltung. Post (#192) legt man über „+ Post“ an; wer das darf,
+ * regeln die Berechtigungen wie bei jedem Typ.
  */
 export const systemSperre = (t: Pick<Mappentyp, 'system'> | undefined): { C: boolean; D: boolean } =>
-  ({ C: t?.system === 'benutzer' || t?.system === 'email', D: t?.system === 'benutzer' });
+  ({ C: t?.system === 'benutzer', D: t?.system === 'benutzer' });
 
 /** Wer gerade fragt. */
 export interface Wer { id: string; rollen: string[] }

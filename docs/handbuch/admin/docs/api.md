@@ -49,6 +49,20 @@ Mappentypen haben seit 0.14 **mehrere Trefferlisten** (`trefferlisten`, eine mit
 
 Mit `suche=…&volltext=true` sucht `GET /api/v1/mappen` auch im Volltext der Dokumente; die Fundstellen stehen in `ausschnitte` (Treffer zwischen den Steuerzeichen U+0002 und U+0003). Den ganzen Text eines Dokuments liefert `GET /api/v1/dokumente/<Id>/volltext`.
 
+### Post anlegen und zuordnen
+
+Ein Skript, ein Scanner oder Home Assistant legt neue [Post](https://motom001.github.io/dms/benutzer/post/) an und lädt die Datei dazu hoch:
+
+```sh
+curl -X POST -H "Authorization: Bearer dms_…" -H "Content-Type: application/json" \
+  -d '{"betreff": "Scan vom Drucker", "fuer": "<Id eines Benutzers>"}' \
+  http://<NAS>:8080/api/v1/post
+curl -X POST -H "Authorization: Bearer dms_…" -H "Content-Type: application/octet-stream" \
+  --data-binary @scan.pdf "http://<NAS>:8080/api/v1/mappen/<Id der Post>/dokumente?register=dokumente&name=scan.pdf"
+```
+
+Die Post steht dann mit Kanal *API* und Stand *Neu* in **Neue Post**. `POST /api/v1/post/<Id>/zuordnen` mit `{"ziel": "<Id einer Mappe>"}` ordnet sie zu; die Dokumente wandern ins erste Dokumentenregister der Mappe (oder in `register`, mit `kopieren: true` bleiben sie auch in der Post). Bei Post, die vor 0.41 als E-Mail angelegt wurde, heißt das Dokumentenregister `anhaenge`.
+
 Gelöschte Mappen liegen im [Papierkorb](papierkorb.md): `GET /api/v1/papierkorb` (eigener), `POST /api/v1/papierkorb/<Id>/wiederherstellen`, `DELETE /api/v1/papierkorb/<Id>` und `DELETE /api/v1/papierkorb` (leeren).
 
 ## Regeln

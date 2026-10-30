@@ -66,6 +66,8 @@ export const HILFE = {
   'ablage.favoriten': benutzer('ablage/', 'Favoriten', 'favoriten'),
   'ablage.papierkorb': benutzer('ablage/', 'Papierkorb', 'papierkorb'),
   'ablage.sicht': benutzer('ablage/', 'Sichten und Listen', 'die-liste'),
+  'ablage.post': benutzer('post/', 'Post'),
+  'post.zuordnen': benutzer('post/', 'Zuordnen', 'zuordnen'),
   'dokumente.sortieren': benutzer('dokumente/', 'Sortieren von Dokumenten', 'sortieren'),
   'dokumente.mehrere': benutzer('dokumente/', 'mehreren Dokumenten auf einmal', 'mehrere-auf-einmal'),
   'profil.rechte': benutzer('profil/', 'deinen Rechten', 'meine-rechte'),
