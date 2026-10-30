@@ -20,6 +20,10 @@ Das DMS läuft bei dir zu Hause: auf einem NAS, einem kleinen Heimserver oder je
 | **QNAP-NAS** | [Container Station](qnap.md) | ☆☆ gering: wie bei Synology |
 | **TrueNAS** | [Apps → Custom App](truenas.md) | ☆☆ gering: Datensatz anlegen, Vorlage einfügen |
 | **Unraid** | [Compose Manager](unraid.md) | ☆☆ gering: Plugin installieren, Vorlage einfügen |
+| **PC oder Mini-PC** (Intel, AMD) | [Linux mit Docker](linux.md) | ☆☆☆ mittel: Linux installieren, ein paar Befehle |
+| **Raspberry Pi** 4 oder 5 | [Raspberry Pi OS mit Docker](raspberry-pi.md) | ☆☆☆ mittel: wie beim PC, plus SSD |
+| **Windows-PC oder Windows Server** | [Docker Desktop oder Hyper-V](windows.md) | ☆☆☆ mittel: Docker Desktop installieren oder Linux-VM anlegen |
+| **Proxmox**, XCP-ng, ESXi … | [Linux-VM mit Docker](proxmox.md) | ☆☆☆ mittel: VM anlegen, dann wie beim PC |
 | **anderer Server mit Docker** | [Docker Compose](docker.md) | ☆☆☆ mittel: Kommandozeile oder eigene Docker-Oberfläche |
 
 Alle Wege brauchen ein Gerät mit **amd64** (Intel, AMD) oder **arm64** (z. B. Raspberry Pi 4/5) und etwa 1 GB freien Arbeitsspeicher. Dazu kommt Platz für deine Dokumente.

@@ -1,6 +1,6 @@
 # Jeder Server mit Docker
 
-Für einen Linux-Server, einen Mini-PC oder ein NAS ohne eigene Anleitung hier: Das DMS braucht **Docker mit Docker Compose**. Die Images sind öffentlich (amd64 und arm64), eine Anmeldung bei der Registry ist nicht nötig.
+Diese Seite gilt für jedes Gerät ohne eigene Anleitung; eigene Seiten gibt es für einen [PC mit Linux](linux.md), den [Raspberry Pi](raspberry-pi.md), [Windows](windows.md) und [Proxmox und Co.](proxmox.md). Das DMS braucht **Docker mit Docker Compose**. Die Images sind öffentlich (amd64 und arm64), eine Anmeldung bei der Registry ist nicht nötig.
 
 ## Mit der Kommandozeile
 
