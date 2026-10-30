@@ -14,12 +14,13 @@ Aufbau (wie bei „mike“, damit die Versionsauswahl von Material for MkDocs fu
   /benutzer/versions.json     Versionen für die Auswahl; „aktuell“ ist ein Alias der neuesten
   /benutzer/index.html        → aktuell/ (oder entwicklung/, solange es kein Release gibt)
   /benutzer/v0.22/  /benutzer/aktuell/  /benutzer/entwicklung/
-  /admin/…                    genauso
+  /admin/…, /installieren/…, /entwickler/…   genauso (#179, #180)
 """
 import json, re, shutil, sys
 from pathlib import Path
 
 RELEASE = re.compile(r'^v(\d+)\.(\d+)$')
+HANDBUECHER = ('benutzer', 'admin', 'installieren', 'entwickler')
 
 def titel(v: str) -> str:
     return v[1:] if RELEASE.match(v) else 'Entwicklung (main)'
@@ -49,7 +50,7 @@ NICHT_GEFUNDEN = """<!doctype html>
 // Alte Adressen (/dms/benutzer/mappen/) und unbekannte Versionen (/dms/admin/v0.9/…) auf die
 // passende Seite der neuesten Version umleiten (#111).
 (async () => {
-  const m = location.pathname.match(/^(.*?\\/)(benutzer|admin)\\/(.*)$/);
+  const m = location.pathname.match(/^(.*?\\/)(benutzer|admin|installieren|entwickler)\\/(.*)$/);
   if (!m) return;
   const [, basis, h, rest] = m;
   let versionen = [];
@@ -66,14 +67,16 @@ NICHT_GEFUNDEN = """<!doctype html>
   location.replace(basis + h + '/' + ziel + location.hash);
 })();
 </script></head>
-<body><h1>Seite nicht gefunden</h1><p>Weiter zum <a href="/dms/benutzer/">Benutzerhandbuch</a> oder zum <a href="/dms/admin/">Administratorhandbuch</a>.</p></body></html>
+<body><h1>Seite nicht gefunden</h1><p>Weiter zu <a href="/dms/">allen Handbüchern</a>: <a href="/dms/installieren/">Wie komme ich an ein DMS?</a>, <a href="/dms/benutzer/">Benutzerhandbuch</a>, <a href="/dms/admin/">Administratorhandbuch</a>, <a href="/dms/entwickler/">Entwicklerhandbuch</a>.</p></body></html>
 """
 
 def main():
     pages, gebaut, ziel, start = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3], Path(sys.argv[4])
     if ziel != 'entwicklung' and not RELEASE.match(ziel):
         sys.exit(f'Unbekanntes Ziel {ziel!r}: erwartet vX.Y oder entwicklung')
-    for h in ('benutzer', 'admin'):
+    for h in HANDBUECHER:
+        if not (gebaut / h).is_dir():
+            continue  # ältere Stände bauen nicht alle Handbücher
         basis = pages / h
         basis.mkdir(parents=True, exist_ok=True)
         datei = basis / 'versions.json'

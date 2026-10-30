@@ -22,16 +22,22 @@ Was das DMS kann, steht in den Handbüchern; was in welcher Version dazukam, in 
 ## Handbücher
 
 - **[Wofür ein DMS?](https://motom001.github.io/dms/benutzer/aktuell/wofuer/)** – wann es im Alltag hilft, mit Selbstcheck.
+- **[Wie komme ich an ein DMS?](https://motom001.github.io/dms/installieren/)** – installieren auf Synology, UGREEN, QNAP, TrueNAS, Unraid, umbrelOS, ZimaOS, CasaOS oder jedem Server mit Docker.
 - **[Benutzerhandbuch](https://motom001.github.io/dms/benutzer/)** – arbeiten in der Ablage: Mappen, Dokumente, Suche, Aufgaben, Profil.
-- **[Administratorhandbuch](https://motom001.github.io/dms/admin/)** – Installation, Aktualisieren und Sichern, Werkbank, Fehlersuche, API, Technik und Entscheidungen.
+- **[Administratorhandbuch](https://motom001.github.io/dms/admin/)** – Einrichtung und Betrieb, Aktualisieren und Sichern, Werkbank, Fehlersuche, API, Technik und Entscheidungen.
+
+- **[Entwicklerhandbuch](https://motom001.github.io/dms/entwickler/)** – mitmachen: Arbeitsweise, Entwicklung, Aufbau und Release.
 
 Im DMS führt **Hilfe** im Menü unter dem eigenen Namen dorthin.
 
-## Mit einem Klick: Umbrel, ZimaOS, CasaOS
+## Installieren
 
-Auf einem Heimserver mit App-Store fügst du den [DMS App Store](https://github.com/motom001/dms-appstore) als Quelle hinzu und installierst **DMS** mit einem Klick. Die Datenbank ist schon dabei, der Assistent fragt nur nach Haushalt und Administrator. Details: [Installation mit einem Klick](https://motom001.github.io/dms/admin/aktuell/app-store/).
+Welcher Weg passt, zeigt **[Wie komme ich an ein DMS?](https://motom001.github.io/dms/installieren/aktuell/)**:
 
-## Schnellstart auf dem NAS
+- **umbrelOS, ZimaOS, CasaOS:** den [DMS App Store](https://github.com/motom001/dms-appstore) als Quelle hinzufügen und **DMS** mit einem Klick installieren ([Anleitung](https://motom001.github.io/dms/installieren/aktuell/app-store/)).
+- **Synology, UGREEN, QNAP, TrueNAS, Unraid:** eine Vorlage aus [`deploy/`](deploy/) in die Docker-Oberfläche des NAS einfügen und ein Passwort eintragen ([Anleitungen](https://motom001.github.io/dms/installieren/aktuell/)).
+
+## Schnellstart mit Docker Compose
 
 Das Image `ghcr.io/motom001/dms` ist öffentlich (amd64 und arm64) – eine Anmeldung bei der Registry ist nicht nötig.
 
@@ -39,13 +45,13 @@ Das Image `ghcr.io/motom001/dms` ist öffentlich (amd64 und arm64) – eine Anme
 2. Daneben eine Datei `.env` mit `DB_PASSWORD=<langes zufälliges Passwort>` ablegen.
 3. Starten und `http://<NAS>:8080` aufrufen. Ein Assistent führt durch die Einrichtung: Einrichtungscode (steht im Protokoll des Containers und in `geheim/EINRICHTUNGSCODE`), Datenbank, Mandant, Administrator, erster Benutzer, Schlüssel und Notfallblatt.
 
-Alles Weitere – Einstellungen, Reverse-Proxy, Aktualisieren, **Sichern** – steht im Administratorhandbuch unter [Installation](https://motom001.github.io/dms/admin/installation/) und [Aktualisieren und Sichern](https://motom001.github.io/dms/admin/aktualisieren/).
+Alles Weitere – Einstellungen, Reverse-Proxy, Aktualisieren, **Sichern** – steht im Administratorhandbuch unter [Einrichtung und Betrieb](https://motom001.github.io/dms/admin/aktuell/installation/) und [Aktualisieren und Sichern](https://motom001.github.io/dms/admin/aktualisieren/).
 
 `ghcr.io/motom001/dms:main` folgt jedem Stand auf `main`; mit einer Versionsnummer wie `ghcr.io/motom001/dms:0.18.0` bleibt die Installation auf einem Release.
 
 ## Wünsche und Fehler
 
-Als [Issue](https://github.com/motom001/dms/issues/new?template=wunsch.md) im Format einer User Story mit Abnahmekriterien. Mit dem Label `freigegeben` wird es umgesetzt.
+Als [Issue](https://github.com/motom001/dms/issues/new/choose) im Format einer User Story mit Akzeptanzkriterien. Umgesetzt wird, was der Maintainer mit dem Label `freigegeben` versieht. Wie Mitarbeit läuft, steht in [CONTRIBUTING.md](CONTRIBUTING.md) und im [Entwicklerhandbuch](https://motom001.github.io/dms/entwickler/aktuell/).
 
 ## Entwicklung
 

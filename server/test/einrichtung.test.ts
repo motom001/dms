@@ -5,7 +5,7 @@ import { mkdtemp, readFile, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { alsUrl, anbindungAus, AnbindungVerwaltung, ausUrl, deute, liesAnbindung, schreibeAnbindung, type Anbindung, type Pruefung } from '../src/anbindung';
+import { alsUrl, anbindungAus, AnbindungVerwaltung, ausUrl, ausVariablen, deute, liesAnbindung, schreibeAnbindung, type Anbindung, type Pruefung } from '../src/anbindung';
 import { Einrichtung } from '../src/einrichtung';
 import { Einrichtungscode, neuerCode } from '../src/einrichtungscode';
 import { speicherEinstellungen } from '../src/einstellungen';
@@ -23,6 +23,12 @@ describe('Datenbank-Anbindung (#119)', () => {
     assert.deepEqual(ausUrl(url), A);
     assert.equal(ausUrl('mysql://x@y/z'), null);
     assert.equal(ausUrl('kaputt'), null);
+  });
+
+  it('DMS_DB_PASSWORT (#184): Standard-Anbindung mit Passwort, Host änderbar, Sonderzeichen ohne Maskieren', () => {
+    assert.equal(ausVariablen({}), null);
+    assert.deepEqual(ausVariablen({ DMS_DB_PASSWORT: 'a:b@c/d' }), { host: 'db', port: 5432, datenbank: 'dms', benutzer: 'dms', passwort: 'a:b@c/d' });
+    assert.equal(ausVariablen({ DMS_DB_PASSWORT: 'x', DMS_DB_HOST: 'datenbank' })?.host, 'datenbank');
   });
 
   it('Eingabe prüfen; leeres Passwort heißt „wie bisher“', () => {

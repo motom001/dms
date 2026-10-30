@@ -34,6 +34,15 @@ export function ausUrl(url: string | undefined): Anbindung | null {
   } catch { return null; }
 }
 
+/**
+ * Ohne DATABASE_URL (#184): DMS_DB_PASSWORT (und optional DMS_DB_HOST) für Compose-Vorlagen, in denen
+ * das Passwort nur einmal steht – ohne Sonderzeichen in einer URL maskieren zu müssen.
+ */
+export function ausVariablen(env: Record<string, string | undefined>): Anbindung | null {
+  if (!env.DMS_DB_PASSWORT) return null;
+  return { ...STANDARD_ANBINDUNG, host: env.DMS_DB_HOST || STANDARD_ANBINDUNG.host, passwort: env.DMS_DB_PASSWORT };
+}
+
 export function alsUrl(a: Anbindung, datenbank = a.datenbank): string {
   const e = encodeURIComponent;
   const host = a.host.includes(':') && !a.host.startsWith('[') ? `[${a.host}]` : a.host;
