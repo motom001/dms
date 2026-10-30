@@ -21,7 +21,7 @@
   "devDependencies": {
     "@types/node": "^22.15.3",
     "@types/nodemailer": "^6.4.17",
-    "esbuild": "^0.25.3",
+    "esbuild": "^0.28.2",
     "tsx": "^4.19.4"
   }
 }
