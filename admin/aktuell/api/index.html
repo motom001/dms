@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.40/api/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.41/api/">
       
       
         <link rel="prev" href="../fehlersuche/">
@@ -1244,6 +1244,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Erster Aufruf">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#post-anlegen-und-zuordnen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post anlegen und zuordnen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1608,6 +1625,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Erster Aufruf">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#post-anlegen-und-zuordnen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post anlegen und zuordnen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1674,6 +1708,15 @@
 <p>Die Mappen einer Sicht liefert <code>GET /api/v1/mappen?sicht=&lt;Id der Sicht&gt;</code> – mit allen Bedingungen der Sicht. Alle Mappen eines Typs, ohne Bedingungen, gibt es mit <code>sicht=typ:&lt;Id des Mappentyps&gt;</code>. Mit <code>sicht=link&amp;link=…</code> geht es über einen <a href="../direktlinks/">sprechenden Link</a>. Die Sichten selbst (Baum, Mappentypen, Bedingungen, gewählte Trefferliste) liefert <code>GET /api/v1/sichten/definitionen</code>. Die eigene Abwesenheit liest und setzt <code>GET</code>/<code>PUT /api/v1/konto/abwesenheit</code>, die eigene tägliche Zusammenfassung (Uhrzeit, Wochentage, Feiertage) <code>GET</code>/<code>PUT /api/v1/konto/zusammenfassung</code>. Die eigenen Favoriten gibt es mit <code>sicht=favoriten</code>; markieren und entfernen mit <code>PUT</code> bzw. <code>DELETE /api/v1/mappen/{id}/favorit</code>.</p>
 <p>Mappentypen haben seit 0.14 <strong>mehrere Trefferlisten</strong> (<code>trefferlisten</code>, eine mit <code>standard: true</code>). Das Feld <code>trefferliste</code> gibt es weiter: Es enthält die Spalten der Standardliste, und wer es beim Ändern angibt, ersetzt damit deren Spalten.</p>
 <p>Mit <code>suche=…&amp;volltext=true</code> sucht <code>GET /api/v1/mappen</code> auch im Volltext der Dokumente; die Fundstellen stehen in <code>ausschnitte</code> (Treffer zwischen den Steuerzeichen U+0002 und U+0003). Den ganzen Text eines Dokuments liefert <code>GET /api/v1/dokumente/&lt;Id&gt;/volltext</code>.</p>
+<h3 id="post-anlegen-und-zuordnen">Post anlegen und zuordnen<a class="headerlink" href="#post-anlegen-und-zuordnen" title="Permanent link">&para;</a></h3>
+<p>Ein Skript, ein Scanner oder Home Assistant legt neue <a href="https://motom001.github.io/dms/benutzer/post/">Post</a> an und lädt die Datei dazu hoch:</p>
+<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer dms_…"</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"betreff": "Scan vom Drucker", "fuer": "&lt;Id eines Benutzers&gt;"}'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>http://&lt;NAS&gt;:8080/api/v1/post
+curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer dms_…"</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/octet-stream"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--data-binary<span class="w"> </span>@scan.pdf<span class="w"> </span><span class="s2">"http://&lt;NAS&gt;:8080/api/v1/mappen/&lt;Id der Post&gt;/dokumente?register=dokumente&amp;name=scan.pdf"</span>
+</code></pre></div>
+<p>Die Post steht dann mit Kanal <em>API</em> und Stand <em>Neu</em> in <strong>Neue Post</strong>. <code>POST /api/v1/post/&lt;Id&gt;/zuordnen</code> mit <code>{"ziel": "&lt;Id einer Mappe&gt;"}</code> ordnet sie zu; die Dokumente wandern ins erste Dokumentenregister der Mappe (oder in <code>register</code>, mit <code>kopieren: true</code> bleiben sie auch in der Post). Bei Post, die vor 0.41 als E-Mail angelegt wurde, heißt das Dokumentenregister <code>anhaenge</code>.</p>
 <p>Gelöschte Mappen liegen im <a href="../papierkorb/">Papierkorb</a>: <code>GET /api/v1/papierkorb</code> (eigener), <code>POST /api/v1/papierkorb/&lt;Id&gt;/wiederherstellen</code>, <code>DELETE /api/v1/papierkorb/&lt;Id&gt;</code> und <code>DELETE /api/v1/papierkorb</code> (leeren).</p>
 <h2 id="regeln">Regeln<a class="headerlink" href="#regeln" title="Permanent link">&para;</a></h2>
 <ul>
