@@ -511,6 +511,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#https-und-zertifikate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTPS und Zertifikate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#was-der-proxy-dem-dms-mitteilt" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1742,6 +1753,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#https-und-zertifikate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTPS und Zertifikate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#was-der-proxy-dem-dms-mitteilt" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1910,6 +1932,14 @@
 </table>
 <h2 id="hinter-einem-reverse-proxy">Hinter einem Reverse-Proxy<a class="headerlink" href="#hinter-einem-reverse-proxy" title="Permanent link">&para;</a></h2>
 <p>Läuft das DMS hinter einem Reverse-Proxy (Nginx Proxy Manager, nginx, Caddy, Traefik, der Proxy deines NAS …), ist nur <strong>eines</strong> zu tun: In der Werkbank unter <strong>E-Mail und Adresse</strong> die öffentliche Adresse eintragen, z. B. <code>https://dms.example.org</code>. Beginnt sie mit <code>https://</code>, setzt das DMS das Sitzungs-Cookie nur noch über HTTPS, und Links in E-Mails führen auf diese Adresse.</p>
+<h3 id="https-und-zertifikate">HTTPS und Zertifikate<a class="headerlink" href="#https-und-zertifikate" title="Permanent link">&para;</a></h3>
+<p>Das DMS spricht selbst nur HTTP und verwaltet keine Zertifikate. Das übernimmt der Reverse-Proxy: Er nimmt die HTTPS-Verbindung an, kümmert sich um das Zertifikat und dessen Erneuerung und reicht die Anfrage an das DMS weiter. Übliche Wege:</p>
+<ul>
+<li><strong>Nginx Proxy Manager</strong> als zusätzlicher Container: Zertifikat von Let's Encrypt per Mausklick. So läuft es beim Entwickler, siehe <a href="https://motom001.github.io/dms/installieren/aktuell/beispiel/">Beispielaufbau</a>.</li>
+<li><strong>Der Proxy deines NAS:</strong> Synology, UGREEN und QNAP bringen einen Reverse-Proxy samt Let's-Encrypt-Zertifikaten mit.</li>
+<li><strong>Caddy:</strong> holt und erneuert Zertifikate von selbst, die Konfiguration ist wenige Zeilen lang.</li>
+</ul>
+<p>Für Let's Encrypt braucht es eine eigene Domain, die auf deinen Anschluss zeigt. Soll das DMS nur zu Hause erreichbar sein, reicht HTTP im Heimnetz.</p>
 <h3 id="was-der-proxy-dem-dms-mitteilt">Was der Proxy dem DMS mitteilt<a class="headerlink" href="#was-der-proxy-dem-dms-mitteilt" title="Permanent link">&para;</a></h3>
 <p>Der Proxy leitet jede Anfrage an das DMS weiter. Für das DMS sieht sie deshalb so aus, als käme sie vom Proxy. Was das Gerät dahinter ist, schreibt der Proxy in Zusatzangaben (<code>X-Forwarded-For</code>, <code>X-Forwarded-Proto</code>). Das DMS braucht sie für:</p>
 <table>
