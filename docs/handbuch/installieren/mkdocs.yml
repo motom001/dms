@@ -70,6 +70,7 @@ nav:
       - QNAP: qnap.md
       - TrueNAS: truenas.md
       - Unraid: unraid.md
+  - "Ein Container: dms-komplett": komplett.md
   - Eigener Rechner:
       - PC oder Mini-PC mit Linux: linux.md
       - Raspberry Pi: raspberry-pi.md

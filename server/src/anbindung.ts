@@ -156,6 +156,8 @@ export interface AnbindungStand {
   umgebung: 'fehlt' | 'gleich' | 'abweichend';
   /** Die Datei wurde geändert und gilt erst nach einem Neustart. */
   neustartNoetig: boolean;
+  /** dms-komplett (#208): PostgreSQL läuft im Container, das Start-Skript setzt DATABASE_URL. */
+  imContainer: boolean;
 }
 
 export class AnbindungVerwaltung {
@@ -170,6 +172,7 @@ export class AnbindungVerwaltung {
       anbindung: ansicht(this.gespeichert)!, datei: join(this.ordner, ANBINDUNG_DATEI),
       umgebung: !this.umgebung ? 'fehlt' : gleicheVerbindung(this.umgebung, this.laufend) ? 'gleich' : 'abweichend',
       neustartNoetig: !gleicheVerbindung(this.gespeichert, this.laufend),
+      imContainer: process.env.DMS_VARIANTE === 'komplett',
     };
   }
 

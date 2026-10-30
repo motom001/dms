@@ -65,6 +65,7 @@ nav:
       - Einrichtung und Betrieb: installation.md
       - "Wie komme ich an ein DMS?": https://motom001.github.io/dms/installieren/aktuell/
       - Aktualisieren und Sichern: aktualisieren.md
+      - Wachsen und umziehen: wachsen.md
       - Verschlüsselung: verschluesselung.md
   - Einrichten in der Werkbank:
       - Werkbank und Übersicht: uebersicht.md

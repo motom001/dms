@@ -151,7 +151,7 @@ export interface EinrichtungStatus {
 }
 export type EinrichtungSchritt = 'benutzer' | 'schluessel' | 'optional' | 'fertig';
 export interface EinrichtungStand { offen: boolean; erledigt: EinrichtungSchritt[]; uebersprungen: EinrichtungSchritt[]; mandant: string | null }
-export interface AnbindungStand { anbindung: AnbindungAnsicht; datei: string; umgebung: 'fehlt' | 'gleich' | 'abweichend'; neustartNoetig: boolean }
+export interface AnbindungStand { anbindung: AnbindungAnsicht; datei: string; umgebung: 'fehlt' | 'gleich' | 'abweichend'; neustartNoetig: boolean; /** dms-komplett (#208) */ imContainer?: boolean }
 /** Wartungsmodus (#102), wie ihn jeder sieht; sekunden = bis zur aktiven Stufe. */
 export interface WartungOeffentlich { stufe: 'aus' | 'angekuendigt' | 'aktiv'; text: string; ende: string | null; aktivAb: string | null; sekunden: number | null; ausloeser?: 'speicherplatz' | null }
 export interface WartungSitzung { id: string; benutzerId: string; name: string; email: string; rolle: string; geraet: string; ip: string; zuletztAktiv: string; erstellt: string; aktuell: boolean }
@@ -505,7 +505,7 @@ export interface Fehlermeldung {
   bilder: Array<{ nr: number; name: string; mime: string; groesse: number }>; erledigt: string | null; erledigtVon: string | null;
 }
 export interface Systemuebersicht {
-  dms: { version: string; commit: string | null; gebaut: string | null };
+  dms: { version: string; commit: string | null; gebaut: string | null; /** #208 */ variante?: 'dms' | 'komplett' };
   laufzeit: { node: string; system: string; architektur: string; container: boolean; alpine: string | null; zeitzone: string; laeuftSeit: string };
   datenbank: { version: string; groesseBytes: number; mappen: number; typen: number; benutzer: number; dokumente: number; dokumenteBytes: number } | { fehler: string };
   bibliotheken: Record<string, string | null>;

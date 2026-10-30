@@ -8,7 +8,7 @@
    ```sh
    docker compose pull && docker compose up -d
    ```
-   oder in der Container-Verwaltung des NAS „Projekt neu erstellen“.
+   oder in der Container-Verwaltung des NAS „Projekt neu erstellen“. Bei [dms-komplett](https://motom001.github.io/dms/installieren/aktuell/komplett/) ist es nur ein Container; Datenbank und DMS kommen mit demselben Image. Bringt ein neues Image eine neue Hauptversion von PostgreSQL mit, siehe [Wachsen und umziehen](wachsen.md#neue-hauptversion-von-postgresql).
 4. Datenbank-Migrationen laufen beim Start automatisch und in einer Transaktion: Schlägt eine fehl, bleibt die Datenbank unverändert, und der Container startet nicht. Im Container-Log steht dann der Grund.
 5. Kurz prüfen, ob alles läuft, dann den Wartungsmodus beenden.
 

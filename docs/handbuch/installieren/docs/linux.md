@@ -29,6 +29,10 @@ docker compose up -d
 docker compose logs app | grep -A1 Einrichtungscode
 ```
 
+!!! tip "Noch einfacher: ein Container"
+    Mit [dms-komplett](komplett.md) ist es ein einziger Container mit eingebauter Datenbank, ohne `.env` und Passwort:
+    `curl -fsSLo docker-compose.yml https://raw.githubusercontent.com/motom001/dms/main/deploy/komplett/docker-compose.yml && docker compose up -d`.
+
 Die Daten liegen damit in `~/dms/daten`. Hast du für Dokumente oder Sicherungen eine eigene Platte, trägst du deren Pfade in der `docker-compose.yml` ein. Weiter geht es im Browser unter `http://<Rechner>:8080`, wie unter [Jeder Server mit Docker](docker.md) beschrieben.
 
 ## 4. Den Rechner zum Server machen
