@@ -25,6 +25,7 @@ function zeilenAus(u: Systemuebersicht): Zeilen {
       ['Version', u.dms.version],
       ['Commit', u.dms.commit ? u.dms.commit.slice(0, 7) : 'unbekannt (lokal gebaut)'],
       ['Image gebaut', zeit(u.dms.gebaut)],
+      ['Image', u.dms.variante === 'komplett' ? 'dms-komplett (mit PostgreSQL im Container)' : 'dms'],
     ]],
     ['Laufzeit', [
       ['Node.js', u.laufzeit.node],
@@ -36,6 +37,7 @@ function zeilenAus(u: Systemuebersicht): Zeilen {
     ]],
     ['Datenbank', db ? [
       ['PostgreSQL', db.version],
+      ['Ort', u.dms.variante === 'komplett' ? 'im Container (dms-komplett)' : 'eigener Datenbank-Server bzw. Container'],
       ['Größe', groesse(db.groesseBytes)],
       ['Mappen / Typen / Benutzer', `${db.mappen.toLocaleString('de-DE')} / ${db.typen} / ${db.benutzer}`],
       ['Dokumente', `${db.dokumente.toLocaleString('de-DE')} (${groesse(db.dokumenteBytes)})`],

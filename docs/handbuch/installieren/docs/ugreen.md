@@ -7,6 +7,9 @@ So richtest du das DMS auf einem UGREEN-NAS mit UGOS Pro ein. Die App **Docker**
 
 Wie das DMS beim Entwickler auf einem UGREEN-NAS läuft – mit Zugriff von unterwegs und Sicherung außer Haus –, zeigt das Beispiel [So läuft es beim Entwickler](beispiel.md).
 
+!!! tip "Noch einfacher: ein Container"
+    Statt eines Projekts mit zwei Containern geht auch **ein Container** aus dem Image `ghcr.io/motom001/dms-komplett:main`, mit eingebauter Datenbank und ohne Passwort. Wie das geht, steht unter [Ein Container: dms-komplett](komplett.md#in-der-oberflache-eines-nas).
+
 ## 1. Docker installieren
 
 Im **App Center** die App **Docker** installieren und öffnen.

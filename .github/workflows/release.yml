@@ -62,7 +62,7 @@ jobs:
           {
             echo
             echo "---"
-            echo "Aktualisieren: Image \`ghcr.io/motom001/dms:${tag#v}\` (oder \`:main\`) neu ziehen und neu starten. Anleitung im [Administratorhandbuch](https://motom001.github.io/dms/admin/aktualisieren/)."
+            echo "Aktualisieren: Image \`ghcr.io/motom001/dms:${tag#v}\` bzw. \`ghcr.io/motom001/dms-komplett:${tag#v}\` (oder \`:main\`) neu ziehen und neu starten. Anleitung im [Administratorhandbuch](https://motom001.github.io/dms/admin/aktualisieren/)."
           } >> notizen.md
       - name: Release anlegen oder Text setzen
         run: |

@@ -87,6 +87,18 @@ jobs:
       - name: Vorlagen probehalber installieren
         if: matrix.plattform == 'linux/amd64'
         run: deploy/vorlagen-probe.sh dms:probe
+      # dms-komplett (#208): DMS und PostgreSQL in einem Container – auf beiden Architekturen.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: komplett
+          platforms: ${{ matrix.plattform }}
+          load: true
+          push: false
+          tags: dms-komplett:probe
+          cache-from: type=gha,scope=${{ matrix.plattform }}
+      - name: dms-komplett probehalber installieren
+        run: deploy/komplett-probe.sh dms-komplett:probe
 
   # Neue Versionsnummer in package.json auf main? Dann gibt es ein Release (#34).
   version:
@@ -121,9 +133,12 @@ jobs:
     needs: [pruefen, version]
     # Läuft auch, wenn „version“ übersprungen wurde (Tags, manueller Start).
     if: always() && needs.pruefen.result == 'success' && github.event_name != 'pull_request' && needs.version.result != 'failure'
+    # Zwei Images (#208): dms (Standard) und dms-komplett (mit PostgreSQL), je zwei Architekturen.
     strategy:
       fail-fast: false
       matrix:
+        variante: [dms, komplett]
+        plattform: [linux/amd64, linux/arm64]
         include:
           - plattform: linux/amd64
             rechner: ubuntu-24.04
@@ -131,6 +146,10 @@ jobs:
           - plattform: linux/arm64
             rechner: ubuntu-24.04-arm
             name: arm64
+          - variante: dms
+            image: dms
+          - variante: komplett
+            image: dms-komplett
     runs-on: ${{ matrix.rechner }}
     steps:
       - uses: actions/checkout@v4
@@ -149,8 +168,9 @@ jobs:
           build-args: |
             DMS_COMMIT=${{ github.sha }}
             DMS_GEBAUT=${{ steps.zeit.outputs.jetzt }}
+          target: ${{ matrix.variante }}
           platforms: ${{ matrix.plattform }}
-          outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=ghcr.io/${{ github.repository_owner }}/${{ matrix.image }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=${{ matrix.plattform }}
           cache-to: type=gha,mode=max,scope=${{ matrix.plattform }}
       - name: Prüfwert merken
@@ -161,7 +181,7 @@ jobs:
           DIGEST: ${{ steps.bau.outputs.digest }}
       - uses: actions/upload-artifact@v4
         with:
-          name: digest-${{ matrix.name }}
+          name: digest-${{ matrix.variante }}-${{ matrix.name }}
           path: ${{ runner.temp }}/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -169,12 +189,19 @@ jobs:
   image-zusammen:
     needs: [version, image]
     if: always() && needs.image.result == 'success'
+    strategy:
+      matrix:
+        include:
+          - variante: dms
+            image: dms
+          - variante: komplett
+            image: dms-komplett
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
           path: ${{ runner.temp }}/digests
-          pattern: digest-*
+          pattern: digest-${{ matrix.variante }}-*
           merge-multiple: true
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
@@ -185,7 +212,7 @@ jobs:
       - id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
@@ -196,11 +223,11 @@ jobs:
         run: |
           test "$(ls | wc -l)" -eq 2 || { echo "::error::Es fehlt eine Architektur: $(ls)"; exit 1; }
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf 'ghcr.io/${{ github.repository }}@sha256:%s ' *)
+            $(printf 'ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}@sha256:%s ' *)
       - name: Prüfen
         run: |
-          docker buildx imagetools inspect "ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.version }}"
-          docker buildx imagetools inspect --raw "ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.version }}" | jq -e '[.manifests[].platform.architecture] | (index("amd64") != null and index("arm64") != null)' >/dev/null
+          docker buildx imagetools inspect "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${{ steps.meta.outputs.version }}"
+          docker buildx imagetools inspect --raw "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${{ steps.meta.outputs.version }}" | jq -e '[.manifests[].platform.architecture] | (index("amd64") != null and index("arm64") != null)' >/dev/null
 
   # Tag und Release anlegen. Ein vom Workflow angelegter Tag startet keine weiteren
   # Workflows; deshalb trägt das Image oben schon die Versionsnummer.

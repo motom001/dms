@@ -35,6 +35,7 @@ Im DMS führt **Hilfe** im Menü unter dem eigenen Namen dorthin.
 Welcher Weg passt, zeigt **[Wie komme ich an ein DMS?](https://motom001.github.io/dms/installieren/aktuell/)**:
 
 - **umbrelOS, ZimaOS, CasaOS:** den [DMS App Store](https://github.com/motom001/dms-appstore) als Quelle hinzufügen und **DMS** mit einem Klick installieren ([umbrelOS](https://motom001.github.io/dms/installieren/aktuell/umbrel/), [ZimaOS](https://motom001.github.io/dms/installieren/aktuell/zimaos/), [CasaOS](https://motom001.github.io/dms/installieren/aktuell/casaos/)).
+- **Ein Container (`dms-komplett`):** DMS und Datenbank zusammen, ohne Passwort – `docker run -d -p 8080:3000 -v …:/data/files -v …:/data/geheim -v …:/data/sicherung -v …:/data/postgres ghcr.io/motom001/dms-komplett:main` ([Anleitung](https://motom001.github.io/dms/installieren/aktuell/komplett/)).
 - **Synology, UGREEN, QNAP, TrueNAS, Unraid:** eine Vorlage aus [`deploy/`](deploy/) in die Docker-Oberfläche des NAS einfügen und ein Passwort eintragen ([Anleitungen](https://motom001.github.io/dms/installieren/aktuell/)).
 
 ## Schnellstart mit Docker Compose

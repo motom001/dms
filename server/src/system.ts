@@ -19,7 +19,8 @@ export interface Datenbankdaten { version: string; groesseBytes: number; mappen:
 export interface SystemQuelle { datenbank(): Promise<Datenbankdaten> }
 
 export interface Uebersicht {
-  dms: { version: string; commit: string | null; gebaut: string | null };
+  /** variante (#208): „komplett“ = dms-komplett mit PostgreSQL im Container, sonst „dms“. */
+  dms: { version: string; commit: string | null; gebaut: string | null; variante: 'dms' | 'komplett' };
   laufzeit: { node: string; system: string; architektur: string; container: boolean; alpine: string | null; zeitzone: string; laeuftSeit: string };
   datenbank: Datenbankdaten | { fehler: string };
   bibliotheken: Record<string, string | null>;
@@ -74,7 +75,7 @@ export async function uebersicht(quelle: SystemQuelle | undefined, betrieb: { ma
   try { datenbank = quelle ? await quelle.datenbank() : { fehler: 'keine Datenbank angebunden' }; }
   catch (e) { datenbank = { fehler: (e as Error).message }; }
   return {
-    dms: { version: eigeneVersion(), commit: env.DMS_COMMIT || null, gebaut: env.DMS_GEBAUT || null },
+    dms: { version: eigeneVersion(), commit: env.DMS_COMMIT || null, gebaut: env.DMS_GEBAUT || null, variante: env.DMS_VARIANTE === 'komplett' ? 'komplett' : 'dms' },
     laufzeit: {
       node: process.versions.node,
       system: `${type()} ${release()}`,

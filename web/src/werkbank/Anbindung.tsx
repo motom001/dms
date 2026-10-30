@@ -26,7 +26,7 @@ export function AnbindungListe({ z }: { z: AnbindungZustand }) {
       {s && (
         <ul className="mappenliste">
           <li><a className="eintrag werk" href="#anbindung"><span className="titel mono">{s.anbindung.benutzer}@{s.anbindung.host}:{s.anbindung.port}/{s.anbindung.datenbank}</span><span className="unter">{s.neustartNoetig ? 'geändert – gilt nach dem Neustart' : 'in Betrieb'}</span>{s.neustartNoetig && <span className="problem">Neustart</span>}</a></li>
-          <li><a className="eintrag werk" href="#anbindung"><span className="titel">DATABASE_URL</span><span className="unter">{s.umgebung === 'fehlt' ? 'nicht gesetzt' : s.umgebung === 'gleich' ? 'gleich – kann entfernt werden' : 'weicht ab – wird ignoriert'}</span>{s.umgebung === 'abweichend' && <span className="problem">abweichend</span>}</a></li>
+          <li><a className="eintrag werk" href="#anbindung"><span className="titel">DATABASE_URL</span><span className="unter">{s.imContainer ? 'vom Container gesetzt (dms-komplett)' : s.umgebung === 'fehlt' ? 'nicht gesetzt' : s.umgebung === 'gleich' ? 'gleich – kann entfernt werden' : 'weicht ab – wird ignoriert'}</span>{s.umgebung === 'abweichend' && <span className="problem">abweichend</span>}</a></li>
         </ul>
       )}
     </>
@@ -74,7 +74,8 @@ export function AnbindungPanel({ z, nachAenderung }: { z: AnbindungZustand; nach
         <p className="leise">Die Anbindung steht in der Datei <span className="mono">{s.datei}</span> und ist führend – auch wenn in der Compose-Datei <span className="mono">DATABASE_URL</span> gesetzt ist. Das Passwort zeigt das DMS nie an.</p>
       </div>
       {s.umgebung === 'abweichend' && <div className="hinweis warn"><p><strong>DATABASE_URL weicht von dieser Anbindung ab und wird ignoriert.</strong> Entferne die Variable aus der Compose-Datei, damit es nicht zu Verwechslungen kommt.</p></div>}
-      {s.umgebung === 'gleich' && <div className="hinweis info"><p><strong>DATABASE_URL ist nicht mehr nötig.</strong> Die Anbindung steht in der Datei; du kannst die Variable beim nächsten Update aus der Compose-Datei entfernen.</p></div>}
+      {s.imContainer && <div className="hinweis info"><p><strong>Die Datenbank läuft in diesem Container (dms-komplett).</strong> Hier ist nichts einzustellen. Zum Umzug auf eine eigene Datenbank: Sicherung hier anlegen und dort wiederherstellen – siehe „Wachsen und umziehen“ im Administratorhandbuch.</p></div>}
+      {s.umgebung === 'gleich' && !s.imContainer && <div className="hinweis info"><p><strong>DATABASE_URL ist nicht mehr nötig.</strong> Die Anbindung steht in der Datei; du kannst die Variable beim nächsten Update aus der Compose-Datei entfernen.</p></div>}
       {s.neustartNoetig && (
         <div className="hinweis warn hinweiszeile">
           <p><strong>Die Anbindung ist geändert und gilt nach dem Neustart.</strong> Im Container startet Docker das DMS gleich wieder (restart: unless-stopped).</p>

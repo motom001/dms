@@ -1,0 +1,23 @@
+# DMS als ein Container mit eingebauter Datenbank (dms-komplett, #208) – Vorlage aus
+# https://github.com/motom001/dms (deploy/komplett)
+# Anleitung: https://motom001.github.io/dms/installieren/aktuell/komplett/
+#
+# Nichts einzutragen: kein Passwort, keine Datenbank. Die Ordner liegen neben dieser Datei;
+# auf einem NAS z. B. /volume1/docker/dms/files statt ./files.
+services:
+  dms:
+    image: ghcr.io/motom001/dms-komplett:main
+    restart: unless-stopped
+    # Beim Stoppen fährt der Container erst das DMS, dann die Datenbank sauber herunter.
+    stop_grace_period: 60s
+    volumes:
+      # Hochgeladene Dateien
+      - ./files:/data/files
+      # Schlüssel und Einrichtungscode – getrennt von den Sicherungen aufbewahren
+      - ./geheim:/data/geheim
+      # Sicherungen (Werkbank → Sicherung) – ab und zu an einen anderen Ort kopieren
+      - ./sicherung:/data/sicherung
+      # Datenbank (PostgreSQL 17)
+      - ./postgres:/data/postgres
+    ports:
+      - "8080:3000"

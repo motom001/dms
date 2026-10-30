@@ -5,6 +5,9 @@ So richtest du das DMS auf **Unraid 6.12 oder neuer** ein. Weil das DMS zwei Con
 !!! info "Bald in Community Applications?"
     Das DMS soll in *Community Applications* ([#183](https://github.com/motom001/dms/issues/183)). Bis dahin geht es so.
 
+!!! tip "Noch einfacher: ein Container"
+    Statt eines Projekts mit zwei Containern geht auch **ein Container** aus dem Image `ghcr.io/motom001/dms-komplett:main`, mit eingebauter Datenbank und ohne Passwort. Wie das geht, steht unter [Ein Container: dms-komplett](komplett.md#in-der-oberflache-eines-nas).
+
 ## 1. Compose Manager installieren
 
 Unter **Apps** (Community Applications) nach *Docker Compose Manager* suchen und installieren.

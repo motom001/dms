@@ -2,6 +2,9 @@
 
 So richtest du das DMS auf einem QNAP-NAS mit QTS 5 oder QuTS hero und **Container Station 3** ein, ohne Kommandozeile.
 
+!!! tip "Noch einfacher: ein Container"
+    Statt eines Projekts mit zwei Containern geht auch **ein Container** aus dem Image `ghcr.io/motom001/dms-komplett:main`, mit eingebauter Datenbank und ohne Passwort. Wie das geht, steht unter [Ein Container: dms-komplett](komplett.md#in-der-oberflache-eines-nas).
+
 ## 1. Container Station installieren
 
 Im **App Center** die **Container Station** installieren und einmal öffnen. Dabei entsteht der freigegebene Ordner `Container`.

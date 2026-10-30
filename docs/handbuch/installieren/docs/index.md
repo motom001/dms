@@ -20,6 +20,7 @@ Das DMS läuft bei dir zu Hause: auf einem NAS, einem kleinen Heimserver oder je
 | **QNAP-NAS** | [Container Station](qnap.md) | ☆☆ gering: wie bei Synology |
 | **TrueNAS** | [Apps → Custom App](truenas.md) | ☆☆ gering: Datensatz anlegen, Vorlage einfügen |
 | **Unraid** | [Compose Manager](unraid.md) | ☆☆ gering: Plugin installieren, Vorlage einfügen |
+| **jedes Gerät mit Docker**, am einfachsten | [Ein Container: dms-komplett](komplett.md) | ☆☆ gering: ein Image, vier Ordner, kein Passwort |
 | **anderer Server mit Docker** | [Docker Compose](docker.md) | ☆☆☆ mittel: Kommandozeile oder eigene Docker-Oberfläche |
 
 Alle Wege brauchen ein Gerät mit **amd64** (Intel, AMD) oder **arm64** (z. B. Raspberry Pi 4/5) und etwa 1 GB freien Arbeitsspeicher. Dazu kommt Platz für deine Dokumente.
@@ -29,7 +30,7 @@ Alle Wege brauchen ein Gerät mit **amd64** (Intel, AMD) oder **arm64** (z. B. R
 
 ## Was du in jedem Fall bekommst
 
-- Zwei Container: das DMS selbst und eine PostgreSQL-Datenbank.
+- Zwei Container: das DMS selbst und eine PostgreSQL-Datenbank. Mit [dms-komplett](komplett.md) ist es ein Container, in dem beides läuft.
 - Vier Ordner auf deinem Gerät: `files` (Dokumente), `geheim` (Schlüssel), `sicherung` (Sicherungen) und `postgres` (Datenbank).
 - Die Oberfläche im Browser, meist unter `http://<Gerät>:8080`. Bei den App-Stores ist es Port `8478`.
 
