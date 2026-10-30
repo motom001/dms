@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.3",
-    "@types/nodemailer": "^6.4.17",
+    "@types/nodemailer": "^8.0.2",
     "esbuild": "^0.25.3",
     "tsx": "^4.19.4"
   }
