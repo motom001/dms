@@ -106,7 +106,7 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 
 - **Keine Umgebungsvariablen mehr** für E-Mail-Versand und Adresse: gepflegt in der Werkbank, gespeichert in `einstellungen` (`mail`, `adresse`), wirksam ohne Neustart – Konten holen sich den Mailer und die Adresse bei jeder Verwendung (`Betrieb` in `server/src/betrieb.ts`).
 - **Einmalige Übernahme** der früheren Variablen `SMTP_*` und `APP_URL` beim ersten Start, nur solange nichts gespeichert ist; danach ignoriert, mit Hinweis im Protokoll. So fällt der Versand beim Update nicht aus.
-- **Ohne gepflegte Adresse** gilt die Adresse der aktuellen Anfrage (`req.protocol` und `req.host`, hinter einem Proxy über `TRUST_PROXY`). Sie steckt im Anfragekontext, damit Konten sie ohne zusätzlichen Parameter finden.
+- **Ohne gepflegte Adresse** gilt die Adresse der aktuellen Anfrage (`req.protocol` und `req.host`, hinter einem Proxy über `X-Forwarded-*`, siehe unten). Sie steckt im Anfragekontext, damit Konten sie ohne zusätzlichen Parameter finden.
 - **Passwort verschlüsselt** (seit #39), nie an die Oberfläche zurück; leeres Feld behält es.
 - **Testen mit ungespeicherten Werten:** Prüfen und Testmail nehmen die Werte aus dem Formular, damit man vor dem Speichern sieht, ob es geht.
 
@@ -168,6 +168,12 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 
 - **Eine Transaktion** für alle verschlüsselten Werte (Mappen, Papierkorb, Einstellungen) samt Fingerabdruck und Prüfwort; die neue Schlüsseldatei liegt bis dahin als `dms.schluessel.neu` daneben und ersetzt die alte erst danach. Ein Neustart dazwischen wird beim Start erkannt und abgeschlossen.
 - **Kein Aufbewahren des alten Schlüssels**: Ältere Sicherungen nennen ihren Fingerabdruck; zum Wiederherstellen dient das alte Notfallblatt.
+
+## Proxy-Angaben automatisch (#234)
+
+- **Standard „private Netze“** statt `false`: Fastify bekommt `trustProxy: ['loopback', 'linklocal', 'uniquelocal']`. Ohne Einstellung stimmten IP-Adressen und die Sperre nach Fehlversuchen (je E-Mail und IP) hinter einem Proxy nicht – und kaum jemand setzte die Variable, weil sonst alles ging.
+- **Restrisiko bewusst in Kauf genommen:** Ein Gerät im Heimnetz, das das DMS direkt erreicht, könnte eine IP vortäuschen. Wer das ausschließen will, setzt `false` oder eine Liste. Aus dem Internet geht es nicht, solange keine Portfreigabe mit verschleierter Absenderadresse (z. B. Docker-Userland-Proxy) dazwischen ist.
+- **Falsche Werte** führen nicht zum Startabbruch: Es gilt `auto`, mit Warnung im Protokoll.
 
 ## Bewusst noch nicht drin
 
