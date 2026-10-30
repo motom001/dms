@@ -1197,6 +1197,7 @@
 
 <h1 id="jeder-server-mit-docker">Jeder Server mit Docker<a class="headerlink" href="#jeder-server-mit-docker" title="Permanent link">&para;</a></h1>
 <p>Diese Seite gilt für jedes Gerät ohne eigene Anleitung; eigene Seiten gibt es für einen <a href="../linux/">PC mit Linux</a>, den <a href="../raspberry-pi/">Raspberry Pi</a>, <a href="../windows/">Windows</a> und <a href="../proxmox/">Proxmox und Co.</a>. Das DMS braucht <strong>Docker mit Docker Compose</strong>. Die Images sind öffentlich (amd64 und arm64), eine Anmeldung bei der Registry ist nicht nötig.</p>
+<p>Empfohlen sind <strong>zwei Container</strong> (DMS und PostgreSQL); die Gegenüberstellung steht unter <a href="../#ein-oder-zwei-container">Ein oder zwei Container?</a>. Wer nur ausprobieren will oder nur einen Container betreiben kann, nimmt <a href="../komplett/">dms-komplett</a>.</p>
 <h2 id="mit-der-kommandozeile">Mit der Kommandozeile<a class="headerlink" href="#mit-der-kommandozeile" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>mkdir<span class="w"> </span>-p<span class="w"> </span>~/dms<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/dms
 curl<span class="w"> </span>-fsSLo<span class="w"> </span>docker-compose.yml<span class="w"> </span>https://raw.githubusercontent.com/motom001/dms/main/deploy/nas/docker-compose.yml
@@ -1211,7 +1212,7 @@ docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"
 <h2 id="gut-zu-wissen">Gut zu wissen<a class="headerlink" href="#gut-zu-wissen" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Ordner:</strong> <code>files</code>, <code>geheim</code>, <code>sicherung</code> und <code>postgres</code> müssen auf dem Server liegen (Volumes). Sonst sind sie beim nächsten Update weg. Mehr unter <a href="https://motom001.github.io/dms/admin/aktuell/installation/#ordner-und-volumes">Ordner und Volumes</a>.</li>
-<li><strong>Updates:</strong> <code>docker compose pull &amp;&amp; docker compose up -d</code>. Mit einer Versionsnummer statt <code>main</code>, z. B. <code>ghcr.io/motom001/dms:0.39.0</code>, bleibt die Installation auf diesem Release. Siehe <a href="https://motom001.github.io/dms/admin/aktuell/aktualisieren/">Aktualisieren</a>.</li>
+<li><strong>Updates:</strong> <code>docker compose pull &amp;&amp; docker compose up -d</code> – das holt das DMS und PostgreSQL (<code>postgres:17</code>) neu. Mit einer Versionsnummer statt <code>main</code>, z. B. <code>ghcr.io/motom001/dms:0.39.0</code>, bleibt die Installation auf diesem Release. Siehe <a href="https://motom001.github.io/dms/admin/aktuell/aktualisieren/">Aktualisieren</a>.</li>
 <li><strong>Von außen erreichbar</strong> erst nach der Einrichtung, am besten mit HTTPS über einen Reverse-Proxy: <a href="https://motom001.github.io/dms/admin/aktuell/installation/#hinter-einem-reverse-proxy">Hinter einem Reverse-Proxy</a>.</li>
 </ul>
 

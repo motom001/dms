@@ -382,6 +382,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Projekt holen und starten">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#zwei-images-aus-einem-dockerfile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zwei Images aus einem Dockerfile
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -684,6 +701,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Projekt holen und starten">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#zwei-images-aus-einem-dockerfile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zwei Images aus einem Dockerfile
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -745,6 +779,35 @@ npm<span class="w"> </span>run<span class="w"> </span>dev<span class="w"> </span
 </code></pre></div>
 <p>Ohne Docker für das DMS selbst legt der Server seine festen Ordner (<code>files</code>, <code>geheim</code>, <code>sicherung</code>) unter <code>./data</code> im Projekt an. <code>DMS_DATENWURZEL=/anderer/ordner</code> verlegt sie. Beim ersten Aufruf führt der Einrichtungsassistent durch die Einrichtung. Den Einrichtungscode zeigt die Konsole des Servers.</p>
 <p>Alles zusammen als Container: <code>docker compose up --build</code>, dann http://localhost:8080.</p>
+<h3 id="zwei-images-aus-einem-dockerfile">Zwei Images aus einem Dockerfile<a class="headerlink" href="#zwei-images-aus-einem-dockerfile" title="Permanent link">&para;</a></h3>
+<p>Das <code>Dockerfile</code> hat zwei Ziele (#208):</p>
+<table>
+<thead>
+<tr>
+<th>Ziel</th>
+<th>Image</th>
+<th>Inhalt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dms</code> (Standard)</td>
+<td><code>ghcr.io/motom001/dms</code></td>
+<td>nur das DMS; PostgreSQL läuft daneben (empfohlen)</td>
+</tr>
+<tr>
+<td><code>komplett</code></td>
+<td><code>ghcr.io/motom001/dms-komplett</code></td>
+<td>DMS und PostgreSQL 17 in einem Container, Start über <code>deploy/komplett/start.sh</code> (tini)</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>dms<span class="w"> </span>.<span class="w">                                  </span><span class="c1"># schlank</span>
+docker<span class="w"> </span>build<span class="w"> </span>--target<span class="w"> </span>komplett<span class="w"> </span>-t<span class="w"> </span>dms-komplett<span class="w"> </span>.<span class="w">       </span><span class="c1"># mit PostgreSQL</span>
+deploy/komplett-probe.sh<span class="w"> </span>dms-komplett<span class="w">                  </span><span class="c1"># Probe wie in der CI: Einrichten, Neustart, Stopp, Absturz, Versionsprüfung</span>
+deploy/vorlagen-probe.sh<span class="w"> </span>dms<span class="w">                           </span><span class="c1"># NAS-Vorlagen mit dem schlanken Image</span>
+</code></pre></div>
+<p><code>deploy/</code> ist bis auf <code>deploy/komplett/start.sh</code> vom Docker-Build ausgeschlossen (<code>.dockerignore</code>). Die CI baut beide Images für amd64 und arm64, bei jedem Pull Request mit Probe; auf <code>main</code> und jede Woche (neue Alpine-Pakete) werden beide veröffentlicht.</p>
 <h2 id="prufen">Prüfen<a class="headerlink" href="#prufen" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

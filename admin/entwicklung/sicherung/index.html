@@ -1207,6 +1207,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verfahrensdokumentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verfahrensdokumentation (Vorlage)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1796,7 +1824,7 @@
 </ul>
 <p>Ist der Zeitplan an und eine Sicherung schlägt fehl oder ist zu alt, bekommen alle Administratoren <strong>eine</strong> E-Mail je Vorfall (nicht stündlich) – sofern der <a href="../installation/#e-mail-und-adresse">E-Mail-Versand</a> eingerichtet ist. Alles steht auch im <a href="../fehlersuche/#protokoll">Protokoll</a>, Modul <em>sicherung</em>.</p>
 <h2 id="speicherort">Speicherort<a class="headerlink" href="#speicherort" title="Permanent link">&para;</a></h2>
-<p>Der Sicherungsordner ist in der <a href="https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml">Compose-Vorlage</a> ein eigenes Volume:</p>
+<p>Der Sicherungsordner ist in den <a href="https://github.com/motom001/dms/tree/main/deploy">Compose-Vorlagen</a> ein eigenes Volume – bei zwei Containern wie bei <a href="https://motom001.github.io/dms/installieren/aktuell/komplett/">dms-komplett</a>:</p>
 <div class="highlight"><pre><span></span><code><span class="nt">volumes</span><span class="p">:</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/volume1/docker/dms/sicherung:/data/sicherung</span>
 </code></pre></div>
@@ -1825,6 +1853,10 @@
 <p><img alt="Notfallblatt" src="../bilder/notfallblatt.png" /></p>
 <p><strong>Aufbewahren:</strong> ausgedruckt an einem sicheren Ort (z. B. bei den Familienunterlagen) oder als PDF in einem Passwortsafe – auf jeden Fall <strong>getrennt vom NAS</strong> und nicht neben den Sicherungen. Wer das Blatt hat, kann die Sicherungen lesen.</p>
 <p>Jeder Download steht im Protokoll (ohne den Schlüssel). Ändert sich der Schlüssel (<a href="../verschluesselung/#schlussel-wechseln">Schlüssel wechseln</a>), weist die Werkbank darauf hin, ein neues Notfallblatt zu erstellen; ältere Sicherungen brauchen weiterhin das alte – bewahre es auf, solange es solche Sicherungen gibt. In der Liste tragen sie den Hinweis „früherer Schlüssel“; mit <strong>Sicherungen mit früherem Schlüssel löschen</strong> entfernst du sie alle auf einmal.</p>
+<div class="admonition tip">
+<p class="admonition-title">Für Selbstständige und Vermieter</p>
+<p>Wie Sicherung, Protokoll und Berechtigungen zusammen eine geordnete Belegablage ergeben, beschreibt die <a href="../verfahrensdokumentation/">Vorlage für die Verfahrensdokumentation</a>.</p>
+</div>
 
 
 

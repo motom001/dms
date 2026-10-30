@@ -345,6 +345,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ein-oder-zwei-container" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ein oder zwei Container?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#was-du-in-jedem-fall-bekommst" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1172,6 +1183,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ein-oder-zwei-container" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ein oder zwei Container?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#was-du-in-jedem-fall-bekommst" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1313,9 +1335,9 @@
 <td>☆☆☆ mittel: VM anlegen, dann wie beim PC</td>
 </tr>
 <tr>
-<td><strong>jedes Gerät mit Docker</strong>, am einfachsten</td>
-<td><a href="komplett/">Ein Container: dms-komplett</a></td>
-<td>☆☆ gering: ein Image, vier Ordner, kein Passwort</td>
+<td><strong>Alternative: ein Container</strong> (Ausprobieren, nur ein Container möglich)</td>
+<td><a href="komplett/">dms-komplett</a></td>
+<td>☆☆ gering: ein Image, vier Ordner, kein Passwort – siehe <a href="#ein-oder-zwei-container">Ein oder zwei Container?</a></td>
 </tr>
 <tr>
 <td><strong>anderer Server mit Docker</strong></td>
@@ -1329,9 +1351,54 @@
 <p class="admonition-title">Du hast noch nichts davon?</p>
 <p>Am einfachsten ist ein kleiner Heimserver mit <strong>umbrelOS</strong> oder <strong>ZimaOS</strong>, z. B. ein Mini-PC oder ein ZimaBoard. Dort installierst du das DMS wie eine App auf dem Handy. Ein NAS von Synology, UGREEN oder QNAP geht ebenso und kümmert sich zusätzlich um deine Festplatten.</p>
 </div>
+<h2 id="ein-oder-zwei-container">Ein oder zwei Container?<a class="headerlink" href="#ein-oder-zwei-container" title="Permanent link">&para;</a></h2>
+<p>Das DMS gibt es in zwei Varianten. <strong>Wir empfehlen zwei Container</strong> – so laufen auch alle Anleitungen und App-Stores hier.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>Zwei Container</strong> (empfohlen): <code>dms</code> + <code>postgres:17</code></th>
+<th><strong>Ein Container</strong>: <code>dms-komplett</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Einrichten</td>
+<td>Compose-Projekt bzw. App-Store, ein Passwort für die Datenbank</td>
+<td>ein Image, vier Ordner, kein Passwort</td>
+</tr>
+<tr>
+<td>Updates von PostgreSQL</td>
+<td>sofort, unabhängig vom DMS: <code>postgres:17</code> neu ziehen</td>
+<td>erst mit dem nächsten DMS-Image</td>
+</tr>
+<tr>
+<td>Betrieb</td>
+<td>DMS und Datenbank einzeln neu starten, überwachen, mit Standardwerkzeugen sichern</td>
+<td>alles zusammen; Datenbank von außen nicht erreichbar (gewollt)</td>
+</tr>
+<tr>
+<td>Neue Hauptversion von PostgreSQL</td>
+<td>planbar, im eigenen Takt</td>
+<td>nur über Sicherung und Wiederherstellung</td>
+</tr>
+<tr>
+<td>App-Stores (umbrelOS, ZimaOS, CasaOS, TrueNAS)</td>
+<td>ja</td>
+<td>nein</td>
+</tr>
+<tr>
+<td>Gut für</td>
+<td>den Dauerbetrieb</td>
+<td>Ausprobieren und Testen, Oberflächen, die nur „Container aus Image erstellen“ können, Anbieter, die nur einen Container erlauben</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Warum zwei Container?</strong> Ein Dienst je Container ist der übliche Docker-Weg. Die Datenbank kommt aus dem offiziellen PostgreSQL-Image und bekommt Sicherheits-Updates, sobald es sie gibt – unabhängig davon, wann das DMS ein neues Release hat. Fällt einer der beiden aus, lässt er sich allein neu starten und untersuchen. Der Preis ist ein Passwort und ein Compose-Projekt; die Vorlagen hier halten beides so klein wie möglich.</p>
+<p><strong>Wann ein Container?</strong> Wenn es schnell gehen soll (ausprobieren, testen) oder die Umgebung nur einen Container zulässt. Ein Wechsel zwischen beiden Varianten geht jederzeit über Sicherung und Wiederherstellung, siehe <a href="https://motom001.github.io/dms/admin/aktuell/wachsen/">Wachsen und umziehen</a>.</p>
 <h2 id="was-du-in-jedem-fall-bekommst">Was du in jedem Fall bekommst<a class="headerlink" href="#was-du-in-jedem-fall-bekommst" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Zwei Container: das DMS selbst und eine PostgreSQL-Datenbank. Mit <a href="komplett/">dms-komplett</a> ist es ein Container, in dem beides läuft.</li>
+<li>Das DMS und eine PostgreSQL-Datenbank – in zwei Containern oder mit <a href="komplett/">dms-komplett</a> in einem.</li>
 <li>Vier Ordner auf deinem Gerät: <code>files</code> (Dokumente), <code>geheim</code> (Schlüssel), <code>sicherung</code> (Sicherungen) und <code>postgres</code> (Datenbank).</li>
 <li>Die Oberfläche im Browser, meist unter <code>http://&lt;Gerät&gt;:8080</code>. Bei den App-Stores ist es Port <code>8478</code>.</li>
 </ul>

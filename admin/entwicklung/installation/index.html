@@ -1213,6 +1213,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verfahrensdokumentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verfahrensdokumentation (Vorlage)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1751,7 +1779,7 @@
 
 <h1 id="einrichtung-und-betrieb">Einrichtung und Betrieb<a class="headerlink" href="#einrichtung-und-betrieb" title="Permanent link">&para;</a></h1>
 <p>Wie du das DMS installierst – auf Synology, UGREEN, QNAP, TrueNAS, Unraid, umbrelOS, ZimaOS, CasaOS oder jedem Server mit Docker –, steht im eigenen Bereich <strong><a href="https://motom001.github.io/dms/installieren/aktuell/">Wie komme ich an ein DMS?</a></strong>. Diese Seite beschreibt, was danach kommt: den Einrichtungsassistenten, die Anbindung an die Datenbank, Ordner, Einstellungen und den Betrieb hinter einem Reverse-Proxy.</p>
-<p>Das DMS läuft als zwei Container: die Anwendung (<code>ghcr.io/motom001/dms</code>) und PostgreSQL. Bei jedem Push auf <code>main</code> baut GitHub Actions ein neues Image (Tag <code>main</code>, zusätzlich je Commit ein Kurz-Hash und je Release die Versionsnummer).</p>
+<p>Das DMS läuft – <strong>empfohlen</strong> – als zwei Container: die Anwendung (<code>ghcr.io/motom001/dms</code>) und PostgreSQL (<code>postgres:17</code>). Alternativ gibt es <strong><code>ghcr.io/motom001/dms-komplett</code></strong>, in dem beides in einem Container läuft (Gegenüberstellung unter <a href="https://motom001.github.io/dms/installieren/aktuell/#ein-oder-zwei-container">Ein oder zwei Container?</a>). Bei jedem Push auf <code>main</code> baut GitHub Actions beide Images neu (Tag <code>main</code>, zusätzlich je Commit ein Kurz-Hash und je Release die Versionsnummer).</p>
 <div class="admonition warning">
 <p class="admonition-title">Erst einrichten, dann freigeben</p>
 <p>Mach das DMS erst über einen Reverse-Proxy oder Port-Freigabe erreichbar, wenn die Einrichtung abgeschlossen ist. Der Einrichtungscode schützt zwar davor, dass ein Fremder sie übernimmt – sicherer ist es trotzdem.</p>
@@ -1763,7 +1791,7 @@
 <li>
 <p><strong>Einrichtungscode.</strong> Damit niemand sonst im Netz das DMS einrichtet, fragt es zuerst nach einem Code wie <code>K7PX-3MNA-Q9TR</code>. Er steht</p>
 <ul>
-<li>im <strong>Protokoll des Containers</strong> – in der Docker-Oberfläche des NAS den Container <code>app</code> des Projekts öffnen und das Protokoll ansehen (bei UGREEN <em>Docker → Container → dms-app → Protokoll</em>, bei Synology <em>Container Manager → Container → Details → Protokoll</em>) oder <code>docker compose logs app</code>;</li>
+<li>im <strong>Protokoll des Containers</strong> – in der Docker-Oberfläche des NAS den Container <code>app</code> des Projekts öffnen und das Protokoll ansehen (bei UGREEN <em>Docker → Container → dms-app → Protokoll</em>, bei Synology <em>Container Manager → Container → Details → Protokoll</em>) oder <code>docker compose logs app</code> (bei <a href="https://motom001.github.io/dms/installieren/aktuell/komplett/">dms-komplett</a>: <code>docker compose logs dms</code>);</li>
 <li>in der Datei <strong><code>EINRICHTUNGSCODE</code></strong> im Ordner <code>geheim</code> (in der Vorlage <code>/volume1/docker/dms/geheim</code>).</li>
 </ul>
 <p>Nach dem Anlegen des Administrators ist der Code wertlos; das DMS löscht die Datei. Nach zehn falschen Versuchen sperrt es die Eingabe für zehn Minuten.

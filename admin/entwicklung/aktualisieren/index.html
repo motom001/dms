@@ -1230,6 +1230,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verfahrensdokumentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verfahrensdokumentation (Vorlage)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1799,7 +1827,7 @@
 <p>Welche Version läuft und ob es neuere gibt, zeigt <strong>Werkbank → Technik</strong> (siehe <a href="../fehlersuche/#technik">Fehlersuche</a>).</p>
 <div class="admonition tip">
 <p class="admonition-title">Auf einer festen Version bleiben</p>
-<p>Statt <code>ghcr.io/motom001/dms:main</code> kannst du in der Compose-Datei eine Versionsnummer angeben, z. B. <code>ghcr.io/motom001/dms:0.8.0</code>. Dann ändert sich nichts, bis du die Nummer selbst erhöhst.</p>
+<p>Statt <code>ghcr.io/motom001/dms:main</code> kannst du in der Compose-Datei eine Versionsnummer angeben, z. B. <code>ghcr.io/motom001/dms:0.8.0</code> – bzw. <code>ghcr.io/motom001/dms-komplett:0.42.0</code>. Dann ändert sich nichts, bis du die Nummer selbst erhöhst. Bei zwei Containern bleibt <code>postgres:17</code> trotzdem für Sicherheits-Updates der Reihe 17 offen.</p>
 </div>
 <h3 id="datenbank-anbindung-und-mandant-ab-024">Datenbank-Anbindung und Mandant (ab 0.24)<a class="headerlink" href="#datenbank-anbindung-und-mandant-ab-024" title="Permanent link">&para;</a></h3>
 <p>Beim ersten Start übernimmt das DMS <code>DATABASE_URL</code> und – falls gesetzt – <code>HAUSHALT_ID</code> in die Datei <code>/data/geheim/datenbank.json</code> (siehe <a href="../installation/#datenbank-anbindung">Datenbank-Anbindung</a>). Es läuft ohne Zutun weiter. Danach sind beide Variablen überflüssig; die Werkbank-Übersicht weist darauf hin, und du kannst sie beim nächsten Update aus der Compose-Datei entfernen. Ändern lässt sich die Anbindung dann unter <strong>Werkbank → Datenbank-Anbindung</strong>.</p>
