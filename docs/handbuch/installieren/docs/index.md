@@ -12,7 +12,9 @@ Das DMS läuft bei dir zu Hause: auf einem NAS, einem kleinen Heimserver oder je
 
 | Gerät oder System | Weg | Aufwand |
 | --- | --- | --- |
-| **umbrelOS, ZimaOS, CasaOS** | [App-Store mit einem Klick](app-store.md) | ☆ sehr gering: Store hinzufügen, installieren, fertig |
+| **umbrelOS** | [App Store mit einem Klick](umbrel.md) | ☆ sehr gering: Store hinzufügen, installieren, fertig |
+| **ZimaOS** | [App Store mit einem Klick](zimaos.md) | ☆ sehr gering: wie bei umbrelOS |
+| **CasaOS** | [App Store mit einem Klick](casaos.md) | ☆ sehr gering: wie bei umbrelOS |
 | **Synology-NAS** | [Container Manager](synology.md) | ☆☆ gering: Ordner anlegen, Vorlage einfügen, Passwort eintragen |
 | **UGREEN-NAS** (UGOS Pro) | [Docker → Projekt](ugreen.md) | ☆☆ gering: wie bei Synology |
 | **QNAP-NAS** | [Container Station](qnap.md) | ☆☆ gering: wie bei Synology |

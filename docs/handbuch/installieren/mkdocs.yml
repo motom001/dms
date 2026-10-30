@@ -61,7 +61,9 @@ extra:
 nav:
   - "Was hast du?": index.md
   - Mit einem Klick:
-      - "App-Store: umbrelOS, ZimaOS, CasaOS": app-store.md
+      - umbrelOS: umbrel.md
+      - ZimaOS: zimaos.md
+      - CasaOS: casaos.md
   - NAS:
       - Synology: synology.md
       - UGREEN: ugreen.md
