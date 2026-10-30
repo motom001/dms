@@ -97,7 +97,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const typen = (await anfrage('GET', '/api/typen')).body;
     const eigene = typen.filter((t: { system?: string | null }) => !t.system);
     assert.deepEqual(eigene.map((t: { name: string }) => t.name), ['Rechnung', 'Vertrag', 'Vertragspartner', 'Zahlung']);
-    assert.deepEqual(typen.filter((t: { system?: string | null }) => t.system).map((t: { system: string }) => t.system).sort(), ['benutzer', 'email', 'rolle']);
+    assert.deepEqual(typen.filter((t: { system?: string | null }) => t.system).map((t: { system: string }) => t.system).sort(), ['benutzer', 'post', 'rolle']);
     const ids = new Set(eigene.map((t: { id: string }) => t.id));
     assert.equal((await anfrage('GET', '/api/mappen')).body.filter((m: { typId: string }) => ids.has(m.typId)).length, 7);
   });
