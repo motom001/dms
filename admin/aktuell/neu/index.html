@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.39/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.40/neu/">
       
       
         <link rel="prev" href="..">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-039" class="md-skip">
+        <a href="#neu-in-version-040" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0390" class="md-nav__link">
+  <a href="#0400" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.39.0
+        0.40.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.39.0">
+    <nav class="md-nav" aria-label="0.40.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -486,7 +486,7 @@
   <span class="md-ellipsis">
     
   
-    Installation auf dem NAS
+    Einrichtung und Betrieb
   
 
     
@@ -507,14 +507,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../app-store/" class="md-nav__link">
+      <a href="https://motom001.github.io/dms/installieren/aktuell/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Mit einem Klick: Umbrel, ZimaOS, CasaOS
+    Wie komme ich an ein DMS?
   
 
     
@@ -1494,6 +1494,62 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/installieren/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wie komme ich an ein DMS?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/entwickler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entwicklerhandbuch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1528,15 +1584,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0390" class="md-nav__link">
+  <a href="#0400" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.39.0
+        0.40.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.39.0">
+    <nav class="md-nav" aria-label="0.40.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1597,23 +1653,32 @@
   
 
 
-<h1 id="neu-in-version-039">Neu in Version 0.39<a class="headerlink" href="#neu-in-version-039" title="Permanent link">&para;</a></h1>
-<h2 id="0390">0.39.0<a class="headerlink" href="#0390" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-040">Neu in Version 0.40<a class="headerlink" href="#neu-in-version-040" title="Permanent link">&para;</a></h1>
+<h2 id="0400">0.40.0<a class="headerlink" href="#0400" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Installation mit einem Klick auf umbrelOS, ZimaOS und CasaOS</strong> (#176): Das DMS gibt es als App im <a href="https://github.com/motom001/dms-appstore">DMS App Store</a>. Den Store fügst du einmal als Quelle hinzu und installierst dann <strong>DMS</strong> wie jede andere App.</li>
-<li>Die App bringt ihre eigene Datenbank mit und ist schon angebunden. Der Einrichtungsassistent beginnt direkt beim Haushalt und beim Administrator, ohne Einrichtungscode und ohne Datenbankschritt.</li>
-<li>Die App-Einträge folgen jedem Release automatisch, spätestens am nächsten Tag. Die Images sind dabei mit Digest festgelegt.</li>
-<li>Neue Seite im Administratorhandbuch: <em>Mit einem Klick: Umbrel, ZimaOS, CasaOS</em>. Sie beschreibt Store hinzufügen, Einrichtung, Datenordner, Sicherungen und Wiederherstellen.</li>
+<li><strong>Neuer Bereich „Wie komme ich an ein DMS?“</strong> (#179): Ein Wegweiser „Was hast du?“ führt zur passenden Anleitung, mit Badges zu Version, Sternen und Plattformen. Anleitungen gibt es für:</li>
+<li>App-Store: umbrelOS, ZimaOS, CasaOS (bisher im Administratorhandbuch)</li>
+<li><strong>Synology</strong> mit Container Manager (#184)</li>
+<li><strong>QNAP</strong> mit Container Station (#185)</li>
+<li><strong>UGREEN</strong> mit Docker → Projekt (#181)</li>
+<li><strong>TrueNAS</strong> mit Custom App (#182)</li>
+<li><strong>Unraid</strong> mit Compose Manager (#183)</li>
+<li>jeden Server mit Docker</li>
+<li><strong>Vorlagen mit nur einem Passwort:</strong> Unter <code>deploy/</code> liegen eigene Compose-Vorlagen für Synology, UGREEN, QNAP, TrueNAS und Unraid. Das Passwort steht nur einmal ganz oben. Die Datenbank ist damit schon angebunden, und der Einrichtungsassistent überspringt den Datenbankschritt.</li>
+<li><strong>Neues Entwicklerhandbuch</strong> (#180): Es erklärt, wie Mitarbeit läuft, nämlich User Stories, Freigabe durch den Maintainer und Pull Requests. Dazu kommen Abschnitte zum Loslegen, zum Aufbau, zum Einreichen eines Beitrags und zum Release. Neu sind außerdem <code>CONTRIBUTING.md</code>, eine Issue-Vorlage für Fehler und Links zu den Handbüchern beim Anlegen eines Issues.</li>
+<li>Die Startseite der Handbücher zeigt jetzt fünf Bereiche in der Reihenfolge des Lesers: Wofür ein DMS? → Wie komme ich an ein DMS? → Benutzerhandbuch → Administratorhandbuch → Entwicklerhandbuch.</li>
 </ul>
 <h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Neue Umgebungsvariable <code>DMS_EINRICHTUNGSCODE=aus</code>: Der Einrichtungsassistent läuft dann ohne Code. Das ist für Plattformen gedacht, auf denen man das Container-Protokoll nicht ohne Kommandozeile lesen kann. Bis der Administrator angelegt ist, kann dann jeder im Netz die Einrichtung übernehmen. Richte das DMS deshalb gleich nach dem Start ein.</li>
-<li>Ohne die Variable bleibt alles wie bisher.</li>
+<li>Neue Umgebungsvariablen <code>DMS_DB_PASSWORT</code> und optional <code>DMS_DB_HOST</code> (Standard <code>db</code>) und <code>DMS_DB_PORT</code> (Standard <code>5432</code>). Sie ersetzen <code>DATABASE_URL</code> für die Standard-Anbindung, ohne Sonderzeichen für eine URL maskieren zu müssen. Wie <code>DATABASE_URL</code> zählen sie nur beim ersten Start.</li>
+<li>Die Seite „Installation auf dem NAS“ im Administratorhandbuch heißt jetzt <strong>„Einrichtung und Betrieb“</strong>. Sie beschreibt den Einrichtungsassistenten, die Datenbank-Anbindung, Ordner, Einstellungen und den Reverse-Proxy. Die Installation selbst steht im neuen Bereich.</li>
+<li>Das Label <code>freigegeben</code> vergibt nur der Maintainer. Setzt es jemand anderes, entfernt ein Workflow es wieder.</li>
+<li>Die CI installiert jede NAS-Vorlage probehalber mit dem gerade gebauten Image. Dabei prüft sie, dass der Assistent ohne Datenbankschritt beginnt.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.38.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.38.0...v0.39.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.39.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.39.0...v0.40.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
@@ -1669,13 +1734,13 @@
         
         
           
-          <a href="../installation/" class="md-footer__link md-footer__link--next" aria-label="Weiter: Installation auf dem NAS">
+          <a href="../installation/" class="md-footer__link md-footer__link--next" aria-label="Weiter: Einrichtung und Betrieb">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Weiter
               </span>
               <div class="md-ellipsis">
-                Installation auf dem NAS
+                Einrichtung und Betrieb
               </div>
             </div>
             <div class="md-footer__button md-icon">
