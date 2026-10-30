@@ -19,7 +19,7 @@
     "postgres": "^3.4.5"
   },
   "devDependencies": {
-    "@types/node": "^22.15.3",
+    "@types/node": "^26.6.5",
     "@types/nodemailer": "^6.4.17",
     "esbuild": "^0.25.3",
     "tsx": "^4.19.4"
