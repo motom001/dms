@@ -12,3 +12,10 @@ Ein Release entsteht, sobald auf `main` eine Versionsnummer steht, für die es n
 - **Neben-Version** (`0.40.0`) für neue Funktionen; das Handbuch bekommt eine eigene Version.
 - **Patch** (`0.39.1`) für Korrekturen; das Handbuch der Neben-Version wird überschrieben.
 - Ohne neue Nummer: nur das Image `main` und das Handbuch `entwicklung` ändern sich.
+
+## Abhängigkeiten und Sicherheitsupdates
+
+- **Dependabot** (`.github/dependabot.yml`) schlägt jeden Montag Updates vor: kleine Updates (minor, patch) gesammelt in einem PR, Hauptversionen einzeln, dazu GitHub Actions und das Basis-Image. Sicherheitsupdates kommen sofort. Die CI prüft jeden dieser PRs wie jeden anderen; Hauptversionen bitte mit Blick in das Änderungsprotokoll der Bibliothek.
+- **`npm audit`** läuft in der CI über alles, was im Image landet (`--omit=dev`). Ab Stufe „hoch“ schlägt die Prüfung fehl. Ist eine Meldung für das DMS nachweislich ohne Wirkung, wird das im PR begründet.
+- **`package-lock.json`** hält die genauen Versionen fest; CI und Image installieren mit `npm ci`. Ändert sich eine `package.json` ohne passende Lockfile, legt der Workflow *Lockfile erzeugen* eine neue auf den Branch `werkzeug/lockfile`; von dort wird sie mit einem normalen Commit übernommen.
+- **Sicherheitskorrektur = Patch-Release** mit dem Hinweis „Sicherheitsupdate – bitte aktualisieren“ in den Release-Notes. Meldungen von außen laufen vertraulich, siehe [`SECURITY.md`](https://github.com/motom001/dms/blob/main/SECURITY.md).

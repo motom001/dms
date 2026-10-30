@@ -30,7 +30,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install --no-audit --no-fund
+      # Mit package-lock.json reproduzierbar (#215); ohne (bis sie eingecheckt ist) wie bisher.
+      - run: if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+      # Bekannte Sicherheitslücken in den Abhängigkeiten, die im Image landen (#215): ab „hoch“ schlägt die Prüfung fehl.
+      - name: Sicherheitslücken in Abhängigkeiten
+        shell: bash
+        run: |
+          set -o pipefail
+          npm audit --omit=dev --audit-level=high 2>&1 | tee audit.log || {
+            grep -E "Severity|^[a-z@].*  |fix available|No fix" audit.log | head -60 | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}' | sed 's/^/::error title=npm audit::/'
+            echo
+            exit 1
+          }
       # Texterkennung (#45): dieselben Werkzeuge wie im Image.
       - name: Texterkennung installieren
         run: sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-deu poppler-utils >/dev/null

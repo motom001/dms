@@ -1,0 +1,40 @@
+# package-lock.json erzeugen (#215), solange es keine gibt oder package.json neue Abhängigkeiten
+# verlangt: Der Lauf legt die Datei auf den Branch werkzeug/lockfile; von dort wird sie mit einem
+# normalen Commit übernommen (so bleibt der Autor des Commits ein Mensch). Dependabot pflegt sie danach selbst.
+name: Lockfile erzeugen
+
+on:
+  push:
+    branches-ignore: [main, 'werkzeug/**', 'dependabot/**']
+    paths: ['package.json', 'server/package.json', 'web/package.json', 'package-lock.json', '.github/workflows/lockfile.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Erzeugen und prüfen
+        id: l
+        run: |
+          if [ -f package-lock.json ] && npm ci --dry-run --ignore-scripts >/dev/null 2>&1; then
+            echo "package-lock.json passt zu package.json – nichts zu tun."; echo "neu=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          npm install --package-lock-only --no-audit --no-fund --ignore-scripts
+          echo "neu=true" >> "$GITHUB_OUTPUT"
+      - name: Auf werkzeug/lockfile ablegen
+        if: steps.l.outputs.neu == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -B werkzeug/lockfile
+          git add package-lock.json
+          git commit -m "package-lock.json für ${GITHUB_REF_NAME} (${GITHUB_SHA::7})"
+          git push -f origin werkzeug/lockfile
+          echo "::notice::package-lock.json liegt auf werkzeug/lockfile – bitte mit einem normalen Commit übernehmen."
