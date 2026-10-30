@@ -49,7 +49,7 @@ docker restart "$NAME" >/dev/null; warte
 [ "$(curl -fsS "http://127.0.0.1:$PORT/api/konto/status" | jq -r '.einrichtungNoetig')" = false ] || fehler "nach dem Neustart wieder uneingerichtet"
 curl -fsS -X POST "http://127.0.0.1:$PORT/api/konto/anmelden" -H 'x-dms: 1' -H 'content-type: application/json' \
   -d '{"email":"admin@probe.invalid","passwort":"ein-langes-probe-passwort"}' >/dev/null || fehler "Anmeldung nach dem Neustart scheitert"
-docker exec "$NAME" sh -c 'pg_isready -h 127.0.0.1' || fehler "pg_isready im Container"
+docker exec "$NAME" pg_isready -q -h 127.0.0.1 -U dms -d dms || fehler "pg_isready im Container"
 # Von außen ist PostgreSQL nicht erreichbar: kein Port 5432 am Container.
 [ -z "$(docker port "$NAME" 5432 2>/dev/null)" ] || fehler "Port 5432 ist nach außen offen"
 echo "::endgroup::"; echo "::notice::dms-komplett: Schritt erledigt"
@@ -73,9 +73,10 @@ echo "Container beendet mit Code $(docker inspect -f '{{.State.ExitCode}}' "$NAM
 echo "::endgroup::"; echo "::notice::dms-komplett: Schritt erledigt"
 
 echo "::group::5. Andere PostgreSQL-Hauptversion"
-alt=$(mktemp -d); mkdir -p "$alt/daten"; echo 15 > "$alt/daten/PG_VERSION"
-docker run --name "$NAME-alt" -v "$alt:/data/postgres" "$IMAGE" > "$alt/log" 2>&1 && fehler "startet trotz anderer Hauptversion"
-grep -q "stammt von PostgreSQL 15" "$alt/log" || { cat "$alt/log"; fehler "keine klare Meldung bei anderer Hauptversion"; }
-sudo rm -rf "$alt"
+# Das Protokoll liegt außerhalb des Ordners: den übernimmt der Container für postgres (nicht mehr lesbar).
+alt=$(mktemp -d); altlog=$(mktemp); mkdir -p "$alt/daten"; echo 15 > "$alt/daten/PG_VERSION"
+docker run --name "$NAME-alt" -v "$alt:/data/postgres" "$IMAGE" > "$altlog" 2>&1 && fehler "startet trotz anderer Hauptversion"
+grep -q "stammt von PostgreSQL 15" "$altlog" || { sed 's/^/::error::/' "$altlog"; fehler "keine klare Meldung bei anderer Hauptversion"; }
+sudo rm -rf "$alt" "$altlog"
 echo "::endgroup::"; echo "::notice::dms-komplett: Schritt erledigt"
 echo "dms-komplett: Einrichten, Neustart, Stopp, Absturz und Versionsprüfung in Ordnung."

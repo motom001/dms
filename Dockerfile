@@ -50,7 +50,7 @@ COPY deploy/komplett/start.sh /usr/local/bin/dms-komplett
 RUN chmod 755 /usr/local/bin/dms-komplett
 ENV DMS_VARIANTE=komplett
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s \
-  CMD wget -qO- http://127.0.0.1:3000/api/gesundheit >/dev/null && pg_isready -q -h 127.0.0.1 || exit 1
+  CMD wget -qO- http://127.0.0.1:3000/api/gesundheit >/dev/null && pg_isready -q -h 127.0.0.1 -U dms -d dms || exit 1
 # Zusätzlich zu /data/files, /data/geheim, /data/sicherung: /data/postgres.
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["/usr/local/bin/dms-komplett"]
