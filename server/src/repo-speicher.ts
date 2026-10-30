@@ -249,6 +249,7 @@ export function speicherRepo(): Repo {
     async holeDokument(id) { const d = dokumente.get(id); return d && kopie(d); },
     async legeDokumentAn(d) { const n = { ...kopie(d), ocr: d.ocr ?? { stand: 'keiner' as const } }; dokumente.set(d.id, n); return kopie(n); },
     async loescheDokument(id) { dokumente.delete(id); },
+    async verschiebeDokument(id, mappeId, registerKey) { const d = dokumente.get(id); if (d) { d.mappeId = mappeId; d.registerKey = registerKey; } },
     async ocrEinreihen(ids) { for (const id of ids) { const d = dokumente.get(id); if (d) d.ocr = { stand: 'wartet' }; } },
     async ocrNaechster() {
       const d = [...dokumente.values()].filter((x) => x.ocr?.stand === 'wartet').sort((a, b) => a.erstellt.localeCompare(b.erstellt))[0];

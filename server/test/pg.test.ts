@@ -676,7 +676,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     // Protokoll (#57)
     const h = (await anfrage('GET', `/api/mappen/${m.id}/historie`)).body;
     assert.deepEqual([...new Set(h.map((e: { art: string }) => e.art))].sort(), ['angelegt', 'aufgabe', 'geaendert', 'notiz']);
-    // E-Mail (#58): ohne Versand 409; mit Versand eine E-Mail-Mappe mit Anhang
+    // E-Mail (#58): ohne Versand 409; mit Versand eine Post-Mappe (#192) mit Anhang
     const hoch = await app.inject({ method: 'POST', url: `/api/mappen/${m.id}/dokumente?register=dokumente&name=v.pdf`, payload: Buffer.from('%PDF-1.7 mail'), headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' } });
     const dok = JSON.parse(hoch.body).dokument;
     const email = { an: 'amt@example.org', betreff: 'Vorgang V-1a', nachricht: 'Anbei', dokumente: [dok.id] };
@@ -690,15 +690,33 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
       assert.equal(e.status, 201, JSON.stringify(e.body));
       assert.equal(gesendet.length, 1);
       const em = (await anfrage('GET', `/api/mappen/${e.body.id}`)).body;
-      assert.equal(em.mappe.werte.bezug, m.id);
+      assert.deepEqual(em.mappe.werte.bezug, [m.id]);
+      assert.equal(em.mappe.werte.kanal, 'E-Mail');
       assert.equal(em.dokumente[0].sha256, dok.sha256);
-      assert.equal((await anfrage('GET', '/api/typen')).body.find((t: { id: string }) => t.id === e.body.typId).system, 'email');
+      assert.equal((await anfrage('GET', '/api/typen')).body.find((t: { id: string }) => t.id === e.body.typId).system, 'post');
       assert.equal((await anfrage('GET', `/api/mappen/${m.id}/historie`)).body[0].art, 'email');
       // Die Mappe lässt sich trotz E-Mail löschen; die Datei bleibt für die E-Mail.
       assert.equal((await anfrage('DELETE', `/api/mappen/${m.id}`)).status, 204);
       assert.equal((await app.inject({ method: 'GET', url: `/api/dokumente/${em.dokumente[0].id}/inhalt`, headers: { cookie } })).statusCode, 200);
       assert.equal((await anfrage('DELETE', `/api/mappen/${e.body.id}`)).status, 204);
     } finally { betrieb.mailer = vorher; }
+    // Post (#192): anlegen, Dokument hochladen, einer Mappe zuordnen – das Dokument wandert mit Volltext.
+    const p = await anfrage('POST', '/api/post', { betreff: 'Brief' });
+    assert.equal(p.status, 201, JSON.stringify(p.body));
+    assert.equal(p.body.werte.stand, 'Neu');
+    const ph = await app.inject({ method: 'POST', url: `/api/mappen/${p.body.id}/dokumente?register=dokumente&name=brief.pdf`, payload: Buffer.from('%PDF-1.7 brief'), headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' } });
+    assert.equal(ph.statusCode, 201, ph.body);
+    const ziel = (await anfrage('POST', '/api/mappen', { typId: typ.id, werte: { nr: 'V-2' } })).body;
+    const zu = await anfrage('POST', `/api/mappen/${p.body.id}/zuordnen`, { ziel: ziel.id });
+    assert.equal(zu.status, 200, JSON.stringify(zu.body));
+    assert.deepEqual(zu.body.post.werte.bezug, [ziel.id]);
+    assert.equal(zu.body.post.werte.stand, 'Zugeordnet');
+    const zd = (await anfrage('GET', `/api/mappen/${ziel.id}`)).body;
+    assert.deepEqual(zd.dokumente.map((x: { name: string }) => x.name), ['brief.pdf']);
+    assert.equal((await anfrage('GET', `/api/mappen/${p.body.id}`)).body.dokumente.length, 0);
+    assert.equal((await anfrage('DELETE', `/api/mappen/${ziel.id}`)).status, 204);
+    assert.deepEqual((await anfrage('GET', `/api/mappen/${p.body.id}`)).body.mappe.werte.bezug, null);
+    assert.equal((await anfrage('DELETE', `/api/mappen/${p.body.id}`)).status, 204);
     assert.equal((await anfrage('DELETE', `/api/typen/${typ.id}`)).status, 204);
   });
 

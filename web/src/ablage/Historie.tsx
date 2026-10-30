@@ -64,6 +64,13 @@ function einzelheiten(e: Historieneintrag, emailTyp: string | undefined): { hinw
         ),
       };
     }
+    case 'zugeordnet': {
+      // Post (#192): Link zur Zielmappe bzw. zur Post.
+      const ziel = str(d.ziel) ?? str(d.post);
+      const typ = str(d.zielTyp) ?? str(d.postTyp);
+      if (!ziel || !typ) return null;
+      return { hinweis: 'öffnen', inhalt: <p className="einzeln"><Link to={`/ablage/${typ}/${ziel}`} className="verweis">{str(d.ziel) ? 'Mappe öffnen' : 'Post öffnen'}</Link></p> };
+    }
     case 'aufgabe': {
       const text = str(d.aufgabentext);
       if (!text) return null;
@@ -108,7 +115,7 @@ export function Historie({ mappeId, stand }: { mappeId: string; stand?: string }
   const [liste, setListe] = useState<Historieneintrag[] | null>(null);
   const [fehler, setFehler] = useState<string>();
   const [alleOffen, setAlleOffen] = useState<boolean | null>(null);
-  const emailTyp = d.typen.find((t) => t.system === 'email')?.id;
+  const emailTyp = d.typen.find((t) => t.system === 'post')?.id;
   useEffect(() => {
     api.historie(mappeId).then((h) => { setListe(h); setFehler(undefined); }, (e: Error) => setFehler(e.message));
   }, [mappeId, stand]);

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { beschreibeBedingung, heuteIn, kinderVon, mitNachkommen, spaltenDerSicht, wirksameTypen, type Sicht } from '../../../shared/src/sichten';
 import { ANSTEHEND_TAGE, datumDe, type Anstehend } from '../../../shared/src/fristen';
 import { liesDirektlink, type Direktlink } from '../../../shared/src/direktlink';
-import { darfErstellen, formatiere, GEMISCHTE_SPALTEN, sortierbar, standardliste, TREFFER_ANFANG, TREFFER_ENDE, vorlageFelder, wirksameVorlage, type Ausschnitt, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
+import { darfErstellen, darfPostAnlegen, formatiere, GEMISCHTE_SPALTEN, sortierbar, standardliste, TREFFER_ANFANG, TREFFER_ENDE, vorlageFelder, wirksameVorlage, type Ausschnitt, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
 import { api, verborgeneAufgaben, type Bezuege, type MappeDetails } from '../api';
 import type { Aufgabe } from '../../../shared/src/model';
 import { AufgabenHinweis } from './Aufgaben';
@@ -17,6 +17,7 @@ import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
 import { Hilfe } from '../Hilfe';
 import { ExportDialog } from './Export';
+import { PostKnopf } from './Post';
 import type { Hilfeort } from '../../../shared/src/hilfe';
 
 /**
@@ -61,7 +62,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   } else if (dritt === 'neu' && typ && !darfErstellen(typ)) {
     rechts = <div className="leer"><p>Von „{typ.name}“ lassen sich in der Ablage keine neuen Mappen anlegen.{typ.system === 'benutzer' ? ' Benutzer legt ein Administrator in der Werkbank unter „Benutzer“ an.' : ''}</p></div>;
   } else if (dritt === 'neu' && typ) {
-    rechts = <NeueMappe key={`${typ.id}-${suche.get('verweis') ?? ''}`} typ={typ} sicht={sicht} verweis={suche.get('verweis') ?? undefined} />;
+    rechts = <NeueMappe key={`${typ.id}-${suche.get('verweis') ?? ''}-${suche.get('zuordnen') ?? ''}`} typ={typ} sicht={sicht} verweis={suche.get('verweis') ?? undefined} zuordnen={zuordnenAus(suche)} />;
   } else if (dritt && sicht === 'papierkorb') {
     rechts = <PapierkorbDetail key={dritt} id={dritt} werkbank={false} />;
   } else if (dritt) {
@@ -121,7 +122,8 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
               beschreibung="Mappen, die du mit einem Stern markiert hast."
               leerText="Noch keine Favoriten. Markiere eine Mappe mit dem Stern ☆, um sie hier zu finden." />
           : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} spaltenTyp={typ ?? sichtTypen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []} titel={verwaltet?.name ?? typ!.name} beschreibung={verwaltet ? verwaltet.beschreibung : typ?.beschreibung}
-              offen={dritt} neu={!!typ && darfErstellen(typ) && verwaltet?.rechte?.C !== false} leerText="Noch keine Mappen in dieser Sicht." hilfe="ablage.sicht" auswahl export={verwaltet?.rechte?.E !== false} />
+              offen={dritt} neu={!!typ && darfErstellen(typ) && verwaltet?.rechte?.C !== false} post={!!typ && darfPostAnlegen(typ) && verwaltet?.rechte?.C !== false}
+              leerText={typ?.system === 'post' ? 'Keine Post. Mit „+ Post“ legst du Dateien als neue Post ab.' : 'Noch keine Mappen in dieser Sicht.'} hilfe={typ?.system === 'post' ? 'ablage.post' : 'ablage.sicht'} auswahl export={verwaltet?.rechte?.E !== false} />
           : sicht ? <div className="leer"><p>Diese Sicht gibt es nicht (mehr).</p></div> : null}
       </section>
 
@@ -131,6 +133,15 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
       </section>
     </Dreiteilung>
   );
+}
+
+/** Zuordnen über eine neue Mappe (#192): ?zuordnen=<Post>&register=…&dokumente=a,b&kopieren=1&vorschlag={…} */
+function zuordnenAus(q: URLSearchParams) {
+  const post = q.get('zuordnen');
+  if (!post) return undefined;
+  let vorschlag: Record<string, string> = {};
+  try { const v = JSON.parse(q.get('vorschlag') ?? '{}'); if (v && typeof v === 'object') vorschlag = v; } catch { /* ohne Vorschlag */ }
+  return { post, register: q.get('register') ?? undefined, dokumente: (q.get('dokumente') ?? '').split(',').filter(Boolean), kopieren: q.get('kopieren') === '1', vorschlag };
 }
 
 /** Sicht „Anstehend“ (#132): eigene Fristen und Erinnerungen der nächsten Tage (Zeitraum im Profil). */
@@ -229,6 +240,8 @@ function LinkListe({ link, suche, offen }: { link: Direktlink; suche: URLSearchP
 
 function Liste(p: {
   sicht: string; typ?: Mappentyp; spaltenTyp?: Mappentyp; spalten?: string[]; listenSpalten?: string[]; titel: string; beschreibung?: string; offen?: string; neu?: boolean; leerText: string;
+  /** Post (#192): „+ Post“ statt „+ Neu“. */
+  post?: boolean;
   /** Kontextbezogene Hilfe (#110). */
   hilfe?: Hilfeort;
   /** Sprechender Link (#98): seine Parameter, der Zusatz für Adressen, Sortierung aus der Adresse, erste Mappe öffnen. */
@@ -335,6 +348,7 @@ function Liste(p: {
           {(p.beschreibung || p.hilfe) && <p className="leise klein">{p.beschreibung}{p.hilfe && <> <Hilfe ort={p.hilfe} /></>}</p>}
         </div>
         {p.neu && <Link to={`/ablage/${p.sicht}/neu`} className="knopf gruen klein">+ Neu</Link>}
+        {p.post && p.typ && <div className="postknopf"><PostKnopf sicht={p.sicht} typ={p.typ} /></div>}
       </div>
       {zeigeSuche && (
         <div className="suchzeile">
@@ -592,7 +606,7 @@ function SichtBaum({ aktiv }: { aktiv?: string }) {
                   onClick={() => umschalten(s.id)}><span aria-hidden="true">{offen ? '▾' : '▸'}</span><span className="sr">{s.name} {offen ? 'zuklappen' : 'aufklappen'}</span></button>
               : null}
             <Link to={`/ablage/${s.id}`} className={`sicht ${aktiv === s.id ? 'an' : ''}`} title={s.beschreibung || undefined}>
-              <span className="nm">{s.name}</span>{n !== undefined && <span className="zahl">{zahl(n)}</span>}
+              <span className="nm">{s.name}</span>{n !== undefined && <span className={s.id === d.zaehler.neuePost && n > 0 ? 'zaehler' : 'zahl'}>{zahl(n)}</span>}
             </Link>
           </div>
         );

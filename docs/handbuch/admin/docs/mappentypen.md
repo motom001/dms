@@ -20,7 +20,7 @@ Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: 
 ## Grunddaten
 
 - **Name** – so heißt die Sicht in der Ablage, z. B. „Vertrag“. Er lässt sich jederzeit ändern.
-- **Schlüssel** – fester, technischer Name, z. B. `vertrag`. Er wird aus dem Namen vorgeschlagen, lässt sich beim Anlegen ändern und ist nach dem ersten Speichern **fest**. [Sprechende Links](direktlinks.md) und Skripte über die [Schnittstelle](api.md) können ihn nutzen – so bleiben sie gültig, auch wenn der Mappentyp umbenannt wird. Die Systemtypen heißen `benutzer`, `rolle` und `email`.
+- **Schlüssel** – fester, technischer Name, z. B. `vertrag`. Er wird aus dem Namen vorgeschlagen, lässt sich beim Anlegen ändern und ist nach dem ersten Speichern **fest**. [Sprechende Links](direktlinks.md) und Skripte über die [Schnittstelle](api.md) können ihn nutzen – so bleiben sie gültig, auch wenn der Mappentyp umbenannt wird. Die Systemtypen heißen `benutzer`, `rolle` und `post` (bis 0.40 hieß *Post* noch *E-Mail* mit dem Schlüssel `email`).
 - **Beschreibung** – steht über der Liste und hilft beim Einordnen.
 
 Beim **Anlegen** gibt es zusätzlich **Eigene Sicht in der Ablage anlegen** (standardmäßig an): Dann erscheint der neue Typ in der Ablage als eigene Sicht. Abwählen, wenn seine Mappen nur in einer bestehenden [Sicht](sichten.md) erscheinen sollen.
@@ -146,7 +146,7 @@ Register sind die Trennblätter einer Mappe, in der angegebenen Reihenfolge:
 | --- | --- |
 | **Feldregister** | eine Gruppe von Feldern; welches Feld auf welchem Register liegt, stellst du am Feld ein |
 | **Dokumentenregister** | hochgeladene Dateien; PDFs und Bilder sind direkt ansehbar. **Volltext erzeugen** (Standard: an) schickt neue Dokumente durch die [Texterkennung](texterkennung.md) |
-| **Verknüpfungsregister** | Mappen, die auf diese Mappe verweisen – alle oder nur bestimmte (z. B. „Rechnungen“ nur über das Feld *Vertrag*). Als Quelle lässt sich auch *E-Mail › Bezug* wählen: Dann stehen hier die aus der Mappe verschickten E-Mails |
+| **Verknüpfungsregister** | Mappen, die auf diese Mappe verweisen – alle oder nur bestimmte (z. B. „Rechnungen“ nur über das Feld *Vertrag*). Als Quelle lässt sich auch *Post › Zugeordnet zu* wählen: Dann steht hier die Post, die dieser Mappe zugeordnet ist, z. B. verschickte E-Mails und eingegangene Briefe |
 | **Protokollregister** | das Protokoll der Mappe: wer wann was geändert hat, mit altem und neuem Wert; dazu Dokumente, Papierkorb, Notizen, Aufgaben, E-Mails und angezeigte Passwörter (ohne Wert). Höchstens eins je Mappentyp |
 
 Register haben feste Schlüssel, damit Dokumente ihr Register behalten, wenn es umbenannt wird. Ein Dokumentenregister, in dem schon Dokumente liegen, lässt sich nicht entfernen.
@@ -159,16 +159,22 @@ Felder, Register und die Spalten jeder Trefferliste haben einen **Griff ⠿**. D
 
 Das ändert nur den Entwurf; übernommen wird es wie alles andere mit **Mappentyp speichern**. Per Tastatur: Griff ansteuern und **Alt+↑/↓**. Am Smartphone den Griff lange antippen, dann ziehen. Die Pfeil-Knöpfe gibt es weiterhin.
 
-## Systemmappentypen: Benutzer, Rolle und E-Mail
+## Systemmappentypen: Benutzer, Rolle und Post
 
-*Benutzer*, *Rolle* und *E-Mail* sind **Systemmappentypen**, erkennbar am Kennzeichen *System*. Sie entstehen von selbst und lassen sich nicht löschen.
+*Benutzer*, *Rolle* und *Post* sind **Systemmappentypen**, erkennbar am Kennzeichen *System*. Sie entstehen von selbst und lassen sich nicht löschen.
 
 ![Systemmappentyp Benutzer](bilder/werkbank-systemtyp.png)
 
 - Du kannst sie um eigene Felder und Register erweitern, z. B. eine Telefonnummer.
 - Ihre **Systemfelder** (Name, E-Mail-Adresse, Rollen, Aktiv bzw. Name der Rolle) sind fest: Bezeichnung, Hilfetext und Register darfst du ändern, Datentyp und Eigenschaften nicht.
 - Mappen vom Typ *Benutzer* lassen sich in der Ablage weder anlegen noch löschen (Systemregel) – Benutzer entstehen in der Benutzerverwaltung.
-- Mappen vom Typ *E-Mail* entstehen, wenn jemand eine Mappe [per E-Mail versendet](https://motom001.github.io/dms/benutzer/versenden/): mit Betreff, Empfängern, Absender, Datum, Nachricht, den Anhängen und dem **Bezug** auf die Mappe, aus der sie kam. Anlegen lassen sie sich in der Ablage nicht (Systemregel); löschen lassen sie sich wie andere Mappen. Der Bezug darf als einziges Feld auf Mappen *jedes* Typs zeigen. Wird die Ursprungsmappe gelöscht, bleibt die E-Mail erhalten und ihr Bezug wird leer. Später sollen hier auch E-Mails landen, die das DMS aus einem Postfach abholt.
+- **Post** ist alles, was ins DMS kommt oder hinausgeht ([Benutzerhandbuch: Post](https://motom001.github.io/dms/benutzer/post/)). Systemfelder: *Betreff*, *Stand* (Neu, Zugeordnet, Erledigt), *Kanal* (Hochgeladen, E-Mail, Scan, Ordner, Import, API, WebDAV), *Richtung*, *Datum*, *Absender*, *Empfänger*, *Für*, *Zugeordnet zu* und *Nachricht*.
+    - Post entsteht über **+ Post** in den Sichten mit Post, über die [Schnittstelle](api.md) (`POST /api/v1/post`) und beim [Versenden per E-Mail](https://motom001.github.io/dms/benutzer/versenden/). Über das allgemeine Formular „+ Neu“ legt man keine Post an. Wer Post anlegen darf, regeln die [Berechtigungen](berechtigungen.md) (C) wie bei jedem Typ.
+    - *Kanal* hält das DMS fest, *Zugeordnet zu* setzt **Zuordnen**. Bei versendeten E-Mails sind auch Betreff, Empfänger, Absender, Datum, Nachricht und Richtung fest.
+    - *Zugeordnet zu* darf als einziges Feld auf Mappen *jedes* Typs zeigen, auch auf mehrere. Wird eine dieser Mappen gelöscht, bleibt die Post erhalten; nur der Verweis entfällt.
+    - *Für* verweist auf einen Benutzer: Solange die Post neu ist, hat er die Aufgabe *Neue Post* im Eingang.
+    - Beim ersten Start legt das DMS die Sichten **Neue Post** (ganz oben, Stand *Neu*) und unter **Post** die Sichten **Eingegangen** und **Versendet** an. Du kannst sie ändern, verschieben oder löschen; gelöschte kommen nicht wieder.
+    - **Aus E-Mail wird Post (0.41):** Der frühere Systemtyp *E-Mail* wird beim Update zu *Post*. Vorhandene E-Mails bekommen Kanal *E-Mail*, Richtung *Ausgehend* und Stand *Erledigt*. Felder, Dokumente und Verweise bleiben erhalten; eigene Felder und Bezeichnungen auch. Sprechende Links mit `typ=email` funktionieren weiter.
 
 Mehr dazu in [Benutzer und Rollen](benutzer.md).
 

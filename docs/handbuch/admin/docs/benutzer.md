@@ -51,7 +51,7 @@ Der Benutzer sieht bei seiner nächsten Anmeldung, wer wann in seinem Namen gear
 
 ## Benutzer als Mappen
 
-Jeder Benutzer hat eine Mappe des [Systemmappentyps](mappentypen.md#systemmappentypen-benutzer-und-rolle) *Benutzer*, mit derselben Id wie sein Konto. So kann ein Mappentyp ein Feld wie „Verantwortlich“ bekommen, das auf einen Benutzer verweist.
+Jeder Benutzer hat eine Mappe des [Systemmappentyps](mappentypen.md#systemmappentypen-benutzer-rolle-und-post) *Benutzer*, mit derselben Id wie sein Konto. So kann ein Mappentyp ein Feld wie „Verantwortlich“ bekommen, das auf einen Benutzer verweist.
 
 ![Benutzer-Mappe in der Ablage](bilder/benutzer-mappe.png)
 

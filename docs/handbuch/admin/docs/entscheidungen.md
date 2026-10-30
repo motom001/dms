@@ -88,7 +88,7 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Rollen sind vorerst fachlich** und von jedem Benutzer in der Ablage anlegbar; Einschränkungen kommen mit der Berechtigungsverwaltung. Keine verschachtelten Rollen.
 - **Rolle löschen:** erlaubt, auch wenn Benutzer sie haben – deren Zuordnung fällt weg. Verweise aus normalen Feldern (z. B. „verantwortliche Rolle“) verhindern das Löschen wie bei jeder Mappe.
 - **Deaktivieren statt löschen:** Wer sich schon angemeldet hat, wird deaktiviert; seine Mappe heißt dann „… (ehemalig)“ und Verweise bleiben gültig. Löschen geht nur für nie angenommene Einladungen.
-- **Neue Mappen / Löschen erlauben** als Eigenschaft jedes Mappentyps (`erstellen_erlaubt`, `loeschen_erlaubt`); die Oberfläche blendet die Knöpfe aus, der Server prüft es. Beim Typ *Benutzer* ist beides fest aus. *Seit 0.32 (#146) abgelöst: Anlegen und Löschen regeln die Berechtigungen (C, D); fest bleiben nur die Systemregeln für Benutzer- und E-Mail-Mappen.*
+- **Neue Mappen / Löschen erlauben** als Eigenschaft jedes Mappentyps (`erstellen_erlaubt`, `loeschen_erlaubt`); die Oberfläche blendet die Knöpfe aus, der Server prüft es. Beim Typ *Benutzer* ist beides fest aus. *Seit 0.32 (#146) abgelöst: Anlegen und Löschen regeln die Berechtigungen (C, D); fest bleiben nur die Systemregeln für Benutzer-Mappen (seit 0.41, #192, gilt für Post die normale Berechtigung C).*
 - Demo-Daten und Beispiele lassen die Systemtypen aus.
 
 ## Handbuch und Releases (#25)

@@ -367,6 +367,20 @@ async function main() {
   await email.getByLabel(/^An/).fill('steuerberater@example.org');
   await email.getByLabel('Nachricht').fill('Hallo Frau Berger,\n\nanbei der Stromvertrag und die Preisanpassung.\n\nViele Grüße');
   await bild(s, 'email');
+  await email.getByRole('button', { name: 'Schließen' }).click();
+
+  // Post (#192): neuer Brief in „Neue Post“, Zuordnen zum Stromvertrag
+  const brief = await api('POST', '/api/post', { betreff: 'Preisanpassung Strom 2027' });
+  await api('POST', `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent('Preisanpassung 2027.pdf')}&typ=application/pdf`, beispielPdf('Preisanpassung zum 1. Januar 2027'), true);
+  const neuePost = (await api('GET', '/api/sichten')).neuePost ?? brief.typId;
+  await geheZu(s, `/ablage/${neuePost}/${brief.id}`);
+  await s.locator('.postleiste').waitFor();
+  await s.getByRole('button', { name: /Zuordnen/ }).click();
+  const zu = s.getByRole('region', { name: 'Zuordnen' });
+  await zu.getByLabel('Mappentyp').selectOption({ value: vertrag.id });
+  await zu.getByPlaceholder(/suchen/).fill('Strom');
+  await zu.locator('.zuordnen-treffer button').first().click();
+  await bild(s, 'post-zuordnen');
 
   // Papierkorb in der Ablage (#43)
   await geheZu(s, '/ablage/papierkorb');

@@ -18,7 +18,7 @@ Mit Berechtigungen legst du je Mappentyp fest, **wer welche Mappen anlegen, lese
 | **P** | Passwörter sehen | den Klartext von Passwortfeldern anzeigen (das „Auge“) |
 
 - **Ohne Lesen wirkt nichts außer Anlegen.** Wer eine Mappe nicht lesen darf, darf sie auch nicht bearbeiten, löschen oder ihre Passwörter sehen – egal was die Regeln sonst sagen.
-- **Systemregeln** gelten für alle, auch für Administratoren, und lassen sich nicht ändern: Benutzer-Mappen entstehen und verschwinden nur über die Benutzerverwaltung (kein C, kein D), E-Mail-Mappen entstehen nur beim [Versenden](https://motom001.github.io/dms/benutzer/versenden/) (kein C). In der Standard-Zeile sind diese Rechte deshalb gesperrt.
+- **Systemregeln** gelten für alle, auch für Administratoren, und lassen sich nicht ändern: Benutzer-Mappen entstehen und verschwinden nur über die Benutzerverwaltung (kein C, kein D). In der Standard-Zeile sind diese Rechte deshalb gesperrt. Bei *Post* regelt C, wer über **+ Post** oder die Schnittstelle neue Post anlegen darf; versendete E-Mails legt das DMS immer an.
 - **Systemfelder** von Benutzern (Rolle, weitere Rollen, Aktiv) ändern sich weiterhin nur in der Benutzerverwaltung und im eigenen Profil.
 - Den **eigenen Papierkorb** sieht jeder Benutzer immer und kann daraus wiederherstellen – auch wenn er die Mappe danach nach den Regeln nicht mehr sehen darf. Er bekommt dann einen Hinweis.
 

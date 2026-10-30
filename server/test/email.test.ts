@@ -1,4 +1,4 @@
-/** E-Mail aus der Mappe (#58) und Systemmappentyp „E-Mail“. */
+/** E-Mail aus der Mappe (#58); die versendete E-Mail ist Post (#192). */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { speicherDateien } from '../src/dateispeicher';
@@ -35,8 +35,11 @@ describe('E-Mail aus der Mappe (#58)', () => {
     assert.equal(mails[0].o?.anhaenge?.[0].name, 'rechnung.pdf');
     const e = await d.holeMappe(r.id);
     const typ = (await d.listeTypen()).find((t) => t.id === e.mappe.typId)!;
-    assert.equal(typ.system, 'email');
-    assert.equal(e.mappe.werte.bezug, m.id);
+    assert.equal(typ.system, 'post');
+    assert.deepEqual(e.mappe.werte.bezug, [m.id]);
+    assert.equal(e.mappe.werte.kanal, 'E-Mail');
+    assert.equal(e.mappe.werte.richtung, 'Ausgehend');
+    assert.equal(e.mappe.werte.stand, 'Erledigt');
     assert.equal(e.mappe.titel, 'Rechnung R-1');
     assert.equal(e.dokumente.length, 1);
     assert.equal(e.dokumente[0].sha256, dokument.sha256);
@@ -46,7 +49,7 @@ describe('E-Mail aus der Mappe (#58)', () => {
     const h = await d.historie(m.id);
     assert.equal(h[0].art, 'email');
     assert.match(String(h[0].daten.text), /an steuer@example.org/);
-    // Die Ursprungsmappe lässt sich trotzdem löschen; der Bezug der E-Mail wird leer.
+    // Die Ursprungsmappe lässt sich trotzdem löschen; der Verweis der Post entfällt.
     await d.loescheMappe(m.id, null);
     assert.ok(!(await d.holeMappe(r.id)).mappe.werte.bezug);
   });
@@ -62,7 +65,7 @@ describe('E-Mail aus der Mappe (#58)', () => {
     assert.equal((await d.historie(m.id)).filter((x) => x.art === 'email').length, 0);
   });
 
-  it('E-Mail-Mappen lassen sich nicht von Hand anlegen, ihre Felder nicht ändern', async () => {
+  it('versendete E-Mails lassen sich nicht über das Formular anlegen, ihre Felder nicht ändern', async () => {
     const { d, m, mailer } = await aufbau();
     const r = await d.versendeMappe(m.id, { an: 'a@example.org', betreff: 'Hallo' }, ich, mailer);
     await assert.rejects(d.legeMappeAn({ typId: r.typId, werte: { betreff: 'x', an: 'a@example.org' } }, null), status(403));

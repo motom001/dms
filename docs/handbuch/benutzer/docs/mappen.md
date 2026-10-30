@@ -103,7 +103,7 @@ Bei einer neuen Mappe ist das Register noch leer: Verknüpfungen entstehen erst,
 
 Unten links in der Mappe steht **Mappe löschen**. Nach einer Rückfrage kommt die Mappe mit ihren Dokumenten in den [Papierkorb](ablage.md#papierkorb); dort lässt sie sich eine Zeit lang wiederherstellen. Ist der Papierkorb ausgeschaltet, ist sie sofort endgültig weg.
 
-Eine Mappe, auf die noch andere verweisen, lässt sich nicht löschen. Der Knopf ist dann ausgegraut, und darüber steht gleich, welche Mappen das sind – mit Links dorthin. Entferne zuerst dort den Verweis. So kann kein Vertrag verschwinden, zu dem noch Rechnungen gehören. Verschickte E-Mails halten das Löschen nicht auf.
+Eine Mappe, auf die noch andere verweisen, lässt sich nicht löschen. Der Knopf ist dann ausgegraut, und darüber steht gleich, welche Mappen das sind – mit Links dorthin. Entferne zuerst dort den Verweis. So kann kein Vertrag verschwinden, zu dem noch Rechnungen gehören. Verschickte E-Mails und andere [Post](post.md) halten das Löschen nicht auf.
 
 Fehlt der Knopf, dürfen Mappen dieses Typs nicht gelöscht werden.
 

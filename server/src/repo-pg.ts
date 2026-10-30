@@ -618,6 +618,9 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async loescheDokument(id) {
       await sql`DELETE FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
+    async verschiebeDokument(id, mappeId, registerKey) {
+      await sql`UPDATE dokumente SET mappe_id = ${mappeId}, register_key = ${registerKey} WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+    },
     async setzeFavorit(benutzerId, mappeId, an) {
       if (!istUuid(benutzerId) || !istUuid(mappeId)) return;
       if (an) await sql`INSERT INTO favoriten (benutzer_id, mappe_id, haushalt_id) VALUES (${benutzerId}, ${mappeId}, ${haushaltId}) ON CONFLICT DO NOTHING`;
