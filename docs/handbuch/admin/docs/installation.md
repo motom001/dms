@@ -93,7 +93,7 @@ Diese Einstellungen sind Umgebungsvariablen im Compose-Projekt:
 | Variable | Bedeutung |
 | --- | --- |
 | `DATABASE_URL` | Nur noch für den Umstieg: wird beim ersten Start in die [Datenbank-Anbindung](#datenbank-anbindung) übernommen und danach ignoriert |
-| `DMS_DB_PASSWORT`, `DMS_DB_HOST` | Statt `DATABASE_URL`: Passwort (und Server, Standard `db`) der Standard-Anbindung; ebenfalls nur für den ersten Start |
+| `DMS_DB_PASSWORT`, `DMS_DB_HOST`, `DMS_DB_PORT` | Statt `DATABASE_URL`: Passwort (sowie Server, Standard `db`, und Port, Standard `5432`) der Standard-Anbindung; ebenfalls nur für den ersten Start |
 | `DMS_EINRICHTUNGSCODE` | `aus`: Einrichtungsassistent ohne Code – für App-Stores, in denen das Container-Protokoll nicht ohne Kommandozeile lesbar ist. Bis der Administrator angelegt ist, kann dann jeder im Netz die Einrichtung übernehmen |
 | `TRUST_PROXY` | `true`, wenn ein Reverse-Proxy davor sitzt (richtige IP-Adressen im Protokoll, sichere Cookies über HTTPS) |
 | `LOG_LEVEL` | Grundstufe des Protokolls: `debug`, `info` (Standard), `warn`, `error` |

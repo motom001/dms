@@ -29,6 +29,8 @@ describe('Datenbank-Anbindung (#119)', () => {
     assert.equal(ausVariablen({}), null);
     assert.deepEqual(ausVariablen({ DMS_DB_PASSWORT: 'a:b@c/d' }), { host: 'db', port: 5432, datenbank: 'dms', benutzer: 'dms', passwort: 'a:b@c/d' });
     assert.equal(ausVariablen({ DMS_DB_PASSWORT: 'x', DMS_DB_HOST: 'datenbank' })?.host, 'datenbank');
+    assert.equal(ausVariablen({ DMS_DB_PASSWORT: 'x', DMS_DB_PORT: '5433' })?.port, 5433);
+    assert.equal(ausVariablen({ DMS_DB_PASSWORT: 'x', DMS_DB_PORT: 'kaputt' })?.port, 5432);
   });
 
   it('Eingabe prüfen; leeres Passwort heißt „wie bisher“', () => {
