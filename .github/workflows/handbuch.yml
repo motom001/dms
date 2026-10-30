@@ -51,13 +51,13 @@ jobs:
           --health-cmd "pg_isready -U dms -d dms"
           --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref || github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -108,7 +108,7 @@ jobs:
 
       - name: Bilder der iPhone-Prüfung hochladen
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mobil-pruefung
           path: ${{ runner.temp }}/mobil
@@ -149,13 +149,13 @@ jobs:
         run: npx tsx docs/handbuch/werkzeuge/hilfe-pruefen.ts site
 
       - name: Screenshots zum Ansehen
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: screenshots
           path: docs/handbuch/bilder
           retention-days: 7
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: github.event_name != 'pull_request'
         with:
           name: handbuch
@@ -173,11 +173,11 @@ jobs:
     env:
       ZIEL: ${{ inputs.version || 'entwicklung' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref || github.sha }}
           path: quelle
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: handbuch
           path: gebaut
