@@ -19,6 +19,6 @@
     "test": "npm run test -w server"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "typescript": "^7.0.2"
   }
 }
