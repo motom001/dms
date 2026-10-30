@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.43/wachsen/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.44/wachsen/">
       
       
         <link rel="prev" href="../aktualisieren/">
@@ -1174,6 +1174,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verfahrensdokumentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verfahrensdokumentation (Vorlage)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1694,9 +1722,14 @@
 <td>eigener Container oder Server, frei wählbar</td>
 </tr>
 <tr>
+<td>Updates von PostgreSQL</td>
+<td>mit dem nächsten DMS-Image</td>
+<td>sofort (<code>postgres:17</code> neu ziehen)</td>
+</tr>
+<tr>
 <td>Gut für</td>
-<td>Haushalt, NAS, schnelles Testen</td>
-<td>eigene Datenbank-Verwaltung, mehrere Programme an einem PostgreSQL, Datenbank auf einem anderen Gerät</td>
+<td>Ausprobieren, Testen, Umgebungen mit nur einem Container</td>
+<td>den Dauerbetrieb (empfohlen), eigene Datenbank-Verwaltung, Datenbank auf einem anderen Gerät</td>
 </tr>
 <tr>
 <td>App-Stores</td>
@@ -1705,7 +1738,7 @@
 </tr>
 </tbody>
 </table>
-<p>Für die meisten Haushalte reicht <code>dms-komplett</code>. Ein Wechsel ist jederzeit möglich, in beide Richtungen.</p>
+<p><strong>Wir empfehlen zwei Container</strong> für den Dauerbetrieb: PostgreSQL bekommt Sicherheits-Updates unabhängig vom DMS, beide lassen sich einzeln neu starten und untersuchen, und es ist der übliche Docker-Weg. <code>dms-komplett</code> ist die Alternative zum Ausprobieren und für Umgebungen, die nur einen Container zulassen. Ein Wechsel ist jederzeit möglich, in beide Richtungen.</p>
 <h2 id="umziehen-schritt-fur-schritt">Umziehen, Schritt für Schritt<a class="headerlink" href="#umziehen-schritt-fur-schritt" title="Permanent link">&para;</a></h2>
 <p>Das gilt für jeden Umzug: von zwei Containern zu <code>dms-komplett</code> und zurück, von einem NAS auf einen Server, auf neue Hardware.</p>
 <ol>
@@ -1733,6 +1766,7 @@
 <li><strong>Mehr Leistung:</strong> Texterkennung und Volltextsuche profitieren von mehr Prozessorkernen und Arbeitsspeicher. Ein Umzug auf einen stärkeren Rechner geht wie oben.</li>
 <li><strong>Datenbank auf einem eigenen Server:</strong> Umzug von <code>dms-komplett</code> auf das schlanke Image <code>dms</code> mit eigener Datenbank, wie oben beschrieben.</li>
 </ul>
+<p>Führst du Belege für eine Tätigkeit (Freiberuf, Kleingewerbe, Vermietung), halte einen Umzug auch in deiner <a href="../verfahrensdokumentation/">Verfahrensdokumentation</a> fest (Abschnitt 1 und 10).</p>
 
 
 

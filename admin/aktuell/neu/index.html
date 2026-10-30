@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.43/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.44/neu/">
       
       
         <link rel="prev" href="..">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-043" class="md-skip">
+        <a href="#neu-in-version-044" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,22 +363,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0430" class="md-nav__link">
+  <a href="#0440" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.43.0
+        0.44.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.43.0">
+    <nav class="md-nav" aria-label="0.44.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#verbessert" class="md-nav__link">
+  <a href="#neu" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Verbessert
+        Neu
       
     </span>
   </a>
@@ -386,10 +386,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#dokumentation" class="md-nav__link">
+  <a href="#geandert" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Dokumentation
+        Geändert
       
     </span>
   </a>
@@ -397,10 +397,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#beim-aktualisieren" class="md-nav__link">
+  <a href="#fur-administratoren" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Beim Aktualisieren
+        Für Administratoren
       
     </span>
   </a>
@@ -1189,6 +1189,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verfahrensdokumentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verfahrensdokumentation (Vorlage)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1623,22 +1651,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0430" class="md-nav__link">
+  <a href="#0440" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.43.0
+        0.44.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.43.0">
+    <nav class="md-nav" aria-label="0.44.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#verbessert" class="md-nav__link">
+  <a href="#neu" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Verbessert
+        Neu
       
     </span>
   </a>
@@ -1646,10 +1674,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#dokumentation" class="md-nav__link">
+  <a href="#geandert" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Dokumentation
+        Geändert
       
     </span>
   </a>
@@ -1657,10 +1685,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#beim-aktualisieren" class="md-nav__link">
+  <a href="#fur-administratoren" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Beim Aktualisieren
+        Für Administratoren
       
     </span>
   </a>
@@ -1703,22 +1731,25 @@
   
 
 
-<h1 id="neu-in-version-043">Neu in Version 0.43<a class="headerlink" href="#neu-in-version-043" title="Permanent link">&para;</a></h1>
-<h2 id="0430">0.43.0<a class="headerlink" href="#0430" title="Permanent link">&para;</a></h2>
-<h3 id="verbessert">Verbessert<a class="headerlink" href="#verbessert" title="Permanent link">&para;</a></h3>
+<h1 id="neu-in-version-044">Neu in Version 0.44<a class="headerlink" href="#neu-in-version-044" title="Permanent link">&para;</a></h1>
+<h2 id="0440">0.44.0<a class="headerlink" href="#0440" title="Permanent link">&para;</a></h2>
+<h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Reverse-Proxy ohne Einstellung</strong> (#234): Das DMS glaubt den Angaben eines Reverse-Proxys (<code>X-Forwarded-For</code>, <code>X-Forwarded-Proto</code>) jetzt von selbst, wenn er im eigenen Rechner oder in einem privaten Netz sitzt – also bei einem Proxy-Container wie Nginx Proxy Manager oder dem Proxy des NAS. Damit stimmen hinter dem Proxy die IP-Adressen im Protokoll und bei den Sitzungen, und die Sperre nach fünf falschen Passwörtern trifft nur das Gerät, von dem die Fehlversuche kamen – nicht mehr alle. Bisher war dafür <code>TRUST_PROXY: "true"</code> nötig.</li>
-<li><code>TRUST_PROXY</code> kennt jetzt: nicht gesetzt/<code>auto</code> (Standard), <code>false</code>, <code>true</code> oder eine Liste von Adressen und Netzen. Unter <em>Technik</em> steht, was gilt. Ein ungültiger Wert führt zu einer Warnung im Protokoll, nicht zum Startabbruch.</li>
+<li><strong>Werkbank → Technik: Versionsabgleich in zwei Gruppen</strong> (#216): <strong>„Von dir zu aktualisieren“</strong> (das DMS-Image, bei zwei Containern PostgreSQL) und <strong>„Kommt mit dem DMS“</strong> (Node.js, Alpine, Bibliotheken – bei dms-komplett auch PostgreSQL). Der gelbe Hinweis nennt nur noch, was du selbst tun kannst; neuere Bibliotheken heißen „kommt mit DMS-Update“. Die Bibliotheken haben verständliche Namen – „postgres“ ist <strong>postgres.js (Datenbank-Treiber)</strong>, nicht die Datenbank. Gibt es ein neueres PostgreSQL in deiner Reihe, sagt der Hinweis je Variante, was zu tun ist; auch der Text unter der Tabelle passt jetzt zu <code>dms</code> bzw. <code>dms-komplett</code>.</li>
+<li><strong>Vorlage für die Verfahrensdokumentation</strong> (#213): neue Seite im Administratorhandbuch mit einer Vorlage als Word- und LibreOffice-Datei. Für alle, die Belege für eine Tätigkeit führen (GoBD): Belegeingang, ersetzendes Scannen, Ablage, Protokoll, Zugriffsschutz, Sicherung, Datenzugriff – vorformuliert, wo das DMS es übernimmt, mit Platzhaltern für deine Angaben. Keine Steuerberatung.</li>
 </ul>
-<h3 id="dokumentation">Dokumentation<a class="headerlink" href="#dokumentation" title="Permanent link">&para;</a></h3>
+<h3 id="geandert">Geändert<a class="headerlink" href="#geandert" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Administratorhandbuch: neuer Abschnitt <em>Was der Proxy dem DMS mitteilt</em> mit einer Tabelle, wofür das DMS die Angaben braucht, und wann <code>TRUST_PROXY</code> doch zu setzen ist. Vorlagen, Synology-Anleitung und das Beispiel des Entwicklers brauchen den Parameter nicht mehr.</li>
+<li><strong>Empfehlung: zwei Container</strong> (#214). „Wie komme ich an ein DMS?“ hat einen neuen Abschnitt <strong>„Ein oder zwei Container?“</strong> mit Vor- und Nachteilen. Empfohlen ist <code>dms</code> mit eigenem <code>postgres:17</code> – PostgreSQL bekommt dann Sicherheits-Updates unabhängig vom DMS. <code>dms-komplett</code> ist die Alternative zum Ausprobieren und für Umgebungen, die nur einen Container zulassen. Anleitungen, Hinweise auf den NAS-Seiten, „Wachsen und umziehen“, Administratorhandbuch und README sind angeglichen; <code>deploy/README.md</code> zeigt, welche Vorlage wofür ist.</li>
 </ul>
-<h3 id="beim-aktualisieren">Beim Aktualisieren<a class="headerlink" href="#beim-aktualisieren" title="Permanent link">&para;</a></h3>
-<p>Nichts zu tun. Wer <code>TRUST_PROXY: "true"</code> gesetzt hat, kann es stehen lassen oder entfernen. Wer ausdrücklich das alte Verhalten möchte, setzt <code>TRUST_PROXY: "false"</code>.</p>
+<h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Beide Images werden jetzt <strong>jede Woche neu gebaut</strong> (Tag <code>main</code>), mit den aktuellen Alpine-Paketen (Tesseract; PostgreSQL in dms-komplett). Feste Versionsnummern ändern sich dabei nicht.</li>
+<li>Die Probe von dms-komplett nennt die enthaltene PostgreSQL-Version.</li>
+</ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.42.1 im Detail: <a href="https://github.com/motom001/dms/compare/v0.42.1...v0.43.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.43.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.43.0...v0.44.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
