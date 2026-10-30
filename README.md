@@ -88,6 +88,15 @@ Wichtig: **Keine echten Dokumente oder persönlichen Daten committen** – nur C
 
 Das DMS ist und bleibt frei nutzbar. Wer die Entwicklung freiwillig unterstützen möchte, kann das über [GitHub Sponsors](https://github.com/sponsors/motom001) tun – einmalig oder monatlich, mit frei gewähltem Betrag. Spenden von persönlichen GitHub-Konten kommen ohne Abzüge an. In der Anwendung steht der Hinweis nur in der Werkbank, nicht in der Ablage.
 
+### So finanziert sich das Projekt
+
+Die Entwicklung kostet Zeit und Geld – für Testgeräte, Server und Werkzeuge. Ein Teil davon soll durch freiwillige Unterstützung wieder hereinkommen, ohne dass die Software je etwas kostet oder Bedingungen stellt:
+
+- **Spenden** über GitHub Sponsors sind der bevorzugte Weg: freiwillig, offen und ohne Gegenleistung.
+- **Testgeräte** nehme ich gern an, etwa von Herstellern von NAS- und Mini-Servern. Wer mir ein Gerät stellt, bekommt meine ehrliche Meinung – auch die kritische – und kauft damit keine Empfehlung.
+- **Empfehlungen** spreche ich nur für Geräte aus, die ich selbst nutze oder getestet habe, und begründe sie. Sollte ich je Partnerlinks verwenden, sind sie direkt am Link als solche gekennzeichnet, ändern nichts am Preis und haben keinen Einfluss auf meine Bewertung. In der Anwendung selbst gibt es keine Werbung und keine Partnerlinks.
+
+
 ## Lizenz
 
 [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-only).
