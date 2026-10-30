@@ -1,0 +1,7 @@
+# Bewusst hingenommene Funde der Image-Prüfung (#220).
+# Je Zeile eine Kennung (CVE-…, GHSA-…), darüber eine Begründung und bis wann sie gilt:
+#
+#   # Betrifft nur <Funktion>, die das DMS nicht nutzt. Erneut prüfen bis 2027-03.
+#   CVE-2026-12345
+#
+# Einträge ohne Begründung werden im Review abgelehnt.

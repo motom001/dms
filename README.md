@@ -3,6 +3,9 @@
 [![Neuestes Release](https://img.shields.io/github/v/release/motom001/dms?label=Release&sort=semver)](https://github.com/motom001/dms/releases/latest)
 [![Prüfen und Image bauen](https://github.com/motom001/dms/actions/workflows/image.yml/badge.svg?branch=main)](https://github.com/motom001/dms/actions/workflows/image.yml)
 [![Handbuch](https://github.com/motom001/dms/actions/workflows/handbuch.yml/badge.svg?branch=main)](https://github.com/motom001/dms/actions/workflows/handbuch.yml)
+[![CodeQL](https://github.com/motom001/dms/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/motom001/dms/security/code-scanning?query=tool%3ACodeQL)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/motom001/dms/badge)](https://scorecard.dev/viewer/?uri=github.com/motom001/dms)
+[![Sicherheit](https://img.shields.io/badge/Sicherheit-SECURITY.md-2ea44f)](SECURITY.md)
 [![Lizenz: AGPL-3.0](https://img.shields.io/badge/Lizenz-AGPL--3.0-blue)](LICENSE)
 [![Projekt unterstützen](https://img.shields.io/badge/Projekt_unterst%C3%BCtzen-GitHub_Sponsors-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/motom001)
 
@@ -49,6 +52,10 @@ Das Image `ghcr.io/motom001/dms` ist öffentlich (amd64 und arm64) – eine Anme
 Alles Weitere – Einstellungen, Reverse-Proxy, Aktualisieren, **Sichern** – steht im Administratorhandbuch unter [Einrichtung und Betrieb](https://motom001.github.io/dms/admin/aktuell/installation/) und [Aktualisieren und Sichern](https://motom001.github.io/dms/admin/aktualisieren/).
 
 `ghcr.io/motom001/dms:main` folgt jedem Stand auf `main`; mit einer Versionsnummer wie `ghcr.io/motom001/dms:0.18.0` bleibt die Installation auf einem Release.
+
+## Sicherheit und Offenheit
+
+Das DMS verwaltet persönliche Dokumente – deshalb ist alles offen nachprüfbar: der Quellcode, wie gebaut wird und was dabei geprüft wird. Automatisch geprüft werden unser Code (CodeQL), die Bibliotheken (Dependabot, `npm audit`), die fertigen Images (Trivy) und versehentlich eingecheckte Geheimnisse (Secret Scanning mit Push-Schutz). Jedes Image trägt einen signierten **Herkunftsnachweis** und eine **Stückliste** (SBOM); wie man das prüft und wie man eine Lücke **vertraulich meldet**, steht in [SECURITY.md](SECURITY.md). Die [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/motom001/dms) bewertet regelmäßig und öffentlich, wie das Projekt mit Sicherheit umgeht.
 
 ## Wünsche und Fehler
 

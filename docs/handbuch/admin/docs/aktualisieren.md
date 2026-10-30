@@ -19,6 +19,15 @@ Welche Version läuft und ob es neuere gibt, zeigt **Werkbank → Technik** (sie
 !!! tip "Auf einer festen Version bleiben"
     Statt `ghcr.io/motom001/dms:main` kannst du in der Compose-Datei eine Versionsnummer angeben, z. B. `ghcr.io/motom001/dms:0.8.0` – bzw. `ghcr.io/motom001/dms-komplett:0.42.0`. Dann ändert sich nichts, bis du die Nummer selbst erhöhst. Bei zwei Containern bleibt `postgres:17` trotzdem für Sicherheits-Updates der Reihe 17 offen.
 
+!!! info "Woher kommt das Image?"
+    Jedes Image des DMS trägt einen **Herkunftsnachweis**: eine Signatur, die belegt, dass es von GitHub aus genau diesem Repository gebaut wurde, und eine **Stückliste** (SBOM) aller enthaltenen Pakete. Beides ist öffentlich und lässt sich mit der GitHub-Kommandozeile prüfen:
+
+    ```sh
+    gh attestation verify oci://ghcr.io/motom001/dms:main -R motom001/dms
+    ```
+
+    Vor jeder Veröffentlichung prüft die CI die Images außerdem auf bekannte Sicherheitslücken. Mehr dazu in der [Sicherheitsrichtlinie](https://github.com/motom001/dms/blob/main/SECURITY.md).
+
 ### Datenbank-Anbindung und Mandant (ab 0.24)
 
 Beim ersten Start übernimmt das DMS `DATABASE_URL` und – falls gesetzt – `HAUSHALT_ID` in die Datei `/data/geheim/datenbank.json` (siehe [Datenbank-Anbindung](installation.md#datenbank-anbindung)). Es läuft ohne Zutun weiter. Danach sind beide Variablen überflüssig; die Werkbank-Übersicht weist darauf hin, und du kannst sie beim nächsten Update aus der Compose-Datei entfernen. Ändern lässt sich die Anbindung dann unter **Werkbank → Datenbank-Anbindung**.
