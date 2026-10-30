@@ -149,9 +149,8 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
             {abwesend && <Link to="/profil/abwesenheit" className="chip warn">Du bist abwesend{ich.abwesenheit?.bis ? ` (bis ${ich.abwesenheit.bis.split('-').reverse().join('.')})` : ''}</Link>}
           </div>
           {vertretung && <button type="button" className="menuepunkt" onClick={() => { setOffen(false); void api.vertretungBeenden().then(() => { geheZu('/werkbank/benutzer', true); return aktualisieren(); }); }}>Vertretung beenden</button>}
+          {/* Jeder Weg nur einmal (#175): Darstellung, Abwesenheit usw. sind Reiter unter „Mein Konto“. */}
           <Link to="/profil/konto" className="menuepunkt">Mein Konto</Link>
-          <Link to="/profil/darstellung" className="menuepunkt">Einstellungen</Link>
-          <Link to="/profil/abwesenheit" className="menuepunkt">Abwesenheit</Link>
           <a href={handbuch('benutzer')} target="_blank" rel="noreferrer" className="menuepunkt" onClick={() => setOffen(false)}>Hilfe <span aria-hidden="true">↗</span></a>
           <Link to="/profil/fehler-melden" className="menuepunkt">Fehler melden</Link>
           <button type="button" className="menuepunkt" onClick={() => void abmelden()}>Abmelden</button>

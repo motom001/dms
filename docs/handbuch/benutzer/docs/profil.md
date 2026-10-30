@@ -7,9 +7,8 @@ Ein Klick auf deinen Namen oben rechts öffnet ein Menü:
 ![Benutzermenü](bilder/benutzermenue.png)
 
 - Oben stehen dein Name, deine E-Mail-Adresse und deine Rolle.
-- **Mein Konto** – Name und E-Mail-Adresse, siehe unten.
-- **Einstellungen** – Design, Schriftgröße und Ansicht.
-- **Abwesenheit** – Urlaub oder Krankheit eintragen, siehe [Abwesenheit](#abwesenheit). Solange sie wirkt, steht oben im Menü „Du bist abwesend“, und neben deinem Namen ist ein Punkt.
+- **Mein Konto** – dein [Profil](#profil) mit allen Bereichen: Konto, Sicherheit, Darstellung (Design, Schriftgröße, Ansicht), Benachrichtigungen und Ablage, [Abwesenheit](#abwesenheit).
+- Solange eine Abwesenheit wirkt, steht oben im Menü „Du bist abwesend“ – ein Klick darauf führt direkt dorthin –, und neben deinem Namen ist ein Punkt.
 - **Hilfe** – öffnet dieses Handbuch.
 - **Fehler melden** – siehe [Fehler melden](#fehler-melden).
 - **Abmelden**.

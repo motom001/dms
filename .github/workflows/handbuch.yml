@@ -95,6 +95,25 @@ jobs:
           DB_HOST: localhost
           DB_PASSWORT: dms
 
+      # iPhone-Größe mit WebKit (#174): kein Eingabefeld ragt über den Rand.
+      - name: Oberfläche in iPhone-Größe prüfen
+        working-directory: docs/handbuch/screenshots
+        run: |
+          npx playwright install --with-deps webkit
+          set -o pipefail
+          node mobil-pruefen.mjs "$RUNNER_TEMP/mobil" 2>&1 | tee -a "$RUNNER_TEMP/aufnahme.log"
+        shell: bash
+        env:
+          DMS_URL: http://localhost:3000
+
+      - name: Bilder der iPhone-Prüfung hochladen
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobil-pruefung
+          path: ${{ runner.temp }}/mobil
+          if-no-files-found: ignore
+
       # Fehler als Anmerkungen ausgeben – die Job-Logs sind nicht überall abrufbar.
       - name: Fehler bei den Screenshots melden
         if: failure()
