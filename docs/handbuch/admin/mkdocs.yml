@@ -63,6 +63,7 @@ nav:
   - Neu in dieser Version: neu.md
   - Installation und Betrieb:
       - Installation auf dem NAS: installation.md
+      - "Mit einem Klick: Umbrel, ZimaOS, CasaOS": app-store.md
       - Aktualisieren und Sichern: aktualisieren.md
       - Verschlüsselung: verschluesselung.md
   - Einrichten in der Werkbank:

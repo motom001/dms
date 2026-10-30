@@ -27,6 +27,10 @@ Was das DMS kann, steht in den Handbüchern; was in welcher Version dazukam, in 
 
 Im DMS führt **Hilfe** im Menü unter dem eigenen Namen dorthin.
 
+## Mit einem Klick: Umbrel, ZimaOS, CasaOS
+
+Auf einem Heimserver mit App-Store fügst du den [DMS App Store](https://github.com/motom001/dms-appstore) als Quelle hinzu und installierst **DMS** mit einem Klick. Die Datenbank ist schon dabei, der Assistent fragt nur nach Haushalt und Administrator. Details: [Installation mit einem Klick](https://motom001.github.io/dms/admin/aktuell/app-store/).
+
 ## Schnellstart auf dem NAS
 
 Das Image `ghcr.io/motom001/dms` ist öffentlich (amd64 und arm64) – eine Anmeldung bei der Registry ist nicht nötig.
