@@ -65,7 +65,7 @@ Wirkt eine Seite langsam, schalte im **Profil** den **Entwicklermodus** ein. Dan
 ![Technik und Versionen](bilder/werkbank-technik.png)
 
 - **Für den Support:** Übersicht kopieren und in ein [GitHub-Issue](https://github.com/motom001/dms/issues/new?template=wunsch.md) einfügen. Passwörter und Zugangsdaten stehen nicht darin.
-- **Neuere Versionen:** Ein Knopfdruck fragt nach, ob es neuere Versionen gibt – bei GitHub für das DMS, bei endoflife.date für Node.js, PostgreSQL und Alpine, bei npm für die Bibliotheken. Ohne Knopfdruck fragt das DMS nirgends nach.
+- **Neuere Versionen:** Ein Knopfdruck fragt nach, ob es neuere Versionen gibt – bei GitHub für das DMS, bei endoflife.date für Node.js, PostgreSQL und Alpine, bei npm für die Bibliotheken. Ohne Knopfdruck fragt das DMS nirgends nach. Beim DMS selbst steht unter *Aktuell* das neueste Release mit Datum; liegen auf `main` schon weitere Änderungen, die noch in keinem Release sind, nennt sie der Hinweis.
 
 Wie die Bausteine zusammenhängen, beschreibt [Technik](technik.md).
 

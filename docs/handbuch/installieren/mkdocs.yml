@@ -71,7 +71,12 @@ nav:
       - TrueNAS: truenas.md
       - Unraid: unraid.md
   - "Ein Container: dms-komplett": komplett.md
-  - Jeder Server mit Docker: docker.md
+  - Eigener Rechner:
+      - PC oder Mini-PC mit Linux: linux.md
+      - Raspberry Pi: raspberry-pi.md
+      - Windows: windows.md
+      - Proxmox und Co.: proxmox.md
+      - Jeder Server mit Docker: docker.md
   - So läuft es beim Entwickler: beispiel.md
   - Weiteres:
       - Administratorhandbuch: https://motom001.github.io/dms/admin/aktuell/
