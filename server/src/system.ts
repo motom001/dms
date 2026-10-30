@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { proxyVertrauen } from './proxy';
 import { existsSync, readFileSync } from 'node:fs';
 import { arch, release, type } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -91,7 +92,7 @@ export async function uebersicht(quelle: SystemQuelle | undefined, betrieb: { ma
     einstellungen: {
       Adresse: betrieb?.adresse ?? '(nicht gepflegt)',
       'E-Mail': betrieb?.mail ?? 'aus',
-      TRUST_PROXY: env.TRUST_PROXY ?? 'false',
+      TRUST_PROXY: `${env.TRUST_PROXY || 'nicht gesetzt'} → ${proxyVertrauen(env.TRUST_PROXY).text}`,
       LOG_LEVEL: env.LOG_LEVEL ?? 'info',
     },
   };

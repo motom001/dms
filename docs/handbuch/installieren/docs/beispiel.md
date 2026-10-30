@@ -12,7 +12,7 @@ Das DMS läuft auf einem **UGREEN DXP4800 Plus** mit der **Docker-App von UGOS**
 
 Ein zweiter Container, der **[Nginx Proxy Manager](https://nginxproxymanager.com/)** (`jc21/nginx-proxy-manager`), veröffentlicht das DMS nach außen, mit HTTPS-Zertifikat. So nutze ich das DMS vollständig vom Handy aus, auch unterwegs. Die Daten bleiben trotzdem auf dem NAS zu Hause.
 
-Was dabei im DMS einzustellen ist (z. B. `TRUST_PROXY`), steht im Administratorhandbuch unter [Einrichtung und Betrieb](https://motom001.github.io/dms/admin/aktuell/installation/).
+Im DMS ist dafür nur die öffentliche Adresse unter **Werkbank → E-Mail und Adresse** eingetragen. Dass die Anfragen über den Proxy kommen, erkennt das DMS von selbst. Was dahintersteckt, steht im Administratorhandbuch unter [Hinter einem Reverse-Proxy](https://motom001.github.io/dms/admin/aktuell/installation/#hinter-einem-reverse-proxy).
 
 !!! tip "Erst einrichten, dann veröffentlichen"
     Mach das DMS erst von außen erreichbar, wenn die Einrichtung abgeschlossen ist.

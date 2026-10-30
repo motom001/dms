@@ -76,7 +76,7 @@ function Adresse({ b }: { b: BetriebZustand }) {
         </div>
       )}
       {s.adresse.startsWith('https://') && s.vorschlag?.startsWith('http://') && (
-        <div className="hinweis warn"><p>Du rufst das DMS gerade über HTTP auf, die Adresse ist aber HTTPS. Nach der nächsten Anmeldung geht das nur noch über HTTPS. Läuft ein Reverse-Proxy davor, muss <span className="mono">TRUST_PROXY</span> gesetzt sein.</p></div>
+        <div className="hinweis warn"><p>Du rufst das DMS gerade über HTTP auf, die Adresse ist aber HTTPS. Nach der nächsten Anmeldung geht das nur noch über HTTPS. Läuft ein Reverse-Proxy davor und steht <span className="mono">TRUST_PROXY</span> auf <span className="mono">false</span>, die Variable entfernen.</p></div>
       )}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <div className="knoepfe"><button className="knopf primaer" disabled={!geaendert}>Adresse speichern</button></div>

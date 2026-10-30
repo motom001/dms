@@ -1,4 +1,5 @@
 import type { Speicherplatz } from './speicherplatz';
+import type { ProxyVertrauen } from './proxy';
 import type { Einrichtung } from './einrichtung';
 import type { AnbindungVerwaltung } from './anbindung';
 import type { OrdnerPruefung } from './ordner';
@@ -38,8 +39,8 @@ interface Optionen {
   logger?: unknown;
   /** Secure-Flag am Cookie (nur bei HTTPS); als Funktion je Anfrage ausgewertet (#37). */
   sicher?: boolean | (() => boolean);
-  /** Hinter einem Reverse-Proxy: X-Forwarded-For auswerten. */
-  proxy?: boolean;
+  /** Wem X-Forwarded-* geglaubt wird (#234), siehe proxy.ts. */
+  proxy?: ProxyVertrauen;
   /** Messung der Datenbankzugriffe (lange Zugriffe, Server-Timing). */
   messung?: Messung;
   system?: SystemQuelle;

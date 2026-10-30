@@ -95,12 +95,34 @@ Diese Einstellungen sind Umgebungsvariablen im Compose-Projekt:
 | `DATABASE_URL` | Nur noch für den Umstieg: wird beim ersten Start in die [Datenbank-Anbindung](#datenbank-anbindung) übernommen und danach ignoriert |
 | `DMS_DB_PASSWORT`, `DMS_DB_HOST`, `DMS_DB_PORT` | Statt `DATABASE_URL`: Passwort (sowie Server, Standard `db`, und Port, Standard `5432`) der Standard-Anbindung; ebenfalls nur für den ersten Start |
 | `DMS_EINRICHTUNGSCODE` | `aus`: Einrichtungsassistent ohne Code – für App-Stores, in denen das Container-Protokoll nicht ohne Kommandozeile lesbar ist. Bis der Administrator angelegt ist, kann dann jeder im Netz die Einrichtung übernehmen |
-| `TRUST_PROXY` | `true`, wenn ein Reverse-Proxy davor sitzt (richtige IP-Adressen im Protokoll, sichere Cookies über HTTPS) |
+| `TRUST_PROXY` | Wem das DMS die Angaben eines Reverse-Proxys glaubt. Nicht gesetzt: dem eigenen Rechner und privaten Netzen – passt fast immer. `false`: niemandem, `true`: allen, oder eine Liste wie `172.18.0.0/16`. Siehe [Hinter einem Reverse-Proxy](#hinter-einem-reverse-proxy) |
 | `LOG_LEVEL` | Grundstufe des Protokolls: `debug`, `info` (Standard), `warn`, `error` |
 
 ## Hinter einem Reverse-Proxy
 
-Läuft das DMS hinter nginx (oder einem anderen Proxy), setze `TRUST_PROXY: "true"` und trage in der Werkbank unter **E-Mail und Adresse** die öffentliche Adresse ein, z. B. `https://dms.example.org`. Beginnt sie mit `https://`, setzt das DMS das Sitzungs-Cookie nur noch über HTTPS.
+Läuft das DMS hinter einem Reverse-Proxy (Nginx Proxy Manager, nginx, Caddy, Traefik, der Proxy deines NAS …), ist nur **eines** zu tun: In der Werkbank unter **E-Mail und Adresse** die öffentliche Adresse eintragen, z. B. `https://dms.example.org`. Beginnt sie mit `https://`, setzt das DMS das Sitzungs-Cookie nur noch über HTTPS, und Links in E-Mails führen auf diese Adresse.
+
+### Was der Proxy dem DMS mitteilt
+
+Der Proxy leitet jede Anfrage an das DMS weiter. Für das DMS sieht sie deshalb so aus, als käme sie vom Proxy. Was das Gerät dahinter ist, schreibt der Proxy in Zusatzangaben (`X-Forwarded-For`, `X-Forwarded-Proto`). Das DMS braucht sie für:
+
+| Wofür | Mit den Angaben des Proxys | Ohne sie |
+|---|---|---|
+| **IP-Adressen** im Protokoll und bei den Sitzungen eines Benutzers | die Adresse des Handys oder Laptops | immer die Adresse des Proxys |
+| **Sperre nach 5 falschen Passwörtern** (eine Minute, je E-Mail-Adresse und IP) | trifft nur das Gerät, von dem die Fehlversuche kamen | trifft alle Geräte: Fehlversuche von außen sperren die Anmeldung auch zu Hause |
+| **HTTPS erkennen**, solange keine Adresse gepflegt ist | Cookie nur über HTTPS, Links mit `https://` | Cookie auch über HTTP, Links mit der internen `http://`-Adresse |
+
+Seit Version 0.43.0 nimmt das DMS diese Angaben **von selbst** an, wenn der Proxy im eigenen Rechner oder in einem privaten Netz sitzt (`127.0.0.1`, `10.x.x.x`, `172.16–31.x.x`, `192.168.x.x` und die entsprechenden IPv6-Netze). Das trifft auf einen Proxy-Container neben dem DMS und auf den Proxy eines NAS praktisch immer zu. Anfragen direkt aus dem Internet können so keine fremde IP und kein HTTPS vortäuschen. Unter **Wartung und Fehlersuche → Technik** steht bei `TRUST_PROXY`, was gerade gilt.
+
+!!! note "Wann `TRUST_PROXY` doch setzen?"
+    - `TRUST_PROXY: "false"`: Wenn du ganz ausschließen willst, dass ein Gerät **in deinem Heimnetz**, das das DMS direkt über Port 8080 erreicht, eine andere IP-Adresse vortäuscht. Die IP-Adressen und die Sperre verhalten sich dann wie in der rechten Spalte oben.
+    - Eine Liste, z. B. `TRUST_PROXY: "172.18.0.5"`: Nur genau diesem Proxy glauben.
+    - `TRUST_PROXY: "true"`: Wenn der Proxy eine öffentliche Adresse hat, etwa ein Tunnel- oder Cloud-Dienst, der direkt ans DMS weiterleitet. Dann darf das DMS selbst nicht aus dem Internet erreichbar sein.
+
+    Vor Version 0.43.0 war `false` der Standard. Wer `TRUST_PROXY: "true"` schon gesetzt hat, kann es stehen lassen oder entfernen.
+
+!!! tip "Die Adresse trotzdem pflegen"
+    Die Adresse in der Werkbank ist verlässlicher als jede Erkennung: E-Mails aus dem Hintergrund (Erinnerungen, Zusammenfassung) haben keine Anfrage, aus der das DMS die Adresse ablesen könnte.
 
 Ein Beispiel für nginx:
 

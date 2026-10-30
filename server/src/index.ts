@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { proxyVertrauen } from './proxy';
 import { mkdir, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -47,7 +48,7 @@ const cfg = {
   migrationen: env.MIGRATIONS_DIR ?? pfad('../migrations'),
   /** Mandant (früher HAUSHALT_ID): steht nach dem Verbinden fest (#119). */
   haushalt: '',
-  proxy: env.TRUST_PROXY === 'true',
+  proxy: proxyVertrauen(env.TRUST_PROXY),
 };
 
 const log = protokoll.modul('system');
@@ -55,7 +56,8 @@ const log = protokoll.modul('system');
 const ordnerPruefung = pruefeOrdner(env, pfad('../../data'));
 const { ordner } = ordnerPruefung;
 const version = env.DMS_VERSION ?? 'Entwicklung';
-log.info(`DMS startet (Version ${version})`, { node: process.version, port: cfg.port, protokoll: protokoll.stufe });
+log.info(`DMS startet (Version ${version})`, { node: process.version, port: cfg.port, protokoll: protokoll.stufe, proxy: cfg.proxy.text });
+if (cfg.proxy.fehler) log.warn(cfg.proxy.fehler);
 
 // Unerwartete Fehler außerhalb von Anfragen nicht verschlucken.
 process.on('unhandledRejection', (e) => protokoll.schreibe('error', 'system', 'Unbehandelter Fehler', { fehler: e instanceof Error ? e.stack : String(e) }));
@@ -103,7 +105,7 @@ if (verbunden && !anbindung && umgebung) {
 if (!verbunden) {
   anbindung = await einrichtungsmodus({
     geheim: ordner.geheim, code: einrichtungscode, vorbelegt: kandidat, quelle, fehler: startfehler,
-    port: cfg.port, host: cfg.host, webDir: cfg.web, proxy: cfg.proxy, wiederholenMs: kandidat ? 10_000 : undefined,
+    port: cfg.port, host: cfg.host, webDir: cfg.web, proxy: cfg.proxy.trust, wiederholenMs: kandidat ? 10_000 : undefined,
   });
 }
 const db = anbindung!;
@@ -197,7 +199,7 @@ const anbindungVerwaltung = new AnbindungVerwaltung(ordner.geheim, db, umgebung,
 const app = await baueApp(dienst, konten, {
   webDir: cfg.web,
   sicher: () => betrieb.cookieNurHttps(),
-  proxy: cfg.proxy,
+  proxy: cfg.proxy.trust,
   messung,
   system: pgSystemQuelle(sql, cfg.haushalt),
   designs,

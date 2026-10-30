@@ -1,4 +1,5 @@
 import fastifyStatic from '@fastify/static';
+import type { ProxyVertrauen } from './proxy';
 import Fastify from 'fastify';
 import { existsSync } from 'node:fs';
 import { ansicht, anbindungAus, legeDatenbankAn, pruefeAnbindung, schreibeAnbindung, type Anbindung, type Pruefung } from './anbindung';
@@ -26,7 +27,7 @@ export interface EinrichtungsmodusOptionen {
   port: number;
   host: string;
   webDir?: string;
-  proxy?: boolean;
+  proxy?: ProxyVertrauen;
   /** Für Tests: Verbindung prüfen und anlegen. */
   pruefe?: (a: Anbindung) => Promise<Pruefung>;
   anlegen?: (a: Anbindung) => Promise<void>;
