@@ -4,10 +4,11 @@
 
 FROM node:22-alpine AS bau
 WORKDIR /app
-COPY package.json ./
+# package-lock.json (#215): reproduzierbar mit npm ci; das Muster lässt den Bau auch ohne sie zu.
+COPY package.json package-lock.jso[n] ./
 COPY server/package.json server/
 COPY web/package.json web/
-RUN npm install --no-audit --no-fund
+RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
 COPY tsconfig.base.json ./
 COPY shared shared
 COPY server server
@@ -26,10 +27,10 @@ ENV NODE_ENV=production \
     DMS_COMMIT=$DMS_COMMIT \
     DMS_GEBAUT=$DMS_GEBAUT
 WORKDIR /app
-COPY package.json ./
+COPY package.json package-lock.jso[n] ./
 COPY server/package.json server/
 COPY web/package.json web/
-RUN npm install --omit=dev --workspace server --no-audit --no-fund && npm cache clean --force
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev --workspace server --no-audit --no-fund; else npm install --omit=dev --workspace server --no-audit --no-fund; fi && npm cache clean --force
 COPY --from=bau /app/server/dist server/dist
 COPY server/migrations server/migrations
 COPY --from=bau /app/web/dist web/dist
