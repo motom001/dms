@@ -363,6 +363,56 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0421" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.42.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.42.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sicherheitsupdate-bitte-aktualisieren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheitsupdate – bitte aktualisieren
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fur-administratoren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Für Administratoren
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fur-entwickler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Für Entwickler
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0420" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -386,7 +436,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fur-administratoren" class="md-nav__link">
+  <a href="#fur-administratoren_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Für Administratoren
@@ -1612,6 +1662,56 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0421" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.42.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.42.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sicherheitsupdate-bitte-aktualisieren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheitsupdate – bitte aktualisieren
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fur-administratoren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Für Administratoren
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fur-entwickler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Für Entwickler
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0420" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1635,7 +1735,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fur-administratoren" class="md-nav__link">
+  <a href="#fur-administratoren_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Für Administratoren
@@ -1686,6 +1786,21 @@
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
+<h2 id="0421">0.42.1<a class="headerlink" href="#0421" title="Permanent link">&para;</a></h2>
+<h3 id="sicherheitsupdate-bitte-aktualisieren">Sicherheitsupdate – bitte aktualisieren<a class="headerlink" href="#sicherheitsupdate-bitte-aktualisieren" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>E-Mail-Versand</strong> (#215): Die Bibliothek <code>nodemailer</code> springt von 6.10 auf 10.x. Für die bisherige Version sind zahlreiche Sicherheitslücken bekannt, darunter Fehler beim Auswerten von Adressen. Korrekturen gibt es nur in den neuen Hauptversionen. Am Versand ändert sich für dich nichts.</li>
+<li><strong>Auslieferung der Oberfläche</strong> (#215): <code>@fastify/static</code> springt von 8.3 auf 10.x und schließt mehrere bekannte Umgehungen von Pfaden. Das DMS nutzte die betroffenen Funktionen nicht; aktualisiert ist es trotzdem.</li>
+</ul>
+<h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Aktualisieren wie gewohnt: Image <code>ghcr.io/motom001/dms</code> bzw. <code>ghcr.io/motom001/dms-komplett</code> neu ziehen und neu starten. Danach unter <strong>Werkbank → E-Mail und Adresse</strong> einmal <strong>Testmail senden</strong>.</li>
+<li>Unter <strong>Werkbank → Technik</strong> stehen danach die neuen Versionen. Der Datenbank-Treiber <code>postgres</code> bleibt bei 3.4; Version 4 ist erst seit Kurzem erschienen und folgt nach Prüfung.</li>
+</ul>
+<h3 id="fur-entwickler">Für Entwickler<a class="headerlink" href="#fur-entwickler" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Dependabot schlägt Updates jetzt wöchentlich vor, die CI prüft mit <code>npm audit</code> auf bekannte Lücken, und <code>package-lock.json</code> hält die Versionen fest (CI und Image mit <code>npm ci</code>). Meldeweg für Sicherheitslücken: <code>SECURITY.md</code>.</li>
+</ul>
 <h2 id="0420">0.42.0<a class="headerlink" href="#0420" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
@@ -1697,7 +1812,7 @@
 <li>Vorlage <code>deploy/komplett/docker-compose.yml</code>, Anleitung unter „Wie komme ich an ein DMS?“ → <strong>Ein Container: dms-komplett</strong>. Synology, UGREEN, QNAP und Unraid können den Container auch direkt aus dem Image erstellen.</li>
 <li><strong>Neue Seite „Wachsen und umziehen“</strong> im Administratorhandbuch: welche Variante wofür, Umzug Schritt für Schritt über Sicherung und Wiederherstellung (zwei Container ↔ ein Container, NAS → Server) und der Wechsel auf eine neue PostgreSQL-Hauptversion.</li>
 </ul>
-<h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
+<h3 id="fur-administratoren_1">Für Administratoren<a class="headerlink" href="#fur-administratoren_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Werkbank → Technik</strong> zeigt, welches Image läuft (<code>dms</code> oder <code>dms-komplett</code>) und wo die Datenbank liegt. Unter <strong>Datenbank-Anbindung</strong> steht bei <code>dms-komplett</code>, dass nichts einzustellen ist.</li>
 <li>Von zwei Containern auf <code>dms-komplett</code> umziehen: Sicherung anlegen, <code>dms-komplett</code> starten, im Assistenten <strong>Aus einer Sicherung wiederherstellen</strong>.</li>
