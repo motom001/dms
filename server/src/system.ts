@@ -179,19 +179,59 @@ async function npmPaket(abruf: Abruf, name: string, installiert: string | null):
   }
 }
 
+/** Stand auf main: Commit und wie viele Änderungen seit dem installierten (Zusatzinfo und Rückfall). */
+async function mainStand(abruf: Abruf, commit: string | null) {
+  const c = (await abruf(`https://api.github.com/repos/${REPO}/commits/main`)) as { sha: string; commit: { committer: { date: string }; message: string } };
+  const gleich = !!commit && (c.sha.startsWith(commit) || commit.startsWith(c.sha));
+  let voraus: number | null = null;
+  if (commit && !gleich) {
+    try { voraus = ((await abruf(`https://api.github.com/repos/${REPO}/compare/${commit}...main`)) as { ahead_by?: number }).ahead_by ?? null; } catch { /* nur Zusatzinfo */ }
+  }
+  return { c, gleich, voraus };
+}
+
+const datumDe = (iso: string) => { const [j, m, t] = iso.slice(0, 10).split('-'); return `${t}.${m}.${j}`; };
+
+/**
+ * Das DMS selbst (#206): mit dem neuesten Release auf GitHub vergleichen (Versionsnummer); Änderungen auf main,
+ * die noch in keinem Release sind, nennt der Hinweis. Ohne Release-Abfrage wie bisher der Vergleich mit main.
+ */
 async function dmsSelbst(abruf: Abruf, u: Uebersicht): Promise<Vergleich> {
-  const quelle = `https://api.github.com/repos/${REPO}/commits/main`;
   const installiert = u.dms.commit ? `${u.dms.version} (${u.dms.commit.slice(0, 7)})` : u.dms.version;
+  type Release = { tag_name?: string; published_at?: string; html_url?: string };
+  const release = await abruf(`https://api.github.com/repos/${REPO}/releases/latest`).then((x) => x as Release, () => null);
+  const version = release?.tag_name?.replace(/^v/, '');
+  if (version && /^\d+\.\d+/.test(version)) {
+    const quelle = release!.html_url || `https://github.com/${REPO}/releases/latest`;
+    const aktuell = `${version}${release!.published_at ? ` (Release vom ${datumDe(release!.published_at)})` : ''}`;
+    const neuer = vergleicheVersion(version, u.dms.version) > 0;
+    const hinweise: string[] = [];
+    if (neuer) {
+      try {
+        const liste = (await abruf(`https://api.github.com/repos/${REPO}/releases?per_page=100`)) as Array<{ tag_name?: string; draft?: boolean; prerelease?: boolean }>;
+        const dazwischen = liste.map((r) => (r.draft || r.prerelease ? '' : (r.tag_name ?? '').replace(/^v/, '')))
+          .filter((v) => /^\d+\.\d+/.test(v) && vergleicheVersion(v, u.dms.version) > 0);
+        if (dazwischen.length > 1) hinweise.push(`${dazwischen.length} neuere Versionen (bis ${version}).`);
+      } catch { /* nur Zusatzinfo */ }
+      hinweise.push('Was neu ist, steht in den Releases auf GitHub. Zum Aktualisieren das Image neu ziehen.');
+    }
+    try {
+      const m = await mainStand(abruf, u.dms.commit ?? null);
+      if (!neuer && u.dms.commit && !m.gleich) {
+        hinweise.push(`Auf main gibt es ${m.voraus ? `${m.voraus} ` : ''}neuere Änderung${m.voraus === 1 ? '' : 'en'}, die noch in keinem Release ${m.voraus === 1 ? 'ist' : 'sind'} (Stand ${m.c.sha.slice(0, 7)} vom ${datumDe(m.c.commit.committer.date)}).`);
+      }
+    } catch { /* nur Zusatzinfo */ }
+    return { komponente: 'DMS', installiert, aktuell, status: neuer ? 'neuer' : 'aktuell', ...(hinweise.length ? { hinweis: hinweise.join(' ') } : {}), quelle };
+  }
+  // Rückfall: Vergleich mit main wie bisher.
+  const quelle = `https://api.github.com/repos/${REPO}/commits/main`;
   try {
-    const c = (await abruf(quelle)) as { sha: string; commit: { committer: { date: string }; message: string } };
+    const { c, gleich, voraus } = await mainStand(abruf, u.dms.commit ?? null);
     const aktuell = `main (${c.sha.slice(0, 7)} vom ${c.commit.committer.date.slice(0, 10)})`;
     if (!u.dms.commit) return { komponente: 'DMS', installiert, aktuell, status: 'unbekannt', hinweis: 'Ohne Commit-Kennung im Image (DMS_COMMIT) lässt sich der Stand nicht vergleichen.', quelle };
-    if (c.sha.startsWith(u.dms.commit) || u.dms.commit.startsWith(c.sha)) return { komponente: 'DMS', installiert, aktuell, status: 'aktuell', quelle };
+    if (gleich) return { komponente: 'DMS', installiert, aktuell, status: 'aktuell', quelle };
     let hinweis = `Neuester Stand: ${c.commit.message.split('\n')[0]}`;
-    try {
-      const v = (await abruf(`https://api.github.com/repos/${REPO}/compare/${u.dms.commit}...main`)) as { ahead_by?: number };
-      if (v.ahead_by) hinweis = `${v.ahead_by} neuere Änderung${v.ahead_by === 1 ? '' : 'en'} auf main. ${hinweis}`;
-    } catch { /* nur Zusatzinfo */ }
+    if (voraus) hinweis = `${voraus} neuere Änderung${voraus === 1 ? '' : 'en'} auf main. ${hinweis}`;
     return { komponente: 'DMS', installiert, aktuell, status: 'neuer', hinweis: `${hinweis}. Zum Aktualisieren das Image neu ziehen.`, quelle };
   } catch (e) {
     return { komponente: 'DMS', installiert, aktuell: null, status: 'unbekannt', hinweis: `Abfrage fehlgeschlagen: ${(e as Error).message}`, quelle };
