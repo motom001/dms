@@ -1,5 +1,8 @@
 # Installation auf dem NAS
 
+!!! tip "Heimserver mit App-Store?"
+    Auf umbrelOS, ZimaOS oder CasaOS geht es ohne Compose-Datei: [Installation mit einem Klick](app-store.md).
+
 Das DMS läuft als zwei Container: die Anwendung (`ghcr.io/motom001/dms`) und PostgreSQL. Bei jedem Push auf `main` baut GitHub Actions ein neues Image (Tag `main`, zusätzlich je Commit ein Kurz-Hash und je Release die Versionsnummer).
 
 ## Voraussetzungen

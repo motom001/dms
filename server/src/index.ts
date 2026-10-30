@@ -71,7 +71,8 @@ for (const o of Object.values(ordner)) await mkdir(o, { recursive: true });
 
 // Datenbank-Anbindung (#119): Datei unter /data/geheim, führend; sonst DATABASE_URL übernehmen;
 // sonst (oder wenn sie nicht funktioniert) der Einrichtungsassistent im Browser.
-const einrichtungscode = new Einrichtungscode(ordner.geheim);
+// App-Stores (#176): DMS_EINRICHTUNGSCODE=aus – ohne Code einrichten.
+const einrichtungscode = new Einrichtungscode(ordner.geheim, Date.now, env.DMS_EINRICHTUNGSCODE === 'aus');
 const umgebung = ausUrl(env.DATABASE_URL);
 if (env.DATABASE_URL && !umgebung) log.error('DATABASE_URL ist keine gültige postgres://-Adresse und wird ignoriert');
 let anbindung: Anbindung | null = null;

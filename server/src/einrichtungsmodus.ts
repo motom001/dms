@@ -74,7 +74,7 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
     const mitCode = o.code.stimmt(kopf(req, 'x-einrichtungscode'));
     return {
       einrichtungNoetig: true, mail: false, benutzer: null, marke: null, wartung: null,
-      einrichtung: { phase: beendet ? 'startet' : 'datenbank', code: true, ...(mitCode ? { anbindung: ansicht(vorbelegt), quelle: o.quelle, fehler } : {}) },
+      einrichtung: { phase: beendet ? 'startet' : 'datenbank', code: o.code.noetig, ...(mitCode ? { anbindung: ansicht(vorbelegt), quelle: o.quelle, fehler } : {}) },
     };
   });
   // Der Container läuft (Healthcheck im Image), wartet aber auf die Einrichtung.

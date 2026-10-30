@@ -88,6 +88,24 @@ describe('Einrichtungscode (#119)', () => {
     assert.ok(!existsSync(join(o, 'EINRICHTUNGSCODE')));
     assert.throws(() => c.pruefe(code), /bereits abgeschlossen/);
   });
+
+  it('abgeschaltet (DMS_EINRICHTUNGSCODE=aus, #176): keine Datei, jede Eingabe gilt', async () => {
+    const o = await ordner();
+    const c = new Einrichtungscode(o, Date.now, true);
+    assert.equal(await c.bereitstellen(), '');
+    assert.ok(!existsSync(join(o, 'EINRICHTUNGSCODE')));
+    assert.equal(c.noetig, false);
+    assert.equal(c.aktiv, false);
+    c.pruefe(undefined);
+    assert.equal(c.stimmt(undefined), true);
+    const konten = new Konten(speicherKontoRepo(), null, 'http://dms');
+    let name: string | null = 'Mandant';
+    const e = new Einrichtung({ konten, code: c, einstellungen: speicherEinstellungen(), mandant: { name: async () => name, umbenennen: async (n) => { name = n; } }, schriftzug: async () => {} });
+    assert.equal(e.codeNoetig, false);
+    const r = await e.einrichten({ mandant: 'Familie Ohne Code', name: 'Admin', email: 'admin@example.org', passwort: 'ein-langes-passwort' }, undefined, { ip: '1', geraet: '' });
+    assert.equal(r.benutzer.rolle, 'admin');
+    await assert.rejects(e.einrichten({ mandant: 'X', name: 'B', email: 'b@example.org', passwort: 'ein-langes-passwort' }, undefined, { ip: '1', geraet: '' }), /bereits abgeschlossen/);
+  });
 });
 
 // Fastify fehlt in manchen lokalen Umgebungen; in der CI läuft der Test immer.
