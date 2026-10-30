@@ -42,6 +42,10 @@ Alle Wege brauchen ein Gerät mit **amd64** (Intel, AMD) oder **arm64** (z. B. R
 !!! warning "Erst einrichten, dann von außen erreichbar machen"
     Gib das DMS erst über eine Portfreigabe, einen Tunnel oder einen Reverse-Proxy nach außen frei, wenn die Einrichtung abgeschlossen ist. Wie das mit HTTPS geht, steht unter [Hinter einem Reverse-Proxy](https://motom001.github.io/dms/admin/aktuell/installation/#hinter-einem-reverse-proxy).
 
+## Ein Beispiel
+
+Wie das DMS beim Entwickler im Alltag läuft – Gerät, Zugriff von unterwegs, Speicher und Sicherung, jeweils mit dem Warum –, steht unter [So läuft es beim Entwickler](beispiel.md).
+
 ## Hilfe
 
 Hakt es bei der Installation? Schreib ein [Issue auf GitHub](https://github.com/motom001/dms/issues) und nenne dein Gerät, sein System und die Meldung, die du siehst.
