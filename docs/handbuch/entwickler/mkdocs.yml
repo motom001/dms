@@ -1,0 +1,74 @@
+site_name: DMS – Entwicklerhandbuch
+site_description: "Mitmachen beim DMS: Arbeitsweise, Entwicklung, Aufbau und Release"
+site_url: !ENV [SITE_URL, 'https://motom001.github.io/dms/entwickler/aktuell/']
+repo_url: https://github.com/motom001/dms
+repo_name: motom001/dms
+edit_uri: edit/main/docs/handbuch/entwickler/docs/
+docs_dir: docs
+copyright: DMS steht unter der AGPL-3.0 · <a href="https://github.com/sponsors/motom001">Projekt unterstützen</a>
+
+theme:
+  name: material
+  # Hinweis auf ältere Versionen (#111)
+  custom_dir: ../overrides
+  language: de
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue grey
+      toggle: { icon: material/weather-night, name: Dunkle Darstellung }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue grey
+      toggle: { icon: material/weather-sunny, name: Helle Darstellung }
+
+plugins:
+  - search:
+      lang: de
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.keys
+
+extra:
+  # Versionsauswahl (#111): versions.json wie bei „mike“, „aktuell“ = neuestes Release
+  version:
+    provider: mike
+    default: aktuell
+    alias: true
+  social:
+    - icon: fontawesome/solid/heart
+      link: https://github.com/sponsors/motom001
+      name: Projekt unterstützen (GitHub Sponsors)
+    - icon: fontawesome/brands/github
+      link: https://github.com/motom001/dms
+      name: Quellcode auf GitHub
+
+nav:
+  - Mitmachen: index.md
+  - Loslegen: loslegen.md
+  - Aufbau: aufbau.md
+  - Beitrag einreichen: beitrag.md
+  - Release: release.md
+  - Weiteres:
+      - Issues auf GitHub: https://github.com/motom001/dms/issues
+      - Administratorhandbuch: https://motom001.github.io/dms/admin/aktuell/
+      - "Wie komme ich an ein DMS?": https://motom001.github.io/dms/installieren/aktuell/

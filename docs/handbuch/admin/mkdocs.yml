@@ -62,8 +62,8 @@ nav:
   - Überblick: index.md
   - Neu in dieser Version: neu.md
   - Installation und Betrieb:
-      - Installation auf dem NAS: installation.md
-      - "Mit einem Klick: Umbrel, ZimaOS, CasaOS": app-store.md
+      - Einrichtung und Betrieb: installation.md
+      - "Wie komme ich an ein DMS?": https://motom001.github.io/dms/installieren/aktuell/
       - Aktualisieren und Sichern: aktualisieren.md
       - Verschlüsselung: verschluesselung.md
   - Einrichten in der Werkbank:
@@ -93,3 +93,5 @@ nav:
   - Weiteres:
       - Was ist neu? (Changelog): https://github.com/motom001/dms/releases
       - Benutzerhandbuch: https://motom001.github.io/dms/benutzer/
+      - "Wie komme ich an ein DMS?": https://motom001.github.io/dms/installieren/
+      - Entwicklerhandbuch: https://motom001.github.io/dms/entwickler/

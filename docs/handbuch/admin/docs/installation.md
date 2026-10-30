@@ -1,26 +1,8 @@
-# Installation auf dem NAS
+# Einrichtung und Betrieb
 
-!!! tip "Heimserver mit App-Store?"
-    Auf umbrelOS, ZimaOS oder CasaOS geht es ohne Compose-Datei: [Installation mit einem Klick](app-store.md).
+Wie du das DMS installierst – auf Synology, UGREEN, QNAP, TrueNAS, Unraid, umbrelOS, ZimaOS, CasaOS oder jedem Server mit Docker –, steht im eigenen Bereich **[Wie komme ich an ein DMS?](https://motom001.github.io/dms/installieren/aktuell/)**. Diese Seite beschreibt, was danach kommt: den Einrichtungsassistenten, die Anbindung an die Datenbank, Ordner, Einstellungen und den Betrieb hinter einem Reverse-Proxy.
 
 Das DMS läuft als zwei Container: die Anwendung (`ghcr.io/motom001/dms`) und PostgreSQL. Bei jedem Push auf `main` baut GitHub Actions ein neues Image (Tag `main`, zusätzlich je Commit ein Kurz-Hash und je Release die Versionsnummer).
-
-## Voraussetzungen
-
-- Ein NAS oder Server mit Docker und Docker Compose (z. B. UGREEN, Synology, Linux-Server), Architektur amd64 oder arm64.
-- Ein Ordner für die Daten, z. B. `/volume1/docker/dms`, darin `postgres`, `files`, `geheim` (für den Schlüssel der gespeicherten Passwörter) und `sicherung` (für die [Sicherungen](sicherung.md), am besten auf einer anderen Platte).
-- Optional ein Postfach für den E-Mail-Versand (Einladungen, Passwort-Links) – eingerichtet wird es später in der Werkbank.
-
-## Schritt für Schritt
-
-Das Image ist öffentlich; eine Anmeldung bei der Registry (`docker login`) ist nicht nötig.
-
-1. **Projekt anlegen.** Die Vorlage [`deploy/nas/docker-compose.yml`](https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml) als Compose-Projekt anlegen und die Pfade an den Docker-Ordner des NAS anpassen. Daneben eine Datei `.env`:
-   ```sh
-   DB_PASSWORD=<langes zufälliges Passwort>
-   ```
-2. **Starten.** Die Oberfläche läuft unter `http://<NAS>:8080`.
-3. **Browser öffnen.** Der Einrichtungsassistent führt durch den Rest – siehe unten.
 
 !!! warning "Erst einrichten, dann freigeben"
     Mach das DMS erst über einen Reverse-Proxy oder Port-Freigabe erreichbar, wenn die Einrichtung abgeschlossen ist. Der Einrichtungscode schützt zwar davor, dass ein Fremder sie übernimmt – sicherer ist es trotzdem.
@@ -57,6 +39,7 @@ Die Anbindung an PostgreSQL steht in der Datei `datenbank.json` im Ordner `/data
 
 - **Gibt es die Datei**, nimmt das DMS sie – auch wenn in der Compose-Datei `DATABASE_URL` gesetzt ist. Weicht die Variable ab, weist die Werkbank-Übersicht darauf hin; sie wird ignoriert und kann entfernt werden.
 - **Gibt es sie nicht, aber `DATABASE_URL`** (bisherige Installationen), prüft das DMS die Variable beim Start und übernimmt sie in die Datei. Danach ist die Variable überflüssig.
+- **Gibt es sie nicht, aber `DMS_DB_PASSWORT`** (Vorlagen für Synology, UGREEN, QNAP, TrueNAS, Unraid), nimmt das DMS die Standard-Anbindung – Server `db` (oder `DMS_DB_HOST`), Port 5432, Datenbank und Benutzer `dms` – mit diesem Passwort und übernimmt sie ebenso. Das Passwort steht so nur einmal in der Compose-Datei, ohne Sonderzeichen für eine URL maskieren zu müssen.
 - **Gibt es beides nicht** – oder klappt die Verbindung nicht –, startet das DMS im **Einrichtungsmodus**: Es liefert nur den Assistenten aus und fragt die Anbindung ab (mit Einrichtungscode). Alle anderen Schnittstellen antworten bis dahin mit 503. Eine gespeicherte Anbindung, deren Datenbank nur noch nicht erreichbar ist (der Datenbank-Container startet noch), versucht es alle zehn Sekunden weiter.
 
 Unter **Werkbank → Datenbank-Anbindung** siehst und änderst du die Anbindung: erst **Verbindung prüfen**, dann **Übernehmen**. Die neue Anbindung gilt nach einem Neustart (**Jetzt neu starten** – im Container startet Docker das DMS gleich wieder). Die Daten wandern dabei nicht mit; für einen Umzug in eine andere Datenbank nimm eine [Sicherung](sicherung.md).
@@ -110,6 +93,8 @@ Diese Einstellungen sind Umgebungsvariablen im Compose-Projekt:
 | Variable | Bedeutung |
 | --- | --- |
 | `DATABASE_URL` | Nur noch für den Umstieg: wird beim ersten Start in die [Datenbank-Anbindung](#datenbank-anbindung) übernommen und danach ignoriert |
+| `DMS_DB_PASSWORT`, `DMS_DB_HOST`, `DMS_DB_PORT` | Statt `DATABASE_URL`: Passwort (sowie Server, Standard `db`, und Port, Standard `5432`) der Standard-Anbindung; ebenfalls nur für den ersten Start |
+| `DMS_EINRICHTUNGSCODE` | `aus`: Einrichtungsassistent ohne Code – für App-Stores, in denen das Container-Protokoll nicht ohne Kommandozeile lesbar ist. Bis der Administrator angelegt ist, kann dann jeder im Netz die Einrichtung übernehmen |
 | `TRUST_PROXY` | `true`, wenn ein Reverse-Proxy davor sitzt (richtige IP-Adressen im Protokoll, sichere Cookies über HTTPS) |
 | `LOG_LEVEL` | Grundstufe des Protokolls: `debug`, `info` (Standard), `warn`, `error` |
 

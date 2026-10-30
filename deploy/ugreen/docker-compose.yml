@@ -1,0 +1,41 @@
+# DMS auf UGREEN (UGOS Pro, Docker) – Vorlage aus https://github.com/motom001/dms (deploy/ugreen)
+# Anleitung: https://motom001.github.io/dms/installieren/aktuell/ugreen/
+#
+# Nur eine Stelle ändern: das Passwort in der nächsten Zeile. Ein langes aus Buchstaben und
+# Zahlen genügt. Es schützt die Datenbank und steht danach nur noch in dieser Datei.
+x-passwort: &passwort "HIER-EIN-LANGES-PASSWORT-EINTRAGEN"
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dms
+      POSTGRES_USER: dms
+      POSTGRES_PASSWORD: *passwort
+    volumes:
+      - /volume1/docker/dms/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dms -d dms"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    image: ghcr.io/motom001/dms:main
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Dasselbe Passwort für das DMS – der Einrichtungsassistent überspringt dann den Datenbankschritt.
+      DMS_DB_PASSWORT: *passwort
+    volumes:
+      # Hochgeladene Dateien
+      - /volume1/docker/dms/files:/data/files
+      # Schlüssel und Einrichtungscode – getrennt von den Sicherungen aufbewahren
+      - /volume1/docker/dms/geheim:/data/geheim
+      # Sicherungen (Werkbank → Sicherung) – ab und zu an einen anderen Ort kopieren
+      - /volume1/docker/dms/sicherung:/data/sicherung
+    ports:
+      - "8080:3000"

@@ -1,0 +1,75 @@
+site_name: "DMS – Wie komme ich an ein DMS?"
+site_description: Installieren auf NAS, Heimserver und App-Store – Schritt für Schritt
+site_url: !ENV [SITE_URL, 'https://motom001.github.io/dms/installieren/aktuell/']
+repo_url: https://github.com/motom001/dms
+repo_name: motom001/dms
+edit_uri: edit/main/docs/handbuch/installieren/docs/
+docs_dir: docs
+copyright: DMS steht unter der AGPL-3.0 · <a href="https://github.com/sponsors/motom001">Projekt unterstützen</a>
+
+theme:
+  name: material
+  # Hinweis auf ältere Versionen (#111)
+  custom_dir: ../overrides
+  language: de
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      toggle: { icon: material/weather-night, name: Dunkle Darstellung }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      toggle: { icon: material/weather-sunny, name: Helle Darstellung }
+
+plugins:
+  - search:
+      lang: de
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.keys
+
+extra:
+  # Versionsauswahl (#111): versions.json wie bei „mike“, „aktuell“ = neuestes Release
+  version:
+    provider: mike
+    default: aktuell
+    alias: true
+  social:
+    - icon: fontawesome/solid/heart
+      link: https://github.com/sponsors/motom001
+      name: Projekt unterstützen (GitHub Sponsors)
+    - icon: fontawesome/brands/github
+      link: https://github.com/motom001/dms
+      name: Quellcode auf GitHub
+
+nav:
+  - "Was hast du?": index.md
+  - Mit einem Klick:
+      - "App-Store: umbrelOS, ZimaOS, CasaOS": app-store.md
+  - NAS:
+      - Synology: synology.md
+      - UGREEN: ugreen.md
+      - QNAP: qnap.md
+      - TrueNAS: truenas.md
+      - Unraid: unraid.md
+  - Jeder Server mit Docker: docker.md
+  - Weiteres:
+      - Administratorhandbuch: https://motom001.github.io/dms/admin/aktuell/
+      - Benutzerhandbuch: https://motom001.github.io/dms/benutzer/aktuell/
+      - Entwicklerhandbuch: https://motom001.github.io/dms/entwickler/aktuell/

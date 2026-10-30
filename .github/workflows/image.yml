@@ -82,6 +82,11 @@ jobs:
           docker run --rm --entrypoint sh dms:probe -c 'uname -m && tesseract --version | head -1 && tesseract --list-langs && pdftotext -v 2>&1 | head -1'
           docker run --rm --entrypoint sh dms:probe -c 'tesseract --list-langs' | grep -qx deu
           docker run --rm --entrypoint node dms:probe -e "console.log('Node.js', process.version, process.arch)"
+      # Vorlagen für Synology, UGREEN, QNAP, TrueNAS, Unraid (#179): starten, DMS antwortet,
+      # Assistent beginnt ohne Datenbankschritt.
+      - name: Vorlagen probehalber installieren
+        if: matrix.plattform == 'linux/amd64'
+        run: deploy/vorlagen-probe.sh dms:probe
 
   # Neue Versionsnummer in package.json auf main? Dann gibt es ein Release (#34).
   version:

@@ -1,0 +1,27 @@
+# Das Label „freigegeben“ vergibt allein der Maintainer (#180). Setzt es jemand anderes, nimmt
+# dieser Workflow es wieder weg und sagt kurz, warum.
+name: Freigabe schützen
+
+on:
+  issues:
+    types: [labeled]
+  pull_request_target:
+    types: [labeled]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  pruefen:
+    if: github.event.label.name == 'freigegeben' && github.event.sender.login != github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label entfernen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMMER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          WER: ${{ github.event.sender.login }}
+        run: |
+          gh api -X DELETE "repos/${{ github.repository }}/issues/$NUMMER/labels/freigegeben" || true
+          gh api "repos/${{ github.repository }}/issues/$NUMMER/comments" -f body="Das Label \`freigegeben\` vergibt nur der Maintainer (@${{ github.repository_owner }}) – ich habe es wieder entfernt (gesetzt von @$WER). Mehr dazu im [Entwicklerhandbuch](https://motom001.github.io/dms/entwickler/aktuell/)."

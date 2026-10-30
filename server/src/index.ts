@@ -18,7 +18,7 @@ import { pgRepo } from './repo-pg';
 import { Betrieb, pgBetriebSpeicher } from './betrieb';
 import { Tresor } from './tresor';
 import { pruefeOrdner, SCHLUESSELDATEI } from './ordner';
-import { alsUrl, ANBINDUNG_DATEI, AnbindungVerwaltung, ausUrl, liesAnbindung, pruefeAnbindung, schreibeAnbindung, type Anbindung } from './anbindung';
+import { alsUrl, ANBINDUNG_DATEI, AnbindungVerwaltung, ausUrl, ausVariablen, liesAnbindung, pruefeAnbindung, schreibeAnbindung, type Anbindung } from './anbindung';
 import { Einrichtungscode } from './einrichtungscode';
 import { einrichtungsmodus } from './einrichtungsmodus';
 import { Einrichtung } from './einrichtung';
@@ -73,7 +73,9 @@ for (const o of Object.values(ordner)) await mkdir(o, { recursive: true });
 // sonst (oder wenn sie nicht funktioniert) der Einrichtungsassistent im Browser.
 // App-Stores (#176): DMS_EINRICHTUNGSCODE=aus – ohne Code einrichten.
 const einrichtungscode = new Einrichtungscode(ordner.geheim, Date.now, env.DMS_EINRICHTUNGSCODE === 'aus');
-const umgebung = ausUrl(env.DATABASE_URL);
+// Vorlagen für NAS-Systeme (#184): nur DMS_DB_PASSWORT statt einer ganzen DATABASE_URL.
+const umgebung = ausUrl(env.DATABASE_URL) ?? ausVariablen(env);
+if (env.DMS_DB_PASSWORT?.startsWith('HIER-')) log.warn('DMS_DB_PASSWORT ist noch das Beispiel aus der Vorlage – bitte in der Compose-Datei ein eigenes Passwort eintragen und das Projekt neu erstellen');
 if (env.DATABASE_URL && !umgebung) log.error('DATABASE_URL ist keine gültige postgres://-Adresse und wird ignoriert');
 let anbindung: Anbindung | null = null;
 try { anbindung = await liesAnbindung(ordner.geheim); } catch (e) { log.error('Datei der Datenbank-Anbindung nicht lesbar', { fehler: (e as Error).message }); }
@@ -95,7 +97,8 @@ if (kandidat) {
 if (verbunden && !anbindung && umgebung) {
   await schreibeAnbindung(ordner.geheim, umgebung);
   anbindung = umgebung;
-  log.info(`DATABASE_URL in ${ANBINDUNG_DATEI} übernommen – die Variable ist nicht mehr nötig und kann aus der Compose-Datei entfernt werden`);
+  if (env.DATABASE_URL) log.info(`DATABASE_URL in ${ANBINDUNG_DATEI} übernommen – die Variable ist nicht mehr nötig und kann aus der Compose-Datei entfernt werden`);
+  else log.info(`Datenbank-Anbindung aus DMS_DB_PASSWORT in ${ANBINDUNG_DATEI} übernommen`);
 }
 if (!verbunden) {
   anbindung = await einrichtungsmodus({

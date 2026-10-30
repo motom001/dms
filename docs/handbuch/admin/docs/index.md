@@ -8,7 +8,8 @@ Dieses Handbuch ist für alle, die das DMS **installieren, einrichten und betrei
 
 | Aufgabe | Wo | Kapitel |
 | --- | --- | --- |
-| DMS auf dem NAS installieren | Docker Compose | [Installation](installation.md) |
+| DMS installieren | NAS, Heimserver, App-Store | [Wie komme ich an ein DMS?](https://motom001.github.io/dms/installieren/aktuell/) |
+| nach der Installation einrichten | Einrichtungsassistent, Datenbank, Reverse-Proxy | [Einrichtung und Betrieb](installation.md) |
 | Neue Version einspielen, Daten sichern | NAS | [Aktualisieren und Sichern](aktualisieren.md) |
 | Festlegen, welche Mappen es gibt und was darin steht | Werkbank → Mappentypen | [Mappentypen](mappentypen.md) |
 | Festlegen, welche Sichten die Ablage anbietet | Werkbank → Sichten | [Sichten](sichten.md) |

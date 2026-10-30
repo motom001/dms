@@ -128,13 +128,15 @@ jobs:
       - name: Handbücher bauen
         run: |
           pip install --quiet 'mkdocs-material>=9.5,<10'
+          # Bilder brauchen Benutzer- und Administratorhandbuch; die anderen verlinken dorthin.
           for h in benutzer admin; do
             cp -r docs/handbuch/bilder "docs/handbuch/$h/docs/bilder"
           done
           mkdir -p docs/handbuch/admin/docs/api
           mv docs/handbuch/admin/docs/bilder/openapi.json docs/handbuch/admin/docs/api/openapi.json
           rm -f docs/handbuch/benutzer/docs/bilder/openapi.json
-          for h in benutzer admin; do
+          # Alle Handbücher (#179, #180): Benutzer, Administrator, Installieren, Entwickler.
+          for h in benutzer admin installieren entwickler; do
             SITE_URL="https://motom001.github.io/dms/$h/$ZIEL/" mkdocs build --strict -f "docs/handbuch/$h/mkdocs.yml" -d "$GITHUB_WORKSPACE/site/$h"
           done
 
