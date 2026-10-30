@@ -452,6 +452,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#abhangigkeiten-und-sicherheitsupdates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Abhängigkeiten und Sicherheitsupdates
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -640,6 +651,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#abhangigkeiten-und-sicherheitsupdates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Abhängigkeiten und Sicherheitsupdates
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -673,6 +695,13 @@
 <li><strong>Neben-Version</strong> (<code>0.40.0</code>) für neue Funktionen; das Handbuch bekommt eine eigene Version.</li>
 <li><strong>Patch</strong> (<code>0.39.1</code>) für Korrekturen; das Handbuch der Neben-Version wird überschrieben.</li>
 <li>Ohne neue Nummer: nur das Image <code>main</code> und das Handbuch <code>entwicklung</code> ändern sich.</li>
+</ul>
+<h2 id="abhangigkeiten-und-sicherheitsupdates">Abhängigkeiten und Sicherheitsupdates<a class="headerlink" href="#abhangigkeiten-und-sicherheitsupdates" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Dependabot</strong> (<code>.github/dependabot.yml</code>) schlägt jeden Montag Updates vor: kleine Updates (minor, patch) gesammelt in einem PR, Hauptversionen einzeln, dazu GitHub Actions und das Basis-Image. Sicherheitsupdates kommen sofort. Die CI prüft jeden dieser PRs wie jeden anderen; Hauptversionen bitte mit Blick in das Änderungsprotokoll der Bibliothek.</li>
+<li><strong><code>npm audit</code></strong> läuft in der CI über alles, was im Image landet (<code>--omit=dev</code>). Ab Stufe „hoch“ schlägt die Prüfung fehl. Ist eine Meldung für das DMS nachweislich ohne Wirkung, wird das im PR begründet.</li>
+<li><strong><code>package-lock.json</code></strong> hält die genauen Versionen fest; CI und Image installieren mit <code>npm ci</code>. Ändert sich eine <code>package.json</code> ohne passende Lockfile, legt der Workflow <em>Lockfile erzeugen</em> eine neue auf den Branch <code>werkzeug/lockfile</code>; von dort wird sie mit einem normalen Commit übernommen.</li>
+<li><strong>Sicherheitskorrektur = Patch-Release</strong> mit dem Hinweis „Sicherheitsupdate – bitte aktualisieren“ in den Release-Notes. Meldungen von außen laufen vertraulich, siehe <a href="https://github.com/motom001/dms/blob/main/SECURITY.md"><code>SECURITY.md</code></a>.</li>
 </ul>
 
 
