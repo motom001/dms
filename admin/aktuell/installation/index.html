@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.41/installation/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.42/installation/">
       
       
         <link rel="prev" href="../neu/">
@@ -561,6 +561,34 @@
     
   
     Aktualisieren und Sichern
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wachsen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wachsen und umziehen
   
 
     
@@ -1776,7 +1804,7 @@
 </tr>
 </tbody>
 </table>
-<p>Jeder der drei Ordner muss ein eigenes Volume sein; sonst ist sein Inhalt weg, sobald der Container neu erstellt wird (z. B. beim Update). Die Datenbank liegt im Volume des PostgreSQL-Containers. Wie viel Platz in jedem Ordner frei ist, zeigen <strong>Werkbank → <a href="../speicherplatz/">Speicherplatz</a></strong> und <strong>Werkbank → Technik</strong>.</p>
+<p>Jeder der drei Ordner muss ein eigenes Volume sein; sonst ist sein Inhalt weg, sobald der Container neu erstellt wird (z. B. beim Update). Die Datenbank liegt im Volume des PostgreSQL-Containers – beim Image <a href="https://motom001.github.io/dms/installieren/aktuell/komplett/">dms-komplett</a> im vierten Ordner <code>/data/postgres</code>. Wie viel Platz in jedem Ordner frei ist, zeigen <strong>Werkbank → <a href="../speicherplatz/">Speicherplatz</a></strong> und <strong>Werkbank → Technik</strong>.</p>
 <div class="highlight"><pre><span></span><code><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/volume1/docker/dms/files:/data/files</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/volume1/docker/dms/geheim:/data/geheim</span>

@@ -10,10 +10,10 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/installieren/v0.41/linux/">
+        <link rel="canonical" href="https://motom001.github.io/dms/installieren/v0.42/linux/">
       
       
-        <link rel="prev" href="../unraid/">
+        <link rel="prev" href="../komplett/">
       
       
         <link rel="next" href="../raspberry-pi/">
@@ -642,6 +642,33 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../komplett/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ein Container: dms-komplett
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -660,10 +687,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -681,8 +708,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -988,10 +1015,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
             
   
   
@@ -1009,8 +1036,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1231,6 +1258,11 @@ sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">'s#/volume
 docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
 docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>app<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-A1<span class="w"> </span>Einrichtungscode
 </code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Noch einfacher: ein Container</p>
+<p>Mit <a href="../komplett/">dms-komplett</a> ist es ein einziger Container mit eingebauter Datenbank, ohne <code>.env</code> und Passwort:
+<code>curl -fsSLo docker-compose.yml https://raw.githubusercontent.com/motom001/dms/main/deploy/komplett/docker-compose.yml &amp;&amp; docker compose up -d</code>.</p>
+</div>
 <p>Die Daten liegen damit in <code>~/dms/daten</code>. Hast du für Dokumente oder Sicherungen eine eigene Platte, trägst du deren Pfade in der <code>docker-compose.yml</code> ein. Weiter geht es im Browser unter <code>http://&lt;Rechner&gt;:8080</code>, wie unter <a href="../docker/">Jeder Server mit Docker</a> beschrieben.</p>
 <h2 id="4-den-rechner-zum-server-machen">4. Den Rechner zum Server machen<a class="headerlink" href="#4-den-rechner-zum-server-machen" title="Permanent link">&para;</a></h2>
 <ul>
@@ -1279,7 +1311,7 @@ docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"
       <nav class="md-footer__inner md-grid" aria-label="Fußzeile" >
         
           
-          <a href="../unraid/" class="md-footer__link md-footer__link--prev" aria-label="Zurück: Unraid">
+          <a href="../komplett/" class="md-footer__link md-footer__link--prev" aria-label="Zurück: Ein Container: dms-komplett">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1289,7 +1321,7 @@ docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"
                 Zurück
               </span>
               <div class="md-ellipsis">
-                Unraid
+                Ein Container: dms-komplett
               </div>
             </div>
           </a>

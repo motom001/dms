@@ -1,0 +1,2304 @@
+
+<!doctype html>
+<html lang="de" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Einrichten, betreiben und erweitern des DMS">
+      
+      
+      
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.42/mappentypen/">
+      
+      
+        <link rel="prev" href="../uebersicht/">
+      
+      
+        <link rel="next" href="../sichten/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Mappentypen - DMS – Administratorhandbuch</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#mappentypen" class="md-skip">
+          Zum Inhalt
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+          <aside class="md-banner md-banner--warning">
+            <div class="md-banner__inner md-grid md-typeset">
+              
+  Du liest nicht das Handbuch zur neuesten Version des DMS.
+  <a href="../.."><strong>Zur aktuellen Version</strong></a>
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL(".."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
+          </aside>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Kopfzeile">
+    <a href=".." title="DMS – Administratorhandbuch" class="md-header__button md-logo" aria-label="DMS – Administratorhandbuch" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DMS – Administratorhandbuch
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Mappentypen
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dunkle Darstellung"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dunkle Darstellung" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Helle Darstellung"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Helle Darstellung" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Suche" placeholder="Suche" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Suche">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Zurücksetzen" aria-label="Zurücksetzen" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Suche wird initialisiert
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/motom001/dms" title="Zum Repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    motom001/dms
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="DMS – Administratorhandbuch" class="md-nav__button md-logo" aria-label="DMS – Administratorhandbuch" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DMS – Administratorhandbuch
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/motom001/dms" title="Zum Repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    motom001/dms
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Überblick
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../neu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Neu in dieser Version
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation und Betrieb
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation und Betrieb
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Einrichtung und Betrieb
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/installieren/aktuell/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wie komme ich an ein DMS?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aktualisieren/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aktualisieren und Sichern
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wachsen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wachsen und umziehen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verschluesselung/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verschlüsselung
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Einrichten in der Werkbank
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Einrichten in der Werkbank
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../uebersicht/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Werkbank und Übersicht
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mappentypen
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mappentypen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Inhaltsverzeichnis">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Inhaltsverzeichnis
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#aufbau-des-editors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aufbau des Editors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grunddaten" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grunddaten
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#felder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Felder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Felder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#der-schlussel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Der Schlüssel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#referenzen-mappen-verbinden" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Referenzen: Mappen verbinden
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#passwortfelder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Passwortfelder
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#formatierter-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Formatierter Text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fristen-erinnerungen-an-datumsfeldern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fristen: Erinnerungen an Datumsfeldern
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wenn-sich-ein-mappentyp-andert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wenn sich ein Mappentyp ändert
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#titel-einer-mappe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Titel einer Mappe
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trefferlisten" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trefferlisten
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Register
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ziehen-statt-klicken" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ziehen statt klicken
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#systemmappentypen-benutzer-rolle-und-post" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Systemmappentypen: Benutzer, Rolle und Post
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#berechtigungen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Berechtigungen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mappentyp-kopieren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mappentyp kopieren
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mappentyp-loschen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mappentyp löschen
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sichten/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sichten
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../direktlinks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sprechende Links
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benutzer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benutzer und Rollen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../berechtigungen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Berechtigungen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../designs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Designs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aufgaben/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aufgaben
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../papierkorb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Papierkorb
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../texterkennung/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Texterkennung und Wartung
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo-Daten
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wartung und Notfall
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Wartung und Notfall
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sicherung/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sicherung
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wiederherstellen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wiederherstellen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wartungsmodus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wartungsmodus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../speicherplatz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Speicherplatz
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notfall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notfall: kein Admin mehr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fehlersuche und Support
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Fehlersuche und Support
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fehlersuche/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protokoll, Datenbank, Technik
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schnittstelle (API)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hintergrund
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hintergrund
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technik/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Technik
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../entscheidungen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entscheidungen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Weiteres
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Weiteres
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/motom001/dms/releases" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Was ist neu? (Changelog)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/benutzer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benutzerhandbuch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/installieren/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wie komme ich an ein DMS?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/entwickler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entwicklerhandbuch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Inhaltsverzeichnis">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Inhaltsverzeichnis
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#aufbau-des-editors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aufbau des Editors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grunddaten" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grunddaten
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#felder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Felder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Felder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#der-schlussel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Der Schlüssel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#referenzen-mappen-verbinden" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Referenzen: Mappen verbinden
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#passwortfelder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Passwortfelder
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#formatierter-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Formatierter Text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fristen-erinnerungen-an-datumsfeldern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fristen: Erinnerungen an Datumsfeldern
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wenn-sich-ein-mappentyp-andert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wenn sich ein Mappentyp ändert
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#titel-einer-mappe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Titel einer Mappe
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trefferlisten" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trefferlisten
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Register
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ziehen-statt-klicken" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ziehen statt klicken
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#systemmappentypen-benutzer-rolle-und-post" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Systemmappentypen: Benutzer, Rolle und Post
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#berechtigungen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Berechtigungen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mappentyp-kopieren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mappentyp kopieren
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mappentyp-loschen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mappentyp löschen
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="mappentypen">Mappentypen<a class="headerlink" href="#mappentypen" title="Permanent link">&para;</a></h1>
+<p>Ein <strong>Mappentyp</strong> legt fest, welche Art von Mappe es gibt – <em>Vertrag</em>, <em>Rechnung</em>, <em>Versicherung</em>, <em>Gerät</em> … – und was darin steht. Jeder Mappentyp erscheint in der Ablage als eigene Sicht.</p>
+<p>Mappentypen pflegst du unter <strong>Werkbank → Mappentypen</strong>. Mit <strong>+ Neu</strong> legst du einen an; ein Klick auf einen bestehenden öffnet ihn zum Bearbeiten.</p>
+<p><img alt="Mappentyp Vertrag in der Werkbank" src="../bilder/werkbank-mappentyp.png" /></p>
+<p>Wie Benutzer mit den Mappen arbeiten, beschreibt das <a href="https://motom001.github.io/dms/benutzer/mappen/">Benutzerhandbuch</a>.</p>
+<h2 id="aufbau-des-editors">Aufbau des Editors<a class="headerlink" href="#aufbau-des-editors" title="Permanent link">&para;</a></h2>
+<p>Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: <strong>Grunddaten → Felder → Titel → Trefferlisten → Register → Berechtigungen → Testlauf</strong>.</p>
+<ul>
+<li>Jeder Bereich lässt sich mit einem Klick auf seine Überschrift <strong>ein- und ausklappen</strong>. Eingeklappt zeigt er das Wichtigste in einer Zeile, z. B. „8 Felder, 2 Pflicht, 1 mit Erinnerung“, die Titel-Vorlage mit einem Beispiel oder „Standard: R · 3 Regeln“.</li>
+<li>Ein <strong>neuer</strong> Mappentyp ist ganz aufgeklappt, ein <strong>bestehender</strong> startet eingeklappt. Was du auf- oder zuklappst, merkt sich dein Gerät je Mappentyp.</li>
+<li>Die <strong>Sprungleiste</strong> oben führt zu jedem Bereich und klappt ihn auf; <strong>Alle aufklappen</strong> bzw. <strong>Alle zuklappen</strong> schaltet alle auf einmal.</li>
+<li>Bereiche mit einem <strong>Fehler</strong> sind in der Sprungleiste und am Rand rot markiert. Ein unbekannter Platzhalter im Titel oder eine unvollständige Regel fällt schon beim Tippen auf; was erst beim Speichern auffällt, klappt seinen Bereich von selbst auf.</li>
+</ul>
+<h2 id="grunddaten">Grunddaten<a class="headerlink" href="#grunddaten" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Name</strong> – so heißt die Sicht in der Ablage, z. B. „Vertrag“. Er lässt sich jederzeit ändern.</li>
+<li><strong>Schlüssel</strong> – fester, technischer Name, z. B. <code>vertrag</code>. Er wird aus dem Namen vorgeschlagen, lässt sich beim Anlegen ändern und ist nach dem ersten Speichern <strong>fest</strong>. <a href="../direktlinks/">Sprechende Links</a> und Skripte über die <a href="../api/">Schnittstelle</a> können ihn nutzen – so bleiben sie gültig, auch wenn der Mappentyp umbenannt wird. Die Systemtypen heißen <code>benutzer</code>, <code>rolle</code> und <code>post</code> (bis 0.40 hieß <em>Post</em> noch <em>E-Mail</em> mit dem Schlüssel <code>email</code>).</li>
+<li><strong>Beschreibung</strong> – steht über der Liste und hilft beim Einordnen.</li>
+</ul>
+<p>Beim <strong>Anlegen</strong> gibt es zusätzlich <strong>Eigene Sicht in der Ablage anlegen</strong> (standardmäßig an): Dann erscheint der neue Typ in der Ablage als eigene Sicht. Abwählen, wenn seine Mappen nur in einer bestehenden <a href="../sichten/">Sicht</a> erscheinen sollen.</p>
+<p>Wer Mappen anlegen oder löschen darf, regeln die <a href="../berechtigungen/">Berechtigungen</a> (Rechte C und D). Die früheren Haken <em>Neue Mappen erlauben</em> und <em>Löschen erlauben</em> gibt es seit Version 0.32 nicht mehr; sie wurden beim Update in die Berechtigungen übernommen.</p>
+<p><strong>Verwendet in</strong> (bei gespeicherten Typen) zeigt, wo der Mappentyp genutzt wird, jeweils mit Link: Sichten, die ihn zeigen, Referenzfelder anderer Mappentypen, die auf ihn verweisen, und Verknüpfungsregister anderer Typen, die seine Felder als Quelle nutzen. So siehst du vor einer Änderung, was davon betroffen ist. Steht dort „Nirgends verwendet“, hängt nichts an ihm.</p>
+<h2 id="felder">Felder<a class="headerlink" href="#felder" title="Permanent link">&para;</a></h2>
+<p>Jedes Feld hat eine <strong>Bezeichnung</strong> (änderbar), einen <strong>Schlüssel</strong> (fest, sobald gespeichert) und einen <strong>Datentyp</strong>. Ein Klick auf ein Feld öffnet es. Die Reihenfolge änderst du mit den Pfeilen oder per <strong>Drag &amp; Drop</strong> am Griff <strong>⠿</strong> (siehe <a href="#ziehen-statt-klicken">Ziehen statt klicken</a>).</p>
+<p><img alt="Ein Feld bearbeiten" src="../bilder/werkbank-feld.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Datentyp</th>
+<th>Eigenschaften</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Text</td>
+<td>Mindest- und Höchstlänge, Muster (regulärer Ausdruck, muss den ganzen Text treffen), eindeutig</td>
+</tr>
+<tr>
+<td>Langtext</td>
+<td>Mindest- und Höchstlänge</td>
+</tr>
+<tr>
+<td>Formatierter Text</td>
+<td>Mindest- und Höchstlänge (siehe unten)</td>
+</tr>
+<tr>
+<td>Zahl</td>
+<td>Minimum, Maximum, Nachkommastellen, eindeutig</td>
+</tr>
+<tr>
+<td>Betrag</td>
+<td>Minimum, Maximum, Standardwährung</td>
+</tr>
+<tr>
+<td>Datum</td>
+<td>–</td>
+</tr>
+<tr>
+<td>Ja/Nein</td>
+<td>–</td>
+</tr>
+<tr>
+<td>Auswahlliste</td>
+<td>die Auswahlwerte (einer pro Zeile), Mehrfachauswahl</td>
+</tr>
+<tr>
+<td>Referenz</td>
+<td>Ziel-Mappentyp, Art des Verweises, mehrere Mappen erlaubt</td>
+</tr>
+<tr>
+<td>Passwort</td>
+<td>– (wird verschlüsselt gespeichert, siehe unten)</td>
+</tr>
+</tbody>
+</table>
+<p>Für alle gilt: <strong>Pflichtfeld</strong> und ein <strong>Hilfetext</strong>, der beim Ausfüllen unter dem Feld steht; die meisten Typen haben außerdem einen <strong>Standardwert</strong> für neue Mappen. <strong>Eindeutig</strong> heißt: Den Wert darf es in diesem Mappentyp nur einmal geben – Groß- und Kleinschreibung zählen dabei nicht.</p>
+<h3 id="der-schlussel">Der Schlüssel<a class="headerlink" href="#der-schlussel" title="Permanent link">&para;</a></h3>
+<p>Unter dem Schlüssel speichert das DMS die Werte, und die <a href="../api/">Schnittstelle</a> verwendet ihn. Deshalb ist er nach dem ersten Speichern fest. Die Bezeichnung kannst du jederzeit ändern.</p>
+<h3 id="referenzen-mappen-verbinden">Referenzen: Mappen verbinden<a class="headerlink" href="#referenzen-mappen-verbinden" title="Permanent link">&para;</a></h3>
+<p>Ein Feld vom Typ <strong>Referenz</strong> verweist auf Mappen eines anderen Typs (oder desselben – so entstehen Hierarchien wie Haus → Heizung → Wärmepumpe). Wähle dazu:</p>
+<ul>
+<li><strong>Ziel-Mappentyp</strong> – worauf verwiesen wird, z. B. <em>Vertragspartner</em>. Auch <em>Benutzer</em> und <em>Rolle</em> sind möglich, z. B. für ein Feld „Verantwortlich“.</li>
+<li><strong>Mehrfach</strong> – ob mehrere Mappen gewählt werden können.</li>
+<li><strong>Verweisart:</strong><ul>
+<li><strong>Zugehörigkeit</strong> – „gehört zu“: Die Rechnung gehört zum Vertrag. Zählt später bei Auswertungen wie „alles zum Haus“ mit.</li>
+<li><strong>Bezug</strong> – „hat zu tun mit“: Die Rechnung kommt von diesem Aussteller. Nur eine Verknüpfung.</li>
+</ul>
+</li>
+</ul>
+<p>Auf eine Mappe, auf die noch verwiesen wird, kann niemand sie löschen.</p>
+<h3 id="passwortfelder">Passwortfelder<a class="headerlink" href="#passwortfelder" title="Permanent link">&para;</a></h3>
+<p>Ein Feld vom Typ <strong>Passwort</strong> nimmt z. B. das Kennwort eines Online-Zugangs auf. Das DMS speichert es verschlüsselt mit dem Schlüssel aus <strong>Werkbank → <a href="../verschluesselung/">Verschlüsselung</a></strong>; solange es keinen gibt, lässt sich kein Wert speichern, und das Feld weist darauf hin.</p>
+<ul>
+<li>In der Mappe steht nur „••••••••“. Das Auge zeigt das Passwort – und jedes Anzeigen steht im <a href="../fehlersuche/">Protokoll</a> mit Benutzer, Mappe und Feld, nie mit dem Wert.</li>
+<li>Passwortfelder erscheinen nie im Titel, in der Trefferliste, in der Suche, in Bedingungen von Sichten oder in Demo-Daten.</li>
+<li>Über die <a href="../api/">API</a> gibt es Passwörter nur mit einem Schlüssel, der das Recht „Passwörter lesen“ hat.</li>
+</ul>
+<h3 id="formatierter-text">Formatierter Text<a class="headerlink" href="#formatierter-text" title="Permanent link">&para;</a></h3>
+<p>Ein Feld vom Typ <strong>Formatierter Text</strong> nimmt längere Texte mit einfacher Formatierung auf: fett, kursiv, Überschriften, Listen, Zitate und Links. Benutzer schreiben mit einer kleinen Werkzeugleiste und sehen eine Vorschau; gespeichert wird der Text als Markdown.</p>
+<ul>
+<li>Rohes HTML gibt es nicht, und Links sind nur mit <code>http(s)</code> oder <code>mailto</code> möglich – ein Text kann so nichts im Browser ausführen.</li>
+<li>In Titel, Trefferliste und Suche erscheint der Text ohne Formatierung, in Listen gekürzt.</li>
+<li>Mit <strong>@</strong> lässt sich ein Benutzer erwähnen; er bekommt dann eine <a href="../aufgaben/">Aufgabe</a>.</li>
+<li>Ein bestehendes Langtextfeld kannst du auf <em>Formatierter Text</em> umstellen; die Texte bleiben, wie sie sind.</li>
+</ul>
+<h3 id="fristen-erinnerungen-an-datumsfeldern">Fristen: Erinnerungen an Datumsfeldern<a class="headerlink" href="#fristen-erinnerungen-an-datumsfeldern" title="Permanent link">&para;</a></h3>
+<p>An einem <strong>Datumsfeld</strong> wie „Kündigung bis“ oder „TÜV fällig“ kannst du <strong>Erinnern</strong> einschalten. Dann steht die Mappe rechtzeitig vor dem Datum als <strong>Frist</strong> im Eingang – und damit auch in der täglichen Zusammenfassung.</p>
+<p><img alt="Erinnerung an einem Datumsfeld" src="../bilder/werkbank-frist.png" /></p>
+<ul>
+<li><strong>Vorlauf</strong> – wie lange vorher, in Tagen, Wochen oder Monaten. Bei 4 Wochen und dem 30.09. erscheint die Frist am 02.09.</li>
+<li><strong>Für</strong> – der <strong>Ersteller der Mappe</strong> oder der Benutzer in einem Feld, das auf Benutzer verweist (z. B. „Verantwortlich“). Ist dieses Feld leer, bekommt der Ersteller die Erinnerung. Abwesenheit und Vertretung gelten wie bei allen <a href="../aufgaben/">Aufgaben</a>.</li>
+<li><strong>Text</strong> – mit den Platzhaltern <code>{feld}</code>, <code>{datum}</code> und <code>{titel}</code>; Standard ist „{feld} {datum}“, also z. B. „Kündigung bis 30.09.2027“.</li>
+<li><strong>Wiederkehrend</strong> – monatlich, vierteljährlich, halbjährlich, jährlich oder alle paar Jahre. Wer die Frist erledigt, bekommt den Vorschlag „Datum auf 30.09.2028 setzen“; das Datum ändert sich <strong>nie von selbst</strong>, und die Änderung steht wie jede andere im Protokoll der Mappe.</li>
+</ul>
+<p>So verhalten sich Fristen:</p>
+<ul>
+<li>Das DMS prüft die Fristen beim Speichern einer Mappe, nach Änderungen am Mappentyp und jeden Tag kurz nach Mitternacht. Je Mappe, Feld und Datum entsteht <strong>höchstens eine</strong> Frist – auch nach dem Erledigen nicht noch einmal.</li>
+<li>Wird das Datum <strong>geändert oder geleert</strong>, erledigt sich eine offene Frist von selbst (mit Eintrag im Protokoll der Mappe); für das neue Datum entsteht zur rechten Zeit eine neue.</li>
+<li>Daten, die schon vorbei sind, erzeugen keine Frist mehr.</li>
+<li>Darf der Empfänger die Mappe nach den <a href="../berechtigungen/">Berechtigungen</a> nicht lesen, bekommt er die Frist trotzdem; unter <em>Werkbank → Aufgaben</em> steht dann ein Hinweis.</li>
+<li>Eine zusätzliche E-Mail am Stichtag gibt es nicht – die Fristen stehen in der täglichen Zusammenfassung.</li>
+</ul>
+<h2 id="wenn-sich-ein-mappentyp-andert">Wenn sich ein Mappentyp ändert<a class="headerlink" href="#wenn-sich-ein-mappentyp-andert" title="Permanent link">&para;</a></h2>
+<p>Du kannst Mappentypen jederzeit ändern, auch wenn es schon Mappen gibt:</p>
+<ul>
+<li><strong>Felder entfernen</strong> löscht keine Werte. Sie bleiben an der Mappe und erscheinen dort als „Werte ohne Felddefinition“. Fügst du das Feld mit demselben Schlüssel wieder hinzu, sind sie wieder da.</li>
+<li><strong>Neue Pflichtfelder, strengere Regeln, entfernte Auswahlwerte:</strong> Mappen, die nicht mehr passen, werden markiert und bekommen eine <a href="../aufgaben/">Aufgabe</a> „Passt nicht“ für ihren Ersteller; so landen sie in seinem <a href="https://motom001.github.io/dms/benutzer/eingang/">Eingang</a>. Die Aufgabe erledigt sich, sobald die Mappe wieder passt. Nichts wird stillschweigend geändert. Über dem Mappentyp steht, wie viele Mappen betroffen sind.</li>
+</ul>
+<p><img alt="Eingang in der Ablage" src="../bilder/eingang.png" /></p>
+<h2 id="titel-einer-mappe">Titel einer Mappe<a class="headerlink" href="#titel-einer-mappe" title="Permanent link">&para;</a></h2>
+<p>Die <strong>Vorlage</strong> bestimmt, wie eine Mappe in Listen und Verweisen heißt, z. B. <code>{rechnungsnummer} vom {rechnungsdatum}</code>. Felder in geschweiften Klammern werden eingesetzt, alles andere bleibt stehen. Daneben gibt es <code>{angelegt}</code> und <code>{geaendert}</code> (jeweils das Datum). Die Vorschau zeigt das Ergebnis mit Beispielwerten oder mit den Werten einer echten Mappe.</p>
+<p>Verweist der Titel auf eine andere Mappe (<code>{vertragspartner}</code>), wird der Titel nachgezogen, wenn sich der Vertragspartner ändert.</p>
+<p>Ohne Vorlage verwendet das DMS das erste Textfeld.</p>
+<h2 id="trefferlisten">Trefferlisten<a class="headerlink" href="#trefferlisten" title="Permanent link">&para;</a></h2>
+<p>Eine <strong>Trefferliste</strong> legt fest, welche Angaben in einer Liste als Spalten erscheinen, und in welcher Reihenfolge – Felder und Systemwerte (Titel, angelegt/geändert am/von).</p>
+<ul>
+<li>Ist die Liste <strong>breit</strong>, wird sie zur sortierbaren Tabelle mit diesen Spalten.</li>
+<li>Ist sie <strong>schmal</strong>, bilden die ersten drei Spalten den kompakten Eintrag: die erste fett, die zweite und dritte darunter.</li>
+</ul>
+<p>Hat eine Trefferliste keine Spalten, zeigt die Ablage den Titel und zwei weitere Felder.</p>
+<p>Ein Mappentyp kann <strong>mehrere</strong> Trefferlisten haben, z. B. <em>Standard</em> mit allen Angaben und <em>Kurz</em> mit Titel, Betrag und <em>bezahlt</em>. Mit <strong>+ Trefferliste</strong> legst du eine weitere an (sie beginnt mit den Spalten der Standardliste).</p>
+<ul>
+<li>Jede Liste hat einen <strong>Namen</strong> und einen festen <strong>Schlüssel</strong>; über ihn wählen <a href="../sichten/#trefferliste">Sichten</a> und Verknüpfungsregister die Liste.</li>
+<li><strong>Genau eine</strong> ist <strong>Standard</strong>: Sie gilt überall, wo keine andere gewählt ist. Mindestens eine Liste bleibt immer.</li>
+<li>Unter jeder Liste steht, <strong>wo sie verwendet</strong> wird (Sichten, Register). Entfernst du eine verwendete Liste, gilt dort die Standardliste.</li>
+</ul>
+<p><img alt="Zwei Trefferlisten am Mappentyp Rechnung" src="../bilder/werkbank-trefferlisten.png" /></p>
+<p><img alt="Die Trefferliste als Tabelle in der Ablage" src="../bilder/tabelle.png" /></p>
+<h2 id="register">Register<a class="headerlink" href="#register" title="Permanent link">&para;</a></h2>
+<p>Register sind die Trennblätter einer Mappe, in der angegebenen Reihenfolge:</p>
+<table>
+<thead>
+<tr>
+<th>Art</th>
+<th>Inhalt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Feldregister</strong></td>
+<td>eine Gruppe von Feldern; welches Feld auf welchem Register liegt, stellst du am Feld ein</td>
+</tr>
+<tr>
+<td><strong>Dokumentenregister</strong></td>
+<td>hochgeladene Dateien; PDFs und Bilder sind direkt ansehbar. <strong>Volltext erzeugen</strong> (Standard: an) schickt neue Dokumente durch die <a href="../texterkennung/">Texterkennung</a></td>
+</tr>
+<tr>
+<td><strong>Verknüpfungsregister</strong></td>
+<td>Mappen, die auf diese Mappe verweisen – alle oder nur bestimmte (z. B. „Rechnungen“ nur über das Feld <em>Vertrag</em>). Als Quelle lässt sich auch <em>Post › Zugeordnet zu</em> wählen: Dann steht hier die Post, die dieser Mappe zugeordnet ist, z. B. verschickte E-Mails und eingegangene Briefe</td>
+</tr>
+<tr>
+<td><strong>Protokollregister</strong></td>
+<td>das Protokoll der Mappe: wer wann was geändert hat, mit altem und neuem Wert; dazu Dokumente, Papierkorb, Notizen, Aufgaben, E-Mails und angezeigte Passwörter (ohne Wert). Höchstens eins je Mappentyp</td>
+</tr>
+</tbody>
+</table>
+<p>Register haben feste Schlüssel, damit Dokumente ihr Register behalten, wenn es umbenannt wird. Ein Dokumentenregister, in dem schon Dokumente liegen, lässt sich nicht entfernen.</p>
+<p><strong>Verknüpfungsregister als Tabelle:</strong> Hakst du eine Quelle an, kannst du daneben eine <a href="#trefferlisten">Trefferliste</a> des Quelltyps wählen. Das Register zeigt die verweisenden Mappen dann als Tabelle mit deren Spalten (z. B. beim Vertragspartner die Rechnungen mit Betrag, Datum und <em>bezahlt</em>). Ohne Auswahl – oder wenn es die Liste nicht mehr gibt – bleibt es bei der einfachen Liste der Titel.</p>
+<h2 id="ziehen-statt-klicken">Ziehen statt klicken<a class="headerlink" href="#ziehen-statt-klicken" title="Permanent link">&para;</a></h2>
+<p>Felder, Register und die Spalten jeder Trefferliste haben einen <strong>Griff ⠿</strong>. Daran ziehst du einen Eintrag an eine andere Stelle; eine Linie zeigt, wo er landet. Ein <strong>Feld</strong> kannst du außerdem auf ein <strong>Feldregister</strong> ziehen – es liegt dann auf diesem Register.</p>
+<p>Das ändert nur den Entwurf; übernommen wird es wie alles andere mit <strong>Mappentyp speichern</strong>. Per Tastatur: Griff ansteuern und <strong>Alt+↑/↓</strong>. Am Smartphone den Griff lange antippen, dann ziehen. Die Pfeil-Knöpfe gibt es weiterhin.</p>
+<h2 id="systemmappentypen-benutzer-rolle-und-post">Systemmappentypen: Benutzer, Rolle und Post<a class="headerlink" href="#systemmappentypen-benutzer-rolle-und-post" title="Permanent link">&para;</a></h2>
+<p><em>Benutzer</em>, <em>Rolle</em> und <em>Post</em> sind <strong>Systemmappentypen</strong>, erkennbar am Kennzeichen <em>System</em>. Sie entstehen von selbst und lassen sich nicht löschen.</p>
+<p><img alt="Systemmappentyp Benutzer" src="../bilder/werkbank-systemtyp.png" /></p>
+<ul>
+<li>Du kannst sie um eigene Felder und Register erweitern, z. B. eine Telefonnummer.</li>
+<li>Ihre <strong>Systemfelder</strong> (Name, E-Mail-Adresse, Rollen, Aktiv bzw. Name der Rolle) sind fest: Bezeichnung, Hilfetext und Register darfst du ändern, Datentyp und Eigenschaften nicht.</li>
+<li>Mappen vom Typ <em>Benutzer</em> lassen sich in der Ablage weder anlegen noch löschen (Systemregel) – Benutzer entstehen in der Benutzerverwaltung.</li>
+<li><strong>Post</strong> ist alles, was ins DMS kommt oder hinausgeht (<a href="https://motom001.github.io/dms/benutzer/post/">Benutzerhandbuch: Post</a>). Systemfelder: <em>Betreff</em>, <em>Stand</em> (Neu, Zugeordnet, Erledigt), <em>Kanal</em> (Hochgeladen, E-Mail, Scan, Ordner, Import, API, WebDAV), <em>Richtung</em>, <em>Datum</em>, <em>Absender</em>, <em>Empfänger</em>, <em>Für</em>, <em>Zugeordnet zu</em> und <em>Nachricht</em>.<ul>
+<li>Post entsteht über <strong>+ Post</strong> in den Sichten mit Post, über die <a href="../api/">Schnittstelle</a> (<code>POST /api/v1/post</code>) und beim <a href="https://motom001.github.io/dms/benutzer/versenden/">Versenden per E-Mail</a>. Über das allgemeine Formular „+ Neu“ legt man keine Post an. Wer Post anlegen darf, regeln die <a href="../berechtigungen/">Berechtigungen</a> (C) wie bei jedem Typ.</li>
+<li><em>Kanal</em> hält das DMS fest, <em>Zugeordnet zu</em> setzt <strong>Zuordnen</strong>. Bei versendeten E-Mails sind auch Betreff, Empfänger, Absender, Datum, Nachricht und Richtung fest.</li>
+<li><em>Zugeordnet zu</em> darf als einziges Feld auf Mappen <em>jedes</em> Typs zeigen, auch auf mehrere. Wird eine dieser Mappen gelöscht, bleibt die Post erhalten; nur der Verweis entfällt.</li>
+<li><em>Für</em> verweist auf einen Benutzer: Solange die Post neu ist, hat er die Aufgabe <em>Neue Post</em> im Eingang.</li>
+<li>Beim ersten Start legt das DMS die Sichten <strong>Neue Post</strong> (ganz oben, Stand <em>Neu</em>) und unter <strong>Post</strong> die Sichten <strong>Eingegangen</strong> und <strong>Versendet</strong> an. Du kannst sie ändern, verschieben oder löschen; gelöschte kommen nicht wieder.</li>
+<li><strong>Aus E-Mail wird Post (0.41):</strong> Der frühere Systemtyp <em>E-Mail</em> wird beim Update zu <em>Post</em>. Vorhandene E-Mails bekommen Kanal <em>E-Mail</em>, Richtung <em>Ausgehend</em> und Stand <em>Erledigt</em>. Felder, Dokumente und Verweise bleiben erhalten; eigene Felder und Bezeichnungen auch. Sprechende Links mit <code>typ=email</code> funktionieren weiter.</li>
+</ul>
+</li>
+</ul>
+<p>Mehr dazu in <a href="../benutzer/">Benutzer und Rollen</a>.</p>
+<h2 id="berechtigungen">Berechtigungen<a class="headerlink" href="#berechtigungen" title="Permanent link">&para;</a></h2>
+<p>Unter den Registern legst du fest, wer Mappen dieses Typs anlegen, lesen, bearbeiten, löschen und Passwörter darin sehen darf – mit der Zeile <strong>Standard</strong> und Regeln. Gespeichert wird mit <strong>Mappentyp speichern</strong>; darunter probierst du die Regeln im <strong>Testlauf</strong> aus – auch ungespeicherte. Alles Weitere steht unter <a href="../berechtigungen/">Berechtigungen</a>.</p>
+<h2 id="mappentyp-kopieren">Mappentyp kopieren<a class="headerlink" href="#mappentyp-kopieren" title="Permanent link">&para;</a></h2>
+<p><strong>Mappentyp kopieren</strong> oben rechts legt einen neuen Mappentyp als <strong>Entwurf</strong> an – mit denselben Feldern, Titel, Trefferlisten, Registern und Berechtigungen. Er heißt „Kopie von …“ und bekommt einen eigenen Schlüssel; beides kannst du vor dem Speichern ändern. Angelegt wird er erst mit <strong>Mappentyp speichern</strong>. Mappen werden nicht kopiert. Felder, die auf den Typ selbst verweisen, zeigen in der Kopie auf die Kopie. Systemtypen lassen sich nicht kopieren.</p>
+<h2 id="mappentyp-loschen">Mappentyp löschen<a class="headerlink" href="#mappentyp-loschen" title="Permanent link">&para;</a></h2>
+<p><strong>Mappentyp löschen</strong> geht nur, solange es keine Mappen dieses Typs gibt und kein anderer Typ auf ihn verweist. Sonst nennt das DMS die Gründe.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Zurück zum Seitenanfang
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Fußzeile" >
+        
+          
+          <a href="../uebersicht/" class="md-footer__link md-footer__link--prev" aria-label="Zurück: Werkbank und Übersicht">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Zurück
+              </span>
+              <div class="md-ellipsis">
+                Werkbank und Übersicht
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../sichten/" class="md-footer__link md-footer__link--next" aria-label="Weiter: Sichten">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Weiter
+              </span>
+              <div class="md-ellipsis">
+                Sichten
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      DMS steht unter der AGPL-3.0 · <a href="https://github.com/sponsors/motom001">Projekt unterstützen</a>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/sponsors/motom001" target="_blank" rel="noopener" title="Projekt unterstützen (GitHub Sponsors)" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="m241 87.1 15 20.7 15-20.7C296 52.5 336.2 32 378.9 32 452.4 32 512 91.6 512 165.1v2.6c0 112.2-139.9 242.5-212.9 298.2-12.4 9.4-27.6 14.1-43.1 14.1s-30.8-4.6-43.1-14.1C139.9 410.2 0 279.9 0 167.7v-2.6C0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://github.com/motom001/dms" target="_blank" rel="noopener" title="Quellcode auf GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "In Zwischenablage kopiert", "clipboard.copy": "In Zwischenablage kopieren", "search.result.more.one": "1 weiteres Suchergebnis auf dieser Seite", "search.result.more.other": "# weitere Suchergebnisse auf dieser Seite", "search.result.none": "Keine Suchergebnisse", "search.result.one": "1 Suchergebnis", "search.result.other": "# Suchergebnisse", "search.result.placeholder": "Suchbegriff eingeben", "search.result.term.missing": "Es fehlt", "select.version": "Version ausw\u00e4hlen"}, "version": {"alias": true, "default": "aktuell", "provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

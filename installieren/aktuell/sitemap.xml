@@ -1,67 +1,71 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://motom001.github.io/dms/installieren/v0.41/</loc>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/installieren/v0.41/app-store/</loc>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/app-store/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/installieren/v0.41/beispiel/</loc>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/beispiel/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/installieren/v0.41/casaos/</loc>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/casaos/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/installieren/v0.41/docker/</loc>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/docker/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/installieren/v0.41/linux/</loc>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/komplett/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/installieren/v0.41/proxmox/</loc>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/linux/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/installieren/v0.41/qnap/</loc>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/proxmox/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/installieren/v0.41/raspberry-pi/</loc>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/qnap/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/installieren/v0.41/synology/</loc>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/raspberry-pi/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/installieren/v0.41/truenas/</loc>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/synology/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/installieren/v0.41/ugreen/</loc>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/truenas/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/installieren/v0.41/umbrel/</loc>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/ugreen/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/installieren/v0.41/unraid/</loc>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/umbrel/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/installieren/v0.41/windows/</loc>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/unraid/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/installieren/v0.41/zimaos/</loc>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/windows/</loc>
+         <lastmod>2026-10-30</lastmod>
+    </url>
+    <url>
+         <loc>https://motom001.github.io/dms/installieren/v0.42/zimaos/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
 </urlset>
