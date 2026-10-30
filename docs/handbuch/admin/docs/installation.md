@@ -2,7 +2,7 @@
 
 Wie du das DMS installierst – auf Synology, UGREEN, QNAP, TrueNAS, Unraid, umbrelOS, ZimaOS, CasaOS oder jedem Server mit Docker –, steht im eigenen Bereich **[Wie komme ich an ein DMS?](https://motom001.github.io/dms/installieren/aktuell/)**. Diese Seite beschreibt, was danach kommt: den Einrichtungsassistenten, die Anbindung an die Datenbank, Ordner, Einstellungen und den Betrieb hinter einem Reverse-Proxy.
 
-Das DMS läuft als zwei Container: die Anwendung (`ghcr.io/motom001/dms`) und PostgreSQL. Bei jedem Push auf `main` baut GitHub Actions ein neues Image (Tag `main`, zusätzlich je Commit ein Kurz-Hash und je Release die Versionsnummer).
+Das DMS läuft – **empfohlen** – als zwei Container: die Anwendung (`ghcr.io/motom001/dms`) und PostgreSQL (`postgres:17`). Alternativ gibt es **`ghcr.io/motom001/dms-komplett`**, in dem beides in einem Container läuft (Gegenüberstellung unter [Ein oder zwei Container?](https://motom001.github.io/dms/installieren/aktuell/#ein-oder-zwei-container)). Bei jedem Push auf `main` baut GitHub Actions beide Images neu (Tag `main`, zusätzlich je Commit ein Kurz-Hash und je Release die Versionsnummer).
 
 !!! warning "Erst einrichten, dann freigeben"
     Mach das DMS erst über einen Reverse-Proxy oder Port-Freigabe erreichbar, wenn die Einrichtung abgeschlossen ist. Der Einrichtungscode schützt zwar davor, dass ein Fremder sie übernimmt – sicherer ist es trotzdem.
@@ -14,7 +14,7 @@ Beim ersten Aufruf führt ein Assistent in neun Schritten durch die Einrichtung.
 ![Einrichtungscode](bilder/einrichtung-code.png)
 
 1. **Einrichtungscode.** Damit niemand sonst im Netz das DMS einrichtet, fragt es zuerst nach einem Code wie `K7PX-3MNA-Q9TR`. Er steht
-    - im **Protokoll des Containers** – in der Docker-Oberfläche des NAS den Container `app` des Projekts öffnen und das Protokoll ansehen (bei UGREEN *Docker → Container → dms-app → Protokoll*, bei Synology *Container Manager → Container → Details → Protokoll*) oder `docker compose logs app`;
+    - im **Protokoll des Containers** – in der Docker-Oberfläche des NAS den Container `app` des Projekts öffnen und das Protokoll ansehen (bei UGREEN *Docker → Container → dms-app → Protokoll*, bei Synology *Container Manager → Container → Details → Protokoll*) oder `docker compose logs app` (bei [dms-komplett](https://motom001.github.io/dms/installieren/aktuell/komplett/): `docker compose logs dms`);
     - in der Datei **`EINRICHTUNGSCODE`** im Ordner `geheim` (in der Vorlage `/volume1/docker/dms/geheim`).
 
     Nach dem Anlegen des Administrators ist der Code wertlos; das DMS löscht die Datei. Nach zehn falschen Versuchen sperrt es die Eingabe für zehn Minuten.

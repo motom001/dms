@@ -51,12 +51,28 @@ function zeilenAus(u: Systemuebersicht): Zeilen {
 }
 
 /** Markdown für ein GitHub-Issue. */
+/** #216: Was der Betreiber selbst aktualisiert – und was mit einem DMS-Update kommt. */
+const GRUPPEN = [['selbst', 'Von dir zu aktualisieren'], ['dms', 'Kommt mit dem DMS']] as const;
+function gruppiert(abgleich: Vergleich[]): Array<[string, Vergleich[]]> {
+  return GRUPPEN.map(([g, titel]) => [titel, abgleich.filter((v) => (v.gruppe ?? 'selbst') === g)]);
+}
+/** In „Kommt mit dem DMS“ ist Neueres keine Aufgabe für den Betreiber; nicht mehr unterstützt bleibt eine Warnung. */
+function statusVon(v: Vergleich): { text: string; art: string } {
+  if (v.gruppe === 'dms' && v.status === 'neuer') return { text: 'kommt mit DMS-Update', art: '' };
+  return STATUS[v.status];
+}
+const istAufgabe = (v: Vergleich) => ((v.gruppe ?? 'selbst') === 'selbst' && v.status === 'neuer') || v.status === 'veraltet';
+
 function alsText(z: Zeilen, abgleich: Vergleich[] | null): string {
   const t = ['### Systemangaben (DMS)', '', '| Bereich | Angabe | Wert |', '| --- | --- | --- |'];
   for (const [g, liste] of z) for (const [k, v] of liste) t.push(`| ${g} | ${k} | ${v.replace(/\|/g, '\\|')} |`);
   if (abgleich) {
     t.push('', '#### Versionsabgleich', '', '| Komponente | Installiert | Aktuell | Status |', '| --- | --- | --- | --- |');
-    for (const v of abgleich) t.push(`| ${v.komponente} | ${v.installiert ?? '–'} | ${v.aktuell ?? '–'} | ${STATUS[v.status].text} |`);
+    for (const [titel, liste] of gruppiert(abgleich)) {
+      if (!liste.length) continue;
+      t.push(`| **${titel}** | | | |`);
+      for (const v of liste) t.push(`| ${v.bezeichnung ?? v.komponente} | ${v.installiert ?? '–'} | ${v.aktuell ?? '–'} | ${statusVon(v).text} |`);
+    }
   }
   t.push('', `_Erstellt am ${new Date().toLocaleString('de-DE')}_`);
   return t.join('\n');
@@ -104,7 +120,9 @@ export function TechnikPanel({ t }: { t: TechnikZustand }) {
     try { await navigator.clipboard.writeText(text); setKopiert(true); setTimeout(() => setKopiert(false), 2500); }
     catch { setFehler('Kopieren nicht möglich (der Browser erlaubt die Zwischenablage nur über HTTPS oder localhost). Der Text steht unten zum Markieren.'); }
   }
-  const neuer = t.abgleich?.filter((v) => v.status === 'neuer' || v.status === 'veraltet').length ?? 0;
+  const aufgaben = t.abgleich?.filter(istAufgabe) ?? [];
+  const komplett = t.u?.dms.variante === 'komplett';
+  const imageName = komplett ? 'ghcr.io/motom001/dms-komplett' : 'ghcr.io/motom001/dms';
   return (
     <div className="einspaltig">
       <div className="mappenkopf">
@@ -127,23 +145,30 @@ export function TechnikPanel({ t }: { t: TechnikZustand }) {
         {fehler && !fehler.startsWith('Kopieren') && <p className="fehlertext">{fehler}</p>}
         {t.abgleich && (
           <>
-            <p className={neuer ? 'hinweis warn' : 'hinweis gut'}>{neuer ? `${neuer} ${neuer === 1 ? 'Komponente hat' : 'Komponenten haben'} Neueres oder wird nicht mehr unterstützt.` : 'Alles auf aktuellem Stand.'}</p>
-            <div className="tabellenrahmen">
-              <table className="tabelle">
-                <thead><tr><th>Komponente</th><th>Installiert</th><th>Aktuell</th><th>Status</th></tr></thead>
-                <tbody>
-                  {t.abgleich.map((v) => (
-                    <tr key={v.komponente}>
-                      <td>{v.komponente}{v.hinweis && <span className="leise klein blockzeile">{v.hinweis}</span>}</td>
-                      <td className="mono">{v.installiert ?? '–'}</td>
-                      <td className="mono">{v.aktuell ?? '–'}</td>
-                      <td><span className={`chip ${STATUS[v.status].art}`}>{STATUS[v.status].text}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="leise klein">Aktualisieren: Das Image <span className="mono">ghcr.io/motom001/dms:main</span> enthält Node.js, Alpine und die Bibliotheken. Neu ziehen und den Container neu starten genügt; PostgreSQL ist ein eigenes Image.</p>
+            <p className={aufgaben.length ? 'hinweis warn' : 'hinweis gut'}>{aufgaben.length
+              ? aufgaben.map((v) => v.status === 'veraltet' ? `${v.bezeichnung ?? v.komponente} wird nicht mehr unterstützt.` : v.komponente === 'DMS' ? 'Eine neuere DMS-Version ist verfügbar.' : `Für ${v.bezeichnung ?? v.komponente} gibt es ein Update.`).join(' ')
+              : 'Für dich ist nichts zu tun.'}</p>
+            {gruppiert(t.abgleich).map(([titel, liste]) => liste.length > 0 && (
+              <div key={titel}>
+                <p className="ueber abstand-oben">{titel}</p>
+                <div className="tabellenrahmen">
+                  <table className="tabelle">
+                    <thead><tr><th>Komponente</th><th>Installiert</th><th>Aktuell</th><th>Status</th></tr></thead>
+                    <tbody>
+                      {liste.map((v) => { const s = statusVon(v); return (
+                        <tr key={v.komponente}>
+                          <td>{v.bezeichnung ?? v.komponente}{v.hinweis && <span className="leise klein blockzeile">{v.hinweis}</span>}</td>
+                          <td className="mono">{v.installiert ?? '–'}</td>
+                          <td className="mono">{v.aktuell ?? '–'}</td>
+                          <td><span className={`chip ${s.art}`}>{s.text}</span></td>
+                        </tr>
+                      ); })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+            <p className="leise klein">Aktualisieren: Das Image <span className="mono">{imageName}</span> enthält Node.js, Alpine und die Bibliotheken{komplett ? ' – und PostgreSQL' : ''}. Neu ziehen und den Container neu starten genügt.{komplett ? '' : ' PostgreSQL ist ein eigenes Image (postgres:17), das du getrennt neu ziehst.'} Die Bibliotheken aktualisiert das Projekt; sie kommen mit dem nächsten DMS-Update.</p>
           </>
         )}
       </div>

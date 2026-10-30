@@ -21,6 +21,24 @@ Ohne Docker für das DMS selbst legt der Server seine festen Ordner (`files`, `g
 
 Alles zusammen als Container: `docker compose up --build`, dann http://localhost:8080.
 
+### Zwei Images aus einem Dockerfile
+
+Das `Dockerfile` hat zwei Ziele (#208):
+
+| Ziel | Image | Inhalt |
+| --- | --- | --- |
+| `dms` (Standard) | `ghcr.io/motom001/dms` | nur das DMS; PostgreSQL läuft daneben (empfohlen) |
+| `komplett` | `ghcr.io/motom001/dms-komplett` | DMS und PostgreSQL 17 in einem Container, Start über `deploy/komplett/start.sh` (tini) |
+
+```sh
+docker build -t dms .                                  # schlank
+docker build --target komplett -t dms-komplett .       # mit PostgreSQL
+deploy/komplett-probe.sh dms-komplett                  # Probe wie in der CI: Einrichten, Neustart, Stopp, Absturz, Versionsprüfung
+deploy/vorlagen-probe.sh dms                           # NAS-Vorlagen mit dem schlanken Image
+```
+
+`deploy/` ist bis auf `deploy/komplett/start.sh` vom Docker-Build ausgeschlossen (`.dockerignore`). Die CI baut beide Images für amd64 und arm64, bei jedem Pull Request mit Probe; auf `main` und jede Woche (neue Alpine-Pakete) werden beide veröffentlicht.
+
 ## Prüfen
 
 | Befehl | Was |

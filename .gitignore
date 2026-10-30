@@ -9,3 +9,6 @@ dist/
 /docs/handbuch/*/docs/bilder/
 /docs/handbuch/admin/docs/api/
 /site/
+
+# Erzeugt im Handbuch-Workflow (#213)
+docs/handbuch/admin/docs/vorlagen/

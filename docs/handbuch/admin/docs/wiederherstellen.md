@@ -16,7 +16,7 @@ Eine [Sicherung](sicherung.md) spielst du in der Werkbank ein – ohne Kommandoz
 Du brauchst: die beiden Sicherungsdateien (`.dms-sicherung` und `.json`) und das [Notfallblatt](sicherung.md#notfallblatt).
 
 1. Auf dem neuen NAS den Ordner für das DMS anlegen, darin `postgres`, `files`, `geheim` und `sicherung` (siehe [Installation](installation.md)).
-2. Die [Compose-Vorlage](https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml) als Projekt anlegen, Pfade anpassen und eine `.env` mit einem neuen `DB_PASSWORD` ablegen.
+2. Das DMS neu installieren, wie unter [Wie komme ich an ein DMS?](https://motom001.github.io/dms/installieren/aktuell/) beschrieben – empfohlen mit zwei Containern (z. B. die [Compose-Vorlage](https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml) mit einer `.env` mit neuem `DB_PASSWORD`), oder mit [dms-komplett](https://motom001.github.io/dms/installieren/aktuell/komplett/) ohne Passwort.
 3. Die beiden Sicherungsdateien in den Ordner `sicherung` kopieren.
 4. Das Projekt starten und das DMS im Browser öffnen. Der [Einrichtungsassistent](installation.md#der-einrichtungsassistent) fragt nach dem **Einrichtungscode** und – falls nötig – nach der Datenbank. Dann **Aus einer Sicherung wiederherstellen** wählen; einen „Wegwerf-Admin“ brauchst du nicht.
 5. Die Sicherung auswählen. Der **Abgleich** zeigt, mit welcher Version sie entstand und was heute läuft (DMS, Datenbank-Stand, PostgreSQL, Architektur, Mandanten-Id). Gehört die Sicherung zu einem anderen Mandanten, übernimmt das DMS dessen Id.

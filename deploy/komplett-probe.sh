@@ -38,7 +38,7 @@ starte; warte
 s=$(curl -fsS "http://127.0.0.1:$PORT/api/konto/status"); echo "$s" | jq -c '{einrichtungNoetig, einrichtung}'
 [ "$(echo "$s" | jq -r '.einrichtung.phase')" = konto ] || fehler "Assistent beginnt nicht beim Mandanten (Datenbank nicht angebunden?)"
 sudo test -s "$arbeit/postgres/daten/PG_VERSION" || fehler "keine Datenbank unter /data/postgres/daten"
-echo "PostgreSQL $(sudo cat "$arbeit/postgres/daten/PG_VERSION")"
+echo "::notice::dms-komplett enthält $(docker exec "$NAME" postgres --version)"
 echo "::endgroup::"; echo "::notice::dms-komplett: Schritt erledigt"
 
 echo "::group::2. Einrichten und Neustart"

@@ -126,7 +126,23 @@ export interface Vergleich {
   status: 'aktuell' | 'neuer' | 'veraltet' | 'unbekannt';
   hinweis?: string;
   quelle: string;
+  /**
+   * #216: „selbst“ = der Betreiber aktualisiert (DMS-Image, bei zwei Containern PostgreSQL);
+   * „dms“ = kommt mit einem DMS-Update (Node.js, Alpine, Bibliotheken; PostgreSQL in dms-komplett).
+   */
+  gruppe?: 'selbst' | 'dms';
+  /** Verständliche Bezeichnung, z. B. „postgres.js (Datenbank-Treiber)“; komponente bleibt der feste Schlüssel. */
+  bezeichnung?: string;
 }
+
+/** #216: Wofür die Bibliotheken da sind – „postgres“ ist der Treiber, nicht die Datenbank. */
+export const BEZEICHNUNGEN: Record<string, string> = {
+  fastify: 'fastify (Webserver)',
+  '@fastify/static': '@fastify/static (Auslieferung der Oberfläche)',
+  postgres: 'postgres.js (Datenbank-Treiber)',
+  nodemailer: 'nodemailer (E-Mail-Versand)',
+  react: 'react (Oberfläche)',
+};
 
 type Abruf = (url: string) => Promise<unknown>;
 
@@ -243,7 +259,8 @@ async function dmsSelbst(abruf: Abruf, u: Uebersicht): Promise<Vergleich> {
 /** Alle Komponenten parallel abgleichen; Fehler je Komponente statt insgesamt. */
 export async function versionsabgleich(u: Uebersicht, browser: Record<string, string> = {}, abruf: Abruf = (url) => holeJson(url)): Promise<Vergleich[]> {
   const pg = 'version' in u.datenbank ? u.datenbank.version.split(' ')[0] : null;
-  return Promise.all([
+  const komplett = u.dms.variante === 'komplett';
+  const [dms, node, postgresql, ...rest] = await Promise.all([
     dmsSelbst(abruf, u),
     zyklus(abruf, 'nodejs', 'Node.js', u.laufzeit.node),
     zyklus(abruf, 'postgresql', 'PostgreSQL', pg),
@@ -251,4 +268,16 @@ export async function versionsabgleich(u: Uebersicht, browser: Record<string, st
     ...Object.entries(u.bibliotheken).map(([n, v]) => npmPaket(abruf, n, v)),
     ...Object.entries(browser).filter(([n]) => n === 'react').map(([n, v]) => npmPaket(abruf, n, v)),
   ]);
+  // PostgreSQL (#214, #216): Bei zwei Containern zieht der Betreiber das Image selbst; in dms-komplett kommt es mit dem DMS.
+  if (postgresql.status === 'neuer') {
+    postgresql.hinweis = [postgresql.hinweis, komplett
+      ? 'Kommt mit dem nächsten Image dms-komplett (ghcr.io/motom001/dms-komplett neu ziehen, sobald es erschienen ist).'
+      : `Zum Aktualisieren das Image postgres:${(pg ?? '').split('.')[0] || '17'} neu ziehen und den Datenbank-Container neu starten.`].filter(Boolean).join(' ');
+  }
+  return [
+    { ...dms, gruppe: 'selbst' as const },
+    { ...postgresql, gruppe: komplett ? 'dms' as const : 'selbst' as const, ...(komplett ? { bezeichnung: 'PostgreSQL (im Container dms-komplett)' } : {}) },
+    { ...node, gruppe: 'dms' as const },
+    ...rest.map((v) => ({ ...v, gruppe: 'dms' as const, ...(BEZEICHNUNGEN[v.komponente] ? { bezeichnung: BEZEICHNUNGEN[v.komponente] } : {}) })),
+  ];
 }

@@ -123,10 +123,24 @@ describe('Versionsübersicht', () => {
     assert.equal(g.status, 'aktuell');
     assert.match(g.hinweis!, /Auf main gibt es 3 neuere Änderungen, die noch in keinem Release sind/);
     assert.equal(v('Node.js').status, 'veraltet');
+    // #216: Gruppen und Bezeichnungen; PostgreSQL bei zwei Containern „selbst“, mit Hinweis aufs Image.
+    assert.equal(v('DMS').gruppe, 'selbst');
+    assert.equal(v('Node.js').gruppe, 'dms');
+    assert.equal(v('PostgreSQL').gruppe, 'selbst');
+    assert.equal(v('postgres').bezeichnung, 'postgres.js (Datenbank-Treiber)');
+    assert.equal(v('postgres').gruppe, 'dms');
     assert.equal(v('PostgreSQL').status, 'aktuell');
     assert.match(v('PostgreSQL').hinweis!, /Neueste Reihe: 18/);
     assert.equal(v('fastify').status, 'unbekannt');
     assert.match(v('fastify').hinweis!, /503/);
     assert.equal(v('react').status, 'aktuell');
+    // Neueres PostgreSQL in der Reihe: Hinweis je Variante (#214, #216).
+    const pgNeuer = async (url: string): Promise<unknown> => (url.endsWith('/postgresql.json') ? [{ cycle: '17', latest: '17.9', eol: '2029-11-08' }] : abruf(url));
+    const getrennt = (await versionsabgleich(u, {}, pgNeuer)).find((x) => x.komponente === 'PostgreSQL')!;
+    assert.equal(getrennt.status, 'neuer');
+    assert.match(getrennt.hinweis!, /Image postgres:17 neu ziehen/);
+    const komplett = (await versionsabgleich({ ...u, dms: { ...u.dms, variante: 'komplett' } }, {}, pgNeuer)).find((x) => x.komponente === 'PostgreSQL')!;
+    assert.equal(komplett.gruppe, 'dms');
+    assert.match(komplett.hinweis!, /nächsten Image dms-komplett/);
   });
 });

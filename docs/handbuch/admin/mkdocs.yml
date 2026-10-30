@@ -85,6 +85,7 @@ nav:
       - Wartungsmodus: wartungsmodus.md
       - Speicherplatz: speicherplatz.md
       - "Notfall: kein Admin mehr": notfall.md
+      - Verfahrensdokumentation (Vorlage): verfahrensdokumentation.md
   - Fehlersuche und Support:
       - Protokoll, Datenbank, Technik: fehlersuche.md
   - Schnittstelle (API): api.md

@@ -6,6 +6,10 @@ on:
     tags: ['v*']
   pull_request:
   workflow_dispatch:
+  # Jede Woche neu bauen (#214): neue Alpine-Pakete (Tesseract, PostgreSQL in dms-komplett) auch ohne neues Release.
+  # Ergibt nur das Tag main (und den Kurz-Hash); Versionsnummern bleiben unverändert.
+  schedule:
+    - cron: '17 3 * * 1'
 
 permissions:
   contents: read
@@ -171,7 +175,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: zeit
-        run: echo "jetzt=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "jetzt=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          echo "woche=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
       - id: bau
         uses: docker/build-push-action@v6
         with:
@@ -179,6 +185,7 @@ jobs:
           build-args: |
             DMS_COMMIT=${{ github.sha }}
             DMS_GEBAUT=${{ steps.zeit.outputs.jetzt }}
+            APK_WOCHE=${{ steps.zeit.outputs.woche }}
           target: ${{ matrix.variante }}
           platforms: ${{ matrix.plattform }}
           outputs: type=image,name=ghcr.io/${{ github.repository_owner }}/${{ matrix.image }},push-by-digest=true,name-canonical=true,push=true
@@ -226,6 +233,7 @@ jobs:
           images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
           tags: |
             type=ref,event=branch
+            type=raw,value=main,enable=${{ github.event_name == 'schedule' }}
             type=semver,pattern={{version}}
             type=sha,format=short
             type=raw,value=${{ needs.version.outputs.version }},enable=${{ needs.version.outputs.neu == 'true' }}

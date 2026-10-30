@@ -17,7 +17,7 @@ Während des Neustarts ist das DMS kurz nicht erreichbar. Offene Seiten zeigen d
 Welche Version läuft und ob es neuere gibt, zeigt **Werkbank → Technik** (siehe [Fehlersuche](fehlersuche.md#technik)).
 
 !!! tip "Auf einer festen Version bleiben"
-    Statt `ghcr.io/motom001/dms:main` kannst du in der Compose-Datei eine Versionsnummer angeben, z. B. `ghcr.io/motom001/dms:0.8.0`. Dann ändert sich nichts, bis du die Nummer selbst erhöhst.
+    Statt `ghcr.io/motom001/dms:main` kannst du in der Compose-Datei eine Versionsnummer angeben, z. B. `ghcr.io/motom001/dms:0.8.0` – bzw. `ghcr.io/motom001/dms-komplett:0.42.0`. Dann ändert sich nichts, bis du die Nummer selbst erhöhst. Bei zwei Containern bleibt `postgres:17` trotzdem für Sicherheits-Updates der Reihe 17 offen.
 
 ### Datenbank-Anbindung und Mandant (ab 0.24)
 

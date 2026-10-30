@@ -2,6 +2,8 @@
 
 Diese Seite gilt für jedes Gerät ohne eigene Anleitung; eigene Seiten gibt es für einen [PC mit Linux](linux.md), den [Raspberry Pi](raspberry-pi.md), [Windows](windows.md) und [Proxmox und Co.](proxmox.md). Das DMS braucht **Docker mit Docker Compose**. Die Images sind öffentlich (amd64 und arm64), eine Anmeldung bei der Registry ist nicht nötig.
 
+Empfohlen sind **zwei Container** (DMS und PostgreSQL); die Gegenüberstellung steht unter [Ein oder zwei Container?](index.md#ein-oder-zwei-container). Wer nur ausprobieren will oder nur einen Container betreiben kann, nimmt [dms-komplett](komplett.md).
+
 ## Mit der Kommandozeile
 
 ```sh
@@ -22,5 +24,5 @@ Nimm die Vorlage [`deploy/synology/docker-compose.yml`](https://github.com/motom
 ## Gut zu wissen
 
 - **Ordner:** `files`, `geheim`, `sicherung` und `postgres` müssen auf dem Server liegen (Volumes). Sonst sind sie beim nächsten Update weg. Mehr unter [Ordner und Volumes](https://motom001.github.io/dms/admin/aktuell/installation/#ordner-und-volumes).
-- **Updates:** `docker compose pull && docker compose up -d`. Mit einer Versionsnummer statt `main`, z. B. `ghcr.io/motom001/dms:0.39.0`, bleibt die Installation auf diesem Release. Siehe [Aktualisieren](https://motom001.github.io/dms/admin/aktuell/aktualisieren/).
+- **Updates:** `docker compose pull && docker compose up -d` – das holt das DMS und PostgreSQL (`postgres:17`) neu. Mit einer Versionsnummer statt `main`, z. B. `ghcr.io/motom001/dms:0.39.0`, bleibt die Installation auf diesem Release. Siehe [Aktualisieren](https://motom001.github.io/dms/admin/aktuell/aktualisieren/).
 - **Von außen erreichbar** erst nach der Einrichtung, am besten mit HTTPS über einen Reverse-Proxy: [Hinter einem Reverse-Proxy](https://motom001.github.io/dms/admin/aktuell/installation/#hinter-einem-reverse-proxy).
