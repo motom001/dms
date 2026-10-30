@@ -792,10 +792,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#systemmappentypen-benutzer-rolle-und-e-mail" class="md-nav__link">
+  <a href="#systemmappentypen-benutzer-rolle-und-post" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Systemmappentypen: Benutzer, Rolle und E-Mail
+        Systemmappentypen: Benutzer, Rolle und Post
       
     </span>
   </a>
@@ -1878,10 +1878,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#systemmappentypen-benutzer-rolle-und-e-mail" class="md-nav__link">
+  <a href="#systemmappentypen-benutzer-rolle-und-post" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Systemmappentypen: Benutzer, Rolle und E-Mail
+        Systemmappentypen: Benutzer, Rolle und Post
       
     </span>
   </a>
@@ -1957,7 +1957,7 @@
 <h2 id="grunddaten">Grunddaten<a class="headerlink" href="#grunddaten" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Name</strong> – so heißt die Sicht in der Ablage, z. B. „Vertrag“. Er lässt sich jederzeit ändern.</li>
-<li><strong>Schlüssel</strong> – fester, technischer Name, z. B. <code>vertrag</code>. Er wird aus dem Namen vorgeschlagen, lässt sich beim Anlegen ändern und ist nach dem ersten Speichern <strong>fest</strong>. <a href="../direktlinks/">Sprechende Links</a> und Skripte über die <a href="../api/">Schnittstelle</a> können ihn nutzen – so bleiben sie gültig, auch wenn der Mappentyp umbenannt wird. Die Systemtypen heißen <code>benutzer</code>, <code>rolle</code> und <code>email</code>.</li>
+<li><strong>Schlüssel</strong> – fester, technischer Name, z. B. <code>vertrag</code>. Er wird aus dem Namen vorgeschlagen, lässt sich beim Anlegen ändern und ist nach dem ersten Speichern <strong>fest</strong>. <a href="../direktlinks/">Sprechende Links</a> und Skripte über die <a href="../api/">Schnittstelle</a> können ihn nutzen – so bleiben sie gültig, auch wenn der Mappentyp umbenannt wird. Die Systemtypen heißen <code>benutzer</code>, <code>rolle</code> und <code>post</code> (bis 0.40 hieß <em>Post</em> noch <em>E-Mail</em> mit dem Schlüssel <code>email</code>).</li>
 <li><strong>Beschreibung</strong> – steht über der Liste und hilft beim Einordnen.</li>
 </ul>
 <p>Beim <strong>Anlegen</strong> gibt es zusätzlich <strong>Eigene Sicht in der Ablage anlegen</strong> (standardmäßig an): Dann erscheint der neue Typ in der Ablage als eigene Sicht. Abwählen, wenn seine Mappen nur in einer bestehenden <a href="../sichten/">Sicht</a> erscheinen sollen.</p>
@@ -2109,7 +2109,7 @@
 </tr>
 <tr>
 <td><strong>Verknüpfungsregister</strong></td>
-<td>Mappen, die auf diese Mappe verweisen – alle oder nur bestimmte (z. B. „Rechnungen“ nur über das Feld <em>Vertrag</em>). Als Quelle lässt sich auch <em>E-Mail › Bezug</em> wählen: Dann stehen hier die aus der Mappe verschickten E-Mails</td>
+<td>Mappen, die auf diese Mappe verweisen – alle oder nur bestimmte (z. B. „Rechnungen“ nur über das Feld <em>Vertrag</em>). Als Quelle lässt sich auch <em>Post › Zugeordnet zu</em> wählen: Dann steht hier die Post, die dieser Mappe zugeordnet ist, z. B. verschickte E-Mails und eingegangene Briefe</td>
 </tr>
 <tr>
 <td><strong>Protokollregister</strong></td>
@@ -2122,14 +2122,22 @@
 <h2 id="ziehen-statt-klicken">Ziehen statt klicken<a class="headerlink" href="#ziehen-statt-klicken" title="Permanent link">&para;</a></h2>
 <p>Felder, Register und die Spalten jeder Trefferliste haben einen <strong>Griff ⠿</strong>. Daran ziehst du einen Eintrag an eine andere Stelle; eine Linie zeigt, wo er landet. Ein <strong>Feld</strong> kannst du außerdem auf ein <strong>Feldregister</strong> ziehen – es liegt dann auf diesem Register.</p>
 <p>Das ändert nur den Entwurf; übernommen wird es wie alles andere mit <strong>Mappentyp speichern</strong>. Per Tastatur: Griff ansteuern und <strong>Alt+↑/↓</strong>. Am Smartphone den Griff lange antippen, dann ziehen. Die Pfeil-Knöpfe gibt es weiterhin.</p>
-<h2 id="systemmappentypen-benutzer-rolle-und-e-mail">Systemmappentypen: Benutzer, Rolle und E-Mail<a class="headerlink" href="#systemmappentypen-benutzer-rolle-und-e-mail" title="Permanent link">&para;</a></h2>
-<p><em>Benutzer</em>, <em>Rolle</em> und <em>E-Mail</em> sind <strong>Systemmappentypen</strong>, erkennbar am Kennzeichen <em>System</em>. Sie entstehen von selbst und lassen sich nicht löschen.</p>
+<h2 id="systemmappentypen-benutzer-rolle-und-post">Systemmappentypen: Benutzer, Rolle und Post<a class="headerlink" href="#systemmappentypen-benutzer-rolle-und-post" title="Permanent link">&para;</a></h2>
+<p><em>Benutzer</em>, <em>Rolle</em> und <em>Post</em> sind <strong>Systemmappentypen</strong>, erkennbar am Kennzeichen <em>System</em>. Sie entstehen von selbst und lassen sich nicht löschen.</p>
 <p><img alt="Systemmappentyp Benutzer" src="../bilder/werkbank-systemtyp.png" /></p>
 <ul>
 <li>Du kannst sie um eigene Felder und Register erweitern, z. B. eine Telefonnummer.</li>
 <li>Ihre <strong>Systemfelder</strong> (Name, E-Mail-Adresse, Rollen, Aktiv bzw. Name der Rolle) sind fest: Bezeichnung, Hilfetext und Register darfst du ändern, Datentyp und Eigenschaften nicht.</li>
 <li>Mappen vom Typ <em>Benutzer</em> lassen sich in der Ablage weder anlegen noch löschen (Systemregel) – Benutzer entstehen in der Benutzerverwaltung.</li>
-<li>Mappen vom Typ <em>E-Mail</em> entstehen, wenn jemand eine Mappe <a href="https://motom001.github.io/dms/benutzer/versenden/">per E-Mail versendet</a>: mit Betreff, Empfängern, Absender, Datum, Nachricht, den Anhängen und dem <strong>Bezug</strong> auf die Mappe, aus der sie kam. Anlegen lassen sie sich in der Ablage nicht (Systemregel); löschen lassen sie sich wie andere Mappen. Der Bezug darf als einziges Feld auf Mappen <em>jedes</em> Typs zeigen. Wird die Ursprungsmappe gelöscht, bleibt die E-Mail erhalten und ihr Bezug wird leer. Später sollen hier auch E-Mails landen, die das DMS aus einem Postfach abholt.</li>
+<li><strong>Post</strong> ist alles, was ins DMS kommt oder hinausgeht (<a href="https://motom001.github.io/dms/benutzer/post/">Benutzerhandbuch: Post</a>). Systemfelder: <em>Betreff</em>, <em>Stand</em> (Neu, Zugeordnet, Erledigt), <em>Kanal</em> (Hochgeladen, E-Mail, Scan, Ordner, Import, API, WebDAV), <em>Richtung</em>, <em>Datum</em>, <em>Absender</em>, <em>Empfänger</em>, <em>Für</em>, <em>Zugeordnet zu</em> und <em>Nachricht</em>.<ul>
+<li>Post entsteht über <strong>+ Post</strong> in den Sichten mit Post, über die <a href="../api/">Schnittstelle</a> (<code>POST /api/v1/post</code>) und beim <a href="https://motom001.github.io/dms/benutzer/versenden/">Versenden per E-Mail</a>. Über das allgemeine Formular „+ Neu“ legt man keine Post an. Wer Post anlegen darf, regeln die <a href="../berechtigungen/">Berechtigungen</a> (C) wie bei jedem Typ.</li>
+<li><em>Kanal</em> hält das DMS fest, <em>Zugeordnet zu</em> setzt <strong>Zuordnen</strong>. Bei versendeten E-Mails sind auch Betreff, Empfänger, Absender, Datum, Nachricht und Richtung fest.</li>
+<li><em>Zugeordnet zu</em> darf als einziges Feld auf Mappen <em>jedes</em> Typs zeigen, auch auf mehrere. Wird eine dieser Mappen gelöscht, bleibt die Post erhalten; nur der Verweis entfällt.</li>
+<li><em>Für</em> verweist auf einen Benutzer: Solange die Post neu ist, hat er die Aufgabe <em>Neue Post</em> im Eingang.</li>
+<li>Beim ersten Start legt das DMS die Sichten <strong>Neue Post</strong> (ganz oben, Stand <em>Neu</em>) und unter <strong>Post</strong> die Sichten <strong>Eingegangen</strong> und <strong>Versendet</strong> an. Du kannst sie ändern, verschieben oder löschen; gelöschte kommen nicht wieder.</li>
+<li><strong>Aus E-Mail wird Post (0.41):</strong> Der frühere Systemtyp <em>E-Mail</em> wird beim Update zu <em>Post</em>. Vorhandene E-Mails bekommen Kanal <em>E-Mail</em>, Richtung <em>Ausgehend</em> und Stand <em>Erledigt</em>. Felder, Dokumente und Verweise bleiben erhalten; eigene Felder und Bezeichnungen auch. Sprechende Links mit <code>typ=email</code> funktionieren weiter.</li>
+</ul>
+</li>
 </ul>
 <p>Mehr dazu in <a href="../benutzer/">Benutzer und Rollen</a>.</p>
 <h2 id="berechtigungen">Berechtigungen<a class="headerlink" href="#berechtigungen" title="Permanent link">&para;</a></h2>
