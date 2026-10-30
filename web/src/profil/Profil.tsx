@@ -106,7 +106,6 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
       </div>
 
       {bereich === 'konto' && <>
-      <MeineRechte admin={ich.rolle === 'admin'} />
       <form className="blatt" onSubmit={fName.absenden}>
         <h2 className="h3">Name</h2>
         <label className="eigenschaft"><span>So erscheinst du bei „angelegt von“</span><input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></label>
@@ -124,6 +123,9 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
         {fEmail.anzeige}
         <div className="knoepfe"><button className="knopf primaer" disabled={fEmail.sendet || email === ich.email || !pwEmail}>Adresse ändern</button></div>
       </form>
+
+      {/* Nur zum Nachlesen – deshalb unter den Formularen (#198). */}
+      <MeineRechte admin={ich.rolle === 'admin'} />
 
       </>}
 
