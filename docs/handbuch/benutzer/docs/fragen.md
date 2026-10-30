@@ -28,7 +28,7 @@
     Im Profil unter **Ansicht auf diesem Gerät** → **Standard-Ansicht wiederherstellen**. Oder kurz auf den Griff zwischen den Spalten klicken – das klappt eingeklappte Bereiche wieder auf.
 
 ??? question "Die Schrift ist zu klein."
-    Menü unter deinem Namen → **Einstellungen** → **Schriftgröße auf diesem Gerät** → *groß*.
+    Menü unter deinem Namen → **Mein Konto** → **Darstellung** → **Schriftgröße auf diesem Gerät** → *groß*.
 
 ??? question "Ich sehe einen Hinweis „Wartung“."
     Ein Administrator wartet das DMS, z. B. für ein Update. Speichere deine Arbeit, bevor der Countdown abläuft – dann wirst du abgemeldet. Anmelden kannst du dich wieder, sobald die Wartung vorbei ist; die Anmeldeseite sagt, wie lange es voraussichtlich dauert.

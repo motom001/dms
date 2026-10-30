@@ -76,6 +76,16 @@ input, select, textarea { width: 100%; min-width: 0; background: var(--flaeche);
 textarea { resize: vertical; }
 input:disabled { background: var(--senke); color: var(--leise); }
 input[type="checkbox"], input[type="radio"] { width: 16px; height: 16px; padding: 0; margin: 2px 0 0; flex: none; accent-color: var(--akzent); }
+/* iPhone (#174): Safari auf iOS zeichnet Datums- und Zeitfelder als eigenes Bedienelement mit
+   fester Mindestbreite – sie ragten über den Kasten hinaus. Nur auf iOS (-webkit-touch-callout gibt
+   es nur dort) wie ein normales Eingabefeld behandeln: volle Breite, gleiche Höhe, linksbündig. */
+@supports (-webkit-touch-callout: none) {
+  input[type="date"], input[type="time"], input[type="datetime-local"] {
+    -webkit-appearance: none; appearance: none; display: block; max-width: 100%;
+    min-height: calc(1.45em + 16px); text-align: left;
+  }
+  input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-date-and-time-value, input[type="datetime-local"]::-webkit-date-and-time-value { text-align: left; margin: 0; }
+}
 .knopf { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 13px; border-radius: 6px; border: 1px solid var(--linie-stark); background: var(--flaeche); font-weight: 600; font-size: calc(13px * var(--skala, 1)); cursor: pointer; white-space: nowrap; text-decoration: none; color: var(--tinte); }
 .knopf:not(.primaer):not(.gruen):hover:not(:disabled) { background: var(--senke); }
 .knopf.primaer { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-tinte); }
