@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/installieren/v0.42/synology/">
+        <link rel="canonical" href="https://motom001.github.io/dms/installieren/v0.43/synology/">
       
       
         <link rel="prev" href="../casaos/">
@@ -1327,7 +1327,7 @@ docker/dms/sicherung
 <h2 id="sicherung-auer-haus">Sicherung außer Haus<a class="headerlink" href="#sicherung-auer-haus" title="Permanent link">&para;</a></h2>
 <p>Das DMS sichert sich selbst in den Ordner <code>sicherung</code> (<strong>Werkbank → Sicherung</strong>). Mit <strong>Hyper Backup</strong> kopierst du diesen Ordner zusätzlich auf eine USB-Platte, ein zweites NAS oder einen Cloudspeicher. Die Sicherungen sind verschlüsselt, ein Cloudspeicher sieht also nur unlesbare Dateien.</p>
 <h2 id="von-unterwegs-erreichbar">Von unterwegs erreichbar<a class="headerlink" href="#von-unterwegs-erreichbar" title="Permanent link">&para;</a></h2>
-<p>Erst <strong>nach</strong> der Einrichtung: In DSM unter <strong>Systemsteuerung → Anmeldeportal → Erweitert → Reverse Proxy</strong> einen Eintrag von <code>https://dms.&lt;deine-domain&gt;</code> auf <code>http://localhost:8080</code> anlegen. Ein Zertifikat gibt es unter <strong>Sicherheit → Zertifikat</strong>. Im DMS dann unter <strong>Werkbank → E-Mail und Adresse</strong> die öffentliche Adresse eintragen und in der Vorlage <code>TRUST_PROXY: "true"</code> ergänzen. Hintergrund: <a href="https://motom001.github.io/dms/admin/aktuell/installation/#hinter-einem-reverse-proxy">Hinter einem Reverse-Proxy</a>.</p>
+<p>Erst <strong>nach</strong> der Einrichtung: In DSM unter <strong>Systemsteuerung → Anmeldeportal → Erweitert → Reverse Proxy</strong> einen Eintrag von <code>https://dms.&lt;deine-domain&gt;</code> auf <code>http://localhost:8080</code> anlegen. Ein Zertifikat gibt es unter <strong>Sicherheit → Zertifikat</strong>. Im DMS dann unter <strong>Werkbank → E-Mail und Adresse</strong> die öffentliche Adresse eintragen. Hintergrund: <a href="https://motom001.github.io/dms/admin/aktuell/installation/#hinter-einem-reverse-proxy">Hinter einem Reverse-Proxy</a>.</p>
 <div class="admonition info">
 <p class="admonition-title">Bilder folgen</p>
 <p>Diese Anleitung ist noch ohne Bildschirmfotos. Die Menüpunkte entsprechen DSM 7.2. Weicht bei dir etwas ab, schreib es gern in ein <a href="https://github.com/motom001/dms/issues">Issue</a>.</p>

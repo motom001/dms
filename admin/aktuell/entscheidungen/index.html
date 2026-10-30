@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.42/entscheidungen/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.43/entscheidungen/">
       
       
         <link rel="prev" href="../technik/">
@@ -1558,6 +1558,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#proxy-angaben-automatisch-234" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proxy-Angaben automatisch (#234)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#bewusst-noch-nicht-drin" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1991,6 +2002,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#proxy-angaben-automatisch-234" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proxy-Angaben automatisch (#234)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#bewusst-noch-nicht-drin" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2130,7 +2152,7 @@
 <ul>
 <li><strong>Keine Umgebungsvariablen mehr</strong> für E-Mail-Versand und Adresse: gepflegt in der Werkbank, gespeichert in <code>einstellungen</code> (<code>mail</code>, <code>adresse</code>), wirksam ohne Neustart – Konten holen sich den Mailer und die Adresse bei jeder Verwendung (<code>Betrieb</code> in <code>server/src/betrieb.ts</code>).</li>
 <li><strong>Einmalige Übernahme</strong> der früheren Variablen <code>SMTP_*</code> und <code>APP_URL</code> beim ersten Start, nur solange nichts gespeichert ist; danach ignoriert, mit Hinweis im Protokoll. So fällt der Versand beim Update nicht aus.</li>
-<li><strong>Ohne gepflegte Adresse</strong> gilt die Adresse der aktuellen Anfrage (<code>req.protocol</code> und <code>req.host</code>, hinter einem Proxy über <code>TRUST_PROXY</code>). Sie steckt im Anfragekontext, damit Konten sie ohne zusätzlichen Parameter finden.</li>
+<li><strong>Ohne gepflegte Adresse</strong> gilt die Adresse der aktuellen Anfrage (<code>req.protocol</code> und <code>req.host</code>, hinter einem Proxy über <code>X-Forwarded-*</code>, siehe unten). Sie steckt im Anfragekontext, damit Konten sie ohne zusätzlichen Parameter finden.</li>
 <li><strong>Passwort verschlüsselt</strong> (seit #39), nie an die Oberfläche zurück; leeres Feld behält es.</li>
 <li><strong>Testen mit ungespeicherten Werten:</strong> Prüfen und Testmail nehmen die Werte aus dem Formular, damit man vor dem Speichern sieht, ob es geht.</li>
 </ul>
@@ -2192,6 +2214,12 @@
 <ul>
 <li><strong>Eine Transaktion</strong> für alle verschlüsselten Werte (Mappen, Papierkorb, Einstellungen) samt Fingerabdruck und Prüfwort; die neue Schlüsseldatei liegt bis dahin als <code>dms.schluessel.neu</code> daneben und ersetzt die alte erst danach. Ein Neustart dazwischen wird beim Start erkannt und abgeschlossen.</li>
 <li><strong>Kein Aufbewahren des alten Schlüssels</strong>: Ältere Sicherungen nennen ihren Fingerabdruck; zum Wiederherstellen dient das alte Notfallblatt.</li>
+</ul>
+<h2 id="proxy-angaben-automatisch-234">Proxy-Angaben automatisch (#234)<a class="headerlink" href="#proxy-angaben-automatisch-234" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Standard „private Netze“</strong> statt <code>false</code>: Fastify bekommt <code>trustProxy: ['loopback', 'linklocal', 'uniquelocal']</code>. Ohne Einstellung stimmten IP-Adressen und die Sperre nach Fehlversuchen (je E-Mail und IP) hinter einem Proxy nicht – und kaum jemand setzte die Variable, weil sonst alles ging.</li>
+<li><strong>Restrisiko bewusst in Kauf genommen:</strong> Ein Gerät im Heimnetz, das das DMS direkt erreicht, könnte eine IP vortäuschen. Wer das ausschließen will, setzt <code>false</code> oder eine Liste. Aus dem Internet geht es nicht, solange keine Portfreigabe mit verschleierter Absenderadresse (z. B. Docker-Userland-Proxy) dazwischen ist.</li>
+<li><strong>Falsche Werte</strong> führen nicht zum Startabbruch: Es gilt <code>auto</code>, mit Warnung im Protokoll.</li>
 </ul>
 <h2 id="bewusst-noch-nicht-drin">Bewusst noch nicht drin<a class="headerlink" href="#bewusst-noch-nicht-drin" title="Permanent link">&para;</a></h2>
 <p>Feldrechte, Kalender-Export (ICS), Backup-Funktion in der Anwendung (#48), Texterkennung für Office-Dokumente, Zwei-Faktor-Anmeldung.</p>
