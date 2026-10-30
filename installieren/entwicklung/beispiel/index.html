@@ -1242,7 +1242,7 @@
 <p>Das DMS läuft auf einem <strong>UGREEN DXP4800 Plus</strong> mit der <strong>Docker-App von UGOS</strong>. Darin ist das DMS ein <em>Projekt</em> mit der Compose-Vorlage, die auch in der Anleitung für <a href="../ugreen/">UGREEN</a> steht. Es gibt keine Sonderlösung: Ich nutze dieselbe Vorlage wie alle anderen. So merke ich selbst, wenn an der Anleitung etwas hakt.</p>
 <h2 id="zugriff-von-unterwegs">Zugriff von unterwegs<a class="headerlink" href="#zugriff-von-unterwegs" title="Permanent link">&para;</a></h2>
 <p>Ein zweiter Container, der <strong><a href="https://nginxproxymanager.com/">Nginx Proxy Manager</a></strong> (<code>jc21/nginx-proxy-manager</code>), veröffentlicht das DMS nach außen, mit HTTPS-Zertifikat. So nutze ich das DMS vollständig vom Handy aus, auch unterwegs. Die Daten bleiben trotzdem auf dem NAS zu Hause.</p>
-<p>Was dabei im DMS einzustellen ist (z. B. <code>TRUST_PROXY</code>), steht im Administratorhandbuch unter <a href="https://motom001.github.io/dms/admin/aktuell/installation/">Einrichtung und Betrieb</a>.</p>
+<p>Im DMS ist dafür nur die öffentliche Adresse unter <strong>Werkbank → E-Mail und Adresse</strong> eingetragen. Dass die Anfragen über den Proxy kommen, erkennt das DMS von selbst. Was dahintersteckt, steht im Administratorhandbuch unter <a href="https://motom001.github.io/dms/admin/aktuell/installation/#hinter-einem-reverse-proxy">Hinter einem Reverse-Proxy</a>.</p>
 <div class="admonition tip">
 <p class="admonition-title">Erst einrichten, dann veröffentlichen</p>
 <p>Mach das DMS erst von außen erreichbar, wenn die Einrichtung abgeschlossen ist.</p>

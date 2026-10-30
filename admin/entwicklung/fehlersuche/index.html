@@ -1864,7 +1864,11 @@
 </details>
 <details class="question">
 <summary>Anmeldung klappt hinter dem Proxy nicht.</summary>
-<p>Ist die Adresse des DMS (Werkbank → E-Mail und Adresse) eine <code>https://</code>-Adresse, wird das Sitzungs-Cookie nur über HTTPS gesetzt. Rufe das DMS dann auch über HTTPS auf und setze <code>TRUST_PROXY: "true"</code>.</p>
+<p>Ist die Adresse des DMS (Werkbank → E-Mail und Adresse) eine <code>https://</code>-Adresse, wird das Sitzungs-Cookie nur über HTTPS gesetzt. Rufe das DMS dann auch über HTTPS auf. Steht <code>TRUST_PROXY</code> auf <code>false</code> oder auf einer Liste, die den Proxy nicht enthält, glaubt das DMS dem Proxy nicht, dass die Verbindung HTTPS ist – dann die Variable entfernen. Siehe <a href="../installation/#hinter-einem-reverse-proxy">Hinter einem Reverse-Proxy</a>.</p>
+</details>
+<details class="question">
+<summary>Im Protokoll und bei den Sitzungen steht immer dieselbe IP-Adresse.</summary>
+<p>Das ist die Adresse des Reverse-Proxys: Das DMS glaubt seinen Angaben nicht. Unter <strong>Technik</strong> nachsehen, was bei <code>TRUST_PROXY</code> steht. Hat der Proxy eine öffentliche Adresse, kann <code>TRUST_PROXY</code> auf diese Adresse oder auf <code>true</code> gesetzt werden – mehr unter <a href="../installation/#was-der-proxy-dem-dms-mitteilt">Was der Proxy dem DMS mitteilt</a>.</p>
 </details>
 <details class="question">
 <summary>Hochladen großer Dateien bricht ab.</summary>
