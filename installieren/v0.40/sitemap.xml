@@ -9,6 +9,10 @@
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
+         <loc>https://motom001.github.io/dms/installieren/v0.40/casaos/</loc>
+         <lastmod>2026-10-30</lastmod>
+    </url>
+    <url>
          <loc>https://motom001.github.io/dms/installieren/v0.40/docker/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
@@ -29,7 +33,15 @@
          <lastmod>2026-10-30</lastmod>
     </url>
     <url>
+         <loc>https://motom001.github.io/dms/installieren/v0.40/umbrel/</loc>
+         <lastmod>2026-10-30</lastmod>
+    </url>
+    <url>
          <loc>https://motom001.github.io/dms/installieren/v0.40/unraid/</loc>
+         <lastmod>2026-10-30</lastmod>
+    </url>
+    <url>
+         <loc>https://motom001.github.io/dms/installieren/v0.40/zimaos/</loc>
          <lastmod>2026-10-30</lastmod>
     </url>
 </urlset>
