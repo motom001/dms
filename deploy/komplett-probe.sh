@@ -54,13 +54,16 @@ echo "::endgroup::"
 echo "::group::3. Sauber stoppen"
 docker stop "$NAME" >/dev/null
 [ "$(docker inspect -f '{{.State.ExitCode}}' "$NAME")" = 0 ] || fehler "Exit-Code beim Stoppen nicht 0"
-docker logs "$NAME" 2>&1 | grep -q "database system is shut down" || fehler "PostgreSQL nicht sauber heruntergefahren"
+# Erst einsammeln, dann suchen: grep -q in einer Pipe bricht docker logs ab (pipefail).
+protokoll=$(docker logs "$NAME" 2>&1)
+grep -q "database system is shut down" <<< "$protokoll" || fehler "PostgreSQL nicht sauber heruntergefahren"
 docker start "$NAME" >/dev/null; warte
 [ "$(curl -fsS "http://127.0.0.1:$PORT/api/konto/status" | jq -r '.einrichtungNoetig')" = false ] || fehler "nach stop/start wieder uneingerichtet"
 echo "::endgroup::"
 
 echo "::group::4. DMS-Prozess abschießen"
-docker exec "$NAME" sh -c 'kill -9 $(pgrep -f "server/dist/index.js")'
+# pkill -x trifft nur den Prozess „node“, nicht die Shell von docker exec.
+docker exec "$NAME" pkill -9 -x node || true
 for _ in $(seq 1 30); do [ "$(docker inspect -f '{{.State.Running}}' "$NAME")" = false ] && break; sleep 1; done
 [ "$(docker inspect -f '{{.State.Running}}' "$NAME")" = false ] || fehler "Container läuft weiter, obwohl das DMS beendet ist"
 echo "Container beendet mit Code $(docker inspect -f '{{.State.ExitCode}}' "$NAME")"
