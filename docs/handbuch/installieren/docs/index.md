@@ -24,7 +24,7 @@ Das DMS läuft bei dir zu Hause: auf einem NAS, einem kleinen Heimserver oder je
 | **Raspberry Pi** 4 oder 5 | [Raspberry Pi OS mit Docker](raspberry-pi.md) | ☆☆☆ mittel: wie beim PC, plus SSD |
 | **Windows-PC oder Windows Server** | [Docker Desktop oder Hyper-V](windows.md) | ☆☆☆ mittel: Docker Desktop installieren oder Linux-VM anlegen |
 | **Proxmox**, XCP-ng, ESXi … | [Linux-VM mit Docker](proxmox.md) | ☆☆☆ mittel: VM anlegen, dann wie beim PC |
-| **jedes Gerät mit Docker**, am einfachsten | [Ein Container: dms-komplett](komplett.md) | ☆☆ gering: ein Image, vier Ordner, kein Passwort |
+| **Alternative: ein Container** (Ausprobieren, nur ein Container möglich) | [dms-komplett](komplett.md) | ☆☆ gering: ein Image, vier Ordner, kein Passwort – siehe [Ein oder zwei Container?](#ein-oder-zwei-container) |
 | **anderer Server mit Docker** | [Docker Compose](docker.md) | ☆☆☆ mittel: Kommandozeile oder eigene Docker-Oberfläche |
 
 Alle Wege brauchen ein Gerät mit **amd64** (Intel, AMD) oder **arm64** (z. B. Raspberry Pi 4/5) und etwa 1 GB freien Arbeitsspeicher. Dazu kommt Platz für deine Dokumente.
@@ -32,9 +32,26 @@ Alle Wege brauchen ein Gerät mit **amd64** (Intel, AMD) oder **arm64** (z. B. R
 !!! tip "Du hast noch nichts davon?"
     Am einfachsten ist ein kleiner Heimserver mit **umbrelOS** oder **ZimaOS**, z. B. ein Mini-PC oder ein ZimaBoard. Dort installierst du das DMS wie eine App auf dem Handy. Ein NAS von Synology, UGREEN oder QNAP geht ebenso und kümmert sich zusätzlich um deine Festplatten.
 
+## Ein oder zwei Container?
+
+Das DMS gibt es in zwei Varianten. **Wir empfehlen zwei Container** – so laufen auch alle Anleitungen und App-Stores hier.
+
+| | **Zwei Container** (empfohlen): `dms` + `postgres:17` | **Ein Container**: `dms-komplett` |
+| --- | --- | --- |
+| Einrichten | Compose-Projekt bzw. App-Store, ein Passwort für die Datenbank | ein Image, vier Ordner, kein Passwort |
+| Updates von PostgreSQL | sofort, unabhängig vom DMS: `postgres:17` neu ziehen | erst mit dem nächsten DMS-Image |
+| Betrieb | DMS und Datenbank einzeln neu starten, überwachen, mit Standardwerkzeugen sichern | alles zusammen; Datenbank von außen nicht erreichbar (gewollt) |
+| Neue Hauptversion von PostgreSQL | planbar, im eigenen Takt | nur über Sicherung und Wiederherstellung |
+| App-Stores (umbrelOS, ZimaOS, CasaOS, TrueNAS) | ja | nein |
+| Gut für | den Dauerbetrieb | Ausprobieren und Testen, Oberflächen, die nur „Container aus Image erstellen“ können, Anbieter, die nur einen Container erlauben |
+
+**Warum zwei Container?** Ein Dienst je Container ist der übliche Docker-Weg. Die Datenbank kommt aus dem offiziellen PostgreSQL-Image und bekommt Sicherheits-Updates, sobald es sie gibt – unabhängig davon, wann das DMS ein neues Release hat. Fällt einer der beiden aus, lässt er sich allein neu starten und untersuchen. Der Preis ist ein Passwort und ein Compose-Projekt; die Vorlagen hier halten beides so klein wie möglich.
+
+**Wann ein Container?** Wenn es schnell gehen soll (ausprobieren, testen) oder die Umgebung nur einen Container zulässt. Ein Wechsel zwischen beiden Varianten geht jederzeit über Sicherung und Wiederherstellung, siehe [Wachsen und umziehen](https://motom001.github.io/dms/admin/aktuell/wachsen/).
+
 ## Was du in jedem Fall bekommst
 
-- Zwei Container: das DMS selbst und eine PostgreSQL-Datenbank. Mit [dms-komplett](komplett.md) ist es ein Container, in dem beides läuft.
+- Das DMS und eine PostgreSQL-Datenbank – in zwei Containern oder mit [dms-komplett](komplett.md) in einem.
 - Vier Ordner auf deinem Gerät: `files` (Dokumente), `geheim` (Schlüssel), `sicherung` (Sicherungen) und `postgres` (Datenbank).
 - Die Oberfläche im Browser, meist unter `http://<Gerät>:8080`. Bei den App-Stores ist es Port `8478`.
 

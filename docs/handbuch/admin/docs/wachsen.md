@@ -8,10 +8,11 @@ Das DMS fängt klein an und kann mitwachsen. Alle Umzüge laufen über denselben
 | --- | --- | --- |
 | Einrichten | ein Image, vier Ordner, fertig | Compose-Projekt oder App-Store, Datenbank-Passwort |
 | Datenbank | PostgreSQL 17 im Container, nur von innen erreichbar | eigener Container oder Server, frei wählbar |
-| Gut für | Haushalt, NAS, schnelles Testen | eigene Datenbank-Verwaltung, mehrere Programme an einem PostgreSQL, Datenbank auf einem anderen Gerät |
+| Updates von PostgreSQL | mit dem nächsten DMS-Image | sofort (`postgres:17` neu ziehen) |
+| Gut für | Ausprobieren, Testen, Umgebungen mit nur einem Container | den Dauerbetrieb (empfohlen), eigene Datenbank-Verwaltung, Datenbank auf einem anderen Gerät |
 | App-Stores | – | umbrelOS, ZimaOS, CasaOS, TrueNAS, Unraid |
 
-Für die meisten Haushalte reicht `dms-komplett`. Ein Wechsel ist jederzeit möglich, in beide Richtungen.
+**Wir empfehlen zwei Container** für den Dauerbetrieb: PostgreSQL bekommt Sicherheits-Updates unabhängig vom DMS, beide lassen sich einzeln neu starten und untersuchen, und es ist der übliche Docker-Weg. `dms-komplett` ist die Alternative zum Ausprobieren und für Umgebungen, die nur einen Container zulassen. Ein Wechsel ist jederzeit möglich, in beide Richtungen.
 
 ## Umziehen, Schritt für Schritt
 
@@ -42,3 +43,5 @@ Eine Datenbank einer älteren Hauptversion (z. B. 17) lässt sich nicht einfach 
 - **Viele Dokumente:** Der Ordner `files` wächst mit den Dokumenten, die Datenbank viel langsamer. Lege `files` und `sicherung` dorthin, wo Platz ist. Die Ordner lassen sich einzeln verschieben, solange das Volume danach wieder auf denselben Ordner im Container zeigt. **Werkbank → Speicherplatz** zeigt, was wie viel belegt.
 - **Mehr Leistung:** Texterkennung und Volltextsuche profitieren von mehr Prozessorkernen und Arbeitsspeicher. Ein Umzug auf einen stärkeren Rechner geht wie oben.
 - **Datenbank auf einem eigenen Server:** Umzug von `dms-komplett` auf das schlanke Image `dms` mit eigener Datenbank, wie oben beschrieben.
+
+Führst du Belege für eine Tätigkeit (Freiberuf, Kleingewerbe, Vermietung), halte einen Umzug auch in deiner [Verfahrensdokumentation](verfahrensdokumentation.md) fest (Abschnitt 1 und 10).

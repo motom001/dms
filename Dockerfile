@@ -18,8 +18,11 @@ RUN npm run build
 FROM node:22-alpine AS laufzeit
 LABEL org.opencontainers.image.source="https://github.com/motom001/dms" \
       org.opencontainers.image.licenses="AGPL-3.0-only"
+# Alpine-Pakete aktuell halten (#214): Die Kalenderwoche gehört zur Cache-Kennung dieser Schicht,
+# also holt jeder Bau in einer neuen Woche die neuesten Pakete (sonst nähme der Build-Cache ewig die alten).
+ARG APK_WOCHE=""
 # Texterkennung (#45): tesseract mit Deutsch (Englisch ist enthalten) und poppler für PDFs.
-RUN apk add --no-cache tesseract-ocr tesseract-ocr-data-deu poppler-utils
+RUN echo "Alpine-Pakete Stand ${APK_WOCHE}" && apk upgrade --no-cache && apk add --no-cache tesseract-ocr tesseract-ocr-data-deu poppler-utils
 # Stand des Images für die Versionsübersicht in der Werkbank (setzt GitHub Actions).
 ARG DMS_COMMIT=""
 ARG DMS_GEBAUT=""
@@ -46,7 +49,8 @@ CMD ["node", "--enable-source-maps", "server/dist/index.js"]
 # Containers erreichbar (127.0.0.1, „trust“) – kein Passwort, das jemand kennen muss. tini startet das
 # Skript, das erst PostgreSQL, dann das DMS startet und beim Stoppen beide sauber beendet.
 FROM laufzeit AS komplett
-RUN apk add --no-cache postgresql17 postgresql17-contrib tini su-exec
+ARG APK_WOCHE=""
+RUN echo "Alpine-Pakete Stand ${APK_WOCHE}" && apk upgrade --no-cache && apk add --no-cache postgresql17 postgresql17-contrib tini su-exec
 COPY deploy/komplett/start.sh /usr/local/bin/dms-komplett
 RUN chmod 755 /usr/local/bin/dms-komplett
 ENV DMS_VARIANTE=komplett

@@ -48,13 +48,17 @@ Jede Protokollzeile gehört zu einem Modul:
 | Protokoll dauerhaft | Container-Logs: `docker logs <app-container>` |
 | Protokoll der letzten 24 Stunden | Werkbank → Protokoll |
 | Lange Datenbankzugriffe | Werkbank → Datenbank (Tabelle `langlaeufer`) |
-| Datenbank sichern | `docker exec <db-container> pg_dump -U dms dms > dms.sql` |
+| Datenbank sichern | am besten über **Werkbank → Sicherung**; zusätzlich mit zwei Containern `docker exec <db-container> pg_dump -U dms dms > dms.sql`, bei dms-komplett `docker exec <container> pg_dump -h 127.0.0.1 -U dms dms > dms.sql` |
 | Dateien sichern | Ordner `files` aus der Compose-Vorlage |
 
 ## Versionen und Aktualisierung
 
-Das Image enthält Node.js, Alpine Linux und alle Bibliotheken; aktualisiert wird durch Neuziehen von `ghcr.io/motom001/dms:main` und Neustart. PostgreSQL ist ein eigenes Image (`postgres:17`): kleinere Versionen (17.x) durch Neuziehen, ein Wechsel der Hauptversion (z. B. 17 → 18) braucht eine Sicherung und Wiederherstellung.
+Das Image enthält Node.js, Alpine Linux und alle Bibliotheken; aktualisiert wird durch Neuziehen von `ghcr.io/motom001/dms:main` und Neustart.
 
-Der Versionsabgleich in der Werkbank fragt nur auf Knopfdruck: GitHub für den Stand des DMS, [endoflife.date](https://endoflife.date) für Node.js, PostgreSQL und Alpine, die npm-Registry für die Bibliotheken.
+- **Zwei Container (empfohlen):** PostgreSQL ist ein eigenes Image (`postgres:17`): kleinere Versionen (17.x) durch Neuziehen, unabhängig vom DMS.
+- **dms-komplett:** PostgreSQL (Alpine-Paket) steckt im Image `ghcr.io/motom001/dms-komplett` und kommt mit dessen Updates. Beide Images werden jede Woche neu gebaut, mit den aktuellen Alpine-Paketen (Tag `main`); feste Versionsnummern ändern sich dabei nicht.
+- Ein Wechsel der Hauptversion (z. B. 17 → 18) braucht in beiden Fällen eine Sicherung und Wiederherstellung, siehe [Wachsen und umziehen](wachsen.md#neue-hauptversion-von-postgresql).
+
+Der Versionsabgleich in der Werkbank fragt nur auf Knopfdruck: GitHub für den Stand des DMS, [endoflife.date](https://endoflife.date) für Node.js, PostgreSQL und Alpine, die npm-Registry für die Bibliotheken. Er trennt, was du **selbst aktualisierst** (das DMS-Image, bei zwei Containern PostgreSQL), von dem, was **mit dem DMS kommt** (Node.js, Alpine, Bibliotheken – bei dms-komplett auch PostgreSQL).
 
 Die Entscheidungen hinter dem Aufbau stehen in [entscheidungen.md](entscheidungen.md).

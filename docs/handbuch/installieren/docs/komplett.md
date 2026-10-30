@@ -1,9 +1,9 @@
 # Ein Container: dms-komplett
 
-Der einfachste Weg mit Docker: **ein Container**, in dem das DMS und seine Datenbank (PostgreSQL 17) zusammen laufen. Es gibt kein Passwort einzutragen, keinen Datenbank-Container und kein Compose-Projekt, wenn du keines willst. Das Image heißt `ghcr.io/motom001/dms-komplett` und läuft auf amd64 und arm64.
+Die Alternative zu zwei Containern: **ein Container**, in dem das DMS und seine Datenbank (PostgreSQL 17) zusammen laufen. Es gibt kein Passwort einzutragen, keinen Datenbank-Container und kein Compose-Projekt, wenn du keines willst. Das Image heißt `ghcr.io/motom001/dms-komplett` und läuft auf amd64 und arm64.
 
-!!! info "Wann lieber zwei Container?"
-    Willst du die Datenbank selbst verwalten, mehrere Programme an einen PostgreSQL-Server hängen oder ihn auf einem anderen Gerät betreiben, nimm das schlanke Image `dms` mit eigener Datenbank, wie in den anderen Anleitungen. Ein Umzug zwischen beiden geht jederzeit über Sicherung und Wiederherstellung, siehe [Wachsen und umziehen](https://motom001.github.io/dms/admin/aktuell/wachsen/).
+!!! info "Empfohlen sind zwei Container"
+    Für den Dauerbetrieb empfehlen wir zwei Container (`dms` und `postgres:17`): PostgreSQL bekommt Sicherheits-Updates dann unabhängig vom DMS, und beide lassen sich einzeln betreiben. `dms-komplett` passt gut zum **Ausprobieren und Testen**, für Oberflächen, die nur **„Container aus Image erstellen“** können, und für **Anbieter, die nur einen Container erlauben**. Die Gegenüberstellung steht unter [Ein oder zwei Container?](index.md#ein-oder-zwei-container). Ein Umzug zwischen beiden geht jederzeit über Sicherung und Wiederherstellung, siehe [Wachsen und umziehen](https://motom001.github.io/dms/admin/aktuell/wachsen/).
 
 ## Mit Docker Compose
 
@@ -48,6 +48,6 @@ Hast du schon ein DMS mit zwei Containern, wähle im Assistenten **Aus einer Sic
 - **Kein Passwort:** Die Datenbank ist nur innerhalb des Containers erreichbar. Von außen gibt es keinen Datenbank-Port.
 - **Ordner:** Alle vier müssen auf dem Gerät liegen (Volumes), sonst sind sie beim nächsten Update weg. Der Container richtet die Rechte von `postgres` beim Start selbst.
 - **Stoppen:** Beim Stoppen fährt der Container erst das DMS und dann die Datenbank sauber herunter. Gib ihm dafür bis zu einer Minute Zeit (`stop_grace_period` bzw. `--stop-timeout`). Endet einer der beiden Teile unerwartet, endet der ganze Container, und Docker startet ihn neu.
-- **Updates:** `docker compose pull && docker compose up -d` bzw. das Image neu ziehen und den Container neu erstellen. Mit einer Versionsnummer statt `main`, z. B. `ghcr.io/motom001/dms-komplett:0.42.0`, bleibt die Installation auf diesem Release.
+- **Updates:** `docker compose pull && docker compose up -d` bzw. das Image neu ziehen und den Container neu erstellen. Updates von PostgreSQL kommen mit dem DMS-Image; **Werkbank → Technik** zeigt, ob es eines gibt. Mit einer Versionsnummer statt `main`, z. B. `ghcr.io/motom001/dms-komplett:0.42.0`, bleibt die Installation auf diesem Release.
 - **Neue PostgreSQL-Hauptversion:** Bringt ein künftiges Image eine neue Hauptversion mit (z. B. 18), startet der Container mit der alten Datenbank bewusst nicht und sagt das im Protokoll. Der Umstieg geht dann über Sicherung und Wiederherstellung, siehe [Wachsen und umziehen](https://motom001.github.io/dms/admin/aktuell/wachsen/#neue-hauptversion-von-postgresql).
 - **Werkbank → Technik** zeigt „Image: dms-komplett“ und „Datenbank: im Container“.

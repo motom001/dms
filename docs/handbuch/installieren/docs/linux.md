@@ -20,6 +20,8 @@ docker compose version          # prüft, ob Compose dabei ist
 
 ## 3. DMS starten
 
+**Empfohlen: zwei Container** (DMS und PostgreSQL, siehe [Ein oder zwei Container?](index.md#ein-oder-zwei-container)):
+
 ```sh
 mkdir -p ~/dms && cd ~/dms
 curl -fsSLo docker-compose.yml https://raw.githubusercontent.com/motom001/dms/main/deploy/nas/docker-compose.yml
@@ -29,9 +31,14 @@ docker compose up -d
 docker compose logs app | grep -A1 Einrichtungscode
 ```
 
-!!! tip "Noch einfacher: ein Container"
-    Mit [dms-komplett](komplett.md) ist es ein einziger Container mit eingebauter Datenbank, ohne `.env` und Passwort:
-    `curl -fsSLo docker-compose.yml https://raw.githubusercontent.com/motom001/dms/main/deploy/komplett/docker-compose.yml && docker compose up -d`.
+**Alternative: ein Container** ([dms-komplett](komplett.md), z. B. zum Ausprobieren), ohne `.env` und Passwort:
+
+```sh
+mkdir -p ~/dms && cd ~/dms
+curl -fsSLo docker-compose.yml https://raw.githubusercontent.com/motom001/dms/main/deploy/komplett/docker-compose.yml
+docker compose up -d
+docker compose logs dms | grep -A1 Einrichtungscode
+```
 
 Die Daten liegen damit in `~/dms/daten`. Hast du für Dokumente oder Sicherungen eine eigene Platte, trägst du deren Pfade in der `docker-compose.yml` ein. Weiter geht es im Browser unter `http://<Rechner>:8080`, wie unter [Jeder Server mit Docker](docker.md) beschrieben.
 

@@ -514,7 +514,7 @@ export interface Systemuebersicht {
   ordner?: OrdnerStand[] | null;
   variablen?: string[];
 }
-export interface Vergleich { komponente: string; installiert: string | null; aktuell: string | null; status: 'aktuell' | 'neuer' | 'veraltet' | 'unbekannt'; hinweis?: string; quelle: string }
+export interface Vergleich { komponente: string; installiert: string | null; aktuell: string | null; status: 'aktuell' | 'neuer' | 'veraltet' | 'unbekannt'; hinweis?: string; quelle: string; /** #216 */ gruppe?: 'selbst' | 'dms'; bezeichnung?: string }
 export interface ApiSchluessel { id: string; name: string; praefix: string; recht: 'lesen' | 'schreiben'; passwoerter: boolean; ablauf: string | null; erstellt: string; zuletztBenutzt: string | null }
 export interface ApiSchluesselEingabe { name: string; recht: 'lesen' | 'schreiben'; passwoerter: boolean; ablauf: string | null }
 
