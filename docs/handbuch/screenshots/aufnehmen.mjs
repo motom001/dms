@@ -477,6 +477,7 @@ async function main() {
     await geheZu(sm, '/profil/konto');
     const blatt = sm.locator('.blatt', { hasText: 'Meine Rechte' });
     await blatt.locator('table').waitFor();
+    await blatt.scrollIntoViewIfNeeded();
     const box = await blatt.boundingBox();
     await bild(sm, 'meine-rechte', { clip: { x: box.x - 8, y: box.y - 8, width: box.width + 16, height: box.height + 16 } });
     await km.close();
