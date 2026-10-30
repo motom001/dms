@@ -52,7 +52,7 @@ Das DMS sichert sich selbst in den Ordner `sicherung` (**Werkbank → Sicherung*
 
 ## Von unterwegs erreichbar
 
-Erst **nach** der Einrichtung: In DSM unter **Systemsteuerung → Anmeldeportal → Erweitert → Reverse Proxy** einen Eintrag von `https://dms.<deine-domain>` auf `http://localhost:8080` anlegen. Ein Zertifikat gibt es unter **Sicherheit → Zertifikat**. Im DMS dann unter **Werkbank → E-Mail und Adresse** die öffentliche Adresse eintragen und in der Vorlage `TRUST_PROXY: "true"` ergänzen. Hintergrund: [Hinter einem Reverse-Proxy](https://motom001.github.io/dms/admin/aktuell/installation/#hinter-einem-reverse-proxy).
+Erst **nach** der Einrichtung: In DSM unter **Systemsteuerung → Anmeldeportal → Erweitert → Reverse Proxy** einen Eintrag von `https://dms.<deine-domain>` auf `http://localhost:8080` anlegen. Ein Zertifikat gibt es unter **Sicherheit → Zertifikat**. Im DMS dann unter **Werkbank → E-Mail und Adresse** die öffentliche Adresse eintragen. Hintergrund: [Hinter einem Reverse-Proxy](https://motom001.github.io/dms/admin/aktuell/installation/#hinter-einem-reverse-proxy).
 
 !!! info "Bilder folgen"
     Diese Anleitung ist noch ohne Bildschirmfotos. Die Menüpunkte entsprechen DSM 7.2. Weicht bei dir etwas ab, schreib es gern in ein [Issue](https://github.com/motom001/dms/issues).

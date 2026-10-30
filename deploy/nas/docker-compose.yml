@@ -27,9 +27,8 @@ services:
     # Die Verbindung zur Datenbank fragt der Einrichtungsassistent im Browser ab (Server „db“,
     # Benutzer und Datenbank „dms“, Passwort aus der .env) und speichert sie in /data/geheim.
     # E-Mail-Versand und die Adresse des DMS stellst du in der Werkbank ein.
-    # Hinter einem Reverse-Proxy (nginx …):
-    # environment:
-    #   TRUST_PROXY: "true"
+    # Hinter einem Reverse-Proxy (nginx …) ist nichts einzustellen: Das DMS glaubt Proxys im
+    # eigenen Rechner und in privaten Netzen von selbst. Abschalten mit TRUST_PROXY: "false".
     # Die Ordner im Container sind fest; wohin sie auf dem NAS zeigen, bestimmst du nur hier.
     volumes:
       # Hochgeladene Dateien, Logos, Fehlerbilder.
