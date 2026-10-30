@@ -5,6 +5,8 @@ So richtest du das DMS auf einem UGREEN-NAS mit UGOS Pro ein. Die App **Docker**
 !!! info "Bald im App Center?"
     Eine App für das UGREEN App Center ist in Arbeit ([#181](https://github.com/motom001/dms/issues/181)). Bis dahin geht es so, und das ist kaum aufwendiger.
 
+Wie das DMS beim Entwickler auf einem UGREEN-NAS läuft – mit Zugriff von unterwegs und Sicherung außer Haus –, zeigt das Beispiel [So läuft es beim Entwickler](beispiel.md).
+
 ## 1. Docker installieren
 
 Im **App Center** die App **Docker** installieren und öffnen.

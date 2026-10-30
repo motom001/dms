@@ -71,6 +71,7 @@ nav:
       - TrueNAS: truenas.md
       - Unraid: unraid.md
   - Jeder Server mit Docker: docker.md
+  - So läuft es beim Entwickler: beispiel.md
   - Weiteres:
       - Administratorhandbuch: https://motom001.github.io/dms/admin/aktuell/
       - Benutzerhandbuch: https://motom001.github.io/dms/benutzer/aktuell/
