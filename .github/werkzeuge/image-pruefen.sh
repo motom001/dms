@@ -30,9 +30,9 @@ funde() {
 KRITISCH="$(funde CRITICAL)"; HOCH="$(funde HIGH)"
 UEBERSICHT="$(jq -r '[.Results[]?.Vulnerabilities[]?] | group_by(.Severity) | map("\(.[0].Severity): \(length)") | join(", ")' "$BERICHT")"
 anm notice "Trivy $IMAGE" "Funde: ${UEBERSICHT:-keine}"
-while IFS= read -r z; do [ -n "$z" ] && anm warning "Lücke (hoch, Korrektur verfügbar)" "$z"; done <<< "$(head -20 <<< "$HOCH")"
+while IFS= read -r z; do [ -n "$z" ] && anm warning "Lücke hoch – Korrektur verfügbar" "$z"; done <<< "$(head -20 <<< "$HOCH")"
 if [ -n "$KRITISCH" ]; then
-  while IFS= read -r z; do anm $($NUR_MELDEN && echo warning || echo error) "Lücke (kritisch, Korrektur verfügbar)" "$z"; done <<< "$KRITISCH"
+  while IFS= read -r z; do anm $($NUR_MELDEN && echo warning || echo error) "Lücke kritisch – Korrektur verfügbar" "$z"; done <<< "$KRITISCH"
   $NUR_MELDEN || { echo "Kritische Lücken mit verfügbarer Korrektur – Paket aktualisieren oder mit Begründung in .trivyignore eintragen."; exit 1; }
 fi
 if [ -n "$KRITISCH" ]; then echo "Kritische Lücken gemeldet (nur melden)."; else echo "Keine kritische Lücke mit verfügbarer Korrektur."; fi

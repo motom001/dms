@@ -33,7 +33,11 @@ WORKDIR /app
 COPY package.json package-lock.jso[n] ./
 COPY server/package.json server/
 COPY web/package.json web/
-RUN if [ -f package-lock.json ]; then npm ci --omit=dev --workspace server --no-audit --no-fund; else npm install --omit=dev --workspace server --no-audit --no-fund; fi && npm cache clean --force
+# Danach npm, Yarn und Corepack entfernen (#220): Das DMS braucht sie zur Laufzeit nicht, und sie
+# bringen eigene Bibliotheken mit, deren Lücken sonst im Image stünden. Nur node selbst bleibt.
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev --workspace server --no-audit --no-fund; else npm install --omit=dev --workspace server --no-audit --no-fund; fi && npm cache clean --force \
+  && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-* \
+     /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg /root/.npm
 COPY --from=bau /app/server/dist server/dist
 COPY server/migrations server/migrations
 COPY --from=bau /app/web/dist web/dist
