@@ -20,6 +20,8 @@ Jede verschickte E-Mail legt das DMS als [Post](post.md#versendete-e-mails) ab �
 
 Steht dort „Der E-Mail-Versand ist nicht eingerichtet“, muss ein Administrator ihn erst in der Werkbank einrichten.
 
+Versenden gibt Daten aus dem DMS hinaus wie ein Export. Deshalb gibt es **Per E-Mail versenden** und **Als PDF exportieren** nur bei Mappen, die du in mindestens einer Ansicht mit Exportrecht siehst. Fehlt beides im Menü, hat dir der Administrator dieses Recht nicht gegeben.
+
 ## Als PDF exportieren
 
 **Aktionen → Als PDF exportieren** öffnet den Druckdialog des Browsers mit der **Druckansicht** der Mappe: Titel, alle Angaben, die Liste der Dokumente und die Notizen. Wähle als Drucker **Als PDF speichern** (bzw. „Microsoft Print to PDF“ unter Windows) – oder drucke sie gleich auf Papier.

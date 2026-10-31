@@ -174,4 +174,13 @@ describe('Exportrecht ohne Sicht (#294, Regel A)', () => {
     assert.equal(await darf(anna, p.id), true);
     assert.equal(await darf(admin, v1.id), true);
   });
+  it('„Per E-Mail versenden“ nur mit Exportrecht (#330)', async () => {
+    const { d, admin, anna, sicht, v1, p, rufe } = await aufbau();
+    const sende = (b: { id: string }, id: string) => rufe(b, 'POST', '/api/mappen/:id/email', { params: { id }, body: { an: 'a@example.org', betreff: 'x' } });
+    await entziehe(d, sicht.id, anna.id);
+    await assert.rejects(sende(anna, v1.id), status(403));
+    // Mit Exportrecht (oder als Administrator) geht es bis zum Versand – hier ohne Mailserver: 409.
+    await assert.rejects(sende(anna, p.id), status(409));
+    await assert.rejects(sende(admin, v1.id), status(409));
+  });
 });
