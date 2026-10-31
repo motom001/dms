@@ -162,6 +162,8 @@ export interface Repo {
    * überschreiben (Nummer + 1). `volltext` gesetzt = übernommen (Zurückholen), sonst Texterkennung neu.
    */
   ersetzeDokument(id: string, neu: NeueVersion): Promise<Dokument>;
+  /** Integritätsprüfung (#212): jede gespeicherte Datei (aktuelle und ältere Versionen) mit Dokument und Mappe. */
+  alleDateien(): Promise<Array<{ sha256: string; groesse: number; dokumentId: string; mappeId: string; name: string; version: number }>>;
   /** Ältere Versionen über die letzten `behalten` hinaus entfernen; liefert deren Dateien (sha256). */
   kuerzeVersionen(dokumentId: string, behalten: number): Promise<string[]>;
   loescheDokument(id: string): Promise<void>;

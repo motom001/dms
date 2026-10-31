@@ -15,6 +15,7 @@ import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
 import { titelOder } from '../seiten';
 import { Hilfe } from '../Hilfe';
+import { FRISTEN, JAHRE_MAX, type Archiv } from '../../../shared/src/archiv';
 import { Bereich, liesOffen, merkeOffen, TYP_BEREICHE, type Klappe, type TypBereich } from './Bereich';
 
 /** Entfernen im Editor wirkt erst beim Speichern (#136). */
@@ -37,6 +38,8 @@ interface Entwurf {
   schluessel: string; _schluesselGetippt?: boolean; beschreibung: string; titelVorlage: string; felder: EntwurfFeld[]; register: EntwurfRegister[]; trefferlisten: EntwurfListe[];
   /** Berechtigungen (#142): mit dem Mappentyp gespeichert. */
   berechtigungen: Regelwerk;
+  /** Archivmodus (#212). */
+  archiv: Archiv | null;
 }
 
 function neueId(): string {
@@ -51,11 +54,12 @@ function neueId(): string {
 const alsEntwurfRegister = ({ felder: _f, ...r }: Register): EntwurfRegister => ({ ...r, _uid: neueId() });
 
 function entwurfAus(t?: Mappentyp): Entwurf {
-  if (!t) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], berechtigungen: structuredClone(OFFENES_REGELWERK) };
+  if (!t) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], berechtigungen: structuredClone(OFFENES_REGELWERK), archiv: null };
   const erstes = t.register.find((r) => r.art === 'felder')?.key ?? '';
   const e: Entwurf = {
     id: t.id, name: t.name, schluessel: t.schluessel ?? '', beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '',
     berechtigungen: structuredClone(regelwerkVon(t)),
+    archiv: t.archiv ?? null,
     register: t.register.map(alsEntwurfRegister),
     felder: t.felder.map((f) => ({
       ...f, _uid: neueId(),
@@ -352,6 +356,10 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
       <TrefferlisteEditor e={e} setE={setE} klappe={klappe('trefferlisten')} />
 
       <RegisterEditor e={e} setE={setE} feldAblage={(key) => zf.ablage(`reg:${key}`)} klappe={klappe('register')} />
+      <Bereich id="archiv" titel="Archivmodus" hilfe={<Hilfe ort="mappentyp.archiv" />} klappe={klappe('archiv')}
+        kurz={e.archiv ? <>an · {e.archiv.jahre} Jahre ab {e.archiv.stichtag ? e.felder.find((f) => f.key === e.archiv!.stichtag)?.label ?? e.archiv.stichtag : 'Anlagedatum'}</> : 'aus'}>
+        <ArchivEinstellung archiv={e.archiv} setze={(archiv) => setE({ ...e, archiv })} datumsfelder={e.felder.filter((f) => f.typ === 'datum' && f.key).map((f) => ({ key: f.key, label: f.label || f.key }))} typId={gespeichert?.id} />
+      </Bereich>
 
       <RegelwerkAbschnitt rw={e.berechtigungen} setRw={(f) => setE((x) => ({ ...x, berechtigungen: f(x.berechtigungen) }))} neu={neu}
         gespeichert={gespeichert ? regelwerkVon(gespeichert) : null} typ={entwurfTyp} klappe={klappe('berechtigungen')} />
@@ -889,5 +897,43 @@ function Spaltenwahl({ e, spalten, name, setze }: { e: Entwurf; spalten: string[
         </label>
       )}
     </>
+  );
+}
+
+/** Archivmodus (#212): Frist, Stichtag; beim Einschalten Vorschau, beim Ausschalten Rückfrage. */
+function ArchivEinstellung({ archiv, setze, datumsfelder, typId }: { archiv: Archiv | null; setze: (a: Archiv | null) => void; datumsfelder: Array<{ key: string; label: string }>; typId?: string }) {
+  const [vorschau, setVorschau] = useState<{ mappen: number; darfWeg: number } | null>(null);
+  const text = JSON.stringify(archiv);
+  useEffect(() => {
+    if (!archiv || !typId) { setVorschau(null); return; }
+    let aktuell = true;
+    api.archivVorschau(typId, archiv).then((v) => aktuell && setVorschau(v)).catch(() => aktuell && setVorschau(null));
+    return () => { aktuell = false; };
+  }, [text, typId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const vorschlag = FRISTEN.some((f) => f.jahre === archiv?.jahre);
+  return (
+    <div className="stapel">
+      <p className="leise">Für Belege mit Aufbewahrungspflicht: Bis zum Ende der Frist lässt sich keine Mappe und kein Dokument löschen – auch nicht von Administratoren; Dokumente ändern sich nur als neue Version. Danach stehen die Mappen unter Werkbank → Darf weg. Gelöscht wird nie automatisch. Das unterstützt eine GoBD-gerechte Aufbewahrung, ersetzt aber keine Verfahrensdokumentation und keine Steuerberatung.</p>
+      <label className="haken"><input type="checkbox" checked={!!archiv} onChange={(ev) => {
+        if (ev.target.checked) setze({ jahre: 8, stichtag: datumsfelder[0]?.key ?? null });
+        else if (confirm('Archivmodus ausschalten? Danach lassen sich Mappen und Dokumente dieses Typs wieder vor Fristende löschen. Das steht im Protokoll.')) setze(null);
+      }} /><span>Archivmodus einschalten<small className="hilfe">Gilt auch für vorhandene Mappen. Die Versionierung der Dokumentenregister ist dann Pflicht.</small></span></label>
+      {archiv && <>
+        <div className="raster">
+          <label className="eigenschaft"><span>Aufbewahrungsfrist</span>
+            <select value={vorschlag ? String(archiv.jahre) : 'eigen'} onChange={(ev) => setze({ ...archiv, jahre: ev.target.value === 'eigen' ? 3 : Number(ev.target.value) })}>
+              {FRISTEN.map((f) => <option key={f.jahre} value={f.jahre}>{f.jahre} Jahre – {f.text}</option>)}
+              <option value="eigen">eigene Zahl</option>
+            </select></label>
+          {!vorschlag && <label className="eigenschaft"><span>Jahre</span><input type="number" min={1} max={JAHRE_MAX} value={archiv.jahre} onChange={(ev) => setze({ ...archiv, jahre: Math.max(1, Math.min(JAHRE_MAX, Math.trunc(Number(ev.target.value) || 1))) })} /></label>}
+          <label className="eigenschaft"><span>Stichtag <small>Frist bis Ende des Kalenderjahres + Jahre</small></span>
+            <select value={archiv.stichtag ?? ''} onChange={(ev) => setze({ ...archiv, stichtag: ev.target.value || null })}>
+              {datumsfelder.map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
+              <option value="">Anlagedatum der Mappe</option>
+            </select></label>
+        </div>
+        {vorschau && <p className="hinweis info">{vorschau.mappen === 1 ? '1 Mappe ist' : `${vorschau.mappen} Mappen sind`} betroffen{vorschau.darfWeg ? `, davon ${vorschau.darfWeg === 1 ? 'wäre 1' : `wären ${vorschau.darfWeg}`} schon „darf weg“` : ''}.</p>}
+      </>}
+    </div>
   );
 }

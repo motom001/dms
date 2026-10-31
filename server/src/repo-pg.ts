@@ -28,6 +28,7 @@ const alsTyp = (r: Zeile): Mappentyp => ({
   loeschenErlaubt: r.loeschen_erlaubt !== false,
   system: (r.system as Mappentyp['system']) ?? null,
   berechtigungen: (r.berechtigungen as Mappentyp['berechtigungen']) ?? null,
+  archiv: (r.archiv as Mappentyp['archiv']) ?? null,
   erstellt: iso(r.erstellt),
   geaendert: iso(r.geaendert),
 });
@@ -309,9 +310,9 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     },
     async legeTypAn(id, d: MappentypDaten, system) {
       const [r] = await sql`
-        INSERT INTO mappentypen (id, haushalt_id, name, schluessel, beschreibung, titel_vorlage, felder, register, trefferliste, trefferlisten, erstellen_erlaubt, loeschen_erlaubt, system)
+        INSERT INTO mappentypen (id, haushalt_id, name, schluessel, beschreibung, titel_vorlage, felder, register, trefferliste, trefferlisten, erstellen_erlaubt, loeschen_erlaubt, system, archiv)
         VALUES (${id}, ${haushaltId}, ${d.name}, ${d.schluessel ?? null}, ${d.beschreibung}, ${d.titelVorlage}, ${json(sql, d.felder)}, ${json(sql, d.register)}, ${json(sql, standardliste(d).spalten)}, ${json(sql, trefferlistenVon(d))},
-          ${d.erstellenErlaubt !== false}, ${d.loeschenErlaubt !== false}, ${system ?? null})
+          ${d.erstellenErlaubt !== false}, ${d.loeschenErlaubt !== false}, ${system ?? null}, ${d.archiv ? json(sql, d.archiv) : null})
         RETURNING *`;
       return alsTyp(r);
     },
@@ -320,7 +321,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         const [r] = await tx`
           UPDATE mappentypen SET name = ${d.name}, schluessel = coalesce(schluessel, ${d.schluessel ?? null}), beschreibung = ${d.beschreibung}, titel_vorlage = ${d.titelVorlage},
             felder = ${json(sql, d.felder)}, register = ${json(sql, d.register)}, trefferliste = ${json(sql, standardliste(d).spalten)}, trefferlisten = ${json(sql, trefferlistenVon(d))},
-            erstellen_erlaubt = ${d.erstellenErlaubt !== false}, loeschen_erlaubt = ${d.loeschenErlaubt !== false}, geaendert = now()
+            erstellen_erlaubt = ${d.erstellenErlaubt !== false}, loeschen_erlaubt = ${d.loeschenErlaubt !== false}, archiv = ${d.archiv ? json(sql, d.archiv) : null}, geaendert = now()
           WHERE haushalt_id = ${haushaltId} AND id = ${id}
           RETURNING *`;
         const refKeys = d.felder.filter((f) => f.typ === 'referenz').map((f) => f.key);
@@ -714,6 +715,13 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
           RETURNING *, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = ${id}) AS aeltere`;
         return alsDokument(r);
       });
+    },
+    async alleDateien() {
+      const r = await sql`
+        SELECT d.sha256, d.groesse, d.id AS dokument_id, d.mappe_id, d.name, coalesce(d.version, 1) AS version FROM dokumente d WHERE d.haushalt_id = ${haushaltId}
+        UNION ALL
+        SELECT v.sha256, v.groesse, v.dokument_id, d.mappe_id, v.name, v.nummer FROM dokument_versionen v JOIN dokumente d ON d.id = v.dokument_id WHERE v.haushalt_id = ${haushaltId}`;
+      return r.map((z) => ({ sha256: z.sha256 as string, groesse: Number(z.groesse), dokumentId: z.dokument_id as string, mappeId: z.mappe_id as string, name: z.name as string, version: Number(z.version) }));
     },
     async kuerzeVersionen(dokumentId, behalten) {
       const weg = await sql`

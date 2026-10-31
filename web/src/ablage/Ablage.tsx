@@ -1,3 +1,4 @@
+import { aufbewahrenBis, datumText, inFrist } from '../../../shared/src/archiv';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { beschreibeBedingung, heuteIn, kinderVon, mitNachkommen, spaltenDerSicht, wirksameTypen, type Sicht } from '../../../shared/src/sichten';
 import { ANSTEHEND_TAGE, datumDe, type Anstehend } from '../../../shared/src/fristen';
@@ -408,7 +409,9 @@ function Liste(p: {
                     {wahl && !m.verborgen && <Wahlhaken an={wahl.gewaehlt.has(m.id)} titel={k.titel} waehle={(an, bereich) => wahl.waehle(i, an, bereich)} />}
                     {m.verborgen ? <span /> : <Stern mappeId={m.id} an={s.favoriten.has(m.id)} titel={k.titel} klein />}
                     <Link to={`/ablage/${p.sicht}/${m.id}${anhang}`} className={`eintrag ${p.offen === m.id ? 'an' : ''}`}>
-                      <span className={`titel ${m.verborgen ? 'verborgen-titel' : ''}`}>{m.verborgen ? 'Nicht sichtbare Mappe' : k.titel}</span>
+                      <span className={`titel ${m.verborgen ? 'verborgen-titel' : ''}`}>{m.verborgen ? 'Nicht sichtbare Mappe' : k.titel}
+                        {/* Archivmodus (#212): Hinweis, solange die Frist läuft. */}
+                        {!m.verborgen && typ?.archiv && inFrist(aufbewahrenBis(typ.archiv, m)) && <> <span className="chip archiv klein" title={`Archiv – aufbewahren bis ${datumText(aufbewahrenBis(typ.archiv, m)!)}`}>Archiv</span></>}</span>
                       <Unter text={k.unter} />
                       {s.ausschnitte[m.id] && <Fundstelle a={s.ausschnitte[m.id]} />}
                       {p.sicht === 'eingang' && s.aufgaben[m.id]

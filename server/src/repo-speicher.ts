@@ -304,6 +304,12 @@ export function speicherRepo(): Repo {
       dokumente.set(id, d);
       return { ...kopie(d), aeltere: versionen.get(id)!.length };
     },
+    async alleDateien() {
+      return [...dokumente.values()].flatMap((d) => [
+        { sha256: d.sha256, groesse: d.groesse, dokumentId: d.id, mappeId: d.mappeId, name: d.name, version: d.version ?? 1 },
+        ...(versionen.get(d.id) ?? []).map((v) => ({ sha256: v.sha256, groesse: v.groesse, dokumentId: d.id, mappeId: d.mappeId, name: v.name, version: v.nummer })),
+      ]);
+    },
     async kuerzeVersionen(id, behalten) {
       const v = versionen.get(id) ?? [];
       const weg = v.slice(0, Math.max(0, v.length - Math.max(0, behalten)));

@@ -1,5 +1,6 @@
 import { AnmeldeschutzListe, AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
 import { NummernkreisEditor, NummernkreiseListe, useNummernkreise } from './Nummernkreise';
+import { DarfWegListe, DarfWegPanel, useDarfWeg } from './Archiv';
 import { PostfachEditor, PostfaecherListe, usePostfaecher } from './Postfaecher';
 import { EingangsordnerListe, EingangsordnerPanel, useEingangsordner } from './Eingangsordner';
 import { useEffect, type ReactNode } from 'react';
@@ -76,6 +77,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const eingang = useEingangsordner(bereich === 'eingangsordner');
   const postfaecher = usePostfaecher(bereich === 'postfaecher');
   const nummernkreise = useNummernkreise(bereich === 'nummernkreise');
+  const darfWeg = useDarfWeg(bereich === 'darfweg');
   const anmeldeschutz = useAnmeldeschutz(bereich === 'anmeldeschutz');
   const anbindung = useAnbindung(bereich === 'anbindung');
   // Wieder erreichbar nach Update oder Neustart (#122): Übersicht und offenen Bereich neu laden.
@@ -155,6 +157,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'anmeldeschutz') {
     liste = <AnmeldeschutzListe z={anmeldeschutz} />;
     rechts = <AnmeldeschutzPanel z={anmeldeschutz} />;
+  } else if (bereich === 'darfweg') {
+    liste = <DarfWegListe z={darfWeg} />;
+    rechts = <DarfWegPanel z={darfWeg} />;
   } else if (bereich === 'nummernkreise') {
     liste = <NummernkreiseListe z={nummernkreise} offen={id} />;
     rechts = id ? <NummernkreisEditor key={id} z={nummernkreise} schluessel={id} /> : <div className="platzhalter"><p>Wähle links einen Nummernkreis oder lege mit „+ Neu“ einen an.</p></div>;
@@ -188,7 +193,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   }
 
   return (
-    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung', 'eingangsordner', 'anmeldeschutz'].includes(bereich) ? 'mappe' : 'liste'} offen={id}>
+    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'darfweg'].includes(bereich) ? 'mappe' : 'liste'} offen={id}>
       <aside className="spalte sichten" aria-label="Bereiche">
         <h2 className="ueber">Werkbank</h2>
         <WerkbankNavigation bereich={bereich} eintraege={[
@@ -196,6 +201,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'typen', name: 'Mappentypen', gruppe: 'ablage', zahl: d.typen.length },
           { pfad: 'sichten', name: 'Sichten', gruppe: 'ablage', zahl: d.sichten.length || undefined },
           { pfad: 'nummernkreise', name: 'Nummernkreise', gruppe: 'ablage', zahl: nummernkreise.liste?.length || undefined },
+          ...(d.typen.some((t) => t.archiv) ? [{ pfad: 'darfweg', name: 'Darf weg', gruppe: 'ablage' as const, zahl: darfWeg.liste?.length || undefined }] : []),
           { pfad: 'benutzer', name: 'Benutzer', gruppe: 'benutzer', zahl: benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined },
           { pfad: 'anmeldeschutz', name: 'Anmeldeschutz', gruppe: 'benutzer', warn: anmeldeschutz.stand?.gesperrt.length ? String(anmeldeschutz.stand.gesperrt.length) : undefined, warnTitel: 'gesperrte IP-Adressen' },
           { pfad: 'aufgaben', name: 'Aufgaben', gruppe: 'benutzer', zahl: uebersicht.stand?.aufgaben.offen || undefined },

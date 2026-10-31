@@ -1,6 +1,7 @@
 import type { Design } from './design';
 import { messung } from './messung';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
+import type { Archiv } from '../../shared/src/archiv';
 import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, DokumentVersion, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Feldbedingung, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
@@ -474,6 +475,10 @@ export const api = {
   emailAendern: (email: string, passwort: string) => anfrage<Benutzer>('PUT', '/api/konto/email', { email, passwort }),
   passwortAendern: (passwortAlt: string, passwortNeu: string) => anfrage<{ benutzer: Benutzer }>('PUT', '/api/konto/passwort', { passwortAlt, passwortNeu }),
   dokumentLoeschen: (id: string) => anfrage<null>('DELETE', `/api/dokumente/${id}`),
+  /* Archivmodus (#212) */
+  archivVorschau: (typId: string, archiv: Archiv) => anfrage<{ mappen: number; darfWeg: number }>('POST', '/api/werkbank/archiv/vorschau', { typId, archiv }),
+  darfWeg: () => anfrage<Array<{ id: string; typId: string; typ: string; titel: string; aufbewahrenBis: string }>>('GET', '/api/werkbank/darf-weg'),
+  dateienPruefen: () => anfrage<Auftrag>('POST', '/api/werkbank/wartung/dateien'),
   /* Versionierung (#194) */
   versionen: (id: string) => anfrage<{ aktuell: Dokument; aeltere: DokumentVersion[] }>('GET', `/api/dokumente/${id}/versionen`),
   zurueckholen: (id: string, nummer: number) => anfrage<Dokument>('POST', `/api/dokumente/${id}/versionen/${nummer}/zurueckholen`),
@@ -510,7 +515,7 @@ export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
   const d = x instanceof ApiFehler && x.status === 404 ? x.details as { verborgen?: boolean; aufgaben?: Aufgabe[] } | undefined : undefined;
   return d?.verborgen ? d.aufgaben ?? [] : null;
 };
-export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */ unpassend?: Record<string, string[]> }
+export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */ unpassend?: Record<string, string[]>; /** Archivmodus (#212). */ aufbewahrenBis?: string | null }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 export const dokumentUrl = (id: string, herunterladen = false) => `/api/dokumente/${id}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
 export const versionUrl = (id: string, nummer: number, herunterladen = false) => `/api/dokumente/${id}/versionen/${nummer}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;

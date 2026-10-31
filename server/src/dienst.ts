@@ -18,6 +18,7 @@ import {
   type Aufloesung, type Sicht, type SichtDaten,
 } from '../../shared/src/sichten';
 import type { Readable } from 'node:stream';
+import { aufbewahrenBis, datumText, inFrist, JAHRE_MAX } from '../../shared/src/archiv';
 import { datumIn, KREIS_SCHLUESSEL, kreisVon, naechste, neubeginn, pruefeMuster, type Nummernkreis } from '../../shared/src/nummernkreis';
 import { csvAus, xlsxAus } from './xlsx';
 import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile } from './export';
@@ -149,6 +150,13 @@ export function bereinigeTrefferlisten(t: Record<string, unknown>, felder: Feld[
 export function bereinigeTyp(e: unknown): MappentypDaten {
   const t = (e ?? {}) as Record<string, unknown>;
   const felder = Array.isArray(t.felder) ? t.felder.map(bereinigeFeld) : [];
+  // Archivmodus (#212): Frist 1–30 Jahre, Stichtag ein Feldschlüssel oder null (Anlagedatum).
+  const a = t.archiv && typeof t.archiv === 'object' ? t.archiv as Record<string, unknown> : null;
+  const jahre = a ? Math.trunc(Number(a.jahre)) : 0;
+  const archiv = a && jahre >= 1 && jahre <= JAHRE_MAX ? { jahre, stichtag: text(a.stichtag) || null } : null;
+  const register = bereinigeRegister(t.register, felder);
+  // Im Archivmodus ist die Versionierung Pflicht, und ältere Versionen bleiben bis zum Fristende.
+  if (archiv) for (const r of register) if (r.art === 'dokumente') { r.versionierung = true; delete r.versionenBehalten; }
   return {
     name: text(t.name),
     ...(text(t.schluessel) ? { schluessel: text(t.schluessel) } : {}),
@@ -156,8 +164,9 @@ export function bereinigeTyp(e: unknown): MappentypDaten {
     // Altes Format: titelFeld → Vorlage {feld}
     titelVorlage: text(t.titelVorlage) || (text(t.titelFeld) ? `{${text(t.titelFeld)}}` : ''),
     felder,
-    register: bereinigeRegister(t.register, felder),
+    register,
     ...bereinigeTrefferlisten(t, felder),
+    archiv,
     // Die Haken „Neue Mappen/Löschen erlauben“ gibt es nicht mehr (#146): das regeln die Berechtigungen.
     erstellenErlaubt: true,
     loeschenErlaubt: true,
@@ -969,6 +978,9 @@ export class Dienst {
   }
 
   private async pruefeTyp(d: MappentypDaten, eigeneId: string) {
+    if (d.archiv?.stichtag && d.felder.find((f) => f.key === d.archiv!.stichtag)?.typ !== 'datum') {
+      throw new Fachfehler(422, 'Archivmodus: Der Stichtag muss ein Datumsfeld dieses Mappentyps sein.', { allgemein: ['Archivmodus: Der Stichtag muss ein Datumsfeld dieses Mappentyps sein.'], felder: {} });
+    }
     const alle = await this.repo.listeTypen();
     // Quellen von Verknüpfungsregistern, deren Feld es nicht mehr gibt, still entfernen.
     for (const r of d.register) {
@@ -1140,6 +1152,8 @@ export class Dienst {
       bezuege: await this.maskiereBezuege(z, await this.repo.bezuege(ziele)),
       /** Verweise, die nicht (mehr) zum Auswahlfilter ihres Felds passen (#172). */
       unpassend: await this.unpassendeVerweise(typ, mappe.werte, z?.ich.id ?? ''),
+      /** Archivmodus (#212): aufbewahren bis (JJJJ-12-31) oder null. */
+      aufbewahrenBis: aufbewahrenBis(typ?.archiv, mappe),
     };
   }
 
@@ -2026,6 +2040,9 @@ export class Dienst {
     await this.pruefeAuswahlfilter(typ, werte, m.werte, benutzerId);
     await this.pruefeWerte(typ, werte, id);
     const aenderungen = await this.aenderungen(typ, m.werte, werte);
+    // Archivmodus (#212): eine neue Frist steht in der Historie.
+    const bisAlt = aufbewahrenBis(typ.archiv, m), bisNeu = aufbewahrenBis(typ.archiv, { ...m, werte });
+    if (bisAlt !== bisNeu) aenderungen.push({ feld: '_aufbewahrenBis', label: 'Aufbewahren bis', alt: bisAlt ? datumText(bisAlt) : '', neu: bisNeu ? datumText(bisNeu) : '' });
     const neu = await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), benutzerId);
     if (aenderungen.length) await this.notiere(id, benutzerId, 'geaendert', { aenderungen });
     // Gespeichert heißt: passt wieder – eine „passt nicht“-Aufgabe ist damit erledigt.
@@ -2051,6 +2068,9 @@ export class Dienst {
   private async loeschPruefung(m: Mappe, typ: Mappentyp | undefined, rueck: Rueckverweis[]) {
     if (m.systemKennung) return { ok: false as const, status: 409, grund: 'Systemrollen lassen sich nicht löschen.', fremd: [], zuordnungen: [], emails: [] };
     if (typ && !darfLoeschen(typ)) return { ok: false as const, status: 403, grund: `Mappen vom Typ „${typ.name}“ lassen sich in der Ablage nicht löschen.${typ.system === 'benutzer' ? ' Benutzer werden in der Benutzerverwaltung deaktiviert.' : ''}`, fremd: [], zuordnungen: [], emails: [] };
+    // Archivmodus (#212): vor Fristende nicht löschen – auch nicht als Administrator.
+    const bis = aufbewahrenBis(typ?.archiv, m);
+    if (inFrist(bis)) return { ok: false as const, status: 409, grund: `Aufbewahrungspflicht bis ${datumText(bis!)} – vorher lässt sich die Mappe nicht löschen.`, fremd: [], zuordnungen: [], emails: [], aufbewahrenBis: bis };
     const typen = rueck.length ? await this.repo.listeTypen() : [];
     // Eine Rolle darf weg, auch wenn Benutzer sie haben: deren Zuordnung fällt weg.
     const benutzerTyp = typ?.system === 'rolle' ? typen.find((t) => t.system === 'benutzer') : undefined;
@@ -2686,7 +2706,15 @@ export class Dienst {
   }
 
   /** Endgültig löschen (ohne Rechteprüfung): Dateien, an denen nichts mehr hängt, und Konten von Benutzer-Mappen. */
-  private async leere(ids: string[], von: string | null = null): Promise<number> {
+  private async leere(ids: string[], von: string | null = null, streng = false): Promise<number> {
+    // Archivmodus (#212): Mappen in der Frist bleiben im Papierkorb (lagen dort schon vor dem Einschalten).
+    if (ids.length) {
+      const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+      const korb = (await this.repo.papierkorb()).filter((e) => ids.includes(e.id));
+      const geschuetzt = korb.filter((e) => inFrist(aufbewahrenBis(typen.get(e.typId)?.archiv, e)));
+      if (geschuetzt.length && streng) throw new Fachfehler(409, `Aufbewahrungspflicht bis ${datumText(aufbewahrenBis(typen.get(geschuetzt[0].typId)?.archiv, geschuetzt[0])!)} – vorher lässt sich „${geschuetzt[0].titel || 'die Mappe'}“ nicht endgültig löschen.`);
+      ids = ids.filter((id) => !geschuetzt.some((e) => e.id === id));
+    }
     if (!ids.length) return 0;
     await this.repo.historieSchreibe(ids.map((mappeId) => ({ mappeId, benutzerId: von, art: 'endgueltig' as const })));
     const benutzerTyp = (await this.repo.listeTypen()).find((t) => t.system === 'benutzer');
@@ -2700,7 +2728,7 @@ export class Dienst {
   /** Einzelne Mappen endgültig löschen: eigene oder (in der Werkbank) alle. */
   async loescheEndgueltig(ids: string[], ich: { id: string; rolle: string }, alle = false): Promise<number> {
     for (const id of ids) await this.eintrag(id, ich, alle);
-    const n = await this.leere(ids, ich.id);
+    const n = await this.leere(ids, ich.id, true);
     if (n) protokoll.modul('ablage').info('Aus dem Papierkorb endgültig gelöscht', { anzahl: n });
     return n;
   }
@@ -2875,6 +2903,8 @@ export class Dienst {
   async loescheDokument(id: string, benutzerId: string | null = null) {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    // Archivmodus (#212): Dokumente bleiben bis Fristende; ändern nur als neue Version.
+    await this.pruefeArchivDokument(d.mappeId, 'löschen');
     // Alle Versionen (#194) gehen mit.
     const aeltere = await this.repo.versionenVon(id);
     await this.repo.loescheDokument(id);
@@ -2882,6 +2912,60 @@ export class Dienst {
     const m = await this.repo.holeMappe(d.mappeId);
     if (m) await this.beruehre(m.id, await this.repo.holeTyp(m.typId), benutzerId);
     for (const sha of new Set([d.sha256, ...aeltere.map((v) => v.sha256)])) await this.raeumeAuf(sha);
+  }
+
+  /* ---------- Archivmodus (#212) ---------- */
+
+  private async pruefeArchivDokument(mappeId: string, was: string) {
+    const m = await this.repo.holeMappe(mappeId);
+    const typ = m ? await this.repo.holeTyp(m.typId) : undefined;
+    const bis = m ? aufbewahrenBis(typ?.archiv, m) : null;
+    if (inFrist(bis)) throw new Fachfehler(409, `Aufbewahrungspflicht bis ${datumText(bis!)} – Dokumente dieser Mappe lassen sich vorher nicht ${was}. Ändern geht als neue Version.`, { aufbewahrenBis: bis });
+  }
+
+  /** Vorschau beim Einschalten: wie viele Mappen betroffen, wie viele schon „darf weg“. */
+  async archivVorschau(typId: string, e: unknown) {
+    const typ = istUuid(typId) ? await this.repo.holeTyp(typId) : undefined;
+    const archiv = bereinigeTyp({ felder: typ?.felder ?? [], archiv: e }).archiv;
+    if (!archiv) throw new Fachfehler(422, `Bitte eine Frist von 1 bis ${JAHRE_MAX} Jahren angeben.`);
+    const mappen = typ ? await this.repo.listeMappen(typ.id) : [];
+    return { mappen: mappen.length, darfWeg: mappen.filter((m) => !inFrist(aufbewahrenBis(archiv, m))).length };
+  }
+
+  /** „Darf weg“: Mappen in Typen mit Archivmodus, deren Frist abgelaufen ist. Gelöscht wird nichts automatisch. */
+  async darfWeg() {
+    const erg: Array<{ id: string; typId: string; typ: string; titel: string; aufbewahrenBis: string }> = [];
+    for (const t of (await this.repo.listeTypen()).filter((x) => x.archiv)) {
+      for (const m of await this.repo.listeMappen(t.id)) {
+        const bis = aufbewahrenBis(t.archiv, m);
+        if (bis && !inFrist(bis)) erg.push({ id: m.id, typId: t.id, typ: t.name, titel: m.titel ?? '', aufbewahrenBis: bis });
+      }
+    }
+    return erg.sort((a, b) => a.aufbewahrenBis.localeCompare(b.aufbewahrenBis) || a.titel.localeCompare(b.titel, 'de'));
+  }
+
+  /** Integrität (#212): jede Datei gegen ihren Prüfwert; als Auftrag im Hintergrund. */
+  pruefeDateien(von: string) {
+    return this.auftraege.starte('dateien-pruefen', 'Alle Dateien prüfen', async (fortschritt) => {
+      const alle = await this.repo.alleDateien();
+      const shas = [...new Set(alle.map((x) => x.sha256))];
+      const abweichungen: Array<{ sha256: string; grund: string; dokumente: typeof alle }> = [];
+      for (const [i, sha] of shas.entries()) {
+        let grund: string | null = null;
+        try {
+          const s = await this.dateien.lies(sha);
+          const h = createHash('sha256');
+          if (Buffer.isBuffer(s)) h.update(s); else for await (const teil of s) h.update(teil as Buffer);
+          if (h.digest('hex') !== sha) grund = 'Inhalt verändert';
+        } catch { grund = 'Datei fehlt'; }
+        if (grund) abweichungen.push({ sha256: sha, grund, dokumente: alle.filter((x) => x.sha256 === sha) });
+        fortschritt(i + 1, shas.length);
+      }
+      const log = protokoll.modul('werkbank');
+      if (abweichungen.length) log.error('Dateien prüfen: Abweichungen gefunden', { von, dateien: shas.length, abweichungen: abweichungen.length, erste: abweichungen[0].dokumente[0]?.name });
+      else log.info('Dateien prüfen: alle in Ordnung', { von, dateien: shas.length });
+      return { dateien: shas.length, abweichungen };
+    });
   }
 
   /* ---------- Versionierung (#194) ---------- */

@@ -542,6 +542,11 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const vorher = (await dienst.listeTypen()).find((x) => x.id === a.params.id);
       const t = await dienst.aendereTyp(a.params.id, a.body);
       L.werkbank.info('Mappentyp geändert, Titel und Passung neu berechnet', { typ: t.name, id: t.id, ms: Date.now() - start });
+      // Archivmodus (#212): Ein-, Aus- und Umschalten festhalten.
+      if (JSON.stringify(vorher?.archiv ?? null) !== JSON.stringify(t.archiv ?? null)) {
+        if (!t.archiv) L.werkbank.warn('Archivmodus ausgeschaltet', { typ: t.name, vorher: vorher?.archiv });
+        else L.werkbank.info(vorher?.archiv ? 'Archivmodus geändert' : 'Archivmodus eingeschaltet', { typ: t.name, jahre: t.archiv.jahre, stichtag: t.archiv.stichtag ?? 'Anlagedatum' });
+      }
       // Versionierung (#194): Ein- und Ausschalten je Register festhalten.
       for (const r of t.register.filter((x) => x.art === 'dokumente')) {
         const war = !!vorher?.register.find((x) => x.key === r.key)?.versionierung;
@@ -645,6 +650,10 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/fehler-neu', zugang: 'admin', handler: async (a) => ok(await ocr().fehlerNeuStarten(ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/abbrechen', zugang: 'admin', handler: async (a) => ok(await ocr().abbrechen(b(a).ids, ich(a).email)) },
     { methode: 'PUT', pfad: '/api/werkbank/texterkennung', zugang: 'admin', handler: async (a) => { await ocr().speichere(a.body); return ok(await ocr().status()); } },
+    /* ---------- Archivmodus (#212) ---------- */
+    { methode: 'POST', pfad: '/api/werkbank/archiv/vorschau', zugang: 'admin', handler: async (a) => ok(await dienst.archivVorschau(String((a.body as { typId?: unknown })?.typId ?? ''), (a.body as { archiv?: unknown })?.archiv)) },
+    { methode: 'GET', pfad: '/api/werkbank/darf-weg', zugang: 'admin', handler: async () => ok(await dienst.darfWeg()) },
+    { methode: 'POST', pfad: '/api/werkbank/wartung/dateien', zugang: 'admin', handler: async (a) => ok(dienst.pruefeDateien(ich(a).email), 202) },
     /* ---------- Auswahlfilter am Referenzfeld (#172, #173) ---------- */
     { methode: 'POST', pfad: '/api/mappen/auswahl-pruefen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.auswahlPruefen(a.body, ich(a).id, await zg(a))) },
     { methode: 'POST', pfad: '/api/werkbank/auswahlfilter/zaehlen', zugang: 'admin', handler: async (a) => ok(await dienst.zaehleAuswahl(a.body, ich(a).id)) },
