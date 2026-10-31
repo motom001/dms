@@ -1018,6 +1018,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#einzelne-dokumente" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Einzelne Dokumente
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#benutzer-und-rollen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1933,6 +1944,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#einzelne-dokumente" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Einzelne Dokumente
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#benutzer-und-rollen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1964,7 +1986,7 @@
 
 
 <h1 id="papierkorb">Papierkorb<a class="headerlink" href="#papierkorb" title="Permanent link">&para;</a></h1>
-<p>Gelöschte Mappen kommen in den Papierkorb – samt Dokumenten und Verweisen. Nach der eingestellten Aufbewahrung löscht das DMS sie endgültig.</p>
+<p>Gelöschte Mappen kommen in den Papierkorb – samt Dokumenten und Verweisen. Einzeln gelöschte <strong>Dokumente</strong> auch, mit allen Versionen und dem Volltext. Nach der eingestellten Aufbewahrung löscht das DMS sie endgültig.</p>
 <ul>
 <li>In der <strong>Ablage</strong> sieht jeder Benutzer unter <em>Papierkorb</em> nur, was <strong>er selbst</strong> gelöscht hat, und kann es wiederherstellen oder endgültig löschen. Der Eintrag steht oben bei den festen Einträgen unter <em>Favoriten</em> – aber nur, solange der Papierkorb eingeschaltet ist oder noch etwas darin liegt.</li>
 <li>Unter <strong>Werkbank → Papierkorb</strong> siehst du als Administrator alles, mit „gelöscht von“, und kannst jede Mappe wiederherstellen oder endgültig löschen.</li>
@@ -1986,9 +2008,18 @@
 <li>Mappen eines Mappentyps im <a href="../archiv/">Archivmodus</a> bleiben im Papierkorb, bis ihre Aufbewahrungsfrist endet – auch wenn die Aufbewahrung des Papierkorbs vorher abläuft. Endgültig löschen lassen sie sich vorher nicht, auch nicht als Administrator.</li>
 <li>Die Dateien bleiben im Dateiordner, bis der Papierkorb geleert ist.</li>
 </ul>
+<h2 id="einzelne-dokumente">Einzelne Dokumente<a class="headerlink" href="#einzelne-dokumente" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Ein aus einem Register gelöschtes Dokument zieht samt <strong>allen Versionen</strong> und <strong>Volltext</strong> in den Papierkorb. Es erscheint nicht mehr in der Mappe, in der Suche oder in der API – bis es wiederhergestellt ist.</li>
+<li>Die Liste zeigt es unter <strong>Dokumente</strong> mit Mappe, Register, Größe und wer es wann gelöscht hat.</li>
+<li><strong>Wiederherstellen</strong> legt es in dasselbe Register derselben Mappe zurück; die Historie der Mappe hält „Dokument in den Papierkorb“ und „Dokument wiederhergestellt“ fest. In der Ablage darf das, wer es gelöscht hat und die Mappe noch bearbeiten darf; in der Werkbank jeder Administrator.</li>
+<li>Liegt die Mappe selbst im Papierkorb, kommt zuerst die Mappe zurück; gibt es sie nicht mehr, lässt sich das Dokument nur noch endgültig löschen. Wird eine Mappe endgültig gelöscht, gehen ihre einzeln gelöschten Dokumente mit.</li>
+<li>Aufbewahrung, <strong>Papierkorb leeren</strong> und 0 Tage gelten für Dokumente genauso. Der <a href="../archiv/">Archivmodus</a> sperrt das Löschen eines Dokuments wie bisher schon vorher.</li>
+<li>Sicherung und Wiederherstellung enthalten den Papierkorb; der <a href="../export/">Vollexport</a> listet die Dokumente im Papierkorb in <code>papierkorb-dokumente.jsonl</code>.</li>
+</ul>
 <div class="admonition note">
 <p class="admonition-title">Sofort endgültig</p>
-<p>Einzeln gelöschte <strong>Dokumente</strong> und <strong>Werkbank → Demo-Daten → entfernen</strong> gehen nicht über den Papierkorb.</p>
+<p><strong>Werkbank → Demo-Daten → entfernen</strong> geht nicht über den Papierkorb.</p>
 </div>
 <h2 id="benutzer-und-rollen">Benutzer und Rollen<a class="headerlink" href="#benutzer-und-rollen" title="Permanent link">&para;</a></h2>
 <p>Rollen gehen wie andere Mappen in den Papierkorb; ihre Zuordnung zu Benutzern entfällt beim Löschen.</p>

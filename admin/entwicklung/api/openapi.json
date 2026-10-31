@@ -1237,6 +1237,183 @@
         }
       }
     },
+    "/papierkorb/dokumente": {
+      "get": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Einzeln gelöschte Dokumente im eigenen Papierkorb",
+        "description": "Dokumente, die der Benutzer dieses Schlüssels aus einem Register gelöscht hat (#344), neueste zuerst. mappe: da (wiederherstellbar), papierkorb (erst die Mappe wiederherstellen) oder weg.",
+        "operationId": "getPapierkorbDokumente",
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PapierkorbDokumente"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/papierkorb/dokumente/{id}/wiederherstellen": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Dokument aus dem Papierkorb wiederherstellen",
+        "description": "Legt das Dokument mit allen Versionen in dasselbe Register derselben Mappe zurück; braucht das Recht „Bearbeiten“ an der Mappe. 409, wenn die Mappe selbst im Papierkorb liegt oder es sie nicht mehr gibt.",
+        "operationId": "postPapierkorbDokumenteMitidWiederherstellen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DokumentWiederhergestellt"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/papierkorb/dokumente/{id}": {
+      "delete": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Dokument endgültig löschen",
+        "operationId": "deletePapierkorbDokumenteMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Geloescht"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Kann (noch) nicht gelöscht werden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/aufgaben": {
       "get": {
         "tags": [
@@ -3094,6 +3271,7 @@
           "Dokumente"
         ],
         "summary": "Dokument löschen",
+        "description": "Ist der Papierkorb eingeschaltet, kommt das Dokument mit allen Versionen in den Papierkorb (#344); sonst ist es endgültig weg.",
         "operationId": "deleteDokumenteMitid",
         "parameters": [
           {
@@ -5018,6 +5196,93 @@
                 }
               }
             }
+          }
+        }
+      },
+      "PapierkorbDokumente": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "art": {
+              "type": "string",
+              "enum": [
+                "dokument"
+              ]
+            },
+            "mappeId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "typId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "mappeTitel": {
+              "type": "string"
+            },
+            "registerKey": {
+              "type": "string"
+            },
+            "register": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "mime": {
+              "type": "string"
+            },
+            "groesse": {
+              "type": "integer"
+            },
+            "sha256": {
+              "type": "string"
+            },
+            "versionen": {
+              "type": "integer",
+              "description": "ältere Versionen, die mitgegangen sind"
+            },
+            "erstellt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "erstelltVon": {
+              "type": "string",
+              "nullable": true
+            },
+            "geloescht": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "geloeschtVon": {
+              "type": "string",
+              "nullable": true
+            },
+            "mappe": {
+              "type": "string",
+              "enum": [
+                "da",
+                "papierkorb",
+                "weg"
+              ]
+            }
+          }
+        }
+      },
+      "DokumentWiederhergestellt": {
+        "type": "object",
+        "properties": {
+          "dokument": {
+            "$ref": "#/components/schemas/Dokument"
+          },
+          "typId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },

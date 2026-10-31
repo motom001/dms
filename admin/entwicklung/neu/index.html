@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-077" class="md-skip">
+        <a href="#neu-in-version-078" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0770" class="md-nav__link">
+  <a href="#0780" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.77.0
+        0.78.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.77.0">
+    <nav class="md-nav" aria-label="0.78.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -386,10 +386,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sicherheit" class="md-nav__link">
+  <a href="#beim-aktualisieren-beachten" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sicherheit
+        Beim Aktualisieren beachten
       
     </span>
   </a>
@@ -1892,15 +1892,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0770" class="md-nav__link">
+  <a href="#0780" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.77.0
+        0.78.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.77.0">
+    <nav class="md-nav" aria-label="0.78.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1915,10 +1915,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sicherheit" class="md-nav__link">
+  <a href="#beim-aktualisieren-beachten" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sicherheit
+        Beim Aktualisieren beachten
       
     </span>
   </a>
@@ -1961,29 +1961,32 @@
   
 
 
-<h1 id="neu-in-version-077">Neu in Version 0.77<a class="headerlink" href="#neu-in-version-077" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-078">Neu in Version 0.78<a class="headerlink" href="#neu-in-version-078" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0770">0.77.0<a class="headerlink" href="#0770" title="Permanent link">&para;</a></h2>
+<h2 id="0780">0.78.0<a class="headerlink" href="#0780" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Doppelte Dokumente erkennen</strong> (#333). Liegt genau diese Datei schon im DMS, erfährt man es <strong>vor</strong> dem Ablegen – mit Link zur Mappe, Register, Dateiname und Datum: „Diese Datei liegt schon in <em>Stromvertrag Haus</em> …“.</li>
-<li><strong>In einer Mappe:</strong> Der Hinweis steht an der neuen Datei, noch vor <em>Mappe speichern</em>. Speichern legt sie trotzdem ab, <em>Nicht hochladen</em> lässt sie weg.</li>
-<li><strong>Neue Post</strong> (Ziehen ins Fenster, <em>+ Neu → Post</em>, Kamera): Vor dem Anlegen fragt das DMS je doppelter Datei – <em>trotzdem ablegen</em> anhaken, <em>Weiter</em> oder <em>Abbrechen</em>; die übrigen Dateien laufen normal.</li>
-<li><strong>Zuordnen einer Post:</strong> Unter jedem Dokument, das schon anderswo liegt, stehen die Fundstellen.</li>
-<li><strong>Eingangsordner und Postfach:</strong> Doppelte Dateien werden trotzdem Post; die Historie sagt „Diese Datei liegt schon im DMS“. Neu unter <strong>Werkbank → Eingangsordner:</strong> <em>Doppelte Dateien überspringen</em>.</li>
-<li><strong>Schnittstelle:</strong> <code>POST /api/v1/dokumente/gleiche</code> mit Prüfwerten (SHA-256); das Hochladen nennt in <code>gleicherInhalt</code> nur Mappen, die der Schlüssel lesen darf.</li>
-<li>Verglichen wird der <strong>Prüfwert</strong> – nur exakt gleiche Dateien, nicht ein zweiter Scan desselben Briefs. Der Prüfwert entsteht im Browser; im Heimnetz über <code>http://</code> mit einer eigenen Umsetzung (etwa 1 s für 50 MB).</li>
+<li><strong>Papierkorb auch für einzelne Dokumente</strong> (#344). Ein aus einem Register gelöschtes Dokument ist nicht mehr sofort weg: Es kommt mit <strong>allen Versionen und dem Volltext</strong> in den Papierkorb.</li>
+<li>Der Papierkorb zeigt unter <strong>Dokumente</strong> Name, Mappe, Register, Größe und wer es wann gelöscht hat.</li>
+<li><strong>Wiederherstellen</strong> legt es in dasselbe Register derselben Mappe zurück. Liegt die Mappe selbst im Papierkorb, sagt das DMS, dass zuerst die Mappe zurückkommt; gibt es sie nicht mehr, bleibt nur endgültig löschen.</li>
+<li>Rechte: in der Ablage, wer es gelöscht hat und die Mappe noch bearbeiten darf; in der Werkbank jeder Administrator. Der Archivmodus sperrt das Löschen wie bisher.</li>
+<li>Aufbewahrung, <em>Papierkorb leeren</em> und <em>0 Tage</em> (Papierkorb aus) gelten für Dokumente genauso. Wird eine Mappe endgültig gelöscht, gehen ihre einzeln gelöschten Dokumente mit.</li>
+<li>Historie der Mappe: „Dokument in den Papierkorb“, „Dokument wiederhergestellt“. Die Zahl am Papierkorb zählt Dokumente mit.</li>
+<li>Schnittstelle: <code>GET /api/v1/papierkorb/dokumente</code>, <code>POST …/dokumente/{id}/wiederherstellen</code>, <code>DELETE …/dokumente/{id}</code>; <code>DELETE /api/v1/dokumente/{id}</code> legt in den Papierkorb, wenn er eingeschaltet ist.</li>
+<li>Vollexport: neue Datei <code>daten/papierkorb-dokumente.jsonl</code>. Sicherungen enthalten den Papierkorb ohnehin.</li>
+<li>Handbuch: <em>Dokumente</em>, <em>Versionen</em>, <em>Ablage → Papierkorb</em> (Benutzer), <em>Papierkorb</em> (Administratoren).</li>
 </ul>
-<h3 id="sicherheit">Sicherheit<a class="headerlink" href="#sicherheit" title="Permanent link">&para;</a></h3>
+<h3 id="beim-aktualisieren-beachten">Beim Aktualisieren beachten<a class="headerlink" href="#beim-aktualisieren-beachten" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Hinweise auf gleiche Dateien nennen <strong>nur Mappen, die man lesen darf</strong>. Liegt die Datei nur in verborgenen Mappen, gibt es keinen Hinweis – das DMS verrät nicht, dass es sie gibt. Bisher nannte die Antwort beim Hochladen und die Historie einer Post aus dem Eingangsordner auch Titel von Mappen, die der Benutzer nicht sehen durfte; neue Einträge enthalten nur noch die Anzahl.</li>
+<li>Migration <strong>037</strong> legt die Tabelle <code>papierkorb_dokumente</code> an. Ältere Sicherungen lassen sich weiter einspielen.</li>
+<li>Wer ein Dokument über die Schnittstelle löscht und den Speicherplatz sofort braucht: Papierkorb ausschalten (0 Tage) oder das Dokument danach mit <code>DELETE /api/v1/papierkorb/dokumente/{id}</code> endgültig löschen.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.76.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.76.0...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.77.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.77.0...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
