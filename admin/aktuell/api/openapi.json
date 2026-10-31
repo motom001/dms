@@ -2435,7 +2435,7 @@
           "Dokumente"
         ],
         "summary": "Dokument hochladen",
-        "description": "Rohe Bytes der Datei als Body (Content-Type: application/octet-stream), höchstens 100 MB. Gleicher Inhalt wird nur einmal gespeichert.",
+        "description": "Rohe Bytes der Datei als Body (Content-Type: application/octet-stream), höchstens 100 MB. Gleicher Inhalt wird nur einmal gespeichert; gleicherInhalt nennt die anderen Mappen mit dieser Datei, soweit der Schlüssel sie lesen darf (#333).",
         "operationId": "postMappenMitidDokumente",
         "parameters": [
           {
@@ -2826,6 +2826,68 @@
           },
           "404": {
             "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dokumente/gleiche": {
+      "post": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "Gibt es diese Dateien schon?",
+        "description": "Doppelte Dateien (#333): SHA-256-Prüfwerte (hex, höchstens 100) → Fundstellen je Prüfwert, nur in Mappen, die der Schlüssel lesen darf. Prüfwerte ohne lesbare Fundstelle fehlen in der Antwort. ohneMappe lässt eine Mappe aus (z. B. die, in die man gerade hochlädt).",
+        "operationId": "postDokumenteGleiche",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Gleiche"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fundstellen"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
             "content": {
               "application/json": {
                 "schema": {
@@ -4895,6 +4957,67 @@
           "favoriten": {
             "type": "integer",
             "description": "Eigene Favoriten"
+          }
+        }
+      },
+      "Gleiche": {
+        "type": "object",
+        "required": [
+          "pruefwerte"
+        ],
+        "properties": {
+          "pruefwerte": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "ohneMappe": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "Fundstellen": {
+        "type": "object",
+        "properties": {
+          "fundstellen": {
+            "type": "object",
+            "description": "Je Prüfwert höchstens 5 Fundstellen",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "mappeId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "typId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "titel": {
+                    "type": "string"
+                  },
+                  "typ": {
+                    "type": "string"
+                  },
+                  "register": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "erstellt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
           }
         }
       },

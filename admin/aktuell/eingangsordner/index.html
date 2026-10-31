@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.76/eingangsordner/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.77/eingangsordner/">
       
       
         <link rel="prev" href="../texterkennung/">
@@ -1948,6 +1948,7 @@
 <li><strong>Eingangsordner prüfen</strong> – ein oder aus (Standard: ein).</li>
 <li><strong>Prüfabstand</strong> – wie oft das DMS nachsieht, 5 bis 3600 Sekunden (Standard: 30).</li>
 <li><strong>Nach dem Übernehmen</strong> – die Datei nach <code>erledigt/</code> verschieben (Standard) oder löschen.</li>
+<li><strong>Doppelte Dateien überspringen</strong> – liegt genau diese Datei (gleicher Prüfwert) schon im DMS, entsteht keine Post; die Datei wird wie eine übernommene weggeräumt und in der Liste als „doppelt – übersprungen“ geführt (Standard: aus).</li>
 <li><strong>Jetzt prüfen</strong> – sofort nachsehen.</li>
 </ul>
 <p>Darunter stehen die letzte Prüfung, Dateien, die noch geschrieben werden, die zuletzt übernommenen Dateien mit Link zur Post und Fehler.</p>
@@ -1958,7 +1959,7 @@
 <li><strong>Nur fertige Dateien:</strong> Eine Datei wird erst übernommen, wenn sich Größe und Änderungszeit über zwei Prüfungen nicht geändert haben – Scanner schreiben langsam.</li>
 <li><strong>Übersprungen</strong> werden versteckte und temporäre Dateien (<code>.*</code>, <code>~*</code>, <code>*.tmp</code>, <code>*.part</code>, <code>*.crdownload</code>, <code>*.partial</code>, <code>Thumbs.db</code>, <code>desktop.ini</code>), die Ordner der NAS-Systeme (<code>@eaDir</code>, <code>#recycle</code>, <code>.@__thumb</code>, <code>@Recycle</code>, <code>.Trash*</code>) sowie <code>erledigt/</code> und <code>fehler/</code>.</li>
 <li><strong>Abgelehnt</strong> werden leere Dateien und Dateien über 100 MB: Sie wandern nach <strong><code>fehler/</code></strong>, daneben eine Textdatei mit dem Grund; die Werkbank zeigt eine Meldung. Ist die <a href="../speicherplatz/">Speicherplatz</a>-Grenze erreicht, bleibt die Datei liegen und kommt dran, sobald wieder Platz ist.</li>
-<li><strong>Gleicher Inhalt:</strong> Gibt es schon Mappen mit derselben Datei, entsteht trotzdem eine neue Post; ihre Historie nennt die anderen Mappen.</li>
+<li><strong>Gleicher Inhalt:</strong> Gibt es schon Mappen mit derselben Datei, entsteht trotzdem eine neue Post (außer mit <em>Doppelte Dateien überspringen</em>). Ihre Historie sagt „Diese Datei liegt schon im DMS“ – ohne Titel, denn die Post sehen oft mehr Leute als die andere Mappe. Wo die Datei liegt, zeigt <strong>Zuordnen</strong> jedem, der die Mappe lesen darf.</li>
 <li><strong>Keine doppelte Übernahme</strong>, auch nicht nach einem Neustart oder Absturz mitten im Übernehmen: Erst wenn die Post gespeichert ist, wird die Datei verschoben oder gelöscht.</li>
 <li>Im <a href="../wartungsmodus/">Wartungsmodus</a> und während einer <a href="../wiederherstellen/">Wiederherstellung</a> ruht der Eingangsordner. Laufen mehrere Instanzen des DMS mit derselben Datenbank, übernimmt nur eine.</li>
 </ul>
