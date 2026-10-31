@@ -889,11 +889,13 @@
 <h2 id="projekt-holen-und-starten">Projekt holen und starten<a class="headerlink" href="#projekt-holen-und-starten" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/motom001/dms.git<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>dms
 npm<span class="w"> </span>install
-docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>db<span class="w">            </span><span class="c1"># nur die Datenbank</span>
-<span class="nv">DATABASE_URL</span><span class="o">=</span>postgres://dms:dms@localhost:5432/dms<span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>dev<span class="w"> </span>-w<span class="w"> </span>server
-npm<span class="w"> </span>run<span class="w"> </span>dev<span class="w"> </span>-w<span class="w"> </span>web<span class="w">              </span><span class="c1"># Oberfläche auf http://localhost:5173</span>
+docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>db<span class="w">         </span><span class="c1"># nur die Datenbank</span>
+<span class="nv">DATABASE_URL</span><span class="o">=</span>postgres://dms:dms@localhost:5432/dms<span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>dev
 </code></pre></div>
-<p>Ohne Docker für das DMS selbst legt der Server seine festen Ordner (<code>files</code>, <code>geheim</code>, <code>sicherung</code>) unter <code>./data</code> im Projekt an. <code>DMS_DATENWURZEL=/anderer/ordner</code> verlegt sie. Beim ersten Aufruf führt der Einrichtungsassistent durch die Einrichtung. Den Einrichtungscode zeigt die Konsole des Servers.</p>
+<p><code>npm run dev</code> im Wurzelordner startet Server (Port 3000) und Oberfläche zusammen; die Oberfläche läuft auf http://localhost:5173 und leitet <code>/api</code> und <code>/hilfe</code> an den Server weiter. Einzeln geht es mit <code>npm run dev -w server</code> und <code>npm run dev -w web</code>.</p>
+<p>Ohne Docker für das DMS selbst legt der Server seine festen Ordner (<code>files</code>, <code>geheim</code>, <code>sicherung</code>) unter <code>./data</code> im Projekt an. <code>DMS_DATENWURZEL=/anderer/ordner</code> verlegt sie. Beim ersten Start mit funktionierender Verbindung übernimmt der Server <code>DATABASE_URL</code> in die Datei <code>./data/geheim/datenbank.json</code>. Danach gilt die Datei; die Variable ist nicht mehr nötig. Für eine andere Datenbank die Datei löschen oder unter <strong>Werkbank → Datenbank-Anbindung</strong> ändern.</p>
+<p>Beim ersten Aufruf führt der Einrichtungsassistent durch die Einrichtung. Den Einrichtungscode gibt der Server im Terminal aus; er steht auch in einer Datei unter <code>./data/geheim</code>.</p>
+<p>Die <a href="https://motom001.github.io/dms/benutzer/aktuell/begriffe/#konsole">Konsole</a> (<code>dms</code> im Container) gibt es auch lokal: Nach <code>npm run build -w server</code> zeigt <code>node server/dist/dms.js</code> die Befehle. Sie spricht mit dem laufenden Server.</p>
 <p>Alles zusammen als Container: <code>docker compose up --build</code>, dann http://localhost:8080.</p>
 <h3 id="zwei-images-aus-einem-dockerfile">Zwei Images aus einem Dockerfile<a class="headerlink" href="#zwei-images-aus-einem-dockerfile" title="Permanent link">&para;</a></h3>
 <p>Das <code>Dockerfile</code> hat zwei Ziele (#208):</p>
@@ -951,7 +953,7 @@ deploy/vorlagen-probe.sh<span class="w"> </span>dms<span class="w">             
 </tr>
 </tbody>
 </table>
-<p>Die CI auf GitHub führt all das aus, baut das Image für amd64 und arm64, nimmt die Screenshots der Handbücher auf und prüft die Oberfläche in iPhone-Größe.</p>
+<p>Die CI auf GitHub führt all das aus, baut beide Images (<code>dms</code>, <code>dms-komplett</code>) für amd64 und arm64, nimmt die Screenshots der Handbücher auf und prüft die Oberfläche in iPhone-Größe.</p>
 <h2 id="handbucher">Handbücher<a class="headerlink" href="#handbucher" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">'mkdocs-material&gt;=9.5,&lt;10'</span>
 mkdocs<span class="w"> </span>serve<span class="w"> </span>-f<span class="w"> </span>docs/handbuch/benutzer/mkdocs.yml

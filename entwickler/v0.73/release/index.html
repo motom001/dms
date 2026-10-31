@@ -479,6 +479,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Versionsnummern">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#workflows-von-hand-starten" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflows von Hand starten
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -783,6 +800,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Versionsnummern">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#workflows-von-hand-starten" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflows von Hand starten
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -870,7 +904,8 @@
 <p>Ein Release entsteht, sobald auf <code>main</code> eine Versionsnummer steht, für die es noch kein Tag gibt.</p>
 <ol>
 <li><strong>Pull Request</strong> mit erhöhter Nummer in <code>package.json</code>, <code>server/package.json</code>, <code>web/package.json</code> und neuen Release-Notizen <code>docs/releases/v&lt;version&gt;.md</code>.</li>
-<li>Nach dem Merge baut <strong>image.yml</strong> das Image nativ für amd64 und arm64. Es legt das Tag <code>v&lt;version&gt;</code> an, veröffentlicht das Release mit den Notizen und pusht <code>ghcr.io/motom001/dms:&lt;version&gt;</code>.</li>
+<li>Nach dem Merge baut <strong>image.yml</strong> (<em>Prüfen und Image bauen</em>) <strong>zwei Images</strong> nativ für amd64 und arm64 und pusht sie: <code>ghcr.io/motom001/dms:&lt;version&gt;</code> und <code>ghcr.io/motom001/dms-komplett:&lt;version&gt;</code>.</li>
+<li>Danach ruft image.yml <strong>release.yml</strong> auf. Der Workflow legt das Tag <code>v&lt;version&gt;</code> und das GitHub-Release an. Den Text übernimmt er aus <code>docs/releases/v&lt;version&gt;.md</code>; fehlt die Datei, nimmt er die Commit-Überschriften seit dem vorigen Tag.</li>
 <li><strong>handbuch.yml</strong> baut alle Handbücher für diese Version (<code>v&lt;Haupt&gt;.&lt;Neben&gt;</code>) und legt sie auf dem Branch <code>gh-pages</code> ab. <code>aktuell</code> zeigt dann auf die neue Version, <code>entwicklung</code> folgt weiter <code>main</code>. Die Seite <em>Neu in dieser Version</em> entsteht aus den Release-Notizen.</li>
 <li><strong><a href="https://github.com/motom001/dms-appstore">motom001/dms-appstore</a></strong> übernimmt die neue Version am nächsten Morgen, mit Images per Digest, für Umbrel, ZimaOS und CasaOS. Von Hand geht es sofort über den Workflow <em>Store aktualisieren</em>.</li>
 </ol>
@@ -880,9 +915,19 @@
 <li><strong>Patch</strong> (<code>0.39.1</code>) für Korrekturen; das Handbuch der Neben-Version wird überschrieben.</li>
 <li>Ohne neue Nummer: nur das Image <code>main</code> und das Handbuch <code>entwicklung</code> ändern sich.</li>
 </ul>
+<h3 id="workflows-von-hand-starten">Workflows von Hand starten<a class="headerlink" href="#workflows-von-hand-starten" title="Permanent link">&para;</a></h3>
+<ul>
+<li><em>Prüfen und Image bauen</em> (<code>image.yml</code>) und <em>Scorecard</em> lassen sich unter <strong>Actions</strong> von Hand starten. Ein Handstart von image.yml baut und veröffentlicht die Images, legt aber kein Release an – das passiert nur nach einem Push auf <code>main</code> mit neuer Nummer.</li>
+<li><em>Handbuch</em> (<code>handbuch.yml</code>) baut von Hand wahlweise eine Version (z. B. <code>v0.22</code>) oder, ohne Angabe, <code>entwicklung</code>.</li>
+<li><em>Lockfile erzeugen</em> (<code>lockfile.yml</code>) lässt sich ebenfalls von Hand starten.</li>
+<li><em>Release</em> (<code>release.yml</code>) startet außerdem bei einem von Hand gepushten Tag <code>v*</code> (legt das Release an) und bei einem von Hand veröffentlichten Release (setzt nur den Text).</li>
+</ul>
 <h2 id="abhangigkeiten-und-sicherheitsupdates">Abhängigkeiten und Sicherheitsupdates<a class="headerlink" href="#abhangigkeiten-und-sicherheitsupdates" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Dependabot</strong> (<code>.github/dependabot.yml</code>) schlägt jeden Montag Updates vor: kleine Updates (minor, patch) gesammelt in einem PR, Hauptversionen einzeln, dazu GitHub Actions und das Basis-Image. Sicherheitsupdates kommen sofort. Die CI prüft jeden dieser PRs wie jeden anderen; Hauptversionen bitte mit Blick in das Änderungsprotokoll der Bibliothek.</li>
+<li><strong>Dependabot</strong> (<code>.github/dependabot.yml</code>) schlägt jeden Montag Updates vor: kleine Updates (minor, patch) gesammelt in einem PR, Hauptversionen einzeln, dazu GitHub Actions und die Basis-Images. Sicherheitsupdates kommen sofort. Die CI prüft jeden dieser PRs wie jeden anderen; Hauptversionen bitte mit Blick in das Änderungsprotokoll der Bibliothek.<ul>
+<li><strong>Ausnahmen</strong> (<code>ignore</code> in <code>dependabot.yml</code>), die bewusst von Hand kommen: neue Hauptversionen von <code>node</code> (Basis-Image, nur LTS-Reihen), <code>@types/node</code> und <code>typescript</code>; bei <code>esbuild</code> (noch 0.x) auch neue Nebenversionen.</li>
+</ul>
+</li>
 <li><strong><code>npm audit</code></strong> läuft in der CI über alles, was im Image landet (<code>--omit=dev</code>). Ab Stufe „hoch“ schlägt die Prüfung fehl. Ist eine Meldung für das DMS nachweislich ohne Wirkung, wird das im PR begründet.</li>
 <li><strong><code>package-lock.json</code></strong> hält die genauen Versionen fest; CI und Image installieren mit <code>npm ci</code>. Ändert sich eine <code>package.json</code> ohne passende Lockfile, legt der Workflow <em>Lockfile erzeugen</em> eine neue auf den Branch <code>werkzeug/lockfile</code>; von dort wird sie mit einem normalen Commit übernommen.</li>
 <li><strong>Sicherheitskorrektur = Patch-Release</strong> mit dem Hinweis „Sicherheitsupdate – bitte aktualisieren“ in den Release-Notes. Meldungen von außen laufen vertraulich, siehe <a href="https://github.com/motom001/dms/blob/main/SECURITY.md"><code>SECURITY.md</code></a>.</li>
@@ -907,12 +952,12 @@ gh<span class="w"> </span>attestation<span class="w"> </span>verify<span class="
 <p>Der Workflow <em>Scorecard</em> bewertet wöchentlich und bei jedem Push auf <code>main</code>, wie das Projekt mit Sicherheit umgeht. Das Ergebnis ist öffentlich (<a href="https://scorecard.dev/viewer/?uri=github.com/motom001/dms">scorecard.dev</a>) und steht als Abzeichen in der README; die einzelnen Hinweise stehen unter <strong>Security → Code scanning</strong>. Daraus folgen diese Regeln:</p>
 <ul>
 <li><strong>Actions mit fester Commit-Kennung</strong>, die Version als Kommentar dahinter: <code>uses: actions/checkout@&lt;40 Zeichen&gt; # v7.0.1</code>. Dependabot aktualisiert beides.</li>
-<li><strong>Rechte:</strong> Oben im Workflow nur <code>contents: read</code> (bzw. keine Rechte). Schreibrechte bekommt nur der Job, der sie braucht (<code>packages</code>, <code>contents</code>, <code>id-token</code>, <code>attestations</code>, <code>security-events</code>).</li>
+<li><strong>Rechte:</strong> Oben im Workflow nur <code>contents: read</code> (bzw. keine Rechte). Schreibrechte bekommt nur der Job, der sie braucht (<code>packages</code>, <code>contents</code>, <code>id-token</code>, <code>attestations</code>, <code>security-events</code>). Einzige Ausnahme ist der Workflow <em>Scorecard</em> mit <code>permissions: read-all</code> oben – das sind nur Leserechte; für die Veröffentlichung des Ergebnisses darf dieser Workflow oben keine Schreibrechte haben.</li>
 <li><strong>Keine Ausführung fremden Codes mit Rechten:</strong> <code>pull_request_target</code> nur ohne Checkout (wie im Workflow <em>Freigabe schützen</em>).</li>
 </ul>
 <p>Bewusst anders, als Scorecard es gern hätte:</p>
 <ul>
-<li><strong>Basis-Images ohne festen Prüfwert</strong> (<code>node:22-alpine</code>, <code>alpine</code>): Der wöchentliche Neubau soll gerade die neuesten Sicherheitskorrekturen der Reihe holen. Ein fester Prüfwert würde jede Woche einen eigenen PR brauchen, ohne mehr Sicherheit zu bringen; die Images selbst werden geprüft und tragen einen Herkunftsnachweis.</li>
+<li><strong>Basis-Images ohne festen Prüfwert</strong> (<code>node:24-alpine</code>, <code>python:3.12-alpine</code> im <code>Dockerfile</code>): Der wöchentliche Neubau soll gerade die neuesten Sicherheitskorrekturen der Reihe holen. Ein fester Prüfwert würde jede Woche einen eigenen PR brauchen, ohne mehr Sicherheit zu bringen; die Images selbst werden geprüft und tragen einen Herkunftsnachweis.</li>
 <li><strong>Code-Review:</strong> Mit einem Maintainer gibt es keine zweite Person, die jeden PR freigibt. Stattdessen müssen alle Prüfungen grün sein, und Änderungen laufen über PRs mit Issue.</li>
 </ul>
 <h3 id="bewertung-des-ersten-laufs">Bewertung des ersten Laufs<a class="headerlink" href="#bewertung-des-ersten-laufs" title="Permanent link">&para;</a></h3>
