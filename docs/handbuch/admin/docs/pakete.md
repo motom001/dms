@@ -13,7 +13,7 @@ Das DMS fragt den Katalog **nur auf Knopfdruck** ab, nie im Hintergrund: Klicke 
 
 Ein Klick auf ein Paket zeigt Name, Beschreibung, Version, Lizenz, Autor, die nötige DMS-Version, Abhängigkeiten, die enthaltenen Mappentypen und Ansichten sowie Links zum README und zu den Änderungen.
 
-Das DMS lädt den Katalog von `https://raw.githubusercontent.com/motom001/dms-registry/gh-pages/katalog.json`. Braucht dein DMS einen Proxy für das Internet, gilt derselbe wie für alle anderen Abrufe.
+Das DMS lädt den Katalog von `https://raw.githubusercontent.com/motom001/dms-registry/gh-pages/katalog.json`. Dafür muss das DMS selbst ins Internet kommen. Einen Proxy für ausgehende Abrufe kann das DMS nicht einstellen. Ohne Internetzugang lädst du ein Paket als Datei hoch (siehe [Expertenmodus](#expertenmodus-weitere-kataloge-und-hochladen)).
 
 ## Installieren
 
@@ -100,8 +100,8 @@ Für Paketentwickler und für ein DMS ohne Internetzugang gibt es unter **Werkba
 
 Im Expertenmodus kannst du:
 
-- **Weitere Katalogadressen** hinzufügen, abschalten und entfernen. Erlaubt ist nur HTTPS, das Format ist dasselbe wie beim offiziellen Katalog (`katalog.json` der Registry). **Katalog abrufen** fragt dann auch die eingeschalteten weiteren Kataloge ab; ihre Pakete tragen die Adresse als Kennzeichen.
-- Ein **Paket als Datei hochladen** (`.zip` im Format der Registry, z. B. der Paketordner gepackt). Das DMS prüft es genauso wie ein Katalogpaket, nur ohne Prüfsumme aus dem Katalog, und zeigt die Vorschau.
+- **Weitere Katalogadressen** hinzufügen, abschalten und entfernen, höchstens 20. Erlaubt ist nur HTTPS, das Format ist dasselbe wie beim offiziellen Katalog (`katalog.json` der Registry). **Katalog abrufen** fragt dann auch die eingeschalteten weiteren Kataloge ab; ihre Pakete tragen die Adresse als Kennzeichen.
+- Ein **Paket als Datei hochladen** (`.zip` im Format der Registry, z. B. der Paketordner gepackt, höchstens 10 MB). Das DMS prüft es genauso wie ein Katalogpaket, nur ohne Prüfsumme aus dem Katalog, und zeigt die Vorschau.
 
 !!! warning "Nicht vom DMS-Projekt geprüft"
     Pakete aus einer anderen Quelle als dem offiziellen Katalog hat niemand vom DMS-Projekt angesehen. Vor der Installation zeigt das DMS deshalb deutlich die Herkunft, und du musst ausdrücklich bestätigen, dass du weißt, woher das Paket stammt.

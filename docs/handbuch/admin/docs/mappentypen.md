@@ -1,6 +1,6 @@
 # Mappentypen
 
-Ein **Mappentyp** legt fest, welche Art von Mappe es gibt – *Vertrag*, *Rechnung*, *Versicherung*, *Gerät* … – und was darin steht. Jeder Mappentyp erscheint in der Ablage als eigene Ansicht.
+Ein **Mappentyp** legt fest, welche Art von Mappe es gibt – *Vertrag*, *Rechnung*, *Versicherung*, *Gerät* … – und was darin steht. Ein neuer Mappentyp bekommt in der Ablage eine eigene Ansicht; das lässt sich beim Anlegen abwählen (siehe [Grunddaten](#grunddaten)).
 
 Mappentypen pflegst du unter **Werkbank → Mappentypen**. Mit **+ Neu** legst du einen an; ein Klick auf einen bestehenden öffnet ihn zum Bearbeiten.
 
@@ -10,7 +10,7 @@ Wie Benutzer mit den Mappen arbeiten, beschreibt das [Benutzerhandbuch](https://
 
 ## Aufbau des Editors
 
-Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: **Grunddaten → Felder → Titel → Trefferlisten → Register → Berechtigungen → Testlauf**.
+Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: **Grunddaten → Felder → Titel → Trefferlisten → Register → Archivmodus → Berechtigungen → Testlauf**.
 
 - Jeder Bereich lässt sich mit einem Klick auf seine Überschrift **ein- und ausklappen**. Eingeklappt zeigt er das Wichtigste in einer Zeile, z. B. „8 Felder, 2 Pflicht, 1 mit Erinnerung“, die Titel-Vorlage mit einem Beispiel oder „Standard: R · 3 Regeln“.
 - Ein **neuer** Mappentyp ist ganz aufgeklappt, ein **bestehender** startet eingeklappt. Was du auf- oder zuklappst, merkt sich dein Gerät je Mappentyp.
@@ -20,7 +20,7 @@ Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: 
 ## Grunddaten
 
 - **Name** – so heißt die Ansicht in der Ablage, z. B. „Vertrag“. Er lässt sich jederzeit ändern.
-- **Kennung** – fester, technischer Name, z. B. `vertrag`. Sie wird aus dem Namen vorgeschlagen, lässt sich beim Anlegen ändern und ist nach dem ersten Speichern **fest**. [Sprechende Links](direktlinks.md) und Skripte über die [Schnittstelle](api.md) können ihn nutzen – so bleiben sie gültig, auch wenn der Mappentyp umbenannt wird. Die Systemtypen heißen `benutzer`, `rolle` und `post` (bis 0.40 hieß *Post* noch *E-Mail* mit der Kennung `email`).
+- **Kennung** – fester, technischer Name, z. B. `vertrag`. Sie wird aus dem Namen vorgeschlagen, lässt sich beim Anlegen ändern und ist nach dem ersten Speichern **fest**. [Links über Mappentyp und Feldwerte](direktlinks.md) und Skripte über die [Schnittstelle](api.md) können sie nutzen – so bleiben sie gültig, auch wenn der Mappentyp umbenannt wird. Die Systemtypen heißen `benutzer`, `rolle` und `post` (bis 0.40 hieß *Post* noch *E-Mail* mit der Kennung `email`).
 - **Beschreibung** – steht über der Liste und hilft beim Einordnen.
 
 Beim **Anlegen** gibt es zusätzlich **Eigene Ansicht in der Ablage anlegen** (standardmäßig an): Dann erscheint der neue Mappentyp in der Ablage als eigene Ansicht. Abwählen, wenn seine Mappen nur in einer bestehenden [Ansicht](sichten.md) erscheinen sollen.
@@ -50,7 +50,7 @@ Jedes Feld hat eine **Bezeichnung** (änderbar), eine **Kennung** (fest, sobald 
 
 Für alle gilt: **Pflichtfeld** und ein **Hilfetext**, der beim Ausfüllen unter dem Feld steht; die meisten Mappentypen haben außerdem einen **Standardwert** für neue Mappen. **Eindeutig** heißt: Den Wert darf es in diesem Mappentyp nur einmal geben – Groß- und Kleinschreibung zählen dabei nicht.
 
-Steht im Standardwert eines Textfelds `{nummernkreis:<schlüssel>}`, bekommt jede neue Mappe eine fortlaufende Nummer aus diesem [Nummernkreis](nummernkreise.md); das Feld ist dann schreibgeschützt.
+Steht im Standardwert eines Textfelds `{nummernkreis:<kennung>}`, bekommt jede neue Mappe eine fortlaufende Nummer aus diesem [Nummernkreis](nummernkreise.md); das Feld ist dann schreibgeschützt.
 
 ### Die Kennung
 
@@ -78,7 +78,7 @@ Unter dem Ziel-Mappentyp legst du mit **Nur Mappen, die …** fest, welche Mappe
 
 **Werte aus dieser Mappe:** Statt eines festen Werts kann eine Bedingung einen Wert der eigenen Mappe nehmen – Haken **Wert aus dieser Mappe** und das Feld wählen. Beispiele: *Fachgebiet* (am Arzt) *ist einer von* **Fachgebiet dieser Mappe**; *Vertragspartner* (am Vertrag) *zeigt auf* **Vertragspartner dieser Mappe**.
 
-- Angeboten werden nur Felder mit passender Feldart: Text zu Text, Zahl zu Zahl, Datum zu Datum, ein Auswahlfeld, dessen Werte es auch am Ziel gibt, ein Verweisfeld auf denselben Mappentyp. Das Referenzfeld selbst geht nicht.
+- Angeboten werden nur Felder mit passender Feldart: Text zu Text, Zahl zu Zahl, Datum zu Datum, ein Auswahlfeld, dessen Werte es auch am Ziel gibt, ein Verweisfeld auf denselben Mappentyp. Das Verweisfeld selbst geht nicht.
 - Ändert man in der Mappe das eigene Feld, filtert die Auswahl sofort neu. Passt eine schon gewählte Mappe nicht mehr, steht der Hinweis „passt nicht mehr zum Filter“ schon vor dem Speichern am Feld.
 - **Ist das eigene Feld leer**, gilt die Bedingung nicht – dann werden alle angeboten, die die übrigen Bedingungen erfüllen.
 - Das DMS prüft beim Speichern mit den Werten, die gespeichert werden sollen – auch wenn beide Felder im selben Zug geändert werden.
@@ -221,13 +221,17 @@ Das ändert nur den Entwurf; übernommen wird es wie alles andere mit **Mappenty
     - *Zugeordnet zu* darf als einziges Feld auf Mappen *jedes* Mappentyps zeigen, auch auf mehrere. Wird eine dieser Mappen gelöscht, bleibt die Post erhalten; nur der Verweis entfällt.
     - *Für* verweist auf einen Benutzer: Solange die Post neu ist, hat er die Aufgabe *Post für dich* unter „Zu erledigen“.
     - Beim ersten Start legt das DMS die Ansichten **Neue Post** (ganz oben, Stand *Neu*) und unter **Post** die Ansichten **Eingegangen** und **Versendet** an. Du kannst sie ändern, verschieben oder löschen; gelöschte kommen nicht wieder.
-    - **Aus E-Mail wird Post (0.41):** Der frühere Systemtyp *E-Mail* wird beim Update zu *Post*. Vorhandene E-Mails bekommen Kanal *E-Mail*, Richtung *Ausgehend* und Stand *Erledigt*. Felder, Dokumente und Verweise bleiben erhalten; eigene Felder und Bezeichnungen auch. Sprechende Links mit `typ=email` funktionieren weiter.
+    - **Aus E-Mail wird Post (0.41):** Der frühere Systemtyp *E-Mail* wird beim Update zu *Post*. Vorhandene E-Mails bekommen Kanal *E-Mail*, Richtung *Ausgehend* und Stand *Erledigt*. Felder, Dokumente und Verweise bleiben erhalten; eigene Felder und Bezeichnungen auch. Links mit `typ=email` funktionieren weiter.
 
 Mehr dazu in [Benutzer und Rollen](benutzer.md).
 
+## Archivmodus
+
+Zwischen Registern und Berechtigungen schaltest du den **Archivmodus** ein: Mappen und Dokumente dieses Mappentyps lassen sich dann bis zum Ende einer Aufbewahrungsfrist nicht löschen, und Dokumente ändern sich nur noch als neue Version. Frist, Stichtag und was währenddessen gilt, stehen unter [Archivmodus und Aufbewahrung](archiv.md).
+
 ## Berechtigungen
 
-Unter den Registern legst du fest, wer Mappen dieses Mappentyps anlegen, lesen, bearbeiten, löschen und Passwörter darin sehen darf – mit der Zeile **Standard** und Regeln. Gespeichert wird mit **Mappentyp speichern**; darunter probierst du die Regeln im **Testlauf** aus – auch ungespeicherte. Alles Weitere steht unter [Berechtigungen](berechtigungen.md).
+Unter Registern und Archivmodus legst du fest, wer Mappen dieses Mappentyps anlegen, lesen, bearbeiten, löschen und Passwörter darin sehen darf – mit der Zeile **Standard** und Regeln. Gespeichert wird mit **Mappentyp speichern**; darunter probierst du die Regeln im **Testlauf** aus – auch ungespeicherte. Alles Weitere steht unter [Berechtigungen](berechtigungen.md).
 
 ## Mappentyp kopieren
 
@@ -235,4 +239,4 @@ Unter den Registern legst du fest, wer Mappen dieses Mappentyps anlegen, lesen, 
 
 ## Mappentyp löschen
 
-**Mappentyp löschen** geht nur, solange es keine Mappen dieses Mappentyps gibt und kein anderer Mappentyp auf ihn verweist. Sonst nennt das DMS die Gründe.
+**Mappentyp löschen** geht nur, solange es keine Mappen dieses Mappentyps gibt – auch keine im [Papierkorb](papierkorb.md) – und kein anderer Mappentyp auf ihn verweist. Sonst nennt das DMS die Gründe. [Systemmappentypen](#systemmappentypen-benutzer-rolle-und-post) lassen sich nie löschen.

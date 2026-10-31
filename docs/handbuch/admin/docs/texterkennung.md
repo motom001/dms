@@ -50,5 +50,7 @@ Am Dokument sehen alle Benutzer den Stand (*wartet*, *läuft*, *fertig*, *Fehler
 **Werkbank → Wartungsoperationen** sammelt Arbeiten am ganzen Bestand, die du bei Bedarf anstößt:
 
 - **Volltext nachholen** stellt alle Dokumente in die Warteschlange, die noch keinen Volltext haben – etwa alles, was vor Version 0.11 hochgeladen wurde. Je nach Menge und Seitenzahl kann das Stunden dauern; das DMS bleibt dabei benutzbar.
+- **Alle Dateien prüfen** liest jede gespeicherte Datei, auch ältere Versionen, und vergleicht sie mit ihrem Prüfwert. So fällt auf, wenn eine Datei auf dem Speicher verändert wurde oder fehlt. Mehr dazu unter [Alle Dateien prüfen](archiv.md#alle-dateien-prufen).
+- **Nummern nachträglich vergeben** gibt Mappen eine Nummer, die angelegt wurden, bevor ihr Feld einen Nummernkreis bekam. Mehr dazu unter [Nummern nachträglich vergeben](nummernkreise.md#nummern-nachtraglich-vergeben).
 
-Sicherung, Wiederherstellung und Export kommen später an diese Stelle.
+Alle drei laufen im Hintergrund; das DMS bleibt dabei benutzbar.

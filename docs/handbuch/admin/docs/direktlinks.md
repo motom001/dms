@@ -1,4 +1,4 @@
-# Sprechende Links
+# Links über Mappentyp und Feldwerte
 
 Ein Link über Mappentyp und Feldwerte findet eine Mappe über ihren **Mappentyp** und ihre **Angaben** statt über ihre technische Id. Den Link kannst du einem Kollegen mit eigenem Konto per Mail oder Chat schicken oder in anderen Programmen hinterlegen, etwa:
 
@@ -34,8 +34,8 @@ Die Adresse im Browser bleibt der Link, auch wenn eine Mappe geöffnet ist oder 
 
 Mehrere Bedingungen gelten **zusammen** (UND), wie in einer [Ansicht](sichten.md). Sonderzeichen im Wert schreibst du so, wie Browser sie kodieren: Leerzeichen als `+` oder `%20`, `&` als `%26`, `+` als `%2B`.
 
-!!! warning "Mappentyp umbenennen macht Links ungültig"
-    Der Link nennt den Mappentyp beim **Namen**. Benennst du „Rechnung“ in „Eingangsrechnung“ um, finden alte Links den Mappentyp nicht mehr und zeigen eine Fehlermeldung. Felder dagegen stehen mit ihrer **Kennung** im Link, die sich nie ändert (siehe [Mappentypen](mappentypen.md#die-kennung)) – Bezeichnungen kannst du gefahrlos umbenennen.
+!!! warning "Mappentyp umbenennen"
+    Nennt ein Link den Mappentyp mit seiner **Kennung** (`typ=rechnung`, so wie „Link kopieren“ ihn erzeugt), bleibt er gültig, auch wenn du den Mappentyp umbenennst. Nur Links, die den Mappentyp beim **Namen** nennen (`typ=Rechnung`), finden ihn nach dem Umbenennen nicht mehr und zeigen eine Fehlermeldung. Felder stehen immer mit ihrer **Kennung** im Link, die sich nie ändert (siehe [Mappentypen](mappentypen.md#die-kennung)) – Bezeichnungen kannst du gefahrlos umbenennen.
 
 Die Kennung eines Feldes siehst du in der Werkbank beim Mappentyp, im Feld unter **Kennung**. Auch die Systemwerte gehen: `_erstellt`, `_geaendert` (Datum) sowie `_erstelltVon`, `_geaendertVon` (nur mit `ich`).
 
@@ -96,4 +96,4 @@ Ein Link mit Fehler zeigt, was nicht stimmt:
 
 ## Über die Schnittstelle
 
-Dieselben Links versteht `GET /api/v1/mappen?sicht=link&link=<Parameter des Links>`, z. B. `link=typ%3DRechnung%26bezahlt%3Dnein` (die Parameter als ein kodierter Wert). Ein fehlerhafter Link ergibt `422` mit der Meldung in `fehler`. Siehe [Schnittstelle](api.md).
+Dieselben Links versteht `GET /api/v1/mappen?sicht=link&link=<Parameter des Links>`, z. B. `link=typ%3Drechnung%26bezahlt%3Dnein` (die Parameter als ein kodierter Wert). Ein fehlerhafter Link ergibt `422` mit der Meldung in `fehler`. Siehe [Schnittstelle](api.md).

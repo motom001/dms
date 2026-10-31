@@ -23,7 +23,7 @@ Alle übrigen Farben leitet das DMS aus diesen beiden ab. Ist eine Farbe auf dem
 
 ## Logo und Schriftzug
 
-Jedes Design hat ein eigenes **Logo** und einen **Schriftzug** (Standard: das Mappen-Symbol und „DMS“). Sie erscheinen
+Jedes Design hat ein eigenes **Logo** (Standard: das Mappen-Symbol) und einen **Schriftzug**. Den Schriftzug des Standard-Designs setzt der [Einrichtungsassistent](installation.md#haushalt) auf den Namen des Haushalts, z. B. „Familie Muster“. Designs ohne eigenen Schriftzug zeigen „DMS“. Logo und Schriftzug erscheinen
 
 - oben links in der Kopfzeile,
 - im Titel und Symbol des Browser-Tabs (z. B. „Familie Muster – Ablage“),

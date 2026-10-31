@@ -20,19 +20,7 @@ Unter **Werkbank → Gemeldete Fehler** stehen die Meldungen, neueste zuerst; de
 
 ![Protokoll](bilder/werkbank-protokoll.png)
 
-Jeder Eintrag gehört zu einem **Modul**:
-
-| Modul | Was |
-| --- | --- |
-| `system` | Start, Einstellungen, Debug-Modus |
-| `http` | eine Zeile je Anfrage: Methode, Pfad, Status, Dauer, Datenbankzugriffe |
-| `konto` | Anmeldung, Sitzungen, Benutzer, Vertretung |
-| `ablage` | Mappen anlegen, ändern, löschen; Ansichten |
-| `werkbank` | Mappentypen, Demo-Daten, Einstellungen, Versionsabgleich |
-| `dokumente` | Hochladen, Anzeigen, Löschen |
-| `texterkennung` | Texterkennung: abgeschlossen, ausgelassen, fehlgeschlagen, neu gestartet, abgebrochen; Einstellungen |
-| `datenbank` | Migrationen, Verbindung, lange Zugriffe |
-| `mail` | Versand und Fehler beim Versand |
+Jeder Eintrag gehört zu einem **Modul**, etwa `konto` für Anmeldungen oder `sicherung` für Sicherungen. Welche Module es gibt, steht unter [Technik → Module](technik.md#module).
 
 Filtern lässt sich nach Stufe, Modul, Benutzer und Text; **Live** aktualisiert die Liste alle zwei Sekunden. Ein Klick auf einen Eintrag zeigt alle Daten dazu, auch Benutzer und Anfrage-Kennung.
 

@@ -21,7 +21,7 @@ Schneller geht es links im Baum: Jede Ansicht hat einen **Griff ⠿**. Daran zie
 - **zwischen zwei Ansichten** – eine Linie zeigt die Einfügestelle, auch auf einer anderen Ebene;
 - **auf eine Ansicht** – die Zielansicht wird umrandet, deine Ansicht wird ihre **Unteransicht**.
 
-Unteransichten wandern mit. Eine Ansicht lässt sich nicht in ihre eigene Unteransicht ziehen. Die neue Ordnung gilt **sofort**, ohne Speichern – auch in der Ablage. *Zu erledigen*, *Favoriten* und *Papierkorb* stehen fest oben und sind keine Ansichten in diesem Baum.
+Unteransichten wandern mit. Eine Ansicht lässt sich nicht in ihre eigene Unteransicht ziehen. Die neue Ordnung gilt **sofort**, ohne Speichern – auch in der Ablage. Die festen Einträge oben – *Erweiterte Suche*, *Zu erledigen*, *Anstehend*, *Favoriten* und *Papierkorb* (nur, solange er an ist oder etwas darin liegt) – sind keine Ansichten in diesem Baum.
 
 - **Tastatur:** Griff mit Tab ansteuern, dann **Alt+↑/↓** verschiebt innerhalb der Ebene, **Alt+→** macht die Ansicht zur Unteransicht der Ansicht darüber, **Alt+←** hängt sie eine Ebene höher (hinter die bisherige Elternansicht).
 - **Smartphone/Tablet:** Griff **lange antippen**, dann ziehen. Die Knöpfe ↑/↓ in der geöffneten Ansicht gibt es weiterhin.
@@ -32,7 +32,7 @@ Unteransichten wandern mit. Eine Ansicht lässt sich nicht in ihre eigene Untera
 Die Ansicht zeigt Mappen der angehakten Mappentypen, sofern sie alle Bedingungen erfüllen. Dazu kommen **immer** die Mappen ihrer Unteransichten – jede mit ihren eigenen Bedingungen, ohne Doppelte.
 
 - Eine Ansicht **ohne Mappentyp** dient nur zum Gruppieren, etwa *Finanzen* über *Offene Rechnungen* und *Zahlungen dieses Jahr*.
-- Zeigt eine Ansicht (mit Unteransichten) **genau einen** Mappentyp, verhält sich die Liste wie gewohnt: Trefferliste des Mappentyps, Sortieren nach seinen Feldern, **+ Neu**, sofern neue Mappen erlaubt sind.
+- Zeigt eine Ansicht (mit Unteransichten) **genau einen** Mappentyp, verhält sich die Liste wie gewohnt: Trefferliste des Mappentyps, Sortieren nach seinen Feldern und **+ Neu**. Den Knopf gibt es nur, wenn der Benutzer das Recht **C** (Anlegen) am Mappentyp ([Berechtigungen](berechtigungen.md)) **und** an der Ansicht ([Berechtigungen](#berechtigungen)) hat. In Ansichten mit Post heißt er **+ Post**.
 - Zeigt sie **mehrere** Mappentypen, gibt es kein **+ Neu**; sortieren lässt sich nach den Systemspalten.
 
 ## Trefferliste
@@ -52,7 +52,7 @@ Bedingungen gelten für die eigenen Mappentypen der Ansicht und **alle zusammen*
 | Feldart | Vergleiche |
 | --- | --- |
 | Text | ist gleich (ohne Groß-/Kleinschreibung), enthält, ist leer, ist nicht leer |
-| Langtext | enthält, ist leer, ist nicht leer |
+| Langtext, formatierter Text | enthält, ist leer, ist nicht leer |
 | Zahl, Betrag | ist gleich, kleiner als, größer als, zwischen, außerhalb von, ist leer, ist nicht leer |
 | Datum | wie Zahl, dazu **im Zeitraum** (Jahr oder Monat) |
 | Ja/Nein | ja, nein (leer zählt als nein) |
@@ -148,4 +148,4 @@ Unter den Berechtigungen prüfst du, was ein Benutzer an der Ansicht darf – mi
     Eine Ansicht gibt nie Zugriff auf Mappen, die ein Benutzer sonst nicht sehen dürfte. Wer eine Ansicht sieht, dort anlegen und aus ihr exportieren darf, steht oben unter [Berechtigungen](#berechtigungen).
 
 !!! tip "Ohne Ansicht auf Mappen zeigen"
-    Dieselben Bedingungen gehen auch in einem [Link über Mappentyp und Feldwerte](direktlinks.md), z. B. `/ablage/link?typ=Rechnung&bezahlt=nein` – ganz ohne Ansicht einzurichten.
+    Dieselben Bedingungen gehen auch in einem [Link über Mappentyp und Feldwerte](direktlinks.md), z. B. `/ablage/link?typ=rechnung&bezahlt=nein` – ganz ohne Ansicht einzurichten.

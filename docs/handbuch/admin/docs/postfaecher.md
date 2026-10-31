@@ -13,18 +13,19 @@ Das DMS kann ein oder mehrere **E-Mail-Postfächer per IMAP abholen** und **jede
 
 | Angabe | Bedeutung |
 | --- | --- |
+| Abrufen | Haken an: das DMS ruft das Postfach regelmäßig ab (Standard). Haken aus: Das Postfach bleibt eingerichtet, wird aber nicht abgerufen |
 | Name | z. B. „Rechnungen“; steht in der Historie der Post |
 | Server, Verschlüsselung, Port | meist SSL/TLS und Port 993; STARTTLS meist Port 143. Ohne Verschlüsselung nur nach ausdrücklicher Bestätigung |
 | Benutzername, Passwort | das Passwort wird mit dem [Schlüssel](verschluesselung.md) verschlüsselt gespeichert und nie wieder angezeigt; leer lassen behält es |
 | Ordner | Standard `INBOX` |
-| Abrufabstand | in Minuten, Standard 5 |
+| Abrufabstand | in Minuten, 1 bis 1440 (ein Tag), Standard 5 |
 | Für | optional: dieser Benutzer steht an jeder Post und hat sie unter „Zu erledigen“ |
 | Nur von diesen Absendern | optional: Adressen (`rechnung@stadtwerke.de`) oder Domains (`bank.de`, auch Unterdomains) |
 | Nach dem Übernehmen | **in einen Ordner verschieben** (Standard `DMS`, wird angelegt), **nur als gelesen markieren** oder **löschen** |
 | Nur Mails mit Anhang | andere bleiben unverändert im Postfach |
 | Original-Mail als .eml | Standard ein: die ganze Mail liegt zusätzlich als Dokument an der Post |
 
-**Verbindung testen** meldet sich an, nennt die Zahl der Mails im Ordner und sagt bei Fehlern, woran es liegt: Anmeldung abgelehnt, Server nicht erreichbar, Zertifikat ungültig. **Jetzt abrufen** holt sofort ab.
+**Verbindung testen** meldet sich an, nennt die Zahl der Mails im Ordner und sagt bei Fehlern, woran es liegt: Anmeldung abgelehnt, Server nicht erreichbar, Zertifikat ungültig. **Jetzt abrufen** holt sofort ab. **Entfernen** löscht das Postfach aus dem DMS, nach einer Rückfrage; die Mails im Postfach bleiben, wie sie sind.
 
 Unter *Stand* stehen der letzte Abruf, die zuletzt übernommenen Mails mit Link zur Post und Fehler. Schlägt der Abruf mehrmals hintereinander fehl, wartet das DMS immer länger zwischen den Versuchen (bis 6 Stunden) und schreibt den Administratoren nach dem dritten Fehler eine Mail.
 
