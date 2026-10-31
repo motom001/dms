@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.48/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.49/neu/">
       
       
         <link rel="prev" href="..">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-048" class="md-skip">
+        <a href="#neu-in-version-049" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0480" class="md-nav__link">
+  <a href="#0490" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.48.0
+        0.49.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.48.0">
+    <nav class="md-nav" aria-label="0.49.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -966,6 +966,34 @@
     
   
     Eingangsordner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../postfaecher/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Postfächer
   
 
     
@@ -1668,15 +1696,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0480" class="md-nav__link">
+  <a href="#0490" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.48.0
+        0.49.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.48.0">
+    <nav class="md-nav" aria-label="0.49.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1737,24 +1765,24 @@
   
 
 
-<h1 id="neu-in-version-048">Neu in Version 0.48<a class="headerlink" href="#neu-in-version-048" title="Permanent link">&para;</a></h1>
-<h2 id="0480">0.48.0<a class="headerlink" href="#0480" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-049">Neu in Version 0.49<a class="headerlink" href="#neu-in-version-049" title="Permanent link">&para;</a></h1>
+<h2 id="0490">0.49.0<a class="headerlink" href="#0490" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Eingangsordner</strong> (#195): Das DMS überwacht den Ordner <code>/eingang</code> und macht aus <strong>jeder Datei, die dort landet, eine neue Post</strong> (Kanal <em>Ordner</em>). Scanner („Scan to Folder“), das NAS oder andere Programme bringen so Dokumente ins DMS, ohne Browser.</li>
-<li><strong>Werkbank → Eingangsordner:</strong> ein/aus, Prüfabstand, nach dem Übernehmen nach <code>erledigt/</code> verschieben oder löschen, „Jetzt prüfen“, zuletzt übernommene Dateien und Fehler.</li>
-<li><strong>Unterordner mit dem Namen eines Benutzers</strong> (z. B. <code>eingang/thomas/</code>) tragen ihn bei <em>Für</em> ein – jeder kann am Scanner sein eigenes Ziel wählen.</li>
-<li>Nur <strong>fertige Dateien</strong> (Größe und Zeit über zwei Prüfungen gleich); temporäre Dateien und Ordner der NAS-Systeme werden übersprungen; Abgelehntes landet mit Grund in <code>fehler/</code>.</li>
-<li><strong>Keine doppelte Übernahme</strong>, auch nach einem Neustart mitten im Übernehmen; im Wartungsmodus und während einer Wiederherstellung ruht der Ordner; bei mehreren Instanzen übernimmt nur eine.</li>
-<li>Neu im Benutzerhandbuch: <em>Post → Scannen in den Eingangsordner</em>; im Administratorhandbuch die Seite <em>Eingangsordner</em>.</li>
+<li><strong>Postfächer</strong> (#196): Das DMS holt ein oder mehrere E-Mail-Postfächer <strong>per IMAP</strong> ab und macht aus <strong>jeder Mail eine neue Post</strong> (Kanal <em>E-Mail</em>).</li>
+<li><strong>Werkbank → Postfächer:</strong> Server, Verschlüsselung, Benutzer und Passwort (verschlüsselt gespeichert, nie wieder angezeigt), Ordner, Abrufabstand, optional <em>Für</em> und <em>nur von diesen Absendern</em>; danach in einen Ordner verschieben (Standard <code>DMS</code>), als gelesen markieren oder löschen; <em>nur Mails mit Anhang</em>; <em>Original-Mail als .eml</em>. <strong>Verbindung testen</strong> nennt Fehler in verständlichen Worten.</li>
+<li><strong>Anhänge</strong> werden Dokumente (Logos und Signaturbilder bleiben weg), der <strong>Text der Mail</strong> steht an der Post – HTML als reiner Text, nie mit Inhalten aus dem Internet.</li>
+<li><strong>Keine doppelte Übernahme</strong>, auch nach Neustart, Absturz oder neuer Nummerierung des Servers. Nach wiederholten Fehlern wartet das DMS länger und schreibt den Administratoren.</li>
+<li>Im Benutzerhandbuch: <em>Post → Per E-Mail ins DMS</em> und <em>Scan to E-Mail</em>; im Administratorhandbuch die Seite <em>Postfächer</em> mit Hinweisen zu App-Passwörtern bei Gmail, GMX, WEB.DE, T-Online, iCloud und Outlook.com.</li>
 </ul>
 <h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Alle Compose-Vorlagen binden den Eingangsordner als fünften, <strong>optionalen</strong> Ordner ein: <code>…/eingang:/eingang</code>. Ohne ihn läuft alles wie bisher; zum Nutzen die Zeile ergänzen, den Ordner im NAS für den Scanner freigeben und das Projekt neu erstellen.</li>
+<li>Neue Bibliotheken: <code>imapflow</code> und <code>mailparser</code> (beide MIT). <strong>Werkbank → Technik</strong> führt sie im Versionsabgleich.</li>
+<li>Ein Postfach braucht einen <a href="https://motom001.github.io/dms/admin/aktuell/verschluesselung/">Schlüssel</a> für das Passwort (Werkbank → Verschlüsselung).</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.47.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.47.0...v0.48.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.48.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.48.0...v0.49.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
