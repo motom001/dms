@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-074" class="md-skip">
+        <a href="#neu-in-version-075" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -419,15 +419,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0740" class="md-nav__link">
+  <a href="#0750" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.74.0
+        0.75.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.74.0">
+    <nav class="md-nav" aria-label="0.75.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1082,15 +1082,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0740" class="md-nav__link">
+  <a href="#0750" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.74.0
+        0.75.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.74.0">
+    <nav class="md-nav" aria-label="0.75.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1140,25 +1140,22 @@
   
 
 
-<h1 id="neu-in-version-074">Neu in Version 0.74<a class="headerlink" href="#neu-in-version-074" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-075">Neu in Version 0.75<a class="headerlink" href="#neu-in-version-075" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0740">0.74.0<a class="headerlink" href="#0740" title="Permanent link">&para;</a></h2>
+<h2 id="0750">0.75.0<a class="headerlink" href="#0750" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Ablageorte: wo die Originale liegen</strong> (#168). Jedes DMS hat jetzt den Mappentyp <strong>Ablageort</strong> – auch nach dem Update. Ein Ablageort ist ein Platz für Papier, und er kann in einem anderen liegen: „zu Hause › Arbeitszimmer Schrank › roter Ordner“, „Kiste 2026“, „Bankschließfach“ oder „vernichtet“.</li>
-<li>Der Titel zeigt den ganzen Pfad. Zieht ein Schrank um, ändert man nur <em>Liegt in</em> am Schrank – die Orte darin und alle Mappen, die den Ort zeigen, ziehen mit.</li>
-<li>Register <em>Enthält</em> (Orte darin), <em>Liegt hier</em> (Mappen an diesem Ort) und <em>Fotos</em>.</li>
-<li>Er lässt sich umbenennen und erweitern wie jeder Mappentyp, aber nicht löschen – Pakete und Beispiele bauen darauf auf.</li>
-<li><strong>Beispiele mit Verbleib:</strong> <em>Vertrag</em> und <em>Rechnung</em> bekommen das Feld <em>Verbleib Originaldokumente</em>, dazu ein paar Ablageorte und die Ansicht <em>Originale nach Ort</em>.</li>
-<li><strong>Titel:</strong> Auch „ › “ gilt jetzt als Trenner, der mit einem leeren Platzhalter wegfällt.</li>
-<li>Handbuch: <em>Original behalten oder vernichten?</em> erklärt, wie man festhält, wo das Papier liegt; das Administratorhandbuch beschreibt den Ablageort und die gemeinsame Kennung <code>verbleib_original</code>.</li>
+<li><strong>Pakete können auf Mappentypen des DMS verweisen</strong> (#310), für alle, die Pakete schreiben: <code>dms:ablageort</code> für den Ablageort (z. B. das Feld <em>Verbleib Originaldokumente</em>), außerdem <code>dms:benutzer</code> und <code>dms:rolle</code>. So bringen die kommenden Pakete Haushalt, Haus und Fahrzeuge keinen eigenen Ablageort mit, sondern nutzen den, den jedes DMS hat.</li>
+<li>Die Paket-Vorschau zeigt diese Verweise als „Ablageort (aus dem DMS)“.</li>
+<li>Unbekannte <code>dms:…</code>-Verweise und die Paket-Id <code>dms</code> lehnt das DMS schon beim Lesen ab; fehlt ein Typ, meldet die Vorschau, ab welcher Version das DMS ihn kennt.</li>
+<li>Entwicklerhandbuch <em>Pakete entwickeln</em> beschreibt die neue Form; Schema und Prüfwerkzeug im Paketkatalog kennen sie ebenfalls.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.73.14 im Detail: <a href="https://github.com/motom001/dms/compare/v0.73.14...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.74.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.74.0...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 
