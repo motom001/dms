@@ -421,6 +421,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Handbücher">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#offline-hilfe-im-image" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Offline-Hilfe im Image
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -740,6 +757,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Handbücher">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#offline-hilfe-im-image" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Offline-Hilfe im Image
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -841,6 +875,14 @@ deploy/vorlagen-probe.sh<span class="w"> </span>dms<span class="w">             
 mkdocs<span class="w"> </span>serve<span class="w"> </span>-f<span class="w"> </span>docs/handbuch/benutzer/mkdocs.yml
 </code></pre></div>
 <p>Die Bilder (<code>bilder/*.png</code>) entstehen in der CI mit <code>docs/handbuch/screenshots/aufnehmen.mjs</code> und liegen nicht im Repository. Lokal fehlen sie deshalb; die Warnungen dazu kannst du ignorieren.</p>
+<h3 id="offline-hilfe-im-image">Offline-Hilfe im Image<a class="headerlink" href="#offline-hilfe-im-image" title="Permanent link">&para;</a></h3>
+<p>Das Dockerfile baut im Abschnitt <code>hilfe</code> alle vier Handbücher und die Startseite mit <code>docs/handbuch/werkzeuge/offline.py</code> und legt sie nach <code>web/dist/hilfe</code>; der Server liefert sie unter <code>/hilfe/</code> aus. Je Handbuch gibt es dafür <code>mkdocs.offline.yml</code> (erbt von <code>mkdocs.yml</code>) mit dem Hook <code>werkzeuge/offline_hook.py</code>:</p>
+<ul>
+<li>Bildschirmfotos (<code>bilder/…</code>) werden zu einem Hinweis mit Link auf dieselbe Seite online (<code>/dms/&lt;handbuch&gt;/vX.Y/…</code>).</li>
+<li>Verweise <code>https://motom001.github.io/dms/&lt;handbuch&gt;/aktuell/…</code> zeigen auf <code>/hilfe/&lt;handbuch&gt;/…</code>; Vorlagen bleiben online, <code>api/openapi.json</code> zeigt auf die eigene Installation.</li>
+<li>Keine Versionsauswahl, keine Schriften aus dem Internet, keine Quellkarten, Suche nur auf Deutsch.</li>
+</ul>
+<p>Lokal: <code>python3 docs/handbuch/werkzeuge/offline.py /tmp/hilfe</code>. Das Skript prüft am Ende, dass jeder Verweis auf <code>/hilfe/…</code> eine Seite trifft; die CI prüft zusätzlich alle Ziele der kontextbezogenen Hilfe. Ohne gebaute Handbücher (<code>npm run dev</code>) leitet der Server <code>/hilfe/…</code> auf die Online-Fassung der Version um.</p>
 
 
 
