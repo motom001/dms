@@ -19,6 +19,7 @@
 ## Stil
 
 - **Sprache:** Oberfläche, Handbuch, Release-Notizen und Commit-Nachrichten auf Deutsch. Auch Bezeichner im Code sind deutsch (`mappe`, `schreibe`, `laden`). Fachbegriffe ohne gutes deutsches Wort bleiben, wie sie sind.
+- **Begriffe:** Verwende die Wörter aus dem [Glossar](https://motom001.github.io/dms/benutzer/aktuell/begriffe/) und nicht die, die dort unter „nicht verwenden“ stehen. Ein neuer Begriff kommt mit demselben Pull Request in `docs/glossar.yml`, mit Beschreibung und der Einstufung für Einsteiger (siehe [Für wen wir bauen](personas.md)). `python3 docs/handbuch/werkzeuge/glossar.py` erzeugt daraus die Seite „Begriffe“.
 - **Texte für Nutzer:** kurz, freundlich, ohne Fachjargon, aus Sicht des Lesers („Speichere deine Arbeit“).
 - **Code:** TypeScript strikt, kleine Funktionen, Kommentare erklären das *Warum* und verweisen auf das Issue (`// Abwesenheit (#77): …`).
 - **Commits:** eine Zeile Zusammenfassung, darunter bei Bedarf Stichpunkte.

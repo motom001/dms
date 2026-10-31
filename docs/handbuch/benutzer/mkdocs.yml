@@ -79,6 +79,7 @@ nav:
       - Benutzer und Rollen: benutzer-und-rollen.md
   - Profil und Einstellungen: profil.md
   - Häufige Fragen: fragen.md
+  - Begriffe: begriffe.md
   - Weiteres:
       - Was ist neu? (Changelog): https://github.com/motom001/dms/releases
       - Administratorhandbuch: https://motom001.github.io/dms/admin/
