@@ -10,7 +10,7 @@ Eine Einladung ist 7 Tage gültig und funktioniert nur einmal. Ist sie abgelaufe
 
 ![Anmeldung](bilder/anmelden.png)
 
-Melde dich mit deiner E-Mail-Adresse und deinem Passwort an. Die Anmeldung bleibt auf diesem Gerät bestehen, bis du dich abmeldest.
+Melde dich mit deiner E-Mail-Adresse und deinem Passwort an. Die Anmeldung bleibt auf diesem Gerät **30 Tage** bestehen – oder bis du dich abmeldest.
 
 Nach mehreren falschen Versuchen wartet das DMS kurz, bevor es einen weiteren zulässt – das schützt dein Konto vor dem Durchprobieren von Passwörtern.
 
@@ -26,6 +26,7 @@ Oben siehst du die Bereiche:
 
 - **Ablage** – hier arbeitest du mit Mappen. Das ist für die meisten Benutzer der einzige Bereich.
 - **Werkbank** – nur für Administratoren; hier wird das DMS eingerichtet.
+- **+ Neu** – legt von überall neue [Post](post.md) an (Dateien wählen oder am Handy fotografieren) oder eine neue Mappe eines Mappentyps, den du anlegen darfst.
 - **Dein Name** – öffnet ein Menü mit *Mein Konto* (dort auch Darstellung und Abwesenheit), der Hilfe, *Fehler melden* und Abmelden.
 
 Die Ablage ist in **drei Spalten** geteilt, von groß nach klein:

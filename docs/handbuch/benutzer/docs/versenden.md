@@ -9,7 +9,7 @@ Rechts über den Registern einer Mappe steht das Menü **Aktionen**.
 1. **Aktionen → Per E-Mail versenden**.
 2. Trage bei **An** eine oder mehrere Adressen ein (durch Komma getrennt).
 3. Prüfe den **Betreff** – vorgeschlagen sind Mappentyp und Titel – und schreibe bei Bedarf eine **Nachricht**.
-4. Wähle unter **Anhänge**, welche Dokumente der Mappe mitgehen. Darunter steht, wie groß sie zusammen sind; ab 20 MB warnt das DMS, weil viele Mailserver größere E-Mails nicht annehmen.
+4. Wähle unter **Anhänge**, welche Dokumente der Mappe mitgehen. Darunter steht, wie groß sie zusammen sind; ab 20 MB warnt das DMS, weil viele Mailserver größere E-Mails nicht annehmen; mehr als 50 MB lassen sich nicht versenden.
 5. **Senden**.
 
 ![E-Mail aus einer Mappe](bilder/email.png)
@@ -22,7 +22,7 @@ Steht dort „Der E-Mail-Versand ist nicht eingerichtet“, muss ein Administrat
 
 ## Als PDF exportieren
 
-**Aktionen → Als PDF exportieren** öffnet den Druckdialog des Browsers mit einer aufgeräumten Fassung der Mappe: Titel, alle Angaben, die Liste der Dokumente und die Notizen. Wähle als Drucker **Als PDF speichern** (bzw. „Microsoft Print to PDF“ unter Windows) – oder drucke sie gleich auf Papier.
+**Aktionen → Als PDF exportieren** öffnet den Druckdialog des Browsers mit der **Druckansicht** der Mappe: Titel, alle Angaben, die Liste der Dokumente und die Notizen. Wähle als Drucker **Als PDF speichern** (bzw. „Microsoft Print to PDF“ unter Windows) – oder drucke sie gleich auf Papier.
 
 Passwörter erscheinen auch dort nur als „••••••••“.
 
@@ -41,4 +41,4 @@ http://nas:8080/ablage/link?typ=vertrag&vertragsnummer=SV-4711
 - Wer den Link öffnet und nicht angemeldet ist, meldet sich an und landet dann direkt bei der Mappe.
 - Fehlt der Menüpunkt, hat die Mappe keine Angabe, über die sich ein Link bilden lässt. Die Adresse im Browser funktioniert immer.
 
-Solche Links kannst du auch selbst schreiben, etwa für „alle offenen Rechnungen“. Wie, steht im [Administratorhandbuch](https://motom001.github.io/dms/admin/direktlinks/).
+Solche Links kannst du auch selbst schreiben, etwa für „alle offenen Rechnungen“. Wie, steht im [Administratorhandbuch](https://motom001.github.io/dms/admin/aktuell/direktlinks/).

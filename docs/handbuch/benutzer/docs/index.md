@@ -22,6 +22,7 @@ Welche Mappentypen es gibt und welche Angaben sie haben, richtet ein Administrat
 | eine Mappe suchst oder Listen sortieren willst | [Ansichten und Listen](ablage.md) |
 | eine Mappe anlegen oder ändern willst | [Mappen](mappen.md) |
 | Dateien ablegen oder ansehen willst | [Dokumente](dokumente.md) |
+| einen Brief oder eine Mail ablegen und später zuordnen willst | [Post](post.md) |
 | wissen willst, was unter „Zu erledigen“ liegt | [Zu erledigen](eingang.md) |
 | jemanden als verantwortlich eintragen willst | [Benutzer und Rollen](benutzer-und-rollen.md) |
 | Passwort, Design oder Schriftgröße ändern willst | [Profil und Einstellungen](profil.md) |

@@ -50,6 +50,6 @@ Passt eine Aufgabe besser zu jemand anderem, klicke im Hinweis auf **Weitergeben
 
 Hat jemand eine [Abwesenheit](profil.md#abwesenheit) eingetragen, steht das in der Auswahl beim Vergeben und Weitergeben und bei den @-Vorschlägen, z. B. „Sabrina – abwesend bis 15.11., vertreten durch Thomas“. Neue Aufgaben für Abwesende gehen automatisch an deren Vertreter; in der Historie der Mappe steht „weitergegeben wegen Abwesenheit von …“.
 
-## Jeden Morgen eine Übersicht
+## Eine Übersicht per E-Mail
 
-Hast du offene Aufgaben, schickt dir das DMS einmal am Tag eine E-Mail mit der Liste und Links zu den Mappen – keine Mail bei jeder einzelnen Aufgabe. Abbestellen kannst du sie im [Profil](profil.md#benachrichtigungen-und-ablage).
+Hast du offene Aufgaben, schickt dir das DMS eine E-Mail mit der Liste und Links zu den Mappen – keine Mail bei jeder einzelnen Aufgabe. Üblich ist **an Werktagen um 7 Uhr**; Uhrzeit und Wochentage stellst du im [Profil](profil.md#benachrichtigungen-und-ablage) ein, dort kannst du die Mail auch abbestellen.

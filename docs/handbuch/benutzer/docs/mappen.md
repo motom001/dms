@@ -10,7 +10,7 @@ Oben steht der **Titel** der Mappe. Ihn musst du nicht selbst schreiben: Das DMS
 
 Darunter stehen die **Indexwerte**, die jede Mappe hat: wann und von wem sie angelegt und zuletzt geändert wurde. Als Änderung zählen auch hochgeladene und entfernte Dokumente, nicht aber Notizen oder Aufgaben. Ein Klick auf einen Namen öffnet die Mappe dieses Benutzers. Mit dem **Stern ☆** rechts neben dem Titel merkst du dir die Mappe als [Favorit](ablage.md#favoriten).
 
-Darunter folgen die **Register** – die Trennblätter der Mappe. Es gibt drei Arten:
+Darunter folgen die **Register** – die Trennblätter der Mappe. Es gibt vier Arten:
 
 | Register | Was darin steht |
 | --- | --- |
@@ -29,7 +29,7 @@ Hinter Dokumenten- und Verknüpfungsregistern steht, wie viel darin liegt. Ein r
 4. Klicke auf **Mappe speichern**.
 
 !!! info "Archiv – aufbewahren bis"
-    Steht an einer Mappe **Archiv · aufbewahren bis 31.12.JJJJ**, muss sie bis dahin aufbewahrt werden: Bis zu diesem Tag lassen sich weder die Mappe noch ihre Dokumente löschen; Dokumente ersetzt du als neue Version. Danach kann ein Administrator sie unter „Darf weg“ löschen.
+    Steht an einer Mappe **Archiv · aufbewahren bis 31.12.JJJJ**, muss sie bis dahin aufbewahrt werden: Bis zu diesem Tag lassen sich weder die Mappe noch ihre Dokumente löschen; Dokumente ersetzt du als neue Version. Danach darf sie löschen, wer das Recht dazu hat; Administratoren finden alle abgelaufenen Mappen gesammelt unter **Werkbank → Darf weg**.
 
 !!! info "Nur passende Mappen"
     Manche Verweisfelder bieten nur bestimmte Mappen an, z. B. beim Feld *Arzt* nur Vertragspartner, die Ärzte sind. Steht neben einer gewählten Mappe „passt nicht mehr zum Filter“, bleibt sie gültig; neu wählen kannst du nur, was passt.
@@ -46,7 +46,7 @@ Stimmt etwas nicht – ein Pflichtfeld ist leer, eine Zahl zu groß, eine Nummer
 | Feld | So gibst du es ein |
 | --- | --- |
 | Text, Langtext | frei; manche Texte haben eine Höchstlänge oder müssen eindeutig sein |
-| Formatierter Text | mit Werkzeugleiste: fett, kursiv, Überschrift, Liste, Zitat, Link; **@** erwähnt jemanden (siehe unten) |
+| Formatierter Text | mit Werkzeugleiste: fett, kursiv, Überschrift, Liste, nummerierte Liste, Zitat, Link; **@** erwähnt jemanden (siehe unten) |
 | Zahl | mit Komma, z. B. `12,5` |
 | Betrag | Zahl und Währung, z. B. `98,00 EUR` |
 | Datum | über den Kalender oder als Datum |
@@ -57,11 +57,11 @@ Stimmt etwas nicht – ein Pflichtfeld ist leer, eine Zahl zu groß, eine Nummer
 
 ### Formatierter Text
 
-Manche längeren Texte lassen sich formatieren. Über dem Feld steht eine kleine **Werkzeugleiste**: Markiere Text und klicke auf **F** (fett), *K* (kursiv), eine Überschrift, eine Liste, ein Zitat oder einen Link. Im Feld steht dann eine einfache Schreibweise, z. B. `**fett**` – das ist richtig so. **Vorschau** zeigt, wie es aussieht.
+Manche längeren Texte lassen sich formatieren. Über dem Feld steht eine kleine **Werkzeugleiste**: Markiere Text und klicke auf **F** (fett), *K* (kursiv), eine Überschrift, eine Liste, eine nummerierte Liste, ein Zitat oder einen Link. Mit **Schreiben** und **Vorschau** wechselst du zwischen Eingabe und fertiger Ansicht. Im Feld steht dann eine einfache Schreibweise, z. B. `**fett**` – das ist richtig so. **Vorschau** zeigt, wie es aussieht.
 
 ![Formatierter Text mit Werkzeugleiste](bilder/formatiert.png)
 
-Tippst du **@** oder klickst auf **@ Erwähnen**, wählst du einen Benutzer aus. Er bekommt dann eine [Aufgabe](eingang.md) zu dieser Mappe.
+Tippst du **@** und die ersten Buchstaben eines Namens, wählst du einen Benutzer aus. Er bekommt dann eine [Aufgabe](eingang.md) zu dieser Mappe.
 
 In Listen und in der Suche erscheint der Text ohne Formatierung.
 
@@ -87,7 +87,7 @@ Ein Klick auf einen gesetzten Verweis öffnet die andere Mappe.
 
 Willst du die Mappe mit ungespeicherten Änderungen verlassen, fragt das DMS nach.
 
-Über den Registern stehen außerdem **Notizen** und das Menü **Aktionen** (Aufgabe vergeben, per E-Mail versenden, als PDF exportieren, Link kopieren) – siehe [Notizen, Erwähnungen, Historie](zusammenarbeit.md) und [E-Mail, PDF und Link](versenden.md).
+Über den Registern stehen außerdem **Notizen** und das Menü **Aktionen** (Aufgabe vergeben, Erinnern, per E-Mail versenden, als PDF exportieren, Link kopieren) – siehe [Notizen, Erwähnungen, Historie](zusammenarbeit.md) und [E-Mail, PDF und Link](versenden.md).
 
 Manche Angaben sind nur zum Lesen da und haben einen gestrichelten Rahmen – zum Beispiel Name und E-Mail-Adresse in der Mappe eines Benutzers. Daneben steht, wo man sie ändert.
 

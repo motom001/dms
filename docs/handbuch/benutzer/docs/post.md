@@ -1,12 +1,12 @@
 # Post
 
-Alles, was ins DMS kommt oder hinausgeht, ist **Post**: ein eingescannter Brief, ein hochgeladenes PDF, eine verschickte E-Mail. Später kommen Scans aus einem Eingangsordner und abgeholte E-Mails dazu. Du musst also nicht erst die passende Mappe suchen und das richtige Register wählen: Leg das Dokument als Post ab und **ordne es zu**, wenn du Zeit hast.
+Alles, was ins DMS kommt oder hinausgeht, ist **Post**: ein eingescannter Brief, ein hochgeladenes PDF, eine verschickte E-Mail, ein Scan aus dem Eingangsordner, eine aus einem Postfach abgeholte E-Mail. Du musst also nicht erst die passende Mappe suchen und das richtige Register wählen: Leg das Dokument als Post ab und **ordne es zu**, wenn du Zeit hast.
 
 ![Neue Post mit Zuordnen](bilder/post-zuordnen.png)
 
 ## Neue Post
 
-Ganz oben in der Ablage steht die Ansicht **Neue Post**. Sie zeigt alle Post, die noch niemand zugeordnet oder erledigt hat. Gibt es welche, ist die Zahl daneben farbig hervorgehoben, wie bei [Zu erledigen](eingang.md).
+In der Ablage steht die Ansicht **Neue Post** über den übrigen Ansichten (ein Administrator kann sie verschieben). Sie zeigt alle Post, die noch niemand zugeordnet oder erledigt hat. Gibt es welche, ist die Zahl daneben farbig hervorgehoben, wie bei [Zu erledigen](eingang.md).
 
 ### Neue Post anlegen – von überall
 
@@ -34,7 +34,7 @@ Hat dein Administrator ein [Postfach](https://motom001.github.io/dms/admin/aktue
 
 ### Scannen in den Eingangsordner
 
-Hat dein Administrator einen [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/) eingerichtet, scannst du einfach in diesen Ordner („Scan to Folder“ am Scanner). **Jede Datei wird eine eigene neue Post** mit Kanal *Ordner*; den Betreff nimmt das DMS aus dem Dateinamen. Scannst du in deinen eigenen Unterordner, z. B. `eingang/thomas/`, steht die Post gleich **für dich** bei dir unter „Zu erledigen“. Die Datei verschwindet danach aus dem Ordner (sie liegt in `erledigt/`).
+Hat dein Administrator einen [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/) eingerichtet, scannst du einfach in diesen Ordner („Scan to Folder“ am Scanner). **Jede Datei wird eine eigene neue Post** mit Kanal *Ordner*; den Betreff nimmt das DMS aus dem Dateinamen. Scannst du in deinen eigenen Unterordner, z. B. `eingang/thomas/`, steht die Post gleich **für dich** bei dir unter „Zu erledigen“. Die Datei verschwindet danach aus dem Ordner: Je nach Einstellung liegt sie in `erledigt/` oder ist gelöscht. Was das DMS nicht übernehmen kann (z. B. eine leere oder zu große Datei), landet in `fehler/`.
 
 ![+ Neu](bilder/neu-knopf.png)
 
@@ -63,13 +63,13 @@ Trägst du bei **Für** einen Benutzer ein, steht die Post bei ihm unter [Zu erl
 Oben in einer Post steht eine Leiste mit dem **Stand** und dem Knopf **Zuordnen …**:
 
 1. Wähle den **Mappentyp**, z. B. *Rechnung*.
-2. Wähle **vorhandene** und suche die Mappe, oder wähle **neue anlegen**.
+2. Wähle **vorhandene wählen** und suche die Mappe, oder **neue anlegen**.
 3. Wähle die **Dokumente**, die mitgehen. Vorausgewählt sind alle. Hat der Mappentyp mehrere Dokumentenregister, wählst du das Register.
-4. **Zuordnen**.
+4. **Zu „…“ zuordnen** (bei einer vorhandenen Mappe) bzw. **Weiter: neue Mappe ausfüllen**.
 
 Danach liegen die Dokumente in der Mappe, und die Post verweist auf sie. Ihr Stand ist *Zugeordnet*. In der [Historie](zusammenarbeit.md#historie) beider Mappen steht, was passiert ist. Der Volltext der Dokumente zieht mit um.
 
-Bei **neue anlegen** öffnet sich das Formular des Mappentyps. Betreff und Datum der Post sind als Vorschlag schon eingetragen. Nach **Mappe speichern** wird die Post der neuen Mappe zugeordnet.
+Bei **Weiter: neue Mappe ausfüllen** öffnet sich das Formular des Mappentyps. Betreff und Datum der Post sind als Vorschlag schon eingetragen. Nach **Mappe speichern** wird die Post der neuen Mappe zugeordnet.
 
 **Kopie in der Post behalten** lässt die Dokumente zusätzlich in der Post liegen. Das kostet keinen Platz, denn das DMS speichert jede Datei nur einmal. Das ist praktisch, wenn ein Brief zu **mehreren** Mappen gehört, z. B. zur Rechnung und zum Vertrag. Du kannst eine Post beliebig oft zuordnen.
 
