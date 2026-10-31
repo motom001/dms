@@ -2437,7 +2437,7 @@
 </tr>
 <tr>
 <td><code>PORT</code>, <code>HOST</code></td>
-<td>Port (Standard <code>3000</code>) und Adresse (Standard <code>0.0.0.0</code>, alle), auf denen das DMS im Container lauscht. Meist nicht nötig: Den Port nach außen legt die Compose-Datei fest (in der Vorlage <code>8080:3000</code>). Die eingebaute Gesundheitsprüfung des Images fragt Port 3000 ab; bei einem anderen <code>PORT</code> meldet Docker den Container als <em>unhealthy</em></td>
+<td>Port (Standard <code>3000</code>) und Adresse (Standard <code>0.0.0.0</code>, alle), auf denen das DMS im Container lauscht. Normalerweise änderst du <strong>nicht</strong> <code>PORT</code>, sondern den Port nach außen in der Compose-Datei (in der Vorlage <code>8080:3000</code>, z. B. <code>8090:3000</code>). Die eingebaute Gesundheitsprüfung des Images folgt <code>PORT</code>; setzt du <code>HOST</code> auf eine einzelne Adresse, muss sie <code>127.0.0.1</code> mit einschließen, sonst gilt der Container als <em>unhealthy</em></td>
 </tr>
 </tbody>
 </table>
