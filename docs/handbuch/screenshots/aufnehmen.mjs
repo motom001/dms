@@ -497,6 +497,10 @@ async function main() {
   await geheZu(s, '/ablage/eingang');
   await s.locator('.mappenliste .eintrag, .trefferliste tbody tr').first().click();
   await bild(s, 'eingang');
+  // Startseite (#334): Kacheln, solange „Zu erledigen“ etwas enthält.
+  await geheZu(s, '/ablage/start');
+  await s.locator('.kacheln').waitFor();
+  await bild(s, 'startseite');
   await api('PUT', `/api/typen/${partner.id}`, partner);
 
   // Sichten als Baum in der Ablage und in der Werkbank (#38)

@@ -203,6 +203,22 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
             onBlur={(e) => { const n = Math.min(ANSTEHEND_MAX, Math.max(1, Math.trunc(Number(e.target.value) || ANSTEHEND_TAGE))); e.target.value = String(n); d.setzeEinstellung('anstehend_tage', n === ANSTEHEND_TAGE ? null : n); }} /></label>
       </div>
 
+      <div className="blatt">
+        <h2 className="h3">Startseite</h2>
+        <p className="leise">Die Startseite der Ablage zeigt Zu erledigen, neue Post, Anstehendes, eine Kachel deiner Wahl und die zuletzt geöffneten Mappen.</p>
+        <label className="haken"><input type="checkbox" checked={d.einstellungen.startseite !== false}
+          onChange={(e) => d.setzeEinstellung('startseite', e.target.checked ? null : false)} />
+          <span>Mit der Startseite beginnen<small className="hilfe">Aus: Nach der Anmeldung geht es direkt zu „Zu erledigen“.</small></span></label>
+        {d.einstellungen.startseite !== false && (
+          <label className="eigenschaft"><span>Vierte Kachel</span>
+            <select value={typeof d.einstellungen.startseite_kachel === 'string' ? d.einstellungen.startseite_kachel : 'favoriten'}
+              onChange={(e) => d.setzeEinstellung('startseite_kachel', e.target.value === 'favoriten' ? null : e.target.value)}>
+              <option value="favoriten">Favoriten</option>
+              {d.sichten.filter((s) => s.typen.length > 0).map((s) => <option key={s.id} value={s.id}>Ansicht „{s.name}“</option>)}
+            </select></label>
+        )}
+      </div>
+
       {(!!d.zaehler.papierkorbTage || d.einstellungen.papierkorb_beim_abmelden === true) && (
         <div className="blatt">
           <h2 className="h3">Papierkorb</h2>

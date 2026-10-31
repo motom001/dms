@@ -71,7 +71,7 @@ export function App() {
         </div>
       )}
       <header className="kopf">
-        <Link to="/ablage/eingang" className="marke" title="Zur Startseite">
+        <Link to={d.einstellungen.startseite === false ? '/ablage/eingang' : '/ablage/start'} className="marke" title="Zur Startseite">
           <Marke logo={logoUrl(d.meinDesign)} schriftzug={schriftzugVon(d.meinDesign)} /><span className="sr-only">{schriftzugVon(d.meinDesign) ? '' : schriftzugVon(null)} – Startseite</span>
         </Link>
         <nav className="bereiche" aria-label="Bereiche">

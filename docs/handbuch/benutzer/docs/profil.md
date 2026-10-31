@@ -82,6 +82,10 @@ Auch ein Link zum Zurücksetzen des Passworts fragt danach den Code ab. Handy ve
 - **Anstehend** – wie viele Tage im Voraus die Ansicht [Anstehend](eingang.md#anstehend) deine Fristen und Erinnerungen zeigt (Standard: 30).
 - **Papierkorb** – **Beim Abmelden leeren** löscht deine gelöschten Mappen endgültig, sobald du dich abmeldest. Ohne den Haken bleiben sie so lange im [Papierkorb](ablage.md#papierkorb), wie der Administrator es eingestellt hat.
 
+### Startseite
+
+**Mit der Startseite beginnen** schaltet die [Startseite](startseite.md) ein oder aus; ohne sie geht es nach der Anmeldung direkt zu *Zu erledigen*. **Vierte Kachel** wählt, was neben Zu erledigen, Neue Post und Anstehend steht: deine Favoriten oder eine Ansicht.
+
 ### Abwesenheit
 
 Damit während deines Urlaubs nichts liegen bleibt, trägst du unter **Abwesenheit** einen **Vertreter** ein:

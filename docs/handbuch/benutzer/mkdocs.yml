@@ -70,6 +70,7 @@ nav:
   - Neu in dieser Version: neu.md
   - Erste Schritte: erste-schritte.md
   - Arbeiten in der Ablage:
+      - Startseite: startseite.md
       - Ansichten und Listen: ablage.md
       - Post: post.md
       - Mappen: mappen.md

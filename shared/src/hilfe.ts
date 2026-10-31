@@ -86,6 +86,7 @@ export const HILFE = {
   'sicherung.probe': admin('wiederherstellen/', 'Probe-Wiederherstellung', 'probe-wiederherstellung'),
   // Ablage und Profil: Benutzerhandbuch
   'ablage.eingang': benutzer('eingang/', 'Zu erledigen und Aufgaben'),
+  'ablage.start': benutzer('startseite/', 'Startseite'),
   'ablage.anstehend': benutzer('eingang/', 'Anstehend', 'anstehend'),
   'ablage.erinnern': benutzer('eingang/', 'Erinnern', 'erinnern'),
   'mappentyp.frist': admin('mappentypen/', 'Erinnerungen an Datumsfeldern', 'fristen-erinnerungen-an-datumsfeldern'),
