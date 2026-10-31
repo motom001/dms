@@ -108,6 +108,12 @@ export interface Repo {
   setzeZaehler(schluessel: string, zeitraum: string, letzter: number): Promise<Nummernkreis | undefined>;
   /** Einer vorhandenen Mappe eine Nummer geben, wenn das Feld leer ist (Wartung); sonst null. */
   vergebeNummer(mappeId: string, feldKey: string, kreis: string, jetzt: Date): Promise<string | null>;
+  /** Archivnummern (#345): `anzahl` Nummern aus einem Kreis ziehen (ohne Mappe), in einer Transaktion. */
+  zieheNummern(kreis: string, anzahl: number, jetzt: Date): Promise<string[]>;
+  /** Archivnummer setzen (null = entfernen); false, wenn ein anderes Dokument sie schon hat. */
+  setzeArchivnummer(dokumentId: string, nummer: string | null): Promise<boolean>;
+  /** Dokument mit dieser Archivnummer (ohne Groß-/Kleinschreibung). */
+  findeArchivnummer(nummer: string): Promise<Dokument | undefined>;
   /** Die Mappe mit dieser Systemkennung (z. B. rolle:admin). */
   holeSystemMappe(kennung: string): Promise<Mappe | undefined>;
   aendereMappe(id: string, werte: Werte, verweise: Verweis[], benutzerId: string | null): Promise<Mappe>;

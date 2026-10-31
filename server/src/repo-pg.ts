@@ -69,6 +69,7 @@ const alsDokument = (r: Zeile): Dokument => ({
   anzeigbar: r.anzeigbar as boolean,
   erstellt: iso(r.erstellt),
   erstelltVon: (r.erstellt_von as string | null) ?? null,
+  archivnummer: (r.archivnummer as string | null) ?? null,
   ocr: {
     stand: ((r.ocr_stand as OcrStandArt | null) ?? 'keiner'),
     info: (r.ocr_info as string | null) ?? null,
@@ -291,7 +292,7 @@ export function lesefilterSql(sql: Sql, f: Lesefilter | null | undefined): Teil 
 /** PostgreSQL-Umsetzung für genau einen Haushalt. */
 export function pgRepo(sql: Sql, haushaltId: string): Repo {
   /** Nummer ziehen (#171) – nur innerhalb einer Transaktion; die Zeile bleibt bis zu deren Ende gesperrt. */
-  async function zieheIn(tx: postgres.TransactionSql, schluessel: string, mappeId: string, jetzt: Date): Promise<string> {
+  async function zieheIn(tx: postgres.TransactionSql, schluessel: string, mappeId: string | null, jetzt: Date): Promise<string> {
     const [r] = await tx`SELECT * FROM nummernkreise WHERE haushalt_id = ${haushaltId} AND schluessel = ${schluessel} FOR UPDATE`;
     if (!r) throw new Error(`Nummernkreis ${schluessel} fehlt`);
     const z = ziehe(alsKreis(r), datumIn(jetzt), mappeId, jetzt.toISOString());
@@ -433,6 +434,28 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         await tx`UPDATE mappen SET werte = werte || ${json(sql, { [feldKey]: nummer })} WHERE haushalt_id = ${haushaltId} AND id = ${mappeId}`;
         return nummer;
       });
+    },
+    async zieheNummern(kreis, anzahl, jetzt) {
+      return sql.begin(async (tx) => {
+        const erg: string[] = [];
+        for (let i = 0; i < anzahl; i++) erg.push(await zieheIn(tx, kreis, null, jetzt));
+        return erg;
+      });
+    },
+    async setzeArchivnummer(dokumentId, nummer) {
+      if (!istUuid(dokumentId)) return false;
+      if (nummer) {
+        const [x] = await sql`SELECT 1 FROM dokumente WHERE haushalt_id = ${haushaltId} AND lower(archivnummer) = lower(${nummer}) AND id <> ${dokumentId}`;
+        if (x) return false;
+      }
+      try { await sql`UPDATE dokumente SET archivnummer = ${nummer} WHERE haushalt_id = ${haushaltId} AND id = ${dokumentId}`; }
+      catch (e) { if ((e as { code?: string }).code === '23505') return false; throw e; }
+      return true;
+    },
+    async findeArchivnummer(nummer) {
+      const [r] = await sql`SELECT d.*, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
+        FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND lower(d.archivnummer) = lower(${nummer})`;
+      return r ? alsDokument(r) : undefined;
     },
     async aendereMappe(id, werte, vs, benutzerId) {
       return sql.begin(async (tx) => {
@@ -844,7 +867,9 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         await tx`
           INSERT INTO dokumente
           SELECT (jsonb_populate_record(NULL::dokumente, d.value || jsonb_build_object(
-            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = d.value ->> 'erstellt_von') THEN d.value -> 'erstellt_von' ELSE 'null'::jsonb END))).*
+            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = d.value ->> 'erstellt_von') THEN d.value -> 'erstellt_von' ELSE 'null'::jsonb END,
+            -- Archivnummer (#345) inzwischen anderweitig vergeben: ohne Nummer zurück.
+            'archivnummer', CASE WHEN EXISTS (SELECT 1 FROM dokumente x WHERE x.haushalt_id = p.haushalt_id AND lower(x.archivnummer) = lower(d.value ->> 'archivnummer')) THEN 'null'::jsonb ELSE COALESCE(d.value -> 'archivnummer', 'null'::jsonb) END))).*
           FROM papierkorb p, jsonb_array_elements(p.dokumente) d WHERE p.id = ${id}`;
         // Ältere Versionen (#194) mit ihren Dokumenten.
         await tx`
@@ -935,7 +960,8 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         await tx`
           INSERT INTO dokumente
           SELECT (jsonb_populate_record(NULL::dokumente, p.dokument || jsonb_build_object(
-            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = p.dokument ->> 'erstellt_von') THEN p.dokument -> 'erstellt_von' ELSE 'null'::jsonb END))).*
+            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = p.dokument ->> 'erstellt_von') THEN p.dokument -> 'erstellt_von' ELSE 'null'::jsonb END,
+            'archivnummer', CASE WHEN EXISTS (SELECT 1 FROM dokumente x WHERE x.haushalt_id = p.haushalt_id AND lower(x.archivnummer) = lower(p.dokument ->> 'archivnummer')) THEN 'null'::jsonb ELSE COALESCE(p.dokument -> 'archivnummer', 'null'::jsonb) END))).*
           FROM papierkorb_dokumente p WHERE p.id = ${id}`;
         await tx`
           INSERT INTO dokument_versionen

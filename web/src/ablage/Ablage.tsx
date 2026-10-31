@@ -374,6 +374,16 @@ function Liste(p: {
   const [ergebnis, setErgebnis] = useState<{ text: string; liste: Array<{ id: string; titel: string; grund: string }> }>();
   const [exportOffen, setExportOffen] = useState(false);
   const [emailOffen, setEmailOffen] = useState(false);
+  // Archivnummer (#345): Enter mit einer Nummer (auch vom Handscanner, „DMS-ASN:A-000123“) springt zum Dokument.
+  async function zurArchivnummer(t: string) {
+    const nr = t.trim();
+    if (!nr || /\s/.test(nr) || !/\d/.test(nr) || nr.length > 50) return;
+    try {
+      const r = await api.archivnummer(nr);
+      setEingabe('');
+      geheZu(`/ablage/${r.typId}/${r.mappeId}?register=${encodeURIComponent(r.dokument.registerKey)}&dokument=${r.dokument.id}`);
+    } catch { /* keine Archivnummer: normale Suche */ }
+  }
   async function alleWaehlen() {
     try { const r = await api.auswahl(p.sicht, suche, volltext, inNotizen, p.link); w.setze(r.ids, true); }
     catch (x) { setErgebnis({ text: (x as Error).message, liste: [] }); }
@@ -413,7 +423,8 @@ function Liste(p: {
       {zeigeSuche && (
         <div className="suchzeile">
           <label className="suche"><span className="sr">Suchen</span>
-            <input type="search" placeholder={volltext ? 'Suchen in Titel, Werten und Dokumenten …' : 'Suchen in Titel und Werten …'} value={eingabe} onChange={(e) => setEingabe(e.target.value)} />
+            <input type="search" placeholder={volltext ? 'Suchen in Titel, Werten und Dokumenten …' : 'Suchen in Titel und Werten …'} value={eingabe} onChange={(e) => setEingabe(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') void zurArchivnummer(eingabe); }} />
           </label>
           <label className="haken klein" title="Auch im Text der Dokumente suchen (Textebene und Texterkennung). Findet auch Wortformen, z. B. „Rechnungen“ bei „Rechnung“.">
             <input type="checkbox" checked={volltext} onChange={(e) => d.setzeEinstellung('suche_volltext', e.target.checked || null)} /><span>Volltext durchsuchen</span>

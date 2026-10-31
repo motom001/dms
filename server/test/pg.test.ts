@@ -862,7 +862,8 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const m = r[0].body;
     assert.equal((await anfrage('PUT', `/api/mappen/${m.id}`, { werte: { ...m.werte, nr: 'X' } })).status, 403);
     const liste = (await anfrage('GET', '/api/werkbank/nummernkreise')).body;
-    assert.match(liste[0].naechste, /-00022$/);
+    // Den Kreis „Archivnummer“ (#345) gibt es immer dazu.
+    assert.match(liste.find((k: { schluessel: string }) => k.schluessel === 'beleg').naechste, /-00022$/);
     assert.equal((await anfrage('DELETE', '/api/werkbank/nummernkreise/beleg')).status, 409);
   });
 

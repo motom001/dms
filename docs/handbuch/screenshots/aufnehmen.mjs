@@ -625,6 +625,11 @@ async function main() {
   await bild(s, 'werkbank-benutzer');
   await geheZu(s, '/werkbank/benutzer/neu');
   await bild(s, 'werkbank-benutzer-neu');
+  // Archivnummern (#345): Aufkleber drucken beim Nummernkreis „Archivnummer“.
+  await geheZu(s, '/werkbank/nummernkreise/archivnummer');
+  await s.getByRole('heading', { name: /Aufkleber drucken/ }).waitFor();
+  await s.getByRole('heading', { name: /Aufkleber drucken/ }).evaluate((e) => e.scrollIntoView({ block: 'start' }));
+  await bild(s, 'werkbank-aufkleber');
   await geheZu(s, '/werkbank/designs');
   await s.locator('.spalte.liste a.eintrag').first().click();
   await bild(s, 'werkbank-designs');

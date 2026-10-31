@@ -108,6 +108,20 @@ Ist an einem Dokumentenregister die **Versionierung** eingeschaltet (das macht e
 - mit Versionierung: **als neue Version** speichern (vorausgewählt) oder **als eigenes Dokument mit Zähler**, z. B. `Rechnung (2).pdf`
 - ohne Versionierung: **als eigenes Dokument mit Zähler** (vorausgewählt) oder **altes Dokument löschen und neues hochladen** – das Löschen ist endgültig
 
+## Archivnummer
+
+Bewahrst du Papieroriginale auf, verbindet die **Archivnummer** das Papier mit dem Dokument im DMS: Auf das Blatt kommt ein Aufkleber mit Barcode und Nummer (z. B. `A-000123`), am Dokument steht dieselbe Nummer. So findest du zum Dokument das Papier – und vom Papier zum Dokument.
+
+- **Eintragen:** **Archivnummer** neben dem Dokument, Nummer eintippen oder mit einem Handscanner einscannen, **Übernehmen**. Das gilt sofort, ohne „Mappe speichern“. Danach steht „Archivnummer A-000123“ unter dem Namen; **ändern** – auch leeren – geht dort.
+- **Jede Nummer gibt es nur einmal.** Hat ein anderes Dokument sie schon, sagt das DMS das und trägt nichts ein – dann klebt wohl ein falscher Aufkleber.
+- **Finden:** Tippe die Nummer ins **Suchfeld** einer Liste und drücke ++enter++ – oder scanne den Aufkleber mit einem Handscanner (er tippt wie eine Tastatur und drückt selbst ++enter++). Das DMS öffnet die Mappe mit dem Register und zeigt das Dokument an. Ist es eine Mappe, die du nicht sehen darfst, sucht es normal weiter.
+- In der [Historie](zusammenarbeit.md#historie) der Mappe steht jede Änderung der Archivnummer.
+
+Die Aufkleber druckt ein Administrator (Werkbank → Nummernkreise → *Archivnummer*). Das Feld für die Nummer gehört zum **Dokument**, nicht zur Mappe: Eine Mappe kann mehrere Papiere haben.
+
+!!! tip "Zusammen mit dem Ablageort"
+    Der [Ablageort](original.md) sagt, **wo** das Papier liegt („Kiste 2026“), die Archivnummer, **welches** Blatt. Schreib auf die Kiste, welche Nummern drin sind – z. B. „Kiste 2026: A-000100 bis A-000180“ – dann findest du jedes Original mit einem Griff.
+
 ## Entfernen
 
 Ein Klick auf **Löschen** neben einem Dokument markiert es mit „wird beim Speichern gelöscht“. Erst **Mappe speichern** löscht es; **Behalten** oder **Änderungen verwerfen** holt es zurück. Noch nicht gespeicherte Dateien nimmst du mit **Nicht hochladen** wieder aus der Liste.
