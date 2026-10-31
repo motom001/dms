@@ -404,6 +404,8 @@ export const api = {
   aufgabeErledigt: (id: string) => anfrage<Aufgabe & { folgetermin?: string }>('POST', `/api/aufgaben/${id}/erledigt`),
   folgetermin: (id: string) => anfrage<Mappe & { hinweis?: string }>('POST', `/api/aufgaben/${id}/folgetermin`),
   /* Fristen und Erinnerungen (#129–#132) */
+  /** Startseite (#334): zuletzt geöffnete Mappen und ob es schon eigene Mappen gibt. */
+  startseite: () => anfrage<{ zuletzt: Array<{ id: string; typId: string; titel: string }>; leer: boolean }>('GET', '/api/startseite'),
   anstehend: (tage?: number) => anfrage<{ tage: number; eintraege: Anstehend[] }>('GET', `/api/anstehend${tage === undefined ? '' : `?tage=${tage}`}`),
   erinnerungAnlegen: (mappeId: string, e: { datum: string; text: string; empfaengerId?: string }) => anfrage<Erinnerung & { hinweis?: string }>('POST', `/api/mappen/${mappeId}/erinnerungen`, e),
   erinnerungAendern: (id: string, e: { datum: string; text: string; empfaengerId?: string }) => anfrage<Erinnerung & { hinweis?: string }>('PUT', `/api/erinnerungen/${id}`, e),

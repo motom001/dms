@@ -1093,7 +1093,18 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       // Exportrecht (#294): „Als PDF exportieren“ nur für lesbare Mappen, die in einer Sicht mit Recht E liegen.
       d.exportierbar = d.rechte?.R !== false && (await dienst.exportierbar(ich(a), z, [a.params.id])).has(a.params.id);
       if (klartext && !d.rechte.P) throw new Fachfehler(403, 'Passwörter dieser Mappe darfst du nicht sehen.');
+      // Startseite (#334): „Zuletzt geöffnet“ – nur in der Oberfläche, nicht über API-Schlüssel.
+      if (!a.apiSchluessel && a.benutzer) await konten.merkeGeoeffnet(a.benutzer, a.params.id).catch(() => {});
       return ok(klartext ? { ...d, mappe: (await dienst.entschluesselePasswoerter([d.mappe], klartext, ich(a).id))[0] } : d);
+    } },
+    // Startseite (#334): zuletzt geöffnete Mappen (nur lesbare, höchstens 5) und ob es schon eigene Mappen gibt.
+    { methode: 'GET', pfad: '/api/startseite', zugang: 'angemeldet', handler: async (a) => {
+      const roh = (await konten.einstellungen(ich(a))).zuletzt_geoeffnet;
+      const ids = Array.isArray(roh) ? roh.filter((x): x is string => typeof x === 'string') : [];
+      const lesbar = await dienst.lesbare(await zg(a), ids);
+      const bezuege = await dienst.bezuegeVon(ids.filter((id) => lesbar.has(id)));
+      const zuletzt = ids.filter((id) => bezuege.has(id)).slice(0, 5).map((id) => ({ id, typId: bezuege.get(id)!.typId, titel: bezuege.get(id)!.titel }));
+      return ok({ zuletzt, leer: await dienst.ohneEigeneMappen() });
     } },
     // Aufgaben (#54, #56)
     { methode: 'GET', pfad: '/api/aufgaben', zugang: 'angemeldet', handler: async (a) => ok(await dienst.meineAufgaben(ich(a), await zg(a))) },

@@ -14,6 +14,7 @@ import { Dreiteilung } from '../bereiche';
 import { titelOder, useSeiten } from '../seiten';
 import { MappeAnsicht, NeueMappe } from './MappeFormular';
 import { PapierkorbDetail, PapierkorbListe, usePapierkorb } from './Papierkorb';
+import { Startseite } from './Startseite';
 import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
 import { Hilfe } from '../Hilfe';
@@ -41,7 +42,9 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   const { ich } = useKonto();
   const [, sicht, dritt] = teile;
 
-  useEffect(() => { if (!sicht) geheZu('/ablage/eingang', true); }, [sicht]);
+  // Startseite (#334): Standard, außer der Benutzer hat sie im Profil abgeschaltet.
+  const mitStart = d.einstellungen.startseite !== false;
+  useEffect(() => { if (!sicht) geheZu(mitStart ? '/ablage/start' : '/ablage/eingang', true); }, [sicht, mitStart]);
   // Erweiterte Suche (#199): am Handy erst das Formular, nach „Suchen“ die Treffer.
   const istSuche = sicht === 'suche';
   const [formular, setFormular] = useState(() => !suche.toString());
@@ -92,6 +95,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           <Link to="/ablage/suche" className="sicht" title="Mappentypen wählen, in Feldern und im Volltext suchen">
             <span className="nm"><span aria-hidden="true">⌕</span> Erweiterte Suche</span>
           </Link>
+          {mitStart && <Link to="/ablage/start" className={`sicht ${sicht === 'start' ? 'an' : ''}`}><span className="nm">Start</span></Link>}
           <Link to="/ablage/eingang" className={`sicht ${sicht === 'eingang' ? 'an' : ''}`}>
             <span className="nm">Zu erledigen</span>{d.zaehler.eingang > 0 && <span className="zaehler">{zahl(d.zaehler.eingang)}</span>}
           </Link>
@@ -128,6 +132,8 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
                   <ul>{link.fehler.map((f) => <li key={f}>{f}</li>)}</ul>
                 </div>
               </>
+          : sicht === 'start'
+          ? <Startseite anstehend={anstehend} offen={dritt} />
           : sicht === 'papierkorb'
           ? <PapierkorbListe z={papierkorb} werkbank={false} offen={dritt} />
           : sicht === 'eingang'

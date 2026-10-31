@@ -3173,6 +3173,17 @@ export class Dienst {
     return { dokument: neu, gleicherInhalt: gleicherInhalt.map((d) => ({ mappeId: d.mappeId, name: d.name, ...bezuege.get(d.mappeId) })) };
   }
 
+  /** Titel und Typ zu Mappen-Ids (ohne Rechteprüfung – vorher filtern). */
+  bezuegeVon(ids: string[]) { return this.repo.bezuege(ids); }
+
+  /** Startseite (#334): Gibt es noch keine Mappe außer denen des Systems (Benutzer, Rollen, Ablageorte) und Demo-Daten? */
+  async ohneEigeneMappen(): Promise<boolean> {
+    const ablageort = await this.ablageortId();
+    const typen = (await this.repo.listeTypen()).filter((t) => !t.system && t.id !== ablageort);
+    const z = (await this.repo.zaehler('', false)).typen;
+    return !typen.some((t) => (z.get(t.id)?.anzahl ?? 0) > 0);
+  }
+
   async holeDokument(id: string) {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');

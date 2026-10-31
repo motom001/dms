@@ -1086,3 +1086,19 @@ a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
 .korbdokument { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 .korbdokument .eintrag { flex: 1; min-width: 0; }
 .korbdokument .knoepfe { flex: none; }
+
+/* Startseite (#334): wenige Kacheln, je eine Zahl und eine Handlung */
+.startseite { display: flex; flex-direction: column; gap: 16px; padding-top: 4px; }
+.kacheln { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.kachel { display: flex; flex-direction: column; gap: 4px; padding: 14px; border: 1px solid var(--linie); border-radius: var(--r); background: var(--flaeche); color: inherit; text-decoration: none; text-align: left; font: inherit; cursor: pointer; min-height: 96px; }
+.kachel:hover { border-color: var(--akzent); }
+.kachel:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+.kacheltitel { font-weight: 600; }
+.kachelzahl { font-size: 2rem; font-weight: 700; line-height: 1.1; }
+.kachelleer { color: var(--gut, #1d7a3a); font-weight: 600; }
+.kachel.auffaellig:not(.erledigt) { border-color: var(--akzent); background: var(--akzent-zart); }
+.kachel.auffaellig:not(.erledigt) .kachelzahl { color: var(--akzent); }
+.kachel.post:not(.erledigt) { background: var(--gruen-zart); }
+.einstiege { display: flex; flex-direction: column; gap: 10px; }
+.einstiege .kachel { min-height: 0; }
+.zuletzt .mappenliste { margin-top: 6px; }

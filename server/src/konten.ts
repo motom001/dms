@@ -318,6 +318,14 @@ export class Konten {
 
   einstellungen(ich: Benutzer) { return this.repo.einstellungen(ich.id); }
 
+  /** Startseite (#334): zuletzt geöffnete Mappen merken – höchstens 10, neueste zuerst. */
+  async merkeGeoeffnet(ich: Benutzer, mappeId: string) {
+    const alt = (await this.repo.einstellungen(ich.id)).zuletzt_geoeffnet;
+    const liste = Array.isArray(alt) ? alt.filter((x): x is string => typeof x === 'string') : [];
+    if (liste[0] === mappeId) return;
+    await this.repo.setzeEinstellung(ich.id, 'zuletzt_geoeffnet', [mappeId, ...liste.filter((x) => x !== mappeId)].slice(0, 10));
+  }
+
   async setzeEinstellung(ich: Benutzer, schluessel: string, wert: unknown) {
     if (!/^[a-z][a-z0-9:_-]{0,80}$/i.test(schluessel)) throw new Fachfehler(422, 'Ungültiger Name der Einstellung.');
     if (wert !== null && JSON.stringify(wert ?? null).length > 4000) throw new Fachfehler(422, 'Die Einstellung ist zu groß.');
