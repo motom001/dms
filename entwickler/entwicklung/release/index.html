@@ -499,6 +499,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#qualitatskontrolle-weiche-zeitangaben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Qualitätskontrolle: weiche Zeitangaben
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#abhangigkeiten-und-sicherheitsupdates" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -820,6 +831,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#qualitatskontrolle-weiche-zeitangaben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Qualitätskontrolle: weiche Zeitangaben
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#abhangigkeiten-und-sicherheitsupdates" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -922,6 +944,12 @@
 <li><em>Lockfile erzeugen</em> (<code>lockfile.yml</code>) lässt sich ebenfalls von Hand starten.</li>
 <li><em>Release</em> (<code>release.yml</code>) startet außerdem bei einem von Hand gepushten Tag <code>v*</code> (legt das Release an) und bei einem von Hand veröffentlichten Release (setzt nur den Text).</li>
 </ul>
+<h2 id="qualitatskontrolle-weiche-zeitangaben">Qualitätskontrolle: weiche Zeitangaben<a class="headerlink" href="#qualitatskontrolle-weiche-zeitangaben" title="Permanent link">&para;</a></h2>
+<p>Ankündigungen wie „im Moment“, „folgt“, „kommt später“ oder „noch nicht“ bleiben gern stehen, wenn die Funktion längst gebaut ist. Bei jeder Qualitätskontrolle (z. B. 0.75) gehört deshalb diese Liste dazu:</p>
+<div class="highlight"><pre><span></span><code>python3<span class="w"> </span>docs/handbuch/werkzeuge/zeitangaben.py
+</code></pre></div>
+<p>Das Skript durchsucht Handbücher, Glossar, Vorlagen, README und die Texte der Oberfläche (<code>web/src</code>, <code>shared/src/hilfe.ts</code>; Kommentare zählen nicht) und gibt je Fund Datei, Zeile, Wort und Satz aus. Der Handbuch-Workflow schreibt dieselbe Liste in die Zusammenfassung des Laufs; er bricht dabei nie ab.</p>
+<p>So liest du sie: Stimmt der Satz noch? Wenn nicht, korrigieren. Ist er gewollt (z. B. „noch nicht bezahlt“ oder eine echte Planung), markiere ihn in derselben Zeile oder der Zeile davor mit <code>&lt;!-- zeitangabe: geprüft 0.75 --&gt;</code> (in YAML <code># zeitangabe: …</code>, in TypeScript <code>// zeitangabe: …</code>). Markierte Stellen stehen gesondert unter „Geprüft“ mit der Version, damit sie bei der nächsten Runde wieder auffallen.</p>
 <h2 id="abhangigkeiten-und-sicherheitsupdates">Abhängigkeiten und Sicherheitsupdates<a class="headerlink" href="#abhangigkeiten-und-sicherheitsupdates" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Dependabot</strong> (<code>.github/dependabot.yml</code>) schlägt jeden Montag Updates vor: kleine Updates (minor, patch) gesammelt in einem PR, Hauptversionen einzeln, dazu GitHub Actions und die Basis-Images. Sicherheitsupdates kommen sofort. Die CI prüft jeden dieser PRs wie jeden anderen; Hauptversionen bitte mit Blick in das Änderungsprotokoll der Bibliothek.<ul>
