@@ -2,7 +2,7 @@
 
 Damit die Suche auch den Text von Dokumenten findet, erzeugt das DMS zu jedem neuen Dokument einen **Volltext** – im Hintergrund, ohne dass jemand warten muss:
 
-*Texterkennung* gehört zur Vorlage **Organisation**, *Wartungsoperationen* nur zur Vorlage **Alles**.
+*Texterkennung* gehört zur Vorlage **Betrieb**, *Wartungsoperationen* nur zur Vorlage **Alles**.
 
 --8<-- "ausgeblendet-schritt.md"
 

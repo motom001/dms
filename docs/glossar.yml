@@ -436,11 +436,19 @@ begriffe:
     code: PaketLaeufer
   - begriff: Werkbank anpassen
     bereich: werkbank
-    beschreibung: Legt fest, welche Bereiche links in der Werkbank stehen – nach einer Vorlage („Haushalt“, „Organisation“ oder „Alles“) und mit Abweichungen. Ausblenden schaltet nichts ab. Neue Installationen starten mit „Haushalt“; Installationen von vor dieser Einstellung zeigen alles.
+    beschreibung: Legt fest, welche Bereiche links in der Werkbank stehen – nach einer Vorlage („Haushalt“, „Betrieb“ oder „Alles“) und mit Abweichungen. Ausblenden schaltet nichts ab. Neue Installationen starten mit „Haushalt“; Installationen von vor dieser Einstellung zeigen alles.
     einsteiger: erklaeren
     begegnet: admin
-    verwandt: [Werkbank, Übersicht]
+    verwandt: [Werkbank, Übersicht, Betrieb]
     code: WerkbankAnsicht, VORLAGEN
+  - begriff: Betrieb
+    bereich: werkbank
+    beschreibung: Die Vorlage unter „Werkbank anpassen“ für Selbständige und kleine Betriebe – mit Nummernkreisen, Archivmodus, Postfächern und weiteren Bereichen. Geplant ist „Betrieb“ auch als Sprachprofil für Firmen (Gegenstück zu „Haushalt“).
+    einsteiger: alltag
+    begegnet: admin
+    nicht_verwenden: [Organisation (für die Vorlage)]
+    verwandt: [Werkbank anpassen, Haushalt]
+    code: organisation (Vorlage)
   - begriff: Übersicht
     bereich: werkbank
     beschreibung: Die erste Seite der Werkbank – was in diesem DMS gerade zu tun ist, mit Hinweisen, Stand und Bestand.
@@ -515,8 +523,7 @@ begriffe:
     begegnet: admin
     nicht_verwenden: [Mandant (in der Oberfläche)]
     code: mandant, haushalt_id
-    profile: {privat: Haushalt, organisation: Organisation}
-    konflikt: [23]
+    profile: {privat: Haushalt, betrieb: Betrieb}
   - begriff: Einrichtungsassistent
     bereich: betrieb
     beschreibung: Die Schritte beim ersten Start des DMS.
@@ -745,3 +752,5 @@ konflikte:
   - nr: 23
     titel: „Organisation“ für drei Dinge
     vorschlag: „Organisation“ ist eine Vorlage unter „Werkbank anpassen“, das geplante Wort für den Haushalt im Sprachprofil für Firmen und ein Mappentyp im Paket Basis. Klären, welches das Wort behält; bis dahin im Text immer sagen, welches gemeint ist.
+    entschieden: '2026-10-31'
+    entscheidung: „Organisation“ bleibt nur für den Mappentyp im Paket Basis. Die Werkbank-Vorlage und das geplante Sprachprofil für Firmen heißen „Betrieb“ (Paar Haushalt ↔ Betrieb).
