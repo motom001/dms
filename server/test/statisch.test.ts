@@ -19,6 +19,11 @@ describe('Oberfläche ausliefern (#215)', { skip: echtesFastify ? false : 'Fasti
     await mkdir(join(web, 'assets'), { recursive: true });
     await writeFile(join(web, 'index.html'), '<!doctype html><title>DMS</title>OBERFLAECHE');
     await writeFile(join(web, 'assets', 'app.js'), 'console.log("app")');
+    // Offline-Hilfe (#219)
+    await mkdir(join(web, 'hilfe', 'admin', 'sicherung'), { recursive: true });
+    await writeFile(join(web, 'hilfe', 'index.html'), 'HILFE-START');
+    await writeFile(join(web, 'hilfe', 'admin', 'index.html'), 'ADMIN-HANDBUCH');
+    await writeFile(join(web, 'hilfe', 'admin', 'sicherung', 'index.html'), 'SICHERUNG-SEITE');
     // Daneben, außerhalb von web/: darf nie ausgeliefert werden.
     await writeFile(join(wurzel, 'geheim.txt'), 'GEHEIM');
     const { baueApp } = await import('../src/http');
@@ -41,6 +46,20 @@ describe('Oberfläche ausliefern (#215)', { skip: echtesFastify ? false : 'Fasti
     assert.equal(route.statusCode, 200);
     assert.match(route.body, /OBERFLAECHE/);
     assert.equal((await app.inject({ method: 'GET', url: '/api/gibtsnicht' })).statusCode, 404);
+  });
+
+  it('liefert die Offline-Hilfe (#219)', async () => {
+    for (const [url, text] of [['/hilfe/', 'HILFE-START'], ['/hilfe/admin/', 'ADMIN-HANDBUCH'], ['/hilfe/admin/sicherung/', 'SICHERUNG-SEITE']] as const) {
+      const r = await app.inject({ method: 'GET', url });
+      assert.equal(r.statusCode, 200, url);
+      assert.match(r.body, new RegExp(text), url);
+    }
+    const ohne = await app.inject({ method: 'GET', url: '/hilfe/admin/sicherung' });
+    assert.equal(ohne.statusCode, 301);
+    assert.equal((ohne as unknown as { headers: Record<string, string> }).headers.location, '/hilfe/admin/sicherung/');
+    const fehlt = await app.inject({ method: 'GET', url: '/hilfe/admin/gibtsnicht/' });
+    assert.equal(fehlt.statusCode, 404);
+    assert.doesNotMatch(fehlt.body, /OBERFLAECHE/);
   });
 
   it('nichts außerhalb von web/, auch mit Pfad-Tricks', async () => {

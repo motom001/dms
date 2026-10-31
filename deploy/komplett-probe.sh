@@ -39,6 +39,11 @@ s=$(curl -fsS "http://127.0.0.1:$PORT/api/konto/status"); echo "$s" | jq -c '{ei
 [ "$(echo "$s" | jq -r '.einrichtung.phase')" = konto ] || fehler "Assistent beginnt nicht beim Mandanten (Datenbank nicht angebunden?)"
 sudo test -s "$arbeit/postgres/daten/PG_VERSION" || fehler "keine Datenbank unter /data/postgres/daten"
 echo "::notice::dms-komplett enthält $(docker exec "$NAME" postgres --version)"
+# Offline-Hilfe (#219): Startseite und eine Seite je Handbuch, ohne Anmeldung.
+for h in "" benutzer/ admin/ installieren/ entwickler/ admin/sicherung/; do
+  curl -fsS "http://127.0.0.1:$PORT/hilfe/$h" | grep -q "<html" || fehler "Hilfe /hilfe/$h fehlt"
+done
+echo "::notice::Offline-Hilfe: $(docker exec "$NAME" du -sh /app/web/dist/hilfe | cut -f1)"
 echo "::endgroup::"; echo "::notice::dms-komplett: Schritt erledigt"
 
 echo "::group::2. Einrichten und Neustart"

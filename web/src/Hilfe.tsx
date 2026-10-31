@@ -3,7 +3,7 @@ import { useKonto } from './konto';
 
 /**
  * Kontextbezogene Hilfe (#110): ein dezentes „?“, das den passenden Abschnitt im Handbuch
- * der installierten Version (#111) in einem neuen Tab öffnet. Welche Stelle wohin zeigt,
+ * der installierten Version (#111) in einem neuen Tab öffnet – aus dem DMS selbst, ohne Internet (#219). Welche Stelle wohin zeigt,
  * steht zentral in shared/src/hilfe.ts.
  */
 export function Hilfe({ ort }: { ort: Hilfeort }) {

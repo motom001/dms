@@ -7,4 +7,7 @@ node_modules
 data
 deploy
 docs
+# Für die Offline-Hilfe (#219)
+!docs/handbuch
+!docs/releases
 !deploy/komplett/start.sh

@@ -7,6 +7,7 @@ import type { Einrichtungscode } from './einrichtungscode';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
 import { standKennung } from './system';
+import { hilfeAntwort, hilfeSenden } from './hilfe';
 
 /**
  * Einrichtungsmodus (#119): Das DMS läuft ohne erreichbare Datenbank und liefert nur den
@@ -104,7 +105,10 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
 
   if (o.webDir && existsSync(o.webDir)) {
     await app.register(fastifyStatic, { root: o.webDir, wildcard: false });
-    app.setNotFoundHandler((_req, reply) => reply.sendFile('index.html'));
+    app.setNotFoundHandler((req, reply) => {
+      const hilfe = hilfeAntwort(req.url, o.webDir);
+      return hilfe ? hilfeSenden(reply, hilfe) : reply.sendFile('index.html');
+    });
   }
 
   // Eine Anbindung, die nur noch nicht erreichbar war (Datenbank-Container startet noch): weiter versuchen.

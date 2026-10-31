@@ -58,3 +58,13 @@ mkdocs serve -f docs/handbuch/benutzer/mkdocs.yml
 ```
 
 Die Bilder (`bilder/*.png`) entstehen in der CI mit `docs/handbuch/screenshots/aufnehmen.mjs` und liegen nicht im Repository. Lokal fehlen sie deshalb; die Warnungen dazu kannst du ignorieren.
+
+### Offline-Hilfe im Image
+
+Das Dockerfile baut im Abschnitt `hilfe` alle vier Handbücher und die Startseite mit `docs/handbuch/werkzeuge/offline.py` und legt sie nach `web/dist/hilfe`; der Server liefert sie unter `/hilfe/` aus. Je Handbuch gibt es dafür `mkdocs.offline.yml` (erbt von `mkdocs.yml`) mit dem Hook `werkzeuge/offline_hook.py`:
+
+- Bildschirmfotos (`bilder/…`) werden zu einem Hinweis mit Link auf dieselbe Seite online (`/dms/<handbuch>/vX.Y/…`).
+- Verweise `https://motom001.github.io/dms/<handbuch>/aktuell/…` zeigen auf `/hilfe/<handbuch>/…`; Vorlagen bleiben online, `api/openapi.json` zeigt auf die eigene Installation.
+- Keine Versionsauswahl, keine Schriften aus dem Internet, keine Quellkarten, Suche nur auf Deutsch.
+
+Lokal: `python3 docs/handbuch/werkzeuge/offline.py /tmp/hilfe`. Das Skript prüft am Ende, dass jeder Verweis auf `/hilfe/…` eine Seite trifft; die CI prüft zusätzlich alle Ziele der kontextbezogenen Hilfe. Ohne gebaute Handbücher (`npm run dev`) leitet der Server `/hilfe/…` auf die Online-Fassung der Version um.

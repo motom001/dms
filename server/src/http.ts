@@ -15,6 +15,7 @@ import type { SystemQuelle } from './system';
 import type { Designs } from './designs';
 import type { ApiSchluesselDienst } from './apischluessel';
 import { wer } from './api-v1';
+import { hilfeAntwort, hilfeSenden } from './hilfe';
 import { kontext, protokoll, type Kontext, type Stufe } from './protokoll';
 import type { Betrieb } from './betrieb';
 import type { Tresor } from './tresor';
@@ -153,6 +154,8 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     // Alle Nicht-API-Pfade liefern die Oberfläche aus (Routing im Browser).
     app.setNotFoundHandler((req, reply) => {
       if (req.url.startsWith('/api/')) return reply.code(404).send({ fehler: 'Diese Schnittstelle gibt es nicht.' });
+      const hilfe = hilfeAntwort(req.url, opt.webDir);
+      if (hilfe) return hilfeSenden(reply, hilfe);
       return reply.sendFile('index.html');
     });
   }

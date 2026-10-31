@@ -15,6 +15,16 @@ COPY server server
 COPY web web
 RUN npm run build
 
+# Handbücher für die Offline-Hilfe (#219): alle vier und die Startseite, ohne Screenshots,
+# ausgeliefert unter /hilfe/. Nur der gebaute Ordner kommt ins Image, nicht Python.
+FROM python:3.12-alpine AS hilfe
+RUN pip install --no-cache-dir --disable-pip-version-check mkdocs-material==9.7.7
+WORKDIR /src
+COPY package.json ./
+COPY docs/releases docs/releases
+COPY docs/handbuch docs/handbuch
+RUN python3 docs/handbuch/werkzeuge/offline.py /hilfe
+
 FROM node:22-alpine AS laufzeit
 LABEL org.opencontainers.image.source="https://github.com/motom001/dms" \
       org.opencontainers.image.licenses="AGPL-3.0-only"
@@ -41,6 +51,7 @@ RUN npm ci --omit=dev --workspace server --no-audit --no-fund && npm cache clean
 COPY --from=bau /app/server/dist server/dist
 COPY server/migrations server/migrations
 COPY --from=bau /app/web/dist web/dist
+COPY --from=hilfe /hilfe web/dist/hilfe
 
 # Feste Ordner (#115): /data/files, /data/geheim, /data/sicherung – zugeordnet nur über Volumes.
 ENV PORT=3000
