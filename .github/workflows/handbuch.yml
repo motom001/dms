@@ -161,6 +161,11 @@ jobs:
             SITE_URL="https://motom001.github.io/dms/$h/$ZIEL/" mkdocs build --strict -f "docs/handbuch/$h/mkdocs.yml" -d "$GITHUB_WORKSPACE/site/$h"
           done
 
+      # Weiche Zeitangaben (#303): Liste zum Durchsehen in der Zusammenfassung des Laufs, bricht nie ab.
+      - name: Weiche Zeitangaben auflisten
+        continue-on-error: true
+        run: python3 docs/handbuch/werkzeuge/zeitangaben.py --markdown >> "$GITHUB_STEP_SUMMARY" || true
+
       # Jede Stelle der kontextbezogenen Hilfe (#110) muss im gebauten Handbuch existieren.
       - name: Hilfe-Links prüfen
         run: npx tsx docs/handbuch/werkzeuge/hilfe-pruefen.ts site
