@@ -532,6 +532,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#sicherheits-header" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheits-Header
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1774,6 +1785,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#sicherheits-header" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheits-Header
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1925,6 +1947,10 @@
 <td>Wem das DMS die Angaben eines Reverse-Proxys glaubt. Nicht gesetzt: dem eigenen Rechner und privaten Netzen – passt fast immer. <code>false</code>: niemandem, <code>true</code>: allen, oder eine Liste wie <code>172.18.0.0/16</code>. Siehe <a href="#hinter-einem-reverse-proxy">Hinter einem Reverse-Proxy</a></td>
 </tr>
 <tr>
+<td><code>DMS_EINBETTEN</code></td>
+<td>Seiten, die das DMS einbetten dürfen (z. B. ein Dashboard), etwa <code>https://ha.example.org http://nas:8123</code>. Nicht gesetzt: nur das DMS selbst. Siehe <a href="#sicherheits-header">Sicherheits-Header</a></td>
+</tr>
+<tr>
 <td><code>LOG_LEVEL</code></td>
 <td>Grundstufe des Protokolls: <code>debug</code>, <code>info</code> (Standard), <code>warn</code>, <code>error</code></td>
 </tr>
@@ -1982,6 +2008,15 @@
 <p class="admonition-title">Die Adresse trotzdem pflegen</p>
 <p>Die Adresse in der Werkbank ist verlässlicher als jede Erkennung: E-Mails aus dem Hintergrund (Erinnerungen, Zusammenfassung) haben keine Anfrage, aus der das DMS die Adresse ablesen könnte.</p>
 </div>
+<h3 id="sicherheits-header">Sicherheits-Header<a class="headerlink" href="#sicherheits-header" title="Permanent link">&para;</a></h3>
+<p>Das DMS setzt die üblichen Sicherheits-Header selbst – dein Reverse-Proxy muss sie <strong>nicht</strong> noch einmal setzen (doppelte Header schaden nicht, verwirren aber bei der Fehlersuche):</p>
+<ul>
+<li><code>X-Frame-Options: SAMEORIGIN</code> und <code>Content-Security-Policy: frame-ancestors 'self'</code> – keine fremde Seite kann das DMS unsichtbar einbetten,</li>
+<li>eine strenge <code>Content-Security-Policy</code> für die Oberfläche (nur eigene Skripte),</li>
+<li><code>X-Content-Type-Options: nosniff</code>, <code>Referrer-Policy: same-origin</code>, <code>Permissions-Policy</code>,</li>
+<li><code>Strict-Transport-Security</code>, sobald das DMS über HTTPS aufgerufen wird.</li>
+</ul>
+<p>Soll das DMS in einer anderen Seite erscheinen, etwa in einem Home-Assistant-Dashboard, trage deren Ursprung in <code>DMS_EINBETTEN</code> ein (mehrere durch Leerzeichen getrennt). Ungültige Angaben ignoriert das DMS und nennt sie im Protokoll.</p>
 <p>Ein Beispiel für nginx:</p>
 <div class="highlight"><pre><span></span><code><span class="k">server</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">443</span><span class="w"> </span><span class="s">ssl</span><span class="p">;</span>
