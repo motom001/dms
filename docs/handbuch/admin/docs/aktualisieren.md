@@ -75,9 +75,9 @@ Von Hand zu sichern sind diese Ordner aus der Compose-Vorlage:
 
 | Ordner | Inhalt |
 | --- | --- |
-| `postgres` | die Datenbank: Mappentypen, Mappen, Benutzer, Einstellungen |
+| `postgres` | die Datenbank: Mappentypen, Mappen, Benutzer, Einstellungen (bei dms-komplett im Container unter `/data/postgres`) |
 | `files` | die hochgeladenen Dateien, je Datei unter ihrem SHA-256-Prüfwert |
-| `geheim` | der Schlüssel für gespeicherte Passwörter (SMTP, Passwortfelder) und Sicherungen – **getrennt** von den anderen aufbewahren |
+| `geheim` | der Schlüssel `dms.schluessel` für alle gespeicherten Geheimnisse (siehe [Verschlüsselung](verschluesselung.md)) und Sicherungen, die Datenbank-Anbindung `datenbank.json` (mit Passwort), bis zur Einrichtung der Einrichtungscode und bei Bedarf die [RESCUE-Datei](notfall.md) – **getrennt** von den anderen aufbewahren |
 | `sicherung` | die Sicherungen des DMS (verschlüsselt) |
 
 Für eine konsistente Datenbanksicherung im laufenden Betrieb vorher einen Abzug erstellen:
@@ -86,7 +86,7 @@ Für eine konsistente Datenbanksicherung im laufenden Betrieb vorher einen Abzug
 docker exec <db-container> pg_dump -U dms dms > dms.sql
 ```
 
-und `dms.sql` zusammen mit dem Ordner `files` sichern.
+Bei dms-komplett heißt der Befehl `docker exec <container> pg_dump -h 127.0.0.1 -U dms dms > dms.sql`. Sichere `dms.sql` zusammen mit dem Ordner `files`.
 
 ### Wiederherstellen
 
@@ -99,6 +99,8 @@ Sicherungen des DMS spielst du in der Werkbank ein: [Wiederherstellen](wiederher
    docker exec -i <db-container> psql -U dms -d dms < dms.sql
    ```
 3. Projekt starten.
+
+Dieser Weg gilt für zwei Container: Dort lässt sich die Datenbank allein starten. Bei dms-komplett laufen DMS und Datenbank im selben Container und starten immer zusammen. Hol dort einen früheren Stand mit einer Sicherung des DMS zurück, wie unter [Wiederherstellen](wiederherstellen.md) beschrieben.
 
 !!! warning "Dateien und Datenbank gehören zusammen"
     Die Datenbank kennt jede Datei über ihren Prüfwert. Sichere und stelle beide immer vom selben Zeitpunkt wieder her.

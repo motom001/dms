@@ -2,11 +2,20 @@
 
 Im Container des DMS gibt es den Befehl `dms`. Damit erledigst du Notfälle und Routinearbeiten ohne Browser – etwa wenn du dich ausgesperrt hast oder etwas per Skript tun willst.
 
+Am einfachsten rufst du ihn im Ordner der Compose-Datei über den Namen des Dienstes auf:
+
 ```sh
-docker exec -it <container> dms hilfe
+docker compose exec app dms hilfe     # zwei Container (Dienst „app“)
+docker compose exec dms dms hilfe     # dms-komplett (Dienst „dms“)
 ```
 
-`<container>` ist der Name des DMS-Containers (bei dms-komplett meist `dms`, beim Betrieb mit zwei Containern der des DMS, nicht der Datenbank). In der Docker-Oberfläche des NAS (Synology Container Manager, QNAP Container Station, Unraid, TrueNAS …) öffnest du stattdessen das **Terminal** des Containers und gibst `dms hilfe` ein.
+Mit `docker exec` brauchst du den Namen des Containers. Docker setzt ihn aus dem Namen des Projekts und des Dienstes zusammen, z. B. `dms-app-1` (zwei Container) oder `dms-dms-1` (dms-komplett). Welche Namen es gibt, zeigt `docker ps`. Nimm den Container des DMS, nicht den der Datenbank:
+
+```sh
+docker exec -it dms-app-1 dms hilfe
+```
+
+In der Docker-Oberfläche des NAS (Synology Container Manager, QNAP Container Station, Unraid, TrueNAS …) öffnest du stattdessen das **Terminal** des Containers und gibst `dms hilfe` ein.
 
 ## Wer darf das?
 
@@ -14,7 +23,9 @@ Wer Befehle im Container ausführen darf, darf auch `dms` – wie ein Administra
 
 `dms` handelt als der älteste aktive Administrator. Mit `--als <email>` wählst du einen anderen.
 
-Technisch legt das DMS beim Start eine Datei `/tmp/dms-konsole.json` mit einem zufälligen Schlüssel an, lesbar nur im Container. Den Schlüssel nimmt das DMS nur über die Adresse `127.0.0.1` an – über den veröffentlichten Port oder einen Reverse-Proxy funktioniert er nicht.
+Technisch legt das DMS beim Start eine Datei `/tmp/dms-konsole.json` mit einem zufälligen Schlüssel an, lesbar nur im Container. Einen anderen Ort legt die Umgebungsvariable `DMS_KONSOLE_DATEI` fest; sie muss dann für das DMS und den Befehl `dms` gleich sein. Den Schlüssel nimmt das DMS nur über die Adresse `127.0.0.1` an – über den veröffentlichten Port oder einen Reverse-Proxy funktioniert er nicht.
+
+Der Befehl `dms` funktioniert auch im [Wartungsmodus](wartungsmodus.md). So beendest du ihn mit `dms wartung aus`, auch wenn die Oberfläche gesperrt ist.
 
 ## Notfall
 
@@ -30,8 +41,8 @@ Technisch legt das DMS beim Start eine Datei `/tmp/dms-konsole.json` mit einem z
 
 !!! example "Ausgesperrt"
     ```sh
-    docker exec -it dms dms passwort ich@example.org
-    docker exec -it dms dms entsperren 192.168.1.20
+    docker compose exec app dms passwort ich@example.org
+    docker compose exec app dms entsperren 192.168.1.20
     ```
 
 Gibt es gar keinen aktiven Administrator mehr, setzt `dms passwort` trotzdem ein Passwort; die übrigen Befehle brauchen einen. Dann hilft der [Notfallzugang](notfall.md).
@@ -69,7 +80,7 @@ Welche Pfade es gibt, zeigt der Netzwerk-Reiter der Entwicklerwerkzeuge im Brows
 
 - `--json` gibt jede Antwort als JSON aus.
 - `--ja` beantwortet Rückfragen (z. B. bei `abmelden --alle`); ohne Terminal (`docker exec` ohne `-it`) ist es Pflicht.
-- Rückgabewert: `0` erledigt, `1` Fehler, `2` falscher Aufruf, `3` DMS läuft nicht oder ist im Einrichtungsmodus, `4` Zugang abgelehnt.
+- Rückgabewert: `0` erledigt, `1` Fehler, `2` falscher Aufruf, `3` DMS läuft nicht oder ist im Einrichtungsmodus, `4` Zugang abgelehnt, `130` Eingabe abgebrochen (z. B. mit Strg+C bei der Abfrage des Passworts).
 
 ## Meldungen
 

@@ -13,28 +13,33 @@ Nach zu vielen falschen Passwörtern sperrt das DMS die Anmeldung. Unter **Werkb
 
 Die Sperrdauer je IP darf auch **0** sein: Dann bleibt die Adresse gesperrt, bis ein Administrator sie freigibt. Die Fehlversuche je IP zählen innerhalb der Sperrdauer (bei „dauerhaft“ innerhalb einer Stunde).
 
-Sperren stehen in der Datenbank und überstehen einen Neustart. Jede Sperre und jedes Entsperren steht im [Protokoll](fehlersuche.md#protokoll). Auf Wunsch bekommen die Administratoren eine Mail, sobald eine IP gesperrt wird.
+Sperren stehen in der Datenbank und überstehen einen Neustart. Jede Sperre und jedes Entsperren steht im [Protokoll](fehlersuche.md#protokoll). Sobald eine IP gesperrt wird, bekommen die Administratoren eine Mail. Das ist Standard; abschalten lässt es sich mit dem Haken **Administratoren per Mail informieren, wenn eine IP gesperrt wird**.
 
 ## Gesperrte Adressen
 
 Die Liste zeigt jede gesperrte IP mit Grund, Beginn und Ende. **Entsperren** gibt sie sofort frei. Oben auf der Seite steht deine eigene Adresse, wie das DMS sie sieht.
 
 !!! warning "Hinter einem Reverse-Proxy"
-    Damit die Sperre je IP die richtige Adresse trifft, muss das DMS die Angaben des Proxys glauben – siehe [Hinter einem Reverse-Proxy](installation.md#hinter-einem-reverse-proxy). Sonst sieht es für alle Anmeldungen die Adresse des Proxys und sperrt im Ernstfall alle aus.
+    Damit die Sperre je IP die richtige Adresse trifft, muss das DMS die Angaben des Proxys glauben. Sitzt der Proxy auf demselben Rechner oder in einem privaten Netz, erkennt das DMS das von selbst (`TRUST_PROXY` nicht gesetzt oder `auto`). Prüfe oben auf der Seite: Steht dort bei deiner Adresse die Adresse des Proxys statt die deines Geräts, sieht das DMS für alle Anmeldungen dieselbe Adresse und sperrt im Ernstfall alle aus. Siehe [Hinter einem Reverse-Proxy](installation.md#hinter-einem-reverse-proxy).
 
 ## Ausnahmen
 
-Unter **Nie sperren** stehen Adressen oder Netze, die nie gesperrt werden, z. B. dein Heimnetz `192.168.0.0/16` oder das Firmennetz. Mehrere durch Komma getrennt.
+Unter **Nie sperren** stehen Adressen oder Netze, die nie gesperrt werden, z. B. dein Heimnetz `192.168.0.0/16` oder das Firmennetz. Mehrere durch Komma getrennt, höchstens 50.
 
 ## Ausgesperrt?
 
-Bist du selbst gesperrt und kein anderer Administrator kann dich freigeben, warte die Sperrdauer ab oder melde dich von einem anderen Gerät oder Netz an. Für eine dauerhafte Sperre hilft der [Notfallzugang](notfall.md).
+Bist du selbst gesperrt und kein anderer Administrator kann dich freigeben, hilft der [Befehl `dms`](konsole.md) im Container:
+
+- `dms gesperrt` zeigt die gesperrten Adressen,
+- `dms entsperren <ip>` gibt eine Adresse sofort frei.
+
+Ohne Zugriff auf den Container warte die Sperrdauer ab oder melde dich von einem anderen Gerät oder Netz an. Gibt es keinen Administrator mehr, hilft der [Notfallzugang](notfall.md).
 
 ## Zwei-Faktor-Anmeldung
 
 Jeder Benutzer kann unter **Profil → Sicherheit** eine Zwei-Faktor-Anmeldung mit einer Authenticator-App einrichten (TOTP, 6 Stellen, 30 Sekunden) und bekommt dazu zehn Wiederherstellungscodes. Wie das für Benutzer aussieht, beschreibt das [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/aktuell/profil/#zwei-faktor-anmeldung).
 
-Unten auf dieser Seite **schreibst du sie je Systemrolle vor** – für Administratoren, für Mitglieder oder beide. Wer sie dann noch nicht hat, sieht nach der Anmeldung nur die Einrichtung und kommt erst danach weiter. Abschalten kann er sie selbst nicht mehr.
+Unter **Werkbank → Anmeldeschutz** im Block **Zwei-Faktor-Anmeldung** **schreibst du sie je Systemrolle vor**: mit den Haken **Für Administratoren vorschreiben** und **Für Mitglieder vorschreiben**. Wer sie dann noch nicht hat, sieht nach der Anmeldung nur die Einrichtung und kommt erst danach weiter. Abschalten kann er sie selbst nicht mehr.
 
 Falsche Codes zählen wie falsche Passwörter für den [Anmeldeschutz](#zwei-sperren). Ein Link zum Zurücksetzen des Passworts ersetzt nur das Passwort; den Code fragt das DMS trotzdem ab.
 
@@ -46,7 +51,7 @@ Das Geheimnis liegt mit dem [Schlüssel des DMS](verschluesselung.md) verschlüs
     Die Codes hängen an der Uhrzeit. Weicht die Uhr des Servers mehr als etwa 30 Sekunden ab, passen sie nicht. Lass den Server die Zeit per NTP stellen.
 
 !!! tip "Selbst ausgesperrt?"
-    Hast du als einziger Administrator Handy und Codes verloren, hilft der [Notfallzugang](notfall.md).
+    Hast du Handy und Codes verloren, entfernt `dms zweifaktor-zuruecksetzen <email>` im Container deine Zwei-Faktor-Anmeldung (siehe [Befehl `dms`](konsole.md)). Kommst du nicht an den Container, hilft der [Notfallzugang](notfall.md).
 
 ## Anmeldung über einen Anbieter (OpenID Connect)
 
@@ -71,10 +76,17 @@ Lege beim Anbieter eine Anwendung (Client) vom Typ *Web* an:
 
 ### Im DMS
 
-Unter **Werkbank → Anmeldeschutz → Anmeldung über einen Anbieter** trägst du Adresse, Client-ID und Client-Secret ein und klickst auf **Verbindung prüfen**. Danach **Eingeschaltet** ankreuzen und speichern. Das Client-Secret liegt mit dem [Schlüssel des DMS](verschluesselung.md) verschlüsselt in der Datenbank.
+Unter **Werkbank → Anmeldeschutz → Anmeldung über einen Anbieter** trägst du ein:
 
-- **Zuordnung:** über die E-Mail-Adresse. Gibt es sie im DMS nicht, lehnt das DMS ab – außer **Unbekannte Adressen als neue Benutzer anlegen** ist an; dann entsteht ein Benutzer mit der eingestellten Rolle. Bei Entra ID dient auch der Anmeldename (UPN) als Adresse.
-- **Gruppe für Administratoren:** Ist sie gesetzt, folgt die Systemrolle bei jeder Anmeldung der Gruppe: Mitglieder der Gruppe sind Administratoren, alle anderen Mitglieder. Der letzte aktive Administrator bleibt Administrator. Bei Entra ID liefert der Claim `groups` die Objekt-IDs der Gruppen (Anwendung → *Token-Konfiguration* → *Gruppenanspruch hinzufügen*); trage dann die Objekt-ID ein.
+- **Adresse des Anbieters** (Issuer),
+- **Client-ID**,
+- **Client-Secret** – leer lassen bei öffentlichen Clients, die kein Secret haben. Ist schon eines gespeichert, lässt ein leeres Feld es unverändert; **Secret löschen** entfernt es,
+- **Beschriftung des Knopfes** auf der Anmeldeseite.
+
+Dann klickst du auf **Verbindung prüfen**. Danach **Eingeschaltet – Knopf auf der Anmeldeseite** ankreuzen und speichern. Das Client-Secret liegt mit dem [Schlüssel des DMS](verschluesselung.md) verschlüsselt in der Datenbank.
+
+- **Zuordnung:** über die E-Mail-Adresse. Gibt es sie im DMS nicht, lehnt das DMS ab – außer **Unbekannte Adressen als neue Benutzer anlegen** ist an; dann entsteht ein Benutzer mit der **Systemrolle neuer Benutzer** (Mitglied oder Administrator). Bei Entra ID dient auch der Anmeldename (UPN) als Adresse.
+- **Gruppe für Administratoren:** Ist sie gesetzt, folgt die Systemrolle bei jeder Anmeldung der Gruppe: Mitglieder der Gruppe sind Administratoren, alle anderen Mitglieder. Der letzte aktive Administrator bleibt Administrator. Aus welchem Claim das DMS die Gruppen liest, steht im Feld **Claim mit den Gruppen** (meist `groups`). Bei Entra ID liefert der Claim `groups` die Objekt-IDs der Gruppen (Anwendung → *Token-Konfiguration* → *Gruppenanspruch hinzufügen*); trage dann die Objekt-ID ein.
 - **Passwort-Anmeldung nur noch für Administratoren:** Mitglieder melden sich nur noch über den Anbieter an. Administratoren behalten ihr Passwort als Notzugang, falls der Anbieter einmal nicht erreichbar ist.
 - **Beim Abmelden auch beim Anbieter abmelden:** Wer sich über den Anbieter angemeldet hat, wird beim Abmelden auch dort abgemeldet (wenn der Anbieter das anbietet).
 - Eine eingerichtete [Zwei-Faktor-Anmeldung](#zwei-faktor-anmeldung) des DMS gilt auch hier. Verlangt schon der Anbieter einen zweiten Faktor, schreibe sie im DMS für diese Rollen nicht zusätzlich vor.

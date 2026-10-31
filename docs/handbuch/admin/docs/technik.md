@@ -13,14 +13,15 @@ Browser ── HTTP ──▶ DMS-Container (Node.js) ──▶ PostgreSQL-Conta
 | Baustein | Technik | Wozu |
 | --- | --- | --- |
 | Oberfläche | React 19, gebaut mit Vite | Ablage, Werkbank, Profil – alles im Browser |
-| Server | Node.js 22, Fastify 5, TypeScript (mit esbuild gebündelt) | Schnittstelle unter `/api`, liefert auch die Oberfläche aus |
+| Server | Node.js 24, Fastify 5, TypeScript (mit esbuild gebündelt) | Schnittstelle unter `/api`, liefert auch die Oberfläche aus |
 | Datenbank | PostgreSQL 17, Zugriff mit postgres.js, SQL-Migrationen in `server/migrations` | Alle Daten außer den Dateien |
-| Dateien | Feste Ordner `/data/files`, `/data/geheim`, `/data/sicherung` (Volumes, siehe [Installation](installation.md#ordner-und-volumes)); je Datei ihr SHA-256 als Name | Hochgeladene Dokumente, gleicher Inhalt nur einmal; Schlüssel; Sicherungen |
-| E-Mail | nodemailer über SMTP (optional, eingestellt in der Werkbank) | Einladungen, Passwort-Links, Hinweise |
+| Dateien | Feste Ordner `/data/files`, `/data/geheim`, `/data/sicherung` (Volumes, siehe [Installation](installation.md#ordner-und-volumes)); je Datei ihr SHA-256 als Name; optional der [Eingangsordner](eingangsordner.md) `/eingang` | Hochgeladene Dokumente, gleicher Inhalt nur einmal; Schlüssel; Sicherungen; Scans zum Abholen |
+| E-Mail | nodemailer über SMTP zum Versenden; imapflow und mailparser über IMAP zum Abholen (beides optional, eingestellt in der Werkbank) | Einladungen, Passwort-Links, Hinweise, Mappen versenden; Mails aus [Postfächern](postfaecher.md) als Post abholen |
 | Texterkennung | Tesseract (deu, eng) und poppler (pdftotext, pdftoppm) im Image; deutsche Volltextsuche von PostgreSQL | Volltext von PDFs, Scans und Bildern (#45) |
 | Verschlüsselung | AES-256-GCM (Node.js crypto), Schlüssel als Datei unter `/data/geheim` | Gespeicherte Passwörter (#39, #46) |
-| Image | `node:22-alpine`, mehrstufig gebaut, für amd64 und arm64 – jede Architektur auf einem eigenen, passenden Rechner von GitHub (ohne Emulation), danach zu einem Image zusammengeführt | Läuft auf dem NAS neben dem PostgreSQL-Image |
-| Prüfungen | GitHub Actions: Typprüfung, Tests gegen PostgreSQL, Image-Bau | Jeder Push auf `main` |
+| Image | `node:24-alpine`, mehrstufig gebaut, für amd64 und arm64 – jede Architektur auf einem eigenen, passenden Rechner von GitHub (ohne Emulation), danach zu einem Image zusammengeführt | Läuft auf dem NAS neben dem PostgreSQL-Image |
+| dms-komplett | Dasselbe Image mit PostgreSQL 17 (Alpine-Paket) im selben Container; Datenbank im Ordner `/data/postgres` | DMS und Datenbank in einem Container |
+| Prüfungen | GitHub Actions: Typprüfung, Tests gegen PostgreSQL, Image-Bau | Jeder Push auf `main`, jeder Pull Request, jedes Versions-Tag und einmal pro Woche |
 
 ## Schnittstelle
 
@@ -28,20 +29,22 @@ Browser ── HTTP ──▶ DMS-Container (Node.js) ──▶ PostgreSQL-Conta
 
 ## Hilfe ohne Internet
 
-Das Image bringt die Handbücher seiner Version mit: Startseite, Wie komme ich an ein DMS?, Benutzer-, Administrator- und Entwicklerhandbuch, erreichbar unter `/hilfe/` der eigenen Installation (z. B. `http://<NAS>:8080/hilfe/`), ohne Anmeldung und schon im Einrichtungsassistenten. Das Fragezeichen neben einer Überschrift und die Links auf das Handbuch öffnen diese Fassung. Sie kommt ohne Internet aus; nur die Bildschirmfotos fehlen – an ihrer Stelle steht ein Link auf dieselbe Seite online. Im Fuß jeder Seite geht es zur Online-Hilfe und zur neuesten Fassung.
+Das Image bringt die Handbücher seiner Version mit: Startseite, Wie komme ich an ein DMS?, Benutzer-, Administrator- und Entwicklerhandbuch, erreichbar unter `/hilfe/` der eigenen Installation (z. B. `http://<NAS>:8080/hilfe/`), ohne Anmeldung und schon im Einrichtungsassistenten. Das Fragezeichen neben einer Überschrift und die Links auf das Handbuch öffnen diese Version. Sie kommt ohne Internet aus; nur die Bildschirmfotos fehlen – an ihrer Stelle steht ein Link auf dieselbe Seite online. Im Fuß jeder Seite geht es zur Online-Hilfe und zur neuesten Version.
 
 ## Module
 
-Jede Protokollzeile gehört zu einem Modul:
+Jede Zeile im [Protokoll](fehlersuche.md#protokoll) gehört zu einem Modul. Für jede Anfrage an den Server schreibt das DMS eine Zeile mit Methode, Pfad, Status, Dauer und Datenbankzugriffen – im Modul des Bereichs, zu dem die Anfrage gehört (z. B. `ablage` für Mappen).
 
 | Modul | Was |
 | --- | --- |
 | `system` | Start, Einstellungen, Debug-Modus |
-| `http` | eine Zeile je Anfrage: Methode, Pfad, Status, Dauer, Datenbankzugriffe |
-| `konto` | Anmeldung, Sitzungen, Benutzer, Vertretung |
-| `ablage` | Mappen anlegen, ändern, löschen; Ansichten |
+| `http` | Anfragen, die zu keinem anderen Modul gehören (z. B. Seiten der Oberfläche) |
+| `konto` | Anmeldung, Sitzungen, Benutzer, Rollen, Vertretung |
+| `ablage` | Mappen anlegen, ändern, löschen; Ansichten, Papierkorb, Notizen, Aufgaben |
 | `werkbank` | Mappentypen, Demo-Daten, Einstellungen, Versionsabgleich |
 | `dokumente` | Hochladen, Anzeigen, Löschen |
+| `texterkennung` | Texterkennung: abgeschlossen, ausgelassen, fehlgeschlagen, neu gestartet, abgebrochen; Einstellungen |
+| `sicherung` | Sicherung, Notfallblatt, Wiederherstellung und Probe |
 | `datenbank` | Migrationen, Verbindung, lange Zugriffe |
 | `mail` | Versand und Fehler beim Versand |
 

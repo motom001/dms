@@ -29,7 +29,12 @@ Nach Ablauf der Vorlaufzeit – oder sofort mit **Alle jetzt abmelden**:
 - Alle Sitzungen außer deiner enden, auch die anderer Administratoren (sie können sich wieder anmelden).
 - Die Anmeldeseite zeigt den Wartungshinweis mit Text und erwartetem Ende; anmelden können sich nur Administratoren.
 - Die [Schnittstelle](api.md) (`/api/v1`) antwortet mit **503** und `Retry-After` (Sekunden bis zum erwarteten Ende, sonst 15 Minuten) – Skripte sollten es später noch einmal versuchen.
-- Texterkennung, tägliche Zusammenfassung der Aufgaben und das Aufräumen des Papierkorbs pausieren.
+- Die Hintergrundarbeiten pausieren:
+    - Texterkennung,
+    - Fristen und Erinnerungen und die tägliche Zusammenfassung der Aufgaben,
+    - das Aufräumen des Papierkorbs,
+    - die geplante [Sicherung](sicherung.md) und die Probe-Wiederherstellung,
+    - der Abruf der [Postfächer](postfaecher.md) und des [Eingangsordners](eingangsordner.md).
 
 Unter **Angemeldete Sitzungen** siehst du, wer gerade mit welchem Gerät angemeldet ist und wann zuletzt aktiv.
 
@@ -43,4 +48,4 @@ Unter **Angemeldete Sitzungen** siehst du, wer gerade mit welchem Gerät angemel
 Ein, Aus und das Abmelden stehen im [Protokoll](fehlersuche.md#protokoll) (Modul *system*).
 
 !!! tip "Vor jedem Update"
-    Wartung ankündigen, nach der Vorlaufzeit das Image aktualisieren (siehe [Aktualisieren](aktualisieren.md)), kurz prüfen, dann **Wartung beenden**.
+    Unter **Werkbank → Sicherung** mit **Jetzt sichern** eine Sicherung anlegen. Dann Wartung ankündigen, nach der Vorlaufzeit das Image aktualisieren (siehe [Aktualisieren](aktualisieren.md)), kurz prüfen, dann **Wartung beenden**.

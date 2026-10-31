@@ -35,7 +35,7 @@ Dieser Weg ist nur offen, solange es noch keinen Benutzer gibt, und nur mit dem 
 1. Den [Wartungsmodus](wartungsmodus.md) einschalten und aktiv werden lassen (oder **Alle jetzt abmelden**).
 2. **Werkbank → Wiederherstellen**, Sicherung auswählen, Abgleich prüfen. Passt der Schlüssel dieses DMS nicht zur Sicherung, gib den vom passenden Notfallblatt ein.
 3. Bestätigen, dass der jetzige Stand ersetzt wird, und **Wiederherstellen** – nach einer Rückfrage.
-4. Vorher sichert das DMS den **jetzigen Stand** (Art „vor einer Wiederherstellung“) – so kannst du zurück, falls du die falsche Sicherung erwischt hast. Fehlt dafür der Schlüssel, steht das als Hinweis im Ablauf.
+4. Vorher sichert das DMS den **jetzigen Stand** (Art „vor einer Wiederherstellung“) – so kannst du zurück, falls du die falsche Sicherung erwischt hast. Fehlt dafür der Schlüssel, steht das als Hinweis im Ablauf. Dann bleibt der bisherige Stand der Datenbank **7 Tage** als eigener Bereich (Schema `dms_alt_behalten_…`) in der Datenbank; danach entfernt das DMS ihn beim nächsten Start. Die Abschlussmeldung nennt den Namen.
 5. Nach dem Neustart ist der Wartungsmodus aus; alle melden sich neu an.
 
 Gehört zur Sicherung ein anderer Schlüssel als der jetzige, legt das DMS die bisherige Schlüsseldatei als `dms.schluessel.alt-…` daneben und nimmt den der Sicherung.
@@ -46,7 +46,7 @@ Eine Sicherung ist erst dann gut, wenn sie sich einspielen lässt. Deshalb spiel
 
 ![Probe-Wiederherstellung](bilder/werkbank-sicherung-probe.png)
 
-Das Ergebnis steht je Sicherung in der Liste und als Ampel in der Übersicht: **grün** = letzte Probe erfolgreich und höchstens 8 Tage alt, **gelb** = älter oder noch nie, **rot** = fehlgeschlagen. Schlägt eine Probe fehl, bekommen alle Administratoren eine Mail. Im aktiven Wartungsmodus und bei zu wenig freiem Platz pausiert die Probe.
+Das Ergebnis steht je Sicherung in der Liste und als Ampel in der Übersicht: **grün** = letzte Probe erfolgreich und höchstens 8 Tage alt, **gelb** = älter oder noch nie, **rot** = fehlgeschlagen. Schlägt eine Probe fehl, bekommen alle Administratoren eine Mail. Im aktiven Wartungsmodus und bei zu wenig freiem Platz pausiert die Probe. Die Probe braucht den **aktuellen Schlüssel** dieses DMS: Eine Sicherung mit einem früheren Schlüssel (nach einem [Schlüsselwechsel](verschluesselung.md#schlussel-wechseln)) lässt sich nicht probeweise einspielen; die Probe schlägt dann mit einem Hinweis auf den Schlüssel fehl.
 
 ## Nicht vorgesehen
 

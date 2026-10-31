@@ -25,7 +25,7 @@ Der Export landet im Ordner `export/` neben den [Sicherungen](sicherung.md), z. 
 dms-export-2026-10-31-14-05-00/
   LIESMICH.md            Aufbau, Formate, Prüfskript
   manifest.json          Formatversion, Anzahlen, Größe und SHA-256 jeder Datei, wo jede Tabelle steht
-  struktur/              Mappentypen, Ansichten, Nummernkreise, Designs, Benutzer (ohne Passwörter)
+  struktur/              Mappentypen, Ansichten, Nummernkreise, Pakete (pakete.json), Designs, Benutzer (ohne Passwörter)
   daten/
     <typ>.csv  .jsonl  .xlsx   je Mappentyp: eine Zeile je Mappe, eine Spalte je Kennung eines Felds
     verweise.csv           Mappe → Feld → Mappe
@@ -62,7 +62,7 @@ Das DMS schlägt Mappentypen vor, die nach Kontakten aussehen (Felder wie Name, 
 
 ## Meine Daten exportieren
 
-Jeder Benutzer kann unter **Profil → Konto → Meine Daten exportieren** einen eigenen Export anstoßen – im selben Aufbau, aber nur mit den Mappen, die er lesen darf, seinen eigenen Aufgaben, Erinnerungen, Favoriten und Papierkorb-Einträgen. Ansichten, Nummernkreise und andere Benutzer fehlen; Passwörter nur aus Mappen, in denen er Passwörter sehen darf, und nur mit Bestätigung. Er liegt unter `export/persoenlich/<Benutzer-Id>/`; ein neuer Export ersetzt den alten. Abschalten lässt sich das im Vollexport-Panel mit **Persönlicher Export für Benutzer**.
+Jeder Benutzer kann unter **Profil → Konto → Meine Daten exportieren** einen eigenen Export anstoßen – im selben Aufbau, aber nur mit den Mappen, die er lesen darf, seinen eigenen Aufgaben, Erinnerungen, Favoriten und Papierkorb-Einträgen. Ansichten, Nummernkreise und andere Benutzer fehlen; Passwörter nur aus Mappen, in denen er Passwörter sehen darf, und nur mit Bestätigung. Er liegt unter `export/persoenlich/<Benutzer-Id>/`; ein neuer Export ersetzt den alten. Abschalten lässt sich das unter **Werkbank → Vollexport** im Abschnitt *Meine Daten exportieren* mit dem Haken **Benutzer dürfen ihre eigenen Daten exportieren**. Solange ein Administrator über [Fehler nachstellen](benutzer.md#fehler-nachstellen) als ein Benutzer arbeitet, gibt es für diesen Benutzer keinen eigenen Export.
 
 ## Weiterverarbeiten
 

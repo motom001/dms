@@ -1,6 +1,6 @@
 # Berechtigungen
 
-Mit Berechtigungen legst du je Mappentyp fest, **wer welche Mappen anlegen, lesen, bearbeiten, löschen und wessen Passwörter sehen** darf. Du pflegst sie am **Mappentyp** selbst, im Abschnitt **Berechtigungen** unter den Registern, und speicherst sie mit **Mappentyp speichern**. Direkt darunter prüfst du sie im [Testlauf](#testlauf); was ein Benutzer insgesamt sieht, zeigt die [Benutzerverwaltung](benutzer.md#was-sieht-ein-benutzer).
+Mit Berechtigungen legst du je Mappentyp fest, **wer welche Mappen anlegen, lesen, bearbeiten, löschen und wessen Passwörter sehen** darf. Du pflegst sie am **Mappentyp** selbst, im Abschnitt **Berechtigungen** nach den Registern und dem [Archivmodus](archiv.md), und speicherst sie mit **Mappentyp speichern**. Direkt darunter prüfst du sie im [Testlauf](#testlauf); was ein Benutzer insgesamt sieht, zeigt die [Benutzerverwaltung](benutzer.md#was-sieht-ein-benutzer).
 
 ![Berechtigungen am Mappentyp Vertrag](bilder/werkbank-berechtigungen.png)
 
@@ -74,7 +74,7 @@ Beim Speichern prüft das DMS außerdem, ob danach Mappen dieses Mappentyps **ni
 
 Unter den Regeln steht der **Testlauf**: Welche Rechte hätte ein bestimmter Benutzer an einer bestimmten Mappe? Wähle Benutzer und Mappe und klicke auf **Prüfen**. Die Tabelle zeigt Schritt für Schritt, welche Regel zutraf, was sie gesetzt hat und wie der Stand danach war.
 
-Der Testlauf nutzt die Regeln, **wie sie gerade im Editor stehen** – auch ungespeicherte. So probierst du eine Änderung aus, bevor du *Mappentyp speichern* klickst. Ändert sich eine Regel, verschwindet das alte Ergebnis. Den Testlauf gibt es, sobald der Mappentyp einmal gespeichert ist.
+Der Testlauf nutzt die Regeln, **wie sie gerade im Editor stehen** – auch ungespeicherte. So probierst du eine Änderung aus, bevor du *Mappentyp speichern* klickst. Ändert sich eine Regel, verschwindet das alte Ergebnis. Den Testlauf gibt es, sobald der Mappentyp gespeichert ist; prüfen kannst du erst, wenn es Mappen dieses Mappentyps gibt.
 
 ![Testlauf: Ben an „Stromvertrag Haus“](bilder/werkbank-berechtigungen-testlauf.png)
 

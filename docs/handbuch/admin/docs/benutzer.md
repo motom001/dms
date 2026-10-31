@@ -8,7 +8,7 @@ Unter **Werkbank → Benutzer** legst du fest, wer sich anmelden darf und mit we
 
 1. **+ Neu**
 2. E-Mail-Adresse, Name und **Systemrolle** (*Administrator* oder *Mitglied*) eintragen, bei Bedarf **Rollen** anhaken.
-3. **Anlegen und einladen**.
+3. **Anlegen und einladen** – ohne E-Mail-Versand heißt der Knopf **Anlegen**.
 
 ![Neuen Benutzer anlegen](bilder/werkbank-benutzer-neu.png)
 
@@ -21,14 +21,19 @@ Mit E-Mail-Versand fordern Benutzer den Link selbst an. Ohne E-Mail-Versand erze
 ## Ändern, deaktivieren, löschen
 
 - **Name** und **Systemrolle** änderst du direkt beim Benutzer. Die E-Mail-Adresse ändert jeder Benutzer selbst im Profil (mit seinem Passwort).
+    - Ist unter [Anmeldung über einen Anbieter](anmeldeschutz.md#anmeldung-uber-einen-anbieter-openid-connect) eine **Gruppe für Administratoren** gesetzt, überschreibt jede Anmeldung über den Anbieter die Systemrolle: Wer in der Gruppe ist, wird Administrator, alle anderen Mitglied. Eine Änderung hier gilt dann nur bis zur nächsten Anmeldung über den Anbieter.
 - <span id="abwesenheit"></span>**Abwesenheit** – wie im Profil des Benutzers (siehe [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/profil/#abwesenheit)): an/aus, von, bis, Vertreter. Du kannst sie für andere eintragen, etwa bei Krankheit, und mit **Alle offenen Aufgaben an ‹Vertreter› geben** seine Aufgaben abgeben. Das steht in der Historie seiner Benutzer-Mappe.
 - <span id="zugang-sperren"></span>**Zugang sperren** (ganz unten) – **Benutzer deaktivieren** sperrt den Zugang sofort und beendet alle Sitzungen, nach einer Rückfrage. Die Mappe bleibt erhalten und heißt „… (ehemalig)“; alle Verweise auf ihn (z. B. als Verantwortlicher) bleiben gültig.
     - Das geht nur, wenn ein **Vertreter** hinterlegt ist und der Benutzer **keine offenen Aufgaben** mehr hat. Fehlt etwas, nennt der Abschnitt den Grund; Vertreter wählen und Aufgaben abgeben geht direkt darüber unter *Abwesenheit*.
     - Der Vertreter bleibt hinterlegt und wirkt **dauerhaft**: Was noch für den Deaktivierten entsteht (z. B. „passt nicht“ an Mappen, die er angelegt hat, oder eine Erwähnung in einem alten Text), bekommt der Vertreter.
     - **Benutzer aktivieren** macht es rückgängig; der Abschnitt zeigt dann, seit wann er deaktiviert ist.
 - **Einladung löschen** geht nur, solange die Einladung nie angenommen wurde – etwa bei einer vertippten Adresse. Wer sich schon angemeldet hat, wird deaktiviert statt gelöscht, damit „angelegt von“ und Verweise erhalten bleiben.
+    - Ist der [Papierkorb](papierkorb.md) eingeschaltet, wandert die Benutzer-Mappe in den Papierkorb, und der Benutzer ist bis dahin deaktiviert. Erst beim endgültigen Löschen aus dem Papierkorb verschwindet das Konto. Holst du die Mappe zurück, ist der Benutzer wieder aktiv.
 
 Es muss immer mindestens einen aktiven Administrator geben; du kannst dich auch nicht selbst deaktivieren.
+
+!!! warning "Notfallzugang"
+    Ein über den [Notfallzugang](notfall.md) angelegter Administrator steht in der Liste als **„Notfall-Admin ‹Datum›“**. Die Übersicht der Werkbank zeigt einen roten Hinweis, bis du ihn umbenannt oder deaktiviert hast. Warst du das nicht, deaktiviere ihn sofort.
 
 !!! warning "Administratoren arbeiten nicht in der Ablage"
     Ein Administrator richtet das DMS ein. Für die tägliche Arbeit nimmt jeder – auch du selbst – einen normalen Benutzer. Öffnet ein Administrator die Ablage, steht oben ein roter Hinweis; er sieht dort alle Mappen. Administratoren bekommen auch keine [API-Schlüssel](api.md#api-schlussel).
@@ -37,7 +42,7 @@ Es muss immer mindestens einen aktiven Administrator geben; du kannst dich auch 
 
 ## Sitzungen
 
-Beim Benutzer steht, auf welchen Geräten er angemeldet ist – mit Gerät, Browser und letzter Aktivität. Einzelne Sitzungen lassen sich beenden, etwa wenn ein Gerät verloren ging.
+Beim Benutzer steht, auf welchen Geräten er angemeldet ist – mit Gerät, Browser und letzter Aktivität. Einzelne Sitzungen beendest du mit **Abmelden**, etwa wenn ein Gerät verloren ging. Ist er auf mehreren Geräten angemeldet, beendet **Überall abmelden** alle Sitzungen auf einmal.
 
 Darüber steht, ob er die [Zwei-Faktor-Anmeldung](anmeldeschutz.md#zwei-faktor-anmeldung) eingerichtet hat. **Zurücksetzen** entfernt sie, z. B. nach einem verlorenen Handy.
 

@@ -22,7 +22,7 @@ Damit niemand sonst im Netz das DMS einrichtet, fragt es zuerst nach einem Code 
 - im **Protokoll des Containers** – in der Docker-Oberfläche des NAS den Container `app` des Projekts öffnen und das Protokoll ansehen (bei UGREEN *Docker → Container → dms-app → Protokoll*, bei Synology *Container Manager → Container → Details → Protokoll*) oder `docker compose logs app` (bei [dms-komplett](https://motom001.github.io/dms/installieren/aktuell/komplett/): `docker compose logs dms`). Gesucht ist die Zeile `Einrichtungscode für das DMS: XXXX-XXXX-XXXX`;
 - in der Datei **`EINRICHTUNGSCODE`** im Ordner `geheim` (in der Vorlage `/volume1/docker/dms/geheim`).
 
-Wo genau das bei deinem Gerät ist, zeigt die Anleitung deiner Plattform unter [Wie komme ich an ein DMS?](https://motom001.github.io/dms/installieren/aktuell/) – mit Bildern für Synology, UGREEN, QNAP, Unraid, TrueNAS, umbrelOS, ZimaOS, CasaOS und andere.
+Wo genau das bei deinem Gerät ist, zeigt die Anleitung deiner Plattform unter [Wie komme ich an ein DMS?](https://motom001.github.io/dms/installieren/aktuell/) – für Synology, UGREEN, QNAP, Unraid, TrueNAS, umbrelOS, ZimaOS, CasaOS und andere.
 
 Nach dem Anlegen des Administrators ist der Code wertlos; das DMS löscht die Datei. Nach zehn falschen Versuchen sperrt es die Eingabe für zehn Minuten.
 
@@ -30,7 +30,7 @@ Nach dem Anlegen des Administrators ist der Code wertlos; das DMS löscht die Da
 
 ![Datenbank](bilder/einrichtung-datenbank.png)
 
-Server (in der Vorlage `db`), Port `5432`, Datenbank und Benutzer `dms` und das Passwort aus der `.env`. **Verbindung prüfen** meldet verständlich, was nicht stimmt – Server nicht erreichbar, Passwort falsch, Datenbank fehlt (mit Knopf zum Anlegen, wenn der Benutzer das darf). **Übernehmen** speichert die Anbindung und startet das DMS – ohne Neustart des Containers; die Tabellen legt es selbst an. Der Schritt entfällt, wenn eine Anbindung schon funktioniert (siehe [Datenbank-Anbindung](#datenbank-anbindung)).
+Server (in der Vorlage `db`), Port `5432`, Datenbank und Benutzer `dms` und das Passwort aus der `.env`. **Verbindung prüfen** meldet verständlich, was nicht stimmt – Server nicht erreichbar, Passwort falsch, Datenbank fehlt (mit Knopf zum Anlegen, wenn der Benutzer das darf). **Übernehmen und weiter** speichert die Anbindung und startet das DMS – ohne Neustart des Containers; die Tabellen legt es selbst an. Der Schritt entfällt, wenn eine Anbindung schon funktioniert (siehe [Datenbank-Anbindung](#datenbank-anbindung)).
 
 ### Neu einrichten oder wiederherstellen
 
@@ -114,10 +114,11 @@ Die Ordner im Container sind fest. Wohin sie auf dem NAS zeigen, bestimmst du al
 | Ordner im Container | Inhalt | Volume in der Vorlage |
 | --- | --- | --- |
 | `/data/files` | hochgeladene Dokumente, Logos, Bilder gemeldeter Fehler | `/volume1/docker/dms/files` |
-| `/data/geheim` | Schlüssel für gespeicherte Passwörter (`dms.schluessel`), [RESCUE-Datei](notfall.md) | `/volume1/docker/dms/geheim` |
+| `/data/geheim` | Schlüssel für gespeicherte Passwörter (`dms.schluessel`), [Datenbank-Anbindung](#datenbank-anbindung) (`datenbank.json`), Einrichtungscode (`EINRICHTUNGSCODE`, nur bis zur Einrichtung), [RESCUE-Datei](notfall.md) | `/volume1/docker/dms/geheim` |
 | `/data/sicherung` | [Sicherungen](sicherung.md), verschlüsselt | `/volume1/docker/dms/sicherung` |
+| `/eingang` (optional) | [Eingangsordner](eingangsordner.md) für Scanner und NAS | `/volume1/docker/dms/eingang` |
 
-Jeder der drei Ordner muss ein eigenes Volume sein; sonst ist sein Inhalt weg, sobald der Container neu erstellt wird (z. B. beim Update). Die Datenbank liegt im Volume des PostgreSQL-Containers – beim Image [dms-komplett](https://motom001.github.io/dms/installieren/aktuell/komplett/) im vierten Ordner `/data/postgres`. Wie viel Platz in jedem Ordner frei ist, zeigen **Werkbank → [Speicherplatz](speicherplatz.md)** und **Werkbank → Technik**.
+Jeder der drei Ordner unter `/data` muss ein eigenes Volume sein; sonst ist sein Inhalt weg, sobald der Container neu erstellt wird (z. B. beim Update). Die Datenbank liegt im Volume des PostgreSQL-Containers – beim Image [dms-komplett](https://motom001.github.io/dms/installieren/aktuell/komplett/) im vierten Ordner `/data/postgres`. Wie viel Platz in jedem Ordner frei ist, zeigen **Werkbank → [Speicherplatz](speicherplatz.md)** und **Werkbank → Technik**.
 
 ```yaml
     volumes:
@@ -138,9 +139,10 @@ Diese Einstellungen sind Umgebungsvariablen im Compose-Projekt:
 | `DATABASE_URL` | Nur noch für den Umstieg: wird beim ersten Start in die [Datenbank-Anbindung](#datenbank-anbindung) übernommen und danach ignoriert |
 | `DMS_DB_PASSWORT`, `DMS_DB_HOST`, `DMS_DB_PORT` | Statt `DATABASE_URL`: Passwort (sowie Server, Standard `db`, und Port, Standard `5432`) der Standard-Anbindung; ebenfalls nur für den ersten Start |
 | `DMS_EINRICHTUNGSCODE` | `aus`: Einrichtungsassistent ohne Code – für App-Stores, in denen das Container-Protokoll nicht ohne Kommandozeile lesbar ist. Bis der Administrator angelegt ist, kann dann jeder im Netz die Einrichtung übernehmen |
-| `TRUST_PROXY` | Wem das DMS die Angaben eines Reverse-Proxys glaubt. Nicht gesetzt: dem eigenen Rechner und privaten Netzen – passt fast immer. `false`: niemandem, `true`: allen, oder eine Liste wie `172.18.0.0/16`. Siehe [Hinter einem Reverse-Proxy](#hinter-einem-reverse-proxy) |
+| `TRUST_PROXY` | Wem das DMS die Angaben eines Reverse-Proxys glaubt. Nicht gesetzt oder `auto`: dem eigenen Rechner und privaten Netzen – passt fast immer. `false`: niemandem, `true`: allen, oder eine Liste wie `172.18.0.0/16`. Siehe [Hinter einem Reverse-Proxy](#hinter-einem-reverse-proxy) |
 | `DMS_EINBETTEN` | Seiten, die das DMS einbetten dürfen (z. B. ein Dashboard), etwa `https://ha.example.org http://nas:8123`. Nicht gesetzt: nur das DMS selbst. Siehe [Sicherheits-Header](#sicherheits-header) |
 | `LOG_LEVEL` | Grundstufe des Protokolls: `debug`, `info` (Standard), `warn`, `error` |
+| `PORT`, `HOST` | Port (Standard `3000`) und Adresse (Standard `0.0.0.0`, alle), auf denen das DMS im Container lauscht. Meist nicht nötig: Den Port nach außen legt die Compose-Datei fest (in der Vorlage `8080:3000`). Die eingebaute Gesundheitsprüfung des Images fragt Port 3000 ab; bei einem anderen `PORT` meldet Docker den Container als *unhealthy* |
 
 ## Hinter einem Reverse-Proxy
 

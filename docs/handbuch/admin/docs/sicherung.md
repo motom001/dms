@@ -28,11 +28,13 @@ Ohne Schlüssel lässt sich keine Sicherung anlegen; die Seite weist dann auf di
 
 Die Liste zeigt alle Sicherungen im Ordner mit Zeitpunkt, Art, Größe und Inhalt. **Prüfen** rechnet die Prüfsumme der Datei nach und vergleicht sie mit der aus den Metadaten – „unverändert“ heißt: Die Datei ist so, wie das DMS sie geschrieben hat. **Löschen** entfernt beide Dateien.
 
+Im Container geht das auch ohne Browser mit dem [Befehl `dms`](konsole.md#betrieb): `dms sicherung` listet die Sicherungen, `dms sicherung jetzt` startet eine, `dms sicherung pruefen <name>` prüft eine.
+
 ## Zeitplan und Aufbewahrung
 
 ![Zeitplan und Aufbewahrung](bilder/werkbank-sicherung-zeitplan.png)
 
-- **Automatisch sichern** täglich oder wöchentlich zu einer Uhrzeit (z. B. täglich 02:00). War das DMS zu der Zeit aus, sichert es, sobald es wieder läuft – höchstens einmal am Tag.
+- **Automatisch sichern** täglich oder wöchentlich zu einer Uhrzeit (z. B. täglich 02:00). War das DMS zu der Zeit aus, sichert es, sobald es wieder läuft – aber nur am selben Tag. Eine verpasste Sicherung vom Vortag holt es nicht nach; es sichert erst wieder zum nächsten geplanten Termin. Mehr als eine automatische Sicherung am Tag gibt es nie.
 - Einschalten lässt sich der Zeitplan erst, wenn das **Notfallblatt** heruntergeladen ist – ohne den Schlüssel darauf wäre jede Sicherung wertlos.
 - **Aufbewahrung** (Standard **7 tägliche / 4 wöchentliche / 12 monatliche**): Von den automatischen Sicherungen bleibt je Tag, je Woche und je Monat die neueste, so viele wie eingestellt; ältere entfernt das DMS nach jeder automatischen Sicherung. Von Hand angelegte Sicherungen bleiben, bis du sie löschst.
 - **Mindest-Speicherplatz** (Standard 1 GB): Ist im Sicherungsordner weniger frei, beginnt keine Sicherung; das steht als Hinweis in der Werkbank und im Protokoll.
@@ -54,7 +56,7 @@ Die Übersicht der Werkbank zeigt einen Hinweis, wenn
 - das Notfallblatt fehlt oder zu einem früheren Schlüssel gehört,
 - der Sicherungsordner kein eigenes Volume ist oder auf derselben Platte liegt wie die Dokumente.
 
-Ist der Zeitplan an und eine Sicherung schlägt fehl oder ist zu alt, bekommen alle Administratoren **eine** E-Mail je Vorfall (nicht stündlich) – sofern der [E-Mail-Versand](installation.md#e-mail-und-adresse) eingerichtet ist. Alles steht auch im [Protokoll](fehlersuche.md#protokoll), Modul *sicherung*.
+Schlägt eine Sicherung fehl, bekommen alle Administratoren eine E-Mail – auch ohne Zeitplan, etwa bei **Jetzt sichern**. Ist die letzte erfolgreiche Sicherung zu alt, kommt die E-Mail nur, wenn der Zeitplan an ist. Es kommt **eine** E-Mail je Vorfall (nicht stündlich) – sofern der [E-Mail-Versand](installation.md#e-mail-und-adresse) eingerichtet ist. Alles steht auch im [Protokoll](fehlersuche.md#protokoll), Modul *sicherung*.
 
 ## Speicherort
 
@@ -87,13 +89,23 @@ Da die Sicherungen verschlüsselt sind, dürfen sie auch in eine Cloud. Das [Not
 - den **Schlüssel** in Vierergruppen zum Abschreiben und seinen **Fingerabdruck**,
 - wo die Sicherungen und die Schlüsseldatei liegen,
 - die Schritte zur Wiederherstellung auf einem neuen System – auch: „Startet das DMS nicht mehr, ein älteres Image ziehen“,
-- den Hinweis, dass das Datenbank-Passwort in der `.env` steht (ohne den Wert).
+- den Hinweis auf das Datenbank-Passwort (ohne den Wert).
 
 ![Notfallblatt](bilder/notfallblatt.png)
 
+Wo das Datenbank-Passwort steht, hängt von der Vorlage ab:
+
+| Vorlage | Datenbank-Passwort |
+| --- | --- |
+| allgemeine Vorlage (`deploy/nas`) | in der Datei `.env` neben der Compose-Datei (`DB_PASSWORD`) |
+| Synology, UGREEN, QNAP, TrueNAS, Unraid | oben in der Compose-Datei (`x-passwort`) |
+| dms-komplett | keins – die Datenbank ist nur im Container erreichbar |
+
+Das Blatt selbst nennt immer die `.env`. Für ein neues System genügt ohnehin ein neues Passwort.
+
 **Aufbewahren:** ausgedruckt an einem sicheren Ort (z. B. bei den Familienunterlagen) oder als PDF in einem Passwortsafe – auf jeden Fall **getrennt vom NAS** und nicht neben den Sicherungen. Wer das Blatt hat, kann die Sicherungen lesen.
 
-Jeder Download steht im Protokoll (ohne den Schlüssel). Ändert sich der Schlüssel ([Schlüssel wechseln](verschluesselung.md#schlussel-wechseln)), weist die Werkbank darauf hin, ein neues Notfallblatt zu erstellen; ältere Sicherungen brauchen weiterhin das alte – bewahre es auf, solange es solche Sicherungen gibt. In der Liste tragen sie den Hinweis „früherer Schlüssel“; mit **Sicherungen mit früherem Schlüssel löschen** entfernst du sie alle auf einmal.
+Jeder Download steht im Protokoll (ohne den Schlüssel). Ändert sich der Schlüssel ([Schlüssel wechseln](verschluesselung.md#schlussel-wechseln)), weist die Werkbank darauf hin, ein neues Notfallblatt zu erstellen; ältere Sicherungen brauchen weiterhin das alte – bewahre es auf, solange es solche Sicherungen gibt. In der Liste tragen sie den Hinweis „früherer Schlüssel“; mit **Sicherungen mit früherem Schlüssel löschen** entfernst du sie alle auf einmal. Die [Probe-Wiederherstellung](wiederherstellen.md#probe-wiederherstellung) braucht den aktuellen Schlüssel – Sicherungen mit früherem Schlüssel lassen sich nicht probeweise einspielen.
 
 !!! tip "Für Selbstständige und Vermieter"
     Wie Sicherung, Historie und Berechtigungen zusammen eine geordnete Belegablage ergeben, beschreibt die [Vorlage für die Verfahrensdokumentation](verfahrensdokumentation.md).

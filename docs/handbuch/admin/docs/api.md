@@ -6,15 +6,15 @@ Andere Programme – ein Scanner, ein Skript, eine Haushalts-App – greifen üb
 
 Die vollständige Beschreibung im **OpenAPI-Format** (Version 3.1):
 
-- **Lesbar** in jeder Installation unter **Profil → API-Dokumentation** – passend zur installierten Version.
-- **Maschinenlesbar** unter `/api/openapi.json` der eigenen Installation, z. B. `http://<NAS>:8080/api/openapi.json`. Das lässt sich in Werkzeuge wie Swagger UI, Postman oder einen Code-Generator laden.
+- **Lesbar** in jeder Installation unter **Profil → Sicherheit → API-Schlüssel** über den Link **API-Dokumentation** – passend zur installierten Version.
+- **Maschinenlesbar** unter `/api/openapi.json` oder `/api/v1/openapi.json` der eigenen Installation, z. B. `http://<NAS>:8080/api/openapi.json`. Das lässt sich in Werkzeuge wie Swagger UI, Postman oder einen Code-Generator laden.
 - Die Beschreibung der aktuellen Version liegt auch hier: [openapi.json](api/openapi.json).
 
 ![API-Dokumentation im DMS](bilder/api-doku.png)
 
 ## API-Schlüssel
 
-Jeder Benutzer erzeugt seine Schlüssel selbst im **Profil** unter *API-Schlüssel* – **außer Administratoren** (ab 0.26): Über die Schnittstelle arbeitet immer ein normaler Benutzer. Lege für ein Programm am besten einen eigenen Benutzer an (z. B. „Scanner“), melde dich als dieser an und erzeuge den Schlüssel dort. Schlüssel, die Administratoren schon vorher hatten, funktionieren weiter; die Werkbank-Übersicht erinnert daran, sie so zu ersetzen.
+Jeder Benutzer erzeugt seine Schlüssel selbst unter **Profil → Sicherheit → API-Schlüssel**, höchstens 50 je Benutzer – **außer Administratoren** (ab 0.26): Über die Schnittstelle arbeitet immer ein normaler Benutzer. Lege für ein Programm am besten einen eigenen Benutzer an (z. B. „Scanner“), melde dich als dieser an und erzeuge den Schlüssel dort. Schlüssel, die Administratoren schon vorher hatten, funktionieren weiter; die Werkbank-Übersicht erinnert daran, sie so zu ersetzen.
 
 - **Name** – wofür der Schlüssel ist, z. B. „Scanner Arbeitszimmer“.
 - **Recht** – *nur lesen* oder *lesen und schreiben*.
@@ -23,7 +23,9 @@ Jeder Benutzer erzeugt seine Schlüssel selbst im **Profil** unter *API-Schlüss
 
 Der Schlüssel ist **nur einmal vollständig sichtbar**, direkt nach dem Erzeugen; danach zeigt das DMS nur noch seinen Anfang. Gespeichert wird nur ein Prüfwert. Wer ihn verliert, erzeugt einen neuen und löscht den alten.
 
-Ein Schlüssel hat höchstens die Rechte seines Benutzers und kommt damit nicht an die Werkbank-Funktionen. Ist der Benutzer deaktiviert, gilt auch sein Schlüssel nicht mehr.
+Ein Schlüssel hat höchstens die Rechte seines Benutzers. Ist der Benutzer deaktiviert, gilt auch sein Schlüssel nicht mehr.
+
+Die Endpunkte der Gruppe *Werkbank* (Mappentypen anlegen, ändern und löschen; Benutzer und Rollen) brauchen **Administratorrechte**. Mit dem Schlüssel eines Mitglieds antworten sie mit `403`. Da Administratoren keine neuen Schlüssel bekommen, gehen sie nur mit einem Schlüssel, der einem Administrator schon vor 0.26 gehörte.
 
 ## Erster Aufruf
 
@@ -51,6 +53,20 @@ Die Mappen einer Ansicht liefert `GET /api/v1/mappen?sicht=<Id der Ansicht>` –
 Mappentypen haben seit 0.14 **mehrere Trefferlisten** (`trefferlisten`, eine mit `standard: true`). Das Feld `trefferliste` gibt es weiter: Es enthält die Spalten der Standardliste, und wer es beim Ändern angibt, ersetzt damit deren Spalten.
 
 Mit `suche=…&volltext=true` sucht `GET /api/v1/mappen` auch im Volltext der Dokumente; die Fundstellen stehen in `ausschnitte` (Treffer zwischen den Steuerzeichen U+0002 und U+0003). Den ganzen Text eines Dokuments liefert `GET /api/v1/dokumente/<Id>/volltext`.
+
+### Weitere Endpunkte
+
+Die API-Dokumentation beschreibt alle Endpunkte mit ihren Parametern. Ein Überblick:
+
+| Wofür | Endpunkte |
+| --- | --- |
+| **Erweiterte Suche** | `GET /api/v1/mappen?sicht=suche&link=…` mit den Parametern der erweiterten Suche als ein kodierter Wert, z. B. `typ%3Drechnung%26volltext%3DBackofen` |
+| **Aufgaben** | `GET /api/v1/aufgaben` (eigene offene), `POST /api/v1/mappen/{id}/aufgaben` (vergeben), `POST /api/v1/aufgaben/{id}/erledigt` und `…/delegieren`; Fristen und Erinnerungen über `GET /api/v1/anstehend` und `…/erinnerungen` |
+| **Notizen** | `GET`/`POST /api/v1/mappen/{id}/notizen`, `PUT`/`DELETE /api/v1/notizen/{id}` |
+| **Historie** einer Mappe | `GET /api/v1/mappen/{id}/historie` |
+| **E-Mail** | `POST /api/v1/mappen/{id}/email` versendet eine Mappe mit Dokumenten (zusammen höchstens 50 MB) |
+| **Dokumente und Versionen** | `POST /api/v1/mappen/{id}/dokumente` (hochladen), `POST /api/v1/dokumente/{id}/ersetzen` (neue Version), `GET /api/v1/dokumente/{id}/versionen`, ältere Version herunterladen und `…/zurueckholen` |
+| **Texterkennung** | `POST /api/v1/dokumente/{id}/texterkennung` stößt sie für ein Dokument (erneut) an; `GET /api/v1/dokumente/{id}/volltext` liefert den Text |
 
 ### Post anlegen und zuordnen
 

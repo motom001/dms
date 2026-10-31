@@ -10,7 +10,7 @@ Unter **Werkbank → Demo-Daten** füllst du ein DMS zum Ausprobieren oder Teste
 
 **Beispiele laden** legt die Mappentypen *Vertragspartner*, *Vertrag*, *Rechnung* und *Zahlung* mit Feldern, Registern, Titel-Vorlagen und Trefferlisten an – dazu ein paar Mappen. Das ist ein guter Startpunkt, um eigene Mappentypen daran anzulehnen.
 
-Das geht nur, solange es außer *Benutzer* und *Rolle* noch keine Mappentypen gibt.
+Das geht nur, solange es außer den Systemmappentypen *Benutzer*, *Rolle* und *Post* noch keine Mappentypen gibt.
 
 ## Demo-Mappen erzeugen
 
@@ -18,7 +18,7 @@ Erzeugt bis zu **50.000 Mappen je Durchlauf** für die vorhandenen Mappentypen �
 
 Das läuft im Hintergrund; du kannst die Seite verlassen. Der Fortschritt steht auf dieser Seite.
 
-Demo-Mappen sind gekennzeichnet. *Benutzer* und *Rolle* bekommen keine Demo-Mappen.
+Demo-Mappen sind gekennzeichnet. Die Systemmappentypen *Benutzer*, *Rolle* und *Post* bekommen keine Demo-Mappen.
 
 ### Startwert
 

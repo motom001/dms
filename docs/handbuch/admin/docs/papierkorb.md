@@ -2,7 +2,7 @@
 
 Gelöschte Mappen kommen in den Papierkorb – samt Dokumenten und Verweisen. Nach der eingestellten Aufbewahrung löscht das DMS sie endgültig.
 
-- In der **Ablage** sieht jeder Benutzer unter *Papierkorb* (unterhalb von „Zu erledigen“) nur, was **er selbst** gelöscht hat, und kann es wiederherstellen oder endgültig löschen.
+- In der **Ablage** sieht jeder Benutzer unter *Papierkorb* nur, was **er selbst** gelöscht hat, und kann es wiederherstellen oder endgültig löschen. Der Eintrag steht oben bei den festen Einträgen unter *Favoriten* – aber nur, solange der Papierkorb eingeschaltet ist oder noch etwas darin liegt.
 - Unter **Werkbank → Papierkorb** siehst du als Administrator alles, mit „gelöscht von“, und kannst jede Mappe wiederherstellen oder endgültig löschen.
 
 ![Werkbank → Papierkorb](bilder/werkbank-papierkorb.png)
@@ -26,6 +26,7 @@ Jede Mappe hat eine **Historie** (wer wann was geändert hat). Wird eine Mappe e
 - Wie bisher lässt sich eine Mappe, auf die noch andere verweisen, gar nicht erst löschen.
 - **Wiederherstellen** bringt Dokumente und Verweise zurück. Verweise auf Mappen, die es inzwischen nicht mehr gibt, entfallen. Ist ein eindeutiger Wert inzwischen vergeben, landet die Mappe bei dem, der sie angelegt hat, unter **Zu erledigen**.
 - Ein Mappentyp lässt sich nicht löschen, solange Mappen von ihm im Papierkorb liegen.
+- Mappen eines Mappentyps im [Archivmodus](archiv.md) bleiben im Papierkorb, bis ihre Aufbewahrungsfrist endet – auch wenn die Aufbewahrung des Papierkorbs vorher abläuft. Endgültig löschen lassen sie sich vorher nicht, auch nicht als Administrator.
 - Die Dateien bleiben im Dateiordner, bis der Papierkorb geleert ist.
 
 !!! note "Sofort endgültig"
