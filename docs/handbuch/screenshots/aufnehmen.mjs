@@ -384,12 +384,14 @@ async function main() {
 
   // Neue Post von überall (#193): zwei Dateien irgendwo ins Fenster ziehen → eine Post mit beiden.
   await geheZu(s, `/ablage/${vertrag.id}`);
-  const dateien = await s.evaluateHandle(() => {
+  // Je Seite neu erzeugen: ein JSHandle gilt nur auf der Seite, auf der es entstand.
+  const neueDateien = () => s.evaluateHandle(() => {
     const dt = new DataTransfer();
-    dt.items.add(new File(['%PDF-1.4\n% Kündigung Fitnessstudio'], 'Kündigung Fitnessstudio.pdf', { type: 'application/pdf' }));
+    dt.items.add(new File(['Kündigung Fitnessstudio zum 31.12.'], 'Kündigung Fitnessstudio.txt', { type: 'text/plain' }));
     dt.items.add(new File(['Mitgliedsnummer 4711'], 'Notiz zur Kündigung.txt', { type: 'text/plain' }));
     return dt;
   });
+  let dateien = await neueDateien();
   await s.dispatchEvent('body', 'dragenter', { dataTransfer: dateien });
   await s.locator('.ablageflaeche').waitFor();
   await bild(s, 'post-ablegen');
@@ -401,6 +403,7 @@ async function main() {
   // Auf einer Mappe mit Dokumentenregister: zwei Ziele.
   await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
   await s.getByRole('tab', { name: 'Vertragsunterlagen' }).click();
+  dateien = await neueDateien();
   await s.dispatchEvent('body', 'dragenter', { dataTransfer: dateien });
   await s.locator('.ablageflaeche.zwei').waitFor();
   await bild(s, 'post-ablegen-mappe');
