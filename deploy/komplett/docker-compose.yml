@@ -19,5 +19,7 @@ services:
       - ./sicherung:/data/sicherung
       # Datenbank (PostgreSQL 17)
       - ./postgres:/data/postgres
+      # Eingangsordner (optional): Scanner und NAS legen hier Dateien ab → neue Post
+      - ./eingang:/eingang
     ports:
       - "8080:3000"

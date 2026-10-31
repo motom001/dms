@@ -2165,7 +2165,11 @@ export class Dienst {
    * Neue Post anlegen (Oberfläche „+ Post“, API): Stand Neu, eingehend, heute. Die Dokumente kommen
    * danach über das Hochladen ins Dokumentenregister. Ob man Post anlegen darf, regeln die Berechtigungen.
    */
-  async legePostAn(eingabe: unknown, ich: { id: string; name: string }, z?: Zugriff, kanal: string = POST_KANAL.hochgeladen): Promise<Mappe> {
+  /**
+   * Post anlegen. `ich.id` null: kein echter Benutzer, sondern ein Eingangskanal (#195: „Eingangsordner“);
+   * `herkunft` steht dann als eigener Eintrag in der Historie.
+   */
+  async legePostAn(eingabe: unknown, ich: { id: string | null; name: string }, z?: Zugriff, kanal: string = POST_KANAL.hochgeladen, herkunft?: Historieneintrag['daten']): Promise<Mappe> {
     const { post: typ } = await this.sichereSystem();
     if (!darfPostAnlegen(typ)) throw new Fachfehler(403, 'Post lässt sich nicht anlegen.');
     const e = (eingabe ?? {}) as Record<string, unknown>;
@@ -2185,7 +2189,8 @@ export class Dienst {
     await this.pruefeVerweisziele(z, typ, werte, {});
     await this.pruefeWerte(typ, werte);
     const m = await this.repo.legeMappeAn(randomUUID(), typ.id, werte, verweiseVon(typ, werte), ich.id);
-    await this.notiere(m.id, ich.id, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, werte) });
+    await this.notiere(m.id, ich.id, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, werte), ...(ich.id ? {} : { system: ich.name }) });
+    if (herkunft) await this.notiere(m.id, null, 'uebernommen', { system: ich.name, ...herkunft });
     const titel = (await this.aktualisiereTitel([m.id])).get(m.id);
     await this.postAufgaben(m.id, ich.id);
     protokoll.modul('ablage').info('Post angelegt', { mappe: m.id, kanal: werte.kanal });
@@ -2552,6 +2557,28 @@ export class Dienst {
       groesse: inhalt.length, sha256, anzeigbar: !!erkannt, erstellt: new Date().toISOString(), erstelltVon: benutzerId,
     });
     return { id: d.id, volltext: Dienst.volltextAn(typ, registerKey) };
+  }
+
+  /* ---------- Eingangskanäle (#195) ---------- */
+
+  async postTyp() { return (await this.sichereSystem()).post; }
+
+  /** Mappen, die schon eine Datei mit diesem Inhalt haben („gleicher Inhalt wie …“). */
+  async dokumenteMitInhalt(sha256: string) {
+    const docs = await this.repo.dokumenteMitSha(sha256);
+    const bezuege = await this.repo.bezuege([...new Set(docs.map((d) => d.mappeId))]);
+    return docs.slice(0, 5).map((d) => ({ mappeId: d.mappeId, name: d.name, titel: bezuege.get(d.mappeId)?.titel ?? '' }));
+  }
+
+  /** Eine Post, die seit `seit` ein Dokument mit diesem Inhalt bekommen hat (Aufräumen nach Abbruch). */
+  async postMitDatei(sha256: string, seit: string): Promise<string | null> {
+    const post = await this.postTyp();
+    for (const d of await this.repo.dokumenteMitSha(sha256)) {
+      if (d.erstellt < seit) continue;
+      const m = await this.repo.holeMappe(d.mappeId);
+      if (m?.typId === post.id) return m.id;
+    }
+    return null;
   }
 
   /** Demo-Dokumente gesammelt in die Warteschlange der Texterkennung. */

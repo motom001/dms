@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { Eingangsordner } from './eingangsordner';
 import { einbettenAus } from './koepfe';
 import { proxyVertrauen } from './proxy';
 import { mkdir, readdir } from 'node:fs/promises';
@@ -199,6 +200,20 @@ const einrichtung = new Einrichtung({
   konten, code: einrichtungNoetig ? einrichtungscode : null, einstellungen: pgEinstellungen(sql, cfg.haushalt),
   mandant: mandantNamen(sql, cfg.haushalt), schriftzug: (t) => designs.setzeSchriftzug(t),
 });
+// Eingangsordner (#195): /eingang, wenn eingebunden; nur eine Instanz übernimmt (Sperre in PostgreSQL).
+let eingangSperre: Promise<boolean> | null = null;
+const eingangsordner = new Eingangsordner(env.DMS_EINGANG ?? '/eingang', {
+  dienst, einstellungen: pgEinstellungen(sql, cfg.haushalt),
+  benutzer: () => konten.listeBenutzer(),
+  pause: () => (wartung.aktiv ? 'Wartungsmodus' : wiederherstellung.laeuft() ? 'Wiederherstellung läuft' : null),
+  sperre: () => (eingangSperre ??= (async () => {
+    // Eine eigene Verbindung hält die Sperre, solange das DMS läuft.
+    const v = await sql.reserve();
+    const [r] = await v`SELECT pg_try_advisory_lock(4711195) AS ok`;
+    if (!r.ok) { v.release(); eingangSperre = null; }
+    return r.ok as boolean;
+  })()),
+});
 const anbindungVerwaltung = new AnbindungVerwaltung(ordner.geheim, db, umgebung, () => { void beenden(); });
 const app = await baueApp(dienst, konten, {
   einbetten: cfg.einbetten,
@@ -222,6 +237,7 @@ const app = await baueApp(dienst, konten, {
   sicherung,
   wiederherstellung,
   speicherplatz,
+  eingangsordner,
   ordner: ordnerPruefung,
   fehlermeldungen: new Fehlermeldungen(pgFehlerRepo(sql, cfg.haushalt), ordnerSpeicher(ordner.dateien, `${cfg.haushalt}/fehlermeldungen`)),
 });
@@ -266,6 +282,7 @@ await texterkennung.start();
 notfall.start();
 sicherung.start();
 speicherplatz.start();
+await eingangsordner.start();
 setInterval(() => void wiederherstellung.tick().catch((e) => log.error('Zeitplan der Probe gestört', { fehler: (e as Error).message })), 60_000).unref();
 
 const beenden = async () => {

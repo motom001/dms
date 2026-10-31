@@ -22,6 +22,7 @@ import type { Notfallzugang } from './notfall';
 import type { Sicherung } from './sicherung';
 import type { Wiederherstellung } from './wiederherstellung';
 import type { Speicherplatz } from './speicherplatz';
+import type { Eingangsordner } from './eingangsordner';
 import type { OrdnerPruefung } from './ordner';
 import type { Einrichtung } from './einrichtung';
 import type { AnbindungVerwaltung } from './anbindung';
@@ -120,6 +121,8 @@ export interface RoutenExtras {
   wiederherstellung?: Wiederherstellung;
   /** Speicherplatz-Überwachung (#116). */
   speicherplatz?: Speicherplatz;
+  /** Eingangsordner (#195). */
+  eingangsordner?: Eingangsordner;
   /** Feste Ordner und überflüssige frühere Variablen (#115). */
   ordner?: OrdnerPruefung;
   /** Einrichtungsassistent und Datenbank-Anbindung (#119). */
@@ -700,6 +703,17 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'PUT', pfad: '/api/werkbank/anbindung', zugang: 'admin', handler: async (a) => ok(await anbindung().speichere({ ...(b(a).anbindung as object ?? {}), leerBestaetigt: b(a).leerBestaetigt }, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/neustart', zugang: 'admin', handler: async (a) => { anbindung().neustart(ich(a).email); return leer; } },
     /* ---------- Speicherplatz (#116) ---------- */
+    // Eingangsordner (#195): nur sichtbar, wenn /eingang eingebunden ist.
+    { methode: 'GET', pfad: '/api/werkbank/eingangsordner', zugang: 'admin', handler: async () => ok(x.eingangsordner ? await x.eingangsordner.stand() : { vorhanden: false }) },
+    { methode: 'PUT', pfad: '/api/werkbank/eingangsordner', zugang: 'admin', handler: async (a) => {
+      if (!x.eingangsordner?.vorhanden) throw new Fachfehler(404, 'Es ist kein Eingangsordner eingebunden.');
+      return ok(await x.eingangsordner.speichere(a.body, ich(a).email));
+    } },
+    { methode: 'POST', pfad: '/api/werkbank/eingangsordner/pruefen', zugang: 'admin', handler: async () => {
+      if (!x.eingangsordner?.vorhanden) throw new Fachfehler(404, 'Es ist kein Eingangsordner eingebunden.');
+      const n = await x.eingangsordner.pruefe(true);
+      return ok({ uebernommen: n, stand: await x.eingangsordner.stand() });
+    } },
     { methode: 'GET', pfad: '/api/werkbank/speicherplatz', zugang: 'admin', handler: async () => ok(await speicherplatz().pruefe()) },
     { methode: 'PUT', pfad: '/api/werkbank/speicherplatz', zugang: 'admin', handler: async (a) => ok(await speicherplatz().speichere(a.body, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/system/abgleich', zugang: 'admin', handler: async (a) => {

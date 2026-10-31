@@ -1,3 +1,4 @@
+import { EingangsordnerListe, EingangsordnerPanel, useEingangsordner } from './Eingangsordner';
 import { useEffect, type ReactNode } from 'react';
 import { Dreiteilung } from '../bereiche';
 import { useDaten } from '../daten';
@@ -69,6 +70,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const wartungsmodus = useWartungsmodus(bereich === 'wartungsmodus');
   const sicherung = useSicherung(bereich === 'sicherung');
   const speicherplatz = useSpeicherplatz(bereich === 'speicherplatz');
+  const eingang = useEingangsordner(bereich === 'eingangsordner');
   const anbindung = useAnbindung(bereich === 'anbindung');
   // Wieder erreichbar nach Update oder Neustart (#122): Übersicht und offenen Bereich neu laden.
   useBeiWiederErreichbar(() => {
@@ -144,6 +146,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'anbindung') {
     liste = <AnbindungListe z={anbindung} />;
     rechts = <AnbindungPanel z={anbindung} nachAenderung={() => void uebersicht.laden()} />;
+  } else if (bereich === 'eingangsordner') {
+    liste = <EingangsordnerListe z={eingang} />;
+    rechts = <EingangsordnerPanel z={eingang} />;
   } else if (bereich === 'speicherplatz') {
     liste = <SpeicherplatzListe z={speicherplatz} />;
     rechts = <SpeicherplatzPanel z={speicherplatz} nachAenderung={() => { void uebersicht.laden(); void wartungsmodus.laden(); }} />;
@@ -168,7 +173,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   }
 
   return (
-    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung'].includes(bereich) ? 'mappe' : 'liste'} offen={id}>
+    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung', 'eingangsordner'].includes(bereich) ? 'mappe' : 'liste'} offen={id}>
       <aside className="spalte sichten" aria-label="Bereiche">
         <h2 className="ueber">Werkbank</h2>
         <WerkbankNavigation bereich={bereich} eintraege={[
@@ -183,6 +188,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'papierkorb', name: 'Papierkorb', gruppe: 'einstellungen', zahl: papierkorb.eintraege?.length || uebersicht.stand?.papierkorb.anzahl || undefined },
           { pfad: 'anbindung', name: 'Datenbank-Anbindung', gruppe: 'einstellungen', warn: uebersicht.stand?.anbindung && (uebersicht.stand.anbindung.umgebung === 'abweichend' || uebersicht.stand.anbindung.neustartNoetig) ? '!' : undefined, warnTitel: 'DATABASE_URL weicht ab oder Neustart nötig' },
           { pfad: 'speicherplatz', name: 'Speicherplatz', gruppe: 'einstellungen', warn: uebersicht.stand?.speicherplatz && uebersicht.stand.speicherplatz.zustand !== 'ok' ? (uebersicht.stand.speicherplatz.zustand === 'grenze' ? 'voll' : 'knapp') : undefined, warnTitel: 'Speicherplatz knapp' },
+          ...(eingang.stand?.vorhanden ? [{ pfad: 'eingangsordner', name: 'Eingangsordner', gruppe: 'einstellungen' as const, warn: eingang.stand.fehler?.length ? String(eingang.stand.fehler.length) : undefined, warnTitel: 'abgelehnte Dateien' }] : []),
           { pfad: 'texterkennung', name: 'Texterkennung', gruppe: 'einstellungen', warn: uebersicht.stand?.texterkennung?.fehler ? String(uebersicht.stand.texterkennung.fehler) : undefined, warnTitel: 'Dokumente mit Fehler' },
           { pfad: 'protokoll', name: 'Protokoll', gruppe: 'wartung', warn: protokoll.debug?.an ? 'Debug' : undefined, warnTitel: 'Debug-Modus ist an' },
           { pfad: 'fehlermeldungen', name: 'Fehlermeldungen', gruppe: 'wartung', warn: uebersicht.stand?.fehlermeldungen ? String(uebersicht.stand.fehlermeldungen) : undefined, warnTitel: 'offene Meldungen' },

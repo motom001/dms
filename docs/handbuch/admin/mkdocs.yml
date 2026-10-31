@@ -78,6 +78,7 @@ nav:
       - Aufgaben: aufgaben.md
       - Papierkorb: papierkorb.md
       - Texterkennung und Wartung: texterkennung.md
+      - Eingangsordner: eingangsordner.md
       - Demo-Daten: demo.md
   - Wartung und Notfall:
       - Sicherung: sicherung.md

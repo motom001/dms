@@ -13,6 +13,10 @@ So richtest du das DMS auf **TrueNAS Community Edition 24.10 oder neuer** ein. D
    mkdir -p /mnt/tank/apps/dms/{postgres,files,geheim,sicherung}
    ```
 
+
+!!! tip "Optional: Eingangsordner für den Scanner"
+    Ein fünfter Ordner `eingang` daneben wird zum [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/): Jede Datei, die dein Scanner oder das NAS dort ablegt, wird neue Post. Gib ihn im NAS für den Scanner frei. Ohne ihn läuft alles wie gewohnt.
+
 ## 2. App anlegen
 
 1. **Apps → Discover Apps → ⋮ → Install via YAML**.

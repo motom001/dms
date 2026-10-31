@@ -18,6 +18,10 @@ Im **App Center** die App **Docker** installieren und öffnen.
 
 In der App **Dateien** im Ordner `docker` (legt die Docker-App an) einen Ordner `dms` anlegen. Darin vier Ordner: `postgres`, `files`, `geheim` und `sicherung`.
 
+
+!!! tip "Optional: Eingangsordner für den Scanner"
+    Ein fünfter Ordner `eingang` daneben wird zum [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/): Jede Datei, die dein Scanner oder das NAS dort ablegt, wird neue Post. Gib ihn im NAS für den Scanner frei. Ohne ihn läuft alles wie gewohnt.
+
 ## 3. Projekt anlegen
 
 1. **Docker → Projekt → Erstellen**.

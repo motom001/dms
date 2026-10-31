@@ -37,5 +37,7 @@ services:
       - /mnt/user/appdata/dms/geheim:/data/geheim
       # Sicherungen (Werkbank → Sicherung) – ab und zu an einen anderen Ort kopieren
       - /mnt/user/appdata/dms/sicherung:/data/sicherung
+      # Eingangsordner (optional): Scanner und NAS legen hier Dateien ab → neue Post
+      - /mnt/user/appdata/dms/eingang:/eingang
     ports:
       - "8080:3000"

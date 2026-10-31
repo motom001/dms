@@ -390,6 +390,9 @@ export const api = {
   datenbank: () => anfrage<DatenbankStand>('GET', '/api/werkbank/datenbank'),
   system: () => anfrage<Systemuebersicht>('GET', '/api/werkbank/system'),
   speicherplatz: () => anfrage<SpeicherplatzStand>('GET', '/api/werkbank/speicherplatz'),
+  eingangsordner: () => anfrage<EingangStand>('GET', '/api/werkbank/eingangsordner'),
+  eingangsordnerSetzen: (e: Partial<EingangEinstellung>) => anfrage<EingangStand>('PUT', '/api/werkbank/eingangsordner', e),
+  eingangsordnerPruefen: () => anfrage<{ uebernommen: number; stand: EingangStand }>('POST', '/api/werkbank/eingangsordner/pruefen'),
   speicherplatzSetzen: (e: SpeicherplatzEinstellung) => anfrage<SpeicherplatzStand>('PUT', '/api/werkbank/speicherplatz', e),
   versionsabgleich: (browser: Record<string, string>) => anfrage<Vergleich[]>('POST', '/api/werkbank/system/abgleich', { browser }),
   datenbankEinstellen: (e: MessEinstellungen) => anfrage<MessEinstellungen>('PUT', '/api/werkbank/datenbank', e),
@@ -556,3 +559,11 @@ export interface TresorStatus {
   notfallblatt?: Notfallblattstand | null;
 }
 export interface Probe { ok: boolean; meldung: string }
+
+/** Eingangsordner (#195). */
+export interface EingangEinstellung { aktiv: boolean; abstand: number; nachher: 'erledigt' | 'loeschen' }
+export interface EingangEreignis { datei: string; zeit: string; mappeId?: string; grund?: string }
+export interface EingangStand {
+  vorhanden: boolean; pfad?: string; einstellung?: EingangEinstellung; letztePruefung?: string | null; wartend?: number;
+  pausiert?: string | null; uebernommen?: EingangEreignis[]; fehler?: EingangEreignis[]; andereInstanz?: boolean;
+}

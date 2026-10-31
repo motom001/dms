@@ -21,7 +21,7 @@ fehler() { echo "::error::dms-komplett: $*"; docker logs --tail 60 "$NAME" 2>&1 
 
 starte() {
   docker run -d --name "$NAME" -p "$PORT:3000" --stop-timeout 60 \
-    -v "$arbeit/files:/data/files" -v "$arbeit/geheim:/data/geheim" -v "$arbeit/sicherung:/data/sicherung" -v "$arbeit/postgres:/data/postgres" \
+    -v "$arbeit/files:/data/files" -v "$arbeit/geheim:/data/geheim" -v "$arbeit/sicherung:/data/sicherung" -v "$arbeit/postgres:/data/postgres" -v "$arbeit/eingang:/eingang" \
     "$IMAGE" >/dev/null
 }
 warte() {
@@ -58,6 +58,22 @@ docker exec "$NAME" pg_isready -q -h 127.0.0.1 -U dms -d dms || fehler "pg_isrea
 # Von außen ist PostgreSQL nicht erreichbar: kein Port 5432 am Container.
 [ -z "$(docker port "$NAME" 5432 2>/dev/null)" ] || fehler "Port 5432 ist nach außen offen"
 echo "::endgroup::"; echo "::notice::dms-komplett: Schritt erledigt"
+
+echo "::group::2b. Eingangsordner (#195)"
+jar=$(mktemp)
+curl -fsS -c "$jar" -X POST "http://127.0.0.1:$PORT/api/konto/anmelden" -H 'x-dms: 1' -H 'content-type: application/json' \
+  -d '{"email":"admin@probe.invalid","passwort":"ein-langes-probe-passwort"}' >/dev/null || fehler "Anmeldung für den Eingangsordner"
+curl -fsS -b "$jar" -X PUT "http://127.0.0.1:$PORT/api/werkbank/eingangsordner" -H 'x-dms: 1' -H 'content-type: application/json' -d '{"abstand":5}' >/dev/null || fehler "Eingangsordner einstellen"
+printf '%%PDF-1.4\n%% Probe Eingangsordner\n' | sudo tee "$arbeit/eingang/Probe Scan.pdf" >/dev/null
+uebernommen=""
+for _ in $(seq 1 30); do
+  uebernommen=$(curl -fsS -b "$jar" -H 'x-dms: 1' "http://127.0.0.1:$PORT/api/werkbank/eingangsordner" | jq -r '.uebernommen[0].mappeId // empty')
+  [ -n "$uebernommen" ] && break; sleep 2
+done
+[ -n "$uebernommen" ] || fehler "Datei aus dem Eingangsordner nicht übernommen"
+sudo test -f "$arbeit/eingang/erledigt/Probe Scan.pdf" || fehler "Datei nicht nach erledigt/ verschoben"
+[ "$(curl -fsS -b "$jar" -H 'x-dms: 1' "http://127.0.0.1:$PORT/api/mappen/$uebernommen" | jq '.dokumente | length')" = 1 ] || fehler "Post ohne Dokument"
+echo "::endgroup::"; echo "::notice::dms-komplett: Eingangsordner übernimmt (Post $uebernommen)"
 
 echo "::group::3. Sauber stoppen"
 docker stop "$NAME" >/dev/null
