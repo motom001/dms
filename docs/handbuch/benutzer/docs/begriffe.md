@@ -92,8 +92,8 @@ Das Register, das alle Mappen zeigt, die auf diese Mappe verweisen – die Gegen
 Siehe auch: [Verweis](#verweis).
 
 <a id="version"></a>**Version** · ✓ Alltagswort · alle  
-Eine frühere Fassung eines Dokuments, das ersetzt wurde. Nur in Registern mit Versionierung. Nicht zu verwechseln mit der Version des DMS selbst.  
-Siehe auch: [Dokument](#dokument), [Archivmodus](#archivmodus). Noch offen: [Frage 18](#offen-18).
+Eine Fassung eines Dokuments. Beim Ersetzen entsteht eine neue Version, die älteren bleiben darunter und lassen sich zurückholen. Nur in Registern mit Versionierung. Nicht zu verwechseln mit der Version des DMS.  
+Siehe auch: [Dokument](#dokument), [Archivmodus](#archivmodus), [Version des DMS](#version-des-dms).
 
 <a id="verweis"></a>**Verweis** · ~ mit Erklärung · alle  
 Ein Feld, das auf andere Mappen zeigt, z. B. von einer Rechnung auf den Vertrag.  
@@ -295,6 +295,10 @@ Siehe auch: [Wiederherstellen](#wiederherstellen), [Probe-Wiederherstellung](#pr
 <a id="speicherplatz"></a>**Speicherplatz** · ✓ Alltagswort · Administratoren  
 Wie voll die Datenordner sind, mit Schwellen für Warnungen.
 
+<a id="version-des-dms"></a>**Version des DMS** · ✓ Alltagswort · alle  
+Der Stand des Programms, z. B. 0.73. Ein Update bringt eine neue Version des DMS; an Dokumenten und ihren Versionen ändert das nichts. Was neu ist, steht unter „Neu in dieser Version“.  
+Siehe auch: [Version](#version).
+
 <a id="vollexport"></a>**Vollexport** · ~ mit Erklärung · Administratoren  
 Alle Daten in offenen Formaten, lesbar auch ohne DMS – damit niemand am DMS hängen bleibt.
 
@@ -330,9 +334,6 @@ Vorschlag: Kein echter Konflikt, aber jeweils definieren.
 
 <a id="offen-17"></a>**17. Dokument, Datei, Anhang**  
 Vorschlag: Datei = was hochgeladen wird, Dokument = was im DMS liegt, Anhang = an einer E-Mail.
-
-<a id="offen-18"></a>**18. Version eines Dokuments und Version des DMS**  
-Vorschlag: Im Handbuch klar trennen („Neu in dieser Version“ vs. „Versionen“ eines Dokuments).
 
 <a id="offen-19"></a>**19. Design, Darstellung, Theme**  
 Vorschlag: Klären, was in Werkbank und Profil jeweils gemeint ist.
@@ -373,6 +374,9 @@ Feldart „Verweis“, Register „Verknüpfungen“; Adressen heißen nur „Li
 
 <a id="offen-16"></a>**16. Typ, Mappentyp, Feldart, Art** (31.10.2026)  
 Konsequent „Mappentyp“ und „Feldart“.
+
+<a id="offen-18"></a>**18. Version eines Dokuments und Version des DMS** (31.10.2026)  
+Zwei Begriffe – „Version“ ist die Fassung eines Dokuments, „Version des DMS“ der Stand des Programms. Erklärt auf der Seite „Versionen verstehen“.
 
 <a id="offen-20"></a>**20. „Neue Post“ als Ansicht und als Art einer Aufgabe** (31.10.2026)  
 Die Aufgabenart heißt „Post für dich“; die Ansicht „Neue Post“ bleibt.
@@ -426,7 +430,8 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Texterkennung | OCR (in der Oberfläche) | `OcrStand` |
 | Trefferliste | – | `Trefferliste` |
 | Unteransicht | Untersicht | – |
-| Version | – | `DokumentVersion` |
+| Version | Revision, Stand (für Dokumente) | `DokumentVersion` |
+| Version des DMS | Release (in der Oberfläche) | – |
 | Vertretung | – | `Vertretung` |
 | Verweis | Referenz, Link, Relation | `FeldVerweis` |
 | Zu erledigen | Eingang, Inbox, Posteingang | `eingang` |

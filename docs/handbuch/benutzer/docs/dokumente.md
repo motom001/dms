@@ -58,6 +58,8 @@ Erkannter Text aus Scans ist nicht immer fehlerfrei – je besser die Vorlage, d
 
 ## Versionen
 
+Warum du im DMS nichts mehr in `_v2` oder `_final` umbenennen musst, erklärt mit Bildern die Seite [Versionen verstehen](versionen.md). Kurz:
+
 Ist an einem Dokumentenregister die **Versionierung** eingeschaltet (das macht ein Administrator), bleibt beim Ersetzen die alte Fassung erhalten:
 
 - **Ersetzen** neben einem Dokument lädt eine neue Datei als **neue Version** hoch – sofort, ohne „Mappe speichern“. Name und Dateityp dürfen sich ändern, z. B. `Kassenbon.jpg` → `Kassenbon.pdf`. Die Mappe zeigt danach nur die neueste Version.
