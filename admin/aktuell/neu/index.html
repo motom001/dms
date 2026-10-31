@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.82/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.83/neu/">
       
       
         <link rel="prev" href="..">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-082" class="md-skip">
+        <a href="#neu-in-version-083" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0820" class="md-nav__link">
+  <a href="#0830" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.82.0
+        0.83.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.82.0">
+    <nav class="md-nav" aria-label="0.83.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1881,15 +1881,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0820" class="md-nav__link">
+  <a href="#0830" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.82.0
+        0.83.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.82.0">
+    <nav class="md-nav" aria-label="0.83.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1939,24 +1939,22 @@
   
 
 
-<h1 id="neu-in-version-082">Neu in Version 0.82<a class="headerlink" href="#neu-in-version-082" title="Permanent link">&para;</a></h1>
-<h2 id="0820">0.82.0<a class="headerlink" href="#0820" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-083">Neu in Version 0.83<a class="headerlink" href="#neu-in-version-083" title="Permanent link">&para;</a></h1>
+<h2 id="0830">0.83.0<a class="headerlink" href="#0830" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>PDF bearbeiten</strong> (#335): Seiten drehen, löschen, umsortieren, teilen und PDFs zusammenfügen – direkt im DMS, ohne anderes Programm.</li>
-<li><strong>Seiten</strong> neben einem PDF zeigt jede Seite als kleines Bild. Je Seite: um 90° drehen, löschen, verschieben (Knöpfe, Ziehen oder Alt + Pfeiltaste), <strong>Teilen ab hier</strong>. Erst <strong>Übernehmen</strong> speichert.</li>
-<li>Mit Versionierung wird das Ergebnis eine <strong>neue Version</strong> – das Original bleibt erhalten, auch im Archivmodus. Ohne Versionierung ersetzt es das Dokument nach Rückfrage; das bisherige kommt in den Papierkorb.</li>
-<li><strong>Teilen</strong> in einer Mappe: Teil 1 wird die neue Version, die weiteren Teile eigene Dokumente „Name (Teil 2).pdf“ … im selben Register.</li>
-<li><strong>Sammelscan teilen</strong>: bei einer Post entsteht je Teil eine neue Post (Stand Neu, Betreff „… (Teil n)“). Die Ausgangspost behält das ganze PDF, ist erledigt und verweist auf die neuen.</li>
-<li><strong>Zusammenfügen</strong> für zwei oder mehr ausgewählte PDFs: ein neues Dokument im selben Register, die Ausgangsdokumente auf Wunsch in den Papierkorb.</li>
-<li>Texterkennung und Vorschaubild laufen für die Ergebnisse neu; die Historie zeigt „PDF bearbeitet“ bzw. „Post geteilt“.</li>
-<li>Alles mit pdf-lib im Server; Seiten werden kopiert, nicht neu berechnet – Text, Schriften und Bildqualität bleiben.</li>
-<li><strong>Schnittstelle</strong>: <code>GET /dokumente/{id}/seiten</code>, <code>GET /dokumente/{id}/seiten/{nr}/bild</code>, <code>POST /dokumente/{id}/seiten</code> (drehen, Seiten löschen, umsortieren, teilen – bei Post „Post teilen nach Seitenbereichen“) und <code>POST /dokumente/zusammenfuegen</code> (auch aus mehreren Posts; eine dadurch leere Post wird erledigt). Damit können Pakete, z. B. für Barcode-Trennblätter, dieselben Schritte ausführen.</li>
-<li>Benutzerhandbuch: <em>Dokumente → PDF bearbeiten</em>, <em>Post → Sammelscan teilen</em>; Hilfe-Verweis in der Seitenansicht.</li>
+<li><strong>Mehrere Mappen per E-Mail versenden</strong> (#151). In der Aktionsleiste einer Ansicht steht neben <strong>Exportieren …</strong> jetzt <strong>Per E-Mail …</strong> – z. B. alle Belege eines Jahres an den Steuerberater.</li>
+<li><strong>Eine</strong> E-Mail an alle Empfänger, gleiche Maske wie an der Mappe (An, Betreff, Nachricht).</li>
+<li>Anhänge: je Mappe ihre <strong>Angaben als PDF</strong> („Titel.pdf“, ohne Passwörter; abwählbar) und ihre <strong>Dokumente</strong> – alle, keine oder je Mappe ausgewählt. Größenanzeige mit Warnung ab 20 MB, höchstens 50 MB; höchstens 100 Mappen.</li>
+<li>Danach <strong>eine</strong> Post (Post → Versendet), die auf alle versendeten Mappen verweist und enthält, was verschickt wurde; in der Historie <strong>jeder</strong> Mappe ein Eintrag mit Link.</li>
+<li>Rechte wie beim Versenden einer Mappe: Lesen und Exportrecht (Recht E einer Ansicht) für <strong>jede</strong> Mappe. Fehlt es bei einer, wird nichts verschickt.</li>
+<li>Entschieden (im Issue offen gelassen): eine E-Mail mit allen Mappen, nicht je Mappe eine.</li>
+<li>Schnittstelle: <code>POST /mappen/email</code>.</li>
+<li>Benutzerhandbuch: <em>E-Mail, PDF und Link → Mehrere Mappen per E-Mail</em>, <em>Ansichten und Listen → Per E-Mail versenden</em>; Hilfe-Verweis im Dialog.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.81.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.81.0...v0.82.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.82.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.82.0...v0.83.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
