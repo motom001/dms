@@ -107,7 +107,7 @@ Mit Berechtigungen legst du fest, **wer eine Ansicht sieht**, **wer dort neue Ma
 |---|---|
 | **R** Sehen | Die Ansicht erscheint im Baum der Ablage und lässt sich öffnen. |
 | **C** Anlegen | In der Ansicht gibt es „+ Neu“. Anlegen dürfen muss man zusätzlich am [Mappentyp](berechtigungen.md) – beide müssen es erlauben. |
-| **E** Exportieren | Mappen der Ansicht als Excel, CSV, ZIP mit Dokumenten oder PDF ausgeben – alles, was Daten aus dem DMS hinausgibt. Lesen muss man jede Mappe zusätzlich am Mappentyp. Außerhalb einer Ansicht (erweiterte Suche, „Als PDF exportieren“ an der Mappe) darf eine Mappe hinaus, wenn sie in mindestens einer Ansicht mit E läge. |
+| **E** Exportieren | Mappen der Ansicht als Excel, CSV, ZIP mit Dokumenten oder PDF ausgeben – alles, was Daten aus dem DMS hinausgibt. Lesen muss man jede Mappe zusätzlich am Mappentyp. Außerhalb einer Ansicht (erweiterte Suche, „Als PDF exportieren“ und „Per E-Mail versenden“ an der Mappe) darf eine Mappe hinaus, wenn sie in mindestens einer Ansicht mit E läge. |
 
 !!! info "Ansichtsregeln regeln die Ansicht, nicht die Mappen"
     Ob jemand eine **Mappe** lesen darf, entscheiden allein die [Berechtigungen am Mappentyp](berechtigungen.md). Eine Mappe aus einer verborgenen Ansicht kann also über die Suche, eine andere Ansicht oder einen Link weiter auftauchen. Wer Mappen verbergen will, regelt das am Mappentyp. Für Administratoren gelten die Regeln an Ansichten nicht.

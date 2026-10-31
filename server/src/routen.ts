@@ -1149,6 +1149,10 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/mappen/:id/email', zugang: 'angemeldet', handler: async (a) => {
       const i = ich(a);
       await darf(a, a.params.id, 'R');
+      // Versenden gibt Daten hinaus wie ein Export (#330): Regel A aus #294.
+      if (!(await dienst.exportierbar(i, await zg(a), [a.params.id])).has(a.params.id)) {
+        throw new Fachfehler(403, 'Du darfst diese Mappe nicht versenden. Versenden ist wie Exportieren nur aus Ansichten erlaubt, für die du das Recht dazu hast.');
+      }
       return ok(await dienst.versendeMappe(a.params.id, b(a), { id: i.id, name: i.name, email: i.email }, x.betrieb?.mailer() ?? null), 201);
     } },
     // Post (#192): anlegen („+ Post“, Dokumente danach über das Hochladen) und einer Mappe zuordnen.

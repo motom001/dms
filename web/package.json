@@ -1,7 +1,7 @@
 {
   "name": "@dms/web",
   "private": true,
-  "version": "0.73.13",
+  "version": "0.73.14",
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
