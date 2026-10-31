@@ -1821,6 +1821,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#werkbank-anpassen-281" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Werkbank anpassen (#281)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#bewusst-noch-nicht-drin" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2293,6 +2304,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#werkbank-anpassen-281" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Werkbank anpassen (#281)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#bewusst-noch-nicht-drin" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2338,10 +2360,10 @@
 <h2 id="technik">Technik<a class="headerlink" href="#technik" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>PostgreSQL</strong> statt SQLite: JSON-Felder mit Index, Volltextsuche mit deutscher Wortstammbildung, Row-Level-Security für die Trennung von Haushalten, parallele Schreibzugriffe.</li>
-<li><strong><code>haushalt_id</code> in jeder Tabelle</strong> von Anfang an; bis zur Benutzerverwaltung gibt es einen Standardhaushalt.</li>
+<li><strong><code>haushalt_id</code> in jeder Tabelle</strong> von Anfang an. Eine Installation ist ein Haushalt (im Code <em>Mandant</em>); seine Id steht seit 0.24 in der Datenbank-Anbindung.</li>
 <li><strong>Verweise zusätzlich in einer eigenen Tabelle</strong> (<code>verweise</code>): schnelle Rückverweise und Löschschutz in der Datenbank selbst.</li>
 <li><strong>SQL-Migrationen als Dateien, kein ORM.</strong> Die offene Frage „Prisma oder Drizzle“ ist damit vertagt, nicht entschieden: Für das generische Mappenmodell (JSON-Werte, dynamische Felder) bringt ein ORM wenig, und reines SQL bleibt am leichtesten nachvollziehbar und portierbar. Migrationen laufen beim Start in einer Transaktion.</li>
-<li><strong>Ein Image</strong> für Server und Oberfläche (modularer Monolith); auf dem NAS laufen nur App und Datenbank.</li>
+<li><strong>Ein Image</strong> für Server und Oberfläche (modularer Monolith): <code>dms</code> mit eigenem Datenbank-Container (empfohlen) und <code>dms-komplett</code> mit PostgreSQL im selben Container, für Oberflächen und Anbieter mit nur einem Container.</li>
 </ul>
 <h2 id="anmeldung">Anmeldung<a class="headerlink" href="#anmeldung" title="Permanent link">&para;</a></h2>
 <ul>
@@ -2349,7 +2371,7 @@
 <li><strong>Datenbank-Anbindung als Datei unter <code>/data/geheim</code></strong>, führend vor <code>DATABASE_URL</code> (#119): So lässt sich das DMS ohne Bearbeiten von Umgebungsvariablen in Betrieb nehmen; ohne erreichbare Datenbank startet es im Einrichtungsmodus und danach im selben Prozess das eigentliche DMS.</li>
 <li><strong>Mandant statt Haushalt</strong> in Oberfläche und Handbuch (#119; seit 0.73 heißt es wieder „Haushalt“, #305), damit das DMS auch für kleine Firmen passt. Intern heißt es weiter <code>haushalt_id</code>; ein Umbau brächte keinen sichtbaren Nutzen. Frische Installationen nutzen den Mandanten, den die erste Migration anlegt (mit Designs und Einstellungen).</li>
 <li><strong>Administratoren arbeiten nicht in der Ablage:</strong> Der Assistent legt deshalb gleich einen ersten normalen Benutzer an.</li>
-<li><strong>Rollen:</strong> Administrator (Einrichtung, Benutzer) und Mitglied (Ablage). Vorerst sehen alle angemeldeten Benutzer alle Mappen.</li>
+<li><strong>Systemrollen:</strong> Administrator (Einrichtung, Benutzer) und Mitglied (Ablage). Wer welche Mappen sieht, regeln die <a href="../berechtigungen/">Berechtigungen</a> (#123).</li>
 <li><strong>Passwörter</strong> mit scrypt aus Node (keine native Bibliothek). <strong>Sitzungen</strong> als HttpOnly-Cookie, in der Datenbank nur als SHA-256-Hash. Gleiches gilt für Einladungs- und Passwort-Links (Einladung 7 Tage, Zurücksetzen 1 Stunde, jeweils nur einmal nutzbar).</li>
 <li><strong>Schutz vor fremden Seiten:</strong> Ändernde Anfragen brauchen den Header <code>X-DMS</code>, den nur die eigene Oberfläche setzt; dazu <code>SameSite=Lax</code>.</li>
 <li><strong>E-Mail optional:</strong> Ohne SMTP zeigt die Benutzerverwaltung die Links zum Kopieren an.</li>
@@ -2357,8 +2379,8 @@
 </ul>
 <h2 id="ablage">Ablage<a class="headerlink" href="#ablage" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Drei Spalten:</strong> Ansichten → Liste → Mappe. Ansichten sind vorerst „Zu erledigen“ und eine pro Mappentyp; konfigurierbare Ansichten folgen.</li>
-<li><strong>Eingang</strong> (heute „Zu erledigen“): Mappen, die nicht zur aktuellen Definition passen, beim Ersteller; ohne bekannten Ersteller beim Administrator. Später kommen Aufgaben dazu.</li>
+<li><strong>Drei Spalten:</strong> Ansichten → Liste → Mappe. Anfangs gab es nur den Eingang und eine Ansicht je Mappentyp; seit 0.10 sind Ansichten frei einzurichten (siehe unten, #38).</li>
+<li><strong>Eingang</strong> (heute „Zu erledigen“): Mappen, die nicht zur aktuellen Definition passen, beim Ersteller; ohne bekannten Ersteller beim Administrator. Heute ist es die Liste aller offenen Aufgaben, „Passt nicht“ ist eine davon.</li>
 <li>
 <p><strong>Indexwerte</strong> (erstellt/geändert am/von) sind feste Spalten, keine Felder eines Mappentyps.</p>
 </li>
@@ -2380,7 +2402,7 @@
 <li><strong>Indexwerte im Titel:</strong> <code>{angelegt}</code>, <code>{geaendert}</code> als Datum in der Zeitzone Europe/Berlin; diese Kennungen sind für Felder gesperrt.</li>
 <li><strong>Dateien</strong> unveränderlich unter ihrem SHA-256 im Dateiordner, gleicher Inhalt nur einmal; Hinweis beim Hochladen, wenn der Inhalt schon in einer anderen Mappe liegt.</li>
 <li><strong>Anzeige im Browser nur für PDF und Bilder</strong>, erkannt am Inhalt (nicht an Endung oder angegebenem Typ). Alles andere wird als Download ausgeliefert, mit <code>nosniff</code> und einer Sandbox-CSP – eine hochgeladene HTML-Datei kann so keinen Code in der Sitzung ausführen.</li>
-<li><strong>Löschen einer Mappe</strong> löscht ihre Dokumente nach Rückfrage mit; die Datei verschwindet, sobald kein Dokument mehr auf sie zeigt.</li>
+<li><strong>Löschen einer Mappe</strong> legt sie samt Dokumenten zuerst in den <a href="../papierkorb/">Papierkorb</a> (#43); erst beim endgültigen Löschen verschwindet eine Datei, sobald kein Dokument mehr auf sie zeigt.</li>
 </ul>
 <h2 id="designs">Designs<a class="headerlink" href="#designs" title="Permanent link">&para;</a></h2>
 <ul>
@@ -2405,13 +2427,13 @@
 </ul>
 <h2 id="benutzer-und-rollen-als-mappen-26-27">Benutzer und Rollen als Mappen (#26, #27)<a class="headerlink" href="#benutzer-und-rollen-als-mappen-26-27" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Systemmappentypen</strong> <em>Benutzer</em> und <em>Rolle</em> (Spalte <code>mappentypen.system</code>): erweiterbar, nie löschbar. Der Server legt sie beim Start an, falls sie fehlen; heißt schon ein eigener Mappentyp so, bekommt der Systemtyp den Zusatz „(System)“.</li>
+<li><strong>Systemmappentypen</strong> <em>Benutzer</em>, <em>Rolle</em> und <em>Post</em> (bis 0.40 <em>E-Mail</em>; Spalte <code>mappentypen.system</code>): erweiterbar, nie löschbar. Der Server legt sie beim Start an, falls sie fehlen; heißt schon ein eigener Mappentyp so, bekommt der Systemtyp den Zusatz „(System)“.</li>
 <li><strong>Systemfelder</strong> (<code>Feld.system</code>) sind fest: Kennung, Feldart und Eigenschaften gibt der Server vor, nur Bezeichnung, Hilfetext und Register darf der Administrator ändern.</li>
 <li><strong>Das Konto ist führend, die Mappe spiegelt es.</strong> Die Mappe eines Benutzers hat dieselbe Id wie sein Konto. Konten melden jede Änderung an Name, E-Mail, Rolle und „aktiv“ an die Mappe; beim Start werden alle Benutzer abgeglichen (auch nach einem Update).</li>
 <li><strong>Sicherheit:</strong> Die Systemfelder einer Benutzer-Mappe sind in der Ablage nur lesbar – der Server lehnt Änderungen ab. Sonst könnte ein Mitglied die E-Mail-Adresse eines Administrators ändern und dessen Konto über „Passwort vergessen“ übernehmen, oder sich selbst eine Systemrolle geben.</li>
-<li><strong>Systemrollen</strong> <em>Administrator</em> und <em>Mitglied</em> sind Rollen-Mappen mit fester Kennung (<code>mappen.system_kennung</code>, z. B. <code>rolle:admin</code>). Wer sie hat, folgt der Rolle des Kontos; sie lassen sich nicht löschen und nicht umbenennen. So kann das spätere Berechtigungskonzept Rechte an Rollen-Mappen hängen, ohne die bestehende Anmeldung umzubauen.</li>
+<li><strong>Systemrollen</strong> <em>Administrator</em> und <em>Mitglied</em> sind Rollen-Mappen mit fester Kennung (<code>mappen.system_kennung</code>, z. B. <code>rolle:admin</code>). Wer sie hat, folgt der Systemrolle des Kontos; sie lassen sich nicht löschen und nicht umbenennen. So hängen die <a href="../berechtigungen/">Berechtigungen</a> Rechte an Rollen-Mappen, ohne die Anmeldung umzubauen.</li>
 <li><strong>Zuordnung Benutzer ↔ Rolle</strong> ist das Systemfeld <code>rollen</code> der Benutzer-Mappe (Mehrfachverweis). Die Rolle zeigt ihre Benutzer als Rückverweise. Gesetzt wird es nur über die Benutzerverwaltung; ungültige Rollen werden geprüft, bevor sich etwas ändert.</li>
-<li><strong>Rollen sind vorerst fachlich</strong> und von jedem Benutzer in der Ablage anlegbar; Einschränkungen kommen mit der Berechtigungsverwaltung. Keine verschachtelten Rollen.</li>
+<li><strong>Rollen sind Mappen</strong> des Systemmappentyps <em>Rolle</em>. Wer sie anlegen, umbenennen und löschen darf, regeln die Berechtigungen an diesem Mappentyp (ohne Regeln: alle). Keine verschachtelten Rollen.</li>
 <li><strong>Rolle löschen:</strong> erlaubt, auch wenn Benutzer sie haben – deren Zuordnung fällt weg. Verweise aus normalen Feldern (z. B. „verantwortliche Rolle“) verhindern das Löschen wie bei jeder Mappe.</li>
 <li><strong>Deaktivieren statt löschen:</strong> Wer sich schon angemeldet hat, wird deaktiviert; seine Mappe heißt dann „… (ehemalig)“ und Verweise bleiben gültig. Löschen geht nur für nie angenommene Einladungen.</li>
 <li><strong>Neue Mappen / Löschen erlauben</strong> als Eigenschaft jedes Mappentyps (<code>erstellen_erlaubt</code>, <code>loeschen_erlaubt</code>); die Oberfläche blendet die Knöpfe aus, der Server prüft es. Beim Mappentyp <em>Benutzer</em> ist beides fest aus. <em>Seit 0.32 (#146) abgelöst: Anlegen und Löschen regeln die Berechtigungen (C, D); fest bleiben nur die Systemregeln für Benutzer-Mappen (seit 0.41, #192, gilt für Post die normale Berechtigung C).</em></li>
@@ -2479,7 +2501,7 @@
 <li><strong>Regeln nur am Mappentyp</strong>, mit Standard (seit 0.32 je Recht ✓/✗, vorher erteilt/entzogen) und geordneten Regeln „wenn … dann ✓/✗/– je Recht“ mit Stopp – wie eine Firewall. Keine Rechte an einzelnen Mappen: Was eine Mappe besonders macht, steht in ihren Feldern, und darauf zielen die Bedingungen.</li>
 <li><strong>CRUDP</strong>: Anlegen, Lesen, Bearbeiten (Felder und Dokumente), Löschen, Passwörter sehen. Notizen, Aufgaben und E-Mail brauchen nur Lesen. Ohne Lesen wirkt nichts außer Anlegen.</li>
 <li><strong>Ein Ausdruck, zwei Auswertungen</strong>: Bedingungen über den Benutzer sind beim Anmelden schon entschieden; was bleibt, sind Filter über die Mappe – im Arbeitsspeicher für eine einzelne Mappe und als SQL für Listen, Suche und Zähler. So stimmen Liste und Mappe immer überein, und Seiten bleiben schnell.</li>
-<li><strong>Administratoren</strong> unterliegen keinen Regeln, arbeiten aber auch nicht in der Ablage (#128). Seit 0.32 (#146) gibt es keine Haken als Obergrenze mehr: Admins sollen nicht in der Ablage arbeiten, aber wenn sie es müssen, ohne unnötige Hürden. Die Haken wurden ohne Mehrrechte für Benutzer in den Standard (✗ C/D) überführt; nur die Systemregeln (Benutzer: kein C/D, E-Mail: kein C) gelten für alle. Den Testlauf gibt es direkt am Mappentyp, auch für ungespeicherte Regeln; „Was sieht ein Benutzer?“ steht am Benutzer.</li>
+<li><strong>Administratoren</strong> unterliegen keinen Regeln, arbeiten aber auch nicht in der Ablage (#128). Seit 0.32 (#146) gibt es keine Haken als Obergrenze mehr: Admins sollen nicht in der Ablage arbeiten, aber wenn sie es müssen, ohne unnötige Hürden. Die Haken wurden ohne Mehrrechte für Benutzer in den Standard (✗ C/D) überführt; nur die Systemregel (Benutzer: kein C/D) gilt für alle. Bei <em>Post</em> regelt C, wer neue Post anlegen darf; versendete E-Mails legt das DMS immer an. Den Testlauf gibt es direkt am Mappentyp, auch für ungespeicherte Regeln; „Was sieht ein Benutzer?“ steht am Benutzer.</li>
 <li><strong>Benutzerauswahl nur unter sichtbaren Benutzern</strong> (#137): So lässt sich ein Programm über die API sauber auf seinen Ausschnitt begrenzen.</li>
 <li><strong>Feldrechte</strong> (einzelne Felder ausblenden) kommen bei Bedarf später.</li>
 </ul>
@@ -2501,8 +2523,14 @@
 <li><strong>Restrisiko bewusst in Kauf genommen:</strong> Ein Gerät im Heimnetz, das das DMS direkt erreicht, könnte eine IP vortäuschen. Wer das ausschließen will, setzt <code>false</code> oder eine Liste. Aus dem Internet geht es nicht, solange keine Portfreigabe mit verschleierter Absenderadresse (z. B. Docker-Userland-Proxy) dazwischen ist.</li>
 <li><strong>Falsche Werte</strong> führen nicht zum Startabbruch: Es gilt <code>auto</code>, mit Warnung im Protokoll.</li>
 </ul>
+<h2 id="werkbank-anpassen-281">Werkbank anpassen (#281)<a class="headerlink" href="#werkbank-anpassen-281" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Ausblenden heißt nicht abschalten.</strong> Die Vorlagen <em>Haushalt</em>, <em>Organisation</em> und <em>Alles</em> bestimmen nur, welche Bereiche links in der Werkbank stehen. Was ausgeblendet ist, läuft weiter (z. B. Postfächer, Protokoll) und bleibt über die Adresse und die Übersicht erreichbar. Neue Installationen starten mit <em>Haushalt</em>, damit die Werkbank für Familien übersichtlich bleibt.</li>
+<li><strong>Bereiche an einer Stelle:</strong> <code>shared/src/werkbankansicht.ts</code> führt alle Bereiche mit Gruppe und Vorlagen; das Handbuch erzeugt seine Tabellen daraus. Eine spätere Neugruppierung und abgestufte Administratorrechte setzen dort an.</li>
+<li><strong>Abgestufte Administratorrechte</strong> (#282) – etwa ein Administrator nur für Benutzer – sind bewusst zurückgestellt: Im Haushalt gibt es meist einen Administrator, und jede Stufe mehr macht die Werkbank schwerer zu verstehen.</li>
+</ul>
 <h2 id="bewusst-noch-nicht-drin">Bewusst noch nicht drin<a class="headerlink" href="#bewusst-noch-nicht-drin" title="Permanent link">&para;</a></h2>
-<p>Feldrechte, Kalender-Export (ICS), Backup-Funktion in der Anwendung (#48), Texterkennung für Office-Dokumente, Zwei-Faktor-Anmeldung.</p>
+<p>Feldrechte (einzelne Felder ausblenden), Texterkennung für Office-Dokumente, ein Kalender-Abo für Fristen, abgestufte Administratorrechte (#282, zurückgestellt, bis Kleinbetriebe in den Fokus rücken). Sicherung (#48), Zwei-Faktor-Anmeldung und der Kalender-Export im Vollexport sind inzwischen da.</p>
 
 
 
