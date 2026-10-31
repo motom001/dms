@@ -1229,6 +1229,9 @@
 <p><a id="ablage"></a><strong>Ablage</strong> · ✓ Alltagswort · alle<br />
 Der Arbeitsbereich für alle Benutzer – mit Ansichten, Listen und Mappen.<br />
 Siehe auch: <a href="#werkbank">Werkbank</a>, <a href="#ansicht">Ansicht</a>.</p>
+<p><a id="ablageort"></a><strong>Ablageort</strong> · ✓ Alltagswort · alle<br />
+Ein Platz, an dem Papier liegt – z. B. ein Ordner, eine Kiste, ein Schließfach oder „vernichtet“. Ablageorte liegen ineinander („zu Hause › Arbeitszimmer Schrank › roter Ordner“). Jedes DMS hat diesen Mappentyp; er lässt sich erweitern, aber nicht löschen.<br />
+Siehe auch: <a href="#verbleib-originaldokumente">Verbleib Originaldokumente</a>, <a href="#mappentyp">Mappentyp</a>.</p>
 <p><a id="ansicht"></a><strong>Ansicht</strong> · ~ mit Erklärung · alle<br />
 Eine gespeicherte Auswahl von Mappen – welche Mappentypen, mit welchen Bedingungen. Ansichten stehen im Baum links in der Ablage. Wie etwas aussieht, heißt dagegen „Darstellung“.<br />
 Siehe auch: <a href="#unteransicht">Unteransicht</a>, <a href="#bedingung">Bedingung</a>, <a href="#trefferliste">Trefferliste</a>.</p>
@@ -1280,6 +1283,9 @@ Der Anzeigename einer Mappe. Er wird aus einer Vorlage mit Feldwerten gebildet.<
 Legt fest, welche Spalten eine Liste zeigt. Ein Mappentyp hat eine oder mehrere Trefferlisten; eine davon ist der Standard. Eine Ansicht oder ein Verknüpfungsregister wählt eine davon, sonst gilt der Standard. Zeigt eine Ansicht mehrere Mappentypen, stehen nur Trefferlisten mit gleicher Kennung in allen zur Wahl, mit den gemeinsamen Spalten.</p>
 <p><a id="unteransicht"></a><strong>Unteransicht</strong> · ~ mit Erklärung · Administratoren<br />
 Eine Ansicht unterhalb einer anderen. Sie erbt deren Berechtigungen.</p>
+<p><a id="verbleib-originaldokumente"></a><strong>Verbleib Originaldokumente</strong> · ✓ Alltagswort · alle<br />
+Das Feld an einer Mappe, das auf den Ablageort des Papiers zeigt. In allen Mappentypen mit derselben Kennung, damit gemeinsame Listen und Ansichten funktionieren.<br />
+Siehe auch: <a href="#ablageort">Ablageort</a>.</p>
 <p><a id="verknupfungen"></a><strong>Verknüpfungen</strong> · ~ mit Erklärung · alle<br />
 Das Register, das alle Mappen zeigt, die auf diese Mappe verweisen – die Gegenrichtung des Verweises.<br />
 Siehe auch: <a href="#verweis">Verweis</a>.</p>
@@ -1526,6 +1532,11 @@ Die Aufgabenart heißt „Post für dich“; die Ansicht „Neue Post“ bleibt.
 </thead>
 <tbody>
 <tr>
+<td>Ablageort</td>
+<td>–</td>
+<td><code>ablageort</code></td>
+</tr>
+<tr>
 <td>Abwesenheit</td>
 <td>–</td>
 <td><code>Abwesenheit</code></td>
@@ -1754,6 +1765,11 @@ Die Aufgabenart heißt „Post für dich“; die Ansicht „Neue Post“ bleibt.
 <td>Unteransicht</td>
 <td>Untersicht</td>
 <td>–</td>
+</tr>
+<tr>
+<td>Verbleib Originaldokumente</td>
+<td>Lagerort, Standort (für Papier)</td>
+<td><code>verbleib_original</code></td>
 </tr>
 <tr>
 <td>Version</td>

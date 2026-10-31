@@ -865,6 +865,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ablageort-wo-die-originale-liegen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ablageort: wo die Originale liegen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#archivmodus" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2276,6 +2287,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ablageort-wo-die-originale-liegen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ablageort: wo die Originale liegen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#archivmodus" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2541,7 +2563,7 @@
 </tbody>
 </table>
 <p><code>jahr</code>, <code>monat</code> und <code>datum</code> gehen bei Datumsfeldern und bei <code>{angelegt}</code> und <code>{geaendert}</code>, <code>ohne_waehrung</code> nur bei Beträgen.</p>
-<p><strong>Leere Teile fallen weg.</strong> Ist ein Feld leer, verschwindet es samt seinem Trenner (<code>–</code>, <code>·</code>, <code>|</code>, <code>/</code>, <code>,</code>). Aus <code>{bezeichnung} – {vertragsnummer} – {beginn|jahr}</code> wird bei fehlender Vertragsnummer „Strom – 2026“ statt „Strom –  – 2026“.</p>
+<p><strong>Leere Teile fallen weg.</strong> Ist ein Feld leer, verschwindet es samt seinem Trenner (<code>–</code>, <code>·</code>, <code>|</code>, <code>/</code>, <code>,</code>, <code>›</code>). Aus <code>{bezeichnung} – {vertragsnummer} – {beginn|jahr}</code> wird bei fehlender Vertragsnummer „Strom – 2026“ statt „Strom –  – 2026“.</p>
 <p>Bewusst gibt es <strong>keine</strong> Bedingungen, Schleifen oder Rechnungen im Titel. Unbekannte Filter oder ein Filter am falschen Feld meldet der Editor sofort, die Vorschau zeigt das Ergebnis.</p>
 <div class="admonition note">
 <p class="admonition-title">Bestehende Titel</p>
@@ -2618,6 +2640,19 @@
 </li>
 </ul>
 <p>Mehr dazu in <a href="../benutzer/">Benutzer und Rollen</a>.</p>
+<h2 id="ablageort-wo-die-originale-liegen">Ablageort: wo die Originale liegen<a class="headerlink" href="#ablageort-wo-die-originale-liegen" title="Permanent link">&para;</a></h2>
+<p>Jedes DMS hat seit 0.74 den Mappentyp <strong>Ablageort</strong> (Kennung <code>ablageort</code>). Damit hält man fest, wo das Papier zu einem eingescannten Dokument liegt – oder dass es vernichtet ist. Er ist kein Systemmappentyp: Du kannst ihn umbenennen, um Felder und Register erweitern und seine Berechtigungen ändern wie bei jedem Mappentyp. <strong>Löschen lässt er sich nicht</strong>, weil Pakete und Beispiele auf ihn verweisen.</p>
+<ul>
+<li><strong>Felder:</strong> <em>Name</em>, <em>Liegt in</em> (ein Verweis auf einen anderen Ablageort) und <em>Beschreibung</em>.</li>
+<li><strong>Register:</strong> <em>Allgemein</em>, <em>Enthält</em> (die Ablageorte, die hier liegen), <em>Liegt hier</em> (alle Mappen, die auf diesen Ort verweisen) und <em>Fotos</em>.</li>
+<li><strong>Titel:</strong> <code>{liegt_in} › {name}</code>. So heißt der rote Ordner z. B. „zu Hause › Arbeitszimmer Schrank › roter Ordner“. Ganz oben (ohne <em>Liegt in</em>) bleibt nur der Name.</li>
+<li><strong>Umzug in einem Schritt:</strong> Kommt der Schrank ins Wohnzimmer, änderst du nur <em>Liegt in</em> am Schrank. Die Titel der Orte darunter und aller Mappen, die den Ort im Titel zeigen, zieht das DMS nach – über höchstens sechs Ebenen.</li>
+</ul>
+<p><strong>Verbleib in deinen Mappentypen:</strong> Gib Mappentypen mit Papier (Vertrag, Rechnung, Versicherung, Urkunde …) ein Verweisfeld auf <em>Ablageort</em> mit der Kennung <strong><code>verbleib_original</code></strong> und der Bezeichnung <em>Verbleib Originaldokumente</em>. Die gleiche Kennung in allen Mappentypen ist wichtig: Nur dann gibt es die Spalte in gemeinsamen Trefferlisten und die Bedingung in Ansichten über mehrere Mappentypen. Die <a href="../demo/">Beispiele</a> bringen das Feld bei <em>Vertrag</em> und <em>Rechnung</em> mit, dazu ein paar Ablageorte und die Ansicht <em>Originale nach Ort</em>.</p>
+<div class="admonition note">
+<p class="admonition-title">Bewusst einfach</p>
+<p>Der Verbleib gilt für die ganze Mappe, nicht für jeden einzelnen Scan. <em>Liegt hier</em> zeigt nur, was direkt an diesem Ort liegt; was in Orten darunter liegt, siehst du über <em>Enthält</em> Ebene für Ebene. Wann man das Papier überhaupt aufheben sollte, steht im Benutzerhandbuch unter <a href="https://motom001.github.io/dms/benutzer/aktuell/original/">Original behalten oder vernichten?</a>.</p>
+</div>
 <h2 id="archivmodus">Archivmodus<a class="headerlink" href="#archivmodus" title="Permanent link">&para;</a></h2>
 <p>Zwischen Registern und Berechtigungen schaltest du den <strong>Archivmodus</strong> ein: Mappen und Dokumente dieses Mappentyps lassen sich dann bis zum Ende einer Aufbewahrungsfrist nicht löschen, und Dokumente ändern sich nur noch als neue Version. Frist, Stichtag und was währenddessen gilt, stehen unter <a href="../archiv/">Archivmodus und Aufbewahrung</a>.</p>
 <h2 id="berechtigungen">Berechtigungen<a class="headerlink" href="#berechtigungen" title="Permanent link">&para;</a></h2>
@@ -2625,7 +2660,7 @@
 <h2 id="mappentyp-kopieren">Mappentyp kopieren<a class="headerlink" href="#mappentyp-kopieren" title="Permanent link">&para;</a></h2>
 <p><strong>Mappentyp kopieren</strong> oben rechts legt einen neuen Mappentyp als <strong>Entwurf</strong> an – mit denselben Feldern, Titel, Trefferlisten, Registern und Berechtigungen. Er heißt „Kopie von …“ und bekommt eine eigene Kennung; beides kannst du vor dem Speichern ändern. Angelegt wird er erst mit <strong>Mappentyp speichern</strong>. Mappen werden nicht kopiert. Felder, die auf den Mappentyp selbst verweisen, zeigen in der Kopie auf die Kopie. Systemtypen lassen sich nicht kopieren.</p>
 <h2 id="mappentyp-loschen">Mappentyp löschen<a class="headerlink" href="#mappentyp-loschen" title="Permanent link">&para;</a></h2>
-<p><strong>Mappentyp löschen</strong> geht nur, solange es keine Mappen dieses Mappentyps gibt – auch keine im <a href="../papierkorb/">Papierkorb</a> – und kein anderer Mappentyp auf ihn verweist. Sonst nennt das DMS die Gründe. <a href="#systemmappentypen-benutzer-rolle-und-post">Systemmappentypen</a> lassen sich nie löschen.</p>
+<p><strong>Mappentyp löschen</strong> geht nur, solange es keine Mappen dieses Mappentyps gibt – auch keine im <a href="../papierkorb/">Papierkorb</a> – und kein anderer Mappentyp auf ihn verweist. Sonst nennt das DMS die Gründe. <a href="#systemmappentypen-benutzer-rolle-und-post">Systemmappentypen</a> und der <a href="#ablageort-wo-die-originale-liegen">Ablageort</a> lassen sich nie löschen.</p>
 
 
 
