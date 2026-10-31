@@ -82,4 +82,6 @@ Ist an einem Dokumentenregister die **Versionierung** eingeschaltet (das macht e
 
 Ein Klick auf **Löschen** neben einem Dokument markiert es mit „wird beim Speichern gelöscht“. Erst **Mappe speichern** löscht es; **Behalten** oder **Änderungen verwerfen** holt es zurück. Noch nicht gespeicherte Dateien nimmst du mit **Nicht hochladen** wieder aus der Liste.
 
-Ein einzeln gelöschtes Dokument ist sofort endgültig weg – mit allen seinen Versionen; hat es ältere Versionen, fragt das DMS vorher nach und nennt ihre Zahl. Löschst du eine ganze Mappe, kommen ihre Dokumente mit ihr in den [Papierkorb](ablage.md#papierkorb).
+Ein gelöschtes Dokument kommt beim Speichern mit allen seinen Versionen in den [Papierkorb](ablage.md#papierkorb) – ein falscher Klick ist also nicht gleich endgültig. Dort steht es unter **Dokumente** mit der Mappe und dem Register, aus dem es kam; **Wiederherstellen** legt es genau dorthin zurück. Hat es ältere Versionen, fragt das DMS vorher nach und nennt ihre Zahl. Löschst du eine ganze Mappe, kommen ihre Dokumente mit ihr in den Papierkorb.
+
+Ist der Papierkorb ausgeschaltet (Werkbank), ist ein gelöschtes Dokument sofort endgültig weg – die Zeile sagt dann „wird beim Speichern endgültig gelöscht“.

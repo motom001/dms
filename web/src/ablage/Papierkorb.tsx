@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { formatiere, SYSTEMSPALTEN } from '../../../shared/src/model';
-import { api, type PapierkorbEintrag } from '../api';
+import { api, type DokumentImKorb, type PapierkorbEintrag } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link } from '../ort';
 import { titelOder } from '../seiten';
@@ -19,13 +19,14 @@ const basis = (werkbank: boolean) => (werkbank ? '/werkbank/papierkorb' : '/abla
 
 export function usePapierkorb(werkbank: boolean, aktiv = true) {
   const [eintraege, setEintraege] = useState<PapierkorbEintrag[] | null>(null);
+  const [dokumente, setDokumente] = useState<DokumentImKorb[]>([]);
   const [tage, setTage] = useState<number | null>(null);
   const [historieTage, setHistorieTage] = useState<number | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
     try {
-      if (werkbank) { const r = await api.papierkorbWerkbank(); setEintraege(r.eintraege); setTage(r.tage); setHistorieTage(r.historieTage); }
-      else setEintraege(await api.papierkorb());
+      if (werkbank) { const r = await api.papierkorbWerkbank(); setEintraege(r.eintraege); setDokumente(r.dokumente ?? []); setTage(r.tage); setHistorieTage(r.historieTage); }
+      else { const [m, dok] = await Promise.all([api.papierkorb(), api.papierkorbDokumente()]); setEintraege(m); setDokumente(dok); }
       setFehler(undefined);
     } catch (e) { setFehler((e as Error).message); }
   }, [werkbank]);
@@ -35,14 +36,14 @@ export function usePapierkorb(werkbank: boolean, aktiv = true) {
     addEventListener(GEAENDERT, laden);
     return () => removeEventListener(GEAENDERT, laden);
   }, [aktiv, laden]);
-  return { eintraege, tage, setTage, historieTage, setHistorieTage, fehler, laden };
+  return { eintraege, dokumente, tage, setTage, historieTage, setHistorieTage, fehler, laden };
 }
 export type PapierkorbZustand = ReturnType<typeof usePapierkorb>;
 
 /** Aufbewahrung in Worten. */
 export function aufbewahrung(tage: number | undefined | null) {
-  if (!tage) return 'Gelöschte Mappen werden sofort endgültig gelöscht.';
-  return `Gelöschte Mappen bleiben ${tage === 1 ? 'einen Tag' : `${tage} Tage`} hier und werden danach endgültig gelöscht.`;
+  if (!tage) return 'Gelöschte Mappen und Dokumente werden sofort endgültig gelöscht.';
+  return `Gelöschte Mappen und Dokumente bleiben ${tage === 1 ? 'einen Tag' : `${tage} Tage`} hier und werden danach endgültig gelöscht.`;
 }
 
 export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; werkbank: boolean; offen?: string }) {
@@ -63,7 +64,8 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
   }, []);
 
   async function leeren() {
-    if (!confirm(`${werkbank ? 'Den ganzen Papierkorb (alle Benutzer)' : 'Deinen Papierkorb'} leeren? ${liste.length === 1 ? 'Die Mappe wird' : `Alle ${liste.length} Mappen werden`} endgültig gelöscht – samt ihrer Dokumente.`)) return;
+    const was = [liste.length ? (liste.length === 1 ? 'eine Mappe (samt Dokumenten)' : `${liste.length} Mappen (samt Dokumenten)`) : '', z.dokumente.length ? (z.dokumente.length === 1 ? 'ein Dokument' : `${z.dokumente.length} Dokumente`) : ''].filter(Boolean).join(' und ');
+    if (!confirm(`${werkbank ? 'Den ganzen Papierkorb (alle Benutzer)' : 'Deinen Papierkorb'} leeren? ${was} ${liste.length + z.dokumente.length === 1 ? 'wird' : 'werden'} endgültig gelöscht.`)) return;
     setLaeuft(true); setMeldung(undefined);
     try { await api.papierkorbLeeren(werkbank); melde(); await d.neuLaden(); geheZu(basis(werkbank)); }
     catch (e) { setMeldung((e as Error).message); }
@@ -90,16 +92,16 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
           <h1>Papierkorb</h1>
           <p className="leise klein">{werkbank ? 'Was alle Benutzer gelöscht haben. ' : 'Was du gelöscht hast. '}{aufbewahrung(tage)} <Hilfe ort={werkbank ? 'werkbank.papierkorb' : 'ablage.papierkorb'} /></p>
         </div>
-        {liste.length > 0 && <button type="button" className="knopf klein gefahr-rand" disabled={laeuft} onClick={() => void leeren()}>{laeuft ? 'Leere …' : 'Papierkorb leeren'}</button>}
+        {liste.length + z.dokumente.length > 0 && <button type="button" className="knopf klein gefahr-rand" disabled={laeuft} onClick={() => void leeren()}>{laeuft ? 'Leere …' : 'Papierkorb leeren'}</button>}
       </div>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       {meldung && <div className="hinweis schlecht"><p>{meldung}</p></div>}
       <div className="listenrumpf">
       {z.eintraege === null
         ? <p className="leise">Lade …</p>
-        : !liste.length
+        : !liste.length && !z.dokumente.length
           ? <p className="leise leerliste">Der Papierkorb ist leer.</p>
-          : <>
+          : !liste.length ? <DokumenteImKorb z={z} werkbank={werkbank} /> : <>
               <p className="listenzahl leise klein">{liste.length} {liste.length === 1 ? 'Mappe' : 'Mappen'}</p>
               {!tabelle && (
                 <ul className="mappenliste">
@@ -132,11 +134,65 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
                   </tbody>
                 </table>
               </div>}
+              <DokumenteImKorb z={z} werkbank={werkbank} />
             </>}
       </div>
     </>
   );
 }
+
+/** Einzelne Dokumente im Papierkorb (#344): Art „Dokument“, aus welcher Mappe und welchem Register; direkt wiederherstellen. */
+function DokumenteImKorb({ z, werkbank }: { z: PapierkorbZustand; werkbank: boolean }) {
+  const d = useDaten();
+  const [laeuft, setLaeuft] = useState<string>();
+  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: ReactNode }>();
+  if (!z.dokumente.length) return null;
+  async function zurueck(x: DokumentImKorb) {
+    setLaeuft(x.id); setMeldung(undefined);
+    try {
+      const r = await api.dokumentWiederherstellen(x.id, werkbank);
+      melde(); await d.neuLaden();
+      setMeldung({ art: 'gut', text: <>„{x.name}“ liegt wieder in <Link to={`/ablage/${r.typId}/${x.mappeId}`} className="verweis">{titelOder(x.mappeTitel)}</Link> (Register {x.register}).</> });
+    } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
+    finally { setLaeuft(undefined); }
+  }
+  async function weg(x: DokumentImKorb) {
+    if (!confirm(`„${x.name}“${x.versionen ? ` mit allen ${x.versionen + 1} Versionen` : ''} endgültig löschen? Das lässt sich nicht rückgängig machen.`)) return;
+    setLaeuft(x.id); setMeldung(undefined);
+    try { await api.dokumentEndgueltig(x.id, werkbank); melde(); await d.neuLaden(); }
+    catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
+    finally { setLaeuft(undefined); }
+  }
+  return (
+    <section className="korbdokumente">
+      <h2 className="h3">Dokumente</h2>
+      <p className="listenzahl leise klein">{z.dokumente.length} {z.dokumente.length === 1 ? 'Dokument' : 'Dokumente'}, einzeln aus einer Mappe gelöscht</p>
+      {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
+      <ul className="mappenliste">
+        {z.dokumente.map((x) => (
+          <li key={x.id} className="korbdokument">
+            <div className="eintrag">
+              <span className="titel"><span className="chip" title="Art">Dokument</span> {x.name}</span>
+              <span className="unter">
+                aus {x.mappe === 'da' ? <Link to={`/ablage/${x.typId}/${x.mappeId}`} className="verweis">{titelOder(x.mappeTitel)}</Link> : titelOder(x.mappeTitel)}
+                {' '}· Register {x.register} · {groesseText(x.groesse)}{x.versionen ? ` · ${x.versionen + 1} Versionen` : ''}
+                {' '}· gelöscht {datumZeit(x.geloescht)}{werkbank ? ` von ${d.person(x.geloeschtVon)}` : ''}
+              </span>
+              {x.mappe === 'papierkorb' && <span className="leise klein">Die Mappe liegt selbst im Papierkorb – stelle zuerst die Mappe wieder her.</span>}
+              {x.mappe === 'weg' && <span className="leise klein">Die Mappe gibt es nicht mehr.</span>}
+            </div>
+            <div className="knoepfe">
+              <button type="button" className="knopf klein" disabled={!!laeuft || x.mappe !== 'da'} onClick={() => void zurueck(x)}>{laeuft === x.id ? '…' : 'Wiederherstellen'}</button>
+              <button type="button" className="textknopf gefahr" disabled={!!laeuft} onClick={() => void weg(x)}>Endgültig löschen</button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+const groesseText = (b: number) => (b < 1024 ? `${b} B` : b < 1024 ** 2 ? `${Math.round(b / 1024)} KB` : `${(b / 1024 ** 2).toFixed(1).replace('.', ',')} MB`);
 
 /** Eine Mappe im Papierkorb: ansehen, wiederherstellen, endgültig löschen. */
 export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boolean }) {

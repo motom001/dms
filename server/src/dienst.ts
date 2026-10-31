@@ -13,7 +13,7 @@ import { alsText, erwaehnungen } from '../../shared/src/markdown';
 import { liesAnsicht, liesEigene, OHNE_EINSTELLUNG } from '../../shared/src/werkbankansicht';
 import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
 import type { Einstellungen } from './einstellungen';
-import { istUuid, type NeueMappe, type PapierkorbEintrag, type Repo, type Rueckverweis, type SortierungIntern } from './repo';
+import { istUuid, type DokumentImPapierkorb, type NeueMappe, type PapierkorbEintrag, type Repo, type Rueckverweis, type SortierungIntern } from './repo';
 import {
   auswahlKlausel, auswahlProbleme, bereinigeAuswahlfilter, setzeEigeneWerte, erfuellt, bereinigeBedingungen, filterFuer, heuteIn, kinderVon, klauselnFuer, verschiebe, waereKreis, wirksameTypen,
   type Aufloesung, type Sicht, type SichtDaten,
@@ -38,6 +38,8 @@ import { ALLES, RECHTE_LISTE, kurzStandard, systemSperre, bereinigeRegelwerk, FA
 const text = (v: unknown) => (v == null ? '' : String(v)).trim();
 
 /** Zugriff eines Benutzers (#124): Rollen, Auflösung dynamischer Werte, Lesefilter (null = alles). */
+/** Dokument im Papierkorb mit Mappe und Register (#344). */
+export interface DokumentImKorb extends DokumentImPapierkorb { art: 'dokument'; typId: string; mappeTitel: string; register: string; mappe: 'da' | 'papierkorb' | 'weg' }
 /** Wo eine gleiche Datei schon liegt (#333) – nur lesbare Mappen. */
 export interface Fundstelle { mappeId: string; typId: string; titel: string; typ: string; register: string; name: string; erstellt: string }
 export interface Zugriff {
@@ -2846,13 +2848,79 @@ export class Dienst {
     if (!Number.isInteger(tage) || tage < 0 || tage > 3650) throw new Fachfehler(422, 'Bitte eine ganze Zahl von 0 bis 3650 Tagen angeben (0 = kein Papierkorb).');
     await this.einstellungen.schreibe('papierkorb', { tage });
     protokoll.modul('werkbank').info(tage ? 'Aufbewahrung im Papierkorb geändert' : 'Papierkorb ausgeschaltet', { tage });
-    const geleert = tage ? await this.raeumePapierkorbAuf() : await this.leere((await this.repo.papierkorb()).map((e) => e.id));
+    const geleert = tage ? await this.raeumePapierkorbAuf() : await this.leere((await this.repo.papierkorb()).map((e) => e.id)) + await this.leereDokumente((await this.repo.papierkorbDokumente()).map((d) => d.id));
     return { tage, geleert };
   }
 
   /** Ablage: was ich gelöscht habe. Werkbank (alle): was alle gelöscht haben. */
   async papierkorb(ich: { id: string; rolle: string }, alle = false): Promise<PapierkorbEintrag[]> {
     return this.repo.papierkorb(alle && ich.rolle === 'admin' ? {} : { von: ich.id });
+  }
+
+  /**
+   * Einzelne Dokumente im Papierkorb (#344), mit Mappe und Register zum Anzeigen.
+   * mappe: „da“ (wiederherstellbar), „papierkorb“ (erst die Mappe wiederherstellen) oder „weg“.
+   */
+  async papierkorbDokumente(ich: { id: string; rolle: string }, alle = false): Promise<DokumentImKorb[]> {
+    const liste = await this.repo.papierkorbDokumente(alle && ich.rolle === 'admin' ? {} : { von: ich.id });
+    return this.mitMappe(liste);
+  }
+
+  private async mitMappe(liste: DokumentImPapierkorb[]): Promise<DokumentImKorb[]> {
+    if (!liste.length) return [];
+    const ids = [...new Set(liste.map((d) => d.mappeId))];
+    const bezuege = await this.repo.bezuege(ids);
+    const imKorb = new Map((await this.repo.papierkorb()).filter((e) => ids.includes(e.id)).map((e) => [e.id, e]));
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t]));
+    return liste.map((d) => {
+      const b = bezuege.get(d.mappeId);
+      const k = imKorb.get(d.mappeId);
+      const typId = b?.typId ?? k?.typId ?? '';
+      const typ = typen.get(typId);
+      return {
+        ...d, art: 'dokument' as const, typId, mappeTitel: b?.titel ?? k?.titel ?? '',
+        register: typ?.register.find((r) => r.key === d.registerKey)?.name ?? d.registerKey,
+        mappe: b ? 'da' as const : k ? 'papierkorb' as const : 'weg' as const,
+      };
+    });
+  }
+
+  private async dokEintrag(id: string, ich: { id: string; rolle: string }, alle: boolean) {
+    const e = await this.repo.holeDokumentAusPapierkorb(id);
+    if (!e || !(e.geloeschtVon === ich.id || (alle && ich.rolle === 'admin'))) throw new Fachfehler(404, 'Dieses Dokument liegt nicht (mehr) im Papierkorb.');
+    return e;
+  }
+
+  /** Dokument zurück in sein Register (#344). Rechte: wer es gelöscht hat (und die Mappe noch bearbeiten darf) oder ein Administrator. */
+  async stelleDokumentWiederHer(id: string, ich: { id: string; rolle: string }, z: Zugriff | undefined, alle = false) {
+    const e = await this.dokEintrag(id, ich, alle);
+    const [x] = await this.mitMappe([e]);
+    if (x.mappe === 'papierkorb') throw new Fachfehler(409, `Die Mappe „${x.mappeTitel || 'ohne Titel'}“ liegt selbst im Papierkorb. Stelle zuerst die Mappe wieder her – ihre Dokumente kommen mit; danach dieses Dokument.`);
+    if (x.mappe === 'weg') throw new Fachfehler(409, 'Die Mappe dieses Dokuments gibt es nicht mehr. Wiederherstellen geht nicht; du kannst es nur endgültig löschen.');
+    if (!(alle && ich.rolle === 'admin')) await this.pruefeRecht(z, e.mappeId, 'U');
+    const typ = (await this.repo.holeTyp(x.typId))!;
+    if (!typ.register.some((r) => r.key === e.registerKey && r.art === 'dokumente')) throw new Fachfehler(409, `Das Register „${x.register}“ gibt es an der Mappe nicht mehr. Lege es im Mappentyp wieder an, dann klappt das Wiederherstellen.`);
+    await this.repo.stelleDokumentWiederHer(id);
+    await this.notiere(e.mappeId, ich.id, 'dokument_wiederhergestellt', { dokument: e.name, register: x.register });
+    await this.beruehre(e.mappeId, typ, ich.id);
+    this.vorschau?.einreihen([(await this.repo.holeDokument(id))!]);
+    protokoll.modul('ablage').info('Dokument wiederhergestellt', { dokument: e.name, id, mappe: e.mappeId });
+    return { dokument: (await this.repo.holeDokument(id))!, typId: x.typId };
+  }
+
+  /** Dokumente endgültig löschen (ohne Rechteprüfung); Archivmodus der Mappe gilt weiter. */
+  private async leereDokumente(ids: string[]): Promise<number> {
+    if (!ids.length) return 0;
+    const dateien = await this.repo.leereDokumentPapierkorb(ids);
+    for (const sha of dateien) await this.raeumeAuf(sha);
+    return ids.length;
+  }
+
+  async loescheDokumentEndgueltig(ids: string[], ich: { id: string; rolle: string }, alle = false): Promise<number> {
+    for (const id of ids) await this.dokEintrag(id, ich, alle);
+    const n = await this.leereDokumente(ids);
+    if (n) protokoll.modul('ablage').info('Dokumente aus dem Papierkorb endgültig gelöscht', { anzahl: n });
+    return n;
   }
 
   /** Eintrag, den dieser Benutzer sehen darf (eigener oder als Administrator in der Werkbank); sonst 404. */
@@ -2898,6 +2966,8 @@ export class Dienst {
     const benutzer = benutzerTyp ? (await this.repo.papierkorb({ typId: benutzerTyp.id })).filter((e) => ids.includes(e.id)).map((e) => e.id) : [];
     const dateien = await this.repo.leerePapierkorb(ids);
     for (const sha of dateien) await this.raeumeAuf(sha);
+    // Einzeln gelöschte Dokumente dieser Mappen (#344) gehen mit – ohne Mappe lassen sie sich nicht mehr wiederherstellen.
+    await this.leereDokumente((await this.repo.papierkorbDokumente({ mappeIds: ids })).map((d) => d.id));
     for (const id of benutzer) await this.konten?.endgueltig(id);
     return ids.length;
   }
@@ -2912,7 +2982,8 @@ export class Dienst {
 
   /** Papierkorb leeren: eigener (Ablage) oder ganz (Werkbank). */
   async leerePapierkorb(ich: { id: string; rolle: string }, alle = false): Promise<number> {
-    const n = await this.leere((await this.papierkorb(ich, alle)).map((e) => e.id), ich.id);
+    const n = await this.leere((await this.papierkorb(ich, alle)).map((e) => e.id), ich.id)
+      + await this.leereDokumente((await this.repo.papierkorbDokumente(alle && ich.rolle === 'admin' ? {} : { von: ich.id })).map((d) => d.id));
     if (n) protokoll.modul('ablage').info(alle ? 'Papierkorb aller Benutzer geleert' : 'Papierkorb geleert', { anzahl: n });
     return n;
   }
@@ -2923,6 +2994,8 @@ export class Dienst {
     const vor = new Date(jetzt - tage * 24 * 60 * 60 * 1000).toISOString();
     const n = await this.leere((await this.repo.papierkorb(tage ? { vor } : {})).map((e) => e.id));
     if (n) protokoll.modul('system').info('Abgelaufene Mappen aus dem Papierkorb gelöscht', { anzahl: n, tage });
+    const nd = await this.leereDokumente((await this.repo.papierkorbDokumente(tage ? { vor } : {})).map((d) => d.id));
+    if (nd) protokoll.modul('system').info('Abgelaufene Dokumente aus dem Papierkorb gelöscht', { anzahl: nd, tage });
     // Historie endgültig gelöschter Mappen nach ihrer Frist (#57).
     const ht = await this.historieTage();
     const weg = await this.repo.historieAufraeumen(new Date(jetzt - ht * 24 * 60 * 60 * 1000).toISOString());
@@ -3119,11 +3192,15 @@ export class Dienst {
     await this.pruefeArchivDokument(d.mappeId, 'löschen');
     // Alle Versionen (#194) gehen mit.
     const aeltere = await this.repo.versionenVon(id);
-    await this.repo.loescheDokument(id);
-    await this.notiere(d.mappeId, benutzerId, 'dokument_geloescht', { dokument: d.name, groesse: d.groesse, mime: d.mime, ...(aeltere.length ? { versionen: aeltere.length + 1 } : {}) });
+    // Papierkorb (#344): eingeschaltet → das Dokument zieht samt Versionen und Volltext dorthin um.
+    const korb = (await this.papierkorbTage()) > 0;
+    if (korb) await this.repo.legeDokumentInPapierkorb(id, benutzerId);
+    else await this.repo.loescheDokument(id);
+    await this.notiere(d.mappeId, benutzerId, korb ? 'dokument_papierkorb' : 'dokument_geloescht', { dokument: d.name, groesse: d.groesse, mime: d.mime, ...(aeltere.length ? { versionen: aeltere.length + 1 } : {}) });
     const m = await this.repo.holeMappe(d.mappeId);
     if (m) await this.beruehre(m.id, await this.repo.holeTyp(m.typId), benutzerId);
-    for (const sha of new Set([d.sha256, ...aeltere.map((v) => v.sha256)])) await this.raeumeAuf(sha);
+    if (!korb) for (const sha of new Set([d.sha256, ...aeltere.map((v) => v.sha256)])) await this.raeumeAuf(sha);
+    return { papierkorb: korb };
   }
 
   /* ---------- Vollexport (#254) ---------- */
@@ -3139,6 +3216,7 @@ export class Dienst {
       pakete: () => r.listePakete(),
       mappen: (typId) => r.listeMappen(typId),
       papierkorb: () => r.papierkorb(),
+      papierkorbDokumente: () => r.papierkorbDokumente(),
       dokumente: (mappeId) => r.listeDokumente(mappeId),
       versionen: (id) => r.versionenVon(id),
       volltext: (id) => r.volltext(id),

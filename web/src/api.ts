@@ -117,6 +117,11 @@ export interface Zaehler {
   neuePost?: string | null;
 }
 /** Eine Mappe im Papierkorb (#43). */
+/** Einzelnes Dokument im Papierkorb (#344). mappe: da · papierkorb (erst die Mappe wiederherstellen) · weg. */
+export interface DokumentImKorb {
+  id: string; art: 'dokument'; mappeId: string; typId: string; mappeTitel: string; registerKey: string; register: string;
+  name: string; mime: string; groesse: number; versionen: number; geloescht: string; geloeschtVon: string | null; mappe: 'da' | 'papierkorb' | 'weg';
+}
 export interface PapierkorbEintrag {
   id: string; typId: string; titel: string; werte: Werte; demo: boolean;
   erstellt: string; erstelltVon: string | null; geaendert: string; geaendertVon: string | null;
@@ -377,7 +382,11 @@ export const api = {
   vorschauNachholen: () => anfrage<{ eingereiht: number }>('POST', '/api/werkbank/wartung/vorschau'),
   /* Papierkorb (#43): Ablage = eigener, Werkbank = alle */
   papierkorb: () => anfrage<PapierkorbEintrag[]>('GET', '/api/papierkorb'),
-  papierkorbWerkbank: () => anfrage<{ tage: number; historieTage: number; eintraege: PapierkorbEintrag[] }>('GET', '/api/werkbank/papierkorb'),
+  papierkorbWerkbank: () => anfrage<{ tage: number; historieTage: number; eintraege: PapierkorbEintrag[]; dokumente?: DokumentImKorb[] }>('GET', '/api/werkbank/papierkorb'),
+  /** Einzelne Dokumente im Papierkorb (#344). */
+  papierkorbDokumente: () => anfrage<DokumentImKorb[]>('GET', '/api/papierkorb/dokumente'),
+  dokumentWiederherstellen: (id: string, werkbank = false) => anfrage<{ dokument: Dokument; typId: string }>('POST', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/dokumente/${id}/wiederherstellen`),
+  dokumentEndgueltig: (id: string, werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/dokumente/${id}`),
   papierkorbEintrag: (id: string, werkbank = false) => anfrage<PapierkorbEintrag>('GET', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}`),
   wiederherstellen: (id: string, werkbank = false) => anfrage<{ mappe: Mappe; verweiseEntfallen: number; hinweis?: string }>('POST', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}/wiederherstellen`),
   endgueltigLoeschen: (id: string, werkbank = false) => anfrage<{ geloescht: number }>('DELETE', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/${id}`),

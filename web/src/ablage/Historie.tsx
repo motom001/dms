@@ -113,7 +113,7 @@ function einzelheiten(e: Historieneintrag, emailTyp: string | undefined): { hinw
         ),
       };
     }
-    case 'dokument_hochgeladen': case 'dokument_geloescht': {
+    case 'dokument_hochgeladen': case 'dokument_geloescht': case 'dokument_papierkorb': {
       if (typeof d.groesse !== 'number') return null;
       return {
         hinweis: groesse(d.groesse),
