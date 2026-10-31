@@ -5,6 +5,7 @@ import { useDaten } from '../daten';
 import { geheZu, Link } from '../ort';
 import { titelOder } from '../seiten';
 import { Hilfe } from '../Hilfe';
+import { neuePost } from './NeuePost';
 
 /**
  * Post (#192): „+ Post“ in den Sichten mit Post, die Leiste an einer Post-Mappe (Stand, Zuordnen,
@@ -14,41 +15,16 @@ import { Hilfe } from '../Hilfe';
 const ohneEndung = (n: string) => n.replace(/\.[^.]{1,8}$/, '').trim() || n;
 const dokumentenRegister = (t: Mappentyp | undefined) => (t?.register ?? []).filter((r) => r.art === 'dokumente');
 
-/** „+ Post“: Dateien wählen → eine Post-Mappe mit allen Dateien, danach geöffnet. */
-export function PostKnopf({ sicht, typ }: { sicht: string; typ: Mappentyp }) {
-  const d = useDaten();
+/** „+ Post“ in den Sichten mit Post: Dateien wählen → eine Post-Mappe (#193, wie Ablegen und „+ Neu“). */
+export function PostKnopf() {
   const eingabe = useRef<HTMLInputElement>(null);
-  const [laeuft, setLaeuft] = useState<string>();
-  const [fehler, setFehler] = useState<string[]>([]);
-  const register = dokumentenRegister(typ)[0]?.key;
-
-  async function anlegen(dateien: File[]) {
-    setFehler([]);
-    setLaeuft('Lege Post an …');
-    try {
-      const betreff = dateien.length ? ohneEndung(dateien[0].name).slice(0, 250) : undefined;
-      const m = await api.postAnlegen({ betreff });
-      const schief: string[] = [];
-      for (const [i, f] of dateien.entries()) {
-        setLaeuft(`Lade hoch: ${f.name} (${i + 1} von ${dateien.length}) …`);
-        if (!register) break;
-        try { await api.ladeHoch(m.id, register, f); } catch (e) { schief.push(`„${f.name}“: ${(e as Error).message}`); }
-      }
-      setFehler(schief);
-      await d.neuLaden();
-      geheZu(`/ablage/${sicht}/${m.id}`);
-    } catch (e) { setFehler([(e as Error).message]); } finally { setLaeuft(undefined); }
-  }
-
   return (
     <>
-      <button type="button" className="knopf gruen klein" disabled={!!laeuft} onClick={() => eingabe.current?.click()} title="Dateien auswählen – sie kommen zusammen in eine neue Post">
+      <button type="button" className="knopf gruen klein" onClick={() => eingabe.current?.click()} title="Dateien auswählen – sie kommen zusammen in eine neue Post">
         + Post
       </button>
       {/* Am Handy bietet die Auswahl auch die Kamera an. */}
-      <input ref={eingabe} type="file" multiple hidden onChange={(e) => { const f = [...(e.target.files ?? [])]; e.target.value = ''; if (f.length) void anlegen(f); }} />
-      {laeuft && <p className="leise klein" role="status">{laeuft}</p>}
-      {fehler.length > 0 && <div className="hinweis schlecht" role="alert">{fehler.map((x) => <p key={x}>{x}</p>)}</div>}
+      <input ref={eingabe} type="file" multiple hidden onChange={(e) => { const f = [...(e.target.files ?? [])]; e.target.value = ''; neuePost(f); }} />
     </>
   );
 }

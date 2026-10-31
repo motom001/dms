@@ -1,3 +1,4 @@
+import { useMappenZiel } from './NeuePost';
 import { useEffect, useRef, useState, type DragEvent, type MouseEvent } from 'react';
 import { MAX_DATEIGROESSE, OCR_STAENDE, type Dokument, type OcrStand, type Register } from '../../../shared/src/model';
 import { api, dokumentUrl } from '../api';
@@ -121,6 +122,8 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
     hinzufuegen(alle.filter((f) => f.size <= MAX_DATEIGROESSE && f.size > 0));
   }
   const fallen = (e: DragEvent) => { e.preventDefault(); setZiehen(false); nimm(e.dataTransfer.files); };
+  // Ablegen irgendwo im Fenster (#193): diese Mappe ist dann ein Ziel neben „als neue Post“.
+  useMappenZiel(nurLesen ? null : { name: register.name, nimm });
   const alleAn = waehlbar.length > 0 && auswahl.length === waehlbar.length;
 
   return (

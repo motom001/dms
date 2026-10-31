@@ -10,6 +10,9 @@ import { istWeg, WIEDER_ERREICHBAR } from './erreichbar';
 
 export const WARTUNG_GEAENDERT = 'dms:wartung';
 const ABFRAGE_MS = 20_000;
+/** Zuletzt bekannter Stand – für Stellen, die nur nachsehen und nicht selbst abfragen (#193). */
+let zuletzt: WartungOeffentlich | null = null;
+export const wartungAktiv = () => zuletzt?.stufe === 'aktiv';
 
 export function useWartung(start?: WartungOeffentlich | null) {
   const [stand, setStand] = useState<WartungOeffentlich | null>(start ?? null);
@@ -18,7 +21,7 @@ export function useWartung(start?: WartungOeffentlich | null) {
   const [, setTick] = useState(0);
   useEffect(() => {
     let aus = false;
-    const hole = () => api.wartung().then((w) => { if (!aus) { setStand(w); setGeholt(Date.now()); } }, () => {});
+    const hole = () => api.wartung().then((w) => { zuletzt = w; if (!aus) { setStand(w); setGeholt(Date.now()); } }, () => {});
     void hole();
     // Solange das DMS nicht erreichbar ist (#122), pausiert die Abfrage.
     const t = setInterval(() => { if (!istWeg()) void hole(); }, ABFRAGE_MS);

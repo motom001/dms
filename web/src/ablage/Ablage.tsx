@@ -348,7 +348,7 @@ function Liste(p: {
           {(p.beschreibung || p.hilfe) && <p className="leise klein">{p.beschreibung}{p.hilfe && <> <Hilfe ort={p.hilfe} /></>}</p>}
         </div>
         {p.neu && <Link to={`/ablage/${p.sicht}/neu`} className="knopf gruen klein">+ Neu</Link>}
-        {p.post && p.typ && <div className="postknopf"><PostKnopf sicht={p.sicht} typ={p.typ} /></div>}
+        {p.post && p.typ && <div className="postknopf"><PostKnopf /></div>}
       </div>
       {zeigeSuche && (
         <div className="suchzeile">
