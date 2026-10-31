@@ -481,7 +481,7 @@
             "name": "sicht",
             "in": "query",
             "required": true,
-            "description": "Id einer Sicht, „eingang“, „favoriten“ (eigene Favoriten) oder „typ:<Id eines Mappentyps>“ (alle Mappen dieses Typs, ohne Bedingungen) oder „link“ (sprechender Link, siehe link)",
+            "description": "Id einer Sicht, „eingang“, „favoriten“ (eigene Favoriten) oder „typ:<Id eines Mappentyps>“ (alle Mappen dieses Typs, ohne Bedingungen) oder „link“ (sprechender Link, siehe link) oder „suche“ (erweiterte Suche, siehe link)",
             "schema": {
               "type": "string"
             }
@@ -490,7 +490,7 @@
             "name": "link",
             "in": "query",
             "required": false,
-            "description": "Nur mit sicht=link: die Parameter eines sprechenden Links als ein kodierter Wert, z. B. typ%3DRechnung%26bezahlt%3Dnein (#98). Fehler im Link: 422.",
+            "description": "Mit sicht=link: die Parameter eines sprechenden Links als ein kodierter Wert, z. B. typ%3DRechnung%26bezahlt%3Dnein (#98). Fehler im Link: 422. Mit sicht=suche die Parameter der erweiterten Suche (#199), z. B. typ%3Drechnung%26rechnungsdatum.von%3D2025-03-01%26vertragspartner%3D<Id>%26volltext%3DBackofen%26in%3Ddokumente: typ mehrfach (ohne = alle Typen, nur Systemfelder), feld.von/feld.bis für Datum und Zahlen, feld=wert mehrfach für Verweise und Auswahl (ODER), Ja/Nein ja|nein, Text enthält, feld.leer=1 bzw. feld.nichtleer=1, volltext mit in=dokumente und/oder in=notizen (ohne in: beide). Zwischen Feldern gilt UND. Ungültige Eingaben: 422.",
             "schema": {
               "type": "string"
             }
