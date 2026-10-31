@@ -2,6 +2,8 @@
 
 Nach zu vielen falschen Passwörtern sperrt das DMS die Anmeldung. Unter **Werkbank → Anmeldeschutz** stellst du ein, wann und wie lange.
 
+--8<-- "ausgeblendet-organisation.md"
+
 ## Zwei Sperren
 
 | Sperre | Standard | Wofür |

@@ -1,7 +1,7 @@
 {
   "name": "dms",
   "private": true,
-  "version": "0.72.0",
+  "version": "0.72.1",
   "license": "AGPL-3.0-only",
   "description": "Selbst gehostetes, persönliches Informations- und Dokumentenmanagementsystem",
   "type": "module",

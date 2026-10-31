@@ -1,5 +1,7 @@
 # Aktualisieren und Sichern
 
+--8<-- "ausgeblendet-schritt.md"
+
 ## Aktualisieren
 
 1. Lies unter [Releases](https://github.com/motom001/dms/releases), was sich geändert hat.

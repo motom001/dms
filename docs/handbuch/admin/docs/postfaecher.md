@@ -2,6 +2,8 @@
 
 Das DMS kann ein oder mehrere **E-Mail-Postfächer per IMAP abholen** und **jede Mail als neue [Post](https://motom001.github.io/dms/benutzer/aktuell/post/)** übernehmen. Rechnungen, Bescheide und Scans („Scan to E-Mail“), die per Mail kommen, landen so ohne Herunterladen und Hochladen im DMS.
 
+--8<-- "ausgeblendet-organisation.md"
+
 !!! tip "Ein eigenes Postfach"
     Nimm ein **eigenes Postfach** (z. B. `dms@…`) oder eine Weiterleitung – nicht dein privates Hauptpostfach. Das DMS verschiebt oder löscht übernommene Mails.
 

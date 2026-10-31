@@ -141,6 +141,8 @@ jobs:
           pip install --quiet 'mkdocs-material>=9.5,<10'
           # Seite „Begriffe“ aus dem Glossar (#276).
           python3 docs/handbuch/werkzeuge/glossar.py
+          # Tabellen der Werkbank-Bereiche aus shared/src/werkbankansicht.ts (#296).
+          python3 docs/handbuch/werkzeuge/werkbank_bereiche.py --pruefen
           # Vorlage Verfahrensdokumentation (#213) als Word und LibreOffice zum Herunterladen.
           command -v pandoc >/dev/null || sudo apt-get install -y -qq pandoc >/dev/null
           mkdir -p docs/handbuch/admin/docs/vorlagen

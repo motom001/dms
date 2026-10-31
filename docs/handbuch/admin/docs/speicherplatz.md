@@ -2,6 +2,8 @@
 
 Läuft die Platte voll, können beim Speichern oder Hochladen Daten verloren gehen. Das DMS misst deshalb selbst, wie viel Platz frei ist, warnt rechtzeitig und hält sich an der Grenze selbst an: **Werkbank → Speicherplatz** (Gruppe *Einstellungen*).
 
+--8<-- "ausgeblendet-schritt.md"
+
 ![Werkbank → Speicherplatz](bilder/werkbank-speicherplatz.png)
 
 ## Was gemessen wird

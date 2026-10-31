@@ -2,6 +2,8 @@
 
 Unter **Werkbank → Demo-Daten** füllst du ein DMS zum Ausprobieren oder Testen mit Inhalt.
 
+--8<-- "ausgeblendet-alles.md"
+
 ![Demo-Daten](bilder/werkbank-demo.png)
 
 ## Beispiel-Mappentypen

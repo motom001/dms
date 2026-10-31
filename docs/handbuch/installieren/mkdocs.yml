@@ -41,6 +41,10 @@ markdown_extensions:
   - toc:
       permalink: true
   - pymdownx.details
+  # Wiederkehrende Hinweise an einer Stelle (#296): docs/handbuch/snippets/
+  - pymdownx.snippets:
+      base_path: [docs/handbuch/snippets, ../snippets]
+      check_paths: true
   - pymdownx.superfences
   - pymdownx.keys
 

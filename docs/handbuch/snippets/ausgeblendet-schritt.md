@@ -1,0 +1,2 @@
+!!! tip "Einen Bereich nicht in der Leiste gefunden?"
+    Manche Bereiche der Werkbank, zum Beispiel *Wartungsmodus*, *Datenbank-Anbindung* oder *Wartungsoperationen*, sind in der Vorlage *Haushalt* ausgeblendet. Unten in der Leiste steht, wie viele Bereiche ausgeblendet sind; ein Klick zeigt sie. Dauerhaft einblenden kannst du sie unter [Werkbank anpassen](https://motom001.github.io/dms/admin/aktuell/uebersicht/#werkbank-anpassen). **Ausgeblendet heißt nicht abgeschaltet.**

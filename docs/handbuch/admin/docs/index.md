@@ -17,6 +17,9 @@ Dieses Handbuch ist für alle, die das DMS **installieren, einrichten und betrei
 | Farben, Logo und Schriftzug anpassen | Werkbank → Designs | [Designs](designs.md) |
 | Ausprobieren mit Beispieldaten | Werkbank → Demo-Daten | [Demo-Daten](demo.md) |
 | Überblick, was zu tun ist | Werkbank → Übersicht | [Werkbank und Übersicht](uebersicht.md) |
+| Festlegen, welche Bereiche die Werkbank zeigt | Werkbank → Werkbank anpassen (unten in der Leiste) | [Werkbank anpassen](uebersicht.md#werkbank-anpassen) |
+| Festlegen, wer was sehen und ändern darf | Werkbank → Mappentypen → Berechtigungen, Werkbank → Sichten | [Berechtigungen](berechtigungen.md) |
+| Daten sichern und wiederherstellen | Werkbank → Sicherung, Wiederherstellen | [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md) |
 | Fehler finden, Meldungen der Benutzer bearbeiten | Werkbank → Wartung und Fehlersuche | [Fehlersuche](fehlersuche.md) |
 | Andere Programme anbinden | Profil → API-Schlüssel | [Schnittstelle](api.md) |
 

@@ -1,21 +1,30 @@
 # Werkbank und Übersicht
 
-Die **Werkbank** sehen nur Administratoren. Links stehen ihre Bereiche in vier Gruppen:
+Die **Werkbank** sehen nur Administratoren. Links stehen ihre Bereiche in vier Gruppen. Welche davon du siehst, hängt von der [Vorlage](#werkbank-anpassen) ab:
 
+<!-- bereiche:gruppen -->
 | Gruppe | Bereiche |
 | --- | --- |
-| **Ablage einrichten** | [Mappentypen](mappentypen.md), [Sichten](sichten.md) |
-| **Benutzer und Zusammenarbeit** | [Benutzer und Rollen](benutzer.md), [Aufgaben](aufgaben.md) |
-| **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Verschlüsselung](verschluesselung.md), [Designs](designs.md), [Papierkorb](papierkorb.md), [Texterkennung](texterkennung.md) |
-| **Wartung und Fehlersuche** | [Protokoll, Fehlermeldungen, Datenbank, Technik](fehlersuche.md), [Wartungsoperationen](texterkennung.md), [Demo-Daten](demo.md) |
+| **Ablage einrichten** | [Mappentypen](mappentypen.md), [Sichten](sichten.md), [Nummernkreise](nummernkreise.md), [Pakete](pakete.md), [Darf weg](archiv.md#nach-der-frist-darf-weg) (nur mit Archivmodus) |
+| **Benutzer und Zusammenarbeit** | [Benutzer](benutzer.md), [Anmeldeschutz](anmeldeschutz.md), [Aufgaben](aufgaben.md) |
+| **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Verschlüsselung](verschluesselung.md), [Designs](designs.md), [Papierkorb](papierkorb.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung), [Speicherplatz](speicherplatz.md), [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [Texterkennung](texterkennung.md) |
+| **Wartung und Fehlersuche** | [Protokoll](fehlersuche.md#protokoll), [Fehlermeldungen](fehlersuche.md#fehlermeldungen-von-benutzern), [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md), [Vollexport](export.md), [Wartungsmodus](wartungsmodus.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen), [Datenbank](fehlersuche.md#datenbank), [Technik](fehlersuche.md#technik), [Demo-Daten](demo.md) |
+<!-- /bereiche:gruppen -->
 
 Welche Bereiche dort stehen, legst du unter [Werkbank anpassen](#werkbank-anpassen) fest. Am Smartphone wählst du oben erst die Gruppe, darunter den Bereich. Ganz unten in der Leiste stehen *Projekt unterstützen* und der Link zu diesem Handbuch.
 
 ## Übersicht
 
-Die Werkbank beginnt mit der **Übersicht**. Sie zeigt oben, was zu tun ist – jeweils mit einem Knopf in den passenden Bereich:
+Die Werkbank beginnt mit der **Übersicht**. Sie zeigt oben, was zu tun ist – jeweils mit einem Knopf in den passenden Bereich. **Das gilt auch für Bereiche, die in deiner Vorlage ausgeblendet sind.** Zum Beispiel:
 
+- Sicherung fehlgeschlagen oder zu alt, Notfallblatt fehlt,
+- Speicherplatz knapp oder voll,
+- Wartungsmodus angekündigt oder aktiv,
+- ein Notfallzugang ist noch aktiv,
 - kein Schlüssel für Passwörter oder Schlüsseldatei nicht auf eigenem Volume,
+- Datenbank-Anbindung weicht ab oder braucht einen Neustart,
+- im Einrichtungsassistenten übersprungene Schritte,
+- Umgebungsvariablen, die nicht mehr nötig sind,
 - E-Mail-Versand nicht eingerichtet,
 - offene Fehlermeldungen von Benutzern,
 - Dokumente mit Fehler in der Texterkennung,
@@ -37,7 +46,9 @@ Nicht jeder braucht jeden Bereich. Ein Haushalt fasst Nummernkreise, Postfächer
 **Vorlagen** für alle Administratoren:
 
 - **Haushalt**: schlank, nur was ein Haushalt zum Einrichten und Sichern braucht. Neue Installationen beginnen damit.
-- **Organisation**: dazu Nummernkreise, Anmeldeschutz, Postfächer, Eingangsordner, Texterkennung, Protokoll, Fehlermeldungen und Wartungsmodus.
+<!-- bereiche:organisation -->
+- **Organisation**: zusätzlich Nummernkreise, Darf weg, Anmeldeschutz, Designs, Postfächer, Eingangsordner, Texterkennung, Protokoll, Fehlermeldungen, Wartungsmodus.
+<!-- /bereiche:organisation -->
 - **Alles**: jeder Bereich. So bleibt es bei Installationen, die vor Version 0.70 eingerichtet wurden, bis du etwas anderes wählst.
 
 Danach kannst du je Bereich abweichen:
@@ -51,32 +62,34 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 
 ### Welchen Bereich brauche ich wofür?
 
+<!-- bereiche:wofuer -->
 | Bereich | Wofür | In der Vorlage |
 | --- | --- | --- |
-| Mappentypen | Eigene Arten von Mappen bauen | Haushalt, Organisation |
-| Sichten | Die Sammlungen links in der Ablage ordnen | Haushalt, Organisation |
-| Nummernkreise | Fortlaufende Nummern, z. B. für Rechnungen | Organisation |
-| Pakete | Fertige Mappentypen und Sichten installieren | Haushalt, Organisation |
-| Darf weg | Mappen mit abgelaufener Aufbewahrungsfrist (nur mit Archivmodus) | Organisation |
-| Benutzer | Benutzer und Rollen anlegen | Haushalt, Organisation |
-| Anmeldeschutz | Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen | Organisation |
-| Aufgaben | Alle offenen Aufgaben im Blick behalten | Haushalt, Organisation |
-| E-Mail und Adresse | E-Mail-Versand und Adresse des DMS | Haushalt, Organisation |
-| Verschlüsselung | Den Schlüssel für Passwörter und Sicherungen | Haushalt, Organisation |
-| Designs | Logo, Farben und eigenes CSS | Organisation |
-| Papierkorb | Gelöschte Mappen zurückholen | Haushalt, Organisation |
-| Datenbank-Anbindung | Die Verbindung zur Datenbank ändern | nur Alles |
-| Speicherplatz | Sehen, wie voll das Gerät ist | Haushalt, Organisation |
-| Postfächer | Post aus einem E-Mail-Konto abholen | Organisation |
-| Eingangsordner | Scans aus einem Ordner übernehmen | Organisation |
-| Texterkennung | Text in gescannten Dokumenten finden | Organisation |
-| Protokoll | Das technische Protokoll lesen | Organisation |
-| Fehlermeldungen | Fehler, die Benutzer gemeldet haben | Organisation |
-| Sicherung | Sicherungen einrichten und prüfen | Haushalt, Organisation |
-| Wiederherstellen | Eine Sicherung zurückspielen | Haushalt, Organisation |
-| Vollexport | Alle Daten in offenen Formaten mitnehmen | Haushalt, Organisation |
-| Wartungsmodus | Benutzer vorübergehend aussperren | Organisation |
-| Wartungsoperationen | Einmalige Pflegearbeiten | nur Alles |
-| Datenbank | Tabellen und Größen der Datenbank | nur Alles |
-| Technik | Version, Updates und die Übersicht für GitHub | Haushalt, Organisation |
-| Demo-Daten | Beispielmappen zum Ausprobieren | nur Alles |
+| [Mappentypen](mappentypen.md) | Eigene Arten von Mappen bauen | Haushalt, Organisation |
+| [Sichten](sichten.md) | Die Sammlungen links in der Ablage ordnen | Haushalt, Organisation |
+| [Nummernkreise](nummernkreise.md) | Fortlaufende Nummern, z. B. für Rechnungen | Organisation |
+| [Pakete](pakete.md) | Fertige Mappentypen und Sichten installieren | Haushalt, Organisation |
+| [Darf weg](archiv.md#nach-der-frist-darf-weg) | Mappen mit abgelaufener Aufbewahrungsfrist (nur mit Archivmodus) | Organisation |
+| [Benutzer](benutzer.md) | Benutzer und Rollen anlegen | Haushalt, Organisation |
+| [Anmeldeschutz](anmeldeschutz.md) | Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen | Organisation |
+| [Aufgaben](aufgaben.md) | Alle offenen Aufgaben im Blick behalten | Haushalt, Organisation |
+| [E-Mail und Adresse](installation.md#e-mail-und-adresse) | E-Mail-Versand und Adresse des DMS | Haushalt, Organisation |
+| [Verschlüsselung](verschluesselung.md) | Den Schlüssel für Passwörter und Sicherungen | Haushalt, Organisation |
+| [Designs](designs.md) | Logo, Farben und eigenes CSS | Organisation |
+| [Papierkorb](papierkorb.md) | Gelöschte Mappen zurückholen | Haushalt, Organisation |
+| [Datenbank-Anbindung](installation.md#datenbank-anbindung) | Die Verbindung zur Datenbank ändern | nur Alles |
+| [Speicherplatz](speicherplatz.md) | Sehen, wie voll das Gerät ist | Haushalt, Organisation |
+| [Postfächer](postfaecher.md) | Post aus einem E-Mail-Konto abholen | Organisation |
+| [Eingangsordner](eingangsordner.md) | Scans aus einem Ordner übernehmen | Organisation |
+| [Texterkennung](texterkennung.md) | Text in gescannten Dokumenten finden | Organisation |
+| [Protokoll](fehlersuche.md#protokoll) | Das technische Protokoll lesen | Organisation |
+| [Fehlermeldungen](fehlersuche.md#fehlermeldungen-von-benutzern) | Fehler, die Benutzer gemeldet haben | Organisation |
+| [Sicherung](sicherung.md) | Sicherungen einrichten und prüfen | Haushalt, Organisation |
+| [Wiederherstellen](wiederherstellen.md) | Eine Sicherung zurückspielen | Haushalt, Organisation |
+| [Vollexport](export.md) | Alle Daten in offenen Formaten mitnehmen | Haushalt, Organisation |
+| [Wartungsmodus](wartungsmodus.md) | Benutzer vorübergehend aussperren | Organisation |
+| [Wartungsoperationen](texterkennung.md#wartungsoperationen) | Einmalige Pflegearbeiten | nur Alles |
+| [Datenbank](fehlersuche.md#datenbank) | Tabellen und Größen der Datenbank | nur Alles |
+| [Technik](fehlersuche.md#technik) | Version, Updates und die Übersicht für GitHub | Haushalt, Organisation |
+| [Demo-Daten](demo.md) | Beispielmappen zum Ausprobieren | nur Alles |
+<!-- /bereiche:wofuer -->
