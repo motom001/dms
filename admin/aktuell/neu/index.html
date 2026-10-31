@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.80/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.81/neu/">
       
       
         <link rel="prev" href="..">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-080" class="md-skip">
+        <a href="#neu-in-version-081" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0800" class="md-nav__link">
+  <a href="#0810" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.80.0
+        0.81.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.80.0">
+    <nav class="md-nav" aria-label="0.81.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1881,15 +1881,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0800" class="md-nav__link">
+  <a href="#0810" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.80.0
+        0.81.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.80.0">
+    <nav class="md-nav" aria-label="0.81.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1939,20 +1939,22 @@
   
 
 
-<h1 id="neu-in-version-080">Neu in Version 0.80<a class="headerlink" href="#neu-in-version-080" title="Permanent link">&para;</a></h1>
-<h2 id="0800">0.80.0<a class="headerlink" href="#0800" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-081">Neu in Version 0.81<a class="headerlink" href="#neu-in-version-081" title="Permanent link">&para;</a></h1>
+<h2 id="0810">0.81.0<a class="headerlink" href="#0810" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Startseite mit wenigen Kacheln</strong> (#334). Nach der Anmeldung öffnet die Ablage mit <strong>Start</strong>: je eine Kachel mit einer Zahl und einem Klick für <strong>Zu erledigen</strong>, <strong>Neue Post</strong>, <strong>Anstehend</strong> und – wählbar – <strong>Favoriten</strong> oder eine Ansicht. Darunter die <strong>zuletzt geöffneten</strong> Mappen; ein Klick öffnet sie rechts daneben.</li>
-<li>Leere Kachel = grünes Häkchen („✓ Nichts zu erledigen“) statt einer Null; <em>Zu erledigen</em> ist hervorgehoben, solange es etwas zu tun gibt. Alle Zahlen beachten die Berechtigungen.</li>
-<li>In einer leeren Ablage drei Einstiege: <em>Erste Post ablegen</em>, <em>Paket Haushalt installieren</em> (Administratoren), <em>Hilfe: so fängst du an</em>.</li>
-<li>Im <strong>Profil → Startseite</strong>: abschalten (dann direkt zu <em>Zu erledigen</em>) und die vierte Kachel wählen.</li>
-<li>„Zuletzt geöffnet“ merkt sich das DMS je Benutzer (höchstens zehn, angezeigt fünf, nur lesbare). Zugriffe über API-Schlüssel zählen nicht.</li>
-<li>Benutzerhandbuch: neue Seite <em>Startseite</em>, Abschnitt im <em>Profil</em>; Hilfe-Symbol auf der Startseite.</li>
+<li><strong>Eigene Rückfragen statt Browser-Fenster</strong> (#355). Wo das DMS vor etwas Folgenreichem nachfragt – löschen, abmelden, ungespeicherte Änderungen verwerfen, Archivmodus ausschalten … –, erscheint jetzt ein eigener Dialog statt des grauen <code>confirm()</code>-Fensters des Browsers.</li>
+<li>Überschrift sagt, was passiert; darunter die Folgen; Knöpfe mit Verb („Löschen“, „Abmelden“, „Hierbleiben“) statt OK/Abbrechen.</li>
+<li>Gefährliches ist rot, der Fokus steht dann zuerst auf <strong>Abbrechen</strong> – ein versehentliches Enter zerstört nichts. Esc bricht ab.</li>
+<li>Bei sehr Folgenreichem (Wiederherstellen einer Sicherung, Schlüssel wechseln) wird zur Bestätigung ein Wort eingetippt.</li>
+<li>Barrierefrei als modaler <code>alertdialog</code> mit Fokusfalle; hell und dunkel; auf dem Smartphone unten eingeblendet mit großen Knöpfen.</li>
+<li>Auch die beiden Hinweise, die bisher als <code>alert()</code> kamen (Mappe danach nicht mehr sichtbar, Zuordnen fehlgeschlagen), sind jetzt solche Dialoge.</li>
+<li>Alle 50 Stellen umgestellt. Ein Test in der CI verhindert, dass neue <code>confirm()</code>, <code>alert()</code> oder <code>prompt()</code> in die Oberfläche kommen; neu ist <code>rueckfrage()</code>/<code>hinweis()</code> aus <code>web/src/rueckfrage.tsx</code>.</li>
+<li>Benutzerhandbuch: <em>Erste Schritte → Rückfragen</em> mit Bildschirmfoto; Administratorhandbuch: Schlüssel wechseln und Wiederherstellen mit Bestätigungswort.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.79.1 im Detail: <a href="https://github.com/motom001/dms/compare/v0.79.1...v0.80.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.80.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.80.0...v0.81.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
