@@ -47,6 +47,24 @@ Bewusst anders, als Scorecard es gern hätte:
 - **Basis-Images ohne festen Prüfwert** (`node:22-alpine`, `alpine`): Der wöchentliche Neubau soll gerade die neuesten Sicherheitskorrekturen der Reihe holen. Ein fester Prüfwert würde jede Woche einen eigenen PR brauchen, ohne mehr Sicherheit zu bringen; die Images selbst werden geprüft und tragen einen Herkunftsnachweis.
 - **Code-Review:** Mit einem Maintainer gibt es keine zweite Person, die jeden PR freigibt. Stattdessen müssen alle Prüfungen grün sein, und Änderungen laufen über PRs mit Issue.
 
+### Bewertung des ersten Laufs
+
+Erster Lauf am 31.10.2026: **6,1 von 10**. So gehen wir mit den einzelnen Prüfungen um:
+
+| Prüfung | Wert | Umgang |
+| --- | --- | --- |
+| Dangerous-Workflow, Token-Permissions, Binary-Artifacts, Dependency-Update-Tool, Security-Policy, Packaging, License, CI-Tests | 10 | erfüllt, so halten |
+| Vulnerabilities | 8 | Bekannte Lücken in Entwicklungswerkzeugen (nicht im Image – das prüfen `npm audit --omit=dev` und Trivy). Kommen mit den Updates aus #236 weg; Liste unter *Security → Dependabot*. |
+| Pinned-Dependencies | 6 | Actions fest, `npm ci` ohne Ausweichen auf `npm install`. Bewusst offen: Basis-Images ohne Prüfwert (siehe oben), Werkzeuge nur für den Handbuch-Bau (mkdocs über pip, Playwright, apt-Pakete der Runner) – sie landen nicht im Image. |
+| SAST | 4 | CodeQL läuft seit Ende Oktober 2026 bei jedem PR. Der Wert zählt die letzten Commits und steigt von selbst. |
+| Maintained | 0 | Das Repository ist jünger als 90 Tage; danach zählt die Aktivität und der Wert steigt von selbst. |
+| Branch-Protection | 0 | Ruleset nach dem Vorschlag unten einschalten (Maintainer). |
+| Code-Review | 0 | Mit einem Maintainer nicht erfüllbar, siehe oben. |
+| CII-Best-Practices | 0 | Selbstauskunft auf [bestpractices.dev](https://www.bestpractices.dev/) ausfüllen (Maintainer, gut eine Stunde); danach Abzeichen in der README. |
+| Contributors | 3 | Zählt Firmen und Organisationen der Mitwirkenden – kein Handlungsbedarf. |
+| Fuzzing | 0 | Bewusst nicht: Eingaben prüfen Schemas und Tests; Fuzzing lohnt erst für eigene Parser. |
+| Signed-Releases | ? | GitHub-Releases haben keine Dateien – die Images sind das Release und tragen Herkunftsnachweis und SBOM. |
+
 ### Vorschlag: Regel für den Branch `main`
 
 Unter **Settings → Rules → Rulesets** ein Ruleset für den Standard-Branch anlegen (einschalten tut es der Maintainer):
