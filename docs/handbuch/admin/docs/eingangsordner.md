@@ -2,6 +2,8 @@
 
 Das DMS kann einen Ordner überwachen und **jede Datei, die dort landet, als neue [Post](https://motom001.github.io/dms/benutzer/aktuell/post/) übernehmen**. So bringen Scanner („Scan to Folder“), das NAS oder jedes andere Programm Dokumente ins DMS, ohne dass jemand den Browser öffnet.
 
+--8<-- "ausgeblendet-organisation.md"
+
 ## Einbinden
 
 Der Eingangsordner ist ein eigener Ordner im Container: **`/eingang`**. Die Vorlagen für Synology, UGREEN, QNAP, TrueNAS, Unraid und `dms-komplett` binden ihn schon ein, z. B.

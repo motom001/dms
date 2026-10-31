@@ -2,6 +2,8 @@
 
 Ein Nummernkreis vergibt fortlaufende Nummern, z. B. Rechnungsnummern wie `202610-R0000001`. Du legst ihn unter **Werkbank → Nummernkreise** an und nutzt ihn in einem Textfeld eines Mappentyps.
 
+--8<-- "ausgeblendet-organisation.md"
+
 ## Anlegen
 
 | Angabe | Bedeutung |

@@ -2,6 +2,10 @@
 
 Damit die Suche auch den Text von Dokumenten findet, erzeugt das DMS zu jedem neuen Dokument einen **Volltext** – im Hintergrund, ohne dass jemand warten muss:
 
+*Texterkennung* gehört zur Vorlage **Organisation**, *Wartungsoperationen* nur zur Vorlage **Alles**.
+
+--8<-- "ausgeblendet-schritt.md"
+
 - **PDFs:** Zuerst liest das DMS die vorhandene Textebene. Nur Seiten ohne Text (gescannte Seiten) gehen durch die Texterkennung.
 - **Bilder** (JPEG, PNG, TIFF, WebP, GIF, BMP) gehen direkt durch die Texterkennung.
 - **Andere Dateien** (z. B. Word, Excel) bekommen vorerst keinen Volltext.

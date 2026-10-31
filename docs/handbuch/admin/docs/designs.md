@@ -2,6 +2,8 @@
 
 Ein **Design** bestimmt die Farben der Oberfläche. Unter **Werkbank → Designs** pflegst du die Designs; jeder Benutzer wählt seines im Profil. Eines ist das **Standard**-Design für alle, die nichts anderes gewählt haben.
 
+--8<-- "ausgeblendet-organisation.md"
+
 ![Designs in der Werkbank](bilder/werkbank-designs.png)
 
 ## Mitgelieferte Designs

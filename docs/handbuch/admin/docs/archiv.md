@@ -2,6 +2,8 @@
 
 Manche Belege musst du aufbewahren: Handwerkerrechnungen privat 2 Jahre (§ 14b UStG), mit Buchführung oder Einnahmen-Überschuss-Rechnung Buchungsbelege 8 Jahre (seit 2025), Bücher 10 Jahre, Geschäftsbriefe 6 Jahre – jeweils ab Ende des Kalenderjahres. Der **Archivmodus** hebt solche Mappen bis zum Ende ihrer Frist unveränderbar auf und sagt dir danach, was weg darf.
 
+--8<-- "ausgeblendet-organisation.md"
+
 !!! warning "Unterstützt – ersetzt nichts"
     Der Archivmodus **unterstützt eine GoBD-gerechte Aufbewahrung**. Ein amtliches „GoBD-Zertifikat“ für Software gibt es nicht: Ordnungsgemäß wird es erst durch Software, Verfahren und eine **Verfahrensdokumentation** zusammen (eine Vorlage liegt im Repository unter `docs/handbuch/vorlagen/verfahrensdokumentation.md`). Er ersetzt weder diese noch eine Steuerberatung.
 

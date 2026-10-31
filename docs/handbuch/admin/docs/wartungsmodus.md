@@ -2,6 +2,10 @@
 
 Vor einem Update oder einer Wiederherstellung soll niemand gleichzeitig arbeiten – sonst gehen Änderungen verloren. Der Wartungsmodus unter **Werkbank → Wartungsmodus** sorgt dafür in zwei Stufen.
 
+--8<-- "ausgeblendet-organisation.md"
+
+Auch ohne Eintrag in der Leiste erreichst du ihn über den Knopf **Zum Wartungsmodus** auf der Seite [Wiederherstellen](wiederherstellen.md) und über die Hinweise der Übersicht.
+
 ![Wartungsmodus in der Werkbank](bilder/werkbank-wartungsmodus.png)
 
 ## Einschalten

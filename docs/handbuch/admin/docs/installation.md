@@ -2,6 +2,8 @@
 
 Wie du das DMS installierst – auf Synology, UGREEN, QNAP, TrueNAS, Unraid, umbrelOS, ZimaOS, CasaOS oder jedem Server mit Docker –, steht im eigenen Bereich **[Wie komme ich an ein DMS?](https://motom001.github.io/dms/installieren/aktuell/)**. Diese Seite beschreibt, was danach kommt: den Einrichtungsassistenten, die Anbindung an die Datenbank, Ordner, Einstellungen und den Betrieb hinter einem Reverse-Proxy.
 
+--8<-- "ausgeblendet-schritt.md"
+
 Das DMS läuft – **empfohlen** – als zwei Container: die Anwendung (`ghcr.io/motom001/dms`) und PostgreSQL (`postgres:17`). Alternativ gibt es **`ghcr.io/motom001/dms-komplett`**, in dem beides in einem Container läuft (Gegenüberstellung unter [Ein oder zwei Container?](https://motom001.github.io/dms/installieren/aktuell/#ein-oder-zwei-container)). Bei jedem Push auf `main` baut GitHub Actions beide Images neu (Tag `main`, zusätzlich je Commit ein Kurz-Hash und je Release die Versionsnummer).
 
 !!! warning "Erst einrichten, dann freigeben"

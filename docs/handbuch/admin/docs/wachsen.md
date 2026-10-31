@@ -2,6 +2,8 @@
 
 Das DMS fängt klein an und kann mitwachsen. Alle Umzüge laufen über denselben Weg: **Sicherung anlegen, neues System starten, Sicherung einspielen**. Die Sicherung des DMS hängt nicht an einer bestimmten PostgreSQL-Version oder einem bestimmten Gerät. Sie enthält die ganze Datenbank und alle Dateien, verschlüsselt mit deinem Schlüssel.
 
+--8<-- "ausgeblendet-schritt.md"
+
 ## Welche Variante?
 
 | | **dms-komplett** (ein Container) | **dms** + eigene Datenbank (zwei Container oder mehr) |

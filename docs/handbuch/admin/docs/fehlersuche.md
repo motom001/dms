@@ -1,6 +1,10 @@
 # Fehlersuche und Support
 
-Alles dazu steht in der Werkbank unter **Wartung und Fehlersuche**: Protokoll, Fehlermeldungen, Wartungsoperationen, Datenbank, Technik und Demo-Daten.
+Alles dazu steht in der Werkbank unter **Wartung und Fehlersuche**. Die Gruppe enthält Protokoll, Fehlermeldungen, Sicherung, Wiederherstellen, Vollexport, Wartungsmodus, Wartungsoperationen, Datenbank, Technik und Demo-Daten. Diese Seite beschreibt die Werkzeuge zur Fehlersuche; [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md), [Vollexport](export.md), [Wartungsmodus](wartungsmodus.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen) und [Demo-Daten](demo.md) haben eigene Seiten.
+
+*Protokoll* und *Fehlermeldungen* gehören zur Vorlage **Organisation**, *Datenbank* nur zur Vorlage **Alles**. *Technik* steht in jeder Vorlage.
+
+--8<-- "ausgeblendet-schritt.md"
 
 ## Fehlermeldungen von Benutzern
 

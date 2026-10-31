@@ -2,6 +2,8 @@
 
 So richtest du das DMS auf einem Synology-NAS mit DSM 7.2 oder neuer ein, ganz ohne Kommandozeile. Du brauchst ein Modell mit **Container Manager**, also die meisten Plus-Modelle mit Intel- oder AMD-Prozessor. Ob dein Modell dazu gehört, zeigt das Paket-Zentrum: Gibt es dort den Container Manager, passt es.
 
+--8<-- "ausgeblendet-schritt.md"
+
 !!! note "Alternative: ein Container"
     Empfohlen ist das Projekt mit zwei Containern unten. Zum schnellen Ausprobieren geht auch **ein Container** aus dem Image `ghcr.io/motom001/dms-komplett:main` – ohne Projekt und Passwort, siehe [Ein Container: dms-komplett](komplett.md#in-der-oberflache-eines-nas) und [Ein oder zwei Container?](index.md#ein-oder-zwei-container).
 

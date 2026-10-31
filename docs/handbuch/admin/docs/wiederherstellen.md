@@ -2,6 +2,8 @@
 
 Eine [Sicherung](sicherung.md) spielst du in der Werkbank ein – ohne Kommandozeile, mit jedem Schritt im Blick. Das geht auf einem **frischen System** (neues NAS, alte Sicherung) und auf dem **laufenden System** (zurück zu einem früheren Stand).
 
+--8<-- "ausgeblendet-schritt.md"
+
 ## So geht das DMS vor
 
 - Eingespielt wird erst in einen **eigenen, leeren Bereich** der Datenbank und einen Ordner neben den Dokumenten. Umgeschaltet wird erst, wenn alles geklappt hat. Bricht etwas ab – Fehler, falscher Schlüssel, zu wenig Platz –, bleibt der bisherige Stand **unverändert**.
