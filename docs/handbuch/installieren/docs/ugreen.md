@@ -18,9 +18,8 @@ Im **App Center** die App **Docker** installieren und öffnen.
 
 In der App **Dateien** im Ordner `docker` (legt die Docker-App an) einen Ordner `dms` anlegen. Darin vier Ordner: `postgres`, `files`, `geheim` und `sicherung`.
 
-
-!!! tip "Optional: Eingangsordner für den Scanner"
-    Ein fünfter Ordner `eingang` daneben wird zum [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/): Jede Datei, die dein Scanner oder das NAS dort ablegt, wird neue Post. Gib ihn im NAS für den Scanner frei. Ohne ihn läuft alles wie gewohnt.
+!!! tip "Eingangsordner für den Scanner"
+    Leg auch einen fünften Ordner `eingang` daneben an. Die Vorlage bindet ihn ein, und manche NAS brechen beim Start ab, wenn ein eingebundener Ordner fehlt. Er wird zum [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/): Jede Datei, die dein Scanner oder das NAS dort ablegt, wird neue Post. Gib ihn im NAS für den Scanner frei. Brauchst du keinen Scanner, bleibt er einfach leer.
 
 ## 3. Projekt anlegen
 
@@ -38,7 +37,9 @@ In der App **Dateien** im Ordner `docker` (legt die Docker-App an) einen Ordner 
 
 1. Im Browser `http://<NAS>:8080` öffnen.
 2. Den **Einrichtungscode** zeigt **Docker → Container → `dms-app-1` → Protokoll**, oder du öffnest die Datei `docker/dms/geheim/EINRICHTUNGSCODE` in der App **Dateien**.
-3. Die Datenbank ist schon angebunden. Weiter geht es mit Haushalt, Administrator, erstem Benutzer, Schlüssel und Notfallblatt.
+3. Die Datenbank fragt der Assistent nicht ab, sie ist schon angebunden.
+
+--8<-- "assistent-weiter.md"
 
 ## Updates
 

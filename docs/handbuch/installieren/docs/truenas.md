@@ -13,9 +13,8 @@ So richtest du das DMS auf **TrueNAS Community Edition 24.10 oder neuer** ein. D
    mkdir -p /mnt/tank/apps/dms/{postgres,files,geheim,sicherung}
    ```
 
-
-!!! tip "Optional: Eingangsordner für den Scanner"
-    Ein fünfter Ordner `eingang` daneben wird zum [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/): Jede Datei, die dein Scanner oder das NAS dort ablegt, wird neue Post. Gib ihn im NAS für den Scanner frei. Ohne ihn läuft alles wie gewohnt.
+!!! tip "Eingangsordner für den Scanner"
+    Leg auch einen fünften Ordner `eingang` daneben an. Die Vorlage bindet ihn ein, und manche NAS brechen beim Start ab, wenn ein eingebundener Ordner fehlt. Er wird zum [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/): Jede Datei, die dein Scanner oder das NAS dort ablegt, wird neue Post. Gib ihn im NAS für den Scanner frei. Brauchst du keinen Scanner, bleibt er einfach leer.
 
 ## 2. App anlegen
 
@@ -32,7 +31,9 @@ So richtest du das DMS auf **TrueNAS Community Edition 24.10 oder neuer** ein. D
 
 1. Im Browser `http://<TrueNAS>:8080` öffnen.
 2. Den **Einrichtungscode** zeigt **Apps → `dms` → Workloads → `app` → Logs**. Er steht auch in `/mnt/tank/apps/dms/geheim/EINRICHTUNGSCODE`.
-3. Die Datenbank ist schon angebunden. Weiter geht es mit Haushalt, Administrator, erstem Benutzer, Schlüssel und Notfallblatt.
+3. Die Datenbank fragt der Assistent nicht ab, sie ist schon angebunden.
+
+--8<-- "assistent-weiter.md"
 
 ## Updates und Sicherung
 

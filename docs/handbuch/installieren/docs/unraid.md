@@ -22,7 +22,6 @@ Unter **Apps** (Community Applications) nach *Docker Compose Manager* suchen und
 !!! warning "Passwort vor dem ersten Start ändern"
     Die Datenbank übernimmt das Passwort nur beim allerersten Start.
 
-
 !!! tip "Optional: Eingangsordner für den Scanner"
     Die Vorlage bindet `/mnt/user/appdata/dms/eingang` als [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/) ein: Jede Datei, die dein Scanner dort ablegt, wird neue Post. Gib den Ordner als SMB-Freigabe für den Scanner frei. Ohne ihn läuft alles wie gewohnt.
 
@@ -30,7 +29,9 @@ Unter **Apps** (Community Applications) nach *Docker Compose Manager* suchen und
 
 1. Im Browser `http://<Unraid>:8080` öffnen.
 2. Den **Einrichtungscode** zeigt das Protokoll des Containers `dms-app-1` (**Docker** → Symbol des Containers → **Logs**). Er steht auch in `appdata/dms/geheim/EINRICHTUNGSCODE`.
-3. Die Datenbank ist schon angebunden. Weiter geht es mit Haushalt, Administrator, erstem Benutzer, Schlüssel und Notfallblatt.
+3. Die Datenbank fragt der Assistent nicht ab, sie ist schon angebunden.
+
+--8<-- "assistent-weiter.md"
 
 ## Updates und Sicherung
 
