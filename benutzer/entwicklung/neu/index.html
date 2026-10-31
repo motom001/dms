@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-056" class="md-skip">
+        <a href="#neu-in-version-057" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -392,15 +392,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0560" class="md-nav__link">
+  <a href="#0570" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.56.0
+        0.57.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.56.0">
+    <nav class="md-nav" aria-label="0.57.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1000,15 +1000,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0560" class="md-nav__link">
+  <a href="#0570" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.56.0
+        0.57.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.56.0">
+    <nav class="md-nav" aria-label="0.57.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1058,22 +1058,23 @@
   
 
 
-<h1 id="neu-in-version-056">Neu in Version 0.56<a class="headerlink" href="#neu-in-version-056" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-057">Neu in Version 0.57<a class="headerlink" href="#neu-in-version-057" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0560">0.56.0<a class="headerlink" href="#0560" title="Permanent link">&para;</a></h2>
+<h2 id="0570">0.57.0<a class="headerlink" href="#0570" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Auswahl am Referenzfeld einschränken</strong> (#172): Im Mappentyp unter dem Ziel-Mappentyp <strong>Nur Mappen, die …</strong> mit den Bedingungen der Sichten (Felder des Zieltyps, Systemwerte, feste und dynamische Werte), dazu „12 von 85 passen“.</li>
-<li>Die Suche im Feld bietet nur passende Mappen an; <strong>+ … anlegen</strong> belegt die neue Mappe mit dem vor, was sich aus dem Filter ergibt.</li>
-<li>Streng: neue oder geänderte Werte müssen passen, auch über die API. Bestehende Werte bleiben gültig und bekommen den Hinweis „passt nicht mehr zum Filter“.</li>
-<li>Bedingungen auf fehlende Felder des Zieltyps meldet das DMS beim Speichern des Mappentyps.</li>
+<li><strong>Auswahlfilter mit Werten der eigenen Mappe</strong> (#173): Im Auswahlfilter eines Referenzfelds kann eine Bedingung den Wert eines Felds der eigenen Mappe nehmen, z. B. <em>Fachgebiet ist einer von</em> <strong>Fachgebiet dieser Mappe</strong>.</li>
+<li>Nur Felder mit passendem Datentyp; nicht das Referenzfeld selbst. Das DMS prüft das beim Speichern des Mappentyps.</li>
+<li>Die Auswahl folgt dem eigenen Feld sofort; passt eine gewählte Mappe nicht mehr, steht der Hinweis schon vor dem Speichern am Feld.</li>
+<li>Leeres eigenes Feld: die Bedingung gilt nicht, alle anderen passenden Mappen werden angeboten.</li>
+<li>Der Server prüft mit den Werten, die gespeichert werden – auch über die API.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.55.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.55.0...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.56.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.56.0...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 
