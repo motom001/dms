@@ -826,6 +826,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#zwei-faktor-anmeldung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zwei-Faktor-Anmeldung
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1763,6 +1774,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#zwei-faktor-anmeldung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zwei-Faktor-Anmeldung
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1819,6 +1841,20 @@
 <p>Unter <strong>Nie sperren</strong> stehen Adressen oder Netze, die nie gesperrt werden, z. B. dein Heimnetz <code>192.168.0.0/16</code> oder das Firmennetz. Mehrere durch Komma getrennt.</p>
 <h2 id="ausgesperrt">Ausgesperrt?<a class="headerlink" href="#ausgesperrt" title="Permanent link">&para;</a></h2>
 <p>Bist du selbst gesperrt und kein anderer Administrator kann dich freigeben, warte die Sperrdauer ab oder melde dich von einem anderen Gerät oder Netz an. Für eine dauerhafte Sperre hilft der <a href="../notfall/">Notfallzugang</a>.</p>
+<h2 id="zwei-faktor-anmeldung">Zwei-Faktor-Anmeldung<a class="headerlink" href="#zwei-faktor-anmeldung" title="Permanent link">&para;</a></h2>
+<p>Jeder Benutzer kann unter <strong>Profil → Sicherheit</strong> eine Zwei-Faktor-Anmeldung mit einer Authenticator-App einrichten (TOTP, 6 Stellen, 30 Sekunden) und bekommt dazu zehn Wiederherstellungscodes. Wie das für Benutzer aussieht, beschreibt das <a href="https://motom001.github.io/dms/benutzer/aktuell/profil/#zwei-faktor-anmeldung">Benutzerhandbuch</a>.</p>
+<p>Unten auf dieser Seite <strong>schreibst du sie je Rolle vor</strong> – für Administratoren, für Mitglieder oder beide. Wer sie dann noch nicht hat, sieht nach der Anmeldung nur die Einrichtung und kommt erst danach weiter. Abschalten kann er sie selbst nicht mehr.</p>
+<p>Falsche Codes zählen wie falsche Passwörter für den <a href="#zwei-sperren">Anmeldeschutz</a>. Ein Link zum Zurücksetzen des Passworts ersetzt nur das Passwort; den Code fragt das DMS trotzdem ab.</p>
+<p><strong>Handy verloren?</strong> Unter <strong>Werkbank → Benutzer</strong> steht beim Benutzer, ob die Zwei-Faktor-Anmeldung eingerichtet ist; <strong>Zurücksetzen</strong> entfernt sie. Danach reicht wieder das Passwort – ist sie vorgeschrieben, richtet der Benutzer sie bei der nächsten Anmeldung neu ein. Jedes Einrichten, Zurücksetzen und jede Anmeldung mit Wiederherstellungscode steht im <a href="../fehlersuche/#protokoll">Protokoll</a>.</p>
+<p>Das Geheimnis liegt mit dem <a href="../verschluesselung/">Schlüssel des DMS</a> verschlüsselt in der Datenbank und ist damit Teil der Sicherung; ein Schlüsselwechsel schlüsselt es mit um. Wiederherstellungscodes speichert das DMS nur als Prüfwert.</p>
+<div class="admonition warning">
+<p class="admonition-title">Uhrzeit</p>
+<p>Die Codes hängen an der Uhrzeit. Weicht die Uhr des Servers mehr als etwa 30 Sekunden ab, passen sie nicht. Lass den Server die Zeit per NTP stellen.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Selbst ausgesperrt?</p>
+<p>Hast du als einziger Administrator Handy und Codes verloren, hilft der <a href="../notfall/">Notfallzugang</a>.</p>
+</div>
 
 
 
