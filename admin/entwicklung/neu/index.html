@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-053" class="md-skip">
+        <a href="#neu-in-version-054" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,22 +363,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0530" class="md-nav__link">
+  <a href="#0540" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.53.0
+        0.54.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.53.0">
+    <nav class="md-nav" aria-label="0.54.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#neu" class="md-nav__link">
+  <a href="#technik" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Neu
+        Technik
       
     </span>
   </a>
@@ -1741,22 +1741,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0530" class="md-nav__link">
+  <a href="#0540" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.53.0
+        0.54.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.53.0">
+    <nav class="md-nav" aria-label="0.54.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#neu" class="md-nav__link">
+  <a href="#technik" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Neu
+        Technik
       
     </span>
   </a>
@@ -1799,26 +1799,26 @@
   
 
 
-<h1 id="neu-in-version-053">Neu in Version 0.53<a class="headerlink" href="#neu-in-version-053" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-054">Neu in Version 0.54<a class="headerlink" href="#neu-in-version-054" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0530">0.53.0<a class="headerlink" href="#0530" title="Permanent link">&para;</a></h2>
-<h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
+<h2 id="0540">0.54.0<a class="headerlink" href="#0540" title="Permanent link">&para;</a></h2>
+<h3 id="technik">Technik<a class="headerlink" href="#technik" title="Permanent link">&para;</a></h3>
+<p>Geplante Versionssprünge (#236, #215) – für Benutzer ändert sich nichts.</p>
 <ul>
-<li><strong>Anmeldung über einen Anbieter per OpenID Connect</strong> (#241) – z. B. Microsoft Entra ID (Microsoft 365), Google Workspace, Keycloak, Authentik, Authelia:</li>
-<li>Einrichten unter <strong>Werkbank → Anmeldeschutz</strong>: Adresse des Anbieters, Client-ID, Client-Secret (verschlüsselt gespeichert), Beschriftung des Knopfes, <strong>Verbindung prüfen</strong>.</li>
-<li>Knopf auf der Anmeldeseite; Fehler der Anmeldung stehen dort im Klartext.</li>
-<li>Zuordnung über die E-Mail-Adresse; auf Wunsch <strong>neue Benutzer anlegen</strong> mit wählbarer Rolle.</li>
-<li><strong>Rolle aus einer Gruppe</strong> des Anbieters (Administratoren); der letzte Administrator bleibt Administrator.</li>
-<li><strong>Passwort-Anmeldung nur noch für Administratoren</strong> als Notzugang.</li>
-<li><strong>Abmelden auch beim Anbieter</strong> (RP-initiated Logout).</li>
-<li>Sicher: Authorization Code Flow mit PKCE, state und nonce, an den Browser gebunden; das DMS prüft Signatur, Aussteller, Empfänger und Gültigkeit des ID-Tokens selbst (RSA, RSA-PSS, ECDSA, Ed25519). Keine neue Abhängigkeit.</li>
+<li><strong>Node.js 24</strong> (LTS) im Image statt 22; <code>@types/node</code> 24. Ungerade Hauptversionen (25) nimmt das DMS nicht.</li>
+<li><strong>postgres.js 4.0</strong> (Datenbank-Treiber) statt 3.4: neu geschriebener Verbindungs-Pool; zwei Sicherheitskorrekturen (NUL-Zeichen in Verbindungsangaben, Spalte <code>__proto__</code>). Parametertypen wie bisher (<code>infer: true</code>).</li>
+<li><strong>vite 8</strong> und <strong>@vitejs/plugin-react 6</strong> für die Oberfläche.</li>
+<li><strong>esbuild 0.28</strong> für den Server.</li>
+<li><strong>@types/nodemailer 8</strong>, passend zu nodemailer 10.</li>
+<li><strong>TypeScript bleibt 5.x:</strong> TypeScript 7 (neuer, nativer Compiler) kommt, sobald Editor-Unterstützung und Werkzeuge damit stabil laufen; für das DMS bringt der Wechsel heute nur schnellere Typprüfung.</li>
+<li>Dependabot schlägt Hauptversionen von vite, plugin-react und @types/nodemailer wieder vor.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.52.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.52.0...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.53.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.53.0...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
