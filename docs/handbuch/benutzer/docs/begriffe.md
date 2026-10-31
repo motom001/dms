@@ -475,6 +475,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Systemrolle | Rolle (für Administrator/Mitglied) | `Rolle, Benutzer.rolle` |
 | Texterkennung | OCR (in der Oberfläche) | `OcrStand` |
 | Trefferliste | – | `Trefferliste` |
+| Tägliche Zusammenfassung | Übersicht per E-Mail, Digest | – |
 | Unteransicht | Untersicht | – |
 | Version | Revision, Stand (für Dokumente) | `DokumentVersion` |
 | Version des DMS | Release (in der Oberfläche) | – |

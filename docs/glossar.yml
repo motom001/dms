@@ -452,6 +452,7 @@ begriffe:
     beschreibung: Eine E-Mail, die einmal am Tag die offenen Aufgaben eines Benutzers auflistet – nur, wenn er welche hat und nicht abwesend ist. Administratoren schalten sie unter Werkbank → Aufgaben ein; Uhrzeit und Wochentage wählt jeder im Profil.
     einsteiger: alltag
     begegnet: alle
+    nicht_verwenden: [Übersicht per E-Mail, Digest]
     verwandt: [Aufgabe, Anstehend]
   - begriff: Archivmodus
     bereich: werkbank

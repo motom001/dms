@@ -191,7 +191,7 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
       {bereich === 'benachrichtigungen' && <>
       <div className="blatt">
         <h2 className="h3">Aufgaben <Hilfe ort="profil.benachrichtigungen" /></h2>
-        <p className="leise">Mappen mit offenen Aufgaben für dich stehen unter „Zu erledigen“. Zusätzlich schickt das DMS einmal am Tag eine Übersicht per E-Mail – zu deiner Uhrzeit und an deinen Wochentagen, solange du offene Aufgaben hast und nicht abwesend bist.</p>
+        <p className="leise">Mappen mit offenen Aufgaben für dich stehen unter „Zu erledigen“. Zusätzlich schickt das DMS die <strong>Tägliche Zusammenfassung</strong> per E-Mail – zu deiner Uhrzeit und an deinen Wochentagen, solange du offene Aufgaben hast und nicht abwesend bist.</p>
         <ZusammenfassungEinstellen />
       </div>
 

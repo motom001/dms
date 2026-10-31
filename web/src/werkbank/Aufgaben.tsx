@@ -88,7 +88,7 @@ export function AufgabenPanel({ z }: { z: AufgabenZustand }) {
       </div>
       <form className="blatt" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }}>
         <h2 className="h3">Tägliche Zusammenfassung</h2>
-        <p className="leise">Statt einer Mail je Aufgabe bekommt jeder mit offenen Aufgaben einmal am Tag eine Übersicht. Jeder kann sie im Profil anpassen oder abbestellen. Braucht den E-Mail-Versand (Werkbank → E-Mail und Adresse).</p>
+        <p className="leise">Statt einer Mail je Aufgabe bekommt jeder mit offenen Aufgaben die Tägliche Zusammenfassung. Jeder kann sie im Profil anpassen oder abbestellen. Braucht den E-Mail-Versand (Werkbank → E-Mail und Adresse).</p>
         <label className="haken"><input type="checkbox" checked={e.aktiv} onChange={(x) => setE({ ...e, aktiv: x.target.checked })} /><span>Zusammenfassung verschicken</span></label>
         <div className="raster">
           <label className="eigenschaft"><span>Standard-Uhrzeit <small>für alle, die im Profil keine eigene gewählt haben</small></span><input type="time" step={900} value={e.uhrzeit} onChange={(x) => setE({ ...e, uhrzeit: x.target.value })} /></label>
