@@ -52,6 +52,8 @@ export function KontoProvider({ children }: { children: ReactNode }) {
           if (el && st.marke.logo) el.href = st.marke.logo;
         }
       }
+      // Nach der Anmeldung über einen Anbieter (#191): zurück zur Seite, von der sie ausging.
+      if (st.benutzer) { const ziel = nachAnmeldung(); if (ziel && ziel !== location.pathname + location.search) geheZu(ziel, true); }
       setStatus(st); setFehler(undefined); geladen.current = true;
     }
     catch (e) { if (!geladen.current) setFehler((e as Error).message); }
@@ -78,7 +80,7 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Anbieter bestätigt, jetzt der Code (#241, #242).
-  if (pfad === '/anmelden/code' && location.hash.length > 1) return <CodeSchritt kennung={location.hash.slice(1)} fertig={async () => { geheZu('/', true); await laden(); }} zurueck={() => geheZu('/', true)} />;
+  if (pfad === '/anmelden/code' && location.hash.length > 1) return <CodeSchritt kennung={location.hash.slice(1)} fertig={async () => { geheZu(nachAnmeldung(false) ?? '/', true); await laden(); }} zurueck={() => geheZu('/', true)} />;
   if (pfad.startsWith('/passwort/')) return <PasswortSetzen schluessel={decodeURIComponent(pfad.slice('/passwort/'.length))} fertig={laden} />;
   if (fehler) return <Karte titel="Keine Verbindung"><p className="hinweis schlecht">{fehler}</p><button className="knopf" onClick={() => void laden()}>Erneut versuchen</button></Karte>;
   if (!status) return <p className="leise mittig">Lade …</p>;
@@ -101,6 +103,13 @@ export function KontoProvider({ children }: { children: ReactNode }) {
       {status.einrichtung?.assistent ? <AssistentAngemeldet /> : children}
     </Ctx.Provider>
   );
+}
+
+/** Ziel nach einer Anmeldung über einen Anbieter (#191), z. B. /werkbank/pakete?installieren=… */
+const ZIEL = 'dms:nach-anmeldung';
+function merkeZiel() { try { if (location.pathname !== '/') sessionStorage.setItem(ZIEL, location.pathname + location.search); } catch { /* ohne */ } }
+function nachAnmeldung(entfernen = true): string | null {
+  try { const z = sessionStorage.getItem(ZIEL); if (entfernen) sessionStorage.removeItem(ZIEL); return z && z.startsWith('/') && !z.startsWith('//') ? z : null; } catch { return null; }
 }
 
 function Karte({ titel, unter, children }: { titel: string; unter?: string; children: ReactNode }) {
@@ -203,7 +212,7 @@ function Anmelden({ mail, wartung, anbieter, fertig }: { mail: boolean; wartung?
     <Karte titel="Anmelden">
       <WartungsHinweis start={wartung} />
       {anbieter && <>
-        <a id="anmelden-anbieter" className="knopf primaer breit" href="/api/konto/anbieter/start">{anbieter.knopf}</a>
+        <a id="anmelden-anbieter" className="knopf primaer breit" href="/api/konto/anbieter/start" onClick={merkeZiel}>{anbieter.knopf}</a>
         {anbieterFehler && <p className="fehlertext" role="alert">{anbieterFehler}</p>}
         {anbieter.lokalNurAdmins && !mitPasswort
           ? <button className="textknopf" onClick={() => setMitPasswort(true)}>Als Administrator mit Passwort anmelden</button>

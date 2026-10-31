@@ -6,8 +6,8 @@
   <title>DMS – Handbücher</title>
   <meta name="description" content="Handbücher zum DMS, dem selbst gehosteten Informations- und Dokumentenmanagement für Haushalte">
   <style>
-    :root { --grund: #f6f7f8; --flaeche: #fff; --tinte: #1c2328; --leise: #5b6670; --linie: #dde2e6; --a: #00796b; --b: #3f51b5; --c: #2e7d32; --d: #546e7a; }
-    @media (prefers-color-scheme: dark) { :root { --grund: #14181b; --flaeche: #1d2226; --tinte: #e8ecef; --leise: #9aa5ae; --linie: #2e353a; --a: #4db6ac; --b: #8c9eff; --c: #81c784; --d: #b0bec5; } }
+    :root { --grund: #f6f7f8; --flaeche: #fff; --tinte: #1c2328; --leise: #5b6670; --linie: #dde2e6; --a: #00796b; --b: #3f51b5; --c: #2e7d32; --d: #546e7a; --e: #ef6c00; }
+    @media (prefers-color-scheme: dark) { :root { --grund: #14181b; --flaeche: #1d2226; --tinte: #e8ecef; --leise: #9aa5ae; --linie: #2e353a; --a: #4db6ac; --b: #8c9eff; --c: #81c784; --d: #b0bec5; --e: #ffb74d; } }
     * { box-sizing: border-box; }
     body { margin: 0; background: var(--grund); color: var(--tinte); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
     main { max-width: 860px; margin: 0 auto; padding: 56px 16px 40px; }
@@ -22,6 +22,8 @@
     a.karte.installieren:hover, a.karte.installieren:focus-visible { border-color: var(--c); }
     a.karte.entwickler { border-top-color: var(--d); }
     a.karte.entwickler:hover, a.karte.entwickler:focus-visible { border-color: var(--d); }
+    a.karte.katalog { border-top-color: var(--e); }
+    a.karte.katalog:hover, a.karte.katalog:focus-visible { border-color: var(--e); }
     a.karte h2 { margin: 0 0 6px; font-size: 1.25rem; }
     a.karte p { margin: 0; color: var(--leise); }
     footer { margin-top: 40px; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; color: var(--leise); font-size: .9rem; }
@@ -48,6 +50,10 @@
       <a class="karte admin" href="admin/">
         <h2>Administratorhandbuch</h2>
         <p>Einrichtung und Betrieb, Mappentypen, Benutzer und Rollen, Sicherung, Fehlersuche und die Schnittstelle (API).</p>
+      </a>
+      <a class="karte katalog" href="https://motom001.github.io/dms-registry/">
+        <h2>Paketkatalog</h2>
+        <p>Fertige Mappentypen und Sichten zum Installieren – ansehen wie im App Store und mit einem Klick ins eigene DMS übernehmen.</p>
       </a>
       <a class="karte entwickler" href="entwickler/">
         <h2>Entwicklerhandbuch</h2>

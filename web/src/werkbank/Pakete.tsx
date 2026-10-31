@@ -163,6 +163,62 @@ export function PaketePanel({ z, id }: { z: PaketeZustand; id?: string }) {
   return <PaketDetail key={`${id}|${quelle ?? ''}`} z={z} id={id} quelle={quelle} />;
 }
 
+/**
+ * Installieren per Link (#191): /werkbank/pakete?installieren=<id>@<version> zeigt die Vorschau genau
+ * dieses Pakets – immer aus dem offiziellen Katalog; andere Parameter zählen nicht. Installiert wird
+ * erst nach Klick auf „Installieren“.
+ */
+export function PaketLink({ z, wert }: { z: PaketeZustand; wert: string }) {
+  const d = useDaten();
+  const [id, version] = wert.split('@');
+  const gueltig = /^[a-z][a-z0-9_]{1,19}$/.test(id ?? '') && (!version || /^\d+\.\d+\.\d+$/.test(version));
+  const [vorschau, setVorschau] = useState<PaketVorschau | null>(null);
+  const [meldung, setMeldung] = useState<Meldung>();
+  useEffect(() => {
+    if (!gueltig) return;
+    let aktuell = true;
+    api.paketVorschau({ id, version: version || undefined }).then((v) => aktuell && setVorschau(v), (e) => aktuell && setMeldung(alsMeldung(e)));
+    return () => { aktuell = false; };
+  }, [id, version, gueltig]);
+  if (!gueltig) return <div className="leer"><p>Dieser Link ist ungültig. Erwartet ist <code>?installieren=paket@1.0.0</code>.</p></div>;
+  const schon = !!vorschau?.installiert && vorschau.probleme.some((p) => p.includes('schon installiert'));
+  return (
+    <div className="einspaltig">
+      <div className="mappenkopf">
+        <p className="ueber">Paket aus dem offiziellen Katalog</p>
+        <h1>{vorschau?.paket.name ?? id}{vorschau ? ` ${vorschau.paket.version}` : version ? ` ${version}` : ''}</h1>
+        {vorschau && <p className="leise">{vorschau.paket.beschreibung}</p>}
+      </div>
+      <MeldungBox m={meldung} />
+      {!vorschau && !meldung && <p className="leise">Frage den offiziellen Katalog ab …</p>}
+      {vorschau && (
+        <section className="blatt">
+          <dl className="eigenschaften">
+            <dt>Lizenz</dt><dd>{vorschau.paket.lizenz}</dd>
+            <dt>Autor</dt><dd>{vorschau.paket.autor.name}{vorschau.paket.autor.github ? ` (@${vorschau.paket.autor.github})` : ''}</dd>
+            <dt>Nötige DMS-Version</dt><dd>{vorschau.paket.dms} (dieses DMS: {vorschau.dmsVersion})</dd>
+            {vorschau.installiert && <><dt>Installiert</dt><dd>Version {vorschau.installiert}</dd></>}
+            {vorschau.paket.readme && <><dt>Mehr</dt><dd><a className="verweis" href={vorschau.paket.readme} target="_blank" rel="noreferrer">README ↗</a></dd></>}
+          </dl>
+        </section>
+      )}
+      {schon && (
+        <div className="hinweis info"><p>„{vorschau!.paket.name}“ ist schon installiert (Version {vorschau!.installiert}). <button type="button" className="textknopf" onClick={() => { void z.abrufen(false); geheZu(`/werkbank/pakete/${id}`); }}>Zum Paket</button> – dort gibt es ggf. das Update.</p></div>
+      )}
+      {vorschau && !schon && (
+        <VorschauBlock v={vorschau} warnung={null} abbrechen={() => geheZu('/werkbank/pakete')}
+          los={async (x) => {
+            try {
+              const r = vorschau.update ? await api.paketAktualisieren(id, vorschau.paket.version) : await api.paketInstallieren({ id, version: vorschau.paket.version, ...x });
+              await z.laden(); await d.neuLaden(); await z.abrufen(false);
+              geheZu(`/werkbank/pakete/${r.id}`);
+            } catch (e) { setMeldung(alsMeldung(e)); }
+          }} />
+      )}
+    </div>
+  );
+}
+
 /** Ergebnis einer Aktion mit ggf. Gründen. */
 type Meldung = { art: 'gut' | 'schlecht'; text: string; gruende?: string[] };
 const alsMeldung = (e: unknown): Meldung => ({ art: 'schlecht', text: (e as Error).message, gruende: e instanceof ApiFehler ? e.gruende : [] });

@@ -2,7 +2,7 @@ import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { AnmeldeschutzListe, AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
 import { NummernkreisEditor, NummernkreiseListe, useNummernkreise } from './Nummernkreise';
 import { DarfWegListe, DarfWegPanel, useDarfWeg } from './Archiv';
-import { PaketeListe, PaketePanel, usePakete } from './Pakete';
+import { PaketeListe, PaketLink, PaketePanel, usePakete } from './Pakete';
 import { useVollexport, VollexportListe, VollexportPanel } from './Vollexport';
 import { PostfachEditor, PostfaecherListe, usePostfaecher } from './Postfaecher';
 import { EingangsordnerListe, EingangsordnerPanel, useEingangsordner } from './Eingangsordner';
@@ -164,7 +164,8 @@ export function Werkbank({ teile }: { teile: string[] }) {
     rechts = <AnmeldeschutzPanel z={anmeldeschutz} />;
   } else if (bereich === 'pakete') {
     liste = <PaketeListe z={pakete} offen={id} />;
-    rechts = <PaketePanel z={pakete} id={id} />;
+    const installieren = !id ? new URLSearchParams(location.search).get('installieren') : null;
+    rechts = installieren ? <PaketLink key={installieren} z={pakete} wert={installieren} /> : <PaketePanel z={pakete} id={id} />;
   } else if (bereich === 'vollexport') {
     liste = <VollexportListe z={vollexport} />;
     rechts = <VollexportPanel z={vollexport} />;
