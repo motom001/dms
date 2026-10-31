@@ -4,6 +4,7 @@ import { Postfaecher } from './postfach';
 import { Anmeldesperre } from './anmeldesperre';
 import { Zweifaktor } from './zweifaktor';
 import { Konsolenzugang, lokaleUrl } from './konsole';
+import { Oidc } from './oidc';
 import { Eingangsordner } from './eingangsordner';
 import { einbettenAus } from './koepfe';
 import { proxyVertrauen } from './proxy';
@@ -241,8 +242,12 @@ const postfaecher = new Postfaecher({
 const anbindungVerwaltung = new AnbindungVerwaltung(ordner.geheim, db, umgebung, () => { void beenden(); });
 // Befehl dms im Container (#244).
 const konsole = new Konsolenzugang();
+// Anmeldung über einen Anbieter (#241); Client-Secret verschlüsselt mit dem Schlüssel des DMS.
+const oidc = new Oidc({ einstellungen: pgEinstellungen(sql, cfg.haushalt), verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w) });
+konten.verbindeAnbieter(() => oidc.bereit());
 const app = await baueApp(dienst, konten, {
   konsole,
+  oidc,
   einbetten: cfg.einbetten,
   webDir: cfg.web,
   sicher: () => betrieb.cookieNurHttps(),
