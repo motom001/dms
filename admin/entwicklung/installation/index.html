@@ -2285,6 +2285,10 @@
 
 <h1 id="einrichtung-und-betrieb">Einrichtung und Betrieb<a class="headerlink" href="#einrichtung-und-betrieb" title="Permanent link">&para;</a></h1>
 <p>Wie du das DMS installierst – auf Synology, UGREEN, QNAP, TrueNAS, Unraid, umbrelOS, ZimaOS, CasaOS oder jedem Server mit Docker –, steht im eigenen Bereich <strong><a href="https://motom001.github.io/dms/installieren/aktuell/">Wie komme ich an ein DMS?</a></strong>. Diese Seite beschreibt, was danach kommt: den Einrichtungsassistenten, die Anbindung an die Datenbank, Ordner, Einstellungen und den Betrieb hinter einem Reverse-Proxy.</p>
+<div class="admonition tip">
+<p class="admonition-title">Einen Bereich nicht in der Leiste gefunden?</p>
+<p>Manche Bereiche der Werkbank, zum Beispiel <em>Wartungsmodus</em>, <em>Datenbank-Anbindung</em> oder <em>Wartungsoperationen</em>, sind in der Vorlage <em>Haushalt</em> ausgeblendet. Unten in der Leiste steht, wie viele Bereiche ausgeblendet sind; ein Klick zeigt sie. Dauerhaft einblenden kannst du sie unter <a href="https://motom001.github.io/dms/admin/aktuell/uebersicht/#werkbank-anpassen">Werkbank anpassen</a>. <strong>Ausgeblendet heißt nicht abgeschaltet.</strong></p>
+</div>
 <p>Das DMS läuft – <strong>empfohlen</strong> – als zwei Container: die Anwendung (<code>ghcr.io/motom001/dms</code>) und PostgreSQL (<code>postgres:17</code>). Alternativ gibt es <strong><code>ghcr.io/motom001/dms-komplett</code></strong>, in dem beides in einem Container läuft (Gegenüberstellung unter <a href="https://motom001.github.io/dms/installieren/aktuell/#ein-oder-zwei-container">Ein oder zwei Container?</a>). Bei jedem Push auf <code>main</code> baut GitHub Actions beide Images neu (Tag <code>main</code>, zusätzlich je Commit ein Kurz-Hash und je Release die Versionsnummer).</p>
 <div class="admonition warning">
 <p class="admonition-title">Erst einrichten, dann freigeben</p>

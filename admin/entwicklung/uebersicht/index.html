@@ -1942,7 +1942,8 @@
 
 
 <h1 id="werkbank-und-ubersicht">Werkbank und Übersicht<a class="headerlink" href="#werkbank-und-ubersicht" title="Permanent link">&para;</a></h1>
-<p>Die <strong>Werkbank</strong> sehen nur Administratoren. Links stehen ihre Bereiche in vier Gruppen:</p>
+<p>Die <strong>Werkbank</strong> sehen nur Administratoren. Links stehen ihre Bereiche in vier Gruppen. Welche davon du siehst, hängt von der <a href="#werkbank-anpassen">Vorlage</a> ab:</p>
+<!-- bereiche:gruppen -->
 <table>
 <thead>
 <tr>
@@ -1953,27 +1954,36 @@
 <tbody>
 <tr>
 <td><strong>Ablage einrichten</strong></td>
-<td><a href="../mappentypen/">Mappentypen</a>, <a href="../sichten/">Sichten</a></td>
+<td><a href="../mappentypen/">Mappentypen</a>, <a href="../sichten/">Sichten</a>, <a href="../nummernkreise/">Nummernkreise</a>, <a href="../pakete/">Pakete</a>, <a href="../archiv/#nach-der-frist-darf-weg">Darf weg</a> (nur mit Archivmodus)</td>
 </tr>
 <tr>
 <td><strong>Benutzer und Zusammenarbeit</strong></td>
-<td><a href="../benutzer/">Benutzer und Rollen</a>, <a href="../aufgaben/">Aufgaben</a></td>
+<td><a href="../benutzer/">Benutzer</a>, <a href="../anmeldeschutz/">Anmeldeschutz</a>, <a href="../aufgaben/">Aufgaben</a></td>
 </tr>
 <tr>
 <td><strong>Einstellungen</strong></td>
-<td><a href="../installation/#e-mail-und-adresse">E-Mail und Adresse</a>, <a href="../verschluesselung/">Verschlüsselung</a>, <a href="../designs/">Designs</a>, <a href="../papierkorb/">Papierkorb</a>, <a href="../texterkennung/">Texterkennung</a></td>
+<td><a href="../installation/#e-mail-und-adresse">E-Mail und Adresse</a>, <a href="../verschluesselung/">Verschlüsselung</a>, <a href="../designs/">Designs</a>, <a href="../papierkorb/">Papierkorb</a>, <a href="../installation/#datenbank-anbindung">Datenbank-Anbindung</a>, <a href="../speicherplatz/">Speicherplatz</a>, <a href="../postfaecher/">Postfächer</a>, <a href="../eingangsordner/">Eingangsordner</a> (nur wenn der Ordner eingebunden ist), <a href="../texterkennung/">Texterkennung</a></td>
 </tr>
 <tr>
 <td><strong>Wartung und Fehlersuche</strong></td>
-<td><a href="../fehlersuche/">Protokoll, Fehlermeldungen, Datenbank, Technik</a>, <a href="../texterkennung/">Wartungsoperationen</a>, <a href="../demo/">Demo-Daten</a></td>
+<td><a href="../fehlersuche/#protokoll">Protokoll</a>, <a href="../fehlersuche/#fehlermeldungen-von-benutzern">Fehlermeldungen</a>, <a href="../sicherung/">Sicherung</a>, <a href="../wiederherstellen/">Wiederherstellen</a>, <a href="../export/">Vollexport</a>, <a href="../wartungsmodus/">Wartungsmodus</a>, <a href="../texterkennung/#wartungsoperationen">Wartungsoperationen</a>, <a href="../fehlersuche/#datenbank">Datenbank</a>, <a href="../fehlersuche/#technik">Technik</a>, <a href="../demo/">Demo-Daten</a></td>
 </tr>
 </tbody>
 </table>
+<!-- /bereiche:gruppen -->
+
 <p>Welche Bereiche dort stehen, legst du unter <a href="#werkbank-anpassen">Werkbank anpassen</a> fest. Am Smartphone wählst du oben erst die Gruppe, darunter den Bereich. Ganz unten in der Leiste stehen <em>Projekt unterstützen</em> und der Link zu diesem Handbuch.</p>
 <h2 id="ubersicht">Übersicht<a class="headerlink" href="#ubersicht" title="Permanent link">&para;</a></h2>
-<p>Die Werkbank beginnt mit der <strong>Übersicht</strong>. Sie zeigt oben, was zu tun ist – jeweils mit einem Knopf in den passenden Bereich:</p>
+<p>Die Werkbank beginnt mit der <strong>Übersicht</strong>. Sie zeigt oben, was zu tun ist – jeweils mit einem Knopf in den passenden Bereich. <strong>Das gilt auch für Bereiche, die in deiner Vorlage ausgeblendet sind.</strong> Zum Beispiel:</p>
 <ul>
+<li>Sicherung fehlgeschlagen oder zu alt, Notfallblatt fehlt,</li>
+<li>Speicherplatz knapp oder voll,</li>
+<li>Wartungsmodus angekündigt oder aktiv,</li>
+<li>ein Notfallzugang ist noch aktiv,</li>
 <li>kein Schlüssel für Passwörter oder Schlüsseldatei nicht auf eigenem Volume,</li>
+<li>Datenbank-Anbindung weicht ab oder braucht einen Neustart,</li>
+<li>im Einrichtungsassistenten übersprungene Schritte,</li>
+<li>Umgebungsvariablen, die nicht mehr nötig sind,</li>
 <li>E-Mail-Versand nicht eingerichtet,</li>
 <li>offene Fehlermeldungen von Benutzern,</li>
 <li>Dokumente mit Fehler in der Texterkennung,</li>
@@ -1991,7 +2001,13 @@
 <p><strong>Vorlagen</strong> für alle Administratoren:</p>
 <ul>
 <li><strong>Haushalt</strong>: schlank, nur was ein Haushalt zum Einrichten und Sichern braucht. Neue Installationen beginnen damit.</li>
-<li><strong>Organisation</strong>: dazu Nummernkreise, Anmeldeschutz, Postfächer, Eingangsordner, Texterkennung, Protokoll, Fehlermeldungen und Wartungsmodus.</li>
+</ul>
+<!-- bereiche:organisation -->
+<ul>
+<li><strong>Organisation</strong>: zusätzlich Nummernkreise, Darf weg, Anmeldeschutz, Designs, Postfächer, Eingangsordner, Texterkennung, Protokoll, Fehlermeldungen, Wartungsmodus.</li>
+</ul>
+<!-- /bereiche:organisation -->
+<ul>
 <li><strong>Alles</strong>: jeder Bereich. So bleibt es bei Installationen, die vor Version 0.70 eingerichtet wurden, bis du etwas anderes wählst.</li>
 </ul>
 <p>Danach kannst du je Bereich abweichen:</p>
@@ -2002,6 +2018,7 @@
 <p>Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldung über einen Anbieter, steht dabei „eingerichtet, aber ausgeblendet“. Unten in der Leiste steht, wie viele Bereiche ausgeblendet sind. Ein Klick darauf zeigt sie vorübergehend alle.</p>
 <p><img alt="Werkbank → Werkbank anpassen" src="../bilder/werkbank-anpassen.png" /></p>
 <h3 id="welchen-bereich-brauche-ich-wofur">Welchen Bereich brauche ich wofür?<a class="headerlink" href="#welchen-bereich-brauche-ich-wofur" title="Permanent link">&para;</a></h3>
+<!-- bereiche:wofuer -->
 <table>
 <thead>
 <tr>
@@ -2012,142 +2029,143 @@
 </thead>
 <tbody>
 <tr>
-<td>Mappentypen</td>
+<td><a href="../mappentypen/">Mappentypen</a></td>
 <td>Eigene Arten von Mappen bauen</td>
 <td>Haushalt, Organisation</td>
 </tr>
 <tr>
-<td>Sichten</td>
+<td><a href="../sichten/">Sichten</a></td>
 <td>Die Sammlungen links in der Ablage ordnen</td>
 <td>Haushalt, Organisation</td>
 </tr>
 <tr>
-<td>Nummernkreise</td>
+<td><a href="../nummernkreise/">Nummernkreise</a></td>
 <td>Fortlaufende Nummern, z. B. für Rechnungen</td>
 <td>Organisation</td>
 </tr>
 <tr>
-<td>Pakete</td>
+<td><a href="../pakete/">Pakete</a></td>
 <td>Fertige Mappentypen und Sichten installieren</td>
 <td>Haushalt, Organisation</td>
 </tr>
 <tr>
-<td>Darf weg</td>
+<td><a href="../archiv/#nach-der-frist-darf-weg">Darf weg</a></td>
 <td>Mappen mit abgelaufener Aufbewahrungsfrist (nur mit Archivmodus)</td>
 <td>Organisation</td>
 </tr>
 <tr>
-<td>Benutzer</td>
+<td><a href="../benutzer/">Benutzer</a></td>
 <td>Benutzer und Rollen anlegen</td>
 <td>Haushalt, Organisation</td>
 </tr>
 <tr>
-<td>Anmeldeschutz</td>
+<td><a href="../anmeldeschutz/">Anmeldeschutz</a></td>
 <td>Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen</td>
 <td>Organisation</td>
 </tr>
 <tr>
-<td>Aufgaben</td>
+<td><a href="../aufgaben/">Aufgaben</a></td>
 <td>Alle offenen Aufgaben im Blick behalten</td>
 <td>Haushalt, Organisation</td>
 </tr>
 <tr>
-<td>E-Mail und Adresse</td>
+<td><a href="../installation/#e-mail-und-adresse">E-Mail und Adresse</a></td>
 <td>E-Mail-Versand und Adresse des DMS</td>
 <td>Haushalt, Organisation</td>
 </tr>
 <tr>
-<td>Verschlüsselung</td>
+<td><a href="../verschluesselung/">Verschlüsselung</a></td>
 <td>Den Schlüssel für Passwörter und Sicherungen</td>
 <td>Haushalt, Organisation</td>
 </tr>
 <tr>
-<td>Designs</td>
+<td><a href="../designs/">Designs</a></td>
 <td>Logo, Farben und eigenes CSS</td>
 <td>Organisation</td>
 </tr>
 <tr>
-<td>Papierkorb</td>
+<td><a href="../papierkorb/">Papierkorb</a></td>
 <td>Gelöschte Mappen zurückholen</td>
 <td>Haushalt, Organisation</td>
 </tr>
 <tr>
-<td>Datenbank-Anbindung</td>
+<td><a href="../installation/#datenbank-anbindung">Datenbank-Anbindung</a></td>
 <td>Die Verbindung zur Datenbank ändern</td>
 <td>nur Alles</td>
 </tr>
 <tr>
-<td>Speicherplatz</td>
+<td><a href="../speicherplatz/">Speicherplatz</a></td>
 <td>Sehen, wie voll das Gerät ist</td>
 <td>Haushalt, Organisation</td>
 </tr>
 <tr>
-<td>Postfächer</td>
+<td><a href="../postfaecher/">Postfächer</a></td>
 <td>Post aus einem E-Mail-Konto abholen</td>
 <td>Organisation</td>
 </tr>
 <tr>
-<td>Eingangsordner</td>
+<td><a href="../eingangsordner/">Eingangsordner</a></td>
 <td>Scans aus einem Ordner übernehmen</td>
 <td>Organisation</td>
 </tr>
 <tr>
-<td>Texterkennung</td>
+<td><a href="../texterkennung/">Texterkennung</a></td>
 <td>Text in gescannten Dokumenten finden</td>
 <td>Organisation</td>
 </tr>
 <tr>
-<td>Protokoll</td>
+<td><a href="../fehlersuche/#protokoll">Protokoll</a></td>
 <td>Das technische Protokoll lesen</td>
 <td>Organisation</td>
 </tr>
 <tr>
-<td>Fehlermeldungen</td>
+<td><a href="../fehlersuche/#fehlermeldungen-von-benutzern">Fehlermeldungen</a></td>
 <td>Fehler, die Benutzer gemeldet haben</td>
 <td>Organisation</td>
 </tr>
 <tr>
-<td>Sicherung</td>
+<td><a href="../sicherung/">Sicherung</a></td>
 <td>Sicherungen einrichten und prüfen</td>
 <td>Haushalt, Organisation</td>
 </tr>
 <tr>
-<td>Wiederherstellen</td>
+<td><a href="../wiederherstellen/">Wiederherstellen</a></td>
 <td>Eine Sicherung zurückspielen</td>
 <td>Haushalt, Organisation</td>
 </tr>
 <tr>
-<td>Vollexport</td>
+<td><a href="../export/">Vollexport</a></td>
 <td>Alle Daten in offenen Formaten mitnehmen</td>
 <td>Haushalt, Organisation</td>
 </tr>
 <tr>
-<td>Wartungsmodus</td>
+<td><a href="../wartungsmodus/">Wartungsmodus</a></td>
 <td>Benutzer vorübergehend aussperren</td>
 <td>Organisation</td>
 </tr>
 <tr>
-<td>Wartungsoperationen</td>
+<td><a href="../texterkennung/#wartungsoperationen">Wartungsoperationen</a></td>
 <td>Einmalige Pflegearbeiten</td>
 <td>nur Alles</td>
 </tr>
 <tr>
-<td>Datenbank</td>
+<td><a href="../fehlersuche/#datenbank">Datenbank</a></td>
 <td>Tabellen und Größen der Datenbank</td>
 <td>nur Alles</td>
 </tr>
 <tr>
-<td>Technik</td>
+<td><a href="../fehlersuche/#technik">Technik</a></td>
 <td>Version, Updates und die Übersicht für GitHub</td>
 <td>Haushalt, Organisation</td>
 </tr>
 <tr>
-<td>Demo-Daten</td>
+<td><a href="../demo/">Demo-Daten</a></td>
 <td>Beispielmappen zum Ausprobieren</td>
 <td>nur Alles</td>
 </tr>
 </tbody>
 </table>
+<!-- /bereiche:wofuer -->
 
 
 
