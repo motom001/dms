@@ -295,6 +295,18 @@ async function main() {
   await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
   await s.getByRole('heading', { name: 'Stromvertrag Haus' }).waitFor();
   await bild(s, 'ablage');
+  // README (#290): breiter, doppelte Auflösung, hell und dunkel – feste Namen, die README holt sie vom Handbuch.
+  for (const [schema, name] of [['light', 'readme'], ['dark', 'readme-dunkel']]) {
+    const kr = await browser.newContext({ viewport: { width: 1600, height: 900 }, colorScheme: schema, locale: 'de-DE', timezoneId: 'Europe/Berlin', deviceScaleFactor: 2 });
+    const [cn, cw] = d.adminCookie.split('=');
+    await kr.addCookies([{ name: cn, value: cw, url: BASIS }]);
+    await kr.addInitScript(() => addEventListener('DOMContentLoaded', () => { const st = document.createElement('style'); st.textContent = '.adminbanner{display:none!important}'; document.head.appendChild(st); }));
+    const sr = await kr.newPage();
+    await geheZu(sr, `/ablage/${vertrag.id}/${d.strom.id}`);
+    await sr.getByRole('heading', { name: 'Stromvertrag Haus' }).waitFor();
+    await bild(sr, name);
+    await kr.close();
+  }
 
   // Register mit Dokumenten
   await s.getByRole('tab', { name: 'Vertragsunterlagen' }).click();

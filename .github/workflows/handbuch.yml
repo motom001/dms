@@ -88,6 +88,8 @@ jobs:
           npx playwright install --with-deps chromium
           set -o pipefail
           node aufnehmen.mjs "$GITHUB_WORKSPACE/docs/handbuch/bilder" 2>&1 | tee "$RUNNER_TEMP/aufnahme.log"
+          # Das README bindet diese beiden Bilder vom Handbuch ein (#290) – ohne sie kein Handbuch.
+          for b in readme readme-dunkel; do test -s "$GITHUB_WORKSPACE/docs/handbuch/bilder/$b.png" || { echo "::error title=README-Bild::$b.png fehlt"; exit 1; }; done
         shell: bash
         env:
           DMS_URL: http://localhost:3000
