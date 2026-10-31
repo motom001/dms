@@ -2,7 +2,7 @@ import type { Readable } from 'node:stream';
 import { MAX_DATEIGROESSE, POST_KANAL, type Benutzer, type Mappe } from '../../shared/src/model';
 import { type Recht } from '../../shared/src/rechte';
 import { ladeBeispiele } from './beispiele';
-import { erzeugeDemo, pruefeAnzahl } from './demo';
+import { erzeugeDemo, pruefeDemoOptionen, schaetzeDemo, type DemoPlatz } from './demo';
 import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import { SITZUNG_TAGE, type Konten } from './konten';
@@ -186,6 +186,15 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   /** Benutzer mit ihren weiteren Rollen (#27). */
   const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.weitereRollen()).get(b.id) ?? [] });
   const sicherung = () => { if (!x.sicherung) throw new Fachfehler(404, 'Sicherungen sind nicht eingerichtet.'); return x.sicherung; };
+  /** Demo-Dokumente (#248): freier Platz bei den Dateien; frei bleiben müssen Mindest-Speicherplatz der Sicherung bzw. die Speicherplatz-Grenze. */
+  const demoPlatz: DemoPlatz | undefined = x.speicherplatz ? {
+    frei: async () => (await x.speicherplatz!.messe()).ordner.find((o) => o.art === 'dateien')?.frei ?? null,
+    mindest: async () => {
+      const grenze = (await x.speicherplatz!.messe()).ordner.find((o) => o.art === 'dateien')?.grenzBytes ?? 0;
+      const sich = x.sicherung ? (await x.sicherung.plan()).mindestFreiGB * 1024 ** 3 : 0;
+      return Math.max(grenze, sich);
+    },
+  } : undefined;
   const wh = () => { if (!x.wiederherstellung) throw new Fachfehler(404, 'Die Wiederherstellung ist nicht eingerichtet.'); return x.wiederherstellung; };
   const anbindung = () => { if (!x.anbindung) throw new Fachfehler(404, 'Die Datenbank-Anbindung ist hier nicht einstellbar.'); return x.anbindung; };
   const speicherplatz = () => { if (!x.speicherplatz) throw new Fachfehler(404, 'Die Speicherplatz-Überwachung ist nicht eingerichtet.'); return x.speicherplatz; };
@@ -437,13 +446,20 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async () => ok(await dienst.demoUebersicht()) },
     // Erzeugen und Entfernen laufen im Hintergrund (202); den Stand liefert /api/werkbank/auftrag.
     { methode: 'POST', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async (a) => {
-      const anzahl = pruefeAnzahl(b(a).anzahl);
+      const o = pruefeDemoOptionen(b(a));
       const benutzerId = ich(a).id;
-      L.werkbank.info('Demo-Mappen werden erzeugt', { anzahl });
-      return ok(dienst.auftraege.starte('demo-erzeugen', `${anzahl} Demo-Mappen erzeugen`, (f) => erzeugeDemo(dienst, anzahl, benutzerId, f)), 202);
+      L.werkbank.info('Demo-Mappen werden erzeugt', { anzahl: o.anzahl, dokumente: !!o.dokumente, startwert: o.startwert ?? null });
+      const titel = `${o.anzahl.toLocaleString('de-DE')} Demo-Mappen${o.dokumente ? ' mit Dokumenten' : ''} erzeugen`;
+      return ok(dienst.auftraege.starte('demo-erzeugen', titel, async (f) => {
+        const r = await erzeugeDemo(dienst, o, benutzerId, f, demoPlatz);
+        L.werkbank.info('Demo-Daten erzeugt', { mappen: r.gesamt, dokumente: r.dokumente?.anzahl ?? 0, bytes: r.dokumente?.bytes ?? 0, dauerMs: r.dauerMs, startwert: r.startwert, abgebrochen: r.abgebrochen ?? null });
+        return r;
+      }), 202);
     } },
+    // Abschätzung vor dem Start (#248): Mappen, Dokumente, Größe, Seiten für die Texterkennung, freier Platz.
+    { methode: 'POST', pfad: '/api/werkbank/demo/abschaetzung', zugang: 'admin', handler: async (a) => ok(await schaetzeDemo(dienst, pruefeDemoOptionen(b(a)), demoPlatz)) },
     { methode: 'DELETE', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async () =>
-      ok(dienst.auftraege.starte('demo-entfernen', 'Demo-Mappen entfernen', () => dienst.entferneDemo()), 202) },
+      ok(dienst.auftraege.starte('demo-entfernen', 'Demo-Mappen entfernen', (f) => dienst.entferneDemo(f)), 202) },
     { methode: 'GET', pfad: '/api/werkbank/auftrag', zugang: 'admin', handler: async () => ok(dienst.auftraege.aktuell()) },
 
     /* ---------- Protokoll und Debug-Modus ---------- */

@@ -319,6 +319,15 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         : await sql`SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} ORDER BY erstellt`;
       return r.map(alsMappe);
     },
+    async mappenKurz() {
+      return (await sql`SELECT id, typ_id, coalesce(titel, '') AS titel FROM mappen WHERE haushalt_id = ${haushaltId}`)
+        .map((r) => ({ id: r.id as string, typId: r.typ_id as string, titel: r.titel as string }));
+    },
+    async feldwerte(typId, key) {
+      if (!istUuid(typId)) return [];
+      return (await sql`SELECT werte ->> ${key} AS w FROM mappen WHERE haushalt_id = ${haushaltId} AND typ_id = ${typId} AND werte ? ${key}`)
+        .map((r) => r.w as string).filter((w) => w != null);
+    },
     async holeMappe(id) {
       if (!istUuid(id)) return undefined;
       const [r] = await sql`SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
@@ -982,20 +991,28 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         WHERE z.demo AND NOT q.demo AND z.haushalt_id = ${haushaltId}`;
       return r.n as number;
     },
-    async loescheDemo() {
+    async loescheDemo(max) {
       return sql.begin(async (tx) => {
-        const dateien = (await tx`
-          SELECT DISTINCT d.sha256 FROM dokumente d JOIN mappen m ON m.id = d.mappe_id
-          WHERE m.demo AND m.haushalt_id = ${haushaltId}`).map((z) => z.sha256 as string);
-        // Demo-Mappen verweisen aufeinander. Erst die Verweise entfernen, sonst greift der
-        // Fremdschlüssel auf ziel_id je nach Reihenfolge der Prüfungen vor der Kaskade.
-        await tx`DELETE FROM verweise v USING mappen m
-          WHERE m.id = v.quelle_id AND m.demo AND m.haushalt_id = ${haushaltId}`;
-        const r = await tx`DELETE FROM mappen WHERE demo AND haushalt_id = ${haushaltId}`;
-        // Demo-Mappen im Papierkorb gehen gleich mit (#43).
-        const korb = await tx`DELETE FROM papierkorb WHERE haushalt_id = ${haushaltId} AND (mappe ->> 'demo')::boolean RETURNING dokumente`;
-        for (const z of korb) for (const d of z.dokumente as Zeile[]) dateien.push(d.sha256 as string);
-        return { anzahl: r.count + korb.count, dateien: [...new Set(dateien)] };
+        const grenze = max && Number.isFinite(max) ? Math.max(1, Math.floor(max)) : null;
+        const ids = (grenze
+          ? await tx`SELECT id FROM mappen WHERE demo AND haushalt_id = ${haushaltId} LIMIT ${grenze}`
+          : await tx`SELECT id FROM mappen WHERE demo AND haushalt_id = ${haushaltId}`).map((z) => z.id as string);
+        const dateien = ids.length ? (await tx`
+          SELECT DISTINCT sha256 FROM dokumente WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${ids}::uuid[])`).map((z) => z.sha256 as string) : [];
+        let anzahl = 0;
+        if (ids.length) {
+          // Demo-Mappen verweisen aufeinander. Erst die Verweise entfernen (auch die auf dieses Paket),
+          // sonst greift der Fremdschlüssel auf ziel_id vor der Kaskade.
+          await tx`DELETE FROM verweise WHERE haushalt_id = ${haushaltId} AND (quelle_id = ANY(${ids}::uuid[]) OR ziel_id = ANY(${ids}::uuid[]))`;
+          anzahl = (await tx`DELETE FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ANY(${ids}::uuid[])`).count;
+        }
+        // Demo-Mappen im Papierkorb gehen mit (#43) – im letzten Paket.
+        if (!grenze || ids.length < grenze) {
+          const korb = await tx`DELETE FROM papierkorb WHERE haushalt_id = ${haushaltId} AND (mappe ->> 'demo')::boolean RETURNING dokumente`;
+          for (const z of korb) for (const d of z.dokumente as Zeile[]) dateien.push(d.sha256 as string);
+          anzahl += korb.count;
+        }
+        return { anzahl, dateien: [...new Set(dateien)] };
       });
     },
     async dokumenteJeRegister(typId) {

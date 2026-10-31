@@ -109,6 +109,8 @@ export function speicherRepo(): Repo {
     async loescheTyp(id) { typen.delete(id); },
     async zaehleMappen(typId) { return [...mappen.values()].filter((m) => m.typId === typId).length; },
 
+    async mappenKurz() { return [...mappen.values()].map((m) => ({ id: m.id, typId: m.typId, titel: m.titel ?? '' })); },
+    async feldwerte(typId, key) { return [...mappen.values()].filter((m) => m.typId === typId && m.werte[key] != null).map((m) => String(m.werte[key])); },
     async listeMappen(typId) { return [...mappen.values()].filter((m) => !typId || m.typId === typId).map(kopie); },
     async holeMappe(id) { const m = mappen.get(id); return m && kopie(m); },
     async legeMappeAn(id, typId, werte: Werte, vs, benutzerId, demo = false, systemKennung = null) {
@@ -365,10 +367,13 @@ export function speicherRepo(): Repo {
       for (const [quelle, vs] of verweise) if (!mappen.get(quelle)?.demo && vs.some((v) => mappen.get(v.zielId)?.demo)) q.add(quelle);
       return q.size;
     },
-    async loescheDemo() {
-      const weg = [...mappen.values()].filter((m) => m.demo).map((m) => m.id);
-      const dateien = [...new Set([...dokumente.values()].filter((d) => weg.includes(d.mappeId)).map((d) => d.sha256))];
+    async loescheDemo(max) {
+      const alle = [...mappen.values()].filter((m) => m.demo).map((m) => m.id);
+      const weg = max ? alle.slice(0, max) : alle;
+      const wegSet = new Set(weg);
+      const dateien = [...new Set([...dokumente.values()].filter((d) => wegSet.has(d.mappeId)).map((d) => d.sha256))];
       for (const id of weg) await this.loescheMappe(id);
+      if (max && weg.length === max) return { anzahl: weg.length, dateien };
       const imKorb = [...korb.values()].filter((k) => k.mappe.demo);
       for (const k of imKorb) { korb.delete(k.mappe.id); for (const d of k.dokumente) if (!dateien.includes(d.sha256)) dateien.push(d.sha256); }
       return { anzahl: weg.length + imKorb.length, dateien };

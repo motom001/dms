@@ -1073,6 +1073,9 @@ export class Dienst {
   }
 
   listeMappen(typId?: string) { return this.repo.listeMappen(typId); }
+  /** Schlank für viele Mappen (Demo-Daten, #248). */
+  mappenKurz() { return this.repo.mappenKurz(); }
+  feldwerte(typId: string, key: string) { return this.repo.feldwerte(typId, key); }
 
   /**
    * Verweisende Mappen eines Typs über ein Feld, vollständig (für die Tabelle im
@@ -2518,12 +2521,44 @@ export class Dienst {
     }));
   }
 
-  async entferneDemo() {
+  /** Alle Demo-Mappen samt Dokumenten entfernen – in Paketen mit Fortschritt (#248). */
+  async entferneDemo(fortschritt: (fertig: number, gesamt: number) => void = () => {}, paket = 1000) {
     const echte = await this.repo.echteVerweiseAufDemo();
     if (echte) throw new Fachfehler(409, `${echte} echte ${echte === 1 ? 'Mappe verweist' : 'Mappen verweisen'} auf Demo-Mappen. Entferne zuerst diese Verweise.`);
-    const { anzahl, dateien } = await this.repo.loescheDemo();
-    for (const sha of dateien) await this.raeumeAuf(sha);
-    return { entfernt: anzahl };
+    const gesamt = [...(await this.repo.zaehleDemo()).values()].reduce((a, b) => a + b, 0);
+    let entfernt = 0;
+    fortschritt(0, gesamt);
+    for (;;) {
+      const { anzahl, dateien } = await this.repo.loescheDemo(paket);
+      for (const sha of dateien) await this.raeumeAuf(sha);
+      entfernt += anzahl;
+      fortschritt(Math.min(entfernt, gesamt), gesamt);
+      if (anzahl < paket) break;
+    }
+    return { entfernt };
+  }
+
+  /**
+   * Demo-Dokument anlegen (#248): ohne Protokolleintrag je Datei und ohne „zuletzt geändert“ –
+   * es sind tausende. Volltext wie beim Hochladen; eingereiht wird gesammelt (demoTexterkennung).
+   */
+  async legeDemoDokumentAn(mappeId: string, typ: Mappentyp, registerKey: string, name: string, mime: string, inhalt: Buffer, benutzerId: string | null) {
+    if (inhalt.length > MAX_DATEIGROESSE) throw new Fachfehler(413, 'Die Datei ist zu groß.');
+    const sha256 = createHash('sha256').update(inhalt).digest('hex');
+    const erkannt = erkenneAnzeigbar(inhalt);
+    await this.dateien.schreibe(sha256, inhalt);
+    const d = await this.repo.legeDokumentAn({
+      id: randomUUID(), mappeId, registerKey, name: dateiname(name), mime: erkannt ?? mime,
+      groesse: inhalt.length, sha256, anzeigbar: !!erkannt, erstellt: new Date().toISOString(), erstelltVon: benutzerId,
+    });
+    return { id: d.id, volltext: Dienst.volltextAn(typ, registerKey) };
+  }
+
+  /** Demo-Dokumente gesammelt in die Warteschlange der Texterkennung. */
+  async demoTexterkennung(ids: string[]) {
+    if (!ids.length) return;
+    await this.repo.ocrEinreihen(ids);
+    this.ocr?.anstossen();
   }
 
   /* ---------- Dokumente ---------- */
