@@ -95,6 +95,9 @@ export function zeitraumVon(z: Zeitraum, heute: string): [string, string] {
 
 /* ---------- Adresse ↔ Formular ---------- */
 
+/** Parameternamen, die nie als Feldschlüssel gelten (Schutz vor Prototype Pollution, #292). */
+const VERBOTENE_NAMEN = new Set(['__proto__', 'constructor', 'prototype']);
+
 export type Suchparameter = Iterable<[string, string]>;
 
 /** Liest die Adresse in ein Formular; was nicht passt, merkt erst `abfrageAus`. */
@@ -110,8 +113,9 @@ export function liesSuche(parameter: Suchparameter): Suchformular {
     if (k === 'sortierung') continue;
     const punkt = k.lastIndexOf('.');
     const [key, zusatz] = punkt > 0 ? [k.slice(0, punkt), k.slice(punkt + 1).toLowerCase()] : [k, ''];
-    if (!key) continue;
-    const e = (f.felder[key] ??= {});
+    // Namen aus der Adresse nie als Eigenschaften von Object.prototype benutzen (#292).
+    if (!key || VERBOTENE_NAMEN.has(key)) continue;
+    const e = Object.hasOwn(f.felder, key) ? f.felder[key] : (f.felder[key] = {});
     if (zusatz === 'von') e.von = w;
     else if (zusatz === 'bis') e.bis = w;
     else if (zusatz === 'leer') { if (w !== '0') e.leer = 'leer'; }

@@ -170,3 +170,14 @@ describe('Erweiterte Suche: Rechte (#199)', () => {
 faelle(false);
 faelle(true);
 after(async () => { for (const s of offen) await s.end(); });
+
+it('Suche: Parameternamen verändern Object.prototype nicht (#292)', () => {
+  const f = liesSuche(new URLSearchParams('__proto__.von=x&__proto__=y&constructor.von=z&prototype.bis=w&constructor.prototype.leer=1&typ=rechnung'));
+  const leer = {} as Record<string, unknown>;
+  for (const k of ['von', 'bis', 'leer', 'werte']) assert.equal(leer[k], undefined, k);
+  for (const k of ['__proto__', 'constructor', 'prototype']) assert.equal(Object.hasOwn(f.felder, k), false, k);
+  assert.equal(Object.getPrototypeOf(f.felder), Object.prototype);
+  assert.deepEqual(f.typen, ['rechnung']);
+  // Normale Felder gehen weiter.
+  assert.deepEqual(liesSuche(new URLSearchParams('betrag.von=1')).felder.betrag, { von: '1' });
+});
