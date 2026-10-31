@@ -1272,8 +1272,8 @@
 <h2 id="2-ordner-anlegen">2. Ordner anlegen<a class="headerlink" href="#2-ordner-anlegen" title="Permanent link">&para;</a></h2>
 <p>In der <strong>File Station</strong> im Ordner <code>Container</code> einen Ordner <code>dms</code> anlegen. Darin vier Ordner: <code>postgres</code>, <code>files</code>, <code>geheim</code> und <code>sicherung</code>.</p>
 <div class="admonition tip">
-<p class="admonition-title">Optional: Eingangsordner für den Scanner</p>
-<p>Ein fünfter Ordner <code>eingang</code> daneben wird zum <a href="https://motom001.github.io/dms/admin/aktuell/eingangsordner/">Eingangsordner</a>: Jede Datei, die dein Scanner oder das NAS dort ablegt, wird neue Post. Gib ihn im NAS für den Scanner frei. Ohne ihn läuft alles wie gewohnt.</p>
+<p class="admonition-title">Eingangsordner für den Scanner</p>
+<p>Leg auch einen fünften Ordner <code>eingang</code> daneben an. Die Vorlage bindet ihn ein, und manche NAS brechen beim Start ab, wenn ein eingebundener Ordner fehlt. Er wird zum <a href="https://motom001.github.io/dms/admin/aktuell/eingangsordner/">Eingangsordner</a>: Jede Datei, die dein Scanner oder das NAS dort ablegt, wird neue Post. Gib ihn im NAS für den Scanner frei. Brauchst du keinen Scanner, bleibt er einfach leer.</p>
 </div>
 <h2 id="3-anwendung-erstellen">3. Anwendung erstellen<a class="headerlink" href="#3-anwendung-erstellen" title="Permanent link">&para;</a></h2>
 <ol>
@@ -1292,8 +1292,9 @@
 <ol>
 <li>Im Browser <code>http://&lt;NAS&gt;:8080</code> öffnen.</li>
 <li>Den <strong>Einrichtungscode</strong> zeigt <strong>Container Station → Container → <code>dms-app-1</code> → Protokolle</strong>. Er steht auch in der Datei <code>Container/dms/geheim/EINRICHTUNGSCODE</code>.</li>
-<li>Die Datenbank ist schon angebunden. Weiter geht es mit Haushalt, Administrator, erstem Benutzer, Schlüssel und Notfallblatt.</li>
+<li>Die Datenbank fragt der Assistent nicht ab, sie ist schon angebunden.</li>
 </ol>
+<p><strong>So geht es im Assistenten weiter:</strong> Wähle <strong>Neu einrichten</strong> – oder <strong>Aus einer Sicherung wiederherstellen</strong>, wenn du von einem anderen Gerät umziehst. Dann trägst du den <strong>Namen deines Haushalts</strong> ein (der Schritt heißt im Assistenten „Mandant“), legst den <strong>Administrator</strong> und den <strong>ersten Benutzer</strong> für die Ablage an und bekommst <strong>Schlüssel und Notfallblatt</strong>. Zum Schluss kommt <strong>Optionales</strong> wie der E-Mail-Versand. Jeder Schritt hat oben rechts <strong>? Hilfe mit Bildern</strong>; ausführlich steht alles im <a href="https://motom001.github.io/dms/admin/aktuell/installation/#der-einrichtungsassistent">Administratorhandbuch</a>.</p>
 <h2 id="updates">Updates<a class="headerlink" href="#updates" title="Permanent link">&para;</a></h2>
 <p><strong>Container Station → Anwendungen → <code>dms</code></strong> → <strong>Aktion → Neu erstellen</strong>, dabei die Images neu ziehen. Die Daten bleiben in den Ordnern.</p>
 <h2 id="sicherung-auer-haus">Sicherung außer Haus<a class="headerlink" href="#sicherung-auer-haus" title="Permanent link">&para;</a></h2>
