@@ -1,4 +1,5 @@
 import { AnmeldeschutzListe, AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
+import { NummernkreisEditor, NummernkreiseListe, useNummernkreise } from './Nummernkreise';
 import { PostfachEditor, PostfaecherListe, usePostfaecher } from './Postfaecher';
 import { EingangsordnerListe, EingangsordnerPanel, useEingangsordner } from './Eingangsordner';
 import { useEffect, type ReactNode } from 'react';
@@ -74,6 +75,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const speicherplatz = useSpeicherplatz(bereich === 'speicherplatz');
   const eingang = useEingangsordner(bereich === 'eingangsordner');
   const postfaecher = usePostfaecher(bereich === 'postfaecher');
+  const nummernkreise = useNummernkreise(bereich === 'nummernkreise');
   const anmeldeschutz = useAnmeldeschutz(bereich === 'anmeldeschutz');
   const anbindung = useAnbindung(bereich === 'anbindung');
   // Wieder erreichbar nach Update oder Neustart (#122): Übersicht und offenen Bereich neu laden.
@@ -153,6 +155,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'anmeldeschutz') {
     liste = <AnmeldeschutzListe z={anmeldeschutz} />;
     rechts = <AnmeldeschutzPanel z={anmeldeschutz} />;
+  } else if (bereich === 'nummernkreise') {
+    liste = <NummernkreiseListe z={nummernkreise} offen={id} />;
+    rechts = id ? <NummernkreisEditor key={id} z={nummernkreise} schluessel={id} /> : <div className="platzhalter"><p>Wähle links einen Nummernkreis oder lege mit „+ Neu“ einen an.</p></div>;
   } else if (bereich === 'postfaecher') {
     liste = <PostfaecherListe z={postfaecher} offen={id} />;
     rechts = id ? <PostfachEditor key={id} z={postfaecher} id={id} /> : <div className="platzhalter"><p>Wähle links ein Postfach oder lege mit „+ Neu“ eines an.</p></div>;
@@ -190,6 +195,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'uebersicht', name: 'Übersicht', gruppe: null, warn: uebersicht.hinweise || undefined },
           { pfad: 'typen', name: 'Mappentypen', gruppe: 'ablage', zahl: d.typen.length },
           { pfad: 'sichten', name: 'Sichten', gruppe: 'ablage', zahl: d.sichten.length || undefined },
+          { pfad: 'nummernkreise', name: 'Nummernkreise', gruppe: 'ablage', zahl: nummernkreise.liste?.length || undefined },
           { pfad: 'benutzer', name: 'Benutzer', gruppe: 'benutzer', zahl: benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined },
           { pfad: 'anmeldeschutz', name: 'Anmeldeschutz', gruppe: 'benutzer', warn: anmeldeschutz.stand?.gesperrt.length ? String(anmeldeschutz.stand.gesperrt.length) : undefined, warnTitel: 'gesperrte IP-Adressen' },
           { pfad: 'aufgaben', name: 'Aufgaben', gruppe: 'benutzer', zahl: uebersicht.stand?.aufgaben.offen || undefined },

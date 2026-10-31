@@ -639,6 +639,27 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/fehler-neu', zugang: 'admin', handler: async (a) => ok(await ocr().fehlerNeuStarten(ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/abbrechen', zugang: 'admin', handler: async (a) => ok(await ocr().abbrechen(b(a).ids, ich(a).email)) },
     { methode: 'PUT', pfad: '/api/werkbank/texterkennung', zugang: 'admin', handler: async (a) => { await ocr().speichere(a.body); return ok(await ocr().status()); } },
+    /* ---------- Nummernkreise (#171) ---------- */
+    { methode: 'GET', pfad: '/api/werkbank/nummernkreise', zugang: 'admin', handler: async () => ok(await dienst.listeNummernkreise()) },
+    { methode: 'POST', pfad: '/api/werkbank/nummernkreise', zugang: 'admin', handler: async (a) => {
+      await dienst.speichereNummernkreis({ ...(a.body as object), neu: true }, ich(a).email);
+      return ok(await dienst.listeNummernkreise(), 201);
+    } },
+    { methode: 'PUT', pfad: '/api/werkbank/nummernkreise/:schluessel', zugang: 'admin', handler: async (a) => {
+      await dienst.speichereNummernkreis({ ...(a.body as object), schluessel: a.params.schluessel, neu: false }, ich(a).email);
+      return ok(await dienst.listeNummernkreise());
+    } },
+    { methode: 'DELETE', pfad: '/api/werkbank/nummernkreise/:schluessel', zugang: 'admin', handler: async (a) => {
+      await dienst.loescheNummernkreis(a.params.schluessel, ich(a).email);
+      return ok(await dienst.listeNummernkreise());
+    } },
+    { methode: 'POST', pfad: '/api/werkbank/nummernkreise/:schluessel/zaehler', zugang: 'admin', handler: async (a) => {
+      await dienst.setzeZaehler(a.params.schluessel, a.body, ich(a).email);
+      return ok(await dienst.listeNummernkreise());
+    } },
+    { methode: 'GET', pfad: '/api/werkbank/wartung/nummern', zugang: 'admin', handler: async (a) => ok(await dienst.nummernVorschau(a.query.typ ?? '', a.query.feld ?? '')) },
+    { methode: 'POST', pfad: '/api/werkbank/wartung/nummern', zugang: 'admin', handler: async (a) =>
+      ok(dienst.nummernNachtragen(String((a.body as { typId?: unknown })?.typId ?? ''), String((a.body as { feldKey?: unknown })?.feldKey ?? ''), ich(a).email), 202) },
     { methode: 'POST', pfad: '/api/werkbank/wartung/volltext', zugang: 'admin', handler: async () => ok({ eingereiht: await dienst.volltextNachholen() }) },
 
     /* ---------- Verschlüsselung (#39) ---------- */

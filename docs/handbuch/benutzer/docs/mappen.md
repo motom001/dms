@@ -28,6 +28,9 @@ Hinter Dokumenten- und Verknüpfungsregistern steht, wie viel darin liegt. Ein r
 3. Fülle die Felder aus. Felder mit **\*** sind Pflichtfelder. Unter manchen Feldern steht ein Hinweis, was hineingehört.
 4. Klicke auf **Mappe speichern**.
 
+!!! info "Fortlaufende Nummern"
+    Steht an einem Feld „Wird beim Speichern vergeben“, bekommt die Mappe dort beim Speichern automatisch die nächste Nummer, z. B. eine Rechnungsnummer. Die Nummer lässt sich danach nicht mehr ändern.
+
 ![Neue Rechnung anlegen](bilder/mappe-neu.png)
 
 Stimmt etwas nicht – ein Pflichtfeld ist leer, eine Zahl zu groß, eine Nummer schon vergeben –, steht der Grund direkt am Feld, und es wird nichts gespeichert.

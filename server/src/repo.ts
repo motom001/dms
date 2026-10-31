@@ -2,6 +2,7 @@ import type { Aufgabe, Ausschnitt, Dokument, Historienart, Historieneintrag, Map
 import type { Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ausdruck, Lesefilter, Regelwerk } from '../../shared/src/rechte';
 import type { Erinnerung } from '../../shared/src/fristen';
+import type { Nummernkreis } from '../../shared/src/nummernkreis';
 
 export interface Verweis { feldKey: string; zielId: string }
 /** Sortierung, wie sie das Repo braucht: Art der Spalte (für den richtigen Vergleich) und ggf. Feldschlüssel. */
@@ -80,7 +81,17 @@ export interface Repo {
   /** Vorhandene Werte eines Feldes (für eindeutige Felder beim Erzeugen von Demo-Daten). */
   feldwerte(typId: string, key: string): Promise<string[]>;
   holeMappe(id: string): Promise<Mappe | undefined>;
-  legeMappeAn(id: string, typId: string, werte: Werte, verweise: Verweis[], benutzerId: string | null, demo?: boolean, systemKennung?: string | null): Promise<Mappe>;
+  /** `nummern` (#171): in derselben Transaktion je Feld eine Nummer aus dem Kreis ziehen und eintragen. */
+  legeMappeAn(id: string, typId: string, werte: Werte, verweise: Verweis[], benutzerId: string | null, demo?: boolean, systemKennung?: string | null, nummern?: NummernZiehen): Promise<Mappe>;
+  /* ---------- Nummernkreise (#171) ---------- */
+  listeNummernkreise(): Promise<Nummernkreis[]>;
+  /** Anlegen oder Name, Muster und Start ändern; Zählerstände bleiben. */
+  speichereNummernkreis(k: Pick<Nummernkreis, 'schluessel' | 'name' | 'muster' | 'start'>): Promise<Nummernkreis>;
+  loescheNummernkreis(schluessel: string): Promise<void>;
+  /** Zählerstand eines Zeitraums setzen (zuletzt vergebener Wert). */
+  setzeZaehler(schluessel: string, zeitraum: string, letzter: number): Promise<Nummernkreis | undefined>;
+  /** Einer vorhandenen Mappe eine Nummer geben, wenn das Feld leer ist (Wartung); sonst null. */
+  vergebeNummer(mappeId: string, feldKey: string, kreis: string, jetzt: Date): Promise<string | null>;
   /** Die Mappe mit dieser Systemkennung (z. B. rolle:admin). */
   holeSystemMappe(kennung: string): Promise<Mappe | undefined>;
   aendereMappe(id: string, werte: Werte, verweise: Verweis[], benutzerId: string | null): Promise<Mappe>;
@@ -234,3 +245,6 @@ export interface Repo {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const istUuid = (s: unknown): s is string => typeof s === 'string' && UUID.test(s);
+
+/** Nummern ziehen beim Anlegen (#171): Feld → Kreis, Tag des Ziehens. */
+export interface NummernZiehen { felder: Array<{ feldKey: string; kreis: string }>; jetzt: Date }

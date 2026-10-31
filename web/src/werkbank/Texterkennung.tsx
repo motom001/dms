@@ -1,3 +1,4 @@
+import { NummernNachtragen } from './Nummernkreise';
 import { useCallback, useEffect, useState } from 'react';
 import { OCR_STAENDE, type OcrStandArt } from '../../../shared/src/model';
 import { api, type OcrEinstellungen, type OcrStatus } from '../api';
@@ -194,10 +195,7 @@ export function WartungPanel({ t }: { t: TexterkennungZustand }) {
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         <div className="knoepfe"><button type="button" className="knopf primaer" disabled={laeuft || !s?.zaehler.keiner} onClick={() => void nachholen()}>{laeuft ? 'Stelle ein …' : 'Volltext nachholen'}</button></div>
       </section>
-      <section className="blatt">
-        <h2 className="h3">Sicherung, Wiederherstellung und Export</h2>
-        <p className="leise">Kommt später an dieser Stelle (siehe Issue #48).</p>
-      </section>
+      <NummernNachtragen />
     </div>
   );
 }

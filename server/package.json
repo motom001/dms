@@ -1,7 +1,7 @@
 {
   "name": "@dms/server",
   "private": true,
-  "version": "0.54.0",
+  "version": "0.55.0",
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "build": "esbuild src/index.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/index.js --sourcemap && esbuild src/dms.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/dms.js",
     "start": "node --enable-source-maps dist/index.js",
     "typecheck": "tsc -p .",
-    "test": "node --import tsx --test test/*.test.ts"
+    "test": "node --import tsx --test --test-reporter=tap test/*.test.ts"
   },
   "dependencies": {
     "@fastify/static": "^10.1.3",

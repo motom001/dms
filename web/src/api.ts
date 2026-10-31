@@ -1,5 +1,6 @@
 import type { Design } from './design';
 import { messung } from './messung';
+import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
@@ -412,6 +413,14 @@ export const api = {
   demoAbschaetzung: (o: DemoOptionen) => anfrage<DemoAbschaetzung>('POST', '/api/werkbank/demo/abschaetzung', o),
   demoEntfernen: () => anfrage<Auftrag>('DELETE', '/api/werkbank/demo'),
   auftrag: () => anfrage<Auftrag | null>('GET', '/api/werkbank/auftrag'),
+  /* Nummernkreise (#171) */
+  nummernkreise: () => anfrage<NummernkreisAnsicht[]>('GET', '/api/werkbank/nummernkreise'),
+  nummernkreisAnlegen: (k: NummernkreisEingabe) => anfrage<NummernkreisAnsicht[]>('POST', '/api/werkbank/nummernkreise', k),
+  nummernkreisAendern: (s: string, k: Omit<NummernkreisEingabe, 'schluessel'>) => anfrage<NummernkreisAnsicht[]>('PUT', `/api/werkbank/nummernkreise/${encodeURIComponent(s)}`, k),
+  nummernkreisLoeschen: (s: string) => anfrage<NummernkreisAnsicht[]>('DELETE', `/api/werkbank/nummernkreise/${encodeURIComponent(s)}`),
+  nummernkreisZaehler: (s: string, naechster: number) => anfrage<NummernkreisAnsicht[]>('POST', `/api/werkbank/nummernkreise/${encodeURIComponent(s)}/zaehler`, { naechster }),
+  nummernVorschau: (typId: string, feldKey: string) => anfrage<{ anzahl: number; von: string | null; bis: string | null }>('GET', `/api/werkbank/wartung/nummern?typ=${encodeURIComponent(typId)}&feld=${encodeURIComponent(feldKey)}`),
+  nummernNachtragen: (typId: string, feldKey: string) => anfrage<Auftrag>('POST', '/api/werkbank/wartung/nummern', { typId, feldKey }),
   protokoll: (f: Record<string, string | number | undefined>) =>
     anfrage<ProtokollAntwort>('GET', `/api/werkbank/protokoll?${new URLSearchParams(Object.entries(f).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]))}`),
   debug: (an: boolean) => anfrage<DebugStand>('PUT', '/api/werkbank/debug', { an }),
@@ -490,6 +499,11 @@ export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rech
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 export const dokumentUrl = (id: string, herunterladen = false) => `/api/dokumente/${id}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
 
+export interface NummernkreisEingabe { schluessel: string; name: string; muster: string; start: number }
+export interface NummernkreisAnsicht extends Nummernkreis {
+  naechste: string; naechsterZaehler: number; zeitraum: string; neubeginn: 'taeglich' | 'monatlich' | 'jaehrlich' | 'nie';
+  verwendet: Array<{ typId: string; typ: string; feldKey: string; feld: string }>;
+}
 export interface Auftrag {
   id: string; art: string; titel: string; status: 'laeuft' | 'fertig' | 'fehler';
   fertig: number; gesamt: number; gestartet: string; beendet?: string; ergebnis?: unknown; fehler?: string;
