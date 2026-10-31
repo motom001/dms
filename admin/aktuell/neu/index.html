@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.51/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.52/neu/">
       
       
         <link rel="prev" href="..">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-051" class="md-skip">
+        <a href="#neu-in-version-052" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0510" class="md-nav__link">
+  <a href="#0520" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.51.0
+        0.52.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.51.0">
+    <nav class="md-nav" aria-label="0.52.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1258,6 +1258,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../konsole/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Konsole: Befehl dms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../verfahrensdokumentation/" class="md-nav__link">
         
   
@@ -1713,15 +1741,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0510" class="md-nav__link">
+  <a href="#0520" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.51.0
+        0.52.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.51.0">
+    <nav class="md-nav" aria-label="0.52.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1771,22 +1799,21 @@
   
 
 
-<h1 id="neu-in-version-051">Neu in Version 0.51<a class="headerlink" href="#neu-in-version-051" title="Permanent link">&para;</a></h1>
-<h2 id="0510">0.51.0<a class="headerlink" href="#0510" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-052">Neu in Version 0.52<a class="headerlink" href="#neu-in-version-052" title="Permanent link">&para;</a></h1>
+<h2 id="0520">0.52.0<a class="headerlink" href="#0520" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Zwei-Faktor-Anmeldung</strong> (#242):</li>
-<li>Unter <strong>Profil → Sicherheit</strong> richtet jeder für sich eine Anmeldung mit <strong>Authenticator-App</strong> ein (QR-Code scannen, Code bestätigen; TOTP, 6 Stellen, 30 Sekunden).</li>
-<li>Dazu <strong>zehn Wiederherstellungscodes</strong> zum Speichern oder Drucken, je einmal gültig; neue lassen sich jederzeit erzeugen.</li>
-<li>Bei der Anmeldung folgt nach dem Passwort der <strong>Code</strong> – oder ein Wiederherstellungscode. Falsche Codes zählen für den Anmeldeschutz.</li>
-<li>Auch ein <strong>Link zum Zurücksetzen des Passworts</strong> fragt danach den Code ab.</li>
-<li><strong>Werkbank → Anmeldeschutz:</strong> Zwei-Faktor-Anmeldung <strong>je Rolle vorschreiben</strong>. Wer sie noch nicht hat, richtet sie nach der Anmeldung ein, bevor es weitergeht.</li>
-<li><strong>Werkbank → Benutzer:</strong> sehen, wer sie eingerichtet hat, und sie <strong>zurücksetzen</strong> (z. B. Handy verloren).</li>
-<li>Das Geheimnis liegt mit dem Schlüssel des DMS verschlüsselt in der Datenbank; Wiederherstellungscodes nur als Prüfwert.</li>
+<li><strong>Befehl <code>dms</code> im Container</strong> (#244): <code>docker exec -it &lt;container&gt; dms hilfe</code> oder im Terminal des Containers in der Docker-Oberfläche des NAS.</li>
+<li><strong>Notfall:</strong> Passwort direkt setzen (ohne Mail), Zwei-Faktor-Anmeldung zurücksetzen, IP entsperren, Wartungsmodus beenden, Benutzer abmelden.</li>
+<li><strong>Betrieb:</strong> Status und Version, Sicherungen auflisten, starten und prüfen.</li>
+<li><strong>Verwaltung:</strong> Benutzer auflisten, anlegen, deaktivieren und aktivieren.</li>
+<li><code>dms api &lt;METHODE&gt; &lt;pfad&gt; [json]</code> für alle übrigen Funktionen; <code>--json</code> für Skripte.</li>
+<li>Spricht mit dem laufenden DMS über einen Schlüssel, der nur im Container und nur über <code>127.0.0.1</code> gilt – nicht mit der Datenbank. Jede Aktion steht im Protokoll mit dem Vermerk „Konsole“.</li>
+<li>Neue Seite <strong>Konsole</strong> im Administratorhandbuch.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.50.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.50.0...v0.51.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.51.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.51.0...v0.52.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
