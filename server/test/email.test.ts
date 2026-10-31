@@ -72,3 +72,26 @@ describe('E-Mail aus der Mappe (#58)', () => {
     await assert.rejects(d.aendereMappe(r.id, { werte: { betreff: 'anders' } }, null), status(403));
   });
 });
+
+describe('Mehrere Mappen per E-Mail (#151)', () => {
+  it('eine E-Mail mit Angaben als PDF und Dokumenten; Post verweist auf alle, Historie in jeder', async () => {
+    const { d, t, m, dokument, mails, mailer } = await aufbau();
+    const m2 = await d.legeMappeAn({ typId: t.id, werte: { nr: 'R-2' } }, null);
+    const z = await d.zugriff({ id: ich.id, rolle: 'admin' });
+    const wer = { ...ich, rolle: 'admin' };
+    const r = await d.versendeMappen({ ids: [m.id, m2.id], an: 'steuer@example.org', betreff: 'Belege 2026', dokumente: 'alle' }, wer, z, mailer);
+    assert.equal(mails.length, 1);
+    assert.deepEqual(mails[0].o?.anhaenge?.map((a) => a.name), ['R-1.pdf', 'rechnung.pdf', 'R-2.pdf']);
+    assert.equal(r.mappen, 2);
+    const post = await d.holeMappe(r.id);
+    assert.deepEqual(post.mappe.werte.bezug, [m.id, m2.id]);
+    assert.equal(post.dokumente.length, 3, 'in der Post liegt, was verschickt wurde');
+    for (const id of [m.id, m2.id]) assert.ok((await d.historie(id)).some((h) => h.art === 'email' && h.daten.email === r.id));
+    // Ohne Angaben, nur gewählte Dokumente.
+    await d.versendeMappen({ ids: [m.id, m2.id], an: 'a@example.org', betreff: 'Nur Beleg', angaben: false, dokumente: [dokument.id] }, wer, z, mailer);
+    assert.deepEqual(mails[1].o?.anhaenge?.map((a) => a.name), ['rechnung.pdf']);
+    await assert.rejects(d.versendeMappen({ ids: [m.id], an: 'a@example.org', betreff: 'x', dokumente: ['fremd'] }, wer, z, mailer), status(422));
+    await assert.rejects(d.versendeMappen({ ids: [], an: 'a@example.org', betreff: 'x' }, wer, z, mailer), status(422));
+    await assert.rejects(d.versendeMappen({ ids: [m.id], an: 'a@example.org', betreff: 'x' }, wer, z, null), status(409));
+  });
+});

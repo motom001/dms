@@ -87,6 +87,7 @@ export const HILFE = {
   // Ablage und Profil: Benutzerhandbuch
   'ablage.eingang': benutzer('eingang/', 'Zu erledigen und Aufgaben'),
   'ablage.start': benutzer('startseite/', 'Startseite'),
+  'ablage.email': benutzer('versenden/', 'mehreren Mappen per E-Mail', 'mehrere-mappen-per-e-mail'),
   'ablage.anstehend': benutzer('eingang/', 'Anstehend', 'anstehend'),
   'ablage.erinnern': benutzer('eingang/', 'Erinnern', 'erinnern'),
   'mappentyp.frist': admin('mappentypen/', 'Erinnerungen an Datumsfeldern', 'fristen-erinnerungen-an-datumsfeldern'),

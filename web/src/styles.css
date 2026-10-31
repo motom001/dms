@@ -1134,3 +1134,5 @@ dialog.rueckfrage .eigenschaft { display: flex; flex-direction: column; gap: 4px
 .symbolknopf { min-width: 26px; min-height: 26px; padding: 0 4px; border: 1px solid var(--linie); border-radius: 4px; background: var(--flaeche); color: var(--tinte); cursor: pointer; font-size: 14px; line-height: 1; }
 .symbolknopf:disabled { opacity: .4; cursor: default; }
 .zusammenfuegen { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px; margin: 6px 0; border: 1px solid var(--linie); border-radius: 8px; background: var(--senke); }
+.emailmappen { list-style: none; padding: 0; margin: 6px 0; display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow: auto; }
+.emailmappen ul { list-style: none; padding-left: 12px; margin: 2px 0; }
