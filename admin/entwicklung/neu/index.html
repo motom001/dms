@@ -363,6 +363,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0739" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.73.9
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.73.9">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sicherheit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#werkzeuge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Werkzeuge
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0738" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2116,6 +2155,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0739" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.73.9
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.73.9">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sicherheit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#werkzeuge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Werkzeuge
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0738" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2414,6 +2492,15 @@
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
+<h2 id="0739">0.73.9<a class="headerlink" href="#0739" title="Permanent link">&para;</a></h2>
+<h3 id="sicherheit">Sicherheit<a class="headerlink" href="#sicherheit" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Bibliotheken <code>glob</code> und <code>minimatch</code> im Image aktualisiert</strong> (#288, Schwere: niedrig). Beide kamen über <code>@fastify/static</code> (Auslieferung der Oberfläche) mit bekannten Warnungen ins Image: <code>glob</code> bis 14.0.1 (Abbruch einer Suche lief im Hintergrund weiter) und <code>minimatch</code> vor 11.0.1 (sehr aufwendige Muster konnten viel Rechenzeit kosten). Im DMS waren beide nicht ausnutzbar – die Muster stehen beim Start fest und kommen nie von Benutzern. Jetzt sind <code>glob</code> 14 und <code>minimatch</code> 11 fest vorgegeben, damit Prüfungen wie Dependabot und Trivy sauber bleiben.</li>
+</ul>
+<h3 id="werkzeuge">Werkzeuge<a class="headerlink" href="#werkzeuge" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Das Werkzeug „Lockfile erzeugen“ löst <code>package-lock.json</code> jetzt immer neu auf (bisher übersah es geänderte <code>overrides</code>) und kann über <em>Run workflow</em> einzelne Pakete gezielt aktualisieren.</li>
+</ul>
 <h2 id="0738">0.73.8<a class="headerlink" href="#0738" title="Permanent link">&para;</a></h2>
 <h3 id="fur-mitwirkende">Für Mitwirkende<a class="headerlink" href="#fur-mitwirkende" title="Permanent link">&para;</a></h3>
 <ul>
