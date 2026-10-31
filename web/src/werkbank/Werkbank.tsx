@@ -1,6 +1,7 @@
 import { AnmeldeschutzListe, AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
 import { NummernkreisEditor, NummernkreiseListe, useNummernkreise } from './Nummernkreise';
 import { DarfWegListe, DarfWegPanel, useDarfWeg } from './Archiv';
+import { useVollexport, VollexportListe, VollexportPanel } from './Vollexport';
 import { PostfachEditor, PostfaecherListe, usePostfaecher } from './Postfaecher';
 import { EingangsordnerListe, EingangsordnerPanel, useEingangsordner } from './Eingangsordner';
 import { useEffect, type ReactNode } from 'react';
@@ -78,6 +79,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const postfaecher = usePostfaecher(bereich === 'postfaecher');
   const nummernkreise = useNummernkreise(bereich === 'nummernkreise');
   const darfWeg = useDarfWeg(bereich === 'darfweg');
+  const vollexport = useVollexport(bereich === 'vollexport');
   const anmeldeschutz = useAnmeldeschutz(bereich === 'anmeldeschutz');
   const anbindung = useAnbindung(bereich === 'anbindung');
   // Wieder erreichbar nach Update oder Neustart (#122): Übersicht und offenen Bereich neu laden.
@@ -157,6 +159,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'anmeldeschutz') {
     liste = <AnmeldeschutzListe z={anmeldeschutz} />;
     rechts = <AnmeldeschutzPanel z={anmeldeschutz} />;
+  } else if (bereich === 'vollexport') {
+    liste = <VollexportListe z={vollexport} />;
+    rechts = <VollexportPanel z={vollexport} />;
   } else if (bereich === 'darfweg') {
     liste = <DarfWegListe z={darfWeg} />;
     rechts = <DarfWegPanel z={darfWeg} />;
@@ -193,7 +198,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   }
 
   return (
-    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'darfweg'].includes(bereich) ? 'mappe' : 'liste'} offen={id}>
+    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'darfweg', 'vollexport'].includes(bereich) ? 'mappe' : 'liste'} offen={id}>
       <aside className="spalte sichten" aria-label="Bereiche">
         <h2 className="ueber">Werkbank</h2>
         <WerkbankNavigation bereich={bereich} eintraege={[
@@ -218,6 +223,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'fehlermeldungen', name: 'Fehlermeldungen', gruppe: 'wartung', warn: uebersicht.stand?.fehlermeldungen ? String(uebersicht.stand.fehlermeldungen) : undefined, warnTitel: 'offene Meldungen' },
           { pfad: 'sicherung', name: 'Sicherung', gruppe: 'wartung', warn: uebersicht.stand?.sicherung && (uebersicht.stand.sicherung.fehler || (uebersicht.stand.sicherung.schluessel && uebersicht.stand.sicherung.zuAlt)) ? '!' : undefined, warnTitel: 'Sicherung fehlgeschlagen oder zu alt' },
           { pfad: 'wiederherstellung', name: 'Wiederherstellen', gruppe: 'wartung' },
+          { pfad: 'vollexport', name: 'Vollexport', gruppe: 'wartung' },
           { pfad: 'wartungsmodus', name: 'Wartungsmodus', gruppe: 'wartung', warn: wartungsmodus.stand && wartungsmodus.stand.stufe !== 'aus' ? (wartungsmodus.stand.stufe === 'aktiv' ? 'aktiv' : 'an') : undefined, warnTitel: 'Wartungsmodus ist an' },
           { pfad: 'wartung', name: 'Wartungsoperationen', gruppe: 'wartung' },
           { pfad: 'datenbank', name: 'Datenbank', gruppe: 'wartung' },

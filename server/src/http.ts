@@ -51,6 +51,7 @@ interface Optionen {
   /** Befehl `dms` im Container (#244). */
   konsole?: import('./konsole').Konsolenzugang;
   oidc?: import('./oidc').Oidc;
+  mandantName?: () => Promise<string | null>;
   betrieb?: Betrieb;
   tresor?: Tresor;
   texterkennung?: Texterkennung;

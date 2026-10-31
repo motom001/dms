@@ -449,6 +449,7 @@ export function speicherRepo(): Repo {
       if (an) s.add(mappeId); else s.delete(mappeId);
       favoriten.set(benutzerId, s);
     },
+    async alleFavoriten() { return [...favoriten].flatMap(([benutzerId, s]) => [...s].filter((m) => mappen.has(m)).map((mappeId) => ({ benutzerId, mappeId }))); },
     async favoritenVon(benutzerId, mappeIds) { return new Set(mappeIds.filter((id) => istFavorit(id, benutzerId) && mappen.has(id))); },
     async legeInPapierkorb(id, benutzerId) {
       const m = mappen.get(id);

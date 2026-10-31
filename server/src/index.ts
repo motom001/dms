@@ -258,6 +258,7 @@ const app = await baueApp(dienst, konten, {
   einrichtung,
   anbindung: anbindungVerwaltung,
   mandantHinweis: mandant.hinweis,
+  mandantName: () => mandantNamen(sql, cfg.haushalt).name(),
   apiSchluessel: new ApiSchluesselDienst(messung.umhuelle(pgApiSchluesselRepo(sql), 'apischluessel')),
   betrieb,
   tresor,

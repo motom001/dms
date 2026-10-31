@@ -34,6 +34,8 @@ export const HILFE = {
   'werkbank.postfaecher': admin('postfaecher/', 'Postfächer'),
   'werkbank.nummernkreise': admin('nummernkreise/', 'Nummernkreise'),
   'mappentyp.archiv': admin('archiv/', 'Archivmodus und Aufbewahrung'),
+  'werkbank.vollexport': admin('export/', 'Daten exportieren'),
+  'werkbank.vollexport.kontakte': admin('export/', 'Kontakte als vCard', 'kontakte-als-vcard'),
   'werkbank.darfweg': admin('archiv/', '„Darf weg“', 'nach-der-frist-darf-weg'),
   'werkbank.dateienpruefen': admin('archiv/', 'Alle Dateien prüfen', 'alle-dateien-prufen'),
   'werkbank.auswahlfilter': admin('mappentypen/', 'Auswahlfilter am Referenzfeld', 'auswahl-einschranken'),

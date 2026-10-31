@@ -38,6 +38,8 @@ export interface KontoRepo {
   holeVertretung(id: string): Promise<Vertretung | undefined>;
   /** Vertretungen, die der Benutzer noch nicht gesehen hat. */
   ungeseheneVertretungen(benutzerId: string): Promise<Vertretung[]>;
+  /** Vollexport (#254): alle Vertretungen. */
+  alleVertretungen(): Promise<Vertretung[]>;
   markiereGesehen(benutzerId: string): Promise<void>;
 
   /** Persönliche Einstellungen (Sortierung, Design …). */
@@ -117,6 +119,7 @@ export function speicherKontoRepo(): KontoRepo {
       return [...vertretungen.values()].filter((v) => v.benutzerId === benutzerId && !v.gesehen)
         .map((v) => ({ id: v.id, benutzerId: v.benutzerId, adminId: v.adminId, adminName: v.adminName, beginn: v.beginn, ende: v.ende }));
     },
+    async alleVertretungen() { return [...vertretungen.values()].map((v) => ({ id: v.id, benutzerId: v.benutzerId, adminId: v.adminId, adminName: v.adminName, beginn: v.beginn, ende: v.ende })); },
     async markiereGesehen(benutzerId) { for (const v of vertretungen.values()) if (v.benutzerId === benutzerId && !v.gesehen) v.gesehen = new Date(); },
     async einstellungen(id) { return structuredClone(einstellungen.get(id) ?? {}); },
     async setzeEinstellung(id, k, w) {
@@ -254,6 +257,9 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
     },
     async ungeseheneVertretungen(benutzerId) {
       return (await sql`SELECT * FROM vertretungen WHERE benutzer_id = ${benutzerId} AND gesehen IS NULL ORDER BY beginn`).map(alsVertretung);
+    },
+    async alleVertretungen() {
+      return (await sql`SELECT v.* FROM vertretungen v JOIN benutzer b ON b.id = v.benutzer_id WHERE b.haushalt_id = ${haushaltId} ORDER BY v.beginn`).map(alsVertretung);
     },
     async markiereGesehen(benutzerId) { await sql`UPDATE vertretungen SET gesehen = now() WHERE benutzer_id = ${benutzerId} AND gesehen IS NULL`; },
     async einstellungen(id) {

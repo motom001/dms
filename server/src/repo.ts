@@ -116,6 +116,8 @@ export interface Repo {
   zaehler(benutzerId: string, admin: boolean, lesen?: Lesefilter | null): Promise<{ typen: Map<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number; favoriten: number }>;
   /** Favoriten (#62): setzen/entfernen; welche der Mappen Favoriten des Benutzers sind. */
   setzeFavorit(benutzerId: string, mappeId: string, an: boolean): Promise<void>;
+  /** Vollexport (#254): alle Favoriten. */
+  alleFavoriten(): Promise<Array<{ benutzerId: string; mappeId: string }>>;
   favoritenVon(benutzerId: string, mappeIds: string[]): Promise<Set<string>>;
   /** Anzahl Mappen je Klauselliste (eine je Sicht), in derselben Reihenfolge. */
   zaehleKlauseln(liste: Klausel[][], lesen?: Lesefilter | null): Promise<number[]>;

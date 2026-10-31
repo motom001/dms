@@ -22,6 +22,7 @@ Was das DMS kann, steht in den Handbüchern; was in welcher Version dazukam, in 
 - **Zusammenarbeit:** Benutzer und Rollen, Notizen, Erwähnungen, Aufgaben mit täglicher Zusammenfassung, Abwesenheit mit Vertretung, Protokoll jeder Änderung.
 - **Weitergeben:** Mappen per E-Mail versenden, als PDF exportieren, sprechende Links wie `/ablage/link?typ=Rechnung&rechnungsnummer=R-17`.
 - **Passwortfelder**, verschlüsselt gespeichert; eigene **Designs** mit Logo; **Schnittstelle** `/api/v1` mit API-Schlüsseln.
+- **Deine Daten gehören dir:** vollständig exportierbar in offenen Formaten (CSV, JSON, Excel, PDF, iCalendar, vCard, Dokumente im Original) – lesbar auch ohne das DMS.
 
 ## Handbücher
 

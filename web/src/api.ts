@@ -475,6 +475,11 @@ export const api = {
   emailAendern: (email: string, passwort: string) => anfrage<Benutzer>('PUT', '/api/konto/email', { email, passwort }),
   passwortAendern: (passwortAlt: string, passwortNeu: string) => anfrage<{ benutzer: Benutzer }>('PUT', '/api/konto/passwort', { passwortAlt, passwortNeu }),
   dokumentLoeschen: (id: string) => anfrage<null>('DELETE', `/api/dokumente/${id}`),
+  /* Vollexport (#254) */
+  vollexport: () => anfrage<VollexportStand>('GET', '/api/werkbank/export'),
+  vollexportStarten: (o: { passwoerter: boolean; passwoerterBestaetigt: boolean; protokolle: boolean; kontakte: Record<string, KontaktZuordnung> }) => anfrage<Auftrag>('POST', '/api/werkbank/export', o),
+  vollexportPruefen: (name: string) => anfrage<{ ok: boolean; dateien: number; fehlend: string[]; abweichend: string[] }>('POST', `/api/werkbank/export/${encodeURIComponent(name)}/pruefen`),
+  vollexportLoeschen: (name: string) => anfrage<null>('DELETE', `/api/werkbank/export/${encodeURIComponent(name)}`),
   /* Archivmodus (#212) */
   archivVorschau: (typId: string, archiv: Archiv) => anfrage<{ mappen: number; darfWeg: number }>('POST', '/api/werkbank/archiv/vorschau', { typId, archiv }),
   darfWeg: () => anfrage<Array<{ id: string; typId: string; typ: string; titel: string; aufbewahrenBis: string }>>('GET', '/api/werkbank/darf-weg'),
@@ -524,6 +529,13 @@ export interface NummernkreisEingabe { schluessel: string; name: string; muster:
 export interface NummernkreisAnsicht extends Nummernkreis {
   naechste: string; naechsterZaehler: number; zeitraum: string; neubeginn: 'taeglich' | 'monatlich' | 'jaehrlich' | 'nie';
   verwendet: Array<{ typId: string; typ: string; feldKey: string; feld: string }>;
+}
+export interface KontaktZuordnung { name: string; email?: string; telefon?: string; adresse?: string; firma?: string; notiz?: string }
+export interface VollexportStand {
+  ordner: string; frei: number | null;
+  abschaetzung: { mappen: number; dokumente: number; bytes: number };
+  exporte: Array<{ name: string; erstellt: string | null; bytes: number; dateien: number; mappen: number | null; passwoerter: boolean }>;
+  kontakte: Array<{ typId: string; typ: string; zuordnung: KontaktZuordnung }>;
 }
 export interface Auftrag {
   id: string; art: string; titel: string; status: 'laeuft' | 'fertig' | 'fehler';

@@ -741,6 +741,9 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       if (an) await sql`INSERT INTO favoriten (benutzer_id, mappe_id, haushalt_id) VALUES (${benutzerId}, ${mappeId}, ${haushaltId}) ON CONFLICT DO NOTHING`;
       else await sql`DELETE FROM favoriten WHERE benutzer_id = ${benutzerId} AND mappe_id = ${mappeId}`;
     },
+    async alleFavoriten() {
+      return (await sql`SELECT benutzer_id, mappe_id FROM favoriten WHERE haushalt_id = ${haushaltId} ORDER BY benutzer_id, mappe_id`).map((r) => ({ benutzerId: r.benutzer_id as string, mappeId: r.mappe_id as string }));
+    },
     async favoritenVon(benutzerId, mappeIds) {
       const ids = mappeIds.filter(istUuid);
       if (!istUuid(benutzerId) || !ids.length) return new Set();

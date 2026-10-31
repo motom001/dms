@@ -379,6 +379,15 @@ export class Konten {
 
   listeBenutzer() { return this.repo.listeBenutzer(); }
 
+  /** Vollexport (#254): Benutzer ohne Passwörter, mit ihren Einstellungen; Vertretungen. */
+  async exportDaten() {
+    const benutzer = await Promise.all((await this.repo.listeBenutzer()).map(async (b) => ({
+      id: b.id, email: b.email, name: b.name, rolle: b.rolle, aktiv: b.aktiv, erstellt: b.erstellt, letzteAnmeldung: b.letzteAnmeldung,
+      abwesenheit: b.abwesenheit ?? null, einstellungen: await this.repo.einstellungen(b.id),
+    })));
+    return { benutzer, vertretungen: await this.repo.alleVertretungen() };
+  }
+
   /** Für alle Angemeldeten: nur Id und Name, z. B. für „angelegt von“. */
   /** Für Namen und Empfängerauswahl; mit Abwesenheit, solange sie an ist (#78). */
   async personen() {
