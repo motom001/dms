@@ -1,0 +1,2654 @@
+
+<!doctype html>
+<html lang="de" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Einrichten, betreiben und erweitern des DMS">
+      
+      
+      
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.78/installation/">
+      
+      
+        <link rel="prev" href="../neu/">
+      
+      
+        <link rel="next" href="../aktualisieren/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Einrichtung und Betrieb - DMS – Administratorhandbuch</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#einrichtung-und-betrieb" class="md-skip">
+          Zum Inhalt
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+          <aside class="md-banner md-banner--warning">
+            <div class="md-banner__inner md-grid md-typeset">
+              
+  Du liest nicht das Handbuch zur neuesten Version des DMS.
+  <a href="../.."><strong>Zur aktuellen Version</strong></a>
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL(".."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
+          </aside>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Kopfzeile">
+    <a href=".." title="DMS – Administratorhandbuch" class="md-header__button md-logo" aria-label="DMS – Administratorhandbuch" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DMS – Administratorhandbuch
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Einrichtung und Betrieb
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dunkle Darstellung"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dunkle Darstellung" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Helle Darstellung"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Helle Darstellung" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Suche" placeholder="Suche" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Suche">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Zurücksetzen" aria-label="Zurücksetzen" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Suche wird initialisiert
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/motom001/dms" title="Zum Repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    motom001/dms
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="DMS – Administratorhandbuch" class="md-nav__button md-logo" aria-label="DMS – Administratorhandbuch" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DMS – Administratorhandbuch
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/motom001/dms" title="Zum Repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    motom001/dms
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Überblick
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../neu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Neu in dieser Version
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation und Betrieb
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation und Betrieb
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Einrichtung und Betrieb
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Einrichtung und Betrieb
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Inhaltsverzeichnis">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Inhaltsverzeichnis
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#der-einrichtungsassistent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Der Einrichtungsassistent
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Der Einrichtungsassistent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#einrichtungscode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Einrichtungscode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#datenbank" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Datenbank
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#neu-einrichten-oder-wiederherstellen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neu einrichten oder wiederherstellen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#haushalt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Haushalt
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#administrator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Administrator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#erster-benutzer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Erster Benutzer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#schlussel-und-notfallblatt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schlüssel und Notfallblatt
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optionales" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optionales
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fertig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fertig
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#datenbank-anbindung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Datenbank-Anbindung
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#e-mail-und-adresse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E-Mail und Adresse
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ordner-und-volumes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ordner und Volumes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#einstellungen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Einstellungen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hinter-einem-reverse-proxy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hinter einem Reverse-Proxy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Hinter einem Reverse-Proxy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#https-und-zertifikate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTPS und Zertifikate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#was-der-proxy-dem-dms-mitteilt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Was der Proxy dem DMS mitteilt
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sicherheits-header" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheits-Header
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/installieren/aktuell/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wie komme ich an ein DMS?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aktualisieren/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aktualisieren und Sichern
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wachsen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wachsen und umziehen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verschluesselung/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verschlüsselung
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Einrichten in der Werkbank
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Einrichten in der Werkbank
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../uebersicht/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Werkbank und Übersicht
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mappentypen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mappentypen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sichten/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ansichten
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nummernkreise/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Nummernkreise
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pakete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pakete
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../archiv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Archivmodus und Aufbewahrung
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../direktlinks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Links über Feldwerte
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benutzer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benutzer und Rollen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../anmeldeschutz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anmeldeschutz
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../berechtigungen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Berechtigungen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../designs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Designs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aufgaben/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aufgaben
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../papierkorb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Papierkorb
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../texterkennung/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Texterkennung und Wartung
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../eingangsordner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Eingangsordner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../postfaecher/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Postfächer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo-Daten
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wartung und Notfall
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Wartung und Notfall
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sicherung/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sicherung
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../export/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Daten exportieren
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wiederherstellen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wiederherstellen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wartungsmodus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wartungsmodus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../speicherplatz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Speicherplatz
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notfall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notfall: kein Admin mehr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../konsole/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Konsole: Befehl dms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verfahrensdokumentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verfahrensdokumentation (Vorlage)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fehlersuche und Support
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Fehlersuche und Support
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fehlersuche/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protokoll, Datenbank, Technik
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schnittstelle (API)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hintergrund
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hintergrund
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technik/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Technik
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../entscheidungen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entscheidungen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/benutzer/aktuell/begriffe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Begriffe (Glossar)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Weiteres
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Weiteres
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/motom001/dms/releases" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Was ist neu? (Changelog)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/benutzer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benutzerhandbuch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/installieren/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wie komme ich an ein DMS?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/entwickler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entwicklerhandbuch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Inhaltsverzeichnis">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Inhaltsverzeichnis
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#der-einrichtungsassistent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Der Einrichtungsassistent
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Der Einrichtungsassistent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#einrichtungscode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Einrichtungscode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#datenbank" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Datenbank
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#neu-einrichten-oder-wiederherstellen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neu einrichten oder wiederherstellen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#haushalt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Haushalt
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#administrator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Administrator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#erster-benutzer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Erster Benutzer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#schlussel-und-notfallblatt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schlüssel und Notfallblatt
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optionales" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optionales
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fertig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fertig
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#datenbank-anbindung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Datenbank-Anbindung
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#e-mail-und-adresse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E-Mail und Adresse
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ordner-und-volumes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ordner und Volumes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#einstellungen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Einstellungen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hinter-einem-reverse-proxy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hinter einem Reverse-Proxy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Hinter einem Reverse-Proxy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#https-und-zertifikate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTPS und Zertifikate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#was-der-proxy-dem-dms-mitteilt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Was der Proxy dem DMS mitteilt
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sicherheits-header" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheits-Header
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="einrichtung-und-betrieb">Einrichtung und Betrieb<a class="headerlink" href="#einrichtung-und-betrieb" title="Permanent link">&para;</a></h1>
+<p>Wie du das DMS installierst – auf Synology, UGREEN, QNAP, TrueNAS, Unraid, umbrelOS, ZimaOS, CasaOS oder jedem Server mit Docker –, steht im eigenen Bereich <strong><a href="https://motom001.github.io/dms/installieren/aktuell/">Wie komme ich an ein DMS?</a></strong>. Diese Seite beschreibt, was danach kommt: den Einrichtungsassistenten, die Anbindung an die Datenbank, Ordner, Einstellungen und den Betrieb hinter einem Reverse-Proxy.</p>
+<div class="admonition tip">
+<p class="admonition-title">Einen Bereich nicht in der Leiste gefunden?</p>
+<p>Manche Bereiche der Werkbank, zum Beispiel <em>Wartungsmodus</em>, <em>Datenbank-Anbindung</em> oder <em>Wartungsoperationen</em>, sind in der Vorlage <em>Haushalt</em> ausgeblendet. Unten in der Leiste steht, wie viele Bereiche ausgeblendet sind; ein Klick zeigt sie. Dauerhaft einblenden kannst du sie unter <a href="https://motom001.github.io/dms/admin/aktuell/uebersicht/#werkbank-anpassen">Werkbank anpassen</a>. <strong>Ausgeblendet heißt nicht abgeschaltet.</strong></p>
+</div>
+<p>Das DMS läuft – <strong>empfohlen</strong> – als zwei Container: die Anwendung (<code>ghcr.io/motom001/dms</code>) und PostgreSQL (<code>postgres:17</code>). Alternativ gibt es <strong><code>ghcr.io/motom001/dms-komplett</code></strong>, in dem beides in einem Container läuft (Gegenüberstellung unter <a href="https://motom001.github.io/dms/installieren/aktuell/#ein-oder-zwei-container">Ein oder zwei Container?</a>). Bei jedem Push auf <code>main</code> baut GitHub Actions beide Images neu (Tag <code>main</code>, zusätzlich je Commit ein Kurz-Hash und je Release die Versionsnummer).</p>
+<div class="admonition warning">
+<p class="admonition-title">Erst einrichten, dann freigeben</p>
+<p>Mach das DMS erst über einen Reverse-Proxy oder Port-Freigabe erreichbar, wenn die Einrichtung abgeschlossen ist. Der Einrichtungscode schützt zwar davor, dass ein Fremder sie übernimmt – sicherer ist es trotzdem.</p>
+</div>
+<h2 id="der-einrichtungsassistent">Der Einrichtungsassistent<a class="headerlink" href="#der-einrichtungsassistent" title="Permanent link">&para;</a></h2>
+<p>Beim ersten Aufruf führt ein Assistent in neun Schritten durch die Einrichtung. Jeder Schritt hat oben ein <strong>?</strong>, das genau den passenden Abschnitt hier öffnet. Übersprungenes lässt sich in der Werkbank nachholen; die Übersicht erinnert daran.</p>
+<h3 id="einrichtungscode">Einrichtungscode<a class="headerlink" href="#einrichtungscode" title="Permanent link">&para;</a></h3>
+<p><img alt="Einrichtungscode" src="../bilder/einrichtung-code.png" /></p>
+<p>Damit niemand sonst im Netz das DMS einrichtet, fragt es zuerst nach einem Code wie <code>K7PX-3MNA-Q9TR</code>. Er steht an zwei Stellen:</p>
+<ul>
+<li>im <strong>Protokoll des Containers</strong> – in der Docker-Oberfläche des NAS den Container <code>app</code> des Projekts öffnen und das Protokoll ansehen (bei UGREEN <em>Docker → Container → dms-app → Protokoll</em>, bei Synology <em>Container Manager → Container → Details → Protokoll</em>) oder <code>docker compose logs app</code> (bei <a href="https://motom001.github.io/dms/installieren/aktuell/komplett/">dms-komplett</a>: <code>docker compose logs dms</code>). Gesucht ist die Zeile <code>Einrichtungscode für das DMS: XXXX-XXXX-XXXX</code>;</li>
+<li>in der Datei <strong><code>EINRICHTUNGSCODE</code></strong> im Ordner <code>geheim</code> (in der Vorlage <code>/volume1/docker/dms/geheim</code>).</li>
+</ul>
+<p>Wo genau das bei deinem Gerät ist, zeigt die Anleitung deiner Plattform unter <a href="https://motom001.github.io/dms/installieren/aktuell/">Wie komme ich an ein DMS?</a> – für Synology, UGREEN, QNAP, Unraid, TrueNAS, umbrelOS, ZimaOS, CasaOS und andere.</p>
+<p>Nach dem Anlegen des Administrators ist der Code wertlos; das DMS löscht die Datei. Nach zehn falschen Versuchen sperrt es die Eingabe für zehn Minuten.</p>
+<h3 id="datenbank">Datenbank<a class="headerlink" href="#datenbank" title="Permanent link">&para;</a></h3>
+<p><img alt="Datenbank" src="../bilder/einrichtung-datenbank.png" /></p>
+<p>Server (in der Vorlage <code>db</code>), Port <code>5432</code>, Datenbank und Benutzer <code>dms</code> und das Passwort aus der <code>.env</code>. <strong>Verbindung prüfen</strong> meldet verständlich, was nicht stimmt – Server nicht erreichbar, Passwort falsch, Datenbank fehlt (mit Knopf zum Anlegen, wenn der Benutzer das darf). <strong>Übernehmen und weiter</strong> speichert die Anbindung und startet das DMS – ohne Neustart des Containers; die Tabellen legt es selbst an. Der Schritt entfällt, wenn eine Anbindung schon funktioniert (siehe <a href="#datenbank-anbindung">Datenbank-Anbindung</a>).</p>
+<h3 id="neu-einrichten-oder-wiederherstellen">Neu einrichten oder wiederherstellen<a class="headerlink" href="#neu-einrichten-oder-wiederherstellen" title="Permanent link">&para;</a></h3>
+<p><img alt="Neu einrichten oder wiederherstellen" src="../bilder/einrichtung-wahl.png" /></p>
+<p>Bei einer leeren Datenbank fragt das DMS, ob du neu anfängst oder eine Sicherung zurückholst. <strong>Wiederherstellen</strong> führt in den Ablauf unter <a href="../wiederherstellen/#neues-nas-alte-sicherung">Wiederherstellen</a> und endet bei der Anmeldung mit den bisherigen Zugangsdaten.</p>
+<h3 id="haushalt">Haushalt<a class="headerlink" href="#haushalt" title="Permanent link">&para;</a></h3>
+<p><img alt="Haushalt" src="../bilder/einrichtung-mandant.png" /></p>
+<p>Der Name des DMS, meist der Name der Familie („Familie Mustermann“) oder der Firma. Er erscheint als Schriftzug in der Kopfzeile, im Browser-Tab und auf der Anmeldeseite (änderbar unter <strong>Werkbank → <a href="../designs/">Designs</a></strong>).</p>
+<h3 id="administrator">Administrator<a class="headerlink" href="#administrator" title="Permanent link">&para;</a></h3>
+<p><img alt="Administrator" src="../bilder/einrichtung-administrator.png" /></p>
+<p>Name, E-Mail-Adresse und Passwort des Administrators. Danach bist du als Administrator angemeldet.</p>
+<h3 id="erster-benutzer">Erster Benutzer<a class="headerlink" href="#erster-benutzer" title="Permanent link">&para;</a></h3>
+<p><img alt="Erster Benutzer" src="../bilder/einrichtung-benutzer.png" /></p>
+<p>Administratoren richten ein, arbeiten aber nicht in der Ablage. Lege deshalb einen normalen Benutzer an – zum Beispiel dich selbst mit einer zweiten Adresse. Ohne E-Mail-Versand zeigt der Assistent den Einladungslink zum Kopieren.</p>
+<h3 id="schlussel-und-notfallblatt">Schlüssel und Notfallblatt<a class="headerlink" href="#schlussel-und-notfallblatt" title="Permanent link">&para;</a></h3>
+<p><img alt="Schlüssel und Notfallblatt" src="../bilder/einrichtung-schluessel.png" /></p>
+<p>Der Schlüssel verschlüsselt gespeicherte Passwörter und alle Sicherungen (siehe <a href="../verschluesselung/">Verschlüsselung</a>); das <a href="../sicherung/#notfallblatt">Notfallblatt</a> enthält ihn zum Ausdrucken. Druck es aus und leg es zu deinen wichtigen Unterlagen – ohne Schlüssel lässt sich keine Sicherung zurückholen.</p>
+<h3 id="optionales">Optionales<a class="headerlink" href="#optionales" title="Permanent link">&para;</a></h3>
+<p><img alt="Optionales" src="../bilder/einrichtung-optional.png" /></p>
+<p>Adresse des DMS (vorbelegt mit der Adresse im Browser), Bundesland für Feiertage, Beispiel-Mappentypen und der E-Mail-Versand. Alles lässt sich auch später in der Werkbank einstellen.</p>
+<h3 id="fertig">Fertig<a class="headerlink" href="#fertig" title="Permanent link">&para;</a></h3>
+<p><img alt="Fertig" src="../bilder/einrichtung-fertig.png" /></p>
+<p>Mit Links zu beiden Handbüchern, „Problem melden“ als vorbereitetes GitHub-Issue und dem Hinweis auf GitHub Sponsors.</p>
+<p>Danach: unter <strong>Werkbank → <a href="../sicherung/">Sicherung</a></strong> den Zeitplan einschalten, eigene <a href="../mappentypen/">Mappentypen</a> anlegen und weitere <a href="../benutzer/">Benutzer einladen</a>.</p>
+<h2 id="datenbank-anbindung">Datenbank-Anbindung<a class="headerlink" href="#datenbank-anbindung" title="Permanent link">&para;</a></h2>
+<p>Die Anbindung an PostgreSQL steht in der Datei <code>datenbank.json</code> im Ordner <code>/data/geheim</code> (nur für den Container lesbar, mit Passwort). Sie ist <strong>führend</strong>:</p>
+<ul>
+<li><strong>Gibt es die Datei</strong>, nimmt das DMS sie – auch wenn in der Compose-Datei <code>DATABASE_URL</code> gesetzt ist. Weicht die Variable ab, weist die Werkbank-Übersicht darauf hin; sie wird ignoriert und kann entfernt werden.</li>
+<li><strong>Gibt es sie nicht, aber <code>DATABASE_URL</code></strong> (bisherige Installationen), prüft das DMS die Variable beim Start und übernimmt sie in die Datei. Danach ist die Variable überflüssig.</li>
+<li><strong>Gibt es sie nicht, aber <code>DMS_DB_PASSWORT</code></strong> (Vorlagen für Synology, UGREEN, QNAP, TrueNAS, Unraid), nimmt das DMS die Standard-Anbindung – Server <code>db</code> (oder <code>DMS_DB_HOST</code>), Port 5432, Datenbank und Benutzer <code>dms</code> – mit diesem Passwort und übernimmt sie ebenso. Das Passwort steht so nur einmal in der Compose-Datei, ohne Sonderzeichen für eine URL maskieren zu müssen.</li>
+<li><strong>Gibt es beides nicht</strong> – oder klappt die Verbindung nicht –, startet das DMS im <strong>Einrichtungsmodus</strong>: Es liefert nur den Assistenten aus und fragt die Anbindung ab (mit Einrichtungscode). Alle anderen Schnittstellen antworten bis dahin mit 503. Eine gespeicherte Anbindung, deren Datenbank nur noch nicht erreichbar ist (der Datenbank-Container startet noch), versucht es alle zehn Sekunden weiter.</li>
+</ul>
+<p>Unter <strong>Werkbank → Datenbank-Anbindung</strong> siehst und änderst du die Anbindung: erst <strong>Verbindung prüfen</strong>, dann <strong>Übernehmen</strong>. Die neue Anbindung gilt nach einem Neustart (<strong>Jetzt neu starten</strong> – im Container startet Docker das DMS gleich wieder). Die Daten wandern dabei nicht mit; für einen Umzug in eine andere Datenbank nimm eine <a href="../sicherung/">Sicherung</a>.</p>
+<p>In der Datei steht auch die interne Id des <strong>Haushalts</strong> (früher die Umgebungsvariable <code>HAUSHALT_ID</code>). Bisherige Installationen übernehmen sie beim ersten Start; die Variable kann danach entfernt werden.</p>
+<h2 id="e-mail-und-adresse">E-Mail und Adresse<a class="headerlink" href="#e-mail-und-adresse" title="Permanent link">&para;</a></h2>
+<p>Unter <strong>Werkbank → E-Mail und Adresse</strong> stellst du ein, was früher Umgebungsvariablen waren. Änderungen gelten sofort, ohne Neustart.</p>
+<p><img alt="E-Mail und Adresse in der Werkbank" src="../bilder/werkbank-betrieb.png" /></p>
+<ul>
+<li><strong>Adresse des DMS</strong> – unter dieser Adresse öffnen die Benutzer das DMS, z. B. <code>http://nas.local:8080</code> oder <code>https://dms.example.org</code>. Sie steht in den Links der E-Mails. Solange keine gepflegt ist, nimmt das DMS die Adresse, unter der es gerade aufgerufen wird; <strong>Diese Adresse übernehmen</strong> speichert sie. Beginnt sie mit <code>https://</code>, gilt die Anmeldung nur noch über HTTPS.</li>
+<li><strong>E-Mail-Versand</strong> – Server, Verbindungsart (STARTTLS, meist Port 587; SSL/TLS, meist 465; unverschlüsselt nur im Heimnetz), Benutzer, Passwort und Absender. <strong>Verbindung prüfen</strong> meldet sich am Server an, ohne etwas zu senden; <strong>Testmail senden</strong> schickt eine Mail an eine Adresse deiner Wahl – beides mit den Werten im Formular, auch bevor du speicherst. Schlägt etwas fehl, steht die Meldung des Mailservers darunter.</li>
+<li><strong>Selbstsigniertes Zertifikat erlauben</strong> – nur für einen eigenen Mailserver im Heimnetz.</li>
+<li>Der <strong>Absender</strong> ist auch der Absender, wenn Benutzer eine Mappe <a href="https://motom001.github.io/dms/benutzer/versenden/">per E-Mail versenden</a>. Das DMS trägt dabei die Adresse des Benutzers als <strong>Antworten an</strong> ein – so kommen Antworten bei ihm an, ohne dass das DMS fremde Absender vortäuscht (das würden viele Empfänger als Spam einstufen). Dieselbe Einstellung braucht die <a href="../aufgaben/#tagliche-zusammenfassung">tägliche Zusammenfassung der Aufgaben</a>.</li>
+<li>Ohne E-Mail-Versand (Haken „E-Mails verschicken“ aus) zeigt die Benutzerverwaltung die Einladungs- und Passwort-Links zum Kopieren an; „Passwort vergessen“ setzt dann der Administrator zurück.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Passwort verschlüsselt</p>
+<p>Das SMTP-Passwort speichert das DMS verschlüsselt; den Schlüssel dazu erzeugst du einmal unter <strong>Werkbank → <a href="../verschluesselung/">Verschlüsselung</a></strong>. Solange es keinen gibt, lässt sich kein Passwort speichern. Das Passwort wird nie an die Oberfläche zurückgegeben. Nimm trotzdem am besten ein eigenes Passwort nur für den Versand, etwa ein App-Passwort deines Mailanbieters.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Von einer älteren Version</p>
+<p>Bis Version 0.8 waren das die Umgebungsvariablen <code>APP_URL</code> und <code>SMTP_*</code>. Beim ersten Start von 0.9 übernimmt das DMS ihre Werte einmalig in die Werkbank; danach werden sie ignoriert, und das Protokoll weist darauf hin, dass sie aus der Compose-Datei entfernt werden können.</p>
+</div>
+<h2 id="ordner-und-volumes">Ordner und Volumes<a class="headerlink" href="#ordner-und-volumes" title="Permanent link">&para;</a></h2>
+<p>Die Ordner im Container sind fest. Wohin sie auf dem NAS zeigen, bestimmst du allein über die Volumes der Compose-Datei – dafür gibt es keine Umgebungsvariablen.</p>
+<table>
+<thead>
+<tr>
+<th>Ordner im Container</th>
+<th>Inhalt</th>
+<th>Volume in der Vorlage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/data/files</code></td>
+<td>hochgeladene Dokumente, Logos, Bilder gemeldeter Fehler</td>
+<td><code>/volume1/docker/dms/files</code></td>
+</tr>
+<tr>
+<td><code>/data/geheim</code></td>
+<td>Schlüssel für gespeicherte Passwörter (<code>dms.schluessel</code>), <a href="#datenbank-anbindung">Datenbank-Anbindung</a> (<code>datenbank.json</code>), Einrichtungscode (<code>EINRICHTUNGSCODE</code>, nur bis zur Einrichtung), <a href="../notfall/">RESCUE-Datei</a></td>
+<td><code>/volume1/docker/dms/geheim</code></td>
+</tr>
+<tr>
+<td><code>/data/sicherung</code></td>
+<td><a href="../sicherung/">Sicherungen</a>, verschlüsselt</td>
+<td><code>/volume1/docker/dms/sicherung</code></td>
+</tr>
+<tr>
+<td><code>/eingang</code> (optional)</td>
+<td><a href="../eingangsordner/">Eingangsordner</a> für Scanner und NAS</td>
+<td><code>/volume1/docker/dms/eingang</code></td>
+</tr>
+</tbody>
+</table>
+<p>Jeder der drei Ordner unter <code>/data</code> muss ein eigenes Volume sein; sonst ist sein Inhalt weg, sobald der Container neu erstellt wird (z. B. beim Update). Die Datenbank liegt im Volume des PostgreSQL-Containers – beim Image <a href="https://motom001.github.io/dms/installieren/aktuell/komplett/">dms-komplett</a> im vierten Ordner <code>/data/postgres</code>. Wie viel Platz in jedem Ordner frei ist, zeigen <strong>Werkbank → <a href="../speicherplatz/">Speicherplatz</a></strong> und <strong>Werkbank → Technik</strong>.</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/volume1/docker/dms/files:/data/files</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/volume1/docker/dms/geheim:/data/geheim</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/volume1/docker/dms/sicherung:/data/sicherung</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Von einer älteren Version (bis 0.22)</p>
+<p>Früher legten <code>FILES_DIR</code>, <code>DMS_SCHLUESSEL_DATEI</code> und <code>DMS_SICHERUNG_DIR</code> die Ordner fest. Steht eine davon noch mit dem festen Wert in der Compose-Datei (z. B. <code>FILES_DIR: /data/files</code>), läuft alles weiter; das Protokoll und die Werkbank-Übersicht weisen darauf hin, dass du sie entfernen kannst. Zeigt sie auf einen <strong>anderen</strong> Ordner, startet das DMS nicht – sonst sähe es plötzlich einen leeren Dateiordner. Die Meldung im Protokoll des Containers nennt dann, welches Volume stattdessen auf den festen Ordner zeigen muss. Siehe <a href="../aktualisieren/#feste-ordner-ab-023">Aktualisieren</a>.</p>
+</div>
+<h2 id="einstellungen">Einstellungen<a class="headerlink" href="#einstellungen" title="Permanent link">&para;</a></h2>
+<p>Diese Einstellungen sind Umgebungsvariablen im Compose-Projekt:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Bedeutung</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DATABASE_URL</code></td>
+<td>Nur noch für den Umstieg: wird beim ersten Start in die <a href="#datenbank-anbindung">Datenbank-Anbindung</a> übernommen und danach ignoriert</td>
+</tr>
+<tr>
+<td><code>DMS_DB_PASSWORT</code>, <code>DMS_DB_HOST</code>, <code>DMS_DB_PORT</code></td>
+<td>Statt <code>DATABASE_URL</code>: Passwort (sowie Server, Standard <code>db</code>, und Port, Standard <code>5432</code>) der Standard-Anbindung; ebenfalls nur für den ersten Start</td>
+</tr>
+<tr>
+<td><code>DMS_EINRICHTUNGSCODE</code></td>
+<td><code>aus</code>: Einrichtungsassistent ohne Code – für App-Stores, in denen das Container-Protokoll nicht ohne Kommandozeile lesbar ist. Bis der Administrator angelegt ist, kann dann jeder im Netz die Einrichtung übernehmen</td>
+</tr>
+<tr>
+<td><code>TRUST_PROXY</code></td>
+<td>Wem das DMS die Angaben eines Reverse-Proxys glaubt. Nicht gesetzt oder <code>auto</code>: dem eigenen Rechner und privaten Netzen – passt fast immer. <code>false</code>: niemandem, <code>true</code>: allen, oder eine Liste wie <code>172.18.0.0/16</code>. Siehe <a href="#hinter-einem-reverse-proxy">Hinter einem Reverse-Proxy</a></td>
+</tr>
+<tr>
+<td><code>DMS_EINBETTEN</code></td>
+<td>Seiten, die das DMS einbetten dürfen (z. B. ein Dashboard), etwa <code>https://ha.example.org http://nas:8123</code>. Nicht gesetzt: nur das DMS selbst. Siehe <a href="#sicherheits-header">Sicherheits-Header</a></td>
+</tr>
+<tr>
+<td><code>LOG_LEVEL</code></td>
+<td>Grundstufe des Protokolls: <code>debug</code>, <code>info</code> (Standard), <code>warn</code>, <code>error</code></td>
+</tr>
+<tr>
+<td><code>PORT</code>, <code>HOST</code></td>
+<td>Port (Standard <code>3000</code>) und Adresse (Standard <code>0.0.0.0</code>, alle), auf denen das DMS im Container lauscht. Normalerweise änderst du <strong>nicht</strong> <code>PORT</code>, sondern den Port nach außen in der Compose-Datei (in der Vorlage <code>8080:3000</code>, z. B. <code>8090:3000</code>). Die eingebaute Gesundheitsprüfung des Images folgt <code>PORT</code>; setzt du <code>HOST</code> auf eine einzelne Adresse, muss sie <code>127.0.0.1</code> mit einschließen, sonst gilt der Container als <em>unhealthy</em></td>
+</tr>
+<tr>
+<td><code>DMS_EINGANG</code></td>
+<td>Nur für Sonderfälle: anderer Ort des <a href="../eingangsordner/">Eingangsordners</a> im Container (Standard <code>/eingang</code>). Üblich ist, den Ordner des NAS auf <code>/eingang</code> einzubinden</td>
+</tr>
+</tbody>
+</table>
+<h2 id="hinter-einem-reverse-proxy">Hinter einem Reverse-Proxy<a class="headerlink" href="#hinter-einem-reverse-proxy" title="Permanent link">&para;</a></h2>
+<p>Läuft das DMS hinter einem Reverse-Proxy (Nginx Proxy Manager, nginx, Caddy, Traefik, der Proxy deines NAS …), ist nur <strong>eines</strong> zu tun: In der Werkbank unter <strong>E-Mail und Adresse</strong> die öffentliche Adresse eintragen, z. B. <code>https://dms.example.org</code>. Beginnt sie mit <code>https://</code>, setzt das DMS das Sitzungs-Cookie nur noch über HTTPS, und Links in E-Mails führen auf diese Adresse.</p>
+<h3 id="https-und-zertifikate">HTTPS und Zertifikate<a class="headerlink" href="#https-und-zertifikate" title="Permanent link">&para;</a></h3>
+<p>Das DMS spricht selbst nur HTTP und verwaltet keine Zertifikate. Das übernimmt der Reverse-Proxy: Er nimmt die HTTPS-Verbindung an, kümmert sich um das Zertifikat und dessen Erneuerung und reicht die Anfrage an das DMS weiter. Übliche Wege:</p>
+<ul>
+<li><strong>Nginx Proxy Manager</strong> als zusätzlicher Container: Zertifikat von Let's Encrypt per Mausklick. So läuft es beim Entwickler, siehe <a href="https://motom001.github.io/dms/installieren/aktuell/beispiel/">Beispielaufbau</a>.</li>
+<li><strong>Der Proxy deines NAS:</strong> Synology, UGREEN und QNAP bringen einen Reverse-Proxy samt Let's-Encrypt-Zertifikaten mit.</li>
+<li><strong>Caddy:</strong> holt und erneuert Zertifikate von selbst, die Konfiguration ist wenige Zeilen lang.</li>
+</ul>
+<p>Für Let's Encrypt braucht es eine eigene Domain, die auf deinen Anschluss zeigt. Soll das DMS nur zu Hause erreichbar sein, reicht HTTP im Heimnetz.</p>
+<h3 id="was-der-proxy-dem-dms-mitteilt">Was der Proxy dem DMS mitteilt<a class="headerlink" href="#was-der-proxy-dem-dms-mitteilt" title="Permanent link">&para;</a></h3>
+<p>Der Proxy leitet jede Anfrage an das DMS weiter. Für das DMS sieht sie deshalb so aus, als käme sie vom Proxy. Was das Gerät dahinter ist, schreibt der Proxy in Zusatzangaben (<code>X-Forwarded-For</code>, <code>X-Forwarded-Proto</code>). Das DMS braucht sie für:</p>
+<table>
+<thead>
+<tr>
+<th>Wofür</th>
+<th>Mit den Angaben des Proxys</th>
+<th>Ohne sie</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>IP-Adressen</strong> im Protokoll und bei den Sitzungen eines Benutzers</td>
+<td>die Adresse des Handys oder Laptops</td>
+<td>immer die Adresse des Proxys</td>
+</tr>
+<tr>
+<td><strong>Sperre nach falschen Passwörtern</strong> (<a href="../anmeldeschutz/">Anmeldeschutz</a>, je E-Mail-Adresse und IP sowie je IP)</td>
+<td>trifft nur das Gerät, von dem die Fehlversuche kamen</td>
+<td>trifft alle Geräte: Fehlversuche von außen sperren die Anmeldung auch zu Hause</td>
+</tr>
+<tr>
+<td><strong>HTTPS erkennen</strong>, solange keine Adresse gepflegt ist</td>
+<td>Cookie nur über HTTPS, Links mit <code>https://</code></td>
+<td>Cookie auch über HTTP, Links mit der internen <code>http://</code>-Adresse</td>
+</tr>
+</tbody>
+</table>
+<p>Seit Version 0.43.0 nimmt das DMS diese Angaben <strong>von selbst</strong> an, wenn der Proxy im eigenen Rechner oder in einem privaten Netz sitzt (<code>127.0.0.1</code>, <code>10.x.x.x</code>, <code>172.16–31.x.x</code>, <code>192.168.x.x</code> und die entsprechenden IPv6-Netze). Das trifft auf einen Proxy-Container neben dem DMS und auf den Proxy eines NAS praktisch immer zu. Anfragen direkt aus dem Internet können so keine fremde IP und kein HTTPS vortäuschen. Unter <strong>Wartung und Fehlersuche → Technik</strong> steht bei <code>TRUST_PROXY</code>, was gerade gilt.</p>
+<div class="admonition note">
+<p class="admonition-title">Wann <code>TRUST_PROXY</code> doch setzen?</p>
+<ul>
+<li><code>TRUST_PROXY: "false"</code>: Wenn du ganz ausschließen willst, dass ein Gerät <strong>in deinem Heimnetz</strong>, das das DMS direkt über Port 8080 erreicht, eine andere IP-Adresse vortäuscht. Die IP-Adressen und die Sperre verhalten sich dann wie in der rechten Spalte oben.</li>
+<li>Eine Liste, z. B. <code>TRUST_PROXY: "172.18.0.5"</code>: Nur genau diesem Proxy glauben.</li>
+<li><code>TRUST_PROXY: "true"</code>: Wenn der Proxy eine öffentliche Adresse hat, etwa ein Tunnel- oder Cloud-Dienst, der direkt ans DMS weiterleitet. Dann darf das DMS selbst nicht aus dem Internet erreichbar sein.</li>
+</ul>
+<p>Vor Version 0.43.0 war <code>false</code> der Standard. Wer <code>TRUST_PROXY: "true"</code> schon gesetzt hat, kann es stehen lassen oder entfernen.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Die Adresse trotzdem pflegen</p>
+<p>Die Adresse in der Werkbank ist verlässlicher als jede Erkennung: E-Mails aus dem Hintergrund (Erinnerungen, Zusammenfassung) haben keine Anfrage, aus der das DMS die Adresse ablesen könnte.</p>
+</div>
+<h3 id="sicherheits-header">Sicherheits-Header<a class="headerlink" href="#sicherheits-header" title="Permanent link">&para;</a></h3>
+<p>Das DMS setzt die üblichen Sicherheits-Header selbst – dein Reverse-Proxy muss sie <strong>nicht</strong> noch einmal setzen (doppelte Header schaden nicht, verwirren aber bei der Fehlersuche):</p>
+<ul>
+<li><code>X-Frame-Options: SAMEORIGIN</code> und <code>Content-Security-Policy: frame-ancestors 'self'</code> – keine fremde Seite kann das DMS unsichtbar einbetten,</li>
+<li>eine strenge <code>Content-Security-Policy</code> für die Oberfläche (nur eigene Skripte),</li>
+<li><code>X-Content-Type-Options: nosniff</code>, <code>Referrer-Policy: same-origin</code>, <code>Permissions-Policy</code>,</li>
+<li><code>Strict-Transport-Security</code>, sobald das DMS über HTTPS aufgerufen wird.</li>
+</ul>
+<p>Soll das DMS in einer anderen Seite erscheinen, etwa in einem Home-Assistant-Dashboard, trage deren Ursprung in <code>DMS_EINBETTEN</code> ein (mehrere durch Leerzeichen getrennt). Ungültige Angaben ignoriert das DMS und nennt sie im Protokoll.</p>
+<p>Ein Beispiel für nginx:</p>
+<div class="highlight"><pre><span></span><code><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">443</span><span class="w"> </span><span class="s">ssl</span><span class="p">;</span>
+<span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">dms.example.org</span><span class="p">;</span>
+<span class="w">    </span><span class="c1"># ssl_certificate …; ssl_certificate_key …;</span>
+
+<span class="w">    </span><span class="kn">client_max_body_size</span><span class="w"> </span><span class="mi">110m</span><span class="p">;</span><span class="w">          </span><span class="c1"># Dokumente bis 100 MB</span>
+
+<span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://&lt;NAS&gt;:8080</span><span class="p">;</span>
+<span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
+<span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span>
+<span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span>
+<span class="w">        </span><span class="kn">proxy_read_timeout</span><span class="w"> </span><span class="s">120s</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Lange Arbeiten wie das Erzeugen tausender Demo-Mappen laufen im Hintergrund, damit der Proxy nicht wegen einer Zeitüberschreitung abbricht. Die Live-Anzeige des Protokolls fragt alle zwei Sekunden nach und braucht keine besondere Proxy-Einstellung.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Zurück zum Seitenanfang
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Fußzeile" >
+        
+          
+          <a href="../neu/" class="md-footer__link md-footer__link--prev" aria-label="Zurück: Neu in dieser Version">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Zurück
+              </span>
+              <div class="md-ellipsis">
+                Neu in dieser Version
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../aktualisieren/" class="md-footer__link md-footer__link--next" aria-label="Weiter: Aktualisieren und Sichern">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Weiter
+              </span>
+              <div class="md-ellipsis">
+                Aktualisieren und Sichern
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      DMS steht unter der AGPL-3.0 · <a href="https://github.com/sponsors/motom001">Projekt unterstützen</a>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/sponsors/motom001" target="_blank" rel="noopener" title="Projekt unterstützen (GitHub Sponsors)" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="m241 87.1 15 20.7 15-20.7C296 52.5 336.2 32 378.9 32 452.4 32 512 91.6 512 165.1v2.6c0 112.2-139.9 242.5-212.9 298.2-12.4 9.4-27.6 14.1-43.1 14.1s-30.8-4.6-43.1-14.1C139.9 410.2 0 279.9 0 167.7v-2.6C0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://github.com/motom001/dms" target="_blank" rel="noopener" title="Quellcode auf GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "In Zwischenablage kopiert", "clipboard.copy": "In Zwischenablage kopieren", "search.result.more.one": "1 weiteres Suchergebnis auf dieser Seite", "search.result.more.other": "# weitere Suchergebnisse auf dieser Seite", "search.result.none": "Keine Suchergebnisse", "search.result.one": "1 Suchergebnis", "search.result.other": "# Suchergebnisse", "search.result.placeholder": "Suchbegriff eingeben", "search.result.term.missing": "Es fehlt", "select.version": "Version ausw\u00e4hlen"}, "version": {"alias": true, "default": "aktuell", "provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>
