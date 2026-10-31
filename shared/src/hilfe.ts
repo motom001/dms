@@ -28,6 +28,7 @@ export const HILFE = {
   'werkbank.uebersicht': admin('uebersicht/', 'Übersicht', 'ubersicht'),
   'werkbank.ansicht': admin('uebersicht/', 'Werkbank anpassen', 'werkbank-anpassen'),
   'werkbank.typen': admin('mappentypen/', 'Mappentypen'),
+  'werkbank.titelfilter': admin('mappentypen/', 'Platzhalter formatieren', 'platzhalter-formatieren'),
   'werkbank.sichten': admin('sichten/', 'Sichten'),
   'werkbank.benutzer': admin('benutzer/', 'Benutzern und Rollen'),
   'werkbank.berechtigungen': admin('berechtigungen/', 'Berechtigungen'),

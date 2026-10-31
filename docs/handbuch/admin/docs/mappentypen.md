@@ -139,6 +139,28 @@ Verweist der Titel auf eine andere Mappe (`{vertragspartner}`), wird der Titel n
 
 Ohne Vorlage verwendet das DMS das erste Textfeld.
 
+### Platzhalter formatieren
+
+Hinter einem senkrechten Strich `|` kannst du einen Platzhalter **formatieren**, ohne ein zusätzliches Feld anzulegen. Mehrere Filter lassen sich hintereinander schreiben, zum Beispiel `{partner|kurz:20|gross}`.
+
+| Filter | Wirkung | Beispiel | Ergebnis |
+| --- | --- | --- | --- |
+| `jahr`, `monat` | Teil eines Datums | `{rechnungsdatum|jahr}` | 2026 |
+| `datum:"…"` | Datum im eigenen Format mit `TT`, `MM`, `JJJJ`, `JJ` | `{rechnungsdatum|datum:"MM/JJJJ"}` | 10/2026 |
+| `ohne_waehrung` | Betrag ohne Währungszeichen | `{betrag|ohne_waehrung}` | 1.234,50 |
+| `gross`, `klein` | Groß- bzw. Kleinschreibung | `{kennzeichen|gross}` | DD-AB 123 |
+| `kurz:n` | auf n Zeichen kürzen, mit „…“ | `{betreff|kurz:30}` | Ihre Rechnung zum Vertrag 12… |
+| `sonst:"…"` | Ersatz, wenn das Feld leer ist | `{nummer|sonst:"ohne Nr."}` | ohne Nr. |
+
+`jahr`, `monat` und `datum` gehen bei Datumsfeldern und bei `{angelegt}` und `{geaendert}`, `ohne_waehrung` nur bei Beträgen.
+
+**Leere Teile fallen weg.** Ist ein Feld leer, verschwindet es samt seinem Trenner (` – `, ` · `, ` | `, ` / `, `, `). Aus `{bezeichnung} – {vertragsnummer} – {beginn|jahr}` wird bei fehlender Vertragsnummer „Strom – 2026“ statt „Strom –  – 2026“.
+
+Bewusst gibt es **keine** Bedingungen, Schleifen oder Rechnungen im Titel. Unbekannte Filter oder ein Filter am falschen Feld meldet der Editor sofort, die Vorschau zeigt das Ergebnis.
+
+!!! note "Bestehende Titel"
+    Alte Vorlagen ohne Filter gelten unverändert. Neu ist nur, dass leere Teile samt Trenner wegfallen. Das wirkt, sobald ein Titel neu gebildet wird, also beim nächsten Speichern der Mappe oder des Mappentyps.
+
 ## Trefferlisten
 
 Eine **Trefferliste** legt fest, welche Angaben in einer Liste als Spalten erscheinen, und in welcher Reihenfolge – Felder und Systemwerte (Titel, angelegt/geändert am/von).

@@ -143,6 +143,12 @@ begriffe:
     beschreibung: Der Anzeigename einer Mappe. Er wird aus einer Vorlage mit Feldwerten gebildet.
     einsteiger: alltag
     begegnet: alle
+  - begriff: Filter (Titel)
+    bereich: grundbegriffe
+    beschreibung: Formatiert einen Platzhalter in der Titel-Vorlage, z. B. nur das Jahr eines Datums oder gekürzter Text. Steht hinter einem senkrechten Strich, z. B. {datum|jahr}.
+    einsteiger: erklaeren
+    begegnet: admin
+    verwandt: [Titel]
   - begriff: Sicht
     bereich: grundbegriffe
     beschreibung: Eine gespeicherte Auswahl von Mappen – welche Mappentypen, mit welchen Bedingungen. Sichten stehen im Baum links in der Ablage.

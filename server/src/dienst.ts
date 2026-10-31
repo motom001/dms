@@ -2610,7 +2610,7 @@ export class Dienst {
         felder[i] = { ...felder[i], key: neu };
         for (const r of register) if (r.felder) r.felder = r.felder.map((k) => (k === x.key ? neu : k));
         trefferlisten = trefferlisten.map((l) => ({ ...l, spalten: l.spalten.map((k) => (k === x.key ? neu : k)) }));
-        titelVorlage = titelVorlage.split(`{${x.key}}`).join(`{${neu}}`);
+        titelVorlage = titelVorlage.replace(new RegExp(`\\{${x.key}(?=[|}])`, 'g'), `{${neu}`);
         umbenannt.push([x.key, neu]);
       }
       felder.push(x);
