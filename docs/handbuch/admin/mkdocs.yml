@@ -86,6 +86,7 @@ nav:
       - Demo-Daten: demo.md
   - Wartung und Notfall:
       - Sicherung: sicherung.md
+      - Daten exportieren: export.md
       - Wiederherstellen: wiederherstellen.md
       - Wartungsmodus: wartungsmodus.md
       - Speicherplatz: speicherplatz.md

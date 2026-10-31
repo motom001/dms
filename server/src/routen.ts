@@ -1,5 +1,5 @@
 import type { Readable } from 'node:stream';
-import { MAX_DATEIGROESSE, POST_KANAL, type Benutzer, type Mappe } from '../../shared/src/model';
+import { MAX_DATEIGROESSE, POST_KANAL, type Benutzer, type Mappe, type Mappentyp } from '../../shared/src/model';
 import { type Recht } from '../../shared/src/rechte';
 import { ladeBeispiele } from './beispiele';
 import { erzeugeDemo, pruefeDemoOptionen, schaetzeDemo, type DemoPlatz } from './demo';
@@ -11,6 +11,10 @@ import { openapi, v1Routen } from './api-v1';
 import type { ApiSchluessel, ApiSchluesselDienst } from './apischluessel';
 import type { Designs } from './designs';
 import type { Oidc } from './oidc';
+import { exportDateien, exporteIn, exportOrdner, freierPlatz, loescheExport, pruefeExport, vollexport, type ExportOptionen, type KontaktZuordnung } from './vollexport';
+import { createReadStream } from 'node:fs';
+import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
+import { join } from 'node:path';
 import { ALS_KOPF, KONSOLE_KOPF, istLoopback, konsolenBenutzer, type Konsolenzugang } from './konsole';
 import type { Messung } from './messung';
 import { eigeneVersion, standKennung, uebersicht, versionsabgleich, type SystemQuelle } from './system';
@@ -132,6 +136,8 @@ export interface RoutenExtras {
   konsole?: Konsolenzugang;
   /** Anmeldung über einen Anbieter (#241). */
   oidc?: Oidc;
+  /** Name des Mandanten (Vollexport, #254). */
+  mandantName?: () => Promise<string | null>;
   /** Wartungsmodus (#102). */
   wartung?: Wartung;
   /** Notfallzugang über eine RESCUE-Datei (#108). */
@@ -212,6 +218,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   /** Benutzer mit ihren weiteren Rollen (#27). */
   const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.weitereRollen()).get(b.id) ?? [] });
   const sicherung = () => { if (!x.sicherung) throw new Fachfehler(404, 'Sicherungen sind nicht eingerichtet.'); return x.sicherung; };
+  // Vollexport (#254): neben den Sicherungen, Unterordner export/.
+  const exportZiel = () => { if (!x.sicherung) throw new Fachfehler(404, 'Ohne Sicherungsordner gibt es keinen Vollexport.'); return join(x.sicherung.ordner, 'export'); };
   const oidc = () => { if (!x.oidc) throw new Fachfehler(404, 'Die Anmeldung über einen Anbieter ist nicht eingerichtet.'); return x.oidc; };
   const adresse = () => (x.betrieb?.adresseFuerLinks() ?? '').replace(/\/+$/, '');
   const zf = () => { if (!konten.zweifaktor) throw new Fachfehler(404, 'Die Zwei-Faktor-Anmeldung ist nicht eingerichtet.'); return konten.zweifaktor; };
@@ -650,6 +658,50 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/fehler-neu', zugang: 'admin', handler: async (a) => ok(await ocr().fehlerNeuStarten(ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/abbrechen', zugang: 'admin', handler: async (a) => ok(await ocr().abbrechen(b(a).ids, ich(a).email)) },
     { methode: 'PUT', pfad: '/api/werkbank/texterkennung', zugang: 'admin', handler: async (a) => { await ocr().speichere(a.body); return ok(await ocr().status()); } },
+    /* ---------- Vollexport (#254) ---------- */
+    { methode: 'GET', pfad: '/api/werkbank/export', zugang: 'admin', handler: async () => {
+      const ziel = exportZiel();
+      const typen = await dienst.listeTypen();
+      return ok({ ordner: ziel, exporte: await exporteIn(ziel), abschaetzung: await dienst.exportAbschaetzung(), frei: await freierPlatz(ziel), kontakte: kontaktVorschlaege(typen) });
+    } },
+    { methode: 'POST', pfad: '/api/werkbank/export', zugang: 'admin', handler: async (a) => {
+      const e = (a.body ?? {}) as { passwoerter?: unknown; passwoerterBestaetigt?: unknown; protokolle?: unknown; kontakte?: unknown };
+      if (e.passwoerter === true && e.passwoerterBestaetigt !== true) throw new Fachfehler(422, 'Passwörter im Klartext nur mit ausdrücklicher Bestätigung.');
+      const ziel = exportZiel();
+      const s = await dienst.exportAbschaetzung();
+      const frei = await freierPlatz(ziel);
+      // Grob: Dokumente plus ein Zuschlag für Tabellen und PDFs.
+      if (frei !== null && frei < s.bytes * 1.1 + 50 * 1024 ** 2) throw new Fachfehler(507, `Zu wenig Platz am Ziel: frei ${Math.round(frei / 1024 ** 2)} MB, nötig etwa ${Math.round((s.bytes * 1.1 + 50 * 1024 ** 2) / 1024 ** 2)} MB.`);
+      const kontakte = e.kontakte && typeof e.kontakte === 'object' ? e.kontakte as ExportOptionen['kontakte'] : undefined;
+      const quelle = dienst.vollexportQuelle({
+        mandant: (await x.mandantName?.()) ?? '', version: eigeneVersion(),
+        benutzer: () => konten.exportDaten(), designs: async () => (x.designs ? (await x.designs.liste()).designs : []),
+        protokoll: () => protokoll.eintraege({}),
+      });
+      const von = ich(a).email;
+      if (e.passwoerter === true) L.werkbank.warn('Vollexport mit Passwörtern im Klartext gestartet', { von });
+      else L.werkbank.info('Vollexport gestartet', { von, protokolle: e.protokolle === true });
+      return ok(dienst.auftraege.starte('vollexport', 'Vollexport', async (f: (fertig: number, gesamt: number) => void) => {
+        const r = await vollexport(quelle, ziel, { passwoerter: e.passwoerter === true, protokolle: e.protokolle === true, kontakte }, f);
+        L.werkbank.info('Vollexport fertig', { von, name: r.name, dateien: r.dateien, mb: Math.round(r.bytes / 1024 ** 2), mappen: r.mappen });
+        return r;
+      }), 202);
+    } },
+    { methode: 'POST', pfad: '/api/werkbank/export/:name/pruefen', zugang: 'admin', handler: async (a) => ok(await pruefeExport(exportOrdner(exportZiel(), a.params.name))) },
+    { methode: 'DELETE', pfad: '/api/werkbank/export/:name', zugang: 'admin', handler: async (a) => {
+      await loescheExport(exportOrdner(exportZiel(), a.params.name));
+      L.werkbank.info('Vollexport gelöscht', { name: a.params.name, von: ich(a).email });
+      return leer;
+    } },
+    { methode: 'GET', pfad: '/api/werkbank/export/:name/zip', zugang: 'admin', handler: async (a) => {
+      const ordner = exportOrdner(exportZiel(), a.params.name);
+      const dateien = await exportDateien(ordner).catch(() => { throw new Fachfehler(404, 'Diesen Export gibt es nicht.'); });
+      const eintraege: ZipEintrag[] = dateien.map((d) => ({ name: `${a.params.name}/${d.name}`, groesse: d.groesse, inhalt: async () => createReadStream(d.pfad) }));
+      const groesse = zipGroesse(eintraege);
+      if (groesse > ZIP_MAX) throw new Fachfehler(422, 'Der Export ist größer als 4 GB – bitte direkt aus dem Ordner kopieren.');
+      L.werkbank.info('Vollexport heruntergeladen', { name: a.params.name, von: ich(a).email });
+      return { datei: { inhalt: zipStrom(eintraege), name: `${a.params.name}.zip`, mime: 'application/zip', anzeigen: false, groesse } };
+    } },
     /* ---------- Archivmodus (#212) ---------- */
     { methode: 'POST', pfad: '/api/werkbank/archiv/vorschau', zugang: 'admin', handler: async (a) => ok(await dienst.archivVorschau(String((a.body as { typId?: unknown })?.typId ?? ''), (a.body as { archiv?: unknown })?.archiv)) },
     { methode: 'GET', pfad: '/api/werkbank/darf-weg', zugang: 'admin', handler: async () => ok(await dienst.darfWeg()) },
@@ -1270,4 +1322,20 @@ export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => st
     throw new Fachfehler(403, 'Bitte zuerst die Zwei-Faktor-Anmeldung einrichten (Mein Konto).');
   }
   if (r.zugang === 'admin' && a.benutzer.rolle !== 'admin') throw new Fachfehler(403, 'Dafür sind Administratorrechte nötig.');
+}
+
+/** Vollexport (#254): Vorschlag, welche Felder eines Typs einen Kontakt (vCard) ergeben – bestätigt der Administrator. */
+export function kontaktVorschlaege(typen: Mappentyp[]): Array<{ typId: string; typ: string; zuordnung: KontaktZuordnung }> {
+  const erg: Array<{ typId: string; typ: string; zuordnung: KontaktZuordnung }> = [];
+  for (const t of typen) {
+    const text = t.felder.filter((f) => f.typ === 'text' || f.typ === 'langtext');
+    const finde = (re: RegExp) => text.find((f) => re.test(`${f.key} ${f.label}`.toLowerCase()))?.key;
+    const email = finde(/e-?mail/), telefon = finde(/telefon|tel\b|handy|mobil|phone/);
+    const adresse = text.find((f) => /adresse|anschrift|stra(ss|ß)e/.test(`${f.key} ${f.label}`.toLowerCase()) && f.key !== email)?.key;
+    if (!email && !telefon && !adresse) continue;
+    const name = finde(/^name|\bname\b|bezeichnung|firma|kontakt/) ?? text[0]?.key;
+    if (!name) continue;
+    erg.push({ typId: t.id, typ: t.name, zuordnung: { name, ...(email ? { email } : {}), ...(telefon ? { telefon } : {}), ...(adresse ? { adresse } : {}), ...(finde(/firma|unternehmen|organisation/) && finde(/firma|unternehmen|organisation/) !== name ? { firma: finde(/firma|unternehmen|organisation/) } : {}) } });
+  }
+  return erg;
 }

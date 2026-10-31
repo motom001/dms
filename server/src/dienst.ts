@@ -19,6 +19,7 @@ import {
 } from '../../shared/src/sichten';
 import type { Readable } from 'node:stream';
 import { aufbewahrenBis, datumText, inFrist, JAHRE_MAX } from '../../shared/src/archiv';
+import type { ExportQuelle } from './vollexport';
 import { datumIn, KREIS_SCHLUESSEL, kreisVon, naechste, neubeginn, pruefeMuster, type Nummernkreis } from '../../shared/src/nummernkreis';
 import { csvAus, xlsxAus } from './xlsx';
 import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile } from './export';
@@ -2912,6 +2913,45 @@ export class Dienst {
     const m = await this.repo.holeMappe(d.mappeId);
     if (m) await this.beruehre(m.id, await this.repo.holeTyp(m.typId), benutzerId);
     for (const sha of new Set([d.sha256, ...aeltere.map((v) => v.sha256)])) await this.raeumeAuf(sha);
+  }
+
+  /* ---------- Vollexport (#254) ---------- */
+
+  /** Datenquelle für den Vollexport; Benutzer, Designs und Protokoll kommen von außen. */
+  vollexportQuelle(x: { mandant: string; version: string; benutzer: ExportQuelle['benutzer']; designs: ExportQuelle['designs']; protokoll: ExportQuelle['protokoll'] }): ExportQuelle {
+    const r = this.repo;
+    return {
+      ...x,
+      typen: () => r.listeTypen(),
+      sichten: () => r.listeSichten(),
+      nummernkreise: () => r.listeNummernkreise(),
+      mappen: (typId) => r.listeMappen(typId),
+      papierkorb: () => r.papierkorb(),
+      dokumente: (mappeId) => r.listeDokumente(mappeId),
+      versionen: (id) => r.versionenVon(id),
+      volltext: (id) => r.volltext(id),
+      datei: (sha) => this.dateien.lies(sha),
+      notizen: (id) => r.notizen(id),
+      aufgaben: (id) => r.aufgabenVon(id),
+      erinnerungen: () => r.erinnerungen(),
+      historie: (id) => r.historie(id),
+      favoriten: () => r.alleFavoriten(),
+      passwort: (w) => (istVerschluesselt(w) ? this.tresor?.entschluessele(w) ?? null : null),
+      pdf: async (titel, mappen, typ, uebersicht) => {
+        const ids = mappen.flatMap((m) => [...verweiseVon(typ, m.werte).map((v) => v.zielId), m.erstelltVon, m.geaendertVon].filter((v): v is string => !!v));
+        const b = await r.bezuege([...new Set(ids)]);
+        const quelle = { typen: new Map([[typ.id, typ]]), titel: (id: string | null | undefined) => (id ? b.get(id)?.titel ?? '' : '') };
+        return mappenPdf(titel, mappen.map((m) => ({ mappe: m, typ, dokumente: [], inhalt: async () => Buffer.alloc(0) })), quelle, uebersicht ? { spalten: exportSpalten([typ], 'liste'), typen: [typ] } : null);
+      },
+    };
+  }
+
+  /** Abschätzung vor dem Vollexport: Mappen, Dokumente, Bytes (mit älteren Versionen). */
+  async exportAbschaetzung() {
+    const dateien = await this.repo.alleDateien();
+    let mappen = 0;
+    for (const t of await this.repo.listeTypen()) mappen += await this.repo.zaehleMappen(t.id);
+    return { mappen, dokumente: dateien.length, bytes: dateien.reduce((a, d) => a + d.groesse, 0) };
   }
 
   /* ---------- Archivmodus (#212) ---------- */
