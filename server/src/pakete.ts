@@ -172,12 +172,22 @@ export interface Vorschau {
   paket: { id: string; name: string; version: string; beschreibung: string; lizenz: string; autor: { name: string; github: string }; dms: string; abhaengigkeiten: Record<string, string>; readme: string | null; changelog: string | null; quelle: string | null };
   dmsVersion: string; dmsOk: boolean;
   installiert: string | null; update: boolean;
+  /** Herkunft des installierten Pakets (bei einem Update). */
+  herkunft: InstalliertesPaket['herkunft'] | null;
   abhaengigkeiten: AbhaengigkeitPlan[];
   typen: TypPlan[]; sichten: SichtPlan[]; beispiele: number;
   /** Was die Installation verhindert. */
   probleme: string[];
 }
-export interface InstallierenEingabe { id: string; version?: string; namen?: Record<string, string>; sichtNamen?: Record<string, string>; beispiele?: boolean; mitAbhaengigkeiten?: boolean }
+export interface InstallierenEingabe {
+  id?: string; version?: string; namen?: Record<string, string>; sichtNamen?: Record<string, string>; beispiele?: boolean; mitAbhaengigkeiten?: boolean;
+  /** Katalogadresse (#189); ohne: der offizielle Katalog. */
+  quelle?: string;
+  /** Hochgeladenes Paket (#189). */
+  upload?: string;
+  /** Herkunft außerhalb des offiziellen Katalogs ausdrücklich bestätigt (#189). */
+  bestaetigt?: boolean;
+}
 
 const freierName = (name: string, paket: string, belegt: Set<string>) => {
   const k = (n: string) => n.trim().toLowerCase();
@@ -220,6 +230,7 @@ export interface PaketOptionen {
   version: () => string;
   /** Daten von einer Adresse holen (Tests: ohne Netz). */
   abruf?: (url: string) => Promise<Buffer>;
+  /** Offizieller Katalog (Tests: eine andere Adresse). */
   katalogUrl?: string;
 }
 
@@ -237,36 +248,108 @@ export async function holeDaten(url: string, max = ARCHIV_MAX): Promise<Buffer> 
 /** Wer handelt: Id für „angelegt von“, E-Mail fürs Protokoll. */
 export interface Handelnder { id: string | null; email: string | null }
 
+/** Eine Katalogquelle: der offizielle Katalog oder eine weitere Adresse (erweiterte Ansicht, #189). */
+export interface Quelle { url: string; offiziell: boolean; aktiv: boolean; von?: string | null; am?: string }
+/** Ergebnis je Quelle beim Abrufen. */
+export interface Abruf { url: string; offiziell: boolean; katalog: Katalog | null; fehler: string | null }
+
+/** Ein hochgeladenes, geprüftes Paket, bis es installiert wird (höchstens 30 Minuten). */
+interface Hochgeladen { paket: Paket; von: Handelnder; am: string; zeit: number }
+const UPLOAD_GUELTIG = 30 * 60_000;
+
 export class Paketverwaltung {
-  private letzter: { url: string; katalog: Katalog; zeit: number } | null = null;
+  private kataloge = new Map<string, { katalog: Katalog; zeit: number }>();
+  private uploads = new Map<string, Hochgeladen>();
 
   constructor(private d: Dienst, private o: PaketOptionen) {}
 
   get katalogUrl() { return this.o.katalogUrl ?? OFFIZIELLER_KATALOG; }
   private abruf(url: string) { return this.o.abruf ? this.o.abruf(url) : holeDaten(url); }
 
-  /** Katalog abrufen – nur auf Knopfdruck (bzw. für Vorschau und Installation). */
-  async katalog(): Promise<{ url: string; katalog: Katalog; abgerufen: string }> {
-    const url = this.katalogUrl;
-    let katalog: Katalog;
-    try { katalog = liesKatalog(JSON.parse((await this.abruf(url)).toString('utf8'))); }
-    catch (e) { throw new Fachfehler(502, `Der Katalog lässt sich nicht abrufen: ${(e as Error).message}`); }
-    this.letzter = { url, katalog, zeit: Date.now() };
-    return { url, katalog, abgerufen: new Date().toISOString() };
+  /* ---------- Quellen (#189) ---------- */
+
+  /** Offizieller Katalog und weitere Adressen aus den Einstellungen. */
+  async quellen(): Promise<Quelle[]> {
+    const weitere = (await this.d.paketQuellen()).filter((q) => q.url !== this.katalogUrl);
+    return [{ url: this.katalogUrl, offiziell: true, aktiv: true }, ...weitere.map((q) => ({ ...q, offiziell: false }))];
   }
 
-  /** Zuletzt abgerufener Katalog, wenn er höchstens 15 Minuten alt ist; sonst neu. */
-  private async aktuellerKatalog() {
-    if (this.letzter && this.letzter.url === this.katalogUrl && Date.now() - this.letzter.zeit < 15 * 60_000) return this.letzter;
-    const k = await this.katalog();
-    return { url: k.url, katalog: k.katalog, zeit: Date.now() };
+  async quelleHinzufuegen(e: { url?: unknown }, von: Handelnder): Promise<Quelle[]> {
+    let u: URL;
+    try { u = new URL(String(e.url ?? '').trim()); } catch { throw new Fachfehler(422, 'Bitte eine vollständige Adresse eingeben, z. B. https://beispiel.de/katalog.json.'); }
+    if (u.protocol !== 'https:') throw new Fachfehler(422, 'Kataloge gehen nur über HTTPS.');
+    const url = u.toString();
+    const liste = await this.d.paketQuellen();
+    if (url === this.katalogUrl || liste.some((q) => q.url === url)) throw new Fachfehler(409, 'Diese Adresse ist schon eingetragen.');
+    if (liste.length >= 20) throw new Fachfehler(422, 'Höchstens 20 weitere Kataloge.');
+    await this.d.setzePaketQuellen([...liste, { url, aktiv: true, von: von.email, am: new Date().toISOString() }]);
+    log.warn('Paketquelle hinzugefügt', { von: von.email, url });
+    return this.quellen();
+  }
+
+  async quelleSchalten(e: { url?: unknown; aktiv?: unknown }, von: Handelnder): Promise<Quelle[]> {
+    const url = String(e.url ?? '');
+    const liste = await this.d.paketQuellen();
+    if (!liste.some((q) => q.url === url)) throw new Fachfehler(404, 'Diese Quelle gibt es nicht.');
+    const aktiv = e.aktiv === true;
+    await this.d.setzePaketQuellen(liste.map((q) => (q.url === url ? { ...q, aktiv } : q)));
+    this.kataloge.delete(url);
+    log.warn(aktiv ? 'Paketquelle eingeschaltet' : 'Paketquelle abgeschaltet', { von: von.email, url });
+    return this.quellen();
+  }
+
+  async quelleEntfernen(url: string, von: Handelnder): Promise<Quelle[]> {
+    const liste = await this.d.paketQuellen();
+    if (!liste.some((q) => q.url === url)) throw new Fachfehler(404, 'Diese Quelle gibt es nicht.');
+    await this.d.setzePaketQuellen(liste.filter((q) => q.url !== url));
+    this.kataloge.delete(url);
+    log.warn('Paketquelle entfernt', { von: von.email, url });
+    return this.quellen();
+  }
+
+  /** Nur der offizielle Katalog und eingeschaltete weitere Quellen; alles andere wird nicht abgefragt. */
+  private async erlaubt(url: string | undefined): Promise<string> {
+    if (!url || url === this.katalogUrl) return this.katalogUrl;
+    if ((await this.quellen()).some((q) => q.url === url && q.aktiv)) return url;
+    throw new Fachfehler(422, 'Diese Katalogquelle ist nicht (mehr) eingerichtet oder abgeschaltet.');
+  }
+
+  /* ---------- Katalog ---------- */
+
+  /** Einen Katalog abrufen – nur auf Knopfdruck (bzw. für Vorschau und Installation). */
+  async katalog(url?: string): Promise<{ url: string; katalog: Katalog; abgerufen: string }> {
+    const u = await this.erlaubt(url);
+    let katalog: Katalog;
+    try { katalog = liesKatalog(JSON.parse((await this.abruf(u)).toString('utf8'))); }
+    catch (e) { throw new Fachfehler(502, `Der Katalog lässt sich nicht abrufen: ${(e as Error).message}`); }
+    this.kataloge.set(u, { katalog, zeit: Date.now() });
+    return { url: u, katalog, abgerufen: new Date().toISOString() };
+  }
+
+  /** Normale Ansicht: nur der offizielle Katalog; erweiterte Ansicht: auch die eingeschalteten weiteren. */
+  async abrufen(alle: boolean): Promise<{ kataloge: Abruf[]; abgerufen: string }> {
+    const quellen = (await this.quellen()).filter((q) => q.offiziell || (alle && q.aktiv));
+    const kataloge = await Promise.all(quellen.map(async (q): Promise<Abruf> => {
+      try { return { url: q.url, offiziell: q.offiziell, katalog: (await this.katalog(q.url)).katalog, fehler: null }; }
+      catch (e) { return { url: q.url, offiziell: q.offiziell, katalog: null, fehler: (e as Error).message }; }
+    }));
+    return { kataloge, abgerufen: new Date().toISOString() };
+  }
+
+  /** Zuletzt abgerufener Katalog einer Quelle, wenn er höchstens 15 Minuten alt ist; sonst neu. */
+  private async aktuellerKatalog(url?: string) {
+    const u = await this.erlaubt(url);
+    const k = this.kataloge.get(u);
+    if (k && Date.now() - k.zeit < 15 * 60_000) return { url: u, katalog: k.katalog };
+    const neu = await this.katalog(u);
+    return { url: neu.url, katalog: neu.katalog };
   }
 
   async installierte(): Promise<InstalliertesPaket[]> { return this.d.listePakete(); }
 
-  /** Paket einer Version aus dem Katalog holen und gegen die Prüfsumme prüfen. */
-  async lade(id: string, version?: string): Promise<{ paket: Paket; kp: KatalogPaket; v: KatalogVersion; url: string }> {
-    const { katalog, url } = await this.aktuellerKatalog();
+  /** Paket einer Version aus einem Katalog holen und gegen die Prüfsumme prüfen. */
+  async lade(id: string, version?: string, quelle?: string): Promise<{ paket: Paket; kp: KatalogPaket; v: KatalogVersion; url: string; katalog: Katalog }> {
+    const { katalog, url } = await this.aktuellerKatalog(quelle);
     const kp = katalog.pakete.find((p) => p.id === id);
     if (!kp) throw new Fachfehler(404, `Das Paket „${id}“ gibt es im Katalog nicht.`);
     const v = version ? kp.versionen.find((x) => x.version === version) : kp.versionen.find((x) => x.version === kp.aktuell) ?? kp.versionen[0];
@@ -277,16 +360,42 @@ export class Paketverwaltung {
     if (createHash('sha256').update(daten).digest('hex') !== v.sha256) throw new Fachfehler(422, `Die Prüfsumme von „${kp.name}“ ${v.version} passt nicht zum Katalog. Das Paket wird nicht installiert.`);
     const paket = liesPaket(liesZip(daten));
     if (paket.manifest.id !== id || paket.manifest.version !== v.version) throw new Fachfehler(422, `Das Archiv enthält ${paket.manifest.id} ${paket.manifest.version} statt ${id} ${v.version}.`);
-    return { paket, kp, v, url };
+    return { paket, kp, v, url, katalog };
   }
+
+  /* ---------- Hochladen (#189) ---------- */
+
+  /** Paket als Datei: dieselbe Prüfung wie bei Katalogpaketen, nur ohne Prüfsumme aus dem Katalog. */
+  async hochladen(daten: unknown, von: Handelnder): Promise<{ upload: string; vorschau: Vorschau }> {
+    if (!Buffer.isBuffer(daten) || !daten.length) throw new Fachfehler(422, 'Bitte eine .zip-Datei hochladen.');
+    if (daten.length > ARCHIV_MAX) throw new Fachfehler(422, 'Die Datei ist zu groß (höchstens 10 MB).');
+    const paket = liesPaket(liesZip(daten));
+    for (const [k, u] of this.uploads) if (Date.now() - u.zeit > UPLOAD_GUELTIG) this.uploads.delete(k);
+    const upload = randomUUID();
+    this.uploads.set(upload, { paket, von, am: new Date().toISOString(), zeit: Date.now() });
+    log.warn('Paket hochgeladen', { von: von.email, paket: paket.manifest.id, version: paket.manifest.version, bytes: daten.length });
+    return { upload, vorschau: await this.plane(paket, undefined, await this.offiziell().catch(() => undefined)) };
+  }
+
+  private hochgeladen(token: unknown): Hochgeladen {
+    const u = this.uploads.get(String(token ?? ''));
+    if (!u || Date.now() - u.zeit > UPLOAD_GUELTIG) throw new Fachfehler(410, 'Das hochgeladene Paket ist abgelaufen. Bitte noch einmal hochladen.');
+    return u;
+  }
+
+  /** Abhängigkeiten eines hochgeladenen Pakets kommen aus dem offiziellen Katalog (wenn schon abgerufen). */
+  private async offiziell(): Promise<Katalog | undefined> { return this.kataloge.get(this.katalogUrl)?.katalog; }
+
+  /* ---------- Vorschau und Installation ---------- */
 
   /** Vorschau: was angelegt bzw. ergänzt wird, Namenskonflikte, Version und Abhängigkeiten. */
-  async vorschau(e: { id: string; version?: string }): Promise<Vorschau> {
-    const { paket, v } = await this.lade(String(e.id), e.version ? String(e.version) : undefined);
-    return this.plane(paket, v);
+  async vorschau(e: { id?: string; version?: string; quelle?: string; upload?: string }): Promise<Vorschau> {
+    if (e.upload) return this.plane(this.hochgeladen(e.upload).paket, undefined, await this.offiziell());
+    const { paket, v, katalog } = await this.lade(String(e.id), e.version ? String(e.version) : undefined, e.quelle ? String(e.quelle) : undefined);
+    return this.plane(paket, v, katalog);
   }
 
-  private async plane(paket: Paket, v?: KatalogVersion, namen: Record<string, string> = {}, sichtNamen: Record<string, string> = {}): Promise<Vorschau> {
+  private async plane(paket: Paket, v?: KatalogVersion, katalog?: Katalog, namen: Record<string, string> = {}, sichtNamen: Record<string, string> = {}): Promise<Vorschau> {
     const m = paket.manifest;
     const installierte = await this.d.listePakete();
     const ich = installierte.find((p) => p.id === m.id) ?? null;
@@ -298,7 +407,6 @@ export class Paketverwaltung {
     if (!dmsOk) probleme.push(`Das Paket braucht DMS ${m.dms}; dieses DMS hat Version ${dmsVersion}. Bitte zuerst das DMS aktualisieren.`);
     if (m.code !== undefined) probleme.push('Pakete mit Code lassen sich noch nicht installieren.');
     if (ich && vergleicheVersion(m.version, ich.version) <= 0) probleme.push(`Version ${ich.version} ist schon installiert.`);
-    const katalog = this.letzter?.katalog;
     const abhaengigkeiten = Object.entries(m.abhaengigkeiten).map(([id, bereich]): AbhaengigkeitPlan => {
       const da = installierte.find((p) => p.id === id);
       const kp = katalog?.pakete.find((p) => p.id === id);
@@ -341,29 +449,47 @@ export class Paketverwaltung {
     return {
       paket: { id: m.id, name: m.name, version: m.version, beschreibung: m.beschreibung, lizenz: m.lizenz, autor: m.autor, dms: m.dms, abhaengigkeiten: m.abhaengigkeiten, readme: v?.readme ?? null, changelog: v?.changelog ?? null, quelle: v?.quelle ?? null },
       dmsVersion, dmsOk, installiert: ich?.version ?? null, update: !!ich,
+      herkunft: ich?.herkunft ?? null,
       abhaengigkeiten, typen: typPlaene, sichten: sichtPlaene, beispiele: paket.beispiele.length, probleme,
     };
   }
 
-  /** Installieren aus dem Katalog; mit `mitAbhaengigkeiten` vorher fehlende Abhängigkeiten. */
+  /**
+   * Installieren aus einem Katalog oder hochgeladen; mit `mitAbhaengigkeiten` vorher fehlende Abhängigkeiten.
+   * Nicht aus dem offiziellen Katalog nur mit ausdrücklicher Bestätigung (#189).
+   */
   async installiere(e: InstallierenEingabe, von: Handelnder): Promise<InstalliertesPaket> {
-    const id = String(e.id ?? '');
-    if ((await this.d.listePakete()).some((p) => p.id === id)) throw new Fachfehler(409, `„${id}“ ist schon installiert. Aktualisieren geht über „Aktualisieren“.`);
-    const { paket, v, url } = await this.lade(id, e.version ? String(e.version) : undefined);
-    const vorschau = await this.plane(paket, v, e.namen ?? {}, e.sichtNamen ?? {});
+    const hoch = e.upload ? this.hochgeladen(e.upload) : null;
+    const quelle = hoch ? null : await this.erlaubt(e.quelle ? String(e.quelle) : undefined);
+    if ((hoch || quelle !== this.katalogUrl) && e.bestaetigt !== true) {
+      throw new Fachfehler(409, 'Dieses Paket kommt nicht aus dem offiziellen Katalog und ist nicht vom DMS-Projekt geprüft. Bitte die Herkunft bestätigen.', { warnung: true });
+    }
+    const geladen = hoch ? { paket: hoch.paket, v: undefined, katalog: await this.offiziell() } : await this.lade(String(e.id ?? ''), e.version ? String(e.version) : undefined, quelle!);
+    const { paket, v } = geladen;
+    const id = paket.manifest.id;
+    const alt = (await this.d.listePakete()).find((p) => p.id === id) ?? null;
+    if (alt) {
+      // Ein hochgeladenes Paket aktualisiert man durch erneutes Hochladen einer höheren Version.
+      if (!hoch) throw new Fachfehler(409, `„${alt.name}“ ist schon installiert. Aktualisieren geht über „Aktualisieren“.`);
+      if (alt.herkunft.art !== 'hochgeladen') throw new Fachfehler(409, `„${alt.name}“ stammt aus einem Katalog; Updates kommen nur von dort.`);
+    }
+    const herkunft: InstalliertesPaket['herkunft'] = hoch ? { art: 'hochgeladen', von: hoch.von.email, am: hoch.am } : { art: 'katalog', url: quelle! };
+    const vorschau = await this.plane(paket, v, geladen.katalog, e.namen ?? {}, e.sichtNamen ?? {});
     const fehlen = vorschau.abhaengigkeiten.filter((a) => !a.installiert);
-    if (fehlen.length && !e.mitAbhaengigkeiten) {
+    if (fehlen.length && (!e.mitAbhaengigkeiten || alt)) {
       throw new Fachfehler(409, `Es fehlen Pakete, die „${paket.manifest.name}“ braucht: ${fehlen.map((a) => `${a.id} ${a.bereich}`).join(', ')}.`, { gruende: fehlen.map((a) => (a.verfuegbar ? `${a.id}: im Katalog gibt es ${a.verfuegbar}` : `${a.id}: nicht im Katalog`)) });
     }
     if (vorschau.probleme.length) throw new Fachfehler(409, vorschau.probleme[0], { gruende: vorschau.probleme });
     for (const a of fehlen) {
       if (!a.verfuegbar) throw new Fachfehler(409, `Die Abhängigkeit „${a.id}“ (${a.bereich}) gibt es im Katalog nicht.`);
-      await this.installiere({ id: a.id, version: a.verfuegbar, beispiele: false, mitAbhaengigkeiten: true }, von);
+      // Abhängigkeiten aus derselben Quelle; bei hochgeladenen Paketen aus dem offiziellen Katalog.
+      await this.installiere({ id: a.id, version: a.verfuegbar, beispiele: false, mitAbhaengigkeiten: true, quelle: quelle ?? this.katalogUrl, bestaetigt: e.bestaetigt }, von);
     }
     const konflikte = [...vorschau.typen, ...vorschau.sichten].filter((x) => x.konflikt);
     if (konflikte.length) throw new Fachfehler(409, 'Einige Namen gibt es schon. Bitte andere wählen.', { gruende: konflikte.map((x) => `${x.konflikt} Vorschlag: „${x.vorschlag}“.`), konflikte: true });
-    const datensatz = await this.lege(paket, { art: 'katalog', url }, v, vorschau, e.beispiele === true, von, null);
-    log.info('Paket installiert', { von: von.email, paket: id, version: paket.manifest.version, herkunft: url, typen: Object.keys(datensatz.typen).length, sichten: Object.keys(datensatz.sichten).length });
+    const datensatz = await this.lege(paket, herkunft, v, vorschau, e.beispiele === true && !alt, von, alt);
+    if (hoch) this.uploads.delete(String(e.upload));
+    log.info(alt ? 'Paket aktualisiert (hochgeladen)' : 'Paket installiert', { von: von.email, paket: id, version: paket.manifest.version, ...(alt ? { vorher: alt.version } : {}), herkunft: hoch ? 'hochgeladen' : quelle, typen: Object.keys(datensatz.typen).length, sichten: Object.keys(datensatz.sichten).length });
     return datensatz;
   }
 
@@ -473,7 +599,7 @@ export class Paketverwaltung {
       const jetzt = new Date().toISOString();
       const datensatz: InstalliertesPaket = {
         id: m.id, name: m.name, version: m.version, beschreibung: m.beschreibung, lizenz: m.lizenz, autor: m.autor,
-        herkunft: alt?.herkunft ?? herkunft,
+        herkunft,
         installiert: alt?.installiert ?? jetzt, installiertVon: alt ? alt.installiertVon : von.email,
         aktualisiert: alt ? jetzt : null, aktualisiertVon: alt ? von.email : null,
         typen: typMap, sichten: sichtMap, abhaengigkeiten: m.abhaengigkeiten,
@@ -487,26 +613,32 @@ export class Paketverwaltung {
     }
   }
 
-  /** Neuere Versionen im Katalog (auf Knopfdruck). */
-  async updates(): Promise<Array<{ id: string; installiert: string; neu: string; changelog: string | null }>> {
-    const { katalog } = await this.katalog();
+  /** Neuere Versionen (auf Knopfdruck) – je Paket nur in der Quelle, aus der es stammt. */
+  async updates(): Promise<Array<{ id: string; installiert: string; neu: string; changelog: string | null; quelle: string }>> {
     const erg = [];
+    const quellen = await this.quellen();
+    const geholt = new Map<string, Katalog | null>();
     for (const p of await this.d.listePakete()) {
-      if (p.herkunft.art !== 'katalog' || p.herkunft.url !== this.katalogUrl) continue;
-      const kp = katalog.pakete.find((x) => x.id === p.id);
+      if (p.herkunft.art !== 'katalog') continue;
+      const url = p.herkunft.url;
+      if (!quellen.some((q) => q.url === url && q.aktiv)) continue;
+      if (!geholt.has(url)) geholt.set(url, await this.katalog(url).then((k) => k.katalog, (e) => { if (url === this.katalogUrl) throw e; return null; }));
+      const kp = geholt.get(url)?.pakete.find((x) => x.id === p.id);
       const v = kp?.versionen.find((x) => x.version === kp.aktuell) ?? kp?.versionen[0];
-      if (v && vergleicheVersion(v.version, p.version) > 0) erg.push({ id: p.id, installiert: p.version, neu: v.version, changelog: v.changelog });
+      if (v && vergleicheVersion(v.version, p.version) > 0) erg.push({ id: p.id, installiert: p.version, neu: v.version, changelog: v.changelog, quelle: url });
     }
     return erg;
   }
 
-  /** Update: ergänzt nur – neue Typen, Felder, Register, Sichten. */
-  async aktualisiere(id: string, e: { version?: string }, von: Handelnder): Promise<InstalliertesPaket> {
+  /** Update aus der Quelle des Pakets: ergänzt nur – neue Typen, Felder, Register, Sichten. */
+  async aktualisiere(id: string, e: { version?: string; bestaetigt?: boolean }, von: Handelnder): Promise<InstalliertesPaket> {
     const alt = (await this.d.listePakete()).find((p) => p.id === id);
     if (!alt) throw new Fachfehler(404, `„${id}“ ist nicht installiert.`);
     if (alt.herkunft.art !== 'katalog') throw new Fachfehler(409, 'Ein hochgeladenes Paket aktualisierst du durch erneutes Hochladen einer höheren Version.');
-    const { paket, v } = await this.lade(id, e.version ? String(e.version) : undefined);
-    const plan = await this.plane(paket, v);
+    const quelle = await this.erlaubt(alt.herkunft.url);
+    if (quelle !== this.katalogUrl && e.bestaetigt !== true) throw new Fachfehler(409, 'Dieses Paket kommt nicht aus dem offiziellen Katalog und ist nicht vom DMS-Projekt geprüft. Bitte die Herkunft bestätigen.', { warnung: true });
+    const { paket, v, katalog } = await this.lade(id, e.version ? String(e.version) : undefined, quelle);
+    const plan = await this.plane(paket, v, katalog);
     const fehlen = plan.abhaengigkeiten.filter((a) => !a.installiert);
     if (fehlen.length) plan.probleme.push(`Es fehlen Pakete: ${fehlen.map((a) => `${a.id} ${a.bereich}`).join(', ')}.`);
     if (plan.probleme.length) throw new Fachfehler(409, plan.probleme[0], { gruende: plan.probleme });

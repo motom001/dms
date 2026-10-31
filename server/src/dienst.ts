@@ -1786,6 +1786,16 @@ export class Dienst {
   speicherePaket(p: InstalliertesPaket) { return this.repo.speicherePaket(p); }
   loeschePaket(id: string) { return this.repo.loeschePaket(id); }
 
+  /** Weitere Katalogadressen (#189), global; der offizielle Katalog steht nicht darin. */
+  async paketQuellen(): Promise<Array<{ url: string; aktiv: boolean; von: string | null; am: string }>> {
+    const v = await this.einstellungen?.lies('paket_kataloge');
+    return Array.isArray(v) ? v.filter((q) => q && typeof q.url === 'string').map((q) => ({ url: q.url, aktiv: q.aktiv !== false, von: q.von ?? null, am: String(q.am ?? '') })) : [];
+  }
+  async setzePaketQuellen(liste: Array<{ url: string; aktiv: boolean; von: string | null; am: string }>) {
+    if (!this.einstellungen) throw new Fachfehler(404, 'Einstellungen sind nicht eingerichtet.');
+    await this.einstellungen.schreibe('paket_kataloge', liste.length ? liste : null);
+  }
+
   /** Warum Mappentypen nicht weg dürfen: Mappen oder Papierkorb-Einträge. Leer = frei. */
   async belegteTypen(ids: string[]): Promise<string[]> {
     const gruende: string[] = [];

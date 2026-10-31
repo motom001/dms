@@ -172,6 +172,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const designs = () => { if (!x.designs) throw new Fachfehler(404, 'Designs sind nicht eingerichtet.'); return x.designs; };
   const log = x.log ?? ((m: string) => L.mail.warn(m));
   const pakete = x.pakete ?? new Paketverwaltung(dienst, { version: eigeneVersion });
+  const wer = (a: Anfrage) => ({ id: a.benutzer?.id ?? null, email: a.benutzer?.email ?? null });
   const typName = async (id: string) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? id;
   const betrieb = () => { if (!x.betrieb) throw new Fachfehler(404, 'Betriebseinstellungen sind nicht eingerichtet.'); return x.betrieb; };
   const mail = () => { if (!x.aufgabenmail) throw new Fachfehler(404, 'Die Aufgaben-Mail ist nicht eingerichtet.'); return x.aufgabenmail; };
@@ -758,14 +759,18 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/mappen/auswahl-pruefen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.auswahlPruefen(a.body, ich(a).id, await zg(a))) },
     { methode: 'POST', pfad: '/api/werkbank/auswahlfilter/zaehlen', zugang: 'admin', handler: async (a) => ok(await dienst.zaehleAuswahl(a.body, ich(a).id)) },
     /* ---------- Nummernkreise (#171) ---------- */
-    // Paketverwaltung (#188): Katalog nur auf Knopfdruck.
-    { methode: 'GET', pfad: '/api/werkbank/pakete', zugang: 'admin', handler: async () => ok({ installiert: await pakete.installierte(), katalogUrl: pakete.katalogUrl, dms: eigeneVersion() }) },
-    { methode: 'POST', pfad: '/api/werkbank/pakete/katalog', zugang: 'admin', handler: async () => ok(await pakete.katalog()) },
-    { methode: 'POST', pfad: '/api/werkbank/pakete/vorschau', zugang: 'admin', handler: async (a) => ok(await pakete.vorschau(a.body as { id: string; version?: string })) },
-    { methode: 'POST', pfad: '/api/werkbank/pakete/installieren', zugang: 'admin', handler: async (a) => ok(await pakete.installiere(a.body as InstallierenEingabe, { id: ich(a).id, email: ich(a).email })) },
+    // Paketverwaltung (#188, #189): Kataloge nur auf Knopfdruck; weitere Quellen und Hochladen in der erweiterten Ansicht.
+    { methode: 'GET', pfad: '/api/werkbank/pakete', zugang: 'admin', handler: async () => ok({ installiert: await pakete.installierte(), katalogUrl: pakete.katalogUrl, quellen: await pakete.quellen(), dms: eigeneVersion() }) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/katalog', zugang: 'admin', handler: async (a) => ok(await pakete.abrufen((a.body as { alle?: unknown } | null)?.alle === true)) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/quellen', zugang: 'admin', handler: async (a) => ok(await pakete.quelleHinzufuegen((a.body ?? {}) as { url?: unknown }, wer(a))) },
+    { methode: 'PUT', pfad: '/api/werkbank/pakete/quellen', zugang: 'admin', handler: async (a) => ok(await pakete.quelleSchalten((a.body ?? {}) as { url?: unknown; aktiv?: unknown }, wer(a))) },
+    { methode: 'DELETE', pfad: '/api/werkbank/pakete/quellen', zugang: 'admin', handler: async (a) => ok(await pakete.quelleEntfernen(String(a.query.url ?? ''), wer(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/hochladen', zugang: 'admin', roh: 10 * 1024 * 1024 + 1024, handler: async (a) => ok(await pakete.hochladen(a.body, wer(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/vorschau', zugang: 'admin', handler: async (a) => ok(await pakete.vorschau((a.body ?? {}) as { id?: string; version?: string; quelle?: string; upload?: string })) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/installieren', zugang: 'admin', handler: async (a) => ok(await pakete.installiere((a.body ?? {}) as InstallierenEingabe, wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/updates', zugang: 'admin', handler: async () => ok(await pakete.updates()) },
-    { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktualisieren', zugang: 'admin', handler: async (a) => ok(await pakete.aktualisiere(a.params.id, (a.body ?? {}) as { version?: string }, { id: ich(a).id, email: ich(a).email })) },
-    { methode: 'DELETE', pfad: '/api/werkbank/pakete/:id', zugang: 'admin', handler: async (a) => { await pakete.entferne(a.params.id, { id: ich(a).id, email: ich(a).email }); return leer; } },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktualisieren', zugang: 'admin', handler: async (a) => ok(await pakete.aktualisiere(a.params.id, (a.body ?? {}) as { version?: string; bestaetigt?: boolean }, wer(a))) },
+    { methode: 'DELETE', pfad: '/api/werkbank/pakete/:id', zugang: 'admin', handler: async (a) => { await pakete.entferne(a.params.id, wer(a)); return leer; } },
     { methode: 'GET', pfad: '/api/werkbank/nummernkreise', zugang: 'admin', handler: async () => ok(await dienst.listeNummernkreise()) },
     { methode: 'POST', pfad: '/api/werkbank/nummernkreise', zugang: 'admin', handler: async (a) => {
       await dienst.speichereNummernkreis({ ...(a.body as object), neu: true }, ich(a).email);

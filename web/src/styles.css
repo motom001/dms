@@ -1045,3 +1045,4 @@ a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
 .paketname { display: grid; gap: 4px; }
 .paketname > span:first-child { font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
 .paketname input { width: 100%; min-width: 0; }
+.umbrechen { overflow-wrap: anywhere; }
