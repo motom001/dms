@@ -1,131 +1,135 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/aktualisieren/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/aktualisieren/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/anmeldeschutz/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/anmeldeschutz/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/api/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/api/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/app-store/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/app-store/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/aufgaben/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/aufgaben/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/benutzer/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/benutzer/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/berechtigungen/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/berechtigungen/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/demo/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/demo/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/designs/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/designs/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/direktlinks/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/direktlinks/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/eingangsordner/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/eingangsordner/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/entscheidungen/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/entscheidungen/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/fehlersuche/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/fehlersuche/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/installation/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/installation/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/konsole/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/konsole/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/mappentypen/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/mappentypen/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/neu/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/neu/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/notfall/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/notfall/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/papierkorb/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/nummernkreise/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/postfaecher/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/papierkorb/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/sicherung/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/postfaecher/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/sichten/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/sicherung/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/speicherplatz/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/sichten/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/technik/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/speicherplatz/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/texterkennung/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/technik/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/uebersicht/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/texterkennung/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/verfahrensdokumentation/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/uebersicht/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/verschluesselung/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/verfahrensdokumentation/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/wachsen/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/verschluesselung/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/wartungsmodus/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/wachsen/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.54/wiederherstellen/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.55/wartungsmodus/</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://motom001.github.io/dms/admin/v0.55/wiederherstellen/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
 </urlset>

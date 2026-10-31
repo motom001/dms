@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.54/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.55/neu/">
       
       
         <link rel="prev" href="../wofuer/">
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-054" class="md-skip">
+        <a href="#neu-in-version-055" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -392,22 +392,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0540" class="md-nav__link">
+  <a href="#0550" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.54.0
+        0.55.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.54.0">
+    <nav class="md-nav" aria-label="0.55.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#technik" class="md-nav__link">
+  <a href="#neu" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Technik
+        Neu
       
     </span>
   </a>
@@ -1000,22 +1000,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0540" class="md-nav__link">
+  <a href="#0550" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.54.0
+        0.55.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.54.0">
+    <nav class="md-nav" aria-label="0.55.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#technik" class="md-nav__link">
+  <a href="#neu" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Technik
+        Neu
       
     </span>
   </a>
@@ -1058,22 +1058,20 @@
   
 
 
-<h1 id="neu-in-version-054">Neu in Version 0.54<a class="headerlink" href="#neu-in-version-054" title="Permanent link">&para;</a></h1>
-<h2 id="0540">0.54.0<a class="headerlink" href="#0540" title="Permanent link">&para;</a></h2>
-<h3 id="technik">Technik<a class="headerlink" href="#technik" title="Permanent link">&para;</a></h3>
-<p>Geplante Versionssprünge (#236, #215) – für Benutzer ändert sich nichts.</p>
+<h1 id="neu-in-version-055">Neu in Version 0.55<a class="headerlink" href="#neu-in-version-055" title="Permanent link">&para;</a></h1>
+<h2 id="0550">0.55.0<a class="headerlink" href="#0550" title="Permanent link">&para;</a></h2>
+<h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Node.js 24</strong> (LTS) im Image statt 22; <code>@types/node</code> 24. Ungerade Hauptversionen (25) nimmt das DMS nicht.</li>
-<li><strong>postgres.js 4.0</strong> (Datenbank-Treiber) statt 3.4: neu geschriebener Verbindungs-Pool; zwei Sicherheitskorrekturen (NUL-Zeichen in Verbindungsangaben, Spalte <code>__proto__</code>). Parametertypen wie bisher (<code>infer: true</code>).</li>
-<li><strong>vite 8</strong> und <strong>@vitejs/plugin-react 6</strong> für die Oberfläche.</li>
-<li><strong>esbuild 0.28</strong> für den Server.</li>
-<li><strong>@types/nodemailer 8</strong>, passend zu nodemailer 10.</li>
-<li><strong>TypeScript bleibt 5.x:</strong> TypeScript 7 (neuer, nativer Compiler) kommt, sobald Editor-Unterstützung und Werkzeuge damit stabil laufen; für das DMS bringt der Wechsel heute nur schnellere Typprüfung.</li>
-<li>Dependabot schlägt Hauptversionen von vite, plugin-react und @types/nodemailer wieder vor.</li>
+<li><strong>Nummernkreise</strong> (#171) unter <strong>Werkbank → Nummernkreise</strong>:</li>
+<li>Fortlaufende Nummern wie <code>202610-R0000001</code> mit Muster aus <code>{jjjj}</code> <code>{jj}</code> <code>{mm}</code> <code>{tt}</code> und <code>{zaehler:n}</code>; der Zähler beginnt je nach Muster täglich, monatlich, jährlich oder nie neu.</li>
+<li>Im Mappentyp: Standardwert <code>{nummernkreis:&lt;schlüssel&gt;}</code> an einem Textfeld. Die Nummer wird beim ersten Speichern vergeben, ist danach schreibgeschützt (auch über die API), ein fehlgeschlagenes Speichern verbraucht keine Nummer, und gleichzeitiges Speichern ergibt nie dieselbe.</li>
+<li>Vorschau der nächsten Nummer, zuletzt vergebene Nummern, „Verwendet in“, <strong>Zählerstand setzen</strong> (mit Protokoll); Löschen nur unbenutzt.</li>
+<li>Wartungsoperation <strong>Nummern nachträglich vergeben</strong> mit Vorschau „von … bis …“.</li>
+<li>Zählerstände sind Teil der Sicherung.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.53.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.53.0...v0.54.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.54.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.54.0...v0.55.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 
