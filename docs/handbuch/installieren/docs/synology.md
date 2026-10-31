@@ -25,9 +25,8 @@ docker/dms/sicherung
 !!! tip "Sicherungen auf eine andere Platte"
     Hat dein NAS mehrere Speicherpools, lege `sicherung` besser auf einen anderen. Dann ändere in der Vorlage später nur diese eine Zeile, z. B. auf `/volume2/sicherung/dms`.
 
-
-!!! tip "Optional: Eingangsordner für den Scanner"
-    Ein fünfter Ordner `eingang` daneben wird zum [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/): Jede Datei, die dein Scanner oder das NAS dort ablegt, wird neue Post. Gib ihn im NAS für den Scanner frei. Ohne ihn läuft alles wie gewohnt.
+!!! tip "Eingangsordner für den Scanner"
+    Leg auch einen fünften Ordner `eingang` daneben an. Die Vorlage bindet ihn ein, und manche NAS brechen beim Start ab, wenn ein eingebundener Ordner fehlt. Er wird zum [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/): Jede Datei, die dein Scanner oder das NAS dort ablegt, wird neue Post. Gib ihn im NAS für den Scanner frei. Brauchst du keinen Scanner, bleibt er einfach leer.
 
 ## 3. Projekt anlegen
 
@@ -46,7 +45,9 @@ docker/dms/sicherung
 
 1. Im Browser `http://<NAS>:8080` öffnen, z. B. `http://192.168.1.20:8080`.
 2. Der Assistent fragt nach dem **Einrichtungscode**. Er steht im **Container Manager → Container → `dms-app-1` → Protokoll** (eine auffällige Zeile *Einrichtungscode für das DMS*). Er steht auch in der Datei `docker/dms/geheim/EINRICHTUNGSCODE`, die du in der File Station öffnen kannst.
-3. Die Datenbank fragt der Assistent nicht ab, sie ist schon angebunden. Es geht weiter mit Haushalt, Administrator, erstem Benutzer, Schlüssel und Notfallblatt.
+3. Die Datenbank fragt der Assistent nicht ab, sie ist schon angebunden.
+
+--8<-- "assistent-weiter.md"
 
 ## Updates
 

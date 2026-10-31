@@ -40,7 +40,7 @@ docker compose up -d
 docker compose logs dms | grep -A1 Einrichtungscode
 ```
 
-Die Daten liegen damit in `~/dms/daten`. Hast du für Dokumente oder Sicherungen eine eigene Platte, trägst du deren Pfade in der `docker-compose.yml` ein. Weiter geht es im Browser unter `http://<Rechner>:8080`, wie unter [Jeder Server mit Docker](docker.md) beschrieben.
+Bei zwei Containern liegen die Daten damit in `~/dms/daten`, bei dms-komplett direkt in `~/dms` (`files`, `geheim`, `sicherung`, `postgres`). Hast du für Dokumente oder Sicherungen eine eigene Platte, trägst du deren Pfade in der `docker-compose.yml` ein. Weiter geht es im Browser unter `http://<Rechner>:8080`, wie unter [Jeder Server mit Docker](docker.md) beschrieben.
 
 ## 4. Den Rechner zum Server machen
 

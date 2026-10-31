@@ -39,10 +39,10 @@ Das DMS gibt es in zwei Varianten. **Wir empfehlen zwei Container** – so laufe
 | | **Zwei Container** (empfohlen): `dms` + `postgres:17` | **Ein Container**: `dms-komplett` |
 | --- | --- | --- |
 | Einrichten | Compose-Projekt bzw. App-Store, ein Passwort für die Datenbank | ein Image, vier Ordner, kein Passwort |
-| Updates von PostgreSQL | sofort, unabhängig vom DMS: `postgres:17` neu ziehen | erst mit dem nächsten DMS-Image |
+| Updates von PostgreSQL | sofort, unabhängig vom DMS: `postgres:17` neu ziehen | mit `:main` wöchentlich neu gebaut, mit fester Version erst mit dem nächsten Release |
 | Betrieb | DMS und Datenbank einzeln neu starten, überwachen, mit Standardwerkzeugen sichern | alles zusammen; Datenbank von außen nicht erreichbar (gewollt) |
 | Neue Hauptversion von PostgreSQL | planbar, im eigenen Takt | nur über Sicherung und Wiederherstellung |
-| App-Stores (umbrelOS, ZimaOS, CasaOS, TrueNAS) | ja | nein |
+| App-Stores (umbrelOS, ZimaOS, CasaOS) | ja | nein |
 | Gut für | den Dauerbetrieb | Ausprobieren und Testen, Oberflächen, die nur „Container aus Image erstellen“ können, Anbieter, die nur einen Container erlauben |
 
 **Warum zwei Container?** Ein Dienst je Container ist der übliche Docker-Weg. Die Datenbank kommt aus dem offiziellen PostgreSQL-Image und bekommt Sicherheits-Updates, sobald es sie gibt – unabhängig davon, wann das DMS ein neues Release hat. Fällt einer der beiden aus, lässt er sich allein neu starten und untersuchen. Der Preis ist ein Passwort und ein Compose-Projekt; die Vorlagen hier halten beides so klein wie möglich.
@@ -57,7 +57,7 @@ Das DMS gibt es in zwei Varianten. **Wir empfehlen zwei Container** – so laufe
 
 ## Nach der Installation
 
-1. **Einrichten.** Beim ersten Aufruf führt ein Assistent durch die Einrichtung: Haushalt, Administrator, erster Benutzer, Schlüssel und Notfallblatt. Die Schritte im Einzelnen beschreibt das [Administratorhandbuch](https://motom001.github.io/dms/admin/aktuell/installation/#der-einrichtungsassistent).
+1. **Einrichten.** Beim ersten Aufruf führt ein Assistent durch die Einrichtung: je nach Weg Einrichtungscode und Datenbank, dann **Neu einrichten** oder **Aus einer Sicherung wiederherstellen**, Name des Haushalts, Administrator, erster Benutzer, Schlüssel und Notfallblatt. Die Schritte im Einzelnen beschreibt das [Administratorhandbuch](https://motom001.github.io/dms/admin/aktuell/installation/#der-einrichtungsassistent).
 2. **Sichern.** Unter **Werkbank → Sicherung** den Zeitplan einschalten und das Notfallblatt ausdrucken. Kopiere die Sicherungen ab und zu an einen anderen Ort, z. B. auf einen USB-Stick oder in einen Cloudspeicher. Fällt das Gerät aus, sind sonst auch die Sicherungen weg. Mehr unter [Sicherung](https://motom001.github.io/dms/admin/aktuell/sicherung/).
 3. **Loslegen.** Wie man mit Mappen, Dokumenten und Aufgaben arbeitet, steht im [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/aktuell/).
 

@@ -25,8 +25,9 @@ Im DMS App Store **DMS** öffnen und **Installieren** wählen. ZimaOS lädt das 
 ## 3. Einrichten
 
 1. Öffne die App **direkt nach der Installation**, über ihr Symbol oder unter `http://<Gerät>:8478`.
-2. Der Assistent beginnt beim **Mandanten**, also dem Namen deines Haushalts, und legt dann den **Administrator** an. Einen Einrichtungscode gibt es hier nicht, und die Datenbank ist schon eingetragen.
-3. Weiter geht es mit erstem Benutzer, Schlüssel und Notfallblatt sowie Optionalem. Die Schritte im Einzelnen beschreibt das [Administratorhandbuch](https://motom001.github.io/dms/admin/aktuell/installation/#der-einrichtungsassistent).
+2. Einen Einrichtungscode gibt es hier nicht, und die Datenbank ist schon eingetragen.
+
+--8<-- "assistent-weiter.md"
 
 !!! warning "Gleich nach der Installation einrichten"
     Bis der Administrator angelegt ist, könnte jeder in deinem Heimnetz die Einrichtung übernehmen.
@@ -42,6 +43,9 @@ Die Daten liegen unter `/DATA/AppData/dms/`:
 | `sicherung` | Sicherungen des DMS |
 | `postgres` | die Datenbank |
 
+!!! note "Kein Eingangsordner"
+    Bei der Installation aus dem App Store gibt es keinen [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/) für Scanner. Dokumente kommen über das Hochladen in der Ablage, per E-Mail über ein [Postfach](https://motom001.github.io/dms/admin/aktuell/postfaecher/) oder über die Schnittstelle ins DMS.
+
 ## Sichern
 
 - Unter **Werkbank → [Sicherung](https://motom001.github.io/dms/admin/aktuell/sicherung/)** einen Zeitplan einschalten und das Notfallblatt ausdrucken.
@@ -53,4 +57,4 @@ Gibt es eine neue Version, zeigt der App Store bei **DMS** ein Update an. Die Da
 
 ## Auf ein neues Gerät umziehen
 
-DMS auf dem neuen Gerät aus dem Store installieren, die Sicherungsdateien in dessen Ordner `sicherung` legen und im Assistenten **Aus Sicherung wiederherstellen** wählen. Ausführlich unter [Wiederherstellen](https://motom001.github.io/dms/admin/aktuell/wiederherstellen/).
+DMS auf dem neuen Gerät aus dem Store installieren, die Sicherungsdateien in dessen Ordner `sicherung` legen und im Assistenten **Aus einer Sicherung wiederherstellen** wählen. Ausführlich unter [Wiederherstellen](https://motom001.github.io/dms/admin/aktuell/wiederherstellen/).

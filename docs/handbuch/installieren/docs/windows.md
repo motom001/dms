@@ -38,4 +38,4 @@ Hyper-V ist in **Windows 10/11 Pro, Enterprise** und in **Windows Server** entha
 
 ## Sicherung
 
-Kopiere den Ordner `sicherung` regelmäßig an einen anderen Ort, z. B. mit dem Windows-Dateiversionsverlauf, OneDrive oder einer USB-Platte. In WSL liegt er unter `\\wsl$\Ubuntu\home\<Name>\dms\daten\sicherung`. Bei der VM kopierst du ihn innerhalb von Linux weiter, siehe [PC mit Linux → Sicherung](linux.md#sicherung).
+Kopiere den Ordner `sicherung` regelmäßig an einen anderen Ort, z. B. mit dem Windows-Dateiversionsverlauf, OneDrive oder einer USB-Platte. In WSL liegt er unter `\\wsl$\Ubuntu\home\<Name>\dms\daten\sicherung` (zwei Container) bzw. `\\wsl$\Ubuntu\home\<Name>\dms\sicherung` (dms-komplett). Bei der VM kopierst du ihn innerhalb von Linux weiter, siehe [PC mit Linux → Sicherung](linux.md#sicherung).
