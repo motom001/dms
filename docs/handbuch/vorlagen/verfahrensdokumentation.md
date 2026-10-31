@@ -20,14 +20,14 @@
 
 Belege kommen auf diesen Wegen ins DMS:
 
-- **Papier:** [Wer] scannt eingehende Belege [täglich / wöchentlich] mit [Scanner, Modell]. Die Datei wird über **„+ Post“** als **Post** im DMS abgelegt. Das DMS hält dabei fest, **wer** sie **wann** angelegt hat (Kanal „Hochgeladen“).
-- **Elektronisch erhaltene Belege** (PDF, E-Rechnung): [Wer] legt die Datei **unverändert im empfangenen Format** über „+ Post“ ab. Bei E-Rechnungen (XRechnung, ZUGFeRD) wird die **Originaldatei** (z. B. die XML-Datei) abgelegt, nicht nur ein Ausdruck oder Bild davon.
+- **Papier:** [Wer] scannt eingehende Belege [täglich / wöchentlich] mit [Scanner, Modell]. Die Datei kommt als **Post** ins DMS – [über **„+ Post“** (Kanal „Hochgeladen“) / direkt vom Scanner in den **Eingangsordner** (Werkbank → Eingangsordner, Kanal „Ordner“)]. Das DMS hält dabei fest, **wer** bzw. welcher Weg sie **wann** angelegt hat.
+- **Elektronisch erhaltene Belege** (PDF, E-Rechnung): [Wer] legt die Datei **unverändert im empfangenen Format** über „+ Post“ ab. [Oder: Das DMS holt E-Mails aus dem Postfach [Adresse] ab (Werkbank → Postfächer, Kanal „E-Mail“); die Anhänge liegen **im Original** an der Post.] Bei E-Rechnungen (XRechnung, ZUGFeRD) wird die **Originaldatei** (z. B. die XML-Datei) abgelegt, nicht nur ein Ausdruck oder Bild davon.
 - **Ausgangsbelege:** [Wie Ausgangsrechnungen entstehen, z. B. Rechnungsprogramm …, und wie sie ins DMS kommen.]
 - [Weitere Wege, z. B. Ablage über die Schnittstelle (API) durch …]
 
 Jede Datei bekommt beim Speichern einen **Prüfwert (SHA-256)**. Dateien mit gleichem Inhalt erkennt das DMS und speichert sie nur einmal.
 
-Die Post wird **zeitnah**, spätestens [z. B. innerhalb von 10 Tagen], einer passenden Mappe **zugeordnet** (z. B. einer Rechnung, einem Vertrag). Dabei wandern die Dokumente in ein Register dieser Mappe; das Protokoll beider Mappen hält fest, wer wann zugeordnet hat.
+Die Post wird **zeitnah**, spätestens [z. B. innerhalb von 10 Tagen], einer passenden Mappe **zugeordnet** (z. B. einer Rechnung, einem Vertrag). Dabei wandern die Dokumente in ein Register dieser Mappe; die **Historie** beider Mappen hält fest, wer wann zugeordnet hat.
 
 ## 3. Ersetzendes Scannen
 
@@ -41,21 +41,29 @@ Die Post wird **zeitnah**, spätestens [z. B. innerhalb von 10 Tagen], einer pas
 ## 4. Ablage und Ordnung
 
 - Belege liegen in **Mappen** festgelegter **Mappentypen**, z. B. [Rechnung, Kontoauszug, Vertrag]. Jeder Mappentyp hat Pflichtfelder, z. B. [Rechnungsdatum, Rechnungsnummer, Betrag, Vertragspartner].
-- **Sichten** fassen Mappen nach Bedingungen zusammen, z. B. [„Rechnungen 2026“].
+- **Ansichten** fassen Mappen nach Bedingungen zusammen, z. B. [„Rechnungen 2026“].
 - Ordnungsmerkmal je Beleg: [z. B. Rechnungsdatum und Rechnungsnummer; ggf. Belegnummer der Buchhaltung].
-- Aufbewahrungsfristen: [Buchungsbelege 8 Jahre, Bücher und Aufzeichnungen 10 Jahre, Geschäftsbriefe 6 Jahre – jeweils ab Ende des Kalenderjahres; mit der Steuerberatung abstimmen]. Vor Ablauf der Frist werden Belege nicht gelöscht. [Wie das sichergestellt wird, z. B. Berechtigungen: nur … darf löschen; jährliche Kontrolle durch …]
+- Aufbewahrungsfristen: [Buchungsbelege 8 Jahre, Bücher und Aufzeichnungen 10 Jahre, Geschäftsbriefe 6 Jahre – jeweils ab Ende des Kalenderjahres; mit der Steuerberatung abstimmen]. Vor Ablauf der Frist werden Belege nicht gelöscht.
+- **Archivmodus:** Für die Mappentypen [Rechnung, Kontoauszug, …] ist der Archivmodus eingeschaltet (Werkbank → Mappentypen → Abschnitt Archivmodus): Aufbewahrungsfrist [8] Jahre, Stichtag [Rechnungsdatum], gerechnet bis zum 31.12. des Stichtagsjahres plus die Jahre. Bis zum Fristende lassen sich weder die Mappen noch einzelne Dokumente löschen – **auch nicht von Administratoren**, auch nicht über Papierkorb oder Schnittstelle.
+- **Nach Fristende:** Unter **Werkbank → Darf weg** stehen die Mappen, deren Frist abgelaufen ist. [Wer] prüft die Liste [jährlich, z. B. im Januar] und löscht, was weg darf. Das DMS löscht nie von selbst.
 
 ## 5. Nachvollziehbarkeit und Unveränderbarkeit
 
-- Das DMS führt zu jeder Mappe ein **Protokoll** (Werkbank-Begriff: Historie): Anlage, jede Änderung eines Feldes mit **altem und neuem Wert**, wer, wann; hochgeladene und gelöschte Dokumente; Zuordnungen; versendete E-Mails.
+- Das DMS führt zu jeder Mappe eine **Historie**: Anlage, jede Änderung eines Feldes mit **altem und neuem Wert**, wer, wann; hochgeladene und gelöschte Dokumente, neue Versionen; Zuordnungen; versendete E-Mails. Bei Mappentypen im Archivmodus wird die Historie nie aufgeräumt.
 - Dokumente werden **unverändert** gespeichert; der Prüfwert (SHA-256) je Datei macht nachträgliche Veränderungen erkennbar.
-- Gelöschte Mappen kommen in den **Papierkorb** (Frist: [z. B. 30 Tage], Werkbank → Papierkorb) und lassen sich bis dahin wiederherstellen; das Löschen steht im Protokoll.
-- [Wer Mappen und Dokumente löschen darf, regeln die Berechtigungen, siehe Abschnitt 6.]
+- **Änderungen nur als neue Version:** Im Archivmodus ist die Versionierung für alle Dokumentenregister Pflicht. Ein geändertes Dokument wird als neue **Version** abgelegt; ältere Versionen bleiben bis zum Fristende erhalten.
+- **Ohne Archivmodus** lässt sich ein einzelnes Dokument endgültig löschen (der Papierkorb nimmt nur ganze Mappen auf). Deshalb gilt der Archivmodus für alle aufbewahrungspflichtigen Mappentypen: [Liste].
+- **Prüfung der Dateien:** [Wer] startet [vierteljährlich / nach jedem Umzug des Speichers / vor dem Vernichten von Papier] unter **Werkbank → Wartungsoperationen → Alle Dateien prüfen** einen Abgleich aller Dateien (auch älterer Versionen) mit ihrem Prüfwert. Abweichungen stehen in der Liste und im Protokoll; [Wer] klärt sie.
+- Gelöschte Mappen kommen in den **Papierkorb** (Frist: [z. B. 30 Tage], Werkbank → Papierkorb) und lassen sich bis dahin wiederherstellen; das Löschen steht in der Historie.
+- [Wer Mappen nach Fristende löschen darf, regeln die Berechtigungen, siehe Abschnitt 6.]
 
 ## 6. Zugriffsschutz
 
-- Zugang nur mit **persönlichem Konto** (E-Mail-Adresse und Passwort). Konten: [Liste der Benutzer und ihrer Rolle].
-- **Rollen und Berechtigungen** je Mappentyp regeln, wer lesen, anlegen, bearbeiten und löschen darf (Werkbank → Berechtigungen). Für Belege gilt: [z. B. nur … darf löschen; … darf nur lesen].
+- Zugang nur mit **persönlichem Konto** (E-Mail-Adresse und Passwort). Konten: [Liste der Benutzer, ihrer Systemrolle (Administrator / Mitglied) und ihrer Rollen].
+- **Zwei-Faktor-Anmeldung:** [vorgeschrieben für Administratoren / für alle / freiwillig] (Werkbank → Anmeldeschutz).
+- [**Anmeldung über einen Anbieter** (OpenID Connect), z. B. [Microsoft 365 / …] – oder: nicht genutzt.]
+- **Anmeldeschutz:** Nach wiederholten Fehlversuchen sperrt das DMS die Anmeldung bzw. die IP-Adresse vorübergehend; Sperren stehen im Protokoll. [Einstellungen, falls geändert.]
+- **Rollen und Berechtigungen** je Mappentyp regeln, wer anlegen, lesen, bearbeiten, löschen und Passwörter sehen darf (Werkbank → Mappentypen → Abschnitt Berechtigungen; Rollen unter Werkbank → Benutzer). Für Administratoren gelten die Regeln nicht. Für Belege gilt: [z. B. nur … darf löschen; … darf nur lesen].
 - Für eine Betriebsprüfung kann ein eigenes Konto mit **nur lesendem Zugriff** angelegt werden: [ja / nein, Vorgehen].
 - Erreichbarkeit: [nur im Heimnetz / von außen über Reverse-Proxy mit HTTPS unter …].
 
@@ -74,7 +82,7 @@ Die Post wird **zeitnah**, spätestens [z. B. innerhalb von 10 Tagen], einer pas
 
 ## 9. Datenzugriff bei einer Betriebsprüfung
 
-- Belege lassen sich aus jeder Sicht **exportieren**: Tabelle (CSV, XLSX), ZIP mit Dokumenten oder PDF (Sicht → Exportieren).
+- Belege lassen sich aus jeder Ansicht **exportieren**: Tabelle (CSV, XLSX), ZIP mit Dokumenten oder PDF (in der Ansicht **Exportieren …**, für ausgewählte oder alle Treffer), sofern das Recht zum Exportieren an der Ansicht besteht.
 - Die Schnittstelle (API, `/api/v1`) liefert alle Daten maschinell auswertbar.
 - Bei Bedarf Lesezugang für Prüfer, siehe Abschnitt 6.
 - Ansprechpartner: [Name].
@@ -83,4 +91,4 @@ Die Post wird **zeitnah**, spätestens [z. B. innerhalb von 10 Tagen], einer pas
 
 | Datum | Was geändert | Wer |
 | --- | --- | --- |
-| [Datum] | erste Fassung | [Name] |
+| [Datum] | erste Version | [Name] |
