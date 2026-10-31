@@ -4,6 +4,7 @@
  *
  * - Angelegt wird über dieselben Funktionen wie in der Werkbank (mit allen Prüfregeln).
  * - Schlüssel bekommen das Paket-Präfix (<paket>_<schluessel>), Verweise <paket>:<schluessel> werden aufgelöst.
+ * - dms:<kennung> verweist auf einen Mappentyp, den das DMS selbst mitbringt (#310), z. B. dms:ablageort.
  * - Scheitert etwas, wird zurückgerollt: Es bleibt nichts halb angelegt.
  * - Ein Update ergänzt nur (neue Typen, Felder, Register, Sichten); es löscht und überschreibt nichts.
  */
@@ -81,6 +82,22 @@ export interface Paket { manifest: Manifest; typen: PaketTyp[]; sichten: PaketSi
 
 const SCHLUESSEL = /^[a-z][a-z0-9_]{0,39}$/;
 const TYPVERWEIS = /^([a-z][a-z0-9_]{1,19}:)?[a-z][a-z0-9_]{0,39}$/;
+
+/**
+ * Mappentypen des DMS, auf die Pakete mit `dms:<kennung>` verweisen dürfen (#310): nur, was jede
+ * Installation hat und was sich nicht löschen lässt. Post nicht – Post zeigt über „Zugeordnet zu“
+ * selbst auf jede Mappe, ein Paket braucht keinen eigenen Verweis darauf.
+ */
+export const DMS_TYPEN: Record<string, string> = { ablageort: 'Ablageort', benutzer: 'Benutzer', rolle: 'Rolle' };
+/** Ab dieser Version versteht das DMS Verweise `dms:…`; Pakete damit sollten `dms: ">=0.75.0"` angeben. */
+export const DMS_VERWEISE_AB = '0.75.0';
+const DMS_PRAEFIX = 'dms:';
+const istDmsVerweis = (vw: string) => vw.startsWith(DMS_PRAEFIX);
+/** Alle Typverweise eines Pakets: Felder, Quellen der Verknüpfungsregister, Typen der Ansichten. */
+const typverweise = (typen: PaketTyp[], sichten: PaketSicht[]) => [
+  ...typen.flatMap((t) => [...t.felder.flatMap((f) => (f.ziel ? [f.ziel] : [])), ...t.register.flatMap((r) => (r.quellen ?? []).map((q) => q.typ))]),
+  ...sichten.flatMap((s) => s.typen ?? []),
+];
 const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const str = (v: unknown) => (typeof v === 'string' ? v : v == null ? '' : String(v));
 
@@ -105,6 +122,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
   if (!istObjekt(m)) throw new Fachfehler(422, 'Das Paket ist ungültig.', { gruende: fehler.length ? fehler : ['manifest.yaml ist leer.'] });
   if (m.schema !== 1) fehler.push(`manifest.yaml: Format ${str(m.schema) || '–'} kennt dieses DMS nicht.`);
   if (!PAKET_ID.test(str(m.id))) fehler.push('manifest.yaml: ungültige Id.');
+  if (str(m.id) === 'dms') fehler.push('manifest.yaml: Die Id „dms“ ist für Verweise auf Mappentypen des DMS reserviert.');
   if (!VERSION.test(str(m.version))) fehler.push('manifest.yaml: ungültige Version (z. B. 1.0.0).');
   if (!str(m.name).trim()) fehler.push('manifest.yaml: Name fehlt.');
   if (!BEREICH.test(str(m.dms))) fehler.push('manifest.yaml: ungültige DMS-Version (z. B. >=0.63.0).');
@@ -144,6 +162,9 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
   const doppelt = (l: string[]) => l.filter((x, i) => l.indexOf(x) !== i);
   for (const s of doppelt(typen.map((t) => t.schluessel))) fehler.push(`mappentypen: Kennung „${s}“ doppelt.`);
   for (const s of doppelt(sichten.map((t) => t.schluessel))) fehler.push(`sichten: Kennung „${s}“ doppelt.`);
+  for (const vw of new Set(typverweise(typen, sichten).filter(istDmsVerweis))) {
+    if (!DMS_TYPEN[vw.slice(DMS_PRAEFIX.length)]) fehler.push(`Verweis „${vw}“: Diesen Mappentyp bringt das DMS nicht mit. Erlaubt sind ${Object.keys(DMS_TYPEN).map((k) => DMS_PRAEFIX + k).join(', ')}.`);
+  }
   // Einstellungen (#197): code.einstellungen und code.aktionen.
   const einst = liesBeschreibung(m.code);
   fehler.push(...einst.fehler.map((f) => `manifest.yaml: code.${f}`));
@@ -282,6 +303,13 @@ export class Paketverwaltung {
   private uploads = new Map<string, Hochgeladen>();
 
   constructor(private d: Dienst, private o: PaketOptionen) {}
+
+  /** Mappentypen des DMS, auf die Pakete verweisen dürfen (#310): Kennung → Typ. */
+  private async dmsTypen(): Promise<Map<string, Mappentyp>> {
+    const s = await this.d.sichereSystem();
+    const a = await this.d.ablageortTyp();
+    return new Map<string, Mappentyp>([['benutzer', s.benutzer], ['rolle', s.rolle], ...(a ? [['ablageort', a] as [string, Mappentyp]] : [])]);
+  }
 
   get katalogUrl() { return this.o.katalogUrl ?? OFFIZIELLER_KATALOG; }
   private abruf(url: string) { return this.o.abruf ? this.o.abruf(url) : holeDaten(url); }
@@ -434,6 +462,12 @@ export class Paketverwaltung {
     // Code läuft erst mit dem Paket-Läufer; Einstellungen lassen sich schon pflegen (#197).
     if (m.code !== undefined) hinweise.push('Das Paket enthält Code. Er läuft erst, wenn es im DMS den Paket-Läufer gibt; Einstellungen lassen sich schon pflegen.');
     if (ich && vergleicheVersion(m.version, ich.version) <= 0) probleme.push(`Version ${ich.version} ist schon installiert.`);
+    // Verweise auf Mappentypen des DMS (#310), z. B. dms:ablageort.
+    const dmsTypen = await this.dmsTypen();
+    const genutzt = [...new Set(typverweise(paket.typen, paket.sichten).filter(istDmsVerweis).map((vw) => vw.slice(DMS_PRAEFIX.length)))];
+    for (const k of genutzt.filter((k) => !dmsTypen.has(k))) probleme.push(`Das Paket verweist auf den Mappentyp „${DMS_TYPEN[k] ?? k}“ des DMS, den es hier nicht gibt. Bitte das DMS aktualisieren (ab ${DMS_VERWEISE_AB}).`);
+    const da = genutzt.filter((k) => dmsTypen.has(k));
+    if (da.length) hinweise.push(`Nutzt Mappentypen aus dem DMS: ${da.map((k) => `${dmsTypen.get(k)!.name} (aus dem DMS)`).join(', ')}.`);
     const abhaengigkeiten = Object.entries(m.abhaengigkeiten).map(([id, bereich]): AbhaengigkeitPlan => {
       const da = installierte.find((p) => p.id === id);
       const kp = katalog?.pakete.find((p) => p.id === id);
@@ -533,8 +567,14 @@ export class Paketverwaltung {
     for (const t of paket.typen) if (!ids.has(t.schluessel)) ids.set(t.schluessel, randomUUID());
     const neueTypen = paket.typen.filter((t) => !plan.typen.find((x) => x.schluessel === t.schluessel)?.vorhanden && !plan.typen.find((x) => x.schluessel === t.schluessel)?.geloescht);
     const angelegt = new Set<string>();
+    const dmsTypen = await this.dmsTypen();
     const ziel = (vw: string, nurAngelegt: boolean): string | null => {
       const [p, s] = vw.includes(':') ? vw.split(':') : [m.id, vw];
+      if (p === 'dms') {
+        const t = dmsTypen.get(s);
+        if (!t) throw new Fachfehler(422, `Der Verweis „${vw}“ lässt sich nicht auflösen: Diesen Mappentyp gibt es in diesem DMS nicht (Verweise auf Mappentypen des DMS ab ${DMS_VERWEISE_AB}).`);
+        return t.id;
+      }
       if (p !== m.id) {
         const fremd = installierte.find((x) => x.id === p)?.typen[s];
         if (!fremd || !vorher.has(fremd)) throw new Fachfehler(422, `Der Verweis „${vw}“ lässt sich nicht auflösen: Paket „${p}“ bzw. sein Typ „${s}“ fehlt.`);
@@ -545,7 +585,8 @@ export class Paketverwaltung {
       return !nurAngelegt || angelegt.has(s) || vorher.has(id) ? id : null;
     };
     const eingabe = (t: PaketTyp, nurAngelegt: boolean) => {
-      const offen = new Set(t.felder.filter((f) => f.ziel && f.ziel.split(':').pop() !== t.schluessel && ziel(f.ziel, nurAngelegt) === null).map((f) => f.key));
+      const eigen = (vw: string) => !vw.includes(':') || vw.startsWith(`${m.id}:`);
+      const offen = new Set(t.felder.filter((f) => f.ziel && !(eigen(f.ziel) && f.ziel.split(':').pop() === t.schluessel) && ziel(f.ziel, nurAngelegt) === null).map((f) => f.key));
       const felder = t.felder.filter((f) => !offen.has(f.key)).map(({ ziel: z, ...f }) => (z ? { ...f, zielTyp: ziel(z, false) } : f));
       const register = t.register.map((r) => ({ ...r, ...(r.quellen ? { quellen: r.quellen.map((q) => ({ typId: ziel(q.typ, nurAngelegt), feldKey: q.feld })).filter((q) => q.typId) } : {}) }));
       const unvollstaendig = offen.size > 0 || t.register.some((r) => (r.quellen ?? []).some((q) => ziel(q.typ, nurAngelegt) === null));
@@ -699,6 +740,7 @@ export class Paketverwaltung {
   private async auswahl(p: InstalliertesPaket) {
     const typen = await this.d.listeTypen();
     const installierte = await this.d.listePakete();
+    const dmsTypen = await this.dmsTypen();
     return {
       typen: typen.map((t) => ({ id: t.id, name: t.name, felder: t.felder.filter((f) => f.typ !== 'passwort').map((f) => ({ key: f.key, label: f.label })) })),
       benutzer: this.o.benutzer ? await this.o.benutzer() : [],
@@ -706,6 +748,7 @@ export class Paketverwaltung {
       sichten: (await this.d.listeSichten()).map((s) => ({ id: s.id, name: s.name })),
       typVon: (vw: string) => {
         const [paket, s] = vw.includes(':') ? vw.split(':') : [p.id, vw];
+        if (paket === 'dms') return dmsTypen.get(s)?.id ?? null;
         return installierte.find((x) => x.id === paket)?.typen[s] ?? null;
       },
     };

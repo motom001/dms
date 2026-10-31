@@ -101,6 +101,25 @@ const vertraege = {
   'inhalt/sichten.yaml': '- { schluessel: vertraege, name: Verträge, typen: [vertrag] }\n',
 };
 
+/** Paket mit Verweisen auf Mappentypen des DMS (#310): Ablageort und Benutzer. */
+const ordnerpaket = {
+  'manifest.yaml': 'schema: 1\nid: ordnerpaket\nname: Ordner\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: MIT\ndms: ">=0.75.0"\ninhalt:\n  mappentypen: inhalt/mappentypen.yaml\n  sichten: inhalt/sichten.yaml\n',
+  'inhalt/mappentypen.yaml': [
+    '- schluessel: urkunde', '  name: Urkunde', '  titelVorlage: "{name}"', '  felder:',
+    '    - { key: name, label: Name, typ: text, pflicht: true }',
+    '    - { key: verbleib_original, label: Verbleib Originaldokumente, typ: referenz, ziel: "dms:ablageort" }',
+    '    - { key: verantwortlich, label: Verantwortlich, typ: referenz, ziel: "dms:benutzer" }',
+    '  register:', '    - { key: daten, name: Daten, art: felder, felder: [name, verbleib_original, verantwortlich] }', '',
+  ].join('\n'),
+  'inhalt/sichten.yaml': '- { schluessel: orte, name: Orte und Urkunden, typen: ["dms:ablageort", urkunde] }\n',
+};
+
+/** Mappentypen ohne die, die das DMS selbst mitbringt (Systemtypen, Ablageort #168). */
+const paketTypen = async (d: Dienst) => {
+  const a = await d.ablageortTyp();
+  return (await d.listeTypen()).filter((t) => !t.system && t.id !== a?.id);
+};
+
 function faelle(pg: boolean) {
   describe(`Paketverwaltung (#188)${pg ? ' – PostgreSQL' : ''}`, { skip: pg && !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
     async function aufbau(eintraege: Parameters<typeof katalog>[0], version = '0.63.0') {
@@ -165,7 +184,7 @@ function faelle(pg: boolean) {
     it('Prüfsumme falsch, DMS zu alt, Abhängigkeit fehlt', async () => {
       const { d, p } = await aufbau([{ dateien: basis, falscheSumme: true }]);
       await assert.rejects(p.vorschau({ id: 'basis' }), /Prüfsumme/);
-      assert.deepEqual(await d.listeTypen(), []);
+      assert.deepEqual(await paketTypen(d), [], 'nur noch die Typen des DMS (System, Ablageort)');
       const alt = await aufbau([{ dateien: basis }], '0.62.0');
       const v = await alt.p.vorschau({ id: 'basis' });
       assert.equal(v.dmsOk, false);
@@ -173,7 +192,7 @@ function faelle(pg: boolean) {
       const ohne = await aufbau([{ dateien: vertraege }]);
       await assert.rejects(ohne.p.installiere({ id: 'vertraege' }, ICH), /Es fehlen Pakete.*basis/);
       await assert.rejects(ohne.p.installiere({ id: 'vertraege', mitAbhaengigkeiten: true }, ICH), /gibt es im Katalog nicht/);
-      assert.deepEqual(await ohne.d.listeTypen(), [], 'nichts angelegt');
+      assert.deepEqual(await paketTypen(ohne.d), [], 'nichts angelegt');
     });
 
     it('installiert Abhängigkeiten mit, löst Verweise auf und sperrt das Entfernen', async () => {
@@ -192,7 +211,7 @@ function faelle(pg: boolean) {
       await assert.rejects(p.entferne('basis', ICH), (e) => e instanceof Fachfehler && JSON.stringify(e.details).includes('braucht'));
       await p.entferne('vertraege', ICH);
       await p.entferne('basis', ICH);
-      assert.deepEqual(await d.listeTypen(), []);
+      assert.deepEqual(await paketTypen(d), [], 'nur noch die Typen des DMS (System, Ablageort)');
     });
 
     it('Namenskonflikt mit Vorschlag; ein Fehler lässt nichts halb angelegt', async () => {
@@ -237,6 +256,24 @@ function faelle(pg: boolean) {
       await assert.rejects(p.aktualisiere('basis', {}, ICH), /abgeschaltet/);
       await p.quelleEntfernen(EIGEN, ICH);
       assert.equal((await p.quellen()).length, 1);
+    });
+
+    it('verweist mit dms:… auf Mappentypen des DMS (#310)', async () => {
+      const { d, p } = await aufbau([{ dateien: ordnerpaket }], '0.75.0');
+      const ablageort = (await d.ablageortTyp())!;
+      const v = await p.vorschau({ id: 'ordnerpaket' });
+      assert.deepEqual(v.probleme, []);
+      assert.ok(v.hinweise.some((h) => /Ablageort \(aus dem DMS\)/.test(h) && /Benutzer \(aus dem DMS\)/.test(h)), v.hinweise.join(' | '));
+      const ok = await p.installiere({ id: 'ordnerpaket' }, ICH);
+      const urkunde = (await d.listeTypen()).find((t) => t.id === ok.typen.urkunde)!;
+      assert.equal(urkunde.felder.find((f) => f.key === 'verbleib_original')!.zielTyp, ablageort.id);
+      assert.equal(urkunde.felder.find((f) => f.key === 'verantwortlich')!.zielTyp, (await d.sichereSystem()).benutzer.id);
+      assert.deepEqual((await d.listeSichten()).find((s) => s.id === ok.sichten.orte)!.typen.sort(), [ablageort.id, urkunde.id].sort());
+      // Unbekannter DMS-Typ und reservierte Id: schon beim Lesen abgelehnt.
+      const falsch = { ...ordnerpaket, 'inhalt/mappentypen.yaml': ordnerpaket['inhalt/mappentypen.yaml'].replace('dms:benutzer', 'dms:post') };
+      assert.throws(() => liesPaket(liesZip(archiv(falsch))), (e) => e instanceof Fachfehler && (e.details as { gruende: string[] }).gruende.some((g) => /dms:post.*nicht mit/.test(g)));
+      const dmsId = { ...ordnerpaket, 'manifest.yaml': ordnerpaket['manifest.yaml'].replace('id: ordnerpaket', 'id: dms') };
+      assert.throws(() => liesPaket(liesZip(archiv(dmsId))), (e) => e instanceof Fachfehler && (e.details as { gruende: string[] }).gruende.some((g) => /reserviert/.test(g)));
     });
 
     it('Paket hochladen: Prüfung, Bestätigung, Herkunft, Update durch erneutes Hochladen (#189)', async () => {
