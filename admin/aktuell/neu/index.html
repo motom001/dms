@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.70/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.71/neu/">
       
       
         <link rel="prev" href="..">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-070" class="md-skip">
+        <a href="#neu-in-version-071" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0700" class="md-nav__link">
+  <a href="#0710" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.70.0
+        0.71.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.70.0">
+    <nav class="md-nav" aria-label="0.71.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -379,28 +379,6 @@
     <span class="md-ellipsis">
       
         Neu
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#beim-aktualisieren-beachten" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Beim Aktualisieren beachten
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#fur-administratoren" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Für Administratoren
       
     </span>
   </a>
@@ -1903,15 +1881,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0700" class="md-nav__link">
+  <a href="#0710" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.70.0
+        0.71.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.70.0">
+    <nav class="md-nav" aria-label="0.71.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1919,28 +1897,6 @@
     <span class="md-ellipsis">
       
         Neu
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#beim-aktualisieren-beachten" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Beim Aktualisieren beachten
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#fur-administratoren" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Für Administratoren
       
     </span>
   </a>
@@ -1983,28 +1939,19 @@
   
 
 
-<h1 id="neu-in-version-070">Neu in Version 0.70<a class="headerlink" href="#neu-in-version-070" title="Permanent link">&para;</a></h1>
-<h2 id="0700">0.70.0<a class="headerlink" href="#0700" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-071">Neu in Version 0.71<a class="headerlink" href="#neu-in-version-071" title="Permanent link">&para;</a></h1>
+<h2 id="0710">0.71.0<a class="headerlink" href="#0710" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Werkbank anpassen</strong> (#281), vor allem für Haushalte, deren Werkbank nicht überladen wirken soll:</li>
-<li>Ganz unten in der Leiste der Werkbank steht <strong>Werkbank anpassen</strong>. Dort wählst du eine Vorlage, <strong>Haushalt</strong>, <strong>Organisation</strong> oder <strong>Alles</strong>, und blendest einzelne Bereiche ein oder aus. Jeder Administrator kann zusätzlich Bereiche <strong>nur für sich</strong> einblenden.</li>
-<li><strong>Ausblenden schaltet nichts ab.</strong> Alles läuft weiter, Links und Hilfe führen weiter hin. Hat ein ausgeblendeter Bereich ein Problem, steht es trotzdem in der Übersicht, und der Bereich erscheint mit seinem Hinweis in der Leiste.</li>
-<li>Eingerichtete Bereiche verschwinden nicht unbemerkt: Im Dialog steht „eingerichtet, aber ausgeblendet“, unten in der Leiste, wie viele Bereiche ausgeblendet sind. Ein Klick zeigt sie vorübergehend alle.</li>
-<li>Das Administratorhandbuch beschreibt die Vorlagen und je Bereich, wofür man ihn braucht.</li>
-</ul>
-<h3 id="beim-aktualisieren-beachten">Beim Aktualisieren beachten<a class="headerlink" href="#beim-aktualisieren-beachten" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Bestehende Installationen sehen weiterhin <strong>alle</strong> Bereiche. Neue Installationen beginnen mit der Vorlage <strong>Haushalt</strong>.</li>
-</ul>
-<h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Die Ansicht steht in der Einstellung <code>werkbank_ansicht</code> (für alle) und <code>werkbank_ansicht:&lt;Benutzer&gt;</code> (je Administrator), beide sind Teil der Sicherung. Schnittstelle: <code>GET</code>/<code>PUT /api/werkbank/ansicht</code>.</li>
-<li>Die Bereiche sind so geschnitten, dass sie später auch Einheiten für abgestufte Administratorrechte sein können (#282).</li>
+<li><strong>Original behalten oder vernichten?</strong> (#167), für alle, die nach dem Einscannen Platz schaffen wollen:</li>
+<li>Neue Seite im Benutzerhandbuch mit einer Übersicht: was im Original bleibt, wo der Scan genügt, worauf man achten muss (Handwerkerrechnungen, Garantie, Sicherung prüfen).</li>
+<li>Die Faustregeln sind für den Haushalt als Abwägung begründet: Aufbewahren kostet fast nichts, ein fehlendes Original kann teuer werden. Dazu Tipps zum Bankschließfach und zur „Kiste je Jahr“.</li>
+<li>Ein Kasten „Für Selbständige und Unternehmen“ verweist auf Archivmodus und Vorlage Verfahrensdokumentation.</li>
+<li>Verlinkt aus <em>Wofür ein DMS?</em> und <em>Dokumente</em>, mit Quellen und dem Hinweis, dass die Seite keine Rechts- oder Steuerberatung ist.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.69.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.69.0...v0.70.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.70.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.70.0...v0.71.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
