@@ -112,4 +112,19 @@ docker run --name "$NAME-alt" -v "$alt:/data/postgres" "$IMAGE" > "$altlog" 2>&1
 grep -q "stammt von PostgreSQL 15" "$altlog" || { sed 's/^/::error::/' "$altlog"; fehler "keine klare Meldung bei anderer Hauptversion"; }
 sudo rm -rf "$alt" "$altlog"
 echo "::endgroup::"; echo "::notice::dms-komplett: Schritt erledigt"
-echo "dms-komplett: Einrichten, Neustart, Stopp, Absturz und Versionsprüfung in Ordnung."
+echo "::group::6. Eigener PORT: Healthcheck bleibt gesund (#321)"
+docker rm -f "$NAME" >/dev/null 2>&1 || true
+docker run -d --name "$NAME" -e PORT=4000 -p "$PORT:4000" \
+  -v "$arbeit/files:/data/files" -v "$arbeit/geheim:/data/geheim" -v "$arbeit/sicherung:/data/sicherung" -v "$arbeit/postgres:/data/postgres" \
+  "$IMAGE" >/dev/null
+warte
+zustand=""
+for _ in $(seq 1 60); do
+  zustand=$(docker inspect -f '{{.State.Health.Status}}' "$NAME")
+  [ "$zustand" = healthy ] && break
+  [ "$zustand" = unhealthy ] && fehler "Healthcheck mit PORT=4000: unhealthy"
+  sleep 3
+done
+[ "$zustand" = healthy ] || fehler "Healthcheck mit PORT=4000: $zustand"
+echo "::endgroup::"; echo "::notice::dms-komplett: Healthcheck mit eigenem PORT gesund"
+echo "dms-komplett: Einrichten, Neustart, Stopp, Absturz, Versionsprüfung und Healthcheck in Ordnung."

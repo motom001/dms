@@ -58,8 +58,9 @@ RUN printf '#!/bin/sh\nexec node /app/server/dist/dms.js "$@"\n' > /usr/local/bi
 # Feste Ordner (#115): /data/files, /data/geheim, /data/sicherung – zugeordnet nur über Volumes.
 ENV PORT=3000
 EXPOSE 3000
+# Port wie der Server (PORT, Standard 3000) – sonst wäre ein Container mit eigener PORT-Einstellung „unhealthy“ (#321).
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
-  CMD wget -qO- http://127.0.0.1:3000/api/gesundheit >/dev/null || exit 1
+  CMD wget -qO- "http://127.0.0.1:${PORT:-3000}/api/gesundheit" >/dev/null || exit 1
 CMD ["node", "--enable-source-maps", "server/dist/index.js"]
 
 # dms-komplett (#208): DMS und PostgreSQL 17 in einem Container. PostgreSQL ist nur innerhalb des
@@ -72,7 +73,7 @@ COPY deploy/komplett/start.sh /usr/local/bin/dms-komplett
 RUN chmod 755 /usr/local/bin/dms-komplett
 ENV DMS_VARIANTE=komplett
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s \
-  CMD wget -qO- http://127.0.0.1:3000/api/gesundheit >/dev/null && pg_isready -q -h 127.0.0.1 -U dms -d dms || exit 1
+  CMD wget -qO- "http://127.0.0.1:${PORT:-3000}/api/gesundheit" >/dev/null && pg_isready -q -h 127.0.0.1 -U dms -d dms || exit 1
 # Zusätzlich zu /data/files, /data/geheim, /data/sicherung: /data/postgres.
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["/usr/local/bin/dms-komplett"]

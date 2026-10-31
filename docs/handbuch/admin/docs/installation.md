@@ -142,7 +142,7 @@ Diese Einstellungen sind Umgebungsvariablen im Compose-Projekt:
 | `TRUST_PROXY` | Wem das DMS die Angaben eines Reverse-Proxys glaubt. Nicht gesetzt oder `auto`: dem eigenen Rechner und privaten Netzen – passt fast immer. `false`: niemandem, `true`: allen, oder eine Liste wie `172.18.0.0/16`. Siehe [Hinter einem Reverse-Proxy](#hinter-einem-reverse-proxy) |
 | `DMS_EINBETTEN` | Seiten, die das DMS einbetten dürfen (z. B. ein Dashboard), etwa `https://ha.example.org http://nas:8123`. Nicht gesetzt: nur das DMS selbst. Siehe [Sicherheits-Header](#sicherheits-header) |
 | `LOG_LEVEL` | Grundstufe des Protokolls: `debug`, `info` (Standard), `warn`, `error` |
-| `PORT`, `HOST` | Port (Standard `3000`) und Adresse (Standard `0.0.0.0`, alle), auf denen das DMS im Container lauscht. Meist nicht nötig: Den Port nach außen legt die Compose-Datei fest (in der Vorlage `8080:3000`). Die eingebaute Gesundheitsprüfung des Images fragt Port 3000 ab; bei einem anderen `PORT` meldet Docker den Container als *unhealthy* |
+| `PORT`, `HOST` | Port (Standard `3000`) und Adresse (Standard `0.0.0.0`, alle), auf denen das DMS im Container lauscht. Normalerweise änderst du **nicht** `PORT`, sondern den Port nach außen in der Compose-Datei (in der Vorlage `8080:3000`, z. B. `8090:3000`). Die eingebaute Gesundheitsprüfung des Images folgt `PORT`; setzt du `HOST` auf eine einzelne Adresse, muss sie `127.0.0.1` mit einschließen, sonst gilt der Container als *unhealthy* |
 
 ## Hinter einem Reverse-Proxy
 
