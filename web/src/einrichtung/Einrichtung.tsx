@@ -3,9 +3,10 @@ import { kreisImStandard } from '../../../shared/src/nummernkreis';
 import { useEffect, useRef, useState } from 'react';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import {
-  FELDTYPEN, freierSchluessel, INDEXPLATZHALTER, istIndexplatzhalter, REGISTERARTEN, SYSTEMSPALTEN, type Systemspalte, schluesselAus, standardRegister, titelAus, trefferlistenVon, VERWEISARTEN, vorlageFelder, wirksameVorlage,
+  FELDTYPEN, freierSchluessel, INDEXPLATZHALTER, istIndexplatzhalter, REGISTERARTEN, SYSTEMSPALTEN, type Systemspalte, schluesselAus, standardRegister, titelAus, trefferlistenVon, VERWEISARTEN, vorlageFelder, wirksameVorlage, pruefeTitelFilter,
   type Feld, type Mappe, type Mappentyp, type Register, type Registerart, type Werte,
 } from '../../../shared/src/model';
+import { FILTER } from '../../../shared/src/titelfilter';
 import { wirksameTypen } from '../../../shared/src/sichten';
 import { OFFENES_REGELWERK, regelProblem, regelwerkVon, type Regelwerk } from '../../../shared/src/rechte';
 import { RegelwerkAbschnitt, TestlaufBlatt } from '../werkbank/Berechtigungen';
@@ -172,7 +173,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
   const entwurfTyp = { id: e.id, name: e.name, beschreibung: e.beschreibung, system: system ?? null, felder: e.felder as unknown as Feld[], register: [], erstellt: '', geaendert: '' } as unknown as Mappentyp;
   // Fehler, die man schon vor dem Speichern sieht.
   const liveFehler: Partial<Record<TypBereich, boolean>> = {
-    titel: vorlageFelder(e.titelVorlage).some((k) => !istIndexplatzhalter(k) && !e.felder.some((f) => f.key === k)),
+    titel: vorlageFelder(e.titelVorlage).some((k) => !istIndexplatzhalter(k) && !e.felder.some((f) => f.key === k)) || pruefeTitelFilter({ felder: e.felder as unknown as Feld[], titelVorlage: e.titelVorlage }).length > 0,
     berechtigungen: e.berechtigungen.regeln.some((r) => !!regelProblem(r, entwurfTyp)),
   };
   const hatFehler = (k: TypBereich) => fehlerOrte.has(k) || !!liveFehler[k];
@@ -216,7 +217,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
       ? `${n} ${n === 1 ? 'Mappe hat' : 'Mappen haben'} in „${f.label}“ einen Wert. Die Werte bleiben gespeichert, werden aber nicht mehr angezeigt. Feld entfernen?${ERST_BEIM_SPEICHERN}`
       : `Feld „${f.label}“ entfernen?${ERST_BEIM_SPEICHERN}`;
     if (!confirm(frage)) return;
-    setE((x) => ({ ...x, titelVorlage: x.titelVorlage.split(`{${f.key}}`).join('').trim(), felder: x.felder.filter((_, j) => j !== i) }));
+    setE((x) => ({ ...x, titelVorlage: x.titelVorlage.replace(new RegExp(`\\{${f.key}(\\|[^{}]*)?\\}`, 'g'), '').trim(), felder: x.felder.filter((_, j) => j !== i) }));
     setOffen(null); setFehler(null);
   }
 
@@ -598,6 +599,7 @@ function TitelEditor({ e, setze, klappe }: { e: Entwurf; setze: (v: string) => v
   const felder = e.felder as unknown as Feld[];
   const v = e.titelVorlage;
   const unbekannt = vorlageFelder(v).filter((k) => !istIndexplatzhalter(k) && !felder.some((f) => f.key === k));
+  const filterFehler = pruefeTitelFilter({ felder, titelVorlage: v });
   const beispiel = mappen.find((m) => m.id === beispielId);
   const werte = beispiel ? beispiel.werte : beispielWerte(felder);
   const jetzt = new Date().toISOString();
@@ -630,6 +632,14 @@ function TitelEditor({ e, setze, klappe }: { e: Entwurf; setze: (v: string) => v
         ))}
       </div>
       {unbekannt.length > 0 && <p className="fehlertext">Diese Platzhalter passen zu keinem Feld: {unbekannt.map((k) => `{${k}}`).join(', ')}</p>}
+      {filterFehler.map((x) => <p key={x} className="fehlertext">{x}</p>)}
+      <details className="filterhilfe">
+        <summary className="klein">Platzhalter formatieren mit Filtern <Hilfe ort="werkbank.titelfilter" /></summary>
+        <p className="leise klein">Hinter einem senkrechten Strich, auch mehrere hintereinander: <code className="mono">{'{betreff|kurz:30|gross}'}</code>. Ist ein Feld leer, fällt es samt Trenner wie „ – “ oder „ · “ weg.</p>
+        <table className="klein filtertabelle"><tbody>
+          {Object.entries(FILTER).map(([k, f]) => <tr key={k}><td><code className="mono">{k}{'arg' in f ? (f.arg === 'zahl' ? ':30' : ':"…"') : ''}</code></td><td>{f.text}</td></tr>)}
+        </tbody></table>
+      </details>
       <div className="vorschau">
         <span className="ueber">Vorschau</span>
         <strong className="vorschautitel">{vorschau || 'Ohne Titel'}</strong>

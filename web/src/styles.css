@@ -321,6 +321,10 @@ a.textknopf { text-decoration: none; }
 .chipknopf:hover { border-color: var(--akzent); color: var(--akzent); }
 .chipknopf.index { border-style: dashed; color: var(--leise); }
 .vorschau { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 12px 14px; border-radius: var(--r); background: var(--senke); border: 1px solid var(--linie); }
+.filterhilfe { margin: 6px 0 10px; }
+.filterhilfe summary { cursor: pointer; color: var(--leise); }
+.filtertabelle { border-collapse: collapse; margin-top: 6px; }
+.filtertabelle td { padding: 3px 12px 3px 0; vertical-align: top; }
 .vorschautitel { font-size: calc(16px * var(--skala, 1)); }
 .vorschau select { width: auto; max-width: 260px; padding: 3px 6px; }
 .registerliste { display: flex; flex-direction: column; gap: 8px; }

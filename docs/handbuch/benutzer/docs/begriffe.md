@@ -39,6 +39,10 @@ Siehe auch: [Feldart](#feldart), [Pflichtfeld](#pflichtfeld), [Standardwert](#st
 Welche Art von Angabe ein Feld aufnimmt, z. B. Datum oder Betrag.  
 Noch offen: [Frage 16](#offen-16).
 
+<a id="filter-titel"></a>**Filter (Titel)** · ~ mit Erklärung · Administratoren  
+Formatiert einen Platzhalter in der Titel-Vorlage, z. B. nur das Jahr eines Datums oder gekürzter Text. Steht hinter einem senkrechten Strich, z. B. {datum|jahr}.  
+Siehe auch: [Titel](#titel).
+
 <a id="mappe"></a>**Mappe** · ✓ Alltagswort · alle  
 Die Grundeinheit des DMS, wie eine Pappmappe im Regal. Sie fasst Angaben, Dokumente und Verweise zu einem Ding zusammen, z. B. zu einem Vertrag, einer Rechnung oder einem Vertragspartner.  
 Siehe auch: [Mappentyp](#mappentyp), [Register](#register), [Dokument](#dokument).

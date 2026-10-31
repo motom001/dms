@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { auswahlText, darfErstellen, POST_STAND, type Mappe, type Mappentyp, type Werte } from '../../../shared/src/model';
+import { auswahlText, darfErstellen, POST_STAND, vorlageFelder, type Mappe, type Mappentyp, type Werte } from '../../../shared/src/model';
 import { api, type MappeDetails } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link } from '../ort';
@@ -73,7 +73,7 @@ export function vorschlagFuer(ziel: Mappentyp, post: Werte): Record<string, stri
   const betreff = auswahlText(post.betreff);
   const datum = auswahlText(post.datum);
   // Das erste Textfeld der Titel-Vorlage, sonst das erste Textfeld überhaupt.
-  const imTitel = [...(ziel.titelVorlage ?? '').matchAll(/\{(\w+)\}/g)].map((x) => x[1]);
+  const imTitel = vorlageFelder(ziel.titelVorlage ?? '');
   const text = ziel.felder.find((f) => f.typ === 'text' && imTitel.includes(f.key) && !f.eindeutig) ?? ziel.felder.find((f) => f.typ === 'text' && !f.eindeutig);
   if (text && betreff) v[text.key] = betreff.slice(0, text.maxLen ?? 250);
   const dat = ziel.felder.find((f) => f.typ === 'datum');

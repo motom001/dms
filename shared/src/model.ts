@@ -7,6 +7,7 @@
  * Fehler früh an, der Server lässt nichts Ungültiges in die Datenbank.
  */
 
+import { LEER, liesFilter, ohneLeereTeile, PLATZHALTER_MIT_FILTERN, pruefeFilter, wendeFilterAn } from './titelfilter';
 import { alsText } from './markdown';
 import { kreisImStandard, kreisVon } from './nummernkreis';
 
@@ -460,6 +461,7 @@ export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebn
   if (unbekannt.length) melde(p, 'titel', `Die Titel-Vorlage nennt unbekannte Felder: ${unbekannt.map((k) => `{${k}}`).join(', ')}.`);
   const geheim = vorlageFelder(t.titelVorlage ?? '').filter((k) => t.felder.some((f) => f.key === k && f.typ === 'passwort'));
   if (geheim.length) melde(p, 'titel', `Passwortfelder dürfen nicht im Titel stehen: ${geheim.map((k) => `{${k}}`).join(', ')}.`);
+  for (const x of pruefeTitelFilter({ felder: t.felder, titelVorlage: t.titelVorlage ?? '' })) melde(p, 'titel', x);
   if ((t.trefferliste ?? []).some((k) => t.felder.some((f) => f.key === k && f.typ === 'passwort'))) melde(p, 'trefferlisten', 'Passwortfelder können keine Spalte der Trefferliste sein.');
   pruefeRegister(t, ctx, p);
 
@@ -590,7 +592,8 @@ export function verweiseVon(t: Pick<Mappentyp, 'felder'>, werte: Werte): Array<{
   return out;
 }
 
-const PLATZHALTER = /\{([a-z][a-z0-9_]*)\}/g;
+/** Platzhalter `{feld}` bzw. `{feld|filter…}` (#170). */
+const PLATZHALTER = PLATZHALTER_MIT_FILTERN;
 
 /** Feste Indexwerte, die jede Titel-Vorlage zusätzlich zu den Feldern verwenden kann. */
 export const INDEXPLATZHALTER = { angelegt: 'Angelegt', geaendert: 'Zuletzt geändert' } as const;
@@ -629,16 +632,44 @@ export function titelAus(t: Pick<Mappentyp, 'felder' | 'titelVorlage'> & Pick<Pa
 }
 
 function titelAusVorlage(t: Pick<Mappentyp, 'felder' | 'titelVorlage'>, werte: Werte, titelVon: (id: string) => string, index: Indexwerte): string {
-  return wirksameVorlage(t)
-    .replace(PLATZHALTER, (_, k: string) => {
-      if (k === 'angelegt') return tagVon(index.erstellt);
-      if (k === 'geaendert') return tagVon(index.geaendert);
-      const f = t.felder.find((x) => x.key === k);
-      // Passwörter nie im Titel – auch nicht, wenn eine ältere Vorlage sie noch nennt.
-      return f && f.typ !== 'passwort' ? formatiere(f, werte[k], titelVon) : '';
-    })
-    .replace(/\s+/g, ' ')
-    .trim();
+  const ersetzt = wirksameVorlage(t)
+    .replace(PLATZHALTER, (_, k: string, kette: string) => {
+      let text = '';
+      let roh: unknown;
+      let art: string | undefined;
+      if (k === 'angelegt' || k === 'geaendert') {
+        const z = k === 'angelegt' ? index.erstellt : index.geaendert;
+        text = tagVon(z);
+        roh = z ? isoTag(z) : undefined;
+        art = 'datum';
+      } else {
+        const f = t.felder.find((x) => x.key === k);
+        // Passwörter nie im Titel – auch nicht, wenn eine ältere Vorlage sie noch nennt.
+        if (f && f.typ !== 'passwort') { text = formatiere(f, werte[k], titelVon); roh = werte[k]; art = f.typ; }
+      }
+      const mitFiltern = wendeFilterAn(text, roh, art, liesFilter(kette));
+      // Leere Teile fallen samt Trenner weg („Strom –  – 2026“ wird „Strom – 2026“).
+      return mitFiltern.trim() ? mitFiltern : LEER;
+    });
+  return ohneLeereTeile(ersetzt).replace(/\s+/g, ' ').trim();
+}
+
+/** Zeitstempel → „JJJJ-MM-TT“ in der Zeitzone des Haushalts (für Datumsfilter an angelegt/geaendert). */
+function isoTag(zeitstempel: string): string {
+  const d = new Date(zeitstempel);
+  if (Number.isNaN(d.getTime())) return '';
+  const teile = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: ZEITZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(d).map((p) => [p.type, p.value]));
+  return `${teile.year}-${teile.month}-${teile.day}`;
+}
+
+/** Fehler in den Filtern der Titel-Vorlage (#170). */
+export function pruefeTitelFilter(t: Pick<Mappentyp, 'felder' | 'titelVorlage'>): string[] {
+  const m: string[] = [];
+  for (const x of (t.titelVorlage ?? '').matchAll(PLATZHALTER)) {
+    const art = istIndexplatzhalter(x[1]) ? 'datum' : t.felder.find((f) => f.key === x[1])?.typ;
+    m.push(...pruefeFilter(x[1], x[2] ?? '', art));
+  }
+  return m;
 }
 
 /** Register für einen neuen oder alten Mappentyp ohne Register. */
