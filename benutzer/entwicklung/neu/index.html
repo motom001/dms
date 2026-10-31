@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-063" class="md-skip">
+        <a href="#neu-in-version-064" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -392,15 +392,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0630" class="md-nav__link">
+  <a href="#0640" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.63.0
+        0.64.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.63.0">
+    <nav class="md-nav" aria-label="0.64.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1000,15 +1000,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0630" class="md-nav__link">
+  <a href="#0640" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.63.0
+        0.64.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.63.0">
+    <nav class="md-nav" aria-label="0.64.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1058,26 +1058,26 @@
   
 
 
-<h1 id="neu-in-version-063">Neu in Version 0.63<a class="headerlink" href="#neu-in-version-063" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-064">Neu in Version 0.64<a class="headerlink" href="#neu-in-version-064" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0630">0.63.0<a class="headerlink" href="#0630" title="Permanent link">&para;</a></h2>
+<h2 id="0640">0.64.0<a class="headerlink" href="#0640" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Paketverwaltung, Stufe 1</strong> (#188) – fertige Mappentypen und Sichten aus dem offiziellen Katalog. <strong>Werkbank → Pakete</strong>:</li>
-<li><strong>Katalog abrufen</strong> nur auf Knopfdruck; Listen „Installiert“ und „Verfügbar“ mit Version, Lizenz, Autor, nötiger DMS-Version, Abhängigkeiten, Inhalt und Links zu README und Änderungen.</li>
-<li><strong>Vorschau</strong> vor der Installation: was angelegt wird, Namenskonflikte mit Vorschlag, Beispiel-Mappen optional, fehlende Abhängigkeiten auf Wunsch mitinstallieren.</li>
-<li>Prüft DMS-Version, Abhängigkeiten und die <strong>SHA-256</strong> des Archivs. Angelegt wird mit allen Prüfregeln der Werkbank; Schlüssel mit Paket-Präfix, Verweise <code>&lt;paket&gt;:&lt;schluessel&gt;</code> aufgelöst. Scheitert etwas, bleibt nichts halb angelegt.</li>
-<li><strong>Aktualisieren</strong> ergänzt nur (neue Typen, Felder, Register, Sichten) und überschreibt keine eigenen Änderungen; <strong>Entfernen</strong> nur ohne Mappen und ohne abhängige Pakete.</li>
-<li>Installierte Pakete mit Herkunft, Zeitpunkt und Person; Teil von Sicherung und Vollexport (<code>struktur/pakete.json</code>); Mappentypen zeigen ihr Paket.</li>
-<li>Das <strong>Basis-Paket</strong> mit dem Mappentyp „Organisation“ ist das erste Paket im Katalog.</li>
-<li>Administratorhandbuch: neue Seite <strong>Pakete</strong>; Entwicklerhandbuch: neuer Bereich <strong>Pakete entwickeln</strong>.</li>
+<li><strong>Paketverwaltung: erweiterte Ansicht</strong> (#189) – für Paketentwickler und DMS ohne Internetzugang. <strong>Werkbank → Pakete → Erweiterte Ansicht</strong> (je Benutzer, standardmäßig aus):</li>
+<li><strong>Weitere Katalogadressen</strong> hinzufügen, abschalten und entfernen (nur HTTPS, gleiches Format). Pakete daraus tragen ihre Quelle.</li>
+<li><strong>Paket als Datei hochladen</strong> (<code>.zip</code> im Format der Registry) – dieselbe Prüfung wie bei Katalogpaketen, ohne Prüfsumme aus dem Katalog.</li>
+<li>Vor der Installation aus einer anderen Quelle als dem offiziellen Katalog eine deutliche Warnung („nicht vom DMS-Projekt geprüft“), die man ausdrücklich bestätigen muss.</li>
+<li>Installierte Pakete zeigen ihre <strong>Herkunft</strong>; Updates kommen nur aus dieser Quelle. Ein hochgeladenes Paket aktualisiert man durch erneutes Hochladen einer höheren Version.</li>
+<li>Das Protokoll vermerkt Quellen und Uploads.</li>
+<li>In der normalen Ansicht bleibt es beim offiziellen Katalog.</li>
+<li>Administratorhandbuch (Pakete → Erweiterte Ansicht), Entwicklerhandbuch („Eigenes Paket testen“).</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.62.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.62.0...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.63.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.63.0...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 
