@@ -811,15 +811,17 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('POST', '/api/werkbank/wartung/volltext')).body.eingereiht >= 0, true);
     assert.equal((await anfrage('PUT', '/api/werkbank/texterkennung', { auftraege: 7 })).status, 422);
     assert.equal((await anfrage('PUT', '/api/werkbank/texterkennung', { auftraege: 2 })).body.einstellungen.auftraege, 2);
-    assert.equal((await anfrage('POST', `/api/dokumente/${dok.id}/texterkennung`)).body.ocr.stand, 'wartet');
+    // Neu eingereiht; ein freier Auftrag kann es sofort aufgreifen.
+    assert.match((await anfrage('POST', `/api/dokumente/${dok.id}/texterkennung`)).body.ocr.stand, /^(wartet|laeuft)$/);
   });
 
   it('Nummernkreise: gleichzeitig angelegte Mappen bekommen verschiedene Nummern (#171)', async () => {
     assert.equal((await anfrage('POST', '/api/werkbank/nummernkreise', { schluessel: 'beleg', name: 'Belege', muster: 'B{jjjj}-{zaehler:5}', start: 1 })).status, 201);
-    const t = (await anfrage('POST', '/api/typen', { name: 'Beleg', felder: [
+    const t = (await anfrage('POST', '/api/typen', { name: 'Ausgangsbeleg', felder: [
       { key: 'nr', label: 'Belegnummer', typ: 'text', standard: '{nummernkreis:beleg}', eindeutig: true },
       { key: 'betreff', label: 'Betreff', typ: 'text', pflicht: true },
     ] })).body;
+    assert.ok(t.id, JSON.stringify(t));
     const r = await Promise.all(Array.from({ length: 20 }, (_, i) => anfrage('POST', '/api/mappen', { typId: t.id, werte: { betreff: `B${i}`, nr: 'egal' } })));
     assert.ok(r.every((x) => x.status === 201), JSON.stringify(r.find((x) => x.status !== 201)));
     const nummern = r.map((x) => x.body.werte.nr as string).sort();
