@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.78/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.79/neu/">
       
       
         <link rel="prev" href="..">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-078" class="md-skip">
+        <a href="#neu-in-version-079" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0780" class="md-nav__link">
+  <a href="#0790" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.78.0
+        0.79.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.78.0">
+    <nav class="md-nav" aria-label="0.79.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -379,17 +379,6 @@
     <span class="md-ellipsis">
       
         Neu
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#beim-aktualisieren-beachten" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Beim Aktualisieren beachten
       
     </span>
   </a>
@@ -1892,15 +1881,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0780" class="md-nav__link">
+  <a href="#0790" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.78.0
+        0.79.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.78.0">
+    <nav class="md-nav" aria-label="0.79.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1908,17 +1897,6 @@
     <span class="md-ellipsis">
       
         Neu
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#beim-aktualisieren-beachten" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Beim Aktualisieren beachten
       
     </span>
   </a>
@@ -1961,28 +1939,20 @@
   
 
 
-<h1 id="neu-in-version-078">Neu in Version 0.78<a class="headerlink" href="#neu-in-version-078" title="Permanent link">&para;</a></h1>
-<h2 id="0780">0.78.0<a class="headerlink" href="#0780" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-079">Neu in Version 0.79<a class="headerlink" href="#neu-in-version-079" title="Permanent link">&para;</a></h1>
+<h2 id="0790">0.79.0<a class="headerlink" href="#0790" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Papierkorb auch für einzelne Dokumente</strong> (#344). Ein aus einem Register gelöschtes Dokument ist nicht mehr sofort weg: Es kommt mit <strong>allen Versionen und dem Volltext</strong> in den Papierkorb.</li>
-<li>Der Papierkorb zeigt unter <strong>Dokumente</strong> Name, Mappe, Register, Größe und wer es wann gelöscht hat.</li>
-<li><strong>Wiederherstellen</strong> legt es in dasselbe Register derselben Mappe zurück. Liegt die Mappe selbst im Papierkorb, sagt das DMS, dass zuerst die Mappe zurückkommt; gibt es sie nicht mehr, bleibt nur endgültig löschen.</li>
-<li>Rechte: in der Ablage, wer es gelöscht hat und die Mappe noch bearbeiten darf; in der Werkbank jeder Administrator. Der Archivmodus sperrt das Löschen wie bisher.</li>
-<li>Aufbewahrung, <em>Papierkorb leeren</em> und <em>0 Tage</em> (Papierkorb aus) gelten für Dokumente genauso. Wird eine Mappe endgültig gelöscht, gehen ihre einzeln gelöschten Dokumente mit.</li>
-<li>Historie der Mappe: „Dokument in den Papierkorb“, „Dokument wiederhergestellt“. Die Zahl am Papierkorb zählt Dokumente mit.</li>
-<li>Schnittstelle: <code>GET /api/v1/papierkorb/dokumente</code>, <code>POST …/dokumente/{id}/wiederherstellen</code>, <code>DELETE …/dokumente/{id}</code>; <code>DELETE /api/v1/dokumente/{id}</code> legt in den Papierkorb, wenn er eingeschaltet ist.</li>
-<li>Vollexport: neue Datei <code>daten/papierkorb-dokumente.jsonl</code>. Sicherungen enthalten den Papierkorb ohnehin.</li>
-<li>Handbuch: <em>Dokumente</em>, <em>Versionen</em>, <em>Ablage → Papierkorb</em> (Benutzer), <em>Papierkorb</em> (Administratoren).</li>
-</ul>
-<h3 id="beim-aktualisieren-beachten">Beim Aktualisieren beachten<a class="headerlink" href="#beim-aktualisieren-beachten" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Migration <strong>037</strong> legt die Tabelle <code>papierkorb_dokumente</code> an. Ältere Sicherungen lassen sich weiter einspielen.</li>
-<li>Wer ein Dokument über die Schnittstelle löscht und den Speicherplatz sofort braucht: Papierkorb ausschalten (0 Tage) oder das Dokument danach mit <code>DELETE /api/v1/papierkorb/dokumente/{id}</code> endgültig löschen.</li>
+<li><strong>Paketformat: Beispiele verweisen auf andere Beispiele</strong> (#347). Beispiel-Mappen eines Pakets können jetzt zeigen, wie Mappen zusammenhängen – ein Vertrag auf seine Organisation, eine Zahlung auf ihren Vertrag.</li>
+<li>Ein Beispiel bekommt optional einen <code>schluessel</code>; ein Verweisfeld darf <code>{ beispiel: strom }</code> sein, auf Beispiele einer Abhängigkeit <code>{ beispiel: "basis:stadtwerke" }</code>.</li>
+<li>Das DMS legt die Beispiele in passender Reihenfolge an. Kreise, unbekannte Schlüssel und fremde Pakete ohne Abhängigkeit lehnt es beim Lesen mit verständlicher Meldung ab – es wird nichts halb installiert.</li>
+<li>Wer die Beispiele mitinstalliert, bekommt auch die Beispiele der Abhängigkeiten, die dabei neu dazukommen. Ist eine Abhängigkeit schon ohne Beispiele da, bleiben Verweise darauf leer; die Vorschau sagt das.</li>
+<li>Beim Update entstehen wie bisher keine Beispiele.</li>
+<li>Entwicklerhandbuch <em>Pakete entwickeln</em>: <code>schluessel</code> und <code>{ beispiel: … }</code>.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.77.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.77.0...v0.78.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.78.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.78.0...v0.79.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
