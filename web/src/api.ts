@@ -374,6 +374,7 @@ export const api = {
   texterkennung: (werkzeugeNeu = false) => anfrage<OcrStatus>('GET', `/api/werkbank/texterkennung${werkzeugeNeu ? '?neu' : ''}`),
   texterkennungSpeichern: (e: Partial<OcrEinstellungen>) => anfrage<OcrStatus>('PUT', '/api/werkbank/texterkennung', e),
   volltextNachholen: () => anfrage<{ eingereiht: number }>('POST', '/api/werkbank/wartung/volltext'),
+  vorschauNachholen: () => anfrage<{ eingereiht: number }>('POST', '/api/werkbank/wartung/vorschau'),
   /* Papierkorb (#43): Ablage = eigener, Werkbank = alle */
   papierkorb: () => anfrage<PapierkorbEintrag[]>('GET', '/api/papierkorb'),
   papierkorbWerkbank: () => anfrage<{ tage: number; historieTage: number; eintraege: PapierkorbEintrag[] }>('GET', '/api/werkbank/papierkorb'),
@@ -565,6 +566,8 @@ export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
 };
 export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */ unpassend?: Record<string, string[]>; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
+/** Vorschaubild der ersten Seite (#332); der Prüfwert in der Adresse sorgt für ein neues Bild nach einer neuen Version. */
+export const vorschauUrl = (d: { id: string; sha256: string }, versuch = 0) => `/api/dokumente/${d.id}/vorschau?v=${d.sha256.slice(0, 12)}${versuch ? `&n=${versuch}` : ''}`;
 export const dokumentUrl = (id: string, herunterladen = false) => `/api/dokumente/${id}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
 export const versionUrl = (id: string, nummer: number, herunterladen = false) => `/api/dokumente/${id}/versionen/${nummer}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
 
@@ -644,7 +647,7 @@ export type OrdnerArt = 'dateien' | 'geheim' | 'sicherung';
 export interface OrdnerStand { art: OrdnerArt; pfad: string; text: string; gesamt: number | null; frei: number | null; belegt: number | null; volume: boolean | null; geraet: string | null; zustand?: 'ok' | 'warnung' | 'grenze' | null; warnBytes?: number | null; grenzBytes?: number | null }
 export interface Schwelle { wert: number; einheit: 'prozent' | 'gb' }
 export interface SpeicherplatzEinstellung { warnung: Schwelle; grenze: Schwelle }
-export interface SpeicherplatzStand { zustand: 'ok' | 'warnung' | 'grenze'; gemessen: string; ordner: OrdnerStand[]; einstellung: SpeicherplatzEinstellung; seit: string | null; wartungBeenden: boolean }
+export interface SpeicherplatzStand { zustand: 'ok' | 'warnung' | 'grenze'; gemessen: string; ordner: OrdnerStand[]; einstellung: SpeicherplatzEinstellung; seit: string | null; wartungBeenden: boolean; /** Vorschaubilder (#332), nur beim Abruf der Seite. */ vorschau?: { anzahl: number; bytes: number } | null }
 export interface Diagnose {
   dms: { version: string; commit: string | null; gebaut: string | null }; serverzeit: string; zeitzone: string; node: string; postgres: string | null;
   texterkennung: boolean | null; mail: boolean; benutzer: { name: string; rolle: string }; sitzung: string | null; vertretung: boolean;

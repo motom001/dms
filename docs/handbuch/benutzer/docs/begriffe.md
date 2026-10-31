@@ -187,6 +187,10 @@ Ein Benutzer übernimmt während einer Abwesenheit die Aufgaben eines anderen. D
 Der durchsuchbare Text in den Dokumenten – aus der Textebene der Datei oder aus der Texterkennung.  
 Siehe auch: [Texterkennung](#texterkennung), [Erweiterte Suche](#erweiterte-suche).
 
+<a id="vorschaubild"></a>**Vorschaubild** · ✓ Alltagswort · alle  
+Kleines Bild der ersten Seite neben einem PDF oder Bild in der Dokumentliste; entsteht im Hintergrund und wird nicht gesichert.  
+Siehe auch: [Dokument](#dokument).
+
 <a id="weitergeben"></a>**Weitergeben** · ✓ Alltagswort · alle  
 Eine Aufgabe einem anderen Benutzer übertragen.
 
@@ -496,6 +500,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Vertretung | – | `Abwesenheit.vertreterId, vertretung (Aufgabenart)` |
 | Verweis | Referenz, Link, Relation | `referenz, Feld.zielTyp` |
 | Verweisart | – | `Verweisart, VERWEISARTEN` |
+| Vorschaubild | Thumbnail, Miniatur | `vorschau` |
 | Werkbank anpassen | – | `WerkbankAnsicht, VORLAGEN` |
 | Zu erledigen | Eingang, Inbox, Posteingang | `eingang` |
 | Zwei-Faktor-Anmeldung | 2FA, MFA (in der Oberfläche) | – |

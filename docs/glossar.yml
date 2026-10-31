@@ -326,6 +326,14 @@ begriffe:
     einsteiger: fachwort
     begegnet: alle
     verwandt: [Texterkennung, Erweiterte Suche]
+  - begriff: Vorschaubild
+    bereich: ablage
+    beschreibung: Kleines Bild der ersten Seite neben einem PDF oder Bild in der Dokumentliste; entsteht im Hintergrund und wird nicht gesichert.
+    einsteiger: alltag
+    begegnet: alle
+    verwandt: [Dokument]
+    nicht_verwenden: [Thumbnail, Miniatur]
+    code: vorschau
   - begriff: Erweiterte Suche
     bereich: ablage
     beschreibung: Ein Suchformular über die Felder mehrerer Mappentypen und den Text in Dokumenten.

@@ -1,3 +1,4 @@
+import { Vorschaubild } from './Vorschaubild';
 import { useEffect, useRef, useState } from 'react';
 import { auswahlText, darfErstellen, POST_STAND, vorlageFelder, type Mappe, type Mappentyp, type Werte } from '../../../shared/src/model';
 import { api, type MappeDetails } from '../api';
@@ -176,7 +177,7 @@ function ZuordnenMaske({ typ, details, neuLaden, schliessen }: { typ: Mappentyp;
         <fieldset className="eigenschaft">
           <legend>Dokumente</legend>
           {details.dokumente.map((x) => (
-            <label key={x.id} className="haken"><input type="checkbox" checked={gewaehlt.has(x.id)} onChange={() => umschalten(x.id)} /><span>{x.name}</span></label>
+            <label key={x.id} className="haken mitvorschau"><input type="checkbox" checked={gewaehlt.has(x.id)} onChange={() => umschalten(x.id)} /><Vorschaubild d={x} /><span>{x.name}</span></label>
           ))}
           {mitDokumenten && regs.length > 1 && (
             <label className="eigenschaft"><span>in das Register</span>

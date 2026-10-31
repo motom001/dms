@@ -17,6 +17,7 @@ Jede Sicherung besteht aus zwei Dateien im Sicherungsordner, z. B.:
 
 - Verschlüsselt wird mit AES-256-GCM. Der Schlüssel dafür wird aus dem Schlüssel unter **Werkbank → [Verschlüsselung](verschluesselung.md)** abgeleitet – derselbe wie für Passwortfelder. **Ohne diesen Schlüssel ist eine Sicherung nicht lesbar.** Er steht nie in der Sicherung, nur in der Schlüsseldatei und auf dem [Notfallblatt](#notfallblatt).
 - Angemeldete Sitzungen gehören nicht dazu: Nach einer Wiederherstellung meldet sich jeder neu an.
+- Die **Vorschaubilder** der Dokumente gehören ebenfalls nicht dazu – sie entstehen nach einer Wiederherstellung von selbst neu.
 - Die Datenbank liest das DMS selbst – unabhängig von der PostgreSQL-Version. Eine Sicherung taugt deshalb auch für den Wechsel auf eine neue Hauptversion von PostgreSQL.
 - Ein **Prüfwort** (ein bekanntes Wort, verschlüsselt in der Datenbank) zeigt nach einer Wiederherstellung, ob der richtige Schlüssel greift.
 

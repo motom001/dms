@@ -310,6 +310,8 @@ async function main() {
 
   // Register mit Dokumenten
   await s.getByRole('tab', { name: 'Vertragsunterlagen' }).click();
+  // Vorschaubilder der ersten Seite (#332) entstehen im Hintergrund – kurz warten, bis sie geladen sind.
+  await s.waitForFunction(() => [...document.querySelectorAll('img.vorschaubild')].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 15_000 }).catch(() => {});
   // Erstes anzeigbares Dokument öffnen: die Anzeige steht direkt unter seiner Zeile (#85).
   const anzeigbar = s.locator('.dokumentliste li.klickbar').first();
   if (await anzeigbar.count()) { await anzeigbar.locator('.dokname > button').first().click(); await s.waitForTimeout(800); }

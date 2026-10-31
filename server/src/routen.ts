@@ -17,6 +17,7 @@ import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
 import { join } from 'node:path';
 import { ALS_KOPF, KONSOLE_KOPF, istLoopback, konsolenBenutzer, type Konsolenzugang } from './konsole';
 import type { Messung } from './messung';
+import type { Vorschaubilder } from './vorschau';
 import { Paketverwaltung, type InstallierenEingabe } from './pakete';
 import { eigeneVersion, standKennung, uebersicht, versionsabgleich, type SystemQuelle } from './system';
 import type { Fehlermeldungen } from './fehlermeldungen';
@@ -151,6 +152,8 @@ export interface RoutenExtras {
   wiederherstellung?: Wiederherstellung;
   /** Speicherplatz-Überwachung (#116). */
   speicherplatz?: Speicherplatz;
+  /** Vorschaubilder der ersten Seite (#332). */
+  vorschau?: Vorschaubilder;
   /** Eingangsordner (#195). */
   eingangsordner?: Eingangsordner;
   /** Postfächer (#196). */
@@ -798,6 +801,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/werkbank/wartung/nummern', zugang: 'admin', handler: async (a) =>
       ok(dienst.nummernNachtragen(String((a.body as { typId?: unknown })?.typId ?? ''), String((a.body as { feldKey?: unknown })?.feldKey ?? ''), ich(a).email), 202) },
     { methode: 'POST', pfad: '/api/werkbank/wartung/volltext', zugang: 'admin', handler: async () => ok({ eingereiht: await dienst.volltextNachholen() }) },
+    { methode: 'POST', pfad: '/api/werkbank/wartung/vorschau', zugang: 'admin', handler: async () => ok({ eingereiht: await dienst.vorschauNachholen() }) },
 
     /* ---------- Verschlüsselung (#39) ---------- */
     /* ---------- Wartungsmodus (#102) ---------- */
@@ -1010,7 +1014,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const n = await x.eingangsordner.pruefe(true);
       return ok({ uebernommen: n, stand: await x.eingangsordner.stand() });
     } },
-    { methode: 'GET', pfad: '/api/werkbank/speicherplatz', zugang: 'admin', handler: async () => ok(await speicherplatz().pruefe()) },
+    // Mit der Belegung der Vorschaubilder (#332) – sie liegen im Ordner der Dateien, werden aber nicht gesichert.
+    { methode: 'GET', pfad: '/api/werkbank/speicherplatz', zugang: 'admin', handler: async () => ok({ ...(await speicherplatz().pruefe()), vorschau: x.vorschau ? await x.vorschau.belegung() : null }) },
     { methode: 'PUT', pfad: '/api/werkbank/speicherplatz', zugang: 'admin', handler: async (a) => ok(await speicherplatz().speichere(a.body, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/system/abgleich', zugang: 'admin', handler: async (a) => {
       const browser = Object.fromEntries(Object.entries((b(a).browser ?? {}) as Record<string, unknown>).map(([k, v]) => [k, String(v)]));
@@ -1242,6 +1247,15 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const anzeigen = d.anzeigbar && a.query.herunterladen === undefined;
       L.dokumente.debug(anzeigen ? 'Dokument angezeigt' : 'Dokument heruntergeladen', { name: d.name, id: d.id });
       return { datei: { inhalt, name: d.name, mime: d.anzeigbar ? d.mime : 'application/octet-stream', anzeigen, groesse: d.groesse } };
+    } },
+    // Vorschaubild der ersten Seite (#332): gleiche Rechte wie das Dokument; 404, solange es keins gibt.
+    { methode: 'GET', pfad: '/api/dokumente/:id/vorschau', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      const d = await dienst.holeDokument(a.params.id);
+      const bild = x.vorschau ? await x.vorschau.bild(d) : null;
+      if (!bild) throw new Fachfehler(404, 'Für dieses Dokument gibt es (noch) kein Vorschaubild.');
+      // Die Adresse trägt den Prüfwert (?v=…): ein neues Bild hat eine neue Adresse, das Bild darf im Browser bleiben.
+      return { datei: { inhalt: bild, name: 'vorschau.jpg', mime: 'image/jpeg', anzeigen: true, groesse: bild.length, koepfe: { 'cache-control': 'private, max-age=604800' } } };
     } },
     // Volltext und Texterkennung (#45)
     { methode: 'GET', pfad: '/api/dokumente/:id/volltext', zugang: 'angemeldet', handler: async (a) => {
