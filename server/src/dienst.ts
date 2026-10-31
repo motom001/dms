@@ -1796,6 +1796,22 @@ export class Dienst {
     await this.einstellungen.schreibe('paket_kataloge', liste.length ? liste : null);
   }
 
+  /** Paket-Einstellungen (#197): je Paket getrennt in den Einstellungen (Teil der Sicherung, Schlüsselwechsel inklusive). */
+  async paketEinstellungen(id: string): Promise<{ werte: Record<string, unknown>; status?: { letzterLauf: string | null; meldungen: string[] } } | null> {
+    const v = await this.einstellungen?.lies(`paket:${id}`);
+    return v && typeof v === 'object' ? v as { werte: Record<string, unknown> } : null;
+  }
+  async setzePaketEinstellungen(id: string, v: { werte: Record<string, unknown>; status?: { letzterLauf: string | null; meldungen: string[] } } | null) {
+    if (!this.einstellungen) throw new Fachfehler(404, 'Einstellungen sind nicht eingerichtet.');
+    await this.einstellungen.schreibe(`paket:${id}`, v);
+  }
+  /** Geheimnisse von Paketen mit dem Tresor des DMS. */
+  verschluesselePaketGeheimnis(text: string): string {
+    if (!this.tresor?.bereit) throw new Fachfehler(409, 'Für Geheimnisse fehlt der Schlüssel. Erzeuge ihn unter Werkbank → Verschlüsselung.');
+    return this.tresor.verschluessele(text);
+  }
+  entschluessele(wert: string): string | null { return this.tresor?.entschluessele(wert) ?? null; }
+
   /** Warum Mappentypen nicht weg dürfen: Mappen oder Papierkorb-Einträge. Leer = frei. */
   async belegteTypen(ids: string[]): Promise<string[]> {
     const gruende: string[] = [];

@@ -4,6 +4,7 @@ import { api, ApiFehler, type PaketQuelle, type PaketVorschau } from '../api';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { geheZu, Link } from '../ort';
+import { PaketEinstellungen } from './PaketEinstellungen';
 
 /**
  * Werkbank → Pakete (#188): Konfigurationspakete aus dem offiziellen Katalog.
@@ -84,7 +85,7 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
         <ul className="mappenliste">
           {installiert.map((p) => (
             <li key={p.id}><Link to={`/werkbank/pakete/${p.id}`} className={`eintrag werk ${offen === p.id ? 'an' : ''}`}>
-              <span className="titel">{p.name} {neuer(p.id) && <span className="chip warn" title="Neuere Version in der Quelle">{neuer(p.id)!.neu}</span>}</span>
+              <span className="titel">{p.name} {neuer(p.id) && <span className="chip warn" title="Neuere Version in der Quelle">{neuer(p.id)!.neu}</span>}{p.einstellungenNoetig && <> <span className="chip warn" title="Pflichtfelder in den Einstellungen fehlen">Einstellungen nötig</span></>}</span>
               <span className="unter">Version {p.version} · {herkunftText(p.herkunft)}</span>
             </Link></li>
           ))}
@@ -272,6 +273,9 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
   const [vorschau, setVorschau] = useState<PaketVorschau | null>(null);
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<Meldung>();
+  const [reiter, setReiter] = useState<'uebersicht' | 'einstellungen'>(() => (new URLSearchParams(location.search).get('reiter') === 'einstellungen' ? 'einstellungen' : 'uebersicht'));
+  const [entfernenOffen, setEntfernenOffen] = useState(false);
+  const [behalten, setBehalten] = useState(false);
   const v = kp?.versionen.find((x) => x.version === (version || kp.aktuell)) ?? kp?.versionen[0];
   const neuer = inst && inst.herkunft.art === 'katalog' && kp && vergleicheVersion(kp.aktuell, inst.version) > 0 ? kp.aktuell : null;
 
@@ -288,9 +292,13 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
     finally { setLaeuft(false); }
   }
   const entfernen = () => {
-    if (!inst || !confirm(`„${inst.name}“ entfernen? Seine Mappentypen und Sichten verschwinden. Das geht nur, solange es keine Mappen dieser Typen gibt.`)) return;
+    if (!inst) return;
+    // Mit Einstellungen (#197): fragen, ob sie für eine spätere Neuinstallation bleiben sollen (Standard: nein).
+    if (inst.einstellungen) { setEntfernenOffen(true); return; }
+    if (!confirm(`„${inst.name}“ entfernen? Seine Mappentypen und Sichten verschwinden. Das geht nur, solange es keine Mappen dieser Typen gibt.`)) return;
     void tu(async () => { await api.paketEntfernen(id); geheZu('/werkbank/pakete', true); return `${inst.name} ist entfernt.`; });
   };
+  const entfernenBestaetigt = () => void tu(async () => { await api.paketEntfernen(id, behalten); setEntfernenOffen(false); geheZu('/werkbank/pakete', true); return `${inst!.name} ist entfernt${behalten ? ', die Einstellungen bleiben für eine spätere Neuinstallation' : ''}.`; });
 
   if (!inst && !kp) return (
     <div className="leer">
@@ -307,6 +315,13 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         <p className="leise">{inst?.beschreibung ?? kp?.beschreibung}</p>
       </div>
       <MeldungBox m={meldung} />
+      {inst?.einstellungen && (
+        <div className="registertaben" role="tablist" aria-label="Paket">
+          <button type="button" role="tab" aria-selected={reiter === 'uebersicht'} className={`registertab ${reiter === 'uebersicht' ? 'an' : ''}`} onClick={() => setReiter('uebersicht')}>Übersicht</button>
+          <button type="button" role="tab" aria-selected={reiter === 'einstellungen'} className={`registertab ${reiter === 'einstellungen' ? 'an' : ''}`} onClick={() => setReiter('einstellungen')}>Einstellungen{inst.einstellungenNoetig ? ' ⚠' : ''}</button>
+        </div>
+      )}
+      {inst?.einstellungen && reiter === 'einstellungen' ? <PaketEinstellungen id={id} gespeichert={() => void z.laden()} /> : <>
 
       <section className="blatt">
         <dl className="eigenschaften">
@@ -339,6 +354,13 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
           {inst && <button type="button" className="knopf gefahr-rand" disabled={laeuft} onClick={entfernen}>Entfernen</button>}
           {inst?.herkunft.art === 'hochgeladen' && <span className="leise klein">Ein hochgeladenes Paket aktualisierst du durch erneutes Hochladen einer höheren Version.</span>}
         </div>
+        {entfernenOffen && inst && (
+          <div className="hinweis warn" role="dialog" aria-label="Paket entfernen">
+            <p>„{inst.name}“ entfernen? Seine Mappentypen und Sichten verschwinden. Das geht nur, solange es keine Mappen dieser Typen gibt.</p>
+            <label className="haken"><input type="checkbox" checked={behalten} onChange={(e) => setBehalten(e.target.checked)} /><span>Einstellungen behalten (für eine spätere Neuinstallation)?</span></label>
+            <div className="knoepfe"><button type="button" className="knopf gefahr" disabled={laeuft} onClick={entfernenBestaetigt}>Entfernen</button><button type="button" className="textknopf" onClick={() => setEntfernenOffen(false)}>Abbrechen</button></div>
+          </div>
+        )}
       </section>
 
       {vorschau && (
@@ -349,6 +371,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
             return `${r.name} ${r.version} ist installiert.`;
           })} />
       )}
+      </>}
     </div>
   );
 }
@@ -381,6 +404,10 @@ function VorschauBlock({ v, warnung, los, abbrechen }: {
         </div>
       )}
       {v.probleme.length > 0 && <div className="hinweis schlecht"><ul>{v.probleme.map((p) => <li key={p}>{p}</li>)}</ul></div>}
+      {v.hinweise?.length > 0 && <div className="hinweis info"><ul>{v.hinweise.map((p) => <li key={p}>{p}</li>)}</ul></div>}
+      {v.einstellungen && (v.einstellungen.neu.length > 0 || v.einstellungen.weg.length > 0) && (
+        <div className="hinweis info"><p>Einstellungen:{v.update && v.einstellungen.neu.length > 0 && <> neu (mit Vorgabe) {v.einstellungen.neu.join(', ')}.</>}{!v.update && <> das Paket hat Einstellungen; Vorgaben werden gesetzt, Pflichtfelder füllst du danach im Reiter „Einstellungen“.</>}{v.einstellungen.weg.length > 0 && <> <strong>Fallen weg:</strong> {v.einstellungen.weg.join(', ')} – ihre Werte werden entfernt.</>}</p></div>
+      )}
       {v.update
         ? <p className="leise">Ein Update ergänzt nur. Es löscht nichts und überschreibt nichts, was du selbst geändert hast.</p>
         : <p className="leise">Das wird angelegt. Gibt es einen Namen schon, wähle einen anderen.</p>}

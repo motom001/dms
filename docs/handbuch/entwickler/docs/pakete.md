@@ -37,6 +37,37 @@ Das Format beschreiben die JSON-Schemas in der Registry: [`schema/manifest.schem
 
 Bei einem **Update** ergänzt das DMS nur: neue Typen, Felder, Register und Sichten. Felder, Register oder Sichten zu entfernen oder umzubenennen hat auf installierte DMS keine Wirkung – plane das Format deshalb vorher.
 
+## Einstellungen beschreiben
+
+Braucht dein Paket (mit Code) Einstellungen, beschreibst du sie im Manifest unter `code.einstellungen` – eine eigene Oberfläche bringt ein Paket nicht mit. Das DMS zeigt das Formular, prüft und speichert die Werte (Teil der Sicherung) und gibt sie dem Paket.
+
+```yaml
+code:
+  einstellungen:
+    - abschnitt: Allgemein
+      felder:
+        - { schluessel: aktiv, name: Regeln automatisch anwenden, typ: janein, standard: true }
+        - { schluessel: token, name: API-Schlüssel, typ: geheim, pflicht: true }
+    - liste: regeln
+      name: Regeln
+      eintrag: Regel
+      sortierbar: true
+      felder:
+        - { schluessel: absender, name: Absender enthält, typ: text }
+        - { schluessel: ziel, name: Mappentyp, typ: mappentyp, pflicht: true }
+  aktionen:
+    - { schluessel: anwenden, name: Regeln jetzt auf neue Post anwenden, bestaetigen: true }
+```
+
+- Höchstens **zwei Ebenen**: Abschnitte (`abschnitt`, `hilfe`, `felder`) und Listen (`liste`, `name`, `eintrag`, `hilfe`, `sortierbar`, `felder`).
+- **Typen:** `text`, `mehrzeilig`, `zahl` (`min`/`max`), `janein`, `datum`, `auswahl` und `mehrfachauswahl` (`optionen`), `geheim`, Verweise `mappentyp`, `feld` (mit `mappentyp:`), `benutzer`, `rolle`, `sicht`.
+- **Werte**, wie das Paket sie bekommt: Abschnittsfelder unter ihrem Schlüssel, Listen als Liste von Objekten (mit `_id` je Eintrag). Verweise sind Ids (bei `feld`: `{ typ, feld }`), Geheimnisse im Klartext – nur für das eigene Paket.
+- Bei einer Änderung bekommt das Paket das Ereignis `paket.einstellungen_geaendert`; es liest die Werte mit `dms.einstellungen()`.
+- **Zugangsdaten nur als `geheim`**, nie als `text` und nie mit `standard`.
+- Bei einem **Update** bekommen neue Felder ihre Vorgabe, vorhandene Werte bleiben, wegfallende werden entfernt.
+
+`werkzeuge/pruefen.py` prüft Schlüssel, Vorgaben, Optionen, Geheimnisse und Verweise. Zum Ausprobieren eignet sich die erweiterte Ansicht mit **Paket hochladen**.
+
 ## Prüfen
 
 ```sh

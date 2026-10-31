@@ -51,6 +51,12 @@ export interface InstalliertesPaket {
   typen: Record<string, string>;
   sichten: Record<string, string>;
   abhaengigkeiten: Record<string, string>;
+  /** Einstellungen, wie das Paket sie beschreibt (#197); null = keine. */
+  einstellungen?: import('./paketeinstellungen').Einstellungsbeschreibung | null;
+  /** Nur in der Antwort der Werkbank: Pflichtfelder der Einstellungen fehlen (#197). */
+  einstellungenNoetig?: boolean;
+  /** Das Paket enthält Code (läuft erst mit dem Paket-Läufer). */
+  code?: boolean;
   /** Links aus dem Katalog (README, Changelog, Quelle), sofern bekannt. */
   links?: { readme?: string; changelog?: string; quelle?: string };
 }
