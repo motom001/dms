@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.56/mappentypen/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.57/mappentypen/">
       
       
         <link rel="prev" href="../uebersicht/">
@@ -2269,6 +2269,14 @@
 <li><strong>Bestehende Werte bleiben gültig</strong>, auch wenn die Ziel-Mappe später nicht mehr passt oder du den Filter änderst. Am Feld steht dann „passt nicht mehr zum Filter“.</li>
 <li>Beim Speichern des Mappentyps meldet das DMS Bedingungen auf Felder, die es im Zieltyp nicht (mehr) gibt.</li>
 <li>Nicht bei Feldern, die auf jede Mappe zeigen.</li>
+</ul>
+<p><strong>Werte aus dieser Mappe:</strong> Statt eines festen Werts kann eine Bedingung einen Wert der eigenen Mappe nehmen – Haken <strong>Wert aus dieser Mappe</strong> und das Feld wählen. Beispiele: <em>Fachgebiet</em> (am Arzt) <em>ist einer von</em> <strong>Fachgebiet dieser Mappe</strong>; <em>Vertragspartner</em> (am Vertrag) <em>zeigt auf</em> <strong>Vertragspartner dieser Mappe</strong>.</p>
+<ul>
+<li>Angeboten werden nur Felder mit passendem Datentyp: Text zu Text, Zahl zu Zahl, Datum zu Datum, ein Auswahlfeld, dessen Werte es auch am Ziel gibt, ein Referenzfeld auf denselben Mappentyp. Das Referenzfeld selbst geht nicht.</li>
+<li>Ändert man in der Mappe das eigene Feld, filtert die Auswahl sofort neu. Passt eine schon gewählte Mappe nicht mehr, steht der Hinweis „passt nicht mehr zum Filter“ schon vor dem Speichern am Feld.</li>
+<li><strong>Ist das eigene Feld leer</strong>, gilt die Bedingung nicht – dann werden alle angeboten, die die übrigen Bedingungen erfüllen.</li>
+<li>Das DMS prüft beim Speichern mit den Werten, die gespeichert werden sollen – auch wenn beide Felder im selben Zug geändert werden.</li>
+<li>Werte aus Mappen, auf die diese Mappe verweist (eine Ebene weiter), gibt es nicht.</li>
 </ul>
 <p>Auf eine Mappe, auf die noch verwiesen wird, kann niemand sie löschen.</p>
 <h3 id="passwortfelder">Passwortfelder<a class="headerlink" href="#passwortfelder" title="Permanent link">&para;</a></h3>
