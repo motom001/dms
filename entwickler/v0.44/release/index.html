@@ -461,6 +461,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Abhängigkeiten und Sicherheitsupdates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#images-prufen-herkunftsnachweis-und-stuckliste" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Images prüfen, Herkunftsnachweis und Stückliste
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#openssf-scorecard-und-regeln-fur-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenSSF Scorecard und Regeln für Workflows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vorschlag-regel-fur-den-branch-main" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vorschlag: Regel für den Branch main
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -660,6 +699,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Abhängigkeiten und Sicherheitsupdates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#images-prufen-herkunftsnachweis-und-stuckliste" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Images prüfen, Herkunftsnachweis und Stückliste
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#openssf-scorecard-und-regeln-fur-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenSSF Scorecard und Regeln für Workflows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vorschlag-regel-fur-den-branch-main" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vorschlag: Regel für den Branch main
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -702,6 +780,43 @@
 <li><strong><code>npm audit</code></strong> läuft in der CI über alles, was im Image landet (<code>--omit=dev</code>). Ab Stufe „hoch“ schlägt die Prüfung fehl. Ist eine Meldung für das DMS nachweislich ohne Wirkung, wird das im PR begründet.</li>
 <li><strong><code>package-lock.json</code></strong> hält die genauen Versionen fest; CI und Image installieren mit <code>npm ci</code>. Ändert sich eine <code>package.json</code> ohne passende Lockfile, legt der Workflow <em>Lockfile erzeugen</em> eine neue auf den Branch <code>werkzeug/lockfile</code>; von dort wird sie mit einem normalen Commit übernommen.</li>
 <li><strong>Sicherheitskorrektur = Patch-Release</strong> mit dem Hinweis „Sicherheitsupdate – bitte aktualisieren“ in den Release-Notes. Meldungen von außen laufen vertraulich, siehe <a href="https://github.com/motom001/dms/blob/main/SECURITY.md"><code>SECURITY.md</code></a>.</li>
+</ul>
+<h3 id="images-prufen-herkunftsnachweis-und-stuckliste">Images prüfen, Herkunftsnachweis und Stückliste<a class="headerlink" href="#images-prufen-herkunftsnachweis-und-stuckliste" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Trivy</strong> prüft beide Images auf bekannte Lücken in den Systempaketen (Alpine, Tesseract, PostgreSQL in <code>dms-komplett</code>) und in den Node-Bibliotheken im Image.<ul>
+<li><strong>Im Pull Request</strong> (Job <code>image-probe</code>, amd64): Lücken der Stufe <em>kritisch</em>, für die es eine Korrektur gibt, lassen die Prüfung fehlschlagen; <em>hoch</em> mit Korrektur erscheint als Warnung. Funde ohne Korrektur blockieren nicht.</li>
+<li><strong>Auf <code>main</code>, bei Tags und beim wöchentlichen Neubau</strong> (Job <code>image-zusammen</code>): Das fertige Image wird geprüft und die Funde landen unter <strong>Security → Code scanning</strong> (Kategorie <code>image-dms</code> bzw. <code>image-dms-komplett</code>). Hier wird nur gemeldet, das Image ist ja schon veröffentlicht.</li>
+<li>Bewusst hingenommene Funde stehen mit Begründung und Prüfdatum in <code>.trivyignore</code>.</li>
+<li>Trivy kommt als Binärdatei mit fester Version und fester Prüfsumme (<code>.github/werkzeuge/trivy-installieren.sh</code>), nicht über die trivy-action: Deren Tags wurden 2026 kompromittiert (CVE-2026-33634). Eine neue Version trägt man dort von Hand ein, mit beiden Prüfsummen aus der <code>checksums.txt</code> des Releases.</li>
+</ul>
+</li>
+<li>
+<p><strong>Herkunftsnachweis und Stückliste (SBOM):</strong> Jedes veröffentlichte Image bekommt einen signierten Nachweis, aus welchem Commit und welchem Workflow es stammt, und eine Stückliste im SPDX-Format. Beides liegt neben dem Image in der Registry. Prüfen lässt sich das mit:</p>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>attestation<span class="w"> </span>verify<span class="w"> </span>oci://ghcr.io/motom001/dms:main<span class="w"> </span>-R<span class="w"> </span>motom001/dms
+gh<span class="w"> </span>attestation<span class="w"> </span>verify<span class="w"> </span>oci://ghcr.io/motom001/dms:main<span class="w"> </span>-R<span class="w"> </span>motom001/dms<span class="w"> </span>--predicate-type<span class="w"> </span>https://spdx.dev/Document/v2.3
+</code></pre></div>
+</li>
+</ul>
+<h3 id="openssf-scorecard-und-regeln-fur-workflows">OpenSSF Scorecard und Regeln für Workflows<a class="headerlink" href="#openssf-scorecard-und-regeln-fur-workflows" title="Permanent link">&para;</a></h3>
+<p>Der Workflow <em>Scorecard</em> bewertet wöchentlich und bei jedem Push auf <code>main</code>, wie das Projekt mit Sicherheit umgeht. Das Ergebnis ist öffentlich (<a href="https://scorecard.dev/viewer/?uri=github.com/motom001/dms">scorecard.dev</a>) und steht als Abzeichen in der README; die einzelnen Hinweise stehen unter <strong>Security → Code scanning</strong>. Daraus folgen diese Regeln:</p>
+<ul>
+<li><strong>Actions mit fester Commit-Kennung</strong>, die Version als Kommentar dahinter: <code>uses: actions/checkout@&lt;40 Zeichen&gt; # v7.0.1</code>. Dependabot aktualisiert beides.</li>
+<li><strong>Rechte:</strong> Oben im Workflow nur <code>contents: read</code> (bzw. keine Rechte). Schreibrechte bekommt nur der Job, der sie braucht (<code>packages</code>, <code>contents</code>, <code>id-token</code>, <code>attestations</code>, <code>security-events</code>).</li>
+<li><strong>Keine Ausführung fremden Codes mit Rechten:</strong> <code>pull_request_target</code> nur ohne Checkout (wie im Workflow <em>Freigabe schützen</em>).</li>
+</ul>
+<p>Bewusst anders, als Scorecard es gern hätte:</p>
+<ul>
+<li><strong>Basis-Images ohne festen Prüfwert</strong> (<code>node:22-alpine</code>, <code>alpine</code>): Der wöchentliche Neubau soll gerade die neuesten Sicherheitskorrekturen der Reihe holen. Ein fester Prüfwert würde jede Woche einen eigenen PR brauchen, ohne mehr Sicherheit zu bringen; die Images selbst werden geprüft und tragen einen Herkunftsnachweis.</li>
+<li><strong>Code-Review:</strong> Mit einem Maintainer gibt es keine zweite Person, die jeden PR freigibt. Stattdessen müssen alle Prüfungen grün sein, und Änderungen laufen über PRs mit Issue.</li>
+</ul>
+<h3 id="vorschlag-regel-fur-den-branch-main">Vorschlag: Regel für den Branch <code>main</code><a class="headerlink" href="#vorschlag-regel-fur-den-branch-main" title="Permanent link">&para;</a></h3>
+<p>Unter <strong>Settings → Rules → Rulesets</strong> ein Ruleset für den Standard-Branch anlegen (einschalten tut es der Maintainer):</p>
+<ul>
+<li><strong>Require a pull request before merging</strong> (ohne Pflicht-Review, siehe oben),</li>
+<li><strong>Require status checks to pass:</strong> <code>pruefen</code>, <code>image-probe (linux/amd64, ubuntu-24.04)</code>, <code>image-probe (linux/arm64, ubuntu-24.04-arm)</code>, <code>bauen</code> (Handbuch),</li>
+<li><strong>Require code scanning results:</strong> CodeQL, Schwelle wie in den Einstellungen („High or higher“),</li>
+<li><strong>Block force pushes</strong> und <strong>Restrict deletions</strong>,</li>
+<li><strong>Bypass:</strong> nur der Maintainer (Rolle <em>Repository admin</em>), damit Notfall-Korrekturen möglich bleiben.</li>
 </ul>
 
 

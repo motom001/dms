@@ -363,6 +363,56 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0443" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.44.3
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.44.3">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#neu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#geandert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Geändert
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fur-entwickler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Für Entwickler
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0442" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -431,7 +481,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#neu" class="md-nav__link">
+  <a href="#neu_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Neu
@@ -442,7 +492,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#geandert" class="md-nav__link">
+  <a href="#geandert_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Geändert
@@ -1707,6 +1757,56 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0443" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.44.3
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.44.3">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#neu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#geandert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Geändert
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fur-entwickler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Für Entwickler
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0442" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1775,7 +1875,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#neu" class="md-nav__link">
+  <a href="#neu_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Neu
@@ -1786,7 +1886,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#geandert" class="md-nav__link">
+  <a href="#geandert_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Geändert
@@ -1844,6 +1944,21 @@
 
 
 <h1 id="neu-in-version-044">Neu in Version 0.44<a class="headerlink" href="#neu-in-version-044" title="Permanent link">&para;</a></h1>
+<h2 id="0443">0.44.3<a class="headerlink" href="#0443" title="Permanent link">&para;</a></h2>
+<h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Images mit Herkunftsnachweis und Stückliste</strong> (#220): Jedes veröffentlichte Image (<code>dms</code> und <code>dms-komplett</code>) trägt einen signierten Nachweis, aus welchem Commit und mit welchem Workflow es gebaut wurde, und eine Stückliste (SBOM) aller enthaltenen Pakete. Prüfen mit <code>gh attestation verify oci://ghcr.io/motom001/dms:0.44.3 -R motom001/dms</code> – siehe Administratorhandbuch, <em>Aktualisieren</em>.</li>
+<li><strong>Images werden auf Sicherheitslücken geprüft</strong> (#220): Vor jedem Merge prüft die CI beide Images auf bekannte Lücken in den Systempaketen und Bibliotheken; kritische Lücken, für die es eine Korrektur gibt, verhindern den Merge. Veröffentlichte Images werden ebenfalls geprüft (auch beim wöchentlichen Neubau), die Funde stehen öffentlich unter <em>Security</em> im Repository.</li>
+</ul>
+<h3 id="geandert">Geändert<a class="headerlink" href="#geandert" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Die Images enthalten kein npm, Yarn und Corepack mehr: Das DMS braucht sie zur Laufzeit nicht, und ihre mitgebrachten Bibliotheken waren die einzigen Funde der ersten Prüfung (#220).</li>
+<li><strong>Sicherheit sichtbar</strong> (#221): Die README zeigt Abzeichen für CodeQL und die <a href="https://scorecard.dev/viewer/?uri=github.com/motom001/dms">OpenSSF Scorecard</a> und einen Abschnitt <em>Sicherheit und Offenheit</em>. <code>SECURITY.md</code> listet, was wann automatisch geprüft wird.</li>
+</ul>
+<h3 id="fur-entwickler">Für Entwickler<a class="headerlink" href="#fur-entwickler" title="Permanent link">&para;</a></h3>
+<ul>
+<li>GitHub Actions sind auf feste Commit-Kennungen gesetzt (Dependabot aktualisiert sie), Workflows haben oben nur Leserechte. Neuer Workflow <em>Scorecard</em>. Regeln und ein Vorschlag für ein Ruleset auf <code>main</code> stehen im Entwicklerhandbuch unter <em>Release</em>.</li>
+</ul>
 <h2 id="0442">0.44.2<a class="headerlink" href="#0442" title="Permanent link">&para;</a></h2>
 <h3 id="behoben">Behoben<a class="headerlink" href="#behoben" title="Permanent link">&para;</a></h3>
 <ul>
@@ -1855,12 +1970,12 @@
 <li><strong>HTTPS und Zertifikate</strong> (#238): Kurzer Abschnitt im Administratorhandbuch unter <em>Hinter einem Reverse-Proxy</em>. Das DMS verwaltet selbst keine Zertifikate; HTTPS übernimmt der Reverse-Proxy (Nginx Proxy Manager, Proxy des NAS oder Caddy), mit Verweis auf den Beispielaufbau des Entwicklers.</li>
 </ul>
 <h2 id="0440">0.44.0<a class="headerlink" href="#0440" title="Permanent link">&para;</a></h2>
-<h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
+<h3 id="neu_1">Neu<a class="headerlink" href="#neu_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Werkbank → Technik: Versionsabgleich in zwei Gruppen</strong> (#216): <strong>„Von dir zu aktualisieren“</strong> (das DMS-Image, bei zwei Containern PostgreSQL) und <strong>„Kommt mit dem DMS“</strong> (Node.js, Alpine, Bibliotheken – bei dms-komplett auch PostgreSQL). Der gelbe Hinweis nennt nur noch, was du selbst tun kannst; neuere Bibliotheken heißen „kommt mit DMS-Update“. Die Bibliotheken haben verständliche Namen – „postgres“ ist <strong>postgres.js (Datenbank-Treiber)</strong>, nicht die Datenbank. Gibt es ein neueres PostgreSQL in deiner Reihe, sagt der Hinweis je Variante, was zu tun ist; auch der Text unter der Tabelle passt jetzt zu <code>dms</code> bzw. <code>dms-komplett</code>.</li>
 <li><strong>Vorlage für die Verfahrensdokumentation</strong> (#213): neue Seite im Administratorhandbuch mit einer Vorlage als Word- und LibreOffice-Datei. Für alle, die Belege für eine Tätigkeit führen (GoBD): Belegeingang, ersetzendes Scannen, Ablage, Protokoll, Zugriffsschutz, Sicherung, Datenzugriff – vorformuliert, wo das DMS es übernimmt, mit Platzhaltern für deine Angaben. Keine Steuerberatung.</li>
 </ul>
-<h3 id="geandert">Geändert<a class="headerlink" href="#geandert" title="Permanent link">&para;</a></h3>
+<h3 id="geandert_1">Geändert<a class="headerlink" href="#geandert_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Empfehlung: zwei Container</strong> (#214). „Wie komme ich an ein DMS?“ hat einen neuen Abschnitt <strong>„Ein oder zwei Container?“</strong> mit Vor- und Nachteilen. Empfohlen ist <code>dms</code> mit eigenem <code>postgres:17</code> – PostgreSQL bekommt dann Sicherheits-Updates unabhängig vom DMS. <code>dms-komplett</code> ist die Alternative zum Ausprobieren und für Umgebungen, die nur einen Container zulassen. Anleitungen, Hinweise auf den NAS-Seiten, „Wachsen und umziehen“, Administratorhandbuch und README sind angeglichen; <code>deploy/README.md</code> zeigt, welche Vorlage wofür ist.</li>
 </ul>
@@ -1871,7 +1986,7 @@
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.43.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.43.0...v0.44.2">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.43.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.43.0...v0.44.3">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>

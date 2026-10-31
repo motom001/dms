@@ -1829,6 +1829,13 @@
 <p class="admonition-title">Auf einer festen Version bleiben</p>
 <p>Statt <code>ghcr.io/motom001/dms:main</code> kannst du in der Compose-Datei eine Versionsnummer angeben, z. B. <code>ghcr.io/motom001/dms:0.8.0</code> – bzw. <code>ghcr.io/motom001/dms-komplett:0.42.0</code>. Dann ändert sich nichts, bis du die Nummer selbst erhöhst. Bei zwei Containern bleibt <code>postgres:17</code> trotzdem für Sicherheits-Updates der Reihe 17 offen.</p>
 </div>
+<div class="admonition info">
+<p class="admonition-title">Woher kommt das Image?</p>
+<p>Jedes Image des DMS trägt einen <strong>Herkunftsnachweis</strong>: eine Signatur, die belegt, dass es von GitHub aus genau diesem Repository gebaut wurde, und eine <strong>Stückliste</strong> (SBOM) aller enthaltenen Pakete. Beides ist öffentlich und lässt sich mit der GitHub-Kommandozeile prüfen:</p>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>attestation<span class="w"> </span>verify<span class="w"> </span>oci://ghcr.io/motom001/dms:main<span class="w"> </span>-R<span class="w"> </span>motom001/dms
+</code></pre></div>
+<p>Vor jeder Veröffentlichung prüft die CI die Images außerdem auf bekannte Sicherheitslücken. Mehr dazu in der <a href="https://github.com/motom001/dms/blob/main/SECURITY.md">Sicherheitsrichtlinie</a>.</p>
+</div>
 <h3 id="datenbank-anbindung-und-mandant-ab-024">Datenbank-Anbindung und Mandant (ab 0.24)<a class="headerlink" href="#datenbank-anbindung-und-mandant-ab-024" title="Permanent link">&para;</a></h3>
 <p>Beim ersten Start übernimmt das DMS <code>DATABASE_URL</code> und – falls gesetzt – <code>HAUSHALT_ID</code> in die Datei <code>/data/geheim/datenbank.json</code> (siehe <a href="../installation/#datenbank-anbindung">Datenbank-Anbindung</a>). Es läuft ohne Zutun weiter. Danach sind beide Variablen überflüssig; die Werkbank-Übersicht weist darauf hin, und du kannst sie beim nächsten Update aus der Compose-Datei entfernen. Ändern lässt sich die Anbindung dann unter <strong>Werkbank → Datenbank-Anbindung</strong>.</p>
 <h3 id="feste-ordner-ab-023">Feste Ordner (ab 0.23)<a class="headerlink" href="#feste-ordner-ab-023" title="Permanent link">&para;</a></h3>
