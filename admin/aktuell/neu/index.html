@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.52/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.53/neu/">
       
       
         <link rel="prev" href="..">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-052" class="md-skip">
+        <a href="#neu-in-version-053" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0520" class="md-nav__link">
+  <a href="#0530" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.52.0
+        0.53.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.52.0">
+    <nav class="md-nav" aria-label="0.53.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1741,15 +1741,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0520" class="md-nav__link">
+  <a href="#0530" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.52.0
+        0.53.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.52.0">
+    <nav class="md-nav" aria-label="0.53.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1799,21 +1799,22 @@
   
 
 
-<h1 id="neu-in-version-052">Neu in Version 0.52<a class="headerlink" href="#neu-in-version-052" title="Permanent link">&para;</a></h1>
-<h2 id="0520">0.52.0<a class="headerlink" href="#0520" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-053">Neu in Version 0.53<a class="headerlink" href="#neu-in-version-053" title="Permanent link">&para;</a></h1>
+<h2 id="0530">0.53.0<a class="headerlink" href="#0530" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Befehl <code>dms</code> im Container</strong> (#244): <code>docker exec -it &lt;container&gt; dms hilfe</code> oder im Terminal des Containers in der Docker-Oberfläche des NAS.</li>
-<li><strong>Notfall:</strong> Passwort direkt setzen (ohne Mail), Zwei-Faktor-Anmeldung zurücksetzen, IP entsperren, Wartungsmodus beenden, Benutzer abmelden.</li>
-<li><strong>Betrieb:</strong> Status und Version, Sicherungen auflisten, starten und prüfen.</li>
-<li><strong>Verwaltung:</strong> Benutzer auflisten, anlegen, deaktivieren und aktivieren.</li>
-<li><code>dms api &lt;METHODE&gt; &lt;pfad&gt; [json]</code> für alle übrigen Funktionen; <code>--json</code> für Skripte.</li>
-<li>Spricht mit dem laufenden DMS über einen Schlüssel, der nur im Container und nur über <code>127.0.0.1</code> gilt – nicht mit der Datenbank. Jede Aktion steht im Protokoll mit dem Vermerk „Konsole“.</li>
-<li>Neue Seite <strong>Konsole</strong> im Administratorhandbuch.</li>
+<li><strong>Anmeldung über einen Anbieter per OpenID Connect</strong> (#241) – z. B. Microsoft Entra ID (Microsoft 365), Google Workspace, Keycloak, Authentik, Authelia:</li>
+<li>Einrichten unter <strong>Werkbank → Anmeldeschutz</strong>: Adresse des Anbieters, Client-ID, Client-Secret (verschlüsselt gespeichert), Beschriftung des Knopfes, <strong>Verbindung prüfen</strong>.</li>
+<li>Knopf auf der Anmeldeseite; Fehler der Anmeldung stehen dort im Klartext.</li>
+<li>Zuordnung über die E-Mail-Adresse; auf Wunsch <strong>neue Benutzer anlegen</strong> mit wählbarer Rolle.</li>
+<li><strong>Rolle aus einer Gruppe</strong> des Anbieters (Administratoren); der letzte Administrator bleibt Administrator.</li>
+<li><strong>Passwort-Anmeldung nur noch für Administratoren</strong> als Notzugang.</li>
+<li><strong>Abmelden auch beim Anbieter</strong> (RP-initiated Logout).</li>
+<li>Sicher: Authorization Code Flow mit PKCE, state und nonce, an den Browser gebunden; das DMS prüft Signatur, Aussteller, Empfänger und Gültigkeit des ID-Tokens selbst (RSA, RSA-PSS, ECDSA, Ed25519). Keine neue Abhängigkeit.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.51.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.51.0...v0.52.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.52.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.52.0...v0.53.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>

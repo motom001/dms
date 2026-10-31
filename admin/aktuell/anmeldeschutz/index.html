@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.52/anmeldeschutz/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.53/anmeldeschutz/">
       
       
         <link rel="prev" href="../benutzer/">
@@ -834,6 +834,45 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anmeldung-uber-einen-anbieter-openid-connect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anmeldung über einen Anbieter (OpenID Connect)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Anmeldung über einen Anbieter (OpenID Connect)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#beim-anbieter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Beim Anbieter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#im-dms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Im DMS
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1813,6 +1852,45 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#anmeldung-uber-einen-anbieter-openid-connect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anmeldung über einen Anbieter (OpenID Connect)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Anmeldung über einen Anbieter (OpenID Connect)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#beim-anbieter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Beim Anbieter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#im-dms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Im DMS
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1882,6 +1960,60 @@
 <div class="admonition tip">
 <p class="admonition-title">Selbst ausgesperrt?</p>
 <p>Hast du als einziger Administrator Handy und Codes verloren, hilft der <a href="../notfall/">Notfallzugang</a>.</p>
+</div>
+<h2 id="anmeldung-uber-einen-anbieter-openid-connect">Anmeldung über einen Anbieter (OpenID Connect)<a class="headerlink" href="#anmeldung-uber-einen-anbieter-openid-connect" title="Permanent link">&para;</a></h2>
+<p>Statt mit Passwort melden sich Benutzer mit dem Konto eines Identitätsanbieters an – etwa <strong>Microsoft Entra ID</strong> (Microsoft 365), <strong>Google Workspace</strong>, <strong>Keycloak</strong>, <strong>Authentik</strong> oder <strong>Authelia</strong>. Auf der Anmeldeseite erscheint dann ein Knopf wie <strong>Mit Firmenkonto anmelden</strong>.</p>
+<h3 id="beim-anbieter">Beim Anbieter<a class="headerlink" href="#beim-anbieter" title="Permanent link">&para;</a></h3>
+<p>Lege beim Anbieter eine Anwendung (Client) vom Typ <em>Web</em> an:</p>
+<ul>
+<li><strong>Weiterleitungs-URI</strong> (Redirect URI): steht in der Werkbank, z. B. <code>https://dms.example.org/api/konto/anbieter/rueckkehr</code>. Sie folgt aus der <a href="../installation/">Adresse des DMS</a>; trage diese vorher ein.</li>
+<li><strong>Abmelde-Adresse</strong> (Post-Logout Redirect URI): die Adresse des DMS mit <code>/</code> am Ende.</li>
+<li><strong>Scopes:</strong> <code>openid</code>, <code>email</code>, <code>profile</code>.</li>
+<li>Notiere <strong>Client-ID</strong> und <strong>Client-Secret</strong>.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Anbieter</th>
+<th>Adresse des Anbieters (Issuer)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Microsoft Entra ID</td>
+<td><code>https://login.microsoftonline.com/&lt;Tenant-ID&gt;/v2.0</code></td>
+</tr>
+<tr>
+<td>Google</td>
+<td><code>https://accounts.google.com</code></td>
+</tr>
+<tr>
+<td>Keycloak</td>
+<td><code>https://&lt;server&gt;/realms/&lt;realm&gt;</code></td>
+</tr>
+<tr>
+<td>Authentik</td>
+<td><code>https://&lt;server&gt;/application/o/&lt;anwendung&gt;/</code></td>
+</tr>
+<tr>
+<td>Authelia</td>
+<td><code>https://&lt;server&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="im-dms">Im DMS<a class="headerlink" href="#im-dms" title="Permanent link">&para;</a></h3>
+<p>Unter <strong>Werkbank → Anmeldeschutz → Anmeldung über einen Anbieter</strong> trägst du Adresse, Client-ID und Client-Secret ein und klickst auf <strong>Verbindung prüfen</strong>. Danach <strong>Eingeschaltet</strong> ankreuzen und speichern. Das Client-Secret liegt mit dem <a href="../verschluesselung/">Schlüssel des DMS</a> verschlüsselt in der Datenbank.</p>
+<ul>
+<li><strong>Zuordnung:</strong> über die E-Mail-Adresse. Gibt es sie im DMS nicht, lehnt das DMS ab – außer <strong>Unbekannte Adressen als neue Benutzer anlegen</strong> ist an; dann entsteht ein Benutzer mit der eingestellten Rolle. Bei Entra ID dient auch der Anmeldename (UPN) als Adresse.</li>
+<li><strong>Gruppe für Administratoren:</strong> Ist sie gesetzt, folgt die Rolle bei jeder Anmeldung der Gruppe: Mitglieder der Gruppe sind Administratoren, alle anderen Mitglieder. Der letzte aktive Administrator bleibt Administrator. Bei Entra ID liefert der Claim <code>groups</code> die Objekt-IDs der Gruppen (Anwendung → <em>Token-Konfiguration</em> → <em>Gruppenanspruch hinzufügen</em>); trage dann die Objekt-ID ein.</li>
+<li><strong>Passwort-Anmeldung nur noch für Administratoren:</strong> Mitglieder melden sich nur noch über den Anbieter an. Administratoren behalten ihr Passwort als Notzugang, falls der Anbieter einmal nicht erreichbar ist.</li>
+<li><strong>Beim Abmelden auch beim Anbieter abmelden:</strong> Wer sich über den Anbieter angemeldet hat, wird beim Abmelden auch dort abgemeldet (wenn der Anbieter das anbietet).</li>
+<li>Eine eingerichtete <a href="#zwei-faktor-anmeldung">Zwei-Faktor-Anmeldung</a> des DMS gilt auch hier. Verlangt schon der Anbieter einen zweiten Faktor, schreibe sie im DMS für diese Rollen nicht zusätzlich vor.</li>
+</ul>
+<p>Jede Anmeldung, Ablehnung und angelegter Benutzer steht im <a href="../fehlersuche/#protokoll">Protokoll</a>. Schlägt eine Anmeldung fehl, zeigt die Anmeldeseite den Grund.</p>
+<div class="admonition tip">
+<p class="admonition-title">Im eigenen Netz</p>
+<p>Läuft der Anbieter im Heimnetz (z. B. Keycloak auf dem NAS), geht auch <code>http://</code> – aber nur für Adressen im eigenen Netz. Das DMS muss den Anbieter selbst erreichen können.</p>
 </div>
 
 
