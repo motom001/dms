@@ -79,6 +79,7 @@ nav:
       - Papierkorb: papierkorb.md
       - Texterkennung und Wartung: texterkennung.md
       - Eingangsordner: eingangsordner.md
+      - Postfächer: postfaecher.md
       - Demo-Daten: demo.md
   - Wartung und Notfall:
       - Sicherung: sicherung.md

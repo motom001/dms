@@ -391,6 +391,12 @@ export const api = {
   system: () => anfrage<Systemuebersicht>('GET', '/api/werkbank/system'),
   speicherplatz: () => anfrage<SpeicherplatzStand>('GET', '/api/werkbank/speicherplatz'),
   eingangsordner: () => anfrage<EingangStand>('GET', '/api/werkbank/eingangsordner'),
+  postfaecher: () => anfrage<PostfachAnsicht[]>('GET', '/api/werkbank/postfaecher'),
+  postfachAnlegen: (p: PostfachEingabe) => anfrage<PostfachAnsicht[]>('POST', '/api/werkbank/postfaecher', p),
+  postfachAendern: (id: string, p: PostfachEingabe) => anfrage<PostfachAnsicht[]>('PUT', `/api/werkbank/postfaecher/${id}`, p),
+  postfachLoeschen: (id: string) => anfrage<void>('DELETE', `/api/werkbank/postfaecher/${id}`),
+  postfachTesten: (p: PostfachEingabe & { id?: string }) => anfrage<{ ok: boolean; text: string; ordner?: string[]; anzahl?: number }>('POST', '/api/werkbank/postfaecher/testen', p),
+  postfachAbrufen: (id: string) => anfrage<{ uebernommen: number }>('POST', `/api/werkbank/postfaecher/${id}/abrufen`),
   eingangsordnerSetzen: (e: Partial<EingangEinstellung>) => anfrage<EingangStand>('PUT', '/api/werkbank/eingangsordner', e),
   eingangsordnerPruefen: () => anfrage<{ uebernommen: number; stand: EingangStand }>('POST', '/api/werkbank/eingangsordner/pruefen'),
   speicherplatzSetzen: (e: SpeicherplatzEinstellung) => anfrage<SpeicherplatzStand>('PUT', '/api/werkbank/speicherplatz', e),
@@ -566,4 +572,16 @@ export interface EingangEreignis { datei: string; zeit: string; mappeId?: string
 export interface EingangStand {
   vorhanden: boolean; pfad?: string; einstellung?: EingangEinstellung; letztePruefung?: string | null; wartend?: number;
   pausiert?: string | null; uebernommen?: EingangEreignis[]; fehler?: EingangEreignis[]; andereInstanz?: boolean;
+}
+
+/** Postfächer (#196). */
+export interface PostfachEingabe {
+  name: string; aktiv: boolean; server: string; port: number; verschluesselung: 'ssl' | 'starttls' | 'keine'; benutzer: string; passwort?: string;
+  ordner: string; abstand: number; fuer: string | null; absender: string[] | string; nachher: 'verschieben' | 'gelesen' | 'loeschen'; zielordner: string;
+  nurMitAnhang: boolean; original: boolean; unverschluesseltBestaetigt?: boolean;
+}
+export interface PostfachEreignis { zeit: string; betreff?: string; absender?: string; mappeId?: string; fehler?: string }
+export interface PostfachAnsicht extends Omit<PostfachEingabe, 'passwort' | 'absender'> {
+  id: string; absender: string[]; passwortGesetzt: boolean;
+  stand: { letzterAbruf: string | null; naechsterAbruf: string | null; fehlerFolge: number; uebernommen: PostfachEreignis[]; fehler: PostfachEreignis[] };
 }

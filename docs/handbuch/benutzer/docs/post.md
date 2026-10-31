@@ -26,6 +26,12 @@ Die Fläche erscheint nur beim Ziehen von Dateien, nicht bei Text oder Links, un
 
 **+ Neu → Mappe …** legt eine neue, leere Mappe eines Typs an, den du anlegen darfst.
 
+### Per E-Mail ins DMS
+
+Hat dein Administrator ein [Postfach](https://motom001.github.io/dms/admin/aktuell/postfaecher/) eingerichtet (z. B. `dms@…`), **leitest du Mails einfach dorthin weiter** – oder lässt Rechnungen gleich dorthin schicken. Jede Mail wird eine neue Post mit Kanal *E-Mail*: Betreff, Absender und Datum aus der Mail, die Anhänge als Dokumente, der Text der Mail an der Post und auf Wunsch die ganze Mail als `.eml`.
+
+**Scan to E-Mail:** Viele Scanner und Multifunktionsgeräte schicken Scans per Mail. Trag die Adresse des Postfachs als Ziel ein – jeder Scan wird neue Post.
+
 ### Scannen in den Eingangsordner
 
 Hat dein Administrator einen [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/) eingerichtet, scannst du einfach in diesen Ordner („Scan to Folder“ am Scanner). **Jede Datei wird eine eigene neue Post** mit Kanal *Ordner*; den Betreff nimmt das DMS aus dem Dateinamen. Scannst du in deinen eigenen Unterordner, z. B. `eingang/thomas/`, steht die Post gleich **für dich** in deinem Eingang. Die Datei verschwindet danach aus dem Ordner (sie liegt in `erledigt/`).

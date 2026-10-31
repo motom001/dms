@@ -2564,6 +2564,10 @@ export class Dienst {
 
   async postTyp() { return (await this.sichereSystem()).post; }
 
+  /** Historien-Eintrag eines Eingangskanals (#196), z. B. nicht übernommene Anhänge. */
+  async notiereSystem(mappeId: string, system: string, text: string) { await this.notiere(mappeId, null, 'uebernommen', { system, text }); }
+  async anzahlDokumente(mappeId: string) { return (await this.repo.listeDokumente(mappeId)).length; }
+
   /** Gibt es die Mappe (z. B. eine Post mit vorgegebener Id) schon? */
   async gibtMappe(id: string) { return !!(await this.repo.holeMappe(id)); }
 

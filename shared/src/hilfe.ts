@@ -31,6 +31,7 @@ export const HILFE = {
   'werkbank.papierkorb': admin('papierkorb/', 'Papierkorb'),
   'werkbank.texterkennung': admin('texterkennung/', 'Texterkennung'),
   'werkbank.eingangsordner': admin('eingangsordner/', 'Eingangsordner'),
+  'werkbank.postfaecher': admin('postfaecher/', 'Postfächer'),
   'werkbank.wartung': admin('texterkennung/', 'Wartungsoperationen', 'wartungsoperationen'),
   'werkbank.protokoll': admin('fehlersuche/', 'Protokoll', 'protokoll'),
   'werkbank.fehlermeldungen': admin('fehlersuche/', 'Fehlermeldungen', 'fehlermeldungen-von-benutzern'),
