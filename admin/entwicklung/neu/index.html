@@ -363,6 +363,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0444" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.44.4
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.44.4">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sicherheitsupdate-bitte-aktualisieren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheitsupdate – bitte aktualisieren
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0443" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1757,6 +1785,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0444" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.44.4
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.44.4">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sicherheitsupdate-bitte-aktualisieren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheitsupdate – bitte aktualisieren
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0443" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1948,6 +2004,15 @@
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
+<h2 id="0444">0.44.4<a class="headerlink" href="#0444" title="Permanent link">&para;</a></h2>
+<h3 id="sicherheitsupdate-bitte-aktualisieren">Sicherheitsupdate – bitte aktualisieren<a class="headerlink" href="#sicherheitsupdate-bitte-aktualisieren" title="Permanent link">&para;</a></h3>
+<p>Behebt sechs Funde der Code-Analyse (CodeQL, #250). Keiner ist ohne Anmeldung als Administrator ausnutzbar; das Update wird trotzdem empfohlen.</p>
+<ul>
+<li><strong>Eigenes CSS eines Designs:</strong> Ein präpariertes CSS konnte den Filter für <code>&lt;style&gt;</code> umgehen. Jetzt ist das Zeichen <code>&lt;</code> im eigenen CSS nicht mehr erlaubt (in Texten geht <code>\3C</code>), und bei der Anzeige wird es zusätzlich maskiert. Ein bestehendes Design mit <code>&lt;</code> im CSS wirkt weiter, lässt sich aber erst nach dem Entfernen wieder speichern.</li>
+<li><strong>Logo als SVG:</strong> Die Erkennung eines SVG ließ sich mit sehr vielen Kommentaren stark verlangsamen. Sie kommt jetzt ohne den anfälligen regulären Ausdruck aus.</li>
+<li><strong>Einrichtungsmodus:</strong> <code>/api/gesundheit</code> rechnet nichts mehr je Anfrage. Der Einrichtungscode bleibt wie bisher nach zehn Fehlversuchen zehn Minuten gesperrt.</li>
+<li><strong>Kleinere Maskierungen:</strong> Werkbank → Technik → <em>Als Text kopieren</em> maskiert auch Backslashes, der Versionsabgleich kodiert Paketnamen vollständig, die Hilfe-Prüfung der CI maskiert Anker vollständig.</li>
+</ul>
 <h2 id="0443">0.44.3<a class="headerlink" href="#0443" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
