@@ -99,7 +99,7 @@ export const V1_TABELLE: V1[] = [
 
   {
     methode: 'POST', pfad: '/mappen/{id}/dokumente', gruppe: 'Dokumente', zusammenfassung: 'Dokument hochladen',
-    beschreibung: 'Rohe Bytes der Datei als Body (Content-Type: application/octet-stream), höchstens 100 MB. Gleicher Inhalt wird nur einmal gespeichert.',
+    beschreibung: 'Rohe Bytes der Datei als Body (Content-Type: application/octet-stream), höchstens 100 MB. Gleicher Inhalt wird nur einmal gespeichert; gleicherInhalt nennt die anderen Mappen mit dieser Datei, soweit der Schlüssel sie lesen darf (#333).',
     intern: { methode: 'POST', pfad: '/api/mappen/:id/dokumente' },
     parameter: [id('der Mappe'),
       { name: 'register', wo: 'query', typ: 'string', pflicht: true, beschreibung: 'Kennung eines Dokumentenregisters des Mappentyps' },
@@ -118,6 +118,7 @@ export const V1_TABELLE: V1[] = [
   { methode: 'GET', pfad: '/dokumente/{id}/versionen', gruppe: 'Dokumente', zusammenfassung: 'Versionen eines Dokuments', intern: { methode: 'GET', pfad: '/api/dokumente/:id/versionen' }, parameter: [id('des Dokuments')], antwort: 'Versionen' },
   { methode: 'GET', pfad: '/dokumente/{id}/versionen/{nummer}/inhalt', gruppe: 'Dokumente', zusammenfassung: 'Ältere Version herunterladen', intern: { methode: 'GET', pfad: '/api/dokumente/:id/versionen/:nummer/inhalt' }, parameter: [id('des Dokuments'), { name: 'nummer', wo: 'path', typ: 'integer', pflicht: true, beschreibung: 'Nummer der Version' }], antwort: 'binaer' },
   { methode: 'POST', pfad: '/dokumente/{id}/versionen/{nummer}/zurueckholen', gruppe: 'Dokumente', zusammenfassung: 'Ältere Version zurückholen', beschreibung: 'Übernimmt die Version als neue, höchste Version; es geht nichts verloren.', intern: { methode: 'POST', pfad: '/api/dokumente/:id/versionen/:nummer/zurueckholen' }, parameter: [id('des Dokuments'), { name: 'nummer', wo: 'path', typ: 'integer', pflicht: true, beschreibung: 'Nummer der Version' }], antwort: 'Dokument', status: 201 },
+  { methode: 'POST', pfad: '/dokumente/gleiche', gruppe: 'Dokumente', zusammenfassung: 'Gibt es diese Dateien schon?', beschreibung: 'Doppelte Dateien (#333): SHA-256-Prüfwerte (hex, höchstens 100) → Fundstellen je Prüfwert, nur in Mappen, die der Schlüssel lesen darf. Prüfwerte ohne lesbare Fundstelle fehlen in der Antwort. ohneMappe lässt eine Mappe aus (z. B. die, in die man gerade hochlädt).', intern: { methode: 'POST', pfad: '/api/dokumente/gleiche' }, body: 'Gleiche', antwort: 'Fundstellen' },
   { methode: 'GET', pfad: '/dokumente/{id}/inhalt', gruppe: 'Dokumente', zusammenfassung: 'Inhalt eines Dokuments herunterladen', intern: { methode: 'GET', pfad: '/api/dokumente/:id/inhalt' }, parameter: [id('des Dokuments')], antwort: 'binaer' },
   { methode: 'GET', pfad: '/dokumente/{id}/volltext', gruppe: 'Dokumente', zusammenfassung: 'Volltext eines Dokuments', beschreibung: 'Textebene des PDFs oder Ergebnis der Texterkennung; text ist null, solange es keinen gibt (siehe ocr.stand).', intern: { methode: 'GET', pfad: '/api/dokumente/:id/volltext' }, parameter: [id('des Dokuments')], antwort: 'Volltext' },
   { methode: 'POST', pfad: '/dokumente/{id}/texterkennung', gruppe: 'Dokumente', zusammenfassung: 'Texterkennung (erneut) anstoßen', beschreibung: 'Stellt das Dokument in die Warteschlange der Texterkennung, z. B. nach einem Fehler.', intern: { methode: 'POST', pfad: '/api/dokumente/:id/texterkennung' }, parameter: [id('des Dokuments')], antwort: 'Dokument' },
@@ -299,6 +300,8 @@ const SCHEMAS: Record<string, Schema> = {
   },
   SichtListe: liste('Sicht'),
   Zaehler: { type: 'object', properties: { sichten: { type: 'object', additionalProperties: { type: 'integer' }, description: 'Anzahl Mappen je Ansicht (mit Unteransichten)' }, typen: { type: 'object', additionalProperties: { type: 'object', properties: { anzahl: { type: 'integer' }, unpassend: { type: 'integer' }, demo: { type: 'integer' } } } }, eingang: { type: 'integer' }, favoriten: { type: 'integer', description: 'Eigene Favoriten' } } },
+  Gleiche: { type: 'object', required: ['pruefwerte'], properties: { pruefwerte: { type: 'array', maxItems: 100, items: { type: 'string', pattern: '^[0-9a-f]{64}$' } }, ohneMappe: uuid } },
+  Fundstellen: { type: 'object', properties: { fundstellen: { type: 'object', description: 'Je Prüfwert höchstens 5 Fundstellen', additionalProperties: { type: 'array', items: { type: 'object', properties: { mappeId: uuid, typId: uuid, titel: { type: 'string' }, typ: { type: 'string' }, register: { type: 'string' }, name: { type: 'string' }, erstellt: { type: 'string', format: 'date-time' } } } } } } },
   Hochgeladen: { type: 'object', properties: { dokument: ref('Dokument'), gleicherInhalt: { type: 'array', items: { type: 'object', properties: { mappeId: uuid, name: { type: 'string' }, titel: { type: 'string' }, typId: uuid } } } } },
   Benutzer: {
     type: 'object',

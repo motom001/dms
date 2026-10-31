@@ -517,6 +517,8 @@ export const api = {
     return sendeDatei(`/api/dokumente/${id}/ersetzen?${new URLSearchParams({ name: datei.name, typ: datei.type || 'application/octet-stream' })}`, datei) as Promise<Dokument>;
   },
   /** gleicherName (#194): zaehler (Standard), version oder ersetzen. */
+  /** Doppelte Dateien (#333): Prüfwerte → Fundstellen in Mappen, die man lesen darf. */
+  gleicheDateien: (pruefwerte: string[], ohneMappe?: string) => anfrage<{ fundstellen: Record<string, Fundstelle[]> }>('POST', '/api/dokumente/gleiche', { pruefwerte, ...(ohneMappe ? { ohneMappe } : {}) }),
   async ladeHoch(mappeId: string, register: string, datei: File, gleicherName?: 'zaehler' | 'version' | 'ersetzen'): Promise<Hochgeladen> {
     const q = new URLSearchParams({ register, name: datei.name, typ: datei.type || 'application/octet-stream', ...(gleicherName ? { gleicherName } : {}) });
     return sendeDatei(`/api/mappen/${mappeId}/dokumente?${q}`, datei) as Promise<Hochgeladen>;
@@ -568,6 +570,8 @@ export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rech
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 /** Vorschaubild der ersten Seite (#332); der Prüfwert in der Adresse sorgt für ein neues Bild nach einer neuen Version. */
 export const vorschauUrl = (d: { id: string; sha256: string }, versuch = 0) => `/api/dokumente/${d.id}/vorschau?v=${d.sha256.slice(0, 12)}${versuch ? `&n=${versuch}` : ''}`;
+/** Wo eine gleiche Datei schon liegt (#333) – nur lesbare Mappen. */
+export interface Fundstelle { mappeId: string; typId: string; titel: string; typ: string; register: string; name: string; erstellt: string }
 export const dokumentUrl = (id: string, herunterladen = false) => `/api/dokumente/${id}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
 export const versionUrl = (id: string, nummer: number, herunterladen = false) => `/api/dokumente/${id}/versionen/${nummer}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
 
@@ -693,7 +697,7 @@ export interface TresorStatus {
 export interface Probe { ok: boolean; meldung: string }
 
 /** Eingangsordner (#195). */
-export interface EingangEinstellung { aktiv: boolean; abstand: number; nachher: 'erledigt' | 'loeschen' }
+export interface EingangEinstellung { aktiv: boolean; abstand: number; nachher: 'erledigt' | 'loeschen'; /** #333 */ doppelteUeberspringen?: boolean }
 export interface EingangEreignis { datei: string; zeit: string; mappeId?: string; grund?: string }
 export interface EingangStand {
   vorhanden: boolean; pfad?: string; einstellung?: EingangEinstellung; letztePruefung?: string | null; wartend?: number;

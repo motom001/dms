@@ -16,6 +16,8 @@ In der Ablage steht die Ansicht **Neue Post** über den übrigen Ansichten (ein 
 
 ![Dateien ablegen](bilder/post-ablegen.png)
 
+**Gibt es eine Datei schon?** Bevor die Post entsteht, prüft das DMS jede Datei. Liegt eine schon in einer Mappe, die du sehen darfst, fragt es nach: je Datei steht, wo sie liegt (mit Link), und du hakst **trotzdem ablegen** an oder lässt sie weg. **Weiter** legt die Post mit den übrigen Dateien an, **Abbrechen** legt gar nichts an, ein Klick auf den Link bringt dich zur vorhandenen Mappe.
+
 Den Betreff nimmt das DMS aus dem ersten Dateinamen; ändern kannst du ihn jederzeit. Absender bist du, der Kanal heißt *Hochgeladen*. Dateien über 100 MB oder bei erreichter Speicherplatz-Grenze werden mit Grund gemeldet, die übrigen trotzdem abgelegt.
 
 **Auf einer geöffneten Mappe** mit Dokumentenregister teilt sich die Fläche: **In diese Mappe** legt die Dateien wie bisher ins Register (übernommen mit *Mappe speichern*), **Als neue Post** macht eine neue Post daraus.
@@ -64,7 +66,7 @@ Oben in einer Post steht eine Leiste mit dem **Stand** und dem Knopf **Zuordnen 
 
 1. Wähle den **Mappentyp**, z. B. *Rechnung*.
 2. Wähle **vorhandene wählen** und suche die Mappe, oder **neue anlegen**.
-3. Wähle die **Dokumente**, die mitgehen. Vorausgewählt sind alle. Hat der Mappentyp mehrere Dokumentenregister, wählst du das Register.
+3. Wähle die **Dokumente**, die mitgehen. Vorausgewählt sind alle. Liegt ein Dokument schon in einer anderen Mappe, die du sehen darfst, steht das darunter – mit Link. Dann brauchst du es vielleicht nicht noch einmal abzulegen. Hat der Mappentyp mehrere Dokumentenregister, wählst du das Register.
 4. **Zu „…“ zuordnen** (bei einer vorhandenen Mappe) bzw. **Weiter: neue Mappe ausfüllen**.
 
 Danach liegen die Dokumente in der Mappe, und die Post verweist auf sie. Ihr Stand ist *Zugeordnet*. In der [Historie](zusammenarbeit.md#historie) beider Mappen steht, was passiert ist. Der Volltext der Dokumente zieht mit um.

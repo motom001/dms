@@ -1,8 +1,9 @@
 import { Vorschaubild } from './Vorschaubild';
+import { Fundstellen, fundstellenFuer } from './Doppelt';
 import { useMappenZiel } from './NeuePost';
 import { useEffect, useRef, useState, type DragEvent, type MouseEvent } from 'react';
 import { HERKUNFT, MAX_DATEIGROESSE, OCR_STAENDE, type Dokument, type DokumentVersion, type Herkunft, type OcrStand, type Register } from '../../../shared/src/model';
-import { api, dokumentUrl, versionUrl } from '../api';
+import { api, dokumentUrl, versionUrl, type Fundstelle } from '../api';
 import { useDaten } from '../daten';
 import { Person } from '../Person';
 import { Hilfe } from '../Hilfe';
@@ -51,6 +52,18 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
   neuLaden?(): Promise<void>;
 }) {
   const versioniert = !!register.versionierung;
+  // Doppelte Dateien (#333): je neuer Datei einmal nachsehen, ob es sie schon gibt.
+  const [doppelt, setDoppelt] = useState<Record<string, Fundstelle[]>>({});
+  const geprueft = useRef(new Set<string>());
+  const eigeneMappe = roh[0]?.mappeId;
+  useEffect(() => {
+    const offen = neue.filter((n) => !geprueft.current.has(n.uid));
+    if (!offen.length) return;
+    for (const n of offen) geprueft.current.add(n.uid);
+    void fundstellenFuer(offen, eigeneMappe).then((m) => {
+      if (m.size) setDoppelt((d) => ({ ...d, ...Object.fromEntries([...m].map(([n, f]) => [n.uid, f.filter((x) => x.mappeId !== eigeneMappe)]).filter(([, f]) => f.length)) }));
+    });
+  }, [neue, eigeneMappe]);
   const [versionenOffen, setVersionenOffen] = useState<string>();
   const [ersetzeId, setErsetzeId] = useState<string>();
   const [versionFehler, setVersionFehler] = useState<string>();
@@ -184,6 +197,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                     <div className="dokname">
                       <span>{n.datei.name} <span className="chip gut">neu</span></span>
                       <span className="leise klein">{groesse(n.datei.size)} · wird beim Speichern hochgeladen</span>
+                      {doppelt[n.uid] && <span className="hinweis warn doppelthinweis"><Fundstellen f={doppelt[n.uid]} /> Beim Speichern wird sie trotzdem abgelegt – sonst „Nicht hochladen“.</span>}
                       {/* Gleicher Name wie ein vorhandenes Dokument (#194): nachfragen. */}
                       {(() => {
                         const gleich = dokumente.find((x) => !entfernt.includes(x.id) && x.name.toLowerCase() === n.datei.name.toLowerCase());

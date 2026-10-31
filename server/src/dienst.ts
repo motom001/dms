@@ -38,6 +38,8 @@ import { ALLES, RECHTE_LISTE, kurzStandard, systemSperre, bereinigeRegelwerk, FA
 const text = (v: unknown) => (v == null ? '' : String(v)).trim();
 
 /** Zugriff eines Benutzers (#124): Rollen, Auflösung dynamischer Werte, Lesefilter (null = alles). */
+/** Wo eine gleiche Datei schon liegt (#333) – nur lesbare Mappen. */
+export interface Fundstelle { mappeId: string; typId: string; titel: string; typ: string; register: string; name: string; erstellt: string }
 export interface Zugriff {
   ich: { id: string; rolle: string };
   admin: boolean;
@@ -2987,6 +2989,31 @@ export class Dienst {
     const docs = await this.repo.dokumenteMitSha(sha256);
     const bezuege = await this.repo.bezuege([...new Set(docs.map((d) => d.mappeId))]);
     return docs.slice(0, 5).map((d) => ({ mappeId: d.mappeId, name: d.name, titel: bezuege.get(d.mappeId)?.titel ?? '' }));
+  }
+
+  /**
+   * Doppelte Dateien (#333): Wo liegt eine Datei mit diesem Prüfwert schon? Nur Mappen, die der Benutzer
+   * lesen darf – liegt sie nur in fremden Mappen, gibt es keinen Hinweis (nichts verraten).
+   */
+  async fundstellen(z: Zugriff | undefined, pruefwerte: unknown, ohneMappe?: string): Promise<Record<string, Fundstelle[]>> {
+    const liste = Array.isArray(pruefwerte) ? [...new Set(pruefwerte.filter((x): x is string => typeof x === 'string' && /^[0-9a-f]{64}$/.test(x)))] : [];
+    if (liste.length > 100) throw new Fachfehler(422, 'Höchstens 100 Prüfwerte auf einmal.');
+    const erg: Record<string, Fundstelle[]> = {};
+    for (const sha of liste) {
+      const docs = (await this.repo.dokumenteMitSha(sha)).filter((d) => d.mappeId !== ohneMappe);
+      if (!docs.length) continue;
+      const lesbar = await this.lesbare(z, [...new Set(docs.map((d) => d.mappeId))]);
+      const sichtbar = docs.filter((d) => lesbar.has(d.mappeId));
+      if (!sichtbar.length) continue;
+      const bezuege = await this.repo.bezuege(sichtbar.map((d) => d.mappeId));
+      const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t]));
+      erg[sha] = sichtbar.slice(0, 5).map((d) => {
+        const b = bezuege.get(d.mappeId);
+        const t = b ? typen.get(b.typId) : undefined;
+        return { mappeId: d.mappeId, typId: b?.typId ?? '', titel: b?.titel ?? '', typ: t?.name ?? '', register: t?.register.find((r) => r.key === d.registerKey)?.name ?? d.registerKey, name: d.name, erstellt: d.erstellt };
+      });
+    }
+    return erg;
   }
 
   /** Eine Post, die seit `seit` ein Dokument mit diesem Inhalt bekommen hat (Aufräumen nach Abbruch). */

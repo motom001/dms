@@ -87,6 +87,8 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
               <option value="loeschen">löschen</option>
             </select></label>
         </div>
+        <label className="haken"><input type="checkbox" checked={e.doppelteUeberspringen === true} onChange={(x) => setE({ ...e, doppelteUeberspringen: x.target.checked })} />
+          <span>Doppelte Dateien überspringen <small className="leise">– liegt genau diese Datei schon im DMS, wird keine Post angelegt; die Datei wird wie oben weggeräumt</small></span></label>
         <div className="knoepfe">
           <button type="button" className="knopf primaer" onClick={() => void speichern()}>Speichern</button>
           <button type="button" className="knopf" onClick={() => void jetzt()}>Jetzt prüfen</button>

@@ -1072,3 +1072,11 @@ a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
 .assistent-hilfe { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; font-size: calc(13px * var(--skala, 1)); color: var(--akzent); text-decoration: none; }
 .assistent-hilfe .hilfesymbol { margin-left: 0; color: var(--akzent); border-color: var(--akzent); }
 .assistent-hilfe:hover, .assistent-hilfe:focus-visible { text-decoration: underline; }
+
+/* Doppelte Dateien (#333) */
+.doppelthinweis { display: block; margin: 4px 0 0; padding: 6px 8px; font-size: .9em; }
+.mitdoppelt { display: flex; flex-direction: column; gap: 2px; margin-bottom: 6px; }
+.mitdoppelt .doppelt { margin-left: 74px; color: var(--warn-text, inherit); }
+.doppeltfrage ul { margin: 6px 0; padding-left: 18px; }
+.doppeltfrage li { margin-bottom: 6px; }
+.doppeltfrage .haken { margin-top: 2px; }
