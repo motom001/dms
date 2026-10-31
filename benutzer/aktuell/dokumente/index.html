@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.81/dokumente/">
+        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.82/dokumente/">
       
       
         <link rel="prev" href="../mappen/">
@@ -683,6 +683,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pdf-bearbeiten" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PDF bearbeiten
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#volltext" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1194,6 +1205,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pdf-bearbeiten" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PDF bearbeiten
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#volltext" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1281,9 +1303,51 @@
 <p>Jede Zeile hat ein Kästchen; <strong>Alle auswählen</strong> über der Liste wählt alle (und wieder ab). Mit <strong>Umschalt + Klick</strong> wählst du einen ganzen Bereich. Für die Auswahl gibt es dann:</p>
 <ul>
 <li><strong>Herunterladen</strong> – lädt die Dokumente nacheinander unter ihrem Namen herunter. Beim ersten Mal fragt der Browser womöglich, ob die Seite mehrere Dateien herunterladen darf – erlaube es.</li>
+<li><strong>Zusammenfügen</strong> – nur bei zwei oder mehr PDFs: hängt sie zu einem neuen PDF aneinander (siehe <a href="#pdf-bearbeiten">PDF bearbeiten</a>).</li>
 <li><strong>Löschen</strong> – markiert sie zum Löschen, wie beim einzelnen Dokument (siehe unten).</li>
 </ul>
 <p>Die Auswahl gilt nur für das Register, in dem du gerade bist.</p>
+<h2 id="pdf-bearbeiten">PDF bearbeiten<a class="headerlink" href="#pdf-bearbeiten" title="Permanent link">&para;</a></h2>
+<p>Schief gescannt, eine leere Rückseite zu viel, drei Briefe in einem Scan? Das richtest du direkt im DMS – ohne anderes Programm.</p>
+<p><strong>Seiten</strong> neben einem PDF öffnet darunter die Seitenansicht mit einem kleinen Bild jeder Seite. Je Seite gibt es:</p>
+<ul>
+<li><strong>↺ / ↻</strong> – um 90 Grad nach links oder rechts drehen</li>
+<li><strong>Löschen</strong> – die Seite fällt weg (<strong>Behalten</strong> holt sie zurück)</li>
+<li><strong>← / →</strong> – nach vorn oder hinten verschieben. Du kannst Seiten auch mit der Maus an eine andere Stelle <strong>ziehen</strong> oder per Tastatur: Seite mit Tab anwählen, dann <strong>Alt + Pfeiltaste</strong>.</li>
+<li><strong>Teilen ab hier</strong> – mit dieser Seite beginnt ein neuer Teil</li>
+</ul>
+<p><img alt="Seiten eines PDFs bearbeiten: Seite 2 gedreht, ab Seite 3 ein neuer Teil" src="../bilder/pdf-bearbeiten.png" /></p>
+<p>Unten steht, was herauskommt („3 von 5 Seiten · 1 gedreht · 2 Teile“). Erst <strong>Übernehmen</strong> speichert – sofort, ohne „Mappe speichern“. <strong>Abbrechen</strong> lässt alles, wie es war.</p>
+<p>Was beim Übernehmen passiert:</p>
+<table>
+<thead>
+<tr>
+<th>Was</th>
+<th>Mit Versionierung</th>
+<th>Ohne Versionierung</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Drehen, löschen, umsortieren</td>
+<td>neue <strong>Version</strong> des Dokuments; die bisherige bleibt als ältere Version erhalten</td>
+<td>nach Rückfrage ersetzt das Ergebnis das Dokument; das bisherige kommt in den <a href="../ablage/#papierkorb">Papierkorb</a></td>
+</tr>
+<tr>
+<td>Teilen in einer Mappe</td>
+<td>Teil 1 wird die neue Version („Scan (Teil 1).pdf“), die weiteren Teile werden eigene Dokumente im selben Register („Scan (Teil 2).pdf“ …)</td>
+<td>ebenso, Teil 1 nach Rückfrage</td>
+</tr>
+<tr>
+<td>Teilen bei <a href="../post/#sammelscan-teilen">Post</a></td>
+<td>je Teil eine <strong>neue Post</strong> – die Ausgangspost bleibt unverändert und wird erledigt</td>
+<td>ebenso</td>
+</tr>
+</tbody>
+</table>
+<p>Im <strong>Archivmodus</strong> ist die Versionierung immer an – das Original bleibt also auch dort erhalten. Für das Ergebnis läuft die <a href="#volltext">Texterkennung</a> neu, das Vorschaubild entsteht neu. In der Historie der Mappe steht „PDF bearbeitet“ mit dem, was sich geändert hat.</p>
+<p><strong>Zusammenfügen:</strong> Wähle mit den Kästchen zwei oder mehr PDFs und klicke auf <strong>Zusammenfügen</strong>. Das DMS hängt sie in der Reihenfolge der Liste aneinander (sortiere vorher, wenn nötig) und legt das Ergebnis als <strong>neues Dokument</strong> in dieses Register; den Namen kannst du ändern. Die Ausgangsdokumente bleiben, außer du hakst <strong>Ausgangsdokumente in den Papierkorb legen</strong> an.</p>
+<p>Bearbeiten lassen sich nur PDFs, keine Bilder oder Word-Dateien, und nur mit dem Recht „Bearbeiten“ an der Mappe. Ein PDF mit Passwortschutz lässt das DMS unverändert. Bilder gibt es für die ersten 400 Seiten; bei sehr langen PDFs stehen danach nur die Seitennummern.</p>
 <h2 id="volltext">Volltext<a class="headerlink" href="#volltext" title="Permanent link">&para;</a></h2>
 <p>Damit die <a href="../ablage/#im-text-der-dokumente-suchen">Volltextsuche</a> ein Dokument findet, liest das DMS nach dem Hochladen im Hintergrund seinen Text: bei PDFs die Textebene, bei Scans und Fotos per Texterkennung. Neben dem Dokument steht, wie weit es ist:</p>
 <table>
