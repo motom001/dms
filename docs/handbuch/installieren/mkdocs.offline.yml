@@ -1,0 +1,7 @@
+# Offline-Fassung im Image (#219), gebaut von werkzeuge/offline.py.
+INHERIT: mkdocs.yml
+site_url: https://dms.local/hilfe/installieren/
+theme:
+  font: false
+hooks:
+  - ../werkzeuge/offline_hook.py

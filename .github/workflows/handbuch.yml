@@ -149,6 +149,12 @@ jobs:
       - name: Hilfe-Links prüfen
         run: npx tsx docs/handbuch/werkzeuge/hilfe-pruefen.ts site
 
+      # Offline-Fassung fürs Image (#219): baut wie im Dockerfile und prüft lokale Verweise und Hilfe-Ziele.
+      - name: Offline-Hilfe prüfen
+        run: |
+          python3 docs/handbuch/werkzeuge/offline.py "$RUNNER_TEMP/hilfe"
+          npx tsx docs/handbuch/werkzeuge/hilfe-pruefen.ts "$RUNNER_TEMP/hilfe"
+
       - name: Screenshots zum Ansehen
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

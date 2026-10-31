@@ -1,5 +1,5 @@
 /**
- * Kontextbezogene Hilfe (#110) und Handbuch je Version (#111).
+ * Kontextbezogene Hilfe (#110), Handbuch je Version (#111), offline im DMS (#219).
  *
  * Eine Tabelle: welche Stelle der Oberfläche auf welche Seite und welchen Abschnitt im Handbuch
  * zeigt. Die CI prüft gegen das gebaute Handbuch, dass jede Seite und jeder Anker existiert
@@ -85,7 +85,16 @@ export function handbuchVersion(version: string | null | undefined): string {
   return m ? `v${m[1]}.${m[2]}` : 'aktuell';
 }
 
-export function handbuchUrl(handbuch: Handbuch, version: string | null | undefined, seite = ''): string {
+/**
+ * Handbuch im DMS selbst (#219): Das Image bringt die Handbücher seiner Version mit, ohne Internet
+ * lesbar unter /hilfe/. Ohne gebaute Handbücher (Entwicklung) leitet der Server auf die Online-Fassung um.
+ */
+export function handbuchUrl(handbuch: Handbuch, _version: string | null | undefined, seite = ''): string {
+  return `/hilfe/${handbuch}/${seite}`;
+}
+
+/** Dieselbe Seite online auf GitHub Pages, passend zur Version. */
+export function handbuchOnlineUrl(handbuch: Handbuch, version: string | null | undefined, seite = ''): string {
   return `${HANDBUCH_BASIS}/${handbuch}/${handbuchVersion(version)}/${seite}`;
 }
 

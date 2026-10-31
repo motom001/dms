@@ -1,13 +1,14 @@
 # DMS
 
-[![Neuestes Release](https://img.shields.io/github/v/release/motom001/dms?label=Release&sort=semver)](https://github.com/motom001/dms/releases/latest)
-[![Prüfen und Image bauen](https://github.com/motom001/dms/actions/workflows/image.yml/badge.svg?branch=main)](https://github.com/motom001/dms/actions/workflows/image.yml)
-[![Handbuch](https://github.com/motom001/dms/actions/workflows/handbuch.yml/badge.svg?branch=main)](https://github.com/motom001/dms/actions/workflows/handbuch.yml)
+<!-- Abzeichen (#252): Zeile 1 Stand, Zeile 2 Sicherheit, Zeile 3 Offenheit. -->
+[![Release](https://img.shields.io/github/v/release/motom001/dms?label=Release&sort=semver)](https://github.com/motom001/dms/releases/latest)
+[![Prüfungen](https://img.shields.io/github/actions/workflow/status/motom001/dms/image.yml?branch=main&label=Pr%C3%BCfungen)](https://github.com/motom001/dms/actions/workflows/image.yml)
+[![Handbuch](https://img.shields.io/github/actions/workflow/status/motom001/dms/handbuch.yml?branch=main&label=Handbuch)](https://motom001.github.io/dms/)<br>
 [![CodeQL](https://github.com/motom001/dms/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/motom001/dms/security/code-scanning?query=tool%3ACodeQL)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/motom001/dms/badge)](https://scorecard.dev/viewer/?uri=github.com/motom001/dms)
-[![Sicherheit](https://img.shields.io/badge/Sicherheit-SECURITY.md-2ea44f)](SECURITY.md)
-[![Lizenz: AGPL-3.0](https://img.shields.io/badge/Lizenz-AGPL--3.0-blue)](LICENSE)
-[![Projekt unterstützen](https://img.shields.io/badge/Projekt_unterst%C3%BCtzen-GitHub_Sponsors-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/motom001)
+[![Sicherheit](https://img.shields.io/badge/Sicherheit-SECURITY.md-2ea44f)](SECURITY.md)<br>
+[![Lizenz](https://img.shields.io/badge/Lizenz-AGPL--3.0-blue)](LICENSE)
+[![Unterstützen](https://img.shields.io/badge/Unterst%C3%BCtzen-GitHub_Sponsors-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/motom001)
 
 Ein selbst gehostetes, persönliches Informations- und Dokumentenmanagementsystem für Haushalte. Statt loser Dokumente in Ordnern ordnet es **Mappen**: Vertragspartner, Verträge, Rechnungen, Gegenstände – verbunden über Verweise, so dass man von jeder Mappe aus zu allem Zugehörigen findet.
 
