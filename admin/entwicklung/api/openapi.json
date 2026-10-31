@@ -2378,6 +2378,68 @@
         }
       }
     },
+    "/mappen/email": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Mehrere Mappen per E-Mail versenden",
+        "description": "Mehrere Mappen in einer E-Mail (#151, höchstens 100). Anhänge: je Mappe ihre Angaben als PDF („Titel.pdf“, angaben=false lässt sie weg) und die Dokumente – dokumente=„alle“ oder eine Liste von Dokument-Ids (Standard: keine); zusammen höchstens 50 MB. Jede Mappe braucht Lesen und das Recht zu versenden (Recht E einer Ansicht, wie beim Export); fehlt es bei einer, wird nichts verschickt (403). Danach gibt es eine Post (Kanal E-Mail, ausgehend, erledigt), die auf alle Mappen verweist, und in jeder Mappe einen Eintrag in der Historie.",
+        "operationId": "postMappenEmail",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailMehrere"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailMehrereVersendet"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/mappen/{id}/email": {
       "post": {
         "tags": [
@@ -5563,6 +5625,77 @@
               "type": "string",
               "format": "uuid"
             }
+          }
+        }
+      },
+      "EmailMehrere": {
+        "type": "object",
+        "required": [
+          "ids",
+          "an",
+          "betreff"
+        ],
+        "properties": {
+          "ids": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "an": {
+            "type": "string",
+            "description": "Empfänger, mehrere durch Komma getrennt (höchstens 20)"
+          },
+          "betreff": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "nachricht": {
+            "type": "string"
+          },
+          "angaben": {
+            "type": "boolean",
+            "description": "Angaben je Mappe als PDF (Standard: ja)"
+          },
+          "dokumente": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "alle"
+                ]
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "EmailMehrereVersendet": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id der Post"
+          },
+          "typId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mappen": {
+            "type": "integer"
+          },
+          "anhaenge": {
+            "type": "integer"
           }
         }
       },
