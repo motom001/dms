@@ -1,0 +1,11 @@
+/* Selbstcheck (#163) */
+.selbstcheck ol > li { margin-bottom: 1em; padding: .4em .6em; border-left: 3px solid transparent; border-radius: 4px; }
+.selbstcheck ol > li.ja { border-left-color: #2e7d32; }
+.selbstcheck ol > li.suchen { border-left-color: #c77700; }
+.selbstcheck ol > li.nein { border-left-color: #c62828; }
+.selbstcheck .wahl { display: flex; flex-wrap: wrap; gap: .3em 1.2em; margin-top: .3em; font-size: .9em; }
+.selbstcheck .wahl label { cursor: pointer; white-space: nowrap; }
+.selbstcheck .tipp { display: block; margin-top: .3em; font-size: .9em; color: var(--md-default-fg-color--light); }
+.selbstcheck .tipp[hidden] { display: none; }
+.selbstcheck .ergebnis { margin: 1em 0; font-weight: 600; }
+.grafik { display: block; max-width: 100%; height: auto; margin: 1em auto; border-radius: 14px; }
