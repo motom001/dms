@@ -107,11 +107,11 @@ describe('Versionsübersicht', () => {
     assert.match(v('DMS').hinweis!, /3 neuere Änderungen/);
     assert.match(v('DMS').aktuell!, /^main \(bbbbbbb/);
     // Mit Releases (#206): neueste Version und Datum, Status über die Versionsnummer.
-    const [ma, mi] = u.dms.version.split('.').map(Number);
+    const [ma, mi, pa] = u.dms.version.split('.').map(Number);
     const neu = `${ma}.${mi + 1}.0`;
     const mitRelease = async (url: string): Promise<unknown> => {
       if (url.endsWith('/releases/latest')) return { tag_name: `v${neu}`, published_at: '2026-10-30T19:00:00Z', html_url: 'https://github.com/motom001/dms/releases/tag/v' + neu };
-      if (url.includes('/releases?')) return [{ tag_name: `v${neu}` }, { tag_name: `v${ma}.${mi}.9` }, { tag_name: `v${u.dms.version}` }, { tag_name: 'v0.1.0' }];
+      if (url.includes('/releases?')) return [{ tag_name: `v${neu}` }, { tag_name: `v${ma}.${mi}.${pa + 1}` }, { tag_name: `v${u.dms.version}` }, { tag_name: 'v0.1.0' }];
       return abruf(url);
     };
     const d = (await versionsabgleich(u, {}, mitRelease)).find((x) => x.komponente === 'DMS')!;
