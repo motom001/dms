@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { liesMail, verbindeImap } from './imap';
 import { Postfaecher } from './postfach';
 import { Anmeldesperre } from './anmeldesperre';
+import { Zweifaktor } from './zweifaktor';
 import { Eingangsordner } from './eingangsordner';
 import { einbettenAus } from './koepfe';
 import { proxyVertrauen } from './proxy';
@@ -159,6 +160,8 @@ spDeps.wartung = wartung;
 spDeps.anAdmins = anAdmins;
 // Anmeldeschutz (#240): Sperren in der Datenbank, einstellbar in der Werkbank.
 konten.verbindeSperre(new Anmeldesperre(pgEinstellungen(sql, cfg.haushalt), anAdmins));
+// Zwei-Faktor-Anmeldung (#242): Geheimnis verschlüsselt mit dem Schlüssel des DMS.
+konten.verbindeZweifaktor(new Zweifaktor(pgEinstellungen(sql, cfg.haushalt), (k) => tresor.verschluessele(k), (w) => tresor.entschluessele(w)));
 const notfall = new Notfallzugang(join(dirname(tresor.datei), 'RESCUE'), konten, pgBetriebSpeicher(sql, cfg.haushalt), anAdmins);
 // Sicherungen (#103–#105): eigenes Volume, verschlüsselt mit dem Schlüssel der Werkbank.
 const sicherung = new Sicherung(ordner.sicherung, ordner.dateien, cfg.haushalt, {

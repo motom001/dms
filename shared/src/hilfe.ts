@@ -33,6 +33,7 @@ export const HILFE = {
   'werkbank.eingangsordner': admin('eingangsordner/', 'Eingangsordner'),
   'werkbank.postfaecher': admin('postfaecher/', 'Postfächer'),
   'werkbank.anmeldeschutz': admin('anmeldeschutz/', 'Anmeldeschutz'),
+  'werkbank.zweifaktor': admin('anmeldeschutz/', 'Zwei-Faktor-Anmeldung', 'zwei-faktor-anmeldung'),
   'werkbank.wartung': admin('texterkennung/', 'Wartungsoperationen', 'wartungsoperationen'),
   'werkbank.protokoll': admin('fehlersuche/', 'Protokoll', 'protokoll'),
   'werkbank.fehlermeldungen': admin('fehlersuche/', 'Fehlermeldungen', 'fehlermeldungen-von-benutzern'),
@@ -75,6 +76,7 @@ export const HILFE = {
   'dokumente.mehrere': benutzer('dokumente/', 'mehreren Dokumenten auf einmal', 'mehrere-auf-einmal'),
   'profil.rechte': benutzer('profil/', 'deinen Rechten', 'meine-rechte'),
   'profil.abwesenheit': benutzer('profil/', 'Abwesenheit', 'abwesenheit'),
+  'profil.zweifaktor': benutzer('profil/', 'Zwei-Faktor-Anmeldung', 'zwei-faktor-anmeldung'),
   'profil.benachrichtigungen': benutzer('profil/', 'Benachrichtigungen', 'benachrichtigungen-und-ablage'),
 } as const satisfies Record<string, Hilfeziel>;
 export type Hilfeort = keyof typeof HILFE;

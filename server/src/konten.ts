@@ -1,3 +1,4 @@
+import type { Zweifaktor } from './zweifaktor';
 import { Anmeldesperre } from './anmeldesperre';
 import { randomUUID } from 'node:crypto';
 import { abwesenheitWirkt, istEmail, KEINE_ABWESENHEIT, PASSWORT_MINDESTLAENGE, type Abwesenheit, type Benutzer, type Rolle } from '../../shared/src/model';
@@ -44,6 +45,11 @@ export class Konten {
   /** Anmeldeschutz (#240); ohne Verbindung mit Standardwerten im Arbeitsspeicher. */
   sperre = new Anmeldesperre();
   verbindeSperre(s: Anmeldesperre) { this.sperre = s; }
+  /** Zwei-Faktor-Anmeldung (#242); ohne Verbindung gibt es keine. */
+  zweifaktor: Zweifaktor | null = null;
+  verbindeZweifaktor(z: Zweifaktor) { this.zweifaktor = z; }
+  /** Nach richtigem Passwort, vor dem Code: kurzlebige Kennung je Anmeldung. */
+  private zweiterSchritt = new Map<string, { benutzerId: string; email: string; ip: string; geraet: string; bis: number; versuche: number }>();
 
   /**
    * `spiegel` hält die Benutzer-Mappen (#26) auf dem Stand der Konten: Das Konto ist führend,
@@ -92,8 +98,44 @@ export class Konten {
       throw new Fachfehler(401, 'E-Mail-Adresse oder Passwort stimmen nicht.');
     }
     await this.sperre.erfolg(email, ip);
+    // Zwei-Faktor (#242): erst nach dem Code gibt es eine Sitzung.
+    if (this.zweifaktor && (await this.zweifaktor.aktiv(treffer.benutzer.id))) {
+      return { zweiterSchritt: this.merkeZweitenSchritt(treffer.benutzer.id, email, { ip, geraet }) } as const;
+    }
     await this.repo.notiereAnmeldung(treffer.benutzer.id);
     return { benutzer: treffer.benutzer, schluessel: await this.neueSitzung(treffer.benutzer.id, { ip, geraet }) };
+  }
+
+  /** Eigenes Passwort bestätigen (z. B. vor dem Abschalten der Zwei-Faktor-Anmeldung). */
+  async pruefeEigenesPasswort(b: Benutzer, passwort: unknown) {
+    const t = await this.repo.holeHash(b.email);
+    if (!t || !(await pruefePasswort(typeof passwort === 'string' ? passwort : '', t.hash))) throw new Fachfehler(403, 'Das Passwort stimmt nicht.');
+  }
+
+  /** Zweiter Schritt (#242): Code aus der App oder ein Wiederherstellungscode. */
+  private merkeZweitenSchritt(benutzerId: string, email: string, g: Geraet) {
+    const kennung = neuerSchluessel();
+    const t = Date.now();
+    for (const [k, v] of this.zweiterSchritt) if (v.bis < t) this.zweiterSchritt.delete(k);
+    this.zweiterSchritt.set(kennung, { benutzerId, email, ip: g.ip, geraet: g.geraet, bis: t + 5 * 60_000, versuche: 0 });
+    return kennung;
+  }
+
+  async anmeldenMitCode(e: { kennung?: unknown; code?: unknown }, ip: string) {
+    const k = typeof e.kennung === 'string' ? this.zweiterSchritt.get(e.kennung) : undefined;
+    if (!k || k.bis < Date.now() || k.ip !== ip) throw new Fachfehler(401, 'Die Anmeldung ist abgelaufen. Bitte noch einmal mit dem Passwort beginnen.');
+    await this.sperre.pruefe(k.email, ip);
+    const art = await this.zweifaktor?.pruefe(k.benutzerId, e.code);
+    if (!art) {
+      await this.sperre.fehlschlag(k.email, ip);
+      if (++k.versuche >= 5) this.zweiterSchritt.delete(e.kennung as string);
+      throw new Fachfehler(401, 'Der Code stimmt nicht.');
+    }
+    this.zweiterSchritt.delete(e.kennung as string);
+    const benutzer = await this.repo.holeBenutzer(k.benutzerId);
+    if (!benutzer || !benutzer.aktiv) throw new Fachfehler(401, 'E-Mail-Adresse oder Passwort stimmen nicht.');
+    await this.repo.notiereAnmeldung(benutzer.id);
+    return { benutzer, schluessel: await this.neueSitzung(benutzer.id, { ip, geraet: k.geraet }), wiederherstellung: art === 'wiederherstellung' };
   }
 
   private async neueSitzung(benutzerId: string, info: Geraet, vertretungId: string | null = null) {
@@ -490,8 +532,12 @@ export class Konten {
     if (!(await this.repo.verbraucheLink(hash))) throw new Fachfehler(410, 'Dieser Link wurde schon benutzt.');
     await this.repo.setzeHash(l.benutzerId, await hashePasswort(passwort));
     await this.repo.loescheSitzungenVon(l.benutzerId);
-    await this.repo.notiereAnmeldung(l.benutzerId);
     const benutzer = (await this.repo.holeBenutzer(l.benutzerId))!;
+    // Zwei-Faktor (#242): Der Link ersetzt nur das Passwort, nicht den zweiten Faktor.
+    if (this.zweifaktor && (await this.zweifaktor.aktiv(benutzer.id))) {
+      return { benutzer, zweiterSchritt: this.merkeZweitenSchritt(benutzer.id, benutzer.email, info) };
+    }
+    await this.repo.notiereAnmeldung(l.benutzerId);
     return { benutzer, schluessel: await this.neueSitzung(l.benutzerId, info) };
   }
 }

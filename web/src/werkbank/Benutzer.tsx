@@ -149,6 +149,7 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
         speichern={(a) => api.benutzerAbwesenheit(b.id, a)} uebergeben={() => api.benutzerAufgabenAnVertreter(b.id)}
         nachSpeichern={async () => { await neuLaden(); if (selbst) await aktualisieren(); }} />
 
+      <ZweifaktorVon b={b} />
       <Sitzungen b={b} neuLaden={neuLaden} />
 
       <WasSiehtBlatt key={b.id} benutzerId={b.id} admin={b.rolle === 'admin'} />
@@ -208,6 +209,29 @@ function ZugangSperren({ b, selbst, loeschbar, aktion }: { b: Benutzer; selbst: 
           }
         }}>Benutzer deaktivieren</button>
       </div>
+    </div>
+  );
+}
+
+/** Zwei-Faktor-Anmeldung des Benutzers (#242): Stand und Zurücksetzen (z. B. Handy verloren). */
+function ZweifaktorVon({ b }: { b: Benutzer }) {
+  const [stand, setStand] = useState<{ aktiv: boolean; seit: string | null; codesUebrig: number } | null>(null);
+  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const laden = useCallback(async () => { try { setStand(await api.benutzerZweifaktor(b.id)); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } }, [b.id]);
+  useEffect(() => { void laden(); }, [laden]);
+  const name = b.name || b.email;
+  return (
+    <div className="blatt">
+      <h2 className="h3">Zwei-Faktor-Anmeldung</h2>
+      {!stand ? !meldung && <p className="leise">Lade …</p> : stand.aktiv ? <>
+        <p><span className="chip gut punkt">eingerichtet</span>{stand.seit && <> seit {new Date(stand.seit).toLocaleDateString('de-DE')}</>} · {stand.codesUebrig} Wiederherstellungscodes übrig</p>
+        <div className="knoepfe"><button type="button" className="knopf gefahr-rand" onClick={() => {
+          if (confirm(`Zwei-Faktor-Anmeldung von ${name} zurücksetzen? Danach reicht das Passwort – ist sie vorgeschrieben, richtet ${name} sie bei der nächsten Anmeldung neu ein.`)) {
+            void api.benutzerZweifaktorZuruecksetzen(b.id).then(() => { setMeldung({ art: 'gut', text: 'Zurückgesetzt.' }); return laden(); }).catch((e) => setMeldung({ art: 'schlecht', text: (e as Error).message }));
+          }
+        }}>Zurücksetzen</button></div>
+      </> : <p className="leise">Nicht eingerichtet.</p>}
+      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
     </div>
   );
 }
