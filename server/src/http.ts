@@ -50,6 +50,7 @@ interface Optionen {
   apiSchluessel?: ApiSchluesselDienst;
   /** Befehl `dms` im Container (#244). */
   konsole?: import('./konsole').Konsolenzugang;
+  oidc?: import('./oidc').Oidc;
   betrieb?: Betrieb;
   tresor?: Tresor;
   texterkennung?: Texterkennung;
@@ -134,6 +135,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
           params: req.params as Record<string, string>,
           query: req.query as Record<string, string | undefined>,
           sitzung: leseCookie(req.headers.cookie, SITZUNG_COOKIE),
+          cookieKopf: req.headers.cookie,
           ip: req.ip,
           peer: req.socket.remoteAddress,
           geraet: String(req.headers['user-agent'] ?? ''),
@@ -152,9 +154,16 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
         });
         // Für den Entwicklermodus: Dauer auf dem Server, davon Datenbank (Anzahl Zugriffe in desc).
         reply.header('server-timing', `app;dur=${(performance.now() - start).toFixed(1)}, db;dur=${k.db.ms.toFixed(1)};desc="${k.db.anzahl}"`);
-        if (antwort.sitzungSetzen !== undefined) {
+        if (antwort.sitzungSetzen !== undefined || antwort.cookies?.length) {
           const sicher = typeof opt.sicher === 'function' ? kontext.run(k, opt.sicher) : opt.sicher ?? false;
-          reply.header('set-cookie', sitzungsCookie(antwort.sitzungSetzen, sicher));
+          reply.header('set-cookie', [
+            ...(antwort.sitzungSetzen !== undefined ? [sitzungsCookie(antwort.sitzungSetzen, sicher)] : []),
+            ...(antwort.cookies ?? []).map((c) => (sicher ? `${c}; Secure` : c)),
+          ]);
+        }
+        if (antwort.weiterleiten) {
+          reply.header('cache-control', 'no-store');
+          return reply.code(302).header('location', antwort.weiterleiten).send();
         }
         if (antwort.datei) {
           for (const [k, v] of Object.entries(dateiKoepfe(antwort.datei))) reply.header(k, v);

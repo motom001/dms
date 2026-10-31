@@ -1004,3 +1004,6 @@ ol.codes code { user-select: all; letter-spacing: .04em; }
   ol.codes, ol.codes * { visibility: visible; }
   ol.codes { position: absolute; left: 0; top: 0; }
 }
+
+/* Anmeldung über einen Anbieter (#241) */
+a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }

@@ -1,4 +1,8 @@
 import type { Zweifaktor } from './zweifaktor';
+import type { AnbieterIdentitaet, OidcEinstellung } from './oidc';
+import { protokoll } from './protokoll';
+
+const log = protokoll.modul('konto');
 import { Anmeldesperre } from './anmeldesperre';
 import { randomUUID } from 'node:crypto';
 import { abwesenheitWirkt, istEmail, KEINE_ABWESENHEIT, PASSWORT_MINDESTLAENGE, type Abwesenheit, type Benutzer, type Rolle } from '../../shared/src/model';
@@ -48,6 +52,9 @@ export class Konten {
   /** Zwei-Faktor-Anmeldung (#242); ohne Verbindung gibt es keine. */
   zweifaktor: Zweifaktor | null = null;
   verbindeZweifaktor(z: Zweifaktor) { this.zweifaktor = z; }
+  /** Anmeldung über einen Anbieter (#241): aktive Einstellung, sonst null. */
+  private anbieter: () => Promise<OidcEinstellung | null> = async () => null;
+  verbindeAnbieter(f: () => Promise<OidcEinstellung | null>) { this.anbieter = f; }
   /** Nach richtigem Passwort, vor dem Code: kurzlebige Kennung je Anmeldung. */
   private zweiterSchritt = new Map<string, { benutzerId: string; email: string; ip: string; geraet: string; bis: number; versuche: number }>();
 
@@ -98,12 +105,44 @@ export class Konten {
       throw new Fachfehler(401, 'E-Mail-Adresse oder Passwort stimmen nicht.');
     }
     await this.sperre.erfolg(email, ip);
-    // Zwei-Faktor (#242): erst nach dem Code gibt es eine Sitzung.
-    if (this.zweifaktor && (await this.zweifaktor.aktiv(treffer.benutzer.id))) {
-      return { zweiterSchritt: this.merkeZweitenSchritt(treffer.benutzer.id, email, { ip, geraet }) } as const;
+    // Anbieter (#241): Passwort nur noch für Administratoren (Notzugang)?
+    const a = await this.anbieter();
+    if (a?.lokalNurAdmins && treffer.benutzer.rolle !== 'admin') throw new Fachfehler(403, `Bitte über „${a.knopf}“ anmelden.`);
+    return this.nachErstemFaktor(treffer.benutzer, { ip, geraet });
+  }
+
+  /** Nach Passwort oder Anbieter: Zwei-Faktor (#242) oder gleich die Sitzung. */
+  private async nachErstemFaktor(b: Benutzer, g: Geraet) {
+    if (this.zweifaktor && (await this.zweifaktor.aktiv(b.id))) {
+      return { zweiterSchritt: this.merkeZweitenSchritt(b.id, b.email, g) } as const;
     }
-    await this.repo.notiereAnmeldung(treffer.benutzer.id);
-    return { benutzer: treffer.benutzer, schluessel: await this.neueSitzung(treffer.benutzer.id, { ip, geraet }) };
+    await this.repo.notiereAnmeldung(b.id);
+    return { benutzer: b, schluessel: await this.neueSitzung(b.id, g) };
+  }
+
+  /**
+   * Anmeldung über einen Anbieter (#241): Zuordnung über die E-Mail-Adresse; unbekannte Adressen nur,
+   * wenn eingestellt. Mit Admin-Gruppe folgt die Rolle bei jeder Anmeldung der Gruppe (der letzte
+   * aktive Administrator bleibt Administrator).
+   */
+  async anmeldenMitAnbieter(id: AnbieterIdentitaet, e: OidcEinstellung, g: Geraet) {
+    const gruppeAdmin = e.adminGruppe ? id.gruppen.includes(e.adminGruppe) : null;
+    let b = (await this.repo.holeHash(id.email))?.benutzer;
+    if (!b) {
+      if (!e.anlegen) throw new Fachfehler(403, `Für ${id.email} gibt es im DMS keinen Zugang. Bitte einen Administrator, dich anzulegen.`);
+      b = await this.repo.legeBenutzerAn({ id: randomUUID(), email: id.email, name: id.name || id.email, rolle: gruppeAdmin ? 'admin' : gruppeAdmin === false ? 'mitglied' : e.standardrolle, passwortHash: null });
+      await this.spiegle(b, b.id);
+      log.info('Benutzer über den Anbieter angelegt', { email: b.email, rolle: b.rolle });
+    } else if (gruppeAdmin !== null && (gruppeAdmin ? 'admin' : 'mitglied') !== b.rolle && b.aktiv) {
+      if (!gruppeAdmin && (await this.anzahlAktiverAdmins(b.id)) === 0) {
+        log.warn('Rolle nicht aus der Gruppe übernommen: letzter aktiver Administrator', { email: b.email });
+      } else {
+        b = await this.spiegle(await this.repo.aendereBenutzer(b.id, { rolle: gruppeAdmin ? 'admin' : 'mitglied' }), b.id);
+        log.info('Rolle aus der Gruppe des Anbieters übernommen', { email: b.email, rolle: b.rolle });
+      }
+    }
+    if (!b.aktiv) throw new Fachfehler(403, 'Dieser Zugang ist deaktiviert.');
+    return this.nachErstemFaktor(b, g);
   }
 
   /**
@@ -542,6 +581,9 @@ export class Konten {
     await this.linkPruefen(schluessel);
     const hash = hasheSchluessel(schluessel);
     const l = (await this.repo.holeLink(hash))!;
+    // Anbieter (#241) mit „Passwort nur für Administratoren“: kein Passwort für Mitglieder.
+    const a = await this.anbieter();
+    if (a?.lokalNurAdmins && (await this.repo.holeBenutzer(l.benutzerId))?.rolle !== 'admin') throw new Fachfehler(403, `Bitte über „${a.knopf}“ anmelden.`);
     if (!(await this.repo.verbraucheLink(hash))) throw new Fachfehler(410, 'Dieser Link wurde schon benutzt.');
     await this.repo.setzeHash(l.benutzerId, await hashePasswort(passwort));
     await this.repo.loescheSitzungenVon(l.benutzerId);

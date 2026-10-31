@@ -117,6 +117,12 @@ export interface PapierkorbEintrag {
   erstellt: string; erstelltVon: string | null; geaendert: string; geaendertVon: string | null;
   geloescht: string; geloeschtVon: string | null; dokumente: number;
 }
+/** Anmeldung über einen Anbieter, OpenID Connect (#241). */
+export interface AnbieterEingabe {
+  aktiv: boolean; aussteller: string; clientId: string; clientSecret: string; clientSecretLoeschen: boolean; knopf: string;
+  anlegen: boolean; standardrolle: Rolle; adminGruppe: string; gruppenClaim: string; lokalNurAdmins: boolean; abmeldenBeimAnbieter: boolean;
+}
+export type AnbieterStand = Omit<AnbieterEingabe, 'clientSecret' | 'clientSecretLoeschen'> & { secretGesetzt: boolean; rueckkehr: string; abmeldenZurueck: string };
 /** Zwei-Faktor-Anmeldung (#242). */
 export interface ZweifaktorStand { aktiv: boolean; seit: string | null; codesUebrig: number; pflicht: boolean }
 export interface ZweifaktorPflicht { admin: boolean; mitglied: boolean }
@@ -124,6 +130,8 @@ export interface KontoStatus {
   einrichtungNoetig: boolean; mail: boolean; benutzer: Benutzer | null;
   /** Zwei-Faktor (#242): eingerichtet; für die Rolle vorgeschrieben, aber noch nicht eingerichtet. */
   zweifaktor?: { aktiv: boolean; fehlt: boolean } | null;
+  /** Anmeldung über einen Anbieter (#241), nur ohne Anmeldung. */
+  anbieter?: { knopf: string; lokalNurAdmins: boolean } | null;
   /** Gibt es einen Schlüssel, um Passwörter zu speichern (#39, #46)? */
   passwoerterMoeglich?: boolean;
   /** Ein Administrator agiert gerade als dieser Benutzer. */
@@ -255,7 +263,11 @@ export const api = {
   zweifaktorPflichtSetzen: (p: Partial<ZweifaktorPflicht>) => anfrage<ZweifaktorPflicht>('PUT', '/api/werkbank/zweifaktor', p),
   benutzerZweifaktor: (id: string) => anfrage<Omit<ZweifaktorStand, 'pflicht'>>('GET', `/api/benutzer/${id}/zweifaktor`),
   benutzerZweifaktorZuruecksetzen: (id: string) => anfrage<null>('POST', `/api/benutzer/${id}/zweifaktor/zuruecksetzen`),
-  abmelden: () => anfrage<null>('POST', '/api/konto/abmelden'),
+  /** Über einen Anbieter angemeldet (#241): Adresse zum Abmelden dort. */
+  abmelden: () => anfrage<{ abmelden?: string } | null>('POST', '/api/konto/abmelden'),
+  anbieter: () => anfrage<AnbieterStand>('GET', '/api/werkbank/anbieter'),
+  anbieterSetzen: (e: Partial<AnbieterEingabe>) => anfrage<AnbieterStand>('PUT', '/api/werkbank/anbieter', e),
+  anbieterPruefen: () => anfrage<{ aussteller: string; abmelden: boolean; schluessel: number }>('POST', '/api/werkbank/anbieter/pruefen'),
   passwortVergessen: (email: string) => anfrage<null>('POST', '/api/konto/passwort-vergessen', { email }),
   linkPruefen: (s: string) => anfrage<{ email: string; name: string; zweck: 'einladung' | 'zuruecksetzen' }>('GET', `/api/konto/link/${encodeURIComponent(s)}`),
   passwortSetzen: (schluessel: string, passwort: string) => anfrage<{ benutzer?: Benutzer; zweiterSchritt?: string }>('POST', '/api/konto/passwort-setzen', { schluessel, passwort }),

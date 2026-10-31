@@ -10,6 +10,7 @@ import type { SitzungIntern } from './konto-repo';
 import { openapi, v1Routen } from './api-v1';
 import type { ApiSchluessel, ApiSchluesselDienst } from './apischluessel';
 import type { Designs } from './designs';
+import type { Oidc } from './oidc';
 import { ALS_KOPF, KONSOLE_KOPF, istLoopback, konsolenBenutzer, type Konsolenzugang } from './konsole';
 import type { Messung } from './messung';
 import { eigeneVersion, standKennung, uebersicht, versionsabgleich, type SystemQuelle } from './system';
@@ -60,6 +61,8 @@ export interface Anfrage {
   geraet?: string;
   /** Angemeldet über einen API-Schlüssel (nur /api/v1). */
   apiSchluessel?: ApiSchluessel;
+  /** Kopf Cookie, für weitere Cookies als die Sitzung (#241). */
+  cookieKopf?: string;
   /** Direkte Gegenstelle der Verbindung (ohne Proxy-Köpfe) – für den Konsolenzugang (#244). */
   peer?: string;
   /** Über den Befehl `dms` im Container (#244). */
@@ -75,7 +78,13 @@ export interface Datei {
   anzeigen: boolean;
   groesse: number;
 }
-export interface Antwort { status?: number; body?: unknown; sitzungSetzen?: string | null; datei?: Datei }
+export interface Antwort {
+  status?: number; body?: unknown; sitzungSetzen?: string | null; datei?: Datei;
+  /** Weiterleitung (302), z. B. zum Anbieter (#241). */
+  weiterleiten?: string;
+  /** Weitere Cookies (Set-Cookie). */
+  cookies?: string[];
+}
 export interface Route {
   methode: 'GET' | 'POST' | 'PUT' | 'DELETE';
   pfad: string;
@@ -121,6 +130,8 @@ export interface RoutenExtras {
   apiSchluessel?: ApiSchluesselDienst;
   /** Befehl `dms` im Container (#244). */
   konsole?: Konsolenzugang;
+  /** Anmeldung über einen Anbieter (#241). */
+  oidc?: Oidc;
   /** Wartungsmodus (#102). */
   wartung?: Wartung;
   /** Notfallzugang über eine RESCUE-Datei (#108). */
@@ -201,6 +212,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   /** Benutzer mit ihren weiteren Rollen (#27). */
   const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.weitereRollen()).get(b.id) ?? [] });
   const sicherung = () => { if (!x.sicherung) throw new Fachfehler(404, 'Sicherungen sind nicht eingerichtet.'); return x.sicherung; };
+  const oidc = () => { if (!x.oidc) throw new Fachfehler(404, 'Die Anmeldung über einen Anbieter ist nicht eingerichtet.'); return x.oidc; };
+  const adresse = () => (x.betrieb?.adresseFuerLinks() ?? '').replace(/\/+$/, '');
   const zf = () => { if (!konten.zweifaktor) throw new Fachfehler(404, 'Die Zwei-Faktor-Anmeldung ist nicht eingerichtet.'); return konten.zweifaktor; };
   const postfaecher = () => { if (!x.postfaecher) throw new Fachfehler(404, 'Postfächer sind nicht eingerichtet.'); return x.postfaecher; };
   /** Demo-Dokumente (#248): freier Platz bei den Dateien; frei bleiben müssen Mindest-Speicherplatz der Sicherung bzw. die Speicherplatz-Grenze. */
@@ -245,6 +258,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       einrichtung: x.einrichtung ? { phase: 'konto', code: x.einrichtung.codeNoetig, assistent: a.benutzer?.rolle === 'admin' && !a.sitzungsDaten?.vertretungId ? (await x.einrichtung.stand()).offen : false } : null,
       mail: konten.mailAktiv,
       benutzer: a.benutzer ?? null,
+      // Anmeldung über einen Anbieter (#241): Knopf auf der Anmeldeseite.
+      anbieter: !a.benutzer && x.oidc ? await x.oidc.bereit().then((e) => (e ? { knopf: e.knopf, lokalNurAdmins: e.lokalNurAdmins } : null)) : null,
       // Zwei-Faktor (#242): eingerichtet? Für die Rolle vorgeschrieben, aber noch nicht eingerichtet?
       zweifaktor: a.benutzer && konten.zweifaktor ? { aktiv: await konten.zweifaktor.aktiv(a.benutzer.id), fehlt: !a.sitzungsDaten?.vertretungId && await konten.zweifaktor.fehlt(a.benutzer) } : null,
       // Ohne Schlüssel (Werkbank → Verschlüsselung) lassen sich keine Passwörter speichern (#39, #46).
@@ -304,6 +319,38 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       L.konto.info(r.wiederherstellung ? 'Angemeldet mit Wiederherstellungscode' : 'Angemeldet (zwei Faktoren)', { email: r.benutzer.email, ip: a.ip, geraet: a.geraet });
       return { body: { benutzer: r.benutzer, wiederherstellung: r.wiederherstellung }, sitzungSetzen: r.schluessel };
     } },
+    /* ---------- Anmeldung über einen Anbieter, OpenID Connect (#241) ---------- */
+    { methode: 'GET', pfad: '/api/konto/anbieter/start', zugang: 'offen', handler: async () => {
+      try {
+        const s = await oidc().start(`${adresse()}/api/konto/anbieter/rueckkehr`);
+        return { weiterleiten: s.url, cookies: [kurzCookie(BINDUNG_COOKIE, s.bindung, 600, '/api/konto/anbieter')] };
+      } catch (e) {
+        L.konto.warn('Anmeldung über den Anbieter nicht begonnen', { fehler: (e as Error).message });
+        return { weiterleiten: `/?anmeldefehler=${encodeURIComponent((e as Error).message)}` };
+      }
+    } },
+    { methode: 'GET', pfad: '/api/konto/anbieter/rueckkehr', zugang: 'offen', handler: async (a) => {
+      const raus = [kurzCookie(BINDUNG_COOKIE, '', 0, '/api/konto/anbieter')];
+      try {
+        const id = await oidc().rueckkehr(a.query, leseCookie(a.cookieKopf, BINDUNG_COOKIE));
+        const r = await konten.anmeldenMitAnbieter(id, (await oidc().bereit())!, { ip: a.ip, geraet: a.geraet ?? '' });
+        raus.push(kurzCookie(ANBIETER_COOKIE, '1', SITZUNG_SEKUNDEN, '/'));
+        if ('zweiterSchritt' in r && r.zweiterSchritt) {
+          L.konto.info('Anbieter bestätigt, Zwei-Faktor folgt', { email: id.email, ip: a.ip });
+          return { weiterleiten: `/anmelden/code#${r.zweiterSchritt}`, cookies: raus };
+        }
+        if (!r.benutzer || !r.schluessel) throw new Fachfehler(500, 'Anmeldung unvollständig.');
+        await nurAdminsInWartung({ benutzer: r.benutzer, schluessel: r.schluessel });
+        L.konto.info('Angemeldet über den Anbieter', { email: r.benutzer.email, ip: a.ip, geraet: a.geraet });
+        return { weiterleiten: '/', sitzungSetzen: r.schluessel, cookies: raus };
+      } catch (e) {
+        L.konto.warn('Anmeldung über den Anbieter fehlgeschlagen', { ip: a.ip, grund: (e as Error).message });
+        return { weiterleiten: `/?anmeldefehler=${encodeURIComponent((e as Error).message)}`, cookies: raus };
+      }
+    } },
+    { methode: 'GET', pfad: '/api/werkbank/anbieter', zugang: 'admin', handler: async () => ok({ ...(await oidc().ansicht()), rueckkehr: `${adresse()}/api/konto/anbieter/rueckkehr`, abmeldenZurueck: `${adresse()}/` }) },
+    { methode: 'PUT', pfad: '/api/werkbank/anbieter', zugang: 'admin', handler: async (a) => ok({ ...(await oidc().speichere(a.body, ich(a).email)), rueckkehr: `${adresse()}/api/konto/anbieter/rueckkehr`, abmeldenZurueck: `${adresse()}/` }) },
+    { methode: 'POST', pfad: '/api/werkbank/anbieter/pruefen', zugang: 'admin', handler: async () => ok(await oidc().pruefe()) },
     /* ---------- Befehl dms im Container (#244) ---------- */
     { methode: 'POST', pfad: '/api/konsole/passwort', zugang: 'offen', konsole: true, handler: async (a) => {
       const z = await konten.setzePasswortDirekt(b(a).email, b(a).passwort);
@@ -339,7 +386,9 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       }
       await konten.abmelden(a.sitzung);
       if (a.benutzer) L.konto.info('Abgemeldet', { email: a.benutzer.email });
-      return { status: 204, sitzungSetzen: null };
+      // Über einen Anbieter angemeldet (#241): auch dort abmelden, wenn eingestellt.
+      const beimAnbieter = leseCookie(a.cookieKopf, ANBIETER_COOKIE) === '1' && x.oidc ? await x.oidc.abmeldeUrl(`${adresse()}/`) : null;
+      return { status: beimAnbieter ? 200 : 204, body: beimAnbieter ? { abmelden: beimAnbieter } : undefined, sitzungSetzen: null, cookies: [kurzCookie(ANBIETER_COOKIE, '', 0, '/')] };
     } },
     { methode: 'POST', pfad: '/api/konto/passwort-vergessen', zugang: 'offen', handler: async (a) => {
       await konten.passwortVergessen(b(a), log);
@@ -1106,6 +1155,14 @@ export function leseCookie(header: string | undefined, name: string): string | u
 }
 
 /** Set-Cookie für die Sitzung; `null` löscht sie. HttpOnly: kein Zugriff aus Skripten. */
+/** Hilfs-Cookies der Anmeldung über einen Anbieter (#241). */
+export const BINDUNG_COOKIE = 'dms_anbieter_bindung';
+export const ANBIETER_COOKIE = 'dms_anbieter';
+export function kurzCookie(name: string, wert: string, sekunden: number, pfad: string): string {
+  // Secure ergänzt http.ts wie beim Sitzungs-Cookie.
+  return [`${name}=${encodeURIComponent(wert)}`, `Path=${pfad}`, 'HttpOnly', 'SameSite=Lax', `Max-Age=${sekunden}`].join('; ');
+}
+
 export function sitzungsCookie(schluessel: string | null, sicher: boolean): string {
   const teile = [`${SITZUNG_COOKIE}=${schluessel ? encodeURIComponent(schluessel) : ''}`, 'Path=/', 'HttpOnly', 'SameSite=Lax', `Max-Age=${schluessel ? SITZUNG_SEKUNDEN : 0}`];
   if (sicher) teile.push('Secure');

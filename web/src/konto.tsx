@@ -70,11 +70,15 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const abmelden = useCallback(async () => {
-    await api.abmelden().catch(() => {});
+    const r = await api.abmelden().catch(() => null);
+    // Über einen Anbieter angemeldet (#241): auch dort abmelden.
+    if (r?.abmelden) { location.href = r.abmelden; return; }
     setStatus((s) => (s ? { ...s, benutzer: null } : s));
     geheZu('/', true);
   }, []);
 
+  // Anbieter bestätigt, jetzt der Code (#241, #242).
+  if (pfad === '/anmelden/code' && location.hash.length > 1) return <CodeSchritt kennung={location.hash.slice(1)} fertig={async () => { geheZu('/', true); await laden(); }} zurueck={() => geheZu('/', true)} />;
   if (pfad.startsWith('/passwort/')) return <PasswortSetzen schluessel={decodeURIComponent(pfad.slice('/passwort/'.length))} fertig={laden} />;
   if (fehler) return <Karte titel="Keine Verbindung"><p className="hinweis schlecht">{fehler}</p><button className="knopf" onClick={() => void laden()}>Erneut versuchen</button></Karte>;
   if (!status) return <p className="leise mittig">Lade …</p>;
@@ -82,7 +86,7 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   if (status.wiederherstellung?.laeuft || status.wiederherstellung?.abschluss) return <Wiederherstellungsbildschirm fertig={() => void laden()} />;
   // Einrichtungsassistent (#119): ohne Datenbank, mit Code, Mandant und Administrator …
   if (status.einrichtungNoetig || status.einrichtung?.phase === 'datenbank' || status.einrichtung?.phase === 'startet') return <Einrichtungsassistent status={status} fertig={laden} />;
-  if (!status.benutzer) return <Anmelden mail={status.mail} wartung={status.wartung} fertig={laden} />;
+  if (!status.benutzer) return <Anmelden mail={status.mail} wartung={status.wartung} anbieter={status.anbieter ?? null} fertig={laden} />;
   // Zwei-Faktor vorgeschrieben (#242), aber noch nicht eingerichtet: erst einrichten.
   if (status.zweifaktor?.fehlt) return (
     <Karte titel="Zwei-Faktor-Anmeldung einrichten" unter="Für deine Rolle ist neben dem Passwort ein Code aus einer App auf dem Handy vorgeschrieben. Richte sie jetzt ein – es dauert eine Minute.">
@@ -160,7 +164,14 @@ function CodeSchritt({ kennung, fertig, zurueck }: { kennung: string; fertig: ()
   );
 }
 
-function Anmelden({ mail, wartung, fertig }: { mail: boolean; wartung?: WartungOeffentlich | null; fertig: () => Promise<void> }) {
+function Anmelden({ mail, wartung, anbieter, fertig }: { mail: boolean; wartung?: WartungOeffentlich | null; anbieter: KontoStatus['anbieter']; fertig: () => Promise<void> }) {
+  // Fehler der Anmeldung über einen Anbieter (#241) kommen als ?anmeldefehler= zurück.
+  const [anbieterFehler] = useState(() => {
+    const m = new URLSearchParams(location.search).get('anmeldefehler');
+    if (m) history.replaceState(null, '', location.pathname);
+    return m;
+  });
+  const [mitPasswort, setMitPasswort] = useState(false);
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
   const [vergessen, setVergessen] = useState(false);
@@ -191,13 +202,22 @@ function Anmelden({ mail, wartung, fertig }: { mail: boolean; wartung?: WartungO
   return (
     <Karte titel="Anmelden">
       <WartungsHinweis start={wartung} />
+      {anbieter && <>
+        <a id="anmelden-anbieter" className="knopf primaer breit" href="/api/konto/anbieter/start">{anbieter.knopf}</a>
+        {anbieterFehler && <p className="fehlertext" role="alert">{anbieterFehler}</p>}
+        {anbieter.lokalNurAdmins && !mitPasswort
+          ? <button className="textknopf" onClick={() => setMitPasswort(true)}>Als Administrator mit Passwort anmelden</button>
+          : <p className="trenner">oder mit Passwort</p>}
+      </>}
+      {(!anbieter || !anbieter.lokalNurAdmins || mitPasswort) && <>
       <form className="stapel" onSubmit={f.absenden}>
-        <label className="eigenschaft"><span>E-Mail-Adresse</span><input id="anmelden-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" autoFocus required /></label>
+        <label className="eigenschaft"><span>E-Mail-Adresse</span><input id="anmelden-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" autoFocus={!anbieter} required /></label>
         <label className="eigenschaft"><span>Passwort</span><input id="anmelden-passwort" type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" required /></label>
         {f.fehler && <p className="fehlertext">{f.fehler}</p>}
-        <button className="knopf primaer" disabled={f.sendet}>{f.sendet ? 'Melde an …' : 'Anmelden'}</button>
+        <button className={`knopf ${anbieter ? '' : 'primaer'}`} disabled={f.sendet}>{f.sendet ? 'Melde an …' : 'Anmelden'}</button>
       </form>
       <button className="textknopf" onClick={() => setVergessen(true)}>Passwort vergessen?</button>
+      </>}
     </Karte>
   );
 }

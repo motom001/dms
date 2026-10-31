@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { api, type AnmeldeschutzStand, type SperrEinstellung, type ZweifaktorPflicht } from '../api';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { api, type AnbieterEingabe, type AnbieterStand, type AnmeldeschutzStand, type SperrEinstellung, type ZweifaktorPflicht } from '../api';
 import { Hilfe } from '../Hilfe';
 
 /** Werkbank → Anmeldeschutz (#240): Fehlversuche je Konto und je IP, gesperrte IPs, Ausnahmen. */
@@ -85,6 +85,7 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
         <div className="knoepfe"><button className="knopf primaer">Speichern</button></div>
       </form>
       <ZweifaktorPflichtBlatt />
+      <AnbieterBlatt />
     </div>
   );
 }
@@ -107,5 +108,62 @@ function ZweifaktorPflichtBlatt() {
       </>}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
     </div>
+  );
+}
+
+/** Anmeldung über einen Anbieter per OpenID Connect (#241): Entra ID, Google, Keycloak, Authentik … */
+function AnbieterBlatt() {
+  const [stand, setStand] = useState<AnbieterStand | null>(null);
+  const [e, setE] = useState<Omit<AnbieterEingabe, 'clientSecretLoeschen'> | null>(null);
+  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const [sendet, setSendet] = useState(false);
+  const uebernehmen = (s: AnbieterStand) => { setStand(s); const { secretGesetzt: _s, rueckkehr: _r, abmeldenZurueck: _a, ...rest } = s; setE({ ...rest, clientSecret: '' }); };
+  useEffect(() => { api.anbieter().then(uebernehmen).catch((x) => setMeldung({ art: 'schlecht', text: (x as Error).message })); }, []);
+  async function tu(f: () => Promise<string>) {
+    setSendet(true); setMeldung(undefined);
+    try { setMeldung({ art: 'gut', text: await f() }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
+  }
+  const speichern = () => tu(async () => { uebernehmen(await api.anbieterSetzen({ ...e!, clientSecret: e!.clientSecret || undefined })); return 'Gespeichert.'; });
+  const pruefen = () => tu(async () => {
+    uebernehmen(await api.anbieterSetzen({ ...e!, aktiv: stand!.aktiv, clientSecret: e!.clientSecret || undefined }));
+    const r = await api.anbieterPruefen();
+    return `Verbindung klappt: ${r.aussteller}, ${r.schluessel} ${r.schluessel === 1 ? 'Schlüssel' : 'Schlüssel'}${r.abmelden ? ', Abmelden beim Anbieter möglich' : ', ohne Abmelden beim Anbieter'}.`;
+  });
+  if (!stand || !e) return <div className="blatt"><h2 className="h3">Anmeldung über einen Anbieter</h2>{meldung ? <p className="fehlertext">{meldung.text}</p> : <p className="leise">Lade …</p>}</div>;
+  const feld = (k: 'aussteller' | 'clientId' | 'knopf' | 'adminGruppe' | 'gruppenClaim', titel: ReactNode, platzhalter = '') => (
+    <label className="eigenschaft"><span>{titel}</span><input id={`oidc-${k}`} value={e[k]} placeholder={platzhalter} onChange={(x) => setE({ ...e, [k]: x.target.value })} /></label>
+  );
+  return (
+    <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }}>
+      <h2 className="h3">Anmeldung über einen Anbieter <Hilfe ort="werkbank.anbieter" /></h2>
+      <p className="leise">Anmelden mit dem Konto eines Identitätsanbieters per OpenID Connect – z. B. Microsoft Entra ID (Microsoft 365), Google Workspace, Keycloak, Authentik oder Authelia. Zugeordnet wird über die E-Mail-Adresse.</p>
+      <p className="klein">Beim Anbieter als Weiterleitungs-URI eintragen: <code className="mono">{stand.rueckkehr}</code><br />
+        Nach dem Abmelden zurück zu: <code className="mono">{stand.abmeldenZurueck}</code></p>
+      <div className="raster">
+        {feld('aussteller', <>Adresse des Anbieters <small>Issuer, z. B. https://login.microsoftonline.com/&lt;Tenant&gt;/v2.0</small></>, 'https://…')}
+        {feld('clientId', 'Client-ID')}
+        <label className="eigenschaft"><span>Client-Secret <small>{stand.secretGesetzt ? 'gespeichert – leer lassen, um es zu behalten' : 'leer für öffentliche Clients'}</small></span>
+          <input id="oidc-secret" type="password" autoComplete="new-password" value={e.clientSecret} onChange={(x) => setE({ ...e, clientSecret: x.target.value })} /></label>
+        {feld('knopf', 'Beschriftung des Knopfes')}
+      </div>
+      <label className="haken"><input id="oidc-anlegen" type="checkbox" checked={e.anlegen} onChange={(x) => setE({ ...e, anlegen: x.target.checked })} /><span>Unbekannte Adressen als neue Benutzer anlegen
+        <small className="leise">sonst nur Benutzer, die es im DMS schon gibt</small></span></label>
+      {e.anlegen && <label className="eigenschaft"><span>Rolle neuer Benutzer</span>
+        <select id="oidc-rolle" value={e.standardrolle} onChange={(x) => setE({ ...e, standardrolle: x.target.value === 'admin' ? 'admin' : 'mitglied' })}><option value="mitglied">Mitglied</option><option value="admin">Administrator</option></select></label>}
+      <div className="raster">
+        {feld('adminGruppe', <>Gruppe für Administratoren <small>leer: Rollen nur im DMS pflegen</small></>, 'z. B. dms-admins oder Objekt-ID')}
+        {feld('gruppenClaim', <>Claim mit den Gruppen <small>meist groups</small></>, 'groups')}
+      </div>
+      <label className="haken"><input id="oidc-lokal" type="checkbox" checked={e.lokalNurAdmins} onChange={(x) => setE({ ...e, lokalNurAdmins: x.target.checked })} /><span>Passwort-Anmeldung nur noch für Administratoren
+        <small className="leise">als Notzugang, falls der Anbieter ausfällt</small></span></label>
+      <label className="haken"><input id="oidc-abmelden" type="checkbox" checked={e.abmeldenBeimAnbieter} onChange={(x) => setE({ ...e, abmeldenBeimAnbieter: x.target.checked })} /><span>Beim Abmelden auch beim Anbieter abmelden</span></label>
+      <label className="haken"><input id="oidc-aktiv" type="checkbox" checked={e.aktiv} onChange={(x) => setE({ ...e, aktiv: x.target.checked })} /><span>Eingeschaltet – Knopf auf der Anmeldeseite</span></label>
+      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
+      <div className="knoepfe">
+        {stand.secretGesetzt && <button type="button" className="knopf gefahr-rand" disabled={sendet} onClick={() => void tu(async () => { uebernehmen(await api.anbieterSetzen({ clientSecretLoeschen: true })); return 'Client-Secret gelöscht.'; })}>Secret löschen</button>}
+        <button type="button" className="knopf" disabled={sendet || !e.aussteller} onClick={() => void pruefen()}>Verbindung prüfen</button>
+        <button className="knopf primaer" disabled={sendet}>Speichern</button>
+      </div>
+    </form>
   );
 }
