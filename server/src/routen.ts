@@ -639,6 +639,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/fehler-neu', zugang: 'admin', handler: async (a) => ok(await ocr().fehlerNeuStarten(ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/texterkennung/auftraege/abbrechen', zugang: 'admin', handler: async (a) => ok(await ocr().abbrechen(b(a).ids, ich(a).email)) },
     { methode: 'PUT', pfad: '/api/werkbank/texterkennung', zugang: 'admin', handler: async (a) => { await ocr().speichere(a.body); return ok(await ocr().status()); } },
+    /* ---------- Auswahlfilter am Referenzfeld (#172) ---------- */
+    { methode: 'POST', pfad: '/api/werkbank/auswahlfilter/zaehlen', zugang: 'admin', handler: async (a) => ok(await dienst.zaehleAuswahl(a.body, ich(a).id)) },
     /* ---------- Nummernkreise (#171) ---------- */
     { methode: 'GET', pfad: '/api/werkbank/nummernkreise', zugang: 'admin', handler: async () => ok(await dienst.listeNummernkreise()) },
     { methode: 'POST', pfad: '/api/werkbank/nummernkreise', zugang: 'admin', handler: async (a) => {

@@ -28,6 +28,9 @@ Hinter Dokumenten- und Verknüpfungsregistern steht, wie viel darin liegt. Ein r
 3. Fülle die Felder aus. Felder mit **\*** sind Pflichtfelder. Unter manchen Feldern steht ein Hinweis, was hineingehört.
 4. Klicke auf **Mappe speichern**.
 
+!!! info "Nur passende Mappen"
+    Manche Verweisfelder bieten nur bestimmte Mappen an, z. B. beim Feld *Arzt* nur Vertragspartner, die Ärzte sind. Steht neben einer gewählten Mappe „passt nicht mehr zum Filter“, bleibt sie gültig; neu wählen kannst du nur, was passt.
+
 !!! info "Fortlaufende Nummern"
     Steht an einem Feld „Wird beim Speichern vergeben“, bekommt die Mappe dort beim Speichern automatisch die nächste Nummer, z. B. eine Rechnungsnummer. Die Nummer lässt sich danach nicht mehr ändern.
 

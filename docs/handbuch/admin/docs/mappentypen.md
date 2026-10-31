@@ -66,6 +66,16 @@ Ein Feld vom Typ **Referenz** verweist auf Mappen eines anderen Typs (oder desse
     - **Zugehörigkeit** – „gehört zu“: Die Rechnung gehört zum Vertrag. Zählt später bei Auswertungen wie „alles zum Haus“ mit.
     - **Bezug** – „hat zu tun mit“: Die Rechnung kommt von diesem Aussteller. Nur eine Verknüpfung.
 
+#### Auswahl einschränken
+
+Unter dem Ziel-Mappentyp legst du mit **Nur Mappen, die …** fest, welche Mappen das Feld anbietet – etwa beim Feld *Arzt* im Arztbericht nur Vertragspartner mit *Art = Arzt*. Die Bedingungen funktionieren wie bei [Sichten](sichten.md): Felder des Zieltyps und Systemwerte (angelegt, geändert, von wem), feste und dynamische Werte (heute ± n, aktueller Benutzer, seine Rollen). Mehrere Bedingungen gelten zusammen. Darunter steht, wie viele Mappen passen, z. B. „12 von 85 Vertragspartner passen“.
+
+- In der Mappe bietet die Suche im Feld nur passende Mappen an – und nur solche, die der Benutzer lesen darf. **+ … anlegen** belegt die neue Mappe mit dem vor, was sich eindeutig aus dem Filter ergibt (z. B. *Art = Arzt*).
+- **Streng:** Ein neuer oder geänderter Wert muss passen, sonst lehnt das DMS das Speichern ab – auch über die [Schnittstelle](api.md).
+- **Bestehende Werte bleiben gültig**, auch wenn die Ziel-Mappe später nicht mehr passt oder du den Filter änderst. Am Feld steht dann „passt nicht mehr zum Filter“.
+- Beim Speichern des Mappentyps meldet das DMS Bedingungen auf Felder, die es im Zieltyp nicht (mehr) gibt.
+- Nicht bei Feldern, die auf jede Mappe zeigen.
+
 Auf eine Mappe, auf die noch verwiesen wird, kann niemand sie löschen.
 
 ### Passwortfelder

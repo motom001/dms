@@ -1,3 +1,4 @@
+import { AuswahlFilter } from '../werkbank/Sichten';
 import { kreisImStandard } from '../../../shared/src/nummernkreis';
 import { useEffect, useRef, useState } from 'react';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
@@ -455,6 +456,12 @@ function FeldZeile(p: {
       <label className="haken"><input type="radio" name={id('va')} checked={f.verweisart !== 'zugehoerigkeit'} onChange={() => setze({ verweisart: 'bezug' })} /><span>Bezug<small className="hilfe">nur verknüpft, z. B. Aussteller</small></span></label>
     </fieldset>
     <div className="eigenschaft unten">{haken('mehrfach', 'Mehrere Mappen erlaubt', 'z. B. eine Zahlung für mehrere Rechnungen')}</div>
+    {/* Auswahlfilter (#172): nicht für „jede Mappe“. */}
+    {f.zielTyp && f.zielTyp !== '*' && (() => {
+      const ziel = p.typen.find((t) => t.id === f.zielTyp);
+      return ziel ? <div className="breit"><AuswahlFilter ziel={ziel} bedingungen={f.auswahlFilter ?? []} setze={(b) => setze({ auswahlFilter: b })} /></div>
+        : f.zielTyp === p.eigeneId ? <p className="leise klein breit">Einen Auswahlfilter auf diesen Typ selbst kannst du nach dem ersten Speichern festlegen.</p> : null;
+    })()}
   </div>;
 
   let standard = null;

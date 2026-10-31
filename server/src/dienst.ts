@@ -14,7 +14,7 @@ import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
 import type { Einstellungen } from './einstellungen';
 import { istUuid, type NeueMappe, type PapierkorbEintrag, type Repo, type Rueckverweis, type SortierungIntern } from './repo';
 import {
-  bereinigeBedingungen, filterFuer, heuteIn, kinderVon, klauselnFuer, verschiebe, waereKreis, wirksameTypen,
+  auswahlKlausel, auswahlProbleme, bereinigeAuswahlfilter, erfuellt, bereinigeBedingungen, filterFuer, heuteIn, kinderVon, klauselnFuer, verschiebe, waereKreis, wirksameTypen,
   type Aufloesung, type Sicht, type SichtDaten,
 } from '../../shared/src/sichten';
 import type { Readable } from 'node:stream';
@@ -42,6 +42,8 @@ export interface Zugriff {
   lesen: Lesefilter | null;
 }
 export const NICHT_SICHTBAR = 'nicht sichtbare Mappe';
+/** Auswahlfilter (#172) zählen nichts – nur Bedingungen auf Felder. */
+const KEINE_ZAEHLUNG = { dokumente: () => 0, verknuepfungen: () => 0 };
 const VERBOTEN: Record<Recht, string> = {
   C: 'Mappen dieses Typs darfst du nicht anlegen.',
   R: 'Diese Mappe darfst du nicht sehen.',
@@ -76,6 +78,8 @@ export function bereinigeFeld(e: unknown): Feld {
     optionen: Array.isArray(f.optionen) ? f.optionen.map(text).filter(Boolean) : [],
     mehrfach: !!f.mehrfach && (typ === 'auswahl' || typ === 'referenz'),
     zielTyp: typ === 'referenz' ? text(f.zielTyp) : '',
+    // Auswahlfilter (#172): nur an Referenzfeldern mit festem Zieltyp.
+    ...(typ === 'referenz' && text(f.zielTyp) && text(f.zielTyp) !== '*' && bereinigeAuswahlfilter(f.auswahlFilter).length ? { auswahlFilter: bereinigeAuswahlfilter(f.auswahlFilter) } : {}),
     verweisart: f.verweisart === 'zugehoerigkeit' ? 'zugehoerigkeit' : 'bezug',
     // Fristen (#129): nur an Datumsfeldern.
     ...(typ === 'datum' && bereinigeFrist(f.frist) ? { frist: bereinigeFrist(f.frist) } : {}),
@@ -980,6 +984,7 @@ export class Dienst {
       existiertTyp: (id) => alle.some((t) => t.id === id),
       felderVon: (id) => alle.find((t) => t.id === id)?.felder,
       nummernkreise: (await this.repo.listeNummernkreise()).map((k) => k.schluessel),
+      auswahlProbleme: (bed, felder) => auswahlProbleme(bed, { felder }),
     });
     if (!istOk(p)) throw new Fachfehler(422, 'Der Mappentyp ist so nicht gültig.', p);
   }
@@ -1127,6 +1132,8 @@ export class Dienst {
       erinnerungen: await this.repo.erinnerungen({ mappeId: id }),
       /** Titel und Typ der Mappen, auf die diese verweist (nicht lesbare ohne Titel). */
       bezuege: await this.maskiereBezuege(z, await this.repo.bezuege(ziele)),
+      /** Verweise, die nicht (mehr) zum Auswahlfilter ihres Felds passen (#172). */
+      unpassend: await this.unpassendeVerweise(typ, mappe.werte, z?.ich.id ?? ''),
     };
   }
 
@@ -1149,6 +1156,14 @@ export class Dienst {
     const sichten = await this.repo.listeSichten();
     // „typ:<id>“: alle Mappen eines Typs, ohne Bedingungen einer Sicht (z. B. Auswahl eines Verweises).
     const nurTyp = String(q.sicht ?? '').startsWith('typ:') ? String(q.sicht).slice(4) : null;
+    // „feld:<typId>:<feldKey>“ (#172): Auswahl für ein Referenzfeld – Zieltyp mit dem Auswahlfilter des Felds.
+    const auswahl = String(q.sicht ?? '').startsWith('feld:') ? (() => {
+      const [, typId, key] = String(q.sicht).split(':');
+      const f = typen.get(typId)?.felder.find((x) => x.key === key && x.typ === 'referenz');
+      const ziel = f ? typen.get(f.zielTyp ?? '') : undefined;
+      if (!f || !ziel) throw new Fachfehler(404, 'Dieses Referenzfeld gibt es nicht.');
+      return { f, ziel };
+    })() : null;
     // Verborgene Sichten (#148) gibt es für den Benutzer nicht; ihre Mappen fehlen auch in der Elternsicht.
     const verborgen = this.verborgeneSichten(sichten, z);
     const sicht = nurTyp ? undefined : sichten.find((x) => x.id === q.sicht && !verborgen.has(x.id));
@@ -1168,6 +1183,8 @@ export class Dienst {
         ? await this.repo.seite({ favoriten: { benutzerId: ich.id }, suche, volltext, notizen, von, anzahl, sortierung, lesen })
       : link
         ? await this.repo.seite({ klauseln: [{ typen: [link.typ.id], filter: filterFuer(link, [link.typ], await this.aufloesung(ich.id)) }], suche, volltext, notizen, von, anzahl, sortierung, lesen })
+      : auswahl
+        ? await this.repo.seite({ klauseln: [auswahlKlausel(auswahl.f.auswahlFilter ?? [], auswahl.ziel, await this.aufloesung(ich.id))], suche, volltext, notizen, von, anzahl, sortierung, lesen })
       : sicht
         ? await this.repo.seite({ klauseln: klauselnFuer(sichten, sicht.id, typen, await this.aufloesung(ich.id), verborgen), suche, volltext, notizen, von, anzahl, sortierung, lesen })
         : await this.repo.seite({ typId: nurTyp ?? q.sicht, suche, volltext, notizen, von, anzahl, sortierung, lesen });
@@ -1870,6 +1887,7 @@ export class Dienst {
       if (fehlt) throw new Fachfehler(409, `Den Nummernkreis „${fehlt.kreis}“ für „${typ.felder.find((f) => f.key === fehlt.feldKey)?.label}“ gibt es nicht mehr. Bitte einen Administrator.`);
     }
     await this.pruefeVerweisziele(z, typ, werte, {});
+    await this.pruefeAuswahlfilter(typ, werte, {}, benutzerId);
     await this.pruefeWerte(typ, werte);
     const id = istUuid(e.id) && !(await this.repo.holeMappe(e.id)) ? e.id : randomUUID();
     const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), benutzerId, demo, null, nummern.length ? { felder: nummern, jetzt: new Date() } : undefined);
@@ -1882,6 +1900,57 @@ export class Dienst {
     if (!demo && fristFelder(typ).length) await this.fristenAbgleichen({ mappeIds: [m.id] });
     const hinweis = z ? await this.hinweisDanach(z, m.id) : undefined;
     return { ...m, titel, ...(hinweis ? { hinweis } : {}) };
+  }
+
+  /**
+   * Auswahlfilter (#172): neue Verweise müssen den Filter des Felds erfüllen; bisherige bleiben
+   * gültig, auch wenn sie inzwischen nicht mehr passen.
+   */
+  private async pruefeAuswahlfilter(typ: Mappentyp, werte: Werte, alt: Werte, benutzerId: string | null) {
+    const mitFilter = typ.felder.filter((f) => f.typ === 'referenz' && f.auswahlFilter?.length);
+    if (!mitFilter.length) return;
+    const ids = (w: unknown) => (Array.isArray(w) ? w : w ? [w] : []).map(String).filter(istUuid);
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    const a = await this.aufloesung(benutzerId ?? '');
+    const fehler: Record<string, string[]> = {};
+    for (const f of mitFilter) {
+      const vorher = new Set(ids(alt[f.key]));
+      const neu = ids(werte[f.key]).filter((x) => !vorher.has(x));
+      const ziel = typen.get(f.zielTyp ?? '');
+      if (!neu.length || !ziel) continue;
+      const k = auswahlKlausel(f.auswahlFilter!, ziel, a);
+      const falsch = (await this.repo.holeMappen(neu)).filter((m) => m.typId !== ziel.id || !erfuellt(m, k.filter, KEINE_ZAEHLUNG));
+      if (falsch.length) fehler[f.key] = [`${falsch.map((m) => `„${m.titel || 'Ohne Titel'}“`).join(', ')} passt nicht zur Auswahl dieses Felds.`];
+    }
+    if (Object.keys(fehler).length) throw new Fachfehler(422, 'Bitte die markierten Felder prüfen.', { allgemein: [], felder: fehler });
+  }
+
+  /** Auswahlfilter (#172): bestehende Verweise, die nicht (mehr) zum Filter passen – für einen Hinweis am Feld. */
+  private async unpassendeVerweise(typ: Mappentyp | undefined, werte: Werte, benutzerId: string): Promise<Record<string, string[]>> {
+    const mitFilter = typ?.felder.filter((f) => f.typ === 'referenz' && f.auswahlFilter?.length) ?? [];
+    if (!mitFilter.length) return {};
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    const a = await this.aufloesung(benutzerId);
+    const erg: Record<string, string[]> = {};
+    for (const f of mitFilter) {
+      const ziel = typen.get(f.zielTyp ?? '');
+      const ids = (Array.isArray(werte[f.key]) ? werte[f.key] as string[] : werte[f.key] ? [String(werte[f.key])] : []).filter(istUuid);
+      if (!ziel || !ids.length) continue;
+      const k = auswahlKlausel(f.auswahlFilter!, ziel, a);
+      const x = (await this.repo.holeMappen(ids)).filter((m) => !erfuellt(m, k.filter, KEINE_ZAEHLUNG)).map((m) => m.id);
+      if (x.length) erg[f.key] = x;
+    }
+    return erg;
+  }
+
+  /** Auswahlfilter (#172) in der Werkbank: wie viele Mappen des Zieltyps passen? */
+  async zaehleAuswahl(e: unknown, benutzerId: string) {
+    const x = (e ?? {}) as { zielTyp?: unknown; bedingungen?: unknown };
+    const ziel = istUuid(x.zielTyp) ? await this.repo.holeTyp(x.zielTyp) : undefined;
+    if (!ziel) throw new Fachfehler(422, 'Unbekannter Ziel-Mappentyp.');
+    const bed = bereinigeAuswahlfilter(x.bedingungen);
+    const [passen] = await this.repo.zaehleKlauseln([[auswahlKlausel(bed, ziel, await this.aufloesung(benutzerId))]], null);
+    return { passen, gesamt: await this.repo.zaehleMappen(ziel.id), probleme: auswahlProbleme(bed, ziel) };
   }
 
   /** Verweise nur auf Mappen, die man sehen darf (#124, #137); bisherige Ziele bleiben erlaubt. */
@@ -1927,6 +1996,7 @@ export class Dienst {
       }
     }
     await this.pruefeVerweisziele(z, typ, werte, m.werte);
+    await this.pruefeAuswahlfilter(typ, werte, m.werte, benutzerId);
     await this.pruefeWerte(typ, werte, id);
     const aenderungen = await this.aenderungen(typ, m.werte, werte);
     const neu = await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), benutzerId);
