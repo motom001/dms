@@ -362,11 +362,34 @@ begriffe:
   # ---------- Verwaltung (Werkbank) ----------
   - begriff: Benutzer
     bereich: werkbank
-    beschreibung: Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe im DMS. Personen und Firmen, mit denen man zu tun hat (Kontakte), sind keine Benutzer, sondern gewöhnliche Mappen, z. B. vom Mappentyp „Organisation“ aus dem Paket Basis.
+    beschreibung: Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe im DMS. Personen und Firmen, mit denen man zu tun hat (Kontakte), sind keine Benutzer, sondern gewöhnliche Mappen vom Mappentyp „Person“ bzw. „Organisation“ aus dem Paket Basis.
     einsteiger: alltag
     begegnet: alle
     nicht_verwenden: [User, Account]
     code: Benutzer
+  - begriff: Person
+    bereich: grundbegriffe
+    beschreibung: Ein Mensch, mit dem man zu tun hat – Ansprechpartnerin, Arzt, Vermieter, Verwandte. Mappentyp aus dem Paket Basis (ab 1.1.0). Eine Person ist **kein Benutzer** und kann sich nicht anmelden.
+    einsteiger: alltag
+    begegnet: alle
+    verwandt: [Benutzer, Organisation, Niederlassung]
+    nicht_verwenden: [Kontakt (als Mappentyp), Benutzer (für Kontakte)]
+    code: basis_person
+  - begriff: Organisation
+    bereich: grundbegriffe
+    beschreibung: Firma, Behörde, Bank, Praxis, Verein oder andere Stelle, mit der man zu tun hat. Mappentyp aus dem Paket Basis; andere Pakete verweisen darauf (Vertragspartner, Versicherer, Bank …).
+    einsteiger: alltag
+    begegnet: alle
+    verwandt: [Niederlassung, Person]
+    code: basis_organisation
+  - begriff: Niederlassung
+    bereich: grundbegriffe
+    beschreibung: Filiale, Zweigstelle, Praxis oder Außenstelle einer Organisation – mit eigener Anschrift und eigenem Telefon. Mappentyp aus dem Paket Basis (ab 1.1.0); gehört zu genau einer Organisation.
+    einsteiger: alltag
+    begegnet: alle
+    verwandt: [Organisation, Person]
+    nicht_verwenden: [Standort (verwechselbar mit Ablageort), Filiale (als Mappentyp – ist eine der Arten)]
+    code: basis_niederlassung
   - begriff: Administrator
     bereich: werkbank
     beschreibung: Ein Benutzer mit Zugang zur Werkbank. Für ihn gelten keine Einschränkungen durch Berechtigungen.

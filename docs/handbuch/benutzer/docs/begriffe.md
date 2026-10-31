@@ -65,8 +65,20 @@ Siehe auch: [Mappentyp](#mappentyp), [Register](#register), [Dokument](#dokument
 Der Bauplan einer Mappe – welche Felder und Register sie hat, wie ihr Titel entsteht und wer was darf.  
 Siehe auch: [Mappe](#mappe), [Feld](#feld), [Systemmappentyp](#systemmappentyp).
 
+<a id="niederlassung"></a>**Niederlassung** · ✓ Alltagswort · alle  
+Filiale, Zweigstelle, Praxis oder Außenstelle einer Organisation – mit eigener Anschrift und eigenem Telefon. Mappentyp aus dem Paket Basis (ab 1.1.0); gehört zu genau einer Organisation.  
+Siehe auch: [Organisation](#organisation), [Person](#person).
+
+<a id="organisation"></a>**Organisation** · ✓ Alltagswort · alle  
+Firma, Behörde, Bank, Praxis, Verein oder andere Stelle, mit der man zu tun hat. Mappentyp aus dem Paket Basis; andere Pakete verweisen darauf (Vertragspartner, Versicherer, Bank …).  
+Siehe auch: [Niederlassung](#niederlassung), [Person](#person).
+
 <a id="papierkorb"></a>**Papierkorb** · ✓ Alltagswort · alle  
 Gelöschte Mappen. Sie lassen sich wiederherstellen, bis die eingestellte Zahl an Tagen abgelaufen ist.
+
+<a id="person"></a>**Person** · ✓ Alltagswort · alle  
+Ein Mensch, mit dem man zu tun hat – Ansprechpartnerin, Arzt, Vermieter, Verwandte. Mappentyp aus dem Paket Basis (ab 1.1.0). Eine Person ist **kein Benutzer** und kann sich nicht anmelden.  
+Siehe auch: [Benutzer](#benutzer), [Organisation](#organisation), [Niederlassung](#niederlassung).
 
 <a id="pflichtfeld"></a>**Pflichtfeld** · ✓ Alltagswort · alle  
 Ein Feld, das ausgefüllt sein muss, bevor die Mappe gespeichert werden kann.  
@@ -216,7 +228,7 @@ Anmelden mit einem fremden Konto, z. B. Microsoft 365 (OpenID Connect).
 Eine Einstellung je Mappentyp für Aufbewahrungspflichten – mit Versionen und einer Löschsperre bis zum Fristende.
 
 <a id="benutzer"></a>**Benutzer** · ✓ Alltagswort · alle  
-Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe im DMS. Personen und Firmen, mit denen man zu tun hat (Kontakte), sind keine Benutzer, sondern gewöhnliche Mappen, z. B. vom Mappentyp „Organisation“ aus dem Paket Basis.
+Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe im DMS. Personen und Firmen, mit denen man zu tun hat (Kontakte), sind keine Benutzer, sondern gewöhnliche Mappen vom Mappentyp „Person“ bzw. „Organisation“ aus dem Paket Basis.
 
 <a id="berechtigungen"></a>**Berechtigungen** · ✓ Alltagswort · Administratoren  
 Wer was darf. Am Mappentyp – Anlegen, Lesen, Bearbeiten, Löschen, Passwörter sehen – mit einem Standard plus Regeln; an der Ansicht – Sehen, Anlegen, Exportieren – mit Vererbung an die Unteransichten. Für Administratoren gelten sie nicht.
@@ -477,11 +489,14 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Mappe | Akte, Ordner, Datensatz | `Mappe` |
 | Mappentyp | Typ (allein), Vorlage, Klasse | `Mappentyp` |
 | Meine Daten exportieren | Persönlicher Export | – |
+| Niederlassung | Standort (verwechselbar mit Ablageort), Filiale (als Mappentyp – ist eine der Arten) | `basis_niederlassung` |
 | Notiz | – | `Notiz` |
 | Nummernkreis | – | `Nummernkreis` |
+| Organisation | – | `basis_organisation` |
 | Paket | Plugin, Erweiterung, App, Modul | `InstalliertesPaket` |
 | Paket-Läufer | – | `PaketLaeufer` |
 | Paketkatalog | – | `Katalog, OFFIZIELLER_KATALOG` |
+| Person | Kontakt (als Mappentyp), Benutzer (für Kontakte) | `basis_person` |
 | Post | Posteingang, Inbox | – |
 | Regel | – | `Regel` |
 | Register | Tab, Reiter | `Register` |
