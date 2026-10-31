@@ -66,7 +66,9 @@ export const liesMail: MailLeser = async (quelle) => {
     return { name: endung && !name.toLowerCase().endsWith('.eml') ? `${name}${endung}` : name, mime: a.contentType, inhalt: a.content, eingebettet };
   });
   // Nur Text: HTML wandelt mailparser in Text um; externe Inhalte werden nie geladen.
-  const text = (m.text ?? '').replace(/\r/g, '').replace(/\n{3,}/g, '\n\n').trim();
+  // Bild-Adressen (Logos, Zählpixel) aus der Umwandlung entfernen; Links bleiben lesbar.
+  const text = (m.text ?? '').replace(/\[https?:\/\/[^\]\s]*\.(gif|png|jpe?g|webp|svg|bmp)(\?[^\]\s]*)?\]/gi, '')
+    .replace(/\r/g, '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
   return {
     messageId: m.messageId, betreff: (m.subject ?? '').trim(), datum: m.date ?? null,
     absenderName: von?.name ?? '', absenderAdresse: (von?.address ?? '').toLowerCase(), text, anhaenge,
