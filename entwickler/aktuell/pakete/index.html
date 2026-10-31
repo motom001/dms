@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/entwickler/v0.63/pakete/">
+        <link rel="canonical" href="https://motom001.github.io/dms/entwickler/v0.64/pakete/">
       
       
         <link rel="prev" href="../release/">
@@ -524,6 +524,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#eigenes-paket-testen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Eigenes Paket testen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#ausblick" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -767,6 +778,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#eigenes-paket-testen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Eigenes Paket testen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#ausblick" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -862,9 +884,16 @@ python3<span class="w"> </span>werkzeuge/katalog.py<span class="w"> </span>--pro
 <li>Pull Request mit <code>Closes #…</code>; jeder Commit trägt ein <code>Signed-off-by:</code> (<code>git commit -s</code>).</li>
 <li>Nach dem Merge baut die CI je Paketversion ein Archiv <code>&lt;id&gt;-&lt;version&gt;.zip</code> und den Katalog <code>katalog.json</code> mit SHA-256 und legt beides auf den Branch <code>gh-pages</code>. Das DMS findet das Paket beim nächsten <strong>Katalog abrufen</strong>.</li>
 </ol>
+<h2 id="eigenes-paket-testen">Eigenes Paket testen<a class="headerlink" href="#eigenes-paket-testen" title="Permanent link">&para;</a></h2>
+<p>Bevor dein Paket in den Katalog kommt, probierst du es im eigenen DMS aus – am besten in einem Test-DMS (z. B. mit <a href="https://motom001.github.io/dms/admin/aktuell/demo/">Demo-Daten</a>):</p>
+<ol>
+<li><strong>Werkbank → Pakete → Erweiterte Ansicht</strong> einschalten.</li>
+<li>Den Paketordner als ZIP packen, z. B. <code>cd pakete/mein_paket &amp;&amp; zip -r ../../mein_paket.zip .</code>, und unter <strong>Paket hochladen</strong> wählen. Das DMS prüft das Paket wie ein Katalogpaket und zeigt die Vorschau; Fehler im Format stehen dort gesammelt.</li>
+<li>Installieren (Herkunft bestätigen), ansehen, ändern. Für eine neue Fassung die <strong>Version erhöhen</strong> und erneut hochladen – das DMS aktualisiert wie bei einem Update aus dem Katalog (nur ergänzen). Zum Neuanfang das Paket entfernen (geht, solange es keine Mappen seiner Typen gibt).</li>
+</ol>
+<p>Mehrere Pakete testest du auch als eigenen Katalog: <code>python3 werkzeuge/katalog.py &lt;ordner&gt;</code> baut <code>katalog.json</code> und die Archive; leg den Ordner auf einen HTTPS-Server und trage die Adresse von <code>katalog.json</code> in der erweiterten Ansicht unter <strong>Weitere Quellen</strong> ein.</p>
 <h2 id="ausblick">Ausblick<a class="headerlink" href="#ausblick" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Eigenes Paket im eigenen DMS testen</strong>, bevor es in den Katalog kommt: eine erweiterte Ansicht mit eigener Katalogadresse und Hochladen als Datei (<a href="https://github.com/motom001/dms/issues/189">#189</a>).</li>
 <li><strong>Pakete mit Code</strong>, die auf Ereignisse reagieren und mit eigenen, bei der Installation bestätigten Rechten über die API arbeiten – abgeschottet als WebAssembly.</li>
 </ul>
 
