@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.72/eingangsordner/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.73/eingangsordner/">
       
       
         <link rel="prev" href="../texterkennung/">
@@ -646,7 +646,7 @@
   <span class="md-ellipsis">
     
   
-    Sichten
+    Ansichten
   
 
     
@@ -1954,7 +1954,7 @@
 <h2 id="was-beim-ubernehmen-passiert">Was beim Übernehmen passiert<a class="headerlink" href="#was-beim-ubernehmen-passiert" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Jede Datei wird eine eigene Post</strong> mit Kanal <em>Ordner</em>, Richtung eingehend, Stand <em>Neu</em>. Der Betreff ist der Dateiname ohne Endung. In der Historie steht „aus dem Eingangsordner übernommen (eingang/…)“; angelegt hat sie der <em>Eingangsordner</em>, kein Benutzer.</li>
-<li><strong>Unterordner für Benutzer:</strong> Liegt die Datei in einem Unterordner mit dem Namen, Vornamen oder dem Teil der E-Mail-Adresse vor dem @ eines Benutzers (z. B. <code>eingang/thomas/</code>), steht dieser Benutzer bei <strong>Für</strong> – die Post erscheint in seinem Eingang. So wählt jeder am Scanner sein eigenes Ziel. Andere Unterordner zählen wie der Hauptordner.</li>
+<li><strong>Unterordner für Benutzer:</strong> Liegt die Datei in einem Unterordner mit dem Namen, Vornamen oder dem Teil der E-Mail-Adresse vor dem @ eines Benutzers (z. B. <code>eingang/thomas/</code>), steht dieser Benutzer bei <strong>Für</strong> – die Post erscheint bei ihm unter „Zu erledigen“. So wählt jeder am Scanner sein eigenes Ziel. Andere Unterordner zählen wie der Hauptordner.</li>
 <li><strong>Nur fertige Dateien:</strong> Eine Datei wird erst übernommen, wenn sich Größe und Änderungszeit über zwei Prüfungen nicht geändert haben – Scanner schreiben langsam.</li>
 <li><strong>Übersprungen</strong> werden versteckte und temporäre Dateien (<code>.*</code>, <code>~*</code>, <code>*.tmp</code>, <code>*.part</code>, <code>Thumbs.db</code>, <code>desktop.ini</code>), die Ordner der NAS-Systeme (<code>@eaDir</code>, <code>#recycle</code>, <code>.@__thumb</code>, <code>@Recycle</code>, <code>.Trash*</code>) sowie <code>erledigt/</code> und <code>fehler/</code>.</li>
 <li><strong>Abgelehnt</strong> werden leere Dateien und Dateien über 100 MB: Sie wandern nach <strong><code>fehler/</code></strong>, daneben eine Textdatei mit dem Grund; die Werkbank zeigt eine Meldung. Ist die <a href="../speicherplatz/">Speicherplatz</a>-Grenze erreicht, bleibt die Datei liegen und kommt dran, sobald wieder Platz ist.</li>

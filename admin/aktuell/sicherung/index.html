@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.72/sicherung/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.73/sicherung/">
       
       
         <link rel="prev" href="../demo/">
@@ -644,7 +644,7 @@
   <span class="md-ellipsis">
     
   
-    Sichten
+    Ansichten
   
 
     
@@ -2033,11 +2033,11 @@
 <tbody>
 <tr>
 <td><code>2026-10-29_0200-automatisch.dms-sicherung</code></td>
-<td>Datenbank und alle Dateien (Dokumente, Logos, Bilder von Fehlermeldungen), gepackt und <strong>verschlüsselt</strong></td>
+<td>Datenbank und alle Dateien (Dokumente, Logos, Bilder gemeldeter Fehler), gepackt und <strong>verschlüsselt</strong></td>
 </tr>
 <tr>
 <td><code>2026-10-29_0200-automatisch.json</code></td>
-<td>Metadaten, lesbar: Mandanten-Id (Feld <code>haushaltId</code>), Versionen (DMS, Datenbank-Stand, PostgreSQL, Node.js, Betriebssystem, Architektur), Art, Beginn und Dauer, Anzahl Mappen, Dokumente und Benutzer, Größen, Verschlüsselung mit Fingerabdruck des Schlüssels und die <strong>SHA-256-Prüfsumme</strong> der Sicherungsdatei</td>
+<td>Metadaten, lesbar: Haushalts-Id (Feld <code>haushaltId</code>), Versionen (DMS, Datenbank-Stand, PostgreSQL, Node.js, Betriebssystem, Architektur), Art, Beginn und Dauer, Anzahl Mappen, Dokumente und Benutzer, Größen, Verschlüsselung mit Fingerabdruck des Schlüssels und die <strong>SHA-256-Prüfsumme</strong> der Sicherungsdatei</td>
 </tr>
 </tbody>
 </table>
@@ -2096,7 +2096,7 @@
 <h2 id="notfallblatt">Notfallblatt<a class="headerlink" href="#notfallblatt" title="Permanent link">&para;</a></h2>
 <p><strong>Notfallblatt herunterladen</strong> (hier und unter <em>Verschlüsselung</em>) erzeugt ein PDF mit allem, was du nach einem Ausfall brauchst:</p>
 <ul>
-<li>Name des DMS (Mandant), <strong>Mandanten-Id</strong>, Adresse, DMS-Version und Datum,</li>
+<li>Name des Haushalts, <strong>Haushalts-Id</strong>, Adresse, DMS-Version und Datum,</li>
 <li>den <strong>Schlüssel</strong> in Vierergruppen zum Abschreiben und seinen <strong>Fingerabdruck</strong>,</li>
 <li>wo die Sicherungen und die Schlüsseldatei liegen,</li>
 <li>die Schritte zur Wiederherstellung auf einem neuen System – auch: „Startet das DMS nicht mehr, ein älteres Image ziehen“,</li>
@@ -2107,7 +2107,7 @@
 <p>Jeder Download steht im Protokoll (ohne den Schlüssel). Ändert sich der Schlüssel (<a href="../verschluesselung/#schlussel-wechseln">Schlüssel wechseln</a>), weist die Werkbank darauf hin, ein neues Notfallblatt zu erstellen; ältere Sicherungen brauchen weiterhin das alte – bewahre es auf, solange es solche Sicherungen gibt. In der Liste tragen sie den Hinweis „früherer Schlüssel“; mit <strong>Sicherungen mit früherem Schlüssel löschen</strong> entfernst du sie alle auf einmal.</p>
 <div class="admonition tip">
 <p class="admonition-title">Für Selbstständige und Vermieter</p>
-<p>Wie Sicherung, Protokoll und Berechtigungen zusammen eine geordnete Belegablage ergeben, beschreibt die <a href="../verfahrensdokumentation/">Vorlage für die Verfahrensdokumentation</a>.</p>
+<p>Wie Sicherung, Historie und Berechtigungen zusammen eine geordnete Belegablage ergeben, beschreibt die <a href="../verfahrensdokumentation/">Vorlage für die Verfahrensdokumentation</a>.</p>
 </div>
 
 

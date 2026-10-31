@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.72/direktlinks/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.73/direktlinks/">
       
       
         <link rel="prev" href="../archiv/">
@@ -646,7 +646,7 @@
   <span class="md-ellipsis">
     
   
-    Sichten
+    Ansichten
   
 
     
@@ -2052,18 +2052,18 @@
 
 
 <h1 id="sprechende-links">Sprechende Links<a class="headerlink" href="#sprechende-links" title="Permanent link">&para;</a></h1>
-<p>Ein sprechender Link findet eine Mappe über ihren <strong>Mappentyp</strong> und ihre <strong>Angaben</strong> statt über ihre technische Id. Den Link kannst du einem Kollegen mit eigenem Konto per Mail oder Chat schicken oder in anderen Programmen hinterlegen, etwa:</p>
+<p>Ein Link über Mappentyp und Feldwerte findet eine Mappe über ihren <strong>Mappentyp</strong> und ihre <strong>Angaben</strong> statt über ihre technische Id. Den Link kannst du einem Kollegen mit eigenem Konto per Mail oder Chat schicken oder in anderen Programmen hinterlegen, etwa:</p>
 <div class="highlight"><pre><span></span><code>http://&lt;NAS&gt;:8080/ablage/link?typ=rechnung&amp;rechnungsnummer=A-2020-11380
 </code></pre></div>
 <p>Eingerichtet wird dafür nichts: Jeder Link, der dem Aufbau unten folgt, funktioniert sofort. In jeder Mappe erzeugt <strong>Aktionen → Link kopieren</strong> einen passenden Link (siehe <a href="https://motom001.github.io/dms/benutzer/versenden/#link-kopieren">Benutzerhandbuch</a>).</p>
 <h2 id="was-der-link-zeigt">Was der Link zeigt<a class="headerlink" href="#was-der-link-zeigt" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Ein Treffer:</strong> Die Mappe öffnet sich.</li>
-<li><strong>Mehrere Treffer:</strong> Die Trefferliste erscheint als vorübergehende Sicht „Link: Rechnung“ – mit den Bedingungen darunter –, und die erste Mappe ist geöffnet. Im Sichtenbaum erscheint diese Sicht nicht.</li>
+<li><strong>Mehrere Treffer:</strong> Die Trefferliste erscheint als vorübergehende Ansicht „Link: Rechnung“ – mit den Bedingungen darunter –, und die erste Mappe ist geöffnet. Im Ansichtenbaum erscheint diese Ansicht nicht.</li>
 <li><strong>Kein Treffer:</strong> Die leere Liste nennt die gesuchten Bedingungen.</li>
-<li><strong>Fehler im Link</strong> (unbekannter Mappentyp, Tippfehler im Feldschlüssel, unpassender Operator, ungültiger Wert): Das DMS zeigt, was nicht stimmt – nie stillschweigend alle Mappen.</li>
+<li><strong>Fehler im Link</strong> (unbekannter Mappentyp, Tippfehler in der Kennung eines Felds, unpassender Operator, ungültiger Wert): Das DMS zeigt, was nicht stimmt – nie stillschweigend alle Mappen.</li>
 </ul>
-<p><img alt="Trefferliste eines sprechenden Links" src="../bilder/direktlink.png" /></p>
+<p><img alt="Trefferliste eines Links über Mappentyp und Feldwerte" src="../bilder/direktlink.png" /></p>
 <p>Die Adresse im Browser bleibt der Link, auch wenn eine Mappe geöffnet ist oder die Liste umsortiert wird. Wer nicht angemeldet ist, meldet sich an und landet danach direkt beim Link. Es gelten die Rechte des Empfängers: Er sieht nur, was er auch in der Ablage sieht.</p>
 <h2 id="aufbau">Aufbau<a class="headerlink" href="#aufbau" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>/ablage/link?typ=&lt;Mappentyp&gt;&amp;&lt;feld&gt;=&lt;wert&gt;&amp;&lt;feld&gt;.&lt;operator&gt;=&lt;wert&gt;&amp;sortierung=&lt;feld&gt;
@@ -2078,11 +2078,11 @@
 <tbody>
 <tr>
 <td><code>typ=rechnung</code></td>
-<td><strong>Schlüssel</strong> des Mappentyps (siehe <a href="../mappentypen/#grunddaten">Mappentypen</a>). Auch der <strong>Name</strong> geht (Groß- und Kleinschreibung zählen nicht) – aber nur der Schlüssel bleibt gültig, wenn der Mappentyp umbenannt wird. „Link kopieren“ nutzt den Schlüssel.</td>
+<td><strong>Kennung</strong> des Mappentyps (siehe <a href="../mappentypen/#grunddaten">Mappentypen</a>). Auch der <strong>Name</strong> geht (Groß- und Kleinschreibung zählen nicht) – aber nur die Kennung bleibt gültig, wenn der Mappentyp umbenannt wird. „Link kopieren“ nutzt die Kennung.</td>
 </tr>
 <tr>
 <td><code>rechnungsnummer=A-2020-11380</code></td>
-<td><strong>Schlüssel</strong> eines Feldes und der Wert: „ist gleich“.</td>
+<td><strong>Kennung</strong> eines Feldes und der Wert: „ist gleich“.</td>
 </tr>
 <tr>
 <td><code>betrag.groesser=100</code></td>
@@ -2094,12 +2094,12 @@
 </tr>
 </tbody>
 </table>
-<p>Mehrere Bedingungen gelten <strong>zusammen</strong> (UND), wie in einer <a href="../sichten/">Sicht</a>. Sonderzeichen im Wert schreibst du so, wie Browser sie kodieren: Leerzeichen als <code>+</code> oder <code>%20</code>, <code>&amp;</code> als <code>%26</code>, <code>+</code> als <code>%2B</code>.</p>
+<p>Mehrere Bedingungen gelten <strong>zusammen</strong> (UND), wie in einer <a href="../sichten/">Ansicht</a>. Sonderzeichen im Wert schreibst du so, wie Browser sie kodieren: Leerzeichen als <code>+</code> oder <code>%20</code>, <code>&amp;</code> als <code>%26</code>, <code>+</code> als <code>%2B</code>.</p>
 <div class="admonition warning">
 <p class="admonition-title">Mappentyp umbenennen macht Links ungültig</p>
-<p>Der Link nennt den Mappentyp beim <strong>Namen</strong>. Benennst du „Rechnung“ in „Eingangsrechnung“ um, finden alte Links den Typ nicht mehr und zeigen eine Fehlermeldung. Felder dagegen stehen mit ihrem <strong>Schlüssel</strong> im Link, der sich nie ändert (siehe <a href="../mappentypen/#der-schlussel">Mappentypen</a>) – Bezeichnungen kannst du gefahrlos umbenennen.</p>
+<p>Der Link nennt den Mappentyp beim <strong>Namen</strong>. Benennst du „Rechnung“ in „Eingangsrechnung“ um, finden alte Links den Mappentyp nicht mehr und zeigen eine Fehlermeldung. Felder dagegen stehen mit ihrer <strong>Kennung</strong> im Link, die sich nie ändert (siehe <a href="../mappentypen/#die-kennung">Mappentypen</a>) – Bezeichnungen kannst du gefahrlos umbenennen.</p>
 </div>
-<p>Den Schlüssel eines Feldes siehst du in der Werkbank beim Mappentyp, im Feld unter <strong>Schlüssel</strong>. Auch die Systemwerte gehen: <code>_erstellt</code>, <code>_geaendert</code> (Datum) sowie <code>_erstelltVon</code>, <code>_geaendertVon</code> (nur mit <code>ich</code>).</p>
+<p>Die Kennung eines Feldes siehst du in der Werkbank beim Mappentyp, im Feld unter <strong>Kennung</strong>. Auch die Systemwerte gehen: <code>_erstellt</code>, <code>_geaendert</code> (Datum) sowie <code>_erstelltVon</code>, <code>_geaendertVon</code> (nur mit <code>ich</code>).</p>
 <h3 id="ohne-operator">Ohne Operator<a class="headerlink" href="#ohne-operator" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2133,7 +2133,7 @@
 </tbody>
 </table>
 <h3 id="operatoren">Operatoren<a class="headerlink" href="#operatoren" title="Permanent link">&para;</a></h3>
-<p>Es gibt dieselben Operatoren wie bei den Bedingungen einer Sicht – je Feldart dieselbe Auswahl:</p>
+<p>Es gibt dieselben Operatoren wie bei den Bedingungen einer Ansicht – je Feldart dieselbe Auswahl:</p>
 <table>
 <thead>
 <tr>
@@ -2199,9 +2199,9 @@
 <li><strong>Zeitraum</strong> (mit <code>imZeitraum</code>): <code>jahr</code> (aktuelles), <code>jahr-1</code> (letztes), <code>monat</code>, <code>monat+1</code> (nächster).</li>
 <li><strong>Ich:</strong> <code>ich</code> ist der angemeldete Benutzer – für Verweise auf Benutzer und für <code>_erstelltVon</code>/<code>_geaendertVon</code>, z. B. <code>verantwortlich=ich</code>.</li>
 </ul>
-<p>Verweise auf andere Mappen (etwa „Vertrag = …“), Passwortfelder sowie Bedingungen auf Dokumente und Verknüpfungen gehen im Link nicht. Dafür richtest du eine <a href="../sichten/">Sicht</a> ein.</p>
+<p>Verweise auf andere Mappen (etwa „Vertrag = …“), Passwortfelder sowie Bedingungen auf Dokumente und Verknüpfungen gehen im Link nicht. Dafür richtest du eine <a href="../sichten/">Ansicht</a> ein.</p>
 <h3 id="felder-namens-typ-oder-sortierung">Felder namens „typ“ oder „sortierung“<a class="headerlink" href="#felder-namens-typ-oder-sortierung" title="Permanent link">&para;</a></h3>
-<p><code>typ</code> und <code>sortierung</code> haben im Link eine feste Bedeutung. Ein Feld mit einem dieser Schlüssel erreichst du mit Operator: <code>typ.gleich=Laptop</code>.</p>
+<p><code>typ</code> und <code>sortierung</code> haben im Link eine feste Bedeutung. Ein Feld mit einer dieser Kennungen erreichst du mit Operator: <code>typ.gleich=Laptop</code>.</p>
 <h2 id="beispiele">Beispiele<a class="headerlink" href="#beispiele" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2234,7 +2234,7 @@
 </tbody>
 </table>
 <p>Ein Link mit Fehler zeigt, was nicht stimmt:</p>
-<p><img alt="Fehlermeldung bei einem Tippfehler im Feldschlüssel" src="../bilder/direktlink-fehler.png" /></p>
+<p><img alt="Fehlermeldung bei einem Tippfehler in der Kennung eines Felds" src="../bilder/direktlink-fehler.png" /></p>
 <h2 id="uber-die-schnittstelle">Über die Schnittstelle<a class="headerlink" href="#uber-die-schnittstelle" title="Permanent link">&para;</a></h2>
 <p>Dieselben Links versteht <code>GET /api/v1/mappen?sicht=link&amp;link=&lt;Parameter des Links&gt;</code>, z. B. <code>link=typ%3DRechnung%26bezahlt%3Dnein</code> (die Parameter als ein kodierter Wert). Ein fehlerhafter Link ergibt <code>422</code> mit der Meldung in <code>fehler</code>. Siehe <a href="../api/">Schnittstelle</a>.</p>
 

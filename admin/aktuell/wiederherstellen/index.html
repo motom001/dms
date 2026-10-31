@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.72/wiederherstellen/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.73/wiederherstellen/">
       
       
         <link rel="prev" href="../export/">
@@ -644,7 +644,7 @@
   <span class="md-ellipsis">
     
   
-    Sichten
+    Ansichten
   
 
     
@@ -1995,7 +1995,7 @@
 <li>Das DMS neu installieren, wie unter <a href="https://motom001.github.io/dms/installieren/aktuell/">Wie komme ich an ein DMS?</a> beschrieben – empfohlen mit zwei Containern (z. B. die <a href="https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml">Compose-Vorlage</a> mit einer <code>.env</code> mit neuem <code>DB_PASSWORD</code>), oder mit <a href="https://motom001.github.io/dms/installieren/aktuell/komplett/">dms-komplett</a> ohne Passwort.</li>
 <li>Die beiden Sicherungsdateien in den Ordner <code>sicherung</code> kopieren.</li>
 <li>Das Projekt starten und das DMS im Browser öffnen. Der <a href="../installation/#der-einrichtungsassistent">Einrichtungsassistent</a> fragt nach dem <strong>Einrichtungscode</strong> und – falls nötig – nach der Datenbank. Dann <strong>Aus einer Sicherung wiederherstellen</strong> wählen; einen „Wegwerf-Admin“ brauchst du nicht.</li>
-<li>Die Sicherung auswählen. Der <strong>Abgleich</strong> zeigt, mit welcher Version sie entstand und was heute läuft (DMS, Datenbank-Stand, PostgreSQL, Architektur, Mandanten-Id). Gehört die Sicherung zu einem anderen Mandanten, übernimmt das DMS dessen Id.</li>
+<li>Die Sicherung auswählen. Der <strong>Abgleich</strong> zeigt, mit welcher Version sie entstand und was heute läuft (DMS, Datenbank-Stand, PostgreSQL, Architektur, Haushalts-Id). Gehört die Sicherung zu einem anderen Mandanten, übernimmt das DMS dessen Id.</li>
 <li>Den <strong>Schlüssel vom Notfallblatt</strong> eingeben (Leerzeichen zählen nicht) und <strong>Schlüssel prüfen</strong> – das DMS vergleicht ihn mit dem Fingerabdruck aus den Metadaten.</li>
 <li><strong>Wiederherstellen</strong>. Der Bildschirm zeigt jeden Schritt; du kannst die Seite neu laden. Am Ende startet das DMS neu.</li>
 <li><strong>Weiter zur Anmeldung</strong> und mit den bisherigen Zugangsdaten anmelden. Die Schlüsseldatei hat das DMS dabei selbst angelegt.</li>

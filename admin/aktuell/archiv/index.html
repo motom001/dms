@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.72/archiv/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.73/archiv/">
       
       
         <link rel="prev" href="../pakete/">
@@ -646,7 +646,7 @@
   <span class="md-ellipsis">
     
   
-    Sichten
+    Ansichten
   
 
     
@@ -1995,11 +1995,11 @@
 <ul>
 <li>An jeder Mappe steht <strong>Archiv · aufbewahren bis 31.12.JJJJ</strong>, in der Liste ein Hinweis <strong>Archiv</strong>. Ändert sich das Datumsfeld, ändert sich die Frist – das steht in der Historie der Mappe.</li>
 <li><strong>Keine Löschung vor Fristende:</strong> weder die Mappe noch einzelne Dokumente, auch nicht durch Administratoren, über Mehrfachauswahl, Papierkorb oder die <a href="../api/">Schnittstelle</a> (409 mit Datum). Mappen, die schon vor dem Einschalten im Papierkorb lagen, bleiben dort bis Fristende und werden nicht automatisch geleert.</li>
-<li><strong>Dokumente ändern sich nur als neue Version:</strong> Die <a href="../mappentypen/#register">Versionierung</a> ist für alle Dokumentenregister des Typs Pflicht; ältere Versionen bleiben bis Fristende („nur die letzten N“ gilt hier nicht).</li>
+<li><strong>Dokumente ändern sich nur als neue Version:</strong> Die <a href="../mappentypen/#register">Versionierung</a> ist für alle Dokumentenregister des Mappentyps Pflicht; ältere Versionen bleiben bis Fristende („nur die letzten N“ gilt hier nicht).</li>
 <li><strong>Feldänderungen</strong> bleiben möglich und stehen wie immer in der Historie. Die Historie dieser Mappen wird nie aufgeräumt.</li>
 </ul>
 <h2 id="nach-der-frist-darf-weg">Nach der Frist: „Darf weg“<a class="headerlink" href="#nach-der-frist-darf-weg" title="Permanent link">&para;</a></h2>
-<p>Unter <strong>Werkbank → Darf weg</strong> stehen alle Mappen aus Typen im Archivmodus, deren Frist abgelaufen ist, mit Datum. Du wählst einzelne oder alle und löschst sie – mit Papierkorb dorthin, sonst endgültig. <strong>Gelöscht wird nie automatisch.</strong></p>
+<p>Unter <strong>Werkbank → Darf weg</strong> stehen alle Mappen aus Mappentypen im Archivmodus, deren Frist abgelaufen ist, mit Datum. Du wählst einzelne oder alle und löschst sie – mit Papierkorb dorthin, sonst endgültig. <strong>Gelöscht wird nie automatisch.</strong></p>
 <h2 id="alle-dateien-prufen">Alle Dateien prüfen<a class="headerlink" href="#alle-dateien-prufen" title="Permanent link">&para;</a></h2>
 <p>Unter <strong>Werkbank → Wartungsoperationen → Alle Dateien prüfen</strong> liest das DMS jede gespeicherte Datei – auch ältere Versionen – und vergleicht sie mit ihrem Prüfwert (SHA-256). Abweichungen („Inhalt verändert“, „Datei fehlt“) stehen mit Dokument und Mappe in der Liste und im Protokoll. Prüfe das z. B. nach einem Umzug des Speichers und vor dem Vernichten von Papier.</p>
 <h2 id="sicherung">Sicherung<a class="headerlink" href="#sicherung" title="Permanent link">&para;</a></h2>

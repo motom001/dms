@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.72/benutzer/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.73/benutzer/">
       
       
         <link rel="prev" href="../direktlinks/">
@@ -646,7 +646,7 @@
   <span class="md-ellipsis">
     
   
-    Sichten
+    Ansichten
   
 
     
@@ -2067,7 +2067,7 @@
 <h2 id="benutzer-einladen">Benutzer einladen<a class="headerlink" href="#benutzer-einladen" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>+ Neu</strong></li>
-<li>E-Mail-Adresse, Name und <strong>Rolle</strong> (<em>Administrator</em> oder <em>Mitglied</em>) eintragen, bei Bedarf <strong>weitere Rollen</strong> anhaken.</li>
+<li>E-Mail-Adresse, Name und <strong>Systemrolle</strong> (<em>Administrator</em> oder <em>Mitglied</em>) eintragen, bei Bedarf <strong>Rollen</strong> anhaken.</li>
 <li><strong>Anlegen und einladen</strong>.</li>
 </ol>
 <p><img alt="Neuen Benutzer anlegen" src="../bilder/werkbank-benutzer-neu.png" /></p>
@@ -2076,8 +2076,8 @@
 <p>Mit E-Mail-Versand fordern Benutzer den Link selbst an. Ohne E-Mail-Versand erzeugst du ihn beim Benutzer mit <strong>Passwort-Link erzeugen</strong> und gibst ihn weiter. Ein Passwort-Link ist eine Stunde gültig; das bisherige Passwort gilt, bis ein neues gesetzt ist.</p>
 <h2 id="andern-deaktivieren-loschen">Ändern, deaktivieren, löschen<a class="headerlink" href="#andern-deaktivieren-loschen" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Name</strong> und <strong>Rolle</strong> änderst du direkt beim Benutzer. Die E-Mail-Adresse ändert jeder Benutzer selbst im Profil (mit seinem Passwort).</li>
-<li><span id="abwesenheit"></span><strong>Abwesenheit</strong> – wie im Profil des Benutzers (siehe <a href="https://motom001.github.io/dms/benutzer/profil/#abwesenheit">Benutzerhandbuch</a>): an/aus, von, bis, Vertreter. Du kannst sie für andere eintragen, etwa bei Krankheit, und mit <strong>Alle offenen Aufgaben an ‹Vertreter› geben</strong> seine Aufgaben abgeben. Das steht im Protokoll seiner Benutzer-Mappe.</li>
+<li><strong>Name</strong> und <strong>Systemrolle</strong> änderst du direkt beim Benutzer. Die E-Mail-Adresse ändert jeder Benutzer selbst im Profil (mit seinem Passwort).</li>
+<li><span id="abwesenheit"></span><strong>Abwesenheit</strong> – wie im Profil des Benutzers (siehe <a href="https://motom001.github.io/dms/benutzer/profil/#abwesenheit">Benutzerhandbuch</a>): an/aus, von, bis, Vertreter. Du kannst sie für andere eintragen, etwa bei Krankheit, und mit <strong>Alle offenen Aufgaben an ‹Vertreter› geben</strong> seine Aufgaben abgeben. Das steht in der Historie seiner Benutzer-Mappe.</li>
 <li><span id="zugang-sperren"></span><strong>Zugang sperren</strong> (ganz unten) – <strong>Benutzer deaktivieren</strong> sperrt den Zugang sofort und beendet alle Sitzungen, nach einer Rückfrage. Die Mappe bleibt erhalten und heißt „… (ehemalig)“; alle Verweise auf ihn (z. B. als Verantwortlicher) bleiben gültig.<ul>
 <li>Das geht nur, wenn ein <strong>Vertreter</strong> hinterlegt ist und der Benutzer <strong>keine offenen Aufgaben</strong> mehr hat. Fehlt etwas, nennt der Abschnitt den Grund; Vertreter wählen und Aufgaben abgeben geht direkt darüber unter <em>Abwesenheit</em>.</li>
 <li>Der Vertreter bleibt hinterlegt und wirkt <strong>dauerhaft</strong>: Was noch für den Deaktivierten entsteht (z. B. „passt nicht“ an Mappen, die er angelegt hat, oder eine Erwähnung in einem alten Text), bekommt der Vertreter.</li>
@@ -2098,24 +2098,24 @@
 <h2 id="was-sieht-ein-benutzer">Was sieht ein Benutzer?<a class="headerlink" href="#was-sieht-ein-benutzer" title="Permanent link">&para;</a></h2>
 <p>Mit <strong>Anzeigen</strong> unter <em>Was sieht ein Benutzer?</em> siehst du je Mappentyp, wie viele Mappen der Benutzer nach den gespeicherten <a href="../berechtigungen/">Berechtigungen</a> lesen darf, mit einigen Beispielen. Für einen Administrator gilt: alles. Willst du wissen, <em>warum</em> er eine bestimmte Mappe sieht oder nicht, nutze den <a href="../berechtigungen/#testlauf">Testlauf</a> am Mappentyp.</p>
 <h2 id="fehler-nachstellen">Fehler nachstellen<a class="headerlink" href="#fehler-nachstellen" title="Permanent link">&para;</a></h2>
-<p>Meldet ein Benutzer einen Fehler, kannst du dich mit <strong>Als … anmelden</strong> als dieser Benutzer anmelden und siehst das DMS genau so wie er – mit seinen Rechten. Oben steht die ganze Zeit ein Warnhinweis mit <strong>Zurück zu meinem Konto</strong>.</p>
+<p>Meldet ein Benutzer einen Fehler, kannst du dich mit <strong>Als … anmelden</strong> als dieser Benutzer anmelden und siehst das DMS genau so wie er – mit seinen Rechten. Oben steht die ganze Zeit ein Warnhinweis mit <strong>Zurück zum eigenen Konto</strong> (auch im Menü unter deinem Namen).</p>
 <p>Der Benutzer sieht bei seiner nächsten Anmeldung, wer wann in seinem Namen gearbeitet hat. Alles, was du in dieser Zeit tust, geschieht unter seinem Konto.</p>
 <h2 id="benutzer-als-mappen">Benutzer als Mappen<a class="headerlink" href="#benutzer-als-mappen" title="Permanent link">&para;</a></h2>
 <p>Jeder Benutzer hat eine Mappe des <a href="../mappentypen/#systemmappentypen-benutzer-rolle-und-post">Systemmappentyps</a> <em>Benutzer</em>, mit derselben Id wie sein Konto. So kann ein Mappentyp ein Feld wie „Verantwortlich“ bekommen, das auf einen Benutzer verweist.</p>
 <p><img alt="Benutzer-Mappe in der Ablage" src="../bilder/benutzer-mappe.png" /></p>
 <ul>
 <li><strong>Das Konto ist führend.</strong> Name, E-Mail-Adresse, Rollen und „aktiv“ übernimmt die Mappe automatisch aus dem Konto – beim Anlegen, bei jeder Änderung und bei jedem Start des DMS.</li>
-<li><strong>Abwesenheit</strong> steht in den Systemfeldern <em>Abwesend</em> (wirkt gerade), <em>Abwesend von</em>, <em>Abwesend bis</em> und <em>Vertreter</em>. Damit lassen sich Sichten wie „Abwesende Benutzer“ bauen, und ein Verknüpfungsregister mit der Quelle <em>Benutzer › Vertreter</em> zeigt, wen jemand vertritt. Hattest du schon eigene Felder mit diesen Schlüsseln, wurden sie beim Update umbenannt (z. B. <code>vertreter_alt</code>) – samt Werten.</li>
+<li><strong>Abwesenheit</strong> steht in den Systemfeldern <em>Abwesend</em> (wirkt gerade), <em>Abwesend von</em>, <em>Abwesend bis</em> und <em>Vertreter</em>. Damit lassen sich Ansichten wie „Abwesende Benutzer“ bauen, und ein Verknüpfungsregister mit der Quelle <em>Benutzer › Vertreter</em> zeigt, wen jemand vertritt. Hattest du schon eigene Felder mit diesen Kennungen, wurden sie beim Update umbenannt (z. B. <code>vertreter_alt</code>) – samt Werten.</li>
 <li><strong>Diese Systemfelder sind in der Ablage nur lesbar.</strong> Der Server lehnt Änderungen daran ab, auch über die Schnittstelle. Sonst könnte ein Mitglied die E-Mail-Adresse eines Administrators ändern und dessen Konto über „Passwort vergessen“ übernehmen – oder sich selbst zum Administrator machen.</li>
 <li><strong>Eigene Felder</strong> (z. B. Telefon) kannst du am Mappentyp ergänzen; die sind in der Ablage normal bearbeitbar.</li>
 <li>Benutzer-Mappen lassen sich in der Ablage weder anlegen noch löschen.</li>
 </ul>
 <h2 id="rollen">Rollen<a class="headerlink" href="#rollen" title="Permanent link">&para;</a></h2>
-<p>Neben der <strong>Rolle</strong> des Zugangs (<em>Administrator</em> oder <em>Mitglied</em>) kann ein Benutzer beliebig viele <strong>weitere Rollen</strong> haben – fachliche Zuständigkeiten wie „Steuern und Finanzen“.</p>
+<p>Neben der <strong>Systemrolle</strong> (<em>Administrator</em> oder <em>Mitglied</em>) kann ein Benutzer beliebig viele <strong>Rollen</strong> haben – fachliche Zuständigkeiten wie „Steuern und Finanzen“.</p>
 <ul>
-<li><strong>Rollen anlegen, umbenennen, löschen</strong> geschieht in der Ablage in der Sicht <em>Rolle</em> – wer das darf, regeln die <a href="../berechtigungen/">Berechtigungen</a> am Mappentyp <em>Rolle</em> (ohne Regeln: jeder Benutzer). Rollennamen sind eindeutig.</li>
-<li><strong>Zuordnen</strong> geht nur hier in der Benutzerverwaltung (Haken bei <em>Weitere Rollen</em>). Die Mappe einer Rolle zeigt im Register <em>Benutzer</em>, wer sie hat.</li>
-<li><strong>Administrator</strong> und <strong>Mitglied</strong> sind <strong>Systemrollen</strong>: Sie erscheinen ebenfalls als Rollen-Mappen, folgen aber der Rolle des Zugangs und lassen sich weder umbenennen noch löschen.</li>
+<li><strong>Rollen anlegen, umbenennen, löschen</strong> geschieht in der Ablage in der Ansicht <em>Rolle</em> – wer das darf, regeln die <a href="../berechtigungen/">Berechtigungen</a> am Mappentyp <em>Rolle</em> (ohne Regeln: jeder Benutzer). Rollennamen sind eindeutig.</li>
+<li><strong>Zuordnen</strong> geht nur hier in der Benutzerverwaltung (Haken bei <em>Rollen</em>). Die Mappe einer Rolle zeigt im Register <em>Benutzer</em>, wer sie hat.</li>
+<li><strong>Administrator</strong> und <strong>Mitglied</strong> sind <strong>Systemrollen</strong>: Sie erscheinen ebenfalls als Rollen-Mappen, folgen aber der Systemrolle des Benutzers und lassen sich weder umbenennen noch löschen.</li>
 <li><strong>Rolle löschen</strong>, die Benutzer haben: erlaubt – die Zuordnung fällt weg. Verweist noch ein Feld auf die Rolle (z. B. „verantwortliche Rolle“), muss dieser Verweis zuerst weg.</li>
 <li>Rollen lassen sich nicht verschachteln.</li>
 </ul>
@@ -2125,12 +2125,12 @@
 <p>Rollen geben von sich aus keine Rechte – außer der Systemrolle <em>Administrator</em>, die die Werkbank freischaltet. Was eine Rolle in der Ablage darf, legst du in den <a href="../berechtigungen/">Berechtigungen</a> fest, etwa „Rolle <em>Buchhaltung</em> darf alle Rechnungen lesen und bearbeiten“.</p>
 </div>
 <h2 id="verantwortliche-felder-auf-benutzer-und-rollen">Verantwortliche: Felder auf Benutzer und Rollen<a class="headerlink" href="#verantwortliche-felder-auf-benutzer-und-rollen" title="Permanent link">&para;</a></h2>
-<p>Für „wer kümmert sich?“ legst du an einem Mappentyp ein Feld vom Typ <strong>Referenz</strong> an:</p>
+<p>Für „wer kümmert sich?“ legst du an einem Mappentyp ein Feld der Feldart <strong>Verweis</strong> an:</p>
 <ul>
 <li>„Verantwortlicher Benutzer“ → Ziel-Mappentyp <em>Benutzer</em></li>
 <li>„Verantwortliche Rolle“ → Ziel-Mappentyp <em>Rolle</em></li>
 </ul>
-<p>Benutzer und Rolle sind dabei getrennte Felder. Siehe <a href="../mappentypen/#referenzen-mappen-verbinden">Referenzen</a>.</p>
+<p>Benutzer und Rolle sind dabei getrennte Felder. Siehe <a href="../mappentypen/#verweise-mappen-verbinden">Verweise</a>.</p>
 
 
 

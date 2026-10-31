@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.72/anmeldeschutz/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.73/anmeldeschutz/">
       
       
         <link rel="prev" href="../benutzer/">
@@ -646,7 +646,7 @@
   <span class="md-ellipsis">
     
   
-    Sichten
+    Ansichten
   
 
     
@@ -2093,7 +2093,7 @@
 <p>Bist du selbst gesperrt und kein anderer Administrator kann dich freigeben, warte die Sperrdauer ab oder melde dich von einem anderen Gerät oder Netz an. Für eine dauerhafte Sperre hilft der <a href="../notfall/">Notfallzugang</a>.</p>
 <h2 id="zwei-faktor-anmeldung">Zwei-Faktor-Anmeldung<a class="headerlink" href="#zwei-faktor-anmeldung" title="Permanent link">&para;</a></h2>
 <p>Jeder Benutzer kann unter <strong>Profil → Sicherheit</strong> eine Zwei-Faktor-Anmeldung mit einer Authenticator-App einrichten (TOTP, 6 Stellen, 30 Sekunden) und bekommt dazu zehn Wiederherstellungscodes. Wie das für Benutzer aussieht, beschreibt das <a href="https://motom001.github.io/dms/benutzer/aktuell/profil/#zwei-faktor-anmeldung">Benutzerhandbuch</a>.</p>
-<p>Unten auf dieser Seite <strong>schreibst du sie je Rolle vor</strong> – für Administratoren, für Mitglieder oder beide. Wer sie dann noch nicht hat, sieht nach der Anmeldung nur die Einrichtung und kommt erst danach weiter. Abschalten kann er sie selbst nicht mehr.</p>
+<p>Unten auf dieser Seite <strong>schreibst du sie je Systemrolle vor</strong> – für Administratoren, für Mitglieder oder beide. Wer sie dann noch nicht hat, sieht nach der Anmeldung nur die Einrichtung und kommt erst danach weiter. Abschalten kann er sie selbst nicht mehr.</p>
 <p>Falsche Codes zählen wie falsche Passwörter für den <a href="#zwei-sperren">Anmeldeschutz</a>. Ein Link zum Zurücksetzen des Passworts ersetzt nur das Passwort; den Code fragt das DMS trotzdem ab.</p>
 <p><strong>Handy verloren?</strong> Unter <strong>Werkbank → Benutzer</strong> steht beim Benutzer, ob die Zwei-Faktor-Anmeldung eingerichtet ist; <strong>Zurücksetzen</strong> entfernt sie. Danach reicht wieder das Passwort – ist sie vorgeschrieben, richtet der Benutzer sie bei der nächsten Anmeldung neu ein. Jedes Einrichten, Zurücksetzen und jede Anmeldung mit Wiederherstellungscode steht im <a href="../fehlersuche/#protokoll">Protokoll</a>.</p>
 <p>Das Geheimnis liegt mit dem <a href="../verschluesselung/">Schlüssel des DMS</a> verschlüsselt in der Datenbank und ist damit Teil der Sicherung; ein Schlüsselwechsel schlüsselt es mit um. Wiederherstellungscodes speichert das DMS nur als Prüfwert.</p>
@@ -2149,7 +2149,7 @@
 <p>Unter <strong>Werkbank → Anmeldeschutz → Anmeldung über einen Anbieter</strong> trägst du Adresse, Client-ID und Client-Secret ein und klickst auf <strong>Verbindung prüfen</strong>. Danach <strong>Eingeschaltet</strong> ankreuzen und speichern. Das Client-Secret liegt mit dem <a href="../verschluesselung/">Schlüssel des DMS</a> verschlüsselt in der Datenbank.</p>
 <ul>
 <li><strong>Zuordnung:</strong> über die E-Mail-Adresse. Gibt es sie im DMS nicht, lehnt das DMS ab – außer <strong>Unbekannte Adressen als neue Benutzer anlegen</strong> ist an; dann entsteht ein Benutzer mit der eingestellten Rolle. Bei Entra ID dient auch der Anmeldename (UPN) als Adresse.</li>
-<li><strong>Gruppe für Administratoren:</strong> Ist sie gesetzt, folgt die Rolle bei jeder Anmeldung der Gruppe: Mitglieder der Gruppe sind Administratoren, alle anderen Mitglieder. Der letzte aktive Administrator bleibt Administrator. Bei Entra ID liefert der Claim <code>groups</code> die Objekt-IDs der Gruppen (Anwendung → <em>Token-Konfiguration</em> → <em>Gruppenanspruch hinzufügen</em>); trage dann die Objekt-ID ein.</li>
+<li><strong>Gruppe für Administratoren:</strong> Ist sie gesetzt, folgt die Systemrolle bei jeder Anmeldung der Gruppe: Mitglieder der Gruppe sind Administratoren, alle anderen Mitglieder. Der letzte aktive Administrator bleibt Administrator. Bei Entra ID liefert der Claim <code>groups</code> die Objekt-IDs der Gruppen (Anwendung → <em>Token-Konfiguration</em> → <em>Gruppenanspruch hinzufügen</em>); trage dann die Objekt-ID ein.</li>
 <li><strong>Passwort-Anmeldung nur noch für Administratoren:</strong> Mitglieder melden sich nur noch über den Anbieter an. Administratoren behalten ihr Passwort als Notzugang, falls der Anbieter einmal nicht erreichbar ist.</li>
 <li><strong>Beim Abmelden auch beim Anbieter abmelden:</strong> Wer sich über den Anbieter angemeldet hat, wird beim Abmelden auch dort abgemeldet (wenn der Anbieter das anbietet).</li>
 <li>Eine eingerichtete <a href="#zwei-faktor-anmeldung">Zwei-Faktor-Anmeldung</a> des DMS gilt auch hier. Verlangt schon der Anbieter einen zweiten Faktor, schreibe sie im DMS für diese Rollen nicht zusätzlich vor.</li>

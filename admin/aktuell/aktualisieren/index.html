@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.72/aktualisieren/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.73/aktualisieren/">
       
       
         <link rel="prev" href="../installation/">
@@ -512,10 +512,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#datenbank-anbindung-und-mandant-ab-024" class="md-nav__link">
+  <a href="#datenbank-anbindung-und-haushalt-ab-024" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Datenbank-Anbindung und Mandant (ab 0.24)
+        Datenbank-Anbindung und Haushalt (ab 0.24)
       
     </span>
   </a>
@@ -793,7 +793,7 @@
   <span class="md-ellipsis">
     
   
-    Sichten
+    Ansichten
   
 
     
@@ -1956,10 +1956,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#datenbank-anbindung-und-mandant-ab-024" class="md-nav__link">
+  <a href="#datenbank-anbindung-und-haushalt-ab-024" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Datenbank-Anbindung und Mandant (ab 0.24)
+        Datenbank-Anbindung und Haushalt (ab 0.24)
       
     </span>
   </a>
@@ -2092,7 +2092,7 @@
 </code></pre></div>
 <p>Vor jeder Veröffentlichung prüft die CI die Images außerdem auf bekannte Sicherheitslücken. Mehr dazu in der <a href="https://github.com/motom001/dms/blob/main/SECURITY.md">Sicherheitsrichtlinie</a>.</p>
 </div>
-<h3 id="datenbank-anbindung-und-mandant-ab-024">Datenbank-Anbindung und Mandant (ab 0.24)<a class="headerlink" href="#datenbank-anbindung-und-mandant-ab-024" title="Permanent link">&para;</a></h3>
+<h3 id="datenbank-anbindung-und-haushalt-ab-024">Datenbank-Anbindung und Haushalt (ab 0.24)<a class="headerlink" href="#datenbank-anbindung-und-haushalt-ab-024" title="Permanent link">&para;</a></h3>
 <p>Beim ersten Start übernimmt das DMS <code>DATABASE_URL</code> und – falls gesetzt – <code>HAUSHALT_ID</code> in die Datei <code>/data/geheim/datenbank.json</code> (siehe <a href="../installation/#datenbank-anbindung">Datenbank-Anbindung</a>). Es läuft ohne Zutun weiter. Danach sind beide Variablen überflüssig; die Werkbank-Übersicht weist darauf hin, und du kannst sie beim nächsten Update aus der Compose-Datei entfernen. Ändern lässt sich die Anbindung dann unter <strong>Werkbank → Datenbank-Anbindung</strong>.</p>
 <h3 id="feste-ordner-ab-023">Feste Ordner (ab 0.23)<a class="headerlink" href="#feste-ordner-ab-023" title="Permanent link">&para;</a></h3>
 <p>Die Ordner im Container sind jetzt fest: <code>/data/files</code>, <code>/data/geheim</code> und <code>/data/sicherung</code> (siehe <a href="../installation/#ordner-und-volumes">Ordner und Volumes</a>). Die Variablen <code>FILES_DIR</code>, <code>DMS_SCHLUESSEL_DATEI</code> und <code>DMS_SICHERUNG_DIR</code> entfallen.</p>

@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/installieren/v0.72/docker/">
+        <link rel="canonical" href="https://motom001.github.io/dms/installieren/v0.73/docker/">
       
       
         <link rel="prev" href="../proxmox/">
@@ -1207,7 +1207,7 @@ docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> 
 docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>app<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-A1<span class="w"> </span>Einrichtungscode
 </code></pre></div>
 <p>Dann <code>http://&lt;Server&gt;:8080</code> öffnen. Der Assistent fragt nach dem Einrichtungscode aus dem Protokoll und nach der Datenbank: Server <code>db</code>, Port <code>5432</code>, Datenbank und Benutzer <code>dms</code>, Passwort aus der <code>.env</code>.</p>
-<p><strong>So geht es im Assistenten weiter:</strong> Wähle <strong>Neu einrichten</strong> – oder <strong>Aus einer Sicherung wiederherstellen</strong>, wenn du von einem anderen Gerät umziehst. Dann trägst du den <strong>Namen deines Haushalts</strong> ein (der Schritt heißt im Assistenten „Mandant“), legst den <strong>Administrator</strong> und den <strong>ersten Benutzer</strong> für die Ablage an und bekommst <strong>Schlüssel und Notfallblatt</strong>. Zum Schluss kommt <strong>Optionales</strong> wie der E-Mail-Versand. Jeder Schritt hat oben rechts <strong>? Hilfe mit Bildern</strong>; ausführlich steht alles im <a href="https://motom001.github.io/dms/admin/aktuell/installation/#der-einrichtungsassistent">Administratorhandbuch</a>.</p>
+<p><strong>So geht es im Assistenten weiter:</strong> Wähle <strong>Neu einrichten</strong> – oder <strong>Aus einer Sicherung wiederherstellen</strong>, wenn du von einem anderen Gerät umziehst. Dann trägst du den <strong>Namen deines Haushalts</strong> ein, legst den <strong>Administrator</strong> und den <strong>ersten Benutzer</strong> für die Ablage an und bekommst <strong>Schlüssel und Notfallblatt</strong>. Zum Schluss kommt <strong>Optionales</strong> wie der E-Mail-Versand. Jeder Schritt hat oben rechts <strong>? Hilfe mit Bildern</strong>; ausführlich steht alles im <a href="https://motom001.github.io/dms/admin/aktuell/installation/#der-einrichtungsassistent">Administratorhandbuch</a>.</p>
 <h2 id="mit-einer-docker-oberflache-portainer-dockge-komodo">Mit einer Docker-Oberfläche (Portainer, Dockge, Komodo …)<a class="headerlink" href="#mit-einer-docker-oberflache-portainer-dockge-komodo" title="Permanent link">&para;</a></h2>
 <p>Nimm die Vorlage <a href="https://github.com/motom001/dms/blob/main/deploy/synology/docker-compose.yml"><code>deploy/synology/docker-compose.yml</code></a> als neuen Stack, trage oben das Passwort ein und passe die Pfade an. Diese Vorlage braucht keine <code>.env</code>, und der Assistent fragt die Datenbank nicht ab.</p>
 <h2 id="gut-zu-wissen">Gut zu wissen<a class="headerlink" href="#gut-zu-wissen" title="Permanent link">&para;</a></h2>
