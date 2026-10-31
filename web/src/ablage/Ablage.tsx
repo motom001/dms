@@ -62,7 +62,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   } else if (dritt === 'neu' && typ && !darfErstellen(typ)) {
     rechts = <div className="leer"><p>Von „{typ.name}“ lassen sich in der Ablage keine neuen Mappen anlegen.{typ.system === 'benutzer' ? ' Benutzer legt ein Administrator in der Werkbank unter „Benutzer“ an.' : ''}</p></div>;
   } else if (dritt === 'neu' && typ) {
-    rechts = <NeueMappe key={`${typ.id}-${suche.get('verweis') ?? ''}-${suche.get('zuordnen') ?? ''}`} typ={typ} sicht={sicht} verweis={suche.get('verweis') ?? undefined} zuordnen={zuordnenAus(suche)} />;
+    rechts = <NeueMappe key={`${typ.id}-${suche.get('verweis') ?? ''}-${suche.get('zuordnen') ?? ''}-${suche.get('vorbelegen') ?? ''}`} typ={typ} sicht={sicht} verweis={suche.get('verweis') ?? undefined} zuordnen={zuordnenAus(suche)} vorbelegen={suche.get('vorbelegen') ?? undefined} />;
   } else if (dritt && sicht === 'papierkorb') {
     rechts = <PapierkorbDetail key={dritt} id={dritt} werkbank={false} />;
   } else if (dritt) {

@@ -3,7 +3,7 @@ import { Ansage, useZiehen, ziehTasten, type Ort } from '../ziehen';
 import { SYSTEMSPALTEN, istSystemspalte, type Mappe, type Mappentyp } from '../../../shared/src/model';
 import {
   bedingungsfelder, bedingungsProblem, beschreibeBedingung, DYNAMISCH, EINHEITEN, gemeinsameTrefferlisten, kinderVon, mitNachkommen, OPERATOREN, OPERATOREN_JE_ART, spaltenDerSicht, trefferlistenProblem, wirksameTypen,
-  ZAEHLVERGLEICHE, type Bedingung, type Bedingungsfeld, type Einheit, type Operator, type Sicht, type SichtDaten, type WertAngabe, type Zaehlvergleich,
+  ZAEHLVERGLEICHE, type Bedingung, type Bedingungsfeld, type Feldbedingung, type Einheit, type Operator, type Sicht, type SichtDaten, type WertAngabe, type Zaehlvergleich,
 } from '../../../shared/src/sichten';
 import { api } from '../api';
 import { useDaten } from '../daten';
@@ -566,5 +566,56 @@ export function MappenSuche({ typId, gewaehlt, titel, merke, setze }: { typId: s
         )}
       </span>
     </span>
+  );
+}
+
+/**
+ * Auswahlfilter am Referenzfeld (#172): „Nur Mappen, die …“ – Bedingungen auf Felder und
+ * Systemwerte des Zieltyps, wie bei Sichten; dazu, wie viele Mappen passen.
+ */
+export function AuswahlFilter({ ziel, bedingungen, setze }: { ziel: Mappentyp; bedingungen: Feldbedingung[]; setze: (b: Feldbedingung[]) => void }) {
+  const d = useDaten();
+  const felder = useMemo(() => bedingungsfelder([ziel]), [ziel]);
+  const [titel, setTitel] = useState<Record<string, string>>({});
+  const merke = (mid: string, t: string) => setTitel((x) => ({ ...x, [mid]: t }));
+  const [zahl, setZahl] = useState<{ passen: number; gesamt: number } | null>(null);
+  const schluessel = JSON.stringify(bedingungen);
+  useEffect(() => {
+    let aktuell = true;
+    const t = setTimeout(() => { api.auswahlZaehlen(ziel.id, bedingungen).then((z) => aktuell && setZahl(z)).catch(() => aktuell && setZahl(null)); }, 300);
+    return () => { aktuell = false; clearTimeout(t); };
+  }, [ziel.id, schluessel]); // eslint-disable-line react-hooks/exhaustive-deps
+  const neu = (f: Bedingungsfeld): Feldbedingung => ({ art: 'feld', feld: f.key, op: OPERATOREN_JE_ART[f.art][0] });
+  const aendere = (i: number, b: Bedingung) => { if (b.art === 'feld') setze(bedingungen.map((x, j) => (j === i ? b : x))); };
+  return (
+    <div className="auswahlfilter">
+      <p className="klein"><strong>Nur Mappen, die …</strong> <span className="leise">alle Bedingungen erfüllen; leer: alle „{ziel.name}“. <Hilfe ort="werkbank.auswahlfilter" /></span></p>
+      {bedingungen.length > 0 && (
+        <ol className="bedingungen">
+          {bedingungen.map((b, i) => {
+            const feld = felder.find((f) => f.key === b.feld);
+            const problem = bedingungsProblem(b, [ziel]);
+            return (
+              <li key={i} className={problem ? 'fehlerhaft' : ''}>
+                <div className="bedingungszeile">
+                  <select aria-label="Feld des Zieltyps" value={feld ? b.feld : ''} onChange={(x) => { const f = felder.find((y) => y.key === x.target.value); if (f) aendere(i, neu(f)); }}>
+                    {!feld && <option value="">– {b.feld} (fehlt) –</option>}
+                    <optgroup label="Felder">{felder.filter((f) => !f.key.startsWith('_')).map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}</optgroup>
+                    <optgroup label="Systemwerte">{felder.filter((f) => f.key.startsWith('_')).map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}</optgroup>
+                  </select>
+                  {feld && <FeldBedingung b={b} feld={feld} setze={(n) => aendere(i, n)} titel={titel} merke={merke} />}
+                  <button type="button" className="textknopf gefahr klein" onClick={() => setze(bedingungen.filter((_, j) => j !== i))}>Entfernen</button>
+                </div>
+                <p className={problem ? 'fehlertext klein' : 'leise klein'}>{problem ?? beschreibeBedingung(b, [ziel], (mid) => titel[mid] ?? d.person(mid))}</p>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+      <div className="zeile">
+        <button type="button" className="knopf klein" disabled={!felder.length} onClick={() => setze([...bedingungen, neu(felder[0])])}>+ Bedingung</button>
+        {zahl && bedingungen.length > 0 && <span className="leise klein">{zahl.passen.toLocaleString('de-DE')} von {zahl.gesamt.toLocaleString('de-DE')} „{ziel.name}“ passen</span>}
+      </div>
+    </div>
   );
 }

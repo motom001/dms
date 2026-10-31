@@ -59,6 +59,8 @@ export interface Feld {
   system?: boolean;
   /** Datumsfeld (#129): Erinnerung als Aufgabe „Frist“ im Eingang; fehlt/null = keine. */
   frist?: import('./fristen').FristEinstellung | null;
+  /** Referenzfeld (#172): nur Mappen des Zieltyps, die alle Bedingungen erfüllen. */
+  auswahlFilter?: import('./sichten').Feldbedingung[];
 }
 
 export const REGISTERARTEN = {
@@ -392,6 +394,8 @@ export interface TypKontext {
   /** Schlüssel der anderen Mappentypen (#145). */
   schluesselAndererTypen?: string[];
   existiertTyp: (id: string) => boolean;
+  /** Auswahlfilter prüfen (#172; aus sichten.ts, hier ohne Kreisimport). */
+  auswahlProbleme?: (bed: import('./sichten').Feldbedingung[], zielFelder: Feld[]) => string[];
   /** Schlüssel der Nummernkreise (#171); fehlt: nicht prüfen. */
   nummernkreise?: string[];
   /** Felder eines anderen Typs (für Quellen von Verknüpfungsregistern). */
@@ -466,6 +470,11 @@ export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebn
       if (!f.zielTyp) m.push('Ziel-Mappentyp auswählen.');
       else if (f.zielTyp === BELIEBIGER_TYP) { if (!f.system) m.push('Ziel-Mappentyp auswählen.'); }
       else if (f.zielTyp !== ctx.eigeneId && !ctx.existiertTyp(f.zielTyp)) m.push('Der Ziel-Mappentyp existiert nicht.');
+      else if (f.auswahlFilter?.length && ctx.auswahlProbleme) {
+        // Auswahlfilter (#172): Bedingungen gegen die Felder des Zieltyps.
+        const ziel = f.zielTyp === ctx.eigeneId ? t.felder : ctx.felderVon?.(f.zielTyp);
+        if (ziel) for (const x of ctx.auswahlProbleme(f.auswahlFilter, ziel)) m.push(`Auswahlfilter: ${x}`);
+      }
     }
     if (f.typ === 'auswahl' && !(f.optionen ?? []).length) m.push('Mindestens einen Auswahlwert eintragen.');
     if ((f.typ === 'text' || f.typ === 'langtext' || f.typ === 'formatiert') && f.minLen != null && f.maxLen != null && f.minLen > f.maxLen)

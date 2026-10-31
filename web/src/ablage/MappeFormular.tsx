@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
+import { vorbelegungAus } from '../../../shared/src/sichten';
 import { darfErstellen, darfLoeschen, formatiere, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register } from '../../../shared/src/model';
 import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
@@ -26,8 +27,18 @@ const registerVon = (t: Mappentyp): Register[] => (t.register?.length ? t.regist
 /** Neue Mappe als Ziel von „Zuordnen“ (#192): danach wird die Post ihr zugeordnet. */
 export interface ZuordnenNachher { post: string; register?: string; dokumente: string[]; kopieren: boolean; vorschlag: Record<string, string> }
 
-export function NeueMappe({ typ, verweis, sicht, zuordnen }: { typ: Mappentyp; verweis?: string; sicht: string; zuordnen?: ZuordnenNachher }) {
+export function NeueMappe({ typ, verweis, sicht, zuordnen, vorbelegen }: { typ: Mappentyp; verweis?: string; sicht: string; zuordnen?: ZuordnenNachher; vorbelegen?: string }) {
   const start = standardRoh(typ);
+  // ?vorbelegen={…} (#172): was sich aus dem Auswahlfilter eines Referenzfelds ergibt, z. B. Art = Arzt.
+  try {
+    for (const [k, v] of Object.entries(vorbelegen ? JSON.parse(vorbelegen) as Record<string, unknown> : {})) {
+      const f = typ.felder.find((x) => x.key === k);
+      if (!f || f.typ === 'passwort' || f.typ === 'betrag') continue;
+      if (f.typ === 'janein' && typeof v === 'boolean') start[k] = v;
+      else if (Array.isArray(v) && f.mehrfach) start[k] = v.map(String);
+      else if (typeof v === 'string' && !f.mehrfach) start[k] = v;
+    }
+  } catch { /* ohne Vorbelegung */ }
   // Vorschläge aus der Post (Betreff, Datum) für Text- und Datumsfelder.
   for (const [k, v] of Object.entries(zuordnen?.vorschlag ?? {})) {
     const f = typ.felder.find((x) => x.key === k);
@@ -283,6 +294,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     const felder = felderAuf(reg);
     inhalt = felder.length
       ? <div className="formular">{felder.map((f) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke}
+          typId={typ.id} unpassend={details?.unpassend?.[f.key]}
           gesperrt={geschuetzt[f.key] ?? (nurLesen && f.typ !== 'passwort' ? '' : undefined)} nurLesen={nurLesen} passwortSehen={!rechte || rechte.P} />)}</div>
       : <p className="leise">Auf diesem Register liegen keine Felder.</p>;
   } else if (reg.art === 'dokumente') {
@@ -346,8 +358,10 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   );
 }
 
-function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, gesperrt, nurLesen, passwortSehen = true }: {
+function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, gesperrt, nurLesen, passwortSehen = true, typId, unpassend }: {
   feld: Feld; roh: Roh | undefined; fehler?: string; setze: (v: Roh) => void; eigeneId?: string;
+  /** Typ der Mappe und Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */
+  typId?: string; unpassend?: string[];
   bekannt: Bezuege; merke: (id: string, b: { titel: string; typId: string }) => void;
   /** Grund, warum das Feld hier nur angezeigt wird. */
   gesperrt?: string;
@@ -427,7 +441,10 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
       if (!ziel) { ctl = <p className="leise">Der Ziel-Mappentyp existiert nicht mehr.</p>; break; }
       mitLabelFor = !f.mehrfach;
       ctl = <MappenWahl id={id} ziel={ziel} mehrfach={!!f.mehrfach} wert={roh as string | string[] | undefined} eigeneId={eigeneId}
-        bekannt={bekannt} merke={merke} setze={setze} />;
+        bekannt={bekannt} merke={merke} setze={setze}
+        sicht={f.auswahlFilter?.length && typId ? `feld:${typId}:${f.key}` : undefined}
+        vorbelegen={f.auswahlFilter?.length ? vorbelegungAus(f.auswahlFilter, ziel) : undefined}
+        unpassend={unpassend} />;
       break;
     }
     case 'formatiert':
@@ -601,9 +618,11 @@ function Trefferliste({ treffer }: { treffer: Rueckverweis[] }) {
 
 /* ---------- Auswahl verwiesener Mappen (mit Suche statt langer Klappliste) ---------- */
 
-function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze }: {
+function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze, sicht, vorbelegen, unpassend = [] }: {
   id: string; ziel: Mappentyp; mehrfach: boolean; wert: string | string[] | undefined; eigeneId?: string;
   bekannt: Bezuege; merke: (id: string, b: { titel: string; typId: string }) => void; setze: (v: Roh) => void;
+  /** Auswahlfilter (#172): Sicht „feld:<typ>:<feld>“ und Vorbelegung für „+ anlegen“. */
+  sicht?: string; vorbelegen?: Record<string, unknown>; unpassend?: string[];
 }) {
   const gewaehlt = (Array.isArray(wert) ? wert : wert ? [wert] : []).filter(Boolean);
   const [offen, setOffen] = useState(false);
@@ -625,10 +644,10 @@ function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze 
     if (!offen) return;
     let aktuell = true;
     const t = setTimeout(() => {
-      api.seite(`typ:${ziel.id}`, 0, 20, eingabe.trim()).then((s) => { if (aktuell) { setTreffer(s.mappen); setGesamt(s.gesamt); } }).catch(() => aktuell && setTreffer([]));
+      api.seite(sicht ?? `typ:${ziel.id}`, 0, 20, eingabe.trim()).then((s) => { if (aktuell) { setTreffer(s.mappen); setGesamt(s.gesamt); } }).catch(() => aktuell && setTreffer([]));
     }, 200);
     return () => { aktuell = false; clearTimeout(t); };
-  }, [offen, eingabe, ziel.id]);
+  }, [offen, eingabe, ziel.id, sicht]);
 
   function waehle(m: Mappe) {
     merke(m.id, { titel: m.titel ?? '', typId: m.typId });
@@ -636,7 +655,8 @@ function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze 
     setEingabe(''); setOffen(false); setAendern(false);
   }
   const auswahl = (treffer ?? []).filter((m) => m.id !== eigeneId && !gewaehlt.includes(m.id));
-  const anlegen = darfErstellen(ziel) ? <Link to={`/ablage/${ziel.id}/neu`} className="verweis klein">+ {ziel.name} anlegen</Link> : null;
+  const vor = vorbelegen && Object.keys(vorbelegen).length ? `?vorbelegen=${encodeURIComponent(JSON.stringify(vorbelegen))}` : '';
+  const anlegen = darfErstellen(ziel) ? <Link to={`/ablage/${ziel.id}/neu${vor}`} className="verweis klein">+ {ziel.name} anlegen</Link> : null;
 
   return (
     <div className="refbox">
@@ -645,6 +665,7 @@ function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze 
           {gewaehlt.map((x) => (
             <li key={x}>
               {bekannt[x]?.typId && !bekannt[x].verborgen ? <Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis">{titelOder(bekannt[x].titel)}</Link> : <span className={bekannt[x]?.verborgen ? 'verborgen-titel' : 'leise'}>{bekannt[x]?.titel ?? 'Lade …'}</span>}
+              {unpassend.includes(x) && <span className="chip warn" title="Bleibt gültig; neu wählen lässt sich nur, was zur Auswahl passt.">passt nicht mehr zum Filter</span>}
               <span className="verweisaktionen">
                 {!mehrfach && !aendern && <button type="button" className="textknopf klein" onClick={() => { setAendern(true); setOffen(true); }}>Ändern</button>}
                 <button type="button" className="textknopf klein gefahr" aria-label="Verweis entfernen" onClick={() => setze(mehrfach ? gewaehlt.filter((y) => y !== x) : '')}>Entfernen</button>

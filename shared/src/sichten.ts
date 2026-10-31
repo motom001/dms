@@ -556,3 +556,38 @@ export function trefferlistenProblem(wahl: string | null | undefined, typen: Map
     ? `Die Trefferliste „${wahl}“ gibt es nicht (mehr) in ${typen.length === 1 ? 'diesem Mappentyp' : 'allen Mappentypen dieser Sicht'}. Die Sicht zeigt stattdessen die Standardliste.`
     : null;
 }
+
+/* ---------- Auswahlfilter am Referenzfeld (#172) ---------- */
+
+/** Nur Bedingungen auf Felder und Systemwerte des Zieltyps; mehrere gelten zusammen. */
+export type Feldbedingung = Extract<Bedingung, { art: 'feld' }>;
+
+export function bereinigeAuswahlfilter(e: unknown): Feldbedingung[] {
+  return bereinigeBedingungen(e).filter((b): b is Feldbedingung => b.art === 'feld').slice(0, 20);
+}
+
+const alsZiel = (ziel: Pick<Mappentyp, 'felder'>) => ({ id: '', register: [], ...ziel } as unknown as Mappentyp);
+
+/** Probleme des Filters gegen den (aktuellen) Zieltyp, z. B. entfernte Felder. */
+export function auswahlProbleme(bed: Feldbedingung[], ziel: Pick<Mappentyp, 'felder'>): string[] {
+  return bed.map((b) => bedingungsProblem(b, [alsZiel(ziel)])).filter((x): x is string => !!x);
+}
+
+/** Klausel für „passende Mappen des Zieltyps“; Bedingungen mit Problem zählen nicht. */
+export function auswahlKlausel(bed: Feldbedingung[], ziel: Mappentyp, a: Aufloesung): Klausel {
+  return { typen: [ziel.id], filter: filterFuer({ bedingungen: bed }, [ziel], a) };
+}
+
+/** Was sich eindeutig aus dem Filter ergibt (z. B. Art = Arzt) – zum Vorbelegen beim Anlegen. */
+export function vorbelegungAus(bed: Feldbedingung[], ziel: Pick<Mappentyp, 'felder'>): Record<string, string | string[] | boolean> {
+  const v: Record<string, string | string[] | boolean> = {};
+  for (const b of bed) {
+    const f = ziel.felder.find((x) => x.key === b.feld);
+    if (!f || bedingungsProblem(b, [alsZiel(ziel)])) continue;
+    const w = b.wert?.art === 'fest' ? b.wert.wert : undefined;
+    if (b.op === 'ja' || b.op === 'nein') v[f.key] = b.op === 'ja';
+    else if (b.op === 'gleich' && (typeof w === 'string' || typeof w === 'number') && String(w) !== '') v[f.key] = String(w);
+    else if ((b.op === 'einerVon' || b.op === 'zeigtAuf') && Array.isArray(w) && w.length === 1) v[f.key] = f.mehrfach ? [String(w[0])] : String(w[0]);
+  }
+  return v;
+}

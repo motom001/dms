@@ -33,6 +33,7 @@ export const HILFE = {
   'werkbank.eingangsordner': admin('eingangsordner/', 'Eingangsordner'),
   'werkbank.postfaecher': admin('postfaecher/', 'Postfächer'),
   'werkbank.nummernkreise': admin('nummernkreise/', 'Nummernkreise'),
+  'werkbank.auswahlfilter': admin('mappentypen/', 'Auswahlfilter am Referenzfeld', 'auswahl-einschranken'),
   'werkbank.nummernkreise.nachtragen': admin('nummernkreise/', 'Nummern nachträglich vergeben', 'nummern-nachtraglich-vergeben'),
   'werkbank.anmeldeschutz': admin('anmeldeschutz/', 'Anmeldeschutz'),
   'werkbank.anbieter': admin('anmeldeschutz/', 'Anmeldung über einen Anbieter', 'anmeldung-uber-einen-anbieter-openid-connect'),
