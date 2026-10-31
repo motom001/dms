@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.73/begriffe/">
+        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.74/begriffe/">
       
       
         <link rel="prev" href="../fragen/">
@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -29,10 +29,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -1229,6 +1229,9 @@
 <p><a id="ablage"></a><strong>Ablage</strong> · ✓ Alltagswort · alle<br />
 Der Arbeitsbereich für alle Benutzer – mit Ansichten, Listen und Mappen.<br />
 Siehe auch: <a href="#werkbank">Werkbank</a>, <a href="#ansicht">Ansicht</a>.</p>
+<p><a id="ablageort"></a><strong>Ablageort</strong> · ✓ Alltagswort · alle<br />
+Ein Platz, an dem Papier liegt – z. B. ein Ordner, eine Kiste, ein Schließfach oder „vernichtet“. Ablageorte liegen ineinander („zu Hause › Arbeitszimmer Schrank › roter Ordner“). Jedes DMS hat diesen Mappentyp; er lässt sich erweitern, aber nicht löschen.<br />
+Siehe auch: <a href="#verbleib-originaldokumente">Verbleib Originaldokumente</a>, <a href="#mappentyp">Mappentyp</a>.</p>
 <p><a id="ansicht"></a><strong>Ansicht</strong> · ~ mit Erklärung · alle<br />
 Eine gespeicherte Auswahl von Mappen – welche Mappentypen, mit welchen Bedingungen. Ansichten stehen im Baum links in der Ablage. Wie etwas aussieht, heißt dagegen „Darstellung“.<br />
 Siehe auch: <a href="#unteransicht">Unteransicht</a>, <a href="#bedingung">Bedingung</a>, <a href="#trefferliste">Trefferliste</a>.</p>
@@ -1280,6 +1283,9 @@ Der Anzeigename einer Mappe. Er wird aus einer Vorlage mit Feldwerten gebildet.<
 Legt fest, welche Spalten eine Liste zeigt. Ein Mappentyp hat eine oder mehrere Trefferlisten; eine davon ist der Standard. Eine Ansicht oder ein Verknüpfungsregister wählt eine davon, sonst gilt der Standard. Zeigt eine Ansicht mehrere Mappentypen, stehen nur Trefferlisten mit gleicher Kennung in allen zur Wahl, mit den gemeinsamen Spalten.</p>
 <p><a id="unteransicht"></a><strong>Unteransicht</strong> · ~ mit Erklärung · Administratoren<br />
 Eine Ansicht unterhalb einer anderen. Sie erbt deren Berechtigungen.</p>
+<p><a id="verbleib-originaldokumente"></a><strong>Verbleib Originaldokumente</strong> · ✓ Alltagswort · alle<br />
+Das Feld an einer Mappe, das auf den Ablageort des Papiers zeigt. In allen Mappentypen mit derselben Kennung, damit gemeinsame Listen und Ansichten funktionieren.<br />
+Siehe auch: <a href="#ablageort">Ablageort</a>.</p>
 <p><a id="verknupfungen"></a><strong>Verknüpfungen</strong> · ~ mit Erklärung · alle<br />
 Das Register, das alle Mappen zeigt, die auf diese Mappe verweisen – die Gegenrichtung des Verweises.<br />
 Siehe auch: <a href="#verweis">Verweis</a>.</p>
@@ -1526,6 +1532,11 @@ Die Aufgabenart heißt „Post für dich“; die Ansicht „Neue Post“ bleibt.
 </thead>
 <tbody>
 <tr>
+<td>Ablageort</td>
+<td>–</td>
+<td><code>ablageort</code></td>
+</tr>
+<tr>
 <td>Abwesenheit</td>
 <td>–</td>
 <td><code>Abwesenheit</code></td>
@@ -1756,6 +1767,11 @@ Die Aufgabenart heißt „Post für dich“; die Ansicht „Neue Post“ bleibt.
 <td>–</td>
 </tr>
 <tr>
+<td>Verbleib Originaldokumente</td>
+<td>Lagerort, Standort (für Papier)</td>
+<td><code>verbleib_original</code></td>
+</tr>
+<tr>
 <td>Version</td>
 <td>Revision, Stand (für Dokumente)</td>
 <td><code>DokumentVersion</code></td>
@@ -1902,10 +1918,10 @@ Die Aufgabenart heißt „Post für dich“; die Ansicht „Neue Post“ bleibt.
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "In Zwischenablage kopiert", "clipboard.copy": "In Zwischenablage kopieren", "search.result.more.one": "1 weiteres Suchergebnis auf dieser Seite", "search.result.more.other": "# weitere Suchergebnisse auf dieser Seite", "search.result.none": "Keine Suchergebnisse", "search.result.one": "1 Suchergebnis", "search.result.other": "# Suchergebnisse", "search.result.placeholder": "Suchbegriff eingeben", "search.result.term.missing": "Es fehlt", "select.version": "Version ausw\u00e4hlen"}, "version": {"alias": true, "default": "aktuell", "provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "In Zwischenablage kopiert", "clipboard.copy": "In Zwischenablage kopieren", "search.result.more.one": "1 weiteres Suchergebnis auf dieser Seite", "search.result.more.other": "# weitere Suchergebnisse auf dieser Seite", "search.result.none": "Keine Suchergebnisse", "search.result.one": "1 Suchergebnis", "search.result.other": "# Suchergebnisse", "search.result.placeholder": "Suchbegriff eingeben", "search.result.term.missing": "Es fehlt", "select.version": "Version ausw\u00e4hlen"}, "version": {"alias": true, "default": "aktuell", "provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
         <script src="../javascripts/selbstcheck.js"></script>
       
