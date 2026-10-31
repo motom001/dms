@@ -84,7 +84,7 @@ jobs:
       - name: Screenshots aufnehmen
         working-directory: docs/handbuch/screenshots
         run: |
-          npm install --no-audit --no-fund --no-save playwright@1
+          npm install --no-audit --no-fund --no-save playwright@1.64.1  # feste Version (#289)
           npx playwright install --with-deps chromium
           set -o pipefail
           node aufnehmen.mjs "$GITHUB_WORKSPACE/docs/handbuch/bilder" 2>&1 | tee "$RUNNER_TEMP/aufnahme.log"
@@ -140,7 +140,7 @@ jobs:
 
       - name: Handbücher bauen
         run: |
-          pip install --quiet 'mkdocs-material>=9.5,<10'
+          pip install --quiet --require-hashes -r docs/handbuch/requirements.txt  # feste Versionen mit Hashes (#289)
           # Seite „Begriffe“ aus dem Glossar (#276).
           python3 docs/handbuch/werkzeuge/glossar.py
           # Tabellen der Werkbank-Bereiche aus shared/src/werkbankansicht.ts (#296).

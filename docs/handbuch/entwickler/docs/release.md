@@ -65,7 +65,7 @@ Der Workflow *Scorecard* bewertet wöchentlich und bei jedem Push auf `main`, wi
 
 Bewusst anders, als Scorecard es gern hätte:
 
-- **Basis-Images ohne festen Prüfwert** (`node:24-alpine`, `python:3.12-alpine` im `Dockerfile`): Der wöchentliche Neubau soll gerade die neuesten Sicherheitskorrekturen der Reihe holen. Ein fester Prüfwert würde jede Woche einen eigenen PR brauchen, ohne mehr Sicherheit zu bringen; die Images selbst werden geprüft und tragen einen Herkunftsnachweis.
+- **Basis-Images ohne festen Prüfwert** (`node:24-alpine`, `python:3.12-alpine` im `Dockerfile`): Der wöchentliche Neubau soll gerade die neuesten Sicherheitskorrekturen der Reihe holen. Ein fester Prüfwert würde jede Woche einen eigenen PR brauchen, ohne mehr Sicherheit zu bringen; die Images selbst werden geprüft und tragen einen Herkunftsnachweis. Das gilt auch nach der Prüfung in #289: Mit Prüfwert kämen Korrekturen an Node nur noch über einen Dependabot-PR, den jemand mergen muss.
 - **Code-Review:** Mit einem Maintainer gibt es keine zweite Person, die jeden PR freigibt. Stattdessen müssen alle Prüfungen grün sein, und Änderungen laufen über PRs mit Issue.
 
 ### Bewertung des ersten Laufs
@@ -76,7 +76,7 @@ Erster Lauf am 31.10.2026: **6,1 von 10**. So gehen wir mit den einzelnen Prüfu
 | --- | --- | --- |
 | Dangerous-Workflow, Token-Permissions, Binary-Artifacts, Dependency-Update-Tool, Security-Policy, Packaging, License, CI-Tests | 10 | erfüllt, so halten |
 | Vulnerabilities | 8 | Bekannte Lücken in Entwicklungswerkzeugen (nicht im Image – das prüfen `npm audit --omit=dev` und Trivy). Kommen mit den Updates aus #236 weg; Liste unter *Security → Dependabot*. |
-| Pinned-Dependencies | 6 | Actions fest, `npm ci` ohne Ausweichen auf `npm install`. Bewusst offen: Basis-Images ohne Prüfwert (siehe oben), Werkzeuge nur für den Handbuch-Bau (mkdocs über pip, Playwright, apt-Pakete der Runner) – sie landen nicht im Image. |
+| Pinned-Dependencies | 6 | Actions fest, `npm ci` ohne Ausweichen auf `npm install`. Seit #289 auch die Werkzeuge der Handbücher: mkdocs mit allen Abhängigkeiten über `docs/handbuch/requirements.txt` mit Hashes (Image und CI, Dependabot hält sie aktuell), Playwright mit fester Version. Bewusst offen: Basis-Images ohne Prüfwert (siehe oben), `FROM laufzeit` (interne Stufe, Fehlalarm), `npm install --package-lock-only` in *Lockfile erzeugen* (erzeugt das Lockfile, Fehlalarm) und die apt-Pakete der Runner. |
 | SAST | 4 | CodeQL läuft seit Ende Oktober 2026 bei jedem PR. Der Wert zählt die letzten Commits und steigt von selbst. |
 | Maintained | 0 | Das Repository ist jünger als 90 Tage; danach zählt die Aktivität und der Wert steigt von selbst. |
 | Branch-Protection | 0 | Ruleset nach dem Vorschlag unten einschalten (Maintainer). |
