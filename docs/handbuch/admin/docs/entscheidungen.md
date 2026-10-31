@@ -177,7 +177,7 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 
 ## Werkbank anpassen (#281)
 
-- **Ausblenden heißt nicht abschalten.** Die Vorlagen *Haushalt*, *Organisation* und *Alles* bestimmen nur, welche Bereiche links in der Werkbank stehen. Was ausgeblendet ist, läuft weiter (z. B. Postfächer, Protokoll) und bleibt über die Adresse und die Übersicht erreichbar. Neue Installationen starten mit *Haushalt*, damit die Werkbank für Familien übersichtlich bleibt.
+- **Ausblenden heißt nicht abschalten.** Die Vorlagen *Haushalt*, *Betrieb* (bis 0.73 „Organisation“) und *Alles* bestimmen nur, welche Bereiche links in der Werkbank stehen. Was ausgeblendet ist, läuft weiter (z. B. Postfächer, Protokoll) und bleibt über die Adresse und die Übersicht erreichbar. Neue Installationen starten mit *Haushalt*, damit die Werkbank für Familien übersichtlich bleibt.
 - **Bereiche an einer Stelle:** `shared/src/werkbankansicht.ts` führt alle Bereiche mit Gruppe und Vorlagen; das Handbuch erzeugt seine Tabellen daraus. Eine spätere Neugruppierung und abgestufte Administratorrechte setzen dort an.
 - **Abgestufte Administratorrechte** (#282) – etwa ein Administrator nur für Benutzer – sind bewusst zurückgestellt: Im Haushalt gibt es meist einen Administrator, und jede Stufe mehr macht die Werkbank schwerer zu verstehen.
 

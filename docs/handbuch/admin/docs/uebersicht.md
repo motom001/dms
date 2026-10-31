@@ -47,7 +47,7 @@ Nicht jeder braucht jeden Bereich. Ein Haushalt fasst Nummernkreise, Postfächer
 
 - **Haushalt**: schlank, nur was ein Haushalt zum Einrichten und Sichern braucht. Neue Installationen beginnen damit.
 <!-- bereiche:organisation -->
-- **Organisation**: zusätzlich Nummernkreise, Darf weg, Anmeldeschutz, Designs, Postfächer, Eingangsordner, Texterkennung, Protokoll, Gemeldete Fehler, Wartungsmodus.
+- **Betrieb**: zusätzlich Nummernkreise, Darf weg, Anmeldeschutz, Designs, Postfächer, Eingangsordner, Texterkennung, Protokoll, Gemeldete Fehler, Wartungsmodus.
 <!-- /bereiche:organisation -->
 - **Alles**: jeder Bereich. So bleibt es bei Installationen, die vor Version 0.70 eingerichtet wurden, bis du etwas anderes wählst.
 
@@ -65,31 +65,31 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 <!-- bereiche:wofuer -->
 | Bereich | Wofür | In der Vorlage |
 | --- | --- | --- |
-| [Mappentypen](mappentypen.md) | Eigene Arten von Mappen bauen | Haushalt, Organisation |
-| [Ansichten](sichten.md) | Die Sammlungen links in der Ablage ordnen | Haushalt, Organisation |
-| [Nummernkreise](nummernkreise.md) | Fortlaufende Nummern, z. B. für Rechnungen | Organisation |
-| [Pakete](pakete.md) | Fertige Mappentypen und Ansichten installieren | Haushalt, Organisation |
-| [Darf weg](archiv.md#nach-der-frist-darf-weg) | Mappen mit abgelaufener Aufbewahrungsfrist (nur mit Archivmodus) | Organisation |
-| [Benutzer](benutzer.md) | Benutzer und Rollen anlegen | Haushalt, Organisation |
-| [Anmeldeschutz](anmeldeschutz.md) | Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen | Organisation |
-| [Aufgaben](aufgaben.md) | Alle offenen Aufgaben im Blick behalten | Haushalt, Organisation |
-| [E-Mail und Adresse](installation.md#e-mail-und-adresse) | E-Mail-Versand und Adresse des DMS | Haushalt, Organisation |
-| [Verschlüsselung](verschluesselung.md) | Den Schlüssel für Passwörter und Sicherungen | Haushalt, Organisation |
-| [Designs](designs.md) | Logo, Farben und eigenes CSS | Organisation |
-| [Papierkorb](papierkorb.md) | Gelöschte Mappen zurückholen | Haushalt, Organisation |
+| [Mappentypen](mappentypen.md) | Eigene Arten von Mappen bauen | Haushalt, Betrieb |
+| [Ansichten](sichten.md) | Die Sammlungen links in der Ablage ordnen | Haushalt, Betrieb |
+| [Nummernkreise](nummernkreise.md) | Fortlaufende Nummern, z. B. für Rechnungen | Betrieb |
+| [Pakete](pakete.md) | Fertige Mappentypen und Ansichten installieren | Haushalt, Betrieb |
+| [Darf weg](archiv.md#nach-der-frist-darf-weg) | Mappen mit abgelaufener Aufbewahrungsfrist (nur mit Archivmodus) | Betrieb |
+| [Benutzer](benutzer.md) | Benutzer und Rollen anlegen | Haushalt, Betrieb |
+| [Anmeldeschutz](anmeldeschutz.md) | Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen | Betrieb |
+| [Aufgaben](aufgaben.md) | Alle offenen Aufgaben im Blick behalten | Haushalt, Betrieb |
+| [E-Mail und Adresse](installation.md#e-mail-und-adresse) | E-Mail-Versand und Adresse des DMS | Haushalt, Betrieb |
+| [Verschlüsselung](verschluesselung.md) | Den Schlüssel für Passwörter und Sicherungen | Haushalt, Betrieb |
+| [Designs](designs.md) | Logo, Farben und eigenes CSS | Betrieb |
+| [Papierkorb](papierkorb.md) | Gelöschte Mappen zurückholen | Haushalt, Betrieb |
 | [Datenbank-Anbindung](installation.md#datenbank-anbindung) | Die Verbindung zur Datenbank ändern | nur Alles |
-| [Speicherplatz](speicherplatz.md) | Sehen, wie voll das Gerät ist | Haushalt, Organisation |
-| [Postfächer](postfaecher.md) | Post aus einem E-Mail-Konto abholen | Organisation |
-| [Eingangsordner](eingangsordner.md) | Scans aus einem Ordner übernehmen | Organisation |
-| [Texterkennung](texterkennung.md) | Text in gescannten Dokumenten finden | Organisation |
-| [Protokoll](fehlersuche.md#protokoll) | Das technische Protokoll lesen | Organisation |
-| [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) | Fehler, die Benutzer gemeldet haben | Organisation |
-| [Sicherung](sicherung.md) | Sicherungen einrichten und prüfen | Haushalt, Organisation |
-| [Wiederherstellen](wiederherstellen.md) | Eine Sicherung zurückspielen | Haushalt, Organisation |
-| [Vollexport](export.md) | Alle Daten in offenen Formaten mitnehmen | Haushalt, Organisation |
-| [Wartungsmodus](wartungsmodus.md) | Benutzer vorübergehend aussperren | Organisation |
+| [Speicherplatz](speicherplatz.md) | Sehen, wie voll das Gerät ist | Haushalt, Betrieb |
+| [Postfächer](postfaecher.md) | Post aus einem E-Mail-Konto abholen | Betrieb |
+| [Eingangsordner](eingangsordner.md) | Scans aus einem Ordner übernehmen | Betrieb |
+| [Texterkennung](texterkennung.md) | Text in gescannten Dokumenten finden | Betrieb |
+| [Protokoll](fehlersuche.md#protokoll) | Das technische Protokoll lesen | Betrieb |
+| [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) | Fehler, die Benutzer gemeldet haben | Betrieb |
+| [Sicherung](sicherung.md) | Sicherungen einrichten und prüfen | Haushalt, Betrieb |
+| [Wiederherstellen](wiederherstellen.md) | Eine Sicherung zurückspielen | Haushalt, Betrieb |
+| [Vollexport](export.md) | Alle Daten in offenen Formaten mitnehmen | Haushalt, Betrieb |
+| [Wartungsmodus](wartungsmodus.md) | Benutzer vorübergehend aussperren | Betrieb |
 | [Wartungsoperationen](texterkennung.md#wartungsoperationen) | Einmalige Pflegearbeiten | nur Alles |
 | [Datenbank](fehlersuche.md#datenbank) | Tabellen und Größen der Datenbank | nur Alles |
-| [Technik](fehlersuche.md#technik) | Version, Updates und die Übersicht für GitHub | Haushalt, Organisation |
+| [Technik](fehlersuche.md#technik) | Version, Updates und die Übersicht für GitHub | Haushalt, Betrieb |
 | [Demo-Daten](demo.md) | Beispielmappen zum Ausprobieren | nur Alles |
 <!-- /bereiche:wofuer -->

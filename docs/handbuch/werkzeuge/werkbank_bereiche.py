@@ -7,7 +7,7 @@ Tabellen der Werkbank-Bereiche im Administratorhandbuch aus shared/src/werkbanka
 
 Ersetzt in uebersicht.md die Abschnitte zwischen den Markern
   <!-- bereiche:gruppen -->        … <!-- /bereiche:gruppen -->        Gruppen und ihre Bereiche
-  <!-- bereiche:organisation -->   … <!-- /bereiche:organisation -->   was „Organisation“ zusätzlich zeigt
+  <!-- bereiche:organisation -->   … <!-- /bereiche:organisation -->   was „Betrieb“ zusätzlich zeigt
   <!-- bereiche:wofuer -->         … <!-- /bereiche:wofuer -->         Wofür man welchen Bereich braucht
 So bleibt das Handbuch beim Ändern der Bereiche oder einer späteren Neugruppierung an einer Stelle aktuell.
 """
@@ -40,7 +40,7 @@ def lies():
     gruppen = dict(re.findall(r"(\w+): '([^']+)'", re.search(r'export const GRUPPEN = \{([^}]*)\}', ts).group(1)))
     bereiche = []
     for pfad, gruppe, name, inn, wann in re.findall(r"\{ pfad: '(\w+)', gruppe: '(\w+)', name: '([^']+)', in: \[([^\]]*)\], wann: '([^']+)' \}", ts):
-        vorlagen = ['Haushalt', 'Organisation'] if '...H' in inn else ['Organisation'] if '...O' in inn else []
+        vorlagen = ['Haushalt', 'Betrieb'] if '...H' in inn else ['Betrieb'] if '...O' in inn else []
         bereiche.append({'pfad': pfad, 'gruppe': gruppe, 'name': name, 'vorlagen': vorlagen, 'wann': wann})
     if not bereiche or any(b['pfad'] not in SEITE for b in bereiche):
         fehlt = [b['pfad'] for b in bereiche if b['pfad'] not in SEITE]
@@ -58,8 +58,8 @@ def bloecke(gruppen, bereiche):
     for g, titel in gruppen.items():
         z.append(f'| **{titel}** | ' + ', '.join(verweis(b) for b in bereiche if b['gruppe'] == g) + ' |')
     gr = '\n'.join(z)
-    org = ', '.join(b['name'] for b in bereiche if b['vorlagen'] == ['Organisation'])
-    org = f'- **Organisation**: zusätzlich {org}.'
+    org = ', '.join(b['name'] for b in bereiche if b['vorlagen'] == ['Betrieb'])
+    org = f'- **Betrieb**: zusätzlich {org}.'
     z = ['| Bereich | Wofür | In der Vorlage |', '| --- | --- | --- |']
     for b in bereiche:
         wann = b['wann'][0].upper() + b['wann'][1:]

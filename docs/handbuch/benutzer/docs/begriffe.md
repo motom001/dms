@@ -209,6 +209,10 @@ Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe im DMS. Personen 
 <a id="berechtigungen"></a>**Berechtigungen** · ✓ Alltagswort · Administratoren  
 Wer was darf. Am Mappentyp – Anlegen, Lesen, Bearbeiten, Löschen, Passwörter sehen – mit einem Standard plus Regeln; an der Ansicht – Sehen, Anlegen, Exportieren – mit Vererbung an die Unteransichten. Für Administratoren gelten sie nicht.
 
+<a id="betrieb"></a>**Betrieb** · ✓ Alltagswort · Administratoren  
+Die Vorlage unter „Werkbank anpassen“ für Selbständige und kleine Betriebe – mit Nummernkreisen, Archivmodus, Postfächern und weiteren Bereichen. Geplant ist „Betrieb“ auch als Sprachprofil für Firmen (Gegenstück zu „Haushalt“).  
+Siehe auch: [Werkbank anpassen](#werkbank-anpassen), [Haushalt](#haushalt).
+
 <a id="darf-weg"></a>**Darf weg** · ✓ Alltagswort · Administratoren  
 Die Liste der Mappen, deren Aufbewahrungsfrist abgelaufen ist.
 
@@ -266,8 +270,8 @@ Eine E-Mail, die einmal am Tag die offenen Aufgaben eines Benutzers auflistet �
 Siehe auch: [Aufgabe](#aufgabe), [Anstehend](#anstehend).
 
 <a id="werkbank-anpassen"></a>**Werkbank anpassen** · ~ mit Erklärung · Administratoren  
-Legt fest, welche Bereiche links in der Werkbank stehen – nach einer Vorlage („Haushalt“, „Organisation“ oder „Alles“) und mit Abweichungen. Ausblenden schaltet nichts ab. Neue Installationen starten mit „Haushalt“; Installationen von vor dieser Einstellung zeigen alles.  
-Siehe auch: [Werkbank](#werkbank), [Übersicht](#ubersicht).
+Legt fest, welche Bereiche links in der Werkbank stehen – nach einer Vorlage („Haushalt“, „Betrieb“ oder „Alles“) und mit Abweichungen. Ausblenden schaltet nichts ab. Neue Installationen starten mit „Haushalt“; Installationen von vor dieser Einstellung zeigen alles.  
+Siehe auch: [Werkbank](#werkbank), [Übersicht](#ubersicht), [Betrieb](#betrieb).
 
 <a id="zwei-faktor-anmeldung"></a>**Zwei-Faktor-Anmeldung** · ~ mit Erklärung · alle  
 Ein zusätzlicher Code aus einer App bei der Anmeldung.
@@ -304,8 +308,7 @@ Eine kurze Prüfkennung, an der man einen Schlüssel wiedererkennt.
 Fehler, die Benutzer über „Fehler melden“ eingereicht haben (Werkbank → Gemeldete Fehler).
 
 <a id="haushalt"></a>**Haushalt** · ✓ Alltagswort · Administratoren  
-Der Haushalt (oder die Firma), für den das DMS eingerichtet ist. Eine Installation ist ein Haushalt. „Mandant“ steht nur im Code und, wo technisch nötig, im Administratorhandbuch. Geplant: Je nach Sprachprofil soll es „Haushalt“ oder „Organisation“ heißen.  
-Noch offen: [Frage 23](#offen-23).
+Der Haushalt (oder die Firma), für den das DMS eingerichtet ist. Eine Installation ist ein Haushalt. „Mandant“ steht nur im Code und, wo technisch nötig, im Administratorhandbuch. Geplant: Je nach Sprachprofil soll es „Haushalt“ oder „Betrieb“ heißen.
 
 <a id="konsole"></a>**Konsole** · ✗ Fachwort · Fortgeschrittene  
 Der Befehl „dms“ im Container für Notfall und Betrieb.
@@ -358,9 +361,6 @@ Manche Wörter stehen für mehr als eine Sache oder klingen zu ähnlich. Das wol
 
 <a id="offen-10"></a>**10. „Wartung“ dreifach – Werkbank-Gruppe „Wartung und Fehlersuche“, Wartungsmodus, Wartungsoperationen**  
 Vorschlag: Werkbank-Gruppe neu benennen („Betrieb“), „Wartungsoperationen“ → „Pflegearbeiten“.
-
-<a id="offen-23"></a>**23. „Organisation“ für drei Dinge**  
-Vorschlag: „Organisation“ ist eine Vorlage unter „Werkbank anpassen“, das geplante Wort für den Haushalt im Sprachprofil für Firmen und ein Mappentyp im Paket Basis. Klären, welches das Wort behält; bis dahin im Text immer sagen, welches gemeint ist.
 
 ## Entschieden
 
@@ -426,6 +426,9 @@ Die Aufgabenart heißt „Post für dich“; die Ansicht „Neue Post“ bleibt.
 <a id="offen-22"></a>**22. „Rolle“ für Administrator/Mitglied und für Gruppen wie „Eltern“** (31.10.2026)  
 „Systemrolle“ (Administrator, Mitglied) und „Rolle“ (Gruppen).
 
+<a id="offen-23"></a>**23. „Organisation“ für drei Dinge** (31.10.2026)  
+„Organisation“ bleibt nur für den Mappentyp im Paket Basis. Die Werkbank-Vorlage und das geplante Sprachprofil für Firmen heißen „Betrieb“ (Paar Haushalt ↔ Betrieb).
+
 ## Für alle, die Texte schreiben
 
 Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet die Begriffe oben und nicht die Wörter in der Spalte „nicht verwenden“. Neue Begriffe kommen mit dem Release ins Glossar: [`docs/glossar.yml`](https://github.com/motom001/dms/blob/main/docs/glossar.yml).
@@ -443,6 +446,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Bedingung | – | `Bedingung` |
 | Benutzer | User, Account | `Benutzer` |
 | Berechtigungen | Permissions | `Rechte` |
+| Betrieb | Organisation (für die Vorlage) | `organisation (Vorlage)` |
 | Darstellung | Theme, Ansicht (für das Aussehen) | – |
 | Design | Theme | – |
 | Dokument | – | `Dokument` |

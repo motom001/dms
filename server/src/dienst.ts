@@ -1795,7 +1795,7 @@ export class Dienst {
     if (!this.einstellungen) throw new Fachfehler(404, 'Einstellungen sind nicht eingerichtet.');
     if ('installation' in body) {
       const a = liesAnsicht(body.installation);
-      if (!a) throw new Fachfehler(422, 'Bitte eine Vorlage wählen: Haushalt, Organisation oder Alles.');
+      if (!a) throw new Fachfehler(422, 'Bitte eine Vorlage wählen: Haushalt, Betrieb oder Alles.');
       await this.einstellungen.schreibe('werkbank_ansicht', a);
       protokoll.modul('werkbank').info('Werkbank angepasst', { vorlage: a.vorlage, ein: a.ein, aus: a.aus, von: wer.email });
     }

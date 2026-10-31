@@ -10,7 +10,7 @@ export type Vorlage = 'haushalt' | 'organisation' | 'alles';
 
 export const VORLAGEN: Record<Vorlage, { name: string; text: string }> = {
   haushalt: { name: 'Haushalt', text: 'Schlank: nur, was ein Haushalt zum Einrichten und Sichern braucht.' },
-  organisation: { name: 'Organisation', text: 'Dazu Nummernkreise, Darf weg, Anmeldeschutz, Designs, Postfächer, Eingangsordner, Texterkennung, Protokoll, Gemeldete Fehler und Wartungsmodus.' },
+  organisation: { name: 'Betrieb', text: 'Für Selbständige und kleine Betriebe. Dazu Nummernkreise, Darf weg, Anmeldeschutz, Designs, Postfächer, Eingangsordner, Texterkennung, Protokoll, Gemeldete Fehler und Wartungsmodus.' },
   alles: { name: 'Alles', text: 'Jeder Bereich der Werkbank.' },
 };
 
