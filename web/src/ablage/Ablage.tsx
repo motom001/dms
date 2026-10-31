@@ -19,6 +19,7 @@ import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
 import { Hilfe } from '../Hilfe';
 import { ExportDialog } from './Export';
+import { EmailMehrere } from './EmailMehrere';
 import { PostKnopf } from './Post';
 import type { Hilfeort } from '../../../shared/src/hilfe';
 import { Suchchips, Suchformular, suchFehler, suchTypen } from './Suche';
@@ -372,6 +373,7 @@ function Liste(p: {
   const wahl = p.auswahl ? w : undefined;
   const [ergebnis, setErgebnis] = useState<{ text: string; liste: Array<{ id: string; titel: string; grund: string }> }>();
   const [exportOffen, setExportOffen] = useState(false);
+  const [emailOffen, setEmailOffen] = useState(false);
   async function alleWaehlen() {
     try { const r = await api.auswahl(p.sicht, suche, volltext, inNotizen, p.link); w.setze(r.ids, true); }
     catch (x) { setErgebnis({ text: (x as Error).message, liste: [] }); }
@@ -434,6 +436,9 @@ function Liste(p: {
           suche={suche} volltext={volltext} notizen={inNotizen} sortierung={sortierung}
           fertig={(meldung) => { setExportOffen(false); if (meldung) setErgebnis({ text: meldung, liste: [] }); }} />
       )}
+      {emailOffen && wahl && wahl.gewaehlt.size > 0 && (
+        <EmailMehrere ids={[...wahl.gewaehlt]} fertig={(meldung) => { setEmailOffen(false); if (meldung) setErgebnis({ text: meldung, liste: [] }); }} />
+      )}
       {s.fehler && <div className="hinweis schlecht"><p>{s.fehler}</p></div>}
       {wahl && wahl.gewaehlt.size > 0 && (
         <div className="aktionsleiste" role="region" aria-label="Auswahl">
@@ -441,6 +446,7 @@ function Liste(p: {
           {!wahl.alle && (s.gesamt ?? 0) > wahl.gewaehlt.size && <button type="button" className="textknopf klein" onClick={() => void alleWaehlen()}>Alle {zahl(s.gesamt ?? 0)} auswählen</button>}
           <span className="luecke" aria-hidden="true" />
           {p.export && <button type="button" className="knopf klein" onClick={() => setExportOffen(true)}>Exportieren …</button>}
+          {p.export && <button type="button" className="knopf klein" onClick={() => { setExportOffen(false); setEmailOffen(true); }}>Per E-Mail …</button>}
           <button type="button" className="knopf klein gefahr" onClick={() => void loeschen()}>Löschen</button>
           <button type="button" className="textknopf klein" onClick={wahl.leeren}>Auswahl aufheben</button>
         </div>

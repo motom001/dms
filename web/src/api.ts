@@ -396,6 +396,9 @@ export const api = {
   postAnlegen: (e: { betreff?: string; fuer?: string | null }) => anfrage<Mappe>('POST', '/api/post', e),
   zuordnen: (postId: string, e: { ziel: string; register?: string; dokumente?: string[]; kopieren?: boolean }) =>
     anfrage<{ post: Mappe; ziel: Mappe }>('POST', `/api/mappen/${postId}/zuordnen`, e),
+  /** Mehrere Mappen per E-Mail (#151). */
+  emailMehrere: (e: { ids: string[]; an: string; betreff: string; nachricht: string; angaben: boolean; dokumente: 'alle' | string[] }) =>
+    anfrage<{ id: string; typId: string; mappen: number; anhaenge: number }>('POST', '/api/mappen/email', e),
   emailSenden: (mappeId: string, e: { an: string; betreff: string; nachricht: string; dokumente: string[] }) => anfrage<{ id: string; typId: string }>('POST', `/api/mappen/${mappeId}/email`, e),
   papierkorbTage: (e: { tage?: number; historieTage?: number }) => anfrage<{ tage: number; geleert: number; historieTage: number }>('PUT', '/api/werkbank/papierkorb/einstellungen', e),
   /* Aufgaben (#54) */

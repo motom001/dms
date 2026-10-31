@@ -183,4 +183,12 @@ describe('Exportrecht ohne Sicht (#294, Regel A)', () => {
     await assert.rejects(sende(anna, p.id), status(409));
     await assert.rejects(sende(admin, v1.id), status(409));
   });
+  it('Mehrere Mappen per E-Mail (#151): nur, wenn jede versendet werden darf', async () => {
+    const { d, admin, anna, sicht, v1, p, rufe } = await aufbau();
+    const sende = (b: { id: string }, ids: string[]) => rufe(b, 'POST', '/api/mappen/email', { body: { ids, an: 'a@example.org', betreff: 'x' } });
+    await entziehe(d, sicht.id, anna.id);
+    await assert.rejects(sende(anna, [p.id, v1.id]), (e) => e instanceof Fachfehler && e.status === 403 && /Eine Mappe darfst du nicht versenden/.test(e.message));
+    await assert.rejects(sende(anna, [p.id]), status(409));
+    await assert.rejects(sende(admin, [p.id, v1.id]), status(409));
+  });
 });

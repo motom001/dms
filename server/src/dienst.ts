@@ -221,6 +221,8 @@ export const PAPIERKORB_STANDARD_TAGE = 30;
 /** Anhänge einer E-Mail zusammen höchstens (#58); die Oberfläche warnt schon ab 20 MB. */
 export const EMAIL_MAX_ANHAENGE = 50_000_000;
 export const EMAIL_MAX_EMPFAENGER = 20;
+/** Höchstens so viele Mappen in einer E-Mail (#151). */
+export const EMAIL_MAX_MAPPEN = 100;
 export const HISTORIE_STANDARD_TAGE = 365;
 export interface DienstOptionen {
   /** Schlüssel für Passwortfelder (#39, #46). */
@@ -873,11 +875,8 @@ export class Dienst {
    * erledigt, zugeordnet zur Mappe) mit den Anhängen (dieselbe Datei, kein zweiter Speicherplatz)
    * und einen Eintrag im Protokoll.
    */
-  async versendeMappe(mappeId: string, eingabe: unknown, ich: { id: string; name: string; email: string }, mailer: Mailer | null) {
-    if (!mailer) throw new Fachfehler(409, 'Der E-Mail-Versand ist nicht eingerichtet (Werkbank → E-Mail und Adresse).');
-    const m = await this.repo.holeMappe(mappeId);
-    if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
-    const e = (eingabe ?? {}) as Record<string, unknown>;
+  /** Empfänger, Betreff und Nachricht einer E-Mail prüfen (#58, #151). */
+  private static emailKopf(e: Record<string, unknown>) {
     const an = [...new Set(String(e.an ?? '').split(/[,;\s]+/).map((x) => x.trim()).filter(Boolean))];
     const betreff = String(e.betreff ?? '').replace(/[\r\n]+/g, ' ').trim();
     const nachricht = String(e.nachricht ?? '');
@@ -889,6 +888,98 @@ export class Dienst {
     else if (betreff.length > 250) fehler.betreff = 'Der Betreff ist zu lang.';
     if (nachricht.length > NOTIZ_MAX) fehler.nachricht = 'Die Nachricht ist zu lang.';
     if (Object.keys(fehler).length) throw new Fachfehler(422, Object.values(fehler).join(' '), { felder: fehler });
+    return { an, betreff, nachricht };
+  }
+
+  /**
+   * Mehrere Mappen per E-Mail (#151): eine E-Mail an alle Empfänger. Anhänge: je Mappe ihre Angaben als
+   * PDF („Titel.pdf“, wenn `angaben`) und die gewählten Dokumente (`dokumente`: „alle“ oder Ids).
+   * Rechte: Lesen und Versenden (Recht E einer Ansicht, Regel A wie beim Export) je Mappe – prüft der Aufrufer
+   * über `z`. Danach eine Post (Kanal E-Mail, ausgehend, erledigt), die auf alle Mappen verweist, und je
+   * Mappe ein Eintrag in der Historie.
+   */
+  async versendeMappen(eingabe: unknown, ich: { id: string; name: string; email: string; rolle: string }, z: Zugriff, mailer: Mailer | null) {
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const ids = [...new Set((Array.isArray(e.ids) ? e.ids : []).map(String).filter(istUuid))];
+    if (!ids.length) throw new Fachfehler(422, 'Keine Mappen ausgewählt.');
+    if (ids.length > EMAIL_MAX_MAPPEN) throw new Fachfehler(422, `Höchstens ${EMAIL_MAX_MAPPEN} Mappen in einer E-Mail.`);
+    const { an, betreff, nachricht } = Dienst.emailKopf(e);
+    // Rechte: jede Mappe lesbar und versendbar – sonst nichts verschicken (keine stillen Lücken in der Mail).
+    const lesbar = await this.lesbare(z, ids);
+    const versendbar = await this.exportierbar(ich, z, ids.filter((id) => lesbar.has(id)));
+    const nicht = ids.filter((id) => !versendbar.has(id));
+    if (nicht.length) throw new Fachfehler(403, `${nicht.length === 1 ? 'Eine Mappe darfst' : `${nicht.length} Mappen darfst`} du nicht versenden. Versenden ist wie Exportieren nur aus Ansichten erlaubt, für die du das Recht dazu hast.`, { nicht });
+    if (!mailer) throw new Fachfehler(409, 'Der E-Mail-Versand ist nicht eingerichtet (Werkbank → E-Mail und Adresse).');
+    const mappen = (await this.repo.holeMappen(ids)).sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
+    if (mappen.length !== ids.length) throw new Fachfehler(404, 'Eine ausgewählte Mappe gibt es nicht (mehr).');
+    const angaben = e.angaben !== false;
+    const gewaehlt = e.dokumente === 'alle' ? null : new Set((Array.isArray(e.dokumente) ? e.dokumente : []).map(String));
+    const lies = async (d: Dokument) => { const x = await this.dateien.lies(d.sha256); return Buffer.isBuffer(x) ? x : Buffer.concat(await x.toArray() as Buffer[]); };
+    const verweise = mappen.flatMap((m) => { const t = z.typen.get(m.typId); return [...(t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []), m.erstelltVon, m.geaendertVon].filter((v): v is string => !!v); });
+    const bezuege = await this.maskiereBezuege(z, await this.repo.bezuege([...new Set(verweise)]));
+    const quelle = { typen: z.typen, titel: (id: string | null | undefined) => (id ? bezuege[id]?.titel || NICHT_SICHTBAR : '') };
+    const je: Array<{ m: Mappe; dokumente: Dokument[]; pdf: Buffer | null }> = [];
+    for (const m of mappen) {
+      const docs = (await this.repo.listeDokumente(m.id)).filter((d) => !gewaehlt || gewaehlt.has(d.id));
+      const pdf = angaben ? await mappenPdf(m.titel || 'Ohne Titel', [{ mappe: m, typ: z.typen.get(m.typId), dokumente: [], inhalt: lies }], quelle, null) : null;
+      je.push({ m, dokumente: docs, pdf });
+    }
+    if (gewaehlt) {
+      const bekannt = new Set(je.flatMap((x) => x.dokumente.map((d) => d.id)));
+      if ([...gewaehlt].some((id) => !bekannt.has(id))) throw new Fachfehler(422, 'Ein ausgewähltes Dokument gehört nicht (mehr) zu diesen Mappen.');
+    }
+    const groesse = je.reduce((a, x) => a + (x.pdf?.length ?? 0) + x.dokumente.reduce((b, d) => b + d.groesse, 0), 0);
+    if (groesse > EMAIL_MAX_ANHAENGE) throw new Fachfehler(413, `Die Anhänge sind zusammen größer als ${Math.round(EMAIL_MAX_ANHAENGE / 1e6)} MB. Bitte weniger Mappen oder Dokumente wählen.`);
+    // Dateinamen eindeutig: „Titel.pdf“ der Angaben, dann die Dokumente.
+    const namen = eindeutig(je.flatMap((x) => [...(x.pdf ? [`${sichererName(x.m.titel || 'Ohne Titel')}.pdf`] : []), ...x.dokumente.map((d) => sichererName(d.name, 120))]));
+    let i = 0;
+    const anhaenge: Array<{ name: string; mime: string; inhalt: Buffer | Readable }> = [];
+    for (const x of je) {
+      if (x.pdf) anhaenge.push({ name: namen[i++], mime: 'application/pdf', inhalt: x.pdf });
+      for (const d of x.dokumente) anhaenge.push({ name: namen[i++], mime: d.mime, inhalt: await this.dateien.lies(d.sha256) });
+    }
+    const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;
+    try {
+      await mailer.sende(an.join(', '), betreff, nachricht, { antwortAn, anhaenge });
+    } catch (x) {
+      throw new Fachfehler(502, `Die E-Mail wurde nicht verschickt: ${(x as Error).message}`);
+    }
+    const { post: typ } = await this.sichereSystem();
+    const id = randomUUID();
+    await this.schreibeSystemMappe(typ, id, {
+      betreff, an: an.join(', '), absender: antwortAn.replace(/"/g, ''), datum: heuteIn(), bezug: ids, ...(nachricht.trim() ? { nachricht } : {}),
+      kanal: POST_KANAL.email, richtung: POST_RICHTUNG.ausgehend, stand: POST_STAND.erledigt,
+    }, ich.id);
+    // In der Post liegt, was verschickt wurde: die Dokumente (gleiche Datei) und die PDFs der Angaben.
+    const reg = typ.register.find((r) => r.art === 'dokumente');
+    i = 0;
+    if (reg) for (const x of je) {
+      if (x.pdf) {
+        const sha256 = createHash('sha256').update(x.pdf).digest('hex');
+        await this.dateien.schreibe(sha256, x.pdf);
+        const neu = await this.repo.legeDokumentAn({ id: randomUUID(), mappeId: id, registerKey: reg.key, name: namen[i++], mime: 'application/pdf', groesse: x.pdf.length, sha256, anzeigbar: true, erstellt: new Date().toISOString(), erstelltVon: ich.id, herkunft: 'hochgeladen' });
+        this.vorschau?.einreihen([neu]);
+      }
+      for (const d of x.dokumente) { await this.repo.legeDokumentAn({ ...d, id: randomUUID(), mappeId: id, registerKey: reg.key, name: namen[i++], erstellt: new Date().toISOString(), erstelltVon: ich.id }); }
+    }
+    for (const x of je) {
+      const n = x.dokumente.length + (x.pdf ? 1 : 0);
+      await this.notiere(x.m.id, ich.id, 'email', {
+        text: `„${betreff}“ an ${an.join(', ')} mit ${mappen.length} Mappen${n ? ` (von dieser ${n} ${n === 1 ? 'Anhang' : 'Anhänge'})` : ''}`, email: id,
+        an, betreff, nachricht: nachricht.slice(0, NOTIZ_MAX), mappen: mappen.length,
+        anhaenge: [...(x.pdf ? [{ name: `${sichererName(x.m.titel || 'Ohne Titel')}.pdf`, groesse: x.pdf.length }] : []), ...x.dokumente.map((d) => ({ name: d.name, groesse: d.groesse }))],
+      });
+    }
+    protokoll.modul('ablage').info('E-Mail mit mehreren Mappen verschickt', { mappen: mappen.length, empfaenger: an.length, anhaenge: anhaenge.length, bytes: groesse });
+    return { id, typId: typ.id, mappen: mappen.length, anhaenge: anhaenge.length };
+  }
+
+  async versendeMappe(mappeId: string, eingabe: unknown, ich: { id: string; name: string; email: string }, mailer: Mailer | null) {
+    if (!mailer) throw new Fachfehler(409, 'Der E-Mail-Versand ist nicht eingerichtet (Werkbank → E-Mail und Adresse).');
+    const m = await this.repo.holeMappe(mappeId);
+    if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const { an, betreff, nachricht } = Dienst.emailKopf(e);
     const ids = Array.isArray(e.dokumente) ? [...new Set(e.dokumente.map(String))] : [];
     const alle = await this.repo.listeDokumente(mappeId);
     const dokumente = ids.map((id) => alle.find((d) => d.id === id));

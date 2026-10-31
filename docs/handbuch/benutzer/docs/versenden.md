@@ -22,6 +22,24 @@ Steht dort „Der E-Mail-Versand ist nicht eingerichtet“, muss ein Administrat
 
 Versenden gibt Daten aus dem DMS hinaus wie ein Export. Deshalb gibt es **Per E-Mail versenden** und **Als PDF exportieren** nur bei Mappen, die du in mindestens einer Ansicht mit Exportrecht siehst. Fehlt beides im Menü, hat dir der Administrator dieses Recht nicht gegeben.
 
+## Mehrere Mappen per E-Mail
+
+Alle Belege eines Jahres an den Steuerberater, die Unterlagen zum Auto an die Versicherung: Das geht in **einer** E-Mail.
+
+1. Wähle in einer Ansicht die Mappen aus – mit den Kästchen in der Liste oder **Alle … auswählen** (siehe [Mehrere Mappen auswählen](ablage.md#mehrere-mappen-auswahlen)).
+2. In der Leiste über der Liste: **Per E-Mail …**.
+3. **An**, **Betreff** und **Nachricht** wie bei einer Mappe.
+4. Unter **Anhänge** wählst du:
+    - **Angaben je Mappe als PDF** – je Mappe eine Datei „Titel.pdf“ mit allen Feldern (Passwörter nie). Vorausgewählt.
+    - **Dokumente:** **alle** Dokumente der Mappen, **keine** oder **Auswählen …** – dann stehen die Dokumente je Mappe mit Kästchen da.
+5. **Senden**.
+
+Darunter steht wieder, wie groß die Anhänge zusammen sind (Warnung ab 20 MB, höchstens 50 MB). In eine E-Mail passen höchstens 100 Mappen.
+
+Danach gibt es **eine** [Post](post.md#versendete-e-mails) unter **Post → Versendet**. Sie verweist unter „Zugeordnet zu“ auf alle versendeten Mappen und enthält, was verschickt wurde – die Dokumente und die PDFs mit den Angaben. In der [Historie](zusammenarbeit.md#historie) **jeder** versendeten Mappe steht die E-Mail mit Link.
+
+Das Recht ist dasselbe wie bei einer einzelnen Mappe: Du musst **jede** Mappe in einer Ansicht mit Exportrecht sehen. Fehlt es bei einer, verschickt das DMS gar nichts und sagt, bei wie vielen Mappen es fehlt – eine E-Mail mit stillen Lücken gibt es nicht. Den Knopf **Per E-Mail …** gibt es deshalb nur in Ansichten, aus denen du exportieren darfst.
+
 ## Als PDF exportieren
 
 **Aktionen → Als PDF exportieren** öffnet den Druckdialog des Browsers mit der **Druckansicht** der Mappe: Titel, alle Angaben, die Liste der Dokumente und die Notizen. Wähle als Drucker **Als PDF speichern** (bzw. „Microsoft Print to PDF“ unter Windows) – oder drucke sie gleich auf Papier.
