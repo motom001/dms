@@ -142,7 +142,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
               leerText="Noch keine Favoriten. Markiere eine Mappe mit dem Stern ☆, um sie hier zu finden." />
           : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} spaltenTyp={typ ?? sichtTypen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []} titel={verwaltet?.name ?? typ!.name} beschreibung={verwaltet ? verwaltet.beschreibung : typ?.beschreibung}
               offen={dritt} neu={!!typ && darfErstellen(typ) && verwaltet?.rechte?.C !== false} post={!!typ && darfPostAnlegen(typ) && verwaltet?.rechte?.C !== false}
-              leerText={typ?.system === 'post' ? 'Keine Post. Mit „+ Post“ legst du Dateien als neue Post ab.' : 'Noch keine Mappen in dieser Sicht.'} hilfe={typ?.system === 'post' ? 'ablage.post' : 'ablage.sicht'} auswahl export={verwaltet?.rechte?.E !== false} />
+              leerText={typ?.system === 'post' ? 'Keine Post. Mit „+ Post“ legst du Dateien als neue Post ab.' : 'Noch keine Mappen in dieser Sicht.'} hilfe={typ?.system === 'post' ? 'ablage.post' : 'ablage.sicht'} auswahl export={verwaltet ? verwaltet.rechte?.E !== false : exportOhneSicht(ich.rolle === 'admin', d.sichten)} />
           : sicht ? <div className="leer"><p>Diese Sicht gibt es nicht (mehr).</p></div> : null}
       </section>
 
@@ -257,9 +257,14 @@ function LinkListe({ link, suche, offen }: { link: Direktlink; suche: URLSearchP
   );
 }
 
+/** Exportieren ohne Sicht (#294, Regel A): nur wer in mindestens einer Sicht das Recht E hat (Admins immer). */
+const exportOhneSicht = (admin: boolean, sichten: Array<{ rechte?: { R?: boolean; E?: boolean } }>) =>
+  admin || sichten.some((s) => s.rechte?.R !== false && s.rechte?.E !== false);
+
 /** Treffer der erweiterten Suche (#199): wie eine Sicht, mit den Bedingungen als Chips. */
 function SuchListe({ suche, offen, aendern }: { suche: URLSearchParams; offen?: string; aendern(): void }) {
   const d = useDaten();
+  const { ich } = useKonto();
   const fehler = suchFehler(suche, d.typen);
   const kopf = <button type="button" className="textknopf klein nur-schmal" onClick={aendern}>← Suche ändern</button>;
   if (fehler.length) return (
@@ -274,7 +279,7 @@ function SuchListe({ suche, offen, aendern }: { suche: URLSearchParams; offen?: 
   const q = suche.toString();
   return (
     <Liste key={q} sicht="suche" link={q} anhang={`?${q}`} typ={typ} spaltenTyp={typ ?? typen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []}
-      titel="Suchergebnis" offen={offen} hilfe="ablage.erweitertesuche" auswahl export immerSuche
+      titel="Suchergebnis" offen={offen} hilfe="ablage.erweitertesuche" auswahl export={exportOhneSicht(ich.rolle === 'admin', d.sichten)} immerSuche
       kopf={<div className="suchkopf">{kopf}<Suchchips suche={suche} offen={offen} /></div>}
       leerText="Keine Treffer. Entferne eine Bedingung (×), um mehr zu finden." />
   );

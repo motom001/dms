@@ -131,6 +131,8 @@ export interface Repo {
   zaehleKlauseln(liste: Klausel[][], lesen?: Lesefilter | null): Promise<number[]>;
   /** Berechtigungen (#124): welche dieser Mappen der Filter durchlässt. */
   lesbare(ids: string[], lesen: Lesefilter | null): Promise<Set<string>>;
+  /** Exportrecht (#294): welche dieser Mappen zu mindestens einer der Klauseln passen. */
+  inKlauseln(ids: string[], klauseln: Klausel[]): Promise<Set<string>>;
   /** Anzahl Mappen eines Typs, für die der Ausdruck gilt (z. B. „niemand kann lesen“, #125). */
   zaehleAusdruck(typId: string, x: Ausdruck): Promise<number>;
   /** Regelwerk eines Mappentyps speichern; null = alles erteilt, keine Regeln. */

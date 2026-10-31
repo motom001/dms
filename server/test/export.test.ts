@@ -61,7 +61,7 @@ async function aufbau() {
     assert.equal(inhalt.length, f.groesse, 'Content-Length stimmt');
     return { ...f, inhalt };
   };
-  return { d, admin, anna, vertrag, sicht, v1, v2, exportiere, rufe };
+  return { d, admin, anna, vertrag, sicht, v1, v2, p, exportiere, rufe };
 }
 
 describe('Bausteine (#153)', () => {
@@ -135,5 +135,43 @@ describe('Export (#152, #153)', () => {
     await assert.rejects(exportiere(anna, { format: 'csv' }), status(403));
     assert.equal((await exportiere(admin, { format: 'csv' })).inhalt.length > 0, true);
     await assert.rejects(exportiere(anna, { format: 'doc' }), status(422));
+  });
+});
+
+describe('Exportrecht ohne Sicht (#294, Regel A)', () => {
+  const entziehe = async (d: Dienst, sichtId: string, wer: string) => {
+    const s = (await d.listeSichten()).find((x) => x.id === sichtId)!;
+    await d.aendereSicht(s.id, { ...s, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [{ id: 'e', name: 'kein Export', wenn: [{ art: 'benutzer', benutzer: [wer] }], dann: { E: 'entziehen' }, stopp: false }] } });
+  };
+  it('erweiterte Suche: nur Mappen aus Sichten mit Recht E, Rest gezählt; Admins alles', async () => {
+    const { d, admin, anna, vertrag, sicht, exportiere } = await aufbau();
+    const suche = (typ = '') => ({ sicht: 'suche', link: typ ? `typ=${typ}` : '' });
+    // Mit Recht E überall: beide Verträge, nichts ausgelassen.
+    const alle = await exportiere(anna, { format: 'csv', ...suche(vertrag.id) });
+    assert.equal(alle.koepfe?.['x-dms-ausgelassen'], '0');
+    assert.match(alle.inhalt.toString('utf8'), /V-1/);
+    // Ohne E an der Sicht „Vertrag“: aus der Suche nach Verträgen nichts mehr …
+    await entziehe(d, sicht.id, anna.id);
+    await assert.rejects(exportiere(anna, { format: 'xlsx', ...suche(vertrag.id) }), status(403));
+    await assert.rejects(exportiere(anna, { format: 'pdf', ...suche(vertrag.id) }), status(403));
+    // … über alle Typen nur der Partner, die zwei Verträge werden gemeldet.
+    const gemischt = await exportiere(anna, { format: 'csv', ...suche() });
+    assert.equal(gemischt.koepfe?.['x-dms-ausgelassen'], '2');
+    const text = gemischt.inhalt.toString('utf8');
+    assert.match(text, /Stadtwerke/);
+    assert.doesNotMatch(text, /V-1|V-2/);
+    // Administratoren dürfen alles exportieren.
+    const admins = await exportiere(admin, { format: 'csv', ...suche() });
+    assert.equal(admins.koepfe?.['x-dms-ausgelassen'], '0');
+    assert.match(admins.inhalt.toString('utf8'), /V-1/);
+  });
+  it('„Als PDF exportieren“ an der Mappe nur mit Exportrecht', async () => {
+    const { d, admin, anna, sicht, v1, p, rufe } = await aufbau();
+    const darf = async (b: { id: string }, id: string) => ((await rufe(b, 'GET', '/api/mappen/:id', { params: { id } })) as { body: { exportierbar: boolean } }).body.exportierbar;
+    assert.equal(await darf(anna, v1.id), true);
+    await entziehe(d, sicht.id, anna.id);
+    assert.equal(await darf(anna, v1.id), false);
+    assert.equal(await darf(anna, p.id), true);
+    assert.equal(await darf(admin, v1.id), true);
   });
 });

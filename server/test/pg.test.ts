@@ -584,6 +584,32 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('GET', '/api/sichten/definitionen')).body.find((x: { id: string }) => x.id === offen.body.id).elternId, null, 'Untersicht rückt hoch');
     assert.equal((await anfrage('DELETE', `/api/sichten/definitionen/${offen.body.id}`)).status, 204);
   });
+  it('exportiert ohne Sicht nur Mappen aus Sichten mit Recht E (#294)', async () => {
+    const typ = (await anfrage('POST', '/api/typen', { name: 'Exportprobe', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] })).body;
+    const m = (await anfrage('POST', '/api/mappen', { typId: typ.id, werte: { name: 'Probe-294' } })).body;
+    const mitglied = (await anfrage('GET', '/api/benutzer')).body.find((x: { email: string }) => x.email === 'mitglied@example.org');
+    const login = await app.inject({ method: 'POST', url: '/api/konto/anmelden', headers: { 'x-dms': '1' }, payload: { email: 'mitglied@example.org', passwort: 'mitglied-passwort' } });
+    const mc = String(login.headers['set-cookie']).split(';')[0];
+    const alsMitglied = async (method: string, url: string, payload?: unknown) => app.inject({ method, url, payload, headers: { 'x-dms': '1', cookie: mc } });
+    const suche = { format: 'csv', sicht: 'suche', link: `typ=${typ.id}` };
+    const vorher = await alsMitglied('POST', '/api/export', suche);
+    assert.equal(vorher.statusCode, 200);
+    assert.equal(vorher.headers['x-dms-ausgelassen'], '0');
+    assert.match(vorher.body, /Probe-294/);
+    assert.equal(JSON.parse((await alsMitglied('GET', `/api/mappen/${m.id}`)).body).exportierbar, true);
+    // Recht E an allen Sichten mit diesem Typ entziehen.
+    for (const s of (await anfrage('GET', '/api/sichten/definitionen')).body.filter((x: { typen?: string[] }) => !x.typen?.length || x.typen.includes(typ.id))) {
+      await anfrage('PUT', `/api/sichten/definitionen/${s.id}`, { ...s, berechtigungen: { grund: { R: true, C: true, E: true }, regeln: [{ id: 'e', name: 'kein Export', wenn: [{ art: 'benutzer', benutzer: [mitglied.id] }], dann: { E: 'entziehen' }, stopp: false }] } });
+    }
+    assert.equal((await alsMitglied('POST', '/api/export', suche)).statusCode, 403);
+    assert.equal(JSON.parse((await alsMitglied('GET', `/api/mappen/${m.id}`)).body).exportierbar, false);
+    const admin = await app.inject({ method: 'POST', url: '/api/export', payload: suche, headers: { 'x-dms': '1', cookie } });
+    assert.equal(admin.statusCode, 200);
+    assert.equal(admin.headers['x-dms-ausgelassen'], '0');
+    for (const s of (await anfrage('GET', '/api/sichten/definitionen')).body.filter((x: { berechtigungen?: { regeln?: { name: string }[] } }) => x.berechtigungen?.regeln?.some((r) => r.name === 'kein Export'))) {
+      await anfrage('PUT', `/api/sichten/definitionen/${s.id}`, { ...s, berechtigungen: undefined });
+    }
+  });
   it('speichert Passwortfelder verschlüsselt und gibt sie nur gezielt heraus (#46)', async () => {
     const typ = (await anfrage('POST', '/api/typen', { name: 'Zugang', felder: [
       { key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'kennwort', label: 'Kennwort', typ: 'passwort' },

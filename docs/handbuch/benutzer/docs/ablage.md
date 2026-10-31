@@ -133,7 +133,7 @@ In der Liste einer Sicht wählst du mehrere Mappen aus, um sie in einem Schritt 
 - **ZIP mit Dokumenten** – die Tabelle als Excel und CSV und je Mappe ein Ordner mit ihren Dokumenten.
 - **PDF** – je Mappe eine Seite mit ihren Feldern und der Liste der Dokumente, wahlweise vorne eine Übersicht als Tabelle. PDF-Dokumente werden danach eingebunden, Bilder (JPEG, PNG) als eigene Seite; andere Dateien werden nur genannt.
 
-Als Spalten nimmst du die der Liste oder alle Felder. Verweise erscheinen mit dem Titel der Mappe. **Passwörter werden nie exportiert.** Jeder Export steht im Protokoll. Ob du aus einer Sicht exportieren darfst, legt der Administrator fest; fehlt das Recht, gibt es den Knopf nicht.
+Als Spalten nimmst du die der Liste oder alle Felder. Verweise erscheinen mit dem Titel der Mappe. **Passwörter werden nie exportiert.** Jeder Export steht im Protokoll. Ob du aus einer Sicht exportieren darfst, legt der Administrator fest; fehlt das Recht, gibt es den Knopf nicht. In der erweiterten Suche und bei **Als PDF exportieren** an einer Mappe gilt dasselbe: Exportiert werden nur Mappen, die du in mindestens einer Sicht mit Exportrecht sehen würdest. Treffer ohne dieses Recht lässt der Export aus und nennt ihre Zahl.
 
 ## Favoriten
 

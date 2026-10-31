@@ -167,7 +167,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
           return reply.code(302).header('location', antwort.weiterleiten).send();
         }
         if (antwort.datei) {
-          for (const [k, v] of Object.entries(dateiKoepfe(antwort.datei))) reply.header(k, v);
+          for (const [k, v] of Object.entries({ ...dateiKoepfe(antwort.datei), ...antwort.datei.koepfe })) reply.header(k, v);
           return reply.send(antwort.datei.inhalt);
         }
         reply.header('cache-control', 'no-store');

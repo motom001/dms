@@ -2176,7 +2176,7 @@ export class Dienst {
    * Export mehrerer Mappen (#152, #153): Tabelle (csv, xlsx), ZIP mit Dokumenten oder ein PDF.
    * Recht E an der Sicht, Lesen je Mappe; Reihenfolge wie in der Liste. Passwörter nie.
    */
-  async exportiere(ich: { id: string; rolle: string }, e: unknown, z: Zugriff): Promise<{ name: string; mime: string; inhalt: Buffer | Readable; groesse: number; mappen: number }> {
+  async exportiere(ich: { id: string; rolle: string }, e: unknown, z: Zugriff): Promise<{ name: string; mime: string; inhalt: Buffer | Readable; groesse: number; mappen: number; ausgelassen: number }> {
     const x = (e ?? {}) as Record<string, unknown>;
     const format = String(x.format ?? '');
     if (!['csv', 'xlsx', 'zip', 'pdf'].includes(format)) throw new Fachfehler(422, 'Unbekanntes Format.');
@@ -2190,8 +2190,17 @@ export class Dienst {
     }
     const treffer = (await this.trefferIds(ich, q, z)).ids;
     const gewaehlt = Array.isArray(x.ids) ? new Set(x.ids.map(String)) : null;
-    const ids = gewaehlt ? treffer.filter((id) => gewaehlt.has(id)) : treffer;
+    let ids = gewaehlt ? treffer.filter((id) => gewaehlt.has(id)) : treffer;
     if (!ids.length) throw new Fachfehler(422, 'Keine Mappen zum Exportieren.');
+    // Ohne Sicht (erweiterte Suche, Typ-Liste, Link …) gilt Regel A (#294): nur Mappen, die der Benutzer
+    // in mindestens einer Sicht mit Recht E sehen würde; die übrigen werden ausgelassen und gezählt.
+    let ausgelassen = 0;
+    if (!sicht && !z.admin) {
+      const erlaubt = await this.exportierbar(ich, z, ids);
+      ausgelassen = ids.length - erlaubt.size;
+      ids = ids.filter((id) => erlaubt.has(id));
+      if (!ids.length) throw new Fachfehler(403, 'Du darfst keine dieser Mappen exportieren. Exportieren ist nur aus Sichten erlaubt, für die du das Recht dazu hast.');
+    }
     const mappen = (await this.repo.holeMappen(ids)).sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
     const typen = [...new Set(mappen.map((m) => m.typId))].map((t) => z.typen.get(t)).filter((t): t is Mappentyp => !!t);
     const spalten = exportSpalten(typen, x.spalten === 'alle' ? 'alle' : 'liste', sicht?.trefferliste ?? null);
@@ -2205,14 +2214,14 @@ export class Dienst {
       const zeilen = mappen.map((m) => zeile(m, spalten, quelle));
       return { kopf, text: zeilen.map((r) => r.text), werte: zeilen.map((r) => r.werte) };
     };
-    if (format === 'csv') { const t = tabelle(); const b = csvAus(t.kopf, t.text); return { name: `${datei}.csv`, mime: 'text/csv; charset=utf-8', inhalt: b, groesse: b.length, mappen: mappen.length }; }
-    if (format === 'xlsx') { const t = tabelle(); const b = xlsxAus(titel, t.kopf, t.werte); return { name: `${datei}.xlsx`, mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', inhalt: b, groesse: b.length, mappen: mappen.length }; }
+    if (format === 'csv') { const t = tabelle(); const b = csvAus(t.kopf, t.text); return { name: `${datei}.csv`, mime: 'text/csv; charset=utf-8', inhalt: b, groesse: b.length, mappen: mappen.length, ausgelassen }; }
+    if (format === 'xlsx') { const t = tabelle(); const b = xlsxAus(titel, t.kopf, t.werte); return { name: `${datei}.xlsx`, mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', inhalt: b, groesse: b.length, mappen: mappen.length, ausgelassen }; }
     if (format === 'pdf') {
       const b = await mappenPdf(titel, await Promise.all(mappen.map(async (m) => ({
         mappe: m, typ: z.typen.get(m.typId), dokumente: await this.repo.listeDokumente(m.id),
         inhalt: async (d: Dokument) => { const s = await this.dateien.lies(d.sha256); return Buffer.isBuffer(s) ? s : Buffer.concat(await s.toArray() as Buffer[]); },
       }))), quelle, x.uebersicht === true ? { spalten, typen } : null);
-      return { name: `${datei}.pdf`, mime: 'application/pdf', inhalt: b, groesse: b.length, mappen: mappen.length };
+      return { name: `${datei}.pdf`, mime: 'application/pdf', inhalt: b, groesse: b.length, mappen: mappen.length, ausgelassen };
     }
     // ZIP: Tabelle als Excel und CSV, je Mappe ein Ordner mit ihren Dokumenten.
     const t = tabelle();
@@ -2227,7 +2236,22 @@ export class Dienst {
     }
     const groesse = zipGroesse(eintraege);
     if (groesse > ZIP_MAX) throw new Fachfehler(422, 'Der Export wäre größer als 4 GB. Bitte weniger Mappen auswählen.');
-    return { name: `${datei}.zip`, mime: 'application/zip', inhalt: zipStrom(eintraege), groesse, mappen: mappen.length };
+    return { name: `${datei}.zip`, mime: 'application/zip', inhalt: zipStrom(eintraege), groesse, mappen: mappen.length, ausgelassen };
+  }
+
+  /**
+   * Exportrecht ohne Sicht (#294, Regel A): welche dieser Mappen der Benutzer in mindestens einer Sicht
+   * mit den Rechten R und E sehen würde (einschließlich Untersichten, ohne verborgene). Administratoren: alle.
+   */
+  async exportierbar(ich: { id: string; rolle: string }, z: Zugriff, ids: string[]): Promise<Set<string>> {
+    if (z.admin) return new Set(ids);
+    const alle = await this.repo.listeSichten();
+    const rechte = alleSichtRechte(alle, z.wer, false);
+    const verborgen = this.verborgeneSichten(alle, z);
+    const a = await this.aufloesung(ich.id);
+    const klauseln = alle.filter((s) => rechte.get(s.id)?.R && rechte.get(s.id)?.E)
+      .flatMap((s) => klauselnFuer(alle, s.id, z.typen, a, verborgen));
+    return klauseln.length ? this.repo.inKlauseln(ids, klauseln) : new Set();
   }
 
   /** Alle Treffer einer Sicht mit Suche (#149): nur die Ids der lesbaren Mappen, höchstens MAX_AUSWAHL. */
