@@ -283,6 +283,22 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('DELETE', '/api/werkbank/demo')).status, 202);
     assert.equal((await auftrag()).ergebnis.entfernt, r.gesamt);
 
+    // Wachstumstests (#248): Abschätzung, Dokumente zu den Mappen, Entfernen in Paketen.
+    const opt = { anzahl: 120, startwert: 'pg', dokumente: { anteil: 100, von: 1, bis: 2, mischung: { brief: 70, mehrseitig: 30 }, duplikate: 10 } };
+    const schaetzung = (await anfrage('POST', '/api/werkbank/demo/abschaetzung', opt)).body;
+    assert.ok(schaetzung.dokumente.dokumente > 0 && schaetzung.mappen >= 120, JSON.stringify(schaetzung));
+    assert.equal((await anfrage('POST', '/api/werkbank/demo', opt)).status, 202);
+    const mitDok = await auftrag();
+    assert.equal(mitDok.status, 'fertig', mitDok.fehler);
+    assert.ok(mitDok.ergebnis.dokumente.anzahl > 0);
+    assert.equal(mitDok.fertig, mitDok.gesamt);
+    const rechnung = (await anfrage('GET', `/api/mappen?sicht=${rechnungTyp.id}&anzahl=200`)).body.mappen.find((m: { demo?: boolean }) => m.demo);
+    const mitDetails = (await anfrage('GET', `/api/mappen/${rechnung.id}`)).body;
+    assert.ok(mitDetails.dokumente.length >= 1, 'Rechnung hat Dokumente');
+    assert.equal((await anfrage('DELETE', '/api/werkbank/demo')).status, 202);
+    assert.equal((await auftrag()).ergebnis.entfernt, mitDok.ergebnis.gesamt);
+    assert.equal((await anfrage('GET', '/api/werkbank/demo')).body.reduce((a: number, t: { demo: number }) => a + t.demo, 0), 0);
+
     assert.equal((await anfrage('PUT', '/api/konto/passwort', { passwortAlt: 'falsch-falsch', passwortNeu: 'neues-admin-passwort' })).status, 403);
     const alt = cookie;
     assert.equal((await anfrage('PUT', '/api/konto/passwort', { passwortAlt: 'ein-langes-passwort', passwortNeu: 'neues-admin-passwort' })).status, 200);

@@ -75,6 +75,10 @@ export interface Repo {
   zaehleMappen(typId: string): Promise<number>;
 
   listeMappen(typId?: string): Promise<Mappe[]>;
+  /** Nur Id, Typ und Titel aller Mappen (Demo-Daten, #248: auch bei 200.000 Mappen schlank). */
+  mappenKurz(): Promise<Array<{ id: string; typId: string; titel: string }>>;
+  /** Vorhandene Werte eines Feldes (für eindeutige Felder beim Erzeugen von Demo-Daten). */
+  feldwerte(typId: string, key: string): Promise<string[]>;
   holeMappe(id: string): Promise<Mappe | undefined>;
   legeMappeAn(id: string, typId: string, werte: Werte, verweise: Verweis[], benutzerId: string | null, demo?: boolean, systemKennung?: string | null): Promise<Mappe>;
   /** Die Mappe mit dieser Systemkennung (z. B. rolle:admin). */
@@ -149,8 +153,11 @@ export interface Repo {
   zaehleDemo(): Promise<Map<string, number>>;
   /** Anzahl echter Mappen, die auf Demo-Mappen verweisen. */
   echteVerweiseAufDemo(): Promise<number>;
-  /** Löscht alle Demo-Mappen (auch im Papierkorb); liefert ihre Anzahl und die Prüfwerte ihrer Dateien. */
-  loescheDemo(): Promise<{ anzahl: number; dateien: string[] }>;
+  /**
+   * Löscht Demo-Mappen; liefert ihre Anzahl und die Prüfwerte ihrer Dateien. Mit `max` höchstens so
+   * viele (#248: in Paketen); erst wenn keine mehr übrig ist, auch die Demo-Mappen im Papierkorb.
+   */
+  loescheDemo(max?: number): Promise<{ anzahl: number; dateien: string[] }>;
 
   /* ---------- Papierkorb (#43) ---------- */
   /** Zieht die Mappe samt Verweisen und Dokumenten in den Papierkorb. */

@@ -380,7 +380,8 @@ export const api = {
   passwortAnzeigen: (mappeId: string, feld: string) => anfrage<{ wert: string }>('POST', `/api/mappen/${mappeId}/passwoerter/${encodeURIComponent(feld)}`),
   beispiele: () => anfrage<null>('POST', '/api/beispiele'),
   demoUebersicht: () => anfrage<Array<{ typId: string; name: string; demo: number; gesamt: number }>>('GET', '/api/werkbank/demo'),
-  demoErzeugen: (anzahl: number) => anfrage<Auftrag>('POST', '/api/werkbank/demo', { anzahl }),
+  demoErzeugen: (o: DemoOptionen) => anfrage<Auftrag>('POST', '/api/werkbank/demo', o),
+  demoAbschaetzung: (o: DemoOptionen) => anfrage<DemoAbschaetzung>('POST', '/api/werkbank/demo/abschaetzung', o),
   demoEntfernen: () => anfrage<Auftrag>('DELETE', '/api/werkbank/demo'),
   auftrag: () => anfrage<Auftrag | null>('GET', '/api/werkbank/auftrag'),
   protokoll: (f: Record<string, string | number | undefined>) =>
@@ -453,7 +454,23 @@ export interface Auftrag {
   id: string; art: string; titel: string; status: 'laeuft' | 'fertig' | 'fehler';
   fertig: number; gesamt: number; gestartet: string; beendet?: string; ergebnis?: unknown; fehler?: string;
 }
-export interface DemoErgebnis { gesamt: number; erzeugt: Record<string, number>; uebersprungen: Array<{ typ: string; grund: string }> }
+export const DOKUMENTARTEN = ['brief', 'mehrseitig', 'scan', 'bild', 'gross'] as const;
+export type Dokumentart = (typeof DOKUMENTARTEN)[number];
+export type DemoStufe = 'leicht' | 'realistisch' | 'schwer';
+export interface DemoOptionen {
+  anzahl: number;
+  startwert?: string;
+  dokumente?: { anteil: number; von: number; bis: number; stufe?: DemoStufe; mischung?: Record<Dokumentart, number>; duplikate: number } | null;
+}
+export interface DemoAbschaetzung {
+  mappen: number; mappenMitRegister: number; frei: number | null; mindest: number; reicht: boolean; rastern: boolean;
+  dokumente: { dokumente: number; bytes: number; ocrSeiten: number; seiten: number; jeArt: Record<Dokumentart, number> } | null;
+}
+export interface DemoErgebnis {
+  gesamt: number; erzeugt: Record<string, number>; uebersprungen: Array<{ typ: string; grund: string }>;
+  startwert?: string; dauerMs?: number; abgebrochen?: string; ohneRastern?: boolean;
+  dokumente?: { anzahl: number; bytes: number; seiten: number; texterkennung: number; duplikate: number; jeArt: Record<Dokumentart, number>; dauerMs: number } | null;
+}
 
 export type Stufe = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 export interface Protokolleintrag { nr: number; zeit: string; stufe: Stufe; modul: string; text: string; benutzer?: string; anfrage?: string; daten?: Record<string, unknown> }
