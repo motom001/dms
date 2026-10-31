@@ -2044,6 +2044,7 @@
 <ul>
 <li>Verschlüsselt wird mit AES-256-GCM. Der Schlüssel dafür wird aus dem Schlüssel unter <strong>Werkbank → <a href="../verschluesselung/">Verschlüsselung</a></strong> abgeleitet – derselbe wie für Passwortfelder. <strong>Ohne diesen Schlüssel ist eine Sicherung nicht lesbar.</strong> Er steht nie in der Sicherung, nur in der Schlüsseldatei und auf dem <a href="#notfallblatt">Notfallblatt</a>.</li>
 <li>Angemeldete Sitzungen gehören nicht dazu: Nach einer Wiederherstellung meldet sich jeder neu an.</li>
+<li>Die <strong>Vorschaubilder</strong> der Dokumente gehören ebenfalls nicht dazu – sie entstehen nach einer Wiederherstellung von selbst neu.</li>
 <li>Die Datenbank liest das DMS selbst – unabhängig von der PostgreSQL-Version. Eine Sicherung taugt deshalb auch für den Wechsel auf eine neue Hauptversion von PostgreSQL.</li>
 <li>Ein <strong>Prüfwort</strong> (ein bekanntes Wort, verschlüsselt in der Datenbank) zeigt nach einer Wiederherstellung, ob der richtige Schlüssel greift.</li>
 </ul>
