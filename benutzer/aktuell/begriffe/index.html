@@ -1263,8 +1263,17 @@ Siehe auch: <a href="#mappentyp">Mappentyp</a>, <a href="#register">Register</a>
 <p><a id="mappentyp"></a><strong>Mappentyp</strong> · ~ mit Erklärung · Administratoren<br />
 Der Bauplan einer Mappe – welche Felder und Register sie hat, wie ihr Titel entsteht und wer was darf.<br />
 Siehe auch: <a href="#mappe">Mappe</a>, <a href="#feld">Feld</a>, <a href="#systemmappentyp">Systemmappentyp</a>.</p>
+<p><a id="niederlassung"></a><strong>Niederlassung</strong> · ✓ Alltagswort · alle<br />
+Filiale, Zweigstelle, Praxis oder Außenstelle einer Organisation – mit eigener Anschrift und eigenem Telefon. Mappentyp aus dem Paket Basis (ab 1.1.0); gehört zu genau einer Organisation.<br />
+Siehe auch: <a href="#organisation">Organisation</a>, <a href="#person">Person</a>.</p>
+<p><a id="organisation"></a><strong>Organisation</strong> · ✓ Alltagswort · alle<br />
+Firma, Behörde, Bank, Praxis, Verein oder andere Stelle, mit der man zu tun hat. Mappentyp aus dem Paket Basis; andere Pakete verweisen darauf (Vertragspartner, Versicherer, Bank …).<br />
+Siehe auch: <a href="#niederlassung">Niederlassung</a>, <a href="#person">Person</a>.</p>
 <p><a id="papierkorb"></a><strong>Papierkorb</strong> · ✓ Alltagswort · alle<br />
 Gelöschte Mappen. Sie lassen sich wiederherstellen, bis die eingestellte Zahl an Tagen abgelaufen ist.</p>
+<p><a id="person"></a><strong>Person</strong> · ✓ Alltagswort · alle<br />
+Ein Mensch, mit dem man zu tun hat – Ansprechpartnerin, Arzt, Vermieter, Verwandte. Mappentyp aus dem Paket Basis (ab 1.1.0). Eine Person ist <strong>kein Benutzer</strong> und kann sich nicht anmelden.<br />
+Siehe auch: <a href="#benutzer">Benutzer</a>, <a href="#organisation">Organisation</a>, <a href="#niederlassung">Niederlassung</a>.</p>
 <p><a id="pflichtfeld"></a><strong>Pflichtfeld</strong> · ✓ Alltagswort · alle<br />
 Ein Feld, das ausgefüllt sein muss, bevor die Mappe gespeichert werden kann.<br />
 Siehe auch: <a href="#eindeutig">Eindeutig</a>.</p>
@@ -1369,7 +1378,7 @@ Anmelden mit einem fremden Konto, z. B. Microsoft 365 (OpenID Connect).</p>
 <p><a id="archivmodus"></a><strong>Archivmodus</strong> · ~ mit Erklärung · Administratoren<br />
 Eine Einstellung je Mappentyp für Aufbewahrungspflichten – mit Versionen und einer Löschsperre bis zum Fristende.</p>
 <p><a id="benutzer"></a><strong>Benutzer</strong> · ✓ Alltagswort · alle<br />
-Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe im DMS. Personen und Firmen, mit denen man zu tun hat (Kontakte), sind keine Benutzer, sondern gewöhnliche Mappen, z. B. vom Mappentyp „Organisation“ aus dem Paket Basis.</p>
+Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe im DMS. Personen und Firmen, mit denen man zu tun hat (Kontakte), sind keine Benutzer, sondern gewöhnliche Mappen vom Mappentyp „Person“ bzw. „Organisation“ aus dem Paket Basis.</p>
 <p><a id="berechtigungen"></a><strong>Berechtigungen</strong> · ✓ Alltagswort · Administratoren<br />
 Wer was darf. Am Mappentyp – Anlegen, Lesen, Bearbeiten, Löschen, Passwörter sehen – mit einem Standard plus Regeln; an der Ansicht – Sehen, Anlegen, Exportieren – mit Vererbung an die Unteransichten. Für Administratoren gelten sie nicht.</p>
 <p><a id="betrieb"></a><strong>Betrieb</strong> · ✓ Alltagswort · Administratoren<br />
@@ -1685,6 +1694,11 @@ Die Aufgabenart heißt „Post für dich“; die Ansicht „Neue Post“ bleibt.
 <td>–</td>
 </tr>
 <tr>
+<td>Niederlassung</td>
+<td>Standort (verwechselbar mit Ablageort), Filiale (als Mappentyp – ist eine der Arten)</td>
+<td><code>basis_niederlassung</code></td>
+</tr>
+<tr>
 <td>Notiz</td>
 <td>–</td>
 <td><code>Notiz</code></td>
@@ -1693,6 +1707,11 @@ Die Aufgabenart heißt „Post für dich“; die Ansicht „Neue Post“ bleibt.
 <td>Nummernkreis</td>
 <td>–</td>
 <td><code>Nummernkreis</code></td>
+</tr>
+<tr>
+<td>Organisation</td>
+<td>–</td>
+<td><code>basis_organisation</code></td>
 </tr>
 <tr>
 <td>Paket</td>
@@ -1708,6 +1727,11 @@ Die Aufgabenart heißt „Post für dich“; die Ansicht „Neue Post“ bleibt.
 <td>Paketkatalog</td>
 <td>–</td>
 <td><code>Katalog, OFFIZIELLER_KATALOG</code></td>
+</tr>
+<tr>
+<td>Person</td>
+<td>Kontakt (als Mappentyp), Benutzer (für Kontakte)</td>
+<td><code>basis_person</code></td>
 </tr>
 <tr>
 <td>Post</td>
