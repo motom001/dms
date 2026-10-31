@@ -3,6 +3,7 @@ import { liesMail, verbindeImap } from './imap';
 import { Postfaecher } from './postfach';
 import { Anmeldesperre } from './anmeldesperre';
 import { Zweifaktor } from './zweifaktor';
+import { Konsolenzugang, lokaleUrl } from './konsole';
 import { Eingangsordner } from './eingangsordner';
 import { einbettenAus } from './koepfe';
 import { proxyVertrauen } from './proxy';
@@ -238,7 +239,10 @@ const postfaecher = new Postfaecher({
   })()),
 });
 const anbindungVerwaltung = new AnbindungVerwaltung(ordner.geheim, db, umgebung, () => { void beenden(); });
+// Befehl dms im Container (#244).
+const konsole = new Konsolenzugang();
 const app = await baueApp(dienst, konten, {
+  konsole,
   einbetten: cfg.einbetten,
   webDir: cfg.web,
   sicher: () => betrieb.cookieNurHttps(),
@@ -317,6 +321,7 @@ const beenden = async () => {
   notfall.stop();
   sicherung.stop();
   speicherplatz.stop();
+  await konsole.entferne();
   await app.close();
   await sql.end({ timeout: 5 });
   process.exit(0);
@@ -325,3 +330,5 @@ process.on('SIGTERM', beenden);
 process.on('SIGINT', beenden);
 
 await app.listen({ port: cfg.port, host: cfg.host });
+await konsole.schreibe(lokaleUrl(cfg.port, cfg.host))
+  .catch((e) => log.warn('Konsolenzugang nicht angelegt – der Befehl dms geht nicht', { datei: konsole.datei, fehler: (e as Error).message }));

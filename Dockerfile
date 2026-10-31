@@ -52,6 +52,8 @@ COPY --from=bau /app/server/dist server/dist
 COPY server/migrations server/migrations
 COPY --from=bau /app/web/dist web/dist
 COPY --from=hilfe /hilfe web/dist/hilfe
+# Befehl dms in der Konsole des Containers (#244): docker exec -it <container> dms hilfe
+RUN printf '#!/bin/sh\nexec node /app/server/dist/dms.js "$@"\n' > /usr/local/bin/dms && chmod 755 /usr/local/bin/dms
 
 # Feste Ordner (#115): /data/files, /data/geheim, /data/sicherung – zugeordnet nur über Volumes.
 ENV PORT=3000

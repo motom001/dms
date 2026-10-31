@@ -75,6 +75,18 @@ sudo test -f "$arbeit/eingang/erledigt/Probe Scan.pdf" || fehler "Datei nicht na
 [ "$(curl -fsS -b "$jar" -H 'x-dms: 1' "http://127.0.0.1:$PORT/api/mappen/$uebernommen" | jq '.dokumente | length')" = 1 ] || fehler "Post ohne Dokument"
 echo "::endgroup::"; echo "::notice::dms-komplett: Eingangsordner übernimmt (Post $uebernommen)"
 
+echo "::group::2c. Befehl dms im Container (#244)"
+docker exec "$NAME" dms hilfe | grep -q "passwort <email>" || fehler "dms hilfe"
+[ "$(docker exec "$NAME" dms status --json | jq -r '.dms.variante')" = komplett ] || fehler "dms status"
+docker exec "$NAME" dms benutzer | grep -q "admin@probe.invalid" || fehler "dms benutzer"
+docker exec "$NAME" dms passwort admin@probe.invalid --passwort ein-neues-probe-passwort >/dev/null || fehler "dms passwort"
+curl -fsS -X POST "http://127.0.0.1:$PORT/api/konto/anmelden" -H 'x-dms: 1' -H 'content-type: application/json' \
+  -d '{"email":"admin@probe.invalid","passwort":"ein-neues-probe-passwort"}' >/dev/null || fehler "Anmeldung mit dem Passwort aus dms passwort"
+# Der Schlüssel gilt nur innerhalb des Containers (Loopback), nicht über den veröffentlichten Port.
+schluessel=$(docker exec "$NAME" cat /tmp/dms-konsole.json | jq -r .schluessel)
+[ "$(curl -s -o /dev/null -w '%{http_code}' -H "x-dms-konsole: $schluessel" "http://127.0.0.1:$PORT/api/benutzer")" = 401 ] || fehler "Konsolenschlüssel von außen angenommen"
+echo "::endgroup::"; echo "::notice::dms-komplett: Befehl dms funktioniert"
+
 echo "::group::3. Sauber stoppen"
 docker stop "$NAME" >/dev/null
 [ "$(docker inspect -f '{{.State.ExitCode}}' "$NAME")" = 0 ] || fehler "Exit-Code beim Stoppen nicht 0"
