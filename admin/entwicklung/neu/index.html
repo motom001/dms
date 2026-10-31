@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -363,6 +363,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#07313" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.73.13
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.73.13">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sicherheit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#07312" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -459,7 +487,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#sicherheit" class="md-nav__link">
+  <a href="#sicherheit_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Sicherheit
@@ -2239,6 +2267,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#07313" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.73.13
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.73.13">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sicherheit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#07312" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2335,7 +2391,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#sicherheit" class="md-nav__link">
+  <a href="#sicherheit_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Sicherheit
@@ -2660,6 +2716,11 @@
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
+<h2 id="07313">0.73.13<a class="headerlink" href="#07313" title="Permanent link">&para;</a></h2>
+<h3 id="sicherheit">Sicherheit<a class="headerlink" href="#sicherheit" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Werkzeuge für die Handbücher mit festen Versionen</strong> (#289, Schwere: niedrig). mkdocs und alle seine Abhängigkeiten kommen jetzt aus <code>docs/handbuch/requirements.txt</code> mit Prüfsummen – im Image (Offline-Hilfe) und beim Bau der Handbücher gleich; Dependabot hält die Datei aktuell. Playwright für die Bildschirmfotos hat eine feste Version. Die Basis-Images bleiben bewusst ohne festen Prüfwert, damit der wöchentliche Neubau Sicherheitskorrekturen an Node und Alpine sofort mitnimmt (Begründung im Entwicklerhandbuch unter <em>Release</em>).</li>
+</ul>
 <h2 id="07312">0.73.12<a class="headerlink" href="#07312" title="Permanent link">&para;</a></h2>
 <h3 id="geandert">Geändert<a class="headerlink" href="#geandert" title="Permanent link">&para;</a></h3>
 <ul>
@@ -2682,7 +2743,7 @@
 <li><em>Administratorhandbuch, Einstellungen:</em> Normalerweise ändert man den Port nach außen in der Compose-Datei, nicht <code>PORT</code>.</li>
 </ul>
 <h2 id="0739">0.73.9<a class="headerlink" href="#0739" title="Permanent link">&para;</a></h2>
-<h3 id="sicherheit">Sicherheit<a class="headerlink" href="#sicherheit" title="Permanent link">&para;</a></h3>
+<h3 id="sicherheit_1">Sicherheit<a class="headerlink" href="#sicherheit_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Bibliotheken <code>glob</code> und <code>minimatch</code> im Image aktualisiert</strong> (#288, Schwere: niedrig). Beide kamen über <code>@fastify/static</code> (Auslieferung der Oberfläche) mit bekannten Warnungen ins Image: <code>glob</code> bis 14.0.1 (Abbruch einer Suche lief im Hintergrund weiter) und <code>minimatch</code> vor 11.0.1 (sehr aufwendige Muster konnten viel Rechenzeit kosten). Im DMS waren beide nicht ausnutzbar – die Muster stehen beim Start fest und kommen nie von Benutzern. Jetzt sind <code>glob</code> 14 und <code>minimatch</code> 11 fest vorgegeben, damit Prüfungen wie Dependabot und Trivy sauber bleiben.</li>
 </ul>
@@ -3009,10 +3070,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "In Zwischenablage kopiert", "clipboard.copy": "In Zwischenablage kopieren", "search.result.more.one": "1 weiteres Suchergebnis auf dieser Seite", "search.result.more.other": "# weitere Suchergebnisse auf dieser Seite", "search.result.none": "Keine Suchergebnisse", "search.result.one": "1 Suchergebnis", "search.result.other": "# Suchergebnisse", "search.result.placeholder": "Suchbegriff eingeben", "search.result.term.missing": "Es fehlt", "select.version": "Version ausw\u00e4hlen"}, "version": {"alias": true, "default": "aktuell", "provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "In Zwischenablage kopiert", "clipboard.copy": "In Zwischenablage kopieren", "search.result.more.one": "1 weiteres Suchergebnis auf dieser Seite", "search.result.more.other": "# weitere Suchergebnisse auf dieser Seite", "search.result.none": "Keine Suchergebnisse", "search.result.one": "1 Suchergebnis", "search.result.other": "# Suchergebnisse", "search.result.placeholder": "Suchbegriff eingeben", "search.result.term.missing": "Es fehlt", "select.version": "Version ausw\u00e4hlen"}, "version": {"alias": true, "default": "aktuell", "provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
