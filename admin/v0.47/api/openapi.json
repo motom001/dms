@@ -1,0 +1,4803 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "DMS API",
+    "version": "handbuch",
+    "description": "Schnittstelle des selbst gehosteten DMS. Anmeldung mit einem API-Schlüssel aus dem Profil: `Authorization: Bearer dms_…`. Ein Schlüssel hat höchstens die Rechte seines Benutzers; Schlüssel „nur lesen“ erlauben nur GET. Diese Beschreibung entsteht aus der installierten Version.",
+    "license": {
+      "name": "AGPL-3.0-only",
+      "url": "https://www.gnu.org/licenses/agpl-3.0.html"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "apiSchluessel": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Konto",
+      "description": "Wer ist angemeldet"
+    },
+    {
+      "name": "Ablage",
+      "description": "Mappentypen lesen, Mappen anlegen, lesen, ändern, löschen"
+    },
+    {
+      "name": "Dokumente",
+      "description": "Dateien an Mappen"
+    },
+    {
+      "name": "Werkbank",
+      "description": "Nur mit dem Schlüssel eines Administrators"
+    }
+  ],
+  "paths": {
+    "/ich": {
+      "get": {
+        "tags": [
+          "Konto"
+        ],
+        "summary": "Wer bin ich?",
+        "description": "Benutzer und Rechte des verwendeten Schlüssels.",
+        "operationId": "getIch",
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ich"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/konto/abwesenheit": {
+      "get": {
+        "tags": [
+          "Konto"
+        ],
+        "summary": "Eigene Abwesenheit",
+        "description": "Abwesenheit mit Vertreter und Anzahl eigener offener Aufgaben.",
+        "operationId": "getKontoAbwesenheit",
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AbwesenheitStand"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Konto"
+        ],
+        "summary": "Eigene Abwesenheit setzen",
+        "description": "Solange sie wirkt (an, und heute im Zeitraum von–bis, beides optional), gehen neue Aufgaben an den Vertreter. Vertreter ist Pflicht, sobald an=true.",
+        "operationId": "putKontoAbwesenheit",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Abwesenheit"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Benutzer"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/konto/zusammenfassung": {
+      "get": {
+        "tags": [
+          "Konto"
+        ],
+        "summary": "Tägliche Zusammenfassung: eigene Einstellung",
+        "description": "Ob, um wie viel Uhr und an welchen Wochentagen die tägliche Zusammenfassung der Aufgaben kommt; uhrzeit null = Standard der Werkbank.",
+        "operationId": "getKontoZusammenfassung",
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Zusammenfassung"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Konto"
+        ],
+        "summary": "Tägliche Zusammenfassung einstellen",
+        "description": "uhrzeit im 15-Minuten-Raster (HH:MM) oder null, tage 1 = Montag … 7 = Sonntag (leer = aus), feiertage = nicht an Feiertagen des Bundeslands.",
+        "operationId": "putKontoZusammenfassung",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZusammenfassungEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Zusammenfassung"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/typen": {
+      "get": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Alle Mappentypen",
+        "description": "Felder, Register, Titel-Vorlage und Trefferliste je Typ. Feldschlüssel sind die Namen in `werte` einer Mappe.",
+        "operationId": "getTypen",
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappentypListe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Mappentyp anlegen (Administrator)",
+        "operationId": "postTypen",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MappentypEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mappentyp"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sichten": {
+      "get": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Anzahl Mappen je Typ, je Sicht und im Eingang",
+        "operationId": "getSichten",
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Zaehler"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sichten/definitionen": {
+      "get": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Alle Sichten",
+        "description": "Sichten mit Elternsicht, Reihenfolge, Mappentypen und Bedingungen. Die Mappen einer Sicht liefert GET /mappen?sicht=<id>.",
+        "operationId": "getSichtenDefinitionen",
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SichtListe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mappen": {
+      "get": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Mappen einer Sicht, seitenweise",
+        "description": "Mappen eines Typs (oder des eigenen Eingangs), sortiert und seitenweise. `bezuege` enthält Titel und Typ der Mappen, auf die die gelieferten Mappen verweisen.",
+        "operationId": "getMappen",
+        "parameters": [
+          {
+            "name": "sicht",
+            "in": "query",
+            "required": true,
+            "description": "Id einer Sicht, „eingang“, „favoriten“ (eigene Favoriten) oder „typ:<Id eines Mappentyps>“ (alle Mappen dieses Typs, ohne Bedingungen) oder „link“ (sprechender Link, siehe link)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "link",
+            "in": "query",
+            "required": false,
+            "description": "Nur mit sicht=link: die Parameter eines sprechenden Links als ein kodierter Wert, z. B. typ%3DRechnung%26bezahlt%3Dnein (#98). Fehler im Link: 422.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "von",
+            "in": "query",
+            "required": false,
+            "description": "Erster Eintrag (ab 0), Standard 0",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "anzahl",
+            "in": "query",
+            "required": false,
+            "description": "Anzahl, 1–500, Standard 100",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "suche",
+            "in": "query",
+            "required": false,
+            "description": "Text in Titel oder Werten",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "notizen",
+            "in": "query",
+            "required": false,
+            "description": "true = auch in Notizen suchen; Fundstellen stehen in ausschnitte (dokument: „Notiz“)",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "volltext",
+            "in": "query",
+            "required": false,
+            "description": "true = auch im Volltext der Dokumente suchen (deutsche Volltextsuche, z. B. „Rechnungen“ findet „Rechnung“); Fundstellen stehen in ausschnitte",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sortierung",
+            "in": "query",
+            "required": false,
+            "description": "Feldschlüssel oder _titel, _typ, _erstellt, _erstelltVon, _geaendert, _geaendertVon; Standard _titel",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "absteigend",
+            "in": "query",
+            "required": false,
+            "description": "true = absteigend",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "passwoerter",
+            "in": "query",
+            "required": false,
+            "description": "„anzeigen“: Passwortfelder im Klartext statt nur {gesetzt, lesbar}. Nur mit einem API-Schlüssel mit dem Recht „Passwörter lesen“ (sonst 403); jeder Abruf steht im Protokoll.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Seite"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Mappe anlegen",
+        "description": "Die Werte werden wie in der Oberfläche geprüft (Pflichtfelder, Längen, eindeutige Werte, Verweise). Bei Fehlern: 422 mit `details` je Feld.",
+        "operationId": "postMappen",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MappeEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mappe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mappen/{id}": {
+      "get": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Eine Mappe mit Dokumenten und Rückverweisen",
+        "operationId": "getMappenMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "passwoerter",
+            "in": "query",
+            "required": false,
+            "description": "„anzeigen“: Passwortfelder im Klartext statt nur {gesetzt, lesbar}. Nur mit einem API-Schlüssel mit dem Recht „Passwörter lesen“ (sonst 403); jeder Abruf steht im Protokoll.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappeDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Mappe ändern",
+        "description": "Übergebene Werte ersetzen die bisherigen; Werte von Feldern, die es im Typ nicht mehr gibt, bleiben erhalten.",
+        "operationId": "putMappenMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MappeAenderung"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mappe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Mappe löschen",
+        "description": "Samt ihrer Dokumente. 409, solange andere Mappen auf sie verweisen. Ist der Papierkorb an, kommt sie dorthin und lässt sich wiederherstellen.",
+        "operationId": "deleteMappenMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Erledigt"
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Kann (noch) nicht gelöscht werden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mappen/{id}/favorit": {
+      "put": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Mappe als Favorit markieren",
+        "description": "Persönlich für den Benutzer des Schlüssels; ändert weder „zuletzt geändert“ noch die Historie. Mehrfaches Markieren schadet nicht.",
+        "operationId": "putMappenMitidFavorit",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Favorit"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Favorit entfernen",
+        "operationId": "deleteMappenMitidFavorit",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Favorit"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Kann (noch) nicht gelöscht werden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/papierkorb": {
+      "get": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Eigener Papierkorb",
+        "description": "Mappen, die der Benutzer dieses Schlüssels gelöscht hat, neueste zuerst. Nach der eingestellten Aufbewahrung werden sie endgültig gelöscht.",
+        "operationId": "getPapierkorb",
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PapierkorbListe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Eigenen Papierkorb leeren",
+        "operationId": "deletePapierkorb",
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Geloescht"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Kann (noch) nicht gelöscht werden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/papierkorb/{id}/wiederherstellen": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Mappe aus dem Papierkorb wiederherstellen",
+        "description": "Verweise auf Mappen, die es nicht mehr gibt, entfallen; passt die Mappe danach nicht zur Definition (z. B. ein eindeutiger Wert ist inzwischen vergeben), erscheint sie im Eingang.",
+        "operationId": "postPapierkorbMitidWiederherstellen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Wiederhergestellt"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/papierkorb/{id}": {
+      "delete": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Mappe endgültig löschen",
+        "operationId": "deletePapierkorbMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Geloescht"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Kann (noch) nicht gelöscht werden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/aufgaben": {
+      "get": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Meine offenen Aufgaben",
+        "description": "Aufgaben für den Benutzer des Schlüssels (Administratoren: auch die für alle Administratoren), mit Titel und Typ der Mappe.",
+        "operationId": "getAufgaben",
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AufgabenListe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mappen/{id}/aufgaben": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Aufgabe vergeben",
+        "operationId": "postMappenMitidAufgaben",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AufgabeEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aufgabe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/aufgaben/{id}/erledigt": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Aufgabe erledigen",
+        "description": "„Passt nicht“-Aufgaben erledigen sich selbst (409).",
+        "operationId": "postAufgabenMitidErledigt",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Aufgabe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aufgabe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/aufgaben/{id}/delegieren": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Aufgabe weitergeben",
+        "operationId": "postAufgabenMitidDelegieren",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Aufgabe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Delegieren"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aufgabe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/anstehend": {
+      "get": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Anstehende Fristen und Erinnerungen",
+        "description": "Fristen und Erinnerungen des Benutzers dieses Schlüssels bis heute + tage (Standard 30), fällige und kommende, nach Datum.",
+        "operationId": "getAnstehend",
+        "parameters": [
+          {
+            "name": "tage",
+            "in": "query",
+            "required": false,
+            "description": "Zeitraum in Tagen ab heute (0–366)",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Anstehend"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mappen/{id}/erinnerungen": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Erinnerung anlegen",
+        "description": "Am Datum wird daraus eine Aufgabe der Art „erinnerung“; liegt es heute oder früher, sofort.",
+        "operationId": "postMappenMitidErinnerungen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErinnerungEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erinnerung"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/erinnerungen/{id}": {
+      "put": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Erinnerung ändern",
+        "operationId": "putErinnerungenMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Erinnerung (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErinnerungEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erinnerung"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Erinnerung löschen",
+        "operationId": "deleteErinnerungenMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Erinnerung (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Erledigt"
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Kann (noch) nicht gelöscht werden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/aufgaben/{id}/folgetermin": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Nächsten Termin einer wiederkehrenden Frist setzen",
+        "description": "Nur solange das Datumsfeld noch das Datum der Frist hat (sonst 409). Braucht das Recht „Bearbeiten“.",
+        "operationId": "postAufgabenMitidFolgetermin",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Aufgabe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mappe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mappen/{id}/notizen": {
+      "get": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Notizen einer Mappe",
+        "operationId": "getMappenMitidNotizen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotizListe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Notiz anlegen",
+        "description": "text als formatierter Text (Markdown).",
+        "operationId": "postMappenMitidNotizen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotizEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Notiz"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notizen/{id}": {
+      "put": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Notiz ändern",
+        "operationId": "putNotizenMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Notiz (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotizEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Notiz"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Notiz löschen",
+        "operationId": "deleteNotizenMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Notiz (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Erledigt"
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Kann (noch) nicht gelöscht werden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mappen/{id}/historie": {
+      "get": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Änderungshistorie einer Mappe",
+        "description": "Neueste zuerst: angelegt, geändert (mit Feld, alt und neu), Dokumente, Papierkorb, Passwort angezeigt, Notizen, Aufgaben, E-Mails. Einträge sind unveränderlich.",
+        "operationId": "getMappenMitidHistorie",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Historie"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mappen/{id}/email": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Mappe per E-Mail versenden",
+        "description": "Absender ist die Adresse des DMS, „Antworten an“ der Benutzer des Schlüssels. Anhänge sind Dokumente der Mappe (zusammen höchstens 50 MB). Danach gibt es eine Post-Mappe (Kanal E-Mail, ausgehend, erledigt), die dieser Mappe zugeordnet ist, und einen Protokolleintrag. 409, wenn der Versand nicht eingerichtet ist; 502, wenn der Mailserver ablehnt.",
+        "operationId": "postMappenMitidEmail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailVersendet"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/post": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Post anlegen",
+        "description": "Neue Post (Systemtyp Post, #192): Stand „Neu“, Richtung eingehend, Kanal „API“ (mit Schlüssel) bzw. „Hochgeladen“; Datum heute, wenn nicht angegeben. Dokumente danach mit POST /mappen/{id}/dokumente ins Register „dokumente“ hochladen. 403 ohne das Recht, Post anzulegen.",
+        "operationId": "postPost",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mappe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/post/{id}/zuordnen": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Post einer Mappe zuordnen",
+        "description": "Die Post verweist danach auf die Mappe („Zugeordnet zu“) und hat Stand „Zugeordnet“. Die gewählten Dokumente (Standard: alle der Post) wandern in ein Dokumentenregister der Zielmappe; mit kopieren=true bleiben sie zusätzlich in der Post (gleiche Datei, kein zweiter Speicherplatz). Mehrmals möglich. Braucht Bearbeiten an Post und Zielmappe.",
+        "operationId": "postPostMitidZuordnen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Post (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Zuordnen"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Zugeordnet"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mappen/{id}/dokumente": {
+      "post": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "Dokument hochladen",
+        "description": "Rohe Bytes der Datei als Body (Content-Type: application/octet-stream), höchstens 100 MB. Gleicher Inhalt wird nur einmal gespeichert.",
+        "operationId": "postMappenMitidDokumente",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "register",
+            "in": "query",
+            "required": true,
+            "description": "Schlüssel eines Dokumentenregisters des Mappentyps",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "description": "Dateiname",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "typ",
+            "in": "query",
+            "required": false,
+            "description": "MIME-Typ (nur Angabe; angezeigt werden PDF und Bilder anhand des Inhalts)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Hochgeladen"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dokumente/{id}/inhalt": {
+      "get": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "Inhalt eines Dokuments herunterladen",
+        "operationId": "getDokumenteMitidInhalt",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dokumente/{id}/volltext": {
+      "get": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "Volltext eines Dokuments",
+        "description": "Textebene des PDFs oder Ergebnis der Texterkennung; text ist null, solange es keinen gibt (siehe ocr.stand).",
+        "operationId": "getDokumenteMitidVolltext",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volltext"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dokumente/{id}/texterkennung": {
+      "post": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "Texterkennung (erneut) anstoßen",
+        "description": "Stellt das Dokument in die Warteschlange der Texterkennung, z. B. nach einem Fehler.",
+        "operationId": "postDokumenteMitidTexterkennung",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dokument"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dokumente/{id}": {
+      "delete": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "Dokument löschen",
+        "operationId": "deleteDokumenteMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Erledigt"
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Kann (noch) nicht gelöscht werden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/typen/{id}": {
+      "put": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Mappentyp ändern (Administrator)",
+        "description": "Titel und Passung aller Mappen des Typs werden neu berechnet.",
+        "operationId": "putTypenMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Mappentyps (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MappentypEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mappentyp"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Mappentyp löschen (Administrator)",
+        "description": "Nur ohne Mappen und ohne Verweise anderer Typen.",
+        "operationId": "deleteTypenMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Mappentyps (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Erledigt"
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Kann (noch) nicht gelöscht werden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/benutzer": {
+      "get": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Alle Benutzer (Administrator)",
+        "operationId": "getBenutzer",
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BenutzerListe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Benutzer anlegen und einladen (Administrator)",
+        "operationId": "postBenutzer",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenutzerEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkErgebnis"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/benutzer/{id}": {
+      "put": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Benutzer ändern (Administrator)",
+        "operationId": "putBenutzerMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Benutzers (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenutzerAenderung"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Benutzer"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Benutzer löschen (Administrator)",
+        "description": "Nur solange die Einladung nie angenommen wurde; wer sich schon angemeldet hat, wird über PUT mit aktiv=false deaktiviert.",
+        "operationId": "deleteBenutzerMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Benutzers (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Erledigt"
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Kann (noch) nicht gelöscht werden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rollen": {
+      "get": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Alle Rollen (Administrator)",
+        "description": "Systemrollen (Administrator, Mitglied) zuerst. Rollen selbst sind Mappen des Systemmappentyps „Rolle“ und werden wie andere Mappen angelegt, geändert und gelöscht.",
+        "operationId": "getRollen",
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RollenListe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "apiSchluessel": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "dms_…",
+        "description": "API-Schlüssel aus dem Profil"
+      }
+    },
+    "schemas": {
+      "Fehler": {
+        "type": "object",
+        "required": [
+          "fehler"
+        ],
+        "properties": {
+          "fehler": {
+            "type": "string",
+            "description": "Meldung auf Deutsch"
+          },
+          "details": {
+            "description": "Je nach Fehler, z. B. Prüfergebnis bei 422"
+          }
+        }
+      },
+      "Pruefergebnis": {
+        "type": "object",
+        "properties": {
+          "allgemein": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "felder": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Meldungen je Feldschlüssel"
+          }
+        }
+      },
+      "Feld": {
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "typ"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,39}$"
+          },
+          "label": {
+            "type": "string"
+          },
+          "typ": {
+            "type": "string",
+            "enum": [
+              "text",
+              "langtext",
+              "formatiert",
+              "zahl",
+              "betrag",
+              "datum",
+              "janein",
+              "auswahl",
+              "referenz",
+              "passwort"
+            ]
+          },
+          "pflicht": {
+            "type": "boolean"
+          },
+          "eindeutig": {
+            "type": "boolean"
+          },
+          "hilfe": {
+            "type": "string"
+          },
+          "minLen": {
+            "type": "integer"
+          },
+          "maxLen": {
+            "type": "integer"
+          },
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "nachkomma": {
+            "type": "integer"
+          },
+          "muster": {
+            "type": "string"
+          },
+          "optionen": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "system": {
+            "type": "boolean",
+            "readOnly": true,
+            "description": "Systemfeld eines Systemmappentyps: nicht entfernbar, nur Bezeichnung und Hilfetext änderbar"
+          },
+          "mehrfach": {
+            "type": "boolean"
+          },
+          "zielTyp": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Bei typ=referenz: Id des Ziel-Mappentyps"
+          },
+          "verweisart": {
+            "type": "string",
+            "enum": [
+              "zugehoerigkeit",
+              "bezug"
+            ]
+          },
+          "waehrung": {
+            "type": "string"
+          }
+        }
+      },
+      "Register": {
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "art"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "art": {
+            "type": "string",
+            "enum": [
+              "felder",
+              "dokumente",
+              "verknuepfungen",
+              "protokoll"
+            ]
+          },
+          "felder": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "quellen": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "typId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "feldKey": {
+                  "type": "string"
+                },
+                "trefferliste": {
+                  "type": "string",
+                  "description": "Schlüssel einer Trefferliste des Quelltyps; das Register zeigt dann deren Spalten"
+                }
+              }
+            }
+          }
+        }
+      },
+      "MappentypEingabe": {
+        "type": "object",
+        "required": [
+          "name",
+          "felder"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "schluessel": {
+            "type": "string",
+            "example": "rechnung",
+            "description": "Fester Schlüssel; beim Anlegen frei wählbar (sonst aus dem Namen), danach unveränderlich"
+          },
+          "beschreibung": {
+            "type": "string"
+          },
+          "titelVorlage": {
+            "type": "string",
+            "example": "{rechnungsnummer} vom {rechnungsdatum}"
+          },
+          "felder": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Feld"
+            }
+          },
+          "register": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Register"
+            }
+          },
+          "trefferlisten": {
+            "type": "array",
+            "description": "Trefferlisten; genau eine ist Standard",
+            "items": {
+              "type": "object",
+              "required": [
+                "key",
+                "name",
+                "spalten"
+              ],
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "spalten": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Feldschlüssel oder _titel, _erstellt, _erstelltVon, _geaendert, _geaendertVon"
+                },
+                "standard": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "trefferliste": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Spalten der Standard-Trefferliste (ältere Form); wenn angegeben, ersetzt sie deren Spalten"
+          },
+          "erstellenErlaubt": {
+            "type": "boolean",
+            "default": true,
+            "deprecated": true,
+            "description": "Ohne Wirkung seit 0.32 – wer anlegen darf, regeln die Berechtigungen (Recht C)"
+          },
+          "sichtAnlegen": {
+            "type": "boolean",
+            "default": true,
+            "writeOnly": true,
+            "description": "Nur beim Anlegen: eigene Sicht in der Ablage anlegen"
+          },
+          "loeschenErlaubt": {
+            "type": "boolean",
+            "default": true,
+            "deprecated": true,
+            "description": "Ohne Wirkung seit 0.32 – wer löschen darf, regeln die Berechtigungen (Recht D)"
+          }
+        }
+      },
+      "Mappentyp": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MappentypEingabe"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "erstellt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "geaendert": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "system": {
+                "type": "string",
+                "enum": [
+                  "benutzer",
+                  "rolle",
+                  "post"
+                ],
+                "nullable": true,
+                "description": "Systemmappentyp: lässt sich erweitern, aber nicht löschen"
+              }
+            }
+          }
+        ]
+      },
+      "MappentypListe": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Mappentyp"
+        }
+      },
+      "Werte": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Werte je Feldschlüssel: Text und Datum (JJJJ-MM-TT) als string, Zahl als number, Ja/Nein als boolean, Betrag als {betrag, waehrung}, Auswahl als string (mehrfach: string[]), Verweis als Mappen-Id (mehrfach: string[]). Passwort: beim Lesen nur {gesetzt, lesbar} (Klartext mit ?passwoerter=anzeigen); zum Setzen ein Text oder {neu}, zum Entfernen null, unverändert lassen durch Weglassen.",
+        "example": {
+          "rechnungsnummer": "R-2026-17",
+          "rechnungsdatum": "2026-10-01",
+          "betrag": {
+            "betrag": 49.9,
+            "waehrung": "EUR"
+          },
+          "bezahlt": false
+        }
+      },
+      "Mappe": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "typId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "werte": {
+            "$ref": "#/components/schemas/Werte"
+          },
+          "titel": {
+            "type": "string",
+            "description": "Vom Server aus der Titel-Vorlage berechnet"
+          },
+          "erstellt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "erstelltVon": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "geaendert": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "geaendertVon": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "passt": {
+            "type": "boolean",
+            "description": "Passt zur aktuellen Definition des Typs"
+          },
+          "problem": {
+            "type": "string",
+            "nullable": true
+          },
+          "demo": {
+            "type": "boolean"
+          },
+          "systemKennung": {
+            "type": "string",
+            "nullable": true,
+            "description": "Mappen, die das System pflegt, z. B. rolle:admin und rolle:mitglied"
+          }
+        }
+      },
+      "MappeEingabe": {
+        "type": "object",
+        "required": [
+          "typId",
+          "werte"
+        ],
+        "properties": {
+          "typId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "werte": {
+            "$ref": "#/components/schemas/Werte"
+          }
+        }
+      },
+      "MappeAenderung": {
+        "type": "object",
+        "required": [
+          "werte"
+        ],
+        "properties": {
+          "werte": {
+            "$ref": "#/components/schemas/Werte"
+          }
+        }
+      },
+      "Bezug": {
+        "type": "object",
+        "properties": {
+          "titel": {
+            "type": "string"
+          },
+          "typId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "PapierkorbEintrag": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "typId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titel": {
+            "type": "string"
+          },
+          "werte": {
+            "$ref": "#/components/schemas/Werte"
+          },
+          "demo": {
+            "type": "boolean"
+          },
+          "erstellt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "erstelltVon": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "geaendert": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "geaendertVon": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "geloescht": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "geloeschtVon": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "dokumente": {
+            "type": "integer",
+            "description": "Anzahl Dokumente, die mit ihr im Papierkorb liegen"
+          }
+        }
+      },
+      "PapierkorbListe": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PapierkorbEintrag"
+        }
+      },
+      "Wiederhergestellt": {
+        "type": "object",
+        "properties": {
+          "mappe": {
+            "$ref": "#/components/schemas/Mappe"
+          },
+          "verweiseEntfallen": {
+            "type": "integer",
+            "description": "Verweise auf Mappen, die es nicht mehr gibt"
+          }
+        }
+      },
+      "Geloescht": {
+        "type": "object",
+        "properties": {
+          "geloescht": {
+            "type": "integer",
+            "description": "Anzahl endgültig gelöschter Mappen"
+          }
+        }
+      },
+      "Dokument": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mappeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "registerKey": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "mime": {
+            "type": "string"
+          },
+          "groesse": {
+            "type": "integer"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "anzeigbar": {
+            "type": "boolean"
+          },
+          "erstellt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "erstelltVon": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "ocr": {
+            "type": "object",
+            "description": "Stand der Texterkennung",
+            "properties": {
+              "stand": {
+                "type": "string",
+                "enum": [
+                  "keiner",
+                  "wartet",
+                  "laeuft",
+                  "fertig",
+                  "fehler",
+                  "ausgelassen"
+                ]
+              },
+              "info": {
+                "type": "string",
+                "nullable": true
+              },
+              "seiten": {
+                "type": "integer",
+                "nullable": true
+              },
+              "zeit": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
+      "MappeDetails": {
+        "type": "object",
+        "properties": {
+          "mappe": {
+            "$ref": "#/components/schemas/Mappe"
+          },
+          "favorit": {
+            "type": "boolean",
+            "description": "Favorit des Benutzers dieses Schlüssels"
+          },
+          "dokumente": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Dokument"
+            }
+          },
+          "notizen": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notiz"
+            }
+          },
+          "aufgaben": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Aufgabe"
+            }
+          },
+          "bezuege": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Bezug"
+            }
+          },
+          "rueckverweise": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "quelleId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "quelleTypId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "feldKey": {
+                  "type": "string"
+                },
+                "titel": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "loeschbar": {
+            "type": "object",
+            "description": "Ob die Mappe gelöscht werden kann; sonst Grund und die Mappen, die das verhindern",
+            "properties": {
+              "ok": {
+                "type": "boolean"
+              },
+              "grund": {
+                "type": "string"
+              },
+              "rueckverweise": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "quelleId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "quelleTypId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "feldKey": {
+                      "type": "string"
+                    },
+                    "titel": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Seite": {
+        "type": "object",
+        "properties": {
+          "gesamt": {
+            "type": "integer"
+          },
+          "von": {
+            "type": "integer"
+          },
+          "mappen": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mappe"
+            }
+          },
+          "bezuege": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Bezug"
+            }
+          },
+          "aufgaben": {
+            "type": "object",
+            "description": "Nur im Eingang: offene Aufgaben je Mappen-Id",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "favoriten": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Ids der gelieferten Mappen, die Favoriten des Benutzers sind"
+          },
+          "ausschnitte": {
+            "type": "object",
+            "description": "Nur mit volltext=true: Fundstelle je Mappen-Id; Treffer zwischen den Steuerzeichen U+0002 und U+0003",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "dokument": {
+                  "type": "string"
+                },
+                "text": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Aufgabe": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mappeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "empfaengerId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "null = Administratoren"
+          },
+          "art": {
+            "type": "string",
+            "enum": [
+              "passung",
+              "erwaehnung",
+              "manuell",
+              "vertretung",
+              "frist",
+              "erinnerung"
+            ]
+          },
+          "text": {
+            "type": "string"
+          },
+          "feldKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "datum": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "Frist und Erinnerung: das Datum, um das es geht"
+          },
+          "erstellt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "erstelltVon": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "erledigt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "erledigtVon": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "mappeTitel": {
+            "type": "string"
+          },
+          "typId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "AufgabenListe": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Aufgabe"
+        }
+      },
+      "AufgabeEingabe": {
+        "type": "object",
+        "required": [
+          "empfaengerId",
+          "text"
+        ],
+        "properties": {
+          "empfaengerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "Favorit": {
+        "type": "object",
+        "properties": {
+          "favorit": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Delegieren": {
+        "type": "object",
+        "required": [
+          "empfaengerId"
+        ],
+        "properties": {
+          "empfaengerId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "Notiz": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mappeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "text": {
+            "type": "string",
+            "description": "Markdown"
+          },
+          "erstellt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "erstelltVon": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "geaendert": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "geaendertVon": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
+      "NotizListe": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Notiz"
+        }
+      },
+      "PostEingabe": {
+        "type": "object",
+        "properties": {
+          "betreff": {
+            "type": "string",
+            "description": "Standard „Neue Post“"
+          },
+          "datum": {
+            "type": "string",
+            "format": "date"
+          },
+          "absender": {
+            "type": "string",
+            "description": "Standard: Name des Benutzers"
+          },
+          "fuer": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id eines Benutzers: Er bekommt die Aufgabe „Neue Post“ im Eingang, solange die Post neu ist."
+          },
+          "nachricht": {
+            "type": "string"
+          },
+          "kanal": {
+            "type": "string",
+            "enum": [
+              "Hochgeladen",
+              "E-Mail",
+              "Scan",
+              "Ordner",
+              "Import",
+              "API",
+              "WebDAV"
+            ]
+          },
+          "werte": {
+            "$ref": "#/components/schemas/Werte",
+            "description": "Werte weiterer Felder, die der Administrator am Typ Post ergänzt hat"
+          }
+        }
+      },
+      "Zuordnen": {
+        "type": "object",
+        "required": [
+          "ziel"
+        ],
+        "properties": {
+          "ziel": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id der Mappe, zu der die Post gehört"
+          },
+          "register": {
+            "type": "string",
+            "description": "Schlüssel eines Dokumentenregisters der Zielmappe; Standard: das erste"
+          },
+          "dokumente": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Ids von Dokumenten der Post; Standard: alle"
+          },
+          "kopieren": {
+            "type": "boolean",
+            "description": "true = Dokumente bleiben auch in der Post"
+          }
+        }
+      },
+      "Zugeordnet": {
+        "type": "object",
+        "properties": {
+          "post": {
+            "$ref": "#/components/schemas/Mappe"
+          },
+          "ziel": {
+            "$ref": "#/components/schemas/Mappe"
+          }
+        }
+      },
+      "EmailEingabe": {
+        "type": "object",
+        "required": [
+          "an",
+          "betreff"
+        ],
+        "properties": {
+          "an": {
+            "type": "string",
+            "description": "Eine oder mehrere Adressen, durch Komma getrennt"
+          },
+          "betreff": {
+            "type": "string"
+          },
+          "nachricht": {
+            "type": "string"
+          },
+          "dokumente": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Ids von Dokumenten dieser Mappe"
+          }
+        }
+      },
+      "EmailVersendet": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id der neuen E-Mail-Mappe"
+          },
+          "typId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "NotizEingabe": {
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "Erinnerung": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mappeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "empfaengerId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "datum": {
+            "type": "string",
+            "format": "date"
+          },
+          "text": {
+            "type": "string"
+          },
+          "erstellt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "erstelltVon": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "hinweis": {
+            "type": "string",
+            "description": "Wenn der Empfänger die Mappe nicht lesen darf"
+          }
+        }
+      },
+      "ErinnerungEingabe": {
+        "type": "object",
+        "required": [
+          "datum",
+          "text"
+        ],
+        "properties": {
+          "datum": {
+            "type": "string",
+            "format": "date"
+          },
+          "text": {
+            "type": "string"
+          },
+          "empfaengerId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Benutzer; fehlt = der Benutzer des Schlüssels"
+          }
+        }
+      },
+      "Anstehend": {
+        "type": "object",
+        "properties": {
+          "tage": {
+            "type": "integer"
+          },
+          "eintraege": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "art": {
+                  "type": "string",
+                  "enum": [
+                    "frist",
+                    "erinnerung"
+                  ]
+                },
+                "datum": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "ab": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "ab wann im Eingang"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "mappeId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "mappeTitel": {
+                  "type": "string"
+                },
+                "typId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "faellig": {
+                  "type": "boolean",
+                  "description": "steht schon im Eingang"
+                },
+                "feldKey": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "erinnerungId": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Historie": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "mappeId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "zeit": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "benutzerId": {
+              "type": "string",
+              "format": "uuid",
+              "nullable": true
+            },
+            "art": {
+              "type": "string"
+            },
+            "daten": {
+              "type": "object",
+              "additionalProperties": true,
+              "description": "Je nach Art, z. B. aenderungen: [{feld, label, alt, neu}] oder dokument"
+            }
+          }
+        }
+      },
+      "Volltext": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "ocr": {
+            "type": "object"
+          },
+          "text": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "Sicht": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "beschreibung": {
+            "type": "string"
+          },
+          "elternId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "position": {
+            "type": "integer"
+          },
+          "typen": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Mappentypen, deren Mappen die Sicht selbst zeigt; dazu kommen die ihrer Untersichten"
+          },
+          "bedingungen": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "description": "Gelten zusammen (UND): {art:\"feld\", feld, op, wert?, bis?}, {art:\"dokumente\"|\"verknuepfungen\", register, vergleich, anzahl}, {art:\"dokumenteGesamt\"|\"verknuepfungenGesamt\", vergleich, anzahl}, {art:\"favorit\"}"
+          },
+          "trefferliste": {
+            "type": "string",
+            "nullable": true,
+            "description": "Schlüssel der Trefferliste; null = Standard"
+          },
+          "rechte": {
+            "type": "object",
+            "readOnly": true,
+            "properties": {
+              "R": {
+                "type": "boolean"
+              },
+              "C": {
+                "type": "boolean"
+              }
+            },
+            "description": "Nur für Benutzer (#148): wirksame Rechte an der Sicht. Verborgene Sichten fehlen in der Liste."
+          }
+        }
+      },
+      "SichtListe": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Sicht"
+        }
+      },
+      "Zaehler": {
+        "type": "object",
+        "properties": {
+          "sichten": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Anzahl Mappen je Sicht (mit Untersichten)"
+          },
+          "typen": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "anzahl": {
+                  "type": "integer"
+                },
+                "unpassend": {
+                  "type": "integer"
+                },
+                "demo": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "eingang": {
+            "type": "integer"
+          },
+          "favoriten": {
+            "type": "integer",
+            "description": "Eigene Favoriten"
+          }
+        }
+      },
+      "Hochgeladen": {
+        "type": "object",
+        "properties": {
+          "dokument": {
+            "$ref": "#/components/schemas/Dokument"
+          },
+          "gleicherInhalt": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "mappeId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "titel": {
+                  "type": "string"
+                },
+                "typId": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Benutzer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rolle": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "mitglied"
+            ]
+          },
+          "aktiv": {
+            "type": "boolean"
+          },
+          "hatPasswort": {
+            "type": "boolean"
+          },
+          "erstellt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "letzteAnmeldung": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "rollen": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Weitere (fachliche) Rollen: Ids von Rollen-Mappen, ohne Administrator und Mitglied"
+          }
+        }
+      },
+      "BenutzerListe": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Benutzer"
+        }
+      },
+      "BenutzerEingabe": {
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rolle": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "mitglied"
+            ]
+          },
+          "rollen": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Weitere (fachliche) Rollen: Ids von Rollen-Mappen, ohne Administrator und Mitglied"
+          }
+        }
+      },
+      "BenutzerAenderung": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "rolle": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "mitglied"
+            ]
+          },
+          "aktiv": {
+            "type": "boolean"
+          },
+          "rollen": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Weitere (fachliche) Rollen: Ids von Rollen-Mappen, ohne Administrator und Mitglied"
+          }
+        }
+      },
+      "RollenListe": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": {
+              "type": "string"
+            },
+            "system": {
+              "type": "boolean",
+              "description": "Administrator oder Mitglied"
+            }
+          }
+        }
+      },
+      "LinkErgebnis": {
+        "type": "object",
+        "properties": {
+          "benutzer": {
+            "$ref": "#/components/schemas/Benutzer"
+          },
+          "mailVerschickt": {
+            "type": "boolean"
+          },
+          "link": {
+            "type": "string",
+            "description": "Nur ohne E-Mail-Versand"
+          }
+        }
+      },
+      "ZusammenfassungEingabe": {
+        "type": "object",
+        "properties": {
+          "aktiv": {
+            "type": "boolean"
+          },
+          "uhrzeit": {
+            "type": "string",
+            "nullable": true,
+            "example": "07:00"
+          },
+          "tage": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 7
+            }
+          },
+          "feiertage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Zusammenfassung": {
+        "type": "object",
+        "properties": {
+          "aktiv": {
+            "type": "boolean"
+          },
+          "uhrzeit": {
+            "type": "string",
+            "nullable": true
+          },
+          "tage": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "feiertage": {
+            "type": "boolean"
+          },
+          "standard": {
+            "type": "object",
+            "properties": {
+              "uhrzeit": {
+                "type": "string"
+              },
+              "tage": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              },
+              "bundesland": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "versand": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Abwesenheit": {
+        "type": "object",
+        "required": [
+          "an"
+        ],
+        "properties": {
+          "an": {
+            "type": "boolean"
+          },
+          "von": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "bis": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "vertreterId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
+      "AbwesenheitStand": {
+        "type": "object",
+        "properties": {
+          "abwesenheit": {
+            "$ref": "#/components/schemas/Abwesenheit",
+            "nullable": true
+          },
+          "offeneAufgaben": {
+            "type": "integer"
+          }
+        }
+      },
+      "Ich": {
+        "type": "object",
+        "properties": {
+          "benutzer": {
+            "$ref": "#/components/schemas/Benutzer"
+          },
+          "schluessel": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "recht": {
+                "type": "string",
+                "enum": [
+                  "lesen",
+                  "schreiben"
+                ]
+              },
+              "passwoerter": {
+                "type": "boolean",
+                "description": "Recht „Passwörter lesen“"
+              },
+              "ablauf": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
