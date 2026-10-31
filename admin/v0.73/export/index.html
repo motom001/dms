@@ -756,7 +756,7 @@
   <span class="md-ellipsis">
     
   
-    Sprechende Links
+    Links über Feldwerte
   
 
     
@@ -2060,7 +2060,7 @@
 <div class="highlight"><pre><span></span><code>dms-export-2026-10-31-14-05-00/
   LIESMICH.md            Aufbau, Formate, Prüfskript
   manifest.json          Formatversion, Anzahlen, Größe und SHA-256 jeder Datei, wo jede Tabelle steht
-  struktur/              Mappentypen, Ansichten, Nummernkreise, Designs, Benutzer (ohne Passwörter)
+  struktur/              Mappentypen, Ansichten, Nummernkreise, Pakete (pakete.json), Designs, Benutzer (ohne Passwörter)
   daten/
     &lt;typ&gt;.csv  .jsonl  .xlsx   je Mappentyp: eine Zeile je Mappe, eine Spalte je Kennung eines Felds
     verweise.csv           Mappe → Feld → Mappe
@@ -2090,7 +2090,7 @@
 <h2 id="kontakte-als-vcard">Kontakte als vCard<a class="headerlink" href="#kontakte-als-vcard" title="Permanent link">&para;</a></h2>
 <p>Das DMS schlägt Mappentypen vor, die nach Kontakten aussehen (Felder wie Name, E-Mail, Telefon, Adresse), und ordnet die Felder zu. Prüfe die Zuordnung vor dem Export; abgewählte Mappentypen bekommen keine vCard.</p>
 <h2 id="meine-daten-exportieren">Meine Daten exportieren<a class="headerlink" href="#meine-daten-exportieren" title="Permanent link">&para;</a></h2>
-<p>Jeder Benutzer kann unter <strong>Profil → Konto → Meine Daten exportieren</strong> einen eigenen Export anstoßen – im selben Aufbau, aber nur mit den Mappen, die er lesen darf, seinen eigenen Aufgaben, Erinnerungen, Favoriten und Papierkorb-Einträgen. Ansichten, Nummernkreise und andere Benutzer fehlen; Passwörter nur aus Mappen, in denen er Passwörter sehen darf, und nur mit Bestätigung. Er liegt unter <code>export/persoenlich/&lt;Benutzer-Id&gt;/</code>; ein neuer Export ersetzt den alten. Abschalten lässt sich das im Vollexport-Panel mit <strong>Persönlicher Export für Benutzer</strong>.</p>
+<p>Jeder Benutzer kann unter <strong>Profil → Konto → Meine Daten exportieren</strong> einen eigenen Export anstoßen – im selben Aufbau, aber nur mit den Mappen, die er lesen darf, seinen eigenen Aufgaben, Erinnerungen, Favoriten und Papierkorb-Einträgen. Ansichten, Nummernkreise und andere Benutzer fehlen; Passwörter nur aus Mappen, in denen er Passwörter sehen darf, und nur mit Bestätigung. Er liegt unter <code>export/persoenlich/&lt;Benutzer-Id&gt;/</code>; ein neuer Export ersetzt den alten. Abschalten lässt sich das unter <strong>Werkbank → Vollexport</strong> im Abschnitt <em>Meine Daten exportieren</em> mit dem Haken <strong>Benutzer dürfen ihre eigenen Daten exportieren</strong>. Solange ein Administrator über <a href="../benutzer/#fehler-nachstellen">Fehler nachstellen</a> als ein Benutzer arbeitet, gibt es für diesen Benutzer keinen eigenen Export.</p>
 <h2 id="weiterverarbeiten">Weiterverarbeiten<a class="headerlink" href="#weiterverarbeiten" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Excel/LibreOffice:</strong> <code>daten/&lt;typ&gt;.xlsx</code> öffnen – oder die <code>.csv</code>.</li>

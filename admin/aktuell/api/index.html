@@ -756,7 +756,7 @@
   <span class="md-ellipsis">
     
   
-    Sprechende Links
+    Links über Feldwerte
   
 
     
@@ -1528,6 +1528,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#weitere-endpunkte" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weitere Endpunkte
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#post-anlegen-und-zuordnen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1937,6 +1948,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#weitere-endpunkte" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weitere Endpunkte
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#post-anlegen-und-zuordnen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1988,13 +2010,13 @@
 <h2 id="api-beschreibung">API-Beschreibung<a class="headerlink" href="#api-beschreibung" title="Permanent link">&para;</a></h2>
 <p>Die vollständige Beschreibung im <strong>OpenAPI-Format</strong> (Version 3.1):</p>
 <ul>
-<li><strong>Lesbar</strong> in jeder Installation unter <strong>Profil → API-Dokumentation</strong> – passend zur installierten Version.</li>
-<li><strong>Maschinenlesbar</strong> unter <code>/api/openapi.json</code> der eigenen Installation, z. B. <code>http://&lt;NAS&gt;:8080/api/openapi.json</code>. Das lässt sich in Werkzeuge wie Swagger UI, Postman oder einen Code-Generator laden.</li>
+<li><strong>Lesbar</strong> in jeder Installation unter <strong>Profil → Sicherheit → API-Schlüssel</strong> über den Link <strong>API-Dokumentation</strong> – passend zur installierten Version.</li>
+<li><strong>Maschinenlesbar</strong> unter <code>/api/openapi.json</code> oder <code>/api/v1/openapi.json</code> der eigenen Installation, z. B. <code>http://&lt;NAS&gt;:8080/api/openapi.json</code>. Das lässt sich in Werkzeuge wie Swagger UI, Postman oder einen Code-Generator laden.</li>
 <li>Die Beschreibung der aktuellen Version liegt auch hier: <a href="openapi.json">openapi.json</a>.</li>
 </ul>
 <p><img alt="API-Dokumentation im DMS" src="../bilder/api-doku.png" /></p>
 <h2 id="api-schlussel">API-Schlüssel<a class="headerlink" href="#api-schlussel" title="Permanent link">&para;</a></h2>
-<p>Jeder Benutzer erzeugt seine Schlüssel selbst im <strong>Profil</strong> unter <em>API-Schlüssel</em> – <strong>außer Administratoren</strong> (ab 0.26): Über die Schnittstelle arbeitet immer ein normaler Benutzer. Lege für ein Programm am besten einen eigenen Benutzer an (z. B. „Scanner“), melde dich als dieser an und erzeuge den Schlüssel dort. Schlüssel, die Administratoren schon vorher hatten, funktionieren weiter; die Werkbank-Übersicht erinnert daran, sie so zu ersetzen.</p>
+<p>Jeder Benutzer erzeugt seine Schlüssel selbst unter <strong>Profil → Sicherheit → API-Schlüssel</strong>, höchstens 50 je Benutzer – <strong>außer Administratoren</strong> (ab 0.26): Über die Schnittstelle arbeitet immer ein normaler Benutzer. Lege für ein Programm am besten einen eigenen Benutzer an (z. B. „Scanner“), melde dich als dieser an und erzeuge den Schlüssel dort. Schlüssel, die Administratoren schon vorher hatten, funktionieren weiter; die Werkbank-Übersicht erinnert daran, sie so zu ersetzen.</p>
 <ul>
 <li><strong>Name</strong> – wofür der Schlüssel ist, z. B. „Scanner Arbeitszimmer“.</li>
 <li><strong>Recht</strong> – <em>nur lesen</em> oder <em>lesen und schreiben</em>.</li>
@@ -2002,7 +2024,8 @@
 <li><strong>Passwörter lesen</strong> – eigenes Recht für <a href="../mappentypen/#passwortfelder">Passwortfelder</a>: Nur damit liefert <code>GET /api/v1/mappen…?passwoerter=anzeigen</code> sie im Klartext; jeder Abruf steht im Protokoll. Ohne den Parameter steht dort immer nur <code>{"gesetzt": true, "lesbar": true}</code>.</li>
 </ul>
 <p>Der Schlüssel ist <strong>nur einmal vollständig sichtbar</strong>, direkt nach dem Erzeugen; danach zeigt das DMS nur noch seinen Anfang. Gespeichert wird nur ein Prüfwert. Wer ihn verliert, erzeugt einen neuen und löscht den alten.</p>
-<p>Ein Schlüssel hat höchstens die Rechte seines Benutzers und kommt damit nicht an die Werkbank-Funktionen. Ist der Benutzer deaktiviert, gilt auch sein Schlüssel nicht mehr.</p>
+<p>Ein Schlüssel hat höchstens die Rechte seines Benutzers. Ist der Benutzer deaktiviert, gilt auch sein Schlüssel nicht mehr.</p>
+<p>Die Endpunkte der Gruppe <em>Werkbank</em> (Mappentypen anlegen, ändern und löschen; Benutzer und Rollen) brauchen <strong>Administratorrechte</strong>. Mit dem Schlüssel eines Mitglieds antworten sie mit <code>403</code>. Da Administratoren keine neuen Schlüssel bekommen, gehen sie nur mit einem Schlüssel, der einem Administrator schon vor 0.26 gehörte.</p>
 <h2 id="erster-aufruf">Erster Aufruf<a class="headerlink" href="#erster-aufruf" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer dms_…"</span><span class="w"> </span>http://&lt;NAS&gt;:8080/api/v1/ich
 </code></pre></div>
@@ -2020,6 +2043,46 @@
 <p>Die Mappen einer Ansicht liefert <code>GET /api/v1/mappen?sicht=&lt;Id der Ansicht&gt;</code> – mit allen Bedingungen der Ansicht. Alle Mappen eines Mappentyps, ohne Bedingungen, gibt es mit <code>sicht=typ:&lt;Id des Mappentyps&gt;</code>. Mit <code>sicht=link&amp;link=…</code> geht es über einen <a href="../direktlinks/">Link über Mappentyp und Feldwerte</a>. Die Ansichten selbst (Baum, Mappentypen, Bedingungen, gewählte Trefferliste) liefert <code>GET /api/v1/sichten/definitionen</code>. Die eigene Abwesenheit liest und setzt <code>GET</code>/<code>PUT /api/v1/konto/abwesenheit</code>, die eigene tägliche Zusammenfassung (Uhrzeit, Wochentage, Feiertage) <code>GET</code>/<code>PUT /api/v1/konto/zusammenfassung</code>. Die eigenen Favoriten gibt es mit <code>sicht=favoriten</code>; markieren und entfernen mit <code>PUT</code> bzw. <code>DELETE /api/v1/mappen/{id}/favorit</code>.</p>
 <p>Mappentypen haben seit 0.14 <strong>mehrere Trefferlisten</strong> (<code>trefferlisten</code>, eine mit <code>standard: true</code>). Das Feld <code>trefferliste</code> gibt es weiter: Es enthält die Spalten der Standardliste, und wer es beim Ändern angibt, ersetzt damit deren Spalten.</p>
 <p>Mit <code>suche=…&amp;volltext=true</code> sucht <code>GET /api/v1/mappen</code> auch im Volltext der Dokumente; die Fundstellen stehen in <code>ausschnitte</code> (Treffer zwischen den Steuerzeichen U+0002 und U+0003). Den ganzen Text eines Dokuments liefert <code>GET /api/v1/dokumente/&lt;Id&gt;/volltext</code>.</p>
+<h3 id="weitere-endpunkte">Weitere Endpunkte<a class="headerlink" href="#weitere-endpunkte" title="Permanent link">&para;</a></h3>
+<p>Die API-Dokumentation beschreibt alle Endpunkte mit ihren Parametern. Ein Überblick:</p>
+<table>
+<thead>
+<tr>
+<th>Wofür</th>
+<th>Endpunkte</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Erweiterte Suche</strong></td>
+<td><code>GET /api/v1/mappen?sicht=suche&amp;link=…</code> mit den Parametern der erweiterten Suche als ein kodierter Wert, z. B. <code>typ%3Drechnung%26volltext%3DBackofen</code></td>
+</tr>
+<tr>
+<td><strong>Aufgaben</strong></td>
+<td><code>GET /api/v1/aufgaben</code> (eigene offene), <code>POST /api/v1/mappen/{id}/aufgaben</code> (vergeben), <code>POST /api/v1/aufgaben/{id}/erledigt</code> und <code>…/delegieren</code>; Fristen und Erinnerungen über <code>GET /api/v1/anstehend</code> und <code>…/erinnerungen</code></td>
+</tr>
+<tr>
+<td><strong>Notizen</strong></td>
+<td><code>GET</code>/<code>POST /api/v1/mappen/{id}/notizen</code>, <code>PUT</code>/<code>DELETE /api/v1/notizen/{id}</code></td>
+</tr>
+<tr>
+<td><strong>Historie</strong> einer Mappe</td>
+<td><code>GET /api/v1/mappen/{id}/historie</code></td>
+</tr>
+<tr>
+<td><strong>E-Mail</strong></td>
+<td><code>POST /api/v1/mappen/{id}/email</code> versendet eine Mappe mit Dokumenten (zusammen höchstens 50 MB)</td>
+</tr>
+<tr>
+<td><strong>Dokumente und Versionen</strong></td>
+<td><code>POST /api/v1/mappen/{id}/dokumente</code> (hochladen), <code>POST /api/v1/dokumente/{id}/ersetzen</code> (neue Version), <code>GET /api/v1/dokumente/{id}/versionen</code>, ältere Version herunterladen und <code>…/zurueckholen</code></td>
+</tr>
+<tr>
+<td><strong>Texterkennung</strong></td>
+<td><code>POST /api/v1/dokumente/{id}/texterkennung</code> stößt sie für ein Dokument (erneut) an; <code>GET /api/v1/dokumente/{id}/volltext</code> liefert den Text</td>
+</tr>
+</tbody>
+</table>
 <h3 id="post-anlegen-und-zuordnen">Post anlegen und zuordnen<a class="headerlink" href="#post-anlegen-und-zuordnen" title="Permanent link">&para;</a></h3>
 <p>Ein Skript, ein Scanner oder Home Assistant legt neue <a href="https://motom001.github.io/dms/benutzer/post/">Post</a> an und lädt die Datei dazu hoch:</p>
 <div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer dms_…"</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>

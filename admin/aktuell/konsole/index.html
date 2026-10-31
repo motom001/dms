@@ -756,7 +756,7 @@
   <span class="md-ellipsis">
     
   
-    Sprechende Links
+    Links über Feldwerte
   
 
     
@@ -2019,13 +2019,19 @@
 
 <h1 id="konsole-befehl-dms">Konsole: Befehl <code>dms</code><a class="headerlink" href="#konsole-befehl-dms" title="Permanent link">&para;</a></h1>
 <p>Im Container des DMS gibt es den Befehl <code>dms</code>. Damit erledigst du Notfälle und Routinearbeiten ohne Browser – etwa wenn du dich ausgesperrt hast oder etwas per Skript tun willst.</p>
-<div class="highlight"><pre><span></span><code>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>&lt;container&gt;<span class="w"> </span>dms<span class="w"> </span>hilfe
+<p>Am einfachsten rufst du ihn im Ordner der Compose-Datei über den Namen des Dienstes auf:</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>app<span class="w"> </span>dms<span class="w"> </span>hilfe<span class="w">     </span><span class="c1"># zwei Container (Dienst „app“)</span>
+docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>dms<span class="w"> </span>dms<span class="w"> </span>hilfe<span class="w">     </span><span class="c1"># dms-komplett (Dienst „dms“)</span>
 </code></pre></div>
-<p><code>&lt;container&gt;</code> ist der Name des DMS-Containers (bei dms-komplett meist <code>dms</code>, beim Betrieb mit zwei Containern der des DMS, nicht der Datenbank). In der Docker-Oberfläche des NAS (Synology Container Manager, QNAP Container Station, Unraid, TrueNAS …) öffnest du stattdessen das <strong>Terminal</strong> des Containers und gibst <code>dms hilfe</code> ein.</p>
+<p>Mit <code>docker exec</code> brauchst du den Namen des Containers. Docker setzt ihn aus dem Namen des Projekts und des Dienstes zusammen, z. B. <code>dms-app-1</code> (zwei Container) oder <code>dms-dms-1</code> (dms-komplett). Welche Namen es gibt, zeigt <code>docker ps</code>. Nimm den Container des DMS, nicht den der Datenbank:</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>dms-app-1<span class="w"> </span>dms<span class="w"> </span>hilfe
+</code></pre></div>
+<p>In der Docker-Oberfläche des NAS (Synology Container Manager, QNAP Container Station, Unraid, TrueNAS …) öffnest du stattdessen das <strong>Terminal</strong> des Containers und gibst <code>dms hilfe</code> ein.</p>
 <h2 id="wer-darf-das">Wer darf das?<a class="headerlink" href="#wer-darf-das" title="Permanent link">&para;</a></h2>
 <p>Wer Befehle im Container ausführen darf, darf auch <code>dms</code> – wie ein Administrator. Der Befehl spricht mit dem <strong>laufenden DMS</strong>, nicht direkt mit der Datenbank; Sperren, Sitzungen und Protokoll bleiben so stimmig. Jede Aktion steht im <a href="../fehlersuche/#protokoll">Protokoll</a> mit dem Vermerk <strong>(Konsole)</strong>.</p>
 <p><code>dms</code> handelt als der älteste aktive Administrator. Mit <code>--als &lt;email&gt;</code> wählst du einen anderen.</p>
-<p>Technisch legt das DMS beim Start eine Datei <code>/tmp/dms-konsole.json</code> mit einem zufälligen Schlüssel an, lesbar nur im Container. Den Schlüssel nimmt das DMS nur über die Adresse <code>127.0.0.1</code> an – über den veröffentlichten Port oder einen Reverse-Proxy funktioniert er nicht.</p>
+<p>Technisch legt das DMS beim Start eine Datei <code>/tmp/dms-konsole.json</code> mit einem zufälligen Schlüssel an, lesbar nur im Container. Einen anderen Ort legt die Umgebungsvariable <code>DMS_KONSOLE_DATEI</code> fest; sie muss dann für das DMS und den Befehl <code>dms</code> gleich sein. Den Schlüssel nimmt das DMS nur über die Adresse <code>127.0.0.1</code> an – über den veröffentlichten Port oder einen Reverse-Proxy funktioniert er nicht.</p>
+<p>Der Befehl <code>dms</code> funktioniert auch im <a href="../wartungsmodus/">Wartungsmodus</a>. So beendest du ihn mit <code>dms wartung aus</code>, auch wenn die Oberfläche gesperrt ist.</p>
 <h2 id="notfall">Notfall<a class="headerlink" href="#notfall" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2067,8 +2073,8 @@
 </table>
 <div class="admonition example">
 <p class="admonition-title">Ausgesperrt</p>
-<div class="highlight"><pre><span></span><code>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>dms<span class="w"> </span>dms<span class="w"> </span>passwort<span class="w"> </span>ich@example.org
-docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>dms<span class="w"> </span>dms<span class="w"> </span>entsperren<span class="w"> </span><span class="m">192</span>.168.1.20
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>app<span class="w"> </span>dms<span class="w"> </span>passwort<span class="w"> </span>ich@example.org
+docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>app<span class="w"> </span>dms<span class="w"> </span>entsperren<span class="w"> </span><span class="m">192</span>.168.1.20
 </code></pre></div>
 </div>
 <p>Gibt es gar keinen aktiven Administrator mehr, setzt <code>dms passwort</code> trotzdem ein Passwort; die übrigen Befehle brauchen einen. Dann hilft der <a href="../notfall/">Notfallzugang</a>.</p>
@@ -2133,7 +2139,7 @@ dms<span class="w"> </span>api<span class="w"> </span>PUT<span class="w"> </span
 <ul>
 <li><code>--json</code> gibt jede Antwort als JSON aus.</li>
 <li><code>--ja</code> beantwortet Rückfragen (z. B. bei <code>abmelden --alle</code>); ohne Terminal (<code>docker exec</code> ohne <code>-it</code>) ist es Pflicht.</li>
-<li>Rückgabewert: <code>0</code> erledigt, <code>1</code> Fehler, <code>2</code> falscher Aufruf, <code>3</code> DMS läuft nicht oder ist im Einrichtungsmodus, <code>4</code> Zugang abgelehnt.</li>
+<li>Rückgabewert: <code>0</code> erledigt, <code>1</code> Fehler, <code>2</code> falscher Aufruf, <code>3</code> DMS läuft nicht oder ist im Einrichtungsmodus, <code>4</code> Zugang abgelehnt, <code>130</code> Eingabe abgebrochen (z. B. mit Strg+C bei der Abfrage des Passworts).</li>
 </ul>
 <h2 id="meldungen">Meldungen<a class="headerlink" href="#meldungen" title="Permanent link">&para;</a></h2>
 <ul>

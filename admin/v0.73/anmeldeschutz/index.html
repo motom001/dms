@@ -758,7 +758,7 @@
   <span class="md-ellipsis">
     
   
-    Sprechende Links
+    Links über Feldwerte
   
 
     
@@ -2080,20 +2080,25 @@
 </tbody>
 </table>
 <p>Die Sperrdauer je IP darf auch <strong>0</strong> sein: Dann bleibt die Adresse gesperrt, bis ein Administrator sie freigibt. Die Fehlversuche je IP zählen innerhalb der Sperrdauer (bei „dauerhaft“ innerhalb einer Stunde).</p>
-<p>Sperren stehen in der Datenbank und überstehen einen Neustart. Jede Sperre und jedes Entsperren steht im <a href="../fehlersuche/#protokoll">Protokoll</a>. Auf Wunsch bekommen die Administratoren eine Mail, sobald eine IP gesperrt wird.</p>
+<p>Sperren stehen in der Datenbank und überstehen einen Neustart. Jede Sperre und jedes Entsperren steht im <a href="../fehlersuche/#protokoll">Protokoll</a>. Sobald eine IP gesperrt wird, bekommen die Administratoren eine Mail. Das ist Standard; abschalten lässt es sich mit dem Haken <strong>Administratoren per Mail informieren, wenn eine IP gesperrt wird</strong>.</p>
 <h2 id="gesperrte-adressen">Gesperrte Adressen<a class="headerlink" href="#gesperrte-adressen" title="Permanent link">&para;</a></h2>
 <p>Die Liste zeigt jede gesperrte IP mit Grund, Beginn und Ende. <strong>Entsperren</strong> gibt sie sofort frei. Oben auf der Seite steht deine eigene Adresse, wie das DMS sie sieht.</p>
 <div class="admonition warning">
 <p class="admonition-title">Hinter einem Reverse-Proxy</p>
-<p>Damit die Sperre je IP die richtige Adresse trifft, muss das DMS die Angaben des Proxys glauben – siehe <a href="../installation/#hinter-einem-reverse-proxy">Hinter einem Reverse-Proxy</a>. Sonst sieht es für alle Anmeldungen die Adresse des Proxys und sperrt im Ernstfall alle aus.</p>
+<p>Damit die Sperre je IP die richtige Adresse trifft, muss das DMS die Angaben des Proxys glauben. Sitzt der Proxy auf demselben Rechner oder in einem privaten Netz, erkennt das DMS das von selbst (<code>TRUST_PROXY</code> nicht gesetzt oder <code>auto</code>). Prüfe oben auf der Seite: Steht dort bei deiner Adresse die Adresse des Proxys statt die deines Geräts, sieht das DMS für alle Anmeldungen dieselbe Adresse und sperrt im Ernstfall alle aus. Siehe <a href="../installation/#hinter-einem-reverse-proxy">Hinter einem Reverse-Proxy</a>.</p>
 </div>
 <h2 id="ausnahmen">Ausnahmen<a class="headerlink" href="#ausnahmen" title="Permanent link">&para;</a></h2>
-<p>Unter <strong>Nie sperren</strong> stehen Adressen oder Netze, die nie gesperrt werden, z. B. dein Heimnetz <code>192.168.0.0/16</code> oder das Firmennetz. Mehrere durch Komma getrennt.</p>
+<p>Unter <strong>Nie sperren</strong> stehen Adressen oder Netze, die nie gesperrt werden, z. B. dein Heimnetz <code>192.168.0.0/16</code> oder das Firmennetz. Mehrere durch Komma getrennt, höchstens 50.</p>
 <h2 id="ausgesperrt">Ausgesperrt?<a class="headerlink" href="#ausgesperrt" title="Permanent link">&para;</a></h2>
-<p>Bist du selbst gesperrt und kein anderer Administrator kann dich freigeben, warte die Sperrdauer ab oder melde dich von einem anderen Gerät oder Netz an. Für eine dauerhafte Sperre hilft der <a href="../notfall/">Notfallzugang</a>.</p>
+<p>Bist du selbst gesperrt und kein anderer Administrator kann dich freigeben, hilft der <a href="../konsole/">Befehl <code>dms</code></a> im Container:</p>
+<ul>
+<li><code>dms gesperrt</code> zeigt die gesperrten Adressen,</li>
+<li><code>dms entsperren &lt;ip&gt;</code> gibt eine Adresse sofort frei.</li>
+</ul>
+<p>Ohne Zugriff auf den Container warte die Sperrdauer ab oder melde dich von einem anderen Gerät oder Netz an. Gibt es keinen Administrator mehr, hilft der <a href="../notfall/">Notfallzugang</a>.</p>
 <h2 id="zwei-faktor-anmeldung">Zwei-Faktor-Anmeldung<a class="headerlink" href="#zwei-faktor-anmeldung" title="Permanent link">&para;</a></h2>
 <p>Jeder Benutzer kann unter <strong>Profil → Sicherheit</strong> eine Zwei-Faktor-Anmeldung mit einer Authenticator-App einrichten (TOTP, 6 Stellen, 30 Sekunden) und bekommt dazu zehn Wiederherstellungscodes. Wie das für Benutzer aussieht, beschreibt das <a href="https://motom001.github.io/dms/benutzer/aktuell/profil/#zwei-faktor-anmeldung">Benutzerhandbuch</a>.</p>
-<p>Unten auf dieser Seite <strong>schreibst du sie je Systemrolle vor</strong> – für Administratoren, für Mitglieder oder beide. Wer sie dann noch nicht hat, sieht nach der Anmeldung nur die Einrichtung und kommt erst danach weiter. Abschalten kann er sie selbst nicht mehr.</p>
+<p>Unter <strong>Werkbank → Anmeldeschutz</strong> im Block <strong>Zwei-Faktor-Anmeldung</strong> <strong>schreibst du sie je Systemrolle vor</strong>: mit den Haken <strong>Für Administratoren vorschreiben</strong> und <strong>Für Mitglieder vorschreiben</strong>. Wer sie dann noch nicht hat, sieht nach der Anmeldung nur die Einrichtung und kommt erst danach weiter. Abschalten kann er sie selbst nicht mehr.</p>
 <p>Falsche Codes zählen wie falsche Passwörter für den <a href="#zwei-sperren">Anmeldeschutz</a>. Ein Link zum Zurücksetzen des Passworts ersetzt nur das Passwort; den Code fragt das DMS trotzdem ab.</p>
 <p><strong>Handy verloren?</strong> Unter <strong>Werkbank → Benutzer</strong> steht beim Benutzer, ob die Zwei-Faktor-Anmeldung eingerichtet ist; <strong>Zurücksetzen</strong> entfernt sie. Danach reicht wieder das Passwort – ist sie vorgeschrieben, richtet der Benutzer sie bei der nächsten Anmeldung neu ein. Jedes Einrichten, Zurücksetzen und jede Anmeldung mit Wiederherstellungscode steht im <a href="../fehlersuche/#protokoll">Protokoll</a>.</p>
 <p>Das Geheimnis liegt mit dem <a href="../verschluesselung/">Schlüssel des DMS</a> verschlüsselt in der Datenbank und ist damit Teil der Sicherung; ein Schlüsselwechsel schlüsselt es mit um. Wiederherstellungscodes speichert das DMS nur als Prüfwert.</p>
@@ -2103,7 +2108,7 @@
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Selbst ausgesperrt?</p>
-<p>Hast du als einziger Administrator Handy und Codes verloren, hilft der <a href="../notfall/">Notfallzugang</a>.</p>
+<p>Hast du Handy und Codes verloren, entfernt <code>dms zweifaktor-zuruecksetzen &lt;email&gt;</code> im Container deine Zwei-Faktor-Anmeldung (siehe <a href="../konsole/">Befehl <code>dms</code></a>). Kommst du nicht an den Container, hilft der <a href="../notfall/">Notfallzugang</a>.</p>
 </div>
 <h2 id="anmeldung-uber-einen-anbieter-openid-connect">Anmeldung über einen Anbieter (OpenID Connect)<a class="headerlink" href="#anmeldung-uber-einen-anbieter-openid-connect" title="Permanent link">&para;</a></h2>
 <p>Statt mit Passwort melden sich Benutzer mit dem Konto eines Identitätsanbieters an – etwa <strong>Microsoft Entra ID</strong> (Microsoft 365), <strong>Google Workspace</strong>, <strong>Keycloak</strong>, <strong>Authentik</strong> oder <strong>Authelia</strong>. Auf der Anmeldeseite erscheint dann ein Knopf wie <strong>Mit Firmenkonto anmelden</strong>.</p>
@@ -2146,10 +2151,17 @@
 </tbody>
 </table>
 <h3 id="im-dms">Im DMS<a class="headerlink" href="#im-dms" title="Permanent link">&para;</a></h3>
-<p>Unter <strong>Werkbank → Anmeldeschutz → Anmeldung über einen Anbieter</strong> trägst du Adresse, Client-ID und Client-Secret ein und klickst auf <strong>Verbindung prüfen</strong>. Danach <strong>Eingeschaltet</strong> ankreuzen und speichern. Das Client-Secret liegt mit dem <a href="../verschluesselung/">Schlüssel des DMS</a> verschlüsselt in der Datenbank.</p>
+<p>Unter <strong>Werkbank → Anmeldeschutz → Anmeldung über einen Anbieter</strong> trägst du ein:</p>
 <ul>
-<li><strong>Zuordnung:</strong> über die E-Mail-Adresse. Gibt es sie im DMS nicht, lehnt das DMS ab – außer <strong>Unbekannte Adressen als neue Benutzer anlegen</strong> ist an; dann entsteht ein Benutzer mit der eingestellten Rolle. Bei Entra ID dient auch der Anmeldename (UPN) als Adresse.</li>
-<li><strong>Gruppe für Administratoren:</strong> Ist sie gesetzt, folgt die Systemrolle bei jeder Anmeldung der Gruppe: Mitglieder der Gruppe sind Administratoren, alle anderen Mitglieder. Der letzte aktive Administrator bleibt Administrator. Bei Entra ID liefert der Claim <code>groups</code> die Objekt-IDs der Gruppen (Anwendung → <em>Token-Konfiguration</em> → <em>Gruppenanspruch hinzufügen</em>); trage dann die Objekt-ID ein.</li>
+<li><strong>Adresse des Anbieters</strong> (Issuer),</li>
+<li><strong>Client-ID</strong>,</li>
+<li><strong>Client-Secret</strong> – leer lassen bei öffentlichen Clients, die kein Secret haben. Ist schon eines gespeichert, lässt ein leeres Feld es unverändert; <strong>Secret löschen</strong> entfernt es,</li>
+<li><strong>Beschriftung des Knopfes</strong> auf der Anmeldeseite.</li>
+</ul>
+<p>Dann klickst du auf <strong>Verbindung prüfen</strong>. Danach <strong>Eingeschaltet – Knopf auf der Anmeldeseite</strong> ankreuzen und speichern. Das Client-Secret liegt mit dem <a href="../verschluesselung/">Schlüssel des DMS</a> verschlüsselt in der Datenbank.</p>
+<ul>
+<li><strong>Zuordnung:</strong> über die E-Mail-Adresse. Gibt es sie im DMS nicht, lehnt das DMS ab – außer <strong>Unbekannte Adressen als neue Benutzer anlegen</strong> ist an; dann entsteht ein Benutzer mit der <strong>Systemrolle neuer Benutzer</strong> (Mitglied oder Administrator). Bei Entra ID dient auch der Anmeldename (UPN) als Adresse.</li>
+<li><strong>Gruppe für Administratoren:</strong> Ist sie gesetzt, folgt die Systemrolle bei jeder Anmeldung der Gruppe: Mitglieder der Gruppe sind Administratoren, alle anderen Mitglieder. Der letzte aktive Administrator bleibt Administrator. Aus welchem Claim das DMS die Gruppen liest, steht im Feld <strong>Claim mit den Gruppen</strong> (meist <code>groups</code>). Bei Entra ID liefert der Claim <code>groups</code> die Objekt-IDs der Gruppen (Anwendung → <em>Token-Konfiguration</em> → <em>Gruppenanspruch hinzufügen</em>); trage dann die Objekt-ID ein.</li>
 <li><strong>Passwort-Anmeldung nur noch für Administratoren:</strong> Mitglieder melden sich nur noch über den Anbieter an. Administratoren behalten ihr Passwort als Notzugang, falls der Anbieter einmal nicht erreichbar ist.</li>
 <li><strong>Beim Abmelden auch beim Anbieter abmelden:</strong> Wer sich über den Anbieter angemeldet hat, wird beim Abmelden auch dort abgemeldet (wenn der Anbieter das anbietet).</li>
 <li>Eine eingerichtete <a href="#zwei-faktor-anmeldung">Zwei-Faktor-Anmeldung</a> des DMS gilt auch hier. Verlangt schon der Anbieter einen zweiten Faktor, schreibe sie im DMS für diese Rollen nicht zusätzlich vor.</li>

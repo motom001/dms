@@ -588,6 +588,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#schlussel-verloren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schlüssel verloren
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -838,7 +849,7 @@
   <span class="md-ellipsis">
     
   
-    Sprechende Links
+    Links über Feldwerte
   
 
     
@@ -1909,6 +1920,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#schlussel-verloren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schlüssel verloren
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1930,7 +1952,17 @@
 
 
 <h1 id="verschlusselung">Verschlüsselung<a class="headerlink" href="#verschlusselung" title="Permanent link">&para;</a></h1>
-<p>Passwörter, die das DMS speichert – das Passwort des Mailservers und <a href="../mappentypen/#passwortfelder">Passwortfelder</a> in Mappen –, liegen verschlüsselt in der Datenbank. Den Schlüssel dazu hält das DMS in einer <strong>eigenen Datei</strong>, nie in der Datenbank. Eine Datenbanksicherung allein verrät damit keine Passwörter.</p>
+<p>Passwörter und andere Geheimnisse, die das DMS speichert, liegen verschlüsselt in der Datenbank. Den Schlüssel dazu hält das DMS in einer <strong>eigenen Datei</strong>, nie in der Datenbank. Eine Datenbanksicherung allein verrät damit keine Geheimnisse.</p>
+<p>Mit diesem Schlüssel verschlüsselt sind:</p>
+<ul>
+<li>das Passwort des Mailservers (SMTP, <strong>Werkbank → E-Mail und Adresse</strong>),</li>
+<li>die Passwörter der <a href="../postfaecher/">Postfächer</a>,</li>
+<li>das Client-Secret der <a href="../anmeldeschutz/#anmeldung-uber-einen-anbieter-openid-connect">Anmeldung über einen Anbieter</a>,</li>
+<li>die Geheimnisse der <a href="../anmeldeschutz/#zwei-faktor-anmeldung">Zwei-Faktor-Anmeldung</a>,</li>
+<li>Geheimnisse in den Einstellungen von <a href="../pakete/">Paketen</a>,</li>
+<li><a href="../mappentypen/#passwortfelder">Passwortfelder</a> in Mappen, auch im Papierkorb,</li>
+<li>die <a href="../sicherung/">Sicherungen</a> – mit einem Schlüssel, der aus diesem abgeleitet ist.</li>
+</ul>
 <p><img alt="Werkbank → Verschlüsselung" src="../bilder/werkbank-verschluesselung.png" /></p>
 <h2 id="schlussel-erzeugen">Schlüssel erzeugen<a class="headerlink" href="#schlussel-erzeugen" title="Permanent link">&para;</a></h2>
 <ol>
@@ -1951,7 +1983,7 @@
 <p>Nach einer Rückfrage</p>
 <ol>
 <li>erzeugt das DMS einen neuen Schlüssel,</li>
-<li>verschlüsselt alle Passwörter – in Mappen, im Papierkorb und den des Mailservers – <strong>ganz oder gar nicht</strong> neu; bricht dabei etwas ab, gilt weiter der bisherige Schlüssel,</li>
+<li>verschlüsselt alle Geheimnisse in der Datenbank <strong>ganz oder gar nicht</strong> neu; bricht dabei etwas ab, gilt weiter der bisherige Schlüssel. Dazu gehören die Passwortfelder in Mappen und im Papierkorb und alle Einstellungen mit Geheimnissen: Mailserver, Postfächer, Client-Secret des Anbieters, Zwei-Faktor-Geheimnisse und Paket-Geheimnisse,</li>
 <li>setzt das Prüfwort neu und</li>
 <li>ersetzt die Schlüsseldatei. Der alte Schlüssel wird nicht aufbewahrt.</li>
 </ol>
@@ -1989,7 +2021,7 @@
 <tr>
 <td><strong>verloren</strong></td>
 <td>Es gab einen Schlüssel, die Datei fehlt aber.</td>
-<td>Datei aus der Sicherung nach <code>geheim/</code> zurücklegen und das DMS neu starten. Ist sie verloren, einen neuen Schlüssel erzeugen und die Passwörter neu eingeben.</td>
+<td>Datei aus deiner Kopie nach <code>geheim/</code> zurücklegen und das DMS neu starten. Ist sie verloren, einen neuen Schlüssel erzeugen und die Geheimnisse neu eingeben – siehe <a href="#schlussel-verloren">Schlüssel verloren</a>.</td>
 </tr>
 <tr>
 <td><strong>passt nicht</strong></td>
@@ -1999,7 +2031,16 @@
 </tbody>
 </table>
 <p>Unter <strong>Nicht lesbare oder unverschlüsselte Werte</strong> listet die Seite, welche Passwörter mit dem vorhandenen Schlüssel nicht lesbar sind (z. B. nach einem neuen Schlüssel) und wo du sie neu eingibst. Ein SMTP-Passwort aus einer Version vor 0.11 erscheint dort als „unverschlüsselt“, bis es einen Schlüssel gibt; dann wird es automatisch verschlüsselt.</p>
-<p>Den Schlüssel zu wechseln, ist eine eigene, spätere Funktion (#47).</p>
+<h2 id="schlussel-verloren">Schlüssel verloren<a class="headerlink" href="#schlussel-verloren" title="Permanent link">&para;</a></h2>
+<p>Ohne die Schlüsseldatei kann das DMS seine Geheimnisse nicht mehr lesen. Erzeugst du einen neuen Schlüssel, gilt danach:</p>
+<ul>
+<li><strong>Passwortfelder und Mailserver:</strong> Die Werte stehen unter <em>Nicht lesbare oder unverschlüsselte Werte</em>. Gib sie neu ein.</li>
+<li><strong>Postfächer:</strong> Der Abruf scheitert, bis du das Passwort unter <strong>Werkbank → Postfächer</strong> neu einträgst.</li>
+<li><strong>Anmeldung über einen Anbieter:</strong> Die Anmeldung scheitert, bis du das Client-Secret unter <strong>Werkbank → Anmeldeschutz</strong> neu einträgst.</li>
+<li><strong>Zwei-Faktor-Anmeldung:</strong> Codes aus der Authenticator-App passen nicht mehr. Die Benutzer kommen nur noch mit ihren Wiederherstellungscodes herein. Setze die Zwei-Faktor-Anmeldung unter <strong>Werkbank → Benutzer</strong> zurück; der Benutzer richtet sie dann neu ein.</li>
+<li><strong>Paket-Geheimnisse:</strong> in den Einstellungen des Pakets neu eingeben.</li>
+<li><strong>Sicherungen:</strong> Ältere Sicherungen lassen sich nur mit dem alten Schlüssel vom <a href="../sicherung/#notfallblatt">Notfallblatt</a> wiederherstellen.</li>
+</ul>
 
 
 

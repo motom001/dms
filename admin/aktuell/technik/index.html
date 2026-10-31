@@ -756,7 +756,7 @@
   <span class="md-ellipsis">
     
   
-    Sprechende Links
+    Links über Feldwerte
   
 
     
@@ -2018,7 +2018,7 @@
 </tr>
 <tr>
 <td>Server</td>
-<td>Node.js 22, Fastify 5, TypeScript (mit esbuild gebündelt)</td>
+<td>Node.js 24, Fastify 5, TypeScript (mit esbuild gebündelt)</td>
 <td>Schnittstelle unter <code>/api</code>, liefert auch die Oberfläche aus</td>
 </tr>
 <tr>
@@ -2028,13 +2028,13 @@
 </tr>
 <tr>
 <td>Dateien</td>
-<td>Feste Ordner <code>/data/files</code>, <code>/data/geheim</code>, <code>/data/sicherung</code> (Volumes, siehe <a href="../installation/#ordner-und-volumes">Installation</a>); je Datei ihr SHA-256 als Name</td>
-<td>Hochgeladene Dokumente, gleicher Inhalt nur einmal; Schlüssel; Sicherungen</td>
+<td>Feste Ordner <code>/data/files</code>, <code>/data/geheim</code>, <code>/data/sicherung</code> (Volumes, siehe <a href="../installation/#ordner-und-volumes">Installation</a>); je Datei ihr SHA-256 als Name; optional der <a href="../eingangsordner/">Eingangsordner</a> <code>/eingang</code></td>
+<td>Hochgeladene Dokumente, gleicher Inhalt nur einmal; Schlüssel; Sicherungen; Scans zum Abholen</td>
 </tr>
 <tr>
 <td>E-Mail</td>
-<td>nodemailer über SMTP (optional, eingestellt in der Werkbank)</td>
-<td>Einladungen, Passwort-Links, Hinweise</td>
+<td>nodemailer über SMTP zum Versenden; imapflow und mailparser über IMAP zum Abholen (beides optional, eingestellt in der Werkbank)</td>
+<td>Einladungen, Passwort-Links, Hinweise, Mappen versenden; Mails aus <a href="../postfaecher/">Postfächern</a> als Post abholen</td>
 </tr>
 <tr>
 <td>Texterkennung</td>
@@ -2048,22 +2048,27 @@
 </tr>
 <tr>
 <td>Image</td>
-<td><code>node:22-alpine</code>, mehrstufig gebaut, für amd64 und arm64 – jede Architektur auf einem eigenen, passenden Rechner von GitHub (ohne Emulation), danach zu einem Image zusammengeführt</td>
+<td><code>node:24-alpine</code>, mehrstufig gebaut, für amd64 und arm64 – jede Architektur auf einem eigenen, passenden Rechner von GitHub (ohne Emulation), danach zu einem Image zusammengeführt</td>
 <td>Läuft auf dem NAS neben dem PostgreSQL-Image</td>
+</tr>
+<tr>
+<td>dms-komplett</td>
+<td>Dasselbe Image mit PostgreSQL 17 (Alpine-Paket) im selben Container; Datenbank im Ordner <code>/data/postgres</code></td>
+<td>DMS und Datenbank in einem Container</td>
 </tr>
 <tr>
 <td>Prüfungen</td>
 <td>GitHub Actions: Typprüfung, Tests gegen PostgreSQL, Image-Bau</td>
-<td>Jeder Push auf <code>main</code></td>
+<td>Jeder Push auf <code>main</code>, jeder Pull Request, jedes Versions-Tag und einmal pro Woche</td>
 </tr>
 </tbody>
 </table>
 <h2 id="schnittstelle">Schnittstelle<a class="headerlink" href="#schnittstelle" title="Permanent link">&para;</a></h2>
 <p><code>/api/v1</code> für andere Programme (API-Schlüssel), Beschreibung unter <code>/api/openapi.json</code>. Die Oberfläche selbst nutzt interne Adressen unter <code>/api/…</code>, die sich ändern dürfen.</p>
 <h2 id="hilfe-ohne-internet">Hilfe ohne Internet<a class="headerlink" href="#hilfe-ohne-internet" title="Permanent link">&para;</a></h2>
-<p>Das Image bringt die Handbücher seiner Version mit: Startseite, Wie komme ich an ein DMS?, Benutzer-, Administrator- und Entwicklerhandbuch, erreichbar unter <code>/hilfe/</code> der eigenen Installation (z. B. <code>http://&lt;NAS&gt;:8080/hilfe/</code>), ohne Anmeldung und schon im Einrichtungsassistenten. Das Fragezeichen neben einer Überschrift und die Links auf das Handbuch öffnen diese Fassung. Sie kommt ohne Internet aus; nur die Bildschirmfotos fehlen – an ihrer Stelle steht ein Link auf dieselbe Seite online. Im Fuß jeder Seite geht es zur Online-Hilfe und zur neuesten Fassung.</p>
+<p>Das Image bringt die Handbücher seiner Version mit: Startseite, Wie komme ich an ein DMS?, Benutzer-, Administrator- und Entwicklerhandbuch, erreichbar unter <code>/hilfe/</code> der eigenen Installation (z. B. <code>http://&lt;NAS&gt;:8080/hilfe/</code>), ohne Anmeldung und schon im Einrichtungsassistenten. Das Fragezeichen neben einer Überschrift und die Links auf das Handbuch öffnen diese Version. Sie kommt ohne Internet aus; nur die Bildschirmfotos fehlen – an ihrer Stelle steht ein Link auf dieselbe Seite online. Im Fuß jeder Seite geht es zur Online-Hilfe und zur neuesten Version.</p>
 <h2 id="module">Module<a class="headerlink" href="#module" title="Permanent link">&para;</a></h2>
-<p>Jede Protokollzeile gehört zu einem Modul:</p>
+<p>Jede Zeile im <a href="../fehlersuche/#protokoll">Protokoll</a> gehört zu einem Modul. Für jede Anfrage an den Server schreibt das DMS eine Zeile mit Methode, Pfad, Status, Dauer und Datenbankzugriffen – im Modul des Bereichs, zu dem die Anfrage gehört (z. B. <code>ablage</code> für Mappen).</p>
 <table>
 <thead>
 <tr>
@@ -2078,15 +2083,15 @@
 </tr>
 <tr>
 <td><code>http</code></td>
-<td>eine Zeile je Anfrage: Methode, Pfad, Status, Dauer, Datenbankzugriffe</td>
+<td>Anfragen, die zu keinem anderen Modul gehören (z. B. Seiten der Oberfläche)</td>
 </tr>
 <tr>
 <td><code>konto</code></td>
-<td>Anmeldung, Sitzungen, Benutzer, Vertretung</td>
+<td>Anmeldung, Sitzungen, Benutzer, Rollen, Vertretung</td>
 </tr>
 <tr>
 <td><code>ablage</code></td>
-<td>Mappen anlegen, ändern, löschen; Ansichten</td>
+<td>Mappen anlegen, ändern, löschen; Ansichten, Papierkorb, Notizen, Aufgaben</td>
 </tr>
 <tr>
 <td><code>werkbank</code></td>
@@ -2095,6 +2100,14 @@
 <tr>
 <td><code>dokumente</code></td>
 <td>Hochladen, Anzeigen, Löschen</td>
+</tr>
+<tr>
+<td><code>texterkennung</code></td>
+<td>Texterkennung: abgeschlossen, ausgelassen, fehlgeschlagen, neu gestartet, abgebrochen; Einstellungen</td>
+</tr>
+<tr>
+<td><code>sicherung</code></td>
+<td>Sicherung, Notfallblatt, Wiederherstellung und Probe</td>
 </tr>
 <tr>
 <td><code>datenbank</code></td>

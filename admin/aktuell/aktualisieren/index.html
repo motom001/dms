@@ -905,7 +905,7 @@
   <span class="md-ellipsis">
     
   
-    Sprechende Links
+    Links über Feldwerte
   
 
     
@@ -2134,7 +2134,7 @@
 <tbody>
 <tr>
 <td><code>postgres</code></td>
-<td>die Datenbank: Mappentypen, Mappen, Benutzer, Einstellungen</td>
+<td>die Datenbank: Mappentypen, Mappen, Benutzer, Einstellungen (bei dms-komplett im Container unter <code>/data/postgres</code>)</td>
 </tr>
 <tr>
 <td><code>files</code></td>
@@ -2142,7 +2142,7 @@
 </tr>
 <tr>
 <td><code>geheim</code></td>
-<td>der Schlüssel für gespeicherte Passwörter (SMTP, Passwortfelder) und Sicherungen – <strong>getrennt</strong> von den anderen aufbewahren</td>
+<td>der Schlüssel <code>dms.schluessel</code> für alle gespeicherten Geheimnisse (siehe <a href="../verschluesselung/">Verschlüsselung</a>) und Sicherungen, die Datenbank-Anbindung <code>datenbank.json</code> (mit Passwort), bis zur Einrichtung der Einrichtungscode und bei Bedarf die <a href="../notfall/">RESCUE-Datei</a> – <strong>getrennt</strong> von den anderen aufbewahren</td>
 </tr>
 <tr>
 <td><code>sicherung</code></td>
@@ -2153,7 +2153,7 @@
 <p>Für eine konsistente Datenbanksicherung im laufenden Betrieb vorher einen Abzug erstellen:</p>
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>&lt;db-container&gt;<span class="w"> </span>pg_dump<span class="w"> </span>-U<span class="w"> </span>dms<span class="w"> </span>dms<span class="w"> </span>&gt;<span class="w"> </span>dms.sql
 </code></pre></div>
-<p>und <code>dms.sql</code> zusammen mit dem Ordner <code>files</code> sichern.</p>
+<p>Bei dms-komplett heißt der Befehl <code>docker exec &lt;container&gt; pg_dump -h 127.0.0.1 -U dms dms &gt; dms.sql</code>. Sichere <code>dms.sql</code> zusammen mit dem Ordner <code>files</code>.</p>
 <h3 id="wiederherstellen">Wiederherstellen<a class="headerlink" href="#wiederherstellen" title="Permanent link">&para;</a></h3>
 <p>Sicherungen des DMS spielst du in der Werkbank ein: <a href="../wiederherstellen/">Wiederherstellen</a>. Für einen Abzug von Hand:</p>
 <ol>
@@ -2164,6 +2164,7 @@ docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </spa
 </code></pre></div></li>
 <li>Projekt starten.</li>
 </ol>
+<p>Dieser Weg gilt für zwei Container: Dort lässt sich die Datenbank allein starten. Bei dms-komplett laufen DMS und Datenbank im selben Container und starten immer zusammen. Hol dort einen früheren Stand mit einer Sicherung des DMS zurück, wie unter <a href="../wiederherstellen/">Wiederherstellen</a> beschrieben.</p>
 <div class="admonition warning">
 <p class="admonition-title">Dateien und Datenbank gehören zusammen</p>
 <p>Die Datenbank kennt jede Datei über ihren Prüfwert. Sichere und stelle beide immer vom selben Zeitpunkt wieder her.</p>

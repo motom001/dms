@@ -27,7 +27,7 @@
     
     
       
-        <title>Sprechende Links - DMS – Administratorhandbuch</title>
+        <title>Links über Feldwerte - DMS – Administratorhandbuch</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#sprechende-links" class="md-skip">
+        <a href="#links-uber-mappentyp-und-feldwerte" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -128,7 +128,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Sprechende Links
+              Links über Feldwerte
             
           </span>
         </div>
@@ -767,7 +767,7 @@
   <span class="md-ellipsis">
     
   
-    Sprechende Links
+    Links über Feldwerte
   
 
     
@@ -785,7 +785,7 @@
   <span class="md-ellipsis">
     
   
-    Sprechende Links
+    Links über Feldwerte
   
 
     
@@ -2051,7 +2051,7 @@
   
 
 
-<h1 id="sprechende-links">Sprechende Links<a class="headerlink" href="#sprechende-links" title="Permanent link">&para;</a></h1>
+<h1 id="links-uber-mappentyp-und-feldwerte">Links über Mappentyp und Feldwerte<a class="headerlink" href="#links-uber-mappentyp-und-feldwerte" title="Permanent link">&para;</a></h1>
 <p>Ein Link über Mappentyp und Feldwerte findet eine Mappe über ihren <strong>Mappentyp</strong> und ihre <strong>Angaben</strong> statt über ihre technische Id. Den Link kannst du einem Kollegen mit eigenem Konto per Mail oder Chat schicken oder in anderen Programmen hinterlegen, etwa:</p>
 <div class="highlight"><pre><span></span><code>http://&lt;NAS&gt;:8080/ablage/link?typ=rechnung&amp;rechnungsnummer=A-2020-11380
 </code></pre></div>
@@ -2096,8 +2096,8 @@
 </table>
 <p>Mehrere Bedingungen gelten <strong>zusammen</strong> (UND), wie in einer <a href="../sichten/">Ansicht</a>. Sonderzeichen im Wert schreibst du so, wie Browser sie kodieren: Leerzeichen als <code>+</code> oder <code>%20</code>, <code>&amp;</code> als <code>%26</code>, <code>+</code> als <code>%2B</code>.</p>
 <div class="admonition warning">
-<p class="admonition-title">Mappentyp umbenennen macht Links ungültig</p>
-<p>Der Link nennt den Mappentyp beim <strong>Namen</strong>. Benennst du „Rechnung“ in „Eingangsrechnung“ um, finden alte Links den Mappentyp nicht mehr und zeigen eine Fehlermeldung. Felder dagegen stehen mit ihrer <strong>Kennung</strong> im Link, die sich nie ändert (siehe <a href="../mappentypen/#die-kennung">Mappentypen</a>) – Bezeichnungen kannst du gefahrlos umbenennen.</p>
+<p class="admonition-title">Mappentyp umbenennen</p>
+<p>Nennt ein Link den Mappentyp mit seiner <strong>Kennung</strong> (<code>typ=rechnung</code>, so wie „Link kopieren“ ihn erzeugt), bleibt er gültig, auch wenn du den Mappentyp umbenennst. Nur Links, die den Mappentyp beim <strong>Namen</strong> nennen (<code>typ=Rechnung</code>), finden ihn nach dem Umbenennen nicht mehr und zeigen eine Fehlermeldung. Felder stehen immer mit ihrer <strong>Kennung</strong> im Link, die sich nie ändert (siehe <a href="../mappentypen/#die-kennung">Mappentypen</a>) – Bezeichnungen kannst du gefahrlos umbenennen.</p>
 </div>
 <p>Die Kennung eines Feldes siehst du in der Werkbank beim Mappentyp, im Feld unter <strong>Kennung</strong>. Auch die Systemwerte gehen: <code>_erstellt</code>, <code>_geaendert</code> (Datum) sowie <code>_erstelltVon</code>, <code>_geaendertVon</code> (nur mit <code>ich</code>).</p>
 <h3 id="ohne-operator">Ohne Operator<a class="headerlink" href="#ohne-operator" title="Permanent link">&para;</a></h3>
@@ -2236,7 +2236,7 @@
 <p>Ein Link mit Fehler zeigt, was nicht stimmt:</p>
 <p><img alt="Fehlermeldung bei einem Tippfehler in der Kennung eines Felds" src="../bilder/direktlink-fehler.png" /></p>
 <h2 id="uber-die-schnittstelle">Über die Schnittstelle<a class="headerlink" href="#uber-die-schnittstelle" title="Permanent link">&para;</a></h2>
-<p>Dieselben Links versteht <code>GET /api/v1/mappen?sicht=link&amp;link=&lt;Parameter des Links&gt;</code>, z. B. <code>link=typ%3DRechnung%26bezahlt%3Dnein</code> (die Parameter als ein kodierter Wert). Ein fehlerhafter Link ergibt <code>422</code> mit der Meldung in <code>fehler</code>. Siehe <a href="../api/">Schnittstelle</a>.</p>
+<p>Dieselben Links versteht <code>GET /api/v1/mappen?sicht=link&amp;link=&lt;Parameter des Links&gt;</code>, z. B. <code>link=typ%3Drechnung%26bezahlt%3Dnein</code> (die Parameter als ein kodierter Wert). Ein fehlerhafter Link ergibt <code>422</code> mit der Meldung in <code>fehler</code>. Siehe <a href="../api/">Schnittstelle</a>.</p>
 
 
 
