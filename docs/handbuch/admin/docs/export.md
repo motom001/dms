@@ -60,6 +60,10 @@ Passwortfelder stehen nie in den Daten – nur „gesetzt“. Wählst du **Passw
 
 Das DMS schlägt Mappentypen vor, die nach Kontakten aussehen (Felder wie Name, E-Mail, Telefon, Adresse), und ordnet die Felder zu. Prüfe die Zuordnung vor dem Export; abgewählte Typen bekommen keine vCard.
 
+## Persönlicher Export
+
+Jeder Benutzer kann unter **Profil → Konto → Meine Daten exportieren** einen eigenen Export anstoßen – im selben Aufbau, aber nur mit den Mappen, die er lesen darf, seinen eigenen Aufgaben, Erinnerungen, Favoriten und Papierkorb-Einträgen. Sichten, Nummernkreise und andere Benutzer fehlen; Passwörter nur aus Mappen, in denen er Passwörter sehen darf, und nur mit Bestätigung. Er liegt unter `export/persoenlich/<Benutzer-Id>/`; ein neuer Export ersetzt den alten. Abschalten lässt sich das im Vollexport-Panel mit **Persönlicher Export für Benutzer**.
+
 ## Weiterverarbeiten
 
 - **Excel/LibreOffice:** `daten/<typ>.xlsx` öffnen – oder die `.csv`.

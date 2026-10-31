@@ -24,6 +24,16 @@ Das Profil hat links fünf Bereiche (am Smartphone oben als Knöpfe):
 - **Name** – so erscheinst du bei „angelegt von“ und „zuletzt geändert von“ – und als Titel deiner Benutzer-Mappe.
 - **E-Mail-Adresse** – damit meldest du dich an. Zum Ändern brauchst du dein aktuelles Passwort. Verschickt das DMS E-Mails, bekommt die bisherige Adresse einen Hinweis – falls jemand anderes die Adresse geändert hat, merkst du es so.
 
+#### Meine Daten exportieren
+
+Unter **Konto → Meine Daten exportieren** bekommst du eine Kopie von allem, was du sehen darfst – in offenen Formaten (CSV, JSON, Excel, PDF, die Dokumente im Original) und lesbar ohne das DMS:
+
+- alle Mappen, die du lesen darfst, mit ihren Dokumenten und älteren Versionen,
+- deine eigenen Aufgaben, Erinnerungen, Favoriten und was du in den Papierkorb gelegt hast,
+- dein eigenes Benutzerkonto (ohne Passwort).
+
+Passwortfelder stehen nur dabei, wenn du sie sehen darfst und das ausdrücklich bestätigst. Der Export läuft im Hintergrund; ist er fertig, lädst du ihn als ZIP herunter. Es gibt immer nur deinen letzten Export – ein neuer ersetzt den alten. Während du als Vertretung arbeitest, geht das nicht. Hat der Administrator den persönlichen Export abgeschaltet, fehlt der Abschnitt.
+
 ### Meine Rechte
 
 Unten im Bereich *Konto*, unter Name und E-Mail-Adresse, steht, was du je Mappentyp darfst: **anlegen, lesen, bearbeiten, löschen** und **Passwörter sehen** – jeweils mit „ja“, „nein“ oder „je nach Mappe“. „Je nach Mappe“ heißt: Es hängt von der einzelnen Mappe ab, zum Beispiel davon, ob du dort verantwortlich bist oder eine Aufgabe dazu hast. Festgelegt werden die Rechte von einem Administrator; mehr unter [Was du sehen und ändern darfst](mappen.md#was-du-sehen-und-andern-darfst).

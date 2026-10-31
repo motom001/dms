@@ -86,6 +86,7 @@ export const HILFE = {
   'dokumente.versionen': benutzer('dokumente/', 'Versionen von Dokumenten', 'versionen'),
   'profil.rechte': benutzer('profil/', 'deinen Rechten', 'meine-rechte'),
   'profil.abwesenheit': benutzer('profil/', 'Abwesenheit', 'abwesenheit'),
+  'profil.export': benutzer('profil/', 'Meine Daten exportieren', 'meine-daten-exportieren'),
   'profil.zweifaktor': benutzer('profil/', 'Zwei-Faktor-Anmeldung', 'zwei-faktor-anmeldung'),
   'profil.benachrichtigungen': benutzer('profil/', 'Benachrichtigungen', 'benachrichtigungen-und-ablage'),
 } as const satisfies Record<string, Hilfeziel>;
