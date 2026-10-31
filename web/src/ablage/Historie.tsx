@@ -64,6 +64,15 @@ function einzelheiten(e: Historieneintrag, emailTyp: string | undefined): { hinw
         ),
       };
     }
+    case 'uebernommen': {
+      // Eingangskanal (#195): gleicher Inhalt wie in anderen Mappen.
+      const gleich = Array.isArray(d.gleicherInhalt) ? (d.gleicherInhalt as Array<{ mappeId: string; titel: string; name: string }>) : [];
+      if (!gleich.length) return null;
+      return {
+        hinweis: 'gleicher Inhalt',
+        inhalt: <ul className="einzeln">{gleich.map((g) => <li key={g.mappeId}>gleicher Inhalt wie „{g.name}“ in <Link to={`/ablage/eingang/${g.mappeId}`} className="verweis">{g.titel || 'Mappe'}</Link></li>)}</ul>,
+      };
+    }
     case 'zugeordnet': {
       // Post (#192): Link zur Zielmappe bzw. zur Post.
       const ziel = str(d.ziel) ?? str(d.post);
@@ -138,7 +147,7 @@ export function Historie({ mappeId, stand }: { mappeId: string; stand?: string }
             <>
               <span className="zeichen" aria-hidden="true" />
               <span className="wann">{zeit(e.zeit)}</span>
-              <span className="wer"><Person id={e.benutzerId} /></span>
+              <span className="wer"><Person id={e.benutzerId} ersatz={typeof e.daten.system === 'string' ? e.daten.system : undefined} /></span>
               <span className="was"><strong>{HISTORIENARTEN[e.art] ?? e.art}</strong>{kurz(e) ? `: ${kurz(e)}` : ''}
                 {e.art === 'email' && typeof e.daten.email === 'string' && emailTyp && <> · <Link to={`/ablage/${emailTyp}/${e.daten.email}`} className="verweis">öffnen</Link></>}</span>
               {x && <span className="mehr chip">{x.hinweis}</span>}

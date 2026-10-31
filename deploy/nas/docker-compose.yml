@@ -39,5 +39,7 @@ services:
       # Sicherungen (Werkbank → Sicherung), verschlüsselt. Am besten auf einer anderen Platte
       # als Datenbank und Dateien – und vom NAS weiterkopiert (3-2-1-Regel).
       - /volume1/docker/dms/sicherung:/data/sicherung
+      # Eingangsordner (optional): Scanner und NAS legen hier Dateien ab → neue Post
+      - /volume1/docker/dms/eingang:/eingang
     ports:
       - "8080:3000"

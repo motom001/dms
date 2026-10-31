@@ -30,6 +30,7 @@ export const HILFE = {
   'werkbank.designs': admin('designs/', 'Designs'),
   'werkbank.papierkorb': admin('papierkorb/', 'Papierkorb'),
   'werkbank.texterkennung': admin('texterkennung/', 'Texterkennung'),
+  'werkbank.eingangsordner': admin('eingangsordner/', 'Eingangsordner'),
   'werkbank.wartung': admin('texterkennung/', 'Wartungsoperationen', 'wartungsoperationen'),
   'werkbank.protokoll': admin('fehlersuche/', 'Protokoll', 'protokoll'),
   'werkbank.fehlermeldungen': admin('fehlersuche/', 'Fehlermeldungen', 'fehlermeldungen-von-benutzern'),

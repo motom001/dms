@@ -14,7 +14,7 @@ docker compose up -d
 docker compose logs dms | grep -A1 Einrichtungscode
 ```
 
-Die Ordner `files`, `geheim`, `sicherung` und `postgres` legt Docker neben der Datei an. Auf einem NAS ersetzt du `./` durch den Pfad deines Ordners, z. B. `/volume1/docker/dms/`.
+Die Ordner `files`, `geheim`, `sicherung`, `postgres` und – optional für den Scanner – `eingang` ([Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/)) legt Docker neben der Datei an. Auf einem NAS ersetzt du `./` durch den Pfad deines Ordners, z. B. `/volume1/docker/dms/`.
 
 ## Mit `docker run`
 

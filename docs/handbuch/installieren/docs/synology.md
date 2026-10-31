@@ -23,6 +23,10 @@ docker/dms/sicherung
 !!! tip "Sicherungen auf eine andere Platte"
     Hat dein NAS mehrere Speicherpools, lege `sicherung` besser auf einen anderen. Dann ändere in der Vorlage später nur diese eine Zeile, z. B. auf `/volume2/sicherung/dms`.
 
+
+!!! tip "Optional: Eingangsordner für den Scanner"
+    Ein fünfter Ordner `eingang` daneben wird zum [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/): Jede Datei, die dein Scanner oder das NAS dort ablegt, wird neue Post. Gib ihn im NAS für den Scanner frei. Ohne ihn läuft alles wie gewohnt.
+
 ## 3. Projekt anlegen
 
 1. **Container Manager → Projekt → Erstellen**.

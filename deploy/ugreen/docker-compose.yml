@@ -37,5 +37,7 @@ services:
       - /volume1/docker/dms/geheim:/data/geheim
       # Sicherungen (Werkbank → Sicherung) – ab und zu an einen anderen Ort kopieren
       - /volume1/docker/dms/sicherung:/data/sicherung
+      # Eingangsordner (optional): Scanner und NAS legen hier Dateien ab → neue Post
+      - /volume1/docker/dms/eingang:/eingang
     ports:
       - "8080:3000"

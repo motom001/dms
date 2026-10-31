@@ -22,6 +22,10 @@ Unter **Apps** (Community Applications) nach *Docker Compose Manager* suchen und
 !!! warning "Passwort vor dem ersten Start ändern"
     Die Datenbank übernimmt das Passwort nur beim allerersten Start.
 
+
+!!! tip "Optional: Eingangsordner für den Scanner"
+    Die Vorlage bindet `/mnt/user/appdata/dms/eingang` als [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/) ein: Jede Datei, die dein Scanner dort ablegt, wird neue Post. Gib den Ordner als SMB-Freigabe für den Scanner frei. Ohne ihn läuft alles wie gewohnt.
+
 ## 3. Einrichten
 
 1. Im Browser `http://<Unraid>:8080` öffnen.
