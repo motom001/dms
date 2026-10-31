@@ -707,6 +707,14 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'PUT', pfad: '/api/werkbank/anbindung', zugang: 'admin', handler: async (a) => ok(await anbindung().speichere({ ...(b(a).anbindung as object ?? {}), leerBestaetigt: b(a).leerBestaetigt }, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/neustart', zugang: 'admin', handler: async (a) => { anbindung().neustart(ich(a).email); return leer; } },
     /* ---------- Speicherplatz (#116) ---------- */
+    // Anmeldeschutz (#240): Fehlversuche, gesperrte IPs, Ausnahmen.
+    { methode: 'GET', pfad: '/api/werkbank/anmeldeschutz', zugang: 'admin', handler: async (a) => ok({ einstellung: await konten.sperre.einstellung(), gesperrt: await konten.sperre.gesperrt(), deineIp: a.ip }) },
+    { methode: 'PUT', pfad: '/api/werkbank/anmeldeschutz', zugang: 'admin', handler: async (a) => ok({ einstellung: await konten.sperre.speichere(a.body, ich(a).email), gesperrt: await konten.sperre.gesperrt(), deineIp: a.ip }) },
+    { methode: 'POST', pfad: '/api/werkbank/anmeldeschutz/entsperren', zugang: 'admin', handler: async (a) => {
+      const ip = String((b(a) as { ip?: unknown }).ip ?? '');
+      if (!(await konten.sperre.entsperre(ip, ich(a).email))) throw new Fachfehler(404, 'Diese Adresse ist nicht gesperrt.');
+      return ok({ einstellung: await konten.sperre.einstellung(), gesperrt: await konten.sperre.gesperrt(), deineIp: a.ip });
+    } },
     // Postfächer (#196): nur Administratoren; Passwörter verlassen den Server nie.
     { methode: 'GET', pfad: '/api/werkbank/postfaecher', zugang: 'admin', handler: async () => ok(await postfaecher().ansicht()) },
     { methode: 'POST', pfad: '/api/werkbank/postfaecher', zugang: 'admin', handler: async (a) => ok(await postfaecher().speichere(a.body, null, ich(a).email)) },

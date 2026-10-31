@@ -392,6 +392,9 @@ export const api = {
   speicherplatz: () => anfrage<SpeicherplatzStand>('GET', '/api/werkbank/speicherplatz'),
   eingangsordner: () => anfrage<EingangStand>('GET', '/api/werkbank/eingangsordner'),
   postfaecher: () => anfrage<PostfachAnsicht[]>('GET', '/api/werkbank/postfaecher'),
+  anmeldeschutz: () => anfrage<AnmeldeschutzStand>('GET', '/api/werkbank/anmeldeschutz'),
+  anmeldeschutzSetzen: (e: Partial<SperrEinstellung>) => anfrage<AnmeldeschutzStand>('PUT', '/api/werkbank/anmeldeschutz', e),
+  entsperren: (ip: string) => anfrage<AnmeldeschutzStand>('POST', '/api/werkbank/anmeldeschutz/entsperren', { ip }),
   postfachAnlegen: (p: PostfachEingabe) => anfrage<PostfachAnsicht[]>('POST', '/api/werkbank/postfaecher', p),
   postfachAendern: (id: string, p: PostfachEingabe) => anfrage<PostfachAnsicht[]>('PUT', `/api/werkbank/postfaecher/${id}`, p),
   postfachLoeschen: (id: string) => anfrage<void>('DELETE', `/api/werkbank/postfaecher/${id}`),
@@ -585,3 +588,8 @@ export interface PostfachAnsicht extends Omit<PostfachEingabe, 'passwort' | 'abs
   id: string; absender: string[]; passwortGesetzt: boolean;
   stand: { letzterAbruf: string | null; naechsterAbruf: string | null; fehlerFolge: number; uebernommen: PostfachEreignis[]; fehler: PostfachEreignis[] };
 }
+
+/** Anmeldeschutz (#240). */
+export interface SperrEinstellung { konto: { versuche: number; minuten: number }; ip: { versuche: number; minuten: number }; ausnahmen: string[]; mail: boolean }
+export interface IpSperre { ip: string; seit: string; bis: string | null; grund: string }
+export interface AnmeldeschutzStand { einstellung: SperrEinstellung; gesperrt: IpSperre[]; deineIp: string }

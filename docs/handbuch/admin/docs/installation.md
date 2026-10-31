@@ -120,7 +120,7 @@ Der Proxy leitet jede Anfrage an das DMS weiter. Für das DMS sieht sie deshalb 
 | Wofür | Mit den Angaben des Proxys | Ohne sie |
 |---|---|---|
 | **IP-Adressen** im Protokoll und bei den Sitzungen eines Benutzers | die Adresse des Handys oder Laptops | immer die Adresse des Proxys |
-| **Sperre nach 5 falschen Passwörtern** (eine Minute, je E-Mail-Adresse und IP) | trifft nur das Gerät, von dem die Fehlversuche kamen | trifft alle Geräte: Fehlversuche von außen sperren die Anmeldung auch zu Hause |
+| **Sperre nach falschen Passwörtern** ([Anmeldeschutz](anmeldeschutz.md), je E-Mail-Adresse und IP sowie je IP) | trifft nur das Gerät, von dem die Fehlversuche kamen | trifft alle Geräte: Fehlversuche von außen sperren die Anmeldung auch zu Hause |
 | **HTTPS erkennen**, solange keine Adresse gepflegt ist | Cookie nur über HTTPS, Links mit `https://` | Cookie auch über HTTP, Links mit der internen `http://`-Adresse |
 
 Seit Version 0.43.0 nimmt das DMS diese Angaben **von selbst** an, wenn der Proxy im eigenen Rechner oder in einem privaten Netz sitzt (`127.0.0.1`, `10.x.x.x`, `172.16–31.x.x`, `192.168.x.x` und die entsprechenden IPv6-Netze). Das trifft auf einen Proxy-Container neben dem DMS und auf den Proxy eines NAS praktisch immer zu. Anfragen direkt aus dem Internet können so keine fremde IP und kein HTTPS vortäuschen. Unter **Wartung und Fehlersuche → Technik** steht bei `TRUST_PROXY`, was gerade gilt.
