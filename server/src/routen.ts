@@ -82,6 +82,8 @@ export interface Datei {
   mime: string;
   anzeigen: boolean;
   groesse: number;
+  /** Zusätzliche Kopfzeilen, z. B. ausgelassene Mappen beim Export (#294). */
+  koepfe?: Record<string, string>;
 }
 export interface Antwort {
   status?: number; body?: unknown; sitzungSetzen?: string | null; datei?: Datei;
@@ -1081,7 +1083,10 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/typen/:id/belegung', zugang: 'admin', handler: async (a) => ok(await dienst.belegung(a.params.id)) },
     { methode: 'GET', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => {
       const klartext = passwoerterAnzeigen(a);
-      const d = { ...await dienst.holeMappe(a.params.id, await zg(a)), favorit: await dienst.istFavorit(ich(a), a.params.id) };
+      const z = await zg(a);
+      const d = { ...await dienst.holeMappe(a.params.id, z), favorit: await dienst.istFavorit(ich(a), a.params.id), exportierbar: false };
+      // Exportrecht (#294): „Als PDF exportieren“ nur für lesbare Mappen, die in einer Sicht mit Recht E liegen.
+      d.exportierbar = d.rechte?.R !== false && (await dienst.exportierbar(ich(a), z, [a.params.id])).has(a.params.id);
       if (klartext && !d.rechte.P) throw new Fachfehler(403, 'Passwörter dieser Mappe darfst du nicht sehen.');
       return ok(klartext ? { ...d, mappe: (await dienst.entschluesselePasswoerter([d.mappe], klartext, ich(a).id))[0] } : d);
     } },
@@ -1177,8 +1182,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     // Export (#152, #153): Tabelle, ZIP mit Dokumenten oder PDF – Recht E an der Sicht, Lesen je Mappe.
     { methode: 'POST', pfad: '/api/export', zugang: 'angemeldet', handler: async (a) => {
       const r = await dienst.exportiere(ich(a), b(a), await zg(a));
-      L.ablage.info('Mappen exportiert', { von: ich(a).email, sicht: b(a).sicht, format: b(a).format, mappen: r.mappen, auswahl: Array.isArray(b(a).ids) });
-      return { datei: { inhalt: r.inhalt, name: r.name, mime: r.mime, anzeigen: false, groesse: r.groesse } };
+      L.ablage.info('Mappen exportiert', { von: ich(a).email, sicht: b(a).sicht, format: b(a).format, mappen: r.mappen, ausgelassen: r.ausgelassen, auswahl: Array.isArray(b(a).ids) });
+      return { datei: { inhalt: r.inhalt, name: r.name, mime: r.mime, anzeigen: false, groesse: r.groesse, koepfe: { 'x-dms-ausgelassen': String(r.ausgelassen) } } };
     } },
     // Auswahl (#149): alle Treffer einer Sicht (mit Suche) als Ids; mehrere Mappen löschen (#150).
     { methode: 'GET', pfad: '/api/mappen/auswahl', zugang: 'angemeldet', handler: async (a) => ok(await dienst.trefferIds(ich(a), a.query, await zg(a))) },

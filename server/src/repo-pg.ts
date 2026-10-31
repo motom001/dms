@@ -670,6 +670,12 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const r = await sql`SELECT id FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) AND ${lesefilterSql(sql, lesefilter)}`;
       return new Set(r.map((z) => z.id as string));
     },
+    async inKlauseln(ids, klauseln) {
+      const gueltig = [...new Set(ids.filter(istUuid))];
+      if (!gueltig.length || !klauseln.length) return new Set();
+      const r = await sql`SELECT id FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) AND (${klauselnSql(sql, klauseln)})`;
+      return new Set(r.map((z) => z.id as string));
+    },
     async zaehleAusdruck(typId, x) {
       if (!istUuid(typId)) return 0;
       const [r] = await sql`SELECT count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} AND typ_id = ${typId} AND ${ausdruckSql(sql, x)}`;

@@ -96,7 +96,7 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { t
           <button type="button" className={`knopf klein ${notizenOffen ? 'an' : ''}`} aria-expanded={notizenOffen} onClick={() => setNotizenOffen(!notizenOffen)} title="Notizen zu dieser Mappe">
             <span aria-hidden="true">🗒</span> Notizen{notizen.length ? ` (${notizen.length})` : ''}
           </button>
-          <Aktionsmenue aufgabe={() => setAufgabeOffen(true)} erinnern={() => setErinnernOffen(true)} email={() => setEmailOffen(true)} drucken={() => setDrucken(true)}
+          <Aktionsmenue aufgabe={() => setAufgabeOffen(true)} erinnern={() => setErinnernOffen(true)} email={() => setEmailOffen(true)} drucken={details.exportierbar === false ? undefined : () => setDrucken(true)}
             link={direktlink ? () => { const l = location.origin + direktlink; void kopiere(l).then((ok) => setKopiert({ link: l, ok })); } : undefined} />
         </div>
         {kopiert && <LinkKopiert {...kopiert} schliessen={() => setKopiert(null)} />}

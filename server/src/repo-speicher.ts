@@ -257,6 +257,7 @@ export function speicherRepo(): Repo {
     },
     async zaehleKlauseln(liste, lesen) { return liste.map((k) => [...mappen.values()].filter((m) => inSicht(m, k, zaehl) && lesbar(lesen ?? null, m, zaehl)).length); },
     async lesbare(ids, lesen) { return new Set(ids.filter((id) => mappen.has(id) && lesbar(lesen, mappen.get(id)!, zaehl))); },
+    async inKlauseln(ids, klauseln) { return new Set(ids.filter((id) => mappen.has(id) && inSicht(mappen.get(id)!, klauseln, zaehl))); },
     async zaehleAusdruck(typId, x) { return [...mappen.values()].filter((m) => m.typId === typId && werte(x, m, zaehl)).length; },
     async setzeTypSchluessel(typId, schluessel) { const t = typen.get(typId); if (t && !t.schluessel) t.schluessel = schluessel; },
     async setzeBerechtigungen(typId, rw) { const t = typen.get(typId)!; t.berechtigungen = rw ? kopie(rw) : null; t.geaendert = jetzt(); return kopie(t); },

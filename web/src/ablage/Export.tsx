@@ -34,7 +34,9 @@ export function ExportDialog({ sicht, link, ids, anzahl, gesamt, suche, volltext
         suche: suche || undefined, volltext: suche ? volltext : undefined, notizen: suche ? notizen : undefined,
         sortierung: sortierung?.spalte, absteigend: sortierung?.absteigend,
       }, `Export.${format}`);
-      fertig(`„${r.name}“ gespeichert (${n.toLocaleString('de-DE')} ${n === 1 ? 'Mappe' : 'Mappen'}).`);
+      const m = n - r.ausgelassen;
+      const aus = r.ausgelassen ? ` ${r.ausgelassen.toLocaleString('de-DE')} ${r.ausgelassen === 1 ? 'Mappe' : 'Mappen'} ohne Exportrecht ausgelassen.` : '';
+      fertig(`„${r.name}“ gespeichert (${m.toLocaleString('de-DE')} ${m === 1 ? 'Mappe' : 'Mappen'}).${aus}`);
     } catch (x) { setFehler((x as Error).message); }
     finally { setLaeuft(false); }
   }

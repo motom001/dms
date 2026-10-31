@@ -107,7 +107,7 @@ Mit Berechtigungen legst du fest, **wer eine Sicht sieht**, **wer dort neue Mapp
 |---|---|
 | **R** Sehen | Die Sicht erscheint im Baum der Ablage und lässt sich öffnen. |
 | **C** Anlegen | In der Sicht gibt es „+ Neu“. Anlegen dürfen muss man zusätzlich am [Mappentyp](berechtigungen.md) – beide müssen es erlauben. |
-| **E** Exportieren | Mappen der Sicht als Excel, CSV, ZIP mit Dokumenten oder PDF ausgeben – alles, was Daten aus dem DMS hinausgibt. Lesen muss man jede Mappe zusätzlich am Mappentyp. |
+| **E** Exportieren | Mappen der Sicht als Excel, CSV, ZIP mit Dokumenten oder PDF ausgeben – alles, was Daten aus dem DMS hinausgibt. Lesen muss man jede Mappe zusätzlich am Mappentyp. Außerhalb einer Sicht (erweiterte Suche, „Als PDF exportieren“ an der Mappe) darf eine Mappe hinaus, wenn sie in mindestens einer Sicht mit E läge. |
 
 !!! info "Sichtregeln regeln die Sicht, nicht die Mappen"
     Ob jemand eine **Mappe** lesen darf, entscheiden allein die [Berechtigungen am Mappentyp](berechtigungen.md). Eine Mappe aus einer verborgenen Sicht kann also über die Suche, eine andere Sicht oder einen Link weiter auftauchen. Wer Mappen verbergen will, regelt das am Mappentyp. Für Administratoren gelten die Regeln an Sichten nicht.

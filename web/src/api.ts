@@ -39,7 +39,7 @@ export function setzeEinrichtungscode(c: string | null) {
 export const hatEinrichtungscode = () => !!einrichtungscode;
 
 /** Datei vom Server holen und im Browser speichern (#153) – POST mit JSON, Antwort als Datei. */
-export async function speichereDatei(url: string, body: unknown, ersatzname: string): Promise<{ name: string; bytes: number }> {
+export async function speichereDatei(url: string, body: unknown, ersatzname: string): Promise<{ name: string; bytes: number; ausgelassen: number }> {
   let r: Response;
   try {
     r = await fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'x-dms': '1', 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -55,7 +55,7 @@ export async function speichereDatei(url: string, body: unknown, ersatzname: str
   const link = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
   document.body.append(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(link.href), 60_000);
-  return { name, bytes: blob.size };
+  return { name, bytes: blob.size, ausgelassen: Number(r.headers.get('x-dms-ausgelassen')) || 0 };
 }
 
 async function anfrage<T>(methode: string, url: string, body?: unknown): Promise<T> {
@@ -563,7 +563,7 @@ export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
   const d = x instanceof ApiFehler && x.status === 404 ? x.details as { verborgen?: boolean; aufgaben?: Aufgabe[] } | undefined : undefined;
   return d?.verborgen ? d.aufgaben ?? [] : null;
 };
-export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */ unpassend?: Record<string, string[]>; /** Archivmodus (#212). */ aufbewahrenBis?: string | null }
+export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */ unpassend?: Record<string, string[]>; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 export const dokumentUrl = (id: string, herunterladen = false) => `/api/dokumente/${id}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
 export const versionUrl = (id: string, nummer: number, herunterladen = false) => `/api/dokumente/${id}/versionen/${nummer}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
