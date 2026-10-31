@@ -67,7 +67,7 @@ jobs:
 
       - name: DMS bauen
         run: |
-          if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+          npm ci --no-audit --no-fund
           npm run build
 
       # Ohne DATABASE_URL: Das DMS startet im Einrichtungsmodus, das Screenshot-Skript geht den

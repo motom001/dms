@@ -34,8 +34,8 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
-      # Mit package-lock.json reproduzierbar (#215); ohne (bis sie eingecheckt ist) wie bisher.
-      - run: if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+      # Genau die Versionen aus package-lock.json (#215).
+      - run: npm ci --no-audit --no-fund
       # Bekannte Sicherheitslücken in den Abhängigkeiten, die im Image landen (#215): ab „hoch“ schlägt die Prüfung fehl.
       - name: Sicherheitslücken in Abhängigkeiten
         shell: bash
@@ -300,7 +300,7 @@ jobs:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
           subject-digest: ${{ steps.digest.outputs.digest }}
           push-to-registry: true
-      - uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
           subject-digest: ${{ steps.digest.outputs.digest }}
