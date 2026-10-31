@@ -15,6 +15,9 @@ Erst beim Speichern werden die Dateien hochgeladen – genau wie die übrigen An
 
 Eine Datei darf bis zu 100 MB groß sein.
 
+!!! tip "Darf das Papier jetzt weg?"
+    Was du nach dem Einscannen vernichten darfst und was du besser im Original behältst: [Original behalten oder vernichten?](original.md)
+
 !!! tip "Gleiche Datei schon abgelegt?"
     Liegt eine Datei mit genau demselben Inhalt schon in einer anderen Mappe, weist das DMS nach dem Speichern darauf hin – mit einem Link zu der anderen Mappe. Gespeichert wird der Inhalt trotzdem nur einmal.
 

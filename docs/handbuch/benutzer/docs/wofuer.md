@@ -65,6 +65,9 @@ Und deine Unterlagen liegen **bei dir**, auf deinem eigenen Gerät – nicht bei
 !!! note "Ehrlich gesagt"
     Wer allein lebt, zur Miete wohnt, wenige Verträge hat und alles im Kopf behält, braucht vielleicht wirklich kein DMS – ein Ordner im Regal reicht dann. Ein DMS lohnt sich, sobald **andere** mitwissen sollen oder **viel Zeit** zwischen Ablegen und Brauchen liegt.
 
+!!! tip "Und das Papier?"
+    Nach dem Einscannen fragst du dich vielleicht, was weg darf. Antworten mit Faustregeln stehen unter [Original behalten oder vernichten?](original.md).
+
 ## Ist das DMS etwas für mich?
 
 ![Vom kleinen Haushalt bis zum Konzern: Wofür das DMS gebaut ist](grafiken/personas-skala.svg){ .grafik }
