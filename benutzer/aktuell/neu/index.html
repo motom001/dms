@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.58/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.59/neu/">
       
       
         <link rel="prev" href="../wofuer/">
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-058" class="md-skip">
+        <a href="#neu-in-version-059" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -392,15 +392,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0580" class="md-nav__link">
+  <a href="#0590" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.58.0
+        0.59.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.58.0">
+    <nav class="md-nav" aria-label="0.59.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -408,17 +408,6 @@
     <span class="md-ellipsis">
       
         Neu
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#geandert" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Geändert
       
     </span>
   </a>
@@ -1011,15 +1000,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0580" class="md-nav__link">
+  <a href="#0590" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.58.0
+        0.59.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.58.0">
+    <nav class="md-nav" aria-label="0.59.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1027,17 +1016,6 @@
     <span class="md-ellipsis">
       
         Neu
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#geandert" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Geändert
       
     </span>
   </a>
@@ -1080,25 +1058,22 @@
   
 
 
-<h1 id="neu-in-version-058">Neu in Version 0.58<a class="headerlink" href="#neu-in-version-058" title="Permanent link">&para;</a></h1>
-<h2 id="0580">0.58.0<a class="headerlink" href="#0580" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-059">Neu in Version 0.59<a class="headerlink" href="#neu-in-version-059" title="Permanent link">&para;</a></h1>
+<h2 id="0590">0.59.0<a class="headerlink" href="#0590" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Versionierung von Dokumenten</strong> (#194):</li>
-<li>Am Dokumentenregister in der Werkbank <strong>Versionierung einschalten</strong> (Standard: aus), optional „nur die letzten N Versionen behalten“.</li>
-<li><strong>Ersetzen</strong> legt eine neue Version an – auch mit anderem Namen oder Dateityp (z. B. JPG → PDF); die Mappe zeigt die neueste.</li>
-<li><strong>Version 3</strong> am Dokument: alle Versionen mit Datum, wer, Herkunft, Name und Größe; ansehen, herunterladen, <strong>zurückholen</strong> (als neue, höchste Version).</li>
-<li><strong>Gleicher Dateiname</strong> beim Hochladen: als neue Version, mit Zähler („Rechnung (2).pdf“) oder – ohne Versionierung – altes löschen. Über die API mit <code>gleicherName</code>, Standard „mit Zähler“.</li>
-<li>Volltext und Suche beziehen sich auf die aktuelle Version. Löschen entfernt alle Versionen; der Papierkorb nimmt sie mit der Mappe mit.</li>
-<li>Historie, Sicherung, Speicherplatz-Anzeige und API v1 (Versionen auflisten, herunterladen, ersetzen, zurückholen) sind dabei.</li>
-</ul>
-<h3 id="geandert">Geändert<a class="headerlink" href="#geandert" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Lädt man eine Datei mit einem Namen hoch, den es im Register schon gibt, bekommt sie jetzt einen Zähler, z. B. <code>Rechnung (2).pdf</code>.</li>
+<li><strong>Archivmodus je Mappentyp</strong> (#212) – unterstützt eine GoBD-gerechte Aufbewahrung:</li>
+<li>Im Mappentyp: <strong>Aufbewahrungsfrist</strong> (2, 6, 8, 10 Jahre oder eigene) und <strong>Stichtag</strong> (Datumsfeld oder Anlagedatum); die Frist läuft bis zum Jahresende + N Jahre. Beim Einschalten zeigt das DMS, wie viele Mappen betroffen sind.</li>
+<li><strong>Keine Löschung vor Fristende</strong> – Mappe und Dokumente, auch für Administratoren, über alle Wege (Mehrfachauswahl, Papierkorb, API: 409 mit Datum).</li>
+<li><strong>Versionierung Pflicht</strong>; ältere Versionen bleiben bis Fristende. Fristwechsel durch ein geändertes Datumsfeld steht in der Historie.</li>
+<li>Hinweis <strong>Archiv · aufbewahren bis …</strong> an Mappe und Liste.</li>
+<li><strong>Werkbank → Darf weg:</strong> abgelaufene Mappen, einzeln oder gemeinsam löschen. Nichts wird automatisch gelöscht.</li>
+<li><strong>Werkbank → Wartungsoperationen → Alle Dateien prüfen:</strong> jede Datei gegen ihren Prüfwert, mit Liste der Abweichungen.</li>
+<li>Neue Seite <strong>Archivmodus und Aufbewahrung</strong> im Administratorhandbuch.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.57.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.57.0...v0.58.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.58.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.58.0...v0.59.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 
