@@ -38,6 +38,16 @@ Angelegt wird über dieselben Funktionen wie in der Werkbank, mit allen Prüfreg
 
 Mappentypen aus Paketen tragen in **Werkbank → Mappentypen** den Hinweis **Paket …**. Du kannst sie danach wie jeden anderen Mappentyp anpassen.
 
+### Über die Katalog-Webseite
+
+Den Katalog gibt es auch als Webseite: [Paketkatalog](https://motom001.github.io/dms-registry/) (auch auf der Startseite der Handbücher). Dort siehst du je Paket die Beschreibung, was angelegt wird, Rechte, Änderungen und ältere Versionen.
+
+1. Klicke beim Paket **In meinem DMS installieren**.
+2. Beim ersten Mal fragt die Seite nach der **Adresse deines DMS**, z. B. `https://dms.example.de`. Sie merkt sie sich nur in deinem Browser; über **DMS-Adresse** oben änderst du sie. Die Webseite sendet nichts an dein DMS und speichert keine Zugangsdaten.
+3. Dein DMS öffnet **Werkbank → Pakete** mit der **Vorschau** genau dieses Pakets (Adresse `…/werkbank/pakete?installieren=<paket>@<version>`). Bist du nicht angemeldet, meldest du dich zuerst an und landest danach wieder dort. Andere Benutzer sehen einen Hinweis, dass nur Administratoren Pakete installieren.
+4. Das DMS holt Paket und Prüfsumme **selbst aus dem offiziellen Katalog** – Angaben im Link, die auf andere Quellen zeigen, zählen nicht. Gibt es das Paket oder die Version dort nicht, sagt das DMS es.
+5. Installiert wird **erst, wenn du auf „Installieren“ klickst**. Der Link allein ändert nichts. Ist das Paket schon installiert, zeigt die Vorschau das; ein Update bietet sie an, wenn der Link eine neuere Version nennt.
+
 ## Installierte Pakete
 
 Je Paket merkt sich das DMS Version, **Herkunft** (der Katalog), wann und von wem es installiert bzw. aktualisiert wurde und welche Mappentypen und Sichten dazugehören. Diese Angaben sind Teil der [Sicherung](sicherung.md) und des [Vollexports](export.md) (`struktur/pakete.json`). Installieren, Aktualisieren und Entfernen stehen im Protokoll.

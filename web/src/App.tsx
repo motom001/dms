@@ -46,7 +46,7 @@ export function App() {
 
   let inhalt;
   if (!d.geladen) inhalt = <p className="leise">Lade …</p>;
-  else if (bereich === 'werkbank' && !admin) inhalt = <div className="leer"><p>Die Werkbank ist Administratoren vorbehalten.</p></div>;
+  else if (bereich === 'werkbank' && !admin) inhalt = <div className="leer"><p>{teile[1] === 'pakete' && new URLSearchParams(location.search).has('installieren') ? 'Pakete installieren nur Administratoren. Schick den Link an einen Administrator deines DMS.' : 'Die Werkbank ist Administratoren vorbehalten.'}</p></div>;
   else if (bereich === 'werkbank') inhalt = <Werkbank teile={teile} />;
   else if (teile[0] === 'api-doku') inhalt = <ApiDoku />;
   else if (bereich === 'profil') inhalt = <Profil teile={teile} />;
