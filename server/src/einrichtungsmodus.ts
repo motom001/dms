@@ -8,6 +8,7 @@ import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
 import { standKennung } from './system';
 import { hilfeAntwort, hilfeSenden } from './hilfe';
+import { einbettenAus, sicherheitsKoepfe, type Einbetten } from './koepfe';
 
 /**
  * Einrichtungsmodus (#119): Das DMS läuft ohne erreichbare Datenbank und liefert nur den
@@ -29,6 +30,8 @@ export interface EinrichtungsmodusOptionen {
   host: string;
   webDir?: string;
   proxy?: ProxyVertrauen;
+  /** Erlaubte Ursprünge zum Einbetten (#239). */
+  einbetten?: Einbetten;
   /** Für Tests: Verbindung prüfen und anlegen. */
   pruefe?: (a: Anbindung) => Promise<Pruefung>;
   anlegen?: (a: Anbindung) => Promise<void>;
@@ -54,6 +57,14 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
     return reply.code(500).send({ fehler: 'Interner Fehler. Details stehen im Protokoll des Containers.' });
   });
   app.addHook('onRequest', async (_req, reply) => { reply.header('cache-control', 'no-store'); });
+  // Sicherheits-Header wie im Betrieb (#239).
+  app.addHook('onSend', async (req, reply, nutzlast) => {
+    const typ = String(reply.getHeader('content-type') ?? '');
+    for (const [k, v] of Object.entries(sicherheitsKoepfe({ pfad: req.url.split('?')[0], https: req.protocol === 'https', html: typ.startsWith('text/html'), csp: reply.hasHeader('content-security-policy') }, o.einbetten ?? einbettenAus(undefined)))) {
+      if (!reply.hasHeader(k)) reply.header(k, v);
+    }
+    return nutzlast;
+  });
 
   const kopf = (req: { headers: Record<string, unknown> }, n: string) => (typeof req.headers[n] === 'string' ? req.headers[n] as string : undefined);
   /** Jede Änderung: Kennung der Oberfläche und Einrichtungscode. */

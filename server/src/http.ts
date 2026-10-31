@@ -16,6 +16,7 @@ import type { Designs } from './designs';
 import type { ApiSchluesselDienst } from './apischluessel';
 import { wer } from './api-v1';
 import { hilfeAntwort, hilfeSenden } from './hilfe';
+import { einbettenAus, sicherheitsKoepfe, type Einbetten } from './koepfe';
 import { kontext, protokoll, type Kontext, type Stufe } from './protokoll';
 import type { Betrieb } from './betrieb';
 import type { Tresor } from './tresor';
@@ -68,6 +69,8 @@ interface Optionen {
   anbindung?: AnbindungVerwaltung;
   mandantHinweis?: string | null;
   abruf?: (url: string) => Promise<unknown>;
+  /** Erlaubte Ursprünge zum Einbetten (#239, DMS_EINBETTEN). */
+  einbetten?: Einbetten;
 }
 
 export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}) {
@@ -102,6 +105,15 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     kontext.run(k, () => protokoll.schreibe(stufe, api ? modulAus(url) : 'http', `${req.method} ${url} ${status}`, {
       ms: Math.round(reply.elapsedTime), ...(k.db.anzahl ? { db: k.db.anzahl, dbMs: Math.round(k.db.ms) } : {}),
     }));
+  });
+
+  // Sicherheits-Header für jede Antwort (#239); eigene CSP einer Antwort (z. B. Dokumente) bleibt.
+  app.addHook('onSend', async (req, reply, nutzlast) => {
+    const typ = String(reply.getHeader('content-type') ?? '');
+    for (const [k, v] of Object.entries(sicherheitsKoepfe({
+      pfad: req.url.split('?')[0], https: req.protocol === 'https', html: typ.startsWith('text/html'), csp: reply.hasHeader('content-security-policy'),
+    }, opt.einbetten ?? einbettenAus(undefined)))) if (!reply.hasHeader(k)) reply.header(k, v);
+    return nutzlast;
   });
 
   // Datei-Uploads kommen als rohe Bytes (application/octet-stream).
