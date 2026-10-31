@@ -23,24 +23,28 @@ Eine gespeicherte Auswahl von Mappen – welche Mappentypen, mit welchen Bedingu
 Siehe auch: [Unteransicht](#unteransicht), [Bedingung](#bedingung), [Trefferliste](#trefferliste).
 
 <a id="bedingung"></a>**Bedingung** · ~ mit Erklärung · Administratoren  
-Ein Filter einer Ansicht auf Feldwerte, Anzahlen, Fristen oder Persönliches („mir zugewiesen“).
+Ein Filter einer Ansicht auf Feldwerte, Anzahlen, Fristen oder Persönliches, z. B. ein Feld gleich „aktueller Benutzer“ oder „ist mein Favorit“.
+
+<a id="darstellung"></a>**Darstellung** · ✓ Alltagswort · alle  
+Der Bereich im Profil, in dem jeder einstellt, wie das DMS für ihn aussieht – das Design (für sein Konto), die Schriftgröße und die Breite der Bereiche (je Gerät).  
+Siehe auch: [Design](#design), [Profil](#profil).
 
 <a id="dokument"></a>**Dokument** · ✓ Alltagswort · alle  
-Eine Datei, die im DMS in einem Dokumentenregister einer Mappe liegt. Hochgeladen wird eine Datei; im DMS ist sie ein Dokument.  
-Siehe auch: [Version](#version). Noch offen: [Frage 17](#offen-17).
+Eine Datei, die im DMS in einem Dokumentenregister einer Mappe liegt. Hochgeladen wird eine Datei; im DMS ist sie ein Dokument. An einer E-Mail heißt sie Anhang.  
+Siehe auch: [Version](#version).
 
 <a id="eindeutig"></a>**Eindeutig** · ~ mit Erklärung · Administratoren  
 Ein Feldwert, der in diesem Mappentyp nur einmal vorkommen darf, z. B. eine Rechnungsnummer.
 
 <a id="favoriten"></a>**Favoriten** · ✓ Alltagswort · alle  
-Mappen oder Ansichten, die ein Benutzer mit dem Stern markiert hat.
+Mappen, die ein Benutzer mit dem Stern markiert hat. Die Ansicht „Favoriten“ zeigt sie.
 
 <a id="feld"></a>**Feld** · ~ mit Erklärung · alle  
-Eine Angabe in einer Mappe, z. B. die Vertragsnummer. Jedes Feld hat eine Feldart wie Text, Zahl, Datum, Betrag, Auswahl, Verweis, Passwort oder formatierter Text.  
+Eine Angabe in einer Mappe, z. B. die Vertragsnummer. Jedes Feld hat eine Feldart – Text, Langtext, Formatierter Text, Zahl, Betrag, Datum, Ja/Nein, Auswahlliste, Verweis oder Passwort.  
 Siehe auch: [Feldart](#feldart), [Pflichtfeld](#pflichtfeld), [Standardwert](#standardwert).
 
 <a id="feldart"></a>**Feldart** · ~ mit Erklärung · Administratoren  
-Welche Art von Angabe ein Feld aufnimmt, z. B. Datum oder Betrag.
+Welche Art von Angabe ein Feld aufnimmt, z. B. Datum oder Betrag. Die Oberfläche schreibt „Feldart“.
 
 <a id="filter-titel"></a>**Filter (Titel)** · ~ mit Erklärung · Administratoren  
 Formatiert einen Platzhalter in der Titel-Vorlage, z. B. nur das Jahr eines Datums oder gekürzter Text. Steht hinter einem senkrechten Strich, z. B. {datum|jahr}.  
@@ -65,10 +69,10 @@ Ein Feld, das ausgefüllt sein muss, bevor die Mappe gespeichert werden kann.
 Siehe auch: [Eindeutig](#eindeutig).
 
 <a id="profil"></a>**Profil** · ✓ Alltagswort · alle  
-Die persönlichen Einstellungen des angemeldeten Benutzers, erreichbar über das Benutzermenü.
+Die persönlichen Einstellungen des angemeldeten Benutzers, erreichbar über das Benutzermenü → „Mein Konto“.
 
 <a id="register"></a>**Register** · ~ mit Erklärung · alle  
-Ein Trennblatt in einer Mappe, z. B. Angaben, Dokumente, Verknüpfungen, Notizen oder Historie.
+Ein Trennblatt in einer Mappe, z. B. Allgemein (mit Feldern), Dokumente, Verknüpfungen oder Historie. Notizen sind kein Register; sie öffnen sich über den Knopf „Notizen“ an der Mappe.
 
 <a id="standardwert"></a>**Standardwert** · ~ mit Erklärung · Administratoren  
 Die Vorbelegung eines Feldes beim Anlegen einer Mappe, auch mit Platzhaltern wie einem Nummernkreis.
@@ -81,8 +85,7 @@ Siehe auch: [Mappentyp](#mappentyp).
 Der Anzeigename einer Mappe. Er wird aus einer Vorlage mit Feldwerten gebildet.
 
 <a id="trefferliste"></a>**Trefferliste** · ✗ Fachwort · Administratoren  
-Legt fest, welche Spalten eine Liste zeigt – am Mappentyp und an der Ansicht.  
-Noch offen: [Frage 11](#offen-11).
+Legt fest, welche Spalten eine Liste zeigt. Ein Mappentyp hat eine oder mehrere Trefferlisten; eine davon ist der Standard. Eine Ansicht oder ein Verknüpfungsregister wählt eine davon, sonst gilt der Standard. Zeigt eine Ansicht mehrere Mappentypen, stehen nur Trefferlisten mit gleicher Kennung in allen zur Wahl, mit den gemeinsamen Spalten.
 
 <a id="unteransicht"></a>**Unteransicht** · ~ mit Erklärung · Administratoren  
 Eine Ansicht unterhalb einer anderen. Sie erbt deren Berechtigungen.
@@ -92,16 +95,20 @@ Das Register, das alle Mappen zeigt, die auf diese Mappe verweisen – die Gegen
 Siehe auch: [Verweis](#verweis).
 
 <a id="version"></a>**Version** · ✓ Alltagswort · alle  
-Eine Fassung eines Dokuments. Beim Ersetzen entsteht eine neue Version, die älteren bleiben darunter und lassen sich zurückholen. Nur in Registern mit Versionierung. Nicht zu verwechseln mit der Version des DMS.  
+Ein Dokument kann mehrere Versionen haben. Beim Ersetzen entsteht eine neue Version, die älteren bleiben darunter und lassen sich zurückholen. Nur in Registern mit Versionierung. Nicht zu verwechseln mit der Version des DMS.  
 Siehe auch: [Dokument](#dokument), [Archivmodus](#archivmodus), [Version des DMS](#version-des-dms).
 
 <a id="verweis"></a>**Verweis** · ~ mit Erklärung · alle  
 Ein Feld, das auf andere Mappen zeigt, z. B. von einer Rechnung auf den Vertrag.  
-Siehe auch: [Verknüpfungen](#verknupfungen).
+Siehe auch: [Verknüpfungen](#verknupfungen), [Verweisart](#verweisart).
+
+<a id="verweisart"></a>**Verweisart** · ~ mit Erklärung · Administratoren  
+Ob ein Verweis eine Zugehörigkeit ist („gehört zu“, z. B. eine Rechnung zum Vertrag) oder nur ein Bezug (z. B. der Aussteller). Die Mappe zeigt die Art am Verweis und in den Verknüpfungen.  
+Siehe auch: [Verweis](#verweis).
 
 <a id="werkbank"></a>**Werkbank** · ~ mit Erklärung · Administratoren  
 Der Arbeitsbereich der Administratoren. Hier werden Mappentypen, Ansichten, Benutzer und Einstellungen gepflegt und das DMS betrieben.  
-Siehe auch: [Ablage](#ablage), [Administrator](#administrator).
+Siehe auch: [Ablage](#ablage), [Administrator](#administrator), [Werkbank anpassen](#werkbank-anpassen).
 
 ## Arbeiten in der Ablage
 
@@ -112,11 +119,11 @@ Ein Zeitraum, in dem ein Benutzer nicht da ist – mit einem Vertreter, der sein
 Das Menü an einer Mappe – Aufgabe vergeben, Erinnern, Versenden, Exportieren und mehr.
 
 <a id="anstehend"></a>**Anstehend** · ✓ Alltagswort · alle  
-Die Ansicht auf Fristen und Erinnerungen, deren Vorlauf noch nicht begonnen hat.
+Die Ansicht mit meinen Fristen und Erinnerungen der nächsten Tage (Standard 30) – kommende und solche, die schon fällig sind und unter „Zu erledigen“ stehen.
 
 <a id="aufgabe"></a>**Aufgabe** · ✓ Alltagswort · alle  
 Etwas, das ein Mensch an einer Mappe tun soll. Arten sind Passt nicht, Erwähnung, Zugewiesen (von Hand vergeben), Post für dich, Frist, Erinnerung und Vertretung.  
-Siehe auch: [Zu erledigen](#zu-erledigen), [Frist](#frist), [Erinnerung](#erinnerung), [Auftrag](#auftrag). Noch offen: [Frage 12](#offen-12).
+Siehe auch: [Zu erledigen](#zu-erledigen), [Frist](#frist), [Erinnerung](#erinnerung), [Auftrag](#auftrag).
 
 <a id="erinnerung"></a>**Erinnerung** · ✓ Alltagswort · alle  
 Eine von Hand gesetzte Aufgabe für einen bestimmten Tag (Aktionen → Erinnern).
@@ -142,7 +149,7 @@ Siehe auch: [Erinnerung](#erinnerung), [Anstehend](#anstehend).
 Die Geschichte einer Mappe – Änderungen vorher und nachher, Dokumente, Papierkorb, Notizen, Aufgaben. Das technische Betriebsprotokoll heißt dagegen „Protokoll“.
 
 <a id="kanal"></a>**Kanal** · ✗ Fachwort · alle  
-Woher Post kam – hochgeladen, per E-Mail, aus dem Eingangsordner oder über die API.
+Wie Post ins DMS kam oder hinausging. Das DMS setzt Hochgeladen, E-Mail, Ordner (Eingangsordner) und API selbst; Scan, Import und WebDAV lassen sich in der Liste von Hand wählen.
 
 <a id="link"></a>**Link** · ✓ Alltagswort · alle  
 Eine Adresse auf eine Ansicht oder Mappe, z. B. über „Link kopieren“ – auch lesbar über Mappentyp und Feldwerte. „Link“ steht nur für Adressen; Felder, die auf Mappen zeigen, heißen Verweis.
@@ -155,10 +162,18 @@ Ein Kommentar an einer Mappe.
 
 <a id="post"></a>**Post** · ✓ Alltagswort · alle  
 Alles, was ins DMS kommt oder hinausgeht – Scan, Upload, E-Mail. Post ist ein Systemmappentyp mit Kanal, Richtung und Stand.  
-Siehe auch: [Neue Post](#neue-post), [Zuordnen](#zuordnen), [Kanal](#kanal).
+Siehe auch: [Neue Post](#neue-post), [Zuordnen](#zuordnen), [Kanal](#kanal), [Richtung (Post)](#richtung-post), [Stand (Post)](#stand-post).
+
+<a id="richtung-post"></a>**Richtung (Post)** · ✓ Alltagswort · alle  
+Ob Post eingehend oder ausgehend ist. Mit „Per E-Mail versenden“ entsteht ausgehende Post.  
+Siehe auch: [Post](#post).
+
+<a id="stand-post"></a>**Stand (Post)** · ✓ Alltagswort · alle  
+Wie weit Post bearbeitet ist – Neu (noch nicht bearbeitet), Zugeordnet (liegt bei einer passenden Mappe) oder Erledigt (nichts mehr zu tun).  
+Siehe auch: [Post](#post), [Neue Post](#neue-post).
 
 <a id="vertretung"></a>**Vertretung** · ✓ Alltagswort · alle  
-Ein Benutzer übernimmt während einer Abwesenheit die Aufgaben eines anderen.
+Ein Benutzer übernimmt während einer Abwesenheit die Aufgaben eines anderen. Der Vertreter bekommt dazu eine Aufgabe der Art „Vertretung“.
 
 <a id="volltext"></a>**Volltext** · ✗ Fachwort · alle  
 Der durchsuchbare Text in den Dokumenten – aus der Textebene der Datei oder aus der Texterkennung.  
@@ -189,8 +204,7 @@ Anmelden mit einem fremden Konto, z. B. Microsoft 365 (OpenID Connect).
 Eine Einstellung je Mappentyp für Aufbewahrungspflichten – mit Versionen und einer Löschsperre bis zum Fristende.
 
 <a id="benutzer"></a>**Benutzer** · ✓ Alltagswort · alle  
-Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe im DMS. Nicht zu verwechseln mit einer Person als Kontakt.  
-Noch offen: [Frage 14](#offen-14).
+Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe im DMS. Personen und Firmen, mit denen man zu tun hat (Kontakte), sind keine Benutzer, sondern gewöhnliche Mappen, z. B. vom Mappentyp „Organisation“ aus dem Paket Basis.
 
 <a id="berechtigungen"></a>**Berechtigungen** · ✓ Alltagswort · Administratoren  
 Wer was darf. Am Mappentyp – Anlegen, Lesen, Bearbeiten, Löschen, Passwörter sehen – mit einem Standard plus Regeln; an der Ansicht – Sehen, Anlegen, Exportieren – mit Vererbung an die Unteransichten. Für Administratoren gelten sie nicht.
@@ -199,20 +213,33 @@ Wer was darf. Am Mappentyp – Anlegen, Lesen, Bearbeiten, Löschen, Passwörter
 Die Liste der Mappen, deren Aufbewahrungsfrist abgelaufen ist.
 
 <a id="design"></a>**Design** · ✓ Alltagswort · Administratoren  
-Logo, Schriftzug, Farben und eigenes CSS des DMS.  
-Noch offen: [Frage 19](#offen-19).
+Wie die Oberfläche aussieht – Logo, Schriftzug, Farben (hell, dunkel, hoher Kontrast oder nach Gerät) und eigenes CSS. Administratoren legen Designs unter Werkbank → Designs an und bestimmen den Standard; jeder Benutzer wählt seines im Profil unter „Darstellung“.  
+Siehe auch: [Darstellung](#darstellung).
 
 <a id="eingangsordner"></a>**Eingangsordner** · ~ mit Erklärung · Administratoren  
 Ein Ordner, den das DMS beobachtet, z. B. für „Scan to Folder“. Jede Datei darin wird Post.
+
+<a id="expertenmodus"></a>**Expertenmodus** · ✗ Fachwort · Fortgeschrittene  
+Ein Schalter unter Werkbank → Pakete. Er blendet „Weitere Quellen“ und „Paket hochladen“ ein – für Paketentwickler und DMS ohne Internet. Gilt je Benutzer und ist zu Beginn aus.  
+Siehe auch: [Paket](#paket), [Paketkatalog](#paketkatalog).
 
 <a id="fehler-nachstellen"></a>**Fehler nachstellen** · ~ mit Erklärung · Administratoren  
 Ein Administrator arbeitet vorübergehend unter dem Konto eines anderen Benutzers, um einen Fehler zu sehen. Zurück geht es mit „Zurück zum eigenen Konto“.
 
 <a id="nummernkreis"></a>**Nummernkreis** · ✗ Fachwort · Administratoren  
-Fortlaufende Nummern nach einem Muster wie {yyyy}-R{0000}, z. B. für Rechnungsnummern.
+Fortlaufende Nummern nach einem Muster wie {jjjj}-R{zaehler:4} (ergibt z. B. 2026-R0001), etwa für Rechnungsnummern.
 
 <a id="paket"></a>**Paket** · ~ mit Erklärung · Administratoren  
-Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Haushalt“.
+Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Basis“. Ein Update ergänzt nur; es entfernt und ändert nichts.  
+Siehe auch: [Paketkatalog](#paketkatalog), [Expertenmodus](#expertenmodus), [Paket-Läufer](#paket-laufer).
+
+<a id="paket-laufer"></a>**Paket-Läufer** · ✗ Fachwort · Fortgeschrittene  
+Der Teil des DMS, der den Code von Paketen ausführt. Geplant – bis dahin läuft Code in Paketen nicht; ihre Einstellungen lassen sich schon pflegen.  
+Siehe auch: [Paket](#paket).
+
+<a id="paketkatalog"></a>**Paketkatalog** · ~ mit Erklärung · Administratoren  
+Die Liste der Pakete, die ein DMS installieren kann (eine Datei katalog.json im Netz). Das DMS fragt den offiziellen Katalog nur auf Knopfdruck ab („Katalog abrufen“). Weitere Kataloge trägt man im Expertenmodus unter „Weitere Quellen“ ein.  
+Siehe auch: [Paket](#paket), [Expertenmodus](#expertenmodus).
 
 <a id="postfach"></a>**Postfach** · ~ mit Erklärung · Administratoren  
 Ein angebundenes E-Mail-Konto (IMAP), aus dem das DMS Post abholt.
@@ -234,8 +261,20 @@ Prüft, welche Rechte ein bestimmter Benutzer am Ende hat.
 <a id="texterkennung"></a>**Texterkennung** · ~ mit Erklärung · Administratoren  
 Erkennt Text in Bildern und gescannten PDFs, damit er durchsuchbar wird.
 
+<a id="tagliche-zusammenfassung"></a>**Tägliche Zusammenfassung** · ✓ Alltagswort · alle  
+Eine E-Mail, die einmal am Tag die offenen Aufgaben eines Benutzers auflistet – nur, wenn er welche hat und nicht abwesend ist. Administratoren schalten sie unter Werkbank → Aufgaben ein; Uhrzeit und Wochentage wählt jeder im Profil.  
+Siehe auch: [Aufgabe](#aufgabe), [Anstehend](#anstehend).
+
+<a id="werkbank-anpassen"></a>**Werkbank anpassen** · ~ mit Erklärung · Administratoren  
+Legt fest, welche Bereiche links in der Werkbank stehen – nach einer Vorlage („Haushalt“, „Organisation“ oder „Alles“) und mit Abweichungen. Ausblenden schaltet nichts ab. Neue Installationen starten mit „Haushalt“; Installationen von vor dieser Einstellung zeigen alles.  
+Siehe auch: [Werkbank](#werkbank), [Übersicht](#ubersicht).
+
 <a id="zwei-faktor-anmeldung"></a>**Zwei-Faktor-Anmeldung** · ~ mit Erklärung · alle  
 Ein zusätzlicher Code aus einer App bei der Anmeldung.
+
+<a id="ubersicht"></a>**Übersicht** · ✓ Alltagswort · Administratoren  
+Die erste Seite der Werkbank – was in diesem DMS gerade zu tun ist, mit Hinweisen, Stand und Bestand.  
+Siehe auch: [Werkbank](#werkbank).
 
 ## Betrieb und Sicherheit
 
@@ -243,8 +282,7 @@ Ein zusätzlicher Code aus einer App bei der Anmeldung.
 Die Schnittstelle, über die Programme mit dem DMS arbeiten. Zugang mit einem persönlichen API-Schlüssel.
 
 <a id="auftrag"></a>**Auftrag** · ✗ Fachwort · Administratoren  
-Arbeit, die das DMS im Hintergrund erledigt und deren Fortschritt man sieht – Demo-Daten, Texterkennung, Export. Arbeit für Menschen heißt Aufgabe.  
-Noch offen: [Frage 12](#offen-12).
+Arbeit, die das DMS im Hintergrund erledigt und deren Fortschritt man sieht, z. B. Demo-Daten erzeugen, Vollexport, Nummern nachträglich vergeben. Es läuft immer nur ein Auftrag. Arbeit für Menschen heißt Aufgabe.
 
 <a id="debug-modus"></a>**Debug-Modus** · ✗ Fachwort · Fortgeschrittene  
 Ein ausführlicheres technisches Protokoll für die Fehlersuche.
@@ -266,7 +304,8 @@ Eine kurze Prüfkennung, an der man einen Schlüssel wiedererkennt.
 Fehler, die Benutzer über „Fehler melden“ eingereicht haben (Werkbank → Gemeldete Fehler).
 
 <a id="haushalt"></a>**Haushalt** · ✓ Alltagswort · Administratoren  
-Der Haushalt oder die Organisation, für die das DMS eingerichtet ist. Eine Installation ist ein Haushalt. „Mandant“ steht nur im Code und, wo technisch nötig, im Administratorhandbuch. Je nach Einrichtung heißt es „Haushalt“ oder „Organisation“.
+Der Haushalt (oder die Firma), für den das DMS eingerichtet ist. Eine Installation ist ein Haushalt. „Mandant“ steht nur im Code und, wo technisch nötig, im Administratorhandbuch. Geplant: Je nach Sprachprofil soll es „Haushalt“ oder „Organisation“ heißen.  
+Noch offen: [Frage 23](#offen-23).
 
 <a id="konsole"></a>**Konsole** · ✗ Fachwort · Fortgeschrittene  
 Der Befehl „dms“ im Container für Notfall und Betrieb.
@@ -317,26 +356,11 @@ Eine Sicherung in ein DMS zurückspielen.
 
 Manche Wörter stehen für mehr als eine Sache oder klingen zu ähnlich. Das wollen wir nach und nach klären. Bis dahin gelten die Begriffe oben.
 
-<a id="offen-10"></a>**10. „Wartung“ dreifach, mit den Paketen bald vierfach**  
+<a id="offen-10"></a>**10. „Wartung“ dreifach – Werkbank-Gruppe „Wartung und Fehlersuche“, Wartungsmodus, Wartungsoperationen**  
 Vorschlag: Werkbank-Gruppe neu benennen („Betrieb“), „Wartungsoperationen“ → „Pflegearbeiten“.
 
-<a id="offen-11"></a>**11. „Trefferliste“ am Mappentyp und an der Sicht**  
-Vorschlag: Beschreiben, wie beide zusammenspielen; für Einsteiger ggf. „Spalten“.
-
-<a id="offen-12"></a>**12. „Aufgabe“ und „Auftrag“ sind sehr nah**  
-Vorschlag: Bei einer Umbenennung von Konflikt 1 nicht „Auftrag“ verwenden.
-
-<a id="offen-14"></a>**14. Benutzer und Person**  
-Vorschlag: „Benutzer“ ist ein Konto, „Person“ ein Kontakt (Paket Basis) – im Glossar getrennt.
-
-<a id="offen-15"></a>**15. Übersicht, Zusammenfassung, Anstehend**  
-Vorschlag: Kein echter Konflikt, aber jeweils definieren.
-
-<a id="offen-17"></a>**17. Dokument, Datei, Anhang**  
-Vorschlag: Datei = was hochgeladen wird, Dokument = was im DMS liegt, Anhang = an einer E-Mail.
-
-<a id="offen-19"></a>**19. Design, Darstellung, Theme**  
-Vorschlag: Klären, was in Werkbank und Profil jeweils gemeint ist.
+<a id="offen-23"></a>**23. „Organisation“ für drei Dinge**  
+Vorschlag: „Organisation“ ist eine Vorlage unter „Werkbank anpassen“, das geplante Wort für den Haushalt im Sprachprofil für Firmen und ein Mappentyp im Paket Basis. Klären, welches das Wort behält; bis dahin im Text immer sagen, welches gemeint ist.
 
 ## Entschieden
 
@@ -369,14 +393,32 @@ Feldart „Verweis“, Register „Verknüpfungen“; Adressen heißen nur „Li
 <a id="offen-9"></a>**9. Export, Vollexport, persönlicher Export, Sicherung** (31.10.2026)  
 Überall „Meine Daten exportieren“; die Sicherung steht im Handbuch klar als „kein Export“.
 
+<a id="offen-11"></a>**11. „Trefferliste“ am Mappentyp und an der Ansicht** (31.10.2026)  
+Kein neues Wort. Der Mappentyp legt seine Trefferlisten fest, eine davon ist der Standard; eine Ansicht wählt eine davon, sonst gilt der Standard (siehe „Trefferliste“).
+
+<a id="offen-12"></a>**12. „Aufgabe“ und „Auftrag“ sind sehr nah** (31.10.2026)  
+Beide Wörter bleiben. „Aufgabe“ ist Arbeit für Menschen, „Auftrag“ Arbeit, die das DMS im Hintergrund erledigt.
+
 <a id="offen-13"></a>**13. Mandant, Haushalt, Organisation, Firma** (31.10.2026)  
 „Haushalt“ in allem, was Benutzer sehen; „Mandant“ nur im Code und wo technisch nötig.
+
+<a id="offen-14"></a>**14. Benutzer und Person** (31.10.2026)  
+„Benutzer“ ist ein Konto zum Anmelden. Kontakte – Personen, Firmen, Behörden – sind gewöhnliche Mappen und keine Benutzer.
+
+<a id="offen-15"></a>**15. Übersicht, Zusammenfassung, Anstehend** (31.10.2026)  
+Drei Begriffe mit je eigener Bedeutung – „Übersicht“ (erste Seite der Werkbank), „Tägliche Zusammenfassung“ (E-Mail mit offenen Aufgaben), „Anstehend“ (Ansicht mit Fristen und Erinnerungen).
 
 <a id="offen-16"></a>**16. Typ, Mappentyp, Feldart, Art** (31.10.2026)  
 Konsequent „Mappentyp“ und „Feldart“.
 
+<a id="offen-17"></a>**17. Dokument, Datei, Anhang** (31.10.2026)  
+Datei = was hochgeladen oder heruntergeladen wird, Dokument = was im DMS in einer Mappe liegt, Anhang = an einer E-Mail.
+
 <a id="offen-18"></a>**18. Version eines Dokuments und Version des DMS** (31.10.2026)  
-Zwei Begriffe – „Version“ ist die Fassung eines Dokuments, „Version des DMS“ der Stand des Programms. Erklärt auf der Seite „Versionen verstehen“.
+Zwei Begriffe – „Version“ gehört zu einem Dokument, „Version des DMS“ ist der Stand des Programms. Erklärt auf der Seite „Versionen verstehen“.
+
+<a id="offen-19"></a>**19. Design, Darstellung, Theme** (31.10.2026)  
+„Design“ legen Administratoren in der Werkbank an (Logo, Farben, eigenes CSS); „Darstellung“ ist der Bereich im Profil, in dem jeder sein Design, die Schriftgröße und die Breiten wählt. „Theme“ nicht verwenden.
 
 <a id="offen-20"></a>**20. „Neue Post“ als Ansicht und als Art einer Aufgabe** (31.10.2026)  
 Die Aufgabenart heißt „Post für dich“; die Ansicht „Neue Post“ bleibt.
@@ -396,22 +438,24 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Ansicht | Sicht, Filter, View | `Sicht` |
 | Anstehend | – | `Anstehend` |
 | Archivmodus | – | `Archiv` |
-| Aufgabe | Auftrag, Task, Todo | `Aufgabe` |
-| Auftrag | Job | – |
+| Aufgabe | Auftrag, Task, Todo | `Aufgabe, AUFGABENARTEN` |
+| Auftrag | Job | `Auftrag` |
 | Bedingung | – | `Bedingung` |
 | Benutzer | User, Account | `Benutzer` |
 | Berechtigungen | Permissions | `Rechte` |
+| Darstellung | Theme, Ansicht (für das Aussehen) | – |
 | Design | Theme | – |
 | Dokument | – | `Dokument` |
 | Erinnerung | – | `Erinnerung` |
 | Erweiterte Suche | – | `Suchformular` |
-| Fehler nachstellen | Impersonation, Vertretung beenden | – |
+| Expertenmodus | Erweiterte Ansicht | `pakete_erweitert` |
+| Fehler nachstellen | Impersonation, Vertretung beenden | `Vertretung` |
 | Feld | – | `Feld` |
-| Feldart | Feldtyp, Datentyp, Art (allein) | `Feldart` |
+| Feldart | Feldtyp, Datentyp, Art (allein) | `Feldtyp, FELDTYPEN, Feld.typ` |
 | Gemeldete Fehler | Fehlermeldungen | – |
-| Haushalt | Mandant (in der Oberfläche) | `Mandant, haushalt_id` |
+| Haushalt | Mandant (in der Oberfläche) | `mandant, haushalt_id` |
 | Historie | Protokoll (an der Mappe), Verlauf | `Historieneintrag` |
-| Kennung | Schlüssel (für Felder), Key | `key` |
+| Kennung | Schlüssel (für Felder), Key | `key, schluessel` |
 | Link | Direktlink, sprechender Link | `Direktlink` |
 | Mappe | Akte, Ordner, Datensatz | `Mappe` |
 | Mappentyp | Typ (allein), Vorlage, Klasse | `Mappentyp` |
@@ -419,21 +463,25 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Notiz | – | `Notiz` |
 | Nummernkreis | – | `Nummernkreis` |
 | Paket | Plugin, Erweiterung, App, Modul | `InstalliertesPaket` |
+| Paket-Läufer | – | `PaketLaeufer` |
+| Paketkatalog | – | `Katalog, OFFIZIELLER_KATALOG` |
 | Post | Posteingang, Inbox | – |
 | Regel | – | `Regel` |
 | Register | Tab, Reiter | `Register` |
-| Rolle | Gruppe, Weitere Rollen | `Rolle` |
+| Rolle | Gruppe, Weitere Rollen | `rolle (Systemtyp), Benutzer.rollen` |
 | Sicherung | Backup (in der Oberfläche) | – |
 | Standardwert | Defaultwert | – |
 | Systemmappentyp | – | `Systemtyp` |
-| Systemrolle | Rolle (für Administrator/Mitglied) | `rolle (am Benutzer)` |
+| Systemrolle | Rolle (für Administrator/Mitglied) | `Rolle, Benutzer.rolle` |
 | Texterkennung | OCR (in der Oberfläche) | `OcrStand` |
 | Trefferliste | – | `Trefferliste` |
 | Unteransicht | Untersicht | – |
 | Version | Revision, Stand (für Dokumente) | `DokumentVersion` |
 | Version des DMS | Release (in der Oberfläche) | – |
-| Vertretung | – | `Vertretung` |
-| Verweis | Referenz, Link, Relation | `FeldVerweis` |
+| Vertretung | – | `Abwesenheit.vertreterId, vertretung (Aufgabenart)` |
+| Verweis | Referenz, Link, Relation | `referenz, Feld.zielTyp` |
+| Verweisart | – | `Verweisart, VERWEISARTEN` |
+| Werkbank anpassen | – | `WerkbankAnsicht, VORLAGEN` |
 | Zu erledigen | Eingang, Inbox, Posteingang | `eingang` |
 | Zwei-Faktor-Anmeldung | 2FA, MFA (in der Oberfläche) | – |
 

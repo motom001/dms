@@ -7,7 +7,7 @@
 #   begriff          So heißt es in Oberfläche, Handbüchern, Hilfetexten, Meldungen und Release-Notizen.
 #   bereich          grundbegriffe | ablage | werkbank | betrieb
 #   beschreibung     Was gemeint ist (Grundlage für spätere Übersetzungen – nicht nur das Wort).
-#   einsteiger       Einstufung aus Sicht der Einsteiger-Familie (Persona Lena, Stufe 1):
+#   einsteiger       Einstufung für die Einsteiger-Familie (Persona Lena, Stufe 1):
 #                      alltag    = versteht sie sofort
 #                      erklaeren = geht, wenn die Oberfläche kurz erklärt
 #                      fachwort  = verstehen Einsteiger nicht; nur mit Erklärung oder im Expertenmodus
@@ -15,7 +15,8 @@
 #   nicht_verwenden  Wörter, die wir dafür nicht schreiben (optional)
 #   verwandt         Verwandte Begriffe (optional)
 #   code             Bezeichner im Code (optional)
-#   profile          Abweichendes Wort je Sprachprofil, z. B. organisation: … (optional, siehe usability-grundsaetze 2.8)
+#   profile          Abweichendes Wort je Sprachprofil, z. B. organisation: … (optional, siehe usability-grundsaetze 2.8).
+#                    Sprachprofile sind geplant; die Seite „Begriffe“ kennzeichnet sie so.
 #   konflikt         Nummern offener Konflikte unten (optional)
 #
 # Neue Begriffe kommen mit dem Release hierher (Qualitätskontrolle).
@@ -37,10 +38,10 @@ begriffe:
     beschreibung: Der Arbeitsbereich der Administratoren. Hier werden Mappentypen, Ansichten, Benutzer und Einstellungen gepflegt und das DMS betrieben.
     einsteiger: erklaeren
     begegnet: admin
-    verwandt: [Ablage, Administrator]
+    verwandt: [Ablage, Administrator, Werkbank anpassen]
   - begriff: Profil
     bereich: grundbegriffe
-    beschreibung: Die persönlichen Einstellungen des angemeldeten Benutzers, erreichbar über das Benutzermenü.
+    beschreibung: Die persönlichen Einstellungen des angemeldeten Benutzers, erreichbar über das Benutzermenü → „Mein Konto“.
     einsteiger: alltag
     begegnet: alle
   - begriff: Mappe
@@ -68,25 +69,25 @@ begriffe:
     code: Systemtyp
   - begriff: Feld
     bereich: grundbegriffe
-    beschreibung: Eine Angabe in einer Mappe, z. B. die Vertragsnummer. Jedes Feld hat eine Feldart wie Text, Zahl, Datum, Betrag, Auswahl, Verweis, Passwort oder formatierter Text.
+    beschreibung: Eine Angabe in einer Mappe, z. B. die Vertragsnummer. Jedes Feld hat eine Feldart – Text, Langtext, Formatierter Text, Zahl, Betrag, Datum, Ja/Nein, Auswahlliste, Verweis oder Passwort.
     einsteiger: erklaeren
     begegnet: alle
     verwandt: [Feldart, Pflichtfeld, Standardwert]
     code: Feld
   - begriff: Feldart
     bereich: grundbegriffe
-    beschreibung: Welche Art von Angabe ein Feld aufnimmt, z. B. Datum oder Betrag.
+    beschreibung: Welche Art von Angabe ein Feld aufnimmt, z. B. Datum oder Betrag. Die Oberfläche schreibt „Feldart“.
     einsteiger: erklaeren
     begegnet: admin
     nicht_verwenden: [Feldtyp, Datentyp, Art (allein)]
-    code: Feldart
+    code: Feldtyp, FELDTYPEN, Feld.typ
   - begriff: Kennung
     bereich: grundbegriffe
     beschreibung: Der feste, technische Name eines Felds, Registers, Mappentyps oder Nummernkreises, z. B. vertragsnummer. Nach dem Speichern bleibt er gleich, damit gespeicherte Werte, Links und Pakete passen.
     einsteiger: fachwort
     begegnet: admin
     nicht_verwenden: [Schlüssel (für Felder), Key]
-    code: key
+    code: key, schluessel
   - begriff: Pflichtfeld
     bereich: grundbegriffe
     beschreibung: Ein Feld, das ausgefüllt sein muss, bevor die Mappe gespeichert werden kann.
@@ -106,22 +107,21 @@ begriffe:
     nicht_verwenden: [Defaultwert]
   - begriff: Register
     bereich: grundbegriffe
-    beschreibung: Ein Trennblatt in einer Mappe, z. B. Angaben, Dokumente, Verknüpfungen, Notizen oder Historie.
+    beschreibung: Ein Trennblatt in einer Mappe, z. B. Allgemein (mit Feldern), Dokumente, Verknüpfungen oder Historie. Notizen sind kein Register; sie öffnen sich über den Knopf „Notizen“ an der Mappe.
     einsteiger: erklaeren
     begegnet: alle
     nicht_verwenden: [Tab, Reiter]
     code: Register
   - begriff: Dokument
     bereich: grundbegriffe
-    beschreibung: Eine Datei, die im DMS in einem Dokumentenregister einer Mappe liegt. Hochgeladen wird eine Datei; im DMS ist sie ein Dokument.
+    beschreibung: Eine Datei, die im DMS in einem Dokumentenregister einer Mappe liegt. Hochgeladen wird eine Datei; im DMS ist sie ein Dokument. An einer E-Mail heißt sie Anhang.
     einsteiger: alltag
     begegnet: alle
     verwandt: [Version]
     code: Dokument
-    konflikt: [17]
   - begriff: Version
     bereich: grundbegriffe
-    beschreibung: Eine Fassung eines Dokuments. Beim Ersetzen entsteht eine neue Version, die älteren bleiben darunter und lassen sich zurückholen. Nur in Registern mit Versionierung. Nicht zu verwechseln mit der Version des DMS.
+    beschreibung: Ein Dokument kann mehrere Versionen haben. Beim Ersetzen entsteht eine neue Version, die älteren bleiben darunter und lassen sich zurückholen. Nur in Registern mit Versionierung. Nicht zu verwechseln mit der Version des DMS.
     einsteiger: alltag
     begegnet: alle
     nicht_verwenden: [Revision, Stand (für Dokumente)]
@@ -133,14 +133,21 @@ begriffe:
     einsteiger: erklaeren
     begegnet: alle
     nicht_verwenden: [Referenz, Link, Relation]
-    verwandt: [Verknüpfungen]
-    code: FeldVerweis
+    verwandt: [Verknüpfungen, Verweisart]
+    code: referenz, Feld.zielTyp
   - begriff: Verknüpfungen
     bereich: grundbegriffe
     beschreibung: Das Register, das alle Mappen zeigt, die auf diese Mappe verweisen – die Gegenrichtung des Verweises.
     einsteiger: erklaeren
     begegnet: alle
     verwandt: [Verweis]
+  - begriff: Verweisart
+    bereich: grundbegriffe
+    beschreibung: Ob ein Verweis eine Zugehörigkeit ist („gehört zu“, z. B. eine Rechnung zum Vertrag) oder nur ein Bezug (z. B. der Aussteller). Die Mappe zeigt die Art am Verweis und in den Verknüpfungen.
+    einsteiger: erklaeren
+    begegnet: admin
+    verwandt: [Verweis]
+    code: Verweisart, VERWEISARTEN
   - begriff: Titel
     bereich: grundbegriffe
     beschreibung: Der Anzeigename einer Mappe. Er wird aus einer Vorlage mit Feldwerten gebildet.
@@ -168,20 +175,19 @@ begriffe:
     nicht_verwenden: [Untersicht]
   - begriff: Trefferliste
     bereich: grundbegriffe
-    beschreibung: Legt fest, welche Spalten eine Liste zeigt – am Mappentyp und an der Ansicht.
+    beschreibung: Legt fest, welche Spalten eine Liste zeigt. Ein Mappentyp hat eine oder mehrere Trefferlisten; eine davon ist der Standard. Eine Ansicht oder ein Verknüpfungsregister wählt eine davon, sonst gilt der Standard. Zeigt eine Ansicht mehrere Mappentypen, stehen nur Trefferlisten mit gleicher Kennung in allen zur Wahl, mit den gemeinsamen Spalten.
     einsteiger: fachwort
     begegnet: admin
     code: Trefferliste
-    konflikt: [11]
   - begriff: Bedingung
     bereich: grundbegriffe
-    beschreibung: Ein Filter einer Ansicht auf Feldwerte, Anzahlen, Fristen oder Persönliches („mir zugewiesen“).
+    beschreibung: Ein Filter einer Ansicht auf Feldwerte, Anzahlen, Fristen oder Persönliches, z. B. ein Feld gleich „aktueller Benutzer“ oder „ist mein Favorit“.
     einsteiger: erklaeren
     begegnet: admin
     code: Bedingung
   - begriff: Favoriten
     bereich: grundbegriffe
-    beschreibung: Mappen oder Ansichten, die ein Benutzer mit dem Stern markiert hat.
+    beschreibung: Mappen, die ein Benutzer mit dem Stern markiert hat. Die Ansicht „Favoriten“ zeigt sie.
     einsteiger: alltag
     begegnet: alle
   - begriff: Papierkorb
@@ -197,7 +203,7 @@ begriffe:
     einsteiger: alltag
     begegnet: alle
     nicht_verwenden: [Posteingang, Inbox]
-    verwandt: [Neue Post, Zuordnen, Kanal]
+    verwandt: [Neue Post, Zuordnen, Kanal, Richtung (Post), Stand (Post)]
   - begriff: Neue Post
     bereich: ablage
     beschreibung: Die Ansicht mit Post, die noch nicht zugeordnet oder erledigt ist. Wer Post zugewiesen bekommt, hat zusätzlich die Aufgabe „Post für dich“.
@@ -210,9 +216,21 @@ begriffe:
     begegnet: alle
   - begriff: Kanal
     bereich: ablage
-    beschreibung: Woher Post kam – hochgeladen, per E-Mail, aus dem Eingangsordner oder über die API.
+    beschreibung: Wie Post ins DMS kam oder hinausging. Das DMS setzt Hochgeladen, E-Mail, Ordner (Eingangsordner) und API selbst; Scan, Import und WebDAV lassen sich in der Liste von Hand wählen.
     einsteiger: fachwort
     begegnet: alle
+  - begriff: Richtung (Post)
+    bereich: ablage
+    beschreibung: Ob Post eingehend oder ausgehend ist. Mit „Per E-Mail versenden“ entsteht ausgehende Post.
+    einsteiger: alltag
+    begegnet: alle
+    verwandt: [Post]
+  - begriff: Stand (Post)
+    bereich: ablage
+    beschreibung: Wie weit Post bearbeitet ist – Neu (noch nicht bearbeitet), Zugeordnet (liegt bei einer passenden Mappe) oder Erledigt (nichts mehr zu tun).
+    einsteiger: alltag
+    begegnet: alle
+    verwandt: [Post, Neue Post]
   - begriff: Zu erledigen
     bereich: ablage
     beschreibung: Die oberste Ansicht. Sie zeigt die Mappen, an denen ich etwas tun soll (meine offenen Aufgaben).
@@ -228,8 +246,7 @@ begriffe:
     begegnet: alle
     nicht_verwenden: [Auftrag, Task, Todo]
     verwandt: [Zu erledigen, Frist, Erinnerung, Auftrag]
-    code: Aufgabe
-    konflikt: [12]
+    code: Aufgabe, AUFGABENARTEN
   - begriff: Erwähnung
     bereich: ablage
     beschreibung: Die Nennung eines Benutzers mit @ in formatiertem Text. Sie erzeugt für ihn eine Aufgabe.
@@ -249,7 +266,7 @@ begriffe:
     code: Erinnerung
   - begriff: Anstehend
     bereich: ablage
-    beschreibung: Die Ansicht auf Fristen und Erinnerungen, deren Vorlauf noch nicht begonnen hat.
+    beschreibung: Die Ansicht mit meinen Fristen und Erinnerungen der nächsten Tage (Standard 30) – kommende und solche, die schon fällig sind und unter „Zu erledigen“ stehen.
     einsteiger: alltag
     begegnet: alle
     code: Anstehend
@@ -266,10 +283,10 @@ begriffe:
     code: Abwesenheit
   - begriff: Vertretung
     bereich: ablage
-    beschreibung: Ein Benutzer übernimmt während einer Abwesenheit die Aufgaben eines anderen.
+    beschreibung: Ein Benutzer übernimmt während einer Abwesenheit die Aufgaben eines anderen. Der Vertreter bekommt dazu eine Aufgabe der Art „Vertretung“.
     einsteiger: alltag
     begegnet: alle
-    code: Vertretung
+    code: Abwesenheit.vertreterId, vertretung (Aufgabenart)
   - begriff: Notiz
     bereich: ablage
     beschreibung: Ein Kommentar an einer Mappe.
@@ -322,12 +339,11 @@ begriffe:
   # ---------- Verwaltung (Werkbank) ----------
   - begriff: Benutzer
     bereich: werkbank
-    beschreibung: Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe im DMS. Nicht zu verwechseln mit einer Person als Kontakt.
+    beschreibung: Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe im DMS. Personen und Firmen, mit denen man zu tun hat (Kontakte), sind keine Benutzer, sondern gewöhnliche Mappen, z. B. vom Mappentyp „Organisation“ aus dem Paket Basis.
     einsteiger: alltag
     begegnet: alle
     nicht_verwenden: [User, Account]
     code: Benutzer
-    konflikt: [14]
   - begriff: Administrator
     bereich: werkbank
     beschreibung: Ein Benutzer mit Zugang zur Werkbank. Für ihn gelten keine Einschränkungen durch Berechtigungen.
@@ -341,7 +357,7 @@ begriffe:
     begegnet: admin
     nicht_verwenden: [Gruppe, Weitere Rollen]
     verwandt: [Systemrolle]
-    code: Rolle
+    code: rolle (Systemtyp), Benutzer.rollen
   - begriff: Systemrolle
     bereich: werkbank
     beschreibung: Ob ein Benutzer Administrator oder Mitglied ist. Nur Administratoren kommen in die Werkbank.
@@ -349,7 +365,7 @@ begriffe:
     begegnet: admin
     nicht_verwenden: [Rolle (für Administrator/Mitglied)]
     verwandt: [Rolle, Administrator]
-    code: rolle (am Benutzer)
+    code: Rolle, Benutzer.rolle
   - begriff: Berechtigungen
     bereich: werkbank
     beschreibung: Wer was darf. Am Mappentyp – Anlegen, Lesen, Bearbeiten, Löschen, Passwörter sehen – mit einem Standard plus Regeln; an der Ansicht – Sehen, Anlegen, Exportieren – mit Vererbung an die Unteransichten. Für Administratoren gelten sie nicht.
@@ -370,24 +386,73 @@ begriffe:
     begegnet: admin
   - begriff: Nummernkreis
     bereich: werkbank
-    beschreibung: Fortlaufende Nummern nach einem Muster wie {yyyy}-R{0000}, z. B. für Rechnungsnummern.
+    beschreibung: Fortlaufende Nummern nach einem Muster wie {jjjj}-R{zaehler:4} (ergibt z. B. 2026-R0001), etwa für Rechnungsnummern.
     einsteiger: fachwort
     begegnet: admin
     code: Nummernkreis
   - begriff: Design
     bereich: werkbank
-    beschreibung: Logo, Schriftzug, Farben und eigenes CSS des DMS.
+    beschreibung: Wie die Oberfläche aussieht – Logo, Schriftzug, Farben (hell, dunkel, hoher Kontrast oder nach Gerät) und eigenes CSS. Administratoren legen Designs unter Werkbank → Designs an und bestimmen den Standard; jeder Benutzer wählt seines im Profil unter „Darstellung“.
     einsteiger: alltag
     begegnet: admin
     nicht_verwenden: [Theme]
-    konflikt: [19]
+    verwandt: [Darstellung]
+  - begriff: Darstellung
+    bereich: grundbegriffe
+    beschreibung: Der Bereich im Profil, in dem jeder einstellt, wie das DMS für ihn aussieht – das Design (für sein Konto), die Schriftgröße und die Breite der Bereiche (je Gerät).
+    einsteiger: alltag
+    begegnet: alle
+    nicht_verwenden: [Theme, Ansicht (für das Aussehen)]
+    verwandt: [Design, Profil]
   - begriff: Paket
     bereich: werkbank
-    beschreibung: Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Haushalt“.
+    beschreibung: Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Basis“. Ein Update ergänzt nur; es entfernt und ändert nichts.
     einsteiger: erklaeren
     begegnet: admin
     nicht_verwenden: [Plugin, Erweiterung, App, Modul]
+    verwandt: [Paketkatalog, Expertenmodus, Paket-Läufer]
     code: InstalliertesPaket
+  - begriff: Paketkatalog
+    bereich: werkbank
+    beschreibung: Die Liste der Pakete, die ein DMS installieren kann (eine Datei katalog.json im Netz). Das DMS fragt den offiziellen Katalog nur auf Knopfdruck ab („Katalog abrufen“). Weitere Kataloge trägt man im Expertenmodus unter „Weitere Quellen“ ein.
+    einsteiger: erklaeren
+    begegnet: admin
+    verwandt: [Paket, Expertenmodus]
+    code: Katalog, OFFIZIELLER_KATALOG
+  - begriff: Expertenmodus
+    bereich: werkbank
+    beschreibung: Ein Schalter unter Werkbank → Pakete. Er blendet „Weitere Quellen“ und „Paket hochladen“ ein – für Paketentwickler und DMS ohne Internet. Gilt je Benutzer und ist zu Beginn aus.
+    einsteiger: fachwort
+    begegnet: fortgeschritten
+    nicht_verwenden: [Erweiterte Ansicht]
+    verwandt: [Paket, Paketkatalog]
+    code: pakete_erweitert
+  - begriff: Paket-Läufer
+    bereich: werkbank
+    beschreibung: Der Teil des DMS, der den Code von Paketen ausführt. Geplant – bis dahin läuft Code in Paketen nicht; ihre Einstellungen lassen sich schon pflegen.
+    einsteiger: fachwort
+    begegnet: fortgeschritten
+    verwandt: [Paket]
+    code: PaketLaeufer
+  - begriff: Werkbank anpassen
+    bereich: werkbank
+    beschreibung: Legt fest, welche Bereiche links in der Werkbank stehen – nach einer Vorlage („Haushalt“, „Organisation“ oder „Alles“) und mit Abweichungen. Ausblenden schaltet nichts ab. Neue Installationen starten mit „Haushalt“; Installationen von vor dieser Einstellung zeigen alles.
+    einsteiger: erklaeren
+    begegnet: admin
+    verwandt: [Werkbank, Übersicht]
+    code: WerkbankAnsicht, VORLAGEN
+  - begriff: Übersicht
+    bereich: werkbank
+    beschreibung: Die erste Seite der Werkbank – was in diesem DMS gerade zu tun ist, mit Hinweisen, Stand und Bestand.
+    einsteiger: alltag
+    begegnet: admin
+    verwandt: [Werkbank]
+  - begriff: Tägliche Zusammenfassung
+    bereich: werkbank
+    beschreibung: Eine E-Mail, die einmal am Tag die offenen Aufgaben eines Benutzers auflistet – nur, wenn er welche hat und nicht abwesend ist. Administratoren schalten sie unter Werkbank → Aufgaben ein; Uhrzeit und Wochentage wählt jeder im Profil.
+    einsteiger: alltag
+    begegnet: alle
+    verwandt: [Aufgabe, Anstehend]
   - begriff: Archivmodus
     bereich: werkbank
     beschreibung: Eine Einstellung je Mappentyp für Aufbewahrungspflichten – mit Versionen und einer Löschsperre bis zum Fristende.
@@ -439,16 +504,18 @@ begriffe:
     einsteiger: erklaeren
     begegnet: admin
     nicht_verwenden: [Impersonation, Vertretung beenden]
+    code: Vertretung
 
   # ---------- Betrieb und Sicherheit ----------
   - begriff: Haushalt
     bereich: betrieb
-    beschreibung: Der Haushalt oder die Organisation, für die das DMS eingerichtet ist. Eine Installation ist ein Haushalt. „Mandant“ steht nur im Code und, wo technisch nötig, im Administratorhandbuch.
+    beschreibung: Der Haushalt (oder die Firma), für den das DMS eingerichtet ist. Eine Installation ist ein Haushalt. „Mandant“ steht nur im Code und, wo technisch nötig, im Administratorhandbuch.
     einsteiger: alltag
     begegnet: admin
     nicht_verwenden: [Mandant (in der Oberfläche)]
-    code: Mandant, haushalt_id
+    code: mandant, haushalt_id
     profile: {privat: Haushalt, organisation: Organisation}
+    konflikt: [23]
   - begriff: Einrichtungsassistent
     bereich: betrieb
     beschreibung: Die Schritte beim ersten Start des DMS.
@@ -562,11 +629,11 @@ begriffe:
     begegnet: fortgeschritten
   - begriff: Auftrag
     bereich: betrieb
-    beschreibung: Arbeit, die das DMS im Hintergrund erledigt und deren Fortschritt man sieht – Demo-Daten, Texterkennung, Export. Arbeit für Menschen heißt Aufgabe.
+    beschreibung: Arbeit, die das DMS im Hintergrund erledigt und deren Fortschritt man sieht, z. B. Demo-Daten erzeugen, Vollexport, Nummern nachträglich vergeben. Es läuft immer nur ein Auftrag. Arbeit für Menschen heißt Aufgabe.
     einsteiger: fachwort
     begegnet: admin
     nicht_verwenden: [Job]
-    konflikt: [12]
+    code: Auftrag
 
 # Offene Konflikte: gleiche oder ähnliche Wörter für verschiedene Dinge.
 # Entschieden wird einzeln (eigene Issues); bis dahin gelten die Begriffe oben.
@@ -617,14 +684,18 @@ konflikte:
     entschieden: '2026-10-31'
     entscheidung: Überall „Meine Daten exportieren“; die Sicherung steht im Handbuch klar als „kein Export“.
   - nr: 10
-    titel: „Wartung“ dreifach, mit den Paketen bald vierfach
+    titel: „Wartung“ dreifach – Werkbank-Gruppe „Wartung und Fehlersuche“, Wartungsmodus, Wartungsoperationen
     vorschlag: Werkbank-Gruppe neu benennen („Betrieb“), „Wartungsoperationen“ → „Pflegearbeiten“.
   - nr: 11
-    titel: „Trefferliste“ am Mappentyp und an der Sicht
+    titel: „Trefferliste“ am Mappentyp und an der Ansicht
     vorschlag: Beschreiben, wie beide zusammenspielen; für Einsteiger ggf. „Spalten“.
+    entschieden: '2026-10-31'
+    entscheidung: Kein neues Wort. Der Mappentyp legt seine Trefferlisten fest, eine davon ist der Standard; eine Ansicht wählt eine davon, sonst gilt der Standard (siehe „Trefferliste“).
   - nr: 12
     titel: „Aufgabe“ und „Auftrag“ sind sehr nah
     vorschlag: Bei einer Umbenennung von Konflikt 1 nicht „Auftrag“ verwenden.
+    entschieden: '2026-10-31'
+    entscheidung: Beide Wörter bleiben. „Aufgabe“ ist Arbeit für Menschen, „Auftrag“ Arbeit, die das DMS im Hintergrund erledigt.
   - nr: 13
     titel: Mandant, Haushalt, Organisation, Firma
     vorschlag: In der Oberfläche „Haushalt“ bzw. „Organisation“ je Sprachprofil, „Mandant“ nur technisch.
@@ -633,9 +704,13 @@ konflikte:
   - nr: 14
     titel: Benutzer und Person
     vorschlag: „Benutzer“ ist ein Konto, „Person“ ein Kontakt (Paket Basis) – im Glossar getrennt.
+    entschieden: '2026-10-31'
+    entscheidung: „Benutzer“ ist ein Konto zum Anmelden. Kontakte – Personen, Firmen, Behörden – sind gewöhnliche Mappen und keine Benutzer.
   - nr: 15
     titel: Übersicht, Zusammenfassung, Anstehend
     vorschlag: Kein echter Konflikt, aber jeweils definieren.
+    entschieden: '2026-10-31'
+    entscheidung: Drei Begriffe mit je eigener Bedeutung – „Übersicht“ (erste Seite der Werkbank), „Tägliche Zusammenfassung“ (E-Mail mit offenen Aufgaben), „Anstehend“ (Ansicht mit Fristen und Erinnerungen).
   - nr: 16
     titel: Typ, Mappentyp, Feldart, Art
     vorschlag: Konsequent „Mappentyp“ und „Feldart“ schreiben.
@@ -644,14 +719,18 @@ konflikte:
   - nr: 17
     titel: Dokument, Datei, Anhang
     vorschlag: Datei = was hochgeladen wird, Dokument = was im DMS liegt, Anhang = an einer E-Mail.
+    entschieden: '2026-10-31'
+    entscheidung: Datei = was hochgeladen oder heruntergeladen wird, Dokument = was im DMS in einer Mappe liegt, Anhang = an einer E-Mail.
   - nr: 18
     titel: Version eines Dokuments und Version des DMS
     vorschlag: Im Handbuch klar trennen („Neu in dieser Version“ vs. „Versionen“ eines Dokuments).
     entschieden: '2026-10-31'
-    entscheidung: Zwei Begriffe – „Version“ ist die Fassung eines Dokuments, „Version des DMS“ der Stand des Programms. Erklärt auf der Seite „Versionen verstehen“.
+    entscheidung: Zwei Begriffe – „Version“ gehört zu einem Dokument, „Version des DMS“ ist der Stand des Programms. Erklärt auf der Seite „Versionen verstehen“.
   - nr: 19
     titel: Design, Darstellung, Theme
     vorschlag: Klären, was in Werkbank und Profil jeweils gemeint ist.
+    entschieden: '2026-10-31'
+    entscheidung: „Design“ legen Administratoren in der Werkbank an (Logo, Farben, eigenes CSS); „Darstellung“ ist der Bereich im Profil, in dem jeder sein Design, die Schriftgröße und die Breiten wählt. „Theme“ nicht verwenden.
   - nr: 20
     titel: „Neue Post“ als Ansicht und als Art einer Aufgabe
     vorschlag: Die Aufgabenart umbenennen.
@@ -662,3 +741,6 @@ konflikte:
     vorschlag: Zwei Begriffe.
     entschieden: '2026-10-31'
     entscheidung: „Systemrolle“ (Administrator, Mitglied) und „Rolle“ (Gruppen).
+  - nr: 23
+    titel: „Organisation“ für drei Dinge
+    vorschlag: „Organisation“ ist eine Vorlage unter „Werkbank anpassen“, das geplante Wort für den Haushalt im Sprachprofil für Firmen und ein Mappentyp im Paket Basis. Klären, welches das Wort behält; bis dahin im Text immer sagen, welches gemeint ist.

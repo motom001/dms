@@ -2,7 +2,7 @@
 
 Das DMS soll Menschen helfen, die Informationen ihres Lebens zu ordnen. Damit Begriffe, Voreinstellungen und neue Funktionen zusammenpassen, richten wir uns nach **neun Personas**: erfundene, aber typische Menschen, vom kleinen Haushalt bis zum Konzern. Die Namen sind nur Merkhilfen.
 
-**Stand:** 31.10.2026 (DMS 0.68.0). Der Fokus ist eine bewusste Entscheidung des Maintainers. Er kann sich später verschieben, zum Beispiel in Richtung Kleinbetrieb, und wird regelmäßig geprüft. Änderungen stehen unten unter [Fokus-Entscheidungen](#fokus-entscheidungen).
+**Stand:** 31.10.2026 (DMS 0.73.6). Der Fokus ist eine bewusste Entscheidung des Maintainers. Er kann sich verschieben, zum Beispiel in Richtung Kleinbetrieb, und wird regelmäßig geprüft. Änderungen stehen unten unter [Fokus-Entscheidungen](#fokus-entscheidungen).
 
 ## Die Skala
 
@@ -38,6 +38,8 @@ Das DMS soll Menschen helfen, die Informationen ihres Lebens zu ordnen. Damit Be
 !!! tip "Im Zweifel gewinnen Stufe 1–3"
     Steht eine Funktion für größere Organisationen im Konflikt mit Einfachheit für Lena, Jonas und Markus, gewinnen Stufe 1–3. Fortgeschrittenes kommt in den **Expertenmodus** oder bleibt aus, bis man es einschaltet.
 
+    Ein Beispiel ist **Werkbank anpassen**: Neue Installationen starten mit der Vorlage „Haushalt“ und zeigen nur die Bereiche, die ein Haushalt zum Einrichten und Sichern braucht. Weitere Bereiche blendet man mit der Vorlage „Organisation“ oder „Alles“ ein.
+
 Bei jeder neuen Idee, jedem Issue und jeder größeren Änderung fragen wir:
 
 1. **Für wen** ist das (Stufe 1–9)?
@@ -48,7 +50,7 @@ Bei jeder neuen Idee, jedem Issue und jeder größeren Änderung fragen wir:
 Daraus folgt außerdem:
 
 - **Voreinstellungen** richten sich nach Lena. Markus darf alles ändern.
-- **Begriffe** prüfen wir aus Ansicht von Lena und Jonas.
+- **Begriffe** prüfen wir mit den Augen von Lena und Jonas.
 - **Risiken** wägen wir je Persona ab. Was im Konzern selten und teuer ist, kann im Haushalt häufig und harmlos sein, und umgekehrt.
 
 ## Zielgruppen an Issues
@@ -153,5 +155,6 @@ Markus richtet das DMS **für Lena und Jonas** ein. Was er baut, müssen die bei
 | 31.10.2026 | Kernfokus Stufe 1–3, Fokus 4–5, unterstützt 6–7, nicht im Fokus 8–9 | Entstanden als Haushalts-DMS. Funktionen für Firmen nur, wenn sie Stufe 1–3 nicht komplizierter machen. |
 | 31.10.2026 | Abgestufte Administratorrechte zurückgestellt ([#282](https://github.com/motom001/dms/issues/282)) | betrifft Stufe 7–9, erst wenn Kleinbetriebe in den Fokus rücken |
 | 31.10.2026 | Zielgruppen als Labels an den Issues | alle, die mitentwickeln, arbeiten mit demselben Fokus |
+| 31.10.2026 | Werkbank anpassen: neue Installationen starten mit der Vorlage „Haushalt“ ([#281](https://github.com/motom001/dms/issues/281)) | Stufe 1–3 sehen nur, was sie brauchen; bestehende Installationen zeigen weiter alles |
 
 Die Grafiken entstehen mit `docs/handbuch/werkzeuge/personas_grafiken.py`. Wer eine Persona ändert, ändert dort die Karte mit.

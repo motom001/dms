@@ -12,12 +12,17 @@
 ```sh
 git clone https://github.com/motom001/dms.git && cd dms
 npm install
-docker compose up db            # nur die Datenbank
-DATABASE_URL=postgres://dms:dms@localhost:5432/dms npm run dev -w server
-npm run dev -w web              # Oberfläche auf http://localhost:5173
+docker compose up -d db         # nur die Datenbank
+DATABASE_URL=postgres://dms:dms@localhost:5432/dms npm run dev
 ```
 
-Ohne Docker für das DMS selbst legt der Server seine festen Ordner (`files`, `geheim`, `sicherung`) unter `./data` im Projekt an. `DMS_DATENWURZEL=/anderer/ordner` verlegt sie. Beim ersten Aufruf führt der Einrichtungsassistent durch die Einrichtung. Den Einrichtungscode zeigt die Konsole des Servers.
+`npm run dev` im Wurzelordner startet Server (Port 3000) und Oberfläche zusammen; die Oberfläche läuft auf http://localhost:5173 und leitet `/api` und `/hilfe` an den Server weiter. Einzeln geht es mit `npm run dev -w server` und `npm run dev -w web`.
+
+Ohne Docker für das DMS selbst legt der Server seine festen Ordner (`files`, `geheim`, `sicherung`) unter `./data` im Projekt an. `DMS_DATENWURZEL=/anderer/ordner` verlegt sie. Beim ersten Start mit funktionierender Verbindung übernimmt der Server `DATABASE_URL` in die Datei `./data/geheim/datenbank.json`. Danach gilt die Datei; die Variable ist nicht mehr nötig. Für eine andere Datenbank die Datei löschen oder unter **Werkbank → Datenbank-Anbindung** ändern.
+
+Beim ersten Aufruf führt der Einrichtungsassistent durch die Einrichtung. Den Einrichtungscode gibt der Server im Terminal aus; er steht auch in einer Datei unter `./data/geheim`.
+
+Die [Konsole](https://motom001.github.io/dms/benutzer/aktuell/begriffe/#konsole) (`dms` im Container) gibt es auch lokal: Nach `npm run build -w server` zeigt `node server/dist/dms.js` die Befehle. Sie spricht mit dem laufenden Server.
 
 Alles zusammen als Container: `docker compose up --build`, dann http://localhost:8080.
 
@@ -48,7 +53,7 @@ deploy/vorlagen-probe.sh dms                           # NAS-Vorlagen mit dem sc
 | `npm run typecheck` | TypeScript für `shared`, `server` und `web` |
 | `npm run build` | Oberfläche und Server bauen wie im Image |
 
-Die CI auf GitHub führt all das aus, baut das Image für amd64 und arm64, nimmt die Screenshots der Handbücher auf und prüft die Oberfläche in iPhone-Größe.
+Die CI auf GitHub führt all das aus, baut beide Images (`dms`, `dms-komplett`) für amd64 und arm64, nimmt die Screenshots der Handbücher auf und prüft die Oberfläche in iPhone-Größe.
 
 ## Handbücher
 

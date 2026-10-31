@@ -106,7 +106,8 @@ def seite(g: dict) -> str:
             z.append(f'{kopf} · {zeichen} {wort} · {BEGEGNET[b["begegnet"]]}  ')
             text = b['beschreibung'].strip()
             if b.get('profile'):
-                text += ' Je nach Einrichtung heißt es „' + '“ oder „'.join(b['profile'].values()) + '“.'
+                # Sprachprofile gibt es im Code noch nicht (#300) – deshalb als geplant kennzeichnen.
+                text += ' Geplant: Je nach Sprachprofil soll es „' + '“ oder „'.join(b['profile'].values()) + '“ heißen.'
             z.append(text + ('  ' if b.get('verwandt') or b.get('konflikt') else ''))
             extra = []
             if b.get('verwandt'):
