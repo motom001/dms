@@ -3782,6 +3782,23 @@
             },
             "description": "Spalten der Standard-Trefferliste (ältere Form); wenn angegeben, ersetzt sie deren Spalten"
           },
+          "archiv": {
+            "type": "object",
+            "nullable": true,
+            "description": "Archivmodus (#212); null = aus. Frist bis Ende des Kalenderjahres des Stichtags + jahre; vorher kein Löschen (409). Die Versionierung der Dokumentenregister ist dann Pflicht.",
+            "properties": {
+              "jahre": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 30
+              },
+              "stichtag": {
+                "type": "string",
+                "nullable": true,
+                "description": "Schlüssel eines Datumsfelds; null = Anlagedatum"
+              }
+            }
+          },
           "erstellenErlaubt": {
             "type": "boolean",
             "default": true,
@@ -4232,6 +4249,12 @@
                 }
               }
             }
+          },
+          "aufbewahrenBis": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "Archivmodus (#212): Ende der Aufbewahrungsfrist (JJJJ-12-31); vorher antwortet Löschen mit 409"
           },
           "loeschbar": {
             "type": "object",
