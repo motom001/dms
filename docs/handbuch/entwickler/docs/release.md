@@ -3,9 +3,10 @@
 Ein Release entsteht, sobald auf `main` eine Versionsnummer steht, für die es noch kein Tag gibt.
 
 1. **Pull Request** mit erhöhter Nummer in `package.json`, `server/package.json`, `web/package.json` und neuen Release-Notizen `docs/releases/v<version>.md`.
-2. Nach dem Merge baut **image.yml** das Image nativ für amd64 und arm64. Es legt das Tag `v<version>` an, veröffentlicht das Release mit den Notizen und pusht `ghcr.io/motom001/dms:<version>`.
-3. **handbuch.yml** baut alle Handbücher für diese Version (`v<Haupt>.<Neben>`) und legt sie auf dem Branch `gh-pages` ab. `aktuell` zeigt dann auf die neue Version, `entwicklung` folgt weiter `main`. Die Seite *Neu in dieser Version* entsteht aus den Release-Notizen.
-4. **[motom001/dms-appstore](https://github.com/motom001/dms-appstore)** übernimmt die neue Version am nächsten Morgen, mit Images per Digest, für Umbrel, ZimaOS und CasaOS. Von Hand geht es sofort über den Workflow *Store aktualisieren*.
+2. Nach dem Merge baut **image.yml** (*Prüfen und Image bauen*) **zwei Images** nativ für amd64 und arm64 und pusht sie: `ghcr.io/motom001/dms:<version>` und `ghcr.io/motom001/dms-komplett:<version>`.
+3. Danach ruft image.yml **release.yml** auf. Der Workflow legt das Tag `v<version>` und das GitHub-Release an. Den Text übernimmt er aus `docs/releases/v<version>.md`; fehlt die Datei, nimmt er die Commit-Überschriften seit dem vorigen Tag.
+4. **handbuch.yml** baut alle Handbücher für diese Version (`v<Haupt>.<Neben>`) und legt sie auf dem Branch `gh-pages` ab. `aktuell` zeigt dann auf die neue Version, `entwicklung` folgt weiter `main`. Die Seite *Neu in dieser Version* entsteht aus den Release-Notizen.
+5. **[motom001/dms-appstore](https://github.com/motom001/dms-appstore)** übernimmt die neue Version am nächsten Morgen, mit Images per Digest, für Umbrel, ZimaOS und CasaOS. Von Hand geht es sofort über den Workflow *Store aktualisieren*.
 
 ## Versionsnummern
 
@@ -13,9 +14,17 @@ Ein Release entsteht, sobald auf `main` eine Versionsnummer steht, für die es n
 - **Patch** (`0.39.1`) für Korrekturen; das Handbuch der Neben-Version wird überschrieben.
 - Ohne neue Nummer: nur das Image `main` und das Handbuch `entwicklung` ändern sich.
 
+### Workflows von Hand starten
+
+- *Prüfen und Image bauen* (`image.yml`) und *Scorecard* lassen sich unter **Actions** von Hand starten. Ein Handstart von image.yml baut und veröffentlicht die Images, legt aber kein Release an – das passiert nur nach einem Push auf `main` mit neuer Nummer.
+- *Handbuch* (`handbuch.yml`) baut von Hand wahlweise eine Version (z. B. `v0.22`) oder, ohne Angabe, `entwicklung`.
+- *Lockfile erzeugen* (`lockfile.yml`) lässt sich ebenfalls von Hand starten.
+- *Release* (`release.yml`) startet außerdem bei einem von Hand gepushten Tag `v*` (legt das Release an) und bei einem von Hand veröffentlichten Release (setzt nur den Text).
+
 ## Abhängigkeiten und Sicherheitsupdates
 
-- **Dependabot** (`.github/dependabot.yml`) schlägt jeden Montag Updates vor: kleine Updates (minor, patch) gesammelt in einem PR, Hauptversionen einzeln, dazu GitHub Actions und das Basis-Image. Sicherheitsupdates kommen sofort. Die CI prüft jeden dieser PRs wie jeden anderen; Hauptversionen bitte mit Blick in das Änderungsprotokoll der Bibliothek.
+- **Dependabot** (`.github/dependabot.yml`) schlägt jeden Montag Updates vor: kleine Updates (minor, patch) gesammelt in einem PR, Hauptversionen einzeln, dazu GitHub Actions und die Basis-Images. Sicherheitsupdates kommen sofort. Die CI prüft jeden dieser PRs wie jeden anderen; Hauptversionen bitte mit Blick in das Änderungsprotokoll der Bibliothek.
+    - **Ausnahmen** (`ignore` in `dependabot.yml`), die bewusst von Hand kommen: neue Hauptversionen von `node` (Basis-Image, nur LTS-Reihen), `@types/node` und `typescript`; bei `esbuild` (noch 0.x) auch neue Nebenversionen.
 - **`npm audit`** läuft in der CI über alles, was im Image landet (`--omit=dev`). Ab Stufe „hoch“ schlägt die Prüfung fehl. Ist eine Meldung für das DMS nachweislich ohne Wirkung, wird das im PR begründet.
 - **`package-lock.json`** hält die genauen Versionen fest; CI und Image installieren mit `npm ci`. Ändert sich eine `package.json` ohne passende Lockfile, legt der Workflow *Lockfile erzeugen* eine neue auf den Branch `werkzeug/lockfile`; von dort wird sie mit einem normalen Commit übernommen.
 - **Sicherheitskorrektur = Patch-Release** mit dem Hinweis „Sicherheitsupdate – bitte aktualisieren“ in den Release-Notes. Meldungen von außen laufen vertraulich, siehe [`SECURITY.md`](https://github.com/motom001/dms/blob/main/SECURITY.md).
@@ -39,12 +48,12 @@ Ein Release entsteht, sobald auf `main` eine Versionsnummer steht, für die es n
 Der Workflow *Scorecard* bewertet wöchentlich und bei jedem Push auf `main`, wie das Projekt mit Sicherheit umgeht. Das Ergebnis ist öffentlich ([scorecard.dev](https://scorecard.dev/viewer/?uri=github.com/motom001/dms)) und steht als Abzeichen in der README; die einzelnen Hinweise stehen unter **Security → Code scanning**. Daraus folgen diese Regeln:
 
 - **Actions mit fester Commit-Kennung**, die Version als Kommentar dahinter: `uses: actions/checkout@<40 Zeichen> # v7.0.1`. Dependabot aktualisiert beides.
-- **Rechte:** Oben im Workflow nur `contents: read` (bzw. keine Rechte). Schreibrechte bekommt nur der Job, der sie braucht (`packages`, `contents`, `id-token`, `attestations`, `security-events`).
+- **Rechte:** Oben im Workflow nur `contents: read` (bzw. keine Rechte). Schreibrechte bekommt nur der Job, der sie braucht (`packages`, `contents`, `id-token`, `attestations`, `security-events`). Einzige Ausnahme ist der Workflow *Scorecard* mit `permissions: read-all` oben – das sind nur Leserechte; für die Veröffentlichung des Ergebnisses darf dieser Workflow oben keine Schreibrechte haben.
 - **Keine Ausführung fremden Codes mit Rechten:** `pull_request_target` nur ohne Checkout (wie im Workflow *Freigabe schützen*).
 
 Bewusst anders, als Scorecard es gern hätte:
 
-- **Basis-Images ohne festen Prüfwert** (`node:22-alpine`, `alpine`): Der wöchentliche Neubau soll gerade die neuesten Sicherheitskorrekturen der Reihe holen. Ein fester Prüfwert würde jede Woche einen eigenen PR brauchen, ohne mehr Sicherheit zu bringen; die Images selbst werden geprüft und tragen einen Herkunftsnachweis.
+- **Basis-Images ohne festen Prüfwert** (`node:24-alpine`, `python:3.12-alpine` im `Dockerfile`): Der wöchentliche Neubau soll gerade die neuesten Sicherheitskorrekturen der Reihe holen. Ein fester Prüfwert würde jede Woche einen eigenen PR brauchen, ohne mehr Sicherheit zu bringen; die Images selbst werden geprüft und tragen einen Herkunftsnachweis.
 - **Code-Review:** Mit einem Maintainer gibt es keine zweite Person, die jeden PR freigibt. Stattdessen müssen alle Prüfungen grün sein, und Änderungen laufen über PRs mit Issue.
 
 ### Bewertung des ersten Laufs
