@@ -7,10 +7,14 @@ const feld = (key: string, label: string, typ: Feld['typ'], extra: Partial<Feld>
 
 /**
  * Legt Beispiel-Mappentypen und ein paar Mappen an, damit eine frische
- * Installation nicht leer ist. Nur möglich, solange es außer Benutzer und Rolle noch keine Typen gibt.
+ * Installation nicht leer ist. Nur möglich, solange es außer den Systemtypen und dem Ablageort noch keine Typen gibt.
+ * Verträge und Rechnungen bekommen das Feld „Verbleib Originaldokumente“ (#168), dazu ein paar Ablageorte.
  */
 export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = null) {
-  if ((await dienst.listeTypen()).some((t) => !t.system)) throw new Fachfehler(409, 'Beispiele lassen sich nur laden, solange es noch keine Mappentypen gibt.');
+  const ablageort = await dienst.ablageortTyp();
+  if ((await dienst.listeTypen()).some((t) => !t.system && t.id !== ablageort?.id)) throw new Fachfehler(409, 'Beispiele lassen sich nur laden, solange es noch keine Mappentypen gibt.');
+  // Verbleib Originaldokumente (#168): gleiche Kennung in allen Mappentypen mit Papier – für gemeinsame Listen und Bedingungen.
+  const verbleib: Feld[] = ablageort ? [feld('verbleib_original', 'Verbleib Originaldokumente', 'referenz', { zielTyp: ablageort.id, verweisart: 'bezug', hilfe: 'Wo das Papier liegt – oder „vernichtet“' })] : [];
   const id = { partner: randomUUID(), vertrag: randomUUID(), rechnung: randomUUID(), zahlung: randomUUID() };
 
   const typen = {
@@ -29,7 +33,7 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
       ],
     },
     vertrag: {
-      id: id.vertrag, name: 'Vertrag', beschreibung: 'Laufender Vertrag mit Fristen und Kosten', titelVorlage: '{bezeichnung}', trefferliste: ['bezeichnung', 'vertragspartner', 'zahlungszyklus', 'betrag', 'kuendigung_bis', 'vertragsnummer'],
+      id: id.vertrag, name: 'Vertrag', beschreibung: 'Laufender Vertrag mit Fristen und Kosten', titelVorlage: '{bezeichnung}', trefferliste: ['bezeichnung', 'vertragspartner', 'zahlungszyklus', 'betrag', 'kuendigung_bis', 'vertragsnummer', ...verbleib.map((f) => f.key)],
       register: [
         { key: 'vertrag', name: 'Vertrag', art: 'felder' },
         { key: 'rechnungen', name: 'Rechnungen', art: 'verknuepfungen', quellen: [{ typId: id.rechnung, feldKey: 'vertrag' }] },
@@ -45,10 +49,11 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
           frist: { vorlauf: 3, einheit: 'monate', empfaengerFeld: null, text: '{feld} {datum}', wiederholung: 12 } }),
         feld('zahlungszyklus', 'Zahlungszyklus', 'auswahl', { optionen: ['monatlich', 'vierteljährlich', 'halbjährlich', 'jährlich'], standard: 'monatlich' }),
         feld('betrag', 'Betrag je Zahlung', 'betrag', { min: 0, waehrung: 'EUR' }),
+        ...verbleib,
       ],
     },
     rechnung: {
-      id: id.rechnung, name: 'Rechnung', beschreibung: 'Eingegangene Rechnung, gehört zu einem Vertrag oder steht für sich', titelVorlage: '{rechnungsnummer} vom {rechnungsdatum}', trefferliste: ['_titel', 'aussteller', 'vertrag', 'betrag', 'rechnungsdatum', 'bezahlt'],
+      id: id.rechnung, name: 'Rechnung', beschreibung: 'Eingegangene Rechnung, gehört zu einem Vertrag oder steht für sich', titelVorlage: '{rechnungsnummer} vom {rechnungsdatum}', trefferliste: ['_titel', 'aussteller', 'vertrag', 'betrag', 'rechnungsdatum', 'bezahlt', ...verbleib.map((f) => f.key)],
       register: [
         { key: 'rechnung', name: 'Rechnung', art: 'felder' },
         { key: 'dokumente', name: 'Rechnungsdokumente', art: 'dokumente' },
@@ -62,6 +67,7 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
         feld('rechnungsdatum', 'Rechnungsdatum', 'datum', { pflicht: true }),
         feld('betrag', 'Rechnungsbetrag', 'betrag', { pflicht: true, waehrung: 'EUR' }),
         feld('bezahlt', 'Bezahlt', 'janein', { standard: false }),
+        ...verbleib,
       ],
     },
     zahlung: {
@@ -82,11 +88,29 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
   for (const t of Object.values(typen)) await dienst.legeTypAn({ ...t, register: undefined });
   for (const t of Object.values(typen)) if (t.register) await dienst.aendereTyp(t.id, t);
 
+  // Ablageorte (#168): verschachtelt; der Titel zeigt den ganzen Pfad.
+  const ort = async (name: string, liegtIn?: string, beschreibung?: string) => ablageort
+    ? (await dienst.legeMappeAn({ typId: ablageort.id, werte: { name, ...(liegtIn ? { liegt_in: liegtIn } : {}), ...(beschreibung ? { beschreibung } : {}) } }, benutzerId)).id
+    : undefined;
+  const zuHause = await ort('zu Hause');
+  const schrank = zuHause && await ort('Arbeitszimmer Schrank', zuHause);
+  const roterOrdner = schrank && await ort('roter Ordner', schrank, 'Verträge und Rechnungen rund ums Haus');
+  if (zuHause) await ort('Safe im Flur', zuHause, 'Urkunden und Ausweise');
+  await ort('beim Notar', undefined, 'Originale, die der Notar verwahrt');
+  const vernichtet = await ort('vernichtet', undefined, 'Papier ist nach dem Scannen vernichtet; das Dokument im DMS ist die einzige Fassung');
+  const im = (o?: string) => (o ? { verbleib_original: o } : {});
+
   const sw = await dienst.legeMappeAn({ typId: id.partner, werte: { name: 'Stadtwerke Musterstadt', art: 'Unternehmen', kundennummer: '100234' } }, benutzerId);
   const hb = await dienst.legeMappeAn({ typId: id.partner, werte: { name: 'Heizungsbau Beispiel GmbH', art: 'Unternehmen', kundennummer: 'K-5521' } }, benutzerId);
-  const sv = await dienst.legeMappeAn({ typId: id.vertrag, werte: { bezeichnung: 'Stromvertrag Haus', vertragspartner: sw.id, vertragsnummer: 'SV-4711', beginn: '2022-01-01', kuendigung_bis: '2027-09-30', zahlungszyklus: 'monatlich', betrag: { betrag: 98, waehrung: 'EUR' } } }, benutzerId);
-  const wv = await dienst.legeMappeAn({ typId: id.vertrag, werte: { bezeichnung: 'Wartungsvertrag Heizung', vertragspartner: hb.id, vertragsnummer: 'WV-2023-17', beginn: '2023-04-01', kuendigung_bis: '2027-01-31', zahlungszyklus: 'jährlich', betrag: { betrag: 189, waehrung: 'EUR' } } }, benutzerId);
-  const r1 = await dienst.legeMappeAn({ typId: id.rechnung, werte: { rechnungsnummer: 'JA-2025-0815', aussteller: sw.id, vertrag: sv.id, vertragsnummer_gedruckt: 'SV-4711', rechnungsdatum: '2026-01-15', betrag: { betrag: 214.37, waehrung: 'EUR' }, bezahlt: true } }, benutzerId);
+  const sv = await dienst.legeMappeAn({ typId: id.vertrag, werte: { bezeichnung: 'Stromvertrag Haus', vertragspartner: sw.id, vertragsnummer: 'SV-4711', ...im(roterOrdner), beginn: '2022-01-01', kuendigung_bis: '2027-09-30', zahlungszyklus: 'monatlich', betrag: { betrag: 98, waehrung: 'EUR' } } }, benutzerId);
+  const wv = await dienst.legeMappeAn({ typId: id.vertrag, werte: { bezeichnung: 'Wartungsvertrag Heizung', vertragspartner: hb.id, vertragsnummer: 'WV-2023-17', ...im(roterOrdner), beginn: '2023-04-01', kuendigung_bis: '2027-01-31', zahlungszyklus: 'jährlich', betrag: { betrag: 189, waehrung: 'EUR' } } }, benutzerId);
+  const r1 = await dienst.legeMappeAn({ typId: id.rechnung, werte: { rechnungsnummer: 'JA-2025-0815', ...im(vernichtet), aussteller: sw.id, vertrag: sv.id, vertragsnummer_gedruckt: 'SV-4711', rechnungsdatum: '2026-01-15', betrag: { betrag: 214.37, waehrung: 'EUR' }, bezahlt: true } }, benutzerId);
   await dienst.legeMappeAn({ typId: id.rechnung, werte: { rechnungsnummer: 'R-2026-117', aussteller: hb.id, vertrag: wv.id, vertragsnummer_gedruckt: 'WV-2023-17', rechnungsdatum: '2026-03-02', betrag: { betrag: 189, waehrung: 'EUR' }, bezahlt: false } }, benutzerId);
   await dienst.legeMappeAn({ typId: id.zahlung, werte: { verwendungszweck: 'Nachzahlung Jahresabrechnung 2025', zahlungsdatum: '2026-01-29', betrag: { betrag: 214.37, waehrung: 'EUR' }, rechnungen: [r1.id] } }, benutzerId);
+  if (ablageort) {
+    await dienst.legeSichtAn({
+      name: 'Originale nach Ort', beschreibung: 'Verträge und Rechnungen, bei denen eingetragen ist, wo das Papier liegt',
+      typen: [id.vertrag, id.rechnung], bedingungen: [{ art: 'feld', feld: 'verbleib_original', op: 'nichtLeer' }],
+    });
+  }
 }

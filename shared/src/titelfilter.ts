@@ -102,11 +102,11 @@ export function wendeFilterAn(text: string, roh: unknown, art: string | undefine
 
 /** Markiert einen leeren Platzhalter, damit sein Trenner mit wegfallen kann. */
 export const LEER = '\u0000';
-const TRENNER = String.raw`(?:\s*[–—·|/,;]\s*|\s+-\s+)`;
+const TRENNER = String.raw`(?:\s*[–—·|/,;›»]\s*|\s+[->]\s+)`;
 const LEER_MIT_TRENNER = new RegExp(`(^\\s*|${TRENNER})${LEER}(${TRENNER})?`, 'g');
 
 /**
- * Entfernt leere Platzhalter samt einem Trenner (– — · | / , ; oder „ - “):
+ * Entfernt leere Platzhalter samt einem Trenner (– — · | / , ; › » oder „ - “, „ > “):
  * „Strom – ␀ – 2026“ → „Strom – 2026“, „␀ · 2026“ → „2026“, „Strom – ␀“ → „Strom“.
  */
 export function ohneLeereTeile(s: string): string {

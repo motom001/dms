@@ -1081,6 +1081,7 @@ export class Dienst {
     const t = await this.repo.holeTyp(id);
     if (!t) throw new Fachfehler(404, 'Diesen Mappentyp gibt es nicht.');
     if (t.system) throw new Fachfehler(409, `„${t.name}“ ist ein Systemmappentyp. Er lässt sich erweitern, aber nicht löschen.`);
+    if (id === (await this.ablageortId())) throw new Fachfehler(409, `„${t.name}“ gehört zum Standard des DMS (Ablageorte für Originale). Er lässt sich erweitern und umbenennen, aber nicht löschen.`);
     const gruende: string[] = [];
     const n = await this.repo.zaehleMappen(id);
     if (n) gruende.push(`${n} ${n === 1 ? 'Mappe gehört' : 'Mappen gehören'} zu diesem Typ.`);
@@ -2357,6 +2358,56 @@ export class Dienst {
     }));
   }
 
+  /**
+   * Ablageort (#168): ein normaler Mappentyp, den jede Installation hat – für den Verbleib von
+   * Originalen („zu Hause › Arbeitszimmer › roter Ordner“). Erweiterbar und umbenennbar, aber nicht
+   * löschbar, weil Pakete und Beispiele darauf verweisen. Gemerkt wird er über seine Id in den
+   * Einstellungen (ohne Einstellungen, z. B. in Tests: über die Kennung `ablageort`).
+   */
+  async ablageortTyp(): Promise<Mappentyp | undefined> {
+    await this.sichereSystem();
+    const id = await this.ablageortId();
+    return id ? this.repo.holeTyp(id) : undefined;
+  }
+
+  private async ablageortId(): Promise<string | undefined> {
+    const merk = (await this.einstellungen?.lies('ablageort')) as { id?: string } | null | undefined;
+    if (merk?.id) return merk.id;
+    return (await this.repo.listeTypen()).find((t) => !t.system && t.schluessel === 'ablageort')?.id;
+  }
+
+  private async sichereAblageort(): Promise<void> {
+    const vorhanden = await this.ablageortId();
+    if (vorhanden && (await this.repo.holeTyp(vorhanden))) {
+      // Schon da (oder ein eigener Mappentyp mit der Kennung „ablageort“): nur merken.
+      if (this.einstellungen && !(await this.einstellungen.lies('ablageort'))) await this.einstellungen.schreibe('ablageort', { id: vorhanden });
+      return;
+    }
+    const typen = await this.repo.listeTypen();
+    const id = randomUUID();
+    const name = typen.some((t) => t.name.trim().toLowerCase() === 'ablageort') ? 'Ablageort (Standard)' : 'Ablageort';
+    const t = await this.repo.legeTypAn(id, {
+      name, schluessel: freierSchluessel('ablageort', typen.map((x) => x.schluessel ?? '')),
+      beschreibung: 'Wo Originale liegen – verschachtelt, z. B. zu Hause › Arbeitszimmer Schrank › roter Ordner',
+      titelVorlage: '{liegt_in} › {name}',
+      felder: [
+        { key: 'name', label: 'Name', typ: 'text', pflicht: true, maxLen: 120, hilfe: 'z. B. roter Ordner, Safe im Flur, beim Notar, vernichtet' },
+        { key: 'liegt_in', label: 'Liegt in', typ: 'referenz', zielTyp: id, verweisart: 'zugehoerigkeit', hilfe: 'Der Ort, in dem dieser Ort liegt – z. B. der Schrank, in dem der Ordner steht. Leer lassen für ganz oben.' },
+        { key: 'beschreibung', label: 'Beschreibung', typ: 'langtext', maxLen: 2000 },
+      ],
+      register: [
+        { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['name', 'liegt_in', 'beschreibung'] },
+        { key: 'enthaelt', name: 'Enthält', art: 'verknuepfungen', quellen: [{ typId: id, feldKey: 'liegt_in' }] },
+        { key: 'liegt_hier', name: 'Liegt hier', art: 'verknuepfungen', quellen: [] },
+        { key: 'fotos', name: 'Fotos', art: 'dokumente' },
+      ],
+      trefferliste: ['_titel', 'beschreibung'], erstellenErlaubt: true, loeschenErlaubt: true,
+    });
+    await this.sichtFuerTyp(t);
+    await this.einstellungen?.schreibe('ablageort', { id: t.id });
+    protokoll.modul('werkbank').info('Mappentyp Ablageort angelegt', { typ: t.name });
+  }
+
   private async sichereSystemJetzt() {
     const typen = await this.repo.listeTypen();
     let rolle = typen.find((t) => t.system === 'rolle');
@@ -2421,6 +2472,7 @@ export class Dienst {
       }
       systemrollen.set(r, m.id);
     }
+    await this.sichereAblageort();
     return { benutzer, rolle, post, systemrollen };
   }
 

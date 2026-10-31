@@ -60,7 +60,9 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     let benutzer = 0;
     if (opt.mitDaten) {
       await ladeBeispiele(dienst, null);
-      const m = (await dienst.listeMappen())[0];
+      // Eine Mappe mit Register „dokumente“ (Vertragspartner); die Ablageorte haben keins.
+      const partner = (await dienst.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
+      const m = (await dienst.listeMappen(partner.id))[0];
       await dienst.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo aus der Sicherung'), null);
       await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (gen_random_uuid(), ${HAUSHALT}, 'anna@example.org', 'Anna', 'admin')`;
       benutzer = 1;

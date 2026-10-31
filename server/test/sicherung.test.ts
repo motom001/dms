@@ -206,7 +206,9 @@ describe('Sicherung mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE_URL ni
     const wurzel = await mkdtemp(join(tmpdir(), 'dms-sich-pg-'));
     const d = new Dienst(pgRepo(sql, HAUSHALT), ordnerSpeicher(join(wurzel, 'files'), HAUSHALT), { einstellungen: pgBetriebSpeicher(sql, HAUSHALT) });
     await ladeBeispiele(d, null);
-    const m = (await d.listeMappen())[0];
+    // Eine Mappe mit Register „dokumente“ (Vertragspartner); die Ablageorte haben keins.
+    const partner = (await d.listeTypen()).find((t) => t.name === 'Vertragspartner')!;
+    const m = (await d.listeMappen(partner.id))[0];
     await d.ladeHoch(m.id, { register: 'dokumente', name: 'brief.txt', typ: 'text/plain' }, Buffer.from('Hallo Welt'), null);
 
     const reihenfolge = (await tabellenIn(sql)).map((t) => t.name);
