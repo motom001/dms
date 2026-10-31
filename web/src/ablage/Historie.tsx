@@ -14,6 +14,7 @@ const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
 function kurz(e: Historieneintrag): string {
   const d = e.daten;
   if (d.aenderungen?.length) return d.aenderungen.map((a) => a.label).join(', ');
+  if (e.art === 'post_geteilt' && typeof d.text === 'string') return d.text;
   if (d.dokument) return d.dokument;
   if (d.feld) return d.feld;
   if (typeof d.text === 'string') return d.text;
@@ -126,6 +127,29 @@ function einzelheiten(e: Historieneintrag, emailTyp: string | undefined): { hinw
           </dl>
         ),
       };
+    }
+    case 'pdf_bearbeitet': {
+      // PDF bearbeiten (#335): was geändert wurde bzw. was zusammengefügt wurde.
+      const quellen = Array.isArray(d.zusammengefuegt) ? (d.zusammengefuegt as string[]) : [];
+      return {
+        hinweis: quellen.length ? `${quellen.length} zusammengefügt` : 'Einzelheiten',
+        inhalt: (
+          <dl className="eigenschaften einzeln">
+            <dt>Datei</dt><dd>{d.dokument}</dd>
+            {str(d.text) && <><dt>Was</dt><dd>{str(d.text)}</dd></>}
+            {typeof d.seiten === 'number' && <><dt>Seiten</dt><dd>{typeof d.vorher === 'number' && d.vorher !== d.seiten ? `${d.vorher} → ` : ''}{d.seiten}</dd></>}
+            {quellen.length > 0 && <><dt>Aus</dt><dd>{quellen.join(', ')}</dd></>}
+          </dl>
+        ),
+      };
+    }
+    case 'post_geteilt': {
+      const typ = str(d.postTyp);
+      const posten = Array.isArray(d.posten) ? (d.posten as string[]) : [];
+      if (!typ) return null;
+      if (posten.length) return { hinweis: `${posten.length} Posts`, inhalt: <ul className="einzeln">{posten.map((id, i) => <li key={id}><Link to={`/ablage/${typ}/${id}`} className="verweis">Teil {i + 1} öffnen</Link></li>)}</ul> };
+      if (str(d.post)) return { hinweis: 'öffnen', inhalt: <p className="einzeln"><Link to={`/ablage/${typ}/${str(d.post)}`} className="verweis">Ausgangspost öffnen</Link></p> };
+      return null;
     }
     case 'wiederhergestellt': {
       const n = typeof d.verweiseEntfallen === 'number' ? d.verweiseEntfallen : 0;

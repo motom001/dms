@@ -77,6 +77,19 @@ Bei **Weiter: neue Mappe ausfüllen** öffnet sich das Formular des Mappentyps. 
 
 Ohne Zuordnung geht es auch: **Erledigt** für Werbung oder Dinge, die schon erledigt sind; **Wieder neu**, wenn doch noch etwas zu tun ist. Unnötige Post löschst du wie jede Mappe.
 
+## Sammelscan teilen
+
+Hast du mehrere Briefe auf einmal gescannt, kommen sie als **eine Post** mit einem langen PDF an. So machst du daraus einzelne Posts:
+
+1. Öffne die Post und das Register mit dem PDF.
+2. Klicke neben dem PDF auf **Seiten**.
+3. Klicke bei der ersten Seite jedes weiteren Briefs auf **Teilen ab hier**. Leere Rückseiten kannst du gleich **löschen**, schiefe Seiten **drehen**.
+4. **Übernehmen** und die Rückfrage bestätigen.
+
+Je Teil entsteht eine **neue Post** mit Stand *Neu*: Betreff „Sammelscan (Teil 1)“, „Sammelscan (Teil 2)“ …, Datum, Absender und „Für“ wie bei der Ausgangspost. Jede kannst du dann wie gewohnt [zuordnen](#zuordnen). Die Ausgangspost behält das ganze PDF, ist *Erledigt* und verweist unter „Zugeordnet zu“ auf die neuen – nichts geht verloren. Oben steht ein Hinweis mit Links zu den neuen Posts.
+
+Umgekehrt geht es auch: Gehören zwei Posts zusammen (z. B. Vorder- und Rückseite einzeln gescannt), öffne die erste, wähle ihre PDFs und **Zusammenfügen** – siehe [PDF bearbeiten](dokumente.md#pdf-bearbeiten). Über die Schnittstelle (API) fügt ein Programm auch PDFs aus mehreren Posts zusammen; eine Post, die dadurch leer ist, wird erledigt.
+
 ## Versendete E-Mails
 
 Verschickst du eine Mappe [per E-Mail](versenden.md), legt das DMS die E-Mail als Post ab: Kanal *E-Mail*, Richtung *Ausgehend*, Stand *Erledigt*, zugeordnet zur Mappe. Betreff, Empfänger, Absender, Datum und Nachricht bleiben, wie sie verschickt wurden. Stand und *Für* kannst du ändern.

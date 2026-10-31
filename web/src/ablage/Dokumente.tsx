@@ -1,8 +1,10 @@
 import { Vorschaubild } from './Vorschaubild';
+import { PdfSeiten } from './PdfSeiten';
+import { Link } from '../ort';
 import { Fundstellen, fundstellenFuer } from './Doppelt';
 import { useMappenZiel } from './NeuePost';
-import { useEffect, useRef, useState, type DragEvent, type MouseEvent } from 'react';
-import { HERKUNFT, MAX_DATEIGROESSE, OCR_STAENDE, type Dokument, type DokumentVersion, type Herkunft, type OcrStand, type Register } from '../../../shared/src/model';
+import { useEffect, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from 'react';
+import { HERKUNFT, MAX_DATEIGROESSE, OCR_STAENDE, type Mappe, type Dokument, type DokumentVersion, type Herkunft, type OcrStand, type Register } from '../../../shared/src/model';
 import { api, dokumentUrl, versionUrl, type Fundstelle } from '../api';
 import { useDaten } from '../daten';
 import { Person } from '../Person';
@@ -42,7 +44,7 @@ export function sortiereDokumente(liste: Dokument[], s: Dokumentsortierung): Dok
 
 const HINWEIS_MEHRFACH = 'dms:mehrere-herunterladen-gesehen';
 
-export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuegen, entferne, entferneMehrere, vergiss, nurLesen, setzeNeue, neuLaden }: {
+export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuegen, entferne, entferneMehrere, vergiss, nurLesen, setzeNeue, neuLaden, post }: {
   register: Register; dokumente: Dokument[]; neue: NeueDatei[]; entfernt: string[];
   /** Ohne Recht „Bearbeiten“ (#126): nur ansehen und herunterladen. */
   nurLesen?: boolean;
@@ -51,6 +53,8 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
   setzeNeue?(uid: string, patch: Partial<NeueDatei>): void;
   /** Nach Ersetzen und Zurückholen (#194) – sofort, ohne „Mappe speichern“. */
   neuLaden?(): Promise<void>;
+  /** Dokumente einer Post (#335): Teilen erzeugt neue Posts. */
+  post?: boolean;
 }) {
   const versioniert = !!register.versionierung;
   // Doppelte Dateien (#333): je neuer Datei einmal nachsehen, ob es sie schon gibt.
@@ -77,6 +81,11 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
     try { await api.ersetzen(id, datei); await neuLaden?.(); } catch (e) { setVersionFehler((e as Error).message); }
   }
   const d = useDaten();
+  // PDF bearbeiten (#335): Seitenansicht je Dokument, Zusammenfügen der Auswahl.
+  const [seitenOffen, setSeitenOffen] = useState<string>();
+  const [pdfMeldung, setPdfMeldung] = useState<ReactNode>();
+  const [zusammen, setZusammen] = useState<{ name: string; entfernen: boolean; laeuft?: boolean; fehler?: string } | null>(null);
+  const bearbeitbar = !nurLesen && !!neuLaden;
   const auswahlFeld = useRef<HTMLInputElement>(null);
   const [ziehen, setZiehen] = useState(false);
   const [zuGross, setZuGross] = useState<string[]>([]);
@@ -90,6 +99,27 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
   const [hinweis, setHinweis] = useState<string>();
   const waehlbar = dokumente.filter((x) => !entfernt.includes(x.id));
   const auswahl = waehlbar.filter((x) => gewaehlt.has(x.id));
+  const pdfAuswahl = auswahl.filter((x) => x.mime === 'application/pdf');
+
+  async function pdfFertig(r: { dokumente: Dokument[]; posten: Mappe[] }) {
+    setSeitenOffen(undefined);
+    setPdfMeldung(r.posten.length
+      ? <>{r.posten.length} neue Posts angelegt: {r.posten.map((p, i) => <span key={p.id}>{i > 0 && ', '}<Link to={`/ablage/${p.typId}/${p.id}`} className="verweis">{String(p.werte.betreff ?? 'Post')}</Link></span>)}. Diese Post ist erledigt.</>
+      : r.dokumente.length > 1 ? `In ${r.dokumente.length} Dokumente geteilt.` : `„${r.dokumente[0]?.name}“ gespeichert${versioniert ? ` – Version ${r.dokumente[0]?.version ?? 1}` : ''}.`);
+    await neuLaden?.();
+  }
+  async function fuegeZusammen() {
+    if (!zusammen) return;
+    const ohneKorb = !d.zaehler.papierkorbTage;
+    if (zusammen.entfernen && ohneKorb && !(await rueckfrage({ titel: 'Ausgangsdokumente endgültig löschen?', text: `Der Papierkorb ist ausgeschaltet: Die ${pdfAuswahl.length} Ausgangsdokumente sind nach dem Zusammenfügen endgültig weg.`, ja: 'Zusammenfügen und löschen', gefahr: true }))) return;
+    setZusammen({ ...zusammen, laeuft: true, fehler: undefined });
+    try {
+      const r = await api.fuegePdfZusammen({ dokumente: pdfAuswahl.map((x) => x.id), name: zusammen.name.trim() || undefined, register: register.key, originaleEntfernen: zusammen.entfernen, bestaetigt: zusammen.entfernen && ohneKorb });
+      setZusammen(null); setGewaehlt(new Set());
+      setPdfMeldung(`${pdfAuswahl.length} PDFs zu „${r.dokument.name}“ zusammengefügt.`);
+      await neuLaden?.();
+    } catch (e) { setZusammen((z) => z && { ...z, laeuft: false, fehler: (e as Error).message }); }
+  }
 
   // Texterkennung (#45): Stand nachladen, solange etwas wartet oder läuft.
   const [ocr, setOcr] = useState<Record<string, OcrStand | undefined>>({});
@@ -181,6 +211,8 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                 <Hilfe ort="dokumente.mehrere" />
                 {auswahl.length > 0 && <>
                   <button type="button" className="knopf klein" onClick={alleHerunterladen}>Herunterladen</button>
+                  {bearbeitbar && pdfAuswahl.length >= 2 && <button type="button" className="knopf klein" aria-expanded={!!zusammen}
+                    onClick={() => setZusammen(zusammen ? null : { name: pdfAuswahl[0].name, entfernen: false })}>Zusammenfügen</button>}
                   {!nurLesen && <button type="button" className="knopf klein gefahr-rand" onClick={auswahlLoeschen}>Löschen</button>}
                 </>}
                 <label className="sortwahl klein"><span className="leise">Sortieren:</span>
@@ -191,6 +223,19 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
               </div>
             )}
             {hinweis && <div className="hinweis info"><p>{hinweis}</p></div>}
+            {zusammen && pdfAuswahl.length >= 2 && (
+              <div className="zusammenfuegen" role="group" aria-label="PDFs zusammenfügen">
+                <span className="klein">{pdfAuswahl.length} PDFs in der Reihenfolge der Liste zu einem:</span>
+                <label className="eigenschaft klein"><span>Name</span><input value={zusammen.name} onChange={(e) => setZusammen({ ...zusammen, name: e.target.value })} /></label>
+                <label className="haken klein"><input type="checkbox" checked={zusammen.entfernen} onChange={(e) => setZusammen({ ...zusammen, entfernen: e.target.checked })} />
+                  <span>Ausgangsdokumente {d.zaehler.papierkorbTage ? 'in den Papierkorb legen' : 'löschen (endgültig)'}</span></label>
+                <button type="button" className="knopf primaer klein" disabled={zusammen.laeuft} onClick={() => void fuegeZusammen()}>{zusammen.laeuft ? 'Wird zusammengefügt …' : 'Zusammenfügen'}</button>
+                <button type="button" className="knopf klein" disabled={zusammen.laeuft} onClick={() => setZusammen(null)}>Abbrechen</button>
+                <Hilfe ort="dokumente.seiten" />
+                {zusammen.fehler && <div className="hinweis schlecht"><p>{zusammen.fehler}</p></div>}
+              </div>
+            )}
+            {pdfMeldung && <div className="hinweis gut"><p>{pdfMeldung}</p></div>}
             <ul className="dokumentliste">
               {neue.map((n) => (
                 <li key={n.uid} className="neu">
@@ -242,6 +287,8 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                       <div className="zeilenaktionen">
                         {klickbar && <a className="symbolverweis" href={dokumentUrl(x.id)} target="_blank" rel="noreferrer" title="In neuem Tab öffnen" aria-label={`${x.name} in neuem Tab öffnen`}>↗</a>}
                         {!weg && <a className="textknopf" href={dokumentUrl(x.id, true)}>Herunterladen</a>}
+                        {bearbeitbar && !weg && x.mime === 'application/pdf' && <button type="button" className="textknopf" aria-expanded={seitenOffen === x.id}
+                          onClick={() => { setPdfMeldung(undefined); setSeitenOffen(seitenOffen === x.id ? undefined : x.id); }} title="Seiten drehen, löschen, umsortieren oder teilen">Seiten</button>}
                         {!nurLesen && versioniert && !weg && <button type="button" className="textknopf" onClick={() => { setErsetzeId(x.id); ersetzFeld.current?.click(); }} title="Neue Version hochladen; die bisherige bleibt erhalten">Ersetzen</button>}
                         {!nurLesen && <button type="button" className={`textknopf ${weg ? '' : 'gefahr'}`} onClick={async () => {
                           // Mit allen Versionen (#194): nachfragen, mit Zahl.
@@ -250,6 +297,10 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                         }}>{weg ? 'Behalten' : 'Löschen'}</button>}
                       </div>
                     </div>
+                    {seitenOffen === x.id && !weg && (
+                      <PdfSeiten d={x} post={!!post} versioniert={versioniert} papierkorb={!!d.zaehler.papierkorbTage}
+                        schliessen={() => setSeitenOffen(undefined)} fertig={(r) => void pdfFertig(r)} />
+                    )}
                     {auf && (
                       <div className="dokansicht">
                         {x.mime === 'application/pdf'

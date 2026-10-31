@@ -9,6 +9,7 @@ import type { Mailer } from './mail';
 import { Auftraege } from './auftrag';
 import { protokoll } from './protokoll';
 import { Fachfehler } from './fehler';
+import { fuegeZusammen, pruefeAuswahl, pruefeTeile, SEITENBILDER_MAX, Seitenbilder, seitenInfo, teile, teilName } from './pdfseiten';
 import { alsText, erwaehnungen } from '../../shared/src/markdown';
 import { liesAnsicht, liesEigene, OHNE_EINSTELLUNG } from '../../shared/src/werkbankansicht';
 import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
@@ -242,6 +243,15 @@ export function sortierungAus(spalte: string, absteigend: boolean, typ?: Mappent
 }
 
 /** Dateiname ohne Pfadanteile und Steuerzeichen. */
+/** Kurztext der Historie für „PDF bearbeitet“ (#335). */
+function pdfText(w: { seiten: number; vorher: number; gedreht?: number; teile?: number }): string {
+  const t: string[] = [];
+  if (w.teile) t.push(`in ${w.teile} Teile geteilt`);
+  if (w.seiten !== w.vorher && !w.teile) t.push(`${w.vorher} → ${w.seiten} Seiten`);
+  if (w.gedreht) t.push(`${w.gedreht} ${w.gedreht === 1 ? 'Seite' : 'Seiten'} gedreht`);
+  return t.join(', ') || 'Seiten umsortiert';
+}
+
 function dateiname(v: unknown): string {
   // eslint-disable-next-line no-control-regex
   const s = text(v).split(/[\\/]/).pop()!.replace(/[\u0000-\u001f\u007f]/g, '').trim();
@@ -3212,6 +3222,162 @@ export class Dienst {
     if (m) await this.beruehre(m.id, await this.repo.holeTyp(m.typId), benutzerId);
     if (!korb) for (const sha of new Set([d.sha256, ...aeltere.map((v) => v.sha256)])) await this.raeumeAuf(sha);
     return { papierkorb: korb };
+  }
+
+  /* ---------- PDF bearbeiten (#335) ---------- */
+
+  /** Seitenbilder der Seitenansicht (im Arbeitsspeicher, für die letzten Dokumente). */
+  readonly seitenbilder = new Seitenbilder();
+
+  private async pdfVon(id: string): Promise<{ d: Dokument; inhalt: Buffer }> {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    if (d.mime !== 'application/pdf') throw new Fachfehler(422, `„${d.name}“ ist kein PDF – bearbeiten lassen sich nur PDF-Dokumente.`);
+    const s = await this.dateien.lies(d.sha256);
+    return { d, inhalt: Buffer.isBuffer(s) ? s : Buffer.concat(await s.toArray() as Buffer[]) };
+  }
+
+  /** Seitenzahl und Drehung je Seite. */
+  async pdfSeiten(id: string) {
+    const { d, inhalt } = await this.pdfVon(id);
+    return { id: d.id, name: d.name, version: d.version ?? 1, sha256: d.sha256, ...(await seitenInfo(inhalt)), bilderBis: SEITENBILDER_MAX };
+  }
+
+  /** Bild einer Seite (Seitenansicht); null, wenn es keins gibt. */
+  async pdfSeitenbild(id: string, nr: number): Promise<Buffer | null> {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    if (d.mime !== 'application/pdf' || !Number.isInteger(nr) || nr < 1 || nr > SEITENBILDER_MAX) return null;
+    return this.seitenbilder.bild(d.sha256, nr, async () => (await this.pdfVon(id)).inhalt);
+  }
+
+  /**
+   * Seiten bearbeiten (#335): `seiten` = die Seiten des Ergebnisses in Reihenfolge (Nummer im Original,
+   * Drehung), `teile` = Positionen in dieser Liste, an denen ein neuer Teil beginnt.
+   * - Ohne Teilen: neue Version (Versionierung) bzw. – ohne Versionierung – Ersetzen nach Rückfrage
+   *   (`bestaetigt`), das bisherige kommt in den Papierkorb.
+   * - Teilen in einer Mappe: Teil 1 wird so zur neuen Version, die weiteren Teile werden eigene Dokumente
+   *   im selben Register.
+   * - Teilen bei Post: je Teil eine neue Post; die Ausgangspost behält ihr Dokument, ist erledigt und
+   *   verweist auf die neuen.
+   */
+  async bearbeitePdf(id: string, eingabe: unknown, von: string | null, z?: Zugriff) {
+    const { d, inhalt } = await this.pdfVon(id);
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const info = await seitenInfo(inhalt);
+    const seiten = pruefeAuswahl(e.seiten, info.anzahl);
+    const starts = pruefeTeile(e.teile, seiten.length);
+    const m = await this.repo.holeMappe(d.mappeId);
+    const typ = m ? await this.repo.holeTyp(m.typId) : undefined;
+    const reg = typ?.register.find((r) => r.key === d.registerKey && r.art === 'dokumente');
+    if (!m || !typ || !reg) throw new Fachfehler(409, 'Das Register dieses Dokuments gibt es nicht mehr.');
+    const gleich = starts.length === 1 && seiten.length === info.anzahl && seiten.every((s, i) => s.nr === i + 1 && !s.drehung);
+    if (gleich) throw new Fachfehler(422, 'Es hat sich nichts geändert.');
+    const teileBuf = await teile(inhalt, seiten, starts);
+    const gedreht = seiten.filter((s) => s.drehung).length;
+    const was = { dokument: d.name, seiten: seiten.length, vorher: info.anzahl, ...(gedreht ? { gedreht } : {}), ...(starts.length > 1 ? { teile: starts.length } : {}) };
+
+    if (typ.system === 'post' && starts.length > 1) return this.teilePost(m, typ, reg, d, teileBuf, von, z, was);
+
+    const korb = (await this.papierkorbTage()) > 0;
+    let erstes: Dokument;
+    const name1 = starts.length > 1 ? teilName(d.name, 1) : d.name;
+    if (reg.versionierung) {
+      erstes = await this.ersetzeDokument(d.id, { name: name1, typ: 'application/pdf', herkunft: 'bearbeitet' }, teileBuf[0], von);
+    } else {
+      if (e.bestaetigt !== true) {
+        throw new Fachfehler(409, `Für dieses Register ist die Versionierung ausgeschaltet: Das bearbeitete PDF ersetzt das bisherige${korb ? ', das bisherige kommt in den Papierkorb' : ' – das bisherige ist danach weg'}. Bitte bestätigen.`, { rueckfrage: true, papierkorb: korb });
+      }
+      await this.loescheDokument(d.id, von);
+      erstes = (await this.ladeHoch(m.id, { register: reg.key, name: name1, typ: 'application/pdf', herkunft: 'bearbeitet' }, teileBuf[0], von)).dokument;
+    }
+    const weitere: Dokument[] = [];
+    for (const [i, b] of teileBuf.slice(1).entries()) {
+      weitere.push((await this.ladeHoch(m.id, { register: reg.key, name: teilName(d.name, i + 2), typ: 'application/pdf', herkunft: 'bearbeitet' }, b, von)).dokument);
+    }
+    await this.notiere(m.id, von, 'pdf_bearbeitet', { ...was, text: pdfText(was) });
+    protokoll.modul('dokumente').info('PDF bearbeitet', { id: d.id, seiten: seiten.length, vorher: info.anzahl, teile: starts.length });
+    return { dokumente: [erstes, ...weitere], posten: [] as Mappe[] };
+  }
+
+  private async teilePost(post: Mappe, typ: Mappentyp, reg: Register, d: Dokument, teileBuf: Buffer[], von: string | null, z: Zugriff | undefined, was: Record<string, unknown>) {
+    const betreff = auswahlText(post.werte.betreff) || 'Post';
+    const posten: Mappe[] = [];
+    const dokumente: Dokument[] = [];
+    for (const [i, b] of teileBuf.entries()) {
+      const neu = await this.legePostAn({
+        betreff: `${betreff} (Teil ${i + 1})`, datum: post.werte.datum, absender: post.werte.absender ?? '', kanal: auswahlText(post.werte.kanal),
+        fuer: alsListe(post.werte.fuer)[0] ?? null,
+      }, { id: von, name: '' }, z);
+      await this.notiere(neu.id, von, 'post_geteilt', { text: `Teil ${i + 1} von ${teileBuf.length} aus „${betreff}“`, post: post.id, postTyp: typ.id });
+      dokumente.push((await this.ladeHoch(neu.id, { register: reg.key, name: teilName(d.name, i + 1), typ: 'application/pdf', herkunft: 'bearbeitet' }, b, von)).dokument);
+      posten.push((await this.repo.holeMappe(neu.id))!);
+    }
+    const bezug = [...new Set([...alsListe(post.werte.bezug), ...posten.map((p) => p.id)])];
+    await this.schreibeSystemMappe(typ, post.id, { ...post.werte, bezug, stand: POST_STAND.erledigt }, von);
+    await this.notiere(post.id, von, 'post_geteilt', { ...was, text: `„${d.name}“ in ${posten.length} Posts geteilt`, posten: posten.map((p) => p.id), postTyp: typ.id });
+    await this.postAufgaben(post.id, von);
+    protokoll.modul('ablage').info('Post geteilt', { post: post.id, teile: posten.length });
+    return { dokumente, posten };
+  }
+
+  /**
+   * Zusammenfügen (#335): mehrere PDF-Dokumente (auch aus mehreren Mappen oder Posts) zu einem neuen
+   * Dokument in `ziel` (Standard: die Mappe des ersten). `originaleEntfernen`: die Ausgangsdokumente
+   * kommen in den Papierkorb (ohne Papierkorb nur mit `bestaetigt`); eine Post, die dadurch kein
+   * Dokument mehr hat, ist erledigt und verweist auf das Ziel.
+   */
+  async fuegePdfZusammen(eingabe: unknown, von: string | null, z?: Zugriff) {
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const ids = Array.isArray(e.dokumente) ? [...new Set(e.dokumente.map(String))] : [];
+    if (ids.length < 2) throw new Fachfehler(422, 'Bitte mindestens zwei PDF-Dokumente wählen.');
+    if (ids.length > 100) throw new Fachfehler(422, 'Höchstens 100 Dokumente auf einmal.');
+    const entfernen = e.originaleEntfernen === true;
+    const quellen: Array<{ d: Dokument; inhalt: Buffer }> = [];
+    for (const id of ids) {
+      const d = await this.repo.holeDokument(id);
+      if (!d) throw new Fachfehler(404, 'Ein gewähltes Dokument gibt es nicht (mehr).');
+      if (z) await this.pruefeRecht(z, d.mappeId, entfernen ? 'U' : 'R');
+      quellen.push(await this.pdfVon(id));
+    }
+    const zielId = istUuid(text(e.ziel)) ? text(e.ziel) : quellen[0].d.mappeId;
+    const ziel = z ? await this.pruefeRecht(z, zielId, 'U') : await this.repo.holeMappe(zielId);
+    if (!ziel) throw new Fachfehler(404, 'Die gewählte Mappe gibt es nicht.');
+    const zielTyp = await this.repo.holeTyp(ziel.typId);
+    const regs = zielTyp?.register.filter((r) => r.art === 'dokumente') ?? [];
+    const reg = e.register ? regs.find((r) => r.key === text(e.register)) : regs.find((r) => r.key === quellen[0].d.registerKey && ziel.id === quellen[0].d.mappeId) ?? regs[0];
+    if (!reg) throw new Fachfehler(422, regs.length ? 'Dieses Dokumentenregister gibt es an der Mappe nicht.' : 'Die Mappe hat kein Dokumentenregister.');
+    const mappen = [...new Set(quellen.map((q) => q.d.mappeId))];
+    if (entfernen) {
+      for (const mid of mappen) await this.pruefeArchivDokument(mid, 'entfernen');
+      if ((await this.papierkorbTage()) === 0 && e.bestaetigt !== true) {
+        throw new Fachfehler(409, 'Der Papierkorb ist ausgeschaltet: Die Ausgangsdokumente sind nach dem Zusammenfügen weg. Bitte bestätigen.', { rueckfrage: true, papierkorb: false });
+      }
+    }
+    const buf = await fuegeZusammen(quellen.map((q) => q.inhalt));
+    if (buf.length > MAX_DATEIGROESSE) throw new Fachfehler(413, 'Zusammengefügt wäre das PDF größer als 100 MB.');
+    let name = dateiname(text(e.name) || quellen[0].d.name);
+    if (!/\.pdf$/i.test(name)) name += '.pdf';
+    // Erst entfernen, dann ablegen: so bekommt das Ergebnis den Namen des ersten ohne „(2)“.
+    if (entfernen) for (const q of quellen) await this.loescheDokument(q.d.id, von);
+    const neu = (await this.ladeHoch(ziel.id, { register: reg.key, name, typ: 'application/pdf', herkunft: 'bearbeitet' }, buf, von)).dokument;
+    const was = { dokument: neu.name, zusammengefuegt: quellen.map((q) => q.d.name), seiten: (await seitenInfo(buf)).anzahl };
+    await this.notiere(ziel.id, von, 'pdf_bearbeitet', { ...was, text: `${quellen.length} PDFs zu „${neu.name}“ zusammengefügt` });
+    const erledigt: string[] = [];
+    if (entfernen) {
+      const zielTitel = await this.titel(ziel);
+      for (const mid of mappen.filter((x) => x !== ziel.id)) {
+        const p = await this.repo.holeMappe(mid);
+        const t = p ? await this.repo.holeTyp(p.typId) : undefined;
+        if (!p || t?.system !== 'post' || (await this.repo.listeDokumente(mid)).length) continue;
+        await this.schreibeSystemMappe(t, p.id, { ...p.werte, bezug: [...new Set([...alsListe(p.werte.bezug), ziel.id])], stand: POST_STAND.erledigt }, von);
+        await this.notiere(p.id, von, 'zugeordnet', { text: `Dokumente zusammengefügt in „${zielTitel}“`, ziel: ziel.id, zielTyp: ziel.typId });
+        await this.postAufgaben(p.id, von);
+        erledigt.push(p.id);
+      }
+    }
+    protokoll.modul('dokumente').info('PDFs zusammengefügt', { ziel: ziel.id, anzahl: quellen.length, entfernt: entfernen });
+    return { dokument: neu, erledigtePost: erledigt };
   }
 
   /* ---------- Vollexport (#254) ---------- */

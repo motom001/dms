@@ -125,6 +125,22 @@ export const V1_TABELLE: V1[] = [
   { methode: 'GET', pfad: '/dokumente/{id}/inhalt', gruppe: 'Dokumente', zusammenfassung: 'Inhalt eines Dokuments herunterladen', intern: { methode: 'GET', pfad: '/api/dokumente/:id/inhalt' }, parameter: [id('des Dokuments')], antwort: 'binaer' },
   { methode: 'GET', pfad: '/dokumente/{id}/volltext', gruppe: 'Dokumente', zusammenfassung: 'Volltext eines Dokuments', beschreibung: 'Textebene des PDFs oder Ergebnis der Texterkennung; text ist null, solange es keinen gibt (siehe ocr.stand).', intern: { methode: 'GET', pfad: '/api/dokumente/:id/volltext' }, parameter: [id('des Dokuments')], antwort: 'Volltext' },
   { methode: 'POST', pfad: '/dokumente/{id}/texterkennung', gruppe: 'Dokumente', zusammenfassung: 'Texterkennung (erneut) anstoßen', beschreibung: 'Stellt das Dokument in die Warteschlange der Texterkennung, z. B. nach einem Fehler.', intern: { methode: 'POST', pfad: '/api/dokumente/:id/texterkennung' }, parameter: [id('des Dokuments')], antwort: 'Dokument' },
+  { methode: 'GET', pfad: '/dokumente/{id}/seiten', gruppe: 'Dokumente', zusammenfassung: 'Seiten eines PDFs', beschreibung: 'PDF bearbeiten (#335): Seitenzahl und Drehung je Seite (Grad). 422 bei anderen Dateitypen.', intern: { methode: 'GET', pfad: '/api/dokumente/:id/seiten' }, parameter: [id('des Dokuments')], antwort: 'Seiten' },
+  { methode: 'GET', pfad: '/dokumente/{id}/seiten/{nr}/bild', gruppe: 'Dokumente', zusammenfassung: 'Bild einer Seite', beschreibung: 'Kleines JPEG (längste Seite 260 px) für eine Seitenansicht; für die ersten 400 Seiten.', intern: { methode: 'GET', pfad: '/api/dokumente/:id/seiten/:nr/bild' }, parameter: [id('des Dokuments'), { name: 'nr', wo: 'path', typ: 'integer', pflicht: true, beschreibung: 'Seitennummer ab 1' }], antwort: 'binaer' },
+  {
+    methode: 'POST', pfad: '/dokumente/{id}/seiten', gruppe: 'Dokumente', zusammenfassung: 'PDF bearbeiten: drehen, Seiten löschen, umsortieren, teilen',
+    beschreibung: 'PDF bearbeiten (#335). seiten = die Seiten des Ergebnisses in der gewünschten Reihenfolge (nr im Original ab 1, drehung zusätzlich im Uhrzeigersinn: 0/90/180/270); fehlende Seiten fallen weg. teile = Positionen in seiten (ab 0), an denen ein neuer Teil beginnt. '
+      + 'Ohne teile: neue Version des Dokuments; ist die Versionierung des Registers aus, ersetzt das Ergebnis das Dokument nur mit bestaetigt=true (sonst 409 mit rueckfrage), das bisherige kommt in den Papierkorb. '
+      + 'Mit teile in einer Mappe: Teil 1 wird die neue Version, die weiteren Teile werden eigene Dokumente „Name (Teil n).pdf“ im selben Register. '
+      + 'Mit teile bei Post („Post teilen nach Seitenbereichen“): je Teil eine neue Post (Stand Neu, Betreff „… (Teil n)“); die Ausgangspost behält ihr Dokument, hat Stand Erledigt und verweist auf die neuen. Texterkennung läuft für die Ergebnisse neu.',
+    intern: { methode: 'POST', pfad: '/api/dokumente/:id/seiten' }, parameter: [id('des Dokuments')], body: 'SeitenBearbeiten', antwort: 'SeitenErgebnis', status: 201,
+  },
+  {
+    methode: 'POST', pfad: '/dokumente/zusammenfuegen', gruppe: 'Dokumente', zusammenfassung: 'PDFs zusammenfügen',
+    beschreibung: 'PDF bearbeiten (#335): mehrere PDF-Dokumente (auch aus mehreren Mappen oder Posts, Lesen genügt) in dieser Reihenfolge zu einem neuen Dokument in ziel (Standard: die Mappe des ersten; braucht Bearbeiten). '
+      + 'originaleEntfernen=true legt die Ausgangsdokumente in den Papierkorb (braucht Bearbeiten; ohne Papierkorb nur mit bestaetigt=true); eine Post, die dadurch kein Dokument mehr hat, ist danach erledigt und verweist auf das Ziel. Im Archivmodus bleiben die Ausgangsdokumente (409).',
+    intern: { methode: 'POST', pfad: '/api/dokumente/zusammenfuegen' }, body: 'Zusammenfuegen', antwort: 'Zusammengefuegt', status: 201,
+  },
   { methode: 'DELETE', pfad: '/dokumente/{id}', gruppe: 'Dokumente', zusammenfassung: 'Dokument löschen', beschreibung: 'Ist der Papierkorb eingeschaltet, kommt das Dokument mit allen Versionen in den Papierkorb (#344); sonst ist es endgültig weg.', intern: { methode: 'DELETE', pfad: '/api/dokumente/:id' }, parameter: [id('des Dokuments')], antwort: null, status: 204 },
 
   { methode: 'POST', pfad: '/typen', gruppe: 'Werkbank', zusammenfassung: 'Mappentyp anlegen (Administrator)', intern: { methode: 'POST', pfad: '/api/typen' }, body: 'MappentypEingabe', antwort: 'Mappentyp', status: 201 },
@@ -303,6 +319,18 @@ const SCHEMAS: Record<string, Schema> = {
   },
   SichtListe: liste('Sicht'),
   Zaehler: { type: 'object', properties: { sichten: { type: 'object', additionalProperties: { type: 'integer' }, description: 'Anzahl Mappen je Ansicht (mit Unteransichten)' }, typen: { type: 'object', additionalProperties: { type: 'object', properties: { anzahl: { type: 'integer' }, unpassend: { type: 'integer' }, demo: { type: 'integer' } } } }, eingang: { type: 'integer' }, favoriten: { type: 'integer', description: 'Eigene Favoriten' } } },
+  Seiten: { type: 'object', properties: { id: uuid, name: { type: 'string' }, version: { type: 'integer' }, sha256: { type: 'string' }, anzahl: { type: 'integer' }, drehungen: { type: 'array', items: { type: 'integer', enum: [0, 90, 180, 270] } }, bilderBis: { type: 'integer', description: 'Seitenbilder gibt es bis zu dieser Seite' } } },
+  SeitenBearbeiten: { type: 'object', required: ['seiten'], properties: {
+    seiten: { type: 'array', minItems: 1, items: { type: 'object', required: ['nr'], properties: { nr: { type: 'integer', minimum: 1 }, drehung: { type: 'integer', enum: [0, 90, 180, 270] } } } },
+    teile: { type: 'array', items: { type: 'integer', minimum: 0 }, description: 'Positionen in seiten, an denen ein neuer Teil beginnt' },
+    bestaetigt: { type: 'boolean', description: 'Ersetzen ohne Versionierung bestätigen' },
+  } },
+  SeitenErgebnis: { type: 'object', properties: { dokumente: { type: 'array', items: ref('Dokument') }, posten: { type: 'array', items: ref('Mappe'), description: 'Neue Posts beim Teilen einer Post' } } },
+  Zusammenfuegen: { type: 'object', required: ['dokumente'], properties: {
+    dokumente: { type: 'array', minItems: 2, maxItems: 100, items: uuid }, ziel: uuid, register: { type: 'string' }, name: { type: 'string' },
+    originaleEntfernen: { type: 'boolean' }, bestaetigt: { type: 'boolean' },
+  } },
+  Zusammengefuegt: { type: 'object', properties: { dokument: ref('Dokument'), erledigtePost: { type: 'array', items: uuid } } },
   Gleiche: { type: 'object', required: ['pruefwerte'], properties: { pruefwerte: { type: 'array', maxItems: 100, items: { type: 'string', pattern: '^[0-9a-f]{64}$' } }, ohneMappe: uuid } },
   Fundstellen: { type: 'object', properties: { fundstellen: { type: 'object', description: 'Je Prüfwert höchstens 5 Fundstellen', additionalProperties: { type: 'array', items: { type: 'object', properties: { mappeId: uuid, typId: uuid, titel: { type: 'string' }, typ: { type: 'string' }, register: { type: 'string' }, name: { type: 'string' }, erstellt: { type: 'string', format: 'date-time' } } } } } } },
   PapierkorbDokumente: { type: 'array', items: { type: 'object', properties: { id: uuid, art: { type: 'string', enum: ['dokument'] }, mappeId: uuid, typId: uuid, mappeTitel: { type: 'string' }, registerKey: { type: 'string' }, register: { type: 'string' }, name: { type: 'string' }, mime: { type: 'string' }, groesse: { type: 'integer' }, sha256: { type: 'string' }, versionen: { type: 'integer', description: 'ältere Versionen, die mitgegangen sind' }, erstellt: { type: 'string', format: 'date-time' }, erstelltVon: { type: 'string', nullable: true }, geloescht: { type: 'string', format: 'date-time' }, geloeschtVon: { type: 'string', nullable: true }, mappe: { type: 'string', enum: ['da', 'papierkorb', 'weg'] } } } },
