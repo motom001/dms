@@ -1,6 +1,7 @@
 import { version as reactVersion } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { geraetText } from '../../../shared/src/model';
+import { markdownZelle } from '../../../shared/src/maskieren';
 import { api, type Systemuebersicht, type Vergleich } from '../api';
 import { Hilfe, useHandbuch } from '../Hilfe';
 import { useKonto } from '../konto';
@@ -65,7 +66,7 @@ const istAufgabe = (v: Vergleich) => ((v.gruppe ?? 'selbst') === 'selbst' && v.s
 
 function alsText(z: Zeilen, abgleich: Vergleich[] | null): string {
   const t = ['### Systemangaben (DMS)', '', '| Bereich | Angabe | Wert |', '| --- | --- | --- |'];
-  for (const [g, liste] of z) for (const [k, v] of liste) t.push(`| ${g} | ${k} | ${v.replace(/\|/g, '\\|')} |`);
+  for (const [g, liste] of z) for (const [k, v] of liste) t.push(`| ${g} | ${k} | ${markdownZelle(v)} |`);
   if (abgleich) {
     t.push('', '#### Versionsabgleich', '', '| Komponente | Installiert | Aktuell | Status |', '| --- | --- | --- | --- |');
     for (const [titel, liste] of gruppiert(abgleich)) {

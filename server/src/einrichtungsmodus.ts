@@ -79,7 +79,9 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
     };
   });
   // Der Container läuft (Healthcheck im Image), wartet aber auf die Einrichtung.
-  app.get('/api/gesundheit', async () => ({ ok: true, einrichtung: true, stand: standKennung() }));
+  // Kennung einmal beim Start (#250): die Antwort selbst rechnet und liest nichts.
+  const stand = standKennung();
+  app.get('/api/gesundheit', async () => ({ ok: true, einrichtung: true, stand }));
   app.post('/api/einrichtung/code', async (req) => { schutz(req); return { ok: true }; });
   app.post('/api/einrichtung/datenbank/pruefen', async (req) => { schutz(req); return pruefe(eingabe(req.body)); });
   app.post('/api/einrichtung/datenbank/anlegen', async (req) => {

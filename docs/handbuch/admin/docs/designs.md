@@ -36,7 +36,7 @@ Weil Logo und Schriftzug zum Design gehören, wähle zu jedem Design ein Logo, d
 
 ## Eigenes CSS
 
-Unter **Eigenes CSS** kannst du die Oberfläche weiter anpassen, etwa `.kopf { border-bottom-width: 3px; }`. `<style>`-Tags sind nicht erlaubt.
+Unter **Eigenes CSS** kannst du die Oberfläche weiter anpassen, etwa `.kopf { border-bottom-width: 3px; }`. Das Zeichen `<` ist nicht erlaubt, damit das CSS nichts außerhalb der Gestaltung verändern kann; in Texten (z. B. bei `content`) schreibst du stattdessen `\3C `.
 
 !!! warning "Oberfläche kaputt?"
     Macht ein eigenes CSS das DMS unbedienbar, hänge `?design=standard` an die Adresse, z. B. `http://nas:8080/werkbank/designs?design=standard`. Dann lädt das Standard-Design ohne eigenes CSS, und du kannst den Fehler beheben.

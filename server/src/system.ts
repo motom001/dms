@@ -187,7 +187,7 @@ async function zyklus(abruf: Abruf, produkt: string, name: string, installiert: 
 }
 
 async function npmPaket(abruf: Abruf, name: string, installiert: string | null): Promise<Vergleich> {
-  const quelle = `https://registry.npmjs.org/${name.replace('/', '%2F')}/latest`;
+  const quelle = `https://registry.npmjs.org/${encodeURIComponent(name)}/latest`;
   try {
     const { version } = (await abruf(quelle)) as { version: string };
     const status = !installiert ? 'unbekannt' : vergleicheVersion(version, installiert) > 0 ? 'neuer' : 'aktuell';

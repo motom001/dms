@@ -21,7 +21,7 @@ const seite = (h: Handbuch, s: string) => {
 for (const [h, s] of SEITEN) seite(h, s);
 for (const [ort, z] of Object.entries(HILFE)) {
   const html = seite(z.handbuch, z.seite);
-  if (html && 'anker' in z && z.anker && !new RegExp(`id=["']?${z.anker.replace(/[-]/g, '\\-')}["'\\s>]`).test(html)) {
+  if (html && 'anker' in z && z.anker && !new RegExp(`id=["']?${z.anker.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')}["'\\s>]`).test(html)) {
     fehler.push(`${ort}: Anker #${z.anker} fehlt auf ${z.handbuch}/${z.seite}`);
   }
 }
