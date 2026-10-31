@@ -2473,6 +2473,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "gleicherName",
+            "in": "query",
+            "required": false,
+            "description": "Gibt es im Register schon ein Dokument mit diesem Namen: zaehler (Standard, „Rechnung (2).pdf“), version (neue Version davon; nur mit Versionierung) oder ersetzen (das vorhandene endgültig löschen; nur ohne Versionierung)",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -2493,6 +2502,304 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Hochgeladen"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dokumente/{id}/ersetzen": {
+      "post": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "Neue Version eines Dokuments",
+        "description": "Versionierung (#194): Rohe Bytes als Body; das Dokument behält seine Id, die bisherige Datei bleibt als ältere Version. Name und Dateityp dürfen sich ändern. 409, wenn die Versionierung des Registers aus ist.",
+        "operationId": "postDokumenteMitidErsetzen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "description": "Neuer Dateiname; ohne Angabe bleibt der bisherige",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "typ",
+            "in": "query",
+            "required": false,
+            "description": "MIME-Typ (nur Angabe)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dokument"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dokumente/{id}/versionen": {
+      "get": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "Versionen eines Dokuments",
+        "operationId": "getDokumenteMitidVersionen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Versionen"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dokumente/{id}/versionen/{nummer}/inhalt": {
+      "get": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "Ältere Version herunterladen",
+        "operationId": "getDokumenteMitidVersionenMitnummerInhalt",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nummer",
+            "in": "path",
+            "required": true,
+            "description": "Nummer der Version",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dokumente/{id}/versionen/{nummer}/zurueckholen": {
+      "post": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "Ältere Version zurückholen",
+        "description": "Übernimmt die Version als neue, höchste Version; es geht nichts verloren.",
+        "operationId": "postDokumenteMitidVersionenMitnummerZurueckholen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nummer",
+            "in": "path",
+            "required": true,
+            "description": "Nummer der Version",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dokument"
                 }
               }
             }
@@ -3789,6 +4096,84 @@
                 "nullable": true
               }
             }
+          },
+          "version": {
+            "type": "integer",
+            "description": "Nummer der aktuellen Version (ohne Versionierung 1)"
+          },
+          "herkunft": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "hochgeladen",
+              "api",
+              "webdav",
+              "paket",
+              "eingang",
+              "zurueckgeholt",
+              null
+            ],
+            "description": "Woher die aktuelle Version kam"
+          },
+          "aeltere": {
+            "type": "integer",
+            "description": "Anzahl älterer Versionen"
+          }
+        }
+      },
+      "DokumentVersion": {
+        "type": "object",
+        "description": "Eine ältere Version eines Dokuments",
+        "properties": {
+          "dokumentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nummer": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "mime": {
+            "type": "string"
+          },
+          "groesse": {
+            "type": "integer"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "anzeigbar": {
+            "type": "boolean"
+          },
+          "erstellt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "erstelltVon": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "herkunft": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "Versionen": {
+        "type": "object",
+        "properties": {
+          "aktuell": {
+            "$ref": "#/components/schemas/Dokument"
+          },
+          "aeltere": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DokumentVersion"
+            },
+            "description": "neueste zuerst"
           }
         }
       },
