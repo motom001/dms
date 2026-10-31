@@ -2061,7 +2061,7 @@
 </tr>
 <tr>
 <td>Andere Programme anbinden</td>
-<td>Profil → API-Schlüssel</td>
+<td>eigenen Benutzer für das Programm anlegen, als dieser anmelden, dann Profil → Sicherheit → API-Schlüssel (Administratoren bekommen keine Schlüssel)</td>
 <td><a href="api/">Schnittstelle</a></td>
 </tr>
 </tbody>
@@ -2072,10 +2072,16 @@
 <li><strong>Administrator</strong> – sieht zusätzlich die <strong>Werkbank</strong> und darf alles einrichten. Es gibt immer mindestens einen aktiven Administrator.</li>
 <li><strong>Mitglied</strong> – arbeitet in der Ablage.</li>
 </ul>
-<p>Daneben gibt es frei anlegbare, fachliche Rollen (etwa „Steuern und Finanzen“); sie geben derzeit keine zusätzlichen Rechte. Siehe <a href="benutzer/">Benutzer und Rollen</a>.</p>
+<p>Das ist die <strong>Systemrolle</strong> eines Benutzers. Daneben gibt es frei anlegbare <strong>Rollen</strong> (etwa „Eltern“ oder „Steuern und Finanzen“). Sie geben von sich aus keine Rechte – über Regeln in den <a href="berechtigungen/">Berechtigungen</a> aber schon. Siehe <a href="benutzer/">Benutzer und Rollen</a>.</p>
 <div class="admonition info">
 <p class="admonition-title">Wer darf was sehen?</p>
-<p>Im Moment sehen alle angemeldeten Benutzer alle Mappen. Feinere Rechte folgen mit der Berechtigungsverwaltung.</p>
+<ul>
+<li><strong>Ohne Regeln dürfen alle alles.</strong> So startet jedes DMS; für eine Familie reicht das oft.</li>
+<li><strong>Je Mappentyp</strong> legst du in den <a href="berechtigungen/">Berechtigungen</a> fest, wer Mappen anlegen, lesen, bearbeiten, löschen und Passwörter sehen darf – mit Regeln, z. B. über Rollen, und einem Testlauf.</li>
+<li><strong>Je Ansicht</strong> legst du an der Ansicht fest, wer sie sieht, dort anlegen und aus ihr exportieren darf (<a href="sichten/#berechtigungen">Ansichten → Berechtigungen</a>).</li>
+<li><strong>Für Administratoren gelten die Regeln nicht:</strong> Sie sehen und dürfen in der Ablage immer alles.</li>
+<li>Was für einen Benutzer am Ende gilt, zeigt ihm sein Profil unter <strong>Meine Rechte</strong>.</li>
+</ul>
 </div>
 <h2 id="neue-versionen">Neue Versionen<a class="headerlink" href="#neue-versionen" title="Permanent link">&para;</a></h2>
 <p>Was sich in welcher Version geändert hat, steht unter <a href="neu/">Neu in dieser Version</a> und auf GitHub unter <a href="https://github.com/motom001/dms/releases">Releases (Changelog)</a>. Die installierte Version zeigt die Werkbank unter <strong>Technik</strong>; dort steht auch ein Link auf alle Änderungen seit deiner Version.</p>
