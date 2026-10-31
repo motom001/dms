@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { lesbar, werte } from '../../shared/src/rechte';
 import type { Erinnerung } from '../../shared/src/fristen';
 import { umschluesseleTief } from './tresor';
+import { datumIn, ziehe, type Nummernkreis } from '../../shared/src/nummernkreis';
 import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
 import { alsText } from '../../shared/src/markdown';
 import { ausschnittAus } from './repo-pg';
@@ -16,6 +17,15 @@ const listen = (d: MappentypDaten) => ({ trefferlisten: structuredClone(trefferl
 export function speicherRepo(): Repo {
   const typen = new Map<string, Mappentyp>();
   const mappen = new Map<string, Mappe>();
+  const kreise = new Map<string, Nummernkreis>();
+  /** Nummer ziehen (#171); synchron, damit gleichzeitiges Anlegen keine doppelten Nummern ergibt. */
+  const zieheSync = (schluessel: string, mappeId: string, j: Date) => {
+    const k = kreise.get(schluessel);
+    if (!k) throw new Error(`Nummernkreis ${schluessel} fehlt`);
+    const r = ziehe(k, datumIn(j), mappeId, j.toISOString());
+    kreise.set(schluessel, r.kreis);
+    return r.nummer;
+  };
   const verweise = new Map<string, Verweis[]>();
   const dokumente = new Map<string, Dokument>();
   const sichten = new Map<string, Sicht>();
@@ -113,7 +123,9 @@ export function speicherRepo(): Repo {
     async feldwerte(typId, key) { return [...mappen.values()].filter((m) => m.typId === typId && m.werte[key] != null).map((m) => String(m.werte[key])); },
     async listeMappen(typId) { return [...mappen.values()].filter((m) => !typId || m.typId === typId).map(kopie); },
     async holeMappe(id) { const m = mappen.get(id); return m && kopie(m); },
-    async legeMappeAn(id, typId, werte: Werte, vs, benutzerId, demo = false, systemKennung = null) {
+    async legeMappeAn(id, typId, werte: Werte, vs, benutzerId, demo = false, systemKennung = null, nummern) {
+      werte = kopie(werte);
+      for (const n of nummern?.felder ?? []) werte[n.feldKey] = zieheSync(n.kreis, id, nummern!.jetzt);
       const m: Mappe = { id, typId, werte: kopie(werte), erstellt: jetzt(), erstelltVon: benutzerId, geaendert: jetzt(), geaendertVon: benutzerId, demo, passt: true, problem: null, systemKennung };
       mappen.set(id, m); verweise.set(id, kopie(vs));
       return kopie(m);
@@ -124,6 +136,28 @@ export function speicherRepo(): Repo {
         mappen.set(m.id, { id: m.id, typId: m.typId, werte: kopie(m.werte), titel: m.titel, erstellt: t, erstelltVon: m.benutzerId, geaendert: t, geaendertVon: m.benutzerId, demo: m.demo, passt: true, problem: null });
         verweise.set(m.id, kopie(m.verweise));
       }
+    },
+    async listeNummernkreise() { return [...kreise.values()].map(kopie).sort((a, b) => a.name.localeCompare(b.name, 'de')); },
+    async speichereNummernkreis(k) {
+      const alt = kreise.get(k.schluessel);
+      const neu: Nummernkreis = { staende: {}, zuletzt: [], ...alt, ...kopie(k) };
+      kreise.set(k.schluessel, neu);
+      return kopie(neu);
+    },
+    async loescheNummernkreis(s) { kreise.delete(s); },
+    async setzeZaehler(s, zeitraum, letzter) {
+      const k = kreise.get(s);
+      if (!k) return undefined;
+      const neu = { ...k, staende: { ...k.staende, [zeitraum]: letzter } };
+      kreise.set(s, neu);
+      return kopie(neu);
+    },
+    async vergebeNummer(mappeId, feldKey, kreis, j) {
+      const m = mappen.get(mappeId);
+      if (!m || (m.werte[feldKey] != null && m.werte[feldKey] !== '')) return null;
+      const nummer = zieheSync(kreis, mappeId, j);
+      mappen.set(mappeId, { ...m, werte: { ...m.werte, [feldKey]: nummer } });
+      return nummer;
     },
     async aendereMappe(id, werte, vs, benutzerId) {
       const m = { ...mappen.get(id)!, werte: kopie(werte), geaendert: jetzt(), geaendertVon: benutzerId, passt: true, problem: null };

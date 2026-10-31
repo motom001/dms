@@ -50,6 +50,8 @@ Jedes Feld hat eine **Bezeichnung** (änderbar), einen **Schlüssel** (fest, sob
 
 Für alle gilt: **Pflichtfeld** und ein **Hilfetext**, der beim Ausfüllen unter dem Feld steht; die meisten Typen haben außerdem einen **Standardwert** für neue Mappen. **Eindeutig** heißt: Den Wert darf es in diesem Mappentyp nur einmal geben – Groß- und Kleinschreibung zählen dabei nicht.
 
+Steht im Standardwert eines Textfelds `{nummernkreis:<schlüssel>}`, bekommt jede neue Mappe eine fortlaufende Nummer aus diesem [Nummernkreis](nummernkreise.md); das Feld ist dann schreibgeschützt.
+
 ### Der Schlüssel
 
 Unter dem Schlüssel speichert das DMS die Werte, und die [Schnittstelle](api.md) verwendet ihn. Deshalb ist er nach dem ersten Speichern fest. Die Bezeichnung kannst du jederzeit ändern.

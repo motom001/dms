@@ -8,6 +8,7 @@
  */
 
 import { alsText } from './markdown';
+import { kreisImStandard, kreisVon } from './nummernkreis';
 
 export const FELDTYPEN = {
   text: 'Text',
@@ -201,6 +202,9 @@ export function geschuetzteFelder(t: Pick<Mappentyp, 'system' | 'felder'> | unde
     if (istVersendet(m?.werte)) for (const k of ['betreff', 'an', 'absender', 'datum', 'nachricht', 'richtung']) fest[k] = 'Wird beim Versand festgehalten.';
     return fest;
   }
+  // Nummernkreis (#171): die Nummer vergibt das DMS.
+  const nummern = (t?.felder ?? []).filter((f) => kreisVon(f));
+  if (nummern.length) return Object.fromEntries(nummern.map((f) => [f.key, m ? 'Fortlaufende Nummer – lässt sich nicht ändern.' : 'Wird beim Speichern vergeben.']));
   return {};
 }
 
@@ -388,6 +392,8 @@ export interface TypKontext {
   /** Schlüssel der anderen Mappentypen (#145). */
   schluesselAndererTypen?: string[];
   existiertTyp: (id: string) => boolean;
+  /** Schlüssel der Nummernkreise (#171); fehlt: nicht prüfen. */
+  nummernkreise?: string[];
   /** Felder eines anderen Typs (für Quellen von Verknüpfungsregistern). */
   felderVon?: (typId: string) => Feld[] | undefined;
 }
@@ -469,6 +475,12 @@ export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebn
     if (f.typ === 'text' && f.muster) {
       try { new RegExp(f.muster); } catch { m.push('Das Muster ist kein gültiger regulärer Ausdruck.'); }
     }
+    // Nummernkreis im Standardwert (#171): nur an Textfeldern, den Kreis muss es geben.
+    const kreis = kreisImStandard(f.standard);
+    if (kreis) {
+      if (f.typ !== 'text') m.push('Einen Nummernkreis gibt es nur für Textfelder.');
+      else if (ctx.nummernkreise && !ctx.nummernkreise.includes(kreis)) m.push(`Den Nummernkreis „${kreis}“ gibt es nicht.`);
+    }
     if (m.length) p.felder[String(i)] = m;
   });
   return p;
@@ -488,6 +500,8 @@ export function pruefeMappe(t: Pick<Mappentyp, 'felder'>, werte: Werte, ctx: Map
 
   for (const f of t.felder) {
     const v = werte?.[f.key];
+    // Nummernkreis (#171): Wert vergibt das DMS, keine Prüfung der Eingabe.
+    if (kreisVon(f)) continue;
     if (istLeer(v)) {
       if (f.pflicht && f.typ !== 'janein') fehler(f.key, 'Pflichtfeld – bitte ausfüllen.');
       continue;

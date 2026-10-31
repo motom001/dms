@@ -18,6 +18,7 @@ import {
   type Aufloesung, type Sicht, type SichtDaten,
 } from '../../shared/src/sichten';
 import type { Readable } from 'node:stream';
+import { datumIn, KREIS_SCHLUESSEL, kreisVon, naechste, neubeginn, pruefeMuster, type Nummernkreis } from '../../shared/src/nummernkreis';
 import { csvAus, xlsxAus } from './xlsx';
 import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile } from './export';
 import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
@@ -978,6 +979,7 @@ export class Dienst {
       schluesselAndererTypen: alle.filter((t) => t.id !== eigeneId && t.schluessel).map((t) => t.schluessel!),
       existiertTyp: (id) => alle.some((t) => t.id === id),
       felderVon: (id) => alle.find((t) => t.id === id)?.felder,
+      nummernkreise: (await this.repo.listeNummernkreise()).map((k) => k.schluessel),
     });
     if (!istOk(p)) throw new Fachfehler(422, 'Der Mappentyp ist so nicht gültig.', p);
   }
@@ -1728,6 +1730,107 @@ export class Dienst {
     return n;
   }
 
+  /* ---------- Nummernkreise (#171) ---------- */
+
+  /** Felder, die einen Kreis nutzen: „Mappentyp · Feld“. */
+  private async kreisVerwendung(): Promise<Map<string, Array<{ typId: string; typ: string; feldKey: string; feld: string }>>> {
+    const v = new Map<string, Array<{ typId: string; typ: string; feldKey: string; feld: string }>>();
+    for (const t of await this.repo.listeTypen()) for (const f of t.felder) {
+      const k = kreisVon(f);
+      if (k) v.set(k, [...(v.get(k) ?? []), { typId: t.id, typ: t.name, feldKey: f.key, feld: f.label }]);
+    }
+    return v;
+  }
+
+  async listeNummernkreise(jetzt = new Date()) {
+    const v = await this.kreisVerwendung();
+    const d = datumIn(jetzt);
+    return (await this.repo.listeNummernkreise()).map((k) => {
+      const n = naechste(k, d);
+      return { ...k, naechste: n.nummer, naechsterZaehler: n.zaehler, zeitraum: n.zeitraum, neubeginn: neubeginn(k.muster), verwendet: v.get(k.schluessel) ?? [] };
+    });
+  }
+
+  async speichereNummernkreis(e: unknown, von: string) {
+    const x = (e ?? {}) as Record<string, unknown>;
+    const schluessel = text(x.schluessel).toLowerCase();
+    const name = text(x.name).slice(0, 80);
+    const muster = String(x.muster ?? '').trim();
+    const start = Number(x.start ?? 1);
+    const vorhanden = (await this.repo.listeNummernkreise()).find((k) => k.schluessel === schluessel);
+    if (x.neu === true && vorhanden) throw new Fachfehler(409, `Den Schlüssel „${schluessel}“ hat schon der Nummernkreis „${vorhanden.name}“.`);
+    if (x.neu !== true && !vorhanden) throw new Fachfehler(404, 'Diesen Nummernkreis gibt es nicht.');
+    if (!KREIS_SCHLUESSEL.test(schluessel)) throw new Fachfehler(422, 'Schlüssel: Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben (höchstens 40 Zeichen).');
+    if (!name) throw new Fachfehler(422, 'Der Nummernkreis braucht einen Namen.');
+    const fm = pruefeMuster(muster);
+    if (fm) throw new Fachfehler(422, fm);
+    if (!Number.isSafeInteger(start) || start < 0) throw new Fachfehler(422, 'Der Startwert muss eine ganze Zahl ab 0 sein.');
+    const k = await this.repo.speichereNummernkreis({ schluessel, name, muster, start });
+    protokoll.modul('werkbank').info(vorhanden ? 'Nummernkreis geändert' : 'Nummernkreis angelegt', { von, schluessel, muster, start, ...(vorhanden && vorhanden.muster !== muster ? { musterVorher: vorhanden.muster } : {}) });
+    return k;
+  }
+
+  async loescheNummernkreis(schluessel: string, von: string) {
+    const v = (await this.kreisVerwendung()).get(schluessel);
+    if (v?.length) throw new Fachfehler(409, `Der Nummernkreis wird noch verwendet: ${v.map((x) => `${x.typ} · ${x.feld}`).join(', ')}.`);
+    await this.repo.loescheNummernkreis(schluessel);
+    protokoll.modul('werkbank').info('Nummernkreis gelöscht', { von, schluessel });
+  }
+
+  /** Zählerstand setzen (#171): `naechster` ist der Zähler der nächsten Nummer im aktuellen Zeitraum. */
+  async setzeZaehler(schluessel: string, e: unknown, von: string, jetzt = new Date()) {
+    const naechster = Number((e as { naechster?: unknown })?.naechster);
+    if (!Number.isSafeInteger(naechster) || naechster < 0) throw new Fachfehler(422, 'Der Zählerstand muss eine ganze Zahl ab 0 sein.');
+    const k = (await this.repo.listeNummernkreise()).find((x) => x.schluessel === schluessel);
+    if (!k) throw new Fachfehler(404, 'Diesen Nummernkreis gibt es nicht.');
+    const vorher = naechste(k, datumIn(jetzt));
+    const neu = await this.repo.setzeZaehler(schluessel, vorher.zeitraum, naechster - 1);
+    protokoll.modul('werkbank').warn('Zählerstand eines Nummernkreises gesetzt', { von, schluessel, zeitraum: vorher.zeitraum, vorher: vorher.zaehler, naechster });
+    return neu;
+  }
+
+  /** Wartung (#171): Mappen eines Typs ohne Nummer – Anzahl und welche Nummern entstehen. */
+  async nummernVorschau(typId: string, feldKey: string, jetzt = new Date()) {
+    const { kreis, ohne } = await this.ohneNummer(typId, feldKey);
+    if (!ohne.length) return { anzahl: 0, von: null, bis: null };
+    const d = datumIn(jetzt);
+    const n = naechste(kreis, d);
+    const bis = naechste({ ...kreis, staende: { ...kreis.staende, [n.zeitraum]: n.zaehler + ohne.length - 2 } }, d);
+    return { anzahl: ohne.length, von: n.nummer, bis: ohne.length === 1 ? n.nummer : bis.nummer };
+  }
+
+  private async ohneNummer(typId: string, feldKey: string): Promise<{ typ: Mappentyp; kreis: Nummernkreis; ohne: Mappe[] }> {
+    const typ = await this.repo.holeTyp(typId);
+    const f = typ?.felder.find((x) => x.key === feldKey);
+    const k = f ? kreisVon(f) : null;
+    if (!typ || !f || !k) throw new Fachfehler(422, 'Dieses Feld nutzt keinen Nummernkreis.');
+    const kreis = (await this.repo.listeNummernkreise()).find((x) => x.schluessel === k);
+    if (!kreis) throw new Fachfehler(409, `Den Nummernkreis „${k}“ gibt es nicht.`);
+    const ohne = (await this.repo.listeMappen(typId)).filter((m) => istLeer(m.werte[feldKey]))
+      .sort((a, b) => a.erstellt.localeCompare(b.erstellt) || a.id.localeCompare(b.id));
+    return { typ, kreis, ohne };
+  }
+
+  /** Wartung (#171): Nummern nachträglich vergeben, in der Reihenfolge des Anlegens; als Auftrag. */
+  nummernNachtragen(typId: string, feldKey: string, von: string) {
+    return this.auftraege.starte('nummern', 'Nummern nachträglich vergeben', async (fortschritt) => {
+      const { typ, ohne } = await this.ohneNummer(typId, feldKey);
+      const label = typ.felder.find((f) => f.key === feldKey)!.label;
+      let vergeben = 0; let erste: string | null = null; let letzte: string | null = null;
+      for (const [i, m] of ohne.entries()) {
+        const nr = await this.repo.vergebeNummer(m.id, feldKey, kreisVon(typ.felder.find((f) => f.key === feldKey)!)!, new Date());
+        if (nr) {
+          vergeben++; erste ??= nr; letzte = nr;
+          await this.notiere(m.id, null, 'geaendert', { aenderungen: [{ feld: feldKey, label, neu: nr }] satisfies Feldaenderung[] });
+        }
+        fortschritt(i + 1, ohne.length);
+      }
+      await this.aktualisiereTitel(ohne.map((m) => m.id));
+      protokoll.modul('werkbank').info('Nummern nachträglich vergeben', { von, typ: typ.name, feld: label, vergeben, erste, letzte });
+      return { vergeben, erste, letzte };
+    });
+  }
+
   async titelNachziehen(): Promise<number> {
     const ids = await this.repo.ohneTitel();
     await this.aktualisiereTitel(ids);
@@ -1758,12 +1861,20 @@ export class Dienst {
       const entwurf: Mappe = { id: '00000000-0000-4000-8000-000000000000', typId: typ.id, werte, erstellt: new Date().toISOString(), erstelltVon: z.ich.id, geaendert: new Date().toISOString(), geaendertVon: z.ich.id };
       if (!(await this.rechteAn(z, entwurf, true)).C) throw new Fachfehler(403, `Mappen vom Typ „${typ.name}“ mit diesen Angaben darfst du nicht anlegen.`);
     }
+    // Nummernkreise (#171): Eingaben zählen nicht; die Nummer zieht das Repo beim Anlegen.
+    const nummern = typ.felder.flatMap((f) => { const k = kreisVon(f); return k ? [{ feldKey: f.key, kreis: k }] : []; });
+    for (const n of nummern) delete werte[n.feldKey];
+    if (nummern.length) {
+      const da = new Set((await this.repo.listeNummernkreise()).map((k) => k.schluessel));
+      const fehlt = nummern.find((n) => !da.has(n.kreis));
+      if (fehlt) throw new Fachfehler(409, `Den Nummernkreis „${fehlt.kreis}“ für „${typ.felder.find((f) => f.key === fehlt.feldKey)?.label}“ gibt es nicht mehr. Bitte einen Administrator.`);
+    }
     await this.pruefeVerweisziele(z, typ, werte, {});
     await this.pruefeWerte(typ, werte);
     const id = istUuid(e.id) && !(await this.repo.holeMappe(e.id)) ? e.id : randomUUID();
-    const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), benutzerId, demo);
+    const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), benutzerId, demo, null, nummern.length ? { felder: nummern, jetzt: new Date() } : undefined);
     if (!demo) {
-      await this.notiere(m.id, benutzerId, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, werte) });
+      await this.notiere(m.id, benutzerId, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, m.werte) });
       await this.pruefeErwaehnungen(typ, m.id, {}, werte, benutzerId);
     }
     const titel = (await this.aktualisiereTitel([m.id])).get(m.id);

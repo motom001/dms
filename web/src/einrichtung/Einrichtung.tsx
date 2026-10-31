@@ -1,3 +1,4 @@
+import { kreisImStandard } from '../../../shared/src/nummernkreis';
 import { useEffect, useRef, useState } from 'react';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import {
@@ -458,7 +459,7 @@ function FeldZeile(p: {
 
   let standard = null;
   if (f.typ === 'text' || f.typ === 'langtext' || f.typ === 'formatiert' || f.typ === 'zahl' || f.typ === 'betrag')
-    standard = <label className="eigenschaft" htmlFor={id('std')}><span>Standardwert</span><input id={id('std')} placeholder="leer" value={String(f.standard ?? '')} onChange={(e) => setze({ standard: e.target.value })} /></label>;
+    standard = <label className="eigenschaft" htmlFor={id('std')}><span>Standardwert {f.typ === 'text' && <small>{kreisImStandard(f.standard) ? 'Nummernkreis – das Feld wird schreibgeschützt' : 'oder {nummernkreis:schlüssel}'}</small>}</span><input id={id('std')} placeholder="leer" value={String(f.standard ?? '')} onChange={(e) => setze({ standard: e.target.value })} /></label>;
   else if (f.typ === 'datum')
     standard = <label className="eigenschaft" htmlFor={id('std')}><span>Standardwert</span><input id={id('std')} type="date" value={String(f.standard ?? '')} onChange={(e) => setze({ standard: e.target.value })} /></label>;
   else if (f.typ === 'janein')

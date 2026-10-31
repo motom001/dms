@@ -6,6 +6,7 @@ import type { Filter, Klausel, Sicht, SichtDaten } from '../../shared/src/sichte
 import type { Ausdruck, Lesefilter } from '../../shared/src/rechte';
 import type { Erinnerung } from '../../shared/src/fristen';
 import { umschluesseleTief } from './tresor';
+import { datumIn, ziehe, type Nummernkreis } from '../../shared/src/nummernkreis';
 import type { Quelle } from '../../shared/src/model';
 import { istUuid, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
 
@@ -30,6 +31,11 @@ const alsTyp = (r: Zeile): Mappentyp => ({
   erstellt: iso(r.erstellt),
   geaendert: iso(r.geaendert),
 });
+const alsKreis = (r: Zeile): Nummernkreis => ({
+  schluessel: String(r.schluessel), name: String(r.name), muster: String(r.muster), start: Number(r.start),
+  staende: (r.staende ?? {}) as Record<string, number>, zuletzt: (r.zuletzt ?? []) as Nummernkreis['zuletzt'],
+});
+
 const alsMappe = (r: Zeile): Mappe => ({
   id: r.id as string,
   typId: r.typ_id as string,
@@ -263,6 +269,16 @@ export function lesefilterSql(sql: Sql, f: Lesefilter | null | undefined): Teil 
 
 /** PostgreSQL-Umsetzung für genau einen Haushalt. */
 export function pgRepo(sql: Sql, haushaltId: string): Repo {
+  /** Nummer ziehen (#171) – nur innerhalb einer Transaktion; die Zeile bleibt bis zu deren Ende gesperrt. */
+  async function zieheIn(tx: postgres.TransactionSql, schluessel: string, mappeId: string, jetzt: Date): Promise<string> {
+    const [r] = await tx`SELECT * FROM nummernkreise WHERE haushalt_id = ${haushaltId} AND schluessel = ${schluessel} FOR UPDATE`;
+    if (!r) throw new Error(`Nummernkreis ${schluessel} fehlt`);
+    const z = ziehe(alsKreis(r), datumIn(jetzt), mappeId, jetzt.toISOString());
+    await tx`UPDATE nummernkreise SET staende = ${tx.json(z.kreis.staende)}, zuletzt = ${tx.json(z.kreis.zuletzt as unknown as postgres.JSONValue)}
+      WHERE haushalt_id = ${haushaltId} AND schluessel = ${schluessel}`;
+    return z.nummer;
+  }
+
   async function schreibeVerweise(tx: postgres.TransactionSql, quelleId: string, vs: Verweis[]) {
     await tx`DELETE FROM verweise WHERE quelle_id = ${quelleId}`;
     const gueltig = vs.filter((v) => istUuid(v.zielId));
@@ -333,8 +349,14 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const [r] = await sql`SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       return r ? alsMappe(r) : undefined;
     },
-    async legeMappeAn(id, typId, werte, vs, benutzerId, demo = false, systemKennung = null) {
+    async legeMappeAn(id, typId, werte, vs, benutzerId, demo = false, systemKennung = null, nummern) {
       return sql.begin(async (tx) => {
+        // Nummernkreise (#171): Zeile sperren, ziehen, mit der Mappe zusammen speichern – scheitert das
+        // Anlegen, rollt auch der Zähler zurück; gleichzeitiges Anlegen wartet auf die Sperre.
+        if (nummern?.felder.length) {
+          werte = { ...werte };
+          for (const n of nummern.felder) werte[n.feldKey] = await zieheIn(tx, n.kreis, id, nummern.jetzt);
+        }
         const [r] = await tx`
           INSERT INTO mappen (id, haushalt_id, typ_id, werte, erstellt_von, geaendert_von, demo, system_kennung)
           VALUES (${id}, ${haushaltId}, ${typId}, ${json(sql, werte)}, ${benutzerId}, ${benutzerId}, ${demo}, ${systemKennung})
@@ -353,6 +375,33 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         const vs = liste.flatMap((m) => m.verweise.filter((v) => istUuid(v.zielId))
           .map((v) => ({ quelle_id: m.id, feld_key: v.feldKey, ziel_id: v.zielId, haushalt_id: haushaltId })));
         if (vs.length) await tx`INSERT INTO verweise ${tx(vs)} ON CONFLICT DO NOTHING`;
+      });
+    },
+    async listeNummernkreise() {
+      return (await sql`SELECT * FROM nummernkreise WHERE haushalt_id = ${haushaltId} ORDER BY name`).map(alsKreis);
+    },
+    async speichereNummernkreis(k) {
+      const [r] = await sql`
+        INSERT INTO nummernkreise (haushalt_id, schluessel, name, muster, start) VALUES (${haushaltId}, ${k.schluessel}, ${k.name}, ${k.muster}, ${k.start})
+        ON CONFLICT (haushalt_id, schluessel) DO UPDATE SET name = EXCLUDED.name, muster = EXCLUDED.muster, start = EXCLUDED.start
+        RETURNING *`;
+      return alsKreis(r);
+    },
+    async loescheNummernkreis(s) { await sql`DELETE FROM nummernkreise WHERE haushalt_id = ${haushaltId} AND schluessel = ${s}`; },
+    async setzeZaehler(s, zeitraum, letzter) {
+      const [r] = await sql`
+        UPDATE nummernkreise SET staende = staende || ${json(sql, { [zeitraum]: letzter })}
+        WHERE haushalt_id = ${haushaltId} AND schluessel = ${s} RETURNING *`;
+      return r ? alsKreis(r) : undefined;
+    },
+    async vergebeNummer(mappeId, feldKey, kreis, jetzt) {
+      return sql.begin(async (tx) => {
+        const [m] = await tx`SELECT werte FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ${mappeId} FOR UPDATE`;
+        const alt = (m?.werte as Werte | undefined)?.[feldKey];
+        if (!m || (alt != null && alt !== '')) return null;
+        const nummer = await zieheIn(tx, kreis, mappeId, jetzt);
+        await tx`UPDATE mappen SET werte = werte || ${json(sql, { [feldKey]: nummer })} WHERE haushalt_id = ${haushaltId} AND id = ${mappeId}`;
+        return nummer;
       });
     },
     async aendereMappe(id, werte, vs, benutzerId) {

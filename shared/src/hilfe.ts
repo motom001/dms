@@ -32,6 +32,8 @@ export const HILFE = {
   'werkbank.texterkennung': admin('texterkennung/', 'Texterkennung'),
   'werkbank.eingangsordner': admin('eingangsordner/', 'Eingangsordner'),
   'werkbank.postfaecher': admin('postfaecher/', 'Postfächer'),
+  'werkbank.nummernkreise': admin('nummernkreise/', 'Nummernkreise'),
+  'werkbank.nummernkreise.nachtragen': admin('nummernkreise/', 'Nummern nachträglich vergeben', 'nummern-nachtraglich-vergeben'),
   'werkbank.anmeldeschutz': admin('anmeldeschutz/', 'Anmeldeschutz'),
   'werkbank.anbieter': admin('anmeldeschutz/', 'Anmeldung über einen Anbieter', 'anmeldung-uber-einen-anbieter-openid-connect'),
   'werkbank.zweifaktor': admin('anmeldeschutz/', 'Zwei-Faktor-Anmeldung', 'zwei-faktor-anmeldung'),

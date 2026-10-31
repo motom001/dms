@@ -813,4 +813,28 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('PUT', '/api/werkbank/texterkennung', { auftraege: 2 })).body.einstellungen.auftraege, 2);
     assert.equal((await anfrage('POST', `/api/dokumente/${dok.id}/texterkennung`)).body.ocr.stand, 'wartet');
   });
+
+  it('Nummernkreise: gleichzeitig angelegte Mappen bekommen verschiedene Nummern (#171)', async () => {
+    assert.equal((await anfrage('POST', '/api/werkbank/nummernkreise', { schluessel: 'beleg', name: 'Belege', muster: 'B{jjjj}-{zaehler:5}', start: 1 })).status, 201);
+    const t = (await anfrage('POST', '/api/typen', { name: 'Beleg', felder: [
+      { key: 'nr', label: 'Belegnummer', typ: 'text', standard: '{nummernkreis:beleg}', eindeutig: true },
+      { key: 'betreff', label: 'Betreff', typ: 'text', pflicht: true },
+    ] })).body;
+    const r = await Promise.all(Array.from({ length: 20 }, (_, i) => anfrage('POST', '/api/mappen', { typId: t.id, werte: { betreff: `B${i}`, nr: 'egal' } })));
+    assert.ok(r.every((x) => x.status === 201), JSON.stringify(r.find((x) => x.status !== 201)));
+    const nummern = r.map((x) => x.body.werte.nr as string).sort();
+    assert.equal(new Set(nummern).size, 20);
+    assert.match(nummern[0], /^B\d{4}-00001$/);
+    assert.match(nummern[19], /-00020$/);
+    // Fehlgeschlagenes Anlegen verbraucht keine Nummer
+    assert.equal((await anfrage('POST', '/api/mappen', { typId: t.id, werte: {} })).status, 422);
+    const n = (await anfrage('POST', '/api/mappen', { typId: t.id, werte: { betreff: 'danach' } })).body.werte.nr as string;
+    assert.match(n, /-00021$/);
+    // Schreibgeschützt
+    const m = r[0].body;
+    assert.equal((await anfrage('PUT', `/api/mappen/${m.id}`, { werte: { ...m.werte, nr: 'X' } })).status, 403);
+    const liste = (await anfrage('GET', '/api/werkbank/nummernkreise')).body;
+    assert.match(liste[0].naechste, /-00022$/);
+    assert.equal((await anfrage('DELETE', '/api/werkbank/nummernkreise/beleg')).status, 409);
+  });
 });

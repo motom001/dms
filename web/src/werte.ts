@@ -1,3 +1,4 @@
+import { kreisVon } from '../../shared/src/nummernkreis';
 import { istPasswortWert, leseZahl, type Betrag, type Feld, type Mappentyp, type Wert, type Werte } from '../../shared/src/model';
 
 /**
@@ -71,7 +72,8 @@ export function standardRoh(t: Mappentyp): RohWerte {
     else if (f.typ === 'passwort') r[f.key] = leeresPasswort;
     else if (f.typ === 'betrag') r[f.key] = { betrag: s == null ? '' : String(s), waehrung: f.waehrung || 'EUR' };
     else if (f.mehrfach && (f.typ === 'auswahl' || f.typ === 'referenz')) r[f.key] = [];
-    else r[f.key] = f.typ === 'referenz' || s == null ? '' : String(s);
+    // Nummernkreis (#171): vergibt der Server beim Speichern.
+    else r[f.key] = f.typ === 'referenz' || s == null || kreisVon(f) ? '' : String(s);
   }
   return r;
 }
