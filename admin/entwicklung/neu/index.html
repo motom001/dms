@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-069" class="md-skip">
+        <a href="#neu-in-version-070" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0690" class="md-nav__link">
+  <a href="#0700" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.69.0
+        0.70.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.69.0">
+    <nav class="md-nav" aria-label="0.70.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -379,6 +379,17 @@
     <span class="md-ellipsis">
       
         Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#beim-aktualisieren-beachten" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Beim Aktualisieren beachten
       
     </span>
   </a>
@@ -1892,15 +1903,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0690" class="md-nav__link">
+  <a href="#0700" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.69.0
+        0.70.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.69.0">
+    <nav class="md-nav" aria-label="0.70.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1908,6 +1919,17 @@
     <span class="md-ellipsis">
       
         Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#beim-aktualisieren-beachten" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Beim Aktualisieren beachten
       
     </span>
   </a>
@@ -1961,25 +1983,32 @@
   
 
 
-<h1 id="neu-in-version-069">Neu in Version 0.69<a class="headerlink" href="#neu-in-version-069" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-070">Neu in Version 0.70<a class="headerlink" href="#neu-in-version-070" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0690">0.69.0<a class="headerlink" href="#0690" title="Permanent link">&para;</a></h2>
+<h2 id="0700">0.70.0<a class="headerlink" href="#0700" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Begriffe</strong> (#276), für alle, die wissen wollen, was ein Wort im DMS bedeutet, und für alle, die Texte schreiben:</li>
-<li>Neue Seite <strong>„Begriffe“</strong> im Benutzerhandbuch mit über 80 Begriffen von <em>Ablage</em> bis <em>Zwei-Faktor-Anmeldung</em>. Bei jedem Begriff steht, was gemeint ist, wie gut ihn Einsteiger verstehen (Alltagswort, mit Erklärung, Fachwort) und wer ihm begegnet. Administrator- und Entwicklerhandbuch verweisen darauf.</li>
-<li>Ein Abschnitt <strong>„Noch offen“</strong> sammelt Wörter, die für mehr als eine Sache stehen, z. B. <em>Eingang</em> und eingehende Post oder <em>Protokoll</em> an der Mappe und in der Werkbank. Sie werden einzeln entschieden. Die Oberfläche ändert sich mit diesem Release noch nicht.</li>
+<li><strong>Werkbank anpassen</strong> (#281), vor allem für Haushalte, deren Werkbank nicht überladen wirken soll:</li>
+<li>Ganz unten in der Leiste der Werkbank steht <strong>Werkbank anpassen</strong>. Dort wählst du eine Vorlage, <strong>Haushalt</strong>, <strong>Organisation</strong> oder <strong>Alles</strong>, und blendest einzelne Bereiche ein oder aus. Jeder Administrator kann zusätzlich Bereiche <strong>nur für sich</strong> einblenden.</li>
+<li><strong>Ausblenden schaltet nichts ab.</strong> Alles läuft weiter, Links und Hilfe führen weiter hin. Hat ein ausgeblendeter Bereich ein Problem, steht es trotzdem in der Übersicht, und der Bereich erscheint mit seinem Hinweis in der Leiste.</li>
+<li>Eingerichtete Bereiche verschwinden nicht unbemerkt: Im Dialog steht „eingerichtet, aber ausgeblendet“, unten in der Leiste, wie viele Bereiche ausgeblendet sind. Ein Klick zeigt sie vorübergehend alle.</li>
+<li>Das Administratorhandbuch beschreibt die Vorlagen und je Bereich, wofür man ihn braucht.</li>
+</ul>
+<h3 id="beim-aktualisieren-beachten">Beim Aktualisieren beachten<a class="headerlink" href="#beim-aktualisieren-beachten" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Bestehende Installationen sehen weiterhin <strong>alle</strong> Bereiche. Neue Installationen beginnen mit der Vorlage <strong>Haushalt</strong>.</li>
 </ul>
 <h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Die Quelle ist <code>docs/glossar.yml</code>. Sie nennt auch Wörter, die wir nicht verwenden, und die Bezeichner im Code. Neue Begriffe kommen mit dem Release ins Glossar.</li>
+<li>Die Ansicht steht in der Einstellung <code>werkbank_ansicht</code> (für alle) und <code>werkbank_ansicht:&lt;Benutzer&gt;</code> (je Administrator), beide sind Teil der Sicherung. Schnittstelle: <code>GET</code>/<code>PUT /api/werkbank/ansicht</code>.</li>
+<li>Die Bereiche sind so geschnitten, dass sie später auch Einheiten für abgestufte Administratorrechte sein können (#282).</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.68.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.68.0...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.69.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.69.0...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
