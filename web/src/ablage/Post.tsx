@@ -1,7 +1,8 @@
 import { Vorschaubild } from './Vorschaubild';
 import { useEffect, useRef, useState } from 'react';
 import { auswahlText, darfErstellen, POST_STAND, vorlageFelder, type Mappe, type Mappentyp, type Werte } from '../../../shared/src/model';
-import { api, type MappeDetails } from '../api';
+import { Fundstellen } from './Doppelt';
+import { api, type Fundstelle, type MappeDetails } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link } from '../ort';
 import { titelOder } from '../seiten';
@@ -93,6 +94,15 @@ function ZuordnenMaske({ typ, details, neuLaden, schliessen }: { typ: Mappentyp;
   const [register, setRegister] = useState('');
   useEffect(() => { setRegister(regs[0]?.key ?? ''); }, [typId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [gewaehlt, setGewaehlt] = useState<Set<string>>(() => new Set(details.dokumente.map((x) => x.id)));
+  // Doppelte Dateien (#333): Liegt ein Dokument dieser Post schon anderswo (in Mappen, die ich lesen darf)?
+  const [doppelt, setDoppelt] = useState<Record<string, Fundstelle[]>>({});
+  useEffect(() => {
+    const werte = [...new Set(details.dokumente.map((x) => x.sha256))];
+    if (!werte.length) return;
+    let aus = false;
+    api.gleicheDateien(werte.slice(0, 100), post.id).then((r) => { if (!aus) setDoppelt(r.fundstellen); }, () => {});
+    return () => { aus = true; };
+  }, [details.dokumente, post.id]);
   const [kopieren, setKopieren] = useState(false);
   const [ziel, setZiel] = useState<Mappe>();
   const [suche, setSuche] = useState('');
@@ -177,7 +187,10 @@ function ZuordnenMaske({ typ, details, neuLaden, schliessen }: { typ: Mappentyp;
         <fieldset className="eigenschaft">
           <legend>Dokumente</legend>
           {details.dokumente.map((x) => (
-            <label key={x.id} className="haken mitvorschau"><input type="checkbox" checked={gewaehlt.has(x.id)} onChange={() => umschalten(x.id)} /><Vorschaubild d={x} /><span>{x.name}</span></label>
+            <div key={x.id} className="mitdoppelt">
+              <label className="haken mitvorschau"><input type="checkbox" checked={gewaehlt.has(x.id)} onChange={() => umschalten(x.id)} /><Vorschaubild d={x} /><span>{x.name}</span></label>
+              {doppelt[x.sha256] && <Fundstellen f={doppelt[x.sha256]} />}
+            </div>
           ))}
           {mitDokumenten && regs.length > 1 && (
             <label className="eigenschaft"><span>in das Register</span>

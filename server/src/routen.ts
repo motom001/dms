@@ -1235,11 +1235,19 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/mappen/:id/dokumente', zugang: 'angemeldet', roh: MAX_DATEIGROESSE, handler: async (a) => {
       await darf(a, a.params.id, 'U');
       const r = await dienst.ladeHoch(a.params.id, { register: a.query.register, name: a.query.name, typ: a.query.typ, gleicherName: a.query.gleicherName, herkunft: a.apiSchluessel ? 'api' : 'hochgeladen' }, a.body, ich(a).id);
+      // Gleicher Inhalt (#333): nur Mappen, die der Benutzer lesen darf.
+      const lesbar = await dienst.lesbare(await zg(a), r.gleicherInhalt.map((g) => g.mappeId));
+      r.gleicherInhalt = r.gleicherInhalt.filter((g) => lesbar.has(g.mappeId));
       L.dokumente.info('Dokument hochgeladen', {
         name: r.dokument.name, groesse: r.dokument.groesse, mime: r.dokument.mime, anzeigbar: r.dokument.anzeigbar,
         mappe: a.params.id, gleicherInhalt: r.gleicherInhalt.length || undefined,
       });
       return ok(r, 201);
+    } },
+    // Doppelte Dateien vor dem Hochladen erkennen (#333): Prüfwerte (SHA-256) → Fundstellen in lesbaren Mappen.
+    { methode: 'POST', pfad: '/api/dokumente/gleiche', zugang: 'angemeldet', handler: async (a) => {
+      const e = (a.body ?? {}) as { pruefwerte?: unknown; ohneMappe?: unknown };
+      return ok({ fundstellen: await dienst.fundstellen(await zg(a), e.pruefwerte, typeof e.ohneMappe === 'string' ? e.ohneMappe : undefined) });
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/inhalt', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');

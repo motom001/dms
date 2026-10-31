@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent as ReactDragEvent } from 'react';
 import { darfErstellen, darfPostAnlegen, MAX_DATEIGROESSE, type Mappentyp } from '../../../shared/src/model';
-import { api } from '../api';
+import { api, type Fundstelle } from '../api';
+import { Fundstellen, fundstellenFuer } from './Doppelt';
 import { useDaten } from '../daten';
 import { useErreichbarkeit } from '../erreichbar';
 import { geheZu } from '../ort';
@@ -68,6 +69,24 @@ export function PostAblage() {
   const zustand = useRef({ darf, gesperrt });
   zustand.current = { darf, gesperrt };
 
+  // Doppelte Dateien (#333): vor dem Anlegen fragen, je betroffener Datei.
+  const [rueckfrage, setRueckfrage] = useState<{ dateien: File[]; doppelt: Array<{ datei: File; f: Fundstelle[] }>; trotzdem: Set<File> } | null>(null);
+  async function pruefen(alle: File[]) {
+    if (!typ || !register) return;
+    setLaeuft('Prüfe, ob es die Dateien schon gibt …');
+    const m = await fundstellenFuer(alle.map((datei) => ({ datei })));
+    setLaeuft(undefined);
+    if (!m.size) { await anlegen(alle); return; }
+    setRueckfrage({ dateien: alle, doppelt: [...m].map(([x, f]) => ({ datei: x.datei, f })), trotzdem: new Set() });
+  }
+  async function weiter() {
+    const r = rueckfrage; setRueckfrage(null);
+    if (!r) return;
+    const doppelt = new Set(r.doppelt.map((x) => x.datei));
+    const nehmen = r.dateien.filter((f) => !doppelt.has(f) || r.trotzdem.has(f));
+    if (nehmen.length) await anlegen(nehmen);
+  }
+
   async function anlegen(alle: File[]) {
     if (!typ || !register) return;
     const zuGross = alle.filter((f) => f.size > MAX_DATEIGROESSE);
@@ -88,11 +107,11 @@ export function PostAblage() {
       geheZu(`/ablage/${typ.id}/${m.id}`);
     } catch (e) { setFehler([...schief, (e as Error).message]); } finally { setLaeuft(undefined); }
   }
-  const anlegenRef = useRef(anlegen);
-  anlegenRef.current = anlegen;
+  const pruefenRef = useRef(pruefen);
+  pruefenRef.current = pruefen;
 
   useEffect(() => {
-    const neu = (e: Event) => void anlegenRef.current((e as CustomEvent<File[]>).detail);
+    const neu = (e: Event) => void pruefenRef.current((e as CustomEvent<File[]>).detail);
     const rein = (e: DragEvent) => {
       if (!nurDateien(e)) return;
       e.preventDefault();
@@ -134,7 +153,7 @@ export function PostAblage() {
     zaehler.current = 0;
     setZieht(false); setUeber(null);
     const dateien = [...e.dataTransfer.files];
-    if (wohin === 'mappe' && ziel) ziel.nimm(dateien); else void anlegen(dateien);
+    if (wohin === 'mappe' && ziel) ziel.nimm(dateien); else void pruefen(dateien);
   };
 
   return (
@@ -148,6 +167,23 @@ export function PostAblage() {
           )}
           <div className={`ablageziel ${ueber === 'post' ? 'drauf' : ''}`} onDragOver={(e) => { e.preventDefault(); setUeber('post'); }} onDrop={ablegen('post')}>
             <strong>{ziel ? 'Als neue Post' : 'Hier neue Dokumente ablegen'}</strong><span>Alle Dateien kommen zusammen in eine neue Post</span>
+          </div>
+        </div>
+      )}
+      {rueckfrage && (
+        <div className="ablagestatus doppeltfrage" role="dialog" aria-label="Dateien schon vorhanden">
+          <p><strong>{rueckfrage.doppelt.length === 1 ? 'Eine Datei gibt es schon' : `${rueckfrage.doppelt.length} Dateien gibt es schon`}</strong></p>
+          <ul>{rueckfrage.doppelt.map(({ datei, f }) => (
+            <li key={`${datei.name}-${datei.size}-${datei.lastModified}`}>
+              <strong>{datei.name}</strong> – <Fundstellen f={f} beiKlick={() => setRueckfrage(null)} />
+              <label className="haken klein"><input type="checkbox" checked={rueckfrage.trotzdem.has(datei)}
+                onChange={(e) => { const t = new Set(rueckfrage.trotzdem); if (e.target.checked) t.add(datei); else t.delete(datei); setRueckfrage({ ...rueckfrage, trotzdem: t }); }} /><span>trotzdem ablegen</span></label>
+            </li>
+          ))}</ul>
+          {rueckfrage.dateien.length > rueckfrage.doppelt.length && <p className="leise klein">Die übrigen {rueckfrage.dateien.length - rueckfrage.doppelt.length} Dateien werden normal abgelegt.</p>}
+          <div className="knoepfe">
+            <button type="button" className="knopf primaer klein" onClick={() => void weiter()}>Weiter</button>
+            <button type="button" className="knopf klein" onClick={() => setRueckfrage(null)}>Abbrechen</button>
           </div>
         </div>
       )}

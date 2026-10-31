@@ -24,6 +24,7 @@ Unter **Werkbank → Eingangsordner**:
 - **Eingangsordner prüfen** – ein oder aus (Standard: ein).
 - **Prüfabstand** – wie oft das DMS nachsieht, 5 bis 3600 Sekunden (Standard: 30).
 - **Nach dem Übernehmen** – die Datei nach `erledigt/` verschieben (Standard) oder löschen.
+- **Doppelte Dateien überspringen** – liegt genau diese Datei (gleicher Prüfwert) schon im DMS, entsteht keine Post; die Datei wird wie eine übernommene weggeräumt und in der Liste als „doppelt – übersprungen“ geführt (Standard: aus).
 - **Jetzt prüfen** – sofort nachsehen.
 
 Darunter stehen die letzte Prüfung, Dateien, die noch geschrieben werden, die zuletzt übernommenen Dateien mit Link zur Post und Fehler.
@@ -35,7 +36,7 @@ Darunter stehen die letzte Prüfung, Dateien, die noch geschrieben werden, die z
 - **Nur fertige Dateien:** Eine Datei wird erst übernommen, wenn sich Größe und Änderungszeit über zwei Prüfungen nicht geändert haben – Scanner schreiben langsam.
 - **Übersprungen** werden versteckte und temporäre Dateien (`.*`, `~*`, `*.tmp`, `*.part`, `*.crdownload`, `*.partial`, `Thumbs.db`, `desktop.ini`), die Ordner der NAS-Systeme (`@eaDir`, `#recycle`, `.@__thumb`, `@Recycle`, `.Trash*`) sowie `erledigt/` und `fehler/`.
 - **Abgelehnt** werden leere Dateien und Dateien über 100 MB: Sie wandern nach **`fehler/`**, daneben eine Textdatei mit dem Grund; die Werkbank zeigt eine Meldung. Ist die [Speicherplatz](speicherplatz.md)-Grenze erreicht, bleibt die Datei liegen und kommt dran, sobald wieder Platz ist.
-- **Gleicher Inhalt:** Gibt es schon Mappen mit derselben Datei, entsteht trotzdem eine neue Post; ihre Historie nennt die anderen Mappen.
+- **Gleicher Inhalt:** Gibt es schon Mappen mit derselben Datei, entsteht trotzdem eine neue Post (außer mit *Doppelte Dateien überspringen*). Ihre Historie sagt „Diese Datei liegt schon im DMS“ – ohne Titel, denn die Post sehen oft mehr Leute als die andere Mappe. Wo die Datei liegt, zeigt **Zuordnen** jedem, der die Mappe lesen darf.
 - **Keine doppelte Übernahme**, auch nicht nach einem Neustart oder Absturz mitten im Übernehmen: Erst wenn die Post gespeichert ist, wird die Datei verschoben oder gelöscht.
 - Im [Wartungsmodus](wartungsmodus.md) und während einer [Wiederherstellung](wiederherstellen.md) ruht der Eingangsordner. Laufen mehrere Instanzen des DMS mit derselben Datenbank, übernimmt nur eine.
 

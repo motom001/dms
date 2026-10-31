@@ -353,11 +353,18 @@ export class Postfaecher {
     const dateien = mail.anhaenge.filter((a) => !a.eingebettet);
     if (p.original) dateien.push({ name: `${(mail.betreff || 'Mail').replace(/[\\/:*?"<>|\r\n]+/g, ' ').slice(0, 80).trim() || 'Mail'}.eml`, mime: 'message/rfc822', inhalt: quelle, eingebettet: false });
     let n = 0;
+    const doppelt: string[] = [];
     for (const a of dateien) {
       if (a.inhalt.length > MAX_DATEIGROESSE) { abgelehnt.push(`${a.name}: größer als 100 MB`); continue; }
       if (!a.inhalt.length) { abgelehnt.push(`${a.name}: leer`); continue; }
-      try { await this.d.dienst.ladeHoch(postId, { register, name: a.name, typ: a.mime }, a.inhalt, null); n++; } catch (e) { abgelehnt.push(`${a.name}: ${(e as Error).message}`); }
+      try {
+        const r = await this.d.dienst.ladeHoch(postId, { register, name: a.name, typ: a.mime }, a.inhalt, null);
+        n++;
+        // Doppelt (#333): Hinweis ohne Titel – wer die Post liest, sieht beim Zuordnen nur die Fundstellen, die er lesen darf.
+        if (r.gleicherInhalt.some((g) => g.mappeId !== postId)) doppelt.push(a.name);
+      } catch (e) { abgelehnt.push(`${a.name}: ${(e as Error).message}`); }
     }
+    if (doppelt.length) await this.d.dienst.notiereSystem(postId, SYSTEMNAME, `Doppelt: ${doppelt.map((x) => `„${x}“`).join(', ')} ${doppelt.length === 1 ? 'liegt' : 'liegen'} schon im DMS – vor dem Zuordnen prüfen.`);
     if (abgelehnt.length) await this.d.dienst.notiereSystem(postId, SYSTEMNAME, `Nicht übernommene Anhänge: ${abgelehnt.join('; ')}`);
     return n;
   }

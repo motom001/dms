@@ -21,8 +21,12 @@ import { protokoll } from './protokoll';
  *    gespeichert ist, wird die Datei bewegt. Mehrere Instanzen: nur eine übernimmt (Sperre).
  */
 
-export interface EingangEinstellung { aktiv: boolean; abstand: number; nachher: 'erledigt' | 'loeschen' }
-export const EINGANG_STANDARD: EingangEinstellung = { aktiv: true, abstand: 30, nachher: 'erledigt' };
+export interface EingangEinstellung {
+  aktiv: boolean; abstand: number; nachher: 'erledigt' | 'loeschen';
+  /** Doppelte Dateien (#333): gleiche Datei liegt schon im DMS → nicht als Post übernehmen, nur wegräumen. */
+  doppelteUeberspringen?: boolean;
+}
+export const EINGANG_STANDARD: EingangEinstellung = { aktiv: true, abstand: 30, nachher: 'erledigt', doppelteUeberspringen: false };
 
 export interface EingangEreignis { datei: string; zeit: string; mappeId?: string; grund?: string }
 export interface EingangStand {
@@ -70,7 +74,8 @@ export function pruefeEingangEinstellung(x: unknown, alt: EingangEinstellung): E
   if (!Number.isFinite(abstand) || abstand < 5 || abstand > 3600) throw new Fachfehler(422, 'Prüfabstand: 5 bis 3600 Sekunden.');
   const nachher = o.nachher === undefined ? alt.nachher : o.nachher;
   if (nachher !== 'erledigt' && nachher !== 'loeschen') throw new Fachfehler(422, 'Nach dem Übernehmen: verschieben (erledigt) oder löschen.');
-  return { aktiv: o.aktiv === undefined ? alt.aktiv : o.aktiv === true, abstand, nachher };
+  const doppelteUeberspringen = o.doppelteUeberspringen === undefined ? alt.doppelteUeberspringen === true : o.doppelteUeberspringen === true;
+  return { aktiv: o.aktiv === undefined ? alt.aktiv : o.aktiv === true, abstand, nachher, doppelteUeberspringen };
 }
 
 const vereinfacht = (s: string) => s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -205,6 +210,13 @@ export class Eingangsordner {
     let inhalt: Buffer;
     try { inhalt = await readFile(pfad); } catch (x) { log.warn('Eingangsordner: Datei nicht lesbar', { datei: anzeige, fehler: (x as Error).message }); return false; }
     const sha256 = createHash('sha256').update(inhalt).digest('hex');
+    // Doppelt (#333): auf Wunsch gar nicht erst als Post übernehmen.
+    if (e.doppelteUeberspringen && (await this.d.dienst.dokumenteMitInhalt(sha256)).length) {
+      await this.nachher(pfad, rel, e);
+      await this.merke('uebernommen', { datei: anzeige, zeit: new Date().toISOString(), grund: 'doppelt – liegt schon im DMS, übersprungen' });
+      log.info('Eingangsordner: doppelte Datei übersprungen', { datei: anzeige });
+      return true;
+    }
     const journal: Journal = { pfad, sha256, groesse, seit: new Date().toISOString() };
     await this.d.einstellungen.schreibe('eingangsordner_journal', journal);
     let mappeId: string;
@@ -213,7 +225,8 @@ export class Eingangsordner {
       const gleich = await this.d.dienst.dokumenteMitInhalt(sha256);
       const post = await this.d.dienst.legePostAn({ betreff: basename(rel, extname(rel)).slice(0, 250), absender: SYSTEMNAME, ...(fuer ? { fuer } : {}) },
         { id: null, name: SYSTEMNAME }, undefined, POST_KANAL.ordner,
-        { text: `aus dem Eingangsordner übernommen (${anzeige})`, datei: anzeige, ...(gleich.length ? { gleicherInhalt: gleich } : {}) });
+        // Doppelt (#333): nur die Anzahl – Titel sähe jeder, der die Post lesen darf, auch für fremde Mappen.
+        { text: `aus dem Eingangsordner übernommen (${anzeige})`, datei: anzeige, ...(gleich.length ? { doppelt: gleich.length } : {}) });
       mappeId = post.id;
       await this.d.einstellungen.schreibe('eingangsordner_journal', { ...journal, mappeId });
       const typ = await this.d.dienst.postTyp();

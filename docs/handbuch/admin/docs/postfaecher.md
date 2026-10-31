@@ -48,6 +48,7 @@ Anmeldung per OAuth2 (z. B. Microsoft 365) gehört nicht dazu; sie kommt bei Bed
 
 - **Jede Mail wird eine Post**: Kanal *E-Mail*, Richtung eingehend, Stand *Neu*; Betreff, Datum und Absender (Name und Adresse) aus der Mail; *Für* aus dem Postfach. Angelegt hat sie das *Postfach*, kein Benutzer. Die Historie nennt Postfach, Absender und Zeit.
 - **Anhänge** werden einzelne Dokumente. Kleine eingebettete Bilder (Logos, Signaturen) werden übersprungen; angehängte Mails bleiben ein `.eml`-Dokument.
+- **Doppelte Anhänge:** Liegt ein Anhang schon im DMS (gleicher Prüfwert), wird er trotzdem übernommen; die Historie der Post sagt „Doppelt: „Rechnung.pdf“ liegt schon im DMS – vor dem Zuordnen prüfen.“ Wo, zeigt **Zuordnen** jedem, der die andere Mappe lesen darf.
 - Der **Text der Mail** steht als reiner Text an der Post. HTML wird in Text umgewandelt; Bilder oder andere Inhalte aus dem Internet lädt das DMS nie.
 - Es gelten die Grenzen wie beim Hochladen. Ein zu großer Anhang steht mit Grund in der Historie; die übrigen werden übernommen. Ist die [Speicherplatz](speicherplatz.md)-Grenze erreicht, bleibt die Mail im Postfach.
 - **Keine doppelte Übernahme** – auch nicht nach einem Neustart, einem Absturz mitten im Abruf oder wenn der Server seine Nummerierung neu beginnt (UIDVALIDITY). Erst wenn die Post gespeichert ist, wird die Mail verschoben, markiert oder gelöscht.

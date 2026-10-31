@@ -66,6 +66,8 @@ function einzelheiten(e: Historieneintrag, emailTyp: string | undefined): { hinw
     }
     case 'uebernommen': {
       // Eingangskanal (#195): gleicher Inhalt wie in anderen Mappen.
+      // Seit #333 nur noch die Anzahl (Titel fremder Mappen bleiben verborgen); die Fundstellen zeigt „Zuordnen“.
+      if (typeof d.doppelt === 'number' && d.doppelt > 0) return { hinweis: 'doppelt', inhalt: <p>Diese Datei liegt schon im DMS – beim Zuordnen stehen die Mappen, die du sehen darfst.</p> };
       const gleich = Array.isArray(d.gleicherInhalt) ? (d.gleicherInhalt as Array<{ mappeId: string; titel: string; name: string }>) : [];
       if (!gleich.length) return null;
       return {

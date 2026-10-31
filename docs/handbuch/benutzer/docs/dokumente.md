@@ -19,7 +19,9 @@ Eine Datei darf bis zu 100 MB groß sein.
     Was du nach dem Einscannen vernichten darfst und was du besser im Original behältst: [Original behalten oder vernichten?](original.md)
 
 !!! tip "Gleiche Datei schon abgelegt?"
-    Liegt eine Datei mit genau demselben Inhalt schon in einer anderen Mappe, weist das DMS nach dem Speichern darauf hin – mit einem Link zu der anderen Mappe. Gespeichert wird der Inhalt trotzdem nur einmal.
+    Liegt genau diese Datei schon in einer anderen Mappe, die du sehen darfst, steht das **sofort** an der neuen Datei – noch vor dem Speichern: „Diese Datei liegt schon in *Stromvertrag Haus* (Vertrag, Register Dokumente, „Scan.pdf“, hochgeladen am …)“, mit Link dorthin. Du entscheidest: **Mappe speichern** legt sie trotzdem ab, **Nicht hochladen** lässt sie weg, der Link führt zur vorhandenen Mappe. Gespeichert wird der Inhalt in jedem Fall nur einmal.
+
+    Das DMS vergleicht den **Prüfwert** der Datei – nur exakt gleiche Dateien zählen, nicht ein zweiter Scan desselben Briefs. Liegt die Datei nur in Mappen, die du nicht sehen darfst, gibt es keinen Hinweis: Das DMS verrät nichts über Mappen, die dir verborgen sind.
 
 ## Ansehen und herunterladen
 
