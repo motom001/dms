@@ -107,6 +107,16 @@ jobs:
         env:
           DMS_URL: http://localhost:3000
 
+      # Erweiterte Suche (#199): Formular, Chips, Link in der Adresse, Ablauf am Handy.
+      - name: Erweiterte Suche prüfen
+        working-directory: docs/handbuch/screenshots
+        run: |
+          set -o pipefail
+          node suche-pruefen.mjs "$RUNNER_TEMP/mobil" 2>&1 | tee -a "$RUNNER_TEMP/aufnahme.log"
+        shell: bash
+        env:
+          DMS_URL: http://localhost:3000
+
       - name: Bilder der iPhone-Prüfung hochladen
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

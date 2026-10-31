@@ -20,6 +20,7 @@ import { Hilfe } from '../Hilfe';
 import { ExportDialog } from './Export';
 import { PostKnopf } from './Post';
 import type { Hilfeort } from '../../../shared/src/hilfe';
+import { Suchchips, Suchformular, suchFehler, suchTypen } from './Suche';
 
 /**
  * Ablage in drei Spalten, von groß nach klein:
@@ -29,6 +30,7 @@ import type { Hilfeort } from '../../../shared/src/hilfe';
  * /ablage/:sicht/:mappeId           Mappe rechts geöffnet
  * /ablage/:typId/neu?verweis=k:id   neue Mappe, optional mit vorbelegtem Verweis
  * /ablage/link?typ=…&feld=…         sprechender Link (#98); geöffnet: /ablage/link/:mappeId?typ=…
+ * /ablage/suche?typ=…&feld.von=…    erweiterte Suche (#199): links das Formular; geöffnet: /ablage/suche/:mappeId?…
  *
  * Die Liste lädt je 100 Mappen nach Titel sortiert und beim Scrollen die nächsten.
  */
@@ -40,11 +42,16 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   const [, sicht, dritt] = teile;
 
   useEffect(() => { if (!sicht) geheZu('/ablage/eingang', true); }, [sicht]);
+  // Erweiterte Suche (#199): am Handy erst das Formular, nach „Suchen“ die Treffer.
+  const istSuche = sicht === 'suche';
+  const [formular, setFormular] = useState(() => !suche.toString());
+  const leereSuche = istSuche && !suche.toString();
+  useEffect(() => { if (leereSuche) setFormular(true); }, [leereSuche]);
 
   // Der eine Mappentyp der Sicht (für Trefferliste, Sortierung, „+ Neu“); bei mehreren Typen keiner.
   const verwaltet = d.sicht(sicht);
   const typ = d.typDerSicht(sicht);
-  const ebene = dritt ? 'mappe' : 'liste';
+  const ebene = dritt ? 'mappe' : istSuche ? (formular ? 'formular' : 'suchliste') : 'liste';
   // Spalten (#75): Trefferliste der Sicht, sonst Standard; bei mehreren Typen nur Gemeinsames.
   const sichtTypen = verwaltet ? wirksameTypen(d.sichten, verwaltet.id).map((t) => d.typ(t)).filter((t): t is Mappentyp => !!t) : typ ? [typ] : [];
   const wahl = verwaltet ? spaltenDerSicht(sichtTypen, verwaltet.trefferliste) : typ ? { key: 'standard', spalten: standardliste(typ).spalten } : { key: null, spalten: GEMISCHTE_SPALTEN };
@@ -52,7 +59,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   const anstehend = useAnstehend();
   // Sprechender Link (#98): die Adresse ist der Link; beim Öffnen einer Mappe bleibt sie erhalten.
   const istLink = sicht === 'link';
-  const anhang = istLink ? `?${suche.toString()}` : '';
+  const anhang = istLink || istSuche ? `?${suche.toString()}` : '';
   const link = istLink ? liesDirektlink(suche, d.typen) : null;
 
   let rechts;
@@ -74,9 +81,17 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
 
   return (
     <Dreiteilung ort="ablage" ebene={ebene} offen={dritt}>
+      {istSuche ? (
+        <aside className="spalte sichten suchspalte" aria-label="Erweiterte Suche">
+          <Suchformular suche={suche} zeigeTreffer={() => setFormular(false)} />
+        </aside>
+      ) : (
       <aside className="spalte sichten" aria-label="Sichten">
         <h2 className="ueber">Sichten</h2>
         <nav className="sichtliste">
+          <Link to="/ablage/suche" className="sicht" title="Mappentypen wählen, in Feldern und im Volltext suchen">
+            <span className="nm"><span aria-hidden="true">⌕</span> Erweiterte Suche</span>
+          </Link>
           <Link to="/ablage/eingang" className={`sicht ${sicht === 'eingang' ? 'an' : ''}`}>
             <span className="nm">Eingang</span>{d.zaehler.eingang > 0 && <span className="zaehler">{zahl(d.zaehler.eingang)}</span>}
           </Link>
@@ -98,9 +113,12 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
         {!d.typen.length && <p className="leise klein">Noch keine Mappentypen. {ich.rolle === 'admin' ? <Link to="/werkbank/typen" className="verweis">Zur Werkbank</Link> : 'Ein Administrator muss sie zuerst einrichten.'}</p>}
         {d.typen.length > 0 && !d.sichten.length && <p className="leise klein">Noch keine Sichten. {ich.rolle === 'admin' ? <Link to="/werkbank/sichten" className="verweis">Sichten einrichten</Link> : 'Ein Administrator muss sie zuerst einrichten.'}</p>}
       </aside>
+      )}
 
       <section className="spalte liste" aria-label="Mappen">
-        {link
+        {istSuche
+          ? <SuchListe suche={suche} offen={dritt} aendern={() => setFormular(true)} />
+          : link
           ? link.ok
             ? <LinkListe key={`${link.link.typ.id}:${JSON.stringify(link.link.bedingungen)}`} link={link.link} suche={suche} offen={dritt} />
             : <>
@@ -239,6 +257,29 @@ function LinkListe({ link, suche, offen }: { link: Direktlink; suche: URLSearchP
   );
 }
 
+/** Treffer der erweiterten Suche (#199): wie eine Sicht, mit den Bedingungen als Chips. */
+function SuchListe({ suche, offen, aendern }: { suche: URLSearchParams; offen?: string; aendern(): void }) {
+  const d = useDaten();
+  const fehler = suchFehler(suche, d.typen);
+  const kopf = <button type="button" className="textknopf klein nur-schmal" onClick={aendern}>← Suche ändern</button>;
+  if (fehler.length) return (
+    <>
+      <div className="listenkopf"><div><h1>Suche</h1>{kopf}</div></div>
+      <div className="hinweis schlecht stapel" role="alert"><p>Diese Suche lässt sich nicht ausführen:</p><ul>{fehler.map((f) => <li key={f}>{f}</li>)}</ul></div>
+    </>
+  );
+  const typen = suchTypen(suche, d.typen);
+  const typ = typen.length === 1 ? typen[0] : undefined;
+  const wahl = typ ? { key: 'standard', spalten: standardliste(typ).spalten } : typen.length ? spaltenDerSicht(typen, null) : { key: null, spalten: GEMISCHTE_SPALTEN };
+  const q = suche.toString();
+  return (
+    <Liste key={q} sicht="suche" link={q} anhang={`?${q}`} typ={typ} spaltenTyp={typ ?? typen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []}
+      titel="Suchergebnis" offen={offen} hilfe="ablage.erweitertesuche" auswahl export immerSuche
+      kopf={<div className="suchkopf">{kopf}<Suchchips suche={suche} offen={offen} /></div>}
+      leerText="Keine Treffer. Entferne eine Bedingung (×), um mehr zu finden." />
+  );
+}
+
 function Liste(p: {
   sicht: string; typ?: Mappentyp; spaltenTyp?: Mappentyp; spalten?: string[]; listenSpalten?: string[]; titel: string; beschreibung?: string; offen?: string; neu?: boolean; leerText: string;
   /** Post (#192): „+ Post“ statt „+ Neu“. */
@@ -251,6 +292,8 @@ function Liste(p: {
   auswahl?: boolean;
   /** Export erlaubt (#153: Recht E an der Sicht). */
   export?: boolean;
+  /** Erweiterte Suche (#199): Chips unter dem Kopf; Suchfeld, sobald es Treffer gibt. */
+  kopf?: ReactNode; immerSuche?: boolean;
 }) {
   const d = useDaten();
   const anhang = p.anhang ?? '';
@@ -308,8 +351,8 @@ function Liste(p: {
 
   const gesamtSicht = p.sicht === 'eingang' ? d.zaehler.eingang : p.sicht === 'favoriten' ? d.zaehler.favoriten ?? 0 : d.zaehler.sichten?.[p.sicht] ?? (p.typ ? d.anzahl(p.typ.id) : 0);
   // Suche immer, sobald es Mappen gibt (#160) – der Volltext lohnt auch bei wenigen.
-  const zeigeSuche = gesamtSicht > 0 || !!eingabe;
-  const anzahlText = s.gesamt === null ? '' : suche
+  const zeigeSuche = gesamtSicht > 0 || !!eingabe || (!!p.immerSuche && !!s.gesamt);
+  const anzahlText = s.gesamt === null ? '' : suche || p.sicht === 'suche'
     ? `${zahl(s.gesamt)} Treffer`
     : `${zahl(s.gesamt)} ${s.gesamt === 1 ? 'Mappe' : 'Mappen'}`;
   const nachladen = !s.alle && (s.laedt ? 'Lade …' : <button type="button" className="textknopf" onClick={s.mehr}>Weitere laden</button>);
@@ -351,6 +394,7 @@ function Liste(p: {
         {p.neu && <Link to={`/ablage/${p.sicht}/neu`} className="knopf gruen klein">+ Neu</Link>}
         {p.post && p.typ && <div className="postknopf"><PostKnopf /></div>}
       </div>
+      {p.kopf}
       {zeigeSuche && (
         <div className="suchzeile">
           <label className="suche"><span className="sr">Suchen</span>
@@ -362,6 +406,7 @@ function Liste(p: {
           <label className="haken klein" title="Auch in den Notizen der Mappen suchen.">
             <input type="checkbox" checked={inNotizen} onChange={(e) => d.setzeEinstellung('suche_notizen', e.target.checked || null)} /><span>Notizen</span>
           </label>
+          {p.sicht !== 'suche' && <Link to={`/ablage/suche${p.typ ? `?typ=${encodeURIComponent(p.typ.schluessel ?? p.typ.id)}` : ''}`} className="verweis klein" title="Mappentypen wählen, in Feldern und im Volltext suchen">Erweiterte Suche</Link>}
         </div>
       )}
       {anzahlText && (
@@ -396,7 +441,7 @@ function Liste(p: {
       )}
       <div className={`listenrumpf${wahl?.gewaehlt.size ? ' mit-auswahl' : ''}`}>
       {s.gesamt === 0
-        ? <p className="leise leerliste">{suche ? 'Nichts gefunden.' : p.leerText}</p>
+        ? <p className="leise leerliste">{suche && p.sicht !== 'suche' ? 'Nichts gefunden.' : p.leerText}</p>
         : tabelle
           ? <Tabelle sicht={p.sicht} anhang={anhang} typ={p.typ} spaltenTyp={p.spaltenTyp} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} ausschnitte={s.ausschnitte} aufgaben={s.aufgaben} favoriten={s.favoriten} offen={p.offen} wahl={wahl}
               sortierung={sortierung} sortiere={sortiere} ende={nachladen ? (el) => { ende.current = el; } : undefined} nachladen={nachladen} />

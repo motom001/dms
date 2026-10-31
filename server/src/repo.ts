@@ -26,6 +26,8 @@ export interface SeitenAnfrage {
   volltext?: boolean;
   /** Suche auch in Notizen (#55). */
   notizen?: boolean;
+  /** Erweiterte Suche (#199): der Begriff muss in Dokumenten und/oder Notizen stehen – UND mit allem anderen. */
+  textfilter?: { text: string; dokumente: boolean; notizen: boolean };
   /** Reihenfolge; ohne: nach Titel. */
   sortierung?: SortierungIntern;
   /** Berechtigungen (#124): nur lesbare Mappen; fehlt/null = alle. */

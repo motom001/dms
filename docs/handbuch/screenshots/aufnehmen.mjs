@@ -324,6 +324,12 @@ async function main() {
   await bild(s, 'volltext-suche');
   await api('PUT', '/api/konto/einstellungen/suche_volltext', { wert: null });
 
+  // Erweiterte Suche (#199): Formular links, Treffer mit Chips in der Mitte
+  await geheZu(s, '/ablage/suche?typ=Rechnung&rechnungsdatum.von=2026-01-01&rechnungsdatum.bis=2026-12-31&bezahlt=ja');
+  await s.locator('.suchchip').first().waitFor();
+  await s.waitForTimeout(600);
+  await bild(s, 'erweiterte-suche');
+
   // Passwortfeld (#46)
   await geheZu(s, `/ablage/${partner.id}/${d.stadtwerke.id}`);
   await s.locator('.passwort').first().waitFor();

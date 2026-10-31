@@ -79,6 +79,8 @@ export const HILFE = {
   'ablage.favoriten': benutzer('ablage/', 'Favoriten', 'favoriten'),
   'ablage.papierkorb': benutzer('ablage/', 'Papierkorb', 'papierkorb'),
   'ablage.sicht': benutzer('ablage/', 'Sichten und Listen', 'die-liste'),
+  'ablage.erweitertesuche': benutzer('ablage/', 'Erweiterte Suche', 'erweiterte-suche'),
+  'ablage.suchvolltext': benutzer('ablage/', 'Volltext in der erweiterten Suche', 'volltext-in-dokumenten-und-notizen'),
   'ablage.post': benutzer('post/', 'Post'),
   'post.zuordnen': benutzer('post/', 'Zuordnen', 'zuordnen'),
   'dokumente.sortieren': benutzer('dokumente/', 'Sortieren von Dokumenten', 'sortieren'),
