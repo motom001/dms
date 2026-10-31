@@ -32,6 +32,7 @@ export const HILFE = {
   'werkbank.texterkennung': admin('texterkennung/', 'Texterkennung'),
   'werkbank.eingangsordner': admin('eingangsordner/', 'Eingangsordner'),
   'werkbank.postfaecher': admin('postfaecher/', 'Postfächer'),
+  'werkbank.anmeldeschutz': admin('anmeldeschutz/', 'Anmeldeschutz'),
   'werkbank.wartung': admin('texterkennung/', 'Wartungsoperationen', 'wartungsoperationen'),
   'werkbank.protokoll': admin('fehlersuche/', 'Protokoll', 'protokoll'),
   'werkbank.fehlermeldungen': admin('fehlersuche/', 'Fehlermeldungen', 'fehlermeldungen-von-benutzern'),

@@ -1,3 +1,4 @@
+import { Anmeldesperre } from './anmeldesperre';
 import { randomUUID } from 'node:crypto';
 import { abwesenheitWirkt, istEmail, KEINE_ABWESENHEIT, PASSWORT_MINDESTLAENGE, type Abwesenheit, type Benutzer, type Rolle } from '../../shared/src/model';
 import { heuteIn } from '../../shared/src/sichten';
@@ -11,8 +12,6 @@ const TAG = 24 * 60 * 60 * 1000;
 export const SITZUNG_TAGE = 30;
 const EINLADUNG_TAGE = 7;
 const ZURUECKSETZEN_STUNDEN = 1;
-const MAX_FEHLVERSUCHE = 5;
-const SPERRE_MS = 60_000;
 
 const text = (v: unknown) => (v == null ? '' : String(v)).trim();
 const rolleAus = (v: unknown): Rolle => (v === 'admin' ? 'admin' : 'mitglied');
@@ -42,7 +41,9 @@ export interface Ergebnis { benutzer: Benutzer; mailVerschickt: boolean; link?: 
  * Schlüssel für Sitzungen und Links werden nur als Hash gespeichert.
  */
 export class Konten {
-  private fehlversuche = new Map<string, { anzahl: number; bis: number }>();
+  /** Anmeldeschutz (#240); ohne Verbindung mit Standardwerten im Arbeitsspeicher. */
+  sperre = new Anmeldesperre();
+  verbindeSperre(s: Anmeldesperre) { this.sperre = s; }
 
   /**
    * `spiegel` hält die Benutzer-Mappen (#26) auf dem Stand der Konten: Das Konto ist führend,
@@ -83,19 +84,14 @@ export class Konten {
   async anmelden(e: { email?: unknown; passwort?: unknown }, ip: string, geraet = '') {
     const email = text(e.email).toLowerCase();
     const passwort = typeof e.passwort === 'string' ? e.passwort : '';
-    const key = `${email}|${ip}`;
-    const sperre = this.fehlversuche.get(key);
-    if (sperre && sperre.anzahl >= MAX_FEHLVERSUCHE && sperre.bis > Date.now()) {
-      throw new Fachfehler(429, 'Zu viele Fehlversuche. Bitte in einer Minute erneut versuchen.');
-    }
+    await this.sperre.pruefe(email, ip);
     const treffer = email ? await this.repo.holeHash(email) : undefined;
     const ok = await pruefePasswort(passwort, treffer?.hash);
     if (!ok || !treffer || !treffer.benutzer.aktiv) {
-      const n = (sperre && sperre.bis > Date.now() ? sperre.anzahl : 0) + 1;
-      this.fehlversuche.set(key, { anzahl: n, bis: Date.now() + SPERRE_MS });
+      await this.sperre.fehlschlag(email, ip);
       throw new Fachfehler(401, 'E-Mail-Adresse oder Passwort stimmen nicht.');
     }
-    this.fehlversuche.delete(key);
+    await this.sperre.erfolg(email, ip);
     await this.repo.notiereAnmeldung(treffer.benutzer.id);
     return { benutzer: treffer.benutzer, schluessel: await this.neueSitzung(treffer.benutzer.id, { ip, geraet }) };
   }

@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { liesMail, verbindeImap } from './imap';
 import { Postfaecher } from './postfach';
+import { Anmeldesperre } from './anmeldesperre';
 import { Eingangsordner } from './eingangsordner';
 import { einbettenAus } from './koepfe';
 import { proxyVertrauen } from './proxy';
@@ -156,6 +157,8 @@ wartung.start();
 const anAdmins = async (betreff: string, text: string) => { await anAlleAdmins(await konten.listeBenutzer(), betrieb.mailer(), betreff, text); };
 spDeps.wartung = wartung;
 spDeps.anAdmins = anAdmins;
+// Anmeldeschutz (#240): Sperren in der Datenbank, einstellbar in der Werkbank.
+konten.verbindeSperre(new Anmeldesperre(pgEinstellungen(sql, cfg.haushalt), anAdmins));
 const notfall = new Notfallzugang(join(dirname(tresor.datei), 'RESCUE'), konten, pgBetriebSpeicher(sql, cfg.haushalt), anAdmins);
 // Sicherungen (#103–#105): eigenes Volume, verschlüsselt mit dem Schlüssel der Werkbank.
 const sicherung = new Sicherung(ordner.sicherung, ordner.dateien, cfg.haushalt, {
