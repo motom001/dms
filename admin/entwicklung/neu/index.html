@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-060" class="md-skip">
+        <a href="#neu-in-version-061" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0600" class="md-nav__link">
+  <a href="#0610" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.60.0
+        0.61.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.60.0">
+    <nav class="md-nav" aria-label="0.61.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1825,15 +1825,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0600" class="md-nav__link">
+  <a href="#0610" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.60.0
+        0.61.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.60.0">
+    <nav class="md-nav" aria-label="0.61.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1883,26 +1883,24 @@
   
 
 
-<h1 id="neu-in-version-060">Neu in Version 0.60<a class="headerlink" href="#neu-in-version-060" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-061">Neu in Version 0.61<a class="headerlink" href="#neu-in-version-061" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0600">0.60.0<a class="headerlink" href="#0600" title="Permanent link">&para;</a></h2>
+<h2 id="0610">0.61.0<a class="headerlink" href="#0610" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Vollexport aller Daten in offenen Formaten</strong> (#254) – kein Vendor-Lock-in. <strong>Werkbank → Vollexport</strong>:</li>
-<li>Ein Ordner neben den Sicherungen (<code>export/</code>), lesbar ohne das DMS: <code>LIESMICH.md</code>, <code>manifest.json</code> mit SHA-256 jeder Datei, Struktur (Mappentypen, Sichten, Nummernkreise, Designs, Benutzer ohne Passwörter), je Mappentyp CSV (RFC 4180, Komma, UTF-8 mit BOM), JSON Lines und Excel, Verweise, Dokumentliste, Notizen, Aufgaben, Erinnerungen, Historie, Papierkorb, Favoriten, Vertretungen.</li>
-<li><code>ablage/&lt;Typ&gt;/&lt;Titel&gt; [Id]/</code> mit <code>mappe.json</code>, <code>mappe.pdf</code>, den Dokumenten im Original, erkanntem Text und allen älteren Versionen.</li>
-<li>PDF-Übersicht je Typ, Kalender (<code>fristen.ics</code>), Kontakte als vCard 4.0 (Zuordnung vom Administrator bestätigt).</li>
-<li>Passwörter nur mit ausdrücklicher Bestätigung als <code>passwoerter.csv</code> (Bitwarden-Format); technische Protokolle wählbar.</li>
-<li>Abschätzung von Größe und freiem Platz, Auftrag im Hintergrund, als ZIP herunterladen, <strong>Prüfen</strong> gegen das Manifest, Löschen.</li>
-<li>Ein Test schlägt fehl, wenn eine Tabelle der Datenbank im Export fehlt.</li>
-<li>Neue Seite <strong>Daten exportieren</strong> im Administratorhandbuch.</li>
+<li><strong>Persönlicher Export</strong> (#255) – jeder Benutzer exportiert unter <strong>Profil → Konto → Meine Daten exportieren</strong> alles, was er sehen darf:</li>
+<li>Gleicher Aufbau wie der Vollexport (CSV, JSON Lines, Excel, PDF, Dokumente im Original, Manifest), aber nur lesbare Mappen und die eigenen Aufgaben, Erinnerungen, Favoriten und Papierkorb-Einträge.</li>
+<li>Passwörter nur aus Mappen mit Passwort-Recht und nur mit ausdrücklicher Bestätigung.</li>
+<li>Läuft im Hintergrund, als ZIP herunterladbar; ein neuer Export ersetzt den alten. Nicht während einer Vertretung.</li>
+<li>Der Administrator kann den persönlichen Export im Vollexport-Panel abschalten.</li>
+<li>Handbücher ergänzt.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.59.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.59.0...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.60.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.60.0...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
