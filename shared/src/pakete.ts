@@ -50,6 +50,8 @@ export interface InstalliertesPaket {
   /** Lokaler Schlüssel → Id des Mappentyps bzw. der Sicht im DMS. */
   typen: Record<string, string>;
   sichten: Record<string, string>;
+  /** Schlüssel der Beispiel-Mappen → Id (#347), nur wenn Beispiele mit Schlüssel angelegt wurden. */
+  beispiele?: Record<string, string>;
   abhaengigkeiten: Record<string, string>;
   /** Einstellungen, wie das Paket sie beschreibt (#197); null = keine. */
   einstellungen?: import('./paketeinstellungen').Einstellungsbeschreibung | null;
