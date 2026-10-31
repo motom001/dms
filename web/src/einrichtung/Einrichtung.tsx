@@ -330,6 +330,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
                 runter: i < e.felder.length - 1 ? () => { verschiebe(i, 1); setAnsage(`${f.label || 'Feld'} steht jetzt an Stelle ${i + 2}.`); } : undefined,
               })}><span aria-hidden="true">⠿</span></button>}
               eigeneId={e.id} eigenerName={e.name} typen={d.typen} feldregister={feldregister}
+              alleFelder={e.felder.map((x) => ({ key: x.key, label: x.label || x.key, typ: x.typ, optionen: x.optionen, zielTyp: x.zielTyp, mehrfach: x.mehrfach }) as Feld)}
               benutzerFelder={e.felder.filter((x) => x.typ === 'referenz' && !x.mehrfach && x.zielTyp && x.zielTyp === d.typen.find((t) => t.system === 'benutzer')?.id).map((x) => ({ key: x.key, label: x.label || x.key }))}
               umschalten={() => setOffen(offen === i ? null : i)}
               verschiebe={(r) => verschiebe(i, r)} entferne={() => void entferne(i)}
@@ -403,6 +404,8 @@ function FeldZeile(p: {
   eigeneId: string; eigenerName: string; typen: Mappentyp[]; feldregister: EntwurfRegister[];
   /** Fristen (#129): Benutzerfelder dieses Typs als möglicher Empfänger. */
   benutzerFelder: Array<{ key: string; label: string }>;
+  /** Auswahlfilter (#173): die Felder dieses Typs, deren Werte der Filter nutzen kann. */
+  alleFelder: Feld[];
   umschalten(): void; verschiebe(r: number): void; entferne(): void; setze(patch: Partial<EntwurfFeld>): void;
   zieh: { className: string }; griff: React.ReactNode;
 }) {
@@ -459,7 +462,7 @@ function FeldZeile(p: {
     {/* Auswahlfilter (#172): nicht für „jede Mappe“. */}
     {f.zielTyp && f.zielTyp !== '*' && (() => {
       const ziel = p.typen.find((t) => t.id === f.zielTyp);
-      return ziel ? <div className="breit"><AuswahlFilter ziel={ziel} bedingungen={f.auswahlFilter ?? []} setze={(b) => setze({ auswahlFilter: b })} /></div>
+      return ziel ? <div className="breit"><AuswahlFilter ziel={ziel} bedingungen={f.auswahlFilter ?? []} setze={(b) => setze({ auswahlFilter: b })} eigeneFelder={p.alleFelder} feldKey={f.key} /></div>
         : f.zielTyp === p.eigeneId ? <p className="leise klein breit">Einen Auswahlfilter auf diesen Typ selbst kannst du nach dem ersten Speichern festlegen.</p> : null;
     })()}
   </div>;

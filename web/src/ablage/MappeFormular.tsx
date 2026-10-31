@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
-import { vorbelegungAus } from '../../../shared/src/sichten';
-import { darfErstellen, darfLoeschen, formatiere, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register } from '../../../shared/src/model';
+import { eigeneFelderIm, vorbelegungAus } from '../../../shared/src/sichten';
+import { darfErstellen, darfLoeschen, formatiere, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register, type Werte } from '../../../shared/src/model';
 import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -204,6 +204,13 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   const felderAuf = (r: Register) => typ.felder.filter((f) => r.felder?.includes(f.key));
   const fehlerAuf = (r: Register) => (r.art === 'felder' ? felderAuf(r).filter((f) => fehler?.felder[f.key]).length : 0);
 
+  /** Auswahlfilter mit Werten dieser Mappe (#173): nur die Felder, von denen er abhängt. */
+  const eigeneWerte = (f: Feld): Werte | undefined => {
+    const keys = eigeneFelderIm(f.auswahlFilter);
+    if (!keys.length) return undefined;
+    const w = werteAusRoh(typ, roh);
+    return Object.fromEntries(keys.map((k) => [k, w[k] ?? null]));
+  };
   const setze = (k: string, v: Roh) => {
     setRoh((r) => ({ ...r, [k]: v }));
     if (fehler?.felder[k]) setFehler((f) => f && { ...f, felder: Object.fromEntries(Object.entries(f.felder).filter(([x]) => x !== k)) });
@@ -294,7 +301,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     const felder = felderAuf(reg);
     inhalt = felder.length
       ? <div className="formular">{felder.map((f) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke}
-          typId={typ.id} unpassend={details?.unpassend?.[f.key]}
+          typId={typ.id} unpassend={details?.unpassend?.[f.key]} eigene={eigeneWerte(f)}
           gesperrt={geschuetzt[f.key] ?? (nurLesen && f.typ !== 'passwort' ? '' : undefined)} nurLesen={nurLesen} passwortSehen={!rechte || rechte.P} />)}</div>
       : <p className="leise">Auf diesem Register liegen keine Felder.</p>;
   } else if (reg.art === 'dokumente') {
@@ -358,10 +365,12 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   );
 }
 
-function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, gesperrt, nurLesen, passwortSehen = true, typId, unpassend }: {
+function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, gesperrt, nurLesen, passwortSehen = true, typId, unpassend, eigene }: {
   feld: Feld; roh: Roh | undefined; fehler?: string; setze: (v: Roh) => void; eigeneId?: string;
   /** Typ der Mappe und Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */
   typId?: string; unpassend?: string[];
+  /** Werte dieser Mappe, von denen der Auswahlfilter abhängt (#173). */
+  eigene?: Werte;
   bekannt: Bezuege; merke: (id: string, b: { titel: string; typId: string }) => void;
   /** Grund, warum das Feld hier nur angezeigt wird. */
   gesperrt?: string;
@@ -444,7 +453,7 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
         bekannt={bekannt} merke={merke} setze={setze}
         sicht={f.auswahlFilter?.length && typId ? `feld:${typId}:${f.key}` : undefined}
         vorbelegen={f.auswahlFilter?.length ? vorbelegungAus(f.auswahlFilter, ziel) : undefined}
-        unpassend={unpassend} />;
+        unpassend={unpassend} eigene={eigene} />;
       break;
     }
     case 'formatiert':
@@ -618,12 +627,13 @@ function Trefferliste({ treffer }: { treffer: Rueckverweis[] }) {
 
 /* ---------- Auswahl verwiesener Mappen (mit Suche statt langer Klappliste) ---------- */
 
-function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze, sicht, vorbelegen, unpassend = [] }: {
+function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze, sicht, vorbelegen, unpassend: vomServer = [], eigene }: {
   id: string; ziel: Mappentyp; mehrfach: boolean; wert: string | string[] | undefined; eigeneId?: string;
   bekannt: Bezuege; merke: (id: string, b: { titel: string; typId: string }) => void; setze: (v: Roh) => void;
   /** Auswahlfilter (#172): Sicht „feld:<typ>:<feld>“ und Vorbelegung für „+ anlegen“. */
-  sicht?: string; vorbelegen?: Record<string, unknown>; unpassend?: string[];
+  sicht?: string; vorbelegen?: Record<string, unknown>; unpassend?: string[]; eigene?: Werte;
 }) {
+  const eigeneText = eigene ? JSON.stringify(eigene) : '';
   const gewaehlt = (Array.isArray(wert) ? wert : wert ? [wert] : []).filter(Boolean);
   const [offen, setOffen] = useState(false);
   const [eingabe, setEingabe] = useState('');
@@ -644,10 +654,22 @@ function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze,
     if (!offen) return;
     let aktuell = true;
     const t = setTimeout(() => {
-      api.seite(sicht ?? `typ:${ziel.id}`, 0, 20, eingabe.trim()).then((s) => { if (aktuell) { setTreffer(s.mappen); setGesamt(s.gesamt); } }).catch(() => aktuell && setTreffer([]));
+      api.seite(sicht ?? `typ:${ziel.id}`, 0, 20, eingabe.trim(), undefined, false, false, undefined, eigeneText ? JSON.parse(eigeneText) as Werte : undefined).then((s) => { if (aktuell) { setTreffer(s.mappen); setGesamt(s.gesamt); } }).catch(() => aktuell && setTreffer([]));
     }, 200);
     return () => { aktuell = false; clearTimeout(t); };
-  }, [offen, eingabe, ziel.id, sicht]);
+  }, [offen, eingabe, ziel.id, sicht, eigeneText]);
+
+  // Passen die gewählten Mappen noch zu den Werten dieser Mappe (#173)? Hinweis schon vor dem Speichern.
+  const gewaehltText = gewaehlt.join(',');
+  const [live, setLive] = useState<string[] | null>(null);
+  useEffect(() => {
+    if (!sicht || !gewaehltText) { setLive(null); return; }
+    const [, typId, feldKey] = sicht.split(':');
+    let aktuell = true;
+    const t = setTimeout(() => { api.auswahlPruefen(typId, feldKey, gewaehltText.split(','), eigeneText ? JSON.parse(eigeneText) as Werte : {}).then((r) => aktuell && setLive(r.unpassend)).catch(() => {}); }, 300);
+    return () => { aktuell = false; clearTimeout(t); };
+  }, [sicht, gewaehltText, eigeneText]);
+  const unpassend = live ?? vomServer;
 
   function waehle(m: Mappe) {
     merke(m.id, { titel: m.titel ?? '', typId: m.typId });

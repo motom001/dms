@@ -302,9 +302,9 @@ export const api = {
   typAendern: (id: string, t: unknown) => anfrage<Mappentyp>('PUT', `/api/typen/${id}`, t),
   typLoeschen: (id: string) => anfrage<null>('DELETE', `/api/typen/${id}`),
   /** Eine Seite einer Sicht („eingang“, Sicht- oder Typ-Id; „link“ mit den Parametern eines sprechenden Links, #98). */
-  seite: (sicht: string, von = 0, anzahl = 100, suche = '', sortierung?: Sortierung | null, volltext = false, notizen = false, link?: string) =>
+  seite: (sicht: string, von = 0, anzahl = 100, suche = '', sortierung?: Sortierung | null, volltext = false, notizen = false, link?: string, eigene?: Werte) =>
     anfrage<Seite>('GET', `/api/mappen?${new URLSearchParams({
-      sicht, ...(link !== undefined ? { link } : {}), von: String(von), anzahl: String(anzahl), ...(suche ? { suche } : {}), ...(suche && volltext ? { volltext: 'true' } : {}), ...(suche && notizen ? { notizen: 'true' } : {}),
+      sicht, ...(link !== undefined ? { link } : {}), ...(eigene ? { eigene: JSON.stringify(eigene) } : {}), von: String(von), anzahl: String(anzahl), ...(suche ? { suche } : {}), ...(suche && volltext ? { volltext: 'true' } : {}), ...(suche && notizen ? { notizen: 'true' } : {}),
       ...(sortierung ? { sortierung: sortierung.spalte, absteigend: String(sortierung.absteigend) } : {}),
     })}`),
   /** Alle Treffer einer Sicht als Ids (#149) – mit derselben Suche wie die Liste. */
@@ -413,6 +413,8 @@ export const api = {
   demoAbschaetzung: (o: DemoOptionen) => anfrage<DemoAbschaetzung>('POST', '/api/werkbank/demo/abschaetzung', o),
   demoEntfernen: () => anfrage<Auftrag>('DELETE', '/api/werkbank/demo'),
   auftrag: () => anfrage<Auftrag | null>('GET', '/api/werkbank/auftrag'),
+  /** Auswahlfilter (#172, #173): welche gewählten Mappen passen zu den aktuellen Werten nicht? */
+  auswahlPruefen: (typId: string, feldKey: string, ids: string[], werte: Werte) => anfrage<{ unpassend: string[] }>('POST', '/api/mappen/auswahl-pruefen', { typId, feldKey, ids, werte }),
   /** Auswahlfilter am Referenzfeld (#172): wie viele Mappen passen? */
   auswahlZaehlen: (zielTyp: string, bedingungen: Feldbedingung[]) => anfrage<{ passen: number; gesamt: number; probleme: string[] }>('POST', '/api/werkbank/auswahlfilter/zaehlen', { zielTyp, bedingungen }),
   /* Nummernkreise (#171) */
