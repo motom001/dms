@@ -15,6 +15,16 @@ const benutzer = (seite: string, titel: string, anker?: string): Hilfeziel => ({
 
 export const HILFE = {
   // Werkbank: Bereiche
+  // Einrichtungsassistent (#278): je Schritt der passende Abschnitt – immer online, s. hilfeOnlineUrl.
+  'einrichtung.code': admin('installation/', 'Einrichtungscode', 'einrichtungscode'),
+  'einrichtung.datenbank': admin('installation/', 'Datenbank', 'datenbank'),
+  'einrichtung.wahl': admin('installation/', 'Neu einrichten oder wiederherstellen', 'neu-einrichten-oder-wiederherstellen'),
+  'einrichtung.mandant': admin('installation/', 'Mandant', 'mandant'),
+  'einrichtung.administrator': admin('installation/', 'Administrator', 'administrator'),
+  'einrichtung.benutzer': admin('installation/', 'Erster Benutzer', 'erster-benutzer'),
+  'einrichtung.schluessel': admin('installation/', 'Schlüssel und Notfallblatt', 'schlussel-und-notfallblatt'),
+  'einrichtung.optional': admin('installation/', 'Optionales', 'optionales'),
+  'einrichtung.fertig': admin('installation/', 'Fertig', 'fertig'),
   'werkbank.uebersicht': admin('uebersicht/', 'Übersicht', 'ubersicht'),
   'werkbank.typen': admin('mappentypen/', 'Mappentypen'),
   'werkbank.sichten': admin('sichten/', 'Sichten'),
@@ -116,6 +126,16 @@ export function handbuchUrl(handbuch: Handbuch, _version: string | null | undefi
 export function handbuchOnlineUrl(handbuch: Handbuch, version: string | null | undefined, seite = ''): string {
   return `${HANDBUCH_BASIS}/${handbuch}/${handbuchVersion(version)}/${seite}`;
 }
+
+/**
+ * Hilfe im Einrichtungsassistenten (#278): immer das Online-Handbuch der aktuellen Version –
+ * ob ein lokales Handbuch erreichbar ist, steht dort noch nicht fest.
+ */
+export function hilfeOnlineUrl(ziel: Hilfeziel): string {
+  return `${handbuchOnlineUrl(ziel.handbuch, null, ziel.seite)}${ziel.anker ? `#${ziel.anker}` : ''}`;
+}
+/** Anleitungen je Plattform: „Wie komme ich an ein DMS?“ */
+export const INSTALLIEREN_URL = `${HANDBUCH_BASIS}/installieren/aktuell/`;
 
 export function hilfeUrl(ziel: Hilfeziel, version: string | null | undefined): string {
   return `${handbuchUrl(ziel.handbuch, version, ziel.seite)}${ziel.anker ? `#${ziel.anker}` : ''}`;

@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { handbuchOnlineUrl, handbuchUrl, hilfeUrl, HILFE } from '../../shared/src/hilfe';
+import { handbuchOnlineUrl, handbuchUrl, hilfeOnlineUrl, hilfeUrl, HILFE } from '../../shared/src/hilfe';
 import { hilfeAntwort } from '../src/hilfe';
 
 describe('Offline-Hilfe (#219)', () => {
@@ -12,6 +12,11 @@ describe('Offline-Hilfe (#219)', () => {
     assert.equal(handbuchUrl('admin', '0.44.4', 'sicherung/'), '/hilfe/admin/sicherung/');
     assert.equal(hilfeUrl(HILFE['werkbank.sicherung'], '0.44.4'), '/hilfe/admin/sicherung/');
     assert.equal(handbuchOnlineUrl('admin', '0.44.4', 'sicherung/'), 'https://motom001.github.io/dms/admin/v0.44/sicherung/');
+  });
+
+  it('Einrichtungsassistent (#278): immer das Online-Handbuch, aktuelle Version, mit Anker', () => {
+    assert.equal(hilfeOnlineUrl(HILFE['einrichtung.code']), 'https://motom001.github.io/dms/admin/aktuell/installation/#einrichtungscode');
+    assert.equal(hilfeOnlineUrl(HILFE['einrichtung.schluessel']), 'https://motom001.github.io/dms/admin/aktuell/installation/#schlussel-und-notfallblatt');
   });
 
   it('liefert Seiten, ergänzt den Schrägstrich und meldet Unbekanntes', async () => {

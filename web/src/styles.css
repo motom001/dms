@@ -1046,3 +1046,9 @@ a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
 .paketname > span:first-child { font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
 .paketname input { width: 100%; min-width: 0; }
 .umbrechen { overflow-wrap: anywhere; }
+
+/* Einrichtungsassistent (#278): Hilfe je Schritt, gut sichtbar oben rechts */
+.assistent-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.assistent-hilfe { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; font-size: calc(13px * var(--skala, 1)); color: var(--akzent); text-decoration: none; }
+.assistent-hilfe .hilfesymbol { margin-left: 0; color: var(--akzent); border-color: var(--akzent); }
+.assistent-hilfe:hover, .assistent-hilfe:focus-visible { text-decoration: underline; }
