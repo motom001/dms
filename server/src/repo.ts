@@ -3,6 +3,7 @@ import type { Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ausdruck, Lesefilter, Regelwerk } from '../../shared/src/rechte';
 import type { Erinnerung } from '../../shared/src/fristen';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
+import type { InstalliertesPaket } from '../../shared/src/pakete';
 
 export interface Verweis { feldKey: string; zielId: string }
 /** Sortierung, wie sie das Repo braucht: Art der Spalte (für den richtigen Vergleich) und ggf. Feldschlüssel. */
@@ -85,6 +86,11 @@ export interface Repo {
   holeMappe(id: string): Promise<Mappe | undefined>;
   /** `nummern` (#171): in derselben Transaktion je Feld eine Nummer aus dem Kreis ziehen und eintragen. */
   legeMappeAn(id: string, typId: string, werte: Werte, verweise: Verweis[], benutzerId: string | null, demo?: boolean, systemKennung?: string | null, nummern?: NummernZiehen): Promise<Mappe>;
+  /* ---------- Pakete (#188) ---------- */
+  listePakete(): Promise<InstalliertesPaket[]>;
+  /** Anlegen oder ersetzen (gleiche Id). */
+  speicherePaket(p: InstalliertesPaket): Promise<void>;
+  loeschePaket(id: string): Promise<void>;
   /* ---------- Nummernkreise (#171) ---------- */
   listeNummernkreise(): Promise<Nummernkreis[]>;
   /** Anlegen oder Name, Muster und Start ändern; Zählerstände bleiben. */

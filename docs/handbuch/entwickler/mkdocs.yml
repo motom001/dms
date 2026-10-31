@@ -68,6 +68,7 @@ nav:
   - Aufbau: aufbau.md
   - Beitrag einreichen: beitrag.md
   - Release: release.md
+  - Pakete entwickeln: pakete.md
   - Weiteres:
       - Issues auf GitHub: https://github.com/motom001/dms/issues
       - Administratorhandbuch: https://motom001.github.io/dms/admin/aktuell/

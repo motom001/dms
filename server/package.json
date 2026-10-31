@@ -1,7 +1,7 @@
 {
   "name": "@dms/server",
   "private": true,
-  "version": "0.62.0",
+  "version": "0.63.0",
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
@@ -18,7 +18,8 @@
     "mailparser": "^3.14.1",
     "nodemailer": "^10.0.13",
     "pdf-lib": "^1.17.1",
-    "postgres": "^4.0.0"
+    "postgres": "^4.0.0",
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

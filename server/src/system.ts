@@ -145,6 +145,7 @@ export const BEZEICHNUNGEN: Record<string, string> = {
   nodemailer: 'nodemailer (E-Mail-Versand)',
   imapflow: 'imapflow (Postfächer abrufen)',
   mailparser: 'mailparser (Mails lesen)',
+  yaml: 'yaml (Pakete lesen)',
   react: 'react (Oberfläche)',
 };
 

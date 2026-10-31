@@ -8,6 +8,7 @@ import type { Erinnerung } from '../../shared/src/fristen';
 import { umschluesseleTief } from './tresor';
 import { datumIn, ziehe, type Nummernkreis } from '../../shared/src/nummernkreis';
 import type { Quelle } from '../../shared/src/model';
+import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { istUuid, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
 
 type Sql = postgres.Sql;
@@ -388,6 +389,15 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         if (vs.length) await tx`INSERT INTO verweise ${tx(vs)} ON CONFLICT DO NOTHING`;
       });
     },
+    async listePakete() {
+      return (await sql`SELECT daten FROM pakete WHERE haushalt_id = ${haushaltId} ORDER BY id`).map((r) => r.daten as InstalliertesPaket);
+    },
+    async speicherePaket(p) {
+      await sql`
+        INSERT INTO pakete (haushalt_id, id, version, daten, installiert) VALUES (${haushaltId}, ${p.id}, ${p.version}, ${json(sql, p)}, ${p.installiert})
+        ON CONFLICT (haushalt_id, id) DO UPDATE SET version = EXCLUDED.version, daten = EXCLUDED.daten`;
+    },
+    async loeschePaket(id) { await sql`DELETE FROM pakete WHERE haushalt_id = ${haushaltId} AND id = ${id}`; },
     async listeNummernkreise() {
       return (await sql`SELECT * FROM nummernkreise WHERE haushalt_id = ${haushaltId} ORDER BY name`).map(alsKreis);
     },

@@ -1,0 +1,27 @@
+# Zwei Beispiel-Mappen mit erfundenen Daten.
+- typ: organisation
+  werte:
+    name: Stadtwerke Musterstadt
+    kuerzel: SWM
+    art: [Versorger]
+    kundennummer: "100-4711"
+    telefon: "0123 45678-0"
+    email: service@stadtwerke-musterstadt.example
+    internet: https://www.stadtwerke-musterstadt.example
+    strasse: Am Wasserturm
+    hausnummer: "1"
+    plz: "12345"
+    ort: Musterstadt
+    land: Deutschland
+- typ: organisation
+  werte:
+    name: Praxis Dr. Beispiel
+    art: [Arzt/Praxis]
+    kundennummer: "P-0815"
+    beschreibung: Hausarztpraxis, Termine nach Vereinbarung.
+    telefon: "0123 98765"
+    strasse: Lindenweg
+    hausnummer: "7"
+    plz: "12345"
+    ort: Musterstadt
+    land: Deutschland

@@ -1,0 +1,16 @@
+# Basis-Paket: Mappentyp Organisation. Schema: schema/manifest.schema.json
+schema: 1
+id: basis
+name: Basis
+version: 1.0.0
+beschreibung: Mappentyp Organisation für Firmen, Behörden, Ärzte, Versicherungen und andere Stellen – mit Kontakt, Anschrift und Sichten nach Art.
+autor:
+  name: Thomas Meissner
+  github: motom001
+lizenz: MIT
+dms: ">=0.63.0"
+abhaengigkeiten: {}
+inhalt:
+  mappentypen: inhalt/mappentypen.yaml
+  sichten: inhalt/sichten.yaml
+  beispiele: inhalt/beispiele.yaml

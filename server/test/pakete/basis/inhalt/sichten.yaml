@@ -1,0 +1,33 @@
+# Sicht „Organisationen“ und darunter je eine Sicht für häufige Arten.
+- schluessel: organisationen
+  name: Organisationen
+  beschreibung: Alle Organisationen
+  typen: [organisation]
+
+- schluessel: versicherungen
+  name: Versicherungen
+  eltern: organisationen
+  typen: [organisation]
+  bedingungen:
+    - { feld: art, operator: einerVon, wert: [Versicherung] }
+
+- schluessel: banken
+  name: Banken
+  eltern: organisationen
+  typen: [organisation]
+  bedingungen:
+    - { feld: art, operator: einerVon, wert: [Bank] }
+
+- schluessel: behoerden
+  name: Behörden
+  eltern: organisationen
+  typen: [organisation]
+  bedingungen:
+    - { feld: art, operator: einerVon, wert: [Behörde] }
+
+- schluessel: aerzte
+  name: Ärzte und Praxen
+  eltern: organisationen
+  typen: [organisation]
+  bedingungen:
+    - { feld: art, operator: einerVon, wert: [Arzt/Praxis] }
