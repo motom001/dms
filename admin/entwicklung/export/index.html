@@ -644,7 +644,7 @@
   <span class="md-ellipsis">
     
   
-    Sichten
+    Ansichten
   
 
     
@@ -1261,10 +1261,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#personlicher-export" class="md-nav__link">
+  <a href="#meine-daten-exportieren" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Persönlicher Export
+        Meine Daten exportieren
       
     </span>
   </a>
@@ -1976,10 +1976,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#personlicher-export" class="md-nav__link">
+  <a href="#meine-daten-exportieren" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Persönlicher Export
+        Meine Daten exportieren
       
     </span>
   </a>
@@ -2034,7 +2034,7 @@
 <td>eigenes Format, verschlüsselt</td>
 </tr>
 <tr>
-<td>Export einer Sicht (<a href="https://motom001.github.io/dms/benutzer/aktuell/ablage/">Ablage</a>)</td>
+<td>Export einer Ansicht (<a href="https://motom001.github.io/dms/benutzer/aktuell/ablage/">Ablage</a>)</td>
 <td>ausgewählte Mappen weitergeben</td>
 <td>Excel, CSV, ZIP, PDF</td>
 </tr>
@@ -2060,9 +2060,9 @@
 <div class="highlight"><pre><span></span><code>dms-export-2026-10-31-14-05-00/
   LIESMICH.md            Aufbau, Formate, Prüfskript
   manifest.json          Formatversion, Anzahlen, Größe und SHA-256 jeder Datei, wo jede Tabelle steht
-  struktur/              Mappentypen, Sichten, Nummernkreise, Designs, Benutzer (ohne Passwörter)
+  struktur/              Mappentypen, Ansichten, Nummernkreise, Designs, Benutzer (ohne Passwörter)
   daten/
-    &lt;typ&gt;.csv  .jsonl  .xlsx   je Mappentyp: eine Zeile je Mappe, eine Spalte je Feldschlüssel
+    &lt;typ&gt;.csv  .jsonl  .xlsx   je Mappentyp: eine Zeile je Mappe, eine Spalte je Kennung eines Felds
     verweise.csv           Mappe → Feld → Mappe
     dokumente.csv          alle Dokumente und älteren Versionen mit Pfad im Export
     notizen.jsonl, aufgaben.jsonl, erinnerungen.jsonl, historie.jsonl,
@@ -2088,9 +2088,9 @@
 <h2 id="passworter">Passwörter<a class="headerlink" href="#passworter" title="Permanent link">&para;</a></h2>
 <p>Passwortfelder stehen nie in den Daten – nur „gesetzt“. Wählst du <strong>Passwortfelder im Klartext</strong> und bestätigst ausdrücklich, kommt <code>passwoerter.csv</code> dazu, im CSV-Format von <strong>Bitwarden</strong> (lässt sich auch in KeePassXC importieren). Das steht im Protokoll. Importiere die Datei und lösche sie danach. Schlüssel, Zugangsdaten (Datenbank, Mail, Postfächer), API-Schlüssel und Sitzungen sind nie dabei.</p>
 <h2 id="kontakte-als-vcard">Kontakte als vCard<a class="headerlink" href="#kontakte-als-vcard" title="Permanent link">&para;</a></h2>
-<p>Das DMS schlägt Mappentypen vor, die nach Kontakten aussehen (Felder wie Name, E-Mail, Telefon, Adresse), und ordnet die Felder zu. Prüfe die Zuordnung vor dem Export; abgewählte Typen bekommen keine vCard.</p>
-<h2 id="personlicher-export">Persönlicher Export<a class="headerlink" href="#personlicher-export" title="Permanent link">&para;</a></h2>
-<p>Jeder Benutzer kann unter <strong>Profil → Konto → Meine Daten exportieren</strong> einen eigenen Export anstoßen – im selben Aufbau, aber nur mit den Mappen, die er lesen darf, seinen eigenen Aufgaben, Erinnerungen, Favoriten und Papierkorb-Einträgen. Sichten, Nummernkreise und andere Benutzer fehlen; Passwörter nur aus Mappen, in denen er Passwörter sehen darf, und nur mit Bestätigung. Er liegt unter <code>export/persoenlich/&lt;Benutzer-Id&gt;/</code>; ein neuer Export ersetzt den alten. Abschalten lässt sich das im Vollexport-Panel mit <strong>Persönlicher Export für Benutzer</strong>.</p>
+<p>Das DMS schlägt Mappentypen vor, die nach Kontakten aussehen (Felder wie Name, E-Mail, Telefon, Adresse), und ordnet die Felder zu. Prüfe die Zuordnung vor dem Export; abgewählte Mappentypen bekommen keine vCard.</p>
+<h2 id="meine-daten-exportieren">Meine Daten exportieren<a class="headerlink" href="#meine-daten-exportieren" title="Permanent link">&para;</a></h2>
+<p>Jeder Benutzer kann unter <strong>Profil → Konto → Meine Daten exportieren</strong> einen eigenen Export anstoßen – im selben Aufbau, aber nur mit den Mappen, die er lesen darf, seinen eigenen Aufgaben, Erinnerungen, Favoriten und Papierkorb-Einträgen. Ansichten, Nummernkreise und andere Benutzer fehlen; Passwörter nur aus Mappen, in denen er Passwörter sehen darf, und nur mit Bestätigung. Er liegt unter <code>export/persoenlich/&lt;Benutzer-Id&gt;/</code>; ein neuer Export ersetzt den alten. Abschalten lässt sich das im Vollexport-Panel mit <strong>Persönlicher Export für Benutzer</strong>.</p>
 <h2 id="weiterverarbeiten">Weiterverarbeiten<a class="headerlink" href="#weiterverarbeiten" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Excel/LibreOffice:</strong> <code>daten/&lt;typ&gt;.xlsx</code> öffnen – oder die <code>.csv</code>.</li>

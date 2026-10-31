@@ -642,7 +642,7 @@
   <span class="md-ellipsis">
     
   
-    Sichten
+    Ansichten
   
 
     
@@ -1722,10 +1722,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#sichten-38-40-41" class="md-nav__link">
+  <a href="#ansichten-38-40-41" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sichten (#38, #40, #41)
+        Ansichten (#38, #40, #41)
       
     </span>
   </a>
@@ -2194,10 +2194,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#sichten-38-40-41" class="md-nav__link">
+  <a href="#ansichten-38-40-41" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sichten (#38, #40, #41)
+        Ansichten (#38, #40, #41)
       
     </span>
   </a>
@@ -2328,10 +2328,10 @@
 <h2 id="fachmodell">Fachmodell<a class="headerlink" href="#fachmodell" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Mappe als einziges Grundkonzept.</strong> Vertragspartner, Vertrag, Rechnung, Gegenstand sind Mappen unterschiedlicher Mappentypen. Ein Mappentyp definiert Felder; eine Mappe speichert Werte je Feldschlüssel.</li>
-<li><strong>Verweise statt Ablageort.</strong> Zusammenhänge entstehen über Referenzfelder (Rechnung → Vertrag → Vertragspartner). Rückverweise werden nicht gepflegt, sondern abgeleitet.</li>
+<li><strong>Verweise statt Ablageort.</strong> Zusammenhänge entstehen über Verweisfelder (Rechnung → Vertrag → Vertragspartner). Rückverweise werden nicht gepflegt, sondern abgeleitet.</li>
 <li><strong>Zwei Verweisarten.</strong> <em>Zugehörigkeit</em> („gehört zu“) zählt später bei „alles zu X“ und bei Auswertungen mit; <em>Bezug</em> (z. B. Aussteller) ist nur eine Verknüpfung. So landet bei „alles zum Haus“ nicht jede Rechnung desselben Handwerkers.</li>
-<li><strong>Hierarchie über Verweis auf den eigenen Typ.</strong> Haus → Heizung → Wärmepumpe braucht keine Sonderlogik.</li>
-<li><strong>Feste Feldschlüssel.</strong> Die Bezeichnung eines Feldes ist änderbar, der Schlüssel nach dem ersten Speichern nicht – gespeicherte Werte und spätere API-Abgleiche bleiben gültig.</li>
+<li><strong>Hierarchie über Verweis auf den eigenen Mappentyp.</strong> Haus → Heizung → Wärmepumpe braucht keine Sonderlogik.</li>
+<li><strong>Feste Kennungen der Felder.</strong> Die Bezeichnung eines Feldes ist änderbar, die Kennung nach dem ersten Speichern nicht – gespeicherte Werte und spätere API-Abgleiche bleiben gültig.</li>
 <li><strong>Entfernte Felder löschen keine Werte.</strong> Die Werte bleiben an der Mappe und werden als „Werte ohne Felddefinition“ angezeigt.</li>
 <li><strong>Definitionsänderungen machen Mappen nicht stillschweigend ungültig.</strong> Passt eine Mappe nicht mehr (neues Pflichtfeld, entfernter Auswahlwert), wird sie markiert; korrigiert wird beim nächsten Speichern.</li>
 </ul>
@@ -2347,7 +2347,7 @@
 <ul>
 <li><strong>Einrichtungsassistent mit Einrichtungscode</strong> (#119, zuvor: erster Aufruf ohne Code). Der Code steht im Protokoll des Containers und in <code>/data/geheim/EINRICHTUNGSCODE</code>; er schützt die Einrichtung und den Datenbanktest (der sonst Rechner im Netz abfragen könnte). Versuchsweise – ob der Code den Einstieg zu umständlich macht, zeigt die Rückmeldung aus der Praxis.</li>
 <li><strong>Datenbank-Anbindung als Datei unter <code>/data/geheim</code></strong>, führend vor <code>DATABASE_URL</code> (#119): So lässt sich das DMS ohne Bearbeiten von Umgebungsvariablen in Betrieb nehmen; ohne erreichbare Datenbank startet es im Einrichtungsmodus und danach im selben Prozess das eigentliche DMS.</li>
-<li><strong>Mandant statt Haushalt</strong> in Oberfläche und Handbuch (#119), damit das DMS auch für kleine Firmen passt. Intern heißt es weiter <code>haushalt_id</code>; ein Umbau brächte keinen sichtbaren Nutzen. Frische Installationen nutzen den Mandanten, den die erste Migration anlegt (mit Designs und Einstellungen).</li>
+<li><strong>Mandant statt Haushalt</strong> in Oberfläche und Handbuch (#119; seit 0.73 heißt es wieder „Haushalt“, #305), damit das DMS auch für kleine Firmen passt. Intern heißt es weiter <code>haushalt_id</code>; ein Umbau brächte keinen sichtbaren Nutzen. Frische Installationen nutzen den Mandanten, den die erste Migration anlegt (mit Designs und Einstellungen).</li>
 <li><strong>Administratoren arbeiten nicht in der Ablage:</strong> Der Assistent legt deshalb gleich einen ersten normalen Benutzer an.</li>
 <li><strong>Rollen:</strong> Administrator (Einrichtung, Benutzer) und Mitglied (Ablage). Vorerst sehen alle angemeldeten Benutzer alle Mappen.</li>
 <li><strong>Passwörter</strong> mit scrypt aus Node (keine native Bibliothek). <strong>Sitzungen</strong> als HttpOnly-Cookie, in der Datenbank nur als SHA-256-Hash. Gleiches gilt für Einladungs- und Passwort-Links (Einladung 7 Tage, Zurücksetzen 1 Stunde, jeweils nur einmal nutzbar).</li>
@@ -2357,27 +2357,27 @@
 </ul>
 <h2 id="ablage">Ablage<a class="headerlink" href="#ablage" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Drei Spalten:</strong> Sichten → Liste → Mappe. Sichten sind vorerst „Eingang“ und eine pro Mappentyp; konfigurierbare Sichten folgen.</li>
-<li><strong>Eingang:</strong> Mappen, die nicht zur aktuellen Definition passen, beim Ersteller; ohne bekannten Ersteller beim Administrator. Später kommen Aufgaben dazu.</li>
+<li><strong>Drei Spalten:</strong> Ansichten → Liste → Mappe. Ansichten sind vorerst „Zu erledigen“ und eine pro Mappentyp; konfigurierbare Ansichten folgen.</li>
+<li><strong>Eingang</strong> (heute „Zu erledigen“): Mappen, die nicht zur aktuellen Definition passen, beim Ersteller; ohne bekannten Ersteller beim Administrator. Später kommen Aufgaben dazu.</li>
 <li>
 <p><strong>Indexwerte</strong> (erstellt/geändert am/von) sind feste Spalten, keine Felder eines Mappentyps.</p>
 </li>
 <li>
-<p><strong>Seitenweise statt alles:</strong> Die Oberfläche lädt keine vollständige Mappenliste mehr. Eine Sicht holt je 100 Mappen, nach Titel sortiert, und beim Scrollen die nächsten; Suche, Zähler und Eingang rechnet der Server. Verweise wählt man über eine Suche statt einer Klappliste.</p>
+<p><strong>Seitenweise statt alles:</strong> Die Oberfläche lädt keine vollständige Mappenliste mehr. Eine Ansicht holt je 100 Mappen, nach Titel sortiert, und beim Scrollen die nächsten; Suche, Zähler und „Zu erledigen“ rechnet der Server. Verweise wählt man über eine Suche statt einer Klappliste.</p>
 </li>
-<li><strong>Trefferliste</strong> als Liste von Spaltenschlüsseln am Mappentyp (<code>mappentypen.trefferliste</code>); Systemspalten beginnen mit <code>_</code> und kollidieren so nie mit Feldschlüsseln. Kompakt oder Tabelle entscheidet die Breite der Liste selbst (ResizeObserver), nicht die Bildschirmbreite.</li>
-<li><strong>Sortieren auf dem Server</strong> (wegen des seitenweisen Ladens), leere Werte immer zuletzt; nicht nach Verweisen und langen Texten. Gespeichert je Benutzer und Sicht in <code>benutzer_einstellungen</code>.</li>
-<li><strong>Passung gespeichert</strong> (<code>mappen.passt</code>, <code>mappen.problem</code>): Ob eine Mappe zur Definition passt, prüft der Server beim Ändern des Typs für alle Mappen dieses Typs (eindeutige Werte im Arbeitsspeicher statt je Mappe in der Datenbank) und nach dem Speichern für bisher unpassende Mappen desselben Typs.</li>
+<li><strong>Trefferliste</strong> als Liste von Spaltenkennungen am Mappentyp (<code>mappentypen.trefferliste</code>); Systemspalten beginnen mit <code>_</code> und kollidieren so nie mit Feldschlüsseln. Kompakt oder Tabelle entscheidet die Breite der Liste selbst (ResizeObserver), nicht die Bildschirmbreite.</li>
+<li><strong>Sortieren auf dem Server</strong> (wegen des seitenweisen Ladens), leere Werte immer zuletzt; nicht nach Verweisen und langen Texten. Gespeichert je Benutzer und Ansicht in <code>benutzer_einstellungen</code>.</li>
+<li><strong>Passung gespeichert</strong> (<code>mappen.passt</code>, <code>mappen.problem</code>): Ob eine Mappe zur Definition passt, prüft der Server beim Ändern des Mappentyps für alle Mappen dieses Mappentyps (eindeutige Werte im Arbeitsspeicher statt je Mappe in der Datenbank) und nach dem Speichern für bisher unpassende Mappen desselben Mappentyps.</li>
 <li><strong>Lange Arbeiten im Hintergrund:</strong> Demo-Daten laufen als Auftrag mit Fortschritt, damit ein Reverse-Proxy nicht nach seiner Wartezeit abbricht.</li>
 </ul>
 <h2 id="register-und-dokumente">Register und Dokumente<a class="headerlink" href="#register-und-dokumente" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Drei Registerarten</strong> am Mappentyp: Feld-, Dokumenten- und Verknüpfungsregister. Jedes Feld liegt auf genau einem Feldregister; nicht zugeordnete Felder landen automatisch auf dem ersten.</li>
-<li><strong>Register haben feste Schlüssel</strong>, damit Dokumente ihr Register behalten, wenn es umbenannt wird. Ein Dokumentenregister mit Dokumenten lässt sich nicht entfernen.</li>
-<li><strong>Verknüpfungsregister</strong> zeigen alle Rückverweise oder nur gewählte Quellen (Typ + Referenzfeld).</li>
+<li><strong>Register haben feste Kennungen</strong>, damit Dokumente ihr Register behalten, wenn es umbenannt wird. Ein Dokumentenregister mit Dokumenten lässt sich nicht entfernen.</li>
+<li><strong>Verknüpfungsregister</strong> zeigen alle Rückverweise oder nur gewählte Quellen (Mappentyp + Verweisfeld).</li>
 <li><strong>Titel-Vorlage</strong> mit Platzhaltern <code>{feld}</code>; Server und Oberfläche nutzen dieselbe Funktion (<code>titelAus</code>).</li>
-<li><strong>Titel gespeichert</strong> (Spalte <code>mappen.titel</code>), damit der Server sortieren und seitenweise laden kann. Neu berechnet beim Speichern einer Mappe, beim Ändern des Typs und – weitergereicht über die Verweise – bei Mappen, deren Titel einen geänderten Titel enthält (bei Verweisen im Kreis höchstens sechs Runden). Fehlende Titel berechnet der Server beim Start.</li>
-<li><strong>Indexwerte im Titel:</strong> <code>{angelegt}</code>, <code>{geaendert}</code> als Datum in der Zeitzone Europe/Berlin; diese Schlüssel sind für Felder gesperrt.</li>
+<li><strong>Titel gespeichert</strong> (Spalte <code>mappen.titel</code>), damit der Server sortieren und seitenweise laden kann. Neu berechnet beim Speichern einer Mappe, beim Ändern des Mappentyps und – weitergereicht über die Verweise – bei Mappen, deren Titel einen geänderten Titel enthält (bei Verweisen im Kreis höchstens sechs Runden). Fehlende Titel berechnet der Server beim Start.</li>
+<li><strong>Indexwerte im Titel:</strong> <code>{angelegt}</code>, <code>{geaendert}</code> als Datum in der Zeitzone Europe/Berlin; diese Kennungen sind für Felder gesperrt.</li>
 <li><strong>Dateien</strong> unveränderlich unter ihrem SHA-256 im Dateiordner, gleicher Inhalt nur einmal; Hinweis beim Hochladen, wenn der Inhalt schon in einer anderen Mappe liegt.</li>
 <li><strong>Anzeige im Browser nur für PDF und Bilder</strong>, erkannt am Inhalt (nicht an Endung oder angegebenem Typ). Alles andere wird als Download ausgeliefert, mit <code>nosniff</code> und einer Sandbox-CSP – eine hochgeladene HTML-Datei kann so keinen Code in der Sitzung ausführen.</li>
 <li><strong>Löschen einer Mappe</strong> löscht ihre Dokumente nach Rückfrage mit; die Datei verschwindet, sobald kein Dokument mehr auf sie zeigt.</li>
@@ -2397,7 +2397,7 @@
 <h2 id="betrieb-und-fehlersuche">Betrieb und Fehlersuche<a class="headerlink" href="#betrieb-und-fehlersuche" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Eigenes Protokoll</strong> (<code>server/src/protokoll.ts</code>) statt Fastify/pino direkt: jede Meldung mit Modul, Benutzer und Anfrage-Kennung (über AsyncLocalStorage), lesbar in den Container-Logs, zusätzlich ein Ringpuffer (24 h, 10.000 Einträge) für die Werkbank. Fastify schreibt über einen pino-kompatiblen Adapter hinein.</li>
-<li><strong>Live-Ansicht per Abfrage alle zwei Sekunden</strong> statt Server-Sent Events: funktioniert hinter jedem Reverse-Proxy ohne Sonderkonfiguration (nginx puffert SSE sonst).</li>
+<li><strong>Live-Anzeige per Abfrage alle zwei Sekunden</strong> statt Server-Sent Events: funktioniert hinter jedem Reverse-Proxy ohne Sonderkonfiguration (nginx puffert SSE sonst).</li>
 <li><strong>Messung je Datenbankzugriff:</strong> Jede Methode der Repos wird über einen Proxy gezählt und gestoppt (ein Zugriff kann mehrere SQL-Anweisungen umfassen). Die Summe je Anfrage geht im Header <code>Server-Timing</code> an die Oberfläche; die übrigen Schritte misst der Browser (Resource Timing). „Netzwerk“ ist dabei eine Näherung.</li>
 <li><strong>Langläufer</strong> stehen in der Datenbank (Tabelle <code>langlaeufer</code>), Schwelle und Aufbewahrung in <code>einstellungen</code>.</li>
 <li><strong>Debug-Modus</strong> nur im Arbeitsspeicher und höchstens eine Stunde; nach einem Neustart ist er aus.</li>
@@ -2405,8 +2405,8 @@
 </ul>
 <h2 id="benutzer-und-rollen-als-mappen-26-27">Benutzer und Rollen als Mappen (#26, #27)<a class="headerlink" href="#benutzer-und-rollen-als-mappen-26-27" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Systemmappentypen</strong> <em>Benutzer</em> und <em>Rolle</em> (Spalte <code>mappentypen.system</code>): erweiterbar, nie löschbar. Der Server legt sie beim Start an, falls sie fehlen; heißt schon ein eigener Typ so, bekommt der Systemtyp den Zusatz „(System)“.</li>
-<li><strong>Systemfelder</strong> (<code>Feld.system</code>) sind fest: Schlüssel, Datentyp und Eigenschaften gibt der Server vor, nur Bezeichnung, Hilfetext und Register darf der Administrator ändern.</li>
+<li><strong>Systemmappentypen</strong> <em>Benutzer</em> und <em>Rolle</em> (Spalte <code>mappentypen.system</code>): erweiterbar, nie löschbar. Der Server legt sie beim Start an, falls sie fehlen; heißt schon ein eigener Mappentyp so, bekommt der Systemtyp den Zusatz „(System)“.</li>
+<li><strong>Systemfelder</strong> (<code>Feld.system</code>) sind fest: Kennung, Feldart und Eigenschaften gibt der Server vor, nur Bezeichnung, Hilfetext und Register darf der Administrator ändern.</li>
 <li><strong>Das Konto ist führend, die Mappe spiegelt es.</strong> Die Mappe eines Benutzers hat dieselbe Id wie sein Konto. Konten melden jede Änderung an Name, E-Mail, Rolle und „aktiv“ an die Mappe; beim Start werden alle Benutzer abgeglichen (auch nach einem Update).</li>
 <li><strong>Sicherheit:</strong> Die Systemfelder einer Benutzer-Mappe sind in der Ablage nur lesbar – der Server lehnt Änderungen ab. Sonst könnte ein Mitglied die E-Mail-Adresse eines Administrators ändern und dessen Konto über „Passwort vergessen“ übernehmen, oder sich selbst eine Systemrolle geben.</li>
 <li><strong>Systemrollen</strong> <em>Administrator</em> und <em>Mitglied</em> sind Rollen-Mappen mit fester Kennung (<code>mappen.system_kennung</code>, z. B. <code>rolle:admin</code>). Wer sie hat, folgt der Rolle des Kontos; sie lassen sich nicht löschen und nicht umbenennen. So kann das spätere Berechtigungskonzept Rechte an Rollen-Mappen hängen, ohne die bestehende Anmeldung umzubauen.</li>
@@ -2414,7 +2414,7 @@
 <li><strong>Rollen sind vorerst fachlich</strong> und von jedem Benutzer in der Ablage anlegbar; Einschränkungen kommen mit der Berechtigungsverwaltung. Keine verschachtelten Rollen.</li>
 <li><strong>Rolle löschen:</strong> erlaubt, auch wenn Benutzer sie haben – deren Zuordnung fällt weg. Verweise aus normalen Feldern (z. B. „verantwortliche Rolle“) verhindern das Löschen wie bei jeder Mappe.</li>
 <li><strong>Deaktivieren statt löschen:</strong> Wer sich schon angemeldet hat, wird deaktiviert; seine Mappe heißt dann „… (ehemalig)“ und Verweise bleiben gültig. Löschen geht nur für nie angenommene Einladungen.</li>
-<li><strong>Neue Mappen / Löschen erlauben</strong> als Eigenschaft jedes Mappentyps (<code>erstellen_erlaubt</code>, <code>loeschen_erlaubt</code>); die Oberfläche blendet die Knöpfe aus, der Server prüft es. Beim Typ <em>Benutzer</em> ist beides fest aus. <em>Seit 0.32 (#146) abgelöst: Anlegen und Löschen regeln die Berechtigungen (C, D); fest bleiben nur die Systemregeln für Benutzer-Mappen (seit 0.41, #192, gilt für Post die normale Berechtigung C).</em></li>
+<li><strong>Neue Mappen / Löschen erlauben</strong> als Eigenschaft jedes Mappentyps (<code>erstellen_erlaubt</code>, <code>loeschen_erlaubt</code>); die Oberfläche blendet die Knöpfe aus, der Server prüft es. Beim Mappentyp <em>Benutzer</em> ist beides fest aus. <em>Seit 0.32 (#146) abgelöst: Anlegen und Löschen regeln die Berechtigungen (C, D); fest bleiben nur die Systemregeln für Benutzer-Mappen (seit 0.41, #192, gilt für Post die normale Berechtigung C).</em></li>
 <li>Demo-Daten und Beispiele lassen die Systemtypen aus.</li>
 </ul>
 <h2 id="handbuch-und-releases-25">Handbuch und Releases (#25)<a class="headerlink" href="#handbuch-und-releases-25" title="Permanent link">&para;</a></h2>
@@ -2436,15 +2436,15 @@
 <li><strong>Passwort verschlüsselt</strong> (seit #39), nie an die Oberfläche zurück; leeres Feld behält es.</li>
 <li><strong>Testen mit ungespeicherten Werten:</strong> Prüfen und Testmail nehmen die Werte aus dem Formular, damit man vor dem Speichern sieht, ob es geht.</li>
 </ul>
-<h2 id="sichten-38-40-41">Sichten (#38, #40, #41)<a class="headerlink" href="#sichten-38-40-41" title="Permanent link">&para;</a></h2>
+<h2 id="ansichten-38-40-41">Ansichten (#38, #40, #41)<a class="headerlink" href="#ansichten-38-40-41" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Sicht = gespeicherte Abfrage</strong>: Mappentypen und Bedingungen, die alle zusammen gelten (UND). Bedienbare Filter über der Liste sind bewusst ein späterer Schritt.</li>
-<li><strong>Baum über <code>eltern_id</code></strong>; eine Sicht zeigt ihre eigenen Treffer und die aller Nachkommen. Technisch ist jede Sicht mit eigenen Typen eine <strong>Klausel</strong> (Typen + Filter); eine Sicht samt Untersichten ist das ODER ihrer Klauseln – so gibt es keine Doppelten, und Zähler, Suche, Sortierung und seitenweises Laden funktionieren unverändert auf dem Server.</li>
+<li><strong>Ansicht = gespeicherte Abfrage</strong>: Mappentypen und Bedingungen, die alle zusammen gelten (UND). Bedienbare Filter über der Liste sind bewusst ein späterer Schritt.</li>
+<li><strong>Baum über <code>eltern_id</code></strong>; eine Ansicht zeigt ihre eigenen Treffer und die aller Nachkommen. Technisch ist jede Ansicht mit eigenen Mappentypen eine <strong>Klausel</strong> (Mappentypen + Filter); eine Ansicht samt Unteransichten ist das ODER ihrer Klauseln – so gibt es keine Doppelten, und Zähler, Suche, Sortierung und seitenweises Laden funktionieren unverändert auf dem Server.</li>
 <li><strong>Dynamische Werte werden je Abfrage aufgelöst</strong> (heute in Europe/Berlin, aktueller Benutzer, seine Rollen aus der Benutzer-Mappe). Das Repo bekommt nur feste Werte (<code>Filter</code>); <code>shared/src/sichten.ts</code> übersetzt Bedingungen → Filter, <code>repo-pg.ts</code> Filter → SQL. Dieselben Testfälle laufen im Arbeitsspeicher und gegen PostgreSQL.</li>
-<li><strong>Ungültige Bedingungen werden ignoriert, nicht ausgewertet</strong>: Ein entferntes Feld leert die Sicht nicht, die Werkbank markiert es.</li>
-<li><strong>Umzug ohne Bruch</strong>: Die bisherigen Sichten je Mappentyp wurden zu verwalteten Sichten mit der Id des Typs (Migration 013). Lesezeichen <code>/ablage/&lt;id&gt;</code> und gemerkte Sortierungen <code>sortierung:&lt;id&gt;</code> bleiben gültig. Eine Typ-Id ohne Sicht zeigt weiter alle Mappen des Typs, damit Links auf Mappen nie ins Leere gehen.</li>
-<li><strong><code>typ:&lt;id&gt;</code></strong> liefert alle Mappen eines Typs ohne Bedingungen – für die Auswahl von Verweisen, die Titel-Vorschau und die API. Sonst würde eine Sicht mit Bedingungen, die zufällig die Id des Typs trägt, die Auswahl einschränken.</li>
-<li><strong>Benutzer und Rolle</strong> bekommen bei neuen Installationen ihre Sichten am Ende der ersten Ebene.</li>
+<li><strong>Ungültige Bedingungen werden ignoriert, nicht ausgewertet</strong>: Ein entferntes Feld leert die Ansicht nicht, die Werkbank markiert es.</li>
+<li><strong>Umzug ohne Bruch</strong>: Die bisherigen Ansichten je Mappentyp wurden zu verwalteten Ansichten mit der Id des Mappentyps (Migration 013). Lesezeichen <code>/ablage/&lt;id&gt;</code> und gemerkte Sortierungen <code>sortierung:&lt;id&gt;</code> bleiben gültig. Eine Typ-Id ohne Ansicht zeigt weiter alle Mappen des Mappentyps, damit Links auf Mappen nie ins Leere gehen.</li>
+<li><strong><code>typ:&lt;id&gt;</code></strong> liefert alle Mappen eines Mappentyps ohne Bedingungen – für die Auswahl von Verweisen, die Titel-Vorschau und die API. Sonst würde eine Ansicht mit Bedingungen, die zufällig die Id des Mappentyps trägt, die Auswahl einschränken.</li>
+<li><strong>Benutzer und Rolle</strong> bekommen bei neuen Installationen ihre Ansichten am Ende der ersten Ebene.</li>
 </ul>
 <h2 id="verschlusselte-passworter-39-46">Verschlüsselte Passwörter (#39, #46)<a class="headerlink" href="#verschlusselte-passworter-39-46" title="Permanent link">&para;</a></h2>
 <ul>
@@ -2456,7 +2456,7 @@
 <h2 id="papierkorb-43">Papierkorb (#43)<a class="headerlink" href="#papierkorb-43" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Eigene Tabelle statt Löschmarke</strong>: Gelöschte Mappen ziehen samt Verweisen und Dokumenten als JSON nach <code>papierkorb</code>. Alle Abfragen auf <code>mappen</code> bleiben unverändert; eindeutige Werte werden frei; der Papierkorb taucht nirgends sonst auf.</li>
-<li><strong>Wiederherstellen</strong> legt die Zeilen wieder an. Verweise auf Mappen, die es nicht mehr gibt, entfallen; passt die Mappe danach nicht (z. B. eindeutiger Wert vergeben), zeigt der Eingang sie – nur sie, nicht die andere.</li>
+<li><strong>Wiederherstellen</strong> legt die Zeilen wieder an. Verweise auf Mappen, die es nicht mehr gibt, entfallen; passt die Mappe danach nicht (z. B. eindeutiger Wert vergeben), zeigt „Zu erledigen“ sie – nur sie, nicht die andere.</li>
 <li><strong>Dateien bleiben</strong>, bis der Papierkorb geleert wird; erst dann prüft das DMS, ob noch ein Dokument (auch im Papierkorb) an der Datei hängt.</li>
 <li><strong>Benutzer-Einladungen</strong> im Papierkorb sind deaktiviert; endgültig gelöscht wird das Konto erst beim Leeren. 0 Tage Aufbewahrung schaltet den Papierkorb aus.</li>
 </ul>
@@ -2485,8 +2485,8 @@
 </ul>
 <h2 id="fristen-129133">Fristen (#129–#133)<a class="headerlink" href="#fristen-129133" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Fristen sind Aufgaben</strong> – keine eigene Liste: Eingang, Zusammenfassung, Abwesenheit, Vertretung und Weitergeben gelten ohne Sonderwege. Eine zusätzliche Stichtags-Mail gibt es bewusst nicht.</li>
-<li><strong>Angelegt erst ab „Datum − Vorlauf“</strong>, je Mappe, Feld und Datum einmal (eindeutiger Index). Was davor liegt, berechnet die Sicht <em>Anstehend</em> aus den Datumsfeldern; so bleibt der Eingang die Liste dessen, was jetzt zu tun ist.</li>
+<li><strong>Fristen sind Aufgaben</strong> – keine eigene Liste: „Zu erledigen“, Zusammenfassung, Abwesenheit, Vertretung und Weitergeben gelten ohne Sonderwege. Eine zusätzliche Stichtags-Mail gibt es bewusst nicht.</li>
+<li><strong>Angelegt erst ab „Datum − Vorlauf“</strong>, je Mappe, Feld und Datum einmal (eindeutiger Index). Was davor liegt, berechnet die Ansicht <em>Anstehend</em> aus den Datumsfeldern; so bleibt „Zu erledigen“ die Liste dessen, was jetzt zu tun ist.</li>
 <li><strong>Das Datum ändert sich nie von selbst</strong>: Wiederkehrende Termine schlagen den nächsten nur vor.</li>
 <li><strong>Freie Erinnerungen</strong> liegen bis zu ihrem Tag in einer eigenen Tabelle und werden dann zu Aufgaben; im Papierkorb ziehen sie mit um.</li>
 </ul>

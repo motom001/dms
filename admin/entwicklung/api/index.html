@@ -644,7 +644,7 @@
   <span class="md-ellipsis">
     
   
-    Sichten
+    Ansichten
   
 
     
@@ -2012,8 +2012,12 @@
 <span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"typId": "&lt;Id des Mappentyps&gt;", "werte": {"rechnungsnummer": "R-17", "rechnungsdatum": "2026-10-01", "betrag": {"betrag": 49.9, "waehrung": "EUR"}}}'</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>http://&lt;NAS&gt;:8080/api/v1/mappen
 </code></pre></div>
-<p>Die Ids der Mappentypen und die Schlüssel ihrer Felder liefert <code>GET /api/v1/typen</code>.</p>
-<p>Die Mappen einer Sicht liefert <code>GET /api/v1/mappen?sicht=&lt;Id der Sicht&gt;</code> – mit allen Bedingungen der Sicht. Alle Mappen eines Typs, ohne Bedingungen, gibt es mit <code>sicht=typ:&lt;Id des Mappentyps&gt;</code>. Mit <code>sicht=link&amp;link=…</code> geht es über einen <a href="../direktlinks/">sprechenden Link</a>. Die Sichten selbst (Baum, Mappentypen, Bedingungen, gewählte Trefferliste) liefert <code>GET /api/v1/sichten/definitionen</code>. Die eigene Abwesenheit liest und setzt <code>GET</code>/<code>PUT /api/v1/konto/abwesenheit</code>, die eigene tägliche Zusammenfassung (Uhrzeit, Wochentage, Feiertage) <code>GET</code>/<code>PUT /api/v1/konto/zusammenfassung</code>. Die eigenen Favoriten gibt es mit <code>sicht=favoriten</code>; markieren und entfernen mit <code>PUT</code> bzw. <code>DELETE /api/v1/mappen/{id}/favorit</code>.</p>
+<p>Die Ids der Mappentypen und die Kennungen ihrer Felder (<code>key</code>) liefert <code>GET /api/v1/typen</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Namen in der API</p>
+<p>Die Schnittstelle behält ihre Namen, auch wo die Oberfläche seit 0.73 andere Wörter verwendet: <code>sicht</code> ist die <strong>Ansicht</strong>, <code>sicht=eingang</code> die Liste <strong>Zu erledigen</strong>, <code>key</code> die <strong>Kennung</strong> eines Felds, Registers oder Mappentyps, die Feldart <code>referenz</code> der <strong>Verweis</strong>, das Register der Art <code>protokoll</code> die <strong>Historie</strong> und <code>mandant</code> bzw. <code>haushalt_id</code> der <strong>Haushalt</strong>.</p>
+</div>
+<p>Die Mappen einer Ansicht liefert <code>GET /api/v1/mappen?sicht=&lt;Id der Ansicht&gt;</code> – mit allen Bedingungen der Ansicht. Alle Mappen eines Mappentyps, ohne Bedingungen, gibt es mit <code>sicht=typ:&lt;Id des Mappentyps&gt;</code>. Mit <code>sicht=link&amp;link=…</code> geht es über einen <a href="../direktlinks/">Link über Mappentyp und Feldwerte</a>. Die Ansichten selbst (Baum, Mappentypen, Bedingungen, gewählte Trefferliste) liefert <code>GET /api/v1/sichten/definitionen</code>. Die eigene Abwesenheit liest und setzt <code>GET</code>/<code>PUT /api/v1/konto/abwesenheit</code>, die eigene tägliche Zusammenfassung (Uhrzeit, Wochentage, Feiertage) <code>GET</code>/<code>PUT /api/v1/konto/zusammenfassung</code>. Die eigenen Favoriten gibt es mit <code>sicht=favoriten</code>; markieren und entfernen mit <code>PUT</code> bzw. <code>DELETE /api/v1/mappen/{id}/favorit</code>.</p>
 <p>Mappentypen haben seit 0.14 <strong>mehrere Trefferlisten</strong> (<code>trefferlisten</code>, eine mit <code>standard: true</code>). Das Feld <code>trefferliste</code> gibt es weiter: Es enthält die Spalten der Standardliste, und wer es beim Ändern angibt, ersetzt damit deren Spalten.</p>
 <p>Mit <code>suche=…&amp;volltext=true</code> sucht <code>GET /api/v1/mappen</code> auch im Volltext der Dokumente; die Fundstellen stehen in <code>ausschnitte</code> (Treffer zwischen den Steuerzeichen U+0002 und U+0003). Den ganzen Text eines Dokuments liefert <code>GET /api/v1/dokumente/&lt;Id&gt;/volltext</code>.</p>
 <h3 id="post-anlegen-und-zuordnen">Post anlegen und zuordnen<a class="headerlink" href="#post-anlegen-und-zuordnen" title="Permanent link">&para;</a></h3>
@@ -2034,7 +2038,7 @@ curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </spa
 <li>Im aktiven <a href="../wartungsmodus/">Wartungsmodus</a> antwortet die Schnittstelle mit <code>503</code> und <code>Retry-After</code> (Sekunden bis zum erwarteten Ende).</li>
 <li>Fehler kommen als JSON mit einer deutschen Meldung in <code>fehler</code>; bei ungültigen Eingaben (422) steht in <code>details</code> das Prüfergebnis je Feld.</li>
 <li>Passwortfelder setzt man mit einem Text oder <code>{"neu": "…"}</code>, entfernt sie mit <code>null</code> und lässt sie unverändert, indem man sie weglässt.</li>
-<li>Feldschlüssel ändern sich nie (siehe <a href="../mappentypen/#der-schlussel">Mappentypen</a>) – Skripte, die mit ihnen arbeiten, bleiben gültig, auch wenn Bezeichnungen umbenannt werden.</li>
+<li>Die Kennungen der Felder ändern sich nie (siehe <a href="../mappentypen/#die-kennung">Mappentypen</a>) – Skripte, die mit ihnen arbeiten, bleiben gültig, auch wenn Bezeichnungen umbenannt werden.</li>
 </ul>
 
 

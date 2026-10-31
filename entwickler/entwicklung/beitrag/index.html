@@ -818,7 +818,7 @@
 <li><strong>Tests</strong> für das Neue, im Arbeitsspeicher und, wo Daten gespeichert werden, auch gegen PostgreSQL.</li>
 <li><code>npm test</code> und <code>npm run typecheck</code> laufen lokal durch.</li>
 <li><strong>Handbuch</strong> angepasst, wo sich etwas Sichtbares ändert: Benutzer-, Administrator- oder Installationshandbuch. Neue ?-Symbole brauchen einen Eintrag in <code>shared/src/hilfe.ts</code>.</li>
-<li><strong>Release-Notizen:</strong> Für eine neue Version die Nummer in den drei <code>package.json</code> erhöhen und <code>docs/releases/v&lt;version&gt;.md</code> schreiben, aus Sicht der Nutzer. Kleine Korrekturen ohne neue Nummer landen nur im Image <code>main</code>. Mit dem Maintainer im Issue klären, welche Nummer passt.</li>
+<li><strong>Release-Notizen:</strong> Für eine neue Version die Nummer in den drei <code>package.json</code> erhöhen und <code>docs/releases/v&lt;version&gt;.md</code> schreiben, aus Ansicht der Nutzer. Kleine Korrekturen ohne neue Nummer landen nur im Image <code>main</code>. Mit dem Maintainer im Issue klären, welche Nummer passt.</li>
 </ul>
 <h2 id="der-pull-request">Der Pull Request<a class="headerlink" href="#der-pull-request" title="Permanent link">&para;</a></h2>
 <ul>
@@ -831,7 +831,7 @@
 <ul>
 <li><strong>Sprache:</strong> Oberfläche, Handbuch, Release-Notizen und Commit-Nachrichten auf Deutsch. Auch Bezeichner im Code sind deutsch (<code>mappe</code>, <code>schreibe</code>, <code>laden</code>). Fachbegriffe ohne gutes deutsches Wort bleiben, wie sie sind.</li>
 <li><strong>Begriffe:</strong> Verwende die Wörter aus dem <a href="https://motom001.github.io/dms/benutzer/aktuell/begriffe/">Glossar</a> und nicht die, die dort unter „nicht verwenden“ stehen. Ein neuer Begriff kommt mit demselben Pull Request in <code>docs/glossar.yml</code>, mit Beschreibung und der Einstufung für Einsteiger (siehe <a href="../personas/">Für wen wir bauen</a>). <code>python3 docs/handbuch/werkzeuge/glossar.py</code> erzeugt daraus die Seite „Begriffe“.</li>
-<li><strong>Texte für Nutzer:</strong> kurz, freundlich, ohne Fachjargon, aus Sicht des Lesers („Speichere deine Arbeit“).</li>
+<li><strong>Texte für Nutzer:</strong> kurz, freundlich, ohne Fachjargon, aus Ansicht des Lesers („Speichere deine Arbeit“).</li>
 <li><strong>Code:</strong> TypeScript strikt, kleine Funktionen, Kommentare erklären das <em>Warum</em> und verweisen auf das Issue (<code>// Abwesenheit (#77): …</code>).</li>
 <li><strong>Commits:</strong> eine Zeile Zusammenfassung, darunter bei Bedarf Stichpunkte.</li>
 </ul>

@@ -646,7 +646,7 @@
   <span class="md-ellipsis">
     
   
-    Sichten
+    Ansichten
   
 
     
@@ -838,10 +838,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#erweiterte-ansicht-weitere-kataloge-und-hochladen" class="md-nav__link">
+  <a href="#expertenmodus-weitere-kataloge-und-hochladen" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Erweiterte Ansicht: weitere Kataloge und Hochladen
+        Expertenmodus: weitere Kataloge und Hochladen
       
     </span>
   </a>
@@ -2032,10 +2032,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#erweiterte-ansicht-weitere-kataloge-und-hochladen" class="md-nav__link">
+  <a href="#expertenmodus-weitere-kataloge-und-hochladen" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Erweiterte Ansicht: weitere Kataloge und Hochladen
+        Expertenmodus: weitere Kataloge und Hochladen
       
     </span>
   </a>
@@ -2074,27 +2074,27 @@
 
 
 <h1 id="pakete">Pakete<a class="headerlink" href="#pakete" title="Permanent link">&para;</a></h1>
-<p>Ein <strong>Paket</strong> bringt fertige Mappentypen, Sichten und auf Wunsch Beispiel-Mappen mit – etwa das Basis-Paket mit dem Mappentyp „Organisation“ für Firmen, Behörden, Ärzte und Versicherungen. Statt Feld für Feld in der Werkbank zu bauen, installierst du es mit wenigen Klicks unter <strong>Werkbank → Pakete</strong>.</p>
-<p>Pakete kommen aus dem <strong>offiziellen Katalog</strong> des DMS-Projekts (<a href="https://github.com/motom001/dms-registry">dms-registry</a>). Jedes Paket dort ist Open Source und wurde vom Maintainer freigegeben. Meist sind es <strong>Konfigurationspakete</strong> (Mappentypen, Sichten, Beispiele). Pakete mit Code lassen sich installieren und einstellen, ihr Code läuft aber erst mit dem Paket-Läufer.</p>
+<p>Ein <strong>Paket</strong> bringt fertige Mappentypen, Ansichten und auf Wunsch Beispiel-Mappen mit – etwa das Basis-Paket mit dem Mappentyp „Organisation“ für Firmen, Behörden, Ärzte und Versicherungen. Statt Feld für Feld in der Werkbank zu bauen, installierst du es mit wenigen Klicks unter <strong>Werkbank → Pakete</strong>.</p>
+<p>Pakete kommen aus dem <strong>offiziellen Katalog</strong> des DMS-Projekts (<a href="https://github.com/motom001/dms-registry">dms-registry</a>). Jedes Paket dort ist Open Source und wurde vom Maintainer freigegeben. Meist sind es <strong>Konfigurationspakete</strong> (Mappentypen, Ansichten, Beispiele). Pakete mit Code lassen sich installieren und einstellen, ihr Code läuft aber erst mit dem Paket-Läufer.</p>
 <h2 id="katalog-abrufen">Katalog abrufen<a class="headerlink" href="#katalog-abrufen" title="Permanent link">&para;</a></h2>
 <p>Das DMS fragt den Katalog <strong>nur auf Knopfdruck</strong> ab, nie im Hintergrund: Klicke <strong>Katalog abrufen</strong>. Die Seite zeigt dann zwei Listen:</p>
 <ul>
 <li><strong>Installiert</strong> – Pakete in diesem DMS, mit Version und Herkunft</li>
 <li><strong>Verfügbar</strong> – Pakete aus dem Katalog, die noch nicht installiert sind</li>
 </ul>
-<p>Ein Klick auf ein Paket zeigt Name, Beschreibung, Version, Lizenz, Autor, die nötige DMS-Version, Abhängigkeiten, die enthaltenen Mappentypen und Sichten sowie Links zum README und zu den Änderungen.</p>
+<p>Ein Klick auf ein Paket zeigt Name, Beschreibung, Version, Lizenz, Autor, die nötige DMS-Version, Abhängigkeiten, die enthaltenen Mappentypen und Ansichten sowie Links zum README und zu den Änderungen.</p>
 <p>Das DMS lädt den Katalog von <code>https://raw.githubusercontent.com/motom001/dms-registry/gh-pages/katalog.json</code>. Braucht dein DMS einen Proxy für das Internet, gilt derselbe wie für alle anderen Abrufe.</p>
 <h2 id="installieren">Installieren<a class="headerlink" href="#installieren" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Wähle ein Paket unter <strong>Verfügbar</strong> und ggf. eine ältere Version.</li>
 <li>Klicke <strong>Installieren …</strong>. Die <strong>Vorschau</strong> zeigt, was angelegt wird:<ul>
-<li>je Mappentyp die Zahl der Felder und den Schlüssel, z. B. <code>basis_organisation</code></li>
-<li>die Sichten, mit Elternsicht</li>
+<li>je Mappentyp die Zahl der Felder und die Kennung, z. B. <code>basis_organisation</code></li>
+<li>die Ansichten, mit Elternansicht</li>
 <li>die Abhängigkeiten und ob sie installiert sind</li>
 <li>wie viele Beispiel-Mappen es gibt</li>
 </ul>
 </li>
-<li><strong>Namen:</strong> Gibt es einen Mappentyp oder eine Sicht (auf oberster Ebene) mit gleichem Namen schon, sagt die Vorschau das und schlägt einen anderen vor, z. B. „Organisation (Basis)“. Du kannst jeden Namen ändern.</li>
+<li><strong>Namen:</strong> Gibt es einen Mappentyp oder eine Ansicht (auf oberster Ebene) mit gleichem Namen schon, sagt die Vorschau das und schlägt einen anderen vor, z. B. „Organisation (Basis)“. Du kannst jeden Namen ändern.</li>
 <li><strong>Beispiel-Mappen</strong> legt das DMS nur an, wenn du den Haken setzt.</li>
 <li><strong>Fehlende Pakete mitinstallieren:</strong> Braucht das Paket ein anderes, das noch fehlt, installiert das DMS es auf Wunsch vorher mit (die neueste passende Version aus dem Katalog).</li>
 <li>Klicke <strong>Installieren</strong>.</li>
@@ -2105,7 +2105,7 @@
 <li>ob alle <strong>Abhängigkeiten</strong> installiert sind und in einer passenden Version,</li>
 <li>ob das heruntergeladene Archiv zur <strong>Prüfsumme (SHA-256)</strong> im Katalog passt. Passt sie nicht, installiert das DMS nichts.</li>
 </ul>
-<p>Angelegt wird über dieselben Funktionen wie in der Werkbank, mit allen Prüfregeln. Die Schlüssel bekommen das Paket-Präfix (<code>&lt;paket&gt;_&lt;schluessel&gt;</code>), damit sich Pakete nicht in die Quere kommen; Verweise auf Typen anderer Pakete löst das DMS auf. <strong>Scheitert etwas, nimmt das DMS alles zurück</strong> – es bleibt nichts halb angelegt.</p>
+<p>Angelegt wird über dieselben Funktionen wie in der Werkbank, mit allen Prüfregeln. Die Kennungen bekommen das Paket-Präfix (<code>&lt;paket&gt;_&lt;schluessel&gt;</code>), damit sich Pakete nicht in die Quere kommen; Verweise auf Mappentypen anderer Pakete löst das DMS auf. <strong>Scheitert etwas, nimmt das DMS alles zurück</strong> – es bleibt nichts halb angelegt.</p>
 <p>Mappentypen aus Paketen tragen in <strong>Werkbank → Mappentypen</strong> den Hinweis <strong>Paket …</strong>. Du kannst sie danach wie jeden anderen Mappentyp anpassen.</p>
 <h3 id="uber-die-katalog-webseite">Über die Katalog-Webseite<a class="headerlink" href="#uber-die-katalog-webseite" title="Permanent link">&para;</a></h3>
 <p>Den Katalog gibt es auch als Webseite: <a href="https://motom001.github.io/dms-registry/">Paketkatalog</a> (auch auf der Startseite der Handbücher). Dort siehst du je Paket die Beschreibung, was angelegt wird, Rechte, Änderungen und ältere Versionen.</p>
@@ -2117,19 +2117,19 @@
 <li>Installiert wird <strong>erst, wenn du auf „Installieren“ klickst</strong>. Der Link allein ändert nichts. Ist das Paket schon installiert, zeigt die Vorschau das; ein Update bietet sie an, wenn der Link eine neuere Version nennt.</li>
 </ol>
 <h2 id="installierte-pakete">Installierte Pakete<a class="headerlink" href="#installierte-pakete" title="Permanent link">&para;</a></h2>
-<p>Je Paket merkt sich das DMS Version, <strong>Herkunft</strong> (der Katalog), wann und von wem es installiert bzw. aktualisiert wurde und welche Mappentypen und Sichten dazugehören. Diese Angaben sind Teil der <a href="../sicherung/">Sicherung</a> und des <a href="../export/">Vollexports</a> (<code>struktur/pakete.json</code>). Installieren, Aktualisieren und Entfernen stehen im Protokoll.</p>
+<p>Je Paket merkt sich das DMS Version, <strong>Herkunft</strong> (der Katalog), wann und von wem es installiert bzw. aktualisiert wurde und welche Mappentypen und Ansichten dazugehören. Diese Angaben sind Teil der <a href="../sicherung/">Sicherung</a> und des <a href="../export/">Vollexports</a> (<code>struktur/pakete.json</code>). Installieren, Aktualisieren und Entfernen stehen im Protokoll.</p>
 <h2 id="aktualisieren">Aktualisieren<a class="headerlink" href="#aktualisieren" title="Permanent link">&para;</a></h2>
 <p><strong>Auf neue Versionen prüfen</strong> fragt den Katalog ab (auf Knopfdruck) und markiert Pakete, für die es Neueres gibt. Im Paket zeigt <strong>Auf … aktualisieren …</strong> eine Vorschau mit dem, was dazukommt, und einem Link zu den Änderungen.</p>
 <p>Ein Update <strong>ergänzt nur</strong>:</p>
 <ul>
-<li>neue Mappentypen und Sichten,</li>
+<li>neue Mappentypen und Ansichten,</li>
 <li>neue Felder und Register bei vorhandenen Mappentypen.</li>
 </ul>
-<p>Es <strong>löscht nichts</strong> und <strong>überschreibt nichts</strong>, was du selbst geändert hast: Hast du einen Typ umbenannt, Felder ergänzt oder eine Sicht gelöscht, bleibt das so.</p>
+<p>Es <strong>löscht nichts</strong> und <strong>überschreibt nichts</strong>, was du selbst geändert hast: Hast du einen Mappentyp umbenannt, Felder ergänzt oder eine Ansicht gelöscht, bleibt das so.</p>
 <h2 id="entfernen">Entfernen<a class="headerlink" href="#entfernen" title="Permanent link">&para;</a></h2>
-<p><strong>Entfernen</strong> löscht die Mappentypen und Sichten des Pakets und seinen Eintrag. Das geht nur,</p>
+<p><strong>Entfernen</strong> löscht die Mappentypen und Ansichten des Pakets und seinen Eintrag. Das geht nur,</p>
 <ul>
-<li>solange es <strong>keine Mappen</strong> dieser Typen gibt (auch nicht im Papierkorb) und</li>
+<li>solange es <strong>keine Mappen</strong> dieser Mappentypen gibt (auch nicht im Papierkorb) und</li>
 <li><strong>kein anderes Paket</strong> davon abhängt.</li>
 </ul>
 <p>Sonst nennt das DMS die Gründe. Beispiel-Mappen löschst du vorher wie andere Mappen.</p>
@@ -2137,9 +2137,9 @@
 <p>Manche Pakete brauchen Einstellungen – etwa Regeln, nach denen sie Post zuordnen, oder ein Zugangsschlüssel für einen Dienst. Das Paket <strong>beschreibt</strong> sie nur; das DMS baut daraus ein Formular, prüft die Werte und speichert sie. Du findest es unter <strong>Werkbank → Pakete → <em>Paket</em> → Reiter „Einstellungen“</strong> – den Reiter gibt es nur bei Paketen, die Einstellungen haben.</p>
 <ul>
 <li><strong>Abschnitte</strong> mit Feldern und <strong>Listen</strong> gleich aufgebauter Einträge (z. B. eine Regel je Eintrag) mit <strong>+ Eintrag</strong>, Löschen und – wenn das Paket es erlaubt – Sortieren mit ↑/↓.</li>
-<li><strong>Felder</strong> wie bei den Mappentypen: Text, mehrzeiliger Text, Zahl, Ja/Nein, Datum, Auswahl, Mehrfachauswahl und <strong>Verweise</strong> auf einen Mappentyp, ein Feld eines Mappentyps, einen Benutzer, eine Rolle oder eine Sicht. Verweise wählst du aus Listen; gespeichert wird die feste Id, nicht der Name – Umbenennen schadet also nicht.</li>
+<li><strong>Felder</strong> wie bei den Mappentypen: Text, mehrzeiliger Text, Zahl, Ja/Nein, Datum, Auswahl, Mehrfachauswahl und <strong>Verweise</strong> auf einen Mappentyp, ein Feld eines Mappentyps, einen Benutzer, eine Rolle oder eine Ansicht. Verweise wählst du aus Listen; gespeichert wird die feste Id, nicht der Name – Umbenennen schadet also nicht.</li>
 <li><strong>Geheimnisse</strong> (z. B. Zugangsdaten) verschlüsselt das DMS mit seinem Schlüssel (siehe <a href="../verschluesselung/">Verschlüsselung</a>). Nach dem Speichern zeigt es sie nie wieder an, nur <strong>gesetzt</strong> mit <strong>Ändern</strong> und <strong>Löschen</strong>.</li>
-<li>Beim <strong>Speichern</strong> prüft das DMS Typ, Pflichtfelder, Auswahlwerte und ob Verweise existieren, und zeigt Fehler am Feld.</li>
+<li>Beim <strong>Speichern</strong> prüft das DMS Mappentyp, Pflichtfelder, Auswahlwerte und ob Verweise existieren, und zeigt Fehler am Feld.</li>
 <li><strong>Aktionen</strong> des Pakets erscheinen als Knöpfe (z. B. „Regeln jetzt anwenden“), die Antwort des Pakets steht darüber. Eine Zeitgrenze verhindert, dass ein Knopf hängt.</li>
 <li>Der <strong>Status</strong> (letzter Lauf, Meldungen) kommt vom Paket selbst und ist schreibgeschützt.</li>
 </ul>
@@ -2154,9 +2154,9 @@
 <p class="admonition-title">Pakete mit Code</p>
 <p>Einstellungen gehören zu Paketen mit Code. Solange es im DMS den <strong>Paket-Läufer</strong> noch nicht gibt, läuft der Code nicht: Du kannst solche Pakete installieren und ihre Einstellungen pflegen, Aktionen melden aber, dass sie noch nicht ausgeführt werden können.</p>
 </div>
-<h2 id="erweiterte-ansicht-weitere-kataloge-und-hochladen">Erweiterte Ansicht: weitere Kataloge und Hochladen<a class="headerlink" href="#erweiterte-ansicht-weitere-kataloge-und-hochladen" title="Permanent link">&para;</a></h2>
-<p>Für Paketentwickler und für ein DMS ohne Internetzugang gibt es unter <strong>Werkbank → Pakete</strong> den Schalter <strong>Erweiterte Ansicht</strong>. Er gilt nur für dich (je Benutzer gemerkt) und ist standardmäßig aus. In der normalen Ansicht gibt es nur den offiziellen Katalog.</p>
-<p>In der erweiterten Ansicht kannst du:</p>
+<h2 id="expertenmodus-weitere-kataloge-und-hochladen">Expertenmodus: weitere Kataloge und Hochladen<a class="headerlink" href="#expertenmodus-weitere-kataloge-und-hochladen" title="Permanent link">&para;</a></h2>
+<p>Für Paketentwickler und für ein DMS ohne Internetzugang gibt es unter <strong>Werkbank → Pakete</strong> den Schalter <strong>Expertenmodus</strong>. Er gilt nur für dich (je Benutzer gemerkt) und ist standardmäßig aus. Ohne Expertenmodus gibt es nur den offiziellen Katalog.</p>
+<p>Im Expertenmodus kannst du:</p>
 <ul>
 <li><strong>Weitere Katalogadressen</strong> hinzufügen, abschalten und entfernen. Erlaubt ist nur HTTPS, das Format ist dasselbe wie beim offiziellen Katalog (<code>katalog.json</code> der Registry). <strong>Katalog abrufen</strong> fragt dann auch die eingeschalteten weiteren Kataloge ab; ihre Pakete tragen die Adresse als Kennzeichen.</li>
 <li>Ein <strong>Paket als Datei hochladen</strong> (<code>.zip</code> im Format der Registry, z. B. der Paketordner gepackt). Das DMS prüft es genauso wie ein Katalogpaket, nur ohne Prüfsumme aus dem Katalog, und zeigt die Vorschau.</li>

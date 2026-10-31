@@ -390,7 +390,7 @@
         "tags": [
           "Ablage"
         ],
-        "summary": "Anzahl Mappen je Typ, je Sicht und im Eingang",
+        "summary": "Anzahl Mappen je Typ, je Ansicht und unter „Zu erledigen“",
         "operationId": "getSichten",
         "responses": {
           "200": {
@@ -431,8 +431,8 @@
         "tags": [
           "Ablage"
         ],
-        "summary": "Alle Sichten",
-        "description": "Sichten mit Elternsicht, Reihenfolge, Mappentypen und Bedingungen. Die Mappen einer Sicht liefert GET /mappen?sicht=<id>.",
+        "summary": "Alle Ansichten",
+        "description": "Ansichten mit Elternsicht, Reihenfolge, Mappentypen und Bedingungen. Die Mappen einer Ansicht liefert GET /mappen?sicht=<id>.",
         "operationId": "getSichtenDefinitionen",
         "responses": {
           "200": {
@@ -473,15 +473,15 @@
         "tags": [
           "Ablage"
         ],
-        "summary": "Mappen einer Sicht, seitenweise",
-        "description": "Mappen eines Typs (oder des eigenen Eingangs), sortiert und seitenweise. `bezuege` enthält Titel und Typ der Mappen, auf die die gelieferten Mappen verweisen.",
+        "summary": "Mappen einer Ansicht, seitenweise",
+        "description": "Mappen eines Typs (oder von „Zu erledigen“), sortiert und seitenweise. `bezuege` enthält Titel und Typ der Mappen, auf die die gelieferten Mappen verweisen.",
         "operationId": "getMappen",
         "parameters": [
           {
             "name": "sicht",
             "in": "query",
             "required": true,
-            "description": "Id einer Sicht, „eingang“, „favoriten“ (eigene Favoriten) oder „typ:<Id eines Mappentyps>“ (alle Mappen dieses Typs, ohne Bedingungen) oder „link“ (sprechender Link, siehe link) oder „suche“ (erweiterte Suche, siehe link)",
+            "description": "Id einer Ansicht, „eingang“, „favoriten“ (eigene Favoriten) oder „typ:<Id eines Mappentyps>“ (alle Mappen dieses Typs, ohne Bedingungen) oder „link“ (Link über Mappentyp und Feldwerte, siehe link). „sicht“ ist die „Ansicht“ der Oberfläche, „eingang“ die Liste „Zu erledigen“ oder „suche“ (erweiterte Suche, siehe link)",
             "schema": {
               "type": "string"
             }
@@ -490,7 +490,7 @@
             "name": "link",
             "in": "query",
             "required": false,
-            "description": "Mit sicht=link: die Parameter eines sprechenden Links als ein kodierter Wert, z. B. typ%3DRechnung%26bezahlt%3Dnein (#98). Fehler im Link: 422. Mit sicht=suche die Parameter der erweiterten Suche (#199), z. B. typ%3Drechnung%26rechnungsdatum.von%3D2025-03-01%26vertragspartner%3D<Id>%26volltext%3DBackofen%26in%3Ddokumente: typ mehrfach (ohne = alle Typen, nur Systemfelder), feld.von/feld.bis für Datum und Zahlen, feld=wert mehrfach für Verweise und Auswahl (ODER), Ja/Nein ja|nein, Text enthält, feld.leer=1 bzw. feld.nichtleer=1, volltext mit in=dokumente und/oder in=notizen (ohne in: beide). Zwischen Feldern gilt UND. Ungültige Eingaben: 422.",
+            "description": "Mit sicht=link: die Parameter eines Links über Mappentyp und Feldwerte als ein kodierter Wert, z. B. typ%3DRechnung%26bezahlt%3Dnein (#98). Fehler im Link: 422. Mit sicht=suche die Parameter der erweiterten Suche (#199), z. B. typ%3Drechnung%26rechnungsdatum.von%3D2025-03-01%26vertragspartner%3D<Id>%26volltext%3DBackofen%26in%3Ddokumente: typ mehrfach (ohne = alle Typen, nur Systemfelder), feld.von/feld.bis für Datum und Zahlen, feld=wert mehrfach für Verweise und Auswahl (ODER), Ja/Nein ja|nein, Text enthält, feld.leer=1 bzw. feld.nichtleer=1, volltext mit in=dokumente und/oder in=notizen (ohne in: beide). Zwischen Feldern gilt UND. Ungültige Eingaben: 422.",
             "schema": {
               "type": "string"
             }
@@ -1108,7 +1108,7 @@
           "Ablage"
         ],
         "summary": "Mappe aus dem Papierkorb wiederherstellen",
-        "description": "Verweise auf Mappen, die es nicht mehr gibt, entfallen; passt die Mappe danach nicht zur Definition (z. B. ein eindeutiger Wert ist inzwischen vergeben), erscheint sie im Eingang.",
+        "description": "Verweise auf Mappen, die es nicht mehr gibt, entfallen; passt die Mappe danach nicht zur Definition (z. B. ein eindeutiger Wert ist inzwischen vergeben), erscheint sie unter „Zu erledigen“.",
         "operationId": "postPapierkorbMitidWiederherstellen",
         "parameters": [
           {
@@ -2451,7 +2451,7 @@
             "name": "register",
             "in": "query",
             "required": true,
-            "description": "Schlüssel eines Dokumentenregisters des Mappentyps",
+            "description": "Kennung eines Dokumentenregisters des Mappentyps",
             "schema": {
               "type": "string"
             }
@@ -3704,7 +3704,7 @@
                 },
                 "trefferliste": {
                   "type": "string",
-                  "description": "Schlüssel einer Trefferliste des Quelltyps; das Register zeigt dann deren Spalten"
+                  "description": "Kennung einer Trefferliste des Quelltyps; das Register zeigt dann deren Spalten"
                 }
               }
             }
@@ -3724,7 +3724,7 @@
           "schluessel": {
             "type": "string",
             "example": "rechnung",
-            "description": "Fester Schlüssel; beim Anlegen frei wählbar (sonst aus dem Namen), danach unveränderlich"
+            "description": "Feste Kennung; beim Anlegen frei wählbar (sonst aus dem Namen), danach unveränderlich"
           },
           "beschreibung": {
             "type": "string"
@@ -3795,7 +3795,7 @@
               "stichtag": {
                 "type": "string",
                 "nullable": true,
-                "description": "Schlüssel eines Datumsfelds; null = Anlagedatum"
+                "description": "Kennung eines Datumsfelds; null = Anlagedatum"
               }
             }
           },
@@ -3809,7 +3809,7 @@
             "type": "boolean",
             "default": true,
             "writeOnly": true,
-            "description": "Nur beim Anlegen: eigene Sicht in der Ablage anlegen"
+            "description": "Nur beim Anlegen: eigene Ansicht in der Ablage anlegen"
           },
           "loeschenErlaubt": {
             "type": "boolean",
@@ -4315,7 +4315,7 @@
           },
           "aufgaben": {
             "type": "object",
-            "description": "Nur im Eingang: offene Aufgaben je Mappen-Id",
+            "description": "Nur unter „Zu erledigen“: offene Aufgaben je Mappen-Id",
             "additionalProperties": {
               "type": "string"
             }
@@ -4515,7 +4515,7 @@
           "fuer": {
             "type": "string",
             "format": "uuid",
-            "description": "Id eines Benutzers: Er bekommt die Aufgabe „Neue Post“ im Eingang, solange die Post neu ist."
+            "description": "Id eines Benutzers: Er bekommt die Aufgabe „Post für dich“ unter „Zu erledigen“, solange die Post neu ist."
           },
           "nachricht": {
             "type": "string"
@@ -4551,7 +4551,7 @@
           },
           "register": {
             "type": "string",
-            "description": "Schlüssel eines Dokumentenregisters der Zielmappe; Standard: das erste"
+            "description": "Kennung eines Dokumentenregisters der Zielmappe; Standard: das erste"
           },
           "dokumente": {
             "type": "array",
@@ -4714,7 +4714,7 @@
                 "ab": {
                   "type": "string",
                   "format": "date",
-                  "description": "ab wann im Eingang"
+                  "description": "ab wann unter „Zu erledigen“"
                 },
                 "text": {
                   "type": "string"
@@ -4732,7 +4732,7 @@
                 },
                 "faellig": {
                   "type": "boolean",
-                  "description": "steht schon im Eingang"
+                  "description": "steht schon unter „Zu erledigen“"
                 },
                 "feldKey": {
                   "type": "string",
@@ -4825,7 +4825,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "description": "Mappentypen, deren Mappen die Sicht selbst zeigt; dazu kommen die ihrer Untersichten"
+            "description": "Mappentypen, deren Mappen die Ansicht selbst zeigt; dazu kommen die ihrer Unteransichten"
           },
           "bedingungen": {
             "type": "array",
@@ -4838,7 +4838,7 @@
           "trefferliste": {
             "type": "string",
             "nullable": true,
-            "description": "Schlüssel der Trefferliste; null = Standard"
+            "description": "Kennung der Trefferliste; null = Standard"
           },
           "rechte": {
             "type": "object",
@@ -4851,7 +4851,7 @@
                 "type": "boolean"
               }
             },
-            "description": "Nur für Benutzer (#148): wirksame Rechte an der Sicht. Verborgene Sichten fehlen in der Liste."
+            "description": "Nur für Benutzer (#148): wirksame Rechte an der Ansicht. Verborgene Ansichten fehlen in der Liste."
           }
         }
       },
@@ -4869,7 +4869,7 @@
             "additionalProperties": {
               "type": "integer"
             },
-            "description": "Anzahl Mappen je Sicht (mit Untersichten)"
+            "description": "Anzahl Mappen je Ansicht (mit Unteransichten)"
           },
           "typen": {
             "type": "object",

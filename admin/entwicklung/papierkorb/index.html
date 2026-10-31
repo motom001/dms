@@ -646,7 +646,7 @@
   <span class="md-ellipsis">
     
   
-    Sichten
+    Ansichten
   
 
     
@@ -991,10 +991,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#protokoll-endgultig-geloschter-mappen" class="md-nav__link">
+  <a href="#historie-endgultig-geloschter-mappen" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Protokoll endgültig gelöschter Mappen
+        Historie endgültig gelöschter Mappen
       
     </span>
   </a>
@@ -1906,10 +1906,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#protokoll-endgultig-geloschter-mappen" class="md-nav__link">
+  <a href="#historie-endgultig-geloschter-mappen" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Protokoll endgültig gelöschter Mappen
+        Historie endgültig gelöschter Mappen
       
     </span>
   </a>
@@ -1966,7 +1966,7 @@
 <h1 id="papierkorb">Papierkorb<a class="headerlink" href="#papierkorb" title="Permanent link">&para;</a></h1>
 <p>Gelöschte Mappen kommen in den Papierkorb – samt Dokumenten und Verweisen. Nach der eingestellten Aufbewahrung löscht das DMS sie endgültig.</p>
 <ul>
-<li>In der <strong>Ablage</strong> sieht jeder Benutzer unter <em>Papierkorb</em> (unter dem Eingang) nur, was <strong>er selbst</strong> gelöscht hat, und kann es wiederherstellen oder endgültig löschen.</li>
+<li>In der <strong>Ablage</strong> sieht jeder Benutzer unter <em>Papierkorb</em> (unterhalb von „Zu erledigen“) nur, was <strong>er selbst</strong> gelöscht hat, und kann es wiederherstellen oder endgültig löschen.</li>
 <li>Unter <strong>Werkbank → Papierkorb</strong> siehst du als Administrator alles, mit „gelöscht von“, und kannst jede Mappe wiederherstellen oder endgültig löschen.</li>
 </ul>
 <p><img alt="Werkbank → Papierkorb" src="../bilder/werkbank-papierkorb.png" /></p>
@@ -1974,14 +1974,14 @@
 <p>Rechts unter <strong>Aufbewahrung</strong> stellst du ein, wie viele Tage gelöschte Mappen bleiben (Standard: 30). Das DMS räumt stündlich auf.</p>
 <p><strong>0 Tage schaltet den Papierkorb aus:</strong> Löschen ist dann sofort endgültig, wie vor Version 0.11. Was gerade im Papierkorb liegt, wird beim Speichern endgültig gelöscht – die Werkbank fragt vorher nach.</p>
 <p>Jeder Benutzer kann in seinem Profil einstellen, dass sein Papierkorb <strong>beim Abmelden geleert</strong> wird.</p>
-<h3 id="protokoll-endgultig-geloschter-mappen">Protokoll endgültig gelöschter Mappen<a class="headerlink" href="#protokoll-endgultig-geloschter-mappen" title="Permanent link">&para;</a></h3>
-<p>Jede Mappe hat ein <strong>Protokoll</strong> (wer wann was geändert hat). Wird eine Mappe endgültig gelöscht, bleibt ihr Protokoll noch eine Weile in der Datenbank, damit sich nachvollziehen lässt, was mit ihr geschah. Wie lange, stellst du darunter unter <strong>Protokoll endgültig gelöschter Mappen behalten</strong> ein (Standard: 365 Tage; 0 löscht es sofort mit). Das Protokoll lebender Mappen bleibt immer.</p>
+<h3 id="historie-endgultig-geloschter-mappen">Historie endgültig gelöschter Mappen<a class="headerlink" href="#historie-endgultig-geloschter-mappen" title="Permanent link">&para;</a></h3>
+<p>Jede Mappe hat eine <strong>Historie</strong> (wer wann was geändert hat). Wird eine Mappe endgültig gelöscht, bleibt ihre Historie noch eine Weile in der Datenbank, damit sich nachvollziehen lässt, was mit ihr geschah. Wie lange, stellst du darunter unter <strong>Historie endgültig gelöschter Mappen behalten</strong> ein (Standard: 365 Tage; 0 löscht es sofort mit). Die Historie lebender Mappen bleibt immer.</p>
 <h2 id="was-im-papierkorb-gilt">Was im Papierkorb gilt<a class="headerlink" href="#was-im-papierkorb-gilt" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Mappen im Papierkorb erscheinen nirgends sonst: nicht in Sichten, Zählern, Suche, Verweisauswahl oder der API.</li>
+<li>Mappen im Papierkorb erscheinen nirgends sonst: nicht in Ansichten, Zählern, Suche, Verweisauswahl oder der API.</li>
 <li>Sie blockieren keine <strong>eindeutigen Werte</strong>: Eine neue Mappe darf dieselbe Rechnungsnummer bekommen.</li>
 <li>Wie bisher lässt sich eine Mappe, auf die noch andere verweisen, gar nicht erst löschen.</li>
-<li><strong>Wiederherstellen</strong> bringt Dokumente und Verweise zurück. Verweise auf Mappen, die es inzwischen nicht mehr gibt, entfallen. Ist ein eindeutiger Wert inzwischen vergeben, landet die Mappe im <strong>Eingang</strong> dessen, der sie angelegt hat.</li>
+<li><strong>Wiederherstellen</strong> bringt Dokumente und Verweise zurück. Verweise auf Mappen, die es inzwischen nicht mehr gibt, entfallen. Ist ein eindeutiger Wert inzwischen vergeben, landet die Mappe bei dem, der sie angelegt hat, unter <strong>Zu erledigen</strong>.</li>
 <li>Ein Mappentyp lässt sich nicht löschen, solange Mappen von ihm im Papierkorb liegen.</li>
 <li>Die Dateien bleiben im Dateiordner, bis der Papierkorb geleert ist.</li>
 </ul>

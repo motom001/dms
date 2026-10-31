@@ -646,7 +646,7 @@
   <span class="md-ellipsis">
     
   
-    Sichten
+    Ansichten
   
 
     
@@ -978,10 +978,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#berechtigungen-an-sichten" class="md-nav__link">
+  <a href="#berechtigungen-an-ansichten" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Berechtigungen an Sichten
+        Berechtigungen an Ansichten
       
     </span>
   </a>
@@ -2093,10 +2093,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#berechtigungen-an-sichten" class="md-nav__link">
+  <a href="#berechtigungen-an-ansichten" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Berechtigungen an Sichten
+        Berechtigungen an Ansichten
       
     </span>
   </a>
@@ -2215,7 +2215,7 @@
 <tr>
 <td><strong>C</strong></td>
 <td>Anlegen</td>
-<td>neue Mappen dieses Typs anlegen</td>
+<td>neue Mappen dieses Mappentyps anlegen</td>
 </tr>
 <tr>
 <td><strong>R</strong></td>
@@ -2249,7 +2249,7 @@
 <p>Über den Regeln steht die Zeile <strong>Standard</strong> mit den fünf Rechten <strong>C R U D P</strong>. Sie gilt, solange keine Regel etwas anderes sagt; ein Klick schaltet ein Recht zwischen <strong>✓</strong> (erteilt) und <strong>✗</strong> (entzogen).</p>
 <ul>
 <li><strong>✓ C R U D P</strong> – jeder darf alles; Regeln <em>schränken ein</em>. So startet jeder neue Mappentyp.</li>
-<li><strong>✗ C R U D P</strong> – niemand darf etwas; Regeln <em>geben frei</em>. Das passt für vertrauliche Typen wie Gehaltsabrechnungen.</li>
+<li><strong>✗ C R U D P</strong> – niemand darf etwas; Regeln <em>geben frei</em>. Das passt für vertrauliche Mappentypen wie Gehaltsabrechnungen.</li>
 <li>Auch gemischt, z. B. <strong>✓ R U P, ✗ C D</strong>: Jeder darf lesen und bearbeiten, anlegen und löschen nur, wem eine Regel es erlaubt.</li>
 </ul>
 <div class="admonition note">
@@ -2285,7 +2285,7 @@
 </tr>
 <tr>
 <td><strong>Feld der Mappe</strong></td>
-<td>ein Feld der Mappe die Bedingung erfüllt – genau wie in <a href="../sichten/#bedingungen">Sichten</a>, z. B. „Verantwortlich zeigt auf aktueller Benutzer“, „Verantwortliche Rolle zeigt auf Rollen des aktuellen Benutzers“, „Privat ist ja“ oder „Angelegt von ist aktueller Benutzer“</td>
+<td>ein Feld der Mappe die Bedingung erfüllt – genau wie in <a href="../sichten/#bedingungen">Ansichten</a>, z. B. „Verantwortlich zeigt auf aktueller Benutzer“, „Verantwortliche Rolle zeigt auf Rollen des aktuellen Benutzers“, „Privat ist ja“ oder „Angelegt von ist aktueller Benutzer“</td>
 </tr>
 <tr>
 <td><strong>Offene Aufgabe für den Benutzer</strong></td>
@@ -2293,7 +2293,7 @@
 </tr>
 <tr>
 <td><strong>Mappe ist die des Benutzers</strong></td>
-<td>(nur beim Typ <em>Benutzer</em>) die Mappe die Benutzer-Mappe des angemeldeten Benutzers ist</td>
+<td>(nur beim Mappentyp <em>Benutzer</em>) die Mappe die Benutzer-Mappe des angemeldeten Benutzers ist</td>
 </tr>
 </tbody>
 </table>
@@ -2303,21 +2303,21 @@
 <p>Ändert jemand ein Feld, von dem seine Rechte abhängen (etwa „Verantwortlich“), fragt das DMS vor dem Speichern nach, wenn er sich damit selbst das Lesen oder Bearbeiten entziehen würde.</p>
 </div>
 <h3 id="regel-in-andere-mappentypen-kopieren">Regel in andere Mappentypen kopieren<a class="headerlink" href="#regel-in-andere-mappentypen-kopieren" title="Permanent link">&para;</a></h3>
-<p>Mit <strong>In andere Mappentypen kopieren …</strong> an einer gespeicherten Regel übernimmst du sie in weitere Typen (bei ungespeicherten Änderungen erst speichern); sie landet dort am Ende. Bedingungen auf Felder, die es im Zieltyp nicht gibt, fallen weg – das DMS sagt, wie viele.</p>
+<p>Mit <strong>In andere Mappentypen kopieren …</strong> an einer gespeicherten Regel übernimmst du sie in weitere Mappentypen (bei ungespeicherten Änderungen erst speichern); sie landet dort am Ende. Bedingungen auf Felder, die es im Zieltyp nicht gibt, fallen weg – das DMS sagt, wie viele.</p>
 <h3 id="speichern">Speichern<a class="headerlink" href="#speichern" title="Permanent link">&para;</a></h3>
 <p>Die Regeln werden mit <strong>Mappentyp speichern</strong> gespeichert, zusammen mit Feldern, Registern und Trefferlisten. Eine Regel darf deshalb auch ein Feld nutzen, das du im selben Zug neu anlegst. Passt eine Regel nicht (z. B. auf ein Feld, das du gerade entfernst), speichert das DMS nichts und nennt die Regel.</p>
-<p>Beim Speichern prüft das DMS außerdem, ob danach Mappen dieses Typs <strong>niemand mehr lesen</strong> könnte (außer Administratoren), und fragt in diesem Fall nach. Jede Änderung steht im <a href="../fehlersuche/">Protokoll</a> mit der vollständigen Regelliste.</p>
+<p>Beim Speichern prüft das DMS außerdem, ob danach Mappen dieses Mappentyps <strong>niemand mehr lesen</strong> könnte (außer Administratoren), und fragt in diesem Fall nach. Jede Änderung steht im <a href="../fehlersuche/">Protokoll</a> mit der vollständigen Regelliste.</p>
 <h2 id="testlauf">Testlauf<a class="headerlink" href="#testlauf" title="Permanent link">&para;</a></h2>
 <p>Unter den Regeln steht der <strong>Testlauf</strong>: Welche Rechte hätte ein bestimmter Benutzer an einer bestimmten Mappe? Wähle Benutzer und Mappe und klicke auf <strong>Prüfen</strong>. Die Tabelle zeigt Schritt für Schritt, welche Regel zutraf, was sie gesetzt hat und wie der Stand danach war.</p>
 <p>Der Testlauf nutzt die Regeln, <strong>wie sie gerade im Editor stehen</strong> – auch ungespeicherte. So probierst du eine Änderung aus, bevor du <em>Mappentyp speichern</em> klickst. Ändert sich eine Regel, verschwindet das alte Ergebnis. Den Testlauf gibt es, sobald der Mappentyp einmal gespeichert ist.</p>
 <p><img alt="Testlauf: Ben an „Stromvertrag Haus“" src="../bilder/werkbank-berechtigungen-testlauf.png" /></p>
 <p>Was ein Benutzer über alle Mappentypen hinweg lesen darf, zeigt <a href="../benutzer/#was-sieht-ein-benutzer">Was sieht ein Benutzer?</a> in der Benutzerverwaltung.</p>
-<h2 id="berechtigungen-an-sichten">Berechtigungen an Sichten<a class="headerlink" href="#berechtigungen-an-sichten" title="Permanent link">&para;</a></h2>
-<p>Wer eine <strong>Sicht</strong> im Baum sieht, dort „+ Neu“ bekommt und aus ihr exportieren darf, regelst du an der Sicht selbst – mit Vererbung an die Untersichten. Das steht unter <a href="../sichten/#berechtigungen">Sichten → Berechtigungen</a>. Ob eine Mappe lesbar ist, entscheidet weiter allein der Mappentyp.</p>
+<h2 id="berechtigungen-an-ansichten">Berechtigungen an Ansichten<a class="headerlink" href="#berechtigungen-an-ansichten" title="Permanent link">&para;</a></h2>
+<p>Wer eine <strong>Ansicht</strong> im Baum sieht, dort „+ Neu“ bekommt und aus ihr exportieren darf, regelst du an der Ansicht selbst – mit Vererbung an die Unteransichten. Das steht unter <a href="../sichten/#berechtigungen">Ansichten → Berechtigungen</a>. Ob eine Mappe lesbar ist, entscheidet weiter allein der Mappentyp.</p>
 <h2 id="was-benutzer-davon-merken">Was Benutzer davon merken<a class="headerlink" href="#was-benutzer-davon-merken" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Mappen ohne Leserecht fehlen in Listen, Suche, Zählern, Favoriten und Trefferlisten. Verweist eine sichtbare Mappe auf eine unsichtbare, steht dort „nicht sichtbare Mappe“ ohne Link.</li>
-<li>Hat jemand eine <strong>Aufgabe</strong> an einer Mappe, die er nicht lesen darf, steht sie trotzdem in seinem Eingang – ohne Titel. Er kann sie erledigen oder an jemanden weitergeben, der die Mappe sehen darf. Wer eine Aufgabe vergibt, bekommt einen Hinweis, wenn der Empfänger die Mappe nicht lesen darf.</li>
+<li>Hat jemand eine <strong>Aufgabe</strong> an einer Mappe, die er nicht lesen darf, steht sie trotzdem bei ihm unter „Zu erledigen“ – ohne Titel. Er kann sie erledigen oder an jemanden weitergeben, der die Mappe sehen darf. Wer eine Aufgabe vergibt, bekommt einen Hinweis, wenn der Empfänger die Mappe nicht lesen darf.</li>
 <li>Ohne <strong>Bearbeiten</strong> zeigt die Mappe ihre Felder nur an; ohne <strong>Löschen</strong> fehlt „Mappe löschen“; ohne <strong>Anlegen</strong> fehlt „+ Neu“.</li>
 <li>Bei der Auswahl von Benutzern (Verantwortlich, Erwähnungen, Vertreter, Aufgaben-Empfänger) erscheinen nur Benutzer, deren Benutzer-Mappe man sehen darf.</li>
 <li>Im Profil zeigt <strong>Meine Rechte</strong> je Mappentyp, was man darf: ja, nein oder „je nach Mappe“ – die Regeln selbst bleiben verborgen.</li>
@@ -2335,7 +2335,7 @@
 <li><strong>Alle anderen nur lesen</strong> – wenn <em>Benutzer hat nicht Rolle Buchhaltung</em> → ✗ C U D P</li>
 </ol>
 <h3 id="praktikanten-sehen-keine-passworter">Praktikanten sehen keine Passwörter<a class="headerlink" href="#praktikanten-sehen-keine-passworter" title="Permanent link">&para;</a></h3>
-<p>An jedem Typ mit Passwortfeldern (einmal anlegen, dann <strong>kopieren</strong>):</p>
+<p>An jedem Mappentyp mit Passwortfeldern (einmal anlegen, dann <strong>kopieren</strong>):</p>
 <ol>
 <li><strong>Keine Passwörter für Praktikanten</strong> – wenn <em>Benutzer hat Rolle Praktikant</em> → ✗ P</li>
 </ol>
@@ -2345,7 +2345,7 @@
 <li>Lege eine Rolle <strong>ERP</strong> und einen Benutzer <strong>ERP-Schnittstelle</strong> mit dieser Rolle an; erzeuge für ihn einen <a href="../api/#api-schlussel">API-Schlüssel</a>.</li>
 <li>Mappentyp <em>Rechnung</em>: Regel <strong>ERP legt Rechnungen an</strong> – wenn <em>Benutzer hat Rolle ERP</em> → ✓ C R U.</li>
 <li>Mappentyp <em>Benutzer</em>: Regel <strong>ERP sieht nur die Buchhaltung</strong> – wenn <em>Benutzer hat Rolle ERP</em> und <em>nicht: Rollen zeigt auf Buchhaltung</em> (das Feld der Benutzer-Mappe) → ✗ R. So kann das Programm als „Verantwortlich“ nur Mitglieder der Buchhaltung eintragen.</li>
-<li>Alle übrigen Mappentypen: Regel <strong>ERP sieht nichts</strong> – wenn <em>Benutzer hat Rolle ERP</em> → ✗ C R U D P (einmal anlegen, dann in die anderen Typen kopieren).</li>
+<li>Alle übrigen Mappentypen: Regel <strong>ERP sieht nichts</strong> – wenn <em>Benutzer hat Rolle ERP</em> → ✗ C R U D P (einmal anlegen, dann in die anderen Mappentypen kopieren).</li>
 <li>Mit <a href="../benutzer/#was-sieht-ein-benutzer">Was sieht ein Benutzer?</a> am Benutzer <em>ERP-Schnittstelle</em> kontrollierst du das Ergebnis.</li>
 </ol>
 
