@@ -56,6 +56,14 @@ export interface PapierkorbEintrag {
   /** Anzahl Dokumente, die mit ihr im Papierkorb liegen. */
   dokumente: number;
 }
+/** Ein einzelnes Dokument im Papierkorb (#344). */
+export interface DokumentImPapierkorb {
+  id: string; mappeId: string; registerKey: string; name: string; mime: string; groesse: number; sha256: string;
+  erstellt: string; erstelltVon: string | null;
+  /** Anzahl älterer Versionen, die mitgegangen sind. */
+  versionen: number;
+  geloescht: string; geloeschtVon: string | null;
+}
 export interface PapierkorbFilter {
   /** Nur, was dieser Benutzer gelöscht hat. */
   von?: string;
@@ -205,9 +213,18 @@ export interface Repo {
   stelleWiederHer(id: string): Promise<{ verweiseEntfallen: number }>;
   /** Löscht endgültig; liefert die Prüfwerte der Dateien, die dabei frei werden könnten. */
   leerePapierkorb(ids: string[]): Promise<string[]>;
+  /** Mappen und einzelne Dokumente (#344). */
   zaehlePapierkorb(von?: string): Promise<number>;
   /** Hängt noch ein Dokument (lebend oder im Papierkorb) an dieser Datei? */
   dateiBenutzt(sha256: string): Promise<boolean>;
+  /* Einzelne Dokumente (#344): samt Volltext und älteren Versionen. */
+  legeDokumentInPapierkorb(id: string, benutzerId: string | null): Promise<void>;
+  papierkorbDokumente(f?: PapierkorbFilter & { mappeIds?: string[] }): Promise<DokumentImPapierkorb[]>;
+  holeDokumentAusPapierkorb(id: string): Promise<DokumentImPapierkorb | undefined>;
+  /** Legt das Dokument wieder an (die Mappe muss es geben). */
+  stelleDokumentWiederHer(id: string): Promise<void>;
+  /** Löscht endgültig; liefert die Prüfwerte der Dateien, die dabei frei werden könnten. */
+  leereDokumentPapierkorb(ids: string[]): Promise<string[]>;
 
   /* ---------- Texterkennung (#45) ---------- */
   /** Dokumente in die Warteschlange stellen. */

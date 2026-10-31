@@ -92,6 +92,7 @@ describe('Versionierung von Dokumenten (#194)', () => {
     assert.deepEqual(v.aeltere.map((x) => x.nummer), [4, 3]);
     const sha1 = (await import('node:crypto')).createHash('sha256').update(PDF('p1')).digest('hex');
     await assert.rejects(dateien.lies(sha1));
+    await d.setzePapierkorbTage(0); // ohne Papierkorb (#344): endgültig wie bisher
     await d.loescheDokument(a.id);
     const sha3 = (await import('node:crypto')).createHash('sha256').update(PDF('p3')).digest('hex');
     await assert.rejects(dateien.lies(sha3));

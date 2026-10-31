@@ -232,7 +232,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                         {klickbar
                           ? <button type="button" className="textknopf" aria-expanded={auf} onClick={() => umschalten(x)}>{x.name}</button>
                           : <span className="dateiname">{x.name}</span>}
-                        <span className="leise klein">{weg ? 'wird beim Speichern gelöscht' : <>{groesse(x.groesse)} · {zeit(x.erstellt)} · <Person id={x.erstelltVon} />
+                        <span className="leise klein">{weg ? (d.zaehler.papierkorbTage ? 'kommt beim Speichern in den Papierkorb' : 'wird beim Speichern endgültig gelöscht') : <>{groesse(x.groesse)} · {zeit(x.erstellt)} · <Person id={x.erstelltVon} />
                           {(versioniert || (x.version ?? 1) > 1) && <> · <button type="button" className="textknopf klein" aria-expanded={versionenOffen === x.id} onClick={() => setVersionenOffen(versionenOffen === x.id ? undefined : x.id)}>Version {x.version ?? 1}</button></>}</>}</span>
                         {!weg && versionenOffen === x.id && <Versionen d={x} zurueck={!nurLesen && versioniert} neuLaden={neuLaden} />}
                         {!weg && <OcrAnzeige s={standVon(x)} erneut={() => void erneut(x.id)} text={() => void zeigeText(x.id)} textOffen={text?.id === x.id} />}
@@ -244,7 +244,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                         {!nurLesen && versioniert && !weg && <button type="button" className="textknopf" onClick={() => { setErsetzeId(x.id); ersetzFeld.current?.click(); }} title="Neue Version hochladen; die bisherige bleibt erhalten">Ersetzen</button>}
                         {!nurLesen && <button type="button" className={`textknopf ${weg ? '' : 'gefahr'}`} onClick={() => {
                           // Mit allen Versionen (#194): nachfragen, mit Zahl.
-                          if (!weg && (x.aeltere ?? 0) > 0 && !confirm(`„${x.name}“ mit allen ${(x.aeltere ?? 0) + 1} Versionen löschen? Das ist endgültig.`)) return;
+                          if (!weg && (x.aeltere ?? 0) > 0 && !confirm(`„${x.name}“ mit allen ${(x.aeltere ?? 0) + 1} Versionen löschen? ${d.zaehler.papierkorbTage ? 'Sie kommen beim Speichern in den Papierkorb und lassen sich von dort wiederherstellen.' : 'Das ist endgültig.'}`)) return;
                           entferne(x.id);
                         }}>{weg ? 'Behalten' : 'Löschen'}</button>}
                       </div>

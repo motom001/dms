@@ -63,6 +63,13 @@ export function speicherRepo(): Repo {
     return woerter(q).every((w) => im.has(w));
   };
   /** Papierkorb (#43): Mappe mit ihren Verweisen und Dokumenten, wie beim Löschen. */
+  /** Einzelne Dokumente im Papierkorb (#344). */
+  const dokKorb = new Map<string, { dokument: Dokument; text: string | null; versionen: V[]; geloescht: string; geloeschtVon: string | null }>();
+  const alsDokEintrag = (k: { dokument: Dokument; versionen: V[]; geloescht: string; geloeschtVon: string | null }) => ({
+    id: k.dokument.id, mappeId: k.dokument.mappeId, registerKey: k.dokument.registerKey, name: k.dokument.name, mime: k.dokument.mime,
+    groesse: k.dokument.groesse, sha256: k.dokument.sha256, erstellt: k.dokument.erstellt, erstelltVon: k.dokument.erstelltVon,
+    versionen: k.versionen.length, geloescht: k.geloescht, geloeschtVon: k.geloeschtVon,
+  });
   const korb = new Map<string, { mappe: Mappe; verweise: Verweis[]; dokumente: Dokument[]; versionen?: Array<[string, V[]]>; notizen?: Notiz[]; aufgaben?: Aufgabe[]; erinnerungen?: Erinnerung[]; geloescht: string; geloeschtVon: string | null }>();
   const alsEintrag = (k: { mappe: Mappe; dokumente: Dokument[]; geloescht: string; geloeschtVon: string | null }): PapierkorbEintrag => ({
     id: k.mappe.id, typId: k.mappe.typId, titel: k.mappe.titel ?? '', werte: kopie(k.mappe.werte), demo: !!k.mappe.demo,
@@ -508,8 +515,41 @@ export function speicherRepo(): Repo {
       }
       return [...dateien];
     },
-    async zaehlePapierkorb(von) { return [...korb.values()].filter((k) => !von || k.geloeschtVon === von).length; },
+    async zaehlePapierkorb(von) { return [...korb.values(), ...dokKorb.values()].filter((k) => !von || k.geloeschtVon === von).length; },
+    async legeDokumentInPapierkorb(id, benutzerId) {
+      const d = dokumente.get(id);
+      if (!d) return;
+      dokKorb.set(id, { dokument: kopie(d), text: texte.get(id) ?? null, versionen: kopie(versionen.get(id) ?? []), geloescht: jetzt(), geloeschtVon: benutzerId });
+      dokumente.delete(id); versionen.delete(id); texte.delete(id);
+    },
+    async papierkorbDokumente(f = {}) {
+      return [...dokKorb.values()]
+        .filter((k) => (!f.von || k.geloeschtVon === f.von) && (!f.vor || k.geloescht < f.vor) && (!f.mappeIds || f.mappeIds.includes(k.dokument.mappeId)))
+        .sort((a, b) => b.geloescht.localeCompare(a.geloescht) || a.dokument.id.localeCompare(b.dokument.id))
+        .map(alsDokEintrag);
+    },
+    async holeDokumentAusPapierkorb(id) { const k = dokKorb.get(id); return k && alsDokEintrag(k); },
+    async stelleDokumentWiederHer(id) {
+      const k = dokKorb.get(id);
+      if (!k) return;
+      if (!mappen.has(k.dokument.mappeId)) throw new Error('Mappe fehlt');
+      dokumente.set(id, kopie(k.dokument));
+      if (k.versionen.length) versionen.set(id, kopie(k.versionen));
+      texte.set(id, k.text);
+      dokKorb.delete(id);
+    },
+    async leereDokumentPapierkorb(ids) {
+      const dateien = new Set<string>();
+      for (const id of ids) {
+        const k = dokKorb.get(id); if (!k) continue;
+        dateien.add(k.dokument.sha256);
+        for (const v of k.versionen) dateien.add(v.sha256);
+        dokKorb.delete(id);
+      }
+      return [...dateien];
+    },
     async dateiBenutzt(sha) {
+      if ([...dokKorb.values()].some((k) => k.dokument.sha256 === sha || k.versionen.some((v) => v.sha256 === sha))) return true;
       return [...dokumente.values()].some((d) => d.sha256 === sha) || [...versionen.values()].some((v) => v.some((x) => x.sha256 === sha))
         || [...korb.values()].some((k) => k.dokumente.some((d) => d.sha256 === sha) || (k.versionen ?? []).some(([, v]) => v.some((x) => x.sha256 === sha)));
     },

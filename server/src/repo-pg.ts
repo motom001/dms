@@ -9,7 +9,7 @@ import { umschluesseleTief } from './tresor';
 import { datumIn, ziehe, type Nummernkreis } from '../../shared/src/nummernkreis';
 import type { Quelle } from '../../shared/src/model';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
-import { istUuid, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
+import { istUuid, type DokumentImPapierkorb, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
 
 type Sql = postgres.Sql;
 type Zeile = Record<string, unknown>;
@@ -113,6 +113,15 @@ export function ausschnittAus(text: string, suche: string): string | null {
   return `${i > 50 ? '… ' : ''}${vor}${TREFFER_ANFANG}${text.slice(i, i + suche.length)}${TREFFER_ENDE}${text.slice(i + suche.length, i + suche.length + 60)}${i + suche.length + 60 < text.length ? ' …' : ''}`.replace(/\s+/g, ' ');
 }
 /** Eintrag im Papierkorb aus der Zeile; die Mappe steht als jsonb (Spaltennamen der Tabelle mappen) darin. */
+/** Dokument im Papierkorb (#344). */
+const alsDokPapierkorb = (r: Zeile): DokumentImPapierkorb => {
+  const d = r.dokument as Zeile;
+  return {
+    id: r.id as string, mappeId: r.mappe_id as string, registerKey: d.register_key as string, name: d.name as string, mime: d.mime as string,
+    groesse: Number(d.groesse), sha256: d.sha256 as string, erstellt: iso(d.erstellt), erstelltVon: (d.erstellt_von as string | null) ?? null,
+    versionen: Number(r.anzahl_versionen ?? 0), geloescht: iso(r.geloescht), geloeschtVon: (r.geloescht_von as string | null) ?? null,
+  };
+};
 const alsPapierkorb = (r: Zeile): PapierkorbEintrag => {
   const m = r.mappe as Zeile;
   return {
@@ -882,13 +891,71 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       return [...new Set<string>(r.flatMap((z: Zeile) => [...(z.dokumente as Zeile[]), ...((z.versionen as Zeile[] | null) ?? [])].map((d) => d.sha256 as string)))];
     },
     async zaehlePapierkorb(von) {
-      const [r] = await sql`SELECT count(*)::int AS n FROM papierkorb WHERE haushalt_id = ${haushaltId}
-        ${von ? sql`AND geloescht_von = ${istUuid(von) ? von : null}::uuid` : sql``}`;
+      // Mappen und einzelne Dokumente (#344).
+      const [r] = await sql`SELECT
+        (SELECT count(*)::int FROM papierkorb WHERE haushalt_id = ${haushaltId} ${von ? sql`AND geloescht_von = ${istUuid(von) ? von : null}::uuid` : sql``})
+        + (SELECT count(*)::int FROM papierkorb_dokumente WHERE haushalt_id = ${haushaltId} ${von ? sql`AND geloescht_von = ${istUuid(von) ? von : null}::uuid` : sql``}) AS n`;
       return r.n as number;
+    },
+    /* Einzelne Dokumente (#344) */
+    async legeDokumentInPapierkorb(id, benutzerId) {
+      if (!istUuid(id)) return;
+      await sql.begin(async (tx) => {
+        const r = await tx`
+          INSERT INTO papierkorb_dokumente (id, haushalt_id, mappe_id, dokument, versionen, geloescht_von)
+          SELECT d.id, d.haushalt_id, d.mappe_id, to_jsonb(d),
+            (SELECT coalesce(jsonb_agg(to_jsonb(x) ORDER BY x.nummer), '[]'::jsonb) FROM dokument_versionen x WHERE x.dokument_id = d.id),
+            ${istUuid(benutzerId) ? benutzerId : null}::uuid
+          FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.id = ${id}`;
+        // Ältere Versionen folgen per Kaskade.
+        if (r.count) await tx`DELETE FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      });
+    },
+    async papierkorbDokumente(f = {}) {
+      const ids = (f.mappeIds ?? []).filter(istUuid);
+      return (await sql`
+        SELECT id, mappe_id, dokument, geloescht, geloescht_von, jsonb_array_length(versionen) AS anzahl_versionen
+        FROM papierkorb_dokumente WHERE haushalt_id = ${haushaltId}
+          ${f.von ? sql`AND geloescht_von = ${istUuid(f.von) ? f.von : null}::uuid` : sql``}
+          ${f.vor ? sql`AND geloescht < ${f.vor}` : sql``}
+          ${f.mappeIds ? sql`AND mappe_id = ANY(${ids}::uuid[])` : sql``}
+        ORDER BY geloescht DESC, id`).map(alsDokPapierkorb);
+    },
+    async holeDokumentAusPapierkorb(id) {
+      if (!istUuid(id)) return undefined;
+      const [r] = await sql`
+        SELECT id, mappe_id, dokument, geloescht, geloescht_von, jsonb_array_length(versionen) AS anzahl_versionen
+        FROM papierkorb_dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      return r ? alsDokPapierkorb(r) : undefined;
+    },
+    async stelleDokumentWiederHer(id) {
+      await sql.begin(async (tx) => {
+        const [p] = await tx`SELECT 1 FROM papierkorb_dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id} FOR UPDATE`;
+        if (!p) return;
+        await tx`
+          INSERT INTO dokumente
+          SELECT (jsonb_populate_record(NULL::dokumente, p.dokument || jsonb_build_object(
+            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = p.dokument ->> 'erstellt_von') THEN p.dokument -> 'erstellt_von' ELSE 'null'::jsonb END))).*
+          FROM papierkorb_dokumente p WHERE p.id = ${id}`;
+        await tx`
+          INSERT INTO dokument_versionen
+          SELECT (jsonb_populate_record(NULL::dokument_versionen, x.value || jsonb_build_object(
+            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'erstellt_von') THEN x.value -> 'erstellt_von' ELSE 'null'::jsonb END))).*
+          FROM papierkorb_dokumente p, jsonb_array_elements(p.versionen) x WHERE p.id = ${id}
+          ON CONFLICT DO NOTHING`;
+        await tx`DELETE FROM papierkorb_dokumente WHERE id = ${id}`;
+      });
+    },
+    async leereDokumentPapierkorb(ids) {
+      const gueltig = ids.filter(istUuid);
+      if (!gueltig.length) return [];
+      const r = await sql`DELETE FROM papierkorb_dokumente WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) RETURNING dokument, versionen`;
+      return [...new Set<string>(r.flatMap((z: Zeile) => [(z.dokument as Zeile).sha256 as string, ...((z.versionen as Zeile[]) ?? []).map((v) => v.sha256 as string)]))];
     },
     async dateiBenutzt(sha256) {
       const [r] = await sql`
         SELECT EXISTS (SELECT 1 FROM dokumente WHERE haushalt_id = ${haushaltId} AND sha256 = ${sha256})
+          OR EXISTS (SELECT 1 FROM papierkorb_dokumente p WHERE p.haushalt_id = ${haushaltId} AND (p.dokument ->> 'sha256' = ${sha256} OR EXISTS (SELECT 1 FROM jsonb_array_elements(p.versionen) v WHERE v.value ->> 'sha256' = ${sha256})))
           OR EXISTS (SELECT 1 FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND sha256 = ${sha256})
           OR EXISTS (SELECT 1 FROM papierkorb p, jsonb_array_elements(p.dokumente) d WHERE p.haushalt_id = ${haushaltId} AND d.value ->> 'sha256' = ${sha256})
           OR EXISTS (SELECT 1 FROM papierkorb p, jsonb_array_elements(p.versionen) v WHERE p.haushalt_id = ${haushaltId} AND v.value ->> 'sha256' = ${sha256}) AS ja`;

@@ -1,6 +1,6 @@
 # Papierkorb
 
-Gelöschte Mappen kommen in den Papierkorb – samt Dokumenten und Verweisen. Nach der eingestellten Aufbewahrung löscht das DMS sie endgültig.
+Gelöschte Mappen kommen in den Papierkorb – samt Dokumenten und Verweisen. Einzeln gelöschte **Dokumente** auch, mit allen Versionen und dem Volltext. Nach der eingestellten Aufbewahrung löscht das DMS sie endgültig.
 
 - In der **Ablage** sieht jeder Benutzer unter *Papierkorb* nur, was **er selbst** gelöscht hat, und kann es wiederherstellen oder endgültig löschen. Der Eintrag steht oben bei den festen Einträgen unter *Favoriten* – aber nur, solange der Papierkorb eingeschaltet ist oder noch etwas darin liegt.
 - Unter **Werkbank → Papierkorb** siehst du als Administrator alles, mit „gelöscht von“, und kannst jede Mappe wiederherstellen oder endgültig löschen.
@@ -29,8 +29,17 @@ Jede Mappe hat eine **Historie** (wer wann was geändert hat). Wird eine Mappe e
 - Mappen eines Mappentyps im [Archivmodus](archiv.md) bleiben im Papierkorb, bis ihre Aufbewahrungsfrist endet – auch wenn die Aufbewahrung des Papierkorbs vorher abläuft. Endgültig löschen lassen sie sich vorher nicht, auch nicht als Administrator.
 - Die Dateien bleiben im Dateiordner, bis der Papierkorb geleert ist.
 
+## Einzelne Dokumente
+
+- Ein aus einem Register gelöschtes Dokument zieht samt **allen Versionen** und **Volltext** in den Papierkorb. Es erscheint nicht mehr in der Mappe, in der Suche oder in der API – bis es wiederhergestellt ist.
+- Die Liste zeigt es unter **Dokumente** mit Mappe, Register, Größe und wer es wann gelöscht hat.
+- **Wiederherstellen** legt es in dasselbe Register derselben Mappe zurück; die Historie der Mappe hält „Dokument in den Papierkorb“ und „Dokument wiederhergestellt“ fest. In der Ablage darf das, wer es gelöscht hat und die Mappe noch bearbeiten darf; in der Werkbank jeder Administrator.
+- Liegt die Mappe selbst im Papierkorb, kommt zuerst die Mappe zurück; gibt es sie nicht mehr, lässt sich das Dokument nur noch endgültig löschen. Wird eine Mappe endgültig gelöscht, gehen ihre einzeln gelöschten Dokumente mit.
+- Aufbewahrung, **Papierkorb leeren** und 0 Tage gelten für Dokumente genauso. Der [Archivmodus](archiv.md) sperrt das Löschen eines Dokuments wie bisher schon vorher.
+- Sicherung und Wiederherstellung enthalten den Papierkorb; der [Vollexport](export.md) listet die Dokumente im Papierkorb in `papierkorb-dokumente.jsonl`.
+
 !!! note "Sofort endgültig"
-    Einzeln gelöschte **Dokumente** und **Werkbank → Demo-Daten → entfernen** gehen nicht über den Papierkorb.
+    **Werkbank → Demo-Daten → entfernen** geht nicht über den Papierkorb.
 
 ## Benutzer und Rollen
 

@@ -1080,3 +1080,9 @@ a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
 .doppeltfrage ul { margin: 6px 0; padding-left: 18px; }
 .doppeltfrage li { margin-bottom: 6px; }
 .doppeltfrage .haken { margin-top: 2px; }
+
+/* Papierkorb: einzelne Dokumente (#344) */
+.korbdokumente { margin-top: 18px; }
+.korbdokument { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.korbdokument .eintrag { flex: 1; min-width: 0; }
+.korbdokument .knoepfe { flex: none; }

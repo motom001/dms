@@ -152,12 +152,13 @@ Ein Klick auf einen Eintrag öffnet die Mappe rechts. Jede Mappe hat eine eigene
 
 ## Papierkorb
 
-Gelöschte Mappen kommen in den **Papierkorb** unterhalb von „Zu erledigen“. Du siehst dort nur, was **du** gelöscht hast – mit Dokumenten und Verweisen.
+Gelöschte Mappen und einzeln gelöschte Dokumente kommen in den **Papierkorb** unterhalb von „Zu erledigen“. Du siehst dort nur, was **du** gelöscht hast – Mappen mit ihren Dokumenten und Verweisen, darunter unter **Dokumente** die einzeln gelöschten mit Mappe und Register.
 
 ![Papierkorb](bilder/papierkorb.png)
 
 - **Wiederherstellen** holt eine Mappe zurück in ihre Ansicht. Hat inzwischen eine andere Mappe denselben eindeutigen Wert (z. B. dieselbe Rechnungsnummer), landet sie unter [Zu erledigen](eingang.md); dort siehst du, was zu ändern ist.
-- **Endgültig löschen** entfernt sie für immer, **Papierkorb leeren** alle auf einmal.
+- **Dokumente:** *Wiederherstellen* legt ein Dokument mit allen Versionen in dasselbe Register derselben Mappe zurück – dafür musst du die Mappe bearbeiten dürfen. Liegt die Mappe selbst im Papierkorb, stellst du zuerst die Mappe wieder her. Wird eine Mappe endgültig gelöscht, gehen auch ihre einzeln gelöschten Dokumente.
+- **Endgültig löschen** entfernt sie für immer, **Papierkorb leeren** alle auf einmal – Mappen und Dokumente.
 - Nach einer Frist, die der Administrator festlegt (meist 30 Tage), löscht das DMS gelöschte Mappen von selbst endgültig. Wie lange, steht über der Liste.
 - Im Profil kannst du einstellen, dass dein Papierkorb **beim Abmelden geleert** wird.
 

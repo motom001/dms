@@ -45,6 +45,7 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   historie: 'daten/historie.jsonl',
   favoriten: 'daten/favoriten.csv',
   papierkorb: 'daten/papierkorb.jsonl',
+  papierkorb_dokumente: 'daten/papierkorb-dokumente.jsonl (ohne Datei)',
   vertretungen: 'daten/vertretungen.jsonl',
   fehlermeldungen: 'nicht enthalten: gemeldete Fehler an die Administratoren (technisch)',
   langlaeufer: 'nicht enthalten: Messwerte langsamer Datenbankzugriffe (technisch)',
@@ -76,6 +77,8 @@ export interface ExportQuelle {
   designs(): Promise<unknown[]>;
   mappen(typId: string): Promise<Mappe[]>;
   papierkorb(): Promise<PapierkorbEintrag[]>;
+  /** Einzeln gelöschte Dokumente (#344); fehlt bei älteren Quellen. */
+  papierkorbDokumente?(): Promise<unknown[]>;
   dokumente(mappeId: string): Promise<Dokument[]>;
   versionen(dokumentId: string): Promise<DokumentVersion[]>;
   volltext(dokumentId: string): Promise<string | null>;
@@ -288,6 +291,7 @@ export async function vollexport(q: ExportQuelle, ziel: string, opt: ExportOptio
   await w.schreibe('daten/historie.jsonl', jsonl(historie));
   await w.schreibe('daten/favoriten.csv', csv(['benutzer_id', 'mappe_id'], (await q.favoriten()).map((f) => [f.benutzerId, f.mappeId])));
   await w.schreibe('daten/papierkorb.jsonl', jsonl((await q.papierkorb()).map((p) => ({ ...p, werte: ohnePasswoerter(typVon.get(p.typId), p.werte) }))));
+  await w.schreibe('daten/papierkorb-dokumente.jsonl', jsonl(q.papierkorbDokumente ? await q.papierkorbDokumente() : []));
   await w.schreibe('daten/vertretungen.jsonl', jsonl(b.vertretungen));
   weiter();
 

@@ -35,7 +35,7 @@ In der [Historie](zusammenarbeit.md#historie) der Mappe steht jede neue Version,
 
 - **Die Suche** findet Text nur in der aktuellen Version.
 - **Begrenzte Zahl:** Ein Administrator kann einstellen, dass nur die letzten soundso viele Versionen bleiben. Ältere löscht das DMS dann von selbst; sie lassen sich nicht mehr zurückholen.
-- **Dokument löschen** entfernt es mit **allen** Versionen. Hat es ältere Versionen, fragt das DMS vorher nach und nennt ihre Zahl. Ein einzeln gelöschtes Dokument kommt nicht in den Papierkorb.
+- **Dokument löschen** entfernt es mit **allen** Versionen. Hat es ältere Versionen, fragt das DMS vorher nach und nennt ihre Zahl. Es kommt mit allen Versionen in den [Papierkorb](ablage.md#papierkorb) und lässt sich von dort zurückholen.
 - **Im Archivmodus** (Aufbewahrungspflicht) lassen sich Dokumente vor Fristende nicht löschen; eine neue Fassung legst du dort als neue Version ab.
 
 ## Version des Dokuments oder Version des DMS?
