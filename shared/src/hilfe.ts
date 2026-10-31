@@ -26,6 +26,7 @@ export const HILFE = {
   'einrichtung.optional': admin('installation/', 'Optionales', 'optionales'),
   'einrichtung.fertig': admin('installation/', 'Fertig', 'fertig'),
   'werkbank.uebersicht': admin('uebersicht/', 'Übersicht', 'ubersicht'),
+  'werkbank.ansicht': admin('uebersicht/', 'Werkbank anpassen', 'werkbank-anpassen'),
   'werkbank.typen': admin('mappentypen/', 'Mappentypen'),
   'werkbank.sichten': admin('sichten/', 'Sichten'),
   'werkbank.benutzer': admin('benutzer/', 'Benutzern und Rollen'),

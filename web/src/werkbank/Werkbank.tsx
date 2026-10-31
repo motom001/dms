@@ -23,7 +23,8 @@ import { TresorListe, TresorPanel, useTresor } from './Verschluesselung';
 import { AufgabenListe, AufgabenPanel, useAufgaben } from './Aufgaben';
 import { TexterkennungListe, TexterkennungPanel, useTexterkennung, WartungListe, WartungPanel } from './Texterkennung';
 import { Hilfe, useHandbuch } from '../Hilfe';
-import { UebersichtListe, UebersichtPanel, useUebersicht, WerkbankNavigation } from './Uebersicht';
+import { AnsichtListe, AnsichtPanel, useWerkbankAnsicht, type BereichZustand } from './Ansicht';
+import { UebersichtListe, UebersichtPanel, useUebersicht, WerkbankNavigation, type WerkbankEintrag } from './Uebersicht';
 import { useWartungsmodus, WartungsmodusListe, WartungsmodusPanel } from './Wartungsmodus';
 import { SicherungListe, SicherungPanel, useSicherung } from './Sicherung';
 import { WiederherstellungListe, WiederherstellungPanel } from './Wiederherstellung';
@@ -85,6 +86,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const pakete = usePakete(bereich === 'pakete' || bereich === 'typen');
   const anmeldeschutz = useAnmeldeschutz(bereich === 'anmeldeschutz');
   const anbindung = useAnbindung(bereich === 'anbindung');
+  const ansicht = useWerkbankAnsicht();
   // Wieder erreichbar nach Update oder Neustart (#122): Übersicht und offenen Bereich neu laden.
   useBeiWiederErreichbar(() => {
     void uebersicht.laden();
@@ -204,11 +206,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
     rechts = <ProtokollDetail p={protokoll} nr={id} />;
   }
 
-  return (
-    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'darfweg', 'vollexport'].includes(bereich) || (bereich === 'pakete' && !id) ? 'mappe' : 'liste'} offen={id}>
-      <aside className="spalte sichten" aria-label="Bereiche">
-        <h2 className="ueber">Werkbank</h2>
-        <WerkbankNavigation bereich={bereich} eintraege={[
+  const eintraege: WerkbankEintrag[] = [
           { pfad: 'uebersicht', name: 'Übersicht', gruppe: null, warn: uebersicht.hinweise || undefined },
           { pfad: 'typen', name: 'Mappentypen', gruppe: 'ablage', zahl: d.typen.length },
           { pfad: 'sichten', name: 'Sichten', gruppe: 'ablage', zahl: d.sichten.length || undefined },
@@ -237,7 +235,18 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'datenbank', name: 'Datenbank', gruppe: 'wartung' },
           { pfad: 'technik', name: 'Technik', gruppe: 'wartung' },
           { pfad: 'demo', name: 'Demo-Daten', gruppe: 'wartung', zahl: Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || undefined },
-        ]} />
+  ];
+  const zustand: Record<string, BereichZustand> = Object.fromEntries(eintraege.map((e) => [e.pfad, { warn: e.warn }]));
+  if (bereich === 'ansicht') {
+    liste = <AnsichtListe />;
+    rechts = <AnsichtPanel z={ansicht} zustand={zustand} />;
+  }
+
+  return (
+    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'darfweg', 'vollexport', 'ansicht'].includes(bereich) || (bereich === 'pakete' && !id) ? 'mappe' : 'liste'} offen={id}>
+      <aside className="spalte sichten" aria-label="Bereiche">
+        <h2 className="ueber">Werkbank</h2>
+        <WerkbankNavigation bereich={bereich} eintraege={eintraege} zeigen={ansicht.zeigen} benutzt={ansicht.stand?.benutzt} />
         {/* Freiwillig, ohne Gebühren für beide Seiten (GitHub Sponsors von persönlichen Konten). */}
         <a className="unterstuetzen" href="https://github.com/sponsors/motom001" target="_blank" rel="noreferrer">
           <span aria-hidden="true">♥</span> Projekt unterstützen

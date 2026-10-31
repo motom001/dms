@@ -10,6 +10,7 @@ import { Auftraege } from './auftrag';
 import { protokoll } from './protokoll';
 import { Fachfehler } from './fehler';
 import { alsText, erwaehnungen } from '../../shared/src/markdown';
+import { liesAnsicht, liesEigene, OHNE_EINSTELLUNG } from '../../shared/src/werkbankansicht';
 import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
 import type { Einstellungen } from './einstellungen';
 import { istUuid, type NeueMappe, type PapierkorbEintrag, type Repo, type Rueckverweis, type SortierungIntern } from './repo';
@@ -1778,6 +1779,31 @@ export class Dienst {
     }
     if (n) protokoll.modul('werkbank').info('Schlüssel für Mappentypen vergeben', { anzahl: n });
     return n;
+  }
+
+  /* ---------- Ansicht der Werkbank (#281): nur Navigation, keine Funktion wird abgeschaltet ---------- */
+
+  async werkbankAnsicht(wer: { id: string | null; email: string }) {
+    const installation = liesAnsicht(await this.einstellungen?.lies('werkbank_ansicht'));
+    return {
+      installation: installation ?? OHNE_EINSTELLUNG,
+      eingestellt: !!installation,
+      eigene: liesEigene(await this.einstellungen?.lies(`werkbank_ansicht:${wer.id ?? wer.email}`)),
+    };
+  }
+  async setzeWerkbankAnsicht(wer: { id: string | null; email: string }, body: Record<string, unknown>) {
+    if (!this.einstellungen) throw new Fachfehler(404, 'Einstellungen sind nicht eingerichtet.');
+    if ('installation' in body) {
+      const a = liesAnsicht(body.installation);
+      if (!a) throw new Fachfehler(422, 'Bitte eine Vorlage wählen: Haushalt, Organisation oder Alles.');
+      await this.einstellungen.schreibe('werkbank_ansicht', a);
+      protokoll.modul('werkbank').info('Ansicht der Werkbank geändert', { vorlage: a.vorlage, ein: a.ein, aus: a.aus, von: wer.email });
+    }
+    if ('eigene' in body) {
+      const e = liesEigene(body.eigene);
+      await this.einstellungen.schreibe(`werkbank_ansicht:${wer.id ?? wer.email}`, e.ein.length ? e : null);
+    }
+    return this.werkbankAnsicht(wer);
   }
 
   /* ---------- Pakete (#188): Ablage der installierten Pakete; die Logik steckt in pakete.ts ---------- */
