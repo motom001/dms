@@ -1361,7 +1361,7 @@
 <li>deine eigenen Aufgaben, Erinnerungen, Favoriten und was du in den Papierkorb gelegt hast,</li>
 <li>dein eigenes Benutzerkonto (ohne Passwort).</li>
 </ul>
-<p>Passwortfelder stehen nur dabei, wenn du sie sehen darfst und das ausdrücklich bestätigst. Der Export läuft im Hintergrund; ist er fertig, lädst du ihn als ZIP herunter. Es gibt immer nur deinen letzten Export – ein neuer ersetzt den alten. Während du als Vertretung arbeitest, geht das nicht. Hat der Administrator den persönlichen Export abgeschaltet, fehlt der Abschnitt.</p>
+<p><strong>Der Export ist unverschlüsselt</strong> – bewahre die Datei sicher auf. Passwortfelder stehen nur dabei, wenn du sie sehen darfst und das ausdrücklich bestätigst; sie liegen dann im Klartext in der Datei <code>passwoerter.csv</code>. Der Export läuft im Hintergrund; ist er fertig, lädst du ihn als ZIP herunter. Es gibt immer nur deinen letzten Export – ein neuer ersetzt den alten. Solange ein Administrator <a href="#hinweis-ein-administrator-hat-in-deinem-namen-gearbeitet">in deinem Namen arbeitet</a>, lässt sich kein Export starten. Hat ein Administrator den Export abgeschaltet, steht das an dieser Stelle.</p>
 <h3 id="meine-rechte">Meine Rechte<a class="headerlink" href="#meine-rechte" title="Permanent link">&para;</a></h3>
 <p>Unten im Bereich <em>Konto</em>, unter Name und E-Mail-Adresse, steht, was du je Mappentyp darfst: <strong>anlegen, lesen, bearbeiten, löschen</strong> und <strong>Passwörter sehen</strong> – jeweils mit „ja“, „nein“ oder „je nach Mappe“. „Je nach Mappe“ heißt: Es hängt von der einzelnen Mappe ab, zum Beispiel davon, ob du dort verantwortlich bist oder eine Aufgabe dazu hast. Festgelegt werden die Rechte von einem Administrator; mehr unter <a href="../mappen/#was-du-sehen-und-andern-darfst">Was du sehen und ändern darfst</a>.</p>
 <p><img alt="Meine Rechte" loading="lazy" src="../bilder/meine-rechte.png" /></p>
@@ -1370,7 +1370,7 @@
 <li><strong>Passwort</strong> – gib dein aktuelles und zweimal das neue Passwort ein (mindestens 10 Zeichen). Nach dem Ändern sind alle anderen Anmeldungen beendet.</li>
 <li><strong>Zwei-Faktor-Anmeldung</strong> – siehe <a href="#zwei-faktor-anmeldung">unten</a>.</li>
 <li><strong>Meine angemeldeten Geräte</strong> – überall, wo du gerade angemeldet bist, mit Browser, Gerät und letzter Aktivität; <em>dieses Gerät</em> ist markiert. <strong>Abmelden</strong> beendet eine einzelne Anmeldung, <strong>Alle anderen abmelden</strong> alle außer dieser – etwa wenn du ein Handy verloren hast. Ändere dann am besten auch dein Passwort.</li>
-<li><strong>API-Schlüssel</strong> – damit können andere Programme in deinem Namen auf das DMS zugreifen, etwa ein Scanner. Brauchst du das nicht, kannst du diesen Abschnitt übergehen. Passwortfelder liefert ein Schlüssel nur, wenn du beim Erzeugen <strong>Passwörter lesen</strong> ankreuzt. Wie das funktioniert, beschreibt das <a href="https://motom001.github.io/dms/admin/api/">Administratorhandbuch</a>.</li>
+<li><strong>API-Schlüssel</strong> – damit können andere Programme in deinem Namen auf das DMS zugreifen, etwa ein Scanner. Brauchst du das nicht, kannst du diesen Abschnitt übergehen. Passwortfelder liefert ein Schlüssel nur, wenn du beim Erzeugen <strong>Passwörter lesen</strong> ankreuzt. Wie das funktioniert, beschreibt das <a href="https://motom001.github.io/dms/admin/aktuell/api/">Administratorhandbuch</a>.</li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Anmelden mit dem Firmenkonto</p>
@@ -1428,7 +1428,7 @@
 </ol>
 <p>Die Administratoren sehen deine Meldung in der Werkbank und melden sich, falls sie Fragen haben.</p>
 <h2 id="hinweis-ein-administrator-hat-in-deinem-namen-gearbeitet">Hinweis „Ein Administrator hat in deinem Namen gearbeitet“<a class="headerlink" href="#hinweis-ein-administrator-hat-in-deinem-namen-gearbeitet" title="Permanent link">&para;</a></h2>
-<p>Um einen Fehler nachzustellen, kann sich ein Administrator als du anmelden. Er sieht dann genau, was du siehst. Danach zeigt dir das DMS beim nächsten Mal oben einen Hinweis, wer das wann getan hat. Mit <strong>Verstanden</strong> blendest du ihn aus. Solange er als du arbeitet, steht das auch in deinem Menü und unter <em>Meine angemeldeten Geräte</em>.</p>
+<p>Um einen Fehler nachzustellen, kann sich ein Administrator als du anmelden. Er sieht dann genau, was du siehst. Danach zeigt dir das DMS beim nächsten Mal oben einen Hinweis, wer das wann getan hat. Mit <strong>Verstanden</strong> blendest du ihn aus. Solange er als du arbeitet, steht bei dieser Anmeldung unter <em>Meine angemeldeten Geräte</em> der Hinweis <strong>Administrator agiert als du</strong>.</p>
 
 
 
