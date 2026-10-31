@@ -2,7 +2,7 @@
 # Zwei Ziele (#208): „dms“ (Standard, Datenbank extern) und „komplett“ (mit PostgreSQL im Container):
 #   docker build -t dms .                         docker build --target komplett -t dms-komplett .
 
-FROM node:22-alpine AS bau
+FROM node:24-alpine AS bau
 WORKDIR /app
 # package-lock.json (#215): genau diese Versionen, reproduzierbar mit npm ci.
 COPY package.json package-lock.json ./
@@ -25,7 +25,7 @@ COPY docs/releases docs/releases
 COPY docs/handbuch docs/handbuch
 RUN python3 docs/handbuch/werkzeuge/offline.py /hilfe
 
-FROM node:22-alpine AS laufzeit
+FROM node:24-alpine AS laufzeit
 LABEL org.opencontainers.image.source="https://github.com/motom001/dms" \
       org.opencontainers.image.licenses="AGPL-3.0-only"
 # Alpine-Pakete aktuell halten (#214): Die Kalenderwoche gehört zur Cache-Kennung dieser Schicht,

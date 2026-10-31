@@ -2,7 +2,7 @@
 
 ## Voraussetzungen
 
-- **Node.js 22** und npm
+- **Node.js 24** (LTS) und npm
 - **Docker** (für PostgreSQL 17; oder eine eigene PostgreSQL-Installation)
 - optional **Tesseract** mit deutschen Sprachdaten und **poppler-utils** für die Texterkennung
 - optional **Python 3** mit `mkdocs-material` für die Handbücher

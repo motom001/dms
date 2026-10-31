@@ -13,17 +13,11 @@ updates:
         update-types: [minor, patch]
     commit-message: { prefix: "Abhängigkeiten" }
     ignore:
-      # Node bleibt auf der LTS-Reihe des Images; die Typen gehören dazu. Wechsel gezielt (#236).
+      # Node bleibt auf der LTS-Reihe des Images (24); die Typen gehören dazu. Wechsel gezielt (#236).
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
-      # Große Sprünge mit Umbauaufwand plant #236, statt sie einzeln als PR zu bekommen.
-      - dependency-name: "vite"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@vitejs/plugin-react"
-        update-types: ["version-update:semver-major"]
+      # TypeScript 7 (neuer Compiler) kommt gezielt, sobald Werkzeuge und Editoren damit sauber laufen (#236).
       - dependency-name: "typescript"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@types/nodemailer"
         update-types: ["version-update:semver-major"]
       # 0.x: jede Minor-Version kann brechen.
       - dependency-name: "esbuild"

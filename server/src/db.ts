@@ -2,8 +2,12 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import postgres from 'postgres';
 
+/**
+ * postgres.js 4 (#236): `infer: true` behält die Parametertypen von v3 (Date als timestamptz, boolean, bytea …),
+ * damit Abfragen ohne ausdrücklichen Typ unverändert laufen.
+ */
 export function verbinde(url: string) {
-  return postgres(url, { max: 10, onnotice: () => {} });
+  return postgres(url, { max: 10, onnotice: () => {}, infer: true });
 }
 
 /**

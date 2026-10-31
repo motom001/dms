@@ -300,7 +300,7 @@ export class Wiederherstellung {
 
       schritt('Entschlüsseln und Einspielen');
       await this.q.sql.unsafe(`CREATE SCHEMA ${bezeichner(schema)}`);
-      neu = postgres(this.q.url, { max: 1, onnotice: () => {}, connection: { search_path: schema } });
+      neu = postgres(this.q.url, { max: 1, onnotice: () => {}, infer: true, connection: { search_path: schema } });
       await neu.unsafe(`SET search_path TO ${bezeichner(schema)}`);
       // Schema auf den Stand der Sicherung bringen: genau ihre Migrationen.
       await neu.begin(async (tx) => {
