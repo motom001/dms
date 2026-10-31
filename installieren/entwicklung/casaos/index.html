@@ -1284,7 +1284,7 @@
 
 
 <h1 id="casaos">CasaOS<a class="headerlink" href="#casaos" title="Permanent link">&para;</a></h1>
-<p>So installierst du das DMS auf einem Rechner mit <strong>CasaOS</strong>, z. B. einem Raspberry Pi oder Mini-PC. Du brauchst weder Compose-Datei noch Kommandozeile. Die App bringt ihre eigene Datenbank mit und ist schon angebunden.</p>
+<p>So installierst du das DMS auf einem Rechner mit <strong>CasaOS</strong>, z. B. einem Raspberry Pi oder Mini-PC. Du brauchst weder Compose-Datei noch Kommandozeile. Die App bringt ihre eigene Datenbank mit: Sie läuft im selben Container und ist schon angebunden.</p>
 <div class="admonition tip">
 <p class="admonition-title">ZimaOS statt CasaOS?</p>
 <p>Die Schritte für ZimaOS stehen auf einer <a href="../zimaos/">eigenen Seite</a>.</p>
@@ -1300,7 +1300,7 @@
 </ol>
 <p>Danach erscheint <strong>DMS</strong> in der App-Liste.</p>
 <h2 id="2-installieren">2. Installieren<a class="headerlink" href="#2-installieren" title="Permanent link">&para;</a></h2>
-<p>In der App-Liste <strong>DMS</strong> öffnen und <strong>Installieren</strong> wählen. CasaOS lädt das DMS und seine Datenbank und startet beide.</p>
+<p>In der App-Liste <strong>DMS</strong> öffnen und <strong>Installieren</strong> wählen. CasaOS lädt das DMS als <strong>einen</strong> Container (Image <code>dms-komplett</code>) und startet ihn. Die Datenbank läuft darin mit – ohne Passwort und ohne Port nach außen. Einen eigenen Container „Datenbank“ gibt es nicht.</p>
 <h2 id="3-einrichten">3. Einrichten<a class="headerlink" href="#3-einrichten" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Öffne die App <strong>direkt nach der Installation</strong>, über ihr Symbol oder unter <code>http://&lt;Gerät&gt;:8478</code>.</li>
@@ -1350,6 +1350,16 @@
 </ul>
 <h2 id="aktualisieren">Aktualisieren<a class="headerlink" href="#aktualisieren" title="Permanent link">&para;</a></h2>
 <p>Gibt es eine neue Version, zeigt der App Store bei <strong>DMS</strong> ein Update an. Die Daten bleiben erhalten. Was neu ist, steht unter <strong>Werkbank → Technik</strong>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Noch mit zwei Containern installiert?</p>
+<p>Wer das DMS vor Version 0.73.10 aus dem Store installiert hat, hat zwei Container: DMS und Datenbank. Nach dem Update auf den einen Container startet das DMS mit einer <strong>leeren</strong> Datenbank. So kommst du wieder an deine Daten:</p>
+<ol>
+<li><strong>Vor</strong> dem Update unter <strong>Werkbank → Sicherung</strong> eine Sicherung erstellen (oder die letzte automatische nehmen).</li>
+<li>Update im App Store einspielen.</li>
+<li>Im Assistenten <strong>Aus einer Sicherung wiederherstellen</strong> wählen und diese Sicherung einspielen.</li>
+</ol>
+<p>Die alten Datenbankdateien bleiben im Ordner <code>postgres/</code> liegen, bis du sie selbst löschst.</p>
+</div>
 <h2 id="auf-ein-neues-gerat-umziehen">Auf ein neues Gerät umziehen<a class="headerlink" href="#auf-ein-neues-gerat-umziehen" title="Permanent link">&para;</a></h2>
 <p>DMS auf dem neuen Gerät aus dem Store installieren, die Sicherungsdateien in dessen Ordner <code>sicherung</code> legen und im Assistenten <strong>Aus einer Sicherung wiederherstellen</strong> wählen. Ausführlich unter <a href="https://motom001.github.io/dms/admin/aktuell/wiederherstellen/">Wiederherstellen</a>.</p>
 
