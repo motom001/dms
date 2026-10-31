@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/entwickler/v0.65/pakete/">
+        <link rel="canonical" href="https://motom001.github.io/dms/entwickler/v0.66/pakete/">
       
       
         <link rel="prev" href="../release/">
@@ -502,6 +502,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#einstellungen-beschreiben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Einstellungen beschreiben
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#prufen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -756,6 +767,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#einstellungen-beschreiben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Einstellungen beschreiben
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#prufen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -873,6 +895,33 @@ werkzeuge/neues-paket.sh<span class="w"> </span>mein_paket<span class="w"> </spa
 <li><strong>Versionen:</strong> <code>dms</code> und <code>abhaengigkeiten</code> nehmen Bereiche: <code>&gt;=1.2.0</code>, <code>&gt;1.2.0</code>, <code>1.2.0</code> bzw. <code>=1.2.0</code>, <code>^1.2.0</code> (gleiche Hauptversion), <code>~1.2.0</code> (gleiche Nebenversion), optional mit Obergrenze <code>&lt;2.0.0</code>.</li>
 </ul>
 <p>Bei einem <strong>Update</strong> ergänzt das DMS nur: neue Typen, Felder, Register und Sichten. Felder, Register oder Sichten zu entfernen oder umzubenennen hat auf installierte DMS keine Wirkung – plane das Format deshalb vorher.</p>
+<h2 id="einstellungen-beschreiben">Einstellungen beschreiben<a class="headerlink" href="#einstellungen-beschreiben" title="Permanent link">&para;</a></h2>
+<p>Braucht dein Paket (mit Code) Einstellungen, beschreibst du sie im Manifest unter <code>code.einstellungen</code> – eine eigene Oberfläche bringt ein Paket nicht mit. Das DMS zeigt das Formular, prüft und speichert die Werte (Teil der Sicherung) und gibt sie dem Paket.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">code</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">einstellungen</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">abschnitt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Allgemein</span>
+<span class="w">      </span><span class="nt">felder</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> schluessel</span><span class="p">:</span><span class="w"> </span><span class="nv">aktiv</span><span class="p p-Indicator">,</span><span class="nt"> name</span><span class="p">:</span><span class="w"> </span><span class="nv">Regeln automatisch anwenden</span><span class="p p-Indicator">,</span><span class="nt"> typ</span><span class="p">:</span><span class="w"> </span><span class="nv">janein</span><span class="p p-Indicator">,</span><span class="nt"> standard</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> schluessel</span><span class="p">:</span><span class="w"> </span><span class="nv">token</span><span class="p p-Indicator">,</span><span class="nt"> name</span><span class="p">:</span><span class="w"> </span><span class="nv">API-Schlüssel</span><span class="p p-Indicator">,</span><span class="nt"> typ</span><span class="p">:</span><span class="w"> </span><span class="nv">geheim</span><span class="p p-Indicator">,</span><span class="nt"> pflicht</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">liste</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">regeln</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Regeln</span>
+<span class="w">      </span><span class="nt">eintrag</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Regel</span>
+<span class="w">      </span><span class="nt">sortierbar</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="nt">felder</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> schluessel</span><span class="p">:</span><span class="w"> </span><span class="nv">absender</span><span class="p p-Indicator">,</span><span class="nt"> name</span><span class="p">:</span><span class="w"> </span><span class="nv">Absender enthält</span><span class="p p-Indicator">,</span><span class="nt"> typ</span><span class="p">:</span><span class="w"> </span><span class="nv">text</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> schluessel</span><span class="p">:</span><span class="w"> </span><span class="nv">ziel</span><span class="p p-Indicator">,</span><span class="nt"> name</span><span class="p">:</span><span class="w"> </span><span class="nv">Mappentyp</span><span class="p p-Indicator">,</span><span class="nt"> typ</span><span class="p">:</span><span class="w"> </span><span class="nv">mappentyp</span><span class="p p-Indicator">,</span><span class="nt"> pflicht</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">aktionen</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> schluessel</span><span class="p">:</span><span class="w"> </span><span class="nv">anwenden</span><span class="p p-Indicator">,</span><span class="nt"> name</span><span class="p">:</span><span class="w"> </span><span class="nv">Regeln jetzt auf neue Post anwenden</span><span class="p p-Indicator">,</span><span class="nt"> bestaetigen</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="w"> </span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<ul>
+<li>Höchstens <strong>zwei Ebenen</strong>: Abschnitte (<code>abschnitt</code>, <code>hilfe</code>, <code>felder</code>) und Listen (<code>liste</code>, <code>name</code>, <code>eintrag</code>, <code>hilfe</code>, <code>sortierbar</code>, <code>felder</code>).</li>
+<li><strong>Typen:</strong> <code>text</code>, <code>mehrzeilig</code>, <code>zahl</code> (<code>min</code>/<code>max</code>), <code>janein</code>, <code>datum</code>, <code>auswahl</code> und <code>mehrfachauswahl</code> (<code>optionen</code>), <code>geheim</code>, Verweise <code>mappentyp</code>, <code>feld</code> (mit <code>mappentyp:</code>), <code>benutzer</code>, <code>rolle</code>, <code>sicht</code>.</li>
+<li><strong>Werte</strong>, wie das Paket sie bekommt: Abschnittsfelder unter ihrem Schlüssel, Listen als Liste von Objekten (mit <code>_id</code> je Eintrag). Verweise sind Ids (bei <code>feld</code>: <code>{ typ, feld }</code>), Geheimnisse im Klartext – nur für das eigene Paket.</li>
+<li>Bei einer Änderung bekommt das Paket das Ereignis <code>paket.einstellungen_geaendert</code>; es liest die Werte mit <code>dms.einstellungen()</code>.</li>
+<li><strong>Zugangsdaten nur als <code>geheim</code></strong>, nie als <code>text</code> und nie mit <code>standard</code>.</li>
+<li>Bei einem <strong>Update</strong> bekommen neue Felder ihre Vorgabe, vorhandene Werte bleiben, wegfallende werden entfernt.</li>
+</ul>
+<p><code>werkzeuge/pruefen.py</code> prüft Schlüssel, Vorgaben, Optionen, Geheimnisse und Verweise. Zum Ausprobieren eignet sich die erweiterte Ansicht mit <strong>Paket hochladen</strong>.</p>
 <h2 id="prufen">Prüfen<a class="headerlink" href="#prufen" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pyyaml<span class="w"> </span>jsonschema
 python3<span class="w"> </span>werkzeuge/pruefen.py<span class="w"> </span>pakete/mein_paket<span class="w">      </span><span class="c1"># Schema, Pflichtdateien, Verweise, Lizenz, Changelog</span>
