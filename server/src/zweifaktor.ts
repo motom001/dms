@@ -1,4 +1,4 @@
-import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import type { Rolle } from '../../shared/src/model';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
@@ -154,8 +154,7 @@ export class Zweifaktor {
 function neueCodes(): string[] {
   const z = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   return Array.from({ length: 10 }, () => {
-    const b = randomBytes(10);
-    const s = [...b].map((x) => z[x % z.length]).join('');
+    const s = Array.from({ length: 10 }, () => z[randomInt(z.length)]).join('');
     return `${s.slice(0, 4)}-${s.slice(4, 8)}-${s.slice(8, 10)}`;
   });
 }
