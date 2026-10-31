@@ -18,6 +18,8 @@ const ZIEL = process.argv[2] ?? 'mobil-fehler';
 const ADMIN = { email: 'anna@beispiel.de', passwort: 'handbuch-passwort-1' };
 const SEITEN = [
   '/ablage/eingang',
+  '/ablage/suche',
+  '/ablage/suche?typ=Rechnung',
   '/profil/konto',
   '/profil/sicherheit',
   '/profil/darstellung',

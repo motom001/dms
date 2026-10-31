@@ -197,6 +197,9 @@ export function speicherRepo(): Repo {
       return r;
     },
     async seite(o) {
+      const tf = o.textfilter?.text.trim() && (o.textfilter.dokumente || o.textfilter.notizen) ? { ...o.textfilter, text: o.textfilter.text.trim().toLowerCase() } : null;
+      // Fundstellen: zur Suche oder zum Volltextfilter.
+      const fund = o.suche && (o.volltext || o.notizen) ? { volltext: !!o.volltext, notizen: !!o.notizen } : tf ? { volltext: tf.dokumente, notizen: tf.notizen } : null;
       const q = o.suche?.toLowerCase();
       const alle = [...mappen.values()]
         .filter((m) => !o.typId || m.typId === o.typId)
@@ -207,23 +210,27 @@ export function speicherRepo(): Repo {
         .filter((m) => !q || (m.titel ?? '').toLowerCase().includes(q) || Object.values(m.werte).some((v) => !(typeof v === 'string' && v.startsWith('dms1$')) && (typeof v === 'object' ? JSON.stringify(v) : String(v)).toLowerCase().includes(q))
           || (!!o.volltext && [...dokumente.values()].some((d) => d.mappeId === m.id && findet(texte.get(d.id), q)))
           || (!!o.notizen && [...notizen.values()].some((n) => n.mappeId === m.id && n.text.toLowerCase().includes(q))))
+        // Erweiterte Suche (#199): Begriff in Dokumenten oder Notizen – UND mit allem anderen.
+        .filter((m) => !tf || (tf.dokumente && [...dokumente.values()].some((d) => d.mappeId === m.id && findet(texte.get(d.id), tf.text)))
+          || (tf.notizen && [...notizen.values()].some((n) => n.mappeId === m.id && n.text.toLowerCase().includes(tf.text))))
         .sort((a, b) => vergleiche(a, b, o.sortierung) || (a.titel ?? '').toLowerCase().localeCompare((b.titel ?? '').toLowerCase()) || a.id.localeCompare(b.id));
       const seite = alle.slice(o.von, o.von + o.anzahl).map(kopie);
-      if ((!o.volltext && !o.notizen) || !q) return { gesamt: alle.length, mappen: seite };
+      if (!fund) return { gesamt: alle.length, mappen: seite };
       const ausschnitte: Record<string, Ausschnitt> = {};
-      if (o.notizen) {
+      const q2 = o.suche && (o.volltext || o.notizen) ? q! : tf!.text;
+      if (fund.notizen) {
         for (const m of seite) {
-          const n = [...notizen.values()].find((x) => x.mappeId === m.id && x.text.toLowerCase().includes(q));
-          const t = n ? ausschnittAus(alsText(n.text), q) : null;
+          const n = [...notizen.values()].find((x) => x.mappeId === m.id && x.text.toLowerCase().includes(q2));
+          const t = n ? ausschnittAus(alsText(n.text), q2) : null;
           if (t) ausschnitte[m.id] = { dokument: 'Notiz', text: t };
         }
       }
-      if (o.volltext) for (const m of seite) {
+      if (fund.volltext) for (const m of seite) {
         if (ausschnitte[m.id]) continue;
-        const d = [...dokumente.values()].find((x) => x.mappeId === m.id && findet(texte.get(x.id), q));
+        const d = [...dokumente.values()].find((x) => x.mappeId === m.id && findet(texte.get(x.id), q2));
         if (!d) continue;
         const text = texte.get(d.id)!;
-        const w = woerter(q)[0];
+        const w = woerter(q2)[0];
         const i = text.toLowerCase().indexOf(w);
         ausschnitte[m.id] = { dokument: d.name, text: `${text.slice(Math.max(0, i - 40), i)}${TREFFER_ANFANG}${text.slice(i, i + w.length)}${TREFFER_ENDE}${text.slice(i + w.length, i + w.length + 40)}` };
       }

@@ -344,6 +344,24 @@ a.textknopf { text-decoration: none; }
 .registertab .anzahl { min-width: 18px; text-align: center; }
 .gruppe header .anzahl { margin-left: 4px; }
 
+.suchformular { gap: 12px; }
+.suchformular fieldset.suchgruppe { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.suchformular legend { font-weight: 600; font-size: calc(12px * var(--skala, 1)); text-transform: uppercase; letter-spacing: .04em; color: var(--leise); margin-bottom: 4px; }
+.suchformular input[type="text"], .suchformular input[type="search"], .suchformular input[type="date"], .suchformular select { width: 100%; min-width: 0; }
+.typwahl { display: flex; flex-direction: column; gap: 2px; max-height: 220px; overflow-y: auto; }
+.feldsuche { display: flex; flex-direction: column; gap: 4px; padding: 6px 0; border-top: 1px solid var(--linie); }
+.feldsuche.gesetzt > .feldsuchkopf label { font-weight: 600; color: var(--tinte); }
+.feldsuchkopf { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.feldsuchkopf select { width: auto !important; max-width: 50%; }
+.vonbis { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.vonbis input { flex: 1 1 110px; }
+.zeile.umbruch { flex-wrap: wrap; }
+.suchkopf { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.suchchips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.chip.suchchip { gap: 4px; white-space: normal; color: var(--tinte); }
+.chipweg { border: 0; background: none; color: var(--leise); cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; }
+.chipweg:hover, .chipweg:focus-visible { color: var(--schlecht); }
+
 @media (max-width: 820px) {
   .zweispaltig { grid-template-columns: minmax(0, 1fr); }
   .leiste { position: static; }
@@ -353,6 +371,9 @@ a.textknopf { text-decoration: none; }
   .kopf { gap: 12px; }
   .drei { grid-template-columns: minmax(0, 1fr); }
   .drei[data-ebene="liste"] .spalte.mappe, .drei[data-ebene="mappe"] .spalte.sichten, .drei[data-ebene="mappe"] .spalte.liste { display: none; }
+  /* Erweiterte Suche (#199): erst das Formular, dann die Treffer. */
+  .drei[data-ebene="formular"] .spalte.liste, .drei[data-ebene="formular"] .spalte.mappe, .drei[data-ebene="suchliste"] .spalte.sichten, .drei[data-ebene="suchliste"] .spalte.mappe { display: none; }
+  .drei[data-ebene="formular"] .spalte.sichten { border-bottom: 0; }
   .spalte.sichten { border-right: 0; border-bottom: 1px solid var(--linie); overflow: visible; padding-bottom: 12px; }
   .sichtliste { flex-direction: row; overflow-x: auto; min-width: 0; max-width: 100%; }
   .spalte.sichten { overflow-x: clip; }

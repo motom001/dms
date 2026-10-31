@@ -66,7 +66,49 @@ Mit dem Haken **Notizen** sucht das DMS auch in den [Notizen](zusammenarbeit.md#
 
 !!! note "Was die Suche (noch) nicht kann"
     - Frisch hochgeladene Dokumente findet sie erst, wenn ihr Text erkannt ist – meist nach Sekunden, bei langen Scans nach einigen Minuten (siehe [Dokumente](dokumente.md#volltext)).
-    - Verweise werden nicht nach dem Namen der anderen Mappe durchsucht: Die Rechnungen der Stadtwerke findest du nicht, indem du in den Rechnungen „Stadtwerke“ suchst. Öffne stattdessen die Stadtwerke – ihr Register *Rechnungen* zeigt alle.
+    - Verweise werden nicht nach dem Namen der anderen Mappe durchsucht: Die Rechnungen der Stadtwerke findest du nicht, indem du in den Rechnungen „Stadtwerke“ suchst. Öffne stattdessen die Stadtwerke – ihr Register *Rechnungen* zeigt alle – oder nimm die [erweiterte Suche](#erweiterte-suche).
+
+## Erweiterte Suche
+
+Wenn du eine Mappe nur ungefähr beschreiben kannst, hilft die **erweiterte Suche**. Du findest sie ganz oben bei den Sichten und als Link **Erweiterte Suche** neben dem Suchfeld einer Liste (dann ist der Mappentyp der Liste schon gewählt).
+
+Links steht dann statt der Sichten das Suchformular, in der Mitte stehen die Treffer, rechts die geöffnete Mappe. Mit **← zurück zu den Sichten** kommst du wieder zu den Sichten.
+
+![Erweiterte Suche: Formular, Chips und Treffer](bilder/erweiterte-suche.png)
+
+**Ein Beispiel:** Du suchst eine Rechnung über einen Backofen. Sie ist zwischen März und November letzten Jahres gekommen, wahrscheinlich von MediaMarkt, Saturn oder Otto.
+
+1. Wähle unter **Mappentypen** „Rechnung“.
+2. Trage beim **Rechnungsdatum** 01.03. bis 30.11. des letzten Jahres ein.
+3. Wähle beim **Vertragspartner** (bzw. Aussteller) MediaMarkt, Saturn und Otto.
+4. Gib unter **Volltext** „Backofen“ ein.
+5. Klicke **Suchen**.
+
+So funktioniert das Formular:
+
+- **Mappentypen**: Du kannst mehrere wählen; angeboten werden nur Typen, die du lesen darfst. Wählst du keinen, sucht das DMS in allen – dann gibt es nur die allgemeinen Felder (angelegt am/von, geändert am/von).
+- **Felder**: Angeboten werden die Felder, die **alle gewählten Typen gemeinsam** haben. Jedes Feld bekommt die passende Eingabe:
+    - **Datum**: von–bis; eins von beiden darf leer bleiben. Unter **Zeitraum …** gibt es „dieses Jahr“, „letztes Jahr“, „letzte 12 Monate“, „dieser Monat“ und „letzter Monat“.
+    - **Zahl, Betrag**: von–bis.
+    - **Verweis** (z. B. Vertragspartner): mehrere Mappen – die Mappe muss auf **eine davon** zeigen.
+    - **Auswahlliste**: mehrere Werte – einer davon muss passen.
+    - **Ja/Nein**: ja, nein oder egal.
+    - **Text**: der Wert enthält den eingegebenen Text.
+    - Rechts neben dem Feldnamen kannst du statt eines Werts **ist leer** oder **ist nicht leer** wählen.
+- Felder ohne Eingabe gelten nicht. **Zwischen den Feldern gilt UND, innerhalb eines Feldes ODER.**
+- Änderst du die Typen, bleiben Werte in Feldern erhalten, die es weiter gibt. Bei den anderen steht ein Hinweis, dass sie entfallen.
+
+### Volltext in Dokumenten und Notizen
+
+Unter **Volltext** gibst du einen Begriff ein, der in den Dokumenten oder Notizen der Mappe stehen soll. Mit den Haken **in Dokumenten** und **in Notizen** (beide vorausgewählt) legst du fest, wo: Steht der Begriff an einem der beiden Orte, zählt die Mappe als Treffer. Die Suche im Text versteht Deutsch und findet Teilwörter wie die [Volltextsuche](#im-text-der-dokumente-suchen). Unter jedem Treffer steht die Fundstelle.
+
+### Das Ergebnis
+
+Über den Treffern stehen die Bedingungen als **Chips**, z. B. „Rechnungsdatum 01.03.2025–30.11.2025“, dazu die Zahl der Treffer. Ein Klick auf **×** entfernt eine Bedingung und sucht sofort neu – praktisch, wenn es keinen Treffer gibt. Sortieren, mehrere Mappen auswählen und [Exportieren](#exportieren) gehen wie in einer Sicht.
+
+Die Suche steht in der **Adresse** des Browsers: Zurück und Vor funktionieren, du kannst sie als Lesezeichen speichern oder den Link weitergeben. Wer den Link öffnet, sieht nur die Mappen, die er lesen darf.
+
+Am Handy kommt erst das Formular, nach **Suchen** die Trefferliste; mit **← Suche ändern** kommst du mit deinen Eingaben zurück zum Formular.
 
 ## Mehrere Mappen auswählen
 
