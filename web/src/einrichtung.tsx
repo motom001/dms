@@ -17,7 +17,7 @@ import { geheZu } from './ort';
  *
  * Übersprungenes lässt sich in der Werkbank nachholen.
  */
-export const SCHRITTE = ['Code', 'Datenbank', 'Neu oder Sicherung', 'Mandant', 'Administrator', 'Erster Benutzer', 'Schlüssel', 'Optionales', 'Fertig'] as const;
+export const SCHRITTE = ['Code', 'Datenbank', 'Neu oder Sicherung', 'Haushalt', 'Administrator', 'Erster Benutzer', 'Schlüssel', 'Optionales', 'Fertig'] as const;
 const REPO = 'https://github.com/motom001/dms';
 
 /** Nach dem Übernehmen der Datenbank ist der Server kurz weg; danach meldet er die nächste Phase. */
@@ -111,7 +111,7 @@ export function Einrichtungsassistent({ status, fertig }: { status: KontoStatus;
     <Rahmen aktiv={2} titel="Neu einrichten oder wiederherstellen?" unter="Die Datenbank ist verbunden und noch leer.">
       <div className="wahlkarten">
         <button type="button" className="wahlkarte" onClick={() => setWahl('neu')}>
-          <strong>Neu einrichten</strong><span className="leise">Ein leeres DMS – du legst Mandant, Administrator und Benutzer an.</span>
+          <strong>Neu einrichten</strong><span className="leise">Ein leeres DMS – du legst Haushalt, Administrator und Benutzer an.</span>
         </button>
         <button type="button" className="wahlkarte" onClick={() => setWahl('sicherung')}>
           <strong>Aus einer Sicherung wiederherstellen</strong><span className="leise">Neues NAS, alte Sicherung: Lege sie in den Sicherungsordner und halte das Notfallblatt bereit. Danach meldest du dich mit den bisherigen Zugangsdaten an.</span>
@@ -127,7 +127,7 @@ export function Einrichtungsassistent({ status, fertig }: { status: KontoStatus;
   if (!mandantFertig) return (
     <Rahmen aktiv={3} titel="Willkommen" unter="Wie heißt dein DMS? Meist der Name der Familie oder der Firma.">
       <form className="stapel" onSubmit={(ev) => { ev.preventDefault(); if (mandant.trim()) setMandantFertig(true); }}>
-        <label className="eigenschaft"><span>Name des Mandanten <small>z. B. „Familie Mustermann“</small></span>
+        <label className="eigenschaft"><span>Name des Haushalts <small>z. B. „Familie Mustermann“</small></span>
           <input value={mandant} onChange={(x) => setMandant(x.target.value)} maxLength={30} autoFocus required /></label>
         <p className="leise klein">Er erscheint als Schriftzug in der Kopfzeile, im Browser-Tab und auf der Anmeldeseite. Ändern lässt er sich jederzeit unter Werkbank → Designs → Logo und Schriftzug.</p>
         <div className="knoepfe"><button type="button" className="knopf" onClick={() => setWahl(null)}>Zurück</button><button className="knopf primaer" disabled={!mandant.trim()}>Weiter</button></div>
@@ -393,7 +393,7 @@ function FertigSchritt({ stand, weiter }: { stand: EinrichtungStand; weiter: () 
   const umgebung = `Version ${version ?? 'unbekannt'}, Browser ${navigator.userAgent}`;
   const issue = `${REPO}/issues/new?${new URLSearchParams({ title: 'Problem bei der Einrichtung', body: `**Was ist passiert?**\n\n\n**Was hätte ich erwartet?**\n\n\n---\n${umgebung}` })}`;
   return (
-    <Rahmen aktiv={NACH.fertig} titel={`${stand.mandant ?? 'Dein DMS'} ist eingerichtet`} unter="Melde dich mit dem Benutzer aus Schritt 6 an, um in der Ablage zu arbeiten. Als Administrator geht es in der Werkbank weiter – dort legst du Mappentypen und Sichten an.">
+    <Rahmen aktiv={NACH.fertig} titel={`${stand.mandant ?? 'Dein DMS'} ist eingerichtet`} unter="Melde dich mit dem Benutzer aus Schritt 6 an, um in der Ablage zu arbeiten. Als Administrator geht es in der Werkbank weiter – dort legst du Mappentypen und Ansichten an.">
       {stand.uebersprungen.length > 0 && <div className="hinweis info"><p>Übersprungen: {stand.uebersprungen.map((s) => SCHRITTE[NACH[s]]).join(', ')}. Das lässt sich in der Werkbank nachholen; die Übersicht erinnert daran.</p></div>}
       <ul className="linkliste">
         <li><a className="verweis" href={handbuchUrl('benutzer', version)} target="_blank" rel="noreferrer">Benutzerhandbuch ↗</a> – Ablage, Dokumente, Aufgaben.</li>

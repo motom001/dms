@@ -8,7 +8,7 @@ Unter **Werkbank → Demo-Daten** füllst du ein DMS zum Ausprobieren oder Teste
 
 ## Beispiel-Mappentypen
 
-**Beispiele laden** legt die Mappentypen *Vertragspartner*, *Vertrag*, *Rechnung* und *Zahlung* mit Feldern, Registern, Titel-Vorlagen und Trefferlisten an – dazu ein paar Mappen. Das ist ein guter Startpunkt, um eigene Typen daran anzulehnen.
+**Beispiele laden** legt die Mappentypen *Vertragspartner*, *Vertrag*, *Rechnung* und *Zahlung* mit Feldern, Registern, Titel-Vorlagen und Trefferlisten an – dazu ein paar Mappen. Das ist ein guter Startpunkt, um eigene Mappentypen daran anzulehnen.
 
 Das geht nur, solange es außer *Benutzer* und *Rolle* noch keine Mappentypen gibt.
 

@@ -5,7 +5,7 @@
 | | Wofür | Format |
 | --- | --- | --- |
 | [Sicherung](sicherung.md) | wiederherstellen *in ein DMS* | eigenes Format, verschlüsselt |
-| Export einer Sicht ([Ablage](https://motom001.github.io/dms/benutzer/aktuell/ablage/)) | ausgewählte Mappen weitergeben | Excel, CSV, ZIP, PDF |
+| Export einer Ansicht ([Ablage](https://motom001.github.io/dms/benutzer/aktuell/ablage/)) | ausgewählte Mappen weitergeben | Excel, CSV, ZIP, PDF |
 | **Vollexport** | alles mitnehmen, Ausstieg, Weiterverarbeitung | offene Formate, ohne DMS lesbar |
 
 ## Export starten
@@ -25,9 +25,9 @@ Der Export landet im Ordner `export/` neben den [Sicherungen](sicherung.md), z. 
 dms-export-2026-10-31-14-05-00/
   LIESMICH.md            Aufbau, Formate, Prüfskript
   manifest.json          Formatversion, Anzahlen, Größe und SHA-256 jeder Datei, wo jede Tabelle steht
-  struktur/              Mappentypen, Sichten, Nummernkreise, Designs, Benutzer (ohne Passwörter)
+  struktur/              Mappentypen, Ansichten, Nummernkreise, Designs, Benutzer (ohne Passwörter)
   daten/
-    <typ>.csv  .jsonl  .xlsx   je Mappentyp: eine Zeile je Mappe, eine Spalte je Feldschlüssel
+    <typ>.csv  .jsonl  .xlsx   je Mappentyp: eine Zeile je Mappe, eine Spalte je Kennung eines Felds
     verweise.csv           Mappe → Feld → Mappe
     dokumente.csv          alle Dokumente und älteren Versionen mit Pfad im Export
     notizen.jsonl, aufgaben.jsonl, erinnerungen.jsonl, historie.jsonl,
@@ -58,11 +58,11 @@ Passwortfelder stehen nie in den Daten – nur „gesetzt“. Wählst du **Passw
 
 ## Kontakte als vCard
 
-Das DMS schlägt Mappentypen vor, die nach Kontakten aussehen (Felder wie Name, E-Mail, Telefon, Adresse), und ordnet die Felder zu. Prüfe die Zuordnung vor dem Export; abgewählte Typen bekommen keine vCard.
+Das DMS schlägt Mappentypen vor, die nach Kontakten aussehen (Felder wie Name, E-Mail, Telefon, Adresse), und ordnet die Felder zu. Prüfe die Zuordnung vor dem Export; abgewählte Mappentypen bekommen keine vCard.
 
-## Persönlicher Export
+## Meine Daten exportieren
 
-Jeder Benutzer kann unter **Profil → Konto → Meine Daten exportieren** einen eigenen Export anstoßen – im selben Aufbau, aber nur mit den Mappen, die er lesen darf, seinen eigenen Aufgaben, Erinnerungen, Favoriten und Papierkorb-Einträgen. Sichten, Nummernkreise und andere Benutzer fehlen; Passwörter nur aus Mappen, in denen er Passwörter sehen darf, und nur mit Bestätigung. Er liegt unter `export/persoenlich/<Benutzer-Id>/`; ein neuer Export ersetzt den alten. Abschalten lässt sich das im Vollexport-Panel mit **Persönlicher Export für Benutzer**.
+Jeder Benutzer kann unter **Profil → Konto → Meine Daten exportieren** einen eigenen Export anstoßen – im selben Aufbau, aber nur mit den Mappen, die er lesen darf, seinen eigenen Aufgaben, Erinnerungen, Favoriten und Papierkorb-Einträgen. Ansichten, Nummernkreise und andere Benutzer fehlen; Passwörter nur aus Mappen, in denen er Passwörter sehen darf, und nur mit Bestätigung. Er liegt unter `export/persoenlich/<Benutzer-Id>/`; ein neuer Export ersetzt den alten. Abschalten lässt sich das im Vollexport-Panel mit **Persönlicher Export für Benutzer**.
 
 ## Weiterverarbeiten
 

@@ -104,7 +104,7 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
       <div className="mappenkopf">
         <p className="ueber">Profil · {BEREICHE[bereich]}</p>
         <h1>{ich.name || ich.email}</h1>
-        <dl className="index"><div><dt>Rolle</dt><dd>{ROLLEN[ich.rolle]}</dd></div><div><dt>E-Mail</dt><dd>{ich.email}</dd></div></dl>
+        <dl className="index"><div><dt>Systemrolle</dt><dd>{ROLLEN[ich.rolle]}</dd></div><div><dt>E-Mail</dt><dd>{ich.email}</dd></div></dl>
       </div>
 
       {bereich === 'konto' && <>
@@ -174,9 +174,9 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
       <SchriftWahl />
 
       <div className="blatt">
-        <h2 className="h3">Ansicht auf diesem Gerät</h2>
+        <h2 className="h3">Darstellung auf diesem Gerät</h2>
         <p className="leise">Die Breite der Bereiche in Ablage und Werkbank und eingeklappte Bereiche merkt sich dieses Gerät für dich. Falls etwas nicht mehr zu finden ist:</p>
-        <div className="knoepfe"><button type="button" className="knopf" onClick={() => { bereicheZuruecksetzen(ich.id); setAnsicht(true); }}>Standard-Ansicht wiederherstellen</button></div>
+        <div className="knoepfe"><button type="button" className="knopf" onClick={() => { bereicheZuruecksetzen(ich.id); setAnsicht(true); }}>Standard-Darstellung wiederherstellen</button></div>
         {ansicht && <p className="gutertext" role="status">Breiten zurückgesetzt.</p>}
       </div>
 
@@ -191,13 +191,13 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
       {bereich === 'benachrichtigungen' && <>
       <div className="blatt">
         <h2 className="h3">Aufgaben <Hilfe ort="profil.benachrichtigungen" /></h2>
-        <p className="leise">Mappen mit offenen Aufgaben für dich stehen im Eingang. Zusätzlich schickt das DMS einmal am Tag eine Übersicht per E-Mail – zu deiner Uhrzeit und an deinen Wochentagen, solange du offene Aufgaben hast und nicht abwesend bist.</p>
+        <p className="leise">Mappen mit offenen Aufgaben für dich stehen unter „Zu erledigen“. Zusätzlich schickt das DMS einmal am Tag eine Übersicht per E-Mail – zu deiner Uhrzeit und an deinen Wochentagen, solange du offene Aufgaben hast und nicht abwesend bist.</p>
         <ZusammenfassungEinstellen />
       </div>
 
       <div className="blatt">
         <h2 className="h3">Anstehend <Hilfe ort="ablage.anstehend" /></h2>
-        <p className="leise">Die Sicht „Anstehend“ unter dem Eingang zeigt deine Fristen und Erinnerungen, die bald fällig sind – auch die, die noch nicht im Eingang stehen.</p>
+        <p className="leise">Die Ansicht „Anstehend“ unter „Zu erledigen“ zeigt deine Fristen und Erinnerungen, die bald fällig sind – auch die, die noch nicht unter „Zu erledigen“ stehen.</p>
         <label className="eigenschaft schmal"><span>Zeitraum <small>Tage ab heute</small></span>
           <input type="number" min={1} max={ANSTEHEND_MAX} className="kurz" defaultValue={Number(d.einstellungen.anstehend_tage ?? ANSTEHEND_TAGE)}
             onBlur={(e) => { const n = Math.min(ANSTEHEND_MAX, Math.max(1, Math.trunc(Number(e.target.value) || ANSTEHEND_TAGE))); e.target.value = String(n); d.setzeEinstellung('anstehend_tage', n === ANSTEHEND_TAGE ? null : n); }} /></label>

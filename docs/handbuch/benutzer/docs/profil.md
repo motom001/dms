@@ -7,7 +7,7 @@ Ein Klick auf deinen Namen oben rechts öffnet ein Menü:
 ![Benutzermenü](bilder/benutzermenue.png)
 
 - Oben stehen dein Name, deine E-Mail-Adresse und deine Rolle.
-- **Mein Konto** – dein [Profil](#profil) mit allen Bereichen: Konto, Sicherheit, Darstellung (Design, Schriftgröße, Ansicht), Benachrichtigungen und Ablage, [Abwesenheit](#abwesenheit).
+- **Mein Konto** – dein [Profil](#profil) mit allen Bereichen: Konto, Sicherheit, Darstellung (Design, Schriftgröße, Spaltenbreiten), Benachrichtigungen und Ablage, [Abwesenheit](#abwesenheit).
 - Solange eine Abwesenheit wirkt, steht oben im Menü „Du bist abwesend“ – ein Klick darauf führt direkt dorthin –, und neben deinem Namen ist ein Punkt.
 - **Hilfe** – öffnet dieses Handbuch.
 - **Fehler melden** – siehe [Fehler melden](#fehler-melden).
@@ -64,22 +64,22 @@ Ab jetzt meldest du dich mit Passwort **und** Code an. Ist das Handy nicht zur H
 Auch ein Link zum Zurücksetzen des Passworts fragt danach den Code ab. Handy verloren und keine Codes mehr? Dann setzt ein Administrator die Zwei-Faktor-Anmeldung bei deinem Benutzer zurück.
 
 !!! note "Vorgeschrieben"
-    Kann ein Administrator für deine Rolle vorschreiben. Dann richtest du sie nach der Anmeldung ein, bevor es weitergeht, und kannst sie nicht selbst abschalten.
+    Kann ein Administrator für deine Systemrolle (Administrator oder Mitglied) vorschreiben. Dann richtest du sie nach der Anmeldung ein, bevor es weitergeht, und kannst sie nicht selbst abschalten.
 
 ### Darstellung
 
 - **Design** – wie das DMS für dich aussieht. **Standard** folgt dem Design, das der Administrator festgelegt hat. Gilt für dein Konto auf allen Geräten.
 - **Schriftgröße auf diesem Gerät** – klein, normal oder groß. Gilt nur für das Gerät, an dem du gerade sitzt; am Smartphone kannst du eine andere Größe wählen als am PC.
-- **Ansicht auf diesem Gerät** – die Breite der Spalten und eingeklappte Bereiche merkt sich jedes Gerät. Ist etwas nicht mehr zu finden, stellt **Standard-Ansicht wiederherstellen** die ursprüngliche Aufteilung her.
+- **Darstellung auf diesem Gerät** – die Breite der Spalten und eingeklappte Bereiche merkt sich jedes Gerät. Ist etwas nicht mehr zu finden, stellt **Standard-Darstellung wiederherstellen** die ursprüngliche Aufteilung her.
 - **Entwicklermodus** – zeigt unten rechts, wie lange ein Seitenaufruf gedauert hat.
 
 ### Benachrichtigungen und Ablage
 
-- **Aufgaben** – Mappen mit offenen [Aufgaben](eingang.md) für dich stehen im Eingang. Zusätzlich schickt das DMS dir einmal am Tag eine Übersicht per E-Mail, solange du welche hast. **Tägliche Zusammenfassung meiner Aufgaben per E-Mail** bestellt sie ab oder wieder an. Darunter wählst du:
+- **Aufgaben** – Mappen mit offenen [Aufgaben](eingang.md) für dich stehen unter „Zu erledigen“. Zusätzlich schickt das DMS dir einmal am Tag eine Übersicht per E-Mail, solange du welche hast. **Tägliche Zusammenfassung meiner Aufgaben per E-Mail** bestellt sie ab oder wieder an. Darunter wählst du:
     - **Uhrzeit** – im 15-Minuten-Raster; *Standard* ist die Uhrzeit, die der Administrator eingestellt hat.
     - **Wochentage** – Standard Montag bis Freitag. Ohne Wochentag kommt keine Zusammenfassung.
     - **Nicht an Feiertagen** – an gesetzlichen Feiertagen des Bundeslands, das der Administrator gewählt hat, kommt keine (Standard: an). Ohne Bundesland ist der Haken ausgegraut.
-- **Anstehend** – wie viele Tage im Voraus die Sicht [Anstehend](eingang.md#anstehend) deine Fristen und Erinnerungen zeigt (Standard: 30).
+- **Anstehend** – wie viele Tage im Voraus die Ansicht [Anstehend](eingang.md#anstehend) deine Fristen und Erinnerungen zeigt (Standard: 30).
 - **Papierkorb** – **Beim Abmelden leeren** löscht deine gelöschten Mappen endgültig, sobald du dich abmeldest. Ohne den Haken bleiben sie so lange im [Papierkorb](ablage.md#papierkorb), wie der Administrator es eingestellt hat.
 
 ### Abwesenheit
@@ -87,10 +87,10 @@ Auch ein Link zum Zurücksetzen des Passworts fragt danach den Code ab. Handy ve
 Damit während deines Urlaubs nichts liegen bleibt, trägst du unter **Abwesenheit** einen **Vertreter** ein:
 
 - **Abwesend** an, **Vertreter** wählen (Pflicht), optional **von** und **bis** (jeweils einschließlich). Ohne Datum gilt die Abwesenheit, bis du sie ausschaltest; mit „bis“ endet sie danach von selbst.
-- Solange sie wirkt, gehen **neue** Aufgaben für dich – von Hand vergebene, Erwähnungen und „passt nicht“ – an deinen Vertreter. Im Protokoll der Mappe steht „weitergegeben wegen Abwesenheit“. Ist dein Vertreter selbst abwesend, geht sie an dessen Vertreter weiter.
+- Solange sie wirkt, gehen **neue** Aufgaben für dich – von Hand vergebene, Erwähnungen und „passt nicht“ – an deinen Vertreter. In der Historie der Mappe steht „weitergegeben wegen Abwesenheit“. Ist dein Vertreter selbst abwesend, geht sie an dessen Vertreter weiter.
 - **Alle offenen Aufgaben an ‹Vertreter› geben** gibt auch die schon vorhandenen ab. Nach deiner Rückkehr bleiben sie beim Vertreter.
-- Dein Vertreter bekommt einen Hinweis in seinen Eingang („Du wurdest für … als Vertreter hinterlegt“). Abwesende bekommen keine tägliche Zusammenfassung.
-- Ein Administrator kann deine Abwesenheit auch für dich eintragen, etwa bei Krankheit. Eintragen, Ändern und Beenden stehen im Protokoll deiner Benutzer-Mappe.
+- Dein Vertreter bekommt einen Hinweis unter „Zu erledigen“ („Du wurdest für … als Vertreter hinterlegt“). Abwesende bekommen keine tägliche Zusammenfassung.
+- Ein Administrator kann deine Abwesenheit auch für dich eintragen, etwa bei Krankheit. Eintragen, Ändern und Beenden stehen in der Historie deiner Benutzer-Mappe.
 
 ## Fehler melden
 

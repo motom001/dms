@@ -76,7 +76,7 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
         {pw && <label className="haken einzug"><input type="checkbox" checked={pwOk} onChange={(e) => setPwOk(e.target.checked)} /><span className="fehlertext">Mir ist klar: Die Passwörter stehen unverschlüsselt in der Datei. Das steht im Protokoll.</span></label>}
         {s.kontakte.length > 0 && <>
           <h3 className="h4">Kontakte als vCard <Hilfe ort="werkbank.vollexport.kontakte" /></h3>
-          <p className="leise klein">Diese Mappentypen sehen nach Kontakten aus. Prüfe die Zuordnung der Felder; abgewählte Typen bekommen keine vCard.</p>
+          <p className="leise klein">Diese Mappentypen sehen nach Kontakten aus. Prüfe die Zuordnung der Felder; abgewählte Mappentypen bekommen keine vCard.</p>
           {s.kontakte.map((k) => {
             const z2 = kontakte[k.typId];
             const typ = d.typ(k.typId);
@@ -105,8 +105,8 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
           })}>Export starten</button></div>
       </div>
       <div className="blatt">
-        <h2 className="h3">Persönlicher Export</h2>
-        <label className="haken"><input type="checkbox" checked={s.persoenlich} onChange={(e) => void tu(async () => { await api.persoenlicherExport(e.target.checked); await z.laden(); return e.target.checked ? 'Benutzer dürfen ihre Daten exportieren.' : 'Persönlicher Export abgeschaltet.'; })} />
+        <h2 className="h3">Meine Daten exportieren</h2>
+        <label className="haken"><input type="checkbox" checked={s.persoenlich} onChange={(e) => void tu(async () => { await api.persoenlicherExport(e.target.checked); await z.laden(); return e.target.checked ? 'Benutzer dürfen ihre Daten exportieren.' : 'Meine Daten exportieren abgeschaltet.'; })} />
           <span>Benutzer dürfen ihre eigenen Daten exportieren<small className="hilfe">Profil → Konto → Meine Daten exportieren: Mappen, die sie lesen dürfen, ihre Aufgaben und Erinnerungen – im selben Format (Recht auf Datenübertragbarkeit, DSGVO Art. 20).</small></span></label>
       </div>
       {s.exporte.length > 0 && (

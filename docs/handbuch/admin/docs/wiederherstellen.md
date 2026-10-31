@@ -21,7 +21,7 @@ Du brauchst: die beiden Sicherungsdateien (`.dms-sicherung` und `.json`) und das
 2. Das DMS neu installieren, wie unter [Wie komme ich an ein DMS?](https://motom001.github.io/dms/installieren/aktuell/) beschrieben – empfohlen mit zwei Containern (z. B. die [Compose-Vorlage](https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml) mit einer `.env` mit neuem `DB_PASSWORD`), oder mit [dms-komplett](https://motom001.github.io/dms/installieren/aktuell/komplett/) ohne Passwort.
 3. Die beiden Sicherungsdateien in den Ordner `sicherung` kopieren.
 4. Das Projekt starten und das DMS im Browser öffnen. Der [Einrichtungsassistent](installation.md#der-einrichtungsassistent) fragt nach dem **Einrichtungscode** und – falls nötig – nach der Datenbank. Dann **Aus einer Sicherung wiederherstellen** wählen; einen „Wegwerf-Admin“ brauchst du nicht.
-5. Die Sicherung auswählen. Der **Abgleich** zeigt, mit welcher Version sie entstand und was heute läuft (DMS, Datenbank-Stand, PostgreSQL, Architektur, Mandanten-Id). Gehört die Sicherung zu einem anderen Mandanten, übernimmt das DMS dessen Id.
+5. Die Sicherung auswählen. Der **Abgleich** zeigt, mit welcher Version sie entstand und was heute läuft (DMS, Datenbank-Stand, PostgreSQL, Architektur, Haushalts-Id). Gehört die Sicherung zu einem anderen Mandanten, übernimmt das DMS dessen Id.
 6. Den **Schlüssel vom Notfallblatt** eingeben (Leerzeichen zählen nicht) und **Schlüssel prüfen** – das DMS vergleicht ihn mit dem Fingerabdruck aus den Metadaten.
 7. **Wiederherstellen**. Der Bildschirm zeigt jeden Schritt; du kannst die Seite neu laden. Am Ende startet das DMS neu.
 8. **Weiter zur Anmeldung** und mit den bisherigen Zugangsdaten anmelden. Die Schlüsseldatei hat das DMS dabei selbst angelegt.

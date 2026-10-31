@@ -36,7 +36,7 @@ Das DMS soll Menschen helfen, die Informationen ihres Lebens zu ordnen. Damit Be
 ## Die Entscheidungsregel
 
 !!! tip "Im Zweifel gewinnen Stufe 1–3"
-    Steht eine Funktion für größere Organisationen im Konflikt mit Einfachheit für Lena, Jonas und Markus, gewinnen Stufe 1–3. Fortgeschrittenes kommt in die **erweiterte Ansicht** oder bleibt aus, bis man es einschaltet.
+    Steht eine Funktion für größere Organisationen im Konflikt mit Einfachheit für Lena, Jonas und Markus, gewinnen Stufe 1–3. Fortgeschrittenes kommt in den **Expertenmodus** oder bleibt aus, bis man es einschaltet.
 
 Bei jeder neuen Idee, jedem Issue und jeder größeren Änderung fragen wir:
 
@@ -48,7 +48,7 @@ Bei jeder neuen Idee, jedem Issue und jeder größeren Änderung fragen wir:
 Daraus folgt außerdem:
 
 - **Voreinstellungen** richten sich nach Lena. Markus darf alles ändern.
-- **Begriffe** prüfen wir aus Sicht von Lena und Jonas.
+- **Begriffe** prüfen wir aus Ansicht von Lena und Jonas.
 - **Risiken** wägen wir je Persona ab. Was im Konzern selten und teuer ist, kann im Haushalt häufig und harmlos sein, und umgekehrt.
 
 ## Zielgruppen an Issues
@@ -76,7 +76,7 @@ Lena **administriert selbst**: Sie ist Einsteigerin und Administratorin zugleich
 
 - **Wer:** Jonas (16), Lenas Sohn, oder Tom, der „nur mal nachschaut“. Nutzt fast nur das Handy.
 - **Ziele:** schnell etwas finden, ein Foto ablegen, eine Aufgabe wie „Bitte unterschreiben“ erledigen.
-- **Stolpersteine:** Begriffe wie Eingang oder Sicht, leere Listen ohne Erklärung, Fehlermeldungen in Technik-Sprache.
+- **Stolpersteine:** Fachwörter wie Mappentyp oder Trefferliste, leere Listen ohne Erklärung, Fehlermeldungen in Technik-Sprache.
 - **Braucht:** eine Ablage, die am Handy gut geht, einfache Sprache, nur die eigenen Mappen, „Das darfst du nicht sehen – frag Lena“ statt Fehlercode.
 - **Erfolg:** findet allein, was er braucht.
 
@@ -86,9 +86,9 @@ Lena **administriert selbst**: Sie ist Einsteigerin und Administratorin zugleich
 
 - **Wer:** Markus (45), IT-affin, betreibt ein NAS mit Docker. Eigenheim, Familie, ein paar Fahrzeuge.
 - **Ziele:** eigene Mappentypen bauen (Haus → Heizung → Wartungsvertrag → Rechnung), Rechte für die Familie, Zugriff von unterwegs, Postfach und Scanner anbinden, Sicherung nach 3-2-1.
-- **Typische Aufgaben:** Mappentypen und Sichten entwerfen, Berechtigungen testen, Pakete installieren, Updates einspielen, Protokoll lesen.
+- **Typische Aufgaben:** Mappentypen und Ansichten entwerfen, Berechtigungen testen, Pakete installieren, Updates einspielen, Protokoll lesen.
 - **Stolpersteine:** versteckte Einstellungen, fehlende Technik-Doku, Updates, die etwas ändern, ohne es zu sagen.
-- **Braucht:** erweiterte Ansicht, Administratorhandbuch, API und Konsole, Release-Notizen, Vollexport.
+- **Braucht:** Expertenmodus, Administratorhandbuch, API und Konsole, Release-Notizen, Vollexport.
 
 Markus richtet das DMS **für Lena und Jonas** ein. Was er baut, müssen die beiden verstehen.
 
@@ -99,7 +99,7 @@ Markus richtet das DMS **für Lena und Jonas** ein. Was er baut, müssen die bei
 - **Wer:** Petra (52) und ihre zwei Brüder kümmern sich um die Mutter (81), die allein lebt. Drei Haushalte in verschiedenen Städten.
 - **Ziele:** Vollmachten, Arztbriefe, Pflegekasse und Verträge der Mutter an einem Ort. Alle Geschwister sehen dasselbe. Keine Frist (Pflegegrad, Widerspruch) geht verloren.
 - **Stolpersteine:** den Zugriff von außen sicher einrichten, sensible Gesundheitsdaten, wer was ändern darf.
-- **Braucht:** Sichten für eine Rolle („Mutter“), Aufgaben an Personen, Zwei-Faktor-Anmeldung, Zugriff von unterwegs, Abwesenheit und Vertretung.
+- **Braucht:** Ansichten für eine Rolle („Mutter“), Aufgaben an Personen, Zwei-Faktor-Anmeldung, Zugriff von unterwegs, Abwesenheit und Vertretung.
 
 ### 5 · Vermieter – Herr Özdemir (Fokus)
 
@@ -117,7 +117,7 @@ Markus richtet das DMS **für Lena und Jonas** ein. Was er baut, müssen die bei
 - **Wer:** Grafikdesignerin, Einzelunternehmerin, eine Teilzeitkraft.
 - **Ziele:** Eingangs- und Ausgangsrechnungen, Kundenverträge, E-Rechnungen im Original aufbewahren, Belege für den Steuerberater.
 - **Besonderheit:** Für sie gilt die GoBD. Privates und Geschäftliches liegen oft im selben DMS.
-- **Braucht:** Archivmodus, Versionen, Nummernkreise, Vorlage Verfahrensdokumentation, Trennung von Privat und Geschäft über Sichten und Rechte.
+- **Braucht:** Archivmodus, Versionen, Nummernkreise, Vorlage Verfahrensdokumentation, Trennung von Privat und Geschäft über Ansichten und Rechte.
 - **Stolperstein:** „Ist das GoBD-konform?“ Wir versprechen kein Zertifikat, sondern liefern Werkzeuge und ehrliche Doku.
 
 ### 7 · Kleinbetrieb – Tischlerei Brandt (unterstützt)

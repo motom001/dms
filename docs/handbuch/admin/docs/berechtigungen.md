@@ -11,7 +11,7 @@ Mit Berechtigungen legst du je Mappentyp fest, **wer welche Mappen anlegen, lese
 
 | Kürzel | Recht | Was es erlaubt |
 |---|---|---|
-| **C** | Anlegen | neue Mappen dieses Typs anlegen |
+| **C** | Anlegen | neue Mappen dieses Mappentyps anlegen |
 | **R** | Lesen | die Mappe in Listen, Suche, Zählern und Verweisen sehen und öffnen; Notizen schreiben, Aufgaben vergeben, per E-Mail versenden |
 | **U** | Bearbeiten | Felder ändern, Dokumente hochladen und entfernen |
 | **D** | Löschen | die Mappe in den Papierkorb legen |
@@ -27,7 +27,7 @@ Mit Berechtigungen legst du je Mappentyp fest, **wer welche Mappen anlegen, lese
 Über den Regeln steht die Zeile **Standard** mit den fünf Rechten **C R U D P**. Sie gilt, solange keine Regel etwas anderes sagt; ein Klick schaltet ein Recht zwischen **✓** (erteilt) und **✗** (entzogen).
 
 - **✓ C R U D P** – jeder darf alles; Regeln *schränken ein*. So startet jeder neue Mappentyp.
-- **✗ C R U D P** – niemand darf etwas; Regeln *geben frei*. Das passt für vertrauliche Typen wie Gehaltsabrechnungen.
+- **✗ C R U D P** – niemand darf etwas; Regeln *geben frei*. Das passt für vertrauliche Mappentypen wie Gehaltsabrechnungen.
 - Auch gemischt, z. B. **✓ R U P, ✗ C D**: Jeder darf lesen und bearbeiten, anlegen und löschen nur, wem eine Regel es erlaubt.
 
 !!! note "Früher: Haken am Mappentyp"
@@ -50,9 +50,9 @@ Eine Regel heißt: **Wenn** alle Bedingungen zutreffen, **dann** setze diese Rec
 |---|---|
 | **Benutzer hat Rolle** | der angemeldete Benutzer eine der gewählten Rollen hat (auch die Systemrollen *Administrator* und *Mitglied*) |
 | **Benutzer ist** | der angemeldete Benutzer einer der gewählten Benutzer ist |
-| **Feld der Mappe** | ein Feld der Mappe die Bedingung erfüllt – genau wie in [Sichten](sichten.md#bedingungen), z. B. „Verantwortlich zeigt auf aktueller Benutzer“, „Verantwortliche Rolle zeigt auf Rollen des aktuellen Benutzers“, „Privat ist ja“ oder „Angelegt von ist aktueller Benutzer“ |
+| **Feld der Mappe** | ein Feld der Mappe die Bedingung erfüllt – genau wie in [Ansichten](sichten.md#bedingungen), z. B. „Verantwortlich zeigt auf aktueller Benutzer“, „Verantwortliche Rolle zeigt auf Rollen des aktuellen Benutzers“, „Privat ist ja“ oder „Angelegt von ist aktueller Benutzer“ |
 | **Offene Aufgabe für den Benutzer** | die Mappe eine offene Aufgabe für den angemeldeten Benutzer hat |
-| **Mappe ist die des Benutzers** | (nur beim Typ *Benutzer*) die Mappe die Benutzer-Mappe des angemeldeten Benutzers ist |
+| **Mappe ist die des Benutzers** | (nur beim Mappentyp *Benutzer*) die Mappe die Benutzer-Mappe des angemeldeten Benutzers ist |
 
 Jede Bedingung lässt sich mit **nicht** umkehren. Mehrere Bedingungen einer Regel müssen **alle** zutreffen; für „oder“ legst du zwei Regeln an.
 
@@ -61,13 +61,13 @@ Jede Bedingung lässt sich mit **nicht** umkehren. Mehrere Bedingungen einer Reg
 
 ### Regel in andere Mappentypen kopieren
 
-Mit **In andere Mappentypen kopieren …** an einer gespeicherten Regel übernimmst du sie in weitere Typen (bei ungespeicherten Änderungen erst speichern); sie landet dort am Ende. Bedingungen auf Felder, die es im Zieltyp nicht gibt, fallen weg – das DMS sagt, wie viele.
+Mit **In andere Mappentypen kopieren …** an einer gespeicherten Regel übernimmst du sie in weitere Mappentypen (bei ungespeicherten Änderungen erst speichern); sie landet dort am Ende. Bedingungen auf Felder, die es im Zieltyp nicht gibt, fallen weg – das DMS sagt, wie viele.
 
 ### Speichern
 
 Die Regeln werden mit **Mappentyp speichern** gespeichert, zusammen mit Feldern, Registern und Trefferlisten. Eine Regel darf deshalb auch ein Feld nutzen, das du im selben Zug neu anlegst. Passt eine Regel nicht (z. B. auf ein Feld, das du gerade entfernst), speichert das DMS nichts und nennt die Regel.
 
-Beim Speichern prüft das DMS außerdem, ob danach Mappen dieses Typs **niemand mehr lesen** könnte (außer Administratoren), und fragt in diesem Fall nach. Jede Änderung steht im [Protokoll](fehlersuche.md) mit der vollständigen Regelliste.
+Beim Speichern prüft das DMS außerdem, ob danach Mappen dieses Mappentyps **niemand mehr lesen** könnte (außer Administratoren), und fragt in diesem Fall nach. Jede Änderung steht im [Protokoll](fehlersuche.md) mit der vollständigen Regelliste.
 
 ## Testlauf
 
@@ -79,14 +79,14 @@ Der Testlauf nutzt die Regeln, **wie sie gerade im Editor stehen** – auch unge
 
 Was ein Benutzer über alle Mappentypen hinweg lesen darf, zeigt [Was sieht ein Benutzer?](benutzer.md#was-sieht-ein-benutzer) in der Benutzerverwaltung.
 
-## Berechtigungen an Sichten
+## Berechtigungen an Ansichten
 
-Wer eine **Sicht** im Baum sieht, dort „+ Neu“ bekommt und aus ihr exportieren darf, regelst du an der Sicht selbst – mit Vererbung an die Untersichten. Das steht unter [Sichten → Berechtigungen](sichten.md#berechtigungen). Ob eine Mappe lesbar ist, entscheidet weiter allein der Mappentyp.
+Wer eine **Ansicht** im Baum sieht, dort „+ Neu“ bekommt und aus ihr exportieren darf, regelst du an der Ansicht selbst – mit Vererbung an die Unteransichten. Das steht unter [Ansichten → Berechtigungen](sichten.md#berechtigungen). Ob eine Mappe lesbar ist, entscheidet weiter allein der Mappentyp.
 
 ## Was Benutzer davon merken
 
 - Mappen ohne Leserecht fehlen in Listen, Suche, Zählern, Favoriten und Trefferlisten. Verweist eine sichtbare Mappe auf eine unsichtbare, steht dort „nicht sichtbare Mappe“ ohne Link.
-- Hat jemand eine **Aufgabe** an einer Mappe, die er nicht lesen darf, steht sie trotzdem in seinem Eingang – ohne Titel. Er kann sie erledigen oder an jemanden weitergeben, der die Mappe sehen darf. Wer eine Aufgabe vergibt, bekommt einen Hinweis, wenn der Empfänger die Mappe nicht lesen darf.
+- Hat jemand eine **Aufgabe** an einer Mappe, die er nicht lesen darf, steht sie trotzdem bei ihm unter „Zu erledigen“ – ohne Titel. Er kann sie erledigen oder an jemanden weitergeben, der die Mappe sehen darf. Wer eine Aufgabe vergibt, bekommt einen Hinweis, wenn der Empfänger die Mappe nicht lesen darf.
 - Ohne **Bearbeiten** zeigt die Mappe ihre Felder nur an; ohne **Löschen** fehlt „Mappe löschen“; ohne **Anlegen** fehlt „+ Neu“.
 - Bei der Auswahl von Benutzern (Verantwortlich, Erwähnungen, Vertreter, Aufgaben-Empfänger) erscheinen nur Benutzer, deren Benutzer-Mappe man sehen darf.
 - Im Profil zeigt **Meine Rechte** je Mappentyp, was man darf: ja, nein oder „je nach Mappe“ – die Regeln selbst bleiben verborgen.
@@ -108,7 +108,7 @@ Mappentyp *Rechnung*, Standard **✓ C R U D P**:
 
 ### Praktikanten sehen keine Passwörter
 
-An jedem Typ mit Passwortfeldern (einmal anlegen, dann **kopieren**):
+An jedem Mappentyp mit Passwortfeldern (einmal anlegen, dann **kopieren**):
 
 1. **Keine Passwörter für Praktikanten** – wenn *Benutzer hat Rolle Praktikant* → ✗ P
 
@@ -119,5 +119,5 @@ Ein Programm (etwa ein ERP-System) soll über die [Schnittstelle](api.md) Rechnu
 1. Lege eine Rolle **ERP** und einen Benutzer **ERP-Schnittstelle** mit dieser Rolle an; erzeuge für ihn einen [API-Schlüssel](api.md#api-schlussel).
 2. Mappentyp *Rechnung*: Regel **ERP legt Rechnungen an** – wenn *Benutzer hat Rolle ERP* → ✓ C R U.
 3. Mappentyp *Benutzer*: Regel **ERP sieht nur die Buchhaltung** – wenn *Benutzer hat Rolle ERP* und *nicht: Rollen zeigt auf Buchhaltung* (das Feld der Benutzer-Mappe) → ✗ R. So kann das Programm als „Verantwortlich“ nur Mitglieder der Buchhaltung eintragen.
-4. Alle übrigen Mappentypen: Regel **ERP sieht nichts** – wenn *Benutzer hat Rolle ERP* → ✗ C R U D P (einmal anlegen, dann in die anderen Typen kopieren).
+4. Alle übrigen Mappentypen: Regel **ERP sieht nichts** – wenn *Benutzer hat Rolle ERP* → ✗ C R U D P (einmal anlegen, dann in die anderen Mappentypen kopieren).
 5. Mit [Was sieht ein Benutzer?](benutzer.md#was-sieht-ein-benutzer) am Benutzer *ERP-Schnittstelle* kontrollierst du das Ergebnis.

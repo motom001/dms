@@ -39,7 +39,7 @@ export function Aktionsmenue({ aufgabe, erinnern, email, drucken, link }: { aufg
           {erinnern && <button type="button" role="menuitem" onClick={waehle(erinnern)} title="Zu einem Datum an diese Mappe erinnern – dich oder jemand anderen"><span aria-hidden="true">⏰</span> Erinnern</button>}
           <button type="button" role="menuitem" onClick={waehle(email)}><span aria-hidden="true">✉</span> Per E-Mail versenden</button>
           {drucken && <button type="button" role="menuitem" onClick={waehle(drucken)}><span aria-hidden="true">⎙</span> Als PDF exportieren</button>}
-          {link && <button type="button" role="menuitem" onClick={waehle(link)} title="Sprechender Link über Typ und Feldwerte, z. B. zum Weitergeben per Mail oder Chat"><span aria-hidden="true">🔗</span> Link kopieren</button>}
+          {link && <button type="button" role="menuitem" onClick={waehle(link)} title="Link über Mappentyp und Feldwerte, z. B. zum Weitergeben per Mail oder Chat"><span aria-hidden="true">🔗</span> Link kopieren</button>}
         </div>
       )}
     </div>
@@ -76,7 +76,7 @@ export function EmailMaske({ typ, details, neuLaden, schliessen }: { typ: Mappen
       {fertig ? (
         <>
           <p className="gutertext" role="status">Die E-Mail ist verschickt.</p>
-          <p className="leise">Sie ist als Mappe vom Typ „E-Mail“ abgelegt und steht im Protokoll dieser Mappe.</p>
+          <p className="leise">Sie ist als Mappe vom Mappentyp „E-Mail“ abgelegt und steht in der Historie dieser Mappe.</p>
           <div className="knoepfe"><Link to={`/ablage/${fertig.typId}/${fertig.id}`} className="knopf">E-Mail öffnen</Link></div>
         </>
       ) : bereit === false ? (

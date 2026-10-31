@@ -192,7 +192,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     };
   };
   const ocr = () => { if (!x.texterkennung) throw new Fachfehler(404, 'Die Texterkennung ist nicht eingerichtet.'); return x.texterkennung; };
-  const meldungen = () => { if (!x.fehlermeldungen) throw new Fachfehler(404, 'Fehlermeldungen sind nicht eingerichtet.'); return x.fehlermeldungen; };
+  const meldungen = () => { if (!x.fehlermeldungen) throw new Fachfehler(404, 'Gemeldete Fehler sind nicht eingerichtet.'); return x.fehlermeldungen; };
   const tresor = () => { if (!x.tresor) throw new Fachfehler(404, 'Die Verschlüsselung ist nicht eingerichtet.'); return x.tresor; };
   const schluessel = () => { if (!x.apiSchluessel) throw new Fachfehler(404, 'API-Schlüssel sind nicht eingerichtet.'); return x.apiSchluessel; };
   /**
@@ -730,13 +730,13 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const quelle = await dienst.persoenlicheQuelle(await zg(a), { mandant: (await x.mandantName?.()) ?? '', version: eigeneVersion(), ich: await konten.exportDatenVon(id) });
       const zustand = { laeuft: true, fehler: null as string | null };
       eigeneExporte.set(id, zustand);
-      L.konto[e.passwoerter === true ? 'warn' : 'info'](e.passwoerter === true ? 'Persönlicher Export mit Passwörtern gestartet' : 'Persönlicher Export gestartet', {});
+      L.konto[e.passwoerter === true ? 'warn' : 'info'](e.passwoerter === true ? '„Meine Daten exportieren“ mit Passwörtern gestartet' : '„Meine Daten exportieren“ gestartet', {});
       void (async () => {
         try {
           for (const alt of await exporteIn(ziel)) await loescheExport(exportOrdner(ziel, alt.name));
           const r = await vollexport(quelle, ziel, { passwoerter: e.passwoerter === true });
-          L.konto.info('Persönlicher Export fertig', { benutzer: id, dateien: r.dateien, mb: Math.round(r.bytes / 1024 ** 2) });
-        } catch (x2) { zustand.fehler = (x2 as Error).message; L.konto.error('Persönlicher Export fehlgeschlagen', { benutzer: id, fehler: zustand.fehler }); }
+          L.konto.info('„Meine Daten exportieren“ fertig', { benutzer: id, dateien: r.dateien, mb: Math.round(r.bytes / 1024 ** 2) });
+        } catch (x2) { zustand.fehler = (x2 as Error).message; L.konto.error('„Meine Daten exportieren“ fehlgeschlagen', { benutzer: id, fehler: zustand.fehler }); }
         finally { zustand.laeuft = false; }
       })();
       return ok({ laeuft: true }, 202);
@@ -750,7 +750,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const eintraege: ZipEintrag[] = dateien.map((d) => ({ name: `${fertig.name}/${d.name}`, groesse: d.groesse, inhalt: async () => createReadStream(d.pfad) }));
       const groesse = zipGroesse(eintraege);
       if (groesse > ZIP_MAX) throw new Fachfehler(422, 'Dein Export ist größer als 4 GB. Bitte einen Administrator, ihn dir aus dem Ordner zu geben.');
-      L.konto.info('Persönlicher Export heruntergeladen', {});
+      L.konto.info('„Meine Daten exportieren“ heruntergeladen', {});
       return { datei: { inhalt: zipStrom(eintraege), name: `${fertig.name}.zip`, mime: 'application/zip', anzeigen: false, groesse } };
     } },
     /* ---------- Archivmodus (#212) ---------- */
@@ -1048,7 +1048,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       }
       const start = Date.now();
       const s = await dienst.seite(ich(a), a.query, z);
-      L.ablage.debug('Sicht geladen', { sicht: a.query.sicht, von: s.von, anzahl: s.mappen.length, gesamt: s.gesamt, suche: a.query.suche, ms: Date.now() - start });
+      L.ablage.debug('Ansicht geladen', { sicht: a.query.sicht, von: s.von, anzahl: s.mappen.length, gesamt: s.gesamt, suche: a.query.suche, ms: Date.now() - start });
       return ok(klartext ? { ...s, mappen: await entschluessele(a, s.mappen.filter((m) => !m.verborgen), klartext) } : s);
     } },
     // Favoriten (#62)
@@ -1060,22 +1060,22 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/sichten/definitionen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.listeSichten(await zg(a))) },
     { methode: 'POST', pfad: '/api/sichten/definitionen', zugang: 'admin', handler: async (a) => {
       const s = await dienst.legeSichtAn(a.body);
-      L.werkbank.info('Sicht angelegt', { sicht: s.name, typen: s.typen.length, bedingungen: s.bedingungen.length });
+      L.werkbank.info('Ansicht angelegt', { sicht: s.name, typen: s.typen.length, bedingungen: s.bedingungen.length });
       return ok(s, 201);
     } },
     { methode: 'PUT', pfad: '/api/sichten/definitionen/:id', zugang: 'admin', handler: async (a) => {
       const s = await dienst.aendereSicht(a.params.id, a.body);
-      L.werkbank.info('Sicht geändert', { sicht: s.name, typen: s.typen.length, bedingungen: s.bedingungen.length });
+      L.werkbank.info('Ansicht geändert', { sicht: s.name, typen: s.typen.length, bedingungen: s.bedingungen.length });
       return ok(s);
     } },
     { methode: 'DELETE', pfad: '/api/sichten/definitionen/:id', zugang: 'admin', handler: async (a) => {
       await dienst.loescheSicht(a.params.id);
-      L.werkbank.info('Sicht gelöscht', { id: a.params.id });
+      L.werkbank.info('Ansicht gelöscht', { id: a.params.id });
       return leer;
     } },
     { methode: 'POST', pfad: '/api/sichten/definitionen/:id/verschieben', zugang: 'admin', handler: async (a) => {
       const r = await dienst.verschiebeSicht(a.params.id, b(a).elternId, b(a).stelle);
-      L.werkbank.info('Sicht verschoben', { id: a.params.id, elternId: b(a).elternId ?? null, stelle: b(a).stelle });
+      L.werkbank.info('Ansicht verschoben', { id: a.params.id, elternId: b(a).elternId ?? null, stelle: b(a).stelle });
       return ok(r);
     } },
     { methode: 'PUT', pfad: '/api/sichten/reihenfolge', zugang: 'admin', handler: async (a) => ok(await dienst.ordneSichten(b(a).elternId, b(a).ids)) },

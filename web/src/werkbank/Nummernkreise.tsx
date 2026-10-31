@@ -75,7 +75,7 @@ export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; 
       <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }}>
         <div className="raster">
           <label className="eigenschaft"><span>Name</span><input id="nk-name" value={e.name} onChange={(x) => setE({ ...e, name: x.target.value, ...(neu && (!e.schluessel || e.schluessel === schluesselAusName(e.name)) ? { schluessel: schluesselAusName(x.target.value) } : {}) })} required /></label>
-          <label className="eigenschaft"><span>Schlüssel <small>{neu ? 'nach dem Anlegen fest' : 'fest'}</small></span><input id="nk-schluessel" className="mono" value={e.schluessel} disabled={!neu} onChange={(x) => setE({ ...e, schluessel: x.target.value })} required /></label>
+          <label className="eigenschaft"><span>Kennung <small>{neu ? 'nach dem Anlegen fest' : 'fest'}</small></span><input id="nk-schluessel" className="mono" value={e.schluessel} disabled={!neu} onChange={(x) => setE({ ...e, schluessel: x.target.value })} required /></label>
           <label className="eigenschaft breit"><span>Muster <small>{'{jjjj} {jj} {mm} {tt} – Datum des Ziehens; {zaehler} oder {zaehler:7} mit führenden Nullen'}</small></span>
             <input id="nk-muster" className="mono" value={e.muster} onChange={(x) => setE({ ...e, muster: x.target.value })} required /></label>
           <label className="eigenschaft"><span>Startwert</span><input id="nk-start" type="number" min={0} value={e.start} onChange={(x) => setE({ ...e, start: x.target.value })} /></label>

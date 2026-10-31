@@ -64,9 +64,9 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
 
   let rechts;
   if (dritt === 'neu' && !typ) {
-    rechts = <div className="leer"><p>Diese Sicht zeigt mehrere Mappentypen. Lege neue Mappen in der Sicht eines einzelnen Typs an.</p></div>;
+    rechts = <div className="leer"><p>Diese Ansicht zeigt mehrere Mappentypen. Lege neue Mappen in der Ansicht eines einzelnen Mappentyps an.</p></div>;
   } else if (dritt === 'neu' && typ && verwaltet?.rechte?.C === false) {
-    rechts = <div className="leer"><p>In der Sicht „{verwaltet.name}“ lassen sich keine neuen Mappen anlegen.</p></div>;
+    rechts = <div className="leer"><p>In der Ansicht „{verwaltet.name}“ lassen sich keine neuen Mappen anlegen.</p></div>;
   } else if (dritt === 'neu' && typ && !darfErstellen(typ)) {
     rechts = <div className="leer"><p>Von „{typ.name}“ lassen sich in der Ablage keine neuen Mappen anlegen.{typ.system === 'benutzer' ? ' Benutzer legt ein Administrator in der Werkbank unter „Benutzer“ an.' : ''}</p></div>;
   } else if (dritt === 'neu' && typ) {
@@ -86,14 +86,14 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           <Suchformular suche={suche} zeigeTreffer={() => setFormular(false)} />
         </aside>
       ) : (
-      <aside className="spalte sichten" aria-label="Sichten">
-        <h2 className="ueber">Sichten</h2>
+      <aside className="spalte sichten" aria-label="Ansichten">
+        <h2 className="ueber">Ansichten</h2>
         <nav className="sichtliste">
           <Link to="/ablage/suche" className="sicht" title="Mappentypen wählen, in Feldern und im Volltext suchen">
             <span className="nm"><span aria-hidden="true">⌕</span> Erweiterte Suche</span>
           </Link>
           <Link to="/ablage/eingang" className={`sicht ${sicht === 'eingang' ? 'an' : ''}`}>
-            <span className="nm">Eingang</span>{d.zaehler.eingang > 0 && <span className="zaehler">{zahl(d.zaehler.eingang)}</span>}
+            <span className="nm">Zu erledigen</span>{d.zaehler.eingang > 0 && <span className="zaehler">{zahl(d.zaehler.eingang)}</span>}
           </Link>
           <Link to="/ablage/anstehend" className={`sicht ${sicht === 'anstehend' ? 'an' : ''}`} title="Fristen und Erinnerungen der nächsten Tage">
             <span className="nm">Anstehend</span>{!!anstehend.liste?.eintraege.length && <span className="zahl">{zahl(anstehend.liste.eintraege.length)}</span>}
@@ -111,7 +111,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           <SichtBaum aktiv={sicht} />
         </nav>
         {!d.typen.length && <p className="leise klein">Noch keine Mappentypen. {ich.rolle === 'admin' ? <Link to="/werkbank/typen" className="verweis">Zur Werkbank</Link> : 'Ein Administrator muss sie zuerst einrichten.'}</p>}
-        {d.typen.length > 0 && !d.sichten.length && <p className="leise klein">Noch keine Sichten. {ich.rolle === 'admin' ? <Link to="/werkbank/sichten" className="verweis">Sichten einrichten</Link> : 'Ein Administrator muss sie zuerst einrichten.'}</p>}
+        {d.typen.length > 0 && !d.sichten.length && <p className="leise klein">Noch keine Ansichten. {ich.rolle === 'admin' ? <Link to="/werkbank/sichten" className="verweis">Ansichten einrichten</Link> : 'Ein Administrator muss sie zuerst einrichten.'}</p>}
       </aside>
       )}
 
@@ -131,7 +131,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           : sicht === 'papierkorb'
           ? <PapierkorbListe z={papierkorb} werkbank={false} offen={dritt} />
           : sicht === 'eingang'
-          ? <Liste key="eingang" sicht="eingang" titel="Eingang" offen={dritt} hilfe="ablage.eingang"
+          ? <Liste key="eingang" sicht="eingang" titel="Zu erledigen" offen={dritt} hilfe="ablage.eingang"
               beschreibung="Mappen, an denen du etwas tun sollst: Sie passen nicht mehr zur Definition, jemand hat dich erwähnt oder dir eine Aufgabe gegeben."
               leerText="Nichts zu tun." />
           : sicht === 'anstehend'
@@ -142,8 +142,8 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
               leerText="Noch keine Favoriten. Markiere eine Mappe mit dem Stern ☆, um sie hier zu finden." />
           : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} spaltenTyp={typ ?? sichtTypen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []} titel={verwaltet?.name ?? typ!.name} beschreibung={verwaltet ? verwaltet.beschreibung : typ?.beschreibung}
               offen={dritt} neu={!!typ && darfErstellen(typ) && verwaltet?.rechte?.C !== false} post={!!typ && darfPostAnlegen(typ) && verwaltet?.rechte?.C !== false}
-              leerText={typ?.system === 'post' ? 'Keine Post. Mit „+ Post“ legst du Dateien als neue Post ab.' : 'Noch keine Mappen in dieser Sicht.'} hilfe={typ?.system === 'post' ? 'ablage.post' : 'ablage.sicht'} auswahl export={verwaltet ? verwaltet.rechte?.E !== false : exportOhneSicht(ich.rolle === 'admin', d.sichten)} />
-          : sicht ? <div className="leer"><p>Diese Sicht gibt es nicht (mehr).</p></div> : null}
+              leerText={typ?.system === 'post' ? 'Keine Post. Mit „+ Post“ legst du Dateien als neue Post ab.' : 'Noch keine Mappen in dieser Ansicht.'} hilfe={typ?.system === 'post' ? 'ablage.post' : 'ablage.sicht'} auswahl export={verwaltet ? verwaltet.rechte?.E !== false : exportOhneSicht(ich.rolle === 'admin', d.sichten)} />
+          : sicht ? <div className="leer"><p>Diese Ansicht gibt es nicht (mehr).</p></div> : null}
       </section>
 
       <section className="spalte mappe" aria-label="Mappe">
@@ -186,17 +186,17 @@ function AnstehendListe({ z, offen }: { z: ReturnType<typeof useAnstehend>; offe
     <>
       <div className="listenkopf">
         <div><h1>Anstehend</h1>
-          <p className="leise klein">Deine Fristen und Erinnerungen der nächsten {l?.tage ?? ANSTEHEND_TAGE} Tage – auch die, die noch nicht im Eingang stehen. Den Zeitraum stellst du im <Link to="/profil/benachrichtigungen" className="verweis">Profil</Link> ein. <Hilfe ort="ablage.anstehend" /></p></div>
+          <p className="leise klein">Deine Fristen und Erinnerungen der nächsten {l?.tage ?? ANSTEHEND_TAGE} Tage – auch die, die noch nicht unter „Zu erledigen“ stehen. Den Zeitraum stellst du im <Link to="/profil/benachrichtigungen" className="verweis">Profil</Link> ein. <Hilfe ort="ablage.anstehend" /></p></div>
       </div>
       {z.fehler && <p className="fehlertext">{z.fehler}</p>}
-      {!l ? <p className="leise leerliste">Lade …</p> : !l.eintraege.length ? <p className="leise leerliste">Nichts in Sicht.</p> : (
+      {!l ? <p className="leise leerliste">Lade …</p> : !l.eintraege.length ? <p className="leise leerliste">Nichts in Ansicht.</p> : (
         <ul className="mappenliste">
           {l.eintraege.map((x, i) => (
             <li key={`${x.mappeId}-${x.feldKey ?? x.erinnerungId ?? i}-${x.datum}`}>
               <Link to={`/ablage/anstehend/${x.mappeId}`} className={`eintrag ${offen === x.mappeId ? 'an' : ''}`}>
                 <span className="titel">{tagText(x.datum)} · {titelOder(x.mappeTitel)}</span>
                 <span className="unter">{x.art === 'frist' ? 'Frist' : 'Erinnerung'}: {x.text}</span>
-                {x.faellig ? <span className="problem">steht im Eingang</span> : x.art === 'frist' && x.ab > heuteIn() ? <span className="unter leise">im Eingang ab {datumDe(x.ab)}</span> : null}
+                {x.faellig ? <span className="problem">steht unter „Zu erledigen“</span> : x.art === 'frist' && x.ab > heuteIn() ? <span className="unter leise">unter „Zu erledigen“ ab {datumDe(x.ab)}</span> : null}
               </Link>
             </li>
           ))}
@@ -252,7 +252,7 @@ function LinkListe({ link, suche, offen }: { link: Direktlink; suche: URLSearchP
   return (
     <Liste sicht="link" link={suche.toString()} anhang={`?${suche.toString()}`} typ={link.typ} spaltenTyp={link.typ}
       spalten={standardliste(link.typ).spalten} listenSpalten={standardliste(link.typ).spalten}
-      titel={`Link: ${link.typ.name}`} beschreibung={bedingungen.length ? bedingungen.join(' · ') : 'Alle Mappen dieses Typs'}
+      titel={`Link: ${link.typ.name}`} beschreibung={bedingungen.length ? bedingungen.join(' · ') : 'Alle Mappen dieses Mappentyps'}
       offen={offen} zuerstOeffnen sortierungFest={{ wert: sortierung, setze }} leerText="Keine Mappe passt zu diesem Link." />
   );
 }
@@ -655,7 +655,7 @@ function SichtBaum({ aktiv }: { aktiv?: string }) {
         return (
           <div key={s.id} className="sichtzeile" style={{ '--tiefe': tiefe } as React.CSSProperties}>
             {kinder
-              ? <button type="button" className="aufklapper" aria-expanded={offen} title={offen ? 'Untersichten zuklappen' : `${unter} Untersicht${unter === 1 ? '' : 'en'} aufklappen`}
+              ? <button type="button" className="aufklapper" aria-expanded={offen} title={offen ? 'Unteransichten zuklappen' : `${unter} Unteransicht${unter === 1 ? '' : 'en'} aufklappen`}
                   onClick={() => umschalten(s.id)}><span aria-hidden="true">{offen ? '▾' : '▸'}</span><span className="sr">{s.name} {offen ? 'zuklappen' : 'aufklappen'}</span></button>
               : null}
             <Link to={`/ablage/${s.id}`} className={`sicht ${aktiv === s.id ? 'an' : ''}`} title={s.beschreibung || undefined}>

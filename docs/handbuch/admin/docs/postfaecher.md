@@ -18,7 +18,7 @@ Das DMS kann ein oder mehrere **E-Mail-Postfächer per IMAP abholen** und **jede
 | Benutzername, Passwort | das Passwort wird mit dem [Schlüssel](verschluesselung.md) verschlüsselt gespeichert und nie wieder angezeigt; leer lassen behält es |
 | Ordner | Standard `INBOX` |
 | Abrufabstand | in Minuten, Standard 5 |
-| Für | optional: dieser Benutzer steht an jeder Post und hat sie in seinem Eingang |
+| Für | optional: dieser Benutzer steht an jeder Post und hat sie unter „Zu erledigen“ |
 | Nur von diesen Absendern | optional: Adressen (`rechnung@stadtwerke.de`) oder Domains (`bank.de`, auch Unterdomains) |
 | Nach dem Übernehmen | **in einen Ordner verschieben** (Standard `DMS`, wird angelegt), **nur als gelesen markieren** oder **löschen** |
 | Nur Mails mit Anhang | andere bleiben unverändert im Postfach |

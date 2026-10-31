@@ -154,11 +154,11 @@ export class Wiederherstellung {
     const pgDamals = m.umgebung.postgres.split('.')[0]; const pgHeute = heute.postgres.split('.')[0];
     vergleich.push({ was: 'PostgreSQL', damals: m.umgebung.postgres, heute: heute.postgres, urteil: pgDamals === pgHeute ? 'gleich' : 'ok', info: pgDamals !== pgHeute ? 'andere Hauptversion – geht, die Daten werden neu eingelesen' : undefined });
     vergleich.push({ was: 'Architektur', damals: m.umgebung.architektur, heute: heute.architektur, urteil: m.umgebung.architektur === heute.architektur ? 'gleich' : 'ok' });
-    vergleich.push({ was: 'Mandanten-Id', damals: m.haushaltId, heute: heute.haushaltId, urteil: m.haushaltId === heute.haushaltId ? 'gleich' : 'hinweis', info: m.haushaltId !== heute.haushaltId ? 'abweichend – siehe Hinweis' : undefined });
+    vergleich.push({ was: 'Haushalts-Id', damals: m.haushaltId, heute: heute.haushaltId, urteil: m.haushaltId === heute.haushaltId ? 'gleich' : 'hinweis', info: m.haushaltId !== heute.haushaltId ? 'abweichend – siehe Hinweis' : undefined });
     if (m.haushaltId !== heute.haushaltId) {
       hinweise.push(this.q.mandantUebernehmen
-        ? `Die Sicherung gehört zum Mandanten ${m.haushaltId}, dieses DMS ist bisher auf ${heute.haushaltId} eingestellt. Das DMS übernimmt die Id der Sicherung beim Wiederherstellen.`
-        : `Die Sicherung gehört zum Mandanten ${m.haushaltId}, dieses DMS ist auf ${heute.haushaltId} eingestellt – sonst sind die Daten nicht zu sehen.`);
+        ? `Die Sicherung gehört zum Haushalt ${m.haushaltId}, dieses DMS ist bisher auf ${heute.haushaltId} eingestellt. Das DMS übernimmt die Id der Sicherung beim Wiederherstellen.`
+        : `Die Sicherung gehört zum Haushalt ${m.haushaltId}, dieses DMS ist auf ${heute.haushaltId} eingestellt – sonst sind die Daten nicht zu sehen.`);
     }
 
     let schluesselNoetig = this.q.tresor.fingerabdruck !== m.verschluesselung.fingerabdruck;
@@ -320,7 +320,7 @@ export class Wiederherstellung {
       lauf.bytes = 0;
       for await (const e of liesSicherung(pfad, leiteAb(k, ZWECK), (n) => { lauf.bytes = n; })) {
         if (e.art === 'M') {
-          if (e.kopf.haushaltId !== m.haushaltId) throw new Error('Inhalt und Metadaten der Sicherung passen nicht zusammen (Mandant).');
+          if (e.kopf.haushaltId !== m.haushaltId) throw new Error('Inhalt und Metadaten der Sicherung passen nicht zusammen (Haushalt).');
           zaehlerSicherung = (e.kopf.zaehler as Record<string, number>) ?? null;
         } else if (e.art === 'T') {
           const t = { name: String(e.kopf.tabelle), spalten: (e.kopf.spalten as string[]).map(String) } as Tabelle;
@@ -452,7 +452,7 @@ export class Wiederherstellung {
       // Anderer Mandant (#119): seine Id gilt ab dem Neustart.
       if (this.q.mandantUebernehmen && m.haushaltId !== (await this.q.laufzeit()).haushaltId) {
         await this.q.mandantUebernehmen(m.haushaltId);
-        log.warn('Mandant der Sicherung übernommen', { mandant: m.haushaltId });
+        log.warn('Haushalt der Sicherung übernommen', { mandant: m.haushaltId });
       }
       ok();
       this.schritt(lauf, 'Neustart', 'laeuft', 'Das DMS startet neu …');

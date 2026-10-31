@@ -181,7 +181,7 @@ export function bedingungsfelder(typen: Array<Pick<Mappentyp, 'felder'>>): Bedin
 export function bedingungsProblem(b: Bedingung, typen: Mappentyp[]): string | null {
   if (b.art === 'feld') {
     const f = bedingungsfelder(typen).find((x) => x.key === b.feld);
-    if (!f) return `Das Feld „${b.feld}“ gibt es ${typen.length > 1 ? 'nicht in allen Mappentypen dieser Sicht' : 'nicht (mehr)'}.`;
+    if (!f) return `Das Feld „${b.feld}“ gibt es ${typen.length > 1 ? 'nicht in allen Mappentypen dieser Ansicht' : 'nicht (mehr)'}.`;
     if (!OPERATOREN_JE_ART[f.art].includes(b.op)) return `„${OPERATOREN[b.op] ?? b.op}“ passt nicht zum Feld „${f.label}“.`;
     const brauchtWert = !['leer', 'nichtLeer', 'ja', 'nein'].includes(b.op);
     if (brauchtWert && !b.wert) return `Bei „${f.label}“ fehlt der Vergleichswert.`;
@@ -190,7 +190,7 @@ export function bedingungsProblem(b: Bedingung, typen: Mappentyp[]): string | nu
     if (b.wert && (b.wert.art === 'jahr' || b.wert.art === 'monat') && b.op !== 'imZeitraum') return `Jahr und Monat gehen nur mit „im Zeitraum“.`;
     if (b.wert && (b.wert.art === 'ich' || b.wert.art === 'meineRollen') && b.op !== 'zeigtAuf') return `„${DYNAMISCH[b.wert.art]}“ geht nur mit „zeigt auf“.`;
     if (b.wert?.art === 'heute' && f.art !== 'datum' && f.art !== 'zeit') return `„heute“ geht nur bei Datumsfeldern.`;
-    if (b.wert?.art === 'eigenesFeld' || b.bis?.art === 'eigenesFeld') return 'Werte aus der eigenen Mappe gibt es nur im Auswahlfilter eines Referenzfelds.';
+    if (b.wert?.art === 'eigenesFeld' || b.bis?.art === 'eigenesFeld') return 'Werte aus der eigenen Mappe gibt es nur im Auswahlfilter eines Verweisfelds.';
     if (b.op === 'zeigtAuf' && b.wert?.art === 'meineRollen' && f.art === 'person') return `„Rollen des aktuellen Benutzers“ geht nicht bei „${f.label}“.`;
     return null;
   }
@@ -199,7 +199,7 @@ export function bedingungsProblem(b: Bedingung, typen: Mappentyp[]): string | nu
     if (!Number.isInteger(b.tage) || b.tage < 0 || b.tage > FRIST_TAGE_MAX) return `Die Anzahl Tage muss zwischen 0 und ${FRIST_TAGE_MAX} liegen.`;
     if (!typen.length) return 'Fristen brauchen mindestens einen Mappentyp.';
     if (b.feld) {
-      if (typen.some((t) => t.felder.find((f) => f.key === b.feld)?.typ !== 'datum')) return `Das Datumsfeld „${b.feld}“ gibt es ${typen.length > 1 ? 'nicht in allen Mappentypen dieser Sicht' : 'nicht (mehr)'}.`;
+      if (typen.some((t) => t.felder.find((f) => f.key === b.feld)?.typ !== 'datum')) return `Das Datumsfeld „${b.feld}“ gibt es ${typen.length > 1 ? 'nicht in allen Mappentypen dieser Ansicht' : 'nicht (mehr)'}.`;
       return null;
     }
     if (!typen.some((t) => mitFrist(t).length)) return 'Keiner der Mappentypen hat ein Datumsfeld mit Erinnerung.';
@@ -211,7 +211,7 @@ export function bedingungsProblem(b: Bedingung, typen: Mappentyp[]): string | nu
   // Bei mehreren Typen: gleicher Schlüssel und gleiche Art in allen (#66).
   const art = b.art === 'dokumente' ? 'dokumente' : 'verknuepfungen';
   if (typen.some((t) => t.register.find((x) => x.key === b.register)?.art !== art)) {
-    return `Das ${art === 'dokumente' ? 'Dokumenten' : 'Verknüpfungs'}register „${b.register}“ gibt es ${typen.length > 1 ? 'nicht in allen Mappentypen dieser Sicht' : 'nicht (mehr)'}.`;
+    return `Das ${art === 'dokumente' ? 'Dokumenten' : 'Verknüpfungs'}register „${b.register}“ gibt es ${typen.length > 1 ? 'nicht in allen Mappentypen dieser Ansicht' : 'nicht (mehr)'}.`;
   }
   return null;
 }
@@ -557,9 +557,9 @@ export function spaltenDerSicht(typen: Mappentyp[], wahl?: string | null): Spalt
 /** Hinweis für die Werkbank, wenn die gewählte Trefferliste nicht (mehr) passt. */
 export function trefferlistenProblem(wahl: string | null | undefined, typen: Mappentyp[]): string | null {
   if (!wahl) return null;
-  if (!typen.length) return 'Die Sicht hat keine Mappentypen; eine Trefferliste lässt sich erst mit Mappentypen wählen.';
+  if (!typen.length) return 'Die Ansicht hat keine Mappentypen; eine Trefferliste lässt sich erst mit Mappentypen wählen.';
   return spaltenDerSicht(typen, wahl).ungueltig
-    ? `Die Trefferliste „${wahl}“ gibt es nicht (mehr) in ${typen.length === 1 ? 'diesem Mappentyp' : 'allen Mappentypen dieser Sicht'}. Die Sicht zeigt stattdessen die Standardliste.`
+    ? `Die Trefferliste „${wahl}“ gibt es nicht (mehr) in ${typen.length === 1 ? 'diesem Mappentyp' : 'allen Mappentypen dieser Ansicht'}. Die Ansicht zeigt stattdessen die Standardliste.`
     : null;
 }
 
@@ -609,7 +609,7 @@ export function auswahlProbleme(bed: Feldbedingung[], ziel: Pick<Mappentyp, 'fel
       if (p) { erg.push(p); continue; }
       if (!OPS_EIGENES_FELD.includes(b.op)) { erg.push(`„${OPERATOREN[b.op]}“ geht nicht mit einem Wert dieser Mappe.`); continue; }
       if (!eigene) continue;
-      if (name === eigene.feldKey) { erg.push('Der Filter darf nicht auf das eigene Referenzfeld zeigen.'); continue; }
+      if (name === eigene.feldKey) { erg.push('Der Filter darf nicht auf das eigene Verweisfeld zeigen.'); continue; }
       const f = eigene.felder.find((x) => x.key === name);
       if (!f) { erg.push(`Das Feld „${name}“ dieser Mappe gibt es nicht (mehr).`); continue; }
       if (!passendeEigeneFelder(b, ziel.felder, eigene.felder, eigene.feldKey).some((x) => x.key === name)) erg.push(`„${f.label}“ passt nicht zum Vergleich mit „${ziel.felder.find((x) => x.key === b.feld)?.label ?? b.feld}“.`);

@@ -30,6 +30,11 @@ EINSTEIGER = {
 BEGEGNET = {'alle': 'alle', 'admin': 'Administratoren', 'fortgeschritten': 'Fortgeschrittene'}
 
 
+def datum(iso) -> str:
+    j, m, t = str(iso).split('-')
+    return f'{int(t)}.{int(m)}.{j}'
+
+
 def anker(text: str) -> str:
     """Wie mkdocs: Kleinbuchstaben, Umlaute ohne Punkte (ü → u), Rest zu Bindestrichen."""
     t = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode().lower()
@@ -40,9 +45,17 @@ def lies() -> dict:
     return yaml.safe_load(QUELLE.read_text(encoding='utf-8'))
 
 
+def offen(g: dict) -> list[dict]:
+    return [k for k in g.get('konflikte', []) if not k.get('entschieden')]
+
+
+def entschieden(g: dict) -> list[dict]:
+    return [k for k in g.get('konflikte', []) if k.get('entschieden')]
+
+
 def pruefe(g: dict) -> list[str]:
     fehler, namen = [], set()
-    nummern = {k['nr'] for k in g.get('konflikte', [])}
+    nummern = {k['nr'] for k in offen(g)}
     for b in g['begriffe']:
         n = b.get('begriff', '?')
         if n in namen:
@@ -59,7 +72,7 @@ def pruefe(g: dict) -> list[str]:
             fehler.append(f'{n}: unbekanntes „begegnet“ {b.get("begegnet")}')
         for k in b.get('konflikt', []):
             if k not in nummern:
-                fehler.append(f'{n}: Konflikt {k} gibt es nicht')
+                fehler.append(f'{n}: offene Frage {k} gibt es nicht (oder sie ist schon entschieden)')
     for b in g['begriffe']:
         for v in b.get('verwandt', []):
             if v not in namen:
@@ -82,7 +95,7 @@ def seite(g: dict) -> str:
         '- **~ mit Erklärung**: Die Oberfläche erklärt es kurz, zum Beispiel mit **?**.',
         '- **✗ Fachwort**: Dafür gibt es kein besseres Wort, oder es betrifft nur Fortgeschrittene.',
         '',
-        'Außerdem steht dort, wer dem Begriff begegnet: alle, nur Administratoren oder nur Fortgeschrittene (erweiterte Ansicht, Technik).',
+        'Außerdem steht dort, wer dem Begriff begegnet: alle, nur Administratoren oder nur Fortgeschrittene (Expertenmodus, Technik).',
         '',
     ]
     for schluessel, titel in BEREICHE.items():
@@ -109,10 +122,21 @@ def seite(g: dict) -> str:
         'Manche Wörter stehen für mehr als eine Sache oder klingen zu ähnlich. Das wollen wir nach und nach klären. Bis dahin gelten die Begriffe oben.',
         '',
     ]
-    for k in g.get('konflikte', []):
+    for k in offen(g):
         z.append(f'<a id="offen-{k["nr"]}"></a>**{k["nr"]}. {k["titel"]}**  ')
         z.append(f'Vorschlag: {k["vorschlag"]}')
         z.append('')
+    if entschieden(g):
+        z += [
+            '## Entschieden',
+            '',
+            'Diese Fragen sind geklärt. Die alten Wörter stehen unten unter „nicht verwenden“.',
+            '',
+        ]
+        for k in entschieden(g):
+            z.append(f'<a id="offen-{k["nr"]}"></a>**{k["nr"]}. {k["titel"]}** ({datum(k["entschieden"])})  ')
+            z.append(k['entscheidung'])
+            z.append('')
     z += [
         '## Für alle, die Texte schreiben',
         '',
@@ -137,7 +161,7 @@ def main():
         print('Fehler im Glossar:', *fehler, sep='\n  ')
         sys.exit(1)
     if '--pruefen' in sys.argv:
-        print(f'Glossar in Ordnung: {len(g["begriffe"])} Begriffe, {len(g.get("konflikte", []))} offene Fragen')
+        print(f'Glossar in Ordnung: {len(g["begriffe"])} Begriffe, {len(offen(g))} offene Fragen, {len(entschieden(g))} entschieden')
         return
     ZIEL.write_text(seite(g), encoding='utf-8')
     print(f'Geschrieben: {ZIEL.relative_to(WURZEL)}')

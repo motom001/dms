@@ -21,12 +21,12 @@ Das gilt sofort auch für vorhandene Mappen. Beim Einschalten zeigt das DMS, wie
 
 - An jeder Mappe steht **Archiv · aufbewahren bis 31.12.JJJJ**, in der Liste ein Hinweis **Archiv**. Ändert sich das Datumsfeld, ändert sich die Frist – das steht in der Historie der Mappe.
 - **Keine Löschung vor Fristende:** weder die Mappe noch einzelne Dokumente, auch nicht durch Administratoren, über Mehrfachauswahl, Papierkorb oder die [Schnittstelle](api.md) (409 mit Datum). Mappen, die schon vor dem Einschalten im Papierkorb lagen, bleiben dort bis Fristende und werden nicht automatisch geleert.
-- **Dokumente ändern sich nur als neue Version:** Die [Versionierung](mappentypen.md#register) ist für alle Dokumentenregister des Typs Pflicht; ältere Versionen bleiben bis Fristende („nur die letzten N“ gilt hier nicht).
+- **Dokumente ändern sich nur als neue Version:** Die [Versionierung](mappentypen.md#register) ist für alle Dokumentenregister des Mappentyps Pflicht; ältere Versionen bleiben bis Fristende („nur die letzten N“ gilt hier nicht).
 - **Feldänderungen** bleiben möglich und stehen wie immer in der Historie. Die Historie dieser Mappen wird nie aufgeräumt.
 
 ## Nach der Frist: „Darf weg“
 
-Unter **Werkbank → Darf weg** stehen alle Mappen aus Typen im Archivmodus, deren Frist abgelaufen ist, mit Datum. Du wählst einzelne oder alle und löschst sie – mit Papierkorb dorthin, sonst endgültig. **Gelöscht wird nie automatisch.**
+Unter **Werkbank → Darf weg** stehen alle Mappen aus Mappentypen im Archivmodus, deren Frist abgelaufen ist, mit Datum. Du wählst einzelne oder alle und löschst sie – mit Papierkorb dorthin, sonst endgültig. **Gelöscht wird nie automatisch.**
 
 ## Alle Dateien prüfen
 

@@ -9,7 +9,7 @@ Ein Nummernkreis vergibt fortlaufende Nummern, z. B. Rechnungsnummern wie `20261
 | Angabe | Bedeutung |
 | --- | --- |
 | **Name** | z. B. „Rechnungsnummern“ |
-| **Schlüssel** | z. B. `rechnungsnummer`; nach dem Anlegen fest |
+| **Kennung** | z. B. `rechnungsnummer`; nach dem Anlegen fest |
 | **Muster** | Text mit Platzhaltern, z. B. `{jjjj}{mm}-R{zaehler:7}` |
 | **Startwert** | erster Zähler eines Zeitraums, meist 1 oder 0 |
 

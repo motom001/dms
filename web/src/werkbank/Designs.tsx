@@ -83,7 +83,7 @@ export function DesignEditor({ id }: { id: string }) {
       <div className="mappenkopf">
         <p className="ueber">Design</p>
         <h1>{e.name || (neu ? 'Neues Design' : 'Ohne Namen')}{standard && <span className="chip">Standard</span>}</h1>
-        <p className="leise">Die Vorschau gilt schon jetzt für deine Ansicht; gespeichert wird mit „Design speichern“.</p>
+        <p className="leise">Die Vorschau gilt schon jetzt für deine Darstellung; gespeichert wird mit „Design speichern“.</p>
       </div>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       <div className="blatt">

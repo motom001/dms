@@ -70,14 +70,14 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
   return (
     <>
       <div className="listenkopf">
-        <div><h1>Pakete</h1><p className="leise klein">Fertige Mappentypen und Sichten aus dem offiziellen Katalog. <Hilfe ort="werkbank.pakete" /></p></div>
+        <div><h1>Pakete</h1><p className="leise klein">Fertige Mappentypen und Ansichten aus dem offiziellen Katalog. <Hilfe ort="werkbank.pakete" /></p></div>
       </div>
       <div className="knoepfe">
         <button type="button" className="knopf klein" disabled={z.laedt} onClick={() => void z.abrufen(erweitert)}>{z.laedt ? 'Frage ab …' : 'Katalog abrufen'}</button>
         {installiert.length > 0 && <button type="button" className="knopf klein" disabled={z.laedt} onClick={() => void z.pruefen(erweitert)}>Auf neue Versionen prüfen</button>}
       </div>
       <label className="haken klein" title="Weitere Katalogadressen und Hochladen als Datei – für Paketentwickler und DMS ohne Internet">
-        <input type="checkbox" checked={erweitert} onChange={(e) => void d.setzeEinstellung('pakete_erweitert', e.target.checked || null)} /><span>Erweiterte Ansicht</span>
+        <input type="checkbox" checked={erweitert} onChange={(e) => void d.setzeEinstellung('pakete_erweitert', e.target.checked || null)} /><span>Expertenmodus</span>
       </label>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       <h2 className="ueber">Installiert</h2>
@@ -154,8 +154,8 @@ export function PaketePanel({ z, id }: { z: PaketeZustand; id?: string }) {
   if (!id) return (
     <div className="einspaltig">
       <div className="mappenkopf"><p className="ueber">Werkbank</p><h1>Pakete</h1>
-        <p className="leise">Ein Paket bringt fertige Mappentypen, Sichten und auf Wunsch Beispiel-Mappen mit – etwa eine „Organisation“ mit Kontakt und Anschrift. Pakete kommen aus dem offiziellen Katalog des DMS-Projekts; das DMS fragt ihn nur ab, wenn du „Katalog abrufen“ klickst.</p>
-        <p className="leise">Ein Update ergänzt nur: neue Felder, Register und Sichten. Was du selbst geändert hast, bleibt.</p>
+        <p className="leise">Ein Paket bringt fertige Mappentypen, Ansichten und auf Wunsch Beispiel-Mappen mit – etwa eine „Organisation“ mit Kontakt und Anschrift. Pakete kommen aus dem offiziellen Katalog des DMS-Projekts; das DMS fragt ihn nur ab, wenn du „Katalog abrufen“ klickst.</p>
+        <p className="leise">Ein Update ergänzt nur: neue Felder, Register und Ansichten. Was du selbst geändert hast, bleibt.</p>
       </div>
     </div>
   );
@@ -232,7 +232,7 @@ function UploadDetail({ z }: { z: PaketeZustand }) {
   const d = useDaten();
   const [meldung, setMeldung] = useState<Meldung>();
   const u = z.upload;
-  if (!u) return <div className="leer"><p>Kein hochgeladenes Paket. Lade in der erweiterten Ansicht eine .zip-Datei hoch.</p></div>;
+  if (!u) return <div className="leer"><p>Kein hochgeladenes Paket. Lade im Expertenmodus eine .zip-Datei hoch.</p></div>;
   const p = u.vorschau.paket;
   return (
     <div className="einspaltig">
@@ -295,7 +295,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
     if (!inst) return;
     // Mit Einstellungen (#197): fragen, ob sie für eine spätere Neuinstallation bleiben sollen (Standard: nein).
     if (inst.einstellungen) { setEntfernenOffen(true); return; }
-    if (!confirm(`„${inst.name}“ entfernen? Seine Mappentypen und Sichten verschwinden. Das geht nur, solange es keine Mappen dieser Typen gibt.`)) return;
+    if (!confirm(`„${inst.name}“ entfernen? Seine Mappentypen und Ansichten verschwinden. Das geht nur, solange es keine Mappen dieser Mappentypen gibt.`)) return;
     void tu(async () => { await api.paketEntfernen(id); geheZu('/werkbank/pakete', true); return `${inst.name} ist entfernt.`; });
   };
   const entfernenBestaetigt = () => void tu(async () => { await api.paketEntfernen(id, behalten); setEntfernenOffen(false); geheZu('/werkbank/pakete', true); return `${inst!.name} ist entfernt${behalten ? ', die Einstellungen bleiben für eine spätere Neuinstallation' : ''}.`; });
@@ -333,7 +333,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
           <dt>Autor</dt><dd>{autor?.name}{autor?.github && <> (<a className="verweis" href={`https://github.com/${autor.github}`} target="_blank" rel="noreferrer">@{autor.github}</a>)</>}</dd>
           {v && <><dt>Nötige DMS-Version</dt><dd>{v.dms} (dieses DMS: {z.stand?.dms})</dd></>}
           {v && <><dt>Abhängigkeiten</dt><dd>{Object.keys(v.abhaengigkeiten).length ? Object.entries(v.abhaengigkeiten).map(([k, b]) => `${k} ${b}`).join(', ') : 'keine'}</dd></>}
-          {v && <><dt>Inhalt</dt><dd>Mappentypen: {v.inhalt.mappentypen.map((t) => t.name).join(', ') || '–'}<br />Sichten: {v.inhalt.sichten.map((s) => s.name).join(', ') || '–'}{v.inhalt.beispiele ? <><br />{v.inhalt.beispiele} Beispiel-Mappen (optional)</> : null}</dd></>}
+          {v && <><dt>Inhalt</dt><dd>Mappentypen: {v.inhalt.mappentypen.map((t) => t.name).join(', ') || '–'}<br />Ansichten: {v.inhalt.sichten.map((s) => s.name).join(', ') || '–'}{v.inhalt.beispiele ? <><br />{v.inhalt.beispiele} Beispiel-Mappen (optional)</> : null}</dd></>}
           {(v?.readme || inst?.links?.readme) && <><dt>Mehr</dt><dd><a className="verweis" href={v?.readme || inst!.links!.readme} target="_blank" rel="noreferrer">README ↗</a>{(v?.changelog || inst?.links?.changelog) && <> · <a className="verweis" href={v?.changelog || inst!.links!.changelog} target="_blank" rel="noreferrer">Änderungen ↗</a></>}</dd></>}
         </dl>
         {inst && (
@@ -341,7 +341,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
             <h2 className="h3">Gehört dazu</h2>
             <ul className="klein">
               {Object.values(inst.typen).map((t) => <li key={t}>Mappentyp {d.typ(t) ? <Link to={`/werkbank/typen/${t}`} className="verweis">{d.typ(t)!.name}</Link> : <span className="leise">(gelöscht)</span>}</li>)}
-              {Object.values(inst.sichten).map((s) => <li key={s}>Sicht {d.sicht(s) ? <Link to={`/ablage/${s}`} className="verweis">{d.sicht(s)!.name}</Link> : <span className="leise">(gelöscht)</span>}</li>)}
+              {Object.values(inst.sichten).map((s) => <li key={s}>Ansicht {d.sicht(s) ? <Link to={`/ablage/${s}`} className="verweis">{d.sicht(s)!.name}</Link> : <span className="leise">(gelöscht)</span>}</li>)}
             </ul>
           </>
         )}
@@ -356,7 +356,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         </div>
         {entfernenOffen && inst && (
           <div className="hinweis warn" role="dialog" aria-label="Paket entfernen">
-            <p>„{inst.name}“ entfernen? Seine Mappentypen und Sichten verschwinden. Das geht nur, solange es keine Mappen dieser Typen gibt.</p>
+            <p>„{inst.name}“ entfernen? Seine Mappentypen und Ansichten verschwinden. Das geht nur, solange es keine Mappen dieser Mappentypen gibt.</p>
             <label className="haken"><input type="checkbox" checked={behalten} onChange={(e) => setBehalten(e.target.checked)} /><span>Einstellungen behalten (für eine spätere Neuinstallation)?</span></label>
             <div className="knoepfe"><button type="button" className="knopf gefahr" disabled={laeuft} onClick={entfernenBestaetigt}>Entfernen</button><button type="button" className="textknopf" onClick={() => setEntfernenOffen(false)}>Abbrechen</button></div>
           </div>
@@ -418,20 +418,20 @@ function VorschauBlock({ v, warnung, los, abbrechen }: {
             {t.vorhanden
               ? <span><strong>{t.name}</strong> – {t.neueFelder.length || t.neueRegister.length ? `neu: ${[...t.neueFelder.map((f) => `Feld „${f}“`), ...t.neueRegister.map((r) => `Register „${r}“`)].join(', ')}` : 'keine Änderung'}</span>
               : t.geloescht ? <span className="leise">{t.name}: hast du gelöscht – bleibt weg.</span>
-              : <label className="paketname"><span>{t.felder} Felder, Schlüssel <code>{t.dmsSchluessel}</code></span>
+              : <label className="paketname"><span>{t.felder} Felder, Kennung <code>{t.dmsSchluessel}</code></span>
                   <input value={namen[t.schluessel] ?? t.name} aria-label={`Name für ${t.name}`} onChange={(e) => setNamen({ ...namen, [t.schluessel]: e.target.value })} />
                   {t.konflikt && (namen[t.schluessel] ?? '').trim().toLowerCase() === t.name.toLowerCase() && <span className="fehlertext klein">{t.konflikt}</span>}
                 </label>}
           </li>
         ))}
       </ul>
-      <h3>Sichten</h3>
+      <h3>Ansichten</h3>
       <ul className="stapel">
         {v.sichten.map((s) => (
           <li key={s.schluessel}>
             {s.vorhanden ? <span className="leise">{s.name} – vorhanden</span>
               : <label className="paketname"><span>{s.eltern ? `unter „${v.sichten.find((x) => x.schluessel === s.eltern)?.name ?? s.eltern}“` : 'oberste Ebene'}</span>
-                  <input value={sichtNamen[s.schluessel] ?? s.name} aria-label={`Name für Sicht ${s.name}`} onChange={(e) => setSichtNamen({ ...sichtNamen, [s.schluessel]: e.target.value })} />
+                  <input value={sichtNamen[s.schluessel] ?? s.name} aria-label={`Name für Ansicht ${s.name}`} onChange={(e) => setSichtNamen({ ...sichtNamen, [s.schluessel]: e.target.value })} />
                   {s.konflikt && (sichtNamen[s.schluessel] ?? '').trim().toLowerCase() === s.name.toLowerCase() && <span className="fehlertext klein">{s.konflikt}</span>}
                 </label>}
           </li>

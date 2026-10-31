@@ -82,9 +82,9 @@ export function ErreichbarkeitsBanner({ version, ansichtNeuLaden }: { version?: 
   if (z.stufe === 'zurueck') {
     return (
       <div className="vertretungsbanner erreichbarkeit zurueck" role="status">
-        <p><strong>Das DMS ist wieder erreichbar.</strong> Zeigt die Ansicht noch Fehler, lade sie neu.</p>
+        <p><strong>Das DMS ist wieder erreichbar.</strong> Zeigt die Seite noch Fehler, lade sie neu.</p>
         <span className="knoepfe">
-          <button className="knopf klein" onClick={() => { erreichbarkeit.schliessen(); ansichtNeuLaden(); }}>Ansicht neu laden</button>
+          <button className="knopf klein" onClick={() => { erreichbarkeit.schliessen(); ansichtNeuLaden(); }}>Seite neu laden</button>
           <button className="knopf klein" onClick={() => erreichbarkeit.schliessen()} aria-label="Hinweis schließen">OK</button>
         </span>
       </div>

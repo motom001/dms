@@ -12,7 +12,7 @@ Gemessen werden die drei festen Ordner im Container (siehe [Ordner und Volumes](
 
 | Ordner | Inhalt |
 | --- | --- |
-| `/data/files` | Dokumente, Logos, Bilder der Fehlermeldungen |
+| `/data/files` | Dokumente, Logos, Bilder gemeldeter Fehler |
 | `/data/geheim` | Schlüssel und Notfallzugang |
 | `/data/sicherung` | Sicherungen |
 

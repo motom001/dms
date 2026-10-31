@@ -67,7 +67,7 @@ export function DatenbankPanel({ z, id }: { z: DatenbankZustand; id?: string }) 
           {l.benutzer && <div><dt>Benutzer</dt><dd>{l.benutzer}</dd></div>}
         </dl>
       </div>
-      <p className="leise">Ein Datenbankzugriff ist eine Methode der Datenzugriffsschicht (z. B. <span className="mono">mappen.seite</span> für eine Seite einer Sicht) und kann mehrere SQL-Anweisungen umfassen. Mehr Einzelheiten zur selben Zeit stehen im <Link to="/werkbank/protokoll" className="verweis">Protokoll</Link> (Modul datenbank).</p>
+      <p className="leise">Ein Datenbankzugriff ist eine Methode der Datenzugriffsschicht (z. B. <span className="mono">mappen.seite</span> für eine Seite einer Ansicht) und kann mehrere SQL-Anweisungen umfassen. Mehr Einzelheiten zur selben Zeit stehen im <Link to="/werkbank/protokoll" className="verweis">Protokoll</Link> (Modul datenbank).</p>
       <div className="knoepfe"><Link to="/werkbank/datenbank" className="knopf">Schließen</Link></div>
     </div>
   );

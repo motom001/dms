@@ -24,7 +24,7 @@ export function FehlermeldungenListe({ z, offen }: { z: FehlermeldungenZustand; 
   return (
     <>
       <div className="listenkopf">
-        <div><h1>Fehlermeldungen</h1><p className="leise klein">{z.erledigt ? 'Erledigte Meldungen der Benutzer.' : 'Was Benutzer gemeldet haben, mit technischen Angaben.'} <Hilfe ort="werkbank.fehlermeldungen" /></p></div>
+        <div><h1>Gemeldete Fehler</h1><p className="leise klein">{z.erledigt ? 'Erledigte Meldungen der Benutzer.' : 'Was Benutzer gemeldet haben, mit technischen Angaben.'} <Hilfe ort="werkbank.fehlermeldungen" /></p></div>
         <button type="button" className="knopf klein" onClick={() => z.setErledigt(!z.erledigt)}>{z.erledigt ? 'Offene zeigen' : 'Erledigte zeigen'}</button>
       </div>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}

@@ -51,7 +51,7 @@ export class Einrichtung {
     // Neue Installationen bekommen die schlanke Werkbank (#281); bestehende behalten alles.
     await this.d.einstellungen.schreibe('werkbank_ansicht', { vorlage: 'haushalt', ein: [], aus: [] });
     await this.d.code?.entfernen();
-    log.info('Einrichtung: Mandant und Administrator angelegt', { mandant, email: r.benutzer.email });
+    log.info('Einrichtung: Haushalt und Administrator angelegt', { mandant, email: r.benutzer.email });
     return r;
   }
 

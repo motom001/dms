@@ -1,6 +1,6 @@
 # Aufgaben
 
-Eine **Aufgabe** sagt, dass an einer Mappe jemand etwas tun soll. Jede Mappe mit einer offenen Aufgabe steht im **Eingang** ihres Empfängers – der Eingang ist damit die Liste der eigenen Aufgaben. Wie Benutzer damit arbeiten, beschreibt das [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/zusammenarbeit/).
+Eine **Aufgabe** sagt, dass an einer Mappe jemand etwas tun soll. Jede Mappe mit einer offenen Aufgabe steht bei ihrem Empfänger unter **Zu erledigen** – „Zu erledigen“ ist damit die Liste der eigenen Aufgaben. Wie Benutzer damit arbeiten, beschreibt das [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/zusammenarbeit/).
 
 Aufgaben entstehen auf diesen Wegen:
 
@@ -8,13 +8,14 @@ Aufgaben entstehen auf diesen Wegen:
 | --- | --- | --- | --- |
 | **Passt nicht** | wenn eine Mappe nach einer Änderung am [Mappentyp](mappentypen.md#wenn-sich-ein-mappentyp-andert) nicht mehr passt | wer die Mappe angelegt hat (sonst die Administratoren) | von selbst, sobald die Mappe wieder passt |
 | **Erwähnung** | wenn jemand in einem formatierten Text mit **@** einen Benutzer erwähnt | der Erwähnte | per Knopf *Erledigt* |
-| **Aufgabe** | von Hand über *Aktionen →* **Aufgabe vergeben** an der Mappe | ein gewählter Benutzer | per Knopf *Erledigt* |
+| **Zugewiesen** | von Hand über *Aktionen →* **Aufgabe vergeben** an der Mappe | ein gewählter Benutzer | per Knopf *Erledigt* |
 | **Frist** | vor dem Datum eines Datumsfelds mit [Erinnerung](mappentypen.md#fristen-erinnerungen-an-datumsfeldern) | Benutzer im gewählten Feld, sonst wer die Mappe angelegt hat | per Knopf *Erledigt*, oder von selbst, wenn sich das Datum ändert |
 | **Erinnerung** | am gewählten Tag nach *Aktionen →* **Erinnern** an der Mappe | der gewählte Benutzer | per Knopf *Erledigt* |
+| **Post für dich** | wenn bei neuer [Post](https://motom001.github.io/dms/benutzer/aktuell/post/) ein Benutzer unter *Für* steht | der Benutzer bei *Für* | von selbst, sobald die Post zugeordnet, erledigt oder weitergegeben ist |
 
 - Empfänger sind immer **Benutzer**, keine Rollen – eine Aufgabe für alle bleibt sonst gern liegen.
-- Wer sich selbst erwähnt, bekommt keine Aufgabe; erneutes Speichern erzeugt keine zweite. Wird eine Erwähnung wieder entfernt, bleibt die Aufgabe offen; im Protokoll der Mappe steht, dass sie entfernt wurde.
-- **Weitergeben** dürfen der Empfänger selbst und Administratoren; das steht im Protokoll der Mappe.
+- Wer sich selbst erwähnt, bekommt keine Aufgabe; erneutes Speichern erzeugt keine zweite. Wird eine Erwähnung wieder entfernt, bleibt die Aufgabe offen; in der Historie der Mappe steht, dass sie entfernt wurde.
+- **Weitergeben** dürfen der Empfänger selbst und Administratoren; das steht in der Historie der Mappe.
 
 ## Werkbank → Aufgaben
 

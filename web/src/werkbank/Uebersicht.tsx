@@ -53,9 +53,9 @@ export function hinweiseAus(u: WerkbankUebersicht): Hinweis[] {
   // Feste Ordner (#115): frühere Variablen mit dem festen Wert sind überflüssig.
   if (u.variablen?.length) h.push({ art: 'info', text: <><strong>{u.variablen.length === 1 ? 'Eine Umgebungsvariable ist' : `${u.variablen.length} Umgebungsvariablen sind`} nicht mehr nötig:</strong> <span className="mono">{u.variablen.join(', ')}</span>. Die Ordner im Container sind fest – entferne sie beim nächsten Update aus der Compose-Datei.</>, ziel: '/werkbank/technik', knopf: 'Zur Technik' });
   if (!u.mail) h.push({ art: 'warn', text: <><strong>Der E-Mail-Versand ist nicht eingerichtet.</strong> Einladungen, die tägliche Zusammenfassung der Aufgaben und „Per E-Mail versenden“ gehen erst danach.</>, ziel: '/werkbank/betrieb', knopf: 'E-Mail einrichten' });
-  if (u.fehlermeldungen) h.push({ art: 'warn', text: <><strong>{u.fehlermeldungen === 1 ? 'Eine offene Fehlermeldung' : `${zahl(u.fehlermeldungen)} offene Fehlermeldungen`}</strong> von Benutzern.</>, ziel: '/werkbank/fehlermeldungen', knopf: 'Ansehen' });
+  if (u.fehlermeldungen) h.push({ art: 'warn', text: <><strong>{u.fehlermeldungen === 1 ? 'Ein gemeldeter Fehler' : `${zahl(u.fehlermeldungen)} gemeldete Fehler`}</strong> von Benutzern.</>, ziel: '/werkbank/fehlermeldungen', knopf: 'Ansehen' });
   if (u.texterkennung?.fehler) h.push({ art: 'warn', text: <><strong>{u.texterkennung.fehler === 1 ? 'Ein Dokument' : `${zahl(u.texterkennung.fehler)} Dokumente`}</strong> mit Fehler in der Texterkennung.</>, ziel: '/werkbank/texterkennung', knopf: 'Zur Texterkennung' });
-  if (u.aufgaben.ohneEmpfaenger) h.push({ art: 'info', text: <><strong>{u.aufgaben.ohneEmpfaenger === 1 ? 'Eine Aufgabe' : `${zahl(u.aufgaben.ohneEmpfaenger)} Aufgaben`}</strong> für die Administratoren (ohne einzelnen Empfänger).</>, ziel: '/ablage/eingang', knopf: 'Zum Eingang' });
+  if (u.aufgaben.ohneEmpfaenger) h.push({ art: 'info', text: <><strong>{u.aufgaben.ohneEmpfaenger === 1 ? 'Eine Aufgabe' : `${zahl(u.aufgaben.ohneEmpfaenger)} Aufgaben`}</strong> für die Administratoren (ohne einzelnen Empfänger).</>, ziel: '/ablage/eingang', knopf: 'Zu erledigen öffnen' });
   if (u.unpassend) h.push({ art: 'info', text: <><strong>{u.unpassend === 1 ? 'Eine Mappe passt' : `${zahl(u.unpassend)} Mappen passen`}</strong> nicht zur aktuellen Definition ihres Mappentyps.</>, ziel: '/werkbank/typen', knopf: 'Zu den Mappentypen' });
   return h;
 }
@@ -119,7 +119,7 @@ function Kacheln({ s }: { s: WerkbankUebersicht }) {
             <Kachel titel="Aufgaben" ziel="/werkbank/aufgaben" wert={zahl(s.aufgaben.offen)} unter="offen" />
             <Kachel titel="Texterkennung" ziel="/werkbank/texterkennung" wert={s.texterkennung ? zahl(s.texterkennung.wartet + s.texterkennung.laeuft) : '–'} unter={s.texterkennung ? `in der Warteschlange · ${zahl(s.texterkennung.fehler)} mit Fehler` : 'nicht eingerichtet'} />
             <Kachel titel="Papierkorb" ziel="/werkbank/papierkorb" wert={zahl(s.papierkorb.anzahl)} unter={s.papierkorb.tage ? (s.papierkorb.aeltester ? `älteste vom ${datum(s.papierkorb.aeltester)} · ${s.papierkorb.tage} Tage` : `${s.papierkorb.tage} Tage Aufbewahrung`) : 'ausgeschaltet'} />
-            <Kachel titel="Fehlermeldungen" ziel="/werkbank/fehlermeldungen" wert={s.fehlermeldungen === null ? '–' : zahl(s.fehlermeldungen)} unter="offen" />
+            <Kachel titel="Gemeldete Fehler" ziel="/werkbank/fehlermeldungen" wert={s.fehlermeldungen === null ? '–' : zahl(s.fehlermeldungen)} unter="offen" />
             {s.bestand && <Kachel titel="Bestand" ziel="/werkbank/datenbank" wert={zahl(s.bestand.mappen)} unter={`Mappen · ${zahl(s.bestand.dokumente)} Dokumente (${bytes(s.bestand.dokumenteBytes)}) · ${zahl(s.bestand.benutzer)} Benutzer`} />}
             <Kachel titel="Version" ziel="/werkbank/technik" wert={s.version.version} unter={s.version.commit ? `Build ${s.version.commit.slice(0, 7)} · unter Technik auf Updates prüfen` : 'unter Technik auf Updates prüfen'} />
           </div>

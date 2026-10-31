@@ -1,6 +1,6 @@
 # Pakete entwickeln
 
-Pakete erweitern das DMS um fertige Mappentypen, Sichten und Beispiel-Mappen. Administratoren installieren sie unter **Werkbank → Pakete** aus dem offiziellen Katalog (siehe [Administratorhandbuch → Pakete](https://motom001.github.io/dms/admin/aktuell/pakete/)).
+Pakete erweitern das DMS um fertige Mappentypen, Ansichten und Beispiel-Mappen. Administratoren installieren sie unter **Werkbank → Pakete** aus dem offiziellen Katalog (siehe [Administratorhandbuch → Pakete](https://motom001.github.io/dms/admin/aktuell/pakete/)).
 
 ## Wo Pakete liegen
 
@@ -19,7 +19,7 @@ Dann ausfüllen:
 | --- | --- |
 | `manifest.yaml` | Id, Name, Version (SemVer), Beschreibung, Autor, Lizenz, nötige DMS-Version (z. B. `">=0.63.0"`), Abhängigkeiten, Inhalt |
 | `inhalt/mappentypen.yaml` | Mappentypen mit Feldern, Registern, Titel und Trefferliste |
-| `inhalt/sichten.yaml` | Sichten mit Elternsicht, Typen und Bedingungen |
+| `inhalt/sichten.yaml` | Ansichten mit Elternansicht, Mappentypen und Bedingungen |
 | `inhalt/beispiele.yaml` | optional: Beispiel-Mappen mit erfundenen Daten |
 | `README.md`, `LICENSE`, `CHANGELOG.md` | Beschreibung, Lizenztext, Änderungen je Version |
 | `tests/erwartung.yaml` | was nach der Installation da sein muss |
@@ -28,14 +28,14 @@ Dann ausfüllen:
 
 Das Format beschreiben die JSON-Schemas in der Registry: [`schema/manifest.schema.json`](https://github.com/motom001/dms-registry/blob/main/schema/manifest.schema.json) und [`schema/inhalt.schema.json`](https://github.com/motom001/dms-registry/blob/main/schema/inhalt.schema.json). Die Vorlage zeigt jede Angabe mit Kommentar. Das DMS liest genau dieses Format:
 
-- **Schlüssel** von Typen, Feldern, Registern und Sichten sind im Paket lokal. Das DMS legt Mappentypen als `<paket>_<schluessel>` an.
+- **Kennungen** (`schluessel`) von Mappentypen, Feldern, Registern und Ansichten sind im Paket lokal. Das DMS legt Mappentypen als `<paket>_<schluessel>` an.
 - **Felder** wie in der Werkbank: `key`, `label`, `typ` (text, langtext, formatiert, zahl, betrag, datum, janein, auswahl, referenz, passwort) und die üblichen Eigenschaften (`pflicht`, `eindeutig`, `hilfe`, `standard`, `minLen`, `maxLen`, `muster`, `min`, `max`, `nachkomma`, `waehrung`, `optionen`, `mehrfach`, `verweisart`, `frist`).
-- **Verweise** (`ziel` bei Referenzfeldern, `quellen[].typ` bei Verknüpfungsregistern): `schluessel` für einen Typ dieses Pakets, `<paket>:<schluessel>` für den Typ eines anderen Pakets. Das andere Paket steht dann unter `abhaengigkeiten`. Typen eines Pakets dürfen auch im Kreis aufeinander verweisen.
-- **Sichten:** `eltern` ist der lokale Schlüssel einer anderen Sicht des Pakets. `bedingungen` sind `{ feld, operator, wert }` mit den Operatoren der Werkbank (`gleich`, `enthaelt`, `kleiner`, `groesser`, `zwischen`, `ausserhalb`, `imZeitraum`, `einerVon`, `zeigtAuf`, `leer`, `nichtLeer`, `ja`, `nein`); bei `zwischen` ist `wert` eine Liste mit zwei Werten.
+- **Verweise** (`ziel` bei Verweisfeldern, `quellen[].typ` bei Verknüpfungsregistern): `schluessel` für einen Mappentyp dieses Pakets, `<paket>:<schluessel>` für den Mappentyp eines anderen Pakets. Das andere Paket steht dann unter `abhaengigkeiten`. Mappentypen eines Pakets dürfen auch im Kreis aufeinander verweisen.
+- **Ansichten:** `eltern` ist die lokale Kennung einer anderen Ansicht des Pakets. `bedingungen` sind `{ feld, operator, wert }` mit den Operatoren der Werkbank (`gleich`, `enthaelt`, `kleiner`, `groesser`, `zwischen`, `ausserhalb`, `imZeitraum`, `einerVon`, `zeigtAuf`, `leer`, `nichtLeer`, `ja`, `nein`); bei `zwischen` ist `wert` eine Liste mit zwei Werten.
 - **Beispiele:** `{ typ, werte }`; Beträge dürfen als Zahl stehen.
 - **Versionen:** `dms` und `abhaengigkeiten` nehmen Bereiche: `>=1.2.0`, `>1.2.0`, `1.2.0` bzw. `=1.2.0`, `^1.2.0` (gleiche Hauptversion), `~1.2.0` (gleiche Nebenversion), optional mit Obergrenze ` <2.0.0`.
 
-Bei einem **Update** ergänzt das DMS nur: neue Typen, Felder, Register und Sichten. Felder, Register oder Sichten zu entfernen oder umzubenennen hat auf installierte DMS keine Wirkung – plane das Format deshalb vorher.
+Bei einem **Update** ergänzt das DMS nur: neue Mappentypen, Felder, Register und Ansichten. Felder, Register oder Ansichten zu entfernen oder umzubenennen hat auf installierte DMS keine Wirkung – plane das Format deshalb vorher.
 
 ## Einstellungen beschreiben
 
@@ -60,13 +60,13 @@ code:
 ```
 
 - Höchstens **zwei Ebenen**: Abschnitte (`abschnitt`, `hilfe`, `felder`) und Listen (`liste`, `name`, `eintrag`, `hilfe`, `sortierbar`, `felder`).
-- **Typen:** `text`, `mehrzeilig`, `zahl` (`min`/`max`), `janein`, `datum`, `auswahl` und `mehrfachauswahl` (`optionen`), `geheim`, Verweise `mappentyp`, `feld` (mit `mappentyp:`), `benutzer`, `rolle`, `sicht`.
-- **Werte**, wie das Paket sie bekommt: Abschnittsfelder unter ihrem Schlüssel, Listen als Liste von Objekten (mit `_id` je Eintrag). Verweise sind Ids (bei `feld`: `{ typ, feld }`), Geheimnisse im Klartext – nur für das eigene Paket.
+- **Mappentypen:** `text`, `mehrzeilig`, `zahl` (`min`/`max`), `janein`, `datum`, `auswahl` und `mehrfachauswahl` (`optionen`), `geheim`, Verweise `mappentyp`, `feld` (mit `mappentyp:`), `benutzer`, `rolle`, `sicht`.
+- **Werte**, wie das Paket sie bekommt: Abschnittsfelder unter ihrer Kennung, Listen als Liste von Objekten (mit `_id` je Eintrag). Verweise sind Ids (bei `feld`: `{ typ, feld }`), Geheimnisse im Klartext – nur für das eigene Paket.
 - Bei einer Änderung bekommt das Paket das Ereignis `paket.einstellungen_geaendert`; es liest die Werte mit `dms.einstellungen()`.
 - **Zugangsdaten nur als `geheim`**, nie als `text` und nie mit `standard`.
 - Bei einem **Update** bekommen neue Felder ihre Vorgabe, vorhandene Werte bleiben, wegfallende werden entfernt.
 
-`werkzeuge/pruefen.py` prüft Schlüssel, Vorgaben, Optionen, Geheimnisse und Verweise. Zum Ausprobieren eignet sich die erweiterte Ansicht mit **Paket hochladen**.
+`werkzeuge/pruefen.py` prüft Kennungen, Vorgaben, Optionen, Geheimnisse und Verweise. Zum Ausprobieren eignet sich der Expertenmodus mit **Paket hochladen**.
 
 ## Prüfen
 
@@ -87,11 +87,11 @@ Dieselben Prüfungen laufen im Pull Request. Ein veröffentlichtes Paket ändert
 
 Bevor dein Paket in den Katalog kommt, probierst du es im eigenen DMS aus – am besten in einem Test-DMS (z. B. mit [Demo-Daten](https://motom001.github.io/dms/admin/aktuell/demo/)):
 
-1. **Werkbank → Pakete → Erweiterte Ansicht** einschalten.
+1. **Werkbank → Pakete → Expertenmodus** einschalten.
 2. Den Paketordner als ZIP packen, z. B. `cd pakete/mein_paket && zip -r ../../mein_paket.zip .`, und unter **Paket hochladen** wählen. Das DMS prüft das Paket wie ein Katalogpaket und zeigt die Vorschau; Fehler im Format stehen dort gesammelt.
-3. Installieren (Herkunft bestätigen), ansehen, ändern. Für eine neue Fassung die **Version erhöhen** und erneut hochladen – das DMS aktualisiert wie bei einem Update aus dem Katalog (nur ergänzen). Zum Neuanfang das Paket entfernen (geht, solange es keine Mappen seiner Typen gibt).
+3. Installieren (Herkunft bestätigen), ansehen, ändern. Für eine neue Fassung die **Version erhöhen** und erneut hochladen – das DMS aktualisiert wie bei einem Update aus dem Katalog (nur ergänzen). Zum Neuanfang das Paket entfernen (geht, solange es keine Mappen seiner Mappentypen gibt).
 
-Mehrere Pakete testest du auch als eigenen Katalog: `python3 werkzeuge/katalog.py <ordner>` baut `katalog.json` und die Archive; leg den Ordner auf einen HTTPS-Server und trage die Adresse von `katalog.json` in der erweiterten Ansicht unter **Weitere Quellen** ein.
+Mehrere Pakete testest du auch als eigenen Katalog: `python3 werkzeuge/katalog.py <ordner>` baut `katalog.json` und die Archive; leg den Ordner auf einen HTTPS-Server und trage die Adresse von `katalog.json` im Expertenmodus unter **Weitere Quellen** ein.
 
 ## Ausblick
 

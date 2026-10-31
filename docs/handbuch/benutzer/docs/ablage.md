@@ -1,25 +1,25 @@
-# Sichten und Listen
+# Ansichten und Listen
 
-## Sichten
+## Ansichten
 
-Links stehen die **Sichten**. Ganz oben der [Eingang](eingang.md), deine [Favoriten](#favoriten) und der [Papierkorb](#papierkorb), darunter die Sichten, die ein Administrator eingerichtet hat – zum Beispiel *Vertrag*, *Rechnung*, *Vertragspartner* oder *Kündigung in den nächsten 12 Monaten*. Die Zahl dahinter sagt, wie viele Mappen die Sicht gerade zeigt.
+Links stehen die **Ansichten**. Ganz oben [Zu erledigen](eingang.md), deine [Favoriten](#favoriten) und der [Papierkorb](#papierkorb), darunter die Ansichten, die ein Administrator eingerichtet hat – zum Beispiel *Vertrag*, *Rechnung*, *Vertragspartner* oder *Kündigung in den nächsten 12 Monaten*. Die Zahl dahinter sagt, wie viele Mappen die Ansicht gerade zeigt.
 
-Ein Klick auf eine Sicht zeigt ihre Mappen in der Liste. Welche Sichten du siehst, kann ein Administrator festlegen; eine Sicht, die für dich verborgen ist, fehlt samt ihrer Mappen auch in der Elternsicht. Mappen findest du trotzdem über die Suche, wenn du sie lesen darfst.
+Ein Klick auf eine Ansicht zeigt ihre Mappen in der Liste. Welche Ansichten du siehst, kann ein Administrator festlegen; eine Ansicht, die für dich verborgen ist, fehlt samt ihrer Mappen auch in der Elternansicht. Mappen findest du trotzdem über die Suche, wenn du sie lesen darfst.
 
-![Sichten als Baum: Finanzen mit Untersichten](bilder/sichten-baum.png)
+![Ansichten als Baum: Finanzen mit Unteransichten](bilder/sichten-baum.png)
 
-- **Sichten können Untersichten haben.** Ein Pfeil ▸ davor zeigt das; ein Klick darauf klappt sie auf oder zu. Dein Gerät merkt sich, was zugeklappt ist.
-- **Eine Sicht mit Untersichten zeigt alles zusammen:** *Finanzen* zeigt zum Beispiel alle offenen Rechnungen *und* die Zahlungen dieses Jahres.
-- **Manche Sichten filtern:** *Offene Rechnungen* zeigt nur Rechnungen, die noch nicht bezahlt sind. Werte wie „heute“ oder „du selbst“ rechnet das DMS bei jedem Öffnen neu – eine Sicht *Kündigung in den nächsten 12 Monaten* ist also immer aktuell.
-- **Zeigt eine Sicht mehrere Mappentypen**, stehen *Titel* und *Typ* vorn, und es gibt kein **+ Neu**. Neue Mappen legst du dann in der Sicht des einzelnen Typs an.
+- **Ansichten können Unteransichten haben.** Ein Pfeil ▸ davor zeigt das; ein Klick darauf klappt sie auf oder zu. Dein Gerät merkt sich, was zugeklappt ist.
+- **Eine Ansicht mit Unteransichten zeigt alles zusammen:** *Finanzen* zeigt zum Beispiel alle offenen Rechnungen *und* die Zahlungen dieses Jahres.
+- **Manche Ansichten filtern:** *Offene Rechnungen* zeigt nur Rechnungen, die noch nicht bezahlt sind. Werte wie „heute“ oder „du selbst“ rechnet das DMS bei jedem Öffnen neu – eine Ansicht *Kündigung in den nächsten 12 Monaten* ist also immer aktuell.
+- **Zeigt eine Ansicht mehrere Mappentypen**, stehen *Titel* und *Mappentyp* vorn, und es gibt kein **+ Neu**. Neue Mappen legst du dann in der Ansicht des einzelnen Mappentyps an.
 
-Welche Sichten es gibt, legt ein Administrator fest. Wünschst du dir eine, sag ihm Bescheid.
+Welche Ansichten es gibt, legt ein Administrator fest. Wünschst du dir eine, sag ihm Bescheid.
 
 ## Die Liste
 
-Die Liste zeigt die Mappen der Sicht, nach Titel sortiert. Sie lädt zunächst 100 Mappen und beim Herunterscrollen automatisch die nächsten.
+Die Liste zeigt die Mappen der Ansicht, nach Titel sortiert. Sie lädt zunächst 100 Mappen und beim Herunterscrollen automatisch die nächsten.
 
-Mit **+ Neu** oben rechts legst du eine neue Mappe dieses Typs an (siehe [Mappen](mappen.md)). Fehlt der Knopf, dürfen von diesem Typ in der Ablage keine Mappen angelegt werden – bei *Benutzer* zum Beispiel ist das so.
+Mit **+ Neu** oben rechts legst du eine neue Mappe dieses Mappentyps an (siehe [Mappen](mappen.md)). Fehlt der Knopf, dürfen von diesem Mappentyp in der Ablage keine Mappen angelegt werden – bei *Benutzer* zum Beispiel ist das so.
 
 ### Kompakt oder als Tabelle
 
@@ -32,19 +32,19 @@ Zieh die Liste einfach am Griff zwischen Liste und Mappe breiter, oder klapp die
 
 ![Breite Liste als Tabelle](bilder/tabelle.png)
 
-Welche Angaben als Spalten erscheinen, legt der Administrator fest – je Mappentyp, und eine Sicht kann eine eigene Auswahl zeigen (z. B. eine kurze Liste).
+Welche Angaben als Spalten erscheinen, legt der Administrator fest – je Mappentyp, und eine Ansicht kann eine eigene Auswahl zeigen (z. B. eine kurze Liste).
 
 ### Sortieren
 
 In der Tabelle sortiert ein Klick auf eine Spaltenüberschrift nach dieser Spalte, ein zweiter Klick dreht die Reihenfolge um (↑ aufsteigend, ↓ absteigend). Leere Werte stehen immer am Ende.
 
-Das DMS merkt sich deine Sortierung je Sicht – auf allen Geräten. Über der Liste steht, wonach gerade sortiert ist; **nach Titel** stellt die Grundeinstellung wieder her.
+Das DMS merkt sich deine Sortierung je Ansicht – auf allen Geräten. Über der Liste steht, wonach gerade sortiert ist; **nach Titel** stellt die Grundeinstellung wieder her.
 
 Nach Verweisen und langen Texten lässt sich nicht sortieren; diese Spalten haben keinen Pfeil.
 
 ## Suchen
 
-Über der Liste jeder Sicht mit Mappen steht ein Suchfeld. Die Suche findet Mappen, deren **Titel oder Angaben** den eingegebenen Text enthalten – Groß- und Kleinschreibung spielt keine Rolle.
+Über der Liste jeder Ansicht mit Mappen steht ein Suchfeld. Die Suche findet Mappen, deren **Titel oder Angaben** den eingegebenen Text enthalten – Groß- und Kleinschreibung spielt keine Rolle.
 
 ![Suche in den Verträgen](bilder/suche.png)
 
@@ -70,9 +70,9 @@ Mit dem Haken **Notizen** sucht das DMS auch in den [Notizen](zusammenarbeit.md#
 
 ## Erweiterte Suche
 
-Wenn du eine Mappe nur ungefähr beschreiben kannst, hilft die **erweiterte Suche**. Du findest sie ganz oben bei den Sichten und als Link **Erweiterte Suche** neben dem Suchfeld einer Liste (dann ist der Mappentyp der Liste schon gewählt).
+Wenn du eine Mappe nur ungefähr beschreiben kannst, hilft die **erweiterte Suche**. Du findest sie ganz oben bei den Ansichten und als Link **Erweiterte Suche** neben dem Suchfeld einer Liste (dann ist der Mappentyp der Liste schon gewählt).
 
-Links steht dann statt der Sichten das Suchformular, in der Mitte stehen die Treffer, rechts die geöffnete Mappe. Mit **← zurück zu den Sichten** kommst du wieder zu den Sichten.
+Links steht dann statt der Ansichten das Suchformular, in der Mitte stehen die Treffer, rechts die geöffnete Mappe. Mit **← zurück zu den Ansichten** kommst du wieder zu den Ansichten.
 
 ![Erweiterte Suche: Formular, Chips und Treffer](bilder/erweiterte-suche.png)
 
@@ -86,8 +86,8 @@ Links steht dann statt der Sichten das Suchformular, in der Mitte stehen die Tre
 
 So funktioniert das Formular:
 
-- **Mappentypen**: Du kannst mehrere wählen; angeboten werden nur Typen, die du lesen darfst. Wählst du keinen, sucht das DMS in allen – dann gibt es nur die allgemeinen Felder (angelegt am/von, geändert am/von).
-- **Felder**: Angeboten werden die Felder, die **alle gewählten Typen gemeinsam** haben. Jedes Feld bekommt die passende Eingabe:
+- **Mappentypen**: Du kannst mehrere wählen; angeboten werden nur Mappentypen, die du lesen darfst. Wählst du keinen, sucht das DMS in allen – dann gibt es nur die allgemeinen Felder (angelegt am/von, geändert am/von).
+- **Felder**: Angeboten werden die Felder, die **alle gewählten Mappentypen gemeinsam** haben. Jedes Feld bekommt die passende Eingabe:
     - **Datum**: von–bis; eins von beiden darf leer bleiben. Unter **Zeitraum …** gibt es „dieses Jahr“, „letztes Jahr“, „letzte 12 Monate“, „dieser Monat“ und „letzter Monat“.
     - **Zahl, Betrag**: von–bis.
     - **Verweis** (z. B. Vertragspartner): mehrere Mappen – die Mappe muss auf **eine davon** zeigen.
@@ -96,7 +96,7 @@ So funktioniert das Formular:
     - **Text**: der Wert enthält den eingegebenen Text.
     - Rechts neben dem Feldnamen kannst du statt eines Werts **ist leer** oder **ist nicht leer** wählen.
 - Felder ohne Eingabe gelten nicht. **Zwischen den Feldern gilt UND, innerhalb eines Feldes ODER.**
-- Änderst du die Typen, bleiben Werte in Feldern erhalten, die es weiter gibt. Bei den anderen steht ein Hinweis, dass sie entfallen.
+- Änderst du die Mappentypen, bleiben Werte in Feldern erhalten, die es weiter gibt. Bei den anderen steht ein Hinweis, dass sie entfallen.
 
 ### Volltext in Dokumenten und Notizen
 
@@ -104,7 +104,7 @@ Unter **Volltext** gibst du einen Begriff ein, der in den Dokumenten oder Notize
 
 ### Das Ergebnis
 
-Über den Treffern stehen die Bedingungen als **Chips**, z. B. „Rechnungsdatum 01.03.2025–30.11.2025“, dazu die Zahl der Treffer. Ein Klick auf **×** entfernt eine Bedingung und sucht sofort neu – praktisch, wenn es keinen Treffer gibt. Sortieren, mehrere Mappen auswählen und [Exportieren](#exportieren) gehen wie in einer Sicht.
+Über den Treffern stehen die Bedingungen als **Chips**, z. B. „Rechnungsdatum 01.03.2025–30.11.2025“, dazu die Zahl der Treffer. Ein Klick auf **×** entfernt eine Bedingung und sucht sofort neu – praktisch, wenn es keinen Treffer gibt. Sortieren, mehrere Mappen auswählen und [Exportieren](#exportieren) gehen wie in einer Ansicht.
 
 Die Suche steht in der **Adresse** des Browsers: Zurück und Vor funktionieren, du kannst sie als Lesezeichen speichern oder den Link weitergeben. Wer den Link öffnet, sieht nur die Mappen, die er lesen darf.
 
@@ -112,39 +112,39 @@ Am Handy kommt erst das Formular, nach **Suchen** die Trefferliste; mit **← Su
 
 ## Mehrere Mappen auswählen
 
-In der Liste einer Sicht wählst du mehrere Mappen aus, um sie in einem Schritt zu bearbeiten.
+In der Liste einer Ansicht wählst du mehrere Mappen aus, um sie in einem Schritt zu bearbeiten.
 
 - **Haken** vor einer Mappe setzen; mit gedrückter **Shift**-Taste wählt der nächste Haken alles dazwischen mit. In der Tabelle wählt der Haken im Kopf alle geladenen Mappen.
 - Sobald etwas gewählt ist, steht über der Liste eine **Aktionsleiste**: „3 von 120 ausgewählt“, die Aktionen und **Auswahl aufheben**.
-- **Alle 120 auswählen** nimmt alle Treffer der Sicht – auch die, die noch nicht geladen sind, und mit deiner Suche.
-- Die Auswahl bleibt, während du Mappen öffnest; wechselst du die Sicht oder die Suche, ist sie weg.
+- **Alle 120 auswählen** nimmt alle Treffer der Ansicht – auch die, die noch nicht geladen sind, und mit deiner Suche.
+- Die Auswahl bleibt, während du Mappen öffnest; wechselst du die Ansicht oder die Suche, ist sie weg.
 - **Am Handy** hält man eine Mappe kurz gedrückt, um die Auswahl zu beginnen; danach schaltet Tippen den Haken um.
 
 ### Mehrere Mappen löschen
 
-**Löschen** in der Aktionsleiste fragt erst nach, z. B. „12 Mappen mit 30 Dokumenten in den Papierkorb legen?“, und legt sie dann in den [Papierkorb](#papierkorb) – mit je einem Eintrag im Protokoll der Mappe. Mappen, die du nicht löschen darfst oder auf die noch eine andere Mappe verweist, werden ausgelassen und danach mit Grund aufgelistet. Verweisen ausgewählte Mappen nur aufeinander, hält das nicht auf.
+**Löschen** in der Aktionsleiste fragt erst nach, z. B. „12 Mappen mit 30 Dokumenten in den Papierkorb legen?“, und legt sie dann in den [Papierkorb](#papierkorb) – mit je einem Eintrag in der Historie der Mappe. Mappen, die du nicht löschen darfst oder auf die noch eine andere Mappe verweist, werden ausgelassen und danach mit Grund aufgelistet. Verweisen ausgewählte Mappen nur aufeinander, hält das nicht auf.
 
 ### Exportieren
 
-**Exportieren …** gibt Mappen aus der Sicht heraus – die Auswahl oder, ohne Auswahl bzw. auf Wunsch, alle Treffer (mit deiner Suche und Sortierung):
+**Exportieren …** gibt Mappen aus der Ansicht heraus – die Auswahl oder, ohne Auswahl bzw. auf Wunsch, alle Treffer (mit deiner Suche und Sortierung):
 
 - **Excel (.xlsx)** – eine Tabelle, in der Datum und Beträge echte Werte sind: Excel kann danach sortieren und rechnen.
 - **CSV** – dieselbe Tabelle für jede Tabellenkalkulation, im deutschen Format (Semikolon, Datum TT.MM.JJJJ, Beträge mit Komma).
 - **ZIP mit Dokumenten** – die Tabelle als Excel und CSV und je Mappe ein Ordner mit ihren Dokumenten.
 - **PDF** – je Mappe eine Seite mit ihren Feldern und der Liste der Dokumente, wahlweise vorne eine Übersicht als Tabelle. PDF-Dokumente werden danach eingebunden, Bilder (JPEG, PNG) als eigene Seite; andere Dateien werden nur genannt.
 
-Als Spalten nimmst du die der Liste oder alle Felder. Verweise erscheinen mit dem Titel der Mappe. **Passwörter werden nie exportiert.** Jeder Export steht im Protokoll. Ob du aus einer Sicht exportieren darfst, legt der Administrator fest; fehlt das Recht, gibt es den Knopf nicht. In der erweiterten Suche und bei **Als PDF exportieren** an einer Mappe gilt dasselbe: Exportiert werden nur Mappen, die du in mindestens einer Sicht mit Exportrecht sehen würdest. Treffer ohne dieses Recht lässt der Export aus und nennt ihre Zahl.
+Als Spalten nimmst du die der Liste oder alle Felder. Verweise erscheinen mit dem Titel der Mappe. **Passwörter werden nie exportiert.** Jeder Export steht im Protokoll. Ob du aus einer Ansicht exportieren darfst, legt der Administrator fest; fehlt das Recht, gibt es den Knopf nicht. In der erweiterten Suche und bei **Als PDF exportieren** an einer Mappe gilt dasselbe: Exportiert werden nur Mappen, die du in mindestens einer Ansicht mit Exportrecht sehen würdest. Treffer ohne dieses Recht lässt der Export aus und nennt ihre Zahl.
 
 ## Favoriten
 
-Mappen, die du oft brauchst, markierst du mit dem **Stern ☆** – oben rechts in der Mappe oder direkt in der Liste (rechts im Eintrag bzw. vorn in der Tabellenzeile). Der Stern wird gelb ★, und die Mappe steht in der Sicht **★ Favoriten** unter dem Eingang; die Zahl dahinter zeigt, wie viele es sind. Ein zweiter Klick entfernt sie wieder.
+Mappen, die du oft brauchst, markierst du mit dem **Stern ☆** – oben rechts in der Mappe oder direkt in der Liste (rechts im Eintrag bzw. vorn in der Tabellenzeile). Der Stern wird gelb ★, und die Mappe steht in der Ansicht **★ Favoriten** unterhalb von „Zu erledigen“; die Zahl dahinter zeigt, wie viele es sind. Ein zweiter Klick entfernt sie wieder.
 
-![Die Sicht Favoriten mit geöffneter Mappe](bilder/favoriten.png)
+![Die Ansicht Favoriten mit geöffneter Mappe](bilder/favoriten.png)
 
-- Favoriten sind **persönlich**: Jeder Benutzer hat seine eigenen. Das Markieren ändert weder „zuletzt geändert“ noch das Protokoll der Mappe.
-- Die Sicht *Favoriten* zeigt Mappen aller Typen, mit Titel, Typ und Datum – wie der Eingang.
+- Favoriten sind **persönlich**: Jeder Benutzer hat seine eigenen. Das Markieren ändert weder „zuletzt geändert“ noch die Historie der Mappe.
+- Die Ansicht *Favoriten* zeigt Mappen aller Mappentypen, mit Titel, Mappentyp und Datum – wie „Zu erledigen“.
 - Löschst du eine Mappe, verschwindet sie aus den Favoriten; stellst du sie aus dem Papierkorb wieder her, ist sie wieder Favorit.
-- Ein Administrator kann Sichten mit der Bedingung **ist mein Favorit** einrichten, etwa *Meine wichtigen Verträge*. Jeder sieht darin seine eigenen Favoriten.
+- Ein Administrator kann Ansichten mit der Bedingung **ist mein Favorit** einrichten, etwa *Meine wichtigen Verträge*. Jeder sieht darin seine eigenen Favoriten.
 
 ## Eine Mappe öffnen
 
@@ -152,11 +152,11 @@ Ein Klick auf einen Eintrag öffnet die Mappe rechts. Jede Mappe hat eine eigene
 
 ## Papierkorb
 
-Gelöschte Mappen kommen in den **Papierkorb** unter dem Eingang. Du siehst dort nur, was **du** gelöscht hast – mit Dokumenten und Verweisen.
+Gelöschte Mappen kommen in den **Papierkorb** unterhalb von „Zu erledigen“. Du siehst dort nur, was **du** gelöscht hast – mit Dokumenten und Verweisen.
 
 ![Papierkorb](bilder/papierkorb.png)
 
-- **Wiederherstellen** holt eine Mappe zurück in ihre Sicht. Hat inzwischen eine andere Mappe denselben eindeutigen Wert (z. B. dieselbe Rechnungsnummer), landet sie im [Eingang](eingang.md); dort siehst du, was zu ändern ist.
+- **Wiederherstellen** holt eine Mappe zurück in ihre Ansicht. Hat inzwischen eine andere Mappe denselben eindeutigen Wert (z. B. dieselbe Rechnungsnummer), landet sie unter [Zu erledigen](eingang.md); dort siehst du, was zu ändern ist.
 - **Endgültig löschen** entfernt sie für immer, **Papierkorb leeren** alle auf einmal.
 - Nach einer Frist, die der Administrator festlegt (meist 30 Tage), löscht das DMS gelöschte Mappen von selbst endgültig. Wie lange, steht über der Liste.
 - Im Profil kannst du einstellen, dass dein Papierkorb **beim Abmelden geleert** wird.

@@ -16,7 +16,7 @@ Rechts über den Registern einer Mappe steht das Menü **Aktionen**.
 
 Absender ist die Adresse des DMS; **Antworten** des Empfängers gehen an deine E-Mail-Adresse.
 
-Jede verschickte E-Mail legt das DMS als [Post](post.md#versendete-e-mails) ab – mit Empfängern, Betreff, Nachricht, Datum, den Anhängen, zugeordnet zur Mappe, aus der sie kam. Du findest sie unter **Post → Versendet**. Im [Protokoll](zusammenarbeit.md#protokoll) der Mappe steht sie mit einem Link. Die Anhänge belegen dabei keinen zusätzlichen Speicherplatz.
+Jede verschickte E-Mail legt das DMS als [Post](post.md#versendete-e-mails) ab – mit Empfängern, Betreff, Nachricht, Datum, den Anhängen, zugeordnet zur Mappe, aus der sie kam. Du findest sie unter **Post → Versendet**. In der [Historie](zusammenarbeit.md#historie) der Mappe steht sie mit einem Link. Die Anhänge belegen dabei keinen zusätzlichen Speicherplatz.
 
 Steht dort „Der E-Mail-Versand ist nicht eingerichtet“, muss ein Administrator ihn erst in der Werkbank einrichten.
 

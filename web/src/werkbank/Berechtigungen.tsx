@@ -77,7 +77,7 @@ export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu, klappe }:
   return (
     <Bereich id="berechtigungen" titel="Berechtigungen" hilfe={<Hilfe ort="werkbank.berechtigungen" />} klappe={klappe}
       kurz={`Standard: ${kurzStandard(Object.fromEntries(RECHTE_LISTE.map((k) => [k, rw.grund[k] && !((k === 'C' && sperre.C) || (k === 'D' && sperre.D))])) as Record<Recht, boolean>)} · ${rw.regeln.length === 1 ? '1 Regel' : `${rw.regeln.length || 'keine'} Regeln`}`}
-      beschreibung={<>Wer Mappen dieses Typs anlegen (C), lesen (R), bearbeiten (U – Felder und Dokumente), löschen (D) und Passwörter sehen (P) darf. Für <strong>Administratoren</strong> gelten die Regeln nicht.</>}>
+      beschreibung={<>Wer Mappen dieses Mappentyps anlegen (C), lesen (R), bearbeiten (U – Felder und Dokumente), löschen (D) und Passwörter sehen (P) darf. Für <strong>Administratoren</strong> gelten die Regeln nicht.</>}>
 
       <h3 className="zwischen">Standard <Hilfe ort="berechtigungen.grund" /></h3>
       <p className="leise klein">Gilt, solange keine Regel etwas anderes sagt. Klicken schaltet zwischen ✓ erteilt und ✗ entzogen.</p>

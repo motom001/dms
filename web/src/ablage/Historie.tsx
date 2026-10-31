@@ -145,7 +145,7 @@ export function Historie({ mappeId, stand }: { mappeId: string; stand?: string }
   }, [mappeId, stand]);
   if (fehler) return <div className="hinweis schlecht"><p>{fehler}</p></div>;
   if (!liste) return <p className="leise">Lade …</p>;
-  if (!liste.length) return <p className="leise">Noch keine Einträge. Das Protokoll beginnt mit Version 0.12; ältere Änderungen sind nicht erfasst.</p>;
+  if (!liste.length) return <p className="leise">Noch keine Einträge. Die Historie beginnt mit Version 0.12; ältere Änderungen sind nicht erfasst.</p>;
   const mitEinzelheiten = liste.map((e) => ({ e, x: einzelheiten(e, emailTyp) }));
   const aufklappbar = mitEinzelheiten.some(({ x }) => x);
   return (

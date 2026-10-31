@@ -164,7 +164,7 @@ export function sichtRegelProblem(r: SichtRegel, untersicht: boolean): string | 
     if (b.art === 'benutzer' && !b.benutzer.length) return `„${r.name}“: Benutzer auswählen.`;
     if (b.art === 'rolle' && !b.rollen.length) return `„${r.name}“: Rolle auswählen.`;
   }
-  if (untersicht && SICHT_RECHTE_LISTE.some((k) => r.dann[k] === 'erteilen')) return `„${r.name}“: In einer Untersicht können Regeln nur entziehen (✗) – ✓ wirkt hier nicht.`;
+  if (untersicht && SICHT_RECHTE_LISTE.some((k) => r.dann[k] === 'erteilen')) return `„${r.name}“: In einer Unteransicht können Regeln nur entziehen (✗) – ✓ wirkt hier nicht.`;
   if (!SICHT_RECHTE_LISTE.some((k) => r.dann[k]) && !r.stopp) return `„${r.name}“ ändert nichts – mindestens ein Recht entziehen${untersicht ? '' : ' oder erteilen'} oder Stopp setzen.`;
   return null;
 }

@@ -83,7 +83,7 @@ export function Dreiteilung({ ort, ebene, offen, children }: {
       {children[2]}
       {breit && <>
         <Griff seite="links" x={l} zu={s.linksZu} wert={l}
-          titel={s.linksZu ? 'Sichten einblenden' : 'Sichten ausblenden (ziehen ändert die Breite)'}
+          titel={s.linksZu ? 'Ansichten einblenden' : 'Ansichten ausblenden (ziehen ändert die Breite)'}
           ziehe={(dx, start) => merke({ ...s, linksZu: false, l: Math.min(MAX_L, Math.max(MIN_L, start + dx)) })}
           start={() => (s.linksZu ? MIN_L : l)}
           umschalten={() => merke({ ...s, linksZu: !s.linksZu })}

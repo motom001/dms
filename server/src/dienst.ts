@@ -735,7 +735,7 @@ export class Dienst {
   /** Ändern und Löschen: Ersteller, Empfänger oder ein Administrator. */
   private async eigeneErinnerung(id: string, ich: { id: string; rolle: string }): Promise<Erinnerung> {
     const e = await this.repo.holeErinnerung(id);
-    if (!e) throw new Fachfehler(404, 'Diese Erinnerung gibt es nicht (mehr) – vielleicht ist sie schon fällig und steht im Eingang.');
+    if (!e) throw new Fachfehler(404, 'Diese Erinnerung gibt es nicht (mehr) – vielleicht ist sie schon fällig und steht unter „Zu erledigen“.');
     if (e.erstelltVon !== ich.id && e.empfaengerId !== ich.id && ich.rolle !== 'admin') throw new Fachfehler(403, 'Ändern kann eine Erinnerung nur, wer sie angelegt hat oder sie bekommt.');
     return e;
   }
@@ -1185,7 +1185,7 @@ export class Dienst {
       const [, typId, key] = String(q.sicht).split(':');
       const f = typen.get(typId)?.felder.find((x) => x.key === key && x.typ === 'referenz');
       const ziel = f ? typen.get(f.zielTyp ?? '') : undefined;
-      if (!f || !ziel) throw new Fachfehler(404, 'Dieses Referenzfeld gibt es nicht.');
+      if (!f || !ziel) throw new Fachfehler(404, 'Dieses Verweisfeld gibt es nicht.');
       // Werte der Mappe, die gerade ausgefüllt wird (#173).
       let eigene: Werte = {};
       try { const w = JSON.parse(text(q.eigene).slice(0, 8000) || '{}'); if (w && typeof w === 'object' && !Array.isArray(w)) eigene = w; } catch { /* ohne */ }
@@ -1504,7 +1504,7 @@ export class Dienst {
     const elternId = istUuid(x.elternId) && alle.some((s) => s.id === x.elternId) && !waereKreis(alle, id, x.elternId) ? x.elternId : null;
     const alt = alle.find((s) => s.id === id);
     const probe: Sicht[] = [...alle.filter((s) => s.id !== id), {
-      ...(alt ?? { name: 'Neue Sicht', beschreibung: '', position: 0, typen: [], bedingungen: [], erstellt: '', geaendert: '' }),
+      ...(alt ?? { name: 'Neue Ansicht', beschreibung: '', position: 0, typen: [], bedingungen: [], erstellt: '', geaendert: '' }),
       id, elternId, berechtigungen: bereinigeSichtRegelwerk(x.berechtigungen),
     }];
     const a = await this.aufloesung(b.id);
@@ -1516,10 +1516,10 @@ export class Dienst {
   private async bereinigeSicht(e: unknown, id: string, alle: Sicht[]): Promise<SichtDaten> {
     const x = (e ?? {}) as Record<string, unknown>;
     const name = text(x.name).slice(0, 80);
-    if (!name) throw new Fachfehler(422, 'Bitte einen Namen für die Sicht angeben.');
+    if (!name) throw new Fachfehler(422, 'Bitte einen Namen für die Ansicht angeben.');
     const elternId = istUuid(x.elternId) ? x.elternId : null;
     if (elternId && !alle.some((s) => s.id === elternId)) throw new Fachfehler(422, 'Die gewählte Elternsicht gibt es nicht.');
-    if (waereKreis(alle, id, elternId)) throw new Fachfehler(422, 'Eine Sicht kann nicht unter sich selbst oder einer ihrer Untersichten liegen.');
+    if (waereKreis(alle, id, elternId)) throw new Fachfehler(422, 'Eine Ansicht kann nicht unter sich selbst oder einer ihrer Unteransichten liegen.');
     const vorhanden = new Set((await this.repo.listeTypen()).map((t) => t.id));
     const typen = [...new Set((Array.isArray(x.typen) ? x.typen : []).map(String))].filter((t) => vorhanden.has(t));
     const geschwister = kinderVon(alle.filter((s) => s.id !== id), elternId);
@@ -1543,7 +1543,7 @@ export class Dienst {
 
   async aendereSicht(id: string, e: unknown): Promise<Sicht> {
     const alle = await this.repo.listeSichten();
-    if (!alle.some((s) => s.id === id)) throw new Fachfehler(404, 'Diese Sicht gibt es nicht.');
+    if (!alle.some((s) => s.id === id)) throw new Fachfehler(404, 'Diese Ansicht gibt es nicht.');
     return this.repo.aendereSicht(id, await this.bereinigeSicht(e, id, alle));
   }
 
@@ -1551,7 +1551,7 @@ export class Dienst {
   async loescheSicht(id: string): Promise<void> {
     const alle = await this.repo.listeSichten();
     const s = alle.find((x) => x.id === id);
-    if (!s) throw new Fachfehler(404, 'Diese Sicht gibt es nicht.');
+    if (!s) throw new Fachfehler(404, 'Diese Ansicht gibt es nicht.');
     // Neue Reihenfolge der Ebene: Geschwister davor, die Kinder, Geschwister danach.
     const ebene = kinderVon(alle, s.elternId).flatMap((g) => (g.id === id ? kinderVon(alle, id) : [g]));
     for (const [i, g] of ebene.entries()) {
@@ -1566,7 +1566,7 @@ export class Dienst {
     const eltern = istUuid(elternId) ? elternId : null;
     const geschwister = kinderVon(alle, eltern);
     const liste = Array.isArray(ids) ? ids.map(String) : [];
-    if (liste.length !== geschwister.length || !geschwister.every((g) => liste.includes(g.id))) throw new Fachfehler(422, 'Die Reihenfolge muss genau die Sichten dieser Ebene enthalten.');
+    if (liste.length !== geschwister.length || !geschwister.every((g) => liste.includes(g.id))) throw new Fachfehler(422, 'Die Reihenfolge muss genau die Ansichten dieser Ebene enthalten.');
     for (const [i, sid] of liste.entries()) {
       const g = geschwister.find((x) => x.id === sid)!;
       if (g.position !== (i + 1) * 10) await this.repo.aendereSicht(sid, { ...g, position: (i + 1) * 10 });
@@ -1581,10 +1581,10 @@ export class Dienst {
   async verschiebeSicht(id: string, elternId: unknown, stelle: unknown): Promise<Sicht[]> {
     const alle = await this.repo.listeSichten();
     const s = alle.find((x) => x.id === id);
-    if (!s) throw new Fachfehler(404, 'Diese Sicht gibt es nicht.');
+    if (!s) throw new Fachfehler(404, 'Diese Ansicht gibt es nicht.');
     const eltern = istUuid(elternId) ? elternId : null;
     if (eltern && !alle.some((x) => x.id === eltern)) throw new Fachfehler(422, 'Die gewählte Elternsicht gibt es nicht.');
-    if (waereKreis(alle, id, eltern)) throw new Fachfehler(422, 'Eine Sicht kann nicht unter sich selbst oder einer ihrer Untersichten liegen.');
+    if (waereKreis(alle, id, eltern)) throw new Fachfehler(422, 'Eine Ansicht kann nicht unter sich selbst oder einer ihrer Unteransichten liegen.');
     const geschwister = kinderVon(alle.filter((x) => x.id !== id), eltern);
     const n = Number(stelle);
     const i = Number.isFinite(n) ? Math.max(0, Math.min(geschwister.length, Math.trunc(n))) : geschwister.length;
@@ -1777,7 +1777,7 @@ export class Dienst {
       await this.repo.setzeTypSchluessel(t.id, k);
       n++;
     }
-    if (n) protokoll.modul('werkbank').info('Schlüssel für Mappentypen vergeben', { anzahl: n });
+    if (n) protokoll.modul('werkbank').info('Kennungen für Mappentypen vergeben', { anzahl: n });
     return n;
   }
 
@@ -1797,7 +1797,7 @@ export class Dienst {
       const a = liesAnsicht(body.installation);
       if (!a) throw new Fachfehler(422, 'Bitte eine Vorlage wählen: Haushalt, Organisation oder Alles.');
       await this.einstellungen.schreibe('werkbank_ansicht', a);
-      protokoll.modul('werkbank').info('Ansicht der Werkbank geändert', { vorlage: a.vorlage, ein: a.ein, aus: a.aus, von: wer.email });
+      protokoll.modul('werkbank').info('Werkbank angepasst', { vorlage: a.vorlage, ein: a.ein, aus: a.aus, von: wer.email });
     }
     if ('eigene' in body) {
       const e = liesEigene(body.eigene);
@@ -1884,9 +1884,9 @@ export class Dienst {
     const muster = String(x.muster ?? '').trim();
     const start = Number(x.start ?? 1);
     const vorhanden = (await this.repo.listeNummernkreise()).find((k) => k.schluessel === schluessel);
-    if (x.neu === true && vorhanden) throw new Fachfehler(409, `Den Schlüssel „${schluessel}“ hat schon der Nummernkreis „${vorhanden.name}“.`);
+    if (x.neu === true && vorhanden) throw new Fachfehler(409, `Die Kennung „${schluessel}“ hat schon der Nummernkreis „${vorhanden.name}“.`);
     if (x.neu !== true && !vorhanden) throw new Fachfehler(404, 'Diesen Nummernkreis gibt es nicht.');
-    if (!KREIS_SCHLUESSEL.test(schluessel)) throw new Fachfehler(422, 'Schlüssel: Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben (höchstens 40 Zeichen).');
+    if (!KREIS_SCHLUESSEL.test(schluessel)) throw new Fachfehler(422, 'Kennung: Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben (höchstens 40 Zeichen).');
     if (!name) throw new Fachfehler(422, 'Der Nummernkreis braucht einen Namen.');
     const fm = pruefeMuster(muster);
     if (fm) throw new Fachfehler(422, fm);
@@ -2185,8 +2185,8 @@ export class Dienst {
     const sicht = alle.find((s) => s.id === q.sicht);
     if (sicht && !z.admin) {
       const r = alleSichtRechte(alle, z.wer, false).get(sicht.id);
-      if (!r?.R) throw new Fachfehler(404, 'Diese Sicht gibt es nicht.');
-      if (!r.E) throw new Fachfehler(403, 'Aus dieser Sicht darfst du nicht exportieren.');
+      if (!r?.R) throw new Fachfehler(404, 'Diese Ansicht gibt es nicht.');
+      if (!r.E) throw new Fachfehler(403, 'Aus dieser Ansicht darfst du nicht exportieren.');
     }
     const treffer = (await this.trefferIds(ich, q, z)).ids;
     const gewaehlt = Array.isArray(x.ids) ? new Set(x.ids.map(String)) : null;
@@ -2199,7 +2199,7 @@ export class Dienst {
       const erlaubt = await this.exportierbar(ich, z, ids);
       ausgelassen = ids.length - erlaubt.size;
       ids = ids.filter((id) => erlaubt.has(id));
-      if (!ids.length) throw new Fachfehler(403, 'Du darfst keine dieser Mappen exportieren. Exportieren ist nur aus Sichten erlaubt, für die du das Recht dazu hast.');
+      if (!ids.length) throw new Fachfehler(403, 'Du darfst keine dieser Mappen exportieren. Exportieren ist nur aus Ansichten erlaubt, für die du das Recht dazu hast.');
     }
     const mappen = (await this.repo.holeMappen(ids)).sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
     const typen = [...new Set(mappen.map((m) => m.typId))].map((t) => z.typen.get(t)).filter((t): t is Mappentyp => !!t);
@@ -2401,7 +2401,7 @@ export class Dienst {
         register: [
           { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: systemfelder('post', rolle.id, benutzer.id).map((f) => f.key) },
           { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
-          { key: 'protokoll', name: 'Protokoll', art: 'protokoll' },
+          { key: 'protokoll', name: 'Historie', art: 'protokoll' },
         ],
         trefferliste: POST_SPALTEN, erstellenErlaubt: false, loeschenErlaubt: true,
       }, 'post');
@@ -2487,7 +2487,7 @@ export class Dienst {
       await this.repo.legeSichtAn(randomUUID(), { name: 'Versendet', beschreibung: 'Aus dem DMS verschickte E-Mails', elternId: typSicht.id, position: 20, typen: [post.id], bedingungen: bed('richtung', POST_RICHTUNG.ausgehend) });
     }
     await this.einstellungen?.schreibe('post', { sichten: true, neu: neu.id });
-    protokoll.modul('werkbank').info('Sichten für Post angelegt', { neu: neu.id });
+    protokoll.modul('werkbank').info('Ansichten für Post angelegt', { neu: neu.id });
   }
 
   /** Id der Sicht „Neue Post“ (#192), damit die Oberfläche ihre Zahl hervorhebt. */
@@ -2605,7 +2605,7 @@ export class Dienst {
     // Aufgaben gehen an Konten; ohne Kontenverwaltung (Tests) genügt der Verweis.
     if (this.konten?.benutzer && !(await this.konten.benutzer()).some((b) => b.id === fuer)) return;
     const a = await this.repo.legeAufgabeAn({
-      id: randomUUID(), mappeId, empfaengerId: fuer, art: 'post', text: 'Neue Post für dich', feldKey: schluessel,
+      id: randomUUID(), mappeId, empfaengerId: fuer, art: 'post', text: 'Post für dich', feldKey: schluessel,
       erstellt: new Date().toISOString(), erstelltVon: von, erledigt: null, erledigtVon: null,
     });
     await this.leiteUm(a);
@@ -3097,7 +3097,7 @@ export class Dienst {
   async persoenlicherExportErlaubt(): Promise<boolean> { return (await this.einstellungen?.lies('persoenlicher_export')) !== false; }
   async setzePersoenlicherExport(an: unknown, von: string) {
     await this.einstellungen?.schreibe('persoenlicher_export', an === false ? false : null);
-    protokoll.modul('werkbank').info(an === false ? 'Persönlicher Export abgeschaltet' : 'Persönlicher Export erlaubt', { von });
+    protokoll.modul('werkbank').info(an === false ? '„Meine Daten exportieren“ abgeschaltet' : '„Meine Daten exportieren“ erlaubt', { von });
     return this.persoenlicherExportErlaubt();
   }
 

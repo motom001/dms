@@ -46,7 +46,7 @@ export function ExportDialog({ sicht, link, ids, anzahl, gesamt, suche, volltext
       {ids && (
         <fieldset className="wahl"><legend className="klein">Welche Mappen?</legend>
           <label className="haken"><input type="radio" name="umfang" checked={umfang === 'auswahl'} onChange={() => setUmfang('auswahl')} /><span>Auswahl ({anzahl.toLocaleString('de-DE')})</span></label>
-          <label className="haken"><input type="radio" name="umfang" checked={umfang === 'alle'} onChange={() => setUmfang('alle')} /><span>Alle Treffer der Sicht ({gesamt.toLocaleString('de-DE')})</span></label>
+          <label className="haken"><input type="radio" name="umfang" checked={umfang === 'alle'} onChange={() => setUmfang('alle')} /><span>Alle Treffer der Ansicht ({gesamt.toLocaleString('de-DE')})</span></label>
         </fieldset>
       )}
       <fieldset className="wahl"><legend className="klein">Format</legend>

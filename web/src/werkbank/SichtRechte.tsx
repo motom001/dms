@@ -87,7 +87,7 @@ export function SichtBerechtigungen({ e, setE, alle, klappe }: {
 
   return (
     <Bereich id="berechtigungen" titel="Berechtigungen" hilfe={<Hilfe ort="sicht.berechtigungen" />} klappe={klappe} kurz={sichtRechteKurz(e, alle)}
-      beschreibung={<>Wer die Sicht in der Ablage sieht (R) und dort „+ Neu“ bekommt (C). Ob eine Mappe lesbar ist, regelt weiter der <strong>Mappentyp</strong>. Für Administratoren gelten die Regeln nicht.</>}>
+      beschreibung={<>Wer die Ansicht in der Ablage sieht (R) und dort „+ Neu“ bekommt (C). Ob eine Mappe lesbar ist, regelt weiter der <strong>Mappentyp</strong>. Für Administratoren gelten die Regeln nicht.</>}>
       {untersicht ? (
         <>
           <h3 className="zwischen">Geerbt</h3>
@@ -116,7 +116,7 @@ export function SichtBerechtigungen({ e, setE, alle, klappe }: {
       ) : (
         <>
           <h3 className="zwischen">Standard <Hilfe ort="sicht.berechtigungen" /></h3>
-          <p className="leise klein">Gilt, solange keine Regel etwas anderes sagt. Untersichten erben ihn.</p>
+          <p className="leise klein">Gilt, solange keine Regel etwas anderes sagt. Unteransichten erben ihn.</p>
           <div className="rechtewahl" role="group" aria-label="Standard je Recht">
             {SICHT_RECHTE_LISTE.map((k) => (
               <button key={k} type="button" className={`rechtknopf ${rw.grund[k] ? 'erteilen' : 'entziehen'}`}
@@ -250,8 +250,8 @@ export function SichtTestlauf({ id, e, klappe }: { id: string | null; e: SichtDa
   }
   return (
     <Bereich id="testlauf" titel="Testlauf" hilfe={<Hilfe ort="sicht.berechtigungen" />} klappe={klappe}
-      kurz="Was ein Benutzer an dieser Sicht darf – auch mit ungespeicherten Regeln"
-      beschreibung="Sieht ein Benutzer diese Sicht, und bekommt er „+ Neu“? Geprüft werden die Regeln, wie sie oben stehen, mit den geerbten.">
+      kurz="Was ein Benutzer an dieser Ansicht darf – auch mit ungespeicherten Regeln"
+      beschreibung="Sieht ein Benutzer diese Ansicht, und bekommt er „+ Neu“? Geprüft werden die Regeln, wie sie oben stehen, mit den geerbten.">
       <div className="bedingungszeile">
         <select aria-label="Benutzer" value={b} onChange={(x) => setB(x.target.value)}>
           <option value="">– Benutzer wählen –</option>
@@ -265,10 +265,10 @@ export function SichtTestlauf({ id, e, klappe }: { id: string | null; e: SichtDa
           {erg.admin
             ? <p><strong>{erg.benutzer.name}</strong> ist Administrator – für ihn gelten die Regeln nicht, er sieht alles.</p>
             : <>
-                <p><strong>{erg.benutzer.name}</strong> an „{e.name || 'dieser Sicht'}“: <RechteZeile r={erg.wirksam!} />
-                  {!erg.wirksam!.R && <span className="leise"> – die Sicht fehlt in seinem Baum, ihre Mappen auch in den Elternsichten.</span>}</p>
+                <p><strong>{erg.benutzer.name}</strong> an „{e.name || 'dieser Ansicht'}“: <RechteZeile r={erg.wirksam!} />
+                  {!erg.wirksam!.R && <span className="leise"> – die Ansicht fehlt in seinem Baum, ihre Mappen auch in den Elternsichten.</span>}</p>
                 <table className="tabelle klein">
-                  <thead><tr><th>Sicht</th><th>Schritt</th><th>trifft zu?</th><th>setzt</th><th>Stand danach</th></tr></thead>
+                  <thead><tr><th>Ansicht</th><th>Schritt</th><th>trifft zu?</th><th>setzt</th><th>Stand danach</th></tr></thead>
                   <tbody>
                     {erg.kette.flatMap((k) => [
                       ...(k.grund ? [<tr key={`${k.sicht}-g`}><td>{k.name}</td><td>Standard</td><td>–</td><td>–</td><td><RechteZeile r={k.grund} /></td></tr>] : []),

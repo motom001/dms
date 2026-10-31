@@ -8,7 +8,7 @@ Ein **Design** bestimmt die Farben der Oberfläche. Unter **Werkbank → Designs
 
 ## Mitgelieferte Designs
 
-*Automatisch* (folgt der hellen oder dunklen Einstellung des Geräts), *Hell*, *Dunkel* und *Kontrast* (für schlechte Sicht, mit besonders starkem Kontrast).
+*Automatisch* (folgt der hellen oder dunklen Einstellung des Geräts), *Hell*, *Dunkel* und *Kontrast* (für schlechte Ansicht, mit besonders starkem Kontrast).
 
 ## Eigenes Design
 

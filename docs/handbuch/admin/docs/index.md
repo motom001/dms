@@ -12,13 +12,13 @@ Dieses Handbuch ist für alle, die das DMS **installieren, einrichten und betrei
 | nach der Installation einrichten | Einrichtungsassistent, Datenbank, Reverse-Proxy | [Einrichtung und Betrieb](installation.md) |
 | Neue Version einspielen, Daten sichern | NAS | [Aktualisieren und Sichern](aktualisieren.md) |
 | Festlegen, welche Mappen es gibt und was darin steht | Werkbank → Mappentypen | [Mappentypen](mappentypen.md) |
-| Festlegen, welche Sichten die Ablage anbietet | Werkbank → Sichten | [Sichten](sichten.md) |
+| Festlegen, welche Ansichten die Ablage anbietet | Werkbank → Ansichten | [Ansichten](sichten.md) |
 | Benutzer einladen, Rollen vergeben, Zugänge sperren | Werkbank → Benutzer | [Benutzer und Rollen](benutzer.md) |
 | Farben, Logo und Schriftzug anpassen | Werkbank → Designs | [Designs](designs.md) |
 | Ausprobieren mit Beispieldaten | Werkbank → Demo-Daten | [Demo-Daten](demo.md) |
 | Überblick, was zu tun ist | Werkbank → Übersicht | [Werkbank und Übersicht](uebersicht.md) |
 | Festlegen, welche Bereiche die Werkbank zeigt | Werkbank → Werkbank anpassen (unten in der Leiste) | [Werkbank anpassen](uebersicht.md#werkbank-anpassen) |
-| Festlegen, wer was sehen und ändern darf | Werkbank → Mappentypen → Berechtigungen, Werkbank → Sichten | [Berechtigungen](berechtigungen.md) |
+| Festlegen, wer was sehen und ändern darf | Werkbank → Mappentypen → Berechtigungen, Werkbank → Ansichten | [Berechtigungen](berechtigungen.md) |
 | Daten sichern und wiederherstellen | Werkbank → Sicherung, Wiederherstellen | [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md) |
 | Fehler finden, Meldungen der Benutzer bearbeiten | Werkbank → Wartung und Fehlersuche | [Fehlersuche](fehlersuche.md) |
 | Andere Programme anbinden | Profil → API-Schlüssel | [Schnittstelle](api.md) |

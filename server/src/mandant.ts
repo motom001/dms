@@ -25,7 +25,7 @@ export async function bestimmeMandant(sql: postgres.Sql, a: Anbindung, env: Reco
   if (env.HAUSHALT_ID && !ausEnv) log.warn('HAUSHALT_ID ist keine gültige Id und wird ignoriert');
   let e: MandantErgebnis;
   if (a.mandant && UUID.test(a.mandant)) {
-    e = { id: a.mandant, quelle: 'datei', hinweis: ausEnv ? (ausEnv === a.mandant ? 'HAUSHALT_ID ist nicht mehr nötig und kann aus der Compose-Datei entfernt werden.' : 'HAUSHALT_ID weicht von der Id des Mandanten ab und wird ignoriert; sie kann aus der Compose-Datei entfernt werden.') : null };
+    e = { id: a.mandant, quelle: 'datei', hinweis: ausEnv ? (ausEnv === a.mandant ? 'HAUSHALT_ID ist nicht mehr nötig und kann aus der Compose-Datei entfernt werden.' : 'HAUSHALT_ID weicht von der Id des Haushalts ab und wird ignoriert; sie kann aus der Compose-Datei entfernt werden.') : null };
   } else if (ausEnv) {
     e = { id: ausEnv, quelle: 'umgebung', hinweis: 'HAUSHALT_ID wurde übernommen und kann aus der Compose-Datei entfernt werden.' };
   } else {
@@ -36,7 +36,7 @@ export async function bestimmeMandant(sql: postgres.Sql, a: Anbindung, env: Reco
   if (a.mandant !== e.id) {
     await speichern({ ...a, mandant: e.id });
     a.mandant = e.id;
-    log.info(e.quelle === 'neu' ? 'Neuer Mandant angelegt' : 'Id des Mandanten in der Anbindung gemerkt', { mandant: e.id, quelle: e.quelle });
+    log.info(e.quelle === 'neu' ? 'Neuer Haushalt angelegt' : 'Id des Haushalts in der Anbindung gemerkt', { mandant: e.id, quelle: e.quelle });
   }
   return e;
 }

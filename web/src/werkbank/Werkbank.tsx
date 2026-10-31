@@ -126,7 +126,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
     }
   } else if (bereich === 'sichten') {
     liste = <SichtenListe offen={id} />;
-    rechts = id ? <SichtEditor key={`${id}-${d.sicht(id)?.geaendert ?? ''}`} id={id} /> : <div className="platzhalter"><p>Wähle links eine Sicht oder lege mit „+ Neu“ eine an.</p></div>;
+    rechts = id ? <SichtEditor key={`${id}-${d.sicht(id)?.geaendert ?? ''}`} id={id} /> : <div className="platzhalter"><p>Wähle links eine Ansicht oder lege mit „+ Neu“ eine an.</p></div>;
   } else if (bereich === 'benutzer') {
     liste = <BenutzerListe liste={benutzer.liste} offen={id} />;
     if (id === 'neu') rechts = <BenutzerNeu key="neu" neuLaden={benutzer.laden} />;
@@ -209,7 +209,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const eintraege: WerkbankEintrag[] = [
           { pfad: 'uebersicht', name: 'Übersicht', gruppe: null, warn: uebersicht.hinweise || undefined },
           { pfad: 'typen', name: 'Mappentypen', gruppe: 'ablage', zahl: d.typen.length },
-          { pfad: 'sichten', name: 'Sichten', gruppe: 'ablage', zahl: d.sichten.length || undefined },
+          { pfad: 'sichten', name: 'Ansichten', gruppe: 'ablage', zahl: d.sichten.length || undefined },
           { pfad: 'nummernkreise', name: 'Nummernkreise', gruppe: 'ablage', zahl: nummernkreise.liste?.length || undefined },
           { pfad: 'pakete', name: 'Pakete', gruppe: 'ablage', zahl: pakete.stand?.installiert.length || undefined },
           ...(d.typen.some((t) => t.archiv) ? [{ pfad: 'darfweg', name: 'Darf weg', gruppe: 'ablage' as const, zahl: darfWeg.liste?.length || undefined }] : []),
@@ -226,7 +226,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           ...(eingang.stand?.vorhanden ? [{ pfad: 'eingangsordner', name: 'Eingangsordner', gruppe: 'einstellungen' as const, warn: eingang.stand.fehler?.length ? String(eingang.stand.fehler.length) : undefined, warnTitel: 'abgelehnte Dateien' }] : []),
           { pfad: 'texterkennung', name: 'Texterkennung', gruppe: 'einstellungen', warn: uebersicht.stand?.texterkennung?.fehler ? String(uebersicht.stand.texterkennung.fehler) : undefined, warnTitel: 'Dokumente mit Fehler' },
           { pfad: 'protokoll', name: 'Protokoll', gruppe: 'wartung', warn: protokoll.debug?.an ? 'Debug' : undefined, warnTitel: 'Debug-Modus ist an' },
-          { pfad: 'fehlermeldungen', name: 'Fehlermeldungen', gruppe: 'wartung', warn: uebersicht.stand?.fehlermeldungen ? String(uebersicht.stand.fehlermeldungen) : undefined, warnTitel: 'offene Meldungen' },
+          { pfad: 'fehlermeldungen', name: 'Gemeldete Fehler', gruppe: 'wartung', warn: uebersicht.stand?.fehlermeldungen ? String(uebersicht.stand.fehlermeldungen) : undefined, warnTitel: 'offene Meldungen' },
           { pfad: 'sicherung', name: 'Sicherung', gruppe: 'wartung', warn: uebersicht.stand?.sicherung && (uebersicht.stand.sicherung.fehler || (uebersicht.stand.sicherung.schluessel && uebersicht.stand.sicherung.zuAlt)) ? '!' : undefined, warnTitel: 'Sicherung fehlgeschlagen oder zu alt' },
           { pfad: 'wiederherstellung', name: 'Wiederherstellen', gruppe: 'wartung' },
           { pfad: 'vollexport', name: 'Vollexport', gruppe: 'wartung' },

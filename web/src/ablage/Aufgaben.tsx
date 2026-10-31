@@ -171,7 +171,7 @@ export function ErinnerungFormular({ mappeId, e, neuLaden, schliessen, eingebett
         <label className="eigenschaft"><span>Für</span><BenutzerWahl label="Erinnerung für" wert={an} setze={setAn} /></label>
         <label className="eigenschaft breit"><span>Woran?</span><input value={text} maxLength={500} onChange={(x) => setText(x.target.value)} placeholder="z. B. Angebote vergleichen" autoFocus /></label>
       </div>
-      <p className="leise klein">Am gewählten Tag steht die Mappe im Eingang{an === ich.id ? '' : ' des Empfängers'}; bis dahin unter „Anstehend“.</p>
+      <p className="leise klein">Am gewählten Tag steht die Mappe unter „Zu erledigen“{an === ich.id ? '' : ' des Empfängers'}; bis dahin unter „Anstehend“.</p>
       {fehler && <p className="fehlertext">{fehler}</p>}
       {hinweis && <div className="hinweis warn"><p>{hinweis}</p></div>}
       <div className="knoepfe">
@@ -212,7 +212,7 @@ export function NeueAufgabe({ mappeId, neuLaden, schliessen }: { mappeId: string
         <label className="eigenschaft"><span>Für</span><BenutzerWahl label="Empfänger" wert={an} setze={setAn} /></label>
         <label className="eigenschaft breit"><span>Was ist zu tun?</span><input value={text} maxLength={2000} onChange={(e) => setText(e.target.value)} placeholder="z. B. Bitte Rechnung prüfen und bezahlen" /></label>
       </div>
-      <p className="leise klein">Die Mappe erscheint im Eingang des Empfängers, bis er die Aufgabe erledigt oder weitergibt.</p>
+      <p className="leise klein">Die Mappe erscheint beim Empfänger unter „Zu erledigen“, bis er die Aufgabe erledigt oder weitergibt.</p>
       {fehler && <p className="fehlertext">{fehler}</p>}
       {hinweis && <div className="hinweis warn" role="status"><p>{hinweis}</p></div>}
       <div className="knoepfe"><button type="button" className="knopf primaer" disabled={!an || !text.trim()} onClick={() => void senden()}>Aufgabe vergeben</button></div>

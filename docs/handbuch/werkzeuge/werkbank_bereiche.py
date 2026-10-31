@@ -26,7 +26,7 @@ SEITE = {
     'designs': 'designs.md', 'papierkorb': 'papierkorb.md', 'anbindung': 'installation.md#datenbank-anbindung',
     'speicherplatz': 'speicherplatz.md', 'postfaecher': 'postfaecher.md', 'eingangsordner': 'eingangsordner.md',
     'texterkennung': 'texterkennung.md', 'protokoll': 'fehlersuche.md#protokoll',
-    'fehlermeldungen': 'fehlersuche.md#fehlermeldungen-von-benutzern', 'sicherung': 'sicherung.md',
+    'fehlermeldungen': 'fehlersuche.md#gemeldete-fehler', 'sicherung': 'sicherung.md',
     'wiederherstellung': 'wiederherstellen.md', 'vollexport': 'export.md', 'wartungsmodus': 'wartungsmodus.md',
     'wartung': 'texterkennung.md#wartungsoperationen', 'datenbank': 'fehlersuche.md#datenbank', 'technik': 'fehlersuche.md#technik',
     'demo': 'demo.md',

@@ -37,7 +37,7 @@ export function notfallblatt(d: Notfalldaten): Buffer {
     zeile('Groß- und Kleinschreibung zählen; die Leerzeichen zwischen den Gruppen nicht. Mögliche Zeichen: A–Z, a–z, 0–9, - und _.', { groesse: 9 }),
 
     zeile('Dieses DMS', { schrift: 'fett', groesse: 13, abstand: 16 }),
-    zeile(`Mandanten-Id: ${d.haushaltId}`, { abstand: 4 }),
+    zeile(`Haushalts-Id: ${d.haushaltId}`, { abstand: 4 }),
     zeile(`Adresse: ${d.adresse || '–'}`),
     zeile(`Sicherungen: Ordner ${d.sicherungsordner} im Container (in der Vorlage /volume1/docker/dms/sicherung auf dem NAS)`),
     zeile(`Schlüsseldatei: Ordner ${d.schluesselordner} im Container (in der Vorlage /volume1/docker/dms/geheim)`),
@@ -49,7 +49,7 @@ export function notfallblatt(d: Notfalldaten): Buffer {
     zeile(`3. Die Sicherung – beide Dateien, .dms-sicherung und .json – in den Ordner sicherung kopieren.`),
     zeile('4. Das DMS starten und im Browser öffnen. Der Einrichtungsassistent fragt nach dem Einrichtungscode (steht im Protokoll des Containers und in der Datei geheim/EINRICHTUNGSCODE). Dann „Aus einer Sicherung wiederherstellen“ wählen, die Sicherung auswählen und den Schlüssel von diesem Blatt eingeben.'),
     zeile('5. Nach der Wiederherstellung startet das DMS neu; danach meldest du dich mit deinen bisherigen Zugangsdaten an.'),
-    zeile('Die Mandanten-Id übernimmt das DMS beim Wiederherstellen aus der Sicherung.', { abstand: 6 }),
+    zeile('Die Haushalts-Id übernimmt das DMS beim Wiederherstellen aus der Sicherung.', { abstand: 6 }),
     zeile(`Startet das DMS nicht mehr (z. B. nach einem Update), trage in der Compose-Datei ein älteres Image ein, etwa ghcr.io/motom001/dms:${d.version}, und starte neu.`),
     zeile('Kommt kein Administrator mehr hinein: im Ordner geheim eine Datei RESCUE mit dem Inhalt NOTFALLZUGANG anlegen (siehe Administratorhandbuch, „Notfall: kein Admin mehr“).'),
 

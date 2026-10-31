@@ -108,7 +108,7 @@ Zehn Fragen, ehrlich beantwortet. Es gibt kein „Bestanden“ – nur Hinweise,
 4. Weißt du, was deine Hausrat- oder Haftpflichtversicherung genau abdeckt?
    *Die Police mit ihren Bedingungen liegt an der Mappe der Versicherung; die Volltextsuche findet darin z. B. „Fahrrad“ oder „Glas“.*
 5. Liegen die Belege fürs letzte Steuerjahr – Handwerker, Spenden, Arztkosten – an einem Ort?
-   *Eine Sicht wie „Steuer 2025“ sammelt alle passenden Mappen von selbst, ohne dass du sie doppelt ablegst.*
+   *Eine Ansicht wie „Steuer 2025“ sammelt alle passenden Mappen von selbst, ohne dass du sie doppelt ablegst.*
 6. Könntest du sagen, wann Heizung oder Auto zuletzt gewartet wurden – und von wem?
    *Heizung, Wartungsvertrag, Rechnungen und Fachbetrieb hängen im DMS zusammen; die nächste Wartung steht als Frist darin.*
 7. Findest du wichtige Nachweise wie Fahrzeugbrief, Zeugnisse, Urkunden oder Impfpass sofort?

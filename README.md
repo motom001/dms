@@ -17,7 +17,7 @@ Statt loser Dateien in Ordnern legst du **Mappen** an: für den Vertrag, die Rec
 <!-- Bildschirmfoto aus dem Handbuch-Workflow (#290): wird mit jedem Release neu aufgenommen, nur Beispieldaten. -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://motom001.github.io/dms/benutzer/aktuell/bilder/readme-dunkel.png">
-  <img alt="Die Ablage des DMS: links die Sichten, in der Mitte die Liste, rechts eine geöffnete Mappe mit Angaben und Dokumenten" src="https://motom001.github.io/dms/benutzer/aktuell/bilder/readme.png">
+  <img alt="Die Ablage des DMS: links die Ansichten, in der Mitte die Liste, rechts eine geöffnete Mappe mit Angaben und Dokumenten" src="https://motom001.github.io/dms/benutzer/aktuell/bilder/readme.png">
 </picture>
 
 ## Für wen?
@@ -31,7 +31,7 @@ Ob es zu dir passt, zeigt [Ist das DMS etwas für mich?](https://motom001.github
 ## Was du davon hast
 
 - **Schnell wiederfinden:** Die Suche findet Wörter auch in gescannten Papieren.
-- **Keine Frist verpassen:** Kündigungsfristen, Garantien und eigene Erinnerungen landen rechtzeitig in deinem Eingang.
+- **Keine Frist verpassen:** Kündigungsfristen, Garantien und eigene Erinnerungen landen rechtzeitig unter „Zu erledigen“.
 - **Post schnell ablegen:** Hochladen, am Handy fotografieren, aus einem E-Mail-Postfach oder vom Scanner über einen Eingangsordner.
 - **Gemeinsam mit der Familie:** Jeder hat ein eigenes Konto und sieht, was er sehen soll.
 - **Sicher aufgehoben:** Verschlüsselte Sicherungen, ein Notfallblatt zum Ausdrucken und eine Probe-Wiederherstellung, die zeigt, dass die Sicherung auch funktioniert.
@@ -58,7 +58,7 @@ Alle Wege im Überblick: **[Wie komme ich an ein DMS?](https://motom001.github.i
 
 - **Mappentypen selbst gestalten:** Felder, Verweise, Register, Titel-Vorlagen und Trefferlisten – in der Werkbank, ohne Programmieren. Fertige **Pakete** aus dem [Paketkatalog](https://github.com/motom001/dms-registry).
 - **Post** aus Postfächern (IMAP) und einem Eingangsordner, **Versionierung** von Dokumenten, **erweiterte Suche** über Felder und Volltext.
-- **Berechtigungen** je Mappentyp und Sicht mit Regeln und Testlauf; **Zwei-Faktor-Anmeldung** und **Anmeldung über einen Anbieter** (OpenID Connect).
+- **Berechtigungen** je Mappentyp und Ansicht mit Regeln und Testlauf; **Zwei-Faktor-Anmeldung** und **Anmeldung über einen Anbieter** (OpenID Connect).
 - **Archivmodus** mit Löschsperre bis Fristende, **Werkbank anpassen** mit den Vorlagen Haushalt, Organisation und Alles.
 - **Konsole** `dms` im Container für Notfall und Betrieb, **Schnittstelle** `/api/v1` mit API-Schlüsseln.
 - Ein Image für **amd64 und arm64**, öffentlich unter `ghcr.io/motom001/dms`.

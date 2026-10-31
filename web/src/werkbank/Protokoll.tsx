@@ -140,7 +140,7 @@ function DebugPanel({ p }: { p: ProtokollZustand }) {
         {d?.an
           ? <div className="hinweis warn"><p>Eingeschaltet bis {new Date(d.bis!).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr. Danach schaltet er sich selbst ab.</p></div>
           : <p className="leise">Aus. Protokolliert wird ab Stufe „{d?.grundstufe ?? 'info'}“.</p>}
-        <p className="leise">Im Debug-Modus kommen ausführliche Einträge dazu: jede Anfrage mit Dauer und Anzahl der Datenbankzugriffe, geladene Sichten, angezeigte Dokumente. Gut zum Nachstellen eines Fehlers; er schaltet sich nach einer Stunde selbst wieder ab.</p>
+        <p className="leise">Im Debug-Modus kommen ausführliche Einträge dazu: jede Anfrage mit Dauer und Anzahl der Datenbankzugriffe, geladene Ansichten, angezeigte Dokumente. Gut zum Nachstellen eines Fehlers; er schaltet sich nach einer Stunde selbst wieder ab.</p>
         <div className="knoepfe">
           {d?.an
             ? <><button className="knopf" disabled={laeuft} onClick={() => void schalte(true)}>Um eine Stunde verlängern</button><button className="knopf" disabled={laeuft} onClick={() => void schalte(false)}>Ausschalten</button></>

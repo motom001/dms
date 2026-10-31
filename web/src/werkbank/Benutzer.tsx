@@ -22,13 +22,13 @@ function useRollen() {
   return { weitere: (rollen ?? []).filter((r) => !r.system), geladen: rollen !== null, typ: d.typen.find((t) => t.system === 'rolle') };
 }
 
-/** Weitere Rollen als Haken; Administrator und Mitglied stehen in der Auswahl „Rolle“. */
+/** Rollen als Haken; Administrator und Mitglied stehen in der Auswahl „Rolle“. */
 function WeitereRollen({ gewaehlt, setze, sperre }: { gewaehlt: string[]; setze: (ids: string[]) => void; sperre?: boolean }) {
   const r = useRollen();
   return (
     <fieldset className="wahl rollenwahl">
-      <legend>Weitere Rollen <small className="leise">z. B. als Verantwortliche in Verträgen</small></legend>
-      {r.geladen && !r.weitere.length && <p className="leise klein">Noch keine weiteren Rollen angelegt.</p>}
+      <legend>Rollen <small className="leise">z. B. als Verantwortliche in Verträgen</small></legend>
+      {r.geladen && !r.weitere.length && <p className="leise klein">Noch keine Rollen angelegt.</p>}
       {r.weitere.map((x) => (
         <label key={x.id} className="haken"><input type="checkbox" disabled={sperre} checked={gewaehlt.includes(x.id)}
           onChange={(e) => setze(e.target.checked ? [...gewaehlt, x.id] : gewaehlt.filter((y) => y !== x.id))} /><span>{x.name}</span></label>
@@ -58,7 +58,7 @@ export function BenutzerListe({ liste: alle, offen }: { liste: Benutzer[]; offen
   return (
     <>
       <div className="listenkopf">
-        <div><h1>Benutzer</h1><p className="leise klein">Wer sich anmelden darf und mit welcher Rolle. {aktiv} gerade aktiv (in den letzten {AKTIV_MINUTEN} Minuten). <Hilfe ort="werkbank.benutzer" /></p></div>
+        <div><h1>Benutzer</h1><p className="leise klein">Wer sich anmelden darf und mit welcher Systemrolle. {aktiv} gerade aktiv (in den letzten {AKTIV_MINUTEN} Minuten). <Hilfe ort="werkbank.benutzer" /></p></div>
         <Link to="/werkbank/benutzer/neu" className="knopf primaer klein">+ Neu</Link>
       </div>
       {deaktiviert.length > 0 && (
@@ -125,8 +125,8 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
         <div className="raster">
           <label className="eigenschaft"><span>Name</span><input value={name} onChange={(e) => setName(e.target.value)} /></label>
           <label className="eigenschaft"><span>E-Mail-Adresse <small>{selbst ? 'änderst du in deinem Profil' : 'ändert der Benutzer selbst'}</small></span><input value={b.email} readOnly disabled /></label>
-          <label className="eigenschaft"><span>Rolle</span>
-            <select value={b.rolle} onChange={(e) => void aktion(() => api.benutzerAendern(b.id, { rolle: e.target.value as Rolle }), 'Rolle geändert.')}>
+          <label className="eigenschaft"><span>Systemrolle</span>
+            <select value={b.rolle} onChange={(e) => void aktion(() => api.benutzerAendern(b.id, { rolle: e.target.value as Rolle }), 'Systemrolle geändert.')}>
               {Object.entries(ROLLEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select></label>
         </div>
@@ -310,7 +310,7 @@ export function BenutzerNeu({ neuLaden }: { neuLaden: () => Promise<void> }) {
         <div className="raster">
           <label className="eigenschaft"><span>Name</span><input value={name} onChange={(e) => setName(e.target.value)} autoFocus /></label>
           <label className="eigenschaft"><span>E-Mail-Adresse</span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
-          <label className="eigenschaft"><span>Rolle</span>
+          <label className="eigenschaft"><span>Systemrolle</span>
             <select value={rolle} onChange={(e) => setRolle(e.target.value as Rolle)}>
               {Object.entries(ROLLEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select></label>

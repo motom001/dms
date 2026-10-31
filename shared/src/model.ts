@@ -21,7 +21,7 @@ export const FELDTYPEN = {
   datum: 'Datum',
   janein: 'Ja/Nein',
   auswahl: 'Auswahlliste',
-  referenz: 'Referenz',
+  referenz: 'Verweis',
   /** Verschlüsselt gespeichert (#46); nie in Titel, Trefferliste, Suche, Protokoll oder Demo-Daten. */
   passwort: 'Passwort',
 } as const;
@@ -69,7 +69,7 @@ export const REGISTERARTEN = {
   dokumente: 'Dokumentenregister',
   verknuepfungen: 'Verknüpfungsregister',
   /** Änderungshistorie der Mappe (#57). */
-  protokoll: 'Protokollregister',
+  protokoll: 'Historie',
 } as const;
 export type Registerart = keyof typeof REGISTERARTEN;
 
@@ -166,7 +166,7 @@ export function systemfelder(s: Systemtyp, rolleTypId: string, benutzerTypId = '
     { key: 'datum', label: 'Datum', typ: 'datum', system: true },
     { key: 'absender', label: 'Absender', typ: 'text', system: true },
     { key: 'an', label: 'Empfänger', typ: 'text', system: true },
-    { key: 'fuer', label: 'Für', typ: 'referenz', zielTyp: benutzerTypId, verweisart: 'bezug', system: true, hilfe: 'Wer sich darum kümmern soll; solange die Post neu ist, steht sie in dessen Eingang' },
+    { key: 'fuer', label: 'Für', typ: 'referenz', zielTyp: benutzerTypId, verweisart: 'bezug', system: true, hilfe: 'Wer sich darum kümmern soll; solange die Post neu ist, steht sie bei ihm unter „Zu erledigen“' },
     { key: 'bezug', label: 'Zugeordnet zu', typ: 'referenz', mehrfach: true, zielTyp: BELIEBIGER_TYP, verweisart: 'bezug', system: true, hilfe: 'Die Mappen, zu denen diese Post gehört; gesetzt über „Zuordnen“' },
     { key: 'nachricht', label: 'Nachricht', typ: 'langtext', system: true },
   ];
@@ -420,8 +420,8 @@ function pruefeRegister(t: MappentypDaten, ctx: TypKontext, p: Pruefergebnis) {
   for (const r of reg) {
     const name = (r.name ?? '').trim() || r.key;
     if (!(r.name ?? '').trim()) melde(p, 'register', 'Jedes Register braucht einen Namen.');
-    if (!SCHLUESSEL_MUSTER.test(r.key ?? '')) melde(p, 'register', `Register „${name}“: ungültiger Schlüssel.`);
-    else if (keys.has(r.key)) melde(p, 'register', `Der Register-Schlüssel „${r.key}“ kommt doppelt vor.`);
+    if (!SCHLUESSEL_MUSTER.test(r.key ?? '')) melde(p, 'register', `Register „${name}“: ungültige Kennung.`);
+    else if (keys.has(r.key)) melde(p, 'register', `Die Register-Kennung „${r.key}“ kommt doppelt vor.`);
     keys.add(r.key);
     if (!(r.art in REGISTERARTEN)) melde(p, 'register', `Register „${name}“: unbekannte Art.`);
     if (r.art === 'felder') {
@@ -450,8 +450,8 @@ export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebn
   else if (ctx.namenAndererTypen.some((n) => n.trim().toLowerCase() === name.toLowerCase()))
     melde(p, 'grunddaten', `Es gibt bereits einen Mappentyp „${name}“.`);
   if (t.schluessel !== undefined) {
-    if (!SCHLUESSEL_MUSTER.test(t.schluessel)) melde(p, 'grunddaten', 'Schlüssel des Mappentyps: nur Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben.');
-    else if ((ctx.schluesselAndererTypen ?? []).includes(t.schluessel)) melde(p, 'grunddaten', `Den Schlüssel „${t.schluessel}“ hat schon ein anderer Mappentyp.`);
+    if (!SCHLUESSEL_MUSTER.test(t.schluessel)) melde(p, 'grunddaten', 'Kennung des Mappentyps: nur Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben.');
+    else if ((ctx.schluesselAndererTypen ?? []).includes(t.schluessel)) melde(p, 'grunddaten', `Die Kennung „${t.schluessel}“ hat schon ein anderer Mappentyp.`);
   }
   if (!Array.isArray(t.felder)) {
     melde(p, 'felder', 'Die Felder fehlen.');
@@ -469,10 +469,10 @@ export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebn
   t.felder.forEach((f, i) => {
     const m: string[] = [];
     if (!(f.label ?? '').trim()) m.push('Bezeichnung fehlt.');
-    if (!(f.typ in FELDTYPEN)) m.push('Unbekannter Datentyp.');
-    if (!SCHLUESSEL_MUSTER.test(f.key ?? '')) m.push('Schlüssel: nur Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben.');
-    else if (gesehen.has(f.key)) m.push(`Schlüssel „${f.key}“ kommt doppelt vor.`);
-    else if (istIndexplatzhalter(f.key)) m.push(`Schlüssel „${f.key}“ ist für den Indexwert „${INDEXPLATZHALTER[f.key as Indexplatzhalter]}“ reserviert.`);
+    if (!(f.typ in FELDTYPEN)) m.push('Unbekannte Feldart.');
+    if (!SCHLUESSEL_MUSTER.test(f.key ?? '')) m.push('Kennung: nur Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben.');
+    else if (gesehen.has(f.key)) m.push(`Kennung „${f.key}“ kommt doppelt vor.`);
+    else if (istIndexplatzhalter(f.key)) m.push(`Kennung „${f.key}“ ist für den Indexwert „${INDEXPLATZHALTER[f.key as Indexplatzhalter]}“ reserviert.`);
     gesehen.add(f.key);
     if (f.typ === 'referenz') {
       if (!f.zielTyp) m.push('Ziel-Mappentyp auswählen.');
@@ -568,7 +568,7 @@ export function pruefeMappe(t: Pick<Mappentyp, 'felder'>, werte: Werte, ctx: Map
         const ids = Array.isArray(v) ? v : [v];
         if (!f.mehrfach && Array.isArray(v)) { fehler(f.key, 'Nur ein Verweis erlaubt.'); break; }
         if (ids.some((id) => typeof id !== 'string' || ctx.typVon(id) === undefined)) fehler(f.key, 'Verweist auf eine Mappe, die es nicht gibt.');
-        else if (f.zielTyp !== BELIEBIGER_TYP && ids.some((id) => ctx.typVon(id as string) !== f.zielTyp)) fehler(f.key, 'Verweist auf eine Mappe eines anderen Typs.');
+        else if (f.zielTyp !== BELIEBIGER_TYP && ids.some((id) => ctx.typVon(id as string) !== f.zielTyp)) fehler(f.key, 'Verweist auf eine Mappe eines anderen Mappentyps.');
         break;
       }
     }
@@ -714,7 +714,7 @@ export interface DokumentVersion {
 }
 
 /* ---------- Aufgaben (#54, #56) ---------- */
-export const AUFGABENARTEN = { passung: 'Passt nicht', erwaehnung: 'Erwähnung', manuell: 'Aufgabe', vertretung: 'Vertretung', frist: 'Frist', erinnerung: 'Erinnerung', post: 'Neue Post' } as const;
+export const AUFGABENARTEN = { passung: 'Passt nicht', erwaehnung: 'Erwähnung', manuell: 'Zugewiesen', vertretung: 'Vertretung', frist: 'Frist', erinnerung: 'Erinnerung', post: 'Post für dich' } as const;
 export type Aufgabenart = keyof typeof AUFGABENARTEN;
 export interface Aufgabe {
   id: string; mappeId: string;
