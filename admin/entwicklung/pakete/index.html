@@ -774,6 +774,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Installieren">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#uber-die-katalog-webseite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Über die Katalog-Webseite
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1912,6 +1929,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Installieren">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#uber-die-katalog-webseite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Über die Katalog-Webseite
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2023,6 +2057,15 @@
 </ul>
 <p>Angelegt wird über dieselben Funktionen wie in der Werkbank, mit allen Prüfregeln. Die Schlüssel bekommen das Paket-Präfix (<code>&lt;paket&gt;_&lt;schluessel&gt;</code>), damit sich Pakete nicht in die Quere kommen; Verweise auf Typen anderer Pakete löst das DMS auf. <strong>Scheitert etwas, nimmt das DMS alles zurück</strong> – es bleibt nichts halb angelegt.</p>
 <p>Mappentypen aus Paketen tragen in <strong>Werkbank → Mappentypen</strong> den Hinweis <strong>Paket …</strong>. Du kannst sie danach wie jeden anderen Mappentyp anpassen.</p>
+<h3 id="uber-die-katalog-webseite">Über die Katalog-Webseite<a class="headerlink" href="#uber-die-katalog-webseite" title="Permanent link">&para;</a></h3>
+<p>Den Katalog gibt es auch als Webseite: <a href="https://motom001.github.io/dms-registry/">Paketkatalog</a> (auch auf der Startseite der Handbücher). Dort siehst du je Paket die Beschreibung, was angelegt wird, Rechte, Änderungen und ältere Versionen.</p>
+<ol>
+<li>Klicke beim Paket <strong>In meinem DMS installieren</strong>.</li>
+<li>Beim ersten Mal fragt die Seite nach der <strong>Adresse deines DMS</strong>, z. B. <code>https://dms.example.de</code>. Sie merkt sie sich nur in deinem Browser; über <strong>DMS-Adresse</strong> oben änderst du sie. Die Webseite sendet nichts an dein DMS und speichert keine Zugangsdaten.</li>
+<li>Dein DMS öffnet <strong>Werkbank → Pakete</strong> mit der <strong>Vorschau</strong> genau dieses Pakets (Adresse <code>…/werkbank/pakete?installieren=&lt;paket&gt;@&lt;version&gt;</code>). Bist du nicht angemeldet, meldest du dich zuerst an und landest danach wieder dort. Andere Benutzer sehen einen Hinweis, dass nur Administratoren Pakete installieren.</li>
+<li>Das DMS holt Paket und Prüfsumme <strong>selbst aus dem offiziellen Katalog</strong> – Angaben im Link, die auf andere Quellen zeigen, zählen nicht. Gibt es das Paket oder die Version dort nicht, sagt das DMS es.</li>
+<li>Installiert wird <strong>erst, wenn du auf „Installieren“ klickst</strong>. Der Link allein ändert nichts. Ist das Paket schon installiert, zeigt die Vorschau das; ein Update bietet sie an, wenn der Link eine neuere Version nennt.</li>
+</ol>
 <h2 id="installierte-pakete">Installierte Pakete<a class="headerlink" href="#installierte-pakete" title="Permanent link">&para;</a></h2>
 <p>Je Paket merkt sich das DMS Version, <strong>Herkunft</strong> (der Katalog), wann und von wem es installiert bzw. aktualisiert wurde und welche Mappentypen und Sichten dazugehören. Diese Angaben sind Teil der <a href="../sicherung/">Sicherung</a> und des <a href="../export/">Vollexports</a> (<code>struktur/pakete.json</code>). Installieren, Aktualisieren und Entfernen stehen im Protokoll.</p>
 <h2 id="aktualisieren">Aktualisieren<a class="headerlink" href="#aktualisieren" title="Permanent link">&para;</a></h2>
