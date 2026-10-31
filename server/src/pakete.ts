@@ -120,19 +120,19 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
   };
   const typen = liste('mappentypen').map((t, i): PaketTyp => {
     const wo = `mappentypen[${i + 1}]`;
-    if (!SCHLUESSEL.test(str(t.schluessel))) fehler.push(`${wo}: ungültiger Schlüssel.`);
+    if (!SCHLUESSEL.test(str(t.schluessel))) fehler.push(`${wo}: ungültige Kennung.`);
     if (!str(t.name).trim()) fehler.push(`${wo}: Name fehlt.`);
     const felder = Array.isArray(t.felder) ? t.felder.filter(istObjekt) as unknown as PaketFeld[] : [];
     const register = Array.isArray(t.register) ? t.register.filter(istObjekt) as unknown as PaketRegister[] : [];
     for (const f of felder) {
-      if (!SCHLUESSEL.test(str(f.key))) fehler.push(`${wo}: Feld mit ungültigem Schlüssel „${str(f.key)}“.`);
+      if (!SCHLUESSEL.test(str(f.key))) fehler.push(`${wo}: Feld mit ungültiger Kennung „${str(f.key)}“.`);
       if (f.ziel !== undefined && !TYPVERWEIS.test(str(f.ziel))) fehler.push(`${wo}: Feld „${f.key}“ verweist ungültig auf „${str(f.ziel)}“.`);
     }
     if (!register.length) fehler.push(`${wo}: mindestens ein Register nötig.`);
     return { schluessel: str(t.schluessel), name: str(t.name).trim(), beschreibung: str(t.beschreibung), titelVorlage: t.titelVorlage ? str(t.titelVorlage) : undefined, felder, register, trefferliste: Array.isArray(t.trefferliste) ? t.trefferliste.map(str) : undefined };
   });
   const sichten = liste('sichten').map((s, i): PaketSicht => {
-    if (!SCHLUESSEL.test(str(s.schluessel))) fehler.push(`sichten[${i + 1}]: ungültiger Schlüssel.`);
+    if (!SCHLUESSEL.test(str(s.schluessel))) fehler.push(`sichten[${i + 1}]: ungültige Kennung.`);
     if (!str(s.name).trim()) fehler.push(`sichten[${i + 1}]: Name fehlt.`);
     return {
       schluessel: str(s.schluessel), name: str(s.name).trim(), beschreibung: s.beschreibung ? str(s.beschreibung) : undefined, eltern: s.eltern ? str(s.eltern) : undefined,
@@ -142,8 +142,8 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
   });
   const beispiele = liste('beispiele').map((b): PaketBeispiel => ({ typ: str(b.typ), werte: istObjekt(b.werte) ? b.werte : {} }));
   const doppelt = (l: string[]) => l.filter((x, i) => l.indexOf(x) !== i);
-  for (const s of doppelt(typen.map((t) => t.schluessel))) fehler.push(`mappentypen: Schlüssel „${s}“ doppelt.`);
-  for (const s of doppelt(sichten.map((t) => t.schluessel))) fehler.push(`sichten: Schlüssel „${s}“ doppelt.`);
+  for (const s of doppelt(typen.map((t) => t.schluessel))) fehler.push(`mappentypen: Kennung „${s}“ doppelt.`);
+  for (const s of doppelt(sichten.map((t) => t.schluessel))) fehler.push(`sichten: Kennung „${s}“ doppelt.`);
   // Einstellungen (#197): code.einstellungen und code.aktionen.
   const einst = liesBeschreibung(m.code);
   fehler.push(...einst.fehler.map((f) => `manifest.yaml: code.${f}`));
@@ -456,7 +456,7 @@ export class Paketverwaltung {
         };
       }
       if (vorhandenId) return { schluessel: t.schluessel, dmsSchluessel, name: t.name, felder: t.felder.length, vorhanden: false, neueFelder: [], neueRegister: [], konflikt: null, vorschlag: null, geloescht: true };
-      if (typen.some((x) => x.schluessel === dmsSchluessel)) probleme.push(`Den Schlüssel „${dmsSchluessel}“ hat schon ein Mappentyp. Dieses Paket war wohl schon einmal installiert; benenne den Typ in der Werkbank um oder lösche ihn.`);
+      if (typen.some((x) => x.schluessel === dmsSchluessel)) probleme.push(`Die Kennung „${dmsSchluessel}“ hat schon ein Mappentyp. Dieses Paket war wohl schon einmal installiert; benenne den Typ in der Werkbank um oder lösche ihn.`);
       const name = (namen[t.schluessel] ?? t.name).trim();
       const konflikt = belegt.has(name.toLowerCase()) ? `Einen Mappentyp „${name}“ gibt es schon.` : null;
       const vorschlag = konflikt ? freierName(name, m.name, belegt) : null;

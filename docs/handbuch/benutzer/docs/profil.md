@@ -75,7 +75,7 @@ Auch ein Link zum Zurücksetzen des Passworts fragt danach den Code ab. Handy ve
 
 ### Benachrichtigungen und Ablage
 
-- **Aufgaben** – Mappen mit offenen [Aufgaben](eingang.md) für dich stehen unter „Zu erledigen“. Zusätzlich schickt das DMS dir einmal am Tag eine Übersicht per E-Mail, solange du welche hast. **Tägliche Zusammenfassung meiner Aufgaben per E-Mail** bestellt sie ab oder wieder an. Darunter wählst du:
+- **Aufgaben** – Mappen mit offenen [Aufgaben](eingang.md) für dich stehen unter „Zu erledigen“. Zusätzlich schickt das DMS dir die **Tägliche Zusammenfassung** per E-Mail, solange du welche hast. **Tägliche Zusammenfassung meiner Aufgaben per E-Mail** bestellt sie ab oder wieder an. Darunter wählst du:
     - **Uhrzeit** – im 15-Minuten-Raster; *Standard* ist die Uhrzeit, die der Administrator eingestellt hat.
     - **Wochentage** – Standard Montag bis Freitag. Ohne Wochentag kommt keine Zusammenfassung.
     - **Nicht an Feiertagen** – an gesetzlichen Feiertagen des Bundeslands, das der Administrator gewählt hat, kommt keine (Standard: an). Ohne Bundesland ist der Haken ausgegraut.
