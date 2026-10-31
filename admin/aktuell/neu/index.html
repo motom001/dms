@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.83/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.84/neu/">
       
       
         <link rel="prev" href="..">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-083" class="md-skip">
+        <a href="#neu-in-version-084" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0830" class="md-nav__link">
+  <a href="#0840" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.83.0
+        0.84.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.83.0">
+    <nav class="md-nav" aria-label="0.84.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -379,6 +379,17 @@
     <span class="md-ellipsis">
       
         Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#noch-nicht-dabei" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Noch nicht dabei
       
     </span>
   </a>
@@ -1881,15 +1892,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0830" class="md-nav__link">
+  <a href="#0840" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.83.0
+        0.84.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.83.0">
+    <nav class="md-nav" aria-label="0.84.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1897,6 +1908,17 @@
     <span class="md-ellipsis">
       
         Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#noch-nicht-dabei" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Noch nicht dabei
       
     </span>
   </a>
@@ -1939,22 +1961,27 @@
   
 
 
-<h1 id="neu-in-version-083">Neu in Version 0.83<a class="headerlink" href="#neu-in-version-083" title="Permanent link">&para;</a></h1>
-<h2 id="0830">0.83.0<a class="headerlink" href="#0830" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-084">Neu in Version 0.84<a class="headerlink" href="#neu-in-version-084" title="Permanent link">&para;</a></h1>
+<h2 id="0840">0.84.0<a class="headerlink" href="#0840" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Mehrere Mappen per E-Mail versenden</strong> (#151). In der Aktionsleiste einer Ansicht steht neben <strong>Exportieren …</strong> jetzt <strong>Per E-Mail …</strong> – z. B. alle Belege eines Jahres an den Steuerberater.</li>
-<li><strong>Eine</strong> E-Mail an alle Empfänger, gleiche Maske wie an der Mappe (An, Betreff, Nachricht).</li>
-<li>Anhänge: je Mappe ihre <strong>Angaben als PDF</strong> („Titel.pdf“, ohne Passwörter; abwählbar) und ihre <strong>Dokumente</strong> – alle, keine oder je Mappe ausgewählt. Größenanzeige mit Warnung ab 20 MB, höchstens 50 MB; höchstens 100 Mappen.</li>
-<li>Danach <strong>eine</strong> Post (Post → Versendet), die auf alle versendeten Mappen verweist und enthält, was verschickt wurde; in der Historie <strong>jeder</strong> Mappe ein Eintrag mit Link.</li>
-<li>Rechte wie beim Versenden einer Mappe: Lesen und Exportrecht (Recht E einer Ansicht) für <strong>jede</strong> Mappe. Fehlt es bei einer, wird nichts verschickt.</li>
-<li>Entschieden (im Issue offen gelassen): eine E-Mail mit allen Mappen, nicht je Mappe eine.</li>
-<li>Schnittstelle: <code>POST /mappen/email</code>.</li>
-<li>Benutzerhandbuch: <em>E-Mail, PDF und Link → Mehrere Mappen per E-Mail</em>, <em>Ansichten und Listen → Per E-Mail versenden</em>; Hilfe-Verweis im Dialog.</li>
+<li><strong>Archivnummer per Barcode-Aufkleber</strong> (#345, Kernteil): Papieroriginal und Dokument verbinden.</li>
+<li>Jedes <strong>Dokument</strong> kann eine Archivnummer haben (z. B. <code>A-000123</code>), eindeutig je Haushalt. Eintragen und ändern direkt an der Dokumentzeile; die Historie der Mappe hält Änderungen fest.</li>
+<li>Neuer Nummernkreis <strong>Archivnummer</strong> (<code>A-{zaehler:6}</code>, in der Werkbank änderbar, nicht löschbar).</li>
+<li><strong>Aufkleber drucken</strong> (Werkbank → Nummernkreise → Archivnummer): PDF für A4-Etikettenbögen (48,5 × 25,4 / 38,1 × 21,2 / 70 × 37 mm), Startfeld für angebrochene Bögen, Barcode <strong>Code 128</strong> mit <code>DMS-ASN:</code> und lesbarer Nummer. Gedruckte Nummern gelten als vergeben.</li>
+<li><strong>Suchen:</strong> Archivnummer ins Suchfeld tippen oder mit dem Handscanner einscannen, Enter – das DMS öffnet die Mappe mit dem Dokument.</li>
+<li>Aus dem Papierkorb wiederhergestellte Dokumente verlieren ihre Archivnummer, wenn sie inzwischen vergeben ist.</li>
+<li>Schnittstelle: <code>PUT /dokumente/{id}/archivnummer</code>, <code>GET /archivnummern/{nr}</code>; <code>archivnummer</code> am Dokument.</li>
+<li>Datenbank: Migration <strong>038</strong> (Spalte <code>archivnummer</code> an <code>dokumente</code>, eindeutig je Haushalt).</li>
+<li>Handbücher: <em>Dokumente → Archivnummer</em> (mit Tipp zum Ablageort), <em>Nummernkreise → Archivnummern und Aufkleber</em>.</li>
+</ul>
+<h3 id="noch-nicht-dabei">Noch nicht dabei<a class="headerlink" href="#noch-nicht-dabei" title="Permanent link">&para;</a></h3>
+<ul>
+<li>QR-Code auf den Aufklebern (nur Code 128), eine Spalte „Archivnummer“ in Trefferlisten und das Erkennen der Aufkleber beim Scannen – das kommt mit dem Paket Trennblatt (dms-registry #16).</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.82.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.82.0...v0.83.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.83.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.83.0...v0.84.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
