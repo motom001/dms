@@ -2439,6 +2439,10 @@
 <td><code>PORT</code>, <code>HOST</code></td>
 <td>Port (Standard <code>3000</code>) und Adresse (Standard <code>0.0.0.0</code>, alle), auf denen das DMS im Container lauscht. Normalerweise änderst du <strong>nicht</strong> <code>PORT</code>, sondern den Port nach außen in der Compose-Datei (in der Vorlage <code>8080:3000</code>, z. B. <code>8090:3000</code>). Die eingebaute Gesundheitsprüfung des Images folgt <code>PORT</code>; setzt du <code>HOST</code> auf eine einzelne Adresse, muss sie <code>127.0.0.1</code> mit einschließen, sonst gilt der Container als <em>unhealthy</em></td>
 </tr>
+<tr>
+<td><code>DMS_EINGANG</code></td>
+<td>Nur für Sonderfälle: anderer Ort des <a href="../eingangsordner/">Eingangsordners</a> im Container (Standard <code>/eingang</code>). Üblich ist, den Ordner des NAS auf <code>/eingang</code> einzubinden</td>
+</tr>
 </tbody>
 </table>
 <h2 id="hinter-einem-reverse-proxy">Hinter einem Reverse-Proxy<a class="headerlink" href="#hinter-einem-reverse-proxy" title="Permanent link">&para;</a></h2>
