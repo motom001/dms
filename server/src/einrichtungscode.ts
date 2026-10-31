@@ -10,9 +10,10 @@ import { protokoll } from './protokoll';
  * Rechner im Netz abfragen. Er steht im Container-Protokoll und in /data/geheim/EINRICHTUNGSCODE
  * und wird nach dem Anlegen des Administrators gelöscht.
  *
- * App-Stores (#176): Mit DMS_EINRICHTUNGSCODE=aus entfällt der Code. Umbrel schützt Apps mit der
- * eigenen Anmeldung; auf ZimaOS/CasaOS gilt das Heimnetz bis zur Einrichtung als vertrauenswürdig.
- * Der Code ließe sich dort nur über Protokoll oder Kommandozeile finden.
+ * App-Stores (#176): Mit DMS_EINRICHTUNGSCODE=aus entfällt der Code. Die Umbrel-Vorlage schaltet die
+ * Umbrel-Anmeldung vor der App ab (PROXY_AUTH_ADD: "false"), weil Familienmitglieder sich mit eigenem
+ * DMS-Konto anmelden; dort wie auf ZimaOS/CasaOS gilt das Heimnetz bis zur Einrichtung als
+ * vertrauenswürdig. Der Code ließe sich dort nur über Protokoll oder Kommandozeile finden.
  */
 export const CODE_DATEI = 'EINRICHTUNGSCODE';
 /** Ohne leicht verwechselbare Zeichen (0/O, 1/I/L). */

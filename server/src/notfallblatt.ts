@@ -41,7 +41,7 @@ export function notfallblatt(d: Notfalldaten): Buffer {
     zeile(`Adresse: ${d.adresse || '–'}`),
     zeile(`Sicherungen: Ordner ${d.sicherungsordner} im Container (in der Vorlage /volume1/docker/dms/sicherung auf dem NAS)`),
     zeile(`Schlüsseldatei: Ordner ${d.schluesselordner} im Container (in der Vorlage /volume1/docker/dms/geheim)`),
-    zeile('Das Passwort der Datenbank steht in der Datei .env neben der docker-compose.yml – bewusst nicht auf diesem Blatt. Für ein neues System genügt ein neues Passwort.'),
+    zeile('Das Passwort der Datenbank steht in der Datei .env bzw. direkt in der docker-compose.yml (je nach Vorlage) – bewusst nicht auf diesem Blatt; bei dms-komplett gibt es keins. Für ein neues System genügt ein neues Passwort.'),
 
     zeile('Wiederherstellen auf einem neuen System', { schrift: 'fett', groesse: 13, abstand: 16 }),
     zeile('1. Auf dem neuen NAS die Ordner postgres, files, geheim und sicherung anlegen.', { abstand: 4 }),

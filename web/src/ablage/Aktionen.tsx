@@ -76,7 +76,7 @@ export function EmailMaske({ typ, details, neuLaden, schliessen }: { typ: Mappen
       {fertig ? (
         <>
           <p className="gutertext" role="status">Die E-Mail ist verschickt.</p>
-          <p className="leise">Sie ist als Mappe vom Mappentyp „E-Mail“ abgelegt und steht in der Historie dieser Mappe.</p>
+          <p className="leise">Sie ist als Post abgelegt (Post → Versendet) und steht in der Historie dieser Mappe.</p>
           <div className="knoepfe"><Link to={`/ablage/${fertig.typId}/${fertig.id}`} className="knopf">E-Mail öffnen</Link></div>
         </>
       ) : bereit === false ? (

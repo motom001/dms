@@ -406,7 +406,7 @@ function VorschauBlock({ v, warnung, los, abbrechen }: {
       {v.probleme.length > 0 && <div className="hinweis schlecht"><ul>{v.probleme.map((p) => <li key={p}>{p}</li>)}</ul></div>}
       {v.hinweise?.length > 0 && <div className="hinweis info"><ul>{v.hinweise.map((p) => <li key={p}>{p}</li>)}</ul></div>}
       {v.einstellungen && (v.einstellungen.neu.length > 0 || v.einstellungen.weg.length > 0) && (
-        <div className="hinweis info"><p>Einstellungen:{v.update && v.einstellungen.neu.length > 0 && <> neu (mit Vorgabe) {v.einstellungen.neu.join(', ')}.</>}{!v.update && <> das Paket hat Einstellungen; Vorgaben werden gesetzt, Pflichtfelder füllst du danach im Reiter „Einstellungen“.</>}{v.einstellungen.weg.length > 0 && <> <strong>Fallen weg:</strong> {v.einstellungen.weg.join(', ')} – ihre Werte werden entfernt.</>}</p></div>
+        <div className="hinweis info"><p>Einstellungen:{v.update && v.einstellungen.neu.length > 0 && <> neu (mit Vorgabe) {v.einstellungen.neu.join(', ')}.</>}{!v.update && <> das Paket hat Einstellungen; Vorgaben werden gesetzt, Pflichtfelder füllst du danach im Bereich „Einstellungen“.</>}{v.einstellungen.weg.length > 0 && <> <strong>Fallen weg:</strong> {v.einstellungen.weg.join(', ')} – ihre Werte werden entfernt.</>}</p></div>
       )}
       {v.update
         ? <p className="leise">Ein Update ergänzt nur. Es löscht nichts und überschreibt nichts, was du selbst geändert hast.</p>

@@ -141,7 +141,7 @@ export function WartungsmodusPanel({ w }: { w: WartungsmodusZustand }) {
             <thead><tr><th>Benutzer</th><th>Gerät</th><th>Letzte Aktivität</th></tr></thead>
             <tbody>{s.sitzungen.map((x) => (
               <tr key={x.id}>
-                <td>{x.name || x.email}{x.rolle === 'admin' && <span className="chip">Admin</span>}{x.aktuell && <span className="chip gut">dieses Gerät</span>}</td>
+                <td>{x.name || x.email}{x.rolle === 'admin' && <span className="chip">Administrator</span>}{x.aktuell && <span className="chip gut">dieses Gerät</span>}</td>
                 <td title={x.geraet}>{geraetKurz(x.geraet)}{x.ip ? <span className="leise"> · {x.ip}</span> : null}</td>
                 <td className="kurz">{zeitpunkt(x.zuletztAktiv)}</td>
               </tr>
