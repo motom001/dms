@@ -16,7 +16,7 @@ Gemessen werden die drei festen Ordner im Container (siehe [Ordner und Volumes](
 | `/data/geheim` | Schlüssel und Notfallzugang |
 | `/data/sicherung` | Sicherungen |
 
-Je Ordner zeigt die Seite belegt, frei und die Größe des Datenträgers, als Balken mit Marken für Warnschwelle und Grenze. Liegen mehrere Ordner auf demselben Datenträger, steht das dabei. **Werkbank → Technik** zeigt dieselben Zahlen in der Übersicht für den Support.
+Je Ordner zeigt die Seite belegt, frei und die Größe des Datenträgers, als Balken mit Marken für Warnschwelle und Grenze. Liegen mehrere Ordner auf demselben Datenträger, steht das dabei. Darunter steht, wie viel davon die **Vorschaubilder** der Dokumente belegen (Ordner `/data/files/vorschau`, meist wenige Kilobyte je Dokument). Sie werden **nicht gesichert** – nach einer Wiederherstellung entstehen sie beim Anzeigen oder über **Wartungsoperationen → Vorschaubilder nachholen** neu. **Werkbank → Technik** zeigt dieselben Zahlen in der Übersicht für den Support.
 
 !!! note "Die Datenbank wird nicht gemessen"
     Bei zwei Containern läuft PostgreSQL in einem eigenen Container; sein Volume kann das DMS nicht sehen. Bei [dms-komplett](https://motom001.github.io/dms/installieren/aktuell/komplett/) liegt die Datenbank im vierten Ordner `/data/postgres` – auch den misst das DMS nicht. Liegen alle Ordner auf derselben Platte des NAS (der übliche Fall), reicht die Messung trotzdem. Liegt die Datenbank auf einer anderen Platte, behalte deren Platz in der Speicherverwaltung des NAS im Blick.

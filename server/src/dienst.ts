@@ -325,6 +325,19 @@ export class Dienst {
   private ocr?: { anstossen(): void };
   verbindeTexterkennung(t: { anstossen(): void }) { this.ocr = t; }
 
+  /** Vorschaubilder anbinden (#332): neue Dateien einreihen, gelöschte mit entfernen. */
+  private vorschau?: { einreihen(d: Dokument[]): unknown; entferne(sha: string): Promise<void>; nachholen(d: Dokument[]): Promise<number> };
+  verbindeVorschau(v: { einreihen(d: Dokument[]): unknown; entferne(sha: string): Promise<void>; nachholen(d: Dokument[]): Promise<number> }) { this.vorschau = v; }
+
+  /** Vorschaubilder für vorhandene Dokumente nachholen (Werkbank → Wartungsoperationen, #332). */
+  async vorschauNachholen(): Promise<number> {
+    if (!this.vorschau) return 0;
+    const ids = [...new Set((await this.repo.alleDateien()).map((f) => f.dokumentId))];
+    const docs: Dokument[] = [];
+    for (const id of ids) { const d = await this.repo.holeDokument(id); if (d) docs.push(d); }
+    return this.vorschau.nachholen(docs);
+  }
+
   /* ---------- Volltext (#45) ---------- */
 
   /** Erzeugt dieses Dokumentenregister einen Volltext? (Standard: ja) */
@@ -2998,7 +3011,10 @@ export class Dienst {
 
   /** Löscht die Datei, wenn kein Dokument mehr auf sie zeigt. */
   private async raeumeAuf(sha256: string) {
-    if (!(await this.repo.dateiBenutzt(sha256))) await this.dateien.loesche(sha256);
+    if (!(await this.repo.dateiBenutzt(sha256))) {
+      await this.dateien.loesche(sha256);
+      await this.vorschau?.entferne(sha256);
+    }
   }
 
   /**
@@ -3045,6 +3061,7 @@ export class Dienst {
       id: randomUUID(), mappeId, registerKey: reg.key, name, mime: erkannt ?? angegeben,
       groesse: inhalt.length, sha256, anzeigbar: !!erkannt, erstellt: new Date().toISOString(), erstelltVon: benutzerId, herkunft: e.herkunft ?? 'hochgeladen',
     });
+    this.vorschau?.einreihen([dokument]);
     // Volltext (#45): neues Dokument in die Warteschlange, wenn das Register das will.
     let neu = dokument;
     if (Dienst.volltextAn(typ, reg.key)) {
@@ -3054,6 +3071,12 @@ export class Dienst {
     }
     const bezuege = await this.repo.bezuege(gleicherInhalt.map((d) => d.mappeId));
     return { dokument: neu, gleicherInhalt: gleicherInhalt.map((d) => ({ mappeId: d.mappeId, name: d.name, ...bezuege.get(d.mappeId) })) };
+  }
+
+  async holeDokument(id: string) {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    return d;
   }
 
   async dokumentInhalt(id: string) {
@@ -3239,6 +3262,7 @@ export class Dienst {
       name: e.name ? dateiname(e.name) : d.name, mime: erkannt ?? angegeben, groesse: inhalt.length, sha256, anzeigbar: !!erkannt,
       erstelltVon: benutzerId, herkunft: e.herkunft ?? 'hochgeladen',
     });
+    this.vorschau?.einreihen([neu]);
     return this.nachNeuerVersion(d, neu, typ, reg, benutzerId);
   }
 

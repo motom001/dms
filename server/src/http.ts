@@ -21,6 +21,7 @@ import { kontext, protokoll, type Kontext, type Stufe } from './protokoll';
 import type { Betrieb } from './betrieb';
 import type { Tresor } from './tresor';
 import type { Texterkennung } from './texterkennung';
+import type { Vorschaubilder } from './vorschau';
 import type { Aufgabenmail } from './aufgabenmail';
 import type { Fehlermeldungen } from './fehlermeldungen';
 import { WartungFehler, type Wartung } from './wartung';
@@ -55,6 +56,8 @@ interface Optionen {
   betrieb?: Betrieb;
   tresor?: Tresor;
   texterkennung?: Texterkennung;
+  /** Vorschaubilder der ersten Seite (#332). */
+  vorschau?: Vorschaubilder;
   aufgabenmail?: Aufgabenmail;
   fehlermeldungen?: Fehlermeldungen;
   /** Wartungsmodus (#102). */

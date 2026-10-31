@@ -1,3 +1,4 @@
+import { Vorschaubild } from './Vorschaubild';
 import { useMappenZiel } from './NeuePost';
 import { useEffect, useRef, useState, type DragEvent, type MouseEvent } from 'react';
 import { HERKUNFT, MAX_DATEIGROESSE, OCR_STAENDE, type Dokument, type DokumentVersion, type Herkunft, type OcrStand, type Register } from '../../../shared/src/model';
@@ -212,6 +213,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                     <div className="dokzeile">
                       <input type="checkbox" className="dokwahl" aria-label={`${x.name} auswählen`} disabled={weg} checked={gewaehlt.has(x.id) && !weg}
                         onClick={(e) => waehle(x, (e.target as HTMLInputElement).checked, e.shiftKey)} onChange={() => {}} />
+                      <Vorschaubild d={x} />
                       <div className="dokname">
                         {klickbar
                           ? <button type="button" className="textknopf" aria-expanded={auf} onClick={() => umschalten(x)}>{x.name}</button>

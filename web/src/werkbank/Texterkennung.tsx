@@ -197,6 +197,7 @@ export function WartungPanel({ t }: { t: TexterkennungZustand }) {
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         <div className="knoepfe"><button type="button" className="knopf primaer" disabled={laeuft || !s?.zaehler.keiner} onClick={() => void nachholen()}>{laeuft ? 'Stelle ein …' : 'Volltext nachholen'}</button></div>
       </section>
+      <VorschauNachholen />
       <DateienPruefen />
       <NummernNachtragen />
     </div>
@@ -273,3 +274,25 @@ function Auftraege({ t }: { t: TexterkennungZustand }) {
   );
 }
 const groesse = (b: number) => (b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);
+
+/** Vorschaubilder der ersten Seite für vorhandene Dokumente erzeugen (#332). */
+function VorschauNachholen() {
+  const [laeuft, setLaeuft] = useState(false);
+  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  async function nachholen() {
+    setLaeuft(true); setMeldung(undefined);
+    try {
+      const r = await api.vorschauNachholen();
+      setMeldung({ art: 'gut', text: r.eingereiht ? `Für ${zahl(r.eingereiht)} ${r.eingereiht === 1 ? 'Datei entsteht' : 'Dateien entstehen'} jetzt im Hintergrund ein Vorschaubild.` : 'Nichts nachzuholen – alle PDFs und Bilder haben schon ein Vorschaubild.' });
+    } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    finally { setLaeuft(false); }
+  }
+  return (
+    <section className="blatt" id="vorschau">
+      <h2 className="h3">Vorschaubilder nachholen</h2>
+      <p className="leise">Neben jedem PDF und Bild zeigt die Ablage ein kleines Bild der ersten Seite. Für neue Dokumente entsteht es gleich nach dem Hochladen, für ältere beim ersten Anzeigen. Das hier erzeugt die fehlenden auf einmal – eins nach dem anderen im Hintergrund.</p>
+      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
+      <div className="knoepfe"><button type="button" className="knopf" disabled={laeuft} onClick={() => void nachholen()}>{laeuft ? 'Stelle ein …' : 'Vorschaubilder nachholen'}</button></div>
+    </section>
+  );
+}

@@ -32,6 +32,7 @@ import { Einrichtungscode } from './einrichtungscode';
 import { einrichtungsmodus } from './einrichtungsmodus';
 import { Einrichtung } from './einrichtung';
 import { bestimmeMandant, mandantNamen } from './mandant';
+import { ordnerAblage, Vorschaubilder } from './vorschau';
 import { Texterkennung } from './texterkennung';
 import { Aufgabenmail } from './aufgabenmail';
 import { Fehlermeldungen, pgFehlerRepo } from './fehlermeldungen';
@@ -192,6 +193,11 @@ const texterkennung = new Texterkennung(messung.umhuelle(pgRepo(sql, cfg.haushal
 dienst.verbindeTexterkennung(texterkennung);
 texterkennung.pause = () => wartung.aktiv;
 wartung.beimAusschalten(() => texterkennung.anstossen());
+// Vorschaubilder der ersten Seite (#332): außerhalb des Haushaltsordners, damit sie nicht in die Sicherung gehen.
+const vorschau = new Vorschaubilder(ordnerAblage(join(ordner.dateien, 'vorschau', cfg.haushalt)), ordnerSpeicher(ordner.dateien, cfg.haushalt));
+dienst.verbindeVorschau(vorschau);
+vorschau.pause = () => wartung.aktiv;
+wartung.beimAusschalten(() => vorschau.anstossen());
 // Tägliche Zusammenfassung der offenen Aufgaben (#54).
 const typName = async (id: string | undefined) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? '';
 const aufgabenmail = new Aufgabenmail({
@@ -263,6 +269,7 @@ const app = await baueApp(dienst, konten, {
   betrieb,
   tresor,
   texterkennung,
+  vorschau,
   aufgabenmail,
   // Screenshots der Fehlermeldungen getrennt von den Dokumenten (#70).
   wartung,
@@ -323,6 +330,7 @@ setInterval(() => void wiederherstellung.tick().catch((e) => log.error('Zeitplan
 const beenden = async () => {
   log.info('DMS wird beendet');
   texterkennung.stop();
+  vorschau.stop();
   wartung.stop();
   notfall.stop();
   sicherung.stop();

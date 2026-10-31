@@ -139,6 +139,7 @@ export function SpeicherplatzPanel({ z, nachAenderung }: { z: SpeicherplatzZusta
             </div>
           );
         })}
+        {s.vorschau && s.vorschau.anzahl > 0 && <p className="leise klein">Davon Vorschaubilder: {s.vorschau.anzahl.toLocaleString('de-DE')} mit {platz(s.vorschau.bytes)}. Sie werden nicht gesichert und entstehen bei Bedarf neu.</p>}
         <p className="leise klein">Gemessen {new Date(s.gemessen).toLocaleTimeString('de-DE', { timeStyle: 'short' })} Uhr.</p>
       </section>
 

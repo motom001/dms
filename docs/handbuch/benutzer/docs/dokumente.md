@@ -23,6 +23,8 @@ Eine Datei darf bis zu 100 MB groß sein.
 
 ## Ansehen und herunterladen
 
+Neben jedem PDF und Bild (JPEG, PNG) steht ein **kleines Vorschaubild der ersten Seite**. So erkennst du auch bei nichtssagenden Namen wie „Scan_2026-10-12.pdf“ oder „IMG_4711.jpg“ auf einen Blick, welches die Rechnung und welches das Foto des Zählers ist. Das Bild entsteht kurz nach dem Hochladen im Hintergrund; bis dahin – und bei anderen Dateien wie Word oder Excel – steht dort die Dateiendung. Das Vorschaubild sieht nur, wer auch das Dokument sehen darf. Auch beim **Zuordnen einer Post** stehen die Vorschaubilder neben den Dokumenten.
+
 - **PDFs und Bilder:** Ein Klick irgendwo auf die Zeile zeigt das Dokument **direkt darunter** an, ein zweiter Klick schließt es. Es ist immer nur ein Dokument offen. Per Tastatur: mit Tab auf den Namen, dann Enter. Das Symbol **↗** öffnet es in einem neuen Browser-Tab.
 - **Alle anderen Dateien** (z. B. Word, Excel) lassen sich nur herunterladen und dann in ihrem Programm öffnen.
 
