@@ -117,6 +117,8 @@ export interface MappentypDaten {
   erstellenErlaubt?: boolean;
   /** In der Ablage dürfen Mappen dieses Typs gelöscht werden (Standard: ja). */
   loeschenErlaubt?: boolean;
+  /** Archivmodus (#212): Aufbewahrungsfrist und Stichtag; fehlt/null = aus. */
+  archiv?: import('./archiv').Archiv | null;
 }
 export interface Mappentyp extends MappentypDaten {
   id: string;

@@ -874,4 +874,22 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('DELETE', `/api/dokumente/${a.id}`)).status, 204);
     assert.equal((await anfrage('GET', `/api/dokumente/${a.id}/versionen`)).status, 404);
   });
+
+  it('Archivmodus: Löschsperre, Darf weg, Dateien prüfen (#212)', async () => {
+    const t = (await anfrage('POST', '/api/typen', { name: 'Archivbeleg', archiv: { jahre: 8, stichtag: 'datum' },
+      felder: [{ key: 'name', label: 'Name', typ: 'text' }, { key: 'datum', label: 'Datum', typ: 'datum' }],
+      register: [{ key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente' }] })).body;
+    assert.deepEqual(t.archiv, { jahre: 8, stichtag: 'datum' });
+    assert.equal(t.register.find((r: { key: string }) => r.key === 'belege').versionierung, true);
+    const jung = (await anfrage('POST', '/api/mappen', { typId: t.id, werte: { name: 'Jung', datum: '2026-02-01' } })).body;
+    const alt = (await anfrage('POST', '/api/mappen', { typId: t.id, werte: { name: 'Alt', datum: '2010-02-01' } })).body;
+    const r = await anfrage('DELETE', `/api/mappen/${jung.id}`);
+    assert.equal(r.status, 409);
+    assert.match(r.body.fehler, /31\.12\.2034/);
+    assert.equal((await anfrage('GET', `/api/mappen/${jung.id}`)).body.aufbewahrenBis, '2034-12-31');
+    const weg = (await anfrage('GET', '/api/werkbank/darf-weg')).body;
+    assert.deepEqual(weg.map((x: { id: string }) => x.id), [alt.id]);
+    assert.equal((await anfrage('DELETE', `/api/mappen/${alt.id}`)).status, 204);
+    assert.equal((await anfrage('POST', '/api/werkbank/wartung/dateien')).status, 202);
+  });
 });

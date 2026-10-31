@@ -180,6 +180,7 @@ const SCHEMAS: Record<string, Schema> = {
     properties: { name: { type: 'string' }, schluessel: { type: 'string', example: 'rechnung', description: 'Fester Schlüssel; beim Anlegen frei wählbar (sonst aus dem Namen), danach unveränderlich' }, beschreibung: { type: 'string' }, titelVorlage: { type: 'string', example: '{rechnungsnummer} vom {rechnungsdatum}' }, felder: liste('Feld'), register: liste('Register'),
       trefferlisten: { type: 'array', description: 'Trefferlisten; genau eine ist Standard', items: { type: 'object', required: ['key', 'name', 'spalten'], properties: { key: { type: 'string' }, name: { type: 'string' }, spalten: { type: 'array', items: { type: 'string' }, description: 'Feldschlüssel oder _titel, _erstellt, _erstelltVon, _geaendert, _geaendertVon' }, standard: { type: 'boolean' } } } },
       trefferliste: { type: 'array', items: { type: 'string' }, description: 'Spalten der Standard-Trefferliste (ältere Form); wenn angegeben, ersetzt sie deren Spalten' },
+      archiv: { type: 'object', nullable: true, description: 'Archivmodus (#212); null = aus. Frist bis Ende des Kalenderjahres des Stichtags + jahre; vorher kein Löschen (409). Die Versionierung der Dokumentenregister ist dann Pflicht.', properties: { jahre: { type: 'integer', minimum: 1, maximum: 30 }, stichtag: { type: 'string', nullable: true, description: 'Schlüssel eines Datumsfelds; null = Anlagedatum' } } },
       erstellenErlaubt: { type: 'boolean', default: true, deprecated: true, description: 'Ohne Wirkung seit 0.32 – wer anlegen darf, regeln die Berechtigungen (Recht C)' },
       sichtAnlegen: { type: 'boolean', default: true, writeOnly: true, description: 'Nur beim Anlegen: eigene Sicht in der Ablage anlegen' },
       loeschenErlaubt: { type: 'boolean', default: true, deprecated: true, description: 'Ohne Wirkung seit 0.32 – wer löschen darf, regeln die Berechtigungen (Recht D)' } },
@@ -237,6 +238,7 @@ const SCHEMAS: Record<string, Schema> = {
     properties: {
       mappe: ref('Mappe'), favorit: { type: 'boolean', description: 'Favorit des Benutzers dieses Schlüssels' }, dokumente: liste('Dokument'), notizen: liste('Notiz'), aufgaben: liste('Aufgabe'), bezuege: { type: 'object', additionalProperties: ref('Bezug') },
       rueckverweise: { type: 'array', items: { type: 'object', properties: { quelleId: uuid, quelleTypId: uuid, feldKey: { type: 'string' }, titel: { type: 'string' } } } },
+      aufbewahrenBis: { type: 'string', format: 'date', nullable: true, description: 'Archivmodus (#212): Ende der Aufbewahrungsfrist (JJJJ-12-31); vorher antwortet Löschen mit 409' },
       loeschbar: { type: 'object', description: 'Ob die Mappe gelöscht werden kann; sonst Grund und die Mappen, die das verhindern', properties: { ok: { type: 'boolean' }, grund: { type: 'string' }, rueckverweise: { type: 'array', items: { type: 'object', properties: { quelleId: uuid, quelleTypId: uuid, feldKey: { type: 'string' }, titel: { type: 'string' } } } } } },
     },
   },

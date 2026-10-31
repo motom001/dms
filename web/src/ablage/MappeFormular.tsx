@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
 import { eigeneFelderIm, vorbelegungAus } from '../../../shared/src/sichten';
+import { datumText, inFrist } from '../../../shared/src/archiv';
 import { darfErstellen, darfLoeschen, formatiere, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register, type Werte } from '../../../shared/src/model';
 import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
@@ -86,6 +87,8 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { t
         <dl className="index">
           <div><dt>Angelegt</dt><dd>{zeit(mappe.erstellt)} von <Person id={mappe.erstelltVon} /></dd></div>
           <div><dt>Zuletzt geändert</dt><dd>{zeit(mappe.geaendert)} von <Person id={mappe.geaendertVon} /></dd></div>
+          {/* Archivmodus (#212) */}
+          {details.aufbewahrenBis && <div><dt><span className="chip archiv" title="Archivmodus: vor Fristende nicht löschbar">Archiv</span></dt><dd>{inFrist(details.aufbewahrenBis) ? 'aufbewahren bis' : 'Frist abgelaufen am'} {datumText(details.aufbewahrenBis)}</dd></div>}
         </dl>
         {typ.system === 'benutzer' && ich.rolle === 'admin' && <p className="leise klein"><Link to={`/werkbank/benutzer/${mappe.id}`} className="verweis">In der Benutzerverwaltung öffnen →</Link></p>}
         {mappe.systemKennung && <p className="leise klein"><span className="chip">Systemrolle</span> Wer sie hat, ergibt sich aus der Rolle in der Benutzerverwaltung.</p>}

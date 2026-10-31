@@ -28,6 +28,9 @@ Hinter Dokumenten- und Verknüpfungsregistern steht, wie viel darin liegt. Ein r
 3. Fülle die Felder aus. Felder mit **\*** sind Pflichtfelder. Unter manchen Feldern steht ein Hinweis, was hineingehört.
 4. Klicke auf **Mappe speichern**.
 
+!!! info "Archiv – aufbewahren bis"
+    Steht an einer Mappe **Archiv · aufbewahren bis 31.12.JJJJ**, muss sie bis dahin aufbewahrt werden: Bis zu diesem Tag lassen sich weder die Mappe noch ihre Dokumente löschen; Dokumente ersetzt du als neue Version. Danach kann ein Administrator sie unter „Darf weg“ löschen.
+
 !!! info "Nur passende Mappen"
     Manche Verweisfelder bieten nur bestimmte Mappen an, z. B. beim Feld *Arzt* nur Vertragspartner, die Ärzte sind. Steht neben einer gewählten Mappe „passt nicht mehr zum Filter“, bleibt sie gültig; neu wählen kannst du nur, was passt.
 
