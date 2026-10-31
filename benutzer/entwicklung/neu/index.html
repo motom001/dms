@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-076" class="md-skip">
+        <a href="#neu-in-version-077" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -419,15 +419,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0760" class="md-nav__link">
+  <a href="#0770" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.76.0
+        0.77.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.76.0">
+    <nav class="md-nav" aria-label="0.77.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -435,6 +435,17 @@
     <span class="md-ellipsis">
       
         Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sicherheit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheit
       
     </span>
   </a>
@@ -1082,15 +1093,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0760" class="md-nav__link">
+  <a href="#0770" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.76.0
+        0.77.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.76.0">
+    <nav class="md-nav" aria-label="0.77.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1098,6 +1109,17 @@
     <span class="md-ellipsis">
       
         Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sicherheit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheit
       
     </span>
   </a>
@@ -1140,24 +1162,29 @@
   
 
 
-<h1 id="neu-in-version-076">Neu in Version 0.76<a class="headerlink" href="#neu-in-version-076" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-077">Neu in Version 0.77<a class="headerlink" href="#neu-in-version-077" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0760">0.76.0<a class="headerlink" href="#0760" title="Permanent link">&para;</a></h2>
+<h2 id="0770">0.77.0<a class="headerlink" href="#0770" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Vorschaubilder der ersten Seite</strong> (#332). Neben jedem PDF und Bild (JPEG, PNG) steht in der Dokumentliste ein kleines Bild der ersten Seite – so erkennt man auch bei Namen wie „Scan_2026-10-12.pdf“ oder „IMG_4711.jpg“ auf einen Blick, welches die Rechnung ist. Auch beim Zuordnen einer Post stehen die Bilder neben den Dokumenten.</li>
-<li>Das Bild entsteht <strong>einmal</strong> im Hintergrund, gleich nach dem Hochladen (bei älteren Dokumenten beim ersten Anzeigen), und wird nach Prüfwert abgelegt – gleicher Inhalt, ein Bild. PDFs rendert <code>pdftoppm</code> (poppler, schon im Image); Bilder werden genauso verkleinert. Andere Dateitypen und Bilder im HEIC-Format zeigen weiter ihre Dateiendung.</li>
-<li>Rechte wie beim Dokument: Das Vorschaubild sieht nur, wer das Dokument lesen darf.</li>
-<li><strong>Werkbank → Wartungsoperationen → Vorschaubilder nachholen</strong> erzeugt die fehlenden für den ganzen Bestand, eins nach dem anderen.</li>
-<li><strong>Werkbank → Speicherplatz</strong> zeigt, wie viel die Vorschaubilder belegen. Sie liegen unter <code>/data/files/vorschau/</code> und werden <strong>nicht gesichert</strong> – sie entstehen bei Bedarf neu.</li>
-<li>Handbuch: <em>Dokumente</em> (Benutzer), <em>Wartungsoperationen</em>, <em>Speicherplatz</em> und <em>Sicherung</em> (Administratoren); Glossar „Vorschaubild“.</li>
+<li><strong>Doppelte Dokumente erkennen</strong> (#333). Liegt genau diese Datei schon im DMS, erfährt man es <strong>vor</strong> dem Ablegen – mit Link zur Mappe, Register, Dateiname und Datum: „Diese Datei liegt schon in <em>Stromvertrag Haus</em> …“.</li>
+<li><strong>In einer Mappe:</strong> Der Hinweis steht an der neuen Datei, noch vor <em>Mappe speichern</em>. Speichern legt sie trotzdem ab, <em>Nicht hochladen</em> lässt sie weg.</li>
+<li><strong>Neue Post</strong> (Ziehen ins Fenster, <em>+ Neu → Post</em>, Kamera): Vor dem Anlegen fragt das DMS je doppelter Datei – <em>trotzdem ablegen</em> anhaken, <em>Weiter</em> oder <em>Abbrechen</em>; die übrigen Dateien laufen normal.</li>
+<li><strong>Zuordnen einer Post:</strong> Unter jedem Dokument, das schon anderswo liegt, stehen die Fundstellen.</li>
+<li><strong>Eingangsordner und Postfach:</strong> Doppelte Dateien werden trotzdem Post; die Historie sagt „Diese Datei liegt schon im DMS“. Neu unter <strong>Werkbank → Eingangsordner:</strong> <em>Doppelte Dateien überspringen</em>.</li>
+<li><strong>Schnittstelle:</strong> <code>POST /api/v1/dokumente/gleiche</code> mit Prüfwerten (SHA-256); das Hochladen nennt in <code>gleicherInhalt</code> nur Mappen, die der Schlüssel lesen darf.</li>
+<li>Verglichen wird der <strong>Prüfwert</strong> – nur exakt gleiche Dateien, nicht ein zweiter Scan desselben Briefs. Der Prüfwert entsteht im Browser; im Heimnetz über <code>http://</code> mit einer eigenen Umsetzung (etwa 1 s für 50 MB).</li>
+</ul>
+<h3 id="sicherheit">Sicherheit<a class="headerlink" href="#sicherheit" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Hinweise auf gleiche Dateien nennen <strong>nur Mappen, die man lesen darf</strong>. Liegt die Datei nur in verborgenen Mappen, gibt es keinen Hinweis – das DMS verrät nicht, dass es sie gibt. Bisher nannte die Antwort beim Hochladen und die Historie einer Post aus dem Eingangsordner auch Titel von Mappen, die der Benutzer nicht sehen durfte; neue Einträge enthalten nur noch die Anzahl.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.75.1 im Detail: <a href="https://github.com/motom001/dms/compare/v0.75.1...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.76.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.76.0...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 
