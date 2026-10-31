@@ -1,0 +1,2 @@
+# Werkzeuge für die Handbücher (#289). Hashes erzeugt mit pip-compile --generate-hashes.
+mkdocs-material==9.7.7

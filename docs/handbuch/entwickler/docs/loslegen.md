@@ -58,7 +58,7 @@ Die CI auf GitHub führt all das aus, baut beide Images (`dms`, `dms-komplett`) 
 ## Handbücher
 
 ```sh
-pip install 'mkdocs-material>=9.5,<10'
+pip install -r docs/handbuch/requirements.txt   # dieselben Versionen wie CI und Image
 mkdocs serve -f docs/handbuch/benutzer/mkdocs.yml
 ```
 

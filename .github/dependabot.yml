@@ -37,3 +37,11 @@ updates:
       # Nur LTS-Versionen von Node (gerade Hauptversionen); der Wechsel kommt gezielt (#236).
       - dependency-name: "node"
         update-types: ["version-update:semver-major"]
+  # Werkzeuge der Handbücher mit Hashes (#289): docs/handbuch/requirements.txt (pip-compile).
+  - package-ecosystem: pip
+    directory: "/docs/handbuch"
+    schedule: { interval: weekly, day: monday, time: "05:00", timezone: Europe/Berlin }
+    groups:
+      handbuch:
+        patterns: ["*"]
+    commit-message: { prefix: "Handbuch" }

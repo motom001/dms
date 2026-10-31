@@ -18,7 +18,9 @@ RUN npm run build
 # Handbücher für die Offline-Hilfe (#219): alle vier und die Startseite, ohne Screenshots,
 # ausgeliefert unter /hilfe/. Nur der gebaute Ordner kommt ins Image, nicht Python.
 FROM python:3.12-alpine AS hilfe
-RUN pip install --no-cache-dir --disable-pip-version-check mkdocs-material==9.7.7
+# Feste Versionen mit Hashes (#289), dieselben wie im Handbuch-Workflow.
+COPY docs/handbuch/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir --disable-pip-version-check --require-hashes -r /tmp/requirements.txt
 WORKDIR /src
 COPY package.json ./
 COPY docs/releases docs/releases
