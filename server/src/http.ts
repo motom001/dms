@@ -64,6 +64,7 @@ interface Optionen {
   /** Speicherplatz-Überwachung (#116) und feste Ordner (#115). */
   speicherplatz?: Speicherplatz;
   eingangsordner?: import('./eingangsordner').Eingangsordner;
+  postfaecher?: import('./postfach').Postfaecher;
   ordner?: OrdnerPruefung;
   /** Einrichtungsassistent und Datenbank-Anbindung (#119). */
   einrichtung?: Einrichtung;

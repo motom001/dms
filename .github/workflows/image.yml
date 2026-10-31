@@ -49,6 +49,13 @@ jobs:
       # Texterkennung (#45): dieselben Werkzeuge wie im Image.
       - name: Texterkennung installieren
         run: sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-deu poppler-utils >/dev/null
+      # IMAP-Testserver für die Postfächer (#196); fehlt das Image, laufen die übrigen Tests trotzdem.
+      - name: IMAP-Testserver (GreenMail) starten
+        run: |
+          if docker run -d --name greenmail -p 3025:3025 -p 3143:3143 \
+               -e GREENMAIL_OPTS='-Dgreenmail.setup.test.smtp -Dgreenmail.setup.test.imap -Dgreenmail.hostname=0.0.0.0 -Dgreenmail.users=dms:geheim@dms.test -Dgreenmail.verbose=false' \
+               greenmail/standalone:2.1.15 >/dev/null; then echo "IMAP_TEST_HOST=127.0.0.1" >> "$GITHUB_ENV"
+          else echo "::warning::GreenMail nicht verfügbar – IMAP-Test übersprungen"; fi
       - name: Typen prüfen
         run: npm run typecheck
       - name: Tests (inklusive PostgreSQL)

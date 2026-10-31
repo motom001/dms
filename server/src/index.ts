@@ -1,4 +1,6 @@
 import { existsSync } from 'node:fs';
+import { liesMail, verbindeImap } from './imap';
+import { Postfaecher } from './postfach';
 import { Eingangsordner } from './eingangsordner';
 import { einbettenAus } from './koepfe';
 import { proxyVertrauen } from './proxy';
@@ -214,6 +216,21 @@ const eingangsordner = new Eingangsordner(env.DMS_EINGANG ?? '/eingang', {
     return r.ok as boolean;
   })()),
 });
+// Postfächer (#196): Mails per IMAP abholen; nur eine Instanz ruft ab.
+let postSperre: Promise<boolean> | null = null;
+const postfaecher = new Postfaecher({
+  dienst, einstellungen: pgEinstellungen(sql, cfg.haushalt), verbinde: verbindeImap, lies: liesMail,
+  verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w),
+  pause: () => (wartung.aktiv ? 'Wartungsmodus' : wiederherstellung.laeuft() ? 'Wiederherstellung läuft' : null),
+  platz: () => speicherplatz.pruefeHochladen(),
+  anAdmins,
+  sperre: () => (postSperre ??= (async () => {
+    const v = await sql.reserve();
+    const [r] = await v`SELECT pg_try_advisory_lock(4711196) AS ok`;
+    if (!r.ok) { v.release(); postSperre = null; }
+    return r.ok as boolean;
+  })()),
+});
 const anbindungVerwaltung = new AnbindungVerwaltung(ordner.geheim, db, umgebung, () => { void beenden(); });
 const app = await baueApp(dienst, konten, {
   einbetten: cfg.einbetten,
@@ -238,6 +255,7 @@ const app = await baueApp(dienst, konten, {
   wiederherstellung,
   speicherplatz,
   eingangsordner,
+  postfaecher,
   ordner: ordnerPruefung,
   fehlermeldungen: new Fehlermeldungen(pgFehlerRepo(sql, cfg.haushalt), ordnerSpeicher(ordner.dateien, `${cfg.haushalt}/fehlermeldungen`)),
 });
@@ -283,6 +301,7 @@ notfall.start();
 sicherung.start();
 speicherplatz.start();
 await eingangsordner.start();
+postfaecher.start();
 setInterval(() => void wiederherstellung.tick().catch((e) => log.error('Zeitplan der Probe gestört', { fehler: (e as Error).message })), 60_000).unref();
 
 const beenden = async () => {

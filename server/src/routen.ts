@@ -23,6 +23,7 @@ import type { Sicherung } from './sicherung';
 import type { Wiederherstellung } from './wiederherstellung';
 import type { Speicherplatz } from './speicherplatz';
 import type { Eingangsordner } from './eingangsordner';
+import type { Postfaecher } from './postfach';
 import type { OrdnerPruefung } from './ordner';
 import type { Einrichtung } from './einrichtung';
 import type { AnbindungVerwaltung } from './anbindung';
@@ -123,6 +124,8 @@ export interface RoutenExtras {
   speicherplatz?: Speicherplatz;
   /** Eingangsordner (#195). */
   eingangsordner?: Eingangsordner;
+  /** Postfächer (#196). */
+  postfaecher?: Postfaecher;
   /** Feste Ordner und überflüssige frühere Variablen (#115). */
   ordner?: OrdnerPruefung;
   /** Einrichtungsassistent und Datenbank-Anbindung (#119). */
@@ -189,6 +192,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   /** Benutzer mit ihren weiteren Rollen (#27). */
   const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.weitereRollen()).get(b.id) ?? [] });
   const sicherung = () => { if (!x.sicherung) throw new Fachfehler(404, 'Sicherungen sind nicht eingerichtet.'); return x.sicherung; };
+  const postfaecher = () => { if (!x.postfaecher) throw new Fachfehler(404, 'Postfächer sind nicht eingerichtet.'); return x.postfaecher; };
   /** Demo-Dokumente (#248): freier Platz bei den Dateien; frei bleiben müssen Mindest-Speicherplatz der Sicherung bzw. die Speicherplatz-Grenze. */
   const demoPlatz: DemoPlatz | undefined = x.speicherplatz ? {
     frei: async () => (await x.speicherplatz!.messe()).ordner.find((o) => o.art === 'dateien')?.frei ?? null,
@@ -703,6 +707,13 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'PUT', pfad: '/api/werkbank/anbindung', zugang: 'admin', handler: async (a) => ok(await anbindung().speichere({ ...(b(a).anbindung as object ?? {}), leerBestaetigt: b(a).leerBestaetigt }, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/neustart', zugang: 'admin', handler: async (a) => { anbindung().neustart(ich(a).email); return leer; } },
     /* ---------- Speicherplatz (#116) ---------- */
+    // Postfächer (#196): nur Administratoren; Passwörter verlassen den Server nie.
+    { methode: 'GET', pfad: '/api/werkbank/postfaecher', zugang: 'admin', handler: async () => ok(await postfaecher().ansicht()) },
+    { methode: 'POST', pfad: '/api/werkbank/postfaecher', zugang: 'admin', handler: async (a) => ok(await postfaecher().speichere(a.body, null, ich(a).email)) },
+    { methode: 'POST', pfad: '/api/werkbank/postfaecher/testen', zugang: 'admin', handler: async (a) => ok(await postfaecher().teste(a.body, typeof (b(a) as { id?: unknown }).id === 'string' ? (b(a) as { id: string }).id : null)) },
+    { methode: 'PUT', pfad: '/api/werkbank/postfaecher/:id', zugang: 'admin', handler: async (a) => ok(await postfaecher().speichere(a.body, a.params.id, ich(a).email)) },
+    { methode: 'DELETE', pfad: '/api/werkbank/postfaecher/:id', zugang: 'admin', handler: async (a) => { await postfaecher().loesche(a.params.id, ich(a).email); return leer; } },
+    { methode: 'POST', pfad: '/api/werkbank/postfaecher/:id/abrufen', zugang: 'admin', handler: async (a) => ok({ uebernommen: await postfaecher().abrufen(a.params.id) }) },
     // Eingangsordner (#195): nur sichtbar, wenn /eingang eingebunden ist.
     { methode: 'GET', pfad: '/api/werkbank/eingangsordner', zugang: 'admin', handler: async () => ok(x.eingangsordner ? await x.eingangsordner.stand() : { vorhanden: false }) },
     { methode: 'PUT', pfad: '/api/werkbank/eingangsordner', zugang: 'admin', handler: async (a) => {

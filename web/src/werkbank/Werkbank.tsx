@@ -1,3 +1,4 @@
+import { PostfachEditor, PostfaecherListe, usePostfaecher } from './Postfaecher';
 import { EingangsordnerListe, EingangsordnerPanel, useEingangsordner } from './Eingangsordner';
 import { useEffect, type ReactNode } from 'react';
 import { Dreiteilung } from '../bereiche';
@@ -71,6 +72,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const sicherung = useSicherung(bereich === 'sicherung');
   const speicherplatz = useSpeicherplatz(bereich === 'speicherplatz');
   const eingang = useEingangsordner(bereich === 'eingangsordner');
+  const postfaecher = usePostfaecher(bereich === 'postfaecher');
   const anbindung = useAnbindung(bereich === 'anbindung');
   // Wieder erreichbar nach Update oder Neustart (#122): Übersicht und offenen Bereich neu laden.
   useBeiWiederErreichbar(() => {
@@ -146,6 +148,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'anbindung') {
     liste = <AnbindungListe z={anbindung} />;
     rechts = <AnbindungPanel z={anbindung} nachAenderung={() => void uebersicht.laden()} />;
+  } else if (bereich === 'postfaecher') {
+    liste = <PostfaecherListe z={postfaecher} offen={id} />;
+    rechts = id ? <PostfachEditor key={id} z={postfaecher} id={id} /> : <div className="platzhalter"><p>Wähle links ein Postfach oder lege mit „+ Neu“ eines an.</p></div>;
   } else if (bereich === 'eingangsordner') {
     liste = <EingangsordnerListe z={eingang} />;
     rechts = <EingangsordnerPanel z={eingang} />;
@@ -188,6 +193,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'papierkorb', name: 'Papierkorb', gruppe: 'einstellungen', zahl: papierkorb.eintraege?.length || uebersicht.stand?.papierkorb.anzahl || undefined },
           { pfad: 'anbindung', name: 'Datenbank-Anbindung', gruppe: 'einstellungen', warn: uebersicht.stand?.anbindung && (uebersicht.stand.anbindung.umgebung === 'abweichend' || uebersicht.stand.anbindung.neustartNoetig) ? '!' : undefined, warnTitel: 'DATABASE_URL weicht ab oder Neustart nötig' },
           { pfad: 'speicherplatz', name: 'Speicherplatz', gruppe: 'einstellungen', warn: uebersicht.stand?.speicherplatz && uebersicht.stand.speicherplatz.zustand !== 'ok' ? (uebersicht.stand.speicherplatz.zustand === 'grenze' ? 'voll' : 'knapp') : undefined, warnTitel: 'Speicherplatz knapp' },
+          { pfad: 'postfaecher', name: 'Postfächer', gruppe: 'einstellungen', zahl: postfaecher.liste?.length || undefined, warn: postfaecher.liste?.some((p) => p.stand.fehlerFolge > 0) ? '!' : undefined, warnTitel: 'Abruf fehlgeschlagen' },
           ...(eingang.stand?.vorhanden ? [{ pfad: 'eingangsordner', name: 'Eingangsordner', gruppe: 'einstellungen' as const, warn: eingang.stand.fehler?.length ? String(eingang.stand.fehler.length) : undefined, warnTitel: 'abgelehnte Dateien' }] : []),
           { pfad: 'texterkennung', name: 'Texterkennung', gruppe: 'einstellungen', warn: uebersicht.stand?.texterkennung?.fehler ? String(uebersicht.stand.texterkennung.fehler) : undefined, warnTitel: 'Dokumente mit Fehler' },
           { pfad: 'protokoll', name: 'Protokoll', gruppe: 'wartung', warn: protokoll.debug?.an ? 'Debug' : undefined, warnTitel: 'Debug-Modus ist an' },

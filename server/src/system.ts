@@ -14,7 +14,7 @@ import type postgres from 'postgres';
 
 export const REPO = 'motom001/dms';
 /** Bibliotheken des Servers, deren Version für den Support zählt. */
-export const BIBLIOTHEKEN = ['fastify', '@fastify/static', 'postgres', 'nodemailer'] as const;
+export const BIBLIOTHEKEN = ['fastify', '@fastify/static', 'postgres', 'nodemailer', 'imapflow', 'mailparser'] as const;
 
 export interface Datenbankdaten { version: string; groesseBytes: number; mappen: number; typen: number; benutzer: number; dokumente: number; dokumenteBytes: number }
 export interface SystemQuelle { datenbank(): Promise<Datenbankdaten> }
@@ -141,6 +141,8 @@ export const BEZEICHNUNGEN: Record<string, string> = {
   '@fastify/static': '@fastify/static (Auslieferung der Oberfläche)',
   postgres: 'postgres.js (Datenbank-Treiber)',
   nodemailer: 'nodemailer (E-Mail-Versand)',
+  imapflow: 'imapflow (Postfächer abrufen)',
+  mailparser: 'mailparser (Mails lesen)',
   react: 'react (Oberfläche)',
 };
 
