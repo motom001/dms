@@ -26,10 +26,11 @@ jobs:
       - name: Erzeugen und prüfen
         id: l
         run: |
-          if [ -f package-lock.json ] && npm ci --dry-run --ignore-scripts >/dev/null 2>&1; then
+          # Immer neu auflösen: `npm ci --dry-run` übersieht geänderte `overrides` und fehlende Einträge (#288).
+          npm install --package-lock-only --no-audit --no-fund --ignore-scripts
+          if [ -f package-lock.json ] && git diff --quiet -- package-lock.json && git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
             echo "package-lock.json passt zu package.json – nichts zu tun."; echo "neu=false" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          npm install --package-lock-only --no-audit --no-fund --ignore-scripts
           echo "neu=true" >> "$GITHUB_OUTPUT"
       - name: Auf werkzeug/lockfile ablegen
         if: steps.l.outputs.neu == 'true'
