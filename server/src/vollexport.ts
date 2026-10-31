@@ -31,6 +31,7 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   mappentypen: 'struktur/mappentypen.json',
   sichten: 'struktur/sichten.json',
   nummernkreise: 'struktur/nummernkreise.json',
+  pakete: 'struktur/pakete.json',
   designs: 'struktur/designs.json',
   benutzer: 'struktur/benutzer.json (ohne Passwort-Hashes)',
   benutzer_einstellungen: 'struktur/benutzer.json (einstellungen)',
@@ -70,6 +71,8 @@ export interface ExportQuelle {
   typen(): Promise<Mappentyp[]>;
   sichten(): Promise<Sicht[]>;
   nummernkreise(): Promise<Nummernkreis[]>;
+  /** Installierte Pakete (#188). */
+  pakete(): Promise<unknown[]>;
   designs(): Promise<unknown[]>;
   mappen(typId: string): Promise<Mappe[]>;
   papierkorb(): Promise<PapierkorbEintrag[]>;
@@ -186,6 +189,7 @@ export async function vollexport(q: ExportQuelle, ziel: string, opt: ExportOptio
   await w.schreibe('struktur/mappentypen.json', json(typen));
   await w.schreibe('struktur/sichten.json', json(await q.sichten()));
   await w.schreibe('struktur/nummernkreise.json', json(await q.nummernkreise()));
+  await w.schreibe('struktur/pakete.json', json(await q.pakete()));
   await w.schreibe('struktur/designs.json', json(await q.designs()));
   await w.schreibe('struktur/benutzer.json', json(b.benutzer));
   weiter();

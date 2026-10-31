@@ -3,6 +3,7 @@ import { lesbar, werte } from '../../shared/src/rechte';
 import type { Erinnerung } from '../../shared/src/fristen';
 import { umschluesseleTief } from './tresor';
 import { datumIn, ziehe, type Nummernkreis } from '../../shared/src/nummernkreis';
+import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type DokumentVersion, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
 import { alsText } from '../../shared/src/markdown';
 import { ausschnittAus } from './repo-pg';
@@ -18,6 +19,7 @@ export function speicherRepo(): Repo {
   const typen = new Map<string, Mappentyp>();
   const mappen = new Map<string, Mappe>();
   const kreise = new Map<string, Nummernkreis>();
+  const pakete = new Map<string, InstalliertesPaket>();
   /** Nummer ziehen (#171); synchron, damit gleichzeitiges Anlegen keine doppelten Nummern ergibt. */
   const zieheSync = (schluessel: string, mappeId: string, j: Date) => {
     const k = kreise.get(schluessel);
@@ -140,6 +142,9 @@ export function speicherRepo(): Repo {
         verweise.set(m.id, kopie(m.verweise));
       }
     },
+    async listePakete() { return [...pakete.values()].map(kopie).sort((a, b) => a.id.localeCompare(b.id)); },
+    async speicherePaket(p) { pakete.set(p.id, kopie(p)); },
+    async loeschePaket(id) { pakete.delete(id); },
     async listeNummernkreise() { return [...kreise.values()].map(kopie).sort((a, b) => a.name.localeCompare(b.name, 'de')); },
     async speichereNummernkreis(k) {
       const alt = kreise.get(k.schluessel);

@@ -1,0 +1,94 @@
+# Mappentyp Organisation. Das DMS legt ihn als basis_organisation an; angezeigt wird „Organisation“.
+- schluessel: organisation
+  name: Organisation
+  beschreibung: Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.
+  titelVorlage: "{name}"
+  felder:
+    # Stammdaten
+    - key: name
+      label: Name
+      typ: text
+      pflicht: true
+      eindeutig: true
+      maxLen: 120
+    - key: kuerzel
+      label: Kürzel
+      typ: text
+      maxLen: 20
+      hilfe: Kurzname, z. B. „SWM“ für Stadtwerke Musterstadt
+    - key: art
+      label: Art
+      typ: auswahl
+      mehrfach: true
+      optionen: [Lieferant, Kunde, Bank, Versicherung, Behörde, Arbeitgeber, Arzt/Praxis, Handwerker, Vermieter, Verein, Versorger, Sonstige]
+    - key: kundennummer
+      label: Kundennummer
+      typ: text
+      maxLen: 60
+      hilfe: Deine eigene Nummer bei dieser Organisation (Kunden-, Mitglieds-, Versicherten- oder Patientennummer)
+    - key: beschreibung
+      label: Beschreibung
+      typ: langtext
+    # Kontakt
+    - key: telefon
+      label: Telefon
+      typ: text
+      maxLen: 40
+    - key: fax
+      label: Fax
+      typ: text
+      maxLen: 40
+    - key: email
+      label: E-Mail
+      typ: text
+      maxLen: 200
+      muster: "[^@\\s]+@[^@\\s]+\\.[^@\\s]+"
+      hilfe: z. B. kontakt@beispiel.de
+    - key: internet
+      label: Internetseite
+      typ: text
+      maxLen: 200
+      hilfe: z. B. https://www.beispiel.de
+    # Anschrift
+    - key: strasse
+      label: Straße
+      typ: text
+      maxLen: 120
+    - key: hausnummer
+      label: Hausnummer
+      typ: text
+      maxLen: 10
+    - key: plz
+      label: PLZ
+      typ: text
+      maxLen: 10
+      hilfe: In Deutschland fünfstellig
+    - key: ort
+      label: Ort
+      typ: text
+      maxLen: 80
+    - key: land
+      label: Land
+      typ: text
+      maxLen: 60
+      standard: Deutschland
+  register:
+    - key: stammdaten
+      name: Stammdaten
+      art: felder
+      felder: [name, kuerzel, art, kundennummer, beschreibung]
+    - key: kontakt
+      name: Kontakt
+      art: felder
+      felder: [telefon, fax, email, internet]
+    - key: anschrift
+      name: Anschrift
+      art: felder
+      felder: [strasse, hausnummer, plz, ort, land]
+    - key: dokumente
+      name: Dokumente
+      art: dokumente
+    - key: protokoll
+      name: Protokoll
+      art: protokoll
+  trefferliste: [name, art, ort, telefon]

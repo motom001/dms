@@ -26,6 +26,7 @@ import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile }
 import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
 import { alleSichtRechte, bereinigeSichtRegelwerk, sichtRegelProblem, sichtTestlauf, type SichtRegelwerk } from '../../shared/src/sichtrechte';
 import { liesDirektlink } from '../../shared/src/direktlink';
+import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { abfrageAus, liesSuche } from '../../shared/src/erweitertesuche';
 import type { Lesefilter } from '../../shared/src/rechte';
 import { ANSTEHEND_MAX, ANSTEHEND_TAGE, bereinigeFrist, datumDe, empfaengerFelder, ERINNERUNG_TEXT_MAX, fristAb, fristEmpfaenger, fristFelder, fristText, istDatum, naechsterTermin, type Anstehend, type Erinnerung } from '../../shared/src/fristen';
@@ -1779,6 +1780,30 @@ export class Dienst {
     return n;
   }
 
+  /* ---------- Pakete (#188): Ablage der installierten Pakete; die Logik steckt in pakete.ts ---------- */
+
+  listePakete() { return this.repo.listePakete(); }
+  speicherePaket(p: InstalliertesPaket) { return this.repo.speicherePaket(p); }
+  loeschePaket(id: string) { return this.repo.loeschePaket(id); }
+
+  /** Warum Mappentypen nicht weg dürfen: Mappen oder Papierkorb-Einträge. Leer = frei. */
+  async belegteTypen(ids: string[]): Promise<string[]> {
+    const gruende: string[] = [];
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    for (const id of ids) {
+      const t = typen.get(id);
+      if (!t) continue;
+      const n = await this.repo.zaehleMappen(id);
+      if (n) gruende.push(`${t.name}: ${n} ${n === 1 ? 'Mappe' : 'Mappen'}.`);
+      const korb = (await this.repo.papierkorb({ typId: id })).length;
+      if (korb) gruende.push(`${t.name}: ${korb} im Papierkorb.`);
+    }
+    return gruende;
+  }
+
+  /** Nur für das Zurückrollen einer fehlgeschlagenen Paketinstallation: Mappen ohne Papierkorb entfernen. */
+  async entferneMappenEndgueltig(ids: string[]) { for (const id of ids) await this.repo.loescheMappe(id); }
+
   /* ---------- Nummernkreise (#171) ---------- */
 
   /** Felder, die einen Kreis nutzen: „Mappentyp · Feld“. */
@@ -2933,6 +2958,7 @@ export class Dienst {
       typen: () => r.listeTypen(),
       sichten: () => r.listeSichten(),
       nummernkreise: () => r.listeNummernkreise(),
+      pakete: () => r.listePakete(),
       mappen: (typId) => r.listeMappen(typId),
       papierkorb: () => r.papierkorb(),
       dokumente: (mappeId) => r.listeDokumente(mappeId),
@@ -2981,6 +3007,7 @@ export class Dienst {
       typen: async () => typen,
       sichten: async () => [],
       nummernkreise: async () => [],
+      pakete: async () => [],
       mappen: async (typId) => mappenJeTyp.get(typId) ?? [],
       papierkorb: async () => (await this.repo.papierkorb({ von: ich })),
       aufgaben: async (id) => (await this.repo.aufgabenVon(id)).filter((a) => a.empfaengerId === ich || a.erstelltVon === ich),

@@ -5,6 +5,7 @@ import type { Archiv } from '../../shared/src/archiv';
 import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, DokumentVersion, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Feldbedingung, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
+import type { InstalliertesPaket, Katalog } from '../../shared/src/pakete';
 import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src/sichtrechte';
 import type { Anstehend, Erinnerung } from '../../shared/src/fristen';
 import { merkeAnfrage } from './diagnose';
@@ -420,6 +421,14 @@ export const api = {
   auswahlZaehlen: (zielTyp: string, bedingungen: Feldbedingung[]) => anfrage<{ passen: number; gesamt: number; probleme: string[] }>('POST', '/api/werkbank/auswahlfilter/zaehlen', { zielTyp, bedingungen }),
   /* Nummernkreise (#171) */
   nummernkreise: () => anfrage<NummernkreisAnsicht[]>('GET', '/api/werkbank/nummernkreise'),
+  /* Paketverwaltung (#188) */
+  pakete: () => anfrage<{ installiert: InstalliertesPaket[]; katalogUrl: string; dms: string }>('GET', '/api/werkbank/pakete'),
+  paketKatalog: () => anfrage<{ url: string; katalog: Katalog; abgerufen: string }>('POST', '/api/werkbank/pakete/katalog'),
+  paketVorschau: (id: string, version?: string) => anfrage<PaketVorschau>('POST', '/api/werkbank/pakete/vorschau', { id, version }),
+  paketInstallieren: (e: { id: string; version?: string; namen?: Record<string, string>; sichtNamen?: Record<string, string>; beispiele?: boolean; mitAbhaengigkeiten?: boolean }) => anfrage<InstalliertesPaket>('POST', '/api/werkbank/pakete/installieren', e),
+  paketUpdates: () => anfrage<Array<{ id: string; installiert: string; neu: string; changelog: string | null }>>('POST', '/api/werkbank/pakete/updates'),
+  paketAktualisieren: (id: string, version?: string) => anfrage<InstalliertesPaket>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/aktualisieren`, { version }),
+  paketEntfernen: (id: string) => anfrage<void>('DELETE', `/api/werkbank/pakete/${encodeURIComponent(id)}`),
   nummernkreisAnlegen: (k: NummernkreisEingabe) => anfrage<NummernkreisAnsicht[]>('POST', '/api/werkbank/nummernkreise', k),
   nummernkreisAendern: (s: string, k: Omit<NummernkreisEingabe, 'schluessel'>) => anfrage<NummernkreisAnsicht[]>('PUT', `/api/werkbank/nummernkreise/${encodeURIComponent(s)}`, k),
   nummernkreisLoeschen: (s: string) => anfrage<NummernkreisAnsicht[]>('DELETE', `/api/werkbank/nummernkreise/${encodeURIComponent(s)}`),
@@ -516,6 +525,15 @@ async function sendeDatei(url: string, datei: File): Promise<unknown> {
     return d;
 }
 
+/** Vorschau einer Paketinstallation bzw. eines Updates (#188). */
+export interface PaketVorschau {
+  paket: { id: string; name: string; version: string; beschreibung: string; lizenz: string; autor: { name: string; github: string }; dms: string; abhaengigkeiten: Record<string, string>; readme: string | null; changelog: string | null; quelle: string | null };
+  dmsVersion: string; dmsOk: boolean; installiert: string | null; update: boolean;
+  abhaengigkeiten: Array<{ id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null }>;
+  typen: Array<{ schluessel: string; dmsSchluessel: string; name: string; felder: number; vorhanden: boolean; neueFelder: string[]; neueRegister: string[]; konflikt: string | null; vorschlag: string | null; geloescht?: boolean }>;
+  sichten: Array<{ schluessel: string; name: string; eltern: string | null; vorhanden: boolean; konflikt: string | null; vorschlag: string | null }>;
+  beispiele: number; probleme: string[];
+}
 export type RechtStufe = 'immer' | 'nie' | 'teils';
 export interface BerechtigungEintrag { typId: string; name: string; system: string | null; berechtigungen: Regelwerk }
 export interface Testlauf extends Ergebnis { admin: boolean; mappe: { id: string; titel: string; typId: string }; benutzer: { id: string; name: string } }

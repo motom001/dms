@@ -17,6 +17,7 @@ import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
 import { join } from 'node:path';
 import { ALS_KOPF, KONSOLE_KOPF, istLoopback, konsolenBenutzer, type Konsolenzugang } from './konsole';
 import type { Messung } from './messung';
+import { Paketverwaltung, type InstallierenEingabe } from './pakete';
 import { eigeneVersion, standKennung, uebersicht, versionsabgleich, type SystemQuelle } from './system';
 import type { Fehlermeldungen } from './fehlermeldungen';
 import { MODULE, protokoll, STUFEN, type Stufe } from './protokoll';
@@ -154,6 +155,8 @@ export interface RoutenExtras {
   postfaecher?: Postfaecher;
   /** Feste Ordner und überflüssige frühere Variablen (#115). */
   ordner?: OrdnerPruefung;
+  /** Paketverwaltung (#188); ohne Angabe: offizieller Katalog über das Netz. */
+  pakete?: Paketverwaltung;
   /** Einrichtungsassistent und Datenbank-Anbindung (#119). */
   einrichtung?: Einrichtung;
   anbindung?: AnbindungVerwaltung;
@@ -168,6 +171,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const { messung, system } = x;
   const designs = () => { if (!x.designs) throw new Fachfehler(404, 'Designs sind nicht eingerichtet.'); return x.designs; };
   const log = x.log ?? ((m: string) => L.mail.warn(m));
+  const pakete = x.pakete ?? new Paketverwaltung(dienst, { version: eigeneVersion });
   const typName = async (id: string) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? id;
   const betrieb = () => { if (!x.betrieb) throw new Fachfehler(404, 'Betriebseinstellungen sind nicht eingerichtet.'); return x.betrieb; };
   const mail = () => { if (!x.aufgabenmail) throw new Fachfehler(404, 'Die Aufgaben-Mail ist nicht eingerichtet.'); return x.aufgabenmail; };
@@ -754,6 +758,14 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/mappen/auswahl-pruefen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.auswahlPruefen(a.body, ich(a).id, await zg(a))) },
     { methode: 'POST', pfad: '/api/werkbank/auswahlfilter/zaehlen', zugang: 'admin', handler: async (a) => ok(await dienst.zaehleAuswahl(a.body, ich(a).id)) },
     /* ---------- Nummernkreise (#171) ---------- */
+    // Paketverwaltung (#188): Katalog nur auf Knopfdruck.
+    { methode: 'GET', pfad: '/api/werkbank/pakete', zugang: 'admin', handler: async () => ok({ installiert: await pakete.installierte(), katalogUrl: pakete.katalogUrl, dms: eigeneVersion() }) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/katalog', zugang: 'admin', handler: async () => ok(await pakete.katalog()) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/vorschau', zugang: 'admin', handler: async (a) => ok(await pakete.vorschau(a.body as { id: string; version?: string })) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/installieren', zugang: 'admin', handler: async (a) => ok(await pakete.installiere(a.body as InstallierenEingabe, { id: ich(a).id, email: ich(a).email })) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/updates', zugang: 'admin', handler: async () => ok(await pakete.updates()) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktualisieren', zugang: 'admin', handler: async (a) => ok(await pakete.aktualisiere(a.params.id, (a.body ?? {}) as { version?: string }, { id: ich(a).id, email: ich(a).email })) },
+    { methode: 'DELETE', pfad: '/api/werkbank/pakete/:id', zugang: 'admin', handler: async (a) => { await pakete.entferne(a.params.id, { id: ich(a).id, email: ich(a).email }); return leer; } },
     { methode: 'GET', pfad: '/api/werkbank/nummernkreise', zugang: 'admin', handler: async () => ok(await dienst.listeNummernkreise()) },
     { methode: 'POST', pfad: '/api/werkbank/nummernkreise', zugang: 'admin', handler: async (a) => {
       await dienst.speichereNummernkreis({ ...(a.body as object), neu: true }, ich(a).email);

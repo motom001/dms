@@ -1,0 +1,4 @@
+# Was nach der Installation im DMS vorhanden sein muss.
+mappentypen: [organisation]
+sichten: [organisationen, versicherungen, banken, behoerden, aerzte]
+beispiele: 2

@@ -33,6 +33,7 @@ export const HILFE = {
   'werkbank.eingangsordner': admin('eingangsordner/', 'Eingangsordner'),
   'werkbank.postfaecher': admin('postfaecher/', 'Postfächer'),
   'werkbank.nummernkreise': admin('nummernkreise/', 'Nummernkreise'),
+  'werkbank.pakete': admin('pakete/', 'Pakete'),
   'mappentyp.archiv': admin('archiv/', 'Archivmodus und Aufbewahrung'),
   'werkbank.vollexport': admin('export/', 'Daten exportieren'),
   'werkbank.vollexport.kontakte': admin('export/', 'Kontakte als vCard', 'kontakte-als-vcard'),

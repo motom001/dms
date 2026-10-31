@@ -1,6 +1,8 @@
+import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { AnmeldeschutzListe, AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
 import { NummernkreisEditor, NummernkreiseListe, useNummernkreise } from './Nummernkreise';
 import { DarfWegListe, DarfWegPanel, useDarfWeg } from './Archiv';
+import { PaketeListe, PaketePanel, usePakete } from './Pakete';
 import { useVollexport, VollexportListe, VollexportPanel } from './Vollexport';
 import { PostfachEditor, PostfaecherListe, usePostfaecher } from './Postfaecher';
 import { EingangsordnerListe, EingangsordnerPanel, useEingangsordner } from './Eingangsordner';
@@ -80,6 +82,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const nummernkreise = useNummernkreise(bereich === 'nummernkreise');
   const darfWeg = useDarfWeg(bereich === 'darfweg');
   const vollexport = useVollexport(bereich === 'vollexport');
+  const pakete = usePakete(bereich === 'pakete' || bereich === 'typen');
   const anmeldeschutz = useAnmeldeschutz(bereich === 'anmeldeschutz');
   const anbindung = useAnbindung(bereich === 'anbindung');
   // Wieder erreichbar nach Update oder Neustart (#122): Übersicht und offenen Bereich neu laden.
@@ -106,7 +109,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
     liste = <FehlermeldungenListe z={meldungen} offen={id} />;
     rechts = id ? <FehlermeldungDetail key={id} id={id} z={meldungen} neuLaden={async () => { await meldungen.laden(); await uebersicht.laden(); }} /> : <div className="platzhalter"><p>Wähle links eine Meldung.</p></div>;
   } else if (bereich === 'typen') {
-    liste = <TypenListe offen={id} />;
+    liste = <TypenListe offen={id} pakete={pakete.stand?.installiert ?? []} />;
     if (id === 'neu') {
       // Mappentyp kopieren (#147): /werkbank/typen/neu?kopie=<id>
       const kopie = new URLSearchParams(location.search).get('kopie');
@@ -159,6 +162,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'anmeldeschutz') {
     liste = <AnmeldeschutzListe z={anmeldeschutz} />;
     rechts = <AnmeldeschutzPanel z={anmeldeschutz} />;
+  } else if (bereich === 'pakete') {
+    liste = <PaketeListe z={pakete} offen={id} />;
+    rechts = <PaketePanel z={pakete} id={id} />;
   } else if (bereich === 'vollexport') {
     liste = <VollexportListe z={vollexport} />;
     rechts = <VollexportPanel z={vollexport} />;
@@ -198,7 +204,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   }
 
   return (
-    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'darfweg', 'vollexport'].includes(bereich) ? 'mappe' : 'liste'} offen={id}>
+    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'darfweg', 'vollexport'].includes(bereich) || (bereich === 'pakete' && !id) ? 'mappe' : 'liste'} offen={id}>
       <aside className="spalte sichten" aria-label="Bereiche">
         <h2 className="ueber">Werkbank</h2>
         <WerkbankNavigation bereich={bereich} eintraege={[
@@ -206,6 +212,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'typen', name: 'Mappentypen', gruppe: 'ablage', zahl: d.typen.length },
           { pfad: 'sichten', name: 'Sichten', gruppe: 'ablage', zahl: d.sichten.length || undefined },
           { pfad: 'nummernkreise', name: 'Nummernkreise', gruppe: 'ablage', zahl: nummernkreise.liste?.length || undefined },
+          { pfad: 'pakete', name: 'Pakete', gruppe: 'ablage', zahl: pakete.stand?.installiert.length || undefined },
           ...(d.typen.some((t) => t.archiv) ? [{ pfad: 'darfweg', name: 'Darf weg', gruppe: 'ablage' as const, zahl: darfWeg.liste?.length || undefined }] : []),
           { pfad: 'benutzer', name: 'Benutzer', gruppe: 'benutzer', zahl: benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined },
           { pfad: 'anmeldeschutz', name: 'Anmeldeschutz', gruppe: 'benutzer', warn: anmeldeschutz.stand?.gesperrt.length ? String(anmeldeschutz.stand.gesperrt.length) : undefined, warnTitel: 'gesperrte IP-Adressen' },
@@ -246,7 +253,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   );
 }
 
-function TypenListe({ offen }: { offen?: string }) {
+function TypenListe({ offen, pakete }: { offen?: string; pakete: InstalliertesPaket[] }) {
   const d = useDaten();
   return (
     <>
@@ -265,7 +272,8 @@ function TypenListe({ offen }: { offen?: string }) {
               return (
                 <li key={t.id}>
                   <Link to={`/werkbank/typen/${t.id}`} className={`eintrag werk ${offen === t.id ? 'an' : ''}`}>
-                    <span className="titel">{t.name}{t.system && <span className="chip" title="Systemmappentyp: lässt sich erweitern, aber nicht löschen">System</span>}</span>
+                    <span className="titel">{t.name}{t.system && <span className="chip" title="Systemmappentyp: lässt sich erweitern, aber nicht löschen">System</span>}
+                      {(() => { const p = pakete.find((x) => Object.values(x.typen).includes(t.id)); return p ? <> <span className="chip" title={`Aus dem Paket „${p.name}“ ${p.version}`}>Paket {p.name}</span></> : null; })()}</span>
                     <span className="unter">{t.felder.length} Felder · {t.register.length} Register · {anzahl.toLocaleString('de-DE')} {anzahl === 1 ? 'Mappe' : 'Mappen'}</span>
                     {unpassend > 0 && <span className="problem">{unpassend} passen nicht zur Definition</span>}
                   </Link>
