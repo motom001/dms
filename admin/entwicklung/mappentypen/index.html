@@ -801,6 +801,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Titel einer Mappe">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#platzhalter-formatieren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Platzhalter formatieren
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2184,6 +2201,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Titel einer Mappe">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#platzhalter-formatieren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Platzhalter formatieren
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2434,6 +2468,63 @@
 <p>Die <strong>Vorlage</strong> bestimmt, wie eine Mappe in Listen und Verweisen heißt, z. B. <code>{rechnungsnummer} vom {rechnungsdatum}</code>. Felder in geschweiften Klammern werden eingesetzt, alles andere bleibt stehen. Daneben gibt es <code>{angelegt}</code> und <code>{geaendert}</code> (jeweils das Datum). Die Vorschau zeigt das Ergebnis mit Beispielwerten oder mit den Werten einer echten Mappe.</p>
 <p>Verweist der Titel auf eine andere Mappe (<code>{vertragspartner}</code>), wird der Titel nachgezogen, wenn sich der Vertragspartner ändert.</p>
 <p>Ohne Vorlage verwendet das DMS das erste Textfeld.</p>
+<h3 id="platzhalter-formatieren">Platzhalter formatieren<a class="headerlink" href="#platzhalter-formatieren" title="Permanent link">&para;</a></h3>
+<p>Hinter einem senkrechten Strich <code>|</code> kannst du einen Platzhalter <strong>formatieren</strong>, ohne ein zusätzliches Feld anzulegen. Mehrere Filter lassen sich hintereinander schreiben, zum Beispiel <code>{partner|kurz:20|gross}</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Filter</th>
+<th>Wirkung</th>
+<th>Beispiel</th>
+<th>Ergebnis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>jahr</code>, <code>monat</code></td>
+<td>Teil eines Datums</td>
+<td><code>{rechnungsdatum|jahr}</code></td>
+<td>2026</td>
+</tr>
+<tr>
+<td><code>datum:"…"</code></td>
+<td>Datum im eigenen Format mit <code>TT</code>, <code>MM</code>, <code>JJJJ</code>, <code>JJ</code></td>
+<td><code>{rechnungsdatum|datum:"MM/JJJJ"}</code></td>
+<td>10/2026</td>
+</tr>
+<tr>
+<td><code>ohne_waehrung</code></td>
+<td>Betrag ohne Währungszeichen</td>
+<td><code>{betrag|ohne_waehrung}</code></td>
+<td>1.234,50</td>
+</tr>
+<tr>
+<td><code>gross</code>, <code>klein</code></td>
+<td>Groß- bzw. Kleinschreibung</td>
+<td><code>{kennzeichen|gross}</code></td>
+<td>DD-AB 123</td>
+</tr>
+<tr>
+<td><code>kurz:n</code></td>
+<td>auf n Zeichen kürzen, mit „…“</td>
+<td><code>{betreff|kurz:30}</code></td>
+<td>Ihre Rechnung zum Vertrag 12…</td>
+</tr>
+<tr>
+<td><code>sonst:"…"</code></td>
+<td>Ersatz, wenn das Feld leer ist</td>
+<td><code>{nummer|sonst:"ohne Nr."}</code></td>
+<td>ohne Nr.</td>
+</tr>
+</tbody>
+</table>
+<p><code>jahr</code>, <code>monat</code> und <code>datum</code> gehen bei Datumsfeldern und bei <code>{angelegt}</code> und <code>{geaendert}</code>, <code>ohne_waehrung</code> nur bei Beträgen.</p>
+<p><strong>Leere Teile fallen weg.</strong> Ist ein Feld leer, verschwindet es samt seinem Trenner (<code>–</code>, <code>·</code>, <code>|</code>, <code>/</code>, <code>,</code>). Aus <code>{bezeichnung} – {vertragsnummer} – {beginn|jahr}</code> wird bei fehlender Vertragsnummer „Strom – 2026“ statt „Strom –  – 2026“.</p>
+<p>Bewusst gibt es <strong>keine</strong> Bedingungen, Schleifen oder Rechnungen im Titel. Unbekannte Filter oder ein Filter am falschen Feld meldet der Editor sofort, die Vorschau zeigt das Ergebnis.</p>
+<div class="admonition note">
+<p class="admonition-title">Bestehende Titel</p>
+<p>Alte Vorlagen ohne Filter gelten unverändert. Neu ist nur, dass leere Teile samt Trenner wegfallen. Das wirkt, sobald ein Titel neu gebildet wird, also beim nächsten Speichern der Mappe oder des Mappentyps.</p>
+</div>
 <h2 id="trefferlisten">Trefferlisten<a class="headerlink" href="#trefferlisten" title="Permanent link">&para;</a></h2>
 <p>Eine <strong>Trefferliste</strong> legt fest, welche Angaben in einer Liste als Spalten erscheinen, und in welcher Reihenfolge – Felder und Systemwerte (Titel, angelegt/geändert am/von).</p>
 <ul>
