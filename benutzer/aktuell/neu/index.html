@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.66/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.67/neu/">
       
       
         <link rel="prev" href="../wofuer/">
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-066" class="md-skip">
+        <a href="#neu-in-version-067" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -392,15 +392,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0660" class="md-nav__link">
+  <a href="#0670" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.66.0
+        0.67.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.66.0">
+    <nav class="md-nav" aria-label="0.67.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1000,15 +1000,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0660" class="md-nav__link">
+  <a href="#0670" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.66.0
+        0.67.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.66.0">
+    <nav class="md-nav" aria-label="0.67.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1058,22 +1058,18 @@
   
 
 
-<h1 id="neu-in-version-066">Neu in Version 0.66<a class="headerlink" href="#neu-in-version-066" title="Permanent link">&para;</a></h1>
-<h2 id="0660">0.66.0<a class="headerlink" href="#0660" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-067">Neu in Version 0.67<a class="headerlink" href="#neu-in-version-067" title="Permanent link">&para;</a></h1>
+<h2 id="0670">0.67.0<a class="headerlink" href="#0670" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Paket-Einstellungen</strong> (#197): Pakete beschreiben ihre Einstellungen im Manifest, das DMS baut daraus ein Formular. <strong>Werkbank → Pakete → <em>Paket</em> → Reiter „Einstellungen“</strong>:</li>
-<li>Abschnitte mit Feldern und Listen gleich aufgebauter Einträge (hinzufügen, löschen, sortieren); höchstens zwei Ebenen.</li>
-<li>Feldtypen wie bei den Mappentypen, dazu Verweise auf Mappentyp, Feld, Benutzer, Rolle und Sicht (gespeichert wird die Id) und <strong>Geheimnisse</strong>, verschlüsselt mit dem Schlüssel des DMS und nach dem Speichern nie mehr angezeigt.</li>
-<li>Prüfung beim Speichern mit Fehlern am Feld; Aktionen als Knöpfe mit Zeitgrenze; schreibgeschützter Status des Pakets.</li>
-<li>Installieren setzt Vorgaben („Einstellungen nötig“, solange Pflichtfelder fehlen); ein Update ergänzt neue Felder und entfernt wegfallende (die Vorschau nennt sie); Entfernen fragt, ob die Einstellungen bleiben sollen.</li>
-<li>Teil der Sicherung, beim Schlüsselwechsel umgeschlüsselt; Protokoll ohne Werte von Geheimnissen; nicht über die API v1 lesbar.</li>
-<li>Pakete mit Code lassen sich installieren und einstellen; ihr Code läuft erst mit dem Paket-Läufer.</li>
-<li>Format: motom001/dms-registry (Schema, Prüfung, Vorlage). Administrator- und Entwicklerhandbuch ergänzt.</li>
+<li><strong>Hilfe schon im Einrichtungsassistenten</strong> (#278) – für alle, die das DMS zum ersten Mal einrichten:</li>
+<li>Jeder Schritt hat oben rechts <strong>„? Hilfe mit Bildern“</strong>. Der Link öffnet in einem neuen Tab genau den passenden Abschnitt im Administratorhandbuch, immer in der Online-Fassung der aktuellen Version (ob ein lokales Handbuch erreichbar ist, steht beim Einrichten noch nicht fest).</li>
+<li>Beim <strong>Einrichtungscode</strong> steht zusätzlich ein Link auf <em>Wie komme ich an ein DMS?</em> mit den bebilderten Anleitungen je Plattform.</li>
+<li>Im Administratorhandbuch hat jetzt jeder Schritt des Assistenten einen eigenen Abschnitt mit Bildschirmfoto (Einrichtungscode, Datenbank, Neu oder Sicherung, Mandant, Administrator, Erster Benutzer, Schlüssel und Notfallblatt, Optionales, Fertig).</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.65.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.65.0...v0.66.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.66.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.66.0...v0.67.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 
