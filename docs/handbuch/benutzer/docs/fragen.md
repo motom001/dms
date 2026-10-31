@@ -29,13 +29,22 @@
     Ein Administrator kann festlegen, wer welche Mappen lesen und welche Ansichten sehen darf – zum Beispiel nur die „Eltern“. Was du je Mappentyp darfst, steht im Profil unter [Meine Rechte](profil.md#meine-rechte). Brauchst du Zugriff, frag den Administrator.
 
 ??? question "Eine Mappe ist plötzlich unter „Zu erledigen“."
-    Ihr Mappentyp wurde geändert, und die Mappe passt nicht mehr dazu. Siehe [Zu erledigen](eingang.md).
+    Dann hast du an ihr eine offene Aufgabe. Was zu tun ist, steht oben in der Mappe. Mögliche Gründe:
+
+    - **Zugewiesen:** Jemand hat dir eine Aufgabe vergeben.
+    - **Erwähnung:** Jemand hat dich mit **@** erwähnt.
+    - **Frist** oder **Erinnerung:** Ein Datum rückt näher, oder der Tag einer Erinnerung ist da.
+    - **Vertretung:** Jemand hat dich als Vertreter eingetragen, oder du vertrittst gerade jemanden.
+    - **Post für dich:** Bei neuer Post steht dein Name unter **Für**.
+    - **Passt nicht:** Ihr Mappentyp wurde geändert, und die Mappe passt nicht mehr dazu.
+
+    Mehr unter [Zu erledigen](eingang.md).
 
 ??? question "Ich habe versehentlich eine Mappe gelöscht."
     Sie liegt im **Papierkorb** unterhalb von „Zu erledigen“. Öffne sie dort und klicke auf **Wiederherstellen**.
 
 ??? question "Die Suche findet einen Text aus einem PDF nicht."
-    Setze unter dem Suchfeld den Haken **Volltext durchsuchen**. Ist das Dokument gerade erst hochgeladen, steht daneben vielleicht noch *Volltext: wartet* – dann einen Moment warten. Bei *ausgelassen* gibt es für diesen Dateityp keinen Volltext.
+    Setze neben dem Suchfeld den Haken **Volltext durchsuchen**. Ist das Dokument gerade erst hochgeladen, steht daneben vielleicht noch *Volltext: wartet* – dann einen Moment warten. Bei *ausgelassen* oder *Fehler* kannst du es mit **Erneut versuchen** am Dokument noch einmal anstoßen; für manche Dateitypen gibt es aber keinen Volltext.
 
 ??? question "Die Spalten sind verrutscht oder eine ist verschwunden."
     Im Profil unter **Darstellung auf diesem Gerät** → **Standard-Darstellung wiederherstellen**. Oder kurz auf den Griff zwischen den Spalten klicken – das klappt eingeklappte Bereiche wieder auf.

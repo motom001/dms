@@ -32,7 +32,7 @@ Unter **Konto → Meine Daten exportieren** bekommst du eine Kopie von allem, wa
 - deine eigenen Aufgaben, Erinnerungen, Favoriten und was du in den Papierkorb gelegt hast,
 - dein eigenes Benutzerkonto (ohne Passwort).
 
-Passwortfelder stehen nur dabei, wenn du sie sehen darfst und das ausdrücklich bestätigst. Der Export läuft im Hintergrund; ist er fertig, lädst du ihn als ZIP herunter. Es gibt immer nur deinen letzten Export – ein neuer ersetzt den alten. Während du als Vertretung arbeitest, geht das nicht. Hat der Administrator den persönlichen Export abgeschaltet, fehlt der Abschnitt.
+**Der Export ist unverschlüsselt** – bewahre die Datei sicher auf. Passwortfelder stehen nur dabei, wenn du sie sehen darfst und das ausdrücklich bestätigst; sie liegen dann im Klartext in der Datei `passwoerter.csv`. Der Export läuft im Hintergrund; ist er fertig, lädst du ihn als ZIP herunter. Es gibt immer nur deinen letzten Export – ein neuer ersetzt den alten. Solange ein Administrator [in deinem Namen arbeitet](#hinweis-ein-administrator-hat-in-deinem-namen-gearbeitet), lässt sich kein Export starten. Hat ein Administrator den Export abgeschaltet, steht das an dieser Stelle.
 
 ### Meine Rechte
 
@@ -45,7 +45,7 @@ Unten im Bereich *Konto*, unter Name und E-Mail-Adresse, steht, was du je Mappen
 - **Passwort** – gib dein aktuelles und zweimal das neue Passwort ein (mindestens 10 Zeichen). Nach dem Ändern sind alle anderen Anmeldungen beendet.
 - **Zwei-Faktor-Anmeldung** – siehe [unten](#zwei-faktor-anmeldung).
 - **Meine angemeldeten Geräte** – überall, wo du gerade angemeldet bist, mit Browser, Gerät und letzter Aktivität; *dieses Gerät* ist markiert. **Abmelden** beendet eine einzelne Anmeldung, **Alle anderen abmelden** alle außer dieser – etwa wenn du ein Handy verloren hast. Ändere dann am besten auch dein Passwort.
-- **API-Schlüssel** – damit können andere Programme in deinem Namen auf das DMS zugreifen, etwa ein Scanner. Brauchst du das nicht, kannst du diesen Abschnitt übergehen. Passwortfelder liefert ein Schlüssel nur, wenn du beim Erzeugen **Passwörter lesen** ankreuzt. Wie das funktioniert, beschreibt das [Administratorhandbuch](https://motom001.github.io/dms/admin/api/).
+- **API-Schlüssel** – damit können andere Programme in deinem Namen auf das DMS zugreifen, etwa ein Scanner. Brauchst du das nicht, kannst du diesen Abschnitt übergehen. Passwortfelder liefert ein Schlüssel nur, wenn du beim Erzeugen **Passwörter lesen** ankreuzt. Wie das funktioniert, beschreibt das [Administratorhandbuch](https://motom001.github.io/dms/admin/aktuell/api/).
 
 !!! note "Anmelden mit dem Firmenkonto"
     Steht auf der Anmeldeseite ein Knopf wie **Mit Firmenkonto anmelden**, meldest du dich darüber mit dem Konto deiner Firma oder deines Anmeldedienstes an. Dein Passwort für das DMS brauchst du dann nicht; Passwort und Abmelden verwaltet der Anbieter.
@@ -107,4 +107,4 @@ Die Administratoren sehen deine Meldung in der Werkbank und melden sich, falls s
 
 ## Hinweis „Ein Administrator hat in deinem Namen gearbeitet“
 
-Um einen Fehler nachzustellen, kann sich ein Administrator als du anmelden. Er sieht dann genau, was du siehst. Danach zeigt dir das DMS beim nächsten Mal oben einen Hinweis, wer das wann getan hat. Mit **Verstanden** blendest du ihn aus. Solange er als du arbeitet, steht das auch in deinem Menü und unter *Meine angemeldeten Geräte*.
+Um einen Fehler nachzustellen, kann sich ein Administrator als du anmelden. Er sieht dann genau, was du siehst. Danach zeigt dir das DMS beim nächsten Mal oben einen Hinweis, wer das wann getan hat. Mit **Verstanden** blendest du ihn aus. Solange er als du arbeitet, steht bei dieser Anmeldung unter *Meine angemeldeten Geräte* der Hinweis **Administrator agiert als du**.

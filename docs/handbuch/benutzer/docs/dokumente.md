@@ -58,12 +58,13 @@ Erkannter Text aus Scans ist nicht immer fehlerfrei – je besser die Vorlage, d
 
 ## Versionen
 
-Ist an einem Dokumentenregister die **Versionierung** eingeschaltet (das macht ein Administrator), geht beim Ersetzen nichts verloren:
+Ist an einem Dokumentenregister die **Versionierung** eingeschaltet (das macht ein Administrator), bleibt beim Ersetzen die alte Fassung erhalten:
 
 - **Ersetzen** neben einem Dokument lädt eine neue Datei als **neue Version** hoch – sofort, ohne „Mappe speichern“. Name und Dateityp dürfen sich ändern, z. B. `Kassenbon.jpg` → `Kassenbon.pdf`. Die Mappe zeigt danach nur die neueste Version.
 - Am Dokument steht **Version 3**. Ein Klick darauf zeigt alle Versionen mit Datum, wer sie gespeichert hat, Herkunft, Dateiname und Größe. Jede ältere Version lässt sich ansehen (↗) und herunterladen.
-- **Zurückholen** übernimmt eine ältere Version als neue, höchste Version – aus Version 1 wird z. B. Version 4. Auch dabei geht nichts verloren.
+- **Zurückholen** übernimmt eine ältere Version als neue, höchste Version – aus Version 1 wird z. B. Version 4. Die bisherigen Versionen bleiben dabei stehen.
 - Die Volltextsuche findet nur die aktuelle Version.
+- Hat der Administrator **nur die letzten … Versionen behalten** eingestellt, löscht das DMS ältere Versionen darüber hinaus von selbst – sie lassen sich dann nicht mehr zurückholen.
 - In der Historie der Mappe steht jede neue Version, z. B. „Version 3 (ersetzt Kassenbon.jpg)“ oder „Version 1 zurückgeholt“.
 
 **Gleicher Dateiname beim Hochladen:** Gibt es im Register schon ein Dokument mit demselben Namen, fragt das DMS in der Liste nach:
