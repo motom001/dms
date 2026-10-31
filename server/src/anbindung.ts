@@ -97,7 +97,7 @@ export type Pruefung =
   | { ok: false; art: Fehlerart; text: string; anlegenMoeglich?: boolean; technisch: string };
 
 type Verbinder = (url: string) => postgres.Sql;
-const kurz: Verbinder = (url) => postgres(url, { max: 1, connect_timeout: 6, idle_timeout: 1, onnotice: () => {} });
+const kurz: Verbinder = (url) => postgres(url, { max: 1, connect_timeout: 6, idle_timeout: 1, onnotice: () => {}, infer: true });
 
 /** Verständliche Meldung zu einem Verbindungsfehler. */
 export function deute(e: unknown, a: Pick<Anbindung, 'host' | 'port' | 'datenbank' | 'benutzer'>): { art: Fehlerart; text: string; technisch: string } {

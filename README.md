@@ -64,7 +64,7 @@ Als [Issue](https://github.com/motom001/dms/issues/new/choose) im Format einer U
 
 ## Entwicklung
 
-Voraussetzungen: Node.js 22, Docker.
+Voraussetzungen: Node.js 24 (LTS), Docker.
 
 ```sh
 npm install
