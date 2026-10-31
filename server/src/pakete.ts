@@ -77,7 +77,41 @@ export interface PaketFeld extends Partial<Feld> { key: string; label: string; t
 export interface PaketRegister { key: string; name: string; art: Register['art']; felder?: string[]; quellen?: Array<{ typ: string; feld: string }>; volltext?: boolean }
 export interface PaketTyp { schluessel: string; name: string; beschreibung: string; titelVorlage?: string; felder: PaketFeld[]; register: PaketRegister[]; trefferliste?: string[] }
 export interface PaketSicht { schluessel: string; name: string; beschreibung?: string; eltern?: string; typen?: string[]; bedingungen?: Array<{ feld: string; operator: string; wert?: unknown }>; trefferliste?: string }
-export interface PaketBeispiel { typ: string; werte: Record<string, unknown> }
+/** Beispiel-Mappe (#347): optional mit Schlüssel; Verweisfelder dürfen { beispiel: schluessel } bzw. { beispiel: paket:schluessel } sein. */
+export interface PaketBeispiel { typ: string; werte: Record<string, unknown>; schluessel?: string }
+
+/** Verweis auf eine andere Beispiel-Mappe im Wert eines Felds (#347). */
+const istBeispielVerweis = (w: unknown): w is { beispiel: string } => istObjekt(w) && typeof w.beispiel === 'string' && Object.keys(w).length === 1;
+/** Alle Beispiel-Verweise in den Werten eines Beispiels (auch in Listen). */
+export const beispielVerweise = (werte: Record<string, unknown>): string[] =>
+  Object.values(werte).flatMap((w) => (Array.isArray(w) ? w : [w]).filter(istBeispielVerweis).map((x) => x.beispiel));
+
+/** Verweise mit eigener Paket-Id („haushalt:x“) wie lokale („x“) behandeln – für die Reihenfolge. */
+const eigeneVerweise = (werte: Record<string, unknown>, id: string): Record<string, unknown> => {
+  const eins = (x: unknown) => (istBeispielVerweis(x) && x.beispiel.startsWith(`${id}:`) ? { beispiel: x.beispiel.slice(id.length + 1) } : x);
+  return Object.fromEntries(Object.entries(werte).map(([k, w]) => [k, Array.isArray(w) ? w.map(eins) : eins(w)]));
+};
+
+/** Reihenfolge, in der Beispiele angelegt werden: erst die, auf die andere zeigen. null = Kreis. */
+export function ordneBeispiele(beispiele: PaketBeispiel[]): PaketBeispiel[] | null {
+  const nach = new Map(beispiele.filter((b) => b.schluessel).map((b) => [b.schluessel!, b]));
+  const fertig = new Set<PaketBeispiel>();
+  const unterwegs = new Set<PaketBeispiel>();
+  const erg: PaketBeispiel[] = [];
+  const besuche = (b: PaketBeispiel): boolean => {
+    if (fertig.has(b)) return true;
+    if (unterwegs.has(b)) return false;
+    unterwegs.add(b);
+    for (const z of beispielVerweise(b.werte)) {
+      const ziel = z.includes(':') ? undefined : nach.get(z);
+      if (ziel && !besuche(ziel)) return false;
+    }
+    unterwegs.delete(b); fertig.add(b); erg.push(b);
+    return true;
+  };
+  for (const b of beispiele) if (!besuche(b)) return null;
+  return erg;
+}
 export interface Paket { manifest: Manifest; typen: PaketTyp[]; sichten: PaketSicht[]; beispiele: PaketBeispiel[]; readme: string; einstellungen: Einstellungsbeschreibung | null }
 
 const SCHLUESSEL = /^[a-z][a-z0-9_]{0,39}$/;
@@ -158,7 +192,27 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       bedingungen: Array.isArray(s.bedingungen) ? s.bedingungen.filter(istObjekt).map((b) => ({ feld: str(b.feld), operator: str(b.operator), wert: b.wert })) : [],
     };
   });
-  const beispiele = liste('beispiele').map((b): PaketBeispiel => ({ typ: str(b.typ), werte: istObjekt(b.werte) ? b.werte : {} }));
+  const beispiele = liste('beispiele').map((b, i): PaketBeispiel => {
+    if (b.schluessel !== undefined && !SCHLUESSEL.test(str(b.schluessel))) fehler.push(`beispiele[${i + 1}]: ungültiger Schlüssel „${str(b.schluessel)}“.`);
+    return { typ: str(b.typ), werte: istObjekt(b.werte) ? b.werte : {}, ...(b.schluessel !== undefined ? { schluessel: str(b.schluessel) } : {}) };
+  });
+  // Verweise zwischen Beispielen (#347): Schlüssel eindeutig, Ziele vorhanden bzw. aus einer Abhängigkeit, keine Kreise.
+  {
+    const eigene = new Set(beispiele.map((b) => b.schluessel).filter((s): s is string => !!s));
+    const schl = beispiele.map((b) => b.schluessel).filter((s): s is string => !!s);
+    for (const s of new Set(schl.filter((x, j) => schl.indexOf(x) !== j))) fehler.push(`beispiele: Schlüssel „${s}“ doppelt.`);
+    for (const [i, b] of beispiele.entries()) {
+      for (const z of beispielVerweise(b.werte)) {
+        if (!TYPVERWEIS.test(z)) { fehler.push(`beispiele[${i + 1}]: Verweis „${z}“ ist kein gültiger Schlüssel.`); continue; }
+        const [p, s] = z.includes(':') ? z.split(':') : [str(m.id), z];
+        if (p === str(m.id)) { if (!eigene.has(s)) fehler.push(`beispiele[${i + 1}]: Verweis auf das Beispiel „${s}“, das es im Paket nicht gibt.`); }
+        else if (p === 'dms' || !(p in abh)) fehler.push(`beispiele[${i + 1}]: Verweis „${z}“ – das Paket „${p}“ steht nicht unter abhaengigkeiten.`);
+      }
+    }
+    if (!ordneBeispiele(beispiele.map((b) => ({ ...b, werte: eigeneVerweise(b.werte, str(m.id)) })))) {
+      fehler.push('beispiele: Die Verweise zwischen den Beispielen bilden einen Kreis (A zeigt auf B, B auf A). Ein Verweis muss weg.');
+    }
+  }
   const doppelt = (l: string[]) => l.filter((x, i) => l.indexOf(x) !== i);
   for (const s of doppelt(typen.map((t) => t.schluessel))) fehler.push(`mappentypen: Kennung „${s}“ doppelt.`);
   for (const s of doppelt(sichten.map((t) => t.schluessel))) fehler.push(`sichten: Kennung „${s}“ doppelt.`);
@@ -468,6 +522,11 @@ export class Paketverwaltung {
     for (const k of genutzt.filter((k) => !dmsTypen.has(k))) probleme.push(`Das Paket verweist auf den Mappentyp „${DMS_TYPEN[k] ?? k}“ des DMS, den es hier nicht gibt. Bitte das DMS aktualisieren (ab ${DMS_VERWEISE_AB}).`);
     const da = genutzt.filter((k) => dmsTypen.has(k));
     if (da.length) hinweise.push(`Nutzt Mappentypen aus dem DMS: ${da.map((k) => `${dmsTypen.get(k)!.name} (aus dem DMS)`).join(', ')}.`);
+    // Beispiele, die auf Beispiele einer Abhängigkeit zeigen (#347): ohne diese bleiben die Verweise leer.
+    for (const p of new Set(paket.beispiele.flatMap((b) => beispielVerweise(b.werte)).filter((z) => z.includes(':') && !z.startsWith(`${m.id}:`)).map((z) => z.split(':')[0]))) {
+      const da = installierte.find((x) => x.id === p);
+      if (da && !Object.keys(da.beispiele ?? {}).length) hinweise.push(`Einige Beispiele zeigen auf Beispiele von „${da.name}“. Die sind hier nicht installiert – diese Verweise bleiben leer.`);
+    }
     const abhaengigkeiten = Object.entries(m.abhaengigkeiten).map(([id, bereich]): AbhaengigkeitPlan => {
       const da = installierte.find((p) => p.id === id);
       const kp = katalog?.pakete.find((p) => p.id === id);
@@ -545,7 +604,8 @@ export class Paketverwaltung {
     for (const a of fehlen) {
       if (!a.verfuegbar) throw new Fachfehler(409, `Die Abhängigkeit „${a.id}“ (${a.bereich}) gibt es im Katalog nicht.`);
       // Abhängigkeiten aus derselben Quelle; bei hochgeladenen Paketen aus dem offiziellen Katalog.
-      await this.installiere({ id: a.id, version: a.verfuegbar, beispiele: false, mitAbhaengigkeiten: true, quelle: quelle ?? this.katalogUrl, bestaetigt: e.bestaetigt }, von);
+      // Beispiele der Abhängigkeit mit, wenn welche gewünscht sind – die eigenen Beispiele können auf sie zeigen (#347).
+      await this.installiere({ id: a.id, version: a.verfuegbar, beispiele: e.beispiele === true, mitAbhaengigkeiten: true, quelle: quelle ?? this.katalogUrl, bestaetigt: e.bestaetigt }, von);
     }
     const konflikte = [...vorschau.typen, ...vorschau.sichten].filter((x) => x.konflikt);
     if (konflikte.length) throw new Fachfehler(409, 'Einige Namen gibt es schon. Bitte andere wählen.', { gruende: konflikte.map((x) => `${x.konflikt} Vorschlag: „${x.vorschlag}“.`), konflikte: true });
@@ -567,6 +627,7 @@ export class Paketverwaltung {
     for (const t of paket.typen) if (!ids.has(t.schluessel)) ids.set(t.schluessel, randomUUID());
     const neueTypen = paket.typen.filter((t) => !plan.typen.find((x) => x.schluessel === t.schluessel)?.vorhanden && !plan.typen.find((x) => x.schluessel === t.schluessel)?.geloescht);
     const angelegt = new Set<string>();
+    const beispielIds = new Map<string, string>();
     const dmsTypen = await this.dmsTypen();
     const ziel = (vw: string, nurAngelegt: boolean): string | null => {
       const [p, s] = vw.includes(':') ? vw.split(':') : [m.id, vw];
@@ -656,16 +717,35 @@ export class Paketverwaltung {
       }
       // 4. Beispiele (nur bei der Installation, auf Wunsch).
       if (beispiele && !alt) {
-        for (const b of paket.beispiele) {
+        // Verweise zwischen Beispielen (#347): erst die Ziele anlegen; fremde Beispiele aus dem Eintrag der Abhängigkeit.
+        const reihenfolge = ordneBeispiele(paket.beispiele.map((b) => ({ ...b, werte: eigeneVerweise(b.werte, m.id) }))) ?? paket.beispiele;
+        const ohneZiel = new Set<string>();
+        const aufloesen = async (w: unknown): Promise<string | undefined> => {
+          if (!istBeispielVerweis(w)) return undefined;
+          const [p, s] = w.beispiel.includes(':') ? w.beispiel.split(':') : [m.id, w.beispiel];
+          const zielId = p === m.id ? beispielIds.get(s) : installierte.find((x) => x.id === p)?.beispiele?.[s];
+          if (zielId && (p === m.id || (await this.d.gibtMappe(zielId)))) return zielId;
+          ohneZiel.add(w.beispiel);
+          return undefined;
+        };
+        for (const b of reihenfolge) {
           const typId = ziel(b.typ, false)!;
-          // Beträge dürfen im Paket als Zahl stehen.
           const felder = (await this.d.listeTypen()).find((t) => t.id === typId)?.felder ?? [];
-          const werte = Object.fromEntries(Object.entries(b.werte).map(([k, w]) => {
+          const werte: Record<string, unknown> = {};
+          for (const [k, w] of Object.entries(b.werte)) {
             const f = felder.find((x) => x.key === k);
-            return [k, f?.typ === 'betrag' && typeof w === 'number' ? { betrag: w, waehrung: f.waehrung || 'EUR' } : w];
-          }));
-          try { mappen.push((await this.d.legeMappeAn({ typId, werte }, von.id)).id); } catch (f) { throw new Fachfehler(422, `Beispiel: ${meldungen(f)}`); }
+            // Beträge dürfen im Paket als Zahl stehen.
+            if (f?.typ === 'betrag' && typeof w === 'number') werte[k] = { betrag: w, waehrung: f.waehrung || 'EUR' };
+            else if (Array.isArray(w) && w.some(istBeispielVerweis)) { const l = (await Promise.all(w.map(aufloesen))).filter((x): x is string => !!x); if (l.length) werte[k] = l; }
+            else if (istBeispielVerweis(w)) { const z = await aufloesen(w); if (z) werte[k] = f?.mehrfach ? [z] : z; }
+            else werte[k] = w;
+          }
+          let mappeId: string;
+          try { mappeId = (await this.d.legeMappeAn({ typId, werte }, von.id)).id; } catch (f) { throw new Fachfehler(422, `Beispiel: ${meldungen(f)}`); }
+          mappen.push(mappeId);
+          if (b.schluessel) beispielIds.set(b.schluessel, mappeId);
         }
+        if (ohneZiel.size) log.info('Paket: Verweise in Beispielen ohne Ziel bleiben leer', { paket: m.id, ziele: [...ohneZiel] });
       }
       // Einstellungen (#197): Vorgaben setzen bzw. überführen; nach dem Entfernen behaltene Werte zählen.
       if (paket.einstellungen) {
@@ -681,6 +761,8 @@ export class Paketverwaltung {
         installiert: alt?.installiert ?? jetzt, installiertVon: alt ? alt.installiertVon : von.email,
         aktualisiert: alt ? jetzt : null, aktualisiertVon: alt ? von.email : null,
         typen: typMap, sichten: sichtMap, abhaengigkeiten: m.abhaengigkeiten,
+        // Beispiel-Mappen mit Schlüssel (#347), damit spätere Pakete auf sie verweisen können.
+        ...(beispielIds.size ? { beispiele: Object.fromEntries(beispielIds) } : alt?.beispiele ? { beispiele: alt.beispiele } : {}),
         einstellungen: paket.einstellungen, code: m.code !== undefined,
         ...(v ? { links: { readme: v.readme, changelog: v.changelog, quelle: v.quelle } } : alt?.links ? { links: alt.links } : {}),
       };

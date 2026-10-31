@@ -101,6 +101,23 @@ const vertraege = {
   'inhalt/sichten.yaml': '- { schluessel: vertraege, name: Verträge, typen: [vertrag] }\n',
 };
 
+/** Beispiele mit Verweisen (#347): Basis gibt der Stadtwerke-Mappe einen Schlüssel, Verträge zeigen darauf. */
+const basisMitSchluessel = (b: Record<string, string>) => ({
+  ...b,
+  'manifest.yaml': b['manifest.yaml'].replace('version: 1.0.0', 'version: 1.0.1'),
+  'inhalt/beispiele.yaml': b['inhalt/beispiele.yaml'].replace('- typ: organisation\n  werte:\n    name: Stadtwerke', '- typ: organisation\n  schluessel: stadtwerke\n  werte:\n    name: Stadtwerke'),
+});
+const vertraegeMitBeispielen = {
+  ...vertraege,
+  'manifest.yaml': vertraege['manifest.yaml'].replace('  sichten: inhalt/sichten.yaml\n', '  sichten: inhalt/sichten.yaml\n  beispiele: inhalt/beispiele.yaml\n'),
+  'inhalt/beispiele.yaml': [
+    // Zahlung zeigt auf den Vertrag, steht aber zuerst: Das DMS legt den Vertrag vorher an.
+    '- typ: zahlung', '  werte: { datum: "2026-01-31", betrag: 89, vertrag: { beispiel: strom } }',
+    '- typ: vertrag', '  schluessel: strom', '  werte: { nr: S-1, partner: { beispiel: "basis:stadtwerke" } }',
+    '- typ: vertrag', '  werte: { nr: S-2, partner: { beispiel: "basis:gibtsnicht" } }', '',
+  ].join('\n'),
+};
+
 /** Paket mit Verweisen auf Mappentypen des DMS (#310): Ablageort und Benutzer. */
 const ordnerpaket = {
   'manifest.yaml': 'schema: 1\nid: ordnerpaket\nname: Ordner\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: MIT\ndms: ">=0.75.0"\ninhalt:\n  mappentypen: inhalt/mappentypen.yaml\n  sichten: inhalt/sichten.yaml\n',
@@ -256,6 +273,42 @@ function faelle(pg: boolean) {
       await assert.rejects(p.aktualisiere('basis', {}, ICH), /abgeschaltet/);
       await p.quelleEntfernen(EIGEN, ICH);
       assert.equal((await p.quellen()).length, 1);
+    });
+
+    it('Beispiele verweisen auf Beispiele – im Paket und in Abhängigkeiten (#347)', async () => {
+      const b1 = basisMitSchluessel(basis);
+      const { d, p } = await aufbau([{ dateien: b1 }, { dateien: vertraegeMitBeispielen }]);
+      await p.katalog();
+      const inst = await p.installiere({ id: 'vertraege', beispiele: true, mitAbhaengigkeiten: true }, ICH);
+      const pakete = await d.listePakete();
+      const bas = pakete.find((x) => x.id === 'basis')!;
+      assert.ok(bas.beispiele?.stadtwerke, 'Beispiele der Abhängigkeit kamen mit und sind gemerkt');
+      assert.ok(inst.beispiele?.strom);
+      const vertrag = await d.listeMappen(inst.typen.vertrag);
+      const s1 = vertrag.find((m) => m.werte.nr === 'S-1')!;
+      assert.equal(s1.werte.partner, bas.beispiele!.stadtwerke, 'Vertrag → Organisation aus Basis');
+      assert.ok(!vertrag.find((m) => m.werte.nr === 'S-2')!.werte.partner, 'unbekanntes Ziel in der Abhängigkeit: Feld bleibt leer');
+      const [z] = await d.listeMappen(inst.typen.zahlung);
+      assert.equal(z.werte.vertrag, s1.id, 'Zahlung → Vertrag, obwohl sie zuerst steht');
+
+      // Basis schon ohne Beispiele installiert: Hinweis in der Vorschau, Verweis bleibt leer.
+      const zwei = await aufbau([{ dateien: b1 }, { dateien: vertraegeMitBeispielen }]);
+      await zwei.p.katalog();
+      await zwei.p.installiere({ id: 'basis' }, ICH);
+      const v = await zwei.p.vorschau({ id: 'vertraege' });
+      assert.ok(v.hinweise.some((h) => /Beispiele von „Basis“/.test(h)), v.hinweise.join(' | '));
+      const i2 = await zwei.p.installiere({ id: 'vertraege', beispiele: true }, ICH);
+      assert.ok(!(await zwei.d.listeMappen(i2.typen.vertrag)).find((m) => m.werte.nr === 'S-1')!.werte.partner);
+
+      // Prüfung beim Lesen: unbekannter Schlüssel, fremdes Paket ohne Abhängigkeit, doppelter Schlüssel, Kreis.
+      const mit = (y: string) => ({ ...vertraegeMitBeispielen, 'inhalt/beispiele.yaml': y });
+      const gruende = (y: string) => { try { liesPaket(liesZip(archiv(mit(y)))); return []; } catch (e) { return (e as Fachfehler & { details: { gruende: string[] } }).details.gruende; } };
+      assert.ok(gruende('- { typ: zahlung, werte: { datum: "2026-01-01", vertrag: { beispiel: fehlt } } }\n').some((g) => /„fehlt“, das es im Paket nicht gibt/.test(g)));
+      assert.ok(gruende('- { typ: vertrag, werte: { nr: X, partner: { beispiel: "haushalt:x" } } }\n').some((g) => /nicht unter abhaengigkeiten/.test(g)));
+      assert.ok(gruende('- { typ: vertrag, schluessel: a, werte: { nr: A } }\n- { typ: vertrag, schluessel: a, werte: { nr: B } }\n').some((g) => /„a“ doppelt/.test(g)));
+      const kreis = '- { typ: vertrag, schluessel: v, werte: { nr: V, letzte: { beispiel: z } } }\n- { typ: zahlung, schluessel: z, werte: { datum: "2026-01-01", vertrag: { beispiel: "vertraege:v" } } }\n';
+      assert.ok(gruende(kreis).some((g) => /Kreis/.test(g)));
+      assert.deepEqual(gruende('- { typ: vertrag, schluessel: v, werte: { nr: V } }\n- { typ: zahlung, werte: { datum: "2026-01-01", vertrag: { beispiel: "vertraege:v" } } }\n'), [], 'eigene Paket-Id als Präfix ist erlaubt');
     });
 
     it('verweist mit dms:… auf Mappentypen des DMS (#310)', async () => {
