@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_AUSWAHL, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, ROLLEN, freierSchluessel, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
-  AUFGABE_MAX, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Benutzer, type Dokument, type Herkunft, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Werte,
+  AUFGABE_MAX, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Benutzer, type Dokument, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
@@ -2944,6 +2944,50 @@ export class Dienst {
         return mappenPdf(titel, mappen.map((m) => ({ mappe: m, typ, dokumente: [], inhalt: async () => Buffer.alloc(0) })), quelle, uebersicht ? { spalten: exportSpalten([typ], 'liste'), typen: [typ] } : null);
       },
     };
+  }
+
+  /**
+   * Persönlicher Export (#255): gleiches Format wie der Vollexport, beschränkt auf Mappen, die der
+   * Benutzer lesen darf; seine Aufgaben, Erinnerungen, Favoriten, sein Profil. Keine Struktur anderer
+   * Benutzer, keine Protokolle. Passwörter nur, wo er sie sehen darf (und nur mit Bestätigung).
+   */
+  async persoenlicheQuelle(z: Zugriff, x: { mandant: string; version: string; ich: { benutzer: Array<Record<string, unknown>>; vertretungen: Vertretung[] } }): Promise<ExportQuelle> {
+    const voll = this.vollexportQuelle({ mandant: x.mandant, version: x.version, benutzer: async () => x.ich, designs: async () => [], protokoll: () => [] });
+    const ich = z.ich.id;
+    const mappenJeTyp = new Map<string, Mappe[]>();
+    const lesbar = new Set<string>();
+    const pwErlaubt = new Set<string>();
+    for (const t of await this.repo.listeTypen()) {
+      const alle = await this.repo.listeMappen(t.id);
+      const ok = await this.lesbare(z, alle.map((m) => m.id));
+      const ms = alle.filter((m) => ok.has(m.id));
+      if (!ms.length) continue;
+      mappenJeTyp.set(t.id, ms);
+      for (const m of ms) { lesbar.add(m.id); if (z.admin || (await this.rechteAn(z, m)).P) pwErlaubt.add(m.id); }
+    }
+    const typen = (await this.repo.listeTypen()).filter((t) => mappenJeTyp.has(t.id));
+    const passwortVon = new Map<unknown, boolean>();
+    for (const [, ms] of mappenJeTyp) for (const m of ms) for (const v of Object.values(m.werte)) if (istVerschluesselt(v)) passwortVon.set(v, pwErlaubt.has(m.id));
+    return {
+      ...voll,
+      typen: async () => typen,
+      sichten: async () => [],
+      nummernkreise: async () => [],
+      mappen: async (typId) => mappenJeTyp.get(typId) ?? [],
+      papierkorb: async () => (await this.repo.papierkorb({ von: ich })),
+      aufgaben: async (id) => (await this.repo.aufgabenVon(id)).filter((a) => a.empfaengerId === ich || a.erstelltVon === ich),
+      erinnerungen: async () => (await this.repo.erinnerungen({ empfaengerId: ich })).filter((e) => lesbar.has(e.mappeId)),
+      favoriten: async () => (await this.repo.alleFavoriten()).filter((f) => f.benutzerId === ich),
+      passwort: (w) => (passwortVon.get(w) ? voll.passwort(w) : null),
+    };
+  }
+
+  /** Dürfen Benutzer ihre Daten selbst exportieren (#255)? Standard: ja. */
+  async persoenlicherExportErlaubt(): Promise<boolean> { return (await this.einstellungen?.lies('persoenlicher_export')) !== false; }
+  async setzePersoenlicherExport(an: unknown, von: string) {
+    await this.einstellungen?.schreibe('persoenlicher_export', an === false ? false : null);
+    protokoll.modul('werkbank').info(an === false ? 'Persönlicher Export abgeschaltet' : 'Persönlicher Export erlaubt', { von });
+    return this.persoenlicherExportErlaubt();
   }
 
   /** Abschätzung vor dem Vollexport: Mappen, Dokumente, Bytes (mit älteren Versionen). */

@@ -387,6 +387,11 @@ export class Konten {
     })));
     return { benutzer, vertretungen: await this.repo.alleVertretungen() };
   }
+  /** Persönlicher Export (#255): nur der Benutzer selbst. */
+  async exportDatenVon(id: string) {
+    const d = await this.exportDaten();
+    return { benutzer: d.benutzer.filter((b) => b.id === id), vertretungen: d.vertretungen.filter((v) => v.benutzerId === id) };
+  }
 
   /** Für alle Angemeldeten: nur Id und Name, z. B. für „angelegt von“. */
   /** Für Namen und Empfängerauswahl; mit Abwesenheit, solange sie an ist (#78). */

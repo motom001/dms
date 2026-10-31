@@ -480,6 +480,10 @@ export const api = {
   vollexportStarten: (o: { passwoerter: boolean; passwoerterBestaetigt: boolean; protokolle: boolean; kontakte: Record<string, KontaktZuordnung> }) => anfrage<Auftrag>('POST', '/api/werkbank/export', o),
   vollexportPruefen: (name: string) => anfrage<{ ok: boolean; dateien: number; fehlend: string[]; abweichend: string[] }>('POST', `/api/werkbank/export/${encodeURIComponent(name)}/pruefen`),
   vollexportLoeschen: (name: string) => anfrage<null>('DELETE', `/api/werkbank/export/${encodeURIComponent(name)}`),
+  /* Persönlicher Export (#255) */
+  meinExport: () => anfrage<{ erlaubt: boolean; laeuft: boolean; fehler: string | null; fertig: VollexportStand['exporte'][number] | null }>('GET', '/api/konto/export'),
+  meinExportStarten: (passwoerter: boolean, passwoerterBestaetigt: boolean) => anfrage<{ laeuft: boolean }>('POST', '/api/konto/export', { passwoerter, passwoerterBestaetigt }),
+  persoenlicherExport: (erlaubt: boolean) => anfrage<{ erlaubt: boolean }>('PUT', '/api/werkbank/export/persoenlich', { erlaubt }),
   /* Archivmodus (#212) */
   archivVorschau: (typId: string, archiv: Archiv) => anfrage<{ mappen: number; darfWeg: number }>('POST', '/api/werkbank/archiv/vorschau', { typId, archiv }),
   darfWeg: () => anfrage<Array<{ id: string; typId: string; typ: string; titel: string; aufbewahrenBis: string }>>('GET', '/api/werkbank/darf-weg'),
@@ -536,6 +540,8 @@ export interface VollexportStand {
   abschaetzung: { mappen: number; dokumente: number; bytes: number };
   exporte: Array<{ name: string; erstellt: string | null; bytes: number; dateien: number; mappen: number | null; passwoerter: boolean }>;
   kontakte: Array<{ typId: string; typ: string; zuordnung: KontaktZuordnung }>;
+  /** Dürfen Benutzer ihre Daten selbst exportieren (#255)? */
+  persoenlich: boolean;
 }
 export interface Auftrag {
   id: string; art: string; titel: string; status: 'laeuft' | 'fertig' | 'fehler';

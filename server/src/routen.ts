@@ -218,6 +218,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   /** Benutzer mit ihren weiteren Rollen (#27). */
   const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.weitereRollen()).get(b.id) ?? [] });
   const sicherung = () => { if (!x.sicherung) throw new Fachfehler(404, 'Sicherungen sind nicht eingerichtet.'); return x.sicherung; };
+  /** Persönlicher Export (#255): je Benutzer, ob er gerade läuft. */
+  const eigeneExporte = new Map<string, { laeuft: boolean; fehler: string | null }>();
   // Vollexport (#254): neben den Sicherungen, Unterordner export/.
   const exportZiel = () => { if (!x.sicherung) throw new Fachfehler(404, 'Ohne Sicherungsordner gibt es keinen Vollexport.'); return join(x.sicherung.ordner, 'export'); };
   const oidc = () => { if (!x.oidc) throw new Fachfehler(404, 'Die Anmeldung über einen Anbieter ist nicht eingerichtet.'); return x.oidc; };
@@ -662,7 +664,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/werkbank/export', zugang: 'admin', handler: async () => {
       const ziel = exportZiel();
       const typen = await dienst.listeTypen();
-      return ok({ ordner: ziel, exporte: await exporteIn(ziel), abschaetzung: await dienst.exportAbschaetzung(), frei: await freierPlatz(ziel), kontakte: kontaktVorschlaege(typen) });
+      return ok({ ordner: ziel, exporte: await exporteIn(ziel), abschaetzung: await dienst.exportAbschaetzung(), frei: await freierPlatz(ziel), kontakte: kontaktVorschlaege(typen), persoenlich: await dienst.persoenlicherExportErlaubt() });
     } },
     { methode: 'POST', pfad: '/api/werkbank/export', zugang: 'admin', handler: async (a) => {
       const e = (a.body ?? {}) as { passwoerter?: unknown; passwoerterBestaetigt?: unknown; protokolle?: unknown; kontakte?: unknown };
@@ -701,6 +703,48 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       if (groesse > ZIP_MAX) throw new Fachfehler(422, 'Der Export ist größer als 4 GB – bitte direkt aus dem Ordner kopieren.');
       L.werkbank.info('Vollexport heruntergeladen', { name: a.params.name, von: ich(a).email });
       return { datei: { inhalt: zipStrom(eintraege), name: `${a.params.name}.zip`, mime: 'application/zip', anzeigen: false, groesse } };
+    } },
+    /* ---------- Persönlicher Export (#255) ---------- */
+    { methode: 'PUT', pfad: '/api/werkbank/export/persoenlich', zugang: 'admin', handler: async (a) => ok({ erlaubt: await dienst.setzePersoenlicherExport((a.body as { erlaubt?: unknown })?.erlaubt, ich(a).email) }) },
+    { methode: 'GET', pfad: '/api/konto/export', zugang: 'angemeldet', handler: async (a) => {
+      const id = ich(a).id;
+      const ordner = join(exportZiel(), 'persoenlich', id);
+      const fertig = (await exporteIn(ordner))[0] ?? null;
+      return ok({ erlaubt: await dienst.persoenlicherExportErlaubt(), laeuft: eigeneExporte.get(id)?.laeuft ?? false, fehler: eigeneExporte.get(id)?.fehler ?? null, fertig });
+    } },
+    { methode: 'POST', pfad: '/api/konto/export', zugang: 'angemeldet', handler: async (a) => {
+      if (!(await dienst.persoenlicherExportErlaubt())) throw new Fachfehler(403, 'Ein Administrator hat den persönlichen Export abgeschaltet.');
+      const e = (a.body ?? {}) as { passwoerter?: unknown; passwoerterBestaetigt?: unknown };
+      if (e.passwoerter === true && e.passwoerterBestaetigt !== true) throw new Fachfehler(422, 'Passwörter im Klartext nur mit ausdrücklicher Bestätigung.');
+      const id = ich(a).id;
+      if (eigeneExporte.get(id)?.laeuft) throw new Fachfehler(409, 'Dein Export läuft schon.');
+      if (a.sitzungsDaten?.vertretungId) throw new Fachfehler(403, 'Während ein Administrator als dieser Benutzer arbeitet, gibt es keinen persönlichen Export.');
+      const ziel = join(exportZiel(), 'persoenlich', id);
+      const quelle = await dienst.persoenlicheQuelle(await zg(a), { mandant: (await x.mandantName?.()) ?? '', version: eigeneVersion(), ich: await konten.exportDatenVon(id) });
+      const zustand = { laeuft: true, fehler: null as string | null };
+      eigeneExporte.set(id, zustand);
+      L.konto[e.passwoerter === true ? 'warn' : 'info'](e.passwoerter === true ? 'Persönlicher Export mit Passwörtern gestartet' : 'Persönlicher Export gestartet', {});
+      void (async () => {
+        try {
+          for (const alt of await exporteIn(ziel)) await loescheExport(exportOrdner(ziel, alt.name));
+          const r = await vollexport(quelle, ziel, { passwoerter: e.passwoerter === true });
+          L.konto.info('Persönlicher Export fertig', { benutzer: id, dateien: r.dateien, mb: Math.round(r.bytes / 1024 ** 2) });
+        } catch (x2) { zustand.fehler = (x2 as Error).message; L.konto.error('Persönlicher Export fehlgeschlagen', { benutzer: id, fehler: zustand.fehler }); }
+        finally { zustand.laeuft = false; }
+      })();
+      return ok({ laeuft: true }, 202);
+    } },
+    { methode: 'GET', pfad: '/api/konto/export/zip', zugang: 'angemeldet', handler: async (a) => {
+      const ziel = join(exportZiel(), 'persoenlich', ich(a).id);
+      const fertig = (await exporteIn(ziel))[0];
+      if (!fertig) throw new Fachfehler(404, 'Es gibt noch keinen Export.');
+      const ordner = exportOrdner(ziel, fertig.name);
+      const dateien = await exportDateien(ordner);
+      const eintraege: ZipEintrag[] = dateien.map((d) => ({ name: `${fertig.name}/${d.name}`, groesse: d.groesse, inhalt: async () => createReadStream(d.pfad) }));
+      const groesse = zipGroesse(eintraege);
+      if (groesse > ZIP_MAX) throw new Fachfehler(422, 'Dein Export ist größer als 4 GB. Bitte einen Administrator, ihn dir aus dem Ordner zu geben.');
+      L.konto.info('Persönlicher Export heruntergeladen', {});
+      return { datei: { inhalt: zipStrom(eintraege), name: `${fertig.name}.zip`, mime: 'application/zip', anzeigen: false, groesse } };
     } },
     /* ---------- Archivmodus (#212) ---------- */
     { methode: 'POST', pfad: '/api/werkbank/archiv/vorschau', zugang: 'admin', handler: async (a) => ok(await dienst.archivVorschau(String((a.body as { typId?: unknown })?.typId ?? ''), (a.body as { archiv?: unknown })?.archiv)) },

@@ -10,6 +10,7 @@ import { GRUNDLAGEN, leseSchrift, SCHRIFTEN, setzeSchrift, type Schrift } from '
 import { Link } from '../ort';
 import { FehlerMelden } from './FehlerMelden';
 import { ZweifaktorBlatt } from './Zweifaktor';
+import { MeinExport } from './MeinExport';
 import { Farbfelder } from '../werkbank/Designs';
 import { useKonto } from '../konto';
 import { Hilfe } from '../Hilfe';
@@ -127,6 +128,8 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
 
       {/* Nur zum Nachlesen – deshalb unter den Formularen (#198). */}
       <MeineRechte admin={ich.rolle === 'admin'} />
+
+      <MeinExport />
 
       </>}
 
