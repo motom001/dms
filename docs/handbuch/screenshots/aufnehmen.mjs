@@ -56,14 +56,19 @@ async function warteAufAuftrag() {
 
 /** Kleines, gültiges PDF mit einer Zeile Text – als Beispieldokument. */
 function beispielPdf(zeile) {
-  const inhalt = `BT /F1 18 Tf 60 760 Td (${zeile}) Tj ET`;
+  // Eine Zeile je Seite; mehrere Zeilen (Liste) = mehrseitiges PDF (#335).
+  const zeilen = Array.isArray(zeile) ? zeile : [zeile];
+  const n = zeilen.length;
   const objekte = [
     '<< /Type /Catalog /Pages 2 0 R >>',
-    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    `<< /Type /Pages /Kids [${zeilen.map((_, i) => `${4 + i * 2} 0 R`).join(' ')}] /Count ${n} >>`,
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
-    `<< /Length ${inhalt.length} >>\nstream\n${inhalt}\nendstream`,
   ];
+  zeilen.forEach((z, i) => {
+    const inhalt = `BT /F1 18 Tf 60 760 Td (${z}) Tj ET`;
+    objekte.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${5 + i * 2} 0 R >>`);
+    objekte.push(`<< /Length ${inhalt.length} >>\nstream\n${inhalt}\nendstream`);
+  });
   let pdf = '%PDF-1.4\n';
   const pos = [];
   objekte.forEach((o, i) => { pos.push(pdf.length); pdf += `${i + 1} 0 obj\n${o}\nendobj\n`; });
@@ -316,6 +321,19 @@ async function main() {
   const anzeigbar = s.locator('.dokumentliste li.klickbar').first();
   if (await anzeigbar.count()) { await anzeigbar.locator('.dokname > button').first().click(); await s.waitForTimeout(800); }
   await bild(s, 'dokumente');
+
+  // PDF bearbeiten (#335): Seitenansicht eines mehrseitigen Scans, eine Seite gedreht, Teilen ab Seite 3.
+  await api('POST', `/api/mappen/${d.strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Scan Vertragsunterlagen.pdf')}&typ=application/pdf`,
+    beispielPdf(['Vertrag Seite 1', 'Vertrag Seite 2', 'Preisblatt', 'Widerrufsbelehrung']), true);
+  await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
+  await s.getByRole('tab', { name: 'Vertragsunterlagen' }).click();
+  const scan = s.locator('.dokumentliste li', { hasText: 'Scan Vertragsunterlagen.pdf' });
+  await scan.getByRole('button', { name: 'Seiten', exact: true }).click();
+  await s.waitForFunction(() => [...document.querySelectorAll('.seitenbild img')].length > 0 && [...document.querySelectorAll('.seitenbild img')].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 20_000 }).catch(() => {});
+  await s.getByRole('button', { name: 'Seite 2 nach rechts drehen' }).click();
+  await s.locator('.seitenraster .seite').nth(2).getByRole('button', { name: 'Teilen ab hier' }).click();
+  await s.locator('.pdfseiten').scrollIntoViewIfNeeded();
+  await bild(s, 'pdf-bearbeiten');
 
   // Verknüpfungsregister beim Vertragspartner
   await geheZu(s, `/ablage/${partner.id}/${d.stadtwerke.id}`);

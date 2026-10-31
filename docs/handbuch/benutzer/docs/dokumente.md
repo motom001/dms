@@ -43,9 +43,39 @@ Neben jedem PDF und Bild (JPEG, PNG) steht ein **kleines Vorschaubild der ersten
 Jede Zeile hat ein Kästchen; **Alle auswählen** über der Liste wählt alle (und wieder ab). Mit **Umschalt + Klick** wählst du einen ganzen Bereich. Für die Auswahl gibt es dann:
 
 - **Herunterladen** – lädt die Dokumente nacheinander unter ihrem Namen herunter. Beim ersten Mal fragt der Browser womöglich, ob die Seite mehrere Dateien herunterladen darf – erlaube es.
+- **Zusammenfügen** – nur bei zwei oder mehr PDFs: hängt sie zu einem neuen PDF aneinander (siehe [PDF bearbeiten](#pdf-bearbeiten)).
 - **Löschen** – markiert sie zum Löschen, wie beim einzelnen Dokument (siehe unten).
 
 Die Auswahl gilt nur für das Register, in dem du gerade bist.
+
+## PDF bearbeiten
+
+Schief gescannt, eine leere Rückseite zu viel, drei Briefe in einem Scan? Das richtest du direkt im DMS – ohne anderes Programm.
+
+**Seiten** neben einem PDF öffnet darunter die Seitenansicht mit einem kleinen Bild jeder Seite. Je Seite gibt es:
+
+- **↺ / ↻** – um 90 Grad nach links oder rechts drehen
+- **Löschen** – die Seite fällt weg (**Behalten** holt sie zurück)
+- **← / →** – nach vorn oder hinten verschieben. Du kannst Seiten auch mit der Maus an eine andere Stelle **ziehen** oder per Tastatur: Seite mit Tab anwählen, dann **Alt + Pfeiltaste**.
+- **Teilen ab hier** – mit dieser Seite beginnt ein neuer Teil
+
+![Seiten eines PDFs bearbeiten: Seite 2 gedreht, ab Seite 3 ein neuer Teil](bilder/pdf-bearbeiten.png)
+
+Unten steht, was herauskommt („3 von 5 Seiten · 1 gedreht · 2 Teile“). Erst **Übernehmen** speichert – sofort, ohne „Mappe speichern“. **Abbrechen** lässt alles, wie es war.
+
+Was beim Übernehmen passiert:
+
+| Was | Mit Versionierung | Ohne Versionierung |
+| --- | --- | --- |
+| Drehen, löschen, umsortieren | neue **Version** des Dokuments; die bisherige bleibt als ältere Version erhalten | nach Rückfrage ersetzt das Ergebnis das Dokument; das bisherige kommt in den [Papierkorb](ablage.md#papierkorb) |
+| Teilen in einer Mappe | Teil 1 wird die neue Version („Scan (Teil 1).pdf“), die weiteren Teile werden eigene Dokumente im selben Register („Scan (Teil 2).pdf“ …) | ebenso, Teil 1 nach Rückfrage |
+| Teilen bei [Post](post.md#sammelscan-teilen) | je Teil eine **neue Post** – die Ausgangspost bleibt unverändert und wird erledigt | ebenso |
+
+Im **Archivmodus** ist die Versionierung immer an – das Original bleibt also auch dort erhalten. Für das Ergebnis läuft die [Texterkennung](#volltext) neu, das Vorschaubild entsteht neu. In der Historie der Mappe steht „PDF bearbeitet“ mit dem, was sich geändert hat.
+
+**Zusammenfügen:** Wähle mit den Kästchen zwei oder mehr PDFs und klicke auf **Zusammenfügen**. Das DMS hängt sie in der Reihenfolge der Liste aneinander (sortiere vorher, wenn nötig) und legt das Ergebnis als **neues Dokument** in dieses Register; den Namen kannst du ändern. Die Ausgangsdokumente bleiben, außer du hakst **Ausgangsdokumente in den Papierkorb legen** an.
+
+Bearbeiten lassen sich nur PDFs, keine Bilder oder Word-Dateien, und nur mit dem Recht „Bearbeiten“ an der Mappe. Ein PDF mit Passwortschutz lässt das DMS unverändert. Bilder gibt es für die ersten 400 Seiten; bei sehr langen PDFs stehen danach nur die Seitennummern.
 
 ## Volltext
 

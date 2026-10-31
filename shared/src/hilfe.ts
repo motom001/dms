@@ -100,6 +100,7 @@ export const HILFE = {
   'dokumente.sortieren': benutzer('dokumente/', 'Sortieren von Dokumenten', 'sortieren'),
   'dokumente.mehrere': benutzer('dokumente/', 'mehreren Dokumenten auf einmal', 'mehrere-auf-einmal'),
   'dokumente.versionen': benutzer('versionen/', 'Versionen verstehen'),
+  'dokumente.seiten': benutzer('dokumente/', 'PDF bearbeiten', 'pdf-bearbeiten'),
   'profil.rechte': benutzer('profil/', 'deinen Rechten', 'meine-rechte'),
   'profil.abwesenheit': benutzer('profil/', 'Abwesenheit', 'abwesenheit'),
   'profil.export': benutzer('profil/', 'Meine Daten exportieren', 'meine-daten-exportieren'),

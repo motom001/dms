@@ -527,6 +527,12 @@ export const api = {
   async ersetzen(id: string, datei: File): Promise<Dokument> {
     return sendeDatei(`/api/dokumente/${id}/ersetzen?${new URLSearchParams({ name: datei.name, typ: datei.type || 'application/octet-stream' })}`, datei) as Promise<Dokument>;
   },
+  /** PDF bearbeiten (#335). */
+  pdfSeiten: (id: string) => anfrage<PdfSeiten>('GET', `/api/dokumente/${id}/seiten`),
+  bearbeitePdf: (id: string, e: { seiten: Array<{ nr: number; drehung?: number }>; teile?: number[]; bestaetigt?: boolean }) =>
+    anfrage<{ dokumente: Dokument[]; posten: Mappe[] }>('POST', `/api/dokumente/${id}/seiten`, e),
+  fuegePdfZusammen: (e: { dokumente: string[]; name?: string; ziel?: string; register?: string; originaleEntfernen?: boolean; bestaetigt?: boolean }) =>
+    anfrage<{ dokument: Dokument; erledigtePost: string[] }>('POST', '/api/dokumente/zusammenfuegen', e),
   /** gleicherName (#194): zaehler (Standard), version oder ersetzen. */
   /** Doppelte Dateien (#333): Prüfwerte → Fundstellen in Mappen, die man lesen darf. */
   gleicheDateien: (pruefwerte: string[], ohneMappe?: string) => anfrage<{ fundstellen: Record<string, Fundstelle[]> }>('POST', '/api/dokumente/gleiche', { pruefwerte, ...(ohneMappe ? { ohneMappe } : {}) }),
@@ -580,6 +586,9 @@ export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
 export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */ unpassend?: Record<string, string[]>; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 /** Vorschaubild der ersten Seite (#332); der Prüfwert in der Adresse sorgt für ein neues Bild nach einer neuen Version. */
+export interface PdfSeiten { id: string; name: string; version: number; sha256: string; anzahl: number; drehungen: number[]; bilderBis: number }
+/** Bild einer Seite (#335); die Adresse trägt den Prüfwert, ein neues PDF hat neue Bilder. */
+export const seitenbildUrl = (d: { id: string; sha256: string }, nr: number) => `/api/dokumente/${d.id}/seiten/${nr}/bild?v=${d.sha256.slice(0, 12)}`;
 export const vorschauUrl = (d: { id: string; sha256: string }, versuch = 0) => `/api/dokumente/${d.id}/vorschau?v=${d.sha256.slice(0, 12)}${versuch ? `&n=${versuch}` : ''}`;
 /** Wo eine gleiche Datei schon liegt (#333) – nur lesbare Mappen. */
 export interface Fundstelle { mappeId: string; typId: string; titel: string; typ: string; register: string; name: string; erstellt: string }
