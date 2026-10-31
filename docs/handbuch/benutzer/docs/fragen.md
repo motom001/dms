@@ -43,6 +43,9 @@
 ??? question "Ich habe versehentlich eine Mappe gelöscht."
     Sie liegt im **Papierkorb** unterhalb von „Zu erledigen“. Öffne sie dort und klicke auf **Wiederherstellen**.
 
+??? question "Ich habe ein Dokument ersetzt. Ist die alte Fassung weg?"
+    Nicht, wenn das Register Versionen hat: Die alte Fassung liegt als ältere **Version** unter dem Dokument und lässt sich ansehen, herunterladen und zurückholen. Wie das geht, steht unter [Versionen verstehen](versionen.md).
+
 ??? question "Die Suche findet einen Text aus einem PDF nicht."
     Setze neben dem Suchfeld den Haken **Volltext durchsuchen**. Ist das Dokument gerade erst hochgeladen, steht daneben vielleicht noch *Volltext: wartet* – dann einen Moment warten. Bei *ausgelassen* oder *Fehler* kannst du es mit **Erneut versuchen** am Dokument noch einmal anstoßen; für manche Dateitypen gibt es aber keinen Volltext.
 
