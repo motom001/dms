@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0460" class="md-nav__link">
+  <a href="#0461" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.46.0
+        0.46.1
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.46.0">
+    <nav class="md-nav" aria-label="0.46.1">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -387,6 +387,45 @@
         
           <li class="md-nav__item">
   <a href="#fur-administratoren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Für Administratoren
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0460" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.46.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.46.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#neu_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fur-administratoren_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Für Administratoren
@@ -1640,15 +1679,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0460" class="md-nav__link">
+  <a href="#0461" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.46.0
+        0.46.1
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.46.0">
+    <nav class="md-nav" aria-label="0.46.1">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1664,6 +1703,45 @@
         
           <li class="md-nav__item">
   <a href="#fur-administratoren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Für Administratoren
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0460" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.46.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.46.0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#neu_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fur-administratoren_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Für Administratoren
@@ -1714,8 +1792,17 @@
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0460">0.46.0<a class="headerlink" href="#0460" title="Permanent link">&para;</a></h2>
+<h2 id="0461">0.46.1<a class="headerlink" href="#0461" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Sicherheits-Header</strong> (#239): Das DMS schützt Oberfläche und Schnittstelle jetzt selbst – gegen das unsichtbare Einbetten in fremde Seiten (<code>X-Frame-Options</code>, <code>frame-ancestors</code>), mit einer strengen Content-Security-Policy für die Oberfläche, <code>nosniff</code>, <code>Referrer-Policy</code>, <code>Permissions-Policy</code> und HSTS bei HTTPS. Ein Reverse-Proxy muss diese Header nicht mehr setzen.</li>
+</ul>
+<h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Neue Umgebungsvariable <strong><code>DMS_EINBETTEN</code></strong>: Ursprünge, die das DMS einbetten dürfen (z. B. ein Dashboard). Siehe Administratorhandbuch, <em>Installation → Sicherheits-Header</em>.</li>
+</ul>
+<h2 id="0460">0.46.0<a class="headerlink" href="#0460" title="Permanent link">&para;</a></h2>
+<h3 id="neu_1">Neu<a class="headerlink" href="#neu_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Demo-Daten für Wachstumstests</strong> (#248) unter <strong>Werkbank → Demo-Daten</strong>:</li>
 <li><strong>Bis 50.000 Mappen je Durchlauf</strong>, mehrfach hintereinander. Vorhandene Mappen werden dafür nur noch schlank geladen, auch bei sehr vielen Mappen.</li>
@@ -1725,7 +1812,7 @@
 <li>Das <strong>Ergebnis</strong> nennt Dauer, Anzahl, Größe, Seiten und Startwert, auch im Protokoll.</li>
 <li><strong>Alle Demo-Mappen entfernen</strong> arbeitet in Paketen zu je 1.000 mit Fortschritt, auch bei vielen Dateien.</li>
 </ul>
-<h3 id="fur-administratoren">Für Administratoren<a class="headerlink" href="#fur-administratoren" title="Permanent link">&para;</a></h3>
+<h3 id="fur-administratoren_1">Für Administratoren<a class="headerlink" href="#fur-administratoren_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Die Texterkennung vieler „gescannter“ PDFs und Bilder dauert auf einem NAS eher Tage als Stunden; Sicherungen werden mit den Demo-Dokumenten entsprechend größer. Am besten in einer zweiten Installation ausprobieren.</li>
 </ul>
