@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { BUNDESLAENDER } from '../../shared/src/feiertage';
-import { handbuchUrl } from '../../shared/src/hilfe';
+import { handbuchUrl, HILFE, hilfeOnlineUrl, INSTALLIEREN_URL, type Hilfeort } from '../../shared/src/hilfe';
 import { PASSWORT_MINDESTLAENGE } from '../../shared/src/model';
 import { api, ApiFehler, hatEinrichtungscode, setzeEinrichtungscode, type AnbindungEingabe, type AnbindungPruefung, type EinrichtungSchritt, type EinrichtungStand, type KontoStatus, type LinkErgebnis, type MailEinstellung, type TresorStatus } from './api';
 import { WiederherstellungsAssistent } from './wiederherstellen';
@@ -40,11 +40,26 @@ function Fortschritt({ aktiv }: { aktiv: number }) {
   );
 }
 
+/** Hilfe je Schritt (#278): der passende Abschnitt im Online-Handbuch, mit Bildern. */
+const HILFE_JE_SCHRITT: Hilfeort[] = ['einrichtung.code', 'einrichtung.datenbank', 'einrichtung.wahl', 'einrichtung.mandant', 'einrichtung.administrator', 'einrichtung.benutzer', 'einrichtung.schluessel', 'einrichtung.optional', 'einrichtung.fertig'];
+
+function SchrittHilfe({ aktiv }: { aktiv: number }) {
+  const z = HILFE[HILFE_JE_SCHRITT[aktiv]];
+  return (
+    <a className="assistent-hilfe" href={hilfeOnlineUrl(z)} target="_blank" rel="noreferrer" title={`Hilfe zu „${z.titel}“ im Administratorhandbuch`} aria-label="Hilfe zu diesem Schritt im Handbuch, mit Bildern (öffnet in neuem Tab)">
+      <span className="hilfesymbol" aria-hidden="true">?</span> Hilfe mit Bildern
+    </a>
+  );
+}
+
 function Rahmen({ aktiv, titel, unter, children }: { aktiv: number; titel: string; unter?: ReactNode; children: ReactNode }) {
   return (
     <div className="kartenseite">
       <div className="karte breit assistent">
-        <p className="ueber">Einrichtung · Schritt {aktiv + 1} von {SCHRITTE.length}</p>
+        <div className="assistent-kopf">
+          <p className="ueber">Einrichtung · Schritt {aktiv + 1} von {SCHRITTE.length}</p>
+          <SchrittHilfe aktiv={aktiv} />
+        </div>
         <Fortschritt aktiv={aktiv} />
         <h1>{titel}</h1>
         {unter && <p className="leise">{unter}</p>}
@@ -139,6 +154,7 @@ function CodeSchritt({ ok }: { ok: () => void }) {
         {s.fehler && <p className="fehlertext">{s.fehler}</p>}
         <button className="knopf primaer" disabled={s.sendet || !code.trim()}>{s.sendet ? 'Prüfe …' : 'Weiter'}</button>
       </form>
+      <p className="klein">Wo das bei deinem Gerät ist, zeigt die Anleitung deiner Plattform mit Bildern: <a className="verweis" href={INSTALLIEREN_URL} target="_blank" rel="noreferrer">Wie komme ich an ein DMS? ↗</a></p>
       <p className="leise klein">Nach der Einrichtung ist der Code wertlos; das DMS löscht die Datei.</p>
     </Rahmen>
   );

@@ -9,27 +9,68 @@ Das DMS läuft – **empfohlen** – als zwei Container: die Anwendung (`ghcr.io
 
 ## Der Einrichtungsassistent
 
-Beim ersten Aufruf führt ein Assistent in neun Schritten durch die Einrichtung. Übersprungenes lässt sich in der Werkbank nachholen; die Übersicht erinnert daran.
+Beim ersten Aufruf führt ein Assistent in neun Schritten durch die Einrichtung. Jeder Schritt hat oben ein **?**, das genau den passenden Abschnitt hier öffnet. Übersprungenes lässt sich in der Werkbank nachholen; die Übersicht erinnert daran.
+
+### Einrichtungscode
 
 ![Einrichtungscode](bilder/einrichtung-code.png)
 
-1. **Einrichtungscode.** Damit niemand sonst im Netz das DMS einrichtet, fragt es zuerst nach einem Code wie `K7PX-3MNA-Q9TR`. Er steht
-    - im **Protokoll des Containers** – in der Docker-Oberfläche des NAS den Container `app` des Projekts öffnen und das Protokoll ansehen (bei UGREEN *Docker → Container → dms-app → Protokoll*, bei Synology *Container Manager → Container → Details → Protokoll*) oder `docker compose logs app` (bei [dms-komplett](https://motom001.github.io/dms/installieren/aktuell/komplett/): `docker compose logs dms`);
-    - in der Datei **`EINRICHTUNGSCODE`** im Ordner `geheim` (in der Vorlage `/volume1/docker/dms/geheim`).
+Damit niemand sonst im Netz das DMS einrichtet, fragt es zuerst nach einem Code wie `K7PX-3MNA-Q9TR`. Er steht an zwei Stellen:
 
-    Nach dem Anlegen des Administrators ist der Code wertlos; das DMS löscht die Datei. Nach zehn falschen Versuchen sperrt es die Eingabe für zehn Minuten.
-2. **Datenbank.** Server (in der Vorlage `db`), Port `5432`, Datenbank und Benutzer `dms` und das Passwort aus der `.env`. **Verbindung prüfen** meldet verständlich, was nicht stimmt – Server nicht erreichbar, Passwort falsch, Datenbank fehlt (mit Knopf zum Anlegen, wenn der Benutzer das darf). **Übernehmen** speichert die Anbindung und startet das DMS – ohne Neustart des Containers; die Tabellen legt es selbst an. Der Schritt entfällt, wenn eine Anbindung schon funktioniert (siehe [Datenbank-Anbindung](#datenbank-anbindung)).
-   ![Datenbank](bilder/einrichtung-datenbank.png)
-3. **Neu einrichten oder aus einer Sicherung wiederherstellen.** Wiederherstellen führt in den Ablauf unter [Wiederherstellen](wiederherstellen.md#neues-nas-alte-sicherung) und endet bei der Anmeldung mit den bisherigen Zugangsdaten.
-4. **Mandant.** Der Name des DMS, meist der Name der Familie („Familie Mustermann“) oder der Firma. Er erscheint als Schriftzug in der Kopfzeile, im Browser-Tab und auf der Anmeldeseite (änderbar unter **Werkbank → [Designs](designs.md)**).
-5. **Administrator** mit Name, E-Mail-Adresse und Passwort. Danach bist du als Administrator angemeldet.
-   ![Administrator](bilder/einrichtung-administrator.png)
-6. **Erster Benutzer.** Administratoren richten ein, arbeiten aber nicht in der Ablage. Lege deshalb einen normalen Benutzer an – zum Beispiel dich selbst mit einer zweiten Adresse. Ohne E-Mail-Versand zeigt der Assistent den Einladungslink zum Kopieren.
-7. **Schlüssel und Notfallblatt.** Der Schlüssel verschlüsselt gespeicherte Passwörter und alle Sicherungen (siehe [Verschlüsselung](verschluesselung.md)); das [Notfallblatt](sicherung.md#notfallblatt) enthält ihn zum Ausdrucken.
-   ![Schlüssel und Notfallblatt](bilder/einrichtung-schluessel.png)
-8. **Optionales:** Adresse des DMS (vorbelegt mit der Adresse im Browser), Bundesland für Feiertage, Beispiel-Mappentypen und der E-Mail-Versand.
-9. **Fertig** – mit Links zu beiden Handbüchern, „Problem melden“ als vorbereitetes GitHub-Issue und dem Hinweis auf GitHub Sponsors.
-   ![Fertig](bilder/einrichtung-fertig.png)
+- im **Protokoll des Containers** – in der Docker-Oberfläche des NAS den Container `app` des Projekts öffnen und das Protokoll ansehen (bei UGREEN *Docker → Container → dms-app → Protokoll*, bei Synology *Container Manager → Container → Details → Protokoll*) oder `docker compose logs app` (bei [dms-komplett](https://motom001.github.io/dms/installieren/aktuell/komplett/): `docker compose logs dms`). Gesucht ist die Zeile `Einrichtungscode für das DMS: XXXX-XXXX-XXXX`;
+- in der Datei **`EINRICHTUNGSCODE`** im Ordner `geheim` (in der Vorlage `/volume1/docker/dms/geheim`).
+
+Wo genau das bei deinem Gerät ist, zeigt die Anleitung deiner Plattform unter [Wie komme ich an ein DMS?](https://motom001.github.io/dms/installieren/aktuell/) – mit Bildern für Synology, UGREEN, QNAP, Unraid, TrueNAS, umbrelOS, ZimaOS, CasaOS und andere.
+
+Nach dem Anlegen des Administrators ist der Code wertlos; das DMS löscht die Datei. Nach zehn falschen Versuchen sperrt es die Eingabe für zehn Minuten.
+
+### Datenbank
+
+![Datenbank](bilder/einrichtung-datenbank.png)
+
+Server (in der Vorlage `db`), Port `5432`, Datenbank und Benutzer `dms` und das Passwort aus der `.env`. **Verbindung prüfen** meldet verständlich, was nicht stimmt – Server nicht erreichbar, Passwort falsch, Datenbank fehlt (mit Knopf zum Anlegen, wenn der Benutzer das darf). **Übernehmen** speichert die Anbindung und startet das DMS – ohne Neustart des Containers; die Tabellen legt es selbst an. Der Schritt entfällt, wenn eine Anbindung schon funktioniert (siehe [Datenbank-Anbindung](#datenbank-anbindung)).
+
+### Neu einrichten oder wiederherstellen
+
+![Neu einrichten oder wiederherstellen](bilder/einrichtung-wahl.png)
+
+Bei einer leeren Datenbank fragt das DMS, ob du neu anfängst oder eine Sicherung zurückholst. **Wiederherstellen** führt in den Ablauf unter [Wiederherstellen](wiederherstellen.md#neues-nas-alte-sicherung) und endet bei der Anmeldung mit den bisherigen Zugangsdaten.
+
+### Mandant
+
+![Mandant](bilder/einrichtung-mandant.png)
+
+Der Name des DMS, meist der Name der Familie („Familie Mustermann“) oder der Firma. Er erscheint als Schriftzug in der Kopfzeile, im Browser-Tab und auf der Anmeldeseite (änderbar unter **Werkbank → [Designs](designs.md)**).
+
+### Administrator
+
+![Administrator](bilder/einrichtung-administrator.png)
+
+Name, E-Mail-Adresse und Passwort des Administrators. Danach bist du als Administrator angemeldet.
+
+### Erster Benutzer
+
+![Erster Benutzer](bilder/einrichtung-benutzer.png)
+
+Administratoren richten ein, arbeiten aber nicht in der Ablage. Lege deshalb einen normalen Benutzer an – zum Beispiel dich selbst mit einer zweiten Adresse. Ohne E-Mail-Versand zeigt der Assistent den Einladungslink zum Kopieren.
+
+### Schlüssel und Notfallblatt
+
+![Schlüssel und Notfallblatt](bilder/einrichtung-schluessel.png)
+
+Der Schlüssel verschlüsselt gespeicherte Passwörter und alle Sicherungen (siehe [Verschlüsselung](verschluesselung.md)); das [Notfallblatt](sicherung.md#notfallblatt) enthält ihn zum Ausdrucken. Druck es aus und leg es zu deinen wichtigen Unterlagen – ohne Schlüssel lässt sich keine Sicherung zurückholen.
+
+### Optionales
+
+![Optionales](bilder/einrichtung-optional.png)
+
+Adresse des DMS (vorbelegt mit der Adresse im Browser), Bundesland für Feiertage, Beispiel-Mappentypen und der E-Mail-Versand. Alles lässt sich auch später in der Werkbank einstellen.
+
+### Fertig
+
+![Fertig](bilder/einrichtung-fertig.png)
+
+Mit Links zu beiden Handbüchern, „Problem melden“ als vorbereitetes GitHub-Issue und dem Hinweis auf GitHub Sponsors.
 
 Danach: unter **Werkbank → [Sicherung](sicherung.md)** den Zeitplan einschalten, eigene [Mappentypen](mappentypen.md) anlegen und weitere [Benutzer einladen](benutzer.md).
 
