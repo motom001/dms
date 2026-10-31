@@ -8,8 +8,8 @@ import { Hilfe } from '../Hilfe';
 
 /**
  * Werkbank → Texterkennung (#45): Werkzeuge, Einstellungen, Warteschlange.
- * Werkbank → Wartungsoperationen: Volltext für vorhandene Dokumente nachholen
- * (später auch Sicherung, Wiederherstellung und Export).
+ * Werkbank → Wartungsoperationen: Volltext nachholen, alle Dateien prüfen (#212),
+ * Nummern nachträglich vergeben. Sicherung, Wiederherstellung und Export sind eigene Bereiche.
  */
 
 export function useTexterkennung(aktiv: boolean) {
@@ -163,7 +163,8 @@ export function WartungListe({ t }: { t: TexterkennungZustand }) {
           <span className="titel">Volltext nachholen</span>
           <span className="unter">{t.stand ? `${zahl(t.stand.zaehler.keiner)} Dokumente ohne Volltext` : '…'}</span>
         </a></li>
-        <li><span className="eintrag werk"><span className="titel">Sicherung, Wiederherstellung, Export</span><span className="unter">kommt später</span></span></li>
+        <li><a className="eintrag werk" href="#dateien"><span className="titel">Alle Dateien prüfen</span><span className="unter">Prüfwerte aller Dateien vergleichen</span></a></li>
+        <li><a className="eintrag werk" href="#nummern"><span className="titel">Nummern nachträglich vergeben</span><span className="unter">für Mappen ohne Nummer</span></a></li>
       </ul>
     </>
   );
