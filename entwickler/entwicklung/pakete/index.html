@@ -915,7 +915,7 @@ werkzeuge/neues-paket.sh<span class="w"> </span>mein_paket<span class="w"> </spa
 <tbody>
 <tr>
 <td><code>manifest.yaml</code></td>
-<td>Id, Name, Version (SemVer), Beschreibung, Autor, Lizenz, nötige DMS-Version (z. B. <code>"&gt;=0.63.0"</code>), Abhängigkeiten, Inhalt</td>
+<td><code>schema: 1</code> (Pflicht), Id, Name, Version (SemVer), Beschreibung, Autor, Lizenz, nötige DMS-Version (z. B. <code>"&gt;=0.63.0"</code>), Abhängigkeiten, <code>inhalt</code> mit den Pfaden der Inhaltsdateien (z. B. <code>mappentypen: inhalt/mappentypen.yaml</code>), optional <code>code</code></td>
 </tr>
 <tr>
 <td><code>inhalt/mappentypen.yaml</code></td>
@@ -942,14 +942,15 @@ werkzeuge/neues-paket.sh<span class="w"> </span>mein_paket<span class="w"> </spa
 <h2 id="paketformat-verbindlich">Paketformat (verbindlich)<a class="headerlink" href="#paketformat-verbindlich" title="Permanent link">&para;</a></h2>
 <p>Das Format beschreiben die JSON-Schemas in der Registry: <a href="https://github.com/motom001/dms-registry/blob/main/schema/manifest.schema.json"><code>schema/manifest.schema.json</code></a> und <a href="https://github.com/motom001/dms-registry/blob/main/schema/inhalt.schema.json"><code>schema/inhalt.schema.json</code></a>. Die Vorlage zeigt jede Angabe mit Kommentar. Das DMS liest genau dieses Format:</p>
 <ul>
-<li><strong>Kennungen</strong> (<code>schluessel</code>) von Mappentypen, Feldern, Registern und Ansichten sind im Paket lokal. Das DMS legt Mappentypen als <code>&lt;paket&gt;_&lt;schluessel&gt;</code> an.</li>
+<li><strong>Manifest:</strong> <code>schema: 1</code> ist Pflicht; ein anderer Wert wird abgelehnt. <code>inhalt</code> nennt die Dateien mit <code>mappentypen</code>, <code>sichten</code> und <code>beispiele</code> (Pfade relativ zum Paketordner). Das Schema kennt außerdem <code>inhalt.rollen</code>; das DMS liest es nicht.</li>
+<li><strong>Kennungen</strong> (<code>schluessel</code> bei Mappentypen und Ansichten, <code>key</code> bei Feldern und Registern) sind im Paket lokal. Das DMS legt Mappentypen als <code>&lt;paket&gt;_&lt;schluessel&gt;</code> an.</li>
 <li><strong>Felder</strong> wie in der Werkbank: <code>key</code>, <code>label</code>, <code>typ</code> (text, langtext, formatiert, zahl, betrag, datum, janein, auswahl, referenz, passwort) und die üblichen Eigenschaften (<code>pflicht</code>, <code>eindeutig</code>, <code>hilfe</code>, <code>standard</code>, <code>minLen</code>, <code>maxLen</code>, <code>muster</code>, <code>min</code>, <code>max</code>, <code>nachkomma</code>, <code>waehrung</code>, <code>optionen</code>, <code>mehrfach</code>, <code>verweisart</code>, <code>frist</code>).</li>
 <li><strong>Verweise</strong> (<code>ziel</code> bei Verweisfeldern, <code>quellen[].typ</code> bei Verknüpfungsregistern): <code>schluessel</code> für einen Mappentyp dieses Pakets, <code>&lt;paket&gt;:&lt;schluessel&gt;</code> für den Mappentyp eines anderen Pakets. Das andere Paket steht dann unter <code>abhaengigkeiten</code>. Mappentypen eines Pakets dürfen auch im Kreis aufeinander verweisen.</li>
-<li><strong>Ansichten:</strong> <code>eltern</code> ist die lokale Kennung einer anderen Ansicht des Pakets. <code>bedingungen</code> sind <code>{ feld, operator, wert }</code> mit den Operatoren der Werkbank (<code>gleich</code>, <code>enthaelt</code>, <code>kleiner</code>, <code>groesser</code>, <code>zwischen</code>, <code>ausserhalb</code>, <code>imZeitraum</code>, <code>einerVon</code>, <code>zeigtAuf</code>, <code>leer</code>, <code>nichtLeer</code>, <code>ja</code>, <code>nein</code>); bei <code>zwischen</code> ist <code>wert</code> eine Liste mit zwei Werten.</li>
+<li><strong>Ansichten:</strong> <code>eltern</code> ist die lokale Kennung einer anderen Ansicht des Pakets. <code>bedingungen</code> sind <code>{ feld, operator, wert }</code> mit den Operatoren der Werkbank (<code>gleich</code>, <code>enthaelt</code>, <code>kleiner</code>, <code>groesser</code>, <code>zwischen</code>, <code>ausserhalb</code>, <code>imZeitraum</code>, <code>einerVon</code>, <code>zeigtAuf</code>, <code>leer</code>, <code>nichtLeer</code>, <code>ja</code>, <code>nein</code>); bei <code>zwischen</code> und <code>ausserhalb</code> ist <code>wert</code> eine Liste mit zwei Werten.</li>
 <li><strong>Beispiele:</strong> <code>{ typ, werte }</code>; Beträge dürfen als Zahl stehen.</li>
-<li><strong>Versionen:</strong> <code>dms</code> und <code>abhaengigkeiten</code> nehmen Bereiche: <code>&gt;=1.2.0</code>, <code>&gt;1.2.0</code>, <code>1.2.0</code> bzw. <code>=1.2.0</code>, <code>^1.2.0</code> (gleiche Hauptversion), <code>~1.2.0</code> (gleiche Nebenversion), optional mit Obergrenze <code>&lt;2.0.0</code>.</li>
+<li><strong>Versionen:</strong> <code>dms</code> und <code>abhaengigkeiten</code> nehmen Bereiche: <code>&gt;=1.2.0</code>, <code>&gt;1.2.0</code>, <code>1.2.0</code> bzw. <code>=1.2.0</code>, <code>^1.2.0</code> (gleiche Hauptversion), <code>~1.2.0</code> (gleiche Nebenversion), optional mit Obergrenze <code>&lt;2.0.0</code>. Bei <code>0.x</code> heißt <code>^</code> gleiche Nebenversion: <code>^0.63.0</code> passt nur zu 0.63.x. Für die DMS-Version deshalb <code>&gt;=0.63.0</code> (bzw. die eigene Mindestversion) schreiben.</li>
 </ul>
-<p>Bei einem <strong>Update</strong> ergänzt das DMS nur: neue Mappentypen, Felder, Register und Ansichten. Felder, Register oder Ansichten zu entfernen oder umzubenennen hat auf installierte DMS keine Wirkung – plane das Format deshalb vorher.</p>
+<p>Bei einem <strong>Update</strong> ergänzt das DMS nur: neue Mappentypen, Felder, Register und Ansichten. Felder, Register oder Ansichten zu entfernen oder umzubenennen hat auf installierte DMS keine Wirkung – plane das Format deshalb vorher. Mappentypen und Ansichten, die ein Administrator gelöscht hat, legt ein Update nicht neu an.</p>
 <h2 id="einstellungen-beschreiben">Einstellungen beschreiben<a class="headerlink" href="#einstellungen-beschreiben" title="Permanent link">&para;</a></h2>
 <p>Braucht dein Paket (mit Code) Einstellungen, beschreibst du sie im Manifest unter <code>code.einstellungen</code> – eine eigene Oberfläche bringt ein Paket nicht mit. Das DMS zeigt das Formular, prüft und speichert die Werte (Teil der Sicherung) und gibt sie dem Paket.</p>
 <div class="highlight"><pre><span></span><code><span class="nt">code</span><span class="p">:</span>
@@ -970,13 +971,22 @@ werkzeuge/neues-paket.sh<span class="w"> </span>mein_paket<span class="w"> </spa
 </code></pre></div>
 <ul>
 <li>Höchstens <strong>zwei Ebenen</strong>: Abschnitte (<code>abschnitt</code>, <code>hilfe</code>, <code>felder</code>) und Listen (<code>liste</code>, <code>name</code>, <code>eintrag</code>, <code>hilfe</code>, <code>sortierbar</code>, <code>felder</code>).</li>
-<li><strong>Mappentypen:</strong> <code>text</code>, <code>mehrzeilig</code>, <code>zahl</code> (<code>min</code>/<code>max</code>), <code>janein</code>, <code>datum</code>, <code>auswahl</code> und <code>mehrfachauswahl</code> (<code>optionen</code>), <code>geheim</code>, Verweise <code>mappentyp</code>, <code>feld</code> (mit <code>mappentyp:</code>), <code>benutzer</code>, <code>rolle</code>, <code>sicht</code>.</li>
+<li><strong>Typen:</strong> <code>text</code>, <code>mehrzeilig</code>, <code>zahl</code> (<code>min</code>/<code>max</code>), <code>janein</code>, <code>datum</code>, <code>auswahl</code> und <code>mehrfachauswahl</code> (<code>optionen</code>), <code>geheim</code>, Verweise <code>mappentyp</code>, <code>feld</code> (mit <code>mappentyp:</code>), <code>benutzer</code>, <code>rolle</code>, <code>sicht</code>.</li>
 <li><strong>Werte</strong>, wie das Paket sie bekommt: Abschnittsfelder unter ihrer Kennung, Listen als Liste von Objekten (mit <code>_id</code> je Eintrag). Verweise sind Ids (bei <code>feld</code>: <code>{ typ, feld }</code>), Geheimnisse im Klartext – nur für das eigene Paket.</li>
-<li>Bei einer Änderung bekommt das Paket das Ereignis <code>paket.einstellungen_geaendert</code>; es liest die Werte mit <code>dms.einstellungen()</code>.</li>
+<li>Zu <code>code</code> verlangt das Schema außerdem <code>sprache</code>, <code>quelle</code> und <code>rechte</code> (siehe Vorlage); das Beispiel oben zeigt nur Einstellungen und Aktionen.</li>
 <li><strong>Zugangsdaten nur als <code>geheim</code></strong>, nie als <code>text</code> und nie mit <code>standard</code>.</li>
 <li>Bei einem <strong>Update</strong> bekommen neue Felder ihre Vorgabe, vorhandene Werte bleiben, wegfallende werden entfernt.</li>
 </ul>
 <p><code>werkzeuge/pruefen.py</code> prüft Kennungen, Vorgaben, Optionen, Geheimnisse und Verweise. Zum Ausprobieren eignet sich der Expertenmodus mit <strong>Paket hochladen</strong>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Erst mit dem Paket-Läufer</p>
+<p>Code in Paketen läuft erst mit dem Paket-Läufer, und den gibt es im DMS noch nicht (geplant, #197). Bis dahin gilt:</p>
+<ul>
+<li>Einstellungen lassen sich in der Werkbank pflegen; das DMS prüft und speichert sie.</li>
+<li>Das Ereignis <code>paket.einstellungen_geaendert</code> bei einer Änderung und das Lesen der Werte mit <code>dms.einstellungen()</code> wirken erst mit dem Paket-Läufer.</li>
+<li><strong>Aktionen</strong> melden „Pakete mit Code laufen in diesem DMS noch nicht“, statt etwas zu tun.</li>
+</ul>
+</div>
 <h2 id="prufen">Prüfen<a class="headerlink" href="#prufen" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pyyaml<span class="w"> </span>jsonschema
 python3<span class="w"> </span>werkzeuge/pruefen.py<span class="w"> </span>pakete/mein_paket<span class="w">      </span><span class="c1"># Schema, Pflichtdateien, Verweise, Lizenz, Changelog</span>
@@ -992,13 +1002,16 @@ python3<span class="w"> </span>werkzeuge/katalog.py<span class="w"> </span>--pro
 <p>Bevor dein Paket in den Katalog kommt, probierst du es im eigenen DMS aus – am besten in einem Test-DMS (z. B. mit <a href="https://motom001.github.io/dms/admin/aktuell/demo/">Demo-Daten</a>):</p>
 <ol>
 <li><strong>Werkbank → Pakete → Expertenmodus</strong> einschalten.</li>
-<li>Den Paketordner als ZIP packen, z. B. <code>cd pakete/mein_paket &amp;&amp; zip -r ../../mein_paket.zip .</code>, und unter <strong>Paket hochladen</strong> wählen. Das DMS prüft das Paket wie ein Katalogpaket und zeigt die Vorschau; Fehler im Format stehen dort gesammelt.</li>
-<li>Installieren (Herkunft bestätigen), ansehen, ändern. Für eine neue Fassung die <strong>Version erhöhen</strong> und erneut hochladen – das DMS aktualisiert wie bei einem Update aus dem Katalog (nur ergänzen). Zum Neuanfang das Paket entfernen (geht, solange es keine Mappen seiner Mappentypen gibt).</li>
+<li>Den Paketordner als ZIP packen, z. B. <code>cd pakete/mein_paket &amp;&amp; zip -r ../../mein_paket.zip .</code>, und unter <strong>Paket hochladen</strong> wählen. Ein Ordner vor <code>manifest.yaml</code> (z. B. <code>mein_paket/manifest.yaml</code>) stört nicht. Das DMS prüft das Paket wie ein Katalogpaket und zeigt die Vorschau; Fehler im Format stehen dort gesammelt.<ul>
+<li><strong>Grenzen:</strong> höchstens 10 MB als ZIP, entpackt höchstens 20 MB und 500 Dateien. Ein hochgeladenes Paket bleibt 30 Minuten zum Installieren bereit; danach erneut hochladen.</li>
+</ul>
+</li>
+<li>Installieren (Herkunft bestätigen), ansehen, ändern. Für ein Update die <strong>Version erhöhen</strong> und erneut hochladen – das DMS aktualisiert wie bei einem Update aus dem Katalog (nur ergänzen). Zum Neuanfang das Paket entfernen (geht, solange es keine Mappen seiner Mappentypen gibt).</li>
 </ol>
 <p>Mehrere Pakete testest du auch als eigenen Katalog: <code>python3 werkzeuge/katalog.py &lt;ordner&gt;</code> baut <code>katalog.json</code> und die Archive; leg den Ordner auf einen HTTPS-Server und trage die Adresse von <code>katalog.json</code> im Expertenmodus unter <strong>Weitere Quellen</strong> ein.</p>
 <h2 id="ausblick">Ausblick<a class="headerlink" href="#ausblick" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Pakete mit Code</strong>, die auf Ereignisse reagieren und mit eigenen, bei der Installation bestätigten Rechten über die API arbeiten – abgeschottet als WebAssembly.</li>
+<li>Geplant: <strong>Pakete mit Code</strong>, die auf Ereignisse reagieren und mit eigenen, bei der Installation bestätigten Rechten über die API arbeiten – abgeschottet als WebAssembly. Dafür kommt der Paket-Läufer.</li>
 </ul>
 
 
