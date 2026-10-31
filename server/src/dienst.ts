@@ -2169,7 +2169,7 @@ export class Dienst {
    * Post anlegen. `ich.id` null: kein echter Benutzer, sondern ein Eingangskanal (#195: „Eingangsordner“);
    * `herkunft` steht dann als eigener Eintrag in der Historie.
    */
-  async legePostAn(eingabe: unknown, ich: { id: string | null; name: string }, z?: Zugriff, kanal: string = POST_KANAL.hochgeladen, herkunft?: Historieneintrag['daten']): Promise<Mappe> {
+  async legePostAn(eingabe: unknown, ich: { id: string | null; name: string }, z?: Zugriff, kanal: string = POST_KANAL.hochgeladen, herkunft?: Historieneintrag['daten'], id: string = randomUUID()): Promise<Mappe> {
     const { post: typ } = await this.sichereSystem();
     if (!darfPostAnlegen(typ)) throw new Fachfehler(403, 'Post lässt sich nicht anlegen.');
     const e = (eingabe ?? {}) as Record<string, unknown>;
@@ -2188,7 +2188,8 @@ export class Dienst {
     }
     await this.pruefeVerweisziele(z, typ, werte, {});
     await this.pruefeWerte(typ, werte);
-    const m = await this.repo.legeMappeAn(randomUUID(), typ.id, werte, verweiseVon(typ, werte), ich.id);
+    // Vorgegebene Id (#196): Eingangskanäle merken sie sich vorher und erkennen nach einem Absturz, dass es die Post schon gibt.
+    const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), ich.id);
     await this.notiere(m.id, ich.id, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, werte), ...(ich.id ? {} : { system: ich.name }) });
     if (herkunft) await this.notiere(m.id, null, 'uebernommen', { system: ich.name, ...herkunft });
     const titel = (await this.aktualisiereTitel([m.id])).get(m.id);
@@ -2562,6 +2563,9 @@ export class Dienst {
   /* ---------- Eingangskanäle (#195) ---------- */
 
   async postTyp() { return (await this.sichereSystem()).post; }
+
+  /** Gibt es die Mappe (z. B. eine Post mit vorgegebener Id) schon? */
+  async gibtMappe(id: string) { return !!(await this.repo.holeMappe(id)); }
 
   /** Mappen, die schon eine Datei mit diesem Inhalt haben („gleicher Inhalt wie …“). */
   async dokumenteMitInhalt(sha256: string) {
