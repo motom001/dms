@@ -1265,7 +1265,7 @@ curl<span class="w"> </span>-fsSLo<span class="w"> </span>docker-compose.yml<spa
 docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
 docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>dms<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-A1<span class="w"> </span>Einrichtungscode
 </code></pre></div>
-<p>Die Daten liegen damit in <code>~/dms/daten</code>. Hast du für Dokumente oder Sicherungen eine eigene Platte, trägst du deren Pfade in der <code>docker-compose.yml</code> ein. Weiter geht es im Browser unter <code>http://&lt;Rechner&gt;:8080</code>, wie unter <a href="../docker/">Jeder Server mit Docker</a> beschrieben.</p>
+<p>Bei zwei Containern liegen die Daten damit in <code>~/dms/daten</code>, bei dms-komplett direkt in <code>~/dms</code> (<code>files</code>, <code>geheim</code>, <code>sicherung</code>, <code>postgres</code>). Hast du für Dokumente oder Sicherungen eine eigene Platte, trägst du deren Pfade in der <code>docker-compose.yml</code> ein. Weiter geht es im Browser unter <code>http://&lt;Rechner&gt;:8080</code>, wie unter <a href="../docker/">Jeder Server mit Docker</a> beschrieben.</p>
 <h2 id="4-den-rechner-zum-server-machen">4. Den Rechner zum Server machen<a class="headerlink" href="#4-den-rechner-zum-server-machen" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Nicht schlafen gehen:</strong> Ein Server-System ohne Desktop schläft normalerweise nicht. Auf einem Laptop oder mit Desktop schaltest du den Ruhezustand ab:
