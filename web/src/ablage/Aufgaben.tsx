@@ -7,6 +7,7 @@ import { nameMitAbwesenheit, useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { Person } from '../Person';
 import { Hilfe } from '../Hilfe';
+import { rueckfrage } from '../rueckfrage';
 
 /** Aufgaben an einer Mappe (#54): offene als Hinweis über der Mappe; eigene erledigen oder weitergeben. */
 const datum = (iso: string) => new Date(iso).toLocaleDateString('de-DE', { dateStyle: 'short' });
@@ -122,7 +123,7 @@ export function Erinnerungen({ liste, neuLaden }: { liste: Erinnerung[]; neuLade
   const [fehler, setFehler] = useState<string>();
   if (!liste.length) return null;
   async function loeschen(e: Erinnerung) {
-    if (!confirm(`Erinnerung „${e.text}“ löschen?`)) return;
+    if (!(await rueckfrage({ titel: 'Erinnerung löschen?', text: `„${e.text}“`, ja: 'Löschen', gefahr: true }))) return;
     try { await api.erinnerungLoeschen(e.id); await neuLaden(); } catch (x) { setFehler((x as Error).message); }
   }
   return (

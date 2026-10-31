@@ -1102,3 +1102,16 @@ a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
 .einstiege { display: flex; flex-direction: column; gap: 10px; }
 .einstiege .kachel { min-height: 0; }
 .zuletzt .mappenliste { margin-top: 6px; }
+/* Rückfragen (#355) */
+dialog.rueckfrage { width: min(440px, calc(100vw - 32px)); padding: 20px 22px 18px; border: 1px solid var(--linie-stark); border-radius: 10px; background: var(--flaeche); color: var(--tinte); box-shadow: 0 12px 40px rgb(0 0 0 / .25); }
+dialog.rueckfrage::backdrop { background: rgb(0 0 0 / .35); }
+dialog.rueckfrage.gefahr { border-top: 4px solid var(--schlecht); }
+dialog.rueckfrage h2 { margin: 0 0 8px; font-size: calc(17px * var(--skala, 1)); }
+.rueckfrage-text p { margin: 0 0 8px; }
+dialog.rueckfrage .eigenschaft { display: flex; flex-direction: column; gap: 4px; margin: 6px 0 4px; }
+.rueckfrage-knoepfe { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+@media (max-width: 600px) {
+  dialog.rueckfrage { margin: auto 0 0; width: 100vw; max-width: 100vw; border-radius: 14px 14px 0 0; padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+  .rueckfrage-knoepfe { flex-direction: column-reverse; }
+  .rueckfrage-knoepfe .knopf { width: 100%; padding: 12px; font-size: 16px; }
+}

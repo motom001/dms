@@ -53,6 +53,17 @@ Dein Gerät merkt sich die Breiten für dich. Ist etwas verschwunden, hilft im [
 
 Auf dem Smartphone und in schmalen Fenstern siehst du immer nur eine Spalte; über **← Zur Liste** geht es zurück.
 
+### Rückfragen
+
+Bevor etwas Folgenreiches passiert – löschen, abmelden, ungespeicherte Änderungen verwerfen –, fragt das DMS in einem eigenen Fenster nach. Oben steht, **was passiert**, darunter die Folgen. Die Knöpfe sagen, was sie tun, z. B. **Löschen** und **Abbrechen**.
+
+![Rückfrage vor dem Schlüsselwechsel](bilder/rueckfrage.png)
+
+- **Gefährliches** ist rot markiert. Dann steht der Fokus zuerst auf **Abbrechen** – ein versehentliches ++enter++ zerstört nichts.
+- ++esc++ oder **Abbrechen** schließt die Frage, ohne etwas zu tun.
+- Bei sehr Folgenreichem (Wiederherstellen einer Sicherung, Schlüssel wechseln) tippst du zur Bestätigung ein Wort ein.
+- Auf dem Smartphone erscheint die Frage unten am Bildschirm, mit großen Knöpfen.
+
 ## Abmelden
 
 Über das Menü unter deinem Namen → **Abmelden**. Auf fremden Geräten solltest du dich immer abmelden.

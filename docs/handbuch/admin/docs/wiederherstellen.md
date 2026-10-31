@@ -34,7 +34,7 @@ Dieser Weg ist nur offen, solange es noch keinen Benutzer gibt, und nur mit dem 
 
 1. Den [Wartungsmodus](wartungsmodus.md) einschalten und aktiv werden lassen (oder **Alle jetzt abmelden**).
 2. **Werkbank → Wiederherstellen**, Sicherung auswählen, Abgleich prüfen. Passt der Schlüssel dieses DMS nicht zur Sicherung, gib den vom passenden Notfallblatt ein.
-3. Bestätigen, dass der jetzige Stand ersetzt wird, und **Wiederherstellen** – nach einer Rückfrage.
+3. Bestätigen, dass der jetzige Stand ersetzt wird, und **Wiederherstellen**. In der Rückfrage tippst du zur Sicherheit das Wort **wiederherstellen** ein.
 4. Vorher sichert das DMS den **jetzigen Stand** (Art „vor einer Wiederherstellung“) – so kannst du zurück, falls du die falsche Sicherung erwischt hast. Fehlt dafür der Schlüssel, steht das als Hinweis im Ablauf. Dann bleibt der bisherige Stand der Datenbank **7 Tage** als eigener Bereich (Schema `dms_alt_behalten_…`) in der Datenbank; danach entfernt das DMS ihn beim nächsten Start. Die Abschlussmeldung nennt den Namen.
 5. Nach dem Neustart ist der Wartungsmodus aus; alle melden sich neu an.
 

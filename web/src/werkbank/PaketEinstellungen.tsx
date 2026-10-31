@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { abschnittsfelder, EINTRAG_ID, listen, type EinstellungBlock, type EinstellungFeld, type FeldVerweis, type GeheimStand } from '../../../shared/src/paketeinstellungen';
 import { api, ApiFehler, type PaketEinstellungenStand } from '../api';
+import { rueckfrage } from '../rueckfrage';
 
 /**
  * Werkbank → Pakete → Paket → Einstellungen (#197): Formular aus der Beschreibung im Manifest.
@@ -50,7 +51,7 @@ export function PaketEinstellungen({ id, gespeichert }: { id: string; gespeicher
     } finally { setLaeuft(false); }
   }
   async function aktion(a: { schluessel: string; name: string; bestaetigen?: boolean }) {
-    if (a.bestaetigen && !confirm(`„${a.name}“ jetzt ausführen?`)) return;
+    if (a.bestaetigen && !(await rueckfrage({ titel: `„${a.name}“ jetzt ausführen?`, ja: 'Ausführen' }))) return;
     setLaeuft(true); setMeldung(undefined);
     try { const r = await api.paketAktion(id, a.schluessel); setMeldung({ art: r.ok ? 'gut' : 'schlecht', text: r.text }); }
     catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }

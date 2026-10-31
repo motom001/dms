@@ -1,8 +1,9 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
+import { rueckfrage } from './rueckfrage';
 
 /* Kleiner Router: der Pfad ist der Zustand, Links schieben ihn in die History. */
 
-type Wache = () => boolean;
+type Wache = () => Promise<boolean>;
 let wache: Wache | null = null;
 
 /** Nach erfolgreichem Speichern: ohne Nachfrage weiter. */
@@ -10,9 +11,13 @@ export function loeseWache() { wache = null; }
 
 export function geheZu(pfad: string, ersetzen = false) {
   if (pfad === location.pathname + location.search) return;
-  if (wache && !wache()) return;
-  history[ersetzen ? 'replaceState' : 'pushState'](null, '', pfad);
-  dispatchEvent(new PopStateEvent('popstate'));
+  const weiter = () => {
+    history[ersetzen ? 'replaceState' : 'pushState'](null, '', pfad);
+    dispatchEvent(new PopStateEvent('popstate'));
+  };
+  // Ungespeicherte Änderungen (#355: eigene Rückfrage statt confirm): erst nach „Verwerfen“ weiter.
+  if (wache) void wache().then((ok) => { if (ok) { wache = null; weiter(); } });
+  else weiter();
 }
 
 export function useOrt() {
@@ -40,7 +45,7 @@ export function useUngespeichert(ungespeichert: boolean) {
   useEffect(() => {
     if (!ungespeichert) return;
     const vorher = wache;
-    wache = () => confirm('Es gibt ungespeicherte Änderungen. Änderungen verwerfen und die Seite verlassen?');
+    wache = () => rueckfrage({ titel: 'Änderungen verwerfen?', text: 'Es gibt ungespeicherte Änderungen. Verlässt du die Seite, gehen sie verloren.', ja: 'Verwerfen und verlassen', nein: 'Hierbleiben', gefahr: true });
     const unload = (e: BeforeUnloadEvent) => { e.preventDefault(); };
     addEventListener('beforeunload', unload);
     return () => { wache = vorher; removeEventListener('beforeunload', unload); };

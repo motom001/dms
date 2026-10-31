@@ -22,6 +22,7 @@ import { ExportDialog } from './Export';
 import { PostKnopf } from './Post';
 import type { Hilfeort } from '../../../shared/src/hilfe';
 import { Suchchips, Suchformular, suchFehler, suchTypen } from './Suche';
+import { rueckfrage } from '../rueckfrage';
 
 /**
  * Ablage in drei Spalten, von groß nach klein:
@@ -383,9 +384,10 @@ function Liste(p: {
       const probe = await api.mappenLoeschen(ids, true);
       if (!probe.mappen) { setErgebnis({ text: 'Keine der ausgewählten Mappen lässt sich löschen.', liste: probe.ausgelassen }); return; }
       const korb = (d.zaehler.papierkorbTage ?? 0) > 0;
-      const frage = `${zahl(probe.mappen)} ${probe.mappen === 1 ? 'Mappe' : 'Mappen'}${probe.dokumente ? ` mit ${zahl(probe.dokumente)} ${probe.dokumente === 1 ? 'Dokument' : 'Dokumenten'}` : ''} ${korb ? 'in den Papierkorb legen' : 'endgültig löschen'}?`
-        + (probe.ausgelassen.length ? `\n\n${zahl(probe.ausgelassen.length)} ${probe.ausgelassen.length === 1 ? 'Mappe wird' : 'Mappen werden'} ausgelassen (kein Recht oder noch verwiesen).` : '');
-      if (!confirm(frage)) return;
+      const titel = `${zahl(probe.mappen)} ${probe.mappen === 1 ? 'Mappe' : 'Mappen'}${probe.dokumente ? ` mit ${zahl(probe.dokumente)} ${probe.dokumente === 1 ? 'Dokument' : 'Dokumenten'}` : ''} ${korb ? 'in den Papierkorb legen' : 'endgültig löschen'}?`;
+      const text = [korb ? 'Dort lassen sie sich wiederherstellen.' : 'Das lässt sich nicht rückgängig machen.',
+        probe.ausgelassen.length ? `${zahl(probe.ausgelassen.length)} ${probe.ausgelassen.length === 1 ? 'Mappe wird' : 'Mappen werden'} ausgelassen (kein Recht oder noch verwiesen).` : ''].filter(Boolean).join('\n\n');
+      if (!(await rueckfrage({ titel, text, ja: korb ? 'In den Papierkorb' : 'Endgültig löschen', gefahr: true }))) return;
       const r = await api.mappenLoeschen(ids, false);
       w.leeren();
       await d.neuLaden();

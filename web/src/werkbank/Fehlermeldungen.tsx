@@ -3,6 +3,7 @@ import { api, type Fehlermeldung } from '../api';
 import { geheZu, Link } from '../ort';
 import { Person } from '../Person';
 import { Hilfe } from '../Hilfe';
+import { rueckfrage } from '../rueckfrage';
 
 /** Werkbank → Wartung und Fehlersuche → Fehlermeldungen (#70). */
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
@@ -65,7 +66,7 @@ export function FehlermeldungDetail({ id, neuLaden }: { id: string; z: Fehlermel
     try { setM(await api.fehlermeldungErledigt(id, an)); await neuLaden(); } catch (e) { setFehler((e as Error).message); }
   }
   async function loeschen() {
-    if (!confirm('Diese Fehlermeldung samt Bildern endgültig löschen?')) return;
+    if (!(await rueckfrage({ titel: 'Fehlermeldung löschen?', text: 'Die Meldung wird samt Bildern endgültig gelöscht.', ja: 'Endgültig löschen', gefahr: true }))) return;
     try { await api.fehlermeldungLoeschen(id); await neuLaden(); geheZu('/werkbank/fehlermeldungen'); } catch (e) { setFehler((e as Error).message); }
   }
   if (fehler) return <div className="hinweis schlecht"><p>{fehler}</p></div>;

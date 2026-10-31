@@ -3,6 +3,7 @@ import { api, type PostfachAnsicht, type PostfachEingabe } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link } from '../ort';
 import { Hilfe } from '../Hilfe';
+import { rueckfrage } from '../rueckfrage';
 
 /**
  * Werkbank → Postfächer (#196): Mails per IMAP abholen, jede Mail wird neue Post.
@@ -80,7 +81,7 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
     try { const r = await api.postfachAbrufen(vorhanden.id); setMeldung({ art: 'gut', text: r.uebernommen ? `${r.uebernommen} ${r.uebernommen === 1 ? 'Mail' : 'Mails'} übernommen.` : 'Keine neuen Mails.' }); await z.laden(); await d.neuLaden(); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); await z.laden(); }
   }
   async function loeschen() {
-    if (!vorhanden || !confirm(`Postfach „${vorhanden.name}“ entfernen? Die Mails im Postfach bleiben, wie sie sind.`)) return;
+    if (!vorhanden || !(await rueckfrage({ titel: `Postfach „${vorhanden.name}“ entfernen?`, text: 'Die Mails im Postfach bleiben, wie sie sind.', ja: 'Entfernen', gefahr: true }))) return;
     try { await api.postfachLoeschen(vorhanden.id); await z.laden(); geheZu('/werkbank/postfaecher'); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
 

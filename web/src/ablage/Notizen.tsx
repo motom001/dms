@@ -3,6 +3,7 @@ import type { Notiz } from '../../../shared/src/model';
 import { api } from '../api';
 import { Formatiert, FormatiertEingabe } from './Formatiert';
 import { Person } from '../Person';
+import { rueckfrage } from '../rueckfrage';
 
 /** Notizen an einer Mappe (#55): lesen, anlegen, bearbeiten, löschen – jeder darf alles. */
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
@@ -32,7 +33,7 @@ export function Notizen({ mappeId, notizen, neuLaden, schliessen }: { mappeId: s
               <Person id={n.erstelltVon} /> · {zeit(n.erstellt)}{n.geaendert !== n.erstellt && n.geaendert.slice(0, 16) !== n.erstellt.slice(0, 16) && <> · geändert {zeit(n.geaendert)}{n.geaendertVon !== n.erstelltVon && <> von <Person id={n.geaendertVon} /></>}</>}
               {bearbeite?.id !== n.id && <span className="zeilenaktionen">
                 <button type="button" className="textknopf" onClick={() => setBearbeite({ id: n.id, text: n.text })}>Bearbeiten</button>
-                <button type="button" className="textknopf gefahr" disabled={laeuft} onClick={() => { if (confirm('Diese Notiz löschen?')) void tu(() => api.notizLoeschen(n.id)); }}>Löschen</button>
+                <button type="button" className="textknopf gefahr" disabled={laeuft} onClick={async () => { if (await rueckfrage({ titel: 'Diese Notiz löschen?', ja: 'Löschen', gefahr: true })) void tu(() => api.notizLoeschen(n.id)); }}>Löschen</button>
               </span>}
             </div>
             {bearbeite?.id === n.id

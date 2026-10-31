@@ -5,6 +5,7 @@ import { designCss, GRUNDLAGEN, palette, rettungsweg, wendeAn, type Design, type
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
 import { logoUrl, Marke } from '../Marke';
 import { Hilfe } from '../Hilfe';
+import { rueckfrage } from '../rueckfrage';
 
 /**
  * Designs in der Werkbank (#21): Mitte die Designs, rechts Bearbeiten mit Vorschau.
@@ -136,8 +137,8 @@ export function DesignEditor({ id }: { id: string }) {
         <details><summary className="leise klein">Verfügbare Farbwerte</summary><pre className="protokolldaten">{designCss({ ...e, css: '' })}</pre></details>
       </div>
       <div className="speicherleiste">
-        {!neu && !standard ? <button type="button" className="textknopf gefahr" onClick={() => {
-          if (confirm(`Design „${vorhanden!.name}“ löschen? Wer es nutzt, bekommt das Standard-Design.`)) {
+        {!neu && !standard ? <button type="button" className="textknopf gefahr" onClick={async () => {
+          if (await rueckfrage({ titel: `Design „${vorhanden!.name}“ löschen?`, text: 'Wer es nutzt, bekommt das Standard-Design.', ja: 'Löschen', gefahr: true })) {
             void aktion(async () => { await api.designLoeschen(id); loeseWache(); await d.designsLaden(); geheZu('/werkbank/designs'); }, 'Gelöscht.');
           }
         }}>Design löschen</button> : <span />}

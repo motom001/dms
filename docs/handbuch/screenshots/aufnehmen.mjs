@@ -683,8 +683,9 @@ async function main() {
     await km.close();
   }
   // Wiederherstellen (#107): nur im aktiven Wartungsmodus – Abgleich einer Sicherung, ohne zu starten.
-  s.once('dialog', (dialog) => void dialog.accept());
+  // Rückfragen sind eigene Dialoge (#355), keine Browser-Fenster.
   await s.getByRole('button', { name: 'Alle jetzt abmelden' }).click();
+  await s.getByRole('alertdialog').getByRole('button', { name: 'Alle abmelden' }).click();
   await s.getByText('Wartungsmodus aktiv', { exact: false }).first().waitFor();
   await geheZu(s, '/werkbank/wiederherstellung');
   await s.locator('.auswahlliste input[type=radio]').first().check();
@@ -696,8 +697,11 @@ async function main() {
 
   // Schlüssel wechseln (#47) – ganz am Ende, weil danach Notfallblatt und Sicherungen auf den alten Schlüssel zeigen.
   await geheZu(s, '/werkbank/verschluesselung');
-  s.once('dialog', (dialog) => void dialog.accept());
   await s.getByRole('button', { name: 'Schlüssel wechseln' }).click();
+  const frage = s.getByRole('alertdialog');
+  await frage.getByRole('textbox').fill('wechseln');
+  await bild(s, 'rueckfrage');
+  await frage.getByRole('button', { name: 'Schlüssel wechseln' }).click();
   await s.locator('#wechseln .hinweis.gut').waitFor();
   await s.locator('#wechseln').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-schluesselwechsel');

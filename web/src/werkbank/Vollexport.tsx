@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, type Auftrag, type KontaktZuordnung, type VollexportStand } from '../api';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
+import { rueckfrage } from '../rueckfrage';
 
 /**
  * Werkbank → Vollexport (#254): alle Daten in offenen Formaten, lesbar ohne das DMS.
@@ -119,7 +120,7 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
                 <span className="knoepfe">
                   <a className="knopf klein" href={`/api/werkbank/export/${encodeURIComponent(e.name)}/zip`}>Als ZIP herunterladen</a>
                   <button type="button" className="knopf klein" onClick={() => void tu(async () => { const r = await api.vollexportPruefen(e.name); return r.ok ? `Alle ${r.dateien} Dateien vollständig und unverändert.` : `Abweichungen: ${[...r.fehlend.map((x) => `fehlt ${x}`), ...r.abweichend.map((x) => `verändert ${x}`)].slice(0, 5).join(', ')}${r.fehlend.length + r.abweichend.length > 5 ? ' …' : ''}`; })}>Prüfen</button>
-                  <button type="button" className="knopf klein gefahr-rand" onClick={() => { if (confirm('Diesen Export löschen?')) void tu(async () => { await api.vollexportLoeschen(e.name); await z.laden(); return 'Export gelöscht.'; }); }}>Löschen</button>
+                  <button type="button" className="knopf klein gefahr-rand" onClick={async () => { if (await rueckfrage({ titel: 'Diesen Export löschen?', text: e.name, ja: 'Löschen', gefahr: true })) void tu(async () => { await api.vollexportLoeschen(e.name); await z.laden(); return 'Export gelöscht.'; }); }}>Löschen</button>
                 </span>
               </li>
             ))}

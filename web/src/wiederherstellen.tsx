@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, type SicherungsMeta, type WhAbgleich, type WhAbschluss, type WhLauf, type WhSchritt } from './api';
+import { rueckfrage } from './rueckfrage';
 
 /**
  * Wiederherstellen (#107): Assistent (Sicherung wählen, Abgleich, Schlüssel, Start) für das
@@ -96,7 +97,7 @@ export function WiederherstellungsAssistent({ frisch, gestartet, abbrechen }: { 
   }
   async function starten() {
     if (!abgleich) return;
-    if (!frisch && !confirm('Der jetzige Stand des DMS wird durch die Sicherung ersetzt (vorher wird er selbst gesichert). Wirklich wiederherstellen?')) return;
+    if (!frisch && !(await rueckfrage({ titel: 'Wirklich wiederherstellen?', text: 'Der jetzige Stand des DMS wird durch die Sicherung ersetzt. Vorher wird er selbst gesichert.', ja: 'Wiederherstellen', gefahr: true, bestaetigeMit: 'wiederherstellen' }))) return;
     setLaeuft(true); setFehler(undefined);
     try { await api.whStart({ name: abgleich.name, ...(schluessel.trim() ? { schluessel } : {}), bestaetigt: !frisch && verstanden }); gestartet(); }
     catch (e) { setFehler((e as Error).message); setLaeuft(false); }
