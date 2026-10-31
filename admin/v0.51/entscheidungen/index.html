@@ -1,0 +1,2449 @@
+
+<!doctype html>
+<html lang="de" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Einrichten, betreiben und erweitern des DMS">
+      
+      
+      
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.51/entscheidungen/">
+      
+      
+        <link rel="prev" href="../technik/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Entscheidungen - DMS – Administratorhandbuch</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#entscheidungen" class="md-skip">
+          Zum Inhalt
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+          <aside class="md-banner md-banner--warning">
+            <div class="md-banner__inner md-grid md-typeset">
+              
+  Du liest nicht das Handbuch zur neuesten Version des DMS.
+  <a href="../.."><strong>Zur aktuellen Version</strong></a>
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL(".."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
+          </aside>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Kopfzeile">
+    <a href=".." title="DMS – Administratorhandbuch" class="md-header__button md-logo" aria-label="DMS – Administratorhandbuch" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DMS – Administratorhandbuch
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Entscheidungen
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dunkle Darstellung"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dunkle Darstellung" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Helle Darstellung"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Helle Darstellung" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Suche" placeholder="Suche" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Suche">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Zurücksetzen" aria-label="Zurücksetzen" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Suche wird initialisiert
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/motom001/dms" title="Zum Repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    motom001/dms
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="DMS – Administratorhandbuch" class="md-nav__button md-logo" aria-label="DMS – Administratorhandbuch" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DMS – Administratorhandbuch
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/motom001/dms" title="Zum Repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    motom001/dms
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Überblick
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../neu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Neu in dieser Version
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation und Betrieb
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation und Betrieb
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Einrichtung und Betrieb
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/installieren/aktuell/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wie komme ich an ein DMS?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aktualisieren/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aktualisieren und Sichern
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wachsen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wachsen und umziehen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verschluesselung/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verschlüsselung
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Einrichten in der Werkbank
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Einrichten in der Werkbank
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../uebersicht/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Werkbank und Übersicht
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mappentypen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mappentypen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sichten/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sichten
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../direktlinks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sprechende Links
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benutzer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benutzer und Rollen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../anmeldeschutz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anmeldeschutz
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../berechtigungen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Berechtigungen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../designs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Designs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aufgaben/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aufgaben
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../papierkorb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Papierkorb
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../texterkennung/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Texterkennung und Wartung
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../eingangsordner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Eingangsordner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../postfaecher/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Postfächer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo-Daten
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wartung und Notfall
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Wartung und Notfall
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sicherung/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sicherung
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wiederherstellen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wiederherstellen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wartungsmodus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wartungsmodus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../speicherplatz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Speicherplatz
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notfall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notfall: kein Admin mehr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verfahrensdokumentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verfahrensdokumentation (Vorlage)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fehlersuche und Support
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Fehlersuche und Support
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fehlersuche/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protokoll, Datenbank, Technik
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schnittstelle (API)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hintergrund
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hintergrund
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technik/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Technik
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entscheidungen
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entscheidungen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Inhaltsverzeichnis">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Inhaltsverzeichnis
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#fachmodell" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fachmodell
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technik" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technik
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anmeldung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anmeldung
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ablage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ablage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#register-und-dokumente" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Register und Dokumente
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#designs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Designs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schnittstelle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schnittstelle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#betrieb-und-fehlersuche" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Betrieb und Fehlersuche
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#benutzer-und-rollen-als-mappen-26-27" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benutzer und Rollen als Mappen (#26, #27)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#handbuch-und-releases-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Handbuch und Releases (#25)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#e-mail-und-adresse-in-der-werkbank-37" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E-Mail und Adresse in der Werkbank (#37)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sichten-38-40-41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sichten (#38, #40, #41)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verschlusselte-passworter-39-46" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verschlüsselte Passwörter (#39, #46)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#papierkorb-43" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Papierkorb (#43)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#texterkennung-45" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Texterkennung (#45)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#image-je-architektur-nativ-bauen-88" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image je Architektur nativ bauen (#88)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#berechtigungen-123127-137" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Berechtigungen (#123–#127, #137)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fristen-129133" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fristen (#129–#133)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schlusselwechsel-47" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schlüsselwechsel (#47)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#proxy-angaben-automatisch-234" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proxy-Angaben automatisch (#234)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bewusst-noch-nicht-drin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bewusst noch nicht drin
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Weiteres
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Weiteres
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/motom001/dms/releases" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Was ist neu? (Changelog)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/benutzer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benutzerhandbuch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/installieren/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wie komme ich an ein DMS?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/entwickler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entwicklerhandbuch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Inhaltsverzeichnis">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Inhaltsverzeichnis
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#fachmodell" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fachmodell
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technik" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technik
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anmeldung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anmeldung
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ablage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ablage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#register-und-dokumente" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Register und Dokumente
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#designs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Designs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schnittstelle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schnittstelle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#betrieb-und-fehlersuche" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Betrieb und Fehlersuche
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#benutzer-und-rollen-als-mappen-26-27" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benutzer und Rollen als Mappen (#26, #27)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#handbuch-und-releases-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Handbuch und Releases (#25)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#e-mail-und-adresse-in-der-werkbank-37" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E-Mail und Adresse in der Werkbank (#37)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sichten-38-40-41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sichten (#38, #40, #41)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verschlusselte-passworter-39-46" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verschlüsselte Passwörter (#39, #46)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#papierkorb-43" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Papierkorb (#43)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#texterkennung-45" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Texterkennung (#45)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#image-je-architektur-nativ-bauen-88" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image je Architektur nativ bauen (#88)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#berechtigungen-123127-137" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Berechtigungen (#123–#127, #137)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fristen-129133" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fristen (#129–#133)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schlusselwechsel-47" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schlüsselwechsel (#47)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#proxy-angaben-automatisch-234" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proxy-Angaben automatisch (#234)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bewusst-noch-nicht-drin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bewusst noch nicht drin
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="entscheidungen">Entscheidungen<a class="headerlink" href="#entscheidungen" title="Permanent link">&para;</a></h1>
+<p>Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.</p>
+<h2 id="fachmodell">Fachmodell<a class="headerlink" href="#fachmodell" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Mappe als einziges Grundkonzept.</strong> Vertragspartner, Vertrag, Rechnung, Gegenstand sind Mappen unterschiedlicher Mappentypen. Ein Mappentyp definiert Felder; eine Mappe speichert Werte je Feldschlüssel.</li>
+<li><strong>Verweise statt Ablageort.</strong> Zusammenhänge entstehen über Referenzfelder (Rechnung → Vertrag → Vertragspartner). Rückverweise werden nicht gepflegt, sondern abgeleitet.</li>
+<li><strong>Zwei Verweisarten.</strong> <em>Zugehörigkeit</em> („gehört zu“) zählt später bei „alles zu X“ und bei Auswertungen mit; <em>Bezug</em> (z. B. Aussteller) ist nur eine Verknüpfung. So landet bei „alles zum Haus“ nicht jede Rechnung desselben Handwerkers.</li>
+<li><strong>Hierarchie über Verweis auf den eigenen Typ.</strong> Haus → Heizung → Wärmepumpe braucht keine Sonderlogik.</li>
+<li><strong>Feste Feldschlüssel.</strong> Die Bezeichnung eines Feldes ist änderbar, der Schlüssel nach dem ersten Speichern nicht – gespeicherte Werte und spätere API-Abgleiche bleiben gültig.</li>
+<li><strong>Entfernte Felder löschen keine Werte.</strong> Die Werte bleiben an der Mappe und werden als „Werte ohne Felddefinition“ angezeigt.</li>
+<li><strong>Definitionsänderungen machen Mappen nicht stillschweigend ungültig.</strong> Passt eine Mappe nicht mehr (neues Pflichtfeld, entfernter Auswahlwert), wird sie markiert; korrigiert wird beim nächsten Speichern.</li>
+</ul>
+<h2 id="technik">Technik<a class="headerlink" href="#technik" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>PostgreSQL</strong> statt SQLite: JSON-Felder mit Index, Volltextsuche mit deutscher Wortstammbildung, Row-Level-Security für die Trennung von Haushalten, parallele Schreibzugriffe.</li>
+<li><strong><code>haushalt_id</code> in jeder Tabelle</strong> von Anfang an; bis zur Benutzerverwaltung gibt es einen Standardhaushalt.</li>
+<li><strong>Verweise zusätzlich in einer eigenen Tabelle</strong> (<code>verweise</code>): schnelle Rückverweise und Löschschutz in der Datenbank selbst.</li>
+<li><strong>SQL-Migrationen als Dateien, kein ORM.</strong> Die offene Frage „Prisma oder Drizzle“ ist damit vertagt, nicht entschieden: Für das generische Mappenmodell (JSON-Werte, dynamische Felder) bringt ein ORM wenig, und reines SQL bleibt am leichtesten nachvollziehbar und portierbar. Migrationen laufen beim Start in einer Transaktion.</li>
+<li><strong>Ein Image</strong> für Server und Oberfläche (modularer Monolith); auf dem NAS laufen nur App und Datenbank.</li>
+</ul>
+<h2 id="anmeldung">Anmeldung<a class="headerlink" href="#anmeldung" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Einrichtungsassistent mit Einrichtungscode</strong> (#119, zuvor: erster Aufruf ohne Code). Der Code steht im Protokoll des Containers und in <code>/data/geheim/EINRICHTUNGSCODE</code>; er schützt die Einrichtung und den Datenbanktest (der sonst Rechner im Netz abfragen könnte). Versuchsweise – ob der Code den Einstieg zu umständlich macht, zeigt die Rückmeldung aus der Praxis.</li>
+<li><strong>Datenbank-Anbindung als Datei unter <code>/data/geheim</code></strong>, führend vor <code>DATABASE_URL</code> (#119): So lässt sich das DMS ohne Bearbeiten von Umgebungsvariablen in Betrieb nehmen; ohne erreichbare Datenbank startet es im Einrichtungsmodus und danach im selben Prozess das eigentliche DMS.</li>
+<li><strong>Mandant statt Haushalt</strong> in Oberfläche und Handbuch (#119), damit das DMS auch für kleine Firmen passt. Intern heißt es weiter <code>haushalt_id</code>; ein Umbau brächte keinen sichtbaren Nutzen. Frische Installationen nutzen den Mandanten, den die erste Migration anlegt (mit Designs und Einstellungen).</li>
+<li><strong>Administratoren arbeiten nicht in der Ablage:</strong> Der Assistent legt deshalb gleich einen ersten normalen Benutzer an.</li>
+<li><strong>Rollen:</strong> Administrator (Einrichtung, Benutzer) und Mitglied (Ablage). Vorerst sehen alle angemeldeten Benutzer alle Mappen.</li>
+<li><strong>Passwörter</strong> mit scrypt aus Node (keine native Bibliothek). <strong>Sitzungen</strong> als HttpOnly-Cookie, in der Datenbank nur als SHA-256-Hash. Gleiches gilt für Einladungs- und Passwort-Links (Einladung 7 Tage, Zurücksetzen 1 Stunde, jeweils nur einmal nutzbar).</li>
+<li><strong>Schutz vor fremden Seiten:</strong> Ändernde Anfragen brauchen den Header <code>X-DMS</code>, den nur die eigene Oberfläche setzt; dazu <code>SameSite=Lax</code>.</li>
+<li><strong>E-Mail optional:</strong> Ohne SMTP zeigt die Benutzerverwaltung die Links zum Kopieren an.</li>
+<li><strong>Routen zentral</strong> in <code>server/src/routen.ts</code>, jede mit Zugriffsstufe (offen, angemeldet, admin).</li>
+</ul>
+<h2 id="ablage">Ablage<a class="headerlink" href="#ablage" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Drei Spalten:</strong> Sichten → Liste → Mappe. Sichten sind vorerst „Eingang“ und eine pro Mappentyp; konfigurierbare Sichten folgen.</li>
+<li><strong>Eingang:</strong> Mappen, die nicht zur aktuellen Definition passen, beim Ersteller; ohne bekannten Ersteller beim Administrator. Später kommen Aufgaben dazu.</li>
+<li>
+<p><strong>Indexwerte</strong> (erstellt/geändert am/von) sind feste Spalten, keine Felder eines Mappentyps.</p>
+</li>
+<li>
+<p><strong>Seitenweise statt alles:</strong> Die Oberfläche lädt keine vollständige Mappenliste mehr. Eine Sicht holt je 100 Mappen, nach Titel sortiert, und beim Scrollen die nächsten; Suche, Zähler und Eingang rechnet der Server. Verweise wählt man über eine Suche statt einer Klappliste.</p>
+</li>
+<li><strong>Trefferliste</strong> als Liste von Spaltenschlüsseln am Mappentyp (<code>mappentypen.trefferliste</code>); Systemspalten beginnen mit <code>_</code> und kollidieren so nie mit Feldschlüsseln. Kompakt oder Tabelle entscheidet die Breite der Liste selbst (ResizeObserver), nicht die Bildschirmbreite.</li>
+<li><strong>Sortieren auf dem Server</strong> (wegen des seitenweisen Ladens), leere Werte immer zuletzt; nicht nach Verweisen und langen Texten. Gespeichert je Benutzer und Sicht in <code>benutzer_einstellungen</code>.</li>
+<li><strong>Passung gespeichert</strong> (<code>mappen.passt</code>, <code>mappen.problem</code>): Ob eine Mappe zur Definition passt, prüft der Server beim Ändern des Typs für alle Mappen dieses Typs (eindeutige Werte im Arbeitsspeicher statt je Mappe in der Datenbank) und nach dem Speichern für bisher unpassende Mappen desselben Typs.</li>
+<li><strong>Lange Arbeiten im Hintergrund:</strong> Demo-Daten laufen als Auftrag mit Fortschritt, damit ein Reverse-Proxy nicht nach seiner Wartezeit abbricht.</li>
+</ul>
+<h2 id="register-und-dokumente">Register und Dokumente<a class="headerlink" href="#register-und-dokumente" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Drei Registerarten</strong> am Mappentyp: Feld-, Dokumenten- und Verknüpfungsregister. Jedes Feld liegt auf genau einem Feldregister; nicht zugeordnete Felder landen automatisch auf dem ersten.</li>
+<li><strong>Register haben feste Schlüssel</strong>, damit Dokumente ihr Register behalten, wenn es umbenannt wird. Ein Dokumentenregister mit Dokumenten lässt sich nicht entfernen.</li>
+<li><strong>Verknüpfungsregister</strong> zeigen alle Rückverweise oder nur gewählte Quellen (Typ + Referenzfeld).</li>
+<li><strong>Titel-Vorlage</strong> mit Platzhaltern <code>{feld}</code>; Server und Oberfläche nutzen dieselbe Funktion (<code>titelAus</code>).</li>
+<li><strong>Titel gespeichert</strong> (Spalte <code>mappen.titel</code>), damit der Server sortieren und seitenweise laden kann. Neu berechnet beim Speichern einer Mappe, beim Ändern des Typs und – weitergereicht über die Verweise – bei Mappen, deren Titel einen geänderten Titel enthält (bei Verweisen im Kreis höchstens sechs Runden). Fehlende Titel berechnet der Server beim Start.</li>
+<li><strong>Indexwerte im Titel:</strong> <code>{angelegt}</code>, <code>{geaendert}</code> als Datum in der Zeitzone Europe/Berlin; diese Schlüssel sind für Felder gesperrt.</li>
+<li><strong>Dateien</strong> unveränderlich unter ihrem SHA-256 im Dateiordner, gleicher Inhalt nur einmal; Hinweis beim Hochladen, wenn der Inhalt schon in einer anderen Mappe liegt.</li>
+<li><strong>Anzeige im Browser nur für PDF und Bilder</strong>, erkannt am Inhalt (nicht an Endung oder angegebenem Typ). Alles andere wird als Download ausgeliefert, mit <code>nosniff</code> und einer Sandbox-CSP – eine hochgeladene HTML-Datei kann so keinen Code in der Sitzung ausführen.</li>
+<li><strong>Löschen einer Mappe</strong> löscht ihre Dokumente nach Rückfrage mit; die Datei verschwindet, sobald kein Dokument mehr auf sie zeigt.</li>
+</ul>
+<h2 id="designs">Designs<a class="headerlink" href="#designs" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Farben werden abgeleitet, nicht einzeln gepflegt:</strong> Aus Grundlage, Primär- und Sekundärfarbe entstehen alle CSS-Variablen (<code>design.ts</code>). Farben werden bei Bedarf aufgehellt oder abgedunkelt, bis sie auf dem Hintergrund lesbar sind (WCAG 4,5:1, beim Kontrast-Design 7:1).</li>
+<li><strong>Design je Konto, Schriftgröße je Gerät</strong> (<code>benutzer_einstellungen</code> bzw. localStorage). Schriftgrößen skalieren über <code>--skala</code>.</li>
+<li><strong>Eigenes CSS</strong> nur durch Administratoren, ohne <code>&lt;style&gt;</code>-Tags; Rettungsweg <code>?design=standard</code>.</li>
+</ul>
+<h2 id="schnittstelle">Schnittstelle<a class="headerlink" href="#schnittstelle" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Eigener Namensraum <code>/api/v1</code></strong> mit festen Adressen; intern nutzt er dieselben Funktionen wie die Oberfläche. API-Schlüssel gelten nur dort, nicht an den internen Adressen der Oberfläche.</li>
+<li><strong>Schlüssel</strong> <code>dms_…</code> (240 Bit Zufall), gespeichert nur als SHA-256; sichtbar bleibt der Anfang. Rechte: höchstens die des Benutzers, dazu „nur lesen“ (nur GET). Seit 0.26 (#128) bekommen Administratoren keine Schlüssel mehr: Über die API arbeitet ein normaler Benutzer.</li>
+<li><strong>OpenAPI aus derselben Tabelle</strong> wie die Routen (<code>api-v1.ts</code>), daher immer passend zur installierten Version; die lesbare Seite rendert sie selbst, ohne fremde Bibliothek.</li>
+</ul>
+<h2 id="betrieb-und-fehlersuche">Betrieb und Fehlersuche<a class="headerlink" href="#betrieb-und-fehlersuche" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Eigenes Protokoll</strong> (<code>server/src/protokoll.ts</code>) statt Fastify/pino direkt: jede Meldung mit Modul, Benutzer und Anfrage-Kennung (über AsyncLocalStorage), lesbar in den Container-Logs, zusätzlich ein Ringpuffer (24 h, 10.000 Einträge) für die Werkbank. Fastify schreibt über einen pino-kompatiblen Adapter hinein.</li>
+<li><strong>Live-Ansicht per Abfrage alle zwei Sekunden</strong> statt Server-Sent Events: funktioniert hinter jedem Reverse-Proxy ohne Sonderkonfiguration (nginx puffert SSE sonst).</li>
+<li><strong>Messung je Datenbankzugriff:</strong> Jede Methode der Repos wird über einen Proxy gezählt und gestoppt (ein Zugriff kann mehrere SQL-Anweisungen umfassen). Die Summe je Anfrage geht im Header <code>Server-Timing</code> an die Oberfläche; die übrigen Schritte misst der Browser (Resource Timing). „Netzwerk“ ist dabei eine Näherung.</li>
+<li><strong>Langläufer</strong> stehen in der Datenbank (Tabelle <code>langlaeufer</code>), Schwelle und Aufbewahrung in <code>einstellungen</code>.</li>
+<li><strong>Debug-Modus</strong> nur im Arbeitsspeicher und höchstens eine Stunde; nach einem Neustart ist er aus.</li>
+<li><strong>Als anderer Benutzer anmelden:</strong> eigene Sitzung des Benutzers mit Verweis auf die Vertretung; der Benutzer sieht beim nächsten Mal, wer wann als er agiert hat. Ein manipulationssicheres Protokoll ist bewusst nicht Teil davon (#16).</li>
+</ul>
+<h2 id="benutzer-und-rollen-als-mappen-26-27">Benutzer und Rollen als Mappen (#26, #27)<a class="headerlink" href="#benutzer-und-rollen-als-mappen-26-27" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Systemmappentypen</strong> <em>Benutzer</em> und <em>Rolle</em> (Spalte <code>mappentypen.system</code>): erweiterbar, nie löschbar. Der Server legt sie beim Start an, falls sie fehlen; heißt schon ein eigener Typ so, bekommt der Systemtyp den Zusatz „(System)“.</li>
+<li><strong>Systemfelder</strong> (<code>Feld.system</code>) sind fest: Schlüssel, Datentyp und Eigenschaften gibt der Server vor, nur Bezeichnung, Hilfetext und Register darf der Administrator ändern.</li>
+<li><strong>Das Konto ist führend, die Mappe spiegelt es.</strong> Die Mappe eines Benutzers hat dieselbe Id wie sein Konto. Konten melden jede Änderung an Name, E-Mail, Rolle und „aktiv“ an die Mappe; beim Start werden alle Benutzer abgeglichen (auch nach einem Update).</li>
+<li><strong>Sicherheit:</strong> Die Systemfelder einer Benutzer-Mappe sind in der Ablage nur lesbar – der Server lehnt Änderungen ab. Sonst könnte ein Mitglied die E-Mail-Adresse eines Administrators ändern und dessen Konto über „Passwort vergessen“ übernehmen, oder sich selbst eine Systemrolle geben.</li>
+<li><strong>Systemrollen</strong> <em>Administrator</em> und <em>Mitglied</em> sind Rollen-Mappen mit fester Kennung (<code>mappen.system_kennung</code>, z. B. <code>rolle:admin</code>). Wer sie hat, folgt der Rolle des Kontos; sie lassen sich nicht löschen und nicht umbenennen. So kann das spätere Berechtigungskonzept Rechte an Rollen-Mappen hängen, ohne die bestehende Anmeldung umzubauen.</li>
+<li><strong>Zuordnung Benutzer ↔ Rolle</strong> ist das Systemfeld <code>rollen</code> der Benutzer-Mappe (Mehrfachverweis). Die Rolle zeigt ihre Benutzer als Rückverweise. Gesetzt wird es nur über die Benutzerverwaltung; ungültige Rollen werden geprüft, bevor sich etwas ändert.</li>
+<li><strong>Rollen sind vorerst fachlich</strong> und von jedem Benutzer in der Ablage anlegbar; Einschränkungen kommen mit der Berechtigungsverwaltung. Keine verschachtelten Rollen.</li>
+<li><strong>Rolle löschen:</strong> erlaubt, auch wenn Benutzer sie haben – deren Zuordnung fällt weg. Verweise aus normalen Feldern (z. B. „verantwortliche Rolle“) verhindern das Löschen wie bei jeder Mappe.</li>
+<li><strong>Deaktivieren statt löschen:</strong> Wer sich schon angemeldet hat, wird deaktiviert; seine Mappe heißt dann „… (ehemalig)“ und Verweise bleiben gültig. Löschen geht nur für nie angenommene Einladungen.</li>
+<li><strong>Neue Mappen / Löschen erlauben</strong> als Eigenschaft jedes Mappentyps (<code>erstellen_erlaubt</code>, <code>loeschen_erlaubt</code>); die Oberfläche blendet die Knöpfe aus, der Server prüft es. Beim Typ <em>Benutzer</em> ist beides fest aus. <em>Seit 0.32 (#146) abgelöst: Anlegen und Löschen regeln die Berechtigungen (C, D); fest bleiben nur die Systemregeln für Benutzer-Mappen (seit 0.41, #192, gilt für Post die normale Berechtigung C).</em></li>
+<li>Demo-Daten und Beispiele lassen die Systemtypen aus.</li>
+</ul>
+<h2 id="handbuch-und-releases-25">Handbuch und Releases (#25)<a class="headerlink" href="#handbuch-und-releases-25" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Zwei getrennte Handbücher</strong> (MkDocs Material, je eine eigene Seite mit eigener Suche): Benutzer sollen sich auf ihre Möglichkeiten konzentrieren und nicht in Technik suchen müssen. Sie verweisen aufeinander, statt Inhalte doppelt zu pflegen. Technik und Entscheidungen gehören zum Administratorhandbuch.</li>
+<li><strong>Deutsche Suche</strong> über das Suchplugin von MkDocs (<code>lang: de</code>, mit Wortstammbildung); läuft im Browser, ohne Server.</li>
+<li><strong>Screenshots werden erzeugt, nicht gepflegt:</strong> Der Workflow <em>Handbuch</em> startet das DMS mit leerer Datenbank, legt Beispiele und Demo-Daten an und nimmt die Seiten mit Playwright auf (<code>docs/handbuch/screenshots/aufnehmen.mjs</code>). So passen die Bilder immer zur Version auf <code>main</code>. Die Bilder liegen nicht im Repository.</li>
+<li><strong>GitHub Pages</strong> über GitHub Actions; Pull Requests bauen nur und legen die Screenshots als Artefakt ab.</li>
+<li><strong>Changelog = GitHub Releases.</strong> Der Text kommt aus <code>docs/releases/&lt;tag&gt;.md</code> oder, falls es die Datei nicht gibt, aus den Commit-Überschriften seit dem vorigen Tag.</li>
+<li><strong>Release bei neuer Versionsnummer (#34).</strong> Steht auf <code>main</code> eine Version in <code>package.json</code>, zu der es noch keinen Tag gibt, legt „Prüfen und Image bauen“ nach bestandenen Prüfungen das Image mit Versionsnummer und danach Tag und Release an (<code>release.yml</code> als wiederverwendbarer Workflow). Nicht bei jedem Commit: So bleibt die Versionsnummer aussagekräftig, und mehrere Wünsche lassen sich bündeln.</li>
+<li><strong>Image-Tag im selben Lauf</strong>, weil ein mit dem Workflow-Token angelegter Tag keine weiteren Workflows startet; so braucht es kein zusätzliches Token. Von Hand gepushte Tags und von Hand veröffentlichte Releases funktionieren weiter.</li>
+<li><strong>Hilfe-Link</strong> im Benutzermenü auf das Benutzerhandbuch, für Administratoren zusätzlich auf das Administratorhandbuch.</li>
+</ul>
+<h2 id="e-mail-und-adresse-in-der-werkbank-37">E-Mail und Adresse in der Werkbank (#37)<a class="headerlink" href="#e-mail-und-adresse-in-der-werkbank-37" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Keine Umgebungsvariablen mehr</strong> für E-Mail-Versand und Adresse: gepflegt in der Werkbank, gespeichert in <code>einstellungen</code> (<code>mail</code>, <code>adresse</code>), wirksam ohne Neustart – Konten holen sich den Mailer und die Adresse bei jeder Verwendung (<code>Betrieb</code> in <code>server/src/betrieb.ts</code>).</li>
+<li><strong>Einmalige Übernahme</strong> der früheren Variablen <code>SMTP_*</code> und <code>APP_URL</code> beim ersten Start, nur solange nichts gespeichert ist; danach ignoriert, mit Hinweis im Protokoll. So fällt der Versand beim Update nicht aus.</li>
+<li><strong>Ohne gepflegte Adresse</strong> gilt die Adresse der aktuellen Anfrage (<code>req.protocol</code> und <code>req.host</code>, hinter einem Proxy über <code>X-Forwarded-*</code>, siehe unten). Sie steckt im Anfragekontext, damit Konten sie ohne zusätzlichen Parameter finden.</li>
+<li><strong>Passwort verschlüsselt</strong> (seit #39), nie an die Oberfläche zurück; leeres Feld behält es.</li>
+<li><strong>Testen mit ungespeicherten Werten:</strong> Prüfen und Testmail nehmen die Werte aus dem Formular, damit man vor dem Speichern sieht, ob es geht.</li>
+</ul>
+<h2 id="sichten-38-40-41">Sichten (#38, #40, #41)<a class="headerlink" href="#sichten-38-40-41" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Sicht = gespeicherte Abfrage</strong>: Mappentypen und Bedingungen, die alle zusammen gelten (UND). Bedienbare Filter über der Liste sind bewusst ein späterer Schritt.</li>
+<li><strong>Baum über <code>eltern_id</code></strong>; eine Sicht zeigt ihre eigenen Treffer und die aller Nachkommen. Technisch ist jede Sicht mit eigenen Typen eine <strong>Klausel</strong> (Typen + Filter); eine Sicht samt Untersichten ist das ODER ihrer Klauseln – so gibt es keine Doppelten, und Zähler, Suche, Sortierung und seitenweises Laden funktionieren unverändert auf dem Server.</li>
+<li><strong>Dynamische Werte werden je Abfrage aufgelöst</strong> (heute in Europe/Berlin, aktueller Benutzer, seine Rollen aus der Benutzer-Mappe). Das Repo bekommt nur feste Werte (<code>Filter</code>); <code>shared/src/sichten.ts</code> übersetzt Bedingungen → Filter, <code>repo-pg.ts</code> Filter → SQL. Dieselben Testfälle laufen im Arbeitsspeicher und gegen PostgreSQL.</li>
+<li><strong>Ungültige Bedingungen werden ignoriert, nicht ausgewertet</strong>: Ein entferntes Feld leert die Sicht nicht, die Werkbank markiert es.</li>
+<li><strong>Umzug ohne Bruch</strong>: Die bisherigen Sichten je Mappentyp wurden zu verwalteten Sichten mit der Id des Typs (Migration 013). Lesezeichen <code>/ablage/&lt;id&gt;</code> und gemerkte Sortierungen <code>sortierung:&lt;id&gt;</code> bleiben gültig. Eine Typ-Id ohne Sicht zeigt weiter alle Mappen des Typs, damit Links auf Mappen nie ins Leere gehen.</li>
+<li><strong><code>typ:&lt;id&gt;</code></strong> liefert alle Mappen eines Typs ohne Bedingungen – für die Auswahl von Verweisen, die Titel-Vorschau und die API. Sonst würde eine Sicht mit Bedingungen, die zufällig die Id des Typs trägt, die Auswahl einschränken.</li>
+<li><strong>Benutzer und Rolle</strong> bekommen bei neuen Installationen ihre Sichten am Ende der ersten Ebene.</li>
+</ul>
+<h2 id="verschlusselte-passworter-39-46">Verschlüsselte Passwörter (#39, #46)<a class="headerlink" href="#verschlusselte-passworter-39-46" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Schlüssel als Datei, nie in der Datenbank</strong>: 32 Byte, erzeugt auf Knopfdruck in der Werkbank (<code>/data/geheim/dms.schluessel</code>, Rechte 0600, eigenes Volume). In der Datenbank steht nur der Fingerabdruck – so erkennt das DMS einen fehlenden oder fremden Schlüssel und zeigt, welche Werte neu einzugeben sind. Eine Datenbanksicherung allein verrät damit keine Passwörter.</li>
+<li><strong>AES-256-GCM je Wert</strong> mit eigener Zufallszahl, gespeichert als <code>dms1$&lt;nonce&gt;:&lt;geheimtext&gt;</code>; das Präfix erlaubt später ein anderes Verfahren und den Schlüsselwechsel (#47).</li>
+<li><strong>Kein Geheimtext verlässt den Server</strong>: Jede Antwort läuft durch eine Maske, die verschlüsselte Werte durch <code>{gesetzt, lesbar}</code> ersetzt – unabhängig davon, welche Route sie liefert. Klartext gibt es nur einzeln (Auge, protokolliert) oder über die API mit eigenem Recht.</li>
+<li>Ohne Schlüssel lässt sich kein Passwort speichern. Ein Klartext-Passwort aus älteren Ständen (SMTP) funktioniert weiter und wird verschlüsselt, sobald es einen Schlüssel gibt.</li>
+</ul>
+<h2 id="papierkorb-43">Papierkorb (#43)<a class="headerlink" href="#papierkorb-43" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Eigene Tabelle statt Löschmarke</strong>: Gelöschte Mappen ziehen samt Verweisen und Dokumenten als JSON nach <code>papierkorb</code>. Alle Abfragen auf <code>mappen</code> bleiben unverändert; eindeutige Werte werden frei; der Papierkorb taucht nirgends sonst auf.</li>
+<li><strong>Wiederherstellen</strong> legt die Zeilen wieder an. Verweise auf Mappen, die es nicht mehr gibt, entfallen; passt die Mappe danach nicht (z. B. eindeutiger Wert vergeben), zeigt der Eingang sie – nur sie, nicht die andere.</li>
+<li><strong>Dateien bleiben</strong>, bis der Papierkorb geleert wird; erst dann prüft das DMS, ob noch ein Dokument (auch im Papierkorb) an der Datei hängt.</li>
+<li><strong>Benutzer-Einladungen</strong> im Papierkorb sind deaktiviert; endgültig gelöscht wird das Konto erst beim Leeren. 0 Tage Aufbewahrung schaltet den Papierkorb aus.</li>
+</ul>
+<h2 id="texterkennung-45">Texterkennung (#45)<a class="headerlink" href="#texterkennung-45" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Im eigenen Prozess, Warteschlange in der Datenbank</strong> (<code>dokumente.ocr_stand</code>): kein zusätzlicher Container; nach einem Neustart geht es weiter. Gleichzeitige Aufträge sind einstellbar (Standard 1, für kleine NAS).</li>
+<li><strong>Textebene zuerst</strong>: <code>pdftotext</code> je Seite; nur Seiten mit kaum Text gehen durch <code>pdftoppm</code> und <code>tesseract</code> (deu+eng). So bleibt die Texterkennung schnell, wo sie nicht nötig ist.</li>
+<li><strong>Gleicher Inhalt, gleicher Text</strong>: Dateien sind über ihren Prüfwert bekannt; ein schon erkannter Text wird übernommen.</li>
+<li><strong>Deutsche Volltextsuche von PostgreSQL</strong> (<code>to_tsvector('german', …)</code>, GIN-Index, <code>websearch_to_tsquery</code>): findet Wortformen; die Fundstelle kommt aus <code>ts_headline</code> mit Steuerzeichen als Markierung – nie als HTML.</li>
+<li>Office-Dokumente und externe Dienste kommen später.</li>
+</ul>
+<h2 id="image-je-architektur-nativ-bauen-88">Image je Architektur nativ bauen (#88)<a class="headerlink" href="#image-je-architektur-nativ-bauen-88" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Kein QEMU mehr:</strong> Das arm64-Image entstand bisher emuliert auf Intel-Rechnern; die Emulation stürzte beim <code>npm install</code> mehrfach mit Fehler 132 ab (0.8.1, 0.13.0), und damit blieben Image, Tag und Release aus. Jetzt baut jede Architektur auf einem passenden Rechner von GitHub (<code>ubuntu-24.04</code> bzw. <code>ubuntu-24.04-arm</code>, für öffentliche Repos kostenlos).</li>
+<li><strong>Hochladen nur unter dem Prüfwert, dann zusammenführen:</strong> Jeder Teil wird ohne Tag hochgeladen; <code>image-zusammen</code> erzeugt daraus mit <code>docker buildx imagetools create</code> das gemeinsame Image mit allen Tags und prüft, dass beide Architekturen enthalten sind. Das Release entsteht erst danach.</li>
+<li><strong>Pull Requests</strong> bauen beide Architekturen ebenfalls nativ zur Probe (ohne Veröffentlichung).</li>
+</ul>
+<h2 id="berechtigungen-123127-137">Berechtigungen (#123–#127, #137)<a class="headerlink" href="#berechtigungen-123127-137" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Regeln nur am Mappentyp</strong>, mit Standard (seit 0.32 je Recht ✓/✗, vorher erteilt/entzogen) und geordneten Regeln „wenn … dann ✓/✗/– je Recht“ mit Stopp – wie eine Firewall. Keine Rechte an einzelnen Mappen: Was eine Mappe besonders macht, steht in ihren Feldern, und darauf zielen die Bedingungen.</li>
+<li><strong>CRUDP</strong>: Anlegen, Lesen, Bearbeiten (Felder und Dokumente), Löschen, Passwörter sehen. Notizen, Aufgaben und E-Mail brauchen nur Lesen. Ohne Lesen wirkt nichts außer Anlegen.</li>
+<li><strong>Ein Ausdruck, zwei Auswertungen</strong>: Bedingungen über den Benutzer sind beim Anmelden schon entschieden; was bleibt, sind Filter über die Mappe – im Arbeitsspeicher für eine einzelne Mappe und als SQL für Listen, Suche und Zähler. So stimmen Liste und Mappe immer überein, und Seiten bleiben schnell.</li>
+<li><strong>Administratoren</strong> unterliegen keinen Regeln, arbeiten aber auch nicht in der Ablage (#128). Seit 0.32 (#146) gibt es keine Haken als Obergrenze mehr: Admins sollen nicht in der Ablage arbeiten, aber wenn sie es müssen, ohne unnötige Hürden. Die Haken wurden ohne Mehrrechte für Benutzer in den Standard (✗ C/D) überführt; nur die Systemregeln (Benutzer: kein C/D, E-Mail: kein C) gelten für alle. Den Testlauf gibt es direkt am Mappentyp, auch für ungespeicherte Regeln; „Was sieht ein Benutzer?“ steht am Benutzer.</li>
+<li><strong>Benutzerauswahl nur unter sichtbaren Benutzern</strong> (#137): So lässt sich ein Programm über die API sauber auf seinen Ausschnitt begrenzen.</li>
+<li><strong>Feldrechte</strong> (einzelne Felder ausblenden) kommen bei Bedarf später.</li>
+</ul>
+<h2 id="fristen-129133">Fristen (#129–#133)<a class="headerlink" href="#fristen-129133" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Fristen sind Aufgaben</strong> – keine eigene Liste: Eingang, Zusammenfassung, Abwesenheit, Vertretung und Weitergeben gelten ohne Sonderwege. Eine zusätzliche Stichtags-Mail gibt es bewusst nicht.</li>
+<li><strong>Angelegt erst ab „Datum − Vorlauf“</strong>, je Mappe, Feld und Datum einmal (eindeutiger Index). Was davor liegt, berechnet die Sicht <em>Anstehend</em> aus den Datumsfeldern; so bleibt der Eingang die Liste dessen, was jetzt zu tun ist.</li>
+<li><strong>Das Datum ändert sich nie von selbst</strong>: Wiederkehrende Termine schlagen den nächsten nur vor.</li>
+<li><strong>Freie Erinnerungen</strong> liegen bis zu ihrem Tag in einer eigenen Tabelle und werden dann zu Aufgaben; im Papierkorb ziehen sie mit um.</li>
+</ul>
+<h2 id="schlusselwechsel-47">Schlüsselwechsel (#47)<a class="headerlink" href="#schlusselwechsel-47" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Eine Transaktion</strong> für alle verschlüsselten Werte (Mappen, Papierkorb, Einstellungen) samt Fingerabdruck und Prüfwort; die neue Schlüsseldatei liegt bis dahin als <code>dms.schluessel.neu</code> daneben und ersetzt die alte erst danach. Ein Neustart dazwischen wird beim Start erkannt und abgeschlossen.</li>
+<li><strong>Kein Aufbewahren des alten Schlüssels</strong>: Ältere Sicherungen nennen ihren Fingerabdruck; zum Wiederherstellen dient das alte Notfallblatt.</li>
+</ul>
+<h2 id="proxy-angaben-automatisch-234">Proxy-Angaben automatisch (#234)<a class="headerlink" href="#proxy-angaben-automatisch-234" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Standard „private Netze“</strong> statt <code>false</code>: Fastify bekommt <code>trustProxy: ['loopback', 'linklocal', 'uniquelocal']</code>. Ohne Einstellung stimmten IP-Adressen und die Sperre nach Fehlversuchen (je E-Mail und IP) hinter einem Proxy nicht – und kaum jemand setzte die Variable, weil sonst alles ging.</li>
+<li><strong>Restrisiko bewusst in Kauf genommen:</strong> Ein Gerät im Heimnetz, das das DMS direkt erreicht, könnte eine IP vortäuschen. Wer das ausschließen will, setzt <code>false</code> oder eine Liste. Aus dem Internet geht es nicht, solange keine Portfreigabe mit verschleierter Absenderadresse (z. B. Docker-Userland-Proxy) dazwischen ist.</li>
+<li><strong>Falsche Werte</strong> führen nicht zum Startabbruch: Es gilt <code>auto</code>, mit Warnung im Protokoll.</li>
+</ul>
+<h2 id="bewusst-noch-nicht-drin">Bewusst noch nicht drin<a class="headerlink" href="#bewusst-noch-nicht-drin" title="Permanent link">&para;</a></h2>
+<p>Feldrechte, Kalender-Export (ICS), Backup-Funktion in der Anwendung (#48), Texterkennung für Office-Dokumente, Zwei-Faktor-Anmeldung.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Zurück zum Seitenanfang
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Fußzeile" >
+        
+          
+          <a href="../technik/" class="md-footer__link md-footer__link--prev" aria-label="Zurück: Technik">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Zurück
+              </span>
+              <div class="md-ellipsis">
+                Technik
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      DMS steht unter der AGPL-3.0 · <a href="https://github.com/sponsors/motom001">Projekt unterstützen</a>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/sponsors/motom001" target="_blank" rel="noopener" title="Projekt unterstützen (GitHub Sponsors)" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="m241 87.1 15 20.7 15-20.7C296 52.5 336.2 32 378.9 32 452.4 32 512 91.6 512 165.1v2.6c0 112.2-139.9 242.5-212.9 298.2-12.4 9.4-27.6 14.1-43.1 14.1s-30.8-4.6-43.1-14.1C139.9 410.2 0 279.9 0 167.7v-2.6C0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://github.com/motom001/dms" target="_blank" rel="noopener" title="Quellcode auf GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "In Zwischenablage kopiert", "clipboard.copy": "In Zwischenablage kopieren", "search.result.more.one": "1 weiteres Suchergebnis auf dieser Seite", "search.result.more.other": "# weitere Suchergebnisse auf dieser Seite", "search.result.none": "Keine Suchergebnisse", "search.result.one": "1 Suchergebnis", "search.result.other": "# Suchergebnisse", "search.result.placeholder": "Suchbegriff eingeben", "search.result.term.missing": "Es fehlt", "select.version": "Version ausw\u00e4hlen"}, "version": {"alias": true, "default": "aktuell", "provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>
