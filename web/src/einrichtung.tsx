@@ -46,7 +46,7 @@ const HILFE_JE_SCHRITT: Hilfeort[] = ['einrichtung.code', 'einrichtung.datenbank
 function SchrittHilfe({ aktiv }: { aktiv: number }) {
   const z = HILFE[HILFE_JE_SCHRITT[aktiv]];
   return (
-    <a className="assistent-hilfe" href={hilfeOnlineUrl(z)} target="_blank" rel="noreferrer" aria-label={`Hilfe zu ${z.titel} im Handbuch, mit Bildern (öffnet in neuem Tab)`}>
+    <a className="assistent-hilfe" href={hilfeOnlineUrl(z)} target="_blank" rel="noreferrer" title={`Hilfe zu „${z.titel}“ im Administratorhandbuch`} aria-label="Hilfe zu diesem Schritt im Handbuch, mit Bildern (öffnet in neuem Tab)">
       <span className="hilfesymbol" aria-hidden="true">?</span> Hilfe mit Bildern
     </a>
   );
