@@ -1,6 +1,6 @@
 # CasaOS
 
-So installierst du das DMS auf einem Rechner mit **CasaOS**, z. B. einem Raspberry Pi oder Mini-PC. Du brauchst weder Compose-Datei noch Kommandozeile. Die App bringt ihre eigene Datenbank mit und ist schon angebunden.
+So installierst du das DMS auf einem Rechner mit **CasaOS**, z. B. einem Raspberry Pi oder Mini-PC. Du brauchst weder Compose-Datei noch Kommandozeile. Die App bringt ihre eigene Datenbank mit: Sie läuft im selben Container und ist schon angebunden.
 
 !!! tip "ZimaOS statt CasaOS?"
     Die Schritte für ZimaOS stehen auf einer [eigenen Seite](zimaos.md).
@@ -20,7 +20,7 @@ Danach erscheint **DMS** in der App-Liste.
 
 ## 2. Installieren
 
-In der App-Liste **DMS** öffnen und **Installieren** wählen. CasaOS lädt das DMS und seine Datenbank und startet beide.
+In der App-Liste **DMS** öffnen und **Installieren** wählen. CasaOS lädt das DMS als **einen** Container (Image `dms-komplett`) und startet ihn. Die Datenbank läuft darin mit – ohne Passwort und ohne Port nach außen. Einen eigenen Container „Datenbank“ gibt es nicht.
 
 ## 3. Einrichten
 
@@ -54,6 +54,15 @@ Die Daten liegen unter `/DATA/AppData/dms/`:
 ## Aktualisieren
 
 Gibt es eine neue Version, zeigt der App Store bei **DMS** ein Update an. Die Daten bleiben erhalten. Was neu ist, steht unter **Werkbank → Technik**.
+
+!!! warning "Noch mit zwei Containern installiert?"
+    Wer das DMS vor Version 0.73.10 aus dem Store installiert hat, hat zwei Container: DMS und Datenbank. Nach dem Update auf den einen Container startet das DMS mit einer **leeren** Datenbank. So kommst du wieder an deine Daten:
+
+    1. **Vor** dem Update unter **Werkbank → Sicherung** eine Sicherung erstellen (oder die letzte automatische nehmen).
+    2. Update im App Store einspielen.
+    3. Im Assistenten **Aus einer Sicherung wiederherstellen** wählen und diese Sicherung einspielen.
+
+    Die alten Datenbankdateien bleiben im Ordner `postgres/` liegen, bis du sie selbst löschst.
 
 ## Auf ein neues Gerät umziehen
 
