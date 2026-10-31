@@ -575,6 +575,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../versionen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Versionen verstehen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../eingang/" class="md-nav__link">
         
   
@@ -1254,8 +1282,8 @@ Eine Ansicht unterhalb einer anderen. Sie erbt deren Berechtigungen.</p>
 Das Register, das alle Mappen zeigt, die auf diese Mappe verweisen – die Gegenrichtung des Verweises.<br />
 Siehe auch: <a href="#verweis">Verweis</a>.</p>
 <p><a id="version"></a><strong>Version</strong> · ✓ Alltagswort · alle<br />
-Eine frühere Fassung eines Dokuments, das ersetzt wurde. Nur in Registern mit Versionierung. Nicht zu verwechseln mit der Version des DMS selbst.<br />
-Siehe auch: <a href="#dokument">Dokument</a>, <a href="#archivmodus">Archivmodus</a>. Noch offen: <a href="#offen-18">Frage 18</a>.</p>
+Eine Fassung eines Dokuments. Beim Ersetzen entsteht eine neue Version, die älteren bleiben darunter und lassen sich zurückholen. Nur in Registern mit Versionierung. Nicht zu verwechseln mit der Version des DMS.<br />
+Siehe auch: <a href="#dokument">Dokument</a>, <a href="#archivmodus">Archivmodus</a>, <a href="#version-des-dms">Version des DMS</a>.</p>
 <p><a id="verweis"></a><strong>Verweis</strong> · ~ mit Erklärung · alle<br />
 Ein Feld, das auf andere Mappen zeigt, z. B. von einer Rechnung auf den Vertrag.<br />
 Siehe auch: <a href="#verknupfungen">Verknüpfungen</a>.</p>
@@ -1394,6 +1422,9 @@ Eine verschlüsselte Gesamtsicherung, die sich in ein DMS zurückspielen lässt.
 Siehe auch: <a href="#wiederherstellen">Wiederherstellen</a>, <a href="#probe-wiederherstellung">Probe-Wiederherstellung</a>, <a href="#vollexport">Vollexport</a>.</p>
 <p><a id="speicherplatz"></a><strong>Speicherplatz</strong> · ✓ Alltagswort · Administratoren<br />
 Wie voll die Datenordner sind, mit Schwellen für Warnungen.</p>
+<p><a id="version-des-dms"></a><strong>Version des DMS</strong> · ✓ Alltagswort · alle<br />
+Der Stand des Programms, z. B. 0.73. Ein Update bringt eine neue Version des DMS; an Dokumenten und ihren Versionen ändert das nichts. Was neu ist, steht unter „Neu in dieser Version“.<br />
+Siehe auch: <a href="#version">Version</a>.</p>
 <p><a id="vollexport"></a><strong>Vollexport</strong> · ~ mit Erklärung · Administratoren<br />
 Alle Daten in offenen Formaten, lesbar auch ohne DMS – damit niemand am DMS hängen bleibt.</p>
 <p><a id="wartungsmodus"></a><strong>Wartungsmodus</strong> · ~ mit Erklärung · Administratoren<br />
@@ -1418,8 +1449,6 @@ Vorschlag: „Benutzer“ ist ein Konto, „Person“ ein Kontakt (Paket Basis) 
 Vorschlag: Kein echter Konflikt, aber jeweils definieren.</p>
 <p><a id="offen-17"></a><strong>17. Dokument, Datei, Anhang</strong><br />
 Vorschlag: Datei = was hochgeladen wird, Dokument = was im DMS liegt, Anhang = an einer E-Mail.</p>
-<p><a id="offen-18"></a><strong>18. Version eines Dokuments und Version des DMS</strong><br />
-Vorschlag: Im Handbuch klar trennen („Neu in dieser Version“ vs. „Versionen“ eines Dokuments).</p>
 <p><a id="offen-19"></a><strong>19. Design, Darstellung, Theme</strong><br />
 Vorschlag: Klären, was in Werkbank und Profil jeweils gemeint ist.</p>
 <h2 id="entschieden">Entschieden<a class="headerlink" href="#entschieden" title="Permanent link">&para;</a></h2>
@@ -1446,6 +1475,8 @@ Feldart „Verweis“, Register „Verknüpfungen“; Adressen heißen nur „Li
 „Haushalt“ in allem, was Benutzer sehen; „Mandant“ nur im Code und wo technisch nötig.</p>
 <p><a id="offen-16"></a><strong>16. Typ, Mappentyp, Feldart, Art</strong> (31.10.2026)<br />
 Konsequent „Mappentyp“ und „Feldart“.</p>
+<p><a id="offen-18"></a><strong>18. Version eines Dokuments und Version des DMS</strong> (31.10.2026)<br />
+Zwei Begriffe – „Version“ ist die Fassung eines Dokuments, „Version des DMS“ der Stand des Programms. Erklärt auf der Seite „Versionen verstehen“.</p>
 <p><a id="offen-20"></a><strong>20. „Neue Post“ als Ansicht und als Art einer Aufgabe</strong> (31.10.2026)<br />
 Die Aufgabenart heißt „Post für dich“; die Ansicht „Neue Post“ bleibt.</p>
 <p><a id="offen-22"></a><strong>22. „Rolle“ für Administrator/Mitglied und für Gruppen wie „Eltern“</strong> (31.10.2026)<br />
@@ -1663,8 +1694,13 @@ Die Aufgabenart heißt „Post für dich“; die Ansicht „Neue Post“ bleibt.
 </tr>
 <tr>
 <td>Version</td>
-<td>–</td>
+<td>Revision, Stand (für Dokumente)</td>
 <td><code>DokumentVersion</code></td>
+</tr>
+<tr>
+<td>Version des DMS</td>
+<td>Release (in der Oberfläche)</td>
+<td>–</td>
 </tr>
 <tr>
 <td>Vertretung</td>
