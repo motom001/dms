@@ -1749,7 +1749,7 @@
 </ul>
 <p>Weil Logo und Schriftzug zum Design gehören, wähle zu jedem Design ein Logo, das auf dessen Hintergrund gut zu sehen ist – etwa ein helles Logo für <em>Dunkel</em>.</p>
 <h2 id="eigenes-css">Eigenes CSS<a class="headerlink" href="#eigenes-css" title="Permanent link">&para;</a></h2>
-<p>Unter <strong>Eigenes CSS</strong> kannst du die Oberfläche weiter anpassen, etwa <code>.kopf { border-bottom-width: 3px; }</code>. <code>&lt;style&gt;</code>-Tags sind nicht erlaubt.</p>
+<p>Unter <strong>Eigenes CSS</strong> kannst du die Oberfläche weiter anpassen, etwa <code>.kopf { border-bottom-width: 3px; }</code>. Das Zeichen <code>&lt;</code> ist nicht erlaubt, damit das CSS nichts außerhalb der Gestaltung verändern kann; in Texten (z. B. bei <code>content</code>) schreibst du stattdessen <code>\3C</code>.</p>
 <div class="admonition warning">
 <p class="admonition-title">Oberfläche kaputt?</p>
 <p>Macht ein eigenes CSS das DMS unbedienbar, hänge <code>?design=standard</code> an die Adresse, z. B. <code>http://nas:8080/werkbank/designs?design=standard</code>. Dann lädt das Standard-Design ohne eigenes CSS, und du kannst den Fehler beheben.</p>
