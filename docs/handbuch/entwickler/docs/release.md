@@ -21,6 +21,18 @@ Ein Release entsteht, sobald auf `main` eine Versionsnummer steht, für die es n
 - *Lockfile erzeugen* (`lockfile.yml`) lässt sich ebenfalls von Hand starten.
 - *Release* (`release.yml`) startet außerdem bei einem von Hand gepushten Tag `v*` (legt das Release an) und bei einem von Hand veröffentlichten Release (setzt nur den Text).
 
+## Qualitätskontrolle: weiche Zeitangaben
+
+Ankündigungen wie „im Moment“, „folgt“, „kommt später“ oder „noch nicht“ bleiben gern stehen, wenn die Funktion längst gebaut ist. Bei jeder Qualitätskontrolle (z. B. 0.75) gehört deshalb diese Liste dazu:
+
+```sh
+python3 docs/handbuch/werkzeuge/zeitangaben.py
+```
+
+Das Skript durchsucht Handbücher, Glossar, Vorlagen, README und die Texte der Oberfläche (`web/src`, `shared/src/hilfe.ts`; Kommentare zählen nicht) und gibt je Fund Datei, Zeile, Wort und Satz aus. Der Handbuch-Workflow schreibt dieselbe Liste in die Zusammenfassung des Laufs; er bricht dabei nie ab.
+
+So liest du sie: Stimmt der Satz noch? Wenn nicht, korrigieren. Ist er gewollt (z. B. „noch nicht bezahlt“ oder eine echte Planung), markiere ihn in derselben Zeile oder der Zeile davor mit `<!-- zeitangabe: geprüft 0.75 -->` (in YAML `# zeitangabe: …`, in TypeScript `// zeitangabe: …`). Markierte Stellen stehen gesondert unter „Geprüft“ mit der Version, damit sie bei der nächsten Runde wieder auffallen.
+
 ## Abhängigkeiten und Sicherheitsupdates
 
 - **Dependabot** (`.github/dependabot.yml`) schlägt jeden Montag Updates vor: kleine Updates (minor, patch) gesammelt in einem PR, Hauptversionen einzeln, dazu GitHub Actions und die Basis-Images. Sicherheitsupdates kommen sofort. Die CI prüft jeden dieser PRs wie jeden anderen; Hauptversionen bitte mit Blick in das Änderungsprotokoll der Bibliothek.
