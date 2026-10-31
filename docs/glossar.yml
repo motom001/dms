@@ -352,7 +352,7 @@ begriffe:
     code: rolle (am Benutzer)
   - begriff: Berechtigungen
     bereich: werkbank
-    beschreibung: Wer an Mappentypen und Ansichten was darf (Lesen, Ändern, Anlegen, Löschen, Sehen, Exportieren). Ein Standard plus Regeln.
+    beschreibung: Wer was darf. Am Mappentyp – Anlegen, Lesen, Bearbeiten, Löschen, Passwörter sehen – mit einem Standard plus Regeln; an der Ansicht – Sehen, Anlegen, Exportieren – mit Vererbung an die Unteransichten. Für Administratoren gelten sie nicht.
     einsteiger: alltag
     begegnet: admin
     nicht_verwenden: [Permissions]

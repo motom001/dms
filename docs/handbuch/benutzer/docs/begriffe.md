@@ -193,7 +193,7 @@ Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe im DMS. Nicht zu 
 Noch offen: [Frage 14](#offen-14).
 
 <a id="berechtigungen"></a>**Berechtigungen** · ✓ Alltagswort · Administratoren  
-Wer an Mappentypen und Ansichten was darf (Lesen, Ändern, Anlegen, Löschen, Sehen, Exportieren). Ein Standard plus Regeln.
+Wer was darf. Am Mappentyp – Anlegen, Lesen, Bearbeiten, Löschen, Passwörter sehen – mit einem Standard plus Regeln; an der Ansicht – Sehen, Anlegen, Exportieren – mit Vererbung an die Unteransichten. Für Administratoren gelten sie nicht.
 
 <a id="darf-weg"></a>**Darf weg** · ✓ Alltagswort · Administratoren  
 Die Liste der Mappen, deren Aufbewahrungsfrist abgelaufen ist.

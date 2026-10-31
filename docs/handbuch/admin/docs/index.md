@@ -21,7 +21,7 @@ Dieses Handbuch ist für alle, die das DMS **installieren, einrichten und betrei
 | Festlegen, wer was sehen und ändern darf | Werkbank → Mappentypen → Berechtigungen, Werkbank → Ansichten | [Berechtigungen](berechtigungen.md) |
 | Daten sichern und wiederherstellen | Werkbank → Sicherung, Wiederherstellen | [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md) |
 | Fehler finden, Meldungen der Benutzer bearbeiten | Werkbank → Wartung und Fehlersuche | [Fehlersuche](fehlersuche.md) |
-| Andere Programme anbinden | Profil → API-Schlüssel | [Schnittstelle](api.md) |
+| Andere Programme anbinden | eigenen Benutzer für das Programm anlegen, als dieser anmelden, dann Profil → Sicherheit → API-Schlüssel (Administratoren bekommen keine Schlüssel) | [Schnittstelle](api.md) |
 
 Wie das DMS technisch aufgebaut ist und warum, beschreiben [Technik](technik.md) und [Entscheidungen](entscheidungen.md).
 
@@ -30,10 +30,14 @@ Wie das DMS technisch aufgebaut ist und warum, beschreiben [Technik](technik.md)
 - **Administrator** – sieht zusätzlich die **Werkbank** und darf alles einrichten. Es gibt immer mindestens einen aktiven Administrator.
 - **Mitglied** – arbeitet in der Ablage.
 
-Daneben gibt es frei anlegbare, fachliche Rollen (etwa „Steuern und Finanzen“); sie geben derzeit keine zusätzlichen Rechte. Siehe [Benutzer und Rollen](benutzer.md).
+Das ist die **Systemrolle** eines Benutzers. Daneben gibt es frei anlegbare **Rollen** (etwa „Eltern“ oder „Steuern und Finanzen“). Sie geben von sich aus keine Rechte – über Regeln in den [Berechtigungen](berechtigungen.md) aber schon. Siehe [Benutzer und Rollen](benutzer.md).
 
 !!! info "Wer darf was sehen?"
-    Im Moment sehen alle angemeldeten Benutzer alle Mappen. Feinere Rechte folgen mit der Berechtigungsverwaltung.
+    - **Ohne Regeln dürfen alle alles.** So startet jedes DMS; für eine Familie reicht das oft.
+    - **Je Mappentyp** legst du in den [Berechtigungen](berechtigungen.md) fest, wer Mappen anlegen, lesen, bearbeiten, löschen und Passwörter sehen darf – mit Regeln, z. B. über Rollen, und einem Testlauf.
+    - **Je Ansicht** legst du an der Ansicht fest, wer sie sieht, dort anlegen und aus ihr exportieren darf ([Ansichten → Berechtigungen](sichten.md#berechtigungen)).
+    - **Für Administratoren gelten die Regeln nicht:** Sie sehen und dürfen in der Ablage immer alles.
+    - Was für einen Benutzer am Ende gilt, zeigt ihm sein Profil unter **Meine Rechte**.
 
 ## Neue Versionen
 

@@ -7,13 +7,26 @@
     Neue Mappentypen richtet ein Administrator ein. Beschreib ihm, was du ablegen willst und welche Angaben dazugehören.
 
 ??? question "Der Knopf „+ Neu“ fehlt."
-    Von diesem Mappentyp dürfen in der Ablage keine Mappen angelegt werden – zum Beispiel bei *Benutzer*. Die legt ein Administrator in der Benutzerverwaltung an.
+    Dafür gibt es mehrere Gründe:
+
+    - Von diesem Mappentyp legt man in der Ablage keine Mappen an – zum Beispiel *Benutzer*. Die legt ein Administrator in der Benutzerverwaltung an.
+    - Du darfst Mappen dieses Mappentyps nicht anlegen, oder du darfst in dieser Ansicht nicht anlegen. Beides legt ein Administrator in den Berechtigungen fest; was für dich gilt, steht im Profil unter [Meine Rechte](profil.md#meine-rechte).
+    - Die Ansicht zeigt mehrere Mappentypen. Lege die Mappe dann in der Ansicht des einzelnen Mappentyps an.
+    - Bei *Post* heißt der Knopf **+ Post** (siehe [Post](post.md)).
 
 ??? question "Ich kann eine Mappe nicht löschen."
-    Entweder verweisen noch andere Mappen auf sie – dann zeigt das DMS, welche; entferne dort zuerst den Verweis. Oder Mappen dieses Mappentyps dürfen grundsätzlich nicht gelöscht werden; dann fehlt der Knopf ganz.
+    - Es verweisen noch andere Mappen auf sie – dann zeigt das DMS, welche. Entferne dort zuerst den Verweis.
+    - Du darfst Mappen dieses Mappentyps nicht löschen; dann fehlt **Mappe löschen** ganz. Das legt ein Administrator in den Berechtigungen fest.
+    - Der Mappentyp ist im **Archivmodus**, und die Aufbewahrungsfrist der Mappe läuft noch. Dann lässt sie sich erst nach dem Fristende löschen – von niemandem.
 
 ??? question "Ich kann ein Feld nicht ändern."
-    Felder mit gestricheltem Rahmen sind nur zum Lesen, zum Beispiel Name und E-Mail-Adresse in der Mappe eines Benutzers. Daneben steht, wo sie geändert werden.
+    - Du darfst Mappen dieses Mappentyps nur lesen, nicht bearbeiten. Dann steht unten in der Mappe „Nur lesen“.
+    - Felder mit gestricheltem Rahmen sind nur zum Lesen, zum Beispiel Name und E-Mail-Adresse in der Mappe eines Benutzers. Daneben steht, wo sie geändert werden.
+    - Eine **fortlaufende Nummer** (z. B. eine Rechnungsnummer) vergibt das DMS beim ersten Speichern; danach kann sie niemand mehr ändern.
+    - Bei *Post* setzt das DMS *Kanal* und *Zugeordnet zu* selbst.
+
+??? question "Ich sehe eine Mappe oder Ansicht nicht, die andere sehen."
+    Ein Administrator kann festlegen, wer welche Mappen lesen und welche Ansichten sehen darf – zum Beispiel nur die „Eltern“. Was du je Mappentyp darfst, steht im Profil unter [Meine Rechte](profil.md#meine-rechte). Brauchst du Zugriff, frag den Administrator.
 
 ??? question "Eine Mappe ist plötzlich unter „Zu erledigen“."
     Ihr Mappentyp wurde geändert, und die Mappe passt nicht mehr dazu. Siehe [Zu erledigen](eingang.md).

@@ -14,18 +14,18 @@ Benutzer-Mappen legt man nicht in der Ablage an und löscht sie dort auch nicht 
 
 ## Rollen
 
-Eine **Rolle** ist eine Aufgabe, die mehrere Personen haben können – zum Beispiel „Steuern und Finanzen“ oder „Haus und Garten“. Rollen sind ebenfalls Mappen, in der Ansicht **Rolle**.
+Eine **Rolle** fasst Benutzer zusammen, die für etwas zuständig sind – zum Beispiel „Eltern“, „Steuern und Finanzen“ oder „Haus und Garten“. Rollen sind ebenfalls Mappen, in der Ansicht **Rolle**.
 
 ![Eine Rolle mit ihren Benutzern](bilder/rolle.png)
 
-- **Anlegen:** In der Ansicht *Rolle* auf **+ Neu**, Namen eingeben, speichern. Der Name muss eindeutig sein.
+- **Anlegen:** In der Ansicht *Rolle* auf **+ Neu**, Namen eingeben, speichern. Der Name muss eindeutig sein. Fehlt **+ Neu**, hat ein Administrator das Anlegen von Rollen eingeschränkt.
 - **Ändern und löschen** wie jede andere Mappe. Haben Benutzer die Rolle, verlieren sie sie beim Löschen. Verweist noch ein Feld auf die Rolle (etwa „verantwortliche Rolle“ in einem Vertrag), lässt sie sich erst löschen, wenn dieser Verweis entfernt ist.
 - **Wer eine Rolle hat**, zeigt das Register *Benutzer* der Rolle. Zuordnen kann das nur ein Administrator.
 
 **Administrator** und **Mitglied** sind die **Systemrollen**: Sie ergeben sich aus dem Zugang des Benutzers und lassen sich weder umbenennen noch löschen.
 
-!!! info "Rollen geben (noch) keine Rechte"
-    Rollen beschreiben im Moment nur, wer wofür zuständig ist. Sie ändern nicht, was jemand im DMS sehen oder tun darf. Das kommt mit einer späteren Version.
+!!! info "Rollen und Rechte"
+    Eine Rolle gibt von sich aus keine Rechte. Ein Administrator kann aber in den Berechtigungen festlegen, was eine Rolle darf – zum Beispiel, dass nur die „Eltern“ die Gehaltsabrechnungen sehen. Was für dich gilt, steht in deinem Profil unter [Meine Rechte](profil.md#meine-rechte).
 
 ## Verantwortliche eintragen
 

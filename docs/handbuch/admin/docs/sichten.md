@@ -145,7 +145,7 @@ Unter den Berechtigungen prüfst du, was ein Benutzer an der Ansicht darf – mi
 **Ansicht löschen** entfernt nur die Ansicht, keine Mappen. Ihre Unteransichten rücken eine Ebene nach oben, an ihre Stelle. Ohne Ansicht sind Mappen weiter über „Zu erledigen“, Verweise und die Suche in anderen Ansichten erreichbar.
 
 !!! info "Ansichten und Rechte"
-    Eine Ansicht gibt nie Zugriff auf Mappen, die ein Benutzer sonst nicht sehen dürfte. Im Moment sehen alle angemeldeten Benutzer alle Ansichten; die Sichtbarkeit je Rolle kommt mit der Berechtigungsverwaltung.
+    Eine Ansicht gibt nie Zugriff auf Mappen, die ein Benutzer sonst nicht sehen dürfte. Wer eine Ansicht sieht, dort anlegen und aus ihr exportieren darf, steht oben unter [Berechtigungen](#berechtigungen).
 
 !!! tip "Ohne Ansicht auf Mappen zeigen"
     Dieselben Bedingungen gehen auch in einem [Link über Mappentyp und Feldwerte](direktlinks.md), z. B. `/ablage/link?typ=Rechnung&bezahlt=nein` – ganz ohne Ansicht einzurichten.
