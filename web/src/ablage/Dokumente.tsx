@@ -1,7 +1,7 @@
 import { useMappenZiel } from './NeuePost';
 import { useEffect, useRef, useState, type DragEvent, type MouseEvent } from 'react';
-import { MAX_DATEIGROESSE, OCR_STAENDE, type Dokument, type OcrStand, type Register } from '../../../shared/src/model';
-import { api, dokumentUrl } from '../api';
+import { HERKUNFT, MAX_DATEIGROESSE, OCR_STAENDE, type Dokument, type DokumentVersion, type Herkunft, type OcrStand, type Register } from '../../../shared/src/model';
+import { api, dokumentUrl, versionUrl } from '../api';
 import { useDaten } from '../daten';
 import { Person } from '../Person';
 import { Hilfe } from '../Hilfe';
@@ -12,7 +12,8 @@ import { Hilfe } from '../Hilfe';
  */
 
 /** Eine Datei, die erst beim Speichern der Mappe hochgeladen wird. */
-export interface NeueDatei { uid: string; datei: File; register: string }
+/** gleicherName (#194): was mit einem Dokument gleichen Namens im Register passiert. */
+export interface NeueDatei { uid: string; datei: File; register: string; gleicherName?: 'zaehler' | 'version' | 'ersetzen' }
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 export const groesse = (b: number) => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);
@@ -38,12 +39,28 @@ export function sortiereDokumente(liste: Dokument[], s: Dokumentsortierung): Dok
 
 const HINWEIS_MEHRFACH = 'dms:mehrere-herunterladen-gesehen';
 
-export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuegen, entferne, entferneMehrere, vergiss, nurLesen }: {
+export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuegen, entferne, entferneMehrere, vergiss, nurLesen, setzeNeue, neuLaden }: {
   register: Register; dokumente: Dokument[]; neue: NeueDatei[]; entfernt: string[];
   /** Ohne Recht „Bearbeiten“ (#126): nur ansehen und herunterladen. */
   nurLesen?: boolean;
   hinzufuegen(d: File[]): void; entferne(id: string): void; entferneMehrere(ids: string[]): void; vergiss(uid: string): void;
+  /** Gleicher Name (#194): Wahl je neuer Datei. */
+  setzeNeue?(uid: string, patch: Partial<NeueDatei>): void;
+  /** Nach Ersetzen und Zurückholen (#194) – sofort, ohne „Mappe speichern“. */
+  neuLaden?(): Promise<void>;
 }) {
+  const versioniert = !!register.versionierung;
+  const [versionenOffen, setVersionenOffen] = useState<string>();
+  const [ersetzeId, setErsetzeId] = useState<string>();
+  const [versionFehler, setVersionFehler] = useState<string>();
+  const ersetzFeld = useRef<HTMLInputElement>(null);
+  async function ersetze(datei: File) {
+    const id = ersetzeId; setErsetzeId(undefined);
+    if (!id) return;
+    setVersionFehler(undefined);
+    if (datei.size > MAX_DATEIGROESSE) { setVersionFehler(`„${datei.name}“ ist zu groß (über 100 MB).`); return; }
+    try { await api.ersetzen(id, datei); await neuLaden?.(); } catch (e) { setVersionFehler((e as Error).message); }
+  }
   const d = useDaten();
   const auswahlFeld = useRef<HTMLInputElement>(null);
   const [ziehen, setZiehen] = useState(false);
@@ -135,6 +152,8 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
         <input ref={auswahlFeld} type="file" multiple hidden onChange={(e) => { if (e.target.files) nimm(e.target.files); e.target.value = ''; }} />
       </div>}
       {zuGross.length > 0 && <div className="hinweis schlecht"><p>Zu groß (über 100 MB): {zuGross.join(', ')}</p></div>}
+      <input ref={ersetzFeld} type="file" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void ersetze(f); else setErsetzeId(undefined); }} />
+      {versionFehler && <div className="hinweis schlecht"><p>{versionFehler}</p></div>}
       {dokumente.length + neue.length === 0
         ? <p className="leise">Noch keine Dokumente in „{register.name}“.</p>
         : <>
@@ -164,6 +183,20 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                     <div className="dokname">
                       <span>{n.datei.name} <span className="chip gut">neu</span></span>
                       <span className="leise klein">{groesse(n.datei.size)} · wird beim Speichern hochgeladen</span>
+                      {/* Gleicher Name wie ein vorhandenes Dokument (#194): nachfragen. */}
+                      {(() => {
+                        const gleich = dokumente.find((x) => !entfernt.includes(x.id) && x.name.toLowerCase() === n.datei.name.toLowerCase());
+                        if (!gleich || !setzeNeue) return null;
+                        const wahl = n.gleicherName ?? (versioniert ? 'version' : 'zaehler');
+                        return (
+                          <label className="eigenschaft klein gleichername"><span>Es gibt schon „{gleich.name}“:</span>
+                            <select value={wahl} onChange={(e) => setzeNeue(n.uid, { gleicherName: e.target.value as NeueDatei['gleicherName'] })}>
+                              {versioniert && <option value="version">als neue Version von „{gleich.name}“ speichern</option>}
+                              <option value="zaehler">als eigenes Dokument mit Zähler, z. B. „{mitZaehler(n.datei.name)}“</option>
+                              {!versioniert && <option value="ersetzen">altes Dokument löschen und neues hochladen (Löschen ist endgültig)</option>}
+                            </select></label>
+                        );
+                      })()}
                     </div>
                     <div className="zeilenaktionen"><button type="button" className="textknopf" onClick={() => vergiss(n.uid)}>Nicht hochladen</button></div>
                   </div>
@@ -183,14 +216,21 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                         {klickbar
                           ? <button type="button" className="textknopf" aria-expanded={auf} onClick={() => umschalten(x)}>{x.name}</button>
                           : <span className="dateiname">{x.name}</span>}
-                        <span className="leise klein">{weg ? 'wird beim Speichern gelöscht' : <>{groesse(x.groesse)} · {zeit(x.erstellt)} · <Person id={x.erstelltVon} /></>}</span>
+                        <span className="leise klein">{weg ? 'wird beim Speichern gelöscht' : <>{groesse(x.groesse)} · {zeit(x.erstellt)} · <Person id={x.erstelltVon} />
+                          {(versioniert || (x.version ?? 1) > 1) && <> · <button type="button" className="textknopf klein" aria-expanded={versionenOffen === x.id} onClick={() => setVersionenOffen(versionenOffen === x.id ? undefined : x.id)}>Version {x.version ?? 1}</button></>}</>}</span>
+                        {!weg && versionenOffen === x.id && <Versionen d={x} zurueck={!nurLesen && versioniert} neuLaden={neuLaden} />}
                         {!weg && <OcrAnzeige s={standVon(x)} erneut={() => void erneut(x.id)} text={() => void zeigeText(x.id)} textOffen={text?.id === x.id} />}
                         {!weg && text?.id === x.id && <pre className="volltext">{text.text ?? 'Kein Volltext vorhanden.'}</pre>}
                       </div>
                       <div className="zeilenaktionen">
                         {klickbar && <a className="symbolverweis" href={dokumentUrl(x.id)} target="_blank" rel="noreferrer" title="In neuem Tab öffnen" aria-label={`${x.name} in neuem Tab öffnen`}>↗</a>}
                         {!weg && <a className="textknopf" href={dokumentUrl(x.id, true)}>Herunterladen</a>}
-                        {!nurLesen && <button type="button" className={`textknopf ${weg ? '' : 'gefahr'}`} onClick={() => entferne(x.id)}>{weg ? 'Behalten' : 'Löschen'}</button>}
+                        {!nurLesen && versioniert && !weg && <button type="button" className="textknopf" onClick={() => { setErsetzeId(x.id); ersetzFeld.current?.click(); }} title="Neue Version hochladen; die bisherige bleibt erhalten">Ersetzen</button>}
+                        {!nurLesen && <button type="button" className={`textknopf ${weg ? '' : 'gefahr'}`} onClick={() => {
+                          // Mit allen Versionen (#194): nachfragen, mit Zahl.
+                          if (!weg && (x.aeltere ?? 0) > 0 && !confirm(`„${x.name}“ mit allen ${(x.aeltere ?? 0) + 1} Versionen löschen? Das ist endgültig.`)) return;
+                          entferne(x.id);
+                        }}>{weg ? 'Behalten' : 'Löschen'}</button>}
                       </div>
                     </div>
                     {auf && (
@@ -220,5 +260,46 @@ function OcrAnzeige({ s, erneut, text, textOffen }: { s?: OcrStand; erneut(): vo
       {s.stand === 'fertig' && <button type="button" className="textknopf" onClick={text}>{textOffen ? 'Text ausblenden' : 'Text anzeigen'}</button>}
       {(s.stand === 'fehler' || s.stand === 'ausgelassen') && <button type="button" className="textknopf" onClick={erneut}>Erneut versuchen</button>}
     </span>
+  );
+}
+
+/** „Rechnung.pdf“ → „Rechnung (2).pdf“ (wie der Server bei gleichem Namen). */
+function mitZaehler(name: string) {
+  const p = name.lastIndexOf('.');
+  return p > 0 ? `${name.slice(0, p)} (2)${name.slice(p)}` : `${name} (2)`;
+}
+
+/** Alle Versionen eines Dokuments (#194): ansehen, herunterladen, zurückholen. */
+function Versionen({ d, zurueck, neuLaden }: { d: Dokument; zurueck: boolean; neuLaden?: () => Promise<void> }) {
+  const [liste, setListe] = useState<DokumentVersion[] | null>(null);
+  const [fehler, setFehler] = useState<string>();
+  useEffect(() => { api.versionen(d.id).then((r) => setListe(r.aeltere)).catch((e) => setFehler((e as Error).message)); }, [d.id, d.version]);
+  async function hole(n: number) {
+    setFehler(undefined);
+    try { await api.zurueckholen(d.id, n); await neuLaden?.(); } catch (e) { setFehler((e as Error).message); }
+  }
+  const herkunft = (h: Herkunft | null | undefined) => (h ? HERKUNFT[h] ?? h : 'hochgeladen');
+  return (
+    <div className="versionen">
+      {fehler && <p className="fehlertext">{fehler}</p>}
+      <table className="tabelle klein">
+        <thead><tr><th>Version</th><th>Datei</th><th>Gespeichert</th><th>Von</th><th>Herkunft</th><th>Größe</th><th /></tr></thead>
+        <tbody>
+          <tr><td><strong>{d.version ?? 1}</strong> (aktuell)</td><td>{d.name}</td><td>{zeit(d.erstellt)}</td><td><Person id={d.erstelltVon} /></td><td>{herkunft(d.herkunft)}</td><td>{groesse(d.groesse)}</td><td /></tr>
+          {liste === null ? <tr><td colSpan={7} className="leise">Lade …</td></tr> : liste.map((v) => (
+            <tr key={v.nummer}>
+              <td>{v.nummer}</td><td>{v.name}</td><td>{zeit(v.erstellt)}</td><td><Person id={v.erstelltVon} /></td><td>{herkunft(v.herkunft)}</td><td>{groesse(v.groesse)}</td>
+              <td className="zeilenaktionen">
+                {v.anzeigbar && <a className="symbolverweis" href={versionUrl(d.id, v.nummer)} target="_blank" rel="noreferrer" title="Ansehen" aria-label={`Version ${v.nummer} ansehen`}>↗</a>}
+                <a className="textknopf" href={versionUrl(d.id, v.nummer, true)}>Herunterladen</a>
+                {zurueck && <button type="button" className="textknopf" onClick={() => { if (confirm(`Version ${v.nummer} zurückholen? Sie wird zur neuen Version ${(d.version ?? 1) + 1}; nichts geht verloren.`)) void hole(v.nummer); }}>Zurückholen</button>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {liste !== null && !liste.length && <p className="leise klein">Keine älteren Versionen.</p>}
+      <p className="leise klein"><Hilfe ort="dokumente.versionen" /></p>
+    </div>
   );
 }

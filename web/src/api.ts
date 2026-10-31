@@ -1,7 +1,7 @@
 import type { Design } from './design';
 import { messung } from './messung';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
-import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
+import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, DokumentVersion, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Feldbedingung, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
 import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src/sichtrechte';
@@ -474,11 +474,23 @@ export const api = {
   emailAendern: (email: string, passwort: string) => anfrage<Benutzer>('PUT', '/api/konto/email', { email, passwort }),
   passwortAendern: (passwortAlt: string, passwortNeu: string) => anfrage<{ benutzer: Benutzer }>('PUT', '/api/konto/passwort', { passwortAlt, passwortNeu }),
   dokumentLoeschen: (id: string) => anfrage<null>('DELETE', `/api/dokumente/${id}`),
-  async ladeHoch(mappeId: string, register: string, datei: File): Promise<Hochgeladen> {
-    const q = new URLSearchParams({ register, name: datei.name, typ: datei.type || 'application/octet-stream' });
+  /* Versionierung (#194) */
+  versionen: (id: string) => anfrage<{ aktuell: Dokument; aeltere: DokumentVersion[] }>('GET', `/api/dokumente/${id}/versionen`),
+  zurueckholen: (id: string, nummer: number) => anfrage<Dokument>('POST', `/api/dokumente/${id}/versionen/${nummer}/zurueckholen`),
+  async ersetzen(id: string, datei: File): Promise<Dokument> {
+    return sendeDatei(`/api/dokumente/${id}/ersetzen?${new URLSearchParams({ name: datei.name, typ: datei.type || 'application/octet-stream' })}`, datei) as Promise<Dokument>;
+  },
+  /** gleicherName (#194): zaehler (Standard), version oder ersetzen. */
+  async ladeHoch(mappeId: string, register: string, datei: File, gleicherName?: 'zaehler' | 'version' | 'ersetzen'): Promise<Hochgeladen> {
+    const q = new URLSearchParams({ register, name: datei.name, typ: datei.type || 'application/octet-stream', ...(gleicherName ? { gleicherName } : {}) });
+    return sendeDatei(`/api/mappen/${mappeId}/dokumente?${q}`, datei) as Promise<Hochgeladen>;
+  },
+};
+
+async function sendeDatei(url: string, datei: File): Promise<unknown> {
     let r: Response;
     try {
-      r = await fetch(`/api/mappen/${mappeId}/dokumente?${q}`, {
+      r = await fetch(url, {
         method: 'POST', credentials: 'same-origin', body: datei,
         headers: { 'x-dms': '1', 'content-type': 'application/octet-stream' },
       });
@@ -487,9 +499,8 @@ export const api = {
     if (istAusfall(r.status, d)) { erreichbarkeit.ausfall(); throw new ApiFehler(r.status, NICHT_ERREICHBAR); }
     if (r.status === 401) dispatchEvent(new Event(ABGEMELDET));
     if (!r.ok) throw new ApiFehler(r.status, d?.fehler ?? (r.status === 413 ? 'Die Datei ist zu groß.' : `Fehler ${r.status}`), d?.details);
-    return d as Hochgeladen;
-  },
-};
+    return d;
+}
 
 export type RechtStufe = 'immer' | 'nie' | 'teils';
 export interface BerechtigungEintrag { typId: string; name: string; system: string | null; berechtigungen: Regelwerk }
@@ -502,6 +513,7 @@ export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
 export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */ unpassend?: Record<string, string[]> }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 export const dokumentUrl = (id: string, herunterladen = false) => `/api/dokumente/${id}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
+export const versionUrl = (id: string, nummer: number, herunterladen = false) => `/api/dokumente/${id}/versionen/${nummer}/inhalt${herunterladen ? '?herunterladen=1' : ''}`;
 
 export interface NummernkreisEingabe { schluessel: string; name: string; muster: string; start: number }
 export interface NummernkreisAnsicht extends Nummernkreis {

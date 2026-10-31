@@ -53,8 +53,23 @@ Damit die [Volltextsuche](ablage.md#im-text-der-dokumente-suchen) ein Dokument f
 
 Erkannter Text aus Scans ist nicht immer fehlerfrei – je besser die Vorlage, desto besser das Ergebnis.
 
+## Versionen
+
+Ist an einem Dokumentenregister die **Versionierung** eingeschaltet (das macht ein Administrator), geht beim Ersetzen nichts verloren:
+
+- **Ersetzen** neben einem Dokument lädt eine neue Datei als **neue Version** hoch – sofort, ohne „Mappe speichern“. Name und Dateityp dürfen sich ändern, z. B. `Kassenbon.jpg` → `Kassenbon.pdf`. Die Mappe zeigt danach nur die neueste Version.
+- Am Dokument steht **Version 3**. Ein Klick darauf zeigt alle Versionen mit Datum, wer sie gespeichert hat, Herkunft, Dateiname und Größe. Jede ältere Version lässt sich ansehen (↗) und herunterladen.
+- **Zurückholen** übernimmt eine ältere Version als neue, höchste Version – aus Version 1 wird z. B. Version 4. Auch dabei geht nichts verloren.
+- Die Volltextsuche findet nur die aktuelle Version.
+- In der Historie der Mappe steht jede neue Version, z. B. „Version 3 (ersetzt Kassenbon.jpg)“ oder „Version 1 zurückgeholt“.
+
+**Gleicher Dateiname beim Hochladen:** Gibt es im Register schon ein Dokument mit demselben Namen, fragt das DMS in der Liste nach:
+
+- mit Versionierung: **als neue Version** speichern (vorausgewählt) oder **als eigenes Dokument mit Zähler**, z. B. `Rechnung (2).pdf`
+- ohne Versionierung: **als eigenes Dokument mit Zähler** (vorausgewählt) oder **altes Dokument löschen und neues hochladen** – das Löschen ist endgültig
+
 ## Entfernen
 
 Ein Klick auf **Löschen** neben einem Dokument markiert es mit „wird beim Speichern gelöscht“. Erst **Mappe speichern** löscht es; **Behalten** oder **Änderungen verwerfen** holt es zurück. Noch nicht gespeicherte Dateien nimmst du mit **Nicht hochladen** wieder aus der Liste.
 
-Ein einzeln gelöschtes Dokument ist sofort endgültig weg. Löschst du eine ganze Mappe, kommen ihre Dokumente mit ihr in den [Papierkorb](ablage.md#papierkorb).
+Ein einzeln gelöschtes Dokument ist sofort endgültig weg – mit allen seinen Versionen; hat es ältere Versionen, fragt das DMS vorher nach und nennt ihre Zahl. Löschst du eine ganze Mappe, kommen ihre Dokumente mit ihr in den [Papierkorb](ablage.md#papierkorb).

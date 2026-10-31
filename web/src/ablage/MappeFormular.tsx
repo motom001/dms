@@ -252,7 +252,10 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     const offen: NeueDatei[] = [];
     for (const n of neueDateien) {
       try {
-        const r = await api.ladeHoch(gespeichert!.id, n.register, n.datei);
+        // Gleicher Name (#194): Standard mit Versionierung „neue Version“, sonst „mit Zähler“.
+        const gleich = (details?.dokumente ?? []).some((x) => x.registerKey === n.register && !entfernt.includes(x.id) && x.name.toLowerCase() === n.datei.name.toLowerCase());
+        const versioniert = !!typ.register.find((r) => r.key === n.register)?.versionierung;
+        const r = await api.ladeHoch(gespeichert!.id, n.register, n.datei, gleich ? n.gleicherName ?? (versioniert ? 'version' : 'zaehler') : undefined);
         const anderswo = r.gleicherInhalt.filter((g) => g.mappeId !== gespeichert!.id);
         if (anderswo.length) neu.push({ art: 'warn', text: <>„{n.datei.name}“ hat denselben Inhalt wie {anderswo.map((g, j) => { return <span key={j}>{j > 0 && ', '}„{g.name}“ in {g.typId ? <Link to={`/ablage/${g.typId}/${g.mappeId}`} className="verweis">{titelOder(g.titel)}</Link> : 'einer anderen Mappe'}</span>; })}. Gespeichert ist die Datei nur einmal.</> });
       } catch (e) {
@@ -310,7 +313,9 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
         hinzufuegen={(dateien) => setNeueDateien((x) => [...x, ...dateien.map((datei) => ({ uid: `n${++zaehler}`, datei, register: reg.key }))])}
         entferne={(id) => setEntfernt((x) => (x.includes(id) ? x.filter((y) => y !== id) : [...x, id]))}
         entferneMehrere={(ids) => setEntfernt((x) => [...x, ...ids.filter((id) => !x.includes(id))])}
-        vergiss={(uid) => setNeueDateien((x) => x.filter((n) => n.uid !== uid))} nurLesen={nurLesen} />
+        vergiss={(uid) => setNeueDateien((x) => x.filter((n) => n.uid !== uid))} nurLesen={nurLesen}
+        setzeNeue={(uid, patch) => setNeueDateien((x) => x.map((n) => (n.uid === uid ? { ...n, ...patch } : n)))}
+        neuLaden={mappe ? async () => { await neuLaden?.(); await d.neuLaden(); } : undefined} />
     );
   } else if (reg.art === 'protokoll') {
     inhalt = mappe ? <Historie mappeId={mappe.id} stand={mappe.geaendert} /> : <p className="leise">Das Protokoll beginnt mit dem ersten Speichern.</p>;

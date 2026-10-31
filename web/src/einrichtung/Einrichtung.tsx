@@ -723,6 +723,11 @@ function RegisterEditor({ e, setE, feldAblage, klappe }: { e: Entwurf; setE: (f:
                 <p className="leise klein">Hier werden Dateien hochgeladen; PDFs und Bilder sind direkt ansehbar.</p>
                 <label className="haken"><input type="checkbox" checked={r.volltext !== false} onChange={(ev) => setzeReg(i, { volltext: ev.target.checked ? undefined : false })} />
                   <span>Volltext erzeugen<small className="hilfe">Textebene von PDFs lesen und gescannte Seiten und Bilder durch die Texterkennung schicken, damit die Volltextsuche sie findet.</small></span></label>
+                {/* Versionierung (#194) */}
+                <label className="haken"><input type="checkbox" checked={!!r.versionierung} onChange={(ev) => setzeReg(i, { versionierung: ev.target.checked || undefined, ...(ev.target.checked ? {} : { versionenBehalten: undefined }) })} />
+                  <span>Versionierung einschalten<small className="hilfe">Beim Ersetzen bleibt die alte Version erhalten und lässt sich wieder hervorholen.</small></span></label>
+                {r.versionierung && <label className="eigenschaft klein einzug"><span>Nur die letzten … Versionen behalten <small>leer = alle</small></span>
+                  <input type="number" min={2} className="kurz" value={r.versionenBehalten ?? ''} onChange={(ev) => setzeReg(i, { versionenBehalten: ev.target.value === '' ? undefined : Math.max(2, Math.trunc(Number(ev.target.value))) })} /></label>}
               </>}
               {r.art === 'protokoll' && <p className="leise klein">Zeigt, wer wann was an der Mappe geändert hat – je Speichern ein Eintrag mit allen geänderten Feldern, dazu Dokumente, Papierkorb, Notizen, Aufgaben und E-Mails. Einträge lassen sich nicht ändern.</p>}
               {r.art === 'verknuepfungen' && (

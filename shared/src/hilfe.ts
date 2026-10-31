@@ -78,6 +78,7 @@ export const HILFE = {
   'post.zuordnen': benutzer('post/', 'Zuordnen', 'zuordnen'),
   'dokumente.sortieren': benutzer('dokumente/', 'Sortieren von Dokumenten', 'sortieren'),
   'dokumente.mehrere': benutzer('dokumente/', 'mehreren Dokumenten auf einmal', 'mehrere-auf-einmal'),
+  'dokumente.versionen': benutzer('dokumente/', 'Versionen von Dokumenten', 'versionen'),
   'profil.rechte': benutzer('profil/', 'deinen Rechten', 'meine-rechte'),
   'profil.abwesenheit': benutzer('profil/', 'Abwesenheit', 'abwesenheit'),
   'profil.zweifaktor': benutzer('profil/', 'Zwei-Faktor-Anmeldung', 'zwei-faktor-anmeldung'),
