@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.45/demo/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.46/demo/">
       
       
         <link rel="prev" href="../texterkennung/">
@@ -942,6 +942,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Demo-Mappen erzeugen">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#startwert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Startwert
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dokumente-erzeugen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dokumente erzeugen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#beobachten" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Beobachten
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1644,6 +1683,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Demo-Mappen erzeugen">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#startwert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Startwert
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dokumente-erzeugen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dokumente erzeugen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#beobachten" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Beobachten
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1684,11 +1762,59 @@
 <p><strong>Beispiele laden</strong> legt die Mappentypen <em>Vertragspartner</em>, <em>Vertrag</em>, <em>Rechnung</em> und <em>Zahlung</em> mit Feldern, Registern, Titel-Vorlagen und Trefferlisten an – dazu ein paar Mappen. Das ist ein guter Startpunkt, um eigene Typen daran anzulehnen.</p>
 <p>Das geht nur, solange es außer <em>Benutzer</em> und <em>Rolle</em> noch keine Mappentypen gibt.</p>
 <h2 id="demo-mappen-erzeugen">Demo-Mappen erzeugen<a class="headerlink" href="#demo-mappen-erzeugen" title="Permanent link">&para;</a></h2>
-<p>Erzeugt beliebig viele Mappen (bis 5.000 auf einmal) für die vorhandenen Mappentypen – mit passenden Werten je Feld und Verweisen auf vorhandene Mappen. So lässt sich prüfen, wie sich Listen, Suche und Sortierung mit vielen Mappen verhalten.</p>
+<p>Erzeugt bis zu <strong>50.000 Mappen je Durchlauf</strong> für die vorhandenen Mappentypen – mit passenden Werten je Feld und Verweisen auf vorhandene Mappen. So lässt sich prüfen, wie sich Listen, Suche, Sortierung, Texterkennung, Speicherplatz und Sicherung mit vielen Mappen und Dokumenten verhalten. Mehrere Durchläufe hintereinander sind möglich; neue Mappen verweisen auch auf die schon vorhandenen.</p>
 <p>Das läuft im Hintergrund; du kannst die Seite verlassen. Der Fortschritt steht auf dieser Seite.</p>
 <p>Demo-Mappen sind gekennzeichnet. <em>Benutzer</em> und <em>Rolle</em> bekommen keine Demo-Mappen.</p>
+<h3 id="startwert">Startwert<a class="headerlink" href="#startwert" title="Permanent link">&para;</a></h3>
+<p>Ein <strong>Startwert</strong> (z. B. <code>messung-1</code>) macht einen Lauf wiederholbar: Gleicher Startwert, gleiche Mappentypen und gleicher Ausgangsstand ergeben dieselben Werte und dieselben Dokumente. So lassen sich Messungen vor und nach einem Update vergleichen. Ohne Startwert wählt das DMS einen und nennt ihn im Ergebnis.</p>
+<h3 id="dokumente-erzeugen">Dokumente erzeugen<a class="headerlink" href="#dokumente-erzeugen" title="Permanent link">&para;</a></h3>
+<p>Mit <strong>Dokumente erzeugen</strong> bekommen die neuen Mappen auch Dokumente – nur Mappentypen mit Dokumentenregister. Einstellbar sind der Anteil der Mappen mit Dokumenten, wie viele Dokumente je Mappe (z. B. 1 bis 3) und die <strong>Mischung</strong> der Arten:</p>
+<table>
+<thead>
+<tr>
+<th>Art</th>
+<th>Was</th>
+<th>Wofür</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Brief/Rechnung</td>
+<td>einseitiges PDF mit Briefkopf, Anschrift, Betreff, Positionen und Summe; die <strong>Werte der Mappe</strong> (z. B. Rechnungsnummer, Betrag, Vertragspartner) stehen im Text</td>
+<td>Volltextsuche findet das Dokument über die Werte der Mappe</td>
+</tr>
+<tr>
+<td>Mehrseitiges PDF</td>
+<td>2–50 Seiten (selten bis 300) mit Überschriften, Absätzen, Aufzählungen und Tabellen</td>
+<td>Vorschau, Volltext langer Dokumente</td>
+</tr>
+<tr>
+<td>„Gescanntes“ PDF</td>
+<td>Seiten nur als Bild, leicht schief, ohne Textebene</td>
+<td>Texterkennung unter Last</td>
+</tr>
+<tr>
+<td>Bild</td>
+<td>JPEG oder PNG, vom Bildschirmfoto bis zum Handyfoto (12 MP), teils Foto eines Belegs mit lesbarem Text</td>
+<td>Vorschau, Texterkennung, Speicherplatz</td>
+</tr>
+<tr>
+<td>Große Datei</td>
+<td>PDF mit 20–100 MB</td>
+<td>Hochladen, Vorschau, Export, Sicherung</td>
+</tr>
+</tbody>
+</table>
+<p>Die drei Stufen <strong>leicht</strong>, <strong>realistisch</strong> und <strong>schwer</strong> sind fertige Mischungen; jede Art lässt sich auch einzeln einstellen. Jede Datei ist einzigartig. Ein Anteil <strong>gewollter Duplikate</strong> legt dieselbe Datei in mehrere Mappen – sie liegt dann nur einmal auf der Platte.</p>
+<p>Vor dem Start steht eine <strong>Abschätzung</strong> auf der Seite: Mappen, Dokumente, Seiten, Größe, Seiten für die Texterkennung und der freie Platz. Reicht der Platz nicht – frei bleiben müssen der <em>Mindest-Speicherplatz</em> der <a href="../sicherung/">Sicherung</a> und die Grenze unter <a href="../speicherplatz/">Speicherplatz</a> –, lässt sich der Lauf nicht starten. Wird der Platz während des Laufs knapp, hört er sauber auf und sagt das im Ergebnis.</p>
+<div class="admonition warning">
+<p class="admonition-title">Texterkennung braucht Zeit</p>
+<p>Die Texterkennung vieler „gescannter“ PDFs und Bilder dauert auf einem NAS eher Tage als Stunden; sie läuft nach dem Erzeugen im Hintergrund weiter. Sicherungen werden entsprechend größer.</p>
+</div>
+<h3 id="beobachten">Beobachten<a class="headerlink" href="#beobachten" title="Permanent link">&para;</a></h3>
+<p>Das Ergebnis jedes Laufs nennt Dauer, Anzahl, Größe, Seiten und Startwert (auch im <a href="../fehlersuche/#protokoll">Protokoll</a>), damit Läufe vergleichbar sind. Wie sich das DMS dabei verhält, zeigen die vorhandenen Werkzeuge: <strong>Werkbank → Datenbank</strong> (lange Zugriffe), <strong>Texterkennung</strong> (Warteschlange), <strong>Speicherplatz</strong> und die Zeiten im Browser unter <em>Server-Timing</em>.</p>
 <h2 id="entfernen">Entfernen<a class="headerlink" href="#entfernen" title="Permanent link">&para;</a></h2>
-<p><strong>Demo-Mappen entfernen</strong> löscht alle Demo-Mappen samt ihrer Dokumente. Echte Mappen bleiben unberührt. Verweist eine echte Mappe auf eine Demo-Mappe, wird nichts gelöscht – entferne dann zuerst diesen Verweis.</p>
+<p><strong>Alle Demo-Mappen entfernen</strong> löscht alle Demo-Mappen samt ihrer Dokumente – in Paketen zu je 1.000 mit Fortschritt, auch bei vielen Dateien. Echte Mappen bleiben unberührt. Verweist eine echte Mappe auf eine Demo-Mappe, wird nichts gelöscht – entferne dann zuerst diesen Verweis.</p>
 <div class="admonition tip">
 <p class="admonition-title">Ausprobieren ohne Risiko</p>
 <p>Für Versuche mit größeren Änderungen an Mappentypen eignet sich eine zweite Installation mit eigener Datenbank besser als die echte.</p>
