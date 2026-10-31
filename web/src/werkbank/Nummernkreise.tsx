@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, type Auftrag, type NummernkreisAnsicht } from '../api';
+import { api, speichereDatei, type Auftrag, type NummernkreisAnsicht } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link } from '../ort';
 import { Hilfe } from '../Hilfe';
@@ -102,6 +102,7 @@ export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; 
             <button className="knopf" disabled={zaehler === ''}>Setzen</button>
           </form>
         </div>
+        {k!.schluessel === 'archivnummer' && <Aufkleber naechste={k!.naechste} neuLaden={z.laden} />}
         <div className="blatt">
           <h2 className="h3">Verwendet in</h2>
           {k!.verwendet.length ? <ul className="stapel">{k!.verwendet.map((v) => <li key={`${v.typId}-${v.feldKey}`}><Link to={`/werkbank/typen/${v.typId}`} className="verweis">{v.typ}</Link> · {v.feld}</li>)}</ul>
@@ -152,5 +153,42 @@ export function NummernNachtragen() {
           onClick={() => void api.nummernNachtragen(typId, feldKey).then(setAuftrag).catch((e) => setFehler((e as Error).message))}>Nummern vergeben</button></div>
       </>}
     </section>
+  );
+}
+
+/** Archivnummern (#345): Aufkleberbogen als PDF – die Nummern gelten danach als vergeben. */
+const ETIKETTEN: Record<string, { name: string; felder: number }> = {
+  '48x25': { name: '48,5 × 25,4 mm – 40 je Bogen (z. B. Avery L4736/3657)', felder: 40 },
+  '38x21': { name: '38,1 × 21,2 mm – 65 je Bogen (z. B. Avery L7651)', felder: 65 },
+  '70x37': { name: '70 × 37 mm – 24 je Bogen (z. B. Avery 3474)', felder: 24 },
+};
+function Aufkleber({ naechste, neuLaden }: { naechste: string; neuLaden(): Promise<void> }) {
+  const [anzahl, setAnzahl] = useState('40');
+  const [etikett, setEtikett] = useState('48x25');
+  const [start, setStart] = useState('1');
+  const [laeuft, setLaeuft] = useState(false);
+  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const felder = ETIKETTEN[etikett].felder;
+  async function los() {
+    setLaeuft(true); setMeldung(undefined);
+    try {
+      const r = await speichereDatei('/api/werkbank/archivnummern/aufkleber', { anzahl: Number(anzahl), etikett, start: Number(start) }, 'Archivnummern.pdf');
+      setMeldung({ art: 'gut', text: `„${r.name}“ gespeichert. Diese Nummern gelten jetzt als vergeben.` });
+      await neuLaden();
+    } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } finally { setLaeuft(false); }
+  }
+  return (
+    <div className="blatt">
+      <h2 className="h3">Aufkleber drucken <Hilfe ort="werkbank.aufkleber" /></h2>
+      <p className="leise">Ein PDF mit Aufklebern ab <code className="mono">{naechste}</code>: Barcode (Code 128) und Nummer lesbar. Auf das Papieroriginal kleben, im DMS am Dokument eintragen – oder mit einem Handscanner ins Suchfeld scannen. Mit 100 % drucken, nicht „an Seite anpassen“.</p>
+      <form className="raster" onSubmit={(e) => { e.preventDefault(); void los(); }}>
+        <label className="eigenschaft"><span>Anzahl</span><input type="number" min={1} max={500} value={anzahl} onChange={(e) => setAnzahl(e.target.value)} /></label>
+        <label className="eigenschaft breit"><span>Etikettenformat (A4)</span>
+          <select value={etikett} onChange={(e) => { setEtikett(e.target.value); setStart('1'); }}>{Object.entries(ETIKETTEN).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}</select></label>
+        <label className="eigenschaft"><span>Beginnen bei Feld <small>1 = oben links, zeilenweise – für angebrochene Bögen</small></span><input type="number" min={1} max={felder} value={start} onChange={(e) => setStart(e.target.value)} /></label>
+        <div className="knoepfe"><button className="knopf primaer" disabled={laeuft || !(Number(anzahl) >= 1 && Number(anzahl) <= 500) || !(Number(start) >= 1 && Number(start) <= felder)}>{laeuft ? 'Erzeuge …' : 'Aufkleber als PDF'}</button></div>
+      </form>
+      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
+    </div>
   );
 }

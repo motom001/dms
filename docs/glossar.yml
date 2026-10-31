@@ -190,6 +190,13 @@ begriffe:
     beschreibung: Mappen, die ein Benutzer mit dem Stern markiert hat. Die Ansicht „Favoriten“ zeigt sie.
     einsteiger: alltag
     begegnet: alle
+  - begriff: Archivnummer
+    bereich: grundbegriffe
+    beschreibung: Nummer auf einem Aufkleber am Papieroriginal (z. B. A-000123), dieselbe steht am Dokument im DMS. Eindeutig je Haushalt; kommt aus dem Nummernkreis „Archivnummer“. Verbindet Papier und Dokument in beide Richtungen.
+    einsteiger: alltag
+    begegnet: alle
+    verwandt: [Ablageort, Nummernkreis, Dokument]
+    code: archivnummer
   - begriff: Ablageort
     bereich: grundbegriffe
     beschreibung: Ein Platz, an dem Papier liegt – z. B. ein Ordner, eine Kiste, ein Schließfach oder „vernichtet“. Ablageorte liegen ineinander („zu Hause › Arbeitszimmer Schrank › roter Ordner“). Jedes DMS hat diesen Mappentyp; er lässt sich erweitern, aber nicht löschen.

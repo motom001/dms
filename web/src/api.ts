@@ -536,6 +536,9 @@ export const api = {
     anfrage<{ dokumente: Dokument[]; posten: Mappe[] }>('POST', `/api/dokumente/${id}/seiten`, e),
   fuegePdfZusammen: (e: { dokumente: string[]; name?: string; ziel?: string; register?: string; originaleEntfernen?: boolean; bestaetigt?: boolean }) =>
     anfrage<{ dokument: Dokument; erledigtePost: string[] }>('POST', '/api/dokumente/zusammenfuegen', e),
+  /** Archivnummer (#345). */
+  archivnummer: (nr: string) => anfrage<{ dokument: Dokument; mappeId: string; typId: string; titel: string }>('GET', `/api/archivnummern/${encodeURIComponent(nr)}`),
+  setzeArchivnummer: (id: string, archivnummer: string) => anfrage<Dokument>('PUT', `/api/dokumente/${id}/archivnummer`, { archivnummer }),
   /** gleicherName (#194): zaehler (Standard), version oder ersetzen. */
   /** Doppelte Dateien (#333): Prüfwerte → Fundstellen in Mappen, die man lesen darf. */
   gleicheDateien: (pruefwerte: string[], ohneMappe?: string) => anfrage<{ fundstellen: Record<string, Fundstelle[]> }>('POST', '/api/dokumente/gleiche', { pruefwerte, ...(ohneMappe ? { ohneMappe } : {}) }),

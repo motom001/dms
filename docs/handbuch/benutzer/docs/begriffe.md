@@ -26,6 +26,10 @@ Siehe auch: [Verbleib Originaldokumente](#verbleib-originaldokumente), [Mappenty
 Eine gespeicherte Auswahl von Mappen – welche Mappentypen, mit welchen Bedingungen. Ansichten stehen im Baum links in der Ablage. Wie etwas aussieht, heißt dagegen „Darstellung“.  
 Siehe auch: [Unteransicht](#unteransicht), [Bedingung](#bedingung), [Trefferliste](#trefferliste).
 
+<a id="archivnummer"></a>**Archivnummer** · ✓ Alltagswort · alle  
+Nummer auf einem Aufkleber am Papieroriginal (z. B. A-000123), dieselbe steht am Dokument im DMS. Eindeutig je Haushalt; kommt aus dem Nummernkreis „Archivnummer“. Verbindet Papier und Dokument in beide Richtungen.  
+Siehe auch: [Ablageort](#ablageort), [Nummernkreis](#nummernkreis), [Dokument](#dokument).
+
 <a id="bedingung"></a>**Bedingung** · ~ mit Erklärung · Administratoren  
 Ein Filter einer Ansicht auf Feldwerte, Anzahlen, Fristen oder Persönliches, z. B. ein Feld gleich „aktueller Benutzer“ oder „ist mein Favorit“.
 
@@ -466,6 +470,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Ansicht | Sicht, Filter, View | `Sicht` |
 | Anstehend | – | `Anstehend` |
 | Archivmodus | – | `Archiv` |
+| Archivnummer | – | `archivnummer` |
 | Aufgabe | Auftrag, Task, Todo | `Aufgabe, AUFGABENARTEN` |
 | Auftrag | Job | `Auftrag` |
 | Bedingung | – | `Bedingung` |

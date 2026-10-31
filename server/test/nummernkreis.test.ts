@@ -72,7 +72,7 @@ describe('Nummernkreise (#171)', () => {
     assert.ok(geschuetzteFelder(t, a).nr);
     assert.match(geschuetzteFelder(t).nr, /beim Speichern/);
     // Übersicht
-    const [k] = await d.listeNummernkreise();
+    const [k] = (await d.listeNummernkreise()).filter((x) => x.schluessel !== 'archivnummer'); // Archivnummer (#345) ist immer da
     assert.equal(k.verwendet[0].feld, 'Rechnungsnummer');
     assert.match(k.naechste, /-R0000028$/);
     assert.equal(k.zuletzt.length, 10);
@@ -90,7 +90,7 @@ describe('Nummernkreise (#171)', () => {
     assert.match(String(m.werte.nr), /-R0000500$/);
     await d.speichereNummernkreis({ neu: true, schluessel: 'frei', name: 'Frei', muster: 'F{zaehler}', start: 0 }, 't');
     await d.loescheNummernkreis('frei', 'test');
-    assert.equal((await d.listeNummernkreise()).length, 1);
+    assert.equal((await d.listeNummernkreise()).filter((x) => x.schluessel !== 'archivnummer').length, 1);
   });
 
   it('Wartung: Nummern nachträglich vergeben, in der Reihenfolge des Anlegens', async () => {

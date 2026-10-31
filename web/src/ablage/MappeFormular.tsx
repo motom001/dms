@@ -173,7 +173,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   const rechte = mappe ? details?.rechte : undefined;
   const nurLesen = !!rechte && !rechte.U;
   const darfLoeschenHier = !rechte || rechte.D;
-  const [aktiv, setAktiv] = useState(register[0]?.key);
+  // Sprung aus der Suche nach einer Archivnummer (#345): ?register=… öffnet das Register.
+  const [aktiv, setAktiv] = useState(() => { const w = new URLSearchParams(location.search).get('register'); return register.find((x) => x.key === w)?.key ?? register[0]?.key; });
   const [basis, setBasis] = useState(() => JSON.stringify(start));
   const [roh, setRoh] = useState<RohWerte>(start);
   const [neueDateien, setNeueDateien] = useState<NeueDatei[]>([]);

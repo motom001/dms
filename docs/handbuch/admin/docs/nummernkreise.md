@@ -49,3 +49,22 @@ Löschen geht nur, wenn kein Feld den Nummernkreis mehr verwendet.
 ## Nummern nachträglich vergeben
 
 Mappen, die es schon gab, bevor das Feld den Nummernkreis bekam, haben keine Nummer. Unter **Werkbank → Wartungsoperationen → Nummern nachträglich vergeben** wählst du das Feld; das DMS zeigt, wie viele Mappen betroffen sind und welche Nummern entstehen (von … bis …), und vergibt sie dann in der Reihenfolge des Anlegens. Als Datum gilt der heutige Tag. Die Arbeit läuft im Hintergrund und steht im Protokoll.
+
+## Archivnummern und Aufkleber
+
+Den Nummernkreis **Archivnummer** gibt es in jedem DMS. Er vergibt die Nummern für Aufkleber auf Papieroriginalen (Muster am Anfang `A-{zaehler:6}`, also `A-000001`). Wie Benutzer die Nummer am Dokument eintragen und wiederfinden, steht im Benutzerhandbuch unter *Dokumente → Archivnummer*.
+
+Unter **Werkbank → Nummernkreise → Archivnummer → Aufkleber drucken**:
+
+1. **Anzahl** (bis 500).
+2. **Etikettenformat** (A4): 48,5 × 25,4 mm (40 je Bogen), 38,1 × 21,2 mm (65 je Bogen) oder 70 × 37 mm (24 je Bogen).
+3. **Beginnen bei Feld** – für einen angebrochenen Bogen: 1 ist oben links, gezählt wird zeilenweise.
+4. **Aufkleber als PDF** lädt die Datei herunter.
+
+![Aufkleber drucken](bilder/werkbank-aufkleber.png)
+
+Jeder Aufkleber trägt einen **Barcode (Code 128)** mit `DMS-ASN:` vor der Nummer und darunter die Nummer zum Lesen. Drucke mit **100 %**, nicht „an Seite anpassen“, sonst passen die Aufkleber nicht auf die Felder.
+
+**Gedruckte Nummern gelten als vergeben** – auch wenn du den Bogen nicht benutzt. Der Kreis zählt einfach weiter; Lücken sind kein Problem. Muster und Startwert darfst du ändern (z. B. `ASN-{jjjj}-{zaehler:4}`); löschen lässt sich dieser Nummernkreis nicht.
+
+Im Protokoll steht, wer wann welche Nummern erzeugt hat.

@@ -21,7 +21,7 @@ export function speicherRepo(): Repo {
   const kreise = new Map<string, Nummernkreis>();
   const pakete = new Map<string, InstalliertesPaket>();
   /** Nummer ziehen (#171); synchron, damit gleichzeitiges Anlegen keine doppelten Nummern ergibt. */
-  const zieheSync = (schluessel: string, mappeId: string, j: Date) => {
+  const zieheSync = (schluessel: string, mappeId: string | null, j: Date) => {
     const k = kreise.get(schluessel);
     if (!k) throw new Error(`Nummernkreis ${schluessel} fehlt`);
     const r = ziehe(k, datumIn(j), mappeId, j.toISOString());
@@ -174,6 +174,18 @@ export function speicherRepo(): Repo {
       mappen.set(mappeId, { ...m, werte: { ...m.werte, [feldKey]: nummer } });
       return nummer;
     },
+    async zieheNummern(kreis, anzahl, j) { return Array.from({ length: anzahl }, () => zieheSync(kreis, null, j)); },
+    async setzeArchivnummer(dokumentId, nummer) {
+      const d = dokumente.get(dokumentId);
+      if (!d) return false;
+      if (nummer && [...dokumente.values()].some((x) => x.id !== dokumentId && x.archivnummer?.toLowerCase() === nummer.toLowerCase())) return false;
+      dokumente.set(dokumentId, { ...d, archivnummer: nummer });
+      return true;
+    },
+    async findeArchivnummer(nummer) {
+      const d = [...dokumente.values()].find((x) => x.archivnummer?.toLowerCase() === nummer.toLowerCase());
+      return d && { ...kopie(d), aeltere: versionen.get(d.id)?.length ?? 0 };
+    },
     async aendereMappe(id, werte, vs, benutzerId) {
       const m = { ...mappen.get(id)!, werte: kopie(werte), geaendert: jetzt(), geaendertVon: benutzerId, passt: true, problem: null };
       mappen.set(id, m); verweise.set(id, kopie(vs));
@@ -306,7 +318,7 @@ export function speicherRepo(): Repo {
 
     async listeDokumente(mappeId) { return [...dokumente.values()].filter((d) => d.mappeId === mappeId).map((d) => ({ ...kopie(d), aeltere: versionen.get(d.id)?.length ?? 0 })).reverse(); },
     async holeDokument(id) { const d = dokumente.get(id); return d && { ...kopie(d), aeltere: versionen.get(d.id)?.length ?? 0 }; },
-    async legeDokumentAn(d) { const n = { version: 1, herkunft: null, ...kopie(d), ocr: d.ocr ?? { stand: 'keiner' as const } }; dokumente.set(d.id, n); return kopie(n); },
+    async legeDokumentAn(d) { const n = { version: 1, herkunft: null, ...kopie(d), archivnummer: null, ocr: d.ocr ?? { stand: 'keiner' as const } }; dokumente.set(d.id, n); return kopie(n); },
     async loescheDokument(id) { dokumente.delete(id); versionen.delete(id); },
     async versionenVon(id) { return [...(versionen.get(id) ?? [])].reverse().map(({ volltext: _v, ...x }) => kopie(x)); },
     async holeVersion(id, nummer) { const v = versionen.get(id)?.find((x) => x.nummer === nummer); return v && kopie(v); },
@@ -533,7 +545,9 @@ export function speicherRepo(): Repo {
       const k = dokKorb.get(id);
       if (!k) return;
       if (!mappen.has(k.dokument.mappeId)) throw new Error('Mappe fehlt');
-      dokumente.set(id, kopie(k.dokument));
+      const nr = k.dokument.archivnummer?.toLowerCase();
+      const belegt = !!nr && [...dokumente.values()].some((x) => x.archivnummer?.toLowerCase() === nr);
+      dokumente.set(id, { ...kopie(k.dokument), ...(belegt ? { archivnummer: null } : {}) });
       if (k.versionen.length) versionen.set(id, kopie(k.versionen));
       texte.set(id, k.text);
       dokKorb.delete(id);

@@ -10,6 +10,7 @@ import { Auftraege } from './auftrag';
 import { protokoll } from './protokoll';
 import { Fachfehler } from './fehler';
 import { fuegeZusammen, pruefeAuswahl, pruefeTeile, SEITENBILDER_MAX, Seitenbilder, seitenInfo, teile, teilName } from './pdfseiten';
+import { aufkleberPdf, ETIKETTEN, type Etikett } from './aufkleber';
 import { alsText, erwaehnungen } from '../../shared/src/markdown';
 import { liesAnsicht, liesEigene, OHNE_EINSTELLUNG } from '../../shared/src/werkbankansicht';
 import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
@@ -252,6 +253,15 @@ function pdfText(w: { seiten: number; vorher: number; gedreht?: number; teile?: 
   if (w.seiten !== w.vorher && !w.teile) t.push(`${w.vorher} → ${w.seiten} Seiten`);
   if (w.gedreht) t.push(`${w.gedreht} ${w.gedreht === 1 ? 'Seite' : 'Seiten'} gedreht`);
   return t.join(', ') || 'Seiten umsortiert';
+}
+
+/** Kreis und Barcode-Präfix der Archivnummern (#345). */
+export const ARCHIV_KREIS = 'archivnummer';
+export const ARCHIV_PRAEFIX = 'DMS-ASN:';
+/** Eingabe → Archivnummer (Präfix aus dem Barcode weg, ohne Rand); leer → null. */
+export function archivnummerAus(v: unknown): string | null {
+  const t = String(v ?? '').trim().replace(/^DMS-ASN:/i, '').trim();
+  return t || null;
 }
 
 function dateiname(v: unknown): string {
@@ -1988,6 +1998,7 @@ export class Dienst {
   }
 
   async listeNummernkreise(jetzt = new Date()) {
+    await this.archivKreis(); // Archivnummern (#345): der Kreis ist immer da
     const v = await this.kreisVerwendung();
     const d = datumIn(jetzt);
     return (await this.repo.listeNummernkreise()).map((k) => {
@@ -2016,6 +2027,7 @@ export class Dienst {
   }
 
   async loescheNummernkreis(schluessel: string, von: string) {
+    if (schluessel === ARCHIV_KREIS) throw new Fachfehler(409, 'Den Nummernkreis der Archivnummern brauchen die Aufkleber (#345); er lässt sich nicht löschen. Das Muster darfst du ändern.');
     const v = (await this.kreisVerwendung()).get(schluessel);
     if (v?.length) throw new Fachfehler(409, `Der Nummernkreis wird noch verwendet: ${v.map((x) => `${x.typ} · ${x.feld}`).join(', ')}.`);
     await this.repo.loescheNummernkreis(schluessel);
@@ -3469,6 +3481,59 @@ export class Dienst {
     }
     protokoll.modul('dokumente').info('PDFs zusammengefügt', { ziel: ziel.id, anzahl: quellen.length, entfernt: entfernen });
     return { dokument: neu, erledigtePost: erledigt };
+  }
+
+  /* ---------- Archivnummer (#345) ---------- */
+
+  /** Der Nummernkreis der Archivnummern; entsteht beim ersten Gebrauch („A-000001“), Muster in der Werkbank änderbar. */
+  async archivKreis(): Promise<Nummernkreis> {
+    const da = (await this.repo.listeNummernkreise()).find((k) => k.schluessel === ARCHIV_KREIS);
+    return da ?? this.repo.speichereNummernkreis({ schluessel: ARCHIV_KREIS, name: 'Archivnummer', muster: 'A-{zaehler:6}', start: 1 });
+  }
+
+  /** Archivnummer am Dokument setzen oder entfernen (leer); eindeutig je Haushalt. */
+  async setzeArchivnummer(id: string, eingabe: unknown, von: string | null): Promise<Dokument> {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    const nr = archivnummerAus(eingabe);
+    if (nr && nr.length > 40) throw new Fachfehler(422, 'Die Archivnummer ist zu lang (höchstens 40 Zeichen).');
+    if (nr && /\s/.test(nr)) throw new Fachfehler(422, 'Die Archivnummer darf keine Leerzeichen enthalten.');
+    if ((d.archivnummer ?? null) === nr) return d;
+    if (!(await this.repo.setzeArchivnummer(id, nr))) {
+      throw new Fachfehler(409, `Die Archivnummer „${nr}“ hat schon ein anderes Dokument. Jede Nummer gibt es nur einmal – prüfe den Aufkleber.`);
+    }
+    await this.notiere(d.mappeId, von, 'archivnummer', { dokument: d.name, text: nr ? `${d.name}: ${nr}` : `${d.name}: entfernt`, alt: d.archivnummer ?? null, neu: nr });
+    protokoll.modul('dokumente').info(nr ? 'Archivnummer gesetzt' : 'Archivnummer entfernt', { id, nr, vorher: d.archivnummer ?? undefined });
+    return (await this.repo.holeDokument(id))!;
+  }
+
+  /** Dokument zu einer Archivnummer (auch mit Präfix aus dem Barcode); nur, wenn die Mappe lesbar ist. */
+  async findeArchivnummer(eingabe: unknown, z?: Zugriff) {
+    const nr = archivnummerAus(eingabe);
+    const d = nr ? await this.repo.findeArchivnummer(nr) : undefined;
+    const m = d ? await this.repo.holeMappe(d.mappeId) : undefined;
+    if (!d || !m || !(await this.lesbare(z, [m.id])).has(m.id)) throw new Fachfehler(404, `Zur Archivnummer „${nr ?? ''}“ gibt es kein Dokument, das du sehen darfst.`);
+    return { dokument: d, mappeId: m.id, typId: m.typId, titel: m.titel ?? '' };
+  }
+
+  /**
+   * Aufkleberbogen (#345): `anzahl` neue Nummern aus dem Kreis „Archivnummer“ ziehen – gedruckte Nummern
+   * gelten als vergeben – und als PDF für das gewählte Etikettenformat ab Feld `start`.
+   */
+  async archivAufkleber(eingabe: unknown, von: string) {
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const anzahl = Number(e.anzahl ?? 0);
+    const etikett = String(e.etikett ?? '48x25') as Etikett;
+    const start = Number(e.start ?? 1);
+    if (!(etikett in ETIKETTEN)) throw new Fachfehler(422, 'Unbekanntes Etikettenformat.');
+    const f = ETIKETTEN[etikett];
+    if (!Number.isInteger(anzahl) || anzahl < 1 || anzahl > 500) throw new Fachfehler(422, 'Bitte 1 bis 500 Aufkleber.');
+    if (!Number.isInteger(start) || start < 1 || start > f.spalten * f.zeilen) throw new Fachfehler(422, `Das Startfeld muss zwischen 1 und ${f.spalten * f.zeilen} liegen.`);
+    await this.archivKreis();
+    const nummern = await this.repo.zieheNummern(ARCHIV_KREIS, anzahl, new Date());
+    const pdf = await aufkleberPdf(nummern, etikett, start, ARCHIV_PRAEFIX);
+    protokoll.modul('werkbank').info('Aufkleber mit Archivnummern erzeugt', { von, anzahl, erste: nummern[0], letzte: nummern[nummern.length - 1], etikett });
+    return { pdf, erste: nummern[0], letzte: nummern[nummern.length - 1] };
   }
 
   /* ---------- Vollexport (#254) ---------- */

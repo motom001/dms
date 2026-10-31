@@ -70,6 +70,13 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
     });
   }, [neue, eigeneMappe]);
   const [versionenOffen, setVersionenOffen] = useState<string>();
+  // Archivnummer (#345): direkt speichern, ohne „Mappe speichern“.
+  const [asn, setAsn] = useState<{ id: string; wert: string; fehler?: string } | null>(null);
+  async function speichereAsn() {
+    if (!asn) return;
+    try { await api.setzeArchivnummer(asn.id, asn.wert); setAsn(null); await neuLaden?.(); }
+    catch (e) { setAsn({ ...asn, fehler: (e as Error).message }); }
+  }
   const [ersetzeId, setErsetzeId] = useState<string>();
   const [versionFehler, setVersionFehler] = useState<string>();
   const ersetzFeld = useRef<HTMLInputElement>(null);
@@ -89,7 +96,8 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
   const auswahlFeld = useRef<HTMLInputElement>(null);
   const [ziehen, setZiehen] = useState(false);
   const [zuGross, setZuGross] = useState<string[]>([]);
-  const [ansicht, setAnsicht] = useState<string>();
+  // ?dokument=… (#345: Sprung über die Archivnummer) zeigt dieses Dokument gleich an.
+  const [ansicht, setAnsicht] = useState<string | undefined>(() => { const w = new URLSearchParams(location.search).get('dokument'); return roh.some((x) => x.id === w && x.anzeigbar) ? w! : undefined; });
   const offenRef = useRef<HTMLLIElement>(null);
   const sortierung = (d.einstellungen.dokumente_sortierung as Dokumentsortierung | undefined) ?? 'name';
   const dokumente = sortiereDokumente(roh, sortierung in DOKUMENT_SORTIERUNGEN ? sortierung : 'name');
@@ -280,6 +288,17 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                           : <span className="dateiname">{x.name}</span>}
                         <span className="leise klein">{weg ? (d.zaehler.papierkorbTage ? 'kommt beim Speichern in den Papierkorb' : 'wird beim Speichern endgültig gelöscht') : <>{groesse(x.groesse)} · {zeit(x.erstellt)} · <Person id={x.erstelltVon} />
                           {(versioniert || (x.version ?? 1) > 1) && <> · <button type="button" className="textknopf klein" aria-expanded={versionenOffen === x.id} onClick={() => setVersionenOffen(versionenOffen === x.id ? undefined : x.id)}>Version {x.version ?? 1}</button></>}</>}</span>
+                        {!weg && (x.archivnummer || asn?.id === x.id) && (asn?.id === x.id
+                          ? <form className="asnform" onSubmit={(e) => { e.preventDefault(); void speichereAsn(); }}>
+                              <label className="klein"><span className="sr">Archivnummer</span>
+                                <input autoFocus value={asn.wert} maxLength={40} placeholder="z. B. A-000123" onChange={(e) => setAsn({ ...asn, wert: e.target.value, fehler: undefined })} /></label>
+                              <button className="knopf klein primaer">Übernehmen</button>
+                              <button type="button" className="textknopf klein" onClick={() => setAsn(null)}>Abbrechen</button>
+                              <Hilfe ort="dokumente.archivnummer" />
+                              {asn.fehler && <span className="fehlertext klein">{asn.fehler}</span>}
+                            </form>
+                          : <span className="klein">Archivnummer <strong className="mono">{x.archivnummer}</strong>
+                              {!nurLesen && neuLaden && <> · <button type="button" className="textknopf klein" onClick={() => setAsn({ id: x.id, wert: x.archivnummer ?? '' })}>ändern</button></>}</span>)}
                         {!weg && versionenOffen === x.id && <Versionen d={x} zurueck={!nurLesen && versioniert} neuLaden={neuLaden} />}
                         {!weg && <OcrAnzeige s={standVon(x)} erneut={() => void erneut(x.id)} text={() => void zeigeText(x.id)} textOffen={text?.id === x.id} />}
                         {!weg && text?.id === x.id && <pre className="volltext">{text.text ?? 'Kein Volltext vorhanden.'}</pre>}
@@ -289,6 +308,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                         {!weg && <a className="textknopf" href={dokumentUrl(x.id, true)}>Herunterladen</a>}
                         {bearbeitbar && !weg && x.mime === 'application/pdf' && <button type="button" className="textknopf" aria-expanded={seitenOffen === x.id}
                           onClick={() => { setPdfMeldung(undefined); setSeitenOffen(seitenOffen === x.id ? undefined : x.id); }} title="Seiten drehen, löschen, umsortieren oder teilen">Seiten</button>}
+                        {!weg && !nurLesen && neuLaden && !x.archivnummer && asn?.id !== x.id && <button type="button" className="textknopf" title="Nummer vom Aufkleber auf dem Papieroriginal eintragen" onClick={() => setAsn({ id: x.id, wert: '' })}>Archivnummer</button>}
                         {!nurLesen && versioniert && !weg && <button type="button" className="textknopf" onClick={() => { setErsetzeId(x.id); ersetzFeld.current?.click(); }} title="Neue Version hochladen; die bisherige bleibt erhalten">Ersetzen</button>}
                         {!nurLesen && <button type="button" className={`textknopf ${weg ? '' : 'gefahr'}`} onClick={async () => {
                           // Mit allen Versionen (#194): nachfragen, mit Zahl.
