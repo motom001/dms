@@ -38,24 +38,26 @@ try {
   await s.waitForURL(/\/ablage\/suche/);
   const form = s.getByRole('form', { name: 'Erweiterte Suche' });
   await form.getByLabel('Rechnung', { exact: true }).check();
-  await form.getByLabel('Rechnungsdatum von').fill('2026-01-01');
-  await form.getByLabel('Rechnungsdatum bis').fill('2026-01-31');
+  await form.getByLabel('Rechnungsdatum von').fill('2026-01-15');
+  await form.getByLabel('Rechnungsdatum bis').fill('2026-01-15');
   await form.getByRole('button', { name: 'Suchen' }).click();
-  await s.waitForURL(/rechnungsdatum\.von=2026-01-01/);
-  await s.getByText('Rechnungsdatum 01.01.2026–31.01.2026').waitFor();
-  await warteZahl((n) => n === 1);
+  await s.waitForURL(/rechnungsdatum\.von=2026-01-15/);
+  await s.getByText('Rechnungsdatum 15.01.2026–15.01.2026').waitFor();
+  // Beispieldaten und Demo-Daten: JA-2025-0815 ist am 15.01.2026, R-2026-117 nicht.
+  await warteZahl((n) => n >= 1);
+  const n1 = await zahl();
   await s.locator('.spalte.liste').getByText(/JA-2025-0815/).first().waitFor();
   console.log('ok  Formular → Treffer und Chips');
 
   // × am Chip entfernt die Bedingung und sucht sofort neu.
   await s.getByRole('button', { name: /Bedingung „Rechnungsdatum .*“ entfernen/ }).click();
   await s.waitForURL((u) => !u.search.includes('rechnungsdatum'));
-  await warteZahl((n) => n >= 2);
+  await warteZahl((n) => n > n1);
   console.log('ok  Chip entfernen');
 
   // Zurück im Browser: wieder mit Datum.
   await s.goBack();
-  await warteZahl((n) => n === 1);
+  await warteZahl((n) => n === n1);
   console.log('ok  Zurück im Browser');
 
   // Link öffnen: Formular aus der Adresse, erste Bedingung wirkt.
