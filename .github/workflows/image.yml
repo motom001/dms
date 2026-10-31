@@ -11,9 +11,9 @@ on:
   schedule:
     - cron: '17 3 * * 1'
 
+# Grundsätzlich nur lesen (#221); Schreibrechte bekommt nur der Job, der sie braucht.
 permissions:
   contents: read
-  packages: write
 
 jobs:
   pruefen:
@@ -30,8 +30,8 @@ jobs:
           --health-cmd "pg_isready -U dms -d dms_test"
           --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
       # Mit package-lock.json reproduzierbar (#215); ohne (bis sie eingecheckt ist) wie bisher.
@@ -82,9 +82,9 @@ jobs:
             rechner: ubuntu-24.04-arm
     runs-on: ${{ matrix.rechner }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: docker/setup-buildx-action@v4
-      - uses: docker/build-push-action@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           platforms: ${{ matrix.plattform }}
@@ -103,7 +103,7 @@ jobs:
         if: matrix.plattform == 'linux/amd64'
         run: deploy/vorlagen-probe.sh dms:probe
       # dms-komplett (#208): DMS und PostgreSQL in einem Container – auf beiden Architekturen.
-      - uses: docker/build-push-action@v7
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           target: komplett
@@ -114,6 +114,17 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.plattform }}
       - name: dms-komplett probehalber installieren
         run: deploy/komplett-probe.sh dms-komplett:probe
+      # Bekannte Sicherheitslücken in den Systempaketen (#220): kritisch mit Korrektur → Fehler.
+      # Eine Architektur genügt, die Pakete sind dieselben.
+      - name: Trivy installieren
+        if: matrix.plattform == 'linux/amd64'
+        run: .github/werkzeuge/trivy-installieren.sh
+      - name: Sicherheitslücken im Image dms
+        if: matrix.plattform == 'linux/amd64'
+        run: .github/werkzeuge/image-pruefen.sh dms:probe
+      - name: Sicherheitslücken im Image dms-komplett
+        if: matrix.plattform == 'linux/amd64'
+        run: .github/werkzeuge/image-pruefen.sh dms-komplett:probe
 
   # Neue Versionsnummer in package.json auf main? Dann gibt es ein Release (#34).
   version:
@@ -126,7 +137,7 @@ jobs:
       # Ordner des Handbuchs zu dieser Version (#111): je Minor-Version, z. B. v0.22.
       handbuch: ${{ steps.v.outputs.handbuch }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: v
         run: |
           version=$(node -p "require('./package.json').version")
@@ -166,10 +177,13 @@ jobs:
           - variante: komplett
             image: dms-komplett
     runs-on: ${{ matrix.rechner }}
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: docker/setup-buildx-action@v4
-      - uses: docker/login-action@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -179,7 +193,7 @@ jobs:
           echo "jetzt=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
           echo "woche=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
       - id: bau
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           build-args: |
@@ -197,7 +211,7 @@ jobs:
           touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
         env:
           DIGEST: ${{ steps.bau.outputs.digest }}
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: digest-${{ matrix.variante }}-${{ matrix.name }}
           path: ${{ runner.temp }}/digests/*
@@ -215,20 +229,34 @@ jobs:
           - variante: komplett
             image: dms-komplett
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # Herkunftsnachweis und SBOM (#220)
+      id-token: write
+      attestations: write
+      # Funde der Image-Prüfung in Security → Code scanning (#220)
+      security-events: write
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            .github/werkzeuge
+            .trivyignore
+          sparse-checkout-cone-mode: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: ${{ runner.temp }}/digests
           pattern: digest-${{ matrix.variante }}-*
           merge-multiple: true
-      - uses: docker/setup-buildx-action@v4
-      - uses: docker/login-action@v4
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
           tags: |
@@ -247,6 +275,37 @@ jobs:
         run: |
           docker buildx imagetools inspect "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${{ steps.meta.outputs.version }}"
           docker buildx imagetools inspect --raw "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${{ steps.meta.outputs.version }}" | jq -e '[.manifests[].platform.architecture] | (index("amd64") != null and index("arm64") != null)' >/dev/null
+      - id: digest
+        name: Prüfwert des gemeinsamen Images
+        run: |
+          d=$(docker buildx imagetools inspect "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${{ steps.meta.outputs.version }}" --format '{{json .Manifest}}' | jq -r .digest)
+          echo "digest=$d" >> "$GITHUB_OUTPUT"
+          echo "ref=ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}@$d" >> "$GITHUB_OUTPUT"
+      # Sicherheitslücken (#220): Das Image ist schon veröffentlicht, hier wird nur gemeldet –
+      # im Security-Reiter und als Anmerkung. Blockiert wird im Pull Request (image-probe).
+      - name: Trivy installieren
+        run: .github/werkzeuge/trivy-installieren.sh
+      - name: Sicherheitslücken im Image
+        run: .github/werkzeuge/image-pruefen.sh "${{ steps.digest.outputs.ref }}" --sarif "$RUNNER_TEMP/trivy.sarif" --nur-melden
+      - uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          sarif_file: ${{ runner.temp }}/trivy.sarif
+          category: image-${{ matrix.image }}
+      # Stückliste (SBOM) und Herkunftsnachweis (#220): prüfbar mit
+      #   gh attestation verify oci://ghcr.io/motom001/dms:<version> -R motom001/dms
+      - name: Stückliste (SBOM) erzeugen
+        run: trivy image --quiet --format spdx-json --output "$RUNNER_TEMP/sbom.spdx.json" "${{ steps.digest.outputs.ref }}"
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+          subject-digest: ${{ steps.digest.outputs.digest }}
+          push-to-registry: true
+      - uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+          subject-digest: ${{ steps.digest.outputs.digest }}
+          sbom-path: ${{ runner.temp }}/sbom.spdx.json
+          push-to-registry: true
 
   # Tag und Release anlegen. Ein vom Workflow angelegter Tag startet keine weiteren
   # Workflows; deshalb trägt das Image oben schon die Versionsnummer.

@@ -9,15 +9,18 @@ on:
     paths: ['package.json', 'server/package.json', 'web/package.json', 'package-lock.json', '.github/workflows/lockfile.yml']
   workflow_dispatch:
 
+# Grundsätzlich nur lesen (#221); Schreibrechte bekommt nur der Job, der sie braucht.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   lockfile:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
       - name: Erzeugen und prüfen

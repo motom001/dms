@@ -8,13 +8,15 @@ on:
   pull_request_target:
     types: [labeled]
 
-permissions:
-  issues: write
-  pull-requests: write
+# Grundsätzlich keine Rechte (#221); der Job bekommt nur, was er braucht.
+permissions: {}
 
 jobs:
   pruefen:
     if: github.event.label.name == 'freigegeben' && github.event.sender.login != github.repository_owner
+    permissions:
+      issues: write
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - name: Label entfernen

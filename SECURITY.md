@@ -10,6 +10,25 @@ Hilfreich sind: betroffene Version (Werkbank → Technik), Schritte zum Nachstel
 
 Korrekturen gibt es für die **neueste Version**. Aktualisiere bitte zuerst, bevor du meldest – siehe [Aktualisieren](https://motom001.github.io/dms/admin/aktuell/aktualisieren/).
 
-## Abhängigkeiten
+## Was automatisch geprüft wird
 
-Dependabot schlägt Updates der Bibliotheken, GitHub Actions und Basis-Images wöchentlich als Pull Request vor. Die CI prüft mit `npm audit`, dass keine bekannte Lücke der Stufe „hoch“ oder „kritisch“ im Image landet.
+| Was | Womit | Wann |
+| --- | --- | --- |
+| Unser Code (TypeScript, Workflows) | CodeQL | jeder Pull Request, jeder Push auf `main` |
+| Bibliotheken | Dependabot (Warnungen und Updates), `npm audit` ab Stufe „hoch“ | jeder Pull Request, wöchentlich |
+| Images `dms` und `dms-komplett` | Trivy: kritische Lücken mit Korrektur blockieren den Pull Request | jeder Pull Request, jede Veröffentlichung, wöchentlicher Neubau |
+| Geheimnisse (Tokens, Passwörter) | Secret Scanning mit Push-Schutz | jeder Push |
+| Arbeitsweise des Projekts | [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/motom001/dms) | wöchentlich, jeder Push auf `main` |
+
+Die Funde stehen unter **Security** in diesem Repository. Bewusst hingenommene Funde der Image-Prüfung stehen mit Begründung in [`.trivyignore`](.trivyignore).
+
+## Herkunft der Images prüfen
+
+Jedes veröffentlichte Image trägt einen signierten **Herkunftsnachweis** (aus welchem Commit, mit welchem Workflow gebaut) und eine **Stückliste** (SBOM, SPDX). Prüfen mit der [GitHub-Kommandozeile](https://cli.github.com/):
+
+```sh
+gh attestation verify oci://ghcr.io/motom001/dms:<version> -R motom001/dms
+gh attestation verify oci://ghcr.io/motom001/dms-komplett:<version> -R motom001/dms
+```
+
+Wie das im Einzelnen gebaut ist, steht im [Entwicklerhandbuch](https://motom001.github.io/dms/entwickler/aktuell/release/#abhangigkeiten-und-sicherheitsupdates).

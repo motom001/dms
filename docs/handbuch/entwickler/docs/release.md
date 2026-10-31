@@ -19,3 +19,40 @@ Ein Release entsteht, sobald auf `main` eine Versionsnummer steht, für die es n
 - **`npm audit`** läuft in der CI über alles, was im Image landet (`--omit=dev`). Ab Stufe „hoch“ schlägt die Prüfung fehl. Ist eine Meldung für das DMS nachweislich ohne Wirkung, wird das im PR begründet.
 - **`package-lock.json`** hält die genauen Versionen fest; CI und Image installieren mit `npm ci`. Ändert sich eine `package.json` ohne passende Lockfile, legt der Workflow *Lockfile erzeugen* eine neue auf den Branch `werkzeug/lockfile`; von dort wird sie mit einem normalen Commit übernommen.
 - **Sicherheitskorrektur = Patch-Release** mit dem Hinweis „Sicherheitsupdate – bitte aktualisieren“ in den Release-Notes. Meldungen von außen laufen vertraulich, siehe [`SECURITY.md`](https://github.com/motom001/dms/blob/main/SECURITY.md).
+
+### Images prüfen, Herkunftsnachweis und Stückliste
+
+- **Trivy** prüft beide Images auf bekannte Lücken in den Systempaketen (Alpine, Tesseract, PostgreSQL in `dms-komplett`) und in den Node-Bibliotheken im Image.
+    - **Im Pull Request** (Job `image-probe`, amd64): Lücken der Stufe *kritisch*, für die es eine Korrektur gibt, lassen die Prüfung fehlschlagen; *hoch* mit Korrektur erscheint als Warnung. Funde ohne Korrektur blockieren nicht.
+    - **Auf `main`, bei Tags und beim wöchentlichen Neubau** (Job `image-zusammen`): Das fertige Image wird geprüft und die Funde landen unter **Security → Code scanning** (Kategorie `image-dms` bzw. `image-dms-komplett`). Hier wird nur gemeldet, das Image ist ja schon veröffentlicht.
+    - Bewusst hingenommene Funde stehen mit Begründung und Prüfdatum in `.trivyignore`.
+    - Trivy kommt als Binärdatei mit fester Version und fester Prüfsumme (`.github/werkzeuge/trivy-installieren.sh`), nicht über die trivy-action: Deren Tags wurden 2026 kompromittiert (CVE-2026-33634). Eine neue Version trägt man dort von Hand ein, mit beiden Prüfsummen aus der `checksums.txt` des Releases.
+- **Herkunftsnachweis und Stückliste (SBOM):** Jedes veröffentlichte Image bekommt einen signierten Nachweis, aus welchem Commit und welchem Workflow es stammt, und eine Stückliste im SPDX-Format. Beides liegt neben dem Image in der Registry. Prüfen lässt sich das mit:
+
+    ```sh
+    gh attestation verify oci://ghcr.io/motom001/dms:main -R motom001/dms
+    gh attestation verify oci://ghcr.io/motom001/dms:main -R motom001/dms --predicate-type https://spdx.dev/Document/v2.3
+    ```
+
+### OpenSSF Scorecard und Regeln für Workflows
+
+Der Workflow *Scorecard* bewertet wöchentlich und bei jedem Push auf `main`, wie das Projekt mit Sicherheit umgeht. Das Ergebnis ist öffentlich ([scorecard.dev](https://scorecard.dev/viewer/?uri=github.com/motom001/dms)) und steht als Abzeichen in der README; die einzelnen Hinweise stehen unter **Security → Code scanning**. Daraus folgen diese Regeln:
+
+- **Actions mit fester Commit-Kennung**, die Version als Kommentar dahinter: `uses: actions/checkout@<40 Zeichen> # v7.0.1`. Dependabot aktualisiert beides.
+- **Rechte:** Oben im Workflow nur `contents: read` (bzw. keine Rechte). Schreibrechte bekommt nur der Job, der sie braucht (`packages`, `contents`, `id-token`, `attestations`, `security-events`).
+- **Keine Ausführung fremden Codes mit Rechten:** `pull_request_target` nur ohne Checkout (wie im Workflow *Freigabe schützen*).
+
+Bewusst anders, als Scorecard es gern hätte:
+
+- **Basis-Images ohne festen Prüfwert** (`node:22-alpine`, `alpine`): Der wöchentliche Neubau soll gerade die neuesten Sicherheitskorrekturen der Reihe holen. Ein fester Prüfwert würde jede Woche einen eigenen PR brauchen, ohne mehr Sicherheit zu bringen; die Images selbst werden geprüft und tragen einen Herkunftsnachweis.
+- **Code-Review:** Mit einem Maintainer gibt es keine zweite Person, die jeden PR freigibt. Stattdessen müssen alle Prüfungen grün sein, und Änderungen laufen über PRs mit Issue.
+
+### Vorschlag: Regel für den Branch `main`
+
+Unter **Settings → Rules → Rulesets** ein Ruleset für den Standard-Branch anlegen (einschalten tut es der Maintainer):
+
+- **Require a pull request before merging** (ohne Pflicht-Review, siehe oben),
+- **Require status checks to pass:** `pruefen`, `image-probe (linux/amd64, ubuntu-24.04)`, `image-probe (linux/arm64, ubuntu-24.04-arm)`, `bauen` (Handbuch),
+- **Require code scanning results:** CodeQL, Schwelle wie in den Einstellungen („High or higher“),
+- **Block force pushes** und **Restrict deletions**,
+- **Bypass:** nur der Maintainer (Rolle *Repository admin*), damit Notfall-Korrekturen möglich bleiben.
