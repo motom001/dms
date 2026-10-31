@@ -65,6 +65,25 @@ Und deine Unterlagen liegen **bei dir**, auf deinem eigenen Gerät – nicht bei
 !!! note "Ehrlich gesagt"
     Wer allein lebt, zur Miete wohnt, wenige Verträge hat und alles im Kopf behält, braucht vielleicht wirklich kein DMS – ein Ordner im Regal reicht dann. Ein DMS lohnt sich, sobald **andere** mitwissen sollen oder **viel Zeit** zwischen Ablegen und Brauchen liegt.
 
+## Ist das DMS etwas für mich?
+
+![Vom kleinen Haushalt bis zum Konzern: Wofür das DMS gebaut ist](grafiken/personas-skala.svg){ .grafik }
+
+Das DMS ist **für Haushalte gebaut**. Wir denken dabei an diese Menschen:
+
+- **Lena**, die in ihrer Familie den Papierkram macht und keine Technik-Kenntnisse hat. Nach einer Stunde soll ihre erste Mappe angelegt sein und die Sicherung laufen.
+- **Jonas**, ihren Sohn, der am Handy sein Zeugnis findet, ohne zu fragen.
+- **Markus**, der gern bastelt, das DMS auf seinem NAS betreibt und es für seine Familie einrichtet.
+- **Petra**, die sich mit ihren Brüdern um die Mutter kümmert. Alle sehen dieselben Unterlagen, auch aus einer anderen Stadt.
+- **Herrn Özdemir**, der zwei Mietshäuser hat und die Belege fürs Steuerjahr beisammen haben will.
+
+**Selbständige und kleine Betriebe** können das DMS gut nutzen. Es gibt zum Beispiel den Archivmodus und die Anmeldung über Microsoft 365. Wir bauen dafür aber nur, was es für Familien nicht komplizierter macht.
+
+!!! note "Was das DMS nicht sein will"
+    Für den **Mittelstand** und für **Konzerne** ist das DMS nicht gemacht. Dort braucht man Dinge wie abgestufte Administratorrechte, Freigaben nach dem Vier-Augen-Prinzip, Hochverfügbarkeit oder Support mit festen Reaktionszeiten. Das DMS hat das nicht, und es ist auch nicht geplant.
+
+Alle neun Personas mit Bildern, und warum wir uns so entschieden haben: [Für wen wir bauen](https://motom001.github.io/dms/entwickler/aktuell/personas/) im Entwicklerhandbuch.
+
 ## Der 5-Minuten-Test
 
 ![Fünf Unterlagen, die man in fünf Minuten finden sollte](grafiken/fuenf-minuten-test.svg){ .grafik }

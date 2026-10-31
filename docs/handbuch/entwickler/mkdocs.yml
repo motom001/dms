@@ -64,6 +64,7 @@ extra:
 
 nav:
   - Mitmachen: index.md
+  - Für wen wir bauen: personas.md
   - Loslegen: loslegen.md
   - Aufbau: aufbau.md
   - Beitrag einreichen: beitrag.md
