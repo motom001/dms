@@ -77,6 +77,8 @@ async function vorbereiten() {
   // Administrator und Schlüssel hat der Einrichtungsassistent angelegt (einrichtenImBrowser).
   const admin = (await api('GET', '/api/konto/status')).benutzer;
   const adminCookie = cookie;
+  // Die Bilder zeigen alle Bereiche der Werkbank; der Assistent stellt sonst „Haushalt“ ein (#281).
+  await api('PUT', '/api/werkbank/ansicht', { installation: { vorlage: 'alles', ein: [], aus: [] } });
   await api('POST', '/api/beispiele');
   await api('POST', '/api/werkbank/demo', { anzahl: 120 });
   await warteAufAuftrag();
@@ -559,6 +561,12 @@ async function main() {
   await geheZu(s, '/werkbank');
   await s.locator('.uebersicht .kacheln').waitFor();
   await bild(s, 'werkbank-uebersicht');
+  // Werkbank anpassen (#281) mit der Vorlage Haushalt, danach wieder alles.
+  await api('PUT', '/api/werkbank/ansicht', { installation: { vorlage: 'haushalt', ein: [], aus: [] } });
+  await geheZu(s, '/werkbank/ansicht');
+  await s.getByRole('heading', { name: 'Werkbank anpassen', level: 1 }).last().waitFor();
+  await bild(s, 'werkbank-anpassen');
+  await api('PUT', '/api/werkbank/ansicht', { installation: { vorlage: 'alles', ein: [], aus: [] } });
   await geheZu(s, '/werkbank/fehlermeldungen');
   await s.locator('.spalte.liste .eintrag').first().click();
   await s.getByRole('heading', { name: 'Technische Angaben' }).waitFor();

@@ -7,6 +7,7 @@ import type { Feldbedingung, Sicht, SichtDaten } from '../../shared/src/sichten'
 import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
 import type { InstalliertesPaket, Katalog } from '../../shared/src/pakete';
 import type { Einstellungsbeschreibung } from '../../shared/src/paketeinstellungen';
+import type { EigeneAnsicht, WerkbankAnsicht } from '../../shared/src/werkbankansicht';
 import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src/sichtrechte';
 import type { Anstehend, Erinnerung } from '../../shared/src/fristen';
 import { merkeAnfrage } from './diagnose';
@@ -423,6 +424,9 @@ export const api = {
   /* Nummernkreise (#171) */
   nummernkreise: () => anfrage<NummernkreisAnsicht[]>('GET', '/api/werkbank/nummernkreise'),
   /* Paketverwaltung (#188, #189) */
+  // Ansicht der Werkbank (#281)
+  werkbankAnsicht: () => anfrage<WerkbankAnsichtStand>('GET', '/api/werkbank/ansicht'),
+  setzeWerkbankAnsicht: (e: { installation?: WerkbankAnsicht; eigene?: EigeneAnsicht }) => anfrage<WerkbankAnsichtStand>('PUT', '/api/werkbank/ansicht', e),
   pakete: () => anfrage<{ installiert: Array<InstalliertesPaket & { einstellungenNoetig?: boolean }>; katalogUrl: string; quellen: PaketQuelle[]; dms: string }>('GET', '/api/werkbank/pakete'),
   paketKatalog: (alle: boolean) => anfrage<{ kataloge: Array<{ url: string; offiziell: boolean; katalog: Katalog | null; fehler: string | null }>; abgerufen: string }>('POST', '/api/werkbank/pakete/katalog', { alle }),
   paketQuelleHinzu: (url: string) => anfrage<PaketQuelle[]>('POST', '/api/werkbank/pakete/quellen', { url }),
@@ -540,6 +544,7 @@ export interface PaketEinstellungenStand {
   auswahl: { typen: Array<{ id: string; name: string; felder: Array<{ key: string; label: string }> }>; benutzer: Array<{ id: string; name: string }>; rollen: Array<{ id: string; name: string }>; sichten: Array<{ id: string; name: string }> };
 }
 /** Katalogquelle (#189): der offizielle Katalog oder eine weitere Adresse. */
+export interface WerkbankAnsichtStand { installation: WerkbankAnsicht; eingestellt: boolean; eigene: EigeneAnsicht; /** Eingerichtete Bereiche (nur GET). */ benutzt?: string[] }
 export interface PaketQuelle { url: string; offiziell: boolean; aktiv: boolean; von?: string | null; am?: string }
 /** Vorschau einer Paketinstallation bzw. eines Updates (#188). */
 export interface PaketVorschau {

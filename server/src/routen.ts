@@ -894,6 +894,21 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     } },
     { methode: 'POST', pfad: '/api/werkbank/fehlermeldungen/:id/erledigt', zugang: 'admin', handler: async (a) => ok(await meldungen().erledigt(a.params.id, b(a).erledigt !== false, ich(a).id)) },
     { methode: 'DELETE', pfad: '/api/werkbank/fehlermeldungen/:id', zugang: 'admin', handler: async (a) => { await meldungen().loesche(a.params.id); return leer; } },
+    // Ansicht der Werkbank (#281): für alle und je Administrator.
+    { methode: 'GET', pfad: '/api/werkbank/ansicht', zugang: 'admin', handler: async (a) => {
+      // Was eingerichtet ist, soll nicht unbemerkt aus der Leiste verschwinden.
+      const sicher = async (f: () => Promise<boolean> | boolean) => { try { return await f(); } catch { return false; } };
+      const benutzt = Object.entries({
+        nummernkreise: () => dienst.listeNummernkreise().then((l) => l.length > 0),
+        postfaecher: async () => !!x.postfaecher && (await x.postfaecher.liste()).length > 0,
+        eingangsordner: () => !!x.eingangsordner?.vorhanden,
+        anmeldeschutz: async () => !!x.oidc && !!(await x.oidc.bereit()),
+      });
+      const liste: string[] = [];
+      for (const [pfad, f] of benutzt) if (await sicher(f)) liste.push(pfad);
+      return ok({ ...(await dienst.werkbankAnsicht(ich(a))), benutzt: liste });
+    } },
+    { methode: 'PUT', pfad: '/api/werkbank/ansicht', zugang: 'admin', handler: async (a) => ok(await dienst.setzeWerkbankAnsicht(ich(a), b(a))) },
     // Übersicht als Startseite der Werkbank (#68): was zu tun ist, auf einen Blick.
     { methode: 'GET', pfad: '/api/werkbank/uebersicht', zugang: 'admin', handler: async (a) => {
       const sicher = async <T>(f: () => Promise<T>): Promise<T | null> => { try { return await f(); } catch { return null; } };

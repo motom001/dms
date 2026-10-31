@@ -717,6 +717,17 @@ a.person:hover, a.person:focus-visible { text-decoration: underline; }
 .wbgruppe { display: flex; flex-direction: column; gap: 2px; }
 .wbgruppe + .wbgruppe { margin-top: 10px; }
 .gruppentitel { margin: 4px 10px 2px; font-size: calc(11px * var(--skala, 1)); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--leise); }
+.sicht.ausgeblendet .nm { opacity: .65; font-style: italic; }
+.ausgeblendet-fuss { margin: 12px 10px 0; }
+.ausgeblendet-fuss .verweis { background: none; border: 0; padding: 0; font: inherit; color: var(--akzent); cursor: pointer; text-decoration: underline; }
+/* Werkbank anpassen (#281) */
+.ansichtgruppe + .ansichtgruppe { margin-top: 14px; }
+.ansichtgruppe .gruppentitel { margin: 0 0 6px; }
+.ansichtgruppe .stapel { gap: 8px; list-style: none; padding: 0; margin: 0; }
+.ansichtzeile { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; padding: 8px 0; border-bottom: 1px solid var(--linie); }
+.ansichtname { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; flex: 1 1 260px; }
+.ansichtwahl { display: flex; gap: 16px; flex-wrap: wrap; }
+.ansichtwahl .haken { margin: 0; }
 .handbuchlink { margin-top: 0; }
 .uebersicht .hinweiszeile { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
 .uebersicht .hinweiszeile p { flex: 1 1 22em; margin: 0; }

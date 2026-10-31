@@ -3,6 +3,7 @@ import { api, type WerkbankUebersicht } from '../api';
 import { Link } from '../ort';
 import { Hilfe, useHandbuch } from '../Hilfe';
 import { sicherungsHinweise } from './Sicherung';
+import { GRUPPEN, type Gruppe } from '../../../shared/src/werkbankansicht';
 
 /** Werkbank → Übersicht (#68): was zu tun ist, auf einen Blick; Gruppen der Leiste. */
 
@@ -98,7 +99,7 @@ export function UebersichtPanel({ u }: { u: UebersichtZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Übersicht</h1>
-        <p className="leise">Hinweise, Stand und Bestand auf einen Blick. Mehr steht im <a href={handbuch('admin')} target="_blank" rel="noreferrer" className="verweis">Administratorhandbuch ↗</a>.</p>
+        <p className="leise">Hinweise, Stand und Bestand auf einen Blick. Mehr steht im <a href={handbuch('admin')} target="_blank" rel="noreferrer" className="verweis">Administratorhandbuch ↗</a>. Zu viele Bereiche links? <Link to="/werkbank/ansicht" className="verweis">Werkbank anpassen</Link></p>
       </div>
       {!s ? <p className="leise">Lade …</p> : (
         <>
@@ -137,40 +138,60 @@ function Kachel({ titel, wert, unter, ziel }: { titel: string; wert: string; unt
 
 /* ---------- Leiste mit Gruppen (#68) ---------- */
 
-export const GRUPPEN = { ablage: 'Ablage einrichten', benutzer: 'Benutzer und Zusammenarbeit', einstellungen: 'Einstellungen', wartung: 'Wartung und Fehlersuche' } as const;
-export type Gruppe = keyof typeof GRUPPEN;
+export { GRUPPEN, type Gruppe };
 export interface WerkbankEintrag { pfad: string; name: string; gruppe: Gruppe | null; zahl?: number; warn?: string | number; warnTitel?: string }
 
-export function WerkbankNavigation({ bereich, eintraege }: { bereich: string; eintraege: WerkbankEintrag[] }) {
-  const aktiv = eintraege.find((e) => e.pfad === bereich)?.gruppe ?? null;
+/**
+ * Leiste der Werkbank. Ausgeblendete Bereiche (#281) fehlen – außer dem offenen und solchen mit Hinweis.
+ * Unten: wie viele ausgeblendet sind, zum Aufklappen, und der Weg zu „Werkbank anpassen“.
+ */
+export function WerkbankNavigation({ bereich, eintraege, zeigen = () => true, benutzt: eingerichtet = [] }: { bereich: string; eintraege: WerkbankEintrag[]; zeigen?: (pfad: string) => boolean; benutzt?: string[] }) {
+  const [alleZeigen, setAlleZeigen] = useState(false);
+  const ausgeblendet = eintraege.filter((e) => e.pfad !== 'uebersicht' && !zeigen(e.pfad));
+  const sichtbar = (e: WerkbankEintrag) => alleZeigen || zeigen(e.pfad) || e.pfad === bereich || !!e.warn;
+  const liste = eintraege.filter(sichtbar);
+  const gruppen = (Object.keys(GRUPPEN) as Gruppe[]).filter((g) => liste.some((e) => e.gruppe === g));
+  const aktiv = liste.find((e) => e.pfad === bereich)?.gruppe ?? null;
   // Am Handy: erst die Gruppe, dann ihre Einträge; vorausgewählt ist die Gruppe des offenen Bereichs.
   const [gewaehlt, setGewaehlt] = useState<Gruppe | null>(aktiv);
   useEffect(() => { setGewaehlt(aktiv); }, [aktiv]);
-  const eintrag = (e: WerkbankEintrag) => (
-    <Link key={e.pfad} to={e.pfad === 'uebersicht' ? '/werkbank' : `/werkbank/${e.pfad}`} className={`sicht ${bereich === e.pfad ? 'an' : ''}`}>
-      <span className="nm">{e.name}</span>
-      {e.warn ? <span className="zaehler" title={e.warnTitel}>{e.warn}</span> : e.zahl ? <span className="zahl">{e.zahl}</span> : null}
-    </Link>
-  );
-  const warnIn = (g: Gruppe) => eintraege.some((e) => e.gruppe === g && e.warn);
+  const eintrag = (e: WerkbankEintrag) => {
+    const aus = !zeigen(e.pfad);
+    return (
+      <Link key={e.pfad} to={e.pfad === 'uebersicht' ? '/werkbank' : `/werkbank/${e.pfad}`} className={`sicht ${bereich === e.pfad ? 'an' : ''} ${aus ? 'ausgeblendet' : ''}`}
+        title={aus ? (e.warn ? 'Ausgeblendet – steht hier wegen eines Hinweises' : 'Ausgeblendet') : undefined}>
+        <span className="nm">{e.name}</span>
+        {e.warn ? <span className="zaehler" title={e.warnTitel}>{e.warn}</span> : e.zahl ? <span className="zahl">{e.zahl}</span> : null}
+      </Link>
+    );
+  };
+  const warnIn = (g: Gruppe) => liste.some((e) => e.gruppe === g && e.warn);
+  const benutzt = ausgeblendet.filter((e) => eingerichtet.includes(e.pfad)).length;
   return (
     <>
       <div className="gruppenwahl" role="tablist" aria-label="Bereiche der Werkbank">
-        {eintraege.filter((e) => !e.gruppe).map(eintrag)}
-        {(Object.keys(GRUPPEN) as Gruppe[]).map((g) => (
+        {liste.filter((e) => !e.gruppe).map(eintrag)}
+        {gruppen.map((g) => (
           <button key={g} type="button" role="tab" aria-selected={gewaehlt === g} className={`sicht ${gewaehlt === g ? 'an' : ''}`} onClick={() => setGewaehlt(g)}>
             <span className="nm">{GRUPPEN[g]}</span>{warnIn(g) && <span className="zaehler" aria-label="mit Hinweis">!</span>}
           </button>
         ))}
       </div>
       <nav className="sichtliste werkbankleiste">
-        {eintraege.filter((e) => !e.gruppe).map((e) => <div key={e.pfad} className="wbgruppe ohne">{eintrag(e)}</div>)}
-        {(Object.keys(GRUPPEN) as Gruppe[]).map((g) => (
+        {liste.filter((e) => !e.gruppe).map((e) => <div key={e.pfad} className="wbgruppe ohne">{eintrag(e)}</div>)}
+        {gruppen.map((g) => (
           <div key={g} className={`wbgruppe ${gewaehlt === g ? 'gewaehlt' : ''}`}>
             <h3 className="gruppentitel">{GRUPPEN[g]}</h3>
-            {eintraege.filter((e) => e.gruppe === g).map(eintrag)}
+            {liste.filter((e) => e.gruppe === g).map(eintrag)}
           </div>
         ))}
+        <p className="ausgeblendet-fuss leise klein">
+          {ausgeblendet.length > 0 && <>
+            <button type="button" className="verweis" aria-expanded={alleZeigen} onClick={() => setAlleZeigen(!alleZeigen)}>
+              {alleZeigen ? 'Ausgeblendete verbergen' : `${ausgeblendet.length === 1 ? 'Ein Bereich' : `${ausgeblendet.length} Bereiche`} ausgeblendet${benutzt ? `, ${benutzt} davon eingerichtet` : ''}`}
+            </button>{' · '}</>}
+          <Link to="/werkbank/ansicht" className="verweis">Werkbank anpassen</Link>
+        </p>
       </nav>
     </>
   );

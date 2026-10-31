@@ -48,6 +48,8 @@ export class Einrichtung {
     await this.d.mandant.umbenennen(mandant);
     try { await this.d.schriftzug?.(mandant); } catch (x) { log.warn('Schriftzug nicht gesetzt', { fehler: (x as Error).message }); }
     await this.d.einstellungen.schreibe('einrichtung', { offen: true, erledigt: [], uebersprungen: [] });
+    // Neue Installationen bekommen die schlanke Werkbank (#281); bestehende behalten alles.
+    await this.d.einstellungen.schreibe('werkbank_ansicht', { vorlage: 'haushalt', ein: [], aus: [] });
     await this.d.code?.entfernen();
     log.info('Einrichtung: Mandant und Administrator angelegt', { mandant, email: r.benutzer.email });
     return r;
