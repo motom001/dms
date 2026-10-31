@@ -62,6 +62,22 @@ Es **löscht nichts** und **überschreibt nichts**, was du selbst geändert hast
 
 Sonst nennt das DMS die Gründe. Beispiel-Mappen löschst du vorher wie andere Mappen.
 
+## Erweiterte Ansicht: weitere Kataloge und Hochladen
+
+Für Paketentwickler und für ein DMS ohne Internetzugang gibt es unter **Werkbank → Pakete** den Schalter **Erweiterte Ansicht**. Er gilt nur für dich (je Benutzer gemerkt) und ist standardmäßig aus. In der normalen Ansicht gibt es nur den offiziellen Katalog.
+
+In der erweiterten Ansicht kannst du:
+
+- **Weitere Katalogadressen** hinzufügen, abschalten und entfernen. Erlaubt ist nur HTTPS, das Format ist dasselbe wie beim offiziellen Katalog (`katalog.json` der Registry). **Katalog abrufen** fragt dann auch die eingeschalteten weiteren Kataloge ab; ihre Pakete tragen die Adresse als Kennzeichen.
+- Ein **Paket als Datei hochladen** (`.zip` im Format der Registry, z. B. der Paketordner gepackt). Das DMS prüft es genauso wie ein Katalogpaket, nur ohne Prüfsumme aus dem Katalog, und zeigt die Vorschau.
+
+!!! warning "Nicht vom DMS-Projekt geprüft"
+    Pakete aus einer anderen Quelle als dem offiziellen Katalog hat niemand vom DMS-Projekt angesehen. Vor der Installation zeigt das DMS deshalb deutlich die Herkunft, und du musst ausdrücklich bestätigen, dass du weißt, woher das Paket stammt.
+
+Die Liste der installierten Pakete zeigt bei jedem die **Herkunft**: „offizieller Katalog“, die Katalogadresse oder „hochgeladen von … am …“. **Updates sucht das DMS nur in der Quelle, aus der das Paket stammt.** Ein hochgeladenes Paket aktualisierst du, indem du eine höhere Version hochlädst; dann gelten dieselben Regeln wie bei jedem Update (nur ergänzen). Ist die Quelle eines Pakets abgeschaltet oder entfernt, gibt es dafür keine Updates.
+
+Das Protokoll vermerkt, wer welche Quelle hinzugefügt, abgeschaltet oder entfernt und wer welches Paket hochgeladen hat.
+
 ## Eigene Pakete
 
 Wie ein Paket aufgebaut ist und wie es in den Katalog kommt, steht im [Entwicklerhandbuch](https://motom001.github.io/dms/entwickler/aktuell/pakete/).

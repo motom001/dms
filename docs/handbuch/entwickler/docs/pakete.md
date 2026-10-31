@@ -52,7 +52,16 @@ Dieselben Prüfungen laufen im Pull Request. Ein veröffentlichtes Paket ändert
 1. Pull Request mit `Closes #…`; jeder Commit trägt ein `Signed-off-by:` (`git commit -s`).
 2. Nach dem Merge baut die CI je Paketversion ein Archiv `<id>-<version>.zip` und den Katalog `katalog.json` mit SHA-256 und legt beides auf den Branch `gh-pages`. Das DMS findet das Paket beim nächsten **Katalog abrufen**.
 
+## Eigenes Paket testen
+
+Bevor dein Paket in den Katalog kommt, probierst du es im eigenen DMS aus – am besten in einem Test-DMS (z. B. mit [Demo-Daten](https://motom001.github.io/dms/admin/aktuell/demo/)):
+
+1. **Werkbank → Pakete → Erweiterte Ansicht** einschalten.
+2. Den Paketordner als ZIP packen, z. B. `cd pakete/mein_paket && zip -r ../../mein_paket.zip .`, und unter **Paket hochladen** wählen. Das DMS prüft das Paket wie ein Katalogpaket und zeigt die Vorschau; Fehler im Format stehen dort gesammelt.
+3. Installieren (Herkunft bestätigen), ansehen, ändern. Für eine neue Fassung die **Version erhöhen** und erneut hochladen – das DMS aktualisiert wie bei einem Update aus dem Katalog (nur ergänzen). Zum Neuanfang das Paket entfernen (geht, solange es keine Mappen seiner Typen gibt).
+
+Mehrere Pakete testest du auch als eigenen Katalog: `python3 werkzeuge/katalog.py <ordner>` baut `katalog.json` und die Archive; leg den Ordner auf einen HTTPS-Server und trage die Adresse von `katalog.json` in der erweiterten Ansicht unter **Weitere Quellen** ein.
+
 ## Ausblick
 
-- **Eigenes Paket im eigenen DMS testen**, bevor es in den Katalog kommt: eine erweiterte Ansicht mit eigener Katalogadresse und Hochladen als Datei ([#189](https://github.com/motom001/dms/issues/189)).
 - **Pakete mit Code**, die auf Ereignisse reagieren und mit eigenen, bei der Installation bestätigten Rechten über die API arbeiten – abgeschottet als WebAssembly.

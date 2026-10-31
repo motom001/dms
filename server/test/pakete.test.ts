@@ -51,15 +51,15 @@ const archiv = (d: Record<string, string>) => zipPuffer(Object.entries(d).map(([
 const sha = (b: Buffer) => createHash('sha256').update(b).digest('hex');
 
 /** Kleiner Katalog im Arbeitsspeicher: Archive je Paket und Version. */
-function katalog(eintraege: Array<{ dateien: Record<string, string>; falscheSumme?: boolean }>) {
-  const daten = new Map<string, Buffer>();
+function katalog(eintraege: Array<{ dateien: Record<string, string>; falscheSumme?: boolean }>, url = KATALOG, daten = new Map<string, Buffer>()) {
+  const basisUrl = url.slice(0, url.lastIndexOf('/') + 1);
   const pakete = new Map<string, Katalog['pakete'][number]>();
   for (const e of eintraege) {
     const m = /^id: (\S+)$/m.exec(e.dateien['manifest.yaml'])![1];
     const version = /^version: (\S+)$/m.exec(e.dateien['manifest.yaml'])![1];
     const dms = /^dms: "?([^"\n]+)"?$/m.exec(e.dateien['manifest.yaml'])![1];
     const b = archiv(e.dateien);
-    daten.set(`https://katalog.test/archive/${m}-${version}.zip`, b);
+    daten.set(`${basisUrl}archive/${m}-${version}.zip`, b);
     const p = pakete.get(m) ?? { id: m, name: m, beschreibung: '', autor: { name: 'Test', github: 'test' }, lizenz: 'MIT', aktuell: version, versionen: [] };
     const abh: Record<string, string> = {};
     for (const z of /abhaengigkeiten:\n((?:  \S+: .+\n)*)/.exec(e.dateien['manifest.yaml'])?.[1]?.split('\n').filter(Boolean) ?? []) { const [k, v] = z.trim().split(': '); abh[k] = v.replace(/"/g, ''); }
@@ -67,7 +67,7 @@ function katalog(eintraege: Array<{ dateien: Record<string, string>; falscheSumm
     if (vergleicheVersion(version, p.aktuell) > 0) p.aktuell = version;
     pakete.set(m, p);
   }
-  daten.set(KATALOG, Buffer.from(JSON.stringify({ format: 1, erstellt: '', quelle: '', pakete: [...pakete.values()] })));
+  daten.set(url, Buffer.from(JSON.stringify({ format: 1, erstellt: '', quelle: '', pakete: [...pakete.values()] })));
   return async (url: string) => { const b = daten.get(url); if (!b) throw new Error(`404 ${url}`); return b; };
 }
 
@@ -135,7 +135,7 @@ function faelle(pg: boolean) {
 
       // Der Administrator ändert selbst: Name, ein eigenes Feld. Das Update überschreibt das nicht.
       await d.aendereTyp(typ.id, { ...typ, name: 'Firma', felder: [...typ.felder, { key: 'notiz', label: 'Notiz', typ: 'text' }] });
-      assert.deepEqual(await p.updates(), [{ id: 'basis', installiert: '1.0.0', neu: '1.1.0', changelog: '' }]);
+      assert.deepEqual(await p.updates(), [{ id: 'basis', installiert: '1.0.0', neu: '1.1.0', changelog: '', quelle: KATALOG }]);
       const uv = await p.vorschau({ id: 'basis' });
       assert.equal(uv.update, true);
       assert.deepEqual(uv.typen[0].neueFelder, ['Steuernummer']);
@@ -211,6 +211,56 @@ function faelle(pg: boolean) {
       assert.deepEqual(await d.listePakete(), []);
       const ok = await p.installiere({ id: 'basis', namen: { organisation: 'Organisation (Basis)' } }, ICH);
       assert.equal((await d.listeTypen()).find((t) => t.id === ok.typen.organisation)!.name, 'Organisation (Basis)');
+    });
+
+    it('erweiterte Ansicht: weitere Kataloge, Bestätigung, Updates nur aus der eigenen Quelle (#189)', async () => {
+      const EIGEN = 'https://eigen.test/k/katalog.json';
+      const daten = new Map<string, Buffer>();
+      katalog([{ dateien: basis }], KATALOG, daten);
+      katalog([{ dateien: basis11 }], EIGEN, daten);
+      const abruf = async (url: string) => { const b = daten.get(url); if (!b) throw new Error(`404 ${url}`); return b; };
+      const d = new Dienst(await repo(pg), speicherDateien(), { einstellungen: speicherEinstellungen() });
+      const p = new Paketverwaltung(d, { version: () => '0.63.0', abruf, katalogUrl: KATALOG });
+      await assert.rejects(p.quelleHinzufuegen({ url: 'http://eigen.test/k.json' }, ICH), /nur über HTTPS/);
+      await assert.rejects(p.vorschau({ id: 'basis', quelle: EIGEN }), /nicht \(mehr\) eingerichtet/);
+      assert.deepEqual((await p.quelleHinzufuegen({ url: EIGEN }, ICH)).map((q) => [q.url, q.offiziell, q.aktiv]), [[KATALOG, true, true], [EIGEN, false, true]]);
+      await assert.rejects(p.quelleHinzufuegen({ url: EIGEN }, ICH), /schon eingetragen/);
+      assert.deepEqual((await p.abrufen(false)).kataloge.map((k) => k.url), [KATALOG], 'normale Ansicht: nur offiziell');
+      const alle = await p.abrufen(true);
+      assert.deepEqual(alle.kataloge.map((k) => [k.url, k.katalog?.pakete[0].aktuell]), [[KATALOG, '1.0.0'], [EIGEN, '1.1.0']]);
+      await assert.rejects(p.installiere({ id: 'basis', quelle: EIGEN }, ICH), (e) => e instanceof Fachfehler && (e.details as { warnung?: boolean }).warnung === true);
+      const inst = await p.installiere({ id: 'basis', version: '1.1.0', quelle: EIGEN, bestaetigt: true }, ICH);
+      assert.deepEqual(inst.herkunft, { art: 'katalog', url: EIGEN });
+      assert.deepEqual(await p.updates(), [], 'im offiziellen Katalog gibt es nur 1.0.0 – zählt nicht');
+      await p.quelleSchalten({ url: EIGEN, aktiv: false }, ICH);
+      assert.deepEqual((await p.abrufen(true)).kataloge.map((k) => k.url), [KATALOG]);
+      await assert.rejects(p.aktualisiere('basis', {}, ICH), /abgeschaltet/);
+      await p.quelleEntfernen(EIGEN, ICH);
+      assert.equal((await p.quellen()).length, 1);
+    });
+
+    it('Paket hochladen: Prüfung, Bestätigung, Herkunft, Update durch erneutes Hochladen (#189)', async () => {
+      const { d, p } = await aufbau([]);
+      await assert.rejects(p.hochladen(Buffer.from('kein zip'), ICH), /kein gültiges ZIP/);
+      const h = await p.hochladen(archiv(basis), ICH);
+      assert.equal(h.vorschau.paket.id, 'basis');
+      assert.equal(h.vorschau.typen[0].dmsSchluessel, 'basis_organisation');
+      assert.deepEqual((await p.vorschau({ upload: h.upload })).sichten.length, 5);
+      await assert.rejects(p.installiere({ upload: h.upload }, ICH), /nicht vom DMS-Projekt geprüft/);
+      const inst = await p.installiere({ upload: h.upload, bestaetigt: true, beispiele: true }, ICH);
+      assert.equal(inst.herkunft.art, 'hochgeladen');
+      assert.equal(inst.herkunft.art === 'hochgeladen' && inst.herkunft.von, ICH.email);
+      await assert.rejects(p.installiere({ upload: h.upload, bestaetigt: true }, ICH), /abgelaufen/, 'ein Upload gilt nur einmal');
+      await assert.rejects(p.aktualisiere('basis', {}, ICH), /erneutes Hochladen/);
+      const gleich = await p.hochladen(archiv(basis), ICH);
+      await assert.rejects(p.installiere({ upload: gleich.upload, bestaetigt: true }, ICH), /schon installiert/);
+      const neu = await p.hochladen(archiv(basis11), ICH);
+      assert.equal(neu.vorschau.update, true);
+      const n = await p.installiere({ upload: neu.upload, bestaetigt: true }, ICH);
+      assert.equal(n.version, '1.1.0');
+      assert.equal(n.installiert, inst.installiert);
+      assert.ok((await d.listeTypen()).find((t) => t.id === n.typen.organisation)!.felder.some((f) => f.key === 'steuernummer'));
+      assert.equal((await d.listeTypen()).filter((t) => t.schluessel === 'basis_organisation').length, 1);
     });
   });
 }
