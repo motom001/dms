@@ -16,7 +16,7 @@ flowchart LR
   G --> H[Release, Image, Handbuch, App-Stores automatisch]
 ```
 
-1. **Alles beginnt mit einem Issue**, geschrieben als User Story: *„Als … möchte ich …, damit …“* und mit Akzeptanzkriterien als Checkliste. Das gilt für Wünsche wie für Fehler. Vorlage: [Neues Issue](https://github.com/motom001/dms/issues/new/choose).
+1. **Alles beginnt mit einem Issue**, geschrieben als User Story: *„Als … möchte ich …, damit …“* und mit Akzeptanzkriterien als Checkliste. Das gilt für Wünsche wie für Fehler. Vorlage: [Neues Issue](https://github.com/motom001/dms/issues/new/choose). Schreib dazu, **für wen** der Wunsch ist: für welche der [Personas](personas.md), von der Einsteiger-Familie bis zum Großunternehmen.
 2. **Diskutiert wird im Issue**, bis klar ist, was gebaut wird und was nicht.
 3. **Umgesetzt wird nur, was das Label `freigegeben` trägt.** Dieses Label vergibt allein der Maintainer. Ohne Freigabe wird ein Pull Request nicht gemergt, auch wenn er gut ist. Frag lieber im Issue nach, bevor du loslegst.
 4. **Pull Request** mit `Closes #…`, Tests, angepasstem Handbuch und Release-Notizen (siehe [Beitrag einreichen](beitrag.md)).
@@ -24,6 +24,9 @@ flowchart LR
 
 !!! info "Warum das Label nur vom Maintainer kommt"
     Das DMS verwaltet Verträge, Ausweise und Steuerunterlagen von Familien. Jede Funktion muss dauerhaft gepflegt, dokumentiert und in Sicherung und Wiederherstellung bedacht werden. Die Freigabe ist der Moment, in dem der Maintainer sagt: Das passt ins Produkt, und ich kann es langfristig tragen. Ein Workflow entfernt das Label wieder, falls es jemand anderes setzt.
+
+!!! note "Für wen wir bauen"
+    Im Kern baut das DMS für Haushalte: Lena, die Einsteigerin, Jonas mit dem Handy und Markus mit seinem NAS. Steht eine Funktion für Firmen im Konflikt mit Einfachheit für diese drei, gewinnen die drei. Mehr dazu, und wie sich das ändern kann: [Für wen wir bauen](personas.md).
 
 ## Wo du helfen kannst
 
