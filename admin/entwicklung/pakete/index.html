@@ -827,6 +827,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#einstellungen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Einstellungen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#erweiterte-ansicht-weitere-kataloge-und-hochladen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1982,6 +1993,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#einstellungen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Einstellungen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#erweiterte-ansicht-weitere-kataloge-und-hochladen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2025,7 +2047,7 @@
 
 <h1 id="pakete">Pakete<a class="headerlink" href="#pakete" title="Permanent link">&para;</a></h1>
 <p>Ein <strong>Paket</strong> bringt fertige Mappentypen, Sichten und auf Wunsch Beispiel-Mappen mit – etwa das Basis-Paket mit dem Mappentyp „Organisation“ für Firmen, Behörden, Ärzte und Versicherungen. Statt Feld für Feld in der Werkbank zu bauen, installierst du es mit wenigen Klicks unter <strong>Werkbank → Pakete</strong>.</p>
-<p>Pakete kommen aus dem <strong>offiziellen Katalog</strong> des DMS-Projekts (<a href="https://github.com/motom001/dms-registry">dms-registry</a>). Jedes Paket dort ist Open Source und wurde vom Maintainer freigegeben. In dieser Stufe gibt es nur <strong>Konfigurationspakete</strong> (Mappentypen, Sichten, Beispiele), keine Pakete mit Code.</p>
+<p>Pakete kommen aus dem <strong>offiziellen Katalog</strong> des DMS-Projekts (<a href="https://github.com/motom001/dms-registry">dms-registry</a>). Jedes Paket dort ist Open Source und wurde vom Maintainer freigegeben. Meist sind es <strong>Konfigurationspakete</strong> (Mappentypen, Sichten, Beispiele). Pakete mit Code lassen sich installieren und einstellen, ihr Code läuft aber erst mit dem Paket-Läufer.</p>
 <h2 id="katalog-abrufen">Katalog abrufen<a class="headerlink" href="#katalog-abrufen" title="Permanent link">&para;</a></h2>
 <p>Das DMS fragt den Katalog <strong>nur auf Knopfdruck</strong> ab, nie im Hintergrund: Klicke <strong>Katalog abrufen</strong>. Die Seite zeigt dann zwei Listen:</p>
 <ul>
@@ -2083,6 +2105,27 @@
 <li><strong>kein anderes Paket</strong> davon abhängt.</li>
 </ul>
 <p>Sonst nennt das DMS die Gründe. Beispiel-Mappen löschst du vorher wie andere Mappen.</p>
+<h2 id="einstellungen">Einstellungen<a class="headerlink" href="#einstellungen" title="Permanent link">&para;</a></h2>
+<p>Manche Pakete brauchen Einstellungen – etwa Regeln, nach denen sie Post zuordnen, oder ein Zugangsschlüssel für einen Dienst. Das Paket <strong>beschreibt</strong> sie nur; das DMS baut daraus ein Formular, prüft die Werte und speichert sie. Du findest es unter <strong>Werkbank → Pakete → <em>Paket</em> → Reiter „Einstellungen“</strong> – den Reiter gibt es nur bei Paketen, die Einstellungen haben.</p>
+<ul>
+<li><strong>Abschnitte</strong> mit Feldern und <strong>Listen</strong> gleich aufgebauter Einträge (z. B. eine Regel je Eintrag) mit <strong>+ Eintrag</strong>, Löschen und – wenn das Paket es erlaubt – Sortieren mit ↑/↓.</li>
+<li><strong>Felder</strong> wie bei den Mappentypen: Text, mehrzeiliger Text, Zahl, Ja/Nein, Datum, Auswahl, Mehrfachauswahl und <strong>Verweise</strong> auf einen Mappentyp, ein Feld eines Mappentyps, einen Benutzer, eine Rolle oder eine Sicht. Verweise wählst du aus Listen; gespeichert wird die feste Id, nicht der Name – Umbenennen schadet also nicht.</li>
+<li><strong>Geheimnisse</strong> (z. B. Zugangsdaten) verschlüsselt das DMS mit seinem Schlüssel (siehe <a href="../verschluesselung/">Verschlüsselung</a>). Nach dem Speichern zeigt es sie nie wieder an, nur <strong>gesetzt</strong> mit <strong>Ändern</strong> und <strong>Löschen</strong>.</li>
+<li>Beim <strong>Speichern</strong> prüft das DMS Typ, Pflichtfelder, Auswahlwerte und ob Verweise existieren, und zeigt Fehler am Feld.</li>
+<li><strong>Aktionen</strong> des Pakets erscheinen als Knöpfe (z. B. „Regeln jetzt anwenden“), die Antwort des Pakets steht darüber. Eine Zeitgrenze verhindert, dass ein Knopf hängt.</li>
+<li>Der <strong>Status</strong> (letzter Lauf, Meldungen) kommt vom Paket selbst und ist schreibgeschützt.</li>
+</ul>
+<p><strong>Lebenszyklus:</strong></p>
+<ul>
+<li><strong>Installieren</strong> setzt die Vorgaben. Fehlen Pflichtfelder, steht das Paket auf <strong>Einstellungen nötig</strong> und läuft erst danach.</li>
+<li><strong>Aktualisieren:</strong> Neue Felder bekommen ihre Vorgabe, vorhandene Werte bleiben. Felder, die die neue Version nicht mehr kennt, werden entfernt – die Vorschau vor dem Update nennt sie.</li>
+<li><strong>Entfernen</strong> fragt, ob die Einstellungen für eine spätere Neuinstallation <strong>bleiben</strong> sollen (Standard: nein).</li>
+</ul>
+<p>Die Einstellungen sind <strong>Teil der Sicherung</strong>; Geheimnisse bleiben dabei verschlüsselt und werden beim Schlüsselwechsel mit umgeschlüsselt. Über die API v1 sind sie nicht lesbar; das Paket selbst bekommt sie über den Paket-Läufer. Das Protokoll vermerkt „Einstellungen von Paket … geändert (Felder …)“ – nie die Werte von Geheimnissen. Nur Administratoren sehen und ändern Einstellungen.</p>
+<div class="admonition note">
+<p class="admonition-title">Pakete mit Code</p>
+<p>Einstellungen gehören zu Paketen mit Code. Solange es im DMS den <strong>Paket-Läufer</strong> noch nicht gibt, läuft der Code nicht: Du kannst solche Pakete installieren und ihre Einstellungen pflegen, Aktionen melden aber, dass sie noch nicht ausgeführt werden können.</p>
+</div>
 <h2 id="erweiterte-ansicht-weitere-kataloge-und-hochladen">Erweiterte Ansicht: weitere Kataloge und Hochladen<a class="headerlink" href="#erweiterte-ansicht-weitere-kataloge-und-hochladen" title="Permanent link">&para;</a></h2>
 <p>Für Paketentwickler und für ein DMS ohne Internetzugang gibt es unter <strong>Werkbank → Pakete</strong> den Schalter <strong>Erweiterte Ansicht</strong>. Er gilt nur für dich (je Benutzer gemerkt) und ist standardmäßig aus. In der normalen Ansicht gibt es nur den offiziellen Katalog.</p>
 <p>In der erweiterten Ansicht kannst du:</p>
