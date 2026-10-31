@@ -979,3 +979,16 @@ fieldset.eigenschaft legend { font-size: calc(12.5px * var(--skala, 1)); font-we
 
 /* Versionsabgleich in zwei Gruppen (#216) */
 .ueber.abstand-oben { margin: 14px 0 6px; }
+
+/* Neue Post von überall (#193): Fläche beim Ziehen von Dateien, Status, „+ Neu“ */
+.neuknopf { position: relative; margin-left: auto; }
+.neuknopf + .konto { margin-left: 0; }
+.neuknopf .menue { left: 0; right: auto; }
+.ablageflaeche { position: fixed; inset: 0; z-index: 60; display: grid; gap: 16px; padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); background: color-mix(in srgb, var(--flaeche) 82%, transparent); backdrop-filter: blur(2px); }
+.ablageflaeche.zwei { grid-template-columns: 1fr 1fr; }
+.ablageziel { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; border: 3px dashed var(--akzent); border-radius: calc(var(--r) * 2); background: var(--akzent-zart); color: var(--tinte); font-size: calc(18px * var(--skala, 1)); padding: 16px; }
+.ablageziel span { font-size: calc(14px * var(--skala, 1)); color: var(--tinte-leise, inherit); }
+.ablageziel.drauf { border-style: solid; filter: brightness(.97); }
+.ablagestatus { position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); z-index: 55; max-width: min(420px, calc(100vw - 32px)); background: var(--flaeche); border: 1px solid var(--linie-stark); border-radius: var(--r); box-shadow: 0 10px 30px rgba(15, 23, 42, .18); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.ablagestatus ul { margin: 0; padding-left: 18px; }
+@media (max-width: 700px) { .ablageflaeche.zwei { grid-template-columns: 1fr; } }

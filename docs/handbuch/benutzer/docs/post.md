@@ -8,7 +8,25 @@ Alles, was ins DMS kommt oder hinausgeht, ist **Post**: ein eingescannter Brief,
 
 Ganz oben in der Ablage steht die Sicht **Neue Post**. Sie zeigt alle Post, die noch niemand zugeordnet oder erledigt hat. Gibt es welche, ist die Zahl daneben farbig hervorgehoben, wie beim [Eingang](eingang.md).
 
-Mit **+ Post** oben in der Liste wählst du eine oder mehrere Dateien aus. Sie kommen **zusammen in eine neue Post**, und die öffnet sich gleich. Am Handy bietet die Auswahl auch die Kamera an. Den Betreff nimmt das DMS aus dem ersten Dateinamen; ändern kannst du ihn jederzeit.
+### Neue Post anlegen – von überall
+
+- **Dateien ins Fenster ziehen:** Zieh eine oder mehrere Dateien **irgendwo** ins Browserfenster des DMS, egal auf welcher Seite. Es erscheint die Fläche **„Hier neue Dokumente ablegen“**. Lässt du los, kommen alle Dateien **zusammen in eine neue Post**, und die öffnet sich gleich.
+- **+ Neu** in der Kopfzeile → **Post**: Dateien auswählen. Am Handy und Tablet bietet die Auswahl auch die **Kamera** an – dort ist das der Weg für neue Post.
+- **+ Post** oben in den Sichten mit Post macht dasselbe.
+
+![Dateien ablegen](bilder/post-ablegen.png)
+
+Den Betreff nimmt das DMS aus dem ersten Dateinamen; ändern kannst du ihn jederzeit. Absender bist du, der Kanal heißt *Hochgeladen*. Dateien über 100 MB oder bei erreichter Speicherplatz-Grenze werden mit Grund gemeldet, die übrigen trotzdem abgelegt.
+
+**Auf einer geöffneten Mappe** mit Dokumentenregister teilt sich die Fläche: **In diese Mappe** legt die Dateien wie bisher ins Register (übernommen mit *Mappe speichern*), **Als neue Post** macht eine neue Post daraus.
+
+![Zwei Ziele auf einer Mappe](bilder/post-ablegen-mappe.png)
+
+Die Fläche erscheint nur beim Ziehen von Dateien, nicht bei Text oder Links, und nur, wenn du Post anlegen darfst. Mit Esc oder wenn du das Fenster verlässt, verschwindet sie. Im Wartungsmodus und solange das DMS nicht erreichbar ist, erscheint stattdessen ein kurzer Hinweis.
+
+**+ Neu → Mappe …** legt eine neue, leere Mappe eines Typs an, den du anlegen darfst.
+
+![+ Neu](bilder/neu-knopf.png)
 
 Unter der Sicht **Post** findest du alle Post, auch die zugeordnete und erledigte, mit den Untersichten **Eingegangen** und **Versendet**.
 

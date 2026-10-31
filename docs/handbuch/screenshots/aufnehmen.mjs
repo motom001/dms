@@ -382,6 +382,38 @@ async function main() {
   await zu.locator('.zuordnen-treffer button').first().click();
   await bild(s, 'post-zuordnen');
 
+  // Neue Post von überall (#193): zwei Dateien irgendwo ins Fenster ziehen → eine Post mit beiden.
+  await geheZu(s, `/ablage/${vertrag.id}`);
+  // Je Seite neu erzeugen: ein JSHandle gilt nur auf der Seite, auf der es entstand.
+  const neueDateien = () => s.evaluateHandle(() => {
+    const dt = new DataTransfer();
+    dt.items.add(new File(['Kündigung Fitnessstudio zum 31.12.'], 'Kündigung Fitnessstudio.txt', { type: 'text/plain' }));
+    dt.items.add(new File(['Mitgliedsnummer 4711'], 'Notiz zur Kündigung.txt', { type: 'text/plain' }));
+    return dt;
+  });
+  let dateien = await neueDateien();
+  await s.dispatchEvent('body', 'dragenter', { dataTransfer: dateien });
+  await s.locator('.ablageflaeche').waitFor();
+  await bild(s, 'post-ablegen');
+  await s.dispatchEvent('.ablageflaeche .ablageziel', 'drop', { dataTransfer: dateien });
+  await s.waitForURL(/\/ablage\/[^/]+\/[0-9a-f-]{36}$/, { timeout: 20_000 });
+  await s.locator('.postleiste').waitFor();
+  const neu = await api('GET', `/api/mappen/${s.url().split('/').pop()}`);
+  if (neu.dokumente.length !== 2) throw new Error(`Ablegen (#193): ${neu.dokumente.length} statt 2 Dokumente in der neuen Post`);
+  // Auf einer Mappe mit Dokumentenregister: zwei Ziele.
+  await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
+  await s.getByRole('tab', { name: 'Vertragsunterlagen' }).click();
+  dateien = await neueDateien();
+  await s.dispatchEvent('body', 'dragenter', { dataTransfer: dateien });
+  await s.locator('.ablageflaeche.zwei').waitFor();
+  await bild(s, 'post-ablegen-mappe');
+  await s.keyboard.press('Escape');
+  // „+ Neu“ in der Kopfzeile
+  await s.getByRole('button', { name: '+ Neu' }).click();
+  await s.getByRole('menuitem', { name: /Mappe/ }).waitFor();
+  await bild(s, 'neu-knopf');
+  await s.keyboard.press('Escape');
+
   // Papierkorb in der Ablage (#43)
   await geheZu(s, '/ablage/papierkorb');
   await s.locator('.spalte.liste .eintrag, .spalte.liste tbody tr').first().click();

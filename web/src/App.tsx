@@ -13,6 +13,7 @@ import { ApiDoku } from './profil/ApiDoku';
 import { Profil } from './profil/Profil';
 import { Werkbank } from './werkbank/Werkbank';
 import { WartungsBanner } from './wartung';
+import { NeuKnopf, PostAblage } from './ablage/NeuePost';
 import { ErreichbarkeitsBanner, useBeiWiederErreichbar } from './erreichbar';
 import { useHandbuch } from './Hilfe';
 
@@ -77,6 +78,7 @@ export function App() {
           <Link to="/ablage" className={bereich === 'ablage' ? 'an' : ''}>Ablage</Link>
           {admin && <Link to="/werkbank/typen" className={bereich === 'werkbank' ? 'an' : ''}>Werkbank</Link>}
         </nav>
+        <NeuKnopf />
         <div className="konto">
           <Benutzermenue an={bereich === 'profil'} abmelden={abmelden} />
           {/* AGPL: Wer das DMS über das Netz nutzt, soll an den Quellcode kommen. */}
@@ -87,6 +89,7 @@ export function App() {
         {d.fehler && <div className="hinweis schlecht"><p>{d.fehler}</p><button className="knopf klein" onClick={() => void d.neuLaden()}>Erneut versuchen</button></div>}
         {inhalt}
       </main>
+      <PostAblage />
       {ich.entwicklermodus && <Messpanel />}
     </div>
   );
