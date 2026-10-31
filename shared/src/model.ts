@@ -395,7 +395,7 @@ export interface TypKontext {
   schluesselAndererTypen?: string[];
   existiertTyp: (id: string) => boolean;
   /** Auswahlfilter prüfen (#172; aus sichten.ts, hier ohne Kreisimport). */
-  auswahlProbleme?: (bed: import('./sichten').Feldbedingung[], zielFelder: Feld[]) => string[];
+  auswahlProbleme?: (bed: import('./sichten').Feldbedingung[], zielFelder: Feld[], eigene: { felder: Feld[]; feldKey: string }) => string[];
   /** Schlüssel der Nummernkreise (#171); fehlt: nicht prüfen. */
   nummernkreise?: string[];
   /** Felder eines anderen Typs (für Quellen von Verknüpfungsregistern). */
@@ -473,7 +473,7 @@ export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebn
       else if (f.auswahlFilter?.length && ctx.auswahlProbleme) {
         // Auswahlfilter (#172): Bedingungen gegen die Felder des Zieltyps.
         const ziel = f.zielTyp === ctx.eigeneId ? t.felder : ctx.felderVon?.(f.zielTyp);
-        if (ziel) for (const x of ctx.auswahlProbleme(f.auswahlFilter, ziel)) m.push(`Auswahlfilter: ${x}`);
+        if (ziel) for (const x of ctx.auswahlProbleme(f.auswahlFilter, ziel, { felder: t.felder, feldKey: f.key })) m.push(`Auswahlfilter: ${x}`);
       }
     }
     if (f.typ === 'auswahl' && !(f.optionen ?? []).length) m.push('Mindestens einen Auswahlwert eintragen.');

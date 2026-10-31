@@ -14,7 +14,7 @@ import { istVerschluesselt, type Betroffen, type Tresor } from './tresor';
 import type { Einstellungen } from './einstellungen';
 import { istUuid, type NeueMappe, type PapierkorbEintrag, type Repo, type Rueckverweis, type SortierungIntern } from './repo';
 import {
-  auswahlKlausel, auswahlProbleme, bereinigeAuswahlfilter, erfuellt, bereinigeBedingungen, filterFuer, heuteIn, kinderVon, klauselnFuer, verschiebe, waereKreis, wirksameTypen,
+  auswahlKlausel, auswahlProbleme, bereinigeAuswahlfilter, setzeEigeneWerte, erfuellt, bereinigeBedingungen, filterFuer, heuteIn, kinderVon, klauselnFuer, verschiebe, waereKreis, wirksameTypen,
   type Aufloesung, type Sicht, type SichtDaten,
 } from '../../shared/src/sichten';
 import type { Readable } from 'node:stream';
@@ -984,7 +984,7 @@ export class Dienst {
       existiertTyp: (id) => alle.some((t) => t.id === id),
       felderVon: (id) => alle.find((t) => t.id === id)?.felder,
       nummernkreise: (await this.repo.listeNummernkreise()).map((k) => k.schluessel),
-      auswahlProbleme: (bed, felder) => auswahlProbleme(bed, { felder }),
+      auswahlProbleme: (bed, felder, eigene) => auswahlProbleme(bed, { felder }, eigene),
     });
     if (!istOk(p)) throw new Fachfehler(422, 'Der Mappentyp ist so nicht gültig.', p);
   }
@@ -1143,7 +1143,7 @@ export class Dienst {
    * Eine Seite einer Sicht: „eingang“, eine verwaltete Sicht (#38) oder – für Links auf Mappen,
    * deren Typ keine eigene Sicht hat – eine Typ-Id. Mit den Bezügen für die Anzeige.
    */
-  async seite(ich: { id: string; rolle: string }, q: { sicht?: string; link?: unknown; von?: unknown; anzahl?: unknown; suche?: unknown; sortierung?: unknown; absteigend?: unknown; volltext?: unknown; notizen?: unknown }, z?: Zugriff, grenze = 500) {
+  async seite(ich: { id: string; rolle: string }, q: { sicht?: string; link?: unknown; eigene?: unknown; von?: unknown; anzahl?: unknown; suche?: unknown; sortierung?: unknown; absteigend?: unknown; volltext?: unknown; notizen?: unknown }, z?: Zugriff, grenze = 500) {
     // Berechtigungen (#124): nur lesbare Mappen; der Eingang zeigt Aufgaben auch zu nicht lesbaren – ohne Inhalt.
     const lesen = z?.lesen ?? null;
     const von = Math.max(0, Math.floor(Number(q.von) || 0));
@@ -1162,7 +1162,10 @@ export class Dienst {
       const f = typen.get(typId)?.felder.find((x) => x.key === key && x.typ === 'referenz');
       const ziel = f ? typen.get(f.zielTyp ?? '') : undefined;
       if (!f || !ziel) throw new Fachfehler(404, 'Dieses Referenzfeld gibt es nicht.');
-      return { f, ziel };
+      // Werte der Mappe, die gerade ausgefüllt wird (#173).
+      let eigene: Werte = {};
+      try { const w = JSON.parse(text(q.eigene).slice(0, 8000) || '{}'); if (w && typeof w === 'object' && !Array.isArray(w)) eigene = w; } catch { /* ohne */ }
+      return { f, ziel, eigene };
     })() : null;
     // Verborgene Sichten (#148) gibt es für den Benutzer nicht; ihre Mappen fehlen auch in der Elternsicht.
     const verborgen = this.verborgeneSichten(sichten, z);
@@ -1184,7 +1187,7 @@ export class Dienst {
       : link
         ? await this.repo.seite({ klauseln: [{ typen: [link.typ.id], filter: filterFuer(link, [link.typ], await this.aufloesung(ich.id)) }], suche, volltext, notizen, von, anzahl, sortierung, lesen })
       : auswahl
-        ? await this.repo.seite({ klauseln: [auswahlKlausel(auswahl.f.auswahlFilter ?? [], auswahl.ziel, await this.aufloesung(ich.id))], suche, volltext, notizen, von, anzahl, sortierung, lesen })
+        ? await this.repo.seite({ klauseln: [auswahlKlausel(setzeEigeneWerte(auswahl.f.auswahlFilter ?? [], auswahl.eigene), auswahl.ziel, await this.aufloesung(ich.id))], suche, volltext, notizen, von, anzahl, sortierung, lesen })
       : sicht
         ? await this.repo.seite({ klauseln: klauselnFuer(sichten, sicht.id, typen, await this.aufloesung(ich.id), verborgen), suche, volltext, notizen, von, anzahl, sortierung, lesen })
         : await this.repo.seite({ typId: nurTyp ?? q.sicht, suche, volltext, notizen, von, anzahl, sortierung, lesen });
@@ -1918,7 +1921,8 @@ export class Dienst {
       const neu = ids(werte[f.key]).filter((x) => !vorher.has(x));
       const ziel = typen.get(f.zielTyp ?? '');
       if (!neu.length || !ziel) continue;
-      const k = auswahlKlausel(f.auswahlFilter!, ziel, a);
+      // Werte aus der eigenen Mappe (#173): die, die gespeichert werden sollen.
+      const k = auswahlKlausel(setzeEigeneWerte(f.auswahlFilter!, werte), ziel, a);
       const falsch = (await this.repo.holeMappen(neu)).filter((m) => m.typId !== ziel.id || !erfuellt(m, k.filter, KEINE_ZAEHLUNG));
       if (falsch.length) fehler[f.key] = [`${falsch.map((m) => `„${m.titel || 'Ohne Titel'}“`).join(', ')} passt nicht zur Auswahl dieses Felds.`];
     }
@@ -1936,11 +1940,27 @@ export class Dienst {
       const ziel = typen.get(f.zielTyp ?? '');
       const ids = (Array.isArray(werte[f.key]) ? werte[f.key] as string[] : werte[f.key] ? [String(werte[f.key])] : []).filter(istUuid);
       if (!ziel || !ids.length) continue;
-      const k = auswahlKlausel(f.auswahlFilter!, ziel, a);
+      const k = auswahlKlausel(setzeEigeneWerte(f.auswahlFilter!, werte), ziel, a);
       const x = (await this.repo.holeMappen(ids)).filter((m) => !erfuellt(m, k.filter, KEINE_ZAEHLUNG)).map((m) => m.id);
       if (x.length) erg[f.key] = x;
     }
     return erg;
+  }
+
+  /** Auswahlfilter (#172, #173) beim Ausfüllen: welche der gewählten Mappen passen zu den aktuellen Werten nicht? */
+  async auswahlPruefen(e: unknown, benutzerId: string, z?: Zugriff) {
+    const x = (e ?? {}) as { typId?: unknown; feldKey?: unknown; ids?: unknown; werte?: unknown };
+    const typ = istUuid(x.typId) ? await this.repo.holeTyp(x.typId) : undefined;
+    const f = typ?.felder.find((y) => y.key === x.feldKey && y.typ === 'referenz');
+    const ziel = f ? await this.repo.holeTyp(f.zielTyp ?? '') : undefined;
+    // Nur Mappen, die man lesen darf – sonst verriete die Antwort etwas über ihre Werte.
+    const roh = (Array.isArray(x.ids) ? x.ids : []).map(String).filter(istUuid).slice(0, 200);
+    const lesbar = await this.lesbare(z, roh);
+    const ids = roh.filter((id) => lesbar.has(id));
+    if (!f || !ziel || !f.auswahlFilter?.length || !ids.length) return { unpassend: [] as string[] };
+    const werte = x.werte && typeof x.werte === 'object' ? x.werte as Werte : {};
+    const k = auswahlKlausel(setzeEigeneWerte(f.auswahlFilter, werte), ziel, await this.aufloesung(benutzerId));
+    return { unpassend: (await this.repo.holeMappen(ids)).filter((m) => !erfuellt(m, k.filter, KEINE_ZAEHLUNG)).map((m) => m.id) };
   }
 
   /** Auswahlfilter (#172) in der Werkbank: wie viele Mappen des Zieltyps passen? */
@@ -1948,7 +1968,8 @@ export class Dienst {
     const x = (e ?? {}) as { zielTyp?: unknown; bedingungen?: unknown };
     const ziel = istUuid(x.zielTyp) ? await this.repo.holeTyp(x.zielTyp) : undefined;
     if (!ziel) throw new Fachfehler(422, 'Unbekannter Ziel-Mappentyp.');
-    const bed = bereinigeAuswahlfilter(x.bedingungen);
+    // Bedingungen mit Werten der eigenen Mappe (#173) zählen hier nicht – die Mappe gibt es noch nicht.
+    const bed = setzeEigeneWerte(bereinigeAuswahlfilter(x.bedingungen), {});
     const [passen] = await this.repo.zaehleKlauseln([[auswahlKlausel(bed, ziel, await this.aufloesung(benutzerId))]], null);
     return { passen, gesamt: await this.repo.zaehleMappen(ziel.id), probleme: auswahlProbleme(bed, ziel) };
   }

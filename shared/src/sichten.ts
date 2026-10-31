@@ -62,7 +62,9 @@ export type WertAngabe =
   | { art: 'jahr'; versatz?: number }
   | { art: 'monat'; versatz?: number }
   | { art: 'ich' }
-  | { art: 'meineRollen' };
+  | { art: 'meineRollen' }
+  /** Nur im Auswahlfilter eines Referenzfelds (#173): der Wert eines Felds der eigenen Mappe. */
+  | { art: 'eigenesFeld'; feld: string };
 
 export const DYNAMISCH = {
   heute: 'heute',
@@ -188,6 +190,7 @@ export function bedingungsProblem(b: Bedingung, typen: Mappentyp[]): string | nu
     if (b.wert && (b.wert.art === 'jahr' || b.wert.art === 'monat') && b.op !== 'imZeitraum') return `Jahr und Monat gehen nur mit „im Zeitraum“.`;
     if (b.wert && (b.wert.art === 'ich' || b.wert.art === 'meineRollen') && b.op !== 'zeigtAuf') return `„${DYNAMISCH[b.wert.art]}“ geht nur mit „zeigt auf“.`;
     if (b.wert?.art === 'heute' && f.art !== 'datum' && f.art !== 'zeit') return `„heute“ geht nur bei Datumsfeldern.`;
+    if (b.wert?.art === 'eigenesFeld' || b.bis?.art === 'eigenesFeld') return 'Werte aus der eigenen Mappe gibt es nur im Auswahlfilter eines Referenzfelds.';
     if (b.op === 'zeigtAuf' && b.wert?.art === 'meineRollen' && f.art === 'person') return `„Rollen des aktuellen Benutzers“ geht nicht bei „${f.label}“.`;
     return null;
   }
@@ -272,6 +275,7 @@ function wertVon(w: WertAngabe | undefined, feldart: Feldart, a: Aufloesung): un
     case 'ich': return [a.ich];
     case 'meineRollen': return a.meineRollen;
     case 'jahr': case 'monat': return zeitraum(w, a.heute);
+    case 'eigenesFeld': return undefined;
     case 'fest': {
       const v = w.wert;
       if (feldart === 'zahl' || feldart === 'betrag') return typeof v === 'number' ? v : Number(String(v).replace(',', '.'));
@@ -418,7 +422,7 @@ export function inSicht(m: Mappe, klauseln: Klausel[], z: Zaehlquelle): boolean 
 
 /* ---------- Eingaben bereinigen ---------- */
 
-const ARTEN_WERT = ['fest', 'heute', 'jahr', 'monat', 'ich', 'meineRollen'];
+const ARTEN_WERT = ['fest', 'heute', 'jahr', 'monat', 'ich', 'meineRollen', 'eigenesFeld'];
 
 function bereinigeWert(w: unknown): WertAngabe | undefined {
   if (!w || typeof w !== 'object') return undefined;
@@ -436,6 +440,7 @@ function bereinigeWert(w: unknown): WertAngabe | undefined {
     case 'heute': return { art: 'heute', versatz, einheit: (Object.keys(EINHEITEN) as Einheit[]).includes(x.einheit as Einheit) ? (x.einheit as Einheit) : 'tage' };
     case 'jahr': return { art: 'jahr', versatz };
     case 'monat': return { art: 'monat', versatz };
+    case 'eigenesFeld': return typeof x.feld === 'string' && x.feld ? { art: 'eigenesFeld', feld: x.feld.slice(0, 60) } : undefined;
     default: return { art: x.art as 'ich' | 'meineRollen' };
   }
 }
@@ -467,7 +472,7 @@ export function bereinigeBedingungen(e: unknown): Bedingung[] {
 }
 
 /** Bedingung lesbar, z. B. „Kündigung bis zwischen heute und heute + 90 Tage“. */
-export function beschreibeBedingung(b: Bedingung, typen: Mappentyp[], titelVon: (id: string) => string = (id) => id): string {
+export function beschreibeBedingung(b: Bedingung, typen: Mappentyp[], titelVon: (id: string) => string = (id) => id, eigeneNamen?: Record<string, string>): string {
   if (b.art === 'favorit') return 'ist mein Favorit';
   if (b.art === 'frist') {
     const feld = b.feld ? typen.flatMap((t) => t.felder).find((f) => f.key === b.feld)?.label ?? b.feld : null;
@@ -489,6 +494,7 @@ export function beschreibeBedingung(b: Bedingung, typen: Mappentyp[], titelVon: 
       case 'monat': { const n = Number(w.versatz) || 0; return n === 0 ? 'aktueller Monat' : n === -1 ? 'letzter Monat' : n === 1 ? 'nächster Monat' : `Monat ${n > 0 ? '+' : '−'} ${Math.abs(n)}`; }
       case 'ich': return 'aktueller Benutzer';
       case 'meineRollen': return 'Rollen des aktuellen Benutzers';
+      case 'eigenesFeld': return `„${eigeneNamen?.[w.feld] ?? w.feld}“ dieser Mappe`;
       case 'fest': {
         const v = w.wert;
         if (f?.art === 'referenz' || f?.art === 'person') return (Array.isArray(v) ? v : [String(v)]).map((x) => `„${titelVon(String(x))}“`).join(' oder ');
@@ -568,10 +574,69 @@ export function bereinigeAuswahlfilter(e: unknown): Feldbedingung[] {
 
 const alsZiel = (ziel: Pick<Mappentyp, 'felder'>) => ({ id: '', register: [], ...ziel } as unknown as Mappentyp);
 
-/** Probleme des Filters gegen den (aktuellen) Zieltyp, z. B. entfernte Felder. */
-export function auswahlProbleme(bed: Feldbedingung[], ziel: Pick<Mappentyp, 'felder'>): string[] {
-  return bed.map((b) => bedingungsProblem(b, [alsZiel(ziel)])).filter((x): x is string => !!x);
+/** Operatoren, die einen Wert aus der eigenen Mappe nehmen können (#173). */
+export const OPS_EIGENES_FELD: Operator[] = ['gleich', 'enthaelt', 'kleiner', 'groesser', 'einerVon', 'zeigtAuf'];
+const TEXTARTEN = ['text', 'langtext', 'formatiert'];
+
+/** Felder der eigenen Mappe, deren Wert zu dieser Bedingung passt (#173). */
+export function passendeEigeneFelder(b: Pick<Feldbedingung, 'feld' | 'op'>, zielFelder: Feld[], eigene: Array<Pick<Feld, 'key' | 'label' | 'typ' | 'optionen' | 'zielTyp' | 'mehrfach'>>, feldKey: string) {
+  const ziel = bedingungsfelder([{ felder: zielFelder }]).find((x) => x.key === b.feld);
+  if (!ziel || !OPS_EIGENES_FELD.includes(b.op)) return [];
+  return eigene.filter((e) => {
+    if (e.key === feldKey) return false; // kein Kreis über das eigene Referenzfeld
+    switch (b.op) {
+      case 'gleich': return !e.mehrfach && (TEXTARTEN.includes(ziel.art) ? e.typ === 'text' : ziel.art === 'zeit' ? e.typ === 'datum' : e.typ === ziel.art && ['zahl', 'datum', 'text'].includes(e.typ));
+      case 'enthaelt': return TEXTARTEN.includes(ziel.art) && e.typ === 'text';
+      case 'kleiner': case 'groesser': return (ziel.art === 'zahl' || ziel.art === 'betrag') ? e.typ === 'zahl' : (ziel.art === 'datum' || ziel.art === 'zeit') && e.typ === 'datum';
+      case 'einerVon': return ziel.art === 'auswahl' && e.typ === 'auswahl' && (e.optionen ?? []).every((o) => (ziel.feld?.optionen ?? []).includes(o));
+      case 'zeigtAuf': return ziel.art === 'referenz' && e.typ === 'referenz' && !!e.zielTyp && e.zielTyp === ziel.feld?.zielTyp;
+      default: return false;
+    }
+  });
 }
+
+/**
+ * Probleme des Filters gegen den (aktuellen) Zieltyp, z. B. entfernte Felder. Mit `eigene` werden
+ * Werte aus der eigenen Mappe (#173) geprüft: das Feld muss es geben und es muss zum Vergleich passen.
+ */
+export function auswahlProbleme(bed: Feldbedingung[], ziel: Pick<Mappentyp, 'felder'>, eigene?: { felder: Feld[]; feldKey: string }): string[] {
+  const erg: string[] = [];
+  for (const b of bed) {
+    if (b.wert?.art === 'eigenesFeld') {
+      const name = b.wert.feld;
+      // Für die allgemeine Prüfung wie ein fester Wert behandeln.
+      const p = bedingungsProblem({ ...b, wert: { art: 'fest', wert: b.op === 'einerVon' || b.op === 'zeigtAuf' ? [] : '' } }, [alsZiel(ziel)]);
+      if (p) { erg.push(p); continue; }
+      if (!OPS_EIGENES_FELD.includes(b.op)) { erg.push(`„${OPERATOREN[b.op]}“ geht nicht mit einem Wert dieser Mappe.`); continue; }
+      if (!eigene) continue;
+      if (name === eigene.feldKey) { erg.push('Der Filter darf nicht auf das eigene Referenzfeld zeigen.'); continue; }
+      const f = eigene.felder.find((x) => x.key === name);
+      if (!f) { erg.push(`Das Feld „${name}“ dieser Mappe gibt es nicht (mehr).`); continue; }
+      if (!passendeEigeneFelder(b, ziel.felder, eigene.felder, eigene.feldKey).some((x) => x.key === name)) erg.push(`„${f.label}“ passt nicht zum Vergleich mit „${ziel.felder.find((x) => x.key === b.feld)?.label ?? b.feld}“.`);
+      continue;
+    }
+    const p = bedingungsProblem(b, [alsZiel(ziel)]);
+    if (p) erg.push(p);
+  }
+  return erg;
+}
+
+/**
+ * Werte aus der eigenen Mappe einsetzen (#173). Ist der eigene Wert leer, gilt die Bedingung als
+ * nicht gesetzt – dann werden alle angeboten, die die übrigen Bedingungen erfüllen.
+ */
+export function setzeEigeneWerte(bed: Feldbedingung[], werte: Record<string, unknown>): Feldbedingung[] {
+  return bed.flatMap((b) => {
+    if (b.wert?.art !== 'eigenesFeld') return [b];
+    const v = werte[b.wert.feld];
+    if (istLeer(v as never)) return [];
+    const wert = Array.isArray(v) ? v.map(String) : typeof v === 'number' ? v : String(v);
+    return [{ ...b, wert: { art: 'fest', wert } }];
+  });
+}
+
+/** Hängt der Filter von Feldern der eigenen Mappe ab? Welche? */
+export const eigeneFelderIm = (bed: Feldbedingung[] | undefined) => [...new Set((bed ?? []).flatMap((b) => (b.wert?.art === 'eigenesFeld' ? [b.wert.feld] : [])))];
 
 /** Klausel für „passende Mappen des Zieltyps“; Bedingungen mit Problem zählen nicht. */
 export function auswahlKlausel(bed: Feldbedingung[], ziel: Mappentyp, a: Aufloesung): Klausel {

@@ -1,7 +1,7 @@
 /** Auswahlfilter am Referenzfeld (#172): Prüfung am Typ, Auswahl, strenge Prüfung neuer Werte, Hinweis bei alten. */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { vorbelegungAus } from '../../shared/src/sichten';
+import { bedingungsProblem, vorbelegungAus } from '../../shared/src/sichten';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
@@ -70,5 +70,59 @@ describe('Auswahlfilter am Referenzfeld (#172)', () => {
     const b2 = await d.aendereMappe(b.id, { werte: { ...b.werte } });
     assert.equal(b2.werte.arzt, mueller.id);
     assert.ok(partner);
+  });
+});
+
+describe('Auswahlfilter mit Werten der eigenen Mappe (#173)', () => {
+  async function aufbau2() {
+    const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+    const GEBIETE = ['Kardiologie', 'Orthopädie', 'Zahnmedizin'];
+    const partner = await d.legeTypAn({ name: 'Arzt', titelVorlage: '{name}', felder: [
+      { key: 'name', label: 'Name', typ: 'text', pflicht: true },
+      { key: 'fach', label: 'Fachgebiet', typ: 'auswahl', optionen: GEBIETE },
+    ] });
+    const filter = [{ art: 'feld', feld: 'fach', op: 'einerVon', wert: { art: 'eigenesFeld', feld: 'gebiet' } }];
+    const bericht = await d.legeTypAn({ name: 'Bericht', felder: [
+      { key: 'gebiet', label: 'Fachgebiet', typ: 'auswahl', optionen: ['Kardiologie', 'Orthopädie'] },
+      { key: 'arzt', label: 'Arzt', typ: 'referenz', zielTyp: partner.id, auswahlFilter: filter },
+    ] });
+    const a = (name: string, fach: string) => d.legeMappeAn({ typId: partner.id, werte: { name, fach } });
+    return { d, partner, bericht, herz: await a('Dr. Herz', 'Kardiologie'), knie: await a('Dr. Knie', 'Orthopädie'), zahn: await a('Dr. Zahn', 'Zahnmedizin') };
+  }
+
+  it('Mappentyp: eigenes Feld muss existieren, passen und darf nicht das Referenzfeld selbst sein', async () => {
+    const { d, partner } = await aufbau2();
+    const probe = (felder: unknown[]) => d.legeTypAn({ name: `T${Math.random()}`, felder });
+    const ref = (wert: unknown) => ({ key: 'arzt', label: 'Arzt', typ: 'referenz', zielTyp: partner.id, auswahlFilter: [{ art: 'feld', feld: 'fach', op: 'einerVon', wert }] });
+    const meldet = (re: RegExp) => (e: unknown) => e instanceof Fachfehler && re.test(JSON.stringify(e.details));
+    await assert.rejects(probe([ref({ art: 'eigenesFeld', feld: 'fehlt' })]), meldet(/gibt es nicht/));
+    await assert.rejects(probe([ref({ art: 'eigenesFeld', feld: 'arzt' })]), meldet(/eigene Referenzfeld/));
+    await assert.rejects(probe([{ key: 'n', label: 'Nummer', typ: 'zahl' }, ref({ art: 'eigenesFeld', feld: 'n' })]), meldet(/passt nicht/));
+    // Auswahl mit Werten, die es am Ziel nicht gibt
+    await assert.rejects(probe([{ key: 'g', label: 'G', typ: 'auswahl', optionen: ['Kardiologie', 'Neurologie'] }, ref({ art: 'eigenesFeld', feld: 'g' })]), meldet(/passt nicht/));
+    // In einer Sicht gibt es das nicht
+    // In Sichten gibt es das nicht (die Bedingung hat ein Problem und wird ignoriert).
+    assert.match(bedingungsProblem({ art: 'feld', feld: 'fach', op: 'einerVon', wert: { art: 'eigenesFeld', feld: 'x' } }, [partner])!, /nur im Auswahlfilter/);
+  });
+
+  it('Auswahl folgt dem eigenen Wert; leer = alle', async () => {
+    const { d, bericht } = await aufbau2();
+    const titel = async (eigene: unknown) => (await d.seite(ICH, { sicht: `feld:${bericht.id}:arzt`, eigene: JSON.stringify(eigene) })).mappen.map((m) => m.titel).sort();
+    assert.deepEqual(await titel({ gebiet: 'Kardiologie' }), ['Dr. Herz']);
+    assert.deepEqual(await titel({ gebiet: 'Orthopädie' }), ['Dr. Knie']);
+    assert.deepEqual(await titel({}), ['Dr. Herz', 'Dr. Knie', 'Dr. Zahn']);
+  });
+
+  it('Server prüft mit den Werten, die gespeichert werden; Hinweis vor dem Speichern', async () => {
+    const { d, bericht, herz, knie } = await aufbau2();
+    await assert.rejects(d.legeMappeAn({ typId: bericht.id, werte: { gebiet: 'Kardiologie', arzt: knie.id } }), status(422));
+    const b = await d.legeMappeAn({ typId: bericht.id, werte: { gebiet: 'Kardiologie', arzt: herz.id } });
+    // Beide Felder im selben Zug geändert: passt
+    const b2 = await d.aendereMappe(b.id, { werte: { gebiet: 'Orthopädie', arzt: knie.id } });
+    assert.equal(b2.werte.arzt, knie.id);
+    // Nur das Fachgebiet geändert: bestehender Arzt bleibt, Hinweis
+    await d.aendereMappe(b.id, { werte: { gebiet: 'Kardiologie', arzt: knie.id } });
+    assert.deepEqual((await d.holeMappe(b.id)).unpassend, { arzt: [knie.id] });
+    assert.deepEqual(await d.auswahlPruefen({ typId: bericht.id, feldKey: 'arzt', ids: [knie.id, herz.id], werte: { gebiet: 'Kardiologie' } }, ICH.id), { unpassend: [knie.id] });
   });
 });

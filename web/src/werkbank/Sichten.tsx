@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Ansage, useZiehen, ziehTasten, type Ort } from '../ziehen';
-import { SYSTEMSPALTEN, istSystemspalte, type Mappe, type Mappentyp } from '../../../shared/src/model';
+import { SYSTEMSPALTEN, istSystemspalte, type Feld, type Mappe, type Mappentyp } from '../../../shared/src/model';
 import {
   bedingungsfelder, bedingungsProblem, beschreibeBedingung, DYNAMISCH, EINHEITEN, gemeinsameTrefferlisten, kinderVon, mitNachkommen, OPERATOREN, OPERATOREN_JE_ART, spaltenDerSicht, trefferlistenProblem, wirksameTypen,
-  ZAEHLVERGLEICHE, type Bedingung, type Bedingungsfeld, type Feldbedingung, type Einheit, type Operator, type Sicht, type SichtDaten, type WertAngabe, type Zaehlvergleich,
+  ZAEHLVERGLEICHE, auswahlProbleme, OPS_EIGENES_FELD, passendeEigeneFelder, type Bedingung, type Bedingungsfeld, type Feldbedingung, type Einheit, type Operator, type Sicht, type SichtDaten, type WertAngabe, type Zaehlvergleich,
 } from '../../../shared/src/sichten';
 import { api } from '../api';
 import { useDaten } from '../daten';
@@ -573,7 +573,12 @@ export function MappenSuche({ typId, gewaehlt, titel, merke, setze }: { typId: s
  * Auswahlfilter am Referenzfeld (#172): „Nur Mappen, die …“ – Bedingungen auf Felder und
  * Systemwerte des Zieltyps, wie bei Sichten; dazu, wie viele Mappen passen.
  */
-export function AuswahlFilter({ ziel, bedingungen, setze }: { ziel: Mappentyp; bedingungen: Feldbedingung[]; setze: (b: Feldbedingung[]) => void }) {
+export function AuswahlFilter({ ziel, bedingungen, setze, eigeneFelder = [], feldKey = '' }: {
+  ziel: Mappentyp; bedingungen: Feldbedingung[]; setze: (b: Feldbedingung[]) => void;
+  /** Werte aus der eigenen Mappe (#173): Felder dieses Typs und das Referenzfeld selbst (kein Kreis). */
+  eigeneFelder?: Feld[]; feldKey?: string;
+}) {
+  const eigeneNamen = Object.fromEntries(eigeneFelder.map((f) => [f.key, f.label]));
   const d = useDaten();
   const felder = useMemo(() => bedingungsfelder([ziel]), [ziel]);
   const [titel, setTitel] = useState<Record<string, string>>({});
@@ -594,7 +599,9 @@ export function AuswahlFilter({ ziel, bedingungen, setze }: { ziel: Mappentyp; b
         <ol className="bedingungen">
           {bedingungen.map((b, i) => {
             const feld = felder.find((f) => f.key === b.feld);
-            const problem = bedingungsProblem(b, [ziel]);
+            const problem = auswahlProbleme([b], ziel, { felder: eigeneFelder, feldKey })[0] ?? null;
+            const moeglich = passendeEigeneFelder(b, ziel.felder, eigeneFelder, feldKey);
+            const eigen = b.wert?.art === 'eigenesFeld' ? b.wert.feld : null;
             return (
               <li key={i} className={problem ? 'fehlerhaft' : ''}>
                 <div className="bedingungszeile">
@@ -603,10 +610,25 @@ export function AuswahlFilter({ ziel, bedingungen, setze }: { ziel: Mappentyp; b
                     <optgroup label="Felder">{felder.filter((f) => !f.key.startsWith('_')).map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}</optgroup>
                     <optgroup label="Systemwerte">{felder.filter((f) => f.key.startsWith('_')).map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}</optgroup>
                   </select>
-                  {feld && <FeldBedingung b={b} feld={feld} setze={(n) => aendere(i, n)} titel={titel} merke={merke} />}
+                  {feld && (eigen === null
+                    ? <FeldBedingung b={b} feld={feld} setze={(n) => aendere(i, n)} titel={titel} merke={merke} />
+                    : <>
+                        <select aria-label="Vergleich" value={b.op} onChange={(x) => aendere(i, { ...b, op: x.target.value as Operator })}>
+                          {OPERATOREN_JE_ART[feld.art].filter((o) => OPS_EIGENES_FELD.includes(o)).map((o) => <option key={o} value={o}>{OPERATOREN[o]}</option>)}
+                        </select>
+                        <select aria-label="Feld dieser Mappe" value={eigen} onChange={(x) => aendere(i, { ...b, wert: { art: 'eigenesFeld', feld: x.target.value } })}>
+                          {!moeglich.some((m) => m.key === eigen) && <option value={eigen}>{eigeneNamen[eigen] ?? eigen} (passt nicht)</option>}
+                          {moeglich.map((m) => <option key={m.key} value={m.key}>{m.label} dieser Mappe</option>)}
+                        </select>
+                      </>)}
+                  {feld && (moeglich.length > 0 || eigen !== null) && (
+                    <label className="haken klein"><input type="checkbox" checked={eigen !== null} onChange={(x) => aendere(i, x.target.checked
+                      ? { art: 'feld', feld: b.feld, op: OPS_EIGENES_FELD.includes(b.op) ? b.op : (OPERATOREN_JE_ART[feld.art].find((o) => OPS_EIGENES_FELD.includes(o)) ?? b.op), wert: { art: 'eigenesFeld', feld: moeglich[0]?.key ?? '' } }
+                      : neu(feld))} /><span>Wert aus dieser Mappe</span></label>
+                  )}
                   <button type="button" className="textknopf gefahr klein" onClick={() => setze(bedingungen.filter((_, j) => j !== i))}>Entfernen</button>
                 </div>
-                <p className={problem ? 'fehlertext klein' : 'leise klein'}>{problem ?? beschreibeBedingung(b, [ziel], (mid) => titel[mid] ?? d.person(mid))}</p>
+                <p className={problem ? 'fehlertext klein' : 'leise klein'}>{problem ?? beschreibeBedingung(b, [ziel], (mid) => titel[mid] ?? d.person(mid), eigeneNamen)}{eigen && !problem && <span> – ist dieses Feld leer, gilt die Bedingung nicht.</span>}</p>
               </li>
             );
           })}

@@ -76,6 +76,14 @@ Unter dem Ziel-Mappentyp legst du mit **Nur Mappen, die …** fest, welche Mappe
 - Beim Speichern des Mappentyps meldet das DMS Bedingungen auf Felder, die es im Zieltyp nicht (mehr) gibt.
 - Nicht bei Feldern, die auf jede Mappe zeigen.
 
+**Werte aus dieser Mappe:** Statt eines festen Werts kann eine Bedingung einen Wert der eigenen Mappe nehmen – Haken **Wert aus dieser Mappe** und das Feld wählen. Beispiele: *Fachgebiet* (am Arzt) *ist einer von* **Fachgebiet dieser Mappe**; *Vertragspartner* (am Vertrag) *zeigt auf* **Vertragspartner dieser Mappe**.
+
+- Angeboten werden nur Felder mit passendem Datentyp: Text zu Text, Zahl zu Zahl, Datum zu Datum, ein Auswahlfeld, dessen Werte es auch am Ziel gibt, ein Referenzfeld auf denselben Mappentyp. Das Referenzfeld selbst geht nicht.
+- Ändert man in der Mappe das eigene Feld, filtert die Auswahl sofort neu. Passt eine schon gewählte Mappe nicht mehr, steht der Hinweis „passt nicht mehr zum Filter“ schon vor dem Speichern am Feld.
+- **Ist das eigene Feld leer**, gilt die Bedingung nicht – dann werden alle angeboten, die die übrigen Bedingungen erfüllen.
+- Das DMS prüft beim Speichern mit den Werten, die gespeichert werden sollen – auch wenn beide Felder im selben Zug geändert werden.
+- Werte aus Mappen, auf die diese Mappe verweist (eine Ebene weiter), gibt es nicht.
+
 Auf eine Mappe, auf die noch verwiesen wird, kann niemand sie löschen.
 
 ### Passwortfelder
