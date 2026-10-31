@@ -6,6 +6,7 @@ import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, DokumentVers
 import type { Feldbedingung, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
 import type { InstalliertesPaket, Katalog } from '../../shared/src/pakete';
+import type { Einstellungsbeschreibung } from '../../shared/src/paketeinstellungen';
 import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src/sichtrechte';
 import type { Anstehend, Erinnerung } from '../../shared/src/fristen';
 import { merkeAnfrage } from './diagnose';
@@ -422,7 +423,7 @@ export const api = {
   /* Nummernkreise (#171) */
   nummernkreise: () => anfrage<NummernkreisAnsicht[]>('GET', '/api/werkbank/nummernkreise'),
   /* Paketverwaltung (#188, #189) */
-  pakete: () => anfrage<{ installiert: InstalliertesPaket[]; katalogUrl: string; quellen: PaketQuelle[]; dms: string }>('GET', '/api/werkbank/pakete'),
+  pakete: () => anfrage<{ installiert: Array<InstalliertesPaket & { einstellungenNoetig?: boolean }>; katalogUrl: string; quellen: PaketQuelle[]; dms: string }>('GET', '/api/werkbank/pakete'),
   paketKatalog: (alle: boolean) => anfrage<{ kataloge: Array<{ url: string; offiziell: boolean; katalog: Katalog | null; fehler: string | null }>; abgerufen: string }>('POST', '/api/werkbank/pakete/katalog', { alle }),
   paketQuelleHinzu: (url: string) => anfrage<PaketQuelle[]>('POST', '/api/werkbank/pakete/quellen', { url }),
   paketQuelleSchalten: (url: string, aktiv: boolean) => anfrage<PaketQuelle[]>('PUT', '/api/werkbank/pakete/quellen', { url, aktiv }),
@@ -432,7 +433,10 @@ export const api = {
   paketInstallieren: (e: { id?: string; version?: string; quelle?: string; upload?: string; bestaetigt?: boolean; namen?: Record<string, string>; sichtNamen?: Record<string, string>; beispiele?: boolean; mitAbhaengigkeiten?: boolean }) => anfrage<InstalliertesPaket>('POST', '/api/werkbank/pakete/installieren', e),
   paketUpdates: () => anfrage<Array<{ id: string; installiert: string; neu: string; changelog: string | null; quelle: string }>>('POST', '/api/werkbank/pakete/updates'),
   paketAktualisieren: (id: string, version?: string, bestaetigt?: boolean) => anfrage<InstalliertesPaket>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/aktualisieren`, { version, bestaetigt }),
-  paketEntfernen: (id: string) => anfrage<void>('DELETE', `/api/werkbank/pakete/${encodeURIComponent(id)}`),
+  paketEntfernen: (id: string, einstellungenBehalten = false) => anfrage<void>('DELETE', `/api/werkbank/pakete/${encodeURIComponent(id)}${einstellungenBehalten ? '?einstellungenBehalten=1' : ''}`),
+  paketEinstellungen: (id: string) => anfrage<PaketEinstellungenStand>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`),
+  paketEinstellungenSpeichern: (id: string, werte: Record<string, unknown>) => anfrage<PaketEinstellungenStand>('PUT', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`, { werte }),
+  paketAktion: (id: string, aktion: string) => anfrage<{ ok: boolean; text: string }>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/aktionen/${encodeURIComponent(aktion)}`),
   nummernkreisAnlegen: (k: NummernkreisEingabe) => anfrage<NummernkreisAnsicht[]>('POST', '/api/werkbank/nummernkreise', k),
   nummernkreisAendern: (s: string, k: Omit<NummernkreisEingabe, 'schluessel'>) => anfrage<NummernkreisAnsicht[]>('PUT', `/api/werkbank/nummernkreise/${encodeURIComponent(s)}`, k),
   nummernkreisLoeschen: (s: string) => anfrage<NummernkreisAnsicht[]>('DELETE', `/api/werkbank/nummernkreise/${encodeURIComponent(s)}`),
@@ -529,6 +533,12 @@ async function sendeDatei(url: string, datei: File): Promise<unknown> {
     return d;
 }
 
+/** Einstellungen eines Pakets (#197): Beschreibung, Werte (Geheimnisse nur „gesetzt“), Auswahllisten, Status. */
+export interface PaketEinstellungenStand {
+  beschreibung: Einstellungsbeschreibung; werte: Record<string, unknown>; fehlend: string[];
+  status: { letzterLauf: string | null; meldungen: string[] } | null; laeufer: boolean;
+  auswahl: { typen: Array<{ id: string; name: string; felder: Array<{ key: string; label: string }> }>; benutzer: Array<{ id: string; name: string }>; rollen: Array<{ id: string; name: string }>; sichten: Array<{ id: string; name: string }> };
+}
 /** Katalogquelle (#189): der offizielle Katalog oder eine weitere Adresse. */
 export interface PaketQuelle { url: string; offiziell: boolean; aktiv: boolean; von?: string | null; am?: string }
 /** Vorschau einer Paketinstallation bzw. eines Updates (#188). */
@@ -538,7 +548,7 @@ export interface PaketVorschau {
   abhaengigkeiten: Array<{ id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null }>;
   typen: Array<{ schluessel: string; dmsSchluessel: string; name: string; felder: number; vorhanden: boolean; neueFelder: string[]; neueRegister: string[]; konflikt: string | null; vorschlag: string | null; geloescht?: boolean }>;
   sichten: Array<{ schluessel: string; name: string; eltern: string | null; vorhanden: boolean; konflikt: string | null; vorschlag: string | null }>;
-  beispiele: number; probleme: string[];
+  beispiele: number; probleme: string[]; hinweise: string[]; einstellungen: { neu: string[]; weg: string[] } | null;
 }
 export type RechtStufe = 'immer' | 'nie' | 'teils';
 export interface BerechtigungEintrag { typId: string; name: string; system: string | null; berechtigungen: Regelwerk }

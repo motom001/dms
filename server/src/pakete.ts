@@ -13,6 +13,7 @@ import { parse as yamlLesen } from 'yaml';
 import type { Feld, Mappentyp, Register } from '../../shared/src/model';
 import { BEREICH, dmsPasst, liesKatalog, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../shared/src/pakete';
 import { kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
+import { EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand } from '../../shared/src/paketeinstellungen';
 import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
@@ -76,7 +77,7 @@ export interface PaketRegister { key: string; name: string; art: Register['art']
 export interface PaketTyp { schluessel: string; name: string; beschreibung: string; titelVorlage?: string; felder: PaketFeld[]; register: PaketRegister[]; trefferliste?: string[] }
 export interface PaketSicht { schluessel: string; name: string; beschreibung?: string; eltern?: string; typen?: string[]; bedingungen?: Array<{ feld: string; operator: string; wert?: unknown }>; trefferliste?: string }
 export interface PaketBeispiel { typ: string; werte: Record<string, unknown> }
-export interface Paket { manifest: Manifest; typen: PaketTyp[]; sichten: PaketSicht[]; beispiele: PaketBeispiel[]; readme: string }
+export interface Paket { manifest: Manifest; typen: PaketTyp[]; sichten: PaketSicht[]; beispiele: PaketBeispiel[]; readme: string; einstellungen: Einstellungsbeschreibung | null }
 
 const SCHLUESSEL = /^[a-z][a-z0-9_]{0,39}$/;
 const TYPVERWEIS = /^([a-z][a-z0-9_]{1,19}:)?[a-z][a-z0-9_]{0,39}$/;
@@ -143,6 +144,9 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
   const doppelt = (l: string[]) => l.filter((x, i) => l.indexOf(x) !== i);
   for (const s of doppelt(typen.map((t) => t.schluessel))) fehler.push(`mappentypen: Schlüssel „${s}“ doppelt.`);
   for (const s of doppelt(sichten.map((t) => t.schluessel))) fehler.push(`sichten: Schlüssel „${s}“ doppelt.`);
+  // Einstellungen (#197): code.einstellungen und code.aktionen.
+  const einst = liesBeschreibung(m.code);
+  fehler.push(...einst.fehler.map((f) => `manifest.yaml: code.${f}`));
   if (fehler.length) throw new Fachfehler(422, 'Das Paket ist ungültig.', { gruende: fehler });
   return {
     manifest: {
@@ -151,7 +155,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       lizenz: str(m.lizenz), dms: str(m.dms), abhaengigkeiten: Object.fromEntries(Object.entries(abh).map(([k, v]) => [k, str(v)])),
       ...(m.code !== undefined ? { code: m.code } : {}),
     },
-    typen, sichten, beispiele, readme: dateien.get('README.md')?.toString('utf8') ?? '',
+    typen, sichten, beispiele, readme: dateien.get('README.md')?.toString('utf8') ?? '', einstellungen: einst.beschreibung,
   };
 }
 
@@ -178,6 +182,10 @@ export interface Vorschau {
   typen: TypPlan[]; sichten: SichtPlan[]; beispiele: number;
   /** Was die Installation verhindert. */
   probleme: string[];
+  /** Hinweise, die nicht verhindern (z. B. Code läuft noch nicht). */
+  hinweise: string[];
+  /** Einstellungen des Pakets (#197): bei einem Update neue und wegfallende Felder. */
+  einstellungen: { neu: string[]; weg: string[] } | null;
 }
 export interface InstallierenEingabe {
   id?: string; version?: string; namen?: Record<string, string>; sichtNamen?: Record<string, string>; beispiele?: boolean; mitAbhaengigkeiten?: boolean;
@@ -232,7 +240,19 @@ export interface PaketOptionen {
   abruf?: (url: string) => Promise<Buffer>;
   /** Offizieller Katalog (Tests: eine andere Adresse). */
   katalogUrl?: string;
+  /** Benutzer zur Auswahl in Paket-Einstellungen (#197). */
+  benutzer?: () => Promise<Array<{ id: string; name: string }>>;
+  /** Paket-Läufer (Pakete mit Code): Aktionen ausführen, Ereignisse zustellen. Fehlt noch im Betrieb. */
+  laeufer?: PaketLaeufer;
 }
+
+/** Schnittstelle zum Paket-Läufer (#197); kommt mit den Paketen mit Code. */
+export interface PaketLaeufer {
+  aktion(paket: string, aktion: string, einstellungen: Record<string, unknown>): Promise<string>;
+  ereignis?(paket: string, name: 'paket.einstellungen_geaendert', felder: string[]): void;
+}
+/** Zeitgrenze für Aktionen, damit ein Knopf nicht hängt. */
+export const AKTION_MS = 30_000;
 
 /** Holt eine Adresse mit Zeitlimit und Größengrenze; nur HTTPS (bzw. HTTP für localhost). */
 export async function holeDaten(url: string, max = ARCHIV_MAX): Promise<Buffer> {
@@ -345,7 +365,12 @@ export class Paketverwaltung {
     return { url: neu.url, katalog: neu.katalog };
   }
 
-  async installierte(): Promise<InstalliertesPaket[]> { return this.d.listePakete(); }
+  /** Installierte Pakete; mit „Einstellungen nötig“, wenn Pflichtfelder fehlen (#197). */
+  async installierte(): Promise<Array<InstalliertesPaket & { einstellungenNoetig?: boolean }>> {
+    return Promise.all((await this.d.listePakete()).map(async (p) => (p.einstellungen
+      ? { ...p, einstellungenNoetig: fehlendePflicht(p.einstellungen, (await this.d.paketEinstellungen(p.id))?.werte ?? {}).length > 0 }
+      : p)));
+  }
 
   /** Paket einer Version aus einem Katalog holen und gegen die Prüfsumme prüfen. */
   async lade(id: string, version?: string, quelle?: string): Promise<{ paket: Paket; kp: KatalogPaket; v: KatalogVersion; url: string; katalog: Katalog }> {
@@ -405,7 +430,9 @@ export class Paketverwaltung {
     const dmsVersion = this.o.version();
     const dmsOk = dmsPasst(dmsVersion, m.dms);
     if (!dmsOk) probleme.push(`Das Paket braucht DMS ${m.dms}; dieses DMS hat Version ${dmsVersion}. Bitte zuerst das DMS aktualisieren.`);
-    if (m.code !== undefined) probleme.push('Pakete mit Code lassen sich noch nicht installieren.');
+    const hinweise: string[] = [];
+    // Code läuft erst mit dem Paket-Läufer; Einstellungen lassen sich schon pflegen (#197).
+    if (m.code !== undefined) hinweise.push('Das Paket enthält Code. Er läuft erst, wenn es im DMS den Paket-Läufer gibt; Einstellungen lassen sich schon pflegen.');
     if (ich && vergleicheVersion(m.version, ich.version) <= 0) probleme.push(`Version ${ich.version} ist schon installiert.`);
     const abhaengigkeiten = Object.entries(m.abhaengigkeiten).map(([id, bereich]): AbhaengigkeitPlan => {
       const da = installierte.find((p) => p.id === id);
@@ -450,7 +477,8 @@ export class Paketverwaltung {
       paket: { id: m.id, name: m.name, version: m.version, beschreibung: m.beschreibung, lizenz: m.lizenz, autor: m.autor, dms: m.dms, abhaengigkeiten: m.abhaengigkeiten, readme: v?.readme ?? null, changelog: v?.changelog ?? null, quelle: v?.quelle ?? null },
       dmsVersion, dmsOk, installiert: ich?.version ?? null, update: !!ich,
       herkunft: ich?.herkunft ?? null,
-      abhaengigkeiten, typen: typPlaene, sichten: sichtPlaene, beispiele: paket.beispiele.length, probleme,
+      abhaengigkeiten, typen: typPlaene, sichten: sichtPlaene, beispiele: paket.beispiele.length, probleme, hinweise,
+      einstellungen: paket.einstellungen || ich?.einstellungen ? einstellungsAenderung(ich?.einstellungen ?? null, paket.einstellungen) : null,
     };
   }
 
@@ -534,6 +562,8 @@ export class Paketverwaltung {
       for (let runde = 0; runde < 3; runde++) for (const s of [...angelegt].reverse()) { const id = ids.get(s)!; await this.d.loescheTyp(id).then(() => angelegt.delete(s), () => {}); }
       for (const t of geaendert) await this.d.aendereTyp(t.id, t).catch(() => {});
     };
+    const alteEinstellungen = await this.d.paketEinstellungen(m.id);
+    let einstellungenGeschrieben = false;
     const typMap: Record<string, string> = { ...(alt?.typen ?? {}) };
     const sichtMap: Record<string, string> = { ...(alt?.sichten ?? {}) };
     try {
@@ -596,6 +626,13 @@ export class Paketverwaltung {
           try { mappen.push((await this.d.legeMappeAn({ typId, werte }, von.id)).id); } catch (f) { throw new Fachfehler(422, `Beispiel: ${meldungen(f)}`); }
         }
       }
+      // Einstellungen (#197): Vorgaben setzen bzw. überführen; nach dem Entfernen behaltene Werte zählen.
+      if (paket.einstellungen) {
+        const vorher = alteEinstellungen ?? { werte: {} };
+        const { werte } = ueberfuehre(paket.einstellungen, alteEinstellungen ? vorher.werte : {});
+        await this.d.setzePaketEinstellungen(m.id, { ...vorher, werte });
+        einstellungenGeschrieben = true;
+      } else if (alteEinstellungen && alt) { await this.d.setzePaketEinstellungen(m.id, null); einstellungenGeschrieben = true; }
       const jetzt = new Date().toISOString();
       const datensatz: InstalliertesPaket = {
         id: m.id, name: m.name, version: m.version, beschreibung: m.beschreibung, lizenz: m.lizenz, autor: m.autor,
@@ -603,12 +640,14 @@ export class Paketverwaltung {
         installiert: alt?.installiert ?? jetzt, installiertVon: alt ? alt.installiertVon : von.email,
         aktualisiert: alt ? jetzt : null, aktualisiertVon: alt ? von.email : null,
         typen: typMap, sichten: sichtMap, abhaengigkeiten: m.abhaengigkeiten,
+        einstellungen: paket.einstellungen, code: m.code !== undefined,
         ...(v ? { links: { readme: v.readme, changelog: v.changelog, quelle: v.quelle } } : alt?.links ? { links: alt.links } : {}),
       };
       await this.d.speicherePaket(datensatz);
       return datensatz;
     } catch (f) {
       await zurueck();
+      if (einstellungenGeschrieben) await this.d.setzePaketEinstellungen(m.id, alteEinstellungen).catch(() => {});
       throw f;
     }
   }
@@ -647,8 +686,121 @@ export class Paketverwaltung {
     return neu;
   }
 
+  /* ---------- Einstellungen (#197) ---------- */
+
+  private async beschreibungVon(id: string) {
+    const p = (await this.d.listePakete()).find((x) => x.id === id);
+    if (!p) throw new Fachfehler(404, `„${id}“ ist nicht installiert.`);
+    if (!p.einstellungen) throw new Fachfehler(404, `„${p.name}“ hat keine Einstellungen.`);
+    return { p, b: p.einstellungen };
+  }
+
+  /** Alles, was es zur Auswahl gibt: Mappentypen mit Feldern, Benutzer, Rollen, Sichten. */
+  private async auswahl(p: InstalliertesPaket) {
+    const typen = await this.d.listeTypen();
+    const installierte = await this.d.listePakete();
+    return {
+      typen: typen.map((t) => ({ id: t.id, name: t.name, felder: t.felder.filter((f) => f.typ !== 'passwort').map((f) => ({ key: f.key, label: f.label })) })),
+      benutzer: this.o.benutzer ? await this.o.benutzer() : [],
+      rollen: (await this.d.listeRollen()).map((r) => ({ id: r.id, name: r.name })),
+      sichten: (await this.d.listeSichten()).map((s) => ({ id: s.id, name: s.name })),
+      typVon: (vw: string) => {
+        const [paket, s] = vw.includes(':') ? vw.split(':') : [p.id, vw];
+        return installierte.find((x) => x.id === paket)?.typen[s] ?? null;
+      },
+    };
+  }
+
+  /** Geheimnisse nie ausgeben – nur, ob einer gesetzt ist. */
+  private maskiere(b: Einstellungsbeschreibung, werte: Record<string, unknown>): Record<string, unknown> {
+    const m = (f: EinstellungFeld, v: unknown): unknown => (f.typ === 'geheim' ? { gesetzt: typeof v === 'string' && v !== '' } satisfies GeheimStand : v);
+    const erg: Record<string, unknown> = {};
+    for (const f of abschnittsfelder(b)) erg[f.schluessel] = m(f, werte[f.schluessel]);
+    for (const l of listen(b)) erg[l.schluessel] = (Array.isArray(werte[l.schluessel]) ? werte[l.schluessel] as Record<string, unknown>[] : [])
+      .map((e) => Object.fromEntries([[EINTRAG_ID, e[EINTRAG_ID]], ...l.felder.map((f) => [f.schluessel, m(f, e[f.schluessel])])]));
+    return erg;
+  }
+
+  async einstellungen(id: string) {
+    const { p, b } = await this.beschreibungVon(id);
+    const gespeichert = (await this.d.paketEinstellungen(id)) ?? { werte: {} };
+    const q = await this.auswahl(p);
+    return {
+      beschreibung: b, werte: this.maskiere(b, gespeichert.werte), fehlend: fehlendePflicht(b, gespeichert.werte),
+      status: gespeichert.status ?? null, laeufer: !!this.o.laeufer,
+      auswahl: { typen: q.typen, benutzer: q.benutzer, rollen: q.rollen, sichten: q.sichten },
+    };
+  }
+
+  /** Speichern: prüfen (Typ, Pflicht, Auswahl, Verweise), Geheimnisse verschlüsseln, Protokoll ohne Werte von Geheimnissen. */
+  async speichereEinstellungen(id: string, eingabe: unknown, von: Handelnder) {
+    const { p, b } = await this.beschreibungVon(id);
+    const alt = (await this.d.paketEinstellungen(id)) ?? { werte: {} };
+    const q = await this.auswahl(p);
+    const r = pruefeWerte(b, (eingabe as { werte?: unknown } | null)?.werte ?? eingabe, { ...q, benutzer: q.benutzer.map((x) => x.id), rollen: q.rollen.map((x) => x.id), sichten: q.sichten.map((x) => x.id) });
+    // Geheimnisse: neu → verschlüsseln, behalten → alter Wert (bei Listen über die Id des Eintrags), null → weg.
+    const geheim = (f: EinstellungFeld, v: unknown, altWert: unknown, pfad: string) => {
+      if (f.typ !== 'geheim') return v;
+      const w = v && typeof v === 'object' ? (typeof altWert === 'string' && altWert ? altWert : null) : typeof v === 'string' ? this.d.verschluesselePaketGeheimnis(v) : null;
+      if (f.pflicht && !w) r.fehler[pfad] = 'Pflichtfeld.';
+      return w;
+    };
+    for (const f of abschnittsfelder(b)) r.werte[f.schluessel] = geheim(f, r.werte[f.schluessel], alt.werte[f.schluessel], f.schluessel);
+    for (const l of listen(b)) {
+      const alte = Array.isArray(alt.werte[l.schluessel]) ? alt.werte[l.schluessel] as Record<string, unknown>[] : [];
+      (r.werte[l.schluessel] as Record<string, unknown>[]).forEach((e, i) => {
+        const vorher = alte.find((x) => x[EINTRAG_ID] === e[EINTRAG_ID]);
+        for (const f of l.felder) e[f.schluessel] = geheim(f, e[f.schluessel], vorher?.[f.schluessel], `${l.schluessel}.${i + 1}.${f.schluessel}`);
+      });
+    }
+    if (Object.keys(r.fehler).length) throw new Fachfehler(422, 'Bitte die markierten Einstellungen prüfen.', { felderFehler: r.fehler, gruende: Object.values(r.fehler) });
+    const geaendert = Object.keys(r.werte).filter((k) => JSON.stringify(r.werte[k]) !== JSON.stringify(alt.werte[k]));
+    await this.d.setzePaketEinstellungen(id, { ...alt, werte: r.werte });
+    if (geaendert.length) {
+      log.info(`Einstellungen von Paket ${p.name} geändert (Felder ${geaendert.join(', ')})`, { von: von.email, paket: id, felder: geaendert });
+      try { this.o.laeufer?.ereignis?.(id, 'paket.einstellungen_geaendert', geaendert); } catch { /* das Paket entscheidet selbst */ }
+    }
+    return this.einstellungen(id);
+  }
+
+  /** Einstellungen im Klartext – nur für das eigene Paket über den Paket-Läufer, nie über die API. */
+  async einstellungenFuerPaket(id: string): Promise<Record<string, unknown>> {
+    const { b } = await this.beschreibungVon(id);
+    const w = structuredClone((await this.d.paketEinstellungen(id))?.werte ?? {});
+    const klar = (f: EinstellungFeld, v: unknown) => (f.typ === 'geheim' && typeof v === 'string' ? this.d.entschluessele(v) : v);
+    for (const f of abschnittsfelder(b)) w[f.schluessel] = klar(f, w[f.schluessel]);
+    for (const l of listen(b)) for (const e of (Array.isArray(w[l.schluessel]) ? w[l.schluessel] as Record<string, unknown>[] : [])) for (const f of l.felder) e[f.schluessel] = klar(f, e[f.schluessel]);
+    return w;
+  }
+
+  /** Statusbereich: schreibt nur das Paket (über den Läufer); in der Oberfläche schreibgeschützt. */
+  async setzeStatus(id: string, status: { letzterLauf: string | null; meldungen: string[] }) {
+    const alt = (await this.d.paketEinstellungen(id)) ?? { werte: {} };
+    await this.d.setzePaketEinstellungen(id, { ...alt, status: { letzterLauf: status.letzterLauf, meldungen: status.meldungen.slice(-20).map((m) => String(m).slice(0, 500)) } });
+  }
+
+  /** Aktion aus dem Manifest ausführen; die Antwort des Pakets als Text, mit Zeitgrenze. */
+  async aktion(id: string, schluessel: string, von: Handelnder): Promise<{ ok: boolean; text: string }> {
+    const { p, b } = await this.beschreibungVon(id);
+    const a = b.aktionen.find((x) => x.schluessel === schluessel);
+    if (!a) throw new Fachfehler(404, 'Diese Aktion gibt es nicht.');
+    const fehlend = fehlendePflicht(b, (await this.d.paketEinstellungen(id))?.werte ?? {});
+    if (fehlend.length) return { ok: false, text: `Einstellungen nötig: ${fehlend.join(', ')}.` };
+    if (!this.o.laeufer) return { ok: false, text: 'Pakete mit Code laufen in diesem DMS noch nicht (der Paket-Läufer fehlt). Die Aktion lässt sich deshalb noch nicht ausführen.' };
+    log.info(`Aktion „${a.name}“ von Paket ${p.name}`, { von: von.email, paket: id, aktion: schluessel });
+    let uhr: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const text = await Promise.race([
+        this.o.laeufer.aktion(id, schluessel, await this.einstellungenFuerPaket(id)),
+        new Promise<never>((_, nein) => { uhr = setTimeout(() => nein(new Error(`Keine Antwort nach ${AKTION_MS / 1000} Sekunden.`)), AKTION_MS); }),
+      ]);
+      return { ok: true, text: String(text).slice(0, 2000) };
+    } catch (e) { return { ok: false, text: (e as Error).message }; }
+    finally { clearTimeout(uhr); }
+  }
+
   /** Entfernen: nur ohne Mappen der Typen des Pakets und wenn kein anderes Paket davon abhängt. */
-  async entferne(id: string, von: Handelnder): Promise<void> {
+  async entferne(id: string, von: Handelnder, behalten = false): Promise<void> {
     const alle = await this.d.listePakete();
     const p = alle.find((x) => x.id === id);
     if (!p) throw new Fachfehler(404, `„${id}“ ist nicht installiert.`);
@@ -683,6 +835,8 @@ export class Paketverwaltung {
       }
     }
     await this.d.loeschePaket(id);
-    log.info('Paket entfernt', { von: von.email, paket: id, version: p.version });
+    // Einstellungen (#197): nur auf ausdrücklichen Wunsch für eine spätere Neuinstallation behalten.
+    if (!behalten) await this.d.setzePaketEinstellungen(id, null);
+    log.info('Paket entfernt', { von: von.email, paket: id, version: p.version, einstellungenBehalten: behalten });
   }
 }
