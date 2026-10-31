@@ -117,8 +117,13 @@ export interface PapierkorbEintrag {
   erstellt: string; erstelltVon: string | null; geaendert: string; geaendertVon: string | null;
   geloescht: string; geloeschtVon: string | null; dokumente: number;
 }
+/** Zwei-Faktor-Anmeldung (#242). */
+export interface ZweifaktorStand { aktiv: boolean; seit: string | null; codesUebrig: number; pflicht: boolean }
+export interface ZweifaktorPflicht { admin: boolean; mitglied: boolean }
 export interface KontoStatus {
   einrichtungNoetig: boolean; mail: boolean; benutzer: Benutzer | null;
+  /** Zwei-Faktor (#242): eingerichtet; für die Rolle vorgeschrieben, aber noch nicht eingerichtet. */
+  zweifaktor?: { aktiv: boolean; fehlt: boolean } | null;
   /** Gibt es einen Schlüssel, um Passwörter zu speichern (#39, #46)? */
   passwoerterMoeglich?: boolean;
   /** Ein Administrator agiert gerade als dieser Benutzer. */
@@ -238,11 +243,22 @@ export const api = {
   wartungJetzt: () => anfrage<unknown>('POST', '/api/werkbank/wartung/jetzt'),
   wartungAus: () => anfrage<unknown>('POST', '/api/werkbank/wartung/aus'),
   einrichten: (d: { mandant?: string; email: string; name: string; passwort: string }) => anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/einrichten', d),
-  anmelden: (d: { email: string; passwort: string }) => anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/anmelden', d),
+  /** Mit Zwei-Faktor (#242) kommt statt des Benutzers eine Kennung für den zweiten Schritt. */
+  anmelden: (d: { email: string; passwort: string }) => anfrage<{ benutzer?: Benutzer; zweiterSchritt?: string }>('POST', '/api/konto/anmelden', d),
+  anmeldenCode: (kennung: string, code: string) => anfrage<{ benutzer: Benutzer; wiederherstellung: boolean }>('POST', '/api/konto/anmelden/code', { kennung, code }),
+  zweifaktor: () => anfrage<ZweifaktorStand>('GET', '/api/konto/zweifaktor'),
+  zweifaktorBeginnen: () => anfrage<{ geheimnis: string; uri: string }>('POST', '/api/konto/zweifaktor/beginnen'),
+  zweifaktorBestaetigen: (code: string) => anfrage<{ codes: string[] }>('POST', '/api/konto/zweifaktor/bestaetigen', { code }),
+  zweifaktorCodes: (passwort: string) => anfrage<{ codes: string[] }>('POST', '/api/konto/zweifaktor/codes', { passwort }),
+  zweifaktorEntfernen: (passwort: string) => anfrage<null>('POST', '/api/konto/zweifaktor/entfernen', { passwort }),
+  zweifaktorPflicht: () => anfrage<ZweifaktorPflicht>('GET', '/api/werkbank/zweifaktor'),
+  zweifaktorPflichtSetzen: (p: Partial<ZweifaktorPflicht>) => anfrage<ZweifaktorPflicht>('PUT', '/api/werkbank/zweifaktor', p),
+  benutzerZweifaktor: (id: string) => anfrage<Omit<ZweifaktorStand, 'pflicht'>>('GET', `/api/benutzer/${id}/zweifaktor`),
+  benutzerZweifaktorZuruecksetzen: (id: string) => anfrage<null>('POST', `/api/benutzer/${id}/zweifaktor/zuruecksetzen`),
   abmelden: () => anfrage<null>('POST', '/api/konto/abmelden'),
   passwortVergessen: (email: string) => anfrage<null>('POST', '/api/konto/passwort-vergessen', { email }),
   linkPruefen: (s: string) => anfrage<{ email: string; name: string; zweck: 'einladung' | 'zuruecksetzen' }>('GET', `/api/konto/link/${encodeURIComponent(s)}`),
-  passwortSetzen: (schluessel: string, passwort: string) => anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/passwort-setzen', { schluessel, passwort }),
+  passwortSetzen: (schluessel: string, passwort: string) => anfrage<{ benutzer?: Benutzer; zweiterSchritt?: string }>('POST', '/api/konto/passwort-setzen', { schluessel, passwort }),
 
   personen: () => anfrage<Person[]>('GET', '/api/personen'),
   /* Abwesenheit mit Vertreter (#78) */

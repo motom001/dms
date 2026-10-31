@@ -192,6 +192,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   /** Benutzer mit ihren weiteren Rollen (#27). */
   const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.weitereRollen()).get(b.id) ?? [] });
   const sicherung = () => { if (!x.sicherung) throw new Fachfehler(404, 'Sicherungen sind nicht eingerichtet.'); return x.sicherung; };
+  const zf = () => { if (!konten.zweifaktor) throw new Fachfehler(404, 'Die Zwei-Faktor-Anmeldung ist nicht eingerichtet.'); return konten.zweifaktor; };
   const postfaecher = () => { if (!x.postfaecher) throw new Fachfehler(404, 'Postfächer sind nicht eingerichtet.'); return x.postfaecher; };
   /** Demo-Dokumente (#248): freier Platz bei den Dateien; frei bleiben müssen Mindest-Speicherplatz der Sicherung bzw. die Speicherplatz-Grenze. */
   const demoPlatz: DemoPlatz | undefined = x.speicherplatz ? {
@@ -235,6 +236,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       einrichtung: x.einrichtung ? { phase: 'konto', code: x.einrichtung.codeNoetig, assistent: a.benutzer?.rolle === 'admin' && !a.sitzungsDaten?.vertretungId ? (await x.einrichtung.stand()).offen : false } : null,
       mail: konten.mailAktiv,
       benutzer: a.benutzer ?? null,
+      // Zwei-Faktor (#242): eingerichtet? Für die Rolle vorgeschrieben, aber noch nicht eingerichtet?
+      zweifaktor: a.benutzer && konten.zweifaktor ? { aktiv: await konten.zweifaktor.aktiv(a.benutzer.id), fehlt: !a.sitzungsDaten?.vertretungId && await konten.zweifaktor.fehlt(a.benutzer) } : null,
       // Ohne Schlüssel (Werkbank → Verschlüsselung) lassen sich keine Passwörter speichern (#39, #46).
       passwoerterMoeglich: dienst.passwoerterMoeglich,
       // Logo und Schriftzug des Standard-Designs für die Anmeldeseite (#72).
@@ -275,9 +278,43 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
         L.konto.warn('Anmeldung fehlgeschlagen', { email: String(b(a).email ?? ''), ip: a.ip, grund: (e as Error).message });
         throw e;
       }
-      await nurAdminsInWartung(r);
+      // Zwei-Faktor (#242): Passwort stimmt, jetzt der Code.
+      if ('zweiterSchritt' in r && r.zweiterSchritt) return ok({ zweiterSchritt: r.zweiterSchritt });
+      if (!r.benutzer || !r.schluessel) throw new Fachfehler(500, 'Anmeldung unvollständig.');
+      await nurAdminsInWartung({ benutzer: r.benutzer, schluessel: r.schluessel });
       L.konto.info('Angemeldet', { email: r.benutzer.email, ip: a.ip, geraet: a.geraet });
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
+    } },
+    { methode: 'POST', pfad: '/api/konto/anmelden/code', zugang: 'offen', handler: async (a) => {
+      let r;
+      try { r = await konten.anmeldenMitCode(b(a), a.ip); } catch (e) {
+        L.konto.warn('Zweiter Faktor falsch', { ip: a.ip, grund: (e as Error).message });
+        throw e;
+      }
+      await nurAdminsInWartung(r);
+      L.konto.info(r.wiederherstellung ? 'Angemeldet mit Wiederherstellungscode' : 'Angemeldet (zwei Faktoren)', { email: r.benutzer.email, ip: a.ip, geraet: a.geraet });
+      return { body: { benutzer: r.benutzer, wiederherstellung: r.wiederherstellung }, sitzungSetzen: r.schluessel };
+    } },
+    /* ---------- Zwei-Faktor-Anmeldung (#242) ---------- */
+    { methode: 'GET', pfad: '/api/konto/zweifaktor', zugang: 'angemeldet', handler: async (a) => ok({ ...(await zf().status(ich(a).id)), pflicht: (await zf().pflicht())[ich(a).rolle] }) },
+    { methode: 'POST', pfad: '/api/konto/zweifaktor/beginnen', zugang: 'angemeldet', handler: async (a) => ok(zf().beginne(ich(a), (await x.designs?.marke())?.schriftzug || 'DMS')) },
+    { methode: 'POST', pfad: '/api/konto/zweifaktor/bestaetigen', zugang: 'angemeldet', handler: async (a) => ok({ codes: await zf().bestaetige(ich(a).id, b(a).code, ich(a).email) }) },
+    { methode: 'POST', pfad: '/api/konto/zweifaktor/codes', zugang: 'angemeldet', handler: async (a) => {
+      await konten.pruefeEigenesPasswort(ich(a), b(a).passwort);
+      return ok({ codes: await zf().neueCodes(ich(a).id, ich(a).email) });
+    } },
+    { methode: 'POST', pfad: '/api/konto/zweifaktor/entfernen', zugang: 'angemeldet', handler: async (a) => {
+      if ((await zf().pflicht())[ich(a).rolle]) throw new Fachfehler(409, 'Für deine Rolle ist die Zwei-Faktor-Anmeldung vorgeschrieben. Ein Administrator kann sie zurücksetzen, dann richtest du sie neu ein.');
+      await konten.pruefeEigenesPasswort(ich(a), b(a).passwort);
+      await zf().entferne(ich(a).id, ich(a).email);
+      return leer;
+    } },
+    { methode: 'GET', pfad: '/api/werkbank/zweifaktor', zugang: 'admin', handler: async () => ok(await zf().pflicht()) },
+    { methode: 'PUT', pfad: '/api/werkbank/zweifaktor', zugang: 'admin', handler: async (a) => ok(await zf().setzePflicht(a.body, ich(a).email)) },
+    { methode: 'GET', pfad: '/api/benutzer/:id/zweifaktor', zugang: 'admin', handler: async (a) => ok(await zf().status(a.params.id)) },
+    { methode: 'POST', pfad: '/api/benutzer/:id/zweifaktor/zuruecksetzen', zugang: 'admin', handler: async (a) => {
+      if (!(await zf().entferne(a.params.id, ich(a).email))) throw new Fachfehler(404, 'Dieser Benutzer hat keine Zwei-Faktor-Anmeldung.');
+      return leer;
     } },
     { methode: 'POST', pfad: '/api/konto/abmelden', zugang: 'offen', handler: async (a) => {
       // Papierkorb beim Abmelden leeren, wenn im Profil so eingestellt (#43) – nicht, solange ein Administrator vertritt.
@@ -297,7 +334,9 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/konto/passwort-setzen', zugang: 'offen', handler: async (a) => {
       const r = await konten.passwortSetzen(b(a), info(a));
       L.konto.info('Passwort über Link gesetzt', { email: r.benutzer.email });
-      await nurAdminsInWartung(r);
+      if ('zweiterSchritt' in r && r.zweiterSchritt) return ok({ zweiterSchritt: r.zweiterSchritt });
+      if (!r.schluessel) throw new Fachfehler(500, 'Anmeldung unvollständig.');
+      await nurAdminsInWartung({ benutzer: r.benutzer, schluessel: r.schluessel });
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
 
@@ -1079,5 +1118,9 @@ export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => st
   if (r.methode !== 'GET' && kopf('x-dms') !== '1') throw new Fachfehler(403, 'Anfrage ohne Kennung der Oberfläche abgelehnt.');
   if (r.zugang === 'offen') return;
   if (!a.benutzer) throw new Fachfehler(401, 'Bitte anmelden.');
+  // Zwei-Faktor vorgeschrieben (#242), aber noch nicht eingerichtet: nur das eigene Konto.
+  if (konten.zweifaktor && !a.sitzungsDaten?.vertretungId && !r.pfad.startsWith('/api/konto/') && (await konten.zweifaktor.fehlt(a.benutzer))) {
+    throw new Fachfehler(403, 'Bitte zuerst die Zwei-Faktor-Anmeldung einrichten (Mein Konto).');
+  }
   if (r.zugang === 'admin' && a.benutzer.rolle !== 'admin') throw new Fachfehler(403, 'Dafür sind Administratorrechte nötig.');
 }

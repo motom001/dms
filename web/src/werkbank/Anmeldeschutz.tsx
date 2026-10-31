@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, type AnmeldeschutzStand, type SperrEinstellung } from '../api';
+import { api, type AnmeldeschutzStand, type SperrEinstellung, type ZweifaktorPflicht } from '../api';
 import { Hilfe } from '../Hilfe';
 
 /** Werkbank → Anmeldeschutz (#240): Fehlversuche je Konto und je IP, gesperrte IPs, Ausnahmen. */
@@ -84,6 +84,28 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
         <label className="haken"><input id="as-mail" type="checkbox" checked={e.mail} onChange={(x) => setE({ ...e, mail: x.target.checked })} /><span>Administratoren per Mail informieren, wenn eine IP gesperrt wird</span></label>
         <div className="knoepfe"><button className="knopf primaer">Speichern</button></div>
       </form>
+      <ZweifaktorPflichtBlatt />
+    </div>
+  );
+}
+
+/** Zwei-Faktor-Anmeldung je Rolle vorschreiben (#242). */
+function ZweifaktorPflichtBlatt() {
+  const [p, setP] = useState<ZweifaktorPflicht | null>(null);
+  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  useEffect(() => { api.zweifaktorPflicht().then(setP).catch((x) => setMeldung({ art: 'schlecht', text: (x as Error).message })); }, []);
+  async function setze(neu: Partial<ZweifaktorPflicht>) {
+    try { setP(await api.zweifaktorPflichtSetzen(neu)); setMeldung({ art: 'gut', text: 'Gespeichert.' }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+  }
+  return (
+    <div className="blatt">
+      <h2 className="h3">Zwei-Faktor-Anmeldung <Hilfe ort="werkbank.zweifaktor" /></h2>
+      <p className="leise">Jeder kann sie unter Profil → Sicherheit für sich einrichten. Hier schreibst du sie für eine Rolle vor: Wer sie noch nicht hat, muss sie nach der nächsten Anmeldung einrichten, bevor es weitergeht. Ein verlorenes Handy setzt du unter Benutzer zurück.</p>
+      {!p ? !meldung && <p className="leise">Lade …</p> : <>
+        <label className="haken"><input id="zf-admin" type="checkbox" checked={p.admin} onChange={(x) => void setze({ admin: x.target.checked })} /><span>Für Administratoren vorschreiben</span></label>
+        <label className="haken"><input id="zf-mitglied" type="checkbox" checked={p.mitglied} onChange={(x) => void setze({ mitglied: x.target.checked })} /><span>Für Mitglieder vorschreiben</span></label>
+      </>}
+      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { useDaten } from '../daten';
 import { GRUNDLAGEN, leseSchrift, SCHRIFTEN, setzeSchrift, type Schrift } from '../design';
 import { Link } from '../ort';
 import { FehlerMelden } from './FehlerMelden';
+import { ZweifaktorBlatt } from './Zweifaktor';
 import { Farbfelder } from '../werkbank/Designs';
 import { useKonto } from '../konto';
 import { Hilfe } from '../Hilfe';
@@ -141,6 +142,8 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
         {fPw.anzeige}
         <div className="knoepfe"><button className="knopf primaer" disabled={fPw.sendet || !alt || !neu}>Passwort ändern</button></div>
       </form>
+
+      <ZweifaktorBlatt />
 
       <MeineGeraete />
 

@@ -33,8 +33,25 @@ Unten im Bereich *Konto*, unter Name und E-Mail-Adresse, steht, was du je Mappen
 ### Sicherheit
 
 - **Passwort** – gib dein aktuelles und zweimal das neue Passwort ein (mindestens 10 Zeichen). Nach dem Ändern sind alle anderen Anmeldungen beendet.
+- **Zwei-Faktor-Anmeldung** – siehe [unten](#zwei-faktor-anmeldung).
 - **Meine angemeldeten Geräte** – überall, wo du gerade angemeldet bist, mit Browser, Gerät und letzter Aktivität; *dieses Gerät* ist markiert. **Abmelden** beendet eine einzelne Anmeldung, **Alle anderen abmelden** alle außer dieser – etwa wenn du ein Handy verloren hast. Ändere dann am besten auch dein Passwort.
 - **API-Schlüssel** – damit können andere Programme in deinem Namen auf das DMS zugreifen, etwa ein Scanner. Brauchst du das nicht, kannst du diesen Abschnitt übergehen. Passwortfelder liefert ein Schlüssel nur, wenn du beim Erzeugen **Passwörter lesen** ankreuzt. Wie das funktioniert, beschreibt das [Administratorhandbuch](https://motom001.github.io/dms/admin/api/).
+
+#### Zwei-Faktor-Anmeldung
+
+Mit der Zwei-Faktor-Anmeldung fragt das DMS nach dem Passwort zusätzlich einen sechsstelligen Code ab, den eine App auf deinem Handy alle 30 Sekunden neu erzeugt. Wer nur dein Passwort kennt, kommt dann nicht hinein.
+
+1. Unter **Profil → Sicherheit** auf **Einrichten** klicken.
+2. In einer Authenticator-App (z. B. Google Authenticator, Microsoft Authenticator, Aegis, 2FAS, Bitwarden oder den Passwörtern auf dem iPhone) den QR-Code scannen. Geht das nicht, tippst du den Schlüssel darunter ab.
+3. Den Code aus der App eingeben und **Bestätigen**.
+4. Du bekommst **zehn Wiederherstellungscodes**. Speichere oder drucke sie und bewahre sie getrennt vom Handy auf – sie werden nur dieses eine Mal angezeigt.
+
+Ab jetzt meldest du dich mit Passwort **und** Code an. Ist das Handy nicht zur Hand, klickst du bei der Anmeldung auf **Wiederherstellungscode verwenden**; jeder Code gilt nur einmal. Gehen sie zur Neige, erzeugst du mit **Neue Wiederherstellungscodes** frische (die alten gelten dann nicht mehr). **Abschalten** schaltet die Zwei-Faktor-Anmeldung wieder aus; beides bestätigst du mit deinem Passwort.
+
+Auch ein Link zum Zurücksetzen des Passworts fragt danach den Code ab. Handy verloren und keine Codes mehr? Dann setzt ein Administrator die Zwei-Faktor-Anmeldung bei deinem Benutzer zurück.
+
+!!! note "Vorgeschrieben"
+    Kann ein Administrator für deine Rolle vorschreiben. Dann richtest du sie nach der Anmeldung ein, bevor es weitergeht, und kannst sie nicht selbst abschalten.
 
 ### Darstellung
 

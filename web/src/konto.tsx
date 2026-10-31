@@ -7,6 +7,7 @@ import { Wiederherstellungsbildschirm } from './wiederherstellen';
 import { AssistentAngemeldet, Einrichtungsassistent } from './einrichtung';
 import { geheZu, useOrt } from './ort';
 import { Marke } from './Marke';
+import { ZweifaktorEinrichten } from './profil/Zweifaktor';
 
 /** Logo und Schriftzug des Standard-Designs für Anmeldung und Passwortseiten (#72). */
 let MARKE: { schriftzug: string | null; logo: string | null } = { schriftzug: null, logo: null };
@@ -82,6 +83,13 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   // Einrichtungsassistent (#119): ohne Datenbank, mit Code, Mandant und Administrator …
   if (status.einrichtungNoetig || status.einrichtung?.phase === 'datenbank' || status.einrichtung?.phase === 'startet') return <Einrichtungsassistent status={status} fertig={laden} />;
   if (!status.benutzer) return <Anmelden mail={status.mail} wartung={status.wartung} fertig={laden} />;
+  // Zwei-Faktor vorgeschrieben (#242), aber noch nicht eingerichtet: erst einrichten.
+  if (status.zweifaktor?.fehlt) return (
+    <Karte titel="Zwei-Faktor-Anmeldung einrichten" unter="Für deine Rolle ist neben dem Passwort ein Code aus einer App auf dem Handy vorgeschrieben. Richte sie jetzt ein – es dauert eine Minute.">
+      <ZweifaktorEinrichten fertig={() => void laden()} />
+      <button className="textknopf" onClick={() => void abmelden()}>Abmelden</button>
+    </Karte>
+  );
   // key: Beim Wechsel des Benutzers (Vertretung) alles neu aufbauen und laden.
   return (
     <Ctx.Provider key={status.benutzer.id} value={{ ich: status.benutzer, mail: status.mail, passwoerterMoeglich: status.passwoerterMoeglich ?? false, abmelden, aktualisieren: laden, vertretung: status.vertretung ?? null, hinweise: status.hinweise ?? [], version: status.version ?? null }}>
@@ -117,16 +125,55 @@ function useAbsenden(fn: () => Promise<void>) {
   return { sendet, fehler, absenden };
 }
 
+/** Zweiter Schritt der Anmeldung (#242): Code aus der App oder ein Wiederherstellungscode. */
+function CodeSchritt({ kennung, fertig, zurueck }: { kennung: string; fertig: () => Promise<void>; zurueck: () => void }) {
+  const [code, setCode] = useState('');
+  const [wiederherstellung, setWiederherstellung] = useState(false);
+  const [genutzt, setGenutzt] = useState(false);
+  const f = useAbsenden(async () => {
+    const r = await api.anmeldenCode(kennung, code);
+    if (r.wiederherstellung) { setGenutzt(true); return; }
+    await fertig();
+  });
+  if (genutzt) return (
+    <Karte titel="Angemeldet mit Wiederherstellungscode">
+      <p className="hinweis warn">Dieser Code ist jetzt verbraucht. Hast du dein Handy verloren oder ein neues? Richte unter Profil → Sicherheit die Zwei-Faktor-Anmeldung neu ein oder erzeuge neue Wiederherstellungscodes.</p>
+      <div className="knoepfe">
+        <button className="knopf primaer" onClick={() => { geheZu('/profil/sicherheit', true); void fertig(); }}>Zu Profil → Sicherheit</button>
+        <button className="knopf" onClick={() => void fertig()}>Weiter</button>
+      </div>
+    </Karte>
+  );
+  return (
+    <Karte titel="Bestätigungscode" unter={wiederherstellung ? 'Gib einen deiner Wiederherstellungscodes ein. Jeder gilt nur einmal.' : 'Gib den sechsstelligen Code aus deiner Authenticator-App ein.'}>
+      <form className="stapel" onSubmit={f.absenden}>
+        <label className="eigenschaft"><span>{wiederherstellung ? 'Wiederherstellungscode' : 'Code'}</span>
+          <input id="anmelden-code" key={String(wiederherstellung)} value={code} onChange={(e) => setCode(e.target.value)} autoFocus required
+            {...(wiederherstellung ? { autoComplete: 'off', autoCapitalize: 'characters', spellCheck: false } : { inputMode: 'numeric' as const, autoComplete: 'one-time-code', maxLength: 7 })} />
+        </label>
+        {f.fehler && <p className="fehlertext">{f.fehler}</p>}
+        <button className="knopf primaer" disabled={f.sendet}>{f.sendet ? 'Prüfe …' : 'Anmelden'}</button>
+      </form>
+      <button className="textknopf" onClick={() => { setWiederherstellung(!wiederherstellung); setCode(''); }}>{wiederherstellung ? 'Code aus der App eingeben' : 'Kein Handy zur Hand? Wiederherstellungscode verwenden'}</button>
+      <button className="textknopf" onClick={zurueck}>← Zur Anmeldung</button>
+    </Karte>
+  );
+}
+
 function Anmelden({ mail, wartung, fertig }: { mail: boolean; wartung?: WartungOeffentlich | null; fertig: () => Promise<void> }) {
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
   const [vergessen, setVergessen] = useState(false);
   const [gesendet, setGesendet] = useState(false);
+  const [kennung, setKennung] = useState<string | null>(null);
   const f = useAbsenden(async () => {
     if (vergessen) { await api.passwortVergessen(email); setGesendet(true); return; }
-    await api.anmelden({ email, passwort: pw });
+    const r = await api.anmelden({ email, passwort: pw });
+    if (r.zweiterSchritt) { setKennung(r.zweiterSchritt); setPw(''); return; }
     await fertig();
   });
+
+  if (kennung) return <CodeSchritt kennung={kennung} fertig={fertig} zurueck={() => setKennung(null)} />;
 
   if (vergessen) return (
     <Karte titel="Passwort vergessen" unter={mail ? 'Gib deine E-Mail-Adresse ein. Du bekommst einen Link, mit dem du ein neues Passwort festlegst.' : undefined}>
@@ -160,13 +207,18 @@ function PasswortSetzen({ schluessel, fertig }: { schluessel: string; fertig: ()
   const [ungueltig, setUngueltig] = useState<string>();
   const [pw, setPw] = useState('');
   const [pw2, setPw2] = useState('');
+  const [kennung, setKennung] = useState<string | null>(null);
   useEffect(() => { api.linkPruefen(schluessel).then(setInfo).catch((e) => setUngueltig((e as Error).message)); }, [schluessel]);
   const f = useAbsenden(async () => {
     if (pw !== pw2) throw new Error('Die beiden Passwörter stimmen nicht überein.');
-    await api.passwortSetzen(schluessel, pw);
+    const r = await api.passwortSetzen(schluessel, pw);
+    // Zwei-Faktor (#242): Der Link ersetzt das Passwort, nicht den Code.
+    if (r.zweiterSchritt) { setKennung(r.zweiterSchritt); return; }
     geheZu('/ablage', true);
     await fertig();
   });
+
+  if (kennung) return <CodeSchritt kennung={kennung} fertig={async () => { if (location.pathname.startsWith('/passwort/')) geheZu('/ablage', true); await fertig(); }} zurueck={() => geheZu('/', true)} />;
 
   if (ungueltig) return <Karte titel="Link nicht mehr gültig"><p>{ungueltig}</p><a className="knopf" href="/">Zur Anmeldung</a></Karte>;
   if (!info) return <p className="leise mittig">Prüfe Link …</p>;
