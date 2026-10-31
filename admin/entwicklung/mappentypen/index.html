@@ -865,6 +865,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#archivmodus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Archivmodus
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#berechtigungen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1032,7 +1043,7 @@
   <span class="md-ellipsis">
     
   
-    Sprechende Links
+    Links über Feldwerte
   
 
     
@@ -2265,6 +2276,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#archivmodus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Archivmodus
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#berechtigungen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2318,12 +2340,12 @@
 
 
 <h1 id="mappentypen">Mappentypen<a class="headerlink" href="#mappentypen" title="Permanent link">&para;</a></h1>
-<p>Ein <strong>Mappentyp</strong> legt fest, welche Art von Mappe es gibt – <em>Vertrag</em>, <em>Rechnung</em>, <em>Versicherung</em>, <em>Gerät</em> … – und was darin steht. Jeder Mappentyp erscheint in der Ablage als eigene Ansicht.</p>
+<p>Ein <strong>Mappentyp</strong> legt fest, welche Art von Mappe es gibt – <em>Vertrag</em>, <em>Rechnung</em>, <em>Versicherung</em>, <em>Gerät</em> … – und was darin steht. Ein neuer Mappentyp bekommt in der Ablage eine eigene Ansicht; das lässt sich beim Anlegen abwählen (siehe <a href="#grunddaten">Grunddaten</a>).</p>
 <p>Mappentypen pflegst du unter <strong>Werkbank → Mappentypen</strong>. Mit <strong>+ Neu</strong> legst du einen an; ein Klick auf einen bestehenden öffnet ihn zum Bearbeiten.</p>
 <p><img alt="Mappentyp Vertrag in der Werkbank" src="../bilder/werkbank-mappentyp.png" /></p>
 <p>Wie Benutzer mit den Mappen arbeiten, beschreibt das <a href="https://motom001.github.io/dms/benutzer/mappen/">Benutzerhandbuch</a>.</p>
 <h2 id="aufbau-des-editors">Aufbau des Editors<a class="headerlink" href="#aufbau-des-editors" title="Permanent link">&para;</a></h2>
-<p>Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: <strong>Grunddaten → Felder → Titel → Trefferlisten → Register → Berechtigungen → Testlauf</strong>.</p>
+<p>Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: <strong>Grunddaten → Felder → Titel → Trefferlisten → Register → Archivmodus → Berechtigungen → Testlauf</strong>.</p>
 <ul>
 <li>Jeder Bereich lässt sich mit einem Klick auf seine Überschrift <strong>ein- und ausklappen</strong>. Eingeklappt zeigt er das Wichtigste in einer Zeile, z. B. „8 Felder, 2 Pflicht, 1 mit Erinnerung“, die Titel-Vorlage mit einem Beispiel oder „Standard: R · 3 Regeln“.</li>
 <li>Ein <strong>neuer</strong> Mappentyp ist ganz aufgeklappt, ein <strong>bestehender</strong> startet eingeklappt. Was du auf- oder zuklappst, merkt sich dein Gerät je Mappentyp.</li>
@@ -2333,7 +2355,7 @@
 <h2 id="grunddaten">Grunddaten<a class="headerlink" href="#grunddaten" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Name</strong> – so heißt die Ansicht in der Ablage, z. B. „Vertrag“. Er lässt sich jederzeit ändern.</li>
-<li><strong>Kennung</strong> – fester, technischer Name, z. B. <code>vertrag</code>. Sie wird aus dem Namen vorgeschlagen, lässt sich beim Anlegen ändern und ist nach dem ersten Speichern <strong>fest</strong>. <a href="../direktlinks/">Sprechende Links</a> und Skripte über die <a href="../api/">Schnittstelle</a> können ihn nutzen – so bleiben sie gültig, auch wenn der Mappentyp umbenannt wird. Die Systemtypen heißen <code>benutzer</code>, <code>rolle</code> und <code>post</code> (bis 0.40 hieß <em>Post</em> noch <em>E-Mail</em> mit der Kennung <code>email</code>).</li>
+<li><strong>Kennung</strong> – fester, technischer Name, z. B. <code>vertrag</code>. Sie wird aus dem Namen vorgeschlagen, lässt sich beim Anlegen ändern und ist nach dem ersten Speichern <strong>fest</strong>. <a href="../direktlinks/">Links über Mappentyp und Feldwerte</a> und Skripte über die <a href="../api/">Schnittstelle</a> können sie nutzen – so bleiben sie gültig, auch wenn der Mappentyp umbenannt wird. Die Systemtypen heißen <code>benutzer</code>, <code>rolle</code> und <code>post</code> (bis 0.40 hieß <em>Post</em> noch <em>E-Mail</em> mit der Kennung <code>email</code>).</li>
 <li><strong>Beschreibung</strong> – steht über der Liste und hilft beim Einordnen.</li>
 </ul>
 <p>Beim <strong>Anlegen</strong> gibt es zusätzlich <strong>Eigene Ansicht in der Ablage anlegen</strong> (standardmäßig an): Dann erscheint der neue Mappentyp in der Ablage als eigene Ansicht. Abwählen, wenn seine Mappen nur in einer bestehenden <a href="../sichten/">Ansicht</a> erscheinen sollen.</p>
@@ -2393,7 +2415,7 @@
 </tbody>
 </table>
 <p>Für alle gilt: <strong>Pflichtfeld</strong> und ein <strong>Hilfetext</strong>, der beim Ausfüllen unter dem Feld steht; die meisten Mappentypen haben außerdem einen <strong>Standardwert</strong> für neue Mappen. <strong>Eindeutig</strong> heißt: Den Wert darf es in diesem Mappentyp nur einmal geben – Groß- und Kleinschreibung zählen dabei nicht.</p>
-<p>Steht im Standardwert eines Textfelds <code>{nummernkreis:&lt;schlüssel&gt;}</code>, bekommt jede neue Mappe eine fortlaufende Nummer aus diesem <a href="../nummernkreise/">Nummernkreis</a>; das Feld ist dann schreibgeschützt.</p>
+<p>Steht im Standardwert eines Textfelds <code>{nummernkreis:&lt;kennung&gt;}</code>, bekommt jede neue Mappe eine fortlaufende Nummer aus diesem <a href="../nummernkreise/">Nummernkreis</a>; das Feld ist dann schreibgeschützt.</p>
 <h3 id="die-kennung">Die Kennung<a class="headerlink" href="#die-kennung" title="Permanent link">&para;</a></h3>
 <p>Unter der Kennung speichert das DMS die Werte, und die <a href="../api/">Schnittstelle</a> verwendet sie. Deshalb ist sie nach dem ersten Speichern fest. Die Bezeichnung kannst du jederzeit ändern.</p>
 <h3 id="verweise-mappen-verbinden">Verweise: Mappen verbinden<a class="headerlink" href="#verweise-mappen-verbinden" title="Permanent link">&para;</a></h3>
@@ -2418,7 +2440,7 @@
 </ul>
 <p><strong>Werte aus dieser Mappe:</strong> Statt eines festen Werts kann eine Bedingung einen Wert der eigenen Mappe nehmen – Haken <strong>Wert aus dieser Mappe</strong> und das Feld wählen. Beispiele: <em>Fachgebiet</em> (am Arzt) <em>ist einer von</em> <strong>Fachgebiet dieser Mappe</strong>; <em>Vertragspartner</em> (am Vertrag) <em>zeigt auf</em> <strong>Vertragspartner dieser Mappe</strong>.</p>
 <ul>
-<li>Angeboten werden nur Felder mit passender Feldart: Text zu Text, Zahl zu Zahl, Datum zu Datum, ein Auswahlfeld, dessen Werte es auch am Ziel gibt, ein Verweisfeld auf denselben Mappentyp. Das Referenzfeld selbst geht nicht.</li>
+<li>Angeboten werden nur Felder mit passender Feldart: Text zu Text, Zahl zu Zahl, Datum zu Datum, ein Auswahlfeld, dessen Werte es auch am Ziel gibt, ein Verweisfeld auf denselben Mappentyp. Das Verweisfeld selbst geht nicht.</li>
 <li>Ändert man in der Mappe das eigene Feld, filtert die Auswahl sofort neu. Passt eine schon gewählte Mappe nicht mehr, steht der Hinweis „passt nicht mehr zum Filter“ schon vor dem Speichern am Feld.</li>
 <li><strong>Ist das eigene Feld leer</strong>, gilt die Bedingung nicht – dann werden alle angeboten, die die übrigen Bedingungen erfüllen.</li>
 <li>Das DMS prüft beim Speichern mit den Werten, die gespeichert werden sollen – auch wenn beide Felder im selben Zug geändert werden.</li>
@@ -2591,17 +2613,19 @@
 <li><em>Zugeordnet zu</em> darf als einziges Feld auf Mappen <em>jedes</em> Mappentyps zeigen, auch auf mehrere. Wird eine dieser Mappen gelöscht, bleibt die Post erhalten; nur der Verweis entfällt.</li>
 <li><em>Für</em> verweist auf einen Benutzer: Solange die Post neu ist, hat er die Aufgabe <em>Post für dich</em> unter „Zu erledigen“.</li>
 <li>Beim ersten Start legt das DMS die Ansichten <strong>Neue Post</strong> (ganz oben, Stand <em>Neu</em>) und unter <strong>Post</strong> die Ansichten <strong>Eingegangen</strong> und <strong>Versendet</strong> an. Du kannst sie ändern, verschieben oder löschen; gelöschte kommen nicht wieder.</li>
-<li><strong>Aus E-Mail wird Post (0.41):</strong> Der frühere Systemtyp <em>E-Mail</em> wird beim Update zu <em>Post</em>. Vorhandene E-Mails bekommen Kanal <em>E-Mail</em>, Richtung <em>Ausgehend</em> und Stand <em>Erledigt</em>. Felder, Dokumente und Verweise bleiben erhalten; eigene Felder und Bezeichnungen auch. Sprechende Links mit <code>typ=email</code> funktionieren weiter.</li>
+<li><strong>Aus E-Mail wird Post (0.41):</strong> Der frühere Systemtyp <em>E-Mail</em> wird beim Update zu <em>Post</em>. Vorhandene E-Mails bekommen Kanal <em>E-Mail</em>, Richtung <em>Ausgehend</em> und Stand <em>Erledigt</em>. Felder, Dokumente und Verweise bleiben erhalten; eigene Felder und Bezeichnungen auch. Links mit <code>typ=email</code> funktionieren weiter.</li>
 </ul>
 </li>
 </ul>
 <p>Mehr dazu in <a href="../benutzer/">Benutzer und Rollen</a>.</p>
+<h2 id="archivmodus">Archivmodus<a class="headerlink" href="#archivmodus" title="Permanent link">&para;</a></h2>
+<p>Zwischen Registern und Berechtigungen schaltest du den <strong>Archivmodus</strong> ein: Mappen und Dokumente dieses Mappentyps lassen sich dann bis zum Ende einer Aufbewahrungsfrist nicht löschen, und Dokumente ändern sich nur noch als neue Version. Frist, Stichtag und was währenddessen gilt, stehen unter <a href="../archiv/">Archivmodus und Aufbewahrung</a>.</p>
 <h2 id="berechtigungen">Berechtigungen<a class="headerlink" href="#berechtigungen" title="Permanent link">&para;</a></h2>
-<p>Unter den Registern legst du fest, wer Mappen dieses Mappentyps anlegen, lesen, bearbeiten, löschen und Passwörter darin sehen darf – mit der Zeile <strong>Standard</strong> und Regeln. Gespeichert wird mit <strong>Mappentyp speichern</strong>; darunter probierst du die Regeln im <strong>Testlauf</strong> aus – auch ungespeicherte. Alles Weitere steht unter <a href="../berechtigungen/">Berechtigungen</a>.</p>
+<p>Unter Registern und Archivmodus legst du fest, wer Mappen dieses Mappentyps anlegen, lesen, bearbeiten, löschen und Passwörter darin sehen darf – mit der Zeile <strong>Standard</strong> und Regeln. Gespeichert wird mit <strong>Mappentyp speichern</strong>; darunter probierst du die Regeln im <strong>Testlauf</strong> aus – auch ungespeicherte. Alles Weitere steht unter <a href="../berechtigungen/">Berechtigungen</a>.</p>
 <h2 id="mappentyp-kopieren">Mappentyp kopieren<a class="headerlink" href="#mappentyp-kopieren" title="Permanent link">&para;</a></h2>
 <p><strong>Mappentyp kopieren</strong> oben rechts legt einen neuen Mappentyp als <strong>Entwurf</strong> an – mit denselben Feldern, Titel, Trefferlisten, Registern und Berechtigungen. Er heißt „Kopie von …“ und bekommt eine eigene Kennung; beides kannst du vor dem Speichern ändern. Angelegt wird er erst mit <strong>Mappentyp speichern</strong>. Mappen werden nicht kopiert. Felder, die auf den Mappentyp selbst verweisen, zeigen in der Kopie auf die Kopie. Systemtypen lassen sich nicht kopieren.</p>
 <h2 id="mappentyp-loschen">Mappentyp löschen<a class="headerlink" href="#mappentyp-loschen" title="Permanent link">&para;</a></h2>
-<p><strong>Mappentyp löschen</strong> geht nur, solange es keine Mappen dieses Mappentyps gibt und kein anderer Mappentyp auf ihn verweist. Sonst nennt das DMS die Gründe.</p>
+<p><strong>Mappentyp löschen</strong> geht nur, solange es keine Mappen dieses Mappentyps gibt – auch keine im <a href="../papierkorb/">Papierkorb</a> – und kein anderer Mappentyp auf ihn verweist. Sonst nennt das DMS die Gründe. <a href="#systemmappentypen-benutzer-rolle-und-post">Systemmappentypen</a> lassen sich nie löschen.</p>
 
 
 

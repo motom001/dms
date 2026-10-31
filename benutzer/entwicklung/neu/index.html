@@ -419,6 +419,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0734" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.73.4
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.73.4">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#korrigiert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Korrigiert
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0733" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -459,7 +487,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#korrigiert" class="md-nav__link">
+  <a href="#korrigiert_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Korrigiert
@@ -487,7 +515,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#korrigiert_1" class="md-nav__link">
+  <a href="#korrigiert_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Korrigiert
@@ -1166,6 +1194,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0734" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.73.4
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.73.4">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#korrigiert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Korrigiert
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0733" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1206,7 +1262,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#korrigiert" class="md-nav__link">
+  <a href="#korrigiert_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Korrigiert
@@ -1234,7 +1290,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#korrigiert_1" class="md-nav__link">
+  <a href="#korrigiert_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Korrigiert
@@ -1313,6 +1369,35 @@
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
+<h2 id="0734">0.73.4<a class="headerlink" href="#0734" title="Permanent link">&para;</a></h2>
+<h3 id="korrigiert">Korrigiert<a class="headerlink" href="#korrigiert" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Administratorhandbuch stimmt wieder mit dem DMS überein</strong> (#297):</li>
+<li><em>Verschlüsselung:</em> vollständige Liste, was mit dem Schlüssel verschlüsselt ist (Mailserver, Postfächer, Client-Secret des Anbieters, Zwei-Faktor-Geheimnisse, Paket-Geheimnisse, Passwortfelder, Sicherungen); der Schlüsselwechsel schlüsselt alle diese Einstellungen mit um; neuer Abschnitt <em>Schlüssel verloren</em> mit den Folgen für Zwei-Faktor-Anmeldung, Postfächer und Anbieter. Der Satz, das Wechseln sei eine spätere Funktion, ist weg.</li>
+<li><em>Anmeldeschutz:</em> Ausgesperrt? Die Befehle <code>dms gesperrt</code>, <code>dms entsperren &lt;ip&gt;</code> und <code>dms zweifaktor-zuruecksetzen &lt;email&gt;</code>; die Mail bei einer IP-Sperre ist Standard und abschaltbar; der Hinweis zum Reverse-Proxy nennt die automatische Erkennung; Lage und Namen der Haken für die Zwei-Faktor-Pflicht; alle Felder der Anmeldung über einen Anbieter (Beschriftung des Knopfes, Claim mit den Gruppen, Systemrolle neuer Benutzer, Client-Secret leer bei öffentlichen Clients); höchstens 50 Ausnahmen.</li>
+<li><em>Benutzer:</em> ohne E-Mail-Versand heißt der Knopf <strong>Anlegen</strong>; <strong>Einladung löschen</strong> mit Papierkorb; die Gruppe für Administratoren beim Anbieter überschreibt die Systemrolle; <strong>Überall abmelden</strong>; der Notfallzugang in Liste und Übersicht.</li>
+<li><em>Schnittstelle:</em> API-Dokumentation unter <strong>Profil → Sicherheit → API-Schlüssel</strong>; auch unter <code>/api/v1/openapi.json</code>; höchstens 50 Schlüssel; Überblick über weitere Endpunkte (erweiterte Suche, Aufgaben, Notizen, Historie, E-Mail, Versionen, Texterkennung); die Endpunkte der Werkbank brauchen Administratorrechte.</li>
+<li><em>Konsole:</em> Aufruf über <code>docker compose exec app dms …</code> bzw. den Containernamen wie <code>dms-app-1</code>; Rückgabewert <code>130</code>; <code>DMS_KONSOLE_DATEI</code>; der Befehl geht auch im Wartungsmodus.</li>
+<li><em>Links über Mappentyp und Feldwerte</em> (bisher „Sprechende Links“): Links mit der Kennung des Mappentyps bleiben beim Umbenennen gültig; Beispiele mit <code>typ=rechnung</code>.</li>
+<li><em>Technik:</em> Node.js 24 und <code>node:24-alpine</code>; E-Mail auch abholen per IMAP; Eingangsordner <code>/eingang</code>; dms-komplett mit <code>/data/postgres</code>; Prüfungen auch bei Pull Requests, Tags und jede Woche; vollständige Liste der Protokoll-Module (mit <code>texterkennung</code> und <code>sicherung</code>) – nur noch hier, <em>Fehlersuche</em> verweist darauf.</li>
+<li><em>Wartungsmodus:</em> alle pausierten Hintergrundarbeiten; vor dem Update eine Sicherung anlegen.</li>
+<li><em>Aufgaben:</em> die Aufgabenart <strong>Vertretung</strong>.</li>
+<li><em>Wartungsoperationen:</em> <strong>Alle Dateien prüfen</strong> und <strong>Nummern nachträglich vergeben</strong>.</li>
+<li><em>Pakete:</em> keine Proxy-Einstellung für Abrufe aus dem Internet – ohne Internet ein Paket hochladen; höchstens 10 MB und 20 weitere Kataloge.</li>
+<li><em>Sicherung:</em> die Mail bei einer fehlgeschlagenen Sicherung kommt immer, die zu einer zu alten nur mit Zeitplan; eine verpasste automatische Sicherung holt das DMS nur am selben Tag nach; wo das Datenbank-Passwort je Vorlage steht; Befehl <code>dms sicherung</code>; die Probe braucht den aktuellen Schlüssel.</li>
+<li><em>Wiederherstellen:</em> ohne passenden Schlüssel bleibt der bisherige Stand 7 Tage in der Datenbank.</li>
+<li><em>Papierkorb:</em> Lage in der Ablage; Mappen im Archivmodus bleiben bis zum Fristende.</li>
+<li><em>Speicherplatz:</em> auch <code>/data/postgres</code> von dms-komplett wird nicht gemessen.</li>
+<li><em>Einrichtung und Betrieb:</em> Ordner <code>/eingang</code> und der Inhalt von <code>/data/geheim</code>; Knopf <strong>Übernehmen und weiter</strong>; <code>TRUST_PROXY=auto</code>; <code>PORT</code> und <code>HOST</code>.</li>
+<li><em>Aktualisieren:</em> der Inhalt von <code>geheim</code> vollständig; das Zurückspielen eines Abzugs von Hand gilt für zwei Container, bei dms-komplett geht es über <em>Wiederherstellen</em>.</li>
+<li><em>Export:</em> <code>struktur/pakete.json</code>; der richtige Name des Hakens für <em>Meine Daten exportieren</em>; kein eigener Export, solange ein Administrator als der Benutzer arbeitet.</li>
+<li><em>Postfächer:</em> Haken <strong>Abrufen</strong>, Knopf <strong>Entfernen</strong>, Abrufabstand 1 bis 1440 Minuten. <em>Eingangsordner:</em> höchstens 5 Ebenen; <code>.crdownload</code> und <code>.partial</code> werden übersprungen.</li>
+<li><em>Mappentypen:</em> Bereich <strong>Archivmodus</strong> im Editor; die eigene Ansicht ist abwählbar; Löschen auch nicht mit Mappen im Papierkorb, Systemmappentypen nie.</li>
+<li><em>Berechtigungen:</em> Lage nach Registern und Archivmodus; prüfen im Testlauf erst, wenn es Mappen gibt.</li>
+<li><em>Ansichten:</em> die festen Einträge oben; <strong>+ Neu</strong> hängt am Recht C von Mappentyp und Ansicht (bei Post <strong>+ Post</strong>); formatierter Text bei den Bedingungen.</li>
+<li><em>Designs:</em> der Schriftzug des Standard-Designs ist der Name aus der Einrichtung. <em>Demo-Daten:</em> auch <em>Post</em> ist ein Systemmappentyp.</li>
+<li><em>Neu in dieser Version:</em> Die Seite entsteht beim Bau des Handbuchs; im Repository steht nur noch ein Platzhalter statt des Stands von 0.22 (beide Handbücher).</li>
+</ul>
 <h2 id="0733">0.73.3<a class="headerlink" href="#0733" title="Permanent link">&para;</a></h2>
 <h3 id="neu-im-handbuch">Neu im Handbuch<a class="headerlink" href="#neu-im-handbuch" title="Permanent link">&para;</a></h3>
 <ul>
@@ -1322,7 +1407,7 @@
 <li><em>Glossar:</em> „Version“ und „Version des DMS“ sind zwei Begriffe; die Frage ist als entschieden vermerkt.</li>
 </ul>
 <h2 id="0732">0.73.2<a class="headerlink" href="#0732" title="Permanent link">&para;</a></h2>
-<h3 id="korrigiert">Korrigiert<a class="headerlink" href="#korrigiert" title="Permanent link">&para;</a></h3>
+<h3 id="korrigiert_1">Korrigiert<a class="headerlink" href="#korrigiert_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Benutzerhandbuch stimmt wieder mit der Ablage überein</strong> (#298):</li>
 <li><em>Erste Schritte:</em> Die Anmeldung bleibt 30 Tage bestehen; <strong>+ Neu</strong> in der Kopfzeile ist erklärt.</li>
@@ -1337,7 +1422,7 @@
 <li><em>Startseite:</em> Wegweiser zur Post.</li>
 </ul>
 <h2 id="0731">0.73.1<a class="headerlink" href="#0731" title="Permanent link">&para;</a></h2>
-<h3 id="korrigiert_1">Korrigiert<a class="headerlink" href="#korrigiert_1" title="Permanent link">&para;</a></h3>
+<h3 id="korrigiert_2">Korrigiert<a class="headerlink" href="#korrigiert_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Rechte und Rollen im Handbuch auf dem heutigen Stand</strong> (#295). Mehrere Seiten sagten noch, alle sähen alles und Rollen hätten keine Wirkung:</li>
 <li><em>Administratorhandbuch, Überblick:</em> Systemrolle und Rollen erklärt; der Kasten „Wer darf was sehen?“ beschreibt die Berechtigungen je Mappentyp und je Ansicht, dass ohne Regeln alle alles dürfen und dass für Administratoren keine Regeln gelten. „Andere Programme anbinden“ führt über einen eigenen Benutzer für das Programm (Administratoren bekommen keine API-Schlüssel).</li>

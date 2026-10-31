@@ -758,7 +758,7 @@
   <span class="md-ellipsis">
     
   
-    Sprechende Links
+    Links über Feldwerte
   
 
     
@@ -2068,7 +2068,7 @@
 <ol>
 <li><strong>+ Neu</strong></li>
 <li>E-Mail-Adresse, Name und <strong>Systemrolle</strong> (<em>Administrator</em> oder <em>Mitglied</em>) eintragen, bei Bedarf <strong>Rollen</strong> anhaken.</li>
-<li><strong>Anlegen und einladen</strong>.</li>
+<li><strong>Anlegen und einladen</strong> – ohne E-Mail-Versand heißt der Knopf <strong>Anlegen</strong>.</li>
 </ol>
 <p><img alt="Neuen Benutzer anlegen" src="../bilder/werkbank-benutzer-neu.png" /></p>
 <p>Ist E-Mail-Versand eingerichtet, bekommt der Benutzer eine Einladung. Sonst zeigt das DMS den Einladungslink zum Kopieren – schick ihn auf einem sicheren Weg weiter. Der Link ist 7 Tage gültig und funktioniert einmal. <strong>Einladung erneut senden</strong> macht den alten Link ungültig.</p>
@@ -2076,7 +2076,10 @@
 <p>Mit E-Mail-Versand fordern Benutzer den Link selbst an. Ohne E-Mail-Versand erzeugst du ihn beim Benutzer mit <strong>Passwort-Link erzeugen</strong> und gibst ihn weiter. Ein Passwort-Link ist eine Stunde gültig; das bisherige Passwort gilt, bis ein neues gesetzt ist.</p>
 <h2 id="andern-deaktivieren-loschen">Ändern, deaktivieren, löschen<a class="headerlink" href="#andern-deaktivieren-loschen" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Name</strong> und <strong>Systemrolle</strong> änderst du direkt beim Benutzer. Die E-Mail-Adresse ändert jeder Benutzer selbst im Profil (mit seinem Passwort).</li>
+<li><strong>Name</strong> und <strong>Systemrolle</strong> änderst du direkt beim Benutzer. Die E-Mail-Adresse ändert jeder Benutzer selbst im Profil (mit seinem Passwort).<ul>
+<li>Ist unter <a href="../anmeldeschutz/#anmeldung-uber-einen-anbieter-openid-connect">Anmeldung über einen Anbieter</a> eine <strong>Gruppe für Administratoren</strong> gesetzt, überschreibt jede Anmeldung über den Anbieter die Systemrolle: Wer in der Gruppe ist, wird Administrator, alle anderen Mitglied. Eine Änderung hier gilt dann nur bis zur nächsten Anmeldung über den Anbieter.</li>
+</ul>
+</li>
 <li><span id="abwesenheit"></span><strong>Abwesenheit</strong> – wie im Profil des Benutzers (siehe <a href="https://motom001.github.io/dms/benutzer/profil/#abwesenheit">Benutzerhandbuch</a>): an/aus, von, bis, Vertreter. Du kannst sie für andere eintragen, etwa bei Krankheit, und mit <strong>Alle offenen Aufgaben an ‹Vertreter› geben</strong> seine Aufgaben abgeben. Das steht in der Historie seiner Benutzer-Mappe.</li>
 <li><span id="zugang-sperren"></span><strong>Zugang sperren</strong> (ganz unten) – <strong>Benutzer deaktivieren</strong> sperrt den Zugang sofort und beendet alle Sitzungen, nach einer Rückfrage. Die Mappe bleibt erhalten und heißt „… (ehemalig)“; alle Verweise auf ihn (z. B. als Verantwortlicher) bleiben gültig.<ul>
 <li>Das geht nur, wenn ein <strong>Vertreter</strong> hinterlegt ist und der Benutzer <strong>keine offenen Aufgaben</strong> mehr hat. Fehlt etwas, nennt der Abschnitt den Grund; Vertreter wählen und Aufgaben abgeben geht direkt darüber unter <em>Abwesenheit</em>.</li>
@@ -2084,16 +2087,23 @@
 <li><strong>Benutzer aktivieren</strong> macht es rückgängig; der Abschnitt zeigt dann, seit wann er deaktiviert ist.</li>
 </ul>
 </li>
-<li><strong>Einladung löschen</strong> geht nur, solange die Einladung nie angenommen wurde – etwa bei einer vertippten Adresse. Wer sich schon angemeldet hat, wird deaktiviert statt gelöscht, damit „angelegt von“ und Verweise erhalten bleiben.</li>
+<li><strong>Einladung löschen</strong> geht nur, solange die Einladung nie angenommen wurde – etwa bei einer vertippten Adresse. Wer sich schon angemeldet hat, wird deaktiviert statt gelöscht, damit „angelegt von“ und Verweise erhalten bleiben.<ul>
+<li>Ist der <a href="../papierkorb/">Papierkorb</a> eingeschaltet, wandert die Benutzer-Mappe in den Papierkorb, und der Benutzer ist bis dahin deaktiviert. Erst beim endgültigen Löschen aus dem Papierkorb verschwindet das Konto. Holst du die Mappe zurück, ist der Benutzer wieder aktiv.</li>
+</ul>
+</li>
 </ul>
 <p>Es muss immer mindestens einen aktiven Administrator geben; du kannst dich auch nicht selbst deaktivieren.</p>
+<div class="admonition warning">
+<p class="admonition-title">Notfallzugang</p>
+<p>Ein über den <a href="../notfall/">Notfallzugang</a> angelegter Administrator steht in der Liste als <strong>„Notfall-Admin ‹Datum›“</strong>. Die Übersicht der Werkbank zeigt einen roten Hinweis, bis du ihn umbenannt oder deaktiviert hast. Warst du das nicht, deaktiviere ihn sofort.</p>
+</div>
 <div class="admonition warning">
 <p class="admonition-title">Administratoren arbeiten nicht in der Ablage</p>
 <p>Ein Administrator richtet das DMS ein. Für die tägliche Arbeit nimmt jeder – auch du selbst – einen normalen Benutzer. Öffnet ein Administrator die Ablage, steht oben ein roter Hinweis; er sieht dort alle Mappen. Administratoren bekommen auch keine <a href="../api/#api-schlussel">API-Schlüssel</a>.</p>
 </div>
 <p><img alt="Hinweis für Administratoren in der Ablage" src="../bilder/admin-hinweis.png" /></p>
 <h2 id="sitzungen">Sitzungen<a class="headerlink" href="#sitzungen" title="Permanent link">&para;</a></h2>
-<p>Beim Benutzer steht, auf welchen Geräten er angemeldet ist – mit Gerät, Browser und letzter Aktivität. Einzelne Sitzungen lassen sich beenden, etwa wenn ein Gerät verloren ging.</p>
+<p>Beim Benutzer steht, auf welchen Geräten er angemeldet ist – mit Gerät, Browser und letzter Aktivität. Einzelne Sitzungen beendest du mit <strong>Abmelden</strong>, etwa wenn ein Gerät verloren ging. Ist er auf mehreren Geräten angemeldet, beendet <strong>Überall abmelden</strong> alle Sitzungen auf einmal.</p>
 <p>Darüber steht, ob er die <a href="../anmeldeschutz/#zwei-faktor-anmeldung">Zwei-Faktor-Anmeldung</a> eingerichtet hat. <strong>Zurücksetzen</strong> entfernt sie, z. B. nach einem verlorenen Handy.</p>
 <h2 id="was-sieht-ein-benutzer">Was sieht ein Benutzer?<a class="headerlink" href="#was-sieht-ein-benutzer" title="Permanent link">&para;</a></h2>
 <p>Mit <strong>Anzeigen</strong> unter <em>Was sieht ein Benutzer?</em> siehst du je Mappentyp, wie viele Mappen der Benutzer nach den gespeicherten <a href="../berechtigungen/">Berechtigungen</a> lesen darf, mit einigen Beispielen. Für einen Administrator gilt: alles. Willst du wissen, <em>warum</em> er eine bestimmte Mappe sieht oder nicht, nutze den <a href="../berechtigungen/#testlauf">Testlauf</a> am Mappentyp.</p>
@@ -2166,7 +2176,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Fußzeile" >
         
           
-          <a href="../direktlinks/" class="md-footer__link md-footer__link--prev" aria-label="Zurück: Sprechende Links">
+          <a href="../direktlinks/" class="md-footer__link md-footer__link--prev" aria-label="Zurück: Links über Feldwerte">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2176,7 +2186,7 @@
                 Zurück
               </span>
               <div class="md-ellipsis">
-                Sprechende Links
+                Links über Feldwerte
               </div>
             </div>
           </a>

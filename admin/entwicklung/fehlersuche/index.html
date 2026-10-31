@@ -756,7 +756,7 @@
   <span class="md-ellipsis">
     
   
-    Sprechende Links
+    Links über Feldwerte
   
 
     
@@ -2065,53 +2065,7 @@
 <h2 id="protokoll">Protokoll<a class="headerlink" href="#protokoll" title="Permanent link">&para;</a></h2>
 <p><strong>Werkbank → Protokoll</strong> zeigt, was im DMS passiert – die letzten 24 Stunden, höchstens 10.000 Einträge, die neuesten oben. Nach einem Neustart beginnt die Liste leer; dauerhaft steht alles in den Container-Logs.</p>
 <p><img alt="Protokoll" src="../bilder/werkbank-protokoll.png" /></p>
-<p>Jeder Eintrag gehört zu einem <strong>Modul</strong>:</p>
-<table>
-<thead>
-<tr>
-<th>Modul</th>
-<th>Was</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>system</code></td>
-<td>Start, Einstellungen, Debug-Modus</td>
-</tr>
-<tr>
-<td><code>http</code></td>
-<td>eine Zeile je Anfrage: Methode, Pfad, Status, Dauer, Datenbankzugriffe</td>
-</tr>
-<tr>
-<td><code>konto</code></td>
-<td>Anmeldung, Sitzungen, Benutzer, Vertretung</td>
-</tr>
-<tr>
-<td><code>ablage</code></td>
-<td>Mappen anlegen, ändern, löschen; Ansichten</td>
-</tr>
-<tr>
-<td><code>werkbank</code></td>
-<td>Mappentypen, Demo-Daten, Einstellungen, Versionsabgleich</td>
-</tr>
-<tr>
-<td><code>dokumente</code></td>
-<td>Hochladen, Anzeigen, Löschen</td>
-</tr>
-<tr>
-<td><code>texterkennung</code></td>
-<td>Texterkennung: abgeschlossen, ausgelassen, fehlgeschlagen, neu gestartet, abgebrochen; Einstellungen</td>
-</tr>
-<tr>
-<td><code>datenbank</code></td>
-<td>Migrationen, Verbindung, lange Zugriffe</td>
-</tr>
-<tr>
-<td><code>mail</code></td>
-<td>Versand und Fehler beim Versand</td>
-</tr>
-</tbody>
-</table>
+<p>Jeder Eintrag gehört zu einem <strong>Modul</strong>, etwa <code>konto</code> für Anmeldungen oder <code>sicherung</code> für Sicherungen. Welche Module es gibt, steht unter <a href="../technik/#module">Technik → Module</a>.</p>
 <p>Filtern lässt sich nach Stufe, Modul, Benutzer und Text; <strong>Live</strong> aktualisiert die Liste alle zwei Sekunden. Ein Klick auf einen Eintrag zeigt alle Daten dazu, auch Benutzer und Anfrage-Kennung.</p>
 <h3 id="debug-modus">Debug-Modus<a class="headerlink" href="#debug-modus" title="Permanent link">&para;</a></h3>
 <p>Schaltet für <strong>eine Stunde</strong> zusätzliche, ausführliche Meldungen ein – etwa jede einzelne Datenbankabfrage. Danach (oder nach einem Neustart) ist er von selbst wieder aus. Die Grundstufe stellt <code>LOG_LEVEL</code> ein (siehe <a href="../installation/#einstellungen">Installation</a>).</p>

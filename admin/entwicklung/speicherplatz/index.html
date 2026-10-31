@@ -756,7 +756,7 @@
   <span class="md-ellipsis">
     
   
-    Sprechende Links
+    Links über Feldwerte
   
 
     
@@ -1963,7 +1963,7 @@
 <p>Je Ordner zeigt die Seite belegt, frei und die Größe des Datenträgers, als Balken mit Marken für Warnschwelle und Grenze. Liegen mehrere Ordner auf demselben Datenträger, steht das dabei. <strong>Werkbank → Technik</strong> zeigt dieselben Zahlen in der Übersicht für den Support.</p>
 <div class="admonition note">
 <p class="admonition-title">Die Datenbank wird nicht gemessen</p>
-<p>PostgreSQL läuft in einem eigenen Container; sein Volume kann das DMS nicht sehen. Liegen alle Ordner auf derselben Platte des NAS (der übliche Fall), reicht die Messung trotzdem. Liegt die Datenbank auf einer anderen Platte, behalte deren Platz in der Speicherverwaltung des NAS im Blick.</p>
+<p>Bei zwei Containern läuft PostgreSQL in einem eigenen Container; sein Volume kann das DMS nicht sehen. Bei <a href="https://motom001.github.io/dms/installieren/aktuell/komplett/">dms-komplett</a> liegt die Datenbank im vierten Ordner <code>/data/postgres</code> – auch den misst das DMS nicht. Liegen alle Ordner auf derselben Platte des NAS (der übliche Fall), reicht die Messung trotzdem. Liegt die Datenbank auf einer anderen Platte, behalte deren Platz in der Speicherverwaltung des NAS im Blick.</p>
 </div>
 <h2 id="warnschwelle-und-grenze">Warnschwelle und Grenze<a class="headerlink" href="#warnschwelle-und-grenze" title="Permanent link">&para;</a></h2>
 <p>Beide stellst du in <strong>GB frei</strong> oder <strong>% frei</strong> ein; Prozent beziehen sich auf die Größe des jeweiligen Datenträgers. Sie gelten für jeden Ordner einzeln.</p>
