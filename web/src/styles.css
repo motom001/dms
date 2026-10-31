@@ -1007,3 +1007,12 @@ ol.codes code { user-select: all; letter-spacing: .04em; }
 
 /* Anmeldung über einen Anbieter (#241) */
 a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
+
+/* Versionierung (#194) */
+.versionen { margin-top: 8px; overflow-x: auto; }
+.versionen table { width: 100%; }
+.gleichername { margin-top: 4px; }
+.einzug { margin-left: 26px; }
+.versionen table { border-collapse: collapse; }
+.versionen th, .versionen td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--linie); vertical-align: top; white-space: nowrap; }
+.versionen th { font-weight: 600; color: var(--leise); }

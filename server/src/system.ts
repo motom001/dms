@@ -108,7 +108,9 @@ export function pgSystemQuelle(sql: postgres.Sql, haushaltId: string): SystemQue
           (SELECT count(*) FROM mappentypen WHERE haushalt_id = ${haushaltId})::int AS typen,
           (SELECT count(*) FROM benutzer WHERE haushalt_id = ${haushaltId})::int AS benutzer,
           (SELECT count(*) FROM dokumente WHERE haushalt_id = ${haushaltId})::int AS dokumente,
-          (SELECT coalesce(sum(groesse), 0) FROM dokumente WHERE haushalt_id = ${haushaltId})::bigint AS dokumente_bytes`;
+          ((SELECT coalesce(sum(groesse), 0) FROM dokumente WHERE haushalt_id = ${haushaltId})
+            -- Ältere Versionen (#194) zählen mit.
+            + (SELECT coalesce(sum(groesse), 0) FROM dokument_versionen WHERE haushalt_id = ${haushaltId}))::bigint AS dokumente_bytes`;
       return {
         version: r.version as string, groesseBytes: Number(r.groesse), mappen: r.mappen as number, typen: r.typen as number,
         benutzer: r.benutzer as number, dokumente: r.dokumente as number, dokumenteBytes: Number(r.dokumente_bytes),

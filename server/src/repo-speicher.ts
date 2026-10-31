@@ -3,7 +3,7 @@ import { lesbar, werte } from '../../shared/src/rechte';
 import type { Erinnerung } from '../../shared/src/fristen';
 import { umschluesseleTief } from './tresor';
 import { datumIn, ziehe, type Nummernkreis } from '../../shared/src/nummernkreis';
-import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
+import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type DokumentVersion, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
 import { alsText } from '../../shared/src/markdown';
 import { ausschnittAus } from './repo-pg';
 import { teilwoerter, woerterIn } from '../../shared/src/suche';
@@ -28,6 +28,9 @@ export function speicherRepo(): Repo {
   };
   const verweise = new Map<string, Verweis[]>();
   const dokumente = new Map<string, Dokument>();
+  /** Ältere Versionen (#194) je Dokument, aufsteigend. */
+  type V = DokumentVersion & { volltext: string | null };
+  const versionen = new Map<string, V[]>();
   const sichten = new Map<string, Sicht>();
   /** Aufgaben (#54). */
   const aufgaben = new Map<string, Aufgabe>();
@@ -58,7 +61,7 @@ export function speicherRepo(): Repo {
     return woerter(q).every((w) => im.has(w));
   };
   /** Papierkorb (#43): Mappe mit ihren Verweisen und Dokumenten, wie beim Löschen. */
-  const korb = new Map<string, { mappe: Mappe; verweise: Verweis[]; dokumente: Dokument[]; notizen?: Notiz[]; aufgaben?: Aufgabe[]; erinnerungen?: Erinnerung[]; geloescht: string; geloeschtVon: string | null }>();
+  const korb = new Map<string, { mappe: Mappe; verweise: Verweis[]; dokumente: Dokument[]; versionen?: Array<[string, V[]]>; notizen?: Notiz[]; aufgaben?: Aufgabe[]; erinnerungen?: Erinnerung[]; geloescht: string; geloeschtVon: string | null }>();
   const alsEintrag = (k: { mappe: Mappe; dokumente: Dokument[]; geloescht: string; geloeschtVon: string | null }): PapierkorbEintrag => ({
     id: k.mappe.id, typId: k.mappe.typId, titel: k.mappe.titel ?? '', werte: kopie(k.mappe.werte), demo: !!k.mappe.demo,
     erstellt: k.mappe.erstellt, erstelltVon: k.mappe.erstelltVon, geaendert: k.mappe.geaendert, geaendertVon: k.mappe.geaendertVon,
@@ -174,7 +177,7 @@ export function speicherRepo(): Repo {
       for (const [k, n] of notizen) if (n.mappeId === id) notizen.delete(k);
       for (const [k, a] of aufgaben) if (a.mappeId === id) aufgaben.delete(k);
       for (const [k, e] of erinnerungen) if (e.mappeId === id) erinnerungen.delete(k);
-      for (const [k, d] of dokumente) if (d.mappeId === id) dokumente.delete(k);
+      for (const [k, d] of dokumente) if (d.mappeId === id) { dokumente.delete(k); versionen.delete(k); }
     },
 
     async holeMappen(ids) { return [...new Set(ids)].map((id) => mappen.get(id)).filter((m): m is Mappe => !!m).map(kopie); },
@@ -281,10 +284,32 @@ export function speicherRepo(): Repo {
       return r.sort((a, b) => a.titel.toLowerCase().localeCompare(b.titel.toLowerCase()));
     },
 
-    async listeDokumente(mappeId) { return [...dokumente.values()].filter((d) => d.mappeId === mappeId).map(kopie).reverse(); },
-    async holeDokument(id) { const d = dokumente.get(id); return d && kopie(d); },
-    async legeDokumentAn(d) { const n = { ...kopie(d), ocr: d.ocr ?? { stand: 'keiner' as const } }; dokumente.set(d.id, n); return kopie(n); },
-    async loescheDokument(id) { dokumente.delete(id); },
+    async listeDokumente(mappeId) { return [...dokumente.values()].filter((d) => d.mappeId === mappeId).map((d) => ({ ...kopie(d), aeltere: versionen.get(d.id)?.length ?? 0 })).reverse(); },
+    async holeDokument(id) { const d = dokumente.get(id); return d && { ...kopie(d), aeltere: versionen.get(d.id)?.length ?? 0 }; },
+    async legeDokumentAn(d) { const n = { version: 1, herkunft: null, ...kopie(d), ocr: d.ocr ?? { stand: 'keiner' as const } }; dokumente.set(d.id, n); return kopie(n); },
+    async loescheDokument(id) { dokumente.delete(id); versionen.delete(id); },
+    async versionenVon(id) { return [...(versionen.get(id) ?? [])].reverse().map(({ volltext: _v, ...x }) => kopie(x)); },
+    async holeVersion(id, nummer) { const v = versionen.get(id)?.find((x) => x.nummer === nummer); return v && kopie(v); },
+    async ersetzeDokument(id, neu) {
+      const alt = dokumente.get(id);
+      if (!alt) throw new Error('Dokument fehlt');
+      const nummer = alt.version ?? 1;
+      versionen.set(id, [...(versionen.get(id) ?? []), {
+        dokumentId: id, nummer, name: alt.name, mime: alt.mime, groesse: alt.groesse, sha256: alt.sha256, anzeigbar: alt.anzeigbar,
+        erstellt: alt.erstellt, erstelltVon: alt.erstelltVon, herkunft: alt.herkunft ?? null, volltext: texte.get(id) ?? null,
+      }]);
+      const uebernehmen = neu.volltext !== undefined && neu.volltext !== null;
+      texte.set(id, uebernehmen ? neu.volltext! : null);
+      const d: Dokument = { ...alt, name: neu.name, mime: neu.mime, groesse: neu.groesse, sha256: neu.sha256, anzeigbar: neu.anzeigbar, erstellt: jetzt(), erstelltVon: neu.erstelltVon, herkunft: neu.herkunft, version: nummer + 1, ocr: { stand: uebernehmen ? 'fertig' : 'keiner' } };
+      dokumente.set(id, d);
+      return { ...kopie(d), aeltere: versionen.get(id)!.length };
+    },
+    async kuerzeVersionen(id, behalten) {
+      const v = versionen.get(id) ?? [];
+      const weg = v.slice(0, Math.max(0, v.length - Math.max(0, behalten)));
+      versionen.set(id, v.slice(weg.length));
+      return [...new Set(weg.map((x) => x.sha256))];
+    },
     async verschiebeDokument(id, mappeId, registerKey) { const d = dokumente.get(id); if (d) { d.mappeId = mappeId; d.registerKey = registerKey; } },
     async ocrEinreihen(ids) { for (const id of ids) { const d = dokumente.get(id); if (d) d.ocr = { stand: 'wartet' }; } },
     async ocrNaechster() {
@@ -424,6 +449,7 @@ export function speicherRepo(): Repo {
       if (!m) return;
       korb.set(id, {
         mappe: kopie(m), verweise: kopie(verweise.get(id) ?? []), dokumente: [...dokumente.values()].filter((d) => d.mappeId === id).map(kopie),
+        versionen: [...dokumente.values()].filter((d) => d.mappeId === id && versionen.has(d.id)).map((d) => [d.id, kopie(versionen.get(d.id)!)] as [string, V[]]),
         notizen: [...notizen.values()].filter((n) => n.mappeId === id).map(kopie),
         aufgaben: [...aufgaben.values()].filter((a) => a.mappeId === id).map(kopie),
         erinnerungen: [...erinnerungen.values()].filter((e) => e.mappeId === id).map(kopie),
@@ -445,6 +471,7 @@ export function speicherRepo(): Repo {
       const bleiben = k.verweise.filter((v) => mappen.has(v.zielId));
       verweise.set(id, bleiben);
       for (const d of k.dokumente) dokumente.set(d.id, kopie(d));
+      for (const [d, v] of k.versionen ?? []) versionen.set(d, kopie(v));
       for (const n of k.notizen ?? []) notizen.set(n.id, kopie(n));
       for (const a of k.aufgaben ?? []) aufgaben.set(a.id, kopie(a));
       for (const e of k.erinnerungen ?? []) erinnerungen.set(e.id, kopie(e));
@@ -453,12 +480,18 @@ export function speicherRepo(): Repo {
     },
     async leerePapierkorb(ids) {
       const dateien = new Set<string>();
-      for (const id of ids) { const k = korb.get(id); if (!k) continue; for (const d of k.dokumente) dateien.add(d.sha256); korb.delete(id); }
+      for (const id of ids) {
+        const k = korb.get(id); if (!k) continue;
+        for (const d of k.dokumente) dateien.add(d.sha256);
+        for (const [, v] of k.versionen ?? []) for (const x of v) dateien.add(x.sha256);
+        korb.delete(id);
+      }
       return [...dateien];
     },
     async zaehlePapierkorb(von) { return [...korb.values()].filter((k) => !von || k.geloeschtVon === von).length; },
     async dateiBenutzt(sha) {
-      return [...dokumente.values()].some((d) => d.sha256 === sha) || [...korb.values()].some((k) => k.dokumente.some((d) => d.sha256 === sha));
+      return [...dokumente.values()].some((d) => d.sha256 === sha) || [...versionen.values()].some((v) => v.some((x) => x.sha256 === sha))
+        || [...korb.values()].some((k) => k.dokumente.some((d) => d.sha256 === sha) || (k.versionen ?? []).some(([, v]) => v.some((x) => x.sha256 === sha)));
     },
     async dokumenteJeRegister(typId) {
       const r = new Map<string, number>();

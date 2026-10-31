@@ -539,8 +539,14 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     } },
     { methode: 'PUT', pfad: '/api/typen/:id', zugang: 'admin', handler: async (a) => {
       const start = Date.now();
+      const vorher = (await dienst.listeTypen()).find((x) => x.id === a.params.id);
       const t = await dienst.aendereTyp(a.params.id, a.body);
       L.werkbank.info('Mappentyp geändert, Titel und Passung neu berechnet', { typ: t.name, id: t.id, ms: Date.now() - start });
+      // Versionierung (#194): Ein- und Ausschalten je Register festhalten.
+      for (const r of t.register.filter((x) => x.art === 'dokumente')) {
+        const war = !!vorher?.register.find((x) => x.key === r.key)?.versionierung;
+        if (war !== !!r.versionierung) L.werkbank.info(r.versionierung ? 'Versionierung eingeschaltet' : 'Versionierung ausgeschaltet', { typ: t.name, register: r.name });
+      }
       return ok(t);
     } },
     { methode: 'DELETE', pfad: '/api/typen/:id', zugang: 'admin', handler: async (a) => {
@@ -1073,7 +1079,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     /* ---------- Dokumente ---------- */
     { methode: 'POST', pfad: '/api/mappen/:id/dokumente', zugang: 'angemeldet', roh: MAX_DATEIGROESSE, handler: async (a) => {
       await darf(a, a.params.id, 'U');
-      const r = await dienst.ladeHoch(a.params.id, { register: a.query.register, name: a.query.name, typ: a.query.typ }, a.body, ich(a).id);
+      const r = await dienst.ladeHoch(a.params.id, { register: a.query.register, name: a.query.name, typ: a.query.typ, gleicherName: a.query.gleicherName, herkunft: a.apiSchluessel ? 'api' : 'hochgeladen' }, a.body, ich(a).id);
       L.dokumente.info('Dokument hochgeladen', {
         name: r.dokument.name, groesse: r.dokument.groesse, mime: r.dokument.mime, anzeigbar: r.dokument.anzeigbar,
         mappe: a.params.id, gleicherInhalt: r.gleicherInhalt.length || undefined,
@@ -1098,6 +1104,29 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const d = await dienst.texterkennungErneut(a.params.id);
       L.dokumente.info('Texterkennung erneut angestoßen', { name: d.name, id: d.id });
       return ok(d);
+    } },
+    /* Versionierung (#194): Ersetzen und Zurückholen mit dem Recht „Bearbeiten“, Versionen mit „Lesen“. */
+    { methode: 'GET', pfad: '/api/dokumente/:id/versionen', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      return ok(await dienst.versionen(a.params.id));
+    } },
+    { methode: 'GET', pfad: '/api/dokumente/:id/versionen/:nummer/inhalt', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      const { version: v, inhalt } = await dienst.versionInhalt(a.params.id, Number(a.params.nummer));
+      const anzeigen = v.anzeigbar && a.query.herunterladen === undefined;
+      return { datei: { inhalt, name: v.name, mime: v.anzeigbar ? v.mime : 'application/octet-stream', anzeigen, groesse: v.groesse } };
+    } },
+    { methode: 'POST', pfad: '/api/dokumente/:id/ersetzen', zugang: 'angemeldet', roh: MAX_DATEIGROESSE, handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
+      const d = await dienst.ersetzeDokument(a.params.id, { name: a.query.name, typ: a.query.typ, herkunft: a.apiSchluessel ? 'api' : 'hochgeladen' }, a.body, ich(a).id);
+      L.dokumente.info('Neue Version eines Dokuments', { name: d.name, id: d.id, version: d.version });
+      return ok(d, 201);
+    } },
+    { methode: 'POST', pfad: '/api/dokumente/:id/versionen/:nummer/zurueckholen', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
+      const d = await dienst.holeVersionZurueck(a.params.id, Number(a.params.nummer), ich(a).id);
+      L.dokumente.info('Ältere Version zurückgeholt', { name: d.name, id: d.id, version: d.version, von: Number(a.params.nummer) });
+      return ok(d, 201);
     } },
     { methode: 'DELETE', pfad: '/api/dokumente/:id', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');

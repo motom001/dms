@@ -1,4 +1,4 @@
-import type { Aufgabe, Ausschnitt, Dokument, Historienart, Historieneintrag, Mappe, Notiz, MappenBezug, Mappentyp, MappentypDaten, OcrStandArt, Systemtyp, Werte } from '../../shared/src/model';
+import type { Aufgabe, Ausschnitt, Dokument, DokumentVersion, Herkunft, Historienart, Historieneintrag, Mappe, Notiz, MappenBezug, Mappentyp, MappentypDaten, OcrStandArt, Systemtyp, Werte } from '../../shared/src/model';
 import type { Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ausdruck, Lesefilter, Regelwerk } from '../../shared/src/rechte';
 import type { Erinnerung } from '../../shared/src/fristen';
@@ -152,6 +152,18 @@ export interface Repo {
   listeDokumente(mappeId: string): Promise<Dokument[]>;
   holeDokument(id: string): Promise<Dokument | undefined>;
   legeDokumentAn(d: Dokument): Promise<Dokument>;
+  /* ---------- Versionierung (#194) ---------- */
+  /** Ältere Versionen, neueste zuerst. */
+  versionenVon(dokumentId: string): Promise<DokumentVersion[]>;
+  /** Volltext einer älteren Version (für „Zurückholen“). */
+  holeVersion(dokumentId: string, nummer: number): Promise<(DokumentVersion & { volltext: string | null }) | undefined>;
+  /**
+   * Neue Version: den aktuellen Stand als ältere Version sichern und das Dokument mit der neuen Datei
+   * überschreiben (Nummer + 1). `volltext` gesetzt = übernommen (Zurückholen), sonst Texterkennung neu.
+   */
+  ersetzeDokument(id: string, neu: NeueVersion): Promise<Dokument>;
+  /** Ältere Versionen über die letzten `behalten` hinaus entfernen; liefert deren Dateien (sha256). */
+  kuerzeVersionen(dokumentId: string, behalten: number): Promise<string[]>;
   loescheDokument(id: string): Promise<void>;
   /** Zuordnen (#192): Dokument samt Volltext in eine andere Mappe und ein anderes Register. */
   verschiebeDokument(id: string, mappeId: string, registerKey: string): Promise<void>;
@@ -248,3 +260,10 @@ export const istUuid = (s: unknown): s is string => typeof s === 'string' && UUI
 
 /** Nummern ziehen beim Anlegen (#171): Feld → Kreis, Tag des Ziehens. */
 export interface NummernZiehen { felder: Array<{ feldKey: string; kreis: string }>; jetzt: Date }
+
+/** Neue Version eines Dokuments (#194). */
+export interface NeueVersion {
+  name: string; mime: string; groesse: number; sha256: string; anzeigbar: boolean; erstelltVon: string | null; herkunft: Herkunft;
+  /** Volltext übernehmen (Zurückholen); undefined = Texterkennung neu. */
+  volltext?: string | null;
+}

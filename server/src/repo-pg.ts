@@ -1,7 +1,7 @@
 import type postgres from 'postgres';
 import { teilwoerter } from '../../shared/src/suche';
 import { alsText } from '../../shared/src/markdown';
-import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
+import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type DokumentVersion, type Herkunft, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
 import type { Filter, Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ausdruck, Lesefilter } from '../../shared/src/rechte';
 import type { Erinnerung } from '../../shared/src/fristen';
@@ -36,6 +36,12 @@ const alsKreis = (r: Zeile): Nummernkreis => ({
   staende: (r.staende ?? {}) as Record<string, number>, zuletzt: (r.zuletzt ?? []) as Nummernkreis['zuletzt'],
 });
 
+const alsVersion = (r: Zeile): DokumentVersion => ({
+  dokumentId: r.dokument_id as string, nummer: r.nummer as number, name: r.name as string, mime: r.mime as string, groesse: Number(r.groesse),
+  sha256: r.sha256 as string, anzeigbar: r.anzeigbar as boolean, erstellt: iso(r.erstellt), erstelltVon: (r.erstellt_von as string | null) ?? null,
+  herkunft: (r.herkunft as Herkunft | null) ?? null,
+});
+
 const alsMappe = (r: Zeile): Mappe => ({
   id: r.id as string,
   typId: r.typ_id as string,
@@ -67,6 +73,10 @@ const alsDokument = (r: Zeile): Dokument => ({
     seiten: (r.ocr_seiten as number | null) ?? null,
     zeit: r.ocr_zeit ? iso(r.ocr_zeit) : null,
   },
+  // Versionierung (#194)
+  version: (r.version as number | null) ?? 1,
+  herkunft: (r.herkunft as Herkunft | null) ?? null,
+  ...(r.aeltere !== undefined ? { aeltere: Number(r.aeltere) } : {}),
 });
 /** Ausschnitte aus dem Volltext: höchstens zwei Stellen, Treffer markiert (#45). */
 const AUSSCHNITT = `StartSel=${TREFFER_ANFANG}, StopSel=${TREFFER_ENDE}, MaxFragments=2, MaxWords=18, MinWords=6, FragmentDelimiter=" … "`;
@@ -659,19 +669,58 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
 
     async listeDokumente(mappeId) {
       if (!istUuid(mappeId)) return [];
-      return (await sql`SELECT * FROM dokumente WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY erstellt DESC`).map(alsDokument);
+      return (await sql`SELECT d.*, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
+        FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.mappe_id = ${mappeId} ORDER BY d.erstellt DESC`).map(alsDokument);
     },
     async holeDokument(id) {
       if (!istUuid(id)) return undefined;
-      const [r] = await sql`SELECT * FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      const [r] = await sql`SELECT d.*, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
+        FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.id = ${id}`;
       return r ? alsDokument(r) : undefined;
     },
     async legeDokumentAn(d) {
       const [r] = await sql`
-        INSERT INTO dokumente (id, haushalt_id, mappe_id, register_key, name, mime, groesse, sha256, anzeigbar, erstellt_von)
-        VALUES (${d.id}, ${haushaltId}, ${d.mappeId}, ${d.registerKey}, ${d.name}, ${d.mime}, ${d.groesse}, ${d.sha256}, ${d.anzeigbar}, ${d.erstelltVon})
+        INSERT INTO dokumente (id, haushalt_id, mappe_id, register_key, name, mime, groesse, sha256, anzeigbar, erstellt_von, herkunft)
+        VALUES (${d.id}, ${haushaltId}, ${d.mappeId}, ${d.registerKey}, ${d.name}, ${d.mime}, ${d.groesse}, ${d.sha256}, ${d.anzeigbar}, ${d.erstelltVon}, ${d.herkunft ?? null})
         RETURNING *`;
       return alsDokument(r);
+    },
+    /* ---------- Versionierung (#194) ---------- */
+    async versionenVon(dokumentId) {
+      if (!istUuid(dokumentId)) return [];
+      return (await sql`SELECT * FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId} ORDER BY nummer DESC`).map(alsVersion);
+    },
+    async holeVersion(dokumentId, nummer) {
+      if (!istUuid(dokumentId) || !Number.isInteger(nummer)) return undefined;
+      const [r] = await sql`SELECT * FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId} AND nummer = ${nummer}`;
+      return r ? { ...alsVersion(r), volltext: (r.volltext as string | null) ?? null } : undefined;
+    },
+    async ersetzeDokument(id, neu) {
+      return sql.begin(async (tx) => {
+        const [alt] = await tx`SELECT * FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id} FOR UPDATE`;
+        if (!alt) throw new Error('Dokument fehlt');
+        const nummer = (alt.version as number | null) ?? 1;
+        await tx`
+          INSERT INTO dokument_versionen (dokument_id, haushalt_id, nummer, name, mime, groesse, sha256, anzeigbar, erstellt, erstellt_von, herkunft, volltext)
+          VALUES (${id}, ${haushaltId}, ${nummer}, ${alt.name as string}, ${alt.mime as string}, ${alt.groesse as number}, ${alt.sha256 as string}, ${alt.anzeigbar as boolean},
+            ${alt.erstellt as Date}, ${alt.erstellt_von as string | null}, ${alt.herkunft as string | null}, ${alt.volltext as string | null})`;
+        const uebernehmen = neu.volltext !== undefined;
+        const [r] = await tx`
+          UPDATE dokumente SET name = ${neu.name}, mime = ${neu.mime}, groesse = ${neu.groesse}, sha256 = ${neu.sha256}, anzeigbar = ${neu.anzeigbar},
+            erstellt = now(), erstellt_von = ${neu.erstelltVon}, herkunft = ${neu.herkunft}, version = ${nummer + 1},
+            volltext = ${uebernehmen ? neu.volltext ?? null : null}, ocr_stand = ${uebernehmen && neu.volltext != null ? 'fertig' : 'keiner'},
+            ocr_info = NULL, ocr_seiten = NULL, ocr_zeit = ${uebernehmen && neu.volltext != null ? sql`now()` : null}
+          WHERE haushalt_id = ${haushaltId} AND id = ${id}
+          RETURNING *, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = ${id}) AS aeltere`;
+        return alsDokument(r);
+      });
+    },
+    async kuerzeVersionen(dokumentId, behalten) {
+      const weg = await sql`
+        DELETE FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId}
+          AND nummer NOT IN (SELECT nummer FROM dokument_versionen WHERE dokument_id = ${dokumentId} ORDER BY nummer DESC LIMIT ${Math.max(0, behalten)})
+        RETURNING sha256`;
+      return [...new Set(weg.map((r) => r.sha256 as string))];
     },
     async loescheDokument(id) {
       await sql`DELETE FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
@@ -693,10 +742,11 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async legeInPapierkorb(id, benutzerId) {
       await sql.begin(async (tx) => {
         const r = await tx`
-          INSERT INTO papierkorb (id, haushalt_id, typ_id, mappe, verweise, dokumente, geloescht_von, notizen, aufgaben, favoriten, erinnerungen)
+          INSERT INTO papierkorb (id, haushalt_id, typ_id, mappe, verweise, dokumente, versionen, geloescht_von, notizen, aufgaben, favoriten, erinnerungen)
           SELECT m.id, m.haushalt_id, m.typ_id, to_jsonb(m),
             (SELECT coalesce(jsonb_agg(to_jsonb(v)), '[]'::jsonb) FROM verweise v WHERE v.quelle_id = m.id),
             (SELECT coalesce(jsonb_agg(to_jsonb(d)), '[]'::jsonb) FROM dokumente d WHERE d.mappe_id = m.id),
+            (SELECT coalesce(jsonb_agg(to_jsonb(x)), '[]'::jsonb) FROM dokument_versionen x JOIN dokumente d ON d.id = x.dokument_id WHERE d.mappe_id = m.id),
             ${istUuid(benutzerId) ? benutzerId : null}::uuid,
             (SELECT coalesce(jsonb_agg(to_jsonb(n)), '[]'::jsonb) FROM notizen n WHERE n.mappe_id = m.id),
             (SELECT coalesce(jsonb_agg(to_jsonb(a)), '[]'::jsonb) FROM aufgaben a WHERE a.mappe_id = m.id),
@@ -746,6 +796,13 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
           SELECT (jsonb_populate_record(NULL::dokumente, d.value || jsonb_build_object(
             'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = d.value ->> 'erstellt_von') THEN d.value -> 'erstellt_von' ELSE 'null'::jsonb END))).*
           FROM papierkorb p, jsonb_array_elements(p.dokumente) d WHERE p.id = ${id}`;
+        // Ältere Versionen (#194) mit ihren Dokumenten.
+        await tx`
+          INSERT INTO dokument_versionen
+          SELECT (jsonb_populate_record(NULL::dokument_versionen, x.value || jsonb_build_object(
+            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'erstellt_von') THEN x.value -> 'erstellt_von' ELSE 'null'::jsonb END))).*
+          FROM papierkorb p, jsonb_array_elements(coalesce(p.versionen, '[]'::jsonb)) x WHERE p.id = ${id}
+          ON CONFLICT DO NOTHING`;
         await tx`
           INSERT INTO notizen
           SELECT (jsonb_populate_record(NULL::notizen, n.value || jsonb_build_object(
@@ -780,8 +837,8 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async leerePapierkorb(ids) {
       const gueltig = ids.filter(istUuid);
       if (!gueltig.length) return [];
-      const r = await sql`DELETE FROM papierkorb WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) RETURNING dokumente`;
-      return [...new Set<string>(r.flatMap((z: Zeile) => (z.dokumente as Zeile[]).map((d) => d.sha256 as string)))];
+      const r = await sql`DELETE FROM papierkorb WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) RETURNING dokumente, versionen`;
+      return [...new Set<string>(r.flatMap((z: Zeile) => [...(z.dokumente as Zeile[]), ...((z.versionen as Zeile[] | null) ?? [])].map((d) => d.sha256 as string)))];
     },
     async zaehlePapierkorb(von) {
       const [r] = await sql`SELECT count(*)::int AS n FROM papierkorb WHERE haushalt_id = ${haushaltId}
@@ -791,7 +848,9 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async dateiBenutzt(sha256) {
       const [r] = await sql`
         SELECT EXISTS (SELECT 1 FROM dokumente WHERE haushalt_id = ${haushaltId} AND sha256 = ${sha256})
-          OR EXISTS (SELECT 1 FROM papierkorb p, jsonb_array_elements(p.dokumente) d WHERE p.haushalt_id = ${haushaltId} AND d.value ->> 'sha256' = ${sha256}) AS ja`;
+          OR EXISTS (SELECT 1 FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND sha256 = ${sha256})
+          OR EXISTS (SELECT 1 FROM papierkorb p, jsonb_array_elements(p.dokumente) d WHERE p.haushalt_id = ${haushaltId} AND d.value ->> 'sha256' = ${sha256})
+          OR EXISTS (SELECT 1 FROM papierkorb p, jsonb_array_elements(p.versionen) v WHERE p.haushalt_id = ${haushaltId} AND v.value ->> 'sha256' = ${sha256}) AS ja`;
       return r.ja as boolean;
     },
 

@@ -839,4 +839,39 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.match(liste[0].naechste, /-00022$/);
     assert.equal((await anfrage('DELETE', '/api/werkbank/nummernkreise/beleg')).status, 409);
   });
+
+  it('Versionierung: ersetzen, Versionen, zurückholen, gleicher Name, Speicherplatz (#194)', async () => {
+    const t = (await anfrage('POST', '/api/typen', { name: 'Versionsbeleg', felder: [{ key: 'name', label: 'Name', typ: 'text' }], register: [
+      { key: 'daten', name: 'Daten', art: 'felder' }, { key: 'belege', name: 'Belege', art: 'dokumente', versionierung: true, versionenBehalten: 3 },
+    ] })).body;
+    assert.ok(t.id, JSON.stringify(t));
+    const m = (await anfrage('POST', '/api/mappen', { typId: t.id, werte: { name: 'Kasse' } })).body;
+    const lade = async (url: string, inhalt: Buffer) => {
+      const r = await app.inject({ method: 'POST', url, payload: inhalt, headers: { 'x-dms': '1', cookie, 'content-type': 'application/octet-stream' } });
+      return { status: r.statusCode as number, body: JSON.parse(r.body) };
+    };
+    const a = (await lade(`/api/mappen/${m.id}/dokumente?register=belege&name=Bon.jpg`, Buffer.from('erstes'))).body.dokument;
+    const b = await lade(`/api/dokumente/${a.id}/ersetzen?name=Bon.pdf&typ=application/pdf`, Buffer.from('%PDF-1.4\nzweites'));
+    assert.equal(b.status, 201, JSON.stringify(b.body));
+    assert.equal(b.body.version, 2);
+    // Gleicher Name als neue Version
+    const c = await lade(`/api/mappen/${m.id}/dokumente?register=belege&name=Bon.pdf&gleicherName=version`, Buffer.from('%PDF-1.4\ndrittes'));
+    assert.equal(c.body.dokument.version, 3);
+    // Gleicher Name mit Zähler
+    assert.equal((await lade(`/api/mappen/${m.id}/dokumente?register=belege&name=Bon.pdf`, Buffer.from('anderes'))).body.dokument.name, 'Bon (2).pdf');
+    const v = (await anfrage('GET', `/api/dokumente/${a.id}/versionen`)).body;
+    assert.deepEqual(v.aeltere.map((x: { nummer: number }) => x.nummer), [2, 1]);
+    const alt = await app.inject({ method: 'GET', url: `/api/dokumente/${a.id}/versionen/1/inhalt?herunterladen=1`, headers: { cookie } });
+    assert.equal(alt.body, 'erstes');
+    const z = await anfrage('POST', `/api/dokumente/${a.id}/versionen/1/zurueckholen`);
+    assert.equal(z.status, 201);
+    assert.equal(z.body.version, 4);
+    // Nur die letzten 3: Version 1 ist weg
+    assert.deepEqual((await anfrage('GET', `/api/dokumente/${a.id}/versionen`)).body.aeltere.map((x: { nummer: number }) => x.nummer), [3, 2]);
+    assert.equal((await app.inject({ method: 'GET', url: `/api/dokumente/${a.id}/inhalt?herunterladen=1`, headers: { cookie } })).body, 'erstes');
+    const det = (await anfrage('GET', `/api/mappen/${m.id}`)).body;
+    assert.equal(det.dokumente.find((x: { id: string }) => x.id === a.id).aeltere, 2);
+    assert.equal((await anfrage('DELETE', `/api/dokumente/${a.id}`)).status, 204);
+    assert.equal((await anfrage('GET', `/api/dokumente/${a.id}/versionen`)).status, 404);
+  });
 });

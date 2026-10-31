@@ -1,4 +1,4 @@
-import { FELDTYPEN, REGISTERARTEN, type Benutzer } from '../../shared/src/model';
+import { FELDTYPEN, HERKUNFT, REGISTERARTEN, type Benutzer } from '../../shared/src/model';
 import { Fachfehler } from './fehler';
 import type { Anfrage, Antwort, Route } from './routen';
 
@@ -104,9 +104,20 @@ export const V1_TABELLE: V1[] = [
     parameter: [id('der Mappe'),
       { name: 'register', wo: 'query', typ: 'string', pflicht: true, beschreibung: 'Schlüssel eines Dokumentenregisters des Mappentyps' },
       { name: 'name', wo: 'query', typ: 'string', pflicht: true, beschreibung: 'Dateiname' },
-      { name: 'typ', wo: 'query', typ: 'string', beschreibung: 'MIME-Typ (nur Angabe; angezeigt werden PDF und Bilder anhand des Inhalts)' }],
+      { name: 'typ', wo: 'query', typ: 'string', beschreibung: 'MIME-Typ (nur Angabe; angezeigt werden PDF und Bilder anhand des Inhalts)' },
+      { name: 'gleicherName', wo: 'query', typ: 'string', beschreibung: 'Gibt es im Register schon ein Dokument mit diesem Namen: zaehler (Standard, „Rechnung (2).pdf“), version (neue Version davon; nur mit Versionierung) oder ersetzen (das vorhandene endgültig löschen; nur ohne Versionierung)' }],
     body: 'binaer', antwort: 'Hochgeladen', status: 201,
   },
+  {
+    methode: 'POST', pfad: '/dokumente/{id}/ersetzen', gruppe: 'Dokumente', zusammenfassung: 'Neue Version eines Dokuments',
+    beschreibung: 'Versionierung (#194): Rohe Bytes als Body; das Dokument behält seine Id, die bisherige Datei bleibt als ältere Version. Name und Dateityp dürfen sich ändern. 409, wenn die Versionierung des Registers aus ist.',
+    intern: { methode: 'POST', pfad: '/api/dokumente/:id/ersetzen' },
+    parameter: [id('des Dokuments'), { name: 'name', wo: 'query', typ: 'string', beschreibung: 'Neuer Dateiname; ohne Angabe bleibt der bisherige' }, { name: 'typ', wo: 'query', typ: 'string', beschreibung: 'MIME-Typ (nur Angabe)' }],
+    body: 'binaer', antwort: 'Dokument', status: 201,
+  },
+  { methode: 'GET', pfad: '/dokumente/{id}/versionen', gruppe: 'Dokumente', zusammenfassung: 'Versionen eines Dokuments', intern: { methode: 'GET', pfad: '/api/dokumente/:id/versionen' }, parameter: [id('des Dokuments')], antwort: 'Versionen' },
+  { methode: 'GET', pfad: '/dokumente/{id}/versionen/{nummer}/inhalt', gruppe: 'Dokumente', zusammenfassung: 'Ältere Version herunterladen', intern: { methode: 'GET', pfad: '/api/dokumente/:id/versionen/:nummer/inhalt' }, parameter: [id('des Dokuments'), { name: 'nummer', wo: 'path', typ: 'integer', pflicht: true, beschreibung: 'Nummer der Version' }], antwort: 'binaer' },
+  { methode: 'POST', pfad: '/dokumente/{id}/versionen/{nummer}/zurueckholen', gruppe: 'Dokumente', zusammenfassung: 'Ältere Version zurückholen', beschreibung: 'Übernimmt die Version als neue, höchste Version; es geht nichts verloren.', intern: { methode: 'POST', pfad: '/api/dokumente/:id/versionen/:nummer/zurueckholen' }, parameter: [id('des Dokuments'), { name: 'nummer', wo: 'path', typ: 'integer', pflicht: true, beschreibung: 'Nummer der Version' }], antwort: 'Dokument', status: 201 },
   { methode: 'GET', pfad: '/dokumente/{id}/inhalt', gruppe: 'Dokumente', zusammenfassung: 'Inhalt eines Dokuments herunterladen', intern: { methode: 'GET', pfad: '/api/dokumente/:id/inhalt' }, parameter: [id('des Dokuments')], antwort: 'binaer' },
   { methode: 'GET', pfad: '/dokumente/{id}/volltext', gruppe: 'Dokumente', zusammenfassung: 'Volltext eines Dokuments', beschreibung: 'Textebene des PDFs oder Ergebnis der Texterkennung; text ist null, solange es keinen gibt (siehe ocr.stand).', intern: { methode: 'GET', pfad: '/api/dokumente/:id/volltext' }, parameter: [id('des Dokuments')], antwort: 'Volltext' },
   { methode: 'POST', pfad: '/dokumente/{id}/texterkennung', gruppe: 'Dokumente', zusammenfassung: 'Texterkennung (erneut) anstoßen', beschreibung: 'Stellt das Dokument in die Warteschlange der Texterkennung, z. B. nach einem Fehler.', intern: { methode: 'POST', pfad: '/api/dokumente/:id/texterkennung' }, parameter: [id('des Dokuments')], antwort: 'Dokument' },
@@ -208,8 +219,19 @@ const SCHEMAS: Record<string, Schema> = {
     properties: {
       id: uuid, mappeId: uuid, registerKey: { type: 'string' }, name: { type: 'string' }, mime: { type: 'string' }, groesse: { type: 'integer' }, sha256: { type: 'string' }, anzeigbar: { type: 'boolean' }, erstellt: zeit, erstelltVon: { ...uuid, nullable: true },
       ocr: { type: 'object', description: 'Stand der Texterkennung', properties: { stand: { type: 'string', enum: ['keiner', 'wartet', 'laeuft', 'fertig', 'fehler', 'ausgelassen'] }, info: { type: 'string', nullable: true }, seiten: { type: 'integer', nullable: true }, zeit: { ...zeit, nullable: true } } },
+      version: { type: 'integer', description: 'Nummer der aktuellen Version (ohne Versionierung 1)' },
+      herkunft: { type: 'string', nullable: true, enum: [...Object.keys(HERKUNFT), null], description: 'Woher die aktuelle Version kam' },
+      aeltere: { type: 'integer', description: 'Anzahl älterer Versionen' },
     },
   },
+  DokumentVersion: {
+    type: 'object', description: 'Eine ältere Version eines Dokuments',
+    properties: {
+      dokumentId: uuid, nummer: { type: 'integer' }, name: { type: 'string' }, mime: { type: 'string' }, groesse: { type: 'integer' }, sha256: { type: 'string' }, anzeigbar: { type: 'boolean' },
+      erstellt: zeit, erstelltVon: { ...uuid, nullable: true }, herkunft: { type: 'string', nullable: true },
+    },
+  },
+  Versionen: { type: 'object', properties: { aktuell: ref('Dokument'), aeltere: { type: 'array', items: ref('DokumentVersion'), description: 'neueste zuerst' } } },
   MappeDetails: {
     type: 'object',
     properties: {

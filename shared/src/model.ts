@@ -91,6 +91,10 @@ export interface Register {
   quellen?: Quelle[];
   /** Dokumentenregister: Volltext erzeugen (Texterkennung, #45); Standard: ja. */
   volltext?: boolean;
+  /** Dokumentenregister (#194): Ersetzen legt eine neue Version an, die alte bleibt. */
+  versionierung?: boolean;
+  /** Nur die letzten N Versionen behalten (mit der aktuellen); leer = alle. */
+  versionenBehalten?: number | null;
 }
 
 export interface MappentypDaten {
@@ -659,6 +663,21 @@ export interface Dokument {
   erstelltVon: string | null;
   /** Stand der Texterkennung (#45). */
   ocr?: OcrStand;
+  /** Versionierung (#194): Nummer der aktuellen Version (ohne Versionierung 1). */
+  version?: number;
+  /** Woher die aktuelle Version kam. */
+  herkunft?: Herkunft | null;
+  /** Anzahl älterer Versionen. */
+  aeltere?: number;
+}
+
+/** Herkunft einer Dokumentversion (#194). */
+export const HERKUNFT = { hochgeladen: 'hochgeladen', api: 'über die Schnittstelle', webdav: 'über WebDAV', paket: 'von einem Paket', eingang: 'Eingangskanal', zurueckgeholt: 'zurückgeholt' } as const;
+export type Herkunft = keyof typeof HERKUNFT;
+/** Eine ältere Version eines Dokuments (#194). */
+export interface DokumentVersion {
+  dokumentId: string; nummer: number; name: string; mime: string; groesse: number; sha256: string; anzeigbar: boolean;
+  erstellt: string; erstelltVon: string | null; herkunft: Herkunft | null;
 }
 
 /* ---------- Aufgaben (#54, #56) ---------- */
@@ -687,7 +706,7 @@ export const HISTORIENARTEN = {
   angelegt: 'angelegt', geaendert: 'geändert', dokument_hochgeladen: 'Dokument hochgeladen', dokument_geloescht: 'Dokument gelöscht',
   papierkorb: 'in den Papierkorb gelegt', wiederhergestellt: 'wiederhergestellt', endgueltig: 'endgültig gelöscht',
   passwort_angezeigt: 'Passwort angezeigt', notiz: 'Notiz', aufgabe: 'Aufgabe', email: 'E-Mail versendet', abwesenheit: 'Abwesenheit',
-  zugeordnet: 'Post zugeordnet', uebernommen: 'übernommen',
+  zugeordnet: 'Post zugeordnet', uebernommen: 'übernommen', dokument_version: 'neue Version',
 } as const;
 export type Historienart = keyof typeof HISTORIENARTEN;
 /** Eine Feldänderung: Werte lesbar zum Zeitpunkt der Änderung; Passwörter nur als „geändert“. */

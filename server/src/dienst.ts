@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_AUSWAHL, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, ROLLEN, freierSchluessel, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
-  AUFGABE_MAX, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Benutzer, type Dokument, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Werte,
+  AUFGABE_MAX, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Benutzer, type Dokument, type Herkunft, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
@@ -100,6 +100,12 @@ export function bereinigeRegister(e: unknown, felder: Feld[]): Register[] {
     }
     // Volltext (#45): nur das Abschalten wird gespeichert; Standard ist an.
     if (art === 'dokumente' && x?.volltext === false) r.volltext = false;
+    // Versionierung (#194): Standard aus; „nur die letzten N“ ab 2, leer = alle.
+    if (art === 'dokumente' && x?.versionierung === true) {
+      r.versionierung = true;
+      const n = Math.trunc(Number(x.versionenBehalten));
+      if (x.versionenBehalten != null && x.versionenBehalten !== '' && Number.isFinite(n) && n >= 2) r.versionenBehalten = Math.min(n, 1000);
+    }
     return r;
   });
   // Felder ohne Register landen auf dem ersten Feldregister.
@@ -2805,7 +2811,12 @@ export class Dienst {
     if (!(await this.repo.dateiBenutzt(sha256))) await this.dateien.loesche(sha256);
   }
 
-  async ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string }, inhalt: unknown, benutzerId: string | null) {
+  /**
+   * Hochladen. Gleicher Name im Register (#194): `gleicherName` = „zaehler“ (Standard: „Rechnung (2).pdf“),
+   * „version“ (neue Version des vorhandenen, nur mit Versionierung) oder „ersetzen“ (vorhandenes löschen,
+   * nur ohne Versionierung).
+   */
+  async ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string; gleicherName?: string; herkunft?: Herkunft }, inhalt: unknown, benutzerId: string | null) {
     const m = await this.repo.holeMappe(mappeId);
     if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
     const typ = await this.repo.holeTyp(m.typId);
@@ -2813,17 +2824,36 @@ export class Dienst {
     if (!reg) throw new Fachfehler(422, 'Dieses Dokumentenregister gibt es an der Mappe nicht.');
     if (!Buffer.isBuffer(inhalt) || inhalt.length === 0) throw new Fachfehler(422, 'Die Datei ist leer.');
     if (inhalt.length > MAX_DATEIGROESSE) throw new Fachfehler(413, 'Die Datei ist zu groß.');
+    const art = e.gleicherName ?? 'zaehler';
+    if (!['zaehler', 'version', 'ersetzen'].includes(art)) throw new Fachfehler(422, 'gleicherName: zaehler, version oder ersetzen.');
+    const vorhanden = (await this.repo.listeDokumente(mappeId)).filter((d) => d.registerKey === reg.key);
+    const gleich = vorhanden.find((d) => d.name.toLowerCase() === dateiname(e.name).toLowerCase());
+    if (gleich && art === 'version') {
+      if (!reg.versionierung) throw new Fachfehler(409, 'Für dieses Register ist die Versionierung ausgeschaltet – eine neue Version ist nicht möglich.');
+      return { dokument: await this.ersetzeDokument(gleich.id, { name: e.name, typ: e.typ, herkunft: e.herkunft }, inhalt, benutzerId), gleicherInhalt: [], version: true };
+    }
+    if (gleich && art === 'ersetzen') {
+      if (reg.versionierung) throw new Fachfehler(409, 'Für dieses Register ist die Versionierung eingeschaltet – lade das Dokument als neue Version hoch.');
+      await this.loescheDokument(gleich.id, benutzerId);
+    }
+    let name = dateiname(e.name);
+    if (gleich && art === 'zaehler') {
+      const namen = new Set(vorhanden.map((d) => d.name.toLowerCase()));
+      const punkt = name.lastIndexOf('.');
+      const [stamm, endung] = punkt > 0 ? [name.slice(0, punkt), name.slice(punkt)] : [name, ''];
+      for (let i = 2; namen.has(name.toLowerCase()); i++) name = `${stamm} (${i})${endung}`;
+    }
 
     const sha256 = createHash('sha256').update(inhalt).digest('hex');
     const erkannt = erkenneAnzeigbar(inhalt);
     const angegeben = /^[\w.+-]+\/[\w.+-]+$/.test(e.typ ?? '') ? e.typ! : 'application/octet-stream';
     const gleicherInhalt = await this.repo.dokumenteMitSha(sha256);
     await this.dateien.schreibe(sha256, inhalt);
-    await this.notiere(mappeId, benutzerId, 'dokument_hochgeladen', { dokument: dateiname(e.name), groesse: inhalt.length, mime: erkannt ?? angegeben, register: reg.name });
+    await this.notiere(mappeId, benutzerId, 'dokument_hochgeladen', { dokument: name, groesse: inhalt.length, mime: erkannt ?? angegeben, register: reg.name });
     await this.beruehre(mappeId, typ, benutzerId);
     const dokument = await this.repo.legeDokumentAn({
-      id: randomUUID(), mappeId, registerKey: reg.key, name: dateiname(e.name), mime: erkannt ?? angegeben,
-      groesse: inhalt.length, sha256, anzeigbar: !!erkannt, erstellt: new Date().toISOString(), erstelltVon: benutzerId,
+      id: randomUUID(), mappeId, registerKey: reg.key, name, mime: erkannt ?? angegeben,
+      groesse: inhalt.length, sha256, anzeigbar: !!erkannt, erstellt: new Date().toISOString(), erstelltVon: benutzerId, herkunft: e.herkunft ?? 'hochgeladen',
     });
     // Volltext (#45): neues Dokument in die Warteschlange, wenn das Register das will.
     let neu = dokument;
@@ -2845,11 +2875,82 @@ export class Dienst {
   async loescheDokument(id: string, benutzerId: string | null = null) {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    // Alle Versionen (#194) gehen mit.
+    const aeltere = await this.repo.versionenVon(id);
     await this.repo.loescheDokument(id);
-    await this.notiere(d.mappeId, benutzerId, 'dokument_geloescht', { dokument: d.name, groesse: d.groesse, mime: d.mime });
+    await this.notiere(d.mappeId, benutzerId, 'dokument_geloescht', { dokument: d.name, groesse: d.groesse, mime: d.mime, ...(aeltere.length ? { versionen: aeltere.length + 1 } : {}) });
     const m = await this.repo.holeMappe(d.mappeId);
     if (m) await this.beruehre(m.id, await this.repo.holeTyp(m.typId), benutzerId);
-    await this.raeumeAuf(d.sha256);
+    for (const sha of new Set([d.sha256, ...aeltere.map((v) => v.sha256)])) await this.raeumeAuf(sha);
+  }
+
+  /* ---------- Versionierung (#194) ---------- */
+
+  private async registerVon(d: Dokument) {
+    const m = await this.repo.holeMappe(d.mappeId);
+    const typ = m ? await this.repo.holeTyp(m.typId) : undefined;
+    return { typ, reg: typ?.register.find((r) => r.key === d.registerKey && r.art === 'dokumente') };
+  }
+
+  /** Neue Version eines Dokuments – unabhängig von Name und Dateityp; nur mit eingeschalteter Versionierung. */
+  async ersetzeDokument(id: string, e: { name?: string; typ?: string; herkunft?: Herkunft }, inhalt: unknown, benutzerId: string | null): Promise<Dokument> {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    const { typ, reg } = await this.registerVon(d);
+    if (!reg?.versionierung) throw new Fachfehler(409, 'Für dieses Register ist die Versionierung ausgeschaltet – Ersetzen ist nicht möglich.');
+    if (!Buffer.isBuffer(inhalt) || inhalt.length === 0) throw new Fachfehler(422, 'Die Datei ist leer.');
+    if (inhalt.length > MAX_DATEIGROESSE) throw new Fachfehler(413, 'Die Datei ist zu groß.');
+    const sha256 = createHash('sha256').update(inhalt).digest('hex');
+    const erkannt = erkenneAnzeigbar(inhalt);
+    const angegeben = /^[\w.+-]+\/[\w.+-]+$/.test(e.typ ?? '') ? e.typ! : 'application/octet-stream';
+    await this.dateien.schreibe(sha256, inhalt);
+    const neu = await this.repo.ersetzeDokument(id, {
+      name: e.name ? dateiname(e.name) : d.name, mime: erkannt ?? angegeben, groesse: inhalt.length, sha256, anzeigbar: !!erkannt,
+      erstelltVon: benutzerId, herkunft: e.herkunft ?? 'hochgeladen',
+    });
+    return this.nachNeuerVersion(d, neu, typ, reg, benutzerId);
+  }
+
+  /** Eine ältere Version zurückholen: als neue, höchste Version; es geht nichts verloren. */
+  async holeVersionZurueck(id: string, nummer: number, benutzerId: string | null): Promise<Dokument> {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    const v = await this.repo.holeVersion(id, nummer);
+    if (!v) throw new Fachfehler(404, `Version ${nummer} gibt es nicht (mehr).`);
+    const { typ, reg } = await this.registerVon(d);
+    if (!reg?.versionierung) throw new Fachfehler(409, 'Für dieses Register ist die Versionierung ausgeschaltet – Zurückholen ist nicht möglich.');
+    const neu = await this.repo.ersetzeDokument(id, {
+      name: v.name, mime: v.mime, groesse: v.groesse, sha256: v.sha256, anzeigbar: v.anzeigbar, erstelltVon: benutzerId, herkunft: 'zurueckgeholt', volltext: v.volltext,
+    });
+    return this.nachNeuerVersion(d, neu, typ, reg, benutzerId, nummer);
+  }
+
+  private async nachNeuerVersion(alt: Dokument, neu: Dokument, typ: Mappentyp | undefined, reg: Register, benutzerId: string | null, zurueckgeholt?: number) {
+    await this.notiere(neu.mappeId, benutzerId, 'dokument_version', {
+      dokument: neu.name, version: neu.version, vorher: alt.name, groesse: neu.groesse, mime: neu.mime, register: reg.name,
+      ...(zurueckgeholt ? { zurueckgeholt } : {}),
+    });
+    await this.beruehre(neu.mappeId, typ, benutzerId);
+    // „Nur die letzten N“ (mit der aktuellen): ältere entfernen, Dateien aufräumen.
+    if (reg.versionenBehalten) for (const sha of await this.repo.kuerzeVersionen(neu.id, reg.versionenBehalten - 1)) await this.raeumeAuf(sha);
+    if (neu.ocr?.stand !== 'fertig' && Dienst.volltextAn(typ, reg.key)) {
+      await this.repo.ocrEinreihen([neu.id]);
+      this.ocr?.anstossen();
+    }
+    return (await this.repo.holeDokument(neu.id)) ?? neu;
+  }
+
+  async versionen(id: string) {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    return { aktuell: d, aeltere: await this.repo.versionenVon(id) };
+  }
+
+  async versionInhalt(id: string, nummer: number) {
+    const v = await this.repo.holeVersion(id, nummer);
+    if (!v) throw new Fachfehler(404, `Version ${nummer} gibt es nicht (mehr).`);
+    const { volltext: _v, ...version } = v;
+    return { version, inhalt: await this.dateien.lies(v.sha256) };
   }
 
   /** Dokumente hinzugefügt oder entfernt (#76): „zuletzt geändert“ nachziehen, Titel mit {geaendert} ebenso. */

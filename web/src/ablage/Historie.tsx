@@ -96,6 +96,21 @@ function einzelheiten(e: Historieneintrag, emailTyp: string | undefined): { hinw
         ),
       };
     }
+    case 'dokument_version': {
+      // Versionierung (#194): „Version 3 von Kassenbon gespeichert (ersetzt Kassenbon.jpg)“, „Version 1 zurückgeholt“.
+      const nr = typeof d.version === 'number' ? d.version : null;
+      return {
+        hinweis: typeof d.zurueckgeholt === 'number' ? `Version ${d.zurueckgeholt} zurückgeholt` : `Version ${nr ?? '?'}`,
+        inhalt: (
+          <dl className="eigenschaften einzeln">
+            <dt>Datei</dt><dd>{d.dokument}{str(d.vorher) && str(d.vorher) !== d.dokument && <> (ersetzt {str(d.vorher)})</>}</dd>
+            {nr && <><dt>Version</dt><dd>{nr}{typeof d.zurueckgeholt === 'number' && <> – Version {d.zurueckgeholt} zurückgeholt</>}</dd></>}
+            {typeof d.groesse === 'number' && <><dt>Größe</dt><dd>{groesse(d.groesse)}</dd></>}
+            {str(d.register) && <><dt>Register</dt><dd>{str(d.register)}</dd></>}
+          </dl>
+        ),
+      };
+    }
     case 'dokument_hochgeladen': case 'dokument_geloescht': {
       if (typeof d.groesse !== 'number') return null;
       return {
