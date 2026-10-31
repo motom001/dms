@@ -62,7 +62,9 @@ function faelle() {
   describe('Sichten verwalten (#38)', () => {
     it('legt je Mappentyp eine Sicht mit dessen Id an und zieht sie beim Umbenennen und Löschen mit', async () => {
       const { d, typ } = await mitBeispielen();
-      const sichten = await d.listeSichten();
+      // Nur die Ansichten der Beispiel-Mappentypen; System, Post und Ablageort (#168) bringen eigene mit.
+      const beispiel = new Set(['Vertragspartner', 'Vertrag', 'Rechnung', 'Zahlung'].map((n) => typ(n).id));
+      const sichten = (await d.listeSichten()).filter((s) => s.typen.length === 1 && beispiel.has(s.typen[0]));
       assert.deepEqual(sichten.map((s) => s.name), ['Vertragspartner', 'Vertrag', 'Rechnung', 'Zahlung'], 'in der Reihenfolge des Anlegens');
       assert.ok(sichten.every((s) => s.typen.length === 1 && s.id === s.typen[0]));
       const z = typ('Zahlung');

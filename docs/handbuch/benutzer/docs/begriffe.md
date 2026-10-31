@@ -18,6 +18,10 @@ Außerdem steht dort, wer dem Begriff begegnet: alle, nur Administratoren oder n
 Der Arbeitsbereich für alle Benutzer – mit Ansichten, Listen und Mappen.  
 Siehe auch: [Werkbank](#werkbank), [Ansicht](#ansicht).
 
+<a id="ablageort"></a>**Ablageort** · ✓ Alltagswort · alle  
+Ein Platz, an dem Papier liegt – z. B. ein Ordner, eine Kiste, ein Schließfach oder „vernichtet“. Ablageorte liegen ineinander („zu Hause › Arbeitszimmer Schrank › roter Ordner“). Jedes DMS hat diesen Mappentyp; er lässt sich erweitern, aber nicht löschen.  
+Siehe auch: [Verbleib Originaldokumente](#verbleib-originaldokumente), [Mappentyp](#mappentyp).
+
 <a id="ansicht"></a>**Ansicht** · ~ mit Erklärung · alle  
 Eine gespeicherte Auswahl von Mappen – welche Mappentypen, mit welchen Bedingungen. Ansichten stehen im Baum links in der Ablage. Wie etwas aussieht, heißt dagegen „Darstellung“.  
 Siehe auch: [Unteransicht](#unteransicht), [Bedingung](#bedingung), [Trefferliste](#trefferliste).
@@ -89,6 +93,10 @@ Legt fest, welche Spalten eine Liste zeigt. Ein Mappentyp hat eine oder mehrere 
 
 <a id="unteransicht"></a>**Unteransicht** · ~ mit Erklärung · Administratoren  
 Eine Ansicht unterhalb einer anderen. Sie erbt deren Berechtigungen.
+
+<a id="verbleib-originaldokumente"></a>**Verbleib Originaldokumente** · ✓ Alltagswort · alle  
+Das Feld an einer Mappe, das auf den Ablageort des Papiers zeigt. In allen Mappentypen mit derselben Kennung, damit gemeinsame Listen und Ansichten funktionieren.  
+Siehe auch: [Ablageort](#ablageort).
 
 <a id="verknupfungen"></a>**Verknüpfungen** · ~ mit Erklärung · alle  
 Das Register, das alle Mappen zeigt, die auf diese Mappe verweisen – die Gegenrichtung des Verweises.  
@@ -435,6 +443,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 
 | Begriff | nicht verwenden | im Code |
 |---|---|---|
+| Ablageort | – | `ablageort` |
 | Abwesenheit | – | `Abwesenheit` |
 | Administrator | Admin (in der Oberfläche) | – |
 | Anmeldung über einen Anbieter | SSO, OIDC (in der Oberfläche) | – |
@@ -481,6 +490,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Trefferliste | – | `Trefferliste` |
 | Tägliche Zusammenfassung | Übersicht per E-Mail, Digest | – |
 | Unteransicht | Untersicht | – |
+| Verbleib Originaldokumente | Lagerort, Standort (für Papier) | `verbleib_original` |
 | Version | Revision, Stand (für Dokumente) | `DokumentVersion` |
 | Version des DMS | Release (in der Oberfläche) | – |
 | Vertretung | – | `Abwesenheit.vertreterId, vertretung (Aufgabenart)` |

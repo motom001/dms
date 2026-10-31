@@ -10,7 +10,7 @@ Unter **Werkbank → Demo-Daten** füllst du ein DMS zum Ausprobieren oder Teste
 
 **Beispiele laden** legt die Mappentypen *Vertragspartner*, *Vertrag*, *Rechnung* und *Zahlung* mit Feldern, Registern, Titel-Vorlagen und Trefferlisten an – dazu ein paar Mappen. Das ist ein guter Startpunkt, um eigene Mappentypen daran anzulehnen.
 
-Das geht nur, solange es außer den Systemmappentypen *Benutzer*, *Rolle* und *Post* noch keine Mappentypen gibt.
+Das geht nur, solange es außer den Systemmappentypen *Benutzer*, *Rolle* und *Post* und dem [Ablageort](mappentypen.md#ablageort-wo-die-originale-liegen) noch keine Mappentypen gibt. *Vertrag* und *Rechnung* bekommen dabei das Feld *Verbleib Originaldokumente*; dazu kommen ein paar Ablageorte (zu Hause › Arbeitszimmer Schrank › roter Ordner, Safe im Flur, beim Notar, vernichtet) und die Ansicht *Originale nach Ort*.
 
 ## Demo-Mappen erzeugen
 

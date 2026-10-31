@@ -190,6 +190,21 @@ begriffe:
     beschreibung: Mappen, die ein Benutzer mit dem Stern markiert hat. Die Ansicht „Favoriten“ zeigt sie.
     einsteiger: alltag
     begegnet: alle
+  - begriff: Ablageort
+    bereich: grundbegriffe
+    beschreibung: Ein Platz, an dem Papier liegt – z. B. ein Ordner, eine Kiste, ein Schließfach oder „vernichtet“. Ablageorte liegen ineinander („zu Hause › Arbeitszimmer Schrank › roter Ordner“). Jedes DMS hat diesen Mappentyp; er lässt sich erweitern, aber nicht löschen.
+    einsteiger: alltag
+    begegnet: alle
+    verwandt: [Verbleib Originaldokumente, Mappentyp]
+    code: ablageort
+  - begriff: Verbleib Originaldokumente
+    bereich: grundbegriffe
+    beschreibung: Das Feld an einer Mappe, das auf den Ablageort des Papiers zeigt. In allen Mappentypen mit derselben Kennung, damit gemeinsame Listen und Ansichten funktionieren.
+    einsteiger: alltag
+    begegnet: alle
+    nicht_verwenden: [Lagerort, Standort (für Papier)]
+    verwandt: [Ablageort]
+    code: verbleib_original
   - begriff: Papierkorb
     bereich: grundbegriffe
     beschreibung: Gelöschte Mappen. Sie lassen sich wiederherstellen, bis die eingestellte Zahl an Tagen abgelaufen ist.

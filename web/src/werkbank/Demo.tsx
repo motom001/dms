@@ -142,10 +142,11 @@ export function DemoPanel() {
         </div>
       )}
 
-      {!d.typen.length ? (
+      {/* Der Ablageort (#168) gehört zum Standard und zählt hier nicht als eigener Mappentyp. */}
+      {!d.typen.some((t) => !t.system && t.schluessel !== 'ablageort') ? (
         <div className="blatt">
           <h2 className="h3">Beispiel-Mappentypen</h2>
-          <p className="leise">Vertragspartner, Vertrag, Rechnung und Zahlung mit Registern und ein paar Mappen. Nur möglich, solange es noch keine Mappentypen gibt.</p>
+          <p className="leise">Vertragspartner, Vertrag, Rechnung und Zahlung mit Registern und ein paar Mappen. Nur möglich, solange es außer dem Ablageort noch keine Mappentypen gibt. Verträge und Rechnungen bekommen dabei das Feld „Verbleib Originaldokumente“ und ein paar Ablageorte.</p>
           <div className="knoepfe"><button className="knopf primaer" disabled={laeuft} onClick={() => void (async () => {
             setMeldung(undefined);
             try { await api.beispiele(); setMeldung({ art: 'gut', text: 'Beispiele geladen.' }); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }

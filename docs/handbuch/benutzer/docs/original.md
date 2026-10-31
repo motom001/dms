@@ -70,8 +70,15 @@ Für Papiere, die du nur eine Zeit lang aufheben musst, brauchst du keinen Ordne
 
 Brauchst du doch einmal ein Original, findest du es im DMS. Am Datum siehst du, in welcher Kiste es liegt.
 
-!!! tip "Bald: wo das Original liegt"
-    Geplant sind **Ablageorte** ([#168](https://github.com/motom001/dms/issues/168)). Dann zeigt jede Mappe im Feld *Verbleib Originaldokumente*, wo das Papier ist: „Kiste 2026“, „Bankschließfach Sparkasse“ oder „vernichtet“. Kiste und Schließfach sind einfach weitere Ablageorte.
+### Festhalten, wo das Original liegt
+
+Jedes DMS hat die Ansicht **Ablageort**. Ein Ablageort ist eine kleine Mappe für einen Platz, an dem Papier liegt – und er kann in einem anderen liegen: „zu Hause › Arbeitszimmer Schrank › roter Ordner“, „Kiste 2026“, „Bankschließfach Sparkasse“, „beim Notar“ oder einfach „vernichtet“.
+
+1. In der Ansicht *Ablageort* mit **+ Neu** einen Ort anlegen: *Name* eintragen und bei *Liegt in* den Ort wählen, in dem er liegt (z. B. der Schrank für den Ordner). Ganz oben bleibt *Liegt in* leer.
+2. In der Mappe, deren Papier du aufhebst, im Feld **Verbleib Originaldokumente** den Ort wählen – sofern dein Administrator das Feld eingerichtet hat.
+3. Zieht der Ordner um, änderst du nur *Liegt in* am Ordner. Alle Mappen darin zeigen danach den neuen Ort.
+
+Am Ablageort selbst zeigt das Register **Liegt hier**, welche Mappen dort liegen, und **Enthält**, welche Orte darin liegen.
 
 ## Für Selbständige und Unternehmen
 
