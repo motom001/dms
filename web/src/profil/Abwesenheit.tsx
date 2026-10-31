@@ -39,7 +39,7 @@ export function AbwesenheitFormular({ benutzerId, wer, wert, offeneAufgaben, spe
   return (
     <form className="blatt" onSubmit={(e) => { e.preventDefault(); void tu(async () => { await speichern(a); return a.an ? 'Abwesenheit gespeichert.' : 'Abwesenheit ausgeschaltet.'; }); }}>
       <h2 className="h3">Abwesenheit <Hilfe ort={hilfe} /></h2>
-      <p className="leise">Solange {du ? 'du' : wer} abwesend {du ? 'bist' : 'ist'}, gehen neue Aufgaben – von Hand vergebene, Erwähnungen und „passt nicht“ – an den Vertreter. Er bekommt dazu einen Hinweis im Eingang. Mit Zeitraum wirkt sie nur von–bis (jeweils einschließlich) und endet danach von selbst; ohne Datum, bis du sie ausschaltest.</p>
+      <p className="leise">Solange {du ? 'du' : wer} abwesend {du ? 'bist' : 'ist'}, gehen neue Aufgaben – von Hand vergebene, Erwähnungen und „passt nicht“ – an den Vertreter. Er bekommt dazu einen Hinweis unter „Zu erledigen“. Mit Zeitraum wirkt sie nur von–bis (jeweils einschließlich) und endet danach von selbst; ohne Datum, bis du sie ausschaltest.</p>
       {wert.an && <div className={`hinweis ${wirkt ? 'warn' : 'info'}`}><p>{du ? 'Du bist' : `${wer} ist`} {wirkt ? 'abwesend' : 'demnächst abwesend'} – {zeitraumText(wert)}, vertreten durch {vertreter?.name ?? '–'}.</p></div>}
       <label className="haken"><input type="checkbox" checked={a.an} onChange={(e) => setA({ ...a, an: e.target.checked })} /><span>Abwesend</span></label>
       <div className="raster">

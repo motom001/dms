@@ -38,9 +38,9 @@ Server (in der Vorlage `db`), Port `5432`, Datenbank und Benutzer `dms` und das 
 
 Bei einer leeren Datenbank fragt das DMS, ob du neu anfängst oder eine Sicherung zurückholst. **Wiederherstellen** führt in den Ablauf unter [Wiederherstellen](wiederherstellen.md#neues-nas-alte-sicherung) und endet bei der Anmeldung mit den bisherigen Zugangsdaten.
 
-### Mandant
+### Haushalt
 
-![Mandant](bilder/einrichtung-mandant.png)
+![Haushalt](bilder/einrichtung-mandant.png)
 
 Der Name des DMS, meist der Name der Familie („Familie Mustermann“) oder der Firma. Er erscheint als Schriftzug in der Kopfzeile, im Browser-Tab und auf der Anmeldeseite (änderbar unter **Werkbank → [Designs](designs.md)**).
 
@@ -87,7 +87,7 @@ Die Anbindung an PostgreSQL steht in der Datei `datenbank.json` im Ordner `/data
 
 Unter **Werkbank → Datenbank-Anbindung** siehst und änderst du die Anbindung: erst **Verbindung prüfen**, dann **Übernehmen**. Die neue Anbindung gilt nach einem Neustart (**Jetzt neu starten** – im Container startet Docker das DMS gleich wieder). Die Daten wandern dabei nicht mit; für einen Umzug in eine andere Datenbank nimm eine [Sicherung](sicherung.md).
 
-In der Datei steht auch die interne Id des **Mandanten** (früher die Umgebungsvariable `HAUSHALT_ID`). Bisherige Installationen übernehmen sie beim ersten Start; die Variable kann danach entfernt werden.
+In der Datei steht auch die interne Id des **Haushalts** (früher die Umgebungsvariable `HAUSHALT_ID`). Bisherige Installationen übernehmen sie beim ersten Start; die Variable kann danach entfernt werden.
 
 ## E-Mail und Adresse
 
@@ -113,7 +113,7 @@ Die Ordner im Container sind fest. Wohin sie auf dem NAS zeigen, bestimmst du al
 
 | Ordner im Container | Inhalt | Volume in der Vorlage |
 | --- | --- | --- |
-| `/data/files` | hochgeladene Dokumente, Logos, Bilder der Fehlermeldungen | `/volume1/docker/dms/files` |
+| `/data/files` | hochgeladene Dokumente, Logos, Bilder gemeldeter Fehler | `/volume1/docker/dms/files` |
 | `/data/geheim` | Schlüssel für gespeicherte Passwörter (`dms.schluessel`), [RESCUE-Datei](notfall.md) | `/volume1/docker/dms/geheim` |
 | `/data/sicherung` | [Sicherungen](sicherung.md), verschlüsselt | `/volume1/docker/dms/sicherung` |
 
@@ -209,4 +209,4 @@ server {
 }
 ```
 
-Lange Arbeiten wie das Erzeugen tausender Demo-Mappen laufen im Hintergrund, damit der Proxy nicht wegen einer Zeitüberschreitung abbricht. Die Live-Ansicht des Protokolls fragt alle zwei Sekunden nach und braucht keine besondere Proxy-Einstellung.
+Lange Arbeiten wie das Erzeugen tausender Demo-Mappen laufen im Hintergrund, damit der Proxy nicht wegen einer Zeitüberschreitung abbricht. Die Live-Anzeige des Protokolls fragt alle zwei Sekunden nach und braucht keine besondere Proxy-Einstellung.

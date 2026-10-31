@@ -39,7 +39,7 @@ Jede Protokollzeile gehört zu einem Modul:
 | `system` | Start, Einstellungen, Debug-Modus |
 | `http` | eine Zeile je Anfrage: Methode, Pfad, Status, Dauer, Datenbankzugriffe |
 | `konto` | Anmeldung, Sitzungen, Benutzer, Vertretung |
-| `ablage` | Mappen anlegen, ändern, löschen; Sichten |
+| `ablage` | Mappen anlegen, ändern, löschen; Ansichten |
 | `werkbank` | Mappentypen, Demo-Daten, Einstellungen, Versionsabgleich |
 | `dokumente` | Hochladen, Anzeigen, Löschen |
 | `datenbank` | Migrationen, Verbindung, lange Zugriffe |

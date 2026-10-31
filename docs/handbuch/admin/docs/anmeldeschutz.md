@@ -34,7 +34,7 @@ Bist du selbst gesperrt und kein anderer Administrator kann dich freigeben, wart
 
 Jeder Benutzer kann unter **Profil → Sicherheit** eine Zwei-Faktor-Anmeldung mit einer Authenticator-App einrichten (TOTP, 6 Stellen, 30 Sekunden) und bekommt dazu zehn Wiederherstellungscodes. Wie das für Benutzer aussieht, beschreibt das [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/aktuell/profil/#zwei-faktor-anmeldung).
 
-Unten auf dieser Seite **schreibst du sie je Rolle vor** – für Administratoren, für Mitglieder oder beide. Wer sie dann noch nicht hat, sieht nach der Anmeldung nur die Einrichtung und kommt erst danach weiter. Abschalten kann er sie selbst nicht mehr.
+Unten auf dieser Seite **schreibst du sie je Systemrolle vor** – für Administratoren, für Mitglieder oder beide. Wer sie dann noch nicht hat, sieht nach der Anmeldung nur die Einrichtung und kommt erst danach weiter. Abschalten kann er sie selbst nicht mehr.
 
 Falsche Codes zählen wie falsche Passwörter für den [Anmeldeschutz](#zwei-sperren). Ein Link zum Zurücksetzen des Passworts ersetzt nur das Passwort; den Code fragt das DMS trotzdem ab.
 
@@ -74,7 +74,7 @@ Lege beim Anbieter eine Anwendung (Client) vom Typ *Web* an:
 Unter **Werkbank → Anmeldeschutz → Anmeldung über einen Anbieter** trägst du Adresse, Client-ID und Client-Secret ein und klickst auf **Verbindung prüfen**. Danach **Eingeschaltet** ankreuzen und speichern. Das Client-Secret liegt mit dem [Schlüssel des DMS](verschluesselung.md) verschlüsselt in der Datenbank.
 
 - **Zuordnung:** über die E-Mail-Adresse. Gibt es sie im DMS nicht, lehnt das DMS ab – außer **Unbekannte Adressen als neue Benutzer anlegen** ist an; dann entsteht ein Benutzer mit der eingestellten Rolle. Bei Entra ID dient auch der Anmeldename (UPN) als Adresse.
-- **Gruppe für Administratoren:** Ist sie gesetzt, folgt die Rolle bei jeder Anmeldung der Gruppe: Mitglieder der Gruppe sind Administratoren, alle anderen Mitglieder. Der letzte aktive Administrator bleibt Administrator. Bei Entra ID liefert der Claim `groups` die Objekt-IDs der Gruppen (Anwendung → *Token-Konfiguration* → *Gruppenanspruch hinzufügen*); trage dann die Objekt-ID ein.
+- **Gruppe für Administratoren:** Ist sie gesetzt, folgt die Systemrolle bei jeder Anmeldung der Gruppe: Mitglieder der Gruppe sind Administratoren, alle anderen Mitglieder. Der letzte aktive Administrator bleibt Administrator. Bei Entra ID liefert der Claim `groups` die Objekt-IDs der Gruppen (Anwendung → *Token-Konfiguration* → *Gruppenanspruch hinzufügen*); trage dann die Objekt-ID ein.
 - **Passwort-Anmeldung nur noch für Administratoren:** Mitglieder melden sich nur noch über den Anbieter an. Administratoren behalten ihr Passwort als Notzugang, falls der Anbieter einmal nicht erreichbar ist.
 - **Beim Abmelden auch beim Anbieter abmelden:** Wer sich über den Anbieter angemeldet hat, wird beim Abmelden auch dort abgemeldet (wenn der Anbieter das anbietet).
 - Eine eingerichtete [Zwei-Faktor-Anmeldung](#zwei-faktor-anmeldung) des DMS gilt auch hier. Verlangt schon der Anbieter einen zweiten Faktor, schreibe sie im DMS für diese Rollen nicht zusätzlich vor.

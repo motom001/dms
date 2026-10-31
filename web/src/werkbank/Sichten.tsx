@@ -86,17 +86,17 @@ export function SichtenListe({ offen }: { offen?: string }) {
   return (
     <>
       <div className="listenkopf">
-        <div><h1>Sichten</h1><p className="leise klein">Was die Ablage links anbietet: Mappentypen, Bedingungen und die Ordnung als Baum. <Hilfe ort="werkbank.sichten" /></p></div>
+        <div><h1>Ansichten</h1><p className="leise klein">Was die Ablage links anbietet: Mappentypen, Bedingungen und die Ordnung als Baum. <Hilfe ort="werkbank.sichten" /></p></div>
         <Link to="/werkbank/sichten/neu" className="knopf primaer klein">+ Neu</Link>
       </div>
       {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
       {hinweis && <div className="hinweis info"><p>{hinweis}</p><button type="button" className="textknopf klein" onClick={() => setHinweis(undefined)}>Ausblenden</button></div>}
       <Ansage text={ansage} />
-      {zeilen.length > 1 && <p className="leise klein">Zum Ordnen am Griff ⠿ ziehen: zwischen zwei Sichten oder auf eine Sicht (wird Untersicht).</p>}
+      {zeilen.length > 1 && <p className="leise klein">Zum Ordnen am Griff ⠿ ziehen: zwischen zwei Ansichten oder auf eine Ansicht (wird Unteransicht).</p>}
       {!zeilen.length && offen !== 'neu'
-        ? <p className="leise leerliste">Noch keine Sichten. Ohne Sicht erscheinen Mappen nur im Eingang und über Verweise.</p>
+        ? <p className="leise leerliste">Noch keine Ansichten. Ohne Ansicht erscheinen Mappen nur unter „Zu erledigen“ und über Verweise.</p>
         : <ul className="mappenliste">
-            {offen === 'neu' && <li><span className="eintrag an werk"><span className="titel">Neue Sicht</span><span className="unter">noch nicht gespeichert</span></span></li>}
+            {offen === 'neu' && <li><span className="eintrag an werk"><span className="titel">Neue Ansicht</span><span className="unter">noch nicht gespeichert</span></span></li>}
             {zeilen.map(({ s, tiefe }) => {
               const e = z.eintrag(s.id);
               const t = typen(s);
@@ -111,7 +111,7 @@ export function SichtenListe({ offen }: { offen?: string }) {
                     <span className="unter">
                       {t.length ? t.map((x) => x.name).join(', ') : 'nur zum Gruppieren'}
                       {s.bedingungen.length > 0 && ` · ${s.bedingungen.length} Bedingung${s.bedingungen.length === 1 ? '' : 'en'}`}
-                      {kinder > 0 && ` · ${kinder} Untersicht${kinder === 1 ? '' : 'en'}`}
+                      {kinder > 0 && ` · ${kinder} Unteransicht${kinder === 1 ? '' : 'en'}`}
                       {` · ${(d.zaehler.sichten?.[s.id] ?? 0).toLocaleString('de-DE')} Mappen`}
                       {s.berechtigungen?.regeln.length ? ` · ${s.berechtigungen.regeln.length} Regel${s.berechtigungen.regeln.length === 1 ? '' : 'n'}` : ''}
                     </span>
@@ -170,7 +170,7 @@ export function SichtEditor({ id }: { id: string }) {
     return () => { aktuell = false; clearTimeout(t); };
   }, [entwurf, d.stand]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!neu && !vorhanden) return <div className="leer"><p>Diese Sicht gibt es nicht (mehr).</p></div>;
+  if (!neu && !vorhanden) return <div className="leer"><p>Diese Ansicht gibt es nicht (mehr).</p></div>;
 
   async function speichern() {
     setSendet(true); setMeldung(undefined);
@@ -181,7 +181,7 @@ export function SichtEditor({ id }: { id: string }) {
       loeseWache();
       if (neu) b.merke(s.id);
       await d.neuLaden();
-      if (neu) geheZu(`/werkbank/sichten/${s.id}`); else setMeldung({ art: 'gut', text: 'Sicht gespeichert.' });
+      if (neu) geheZu(`/werkbank/sichten/${s.id}`); else setMeldung({ art: 'gut', text: 'Ansicht gespeichert.' });
     } catch (x) {
       setMeldung({ art: 'schlecht', text: (x as Error).message });
       // Fehler in den Berechtigungen (#148): Bereich markieren und aufklappen; sonst die Grunddaten.
@@ -191,8 +191,8 @@ export function SichtEditor({ id }: { id: string }) {
     finally { setSendet(false); }
   }
   async function loeschen() {
-    const hinweis = untersichten ? ` Ihre ${untersichten} Untersicht${untersichten === 1 ? '' : 'en'} rücken eine Ebene nach oben.` : '';
-    if (!confirm(`Sicht „${vorhanden!.name}“ löschen? Mappen werden nicht gelöscht.${hinweis}`)) return;
+    const hinweis = untersichten ? ` Ihre ${untersichten} Unteransicht${untersichten === 1 ? '' : 'en'} rücken eine Ebene nach oben.` : '';
+    if (!confirm(`Ansicht „${vorhanden!.name}“ löschen? Mappen werden nicht gelöscht.${hinweis}`)) return;
     try { await api.sichtLoeschen(id); loeseWache(); await d.neuLaden(); geheZu('/werkbank/sichten'); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
@@ -208,12 +208,12 @@ export function SichtEditor({ id }: { id: string }) {
   return (
     <form onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} noValidate>
       <div className="seitenkopf"><div>
-        <p className="ueber">Sicht</p>
-        <h1>{e.name || (neu ? 'Neue Sicht' : 'Ohne Namen')}</h1>
+        <p className="ueber">Ansicht</p>
+        <h1>{e.name || (neu ? 'Neue Ansicht' : 'Ohne Namen')}</h1>
         {!neu && <p className="leise"><Link to={`/ablage/${id}`} className="verweis">In der Ablage öffnen →</Link></p>}
       </div></div>
 
-      {b.leiste(hatFehler, 'Bereiche der Sicht')}
+      {b.leiste(hatFehler, 'Bereiche der Ansicht')}
 
       <Bereich id="grunddaten" titel="Grunddaten" klappe={klappe('grunddaten')}
         kurz={e.elternId ? `unter „${d.sicht(e.elternId)?.name ?? '…'}“` : 'oberste Ebene'}>
@@ -234,13 +234,13 @@ export function SichtEditor({ id }: { id: string }) {
           </div>
         )}
         {!neu && vorhanden && e.elternId !== vorhanden.elternId && (
-          <p className="hinweis info klein">{e.elternId ? `Nach dem Speichern erbt die Sicht die Berechtigungen von „${d.sicht(e.elternId)?.name ?? '…'}“.` : 'Nach dem Speichern erbt die Sicht keine Berechtigungen mehr.'}</p>
+          <p className="hinweis info klein">{e.elternId ? `Nach dem Speichern erbt die Ansicht die Berechtigungen von „${d.sicht(e.elternId)?.name ?? '…'}“.` : 'Nach dem Speichern erbt die Ansicht keine Berechtigungen mehr.'}</p>
         )}
       </Bereich>
 
       <Bereich id="mappentypen" titel="Mappentypen" klappe={klappe('mappentypen')}
         kurz={eigeneTypen.length ? `${eigeneTypen.length}: ${eigeneTypen.map((t) => t.name).join(', ')}` : 'nur zum Gruppieren'}
-        beschreibung={<>Mappen dieser Typen zeigt die Sicht selbst. {untersichten > 0 ? `Dazu kommen die Mappen ihrer ${untersichten} Untersicht${untersichten === 1 ? '' : 'en'}.` : 'Ohne Typ dient sie nur zum Gruppieren von Untersichten.'} Zeigt sie mehrere Typen, gibt es kein „+ Neu“; als Spalten bietet sie nur an, was alle Typen gemeinsam haben.</>}>
+        beschreibung={<>Mappen dieser Mappentypen zeigt die Ansicht selbst. {untersichten > 0 ? `Dazu kommen die Mappen ihrer ${untersichten} Unteransicht${untersichten === 1 ? '' : 'en'}.` : 'Ohne Mappentyp dient sie nur zum Gruppieren von Unteransichten.'} Zeigt sie mehrere Mappentypen, gibt es kein „+ Neu“; als Spalten bietet sie nur an, was alle Mappentypen gemeinsam haben.</>}>
         <div className="typwahl">
           {d.typen.map((t) => (
             <label key={t.id} className="haken"><input type="checkbox" checked={e.typen.includes(t.id)} onChange={(x) => setzeTyp(t.id, x.target.checked)} /><span>{t.name}</span></label>
@@ -257,15 +257,15 @@ export function SichtEditor({ id }: { id: string }) {
       <SichtTestlauf id={neu ? null : id} e={e} klappe={klappe('testlauf')} />
 
       <div className="hinweis info" role="status">
-        <p>{vorschau === null ? 'Vorschau wird berechnet …' : <>Diese Sicht zeigt zurzeit <strong>{vorschau.toLocaleString('de-DE')} {vorschau === 1 ? 'Mappe' : 'Mappen'}</strong>{untersichten > 0 ? ' (mit Untersichten)' : ''}.</>}</p>
+        <p>{vorschau === null ? 'Vorschau wird berechnet …' : <>Diese Ansicht zeigt zurzeit <strong>{vorschau.toLocaleString('de-DE')} {vorschau === 1 ? 'Mappe' : 'Mappen'}</strong>{untersichten > 0 ? ' (mit Unteransichten)' : ''}.</>}</p>
       </div>
 
       <div className="speicherleiste">
-        {neu ? <Link to="/werkbank/sichten" className="textknopf">Entwurf verwerfen</Link> : <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>Sicht löschen</button>}
+        {neu ? <Link to="/werkbank/sichten" className="textknopf">Entwurf verwerfen</Link> : <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>Ansicht löschen</button>}
         <span className={`status ${meldung?.art === 'schlecht' ? 'schlecht' : ''}`} role="status">{meldung?.text ?? (geaendert && !neu ? 'Ungespeicherte Änderungen' : '')}</span>
         <div className="knoepfe">
           {!neu && <button type="button" className="knopf" disabled={!geaendert || sendet} onClick={() => { setE(JSON.parse(basis)); setMeldung(undefined); }}>Änderungen verwerfen</button>}
-          <button className="knopf primaer" disabled={sendet || (!geaendert && !neu)}>{sendet ? 'Speichere …' : 'Sicht speichern'}</button>
+          <button className="knopf primaer" disabled={sendet || (!geaendert && !neu)}>{sendet ? 'Speichere …' : 'Ansicht speichern'}</button>
         </div>
       </div>
     </form>
@@ -284,10 +284,10 @@ function TrefferlistenWahl({ e, setE, typen, klappe }: { e: SichtDaten; setE: (f
     <Bereich id="trefferliste" titel="Trefferliste" hilfe={<Hilfe ort="sicht.trefferliste" />} klappe={klappe}
       kurz={!typen.length ? 'Systemspalten' : problem ? 'Trefferliste fehlt – Standard' : (listen.find((l) => l.key === e.trefferliste)?.name ?? (standard ? `Standard („${standard.name}“)` : 'Standard'))}>
       {!typen.length
-        ? <p className="leise">Ohne Mappentypen zeigt die Sicht die Systemspalten (Titel, Typ, angelegt, geändert).</p>
+        ? <p className="leise">Ohne Mappentypen zeigt die Ansicht die Systemspalten (Titel, Typ, angelegt, geändert).</p>
         : <>
             <p className="leise">Welche Spalten die Liste in der Ablage zeigt. Die Trefferlisten richtest du am Mappentyp ein.
-              {typen.length > 1 && ' Bei mehreren Mappentypen gibt es nur Listen, die alle Typen haben, und darin nur die gemeinsamen Spalten; Titel und Typ stehen immer vorn.'}</p>
+              {typen.length > 1 && ' Bei mehreren Mappentypen gibt es nur Listen, die alle Mappentypen haben, und darin nur die gemeinsamen Spalten; Titel und Typ stehen immer vorn.'}</p>
             <label className="eigenschaft schmal"><span>Trefferliste</span>
               <select value={e.trefferliste ?? ''} onChange={(x) => setE((y) => ({ ...y, trefferliste: x.target.value || null }))}>
                 <option value="">{standard ? `Standard („${standard.name}“)` : 'Standard (Systemspalten)'}</option>
@@ -349,10 +349,10 @@ function Bedingungen({ e, setE, typen, klappe }: { e: SichtDaten; setE: (f: (x: 
     <Bereich id="bedingungen" titel="Bedingungen" hilfe={<Hilfe ort="sicht.bedingungen" />} klappe={klappe}
       kurz={e.bedingungen.length ? `${e.bedingungen.length} Bedingung${e.bedingungen.length === 1 ? '' : 'en'}` : 'keine'}>
       {!typen.length
-        ? <p className="leise">Bedingungen gelten für die eigenen Mappentypen der Sicht – wähle oben mindestens einen.</p>
+        ? <p className="leise">Bedingungen gelten für die eigenen Mappentypen der Ansicht – wähle oben mindestens einen.</p>
         : <>
-            <p className="leise">Die Sicht zeigt nur Mappen, die <strong>alle</strong> Bedingungen erfüllen. Werte wie „heute“ oder „aktueller Benutzer“ werden bei jedem Öffnen neu berechnet.
-              {typen.length > 1 && ' Bei mehreren Mappentypen gibt es nur Felder und Register, die alle Typen gleich haben, und die Systemwerte. Ein gemeinsames Register zählt je Typ über dessen eigene Quellen.'}</p>
+            <p className="leise">Die Ansicht zeigt nur Mappen, die <strong>alle</strong> Bedingungen erfüllen. Werte wie „heute“ oder „aktueller Benutzer“ werden bei jedem Öffnen neu berechnet.
+              {typen.length > 1 && ' Bei mehreren Mappentypen gibt es nur Felder und Register, die alle Mappentypen gleich haben, und die Systemwerte. Ein gemeinsames Register zählt je Typ über dessen eigene Quellen.'}</p>
             {e.bedingungen.length > 0 && (
               <ol className="bedingungen">
                 {e.bedingungen.map((b, i) => {

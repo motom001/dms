@@ -10,7 +10,7 @@ export type Vorlage = 'haushalt' | 'organisation' | 'alles';
 
 export const VORLAGEN: Record<Vorlage, { name: string; text: string }> = {
   haushalt: { name: 'Haushalt', text: 'Schlank: nur, was ein Haushalt zum Einrichten und Sichern braucht.' },
-  organisation: { name: 'Organisation', text: 'Dazu Nummernkreise, Darf weg, Anmeldeschutz, Designs, Postfächer, Eingangsordner, Texterkennung, Protokoll, Fehlermeldungen und Wartungsmodus.' },
+  organisation: { name: 'Organisation', text: 'Dazu Nummernkreise, Darf weg, Anmeldeschutz, Designs, Postfächer, Eingangsordner, Texterkennung, Protokoll, Gemeldete Fehler und Wartungsmodus.' },
   alles: { name: 'Alles', text: 'Jeder Bereich der Werkbank.' },
 };
 
@@ -35,9 +35,9 @@ const O = ['organisation'] as const;
 /** Alle Bereiche außer der Übersicht (die ist immer da), in der Reihenfolge der Leiste. */
 export const BEREICHE: Bereich[] = [
   { pfad: 'typen', gruppe: 'ablage', name: 'Mappentypen', in: [...H], wann: 'eigene Arten von Mappen bauen' },
-  { pfad: 'sichten', gruppe: 'ablage', name: 'Sichten', in: [...H], wann: 'die Sammlungen links in der Ablage ordnen' },
+  { pfad: 'sichten', gruppe: 'ablage', name: 'Ansichten', in: [...H], wann: 'die Sammlungen links in der Ablage ordnen' },
   { pfad: 'nummernkreise', gruppe: 'ablage', name: 'Nummernkreise', in: [...O], wann: 'fortlaufende Nummern, z. B. für Rechnungen' },
-  { pfad: 'pakete', gruppe: 'ablage', name: 'Pakete', in: [...H], wann: 'fertige Mappentypen und Sichten installieren' },
+  { pfad: 'pakete', gruppe: 'ablage', name: 'Pakete', in: [...H], wann: 'fertige Mappentypen und Ansichten installieren' },
   { pfad: 'darfweg', gruppe: 'ablage', name: 'Darf weg', in: [...O], wann: 'Mappen mit abgelaufener Aufbewahrungsfrist (nur mit Archivmodus)' },
   { pfad: 'benutzer', gruppe: 'benutzer', name: 'Benutzer', in: [...H], wann: 'Benutzer und Rollen anlegen' },
   { pfad: 'anmeldeschutz', gruppe: 'benutzer', name: 'Anmeldeschutz', in: [...O], wann: 'Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen' },
@@ -52,7 +52,7 @@ export const BEREICHE: Bereich[] = [
   { pfad: 'eingangsordner', gruppe: 'einstellungen', name: 'Eingangsordner', in: [...O], wann: 'Scans aus einem Ordner übernehmen' },
   { pfad: 'texterkennung', gruppe: 'einstellungen', name: 'Texterkennung', in: [...O], wann: 'Text in gescannten Dokumenten finden' },
   { pfad: 'protokoll', gruppe: 'wartung', name: 'Protokoll', in: [...O], wann: 'das technische Protokoll lesen' },
-  { pfad: 'fehlermeldungen', gruppe: 'wartung', name: 'Fehlermeldungen', in: [...O], wann: 'Fehler, die Benutzer gemeldet haben' },
+  { pfad: 'fehlermeldungen', gruppe: 'wartung', name: 'Gemeldete Fehler', in: [...O], wann: 'Fehler, die Benutzer gemeldet haben' },
   { pfad: 'sicherung', gruppe: 'wartung', name: 'Sicherung', in: [...H], wann: 'Sicherungen einrichten und prüfen' },
   { pfad: 'wiederherstellung', gruppe: 'wartung', name: 'Wiederherstellen', in: [...H], wann: 'eine Sicherung zurückspielen' },
   { pfad: 'vollexport', gruppe: 'wartung', name: 'Vollexport', in: [...H], wann: 'alle Daten in offenen Formaten mitnehmen' },

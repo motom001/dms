@@ -148,7 +148,7 @@ function AnbieterBlatt() {
       </div>
       <label className="haken"><input id="oidc-anlegen" type="checkbox" checked={e.anlegen} onChange={(x) => setE({ ...e, anlegen: x.target.checked })} /><span>Unbekannte Adressen als neue Benutzer anlegen
         <small className="leise">sonst nur Benutzer, die es im DMS schon gibt</small></span></label>
-      {e.anlegen && <label className="eigenschaft"><span>Rolle neuer Benutzer</span>
+      {e.anlegen && <label className="eigenschaft"><span>Systemrolle neuer Benutzer</span>
         <select id="oidc-rolle" value={e.standardrolle} onChange={(x) => setE({ ...e, standardrolle: x.target.value === 'admin' ? 'admin' : 'mitglied' })}><option value="mitglied">Mitglied</option><option value="admin">Administrator</option></select></label>}
       <div className="raster">
         {feld('adminGruppe', <>Gruppe für Administratoren <small>leer: Rollen nur im DMS pflegen</small></>, 'z. B. dms-admins oder Objekt-ID')}

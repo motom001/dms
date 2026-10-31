@@ -5,10 +5,10 @@ Die **Werkbank** sehen nur Administratoren. Links stehen ihre Bereiche in vier G
 <!-- bereiche:gruppen -->
 | Gruppe | Bereiche |
 | --- | --- |
-| **Ablage einrichten** | [Mappentypen](mappentypen.md), [Sichten](sichten.md), [Nummernkreise](nummernkreise.md), [Pakete](pakete.md), [Darf weg](archiv.md#nach-der-frist-darf-weg) (nur mit Archivmodus) |
+| **Ablage einrichten** | [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Pakete](pakete.md), [Darf weg](archiv.md#nach-der-frist-darf-weg) (nur mit Archivmodus) |
 | **Benutzer und Zusammenarbeit** | [Benutzer](benutzer.md), [Anmeldeschutz](anmeldeschutz.md), [Aufgaben](aufgaben.md) |
 | **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Verschlüsselung](verschluesselung.md), [Designs](designs.md), [Papierkorb](papierkorb.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung), [Speicherplatz](speicherplatz.md), [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [Texterkennung](texterkennung.md) |
-| **Wartung und Fehlersuche** | [Protokoll](fehlersuche.md#protokoll), [Fehlermeldungen](fehlersuche.md#fehlermeldungen-von-benutzern), [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md), [Vollexport](export.md), [Wartungsmodus](wartungsmodus.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen), [Datenbank](fehlersuche.md#datenbank), [Technik](fehlersuche.md#technik), [Demo-Daten](demo.md) |
+| **Wartung und Fehlersuche** | [Protokoll](fehlersuche.md#protokoll), [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler), [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md), [Vollexport](export.md), [Wartungsmodus](wartungsmodus.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen), [Datenbank](fehlersuche.md#datenbank), [Technik](fehlersuche.md#technik), [Demo-Daten](demo.md) |
 <!-- /bereiche:gruppen -->
 
 Welche Bereiche dort stehen, legst du unter [Werkbank anpassen](#werkbank-anpassen) fest. Am Smartphone wählst du oben erst die Gruppe, darunter den Bereich. Ganz unten in der Leiste stehen *Projekt unterstützen* und der Link zu diesem Handbuch.
@@ -26,11 +26,11 @@ Die Werkbank beginnt mit der **Übersicht**. Sie zeigt oben, was zu tun ist – 
 - im Einrichtungsassistenten übersprungene Schritte,
 - Umgebungsvariablen, die nicht mehr nötig sind,
 - E-Mail-Versand nicht eingerichtet,
-- offene Fehlermeldungen von Benutzern,
+- offene gemeldete Fehler,
 - Dokumente mit Fehler in der Texterkennung,
 - Aufgaben für die Administratoren und Mappen, die nicht zur Definition passen.
 
-Darunter stehen Kacheln mit offenen Aufgaben, Warteschlange der Texterkennung, Papierkorb, Fehlermeldungen, Bestand (Mappen, Dokumente, Speicher, Benutzer) und Version. Ist alles eingerichtet, steht dort „Alles eingerichtet“.
+Darunter stehen Kacheln mit offenen Aufgaben, Warteschlange der Texterkennung, Papierkorb, Gemeldete Fehler, Bestand (Mappen, Dokumente, Speicher, Benutzer) und Version. Ist alles eingerichtet, steht dort „Alles eingerichtet“.
 
 ![Werkbank → Übersicht](bilder/werkbank-uebersicht.png)
 
@@ -47,7 +47,7 @@ Nicht jeder braucht jeden Bereich. Ein Haushalt fasst Nummernkreise, Postfächer
 
 - **Haushalt**: schlank, nur was ein Haushalt zum Einrichten und Sichern braucht. Neue Installationen beginnen damit.
 <!-- bereiche:organisation -->
-- **Organisation**: zusätzlich Nummernkreise, Darf weg, Anmeldeschutz, Designs, Postfächer, Eingangsordner, Texterkennung, Protokoll, Fehlermeldungen, Wartungsmodus.
+- **Organisation**: zusätzlich Nummernkreise, Darf weg, Anmeldeschutz, Designs, Postfächer, Eingangsordner, Texterkennung, Protokoll, Gemeldete Fehler, Wartungsmodus.
 <!-- /bereiche:organisation -->
 - **Alles**: jeder Bereich. So bleibt es bei Installationen, die vor Version 0.70 eingerichtet wurden, bis du etwas anderes wählst.
 
@@ -66,9 +66,9 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | Bereich | Wofür | In der Vorlage |
 | --- | --- | --- |
 | [Mappentypen](mappentypen.md) | Eigene Arten von Mappen bauen | Haushalt, Organisation |
-| [Sichten](sichten.md) | Die Sammlungen links in der Ablage ordnen | Haushalt, Organisation |
+| [Ansichten](sichten.md) | Die Sammlungen links in der Ablage ordnen | Haushalt, Organisation |
 | [Nummernkreise](nummernkreise.md) | Fortlaufende Nummern, z. B. für Rechnungen | Organisation |
-| [Pakete](pakete.md) | Fertige Mappentypen und Sichten installieren | Haushalt, Organisation |
+| [Pakete](pakete.md) | Fertige Mappentypen und Ansichten installieren | Haushalt, Organisation |
 | [Darf weg](archiv.md#nach-der-frist-darf-weg) | Mappen mit abgelaufener Aufbewahrungsfrist (nur mit Archivmodus) | Organisation |
 | [Benutzer](benutzer.md) | Benutzer und Rollen anlegen | Haushalt, Organisation |
 | [Anmeldeschutz](anmeldeschutz.md) | Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen | Organisation |
@@ -83,7 +83,7 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Eingangsordner](eingangsordner.md) | Scans aus einem Ordner übernehmen | Organisation |
 | [Texterkennung](texterkennung.md) | Text in gescannten Dokumenten finden | Organisation |
 | [Protokoll](fehlersuche.md#protokoll) | Das technische Protokoll lesen | Organisation |
-| [Fehlermeldungen](fehlersuche.md#fehlermeldungen-von-benutzern) | Fehler, die Benutzer gemeldet haben | Organisation |
+| [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) | Fehler, die Benutzer gemeldet haben | Organisation |
 | [Sicherung](sicherung.md) | Sicherungen einrichten und prüfen | Haushalt, Organisation |
 | [Wiederherstellen](wiederherstellen.md) | Eine Sicherung zurückspielen | Haushalt, Organisation |
 | [Vollexport](export.md) | Alle Daten in offenen Formaten mitnehmen | Haushalt, Organisation |

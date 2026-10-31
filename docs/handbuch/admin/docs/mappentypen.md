@@ -1,6 +1,6 @@
 # Mappentypen
 
-Ein **Mappentyp** legt fest, welche Art von Mappe es gibt – *Vertrag*, *Rechnung*, *Versicherung*, *Gerät* … – und was darin steht. Jeder Mappentyp erscheint in der Ablage als eigene Sicht.
+Ein **Mappentyp** legt fest, welche Art von Mappe es gibt – *Vertrag*, *Rechnung*, *Versicherung*, *Gerät* … – und was darin steht. Jeder Mappentyp erscheint in der Ablage als eigene Ansicht.
 
 Mappentypen pflegst du unter **Werkbank → Mappentypen**. Mit **+ Neu** legst du einen an; ein Klick auf einen bestehenden öffnet ihn zum Bearbeiten.
 
@@ -19,23 +19,23 @@ Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: 
 
 ## Grunddaten
 
-- **Name** – so heißt die Sicht in der Ablage, z. B. „Vertrag“. Er lässt sich jederzeit ändern.
-- **Schlüssel** – fester, technischer Name, z. B. `vertrag`. Er wird aus dem Namen vorgeschlagen, lässt sich beim Anlegen ändern und ist nach dem ersten Speichern **fest**. [Sprechende Links](direktlinks.md) und Skripte über die [Schnittstelle](api.md) können ihn nutzen – so bleiben sie gültig, auch wenn der Mappentyp umbenannt wird. Die Systemtypen heißen `benutzer`, `rolle` und `post` (bis 0.40 hieß *Post* noch *E-Mail* mit dem Schlüssel `email`).
+- **Name** – so heißt die Ansicht in der Ablage, z. B. „Vertrag“. Er lässt sich jederzeit ändern.
+- **Kennung** – fester, technischer Name, z. B. `vertrag`. Sie wird aus dem Namen vorgeschlagen, lässt sich beim Anlegen ändern und ist nach dem ersten Speichern **fest**. [Sprechende Links](direktlinks.md) und Skripte über die [Schnittstelle](api.md) können ihn nutzen – so bleiben sie gültig, auch wenn der Mappentyp umbenannt wird. Die Systemtypen heißen `benutzer`, `rolle` und `post` (bis 0.40 hieß *Post* noch *E-Mail* mit der Kennung `email`).
 - **Beschreibung** – steht über der Liste und hilft beim Einordnen.
 
-Beim **Anlegen** gibt es zusätzlich **Eigene Sicht in der Ablage anlegen** (standardmäßig an): Dann erscheint der neue Typ in der Ablage als eigene Sicht. Abwählen, wenn seine Mappen nur in einer bestehenden [Sicht](sichten.md) erscheinen sollen.
+Beim **Anlegen** gibt es zusätzlich **Eigene Ansicht in der Ablage anlegen** (standardmäßig an): Dann erscheint der neue Mappentyp in der Ablage als eigene Ansicht. Abwählen, wenn seine Mappen nur in einer bestehenden [Ansicht](sichten.md) erscheinen sollen.
 
 Wer Mappen anlegen oder löschen darf, regeln die [Berechtigungen](berechtigungen.md) (Rechte C und D). Die früheren Haken *Neue Mappen erlauben* und *Löschen erlauben* gibt es seit Version 0.32 nicht mehr; sie wurden beim Update in die Berechtigungen übernommen.
 
-**Verwendet in** (bei gespeicherten Typen) zeigt, wo der Mappentyp genutzt wird, jeweils mit Link: Sichten, die ihn zeigen, Referenzfelder anderer Mappentypen, die auf ihn verweisen, und Verknüpfungsregister anderer Typen, die seine Felder als Quelle nutzen. So siehst du vor einer Änderung, was davon betroffen ist. Steht dort „Nirgends verwendet“, hängt nichts an ihm.
+**Verwendet in** (bei gespeicherten Mappentypen) zeigt, wo der Mappentyp genutzt wird, jeweils mit Link: Ansichten, die ihn zeigen, Verweisfelder anderer Mappentypen, die auf ihn verweisen, und Verknüpfungsregister anderer Mappentypen, die seine Felder als Quelle nutzen. So siehst du vor einer Änderung, was davon betroffen ist. Steht dort „Nirgends verwendet“, hängt nichts an ihm.
 
 ## Felder
 
-Jedes Feld hat eine **Bezeichnung** (änderbar), einen **Schlüssel** (fest, sobald gespeichert) und einen **Datentyp**. Ein Klick auf ein Feld öffnet es. Die Reihenfolge änderst du mit den Pfeilen oder per **Drag & Drop** am Griff **⠿** (siehe [Ziehen statt klicken](#ziehen-statt-klicken)).
+Jedes Feld hat eine **Bezeichnung** (änderbar), eine **Kennung** (fest, sobald gespeichert) und eine **Feldart**. Ein Klick auf ein Feld öffnet es. Die Reihenfolge änderst du mit den Pfeilen oder per **Drag & Drop** am Griff **⠿** (siehe [Ziehen statt klicken](#ziehen-statt-klicken)).
 
 ![Ein Feld bearbeiten](bilder/werkbank-feld.png)
 
-| Datentyp | Eigenschaften |
+| Feldart | Eigenschaften |
 | --- | --- |
 | Text | Mindest- und Höchstlänge, Muster (regulärer Ausdruck, muss den ganzen Text treffen), eindeutig |
 | Langtext | Mindest- und Höchstlänge |
@@ -45,20 +45,20 @@ Jedes Feld hat eine **Bezeichnung** (änderbar), einen **Schlüssel** (fest, sob
 | Datum | – |
 | Ja/Nein | – |
 | Auswahlliste | die Auswahlwerte (einer pro Zeile), Mehrfachauswahl |
-| Referenz | Ziel-Mappentyp, Art des Verweises, mehrere Mappen erlaubt |
+| Verweis | Ziel-Mappentyp, Art des Verweises, mehrere Mappen erlaubt |
 | Passwort | – (wird verschlüsselt gespeichert, siehe unten) |
 
-Für alle gilt: **Pflichtfeld** und ein **Hilfetext**, der beim Ausfüllen unter dem Feld steht; die meisten Typen haben außerdem einen **Standardwert** für neue Mappen. **Eindeutig** heißt: Den Wert darf es in diesem Mappentyp nur einmal geben – Groß- und Kleinschreibung zählen dabei nicht.
+Für alle gilt: **Pflichtfeld** und ein **Hilfetext**, der beim Ausfüllen unter dem Feld steht; die meisten Mappentypen haben außerdem einen **Standardwert** für neue Mappen. **Eindeutig** heißt: Den Wert darf es in diesem Mappentyp nur einmal geben – Groß- und Kleinschreibung zählen dabei nicht.
 
 Steht im Standardwert eines Textfelds `{nummernkreis:<schlüssel>}`, bekommt jede neue Mappe eine fortlaufende Nummer aus diesem [Nummernkreis](nummernkreise.md); das Feld ist dann schreibgeschützt.
 
-### Der Schlüssel
+### Die Kennung
 
-Unter dem Schlüssel speichert das DMS die Werte, und die [Schnittstelle](api.md) verwendet ihn. Deshalb ist er nach dem ersten Speichern fest. Die Bezeichnung kannst du jederzeit ändern.
+Unter der Kennung speichert das DMS die Werte, und die [Schnittstelle](api.md) verwendet sie. Deshalb ist sie nach dem ersten Speichern fest. Die Bezeichnung kannst du jederzeit ändern.
 
-### Referenzen: Mappen verbinden
+### Verweise: Mappen verbinden
 
-Ein Feld vom Typ **Referenz** verweist auf Mappen eines anderen Typs (oder desselben – so entstehen Hierarchien wie Haus → Heizung → Wärmepumpe). Wähle dazu:
+Ein Feld der Feldart **Verweis** zeigt auf Mappen eines anderen Mappentyps (oder desselben – so entstehen Hierarchien wie Haus → Heizung → Wärmepumpe). Wähle dazu:
 
 - **Ziel-Mappentyp** – worauf verwiesen wird, z. B. *Vertragspartner*. Auch *Benutzer* und *Rolle* sind möglich, z. B. für ein Feld „Verantwortlich“.
 - **Mehrfach** – ob mehrere Mappen gewählt werden können.
@@ -68,7 +68,7 @@ Ein Feld vom Typ **Referenz** verweist auf Mappen eines anderen Typs (oder desse
 
 #### Auswahl einschränken
 
-Unter dem Ziel-Mappentyp legst du mit **Nur Mappen, die …** fest, welche Mappen das Feld anbietet – etwa beim Feld *Arzt* im Arztbericht nur Vertragspartner mit *Art = Arzt*. Die Bedingungen funktionieren wie bei [Sichten](sichten.md): Felder des Zieltyps und Systemwerte (angelegt, geändert, von wem), feste und dynamische Werte (heute ± n, aktueller Benutzer, seine Rollen). Mehrere Bedingungen gelten zusammen. Darunter steht, wie viele Mappen passen, z. B. „12 von 85 Vertragspartner passen“.
+Unter dem Ziel-Mappentyp legst du mit **Nur Mappen, die …** fest, welche Mappen das Feld anbietet – etwa beim Feld *Arzt* im Arztbericht nur Vertragspartner mit *Art = Arzt*. Die Bedingungen funktionieren wie bei [Ansichten](sichten.md): Felder des Zieltyps und Systemwerte (angelegt, geändert, von wem), feste und dynamische Werte (heute ± n, aktueller Benutzer, seine Rollen). Mehrere Bedingungen gelten zusammen. Darunter steht, wie viele Mappen passen, z. B. „12 von 85 Vertragspartner passen“.
 
 - In der Mappe bietet die Suche im Feld nur passende Mappen an – und nur solche, die der Benutzer lesen darf. **+ … anlegen** belegt die neue Mappe mit dem vor, was sich eindeutig aus dem Filter ergibt (z. B. *Art = Arzt*).
 - **Streng:** Ein neuer oder geänderter Wert muss passen, sonst lehnt das DMS das Speichern ab – auch über die [Schnittstelle](api.md).
@@ -78,7 +78,7 @@ Unter dem Ziel-Mappentyp legst du mit **Nur Mappen, die …** fest, welche Mappe
 
 **Werte aus dieser Mappe:** Statt eines festen Werts kann eine Bedingung einen Wert der eigenen Mappe nehmen – Haken **Wert aus dieser Mappe** und das Feld wählen. Beispiele: *Fachgebiet* (am Arzt) *ist einer von* **Fachgebiet dieser Mappe**; *Vertragspartner* (am Vertrag) *zeigt auf* **Vertragspartner dieser Mappe**.
 
-- Angeboten werden nur Felder mit passendem Datentyp: Text zu Text, Zahl zu Zahl, Datum zu Datum, ein Auswahlfeld, dessen Werte es auch am Ziel gibt, ein Referenzfeld auf denselben Mappentyp. Das Referenzfeld selbst geht nicht.
+- Angeboten werden nur Felder mit passender Feldart: Text zu Text, Zahl zu Zahl, Datum zu Datum, ein Auswahlfeld, dessen Werte es auch am Ziel gibt, ein Verweisfeld auf denselben Mappentyp. Das Referenzfeld selbst geht nicht.
 - Ändert man in der Mappe das eigene Feld, filtert die Auswahl sofort neu. Passt eine schon gewählte Mappe nicht mehr, steht der Hinweis „passt nicht mehr zum Filter“ schon vor dem Speichern am Feld.
 - **Ist das eigene Feld leer**, gilt die Bedingung nicht – dann werden alle angeboten, die die übrigen Bedingungen erfüllen.
 - Das DMS prüft beim Speichern mit den Werten, die gespeichert werden sollen – auch wenn beide Felder im selben Zug geändert werden.
@@ -88,15 +88,15 @@ Auf eine Mappe, auf die noch verwiesen wird, kann niemand sie löschen.
 
 ### Passwortfelder
 
-Ein Feld vom Typ **Passwort** nimmt z. B. das Kennwort eines Online-Zugangs auf. Das DMS speichert es verschlüsselt mit dem Schlüssel aus **Werkbank → [Verschlüsselung](verschluesselung.md)**; solange es keinen gibt, lässt sich kein Wert speichern, und das Feld weist darauf hin.
+Ein Feld der Feldart **Passwort** nimmt z. B. das Kennwort eines Online-Zugangs auf. Das DMS speichert es verschlüsselt mit dem Schlüssel aus **Werkbank → [Verschlüsselung](verschluesselung.md)**; solange es keinen gibt, lässt sich kein Wert speichern, und das Feld weist darauf hin.
 
 - In der Mappe steht nur „••••••••“. Das Auge zeigt das Passwort – und jedes Anzeigen steht im [Protokoll](fehlersuche.md) mit Benutzer, Mappe und Feld, nie mit dem Wert.
-- Passwortfelder erscheinen nie im Titel, in der Trefferliste, in der Suche, in Bedingungen von Sichten oder in Demo-Daten.
+- Passwortfelder erscheinen nie im Titel, in der Trefferliste, in der Suche, in Bedingungen von Ansichten oder in Demo-Daten.
 - Über die [API](api.md) gibt es Passwörter nur mit einem Schlüssel, der das Recht „Passwörter lesen“ hat.
 
 ### Formatierter Text
 
-Ein Feld vom Typ **Formatierter Text** nimmt längere Texte mit einfacher Formatierung auf: fett, kursiv, Überschriften, Listen, Zitate und Links. Benutzer schreiben mit einer kleinen Werkzeugleiste und sehen eine Vorschau; gespeichert wird der Text als Markdown.
+Ein Feld der Feldart **Formatierter Text** nimmt längere Texte mit einfacher Formatierung auf: fett, kursiv, Überschriften, Listen, Zitate und Links. Benutzer schreiben mit einer kleinen Werkzeugleiste und sehen eine Vorschau; gespeichert wird der Text als Markdown.
 
 - Rohes HTML gibt es nicht, und Links sind nur mit `http(s)` oder `mailto` möglich – ein Text kann so nichts im Browser ausführen.
 - In Titel, Trefferliste und Suche erscheint der Text ohne Formatierung, in Listen gekürzt.
@@ -105,19 +105,19 @@ Ein Feld vom Typ **Formatierter Text** nimmt längere Texte mit einfacher Format
 
 ### Fristen: Erinnerungen an Datumsfeldern
 
-An einem **Datumsfeld** wie „Kündigung bis“ oder „TÜV fällig“ kannst du **Erinnern** einschalten. Dann steht die Mappe rechtzeitig vor dem Datum als **Frist** im Eingang – und damit auch in der täglichen Zusammenfassung.
+An einem **Datumsfeld** wie „Kündigung bis“ oder „TÜV fällig“ kannst du **Erinnern** einschalten. Dann steht die Mappe rechtzeitig vor dem Datum als **Frist** unter „Zu erledigen“ – und damit auch in der täglichen Zusammenfassung.
 
 ![Erinnerung an einem Datumsfeld](bilder/werkbank-frist.png)
 
 - **Vorlauf** – wie lange vorher, in Tagen, Wochen oder Monaten. Bei 4 Wochen und dem 30.09. erscheint die Frist am 02.09.
 - **Für** – der **Ersteller der Mappe** oder der Benutzer in einem Feld, das auf Benutzer verweist (z. B. „Verantwortlich“). Ist dieses Feld leer, bekommt der Ersteller die Erinnerung. Abwesenheit und Vertretung gelten wie bei allen [Aufgaben](aufgaben.md).
 - **Text** – mit den Platzhaltern `{feld}`, `{datum}` und `{titel}`; Standard ist „{feld} {datum}“, also z. B. „Kündigung bis 30.09.2027“.
-- **Wiederkehrend** – monatlich, vierteljährlich, halbjährlich, jährlich oder alle paar Jahre. Wer die Frist erledigt, bekommt den Vorschlag „Datum auf 30.09.2028 setzen“; das Datum ändert sich **nie von selbst**, und die Änderung steht wie jede andere im Protokoll der Mappe.
+- **Wiederkehrend** – monatlich, vierteljährlich, halbjährlich, jährlich oder alle paar Jahre. Wer die Frist erledigt, bekommt den Vorschlag „Datum auf 30.09.2028 setzen“; das Datum ändert sich **nie von selbst**, und die Änderung steht wie jede andere in der Historie der Mappe.
 
 So verhalten sich Fristen:
 
 - Das DMS prüft die Fristen beim Speichern einer Mappe, nach Änderungen am Mappentyp und jeden Tag kurz nach Mitternacht. Je Mappe, Feld und Datum entsteht **höchstens eine** Frist – auch nach dem Erledigen nicht noch einmal.
-- Wird das Datum **geändert oder geleert**, erledigt sich eine offene Frist von selbst (mit Eintrag im Protokoll der Mappe); für das neue Datum entsteht zur rechten Zeit eine neue.
+- Wird das Datum **geändert oder geleert**, erledigt sich eine offene Frist von selbst (mit Eintrag in der Historie der Mappe); für das neue Datum entsteht zur rechten Zeit eine neue.
 - Daten, die schon vorbei sind, erzeugen keine Frist mehr.
 - Darf der Empfänger die Mappe nach den [Berechtigungen](berechtigungen.md) nicht lesen, bekommt er die Frist trotzdem; unter *Werkbank → Aufgaben* steht dann ein Hinweis.
 - Eine zusätzliche E-Mail am Stichtag gibt es nicht – die Fristen stehen in der täglichen Zusammenfassung.
@@ -126,10 +126,10 @@ So verhalten sich Fristen:
 
 Du kannst Mappentypen jederzeit ändern, auch wenn es schon Mappen gibt:
 
-- **Felder entfernen** löscht keine Werte. Sie bleiben an der Mappe und erscheinen dort als „Werte ohne Felddefinition“. Fügst du das Feld mit demselben Schlüssel wieder hinzu, sind sie wieder da.
-- **Neue Pflichtfelder, strengere Regeln, entfernte Auswahlwerte:** Mappen, die nicht mehr passen, werden markiert und bekommen eine [Aufgabe](aufgaben.md) „Passt nicht“ für ihren Ersteller; so landen sie in seinem [Eingang](https://motom001.github.io/dms/benutzer/eingang/). Die Aufgabe erledigt sich, sobald die Mappe wieder passt. Nichts wird stillschweigend geändert. Über dem Mappentyp steht, wie viele Mappen betroffen sind.
+- **Felder entfernen** löscht keine Werte. Sie bleiben an der Mappe und erscheinen dort als „Werte ohne Felddefinition“. Fügst du das Feld mit derselben Kennung wieder hinzu, sind sie wieder da.
+- **Neue Pflichtfelder, strengere Regeln, entfernte Auswahlwerte:** Mappen, die nicht mehr passen, werden markiert und bekommen eine [Aufgabe](aufgaben.md) „Passt nicht“ für ihren Ersteller; so landen sie bei ihm unter [Zu erledigen](https://motom001.github.io/dms/benutzer/eingang/). Die Aufgabe erledigt sich, sobald die Mappe wieder passt. Nichts wird stillschweigend geändert. Über dem Mappentyp steht, wie viele Mappen betroffen sind.
 
-![Eingang in der Ablage](bilder/eingang.png)
+![Zu erledigen in der Ablage](bilder/eingang.png)
 
 ## Titel einer Mappe
 
@@ -172,9 +172,9 @@ Hat eine Trefferliste keine Spalten, zeigt die Ablage den Titel und zwei weitere
 
 Ein Mappentyp kann **mehrere** Trefferlisten haben, z. B. *Standard* mit allen Angaben und *Kurz* mit Titel, Betrag und *bezahlt*. Mit **+ Trefferliste** legst du eine weitere an (sie beginnt mit den Spalten der Standardliste).
 
-- Jede Liste hat einen **Namen** und einen festen **Schlüssel**; über ihn wählen [Sichten](sichten.md#trefferliste) und Verknüpfungsregister die Liste.
+- Jede Liste hat einen **Namen** und eine feste **Kennung**; über sie wählen [Ansichten](sichten.md#trefferliste) und Verknüpfungsregister die Liste.
 - **Genau eine** ist **Standard**: Sie gilt überall, wo keine andere gewählt ist. Mindestens eine Liste bleibt immer.
-- Unter jeder Liste steht, **wo sie verwendet** wird (Sichten, Register). Entfernst du eine verwendete Liste, gilt dort die Standardliste.
+- Unter jeder Liste steht, **wo sie verwendet** wird (Ansichten, Register). Entfernst du eine verwendete Liste, gilt dort die Standardliste.
 
 ![Zwei Trefferlisten am Mappentyp Rechnung](bilder/werkbank-trefferlisten.png)
 
@@ -189,11 +189,11 @@ Register sind die Trennblätter einer Mappe, in der angegebenen Reihenfolge:
 | **Feldregister** | eine Gruppe von Feldern; welches Feld auf welchem Register liegt, stellst du am Feld ein |
 | **Dokumentenregister** | hochgeladene Dateien; PDFs und Bilder sind direkt ansehbar. **Volltext erzeugen** (Standard: an) schickt neue Dokumente durch die [Texterkennung](texterkennung.md) |
 | **Verknüpfungsregister** | Mappen, die auf diese Mappe verweisen – alle oder nur bestimmte (z. B. „Rechnungen“ nur über das Feld *Vertrag*). Als Quelle lässt sich auch *Post › Zugeordnet zu* wählen: Dann steht hier die Post, die dieser Mappe zugeordnet ist, z. B. verschickte E-Mails und eingegangene Briefe |
-| **Protokollregister** | das Protokoll der Mappe: wer wann was geändert hat, mit altem und neuem Wert; dazu Dokumente, Papierkorb, Notizen, Aufgaben, E-Mails und angezeigte Passwörter (ohne Wert). Höchstens eins je Mappentyp |
+| **Historienregister** | die Historie der Mappe: wer wann was geändert hat, mit altem und neuem Wert; dazu Dokumente, Papierkorb, Notizen, Aufgaben, E-Mails und angezeigte Passwörter (ohne Wert). Höchstens eins je Mappentyp |
 
 **Versionierung einschalten** (Standard: aus) an einem Dokumentenregister: Beim Ersetzen bleibt die alte Version erhalten und lässt sich wieder hervorholen. Mit **Nur die letzten … Versionen behalten** räumt das DMS ältere Versionen samt ihren Dateien auf (leer = alle behalten). Schaltest du die Versionierung ein, gilt jedes vorhandene Dokument als Version 1; schaltest du sie aus, bleiben vorhandene ältere Versionen sichtbar, neue entstehen keine mehr. Ohne Versionierung gibt es kein Ersetzen – über die Schnittstelle kommt dann eine verständliche Fehlermeldung. Das Ein- und Ausschalten steht im [Protokoll](fehlersuche.md#protokoll) beim Speichern des Mappentyps. Wie es für Benutzer aussieht, steht im [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/aktuell/dokumente/#versionen).
 
-Register haben feste Schlüssel, damit Dokumente ihr Register behalten, wenn es umbenannt wird. Ein Dokumentenregister, in dem schon Dokumente liegen, lässt sich nicht entfernen.
+Register haben feste Kennungen, damit Dokumente ihr Register behalten, wenn es umbenannt wird. Ein Dokumentenregister, in dem schon Dokumente liegen, lässt sich nicht entfernen.
 
 **Verknüpfungsregister als Tabelle:** Hakst du eine Quelle an, kannst du daneben eine [Trefferliste](#trefferlisten) des Quelltyps wählen. Das Register zeigt die verweisenden Mappen dann als Tabelle mit deren Spalten (z. B. beim Vertragspartner die Rechnungen mit Betrag, Datum und *bezahlt*). Ohne Auswahl – oder wenn es die Liste nicht mehr gibt – bleibt es bei der einfachen Liste der Titel.
 
@@ -210,26 +210,26 @@ Das ändert nur den Entwurf; übernommen wird es wie alles andere mit **Mappenty
 ![Systemmappentyp Benutzer](bilder/werkbank-systemtyp.png)
 
 - Du kannst sie um eigene Felder und Register erweitern, z. B. eine Telefonnummer.
-- Ihre **Systemfelder** (Name, E-Mail-Adresse, Rollen, Aktiv bzw. Name der Rolle) sind fest: Bezeichnung, Hilfetext und Register darfst du ändern, Datentyp und Eigenschaften nicht.
-- Mappen vom Typ *Benutzer* lassen sich in der Ablage weder anlegen noch löschen (Systemregel) – Benutzer entstehen in der Benutzerverwaltung.
+- Ihre **Systemfelder** (Name, E-Mail-Adresse, Rollen, Aktiv bzw. Name der Rolle) sind fest: Bezeichnung, Hilfetext und Register darfst du ändern, Feldart und Eigenschaften nicht.
+- Mappen vom Mappentyp *Benutzer* lassen sich in der Ablage weder anlegen noch löschen (Systemregel) – Benutzer entstehen in der Benutzerverwaltung.
 - **Post** ist alles, was ins DMS kommt oder hinausgeht ([Benutzerhandbuch: Post](https://motom001.github.io/dms/benutzer/post/)). Systemfelder: *Betreff*, *Stand* (Neu, Zugeordnet, Erledigt), *Kanal* (Hochgeladen, E-Mail, Scan, Ordner, Import, API, WebDAV), *Richtung*, *Datum*, *Absender*, *Empfänger*, *Für*, *Zugeordnet zu* und *Nachricht*.
-    - Post entsteht über **+ Post** in den Sichten mit Post, über die [Schnittstelle](api.md) (`POST /api/v1/post`) und beim [Versenden per E-Mail](https://motom001.github.io/dms/benutzer/versenden/). Über das allgemeine Formular „+ Neu“ legt man keine Post an. Wer Post anlegen darf, regeln die [Berechtigungen](berechtigungen.md) (C) wie bei jedem Typ.
+    - Post entsteht über **+ Post** in den Ansichten mit Post, über die [Schnittstelle](api.md) (`POST /api/v1/post`) und beim [Versenden per E-Mail](https://motom001.github.io/dms/benutzer/versenden/). Über das allgemeine Formular „+ Neu“ legt man keine Post an. Wer Post anlegen darf, regeln die [Berechtigungen](berechtigungen.md) (C) wie bei jedem Mappentyp.
     - *Kanal* hält das DMS fest, *Zugeordnet zu* setzt **Zuordnen**. Bei versendeten E-Mails sind auch Betreff, Empfänger, Absender, Datum, Nachricht und Richtung fest.
-    - *Zugeordnet zu* darf als einziges Feld auf Mappen *jedes* Typs zeigen, auch auf mehrere. Wird eine dieser Mappen gelöscht, bleibt die Post erhalten; nur der Verweis entfällt.
-    - *Für* verweist auf einen Benutzer: Solange die Post neu ist, hat er die Aufgabe *Neue Post* im Eingang.
-    - Beim ersten Start legt das DMS die Sichten **Neue Post** (ganz oben, Stand *Neu*) und unter **Post** die Sichten **Eingegangen** und **Versendet** an. Du kannst sie ändern, verschieben oder löschen; gelöschte kommen nicht wieder.
+    - *Zugeordnet zu* darf als einziges Feld auf Mappen *jedes* Mappentyps zeigen, auch auf mehrere. Wird eine dieser Mappen gelöscht, bleibt die Post erhalten; nur der Verweis entfällt.
+    - *Für* verweist auf einen Benutzer: Solange die Post neu ist, hat er die Aufgabe *Post für dich* unter „Zu erledigen“.
+    - Beim ersten Start legt das DMS die Ansichten **Neue Post** (ganz oben, Stand *Neu*) und unter **Post** die Ansichten **Eingegangen** und **Versendet** an. Du kannst sie ändern, verschieben oder löschen; gelöschte kommen nicht wieder.
     - **Aus E-Mail wird Post (0.41):** Der frühere Systemtyp *E-Mail* wird beim Update zu *Post*. Vorhandene E-Mails bekommen Kanal *E-Mail*, Richtung *Ausgehend* und Stand *Erledigt*. Felder, Dokumente und Verweise bleiben erhalten; eigene Felder und Bezeichnungen auch. Sprechende Links mit `typ=email` funktionieren weiter.
 
 Mehr dazu in [Benutzer und Rollen](benutzer.md).
 
 ## Berechtigungen
 
-Unter den Registern legst du fest, wer Mappen dieses Typs anlegen, lesen, bearbeiten, löschen und Passwörter darin sehen darf – mit der Zeile **Standard** und Regeln. Gespeichert wird mit **Mappentyp speichern**; darunter probierst du die Regeln im **Testlauf** aus – auch ungespeicherte. Alles Weitere steht unter [Berechtigungen](berechtigungen.md).
+Unter den Registern legst du fest, wer Mappen dieses Mappentyps anlegen, lesen, bearbeiten, löschen und Passwörter darin sehen darf – mit der Zeile **Standard** und Regeln. Gespeichert wird mit **Mappentyp speichern**; darunter probierst du die Regeln im **Testlauf** aus – auch ungespeicherte. Alles Weitere steht unter [Berechtigungen](berechtigungen.md).
 
 ## Mappentyp kopieren
 
-**Mappentyp kopieren** oben rechts legt einen neuen Mappentyp als **Entwurf** an – mit denselben Feldern, Titel, Trefferlisten, Registern und Berechtigungen. Er heißt „Kopie von …“ und bekommt einen eigenen Schlüssel; beides kannst du vor dem Speichern ändern. Angelegt wird er erst mit **Mappentyp speichern**. Mappen werden nicht kopiert. Felder, die auf den Typ selbst verweisen, zeigen in der Kopie auf die Kopie. Systemtypen lassen sich nicht kopieren.
+**Mappentyp kopieren** oben rechts legt einen neuen Mappentyp als **Entwurf** an – mit denselben Feldern, Titel, Trefferlisten, Registern und Berechtigungen. Er heißt „Kopie von …“ und bekommt eine eigene Kennung; beides kannst du vor dem Speichern ändern. Angelegt wird er erst mit **Mappentyp speichern**. Mappen werden nicht kopiert. Felder, die auf den Mappentyp selbst verweisen, zeigen in der Kopie auf die Kopie. Systemtypen lassen sich nicht kopieren.
 
 ## Mappentyp löschen
 
-**Mappentyp löschen** geht nur, solange es keine Mappen dieses Typs gibt und kein anderer Typ auf ihn verweist. Sonst nennt das DMS die Gründe.
+**Mappentyp löschen** geht nur, solange es keine Mappen dieses Mappentyps gibt und kein anderer Mappentyp auf ihn verweist. Sonst nennt das DMS die Gründe.

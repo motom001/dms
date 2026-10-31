@@ -217,7 +217,7 @@ function nachEltern(sichten: PaketSicht[]): PaketSicht[] {
 
 /** Bedingung aus dem Paket in die Form der Werkbank. */
 function bedingungAus(b: { feld: string; operator: string; wert?: unknown }): Bedingung {
-  if (!(b.operator in OPERATOREN)) throw new Fachfehler(422, `Unbekannter Operator „${b.operator}“ in einer Sicht.`);
+  if (!(b.operator in OPERATOREN)) throw new Fachfehler(422, `Unbekannter Operator „${b.operator}“ in einer Ansicht.`);
   const op = b.operator as Operator;
   const fest = (w: unknown) => (istObjekt(w) && typeof w.art === 'string' ? w as never : { art: 'fest' as const, wert: w as string });
   if ((op === 'zwischen' || op === 'ausserhalb') && Array.isArray(b.wert) && b.wert.length === 2) return { art: 'feld', feld: b.feld, op, wert: fest(b.wert[0]), bis: fest(b.wert[1]) };
@@ -470,7 +470,7 @@ export class Paketverwaltung {
       const name = (sichtNamen[s.schluessel] ?? s.name).trim();
       // Konflikt nur auf oberster Ebene: Untersichten stehen unter der neuen Elternsicht.
       const geschwister = s.eltern ? [] : sichten.filter((x) => !x.elternId).map((x) => x.name.trim().toLowerCase());
-      const konflikt = geschwister.includes(name.toLowerCase()) ? `Eine Sicht „${name}“ gibt es schon.` : null;
+      const konflikt = geschwister.includes(name.toLowerCase()) ? `Eine Ansicht „${name}“ gibt es schon.` : null;
       return { schluessel: s.schluessel, name, eltern: s.eltern ?? null, vorhanden: false, konflikt, vorschlag: konflikt ? freierName(name, m.name, new Set(geschwister)) : null };
     });
     return {
@@ -604,14 +604,14 @@ export class Paketverwaltung {
         if (sp.vorhanden) continue;
         const alle = await this.d.listeSichten();
         const elternId = s.eltern ? sichtMap[s.eltern] ?? null : null;
-        if (s.eltern && !elternId) throw new Fachfehler(422, `Sicht „${s.name}“: Elternsicht „${s.eltern}“ fehlt.`);
+        if (s.eltern && !elternId) throw new Fachfehler(422, `Ansicht „${s.name}“: Elternsicht „${s.eltern}“ fehlt.`);
         const position = Math.max(0, ...kinderVon(alle, elternId).map((x) => x.position)) + 10;
         const typen = (s.typen ?? []).map((x) => ziel(x, false)!).filter(Boolean);
         try {
           const neu = await this.d.legeSichtAn({ name: sp.name, beschreibung: s.beschreibung ?? '', elternId, position, typen, bedingungen: (s.bedingungen ?? []).map(bedingungAus), ...(s.trefferliste ? { trefferliste: s.trefferliste } : {}) });
           neueSichten.push(neu.id);
           sichtMap[s.schluessel] = neu.id;
-        } catch (f) { throw new Fachfehler(422, `Sicht „${sp.name}“: ${meldungen(f)}`); }
+        } catch (f) { throw new Fachfehler(422, `Ansicht „${sp.name}“: ${meldungen(f)}`); }
       }
       // 4. Beispiele (nur bei der Installation, auf Wunsch).
       if (beispiele && !alt) {

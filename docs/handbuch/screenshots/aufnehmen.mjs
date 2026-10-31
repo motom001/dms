@@ -103,7 +103,7 @@ async function vorbereiten() {
     { key: 'verantwortlich', label: 'Verantwortlich', typ: 'referenz', zielTyp: benutzerTyp.id, verweisart: 'bezug', hilfe: 'Wer die Fristen im Blick behält' },
     { key: 'bemerkung', label: 'Bemerkung', typ: 'formatiert' }];
   const register = [...vertrag.register.map((r) => (r.art === 'felder' && r.key === 'vertrag' ? { ...r, felder: [...(r.felder ?? vertrag.felder.map((f) => f.key)), 'verantwortlich', 'bemerkung'] } : r)),
-    { key: 'protokoll', name: 'Protokoll', art: 'protokoll' }];
+    { key: 'protokoll', name: 'Historie', art: 'protokoll' }];
   await api('PUT', `/api/typen/${vertrag.id}`, { ...vertrag, felder, register });
   typen = await api('GET', '/api/typen');
 
@@ -205,7 +205,7 @@ async function einrichtenImBrowser(browser, bild) {
   await s.getByRole('heading', { name: 'Neu einrichten oder wiederherstellen?' }).waitFor({ timeout: 90_000 });
   await bild(s, 'einrichtung-wahl');
   await s.getByRole('button', { name: /^Neu einrichten/ }).click();
-  await s.getByLabel(/Name des Mandanten/).fill('Familie Beispiel');
+  await s.getByLabel(/Name des Haushalts/).fill('Familie Beispiel');
   await bild(s, 'einrichtung-mandant');
   await s.getByRole('button', { name: 'Weiter' }).click();
   await s.getByLabel('Name', { exact: true }).fill(ADMIN.name);
@@ -377,7 +377,7 @@ async function main() {
   await s.locator('.spalte.liste .mappenliste .eintrag').first().waitFor();
   await bild(s, 'anstehend');
   await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
-  await s.getByRole('tab', { name: 'Protokoll' }).click();
+  await s.getByRole('tab', { name: 'Historie' }).click();
   await s.locator('.historie details').first().click();
   await bild(s, 'protokoll');
   await s.getByRole('button', { name: /Aktionen/ }).click();
@@ -503,7 +503,7 @@ async function main() {
   await bild(s, 'sichten-baum');
   await geheZu(s, `/werkbank/sichten/${d.fristen.id}#bedingungen`);
   await s.getByRole('heading', { name: 'Bedingungen' }).waitFor();
-  await s.getByText('Diese Sicht zeigt zurzeit').waitFor();
+  await s.getByText('Diese Ansicht zeigt zurzeit').waitFor();
   await bild(s, 'werkbank-sichten');
 
   // Benutzer und Rollen in der Ablage

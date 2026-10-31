@@ -17,13 +17,13 @@ Darunter folgen die **Register** – die Trennblätter der Mappe. Es gibt drei A
 | **Angaben** (z. B. „Vertrag“, „Stammdaten“) | Felder zum Ausfüllen |
 | **Dokumente** (z. B. „Vertragsunterlagen“) | Hochgeladene Dateien, siehe [Dokumente](dokumente.md) |
 | **Verknüpfungen** (z. B. „Rechnungen“) | Andere Mappen, die auf diese Mappe verweisen |
-| **Protokoll** | Wer wann was an der Mappe geändert hat, siehe [Protokoll](zusammenarbeit.md#protokoll) |
+| **Historie** | Wer wann was an der Mappe geändert hat, siehe [Historie](zusammenarbeit.md#historie) |
 
 Hinter Dokumenten- und Verknüpfungsregistern steht, wie viel darin liegt. Ein roter Punkt zeigt, auf welchem Register ein Feld noch nicht stimmt.
 
 ## Eine Mappe anlegen
 
-1. Wähle links die Sicht des Mappentyps, zum Beispiel *Rechnung*.
+1. Wähle links die Ansicht des Mappentyps, zum Beispiel *Rechnung*.
 2. Klicke auf **+ Neu**.
 3. Fülle die Felder aus. Felder mit **\*** sind Pflichtfelder. Unter manchen Feldern steht ein Hinweis, was hineingehört.
 4. Klicke auf **Mappe speichern**.
@@ -67,7 +67,7 @@ In Listen und in der Suche erscheint der Text ohne Formatierung.
 
 ### Passwörter
 
-In einem **Passwortfeld** (z. B. das Kennwort eines Kundenportals) steht nach dem Speichern nur „••••••••“. Das **Auge** zeigt das Passwort; jedes Anzeigen hält das DMS im Protokoll fest (wer, wann, welche Mappe – nicht das Passwort). **Ändern** nimmt ein neues Passwort auf, **Passwort entfernen** löscht es beim Speichern (bis dahin geht **Rückgängig**).
+In einem **Passwortfeld** (z. B. das Kennwort eines Kundenportals) steht nach dem Speichern nur „••••••••“. Das **Auge** zeigt das Passwort; jedes Anzeigen hält das DMS in der Historie der Mappe fest (wer, wann, welche Mappe – nicht das Passwort). **Ändern** nimmt ein neues Passwort auf, **Passwort entfernen** löscht es beim Speichern (bis dahin geht **Rückgängig**).
 
 ![Passwortfeld](bilder/passwortfeld.png)
 
@@ -87,7 +87,7 @@ Ein Klick auf einen gesetzten Verweis öffnet die andere Mappe.
 
 Willst du die Mappe mit ungespeicherten Änderungen verlassen, fragt das DMS nach.
 
-Über den Registern stehen außerdem **Notizen** und das Menü **Aktionen** (Aufgabe vergeben, per E-Mail versenden, als PDF exportieren, Link kopieren) – siehe [Notizen, Erwähnungen, Protokoll](zusammenarbeit.md) und [E-Mail, PDF und Link](versenden.md).
+Über den Registern stehen außerdem **Notizen** und das Menü **Aktionen** (Aufgabe vergeben, per E-Mail versenden, als PDF exportieren, Link kopieren) – siehe [Notizen, Erwähnungen, Historie](zusammenarbeit.md) und [E-Mail, PDF und Link](versenden.md).
 
 Manche Angaben sind nur zum Lesen da und haben einen gestrichelten Rahmen – zum Beispiel Name und E-Mail-Adresse in der Mappe eines Benutzers. Daneben steht, wo man sie ändert.
 
@@ -114,7 +114,7 @@ Unten links in der Mappe steht **Mappe löschen**. Nach einer Rückfrage kommt d
 
 Eine Mappe, auf die noch andere verweisen, lässt sich nicht löschen. Der Knopf ist dann ausgegraut, und darüber steht gleich, welche Mappen das sind – mit Links dorthin. Entferne zuerst dort den Verweis. So kann kein Vertrag verschwinden, zu dem noch Rechnungen gehören. Verschickte E-Mails und andere [Post](post.md) halten das Löschen nicht auf.
 
-Fehlt der Knopf, dürfen Mappen dieses Typs nicht gelöscht werden.
+Fehlt der Knopf, dürfen Mappen dieses Mappentyps nicht gelöscht werden.
 
 ## Was du sehen und ändern darfst
 

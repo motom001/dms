@@ -3,29 +3,29 @@
 ??? question "Ich sehe die Werkbank nicht."
     Die Werkbank ist Administratoren vorbehalten. Als Mitglied arbeitest du nur in der Ablage.
 
-??? question "Es gibt keine Sicht für die Unterlagen, die ich ablegen will."
+??? question "Es gibt keine Ansicht für die Unterlagen, die ich ablegen will."
     Neue Mappentypen richtet ein Administrator ein. Beschreib ihm, was du ablegen willst und welche Angaben dazugehören.
 
 ??? question "Der Knopf „+ Neu“ fehlt."
     Von diesem Mappentyp dürfen in der Ablage keine Mappen angelegt werden – zum Beispiel bei *Benutzer*. Die legt ein Administrator in der Benutzerverwaltung an.
 
 ??? question "Ich kann eine Mappe nicht löschen."
-    Entweder verweisen noch andere Mappen auf sie – dann zeigt das DMS, welche; entferne dort zuerst den Verweis. Oder Mappen dieses Typs dürfen grundsätzlich nicht gelöscht werden; dann fehlt der Knopf ganz.
+    Entweder verweisen noch andere Mappen auf sie – dann zeigt das DMS, welche; entferne dort zuerst den Verweis. Oder Mappen dieses Mappentyps dürfen grundsätzlich nicht gelöscht werden; dann fehlt der Knopf ganz.
 
 ??? question "Ich kann ein Feld nicht ändern."
     Felder mit gestricheltem Rahmen sind nur zum Lesen, zum Beispiel Name und E-Mail-Adresse in der Mappe eines Benutzers. Daneben steht, wo sie geändert werden.
 
-??? question "Eine Mappe ist plötzlich im Eingang."
-    Ihr Mappentyp wurde geändert, und die Mappe passt nicht mehr dazu. Siehe [Eingang](eingang.md).
+??? question "Eine Mappe ist plötzlich unter „Zu erledigen“."
+    Ihr Mappentyp wurde geändert, und die Mappe passt nicht mehr dazu. Siehe [Zu erledigen](eingang.md).
 
 ??? question "Ich habe versehentlich eine Mappe gelöscht."
-    Sie liegt im **Papierkorb** unter dem Eingang. Öffne sie dort und klicke auf **Wiederherstellen**.
+    Sie liegt im **Papierkorb** unterhalb von „Zu erledigen“. Öffne sie dort und klicke auf **Wiederherstellen**.
 
 ??? question "Die Suche findet einen Text aus einem PDF nicht."
     Setze unter dem Suchfeld den Haken **Volltext durchsuchen**. Ist das Dokument gerade erst hochgeladen, steht daneben vielleicht noch *Volltext: wartet* – dann einen Moment warten. Bei *ausgelassen* gibt es für diesen Dateityp keinen Volltext.
 
 ??? question "Die Spalten sind verrutscht oder eine ist verschwunden."
-    Im Profil unter **Ansicht auf diesem Gerät** → **Standard-Ansicht wiederherstellen**. Oder kurz auf den Griff zwischen den Spalten klicken – das klappt eingeklappte Bereiche wieder auf.
+    Im Profil unter **Darstellung auf diesem Gerät** → **Standard-Darstellung wiederherstellen**. Oder kurz auf den Griff zwischen den Spalten klicken – das klappt eingeklappte Bereiche wieder auf.
 
 ??? question "Die Schrift ist zu klein."
     Menü unter deinem Namen → **Mein Konto** → **Darstellung** → **Schriftgröße auf diesem Gerät** → *groß*.

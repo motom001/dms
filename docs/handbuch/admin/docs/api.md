@@ -41,9 +41,12 @@ curl -X POST -H "Authorization: Bearer dms_…" -H "Content-Type: application/js
   http://<NAS>:8080/api/v1/mappen
 ```
 
-Die Ids der Mappentypen und die Schlüssel ihrer Felder liefert `GET /api/v1/typen`.
+Die Ids der Mappentypen und die Kennungen ihrer Felder (`key`) liefert `GET /api/v1/typen`.
 
-Die Mappen einer Sicht liefert `GET /api/v1/mappen?sicht=<Id der Sicht>` – mit allen Bedingungen der Sicht. Alle Mappen eines Typs, ohne Bedingungen, gibt es mit `sicht=typ:<Id des Mappentyps>`. Mit `sicht=link&link=…` geht es über einen [sprechenden Link](direktlinks.md). Die Sichten selbst (Baum, Mappentypen, Bedingungen, gewählte Trefferliste) liefert `GET /api/v1/sichten/definitionen`. Die eigene Abwesenheit liest und setzt `GET`/`PUT /api/v1/konto/abwesenheit`, die eigene tägliche Zusammenfassung (Uhrzeit, Wochentage, Feiertage) `GET`/`PUT /api/v1/konto/zusammenfassung`. Die eigenen Favoriten gibt es mit `sicht=favoriten`; markieren und entfernen mit `PUT` bzw. `DELETE /api/v1/mappen/{id}/favorit`.
+!!! note "Namen in der API"
+    Die Schnittstelle behält ihre Namen, auch wo die Oberfläche seit 0.73 andere Wörter verwendet: `sicht` ist die **Ansicht**, `sicht=eingang` die Liste **Zu erledigen**, `key` die **Kennung** eines Felds, Registers oder Mappentyps, die Feldart `referenz` der **Verweis**, das Register der Art `protokoll` die **Historie** und `mandant` bzw. `haushalt_id` der **Haushalt**.
+
+Die Mappen einer Ansicht liefert `GET /api/v1/mappen?sicht=<Id der Ansicht>` – mit allen Bedingungen der Ansicht. Alle Mappen eines Mappentyps, ohne Bedingungen, gibt es mit `sicht=typ:<Id des Mappentyps>`. Mit `sicht=link&link=…` geht es über einen [Link über Mappentyp und Feldwerte](direktlinks.md). Die Ansichten selbst (Baum, Mappentypen, Bedingungen, gewählte Trefferliste) liefert `GET /api/v1/sichten/definitionen`. Die eigene Abwesenheit liest und setzt `GET`/`PUT /api/v1/konto/abwesenheit`, die eigene tägliche Zusammenfassung (Uhrzeit, Wochentage, Feiertage) `GET`/`PUT /api/v1/konto/zusammenfassung`. Die eigenen Favoriten gibt es mit `sicht=favoriten`; markieren und entfernen mit `PUT` bzw. `DELETE /api/v1/mappen/{id}/favorit`.
 
 Mappentypen haben seit 0.14 **mehrere Trefferlisten** (`trefferlisten`, eine mit `standard: true`). Das Feld `trefferliste` gibt es weiter: Es enthält die Spalten der Standardliste, und wer es beim Ändern angibt, ersetzt damit deren Spalten.
 
@@ -73,4 +76,4 @@ Gelöschte Mappen liegen im [Papierkorb](papierkorb.md): `GET /api/v1/papierkorb
 - Im aktiven [Wartungsmodus](wartungsmodus.md) antwortet die Schnittstelle mit `503` und `Retry-After` (Sekunden bis zum erwarteten Ende).
 - Fehler kommen als JSON mit einer deutschen Meldung in `fehler`; bei ungültigen Eingaben (422) steht in `details` das Prüfergebnis je Feld.
 - Passwortfelder setzt man mit einem Text oder `{"neu": "…"}`, entfernt sie mit `null` und lässt sie unverändert, indem man sie weglässt.
-- Feldschlüssel ändern sich nie (siehe [Mappentypen](mappentypen.md#der-schlussel)) – Skripte, die mit ihnen arbeiten, bleiben gültig, auch wenn Bezeichnungen umbenannt werden.
+- Die Kennungen der Felder ändern sich nie (siehe [Mappentypen](mappentypen.md#die-kennung)) – Skripte, die mit ihnen arbeiten, bleiben gültig, auch wenn Bezeichnungen umbenannt werden.

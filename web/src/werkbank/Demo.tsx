@@ -17,7 +17,7 @@ export function DemoListe() {
   const u = useUebersicht();
   return (
     <>
-      <div className="listenkopf"><div><h1>Demo-Daten</h1><p className="leise klein">Mappen je Typ, davon Demo-Mappen. <Hilfe ort="werkbank.demo" /></p></div></div>
+      <div className="listenkopf"><div><h1>Demo-Daten</h1><p className="leise klein">Mappen je Mappentyp, davon Demo-Mappen. <Hilfe ort="werkbank.demo" /></p></div></div>
       {!u.length
         ? <p className="leise leerliste">Noch keine Mappentypen.</p>
         : <ul className="mappenliste">
@@ -156,7 +156,7 @@ export function DemoPanel() {
         <form className="blatt" onSubmit={(e) => { e.preventDefault(); void starte(() => api.demoErzeugen(optionen)); }}>
           <h2 className="h3">Erzeugen</h2>
           <div className="raster">
-            <label className="eigenschaft"><span>Anzahl <small>bis 50.000 je Lauf, wird auf die Typen verteilt, Belege bekommen mehr als Stammdaten</small></span>
+            <label className="eigenschaft"><span>Anzahl <small>bis 50.000 je Lauf, wird auf die Mappentypen verteilt, Belege bekommen mehr als Stammdaten</small></span>
               <input id="demo-anzahl" type="number" min={1} max={50000} value={anzahl} onChange={(e) => setAnzahl(e.target.value)} /></label>
             <label className="eigenschaft"><span>Startwert <small>optional; gleicher Startwert ergibt gleiche Daten, damit Messungen vergleichbar sind</small></span>
               <input id="demo-startwert" value={startwert} maxLength={100} placeholder="z. B. messung-1" onChange={(e) => setStartwert(e.target.value)} /></label>

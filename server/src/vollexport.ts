@@ -27,7 +27,7 @@ export const FORMATVERSION = 1;
  * Tabellen der Datenbank: Eine neue Tabelle ohne Eintrag hier lässt ihn fehlschlagen.
  */
 export const EXPORT_TABELLEN: Record<string, string> = {
-  haushalte: 'manifest.json (Mandant)',
+  haushalte: 'manifest.json (Haushalt)',
   mappentypen: 'struktur/mappentypen.json',
   sichten: 'struktur/sichten.json',
   nummernkreise: 'struktur/nummernkreise.json',
@@ -46,7 +46,7 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   favoriten: 'daten/favoriten.csv',
   papierkorb: 'daten/papierkorb.jsonl',
   vertretungen: 'daten/vertretungen.jsonl',
-  fehlermeldungen: 'nicht enthalten: Fehlermeldungen an die Administratoren (technisch)',
+  fehlermeldungen: 'nicht enthalten: gemeldete Fehler an die Administratoren (technisch)',
   langlaeufer: 'nicht enthalten: Messwerte langsamer Datenbankzugriffe (technisch)',
   einstellungen: 'nicht enthalten: Betriebseinstellungen mit Zugangsdaten (Mail, Postfächer, Schlüssel, Anmeldung)',
   api_schluessel: 'nicht enthalten: Geheimnisse',
@@ -320,7 +320,7 @@ export async function vollexport(q: ExportQuelle, ziel: string, opt: ExportOptio
 function liesmich(q: ExportQuelle, jetzt: Date, n: Record<string, number>, opt: ExportOptionen) {
   return `# DMS – Vollexport
 
-Erstellt am ${jetzt.toISOString()} mit DMS ${q.version} (Formatversion ${FORMATVERSION}), Mandant „${q.mandant}“.
+Erstellt am ${jetzt.toISOString()} mit DMS ${q.version} (Formatversion ${FORMATVERSION}), Haushalt „${q.mandant}“.
 ${n.mappen} Mappen in ${n.mappentypen} Mappentypen, ${n.dokumente} Dokumente.
 
 Alles hier lässt sich ohne das DMS lesen. **Der Export ist unverschlüsselt** – bewahre ihn sicher auf.${opt.passwoerter ? '\n\n**Achtung: passwoerter.csv enthält Passwörter im Klartext.** Importiere sie in einen Passwortmanager (Bitwarden-CSV) und lösche die Datei danach.' : ''}
@@ -330,7 +330,7 @@ Alles hier lässt sich ohne das DMS lesen. **Der Export ist unverschlüsselt** �
 | Ordner/Datei | Inhalt |
 | --- | --- |
 | \`manifest.json\` | Formatversion, Anzahlen, Größe und SHA-256 jeder Datei, wo jede Tabelle steht |
-| \`struktur/\` | Mappentypen (Felder, Register, Titelvorlagen, Berechtigungen, Archiv), Sichten, Nummernkreise, Designs, Benutzer (ohne Passwörter) |
+| \`struktur/\` | Mappentypen (Felder, Register, Titelvorlagen, Berechtigungen, Archiv), Ansichten, Nummernkreise, Designs, Benutzer (ohne Passwörter) |
 | \`daten/<typ>.csv\` | je Mappentyp eine Tabelle: eine Zeile je Mappe, eine Spalte je Feldschlüssel; Verweise als Id und \`_titel\` |
 | \`daten/<typ>.jsonl\` | dasselbe verlustfrei als JSON Lines (eine Mappe je Zeile) |
 | \`daten/<typ>.xlsx\` | dasselbe für Excel/LibreOffice, mit Spaltenüberschriften |

@@ -31,7 +31,7 @@ Darunter stehen die letzte Prüfung, Dateien, die noch geschrieben werden, die z
 ## Was beim Übernehmen passiert
 
 - **Jede Datei wird eine eigene Post** mit Kanal *Ordner*, Richtung eingehend, Stand *Neu*. Der Betreff ist der Dateiname ohne Endung. In der Historie steht „aus dem Eingangsordner übernommen (eingang/…)“; angelegt hat sie der *Eingangsordner*, kein Benutzer.
-- **Unterordner für Benutzer:** Liegt die Datei in einem Unterordner mit dem Namen, Vornamen oder dem Teil der E-Mail-Adresse vor dem @ eines Benutzers (z. B. `eingang/thomas/`), steht dieser Benutzer bei **Für** – die Post erscheint in seinem Eingang. So wählt jeder am Scanner sein eigenes Ziel. Andere Unterordner zählen wie der Hauptordner.
+- **Unterordner für Benutzer:** Liegt die Datei in einem Unterordner mit dem Namen, Vornamen oder dem Teil der E-Mail-Adresse vor dem @ eines Benutzers (z. B. `eingang/thomas/`), steht dieser Benutzer bei **Für** – die Post erscheint bei ihm unter „Zu erledigen“. So wählt jeder am Scanner sein eigenes Ziel. Andere Unterordner zählen wie der Hauptordner.
 - **Nur fertige Dateien:** Eine Datei wird erst übernommen, wenn sich Größe und Änderungszeit über zwei Prüfungen nicht geändert haben – Scanner schreiben langsam.
 - **Übersprungen** werden versteckte und temporäre Dateien (`.*`, `~*`, `*.tmp`, `*.part`, `Thumbs.db`, `desktop.ini`), die Ordner der NAS-Systeme (`@eaDir`, `#recycle`, `.@__thumb`, `@Recycle`, `.Trash*`) sowie `erledigt/` und `fehler/`.
 - **Abgelehnt** werden leere Dateien und Dateien über 100 MB: Sie wandern nach **`fehler/`**, daneben eine Textdatei mit dem Grund; die Werkbank zeigt eine Meldung. Ist die [Speicherplatz](speicherplatz.md)-Grenze erreicht, bleibt die Datei liegen und kommt dran, sobald wieder Platz ist.

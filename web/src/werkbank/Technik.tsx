@@ -40,7 +40,7 @@ function zeilenAus(u: Systemuebersicht): Zeilen {
       ['PostgreSQL', db.version],
       ['Ort', u.dms.variante === 'komplett' ? 'im Container (dms-komplett)' : 'eigener Datenbank-Server bzw. Container'],
       ['Größe', groesse(db.groesseBytes)],
-      ['Mappen / Typen / Benutzer', `${db.mappen.toLocaleString('de-DE')} / ${db.typen} / ${db.benutzer}`],
+      ['Mappen / Mappentypen / Benutzer', `${db.mappen.toLocaleString('de-DE')} / ${db.typen} / ${db.benutzer}`],
       ['Dokumente', `${db.dokumente.toLocaleString('de-DE')} (${groesse(db.dokumenteBytes)})`],
     ] : [['Fehler', (u.datenbank as { fehler: string }).fehler]]],
     ['Bibliotheken (Server)', Object.entries(u.bibliotheken).map(([k, v]) => [k, v ?? 'nicht gefunden'])],

@@ -57,7 +57,7 @@ export function App() {
       {vertretung && (
         <div className="vertretungsbanner" role="alert">
           <p><strong>{vertretung.adminName}, du agierst als {ich.name || ich.email}</strong> ({ich.email}, seit {uhrzeit(vertretung.beginn)}). Alles, was du jetzt tust, geschieht unter diesem Konto.</p>
-          <button className="knopf klein" onClick={() => void api.vertretungBeenden().then(() => { geheZu('/werkbank/benutzer', true); return aktualisieren(); })}>Zurück zu meinem Konto</button>
+          <button className="knopf klein" onClick={() => void api.vertretungBeenden().then(() => { geheZu('/werkbank/benutzer', true); return aktualisieren(); })}>Zurück zum eigenen Konto</button>
         </div>
       )}
       {!vertretung && hinweise.length > 0 && <Hinweise />}
@@ -151,7 +151,7 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
             {vertretung && <span className="chip warn">Als {ich.name || ich.email} angemeldet</span>}
             {abwesend && <Link to="/profil/abwesenheit" className="chip warn">Du bist abwesend{ich.abwesenheit?.bis ? ` (bis ${ich.abwesenheit.bis.split('-').reverse().join('.')})` : ''}</Link>}
           </div>
-          {vertretung && <button type="button" className="menuepunkt" onClick={() => { setOffen(false); void api.vertretungBeenden().then(() => { geheZu('/werkbank/benutzer', true); return aktualisieren(); }); }}>Vertretung beenden</button>}
+          {vertretung && <button type="button" className="menuepunkt" onClick={() => { setOffen(false); void api.vertretungBeenden().then(() => { geheZu('/werkbank/benutzer', true); return aktualisieren(); }); }}>Zurück zum eigenen Konto</button>}
           {/* Jeder Weg nur einmal (#175): Darstellung, Abwesenheit usw. sind Reiter unter „Mein Konto“. */}
           <Link to="/profil/konto" className="menuepunkt">Mein Konto</Link>
           <a href={handbuch('benutzer')} target="_blank" rel="noreferrer" className="menuepunkt" onClick={() => setOffen(false)}>Hilfe <span aria-hidden="true">↗</span></a>

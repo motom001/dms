@@ -321,7 +321,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
         neuLaden={mappe ? async () => { await neuLaden?.(); await d.neuLaden(); } : undefined} />
     );
   } else if (reg.art === 'protokoll') {
-    inhalt = mappe ? <Historie mappeId={mappe.id} stand={mappe.geaendert} /> : <p className="leise">Das Protokoll beginnt mit dem ersten Speichern.</p>;
+    inhalt = mappe ? <Historie mappeId={mappe.id} stand={mappe.geaendert} /> : <p className="leise">Die Historie beginnt mit dem ersten Speichern.</p>;
   } else if (!mappe) {
     inhalt = <p className="leise">Verknüpfungen entstehen, sobald andere Mappen auf diese verweisen – also nach dem ersten Speichern.</p>;
   } else if (!details) {
@@ -571,7 +571,7 @@ function LoeschHindernis({ l }: { l: NonNullable<MappeDetails['loeschbar']> }) {
 
 function Verknuepfungen({ mappe, gruppen }: { mappe: Mappe; gruppen: ReturnType<typeof verknuepfungsGruppen> }) {
   const d = useDaten();
-  if (!gruppen.length) return <p className="leise">Kein Mappentyp verweist auf „{d.typ(mappe.typId)?.name}“. Lege dafür in der Werkbank ein Referenzfeld an.</p>;
+  if (!gruppen.length) return <p className="leise">Kein Mappentyp verweist auf „{d.typ(mappe.typId)?.name}“. Lege dafür in der Werkbank ein Verweisfeld an.</p>;
   return (
     <div className="gruppen">
       {gruppen.map(({ t, f, treffer, liste }) => (

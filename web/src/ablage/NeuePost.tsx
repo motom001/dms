@@ -194,7 +194,7 @@ export function NeuKnopf() {
             {post && <button type="button" className="menuepunkt" role="menuitem" onClick={() => { setOffen(false); eingabe.current?.click(); }}>Post <span className="leise klein">– Dateien auswählen{' '}oder fotografieren</span></button>}
             {typen.length > 0 && <button type="button" className="menuepunkt" role="menuitem" onClick={() => setMappe(true)}>Mappe … <span aria-hidden="true">›</span></button>}
           </> : <>
-            <p className="leise klein">Neue Mappe vom Typ</p>
+            <p className="leise klein">Neue Mappe vom Mappentyp</p>
             {typen.map((t) => <button key={t.id} type="button" className="menuepunkt" role="menuitem" onClick={() => { setOffen(false); setMappe(false); geheZu(`/ablage/${t.id}/neu`); }}>{t.name}</button>)}
           </>}
         </div>

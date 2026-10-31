@@ -96,7 +96,7 @@ describe('Auswahlfilter mit Werten der eigenen Mappe (#173)', () => {
     const ref = (wert: unknown) => ({ key: 'arzt', label: 'Arzt', typ: 'referenz', zielTyp: partner.id, auswahlFilter: [{ art: 'feld', feld: 'fach', op: 'einerVon', wert }] });
     const meldet = (re: RegExp) => (e: unknown) => e instanceof Fachfehler && re.test(JSON.stringify(e.details));
     await assert.rejects(probe([ref({ art: 'eigenesFeld', feld: 'fehlt' })]), meldet(/gibt es nicht/));
-    await assert.rejects(probe([ref({ art: 'eigenesFeld', feld: 'arzt' })]), meldet(/eigene Referenzfeld/));
+    await assert.rejects(probe([ref({ art: 'eigenesFeld', feld: 'arzt' })]), meldet(/eigene Verweisfeld/));
     await assert.rejects(probe([{ key: 'n', label: 'Nummer', typ: 'zahl' }, ref({ art: 'eigenesFeld', feld: 'n' })]), meldet(/passt nicht/));
     // Auswahl mit Werten, die es am Ziel nicht gibt
     await assert.rejects(probe([{ key: 'g', label: 'G', typ: 'auswahl', optionen: ['Kardiologie', 'Neurologie'] }, ref({ art: 'eigenesFeld', feld: 'g' })]), meldet(/passt nicht/));

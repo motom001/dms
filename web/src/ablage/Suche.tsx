@@ -65,7 +65,7 @@ export function Suchformular({ suche, zeigeTreffer }: { suche: URLSearchParams; 
 
   return (
     <form className="suchformular stapel" onSubmit={suchen} aria-label="Erweiterte Suche">
-      <Link to="/ablage/eingang" className="verweis klein">← zurück zu den Sichten</Link>
+      <Link to="/ablage/eingang" className="verweis klein">← zurück zu den Ansichten</Link>
       <h2 className="h3">Erweiterte Suche <Hilfe ort="ablage.erweitertesuche" /></h2>
 
       <fieldset className="suchgruppe">
@@ -77,7 +77,7 @@ export function Suchformular({ suche, zeigeTreffer }: { suche: URLSearchParams; 
             ))}
           </div>
         )}
-        <p className="leise klein">{gewaehlt.length ? (gewaehlt.length > 1 ? 'Angeboten werden die Felder, die alle gewählten Typen haben.' : '') : 'Ohne Auswahl: alle Typen, die du lesen darfst – dann nur mit den allgemeinen Feldern.'}</p>
+        <p className="leise klein">{gewaehlt.length ? (gewaehlt.length > 1 ? 'Angeboten werden die Felder, die alle gewählten Mappentypen haben.' : '') : 'Ohne Auswahl: alle Mappentypen, die du lesen darfst – dann nur mit den allgemeinen Feldern.'}</p>
       </fieldset>
 
       <fieldset className="suchgruppe">

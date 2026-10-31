@@ -7,7 +7,7 @@
 
 ### Neu
 
-- **Hilfe genau da, wo du sie brauchst** (#110): Ein kleines **?** an jedem Bereich der Werkbank und an vielen Zwischenüberschriften (Felder, Register, Trefferlisten, Bedingungen, Abwesenheit, Zugang sperren, Sicherung …), in der Ablage (Eingang, Favoriten, Papierkorb, Sichten, Dokumente) und im Profil öffnet in einem neuen Tab genau den passenden Abschnitt im Handbuch.
+- **Hilfe genau da, wo du sie brauchst** (#110): Ein kleines **?** an jedem Bereich der Werkbank und an vielen Zwischenüberschriften (Felder, Register, Trefferlisten, Bedingungen, Abwesenheit, Zugang sperren, Sicherung …), in der Ablage (Eingang, Favoriten, Papierkorb, Ansichten, Dokumente) und im Profil öffnet in einem neuen Tab genau den passenden Abschnitt im Handbuch.
 - **Handbuch je Version** (#111): Zu jeder Version gibt es ein eigenes Handbuch mit Versionsauswahl. Hilfe-Links aus dem DMS führen zum Handbuch der installierten Version. Neue Seite **Neu in dieser Version** in beiden Handbüchern.
 
 ### Für Administratoren

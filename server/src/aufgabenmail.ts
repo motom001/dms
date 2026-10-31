@@ -135,7 +135,7 @@ export class Aufgabenmail {
       if (!liste.length) return false;
       const basis = this.adresse().replace(/\/+$/, '');
       const zeilen = await Promise.all(liste.map(async (a) => `- ${a.mappeTitel || 'Ohne Titel'} (${await this.quelle.typName(a.typId)}): ${a.text}\n  ${basis}/ablage/eingang/${a.mappeId}`));
-      const text = `Hallo ${b.name || b.email},\n\ndu hast ${liste.length === 1 ? 'eine offene Aufgabe' : `${liste.length} offene Aufgaben`} im DMS:\n\n${zeilen.join('\n')}\n\nAlle findest du im Eingang: ${basis}/ablage/eingang\n\nUhrzeit und Wochentage dieser Zusammenfassung stellst du in deinem Profil ein; dort kannst du sie auch abbestellen.\n`;
+      const text = `Hallo ${b.name || b.email},\n\ndu hast ${liste.length === 1 ? 'eine offene Aufgabe' : `${liste.length} offene Aufgaben`} im DMS:\n\n${zeilen.join('\n')}\n\nAlle findest du unter „Zu erledigen“: ${basis}/ablage/eingang\n\nUhrzeit und Wochentage dieser Zusammenfassung stellst du in deinem Profil ein; dort kannst du sie auch abbestellen.\n`;
       try {
         await mailer.sende(b.email, `DMS: ${liste.length === 1 ? 'eine offene Aufgabe' : `${liste.length} offene Aufgaben`}`, text);
         return true;

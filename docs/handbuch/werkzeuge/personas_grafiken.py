@@ -181,7 +181,7 @@ def alle_karten():
     karte('persona-3-markus.svg', 3, 'Haushalts-Admin · Markus', 'Markus (45) · Eigenheim, Familie, Fahrzeuge · NAS mit Docker', 'kern',
           boden(24, 330, B) + haus(196, B, 110, 80) + person(110, B, 1.45, '#5c6bc0') + tisch(30, B - 70, 150)
           + nas(42, B - 126, 1.0) + laptop(120, B - 70, 1.0) + sprechblase(150, 32, 'Haus › Heizung › Wartung', 172),
-          ['eigene Mappentypen', 'Berechtigungen', 'Postfach und Scanner', 'Sicherung 3-2-1', 'erweiterte Ansicht', 'API und Konsole', 'Vollexport'],
+          ['eigene Mappentypen', 'Berechtigungen', 'Postfach und Scanner', 'Sicherung 3-2-1', 'Expertenmodus', 'API und Konsole', 'Vollexport'],
           ['Wichtig: Markus richtet das DMS für Lena und Jonas ein –', 'die beiden müssen verstehen, was er baut.'])
     karte('persona-4-petra.svg', 4, 'Für die Eltern sorgen · Petra', 'Petra (52) und zwei Brüder · Mutter (81) lebt allein · drei Städte', 'fokus',
           boden(24, 330, B) + person(80, B, 1.25, '#8e24aa') + person(160, B, 1.2, '#78909c', alt=True)

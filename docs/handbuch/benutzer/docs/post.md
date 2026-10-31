@@ -6,13 +6,13 @@ Alles, was ins DMS kommt oder hinausgeht, ist **Post**: ein eingescannter Brief,
 
 ## Neue Post
 
-Ganz oben in der Ablage steht die Sicht **Neue Post**. Sie zeigt alle Post, die noch niemand zugeordnet oder erledigt hat. Gibt es welche, ist die Zahl daneben farbig hervorgehoben, wie beim [Eingang](eingang.md).
+Ganz oben in der Ablage steht die Ansicht **Neue Post**. Sie zeigt alle Post, die noch niemand zugeordnet oder erledigt hat. Gibt es welche, ist die Zahl daneben farbig hervorgehoben, wie bei [Zu erledigen](eingang.md).
 
 ### Neue Post anlegen – von überall
 
 - **Dateien ins Fenster ziehen:** Zieh eine oder mehrere Dateien **irgendwo** ins Browserfenster des DMS, egal auf welcher Seite. Es erscheint die Fläche **„Hier neue Dokumente ablegen“**. Lässt du los, kommen alle Dateien **zusammen in eine neue Post**, und die öffnet sich gleich.
 - **+ Neu** in der Kopfzeile → **Post**: Dateien auswählen. Am Handy und Tablet bietet die Auswahl auch die **Kamera** an – dort ist das der Weg für neue Post.
-- **+ Post** oben in den Sichten mit Post macht dasselbe.
+- **+ Post** oben in den Ansichten mit Post macht dasselbe.
 
 ![Dateien ablegen](bilder/post-ablegen.png)
 
@@ -24,7 +24,7 @@ Den Betreff nimmt das DMS aus dem ersten Dateinamen; ändern kannst du ihn jeder
 
 Die Fläche erscheint nur beim Ziehen von Dateien, nicht bei Text oder Links, und nur, wenn du Post anlegen darfst. Mit Esc oder wenn du das Fenster verlässt, verschwindet sie. Im Wartungsmodus und solange das DMS nicht erreichbar ist, erscheint stattdessen ein kurzer Hinweis.
 
-**+ Neu → Mappe …** legt eine neue, leere Mappe eines Typs an, den du anlegen darfst.
+**+ Neu → Mappe …** legt eine neue, leere Mappe eines Mappentyps an, den du anlegen darfst.
 
 ### Per E-Mail ins DMS
 
@@ -34,11 +34,11 @@ Hat dein Administrator ein [Postfach](https://motom001.github.io/dms/admin/aktue
 
 ### Scannen in den Eingangsordner
 
-Hat dein Administrator einen [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/) eingerichtet, scannst du einfach in diesen Ordner („Scan to Folder“ am Scanner). **Jede Datei wird eine eigene neue Post** mit Kanal *Ordner*; den Betreff nimmt das DMS aus dem Dateinamen. Scannst du in deinen eigenen Unterordner, z. B. `eingang/thomas/`, steht die Post gleich **für dich** in deinem Eingang. Die Datei verschwindet danach aus dem Ordner (sie liegt in `erledigt/`).
+Hat dein Administrator einen [Eingangsordner](https://motom001.github.io/dms/admin/aktuell/eingangsordner/) eingerichtet, scannst du einfach in diesen Ordner („Scan to Folder“ am Scanner). **Jede Datei wird eine eigene neue Post** mit Kanal *Ordner*; den Betreff nimmt das DMS aus dem Dateinamen. Scannst du in deinen eigenen Unterordner, z. B. `eingang/thomas/`, steht die Post gleich **für dich** bei dir unter „Zu erledigen“. Die Datei verschwindet danach aus dem Ordner (sie liegt in `erledigt/`).
 
 ![+ Neu](bilder/neu-knopf.png)
 
-Unter der Sicht **Post** findest du alle Post, auch die zugeordnete und erledigte, mit den Untersichten **Eingegangen** und **Versendet**.
+Unter der Ansicht **Post** findest du alle Post, auch die zugeordnete und erledigte, mit den Unteransichten **Eingegangen** und **Versendet**.
 
 ## Was an einer Post steht
 
@@ -56,7 +56,7 @@ Kanal und *Zugeordnet zu* setzt das DMS selbst. Alles andere kannst du ändern w
 
 ## Für jemanden
 
-Trägst du bei **Für** einen Benutzer ein, steht die Post in seinem [Eingang](eingang.md) mit der Aufgabe **Neue Post**. Wird sie zugeordnet, erledigt oder an jemand anderen gegeben, erledigt sich die Aufgabe von selbst. Ist der Benutzer abwesend, bekommt sie sein Vertreter.
+Trägst du bei **Für** einen Benutzer ein, steht die Post bei ihm unter [Zu erledigen](eingang.md) mit der Aufgabe **Post für dich**. Wird sie zugeordnet, erledigt oder an jemand anderen gegeben, erledigt sich die Aufgabe von selbst. Ist der Benutzer abwesend, bekommt sie sein Vertreter.
 
 ## Zuordnen
 
@@ -67,7 +67,7 @@ Oben in einer Post steht eine Leiste mit dem **Stand** und dem Knopf **Zuordnen 
 3. Wähle die **Dokumente**, die mitgehen. Vorausgewählt sind alle. Hat der Mappentyp mehrere Dokumentenregister, wählst du das Register.
 4. **Zuordnen**.
 
-Danach liegen die Dokumente in der Mappe, und die Post verweist auf sie. Ihr Stand ist *Zugeordnet*. Im [Protokoll](zusammenarbeit.md#protokoll) beider Mappen steht, was passiert ist. Der Volltext der Dokumente zieht mit um.
+Danach liegen die Dokumente in der Mappe, und die Post verweist auf sie. Ihr Stand ist *Zugeordnet*. In der [Historie](zusammenarbeit.md#historie) beider Mappen steht, was passiert ist. Der Volltext der Dokumente zieht mit um.
 
 Bei **neue anlegen** öffnet sich das Formular des Mappentyps. Betreff und Datum der Post sind als Vorschlag schon eingetragen. Nach **Mappe speichern** wird die Post der neuen Mappe zugeordnet.
 
@@ -83,4 +83,4 @@ Wird eine Mappe gelöscht, bleibt die Post erhalten. Nur der Verweis auf diese M
 
 ## Wer darf was?
 
-Wer Post sieht, anlegt, bearbeitet und löscht, regeln die [Berechtigungen](mappen.md#was-du-sehen-und-andern-darfst) des Typs *Post*. Zum Zuordnen brauchst du das Recht, die Post **und** die Zielmappe zu bearbeiten.
+Wer Post sieht, anlegt, bearbeitet und löscht, regeln die [Berechtigungen](mappen.md#was-du-sehen-und-andern-darfst) des Mappentyps *Post*. Zum Zuordnen brauchst du das Recht, die Post **und** die Zielmappe zu bearbeiten.

@@ -84,7 +84,7 @@ export function AufgabenPanel({ z }: { z: AufgabenZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Aufgaben</h1>
-        <p className="leise">Aufgaben entstehen, wenn eine Mappe nicht mehr zur Definition passt (für ihren Ersteller), wenn jemand in einem formatierten Text erwähnt wird, oder von Hand an der Mappe. Jede Mappe mit offener Aufgabe steht im Eingang ihres Empfängers. Weitergeben dürfen der Empfänger und Administratoren; das steht im Protokoll.</p>
+        <p className="leise">Aufgaben entstehen, wenn eine Mappe nicht mehr zur Definition passt (für ihren Ersteller), wenn jemand in einem formatierten Text erwähnt wird, oder von Hand an der Mappe. Jede Mappe mit offener Aufgabe steht unter „Zu erledigen“ ihres Empfängers. Weitergeben dürfen der Empfänger und Administratoren; das steht im Protokoll.</p>
       </div>
       <form className="blatt" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }}>
         <h2 className="h3">Tägliche Zusammenfassung</h2>

@@ -2,7 +2,7 @@
 
 Wer Bücher führt oder Aufzeichnungen machen muss – auch mit Einnahmen-Überschuss-Rechnung, also z. B. bei freiberuflicher Arbeit, Kleingewerbe oder Photovoltaik mit Gewerbe –, braucht nach den **GoBD** eine **Verfahrensdokumentation**: eine Beschreibung, wie Belege entstehen, ins System kommen, aufbewahrt, geschützt und wieder gefunden werden. Für reine Privathaushalte gelten die GoBD nicht; bei Vermietung oder Handwerkerrechnungen schadet Ordnung trotzdem nicht.
 
-Eine Software allein ist nie „GoBD-konform“ – das wird erst das beschriebene und gelebte Verfahren. Das DMS **unterstützt** dabei: Protokoll jeder Änderung, Prüfwerte der Dateien, Berechtigungen, verschlüsselte Sicherung mit Probe-Wiederherstellung.
+Eine Software allein ist nie „GoBD-konform“ – das wird erst das beschriebene und gelebte Verfahren. Das DMS **unterstützt** dabei: Historie jeder Änderung, Prüfwerte der Dateien, Berechtigungen, verschlüsselte Sicherung mit Probe-Wiederherstellung.
 
 ## Die Vorlage
 
@@ -17,8 +17,8 @@ Sie ist gegliedert in:
 1. **Allgemeines** – wer, welche Tätigkeit, welche Version und Variante des DMS
 2. **Belegeingang** – Papier, elektronische Belege und E-Rechnungen im Originalformat, Zuordnen
 3. **Ersetzendes Scannen** – Gerät, Kontrolle, wann das Papier vernichtet wird, Ausnahmen
-4. **Ablage und Ordnung** – Mappentypen, Pflichtfelder, Sichten, Aufbewahrungsfristen
-5. **Nachvollziehbarkeit und Unveränderbarkeit** – Protokoll, Prüfwerte, Papierkorb
+4. **Ablage und Ordnung** – Mappentypen, Pflichtfelder, Ansichten, Aufbewahrungsfristen
+5. **Nachvollziehbarkeit und Unveränderbarkeit** – Historie der Mappen, Protokoll, Prüfwerte, Papierkorb
 6. **Zugriffsschutz** – Konten, Rollen, Berechtigungen, Lesezugang für Prüfer
 7. **Datensicherung und Wiederherstellung** – Zeitplan, Kopie außer Haus, Notfallblatt, Probe
 8. **Betrieb** – Updates, Wartungsmodus, Protokoll

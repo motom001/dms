@@ -8,7 +8,7 @@
 export const EINSTELLUNG_TYPEN = {
   text: 'Text', mehrzeilig: 'Mehrzeiliger Text', zahl: 'Zahl', janein: 'Ja/Nein', datum: 'Datum',
   auswahl: 'Auswahl', mehrfachauswahl: 'Mehrfachauswahl', geheim: 'Geheimnis',
-  mappentyp: 'Mappentyp', feld: 'Feld eines Mappentyps', benutzer: 'Benutzer', rolle: 'Rolle', sicht: 'Sicht',
+  mappentyp: 'Mappentyp', feld: 'Feld eines Mappentyps', benutzer: 'Benutzer', rolle: 'Rolle', sicht: 'Ansicht',
 } as const;
 export type EinstellungTyp = keyof typeof EINSTELLUNG_TYPEN;
 const VERWEISE: EinstellungTyp[] = ['mappentyp', 'feld', 'benutzer', 'rolle', 'sicht'];
@@ -195,7 +195,7 @@ export function pruefeWerte(b: Einstellungsbeschreibung, eingabe: unknown, q: Ve
       case 'mappentyp': if (!q.typen.some((t) => t.id === v)) { fehler[pfad] = 'Diesen Mappentyp gibt es nicht.'; return null; } return v;
       case 'benutzer': if (!q.benutzer.includes(String(v))) { fehler[pfad] = 'Diesen Benutzer gibt es nicht.'; return null; } return v;
       case 'rolle': if (!q.rollen.includes(String(v))) { fehler[pfad] = 'Diese Rolle gibt es nicht.'; return null; } return v;
-      case 'sicht': if (!q.sichten.includes(String(v))) { fehler[pfad] = 'Diese Sicht gibt es nicht.'; return null; } return v;
+      case 'sicht': if (!q.sichten.includes(String(v))) { fehler[pfad] = 'Diese Ansicht gibt es nicht.'; return null; } return v;
       case 'feld': {
         const x = v as Partial<FeldVerweis>;
         const soll = f.mappentyp ? q.typVon(f.mappentyp) : null;

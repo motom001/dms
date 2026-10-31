@@ -195,7 +195,7 @@ export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boole
           <dt>Dokumente</dt><dd>{e.dokumente || <span className="leise">keine</span>}</dd>
         </dl>
       </section>
-      <p className="leise klein">Beim Wiederherstellen kommen Dokumente und Verweise mit. Verweise auf Mappen, die es nicht mehr gibt, entfallen; ist ein eindeutiger Wert inzwischen vergeben, landet die Mappe im Eingang.</p>
+      <p className="leise klein">Beim Wiederherstellen kommen Dokumente und Verweise mit. Verweise auf Mappen, die es nicht mehr gibt, entfallen; ist ein eindeutiger Wert inzwischen vergeben, landet die Mappe unter „Zu erledigen“.</p>
       {meldung && <div className="hinweis schlecht"><p>{meldung}</p></div>}
       <div className="knoepfe">
         <button type="button" className="knopf gefahr-rand" disabled={!!laeuft} onClick={() => void endgueltig()}>{laeuft === 'weg' ? 'Lösche …' : 'Endgültig löschen'}</button>
@@ -237,7 +237,7 @@ export function PapierkorbEinstellungen({ z }: { z: PapierkorbZustand }) {
         <label className="eigenschaft"><span>Tage <small>0 = kein Papierkorb, Löschen ist sofort endgültig</small></span>
           <input type="number" min={0} max={3650} value={tage} onChange={(ev) => { setTage(ev.target.value); setMeldung(undefined); }} /></label>
         <p className="leise klein">Einzeln gelöschte Dokumente und das Entfernen der Demo-Daten sind immer sofort endgültig.</p>
-        <label className="eigenschaft"><span>Protokoll endgültig gelöschter Mappen behalten <small>Tage, danach wird ihre Änderungshistorie gelöscht</small></span>
+        <label className="eigenschaft"><span>Historie endgültig gelöschter Mappen behalten <small>Tage, danach wird ihre Änderungshistorie gelöscht</small></span>
           <input type="number" min={0} max={36500} value={hTage} onChange={(ev) => { setHTage(ev.target.value); setMeldung(undefined); }} /></label>
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         <div className="knoepfe"><button className="knopf primaer" disabled={!Number.isInteger(n) || n < 0 || !Number.isInteger(h) || h < 0 || !geaendert}>Speichern</button></div>

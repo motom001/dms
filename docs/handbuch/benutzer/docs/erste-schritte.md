@@ -30,13 +30,13 @@ Oben siehst du die Bereiche:
 
 Die Ablage ist in **drei Spalten** geteilt, von groß nach klein:
 
-1. **Sichten** links – welche Art von Mappen du sehen willst, zum Beispiel alle Verträge.
-2. **Liste** in der Mitte – die Mappen dieser Sicht.
+1. **Ansichten** links – welche Art von Mappen du sehen willst, zum Beispiel alle Verträge.
+2. **Liste** in der Mitte – die Mappen dieser Ansicht.
 3. **Mappe** rechts – die geöffnete Mappe mit ihren Registern.
 
-![Drei Spalten: Sichten, Liste, Mappe](bilder/ablage.png)
+![Drei Spalten: Ansichten, Liste, Mappe](bilder/ablage.png)
 
-Ein Klick auf **DMS** oben links bringt dich von überall zurück zur Startseite, dem [Eingang](eingang.md).
+Ein Klick auf **DMS** oben links bringt dich von überall zurück zur Startseite, der Liste [Zu erledigen](eingang.md).
 
 Steht neben einer Überschrift ein kleines **?**, öffnet es in einem neuen Tab genau den passenden Abschnitt dieses Handbuchs – passend zur Version deines DMS. Was neu ist, steht unter [Neu in dieser Version](neu.md).
 
@@ -45,10 +45,10 @@ Steht neben einer Überschrift ein kleines **?**, öffnet es in einem neuen Tab 
 Zwischen den Spalten liegen schmale Griffe:
 
 - **Ziehen** verändert die Breite.
-- **Kurz klicken** klappt die Sichten bzw. die Mappe ein und wieder aus.
+- **Kurz klicken** klappt die Ansichten bzw. die Mappe ein und wieder aus.
 - Mit der Tastatur: Griff anwählen, dann ++arrow-left++ und ++arrow-right++; ++home++ setzt die Breite zurück.
 
-Dein Gerät merkt sich die Breiten für dich. Ist etwas verschwunden, hilft im [Profil](profil.md#ansicht-zurucksetzen) **Standard-Ansicht wiederherstellen**.
+Dein Gerät merkt sich die Breiten für dich. Ist etwas verschwunden, hilft im [Profil](profil.md#darstellung) **Standard-Darstellung wiederherstellen**.
 
 Auf dem Smartphone und in schmalen Fenstern siehst du immer nur eine Spalte; über **← Zur Liste** geht es zurück.
 

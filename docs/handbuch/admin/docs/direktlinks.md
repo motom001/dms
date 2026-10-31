@@ -1,6 +1,6 @@
 # Sprechende Links
 
-Ein sprechender Link findet eine Mappe über ihren **Mappentyp** und ihre **Angaben** statt über ihre technische Id. Den Link kannst du einem Kollegen mit eigenem Konto per Mail oder Chat schicken oder in anderen Programmen hinterlegen, etwa:
+Ein Link über Mappentyp und Feldwerte findet eine Mappe über ihren **Mappentyp** und ihre **Angaben** statt über ihre technische Id. Den Link kannst du einem Kollegen mit eigenem Konto per Mail oder Chat schicken oder in anderen Programmen hinterlegen, etwa:
 
 ```
 http://<NAS>:8080/ablage/link?typ=rechnung&rechnungsnummer=A-2020-11380
@@ -11,11 +11,11 @@ Eingerichtet wird dafür nichts: Jeder Link, der dem Aufbau unten folgt, funktio
 ## Was der Link zeigt
 
 - **Ein Treffer:** Die Mappe öffnet sich.
-- **Mehrere Treffer:** Die Trefferliste erscheint als vorübergehende Sicht „Link: Rechnung“ – mit den Bedingungen darunter –, und die erste Mappe ist geöffnet. Im Sichtenbaum erscheint diese Sicht nicht.
+- **Mehrere Treffer:** Die Trefferliste erscheint als vorübergehende Ansicht „Link: Rechnung“ – mit den Bedingungen darunter –, und die erste Mappe ist geöffnet. Im Ansichtenbaum erscheint diese Ansicht nicht.
 - **Kein Treffer:** Die leere Liste nennt die gesuchten Bedingungen.
-- **Fehler im Link** (unbekannter Mappentyp, Tippfehler im Feldschlüssel, unpassender Operator, ungültiger Wert): Das DMS zeigt, was nicht stimmt – nie stillschweigend alle Mappen.
+- **Fehler im Link** (unbekannter Mappentyp, Tippfehler in der Kennung eines Felds, unpassender Operator, ungültiger Wert): Das DMS zeigt, was nicht stimmt – nie stillschweigend alle Mappen.
 
-![Trefferliste eines sprechenden Links](bilder/direktlink.png)
+![Trefferliste eines Links über Mappentyp und Feldwerte](bilder/direktlink.png)
 
 Die Adresse im Browser bleibt der Link, auch wenn eine Mappe geöffnet ist oder die Liste umsortiert wird. Wer nicht angemeldet ist, meldet sich an und landet danach direkt beim Link. Es gelten die Rechte des Empfängers: Er sieht nur, was er auch in der Ablage sieht.
 
@@ -27,17 +27,17 @@ Die Adresse im Browser bleibt der Link, auch wenn eine Mappe geöffnet ist oder 
 
 | Teil | Bedeutung |
 | --- | --- |
-| `typ=rechnung` | **Schlüssel** des Mappentyps (siehe [Mappentypen](mappentypen.md#grunddaten)). Auch der **Name** geht (Groß- und Kleinschreibung zählen nicht) – aber nur der Schlüssel bleibt gültig, wenn der Mappentyp umbenannt wird. „Link kopieren“ nutzt den Schlüssel. |
-| `rechnungsnummer=A-2020-11380` | **Schlüssel** eines Feldes und der Wert: „ist gleich“. |
+| `typ=rechnung` | **Kennung** des Mappentyps (siehe [Mappentypen](mappentypen.md#grunddaten)). Auch der **Name** geht (Groß- und Kleinschreibung zählen nicht) – aber nur die Kennung bleibt gültig, wenn der Mappentyp umbenannt wird. „Link kopieren“ nutzt die Kennung. |
+| `rechnungsnummer=A-2020-11380` | **Kennung** eines Feldes und der Wert: „ist gleich“. |
 | `betrag.groesser=100` | Feld mit **Operator**. |
 | `sortierung=-rechnungsdatum` | Reihenfolge der Trefferliste; `-` = absteigend. Ohne: nach Titel. |
 
-Mehrere Bedingungen gelten **zusammen** (UND), wie in einer [Sicht](sichten.md). Sonderzeichen im Wert schreibst du so, wie Browser sie kodieren: Leerzeichen als `+` oder `%20`, `&` als `%26`, `+` als `%2B`.
+Mehrere Bedingungen gelten **zusammen** (UND), wie in einer [Ansicht](sichten.md). Sonderzeichen im Wert schreibst du so, wie Browser sie kodieren: Leerzeichen als `+` oder `%20`, `&` als `%26`, `+` als `%2B`.
 
 !!! warning "Mappentyp umbenennen macht Links ungültig"
-    Der Link nennt den Mappentyp beim **Namen**. Benennst du „Rechnung“ in „Eingangsrechnung“ um, finden alte Links den Typ nicht mehr und zeigen eine Fehlermeldung. Felder dagegen stehen mit ihrem **Schlüssel** im Link, der sich nie ändert (siehe [Mappentypen](mappentypen.md#der-schlussel)) – Bezeichnungen kannst du gefahrlos umbenennen.
+    Der Link nennt den Mappentyp beim **Namen**. Benennst du „Rechnung“ in „Eingangsrechnung“ um, finden alte Links den Mappentyp nicht mehr und zeigen eine Fehlermeldung. Felder dagegen stehen mit ihrer **Kennung** im Link, die sich nie ändert (siehe [Mappentypen](mappentypen.md#die-kennung)) – Bezeichnungen kannst du gefahrlos umbenennen.
 
-Den Schlüssel eines Feldes siehst du in der Werkbank beim Mappentyp, im Feld unter **Schlüssel**. Auch die Systemwerte gehen: `_erstellt`, `_geaendert` (Datum) sowie `_erstelltVon`, `_geaendertVon` (nur mit `ich`).
+Die Kennung eines Feldes siehst du in der Werkbank beim Mappentyp, im Feld unter **Kennung**. Auch die Systemwerte gehen: `_erstellt`, `_geaendert` (Datum) sowie `_erstelltVon`, `_geaendertVon` (nur mit `ich`).
 
 ### Ohne Operator
 
@@ -50,7 +50,7 @@ Den Schlüssel eines Feldes siehst du in der Werkbank beim Mappentyp, im Feld un
 
 ### Operatoren
 
-Es gibt dieselben Operatoren wie bei den Bedingungen einer Sicht – je Feldart dieselbe Auswahl:
+Es gibt dieselben Operatoren wie bei den Bedingungen einer Ansicht – je Feldart dieselbe Auswahl:
 
 | Operator | Bedeutung | Beispiel |
 | --- | --- | --- |
@@ -74,11 +74,11 @@ Groß- und Kleinschreibung der Operatoren zählt nicht (`nichtleer` geht auch).
 - **Zeitraum** (mit `imZeitraum`): `jahr` (aktuelles), `jahr-1` (letztes), `monat`, `monat+1` (nächster).
 - **Ich:** `ich` ist der angemeldete Benutzer – für Verweise auf Benutzer und für `_erstelltVon`/`_geaendertVon`, z. B. `verantwortlich=ich`.
 
-Verweise auf andere Mappen (etwa „Vertrag = …“), Passwortfelder sowie Bedingungen auf Dokumente und Verknüpfungen gehen im Link nicht. Dafür richtest du eine [Sicht](sichten.md) ein.
+Verweise auf andere Mappen (etwa „Vertrag = …“), Passwortfelder sowie Bedingungen auf Dokumente und Verknüpfungen gehen im Link nicht. Dafür richtest du eine [Ansicht](sichten.md) ein.
 
 ### Felder namens „typ“ oder „sortierung“
 
-`typ` und `sortierung` haben im Link eine feste Bedeutung. Ein Feld mit einem dieser Schlüssel erreichst du mit Operator: `typ.gleich=Laptop`.
+`typ` und `sortierung` haben im Link eine feste Bedeutung. Ein Feld mit einer dieser Kennungen erreichst du mit Operator: `typ.gleich=Laptop`.
 
 ## Beispiele
 
@@ -92,7 +92,7 @@ Verweise auf andere Mappen (etwa „Vertrag = …“), Passwortfelder sowie Bedi
 
 Ein Link mit Fehler zeigt, was nicht stimmt:
 
-![Fehlermeldung bei einem Tippfehler im Feldschlüssel](bilder/direktlink-fehler.png)
+![Fehlermeldung bei einem Tippfehler in der Kennung eines Felds](bilder/direktlink-fehler.png)
 
 ## Über die Schnittstelle
 

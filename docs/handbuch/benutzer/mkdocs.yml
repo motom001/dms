@@ -70,12 +70,12 @@ nav:
   - Neu in dieser Version: neu.md
   - Erste Schritte: erste-schritte.md
   - Arbeiten in der Ablage:
-      - Sichten und Listen: ablage.md
+      - Ansichten und Listen: ablage.md
       - Post: post.md
       - Mappen: mappen.md
       - Dokumente: dokumente.md
-      - Eingang und Aufgaben: eingang.md
-      - Notizen, Erwähnungen, Protokoll: zusammenarbeit.md
+      - Zu erledigen und Aufgaben: eingang.md
+      - Notizen, Erwähnungen, Historie: zusammenarbeit.md
       - E-Mail, PDF und Link: versenden.md
       - Benutzer und Rollen: benutzer-und-rollen.md
   - Profil und Einstellungen: profil.md

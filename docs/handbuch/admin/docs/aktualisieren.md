@@ -30,7 +30,7 @@ Welche Version läuft und ob es neuere gibt, zeigt **Werkbank → Technik** (sie
 
     Vor jeder Veröffentlichung prüft die CI die Images außerdem auf bekannte Sicherheitslücken. Mehr dazu in der [Sicherheitsrichtlinie](https://github.com/motom001/dms/blob/main/SECURITY.md).
 
-### Datenbank-Anbindung und Mandant (ab 0.24)
+### Datenbank-Anbindung und Haushalt (ab 0.24)
 
 Beim ersten Start übernimmt das DMS `DATABASE_URL` und – falls gesetzt – `HAUSHALT_ID` in die Datei `/data/geheim/datenbank.json` (siehe [Datenbank-Anbindung](installation.md#datenbank-anbindung)). Es läuft ohne Zutun weiter. Danach sind beide Variablen überflüssig; die Werkbank-Übersicht weist darauf hin, und du kannst sie beim nächsten Update aus der Compose-Datei entfernen. Ändern lässt sich die Anbindung dann unter **Werkbank → Datenbank-Anbindung**.
 

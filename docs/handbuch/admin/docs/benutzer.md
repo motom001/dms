@@ -7,7 +7,7 @@ Unter **Werkbank → Benutzer** legst du fest, wer sich anmelden darf und mit we
 ## Benutzer einladen
 
 1. **+ Neu**
-2. E-Mail-Adresse, Name und **Rolle** (*Administrator* oder *Mitglied*) eintragen, bei Bedarf **weitere Rollen** anhaken.
+2. E-Mail-Adresse, Name und **Systemrolle** (*Administrator* oder *Mitglied*) eintragen, bei Bedarf **Rollen** anhaken.
 3. **Anlegen und einladen**.
 
 ![Neuen Benutzer anlegen](bilder/werkbank-benutzer-neu.png)
@@ -20,8 +20,8 @@ Mit E-Mail-Versand fordern Benutzer den Link selbst an. Ohne E-Mail-Versand erze
 
 ## Ändern, deaktivieren, löschen
 
-- **Name** und **Rolle** änderst du direkt beim Benutzer. Die E-Mail-Adresse ändert jeder Benutzer selbst im Profil (mit seinem Passwort).
-- <span id="abwesenheit"></span>**Abwesenheit** – wie im Profil des Benutzers (siehe [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/profil/#abwesenheit)): an/aus, von, bis, Vertreter. Du kannst sie für andere eintragen, etwa bei Krankheit, und mit **Alle offenen Aufgaben an ‹Vertreter› geben** seine Aufgaben abgeben. Das steht im Protokoll seiner Benutzer-Mappe.
+- **Name** und **Systemrolle** änderst du direkt beim Benutzer. Die E-Mail-Adresse ändert jeder Benutzer selbst im Profil (mit seinem Passwort).
+- <span id="abwesenheit"></span>**Abwesenheit** – wie im Profil des Benutzers (siehe [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/profil/#abwesenheit)): an/aus, von, bis, Vertreter. Du kannst sie für andere eintragen, etwa bei Krankheit, und mit **Alle offenen Aufgaben an ‹Vertreter› geben** seine Aufgaben abgeben. Das steht in der Historie seiner Benutzer-Mappe.
 - <span id="zugang-sperren"></span>**Zugang sperren** (ganz unten) – **Benutzer deaktivieren** sperrt den Zugang sofort und beendet alle Sitzungen, nach einer Rückfrage. Die Mappe bleibt erhalten und heißt „… (ehemalig)“; alle Verweise auf ihn (z. B. als Verantwortlicher) bleiben gültig.
     - Das geht nur, wenn ein **Vertreter** hinterlegt ist und der Benutzer **keine offenen Aufgaben** mehr hat. Fehlt etwas, nennt der Abschnitt den Grund; Vertreter wählen und Aufgaben abgeben geht direkt darüber unter *Abwesenheit*.
     - Der Vertreter bleibt hinterlegt und wirkt **dauerhaft**: Was noch für den Deaktivierten entsteht (z. B. „passt nicht“ an Mappen, die er angelegt hat, oder eine Erwähnung in einem alten Text), bekommt der Vertreter.
@@ -47,7 +47,7 @@ Mit **Anzeigen** unter *Was sieht ein Benutzer?* siehst du je Mappentyp, wie vie
 
 ## Fehler nachstellen
 
-Meldet ein Benutzer einen Fehler, kannst du dich mit **Als … anmelden** als dieser Benutzer anmelden und siehst das DMS genau so wie er – mit seinen Rechten. Oben steht die ganze Zeit ein Warnhinweis mit **Zurück zu meinem Konto**.
+Meldet ein Benutzer einen Fehler, kannst du dich mit **Als … anmelden** als dieser Benutzer anmelden und siehst das DMS genau so wie er – mit seinen Rechten. Oben steht die ganze Zeit ein Warnhinweis mit **Zurück zum eigenen Konto** (auch im Menü unter deinem Namen).
 
 Der Benutzer sieht bei seiner nächsten Anmeldung, wer wann in seinem Namen gearbeitet hat. Alles, was du in dieser Zeit tust, geschieht unter seinem Konto.
 
@@ -58,18 +58,18 @@ Jeder Benutzer hat eine Mappe des [Systemmappentyps](mappentypen.md#systemmappen
 ![Benutzer-Mappe in der Ablage](bilder/benutzer-mappe.png)
 
 - **Das Konto ist führend.** Name, E-Mail-Adresse, Rollen und „aktiv“ übernimmt die Mappe automatisch aus dem Konto – beim Anlegen, bei jeder Änderung und bei jedem Start des DMS.
-- **Abwesenheit** steht in den Systemfeldern *Abwesend* (wirkt gerade), *Abwesend von*, *Abwesend bis* und *Vertreter*. Damit lassen sich Sichten wie „Abwesende Benutzer“ bauen, und ein Verknüpfungsregister mit der Quelle *Benutzer › Vertreter* zeigt, wen jemand vertritt. Hattest du schon eigene Felder mit diesen Schlüsseln, wurden sie beim Update umbenannt (z. B. `vertreter_alt`) – samt Werten.
+- **Abwesenheit** steht in den Systemfeldern *Abwesend* (wirkt gerade), *Abwesend von*, *Abwesend bis* und *Vertreter*. Damit lassen sich Ansichten wie „Abwesende Benutzer“ bauen, und ein Verknüpfungsregister mit der Quelle *Benutzer › Vertreter* zeigt, wen jemand vertritt. Hattest du schon eigene Felder mit diesen Kennungen, wurden sie beim Update umbenannt (z. B. `vertreter_alt`) – samt Werten.
 - **Diese Systemfelder sind in der Ablage nur lesbar.** Der Server lehnt Änderungen daran ab, auch über die Schnittstelle. Sonst könnte ein Mitglied die E-Mail-Adresse eines Administrators ändern und dessen Konto über „Passwort vergessen“ übernehmen – oder sich selbst zum Administrator machen.
 - **Eigene Felder** (z. B. Telefon) kannst du am Mappentyp ergänzen; die sind in der Ablage normal bearbeitbar.
 - Benutzer-Mappen lassen sich in der Ablage weder anlegen noch löschen.
 
 ## Rollen
 
-Neben der **Rolle** des Zugangs (*Administrator* oder *Mitglied*) kann ein Benutzer beliebig viele **weitere Rollen** haben – fachliche Zuständigkeiten wie „Steuern und Finanzen“.
+Neben der **Systemrolle** (*Administrator* oder *Mitglied*) kann ein Benutzer beliebig viele **Rollen** haben – fachliche Zuständigkeiten wie „Steuern und Finanzen“.
 
-- **Rollen anlegen, umbenennen, löschen** geschieht in der Ablage in der Sicht *Rolle* – wer das darf, regeln die [Berechtigungen](berechtigungen.md) am Mappentyp *Rolle* (ohne Regeln: jeder Benutzer). Rollennamen sind eindeutig.
-- **Zuordnen** geht nur hier in der Benutzerverwaltung (Haken bei *Weitere Rollen*). Die Mappe einer Rolle zeigt im Register *Benutzer*, wer sie hat.
-- **Administrator** und **Mitglied** sind **Systemrollen**: Sie erscheinen ebenfalls als Rollen-Mappen, folgen aber der Rolle des Zugangs und lassen sich weder umbenennen noch löschen.
+- **Rollen anlegen, umbenennen, löschen** geschieht in der Ablage in der Ansicht *Rolle* – wer das darf, regeln die [Berechtigungen](berechtigungen.md) am Mappentyp *Rolle* (ohne Regeln: jeder Benutzer). Rollennamen sind eindeutig.
+- **Zuordnen** geht nur hier in der Benutzerverwaltung (Haken bei *Rollen*). Die Mappe einer Rolle zeigt im Register *Benutzer*, wer sie hat.
+- **Administrator** und **Mitglied** sind **Systemrollen**: Sie erscheinen ebenfalls als Rollen-Mappen, folgen aber der Systemrolle des Benutzers und lassen sich weder umbenennen noch löschen.
 - **Rolle löschen**, die Benutzer haben: erlaubt – die Zuordnung fällt weg. Verweist noch ein Feld auf die Rolle (z. B. „verantwortliche Rolle“), muss dieser Verweis zuerst weg.
 - Rollen lassen sich nicht verschachteln.
 
@@ -80,9 +80,9 @@ Neben der **Rolle** des Zugangs (*Administrator* oder *Mitglied*) kann ein Benut
 
 ## Verantwortliche: Felder auf Benutzer und Rollen
 
-Für „wer kümmert sich?“ legst du an einem Mappentyp ein Feld vom Typ **Referenz** an:
+Für „wer kümmert sich?“ legst du an einem Mappentyp ein Feld der Feldart **Verweis** an:
 
 - „Verantwortlicher Benutzer“ → Ziel-Mappentyp *Benutzer*
 - „Verantwortliche Rolle“ → Ziel-Mappentyp *Rolle*
 
-Benutzer und Rolle sind dabei getrennte Felder. Siehe [Referenzen](mappentypen.md#referenzen-mappen-verbinden).
+Benutzer und Rolle sind dabei getrennte Felder. Siehe [Verweise](mappentypen.md#verweise-mappen-verbinden).
