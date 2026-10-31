@@ -1,71 +1,75 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/ablage/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/ablage/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/begriffe/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/begriffe/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/benutzer-und-rollen/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/benutzer-und-rollen/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/dokumente/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/dokumente/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/eingang/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/eingang/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/erste-schritte/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/erste-schritte/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/fragen/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/fragen/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/mappen/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/mappen/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/neu/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/neu/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/original/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/original/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/post/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/post/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/profil/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/profil/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/versenden/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/startseite/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/versionen/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/versenden/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/wofuer/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/versionen/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.79/zusammenarbeit/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/wofuer/</loc>
+         <lastmod>2026-10-31</lastmod>
+    </url>
+    <url>
+         <loc>https://motom001.github.io/dms/benutzer/v0.80/zusammenarbeit/</loc>
          <lastmod>2026-10-31</lastmod>
     </url>
 </urlset>
