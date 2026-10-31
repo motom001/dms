@@ -48,6 +48,14 @@ describe('Oberfläche ausliefern (#215)', { skip: echtesFastify ? false : 'Fasti
     assert.equal((await app.inject({ method: 'GET', url: '/api/gibtsnicht' })).statusCode, 404);
   });
 
+  it('setzt Sicherheits-Header (#239)', async () => {
+    const r = await app.inject({ method: 'GET', url: '/ablage/eingang' }) as unknown as { headers: Record<string, string> };
+    assert.equal(r.headers['x-frame-options'], 'SAMEORIGIN');
+    assert.match(r.headers['content-security-policy'], /default-src 'self'/);
+    const api = await app.inject({ method: 'GET', url: '/api/gibtsnicht' }) as unknown as { headers: Record<string, string> };
+    assert.equal(api.headers['x-content-type-options'], 'nosniff');
+  });
+
   it('liefert die Offline-Hilfe (#219)', async () => {
     for (const [url, text] of [['/hilfe/', 'HILFE-START'], ['/hilfe/admin/', 'ADMIN-HANDBUCH'], ['/hilfe/admin/sicherung/', 'SICHERUNG-SEITE']] as const) {
       const r = await app.inject({ method: 'GET', url });

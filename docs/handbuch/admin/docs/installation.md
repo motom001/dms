@@ -96,6 +96,7 @@ Diese Einstellungen sind Umgebungsvariablen im Compose-Projekt:
 | `DMS_DB_PASSWORT`, `DMS_DB_HOST`, `DMS_DB_PORT` | Statt `DATABASE_URL`: Passwort (sowie Server, Standard `db`, und Port, Standard `5432`) der Standard-Anbindung; ebenfalls nur für den ersten Start |
 | `DMS_EINRICHTUNGSCODE` | `aus`: Einrichtungsassistent ohne Code – für App-Stores, in denen das Container-Protokoll nicht ohne Kommandozeile lesbar ist. Bis der Administrator angelegt ist, kann dann jeder im Netz die Einrichtung übernehmen |
 | `TRUST_PROXY` | Wem das DMS die Angaben eines Reverse-Proxys glaubt. Nicht gesetzt: dem eigenen Rechner und privaten Netzen – passt fast immer. `false`: niemandem, `true`: allen, oder eine Liste wie `172.18.0.0/16`. Siehe [Hinter einem Reverse-Proxy](#hinter-einem-reverse-proxy) |
+| `DMS_EINBETTEN` | Seiten, die das DMS einbetten dürfen (z. B. ein Dashboard), etwa `https://ha.example.org http://nas:8123`. Nicht gesetzt: nur das DMS selbst. Siehe [Sicherheits-Header](#sicherheits-header) |
 | `LOG_LEVEL` | Grundstufe des Protokolls: `debug`, `info` (Standard), `warn`, `error` |
 
 ## Hinter einem Reverse-Proxy
@@ -133,6 +134,17 @@ Seit Version 0.43.0 nimmt das DMS diese Angaben **von selbst** an, wenn der Prox
 
 !!! tip "Die Adresse trotzdem pflegen"
     Die Adresse in der Werkbank ist verlässlicher als jede Erkennung: E-Mails aus dem Hintergrund (Erinnerungen, Zusammenfassung) haben keine Anfrage, aus der das DMS die Adresse ablesen könnte.
+
+### Sicherheits-Header
+
+Das DMS setzt die üblichen Sicherheits-Header selbst – dein Reverse-Proxy muss sie **nicht** noch einmal setzen (doppelte Header schaden nicht, verwirren aber bei der Fehlersuche):
+
+- `X-Frame-Options: SAMEORIGIN` und `Content-Security-Policy: frame-ancestors 'self'` – keine fremde Seite kann das DMS unsichtbar einbetten,
+- eine strenge `Content-Security-Policy` für die Oberfläche (nur eigene Skripte),
+- `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`, `Permissions-Policy`,
+- `Strict-Transport-Security`, sobald das DMS über HTTPS aufgerufen wird.
+
+Soll das DMS in einer anderen Seite erscheinen, etwa in einem Home-Assistant-Dashboard, trage deren Ursprung in `DMS_EINBETTEN` ein (mehrere durch Leerzeichen getrennt). Ungültige Angaben ignoriert das DMS und nennt sie im Protokoll.
 
 Ein Beispiel für nginx:
 

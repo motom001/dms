@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { einbettenAus } from './koepfe';
 import { proxyVertrauen } from './proxy';
 import { mkdir, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -49,6 +50,8 @@ const cfg = {
   /** Mandant (früher HAUSHALT_ID): steht nach dem Verbinden fest (#119). */
   haushalt: '',
   proxy: proxyVertrauen(env.TRUST_PROXY),
+  /** Einbetten in fremde Seiten (#239). */
+  einbetten: einbettenAus(env.DMS_EINBETTEN),
 };
 
 const log = protokoll.modul('system');
@@ -58,6 +61,7 @@ const { ordner } = ordnerPruefung;
 const version = env.DMS_VERSION ?? 'Entwicklung';
 log.info(`DMS startet (Version ${version})`, { node: process.version, port: cfg.port, protokoll: protokoll.stufe, proxy: cfg.proxy.text });
 if (cfg.proxy.fehler) log.warn(cfg.proxy.fehler);
+if (cfg.einbetten.fehler) log.warn(cfg.einbetten.fehler);
 
 // Unerwartete Fehler außerhalb von Anfragen nicht verschlucken.
 process.on('unhandledRejection', (e) => protokoll.schreibe('error', 'system', 'Unbehandelter Fehler', { fehler: e instanceof Error ? e.stack : String(e) }));
@@ -105,7 +109,7 @@ if (verbunden && !anbindung && umgebung) {
 if (!verbunden) {
   anbindung = await einrichtungsmodus({
     geheim: ordner.geheim, code: einrichtungscode, vorbelegt: kandidat, quelle, fehler: startfehler,
-    port: cfg.port, host: cfg.host, webDir: cfg.web, proxy: cfg.proxy.trust, wiederholenMs: kandidat ? 10_000 : undefined,
+    port: cfg.port, host: cfg.host, webDir: cfg.web, proxy: cfg.proxy.trust, einbetten: cfg.einbetten, wiederholenMs: kandidat ? 10_000 : undefined,
   });
 }
 const db = anbindung!;
@@ -197,6 +201,7 @@ const einrichtung = new Einrichtung({
 });
 const anbindungVerwaltung = new AnbindungVerwaltung(ordner.geheim, db, umgebung, () => { void beenden(); });
 const app = await baueApp(dienst, konten, {
+  einbetten: cfg.einbetten,
   webDir: cfg.web,
   sicher: () => betrieb.cookieNurHttps(),
   proxy: cfg.proxy.trust,
