@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, type ApiSchluessel, type ApiSchluesselEingabe } from '../api';
 import { Link } from '../ort';
 import { useKonto } from '../konto';
+import { rueckfrage } from '../rueckfrage';
 
 /** API-Schlüssel im eigenen Profil (#20): erzeugen, ändern, löschen; ganz sichtbar nur beim Erzeugen. */
 const datum = (iso: string | null) => (iso ? new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }) : '–');
@@ -47,7 +48,7 @@ export function ApiSchluesselBlatt() {
                 </div>
                 <span className="zeilenaktionen">
                   <button type="button" className="textknopf" onClick={() => setBearbeite(s.id)}>Ändern</button>
-                  <button type="button" className="textknopf gefahr" onClick={() => { if (confirm(`Schlüssel „${s.name}“ löschen? Programme, die ihn nutzen, kommen dann nicht mehr hinein.`)) void aktion(() => api.apiSchluesselLoeschen(s.id)); }}>Löschen</button>
+                  <button type="button" className="textknopf gefahr" onClick={async () => { if (await rueckfrage({ titel: `Schlüssel „${s.name}“ löschen?`, text: 'Programme, die ihn nutzen, kommen dann nicht mehr hinein.', ja: 'Löschen', gefahr: true })) void aktion(() => api.apiSchluesselLoeschen(s.id)); }}>Löschen</button>
                 </span>
               </li>
             ))}

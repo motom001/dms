@@ -18,6 +18,7 @@ import { titelOder } from '../seiten';
 import { Hilfe } from '../Hilfe';
 import { FRISTEN, JAHRE_MAX, type Archiv } from '../../../shared/src/archiv';
 import { Bereich, liesOffen, merkeOffen, TYP_BEREICHE, type Klappe, type TypBereich } from './Bereich';
+import { hinweis, rueckfrage } from '../rueckfrage';
 
 /** Entfernen im Editor wirkt erst beim Speichern (#136). */
 const ERST_BEIM_SPEICHERN = ' Das wird erst mit „Mappentyp speichern“ wirksam.';
@@ -213,10 +214,10 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
   async function entferne(i: number) {
     const f = e.felder[i];
     const n = gespeichert && d.anzahl(gespeichert.id) ? (await api.belegung(gespeichert.id).catch(() => ({} as Record<string, number>)))[f.key] ?? 0 : 0;
-    const frage = n
-      ? `${n} ${n === 1 ? 'Mappe hat' : 'Mappen haben'} in „${f.label}“ einen Wert. Die Werte bleiben gespeichert, werden aber nicht mehr angezeigt. Feld entfernen?${ERST_BEIM_SPEICHERN}`
-      : `Feld „${f.label}“ entfernen?${ERST_BEIM_SPEICHERN}`;
-    if (!confirm(frage)) return;
+    const text = n
+      ? `${n} ${n === 1 ? 'Mappe hat' : 'Mappen haben'} in „${f.label}“ einen Wert. Die Werte bleiben gespeichert, werden aber nicht mehr angezeigt.${ERST_BEIM_SPEICHERN}`
+      : ERST_BEIM_SPEICHERN.trim();
+    if (!(await rueckfrage({ titel: `Feld „${f.label}“ entfernen?`, text, ja: 'Entfernen', gefahr: n > 0 }))) return;
     setE((x) => ({ ...x, titelVorlage: x.titelVorlage.replace(new RegExp(`\\{${f.key}(\\|[^{}]*)?\\}`, 'g'), '').trim(), felder: x.felder.filter((_, j) => j !== i) }));
     setOffen(null); setFehler(null);
   }
@@ -246,7 +247,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
     } catch (err) {
       const f = err as ApiFehler;
       // Berechtigungen (#142): Danach könnte niemand mehr Mappen dieses Typs lesen – nachfragen.
-      if (f.status === 409 && (f.details as { niemand?: number } | undefined)?.niemand && !bestaetigt && confirm(f.message)) { setSendet(false); await speichern(true); return; }
+      if (f.status === 409 && (f.details as { niemand?: number } | undefined)?.niemand && !bestaetigt && await rueckfrage({ titel: 'Trotzdem speichern?', text: f.message, ja: 'Trotzdem speichern', gefahr: true })) { setSendet(false); await speichern(true); return; }
       // Bereiche mit Fehler markieren und aufklappen (#144).
       const orte = new Set<TypBereich>();
       if (f.pruefung) {
@@ -265,7 +266,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
 
   async function loeschen() {
     if (neu) { loeseWache(); geheZu('/werkbank/typen'); return; }
-    if (!confirm(`Mappentyp „${e.name}“ endgültig löschen?`)) return;
+    if (!(await rueckfrage({ titel: `Mappentyp „${e.name}“ endgültig löschen?`, text: 'Das lässt sich nicht rückgängig machen.', ja: 'Endgültig löschen', gefahr: true }))) return;
     try {
       await api.typLoeschen(e.id);
       loeseWache(); await d.neuLaden(); geheZu('/werkbank/typen');
@@ -684,17 +685,17 @@ function RegisterEditor({ e, setE, feldAblage, klappe }: { e: Entwurf; setE: (f:
     if (j < 0 || j >= e.register.length) return;
     setE((x) => { const rs = [...x.register]; [rs[i], rs[j]] = [rs[j], rs[i]]; return { ...x, register: rs }; });
   }
-  function entferne(i: number) {
+  async function entferne(i: number) {
     const r = e.register[i];
     if (r.art === 'felder') {
       const ziel = e.register.find((x, j) => j !== i && x.art === 'felder');
       const betroffen = e.felder.filter((f) => f._register === r.key);
-      if (betroffen.length && !ziel) { alert('Auf diesem Register liegen Felder, und es gibt kein anderes Feldregister. Lege zuerst ein weiteres an.'); return; }
-      if (!confirm(`${betroffen.length ? `Register „${r.name}“ entfernen? Seine ${betroffen.length} Felder wandern auf „${ziel!.name}“.` : `Register „${r.name}“ entfernen?`}${ERST_BEIM_SPEICHERN}`)) return;
+      if (betroffen.length && !ziel) { await hinweis({ titel: 'Register lässt sich nicht entfernen', text: 'Auf diesem Register liegen Felder, und es gibt kein anderes Feldregister. Lege zuerst ein weiteres an.' }); return; }
+      if (!(await rueckfrage({ titel: `Register „${r.name}“ entfernen?`, text: `${betroffen.length ? `Seine ${betroffen.length} Felder wandern auf „${ziel!.name}“.` : ''}${ERST_BEIM_SPEICHERN}`.trim(), ja: 'Entfernen' }))) return;
       setE((x) => ({ ...x, register: x.register.filter((_, j) => j !== i), felder: x.felder.map((f) => (f._register === r.key ? { ...f, _register: ziel!.key } : f)) }));
       return;
     }
-    if (!confirm(`Register „${r.name}“ entfernen?${r.art === 'dokumente' ? ' Enthält es noch Dokumente, lässt sich der Mappentyp nicht speichern.' : ''}${ERST_BEIM_SPEICHERN}`)) return;
+    if (!(await rueckfrage({ titel: `Register „${r.name}“ entfernen?`, text: `${r.art === 'dokumente' ? 'Enthält es noch Dokumente, lässt sich der Mappentyp nicht speichern.' : ''}${ERST_BEIM_SPEICHERN}`.trim(), ja: 'Entfernen' }))) return;
     setE((x) => ({ ...x, register: x.register.filter((_, j) => j !== i) }));
   }
 
@@ -811,10 +812,10 @@ function TrefferlisteEditor({ e, setE, klappe }: { e: Entwurf; setE: (f: (x: Ent
     const vorlage = e.trefferlisten.find((l) => l.standard)?.spalten ?? [];
     setE((x) => ({ ...x, trefferlisten: [...x.trefferlisten, { _uid: neueId(), _neu: true, key: eindeutig(schluesselAus(nm), -1), name: nm, spalten: [...vorlage], standard: false }] }));
   }
-  function entferne(i: number) {
+  async function entferne(i: number) {
     const l = e.trefferlisten[i];
     const n = verwendung(l.key).length;
-    if (!confirm(`Trefferliste „${l.name}“ entfernen?${n ? ` Sie wird ${n === 1 ? 'an einer Stelle' : `an ${n} Stellen`} verwendet; dort gilt danach die Standardliste.` : ''}${ERST_BEIM_SPEICHERN}`)) return;
+    if (!(await rueckfrage({ titel: `Trefferliste „${l.name}“ entfernen?`, text: `${n ? `Sie wird ${n === 1 ? 'an einer Stelle' : `an ${n} Stellen`} verwendet; dort gilt danach die Standardliste.` : ''}${ERST_BEIM_SPEICHERN}`.trim(), ja: 'Entfernen' }))) return;
     setE((x) => {
       const rest = x.trefferlisten.filter((_, j) => j !== i);
       if (l.standard && rest.length) rest[0] = { ...rest[0], standard: true };
@@ -926,9 +927,9 @@ function ArchivEinstellung({ archiv, setze, datumsfelder, typId }: { archiv: Arc
   return (
     <div className="stapel">
       <p className="leise">Für Belege mit Aufbewahrungspflicht: Bis zum Ende der Frist lässt sich keine Mappe und kein Dokument löschen – auch nicht von Administratoren; Dokumente ändern sich nur als neue Version. Danach stehen die Mappen unter Werkbank → Darf weg. Gelöscht wird nie automatisch. Das unterstützt eine GoBD-gerechte Aufbewahrung, ersetzt aber keine Verfahrensdokumentation und keine Steuerberatung.</p>
-      <label className="haken"><input type="checkbox" checked={!!archiv} onChange={(ev) => {
+      <label className="haken"><input type="checkbox" checked={!!archiv} onChange={async (ev) => {
         if (ev.target.checked) setze({ jahre: 8, stichtag: datumsfelder[0]?.key ?? null });
-        else if (confirm('Archivmodus ausschalten? Danach lassen sich Mappen und Dokumente dieses Mappentyps wieder vor Fristende löschen. Das steht im Protokoll.')) setze(null);
+        else if (await rueckfrage({ titel: 'Archivmodus ausschalten?', text: 'Danach lassen sich Mappen und Dokumente dieses Mappentyps wieder vor Fristende löschen. Das steht im Protokoll.', ja: 'Ausschalten', gefahr: true })) setze(null);
       }} /><span>Archivmodus einschalten<small className="hilfe">Gilt auch für vorhandene Mappen. Die Versionierung der Dokumentenregister ist dann Pflicht.</small></span></label>
       {archiv && <>
         <div className="raster">

@@ -7,6 +7,7 @@ import { api, dokumentUrl, versionUrl, type Fundstelle } from '../api';
 import { useDaten } from '../daten';
 import { Person } from '../Person';
 import { Hilfe } from '../Hilfe';
+import { rueckfrage } from '../rueckfrage';
 
 /**
  * Dokumentenregister: hochladen (übernommen mit „Mappe speichern“), ansehen direkt unter der
@@ -242,9 +243,9 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                         {klickbar && <a className="symbolverweis" href={dokumentUrl(x.id)} target="_blank" rel="noreferrer" title="In neuem Tab öffnen" aria-label={`${x.name} in neuem Tab öffnen`}>↗</a>}
                         {!weg && <a className="textknopf" href={dokumentUrl(x.id, true)}>Herunterladen</a>}
                         {!nurLesen && versioniert && !weg && <button type="button" className="textknopf" onClick={() => { setErsetzeId(x.id); ersetzFeld.current?.click(); }} title="Neue Version hochladen; die bisherige bleibt erhalten">Ersetzen</button>}
-                        {!nurLesen && <button type="button" className={`textknopf ${weg ? '' : 'gefahr'}`} onClick={() => {
+                        {!nurLesen && <button type="button" className={`textknopf ${weg ? '' : 'gefahr'}`} onClick={async () => {
                           // Mit allen Versionen (#194): nachfragen, mit Zahl.
-                          if (!weg && (x.aeltere ?? 0) > 0 && !confirm(`„${x.name}“ mit allen ${(x.aeltere ?? 0) + 1} Versionen löschen? ${d.zaehler.papierkorbTage ? 'Sie kommen beim Speichern in den Papierkorb und lassen sich von dort wiederherstellen.' : 'Das ist endgültig.'}`)) return;
+                          if (!weg && (x.aeltere ?? 0) > 0 && !(await rueckfrage({ titel: `„${x.name}“ mit allen ${(x.aeltere ?? 0) + 1} Versionen löschen?`, text: d.zaehler.papierkorbTage ? 'Sie kommen beim Speichern in den Papierkorb und lassen sich von dort wiederherstellen.' : 'Das ist endgültig.', ja: 'Löschen', gefahr: true }))) return;
                           entferne(x.id);
                         }}>{weg ? 'Behalten' : 'Löschen'}</button>}
                       </div>
@@ -308,7 +309,7 @@ function Versionen({ d, zurueck, neuLaden }: { d: Dokument; zurueck: boolean; ne
               <td className="zeilenaktionen">
                 {v.anzeigbar && <a className="symbolverweis" href={versionUrl(d.id, v.nummer)} target="_blank" rel="noreferrer" title="Ansehen" aria-label={`Version ${v.nummer} ansehen`}>↗</a>}
                 <a className="textknopf" href={versionUrl(d.id, v.nummer, true)}>Herunterladen</a>
-                {zurueck && <button type="button" className="textknopf" onClick={() => { if (confirm(`Version ${v.nummer} zurückholen? Sie wird zur neuen Version ${(d.version ?? 1) + 1}; nichts geht verloren.`)) void hole(v.nummer); }}>Zurückholen</button>}
+                {zurueck && <button type="button" className="textknopf" onClick={async () => { if (await rueckfrage({ titel: `Version ${v.nummer} zurückholen?`, text: `Sie wird zur neuen Version ${(d.version ?? 1) + 1}; nichts geht verloren.`, ja: 'Zurückholen' })) void hole(v.nummer); }}>Zurückholen</button>}
               </td>
             </tr>
           ))}

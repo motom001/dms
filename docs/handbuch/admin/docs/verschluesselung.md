@@ -35,7 +35,7 @@ Könnte der Schlüssel bekannt geworden sein – etwa weil ein ausgedrucktes Not
 
 ![Schlüssel gewechselt](bilder/werkbank-schluesselwechsel.png)
 
-Nach einer Rückfrage
+Nach einer Rückfrage – zur Sicherheit tippst du dort das Wort **wechseln** ein –
 
 1. erzeugt das DMS einen neuen Schlüssel,
 2. verschlüsselt alle Geheimnisse in der Datenbank **ganz oder gar nicht** neu; bricht dabei etwas ab, gilt weiter der bisherige Schlüssel. Dazu gehören die Passwortfelder in Mappen und im Papierkorb und alle Einstellungen mit Geheimnissen: Mailserver, Postfächer, Client-Secret des Anbieters, Zwei-Faktor-Geheimnisse und Paket-Geheimnisse,

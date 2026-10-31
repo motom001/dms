@@ -3,6 +3,7 @@ import { api, type WartungWerkbank } from '../api';
 import { dauerText, WARTUNG_GEAENDERT, zeitpunkt } from '../wartung';
 import { Hilfe } from '../Hilfe';
 import { istWeg } from '../erreichbar';
+import { rueckfrage } from '../rueckfrage';
 
 /**
  * Werkbank → Wartungsmodus (#102): ankündigen, sofort beginnen, alle abmelden, beenden;
@@ -118,15 +119,15 @@ export function WartungsmodusPanel({ w }: { w: WartungsmodusZustand }) {
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         <div className="knoepfe">
           {s.stufe === 'aus' && (
-            <button className="knopf primaer" disabled={laeuft} onClick={() => {
-              if (!vorlauf && !confirm('Alle außer dir werden sofort abgemeldet. Wartung jetzt beginnen?')) return;
+            <button className="knopf primaer" disabled={laeuft} onClick={async () => {
+              if (!vorlauf && !(await rueckfrage({ titel: 'Wartung jetzt beginnen?', text: 'Alle außer dir werden sofort abgemeldet.', ja: 'Wartung beginnen', gefahr: true }))) return;
               void tu(() => api.wartungEin({ ...eingabe, vorlauf }), vorlauf ? `Wartung angekündigt – aktiv in ${vorlauf} Minuten.` : 'Wartungsmodus aktiv.');
             }}>{vorlauf ? 'Wartung ankündigen' : 'Wartung sofort beginnen'}</button>
           )}
           {s.stufe === 'aktiv' && <button className="knopf" disabled={laeuft} onClick={() => void tu(() => api.wartungEin({ ...eingabe, vorlauf: 0 }), 'Text und Ende übernommen.')}>Text und Ende übernehmen</button>}
           {s.stufe !== 'aus' && (
-            <button className="knopf gefahr-rand" disabled={laeuft} onClick={() => {
-              if (!confirm(andere ? `${andere === 1 ? 'Eine andere Sitzung wird' : `${andere} andere Sitzungen werden`} sofort beendet. Fortfahren?` : 'Die Wartung beginnt sofort. Fortfahren?')) return;
+            <button className="knopf gefahr-rand" disabled={laeuft} onClick={async () => {
+              if (!(await rueckfrage({ titel: 'Alle jetzt abmelden?', text: andere ? `${andere === 1 ? 'Eine andere Sitzung wird' : `${andere} andere Sitzungen werden`} sofort beendet.` : 'Die Wartung beginnt sofort.', ja: 'Alle abmelden', gefahr: true }))) return;
               void tu(() => api.wartungJetzt(), 'Alle anderen sind abgemeldet. Der Wartungsmodus ist aktiv.');
             }}>Alle jetzt abmelden</button>
           )}

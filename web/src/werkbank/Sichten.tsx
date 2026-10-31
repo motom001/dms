@@ -13,6 +13,7 @@ import { Hilfe } from '../Hilfe';
 import { Bereich, SICHT_BEREICHE, useBereiche, type Klappe, type SichtBereich } from '../einrichtung/Bereich';
 import { elternkette, SichtBerechtigungen, SichtTestlauf } from './SichtRechte';
 import { sichtRegelProblem, sichtRegelwerkVon } from '../../../shared/src/sichtrechte';
+import { rueckfrage } from '../rueckfrage';
 
 /**
  * Sichten verwalten (#38) mit Bedingungen (#40, #41): Baum links, Bearbeitung rechts.
@@ -192,7 +193,7 @@ export function SichtEditor({ id }: { id: string }) {
   }
   async function loeschen() {
     const hinweis = untersichten ? ` Ihre ${untersichten} Unteransicht${untersichten === 1 ? '' : 'en'} rücken eine Ebene nach oben.` : '';
-    if (!confirm(`Ansicht „${vorhanden!.name}“ löschen? Mappen werden nicht gelöscht.${hinweis}`)) return;
+    if (!(await rueckfrage({ titel: `Ansicht „${vorhanden!.name}“ löschen?`, text: `Mappen werden nicht gelöscht.${hinweis}`, ja: 'Löschen', gefahr: true }))) return;
     try { await api.sichtLoeschen(id); loeseWache(); await d.neuLaden(); geheZu('/werkbank/sichten'); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }

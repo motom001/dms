@@ -8,6 +8,7 @@ import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { geheZu, Link } from '../ort';
 import { Hilfe } from '../Hilfe';
+import { rueckfrage } from '../rueckfrage';
 
 const datumZeit = (iso: string | null) => (iso ? new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }) : 'noch nie');
 const status = (b: Benutzer) => (!b.aktiv ? { text: 'deaktiviert', art: '' } : !b.hatPasswort ? { text: 'eingeladen', art: 'warn' } : { text: 'aktiv', art: 'gut' });
@@ -158,8 +159,8 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
         <div className="blatt">
           <h2 className="h3">Fehler nachstellen</h2>
           <p className="leise">Du siehst und bedienst das DMS dann genau so wie {b.name || b.email}, mit den Rechten dieses Kontos. Oben steht die ganze Zeit ein Warnhinweis mit dem Weg zurück. {b.name || b.email} erfährt bei der nächsten Anmeldung, dass und wann du unter diesem Konto gearbeitet hast.</p>
-          <div className="knoepfe"><button className="knopf" onClick={() => {
-            if (confirm(`Als ${b.name || b.email} anmelden? Deine eigene Sitzung endet dabei; zurück geht es über den Warnhinweis oben.`)) {
+          <div className="knoepfe"><button className="knopf" onClick={async () => {
+            if (await rueckfrage({ titel: `Als ${b.name || b.email} anmelden?`, text: 'Deine eigene Sitzung endet dabei; zurück geht es über den Warnhinweis oben.', ja: 'Anmelden' })) {
               void aktion(async () => { await api.vertreten(b.id); geheZu('/ablage', true); await aktualisieren(); });
             }
           }}>Als {b.name || b.email} anmelden</button></div>
@@ -200,11 +201,11 @@ function ZugangSperren({ b, selbst, loeschbar, aktion }: { b: Benutzer; selbst: 
       </ul>
       {gruende.length > 0 && <div className="hinweis warn"><p>Deaktivieren geht erst, wenn ein Vertreter hinterlegt ist und keine Aufgaben mehr offen sind.</p><ul>{gruende.map((g) => <li key={g}>{g}</li>)}</ul></div>}
       <div className="knoepfe">
-        {loeschbar && <button className="knopf gefahr-rand" onClick={() => {
-          if (confirm(`Einladung an ${b.email} zurückziehen und den Benutzer löschen?`)) void aktion(async () => { await api.benutzerLoeschen(b.id); geheZu('/werkbank/benutzer'); });
+        {loeschbar && <button className="knopf gefahr-rand" onClick={async () => {
+          if (await rueckfrage({ titel: 'Einladung löschen?', text: `Die Einladung an ${b.email} wird zurückgezogen und der Benutzer gelöscht.`, ja: 'Einladung löschen', gefahr: true })) void aktion(async () => { await api.benutzerLoeschen(b.id); geheZu('/werkbank/benutzer'); });
         }}>Einladung löschen</button>}
-        <button className="knopf gefahr" disabled={gruende.length > 0} onClick={() => {
-          if (confirm(`${name} deaktivieren? Der Zugang ist sofort gesperrt, alle Sitzungen enden. Aufgaben, die noch für ${name} entstehen, gehen an ${vertreter}.`)) {
+        <button className="knopf gefahr" disabled={gruende.length > 0} onClick={async () => {
+          if (await rueckfrage({ titel: `${name} deaktivieren?`, text: `Der Zugang ist sofort gesperrt, alle Sitzungen enden. Aufgaben, die noch für ${name} entstehen, gehen an ${vertreter}.`, ja: 'Deaktivieren', gefahr: true })) {
             void aktion(() => api.benutzerAendern(b.id, { aktiv: false }), 'Deaktiviert – alle Sitzungen beendet.');
           }
         }}>Benutzer deaktivieren</button>
@@ -225,8 +226,8 @@ function ZweifaktorVon({ b }: { b: Benutzer }) {
       <h2 className="h3">Zwei-Faktor-Anmeldung</h2>
       {!stand ? !meldung && <p className="leise">Lade …</p> : stand.aktiv ? <>
         <p><span className="chip gut punkt">eingerichtet</span>{stand.seit && <> seit {new Date(stand.seit).toLocaleDateString('de-DE')}</>} · {stand.codesUebrig} Wiederherstellungscodes übrig</p>
-        <div className="knoepfe"><button type="button" className="knopf gefahr-rand" onClick={() => {
-          if (confirm(`Zwei-Faktor-Anmeldung von ${name} zurücksetzen? Danach reicht das Passwort – ist sie vorgeschrieben, richtet ${name} sie bei der nächsten Anmeldung neu ein.`)) {
+        <div className="knoepfe"><button type="button" className="knopf gefahr-rand" onClick={async () => {
+          if (await rueckfrage({ titel: `Zwei-Faktor-Anmeldung von ${name} zurücksetzen?`, text: `Danach reicht das Passwort – ist sie vorgeschrieben, richtet ${name} sie bei der nächsten Anmeldung neu ein.`, ja: 'Zurücksetzen', gefahr: true })) {
             void api.benutzerZweifaktorZuruecksetzen(b.id).then(() => { setMeldung({ art: 'gut', text: 'Zurückgesetzt.' }); return laden(); }).catch((e) => setMeldung({ art: 'schlecht', text: (e as Error).message }));
           }
         }}>Zurücksetzen</button></div>
@@ -268,8 +269,8 @@ function Sitzungen({ b, neuLaden }: { b: Benutzer; neuLaden: () => Promise<void>
         </ul>
       )}
       {liste && liste.length > 1 && (
-        <div className="knoepfe"><button className="knopf gefahr-rand" onClick={() => {
-          if (confirm(`${b.name || b.email} auf allen ${liste.length} Geräten abmelden?`)) void beende(() => api.alleSitzungenBeenden(b.id), liste.some((s) => s.aktuell));
+        <div className="knoepfe"><button className="knopf gefahr-rand" onClick={async () => {
+          if (await rueckfrage({ titel: `${b.name || b.email} auf allen ${liste.length} Geräten abmelden?`, ja: 'Überall abmelden', gefahr: true })) void beende(() => api.alleSitzungenBeenden(b.id), liste.some((s) => s.aktuell));
         }}>Überall abmelden</button></div>
       )}
     </div>

@@ -5,6 +5,7 @@ import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { datumText } from '../../../shared/src/archiv';
 import { titelOder } from '../seiten';
+import { rueckfrage } from '../rueckfrage';
 
 /** Werkbank → Darf weg (#212): Mappen im Archivmodus, deren Aufbewahrungsfrist abgelaufen ist. */
 
@@ -47,7 +48,7 @@ export function DarfWegPanel({ z }: { z: DarfWegZustand }) {
   const alle = liste.length > 0 && gewaehlt.size === liste.length;
   async function loeschen() {
     const ids = liste.filter((m) => gewaehlt.has(m.id)).map((m) => m.id);
-    if (!ids.length || !confirm(`${ids.length === 1 ? 'Diese Mappe' : `Diese ${ids.length} Mappen`} löschen? Mit eingeschaltetem Papierkorb landen sie dort, sonst sind sie endgültig weg.`)) return;
+    if (!ids.length || !(await rueckfrage({ titel: `${ids.length === 1 ? 'Diese Mappe' : `Diese ${ids.length} Mappen`} löschen?`, text: 'Mit eingeschaltetem Papierkorb landen sie dort, sonst sind sie endgültig weg.', ja: 'Löschen', gefahr: true }))) return;
     setLaeuft(true); setMeldung(undefined);
     const fehler: string[] = [];
     for (const id of ids) { try { await api.mappeLoeschen(id); } catch (e) { fehler.push((e as Error).message); } }

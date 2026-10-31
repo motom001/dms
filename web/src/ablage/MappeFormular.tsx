@@ -19,6 +19,7 @@ import { PostLeiste } from './Post';
 import { linkZuMappe } from '../../../shared/src/direktlink';
 import { Person } from '../Person';
 import { Dokumente, type NeueDatei } from './Dokumente';
+import { hinweis, rueckfrage } from '../rueckfrage';
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -235,8 +236,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     // Würde man sich mit diesen Werten selbst das Lesen oder Bearbeiten entziehen? Dann erst fragen (#126).
     if (mappe && werteGeaendert && ich.rolle !== 'admin') {
       const r = await api.rechteVorschau(mappe.id, werte).catch(() => null);
-      if (r && !r.R && !confirm('Nach dem Speichern kannst du diese Mappe nach den Berechtigungen nicht mehr sehen. Trotzdem speichern?')) return;
-      if (r && r.R && !r.U && !confirm('Nach dem Speichern kannst du diese Mappe nach den Berechtigungen nicht mehr bearbeiten. Trotzdem speichern?')) return;
+      if (r && !r.R && !(await rueckfrage({ titel: 'Trotzdem speichern?', text: 'Nach dem Speichern kannst du diese Mappe nach den Berechtigungen nicht mehr sehen.', ja: 'Trotzdem speichern', gefahr: true }))) return;
+      if (r && r.R && !r.U && !(await rueckfrage({ titel: 'Trotzdem speichern?', text: 'Nach dem Speichern kannst du diese Mappe nach den Berechtigungen nicht mehr bearbeiten.', ja: 'Trotzdem speichern', gefahr: true }))) return;
     }
     setSendet(true); setHinweise([]);
     let gespeichert: (Mappe & { hinweis?: string }) | undefined = mappe;
@@ -269,7 +270,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     // Zuordnen (#192): Die Post gehört jetzt zu dieser neuen Mappe.
     if (!mappe && zuordnen) {
       try { await api.zuordnen(zuordnen.post, { ziel: gespeichert!.id, register: zuordnen.register, dokumente: zuordnen.dokumente, kopieren: zuordnen.kopieren }); }
-      catch (e) { alert(`Die Mappe ist angelegt, aber das Zuordnen der Post ging nicht: ${(e as Error).message}`); }
+      catch (e) { await hinweis({ titel: 'Post nicht zugeordnet', text: `Die Mappe ist angelegt, aber das Zuordnen der Post ging nicht: ${(e as Error).message}` }); }
     }
     const nichtEntfernt: string[] = [];
     for (const id of entfernt) {
@@ -279,7 +280,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     if (!offen.length && !nichtEntfernt.length) loeseWache();
     // Lesen verloren (#126): zurück zur Liste, mit Hinweis.
     const verloren = gespeichert?.hinweis?.includes('nicht mehr sehen');
-    if (verloren) { loeseWache(); alert(gespeichert!.hinweis); await d.neuLaden(); geheZu(`/ablage/${sicht}${anhang}`); return; }
+    if (verloren) { loeseWache(); await hinweis({ titel: 'Gespeichert', text: gespeichert!.hinweis }); await d.neuLaden(); geheZu(`/ablage/${sicht}${anhang}`); return; }
     await d.neuLaden();
     await neuLaden?.();
     setSendet(false);
@@ -291,10 +292,10 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     if (!mappe) return;
     const n = details?.dokumente.length ?? 0;
     const korb = d.zaehler.papierkorbTage ?? 0;
-    const frage = korb
-      ? `Mappe „${titelOder(mappe.titel)}“ in den Papierkorb legen?${n ? ` Ihre ${n} Dokument${n === 1 ? '' : 'e'} kommen mit.` : ''} Dort lässt sie sich ${korb === 1 ? 'einen Tag' : `${korb} Tage`} lang wiederherstellen.`
-      : `Mappe „${titelOder(mappe.titel)}“ endgültig löschen?${n ? ` Ihre ${n} Dokument${n === 1 ? '' : 'e'} werden mitgelöscht.` : ''}`;
-    if (!confirm(frage)) return;
+    const ok = await rueckfrage(korb
+      ? { titel: `Mappe „${titelOder(mappe.titel)}“ in den Papierkorb legen?`, text: `${n ? `Ihre ${n} Dokument${n === 1 ? '' : 'e'} kommen mit. ` : ''}Dort lässt sie sich ${korb === 1 ? 'einen Tag' : `${korb} Tage`} lang wiederherstellen.`, ja: 'In den Papierkorb', gefahr: true }
+      : { titel: `Mappe „${titelOder(mappe.titel)}“ endgültig löschen?`, text: `${n ? `Ihre ${n} Dokument${n === 1 ? '' : 'e'} werden mitgelöscht. ` : ''}Das lässt sich nicht rückgängig machen.`, ja: 'Endgültig löschen', gefahr: true });
+    if (!ok) return;
     try {
       await api.mappeLoeschen(mappe.id);
       loeseWache(); await d.neuLaden(); geheZu(`/ablage/${sicht}${anhang}`);

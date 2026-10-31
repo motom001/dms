@@ -4,6 +4,7 @@ import { useDaten } from '../daten';
 import { geheZu, Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { NEUBEGINN_TEXT, pruefeMuster, formatiereNummer, datumIn, kreisVon, neubeginn as neubeginnVon } from '../../../shared/src/nummernkreis';
+import { rueckfrage } from '../rueckfrage';
 
 /**
  * Werkbank → Nummernkreise (#171): fortlaufende Nummern für Textfelder.
@@ -83,7 +84,7 @@ export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; 
         {musterFehler ? <p className="fehlertext">{musterFehler}</p> : <p className="klein">Beispiel heute: <code className="mono">{beispiel}</code> · Zähler beginnt neu: <strong>{NEUBEGINN_TEXT[neubeginn]}</strong></p>}
         <div className="knoepfe">
           {!neu && <button type="button" className="knopf gefahr-rand" disabled={k!.verwendet.length > 0} title={k!.verwendet.length ? 'Wird noch verwendet' : undefined}
-            onClick={() => { if (confirm(`Nummernkreis „${k!.name}“ löschen?`)) void tu(async () => { z.setListe(await api.nummernkreisLoeschen(k!.schluessel)); geheZu('/werkbank/nummernkreise', true); return 'Gelöscht.'; }); }}>Löschen</button>}
+            onClick={async () => { if (await rueckfrage({ titel: `Nummernkreis „${k!.name}“ löschen?`, ja: 'Löschen', gefahr: true })) void tu(async () => { z.setListe(await api.nummernkreisLoeschen(k!.schluessel)); geheZu('/werkbank/nummernkreise', true); return 'Gelöscht.'; }); }}>Löschen</button>}
           <button className="knopf primaer" disabled={!!musterFehler}>{neu ? 'Anlegen' : 'Speichern'}</button>
         </div>
       </form>
@@ -95,7 +96,7 @@ export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; 
             <p className="leise klein">Zuletzt vergeben:</p>
             <ul className="stapel klein">{k!.zuletzt.map((x) => <li key={`${x.nummer}-${x.am}`}><code className="mono">{x.nummer}</code> · {zeit(x.am)}{x.mappeId && <> · <Link to={`/ablage/mappe/${x.mappeId}`} className="verweis">Mappe</Link></>}</li>)}</ul>
           </>}
-          <form className="zeile" onSubmit={(x) => { x.preventDefault(); if (confirm(`Nächste Nummer mit Zähler ${zaehler} vergeben? Das steht im Protokoll.`)) void tu(async () => { z.setListe(await api.nummernkreisZaehler(k!.schluessel, Number(zaehler))); setZaehler(''); return 'Zählerstand gesetzt.'; }); }}>
+          <form className="zeile" onSubmit={async (x) => { x.preventDefault(); if (await rueckfrage({ titel: 'Zählerstand setzen?', text: `Die nächste Nummer bekommt den Zähler ${zaehler}. Das steht im Protokoll.`, ja: 'Zählerstand setzen' })) void tu(async () => { z.setListe(await api.nummernkreisZaehler(k!.schluessel, Number(zaehler))); setZaehler(''); return 'Zählerstand gesetzt.'; }); }}>
             <label className="eigenschaft"><span>Zählerstand setzen <small>Zähler der nächsten Nummer, z. B. beim Umstieg aus einem anderen Programm</small></span>
               <input id="nk-zaehler" type="number" min={0} value={zaehler} onChange={(x) => setZaehler(x.target.value)} /></label>
             <button className="knopf" disabled={zaehler === ''}>Setzen</button>

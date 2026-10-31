@@ -16,6 +16,7 @@ import { useKonto } from '../konto';
 import { Hilfe } from '../Hilfe';
 import { RECHTE, RECHTE_LISTE } from '../../../shared/src/rechte';
 import { ANSTEHEND_MAX, ANSTEHEND_TAGE } from '../../../shared/src/fristen';
+import { rueckfrage } from '../rueckfrage';
 
 const STUFE = { immer: 'ja', nie: 'nein', teils: 'je nach Mappe' } as const;
 
@@ -288,8 +289,8 @@ function MeineGeraete() {
       )}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       {andere.length > 0 && !vertretung && (
-        <div className="knoepfe"><button type="button" className="knopf gefahr-rand" onClick={() => {
-          if (confirm(`Auf ${andere.length === 1 ? 'dem anderen Gerät' : `allen ${andere.length} anderen Geräten`} abmelden?`)) void tu(async () => { const r = await api.andereSitzungenBeenden(); return `${r.beendet} ${r.beendet === 1 ? 'Gerät' : 'Geräte'} abgemeldet.`; });
+        <div className="knoepfe"><button type="button" className="knopf gefahr-rand" onClick={async () => {
+          if (await rueckfrage({ titel: `Auf ${andere.length === 1 ? 'dem anderen Gerät' : `allen ${andere.length} anderen Geräten`} abmelden?`, ja: 'Abmelden', gefahr: true })) void tu(async () => { const r = await api.andereSitzungenBeenden(); return `${r.beendet} ${r.beendet === 1 ? 'Gerät' : 'Geräte'} abgemeldet.`; });
         }}>Alle anderen abmelden</button></div>
       )}
     </div>

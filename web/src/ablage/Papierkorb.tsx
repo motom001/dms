@@ -6,6 +6,7 @@ import { geheZu, Link } from '../ort';
 import { titelOder } from '../seiten';
 import { Person } from '../Person';
 import { Hilfe } from '../Hilfe';
+import { hinweis, rueckfrage } from '../rueckfrage';
 
 /**
  * Papierkorb (#43). In der Ablage sieht jeder, was er selbst gelöscht hat; in der Werkbank
@@ -65,7 +66,7 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
 
   async function leeren() {
     const was = [liste.length ? (liste.length === 1 ? 'eine Mappe (samt Dokumenten)' : `${liste.length} Mappen (samt Dokumenten)`) : '', z.dokumente.length ? (z.dokumente.length === 1 ? 'ein Dokument' : `${z.dokumente.length} Dokumente`) : ''].filter(Boolean).join(' und ');
-    if (!confirm(`${werkbank ? 'Den ganzen Papierkorb (alle Benutzer)' : 'Deinen Papierkorb'} leeren? ${was} ${liste.length + z.dokumente.length === 1 ? 'wird' : 'werden'} endgültig gelöscht.`)) return;
+    if (!(await rueckfrage({ titel: `${werkbank ? 'Den ganzen Papierkorb (alle Benutzer)' : 'Deinen Papierkorb'} leeren?`, text: `${was.charAt(0).toUpperCase()}${was.slice(1)} ${liste.length + z.dokumente.length === 1 ? 'wird' : 'werden'} endgültig gelöscht.`, ja: 'Papierkorb leeren', gefahr: true }))) return;
     setLaeuft(true); setMeldung(undefined);
     try { await api.papierkorbLeeren(werkbank); melde(); await d.neuLaden(); geheZu(basis(werkbank)); }
     catch (e) { setMeldung((e as Error).message); }
@@ -157,7 +158,7 @@ function DokumenteImKorb({ z, werkbank }: { z: PapierkorbZustand; werkbank: bool
     finally { setLaeuft(undefined); }
   }
   async function weg(x: DokumentImKorb) {
-    if (!confirm(`„${x.name}“${x.versionen ? ` mit allen ${x.versionen + 1} Versionen` : ''} endgültig löschen? Das lässt sich nicht rückgängig machen.`)) return;
+    if (!(await rueckfrage({ titel: `„${x.name}“${x.versionen ? ` mit allen ${x.versionen + 1} Versionen` : ''} endgültig löschen?`, text: 'Das lässt sich nicht rückgängig machen.', ja: 'Endgültig löschen', gefahr: true }))) return;
     setLaeuft(x.id); setMeldung(undefined);
     try { await api.dokumentEndgueltig(x.id, werkbank); melde(); await d.neuLaden(); }
     catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
@@ -215,13 +216,13 @@ export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boole
       const r = await api.wiederherstellen(id, werkbank);
       melde(); await d.neuLaden();
       // Nach den Berechtigungen nicht mehr sichtbar (#126): Bescheid sagen und in den Papierkorb zurück.
-      if (r.hinweis) { alert(r.hinweis); geheZu(basis(werkbank)); return; }
+      if (r.hinweis) { await hinweis({ titel: 'Wiederhergestellt', text: r.hinweis }); geheZu(basis(werkbank)); return; }
       // Passt sie nicht mehr (z. B. eindeutiger Wert inzwischen vergeben), zeigt die Mappe selbst den Grund.
       geheZu(`/ablage/${r.mappe.passt === false ? 'eingang' : r.mappe.typId}/${r.mappe.id}`);
     } catch (x) { setMeldung((x as Error).message); setLaeuft(null); }
   }
   async function endgueltig() {
-    if (!confirm(`„${titelOder(e && e !== 'fehlt' ? e.titel : '')}“ endgültig löschen? Das lässt sich nicht rückgängig machen.`)) return;
+    if (!(await rueckfrage({ titel: `„${titelOder(e && e !== 'fehlt' ? e.titel : '')}“ endgültig löschen?`, text: 'Das lässt sich nicht rückgängig machen.', ja: 'Endgültig löschen', gefahr: true }))) return;
     setLaeuft('weg'); setMeldung(undefined);
     try { await api.endgueltigLoeschen(id, werkbank); melde(); await d.neuLaden(); geheZu(basis(werkbank)); }
     catch (x) { setMeldung((x as Error).message); setLaeuft(null); }
@@ -274,7 +275,7 @@ export function PapierkorbEinstellungen({ z }: { z: PapierkorbZustand }) {
   const geaendert = String(z.tage) !== tage || String(z.historieTage) !== hTage;
   async function speichern() {
     const anzahl = z.eintraege?.length ?? 0;
-    if (n === 0 && anzahl && !confirm(`Papierkorb ausschalten? Die ${anzahl === 1 ? 'eine Mappe darin wird' : `${anzahl} Mappen darin werden`} sofort endgültig gelöscht.`)) return;
+    if (n === 0 && anzahl && !(await rueckfrage({ titel: 'Papierkorb ausschalten?', text: `Die ${anzahl === 1 ? 'eine Mappe darin wird' : `${anzahl} Mappen darin werden`} sofort endgültig gelöscht.`, ja: 'Ausschalten und leeren', gefahr: true }))) return;
     try {
       const r = await api.papierkorbTage({ tage: n, historieTage: h });
       z.setTage(r.tage); z.setHistorieTage(r.historieTage); melde(); await d.neuLaden();

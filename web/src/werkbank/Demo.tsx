@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, DOKUMENTARTEN, type Auftrag, type DemoAbschaetzung, type DemoErgebnis, type DemoOptionen, type DemoStufe, type Dokumentart } from '../api';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
+import { rueckfrage } from '../rueckfrage';
 
 type Uebersicht = Array<{ typId: string; name: string; demo: number; gesamt: number }>;
 
@@ -202,8 +203,8 @@ export function DemoPanel() {
       <div className="blatt">
         <h2 className="h3">Entfernen</h2>
         <p className="leise">Löscht alle {demo.toLocaleString('de-DE')} Demo-Mappen samt ihrer Dokumente, in Paketen zu je 1.000. Echte Mappen bleiben unberührt; verweist eine echte Mappe auf eine Demo-Mappe, wird nichts gelöscht.</p>
-        <div className="knoepfe"><button className="knopf gefahr-rand" disabled={!demo || laeuft} onClick={() => {
-          if (confirm(`Alle ${demo} Demo-Mappen löschen?`)) void starte(() => api.demoEntfernen());
+        <div className="knoepfe"><button className="knopf gefahr-rand" disabled={!demo || laeuft} onClick={async () => {
+          if (await rueckfrage({ titel: `Alle ${demo.toLocaleString('de-DE')} Demo-Mappen löschen?`, text: 'Echte Mappen bleiben unberührt.', ja: 'Demo-Mappen löschen', gefahr: true })) void starte(() => api.demoEntfernen());
         }}>Alle Demo-Mappen entfernen</button></div>
       </div>
     </div>

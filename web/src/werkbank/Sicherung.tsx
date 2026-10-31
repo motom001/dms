@@ -3,6 +3,7 @@ import { api, type ProbeStand, type SicherungsPlan, type SicherungStand, type Si
 import { Schritte } from '../wiederherstellen';
 import { Hilfe, useHandbuch } from '../Hilfe';
 import { Link } from '../ort';
+import { rueckfrage } from '../rueckfrage';
 
 /**
  * Werkbank → Sicherung (#103–#106): jetzt sichern, Liste mit Prüfsumme, Zeitplan und
@@ -147,7 +148,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
           <div className="hinweis info">
             <p><strong>{alte.length === 1 ? 'Eine Sicherung ist' : `${alte.length} Sicherungen sind`} mit einem früheren Schlüssel verschlüsselt.</strong> Zum Wiederherstellen brauchst du das Notfallblatt zu diesem Schlüssel – bewahre es auf, solange es solche Sicherungen gibt.</p>
             <div className="knoepfe"><button type="button" className="knopf klein gefahr-rand" disabled={laeuft}
-              onClick={() => { if (confirm(`${alte.length === 1 ? 'Die Sicherung' : `Alle ${alte.length} Sicherungen`} mit früherem Schlüssel endgültig löschen? Danach brauchst du das alte Notfallblatt nicht mehr.`)) void tu(async () => { for (const x of alte) await api.sicherungLoeschen(x.name); }, 'Sicherungen mit früherem Schlüssel gelöscht.'); }}>
+              onClick={async () => { if (await rueckfrage({ titel: `${alte.length === 1 ? 'Die Sicherung' : `Alle ${alte.length} Sicherungen`} mit früherem Schlüssel löschen?`, text: 'Sie sind danach endgültig weg; das alte Notfallblatt brauchst du dann nicht mehr.', ja: 'Endgültig löschen', gefahr: true })) void tu(async () => { for (const x of alte) await api.sicherungLoeschen(x.name); }, 'Sicherungen mit früherem Schlüssel gelöscht.'); }}>
               Sicherungen mit früherem Schlüssel löschen</button></div>
           </div>
         )}
@@ -165,7 +166,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
                 <td>{x.probe ? <span className={`chip ${x.probe.ok ? 'gut' : 'schlecht'}`} title={`${zeit(x.probe.am)}: ${x.probe.info}`}>{x.probe.ok ? 'in Ordnung' : 'Fehler'}</span> : <span className="leise">–</span>}</td>
                 <td className="kurz">
                   <button type="button" className="textknopf" disabled={laeuft || !x.meta} onClick={() => void tu(() => api.sicherungPruefen(x.name))}>Prüfen</button>{' · '}
-                  <button type="button" className="textknopf" disabled={laeuft} onClick={() => { if (confirm(`Sicherung vom ${x.meta ? zeit(x.meta.beginn) : x.name} endgültig löschen?`)) void tu(() => api.sicherungLoeschen(x.name), 'Sicherung gelöscht.'); }}>Löschen</button>
+                  <button type="button" className="textknopf" disabled={laeuft} onClick={async () => { if (await rueckfrage({ titel: `Sicherung vom ${x.meta ? zeit(x.meta.beginn) : x.name} löschen?`, text: 'Sie ist danach endgültig weg.', ja: 'Endgültig löschen', gefahr: true })) void tu(() => api.sicherungLoeschen(x.name), 'Sicherung gelöscht.'); }}>Löschen</button>
                 </td>
               </tr>
             ))}</tbody>

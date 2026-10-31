@@ -6,6 +6,7 @@ import { KontoProvider } from './konto';
 import './styles.css';
 import { starteSammler } from './diagnose';
 import { starteErreichbarkeit } from './erreichbar';
+import { Rueckfragen } from './rueckfrage';
 
 starteSammler();
 starteErreichbarkeit();
@@ -17,5 +18,7 @@ createRoot(document.getElementById('root')!).render(
         <App />
       </DatenProvider>
     </KontoProvider>
+    {/* Rückfragen (#355) – außerhalb der Anmeldung, damit auch Einrichtung und Wiederherstellen sie haben. */}
+    <Rueckfragen />
   </StrictMode>,
 );

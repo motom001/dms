@@ -5,6 +5,7 @@ import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { geheZu, Link } from '../ort';
 import { PaketEinstellungen } from './PaketEinstellungen';
+import { rueckfrage } from '../rueckfrage';
 
 /**
  * Werkbank → Pakete (#188): Konfigurationspakete aus dem offiziellen Katalog.
@@ -136,7 +137,7 @@ function Quellen({ z }: { z: PaketeZustand }) {
             <li key={q.url}>
               <label className="haken"><input type="checkbox" checked={q.aktiv} onChange={(e) => void tu(() => api.paketQuelleSchalten(q.url, e.target.checked))} /><span className="umbrechen">{q.url}</span></label>
               <span className="leise"> {q.von ? `von ${q.von}` : ''}{q.am ? ` am ${datum(q.am)}` : ''} · </span>
-              <button type="button" className="textknopf gefahr" onClick={() => { if (confirm(`Quelle ${q.url} entfernen?`)) void tu(() => api.paketQuelleEntfernen(q.url)); }}>Entfernen</button>
+              <button type="button" className="textknopf gefahr" onClick={async () => { if (await rueckfrage({ titel: 'Paketquelle entfernen?', text: q.url, ja: 'Entfernen', gefahr: true })) void tu(() => api.paketQuelleEntfernen(q.url)); }}>Entfernen</button>
             </li>
           ))}
         </ul>
@@ -291,11 +292,11 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
     catch (e) { setMeldung(alsMeldung(e)); }
     finally { setLaeuft(false); }
   }
-  const entfernen = () => {
+  const entfernen = async () => {
     if (!inst) return;
     // Mit Einstellungen (#197): fragen, ob sie für eine spätere Neuinstallation bleiben sollen (Standard: nein).
     if (inst.einstellungen) { setEntfernenOffen(true); return; }
-    if (!confirm(`„${inst.name}“ entfernen? Seine Mappentypen und Ansichten verschwinden. Das geht nur, solange es keine Mappen dieser Mappentypen gibt.`)) return;
+    if (!(await rueckfrage({ titel: `„${inst.name}“ entfernen?`, text: 'Seine Mappentypen und Ansichten verschwinden. Das geht nur, solange es keine Mappen dieser Mappentypen gibt.', ja: 'Entfernen', gefahr: true }))) return;
     void tu(async () => { await api.paketEntfernen(id); geheZu('/werkbank/pakete', true); return `${inst.name} ist entfernt.`; });
   };
   const entfernenBestaetigt = () => void tu(async () => { await api.paketEntfernen(id, behalten); setEntfernenOffen(false); geheZu('/werkbank/pakete', true); return `${inst!.name} ist entfernt${behalten ? ', die Einstellungen bleiben für eine spätere Neuinstallation' : ''}.`; });

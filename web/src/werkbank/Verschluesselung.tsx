@@ -4,6 +4,7 @@ import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { Notfallblatt } from './Sicherung';
 import { Hilfe } from '../Hilfe';
+import { rueckfrage } from '../rueckfrage';
 
 /**
  * Schlüssel für verschlüsselte Zugangsdaten (#39): Status, Fingerabdruck, Erzeugen
@@ -95,7 +96,7 @@ export function TresorPanel({ t }: { t: TresorZustand }) {
   const erzeugbar = s.zustand === 'fehlt' || s.zustand === 'verloren';
 
   async function wechseln() {
-    if (!confirm('Schlüssel jetzt wechseln?\n\nAlle gespeicherten Passwörter werden mit einem neuen Schlüssel verschlüsselt – ganz oder gar nicht. Danach brauchst du ein neues Notfallblatt. Ältere Sicherungen bleiben mit dem bisherigen Schlüssel verschlüsselt: Bewahre das alte Notfallblatt auf, solange du sie brauchst.')) return;
+    if (!(await rueckfrage({ titel: 'Schlüssel jetzt wechseln?', text: 'Alle gespeicherten Passwörter werden mit einem neuen Schlüssel verschlüsselt – ganz oder gar nicht. Danach brauchst du ein neues Notfallblatt.\n\nÄltere Sicherungen bleiben mit dem bisherigen Schlüssel verschlüsselt: Bewahre das alte Notfallblatt auf, solange du sie brauchst.', ja: 'Schlüssel wechseln', gefahr: true, bestaetigeMit: 'wechseln' }))) return;
     setLaeuft(true); setMeldung(undefined); setWechsel(undefined);
     try { const r = await api.tresorWechseln(); t.setStand(r); setWechsel(r); melde(); await aktualisieren(); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
@@ -140,8 +141,8 @@ export function TresorPanel({ t }: { t: TresorZustand }) {
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         {erzeugbar && (
           <div className="knoepfe">
-            <button className="knopf primaer" disabled={laeuft} onClick={() => {
-              if (s.zustand === 'verloren' && !confirm('Die bisher gespeicherten Passwörter werden damit endgültig unlesbar. Neuen Schlüssel erzeugen?')) return;
+            <button className="knopf primaer" disabled={laeuft} onClick={async () => {
+              if (s.zustand === 'verloren' && !(await rueckfrage({ titel: 'Neuen Schlüssel erzeugen?', text: 'Die bisher gespeicherten Passwörter werden damit endgültig unlesbar.', ja: 'Neuen Schlüssel erzeugen', gefahr: true }))) return;
               void erzeugen();
             }}>{laeuft ? 'Erzeuge …' : s.zustand === 'verloren' ? 'Neuen Schlüssel erzeugen' : 'Schlüssel erzeugen'}</button>
           </div>
