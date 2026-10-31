@@ -49,10 +49,30 @@ function bereinige(e: unknown): DesignDaten {
   if (!FARBE.test(primaer)) fehler.push('Primärfarbe als #RRGGBB angeben.');
   if (!FARBE.test(sekundaer)) fehler.push('Sekundärfarbe als #RRGGBB angeben.');
   if (css.length > MAX_CSS) fehler.push('Das eigene CSS ist zu lang (höchstens 50.000 Zeichen).');
-  // CSS darf nicht aus dem <style>-Element ausbrechen.
-  if (/<\/?\s*style/i.test(css)) fehler.push('Das CSS darf kein <style>-Tag enthalten.');
+  // Kein „<“ (#250): Damit kann eigenes CSS den Style-Block nicht verlassen. In CSS-Texten geht „\3C “.
+  if (css.includes('<')) fehler.push('Das CSS darf kein „<“ enthalten (in Texten stattdessen \\3C schreiben).');
   if (fehler.length) throw new Fachfehler(422, fehler.join(' '));
   return { name, grundlage, primaer: primaer.toUpperCase(), sekundaer: sekundaer.toUpperCase(), css, schriftzug };
+}
+
+/**
+ * Beginnt der Text mit einem SVG-Element – nach optionaler XML-Deklaration und Kommentaren?
+ * Bewusst ohne verschachtelten regulären Ausdruck (#250): der ließ sich mit vielen
+ * Kommentaren sehr langsam machen (ReDoS).
+ */
+export function istSvg(text: string): boolean {
+  let t = text.trimStart();
+  if (t.slice(0, 5).toLowerCase() === '<?xml') {
+    const ende = t.indexOf('?>');
+    if (ende < 0) return false;
+    t = t.slice(ende + 2).trimStart();
+  }
+  while (t.startsWith('<!--')) {
+    const ende = t.indexOf('-->', 4);
+    if (ende < 0) return false;
+    t = t.slice(ende + 3).trimStart();
+  }
+  return /^<svg[\s>]/i.test(t);
 }
 
 /** Bildtyp am Inhalt erkennen; SVG nur ohne Skripte, Ereignisse und fremde Verweise (#72). */
@@ -62,7 +82,7 @@ export function pruefeLogo(b: Buffer): string {
   if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
   if (kopf.startsWith('RIFF') && kopf.slice(8, 12) === 'WEBP') return 'image/webp';
   const text = b.toString('utf8');
-  if (/^\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*<svg[\s>]/i.test(text)) {
+  if (istSvg(text)) {
     const verboten = [/<script/i, /<foreignObject/i, /\son[a-z]+\s*=/i, /javascript:/i, /<!ENTITY/i, /<!DOCTYPE/i, /<(iframe|embed|object|link|meta|style)\b/i,
       /(xlink:)?href\s*=\s*["']\s*(?!#)/i, /url\(\s*["']?\s*(?!#)/i, /@import/i];
     if (verboten.some((r) => r.test(text))) throw new Fachfehler(422, 'Das SVG enthält Skripte, Ereignisse oder Verweise auf andere Dateien. Bitte ein schlichtes SVG oder PNG verwenden.');

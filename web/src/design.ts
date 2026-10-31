@@ -4,6 +4,7 @@
  * lesbare Schrift auf der Farbe, für dunkle Grundlagen aufgehellte Töne)
  * entstehen hier, damit jede Farbe auf jeder Grundlage lesbar bleibt.
  */
+import { cssOhneSpitzeKlammer } from '../../shared/src/maskieren';
 export type Grundlage = 'automatisch' | 'hell' | 'dunkel' | 'kontrast';
 export interface Design {
   id: string; name: string; grundlage: Grundlage; primaer: string; sekundaer: string; css: string;
@@ -72,7 +73,7 @@ export function designCss(d: Pick<Design, 'grundlage' | 'primaer' | 'sekundaer' 
        `@media (prefers-color-scheme: dark) { :root { ${block(palette('dunkel', d.primaer, d.sekundaer))} } }`]
     : [`:root { ${block(palette(d.grundlage, d.primaer, d.sekundaer))} }`];
   if (d.grundlage === 'kontrast') teile.push(':root { --r: 4px; } :focus-visible { outline-width: 3px; } a, .verweis, .textknopf { text-decoration: underline; }');
-  if (mitCss && d.css.trim()) teile.push(`/* Eigenes CSS des Designs */\n${d.css.replace(/<\/?\s*style/gi, '')}`);
+  if (mitCss && d.css.trim()) teile.push(`/* Eigenes CSS des Designs */\n${cssOhneSpitzeKlammer(d.css)}`);
   return teile.join('\n');
 }
 
