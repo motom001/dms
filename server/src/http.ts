@@ -48,6 +48,8 @@ interface Optionen {
   system?: SystemQuelle;
   designs?: Designs;
   apiSchluessel?: ApiSchluesselDienst;
+  /** Befehl `dms` im Container (#244). */
+  konsole?: import('./konsole').Konsolenzugang;
   betrieb?: Betrieb;
   tresor?: Tresor;
   texterkennung?: Texterkennung;
@@ -133,6 +135,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
           query: req.query as Record<string, string | undefined>,
           sitzung: leseCookie(req.headers.cookie, SITZUNG_COOKIE),
           ip: req.ip,
+          peer: req.socket.remoteAddress,
           geraet: String(req.headers['user-agent'] ?? ''),
           einrichtungscode: typeof req.headers['x-einrichtungscode'] === 'string' ? req.headers['x-einrichtungscode'] : undefined,
         };
@@ -140,10 +143,11 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
         const k: Kontext = { anfrage: req.id, pfad: `${req.method} ${req.url.split('?')[0]}`, db: { anzahl: 0, ms: 0 }, ursprung: `${req.protocol}://${req.host}` };
         (req as MitKontext).dms = k;
         const antwort = await kontext.run(k, async () => {
-          await pruefeZugang(r, a, (n) => req.headers[n] as string | undefined, konten, opt.apiSchluessel);
-          k.benutzer = wer(a.benutzer, a.apiSchluessel);
+          await pruefeZugang(r, a, (n) => req.headers[n] as string | undefined, konten, opt.apiSchluessel, opt.konsole);
+          k.benutzer = a.konsole ? `${a.benutzer?.email ?? 'ohne Administrator'} (Konsole)` : wer(a.benutzer, a.apiSchluessel);
           // Wartungsmodus (#102): API 503, in der aktiven Stufe nur Administratoren.
-          opt.wartung?.pruefeAnfrage(r, a.benutzer);
+          // Die Konsole (#244) arbeitet auch im Wartungsmodus – etwa um ihn zu beenden.
+          if (!a.konsole) opt.wartung?.pruefeAnfrage(r, a.benutzer);
           return r.handler(a);
         });
         // Für den Entwicklermodus: Dauer auf dem Server, davon Datenbank (Anzahl Zugriffe in desc).

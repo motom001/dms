@@ -1,5 +1,8 @@
 # Notfall: kein Admin mehr
 
+!!! tip "Erst die Konsole"
+    Gibt es noch einen Administrator und du kommst nur nicht hinein (Passwort vergessen, IP gesperrt, Handy für die Zwei-Faktor-Anmeldung verloren), geht es schneller mit dem [Befehl `dms`](konsole.md) im Container, z. B. `dms passwort <email>`.
+
 Hat niemand mehr Zugang als Administrator – Passwort vergessen, einziger Admin nicht erreichbar, kein E-Mail-Versand für „Passwort vergessen“ –, legst du dir über eine Datei auf dem NAS einen neuen Zugang an. Eine Kommandozeile brauchst du dafür nicht.
 
 ## So geht's

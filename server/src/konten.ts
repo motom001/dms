@@ -106,6 +106,19 @@ export class Konten {
     return { benutzer: treffer.benutzer, schluessel: await this.neueSitzung(treffer.benutzer.id, { ip, geraet }) };
   }
 
+  /**
+   * Passwort direkt setzen (#244, Befehl `dms passwort` im Container) – ohne Mail und Link.
+   * Beendet alle Sitzungen des Benutzers.
+   */
+  async setzePasswortDirekt(email: unknown, passwort: unknown) {
+    const t = await this.repo.holeHash(text(email).toLowerCase());
+    if (!t) throw new Fachfehler(404, `Unter ${text(email)} gibt es keinen Benutzer.`);
+    await this.repo.setzeHash(t.benutzer.id, await hashePasswort(pruefePasswortRegeln(passwort)));
+    await this.repo.loescheLinksVon(t.benutzer.id);
+    await this.repo.loescheSitzungenVon(t.benutzer.id);
+    return t.benutzer;
+  }
+
   /** Eigenes Passwort bestätigen (z. B. vor dem Abschalten der Zwei-Faktor-Anmeldung). */
   async pruefeEigenesPasswort(b: Benutzer, passwort: unknown) {
     const t = await this.repo.holeHash(b.email);

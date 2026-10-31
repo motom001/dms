@@ -10,6 +10,7 @@ import type { SitzungIntern } from './konto-repo';
 import { openapi, v1Routen } from './api-v1';
 import type { ApiSchluessel, ApiSchluesselDienst } from './apischluessel';
 import type { Designs } from './designs';
+import { ALS_KOPF, KONSOLE_KOPF, istLoopback, konsolenBenutzer, type Konsolenzugang } from './konsole';
 import type { Messung } from './messung';
 import { eigeneVersion, standKennung, uebersicht, versionsabgleich, type SystemQuelle } from './system';
 import type { Fehlermeldungen } from './fehlermeldungen';
@@ -59,6 +60,10 @@ export interface Anfrage {
   geraet?: string;
   /** Angemeldet über einen API-Schlüssel (nur /api/v1). */
   apiSchluessel?: ApiSchluessel;
+  /** Direkte Gegenstelle der Verbindung (ohne Proxy-Köpfe) – für den Konsolenzugang (#244). */
+  peer?: string;
+  /** Über den Befehl `dms` im Container (#244). */
+  konsole?: boolean;
   /** Kopf X-Einrichtungscode (#119), solange das DMS nicht eingerichtet ist. */
   einrichtungscode?: string;
 }
@@ -79,6 +84,8 @@ export interface Route {
   roh?: number;
   /** Teil der öffentlichen API (/api/v1): API-Schlüssel erlaubt. */
   api?: boolean;
+  /** Nur über den Befehl `dms` im Container (#244). */
+  konsole?: boolean;
   handler(a: Anfrage): Promise<Antwort>;
 }
 
@@ -112,6 +119,8 @@ export interface RoutenExtras {
   fehlermeldungen?: Fehlermeldungen;
   /** API-Schlüssel (#20). */
   apiSchluessel?: ApiSchluesselDienst;
+  /** Befehl `dms` im Container (#244). */
+  konsole?: Konsolenzugang;
   /** Wartungsmodus (#102). */
   wartung?: Wartung;
   /** Notfallzugang über eine RESCUE-Datei (#108). */
@@ -295,6 +304,13 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       L.konto.info(r.wiederherstellung ? 'Angemeldet mit Wiederherstellungscode' : 'Angemeldet (zwei Faktoren)', { email: r.benutzer.email, ip: a.ip, geraet: a.geraet });
       return { body: { benutzer: r.benutzer, wiederherstellung: r.wiederherstellung }, sitzungSetzen: r.schluessel };
     } },
+    /* ---------- Befehl dms im Container (#244) ---------- */
+    { methode: 'POST', pfad: '/api/konsole/passwort', zugang: 'offen', konsole: true, handler: async (a) => {
+      const z = await konten.setzePasswortDirekt(b(a).email, b(a).passwort);
+      L.konto.warn('Passwort über die Konsole gesetzt, alle Sitzungen beendet', { email: z.email, aktiv: z.aktiv });
+      return ok({ email: z.email, name: z.name, rolle: z.rolle, aktiv: z.aktiv, zweifaktor: konten.zweifaktor ? await konten.zweifaktor.aktiv(z.id) : false });
+    } },
+    { methode: 'GET', pfad: '/api/konsole/ich', zugang: 'offen', konsole: true, handler: async (a) => ok({ als: a.benutzer?.email ?? null, version: eigeneVersion() }) },
     /* ---------- Zwei-Faktor-Anmeldung (#242) ---------- */
     { methode: 'GET', pfad: '/api/konto/zweifaktor', zugang: 'angemeldet', handler: async (a) => ok({ ...(await zf().status(ich(a).id)), pflicht: (await zf().pflicht())[ich(a).rolle] }) },
     { methode: 'POST', pfad: '/api/konto/zweifaktor/beginnen', zugang: 'angemeldet', handler: async (a) => ok(zf().beginne(ich(a), (await x.designs?.marke())?.schriftzug || 'DMS')) },
@@ -1100,7 +1116,19 @@ export function sitzungsCookie(schluessel: string | null, sicher: boolean): stri
  * Prüft Zugang und Schutz vor fremden Seiten (CSRF): Ändernde Anfragen
  * müssen den Header X-DMS tragen, den nur die eigene Oberfläche setzt.
  */
-export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => string | undefined, konten: Konten, schluessel?: ApiSchluesselDienst) {
+export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => string | undefined, konten: Konten, schluessel?: ApiSchluesselDienst, konsole?: Konsolenzugang) {
+  // Befehl `dms` im Container (#244): Schlüssel aus /tmp, nur über Loopback; handelt als Administrator.
+  const k = kopf(KONSOLE_KOPF);
+  if (k !== undefined) {
+    if (!konsole || !konsole.passt(k) || !istLoopback(a.peer)) throw new Fachfehler(401, 'Konsolenzugang ungültig. Der Befehl dms funktioniert nur im Container des DMS.');
+    a.konsole = true;
+    try { a.benutzer = konsolenBenutzer(await konten.listeBenutzer(), kopf(ALS_KOPF)); } catch (e) {
+      // Nur die Konsolen-Befehle selbst gehen auch ohne Administrator (z. B. Passwort setzen).
+      if (!r.konsole) throw e;
+    }
+    return;
+  }
+  if (r.konsole) throw new Fachfehler(404, 'Diese Schnittstelle gibt es nicht.');
   // Öffentliche API: Anmeldung per API-Schlüssel statt Sitzung; kein X-DMS nötig (kein Cookie im Spiel).
   const auth = kopf('authorization');
   if (r.api && auth && schluessel) {

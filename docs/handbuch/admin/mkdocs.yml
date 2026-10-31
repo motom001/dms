@@ -88,6 +88,7 @@ nav:
       - Wartungsmodus: wartungsmodus.md
       - Speicherplatz: speicherplatz.md
       - "Notfall: kein Admin mehr": notfall.md
+      - "Konsole: Befehl dms": konsole.md
       - Verfahrensdokumentation (Vorlage): verfahrensdokumentation.md
   - Fehlersuche und Support:
       - Protokoll, Datenbank, Technik: fehlersuche.md
