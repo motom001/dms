@@ -7504,7 +7504,7 @@
           },
           "absender": {
             "type": "string",
-            "description": "Standard: Name des Benutzers"
+            "description": "Wer die Post geschickt hat; ohne Angabe leer (bis 0.99: Name des Benutzers, #494)"
           },
           "fuer": {
             "type": "string",
