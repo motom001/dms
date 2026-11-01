@@ -6,8 +6,8 @@ Die **Werkbank** sehen nur Administratoren. Links stehen ihre Bereiche in vier G
 | Gruppe | Bereiche |
 | --- | --- |
 | **Ablage einrichten** | [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Stempel](stempel.md), [Pakete](pakete.md), [Darf weg](archiv.md#nach-der-frist-darf-weg) (nur mit Archivmodus), [Datenschutz](datenschutz.md) |
-| **Benutzer und Zusammenarbeit** | [Benutzer](benutzer.md), [Anmeldeschutz](anmeldeschutz.md), [Aufgaben](aufgaben.md) |
-| **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Verschlüsselung](verschluesselung.md), [Designs](designs.md), [Papierkorb](papierkorb.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung), [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Texterkennung](texterkennung.md) |
+| **Benutzer und Zusammenarbeit** | [Benutzer](benutzer.md), [Aufgaben](aufgaben.md) |
+| **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Verschlüsselung](verschluesselung.md), [Anmeldeschutz](anmeldeschutz.md), [Designs](designs.md), [Papierkorb](papierkorb.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung), [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Texterkennung](texterkennung.md) |
 | **Wartung und Fehlersuche** | [Protokoll](fehlersuche.md#protokoll), [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler), [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md), [Vollexport](export.md), [Wartungsmodus](wartungsmodus.md), [Systemzustand](speicherplatz.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen), [Technik](fehlersuche.md#technik), [Demo-Daten](demo.md) |
 <!-- /bereiche:gruppen -->
 
@@ -91,10 +91,10 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Darf weg](archiv.md#nach-der-frist-darf-weg) | Mappen mit abgelaufener Aufbewahrungsfrist (nur mit Archivmodus) | Betrieb |
 | [Datenschutz](datenschutz.md) | Auskunft nach Art. 15 DSGVO an Kunden, Mieter und Kontakte als ZIP | Betrieb |
 | [Benutzer](benutzer.md) | Benutzer und Rollen anlegen | Haushalt, Betrieb |
-| [Anmeldeschutz](anmeldeschutz.md) | Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen | Betrieb |
 | [Aufgaben](aufgaben.md) | Alle offenen Aufgaben im Blick behalten | Haushalt, Betrieb |
 | [E-Mail und Adresse](installation.md#e-mail-und-adresse) | E-Mail-Versand und Adresse des DMS | Haushalt, Betrieb |
 | [Verschlüsselung](verschluesselung.md) | Den Schlüssel für Passwörter und Sicherungen | Haushalt, Betrieb |
+| [Anmeldeschutz](anmeldeschutz.md) | Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen | Betrieb |
 | [Designs](designs.md) | Logo, Farben und eigenes CSS | Betrieb |
 | [Papierkorb](papierkorb.md) | Gelöschte Mappen zurückholen | Haushalt, Betrieb |
 | [Datenbank-Anbindung](installation.md#datenbank-anbindung) | Die Verbindung zur Datenbank, lange Datenbankzugriffe und was gerade läuft | nur Alles |

@@ -127,6 +127,15 @@ describe('Werkbank: mittlere Spalte nur für große Sammlungen (#366)', () => {
     assert.deepEqual(liesEigene({ ein: ['datenbank', 'anbindung'] }), { ein: ['anbindung'] });
   });
 
+  it('#417: Anmeldeschutz steht unter Einstellungen, gleich nach der Verschlüsselung', () => {
+    const b = BEREICHE.find((x) => x.pfad === 'anmeldeschutz');
+    assert.equal(b?.gruppe, 'einstellungen');
+    const i = BEREICHE.findIndex((x) => x.pfad === 'verschluesselung');
+    assert.equal(BEREICHE[i + 1].pfad, 'anmeldeschutz');
+    assert.deepEqual(BEREICHE.filter((x) => x.gruppe === 'benutzer').map((x) => x.pfad), ['benutzer', 'aufgaben']);
+    assert.equal(werkbankUmleitung('anmeldeschutz'), null, 'Pfad bleibt, alte Links gelten weiter');
+  });
+
   it('#408: „Speicherplatz“ heißt „Systemzustand“ und steht unter Wartung und Fehlersuche', () => {
     assert.ok(!BEREICHE.some((b) => b.pfad === 'speicherplatz'));
     const b = BEREICHE.find((x) => x.pfad === 'systemzustand');
