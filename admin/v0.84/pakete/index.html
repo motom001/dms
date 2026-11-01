@@ -2155,10 +2155,11 @@
 <p>Einstellungen gehören zu Paketen mit Code. Solange es im DMS den <strong>Paket-Läufer</strong> noch nicht gibt, läuft der Code nicht: Du kannst solche Pakete installieren und ihre Einstellungen pflegen, Aktionen melden aber, dass sie noch nicht ausgeführt werden können.</p>
 </div>
 <h2 id="expertenmodus-weitere-kataloge-und-hochladen">Expertenmodus: weitere Kataloge und Hochladen<a class="headerlink" href="#expertenmodus-weitere-kataloge-und-hochladen" title="Permanent link">&para;</a></h2>
-<p>Für Paketentwickler und für ein DMS ohne Internetzugang gibt es unter <strong>Werkbank → Pakete</strong> den Schalter <strong>Expertenmodus</strong>. Er gilt nur für dich (je Benutzer gemerkt) und ist standardmäßig aus. Ohne Expertenmodus gibt es nur den offiziellen Katalog.</p>
+<p>Für Paketentwickler und für ein DMS ohne Internetzugang gibt es unter <strong>Werkbank → Pakete</strong> direkt unter den Knöpfen den Abschnitt <strong>Expertenmodus</strong>. Er ist zugeklappt; ein Klick auf <strong>▸ Expertenmodus</strong> (oder Enter bzw. Leertaste) klappt ihn an Ort und Stelle auf. Ob er auf- oder zugeklappt ist, merkt sich dein Browser für dich – das ist nur Bequemlichkeit, kein Recht: Was dort steht, dürfen alle Administratoren.</p>
+<p><img alt="Werkbank → Pakete mit aufgeklapptem Expertenmodus" src="../bilder/werkbank-pakete.png" /></p>
 <p>Im Expertenmodus kannst du:</p>
 <ul>
-<li><strong>Weitere Katalogadressen</strong> hinzufügen, abschalten und entfernen, höchstens 20. Erlaubt ist nur HTTPS, das Format ist dasselbe wie beim offiziellen Katalog (<code>katalog.json</code> der Registry). <strong>Katalog abrufen</strong> fragt dann auch die eingeschalteten weiteren Kataloge ab; ihre Pakete tragen die Adresse als Kennzeichen.</li>
+<li><strong>Weitere Quellen</strong> – Katalogadressen hinzufügen, abschalten und entfernen, höchstens 20. Erlaubt ist nur HTTPS, das Format ist dasselbe wie beim offiziellen Katalog (<code>katalog.json</code> der Registry). <strong>Katalog abrufen</strong> fragt neben dem offiziellen Katalog alle <strong>eingeschalteten</strong> weiteren Kataloge ab – egal, ob der Abschnitt gerade auf- oder zugeklappt ist; ihre Pakete tragen die Adresse als Kennzeichen. Willst du eine Quelle nicht mehr nutzen, schalte sie ab oder entferne sie. Ohne weitere Quellen gibt es nur den offiziellen Katalog.</li>
 <li>Ein <strong>Paket als Datei hochladen</strong> (<code>.zip</code> im Format der Registry, z. B. der Paketordner gepackt, höchstens 10 MB). Das DMS prüft es genauso wie ein Katalogpaket, nur ohne Prüfsumme aus dem Katalog, und zeigt die Vorschau.</li>
 </ul>
 <div class="admonition warning">
