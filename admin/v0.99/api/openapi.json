@@ -1206,7 +1206,7 @@
           "Ablage"
         ],
         "summary": "Mit verknüpften Mappen löschen: ausführen",
-        "description": "Sammelt die Vorschau neu (gleiche tiefe/max angeben) und löscht nach auswahl (Id → loeschen | entkoppeln | behalten; fehlende Ids bleiben – z. B. vorschlag aus der Vorschau übernehmen). Dieselben Prüfungen wie in der Vorschau: Rechte, Aufbewahrungsfristen; eine Mappe, auf die eine bleibende Mappe noch verweist, bleibt. entkoppeln entfernt nur die Verweise dieser Mappe auf gelöschte Mappen (Recht „Bearbeiten“). Alles geht als ein Vorgang in den Papierkorb (bei 0 Tagen Aufbewahrung sofort endgültig) und lässt sich mit POST /papierkorb/vorgang/{vorgang}/wiederherstellen gemeinsam wiederherstellen. 422, wenn nach der Auswahl nichts gelöscht würde.",
+        "description": "Sammelt die Vorschau neu (gleiche tiefe/max angeben) und löscht nach auswahl (Id → loeschen | entkoppeln | behalten; fehlende Ids bleiben – z. B. vorschlag aus der Vorschau übernehmen). Dieselben Prüfungen wie in der Vorschau: Rechte, Aufbewahrungsfristen; eine Mappe, auf die eine bleibende Mappe noch verweist, bleibt. entkoppeln entfernt nur die Verweise dieser Mappe auf gelöschte Mappen (Recht „Bearbeiten“). Alles geht als ein Vorgang in den Papierkorb (bei 0 Tagen Aufbewahrung sofort endgültig) und lässt sich mit POST /papierkorb/vorgang/{vorgang}/wiederherstellen gemeinsam wiederherstellen. Bleibt die Start-Mappe wegen Mappen in der Aufbewahrungsfrist, legt das DMS dem Aufrufer an ihr eine Erinnerung zum Tag nach dem spätesten Fristende an (erinnerung). 422, wenn nach der Auswahl nichts gelöscht würde.",
         "operationId": "postMappenMitidMit-verknuepften-loeschen",
         "parameters": [
           {
@@ -6783,6 +6783,24 @@
             "type": "array",
             "items": {
               "type": "object"
+            }
+          },
+          "erinnerung": {
+            "type": "object",
+            "nullable": true,
+            "description": "Erinnerung zum Fristende (#424): blieb die Start-Mappe wegen Mappen in der Aufbewahrungsfrist, eine Erinnerung für den Aufrufer an der Start-Mappe zum Tag nach dem spätesten Fristende",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "datum": {
+                "type": "string",
+                "format": "date"
+              },
+              "text": {
+                "type": "string"
+              }
             }
           }
         }

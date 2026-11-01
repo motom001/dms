@@ -363,6 +363,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0991" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.99.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.99.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#neu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0990" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -375,7 +403,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#neu" class="md-nav__link">
+  <a href="#neu_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Neu
@@ -2026,6 +2054,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0991" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.99.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.99.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#neu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0990" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2038,7 +2094,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#neu" class="md-nav__link">
+  <a href="#neu_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Neu
@@ -2118,8 +2174,14 @@
 
 
 <h1 id="neu-in-version-099">Neu in Version 0.99<a class="headerlink" href="#neu-in-version-099" title="Permanent link">&para;</a></h1>
-<h2 id="0990">0.99.0<a class="headerlink" href="#0990" title="Permanent link">&para;</a></h2>
+<h2 id="0991">0.99.1<a class="headerlink" href="#0991" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Erinnerung zum Fristende beim Löschen mit verknüpften Mappen</strong> (#424): Bleibt eine Mappe stehen, weil Mappen darunter noch in der Aufbewahrungsfrist sind, legt das DMS dir an ihr eine Erinnerung zum Tag nach dem spätesten Fristende an – „Müller GmbH kann ab 01.01.2032 gelöscht werden – „Mit verknüpften Mappen löschen“ erneut ausführen“. An dem Tag steht sie unter „Zu erledigen“ und führt zur Mappe. Die Vorschau kündigt sie an, die Bestätigung nennt das Datum.</li>
+<li>Schnittstelle: <code>POST /mappen/{id}/mit-verknuepften-loeschen</code> liefert die angelegte Erinnerung unter <code>erinnerung</code> (sonst <code>null</code>).</li>
+</ul>
+<h2 id="0990">0.99.0<a class="headerlink" href="#0990" title="Permanent link">&para;</a></h2>
+<h3 id="neu_1">Neu<a class="headerlink" href="#neu_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Mappe mit allen verknüpften Mappen löschen</strong> (#424): an der Mappe unter <strong>Mappe ▾ → Mit verknüpften Mappen löschen …</strong> (bei den Löschwegen, #427) und unter <strong>Warum nicht?</strong> am gesperrten Löschknopf (#423) – z. B. ein Vertragspartner ohne Aktivität seit Jahren samt Verträgen, Rechnungen, Post und Dokumenten.</li>
 <li><strong>Vorschau als Baum</strong> (Mappen, die darauf verweisen, und so weiter; Tiefe einstellbar, Äste auf- und zuklappbar) mit Dokumentanzahl und Kästchen je Mappe. Kennzeichnungen: ✅ wird gelöscht, 📎 nur über Bezug verbunden (nur der Verweis wird entfernt), 🔗 hängt auch an anderen Mappen (Vorschlag: <strong>nur den Verweis entfernen, Mappe behalten</strong>), 🔒 Aufbewahrungsfrist läuft noch, ⛔ kein Löschrecht.</li>
@@ -2145,7 +2207,7 @@
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.98.13 im Detail: <a href="https://github.com/motom001/dms/compare/v0.98.13...v0.99.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.98.13 im Detail: <a href="https://github.com/motom001/dms/compare/v0.98.13...v0.99.1">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
