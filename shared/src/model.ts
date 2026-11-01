@@ -716,7 +716,7 @@ export interface Dokument {
 }
 
 /** Herkunft einer Dokumentversion (#194). */
-export const HERKUNFT = { hochgeladen: 'hochgeladen', api: 'über die Schnittstelle', webdav: 'über WebDAV', paket: 'von einem Paket', eingang: 'Eingangskanal', zurueckgeholt: 'zurückgeholt', bearbeitet: 'im DMS bearbeitet' } as const;
+export const HERKUNFT = { hochgeladen: 'hochgeladen', api: 'über die Schnittstelle', webdav: 'über WebDAV', paket: 'von einem Paket', eingang: 'Eingangskanal', zurueckgeholt: 'zurückgeholt', bearbeitet: 'im DMS bearbeitet', geschwaerzt: 'im DMS geschwärzt' } as const;
 export type Herkunft = keyof typeof HERKUNFT;
 /** Eine ältere Version eines Dokuments (#194). */
 export interface DokumentVersion {
@@ -754,6 +754,7 @@ export const HISTORIENARTEN = {
   dokument_papierkorb: 'Dokument in den Papierkorb', dokument_wiederhergestellt: 'Dokument wiederhergestellt',
   pdf_bearbeitet: 'PDF bearbeitet', post_geteilt: 'Post geteilt',
   archivnummer: 'Archivnummer', volltext: 'Volltext gesetzt', weitergegeben: 'weitergegeben',
+  geschwaerzt: 'geschwärzte Fassung erstellt',
 } as const;
 export type Historienart = keyof typeof HISTORIENARTEN;
 /** Eine Feldänderung: Werte lesbar zum Zeitpunkt der Änderung; Passwörter nur als „geändert“. */

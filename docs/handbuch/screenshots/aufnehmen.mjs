@@ -401,6 +401,28 @@ async function main() {
   erstellt.push('pdf-verkleinern');
   await klein.getByRole('button', { name: 'Abbrechen' }).click();
 
+  // Schwärzen (#392): Suchbegriff überall, IBAN als Vorschlag angehakt, Vorschau der schwarzen Bereiche.
+  await api('POST', `/api/mappen/${d.strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Kontoauszug.pdf')}&typ=application/pdf`,
+    beispielPdf('Anna Beispiel - IBAN DE89 3704 0044 0532 0130 00 - Telefon 0351 1234567'), true);
+  await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
+  await s.getByRole('tab', { name: 'Vertragsunterlagen' }).click();
+  const auszug = s.locator('.dokumentliste li', { hasText: /^Kontoauszug\.pdf/ }).first();
+  await auszug.getByRole('button', { name: 'Schwärzen', exact: true }).click();
+  const schwarz = s.locator('.pdfseiten.schwaerzen');
+  await schwarz.locator('.schwarz-seite img').first().waitFor({ timeout: 30_000 });
+  await schwarz.getByLabel('Überall schwärzen').fill('Beispiel');
+  await schwarz.getByRole('button', { name: 'Hinzufügen' }).click();
+  await schwarz.locator('.schwarz-art', { hasText: 'IBAN' }).locator('legend input').check();
+  await schwarz.getByRole('button', { name: 'Vorschau' }).click();
+  await s.waitForTimeout(500);
+  await schwarz.scrollIntoViewIfNeeded();
+  // Die Speicherleiste der Mappe liegt unten über dem Dialog – für das Bild ausblenden.
+  const ohneLeiste = await s.addStyleTag({ content: '.speicherleiste { visibility: hidden !important; }' });
+  await schwarz.screenshot({ path: join(ZIEL, 'schwaerzen.png') });
+  await ohneLeiste.evaluate((e) => e.remove());
+  erstellt.push('schwaerzen');
+  await schwarz.getByRole('button', { name: 'Abbrechen' }).click();
+
   // Verknüpfungsregister beim Vertragspartner
   await geheZu(s, `/ablage/${partner.id}/${d.stadtwerke.id}`);
   await s.getByRole('tab', { name: 'Verträge' }).click();

@@ -104,6 +104,35 @@ Gut zu wissen:
 - Verschlüsselte PDFs lassen sich nicht verkleinern.
 - Beim **Weitergeben** (E-Mail, Export, Herunterladen mit Stempel) gibt es zusätzlich das Kästchen **PDFs verkleinert senden** – siehe [Verkleinert weitergeben](versenden.md#verkleinert-weitergeben). Große PDFs auf einmal verkleinert der Administrator in der Werkbank.
 
+## Schwärzen {#schwaerzen}
+
+Bevor du einen Kontoauszug an die Familienkasse, eine Gehaltsabrechnung an den Vermieter oder einen Beleg an einen Kunden gibst, willst du manches unkenntlich machen: Kontonummer, Gehalt, Gesundheitsangaben, Namen anderer Leute. **Schwärzen** neben einem PDF oder Bild (JPEG, PNG) macht daraus eine **geschwärzte Kopie**, in der diese Stellen wirklich fehlen – nicht nur schwarz überdeckt.
+
+![Schwärzen: Suchbegriff und IBAN-Vorschlag, Vorschau der schwarzen Bereiche](bilder/schwaerzen.png)
+
+So wählst du aus, was schwarz wird:
+
+- **Bereiche aufziehen** – mit der Maus (oder dem Finger) ein Rechteck über die Stelle ziehen. Ein **Wort antippen** schwärzt genau dieses Wort; einen eigenen Bereich nochmal antippen nimmt ihn wieder weg. Am Handy schaltest du mit **✎ Aufziehen an/aus** zwischen Aufziehen und Blättern um.
+- **Überall schwärzen** – einen Suchbegriff eingeben, z. B. einen Namen oder eine IBAN, und **Hinzufügen**: Er wird auf allen Seiten geschwärzt, egal ob groß oder klein geschrieben und auch mit oder ohne Leerzeichen („DE89 3704“ findet „DE893704“). Daneben steht, wie oft er vorkommt.
+- **Vorschläge** – das DMS sucht selbst nach **IBAN**, **Steuer-Id**, **Geburtsdatum** (ein Datum mit „geb.“ davor), **E-Mail** und **Telefon** und listet die Fundstellen zum Anhaken auf. Das passiert auf deinem Rechner bzw. im DMS, ohne Internet. IBAN und Steuer-Id werden mit ihrer Prüfziffer geprüft, Telefonnummern können auch einmal danebenliegen – sieh dir die Liste an.
+- **Vorschau** zeigt die Seiten so, wie sie danach aussehen. **Textstellen zeigen** blendet ein, wo das DMS Text erkannt hat – so siehst du, ob die Textebene genau über dem sichtbaren Text liegt.
+
+Mit **Geschwärzt speichern** kommt eine Rückfrage: Schwärzen lässt sich nicht rückgängig machen. Danach liegt im selben Register ein neues Dokument **„… (geschwärzt)“**; das Original bleibt unverändert in der Mappe. Ist für das Register die [Versionierung](#versionen) an, kannst du stattdessen **Neue Version** wählen – dann bleibt die ungeschwärzte Fassung als ältere Version erhalten und ist für alle mit Leserecht weiter zu sehen. Zum Weitergeben ist die Kopie meist besser.
+
+Was dabei passiert:
+
+- **Alle Seiten** werden neu als Bild aufgebaut (150 dpi), die Bereiche in den Bildpunkten schwarz gefüllt. Aus dem Original kommt nichts mit: keine Textebene darunter, keine Anmerkungen, Formularfelder, Lesezeichen, eingebetteten Dateien, Autor, Titel oder andere Metadaten. Bilder bleiben Bilder desselben Typs, ohne EXIF-Daten (z. B. Aufnahmeort).
+- Die **Textebene** entsteht neu – ohne die geschwärzten Wörter. Die Kopie bleibt also durchsuchbar und kopierbar, nur die Stellen nicht; der [Volltext](#volltext) der Kopie enthält sie nicht, die Suche findet sie dort nicht.
+- Ein Wort, das ein Bereich auch nur teilweise berührt, fehlt in der Textebene ganz.
+- Die Historie der Mappe vermerkt „geschwärzte Fassung erstellt“ mit der Zahl der Stellen – nie die Suchbegriffe oder den geschwärzten Text.
+
+Gut zu wissen:
+
+- Bei **Scans ohne Textebene** liest die Texterkennung die Seiten zuerst; das dauert etwas. Ohne Texterkennung gehen nur Bereiche, keine Suchbegriffe und Vorschläge.
+- Vektortext wird dabei zu einem Bild – die Kopie ist meist etwas größer und nicht ganz so scharf wie ein PDF direkt aus einem Programm.
+- Schwärzen geht mit dem Recht „Bearbeiten“ an der Mappe, für höchstens 300 Seiten auf einmal (längere PDFs vorher [teilen](#pdf-bearbeiten)), nicht bei PDFs mit Passwortschutz.
+- Das **Original** enthält weiterhin alles. Gib die geschwärzte Kopie weiter – per [E-Mail, Export oder Link](versenden.md).
+
 ## Volltext
 
 Damit die [Volltextsuche](ablage.md#im-text-der-dokumente-suchen) ein Dokument findet, liest das DMS nach dem Hochladen im Hintergrund seinen Text: bei PDFs die Textebene, bei Scans und Fotos per Texterkennung. Neben dem Dokument steht, wie weit es ist:

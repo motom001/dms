@@ -113,6 +113,7 @@ export const HILFE = {
   'dokumente.versionen': benutzer('versionen/', 'Versionen verstehen'),
   'dokumente.seiten': benutzer('dokumente/', 'PDF bearbeiten', 'pdf-bearbeiten'),
   'dokumente.verkleinern': benutzer('dokumente/', 'PDF verkleinern', 'pdf-verkleinern'),
+  'dokumente.schwaerzen': benutzer('dokumente/', 'Schwärzen', 'schwaerzen'),
   'versenden.verkleinert': benutzer('versenden/', 'Verkleinert weitergeben', 'verkleinert-weitergeben'),
   'dokumente.archivnummer': benutzer('dokumente/', 'Archivnummer', 'archivnummer'),
   'profil.rechte': benutzer('profil/', 'deinen Rechten', 'meine-rechte'),

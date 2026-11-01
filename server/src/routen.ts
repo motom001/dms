@@ -1486,6 +1486,21 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return ok(await dienst.bearbeitePdf(a.params.id, a.body, ich(a).id, await zg(a)), 201);
     } },
     { methode: 'POST', pfad: '/api/dokumente/zusammenfuegen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.fuegePdfZusammen(a.body, ich(a).id, await zg(a)), 201) },
+    /* Schwärzen (#392): Ansehen und Analyse mit „Lesen“, Schwärzen (neues Dokument bzw. Version) mit „Bearbeiten“. */
+    { methode: 'GET', pfad: '/api/dokumente/:id/schwaerzen', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      return ok(await dienst.schwaerzenVorschau(a.params.id));
+    } },
+    { methode: 'GET', pfad: '/api/dokumente/:id/schwaerzen/seiten/:nr', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      const bild = await dienst.schwaerzSeitenbild(a.params.id, Number(a.params.nr));
+      if (!bild) throw new Fachfehler(404, 'Für diese Seite gibt es kein Bild.');
+      return { datei: { inhalt: bild, name: `seite-${a.params.nr}.jpg`, mime: 'image/jpeg', anzeigen: true, groesse: bild.length, koepfe: { 'cache-control': 'private, max-age=3600' } } };
+    } },
+    { methode: 'POST', pfad: '/api/dokumente/:id/schwaerzen', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
+      return ok(await dienst.schwaerzeDokument(a.params.id, a.body, ich(a).id), 201);
+    } },
     /* PDF verkleinern (#393): Schätzung mit „Lesen“, Verkleinern (neue Version) mit „Bearbeiten“. */
     { methode: 'GET', pfad: '/api/dokumente/:id/verkleinern', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
