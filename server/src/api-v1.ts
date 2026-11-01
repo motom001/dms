@@ -418,7 +418,7 @@ export function openapi(version: string, serverUrl?: string): Schema {
       title: 'DMS API',
       version,
       description: 'Schnittstelle des selbst gehosteten DMS. Anmeldung mit einem API-Schlüssel aus dem Profil: `Authorization: Bearer dms_…`. Ein Schlüssel hat höchstens die Rechte seines Benutzers; Schlüssel „nur lesen“ erlauben nur GET. Diese Beschreibung entsteht aus der installierten Version.',
-      license: { name: 'AGPL-3.0-only', url: 'https://www.gnu.org/licenses/agpl-3.0.html' },
+      license: { name: 'Apache-2.0', url: 'https://www.apache.org/licenses/LICENSE-2.0' },
     },
     servers: [{ url: `${serverUrl?.replace(/\/$/, '') ?? ''}/api/v1` }],
     security: [{ apiSchluessel: [] }],

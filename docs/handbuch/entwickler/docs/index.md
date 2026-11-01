@@ -37,4 +37,4 @@ flowchart LR
 
 ## Lizenz
 
-Das DMS steht unter der [AGPL-3.0](https://github.com/motom001/dms/blob/main/LICENSE). Mit einem Beitrag stellst du ihn unter dieselbe Lizenz. Keine echten Dokumente oder persönlichen Daten committen, nur Code und Beispieldaten.
+Das DMS steht unter der [Apache-2.0](https://github.com/motom001/dms/blob/main/LICENSE) (bis einschließlich 0.92.0: AGPL-3.0). Mit einem Beitrag stellst du ihn unter dieselbe Lizenz. Keine echten Dokumente oder persönlichen Daten committen, nur Code und Beispieldaten.

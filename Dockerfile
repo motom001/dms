@@ -29,7 +29,7 @@ RUN python3 docs/handbuch/werkzeuge/offline.py /hilfe
 
 FROM node:24-alpine AS laufzeit
 LABEL org.opencontainers.image.source="https://github.com/motom001/dms" \
-      org.opencontainers.image.licenses="AGPL-3.0-only"
+      org.opencontainers.image.licenses="Apache-2.0"
 # Alpine-Pakete aktuell halten (#214): Die Kalenderwoche gehört zur Cache-Kennung dieser Schicht,
 # also holt jeder Bau in einer neuen Woche die neuesten Pakete (sonst nähme der Build-Cache ewig die alten).
 ARG APK_WOCHE=""

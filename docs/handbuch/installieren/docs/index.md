@@ -4,7 +4,7 @@
 [![Sterne auf GitHub](https://img.shields.io/github/stars/motom001/dms?label=Sterne&logo=github)](https://github.com/motom001/dms/stargazers)
 [![Letzte Änderung](https://img.shields.io/github/last-commit/motom001/dms?label=letzte%20%C3%84nderung)](https://github.com/motom001/dms/commits/main)
 ![Images für amd64 und arm64](https://img.shields.io/badge/Image-amd64%20%7C%20arm64-2b7656?logo=docker&logoColor=white)
-[![Lizenz AGPL-3.0](https://img.shields.io/github/license/motom001/dms?label=Lizenz)](https://github.com/motom001/dms/blob/main/LICENSE)
+[![Lizenz Apache-2.0](https://img.shields.io/github/license/motom001/dms?label=Lizenz)](https://github.com/motom001/dms/blob/main/LICENSE)
 
 Das DMS läuft bei dir zu Hause: auf einem NAS, einem kleinen Heimserver oder jedem Rechner mit Docker. Deine Unterlagen bleiben damit bei dir. Welcher Weg der richtige ist, hängt davon ab, was du schon hast.
 

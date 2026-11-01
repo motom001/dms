@@ -214,7 +214,7 @@ def alle_karten():
           boden(24, 330, B) + buero(40, B, 120, 240, 9, '#b0bec5') + buero(180, B, 140, 190, 7)
           + ''.join(person(200 + i * 28, B, 0.55, ['#3949ab', '#00897b', '#6d4c41', '#8e24aa', '#546e7a'][i]) for i in range(5)),
           ['Hochverfügbarkeit', 'mehrere Mandanten', 'Verzeichnisdienst', 'Legal Hold', 'Zertifizierungen', 'ERP/CRM'],
-          ['Open Source (AGPL): darf das DMS einsetzen und erweitern.', 'Wir gestalten aber nicht dafür.'])
+          ['Open Source (Apache-2.0): darf das DMS einsetzen und erweitern.', 'Wir gestalten aber nicht dafür.'])
 
 
 # ---------- Übersicht der Skala ----------
