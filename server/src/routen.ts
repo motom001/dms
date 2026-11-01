@@ -19,6 +19,8 @@ import { mkdir } from 'node:fs/promises';
 import { AUSKUNFT_PHASEN, auskuenfteIn, auskunftDatei, auskunftOrdner, erzeugeAuskunft, haltenBis, loescheAuskunft } from './auskunft';
 import { AUSKUNFT_TAGE, linkStatus, oeffentlichErreichbar } from '../../shared/src/auskunft';
 import { textDritte, type TextDritte } from '../../shared/src/anrede';
+import { loeschkonzept, luecken, type LoeschkonzeptQuelle } from '../../shared/src/loeschkonzept';
+import { DOCX_MIME, schriftstueckDocx, schriftstueckPdf } from './schriftstueck';
 import { AbrufTickets, kuerzeIp } from './abruf';
 import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
 import { join } from 'node:path';
@@ -287,6 +289,14 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   // Vollexport (#254): neben den Sicherungen, Unterordner export/.
   // Auskünfte (#396): neben den Exporten, ohne Sicherungsordner im temporären Ordner.
   const auskunftZiel = () => auskunftOrdner(x.sicherung?.ordner);
+  /** Löschkonzept (#469): nur Typen, Einstellungen und Fristen – nichts aus Mappen. */
+  const loeschkonzeptQuelle = async (): Promise<LoeschkonzeptQuelle> => ({
+    typen: await dienst.listeTypen(), datenschutz: await dienst.datenschutz(),
+    papierkorbTage: await dienst.papierkorbTage(), historieTage: await dienst.historieTage(),
+    // Ohne eingerichtete Sicherung (oder wenn der Plan nicht lesbar ist) steht im Dokument „keine automatischen Sicherungen“.
+    sicherung: (await x.sicherung?.plan?.().catch(() => null)) ?? null, auskunftTage: AUSKUNFT_TAGE,
+    version: eigeneVersion(), stand: new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(new Date()), mandant: (await x.mandantName?.()) ?? '',
+  });
   /** Auskunft zustellen (#455): Einmal-Tickets der öffentlichen Abrufseite. */
   const abrufTickets = new AbrufTickets();
   /** Gemeinsamer Schlüssel im Anmeldeschutz: Fehlversuche je IP über alle Abruf-Links. */
@@ -839,7 +849,18 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       einstellung: await dienst.datenschutz(), auskuenfte: await auskuenfteIn(auskunftZiel()), tage: AUSKUNFT_TAGE,
       // Zustellen (#455): Abruf-Links (Nachweis, auch nach dem Löschen der ZIP), Erreichbarkeit, E-Mail-Versand.
       links: await dienst.auskunftLinks({ max: 200 }), adresse: adresse(), oeffentlich: oeffentlichErreichbar(adresse()), mail: !!x.betrieb?.mailer(),
+      // Löschkonzept (#469): was im erzeugten Dokument noch fehlen würde.
+      loeschkonzept: { luecken: luecken(await loeschkonzeptQuelle()) },
     }) },
+    { methode: 'GET', pfad: '/api/werkbank/datenschutz/loeschkonzept', zugang: 'admin', handler: async (a) => {
+      const format = a.query.format === 'docx' ? 'docx' : 'pdf';
+      const q = await loeschkonzeptQuelle();
+      const k = loeschkonzept(q);
+      const s = { titel: k.titel, untertitel: k.untertitel, stand: k.stand, vorbemerkung: k.vorbemerkung, abschnitte: k.abschnitte };
+      const inhalt = format === 'docx' ? schriftstueckDocx(s) : await schriftstueckPdf(s);
+      L.datenschutz.info('Löschkonzept erzeugt', { format, datenarten: k.datenarten.length, luecken: k.luecken.length, von: ich(a).email });
+      return { datei: { inhalt, name: `Löschkonzept ${q.stand}.${format}`, mime: format === 'docx' ? DOCX_MIME : 'application/pdf', anzeigen: false, groesse: inhalt.length } };
+    } },
     { methode: 'PUT', pfad: '/api/werkbank/datenschutz', zugang: 'admin', handler: async (a) => ok(await dienst.setzeDatenschutz(a.body, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/auskunft/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.auskunftVorschau(a.body, await zg(a))) },
     { methode: 'POST', pfad: '/api/werkbank/auskunft/frist', zugang: 'admin', handler: async (a) => ok(await dienst.auskunftFrist(a.body, await zg(a), ich(a).id), 201) },

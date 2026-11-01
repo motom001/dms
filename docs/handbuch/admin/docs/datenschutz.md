@@ -94,14 +94,14 @@ Hat die Person ein **Benutzerkonto**, das schon benutzt wurde, [deaktivierst](be
 
 Für Vermieter, Selbständige und Betriebe: einmal festlegen, wie lange welche Daten bleiben, und das DMS so einrichten, dass es dich daran hält.
 
-1. **Datenarten erfassen:** Jeder Mappentyp ist eine Datenart – Mieter, Mietvertrag, Rechnung, Kunde, Bewerbung … Trage sie in die [Vorlage Löschkonzept](loeschkonzept.md) ein, mit Zweck und Grund für die Aufbewahrung.
+1. **Datenarten erfassen:** Jeder Mappentyp ist eine Datenart – Mieter, Mietvertrag, Rechnung, Kunde, Bewerbung … Markiere unter **Werkbank → Datenschutz → Einstellungen**, welche eine Person betreffen, und trage je Mappentyp den Zweck ein. Daraus [erzeugt das DMS das Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) mit ausgefüllter Tabelle „Datenarten und Fristen“ – oder du füllst die [Vorlage](loeschkonzept.md#die-vorlage) von Hand aus.
 2. **Fristen festlegen** – mit deiner Steuerberatung: z. B. Buchungsbelege 8 Jahre, Geschäftsbriefe 6 Jahre, Bewerbungen ohne Zusage 6 Monate.
 3. **Archivmodus einschalten** für jeden Mappentyp mit gesetzlicher Frist: Frist in Jahren und Stichtag (z. B. Rechnungsdatum). Bis Fristende ist die Mappe gegen Löschen gesperrt; danach steht sie unter **Darf weg**. Siehe [Archivmodus](archiv.md#einschalten).
 4. **Kürzere Fristen ohne Archivmodus** (z. B. Interessenten, Bewerbungen): Lege eine [Ansicht](sichten.md) an, die die fälligen Mappen nach einem Datumsfeld zeigt, und schau sie regelmäßig durch.
 5. **Wie lange Gelöschtes nachwirkt:** Aufbewahrung des [Papierkorbs](papierkorb.md#aufbewahrung) (Standard 30 Tage), Historie gelöschter Mappen (Standard 365 Tage) und Aufbewahrung der [Sicherungen](sicherung.md#zeitplan-und-aufbewahrung) passend zu deinem Konzept einstellen.
 6. **Regelmäßig prüfen:** z. B. jedes Jahr im Januar **Werkbank → Darf weg** durchgehen und löschen, was weg darf – einen Kunden oder Vertragspartner samt allem, was dranhängt, mit [Mit verknüpften Mappen löschen](#mit-verknupften-mappen-loschen). Gelöscht wird nie automatisch.
 7. **Sperren auf Verlangen** wie unter [Löschen auf Verlangen](#loschen-auf-verlangen) beschrieben.
-8. **Dokumentieren:** Das ausgefüllte Löschkonzept legst du selbst als Mappe im DMS ab und hältst es aktuell.
+8. **Dokumentieren:** Erzeuge das Löschkonzept unter **Werkbank → Datenschutz → Löschkonzept** (PDF oder Word), ergänze die [eckigen Klammern] und lege es als Mappe im DMS ab. Ändern sich Mappentypen oder Fristen, erzeugst du es neu.
 
 ## Auskunft erteilen: Werkbank → Datenschutz
 
@@ -247,4 +247,4 @@ Dabei gilt:
 
 ## Schnittstelle
 
-Alles geht auch über die [API](api.md): `POST /api/v1/werkbank/auskunft/vorschau` (Prüfliste), `POST /api/v1/werkbank/auskunft` (erzeugen, Hintergrundauftrag), `GET /api/v1/werkbank/auskunft/{id}/zip`, `POST /api/v1/werkbank/auskunft/frist` und `GET`/`PUT /api/v1/werkbank/datenschutz`; zum Zustellen `POST /api/v1/werkbank/auskunft/{id}/email`, `POST /api/v1/werkbank/auskunft/{id}/link` und `POST /api/v1/werkbank/auskunft/link/{id}/widerrufen`. Die Abrufseite selbst (`POST /api/abruf`, `GET /api/abruf/datei`) gehört nicht zur API. Die Sammlung über Verweise selbst steht jedem Benutzer mit seinen Rechten unter `GET /api/v1/mappen/{id}/baum` zur Verfügung. Für das Löschkonzept: `GET /api/v1/mappen/{id}/loeschvorschau` (Vorschau mit Vorschlag), `POST /api/v1/mappen/{id}/mit-verknuepften-loeschen` (ausführen, mit denselben Prüfungen) und `POST /api/v1/papierkorb/vorgang/{id}/wiederherstellen`.
+Alles geht auch über die [API](api.md): `POST /api/v1/werkbank/auskunft/vorschau` (Prüfliste), `POST /api/v1/werkbank/auskunft` (erzeugen, Hintergrundauftrag), `GET /api/v1/werkbank/auskunft/{id}/zip`, `POST /api/v1/werkbank/auskunft/frist`, `GET`/`PUT /api/v1/werkbank/datenschutz` und `GET /api/v1/werkbank/datenschutz/loeschkonzept?format=pdf|docx` (Löschkonzept); zum Zustellen `POST /api/v1/werkbank/auskunft/{id}/email`, `POST /api/v1/werkbank/auskunft/{id}/link` und `POST /api/v1/werkbank/auskunft/link/{id}/widerrufen`. Die Abrufseite selbst (`POST /api/abruf`, `GET /api/abruf/datei`) gehört nicht zur API. Die Sammlung über Verweise selbst steht jedem Benutzer mit seinen Rechten unter `GET /api/v1/mappen/{id}/baum` zur Verfügung. Für das Löschkonzept: `GET /api/v1/mappen/{id}/loeschvorschau` (Vorschau mit Vorschlag), `POST /api/v1/mappen/{id}/mit-verknuepften-loeschen` (ausführen, mit denselben Prüfungen) und `POST /api/v1/papierkorb/vorgang/{id}/wiederherstellen`.
