@@ -67,7 +67,7 @@ export function Abrufseite() {
           <div className="abruf-fertig" role="status">
             <p className="hinweis gut">{t('abruf.download', { groesse: mb(fertig.groesse) })}</p>
             {fertig.verschluesselt && <p>{t('abruf.passwort')}</p>}
-            <p className="leise">{fertig.rest > 0 ? t('abruf.rest', { 'wie oft': ['', 'einmal', 'zweimal', 'dreimal'][fertig.rest] ?? `${fertig.rest}-mal` }) : t('abruf.aufgebraucht')} {t('abruf.startet.nicht')}</p>
+            <p className="leise">{fertig.rest > 0 ? t('abruf.rest', { wieOft: ['', 'einmal', 'zweimal', 'dreimal'][fertig.rest] ?? `${fertig.rest}-mal` }) : t('abruf.aufgebraucht')} {t('abruf.startet.nicht')}</p>
             {fertig.rest > 0 && <button type="button" className="knopf" onClick={() => setFertig(null)}>{t('abruf.nochmal')}</button>}
           </div>
         ) : (

@@ -11,6 +11,7 @@ import { Fachfehler } from './fehler';
 import type { KontoRepo, SitzungIntern, SitzungsInfo, Zweck } from './konto-repo';
 import type { Benutzerspiegel } from './dienst';
 import { mailtexte, type Mailer } from './mail';
+import { t } from './sprache';
 import { hashePasswort, hasheSchluessel, neuerSchluessel, pruefePasswort } from './passwort';
 
 const TAG = 24 * 60 * 60 * 1000;
@@ -23,13 +24,13 @@ const rolleAus = (v: unknown): Rolle => (v === 'admin' ? 'admin' : 'mitglied');
 
 function pruefePasswortRegeln(pw: unknown): string {
   const s = typeof pw === 'string' ? pw : '';
-  if (s.length < PASSWORT_MINDESTLAENGE) throw new Fachfehler(422, `Das Passwort braucht mindestens ${PASSWORT_MINDESTLAENGE} Zeichen.`);
-  if (s.length > 200) throw new Fachfehler(422, 'Das Passwort ist zu lang.');
+  if (s.length < PASSWORT_MINDESTLAENGE) throw new Fachfehler(422, t('anmeldung.fehler.passwort.kurz', { anzahl: PASSWORT_MINDESTLAENGE }));
+  if (s.length > 200) throw new Fachfehler(422, t('anmeldung.fehler.passwort.lang'));
   return s;
 }
 function pruefeEmail(v: unknown): string {
   const e = text(v);
-  if (!istEmail(e)) throw new Fachfehler(422, 'Bitte eine gültige E-Mail-Adresse angeben.');
+  if (!istEmail(e)) throw new Fachfehler(422, t('anmeldung.fehler.email'));
   return e;
 }
 
@@ -102,12 +103,12 @@ export class Konten {
     const ok = await pruefePasswort(passwort, treffer?.hash);
     if (!ok || !treffer || !treffer.benutzer.aktiv) {
       await this.sperre.fehlschlag(email, ip, !!treffer?.benutzer.aktiv);
-      throw new Fachfehler(401, 'E-Mail-Adresse oder Passwort stimmen nicht.');
+      throw new Fachfehler(401, t('anmeldung.fehler.falsch'));
     }
     await this.sperre.erfolg(email, ip);
     // Anbieter (#241): Passwort nur noch für Administratoren (Notzugang)?
     const a = await this.anbieter();
-    if (a?.lokalNurAdmins && treffer.benutzer.rolle !== 'admin') throw new Fachfehler(403, `Bitte über „${a.knopf}“ anmelden.`);
+    if (a?.lokalNurAdmins && treffer.benutzer.rolle !== 'admin') throw new Fachfehler(403, t('anmeldung.fehler.anbieter', { knopf: a.knopf }));
     return this.nachErstemFaktor(treffer.benutzer, { ip, geraet });
   }
 
@@ -129,7 +130,7 @@ export class Konten {
     const gruppeAdmin = e.adminGruppe ? id.gruppen.includes(e.adminGruppe) : null;
     let b = (await this.repo.holeHash(id.email))?.benutzer;
     if (!b) {
-      if (!e.anlegen) throw new Fachfehler(403, `Für ${id.email} gibt es im DMS keinen Zugang. Bitte einen Administrator, dich anzulegen.`);
+      if (!e.anlegen) throw new Fachfehler(403, t('anmeldung.fehler.anbieter.unbekannt', { email: id.email }));
       b = await this.repo.legeBenutzerAn({ id: randomUUID(), email: id.email, name: id.name || id.email, rolle: gruppeAdmin ? 'admin' : gruppeAdmin === false ? 'mitglied' : e.standardrolle, passwortHash: null });
       await this.spiegle(b, b.id);
       log.info('Benutzer über den Anbieter angelegt', { email: b.email, rolle: b.rolle });
@@ -141,7 +142,7 @@ export class Konten {
         log.info('Rolle aus der Gruppe des Anbieters übernommen', { email: b.email, rolle: b.rolle });
       }
     }
-    if (!b.aktiv) throw new Fachfehler(403, 'Dieser Zugang ist deaktiviert.');
+    if (!b.aktiv) throw new Fachfehler(403, t('anmeldung.fehler.deaktiviert'));
     return this.nachErstemFaktor(b, g);
   }
 
@@ -175,17 +176,17 @@ export class Konten {
 
   async anmeldenMitCode(e: { kennung?: unknown; code?: unknown }, ip: string) {
     const k = typeof e.kennung === 'string' ? this.zweiterSchritt.get(e.kennung) : undefined;
-    if (!k || k.bis < Date.now() || k.ip !== ip) throw new Fachfehler(401, 'Die Anmeldung ist abgelaufen. Bitte noch einmal mit dem Passwort beginnen.');
+    if (!k || k.bis < Date.now() || k.ip !== ip) throw new Fachfehler(401, t('anmeldung.fehler.abgelaufen'));
     await this.sperre.pruefe(k.email, ip);
     const art = await this.zweifaktor?.pruefe(k.benutzerId, e.code);
     if (!art) {
       await this.sperre.fehlschlag(k.email, ip, true);
       if (++k.versuche >= 5) this.zweiterSchritt.delete(e.kennung as string);
-      throw new Fachfehler(401, 'Der Code stimmt nicht.');
+      throw new Fachfehler(401, t('anmeldung.fehler.code'));
     }
     this.zweiterSchritt.delete(e.kennung as string);
     const benutzer = await this.repo.holeBenutzer(k.benutzerId);
-    if (!benutzer || !benutzer.aktiv) throw new Fachfehler(401, 'E-Mail-Adresse oder Passwort stimmen nicht.');
+    if (!benutzer || !benutzer.aktiv) throw new Fachfehler(401, t('anmeldung.fehler.falsch'));
     await this.repo.notiereAnmeldung(benutzer.id);
     return { benutzer, schluessel: await this.neueSitzung(benutzer.id, { ip, geraet: k.geraet }), wiederherstellung: art === 'wiederherstellung' };
   }
@@ -624,9 +625,9 @@ export class Konten {
 
   async linkPruefen(schluessel: string) {
     const l = await this.repo.holeLink(hasheSchluessel(schluessel));
-    if (!l || l.benutzt || l.ablauf.getTime() < Date.now()) throw new Fachfehler(410, 'Dieser Link ist abgelaufen oder wurde schon benutzt. Bitte einen neuen anfordern.');
+    if (!l || l.benutzt || l.ablauf.getTime() < Date.now()) throw new Fachfehler(410, t('anmeldung.fehler.link.abgelaufen'));
     const b = await this.repo.holeBenutzer(l.benutzerId);
-    if (!b || !b.aktiv) throw new Fachfehler(410, 'Dieser Link ist nicht mehr gültig.');
+    if (!b || !b.aktiv) throw new Fachfehler(410, t('anmeldung.fehler.link.ungueltig'));
     return { email: b.email, name: b.name, zweck: l.zweck };
   }
 
@@ -638,8 +639,8 @@ export class Konten {
     const l = (await this.repo.holeLink(hash))!;
     // Anbieter (#241) mit „Passwort nur für Administratoren“: kein Passwort für Mitglieder.
     const a = await this.anbieter();
-    if (a?.lokalNurAdmins && (await this.repo.holeBenutzer(l.benutzerId))?.rolle !== 'admin') throw new Fachfehler(403, `Bitte über „${a.knopf}“ anmelden.`);
-    if (!(await this.repo.verbraucheLink(hash))) throw new Fachfehler(410, 'Dieser Link wurde schon benutzt.');
+    if (a?.lokalNurAdmins && (await this.repo.holeBenutzer(l.benutzerId))?.rolle !== 'admin') throw new Fachfehler(403, t('anmeldung.fehler.anbieter', { knopf: a.knopf }));
+    if (!(await this.repo.verbraucheLink(hash))) throw new Fachfehler(410, t('anmeldung.fehler.link.benutzt'));
     await this.repo.setzeHash(l.benutzerId, await hashePasswort(passwort));
     await this.repo.loescheSitzungenVon(l.benutzerId);
     const benutzer = (await this.repo.holeBenutzer(l.benutzerId))!;

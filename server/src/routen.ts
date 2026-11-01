@@ -19,6 +19,7 @@ import { mkdir } from 'node:fs/promises';
 import { AUSKUNFT_PHASEN, auskuenfteIn, auskunftDatei, auskunftOrdner, erzeugeAuskunft, haltenBis, loescheAuskunft } from './auskunft';
 import { AUSKUNFT_TAGE, linkStatus, oeffentlichErreichbar } from '../../shared/src/auskunft';
 import { textDritte, type TextDritte } from '../../shared/src/anrede';
+import { t } from './sprache';
 import { loeschkonzept, luecken, type LoeschkonzeptQuelle } from '../../shared/src/loeschkonzept';
 import { DOCX_MIME, schriftstueckDocx, schriftstueckPdf } from './schriftstueck';
 import { liesAnlass, type Ausloeser } from '../../shared/src/loeschprotokoll';
@@ -152,7 +153,7 @@ const info = (a: Anfrage) => ({ ip: a.ip, geraet: a.geraet ?? '' });
 /** Löschprotokoll (#470): wer löscht – Benutzer in der Oberfläche, Schnittstelle (API-Schlüssel) oder Paket (Dienstkonto). */
 const quelle = (a: Anfrage): Ausloeser => (a.benutzer?.art === 'dienst' ? 'paket' : a.apiSchluessel ? 'api' : 'benutzer');
 const ich = (a: Anfrage) => {
-  if (!a.benutzer) throw new Fachfehler(401, 'Bitte anmelden.');
+  if (!a.benutzer) throw new Fachfehler(401, t('anmeldung.fehler.bitte-anmelden'));
   return a.benutzer;
 };
 
@@ -409,7 +410,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       }
       // Zwei-Faktor (#242): Passwort stimmt, jetzt der Code.
       if ('zweiterSchritt' in r && r.zweiterSchritt) return ok({ zweiterSchritt: r.zweiterSchritt });
-      if (!r.benutzer || !r.schluessel) throw new Fachfehler(500, 'Anmeldung unvollständig.');
+      if (!r.benutzer || !r.schluessel) throw new Fachfehler(500, t('anmeldung.fehler.unvollstaendig'));
       await nurAdminsInWartung({ benutzer: r.benutzer, schluessel: r.schluessel });
       L.konto.info('Angemeldet', { email: r.benutzer.email, ip: a.ip, geraet: a.geraet });
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
@@ -444,7 +445,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
           L.konto.info('Anbieter bestätigt, Zwei-Faktor folgt', { email: id.email, ip: a.ip });
           return { weiterleiten: `/anmelden/code#${r.zweiterSchritt}`, cookies: raus };
         }
-        if (!r.benutzer || !r.schluessel) throw new Fachfehler(500, 'Anmeldung unvollständig.');
+        if (!r.benutzer || !r.schluessel) throw new Fachfehler(500, t('anmeldung.fehler.unvollstaendig'));
         await nurAdminsInWartung({ benutzer: r.benutzer, schluessel: r.schluessel });
         L.konto.info('Angemeldet über den Anbieter', { email: r.benutzer.email, ip: a.ip, geraet: a.geraet });
         return { weiterleiten: '/', sitzungSetzen: r.schluessel, cookies: raus };
@@ -505,7 +506,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const r = await konten.passwortSetzen(b(a), info(a));
       L.konto.info('Passwort über Link gesetzt', { email: r.benutzer.email });
       if ('zweiterSchritt' in r && r.zweiterSchritt) return ok({ zweiterSchritt: r.zweiterSchritt });
-      if (!r.schluessel) throw new Fachfehler(500, 'Anmeldung unvollständig.');
+      if (!r.schluessel) throw new Fachfehler(500, t('anmeldung.fehler.unvollstaendig'));
       await nurAdminsInWartung({ benutzer: r.benutzer, schluessel: r.schluessel });
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
@@ -1946,7 +1947,7 @@ export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => st
   a.sitzungsDaten = anmeldung?.sitzung;
   if (r.methode !== 'GET' && kopf('x-dms') !== '1') throw new Fachfehler(403, 'Anfrage ohne Kennung der Oberfläche abgelehnt.');
   if (r.zugang === 'offen') return;
-  if (!a.benutzer) throw new Fachfehler(401, 'Bitte anmelden.');
+  if (!a.benutzer) throw new Fachfehler(401, t('anmeldung.fehler.bitte-anmelden'));
   // Zwei-Faktor vorgeschrieben (#242), aber noch nicht eingerichtet: nur das eigene Konto.
   // #416: gilt erst für Sitzungen ab dem Einschalten der Pflicht; die Pflicht selbst lesen und ausschalten geht immer.
   if (konten.zweifaktor && !a.sitzungsDaten?.vertretungId && !r.pfad.startsWith('/api/konto/') && !pflichtZuruecknehmen(r, a)
