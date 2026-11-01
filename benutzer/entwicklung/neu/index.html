@@ -419,6 +419,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0992" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.99.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.99.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#geandert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Geändert
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0991" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -481,7 +509,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#geandert" class="md-nav__link">
+  <a href="#geandert_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Geändert
@@ -1199,6 +1227,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0992" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.99.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.99.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#geandert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Geändert
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0991" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1261,7 +1317,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#geandert" class="md-nav__link">
+  <a href="#geandert_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Geändert
@@ -1323,6 +1379,16 @@
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
+<h2 id="0992">0.99.2<a class="headerlink" href="#0992" title="Permanent link">&para;</a></h2>
+<h3 id="geandert">Geändert<a class="headerlink" href="#geandert" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Auskunft nach Art. 15 DSGVO: nur, was die Person wirklich betrifft</strong> (#472, Nacharbeit zu #396):</li>
+<li><strong>Zugehörigkeit oder Bezug:</strong> Vollständig – mit Dokumenten, Notizen und allen Angaben – kommt nur, was über einen Verweis der Art <strong>Zugehörigkeit</strong> zur Person gehört. Ist sie in einer Mappe nur über einen <strong>Bezug</strong> eingetragen (z. B. als Ansprechpartner in einem Wartungsvertrag, Post mit „Zugeordnet zu“), steht die Mappe in der Prüfliste als „als Ansprechpartner eingetragen in Wartungsvertrag „W-1““ und geht nur so hinaus – Art, Titel und Feld, ohne Dokumente, Notizen und übrige Angaben. Über sie wird nicht weitergesammelt. Mit <strong>ganz aufnehmen</strong> (Vorgabe: aus) nimmst du sie bewusst vollständig auf.</li>
+<li><strong>Richtung unverändert:</strong> nach unten alles, nach oben (Person → Firma → Muttergesellschaft) nur weiter nach oben, nie wieder hinunter in die Verträge der Firma.</li>
+<li><strong>Keine Volltext-Vorschläge mehr</strong> – auch nicht zum Einschalten: zu viele Verwechslungen („Meissner/Meißner“) und die Gefahr, fremde Inhalte herauszugeben. Die ZIP-Datei nennt die Erwähnungen in <code>Uebersicht.html</code>/<code>Uebersicht.csv</code> und auf dem Deckblatt.</li>
+<li>Administratorhandbuch <em>Datenschutz im DMS → Auskunft</em>: Richtung, Zugehörigkeit/Bezug und warum es keine Volltext-Suche gibt.</li>
+<li>Schnittstelle: <code>POST /werkbank/auskunft/vorschau</code> liefert <code>vorschlaege</code>, <code>vorschlagMappen</code> und <code>begriffe</code> nicht mehr; die Eingabe <code>vorschlaege</code> wird ignoriert. Neu in der Auswahl von <code>POST /werkbank/auskunft</code>: <code>erwaehnungen</code> (Ids der Bezug-Mappen, die nur als Erwähnung hinausgehen). Die Baum-Sammlung <code>GET /mappen/{id}/baum</code> kennt die Option <code>nurZugehoerigkeit</code> und liefert je Knoten <code>ueber.verweisart</code> und <code>nurBezug</code>.</li>
+</ul>
 <h2 id="0991">0.99.1<a class="headerlink" href="#0991" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
@@ -1346,7 +1412,7 @@
 <ul>
 <li>Migration <code>042_papierkorb_vorgang.sql</code>: Spalten <code>vorgang</code> und <code>entkoppelt</code> im Papierkorb.</li>
 </ul>
-<h3 id="geandert">Geändert<a class="headerlink" href="#geandert" title="Permanent link">&para;</a></h3>
+<h3 id="geandert_1">Geändert<a class="headerlink" href="#geandert_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Beispiel-Mappentypen: Das Feld <em>Vertragspartner</em> im Vertrag ist jetzt eine <strong>Zugehörigkeit</strong> (vorher Bezug), damit ein Vertragspartner seine Verträge mitnimmt. Bestehende Mappentypen bleiben, wie sie sind – prüfe dort die Verweisart.</li>
 </ul>

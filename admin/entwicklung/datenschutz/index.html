@@ -945,6 +945,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#warum-keine-volltext-suche" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Warum keine Volltext-Suche?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#was-die-zip-datei-enthalt" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2345,6 +2356,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#warum-keine-volltext-suche" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Warum keine Volltext-Suche?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#was-die-zip-datei-enthalt" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2608,15 +2630,15 @@
 <ol>
 <li><strong>Einmal einrichten:</strong> Verantwortlicher, Empfänger und die Mappentypen, die eine Person betreffen, jeweils mit Zweck (<a href="#einstellungen">Einstellungen</a>).</li>
 <li><strong>Person wählen</strong> – oder an ihrer Mappe <strong>Mappe ▾ → Auskunft erstellen …</strong> – und den Eingang der Anfrage eintragen. <strong>Frist als Aufgabe anlegen</strong> erinnert dich unter „Zu erledigen“.</li>
-<li><strong>Sammeln:</strong> Das DMS folgt den Verweisen von der Mappe der Person aus (Mietvertrag, Abrechnungen, Post, Wohnung). Darunter stehen <strong>Vorschläge aus der Suche</strong> – Mappen, in denen Name, E-Mail-Adresse, Kundennummer oder IBAN vorkommen, auch im Text der Dokumente und Notizen.</li>
-<li><strong>Weitersuchen</strong>, wenn die Person auch anderswo vorkommt: In der Ablage findet die <a href="https://motom001.github.io/dms/benutzer/aktuell/ablage/#erweiterte-suche">erweiterte Suche</a> ohne gewählten Mappentyp über alle Mappentypen, mit <strong>Volltext</strong> auch in Dokumenten und Notizen. Was dazugehört, nimmst du in der Prüfliste aus den Vorschlägen auf oder verknüpfst es mit der Mappe der Person und sammelst neu.</li>
+<li><strong>Sammeln:</strong> Das DMS folgt den Verweisen von der Mappe der Person aus (Mietvertrag, Abrechnungen, Wohnung) – vollständig nur, was über eine <strong>Zugehörigkeit</strong> zu ihr gehört. Mappen, in denen sie nur über einen <strong>Bezug</strong> genannt ist (z. B. als Ansprechpartner), stehen ohne ihre Inhalte da (<a href="#zugehorigkeit-oder-bezug">Zugehörigkeit oder Bezug</a>).</li>
+<li><strong>Weitersuchen</strong>, wenn die Person auch anderswo vorkommt: Eine Volltext-Suche macht das DMS bewusst nicht (<a href="#warum-keine-volltext-suche">warum</a>). Such selbst in der Ablage mit der <a href="https://motom001.github.io/dms/benutzer/aktuell/ablage/#erweiterte-suche">erweiterten Suche</a> ohne gewählten Mappentyp, mit <strong>Volltext</strong> auch in Dokumenten und Notizen. Was wirklich zur Person gehört, verknüpfst du mit ihrer Mappe (als Zugehörigkeit) und sammelst neu.</li>
 <li><strong>Prüfen und schwärzen:</strong> Nur Angehaktes geht hinaus; Angaben zu anderen Personen schwärzt du vorher.</li>
 <li><strong>Erzeugen und zustellen:</strong> am besten mit Passwort, dann per <a href="#auskunft-zustellen">Abruf-Link oder E-Mail</a>. Der Nachweis steht in der Historie der Person.</li>
 </ol>
 <h3 id="loschen-auf-verlangen">Löschen auf Verlangen<a class="headerlink" href="#loschen-auf-verlangen" title="Permanent link">&para;</a></h3>
 <p>Jemand verlangt, dass seine Daten gelöscht werden (Art. 17 DSGVO).</p>
 <ol>
-<li><strong>Finden, was zur Person gehört:</strong> wie bei der Auskunft – die Prüfliste unter <strong>Werkbank → Datenschutz</strong> zeigt alle Mappen, die an der Person hängen, und Vorschläge aus der Suche. Erzeugen musst du dafür nichts.</li>
+<li><strong>Finden, was zur Person gehört:</strong> wie bei der Auskunft – die Prüfliste unter <strong>Werkbank → Datenschutz</strong> zeigt alle Mappen, die zur Person gehören, und die, in denen sie nur genannt ist. Erzeugen musst du dafür nichts.</li>
 <li><strong>Prüfen, ob eine Aufbewahrungsfrist entgegensteht</strong> (Art. 17 Abs. 3): Mappen eines Mappentyps im <a href="../archiv/">Archivmodus</a> tragen <strong>Archiv · aufbewahren bis …</strong> und lassen sich vor Fristende ohnehin nicht löschen – auch nicht von Administratoren. Prüfe auch Mappen ohne Archivmodus: Rechnungen oder Verträge können Fristen haben, die du (noch) nicht eingetragen hast.</li>
 <li><strong>Frist steht entgegen → sperren statt löschen.</strong> Die Mappe bleibt bis Fristende; benutze sie nur noch dafür, wofür du sie aufbewahren musst.<ul>
 <li><strong>Zugriff einschränken:</strong> Gib dem Mappentyp ein Ja/Nein-Feld wie <em>Gesperrt</em> und lege in den <a href="../berechtigungen/#bedingungen">Berechtigungen</a> eine Regel an: Wenn „Gesperrt ist ja“, dann Lesen und Bearbeiten nur für eine Rolle wie <em>Datenschutz</em>. Administratoren sehen weiter alles.</li>
@@ -2671,15 +2693,20 @@
 <ol>
 <li><strong>Person wählen:</strong> Art (einer der markierten Mappentypen) und Name suchen – oder direkt an der Mappe unter <strong>Mappe ▾ → Auskunft erstellen …</strong> (nur für Administratoren und nur bei Mappentypen, die eine Person betreffen).</li>
 <li><strong>Frist:</strong> Trage ein, wann die Anfrage eingegangen ist, und lege mit <strong>Frist als Aufgabe anlegen</strong> eine Aufgabe für dich an – „Auskunft nach Art. 15 DSGVO an … bis …“, fällig einen Monat nach Eingang (Art. 12 Abs. 3 DSGVO). Sie steht wie jede Aufgabe unter „Zu erledigen“.</li>
-<li><strong>Sammeln:</strong> Das DMS folgt den Verweisen von der Mappe der Person aus – <strong>Mappen, die darauf verweisen</strong> (Mietvertrag → Nebenkostenabrechnungen, Post) und <strong>Mappen, auf die sie verweist</strong> (Wohnung). Die <strong>Tiefe</strong> stellst du ein (Vorgabe 2: Vertrag und dessen Rechnungen). Jede Mappe geht nur in der Richtung weiter, über die sie erreicht wurde: Von der Wohnung aus sammelt das DMS also nicht die anderen Mieter. Kreise (zwei Verträge, die aufeinander verweisen) werden erkannt; jede Mappe steht nur einmal da. Benutzer und Rollen sind nie dabei.</li>
+<li><strong>Sammeln:</strong> Das DMS folgt den Verweisen von der Mappe der Person aus – <strong>Mappen, die darauf verweisen</strong> (Mietvertrag → Nebenkostenabrechnungen) und <strong>Mappen, auf die sie verweist</strong> (Wohnung, Arbeitgeber). Die <strong>Tiefe</strong> stellst du ein (Vorgabe 2: Vertrag und dessen Rechnungen). Kreise (zwei Verträge, die aufeinander verweisen) werden erkannt; jede Mappe steht nur einmal da. Benutzer und Rollen sind nie dabei.<ul>
+<li><strong>Richtung:</strong> Nach unten (Mappen, die zur Person gehören) sammelt das DMS alles, über mehrere Stufen. Nach oben (Person → Firma → Muttergesellschaft) geht es nur weiter nach oben, <strong>nie wieder hinunter</strong>: Von der Wohnung aus sammelt es nicht die anderen Mieter, von der Firma aus nicht deren Verträge.</li>
+<li><a id="zugehorigkeit-oder-bezug"></a><strong>Zugehörigkeit oder Bezug:</strong> Vollständig – mit Dokumenten, Notizen und allen Angaben – kommt nur, was über einen Verweis der <a href="../mappentypen/#verweise-mappen-verbinden">Verweisart</a> <strong>Zugehörigkeit</strong> verbunden ist. Ist die Person in einer Mappe nur über einen <strong>Bezug</strong> eingetragen – z. B. ein Wartungsvertrag mit ihr als <em>Ansprechpartner</em>, Post mit <em>Zugeordnet zu</em> –, steht die Mappe in der Prüfliste als „als Ansprechpartner eingetragen in Wartungsvertrag „W-1““: In die Auskunft geht nur das – Art, Titel und Feld –, <strong>ohne ihre Dokumente, Notizen und übrigen Angaben</strong>, und über sie sammelt das DMS nicht weiter. Gehört sie doch ganz dazu, setzt du <strong>ganz aufnehmen</strong> (Vorgabe: aus). Prüfe darum die Verweisart deiner Felder: Soll Post zur Person ganz hinausgehen, nimm sie bewusst auf oder verknüpfe sie über ein Feld der Art Zugehörigkeit.</li>
+</ul>
+</li>
 <li><strong>Prüfen:</strong> Die Liste zeigt den Baum mit Häkchen je <strong>Mappe</strong>, <strong>Dokument</strong>, <strong>Notiz</strong> und <strong>Historie</strong>. Nur Angehaktes geht hinaus, und erst wenn du <strong>„Ich habe die Auswahl geprüft“</strong> bestätigst, lässt sich die Auskunft erzeugen.<ul>
 <li><strong>Daten Dritter?</strong> Ist eine Mappe noch mit anderen Personen verbunden (Mappen eines Typs, der eine Person betrifft – z. B. eine Wohnung, in der auch andere Mieter wohnen), steht das dabei. Enthält ein Dokument Angaben zu anderen Personen, öffne es über <strong>schwärzen …</strong> in einem neuen Tab, schwärze die Stellen (<a href="https://motom001.github.io/dms/benutzer/aktuell/dokumente/">Schwärzen</a>) und sammle neu: Die <strong>geschwärzte Fassung</strong> ist dann angehakt, das Original nicht.</li>
 <li><strong>Notizen</strong> sind vorgewählt. Hältst du eine zurück (z. B. eine interne Bewertung), ist eine <strong>Begründung Pflicht</strong>; sie steht im Nachweis, nicht in der Auskunft.</li>
-<li><strong>Vorschläge aus der Suche:</strong> Mappen, die nicht über Verweise an der Person hängen, aber ihren Namen, ihre E-Mail-Adresse, Kundennummer oder IBAN enthalten (auch in Dokumenten und Notizen). Sie sind nicht angehakt – nimm sie nur auf, wenn sie wirklich zur Person gehören.</li>
 </ul>
 </li>
 <li><strong>Erzeugen:</strong> Empfänger und eine Anmerkung fürs Deckblatt, optional ein <strong>Passwort</strong> (mindestens 10 Zeichen, „Vorschlagen“ erzeugt eines). Die Auskunft entsteht im Hintergrund; danach erscheint <strong>Herunterladen</strong>.</li>
 </ol>
+<h3 id="warum-keine-volltext-suche">Warum keine Volltext-Suche?<a class="headerlink" href="#warum-keine-volltext-suche" title="Permanent link">&para;</a></h3>
+<p>Früher schlug die Prüfliste auch Mappen vor, in denen Name, E-Mail-Adresse, Kundennummer oder IBAN irgendwo im Text vorkamen. Das gibt es nicht mehr, auch nicht zum Einschalten: Zu oft trifft die Suche die Falschen („Meissner“ und „Meißner“), und zu leicht gingen fremde Inhalte hinaus – etwa ein internes Besprechungsprotokoll, in dem die Person nur erwähnt ist. In die Auskunft kommt nur, was über Verweise mit der Person verbunden ist. Kommt sie anderswo vor, suchst du selbst und verknüpfst, was dazugehört.</p>
 <h3 id="was-die-zip-datei-enthalt">Was die ZIP-Datei enthält<a class="headerlink" href="#was-die-zip-datei-enthalt" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2695,7 +2722,7 @@
 </tr>
 <tr>
 <td><code>Uebersicht.html</code></td>
-<td>alle Mappen mit ihren Angaben und Links zu den Dokumenten – im Browser zu öffnen</td>
+<td>alle Mappen mit ihren Angaben und Links zu den Dokumenten, dazu „Hier bist du genannt“ mit den Bezug-Mappen (nur Art, Titel und Feld) – im Browser zu öffnen</td>
 </tr>
 <tr>
 <td><code>Uebersicht.csv</code></td>
