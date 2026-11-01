@@ -11,7 +11,18 @@ Ein Klick auf deinen Namen oben rechts öffnet ein Menü:
 - Solange eine Abwesenheit wirkt, steht oben im Menü „Du bist abwesend“ – ein Klick darauf führt direkt dorthin –, und neben deinem Namen ist ein Punkt.
 - **Hilfe** – öffnet dieses Handbuch.
 - **Fehler melden** – siehe [Fehler melden](#fehler-melden).
+- **Über das DMS** – siehe [Über das DMS](#uber-das-dms).
 - **Abmelden**.
+
+Jeder Eintrag hat vorn ein kleines Piktogramm, damit du ihn schneller findest.
+
+### Über das DMS { #uber-das-dms }
+
+Das Fenster **Über das DMS** zeigt, was das DMS ist, welche **Version** gerade läuft und unter welcher **Lizenz** es steht: der Apache License 2.0 – das DMS ist freie Software, du darfst es kostenlos nutzen, verändern und weitergeben. Der Link **Quellcode** führt zum Quellcode genau dieser Version auf GitHub. Dazu gibt es Links zu diesem Handbuch, zu „Neu in dieser Version“ und den Release-Notizen und – freiwillig – zur Seite „Wer nutzt das DMS?“, auf der du erzählen kannst, wie du das DMS einsetzt.
+
+Schließen kannst du das Fenster mit **Schließen**, mit der Esc-Taste oder mit einem Klick daneben.
+
+![Über das DMS](bilder/ueber-dms.png){ loading=lazy }
 
 ## Profil
 
