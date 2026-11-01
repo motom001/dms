@@ -2068,7 +2068,7 @@
 <h2 id="hilfe-ohne-internet">Hilfe ohne Internet<a class="headerlink" href="#hilfe-ohne-internet" title="Permanent link">&para;</a></h2>
 <p>Das Image bringt die Handbücher seiner Version mit: Startseite, Wie komme ich an ein DMS?, Benutzer-, Administrator- und Entwicklerhandbuch, erreichbar unter <code>/hilfe/</code> der eigenen Installation (z. B. <code>http://&lt;NAS&gt;:8080/hilfe/</code>), ohne Anmeldung und schon im Einrichtungsassistenten. Das Fragezeichen neben einer Überschrift und die Links auf das Handbuch öffnen diese Version. Sie kommt ohne Internet aus; nur die Bildschirmfotos fehlen – an ihrer Stelle steht ein Link auf dieselbe Seite online. Im Fuß jeder Seite geht es zur Online-Hilfe und zur neuesten Version.</p>
 <h2 id="module">Module<a class="headerlink" href="#module" title="Permanent link">&para;</a></h2>
-<p>Jede Zeile im <a href="../fehlersuche/#protokoll">Protokoll</a> gehört zu einem Modul. Für jede Anfrage an den Server schreibt das DMS eine Zeile mit Methode, Pfad, Status, Dauer und Datenbankzugriffen – im Modul des Bereichs, zu dem die Anfrage gehört (z. B. <code>ablage</code> für Mappen).</p>
+<p>Jede Zeile im <a href="../fehlersuche/#protokoll">Protokoll</a> gehört zu einem Modul. Für jede Anfrage an den Server schreibt das DMS eine Zeile mit Methode, Pfad, Status, Dauer und Datenbankzugriffen – im Modul des Bereichs, zu dem die Anfrage gehört (z. B. <code>ablage</code> für Mappen). Anfragen, die nur lesen – auch Vorschauen, Zählungen und Testläufe, die die Oberfläche per POST schickt –, stehen nur auf Stufe <code>debug</code>, also nur im Debug-Modus.</p>
 <table>
 <thead>
 <tr>
