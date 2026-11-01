@@ -2,7 +2,7 @@
 
 ## Ansichten
 
-Links stehen die **Ansichten**. Ganz oben stehen fest die [Erweiterte Suche](#erweiterte-suche), [Zu erledigen](eingang.md), [Anstehend](eingang.md#anstehend), deine [Favoriten](#favoriten) und der [Papierkorb](#papierkorb), darunter die Ansichten, die ein Administrator eingerichtet hat – zum Beispiel *Vertrag*, *Rechnung*, *Vertragspartner* oder *Kündigung in den nächsten 12 Monaten*. Die Zahl dahinter sagt, wie viele Mappen die Ansicht gerade zeigt.
+Links stehen die **Ansichten**. Ganz oben stehen fest, jeweils mit einem Symbol: [Erweiterte Suche](#erweiterte-suche), [Start](startseite.md), [Zu erledigen](eingang.md), [Neue Post](post.md), [Anstehend](eingang.md#anstehend), deine [Favoriten](#favoriten) und der [Papierkorb](#papierkorb) (solange er an ist oder etwas darin liegt). Unter dem Trenner stehen – ohne Symbol – die Ansichten, die ein Administrator eingerichtet hat – zum Beispiel *Vertrag*, *Rechnung*, *Vertragspartner* oder *Kündigung in den nächsten 12 Monaten*. Die Zahl dahinter sagt, wie viele Mappen die Ansicht gerade zeigt.
 
 Ein Klick auf eine Ansicht zeigt ihre Mappen in der Liste. Welche Ansichten du siehst, kann ein Administrator festlegen; eine Ansicht, die für dich verborgen ist, fehlt samt ihrer Mappen auch in der Elternansicht. Mappen findest du trotzdem über die Suche, wenn du sie lesen darfst.
 
@@ -15,8 +15,8 @@ Gibt es viele Ansichten, filtert das kleine Feld **Ansicht suchen …** über de
 Am Handy steht statt der Liste ein Knopf mit der aktuellen Ansicht, z. B. **Ansicht Rechnung ▾**. Er öffnet ein Blatt von unten:
 
 - oben ein Suchfeld **Ansicht suchen …** – es filtert beim Tippen (auch Ansichten, die du ausgeblendet hast);
-- die festen Einträge wie *Start*, *Zu erledigen* und *Anstehend*;
-- **Meine Ansichten**: Ansichten, die du mit dem Stern ☆ angeheftet hast;
+- die festen Einträge in derselben Reihenfolge wie am Rechner, mit Symbol;
+- **Meine Ansichten**: Ansichten, die du mit dem Stern angeheftet hast;
 - **Zuletzt benutzt**: die letzten fünf Ansichten, die du geöffnet hast (auch am Rechner);
 - danach alle Ansichten nach Gruppen – je Ansicht der obersten Ebene mit Unteransichten eine Gruppe (z. B. *Fahrzeuge*, *Haus*), die übrigen unter *Weitere Ansichten*. Gruppen klappst du mit einem Tipp auf und zu; die Gruppe der aktuellen Ansicht ist offen. Die Zahl rechts sagt, wie viele Mappen die Ansicht zeigt.
 
@@ -157,7 +157,7 @@ Als Spalten nimmst du die der Liste oder alle Felder. Verweise erscheinen mit de
 
 ## Favoriten
 
-Mappen, die du oft brauchst, markierst du mit dem **Stern ☆** – oben rechts in der Mappe oder direkt in der Liste (rechts im Eintrag bzw. vorn in der Tabellenzeile). Der Stern wird gelb ★, und die Mappe steht in der Ansicht **★ Favoriten** unterhalb von „Zu erledigen“; die Zahl dahinter zeigt, wie viele es sind. Ein zweiter Klick entfernt sie wieder.
+Mappen, die du oft brauchst, markierst du mit dem **Stern** – oben rechts in der Mappe oder direkt in der Liste (rechts im Eintrag bzw. vorn in der Tabellenzeile). Der Stern wird gelb ausgefüllt, und die Mappe steht in der Ansicht **Favoriten** oben bei den festen Einträgen; die Zahl dahinter zeigt, wie viele es sind. Ein zweiter Klick entfernt sie wieder.
 
 ![Die Ansicht Favoriten mit geöffneter Mappe](bilder/favoriten.png)
 

@@ -1517,3 +1517,7 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
   .suchzeile:not(.lk-zu) > .lk-nur-schmal { display: inline-flex; }
   .lk-nur-breit { display: none; }
 }
+/* Feste Einträge links (#507): Symbol in gleicher Größe; Stern gefüllt, wenn gesetzt. */
+.sym.sym-voll { fill: currentColor; }
+.sichtliste .fest-sym { color: var(--leise); margin-right: 2px; }
+.sichtliste .sicht.an .fest-sym { color: inherit; }
