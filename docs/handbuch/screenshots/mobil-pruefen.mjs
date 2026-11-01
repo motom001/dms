@@ -13,7 +13,8 @@
  *    - Kacheln der Startseite einspaltig;
  *    - geöffnete Menüs („+ Neu“, Benutzermenü, „Mappe ▾“) liegen vollständig im Bildschirm;
  *    - Suchfeld der Startseite (#497) liefert Treffer, ohne dass etwas zu breit wird;
- *    - „Ansicht ▾“ (#498) öffnet ein Blatt im Bildschirm mit Tippzielen von mindestens 44 px.
+ *    - „Ansicht ▾“ (#498) öffnet ein Blatt im Bildschirm mit Tippzielen von mindestens 44 px;
+ *    - Dokumente einer Post (#505): kein eingebetteter PDF-Rahmen, Tippziele mindestens 44 px.
  *    Von jeder Seite und jedem Menü entsteht ein Bild im Bilderordner (<breite>/<name>.png).
  *
  * Läuft im Workflow „Handbuch“ nach aufnehmen.mjs (gleiche Daten, gleicher Administrator).
@@ -211,6 +212,20 @@ for (const g of GROESSEN) {
         if (raus.length) fehler.push(`${ort} Suche:\n  ${raus.slice(0, 10).join('\n  ')}`);
         await feld.fill('');
       }
+    }
+    // Dokument vorzeigen (#505): Register mit Dokumenten – kein eingebetteter Rahmen, Tippziele mindestens 44 px.
+    if (seite.name === 'post') {
+      await s.goto(`${BASIS}${seite.pfad}?register=dokumente`);
+      await s.waitForLoadState('networkidle');
+      await s.waitForTimeout(300);
+      const karten = await s.locator('.dokumentliste li').count();
+      const probleme = await s.evaluate(() => [
+        ...[...document.querySelectorAll('.dokumentliste a, .dokumentliste button')].filter((e) => { const r = e.getBoundingClientRect(); return r.height > 0 && (r.height < 43.5 || r.width < 43.5); })
+          .map((e) => `Tippziel ${(e.textContent || e.getAttribute('aria-label') || '').trim().slice(0, 25)} ${Math.round(e.getBoundingClientRect().width)}×${Math.round(e.getBoundingClientRect().height)} px`),
+        ...[...document.querySelectorAll('.dokansicht iframe')].filter((e) => e.getBoundingClientRect().height > 0).map(() => 'eingebetteter PDF-Rahmen sichtbar'),
+      ]);
+      await s.screenshot({ path: join(ordner, 'post-dokumente.png') });
+      if (karten && probleme.length) fehler.push(`${ort} Dokumente:\n  ${probleme.slice(0, 10).join('\n  ')}`);
     }
     if (seite.mappenmenue) await pruefeMenue(s, `${ort} „Mappe ▾“`, '.aktionsmenue > button', '.aktionsmenue .menue', join(ordner, 'menue-mappe.png'));
   }

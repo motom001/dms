@@ -1521,3 +1521,21 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .sym.sym-voll { fill: currentColor; }
 .sichtliste .fest-sym { color: var(--leise); margin-right: 2px; }
 .sichtliste .sicht.an .fest-sym { color: inherit; }
+/* Dokument vorzeigen am Handy (#505): großer Knopf „Öffnen“, „Teilen“, „⋯“ mit allen weiteren Aktionen als Blatt von unten. Präfix dk-. */
+.dk-gross { min-height: 44px; min-width: 44px; font-size: 16px; }
+@media (max-width: 600px) {
+  .dokansicht { display: none; }
+  .dokzeile .vorschaubild { width: 60px; height: 78px; }
+  .dokzeile > .zeilenaktionen.dk-handy { flex: 1 1 100%; display: flex; gap: 8px; flex-wrap: nowrap; white-space: normal; }
+  .dk-handy > .knopf.primaer { flex: 1; }
+  .dk-mehr { font-size: 22px; line-height: 1; padding: 0 14px; }
+  .dokzeile .dokname > .textknopf { min-height: 44px; text-align: left; font-size: 16px; }
+  .dokwahl { width: 22px; height: 22px; }
+  .dokzeile .dokname a, .dokzeile .dokname button { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+  .dk-blatt { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 80vh; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;
+    background: var(--flaeche); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 30px rgb(0 0 0 / .25); white-space: normal;
+    padding: 12px max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+  .dk-blatt > .dk-titel { font-weight: 700; padding: 4px 12px 8px; overflow-wrap: anywhere; }
+  .dk-blatt > a, .dk-blatt > button { display: flex; align-items: center; width: 100%; min-height: 48px; padding: 12px; font-size: 16px; text-align: left; text-decoration: none; border-radius: 8px; }
+  .dk-blatt > .dk-zu { justify-content: center; margin-top: 4px; }
+}
