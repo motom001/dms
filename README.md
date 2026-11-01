@@ -89,7 +89,7 @@ Das DMS verwaltet persönliche Dokumente – deshalb ist alles offen nachprüfba
 
 ## Wünsche und Fehler
 
-Als [Issue](https://github.com/motom001/dms/issues/new/choose) im Format einer User Story mit Akzeptanzkriterien. Umgesetzt wird, was der Maintainer mit dem Label `freigegeben` versieht. Wie Mitarbeit läuft, steht in [CONTRIBUTING.md](CONTRIBUTING.md) und im [Entwicklerhandbuch](https://motom001.github.io/dms/entwickler/aktuell/).
+Als [Issue](https://github.com/motom001/dms/issues/new/choose) im Format einer User Story mit Akzeptanzkriterien. Umgesetzt wird, was der Maintainer mit dem Label `freigegeben` versieht. Was als Nächstes kommt und in welcher Reihenfolge, steht im [Fahrplan](ROADMAP.md). Wie Mitarbeit läuft, steht in [CONTRIBUTING.md](CONTRIBUTING.md) und im [Entwicklerhandbuch](https://motom001.github.io/dms/entwickler/aktuell/).
 
 ## Entwicklung
 
