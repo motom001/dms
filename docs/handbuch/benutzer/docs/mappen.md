@@ -141,6 +141,8 @@ Willst du eine Mappe **mit allem, was an ihr hängt**, loswerden – etwa einen 
 4. **Zusammenfassung:** Unten steht, was geschieht, z. B. „37 Mappen und 112 Dokumente werden in den Papierkorb gelegt; 3 bleiben wegen Aufbewahrungsfrist; 2 Verweise werden entfernt.“
 5. **Bestätigen:** Zum Bestätigen tippst du den Namen der Mappe ein.
 
+**Erinnerung zum Fristende:** Bleibt die Mappe stehen, weil Mappen darunter noch in der Aufbewahrungsfrist sind, legt das DMS dir an ihr eine [Erinnerung](begriffe.md#erinnerung) zum Tag nach dem spätesten Fristende an – „Müller GmbH kann ab 01.01.2032 gelöscht werden – „Mit verknüpften Mappen löschen“ erneut ausführen“. An dem Tag steht sie unter „Zu erledigen“; ein Klick öffnet die Mappe, und du löschst erneut.
+
 Alles geht als **ein Vorgang** in den [Papierkorb](ablage.md#papierkorb): Dort stellst du mit **Alle wiederherstellen** alle Mappen und Dokumente gemeinsam wieder her – auch die Verweise untereinander und die Verweise, die an bleibenden Mappen entfernt wurden. In der Historie jeder Mappe steht „in den Papierkorb gelegt – mit verknüpften Mappen gelöscht“ mit der Zahl der Mappen und Dokumente. Ist der Papierkorb ausgeschaltet, ist das Löschen sofort endgültig; die Rückfrage sagt das.
 
 Fehlt der Knopf, dürfen Mappen dieses Mappentyps nicht gelöscht werden.

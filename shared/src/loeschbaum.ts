@@ -162,3 +162,20 @@ export function loeschZusammenfassung(p: LoeschPlan, papierkorb: boolean, erledi
   if (z.verweise) teile.push(`${anzahl(z.verweise, erledigt ? 'Verweis wurde' : 'Verweis wird', erledigt ? 'Verweise wurden' : 'Verweise werden')} entfernt`);
   return `${teile.join('; ')}.`;
 }
+
+/** Tag nach einem Datum (JJJJ-MM-TT). */
+const tagDanach = (iso: string) => { const d = new Date(`${iso}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10); };
+
+/**
+ * Erinnerung zum Fristende (#424, Option D): Bleiben Mappen wegen der Aufbewahrungsfrist stehen und mit
+ * ihnen die Start-Mappe, erinnert das DMS den Löschenden am Tag nach dem spätesten Fristende daran, das
+ * Löschen zu wiederholen. null, wenn nichts wegen einer Frist blieb oder die Start-Mappe gelöscht wird.
+ */
+export function loeschErinnerung(v: Pick<LoeschVorschau, 'baum'>, p: Pick<LoeschPlan, 'loeschen' | 'bleibt'>): { datum: string; text: string } | null {
+  const start = v.baum.knoten[0];
+  if (!start || p.loeschen.includes(start.id)) return null;
+  const bis = v.baum.knoten.filter((k) => p.bleibt[k.id]?.weil === 'frist' && k.aufbewahrenBis).map((k) => k.aufbewahrenBis!).sort().pop();
+  if (!bis) return null;
+  const datum = tagDanach(bis);
+  return { datum, text: `„${(start.titel || 'Ohne Titel').slice(0, 200)}“ kann ab ${datumText(datum)} gelöscht werden – „Mit verknüpften Mappen löschen“ erneut ausführen` };
+}

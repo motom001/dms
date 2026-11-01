@@ -394,7 +394,7 @@ export const api = {
   /** Mit allen verknüpften Mappen löschen (#424). */
   loeschVorschau: (id: string, tiefe: number) => anfrage<LoeschVorschau>('GET', `/api/mappen/${id}/loeschvorschau?tiefe=${tiefe}`),
   mitVerknuepftenLoeschen: (id: string, e: { tiefe: number; auswahl: Record<string, LoeschAktion> }) =>
-    anfrage<{ vorgang: string; endgueltig: boolean; zahlen: LoeschPlan['zahlen']; loeschen: string[] }>('POST', `/api/mappen/${id}/mit-verknuepften-loeschen`, e),
+    anfrage<{ vorgang: string; endgueltig: boolean; zahlen: LoeschPlan['zahlen']; loeschen: string[]; erinnerung: { id: string; datum: string; text: string } | null }>('POST', `/api/mappen/${id}/mit-verknuepften-loeschen`, e),
   vorgangWiederherstellen: (vorgang: string, werkbank = false) =>
     anfrage<{ mappen: number; verweiseWieder: number; verweiseEntfallen: number; startId: string | null }>('POST', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/vorgang/${vorgang}/wiederherstellen`),
   /* Volltext und Texterkennung (#45) */
