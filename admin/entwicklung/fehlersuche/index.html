@@ -2164,8 +2164,8 @@
 
 
 <h1 id="fehlersuche-und-support">Fehlersuche und Support<a class="headerlink" href="#fehlersuche-und-support" title="Permanent link">&para;</a></h1>
-<p>Alles dazu steht in der Werkbank unter <strong>Wartung und Fehlersuche</strong>. Die Gruppe enthält Protokoll, Gemeldete Fehler, Sicherung, Wiederherstellen, Vollexport, Wartungsmodus, Wartungsoperationen, Datenbank, Technik und Demo-Daten. Diese Seite beschreibt die Werkzeuge zur Fehlersuche; <a href="../sicherung/">Sicherung</a>, <a href="../wiederherstellen/">Wiederherstellen</a>, <a href="../export/">Vollexport</a>, <a href="../wartungsmodus/">Wartungsmodus</a>, <a href="../texterkennung/#wartungsoperationen">Wartungsoperationen</a> und <a href="../demo/">Demo-Daten</a> haben eigene Seiten.</p>
-<p><em>Protokoll</em> und <em>Gemeldete Fehler</em> gehören zur Vorlage <strong>Betrieb</strong>, <em>Datenbank</em> nur zur Vorlage <strong>Alles</strong>. <em>Technik</em> steht in jeder Vorlage.</p>
+<p>Alles dazu steht in der Werkbank unter <strong>Wartung und Fehlersuche</strong>. Die Gruppe enthält Protokoll, Gemeldete Fehler, Sicherung, Wiederherstellen, Vollexport, Wartungsmodus, Wartungsoperationen, Technik und Demo-Daten. Diese Seite beschreibt die Werkzeuge zur Fehlersuche; <a href="../sicherung/">Sicherung</a>, <a href="../wiederherstellen/">Wiederherstellen</a>, <a href="../export/">Vollexport</a>, <a href="../wartungsmodus/">Wartungsmodus</a>, <a href="../texterkennung/#wartungsoperationen">Wartungsoperationen</a> und <a href="../demo/">Demo-Daten</a> haben eigene Seiten.</p>
+<p><em>Protokoll</em> und <em>Gemeldete Fehler</em> gehören zur Vorlage <strong>Betrieb</strong>. <em>Technik</em> steht in jeder Vorlage.</p>
 <div class="admonition tip">
 <p class="admonition-title">Einen Bereich nicht in der Leiste gefunden?</p>
 <p>Manche Bereiche der Werkbank, zum Beispiel <em>Wartungsmodus</em>, <em>Datenbank-Anbindung</em> oder <em>Wartungsoperationen</em>, sind in der Vorlage <em>Haushalt</em> ausgeblendet. Unten in der Leiste steht, wie viele Bereiche ausgeblendet sind; ein Klick zeigt sie. Dauerhaft einblenden kannst du sie unter <a href="https://motom001.github.io/dms/admin/aktuell/uebersicht/#werkbank-anpassen">Werkbank anpassen</a>. <strong>Ausgeblendet heißt nicht abgeschaltet.</strong></p>
@@ -2188,9 +2188,7 @@
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>logs<span class="w"> </span>&lt;app-container&gt;
 </code></pre></div>
 <h2 id="datenbank">Datenbank<a class="headerlink" href="#datenbank" title="Permanent link">&para;</a></h2>
-<p><strong>Werkbank → Datenbank</strong> zeigt <strong>lange Datenbankzugriffe</strong> – Zugriffe, die länger als eine Schwelle gedauert haben (Standard 500 ms, aufbewahrt 30 Tage; beides einstellbar) – und was <strong>gerade</strong> in der Datenbank läuft.</p>
-<p>Die Liste steht im Abschnitt <strong>Einstellungen</strong> unter <em>Lang ab</em> und <em>Aufbewahren</em>, die neuesten oben; sie zeigt etwa zehn Einträge, darin scrollst du. Ein Klick auf einen Eintrag klappt ihn auf: Abfrage, Aufrufer (Anfrage und Benutzer), Dauer und Zeit. Einzelheiten zur selben Zeit stehen im <a href="#protokoll">Protokoll</a> (Modul <em>datenbank</em>).</p>
-<p><img alt="Datenbank" src="../bilder/werkbank-datenbank.png" /></p>
+<p>Lange Datenbankzugriffe und was gerade in der Datenbank läuft stehen unter <strong>Werkbank → Einstellungen → Datenbank-Anbindung</strong>, unter der Verbindung – siehe <a href="../installation/#lange-datenbankzugriffe">Lange Datenbankzugriffe</a>. Wirkt das DMS langsam, schau dort zuerst nach.</p>
 <h2 id="zeitmessung-entwicklermodus">Zeitmessung (Entwicklermodus)<a class="headerlink" href="#zeitmessung-entwicklermodus" title="Permanent link">&para;</a></h2>
 <p>Wirkt eine Seite langsam, schalte im <strong>Profil</strong> den <strong>Entwicklermodus</strong> ein. Dann zeigt das DMS unten rechts bei jedem Seitenaufruf, wie lange Netzwerk, Aufbereitung auf dem Server, Datenbankzugriffe, Übertragung und Darstellung im Browser gedauert haben. Er gilt nur für dein Konto.</p>
 <h2 id="technik">Technik<a class="headerlink" href="#technik" title="Permanent link">&para;</a></h2>

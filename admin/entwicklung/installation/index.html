@@ -568,6 +568,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Datenbank-Anbindung">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lange-datenbankzugriffe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lange Datenbankzugriffe
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#was-lauft-gerade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Was läuft gerade
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2290,6 +2318,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Datenbank-Anbindung">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lange-datenbankzugriffe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lange Datenbankzugriffe
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#was-lauft-gerade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Was läuft gerade
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2452,6 +2508,17 @@
 </ul>
 <p>Unter <strong>Werkbank → Datenbank-Anbindung</strong> siehst und änderst du die Anbindung. Im Abschnitt <em>Verbindung</em> steht, womit das DMS gerade verbunden ist („Aktuell verbunden: dms@postgres:5432/dms · in Betrieb“). Ändern: erst <strong>Verbindung prüfen</strong>, dann <strong>Übernehmen</strong>. Die neue Anbindung gilt nach einem Neustart (<strong>Jetzt neu starten</strong> – im Container startet Docker das DMS gleich wieder). Die Daten wandern dabei nicht mit; für einen Umzug in eine andere Datenbank nimm eine <a href="../sicherung/">Sicherung</a>.</p>
 <p>In der Datei steht auch die interne Id des <strong>Haushalts</strong> (früher die Umgebungsvariable <code>HAUSHALT_ID</code>). Bisherige Installationen übernehmen sie beim ersten Start; die Variable kann danach entfernt werden.</p>
+<p>Unter der Verbindung zeigt die Seite, wie es der Datenbank im Betrieb geht: die <strong>langen Datenbankzugriffe</strong> und <strong>was gerade läuft</strong>. Früher stand das unter <em>Wartung und Fehlersuche → Datenbank</em>; alte Links und Lesezeichen führen hierher.</p>
+<p><img alt="Datenbank-Anbindung: lange Datenbankzugriffe" src="../bilder/werkbank-datenbank.png" /></p>
+<h3 id="lange-datenbankzugriffe">Lange Datenbankzugriffe<a class="headerlink" href="#lange-datenbankzugriffe" title="Permanent link">&para;</a></h3>
+<p>Jeder Datenbankzugriff wird gestoppt. Was länger dauert als eine Schwelle, landet in der Liste und als Warnung im <a href="../fehlersuche/#protokoll">Protokoll</a> (Modul <em>datenbank</em>). Direkt über der Liste stellst du ein:</p>
+<ul>
+<li><strong>Lang ab</strong> – die Schwelle in Millisekunden (Standard 500),</li>
+<li><strong>Aufbewahren</strong> – wie viele Tage die Einträge bleiben (Standard 30).</li>
+</ul>
+<p>Die Liste zeigt die neuesten oben, etwa zehn Einträge; darin scrollst du. Ein Klick auf einen Eintrag klappt ihn auf: Abfrage, Aufrufer (Anfrage und Benutzer), Dauer und Zeit. Ein Datenbankzugriff ist eine Methode der Datenzugriffsschicht (z. B. <code>mappen.seite</code> für eine Seite einer Ansicht) und kann mehrere SQL-Anweisungen umfassen.</p>
+<h3 id="was-lauft-gerade">Was läuft gerade<a class="headerlink" href="#was-lauft-gerade" title="Permanent link">&para;</a></h3>
+<p>Die Abfragen, die gerade in der Datenbank laufen, mit Dauer, Zustand und Prozess – alle fünf Sekunden aktualisiert. Laufen welche schon länger als die Schwelle, weist ein Hinweis darauf hin.</p>
 <h2 id="e-mail-und-adresse">E-Mail und Adresse<a class="headerlink" href="#e-mail-und-adresse" title="Permanent link">&para;</a></h2>
 <p>Unter <strong>Werkbank → E-Mail und Adresse</strong> stellst du ein, was früher Umgebungsvariablen waren. Änderungen gelten sofort, ohne Neustart.</p>
 <p><img alt="E-Mail und Adresse in der Werkbank" src="../bilder/werkbank-betrieb.png" /></p>
