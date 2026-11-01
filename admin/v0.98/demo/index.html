@@ -1468,7 +1468,7 @@
   <span class="md-ellipsis">
     
   
-    Speicherplatz
+    Systemzustand
   
 
     
@@ -2181,13 +2181,13 @@
 </tbody>
 </table>
 <p>Die Vorlagen <strong>leicht</strong>, <strong>realistisch</strong> und <strong>schwer</strong> sind fertige Mischungen; bewegst du danach einen Regler, steht dort <em>eigene Mischung</em>. Jede Datei ist einzigartig. Ein Anteil <strong>gewollter Duplikate</strong> legt dieselbe Datei in mehrere Mappen – sie liegt dann nur einmal auf der Platte.</p>
-<p>Vor dem Start steht eine <strong>Abschätzung</strong> auf der Seite und ändert sich beim Schieben sofort: Mappen, Dokumente, Seiten, Größe, Seiten für die Texterkennung und der freie Platz – z. B. „≈ 1.000 Mappen, ≈ 600 Dokumente mit ≈ 4.224 Seiten, zusammen ≈ 559 MB; ≈ 348 Seiten für die Texterkennung“. Bei sehr großen Mengen (ab etwa 20.000 Dokumenten oder 20 GB) warnt sie deutlich, denn das dauert auf einem NAS Stunden. Mehr als 250.000 Dokumente je Lauf sind nicht möglich – dann lieber mehrere Läufe. Reicht der Platz nicht – frei bleiben müssen der <em>Mindest-Speicherplatz</em> der <a href="../sicherung/">Sicherung</a> und die Grenze unter <a href="../speicherplatz/">Speicherplatz</a> –, lässt sich der Lauf nicht starten. Wird der Platz während des Laufs knapp, hört er sauber auf und sagt das im Ergebnis.</p>
+<p>Vor dem Start steht eine <strong>Abschätzung</strong> auf der Seite und ändert sich beim Schieben sofort: Mappen, Dokumente, Seiten, Größe, Seiten für die Texterkennung und der freie Platz – z. B. „≈ 1.000 Mappen, ≈ 600 Dokumente mit ≈ 4.224 Seiten, zusammen ≈ 559 MB; ≈ 348 Seiten für die Texterkennung“. Bei sehr großen Mengen (ab etwa 20.000 Dokumenten oder 20 GB) warnt sie deutlich, denn das dauert auf einem NAS Stunden. Mehr als 250.000 Dokumente je Lauf sind nicht möglich – dann lieber mehrere Läufe. Reicht der Platz nicht – frei bleiben müssen der <em>Mindest-Speicherplatz</em> der <a href="../sicherung/">Sicherung</a> und die Grenze unter <a href="../speicherplatz/">Systemzustand</a> –, lässt sich der Lauf nicht starten. Wird der Platz während des Laufs knapp, hört er sauber auf und sagt das im Ergebnis.</p>
 <div class="admonition warning">
 <p class="admonition-title">Texterkennung braucht Zeit</p>
 <p>Die Texterkennung vieler „gescannter“ PDFs und Bilder dauert auf einem NAS eher Tage als Stunden; sie läuft nach dem Erzeugen im Hintergrund weiter. Sicherungen werden entsprechend größer.</p>
 </div>
 <h3 id="beobachten">Beobachten<a class="headerlink" href="#beobachten" title="Permanent link">&para;</a></h3>
-<p>Das Ergebnis jedes Laufs nennt Dauer, Anzahl, Größe, Seiten und Startwert (auch im <a href="../fehlersuche/#protokoll">Protokoll</a>), damit Läufe vergleichbar sind. Wie sich das DMS dabei verhält, zeigen die vorhandenen Werkzeuge: <strong>Werkbank → <a href="../installation/#lange-datenbankzugriffe">Datenbank-Anbindung</a></strong> (lange Zugriffe), <strong>Texterkennung</strong> (Warteschlange), <strong>Speicherplatz</strong> und die Zeiten im Browser unter <em>Server-Timing</em>.</p>
+<p>Das Ergebnis jedes Laufs nennt Dauer, Anzahl, Größe, Seiten und Startwert (auch im <a href="../fehlersuche/#protokoll">Protokoll</a>), damit Läufe vergleichbar sind. Wie sich das DMS dabei verhält, zeigen die vorhandenen Werkzeuge: <strong>Werkbank → <a href="../installation/#lange-datenbankzugriffe">Datenbank-Anbindung</a></strong> (lange Zugriffe), <strong>Texterkennung</strong> (Warteschlange), <strong>Systemzustand</strong> (Speicherplatz) und die Zeiten im Browser unter <em>Server-Timing</em>.</p>
 <p>Damit du nebenher normal weiterarbeiten kannst, legt der Lauf nach jedem Dokument und jedem Paket Mappen eine kurze Pause ein und frischt danach die Statistik der Datenbank auf (<code>ANALYZE</code>). Er dauert dadurch etwas länger. Die Texterkennung läuft trotzdem parallel und braucht auf einem NAS viel Rechenzeit – einzelne lange Zugriffe unter <strong>Werkbank → Datenbank-Anbindung</strong> sind in dieser Zeit möglich.</p>
 <h2 id="entfernen">Entfernen<a class="headerlink" href="#entfernen" title="Permanent link">&para;</a></h2>
 <p>Unter dem Knopf steht je Mappentyp, wie viele Mappen es gibt und wie viele davon Demo-Mappen sind, mit Summe.</p>
