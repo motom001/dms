@@ -744,6 +744,6 @@ export interface PostfachAnsicht extends Omit<PostfachEingabe, 'passwort' | 'abs
 }
 
 /** Anmeldeschutz (#240). */
-export interface SperrEinstellung { konto: { versuche: number; minuten: number }; ip: { versuche: number; minuten: number }; ausnahmen: string[]; mail: boolean }
+export interface SperrEinstellung { konto: { versuche: number; minuten: number }; ip: { versuche: number; minuten: number }; ausnahmen: string[]; mail: boolean; mailKonto: boolean }
 export interface IpSperre { ip: string; seit: string; bis: string | null; grund: string }
 export interface AnmeldeschutzStand { einstellung: SperrEinstellung; gesperrt: IpSperre[]; deineIp: string }

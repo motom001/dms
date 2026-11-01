@@ -217,7 +217,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'pakete', name: 'Pakete', gruppe: 'ablage', zahl: zahl(pakete.stand?.installiert.length, uz?.pakete) },
           ...(d.typen.some((t) => t.archiv) ? [{ pfad: 'darfweg', name: 'Darf weg', gruppe: 'ablage' as const, zahl: zahl(darfWeg.liste?.length, uz?.darfWeg) }] : []),
           { pfad: 'benutzer', name: 'Benutzer', gruppe: 'benutzer', zahl: zahl(benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined, uz?.benutzer) },
-          { pfad: 'anmeldeschutz', name: 'Anmeldeschutz', gruppe: 'benutzer', warn: anmeldeschutz.stand?.gesperrt.length ? String(anmeldeschutz.stand.gesperrt.length) : undefined, warnTitel: 'gesperrte IP-Adressen' },
+          { pfad: 'anmeldeschutz', name: 'Anmeldeschutz', gruppe: 'benutzer', zahl: anmeldeschutz.stand?.gesperrt.length || undefined },
           { pfad: 'aufgaben', name: 'Aufgaben', gruppe: 'benutzer', zahl: zahl(aufgaben.liste?.filter((a) => !a.erledigt).length, uebersicht.stand?.aufgaben.offen) },
           { pfad: 'betrieb', name: 'E-Mail und Adresse', gruppe: 'einstellungen', warn: uebersicht.stand && !uebersicht.stand.mail ? 'aus' : undefined },
           { pfad: 'verschluesselung', name: 'Verschlüsselung', gruppe: 'einstellungen', warn: tresor.stand && tresor.stand.zustand !== 'vorhanden' ? 'fehlt' : undefined },
