@@ -72,9 +72,9 @@ Beim Speichern prüft das DMS außerdem, ob danach Mappen dieses Mappentyps **ni
 
 ## Testlauf
 
-Unter den Regeln steht der **Testlauf**: Welche Rechte hätte ein bestimmter Benutzer an einer bestimmten Mappe? Wähle Benutzer und Mappe und klicke auf **Prüfen**. Die Tabelle zeigt Schritt für Schritt, welche Regel zutraf, was sie gesetzt hat und wie der Stand danach war.
+Unter den Regeln steht der **Testlauf**: Welche Rechte hätte ein bestimmter Benutzer an einer bestimmten Mappe? **Benutzer** und **Testmappe** wählst du genauso wie in einem Verweisfeld einer Mappe: Tippe einen Teil des Namens bzw. Titels und klicke auf einen Treffer; mit **Ändern** wählst du neu. Ist ein Administrator gewählt, steht das gleich daneben – für ihn gelten die Regeln nicht. Sobald beides gewählt ist, erscheint das Ergebnis von selbst. Die Tabelle zeigt Schritt für Schritt, welche Regel zutraf, was sie gesetzt hat und wie der Stand danach war.
 
-Der Testlauf nutzt die Regeln, **wie sie gerade im Editor stehen** – auch ungespeicherte. So probierst du eine Änderung aus, bevor du *Mappentyp speichern* klickst. Ändert sich eine Regel, verschwindet das alte Ergebnis. Den Testlauf gibt es, sobald der Mappentyp gespeichert ist; prüfen kannst du erst, wenn es Mappen dieses Mappentyps gibt.
+Der Testlauf nutzt die Regeln, **wie sie gerade im Editor stehen** – auch ungespeicherte. So probierst du eine Änderung aus, bevor du *Mappentyp speichern* klickst. Das Ergebnis gehört immer genau zu Benutzer, Testmappe und Regeln, wie sie gerade gewählt sind: Wechselst du Benutzer oder Testmappe, wird sofort neu geprüft; änderst du eine Regel, verschwindet das alte Ergebnis, und du prüfst mit **Prüfen** erneut. Den Testlauf gibt es, sobald der Mappentyp gespeichert ist; prüfen kannst du erst, wenn es Mappen dieses Mappentyps gibt.
 
 ![Testlauf: Ben an „Stromvertrag Haus“](bilder/werkbank-berechtigungen-testlauf.png)
 

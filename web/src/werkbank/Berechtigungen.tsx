@@ -12,7 +12,8 @@ import { Link } from '../ort';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import { FeldBedingung, MappenSuche } from './Sichten';
 import { Bereich, type Klappe } from '../einrichtung/Bereich';
-import type { Benutzer } from '../../../shared/src/model';
+import { passendesErgebnis, testlaufSchluessel, type TestlaufErgebnis } from '../../../shared/src/testlauf';
+import { TestBenutzerWahl, TestMappeWahl, useTestlauf } from './TestlaufWahl';
 
 /**
  * Berechtigungen (#123–#127, #137, #142): je Mappentyp eine Grundeinstellung und Regeln
@@ -249,12 +250,6 @@ function Kopieren({ typ, regel, fertig }: { typ: Mappentyp; regel: Regel; fertig
 
 /* ---------- Testlauf (#125) ---------- */
 
-function useRegelBenutzer() {
-  const [liste, setListe] = useState<Benutzer[]>([]);
-  useEffect(() => { api.benutzer().then((l) => setListe(l.filter((b) => b.aktiv))).catch(() => {}); }, []);
-  return liste;
-}
-
 function RechteZeile({ r }: { r: Record<Recht, boolean> }) {
   return (
     <span className="rechtezeile">
@@ -265,32 +260,24 @@ function RechteZeile({ r }: { r: Record<Recht, boolean> }) {
 
 /** Testlauf am Mappentyp (#146): mit den Regeln, wie sie gerade im Editor stehen – auch ungespeichert. */
 export function TestlaufBlatt({ typId, entwurf, klappe }: { typId: string; entwurf: Regelwerk; klappe: Klappe }) {
-  const benutzer = useRegelBenutzer();
   const [b, setB] = useState('');
-  const [mappe, setMappe] = useState<string[]>([]);
-  const [titel, setTitel] = useState<Record<string, string>>({});
-  const [erg, setErg] = useState<Testlauf>();
-  const [fehler, setFehler] = useState<string>();
-  async function los() {
-    setFehler(undefined);
-    try { setErg(await api.testlauf({ mappeId: mappe[0], benutzerId: b, berechtigungen: entwurf })); } catch (x) { setFehler((x as Error).message); setErg(undefined); }
-  }
-  // Nach jeder Änderung an den Regeln: altes Ergebnis ausblenden.
+  const [mappe, setMappe] = useState('');
+  // Das Ergebnis gehört zu (Benutzer, Mappe, Regeln) – wechselt eines davon, ist es sofort weg (#371).
   const stand = JSON.stringify(entwurf);
-  useEffect(() => { setErg(undefined); }, [stand]);
+  const schluessel = testlaufSchluessel({ benutzerId: b, mappeId: mappe, stand });
+  const { erg, fehler, los } = useTestlauf<Testlauf>(schluessel, `${b}|${mappe}`,
+    () => api.testlauf({ mappeId: mappe, benutzerId: b, berechtigungen: entwurf }));
   return (
     <Bereich id="testlauf" titel="Testlauf" hilfe={<Hilfe ort="berechtigungen.testlauf" />} klappe={klappe}
       kurz={typId ? 'Rechte eines Benutzers an einer Mappe ausprobieren – auch mit ungespeicherten Regeln' : 'Gibt es, sobald der Mappentyp gespeichert ist'}
       beschreibung="Welche Rechte hätte ein Benutzer an einer bestimmten Mappe – und welche Regel hat das entschieden? Geprüft werden die Regeln, wie sie oben stehen, auch wenn sie noch nicht gespeichert sind.">
       {!typId ? <p className="leise klein">Den Testlauf gibt es, sobald der Mappentyp gespeichert ist und Mappen hat.</p> : <>
-      <div className="bedingungszeile">
-        <select aria-label="Benutzer" value={b} onChange={(x) => setB(x.target.value)}>
-          <option value="">– Benutzer wählen –</option>
-          {benutzer.map((x) => <option key={x.id} value={x.id}>{x.name || x.email}{x.rolle === 'admin' ? ' (Administrator)' : ''}</option>)}
-        </select>
-        {typId && <MappenSuche key={typId} typId={typId} gewaehlt={mappe} titel={titel} merke={(id, t) => setTitel((x) => ({ ...x, [id]: t }))} setze={(ids) => setMappe(ids.slice(-1))} />}
-        <button type="button" className="knopf klein primaer" disabled={!b || !mappe.length} onClick={() => void los()}>Prüfen</button>
+      <div className="formular">
+        <TestBenutzerWahl id="testlauf-benutzer" wert={b} setze={setB} />
+        <TestMappeWahl key={typId} id="testlauf-mappe" typId={typId} wert={mappe} setze={setMappe} />
       </div>
+      {!schluessel && <p className="leise klein">Wähle Benutzer und Testmappe – das Ergebnis erscheint sofort.</p>}
+      {schluessel && !erg && !fehler && <div className="knoepfe"><button type="button" className="knopf klein primaer" onClick={() => void los()}>Prüfen</button></div>}
       {fehler && <p className="fehlertext klein">{fehler}</p>}
       {erg && (
         <div className="testlauf" role="status">
@@ -328,13 +315,16 @@ export function TestlaufBlatt({ typId, entwurf, klappe }: { typId: string; entwu
 /* ---------- Was sieht ein Benutzer? (#125, #146: in der Benutzerverwaltung) ---------- */
 
 export function WasSiehtBlatt({ benutzerId, admin }: { benutzerId: string; admin: boolean }) {
-  const [erg, setErg] = useState<Awaited<ReturnType<typeof api.wasSieht>>>();
-  const [fehler, setFehler] = useState<string>();
+  // Ergebnis an den Benutzer gebunden (#371): nie die Liste eines anderen Benutzers zeigen.
+  const [gespeichert, setErg] = useState<TestlaufErgebnis<Awaited<ReturnType<typeof api.wasSieht>>>>();
+  const [fehlerZu, setFehler] = useState<TestlaufErgebnis<string>>();
+  const erg = passendesErgebnis(gespeichert, benutzerId);
+  const fehler = passendesErgebnis(fehlerZu, benutzerId);
   const [an, setAn] = useState(false);
   useEffect(() => {
     if (!an || admin) return;
     let aktuell = true;
-    api.wasSieht(benutzerId).then((x) => aktuell && setErg(x)).catch((x) => aktuell && setFehler((x as Error).message));
+    api.wasSieht(benutzerId).then((x) => aktuell && setErg({ schluessel: benutzerId, wert: x })).catch((x) => aktuell && setFehler({ schluessel: benutzerId, wert: (x as Error).message }));
     return () => { aktuell = false; };
   }, [an, benutzerId, admin]);
   return (
