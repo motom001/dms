@@ -1085,6 +1085,17 @@ fieldset.eigenschaft legend { font-size: calc(12.5px * var(--skala, 1)); font-we
 .neuknopf .menue { left: 0; right: auto; }
 /* #418: Am Handy rutscht das Benutzermenü in die zweite Zeile – es öffnet dann über die ganze Breite statt aus dem Bild heraus. */
 @media (max-width: 820px) { .benutzermenue > .menue { position: fixed; top: auto; left: 8px; right: 8px; min-width: 0; margin-top: 6px; } }
+/* #415, #419: Aufgaben gesammelt weitergeben; Tägliche Zusammenfassung zuklappbar. */
+.sammel-liste > li { position: relative; }
+.sammel-liste > li.mit-haken > .aufgabenzeile { padding-left: 34px; }
+.sammel-kopf { margin-top: 4px; }
+.sammel-ziel { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; }
+.sammel-ziel select { width: auto; min-width: 0; max-width: 100%; flex: 0 1 220px; padding-top: 4px; padding-bottom: 4px; }
+.sammel-rechts { flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.sammel-aufklapper { display: inline-flex; align-items: baseline; gap: 6px; background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+.sammel-pfeil { display: inline-block; width: 1em; color: var(--leise); }
+.sammel-stand { font-weight: 400; margin-left: 10px; }
+.sammel-inhalt:not([hidden]) { display: flex; flex-direction: column; gap: 14px; }
 /* #430: Piktogramme im Benutzermenü und Fenster „Über das DMS“. */
 .benutzermenue .menuepunkt .pikto { vertical-align: -3px; margin-right: 10px; color: var(--leise); flex: none; }
 dialog.ueber-dms { width: min(460px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--linie-stark); border-radius: 10px; background: var(--flaeche); color: var(--tinte); box-shadow: 0 12px 40px rgb(0 0 0 / .25); }

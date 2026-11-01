@@ -842,6 +842,11 @@ async function main() {
   // #366: Mitte Zusammenfassung und Liste mit Filter, rechts die Mappe der ersten Aufgabe.
   if (await s.locator('.spalte.liste a.eintrag').count()) await s.locator('.spalte.liste a.eintrag').first().click();
   await bild(s, 'werkbank-aufgaben');
+  // #415: Mehrfachauswahl mit Leiste „Ausgewählte weitergeben an“ (nur auswählen, nichts weitergeben).
+  await s.getByLabel('Alle angezeigten auswählen').check();
+  await s.locator('.sammel-leiste').waitFor();
+  await bild(s, 'werkbank-aufgaben-auswahl');
+  await s.locator('.sammel-leiste').getByRole('button', { name: 'Auswahl aufheben' }).click();
   await geheZu(s, '/werkbank/papierkorb');
   await s.getByRole('heading', { name: 'Aufbewahrung', exact: true }).waitFor();
   // #366: Aufbewahrung und Liste in der Mitte, rechts die gewählte Mappe.

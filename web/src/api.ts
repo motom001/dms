@@ -444,6 +444,10 @@ export const api = {
   erinnerungAendern: (id: string, e: { datum: string; text: string; empfaengerId?: string }) => anfrage<Erinnerung & { hinweis?: string }>('PUT', `/api/erinnerungen/${id}`, e),
   erinnerungLoeschen: (id: string) => anfrage<null>('DELETE', `/api/erinnerungen/${id}`),
   aufgabeDelegieren: (id: string, empfaengerId: string) => anfrage<Aufgabe & { hinweis?: string }>('POST', `/api/aufgaben/${id}/delegieren`, { empfaengerId }),
+  /** Sammel-Weitergabe und -Erledigen (#415, #419). */
+  aufgabenWeitergeben: (ids: string[], empfaengerId: string) => anfrage<{ weitergegeben: string[]; nicht: Array<{ id: string; grund: string }> }>('POST', '/api/aufgaben/weitergeben', { ids, empfaengerId }),
+  aufgabenErledigen: (ids: string[]) => anfrage<{ erledigt: string[]; nicht: Array<{ id: string; grund: string }> }>('POST', '/api/aufgaben/erledigt', { ids }),
+  meineAufgaben: () => anfrage<Array<Aufgabe & { verborgen?: boolean }>>('GET', '/api/aufgaben'),
   aufgabenWerkbank: (erledigt = false) => anfrage<{ aufgaben: Aufgabe[]; mail: MailEinstellung | null; unlesbar?: string[] }>('GET', `/api/werkbank/aufgaben${erledigt ? '?erledigt' : ''}`),
   aufgabenMailSpeichern: (e: MailEinstellung) => anfrage<MailEinstellung>('PUT', '/api/werkbank/aufgaben/mail', e),
   /** Eigene tägliche Zusammenfassung (#92, #94). */

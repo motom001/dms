@@ -1321,6 +1321,9 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async delegiereAufgabe(id, an) {
       await sql`UPDATE aufgaben SET empfaenger_id = ${istUuid(an) ? an : null}::uuid WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
+    async aendereAufgabeText(id, text) {
+      await sql`UPDATE aufgaben SET text = ${text} WHERE haushalt_id = ${haushaltId} AND id = ${id} AND erledigt IS NULL`;
+    },
     async fristAufgaben(mappeIds) {
       const welche = mappeIds ? sql`AND a.mappe_id = ANY(${mappeIds.filter(istUuid)}::uuid[])` : sql``;
       return (await sql`

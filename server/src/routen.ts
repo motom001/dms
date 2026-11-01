@@ -1364,6 +1364,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return ok({ ...auf, ...await leseHinweis(auf.empfaengerId, a.params.id) }, 201);
     } },
     { methode: 'POST', pfad: '/api/aufgaben/:id/erledigt', zugang: 'angemeldet', handler: async (a) => ok(await dienst.erledigeAufgabe(a.params.id, ich(a))) },
+    // Sammel-Weitergabe und -Erledigen (#415, #419): Werkbank → Aufgaben und Profil → Abwesenheit.
+    { methode: 'POST', pfad: '/api/aufgaben/weitergeben', zugang: 'angemeldet', handler: async (a) => {
+      await empfaengerSichtbar(a, b(a).empfaengerId);
+      return ok(await dienst.aufgabenWeitergeben(b(a).ids, b(a).empfaengerId, ich(a)));
+    } },
+    { methode: 'POST', pfad: '/api/aufgaben/erledigt', zugang: 'angemeldet', handler: async (a) => ok(await dienst.aufgabenErledigen(b(a).ids, ich(a))) },
     { methode: 'POST', pfad: '/api/aufgaben/:id/delegieren', zugang: 'angemeldet', handler: async (a) => {
       await empfaengerSichtbar(a, b(a).empfaengerId);
       const auf = await dienst.delegiereAufgabe(a.params.id, b(a).empfaengerId, ich(a));

@@ -492,6 +492,7 @@ export function speicherRepo(): Repo {
     },
     async erledigeAufgabe(id, von) { const a = aufgaben.get(id); if (a && !a.erledigt) { a.erledigt = jetzt(); a.erledigtVon = von; } },
     async delegiereAufgabe(id, an) { const a = aufgaben.get(id); if (a) a.empfaengerId = an; },
+    async aendereAufgabeText(id, text) { const a = aufgaben.get(id); if (a && !a.erledigt) a.text = text; },
     async fristAufgaben(mappeIds) {
       return [...aufgaben.values()].filter((a) => a.art === 'frist' && mappen.has(a.mappeId) && (!mappeIds || mappeIds.includes(a.mappeId)))
         .sort((a, b) => a.erstellt.localeCompare(b.erstellt)).map(mitMappe);
