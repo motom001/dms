@@ -107,7 +107,7 @@ begriffe:
     nicht_verwenden: [Defaultwert]
   - begriff: Register
     bereich: grundbegriffe
-    beschreibung: Ein Trennblatt in einer Mappe, z. B. Allgemein (mit Feldern), Dokumente, Verknüpfungen oder Historie. Notizen sind kein Register; sie öffnen sich über den Knopf „Notizen“ an der Mappe.
+    beschreibung: Ein Trennblatt in einer Mappe, z. B. Allgemein (mit Feldern), Dokumente, Verknüpfungen oder Historie. Notizen und Historie sind feste Register jeder Mappe.
     einsteiger: erklaeren
     begegnet: alle
     nicht_verwenden: [Tab, Reiter]
@@ -282,7 +282,7 @@ begriffe:
     verwandt: [Erinnerung, Anstehend]
   - begriff: Erinnerung
     bereich: ablage
-    beschreibung: Eine von Hand gesetzte Aufgabe für einen bestimmten Tag (Aktionen → Erinnern).
+    beschreibung: Eine von Hand gesetzte Aufgabe für einen bestimmten Tag (Mappe ▾ → Erinnern).
     einsteiger: alltag
     begegnet: alle
     code: Erinnerung
@@ -362,7 +362,7 @@ begriffe:
     verwandt: [Vollexport, Meine Daten exportieren, Sicherung]
   - begriff: Aktionen
     bereich: ablage
-    beschreibung: Das Menü an einer Mappe – Aufgabe vergeben, Erinnern, Versenden, Exportieren und mehr.
+    beschreibung: Das Menü „Mappe ▾“ neben dem Titel einer Mappe – Aufgabe vergeben, Erinnern, Versenden, Exportieren und mehr. Hieß früher selbst „Aktionen“.
     einsteiger: alltag
     begegnet: alle
 

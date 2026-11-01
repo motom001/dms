@@ -87,7 +87,7 @@ Ein Klick auf einen gesetzten Verweis öffnet die andere Mappe.
 
 Willst du die Mappe mit ungespeicherten Änderungen verlassen, fragt das DMS nach.
 
-Über den Registern stehen außerdem **Notizen** und das Menü **Aktionen** (Aufgabe vergeben, Erinnern, per E-Mail versenden, als PDF exportieren, Link kopieren) – siehe [Notizen, Erwähnungen, Historie](zusammenarbeit.md) und [E-Mail, PDF und Link](versenden.md).
+Neben dem Titel stehen der Stern für die [Favoriten](ablage.md#favoriten) und das Menü **Mappe ▾** (Aufgabe vergeben, Erinnern, per E-Mail versenden, als PDF exportieren, Link kopieren). Bei jeder Mappe gibt es außerdem die Register **Notizen** (mit Zahl) und **Historie** – siehe [Notizen, Erwähnungen, Historie](zusammenarbeit.md) und [E-Mail, PDF und Link](versenden.md). Am Handy rollt die Reihe der Register waagerecht; ein Schatten am Rand zeigt, dass weitere folgen.
 
 Manche Angaben sind nur zum Lesen da und haben einen gestrichelten Rahmen – zum Beispiel Name und E-Mail-Adresse in der Mappe eines Benutzers. Daneben steht, wo man sie ändert.
 

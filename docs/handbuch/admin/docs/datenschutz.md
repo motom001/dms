@@ -62,7 +62,7 @@ Ein Familienmitglied oder jemand aus dem Betrieb, der ein Konto im DMS hat, möc
 Ein Mieter, Kunde oder Kontakt fragt nach seinen Daten. Das erledigt **Werkbank → Datenschutz**; die Einzelheiten stehen [weiter unten](#auskunft-nach-art-15-dsgvo).
 
 1. **Einmal einrichten:** Verantwortlicher, Empfänger und die Mappentypen, die eine Person betreffen, jeweils mit Zweck ([Einstellungen](#einstellungen)).
-2. **Person wählen** – oder an ihrer Mappe **Aktionen → Auskunft erstellen …** – und den Eingang der Anfrage eintragen. **Frist als Aufgabe anlegen** erinnert dich unter „Zu erledigen“.
+2. **Person wählen** – oder an ihrer Mappe **Mappe ▾ → Auskunft erstellen …** – und den Eingang der Anfrage eintragen. **Frist als Aufgabe anlegen** erinnert dich unter „Zu erledigen“.
 3. **Sammeln:** Das DMS folgt den Verweisen von der Mappe der Person aus (Mietvertrag, Abrechnungen, Post, Wohnung). Darunter stehen **Vorschläge aus der Suche** – Mappen, in denen Name, E-Mail-Adresse, Kundennummer oder IBAN vorkommen, auch im Text der Dokumente und Notizen.
 4. **Weitersuchen**, wenn die Person auch anderswo vorkommt: In der Ablage findet die [erweiterte Suche](https://motom001.github.io/dms/benutzer/aktuell/ablage/#erweiterte-suche) ohne gewählten Mappentyp über alle Mappentypen, mit **Volltext** auch in Dokumenten und Notizen. Was dazugehört, nimmst du in der Prüfliste aus den Vorschlägen auf oder verknüpfst es mit der Mappe der Person und sammelst neu.
 5. **Prüfen und schwärzen:** Nur Angehaktes geht hinaus; Angaben zu anderen Personen schwärzt du vorher.
@@ -124,7 +124,7 @@ Die **Speicherdauer** auf dem Deckblatt kommt aus dem [Archivmodus](archiv.md): 
 
 ## Auskunft nach Art. 15 DSGVO
 
-1. **Person wählen:** Art (einer der markierten Mappentypen) und Name suchen – oder direkt an der Mappe unter **Aktionen → Auskunft erstellen …** (nur für Administratoren und nur bei Mappentypen, die eine Person betreffen).
+1. **Person wählen:** Art (einer der markierten Mappentypen) und Name suchen – oder direkt an der Mappe unter **Mappe ▾ → Auskunft erstellen …** (nur für Administratoren und nur bei Mappentypen, die eine Person betreffen).
 2. **Frist:** Trage ein, wann die Anfrage eingegangen ist, und lege mit **Frist als Aufgabe anlegen** eine Aufgabe für dich an – „Auskunft nach Art. 15 DSGVO an … bis …“, fällig einen Monat nach Eingang (Art. 12 Abs. 3 DSGVO). Sie steht wie jede Aufgabe unter „Zu erledigen“.
 3. **Sammeln:** Das DMS folgt den Verweisen von der Mappe der Person aus – **Mappen, die darauf verweisen** (Mietvertrag → Nebenkostenabrechnungen, Post) und **Mappen, auf die sie verweist** (Wohnung). Die **Tiefe** stellst du ein (Vorgabe 2: Vertrag und dessen Rechnungen). Jede Mappe geht nur in der Richtung weiter, über die sie erreicht wurde: Von der Wohnung aus sammelt das DMS also nicht die anderen Mieter. Kreise (zwei Verträge, die aufeinander verweisen) werden erkannt; jede Mappe steht nur einmal da. Benutzer und Rollen sind nie dabei.
 4. **Prüfen:** Die Liste zeigt den Baum mit Häkchen je **Mappe**, **Dokument**, **Notiz** und **Historie**. Nur Angehaktes geht hinaus, und erst wenn du **„Ich habe die Auswahl geprüft“** bestätigst, lässt sich die Auskunft erzeugen.
@@ -159,7 +159,7 @@ Nur **Administratoren**. Ein eigenes Recht „Auskunft erteilen“ gibt es (noch
 
 ## Auskunft zustellen
 
-Die fertige Auskunft schickst du direkt aus dem DMS – unter **Bereitliegende Auskünfte** mit **Zustellen …** (oder gleich nach dem Erzeugen). Kommst du von der Mappe der Person (*Aktionen → Auskunft erstellen …*), stehen ihre Auskünfte oben. Zwei Wege:
+Die fertige Auskunft schickst du direkt aus dem DMS – unter **Bereitliegende Auskünfte** mit **Zustellen …** (oder gleich nach dem Erzeugen). Kommst du von der Mappe der Person (*Mappe ▾ → Auskunft erstellen …*), stehen ihre Auskünfte oben. Zwei Wege:
 
 | | Abruf-Link mit Abrufcode | ZIP per E-Mail |
 | --- | --- | --- |

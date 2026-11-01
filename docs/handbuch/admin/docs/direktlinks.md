@@ -6,7 +6,7 @@ Ein Link über Mappentyp und Feldwerte findet eine Mappe über ihren **Mappentyp
 http://<NAS>:8080/ablage/link?typ=rechnung&rechnungsnummer=A-2020-11380
 ```
 
-Eingerichtet wird dafür nichts: Jeder Link, der dem Aufbau unten folgt, funktioniert sofort. In jeder Mappe erzeugt **Aktionen → Link kopieren** einen passenden Link (siehe [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/versenden/#link-kopieren)).
+Eingerichtet wird dafür nichts: Jeder Link, der dem Aufbau unten folgt, funktioniert sofort. In jeder Mappe erzeugt **Mappe ▾ → Link kopieren** einen passenden Link (siehe [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/versenden/#link-kopieren)).
 
 ## Was der Link zeigt
 

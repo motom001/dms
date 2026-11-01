@@ -4,17 +4,17 @@
 
 ![Zu erledigen mit einer Aufgabe](bilder/eingang.png)
 
-In der Liste steht bei jeder Mappe, was zu tun ist. In der Mappe selbst steht oben ein Hinweis mit der Aufgabe.
+In der Liste steht bei jeder Mappe, was zu tun ist. In der Mappe selbst steht oben, unter dem Titel, ein gelber Hinweis mit der Aufgabe: vorne **Deine Aufgabe:** (bzw. **Post für dich:**, **Du wurdest erwähnt:**, **Deine Erinnerung:**), rechts die Knöpfe **Erledigt** und **Weitergeben** – sie gehören zur Aufgabe, nicht zur Mappe. Was du mit der ganzen Mappe tun kannst, steht im Menü **Mappe ▾** neben dem Titel. Bei einer Erwähnung in einer Notiz öffnet sich die Mappe gleich auf dem Register **Notizen**; **Zur Notiz** im Hinweis springt dorthin.
 
 ## Woher kommen Aufgaben?
 
 | Art | Wann | Wie wird sie erledigt? |
 | --- | --- | --- |
 | **Passt nicht** | Ein Administrator hat den Mappentyp geändert – z. B. ein neues Pflichtfeld –, und deine Mappe passt nicht mehr dazu. | Ergänze oder korrigiere die markierten Angaben und speichere. Dann erledigt sie sich von selbst. |
-| **Erwähnung** | Jemand hat dich in einem formatierten Text mit **@** erwähnt. | Klicke im Hinweis auf **Erledigt**. |
-| **Zugewiesen** | Jemand hat dir über **Aktionen → Aufgabe vergeben** etwas zu tun gegeben. | Klicke im Hinweis auf **Erledigt**. |
+| **Erwähnung** | Jemand hat dich in einem formatierten Text oder einer Notiz mit **@** erwähnt. | Klicke im Hinweis auf **Erledigt**. |
+| **Zugewiesen** | Jemand hat dir über **Mappe ▾ → Aufgabe vergeben** etwas zu tun gegeben. | Klicke im Hinweis auf **Erledigt**. |
 | **Frist** | Ein Datum in einer deiner Mappen rückt näher, z. B. „Kündigung bis 30.09.2027“. Daneben steht, wie viele Tage noch bleiben. | Klicke auf **Erledigt**. Ändert sich das Datum oder wird es geleert, erledigt sie sich von selbst. Wiederholt sich der Termin (z. B. jährlich), schlägt das DMS den nächsten vor: **Datum auf … setzen**. |
-| **Erinnerung** | Du oder jemand anderes hat über **Aktionen → Erinnern** an diese Mappe erinnert, und der Tag ist da. | Klicke auf **Erledigt**. |
+| **Erinnerung** | Du oder jemand anderes hat über **Mappe ▾ → Erinnern** an diese Mappe erinnert, und der Tag ist da. | Klicke auf **Erledigt**. |
 | **Vertretung** | Jemand hat dich als [Vertreter](profil.md#abwesenheit) für seine Abwesenheit eingetragen. Die Aufgabe steht an seiner Benutzer-Mappe und nennt den Zeitraum. | **Erledigt** heißt „zur Kenntnis genommen“. Ändert sich die Abwesenheit oder endet sie, erledigt sie sich von selbst. |
 | **Post für dich** | Bei neuer [Post](post.md) steht dein Name unter **Für**. | Ordne die Post zu, erledige sie oder gib sie weiter. Dann erledigt sie sich von selbst. |
 | **Auskunft** | Eine Person hat ihre Auskunft nach Art. 15 DSGVO über den Abruf-Link heruntergeladen – oder der Link wurde nach zu vielen falschen Abrufcodes gesperrt. Du bekommst das, wenn du die Auskunft erstellt hast oder die Mappe der Person ein [Favorit](ablage.md#favoriten) von dir ist. | **Erledigt** heißt „zur Kenntnis genommen“. Bis dahin kommt für denselben Link keine zweite Meldung. |
@@ -23,7 +23,7 @@ Bei „Passt nicht“ löscht oder ändert das DMS nichts von selbst; die betrof
 
 ## Eine Aufgabe vergeben
 
-Rechts über den Registern einer Mappe steht das Menü **Aktionen**; darin **Aufgabe vergeben**. Wähle, **für wen** sie ist, und schreibe, **was zu tun ist**. Die Mappe erscheint dann unter „Zu erledigen“ dieses Benutzers.
+Rechts neben dem Titel einer Mappe, neben dem Stern, steht das Menü **Mappe ▾**; darin **Aufgabe vergeben**. Wähle, **für wen** sie ist, und schreibe, **was zu tun ist**. Die Mappe erscheint dann unter „Zu erledigen“ dieses Benutzers.
 
 ![Aufgabe vergeben](bilder/aufgabe-vergeben.png)
 
@@ -33,7 +33,7 @@ Steht bei dir unter „Zu erledigen“ eine **nicht sichtbare Mappe**, hast du e
 
 ## Erinnern
 
-Über **Aktionen → Erinnern** in einer Mappe lässt du dich – oder jemand anderen – an einem bestimmten Tag an die Mappe erinnern, z. B. „am 15.11.: Angebote vergleichen“. Bis dahin steht die Erinnerung oben in der Mappe und unter [Anstehend](#anstehend); wer sie angelegt hat und wer sie bekommt, kann sie dort ändern oder löschen. Am gewählten Tag landet die Mappe unter „Zu erledigen“.
+Über **Mappe ▾ → Erinnern** in einer Mappe lässt du dich – oder jemand anderen – an einem bestimmten Tag an die Mappe erinnern, z. B. „am 15.11.: Angebote vergleichen“. Bis dahin steht die Erinnerung oben in der Mappe und unter [Anstehend](#anstehend); wer sie angelegt hat und wer sie bekommt, kann sie dort ändern oder löschen. Am gewählten Tag landet die Mappe unter „Zu erledigen“.
 
 ![Erinnerung an einer Mappe](bilder/erinnerung.png)
 

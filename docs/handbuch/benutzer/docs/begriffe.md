@@ -92,7 +92,7 @@ Siehe auch: [Eindeutig](#eindeutig).
 Die persönlichen Einstellungen des angemeldeten Benutzers, erreichbar über das Benutzermenü → „Mein Konto“.
 
 <a id="register"></a>**Register** · ~ mit Erklärung · alle  
-Ein Trennblatt in einer Mappe, z. B. Allgemein (mit Feldern), Dokumente, Verknüpfungen oder Historie. Notizen sind kein Register; sie öffnen sich über den Knopf „Notizen“ an der Mappe.
+Ein Trennblatt in einer Mappe, z. B. Allgemein (mit Feldern), Dokumente, Verknüpfungen oder Historie. Notizen und Historie sind feste Register jeder Mappe.
 
 <a id="standardwert"></a>**Standardwert** · ~ mit Erklärung · Administratoren  
 Die Vorbelegung eines Feldes beim Anlegen einer Mappe, auch mit Platzhaltern wie einem Nummernkreis.
@@ -140,7 +140,7 @@ Siehe auch: [Ablage](#ablage), [Administrator](#administrator), [Werkbank anpass
 Ein Zeitraum, in dem ein Benutzer nicht da ist – mit einem Vertreter, der seine Aufgaben übernimmt.
 
 <a id="aktionen"></a>**Aktionen** · ✓ Alltagswort · alle  
-Das Menü an einer Mappe – Aufgabe vergeben, Erinnern, Versenden, Exportieren und mehr.
+Das Menü „Mappe ▾“ neben dem Titel einer Mappe – Aufgabe vergeben, Erinnern, Versenden, Exportieren und mehr. Hieß früher selbst „Aktionen“.
 
 <a id="anstehend"></a>**Anstehend** · ✓ Alltagswort · alle  
 Die Ansicht mit meinen Fristen und Erinnerungen der nächsten Tage (Standard 30) – kommende und solche, die schon fällig sind und unter „Zu erledigen“ stehen.
@@ -150,7 +150,7 @@ Etwas, das ein Mensch an einer Mappe tun soll. Arten sind Passt nicht, Erwähnun
 Siehe auch: [Zu erledigen](#zu-erledigen), [Frist](#frist), [Erinnerung](#erinnerung), [Auftrag](#auftrag).
 
 <a id="erinnerung"></a>**Erinnerung** · ✓ Alltagswort · alle  
-Eine von Hand gesetzte Aufgabe für einen bestimmten Tag (Aktionen → Erinnern).
+Eine von Hand gesetzte Aufgabe für einen bestimmten Tag (Mappe ▾ → Erinnern).
 
 <a id="erweiterte-suche"></a>**Erweiterte Suche** · ✓ Alltagswort · alle  
 Ein Suchformular über die Felder mehrerer Mappentypen und den Text in Dokumenten.
