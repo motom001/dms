@@ -16,7 +16,7 @@ Das geht nur, solange es außer den Systemmappentypen *Benutzer*, *Rolle* und *P
 
 Erzeugt bis zu **50.000 Mappen je Durchlauf** für die vorhandenen Mappentypen – mit passenden Werten je Feld und Verweisen auf vorhandene Mappen. So lässt sich prüfen, wie sich Listen, Suche, Sortierung, Texterkennung, Speicherplatz und Sicherung mit vielen Mappen und Dokumenten verhalten. Mehrere Durchläufe hintereinander sind möglich; neue Mappen verweisen auch auf die schon vorhandenen.
 
-Das läuft im Hintergrund; du kannst die Seite verlassen. Der Fortschritt steht auf dieser Seite.
+Das läuft im Hintergrund; du kannst die Seite verlassen. Der Fortschritt steht auf dieser Seite – je Phase mit dem, was gezählt wird, z. B. „Mappen anlegen: 1.000 von 1.000 ✓ · Dokumente erzeugen: 1.326 von 1.907“. Die Zahl der Mappen entspricht deiner Eingabe; nur wenn sich für einen Mappentyp keine passenden Werte erzeugen lassen, werden es weniger, und das Ergebnis nennt den Grund.
 
 Demo-Mappen sind gekennzeichnet. Die Systemmappentypen *Benutzer*, *Rolle* und *Post* bekommen keine Demo-Mappen.
 

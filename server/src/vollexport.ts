@@ -172,7 +172,13 @@ function namen() {
 
 export interface ExportErgebnis { ordner: string; name: string; dateien: number; bytes: number; mappen: number; dokumente: number }
 
-export async function vollexport(q: ExportQuelle, ziel: string, opt: ExportOptionen, fortschritt: (fertig: number, gesamt: number) => void = () => {}, jetzt = new Date()): Promise<ExportErgebnis> {
+/** Phasen des Auftrags (#364): je Mappe ein Schritt, danach Listen, Kalender und Manifest. */
+export const VOLLEXPORT_PHASEN = [
+  { key: 'mappen', name: 'Mappen exportieren', einheit: 'Mappen' },
+  { key: 'abschluss', name: 'Listen und Prüfwerte schreiben', einheit: 'Schritte' },
+];
+
+export async function vollexport(q: ExportQuelle, ziel: string, opt: ExportOptionen, fortschritt: (fertig: number, gesamt: number, phase?: string) => void = () => {}, jetzt = new Date()): Promise<ExportErgebnis> {
   const name = `dms-export-${jetzt.toISOString().slice(0, 19).replace(/[T:]/g, '-')}`;
   const ordner = join(ziel, name);
   await mkdir(ordner, { recursive: true });
@@ -184,8 +190,11 @@ export async function vollexport(q: ExportQuelle, ziel: string, opt: ExportOptio
   for (const t of typen) { const ms = await q.mappen(t.id); jeTyp.set(t.id, ms); for (const m of ms) alleMappen.set(m.id, m); }
   const titel = (id: string | null | undefined) => (id ? alleMappen.get(id)?.titel ?? '' : '');
   const quelle = { typen: typVon, titel };
-  let fertig = 0; const gesamt = alleMappen.size + 10;
-  const weiter = () => fortschritt(++fertig, gesamt);
+  let fertig = 0; const gesamt = alleMappen.size;
+  const weiter = () => fortschritt(++fertig, gesamt, 'mappen');
+  let schritt = 0;
+  const abschluss = () => fortschritt(++schritt, 3, 'abschluss');
+  fortschritt(0, gesamt, 'mappen');
 
   // Struktur
   const b = await q.benutzer();
@@ -195,7 +204,6 @@ export async function vollexport(q: ExportQuelle, ziel: string, opt: ExportOptio
   await w.schreibe('struktur/pakete.json', json(await q.pakete()));
   await w.schreibe('struktur/designs.json', json(await q.designs()));
   await w.schreibe('struktur/benutzer.json', json(b.benutzer));
-  weiter();
 
   // Daten je Mappentyp
   const ordnerTyp = namen();
@@ -293,7 +301,7 @@ export async function vollexport(q: ExportQuelle, ziel: string, opt: ExportOptio
   await w.schreibe('daten/papierkorb.jsonl', jsonl((await q.papierkorb()).map((p) => ({ ...p, werte: ohnePasswoerter(typVon.get(p.typId), p.werte) }))));
   await w.schreibe('daten/papierkorb-dokumente.jsonl', jsonl(q.papierkorbDokumente ? await q.papierkorbDokumente() : []));
   await w.schreibe('daten/vertretungen.jsonl', jsonl(b.vertretungen));
-  weiter();
+  abschluss();
 
   // Kalender: Fristen und Aufgaben mit Datum, Erinnerungen
   const tag = (d: string) => d.slice(0, 10).replace(/-/g, '');
@@ -310,14 +318,14 @@ export async function vollexport(q: ExportQuelle, ziel: string, opt: ExportOptio
     await w.schreibe('passwoerter.csv', csv(['folder', 'favorite', 'type', 'name', 'notes', 'fields', 'reprompt', 'login_uri', 'login_username', 'login_password', 'login_totp'], passwoerter));
   }
   if (opt.protokolle) await w.schreibe('protokolle/protokoll.jsonl', jsonl(q.protokoll()));
-  weiter();
+  abschluss();
 
   const anzahlen = { mappentypen: typen.length, mappen: alleMappen.size, dokumente, verweise: verweise.length, notizen: notizen.length, aufgaben: aufgaben.length, erinnerungen: erinnerungen.length, historie: historie.length };
   await w.schreibe('LIESMICH.md', Buffer.from(liesmich(q, jetzt, anzahlen, opt), 'utf8'));
   // Manifest zuletzt; es nennt alle anderen Dateien mit Größe und Prüfwert.
   const manifest = { format: 'dms-vollexport', formatversion: FORMATVERSION, erstellt: jetzt.toISOString(), dms: q.version, mandant: q.mandant, anzahlen, passwoerter: !!opt.passwoerter, protokolle: !!opt.protokolle, tabellen: EXPORT_TABELLEN, dateien: w.dateien };
   await writeFile(join(ordner, 'manifest.json'), json(manifest));
-  fortschritt(gesamt, gesamt);
+  abschluss();
   return { ordner, name, dateien: w.dateien.length + 1, bytes: w.bytes, mappen: alleMappen.size, dokumente };
 }
 

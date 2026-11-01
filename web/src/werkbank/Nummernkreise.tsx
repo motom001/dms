@@ -5,6 +5,7 @@ import { geheZu, Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { NEUBEGINN_TEXT, pruefeMuster, formatiereNummer, datumIn, kreisVon, neubeginn as neubeginnVon } from '../../../shared/src/nummernkreis';
 import { rueckfrage } from '../rueckfrage';
+import { fortschrittText } from '../../../shared/src/auftrag';
 
 /**
  * Werkbank → Nummernkreise (#171): fortlaufende Nummern für Textfelder.
@@ -146,7 +147,7 @@ export function NummernNachtragen() {
           </select></label>
         {vorschau && (vorschau.anzahl ? <p>{vorschau.anzahl === 1 ? '1 Mappe bekommt' : `${vorschau.anzahl} Mappen bekommen`} die Nummer{vorschau.anzahl === 1 ? '' : 'n'} <code className="mono">{vorschau.von}</code>{vorschau.anzahl > 1 && <> bis <code className="mono">{vorschau.bis}</code></>}.</p>
           : <p className="leise">Alle Mappen haben schon eine Nummer.</p>)}
-        {auftrag?.status === 'laeuft' && <p className="leise">Vergebe … {auftrag.fertig} von {auftrag.gesamt}</p>}
+        {auftrag?.status === 'laeuft' && <p className="leise" role="status">{fortschrittText(auftrag, 'Mappen')}</p>}
         {ergebnis && <p className="gutertext" role="status">{ergebnis.vergeben} Nummern vergeben{ergebnis.erste ? ` (${ergebnis.erste} bis ${ergebnis.letzte})` : ''}.</p>}
         {(fehler || auftrag?.status === 'fehler') && <p className="fehlertext">{fehler ?? auftrag?.fehler}</p>}
         <div className="knoepfe"><button type="button" className="knopf primaer" disabled={!vorschau?.anzahl || auftrag?.status === 'laeuft'}

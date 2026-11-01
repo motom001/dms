@@ -2,7 +2,7 @@ import type { Readable } from 'node:stream';
 import { MAX_DATEIGROESSE, POST_KANAL, type Benutzer, type Mappe, type Mappentyp } from '../../shared/src/model';
 import { type Recht } from '../../shared/src/rechte';
 import { ladeBeispiele } from './beispiele';
-import { erzeugeDemo, pruefeDemoOptionen, schaetzeDemo, type DemoPlatz } from './demo';
+import { demoPhasen, erzeugeDemo, pruefeDemoOptionen, schaetzeDemo, type DemoPlatz } from './demo';
 import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import { SITZUNG_TAGE, type Konten } from './konten';
@@ -11,7 +11,7 @@ import { openapi, v1Routen } from './api-v1';
 import type { ApiSchluessel, ApiSchluesselDienst } from './apischluessel';
 import type { Designs } from './designs';
 import type { Oidc } from './oidc';
-import { exportDateien, exporteIn, exportOrdner, freierPlatz, loescheExport, pruefeExport, vollexport, type ExportOptionen, type KontaktZuordnung } from './vollexport';
+import { exportDateien, exporteIn, exportOrdner, freierPlatz, loescheExport, pruefeExport, vollexport, VOLLEXPORT_PHASEN, type ExportOptionen, type KontaktZuordnung } from './vollexport';
 import { createReadStream } from 'node:fs';
 import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
 import { join } from 'node:path';
@@ -613,12 +613,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
         const r = await erzeugeDemo(dienst, o, benutzerId, f, demoPlatz);
         L.werkbank.info('Demo-Daten erzeugt', { mappen: r.gesamt, dokumente: r.dokumente?.anzahl ?? 0, bytes: r.dokumente?.bytes ?? 0, dauerMs: r.dauerMs, startwert: r.startwert, abgebrochen: r.abgebrochen ?? null });
         return r;
-      }), 202);
+      }, demoPhasen(!!o.dokumente)), 202);
     } },
     // Abschätzung vor dem Start (#248): Mappen, Dokumente, Größe, Seiten für die Texterkennung, freier Platz.
     { methode: 'POST', pfad: '/api/werkbank/demo/abschaetzung', zugang: 'admin', lesend: true, handler: async (a) => ok(await schaetzeDemo(dienst, pruefeDemoOptionen(b(a)), demoPlatz)) },
     { methode: 'DELETE', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async () =>
-      ok(dienst.auftraege.starte('demo-entfernen', 'Demo-Mappen entfernen', (f) => dienst.entferneDemo(f)), 202) },
+      ok(dienst.auftraege.starte('demo-entfernen', 'Demo-Mappen entfernen', (f) => dienst.entferneDemo(f), [{ key: 'mappen', name: 'Demo-Mappen entfernen', einheit: 'Mappen' }]), 202) },
     { methode: 'GET', pfad: '/api/werkbank/auftrag', zugang: 'admin', handler: async () => ok(dienst.auftraege.aktuell()) },
 
     /* ---------- Protokoll und Debug-Modus ---------- */
@@ -710,11 +710,11 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const von = ich(a).email;
       if (e.passwoerter === true) L.werkbank.warn('Vollexport mit Passwörtern im Klartext gestartet', { von });
       else L.werkbank.info('Vollexport gestartet', { von, protokolle: e.protokolle === true });
-      return ok(dienst.auftraege.starte('vollexport', 'Vollexport', async (f: (fertig: number, gesamt: number) => void) => {
+      return ok(dienst.auftraege.starte('vollexport', 'Vollexport', async (f) => {
         const r = await vollexport(quelle, ziel, { passwoerter: e.passwoerter === true, protokolle: e.protokolle === true, kontakte }, f);
         L.werkbank.info('Vollexport fertig', { von, name: r.name, dateien: r.dateien, mb: Math.round(r.bytes / 1024 ** 2), mappen: r.mappen });
         return r;
-      }), 202);
+      }, VOLLEXPORT_PHASEN), 202);
     } },
     { methode: 'POST', pfad: '/api/werkbank/export/:name/pruefen', zugang: 'admin', handler: async (a) => ok(await pruefeExport(exportOrdner(exportZiel(), a.params.name))) },
     { methode: 'DELETE', pfad: '/api/werkbank/export/:name', zugang: 'admin', handler: async (a) => {

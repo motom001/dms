@@ -3,6 +3,7 @@ import { api, DOKUMENTARTEN, type Auftrag, type DemoAbschaetzung, type DemoErgeb
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { rueckfrage } from '../rueckfrage';
+import { fortschrittText } from '../../../shared/src/auftrag';
 
 type Uebersicht = Array<{ typId: string; name: string; demo: number; gesamt: number }>;
 
@@ -138,7 +139,7 @@ export function DemoPanel() {
           <p><strong>{auftrag.titel}</strong> … läuft im Hintergrund, du kannst die Seite auch verlassen.</p>
           {auftrag.gesamt > 0 && <>
             <progress max={auftrag.gesamt} value={auftrag.fertig} />
-            <p className="klein leise">{auftrag.fertig.toLocaleString('de-DE')} von {auftrag.gesamt.toLocaleString('de-DE')}</p>
+            <p className="klein leise">{fortschrittText(auftrag, 'Mappen')}</p>
           </>}
         </div>
       )}
