@@ -7,7 +7,7 @@ Ein Klick auf deinen Namen oben rechts öffnet ein Menü:
 ![Benutzermenü](bilder/benutzermenue.png)
 
 - Oben stehen dein Name, deine E-Mail-Adresse und deine Rolle.
-- **Mein Konto** – dein [Profil](#profil) mit allen Bereichen: Konto, Sicherheit, Darstellung (Design, Schriftgröße, Spaltenbreiten), Benachrichtigungen und Ablage, [Abwesenheit](#abwesenheit).
+- **Mein Konto** – dein [Profil](#profil) mit allen Bereichen: Konto, Sicherheit, Darstellung (Design, Schriftgröße, Startseite, Anstehend, Spaltenbreiten), Benachrichtigungen, [Abwesenheit](#abwesenheit).
 - Solange eine Abwesenheit wirkt, steht oben im Menü „Du bist abwesend“ – ein Klick darauf führt direkt dorthin –, und neben deinem Namen ist ein Punkt.
 - **Hilfe** – öffnet dieses Handbuch.
 - **Fehler melden** – siehe [Fehler melden](#fehler-melden).
@@ -64,6 +64,7 @@ Unten im Bereich *Konto*, unter Name und E-Mail-Adresse, steht, was du je Mappen
 - **Zwei-Faktor-Anmeldung** – siehe [unten](#zwei-faktor-anmeldung).
 - **Meine angemeldeten Geräte** – überall, wo du gerade angemeldet bist, mit Browser, Gerät und letzter Aktivität; *dieses Gerät* ist markiert. **Abmelden** beendet eine einzelne Anmeldung, **Alle anderen abmelden** alle außer dieser – etwa wenn du ein Handy verloren hast. Ändere dann am besten auch dein Passwort.
 - **API-Schlüssel** – damit können andere Programme in deinem Namen auf das DMS zugreifen, etwa ein Scanner. Brauchst du das nicht, kannst du diesen Abschnitt übergehen. Passwortfelder liefert ein Schlüssel nur, wenn du beim Erzeugen **Passwörter lesen** ankreuzt. Wie das funktioniert, beschreibt das [Administratorhandbuch](https://motom001.github.io/dms/admin/aktuell/api/).
+- <span id="papierkorb"></span>**Papierkorb** – **Beim Abmelden leeren** löscht deine gelöschten Mappen endgültig, sobald du dich abmeldest. Ohne den Haken bleiben sie so lange im [Papierkorb](ablage.md#papierkorb), wie der Administrator es eingestellt hat.
 
 !!! note "Anmelden mit dem Firmenkonto"
     Steht auf der Anmeldeseite ein Knopf wie **Mit Firmenkonto anmelden**, meldest du dich darüber mit dem Konto deiner Firma oder deines Anmeldedienstes an. Dein Passwort für das DMS brauchst du dann nicht; Passwort und Abmelden verwaltet der Anbieter.
@@ -88,21 +89,23 @@ Auch ein Link zum Zurücksetzen des Passworts fragt danach den Code ab. Handy ve
 
 - **Design** – wie das DMS für dich aussieht. **Standard** folgt dem Design, das der Administrator festgelegt hat. Gilt für dein Konto auf allen Geräten.
 - **Schriftgröße auf diesem Gerät** – klein, normal oder groß. Gilt nur für das Gerät, an dem du gerade sitzt; am Smartphone kannst du eine andere Größe wählen als am PC.
+- <span id="startseite"></span>**Startseite** – **Mit der Startseite beginnen** schaltet die [Startseite](startseite.md) ein oder aus; ohne sie geht es nach der Anmeldung direkt zu *Zu erledigen*. **Vierte Kachel** wählt, was neben Zu erledigen, Neue Post und Anstehend steht: deine Favoriten oder eine Ansicht.
+- <span id="anstehend"></span>**Anstehend** – wie viele Tage im Voraus die Ansicht [Anstehend](eingang.md#anstehend) deine Fristen und Erinnerungen zeigt (Standard: 30).
 - **Darstellung auf diesem Gerät** – die Breite der Spalten und eingeklappte Bereiche merkt sich jedes Gerät. Ist etwas nicht mehr zu finden, stellt **Standard-Darstellung wiederherstellen** die ursprüngliche Aufteilung her.
 - **Entwicklermodus** – zeigt unten rechts, wie lange ein Seitenaufruf gedauert hat.
 
-### Benachrichtigungen und Ablage
+![Profil → Darstellung](bilder/profil-darstellung.png){ loading=lazy }
+
+### Benachrichtigungen { #benachrichtigungen }
+
+<span id="benachrichtigungen-und-ablage"></span>
 
 - **Aufgaben** – Mappen mit offenen [Aufgaben](eingang.md) für dich stehen unter „Zu erledigen“. Zusätzlich schickt das DMS dir die **Tägliche Zusammenfassung** per E-Mail, solange du welche hast. **Tägliche Zusammenfassung meiner Aufgaben per E-Mail** bestellt sie ab oder wieder an. Darunter wählst du:
     - **Uhrzeit** – im 15-Minuten-Raster; *Standard* ist die Uhrzeit, die der Administrator eingestellt hat.
     - **Wochentage** – Standard Montag bis Freitag. Ohne Wochentag kommt keine Zusammenfassung.
     - **Nicht an Feiertagen** – an gesetzlichen Feiertagen des Bundeslands, das der Administrator gewählt hat, kommt keine (Standard: an). Ohne Bundesland ist der Haken ausgegraut.
-- **Anstehend** – wie viele Tage im Voraus die Ansicht [Anstehend](eingang.md#anstehend) deine Fristen und Erinnerungen zeigt (Standard: 30).
-- **Papierkorb** – **Beim Abmelden leeren** löscht deine gelöschten Mappen endgültig, sobald du dich abmeldest. Ohne den Haken bleiben sie so lange im [Papierkorb](ablage.md#papierkorb), wie der Administrator es eingestellt hat.
 
-### Startseite
-
-**Mit der Startseite beginnen** schaltet die [Startseite](startseite.md) ein oder aus; ohne sie geht es nach der Anmeldung direkt zu *Zu erledigen*. **Vierte Kachel** wählt, was neben Zu erledigen, Neue Post und Anstehend steht: deine Favoriten oder eine Ansicht.
+![Profil → Benachrichtigungen](bilder/profil-benachrichtigungen.png){ loading=lazy }
 
 ### Abwesenheit
 

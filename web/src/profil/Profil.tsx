@@ -55,7 +55,7 @@ function useFormular(fn: () => Promise<string>) {
 }
 
 /** Bereiche der Profilseite (#69); jeder mit eigener Adresse, /profil führt zu „Konto“. */
-const BEREICHE = { konto: 'Konto', sicherheit: 'Sicherheit', darstellung: 'Darstellung', benachrichtigungen: 'Benachrichtigungen und Ablage' } as const;
+const BEREICHE = { konto: 'Konto', sicherheit: 'Sicherheit', darstellung: 'Darstellung', benachrichtigungen: 'Benachrichtigungen' } as const;
 type Bereich = keyof typeof BEREICHE | 'fehler-melden' | 'abwesenheit';
 
 export function Profil({ teile = [] }: { teile?: string[] }) {
@@ -152,6 +152,17 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
       <MeineGeraete />
 
       <ApiSchluesselBlatt />
+
+      {/* #420: Löschen gehört zur Sicherheit. */}
+      {(!!d.zaehler.papierkorbTage || d.einstellungen.papierkorb_beim_abmelden === true) && (
+        <div className="blatt">
+          <h2 className="h3">Papierkorb</h2>
+          <p className="leise">Was du löschst, bleibt {d.zaehler.papierkorbTage === 1 ? 'einen Tag' : `${d.zaehler.papierkorbTage ?? 0} Tage`} im Papierkorb der Ablage, bevor es endgültig gelöscht wird.</p>
+          <label className="haken"><input type="checkbox" checked={d.einstellungen.papierkorb_beim_abmelden === true}
+            onChange={(e) => d.setzeEinstellung('papierkorb_beim_abmelden', e.target.checked || null)} />
+            <span>Beim Abmelden leeren<small className="hilfe">Deine gelöschten Mappen werden beim Abmelden endgültig gelöscht.</small></span></label>
+        </div>
+      )}
       </>}
 
       {bereich === 'darstellung' && <>
@@ -174,6 +185,31 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
 
       <SchriftWahl />
 
+      {/* #420: Startseite und Anstehend steuern, was du siehst – deshalb unter Darstellung. */}
+      <div className="blatt">
+        <h2 className="h3">Startseite</h2>
+        <p className="leise">Die Startseite der Ablage zeigt Zu erledigen, neue Post, Anstehendes, eine Kachel deiner Wahl und die zuletzt geöffneten Mappen.</p>
+        <label className="haken"><input type="checkbox" checked={d.einstellungen.startseite !== false}
+          onChange={(e) => d.setzeEinstellung('startseite', e.target.checked ? null : false)} />
+          <span>Mit der Startseite beginnen<small className="hilfe">Aus: Nach der Anmeldung geht es direkt zu „Zu erledigen“.</small></span></label>
+        {d.einstellungen.startseite !== false && (
+          <label className="eigenschaft"><span>Vierte Kachel</span>
+            <select value={typeof d.einstellungen.startseite_kachel === 'string' ? d.einstellungen.startseite_kachel : 'favoriten'}
+              onChange={(e) => d.setzeEinstellung('startseite_kachel', e.target.value === 'favoriten' ? null : e.target.value)}>
+              <option value="favoriten">Favoriten</option>
+              {d.sichten.filter((s) => s.typen.length > 0).map((s) => <option key={s.id} value={s.id}>Ansicht „{s.name}“</option>)}
+            </select></label>
+        )}
+      </div>
+
+      <div className="blatt">
+        <h2 className="h3">Anstehend <Hilfe ort="ablage.anstehend" /></h2>
+        <p className="leise">Die Ansicht „Anstehend“ unter „Zu erledigen“ zeigt deine Fristen und Erinnerungen, die bald fällig sind – auch die, die noch nicht unter „Zu erledigen“ stehen.</p>
+        <label className="eigenschaft schmal"><span>Zeitraum <small>Tage ab heute</small></span>
+          <input type="number" min={1} max={ANSTEHEND_MAX} className="kurz" defaultValue={Number(d.einstellungen.anstehend_tage ?? ANSTEHEND_TAGE)}
+            onBlur={(e) => { const n = Math.min(ANSTEHEND_MAX, Math.max(1, Math.trunc(Number(e.target.value) || ANSTEHEND_TAGE))); e.target.value = String(n); d.setzeEinstellung('anstehend_tage', n === ANSTEHEND_TAGE ? null : n); }} /></label>
+      </div>
+
       <div className="blatt">
         <h2 className="h3">Darstellung auf diesem Gerät</h2>
         <p className="leise">Die Breite der Bereiche in Ablage und Werkbank und eingeklappte Bereiche merkt sich dieses Gerät für dich. Falls etwas nicht mehr zu finden ist:</p>
@@ -195,40 +231,6 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
         <p className="leise">Mappen mit offenen Aufgaben für dich stehen unter „Zu erledigen“. Zusätzlich schickt das DMS die <strong>Tägliche Zusammenfassung</strong> per E-Mail – zu deiner Uhrzeit und an deinen Wochentagen, solange du offene Aufgaben hast und nicht abwesend bist.</p>
         <ZusammenfassungEinstellen />
       </div>
-
-      <div className="blatt">
-        <h2 className="h3">Anstehend <Hilfe ort="ablage.anstehend" /></h2>
-        <p className="leise">Die Ansicht „Anstehend“ unter „Zu erledigen“ zeigt deine Fristen und Erinnerungen, die bald fällig sind – auch die, die noch nicht unter „Zu erledigen“ stehen.</p>
-        <label className="eigenschaft schmal"><span>Zeitraum <small>Tage ab heute</small></span>
-          <input type="number" min={1} max={ANSTEHEND_MAX} className="kurz" defaultValue={Number(d.einstellungen.anstehend_tage ?? ANSTEHEND_TAGE)}
-            onBlur={(e) => { const n = Math.min(ANSTEHEND_MAX, Math.max(1, Math.trunc(Number(e.target.value) || ANSTEHEND_TAGE))); e.target.value = String(n); d.setzeEinstellung('anstehend_tage', n === ANSTEHEND_TAGE ? null : n); }} /></label>
-      </div>
-
-      <div className="blatt">
-        <h2 className="h3">Startseite</h2>
-        <p className="leise">Die Startseite der Ablage zeigt Zu erledigen, neue Post, Anstehendes, eine Kachel deiner Wahl und die zuletzt geöffneten Mappen.</p>
-        <label className="haken"><input type="checkbox" checked={d.einstellungen.startseite !== false}
-          onChange={(e) => d.setzeEinstellung('startseite', e.target.checked ? null : false)} />
-          <span>Mit der Startseite beginnen<small className="hilfe">Aus: Nach der Anmeldung geht es direkt zu „Zu erledigen“.</small></span></label>
-        {d.einstellungen.startseite !== false && (
-          <label className="eigenschaft"><span>Vierte Kachel</span>
-            <select value={typeof d.einstellungen.startseite_kachel === 'string' ? d.einstellungen.startseite_kachel : 'favoriten'}
-              onChange={(e) => d.setzeEinstellung('startseite_kachel', e.target.value === 'favoriten' ? null : e.target.value)}>
-              <option value="favoriten">Favoriten</option>
-              {d.sichten.filter((s) => s.typen.length > 0).map((s) => <option key={s.id} value={s.id}>Ansicht „{s.name}“</option>)}
-            </select></label>
-        )}
-      </div>
-
-      {(!!d.zaehler.papierkorbTage || d.einstellungen.papierkorb_beim_abmelden === true) && (
-        <div className="blatt">
-          <h2 className="h3">Papierkorb</h2>
-          <p className="leise">Was du löschst, bleibt {d.zaehler.papierkorbTage === 1 ? 'einen Tag' : `${d.zaehler.papierkorbTage ?? 0} Tage`} im Papierkorb der Ablage, bevor es endgültig gelöscht wird.</p>
-          <label className="haken"><input type="checkbox" checked={d.einstellungen.papierkorb_beim_abmelden === true}
-            onChange={(e) => d.setzeEinstellung('papierkorb_beim_abmelden', e.target.checked || null)} />
-            <span>Beim Abmelden leeren<small className="hilfe">Deine gelöschten Mappen werden beim Abmelden endgültig gelöscht.</small></span></label>
-        </div>
-      )}
 
       </>}
     </div>

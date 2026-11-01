@@ -12,7 +12,7 @@ Die Startseite nutzt die ganze Breite neben den Ansichten: Auf einem großen Bil
 | --- | --- | --- |
 | **Zu erledigen** | offene Aufgaben und Mappen, an denen du etwas tun sollst | [Zu erledigen](eingang.md) |
 | **Neue Post** | Post, die noch niemand zugeordnet hat | die Ansicht *Neue Post* ([Post](post.md)) |
-| **Anstehend** | Fristen und Erinnerungen der nächsten Tage (wie viele Tage, stellst du im [Profil](profil.md) ein) | [Anstehend](eingang.md#anstehend) |
+| **Anstehend** | Fristen und Erinnerungen der nächsten Tage (wie viele Tage, stellst du im [Profil unter Darstellung](profil.md#anstehend) ein) | [Anstehend](eingang.md#anstehend) |
 | **Favoriten** oder eine **Ansicht deiner Wahl** | deine Favoriten bzw. die Mappen der Ansicht | die Favoriten bzw. die Ansicht |
 
 Ist eine Kachel leer, steht dort statt einer Null ein grünes Häkchen, z. B. „✓ Nichts zu erledigen“. *Zu erledigen* ist hervorgehoben, solange es etwas zu tun gibt. Alle Zahlen zählen nur, was du sehen darfst.
@@ -31,7 +31,7 @@ In einem neuen DMS gibt es noch nichts zu zählen. Dann zeigt die Startseite dre
 
 ## Einstellen
 
-Im [Profil](profil.md) unter **Startseite**:
+Im [Profil](profil.md#startseite) unter **Darstellung → Startseite**:
 
 - **Mit der Startseite beginnen** – ausgeschaltet geht es nach der Anmeldung direkt zu *Zu erledigen*, und *Start* verschwindet aus der Liste der Ansichten.
 - **Vierte Kachel** – *Favoriten* (Standard) oder eine Ansicht, z. B. *Verträge* oder *Kündigung in den nächsten 3 Monaten*.
