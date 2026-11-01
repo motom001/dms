@@ -3,6 +3,7 @@ import { ansichtAbschnitte, EINSTELLUNG_ANGEHEFTET, EINSTELLUNG_AUSGEBLENDET, EI
 import type { Sicht } from '../../../shared/src/sichten';
 import { useDaten } from '../daten';
 import { Link } from '../ort';
+import { Symbol } from '../Symbol';
 
 /**
  * Ansicht wählen am Handy (#498): ein Knopf „<Ansicht> ▾“ statt einer Reiterleiste mit 40 Ansichten.
@@ -14,6 +15,7 @@ import { Link } from '../ort';
 const zahl = (n: number) => n.toLocaleString('de-DE');
 
 export interface FesterEintrag { pfad: string; name: ReactNode; text: string; zahl?: number; hervor?: boolean; an: boolean }
+/** #507: Ansichten, die oben als fester Eintrag stehen (Neue Post), erscheinen nicht noch einmal in den Gruppen. */
 
 function Zeile({ s, aktiv, angeheftet, tiefe = 0, pfad, anheften }: { s: Sicht; aktiv?: string; angeheftet: boolean; tiefe?: number; pfad?: string; anheften(id: string): void }) {
   const d = useDaten();
@@ -25,12 +27,12 @@ function Zeile({ s, aktiv, angeheftet, tiefe = 0, pfad, anheften }: { s: Sicht; 
         {n !== undefined && <span className={s.id === d.zaehler.neuePost && n > 0 ? 'zaehler' : 'zahl'}>{zahl(n)}</span>}
       </Link>
       <button type="button" className={`aw-stern ${angeheftet ? 'an' : ''}`} aria-pressed={angeheftet} onClick={() => anheften(s.id)}
-        aria-label={angeheftet ? `„${s.name}“ von „Meine Ansichten“ lösen` : `„${s.name}“ bei „Meine Ansichten“ anheften`}>{angeheftet ? '★' : '☆'}</button>
+        aria-label={angeheftet ? `„${s.name}“ von „Meine Ansichten“ lösen` : `„${s.name}“ bei „Meine Ansichten“ anheften`}><Symbol name="stern" className={angeheftet ? 'sym-voll' : undefined} /></button>
     </li>
   );
 }
 
-export function AnsichtWahl({ aktiv, aktuell, feste }: { aktiv?: string; aktuell: string; feste: FesterEintrag[] }) {
+export function AnsichtWahl({ aktiv, aktuell, feste, ohne = [] }: { aktiv?: string; aktuell: string; feste: FesterEintrag[]; ohne?: string[] }) {
   const d = useDaten();
   const [offen, setOffen] = useState(false);
   const [suche, setSuche] = useState('');
@@ -57,7 +59,7 @@ export function AnsichtWahl({ aktiv, aktuell, feste }: { aktiv?: string; aktuell
     return () => removeEventListener('keydown', esc);
   }, [offen]);
 
-  const a = ansichtAbschnitte(d.sichten, { angeheftet, ausgeblendet, zuletzt, suche });
+  const a = ansichtAbschnitte(d.sichten, { angeheftet, ausgeblendet, zuletzt, suche, ohne });
   const anIds = new Set(Array.isArray(angeheftet) ? angeheftet as string[] : []);
   const wegIds = new Set(Array.isArray(ausgeblendet) ? ausgeblendet as string[] : []);
   const anheften = (id: string) => d.setzeEinstellung(EINSTELLUNG_ANGEHEFTET, umschalten(angeheftet, id));

@@ -30,7 +30,7 @@ function Kachel({ name, to, art, titel, anzahl, leer, unter }: { name: string; t
     <div className="start-feld" data-kachel={name}>
       <Link to={to} className={`kachel ${art} ${nichts ? 'erledigt' : ''}`}>
         <span className="kacheltitel">{titel}</span>
-        {anzahl === null ? <span className="kachelzahl leise">…</span> : nichts ? <span className="kachelleer">✓ {leer}</span> : <span className="kachelzahl">{zahl(anzahl)}</span>}
+        {anzahl === null ? <span className="kachelzahl leise">…</span> : nichts ? <span className="kachelleer"><Symbol name="haken" /> {leer}</span> : <span className="kachelzahl">{zahl(anzahl)}</span>}
         {unter && !nichts && <span className="kachelunter leise klein">{unter}</span>}
       </Link>
     </div>
@@ -92,7 +92,7 @@ export function Startseite({ anstehend, offen, breit = false }: { anstehend: { l
             <Kachel name="anstehend" to="/ablage/anstehend" art="ruhig" titel="Anstehend" anzahl={anstehend.liste ? anstehend.liste.eintraege.length : null} leer={`Nichts in den nächsten ${tage ?? 30} Tagen`} unter={tage ? `Fristen und Erinnerungen der nächsten ${tage} Tage` : undefined} />
             {lieblings
               ? <Kachel name="wahl" to={`/ablage/${lieblings.id}`} art="ruhig" titel={lieblings.name} anzahl={d.zaehler.sichten?.[lieblings.id] ?? 0} leer="Leer" />
-              : <Kachel name="wahl" to="/ablage/favoriten" art="ruhig" titel="Favoriten" anzahl={d.zaehler.favoriten ?? 0} leer="Noch keine – ★ an einer Mappe merkt sie dir" />}
+              : <Kachel name="wahl" to="/ablage/favoriten" art="ruhig" titel="Favoriten" anzahl={d.zaehler.favoriten ?? 0} leer="Noch keine – der Stern an einer Mappe merkt sie dir" />}
           </div>
         )}
         {daten && daten.zuletzt.length > 0 && (
