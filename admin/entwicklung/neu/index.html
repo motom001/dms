@@ -363,6 +363,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#01022" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.102.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.102.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#neu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#01021" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -375,7 +414,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#behoben" class="md-nav__link">
+  <a href="#behoben_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Behoben
@@ -403,7 +442,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#neu" class="md-nav__link">
+  <a href="#neu_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Neu
@@ -2043,6 +2082,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#01022" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.102.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.102.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#neu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#01021" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2055,7 +2133,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#behoben" class="md-nav__link">
+  <a href="#behoben_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Behoben
@@ -2083,7 +2161,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#neu" class="md-nav__link">
+  <a href="#neu_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Neu
@@ -2156,13 +2234,76 @@
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="01021">0.102.1<a class="headerlink" href="#01021" title="Permanent link">&para;</a></h2>
+<h2 id="01022">0.102.2<a class="headerlink" href="#01022" title="Permanent link">&para;</a></h2>
+<h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Zeitmessung genauer</strong> (#477): Im Entwicklermodus zeigt die Zeitmessung je Anfrage jetzt auch „Warten (Browser)“, „Leitung“, „Warten (Server)“, „Rechte“ und „JSON“, jeweils mit eigener Farbe, dazu oben die Summe über alle Anfragen der Seite. Das frühere „Netzwerk“ ist aufgeteilt in Warten im Browser und Leitung. Der Server liefert dafür im Header <code>Server-Timing</code> zusätzlich <code>vor</code>, <code>rechte</code>, <code>json</code> und <code>gesamt</code>.</li>
+<li><strong>Auslastung des Servers</strong> (#477): Werkbank → Datenbank zeigt, wie lange Anfragen in der letzten Minute warten mussten, weil der Server gerade etwas anderes rechnete.</li>
+<li><strong>Lange Anfragen</strong> (#477): Ganze Anfragen über der Schwelle landen mit ihrer Aufteilung (Warten, Datenbank, Rechte, Aufbereitung, JSON) bei den langen Datenbankzugriffen.</li>
+</ul>
 <h3 id="behoben">Behoben<a class="headerlink" href="#behoben" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Ladezeiten der Ablage</strong> (#477): Startseite, Listen und Mappen laden mit vielen Mappen deutlich schneller, für Mitglieder wie für Administratoren. „Anstehend“ holt nur noch Mappen mit einem Datum im Zeitraum statt alle, und die Zähler der Ablage laufen für Mitglieder nicht mehr doppelt. Die Rechte-Auswertung war nicht die Ursache: Sie kostet je Seite nur wenige Millisekunden.</li>
+</ul>
+<p>Gemessen mit 50.000 Demo-Mappen (Median, Laden der Seite in ms):</p>
+<table>
+<thead>
+<tr>
+<th>Seite</th>
+<th>Wer</th>
+<th style="text-align: right;">vorher</th>
+<th style="text-align: right;">nachher</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Startseite</td>
+<td>Administrator</td>
+<td style="text-align: right;">562</td>
+<td style="text-align: right;">360</td>
+</tr>
+<tr>
+<td>Startseite</td>
+<td>Mitglied ohne Rolle</td>
+<td style="text-align: right;">492</td>
+<td style="text-align: right;">288</td>
+</tr>
+<tr>
+<td>Liste (4.120 Rechnungen)</td>
+<td>Administrator</td>
+<td style="text-align: right;">636</td>
+<td style="text-align: right;">401</td>
+</tr>
+<tr>
+<td>Liste (4.120 Rechnungen)</td>
+<td>Mitglied ohne Rolle</td>
+<td style="text-align: right;">450</td>
+<td style="text-align: right;">332</td>
+</tr>
+<tr>
+<td>Mappe öffnen</td>
+<td>Administrator</td>
+<td style="text-align: right;">570</td>
+<td style="text-align: right;">414</td>
+</tr>
+<tr>
+<td>Mappe öffnen</td>
+<td>Mitglied mit Rolle</td>
+<td style="text-align: right;">584</td>
+<td style="text-align: right;">362</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Passwörter im Klartext für viele Mappen</strong> (#477): Das Recht „Passwörter sehen“ wird für alle Mappen einer Antwort gebündelt geprüft statt mit einer Abfrage je Mappe.</li>
+</ul>
+<h2 id="01021">0.102.1<a class="headerlink" href="#01021" title="Permanent link">&para;</a></h2>
+<h3 id="behoben_1">Behoben<a class="headerlink" href="#behoben_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Hinweis „Umgebungsvariable nicht mehr nötig“</strong> (#478): Werkbank → Übersicht nennt jetzt je Variable den passenden Grund – bei den früheren Ordner-Variablen die festen Ordner im Container, bei <code>DATABASE_URL</code> die Datenbank-Anbindung in einer Datei im Datenordner, bei <code>HAUSHALT_ID</code> die gespeicherte Kennung des Haushalts. Statt „entferne sie“ heißt es „Entferne die Variable“ bzw. „Entferne diese Variablen“. Ist nur <code>DATABASE_URL</code> überflüssig, führt der Knopf zur Datenbank-Anbindung.</li>
 </ul>
 <h2 id="01020">0.102.0<a class="headerlink" href="#01020" title="Permanent link">&para;</a></h2>
-<h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
+<h3 id="neu_1">Neu<a class="headerlink" href="#neu_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Favorit = Abo</strong> (#422): Ändert jemand anderes einen deiner Favoriten (Felder, Dokumente, Notizen, Register, Aufgaben), bekommst du <strong>eine</strong> Benachrichtigung „Geändert“ unter „Zu erledigen“ – sie zählt weitere Änderungen nur hoch („3 Änderungen von Anna und Paul seit 01.11.“), bis du die Mappe öffnest oder sie erledigst. Eigene Änderungen melden sich nie; benachrichtigt wird nur, wer die Mappe lesen darf. Keine zusätzliche Glocke – es bleibt beim Stern.</li>
 <li><strong>Geänderte Mappen hervorheben</strong> (#422): Favoriten und selbst angelegte Mappen, die andere seit deinem letzten Öffnen geändert haben, haben in allen Listen einen Punkt vor dem Titel; „Alle als gesehen markieren“ über der Liste.</li>

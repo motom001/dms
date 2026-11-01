@@ -558,6 +558,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#zeitmessung-einer-anfrage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zeitmessung einer Anfrage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ladezeiten-der-oberflache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ladezeiten der Oberfläche
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#regeln" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -834,6 +856,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#zeitmessung-einer-anfrage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zeitmessung einer Anfrage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ladezeiten-der-oberflache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ladezeiten der Oberfläche
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#regeln" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -908,9 +952,158 @@
 <li><code>--explain</code> gibt die Pläne (<code>EXPLAIN (ANALYZE, BUFFERS)</code>) der wichtigsten Abfragen aus.</li>
 <li><code>--last</code> misst dieselben Zugriffe noch einmal, <strong>während</strong> im selben Prozess Demo-Daten mit Dokumenten entstehen und die Texterkennung läuft (auf einer Kopie der Datenbank), dazu die Verzögerung der Ereignisschleife.</li>
 </ul>
+<h2 id="zeitmessung-einer-anfrage">Zeitmessung einer Anfrage<a class="headerlink" href="#zeitmessung-einer-anfrage" title="Permanent link">&para;</a></h2>
+<p>Jede Antwort einer Route trägt den Header <code>Server-Timing</code> (#11, #477):</p>
+<div class="highlight"><pre><span></span><code>vor;dur=0.1, app;dur=211.5, db;dur=154.7;desc="8", rechte;dur=2.6, json;dur=0.7, gesamt;dur=212.4
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Teil</th>
+<th>Gemessen</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>vor</code></td>
+<td>Eingang der Anfrage (Hook <code>onRequest</code>) bis Beginn des Handlers</td>
+</tr>
+<tr>
+<td><code>app</code></td>
+<td>Handler, enthält <code>db</code> und <code>rechte</code></td>
+</tr>
+<tr>
+<td><code>db</code></td>
+<td>Summe der Datenbankzugriffe (<code>Messung.umhuelle</code>), in <code>desc</code> ihre Anzahl</td>
+</tr>
+<tr>
+<td><code>rechte</code></td>
+<td>Rechte auswerten (<code>Dienst.zugriff</code>, <code>rechteAn</code>, <code>rechteAnVielen</code>, <code>lesbare</code>), überlappende Aufrufe einmal, ohne die Datenbankzugriffe darin (<code>rechteMessen</code> in <code>messung.ts</code>)</td>
+</tr>
+<tr>
+<td><code>json</code></td>
+<td><code>reply.send</code> bis zum Hook <code>onSend</code> – die Antwort in Text umwandeln</td>
+</tr>
+<tr>
+<td><code>gesamt</code></td>
+<td>Eingang bis <code>onSend</code></td>
+</tr>
+</tbody>
+</table>
+<p>Wartet eine Anfrage, weil der eine Faden von Node.js gerade für eine andere rechnet, nimmt der Server sie erst danach an – das steckt dann nicht in <code>vor</code>, sondern in der „Leitung“ der Zeitmessung im Browser. Dafür misst <code>Auslastung</code> (<code>perf_hooks.monitorEventLoopDelay</code>) die Verzögerung der Ereignisschleife; Werkbank → Datenbank zeigt sie. Ganze Anfragen über der Schwelle für lange Zugriffe landen mit ihrer Aufteilung bei den Langläufern (<code>zugriff</code> beginnt mit <code>Anfrage:</code>).</p>
+<p>Im Browser teilt <code>shared/src/zeitmessung.ts</code> die Zeit mit Resource Timing weiter auf: „Warten (Browser)“ (<code>startTime</code> bis <code>requestStart</code> ohne Verbindungsaufbau – der Browser schickt höchstens etwa 6 Anfragen gleichzeitig) und „Leitung“ (Hin- und Rückweg minus <code>gesamt</code>).</p>
+<h2 id="ladezeiten-der-oberflache">Ladezeiten der Oberfläche<a class="headerlink" href="#ladezeiten-der-oberflache" title="Permanent link">&para;</a></h2>
+<p><code>server/test/ladezeiten.mjs</code> lädt Startseite, eine Liste und eine Mappe in Chromium als Administrator, als Mitglied mit Rolle und als Mitglied ohne Rolle (mit Regeln, die einen Lesefilter in SQL ergeben) und fasst Server-Timing je Seite zusammen. Gegen ein laufendes DMS mit frischer Datenbank:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">DMS_URL</span><span class="o">=</span>http://localhost:3100<span class="w"> </span><span class="nv">CODE</span><span class="o">=</span>&lt;Einrichtungscode&gt;<span class="w"> </span>node<span class="w"> </span>server/test/ladezeiten.mjs<span class="w"> </span>--einrichten<span class="w"> </span>--mappen<span class="w"> </span><span class="m">50000</span>
+<span class="nv">DMS_URL</span><span class="o">=</span>http://localhost:3100<span class="w"> </span><span class="nv">N</span><span class="o">=</span><span class="m">5</span><span class="w"> </span>node<span class="w"> </span>server/test/ladezeiten.mjs
+</code></pre></div>
+<p><strong>Messung zu #477</strong> (50.000 Demo-Mappen ohne Dokumente, lokaler Rechner, Median aus 5 Ladevorgängen, Mittel aus zwei abwechselnden Durchgängen; Server = Summe aller Anfragen der Seite, sie laufen teils gleichzeitig):</p>
+<table>
+<thead>
+<tr>
+<th>Seite</th>
+<th>Wer</th>
+<th style="text-align: right;">Laden vorher ms</th>
+<th style="text-align: right;">Laden nachher ms</th>
+<th style="text-align: right;">Server vorher ms</th>
+<th style="text-align: right;">Server nachher ms</th>
+<th style="text-align: right;">davon Rechte ms</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Startseite</td>
+<td>Administrator</td>
+<td style="text-align: right;">562</td>
+<td style="text-align: right;">360</td>
+<td style="text-align: right;">659</td>
+<td style="text-align: right;">464</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td>Startseite</td>
+<td>Mitglied mit Rolle</td>
+<td style="text-align: right;">452</td>
+<td style="text-align: right;">306</td>
+<td style="text-align: right;">585</td>
+<td style="text-align: right;">393</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr>
+<td>Startseite</td>
+<td>Mitglied ohne Rolle</td>
+<td style="text-align: right;">492</td>
+<td style="text-align: right;">288</td>
+<td style="text-align: right;">583</td>
+<td style="text-align: right;">339</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr>
+<td>Liste (4.120 Rechnungen)</td>
+<td>Administrator</td>
+<td style="text-align: right;">636</td>
+<td style="text-align: right;">401</td>
+<td style="text-align: right;">770</td>
+<td style="text-align: right;">520</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td>Liste (4.120 Rechnungen)</td>
+<td>Mitglied mit Rolle</td>
+<td style="text-align: right;">504</td>
+<td style="text-align: right;">328</td>
+<td style="text-align: right;">687</td>
+<td style="text-align: right;">385</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr>
+<td>Liste (4.120 Rechnungen)</td>
+<td>Mitglied ohne Rolle</td>
+<td style="text-align: right;">450</td>
+<td style="text-align: right;">332</td>
+<td style="text-align: right;">617</td>
+<td style="text-align: right;">379</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
+<td>Mappe öffnen</td>
+<td>Administrator</td>
+<td style="text-align: right;">570</td>
+<td style="text-align: right;">414</td>
+<td style="text-align: right;">717</td>
+<td style="text-align: right;">527</td>
+<td style="text-align: right;">6</td>
+</tr>
+<tr>
+<td>Mappe öffnen</td>
+<td>Mitglied mit Rolle</td>
+<td style="text-align: right;">584</td>
+<td style="text-align: right;">362</td>
+<td style="text-align: right;">890</td>
+<td style="text-align: right;">470</td>
+<td style="text-align: right;">5</td>
+</tr>
+<tr>
+<td>Mappe öffnen</td>
+<td>Mitglied ohne Rolle</td>
+<td style="text-align: right;">441</td>
+<td style="text-align: right;">325</td>
+<td style="text-align: right;">650</td>
+<td style="text-align: right;">443</td>
+<td style="text-align: right;">4</td>
+</tr>
+</tbody>
+</table>
+<p>Befund: Die Rechte-Auswertung im Arbeitsspeicher kostet je Seite nur wenige Millisekunden (unter 1 %); der Verdacht aus dem Issue hat sich nicht bestätigt. Die Zeit lag in der Datenbank, bei zwei Anfragen, die jede Seite der Ablage stellt:</p>
+<ul>
+<li><code>/api/anstehend</code> lud <strong>alle</strong> Mappen jedes Typs mit Fristfeldern und filterte das Datum im Arbeitsspeicher. Jetzt holt <code>mappenMitDatum</code> nur Mappen mit einem Datum im Zeitraum (einzeln gemessen etwa 250 → 30 ms).</li>
+<li><code>/api/sichten</code> zählte den Eingang mit einem <code>EXISTS</code> je Mappe; für Mitglieder mit Lesefilter lief der ganze Zähler dafür <strong>ein zweites Mal</strong> ohne Filter. Jetzt zählt eine Abfrage über die offenen Aufgaben den Eingang, einmal für alle.</li>
+</ul>
+<p>Zielwert: Ein Mitglied lädt Startseite und Ablage bei gleichen Daten höchstens 10 % langsamer als der Administrator – erfüllt (sogar schneller, weil für den Administrator auch Fristen ohne Empfänger anstehen). Die Verzögerung der Ereignisschleife blieb bei 99 % unter 16 ms. Größter Posten ist jetzt <code>/api/sichten</code> (Zähler je Typ und Ansicht, 150–230 ms bei 50.000 Mappen, für alle Benutzer gleich).</p>
 <h2 id="regeln">Regeln<a class="headerlink" href="#regeln" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Kein <code>SELECT *</code> auf Tabellen mit großen Spalten.</strong> Dokumente immer mit <code>DOKUMENT_SPALTEN</code>; den Volltext nur über <code>volltext(id)</code> oder gebündelt über <code>volltexte(ids)</code> lesen. EXPLAIN zeigt das nicht: Der Volltext liegt ausgelagert (TOAST) und wird erst beim Senden an den Server entpackt.</li>
+<li><strong>Nicht alle Mappen laden, um im Arbeitsspeicher zu filtern.</strong> Was sich in SQL eingrenzen lässt (Datum im Zeitraum, offene Aufgaben), grenzt die Abfrage ein (#477: <code>mappenMitDatum</code>, Eingang im Zähler).</li>
 <li><strong>Keine Zugriffe in Schleifen über Mappen oder Dokumente.</strong> Für Massenarbeit gibt es gebündelte Methoden (<code>dokumenteVon</code>, <code>volltexte</code>, <code>versionenVonDokumenten</code>, <code>notizenVon</code>, <code>aufgabenVonMappen</code>, <code>historieVon</code>). Ein Zugriff kostet auch lokal etwa eine halbe Millisekunde – bei 10.000 Mappen sind das Sekunden.</li>
 <li><strong>Nach Massenläufen die Statistik auffrischen:</strong> <code>Dienst.aktualisiereStatistik()</code> (Demo-Daten erzeugen und entfernen; die Wiederherstellung macht es selbst). Für <code>dokumente</code> nur über die Spalten in <code>STATISTIK_SPALTEN</code>: Ohne Spaltenliste berechnet PostgreSQL auch die Statistik des Index <code>to_tsvector('german', volltext)</code> – über eine Minute bei 20.000 Dokumenten statt 0,1 Sekunden.</li>
 <li><strong>Lange Rechenarbeit gibt nach.</strong> Server und Oberfläche teilen sich einen Node-Prozess: Was die Ereignisschleife blockiert, verzögert jede Anfrage – und erscheint in der Messung der Datenbankzugriffe als „langer Zugriff“, obwohl die Datenbank schnell war. Schleifen über viele Elemente geben mit <code>takt()</code> (<code>server/src/demo.ts</code>) oder <code>setImmediate</code> nach; große Daten werden mit dem asynchronen <code>zlib</code> gepackt statt im Hauptthread.</li>
