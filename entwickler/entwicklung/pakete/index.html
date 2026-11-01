@@ -515,6 +515,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Ein Paket anlegen">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#paket-aus-deinem-dms-erstellen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paket aus deinem DMS erstellen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -808,6 +825,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Ein Paket anlegen">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#paket-aus-deinem-dms-erstellen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paket aus deinem DMS erstellen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -936,6 +970,47 @@ werkzeuge/neues-paket.sh<span class="w"> </span>mein_paket<span class="w"> </spa
 <tr>
 <td><code>tests/erwartung.yaml</code></td>
 <td>was nach der Installation da sein muss</td>
+</tr>
+</tbody>
+</table>
+<h3 id="paket-aus-deinem-dms-erstellen">Paket aus deinem DMS erstellen<a class="headerlink" href="#paket-aus-deinem-dms-erstellen" title="Permanent link">&para;</a></h3>
+<p>Statt mit der Vorlage zu beginnen, kannst du Mappentypen und Ansichten, die du in einem DMS gebaut hast, unter <strong>Werkbank → Pakete → Paket erstellen</strong> exportieren (ab DMS 0.86.0, siehe <a href="https://motom001.github.io/dms/admin/aktuell/pakete/#paket-aus-deinem-dms-erstellen">Administratorhandbuch → Paket aus deinem DMS erstellen</a>). Das Ergebnis ist ein ZIP mit einem Ordner <code>&lt;id&gt;/</code> im Format der Registry – <code>manifest.yaml</code>, <code>inhalt/mappentypen.yaml</code>, <code>inhalt/sichten.yaml</code>, ggf. <code>inhalt/beispiele.yaml</code>, <code>README.md</code> aus der Beschreibung, <code>CHANGELOG.md</code>, <code>LICENSE</code> mit dem vollen Lizenztext und <code>tests/erwartung.yaml</code>. Es besteht <code>werkzeuge/pruefen.py</code>; entpackt unter <code>pakete/</code> ist es ein fertiger Paketordner für einen Pull Request (README und Beschreibung lohnt es sich noch auszubauen).</p>
+<p>So bildet der Export das DMS auf das Paketformat ab:</p>
+<table>
+<thead>
+<tr>
+<th>Im DMS</th>
+<th>Im Paket</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>eigener Mappentyp</td>
+<td>Eintrag in <code>mappentypen.yaml</code>; Kennung aus der Kennung des Typs, bleibt über Versionen gleich (gemerkt)</td>
+</tr>
+<tr>
+<td>Typ oder Ansicht aus einem installierten Paket</td>
+<td>nicht kopiert, sondern <code>abhaengigkeiten: { &lt;paket&gt;: "&gt;=&lt;installierte Version&gt;" }</code>, Verweise als <code>&lt;paket&gt;:&lt;kennung&gt;</code></td>
+</tr>
+<tr>
+<td>Verweis auf Benutzer, Rolle, Ablageort</td>
+<td><code>dms:benutzer</code>, <code>dms:rolle</code>, <code>dms:ablageort</code> (dann <code>dms</code> mindestens <code>&gt;=0.75.0</code>)</td>
+</tr>
+<tr>
+<td>Standard-Trefferliste</td>
+<td><code>trefferliste</code>; weitere Trefferlisten fehlen</td>
+</tr>
+<tr>
+<td>Bedingung auf ein Feld</td>
+<td><code>{ feld, operator, wert }</code>, dynamische Werte (heute, ich …) als Objekt; Bedingungen auf Anzahlen, Favoriten, Fristen und auf feste Mappen fehlen</td>
+</tr>
+<tr>
+<td>gewählte Beispiel-Mappen</td>
+<td><code>beispiele.yaml</code> mit <code>schluessel</code> und <code>{ beispiel: … }</code> für Verweise untereinander; ohne Passwörter, Dokumente und Verweise auf nicht gewählte Mappen</td>
+</tr>
+<tr>
+<td>Nummernkreis am Feld, Berechtigungen, Archivmodus</td>
+<td>fehlen (das Format kennt sie nicht); die Prüfung nennt sie</td>
 </tr>
 </tbody>
 </table>
