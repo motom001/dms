@@ -8,6 +8,7 @@ import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { Formatiert } from './Formatiert';
 import { NamenOhneLinks } from '../Person';
+import { alsWunsch, stempelFehler, StempelFelder, stempelStart, useStempelVorlagen, type StempelWahl } from './Stempel';
 
 /** Aktionen an der Mappe (#58): per E-Mail versenden, als PDF exportieren, Link kopieren (#98). */
 
@@ -60,12 +61,17 @@ export function EmailMaske({ typ, details, neuLaden, schliessen }: { typ: Mappen
   const [fertig, setFertig] = useState<{ id: string; typId: string }>();
   useEffect(() => { api.emailBereit().then((r) => setBereit(r.bereit), () => setBereit(false)); }, []);
   const summe = details.dokumente.filter((x) => gewaehlt.has(x.id)).reduce((a, x) => a + x.groesse, 0);
+  // Stempel (#394): Vorschlag oder Pflicht des Mappentyps; {empfänger} ohne Angabe = die Adressen.
+  const vorlagen = useStempelVorlagen();
+  const [stempel, setStempel] = useState<StempelWahl | null>(null);
+  useEffect(() => { if (vorlagen && !stempel) setStempel(stempelStart(vorlagen, typ.stempel)); }, [vorlagen, stempel, typ.stempel]);
+  const stempelProblem = gewaehlt.size ? stempelFehler(stempel && (stempel.an || typ.stempel?.modus === 'pflicht') ? { ...stempel, an: true } : stempel, an) : null;
   const umschalten = (id: string) => setGewaehlt((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   async function senden() {
     setFehler(undefined); setLaeuft(true);
     try {
-      setFertig(await api.emailSenden(mappe.id, { an, betreff, nachricht, dokumente: [...gewaehlt] }));
+      setFertig(await api.emailSenden(mappe.id, { an, betreff, nachricht, dokumente: [...gewaehlt], stempel: alsWunsch(stempel) }));
       await neuLaden(); await d.neuLaden();
     } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(false); }
   }
@@ -97,13 +103,15 @@ export function EmailMaske({ typ, details, neuLaden, schliessen }: { typ: Mappen
                 ))}
               </ul>
             )}
+            {details.dokumente.length > 0 && stempel && vorlagen && <StempelFelder wahl={stempel} setze={setStempel} vorlagen={vorlagen} pflicht={typ.stempel?.modus === 'pflicht'}
+              mappe={titelOder(mappe.titel)} empfaengerErsatz={an.trim() || 'die Adressen unter „An“'} id="email-stempel" />}
             {details.dokumente.length > 0 && <p className={`klein ${summe > EMAIL_WARNUNG ? 'fehlertext' : 'leise'}`}>
               Zusammen {groesse(summe)}.{summe > EMAIL_HOECHSTENS ? ' Das ist zu groß zum Versenden; bitte weniger auswählen.' : summe > EMAIL_WARNUNG ? ' Viele Mailserver nehmen E-Mails über 20 MB nicht an.' : ''}
             </p>}
           </fieldset>
           <p className="leise klein">Absender ist die Adresse des DMS. Antworten gehen an dich ({ich?.email}).</p>
           {fehler && <p className="fehlertext" role="alert">{fehler}</p>}
-          <div className="knoepfe"><button className="knopf primaer" disabled={laeuft || bereit === null || !an.trim() || !betreff.trim() || summe > EMAIL_HOECHSTENS}>{laeuft ? 'Wird verschickt …' : 'Senden'}</button></div>
+          <div className="knoepfe">{stempelProblem && <p className="leise klein">{stempelProblem}</p>}<button className="knopf primaer" disabled={laeuft || bereit === null || !an.trim() || !betreff.trim() || summe > EMAIL_HOECHSTENS || !!stempelProblem}>{laeuft ? 'Wird verschickt …' : 'Senden'}</button></div>
         </form>
       )}
     </section>

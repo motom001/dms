@@ -37,6 +37,7 @@ export const BEREICHE: Bereich[] = [
   { pfad: 'typen', gruppe: 'ablage', name: 'Mappentypen', in: [...H], wann: 'eigene Arten von Mappen bauen' },
   { pfad: 'sichten', gruppe: 'ablage', name: 'Ansichten', in: [...H], wann: 'die Sammlungen links in der Ablage ordnen' },
   { pfad: 'nummernkreise', gruppe: 'ablage', name: 'Nummernkreise', in: [...O], wann: 'fortlaufende Nummern, z. B. für Rechnungen' },
+  { pfad: 'stempel', gruppe: 'ablage', name: 'Stempel', in: [...H], wann: 'Vorlagen für Stempel und Wasserzeichen beim Weitergeben' },
   { pfad: 'pakete', gruppe: 'ablage', name: 'Pakete', in: [...H], wann: 'fertige Mappentypen und Ansichten installieren' },
   { pfad: 'darfweg', gruppe: 'ablage', name: 'Darf weg', in: [...O], wann: 'Mappen mit abgelaufener Aufbewahrungsfrist (nur mit Archivmodus)' },
   { pfad: 'benutzer', gruppe: 'benutzer', name: 'Benutzer', in: [...H], wann: 'Benutzer und Rollen anlegen' },
@@ -114,7 +115,8 @@ export function ansichtAus(vorlage: Vorlage, sichtbareBereiche: Iterable<string>
 
 /**
  * Die Mitte gibt es nur für große Sammlungen, die man bearbeitet (Mappentypen, Ansichten, Benutzer …).
- * Kleine oder nur lesende Listen (lange Zugriffe, Demo-Übersicht, Technik, Exporte, gesperrte Adressen)
+ * Kleine oder nur lesende Listen (lange Zugriffe, Demo-Übersicht, Technik, Exporte, gesperrte Adressen,
+ * Stempel-Vorlagen #394)
  * stehen rechts im passenden Abschnitt. Alle anderen Bereiche – auch künftige – sind zweiteilig.
  */
 export const MIT_MITTE: ReadonlySet<string> = new Set([
@@ -142,7 +144,7 @@ export const werkbankZurueck = (bereich: string) => (hatMitte(bereich) ? `/werkb
  */
 export function werkbankUmleitung(bereich: string, id?: string): string | null {
   if (!id || hatMitte(bereich)) return null;
-  return bereich === 'datenbank' ? `/werkbank/datenbank?offen=${encodeURIComponent(id)}` : `/werkbank/${bereich}`;
+  return bereich === 'datenbank' || bereich === 'stempel' ? `/werkbank/${bereich}?offen=${encodeURIComponent(id)}` : `/werkbank/${bereich}`;
 }
 
 /** Plakette links für den Wartungsmodus (#366): „angekündigt“, solange er noch nicht wirkt, „an“ erst danach. */

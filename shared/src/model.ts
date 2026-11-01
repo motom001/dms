@@ -120,6 +120,11 @@ export interface MappentypDaten {
   loeschenErlaubt?: boolean;
   /** Archivmodus (#212): Aufbewahrungsfrist und Stichtag; fehlt/null = aus. */
   archiv?: import('./archiv').Archiv | null;
+  /**
+   * Stempel beim Weitergeben (#394): vorschlagen oder Pflicht, mit Vorlage. Gespeichert in den
+   * Einstellungen (nicht in der Tabelle der Mappentypen); beim Lesen und Speichern hier mitgeliefert.
+   */
+  stempel?: import('./stempel').StempelTyp | null;
 }
 export interface Mappentyp extends MappentypDaten {
   id: string;
@@ -748,7 +753,7 @@ export const HISTORIENARTEN = {
   zugeordnet: 'Post zugeordnet', uebernommen: 'übernommen', dokument_version: 'neue Version',
   dokument_papierkorb: 'Dokument in den Papierkorb', dokument_wiederhergestellt: 'Dokument wiederhergestellt',
   pdf_bearbeitet: 'PDF bearbeitet', post_geteilt: 'Post geteilt',
-  archivnummer: 'Archivnummer', volltext: 'Volltext gesetzt',
+  archivnummer: 'Archivnummer', volltext: 'Volltext gesetzt', weitergegeben: 'weitergegeben',
 } as const;
 export type Historienart = keyof typeof HISTORIENARTEN;
 /** Eine Feldänderung: Werte lesbar zum Zeitpunkt der Änderung; Passwörter nur als „geändert“. */

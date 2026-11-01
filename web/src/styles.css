@@ -1198,3 +1198,20 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 /* Mitte mit Einstellungen oben (#366: Papierkorb, Aufgaben): die ganze Spalte scrollt, sonst bleibt der Liste nur ein Streifen. */
 .spalte.liste:has(> .blatt) { overflow-y: auto; padding-bottom: 32px; }
 .spalte.liste:has(> .blatt) > .listenrumpf { flex: none; min-height: auto; overflow: visible; padding-bottom: 0; }
+/* Stempel beim Weitergeben (#394) */
+.stempelwahl { border: 0; padding: 0; margin: 8px 0; min-width: 0; }
+.stempelfelder { margin-top: 8px; padding: 10px; border: 1px solid var(--linie); border-radius: var(--r); background: var(--senke); display: flex; flex-direction: column; gap: 10px; }
+.stempelzeile { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+.stempelzeile > div:not(.stempelbild) { flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.stempeltext { color: var(--schlecht); overflow-wrap: anywhere; }
+.stempelbild { position: relative; flex: 0 0 auto; width: 96px; height: 136px; background: #fff; border: 1px solid var(--linie-stark); border-radius: 2px; padding: 16px 10px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.stempelbild .zeile { display: block; height: 3px; background: #d5d9df; border-radius: 2px; }
+.stempelbild .zeile:nth-child(3n) { width: 70%; }
+.stempelbild .stempel { position: absolute; color: #bf1414; font-weight: 700; font-size: 8px; line-height: 1.1; white-space: nowrap; max-width: 88px; overflow: hidden; text-overflow: ellipsis; }
+.stempelbild.diagonal .stempel { left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-55deg); font-size: 7px; max-width: 160px; }
+.stempelbild.kopf .stempel { top: 4px; left: 50%; transform: translateX(-50%); }
+.stempelbild.fuss .stempel { bottom: 12px; left: 50%; transform: translateX(-50%); }
+.stempelbild.ecke .stempel { top: 4px; right: 4px; border: 1px solid #bf1414; padding: 1px 2px; max-width: 60px; }
+.stempelbild .fuss { position: absolute; right: 4px; bottom: 3px; font-size: 5px; color: #333; }
+.stempelvorlagen .stempeleditor { padding: 4px 12px 12px; display: flex; flex-direction: column; gap: 10px; }
+.stempelvorlagen .stempeleditor form { display: flex; flex-direction: column; gap: 10px; }

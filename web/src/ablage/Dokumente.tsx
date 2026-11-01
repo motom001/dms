@@ -4,13 +4,15 @@ import { Link } from '../ort';
 import { Fundstellen, fundstellenFuer } from './Doppelt';
 import { useMappenZiel } from './NeuePost';
 import { useEffect, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from 'react';
-import { HERKUNFT, MAX_DATEIGROESSE, OCR_STAENDE, type Mappe, type Dokument, type DokumentVersion, type Herkunft, type OcrStand, type Register } from '../../../shared/src/model';
+import { HERKUNFT, MAX_DATEIGROESSE, OCR_STAENDE, type Mappentyp, type Mappe, type Dokument, type DokumentVersion, type Herkunft, type OcrStand, type Register } from '../../../shared/src/model';
 import { spracheAusInfo, sprachname } from '../../../shared/src/textsprache';
 import { api, dokumentUrl, versionUrl, type Fundstelle } from '../api';
 import { useDaten } from '../daten';
 import { Person } from '../Person';
 import { Hilfe } from '../Hilfe';
 import { rueckfrage } from '../rueckfrage';
+import { StempelDialog } from './Stempel';
+import { kannStempeln } from '../../../shared/src/stempel';
 
 /**
  * Dokumentenregister: hochladen (übernommen mit „Mappe speichern“), ansehen direkt unter der
@@ -45,7 +47,7 @@ export function sortiereDokumente(liste: Dokument[], s: Dokumentsortierung): Dok
 
 const HINWEIS_MEHRFACH = 'dms:mehrere-herunterladen-gesehen';
 
-export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuegen, entferne, entferneMehrere, vergiss, nurLesen, setzeNeue, neuLaden, post }: {
+export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuegen, entferne, entferneMehrere, vergiss, nurLesen, setzeNeue, neuLaden, post, typ, mappeTitel = '' }: {
   register: Register; dokumente: Dokument[]; neue: NeueDatei[]; entfernt: string[];
   /** Ohne Recht „Bearbeiten“ (#126): nur ansehen und herunterladen. */
   nurLesen?: boolean;
@@ -56,7 +58,11 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
   neuLaden?(): Promise<void>;
   /** Dokumente einer Post (#335): Teilen erzeugt neue Posts. */
   post?: boolean;
+  /** Stempel beim Weitergeben (#394): Einstellung des Mappentyps, Titel für {mappe}. */
+  typ?: Mappentyp; mappeTitel?: string;
 }) {
+  const [stempelOffen, setStempelOffen] = useState<{ id: string; version?: number }>();
+  const stempelPflicht = typ?.stempel?.modus === 'pflicht';
   const versioniert = !!register.versionierung;
   // Doppelte Dateien (#333): je neuer Datei einmal nachsehen, ob es sie schon gibt.
   const [doppelt, setDoppelt] = useState<Record<string, Fundstelle[]>>({});
@@ -219,7 +225,8 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                   <span>{auswahl.length ? `${auswahl.length} von ${waehlbar.length} ausgewählt` : 'Alle auswählen'}</span></label>
                 <Hilfe ort="dokumente.mehrere" />
                 {auswahl.length > 0 && <>
-                  <button type="button" className="knopf klein" onClick={alleHerunterladen}>Herunterladen</button>
+                  <button type="button" className="knopf klein" onClick={alleHerunterladen} disabled={stempelPflicht}
+                    title={stempelPflicht ? 'Dieser Mappentyp verlangt beim Weitergeben einen Stempel: lade die Dokumente einzeln mit Stempel herunter.' : undefined}>Herunterladen</button>
                   {bearbeitbar && pdfAuswahl.length >= 2 && <button type="button" className="knopf klein" aria-expanded={!!zusammen}
                     onClick={() => setZusammen(zusammen ? null : { name: pdfAuswahl[0].name, entfernen: false })}>Zusammenfügen</button>}
                   {!nurLesen && <button type="button" className="knopf klein gefahr-rand" onClick={auswahlLoeschen}>Löschen</button>}
@@ -300,13 +307,17 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                             </form>
                           : <span className="klein">Archivnummer <strong className="mono">{x.archivnummer}</strong>
                               {!nurLesen && neuLaden && <> · <button type="button" className="textknopf klein" onClick={() => setAsn({ id: x.id, wert: x.archivnummer ?? '' })}>ändern</button></>}</span>)}
-                        {!weg && versionenOffen === x.id && <Versionen d={x} zurueck={!nurLesen && versioniert} neuLaden={neuLaden} />}
+                        {!weg && versionenOffen === x.id && <Versionen d={x} zurueck={!nurLesen && versioniert} neuLaden={neuLaden}
+                          mitStempel={stempelPflicht && kannStempeln(x.mime) ? (n) => setStempelOffen({ id: x.id, version: n }) : undefined} />}
                         {!weg && <OcrAnzeige s={standVon(x)} erneut={() => void erneut(x.id)} text={() => void zeigeText(x.id)} textOffen={text?.id === x.id} />}
                         {!weg && text?.id === x.id && <pre className="volltext">{text.text ?? 'Kein Volltext vorhanden.'}</pre>}
                       </div>
                       <div className="zeilenaktionen">
                         {klickbar && <a className="symbolverweis" href={dokumentUrl(x.id)} target="_blank" rel="noreferrer" title="In neuem Tab öffnen" aria-label={`${x.name} in neuem Tab öffnen`}>↗</a>}
-                        {!weg && <a className="textknopf" href={dokumentUrl(x.id, true)}>Herunterladen</a>}
+                        {!weg && !stempelPflicht && <a className="textknopf" href={dokumentUrl(x.id, true)}>Herunterladen</a>}
+                        {!weg && kannStempeln(x.mime) && typ && <button type="button" className="textknopf" aria-expanded={stempelOffen?.id === x.id && !stempelOffen.version}
+                          title="Eine Kopie mit Stempel oder Wasserzeichen herunterladen; das Original bleibt unverändert"
+                          onClick={() => setStempelOffen(stempelOffen?.id === x.id && !stempelOffen.version ? undefined : { id: x.id })}>{stempelPflicht ? 'Herunterladen mit Stempel' : 'Mit Stempel …'}</button>}
                         {bearbeitbar && !weg && x.mime === 'application/pdf' && <button type="button" className="textknopf" aria-expanded={seitenOffen === x.id}
                           onClick={() => { setPdfMeldung(undefined); setSeitenOffen(seitenOffen === x.id ? undefined : x.id); }} title="Seiten drehen, löschen, umsortieren oder teilen">Seiten</button>}
                         {!weg && !nurLesen && neuLaden && !x.archivnummer && asn?.id !== x.id && <button type="button" className="textknopf" title="Nummer vom Aufkleber auf dem Papieroriginal eintragen" onClick={() => setAsn({ id: x.id, wert: '' })}>Archivnummer</button>}
@@ -318,6 +329,9 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                         }}>{weg ? 'Behalten' : 'Löschen'}</button>}
                       </div>
                     </div>
+                    {stempelOffen?.id === x.id && !weg && (
+                      <StempelDialog key={`${x.id}-${stempelOffen.version ?? ''}`} d={x} typ={typ} mappe={mappeTitel} version={stempelOffen.version} schliessen={() => setStempelOffen(undefined)} />
+                    )}
                     {seitenOffen === x.id && !weg && (
                       <PdfSeiten d={x} post={!!post} versioniert={versioniert} papierkorb={!!d.zaehler.papierkorbTage}
                         schliessen={() => setSeitenOffen(undefined)} fertig={(r) => void pdfFertig(r)} />
@@ -361,7 +375,7 @@ function mitZaehler(name: string) {
 }
 
 /** Alle Versionen eines Dokuments (#194): ansehen, herunterladen, zurückholen. */
-function Versionen({ d, zurueck, neuLaden }: { d: Dokument; zurueck: boolean; neuLaden?: () => Promise<void> }) {
+function Versionen({ d, zurueck, neuLaden, mitStempel }: { d: Dokument; zurueck: boolean; neuLaden?: () => Promise<void>; /** Pflicht-Stempel (#394): Herunterladen nur über den Dialog. */ mitStempel?: (nummer: number) => void }) {
   const [liste, setListe] = useState<DokumentVersion[] | null>(null);
   const [fehler, setFehler] = useState<string>();
   useEffect(() => { api.versionen(d.id).then((r) => setListe(r.aeltere)).catch((e) => setFehler((e as Error).message)); }, [d.id, d.version]);
@@ -382,7 +396,8 @@ function Versionen({ d, zurueck, neuLaden }: { d: Dokument; zurueck: boolean; ne
               <td>{v.nummer}</td><td>{v.name}</td><td>{zeit(v.erstellt)}</td><td><Person id={v.erstelltVon} /></td><td>{herkunft(v.herkunft)}</td><td>{groesse(v.groesse)}</td>
               <td className="zeilenaktionen">
                 {v.anzeigbar && <a className="symbolverweis" href={versionUrl(d.id, v.nummer)} target="_blank" rel="noreferrer" title="Ansehen" aria-label={`Version ${v.nummer} ansehen`}>↗</a>}
-                <a className="textknopf" href={versionUrl(d.id, v.nummer, true)}>Herunterladen</a>
+                {mitStempel ? kannStempeln(v.mime) && <button type="button" className="textknopf" onClick={() => mitStempel(v.nummer)}>Mit Stempel herunterladen</button>
+                  : <a className="textknopf" href={versionUrl(d.id, v.nummer, true)}>Herunterladen</a>}
                 {zurueck && <button type="button" className="textknopf" onClick={async () => { if (await rueckfrage({ titel: `Version ${v.nummer} zurückholen?`, text: `Sie wird zur neuen Version ${(d.version ?? 1) + 1}; nichts geht verloren.`, ja: 'Zurückholen' })) void hole(v.nummer); }}>Zurückholen</button>}
               </td>
             </tr>

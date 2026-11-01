@@ -91,7 +91,7 @@ describe('Werkbank: mittlere Spalte nur für große Sammlungen (#366)', () => {
   it('Sammlungen behalten die Mitte, Seiten sind zweiteilig', () => {
     for (const b of ['typen', 'sichten', 'benutzer', 'pakete', 'postfaecher', 'papierkorb', 'protokoll']) assert.ok(hatMitte(b), b);
     for (const b of ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung',
-      'speicherplatz', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'darfweg', 'vollexport', 'ansicht', 'datenbank', 'webdav']) assert.ok(!hatMitte(b), b);
+      'speicherplatz', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'darfweg', 'vollexport', 'ansicht', 'datenbank', 'webdav', 'stempel']) assert.ok(!hatMitte(b), b);
     // Jeder Bereich der Leiste ist eingeordnet; neue Bereiche sind ohne Zutun zweiteilig.
     assert.ok(BEREICHE.every((b) => typeof hatMitte(b.pfad) === 'boolean'));
   });
@@ -111,6 +111,7 @@ describe('Werkbank: mittlere Spalte nur für große Sammlungen (#366)', () => {
   it('alte Direktlinks führen auf die Seite', () => {
     assert.equal(werkbankUmleitung('datenbank', '42'), '/werkbank/datenbank?offen=42');
     assert.equal(werkbankUmleitung('technik', 'irgendwas'), '/werkbank/technik');
+    assert.equal(werkbankUmleitung('stempel', 'kopie'), '/werkbank/stempel?offen=kopie');
     assert.equal(werkbankUmleitung('datenbank'), null);
     assert.equal(werkbankUmleitung('typen', 'abc'), null);
   });

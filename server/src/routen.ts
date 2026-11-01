@@ -8,6 +8,7 @@ import { Fachfehler } from './fehler';
 import { SITZUNG_TAGE, type Konten } from './konten';
 import type { SitzungIntern } from './konto-repo';
 import { openapi, v1Routen } from './api-v1';
+import { wunschAus } from '../../shared/src/stempel';
 import type { ApiSchluessel, ApiSchluesselDienst } from './apischluessel';
 import type { Designs } from './designs';
 import type { Oidc } from './oidc';
@@ -208,6 +209,16 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const pakete = x.pakete ?? new Paketverwaltung(dienst, { version: eigeneVersion, benutzer: async () => (await konten.listeBenutzer()).filter((b) => b.aktiv !== false).map((b) => ({ id: b.id, name: b.name || b.email })) });
   const paketerstellung = new Paketerstellung(dienst, { version: eigeneVersion });
   const wer = (a: Anfrage) => ({ id: a.benutzer?.id ?? null, email: a.benutzer?.email ?? null });
+  /**
+   * Ist ein Abruf ein Weitergeben (#394)? Herunterladen (?herunterladen), Stempel-Parameter oder ein API-Schlüssel
+   * eines Benutzers. Anzeigen in der Oberfläche und Pakete (Dienstkonten, z. B. Texterkennung) bekommen das Original.
+   */
+  const weitergabe = (a: Anfrage) => a.query.herunterladen !== undefined || !!wunschAus(a.query) || (!!a.apiSchluessel && a.benutzer?.art !== 'dienst');
+  /** Antwort für eine ausgegebene Datei (#394): immer als Herunterladen. */
+  const ausgabeDatei = (r: { name: string; mime: string; anzeigbar: boolean; groesse: number; inhalt: Buffer | Readable; gestempelt: boolean }): Antwort => {
+    L.dokumente.debug(r.gestempelt ? 'Dokument mit Stempel heruntergeladen' : 'Dokument heruntergeladen', { name: r.name });
+    return { datei: { inhalt: r.inhalt, name: r.name, mime: r.anzeigbar ? r.mime : 'application/octet-stream', anzeigen: false, groesse: r.groesse, ...(r.gestempelt ? { koepfe: { 'x-dms-stempel': '1' } } : {}) } };
+  };
   const typName = async (id: string) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? id;
   const betrieb = () => { if (!x.betrieb) throw new Fachfehler(404, 'Betriebseinstellungen sind nicht eingerichtet.'); return x.betrieb; };
   const mail = () => { if (!x.aufgabenmail) throw new Fachfehler(404, 'Die Aufgaben-Mail ist nicht eingerichtet.'); return x.aufgabenmail; };
@@ -586,6 +597,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       L.konto.warn('Administrator agiert als anderer Benutzer', { admin: ich(a).email, als: r.benutzer.email });
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
+
+    /* ---------- Stempel beim Weitergeben (#394) ---------- */
+    { methode: 'GET', pfad: '/api/stempel/vorlagen', zugang: 'angemeldet', handler: async () => ok(await dienst.stempelVorlagen()) },
+    { methode: 'POST', pfad: '/api/werkbank/stempel/vorlagen', zugang: 'admin', handler: async (a) => ok(await dienst.speichereStempelVorlage(null, a.body, ich(a).email), 201) },
+    { methode: 'PUT', pfad: '/api/werkbank/stempel/vorlagen/:id', zugang: 'admin', handler: async (a) => ok(await dienst.speichereStempelVorlage(a.params.id, a.body, ich(a).email)) },
+    { methode: 'DELETE', pfad: '/api/werkbank/stempel/vorlagen/:id', zugang: 'admin', handler: async (a) => ok(await dienst.loescheStempelVorlage(a.params.id, ich(a).email)) },
 
     /* ---------- Mappentypen ---------- */
     // Regeln (#123) sehen nur Administratoren; alle anderen erfahren, ob sie anlegen dürfen.
@@ -1376,10 +1393,19 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/inhalt', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      // Herunterladen ist Weitergeben (#394): mit Stempel-Parametern oder Pflicht des Mappentyps gestempelt.
+      if (weitergabe(a)) return ausgabeDatei(await dienst.dokumentFuerAusgabe(a.params.id, { stempel: a.query, ich: ich(a) }));
       const { dokument: d, inhalt } = await dienst.dokumentInhalt(a.params.id);
-      const anzeigen = d.anzeigbar && a.query.herunterladen === undefined;
+      const anzeigen = d.anzeigbar;
       L.dokumente.debug(anzeigen ? 'Dokument angezeigt' : 'Dokument heruntergeladen', { name: d.name, id: d.id });
       return { datei: { inhalt, name: d.name, mime: d.anzeigbar ? d.mime : 'application/octet-stream', anzeigen, groesse: d.groesse } };
+    } },
+    // Herunterladen mit Stempel aus der Oberfläche (#394): Angaben im Körper, sonst wie oben.
+    { methode: 'POST', pfad: '/api/dokumente/:id/herunterladen', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      const e = (a.body ?? {}) as { stempel?: unknown; version?: unknown };
+      const version = e.version == null ? undefined : Number(e.version);
+      return ausgabeDatei(await dienst.dokumentFuerAusgabe(a.params.id, { stempel: e.stempel, version: Number.isInteger(version) ? version : undefined, ich: ich(a) }));
     } },
     // Vorschaubild der ersten Seite (#332): gleiche Rechte wie das Dokument; 404, solange es keins gibt.
     { methode: 'GET', pfad: '/api/dokumente/:id/vorschau', zugang: 'angemeldet', handler: async (a) => {
@@ -1424,8 +1450,9 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/versionen/:nummer/inhalt', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      if (weitergabe(a)) return ausgabeDatei(await dienst.dokumentFuerAusgabe(a.params.id, { version: Number(a.params.nummer), stempel: a.query, ich: ich(a) }));
       const { version: v, inhalt } = await dienst.versionInhalt(a.params.id, Number(a.params.nummer));
-      const anzeigen = v.anzeigbar && a.query.herunterladen === undefined;
+      const anzeigen = v.anzeigbar;
       return { datei: { inhalt, name: v.name, mime: v.anzeigbar ? v.mime : 'application/octet-stream', anzeigen, groesse: v.groesse } };
     } },
     { methode: 'POST', pfad: '/api/dokumente/:id/ersetzen', zugang: 'angemeldet', roh: MAX_DATEIGROESSE, handler: async (a) => {

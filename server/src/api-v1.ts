@@ -31,6 +31,20 @@ interface V1 {
 }
 
 const passwoerter: Parameter = { name: 'passwoerter', wo: 'query', typ: 'string', beschreibung: '„anzeigen“: Passwortfelder im Klartext statt nur {gesetzt, lesbar}. Nur mit einem API-Schlüssel mit dem Recht „Passwörter lesen“ (sonst 403); jeder Abruf steht im Protokoll.' };
+/** Stempel beim Herunterladen (#394). */
+const stempelParameter: Parameter[] = [
+  { name: 'herunterladen', wo: 'query', typ: 'string', beschreibung: 'Beliebiger Wert: als Datei herunterladen. Über einen API-Schlüssel ist jeder Abruf ein Herunterladen (Weitergeben); Pakete bekommen immer das Original.' },
+  { name: 'vorlage', wo: 'query', typ: 'string', beschreibung: 'Id einer Stempel-Vorlage (GET /stempel/vorlagen); eigene Angaben unten gehen vor' },
+  { name: 'stempel', wo: 'query', typ: 'string', beschreibung: 'Text des Stempels (höchstens 200 Zeichen) mit Platzhaltern {datum}, {empfänger}, {benutzer}, {mappe}' },
+  { name: 'empfaenger', wo: 'query', typ: 'string', beschreibung: 'Wert für {empfänger}; Pflicht, wenn der Text ihn nutzt' },
+  { name: 'lage', wo: 'query', typ: 'string', beschreibung: 'diagonal (Wasserzeichen, Standard), kopf, fuss oder ecke' },
+  { name: 'deckkraft', wo: 'query', typ: 'string', beschreibung: '0.1 bis 1, Standard 0.25' },
+  { name: 'seiten', wo: 'query', typ: 'string', beschreibung: 'alle (Standard) oder erste' },
+  { name: 'seitenzahlen', wo: 'query', typ: 'boolean', beschreibung: 'true = Fußzeile „Seite x von y“ auf jeder Seite (auch ohne Stempeltext)' },
+  { name: 'archivnummer', wo: 'query', typ: 'boolean', beschreibung: 'true = Archivnummer des Dokuments in der Fußzeile' },
+];
+const STEMPEL_BESCHREIBUNG = ' Stempel (#394): Mit Stempel-Parametern entsteht eine gestempelte Kopie als PDF (Bilder werden zum PDF); das gespeicherte Original bleibt unverändert, die Historie der Mappe vermerkt die Weitergabe, die Antwort trägt den Kopf X-DMS-Stempel: 1. Verlangt der Mappentyp einen Stempel (Pflicht), wird ohne Parameter seine Vorlage verwendet. 422, wenn sich die Datei nicht stempeln lässt (nur PDF, JPEG, PNG; nicht verschlüsselt) oder der Empfänger fehlt.';
+
 const id = (was: string): Parameter => ({ name: 'id', wo: 'path', typ: 'string', pflicht: true, beschreibung: `Id ${was} (UUID)` });
 
 export const V1_TABELLE: V1[] = [
@@ -120,10 +134,11 @@ export const V1_TABELLE: V1[] = [
     body: 'binaer', antwort: 'Dokument', status: 201,
   },
   { methode: 'GET', pfad: '/dokumente/{id}/versionen', gruppe: 'Dokumente', zusammenfassung: 'Versionen eines Dokuments', intern: { methode: 'GET', pfad: '/api/dokumente/:id/versionen' }, parameter: [id('des Dokuments')], antwort: 'Versionen' },
-  { methode: 'GET', pfad: '/dokumente/{id}/versionen/{nummer}/inhalt', gruppe: 'Dokumente', zusammenfassung: 'Ältere Version herunterladen', intern: { methode: 'GET', pfad: '/api/dokumente/:id/versionen/:nummer/inhalt' }, parameter: [id('des Dokuments'), { name: 'nummer', wo: 'path', typ: 'integer', pflicht: true, beschreibung: 'Nummer der Version' }], antwort: 'binaer' },
+  { methode: 'GET', pfad: '/dokumente/{id}/versionen/{nummer}/inhalt', gruppe: 'Dokumente', zusammenfassung: 'Ältere Version herunterladen', beschreibung: `Wie der Inhalt des Dokuments, mit denselben Stempel-Parametern.${STEMPEL_BESCHREIBUNG}`, intern: { methode: 'GET', pfad: '/api/dokumente/:id/versionen/:nummer/inhalt' }, parameter: [id('des Dokuments'), { name: 'nummer', wo: 'path', typ: 'integer', pflicht: true, beschreibung: 'Nummer der Version' }, ...stempelParameter], antwort: 'binaer' },
   { methode: 'POST', pfad: '/dokumente/{id}/versionen/{nummer}/zurueckholen', gruppe: 'Dokumente', zusammenfassung: 'Ältere Version zurückholen', beschreibung: 'Übernimmt die Version als neue, höchste Version; es geht nichts verloren.', intern: { methode: 'POST', pfad: '/api/dokumente/:id/versionen/:nummer/zurueckholen' }, parameter: [id('des Dokuments'), { name: 'nummer', wo: 'path', typ: 'integer', pflicht: true, beschreibung: 'Nummer der Version' }], antwort: 'Dokument', status: 201 },
   { methode: 'POST', pfad: '/dokumente/gleiche', gruppe: 'Dokumente', zusammenfassung: 'Gibt es diese Dateien schon?', beschreibung: 'Doppelte Dateien (#333): SHA-256-Prüfwerte (hex, höchstens 100) → Fundstellen je Prüfwert, nur in Mappen, die der Schlüssel lesen darf. Prüfwerte ohne lesbare Fundstelle fehlen in der Antwort. ohneMappe lässt eine Mappe aus (z. B. die, in die man gerade hochlädt).', intern: { methode: 'POST', pfad: '/api/dokumente/gleiche' }, body: 'Gleiche', antwort: 'Fundstellen' },
-  { methode: 'GET', pfad: '/dokumente/{id}/inhalt', gruppe: 'Dokumente', zusammenfassung: 'Inhalt eines Dokuments herunterladen', intern: { methode: 'GET', pfad: '/api/dokumente/:id/inhalt' }, parameter: [id('des Dokuments')], antwort: 'binaer' },
+  { methode: 'GET', pfad: '/dokumente/{id}/inhalt', gruppe: 'Dokumente', zusammenfassung: 'Inhalt eines Dokuments herunterladen', beschreibung: `Ohne Parameter die gespeicherte Datei.${STEMPEL_BESCHREIBUNG} Beispiel: ?vorlage=kopie&empfaenger=Hausverwaltung%20M%C3%BCller oder ?stempel=ENTWURF&lage=diagonal&deckkraft=0.2&seitenzahlen=true.`, intern: { methode: 'GET', pfad: '/api/dokumente/:id/inhalt' }, parameter: [id('des Dokuments'), ...stempelParameter], antwort: 'binaer' },
+  { methode: 'GET', pfad: '/stempel/vorlagen', gruppe: 'Dokumente', zusammenfassung: 'Stempel-Vorlagen', beschreibung: 'Vorlagen für Stempel beim Weitergeben (#394): id, name, text mit Platzhaltern, lage, deckkraft, seiten, seitenzahlen, archivnummer. Ob ein Mappentyp einen Stempel vorschlägt oder verlangt, steht an GET /typen unter stempel ({ modus: vorschlag|pflicht, vorlage }).', intern: { methode: 'GET', pfad: '/api/stempel/vorlagen' }, antwort: 'StempelVorlagen' },
   { methode: 'GET', pfad: '/dokumente/{id}/volltext', gruppe: 'Dokumente', zusammenfassung: 'Volltext eines Dokuments', beschreibung: 'Textebene des PDFs oder Ergebnis der Texterkennung; text ist null, solange es keinen gibt (siehe ocr.stand).', intern: { methode: 'GET', pfad: '/api/dokumente/:id/volltext' }, parameter: [id('des Dokuments')], antwort: 'Volltext' },
   { methode: 'PUT', pfad: '/dokumente/{id}/volltext', gruppe: 'Dokumente', zusammenfassung: 'Volltext schreiben', beschreibung: 'Für Pakete mit eigener Texterkennung (#338): ersetzt den Volltext. Dienstkonten brauchen das Recht „Dokumente schreiben“ aus dem Manifest, Benutzer das Recht Bearbeiten an der Mappe. Die Herkunft steht in ocr.info und in der Historie; die eingebaute Texterkennung überschreibt den Text danach nicht mehr von selbst.', intern: { methode: 'PUT', pfad: '/api/dokumente/:id/volltext' }, parameter: [id('des Dokuments')], body: 'VolltextSchreiben', antwort: 'Volltext' },
   { methode: 'GET', pfad: '/dokumente/{id}/seiten/{nr}/scan', gruppe: 'Dokumente', zusammenfassung: 'Seite als Graustufenbild (PGM)', beschreibung: 'Für eine Texterkennung im Paket (#338): die Seite eines PDFs als PGM (8 Bit, „P5 Breite Höhe 255“, danach die Bildpunkte). 404, wenn es die Seite nicht gibt; 422 für andere Dateitypen oder zu große Seiten.', intern: { methode: 'GET', pfad: '/api/dokumente/:id/seiten/:nr/scan' }, parameter: [id('des Dokuments'), { name: 'nr', wo: 'path', typ: 'integer', pflicht: true, beschreibung: 'Seitennummer ab 1' }, { name: 'dpi', wo: 'query', typ: 'integer', beschreibung: 'Auflösung 72–400, ohne Angabe 300' }], antwort: 'binaer' },
@@ -210,7 +225,7 @@ const SCHEMAS: Record<string, Schema> = {
       sichtAnlegen: { type: 'boolean', default: true, writeOnly: true, description: 'Nur beim Anlegen: eigene Ansicht in der Ablage anlegen' },
       loeschenErlaubt: { type: 'boolean', default: true, deprecated: true, description: 'Ohne Wirkung seit 0.32 – wer löschen darf, regeln die Berechtigungen (Recht D)' } },
   },
-  Mappentyp: { allOf: [ref('MappentypEingabe'), { type: 'object', properties: { id: uuid, erstellt: zeit, geaendert: zeit, system: { type: 'string', enum: ['benutzer', 'rolle', 'post'], nullable: true, description: 'Systemmappentyp: lässt sich erweitern, aber nicht löschen' } } }] },
+  Mappentyp: { allOf: [ref('MappentypEingabe'), { type: 'object', properties: { id: uuid, erstellt: zeit, geaendert: zeit, system: { type: 'string', enum: ['benutzer', 'rolle', 'post'], nullable: true, description: 'Systemmappentyp: lässt sich erweitern, aber nicht löschen' }, stempel: { type: 'object', nullable: true, description: 'Stempel beim Weitergeben (#394): vorschlag oder pflicht, mit Id der Vorlage; null = kein Stempel', properties: { modus: { type: 'string', enum: ['vorschlag', 'pflicht'] }, vorlage: { type: 'string', nullable: true } } } } }] },
   MappentypListe: liste('Mappentyp'),
   Werte: {
     type: 'object', additionalProperties: true,
@@ -312,6 +327,7 @@ const SCHEMAS: Record<string, Schema> = {
     mappeId: uuid, mappeTitel: { type: 'string' }, typId: uuid, faellig: { type: 'boolean', description: 'steht schon unter „Zu erledigen“' }, feldKey: { type: 'string', nullable: true }, erinnerungId: uuid,
   } } } } },
   Historie: { type: 'array', items: { type: 'object', properties: { id: { type: 'integer' }, mappeId: uuid, zeit: zeit, benutzerId: { ...uuid, nullable: true }, art: { type: 'string' }, daten: { type: 'object', additionalProperties: true, description: 'Je nach Art, z. B. aenderungen: [{feld, label, alt, neu}] oder dokument' } } } },
+  StempelVorlagen: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' }, text: { type: 'string' }, lage: { type: 'string', enum: ['diagonal', 'kopf', 'fuss', 'ecke'] }, deckkraft: { type: 'number' }, seiten: { type: 'string', enum: ['alle', 'erste'] }, seitenzahlen: { type: 'boolean' }, archivnummer: { type: 'boolean' } } } },
   Volltext: { type: 'object', properties: { id: uuid, name: { type: 'string' }, ocr: { type: 'object' }, text: { type: 'string', nullable: true } } },
   Sicht: {
     type: 'object',

@@ -7,6 +7,7 @@ import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { EMAIL_WARNUNG } from './Aktionen';
+import { alsWunsch, stempelFehler, StempelFelder, stempelStart, stempelVon, useStempelVorlagen, type StempelWahl } from './Stempel';
 
 /**
  * Mehrere Mappen per E-Mail (#151): eine E-Mail, je Mappe ihre Angaben als PDF und – wählbar – ihre
@@ -16,7 +17,7 @@ const groesse = (b: number) => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 
 const EMAIL_HOECHSTENS = 50_000_000;
 export const EMAIL_MAPPEN_HOECHSTENS = 100;
 
-interface MappeMitDokumenten { id: string; titel: string; dokumente: Dokument[] }
+interface MappeMitDokumenten { id: string; titel: string; typId: string; dokumente: Dokument[] }
 
 export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: string): void }) {
   const d = useDaten();
@@ -41,7 +42,7 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
     void (async () => {
       const x: MappeMitDokumenten[] = [];
       for (const id of ids) {
-        try { const m = await api.mappe(id); x.push({ id, titel: titelOder(m.mappe.titel), dokumente: m.dokumente }); } catch { /* nicht lesbar: der Server lehnt ab */ }
+        try { const m = await api.mappe(id); x.push({ id, titel: titelOder(m.mappe.titel), typId: m.mappe.typId, dokumente: m.dokumente }); } catch { /* nicht lesbar: der Server lehnt ab */ }
       }
       if (ab) return;
       setListe(x);
@@ -55,12 +56,18 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
   const alleDocs = (liste ?? []).flatMap((m) => m.dokumente);
   const docs = umfang === 'alle' ? alleDocs : umfang === 'keine' ? [] : alleDocs.filter((x) => gewaehlt.has(x.id));
   const summe = docs.reduce((a, x) => a + x.groesse, 0);
+  // Stempel (#394): je Mappentyp vorgeschlagen oder Pflicht; Pflicht gilt dann für Mappen dieses Typs.
+  const vorlagen = useStempelVorlagen();
+  const typStempel = liste ? stempelVon(liste.map((m) => d.typ(m.typId))) : null;
+  const [stempel, setStempel] = useState<StempelWahl | null>(null);
+  useEffect(() => { if (vorlagen && liste && !stempel) setStempel(stempelStart(vorlagen, typStempel)); }, [vorlagen, liste, stempel, typStempel]);
+  const stempelProblem = docs.length ? stempelFehler(stempel, an) : null;
   const umschalten = (id: string) => setGewaehlt((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   async function senden() {
     setFehler(undefined); setLaeuft(true);
     try {
-      const r = await api.emailMehrere({ ids, an, betreff, nachricht, angaben, dokumente: umfang === 'alle' ? 'alle' : umfang === 'keine' ? [] : [...gewaehlt] });
+      const r = await api.emailMehrere({ ids, an, betreff, nachricht, angaben, dokumente: umfang === 'alle' ? 'alle' : umfang === 'keine' ? [] : [...gewaehlt], stempel: alsWunsch(stempel) });
       setErgebnis(r); await d.neuLaden();
     } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(false); }
   }
@@ -105,15 +112,18 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
                 ))}
               </ul>
             ))}
+            {docs.length > 0 && stempel && vorlagen && <StempelFelder wahl={stempel} setze={setStempel} vorlagen={vorlagen} empfaengerErsatz={an.trim() || 'die Adressen unter „An“'} id="emails-stempel" />}
+            {docs.length > 0 && typStempel?.modus === 'pflicht' && <p className="leise klein">Mappen, deren Mappentyp einen Stempel verlangt, bekommen ihn auch ohne diese Angabe.</p>}
             {liste && <p className={`klein ${summe > EMAIL_WARNUNG ? 'fehlertext' : 'leise'}`}>
               Dokumente zusammen {groesse(summe)}{angaben ? `, dazu ${ids.length} kleine PDFs mit den Angaben` : ''}.{summe > EMAIL_HOECHSTENS ? ' Das ist zu groß zum Versenden; bitte weniger auswählen.' : summe > EMAIL_WARNUNG ? ' Viele Mailserver nehmen E-Mails über 20 MB nicht an.' : ''}
             </p>}
           </fieldset>
           <p className="leise klein">Eine E-Mail an alle Empfänger. Absender ist die Adresse des DMS, Antworten gehen an dich ({ich?.email}).</p>
           {fehler && <p className="fehlertext" role="alert">{fehler}</p>}
+          {stempelProblem && <p className="leise klein">{stempelProblem}</p>}
           <div className="knoepfe">
             <button type="button" className="knopf" onClick={() => fertig()}>Abbrechen</button>
-            <button className="knopf primaer" disabled={laeuft || bereit === null || !liste || !an.trim() || !betreff.trim() || summe > EMAIL_HOECHSTENS}>{laeuft ? 'Wird verschickt …' : 'Senden'}</button>
+            <button className="knopf primaer" disabled={laeuft || bereit === null || !liste || !an.trim() || !betreff.trim() || summe > EMAIL_HOECHSTENS || !!stempelProblem}>{laeuft ? 'Wird verschickt …' : 'Senden'}</button>
           </div>
         </form>
       )}
