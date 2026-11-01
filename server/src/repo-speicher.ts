@@ -153,6 +153,7 @@ export function speicherRepo(): Repo {
         verweise.set(m.id, kopie(m.verweise));
       }
     },
+    transaktion(f) { return f(this); },
     async listePakete() { return [...pakete.values()].map(kopie).sort((a, b) => a.id.localeCompare(b.id)); },
     async speicherePaket(p) { pakete.set(p.id, kopie(p)); },
     async loeschePaket(id) { pakete.delete(id); },

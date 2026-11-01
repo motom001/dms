@@ -162,4 +162,33 @@ describe('PDF bearbeiten (#335)', () => {
     const zwei = await fuegeZusammen([await pdf(1), await pdf(1, 2)]);
     assert.equal((await seitenInfo(zwei)).anzahl, 2);
   });
+
+  it('Ereignisse (#404): teilen, zusammenfügen und Post teilen melden jedes neue Dokument – nicht die eigenen eines Pakets', async () => {
+    const { d, m, doc } = await aufbau(false);
+    await d.speicherePaket({ id: 'ocr', name: 'OCR', version: '1.0.0', beschreibung: '', lizenz: 'MIT', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: '', installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, laeufer: { sprache: 'c', ereignisse: ['dokument.hochgeladen', 'post.angelegt'], rechte: { lesen: [], schreiben: [], dokumente: 'schreiben' }, netz: [] } });
+    const neue = async () => {
+      const liste = await d.faelligeEreignisse(100);
+      for (const e of liste) await d.ereignisZugestellt(e.id);
+      return liste.map((e) => `${e.art}:${e.art === 'post.angelegt' ? e.daten.mappe : e.daten.dokument}`);
+    };
+    // Teilen in einer Mappe ohne Versionierung: alle drei Teile sind neue Dokumente.
+    const r1 = await d.bearbeitePdf(doc.id, { seiten: [1, 2, 3, 4, 5].map((nr) => ({ nr })), teile: [2, 4], bestaetigt: true }, ANNA);
+    assert.deepEqual(await neue(), r1.dokumente.map((x) => `dokument.hochgeladen:${x.id}`));
+    // Zusammenfügen: das Ergebnis.
+    const r2 = await d.fuegePdfZusammen({ dokumente: [r1.dokumente[1].id, r1.dokumente[2].id], name: 'Zusammen' }, ANNA);
+    assert.deepEqual(await neue(), [`dokument.hochgeladen:${r2.dokument.id}`]);
+    // Post teilen: je Teil die neue Post und ihr Dokument.
+    const post = await d.legePostAn({ betreff: 'Stapel' }, { id: ANNA, name: 'Anna' });
+    const pdoc = (await d.ladeHoch(post.id, { register: await postRegister(d, post.typId), name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(2), ANNA)).dokument;
+    await neue();
+    const r3 = await d.bearbeitePdf(pdoc.id, { seiten: [1, 2].map((nr) => ({ nr })), teile: [0, 1] }, ANNA);
+    assert.deepEqual(await neue(), r3.posten.flatMap((p, i) => [`post.angelegt:${p.id}`, `dokument.hochgeladen:${r3.dokumente[i].id}`]));
+    // Was das Dienstkonto des Pakets selbst teilt oder zusammenfügt, meldet das DMS ihm nicht.
+    const konto = '00000000-0000-4000-8000-0000000000cc';
+    d.paketKonten.set(konto, 'ocr');
+    const r4 = await d.bearbeitePdf(r2.dokument.id, { seiten: [1, 2, 3].map((nr) => ({ nr })), teile: [0, 1], bestaetigt: true }, konto);
+    await d.fuegePdfZusammen({ dokumente: r4.dokumente.map((x) => x.id) }, konto);
+    assert.deepEqual(await neue(), []);
+    assert.equal((await d.holeMappe(m.id)).dokumente.length, 6, 'die Änderungen des Pakets sind trotzdem da');
+  });
 });
