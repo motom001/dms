@@ -49,7 +49,6 @@ export const BEREICHE: Bereich[] = [
   { pfad: 'designs', gruppe: 'einstellungen', name: 'Designs', in: [...O], wann: 'Logo, Farben und eigenes CSS' },
   { pfad: 'papierkorb', gruppe: 'einstellungen', name: 'Papierkorb', in: [...H], wann: 'gelöschte Mappen zurückholen' },
   { pfad: 'anbindung', gruppe: 'einstellungen', name: 'Datenbank-Anbindung', in: [], wann: 'die Verbindung zur Datenbank, lange Datenbankzugriffe und was gerade läuft' },
-  { pfad: 'speicherplatz', gruppe: 'einstellungen', name: 'Speicherplatz', in: [...H], wann: 'sehen, wie voll das Gerät ist' },
   { pfad: 'postfaecher', gruppe: 'einstellungen', name: 'Postfächer', in: [...O], wann: 'Post aus einem E-Mail-Konto abholen' },
   { pfad: 'eingangsordner', gruppe: 'einstellungen', name: 'Eingangsordner', in: [...O], wann: 'Scans aus einem Ordner übernehmen' },
   { pfad: 'webdav', gruppe: 'einstellungen', name: 'WebDAV-Laufwerk', in: [...H], wann: 'die Ablage im Explorer, Finder oder in der Dateien-App einbinden' },
@@ -60,6 +59,7 @@ export const BEREICHE: Bereich[] = [
   { pfad: 'wiederherstellung', gruppe: 'wartung', name: 'Wiederherstellen', in: [...H], wann: 'eine Sicherung zurückspielen' },
   { pfad: 'vollexport', gruppe: 'wartung', name: 'Vollexport', in: [...H], wann: 'alle Daten in offenen Formaten mitnehmen' },
   { pfad: 'wartungsmodus', gruppe: 'wartung', name: 'Wartungsmodus', in: [...O], wann: 'Benutzer vorübergehend aussperren' },
+  { pfad: 'systemzustand', gruppe: 'wartung', name: 'Systemzustand', in: [...H], wann: 'sehen, wie es dem Server geht: Speicherplatz mit Warnschwellen' },
   { pfad: 'wartung', gruppe: 'wartung', name: 'Wartungsoperationen', in: [], wann: 'einmalige Pflegearbeiten' },
   { pfad: 'technik', gruppe: 'wartung', name: 'Technik', in: [...H], wann: 'Version, Updates und die Übersicht für GitHub' },
   { pfad: 'demo', gruppe: 'wartung', name: 'Demo-Daten', in: [], wann: 'Beispielmappen zum Ausprobieren' },
@@ -69,9 +69,10 @@ const BEKANNT = new Set(BEREICHE.map((b) => b.pfad));
 
 /**
  * Umgezogene Bereiche: alte Kennung → neue. Alte Links und Lesezeichen leiten weiter, gespeicherte
- * Ansichten übernehmen die neue Kennung (#407: Datenbank → Datenbank-Anbindung).
+ * Ansichten übernehmen die neue Kennung (#407: Datenbank → Datenbank-Anbindung; #408: Speicherplatz
+ * → Systemzustand unter Wartung und Fehlersuche).
  */
-export const UMGEZOGEN: Readonly<Record<string, string>> = { datenbank: 'anbindung' };
+export const UMGEZOGEN: Readonly<Record<string, string>> = { datenbank: 'anbindung', speicherplatz: 'systemzustand' };
 
 /** Für die ganze Installation: Vorlage plus Abweichungen. */
 export interface WerkbankAnsicht { vorlage: Vorlage; ein: string[]; aus: string[] }
@@ -165,7 +166,7 @@ export function wartungsPlakette(stufe: 'aus' | 'angekuendigt' | 'aktiv', aktivA
   return 'angekündigt';
 }
 
-/** Speicherplatz (#366): Liegen alle messbaren Ordner auf demselben Datenträger, genügt ein Balken. */
+/** Systemzustand, Speicherplatz (#366, #408): Liegen alle messbaren Ordner auf demselben Datenträger, genügt ein Balken. */
 export function einDatentraeger(ordner: Array<{ geraet: string | null; gesamt: number | null }>): boolean {
   const gemessen = ordner.filter((o) => o.gesamt !== null);
   return ordner.length > 1 && gemessen.length === ordner.length && !!gemessen[0].geraet && gemessen.every((o) => o.geraet === gemessen[0].geraet);

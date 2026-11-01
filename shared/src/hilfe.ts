@@ -86,7 +86,7 @@ export const HILFE = {
   'werkbank.wiederherstellung': admin('wiederherstellen/', 'Wiederherstellen'),
   'werkbank.wartungsmodus': admin('wartungsmodus/', 'Wartungsmodus'),
   'wartungsmodus.sofort': admin('wartungsmodus/', 'Jetzt sofort sperren', 'jetzt-sofort-sperren'),
-  'werkbank.speicherplatz': admin('speicherplatz/', 'Speicherplatz'),
+  'werkbank.speicherplatz': admin('speicherplatz/', 'Systemzustand'),
   'werkbank.verkleinern': admin('speicherplatz/', 'Große PDFs verkleinern', 'grosse-pdfs-verkleinern'),
   'werkbank.anbindung': admin('installation/', 'der Datenbank-Anbindung', 'datenbank-anbindung'),
   // Werkbank: Zwischenüberschriften langer Seiten

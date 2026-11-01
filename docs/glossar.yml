@@ -670,11 +670,19 @@ begriffe:
     einsteiger: alltag
     begegnet: admin
     nicht_verwenden: [Fehlermeldungen]
+  - begriff: Systemzustand
+    bereich: betrieb
+    beschreibung: Wie es dem Server gerade geht – Speicherplatz mit Warnschwellen, später auch die Auslastung (Werkbank → Wartung und Fehlersuche → Systemzustand). Gemeint ist der Zustand im Betrieb, nicht die Konfiguration.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Systemumgebung]
+    verwandt: [Speicherplatz]
   - begriff: Speicherplatz
     bereich: betrieb
-    beschreibung: Wie voll die Datenordner sind, mit Schwellen für Warnungen.
+    beschreibung: Wie voll die Datenordner sind, mit Schwellen für Warnungen (unter Systemzustand).
     einsteiger: alltag
     begegnet: admin
+    verwandt: [Systemzustand]
   - begriff: Demo-Daten
     bereich: betrieb
     beschreibung: Erzeugte Beispielmappen zum Ausprobieren und für Lasttests.

@@ -64,7 +64,8 @@ import { useBeiWiederErreichbar } from '../erreichbar';
  * /werkbank/wiederherstellung      Sicherung einspielen (#107)
  * /werkbank/anbindung[?offen=:id] Datenbank-Anbindung (#119), darunter lange Zugriffe, aufklappbar,
  *                                 und was gerade läuft (#407; früher /werkbank/datenbank, leitet weiter)
- * /werkbank/speicherplatz         Speicherplatz je Ordner, Warnschwelle und Grenze (#115, #116)
+ * /werkbank/systemzustand         Systemzustand: Warnschwelle und Grenze, darunter Speicherplatz je Ordner
+ *                                 (#115, #116; #408, früher /werkbank/speicherplatz, leitet weiter)
  * /werkbank/webdav                WebDAV-Laufwerk an/aus, Stand, letzte Zugriffe (#346, rechts seit #366)
  * /werkbank/stempel                Vorlagen für Stempel beim Weitergeben (#394), zweiteilig
  * /werkbank/datenschutz[?mappe=]    Auskunft nach Art. 15 DSGVO als ZIP (#396), zweiteilig
@@ -92,7 +93,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const meldungen = useFehlermeldungen(bereich === 'fehlermeldungen');
   const wartungsmodus = useWartungsmodus(bereich === 'wartungsmodus');
   const sicherung = useSicherung(bereich === 'sicherung');
-  const speicherplatz = useSpeicherplatz(bereich === 'speicherplatz');
+  const speicherplatz = useSpeicherplatz(bereich === 'systemzustand');
   const eingang = useEingangsordner(bereich === 'eingangsordner');
   const webdav = useWebdav(bereich === 'webdav');
   const postfaecher = usePostfaecher(bereich === 'postfaecher');
@@ -115,7 +116,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
       protokoll: protokoll.neu, technik: technik.laden, betrieb: betrieb.laden,
       verschluesselung: tresor.laden, papierkorb: papierkorb.laden, aufgaben: aufgaben.laden, texterkennung: ocr.laden,
       wartung: ocr.laden, fehlermeldungen: meldungen.laden, wartungsmodus: wartungsmodus.laden, sicherung: sicherung.laden,
-      speicherplatz: speicherplatz.laden, anbindung: async () => { await anbindung.laden(); await datenbank.laden(); }, benutzer: benutzer.laden, webdav: webdav.laden,
+      systemzustand: speicherplatz.laden, anbindung: async () => { await anbindung.laden(); await datenbank.laden(); }, benutzer: benutzer.laden, webdav: webdav.laden,
       datenschutz: datenschutz.laden,
     };
     void offen[bereich]?.();
@@ -206,7 +207,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
     rechts = <EingangsordnerPanel z={eingang} />;
   } else if (bereich === 'webdav') {
     rechts = <WebdavPanel z={webdav} />;
-  } else if (bereich === 'speicherplatz') {
+  } else if (bereich === 'systemzustand') {
     rechts = <SpeicherplatzPanel z={speicherplatz} nachAenderung={() => { void uebersicht.laden(); void wartungsmodus.laden(); }} />;
   } else if (bereich === 'wartungsmodus') {
     rechts = <WartungsmodusPanel w={wartungsmodus} />;
@@ -239,7 +240,6 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'designs', name: 'Designs', gruppe: 'einstellungen', zahl: d.designs.length || undefined },
           { pfad: 'papierkorb', name: 'Papierkorb', gruppe: 'einstellungen', zahl: zahl(papierkorb.eintraege ? papierkorb.eintraege.length + papierkorb.dokumente.length : undefined, uebersicht.stand?.papierkorb.anzahl) },
           { pfad: 'anbindung', name: 'Datenbank-Anbindung', gruppe: 'einstellungen', warn: uebersicht.stand?.anbindung && (uebersicht.stand.anbindung.umgebung === 'abweichend' || uebersicht.stand.anbindung.neustartNoetig) ? '!' : undefined, warnTitel: 'DATABASE_URL weicht ab oder Neustart nötig' },
-          { pfad: 'speicherplatz', name: 'Speicherplatz', gruppe: 'einstellungen', warn: uebersicht.stand?.speicherplatz && uebersicht.stand.speicherplatz.zustand !== 'ok' ? (uebersicht.stand.speicherplatz.zustand === 'grenze' ? 'voll' : 'knapp') : undefined, warnTitel: 'Speicherplatz knapp' },
           { pfad: 'postfaecher', name: 'Postfächer', gruppe: 'einstellungen', zahl: zahl(postfaecher.liste?.length, uz?.postfaecher), warn: uebersicht.stand?.postfachAnmeldung?.length || postfaecher.liste?.some((p) => p.stand.fehlerFolge > 0 || (p.oauth && p.oauth.zustand !== 'ok')) ? '!' : undefined, warnTitel: uebersicht.stand?.postfachAnmeldung?.length ? 'Anmeldung abgelaufen oder fehlt' : 'Abruf fehlgeschlagen' },
           ...(eingang.stand?.vorhanden ? [{ pfad: 'eingangsordner', name: 'Eingangsordner', gruppe: 'einstellungen' as const, warn: eingang.stand.fehler?.length ? String(eingang.stand.fehler.length) : undefined, warnTitel: 'abgelehnte Dateien' }] : []),
           { pfad: 'webdav', name: 'WebDAV-Laufwerk', gruppe: 'einstellungen', warn: webdav.stand?.einstellung.aktiv ? 'an' : undefined, warnTitel: 'Das Laufwerk ist eingeschaltet' },
@@ -250,6 +250,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'wiederherstellung', name: 'Wiederherstellen', gruppe: 'wartung' },
           { pfad: 'vollexport', name: 'Vollexport', gruppe: 'wartung' },
           { pfad: 'wartungsmodus', name: 'Wartungsmodus', gruppe: 'wartung', warn: wartungsPlakette(wartungsmodus.stand?.stufe ?? 'aus', wartungsmodus.stand?.aktivAb ?? null), warnTitel: wartungAn ? 'Wartungsmodus ist an' : 'Wartungsmodus ist angekündigt' },
+          { pfad: 'systemzustand', name: 'Systemzustand', gruppe: 'wartung', warn: uebersicht.stand?.speicherplatz && uebersicht.stand.speicherplatz.zustand !== 'ok' ? (uebersicht.stand.speicherplatz.zustand === 'grenze' ? 'voll' : 'knapp') : undefined, warnTitel: 'Speicherplatz knapp' },
           { pfad: 'wartung', name: 'Wartungsoperationen', gruppe: 'wartung' },
           { pfad: 'technik', name: 'Technik', gruppe: 'wartung' },
           { pfad: 'demo', name: 'Demo-Daten', gruppe: 'wartung', zahl: Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || undefined },

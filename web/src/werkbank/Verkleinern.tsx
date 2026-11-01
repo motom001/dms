@@ -9,7 +9,7 @@ import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 
 /**
- * Werkbank → Speicherplatz (#393): große PDFs verkleinern (Liste nach Größe mit geschätzter Ersparnis,
+ * Werkbank → Systemzustand (#393, #408): große PDFs verkleinern (Liste nach Größe mit geschätzter Ersparnis,
  * Sammelaktion als Hintergrundauftrag) und neue PDFs automatisch verkleinern (Standard aus).
  * Die Liste steht rechts mit fester Höhe (#366): eine Arbeitsliste, keine Sammlung zum Bearbeiten.
  */

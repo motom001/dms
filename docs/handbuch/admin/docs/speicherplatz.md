@@ -1,10 +1,23 @@
-# Speicherplatz
+# Systemzustand
 
-Läuft die Platte voll, können beim Speichern oder Hochladen Daten verloren gehen. Das DMS misst deshalb selbst, wie viel Platz frei ist, warnt rechtzeitig und hält sich an der Grenze selbst an: **Werkbank → Speicherplatz** (Gruppe *Einstellungen*).
+Wie geht es dem Server gerade? Das zeigt **Werkbank → Wartung und Fehlersuche → Systemzustand** – bisher vor allem den **Speicherplatz**. (Früher hieß der Bereich *Speicherplatz* und stand unter *Einstellungen*; alte Links und Lesezeichen führen hierher.)
+
+Läuft die Platte voll, können beim Speichern oder Hochladen Daten verloren gehen. Das DMS misst deshalb selbst, wie viel Platz frei ist, warnt rechtzeitig und hält sich an der Grenze selbst an. Oben auf der Seite stehen die **Schwellen**, darunter die **Ordner** mit ihrer Belegung, ganz unten **Große PDFs verkleinern**.
 
 --8<-- "ausgeblendet-schritt.md"
 
-![Werkbank → Speicherplatz](bilder/werkbank-speicherplatz.png)
+![Werkbank → Systemzustand](bilder/werkbank-speicherplatz.png)
+
+## Warnschwelle und Grenze
+
+Ganz oben auf der Seite. Beide stellst du in **GB frei** oder **% frei** ein; Prozent beziehen sich auf die Größe des jeweiligen Datenträgers. Sie gelten für jeden Ordner einzeln.
+
+| Stufe | Standard | Was passiert |
+| --- | --- | --- |
+| **Warnschwelle** | unter 10 % frei | Hinweis in der [Übersicht](uebersicht.md) und auf dieser Seite, **eine Mail** an alle Administratoren (einmal je Unterschreiten – erst wenn wieder genug frei war, gibt es beim nächsten Mal eine neue). Alle arbeiten normal weiter. |
+| **Grenze** | unter 2 GB frei | **Hochladen sofort gesperrt** (neue Dokumente, Logos); Werte speichern geht noch. Mail an alle Administratoren, und der [Wartungsmodus](wartungsmodus.md) startet mit **5 Minuten Vorlauf** und dem Text **„Speicherplatzlimit erreicht“**. |
+
+Die Warnschwelle muss mehr freien Platz verlangen als die Grenze – sonst käme die Warnung erst danach.
 
 ## Was gemessen wird
 
@@ -21,20 +34,9 @@ Je Ordner zeigt die Seite belegt, frei und die Größe des Datenträgers, als Ba
 !!! note "Die Datenbank wird nicht gemessen"
     Bei zwei Containern läuft PostgreSQL in einem eigenen Container; sein Volume kann das DMS nicht sehen. Bei [dms-komplett](https://motom001.github.io/dms/installieren/aktuell/komplett/) liegt die Datenbank im vierten Ordner `/data/postgres` – auch den misst das DMS nicht. Liegen alle Ordner auf derselben Platte des NAS (der übliche Fall), reicht die Messung trotzdem. Liegt die Datenbank auf einer anderen Platte, behalte deren Platz in der Speicherverwaltung des NAS im Blick.
 
-## Warnschwelle und Grenze
-
-Beide stellst du in **GB frei** oder **% frei** ein; Prozent beziehen sich auf die Größe des jeweiligen Datenträgers. Sie gelten für jeden Ordner einzeln.
-
-| Stufe | Standard | Was passiert |
-| --- | --- | --- |
-| **Warnschwelle** | unter 10 % frei | Hinweis in der [Übersicht](uebersicht.md) und auf dieser Seite, **eine Mail** an alle Administratoren (einmal je Unterschreiten – erst wenn wieder genug frei war, gibt es beim nächsten Mal eine neue). Alle arbeiten normal weiter. |
-| **Grenze** | unter 2 GB frei | **Hochladen sofort gesperrt** (neue Dokumente, Logos); Werte speichern geht noch. Mail an alle Administratoren, und der [Wartungsmodus](wartungsmodus.md) startet mit **5 Minuten Vorlauf** und dem Text **„Speicherplatzlimit erreicht“**. |
-
-Die Warnschwelle muss mehr freien Platz verlangen als die Grenze – sonst käme die Warnung erst danach.
-
 ## Große PDFs verkleinern {#grosse-pdfs-verkleinern}
 
-Gescannte und fotografierte PDFs sind oft viel größer als nötig: Ein Scanner mit 600 dpi oder ein Foto-PDF vom Handy legt Bilder ab, von denen 150 dpi zum Lesen und Drucken reichen. Unter den Schwellen listet **Große PDFs verkleinern** die PDF-Dokumente ab einer Größe (1 bis 20 MB, Standard 2 MB), **größte zuerst**, mit der geschätzten Größe danach. Die Liste hat eine feste Höhe und zeigt höchstens die 200 größten; geschätzt werden die ersten 60.
+Gescannte und fotografierte PDFs sind oft viel größer als nötig: Ein Scanner mit 600 dpi oder ein Foto-PDF vom Handy legt Bilder ab, von denen 150 dpi zum Lesen und Drucken reichen. Unter den Ordnern listet **Große PDFs verkleinern** die PDF-Dokumente ab einer Größe (1 bis 20 MB, Standard 2 MB), **größte zuerst**, mit der geschätzten Größe danach. Die Liste hat eine feste Höhe und zeigt höchstens die 200 größten; geschätzt werden die ersten 60.
 
 1. **Stufe** wählen: **Bildschirm** (≈ 100 dpi), **Standard** (≈ 150 dpi, Vorgabe) oder **Druck** (≈ 300 dpi).
 2. Dokumente ankreuzen – vorgewählt sind alle, bei denen es sich lohnt (mindestens 10 % kleiner). Unten steht, wie viel Platz geschätzt frei wird.

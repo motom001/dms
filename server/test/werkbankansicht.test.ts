@@ -91,7 +91,7 @@ describe('Werkbank: mittlere Spalte nur für große Sammlungen (#366)', () => {
   it('Sammlungen behalten die Mitte, Seiten sind zweiteilig', () => {
     for (const b of ['typen', 'sichten', 'benutzer', 'pakete', 'postfaecher', 'papierkorb', 'protokoll']) assert.ok(hatMitte(b), b);
     for (const b of ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung',
-      'speicherplatz', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'darfweg', 'vollexport', 'ansicht', 'webdav', 'stempel']) assert.ok(!hatMitte(b), b);
+      'systemzustand', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'darfweg', 'vollexport', 'ansicht', 'webdav', 'stempel']) assert.ok(!hatMitte(b), b);
     // Jeder Bereich der Leiste ist eingeordnet; neue Bereiche sind ohne Zutun zweiteilig.
     assert.ok(BEREICHE.every((b) => typeof hatMitte(b.pfad) === 'boolean'));
   });
@@ -125,6 +125,18 @@ describe('Werkbank: mittlere Spalte nur für große Sammlungen (#366)', () => {
     // Gespeicherte Ansichten übernehmen die neue Kennung.
     assert.deepEqual(liesAnsicht({ vorlage: 'haushalt', ein: ['datenbank', 'demo'], aus: [] }), { vorlage: 'haushalt', ein: ['anbindung', 'demo'], aus: [] });
     assert.deepEqual(liesEigene({ ein: ['datenbank', 'anbindung'] }), { ein: ['anbindung'] });
+  });
+
+  it('#408: „Speicherplatz“ heißt „Systemzustand“ und steht unter Wartung und Fehlersuche', () => {
+    assert.ok(!BEREICHE.some((b) => b.pfad === 'speicherplatz'));
+    const b = BEREICHE.find((x) => x.pfad === 'systemzustand');
+    assert.equal(b?.gruppe, 'wartung');
+    assert.equal(b?.name, 'Systemzustand');
+    assert.ok(inVorlage('haushalt', 'systemzustand'), 'wie bisher schon im Haushalt');
+    assert.ok(!hatMitte('systemzustand'));
+    assert.equal(werkbankUmleitung('speicherplatz'), '/werkbank/systemzustand');
+    assert.equal(werkbankUmleitung('speicherplatz', 'x'), '/werkbank/systemzustand');
+    assert.deepEqual(liesAnsicht({ vorlage: 'haushalt', ein: [], aus: ['speicherplatz'] }), { vorlage: 'haushalt', ein: [], aus: ['systemzustand'] });
   });
 
   it('Plakette Wartungsmodus: angekündigt, dann an', () => {

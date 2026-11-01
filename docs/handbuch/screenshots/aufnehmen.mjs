@@ -814,8 +814,9 @@ async function main() {
   await geheZu(s, '/werkbank/technik');
   await s.getByRole('heading', { name: 'Installiert', exact: true }).waitFor();
   await bild(s, 'werkbank-technik');
-  await geheZu(s, '/werkbank/speicherplatz');
-  await s.getByRole('heading', { name: 'Schwellen', exact: true }).waitFor();
+  // #408: Systemzustand unter Wartung und Fehlersuche – Schwellen oben, Ordner darunter.
+  await geheZu(s, '/werkbank/systemzustand');
+  await s.getByRole('heading', { name: 'Schwellen für den Speicherplatz' }).waitFor();
   await bild(s, 'werkbank-speicherplatz');
   await geheZu(s, '/werkbank/demo');
   // Mit Dokumenten (#365): Schieberegler, Mischung und Abschätzung sichtbar.
