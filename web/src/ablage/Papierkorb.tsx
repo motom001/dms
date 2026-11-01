@@ -86,6 +86,8 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
   ];
 
   const tabelle = breite >= spalten.length * 110;
+  const leerenKnopf = liste.length + z.dokumente.length > 0
+    ? <button type="button" className="knopf klein gefahr-rand" disabled={laeuft} onClick={() => void leeren()}>{laeuft ? 'Leere …' : 'Papierkorb leeren'}</button> : null;
   return (
     <>
       <div ref={mess} className="breitenmesser" aria-hidden="true" />
@@ -94,8 +96,10 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
           <h1>Papierkorb</h1>
           <p className="leise klein">{werkbank ? 'Was alle Benutzer gelöscht haben. ' : 'Was du gelöscht hast. '}{aufbewahrung(tage)} <Hilfe ort={werkbank ? 'werkbank.papierkorb' : 'ablage.papierkorb'} /></p>
         </div>
-        {liste.length + z.dokumente.length > 0 && <button type="button" className="knopf klein gefahr-rand" disabled={laeuft} onClick={() => void leeren()}>{laeuft ? 'Leere …' : 'Papierkorb leeren'}</button>}
+        {!werkbank && leerenKnopf}
       </div>
+      {/* Werkbank (#366): Aufbewahrung und Leeren gehören zusammen, oben in der Mitte. */}
+      {werkbank && <PapierkorbEinstellungen z={z} leeren={leerenKnopf} />}
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       {meldung && <div className="hinweis schlecht"><p>{meldung}</p></div>}
       <div className="listenrumpf">
@@ -104,7 +108,7 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
         : !liste.length && !z.dokumente.length
           ? <p className="leise leerliste">Der Papierkorb ist leer.</p>
           : !liste.length ? <DokumenteImKorb z={z} werkbank={werkbank} /> : <>
-              <p className="listenzahl leise klein">{liste.length} {liste.length === 1 ? 'Mappe' : 'Mappen'}</p>
+              <p className="listenzahl leise klein">{liste.length} {liste.length === 1 ? 'Mappe' : 'Mappen'}{z.dokumente.length ? ` · ${z.dokumente.length} ${z.dokumente.length === 1 ? 'Dokument' : 'Dokumente'} (unten)` : ''}</p>
               {!tabelle && (
                 <ul className="mappenliste">
                   {liste.map((e) => (
@@ -263,8 +267,8 @@ export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boole
   );
 }
 
-/** Werkbank: Aufbewahrung einstellen. */
-export function PapierkorbEinstellungen({ z }: { z: PapierkorbZustand }) {
+/** Werkbank: Aufbewahrung einstellen und Papierkorb leeren (#366: oben in der Mitte). */
+function PapierkorbEinstellungen({ z, leeren }: { z: PapierkorbZustand; leeren?: ReactNode }) {
   const d = useDaten();
   const [tage, setTage] = useState(String(z.tage ?? ''));
   const [hTage, setHTage] = useState(String(z.historieTage ?? ''));
@@ -277,8 +281,8 @@ export function PapierkorbEinstellungen({ z }: { z: PapierkorbZustand }) {
     aus: z.tage === null, zuruecksetzen: () => { setTage(String(z.tage)); setHTage(String(z.historieTage)); setMeldung(undefined); },
   });
   async function speichern() {
-    const anzahl = z.eintraege?.length ?? 0;
-    if (n === 0 && anzahl && !(await rueckfrage({ titel: 'Papierkorb ausschalten?', text: `Die ${anzahl === 1 ? 'eine Mappe darin wird' : `${anzahl} Mappen darin werden`} sofort endgültig gelöscht.`, ja: 'Ausschalten und leeren', gefahr: true }))) return;
+    const anzahl = (z.eintraege?.length ?? 0) + z.dokumente.length;
+    if (n === 0 && anzahl && !(await rueckfrage({ titel: 'Papierkorb ausschalten?', text: `${anzahl === 1 ? 'Was darin liegt, wird' : `Alle ${anzahl} Einträge darin werden`} sofort endgültig gelöscht.`, ja: 'Ausschalten und leeren', gefahr: true }))) return;
     try {
       const r = await api.papierkorbTage({ tage: n, historieTage: h });
       z.setTage(r.tage); z.setHistorieTage(r.historieTage); melde(); await d.neuLaden();
@@ -286,22 +290,15 @@ export function PapierkorbEinstellungen({ z }: { z: PapierkorbZustand }) {
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   return (
-    <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">Werkbank</p>
-        <h1>Papierkorb</h1>
-        <p className="leise">{aufbewahrung(z.tage)} Jeder Benutzer sieht in der Ablage, was er selbst gelöscht hat, und kann es wiederherstellen oder endgültig löschen. Hier siehst du alles.</p>
-      </div>
-      <form className="blatt" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
-        <h2 className="h3">Aufbewahrung</h2>
+      <form className="blatt" id="aufbewahrung" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
+        <div className="blattkopf zeile-zwischen"><h2 className="h3">Aufbewahrung</h2>{leeren}</div>
         <label className="eigenschaft"><span>Tage <small>0 = kein Papierkorb, Löschen ist sofort endgültig</small></span>
           <input type="number" min={0} max={3650} value={tage} onChange={(ev) => { setTage(ev.target.value); setMeldung(undefined); }} /></label>
-        <p className="leise klein">Einzeln gelöschte Dokumente und das Entfernen der Demo-Daten sind immer sofort endgültig.</p>
+        <p className="leise klein">Gelöschte Mappen und einzeln gelöschte Dokumente kommen in den Papierkorb. Nur das Entfernen der Demo-Daten ist immer sofort endgültig.</p>
         <label className="eigenschaft"><span>Historie endgültig gelöschter Mappen behalten <small>Tage, danach wird ihre Änderungshistorie gelöscht</small></span>
           <input type="number" min={0} max={36500} value={hTage} onChange={(ev) => { setHTage(ev.target.value); setMeldung(undefined); }} /></label>
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         <Speicherleiste ent={ent} gegenstand="Aufbewahrung" ungueltig={!Number.isInteger(n) || n < 0 || !Number.isInteger(h) || h < 0} />
       </form>
-    </div>
   );
 }

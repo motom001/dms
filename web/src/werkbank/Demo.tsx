@@ -16,25 +16,6 @@ function useUebersicht() {
   return u;
 }
 
-export function DemoListe() {
-  const u = useUebersicht();
-  return (
-    <>
-      <div className="listenkopf"><div><h1>Demo-Daten</h1><p className="leise klein">Mappen je Mappentyp, davon Demo-Mappen. <Hilfe ort="werkbank.demo" /></p></div></div>
-      {!u.length
-        ? <p className="leise leerliste">Noch keine Mappentypen.</p>
-        : <ul className="mappenliste">
-            {u.map((t) => (
-              <li key={t.typId}><span className="eintrag werk">
-                <span className="titel">{t.name}</span>
-                <span className="unter">{t.gesamt.toLocaleString('de-DE')} {t.gesamt === 1 ? 'Mappe' : 'Mappen'}{t.demo ? `, davon ${t.demo.toLocaleString('de-DE')} Demo` : ''}</span>
-              </span></li>
-            ))}
-          </ul>}
-    </>
-  );
-}
-
 type Meldung = { art: 'gut' | 'warn' | 'schlecht'; text: string; liste?: string[] };
 
 const ARTNAME: Record<Dokumentart, string> = { brief: 'Brief/Rechnung (1 Seite)', mehrseitig: 'Mehrseitiges PDF', scan: '„Gescanntes“ PDF', bild: 'Bild (JPEG/PNG)', gross: 'Große Datei (20–100 MB)' };
@@ -145,7 +126,7 @@ export function DemoPanel() {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Demo-Daten</h1>
-        <p className="leise">Erzeugt Mappen für die vorhandenen Mappentypen – mit passenden Werten je Feld und Verweisen auf vorhandene Mappen, wahlweise mit Dokumenten. So lässt sich beobachten, wie sich das DMS mit vielen Mappen und Dokumenten verhält. Demo-Mappen sind gekennzeichnet und lassen sich gesammelt wieder entfernen.</p>
+        <p className="leise">Erzeugt Mappen für die vorhandenen Mappentypen – mit passenden Werten je Feld und Verweisen auf vorhandene Mappen, wahlweise mit Dokumenten. So lässt sich beobachten, wie sich das DMS mit vielen Mappen und Dokumenten verhält. Demo-Mappen sind gekennzeichnet und lassen sich gesammelt wieder entfernen. <Hilfe ort="werkbank.demo" /></p>
       </div>
       {meldung && <div className={`hinweis ${meldung.art} stapel`}><p>{meldung.text}</p>{meldung.liste && <ul>{meldung.liste.map((x) => <li key={x}>{x}</li>)}</ul>}</div>}
       {laeuft && auftrag && (
@@ -224,7 +205,23 @@ export function DemoPanel() {
         <div className="knoepfe"><button className="knopf gefahr-rand" disabled={!demo || laeuft} onClick={async () => {
           if (await rueckfrage({ titel: `Alle ${demo.toLocaleString('de-DE')} Demo-Mappen löschen?`, text: 'Echte Mappen bleiben unberührt.', ja: 'Demo-Mappen löschen', gefahr: true })) void starte(() => api.demoEntfernen());
         }}>Alle Demo-Mappen entfernen</button></div>
+        <DemoTabelle u={u} />
       </div>
+    </div>
+  );
+}
+
+/** Mappen je Mappentyp, davon Demo (#366: früher die mittlere Spalte). */
+function DemoTabelle({ u }: { u: Uebersicht }) {
+  if (!u.length) return <p className="leise klein">Noch keine Mappentypen.</p>;
+  const z = (n: number) => n.toLocaleString('de-DE');
+  return (
+    <div className="tabellenrahmen festhoehe">
+      <table className="tabelle">
+        <thead><tr><th>Mappentyp</th><th className="zahlzelle">Mappen</th><th className="zahlzelle">davon Demo</th></tr></thead>
+        <tbody>{u.map((t) => <tr key={t.typId}><td>{t.name}</td><td className="zahlzelle">{z(t.gesamt)}</td><td className="zahlzelle">{t.demo ? z(t.demo) : '–'}</td></tr>)}</tbody>
+        <tfoot><tr><th>Summe</th><th className="zahlzelle">{z(u.reduce((s, t) => s + t.gesamt, 0))}</th><th className="zahlzelle">{z(u.reduce((s, t) => s + t.demo, 0))}</th></tr></tfoot>
+      </table>
     </div>
   );
 }

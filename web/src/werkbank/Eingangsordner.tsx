@@ -27,27 +27,6 @@ export function useEingangsordner(offen: boolean) {
 }
 export type EingangZustand = ReturnType<typeof useEingangsordner>;
 
-export function EingangsordnerListe({ z }: { z: EingangZustand }) {
-  const s = z.stand;
-  return (
-    <>
-      <div className="listenkopf"><div><h1>Eingangsordner</h1><p className="leise klein">Dateien aus dem Ordner werden zu neuer Post. <Hilfe ort="werkbank.eingangsordner" /></p></div></div>
-      {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
-      {s?.vorhanden && (
-        <ul className="mappenliste">
-          {(s.uebernommen ?? []).map((e) => (
-            <li key={`${e.datei}-${e.zeit}`}><span className="eintrag werk">
-              <span className="titel">{e.datei}</span>
-              <span className="unter">{zeit(e.zeit)}{e.mappeId && <> · <Link to={`/ablage/eingang/${e.mappeId}`} className="verweis">Post öffnen</Link></>}</span>
-            </span></li>
-          ))}
-          {!(s.uebernommen ?? []).length && <li className="leise leerliste">Noch nichts übernommen.</li>}
-        </ul>
-      )}
-    </>
-  );
-}
-
 export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
   const s = z.stand;
   const [e, setE] = useState<EingangEinstellung | null>(null);
@@ -55,11 +34,11 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
   const [sendet, setSendet] = useState(false);
   useEffect(() => { if (s?.einstellung && !e) setE(s.einstellung); }, [s, e]);
   const ent = useEntwurf(s?.einstellung ?? null, e, { aus: !e, zuruecksetzen: () => { setE(s?.einstellung ?? null); setMeldung(undefined); } });
-  if (!s) return <p className="leise">Lade …</p>;
+  if (!s) return <p className="leise">{z.fehler ?? 'Lade …'}</p>;
   if (!s.vorhanden || !e) {
     return (
       <div className="einspaltig"><div className="mappenkopf"><p className="ueber">Werkbank</p><h1>Eingangsordner</h1>
-        <p className="leise">Es ist kein Eingangsordner eingebunden. Binde einen Ordner deines NAS als <code>/eingang</code> in den Container ein – siehe Handbuch.</p></div></div>
+        <p className="leise">Es ist kein Eingangsordner eingebunden. Binde einen Ordner deines NAS als <code>/eingang</code> in den Container ein – siehe Handbuch. <Hilfe ort="werkbank.eingangsordner" /></p></div></div>
     );
   }
   async function speichern() {
@@ -74,7 +53,7 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Eingangsordner</h1>
-        <p className="leise">Jede fertige Datei im Ordner <code>{s.pfad}</code> wird eine neue Post (Kanal „Ordner“). Unterordner mit dem Namen eines Benutzers, z. B. <code>eingang/thomas/</code>, tragen ihn bei „Für“ ein.</p>
+        <p className="leise">Jede fertige Datei im Ordner <code>{s.pfad}</code> wird eine neue Post (Kanal „Ordner“). Unterordner mit dem Namen eines Benutzers, z. B. <code>eingang/thomas/</code>, tragen ihn bei „Für“ ein. <Hilfe ort="werkbank.eingangsordner" /></p>
       </div>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       {s.pausiert && <div className="hinweis warn"><p>Ruht gerade: {s.pausiert}.</p></div>}
@@ -109,6 +88,19 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
           <ul>{(s.fehler ?? []).map((f) => <li key={`${f.datei}-${f.zeit}`}><strong>{f.datei}</strong> ({zeit(f.zeit)}): {f.grund}</li>)}</ul>
           <p className="leise klein">Abgelehnte Dateien liegen in <code>fehler/</code>, daneben eine Textdatei mit dem Grund.</p>
         </>}
+      </div>
+      <div className="blatt" id="uebernommen">
+        <h2 className="h3">Zuletzt übernommen</h2>
+        {!(s.uebernommen ?? []).length ? <p className="leise">Noch nichts übernommen.</p> : (
+          <ul className="sitzungsliste festhoehe">
+            {(s.uebernommen ?? []).map((u) => (
+              <li key={`${u.datei}-${u.zeit}`}>
+                <span><strong>{u.datei}</strong> <span className="leise klein">{zeit(u.zeit)}</span></span>
+                {u.mappeId && <Link to={`/ablage/eingang/${u.mappeId}`} className="verweis klein">Post öffnen</Link>}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

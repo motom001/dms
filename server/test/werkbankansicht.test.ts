@@ -2,7 +2,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
-  ansichtAus, BEREICHE, fuerAlle, inVorlage, liesAnsicht, liesEigene, OHNE_EINSTELLUNG, sichtbar,
+  ansichtAus, BEREICHE, fuerAlle, hatMitte, inVorlage, liesAnsicht, liesEigene, OHNE_EINSTELLUNG, sichtbar, wartungsPlakette,
+  werkbankEbene, werkbankUmleitung, werkbankZurueck, einDatentraeger,
 } from '../../shared/src/werkbankansicht';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
@@ -83,5 +84,53 @@ describe('Werkbank-Ansicht: Dienst', () => {
 
   it('lehnt Unbrauchbares ab', async () => {
     await assert.rejects(neu().setzeWerkbankAnsicht(ICH, { installation: 'haushalt' }), (e: unknown) => e instanceof Fachfehler && e.status === 422);
+  });
+});
+
+describe('Werkbank: mittlere Spalte nur für große Sammlungen (#366)', () => {
+  it('Sammlungen behalten die Mitte, Seiten sind zweiteilig', () => {
+    for (const b of ['typen', 'sichten', 'benutzer', 'pakete', 'postfaecher', 'papierkorb', 'protokoll']) assert.ok(hatMitte(b), b);
+    for (const b of ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung',
+      'speicherplatz', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'darfweg', 'vollexport', 'ansicht', 'datenbank', 'webdav']) assert.ok(!hatMitte(b), b);
+    // Jeder Bereich der Leiste ist eingeordnet; neue Bereiche sind ohne Zutun zweiteilig.
+    assert.ok(BEREICHE.every((b) => typeof hatMitte(b.pfad) === 'boolean'));
+  });
+
+  it('am Handy keine leere Zwischenstufe', () => {
+    assert.equal(werkbankEbene('technik'), 'mappe');
+    assert.equal(werkbankZurueck('technik'), '/werkbank');
+    assert.equal(werkbankEbene('typen'), 'liste');
+    assert.equal(werkbankEbene('typen', 'x'), 'mappe');
+    assert.equal(werkbankZurueck('typen'), '/werkbank/typen');
+    // Pakete: ohne Auswahl die Liste (Katalog abrufen, installierte Pakete), mit Installations-Link rechts.
+    assert.equal(werkbankEbene('pakete'), 'liste');
+    assert.equal(werkbankEbene('pakete', undefined, true), 'mappe');
+    assert.equal(werkbankEbene('technik', undefined, true), 'mappe');
+  });
+
+  it('alte Direktlinks führen auf die Seite', () => {
+    assert.equal(werkbankUmleitung('datenbank', '42'), '/werkbank/datenbank?offen=42');
+    assert.equal(werkbankUmleitung('technik', 'irgendwas'), '/werkbank/technik');
+    assert.equal(werkbankUmleitung('datenbank'), null);
+    assert.equal(werkbankUmleitung('typen', 'abc'), null);
+  });
+
+  it('Plakette Wartungsmodus: angekündigt, dann an', () => {
+    const jetzt = Date.parse('2026-11-01T01:25:00Z');
+    assert.equal(wartungsPlakette('aus', null, jetzt), undefined);
+    assert.equal(wartungsPlakette('angekuendigt', '2026-11-01T01:33:00Z', jetzt), 'angekündigt');
+    assert.equal(wartungsPlakette('angekuendigt', '2026-11-01T01:20:00Z', jetzt), 'an', 'Zeitpunkt erreicht');
+    assert.equal(wartungsPlakette('aktiv', '2026-11-01T01:20:00Z', jetzt), 'an');
+  });
+});
+
+describe('Speicherplatz: ein Balken für einen Datenträger (#366)', () => {
+  it('nur wenn alle Ordner gemessen sind und auf demselben Gerät liegen', () => {
+    const o = (geraet: string | null, gesamt: number | null = 100) => ({ geraet, gesamt });
+    assert.ok(einDatentraeger([o('8:1'), o('8:1'), o('8:1')]));
+    assert.ok(!einDatentraeger([o('8:1'), o('8:2'), o('8:1')]));
+    assert.ok(!einDatentraeger([o('8:1'), o('8:1', null)]), 'ein Ordner nicht messbar');
+    assert.ok(!einDatentraeger([o(null), o(null)]), 'Gerät unbekannt');
+    assert.ok(!einDatentraeger([o('8:1')]), 'nur ein Ordner');
   });
 });

@@ -601,7 +601,7 @@ async function main() {
   // Werkbank anpassen (#281) mit der Vorlage Haushalt, danach wieder alles.
   await api('PUT', '/api/werkbank/ansicht', { installation: { vorlage: 'haushalt', ein: [], aus: [] } });
   await geheZu(s, '/werkbank/ansicht');
-  await s.getByRole('heading', { name: 'Werkbank anpassen', level: 1 }).last().waitFor();
+  await s.getByRole('heading', { name: /Werkbank anpassen/, level: 1 }).waitFor();
   await bild(s, 'werkbank-anpassen');
   await api('PUT', '/api/werkbank/ansicht', { installation: { vorlage: 'alles', ein: [], aus: [] } });
   await geheZu(s, '/werkbank/fehlermeldungen');
@@ -657,17 +657,27 @@ async function main() {
   await bild(s, 'werkbank-verschluesselung');
   await geheZu(s, '/werkbank/aufgaben');
   await s.getByRole('heading', { name: 'Tägliche Zusammenfassung' }).waitFor();
+  // #366: Mitte Zusammenfassung und Liste mit Filter, rechts die Mappe der ersten Aufgabe.
+  if (await s.locator('.spalte.liste a.eintrag').count()) await s.locator('.spalte.liste a.eintrag').first().click();
   await bild(s, 'werkbank-aufgaben');
   await geheZu(s, '/werkbank/papierkorb');
   await s.getByRole('heading', { name: 'Aufbewahrung', exact: true }).waitFor();
+  // #366: Aufbewahrung und Liste in der Mitte, rechts die gewählte Mappe.
+  if (await s.locator('.spalte.liste a.eintrag, .spalte.liste tbody tr').count()) {
+    await s.locator('.spalte.liste a.eintrag, .spalte.liste tbody tr').first().click();
+    await s.getByRole('button', { name: 'Wiederherstellen' }).first().waitFor();
+  }
   await bild(s, 'werkbank-papierkorb');
   await geheZu(s, '/werkbank/texterkennung');
   await s.getByRole('heading', { name: 'Werkzeuge', exact: true }).waitFor();
   await s.getByRole('heading', { name: 'Aufträge', exact: true }).waitFor();
   await bild(s, 'werkbank-texterkennung');
+  // Ohne Mitte (#366): lange Zugriffe unter den Einstellungen, „Installiert“ unter „Neuere Versionen“.
   await geheZu(s, '/werkbank/datenbank');
+  await s.getByRole('heading', { name: /Lange Datenbankzugriffe/ }).waitFor();
   await bild(s, 'werkbank-datenbank');
   await geheZu(s, '/werkbank/technik');
+  await s.getByRole('heading', { name: 'Installiert', exact: true }).waitFor();
   await bild(s, 'werkbank-technik');
   await geheZu(s, '/werkbank/speicherplatz');
   await s.getByRole('heading', { name: 'Schwellen', exact: true }).waitFor();

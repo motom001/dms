@@ -76,24 +76,17 @@ export function sicherungsHinweise(z: SicherungsZustand): Array<{ art: 'schlecht
   return h;
 }
 
-export function SicherungListe({ z }: { z: SicherungZustand }) {
-  const s = z.stand;
-  return (
-    <>
-      <div className="listenkopf"><div><h1>Sicherung</h1><p className="leise klein">Datenbank und Dokumente, verschlüsselt, zum selben Zeitpunkt. <Hilfe ort="werkbank.sicherung" /></p></div></div>
-      {s && (
-        <ul className="mappenliste">
-          <li><a className="eintrag werk" href="#jetzt"><span className="titel">Letzte Sicherung</span>
-            <span className="unter">{s.zustand.letzte ? zeit(s.zustand.letzte.ende) : 'noch keine'}</span>
-            {(s.zustand.fehler || s.zustand.zuAlt) && <span className="problem">{s.zustand.fehler ? 'fehlgeschlagen' : 'zu alt'}</span>}</a></li>
-          <li><a className="eintrag werk" href="#liste"><span className="titel">Sicherungen</span><span className="unter">{s.liste.length} · {bytes(s.speicher.sicherungenBytes)}</span></a></li>
-          <li><a className="eintrag werk" href="#zeitplan"><span className="titel">Zeitplan</span><span className="unter">{s.plan.aktiv ? `${s.plan.haeufigkeit === 'taeglich' ? 'täglich' : TAGE[s.plan.wochentag]} ${s.plan.uhrzeit} Uhr` : 'aus'}</span></a></li>
-          <li><a className="eintrag werk" href="#speicher"><span className="titel">Speicherplatz</span><span className="unter">{s.speicher.frei === null ? 'nicht feststellbar' : `${bytes(s.speicher.frei)} frei`}</span>{s.speicher.knapp && <span className="problem">knapp</span>}</a></li>
-          <li><a className="eintrag werk" href="#notfallblatt"><span className="titel">Notfallblatt</span><span className="unter">{s.zustand.notfallblatt.aktuell ? `heruntergeladen ${zeit(s.zustand.notfallblatt.am!)}` : 'fehlt'}</span></a></li>
-        </ul>
-      )}
-    </>
-  );
+/** Stand in einer Zeile (#366: früher die mittlere Spalte). */
+function StandZeile({ s }: { s: SicherungStand }) {
+  const z = s.zustand;
+  const teile: ReactNode[] = [
+    <>Letzte Sicherung {z.letzte ? zeit(z.letzte.ende) : 'noch keine'}{(z.fehler || z.zuAlt) && <span className="fehlertext"> ({z.fehler ? 'fehlgeschlagen' : 'zu alt'})</span>}</>,
+    `${s.liste.length} ${s.liste.length === 1 ? 'Sicherung' : 'Sicherungen'} · ${bytes(s.speicher.sicherungenBytes)}`,
+    s.plan.aktiv ? `nächste ${s.plan.haeufigkeit === 'taeglich' ? 'täglich' : TAGE[s.plan.wochentag]} ${s.plan.uhrzeit} Uhr` : 'Zeitplan aus',
+    <>{s.speicher.frei === null ? 'Platz nicht feststellbar' : `${bytes(s.speicher.frei)} frei`}{s.speicher.knapp && <span className="fehlertext"> (knapp)</span>}</>,
+    z.notfallblatt.aktuell && z.notfallblatt.am ? `Notfallblatt heruntergeladen ${zeit(z.notfallblatt.am)}` : <span className="fehlertext">Notfallblatt fehlt</span>,
+  ];
+  return <p className="klein standzeile">{teile.map((x, i) => <span key={i}>{i > 0 && ' · '}{x}</span>)}</p>;
 }
 
 export function SicherungPanel({ z }: { z: SicherungZustand }) {
@@ -118,7 +111,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Sicherung</h1>
-        <p className="leise">Eine Sicherung enthält die ganze Datenbank und alle Dateien zum selben Zeitpunkt – verschlüsselt mit dem Schlüssel aus <Link to="/werkbank/verschluesselung" className="verweis">Verschlüsselung</Link>. Daneben liegt eine lesbare Datei (.json) mit Version, Umfang und Prüfsumme. Mehr im <a href={handbuch('admin', 'sicherung/')} target="_blank" rel="noreferrer" className="verweis">Administratorhandbuch ↗</a>.</p>
+        <p className="leise">Eine Sicherung enthält die ganze Datenbank und alle Dateien zum selben Zeitpunkt – verschlüsselt mit dem Schlüssel aus <Link to="/werkbank/verschluesselung" className="verweis">Verschlüsselung</Link>. Daneben liegt eine lesbare Datei (.json) mit Version, Umfang und Prüfsumme. Mehr im <a href={handbuch('admin', 'sicherung/')} target="_blank" rel="noreferrer" className="verweis">Administratorhandbuch ↗</a>. <Hilfe ort="werkbank.sicherung" /></p>
       </div>
 
       {!s.zustand.schluessel && <div className="hinweis warn"><p><strong>Ohne Schlüssel keine Sicherung.</strong> Erzeuge ihn zuerst unter Verschlüsselung.</p><Link to="/werkbank/verschluesselung" className="knopf klein">Zur Verschlüsselung</Link></div>}
@@ -126,6 +119,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
 
       <section className="blatt" id="jetzt">
         <h2 className="h3">Jetzt sichern</h2>
+        <StandZeile s={s} />
         {laeuft ? (
           <div className="stapel">
             <p><strong>{lauf!.titel}</strong> – {lauf!.schritt}</p>
@@ -296,7 +290,7 @@ function Probe({ stand, lauf, sicherungen, gesperrt, neuLaden }: { stand: ProbeS
       <div className="knoepfe">
         <button type="button" className="knopf" disabled={!sicherungen || laeuft || gesperrt} onClick={() => void tu(() => api.probeStarten())}>{laeuft ? 'Probe läuft …' : 'Jetzt probeweise wiederherstellen'}</button>
       </div>
-      <Speicherleiste ent={ent} gegenstand="Zeitplan" sendet={sendet} />
+      <Speicherleiste ent={ent} gegenstand="Probe-Zeitplan" sendet={sendet} />
     </form>
   );
 }

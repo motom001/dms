@@ -8,6 +8,8 @@ Auch ohne Eintrag in der Leiste erreichst du ihn über den Knopf **Zum Wartungsm
 
 ![Wartungsmodus in der Werkbank](bilder/werkbank-wartungsmodus.png)
 
+Links in der Leiste steht neben dem Wartungsmodus **angekündigt**, solange er noch nicht wirkt, und **an**, sobald er aktiv ist.
+
 ## Einschalten
 
 1. Optional einen **Text für alle** eintragen, z. B. „Update auf die neue Version“, und das **erwartete Ende**.

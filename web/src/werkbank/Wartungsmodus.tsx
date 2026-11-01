@@ -28,7 +28,7 @@ export function useWartungsmodus(offen: boolean) {
 }
 export type WartungsmodusZustand = ReturnType<typeof useWartungsmodus>;
 
-const STUFE = { aus: 'aus', angekuendigt: 'angekündigt', aktiv: 'aktiv' } as const;
+const STUFE = { aus: 'aus', angekuendigt: 'angekündigt', aktiv: 'an' } as const;
 const geraetKurz = (ua: string) => {
   if (!ua) return 'unbekanntes Gerät';
   const b = /Edg\//.test(ua) ? 'Edge' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : /curl|node|python/i.test(ua) ? 'Programm' : 'Browser';
@@ -42,28 +42,6 @@ const lokal = (iso: string | null) => {
   const p = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 };
-
-export function WartungsmodusListe({ w }: { w: WartungsmodusZustand }) {
-  const s = w.stand;
-  return (
-    <>
-      <div className="listenkopf"><div><h1>Wartungsmodus</h1><p className="leise klein">Vor Updates und Wiederherstellungen: niemand arbeitet gleichzeitig. <Hilfe ort="werkbank.wartungsmodus" /></p></div></div>
-      {s && (
-        <ul className="mappenliste">
-          <li><a className="eintrag werk" href="#stand">
-            <span className="titel">Stand</span>
-            <span className="unter">{s.stufe === 'angekuendigt' && s.sekunden !== null ? `aktiv in ${dauerText(s.sekunden)}` : s.text || '—'}</span>
-            <span><span className={`chip ${s.stufe === 'aus' ? '' : s.stufe === 'aktiv' ? 'schlecht' : 'warn'}`}>{STUFE[s.stufe]}</span></span>
-          </a></li>
-          <li><a className="eintrag werk" href="#sitzungen">
-            <span className="titel">Angemeldet</span>
-            <span className="unter">{s.sitzungen.length === 1 ? 'eine Sitzung' : `${s.sitzungen.length} Sitzungen`}</span>
-          </a></li>
-        </ul>
-      )}
-    </>
-  );
-}
 
 export function WartungsmodusPanel({ w }: { w: WartungsmodusZustand }) {
   const s = w.stand;
@@ -94,7 +72,7 @@ export function WartungsmodusPanel({ w }: { w: WartungsmodusZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Wartungsmodus</h1>
-        <p className="leise">Schalte ihn vor einem Update oder einer Wiederherstellung ein. Erst sehen alle einen Hinweis mit Countdown und können ihre Arbeit speichern; dann werden alle außer dir abgemeldet, die Schnittstelle antwortet mit „503“, und Texterkennung, tägliche Zusammenfassung und das Aufräumen des Papierkorbs pausieren.</p>
+        <p className="leise">Schalte ihn vor einem Update oder einer Wiederherstellung ein. Erst sehen alle einen Hinweis mit Countdown und können ihre Arbeit speichern; dann werden alle außer dir abgemeldet, die Schnittstelle antwortet mit „503“, und Texterkennung, tägliche Zusammenfassung und das Aufräumen des Papierkorbs pausieren. <Hilfe ort="werkbank.wartungsmodus" /></p>
       </div>
 
       <section className="blatt" id="stand">

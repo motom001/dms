@@ -4,6 +4,7 @@ import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { WARTUNG_GEAENDERT } from '../wartung';
+import { einDatentraeger } from '../../../shared/src/werkbankansicht';
 
 /**
  * Werkbank → Speicherplatz (#116): belegt/frei je fester Ordner (#115), Warnschwelle und Grenze.
@@ -13,6 +14,7 @@ import { WARTUNG_GEAENDERT } from '../wartung';
 const GB = 1024 ** 3;
 export const platz = (b: number) => (b < GB ? `${Math.round(b / 1024 ** 2).toLocaleString('de-DE')} MB` : `${(b / GB).toFixed(1).replace('.', ',')} GB`);
 const schwelleText = (s: Schwelle) => `${String(s.wert).replace('.', ',')} ${s.einheit === 'prozent' ? '%' : 'GB'}`;
+const ORDNERNAME: Record<string, string> = { dateien: 'Dateien', geheim: 'Schlüssel', sicherung: 'Sicherungen' };
 const ZUSTAND = { ok: { text: 'ausreichend', art: 'gut' }, warnung: { text: 'knapp', art: 'warn' }, grenze: { text: 'Grenze erreicht', art: 'schlecht' } } as const;
 
 export function useSpeicherplatz(offen: boolean) {
@@ -38,24 +40,18 @@ function datentraeger(o: OrdnerStand[]) {
   return (x: OrdnerStand) => (x.geraet ? erster.get(x.geraet) : undefined);
 }
 
-export function SpeicherplatzListe({ z }: { z: SpeicherplatzZustand }) {
-  const s = z.stand;
+/** Belegt/frei mit Warnschwelle und Grenze. */
+function Balken({ o }: { o: OrdnerStand }) {
+  if (o.gesamt === null || o.frei === null) return <p className="leise klein">nicht messbar (Ordner fehlt oder ist nicht lesbar)</p>;
+  const anteil = o.belegt !== null ? Math.min(100, (o.belegt / o.gesamt) * 100) : 0;
   return (
     <>
-      <div className="listenkopf"><div><h1>Speicherplatz</h1><p className="leise klein">Frei je Ordner, Warnschwelle und Grenze. <Hilfe ort="werkbank.speicherplatz" /></p></div>
-        <button type="button" className="knopf klein" onClick={() => void z.laden()}>Neu messen</button></div>
-      {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
-      {!s ? <p className="leise">Lade …</p> : (
-        <ul className="mappenliste">
-          {s.ordner.map((o) => (
-            <li key={o.art}><a className="eintrag werk" href={`#ordner-${o.art}`}>
-              <span className="titel mono">{o.pfad}</span>
-              <span className="unter">{o.frei === null ? 'nicht messbar' : `${platz(o.frei)} frei`} · {o.text}</span>
-              {o.zustand && o.zustand !== 'ok' && <span className={`problem ${o.zustand === 'grenze' ? '' : 'warn'}`}>{ZUSTAND[o.zustand].text}</span>}
-            </a></li>
-          ))}
-        </ul>
-      )}
+      <div className="platzbalken" role="img" aria-label={`${Math.round(anteil)} Prozent belegt`}>
+        <span className={o.zustand ?? ''} style={{ width: `${anteil}%` }} />
+        {o.warnBytes != null && <i className="marke warn" style={{ left: `${100 - (o.warnBytes / o.gesamt) * 100}%` }} title="Warnschwelle" />}
+        {o.grenzBytes != null && <i className="marke grenze" style={{ left: `${100 - (o.grenzBytes / o.gesamt) * 100}%` }} title="Grenze" />}
+      </div>
+      <p className="leise klein">{platz(o.belegt ?? 0)} belegt · <strong>{platz(o.frei)} frei</strong> von {platz(o.gesamt)}</p>
     </>
   );
 }
@@ -83,6 +79,7 @@ export function SpeicherplatzPanel({ z, nachAenderung }: { z: SpeicherplatzZusta
   const ent = useEntwurf(s?.einstellung ?? null, e, { aus: !s || !e, zuruecksetzen: () => { if (s) setE(s.einstellung); setMeldung(undefined); } });
   if (!s || !e) return <p className="leise">{z.fehler ?? 'Lade …'}</p>;
   const gleicherTraeger = datentraeger(s.ordner);
+  const ein = einDatentraeger(s.ordner);
 
   async function speichern() {
     setLaeuft(true); setMeldung(undefined);
@@ -101,9 +98,9 @@ export function SpeicherplatzPanel({ z, nachAenderung }: { z: SpeicherplatzZusta
   return (
     <div className="einspaltig">
       <div className="mappenkopf">
-        <p className="ueber">Werkbank · Einstellungen</p>
+        <p className="ueber">Werkbank</p>
         <h1>Speicherplatz</h1>
-        <p className="leise">Das DMS misst jede Minute und vor jedem Hochladen, wie viel Platz in seinen Ordnern frei ist. Unter der <strong>Warnschwelle</strong> gibt es einen Hinweis hier und in der Übersicht sowie eine Mail an alle Administratoren. Unter der <strong>Grenze</strong> ist das Hochladen sofort gesperrt, und nach 5 Minuten Vorlauf beginnt der Wartungsmodus („Speicherplatzlimit erreicht“).</p>
+        <p className="leise">Das DMS misst jede Minute und vor jedem Hochladen, wie viel Platz in seinen Ordnern frei ist. Unter der <strong>Warnschwelle</strong> gibt es einen Hinweis hier und in der Übersicht sowie eine Mail an alle Administratoren. Unter der <strong>Grenze</strong> ist das Hochladen sofort gesperrt, und nach 5 Minuten Vorlauf beginnt der Wartungsmodus („Speicherplatzlimit erreicht“). <Hilfe ort="werkbank.speicherplatz" /></p>
       </div>
 
       {s.zustand === 'grenze' && <div className="hinweis schlecht"><p><strong>Speicherplatzlimit erreicht.</strong> Hochladen ist gesperrt. Schaffe Platz – alte <Link to="/werkbank/sicherung" className="verweis">Sicherungen</Link> löschen, den <Link to="/werkbank/papierkorb" className="verweis">Papierkorb</Link> leeren – oder vergrößere den Speicher des NAS. Danach beendest du den <Link to="/werkbank/wartungsmodus" className="verweis">Wartungsmodus</Link> selbst.</p></div>}
@@ -115,33 +112,42 @@ export function SpeicherplatzPanel({ z, nachAenderung }: { z: SpeicherplatzZusta
         </div>
       )}
 
+      {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       <section className="blatt">
         <h2 className="h3">Ordner</h2>
         <p className="leise klein">Die Ordner im Container sind fest; auf welchen Ordner des NAS sie zeigen, bestimmen die Volumes der Compose-Datei. Die Datenbank liegt in ihrem eigenen Container und lässt sich von hier nicht messen – liegt alles auf derselben Platte (üblich auf dem NAS), genügt diese Messung.</p>
-        {s.ordner.map((o) => {
+        {ein ? (
+          <div className="ordnerzeile">
+            <div className="zeile-zwischen">
+              <strong>Ein Datenträger für {s.ordner.map((o) => ORDNERNAME[o.art] ?? o.pfad).join(', ').replace(/, ([^,]*)$/, ' und $1')}</strong>
+              {s.ordner[0].zustand && <span className={`chip ${ZUSTAND[s.ordner[0].zustand].art}`}>{ZUSTAND[s.ordner[0].zustand].text}</span>}
+            </div>
+            <Balken o={s.ordner[0]} />
+            <ul className="stapel klein">
+              {s.ordner.map((o) => (
+                <li key={o.art} id={`ordner-${o.art}`}><span className="mono">{o.pfad}</span> <span className="leise">{o.text}</span>{o.volume === false && <span className="fehlertext"> · kein eigenes Volume – geht beim Neuerstellen des Containers verloren!</span>}</li>
+              ))}
+            </ul>
+            {s.ordner.some((o) => o.art === 'sicherung') && <div className="hinweis info"><p><strong>Die Sicherungen liegen auf derselben Platte wie die Dokumente.</strong> Fällt sie aus, sind beide weg – kopiere den Sicherungsordner auf eine andere Platte oder außer Haus.</p></div>}
+          </div>
+        ) : s.ordner.map((o) => {
           const wie = gleicherTraeger(o);
-          const anteil = o.gesamt && o.belegt !== null ? Math.min(100, (o.belegt / o.gesamt) * 100) : 0;
           return (
             <div key={o.art} id={`ordner-${o.art}`} className="ordnerzeile">
               <div className="zeile-zwischen">
                 <span><span className="mono">{o.pfad}</span> <span className="leise klein">{o.text}</span></span>
                 {o.zustand && <span className={`chip ${ZUSTAND[o.zustand].art}`}>{ZUSTAND[o.zustand].text}</span>}
               </div>
-              {o.gesamt === null || o.frei === null ? <p className="leise klein">nicht messbar (Ordner fehlt oder ist nicht lesbar)</p> : (
-                <>
-                  <div className="platzbalken" role="img" aria-label={`${Math.round(anteil)} Prozent belegt`}>
-                    <span className={o.zustand ?? ''} style={{ width: `${anteil}%` }} />
-                    {o.warnBytes != null && <i className="marke warn" style={{ left: `${100 - (o.warnBytes / o.gesamt) * 100}%` }} title="Warnschwelle" />}
-                    {o.grenzBytes != null && <i className="marke grenze" style={{ left: `${100 - (o.grenzBytes / o.gesamt) * 100}%` }} title="Grenze" />}
-                  </div>
-                  <p className="leise klein">{platz(o.belegt ?? 0)} belegt · <strong>{platz(o.frei)} frei</strong> von {platz(o.gesamt)}{wie && wie.art !== o.art ? ` · gleicher Datenträger wie ${wie.pfad}` : ''}{o.volume === false ? ' · kein eigenes Volume – geht beim Neuerstellen des Containers verloren!' : ''}</p>
-                </>
-              )}
+              <Balken o={o} />
+              {o.gesamt !== null && o.frei !== null && <p className="leise klein">{wie && wie.art !== o.art ? `gleicher Datenträger wie ${wie.pfad}` : ''}{o.volume === false ? `${wie && wie.art !== o.art ? ' · ' : ''}kein eigenes Volume – geht beim Neuerstellen des Containers verloren!` : ''}</p>}
             </div>
           );
         })}
         {s.vorschau && s.vorschau.anzahl > 0 && <p className="leise klein">Davon Vorschaubilder: {s.vorschau.anzahl.toLocaleString('de-DE')} mit {platz(s.vorschau.bytes)}. Sie werden nicht gesichert und entstehen bei Bedarf neu.</p>}
-        <p className="leise klein">Gemessen {new Date(s.gemessen).toLocaleTimeString('de-DE', { timeStyle: 'short' })} Uhr.</p>
+        <div className="zeile-zwischen">
+          <p className="leise klein">Gemessen {new Date(s.gemessen).toLocaleTimeString('de-DE', { timeStyle: 'short' })} Uhr.</p>
+          <button type="button" className="knopf klein" onClick={() => void z.laden()}>Neu messen</button>
+        </div>
       </section>
 
       <form className="blatt" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>

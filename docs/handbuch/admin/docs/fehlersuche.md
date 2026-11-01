@@ -44,6 +44,8 @@ docker logs <app-container>
 
 **Werkbank → Datenbank** zeigt **lange Datenbankzugriffe** – Zugriffe, die länger als eine Schwelle gedauert haben (Standard 500 ms, aufbewahrt 30 Tage; beides einstellbar) – und was **gerade** in der Datenbank läuft.
 
+Die Liste steht im Abschnitt **Einstellungen** unter *Lang ab* und *Aufbewahren*, die neuesten oben; sie zeigt etwa zehn Einträge, darin scrollst du. Ein Klick auf einen Eintrag klappt ihn auf: Abfrage, Aufrufer (Anfrage und Benutzer), Dauer und Zeit. Einzelheiten zur selben Zeit stehen im [Protokoll](#protokoll) (Modul *datenbank*).
+
 ![Datenbank](bilder/werkbank-datenbank.png)
 
 ## Zeitmessung (Entwicklermodus)
@@ -52,7 +54,7 @@ Wirkt eine Seite langsam, schalte im **Profil** den **Entwicklermodus** ein. Dan
 
 ## Technik
 
-**Werkbank → Technik** zeigt, was installiert ist: Version und Stand des DMS, Node.js, PostgreSQL, Betriebssystem und Bibliotheken.
+**Werkbank → Technik** zeigt im Abschnitt **Installiert** (unter *Neuere Versionen*), was installiert ist: Version und Stand des DMS, Laufzeit (Node.js, Betriebssystem), Datenbank, Bibliotheken und Oberfläche.
 
 ![Technik und Versionen](bilder/werkbank-technik.png)
 

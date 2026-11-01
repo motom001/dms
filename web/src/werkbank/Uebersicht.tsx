@@ -165,7 +165,7 @@ export function WerkbankNavigation({ bereich, eintraege, zeigen = () => true, be
       <Link key={e.pfad} to={e.pfad === 'uebersicht' ? '/werkbank' : `/werkbank/${e.pfad}`} className={`sicht ${bereich === e.pfad ? 'an' : ''} ${aus ? 'ausgeblendet' : ''}`}
         title={aus ? (e.warn ? 'Ausgeblendet – steht hier wegen eines Hinweises' : 'Ausgeblendet') : undefined}>
         <span className="nm">{e.name}</span>
-        {e.warn ? <span className="zaehler" title={e.warnTitel}>{e.warn}</span> : e.zahl ? <span className="zahl">{e.zahl}</span> : null}
+        {e.warn ? <span className="zaehler" title={e.warnTitel} aria-label={e.warnTitel ? `${e.warn} – ${e.warnTitel}` : undefined}>{e.warn}</span> : e.zahl ? <span className="zahl">{e.zahl}</span> : null}
       </Link>
     );
   };

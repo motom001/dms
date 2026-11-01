@@ -33,10 +33,12 @@ export function bereicheZuruecksetzen(benutzer: string) {
   dispatchEvent(new Event(RESET));
 }
 
-export function Dreiteilung({ ort, ebene, offen, children }: {
+export function Dreiteilung({ ort, ebene, offen, mitte = true, children }: {
   ort: Ort; ebene: string;
   /** Was rechts geöffnet ist; wechselt es, wird ein eingeklappter rechter Bereich wieder gezeigt. */
   offen?: string;
+  /** Ohne Mitte (#366): links die Bereiche, rechts die ganze Seite – ohne rechten Griff. */
+  mitte?: boolean;
   children: [ReactNode, ReactNode, ReactNode];
 }) {
   const { ich } = useKonto();
@@ -73,13 +75,14 @@ export function Dreiteilung({ ort, ebene, offen, children }: {
   const gesamt = rahmen.current?.clientWidth ?? innerWidth;
   const l = s.linksZu ? 0 : Math.min(MAX_L, Math.max(MIN_L, s.l));
   const m = Math.max(MIN_M, Math.min(s.m, gesamt - l - MIN_RECHTS));
-  const spalten = s.rechtsZu ? `${l}px minmax(0, 1fr) 0` : `${l}px ${m}px minmax(0, 1fr)`;
+  const rechtsZu = s.rechtsZu && mitte;
+  const spalten = !mitte ? `${l}px minmax(0, 1fr)` : rechtsZu ? `${l}px minmax(0, 1fr) 0` : `${l}px ${m}px minmax(0, 1fr)`;
   const style = breit ? ({ gridTemplateColumns: spalten } as CSSProperties) : undefined;
 
   return (
-    <div ref={rahmen} className={`drei ${s.linksZu ? 'links-zu' : ''} ${s.rechtsZu ? 'rechts-zu' : ''}`} data-ebene={ebene} style={style}>
+    <div ref={rahmen} className={`drei ${s.linksZu ? 'links-zu' : ''} ${rechtsZu ? 'rechts-zu' : ''} ${mitte ? '' : 'ohne-mitte'}`} data-ebene={ebene} style={style}>
       {children[0]}
-      {children[1]}
+      {mitte && children[1]}
       {children[2]}
       {breit && <>
         <Griff seite="links" x={l} zu={s.linksZu} wert={l}
@@ -88,12 +91,12 @@ export function Dreiteilung({ ort, ebene, offen, children }: {
           start={() => (s.linksZu ? MIN_L : l)}
           umschalten={() => merke({ ...s, linksZu: !s.linksZu })}
           zuruecksetzen={() => merke({ ...s, linksZu: false, l: standard().l })} />
-        <Griff seite="rechts" x={s.rechtsZu ? gesamt : l + m} zu={s.rechtsZu} wert={m}
+        {mitte && <Griff seite="rechts" x={s.rechtsZu ? gesamt : l + m} zu={s.rechtsZu} wert={m}
           titel={s.rechtsZu ? 'Mappe einblenden' : 'Mappe ausblenden (ziehen ändert die Breite der Liste)'}
           ziehe={(dx, start) => merke({ ...s, rechtsZu: false, m: Math.max(MIN_M, Math.min(start + dx, gesamt - l - MIN_RECHTS)) })}
           start={() => (s.rechtsZu ? gesamt - l - MIN_RECHTS : m)}
           umschalten={() => merke({ ...s, rechtsZu: !s.rechtsZu })}
-          zuruecksetzen={() => merke({ ...s, rechtsZu: false, m: standard().m })} />
+          zuruecksetzen={() => merke({ ...s, rechtsZu: false, m: standard().m })} />}
       </>}
     </div>
   );

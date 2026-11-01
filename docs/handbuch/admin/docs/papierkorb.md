@@ -3,13 +3,13 @@
 Gelöschte Mappen kommen in den Papierkorb – samt Dokumenten und Verweisen. Einzeln gelöschte **Dokumente** auch, mit allen Versionen und dem Volltext. Nach der eingestellten Aufbewahrung löscht das DMS sie endgültig.
 
 - In der **Ablage** sieht jeder Benutzer unter *Papierkorb* nur, was **er selbst** gelöscht hat, und kann es wiederherstellen oder endgültig löschen. Der Eintrag steht oben bei den festen Einträgen unter *Favoriten* – aber nur, solange der Papierkorb eingeschaltet ist oder noch etwas darin liegt.
-- Unter **Werkbank → Papierkorb** siehst du als Administrator alles, mit „gelöscht von“, und kannst jede Mappe wiederherstellen oder endgültig löschen.
+- Unter **Werkbank → Papierkorb** siehst du als Administrator alles, mit „gelöscht von“: in der Mitte oben die **Aufbewahrung** mit **Papierkorb leeren**, darunter die gelöschten Mappen und Dokumente. Wählst du eine Mappe, steht sie rechts – dort stellst du sie wieder her oder löschst sie endgültig.
 
 ![Werkbank → Papierkorb](bilder/werkbank-papierkorb.png)
 
 ## Aufbewahrung
 
-Rechts unter **Aufbewahrung** stellst du ein, wie viele Tage gelöschte Mappen bleiben (Standard: 30). Das DMS räumt stündlich auf.
+Oben in der Mitte unter **Aufbewahrung** stellst du ein, wie viele Tage gelöschte Mappen und Dokumente bleiben (Standard: 30). Daneben leert **Papierkorb leeren** alles auf einmal. Sofort endgültig ist nur das Entfernen der [Demo-Daten](demo.md). Das DMS räumt stündlich auf.
 
 **0 Tage schaltet den Papierkorb aus:** Löschen ist dann sofort endgültig, wie vor Version 0.11. Was gerade im Papierkorb liegt, wird beim Speichern endgültig gelöscht – die Werkbank fragt vorher nach.
 

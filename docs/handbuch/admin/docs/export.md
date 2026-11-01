@@ -54,7 +54,7 @@ dms-export-2026-10-31-14-05-00/
 
 ## Passwörter
 
-Passwortfelder stehen nie in den Daten – nur „gesetzt“. Wählst du **Passwortfelder im Klartext** und bestätigst ausdrücklich, kommt `passwoerter.csv` dazu, im CSV-Format von **Bitwarden** (lässt sich auch in KeePassXC importieren). Das steht im Protokoll. Importiere die Datei und lösche sie danach. Schlüssel, Zugangsdaten (Datenbank, Mail, Postfächer), API-Schlüssel und Sitzungen sind nie dabei.
+Passwortfelder stehen nie in den Daten – nur „gesetzt“. Wählst du **Passwortfelder im Klartext** und bestätigst ausdrücklich, kommt `passwoerter.csv` dazu, im CSV-Format von **Bitwarden** (lässt sich auch in KeePassXC importieren). Das steht im Protokoll. Importiere die Datei und lösche sie danach – unter **Vorhandene Exporte** ist ein solcher Export rot markiert („Enthält Passwörter im Klartext“), weil er unverschlüsselt im Sicherungsordner liegt. Schlüssel, Zugangsdaten (Datenbank, Mail, Postfächer), API-Schlüssel und Sitzungen sind nie dabei.
 
 ## Kontakte als vCard
 

@@ -20,26 +20,6 @@ export function useAnmeldeschutz(offen: boolean) {
 }
 export type AnmeldeschutzZustand = ReturnType<typeof useAnmeldeschutz>;
 
-export function AnmeldeschutzListe({ z }: { z: AnmeldeschutzZustand }) {
-  const s = z.stand;
-  return (
-    <>
-      <div className="listenkopf"><div><h1>Anmeldeschutz</h1><p className="leise klein">Gesperrte IP-Adressen. <Hilfe ort="werkbank.anmeldeschutz" /></p></div></div>
-      {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
-      {!s ? <p className="leise">Lade …</p> : !s.gesperrt.length ? <p className="leise leerliste">Gerade ist keine Adresse gesperrt.</p> : (
-        <ul className="mappenliste">
-          {s.gesperrt.map((g) => (
-            <li key={g.ip}><span className="eintrag werk">
-              <span className="titel mono">{g.ip}</span>
-              <span className="unter">seit {zeit(g.seit)} · {g.bis ? `bis ${zeit(g.bis)}` : 'bis entsperrt'}</span>
-            </span></li>
-          ))}
-        </ul>
-      )}
-    </>
-  );
-}
-
 export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
   const s = z.stand;
   const [e, setE] = useState<SperrFormular | null>(null);
@@ -48,13 +28,13 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
   useEffect(() => { if (s && !e) setE(sperrFormular(s.einstellung)); }, [s, e]);
   const gespeichert = s ? sperrFormular(s.einstellung) : null;
   const ent = useEntwurf(gespeichert, e, { aus: !e, zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); } });
-  if (!s || !e) return <p className="leise">Lade …</p>;
+  if (!s || !e) return <p className="leise">{z.fehler ?? 'Lade …'}</p>;
   async function speichern() {
     setSendet(true);
     try { const n = await api.anmeldeschutzSetzen({ ...e!, ausnahmen: e!.ausnahmen.split(/[\s,;]+/).filter(Boolean) }); z.setStand(n); setE(sperrFormular(n.einstellung)); setMeldung({ art: 'gut', text: 'Gespeichert.' }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   async function entsperren(ip: string) {
-    try { z.setStand(await api.entsperren(ip)); setMeldung({ art: 'gut', text: `${ip} entsperrt.` }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    try { z.setStand(await api.entsperren(ip)); setMeldung({ art: 'gut', text: `${ip} freigegeben.` }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   const zahl = (wert: number, f: (n: number) => void, min: number, id: string) => <input id={id} type="number" min={min} value={wert} onChange={(x) => f(Number(x.target.value))} />;
   return (
@@ -62,20 +42,9 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Anmeldeschutz</h1>
-        <p className="leise">Nach zu vielen falschen Passwörtern sperrt das DMS die Anmeldung – je E-Mail-Adresse und IP und zusätzlich je IP über alle Adressen. Sperren überstehen einen Neustart. Deine Adresse gerade: <code>{s.deineIp}</code></p>
+        <p className="leise">Nach zu vielen falschen Passwörtern sperrt das DMS die Anmeldung – je E-Mail-Adresse und IP und zusätzlich je IP über alle Adressen. Sperren überstehen einen Neustart. Deine Adresse gerade: <code>{s.deineIp}</code> <Hilfe ort="werkbank.anmeldeschutz" /></p>
       </div>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
-      {s.gesperrt.length > 0 && (
-        <div className="blatt">
-          <h2 className="h3">Gesperrte Adressen</h2>
-          <ul className="stapel">
-            {s.gesperrt.map((g) => (
-              <li key={g.ip}><strong className="mono">{g.ip}</strong> – {g.grund}; seit {zeit(g.seit)}, {g.bis ? `bis ${zeit(g.bis)}` : 'bis entsperrt'}{' '}
-                <button type="button" className="knopf klein" onClick={() => void entsperren(g.ip)}>Entsperren</button></li>
-            ))}
-          </ul>
-        </div>
-      )}
       <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <h2 className="h3">Je E-Mail-Adresse und IP</h2>
         <div className="raster">
@@ -99,6 +68,20 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
       </form>
       <ZweifaktorPflichtBlatt />
       <AnbieterBlatt />
+      {/* #366: früher die mittlere Spalte; ganz unten, mit fester Höhe – bei Dauerangriffen kommen viele zusammen. */}
+      <div className="blatt" id="gesperrt">
+        <h2 className="h3">Gesperrte Adressen{s.gesperrt.length > 0 && <> <span className="chip">{s.gesperrt.length}</span></>}</h2>
+        {!s.gesperrt.length ? <p className="leise">Gerade ist keine Adresse gesperrt.</p> : (
+          <ul className="sitzungsliste festhoehe">
+            {s.gesperrt.map((g) => (
+              <li key={g.ip}>
+                <span><strong className="mono">{g.ip}</strong> <span className="leise klein">– {g.grund}; seit {zeit(g.seit)}, {g.bis ? `bis ${zeit(g.bis)}` : 'bis entsperrt'}</span></span>
+                <button type="button" className="knopf klein" onClick={() => void entsperren(g.ip)}>Freigeben</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

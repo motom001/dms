@@ -24,16 +24,18 @@ Unter **Werkbank → Texterkennung**:
 | **Gleichzeitige Aufträge** | 1–4 (Standard 1). Mehr ist schneller, braucht aber mehr Prozessor und Speicher – auf einem NAS reicht meist einer. |
 | **Höchstens Seiten** | je Dokument (Standard 50); weitere Seiten werden nicht gelesen. |
 | **Größere Dateien auslassen** | ab dieser Größe in MB (Standard 50). |
-| **Sprachen** | z. B. `deu+eng`. |
+| **Sprachen** | z. B. `deu+eng`. Ist eine eingestellte Sprache nicht installiert, steht das am Feld; die Texterkennung überspringt sie. |
 | **Je Dateityp** | welches Verfahren – oder *keine Texterkennung*, um einen Dateityp auszuschließen. Externe Dienste kommen später dazu. |
 
 Ob ein Dokumentenregister überhaupt einen Volltext erzeugt, stellst du am [Mappentyp](mappentypen.md#register) ein (*Volltext erzeugen*, Standard: an).
 
 Darunter zeigt die Seite, welche Werkzeuge installiert sind, und die **Warteschlange**: wie viele Dokumente warten, gerade laufen, fertig sind, einen Fehler hatten oder ausgelassen wurden.
 
+Steht die Warteschlange, sagt ein Hinweis oben auf der Seite und bei *Volltext nachholen* warum: **ausgeschaltet** (mit **Einschalten**) oder **pausiert, solange der Wartungsmodus an ist** (mit **Wartungsmodus beenden**). Ein nur angekündigter Wartungsmodus hält die Texterkennung nicht an.
+
 ## Aufträge
 
-Unter **Aufträge** siehst du die Dokumente je Stand (*Fehler*, *wartet*, *läuft*, *ausgelassen*, *fertig*) – mit Mappe (als Link), Größe, Zeitpunkt und dem **Grund** bei Fehlern oder ausgelassenen Dokumenten.
+Unter **Aufträge** siehst du in einer Liste mit fester Höhe die Dokumente je Stand (*Fehler*, *wartet*, *läuft*, *ausgelassen*, *fertig*) – mit Mappe (als Link), Größe, Zeitpunkt und dem **Grund** bei Fehlern oder ausgelassenen Dokumenten.
 
 - Dokumente auswählen und **Neu starten**: Sie kommen wieder in die Warteschlange.
 - Wartende **aus der Warteschlange nehmen** bzw. laufende **abbrechen**: Sie gelten dann als *ausgelassen* („Vom Administrator abgebrochen“); ein laufender Vorgang (tesseract, pdftoppm) wird beendet.
