@@ -3606,6 +3606,152 @@
         }
       }
     },
+    "/dokumente/{id}/archivnummer": {
+      "put": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "Archivnummer setzen",
+        "description": "Archivnummer des Papieroriginals (#345), eindeutig je Haushalt (ohne Groß-/Kleinschreibung); ein vorangestelltes „DMS-ASN:“ aus dem Barcode wird entfernt, leer entfernt die Nummer. 409, wenn ein anderes Dokument sie schon hat. Braucht Bearbeiten an der Mappe.",
+        "operationId": "putDokumenteMitidArchivnummer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Archivnummer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dokument"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/archivnummern/{nr}": {
+      "get": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "Dokument zu einer Archivnummer",
+        "description": "Sucht das Dokument mit dieser Archivnummer (#345, auch mit „DMS-ASN:“ davor); 404, wenn es keins gibt oder die Mappe nicht lesbar ist.",
+        "operationId": "getArchivnummernMitnr",
+        "parameters": [
+          {
+            "name": "nr",
+            "in": "path",
+            "required": true,
+            "description": "Archivnummer, z. B. A-000123",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchivnummerTreffer"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/dokumente/{id}": {
       "delete": {
         "tags": [
@@ -4714,6 +4860,11 @@
             ],
             "description": "Woher die aktuelle Version kam"
           },
+          "archivnummer": {
+            "type": "string",
+            "nullable": true,
+            "description": "Archivnummer des Papieroriginals (#345)"
+          },
           "aeltere": {
             "type": "integer",
             "description": "Anzahl älterer Versionen"
@@ -5696,6 +5847,36 @@
           },
           "anhaenge": {
             "type": "integer"
+          }
+        }
+      },
+      "Archivnummer": {
+        "type": "object",
+        "properties": {
+          "archivnummer": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 40,
+            "description": "leer oder null entfernt die Nummer"
+          }
+        }
+      },
+      "ArchivnummerTreffer": {
+        "type": "object",
+        "properties": {
+          "dokument": {
+            "$ref": "#/components/schemas/Dokument"
+          },
+          "mappeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "typId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titel": {
+            "type": "string"
           }
         }
       },
