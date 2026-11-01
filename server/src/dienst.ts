@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_AUSWAHL, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
@@ -66,6 +67,9 @@ export const NICHT_SICHTBAR = 'nicht sichtbare Mappe';
 /** Obergrenze für geschriebenen Volltext (Zeichen). */
 export const VOLLTEXT_MAX = 5_000_000;
 /** Auswahlfilter (#172) zählen nichts – nur Bedingungen auf Felder. */
+/** Laufende Transaktion je Aufruf (#404): Repo der Transaktion und was erst nach dem Speichern geschehen soll. */
+const transaktionen = new AsyncLocalStorage<{ dienst: object; repo: Repo; nachher: Array<() => void> }>();
+
 const KEINE_ZAEHLUNG = { dokumente: () => 0, verknuepfungen: () => 0 };
 const VERBOTEN: Record<Recht, string> = {
   C: 'Mappen dieses Typs darfst du nicht anlegen.',
@@ -344,10 +348,35 @@ export class Dienst {
   private einstellungen?: Einstellungen;
   private konten?: KontenHaken;
 
-  constructor(private repo: Repo, private dateien: Dateispeicher, opt: DienstOptionen = {}) {
+  constructor(private grundRepo: Repo, private dateien: Dateispeicher, opt: DienstOptionen = {}) {
     this.tresor = opt.tresor;
     this.einstellungen = opt.einstellungen;
     this.tresor?.registriere(() => this.unlesbarePasswoerter());
+  }
+
+  /** Das Repo – innerhalb von `inTransaktion` das der Transaktion. */
+  private get repo(): Repo {
+    const t = transaktionen.getStore();
+    return t?.dienst === this ? t.repo : this.grundRepo;
+  }
+
+  /**
+   * Änderungen samt Ereignissen ganz oder gar nicht (#404). Verschachtelt läuft alles in der äußeren
+   * Transaktion. Nur Datenbank-Arbeit hineinlegen: Dateien schreiben vorher, Anstöße (Vorschau,
+   * Texterkennung, Läufer) mit `danach`.
+   */
+  private async inTransaktion<T>(f: () => Promise<T>): Promise<T> {
+    if (transaktionen.getStore()?.dienst === this) return f();
+    const nachher: Array<() => void> = [];
+    const erg = await this.grundRepo.transaktion((repo) => transaktionen.run({ dienst: this, repo, nachher }, f));
+    for (const n of nachher) n();
+    return erg;
+  }
+
+  /** Nach dem Speichern (bzw. sofort ohne Transaktion); bei Zurückrollen nie. */
+  private danach(f: () => void) {
+    const t = transaktionen.getStore();
+    if (t?.dienst === this) t.nachher.push(f); else f();
   }
 
   /** Schlüssel wechseln (#47): alle Passwortfelder, der Papierkorb und die Einstellungen in einer Transaktion. */
@@ -2084,18 +2113,21 @@ export class Dienst {
   paketKonten = new Map<string, string>();
 
   /**
-   * Ereignis für alle Pakete mit Code, die es abonniert haben (#338). Nicht blockierend: Fehler hier
-   * dürfen die eigentliche Änderung nie verhindern, sie landen nur im Protokoll.
+   * Ereignis für alle Pakete mit Code, die es abonniert haben (#338). In einer Transaktion (#404) gehört
+   * es zur Änderung: scheitert es, wird beides nicht gespeichert. Sonst nicht blockierend – Fehler landen
+   * nur im Protokoll. `von`: wer es ausgelöst hat – ein Paket bekommt seine eigenen Änderungen nicht
+   * gemeldet (sonst Schleifen).
    */
-  /** von: wer es ausgelöst hat – ein Paket bekommt seine eigenen Änderungen nicht gemeldet (sonst Schleifen). */
   async melde(art: EreignisArt, daten: Record<string, unknown>, nurPaket?: string, von?: string | null): Promise<void> {
+    const inTx = transaktionen.getStore()?.dienst === this;
     try {
       const selbst = von ? this.paketKonten.get(von) : undefined;
       const pakete = (await this.repo.listePakete()).filter((p) => p.laeufer?.ereignisse.includes(art) && (!nurPaket || p.id === nurPaket) && p.id !== selbst);
       if (!pakete.length) return;
       await this.repo.legeEreignisseAn(pakete.map((p) => ({ id: randomUUID(), paketId: p.id, art, daten })));
-      this.ereignisWecker?.();
+      this.danach(() => this.ereignisWecker?.());
     } catch (e) {
+      if (inTx) throw e;
       protokoll.modul('werkbank').error('Ereignis für Pakete nicht gespeichert', { art, fehler: (e as Error).message });
     }
   }
@@ -2941,13 +2973,17 @@ export class Dienst {
     await this.pruefeVerweisziele(z, typ, werte, {});
     await this.pruefeWerte(typ, werte);
     // Vorgegebene Id (#196): Eingangskanäle merken sie sich vorher und erkennen nach einem Absturz, dass es die Post schon gibt.
-    const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), ich.id);
-    await this.notiere(m.id, ich.id, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, werte), ...(ich.id ? {} : { system: ich.name }) });
-    if (herkunft) await this.notiere(m.id, null, 'uebernommen', { system: ich.name, ...herkunft });
-    const titel = (await this.aktualisiereTitel([m.id])).get(m.id);
-    await this.postAufgaben(m.id, ich.id);
+    // Post samt Historie, Aufgabe und Ereignis in einer Transaktion (#404).
+    const { m, titel } = await this.inTransaktion(async () => {
+      const m = await this.repo.legeMappeAn(id, typ.id, werte, verweiseVon(typ, werte), ich.id);
+      await this.notiere(m.id, ich.id, 'angelegt', { aenderungen: await this.aenderungen(typ, {}, werte), ...(ich.id ? {} : { system: ich.name }) });
+      if (herkunft) await this.notiere(m.id, null, 'uebernommen', { system: ich.name, ...herkunft });
+      const titel = (await this.aktualisiereTitel([m.id])).get(m.id);
+      await this.postAufgaben(m.id, ich.id);
+      await this.melde('post.angelegt', { mappe: m.id, kanal: werte.kanal }, undefined, ich.id);
+      return { m, titel };
+    });
     protokoll.modul('ablage').info('Post angelegt', { mappe: m.id, kanal: werte.kanal });
-    await this.melde('post.angelegt', { mappe: m.id, kanal: werte.kanal }, undefined, ich.id);
     return { ...m, titel };
   }
 
@@ -3502,21 +3538,25 @@ export class Dienst {
     const angegeben = /^[\w.+-]+\/[\w.+-]+$/.test(e.typ ?? '') ? e.typ! : 'application/octet-stream';
     const gleicherInhalt = await this.repo.dokumenteMitSha(sha256);
     await this.dateien.schreibe(sha256, inhalt);
-    await this.notiere(mappeId, benutzerId, 'dokument_hochgeladen', { dokument: name, groesse: inhalt.length, mime: erkannt ?? angegeben, register: reg.name });
-    await this.beruehre(mappeId, typ, benutzerId);
-    const dokument = await this.repo.legeDokumentAn({
-      id: randomUUID(), mappeId, registerKey: reg.key, name, mime: erkannt ?? angegeben,
-      groesse: inhalt.length, sha256, anzeigbar: !!erkannt, erstellt: new Date().toISOString(), erstelltVon: benutzerId, herkunft: e.herkunft ?? 'hochgeladen',
+    // Dokument, Historie und Ereignis in einer Transaktion (#404); die Datei liegt schon (bleibt sie übrig, räumt die Wartung auf).
+    const neu = await this.inTransaktion(async () => {
+      await this.notiere(mappeId, benutzerId, 'dokument_hochgeladen', { dokument: name, groesse: inhalt.length, mime: erkannt ?? angegeben, register: reg.name });
+      await this.beruehre(mappeId, typ, benutzerId);
+      const dokument = await this.repo.legeDokumentAn({
+        id: randomUUID(), mappeId, registerKey: reg.key, name, mime: erkannt ?? angegeben,
+        groesse: inhalt.length, sha256, anzeigbar: !!erkannt, erstellt: new Date().toISOString(), erstelltVon: benutzerId, herkunft: e.herkunft ?? 'hochgeladen',
+      });
+      this.danach(() => this.vorschau?.einreihen([dokument]));
+      // Volltext (#45): neues Dokument in die Warteschlange, wenn das Register das will.
+      let neu = dokument;
+      if (Dienst.volltextAn(typ, reg.key)) {
+        await this.repo.ocrEinreihen([dokument.id]);
+        neu = (await this.repo.holeDokument(dokument.id)) ?? dokument;
+        this.danach(() => this.ocr?.anstossen());
+      }
+      await this.melde('dokument.hochgeladen', { dokument: dokument.id, mappe: mappeId, name, mime: dokument.mime, groesse: inhalt.length, volltextGeplant: neu.ocr?.stand === 'wartet' }, undefined, benutzerId);
+      return neu;
     });
-    this.vorschau?.einreihen([dokument]);
-    // Volltext (#45): neues Dokument in die Warteschlange, wenn das Register das will.
-    let neu = dokument;
-    if (Dienst.volltextAn(typ, reg.key)) {
-      await this.repo.ocrEinreihen([dokument.id]);
-      neu = (await this.repo.holeDokument(dokument.id)) ?? dokument;
-      this.ocr?.anstossen();
-    }
-    await this.melde('dokument.hochgeladen', { dokument: dokument.id, mappe: mappeId, name, mime: dokument.mime, groesse: inhalt.length, volltextGeplant: neu.ocr?.stand === 'wartet' }, undefined, benutzerId);
     const bezuege = await this.repo.bezuege(gleicherInhalt.map((d) => d.mappeId));
     return { dokument: neu, gleicherInhalt: gleicherInhalt.map((d) => ({ mappeId: d.mappeId, name: d.name, ...bezuege.get(d.mappeId) })) };
   }
@@ -3767,13 +3807,16 @@ export class Dienst {
     const posten: Mappe[] = [];
     const dokumente: Dokument[] = [];
     for (const [i, b] of teileBuf.entries()) {
-      const neu = await this.legePostAn({
-        betreff: `${betreff} (Teil ${i + 1})`, datum: post.werte.datum, absender: post.werte.absender ?? '', kanal: auswahlText(post.werte.kanal),
-        fuer: alsListe(post.werte.fuer)[0] ?? null,
-      }, { id: von, name: '' }, z);
-      await this.notiere(neu.id, von, 'post_geteilt', { text: `Teil ${i + 1} von ${teileBuf.length} aus „${betreff}“`, post: post.id, postTyp: typ.id });
-      dokumente.push((await this.ladeHoch(neu.id, { register: reg.key, name: teilName(d.name, i + 1), typ: 'application/pdf', herkunft: 'bearbeitet' }, b, von)).dokument);
-      posten.push((await this.repo.holeMappe(neu.id))!);
+      // Je Teil: neue Post mit ihrem Dokument und beiden Ereignissen (post.angelegt, dokument.hochgeladen) ganz oder gar nicht (#404).
+      await this.inTransaktion(async () => {
+        const neu = await this.legePostAn({
+          betreff: `${betreff} (Teil ${i + 1})`, datum: post.werte.datum, absender: post.werte.absender ?? '', kanal: auswahlText(post.werte.kanal),
+          fuer: alsListe(post.werte.fuer)[0] ?? null,
+        }, { id: von, name: '' }, z);
+        await this.notiere(neu.id, von, 'post_geteilt', { text: `Teil ${i + 1} von ${teileBuf.length} aus „${betreff}“`, post: post.id, postTyp: typ.id });
+        dokumente.push((await this.ladeHoch(neu.id, { register: reg.key, name: teilName(d.name, i + 1), typ: 'application/pdf', herkunft: 'bearbeitet' }, b, von)).dokument);
+        posten.push((await this.repo.holeMappe(neu.id))!);
+      });
     }
     const bezug = [...new Set([...alsListe(post.werte.bezug), ...posten.map((p) => p.id)])];
     await this.schreibeSystemMappe(typ, post.id, { ...post.werte, bezug, stand: POST_STAND.erledigt }, von);

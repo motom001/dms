@@ -311,6 +311,19 @@ export function lesefilterSql(sql: Sql, f: Lesefilter | null | undefined): Teil 
 }
 
 /** PostgreSQL-Umsetzung für genau einen Haushalt. */
+/**
+ * Verbindung einer laufenden Transaktion, die sich wie `sql` benutzen lässt (#404): `begin` wird dort
+ * zum Sicherungspunkt, damit die Methoden des Repos unverändert auch in einer Transaktion laufen.
+ */
+function inTransaktion(tx: postgres.TransactionSql): Sql {
+  return new Proxy(tx, {
+    get(ziel, prop, empfaenger) {
+      if (prop === 'begin') return (...args: unknown[]) => ziel.savepoint(args[args.length - 1] as (s: postgres.TransactionSql) => Promise<unknown>);
+      return Reflect.get(ziel, prop, empfaenger);
+    },
+  }) as unknown as Sql;
+}
+
 export function pgRepo(sql: Sql, haushaltId: string): Repo {
   // Dokumente immer mit ausdrücklichen Spalten, nie `d.*` (#367): sonst kommt der Volltext mit.
   const DOK = sql.unsafe(DOKUMENT_SPALTEN.map((c) => `d.${c}`).join(', '));
@@ -336,6 +349,9 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
   }
 
   return {
+    transaktion(f) {
+      return sql.begin((tx) => f(pgRepo(inTransaktion(tx), haushaltId))) as Promise<Awaited<ReturnType<typeof f>>>;
+    },
     async listeTypen() {
       const r = await sql`SELECT * FROM mappentypen WHERE haushalt_id = ${haushaltId} ORDER BY lower(name)`;
       return r.map(alsTyp);

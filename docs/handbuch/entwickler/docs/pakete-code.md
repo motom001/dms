@@ -36,12 +36,14 @@ code:
 
 ## Ereignisse
 
-| Ereignis | `daten` |
-|---|---|
-| `post.angelegt` | `mappe`, `kanal` |
-| `dokument.hochgeladen` | `dokument`, `mappe`, `name`, `mime`, `groesse`, `volltextGeplant` (ob die Texterkennung des DMS noch läuft) |
-| `texterkennung.fertig` | `dokument`, `mappe`, `seiten` |
-| `paket.einstellungen_geaendert` | `felder` (geänderte Kennungen) |
+| Ereignis | Auslöser | `daten` |
+|---|---|---|
+| `post.angelegt` | Neue Post: in der Oberfläche, über die API, aus Eingangsordner und Postfach, beim **Post teilen** je neuer Post | `mappe`, `kanal` |
+| `dokument.hochgeladen` | Jedes neue Dokument: Hochladen (Oberfläche, API, Eingangskanäle) und die neuen Dokumente beim **PDF teilen**, **Zusammenfügen** und **Post teilen**. Eine neue Version eines vorhandenen Dokuments ist kein neues Dokument. | `dokument`, `mappe`, `name`, `mime`, `groesse`, `volltextGeplant` (ob die Texterkennung des DMS noch läuft) |
+| `texterkennung.fertig` | Die Texterkennung des DMS ist mit einem Dokument fertig | `dokument`, `mappe`, `seiten` |
+| `paket.einstellungen_geaendert` | Ein Administrator hat die Einstellungen des Pakets gespeichert | `felder` (geänderte Kennungen) |
+
+Das Ereignis entsteht in **derselben Datenbank-Transaktion** wie die Änderung: Entweder ist beides gespeichert oder nichts. Fällt das DMS genau dazwischen aus, fehlt also kein Ereignis.
 
 Ereignisse stehen im DMS in einem **Ausgangskorb**: Je Paket stellt der Läufer sie der Reihe nach zu; ein langsames Paket hält die anderen nicht auf. Schlägt ein Aufruf fehl (Fehlercode, Absturz, Zeitgrenze), versucht er es nach 1, 5, 30, 120 und 360 Minuten erneut und gibt dann auf – so lange warten die späteren Ereignisse desselben Pakets. Was ein Paket selbst ändert (z. B. eine Post, die es anlegt), meldet das DMS ihm nicht zurück; andere Pakete bekommen es. Code muss deshalb **wiederholbar** sein: dasselbe Ereignis kann zweimal kommen (`id` bleibt gleich, `versuch` zählt hoch). Während einer Wartung stellt der Läufer nichts zu.
 

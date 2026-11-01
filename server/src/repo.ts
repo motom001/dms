@@ -80,6 +80,11 @@ export interface PapierkorbFilter {
 export interface PaketEreignis { id: string; paketId: string; art: string; daten: Record<string, unknown>; erstellt: string; versuche: number }
 
 export interface Repo {
+  /**
+   * Mehrere Änderungen ganz oder gar nicht (#404), z. B. eine Änderung samt Ereignis im Ausgangskorb:
+   * `f` bekommt ein Repo, das in der Transaktion arbeitet. Im Speicher-Repo (Tests) ohne Zurückrollen.
+   */
+  transaktion<T>(f: (repo: Repo) => Promise<T>): Promise<T>;
   listeTypen(): Promise<Mappentyp[]>;
   holeTyp(id: string): Promise<Mappentyp | undefined>;
   /** `system` nur für die Systemtypen, die der Server selbst anlegt. */
