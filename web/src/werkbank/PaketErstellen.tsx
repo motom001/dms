@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Symbol } from '../Symbol';
 import { BESCHREIBUNG_LAENGE, LIZENZEN, naechsteVersion, paketIdAus, type ErstellenStand, type PaketEntwurf, type PaketErstellenEingabe, type PaketPruefung } from '../../../shared/src/paketerstellung';
 import { api, ApiFehler } from '../api';
 import { Hilfe } from '../Hilfe';
@@ -76,7 +77,7 @@ export function PaketErstellen() {
       <ol className="assistent-schritte" aria-label={`Schritt ${schritt + 1} von ${SCHRITTE.length}: ${SCHRITTE[schritt]}`}>
         {SCHRITTE.map((s, i) => (
           <li key={s} className={i < schritt ? 'erledigt' : i === schritt ? 'aktiv' : ''} aria-current={i === schritt ? 'step' : undefined}>
-            <button type="button" className="textknopf" onClick={() => setSchritt(i)}><span className="nr" aria-hidden="true">{i < schritt ? '✓' : i + 1}</span><span className="name">{s}</span></button>
+            <button type="button" className="textknopf" onClick={() => setSchritt(i)}><span className="nr" aria-hidden="true">{i < schritt ? <Symbol name="haken" /> : i + 1}</span><span className="name">{s}</span></button>
           </li>
         ))}
       </ol>

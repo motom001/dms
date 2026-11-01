@@ -34,6 +34,14 @@ describe('Ansicht wählen (#498)', () => {
     assert.deepEqual(ansichtAbschnitte(SICHTEN, { suche: 'TÜV', ausgeblendet: ['fz2'] }).treffer!.map((t) => t.sicht.id), ['fz2']);
   });
 
+  it('feste Einträge (Neue Post, #507) erscheinen nicht noch einmal', () => {
+    const a = ansichtAbschnitte(SICHTEN, { ohne: ['post'], angeheftet: ['post'], zuletzt: ['post'] });
+    assert.ok(!a.gruppen.flatMap((g) => g.eintraege).some((e) => e.sicht.id === 'post'));
+    assert.deepEqual([a.meine.length, a.zuletzt.length], [0, 0]);
+    // Mit Unteransichten bleibt sie in den Gruppen (sonst gingen die Unteransichten verloren).
+    assert.ok(ansichtAbschnitte(SICHTEN, { ohne: ['fz'] }).gruppen.some((g) => g.schluessel === 'fz'));
+  });
+
   it('merkeZuletzt und umschalten', () => {
     assert.deepEqual(merkeZuletzt(['a', 'b'], 'b'), ['b', 'a']);
     assert.equal(merkeZuletzt(['1', '2', '3', '4', '5', '6'], 'x').length, ZULETZT_MAX);
