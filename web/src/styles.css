@@ -674,6 +674,17 @@ input.kurz { width: 7em; }
 .historie .aenderungen { margin: 8px 0 4px; font-size: calc(13px * var(--skala, 1)); width: 100%; }
 .historie .aenderungen td { padding: 4px 8px; vertical-align: top; overflow-wrap: anywhere; }
 .registertab.an.art-protokoll { border-top-color: var(--leise); }
+.registertab.an.art-notizen { border-top-color: var(--warn); }
+/* Mappe (#427): „Mappe ▾“ neben dem Stern; Register-Reihe rollt am Handy mit Schatten als Hinweis. */
+.mappenkopf-knoepfe { display: flex; align-items: center; gap: 8px; flex: none; }
+.registerreihe { position: relative; margin: 0 -20px; }
+.registerreihe > .registertaben { margin: 0; }
+.registerreihe::before, .registerreihe::after { content: ''; position: absolute; top: 0; bottom: 1px; width: 32px; pointer-events: none; opacity: 0; transition: opacity .15s; z-index: 1; }
+.registerreihe::before { left: 0; background: linear-gradient(to left, transparent, var(--senke) 70%); border-top-left-radius: var(--r); }
+.registerreihe::after { right: 0; background: linear-gradient(to right, transparent, var(--senke) 70%); border-top-right-radius: var(--r); }
+.registerreihe-links::before, .registerreihe-rechts::after { opacity: 1; }
+.notizregister { display: flex; flex-direction: column; gap: 12px; }
+@media (max-width: 820px) { .registerreihe { margin: 0 -14px; } }
 /* Notizen (#55) und Werkzeugleiste der Mappe */
 .mappenleiste { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .zeile-zwischen { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
@@ -698,6 +709,8 @@ input.kurz { width: 7em; }
 .aktionsmenue .menue { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 220px; display: flex; flex-direction: column; padding: 4px; background: var(--flaeche, #fff); border: 1px solid var(--linie); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
 .aktionsmenue .menue button { text-align: left; background: none; border: 0; padding: 8px 10px; border-radius: 6px; font: inherit; color: inherit; cursor: pointer; display: flex; align-items: center; gap: 8px; }
 .aktionsmenue .menue button:hover, .aktionsmenue .menue button:focus-visible { background: var(--senke); }
+.aktionsmenue-trenner { height: 1px; margin: 4px 6px; background: var(--linie); }
+.aktionsmenue .menue button.aktionsmenue-gefahr { color: var(--schlecht); }
 .mappenleiste .aktionsmenue { margin-left: auto; }
 .anhaenge { border: 0; padding: 0; margin: 12px 0; }
 .anhaenge legend { font-weight: 600; margin-bottom: 4px; }

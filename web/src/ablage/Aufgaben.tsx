@@ -3,6 +3,7 @@ import { Symbol } from '../Symbol';
 import { AUFGABENARTEN, type Aufgabe } from '../../../shared/src/model';
 import { datumDe, type Erinnerung } from '../../../shared/src/fristen';
 import { heuteIn, verschiebe } from '../../../shared/src/sichten';
+import { aufgabenBeschriftung, ausNotiz } from '../../../shared/src/mappenansicht';
 import { api } from '../api';
 import { nameMitAbwesenheit, useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -25,7 +26,7 @@ export function BenutzerWahl({ wert, setze, ohne, label, fokus }: { wert: string
 
 type Folge = { aufgabe: Aufgabe; datum: string };
 
-function Zeile({ a, neuLaden, setBestaetigt, setFolge }: { a: Aufgabe; neuLaden: () => Promise<void>; setBestaetigt: (t: string) => void; setFolge: (f: Folge) => void }) {
+function Zeile({ a, neuLaden, setBestaetigt, setFolge, zuNotizen }: { a: Aufgabe; neuLaden: () => Promise<void>; setBestaetigt: (t: string) => void; setFolge: (f: Folge) => void; zuNotizen?: () => void }) {
   const d = useDaten();
   const { ich } = useKonto();
   const [weiter, setWeiter] = useState(false);
@@ -48,12 +49,14 @@ function Zeile({ a, neuLaden, setBestaetigt, setFolge }: { a: Aufgabe; neuLaden:
   return (
     <li className={meine ? 'meine' : ''}>
       <div className="aufgabentext">
-        <strong>{meine ? 'Für dich' : <>Für {a.empfaengerId ? <Person id={a.empfaengerId} /> : 'Administratoren'}</>}:</strong> {a.text}
+        {/* „Deine Aufgabe:“ (#427) – damit klar ist, dass Erledigt/Weitergeben rechts zur Aufgabe gehören. */}
+        <strong>{meine ? aufgabenBeschriftung(a.art, true) : <>{aufgabenBeschriftung(a.art, false)} {a.empfaengerId ? <Person id={a.empfaengerId} /> : 'Administratoren'}</>}:</strong> {a.text}
         {a.art === 'frist' && a.datum && <span className={`chip ${a.datum <= heuteIn() ? 'schlecht' : 'warn'}`} title="Frist">{noch(a.datum)}</span>}
         <span className="leise klein"> · {AUFGABENARTEN[a.art]} seit {datum(a.erstellt)}{a.erstelltVon && <> von <Person id={a.erstelltVon} /></>}</span>
       </div>
       {darf && !weiter && (
         <div className="aufgabenaktionen">
+          {zuNotizen && ausNotiz(a) && <button type="button" className="textknopf klein" onClick={zuNotizen}>Zur Notiz</button>}
           {a.art !== 'passung' && <button type="button" className="knopf klein" onClick={() => void tu(() => api.aufgabeErledigt(a.id))}>Erledigt</button>}
           <button type="button" className="knopf klein" onClick={() => setWeiter(true)}>Weitergeben</button>
         </div>
@@ -73,7 +76,7 @@ function Zeile({ a, neuLaden, setBestaetigt, setFolge }: { a: Aufgabe; neuLaden:
 }
 
 /** Hinweis über der Mappe mit allen offenen Aufgaben. */
-export function AufgabenHinweis({ aufgaben, neuLaden }: { aufgaben: Aufgabe[]; neuLaden: () => Promise<void> }) {
+export function AufgabenHinweis({ aufgaben, neuLaden, zuNotizen }: { aufgaben: Aufgabe[]; neuLaden: () => Promise<void>; zuNotizen?: () => void }) {
   const offen = aufgaben.filter((a) => !a.erledigt);
   const [bestaetigt, setBestaetigt] = useState<string>();
   const [folge, setFolge] = useState<Folge>();
@@ -84,7 +87,7 @@ export function AufgabenHinweis({ aufgaben, neuLaden }: { aufgaben: Aufgabe[]; n
     <>
       {vorschlag}
       <div className="hinweis warn stapel aufgabenhinweis" role="status">
-        <ul>{offen.map((a) => <Zeile key={a.id} a={a} neuLaden={neuLaden} setBestaetigt={setBestaetigt} setFolge={setFolge} />)}</ul>
+        <ul>{offen.map((a) => <Zeile key={a.id} a={a} neuLaden={neuLaden} setBestaetigt={setBestaetigt} setFolge={setFolge} zuNotizen={zuNotizen} />)}</ul>
         {bestaetigt && <p className="gutertext klein">{bestaetigt}</p>}
       </div>
     </>

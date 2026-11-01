@@ -5,10 +5,10 @@ import { Formatiert, FormatiertEingabe } from './Formatiert';
 import { Person } from '../Person';
 import { rueckfrage } from '../rueckfrage';
 
-/** Notizen an einer Mappe (#55): lesen, anlegen, bearbeiten, löschen – jeder darf alles. */
+/** Notizen an einer Mappe (#55): lesen, anlegen, bearbeiten, löschen – jeder darf alles. Seit #427 ein System-Register. */
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
 
-export function Notizen({ mappeId, notizen, neuLaden, schliessen }: { mappeId: string; notizen: Notiz[]; neuLaden: () => Promise<void>; schliessen: () => void }) {
+export function Notizen({ mappeId, notizen, neuLaden }: { mappeId: string; notizen: Notiz[]; neuLaden: () => Promise<void> }) {
   const [neu, setNeu] = useState('');
   const [bearbeite, setBearbeite] = useState<{ id: string; text: string } | null>(null);
   const [laeuft, setLaeuft] = useState(false);
@@ -20,11 +20,7 @@ export function Notizen({ mappeId, notizen, neuLaden, schliessen }: { mappeId: s
   }
 
   return (
-    <section className="blatt notizen" aria-label="Notizen">
-      <div className="blattkopf zeile-zwischen">
-        <h2 className="h3">Notizen {notizen.length > 0 && <span className="leise">({notizen.length})</span>}</h2>
-        <button type="button" className="textknopf" onClick={schliessen}>Schließen</button>
-      </div>
+    <section className="notizen notizregister" aria-label="Notizen">
       {!notizen.length && <p className="leise">Noch keine Notizen. Notizen ergänzen die Mappe, ohne ihre Angaben zu ändern.</p>}
       <ul className="notizliste">
         {notizen.map((n) => (
