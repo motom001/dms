@@ -2,6 +2,7 @@
  * Paketverwaltung (#188): Katalog der Registry, Versionen und installierte Pakete.
  * Format von Katalog und Paket: motom001/dms-registry (README, schema/). Server und Oberfläche teilen diese Datei.
  */
+import type { Hilfeort } from './hilfe';
 
 /** Der offizielle Katalog (Branch gh-pages der Registry). */
 export const OFFIZIELLER_KATALOG = 'https://raw.githubusercontent.com/motom001/dms-registry/gh-pages/katalog.json';
@@ -59,7 +60,7 @@ export interface InstalliertesPaket {
   einstellungenNoetig?: boolean;
   /** Das Paket enthält Code (#338: läuft im Paket-Läufer). */
   code?: boolean;
-  /** Code des Pakets (#338): Ereignisse, bestätigte Rechte und Netzadressen, Prüfwert des Moduls. */
+  /** Code des Pakets (#338): Ereignisse, bestätigte Rechte und erlaubte Adressen im Netzwerk/Internet, Prüfwert des Moduls. */
   laeufer?: PaketCode;
   /** Links aus dem Katalog (README, Changelog, Quelle), sofern bekannt. */
   links?: { readme?: string; changelog?: string; quelle?: string };
@@ -248,19 +249,40 @@ export function laeuferZustandText(
   return { text: x.paket.aufrufe ? 'bereit' : 'bereit – wartet auf das erste Ereignis', fehler: false, wartet: false };
 }
 
-/** Rechte und Netz für die Rückfrage bei der Installation (und für den Vergleich beim Update). */
-export function rechteText(c: PaketCode, typName: (verweis: string) => string): string[] {
+/** Netzwerkzugriff eines Pakets mit Code (#449) – so in der Vorschau, im Handbuch und auf der Katalog-Webseite. */
+export function netzText(netz: string[]): string {
+  return netz.length ? `Zugriff auf Netzwerk/Internet nur zu: ${netz.join(', ')}` : 'kein Zugriff auf Netzwerk und Internet';
+}
+
+/** Hilfe-Ort im Administratorhandbuch (Pakete mit Code) je Ereignis (#449); Schlüssel wie in shared/src/hilfe.ts. */
+export const EREIGNIS_HILFE: Record<EreignisArt, Hilfeort> = {
+  'post.angelegt': 'pakete.ereignis.post_angelegt',
+  'dokument.hochgeladen': 'pakete.ereignis.dokument_hochgeladen',
+  'texterkennung.fertig': 'pakete.ereignis.texterkennung_fertig',
+  'paket.einstellungen_geaendert': 'pakete.ereignis.einstellungen_geaendert',
+};
+
+/** Ein Punkt der Rechte-Liste in der Vorschau (#449): Text, Handbuch-Stelle, ggf. Unterliste (Ereignisse). */
+export interface RechtePunkt { text: string; hilfe: Hilfeort; unter?: Array<{ text: string; hilfe: Hilfeort }> }
+
+/** Rechte und Netzwerkzugriff für die Rückfrage bei der Installation (#338, #449): je Recht ein Punkt, Ereignisse als Unterliste. */
+export function rechtePunkte(c: PaketCode, typName: (verweis: string) => string): RechtePunkt[] {
   const t = (l: string[]) => l.map((v) => (v === ALLE_TYPEN ? 'alle Mappentypen' : typName(v))).join(', ');
-  const z: string[] = [];
-  if (c.rechte.lesen.length) z.push(`Mappen lesen: ${t(c.rechte.lesen)}`);
-  if (c.rechte.schreiben.length) z.push(`Mappen anlegen und ändern: ${t(c.rechte.schreiben)}`);
-  if (c.rechte.dokumente !== 'keine') z.push(DOKUMENT_RECHTE[c.rechte.dokumente]);
-  z.push(c.netz.length ? `Netz: ${c.netz.join(', ')}` : 'kein Netz');
-  if (c.ereignisse.length) z.push(`reagiert auf: ${c.ereignisse.map((e) => EREIGNISSE[e]).join('; ')}`);
+  const z: RechtePunkt[] = [];
+  if (c.rechte.lesen.length) z.push({ text: `Mappen lesen: ${t(c.rechte.lesen)}`, hilfe: 'pakete.recht.lesen' });
+  if (c.rechte.schreiben.length) z.push({ text: `Mappen anlegen und ändern: ${t(c.rechte.schreiben)}`, hilfe: 'pakete.recht.schreiben' });
+  if (c.rechte.dokumente !== 'keine') z.push({ text: DOKUMENT_RECHTE[c.rechte.dokumente], hilfe: 'pakete.recht.dokumente' });
+  z.push({ text: netzText(c.netz), hilfe: 'pakete.recht.netz' });
+  if (c.ereignisse.length) z.push({ text: 'Reagiert auf diese Ereignisse:', hilfe: 'pakete.ereignisse', unter: c.ereignisse.map((e) => ({ text: EREIGNISSE[e], hilfe: EREIGNIS_HILFE[e] })) });
   return z;
 }
 
-/** Gleiche Rechte und gleiches Netz? (Sonst muss ein Update neu bestätigt werden.) */
+/** Rechte-Punkte als einfache Zeilen (z. B. in der Fehlermeldung, wenn die Bestätigung fehlt). */
+export const rechteZeilen = (punkte: RechtePunkt[]): string[] =>
+  punkte.map((p) => (p.unter ? `${p.text} ${p.unter.map((u) => u.text).join('; ')}` : p.text));
+export const rechteText = (c: PaketCode, typName: (verweis: string) => string): string[] => rechteZeilen(rechtePunkte(c, typName));
+
+/** Gleiche Rechte und gleicher Netzwerkzugriff? (Sonst muss ein Update neu bestätigt werden.) */
 export const gleicheRechte = (a: PaketCode | undefined, b: PaketCode | undefined) =>
   JSON.stringify(rechteSchluessel(a)) === JSON.stringify(rechteSchluessel(b));
 const rechteSchluessel = (c: PaketCode | undefined) => c ? [[...c.rechte.lesen].sort(), [...c.rechte.schreiben].sort(), c.rechte.dokumente, [...c.netz].sort()] : null;

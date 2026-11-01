@@ -323,7 +323,7 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
     ...(beispiele.length ? [`**Beispiele:** ${beispiele.length} Beispiel-Mappen (${[...new Set(beispiele.map((b) => typName.get(b.typ)))].join(', ')}), auf Wunsch bei der Installation.`, ''] : []),
     '## Voraussetzungen', '', `- DMS ${dms}`,
     ...(Object.keys(abh).length ? Object.entries(abh).map(([k, v]) => `- Paket \`${k}\` ${v}`) : ['- keine weiteren Pakete']), '',
-    '## Rechte und Netz', '', 'Dieses Paket enthält keinen Code. Es legt nur Mappentypen und Ansichten an.', '',
+    '## Rechte und Netzwerkzugriff', '', 'Dieses Paket enthält keinen Code. Es legt nur Mappentypen und Ansichten an.', '',
     '## Herkunft', '', `Erstellt mit „Paket erstellen“ im DMS (Werkbank → Pakete) am ${datum}${autor.name ? ` von ${autor.name}` : ''}.`, '',
   ].join('\n');
   const lizenz = (LIZENZTEXTE[e.lizenz] ?? '').replace('{jahr}', String(d.jetzt.getFullYear())).replace('{name}', autor.name);

@@ -40,8 +40,8 @@ code:
   ```
 
 - **Dokumente:** `lesen` erlaubt Dokumente zu lesen (Datei, Volltext, Seiten als Bild), `schreiben` zusätzlich hochzuladen, zu ersetzen und den Volltext zu setzen. Dokumente gibt es nur in Mappen, die das Paket lesen darf.
-- **Netz:** nur `https://`, ohne Zugangsdaten. Weiterleitungen folgt der Läufer nicht.
-- Bei der **Installation** zeigt das DMS diese Rechte und lässt sie bestätigen. Ändern sich Rechte oder Netz in einem Update, muss der Administrator neu bestätigen.
+- **Netzwerk/Internet (`netz`):** nur `https://`, ohne Zugangsdaten. Weiterleitungen folgt der Läufer nicht. Die Vorschau zeigt „kein Zugriff auf Netzwerk und Internet“ bzw. „Zugriff auf Netzwerk/Internet nur zu: …“ (#449).
+- Bei der **Installation** zeigt das DMS diese Rechte und lässt sie bestätigen; die Ereignisse stehen dort als Unterliste mit Link ins Administratorhandbuch. Ändern sich Rechte oder Adressen in einem Update, muss der Administrator neu bestätigen.
 
 ## Ereignisse
 

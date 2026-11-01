@@ -23,7 +23,7 @@ Das DMS lädt den Katalog von `https://raw.githubusercontent.com/motom001/dms-re
     - die Ansichten, mit Elternansicht
     - die Abhängigkeiten und ob sie installiert sind
     - wie viele Beispiel-Mappen es gibt
-    - bei Paketen mit Code: **was der Code darf** (siehe [Pakete mit Code](#pakete-mit-code)) – du bestätigst es mit einem Haken, sonst bleibt **Installieren** grau
+    - bei Paketen mit Code: **was der Code darf** – als Liste, Ereignisse als Unterliste, mit **?** zur Erklärung (siehe [Rechte eines Pakets](#rechte-eines-pakets)). Darunter bestätigst du es mit einem Haken, sonst bleibt **Installieren** grau
 3. **Namen:** Gibt es einen Mappentyp oder eine Ansicht (auf oberster Ebene) mit gleichem Namen schon, sagt die Vorschau das und schlägt einen anderen vor, z. B. „Organisation (Basis)“. Du kannst jeden Namen ändern.
 4. **Beispiel-Mappen** legt das DMS nur an, wenn du den Haken setzt.
 5. **Fehlende Pakete mitinstallieren:** Braucht das Paket ein anderes, das noch fehlt, installiert das DMS es auf Wunsch vorher mit (die neueste passende Version aus dem Katalog).
@@ -96,8 +96,8 @@ Die Einstellungen sind **Teil der Sicherung**; Geheimnisse bleiben dabei verschl
 
 Manche Pakete bringen **Code** mit – etwa eine eigene Texterkennung oder Regeln, die neue Post zuordnen. Der Code reagiert auf Ereignisse (neue Post, hochgeladenes Dokument, fertige Texterkennung, geänderte Einstellungen) und auf die **Aktionen** im Reiter „Einstellungen“. Das DMS führt ihn im **Paket-Läufer** aus:
 
-- **Abgeschottet:** Der Code ist WebAssembly und läuft in einem eigenen Prozess des DMS, ohne Zugriff auf Dateien, Schlüssel oder Datenbank. Das Netz erreicht er nur unter den Adressen, die das Paket angibt.
-- **Nur bestätigte Rechte:** Vor der Installation zeigt die Vorschau, was der Code darf – welche Mappentypen er lesen bzw. anlegen und ändern darf, ob er Dokumente lesen oder schreiben darf, welche Adressen im Netz er erreicht und auf welche Ereignisse er reagiert. Erst wenn du das bestätigst, installiert das DMS. Will ein **Update** mehr Rechte oder anderes Netz, fragt das DMS erneut.
+- **Abgeschottet:** Der Code ist WebAssembly und läuft in einem eigenen Prozess des DMS, ohne Zugriff auf Dateien, Schlüssel oder Datenbank. Netzwerk und Internet erreicht er nur unter den Adressen, die das Paket angibt – meist gar nicht.
+- **Nur bestätigte Rechte:** Vor der Installation zeigt die Vorschau, was der Code darf – welche Mappentypen er lesen bzw. anlegen und ändern darf, ob er Dokumente lesen oder schreiben darf, ob er aufs Netzwerk oder Internet zugreifen darf und auf welche Ereignisse er reagiert (siehe [Rechte eines Pakets](#rechte-eines-pakets) und [Ereignisse](#ereignisse)). Erst wenn du das bestätigst, installiert das DMS. Will ein **Update** mehr Rechte oder andere Adressen, fragt das DMS erneut.
 - **Dienstkonto:** Für jedes Paket mit Code legt das DMS ein Dienstkonto „Paket *Name*“ an. Mit ihm arbeitet der Code über die API; die Historie zeigt deshalb, was ein Paket geändert hat. Dienstkonten erscheinen nicht unter **Benutzer**, melden sich nie an und können **nie löschen** – auch nicht mit Rechten auf alle Mappentypen. Benutzer und Passwörter sehen sie nicht.
 - **Grenzen:** Jeder Aufruf hat höchstens 256 MB Speicher und 2 Minuten Zeit; es laufen höchstens zwei Aufrufe gleichzeitig. Was die Grenzen reißt, bricht ab, ohne das DMS zu stören.
 - **Wiederholen:** Ereignisse merkt sich das DMS. Scheitert ein Aufruf, versucht es der Läufer nach 1, 5, 30, 120 und 360 Minuten erneut und gibt dann auf. Während einer Wartung (z. B. beim Wiederherstellen) ruht der Läufer.
@@ -120,6 +120,62 @@ Schlägt ein **Update** fehl, bleibt die alte Version mit ihrem alten Code insta
 
 !!! note "Volltext aus einem Paket"
     Setzt ein Paket den Volltext eines Dokuments (z. B. das Paket **Texterkennung**), vermerkt die Historie „Volltext gesetzt“ mit dem Namen des Pakets, und die Texterkennung des DMS überschreibt diesen Text nicht.
+
+### Rechte eines Pakets { #rechte-eines-pakets }
+
+Vor der Installation zeigt die Vorschau unter **„Das Paket enthält Code.“** eine Liste der Rechte. Hinter jedem Punkt führt ein **?** zur passenden Stelle hier. **Unter der Liste** steht links der Haken **„Ich erlaube dem Paket diese Rechte.“** – lies erst die Liste, dann setze den Haken. Ohne ihn bleibt **Installieren** gesperrt. Bei einem **Update** mit geänderten Rechten heißt der Haken **„Die Rechte haben sich geändert. Ich erlaube sie.“**; sind die Rechte gleich geblieben, steht dort nur „Die Rechte sind dieselben wie bisher.“
+
+Was nicht in der Liste steht, darf der Code nicht. Benutzer und Passwörter sieht ein Paket nie, und löschen darf es nichts.
+
+#### Mappen lesen { #recht-mappen-lesen }
+
+**„Mappen lesen: *Mappentypen*“** – Der Code darf Mappen dieser Mappentypen lesen, mit allen Feldern und Verweisen. **„alle Mappentypen“** heißt jede Mappe (außer Benutzern). Stammt ein Mappentyp aus einem anderen Paket, steht dessen Kennung in Klammern dahinter, z. B. „Organisation (basis)“; **Post**, **Ablageort** und **Rolle** bringt das DMS selbst mit.
+
+#### Mappen anlegen und ändern { #recht-mappen-anlegen-und-andern }
+
+**„Mappen anlegen und ändern: *Mappentypen*“** – Der Code darf Mappen dieser Mappentypen anlegen und ihre Felder ändern; lesen darf er sie damit auch. Löschen darf ein Paket nie. Jede Änderung steht in der Historie der Mappe mit dem Dienstkonto „Paket *Name*“.
+
+#### Dokumente lesen oder Volltext schreiben { #recht-dokumente }
+
+- **„Dokumente lesen“** – Der Code darf die Dokumente in den Mappen lesen, die er lesen darf: die Datei, den Volltext und die Seiten als Bild.
+- **„Dokumente lesen und Volltext schreiben“** – zusätzlich darf er dort Dokumente hochladen und ersetzen und den Volltext setzen, etwa für eine eigene Texterkennung.
+
+Steht keins von beiden in der Liste, sieht der Code keine Dokumente.
+
+#### Zugriff auf Netzwerk und Internet { #recht-netzwerk-und-internet }
+
+- **„kein Zugriff auf Netzwerk und Internet“** – Der Code erreicht weder Geräte in deinem Heimnetz noch das Internet. Das ist der Normalfall: Die Daten bleiben im DMS.
+- **„Zugriff auf Netzwerk/Internet nur zu: *Adressen*“** – Der Code darf nur diese Adressen erreichen (immer `https://`, auch Pfade darunter), z. B. einen Dienst im Internet oder ein Gerät in deinem Netzwerk. Alles andere sperrt der Paket-Läufer, auch Weiterleitungen. Wozu das Paket die Adressen braucht, erklärt sein README – was du dorthin schickst, verlässt dein DMS.
+
+Will ein Update andere Adressen, fragt das DMS erneut.
+
+### Ereignisse { #ereignisse }
+
+Unter **„Reagiert auf diese Ereignisse:“** nennt die Vorschau, wann der Code von selbst läuft – je Ereignis eine Zeile mit **?**. Ohne Ereignisse läuft er nur, wenn du im Reiter **Einstellungen** eine Aktion auslöst. Ein Ereignis gibt dem Paket keine weiteren Rechte: Es erfährt nur, *dass* etwas passiert ist (z. B. die Kennung der neuen Post), und arbeitet dann mit den Rechten oben. Kommen in einem Update nur Ereignisse dazu, fragt das DMS deshalb nicht erneut. Was ein Paket selbst ändert, wird ihm nicht zurückgemeldet.
+
+#### Neue Post ist angelegt { #ereignis-post-angelegt }
+
+**Wann:** Sobald eine neue Post entsteht – mit **+ Post** in der Ablage, über die API, aus einem Eingangsordner oder Postfach und beim **Post teilen** für jede neue Post.
+
+**Typisch:** Post prüfen, zuordnen oder zählen – das Beispielpaket **Hallo Post** etwa zählt neue Post.
+
+#### Ein Dokument wurde hochgeladen { #ereignis-dokument-hochgeladen }
+
+**Wann:** Bei jedem neuen Dokument – Hochladen in der Oberfläche oder über die API, aus Eingangsordner und Postfach, und für die neuen Dokumente beim **PDF teilen**, **Zusammenfügen**, **Post teilen** und **Schwärzen** (als Kopie). Eine neue Version eines vorhandenen Dokuments ist kein neues Dokument.
+
+**Typisch:** Das Dokument ansehen und etwas daraus machen – das Paket **Trennblatt** teilt Post an Trennblättern, **Texterkennung** erkennt Text in Scans.
+
+#### Die Texterkennung eines Dokuments ist fertig { #ereignis-texterkennung-fertig }
+
+**Wann:** Wenn die eingebaute [Texterkennung](texterkennung.md) des DMS mit einem Dokument fertig ist – also der Volltext feststeht.
+
+**Typisch:** Mit dem Volltext arbeiten, z. B. Felder vorschlagen oder Post anhand von Wörtern zuordnen.
+
+#### Die Einstellungen des Pakets wurden geändert { #ereignis-einstellungen-geandert }
+
+**Wann:** Wenn ein Administrator die [Einstellungen des Pakets](#einstellungen) speichert. Nur das Paket selbst bekommt dieses Ereignis.
+
+**Typisch:** Die neuen Werte übernehmen, z. B. eine Verbindung neu prüfen oder den Status aktualisieren.
 
 ## Expertenmodus: weitere Kataloge und Hochladen
 

@@ -467,9 +467,17 @@ function VorschauBlock({ v, warnung, los, abbrechen }: {
         </div>
       )}
       {v.laeufer && (
-        <div className={`hinweis ${v.laeufer.bestaetigen ? 'warn' : 'info'}`} role={v.laeufer.bestaetigen ? 'alert' : undefined}>
+        // Erst lesen, dann bestätigen (#449): Liste, darunter links der Haken – untereinander, auch am Handy.
+        <div className={`hinweis stapel ${v.laeufer.bestaetigen ? 'warn' : 'info'}`} role={v.laeufer.bestaetigen ? 'alert' : undefined}>
           <p><strong>Das Paket enthält Code.</strong> Er läuft im Paket-Läufer des DMS, abgeschottet und mit einem eigenen Dienstkonto – nur mit diesen Rechten:</p>
-          <ul>{v.laeufer.rechte.map((r) => <li key={r}>{r}</li>)}</ul>
+          <ul>
+            {v.laeufer.rechte.map((r) => (
+              <li key={r.text}>
+                {r.text} <Hilfe ort={r.hilfe} />
+                {r.unter && <ul>{r.unter.map((u) => <li key={u.text}>{u.text} <Hilfe ort={u.hilfe} /></li>)}</ul>}
+              </li>
+            ))}
+          </ul>
           {v.laeufer.bestaetigen
             ? <label className="haken"><input type="checkbox" checked={rechteOk} onChange={(e) => setRechteOk(e.target.checked)} /><span>{v.update ? 'Die Rechte haben sich geändert. Ich erlaube sie.' : 'Ich erlaube dem Paket diese Rechte.'}</span></label>
             : <p className="leise">Die Rechte sind dieselben wie bisher.</p>}

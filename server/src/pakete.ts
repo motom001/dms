@@ -12,7 +12,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { inflateRawSync } from 'node:zlib';
 import { parse as yamlLesen } from 'yaml';
 import type { Feld, Mappentyp, Register } from '../../shared/src/model';
-import { BEREICH, CODE_MAX, DMS_RECHTE_TYPEN, gleicheRechte, liesCode, rechteText, type PaketCode, dmsPasst, liesKatalog, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../shared/src/pakete';
+import { BEREICH, CODE_MAX, DMS_RECHTE_TYPEN, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../shared/src/pakete';
 import { kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
 import { EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand } from '../../shared/src/paketeinstellungen';
 import type { Dienst } from './dienst';
@@ -281,8 +281,8 @@ export interface Vorschau {
   hinweise: string[];
   /** Einstellungen des Pakets (#197): bei einem Update neue und wegfallende Felder. */
   einstellungen: { neu: string[]; weg: string[] } | null;
-  /** Code (#338): Rechte, Netz, Ereignisse – muss bestätigt werden (bei einem Update nur, wenn sie sich ändern). */
-  laeufer: { rechte: string[]; bestaetigen: boolean } | null;
+  /** Code (#338): Rechte, Netzwerkzugriff, Ereignisse (#449) – muss bestätigt werden (bei einem Update nur, wenn sie sich ändern). */
+  laeufer: { rechte: RechtePunkt[]; bestaetigen: boolean } | null;
 }
 export interface InstallierenEingabe {
   id?: string; version?: string; namen?: Record<string, string>; sichtNamen?: Record<string, string>; beispiele?: boolean; mitAbhaengigkeiten?: boolean;
@@ -292,7 +292,7 @@ export interface InstallierenEingabe {
   upload?: string;
   /** Herkunft außerhalb des offiziellen Katalogs ausdrücklich bestätigt (#189). */
   bestaetigt?: boolean;
-  /** Rechte und Netzadressen eines Pakets mit Code bestätigt (#338). */
+  /** Rechte und erlaubte Adressen (Netzwerk/Internet) eines Pakets mit Code bestätigt (#338). */
   rechteBestaetigt?: boolean;
 }
 
@@ -603,7 +603,7 @@ export class Paketverwaltung {
       herkunft: ich?.herkunft ?? null,
       abhaengigkeiten, typen: typPlaene, sichten: sichtPlaene, beispiele: paket.beispiele.length, probleme, hinweise,
       einstellungen: paket.einstellungen || ich?.einstellungen ? einstellungsAenderung(ich?.einstellungen ?? null, paket.einstellungen) : null,
-      laeufer: paket.code ? { rechte: rechteText(paket.code.info, (vw) => this.typName(vw, paket, installierte, typen)), bestaetigen: !ich || !gleicheRechte(ich.laeufer, paket.code.info) } : null,
+      laeufer: paket.code ? { rechte: rechtePunkte(paket.code.info, (vw) => this.typName(vw, paket, installierte, typen)), bestaetigen: !ich || !gleicheRechte(ich.laeufer, paket.code.info) } : null,
     };
   }
 
@@ -619,7 +619,7 @@ export class Paketverwaltung {
   /** Rechte eines Pakets mit Code verlangen eine ausdrückliche Bestätigung (#338). */
   private static rechteBestaetigen(plan: Vorschau, e: { rechteBestaetigt?: boolean }) {
     if (plan.laeufer?.bestaetigen && e.rechteBestaetigt !== true) {
-      throw new Fachfehler(409, `„${plan.paket.name}“ enthält Code, der im DMS laufen soll. Bitte die Rechte bestätigen.`, { rechte: plan.laeufer.rechte });
+      throw new Fachfehler(409, `„${plan.paket.name}“ enthält Code, der im DMS laufen soll. Bitte die Rechte bestätigen.`, { rechte: rechteZeilen(plan.laeufer.rechte) });
     }
   }
 
