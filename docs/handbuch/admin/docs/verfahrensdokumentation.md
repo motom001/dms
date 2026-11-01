@@ -32,4 +32,4 @@ Sie ist gegliedert in:
 - **Sie beschreibt den heutigen Stand des DMS.** Kommen neue Funktionen dazu, die du nutzt, ergänze die Abschnitte. Die Vorlage hier wird mit jeder Version nachgezogen.
 - Hintergrund: GoBD (BMF-Schreiben, zuletzt geändert am 14.07.2025); Aufbewahrungsfristen derzeit 8 Jahre für Buchungsbelege, 10 Jahre für Bücher, 6 Jahre für Geschäftsbriefe, jeweils ab Ende des Kalenderjahres.
 
-Weiter: [Archivmodus](archiv.md) · [Sicherung](sicherung.md) · [Berechtigungen](berechtigungen.md) · [Wachsen und umziehen](wachsen.md)
+Weiter: [Archivmodus](archiv.md) · [Löschkonzept (Vorlage)](loeschkonzept.md) · [Sicherung](sicherung.md) · [Berechtigungen](berechtigungen.md) · [Wachsen und umziehen](wachsen.md)

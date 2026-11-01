@@ -26,7 +26,7 @@ Das gilt sofort auch für vorhandene Mappen. Beim Einschalten zeigt das DMS, wie
 
 ## Nach der Frist: „Darf weg“
 
-Unter **Werkbank → Darf weg** stehen alle Mappen aus Mappentypen im Archivmodus, deren Frist abgelaufen ist, mit Datum. Du wählst einzelne oder alle und löschst sie – mit Papierkorb dorthin, sonst endgültig. **Gelöscht wird nie automatisch.**
+Unter **Werkbank → Darf weg** stehen alle Mappen aus Mappentypen im Archivmodus, deren Frist abgelaufen ist, mit Datum. Du wählst einzelne oder alle und löschst sie – mit Papierkorb dorthin, sonst endgültig. **Gelöscht wird nie automatisch.** Wie Archivmodus, „Darf weg“ und Papierkorb zu einem Sperr- und Löschkonzept nach der DSGVO zusammenpassen, steht unter [Datenschutz im DMS](datenschutz.md#sperr-und-loschkonzept-aufsetzen), mit einer [Vorlage Löschkonzept](loeschkonzept.md).
 
 ## Alle Dateien prüfen
 

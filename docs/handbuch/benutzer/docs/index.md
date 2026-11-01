@@ -27,6 +27,9 @@ Welche Mappentypen es gibt und welche Angaben sie haben, richtet ein Administrat
 | jemanden als verantwortlich eintragen willst | [Benutzer und Rollen](benutzer-und-rollen.md) |
 | Passwort, Design oder Schriftgröße ändern willst | [Profil und Einstellungen](profil.md) |
 
+!!! info "Deine Daten bleiben bei dir"
+    Das DMS läuft bei deinem Haushalt oder Betrieb, nicht in einer fremden Cloud. Es sendet keine Nutzungsdaten – auch keine anonymen – und ist auf Datenschutz ausgelegt. Was das für dich heißt, steht unter [Meine Daten](profil.md#meine-daten); was das DMS dafür mitbringt, im Administratorhandbuch unter [Datenschutz im DMS](https://motom001.github.io/dms/admin/aktuell/datenschutz/).
+
 Oben rechts kannst du das ganze Handbuch durchsuchen. Was sich in neuen Versionen geändert hat, steht unter [Was ist neu?](https://github.com/motom001/dms/releases)
 
 !!! tip "Hilfe aus dem DMS heraus"

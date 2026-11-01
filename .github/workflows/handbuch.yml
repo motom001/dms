@@ -145,10 +145,12 @@ jobs:
           python3 docs/handbuch/werkzeuge/glossar.py
           # Tabellen der Werkbank-Bereiche aus shared/src/werkbankansicht.ts (#296).
           python3 docs/handbuch/werkzeuge/werkbank_bereiche.py --pruefen
-          # Vorlage Verfahrensdokumentation (#213) als Word und LibreOffice zum Herunterladen.
+          # Vorlagen Verfahrensdokumentation (#213) und Löschkonzept (#389) als Word und LibreOffice zum Herunterladen.
           command -v pandoc >/dev/null || sudo apt-get install -y -qq pandoc >/dev/null
           mkdir -p docs/handbuch/admin/docs/vorlagen
-          for f in docx odt; do pandoc docs/handbuch/vorlagen/verfahrensdokumentation.md -o "docs/handbuch/admin/docs/vorlagen/verfahrensdokumentation.$f"; done
+          for v in verfahrensdokumentation loeschkonzept; do
+            for f in docx odt; do pandoc "docs/handbuch/vorlagen/$v.md" -o "docs/handbuch/admin/docs/vorlagen/$v.$f"; done
+          done
           # Bilder brauchen Benutzer- und Administratorhandbuch; die anderen verlinken dorthin.
           for h in benutzer admin; do
             cp -r docs/handbuch/bilder "docs/handbuch/$h/docs/bilder"
