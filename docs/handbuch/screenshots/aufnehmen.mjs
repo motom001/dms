@@ -852,9 +852,15 @@ async function main() {
   const mitgliedCookie = (mitgliedAnmeldung.headers.get('set-cookie') ?? '').split(';')[0];
   await geheZu(s, '/werkbank/wartungsmodus');
   await s.getByLabel(/Text für alle/).fill('Update auf die neue Version');
+  // #402: Zeitschiene Beginn → Ende mit Satz darunter und „Jetzt sofort sperren“ – vor dem Ankündigen.
+  await s.getByLabel(/Erwartetes Ende/).fill(await s.locator('#wartung-beginn').evaluate((e) => {
+    const d = new Date(new Date(e.value).getTime() + 3600_000); const p = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  }));
+  await s.getByRole('button', { name: 'Jetzt sofort sperren' }).waitFor();
+  await bild(s, 'werkbank-wartungsmodus');
   await s.getByRole('button', { name: 'Wartung ankündigen' }).click();
   await s.locator('.wartungsbanner').waitFor();
-  await bild(s, 'werkbank-wartungsmodus');
   if (mitgliedCookie) {
     const km = await browser.newContext({ viewport: { width: 1100, height: 620 }, colorScheme: 'light', locale: 'de-DE', timezoneId: 'Europe/Berlin' });
     const [name, wert] = mitgliedCookie.split('=');

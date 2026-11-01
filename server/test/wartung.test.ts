@@ -104,6 +104,38 @@ describe('Wartungsmodus (#102)', () => {
     assert.equal(await einstellungen.lies('wartung'), null);
   });
 
+  it('Zeitschiene (#402): Beginn als Zeitpunkt statt Vorlaufzeit, geprüft gegen jetzt und Ende', async () => {
+    const { admin, adminSitzung, wartung, uhr } = await aufbau();
+    await assert.rejects(wartung.einschalten({ beginn: '2026-10-29T09:59:00Z' }, admin.benutzer, null), /Vergangenheit.*Jetzt sofort sperren/);
+    await assert.rejects(wartung.einschalten({ beginn: '2026-10-30T10:01:00Z' }, admin.benutzer, null), /24 Stunden/);
+    await assert.rejects(wartung.einschalten({ beginn: '2026-10-29T10:45:00Z', ende: '2026-10-29T10:45:00Z' }, admin.benutzer, null), /Ende muss nach dem Beginn/);
+    await assert.rejects(wartung.einschalten({ beginn: 'bald' }, admin.benutzer, null), /kein gültiger Zeitpunkt/);
+    assert.equal(wartung.stand.stufe, 'aus');
+    await wartung.einschalten({ beginn: '2026-10-29T10:45:00Z', ende: '2026-10-29T11:45:00Z', vorlauf: 5 }, admin.benutzer, adminSitzung.id);
+    assert.equal(wartung.stand.aktivAb, '2026-10-29T10:45:00.000Z', 'beginn gewinnt vor vorlauf');
+    assert.equal(wartung.oeffentlich().sekunden, 45 * 60);
+    uhr.stelle('2026-10-29T10:45:00Z');
+    await wartung.pruefe();
+    assert.equal(wartung.stand.stufe, 'aktiv');
+    assert.ok(!wartung.stand.sofort);
+  });
+
+  it('„Jetzt sofort sperren“ (#402) wirkt wie Vorlaufzeit 0 und steht als „sofort gesperrt“ im Protokoll', async () => {
+    const { admin, adminSitzung, wartung, konten, route } = await aufbau();
+    const vorher = protokoll.letzteNr;
+    const r = await route('POST', '/api/werkbank/wartung/ein').handler(anfrage({ benutzer: admin.benutzer, sitzungsDaten: adminSitzung, body: { text: 'Sicherheitsvorfall', ende: null, sofort: true, beginn: '2026-10-29T10:30:00Z' } }));
+    assert.equal((r.body as { stufe: string }).stufe, 'aktiv');
+    assert.equal(wartung.stand.sofort, true);
+    assert.equal(wartung.stand.text, 'Sicherheitsvorfall');
+    assert.deepEqual((await konten.alleSitzungen()).map((s) => s.email), ['admin@example.org']);
+    const texte = protokoll.eintraege({ seit: vorher }).map((e) => e.text);
+    assert.ok(texte.includes('Wartungsmodus sofort gesperrt'), texte.join(' | '));
+    assert.ok(protokoll.eintraege({ seit: vorher }).some((e) => /aktiv/.test(e.text) && JSON.stringify(e).includes('sofort gesperrt')));
+    await wartung.ausschalten('admin@example.org');
+    await wartung.einschalten({ vorlauf: 0 }, admin.benutzer, adminSitzung.id);
+    assert.ok(!wartung.stand.sofort, 'Vorlaufzeit 0 über die API bleibt „eingeschaltet“');
+  });
+
   it('prüft Eingaben', async () => {
     const { admin, wartung } = await aufbau();
     await assert.rejects(wartung.einschalten({ vorlauf: -1 }, admin.benutzer, null), (e: unknown) => e instanceof Fachfehler && e.status === 422);
