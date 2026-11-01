@@ -969,21 +969,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#benachrichtigungen-und-ablage" class="md-nav__link">
+  <a href="#benachrichtigungen" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Benachrichtigungen und Ablage
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#startseite" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Startseite
+        Benachrichtigungen
       
     </span>
   </a>
@@ -1417,21 +1406,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#benachrichtigungen-und-ablage" class="md-nav__link">
+  <a href="#benachrichtigungen" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Benachrichtigungen und Ablage
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#startseite" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Startseite
+        Benachrichtigungen
       
     </span>
   </a>
@@ -1502,7 +1480,7 @@
 <p><img alt="Benutzermenü" src="../bilder/benutzermenue.png" /></p>
 <ul>
 <li>Oben stehen dein Name, deine E-Mail-Adresse und deine Rolle.</li>
-<li><strong>Mein Konto</strong> – dein <a href="#profil">Profil</a> mit allen Bereichen: Konto, Sicherheit, Darstellung (Design, Schriftgröße, Spaltenbreiten), Benachrichtigungen und Ablage, <a href="#abwesenheit">Abwesenheit</a>.</li>
+<li><strong>Mein Konto</strong> – dein <a href="#profil">Profil</a> mit allen Bereichen: Konto, Sicherheit, Darstellung (Design, Schriftgröße, Startseite, Anstehend, Spaltenbreiten), Benachrichtigungen, <a href="#abwesenheit">Abwesenheit</a>.</li>
 <li>Solange eine Abwesenheit wirkt, steht oben im Menü „Du bist abwesend“ – ein Klick darauf führt direkt dorthin –, und neben deinem Namen ist ein Punkt.</li>
 <li><strong>Hilfe</strong> – öffnet dieses Handbuch.</li>
 <li><strong>Fehler melden</strong> – siehe <a href="#fehler-melden">Fehler melden</a>.</li>
@@ -1545,6 +1523,7 @@
 <li><strong>Zwei-Faktor-Anmeldung</strong> – siehe <a href="#zwei-faktor-anmeldung">unten</a>.</li>
 <li><strong>Meine angemeldeten Geräte</strong> – überall, wo du gerade angemeldet bist, mit Browser, Gerät und letzter Aktivität; <em>dieses Gerät</em> ist markiert. <strong>Abmelden</strong> beendet eine einzelne Anmeldung, <strong>Alle anderen abmelden</strong> alle außer dieser – etwa wenn du ein Handy verloren hast. Ändere dann am besten auch dein Passwort.</li>
 <li><strong>API-Schlüssel</strong> – damit können andere Programme in deinem Namen auf das DMS zugreifen, etwa ein Scanner. Brauchst du das nicht, kannst du diesen Abschnitt übergehen. Passwortfelder liefert ein Schlüssel nur, wenn du beim Erzeugen <strong>Passwörter lesen</strong> ankreuzt. Wie das funktioniert, beschreibt das <a href="https://motom001.github.io/dms/admin/aktuell/api/">Administratorhandbuch</a>.</li>
+<li><span id="papierkorb"></span><strong>Papierkorb</strong> – <strong>Beim Abmelden leeren</strong> löscht deine gelöschten Mappen endgültig, sobald du dich abmeldest. Ohne den Haken bleiben sie so lange im <a href="../ablage/#papierkorb">Papierkorb</a>, wie der Administrator es eingestellt hat.</li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Anmelden mit dem Firmenkonto</p>
@@ -1568,10 +1547,14 @@
 <ul>
 <li><strong>Design</strong> – wie das DMS für dich aussieht. <strong>Standard</strong> folgt dem Design, das der Administrator festgelegt hat. Gilt für dein Konto auf allen Geräten.</li>
 <li><strong>Schriftgröße auf diesem Gerät</strong> – klein, normal oder groß. Gilt nur für das Gerät, an dem du gerade sitzt; am Smartphone kannst du eine andere Größe wählen als am PC.</li>
+<li><span id="startseite"></span><strong>Startseite</strong> – <strong>Mit der Startseite beginnen</strong> schaltet die <a href="../startseite/">Startseite</a> ein oder aus; ohne sie geht es nach der Anmeldung direkt zu <em>Zu erledigen</em>. <strong>Vierte Kachel</strong> wählt, was neben Zu erledigen, Neue Post und Anstehend steht: deine Favoriten oder eine Ansicht.</li>
+<li><span id="anstehend"></span><strong>Anstehend</strong> – wie viele Tage im Voraus die Ansicht <a href="../eingang/#anstehend">Anstehend</a> deine Fristen und Erinnerungen zeigt (Standard: 30).</li>
 <li><strong>Darstellung auf diesem Gerät</strong> – die Breite der Spalten und eingeklappte Bereiche merkt sich jedes Gerät. Ist etwas nicht mehr zu finden, stellt <strong>Standard-Darstellung wiederherstellen</strong> die ursprüngliche Aufteilung her.</li>
 <li><strong>Entwicklermodus</strong> – zeigt unten rechts, wie lange ein Seitenaufruf gedauert hat.</li>
 </ul>
-<h3 id="benachrichtigungen-und-ablage">Benachrichtigungen und Ablage<a class="headerlink" href="#benachrichtigungen-und-ablage" title="Permanent link">&para;</a></h3>
+<p><img alt="Profil → Darstellung" loading="lazy" src="../bilder/profil-darstellung.png" /></p>
+<h3 id="benachrichtigungen">Benachrichtigungen<a class="headerlink" href="#benachrichtigungen" title="Permanent link">&para;</a></h3>
+<p><span id="benachrichtigungen-und-ablage"></span></p>
 <ul>
 <li><strong>Aufgaben</strong> – Mappen mit offenen <a href="../eingang/">Aufgaben</a> für dich stehen unter „Zu erledigen“. Zusätzlich schickt das DMS dir die <strong>Tägliche Zusammenfassung</strong> per E-Mail, solange du welche hast. <strong>Tägliche Zusammenfassung meiner Aufgaben per E-Mail</strong> bestellt sie ab oder wieder an. Darunter wählst du:<ul>
 <li><strong>Uhrzeit</strong> – im 15-Minuten-Raster; <em>Standard</em> ist die Uhrzeit, die der Administrator eingestellt hat.</li>
@@ -1579,11 +1562,8 @@
 <li><strong>Nicht an Feiertagen</strong> – an gesetzlichen Feiertagen des Bundeslands, das der Administrator gewählt hat, kommt keine (Standard: an). Ohne Bundesland ist der Haken ausgegraut.</li>
 </ul>
 </li>
-<li><strong>Anstehend</strong> – wie viele Tage im Voraus die Ansicht <a href="../eingang/#anstehend">Anstehend</a> deine Fristen und Erinnerungen zeigt (Standard: 30).</li>
-<li><strong>Papierkorb</strong> – <strong>Beim Abmelden leeren</strong> löscht deine gelöschten Mappen endgültig, sobald du dich abmeldest. Ohne den Haken bleiben sie so lange im <a href="../ablage/#papierkorb">Papierkorb</a>, wie der Administrator es eingestellt hat.</li>
 </ul>
-<h3 id="startseite">Startseite<a class="headerlink" href="#startseite" title="Permanent link">&para;</a></h3>
-<p><strong>Mit der Startseite beginnen</strong> schaltet die <a href="../startseite/">Startseite</a> ein oder aus; ohne sie geht es nach der Anmeldung direkt zu <em>Zu erledigen</em>. <strong>Vierte Kachel</strong> wählt, was neben Zu erledigen, Neue Post und Anstehend steht: deine Favoriten oder eine Ansicht.</p>
+<p><img alt="Profil → Benachrichtigungen" loading="lazy" src="../bilder/profil-benachrichtigungen.png" /></p>
 <h3 id="abwesenheit">Abwesenheit<a class="headerlink" href="#abwesenheit" title="Permanent link">&para;</a></h3>
 <p>Damit während deines Urlaubs nichts liegen bleibt, trägst du unter <strong>Abwesenheit</strong> einen <strong>Vertreter</strong> ein:</p>
 <ul>
