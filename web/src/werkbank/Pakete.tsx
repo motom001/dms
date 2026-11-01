@@ -247,10 +247,10 @@ export function PaketLink({ z, wert }: { z: PaketeZustand; wert: string }) {
 }
 
 /** Ergebnis einer Aktion mit ggf. Gründen. */
-type Meldung = { art: 'gut' | 'schlecht'; text: string; gruende?: string[] };
-const alsMeldung = (e: unknown): Meldung => ({ art: 'schlecht', text: (e as Error).message, gruende: e instanceof ApiFehler ? e.gruende : [] });
+export type Meldung = { art: 'gut' | 'schlecht'; text: string; gruende?: string[] };
+export const alsMeldung = (e: unknown): Meldung => ({ art: 'schlecht', text: (e as Error).message, gruende: e instanceof ApiFehler ? e.gruende : [] });
 
-function MeldungBox({ m }: { m?: Meldung }) {
+export function MeldungBox({ m }: { m?: Meldung }) {
   return m ? <div className={`hinweis ${m.art}`} role="status"><p>{m.text}</p>{!!m.gruende?.length && <ul>{m.gruende.map((g) => <li key={g}>{g}</li>)}</ul>}</div> : null;
 }
 
@@ -441,9 +441,11 @@ function LaeuferStand({ paket }: { paket: string }) {
 /**
  * Vorschau mit Namen, Abhängigkeiten und Beispielen. Bei Paketen außerhalb des offiziellen
  * Katalogs (#189) eine deutliche Warnung, die man ausdrücklich bestätigen muss.
+ * Auch im Einrichtungsassistenten und für Sammeldateien (#460, #461): je Paket ein Block, eigene Überschrift
+ * und „Auslassen“ statt „Abbrechen“.
  */
-function VorschauBlock({ v, warnung, los, abbrechen }: {
-  v: PaketVorschau; warnung: string | null; abbrechen(): void;
+export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText = 'Abbrechen' }: {
+  v: PaketVorschau; warnung: string | null; abbrechen(): void; titel?: string; abbrechenText?: string;
   los(x: { namen: Record<string, string>; sichtNamen: Record<string, string>; beispiele: boolean; mitAbhaengigkeiten: boolean; rechteBestaetigt?: boolean }): Promise<void>;
 }) {
   const [namen, setNamen] = useState<Record<string, string>>(() => Object.fromEntries(v.typen.filter((t) => !t.vorhanden).map((t) => [t.schluessel, t.vorschlag ?? t.name])));
@@ -460,7 +462,7 @@ function VorschauBlock({ v, warnung, los, abbrechen }: {
   const leer = Object.values(namen).some((n) => !n.trim()) || Object.values(sichtNamen).some((n) => !n.trim());
   return (
     <section className="blatt" aria-label="Vorschau">
-      <h2 className="h3">{v.update ? `Update auf ${v.paket.version}` : `Vorschau: ${v.paket.name} ${v.paket.version}`}</h2>
+      <h2 className="h3">{titel ?? (v.update ? `Update auf ${v.paket.version}` : `Vorschau: ${v.paket.name} ${v.paket.version}`)}</h2>
       {warnung && (
         <div className="hinweis warn" role="alert">
           <p><strong>Nicht vom DMS-Projekt geprüft.</strong> {warnung}. Installiere nur Pakete, deren Herkunft du kennst und der du vertraust.</p>
@@ -492,7 +494,7 @@ function VorschauBlock({ v, warnung, los, abbrechen }: {
       {v.update
         ? <p className="leise">Ein Update ergänzt nur. Es löscht nichts und überschreibt nichts, was du selbst geändert hast.</p>
         : <p className="leise">Das wird angelegt. Gibt es einen Namen schon, wähle einen anderen.</p>}
-      <h3>Mappentypen</h3>
+      {v.typen.length > 0 && <h3>Mappentypen</h3>}
       <ul className="stapel">
         {v.typen.map((t) => (
           <li key={t.schluessel}>
@@ -506,7 +508,7 @@ function VorschauBlock({ v, warnung, los, abbrechen }: {
           </li>
         ))}
       </ul>
-      <h3>Ansichten</h3>
+      {v.sichten.length > 0 && <h3>Ansichten</h3>}
       <ul className="stapel">
         {v.sichten.map((s) => (
           <li key={s.schluessel}>
@@ -531,7 +533,7 @@ function VorschauBlock({ v, warnung, los, abbrechen }: {
           onClick={() => { setLaeuft(true); void los({ namen, sichtNamen, beispiele, mitAbhaengigkeiten: mit, ...(rechteOk ? { rechteBestaetigt: true } : {}) }).finally(() => setLaeuft(false)); }}>
           {laeuft ? (v.update ? 'Aktualisiere …' : 'Installiere …') : v.update ? 'Aktualisieren' : 'Installieren'}
         </button>
-        <button type="button" className="textknopf" onClick={abbrechen}>Abbrechen</button>
+        <button type="button" className="textknopf" onClick={abbrechen}>{abbrechenText}</button>
       </div>
     </section>
   );
