@@ -2,17 +2,29 @@
 
 Passwörter und andere Geheimnisse, die das DMS speichert, liegen verschlüsselt in der Datenbank. Den Schlüssel dazu hält das DMS in einer **eigenen Datei**, nie in der Datenbank. Eine Datenbanksicherung allein verrät damit keine Geheimnisse.
 
-Mit diesem Schlüssel verschlüsselt sind:
-
-- das Passwort des Mailservers (SMTP, **Werkbank → E-Mail und Adresse**),
-- die Passwörter der [Postfächer](postfaecher.md),
-- das Client-Secret der [Anmeldung über einen Anbieter](anmeldeschutz.md#anmeldung-uber-einen-anbieter-openid-connect),
-- die Geheimnisse der [Zwei-Faktor-Anmeldung](anmeldeschutz.md#zwei-faktor-anmeldung),
-- Geheimnisse in den Einstellungen von [Paketen](pakete.md),
-- [Passwortfelder](mappentypen.md#passwortfelder) in Mappen, auch im Papierkorb,
-- die [Sicherungen](sicherung.md) – mit einem Schlüssel, der aus diesem abgeleitet ist.
+Was genau verschlüsselt ist, zeigt die Seite unter [Was verschlüsselt ist](#was-verschlusselt-ist) mit der Anzahl je Art.
 
 ![Werkbank → Verschlüsselung](bilder/werkbank-verschluesselung.png)
+
+## Was verschlüsselt ist
+
+Der Abschnitt **Was verschlüsselt ist** zählt jede Art verschlüsselter Werte – auch mit 0, damit du siehst, was dazugehört:
+
+| Art | Wo du sie einträgst |
+| --- | --- |
+| **Passwortfelder in Mappen** | [Passwortfelder](mappentypen.md#passwortfelder) in der Ablage |
+| **Passwortfelder im Papierkorb** | gelöschte Mappen im [Papierkorb](papierkorb.md) |
+| **E-Mail-Versand** (Passwort des Mailservers) | **Werkbank → E-Mail und Adresse** |
+| **Postfächer (IMAP-Passwort)** | [Postfächer](postfaecher.md) mit Anmeldung per Passwort |
+| **Postfächer (OAuth: App-Geheimnis)** | das Client-Secret der App beim Anbieter, unter [Postfächer](postfaecher.md) |
+| **Postfächer (OAuth-Anmeldung)** | Zugriffs- und Aktualisierungstoken nach der Anmeldung beim Anbieter |
+| **Anmeldung über einen Anbieter (OIDC)** | das Client-Secret unter [Anmeldeschutz](anmeldeschutz.md#anmeldung-uber-einen-anbieter-openid-connect) |
+| **Zwei-Faktor-Anmeldung** | das Geheimnis jedes Benutzers, der die [Zwei-Faktor-Anmeldung](anmeldeschutz.md#zwei-faktor-anmeldung) eingerichtet hat |
+| **Paket-Einstellungen (Geheimnisse)** | Felder vom Typ Geheimnis in den Einstellungen von [Paketen](pakete.md) |
+
+Ist ein Wert mit dem vorhandenen Schlüssel nicht lesbar, steht daneben „… nicht lesbar“; welcher es ist, steht darunter unter *Nicht lesbare oder unverschlüsselte Werte*. Taucht eine Zeile **Weitere Einstellungen** auf, kennt die Anzeige diese Art noch nicht – verschlüsselt und beim Wechsel mitgenommen wird sie trotzdem; melde sie gern als Fehler.
+
+Die [Sicherungen](sicherung.md) verschlüsselt das DMS mit einem Schlüssel, der aus diesem abgeleitet ist; sie stehen nicht in der Liste.
 
 ## Schlüssel erzeugen
 
@@ -38,7 +50,7 @@ Könnte der Schlüssel bekannt geworden sein – etwa weil ein ausgedrucktes Not
 Nach einer Rückfrage – zur Sicherheit tippst du dort das Wort **wechseln** ein –
 
 1. erzeugt das DMS einen neuen Schlüssel,
-2. verschlüsselt alle Geheimnisse in der Datenbank **ganz oder gar nicht** neu; bricht dabei etwas ab, gilt weiter der bisherige Schlüssel. Dazu gehören die Passwortfelder in Mappen und im Papierkorb und alle Einstellungen mit Geheimnissen: Mailserver, Postfächer, Client-Secret des Anbieters, Zwei-Faktor-Geheimnisse und Paket-Geheimnisse,
+2. verschlüsselt alle Geheimnisse in der Datenbank **ganz oder gar nicht** neu; bricht dabei etwas ab, gilt weiter der bisherige Schlüssel. Dazu gehört alles unter [Was verschlüsselt ist](#was-verschlusselt-ist): Passwortfelder in Mappen und im Papierkorb, Mailserver, Postfächer (IMAP-Passwort, OAuth-App und OAuth-Anmeldung), Client-Secret des Anbieters, Zwei-Faktor-Geheimnisse und Paket-Geheimnisse,
 3. setzt das Prüfwort neu und
 4. ersetzt die Schlüsseldatei. Der alte Schlüssel wird nicht aufbewahrt.
 
@@ -64,14 +76,14 @@ Die Seite zeigt die beiden nächsten Schritte mit je einem Knopf; ein erledigter
 | **verloren** | Es gab einen Schlüssel, die Datei fehlt aber. | Datei aus deiner Kopie nach `geheim/` zurücklegen und das DMS neu starten. Ist sie verloren, einen neuen Schlüssel erzeugen und die Geheimnisse neu eingeben – siehe [Schlüssel verloren](#schlussel-verloren). |
 | **passt nicht** | Unter `geheim/` liegt ein anderer Schlüssel als der, mit dem die Passwörter verschlüsselt sind. | Die richtige Datei ablegen und neu starten – oder die falsche entfernen, neu starten und einen neuen Schlüssel erzeugen. |
 
-Unter **Nicht lesbare oder unverschlüsselte Werte** listet die Seite, welche Passwörter mit dem vorhandenen Schlüssel nicht lesbar sind (z. B. nach einem neuen Schlüssel) und wo du sie neu eingibst. Ein SMTP-Passwort aus einer Version vor 0.11 erscheint dort als „unverschlüsselt“, bis es einen Schlüssel gibt; dann wird es automatisch verschlüsselt.
+Unter **Nicht lesbare oder unverschlüsselte Werte** listet die Seite, welche Passwörter und Geheimnisse mit dem vorhandenen Schlüssel nicht lesbar sind (z. B. nach einem neuen Schlüssel) und wo du sie neu eingibst – auch Postfächer, OAuth-Anmeldungen, das Client-Secret des Anbieters, Zwei-Faktor-Geheimnisse und Paket-Geheimnisse. Ein SMTP-Passwort aus einer Version vor 0.11 erscheint dort als „unverschlüsselt“, bis es einen Schlüssel gibt; dann wird es automatisch verschlüsselt.
 
 ## Schlüssel verloren
 
 Ohne die Schlüsseldatei kann das DMS seine Geheimnisse nicht mehr lesen. Erzeugst du einen neuen Schlüssel, gilt danach:
 
 - **Passwortfelder und Mailserver:** Die Werte stehen unter *Nicht lesbare oder unverschlüsselte Werte*. Gib sie neu ein.
-- **Postfächer:** Der Abruf scheitert, bis du das Passwort unter **Werkbank → Postfächer** neu einträgst.
+- **Postfächer:** Der Abruf scheitert, bis du das Passwort unter **Werkbank → Postfächer** neu einträgst. Bei OAuth trägst du das Client-Secret der App neu ein und meldest die Postfächer neu beim Anbieter an.
 - **Anmeldung über einen Anbieter:** Die Anmeldung scheitert, bis du das Client-Secret unter **Werkbank → Anmeldeschutz** neu einträgst.
 - **Zwei-Faktor-Anmeldung:** Codes aus der Authenticator-App passen nicht mehr. Die Benutzer kommen nur noch mit ihren Wiederherstellungscodes herein. Setze die Zwei-Faktor-Anmeldung unter **Werkbank → Benutzer** zurück; der Benutzer richtet sie dann neu ein.
 - **Paket-Geheimnisse:** in den Einstellungen des Pakets neu eingeben.

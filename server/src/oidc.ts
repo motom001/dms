@@ -165,6 +165,8 @@ export class Oidc {
     }
     return this.stand;
   }
+  /** Zwischengespeicherte Einstellung vergessen, z. B. nach dem Schlüsselwechsel (#410: neues Client-Secret). */
+  vergiss() { this.stand = null; }
   async ansicht(): Promise<OidcAnsicht> {
     const { clientSecret, ...rest } = await this.einstellung();
     return { ...rest, secretGesetzt: !!clientSecret };

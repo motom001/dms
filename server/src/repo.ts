@@ -5,6 +5,7 @@ import type { Erinnerung } from '../../shared/src/fristen';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import type { AuskunftLink } from '../../shared/src/auskunft';
+import type { Fundstelle } from './geheimnisse';
 
 export interface Verweis { feldKey: string; zielId: string }
 /** Abruf-Link (#455) mit den Hashes von Schlüssel und Abrufcode – verlässt den Server nie. */
@@ -331,6 +332,11 @@ export interface Repo {
    * und die angegebenen Einstellungen setzen – in einer Transaktion.
    */
   umschluesseln(um: (wert: string) => string | null, einstellungen: Record<string, unknown>): Promise<{ umgeschluesselt: number; unlesbar: number }>;
+  /**
+   * Alle verschlüsselten Werte mit Fundstelle (#410) – genau die, die `umschluesseln` anfasst
+   * (Mappen, Papierkorb, Einstellungen außer den beim Wechsel neu gesetzten).
+   */
+  verschluesselteFundstellen(): Promise<Fundstelle[]>;
 
   /* ---------- Freie Erinnerungen (#131), solange nicht fällig ---------- */
   erinnerungen(f?: { mappeId?: string; empfaengerId?: string; bis?: string }): Promise<Erinnerung[]>;

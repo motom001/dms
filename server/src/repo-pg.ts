@@ -1320,6 +1320,22 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       });
     },
 
+    async verschluesselteFundstellen() {
+      // Dieselben Stellen wie umschluesseln (#410); Benutzername für die Zwei-Faktor-Anmeldung.
+      const muster = '%dms1$%';
+      const mappen = await sql`SELECT id, titel, werte FROM mappen WHERE haushalt_id = ${haushaltId} AND werte::text LIKE ${muster}`;
+      const korb = await sql`SELECT id, mappe FROM papierkorb WHERE haushalt_id = ${haushaltId} AND mappe::text LIKE ${muster}`;
+      const einst = await sql`
+        SELECT e.schluessel, e.wert, coalesce(nullif(b.name, ''), b.email) AS titel FROM einstellungen e
+        LEFT JOIN benutzer b ON b.haushalt_id = e.haushalt_id AND e.schluessel = 'zweifaktor_' || b.id::text
+        WHERE e.haushalt_id = ${haushaltId} AND e.wert::text LIKE ${muster} ORDER BY e.schluessel`;
+      return [
+        ...mappen.map((r) => ({ quelle: 'mappe' as const, schluessel: String(r.id), wert: r.werte, titel: r.titel as string })),
+        ...korb.map((r) => ({ quelle: 'papierkorb' as const, schluessel: String(r.id), wert: r.mappe, titel: (r.mappe as { titel?: string }).titel ?? null })),
+        ...einst.map((r) => ({ quelle: 'einstellung' as const, schluessel: r.schluessel as string, wert: r.wert, titel: (r.titel as string | null) ?? null })),
+      ];
+    },
+
     /* ---------- Freie Erinnerungen (#131) ---------- */
     async erinnerungen(f = {}) {
       return (await sql`

@@ -803,6 +803,8 @@ export interface TresorStatus {
   fingerabdruck: string | null; erwartet: string | null; erstellt: string | null; datei: string;
   eingebunden: boolean | null;
   betroffen: Array<{ bereich: string; was: string; wo?: string }>;
+  /** Was verschlüsselt gespeichert ist, mit Anzahl je Art (#410). */
+  arten?: Array<{ art: string; name: string; anzahl: number; unlesbar: number }>;
   /** Notfallblatt zum aktuellen Schlüssel (#106). */
   notfallblatt?: Notfallblattstand | null;
 }
