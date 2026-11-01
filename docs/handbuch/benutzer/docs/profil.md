@@ -114,8 +114,20 @@ Damit während deines Urlaubs nichts liegen bleibt, trägst du unter **Abwesenhe
 - **Abwesend** an, **Vertreter** wählen (Pflicht), optional **von** und **bis** (jeweils einschließlich). Ohne Datum gilt die Abwesenheit, bis du sie ausschaltest; mit „bis“ endet sie danach von selbst.
 - Solange sie wirkt, gehen **neue** Aufgaben für dich – von Hand vergebene, Erwähnungen und „passt nicht“ – an deinen Vertreter. In der Historie der Mappe steht „weitergegeben wegen Abwesenheit“. Ist dein Vertreter selbst abwesend, geht sie an dessen Vertreter weiter.
 - **Alle offenen Aufgaben an ‹Vertreter› geben** gibt auch die schon vorhandenen ab. Nach deiner Rückkehr bleiben sie beim Vertreter.
+- Schaltest du die Abwesenheit ein und hast noch offene Aufgaben, erinnert dich ein Hinweis daran: Neue Aufgaben gehen an den Vertreter, die bestehenden bleiben bei dir, bis du sie weitergibst.
 - Dein Vertreter bekommt einen Hinweis unter „Zu erledigen“ („Du wurdest für … als Vertreter hinterlegt“). Abwesende bekommen keine tägliche Zusammenfassung.
 - Ein Administrator kann deine Abwesenheit auch für dich eintragen, etwa bei Krankheit. Eintragen, Ändern und Beenden stehen in der Historie deiner Benutzer-Mappe.
+
+#### Meine offenen Aufgaben { #meine-offenen-aufgaben }
+
+Unter der Abwesenheit stehen alle Aufgaben, die gerade bei dir liegen – mit Filter nach **Art**, **Mappentyp**, **Fälligkeit** und Suche im Titel. So gibst du sie vor dem Urlaub weiter, einzeln, in Gruppen oder alle auf einmal:
+
+- **Einzeln:** unter der Aufgabe bei *weitergeben an* eine Person wählen.
+- **Mehrere:** die Kästchen links anhaken oder **Alle angezeigten auswählen** (gilt für die gerade gefilterten). In der Leiste **Ausgewählte weitergeben an** eine Person wählen – dein eingetragener Vertreter ist schon vorausgewählt – und **Weitergeben**. Das geht mehrmals hintereinander, etwa drei an Anna, vier an Paul und den Rest an den Vertreter.
+
+Weitergeben geht nur an Personen, die die jeweilige Mappe lesen dürfen; was nicht geht, steht danach mit Grund da und bleibt ausgewählt. Jede Weitergabe steht in der Historie der Mappe, und wer etwas von dir bekommt, erhält **eine** Sammelbenachrichtigung unter „Zu erledigen“ statt einer je Aufgabe.
+
+![Meine offenen Aufgaben unter Abwesenheit](bilder/profil-abwesenheit-aufgaben.png){ loading=lazy }
 
 ## Fehler melden
 
