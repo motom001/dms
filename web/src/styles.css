@@ -699,6 +699,11 @@ input.kurz { width: 7em; }
 .aufgabentext { flex: 1 1 18em; min-width: 0; color: var(--tinte); }
 .aufgabenaktionen, .weitergeben { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .eigenschaft.breit { grid-column: 1 / -1; }
+/* Wartungsmodus (#402): Zeitschiene Beginn → Ende, Schnellwahl, „Jetzt sofort sperren“. */
+.raster > .wm-oben > span:first-child { flex-grow: 0; }
+.wm-schnell { display: flex; flex-wrap: wrap; gap: 6px; }
+.wm-sofort { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--linie); display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.wm-sofort p { margin: 0; }
 
 /* Werkbank → Aufgaben (#54) */
 .aufgabenzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 2px 12px 10px; }

@@ -34,6 +34,8 @@ export interface WartungStand {
   sitzungId: string | null;
   /** Vom DMS selbst eingeschaltet (#116), z. B. bei vollem Speicherplatz; null = von Hand. */
   ausloeser?: 'speicherplatz' | null;
+  /** Mit „Jetzt sofort sperren“ eingeschaltet (#402), z. B. bei einem Sicherheitsvorfall. */
+  sofort?: boolean;
 }
 
 /** Was jeder sehen darf (auch ohne Anmeldung). */
@@ -116,10 +118,12 @@ export class Wartung {
   }
 
   /**
-   * Einschalten. vorlauf in Minuten (0 = sofort aktiv). Ist die Wartung schon an, werden Text und
+   * Einschalten. vorlauf in Minuten (0 = sofort aktiv) – oder beginn als Zeitpunkt (#402, höchstens
+   * 24 Stunden in der Zukunft; gewinnt vor vorlauf). sofort = „Jetzt sofort sperren“: wie vorlauf 0,
+   * nur im Protokoll als „sofort gesperrt“ vermerkt. Ist die Wartung schon an, werden Text und
    * Ende übernommen; die Vorlaufzeit gilt dann nur, solange sie noch angekündigt ist.
    */
-  async einschalten(e: { text?: unknown; ende?: unknown; vorlauf?: unknown }, admin: { email: string }, sitzungId: string | null): Promise<WartungStand> {
+  async einschalten(e: { text?: unknown; ende?: unknown; vorlauf?: unknown; beginn?: unknown; sofort?: unknown }, admin: { email: string }, sitzungId: string | null): Promise<WartungStand> {
     const text = typeof e.text === 'string' ? e.text.trim().slice(0, 200) : '';
     let ende: string | null = null;
     if (e.ende !== undefined && e.ende !== null && e.ende !== '') {
@@ -127,20 +131,30 @@ export class Wartung {
       if (!Number.isFinite(t)) throw new Fachfehler(422, 'Das erwartete Ende ist kein gültiger Zeitpunkt.');
       ende = new Date(t).toISOString();
     }
-    const vorlauf = e.vorlauf === undefined || e.vorlauf === null || e.vorlauf === '' ? VORLAUF_STANDARD_MIN : Number(e.vorlauf);
-    if (!Number.isInteger(vorlauf) || vorlauf < 0 || vorlauf > 24 * 60) throw new Fachfehler(422, 'Die Vorlaufzeit muss zwischen 0 und 1440 Minuten liegen.');
+    const sofort = e.sofort === true;
     const jetzt = this.jetzt();
+    let beginn: number | null = null;
+    if (!sofort && e.beginn !== undefined && e.beginn !== null && e.beginn !== '') {
+      beginn = Date.parse(String(e.beginn));
+      if (!Number.isFinite(beginn)) throw new Fachfehler(422, 'Der Beginn ist kein gültiger Zeitpunkt.');
+      if (beginn <= jetzt.getTime()) throw new Fachfehler(422, 'Der Beginn liegt in der Vergangenheit. Für sofort bitte „Jetzt sofort sperren“ nutzen.');
+      if (beginn > jetzt.getTime() + 24 * 3600_000) throw new Fachfehler(422, 'Der Beginn darf höchstens 24 Stunden in der Zukunft liegen – ab der Ankündigung können sich nur noch Administratoren anmelden.');
+      if (ende && Date.parse(ende) <= beginn) throw new Fachfehler(422, 'Das erwartete Ende muss nach dem Beginn liegen.');
+    }
+    const vorlauf = sofort ? 0 : beginn !== null ? Math.max(1, Math.round((beginn - jetzt.getTime()) / 60_000))
+      : e.vorlauf === undefined || e.vorlauf === null || e.vorlauf === '' ? VORLAUF_STANDARD_MIN : Number(e.vorlauf);
+    if (!Number.isInteger(vorlauf) || vorlauf < 0 || vorlauf > 24 * 60) throw new Fachfehler(422, 'Die Vorlaufzeit muss zwischen 0 und 1440 Minuten liegen.');
     if (this.s.stufe === 'aktiv') {
       this.s = { ...this.s, text, ende };
       await this.speichere();
       log.info('Wartungsmodus geändert', { text, ende });
       return this.stand;
     }
-    const aktivAb = new Date(jetzt.getTime() + vorlauf * 60_000).toISOString();
-    this.s = { stufe: 'angekuendigt', text, ende, aktivAb, beginn: this.s.beginn ?? jetzt.toISOString(), von: admin.email, sitzungId };
+    const aktivAb = new Date(beginn ?? jetzt.getTime() + vorlauf * 60_000).toISOString();
+    this.s = { stufe: 'angekuendigt', text, ende, aktivAb, beginn: this.s.beginn ?? jetzt.toISOString(), von: admin.email, sitzungId, ...(sofort ? { sofort: true } : {}) };
     await this.speichere();
-    log.warn(vorlauf ? 'Wartungsmodus angekündigt' : 'Wartungsmodus eingeschaltet', { von: admin.email, text, ende, aktivAb, vorlaufMinuten: vorlauf });
-    if (!vorlauf) await this.aktiviere('sofort');
+    log.warn(sofort ? 'Wartungsmodus sofort gesperrt' : vorlauf ? 'Wartungsmodus angekündigt' : 'Wartungsmodus eingeschaltet', { von: admin.email, text, ende, aktivAb, vorlaufMinuten: vorlauf });
+    if (!vorlauf) await this.aktiviere(sofort ? 'sofort gesperrt' : 'sofort');
     return this.stand;
   }
 

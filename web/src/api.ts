@@ -230,7 +230,7 @@ export interface WhAbgleich {
   probleme: string[]; hinweise: string[]; schluesselNoetig: boolean;
 }
 export interface ProbeStand { ampel: 'gruen' | 'gelb' | 'rot' | null; letzte: { name: string; am: string; ok: boolean; info: string } | null; plan: { aktiv: boolean; wochentag: number; uhrzeit: string } }
-export interface WartungWerkbank extends WartungOeffentlich { beginn: string | null; von: string | null; sitzungen: WartungSitzung[] }
+export interface WartungWerkbank extends WartungOeffentlich { beginn: string | null; von: string | null; sitzungen: WartungSitzung[]; /** „Jetzt sofort gesperrt“ (#402) */ sofort?: boolean }
 /** Benutzer für Namen und Empfängerauswahl; abwesend, solange die Abwesenheit an ist (#78). */
 export interface Person { id: string; name: string; aktiv?: boolean; /** Dienstkonto eines Pakets (#338) */ art?: 'dienst'; abwesend?: { wirkt: boolean; von: string | null; bis: string | null; vertreter: string } }
 /** Werkbank: tägliche Zusammenfassung (#54, #92, #94). */
@@ -270,7 +270,8 @@ export const api = {
   probePlan: (p: { aktiv?: boolean; wochentag?: number; uhrzeit?: string }) => anfrage<unknown>('PUT', '/api/werkbank/sicherung/probe-plan', p),
   sicherungLoeschen: (name: string) => anfrage<null>('DELETE', `/api/werkbank/sicherung/${encodeURIComponent(name)}`),
   werkbankWartung: () => anfrage<WartungWerkbank>('GET', '/api/werkbank/wartung'),
-  wartungEin: (d: { text: string; ende: string | null; vorlauf: number }) => anfrage<unknown>('POST', '/api/werkbank/wartung/ein', d),
+  /** beginn (ISO) statt vorlauf (#402); sofort = „Jetzt sofort sperren“ (wie vorlauf 0). */
+  wartungEin: (d: { text: string; ende: string | null; vorlauf?: number; beginn?: string; sofort?: boolean }) => anfrage<unknown>('POST', '/api/werkbank/wartung/ein', d),
   wartungJetzt: () => anfrage<unknown>('POST', '/api/werkbank/wartung/jetzt'),
   wartungAus: () => anfrage<unknown>('POST', '/api/werkbank/wartung/aus'),
   einrichten: (d: { mandant?: string; email: string; name: string; passwort: string }) => anfrage<{ benutzer: Benutzer }>('POST', '/api/konto/einrichten', d),
