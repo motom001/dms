@@ -37,6 +37,18 @@ Ob es zu dir passt, zeigt [Ist das DMS etwas für mich?](https://motom001.github
 - **Sicher aufgehoben:** Verschlüsselte Sicherungen, ein Notfallblatt zum Ausdrucken und eine Probe-Wiederherstellung, die zeigt, dass die Sicherung auch funktioniert.
 - **Deine Daten gehören dir:** Alles lässt sich jederzeit in offenen Formaten exportieren und ist auch ohne das DMS lesbar.
 
+## Datenschutz eingebaut
+
+Das DMS ist auf Datenschutz ausgelegt (Art. 25 DSGVO) – für die Daten deiner Familie genauso wie für Mieter und Kunden:
+
+- **Keine Telemetrie:** Das DMS sendet keine Nutzungsdaten, auch keine anonymen und auch nicht regelmäßig. Von sich aus baut es keine Verbindung ins Internet auf; den Versionsabgleich mit GitHub startest du selbst per Knopfdruck.
+- **Selbst gehostet:** Deine Unterlagen liegen auf deinem Gerät – kein Tracking, keine Werbung, keine KI-Dienste. Wer was sieht, regeln Rechte je Mappentyp.
+- **Auskunft nach Art. 15:** Alles zu einem Mieter, Kunden oder Kontakt als ZIP mit Deckblatt – geprüft, geschwärzt, mit Nachweis.
+- **Aufbewahren, sperren, löschen:** Archivmodus mit Löschsperre bis Fristende, die Liste „Darf weg“ und ein Papierkorb – Bausteine für dein Löschkonzept, mit Vorlage.
+- **Daten mitnehmen:** Jeder Benutzer exportiert seine eigenen Daten, Administratoren alles – in offenen Formaten.
+
+Software allein macht noch keinen Datenschutz – dazu gehören deine Abläufe. Was das DMS dafür bietet und was du selbst regelst: **[Datenschutz im DMS](https://motom001.github.io/dms/admin/aktuell/datenschutz/)**.
+
 ## So kommst du an ein DMS
 
 | Du hast … | So geht es |

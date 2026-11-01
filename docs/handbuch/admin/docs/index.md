@@ -19,6 +19,7 @@ Dieses Handbuch ist für alle, die das DMS **installieren, einrichten und betrei
 | Überblick, was zu tun ist | Werkbank → Übersicht | [Werkbank und Übersicht](uebersicht.md) |
 | Festlegen, welche Bereiche die Werkbank zeigt | Werkbank → Werkbank anpassen (unten in der Leiste) | [Werkbank anpassen](uebersicht.md#werkbank-anpassen) |
 | Festlegen, wer was sehen und ändern darf | Werkbank → Mappentypen → Berechtigungen, Werkbank → Ansichten | [Berechtigungen](berechtigungen.md) |
+| Auskunft geben, auf Verlangen löschen, Fristen einhalten (DSGVO) | Werkbank → Datenschutz, Darf weg, Papierkorb | [Datenschutz im DMS](datenschutz.md) |
 | Daten sichern und wiederherstellen | Werkbank → Sicherung, Wiederherstellen | [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md) |
 | Fehler finden, Meldungen der Benutzer bearbeiten | Werkbank → Wartung und Fehlersuche | [Fehlersuche](fehlersuche.md) |
 | Andere Programme anbinden | eigenen Benutzer für das Programm anlegen, als dieser anmelden, dann Profil → Sicherheit → API-Schlüssel (Administratoren bekommen keine Schlüssel) | [Schnittstelle](api.md) |

@@ -12,7 +12,10 @@
     body { margin: 0; background: var(--grund); color: var(--tinte); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
     main { max-width: 860px; margin: 0 auto; padding: 56px 16px 40px; }
     h1 { font-size: 2rem; margin: 0 0 8px; }
-    p.leise { color: var(--leise); margin: 0 0 32px; }
+    p.leise { color: var(--leise); margin: 0 0 16px; }
+    ul.versprechen { margin: 0 0 32px; padding-left: 1.2em; }
+    ul.versprechen li { margin: 4px 0; }
+    ul.versprechen a { color: var(--b); }
     .karten { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
     a.karte { display: block; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 10px; padding: 22px; color: inherit; text-decoration: none; border-top: 4px solid var(--a); }
     a.karte.admin { border-top-color: var(--b); }
@@ -34,6 +37,11 @@
   <main>
     <h1>DMS – Handbücher</h1>
     <p class="leise">Ein selbst gehostetes Informations- und Dokumentenmanagement für Haushalte: Mappen statt Ordner, verbunden über Verweise.</p>
+    <ul class="versprechen">
+      <li><strong>Deine Daten bleiben bei dir:</strong> selbst gehostet, alles jederzeit in offenen Formaten exportierbar.</li>
+      <li><strong>Datenschutz eingebaut:</strong> keine Telemetrie, kein Tracking; Auskunft, Aufbewahrungsfristen und Löschen sind Teil des DMS. <a href="admin/aktuell/datenschutz/">Datenschutz im DMS</a></li>
+      <li><strong>Frei:</strong> Open Source (Apache-2.0), ohne Lizenzkosten und ohne Abo.</li>
+    </ul>
     <div class="karten">
       <a class="karte wofuer" href="benutzer/aktuell/wofuer/">
         <h2>Wofür ein DMS?</h2>

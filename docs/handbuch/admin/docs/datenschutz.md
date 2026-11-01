@@ -1,15 +1,117 @@
 # Datenschutz im DMS
 
+Das DMS ist **auf Datenschutz ausgelegt** – „Datenschutz durch Technikgestaltung und datenschutzfreundliche Voreinstellungen“ heißt das in Art. 25 DSGVO. Es läuft bei dir, sendet nichts nach Hause und bringt Werkzeuge mit, mit denen du Auskunft gibst, Aufbewahrungsfristen einhältst und löschst. So legst du Daten von Familie, Mietern und Kunden guten Gewissens darin ab. Diese Seite zeigt, was es dafür gibt und wo du es findest, was du selbst regeln musst und wie du bei einer Anfrage Schritt für Schritt vorgehst.
+
+!!! note "Unterstützt – ersetzt nichts. Keine Rechtsberatung."
+    Eine Software allein ist nie „DSGVO-konform“, und ein Siegel dafür hat das DMS nicht. Datenschutzgerecht wird es erst durch **Software, deine Abläufe und deine Dokumentation zusammen** – wie bei der [Verfahrensdokumentation](verfahrensdokumentation.md) nach GoBD. Das DMS stellt Daten zusammen, sperrt und löscht und hält fest, was geschah. Ob und was du herausgeben, aufbewahren oder löschen musst, entscheidest du – im Zweifel mit deinem Datenschutzbeauftragten oder einer Rechtsberatung. Diese Seite ist keine Rechtsberatung.
+
+## Datenschutz eingebaut
+
+| DSGVO | Was das DMS dafür hat | Wo |
+| --- | --- | --- |
+| Art. 5 Abs. 1 c und Art. 25 – Datenminimierung, datenschutzfreundliche Voreinstellungen | **Selbst gehostet:** Die Daten liegen nur auf deinem Gerät. [Keine Telemetrie](#keine-telemetrie), kein Tracking, keine Werbung, keine KI-Dienste; die Texterkennung läuft im DMS selbst. Wer was sehen darf, regeln Rechte je Mappentyp mit Regeln. | Werkbank → Mappentypen → [Berechtigungen](berechtigungen.md) |
+| Art. 5 Abs. 1 e – Speicherbegrenzung; Art. 17 – Löschen | [Archivmodus](archiv.md) mit Aufbewahrungsfrist und der Liste **Darf weg**; [Papierkorb](papierkorb.md) für Mappen und Dokumente mit endgültigem Löschen; die Historie gelöschter Mappen fällt nach einer einstellbaren Zeit weg | Werkbank → Mappentypen → Archivmodus, Werkbank → Darf weg, Werkbank → Papierkorb |
+| Art. 18 – Einschränkung (Sperren) | **Löschsperre bis Fristende** im Archivmodus – der erste Baustein eines [Sperr- und Löschkonzepts](#sperr-und-loschkonzept-aufsetzen); den Zugriff schränkst du über Berechtigungen ein | Werkbank → Mappentypen |
+| Art. 15 – Auskunft | [Auskunft](#auskunft-nach-art-15-dsgvo) als ZIP mit Deckblatt, Prüfliste und Nachweis; [zustellen](#auskunft-zustellen) per Abruf-Link oder E-Mail | Werkbank → Datenschutz |
+| Art. 20 – Datenübertragbarkeit | **Persönlicher Export** für jeden Benutzer, **Vollexport** aller Daten – beides in offenen Formaten (CSV, JSON, Excel, Dokumente im Original) | Profil → Konto → Meine Daten exportieren; Werkbank → Vollexport ([Daten exportieren](export.md)) |
+| Art. 5 Abs. 2 – Rechenschaft; Art. 30 – Nachweis | **Historie** jeder Mappe (wer hat wann was geändert), [Protokoll](fehlersuche.md#protokoll), Nachweis jeder Auskunft in der Historie der Person; Vorlagen [Löschkonzept](loeschkonzept.md) und [Verfahrensdokumentation](verfahrensdokumentation.md) | Register *Historie* an jeder Mappe, Werkbank → Protokoll |
+| Art. 32 – Sicherheit | [Verschlüsselte](verschluesselung.md) Passwortfelder und Zugangsdaten, verschlüsselte [Sicherung](sicherung.md) mit [Probe-Wiederherstellung](wiederherstellen.md#probe-wiederherstellung), [Anmeldeschutz und Zwei-Faktor-Anmeldung](anmeldeschutz.md), Prüfwerte für jede Datei, Hinweise zu [HTTPS](installation.md#https-und-zertifikate) | Werkbank → Verschlüsselung, Sicherung, Anmeldeschutz |
+
+## Keine Telemetrie { #keine-telemetrie }
+
+Das DMS sendet **keine Nutzungsdaten** – weder an das Projekt noch an sonst jemanden: keine anonymen Statistiken, keine regelmäßigen „Lebenszeichen“, keine Absturzberichte, kein Tracking in der Oberfläche. Die Oberfläche lädt von Haus aus nichts von fremden Servern – keine Schriften, Skripte oder Bilder.
+
+**Von sich aus baut das DMS keine Verbindung ins Internet auf.** Eine automatische Suche nach neuen Versionen gibt es nicht – also auch nichts abzuschalten. Nach außen geht es nur, wenn du es auslöst oder einrichtest:
+
+| Verbindung | Wann | Wohin, was |
+| --- | --- | --- |
+| **Versionsabgleich** | nur auf Knopfdruck unter **Werkbank → Technik** | GitHub (Stand des DMS), endoflife.date (Node.js, PostgreSQL, Alpine), npm-Registry (Bibliotheken). Die Anfrage an GitHub enthält die Commit-Kennung deiner Version, damit sich die Änderungen seitdem zählen lassen – keine Daten aus deiner Ablage. Siehe [Technik](technik.md#versionen-und-aktualisierung). |
+| **Paketkatalog** | auf Knopfdruck unter **Werkbank → Pakete** (Katalog abrufen, auf neue Versionen prüfen) und wenn du einen Installationslink aus dem Katalog öffnest | GitHub ([Pakete](pakete.md)); weitere Kataloge nur, wenn du sie einträgst |
+| **E-Mail** | wenn du den E-Mail-Versand oder [Postfächer](postfaecher.md) einrichtest | dein Mailserver |
+| **Anmeldung über einen Anbieter** | wenn du sie [einrichtest](anmeldeschutz.md#anmeldung-uber-einen-anbieter-openid-connect) | dein Anbieter (OpenID Connect) |
+| **Pakete mit Code** | nur, wenn ein Paket es braucht und du es bei der Installation bestätigst | nur die Adressen, die das Paket angibt ([Rechte eines Pakets](pakete.md#recht-netzwerk-und-internet)) |
+| **Handbuch** | wenn du auf **Hilfe** oder ein **?** klickst | Das mitgelieferte Handbuch unter `/hilfe/` kommt ohne Internet aus ([Hilfe ohne Internet](technik.md#hilfe-ohne-internet)); Links auf das Online-Handbuch öffnet dein Browser. |
+
+Wer dem Projekt sagen möchte, dass und wie er das DMS nutzt, entscheidet das selbst und tut es bewusst – das DMS meldet nichts.
+
+## Was du selbst regeln musst { #grenzen }
+
+Das DMS gibt dir Werkzeuge. Diese Punkte bleiben bei dir als Verantwortlichem:
+
+- **Verzeichnis der Verarbeitungstätigkeiten** (Art. 30), **Rechtsgrundlagen und Informationspflichten** (Art. 13, 14) – etwa der Datenschutzhinweis im Mietvertrag. Die Angaben dafür stehen im DMS: Mappentypen, Zwecke aus den [Einstellungen](#einstellungen), Fristen aus dem Archivmodus.
+- **Welche Frist gilt:** Aufbewahrungsfristen klärst du mit deiner Steuerberatung; das DMS setzt um, was du einträgst.
+- **Löschen nach Fristende:** Das DMS löscht nie von selbst. Du prüfst **Darf weg** regelmäßig.
+- **Kopien außerhalb der Ablage:** Gelöschtes steckt noch in älteren [Sicherungen](sicherung.md#zeitplan-und-aufbewahrung), bis sie nach deiner Aufbewahrung wegfallen (Standard: bis zu 12 Monate; von Hand angelegte bleiben, bis du sie löschst), in Vollexporten und persönlichen Exporten unter `export/`, in Kopien außer Haus, heruntergeladenen Dateien und Ausdrucken.
+- **Wer Zugriff hat:** Administratoren sehen alles. Rollen und Berechtigungen richtest du ein; Zugänge von Personen, die gehen, [deaktivierst](benutzer.md#zugang-sperren) du.
+- **Die Umgebung:** Gerät und Festplatten, Netzwerk, HTTPS, Updates, Kopie der Sicherungen außer Haus – und Verträge zur Auftragsverarbeitung mit Dienstleistern, etwa dem Mailanbieter.
+- **Datenpannen** melden (Art. 33, 34) und, wo vorgeschrieben, einen Datenschutzbeauftragten benennen.
+
+## Schritt für Schritt
+
+### Auskunft an einen Benutzer { #auskunft-an-einen-benutzer }
+
+Ein Familienmitglied oder jemand aus dem Betrieb, der ein Konto im DMS hat, möchte wissen, was über ihn gespeichert ist.
+
+1. **Selbst exportieren lassen:** Unter **Profil → Konto → Meine Daten exportieren** bekommt er alles, was er lesen darf – Mappen mit Dokumenten, seine Aufgaben, Erinnerungen, Favoriten und seinen Papierkorb, sein Benutzerkonto ohne Passwort ([Meine Daten exportieren](export.md#meine-daten-exportieren)). Prüfe vorher unter **Werkbank → Vollexport**, ob der persönliche Export eingeschaltet ist.
+2. **Was darin fehlt, ergänzt du:** Mappen über ihn, die er nicht lesen darf (z. B. eine Personalakte), und Einträge im [Protokoll](fehlersuche.md#protokoll) (Anmeldungen, Fehler). Ist er auch als Person erfasst – etwa als Mappe *Mitarbeiter* –, erteile dafür eine [Auskunft wie für eine Person, die kein Benutzer ist](#auskunft-an-eine-person-die-kein-benutzer-ist).
+3. **Ehemalige Benutzer** können sich nicht mehr anmelden und also nicht selbst exportieren. Nimm dann die Angaben aus einem [Vollexport](export.md): das Benutzerkonto unter `struktur/`, seine Einträge in `daten/historie.jsonl` und die Mappen, die ihn betreffen.
+4. **Frist:** Antworte innerhalb eines Monats (Art. 12 Abs. 3 DSGVO).
+
+### Auskunft an eine Person, die kein Benutzer ist { #auskunft-an-eine-person-die-kein-benutzer-ist }
+
+Ein Mieter, Kunde oder Kontakt fragt nach seinen Daten. Das erledigt **Werkbank → Datenschutz**; die Einzelheiten stehen [weiter unten](#auskunft-nach-art-15-dsgvo).
+
+1. **Einmal einrichten:** Verantwortlicher, Empfänger und die Mappentypen, die eine Person betreffen, jeweils mit Zweck ([Einstellungen](#einstellungen)).
+2. **Person wählen** – oder an ihrer Mappe **Aktionen → Auskunft erstellen …** – und den Eingang der Anfrage eintragen. **Frist als Aufgabe anlegen** erinnert dich unter „Zu erledigen“.
+3. **Sammeln:** Das DMS folgt den Verweisen von der Mappe der Person aus (Mietvertrag, Abrechnungen, Post, Wohnung). Darunter stehen **Vorschläge aus der Suche** – Mappen, in denen Name, E-Mail-Adresse, Kundennummer oder IBAN vorkommen, auch im Text der Dokumente und Notizen.
+4. **Weitersuchen**, wenn die Person auch anderswo vorkommt: In der Ablage findet die [erweiterte Suche](https://motom001.github.io/dms/benutzer/aktuell/ablage/#erweiterte-suche) ohne gewählten Mappentyp über alle Mappentypen, mit **Volltext** auch in Dokumenten und Notizen. Was dazugehört, nimmst du in der Prüfliste aus den Vorschlägen auf oder verknüpfst es mit der Mappe der Person und sammelst neu.
+5. **Prüfen und schwärzen:** Nur Angehaktes geht hinaus; Angaben zu anderen Personen schwärzt du vorher.
+6. **Erzeugen und zustellen:** am besten mit Passwort, dann per [Abruf-Link oder E-Mail](#auskunft-zustellen). Der Nachweis steht in der Historie der Person.
+
+### Löschen auf Verlangen { #loschen-auf-verlangen }
+
+Jemand verlangt, dass seine Daten gelöscht werden (Art. 17 DSGVO).
+
+1. **Finden, was zur Person gehört:** wie bei der Auskunft – die Prüfliste unter **Werkbank → Datenschutz** zeigt alle Mappen, die an der Person hängen, und Vorschläge aus der Suche. Erzeugen musst du dafür nichts.
+2. **Prüfen, ob eine Aufbewahrungsfrist entgegensteht** (Art. 17 Abs. 3): Mappen eines Mappentyps im [Archivmodus](archiv.md) tragen **Archiv · aufbewahren bis …** und lassen sich vor Fristende ohnehin nicht löschen – auch nicht von Administratoren. Prüfe auch Mappen ohne Archivmodus: Rechnungen oder Verträge können Fristen haben, die du (noch) nicht eingetragen hast.
+3. **Frist steht entgegen → sperren statt löschen.** Die Mappe bleibt bis Fristende; benutze sie nur noch dafür, wofür du sie aufbewahren musst.
+    - **Zugriff einschränken:** Gib dem Mappentyp ein Ja/Nein-Feld wie *Gesperrt* und lege in den [Berechtigungen](berechtigungen.md#bedingungen) eine Regel an: Wenn „Gesperrt ist ja“, dann Lesen und Bearbeiten nur für eine Rolle wie *Datenschutz*. Administratoren sehen weiter alles.
+    - **Vermerken:** eine Notiz an der Mappe, z. B. „Gesperrt auf Verlangen vom 03.11.2026 – löschen nach Fristende“.
+    - **Nach Fristende** steht die Mappe unter **Werkbank → Darf weg**; dann löschst du sie wie unten.
+    - Sag der Person, dass und bis wann ihre Daten gesperrt bleiben und warum.
+4. **Keine Frist → löschen:**
+    - In der Ablage die Mappen löschen – einzeln oder über die [Mehrfachauswahl](https://motom001.github.io/dms/benutzer/aktuell/ablage/#mehrere-mappen-loschen); einzelne Dokumente an der Dokumentzeile. Eine Mappe, auf die noch andere verweisen, lässt sich nicht löschen: Entferne zuerst den Verweis oder lösche die verweisende Mappe mit, wenn auch sie weg soll.
+    - Unter **Werkbank → Papierkorb** die Mappen und Dokumente wählen und **endgültig löschen** (oder den ganzen Papierkorb leeren). Erst dann sind auch Dateien und Volltext weg.
+5. **Was danach noch bleibt** – sag es der Person, wenn sie fragt:
+    - die **Historie der gelöschten Mappen** für die eingestellte Zeit (Standard 365 Tage, [einstellbar](papierkorb.md#historie-endgultig-geloschter-mappen); 0 löscht sie sofort mit – das gilt dann für alle Mappen),
+    - ältere **Sicherungen**, bis sie nach der Aufbewahrung wegfallen,
+    - **Exporte** unter `export/`, bereitliegende **Auskünfte** (höchstens 7 Tage oder bis ein Abruf-Link abläuft) und Kopien außerhalb des DMS.
+6. **Festhalten, dass gelöscht wurde:** Notiere Datum, Anfrage und welche Arten von Daten gelöscht wurden – ohne die Daten selbst –, z. B. in einer Mappe für Datenschutzanfragen.
+
+Hat die Person ein **Benutzerkonto**, das schon benutzt wurde, [deaktivierst](benutzer.md#zugang-sperren) du es: Das DMS löscht solche Konten nicht, damit „angelegt von“ und Verweise stimmen. Ihr Name bleibt dort stehen.
+
+### Sperr- und Löschkonzept aufsetzen { #sperr-und-loschkonzept-aufsetzen }
+
+Für Vermieter, Selbständige und Betriebe: einmal festlegen, wie lange welche Daten bleiben, und das DMS so einrichten, dass es dich daran hält.
+
+1. **Datenarten erfassen:** Jeder Mappentyp ist eine Datenart – Mieter, Mietvertrag, Rechnung, Kunde, Bewerbung … Trage sie in die [Vorlage Löschkonzept](loeschkonzept.md) ein, mit Zweck und Grund für die Aufbewahrung.
+2. **Fristen festlegen** – mit deiner Steuerberatung: z. B. Buchungsbelege 8 Jahre, Geschäftsbriefe 6 Jahre, Bewerbungen ohne Zusage 6 Monate.
+3. **Archivmodus einschalten** für jeden Mappentyp mit gesetzlicher Frist: Frist in Jahren und Stichtag (z. B. Rechnungsdatum). Bis Fristende ist die Mappe gegen Löschen gesperrt; danach steht sie unter **Darf weg**. Siehe [Archivmodus](archiv.md#einschalten).
+4. **Kürzere Fristen ohne Archivmodus** (z. B. Interessenten, Bewerbungen): Lege eine [Ansicht](sichten.md) an, die die fälligen Mappen nach einem Datumsfeld zeigt, und schau sie regelmäßig durch.
+5. **Wie lange Gelöschtes nachwirkt:** Aufbewahrung des [Papierkorbs](papierkorb.md#aufbewahrung) (Standard 30 Tage), Historie gelöschter Mappen (Standard 365 Tage) und Aufbewahrung der [Sicherungen](sicherung.md#zeitplan-und-aufbewahrung) passend zu deinem Konzept einstellen.
+6. **Regelmäßig prüfen:** z. B. jedes Jahr im Januar **Werkbank → Darf weg** durchgehen und löschen, was weg darf. Gelöscht wird nie automatisch.
+7. **Sperren auf Verlangen** wie unter [Löschen auf Verlangen](#loschen-auf-verlangen) beschrieben.
+8. **Dokumentieren:** Das ausgefüllte Löschkonzept legst du selbst als Mappe im DMS ab und hältst es aktuell.
+
+## Auskunft erteilen: Werkbank → Datenschutz
+
 Wer Daten von Kunden, Mietern oder Kontakten verwaltet, muss auf Anfrage sagen können, was er über sie gespeichert hat – und das in einer Form, die die Person mitnehmen kann. Unter **Werkbank → Datenschutz** erledigt das DMS das in wenigen Minuten.
 
 --8<-- "ausgeblendet-organisation.md"
 
-!!! note "Unterstützt – ersetzt nichts"
-    Das DMS stellt die Daten zusammen und hält fest, dass du Auskunft erteilt hast. Ob und was du herausgeben musst, entscheidest du – im Zweifel mit deinem Datenschutzbeauftragten oder einer Rechtsberatung. Weitere Themen (Sperr- und Löschkonzept, Verzeichnis der Verarbeitungstätigkeiten) folgen auf dieser Seite.
-
 ![Werkbank → Datenschutz](bilder/werkbank-datenschutz.png)
 
-## Einstellungen
+### Einstellungen { #einstellungen }
 
 Einmal einrichten, unten auf der Seite unter **Einstellungen**:
 
