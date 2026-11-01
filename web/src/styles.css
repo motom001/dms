@@ -805,8 +805,12 @@ a.person:hover, a.person:focus-visible { text-decoration: underline; }
 .trefferlistenblock { border: 1px solid var(--linie); border-left: 4px solid var(--linie-stark); border-radius: var(--r); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 .trefferlistenblock.standard { border-left-color: var(--gruen); }
 .trefferlistenblock .registerkopf .haken { flex: none; }
-.quellzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
-.quellzeile select { max-width: 100%; width: auto; }
+/* Verknüpfungsregister (#372): feste Zeilenhöhe – die Trefferliste ist kompakt und steht auch ohne Haken (unsichtbar) da. */
+.quellzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-height: 30px; }
+.quellzeile .haken { align-items: center; }
+.quellzeile .haken input { margin: 0; }
+.quellzeile select { max-width: 100%; width: auto; padding: 3px 8px; line-height: 1.3; }
+.quellzeile select.platzhalter { visibility: hidden; }
 select.fehlerhaft { border-color: var(--schlecht); }
 .gruppe .verweistabelle { border: 0; border-radius: 0; margin: 0; max-height: none; }
 .gruppe .verweistabelle > p { padding: 6px 12px; }
@@ -974,6 +978,8 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
 .sprungleiste .sprung.fehler { border-color: var(--schlecht); color: var(--schlecht); background: var(--schlecht-zart); }
 .sprungleiste .fehlerpunkt { font-weight: 700; }
 .sprungleiste .luecke { flex: 1; }
+/* Mappentyp- und Ansichten-Editor (#372): Abstand zwischen Kopf (z. B. „Mappentyp kopieren“), Sprungleiste und Bereichen wie auf den übrigen Werkbank-Seiten. */
+.editorform { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .verwendetliste { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
 @media (max-width: 700px) { .sprungleiste { position: static; } }
 
