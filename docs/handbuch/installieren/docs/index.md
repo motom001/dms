@@ -6,7 +6,7 @@
 ![Images für amd64 und arm64](https://img.shields.io/badge/Image-amd64%20%7C%20arm64-2b7656?logo=docker&logoColor=white)
 [![Lizenz Apache-2.0](https://img.shields.io/github/license/motom001/dms?label=Lizenz)](https://github.com/motom001/dms/blob/main/LICENSE)
 
-Das DMS läuft bei dir zu Hause: auf einem NAS, einem kleinen Heimserver oder jedem Rechner mit Docker. Deine Unterlagen bleiben damit bei dir. Welcher Weg der richtige ist, hängt davon ab, was du schon hast.
+Das DMS läuft bei dir zu Hause: auf einem NAS, einem kleinen Heimserver oder jedem Rechner mit Docker. Deine Unterlagen bleiben damit bei dir. Ohne eigenes Gerät geht es auch [bei einem Anbieter](anbieter.md). Welcher Weg der richtige ist, hängt davon ab, was du schon hast.
 
 ## Was hast du?
 
@@ -26,11 +26,12 @@ Das DMS läuft bei dir zu Hause: auf einem NAS, einem kleinen Heimserver oder je
 | **Proxmox**, XCP-ng, ESXi … | [Linux-VM mit Docker](proxmox.md) | ☆☆☆ mittel: VM anlegen, dann wie beim PC |
 | **Alternative: ein Container** (Ausprobieren, nur ein Container möglich) | [dms-komplett](komplett.md) | ☆☆ gering: ein Image, vier Ordner, kein Passwort – siehe [Ein oder zwei Container?](#ein-oder-zwei-container) |
 | **anderer Server mit Docker** | [Docker Compose](docker.md) | ☆☆☆ mittel: Kommandozeile oder eigene Docker-Oberfläche |
+| **kein eigenes Gerät** | [bei einem Anbieter](anbieter.md): fertige App, Docker-Plattform oder eigener vServer | ☆ bis ☆☆☆ je nach Weg – mit Checkliste, worauf du beim Anbieter achtest |
 
 Alle Wege brauchen ein Gerät mit **amd64** (Intel, AMD) oder **arm64** (z. B. Raspberry Pi 4/5) und etwa 1 GB freien Arbeitsspeicher. Dazu kommt Platz für deine Dokumente.
 
 !!! tip "Du hast noch nichts davon?"
-    Am einfachsten ist ein kleiner Heimserver mit **umbrelOS** oder **ZimaOS**, z. B. ein Mini-PC oder ein ZimaBoard. Dort installierst du das DMS wie eine App auf dem Handy. Ein NAS von Synology, UGREEN oder QNAP geht ebenso und kümmert sich zusätzlich um deine Festplatten.
+    Am einfachsten ist ein kleiner Heimserver mit **umbrelOS** oder **ZimaOS**, z. B. ein Mini-PC oder ein ZimaBoard. Dort installierst du das DMS wie eine App auf dem Handy. Ein NAS von Synology, UGREEN oder QNAP geht ebenso und kümmert sich zusätzlich um deine Festplatten. Willst du gar kein Gerät betreiben, läuft das DMS auch [bei einem Anbieter](anbieter.md) – worauf du dann achtest, steht dort.
 
 ## Ein oder zwei Container?
 

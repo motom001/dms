@@ -9,7 +9,7 @@ Das DMS ist **auf Datenschutz ausgelegt** – „Datenschutz durch Technikgestal
 
 | DSGVO | Was das DMS dafür hat | Wo |
 | --- | --- | --- |
-| Art. 5 Abs. 1 c und Art. 25 – Datenminimierung, datenschutzfreundliche Voreinstellungen | **Selbst gehostet:** Die Daten liegen nur auf deinem Gerät. [Keine Telemetrie](#keine-telemetrie), kein Tracking, keine Werbung, keine KI-Dienste; die Texterkennung läuft im DMS selbst. Wer was sehen darf, regeln Rechte je Mappentyp mit Regeln. | Werkbank → Mappentypen → [Berechtigungen](berechtigungen.md) |
+| Art. 5 Abs. 1 c und Art. 25 – Datenminimierung, datenschutzfreundliche Voreinstellungen | **Selbst gehostet:** Die Daten liegen nur auf deinem Gerät – oder bei einem [Anbieter](https://motom001.github.io/dms/installieren/aktuell/anbieter/), den du selbst wählst. [Keine Telemetrie](#keine-telemetrie), kein Tracking, keine Werbung, keine KI-Dienste; die Texterkennung läuft im DMS selbst. Wer was sehen darf, regeln Rechte je Mappentyp mit Regeln. | Werkbank → Mappentypen → [Berechtigungen](berechtigungen.md) |
 | Art. 5 Abs. 1 e – Speicherbegrenzung; Art. 17 – Löschen | [Archivmodus](archiv.md) mit Aufbewahrungsfrist und der Liste **Darf weg**; [Papierkorb](papierkorb.md) für Mappen und Dokumente mit endgültigem Löschen; die Historie gelöschter Mappen fällt nach einer einstellbaren Zeit weg | Werkbank → Mappentypen → Archivmodus, Werkbank → Darf weg, Werkbank → Papierkorb |
 | Art. 18 – Einschränkung (Sperren) | **Löschsperre bis Fristende** im Archivmodus – der erste Baustein eines [Sperr- und Löschkonzepts](#sperr-und-loschkonzept-aufsetzen); den Zugriff schränkst du über Berechtigungen ein | Werkbank → Mappentypen |
 | Art. 15 – Auskunft | [Auskunft](#auskunft-nach-art-15-dsgvo) als ZIP mit Deckblatt, Prüfliste und Nachweis; [zustellen](#auskunft-zustellen) per Abruf-Link oder E-Mail | Werkbank → Datenschutz |
@@ -43,7 +43,7 @@ Das DMS gibt dir Werkzeuge. Diese Punkte bleiben bei dir als Verantwortlichem:
 - **Löschen nach Fristende:** Das DMS löscht nie von selbst. Du prüfst **Darf weg** regelmäßig.
 - **Kopien außerhalb der Ablage:** Gelöschtes steckt noch in älteren [Sicherungen](sicherung.md#zeitplan-und-aufbewahrung), bis sie nach deiner Aufbewahrung wegfallen (Standard: bis zu 12 Monate; von Hand angelegte bleiben, bis du sie löschst), in Vollexporten und persönlichen Exporten unter `export/`, in Kopien außer Haus, heruntergeladenen Dateien und Ausdrucken.
 - **Wer Zugriff hat:** Administratoren sehen alles. Rollen und Berechtigungen richtest du ein; Zugänge von Personen, die gehen, [deaktivierst](benutzer.md#zugang-sperren) du.
-- **Die Umgebung:** Gerät und Festplatten, Netzwerk, HTTPS, Updates, Kopie der Sicherungen außer Haus – und Verträge zur Auftragsverarbeitung mit Dienstleistern, etwa dem Mailanbieter.
+- **Die Umgebung:** Gerät und Festplatten, Netzwerk, HTTPS, Updates, Kopie der Sicherungen außer Haus – und Verträge zur Auftragsverarbeitung mit Dienstleistern, etwa dem Mailanbieter. Läuft dein DMS [bei einem Anbieter](https://motom001.github.io/dms/installieren/aktuell/anbieter/), brauchst du als Vermieter oder Betrieb mit ihm einen **AV-Vertrag**; dort steht auch, worauf du bei der Wahl achtest.
 - **Datenpannen** melden (Art. 33, 34) und, wo vorgeschrieben, einen Datenschutzbeauftragten benennen.
 
 ## Schritt für Schritt
@@ -205,7 +205,7 @@ Die Abrufseite ist der **einzige** Weg, ohne Anmeldung an Daten im DMS zu kommen
 
 ### Erreichbarkeit aus dem Internet
 
-Der Abruf-Link funktioniert nur, wenn die Person dein DMS von außen erreicht. Viele Installationen zu Hause sind das nicht – dann nimm den Weg per E-Mail. Soll das DMS erreichbar sein, geht das über einen [Reverse-Proxy](installation.md#hinter-einem-reverse-proxy) mit HTTPS (z. B. auf dem NAS mit Portfreigabe), einen Tunnel (z. B. Cloudflare Tunnel, Tailscale Funnel) oder ein gemietetes Hosting. Trage unter [E-Mail und Adresse](installation.md#e-mail-und-adresse) die Adresse ein, unter der es von außen erreichbar ist – sie steht im Link. Wer nur die Abrufseite nach außen geben will, gibt am Proxy `/abruf`, `/api/abruf`, `/api/abruf/datei` und die Dateien der Oberfläche (`/assets/`) frei.
+Der Abruf-Link funktioniert nur, wenn die Person dein DMS von außen erreicht. Viele Installationen zu Hause sind das nicht – dann nimm den Weg per E-Mail. Soll das DMS erreichbar sein, geht das über einen [Reverse-Proxy](installation.md#hinter-einem-reverse-proxy) mit HTTPS (z. B. auf dem NAS mit Portfreigabe), einen Tunnel (z. B. Cloudflare Tunnel, Tailscale Funnel) oder [bei einem Anbieter](https://motom001.github.io/dms/installieren/aktuell/anbieter/). Trage unter [E-Mail und Adresse](installation.md#e-mail-und-adresse) die Adresse ein, unter der es von außen erreichbar ist – sie steht im Link. Wer nur die Abrufseite nach außen geben will, gibt am Proxy `/abruf`, `/api/abruf`, `/api/abruf/datei` und die Dateien der Oberfläche (`/assets/`) frei.
 
 ## Schnittstelle
 
