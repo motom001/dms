@@ -8,6 +8,7 @@ import { WiederherstellungsAssistent } from './wiederherstellen';
 import { BetriebPanel, useBetrieb } from './werkbank/Betrieb';
 import { Erledigt } from './werkbank/Sicherung';
 import { useKonto } from './konto';
+import { PaketeDazuholen } from './werkbank/PaketeDazuholen';
 import { geheZu } from './ort';
 
 /**
@@ -15,11 +16,11 @@ import { geheZu } from './ort';
  *
  *   1 Code · 2 Datenbank · 3 Neu oder Sicherung · 4 Mandant · 5 Administrator
  *   – ab hier angemeldet als Administrator –
- *   6 Erster Benutzer · 7 Schlüssel und Notfallblatt · 8 Optionales · 9 Fertig
+ *   6 Erster Benutzer · 7 Schlüssel und Notfallblatt · 8 Pakete (#460) · 9 Optionales · 10 Fertig
  *
  * Übersprungenes lässt sich in der Werkbank nachholen.
  */
-export const SCHRITTE = ['Code', 'Datenbank', 'Neu oder Sicherung', 'Haushalt', 'Administrator', 'Erster Benutzer', 'Schlüssel', 'Optionales', 'Fertig'] as const;
+export const SCHRITTE = ['Code', 'Datenbank', 'Neu oder Sicherung', 'Haushalt', 'Administrator', 'Erster Benutzer', 'Schlüssel', 'Pakete', 'Optionales', 'Fertig'] as const;
 const REPO = 'https://github.com/motom001/dms';
 
 /** Nach dem Übernehmen der Datenbank ist der Server kurz weg; danach meldet er die nächste Phase. */
@@ -43,7 +44,7 @@ function Fortschritt({ aktiv }: { aktiv: number }) {
 }
 
 /** Hilfe je Schritt (#278): der passende Abschnitt im Online-Handbuch, mit Bildern. */
-const HILFE_JE_SCHRITT: Hilfeort[] = ['einrichtung.code', 'einrichtung.datenbank', 'einrichtung.wahl', 'einrichtung.mandant', 'einrichtung.administrator', 'einrichtung.benutzer', 'einrichtung.schluessel', 'einrichtung.optional', 'einrichtung.fertig'];
+const HILFE_JE_SCHRITT: Hilfeort[] = ['einrichtung.code', 'einrichtung.datenbank', 'einrichtung.wahl', 'einrichtung.mandant', 'einrichtung.administrator', 'einrichtung.benutzer', 'einrichtung.schluessel', 'einrichtung.pakete', 'einrichtung.optional', 'einrichtung.fertig'];
 
 function SchrittHilfe({ aktiv }: { aktiv: number }) {
   const z = HILFE[HILFE_JE_SCHRITT[aktiv]];
@@ -245,9 +246,9 @@ function AdminSchritt({ mandant, zurueck, fertig }: { mandant: string; zurueck: 
   );
 }
 
-/* ---------- Schritte 6–9: angemeldet als Administrator ---------- */
+/* ---------- Schritte 6–10: angemeldet als Administrator ---------- */
 
-const NACH: Record<EinrichtungSchritt, number> = { benutzer: 5, schluessel: 6, optional: 7, fertig: 8 };
+const NACH: Record<EinrichtungSchritt, number> = { benutzer: 5, schluessel: 6, pakete: 7, optional: 8, fertig: 9 };
 
 export function AssistentAngemeldet() {
   const { aktualisieren } = useKonto();
@@ -263,9 +264,10 @@ export function AssistentAngemeldet() {
   if (fehler) return <Rahmen aktiv={5} titel="Einrichtung"><p className="fehlertext">{fehler}</p></Rahmen>;
   if (!stand) return <p className="leise mittig">Lade …</p>;
   const fertig = new Set([...stand.erledigt, ...stand.uebersprungen]);
-  const schritt = (['benutzer', 'schluessel', 'optional', 'fertig'] as const).find((s) => !fertig.has(s)) ?? 'fertig';
+  const schritt = (['benutzer', 'schluessel', 'pakete', 'optional', 'fertig'] as const).find((s) => !fertig.has(s)) ?? 'fertig';
   if (schritt === 'benutzer') return <BenutzerSchritt weiter={(u) => merke('benutzer', u)} />;
   if (schritt === 'schluessel') return <SchluesselSchritt weiter={(u) => merke('schluessel', u)} />;
+  if (schritt === 'pakete') return <PaketeSchritt weiter={(u) => merke('pakete', u)} />;
   if (schritt === 'optional') return <OptionalSchritt weiter={(u) => merke('optional', u)} />;
   return <FertigSchritt stand={stand} weiter={() => merke('fertig')} />;
 }
@@ -340,6 +342,20 @@ function SchluesselSchritt({ weiter }: { weiter: (uebersprungen: boolean) => Pro
           {da && !geladen && <p className="leise klein">Ohne Notfallblatt weiter? Du findest es später unter Werkbank → Sicherung; die Übersicht erinnert daran.</p>}
         </>
       )}
+    </Rahmen>
+  );
+}
+
+/**
+ * Pakete dazuholen (#460): Auswahl aus dem offiziellen Katalog, Texterkennung vorausgewählt. Der Katalog wird
+ * erst abgefragt, wenn dieser Schritt erscheint. Rechte bestätigst du je Paket.
+ */
+function PaketeSchritt({ weiter }: { weiter: (uebersprungen: boolean) => Promise<void> }) {
+  const s = useSenden();
+  return (
+    <Rahmen aktiv={NACH.pakete} titel="Pakete dazuholen" unter="Pakete bringen fertige Mappentypen, Ansichten und Funktionen wie die Texterkennung mit. Wähle, was du gleich brauchst – alles andere holst du später unter Werkbank → Pakete.">
+      <PaketeDazuholen ueberspringen={() => void s.los(() => weiter(true))} weiter={(e) => void s.los(() => weiter(!e.some((x) => x.art === 'installiert')))} />
+      {s.fehler && <p className="fehlertext">{s.fehler}</p>}
     </Rahmen>
   );
 }

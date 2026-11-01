@@ -196,7 +196,7 @@ export interface EinrichtungStatus {
   quelle?: 'datei' | 'umgebung' | null;
   fehler?: string | null;
 }
-export type EinrichtungSchritt = 'benutzer' | 'schluessel' | 'optional' | 'fertig';
+export type EinrichtungSchritt = 'benutzer' | 'schluessel' | 'pakete' | 'optional' | 'fertig';
 export interface EinrichtungStand { offen: boolean; erledigt: EinrichtungSchritt[]; uebersprungen: EinrichtungSchritt[]; mandant: string | null }
 export interface AnbindungStand { anbindung: AnbindungAnsicht; datei: string; umgebung: 'fehlt' | 'gleich' | 'abweichend'; neustartNoetig: boolean; /** dms-komplett (#208) */ imContainer?: boolean }
 /** Wartungsmodus (#102), wie ihn jeder sieht; sekunden = bis zur aktiven Stufe. */

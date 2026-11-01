@@ -271,6 +271,11 @@ async function einrichtenImBrowser(browser, bild) {
   await s.getByText(/Erledigt – Fingerabdruck/).waitFor();
   await bild(s, 'einrichtung-schluessel');
   await s.getByRole('button', { name: 'Weiter' }).click();
+  // Pakete dazuholen (#460): Katalog abrufen (ohne Internet: Hinweis), dann überspringen.
+  await s.getByRole('heading', { name: 'Pakete dazuholen' }).waitFor();
+  await s.getByRole('button', { name: 'Überspringen' }).waitFor({ timeout: 30_000 });
+  await bild(s, 'einrichtung-pakete', { fullPage: true });
+  await s.getByRole('button', { name: 'Überspringen' }).click();
   await s.getByRole('heading', { name: 'Optionales' }).waitFor();
   await bild(s, 'einrichtung-optional', { fullPage: true });
   await s.getByRole('button', { name: 'Überspringen' }).click();

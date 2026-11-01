@@ -5,7 +5,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { passt, vergleicheVersion, type Katalog } from '../../shared/src/pakete';
+import { auswahlMitAbhaengigkeiten, nachAbhaengigkeiten, passt, vergleicheVersion, type Katalog } from '../../shared/src/pakete';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
@@ -354,6 +354,37 @@ function faelle(pg: boolean) {
     });
   });
 }
+
+describe('Pakete dazuholen: Auswahl mit Abhängigkeiten (#460)', () => {
+  const kv = (version: string, dms: string, abhaengigkeiten: Record<string, string> = {}, code = false) => ({ version, dms, abhaengigkeiten, inhalt: { mappentypen: [], sichten: [], beispiele: 0 }, code, archiv: `archive/x-${version}.zip`, sha256: '0'.repeat(64), groesse: 1, veroeffentlicht: '', quelle: '', readme: '', changelog: '' });
+  const kp = (id: string, versionen: ReturnType<typeof kv>[]) => ({ id, name: id[0].toUpperCase() + id.slice(1), beschreibung: '', autor: { name: '', github: '' }, lizenz: 'MIT', aktuell: versionen[0].version, versionen });
+  const k: Katalog = { format: 1, erstellt: '', quelle: '', pakete: [
+    kp('basis', [kv('1.1.1', '>=0.79.0'), kv('1.0.0', '>=0.63.0')]),
+    kp('haushalt', [kv('1.0.2', '>=0.79.0', { basis: '>=1.0.0' })]),
+    kp('vermietung', [kv('1.0.1', '>=0.79.0', { basis: '>=1.1.0', haushalt: '>=1.0.0', haus: '>=1.0.0' })]),
+    kp('haus', [kv('1.0.2', '>=0.79.0', { basis: '>=1.0.0', haushalt: '>=1.0.0' })]),
+    kp('texterkennung', [kv('1.0.0', '>=0.88.0', {}, true)]),
+  ] };
+  it('nimmt Abhängigkeiten mit, Abhängigkeiten zuerst, passend zur DMS-Version', () => {
+    const r = auswahlMitAbhaengigkeiten(k, ['vermietung', 'texterkennung'], '0.107.1');
+    assert.deepEqual(r.probleme, []);
+    assert.deepEqual(r.pakete.map((p) => `${p.id}@${p.version}${p.gewaehlt ? '' : '*'}`), ['basis@1.1.1*', 'haushalt@1.0.2*', 'haus@1.0.2*', 'vermietung@1.0.1', 'texterkennung@1.0.0']);
+    assert.deepEqual(r.pakete.find((p) => p.id === 'basis')!.fuer, ['vermietung', 'haushalt', 'haus']);
+    // Selbst gewählt, obwohl auch Abhängigkeit: gilt als gewählt.
+    assert.equal(auswahlMitAbhaengigkeiten(k, ['haushalt', 'basis'], '0.107.1').pakete.find((p) => p.id === 'basis')!.gewaehlt, true);
+  });
+  it('lässt passend Installiertes weg und meldet, was nicht passt', () => {
+    assert.deepEqual(auswahlMitAbhaengigkeiten(k, ['haushalt'], '0.107.1', [{ id: 'basis', version: '1.0.0' }]).pakete.map((p) => p.id), ['haushalt']);
+    const alt = auswahlMitAbhaengigkeiten(k, ['texterkennung', 'basis'], '0.70.0');
+    assert.deepEqual(alt.pakete.map((p) => `${p.id}@${p.version}`), ['basis@1.0.0']);
+    assert.match(alt.probleme[0], /Texterkennung.*keine Version passt zu DMS 0\.70\.0/);
+    assert.match(auswahlMitAbhaengigkeiten({ ...k, pakete: k.pakete.filter((p) => p.id !== 'basis') }, ['haushalt'], '0.107.1').probleme[0], /braucht „basis“/);
+  });
+  it('Reihenfolge nach Abhängigkeiten, Kreis = null', () => {
+    assert.deepEqual(nachAbhaengigkeiten([{ id: 'b', abhaengigkeiten: { a: '1.0.0' } }, { id: 'a', abhaengigkeiten: { x: '1.0.0' } }])!.map((x) => x.id), ['a', 'b']);
+    assert.equal(nachAbhaengigkeiten([{ id: 'b', abhaengigkeiten: { a: '1.0.0' } }, { id: 'a', abhaengigkeiten: { b: '1.0.0' } }]), null);
+  });
+});
 
 describe('Pakete: Versionen und Archiv (#188)', () => {
   it('Versionsbereiche', () => {
