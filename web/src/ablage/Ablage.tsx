@@ -370,6 +370,18 @@ function Liste(p: {
     ? `${zahl(s.gesamt)} Treffer`
     : `${zahl(s.gesamt)} ${s.gesamt === 1 ? 'Mappe' : 'Mappen'}`;
   const nachladen = !s.alle && (s.laedt ? 'Lade …' : <button type="button" className="textknopf" onClick={s.mehr}>Weitere laden</button>);
+  // Favorit = Abo (#422): Geöffnet = gesehen – Hervorhebung weg, Zähler (eine „Geändert“-Aufgabe erledigt sich) neu.
+  useEffect(() => {
+    if (!p.offen || !s.geaendert.has(p.offen)) return;
+    const id = p.offen;
+    s.gesehen([id]);
+    void api.gesehen([id]).then(() => d.neuLaden()).catch(() => {});
+  }, [p.offen, s.geaendert]); // eslint-disable-line react-hooks/exhaustive-deps
+  const geaenderteHier = s.mappen.filter((m) => s.geaendert.has(m.id)).map((m) => m.id);
+  async function alleGesehen() {
+    s.gesehen(geaenderteHier);
+    try { await api.gesehen(geaenderteHier); await d.neuLaden(); } catch { /* beim nächsten Laden wieder da */ }
+  }
   const w = useAuswahl(s.mappen, s.gesamt, [p.sicht, suche, volltext, inNotizen, p.link ?? '']);
   const wahl = p.auswahl ? w : undefined;
   const [ergebnis, setErgebnis] = useState<{ text: string; liste: Array<{ id: string; titel: string; grund: string }> }>();
@@ -441,6 +453,7 @@ function Liste(p: {
           {anzahlText}{s.mappen.length < (s.gesamt ?? 0) ? `, ${zahl(s.mappen.length)} geladen` : ''}
           {sortierung && <> · sortiert nach {spaltenName(sortierung.spalte, p.typ)} {sortierung.absteigend ? '↓' : '↑'} <button type="button" className="textknopf" onClick={() => setzeSortierung(null)}>nach Titel</button></>}
           {p.export && !wahl?.gewaehlt.size && !!s.gesamt && <> · <button type="button" className="textknopf" onClick={() => setExportOffen(true)}>Exportieren …</button></>}
+          {geaenderteHier.length > 0 && <> · <span className="abo-punkt" aria-hidden="true" /> {zahl(geaenderteHier.length)} geändert · <button type="button" className="textknopf" onClick={() => void alleGesehen()}>Alle als gesehen markieren</button></>}
         </p>
       )}
       {exportOffen && (
@@ -474,18 +487,18 @@ function Liste(p: {
       {s.gesamt === 0
         ? <p className="leise leerliste">{suche && p.sicht !== 'suche' ? 'Nichts gefunden.' : p.leerText}</p>
         : tabelle
-          ? <Tabelle sicht={p.sicht} anhang={anhang} typ={p.typ} spaltenTyp={p.spaltenTyp} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} ausschnitte={s.ausschnitte} aufgaben={s.aufgaben} favoriten={s.favoriten} offen={p.offen} wahl={wahl}
+          ? <Tabelle sicht={p.sicht} anhang={anhang} typ={p.typ} spaltenTyp={p.spaltenTyp} spalten={spalten} mappen={s.mappen} bezuege={s.bezuege} ausschnitte={s.ausschnitte} aufgaben={s.aufgaben} favoriten={s.favoriten} geaendert={s.geaendert} offen={p.offen} wahl={wahl}
               sortierung={sortierung} sortiere={sortiere} ende={nachladen ? (el) => { ende.current = el; } : undefined} nachladen={nachladen} />
           : <ul className="mappenliste">
               {s.mappen.map((m, i) => {
                 const typ = d.typ(m.typId);
                 const k = kompakt(p.listenSpalten ?? [], !!p.typ, typ, m, s.bezuege, d.person);
                 return (
-                  <li key={m.id} className={`mit-stern${wahl ? ' mit-haken' : ''}${wahl?.gewaehlt.has(m.id) ? ' gewaehlt' : ''}`} {...(wahl && !m.verborgen ? wahl.druck(i) : {})}>
+                  <li key={m.id} className={`mit-stern${wahl ? ' mit-haken' : ''}${wahl?.gewaehlt.has(m.id) ? ' gewaehlt' : ''}${s.geaendert.has(m.id) ? ' abo-geaendert' : ''}`} {...(wahl && !m.verborgen ? wahl.druck(i) : {})}>
                     {wahl && !m.verborgen && <Wahlhaken an={wahl.gewaehlt.has(m.id)} titel={k.titel} waehle={(an, bereich) => wahl.waehle(i, an, bereich)} />}
                     {m.verborgen ? <span /> : <Stern mappeId={m.id} an={s.favoriten.has(m.id)} titel={k.titel} klein />}
                     <Link to={`/ablage/${p.sicht}/${m.id}${anhang}`} className={`eintrag ${p.offen === m.id ? 'an' : ''}`}>
-                      <span className={`titel ${m.verborgen ? 'verborgen-titel' : ''}`}>{m.verborgen ? 'Nicht sichtbare Mappe' : k.titel}
+                      <span className={`titel ${m.verborgen ? 'verborgen-titel' : ''}`}>{s.geaendert.has(m.id) && <GeaendertPunkt />}{m.verborgen ? 'Nicht sichtbare Mappe' : k.titel}
                         {/* Archivmodus (#212): Hinweis, solange die Frist läuft. */}
                         {!m.verborgen && typ?.archiv && inFrist(aufbewahrenBis(typ.archiv, m)) && <> <span className="chip archiv klein" title={`Archiv – aufbewahren bis ${datumText(aufbewahrenBis(typ.archiv, m)!)}`}>Archiv</span></>}</span>
                       <Unter text={k.unter} />
@@ -494,6 +507,15 @@ function Liste(p: {
                         ? <span className="problem">{s.aufgaben[m.id]}</span>
                         : m.passt === false && <span className="problem">{p.typ ? 'passt nicht zur Definition' : m.problem}</span>}
                     </Link>
+                    {/* Favorit = Abo (#422): je Favorit „bei Änderungen benachrichtigen“ – nur in der Favoritenliste. */}
+                    {p.sicht === 'favoriten' && !m.verborgen && (
+                      <label className="haken klein abo-schalter">
+                        <input type="checkbox" checked={!s.stumm.has(m.id)} onChange={(e) => {
+                          const an = e.target.checked; s.setzeStumm(m.id, !an);
+                          void api.favoritBenachrichtigen(m.id, an).catch(() => s.setzeStumm(m.id, an));
+                        }} /><span>Bei Änderungen benachrichtigen</span>
+                      </label>
+                    )}
                   </li>
                 );
               })}
@@ -502,6 +524,11 @@ function Liste(p: {
       </div>
     </>
   );
+}
+
+/** Favorit = Abo (#422): Punkt vor geänderten Favoriten und eigenen Mappen – wie „ungelesen“ im E-Mail-Programm. */
+function GeaendertPunkt() {
+  return <><span className="abo-punkt" title="Von anderen geändert, seit du die Mappe zuletzt geöffnet hast" aria-hidden="true" /><span className="sr-only">Geändert: </span></>;
 }
 
 /** Kompakter Eintrag: mit Trefferliste Spalte 1 fett, 2 und 3 darunter; sonst Titel und zwei Nebenfelder (bzw. der Typ). */
@@ -514,7 +541,7 @@ function kompakt(liste: string[], einTyp: boolean, typ: Mappentyp | undefined, m
 }
 
 function Tabelle(p: {
-  sicht: string; anhang?: string; typ?: Mappentyp; spaltenTyp?: Mappentyp; spalten: string[]; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; favoriten: Set<string>; offen?: string;
+  sicht: string; anhang?: string; typ?: Mappentyp; spaltenTyp?: Mappentyp; spalten: string[]; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; favoriten: Set<string>; geaendert?: Set<string>; offen?: string;
   sortierung: Sortierung | null; sortiere(spalte: string): void; ende?: (el: HTMLElement | null) => void; nachladen: ReactNode;
   wahl?: Auswahl;
 }) {
@@ -555,13 +582,13 @@ function Tabelle(p: {
             const typ = d.typ(m.typId);
             const ziel = `/ablage/${p.sicht}/${m.id}${p.anhang ?? ''}`;
             return (
-              <tr key={m.id} className={`${p.offen === m.id ? 'an' : ''} ${m.passt === false ? 'unpassend' : ''}${p.wahl?.gewaehlt.has(m.id) ? ' gewaehlt' : ''}`} {...(p.wahl && !m.verborgen ? p.wahl.druck(i) : {})}
+              <tr key={m.id} className={`${p.offen === m.id ? 'an' : ''} ${m.passt === false ? 'unpassend' : ''}${p.wahl?.gewaehlt.has(m.id) ? ' gewaehlt' : ''}${p.geaendert?.has(m.id) ? ' abo-geaendert' : ''}`} {...(p.wahl && !m.verborgen ? p.wahl.druck(i) : {})}
                 onClick={(e) => { if (!(e.target as HTMLElement).closest('a, button, input')) geheZu(ziel); }}>
                 {p.wahl && <td className="hakenspalte">{!m.verborgen && <Wahlhaken an={p.wahl.gewaehlt.has(m.id)} titel={titelOder(m.titel)} waehle={(an, bereich) => p.wahl!.waehle(i, an, bereich)} />}</td>}
                 <td className="sternspalte"><Stern mappeId={m.id} an={p.favoriten.has(m.id)} titel={titelOder(m.titel)} klein /></td>
                 {p.spalten.map((k, i) => {
                   const text = zelle(k, m, typ, p.bezuege, d.person);
-                  return <td key={k} className={rechts(k) ? 'rechts' : kurz(k) ? 'kurz' : ''}>{i === 0 ? <><Link to={ziel}>{text || titelOder(m.titel)}</Link>{p.ausschnitte?.[m.id] && <Fundstelle a={p.ausschnitte[m.id]} />}</> : text}</td>;
+                  return <td key={k} className={rechts(k) ? 'rechts' : kurz(k) ? 'kurz' : ''}>{i === 0 ? <>{p.geaendert?.has(m.id) && <GeaendertPunkt />}<Link to={ziel}>{text || titelOder(m.titel)}</Link>{p.ausschnitte?.[m.id] && <Fundstelle a={p.ausschnitte[m.id]} />}</> : text}</td>;
                 })}
                 {p.sicht === 'eingang' && <td className="problemzelle">{p.aufgaben?.[m.id] ?? m.problem}</td>}
               </tr>

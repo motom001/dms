@@ -1037,6 +1037,42 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const r = await sql`UPDATE auskunft_links SET widerrufen = now() WHERE haushalt_id = ${haushaltId} AND id = ${id} AND widerrufen IS NULL RETURNING id`;
       return r.length > 0;
     },
+    async favoritenDerMappe(mappeId) {
+      if (!istUuid(mappeId)) return [];
+      return (await sql`SELECT benutzer_id, benachrichtigen FROM favoriten WHERE mappe_id = ${mappeId}`).map((r) => ({ benutzerId: r.benutzer_id as string, benachrichtigen: r.benachrichtigen !== false }));
+    },
+    async setzeFavoritBenachrichtigen(benutzerId, mappeId, an) {
+      if (!istUuid(benutzerId) || !istUuid(mappeId)) return;
+      await sql`UPDATE favoriten SET benachrichtigen = ${an ? null : false} WHERE benutzer_id = ${benutzerId} AND mappe_id = ${mappeId}`;
+    },
+    async stummeFavoriten(benutzerId, mappeIds) {
+      const ids = mappeIds.filter(istUuid);
+      if (!istUuid(benutzerId) || !ids.length) return new Set();
+      return new Set((await sql`SELECT mappe_id FROM favoriten WHERE benutzer_id = ${benutzerId} AND mappe_id = ANY(${ids}::uuid[]) AND benachrichtigen = false`).map((r) => r.mappe_id as string));
+    },
+    async merkeGesehen(benutzerId, mappeIds) {
+      const ids = [...new Set(mappeIds.filter(istUuid))];
+      if (!istUuid(benutzerId) || !ids.length) return;
+      await sql`INSERT INTO gesehen (benutzer_id, mappe_id, haushalt_id)
+        SELECT ${benutzerId}::uuid, m.id, m.haushalt_id FROM mappen m WHERE m.haushalt_id = ${haushaltId} AND m.id = ANY(${ids}::uuid[])
+        ON CONFLICT (benutzer_id, mappe_id) DO UPDATE SET zeit = now()`;
+    },
+    async geaendertVonAnderen(benutzerId, mappeIds, arten) {
+      const ids = [...new Set(mappeIds.filter(istUuid))];
+      if (!istUuid(benutzerId) || !ids.length) return new Set();
+      // Nur die Mappen dieser Seite: Favorit oder selbst angelegt; je Mappe ein Blick in den Index historie (mappe_id, zeit).
+      return new Set((await sql`
+        WITH k AS (
+          SELECT m.id, GREATEST(g.zeit, f.erstellt, m.erstellt) AS seit
+          FROM mappen m
+          LEFT JOIN favoriten f ON f.mappe_id = m.id AND f.benutzer_id = ${benutzerId}
+          LEFT JOIN gesehen g ON g.mappe_id = m.id AND g.benutzer_id = ${benutzerId}
+          WHERE m.haushalt_id = ${haushaltId} AND m.id = ANY(${ids}::uuid[]) AND (f.mappe_id IS NOT NULL OR m.erstellt_von = ${benutzerId})
+        )
+        SELECT k.id FROM k WHERE EXISTS (
+          SELECT 1 FROM historie h WHERE h.mappe_id = k.id AND h.zeit > k.seit AND h.benutzer_id IS NOT NULL AND h.benutzer_id <> ${benutzerId}
+            AND h.art = ANY(${[...arten]}::text[]) AND coalesce(h.daten->>'aufgabenart', '') <> 'aenderung')`).map((r) => r.id as string));
+    },
     async favoritenVon(benutzerId, mappeIds) {
       const ids = mappeIds.filter(istUuid);
       if (!istUuid(benutzerId) || !ids.length) return new Set();

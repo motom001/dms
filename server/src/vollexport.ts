@@ -56,6 +56,7 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   passwort_links: 'nicht enthalten: Geheimnisse',
   auskunft_links: 'nicht enthalten: Abruf-Links von Auskünften (#455, Hashes; der Nachweis steht in daten/historie.jsonl)',
   sitzungen: 'nicht enthalten: Anmeldungen',
+  gesehen: 'nicht enthalten: wann ein Benutzer eine Mappe zuletzt geöffnet hat (#422, nur für die Hervorhebung geänderter Mappen)',
   schema_migrationen: 'nicht enthalten: Stand der Datenbank (steht als Version im Manifest)',
 };
 

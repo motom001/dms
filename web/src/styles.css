@@ -1096,6 +1096,10 @@ fieldset.eigenschaft legend { font-size: calc(12.5px * var(--skala, 1)); font-we
 .sammel-pfeil { display: inline-block; width: 1em; color: var(--leise); }
 .sammel-stand { font-weight: 400; margin-left: 10px; }
 .sammel-inhalt:not([hidden]) { display: flex; flex-direction: column; gap: 14px; }
+/* #422: Favorit = Abo – geänderte Favoriten und eigene Mappen hervorheben, Schalter je Favorit. */
+.abo-punkt { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--akzent); margin-right: 6px; vertical-align: 1px; flex: none; }
+.mappenliste > li.abo-geaendert .titel, .trefferliste tr.abo-geaendert td a { font-weight: 700; }
+.abo-schalter { padding: 0 12px 8px 10px; }
 /* #430: Piktogramme im Benutzermenü und Fenster „Über das DMS“. */
 .benutzermenue .menuepunkt .pikto { vertical-align: -3px; margin-right: 10px; color: var(--leise); flex: none; }
 dialog.ueber-dms { width: min(460px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--linie-stark); border-radius: 10px; background: var(--flaeche); color: var(--tinte); box-shadow: 0 12px 40px rgb(0 0 0 / .25); }
