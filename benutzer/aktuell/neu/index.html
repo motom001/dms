@@ -419,6 +419,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0912" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.91.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.91.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#geandert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Geändert
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0911" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -431,7 +470,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#behoben" class="md-nav__link">
+  <a href="#behoben_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Behoben
@@ -1188,6 +1227,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0912" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.91.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.91.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#geandert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Geändert
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0911" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1200,7 +1278,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#behoben" class="md-nav__link">
+  <a href="#behoben_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Behoben
@@ -1297,8 +1375,20 @@
 
 
 <h1 id="neu-in-version-091">Neu in Version 0.91<a class="headerlink" href="#neu-in-version-091" title="Permanent link">&para;</a></h1>
-<h2 id="0911">0.91.1<a class="headerlink" href="#0911" title="Permanent link">&para;</a></h2>
+<h2 id="0912">0.91.2<a class="headerlink" href="#0912" title="Permanent link">&para;</a></h2>
 <h3 id="behoben">Behoben<a class="headerlink" href="#behoben" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Paket-Läufer:</strong> Schlägt das Update eines Pakets mit Code fehl, kommt jetzt auch der alte Code zurück – vorher lief die alte Version mit dem neuen Modul weiter. Bei einer gescheiterten Neuinstallation bleibt kein Code zurück (#403).</li>
+<li><strong>Werkbank → Pakete → <em>Paket</em>:</strong> Direkt nach der Installation steht nicht mehr „Der Paket-Läufer läuft nicht“, sondern „startet …“ und dann „bereit – wartet auf das erste Ereignis“; die Seite fragt von selbst nach, bis der Läufer bereit ist (#403).</li>
+</ul>
+<h3 id="geandert">Geändert<a class="headerlink" href="#geandert" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Größengrenze für Code:</strong> Die Dateien unter <code>code/</code> (Modul, Daten, Quellcode) dürfen zusammen höchstens <strong>32 MB je Paket</strong> groß sein; größere Pakete lehnt das DMS mit klarer Meldung ab. Sie zählen nicht mehr zur allgemeinen Grenze von 20 MB für das entpackte Archiv (#403).</li>
+<li><strong>Paket-Läufer lädt nur Geändertes:</strong> Wird ein Paket installiert, aktualisiert oder entfernt, liest der Läufer nur dessen Modul neu; die übrigen behalten ihr geladenes Modul (#403).</li>
+<li><strong>Zustand nach Absturz:</strong> Stürzt der Läufer ab, zeigt die Werkbank „abgestürzt um … – startet neu …“ und danach „neu gestartet nach Absturz um …“ statt „startet …“. Das Admin-Handbuch (<em>Pakete → Pakete mit Code</em>) erklärt alle Zustände (#403).</li>
+</ul>
+<h2 id="0911">0.91.1<a class="headerlink" href="#0911" title="Permanent link">&para;</a></h2>
+<h3 id="behoben_1">Behoben<a class="headerlink" href="#behoben_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Zwei-Faktor für Administratoren vorschreiben sperrte den einschaltenden Admin sofort aus</strong> (#416). Wer den Haken setzte, ohne selbst Zwei-Faktor zu haben, konnte danach nichts mehr außer „Mein Konto“ – auch den Haken nicht wieder entfernen.</li>
 <li>Die Pflicht greift jetzt wie beschrieben <strong>erst bei der nächsten Anmeldung</strong>: Laufende Sitzungen arbeiten weiter und zeigen oben einen Hinweis mit <strong>Jetzt einrichten</strong>.</li>
@@ -1331,7 +1421,7 @@
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.90.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.90.0...v0.91.1">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.90.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.90.0...v0.91.2">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 
