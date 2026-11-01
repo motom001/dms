@@ -81,7 +81,12 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
         </div>
         <label className="eigenschaft"><span>Nie sperren <small>Adressen oder Netze, z. B. 192.168.0.0/16 – dein Heimnetz</small></span>
           <input id="as-ausnahmen" value={e.ausnahmen} placeholder="192.168.0.0/16, 10.0.0.0/8" onChange={(x) => setE({ ...e, ausnahmen: x.target.value })} /></label>
-        <label className="haken"><input id="as-mail" type="checkbox" checked={e.mail} onChange={(x) => setE({ ...e, mail: x.target.checked })} /><span>Administratoren per Mail informieren, wenn eine IP gesperrt wird</span></label>
+        <h2 className="h3">Mail an die Administratoren</h2>
+        <p className="leise klein">Angriffsversuche aus dem Internet sind normal; Sperren passieren automatisch. Gesperrte Adressen siehst du jederzeit hier und im Protokoll.</p>
+        <label className="haken"><input id="as-mail" type="checkbox" checked={e.mail} onChange={(x) => setE({ ...e, mail: x.target.checked })} /><span>Einmal am Tag eine Sammelmeldung über die Sperren schicken
+          <small className="leise">höchstens eine Mail am Tag, über die Sperren des Vortags – nicht eine je gesperrter IP</small></span></label>
+        <label className="haken"><input id="as-mail-konto" type="checkbox" checked={e.mailKonto} onChange={(x) => setE({ ...e, mailKonto: x.target.checked })} /><span>Sofort melden, wenn ein Benutzerkonto gesperrt wird
+          <small className="leise">nur für bestehende Konten, je Konto höchstens einmal am Tag</small></span></label>
         <div className="knoepfe"><button className="knopf primaer">Speichern</button></div>
       </form>
       <ZweifaktorPflichtBlatt />

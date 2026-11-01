@@ -162,7 +162,8 @@ const anAdmins = async (betreff: string, text: string) => { await anAlleAdmins(a
 spDeps.wartung = wartung;
 spDeps.anAdmins = anAdmins;
 // Anmeldeschutz (#240): Sperren in der Datenbank, einstellbar in der Werkbank.
-konten.verbindeSperre(new Anmeldesperre(pgEinstellungen(sql, cfg.haushalt), anAdmins));
+const anmeldesperre = new Anmeldesperre(pgEinstellungen(sql, cfg.haushalt), anAdmins);
+konten.verbindeSperre(anmeldesperre);
 // Zwei-Faktor-Anmeldung (#242): Geheimnis verschlüsselt mit dem Schlüssel des DMS.
 konten.verbindeZweifaktor(new Zweifaktor(pgEinstellungen(sql, cfg.haushalt), (k) => tresor.verschluessele(k), (w) => tresor.entschluessele(w)));
 const notfall = new Notfallzugang(join(dirname(tresor.datei), 'RESCUE'), konten, pgBetriebSpeicher(sql, cfg.haushalt), anAdmins);
@@ -305,6 +306,10 @@ setInterval(papierkorbLauf, 60 * 60 * 1000).unref();
 const abwesenheiten = () => konten.abwesenheitenPruefen().catch((e) => log.error('Abwesenheiten prüfen fehlgeschlagen', { fehler: (e as Error).message }));
 await abwesenheiten();
 setInterval(abwesenheiten, 60 * 60 * 1000).unref();
+// Anmeldeschutz (#368): höchstens eine Sammelmeldung am Tag über die Sperren des Vortags.
+const sperrMeldung = () => anmeldesperre.meldeTaeglich().catch((e) => log.error('Sammelmeldung Anmeldeschutz fehlgeschlagen', { fehler: (e as Error).message }));
+await sperrMeldung();
+setInterval(sperrMeldung, 15 * 60 * 1000).unref();
 // Fristen und Erinnerungen (#129, #131): einmal am Tag – gleich nach Mitternacht bzw. beim Start –, vor der Zusammenfassung.
 let fristenTag = '';
 const fristen = async () => {

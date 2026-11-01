@@ -101,7 +101,7 @@ export class Konten {
     const treffer = email ? await this.repo.holeHash(email) : undefined;
     const ok = await pruefePasswort(passwort, treffer?.hash);
     if (!ok || !treffer || !treffer.benutzer.aktiv) {
-      await this.sperre.fehlschlag(email, ip);
+      await this.sperre.fehlschlag(email, ip, !!treffer?.benutzer.aktiv);
       throw new Fachfehler(401, 'E-Mail-Adresse oder Passwort stimmen nicht.');
     }
     await this.sperre.erfolg(email, ip);
@@ -179,7 +179,7 @@ export class Konten {
     await this.sperre.pruefe(k.email, ip);
     const art = await this.zweifaktor?.pruefe(k.benutzerId, e.code);
     if (!art) {
-      await this.sperre.fehlschlag(k.email, ip);
+      await this.sperre.fehlschlag(k.email, ip, true);
       if (++k.versuche >= 5) this.zweiterSchritt.delete(e.kennung as string);
       throw new Fachfehler(401, 'Der Code stimmt nicht.');
     }

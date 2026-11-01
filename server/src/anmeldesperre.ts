@@ -1,4 +1,5 @@
 import { BlockList, isIP } from 'node:net';
+import { heuteIn } from '../../shared/src/sichten';
 import type { Einstellungen } from './einstellungen';
 import { speicherEinstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
@@ -8,11 +9,68 @@ import { protokoll } from './protokoll';
  * Anmeldeschutz (#240): nach zu vielen Fehlversuchen sperren – je E-Mail-Adresse und IP (wie bisher)
  * und zusätzlich je IP über alle Adressen, wahlweise dauerhaft bis zum Entsperren. Werte in der
  * Werkbank einstellbar, Sperren in der Datenbank (überstehen einen Neustart), Ausnahmen für eigene Netze.
+ *
+ * Mails (#368): Angriffsversuche aus dem Internet sind normal, darum im Standard keine Mail. Eingeschaltet
+ * kommt höchstens eine Sammelmeldung am Tag (über die Sperren des Vortags), wahlweise zusätzlich sofort
+ * eine Mail, wenn ein bestehendes Benutzerkonto gesperrt wird (je Konto höchstens einmal am Tag).
  */
 
 export interface Grenze { versuche: number; /** 0 = dauerhaft, bis entsperrt (nur IP). */ minuten: number }
-export interface SperrEinstellung { konto: Grenze; ip: Grenze; ausnahmen: string[]; mail: boolean }
-export const SPERRE_STANDARD: SperrEinstellung = { konto: { versuche: 5, minuten: 1 }, ip: { versuche: 30, minuten: 60 }, ausnahmen: [], mail: true };
+export interface SperrEinstellung {
+  konto: Grenze; ip: Grenze; ausnahmen: string[];
+  /** Tägliche Sammelmeldung über die Sperren (#368; bis 0.84.7 eine Mail je gesperrter IP, im Standard an). */
+  mail: boolean;
+  /** Zusätzlich sofort melden, wenn ein bestehendes Benutzerkonto gesperrt wird (#368). */
+  mailKonto: boolean;
+}
+export const SPERRE_STANDARD: SperrEinstellung = { konto: { versuche: 5, minuten: 1 }, ip: { versuche: 30, minuten: 60 }, ausnahmen: [], mail: false, mailKonto: false };
+
+/**
+ * So liegt die Einstellung in der Datenbank. `mailGewaehlt` steht nur dort, wo ein Administrator den
+ * Mail-Schalter selbst umgelegt hat (ab 0.84.8). Bis 0.84.7 schrieb die Werkbank beim Speichern immer den
+ * ganzen Satz mit – ein gespeichertes `mail: true` heißt dort nur „Standard übernommen“. Ohne Kennzeichen
+ * gilt darum der aktuelle Standard; so braucht es keine Migration.
+ */
+type GespeicherteEinstellung = Partial<SperrEinstellung> & { mailGewaehlt?: boolean };
+
+/** Wirksame Einstellung aus dem gespeicherten Wert (#368). */
+export function leseSperrEinstellung(roh: unknown): { e: SperrEinstellung; mailGewaehlt: boolean } {
+  const g = (roh && typeof roh === 'object' ? roh : {}) as GespeicherteEinstellung;
+  const { mailGewaehlt, ...rest } = g;
+  const gewaehlt = mailGewaehlt === true;
+  return { e: { ...SPERRE_STANDARD, ...rest, mail: gewaehlt ? rest.mail === true : SPERRE_STANDARD.mail, mailKonto: rest.mailKonto === true }, mailGewaehlt: gewaehlt };
+}
+
+/** Eine Sperre für die Sammelmeldung; `tag` als JJJJ-MM-TT (Europe/Berlin). */
+export interface Meldung { tag: string; art: 'ip' | 'konto'; wer: string; versuche: number }
+interface Meldestand { offen: Meldung[]; zuletzt?: string }
+const MELDUNGEN_HOECHSTENS = 2000;
+
+const datum = (tag: string) => tag.split('-').reverse().join('.');
+
+/** Text der Sammelmeldung über die Sperren vor heute (#368). */
+export function sammelText(meldungen: Meldung[]): { betreff: string; text: string } {
+  const tage = [...new Set(meldungen.map((m) => m.tag))].sort();
+  const zeitraum = tage.length === 1 ? `Am ${datum(tage[0])}` : `Vom ${datum(tage[0])} bis ${datum(tage[tage.length - 1])}`;
+  const ips = meldungen.filter((m) => m.art === 'ip');
+  const konten = meldungen.filter((m) => m.art === 'konto');
+  const teile: string[] = [];
+  if (ips.length) teile.push(ips.length === 1 ? 'eine IP-Adresse' : `${ips.length} IP-Adressen`);
+  const kontenAnzahl = new Set(konten.map((m) => m.wer)).size;
+  if (kontenAnzahl) teile.push(kontenAnzahl === 1 ? 'ein Benutzerkonto' : `${kontenAnzahl} Benutzerkonten`);
+  const zeilen = [`${zeitraum} hat der Anmeldeschutz ${teile.join(' und ')} nach Fehlversuchen gesperrt.`, '', 'Angriffsversuche aus dem Internet sind normal; die Sperren passieren automatisch. Du musst nichts tun, solange du keine eigenen Adressen darunter findest.'];
+  if (ips.length) {
+    const top = [...ips].sort((a, b) => b.versuche - a.versuche).slice(0, 5);
+    zeilen.push('', ips.length > 5 ? 'Die fünf mit den meisten Fehlversuchen:' : 'Gesperrte Adressen:', ...top.map((m) => `- ${m.wer}: ${m.versuche} Fehlversuche (${datum(m.tag)})`));
+  }
+  if (konten.length) {
+    const je = new Map<string, number>();
+    for (const m of konten) je.set(m.wer, (je.get(m.wer) ?? 0) + 1);
+    zeilen.push('', 'Gesperrte Benutzerkonten (je E-Mail-Adresse und IP):', ...[...je].slice(0, 10).map(([wer, n]) => `- ${wer}${n > 1 ? ` (${n}×)` : ''}`));
+  }
+  zeilen.push('', 'Gesperrte Adressen entsperren: Werkbank → Anmeldeschutz.');
+  return { betreff: `DMS: Anmeldeschutz – ${teile.join(' und ')} gesperrt`, text: zeilen.join('\n') };
+}
 
 export interface IpSperre { ip: string; seit: string; bis: string | null; grund: string }
 interface Zaehler { anzahl: number; bis: number }
@@ -58,6 +116,7 @@ export function pruefeSperrEinstellung(x: unknown, alt: SperrEinstellung): Sperr
     ip: grenze(o.ip, alt.ip, 'Je IP', true),
     ausnahmen: o.ausnahmen === undefined ? alt.ausnahmen : pruefeAusnahmen(o.ausnahmen),
     mail: o.mail === undefined ? alt.mail : o.mail === true,
+    mailKonto: o.mailKonto === undefined ? alt.mailKonto : o.mailKonto === true,
   };
 }
 
@@ -67,13 +126,16 @@ export class Anmeldesperre {
   private ips: IpSperre[] = [];
   private geladen = false;
   private e: SperrEinstellung = SPERRE_STANDARD;
+  private mailGewaehlt = false;
   private ausnahmen = liste([]);
+  /** Sofortmeldungen je Konto: E-Mail-Adresse → Tag der letzten Mail. */
+  private sofortGemeldet = new Map<string, string>();
 
   constructor(private speicher: Einstellungen = speicherEinstellungen(), private anAdmins?: (betreff: string, text: string) => Promise<void>, private jetzt: () => number = Date.now) {}
 
   private async lade() {
     if (this.geladen) return;
-    this.e = { ...SPERRE_STANDARD, ...((await this.speicher.lies('anmeldesperre')) as Partial<SperrEinstellung> | null ?? {}) };
+    ({ e: this.e, mailGewaehlt: this.mailGewaehlt } = leseSperrEinstellung(await this.speicher.lies('anmeldesperre')));
     this.ausnahmen = liste(this.e.ausnahmen);
     const g = (await this.speicher.lies('anmeldesperren')) as Gespeichert | null;
     this.ips = g?.ips ?? [];
@@ -96,10 +158,15 @@ export class Anmeldesperre {
   async einstellung(): Promise<SperrEinstellung> { await this.lade(); return this.e; }
   async speichere(x: unknown, von: string): Promise<SperrEinstellung> {
     await this.lade();
+    const vorher = this.e.mail;
     this.e = pruefeSperrEinstellung(x, this.e);
     this.ausnahmen = liste(this.e.ausnahmen);
-    await this.speicher.schreibe('anmeldesperre', this.e);
-    log.info('Anmeldeschutz eingestellt', { von, konto: `${this.e.konto.versuche}×/${this.e.konto.minuten} min`, ip: `${this.e.ip.versuche}×/${this.e.ip.minuten || 'dauerhaft'}`, ausnahmen: this.e.ausnahmen.join(' ') || '–' });
+    // Nur ein umgelegter Schalter zählt als eigene Wahl; wer den Standard bloß mitspeichert, behält den Standard (#368).
+    if (this.e.mail !== vorher) this.mailGewaehlt = true;
+    const wert: GespeicherteEinstellung = this.mailGewaehlt ? { ...this.e, mailGewaehlt: true } : { ...this.e };
+    await this.speicher.schreibe('anmeldesperre', wert);
+    if (!this.e.mail) await this.speicher.schreibe('anmeldesperre_meldung', null);
+    log.info('Anmeldeschutz eingestellt', { von, konto: `${this.e.konto.versuche}×/${this.e.konto.minuten} min`, ip: `${this.e.ip.versuche}×/${this.e.ip.minuten || 'dauerhaft'}`, ausnahmen: this.e.ausnahmen.join(' ') || '–', mail: this.e.mail ? 'täglich' : 'aus', mailKonto: this.e.mailKonto ? 'sofort' : 'aus' });
     return this.e;
   }
 
@@ -137,8 +204,39 @@ export class Anmeldesperre {
     }
   }
 
-  /** Nach einem falschen Passwort: zählen und gegebenenfalls sperren. */
-  async fehlschlag(email: string, ip: string) {
+  private heute() { return heuteIn(new Date(this.jetzt())); }
+
+  /** Sperre für die tägliche Sammelmeldung vormerken (nur bei eingeschalteter Mail). */
+  private async vormerken(m: Omit<Meldung, 'tag'>) {
+    if (!this.e.mail) return;
+    const s = ((await this.speicher.lies('anmeldesperre_meldung')) as Meldestand | null) ?? { offen: [] };
+    s.offen = [...s.offen, { tag: this.heute(), ...m }].slice(-MELDUNGEN_HOECHSTENS);
+    await this.speicher.schreibe('anmeldesperre_meldung', s);
+  }
+
+  /**
+   * Regelmäßig aufgerufen (#368): höchstens eine Sammelmeldung am Tag, über die Sperren vor heute.
+   * Liefert true, wenn eine Mail verschickt wurde.
+   */
+  async meldeTaeglich(): Promise<boolean> {
+    await this.lade();
+    if (!this.e.mail || !this.anAdmins) return false;
+    const s = (await this.speicher.lies('anmeldesperre_meldung')) as Meldestand | null;
+    const heute = this.heute();
+    if (!s || s.zuletzt === heute) return false;
+    const faellig = s.offen.filter((m) => m.tag < heute);
+    if (!faellig.length) return false;
+    await this.speicher.schreibe('anmeldesperre_meldung', { offen: s.offen.filter((m) => m.tag >= heute), zuletzt: heute } satisfies Meldestand);
+    const { betreff, text } = sammelText(faellig);
+    await this.anAdmins(betreff, text).catch((e) => log.warn('Sammelmeldung Anmeldeschutz nicht verschickt', { fehler: (e as Error).message }));
+    return true;
+  }
+
+  /**
+   * Nach einem falschen Passwort: zählen und gegebenenfalls sperren. `bekannt`: Die E-Mail-Adresse
+   * gehört zu einem bestehenden Benutzerkonto (nur dann kommt die Sofortmeldung, #368).
+   */
+  async fehlschlag(email: string, ip: string, bekannt = false) {
     await this.lade();
     const a = norm(ip);
     if (this.ausgenommen(a)) return;
@@ -147,7 +245,11 @@ export class Anmeldesperre {
     const k = this.konten.get(key);
     const n = (k && k.bis > t ? k.anzahl : 0) + 1;
     this.konten.set(key, { anzahl: n, bis: t + this.e.konto.minuten * MIN });
-    if (n === this.e.konto.versuche) { log.warn('Anmeldung gesperrt (Konto und IP)', { email, ip: a, versuche: n, minuten: this.e.konto.minuten }); await this.sichere(); }
+    if (n === this.e.konto.versuche) {
+      log.warn('Anmeldung gesperrt (Konto und IP)', { email, ip: a, versuche: n, minuten: this.e.konto.minuten });
+      await this.sichere();
+      if (bekannt) await this.kontoGesperrt(email, a, n);
+    }
     // Je IP über alle Adressen; das Zählfenster ist die Sperrdauer (bei „dauerhaft“ eine Stunde).
     const fenster = (this.e.ip.minuten || 60) * MIN;
     const z = this.ipZaehler.get(a);
@@ -159,8 +261,18 @@ export class Anmeldesperre {
       this.ipZaehler.delete(a);
       await this.sichere();
       log.warn('IP-Adresse gesperrt', { ip: a, versuche: m, bis: sperre.bis ?? 'bis entsperrt' });
-      if (this.e.mail) await this.anAdmins?.('DMS: IP-Adresse nach Fehlversuchen gesperrt', `Von ${a} kamen ${m} fehlgeschlagene Anmeldungen. Die Adresse ist ${sperre.bis ? `bis ${new Date(sperre.bis).toLocaleString('de-DE')}` : 'gesperrt, bis ein Administrator sie freigibt'}.\n\nEntsperren: Werkbank → Anmeldeschutz.`).catch(() => {});
+      await this.vormerken({ art: 'ip', wer: a, versuche: m });
     }
+  }
+
+  /** Ein bestehendes Konto wurde gesperrt: vormerken und – falls gewünscht – sofort melden, je Konto höchstens einmal am Tag. */
+  private async kontoGesperrt(email: string, ip: string, versuche: number) {
+    await this.vormerken({ art: 'konto', wer: email, versuche });
+    if (!this.e.mailKonto || !this.anAdmins) return;
+    const heute = this.heute();
+    if (this.sofortGemeldet.get(email) === heute) return;
+    this.sofortGemeldet.set(email, heute);
+    await this.anAdmins('DMS: Benutzerkonto nach Fehlversuchen gesperrt', `Für ${email} kamen von ${ip} ${versuche} falsche Passwörter hintereinander. Die Anmeldung von dieser Adresse ist für ${this.e.konto.minuten === 1 ? 'eine Minute' : `${this.e.konto.minuten} Minuten`} gesperrt.\n\nWar das nicht der Benutzer selbst, versucht jemand, das Passwort zu erraten. Heute kommt zu diesem Konto keine weitere Sofortmeldung.\n\nEinstellungen: Werkbank → Anmeldeschutz.`).catch((e) => log.warn('Meldung zur Kontosperre nicht verschickt', { fehler: (e as Error).message }));
   }
 
   /** Nach erfolgreicher Anmeldung: Zähler für Konto und IP zurücksetzen. */
