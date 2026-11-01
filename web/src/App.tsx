@@ -88,7 +88,7 @@ export function App() {
         <NeuKnopf />
         <div className="konto">
           <Benutzermenue an={bereich === 'profil'} abmelden={abmelden} />
-          {/* AGPL: Wer das DMS über das Netz nutzt, soll an den Quellcode kommen. */}
+          {/* Quellcode-Link (früher Pflicht nach AGPL § 13, seit Apache-2.0 freiwillig – #430). */}
           <a className="quelle" href="https://github.com/motom001/dms" target="_blank" rel="noreferrer">Quellcode</a>
         </div>
       </header>

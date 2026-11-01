@@ -2,7 +2,7 @@
   "name": "dms",
   "private": true,
   "version": "0.92.0",
-  "license": "AGPL-3.0-only",
+  "license": "Apache-2.0",
   "description": "Selbst gehostetes, persönliches Informations- und Dokumentenmanagementsystem",
   "type": "module",
   "workspaces": [

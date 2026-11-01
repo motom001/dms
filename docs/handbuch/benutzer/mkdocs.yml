@@ -5,7 +5,7 @@ repo_url: https://github.com/motom001/dms
 repo_name: motom001/dms
 edit_uri: edit/main/docs/handbuch/benutzer/docs/
 docs_dir: docs
-copyright: DMS steht unter der AGPL-3.0 · <a href="https://github.com/sponsors/motom001">Projekt unterstützen</a>
+copyright: DMS steht unter der Apache-2.0 · <a href="https://github.com/sponsors/motom001">Projekt unterstützen</a>
 
 theme:
   name: material

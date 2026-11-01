@@ -7,7 +7,7 @@
 [![CodeQL](https://github.com/motom001/dms/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/motom001/dms/security/code-scanning?query=tool%3ACodeQL)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/motom001/dms/badge)](https://scorecard.dev/viewer/?uri=github.com/motom001/dms)
 [![Sicherheit](https://img.shields.io/badge/Sicherheit-SECURITY.md-2ea44f)](SECURITY.md)<br>
-[![Lizenz](https://img.shields.io/badge/Lizenz-AGPL--3.0-blue)](LICENSE)
+[![Lizenz](https://img.shields.io/badge/Lizenz-Apache--2.0-blue)](LICENSE)
 [![Unterstützen](https://img.shields.io/badge/Unterst%C3%BCtzen-GitHub_Sponsors-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/motom001)
 
 **Die Unterlagen deines Haushalts an einem Ort – selbst gehostet, kostenlos, deine Daten bleiben bei dir.**
@@ -122,6 +122,6 @@ Die Entwicklung kostet Zeit und Geld – für Testgeräte, Server und Werkzeuge.
 
 ## Lizenz
 
-[GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-only).
+[Apache License 2.0](LICENSE) (Apache-2.0), Hinweise in [NOTICE](NOTICE). Versionen bis einschließlich 0.92.0 stehen unter der GNU Affero General Public License v3.0 (AGPL-3.0-only).
 
 Jeder darf das DMS nutzen, verändern und weitergeben. Wer eine veränderte Fassung weitergibt oder anderen über ein Netzwerk zur Nutzung anbietet, muss deren Quellcode unter derselben Lizenz zugänglich machen.

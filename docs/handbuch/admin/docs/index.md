@@ -62,6 +62,6 @@ Wünsche und Fehler bitte als [Issue](https://github.com/motom001/dms/issues/new
 
 ## Projekt unterstützen
 
-Das DMS ist freie Software (AGPL-3.0). Unterstützung ist über GitHub Sponsors möglich:
+Das DMS ist freie Software (Apache-2.0). Unterstützung ist über GitHub Sponsors möglich:
 
 [![Projekt unterstützen](https://img.shields.io/badge/Projekt_unterst%C3%BCtzen-GitHub_Sponsors-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/motom001)

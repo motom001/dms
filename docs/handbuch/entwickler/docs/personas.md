@@ -146,7 +146,7 @@ Markus richtet das DMS **für Lena und Jonas** ein. Was er baut, müssen die bei
 
 - **Wer:** 2.000+ Mitarbeitende, IT-Abteilung, viele Administratoren mit getrennten Zuständigkeiten, Compliance.
 - **Erwartet zusätzlich:** Hochverfügbarkeit, mehrere Mandanten in einer Installation, Rechte aus dem Verzeichnisdienst, Aufbewahrungsrichtlinien, Zertifizierungen, Anbindung an ERP und CRM.
-- **Haltung:** Das DMS steht unter der AGPL. Ein Konzern darf es einsetzen und erweitern. Wir gestalten aber nicht dafür.
+- **Haltung:** Das DMS steht unter der Apache-2.0. Ein Konzern darf es einsetzen und erweitern. Wir gestalten aber nicht dafür.
 
 ## Fokus-Entscheidungen
 

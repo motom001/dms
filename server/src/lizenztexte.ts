@@ -2,7 +2,7 @@
  * Lizenztexte für selbst erstellte Pakete (#374): die Positivliste der Registry (REGELN.md), je mit dem
  * vollständigen Text für LICENSE. {jahr} und {name} setzt die Paketerstellung ein (nur MIT und BSD).
  * Quellen: Vorlage der Registry (MIT), SPDX (BSD), Debian common-licenses (Apache, MPL, GPL, LGPL, CC0),
- * LICENSE des DMS (AGPL).
+ * LICENSE des DMS bis 0.92.0 (AGPL).
  */
 /* eslint-disable */
 export const LIZENZTEXTE: Record<string, string> = {
