@@ -1288,6 +1288,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../webdav/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WebDAV-Laufwerk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../demo/" class="md-nav__link">
         
   
@@ -2455,6 +2483,7 @@
 <li><strong>Caddy:</strong> holt und erneuert Zertifikate von selbst, die Konfiguration ist wenige Zeilen lang.</li>
 </ul>
 <p>Für Let's Encrypt braucht es eine eigene Domain, die auf deinen Anschluss zeigt. Soll das DMS nur zu Hause erreichbar sein, reicht HTTP im Heimnetz.</p>
+<p>Nutzt ihr das <a href="../webdav/">WebDAV-Laufwerk</a>, braucht es <strong>HTTPS</strong> auch zu Hause (Windows verlangt es), und der Proxy muss die WebDAV-Methoden wie <code>PROPFIND</code> und <code>LOCK</code> durchlassen – siehe <a href="../webdav/#hinter-einem-reverse-proxy">Hinter einem Reverse-Proxy</a>.</p>
 <h3 id="was-der-proxy-dem-dms-mitteilt">Was der Proxy dem DMS mitteilt<a class="headerlink" href="#was-der-proxy-dem-dms-mitteilt" title="Permanent link">&para;</a></h3>
 <p>Der Proxy leitet jede Anfrage an das DMS weiter. Für das DMS sieht sie deshalb so aus, als käme sie vom Proxy. Was das Gerät dahinter ist, schreibt der Proxy in Zusatzangaben (<code>X-Forwarded-For</code>, <code>X-Forwarded-Proto</code>). Das DMS braucht sie für:</p>
 <table>
