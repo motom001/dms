@@ -1,28 +1,21 @@
 /**
- * Zeitmessung für den Entwicklermodus (#11).
+ * Zeitmessung für den Entwicklermodus (#11, #477).
  *
  * Je Seite (Navigation) werden die Anfragen an den Server erfasst und zerlegt:
- *   Netzwerk      – Hin- und Rückweg ohne die Zeit auf dem Server (aus Resource Timing, Näherung)
- *   Aufbereitung  – Zeit auf dem Server ohne Datenbank (Header Server-Timing)
- *   Datenbank     – Anzahl und Dauer der Datenbankzugriffe (Server-Timing)
- *   Übertragung   – Senden der Antwort an den Browser (Resource Timing)
- *   Auswerten     – JSON im Browser lesen
- *   Darstellung   – bis der Browser das Ergebnis gezeichnet hat
+ *   Warten (Browser) – Anfrage wartet im Browser, z. B. weil schon 6 Anfragen an den Server laufen (Resource Timing)
+ *   Leitung          – Hin- und Rückweg ohne die Zeit im Server (Näherung; enthält auch Warten, bevor der Server die Anfrage annimmt)
+ *   Warten (Server)  – Eingang der Anfrage bis zum Handler (Server-Timing „vor“)
+ *   Rechte           – Berechtigungen auswerten, ohne die Datenbankzugriffe darin (Server-Timing „rechte“)
+ *   Datenbank        – Anzahl und Dauer der Datenbankzugriffe (Server-Timing „db“)
+ *   Aufbereitung     – übrige Zeit im Handler (Server-Timing „app“ minus Datenbank und Rechte)
+ *   JSON             – Antwort auf dem Server in Text umwandeln (Server-Timing „json“)
+ *   Übertragung      – Senden der Antwort an den Browser (Resource Timing)
+ *   Auswerten        – JSON im Browser lesen
+ *   Darstellung      – bis der Browser das Ergebnis gezeichnet hat
  */
-export interface Anfragemessung {
-  nr: number;
-  methode: string;
-  url: string;
-  status: number;
-  gesamt: number;
-  netzwerk?: number;
-  aufbereitung?: number;
-  db?: number;
-  dbAnzahl?: number;
-  uebertragung?: number;
-  auswerten: number;
-  darstellung?: number;
-}
+import { liesServerTiming, teileAuf, type Anfragemessung } from '../../shared/src/zeitmessung';
+
+export type { Anfragemessung };
 export interface Seitenmessung { pfad: string; start: number; anfragen: Anfragemessung[]; bisAnzeige?: number }
 
 let aktiv = false;
@@ -49,21 +42,14 @@ export const messung = {
   /** Nach einer Anfrage: Zeiten zusammentragen; die Darstellung folgt nach dem nächsten Zeichnen. */
   erfasse(s: Seitenmessung, methode: string, url: string, antwort: Response, start: number, kopf: number, fertig: number) {
     if (!aktiv) return;
-    const st = /app;dur=([\d.]+)/.exec(antwort.headers.get('server-timing') ?? '');
-    const dbm = /db;dur=([\d.]+);desc="(\d+)"/.exec(antwort.headers.get('server-timing') ?? '');
-    const app = st ? Number(st[1]) : undefined;
-    const db = dbm ? Number(dbm[1]) : undefined;
+    const st = liesServerTiming(antwort.headers.get('server-timing') ?? '');
     const rt = performance.getEntriesByName(new URL(url, location.href).href, 'resource').at(-1) as PerformanceResourceTiming | undefined;
-    const uebertragung = rt && rt.responseEnd > 0 ? rt.responseEnd - rt.responseStart : undefined;
-    const warten = rt && rt.responseStart > 0 ? rt.responseStart - rt.startTime : kopf - start;
+    const teile = teileAuf(st, rt, kopf - start);
     const m: Anfragemessung = {
       nr: ++nr, methode, url, status: antwort.status,
       gesamt: fertig - start,
-      netzwerk: app !== undefined ? Math.max(0, warten - app) : undefined,
-      aufbereitung: app !== undefined ? Math.max(0, app - (db ?? 0)) : undefined,
-      db, dbAnzahl: dbm ? Number(dbm[2]) : undefined,
-      uebertragung,
-      auswerten: Math.max(0, fertig - kopf - (uebertragung ?? 0)),
+      ...teile,
+      auswerten: Math.max(0, fertig - kopf - (teile.uebertragung ?? 0)),
     };
     // Zählt zur Seite, auf der die Anfrage begann (auch wenn schon weiter navigiert wurde).
     s.anfragen.push(m);

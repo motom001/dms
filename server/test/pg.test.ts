@@ -359,7 +359,8 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
 
   it('misst Datenbankzugriffe und merkt sich lange', async () => {
     const r = await app.inject({ method: 'GET', url: '/api/sichten', headers: { cookie } });
-    assert.match(String(r.headers['server-timing']), /^app;dur=[\d.]+, db;dur=[\d.]+;desc="\d+"$/);
+    // #477: dazu vor, rechte, json, gesamt
+    assert.match(String(r.headers['server-timing']), /^vor;dur=[\d.]+, app;dur=[\d.]+, db;dur=[\d.]+;desc="\d+", rechte;dur=[\d.]+, json;dur=[\d.]+, gesamt;dur=[\d.]+$/);
     assert.ok(Number(/desc="(\d+)"/.exec(String(r.headers['server-timing']))![1]) >= 2, 'Sitzung und Zähler');
     // Schwelle auf 1 ms: dann gilt praktisch jeder Zugriff als lang.
     assert.equal((await anfrage('PUT', '/api/werkbank/datenbank', { schwelleMs: 0, tage: 7 })).status, 422);
@@ -371,7 +372,9 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.deepEqual(d.einstellungen, { schwelleMs: 1, tage: 7 });
     assert.ok(Array.isArray(d.laufend));
     assert.ok(d.langlaeufer.length >= 1, 'mindestens ein Zugriff über 1 ms');
-    assert.match(d.langlaeufer[0].zugriff, /^(mappen|konto)\./);
+    assert.ok(d.langlaeufer.some((l: { zugriff: string }) => /^(mappen|konto)\./.test(l.zugriff)), 'Datenbankzugriff');
+    // #477: auch ganze Anfragen, mit Aufteilung
+    assert.ok(d.langlaeufer.some((l: { zugriff: string }) => /^Anfrage: \d+ ms gesamt · /.test(l.zugriff)), 'Anfrage');
     assert.equal((await anfrage('PUT', '/api/werkbank/datenbank', { schwelleMs: 500, tage: 30 })).status, 200);
     // Entwicklermodus im Profil
     assert.equal((await anfrage('PUT', '/api/konto/profil', { entwicklermodus: true })).body.entwicklermodus, true);

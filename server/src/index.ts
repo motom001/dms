@@ -148,6 +148,7 @@ await betrieb.uebernimmAlteVariablen(env);
 // Jeder Datenbankzugriff der Repos wird gezählt und gestoppt (Entwicklermodus, lange Zugriffe).
 const messung = new Messung(pgMessSpeicher(sql, cfg.haushalt));
 await messung.start();
+messung.auslastung.start();
 // Speicherplatz (#116): an der Grenze ist das Hochladen gesperrt; Wartung und Mail kommen unten dazu.
 const spDeps: SpeicherplatzDeps = { einstellungen: pgEinstellungen(sql, cfg.haushalt) };
 const speicherplatz = new Speicherplatz(ordner, spDeps);

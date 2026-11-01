@@ -143,6 +143,9 @@ export function speicherRepo(): Repo {
     async mappenKurz() { return [...mappen.values()].map((m) => ({ id: m.id, typId: m.typId, titel: m.titel ?? '' })); },
     async feldwerte(typId, key) { return [...mappen.values()].filter((m) => m.typId === typId && m.werte[key] != null).map((m) => String(m.werte[key])); },
     async listeMappen(typId) { return [...mappen.values()].filter((m) => !typId || m.typId === typId).map(kopie); },
+    async mappenMitDatum(typId, felder, von, bis) {
+      return [...mappen.values()].filter((m) => m.typId === typId && felder.some((k) => { const w = m.werte[k]; return typeof w === 'string' && w >= von && w <= bis; })).map(kopie);
+    },
     async holeMappe(id) { const m = mappen.get(id); return m && kopie(m); },
     async legeMappeAn(id, typId, werte: Werte, vs, benutzerId, demo = false, systemKennung = null, nummern) {
       werte = kopie(werte);
@@ -307,11 +310,12 @@ export function speicherRepo(): Repo {
       const typen = new Map<string, { anzahl: number; unpassend: number; demo: number }>();
       let eingang = 0;
       for (const m of mappen.values()) {
+        // Eingang ohne Lesefilter (#127, #477).
+        if (offenFuer(m, benutzerId, admin)) eingang++;
         if (!lesbar(lesen ?? null, m, zaehl)) continue;
         const z = typen.get(m.typId) ?? { anzahl: 0, unpassend: 0, demo: 0 };
         z.anzahl++;
         if (m.passt !== true) z.unpassend++;
-        if (offenFuer(m, benutzerId, admin)) eingang++;
         if (m.demo) z.demo++;
         typen.set(m.typId, z);
       }

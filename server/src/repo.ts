@@ -105,6 +105,11 @@ export interface Repo {
   zaehleMappen(typId: string): Promise<number>;
 
   listeMappen(typId?: string): Promise<Mappe[]>;
+  /**
+   * Mappen eines Typs, bei denen mindestens eines der Datumsfelder zwischen von und bis liegt
+   * (je einschließlich, JJJJ-MM-TT). Für „Anstehend“ (#477), statt alle Mappen des Typs zu laden.
+   */
+  mappenMitDatum(typId: string, felder: string[], von: string, bis: string): Promise<Mappe[]>;
   /** Nur Id, Typ und Titel aller Mappen (Demo-Daten, #248: auch bei 200.000 Mappen schlank). */
   mappenKurz(): Promise<Array<{ id: string; typId: string; titel: string }>>;
   /** Vorhandene Werte eines Feldes (für eindeutige Felder beim Erzeugen von Demo-Daten). */
@@ -169,7 +174,7 @@ export interface Repo {
   bezuege(ids: string[]): Promise<Map<string, MappenBezug>>;
   /** Eine Seite einer Sicht, sortiert nach Titel. */
   seite(o: SeitenAnfrage): Promise<{ gesamt: number; mappen: Mappe[]; ausschnitte?: Record<string, Ausschnitt> }>;
-  /** Zähler für die Sichten. */
+  /** Zähler für die Sichten. `lesen` gilt für typen und favoriten; eingang zählt immer ohne Lesefilter (#127: auch Aufgaben zu nicht lesbaren Mappen, #477: eigene schnelle Abfrage). */
   zaehler(benutzerId: string, admin: boolean, lesen?: Lesefilter | null): Promise<{ typen: Map<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number; favoriten: number }>;
   /** Favoriten (#62): setzen/entfernen; welche der Mappen Favoriten des Benutzers sind. */
   setzeFavorit(benutzerId: string, mappeId: string, an: boolean): Promise<void>;

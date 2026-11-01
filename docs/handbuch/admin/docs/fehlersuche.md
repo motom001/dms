@@ -42,11 +42,28 @@ docker logs <app-container>
 
 ## Datenbank
 
-Lange Datenbankzugriffe und was gerade in der Datenbank läuft stehen unter **Werkbank → Einstellungen → Datenbank-Anbindung**, unter der Verbindung – siehe [Lange Datenbankzugriffe](installation.md#lange-datenbankzugriffe). Wirkt das DMS langsam, schau dort zuerst nach.
+Lange Datenbankzugriffe und Anfragen, die **Auslastung des Servers** und was gerade in der Datenbank läuft stehen unter **Werkbank → Einstellungen → Datenbank-Anbindung**, unter der Verbindung – siehe [Lange Datenbankzugriffe](installation.md#lange-datenbankzugriffe). Wirkt das DMS langsam, schau dort zuerst nach.
+
+Einträge, die mit **Anfrage:** beginnen, betreffen eine ganze Anfrage; aufgeklappt zeigen sie die **Aufteilung**: Warten vor dem Handler, Datenbank (mit Anzahl der Zugriffe), Rechte, Aufbereitung und JSON. Einzelheiten zur selben Zeit stehen im [Protokoll](#protokoll) (Modul *datenbank*).
+
+**Auslastung des Servers:** Das DMS arbeitet Anfragen auf einem Faden ab. Rechnet eine Anfrage lange, warten alle anderen so lange. Die Werte zeigen, wie lange in der letzten Minute üblicherweise, in 99 % der Fälle und höchstens gewartet wurde. Unter 50 ms ist unauffällig; ab 100 ms (99 %) erscheint ein Hinweis.
 
 ## Zeitmessung (Entwicklermodus)
 
-Wirkt eine Seite langsam, schalte im **Profil** den **Entwicklermodus** ein. Dann zeigt das DMS unten rechts bei jedem Seitenaufruf, wie lange Netzwerk, Aufbereitung auf dem Server, Datenbankzugriffe, Übertragung und Darstellung im Browser gedauert haben. Er gilt nur für dein Konto.
+Wirkt eine Seite langsam, schalte im **Profil** den **Entwicklermodus** ein. Dann zeigt das DMS unten rechts bei jedem Seitenaufruf je Anfrage, wo die Zeit geblieben ist, oben die Summe über alle Anfragen der Seite. Er gilt nur für dein Konto.
+
+| Abschnitt | Was es ist |
+|---|---|
+| Warten (Browser) | Die Anfrage wartet im Browser. Er schickt höchstens etwa 6 Anfragen gleichzeitig an einen Server, die übrigen warten. |
+| Leitung | Hin- und Rückweg ohne die Zeit im Server – eine Näherung. Sie enthält auch das Warten, bevor der Server die Anfrage überhaupt annimmt; ist er beschäftigt, zeigt das die **Auslastung** unter Werkbank → Datenbank. |
+| Warten (Server) | Vom Eingang im Server bis zur Bearbeitung, z. B. Körper der Anfrage lesen. |
+| Rechte | Berechtigungen auswerten (Zugriff bilden, Lesefilter, Rechte je Mappe), ohne die Datenbankzugriffe darin. |
+| Datenbank | Anzahl und Dauer der Datenbankzugriffe. |
+| Aufbereitung | Die übrige Zeit im Server. |
+| JSON | Die Antwort im Server in Text umwandeln. |
+| Übertragung, Auswerten, Darstellung | Antwort senden, im Browser lesen und zeichnen. |
+
+Die Werte kommen vom Server im Header `Server-Timing` (`vor`, `app`, `db`, `rechte`, `json`, `gesamt`) und aus der Zeitmessung des Browsers.
 
 ## Technik
 
