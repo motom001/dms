@@ -39,7 +39,7 @@ Steht bei dir unter „Zu erledigen“ eine **nicht sichtbare Mappe**, hast du e
 
 ## Anstehend
 
-Direkt unter „Zu erledigen“ zeigt **Anstehend** deine Fristen und Erinnerungen der nächsten 30 Tage nach Datum – auch die, die noch nicht unter „Zu erledigen“ stehen. So siehst du, was auf dich zukommt. Den Zeitraum stellst du im [Profil](profil.md#benachrichtigungen-und-ablage) ein. Ein Klick öffnet die Mappe.
+Direkt unter „Zu erledigen“ zeigt **Anstehend** deine Fristen und Erinnerungen der nächsten 30 Tage nach Datum – auch die, die noch nicht unter „Zu erledigen“ stehen. So siehst du, was auf dich zukommt. Den Zeitraum stellst du im [Profil unter Darstellung](profil.md#anstehend) ein. Ein Klick öffnet die Mappe.
 
 ![Anstehend](bilder/anstehend.png)
 
@@ -53,4 +53,4 @@ Hat jemand eine [Abwesenheit](profil.md#abwesenheit) eingetragen, steht das in d
 
 ## Tägliche Zusammenfassung
 
-Hast du offene Aufgaben, schickt dir das DMS die **Tägliche Zusammenfassung**: eine E-Mail mit der Liste und Links zu den Mappen – keine Mail bei jeder einzelnen Aufgabe. Üblich ist **an Werktagen um 7 Uhr**; Uhrzeit und Wochentage stellst du im [Profil](profil.md#benachrichtigungen-und-ablage) ein, dort kannst du die Mail auch abbestellen.
+Hast du offene Aufgaben, schickt dir das DMS die **Tägliche Zusammenfassung**: eine E-Mail mit der Liste und Links zu den Mappen – keine Mail bei jeder einzelnen Aufgabe. Üblich ist **an Werktagen um 7 Uhr**; Uhrzeit und Wochentage stellst du im [Profil unter Benachrichtigungen](profil.md#benachrichtigungen) ein, dort kannst du die Mail auch abbestellen.
