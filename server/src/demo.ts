@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { formatiere, istOk, pruefeMappe, titelAus, verweiseVon, type Feld, type Mappentyp, type Wert, type Werte } from '../../shared/src/model';
-import { DOKUMENTARTEN, erzeugeDokument, kannRastern, pruefeDokumentOptionen, schaetze, type Abschaetzung, type DokumentOptionen, type Dokumentart, type MappenInhalt } from './demo-dokumente';
+import { dokumentRegister, MAX_DEMO, MAX_DEMO_DOKUMENTE, mengenWarnung, schaetzeMenge, verteilung } from '../../shared/src/demodaten';
+import { DOKUMENTARTEN, erzeugeDokument, kannRastern, pruefeDokumentOptionen, type Abschaetzung, type DokumentOptionen, type Dokumentart, type MappenInhalt } from './demo-dokumente';
 import { NACHNAMEN, ORTE, STRASSEN, VORNAMEN } from './demo-text';
 import type { PhasenPlan } from './auftrag';
 import type { Dienst } from './dienst';
@@ -17,7 +18,7 @@ import { Zufall } from './zufall';
  * (demo-dokumente.ts), mit Startwert wiederholbar. Vorhandene Mappen werden nur schlank
  * geladen (Id, Typ, Titel; Werte nur für eindeutige Felder).
  */
-export const MAX_DEMO = 50_000;
+export { MAX_DEMO };
 
 // Zufall des laufenden Auftrags (mit Startwert). Es läuft immer nur ein Auftrag (Auftraege).
 let z = new Zufall();
@@ -141,20 +142,6 @@ export function pruefeDemoOptionen(x: unknown): DemoOptionen {
   return { anzahl: pruefeAnzahl(o.anzahl), startwert, dokumente: pruefeDokumentOptionen(o.dokumente) };
 }
 
-/** Wie viele Mappen bekommt jeder Typ? Stammdaten (wenig Verweise) weniger als Belege. */
-function verteilung(typen: Mappentyp[], n: number) {
-  const gewicht = (t: Mappentyp) => 1 + 2 * t.felder.filter((f) => f.typ === 'referenz' && f.zielTyp !== t.id).length;
-  const summe = typen.reduce((a, t) => a + gewicht(t), 0);
-  // Größte Reste (#364): Die Summe ergibt genau n – sonst stünde bei „40 Mappen“ im Fortschritt „39“.
-  const roh = typen.map((t) => (n * gewicht(t)) / summe);
-  const anzahl = roh.map(Math.floor);
-  let rest = n - anzahl.reduce((a, b) => a + b, 0);
-  for (const i of roh.map((_, i) => i).sort((i, j) => (roh[j] - anzahl[j]) - (roh[i] - anzahl[i]) || i - j)) { if (rest-- <= 0) break; anzahl[i]++; }
-  // Jeder Typ bekommt mindestens eine Mappe (bei sehr kleinen Anzahlen also etwas mehr als n).
-  return new Map(typen.map((t, i) => [t.id, Math.max(1, anzahl[i])]));
-}
-const dokumentRegister = (t: Mappentyp) => t.register.filter((r) => r.art === 'dokumente');
-
 export interface DemoAbschaetzung {
   mappen: number;
   mappenMitRegister: number;
@@ -168,11 +155,8 @@ export interface DemoAbschaetzung {
 }
 
 export async function schaetzeDemo(dienst: Dienst, o: DemoOptionen, platz?: DemoPlatz): Promise<DemoAbschaetzung> {
-  const typen = (await dienst.listeTypen()).filter((t) => !t.system);
-  const ziel = verteilung(typen, o.anzahl);
-  const mappen = [...ziel.values()].reduce((a, b) => a + b, 0);
-  const mappenMitRegister = typen.filter((t) => dokumentRegister(t).length).reduce((a, t) => a + (ziel.get(t.id) ?? 0), 0);
-  const dokumente = o.dokumente ? schaetze(mappenMitRegister, o.dokumente) : null;
+  // Dieselbe Rechnung wie in der Oberfläche (#365), hier zusätzlich mit dem freien Platz.
+  const { mappen, mappenMitRegister, dokumente } = schaetzeMenge(await dienst.listeTypen(), o);
   const frei = platz ? await platz.frei().catch(() => null) : null;
   const mindest = platz ? await platz.mindest().catch(() => 0) : 0;
   return { mappen, mappenMitRegister, dokumente, frei, mindest, reicht: frei === null || frei - (dokumente?.bytes ?? 0) >= mindest, rastern: await kannRastern() };
@@ -222,6 +206,10 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
   // Benutzer und Rollen pflegt das System; Demo-Mappen dürfen aber auf sie verweisen.
   const typen = reihenfolge((await dienst.listeTypen()).filter((t) => !t.system));
   if (!typen.length) throw new Fachfehler(409, 'Es gibt noch keine Mappentypen. Lege zuerst welche an oder lade die Beispiele.');
+
+  // Grenze je Lauf (#365): Mappen × Anteil × Dokumente je Mappe.
+  const menge = schaetzeMenge(typen, o);
+  if ((menge.dokumente?.dokumente ?? 0) > MAX_DEMO_DOKUMENTE) throw new Fachfehler(422, mengenWarnung(menge)!);
 
   // Platz vorab: reicht er für die geschätzten Dokumente nicht, beginnt der Lauf gar nicht erst.
   if (o.dokumente && platz) {

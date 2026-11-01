@@ -11,6 +11,7 @@ import type { EigeneAnsicht, WerkbankAnsicht } from '../../shared/src/werkbankan
 import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src/sichtrechte';
 import type { Anstehend, Erinnerung } from '../../shared/src/fristen';
 import type { Auftrag } from '../../shared/src/auftrag';
+import type { Dokumentart } from '../../shared/src/demodaten';
 import { merkeAnfrage } from './diagnose';
 import { erreichbarkeit, NICHT_ERREICHBAR } from './erreichbar';
 import { istAusfall } from '../../shared/src/erreichbarkeit';
@@ -618,8 +619,7 @@ export interface VollexportStand {
 }
 // Hintergrundaufträge mit Phase und Einheit (#364).
 export type { Auftrag, AuftragPhase } from '../../shared/src/auftrag';
-export const DOKUMENTARTEN = ['brief', 'mehrseitig', 'scan', 'bild', 'gross'] as const;
-export type Dokumentart = (typeof DOKUMENTARTEN)[number];
+export { DOKUMENTARTEN, type Dokumentart } from '../../shared/src/demodaten';
 export type DemoStufe = 'leicht' | 'realistisch' | 'schwer';
 export interface DemoOptionen {
   anzahl: number;

@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { crc32, deflateSync } from 'node:zlib';
 import { degrees, PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage } from 'pdf-lib';
+import { DOKUMENTARTEN, MAX_DUPLIKATE, MAX_JE_MAPPE, MISCHUNGEN, STUFEN, type DokumentOptionen, type Dokumentart, type Mischung, type Stufe } from '../../shared/src/demodaten';
 import { absatz, anschrift, euro, person, position, satz, ueberschrift } from './demo-text';
 import { Fachfehler } from './fehler';
 import type { Zufall } from './zufall';
@@ -18,38 +19,9 @@ import type { Zufall } from './zufall';
  * Ohne neue Bibliothek: pdf-lib (wie der Export) und pdftoppm (im Image für die Texterkennung).
  */
 
-export const DOKUMENTARTEN = ['brief', 'mehrseitig', 'scan', 'bild', 'gross'] as const;
-export type Dokumentart = (typeof DOKUMENTARTEN)[number];
-export type Mischung = Record<Dokumentart, number>;
-export const STUFEN = ['leicht', 'realistisch', 'schwer'] as const;
-export type Stufe = (typeof STUFEN)[number];
-
-/** Anteile in Prozent je Stufe. */
-export const MISCHUNGEN: Record<Stufe, Mischung> = {
-  leicht: { brief: 70, mehrseitig: 25, scan: 5, bild: 0, gross: 0 },
-  realistisch: { brief: 45, mehrseitig: 20, scan: 20, bild: 14, gross: 1 },
-  schwer: { brief: 20, mehrseitig: 25, scan: 30, bild: 20, gross: 5 },
-};
-
-/** Erwartete Größe und Seiten für die Texterkennung je Datei – für die Abschätzung vor dem Start. */
-export const ERWARTUNG: Record<Dokumentart, { bytes: number; ocrSeiten: number; seiten: number }> = {
-  brief: { bytes: 3_000, ocrSeiten: 0, seiten: 1 },
-  mehrseitig: { bytes: 80_000, ocrSeiten: 0, seiten: 30 },
-  scan: { bytes: 600_000, ocrSeiten: 2.2, seiten: 2.2 },
-  bild: { bytes: 1_500_000, ocrSeiten: 1, seiten: 1 },
-  gross: { bytes: 60 * 1024 * 1024, ocrSeiten: 0, seiten: 1 },
-};
+// Arten, Mischungen, Erwartungswerte und die Abschätzung liegen in shared (#365), damit die Oberfläche live rechnet.
+export { DOKUMENTARTEN, ERWARTUNG, MAX_JE_MAPPE, MISCHUNGEN, STUFEN, schaetze, type Abschaetzung, type DokumentOptionen, type Dokumentart, type Mischung, type Stufe } from '../../shared/src/demodaten';
 const MAX_GROSS = 95 * 1024 * 1024;
-
-export interface DokumentOptionen {
-  /** Anteil der neuen Mappen (mit Dokumentenregister), die Dokumente bekommen, in Prozent. */
-  anteil: number;
-  von: number;
-  bis: number;
-  mischung: Mischung;
-  /** Anteil gewollter Duplikate in Prozent (gleiche Datei in mehreren Mappen). */
-  duplikate: number;
-}
 
 export function pruefeDokumentOptionen(x: unknown): DokumentOptionen | null {
   if (x == null || x === false) return null;
@@ -60,31 +32,14 @@ export function pruefeDokumentOptionen(x: unknown): DokumentOptionen | null {
     return n;
   };
   const anteil = zahl(o.anteil, 30, 0, 100, 'Anteil der Mappen mit Dokumenten');
-  const von = Math.round(zahl(o.von, 1, 1, 20, 'Dokumente je Mappe (von)'));
-  const bis = Math.round(zahl(o.bis, 3, 1, 20, 'Dokumente je Mappe (bis)'));
+  const von = Math.round(zahl(o.von, 1, 1, MAX_JE_MAPPE, 'Dokumente je Mappe (von)'));
+  const bis = Math.round(zahl(o.bis, 3, 1, MAX_JE_MAPPE, 'Dokumente je Mappe (bis)'));
   if (bis < von) throw new Fachfehler(422, 'Dokumente je Mappe: „bis“ darf nicht kleiner als „von“ sein.');
   const stufe = STUFEN.includes(o.stufe as Stufe) ? (o.stufe as Stufe) : 'realistisch';
   const m = (o.mischung && typeof o.mischung === 'object' ? o.mischung : MISCHUNGEN[stufe]) as Record<string, unknown>;
   const mischung = Object.fromEntries(DOKUMENTARTEN.map((a) => [a, zahl(m[a] ?? 0, 0, 0, 100, `Anteil ${a}`)])) as Mischung;
   if (!DOKUMENTARTEN.some((a) => mischung[a] > 0)) throw new Fachfehler(422, 'Bitte mindestens eine Art von Dokumenten wählen.');
-  return { anteil, von, bis, mischung, duplikate: zahl(o.duplikate, 0, 0, 50, 'Anteil Duplikate') };
-}
-
-export interface Abschaetzung { dokumente: number; bytes: number; ocrSeiten: number; seiten: number; jeArt: Mischung }
-
-/** Erwartungswerte für eine Anzahl Mappen mit Dokumentenregister. */
-export function schaetze(mappenMitRegister: number, o: DokumentOptionen): Abschaetzung {
-  const dokumente = Math.round(mappenMitRegister * (o.anteil / 100) * ((o.von + o.bis) / 2));
-  const summe = DOKUMENTARTEN.reduce((a, k) => a + o.mischung[k], 0) || 1;
-  const jeArt = Object.fromEntries(DOKUMENTARTEN.map((k) => [k, Math.round((dokumente * o.mischung[k]) / summe)])) as Mischung;
-  const neu = 1 - o.duplikate / 100;
-  let bytes = 0, ocrSeiten = 0, seiten = 0;
-  for (const k of DOKUMENTARTEN) {
-    bytes += jeArt[k] * ERWARTUNG[k].bytes * neu;
-    ocrSeiten += jeArt[k] * ERWARTUNG[k].ocrSeiten;
-    seiten += jeArt[k] * ERWARTUNG[k].seiten;
-  }
-  return { dokumente, bytes: Math.round(bytes), ocrSeiten: Math.round(ocrSeiten), seiten: Math.round(seiten), jeArt };
+  return { anteil, von, bis, mischung, duplikate: zahl(o.duplikate, 0, 0, MAX_DUPLIKATE, 'Anteil Duplikate') };
 }
 
 /** Was die Mappe zum Dokument beiträgt: Titel und ihre Werte als „Bezeichnung: Wert“. */
