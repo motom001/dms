@@ -122,6 +122,7 @@ function einzelheiten(e: Historieneintrag, emailTyp: string | undefined): { hinw
           <dl className="eigenschaften einzeln">
             <dt>Datei</dt><dd>{d.dokument}</dd>
             <dt>Größe</dt><dd>{groesse(d.groesse)}</dd>
+            {str(d.verkleinert) && <><dt>Verkleinert</dt><dd>{str(d.verkleinert)}</dd></>}
             {str(d.mime) && <><dt>Typ</dt><dd>{str(d.mime)}</dd></>}
             {str(d.register) && <><dt>Register</dt><dd>{str(d.register)}</dd></>}
           </dl>

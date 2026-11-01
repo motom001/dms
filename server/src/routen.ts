@@ -214,11 +214,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
    * Ist ein Abruf ein Weitergeben (#394)? Herunterladen (?herunterladen), Stempel-Parameter oder ein API-Schlüssel
    * eines Benutzers. Anzeigen in der Oberfläche und Pakete (Dienstkonten, z. B. Texterkennung) bekommen das Original.
    */
-  const weitergabe = (a: Anfrage) => a.query.herunterladen !== undefined || !!wunschAus(a.query) || (!!a.apiSchluessel && a.benutzer?.art !== 'dienst');
-  /** Antwort für eine ausgegebene Datei (#394): immer als Herunterladen. */
-  const ausgabeDatei = (r: { name: string; mime: string; anzeigbar: boolean; groesse: number; inhalt: Buffer | Readable; gestempelt: boolean }): Antwort => {
+  const weitergabe = (a: Anfrage) => a.query.herunterladen !== undefined || a.query.verkleinern !== undefined || !!wunschAus(a.query) || (!!a.apiSchluessel && a.benutzer?.art !== 'dienst');
+  /** Antwort für eine ausgegebene Datei (#394): immer als Herunterladen. Verkleinert (#393): Kopf X-DMS-Verkleinert „vorher/nachher“. */
+  const ausgabeDatei = (r: { name: string; mime: string; anzeigbar: boolean; groesse: number; inhalt: Buffer | Readable; gestempelt: boolean; verkleinert?: { vorher: number; nachher: number } | null }): Antwort => {
     L.dokumente.debug(r.gestempelt ? 'Dokument mit Stempel heruntergeladen' : 'Dokument heruntergeladen', { name: r.name });
-    return { datei: { inhalt: r.inhalt, name: r.name, mime: r.anzeigbar ? r.mime : 'application/octet-stream', anzeigen: false, groesse: r.groesse, ...(r.gestempelt ? { koepfe: { 'x-dms-stempel': '1' } } : {}) } };
+    const koepfe: Record<string, string> = { ...(r.gestempelt ? { 'x-dms-stempel': '1' } : {}), ...(r.verkleinert ? { 'x-dms-verkleinert': `${r.verkleinert.vorher}/${r.verkleinert.nachher}` } : {}) };
+    return { datei: { inhalt: r.inhalt, name: r.name, mime: r.anzeigbar ? r.mime : 'application/octet-stream', anzeigen: false, groesse: r.groesse, ...(Object.keys(koepfe).length ? { koepfe } : {}) } };
   };
   const typName = async (id: string) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? id;
   const betrieb = () => { if (!x.betrieb) throw new Fachfehler(404, 'Betriebseinstellungen sind nicht eingerichtet.'); return x.betrieb; };
@@ -1396,7 +1397,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/dokumente/:id/inhalt', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
       // Herunterladen ist Weitergeben (#394): mit Stempel-Parametern oder Pflicht des Mappentyps gestempelt.
-      if (weitergabe(a)) return ausgabeDatei(await dienst.dokumentFuerAusgabe(a.params.id, { stempel: a.query, ich: ich(a) }));
+      if (weitergabe(a)) return ausgabeDatei(await dienst.dokumentFuerAusgabe(a.params.id, { stempel: a.query, verkleinern: a.query.verkleinern, ich: ich(a) }));
       const { dokument: d, inhalt } = await dienst.dokumentInhalt(a.params.id);
       const anzeigen = d.anzeigbar;
       L.dokumente.debug(anzeigen ? 'Dokument angezeigt' : 'Dokument heruntergeladen', { name: d.name, id: d.id });
@@ -1405,9 +1406,9 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     // Herunterladen mit Stempel aus der Oberfläche (#394): Angaben im Körper, sonst wie oben.
     { methode: 'POST', pfad: '/api/dokumente/:id/herunterladen', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
-      const e = (a.body ?? {}) as { stempel?: unknown; version?: unknown };
+      const e = (a.body ?? {}) as { stempel?: unknown; version?: unknown; verkleinern?: unknown };
       const version = e.version == null ? undefined : Number(e.version);
-      return ausgabeDatei(await dienst.dokumentFuerAusgabe(a.params.id, { stempel: e.stempel, version: Number.isInteger(version) ? version : undefined, ich: ich(a) }));
+      return ausgabeDatei(await dienst.dokumentFuerAusgabe(a.params.id, { stempel: e.stempel, verkleinern: e.verkleinern, version: Number.isInteger(version) ? version : undefined, ich: ich(a) }));
     } },
     // Vorschaubild der ersten Seite (#332): gleiche Rechte wie das Dokument; 404, solange es keins gibt.
     { methode: 'GET', pfad: '/api/dokumente/:id/vorschau', zugang: 'angemeldet', handler: async (a) => {
@@ -1452,7 +1453,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/versionen/:nummer/inhalt', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
-      if (weitergabe(a)) return ausgabeDatei(await dienst.dokumentFuerAusgabe(a.params.id, { version: Number(a.params.nummer), stempel: a.query, ich: ich(a) }));
+      if (weitergabe(a)) return ausgabeDatei(await dienst.dokumentFuerAusgabe(a.params.id, { version: Number(a.params.nummer), stempel: a.query, verkleinern: a.query.verkleinern, ich: ich(a) }));
       const { version: v, inhalt } = await dienst.versionInhalt(a.params.id, Number(a.params.nummer));
       const anzeigen = v.anzeigbar;
       return { datei: { inhalt, name: v.name, mime: v.anzeigbar ? v.mime : 'application/octet-stream', anzeigen, groesse: v.groesse } };
@@ -1485,6 +1486,20 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return ok(await dienst.bearbeitePdf(a.params.id, a.body, ich(a).id, await zg(a)), 201);
     } },
     { methode: 'POST', pfad: '/api/dokumente/zusammenfuegen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.fuegePdfZusammen(a.body, ich(a).id, await zg(a)), 201) },
+    /* PDF verkleinern (#393): Schätzung mit „Lesen“, Verkleinern (neue Version) mit „Bearbeiten“. */
+    { methode: 'GET', pfad: '/api/dokumente/:id/verkleinern', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      return ok(await dienst.verkleinernVorschau(a.params.id));
+    } },
+    { methode: 'POST', pfad: '/api/dokumente/:id/verkleinern', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
+      const r = await dienst.verkleinereDokument(a.params.id, a.body, ich(a).id);
+      return ok(r, r.unveraendert ? 200 : 201);
+    } },
+    { methode: 'GET', pfad: '/api/werkbank/verkleinern', zugang: 'admin', handler: async (a) => ok(await dienst.grosseDokumente(a.query)) },
+    { methode: 'POST', pfad: '/api/werkbank/verkleinern', zugang: 'admin', handler: async (a) => ok(dienst.verkleinereViele(a.body, { id: ich(a).id, email: ich(a).email }), 202) },
+    { methode: 'GET', pfad: '/api/werkbank/verkleinern/einstellung', zugang: 'admin', handler: async () => ok(await dienst.verkleinernEinstellung()) },
+    { methode: 'PUT', pfad: '/api/werkbank/verkleinern/einstellung', zugang: 'admin', handler: async (a) => ok(await dienst.setzeVerkleinernEinstellung(a.body)) },
     /* Archivnummer (#345): setzen mit „Bearbeiten“, suchen mit „Lesen“, Aufkleber in der Werkbank. */
     { methode: 'PUT', pfad: '/api/dokumente/:id/archivnummer', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');

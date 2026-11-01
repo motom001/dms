@@ -12,7 +12,11 @@ import { Person } from '../Person';
 import { Hilfe } from '../Hilfe';
 import { rueckfrage } from '../rueckfrage';
 import { StempelDialog } from './Stempel';
+import { PdfVerkleinern } from './PdfVerkleinern';
 import { kannStempeln } from '../../../shared/src/stempel';
+
+/** „Verkleinern“ (#393) erst ab dieser Größe anbieten – kleinere PDFs lohnen die Mühe kaum. */
+const VERKLEINERN_AB = 500 * 1024;
 
 /**
  * Dokumentenregister: hochladen (übernommen mit „Mappe speichern“), ansehen direkt unter der
@@ -97,6 +101,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
   const d = useDaten();
   // PDF bearbeiten (#335): Seitenansicht je Dokument, Zusammenfügen der Auswahl.
   const [seitenOffen, setSeitenOffen] = useState<string>();
+  const [kleinOffen, setKleinOffen] = useState<string>();
   const [pdfMeldung, setPdfMeldung] = useState<ReactNode>();
   const [zusammen, setZusammen] = useState<{ name: string; entfernen: boolean; laeuft?: boolean; fehler?: string } | null>(null);
   const bearbeitbar = !nurLesen && !!neuLaden;
@@ -319,7 +324,9 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                           title="Eine Kopie mit Stempel oder Wasserzeichen herunterladen; das Original bleibt unverändert"
                           onClick={() => setStempelOffen(stempelOffen?.id === x.id && !stempelOffen.version ? undefined : { id: x.id })}>{stempelPflicht ? 'Herunterladen mit Stempel' : 'Mit Stempel …'}</button>}
                         {bearbeitbar && !weg && x.mime === 'application/pdf' && <button type="button" className="textknopf" aria-expanded={seitenOffen === x.id}
-                          onClick={() => { setPdfMeldung(undefined); setSeitenOffen(seitenOffen === x.id ? undefined : x.id); }} title="Seiten drehen, löschen, umsortieren oder teilen">Seiten</button>}
+                          onClick={() => { setPdfMeldung(undefined); setKleinOffen(undefined); setSeitenOffen(seitenOffen === x.id ? undefined : x.id); }} title="Seiten drehen, löschen, umsortieren oder teilen">Seiten</button>}
+                        {!weg && x.mime === 'application/pdf' && x.groesse >= VERKLEINERN_AB && <button type="button" className="textknopf" aria-expanded={kleinOffen === x.id}
+                          onClick={() => { setPdfMeldung(undefined); setSeitenOffen(undefined); setKleinOffen(kleinOffen === x.id ? undefined : x.id); }} title="Bilder im PDF herunterrechnen – als neue Version oder als Kopie zum Herunterladen">Verkleinern</button>}
                         {!weg && !nurLesen && neuLaden && !x.archivnummer && asn?.id !== x.id && <button type="button" className="textknopf" title="Nummer vom Aufkleber auf dem Papieroriginal eintragen" onClick={() => setAsn({ id: x.id, wert: '' })}>Archivnummer</button>}
                         {!nurLesen && versioniert && !weg && <button type="button" className="textknopf" onClick={() => { setErsetzeId(x.id); ersetzFeld.current?.click(); }} title="Neue Version hochladen; die bisherige bleibt erhalten">Ersetzen</button>}
                         {!nurLesen && <button type="button" className={`textknopf ${weg ? '' : 'gefahr'}`} onClick={async () => {
@@ -331,6 +338,10 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                     </div>
                     {stempelOffen?.id === x.id && !weg && (
                       <StempelDialog key={`${x.id}-${stempelOffen.version ?? ''}`} d={x} typ={typ} mappe={mappeTitel} version={stempelOffen.version} schliessen={() => setStempelOffen(undefined)} />
+                    )}
+                    {kleinOffen === x.id && !weg && (
+                      <PdfVerkleinern d={x} bearbeitbar={bearbeitbar} schliessen={() => setKleinOffen(undefined)}
+                        fertig={(m, geaendert) => { setKleinOffen(undefined); setPdfMeldung(m); if (geaendert) void neuLaden?.(); }} />
                     )}
                     {seitenOffen === x.id && !weg && (
                       <PdfSeiten d={x} post={!!post} versioniert={versioniert} papierkorb={!!d.zaehler.papierkorbTage}

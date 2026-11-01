@@ -5,6 +5,7 @@ import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { WARTUNG_GEAENDERT } from '../wartung';
 import { einDatentraeger } from '../../../shared/src/werkbankansicht';
+import { AutomatischVerkleinern, GrossePdfsVerkleinern } from './Verkleinern';
 
 /**
  * Werkbank → Speicherplatz (#116): belegt/frei je fester Ordner (#115), Warnschwelle und Grenze.
@@ -103,7 +104,7 @@ export function SpeicherplatzPanel({ z, nachAenderung }: { z: SpeicherplatzZusta
         <p className="leise">Das DMS misst jede Minute und vor jedem Hochladen, wie viel Platz in seinen Ordnern frei ist. Unter der <strong>Warnschwelle</strong> gibt es einen Hinweis hier und in der Übersicht sowie eine Mail an alle Administratoren. Unter der <strong>Grenze</strong> ist das Hochladen sofort gesperrt, und nach 5 Minuten Vorlauf beginnt der Wartungsmodus („Speicherplatzlimit erreicht“). <Hilfe ort="werkbank.speicherplatz" /></p>
       </div>
 
-      {s.zustand === 'grenze' && <div className="hinweis schlecht"><p><strong>Speicherplatzlimit erreicht.</strong> Hochladen ist gesperrt. Schaffe Platz – alte <Link to="/werkbank/sicherung" className="verweis">Sicherungen</Link> löschen, den <Link to="/werkbank/papierkorb" className="verweis">Papierkorb</Link> leeren – oder vergrößere den Speicher des NAS. Danach beendest du den <Link to="/werkbank/wartungsmodus" className="verweis">Wartungsmodus</Link> selbst.</p></div>}
+      {s.zustand === 'grenze' && <div className="hinweis schlecht"><p><strong>Speicherplatzlimit erreicht.</strong> Hochladen ist gesperrt. Schaffe Platz – alte <Link to="/werkbank/sicherung" className="verweis">Sicherungen</Link> löschen, den <Link to="/werkbank/papierkorb" className="verweis">Papierkorb</Link> leeren, <a href="#verkleinern" className="verweis">große PDFs verkleinern</a> – oder vergrößere den Speicher des NAS. Danach beendest du den <Link to="/werkbank/wartungsmodus" className="verweis">Wartungsmodus</Link> selbst.</p></div>}
       {s.zustand === 'warnung' && <div className="hinweis warn"><p><strong>Der Speicherplatz wird knapp.</strong> Noch arbeiten alle normal. Schaffe rechtzeitig Platz, bevor die Grenze ({schwelleText(s.einstellung.grenze)} frei) erreicht ist.</p></div>}
       {s.wartungBeenden && (
         <div className="hinweis gut hinweiszeile">
@@ -160,6 +161,10 @@ export function SpeicherplatzPanel({ z, nachAenderung }: { z: SpeicherplatzZusta
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         <Speicherleiste ent={ent} gegenstand="Schwellen" sendet={laeuft} />
       </form>
+
+      {/* PDF verkleinern (#393): Platz schaffen bei großen Scans. */}
+      <GrossePdfsVerkleinern />
+      <AutomatischVerkleinern />
     </div>
   );
 }

@@ -73,6 +73,7 @@ export const HILFE = {
   'werkbank.wiederherstellung': admin('wiederherstellen/', 'Wiederherstellen'),
   'werkbank.wartungsmodus': admin('wartungsmodus/', 'Wartungsmodus'),
   'werkbank.speicherplatz': admin('speicherplatz/', 'Speicherplatz'),
+  'werkbank.verkleinern': admin('speicherplatz/', 'Große PDFs verkleinern', 'grosse-pdfs-verkleinern'),
   'werkbank.anbindung': admin('installation/', 'der Datenbank-Anbindung', 'datenbank-anbindung'),
   // Werkbank: Zwischenüberschriften langer Seiten
   'mappentyp.felder': admin('mappentypen/', 'Feldern', 'felder'),
@@ -111,6 +112,8 @@ export const HILFE = {
   'dokumente.mehrere': benutzer('dokumente/', 'mehreren Dokumenten auf einmal', 'mehrere-auf-einmal'),
   'dokumente.versionen': benutzer('versionen/', 'Versionen verstehen'),
   'dokumente.seiten': benutzer('dokumente/', 'PDF bearbeiten', 'pdf-bearbeiten'),
+  'dokumente.verkleinern': benutzer('dokumente/', 'PDF verkleinern', 'pdf-verkleinern'),
+  'versenden.verkleinert': benutzer('versenden/', 'Verkleinert weitergeben', 'verkleinert-weitergeben'),
   'dokumente.archivnummer': benutzer('dokumente/', 'Archivnummer', 'archivnummer'),
   'profil.rechte': benutzer('profil/', 'deinen Rechten', 'meine-rechte'),
   'profil.abwesenheit': benutzer('profil/', 'Abwesenheit', 'abwesenheit'),

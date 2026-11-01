@@ -36,7 +36,9 @@ ARG APK_WOCHE=""
 # Texterkennung (#45): tesseract mit Deutsch und Englisch und poppler für PDFs. Englisch ist ein eigenes
 # Paket (#395: vorher fehlte es still). osd: Lage und Schrift erkennen, gedrehte Seiten richtig lesen.
 # Weitere Sprachen: eigenes Image mit „apk add tesseract-ocr-data-fra“ o. Ä. (Admin-Handbuch → Texterkennung).
-RUN echo "Alpine-Pakete Stand ${APK_WOCHE}" && apk upgrade --no-cache && apk add --no-cache tesseract-ocr tesseract-ocr-data-deu tesseract-ocr-data-eng tesseract-ocr-data-osd poppler-utils
+# PDF verkleinern (#393): qpdf (Apache-2.0, Alpine „community“) optimiert die Struktur; die Bilder rechnet
+# pdftoppm aus poppler-utils. Bewusst kein Ghostscript (AGPL). Fehlt qpdf, geht es auch ohne.
+RUN echo "Alpine-Pakete Stand ${APK_WOCHE}" && apk upgrade --no-cache && apk add --no-cache tesseract-ocr tesseract-ocr-data-deu tesseract-ocr-data-eng tesseract-ocr-data-osd poppler-utils qpdf
 # Stand des Images für die Versionsübersicht in der Werkbank (setzt GitHub Actions).
 ARG DMS_COMMIT=""
 ARG DMS_GEBAUT=""

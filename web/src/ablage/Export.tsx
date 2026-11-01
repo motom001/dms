@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { speichereDatei } from '../api';
 import { useDaten } from '../daten';
 import { alsWunsch, stempelFehler, StempelFelder, stempelStart, useStempelVorlagen, type StempelWahl } from './Stempel';
+import { VerkleinertWahl } from './VerkleinertWahl';
+import type { Stufe } from '../../../shared/src/verkleinern';
 import type { Sortierung } from '../../../shared/src/model';
 
 /**
@@ -35,6 +37,8 @@ export function ExportDialog({ sicht, link, ids, anzahl, gesamt, suche, volltext
   const mitDokumenten = format === 'zip' || format === 'pdf';
   const pflichtTypen = d.typen.filter((t) => t.stempel?.modus === 'pflicht').map((t) => t.name);
   const stempelProblem = mitDokumenten ? stempelFehler(stempel) : null;
+  // Verkleinert exportieren (#393): nur PDFs, das gespeicherte Dokument bleibt.
+  const [klein, setKlein] = useState<Stufe | null>(null);
   async function los() {
     setLaeuft(true); setFehler(undefined);
     try {
@@ -43,7 +47,7 @@ export function ExportDialog({ sicht, link, ids, anzahl, gesamt, suche, volltext
         ids: umfang === 'auswahl' ? ids : null,
         suche: suche || undefined, volltext: suche ? volltext : undefined, notizen: suche ? notizen : undefined,
         sortierung: sortierung?.spalte, absteigend: sortierung?.absteigend,
-        ...(mitDokumenten ? { stempel: alsWunsch(stempel) } : {}),
+        ...(mitDokumenten ? { stempel: alsWunsch(stempel), verkleinern: klein } : {}),
       }, `Export.${format}`);
       const m = n - r.ausgelassen;
       const aus = r.ausgelassen ? ` ${r.ausgelassen.toLocaleString('de-DE')} ${r.ausgelassen === 1 ? 'Mappe' : 'Mappen'} ohne Exportrecht ausgelassen.` : '';
@@ -72,6 +76,7 @@ export function ExportDialog({ sicht, link, ids, anzahl, gesamt, suche, volltext
             <label className="haken"><input type="radio" name="spalten" checked={spalten === 'alle'} onChange={() => setSpalten('alle')} /><span>alle Felder</span></label>
           </fieldset>
         : <label className="haken"><input type="checkbox" checked={uebersicht} onChange={(e) => setUebersicht(e.target.checked)} /><span>Vorne eine Übersicht als Tabelle (Spalten der Liste)</span></label>}
+      {mitDokumenten && <VerkleinertWahl wert={klein} setze={setKlein} wie="exportieren" id="export-verkleinert" />}
       {mitDokumenten && stempel && vorlagen && <StempelFelder wahl={stempel} setze={setStempel} vorlagen={vorlagen} id="export-stempel" />}
       {mitDokumenten && pflichtTypen.length > 0 && <p className="leise klein">Dokumente aus {pflichtTypen.map((x) => `„${x}“`).join(', ')} bekommen immer einen Stempel (Pflicht des Mappentyps).</p>}
       <p className="leise klein">Passwörter werden nie exportiert. Der Export steht im Protokoll.</p>

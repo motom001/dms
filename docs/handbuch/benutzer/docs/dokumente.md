@@ -77,6 +77,33 @@ Im **Archivmodus** ist die Versionierung immer an – das Original bleibt also a
 
 Bearbeiten lassen sich nur PDFs, keine Bilder oder Word-Dateien, und nur mit dem Recht „Bearbeiten“ an der Mappe. Ein PDF mit Passwortschutz lässt das DMS unverändert. Bilder gibt es für die ersten 400 Seiten; bei sehr langen PDFs stehen danach nur die Seitennummern.
 
+## PDF verkleinern
+
+Ein Scan mit 600 dpi oder ein Foto-PDF vom Handy ist schnell 20 MB groß – zu groß für viele E-Mail-Anbieter (oft 10 bis 25 MB) und unnötig viel für Speicher und Sicherung. **Verkleinern** neben einem PDF (ab etwa 0,5 MB) rechnet die Bilder darin auf eine sinnvolle Auflösung herunter und komprimiert sie neu.
+
+![PDF verkleinern: drei Stufen mit geschätzter Größe](bilder/pdf-verkleinern.png)
+
+Du wählst eine von drei **Stufen**; neben jeder steht die geschätzte Größe danach:
+
+| Stufe | Bilder mit etwa | Wofür |
+| --- | --- | --- |
+| **Bildschirm** | 100 dpi | Lesen am Bildschirm, Verschicken – am kleinsten |
+| **Standard** (Vorgabe) | 150 dpi | gut lesbar und ordentlich druckbar |
+| **Druck** | 300 dpi | für den Druck; kleiner werden nur sehr fein gescannte Seiten |
+
+- **Als neue Version speichern** – das verkleinerte PDF wird die neue [Version](#versionen) des Dokuments, das Original bleibt als ältere Version erhalten. Ohne Versionierung heißt der Knopf **Verkleinern und ersetzen**: Nach einer Rückfrage ersetzt das verkleinerte PDF das bisherige, das bisherige kommt in den [Papierkorb](ablage.md#papierkorb) – wie bei [PDF bearbeiten](#pdf-bearbeiten).
+- **Verkleinert herunterladen** – nur eine verkleinerte Kopie auf deinen Rechner; das Dokument im DMS bleibt, wie es ist. Das geht auch mit dem Recht „Lesen“.
+
+Danach steht dort, wie viel es gebracht hat, z. B. „verkleinert von 18,4 MB auf 2,1 MB (−89 %)“. Die Historie der Mappe vermerkt es unter „PDF bearbeitet“.
+
+Gut zu wissen:
+
+- **Text bleibt Text.** Nur die Bilder werden neu berechnet. Eine Textebene (aus dem Scanner oder der Texterkennung) bleibt unverändert, der [Volltext](#volltext) auch – die Texterkennung läuft dafür nicht neu.
+- **Bringt es weniger als 10 %**, bleibt das Dokument unverändert, und du bekommst eine Meldung. Das ist bei PDFs ohne große Bilder (z. B. Rechnungen direkt aus einem Programm) der Normalfall.
+- Schwarz-Weiß-Scans (1 Bit) und Bilder mit Sonderfarben bleiben, wie sie sind – dort wäre ein JPEG größer oder unschärfer.
+- Verschlüsselte PDFs lassen sich nicht verkleinern.
+- Beim **Weitergeben** (E-Mail, Export, Herunterladen mit Stempel) gibt es zusätzlich das Kästchen **PDFs verkleinert senden** – siehe [Verkleinert weitergeben](versenden.md#verkleinert-weitergeben). Große PDFs auf einmal verkleinert der Administrator in der Werkbank.
+
 ## Volltext
 
 Damit die [Volltextsuche](ablage.md#im-text-der-dokumente-suchen) ein Dokument findet, liest das DMS nach dem Hochladen im Hintergrund seinen Text: bei PDFs die Textebene, bei Scans und Fotos per Texterkennung. Neben dem Dokument steht, wie weit es ist:
