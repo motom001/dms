@@ -67,6 +67,10 @@ export interface ExportOptionen {
   protokolle?: boolean;
   /** vCard je Mappentyp: Typ-Id → Zuordnung. */
   kontakte?: Record<string, KontaktZuordnung>;
+  /** Eigener Text für LIESMICH.md (Auskunft, #396); Standard: der des Vollexports. */
+  liesmich?: string;
+  /** Zweck im Manifest (Auskunft, #396); das Format bleibt dms-vollexport. */
+  zweck?: string;
 }
 
 export interface ExportQuelle {
@@ -187,7 +191,11 @@ function gruppiere<T>(liste: T[], schluessel: (x: T) => string): Map<string, T[]
   return r;
 }
 
-export interface ExportErgebnis { ordner: string; name: string; dateien: number; bytes: number; mappen: number; dokumente: number }
+export interface ExportErgebnis {
+  ordner: string; name: string; dateien: number; bytes: number; mappen: number; dokumente: number;
+  /** Pfad (relativ zum Export) je Mappe (Ordner) und je Dokument (Datei) – für Übersichten, die darauf verlinken (#396). */
+  pfade: { mappen: Map<string, string>; dokumente: Map<string, string> };
+}
 
 /** Phasen des Auftrags (#364): je Mappe ein Schritt, danach Listen, Kalender und Manifest. */
 export const VOLLEXPORT_PHASEN = [
@@ -228,6 +236,7 @@ export async function vollexport(q: ExportQuelle, ziel: string, opt: ExportOptio
   const dokZeilen: string[][] = [];
   const notizen: unknown[] = [], aufgaben: Aufgabe[] = [], historie: unknown[] = [];
   const passwoerter: string[][] = [];
+  const pfade: ExportErgebnis['pfade'] = { mappen: new Map(), dokumente: new Map() };
   let dokumente = 0;
   for (const t of typen) {
     const ms = jeTyp.get(t.id) ?? [];
@@ -267,6 +276,7 @@ export async function vollexport(q: ExportQuelle, ziel: string, opt: ExportOptio
       for (let j = 0; j < dokIds.length; j += VOLLTEXT_PAKET) for (const [k, v] of await q.volltexte(dokIds.slice(j, j + VOLLTEXT_PAKET))) texte.set(k, v);
       for (const m of paket) {
         const pfad = `ablage/${tOrdner}/${mOrdner(`${m.titel || 'Ohne Titel'} [${m.id.slice(0, 8)}]`)}`;
+        pfade.mappen.set(m.id, pfad);
         await w.schreibe(`${pfad}/mappe.json`, json({ ...m, werte: ohnePasswoerter(t, m.werte), typ: t.name, ...(t.archiv ? { aufbewahrenBis: aufbewahrenBis(t.archiv, m) } : {}) }));
         await w.schreibe(`${pfad}/mappe.pdf`, () => q.pdf(m.titel || t.name, [{ ...m, werte: ohnePasswoerter(t, m.werte) }], t, false));
         for (const v of verweiseVon(t, m.werte)) verweise.push([m.id, t.felder.find((f) => f.key === v.feldKey)?.label ?? v.feldKey, v.feldKey, v.zielId, titel(v.zielId)]);
@@ -278,6 +288,7 @@ export async function vollexport(q: ExportQuelle, ziel: string, opt: ExportOptio
           const dn = dateiNamen.get(regName)!(d.name);
           const rel = `${pfad}/${regName}/${dn}`;
           await w.schreibe(rel, () => q.datei(d.sha256));
+          pfade.dokumente.set(d.id, rel);
           const text = texte.get(d.id);
           if (text) await w.schreibe(`${rel}.txt`, Buffer.from(text, 'utf8'));
           dokZeilen.push([d.id, m.id, d.registerKey, d.name, d.mime, String(d.groesse), d.sha256, d.erstellt, d.erstelltVon ?? '', String(d.version ?? 1), 'aktuell', rel]);
@@ -352,12 +363,12 @@ export async function vollexport(q: ExportQuelle, ziel: string, opt: ExportOptio
   abschluss();
 
   const anzahlen = { mappentypen: typen.length, mappen: alleMappen.size, dokumente, verweise: verweise.length, notizen: notizen.length, aufgaben: aufgaben.length, erinnerungen: erinnerungen.length, historie: historie.length };
-  await w.schreibe('LIESMICH.md', Buffer.from(liesmich(q, jetzt, anzahlen, opt), 'utf8'));
+  await w.schreibe('LIESMICH.md', Buffer.from(opt.liesmich ?? liesmich(q, jetzt, anzahlen, opt), 'utf8'));
   // Manifest zuletzt; es nennt alle anderen Dateien mit Größe und Prüfwert.
-  const manifest = { format: 'dms-vollexport', formatversion: FORMATVERSION, erstellt: jetzt.toISOString(), dms: q.version, mandant: q.mandant, anzahlen, passwoerter: !!opt.passwoerter, protokolle: !!opt.protokolle, tabellen: EXPORT_TABELLEN, dateien: w.dateien };
+  const manifest = { format: 'dms-vollexport', formatversion: FORMATVERSION, erstellt: jetzt.toISOString(), dms: q.version, mandant: q.mandant, anzahlen, passwoerter: !!opt.passwoerter, protokolle: !!opt.protokolle, ...(opt.zweck ? { zweck: opt.zweck } : {}), tabellen: EXPORT_TABELLEN, dateien: w.dateien };
   await writeFile(join(ordner, 'manifest.json'), json(manifest));
   abschluss();
-  return { ordner, name, dateien: w.dateien.length + 1, bytes: w.bytes, mappen: alleMappen.size, dokumente };
+  return { ordner, name, dateien: w.dateien.length + 1, bytes: w.bytes, mappen: alleMappen.size, dokumente, pfade };
 }
 
 function liesmich(q: ExportQuelle, jetzt: Date, n: Record<string, number>, opt: ExportOptionen) {

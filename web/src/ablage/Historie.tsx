@@ -158,6 +158,23 @@ function einzelheiten(e: Historieneintrag, emailTyp: string | undefined): { hinw
         ),
       };
     }
+    case 'auskunft': {
+      // Auskunft nach Art. 15 DSGVO (#396): nur Zahlen, keine Inhalte; Begründungen für zurückgehaltene Notizen.
+      const n = (k: string) => (typeof d[k] === 'number' ? d[k] as number : 0);
+      const gruende = Array.isArray(d.gruende) ? (d.gruende as unknown[]).filter((g): g is string => typeof g === 'string') : [];
+      return {
+        hinweis: `${n('mappen')} Mappen, ${n('dokumente')} Dokumente`,
+        inhalt: (
+          <dl className="eigenschaften einzeln">
+            <dt>Mappen</dt><dd>{n('mappen')}</dd><dt>Dokumente</dt><dd>{n('dokumente')}</dd>
+            <dt>Notizen</dt><dd>{n('notizen')}{n('ohneNotizen') ? `, ${n('ohneNotizen')} zurückgehalten` : ''}</dd>
+            <dt>Historie</dt><dd>von {n('historie')} {n('historie') === 1 ? 'Mappe' : 'Mappen'}</dd>
+            <dt>Passwort</dt><dd>{d.verschluesselt ? 'ja (AES-256)' : 'nein'}</dd>
+            {gruende.length > 0 && <><dt>Zurückgehalten, weil</dt><dd><ul className="einzeln">{gruende.map((g, i) => <li key={i}>{g}</li>)}</ul></dd></>}
+          </dl>
+        ),
+      };
+    }
     case 'volltext': {
       // Texterkennung als Paket (#338): welches Paket den Volltext geschrieben hat.
       return { hinweis: str(d.dokument) ?? 'Volltext', inhalt: <dl className="eigenschaften einzeln"><dt>Datei</dt><dd>{str(d.dokument)}</dd>{str(d.text) && <><dt>Von</dt><dd>{str(d.text)}</dd></>}</dl> };

@@ -15,6 +15,9 @@ import type { Designs } from './designs';
 import type { Oidc } from './oidc';
 import { exportDateien, exporteIn, exportOrdner, freierPlatz, loescheExport, pruefeExport, vollexport, VOLLEXPORT_PHASEN, type ExportOptionen, type KontaktZuordnung } from './vollexport';
 import { createReadStream } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
+import { AUSKUNFT_PHASEN, auskuenfteIn, auskunftDatei, auskunftOrdner, erzeugeAuskunft, loescheAuskunft } from './auskunft';
+import { AUSKUNFT_TAGE } from '../../shared/src/auskunft';
 import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
 import { join } from 'node:path';
 import { ALS_KOPF, KONSOLE_KOPF, istLoopback, konsolenBenutzer, type Konsolenzugang } from './konsole';
@@ -50,6 +53,7 @@ import { MAIL_STANDARD, pruefeZeit, STANDARD_TAGE, wirksameZeit, type Aufgabenma
 const L = {
   konto: protokoll.modul('konto'), ablage: protokoll.modul('ablage'), werkbank: protokoll.modul('werkbank'),
   dokumente: protokoll.modul('dokumente'), system: protokoll.modul('system'), mail: protokoll.modul('mail'),
+  datenschutz: protokoll.modul('datenschutz'),
 };
 
 /**
@@ -274,6 +278,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   /** Persönlicher Export (#255): je Benutzer, ob er gerade läuft. */
   const eigeneExporte = new Map<string, { laeuft: boolean; fehler: string | null }>();
   // Vollexport (#254): neben den Sicherungen, Unterordner export/.
+  // Auskünfte (#396): neben den Exporten, ohne Sicherungsordner im temporären Ordner.
+  const auskunftZiel = () => auskunftOrdner(x.sicherung?.ordner);
   const exportZiel = () => { if (!x.sicherung) throw new Fachfehler(404, 'Ohne Sicherungsordner gibt es keinen Vollexport.'); return join(x.sicherung.ordner, 'export'); };
   const oidc = () => { if (!x.oidc) throw new Fachfehler(404, 'Die Anmeldung über einen Anbieter ist nicht eingerichtet.'); return x.oidc; };
   const adresse = () => (x.betrieb?.adresseFuerLinks() ?? '').replace(/\/+$/, '');
@@ -812,6 +818,40 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       if (groesse > ZIP_MAX) throw new Fachfehler(422, 'Dein Export ist größer als 4 GB. Bitte einen Administrator, ihn dir aus dem Ordner zu geben.');
       L.konto.info('„Meine Daten exportieren“ heruntergeladen', {});
       return { datei: { inhalt: zipStrom(eintraege), name: `${fertig.name}.zip`, mime: 'application/zip', anzeigen: false, groesse } };
+    } },
+    /* ---------- Baum über Verweise (#396, #424): mit den Rechten des Aufrufers ---------- */
+    { methode: 'GET', pfad: '/api/mappen/:id/baum', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.baum(a.params.id, a.query, await zg(a))) },
+    /* ---------- Datenschutz: Auskunft nach Art. 15 DSGVO (#396), nur Administratoren ---------- */
+    { methode: 'GET', pfad: '/api/werkbank/datenschutz', zugang: 'admin', handler: async () => ok({ einstellung: await dienst.datenschutz(), auskuenfte: await auskuenfteIn(auskunftZiel()), tage: AUSKUNFT_TAGE }) },
+    { methode: 'PUT', pfad: '/api/werkbank/datenschutz', zugang: 'admin', handler: async (a) => ok(await dienst.setzeDatenschutz(a.body, ich(a).email)) },
+    { methode: 'POST', pfad: '/api/werkbank/auskunft/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.auskunftVorschau(a.body, await zg(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/auskunft/frist', zugang: 'admin', handler: async (a) => ok(await dienst.auskunftFrist(a.body, await zg(a), ich(a).id), 201) },
+    { methode: 'POST', pfad: '/api/werkbank/auskunft', zugang: 'admin', handler: async (a) => {
+      const mandant = (await x.mandantName?.()) ?? '';
+      const daten = await dienst.auskunftDaten(a.body, await zg(a), { mandant, version: eigeneVersion() });
+      const ziel = auskunftZiel();
+      await mkdir(ziel, { recursive: true });
+      await auskuenfteIn(ziel);
+      const von = { id: ich(a).id, name: ich(a).name, email: ich(a).email };
+      L.datenschutz.info('Auskunft gestartet', { mappeId: daten.start.id, mappen: daten.anzahl.mappen, dokumente: daten.anzahl.dokumente, von: von.email });
+      return ok(dienst.auftraege.starte('auskunft', `Auskunft für ${daten.start.titel || 'Ohne Titel'}`, async (f) => {
+        const r = await erzeugeAuskunft(daten, ziel, { von, mandant }, f);
+        await dienst.auskunftNachweis(daten, von, r);
+        return r;
+      }, AUSKUNFT_PHASEN), 202);
+    } },
+    { methode: 'GET', pfad: '/api/werkbank/auskunft/:id/zip', zugang: 'admin', handler: async (a) => {
+      const ziel = auskunftZiel();
+      const { stand, pfad, groesse } = await auskunftDatei(ziel, a.params.id);
+      // Nach dem Herunterladen gelöscht (#396): erst, wenn die Datei ganz gelesen ist.
+      const strom = createReadStream(pfad);
+      strom.on('end', () => void loescheAuskunft(ziel, stand.id).then(() => L.datenschutz.info('Auskunft heruntergeladen und gelöscht', { mappeId: stand.mappeId, von: ich(a).email })));
+      return { datei: { inhalt: strom, name: `${stand.name}.zip`, mime: 'application/zip', anzeigen: false, groesse } };
+    } },
+    { methode: 'DELETE', pfad: '/api/werkbank/auskunft/:id', zugang: 'admin', handler: async (a) => {
+      await loescheAuskunft(auskunftZiel(), a.params.id);
+      L.datenschutz.info('Auskunft gelöscht', { id: a.params.id, von: ich(a).email });
+      return leer;
     } },
     /* ---------- Archivmodus (#212) ---------- */
     { methode: 'POST', pfad: '/api/werkbank/archiv/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.archivVorschau(String((a.body as { typId?: unknown })?.typId ?? ''), (a.body as { archiv?: unknown })?.archiv)) },

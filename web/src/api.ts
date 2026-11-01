@@ -15,6 +15,8 @@ import type { EigeneAnsicht, WerkbankAnsicht } from '../../shared/src/werkbankan
 import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src/sichtrechte';
 import type { Anstehend, Erinnerung } from '../../shared/src/fristen';
 import type { Auftrag } from '../../shared/src/auftrag';
+import type { Baum } from '../../shared/src/baum';
+import type { AuskunftAuswahl, AuskunftStand, AuskunftVorschau, Datenschutz } from '../../shared/src/auskunft';
 import type { Dokumentart } from '../../shared/src/demodaten';
 import { merkeAnfrage } from './diagnose';
 import { erreichbarkeit, NICHT_ERREICHBAR } from './erreichbar';
@@ -569,6 +571,16 @@ export const api = {
   schwaerzenVorschau: (id: string) => anfrage<SchwaerzenVorschau>('GET', `/api/dokumente/${id}/schwaerzen`),
   schwaerzen: (id: string, e: { bereiche: Bereich[]; begriffe: string[]; ziel: 'kopie' | 'version' }) =>
     anfrage<{ dokument: Dokument; ziel: 'kopie' | 'version'; stellen: number; seiten: number; begriffe: Array<{ gefunden: number }>; meldung: string }>('POST', `/api/dokumente/${id}/schwaerzen`, e),
+  /** Baum über Verweise (#396, #424). */
+  baum: (id: string, o: { tiefe?: number; richtungen?: string[]; max?: number; seitwaerts?: boolean } = {}) =>
+    anfrage<Baum>('GET', `/api/mappen/${id}/baum?${new URLSearchParams(Object.entries(o).filter(([, v]) => v !== undefined).map(([k, v]) => [k, Array.isArray(v) ? v.join(',') : String(v)]))}`),
+  /** Datenschutz: Auskunft nach Art. 15 DSGVO (#396). */
+  datenschutz: () => anfrage<{ einstellung: Datenschutz; auskuenfte: AuskunftStand[]; tage: number }>('GET', '/api/werkbank/datenschutz'),
+  setzeDatenschutz: (d: Datenschutz) => anfrage<Datenschutz>('PUT', '/api/werkbank/datenschutz', d),
+  auskunftVorschau: (e: { mappeId: string; tiefe: number; richtungen: string[] }) => anfrage<AuskunftVorschau>('POST', '/api/werkbank/auskunft/vorschau', e),
+  auskunftStarten: (e: { mappeId: string; tiefe: number; richtungen: string[]; auswahl: AuskunftAuswahl; geprueft: boolean; passwort: string; empfaenger: string; anmerkung: string }) => anfrage<Auftrag>('POST', '/api/werkbank/auskunft', e),
+  auskunftFrist: (e: { mappeId: string; eingang: string }) => anfrage<Aufgabe>('POST', '/api/werkbank/auskunft/frist', e),
+  auskunftLoeschen: (id: string) => anfrage<null>('DELETE', `/api/werkbank/auskunft/${id}`),
   /** PDF verkleinern (#393). */
   verkleinernVorschau: (id: string) => anfrage<VerkleinernVorschau>('GET', `/api/dokumente/${id}/verkleinern`),
   verkleinern: (id: string, e: { stufe: KleinStufe; bestaetigt?: boolean }) =>
@@ -641,7 +653,7 @@ export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
   const d = x instanceof ApiFehler && x.status === 404 ? x.details as { verborgen?: boolean; aufgaben?: Aufgabe[] } | undefined : undefined;
   return d?.verborgen ? d.aufgaben ?? [] : null;
 };
-export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */ unpassend?: Record<string, string[]>; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean }
+export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */ unpassend?: Record<string, string[]>; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean; /** Auskunft nach Art. 15 DSGVO möglich (#396, Administratoren). */ auskunft?: boolean }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 /** Vorschaubild der ersten Seite (#332); der Prüfwert in der Adresse sorgt für ein neues Bild nach einer neuen Version. */
 export interface SchwaerzenVorschau {

@@ -821,6 +821,22 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       return r.map((z) => ({ quelleId: z.quelle_id as string, quelleTypId: z.typ_id as string, feldKey: z.feld_key as string, titel: (z.titel as string | null) ?? '' }));
     },
 
+    async kantenVon(ids) {
+      const gueltig = [...new Set(ids.filter(istUuid))];
+      if (!gueltig.length) return [];
+      const r = await sql`
+        SELECT quelle_id, feld_key, ziel_id FROM verweise WHERE haushalt_id = ${haushaltId} AND quelle_id = ANY(${gueltig}::uuid[])
+        UNION
+        SELECT quelle_id, feld_key, ziel_id FROM verweise WHERE haushalt_id = ${haushaltId} AND ziel_id = ANY(${gueltig}::uuid[])`;
+      return r.map((z) => ({ quelleId: z.quelle_id as string, feldKey: z.feld_key as string, zielId: z.ziel_id as string }));
+    },
+    async zaehleDokumente(ids) {
+      const gueltig = [...new Set(ids.filter(istUuid))];
+      if (!gueltig.length) return new Map();
+      const r = await sql`SELECT mappe_id, count(*)::int AS n FROM dokumente WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${gueltig}::uuid[]) GROUP BY mappe_id`;
+      return new Map(r.map((z) => [z.mappe_id as string, z.n as number]));
+    },
+
     async listeDokumente(mappeId) {
       if (!istUuid(mappeId)) return [];
       return (await sql`SELECT ${DOK}, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere

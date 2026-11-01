@@ -6,6 +6,8 @@ import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 
 export interface Verweis { feldKey: string; zielId: string }
+/** Ein gespeicherter Verweis mit beiden Enden (#396). */
+export interface Kante { quelleId: string; feldKey: string; zielId: string }
 /** Sortierung, wie sie das Repo braucht: Art der Spalte (für den richtigen Vergleich) und ggf. Feldschlüssel. */
 export interface SortierungIntern {
   art: 'titel' | 'typ' | 'erstellt' | 'geaendert' | 'erstelltVon' | 'geaendertVon' | 'text' | 'zahl' | 'betrag' | 'datum' | 'janein';
@@ -199,10 +201,14 @@ export interface Repo {
   /** Eine andere Mappe desselben Typs mit gleichem Wert (Groß-/Kleinschreibung egal). */
   findeDoppelt(typId: string, feldKey: string, wert: string, ausser?: string): Promise<Mappe | undefined>;
   rueckverweise(zielId: string): Promise<Rueckverweis[]>;
+  /** Baum-Sammlung (#396, #424): alle Verweise, deren Quelle oder Ziel eine dieser Mappen ist (beide Richtungen). */
+  kantenVon(ids: string[]): Promise<Kante[]>;
 
   listeDokumente(mappeId: string): Promise<Dokument[]>;
   /** Dokumente mehrerer Mappen in einem Zugriff (#367: Export ohne N+1), je Mappe neueste zuerst. */
   dokumenteVon(mappeIds: string[]): Promise<Dokument[]>;
+  /** Anzahl (lebender) Dokumente je Mappe (#396); Mappen ohne fehlen. */
+  zaehleDokumente(mappeIds: string[]): Promise<Map<string, number>>;
   holeDokument(id: string): Promise<Dokument | undefined>;
   legeDokumentAn(d: Dokument): Promise<Dokument>;
   /* ---------- Versionierung (#194) ---------- */
