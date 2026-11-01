@@ -49,7 +49,7 @@ Passt eine Aufgabe besser zu jemand anderem, klicke im Hinweis auf **Weitergeben
 
 ## Wenn jemand abwesend ist
 
-Hat jemand eine [Abwesenheit](profil.md#abwesenheit) eingetragen, steht das in der Auswahl beim Vergeben und Weitergeben und bei den @-Vorschlägen, z. B. „Sabrina – abwesend bis 15.11., vertreten durch Thomas“. Neue Aufgaben für Abwesende gehen automatisch an deren Vertreter; in der Historie der Mappe steht „weitergegeben wegen Abwesenheit von …“.
+Hat jemand eine [Abwesenheit](profil.md#abwesenheit) eingetragen, steht das in der Auswahl beim Vergeben und Weitergeben und bei den @-Vorschlägen, z. B. „Lena – abwesend bis 15.11., vertreten durch Jonas“. Neue Aufgaben für Abwesende gehen automatisch an deren Vertreter; in der Historie der Mappe steht „weitergegeben wegen Abwesenheit von …“.
 
 ## Tägliche Zusammenfassung
 
