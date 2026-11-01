@@ -1156,6 +1156,14 @@ a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
 .einstiege { display: flex; flex-direction: column; gap: 10px; }
 .einstiege .kachel { min-height: 0; }
 .zuletzt .mappenliste { margin-top: 6px; }
+/* Startseite über Mitte und rechts (#429): Raster aus Kacheln mit festem Schlüssel (data-kachel), Grundlage für #421. */
+.start-feld { display: grid; }
+@media (min-width: 821px) {
+  .startseite.start-breit { gap: 24px; }
+  .startseite.start-breit .start-raster { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .startseite.start-breit .kachel { min-height: 120px; padding: 18px 20px; }
+  .startseite.start-breit .zuletzt .mappenliste { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0 16px; }
+}
 /* Rückfragen (#355) */
 dialog.rueckfrage { width: min(440px, calc(100vw - 32px)); padding: 20px 22px 18px; border: 1px solid var(--linie-stark); border-radius: 10px; background: var(--flaeche); color: var(--tinte); box-shadow: 0 12px 40px rgb(0 0 0 / .25); }
 dialog.rueckfrage::backdrop { background: rgb(0 0 0 / .35); }

@@ -85,7 +85,8 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   }
 
   return (
-    <Dreiteilung ort="ablage" ebene={ebene} offen={dritt}>
+    // Startseite ohne geöffnete Mappe (#429): ein großes Dashboard über Mitte und rechts.
+    <Dreiteilung ort="ablage" ebene={ebene} offen={dritt} rechts={!(sicht === 'start' && !dritt)}>
       {istSuche ? (
         <aside className="spalte sichten suchspalte" aria-label="Erweiterte Suche">
           <Suchformular suche={suche} zeigeTreffer={() => setFormular(false)} />
@@ -135,7 +136,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
                 </div>
               </>
           : sicht === 'start'
-          ? <Startseite anstehend={anstehend} offen={dritt} />
+          ? <Startseite anstehend={anstehend} offen={dritt} breit={!dritt} />
           : sicht === 'papierkorb'
           ? <PapierkorbListe z={papierkorb} werkbank={false} offen={dritt} />
           : sicht === 'eingang'
