@@ -8,6 +8,10 @@ import { geheZu, Link } from '../ort';
 import { titelOder } from '../seiten';
 import { Hilfe } from '../Hilfe';
 import { neuePost } from './NeuePost';
+import { istTouch, postFotografieren } from './PostKamera';
+import { Symbol } from '../Symbol';
+import { istVersendet } from '../../../shared/src/model';
+import { rueckfrage } from '../rueckfrage';
 
 /**
  * Post (#192): „+ Post“ in den Sichten mit Post, die Leiste an einer Post-Mappe (Stand, Zuordnen,
@@ -38,7 +42,10 @@ export function PostLeiste({ typ, details, neuLaden }: { typ: Mappentyp; details
   const stand = auswahlText(m.werte.stand) || POST_STAND.neu;
   const darf = details.rechte?.U !== false;
   const [offen, setOffen] = useState(false);
+  const [zusammen, setZusammen] = useState(false);
   const [fehler, setFehler] = useState<string>();
+  const versendet = istVersendet(m.werte);
+  const pdf = details.dokumente.find((x) => x.mime === 'application/pdf');
   const zugeordnet = (Array.isArray(m.werte.bezug) ? m.werte.bezug : []) as string[];
 
   async function setzeStand(s: string) {
@@ -62,10 +69,54 @@ export function PostLeiste({ typ, details, neuLaden }: { typ: Mappentyp; details
         {darf && stand !== POST_STAND.erledigt && <button type="button" className="knopf klein" onClick={() => void setzeStand(POST_STAND.erledigt)} title="Nichts mehr zu tun, z. B. Werbung oder schon erledigt">Erledigt</button>}
         {darf && stand !== POST_STAND.neu && <button type="button" className="textknopf klein" onClick={() => void setzeStand(POST_STAND.neu)}>Wieder neu</button>}
         <Hilfe ort="post.zuordnen" />
+        {/* #490: Rückseite vergessen? Seite mit der Kamera anhängen (Handy) bzw. eine zweite Post anhängen. */}
+        {darf && !versendet && <div className="pk-postzeile">
+          {istTouch() && <button type="button" className="knopf klein" onClick={() => postFotografieren({ mappeId: m.id, dokumentId: pdf?.id, titel: titelOder(m.titel), fertig: () => { void neuLaden(); void d.neuLaden(); } })}
+            title={pdf ? `Foto als weitere Seite an „${pdf.name}“ anhängen` : 'Fotos als PDF an diese Post'}><Symbol name="kamera" /> Seite hinzufügen</button>}
+          <button type="button" className={`textknopf klein ${zusammen ? 'an' : ''}`} aria-expanded={zusammen} onClick={() => setZusammen(!zusammen)} title="Die Seiten einer anderen Post hier anhängen – z. B. die Rückseite desselben Briefs">Mit anderer Post zusammenlegen …</button>
+        </div>}
       </div>
       {fehler && <div className="hinweis schlecht" role="alert"><p>{fehler}</p></div>}
       {offen && <ZuordnenMaske typ={typ} details={details} neuLaden={neuLaden} schliessen={() => setOffen(false)} />}
+      {zusammen && <Zusammenlegen typ={typ} post={m} neuLaden={neuLaden} schliessen={() => setZusammen(false)} />}
     </>
+  );
+}
+
+/**
+ * Zwei Posts zusammenlegen (#490): Die Seiten der gewählten Post kommen ans Ende des PDFs dieser Post,
+ * die gewählte Post kommt in den Papierkorb. Zur Wahl stehen die letzten Posts mit Stand „Neu“.
+ */
+function Zusammenlegen({ typ, post, neuLaden, schliessen }: { typ: Mappentyp; post: Mappe; neuLaden: () => Promise<void>; schliessen(): void }) {
+  const d = useDaten();
+  const [liste, setListe] = useState<Mappe[] | null>(null);
+  const [fehler, setFehler] = useState<string>();
+  const [laeuft, setLaeuft] = useState(false);
+  useEffect(() => {
+    api.seite(typ.id, 0, 40, '', { spalte: '_erstellt', absteigend: true })
+      .then((s) => setListe(s.mappen.filter((x) => x.id !== post.id && !x.verborgen && auswahlText(x.werte.stand) === POST_STAND.neu && auswahlText(x.werte.richtung) !== 'Ausgehend')))
+      .catch((e) => setFehler((e as Error).message));
+  }, [typ.id, post.id]);
+  async function legen(q: Mappe) {
+    if (!(await rueckfrage({ titel: `„${titelOder(q.titel)}“ hier anhängen?`, text: `Ihre Seiten kommen ans Ende des PDFs von „${titelOder(post.titel)}“. „${titelOder(q.titel)}“ kommt danach in den Papierkorb.`, ja: 'Zusammenlegen' }))) return;
+    setLaeuft(true); setFehler(undefined);
+    try { await api.postZusammenlegen(post.id, q.id); schliessen(); await neuLaden(); await d.neuLaden(); }
+    catch (e) { setFehler((e as Error).message); } finally { setLaeuft(false); }
+  }
+  const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
+  return (
+    <section className="blatt pk-zusammen" aria-label="Mit anderer Post zusammenlegen">
+      <div className="blattkopf zeile-zwischen"><h2 className="h3">Mit anderer Post zusammenlegen</h2><button type="button" className="textknopf" onClick={schliessen}>Schließen</button></div>
+      <p className="leise">Welche Post gehört zu diesem Brief? Ihre Seiten kommen hier ans Ende, sie selbst in den Papierkorb.</p>
+      {fehler && <p className="fehlertext" role="alert">{fehler}</p>}
+      {liste === null ? !fehler && <p className="leise">Lade …</p> : !liste.length ? <p className="leise">Keine andere neue Post da.</p> : (
+        <ul className="pk-postliste">{liste.map((q) => (
+          <li key={q.id}><button type="button" className="knopf" disabled={laeuft} onClick={() => void legen(q)}>
+            <span className="pk-postname">{titelOder(q.titel)}</span><span className="leise klein">{zeit(q.erstellt)}</span>
+          </button></li>
+        ))}</ul>
+      )}
+    </section>
   );
 }
 

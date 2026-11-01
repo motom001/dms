@@ -50,6 +50,7 @@ import { dirname } from 'node:path';
 import { WartungFehler } from './wartung';
 import { werkbankZahlen } from './werkbankzahlen';
 import { ueberfluessigeVariablen } from '../../shared/src/umgebungsvariablen';
+import { Fotostapel } from './fotostapel';
 import { MAIL_STANDARD, pruefeZeit, STANDARD_TAGE, wirksameZeit, type Aufgabenmail, type MailZeit } from './aufgabenmail';
 
 const L = {
@@ -150,6 +151,8 @@ const ich = (a: Anfrage) => {
 };
 
 export interface RoutenExtras {
+  /** Fotos vom Handy bis „Fertig“ (#490); Standard: Arbeitsordner im Temp-Verzeichnis. */
+  fotostapel?: Fotostapel;
   messung?: Messung;
   /** Datenbankangaben für die Versionsübersicht. */
   system?: SystemQuelle;
@@ -210,6 +213,7 @@ export interface RoutenExtras {
 }
 
 export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Route[] {
+  const fotostapel = x.fotostapel ?? new Fotostapel();
   const { messung, system } = x;
   const designs = () => { if (!x.designs) throw new Fachfehler(404, 'Designs sind nicht eingerichtet.'); return x.designs; };
   const log = x.log ?? ((m: string) => L.mail.warn(m));
@@ -1442,6 +1446,25 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const i = ich(a);
       return ok(await dienst.legePostAn(b(a), { id: i.id, name: i.name }, await zg(a), a.apiSchluessel ? POST_KANAL.api : POST_KANAL.hochgeladen), 201);
     } },
+    // Post fotografieren (#490): Fotos einzeln in den Stapel, „Fertig“ macht ein PDF daraus.
+    { methode: 'POST', pfad: '/api/fotostapel', zugang: 'angemeldet', roh: MAX_DATEIGROESSE, handler: async (a) => ok({ id: await fotostapel.lege(ich(a).id, a.body) }, 201) },
+    { methode: 'POST', pfad: '/api/post/fotos', zugang: 'angemeldet', handler: async (a) => {
+      const i = ich(a);
+      const ids = (b(a) as { stapel?: unknown }).stapel;
+      const fotos = await fotostapel.nimm(i.id, ids);
+      const r = await dienst.postAusFotos(b(a), fotos, { id: i.id, name: i.name }, await zg(a), a.apiSchluessel ? POST_KANAL.api : POST_KANAL.hochgeladen);
+      await fotostapel.weg(i.id, ids as string[]);
+      return ok(r, 201);
+    } },
+    { methode: 'POST', pfad: '/api/mappen/:id/fotos', zugang: 'angemeldet', handler: async (a) => {
+      const i = ich(a);
+      const ids = (b(a) as { stapel?: unknown }).stapel;
+      const fotos = await fotostapel.nimm(i.id, ids);
+      const r = await dienst.fotosAnMappe(a.params.id, b(a), fotos, i.id, await zg(a));
+      await fotostapel.weg(i.id, ids as string[]);
+      return ok(r, 201);
+    } },
+    { methode: 'POST', pfad: '/api/post/:id/zusammenlegen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.legePostZusammen(a.params.id, b(a), ich(a).id, await zg(a))) },
     { methode: 'POST', pfad: '/api/mappen/:id/zuordnen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.ordneZu(a.params.id, b(a), ich(a).id, await zg(a))) },
     // Notizen brauchen nur Lesen (#124).
     { methode: 'GET', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.notizen(a.params.id)); } },

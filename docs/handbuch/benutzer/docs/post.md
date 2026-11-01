@@ -11,7 +11,7 @@ In der Ablage steht die Ansicht **Neue Post** über den übrigen Ansichten (ein 
 ### Neue Post anlegen – von überall
 
 - **Dateien ins Fenster ziehen:** Zieh eine oder mehrere Dateien **irgendwo** ins Browserfenster des DMS, egal auf welcher Seite. Es erscheint die Fläche **„Hier neue Dokumente ablegen“**. Lässt du los, kommen alle Dateien **zusammen in eine neue Post**, und die öffnet sich gleich.
-- **+ Neu** in der Kopfzeile → **Post**: Dateien auswählen. Am Handy und Tablet bietet die Auswahl auch die **Kamera** an – dort ist das der Weg für neue Post.
+- **+ Neu** in der Kopfzeile → **Post**: Dateien auswählen. Am Handy und Tablet heißt der Eintrag **Post – Datei oder Foto wählen**; darüber steht **Post fotografieren** (siehe [Post erfassen am Handy](#post-erfassen-am-handy)).
 - **+ Post** oben in den Ansichten mit Post macht dasselbe.
 
 ![Dateien ablegen](bilder/post-ablegen.png)
@@ -27,6 +27,21 @@ Den Betreff nimmt das DMS aus dem ersten Dateinamen; ändern kannst du ihn jeder
 Die Fläche erscheint nur beim Ziehen von Dateien, nicht bei Text oder Links, und nur, wenn du Post anlegen darfst. Mit Esc oder wenn du das Fenster verlässt, verschwindet sie. Im Wartungsmodus und solange das DMS nicht erreichbar ist, erscheint stattdessen ein kurzer Hinweis.
 
 **+ Neu → Mappe …** legt eine neue, leere Mappe eines Mappentyps an, den du anlegen darfst.
+
+### Post erfassen am Handy
+
+Briefe fotografierst du am schnellsten mit **Post fotografieren** – als großer Knopf oben auf der [Startseite](startseite.md) und als erster Eintrag unter **+ Neu**. Er öffnet **direkt die Kamera**, ohne die Auswahl „Fotomediathek / Foto aufnehmen / Datei auswählen“.
+
+1. Fotografiere die erste Seite und bestätige das Foto.
+2. Unten erscheint das Blatt mit den aufgenommenen Seiten. **Weitere Seite** fotografiert die nächste Seite **desselben Briefs** (z. B. die Rückseite). Mit **×** an einem Vorschaubild verwirfst du eine Seite.
+3. **Fertig – als Post speichern**: Aus allen Seiten wird **ein PDF** und daraus **eine Post** mit dem Betreff „Post vom 01.11.2026, 20:52“ (statt „image“). Den Betreff änderst du später beim Zuordnen.
+4. **✓ Post gespeichert** – tippe **Nächsten Beleg fotografieren**, um gleich den nächsten Brief als eigene Post zu erfassen. **Jetzt zuordnen** öffnet die Post, **Fertig** zeigt, wie viele Belege du erfasst hast; sie liegen unter *Neue Post*.
+
+So erfasst du mehrere Briefe hintereinander, ohne eine Mappe zu öffnen – zuordnen kannst du später am Rechner oder über *Zu erledigen*. Schließt du die Kamera ohne Foto (oder triffst versehentlich die Mediathek), bleibt das Blatt offen: **Foto aufnehmen** oder **Foto aus der Mediathek wählen** – du fängst nicht von vorn an. Das Handy verkleinert jedes Foto vor dem Hochladen (längste Seite 2400 Pixel); das spart Zeit und Platz.
+
+**Seite vergessen?** In einer Post steht am Handy **Seite hinzufügen**: Die Kamera öffnet sich, und die neuen Seiten kommen **ans Ende des PDFs** dieser Post.
+
+**Zwei Posts zusammenlegen:** Ist die Rückseite als eigene Post gelandet, öffne die Post mit der Vorderseite und tippe **Mit anderer Post zusammenlegen …** (auch am Rechner). Wähle die andere Post – ihre Seiten (PDFs und Fotos) kommen ans Ende des PDFs, die andere Post kommt in den Papierkorb. Dateien, die weder PDF noch Foto sind, lassen sich so nicht anhängen; solche Post ordnest du stattdessen zu.
 
 ### Per E-Mail ins DMS
 
