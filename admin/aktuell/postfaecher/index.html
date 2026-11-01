@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.85/postfaecher/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.86/postfaecher/">
       
       
         <link rel="prev" href="../eingangsordner/">
@@ -1085,6 +1085,78 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#anmeldung-mit-oauth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anmeldung mit OAuth
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Anmeldung mit OAuth">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#so-geht-es" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        So geht es
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#abgelaufene-anmeldung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Abgelaufene Anmeldung
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#microsoft-entra-microsoft-365-outlookcom" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Microsoft Entra (Microsoft 365, Outlook.com)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#google-cloud-gmail-google-workspace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Google Cloud (Gmail, Google Workspace)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anderer-anbieter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anderer Anbieter
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#was-beim-ubernehmen-passiert" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1899,6 +1971,78 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#anmeldung-mit-oauth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anmeldung mit OAuth
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Anmeldung mit OAuth">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#so-geht-es" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        So geht es
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#abgelaufene-anmeldung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Abgelaufene Anmeldung
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#microsoft-entra-microsoft-365-outlookcom" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Microsoft Entra (Microsoft 365, Outlook.com)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#google-cloud-gmail-google-workspace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Google Cloud (Gmail, Google Workspace)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anderer-anbieter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anderer Anbieter
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#was-beim-ubernehmen-passiert" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1962,8 +2106,12 @@
 <td>meist SSL/TLS und Port 993; STARTTLS meist Port 143. Ohne Verschlüsselung nur nach ausdrücklicher Bestätigung</td>
 </tr>
 <tr>
+<td>Anmeldung</td>
+<td><strong>Passwort (oder App-Passwort)</strong> – Standard, wie bei allen älteren Postfächern – oder <strong>OAuth 2.0</strong> mit Anbieter <em>Microsoft 365 / Outlook.com</em>, <em>Gmail / Google Workspace</em> oder <em>anderer Anbieter</em>, siehe <a href="#anmeldung-mit-oauth">Anmeldung mit OAuth</a></td>
+</tr>
+<tr>
 <td>Benutzername, Passwort</td>
-<td>das Passwort wird mit dem <a href="../verschluesselung/">Schlüssel</a> verschlüsselt gespeichert und nie wieder angezeigt; leer lassen behält es</td>
+<td>das Passwort wird mit dem <a href="../verschluesselung/">Schlüssel</a> verschlüsselt gespeichert und nie wieder angezeigt; leer lassen behält es. Bei OAuth gibt es kein Passwort; Benutzername ist die Mail-Adresse des Kontos</td>
 </tr>
 <tr>
 <td>Ordner</td>
@@ -1995,7 +2143,7 @@
 </tr>
 </tbody>
 </table>
-<p><strong>Verbindung testen</strong> meldet sich an, nennt die Zahl der Mails im Ordner und sagt bei Fehlern, woran es liegt: Anmeldung abgelehnt, Server nicht erreichbar, Zertifikat ungültig. <strong>Jetzt abrufen</strong> holt sofort ab. <strong>Entfernen</strong> löscht das Postfach aus dem DMS, nach einer Rückfrage; die Mails im Postfach bleiben, wie sie sind.</p>
+<p><strong>Verbindung testen</strong> meldet sich an, nennt die Zahl der Mails im Ordner und sagt bei Fehlern, woran es liegt: Anmeldung abgelehnt, Server nicht erreichbar, Zertifikat ungültig. Ein gespeichertes Passwort (oder die OAuth-Anmeldung) geht dabei nur an den gespeicherten Server, Port und die gespeicherte Verschlüsselung: Änderst du eins davon, gib das Passwort neu ein (bzw. speichere und melde dich neu an). <strong>Jetzt abrufen</strong> holt sofort ab. <strong>Entfernen</strong> löscht das Postfach aus dem DMS, nach einer Rückfrage; die Mails im Postfach bleiben, wie sie sind.</p>
 <p>Unter <em>Stand</em> stehen der letzte Abruf, die zuletzt übernommenen Mails mit Link zur Post und Fehler. Schlägt der Abruf mehrmals hintereinander fehl, wartet das DMS immer länger zwischen den Versuchen (bis 6 Stunden) und schreibt den Administratoren nach dem dritten Fehler eine Mail.</p>
 <h2 id="app-passworter">App-Passwörter<a class="headerlink" href="#app-passworter" title="Permanent link">&para;</a></h2>
 <p>Viele Anbieter lassen Programme wie das DMS nicht mit dem normalen Passwort an das Postfach, sondern verlangen ein eigenes <strong>App-Passwort</strong> – oft erst, wenn die Zwei-Faktor-Anmeldung an ist.</p>
@@ -2034,13 +2182,63 @@
 <td>unter account.apple.com ein <strong>app-spezifisches Passwort</strong> erzeugen; Benutzername ist die iCloud-Mail-Adresse</td>
 </tr>
 <tr>
-<td>Outlook.com / Hotmail</td>
+<td>Outlook.com / Hotmail, Microsoft 365</td>
 <td><code>outlook.office365.com</code>, 993</td>
-<td>Microsoft lässt für private Konten kaum noch Anmeldungen mit Passwort zu. Klappt es nicht, eine Weiterleitung an ein anderes Postfach einrichten</td>
+<td>Microsoft nimmt Benutzername und Passwort für IMAP nicht mehr an – nimm die <a href="#anmeldung-mit-oauth">Anmeldung mit OAuth</a></td>
 </tr>
 </tbody>
 </table>
-<p>Anmeldung per OAuth2 (z. B. Microsoft 365) gehört nicht dazu; sie kommt bei Bedarf später.</p>
+<h2 id="anmeldung-mit-oauth">Anmeldung mit OAuth<a class="headerlink" href="#anmeldung-mit-oauth" title="Permanent link">&para;</a></h2>
+<p>Bei <strong>Microsoft 365, Outlook.com</strong> und auf Wunsch bei <strong>Gmail</strong> meldet sich das DMS mit <strong>OAuth 2.0</strong> an (IMAP mit XOAUTH2): Du meldest dich einmal beim Anbieter an und erlaubst dem DMS den Zugriff auf das Postfach. Das DMS bekommt dafür Token statt eines Passworts und erneuert sie selbst.</p>
+<p>Dafür brauchst du eine <strong>eigene App-Registrierung</strong> beim Anbieter – das DMS-Projekt betreibt keinen gemeinsamen Dienst. Die App gilt für alle Postfächer dieses Anbieters in deinem DMS.</p>
+<h3 id="so-geht-es">So geht es<a class="headerlink" href="#so-geht-es" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Unter <a href="../installation/#e-mail-und-adresse">E-Mail und Adresse</a> die <strong>Adresse des DMS</strong> eintragen (z. B. <code>https://dms.example.org</code>). Daraus entsteht die <strong>Umleitungs-URI</strong> <code>https://dms.example.org/api/oauth/postfach/rueckruf</code>; die Werkbank zeigt sie an. Die Anmeldung im Browser braucht eine <strong>https-Adresse</strong> (http nur über <code>localhost</code>); ohne sie geht bei Microsoft der <strong>Gerätecode</strong> (siehe unten).</li>
+<li>Beim Anbieter die App anlegen (Anleitungen unten).</li>
+<li><strong>Werkbank → Postfächer → + Neu</strong>: <em>Anmeldung</em> <strong>OAuth 2.0</strong>, <em>Anbieter</em> wählen – Server, Port und Verschlüsselung sind vorbelegt (<code>outlook.office365.com</code> bzw. <code>imap.gmail.com</code>, 993, SSL/TLS). <em>Benutzername</em> ist die Mail-Adresse des Postfachs. <strong>Speichern</strong>.</li>
+<li>Unter <em>App beim Anbieter</em> <strong>Client-ID</strong> und <strong>Client-Geheimnis</strong> eintragen, bei Microsoft den <strong>Mandanten</strong>, <strong>App speichern</strong>.</li>
+<li><strong>Im Browser anmelden</strong>: Das DMS leitet dich zum Anbieter; nach der Anmeldung und Zustimmung kommst du zurück in die Werkbank. Oder <strong>Mit Gerätecode anmelden</strong>: Das DMS zeigt einen Code und eine Adresse; dort meldest du dich auf einem beliebigen Gerät an, die Werkbank wartet so lange.</li>
+<li><strong>Verbindung testen</strong>.</li>
+</ol>
+<p><img alt="Werkbank → Postfächer: Anmeldung mit OAuth 2.0" src="../bilder/werkbank-postfach-oauth.png" /></p>
+<p>Der <em>Zustand</em> zeigt, wann und von wem angemeldet wurde. <strong>Abmelden</strong> löscht die gespeicherten Token (bei Google widerruft das DMS sie zusätzlich beim Anbieter); danach holt das DMS dort nichts mehr ab. Änderst du am Postfach Server, Port oder Verschlüsselung oder an der App den Mandanten bzw. Token-Endpunkt, meldet das DMS die betroffenen Postfächer ebenfalls ab – melde sie danach neu an. OAuth geht nur mit Verschlüsselung (SSL/TLS oder STARTTLS).</p>
+<div class="admonition note">
+<p class="admonition-title">Sicherheit</p>
+<p>Token und Client-Geheimnis speichert das DMS nur mit dem <a href="../verschluesselung/">Schlüssel</a> verschlüsselt. Sie erscheinen nie in der Oberfläche, nicht im <a href="../export/">Vollexport</a> und nicht im Protokoll; in der <a href="../sicherung/">Sicherung</a> nur verschlüsselt. Die Anmeldung im Browser ist mit PKCE und einem einmaligen, 10 Minuten gültigen Wert geschützt und gilt nur für den Administrator und den Browser, die sie begonnen haben.</p>
+</div>
+<h3 id="abgelaufene-anmeldung">Abgelaufene Anmeldung<a class="headerlink" href="#abgelaufene-anmeldung" title="Permanent link">&para;</a></h3>
+<p>Das DMS erneuert die Anmeldung vor Ablauf selbst. Lehnt der Anbieter das ab – die Anmeldung ist abgelaufen, wurde beim Anbieter entzogen oder das Passwort des Kontos wurde geändert –, dann</p>
+<ul>
+<li>steht am Postfach <em>abgelaufen oder entzogen</em> mit dem Grund,</li>
+<li>warnen die <strong>Übersicht</strong> und die Leiste der Werkbank (<em>Postfächer</em> mit „!“),</li>
+<li>bekommen die Administratoren <strong>eine</strong> Mail (nicht bei jedem Versuch erneut),</li>
+<li>ruht der Abruf dieses Postfachs, bis du <strong>neu anmeldest</strong>.</li>
+</ul>
+<h3 id="microsoft-entra-microsoft-365-outlookcom">Microsoft Entra (Microsoft 365, Outlook.com)<a class="headerlink" href="#microsoft-entra-microsoft-365-outlookcom" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Im <a href="https://entra.microsoft.com">Microsoft Entra Admin Center</a> → <em>Anwendungen</em> → <strong>App-Registrierungen</strong> → <em>Neue Registrierung</em>.</li>
+<li><em>Name</em> z. B. „DMS Postfächer“. <em>Unterstützte Kontotypen</em>: nur dein Verzeichnis (Microsoft 365), oder <strong>Konten in einem beliebigen Organisationsverzeichnis und persönliche Microsoft-Konten</strong>, wenn auch Outlook.com-Postfächer dazugehören.</li>
+<li><em>Umleitungs-URI</em>: Plattform <strong>Web</strong>, Adresse aus der Werkbank (<code>https://&lt;dms&gt;/api/oauth/postfach/rueckruf</code>). Ohne öffentliche Adresse leer lassen und den Gerätecode nutzen.</li>
+<li>Nach dem Anlegen: Die <strong>Anwendungs-ID (Client-ID)</strong> von der <em>Übersicht</em> in die Werkbank übernehmen; die <strong>Verzeichnis-ID (Tenant)</strong> als <em>Mandant</em> – oder <code>common</code> (beliebige Konten), <code>consumers</code> (nur Outlook.com), <code>organizations</code>.</li>
+<li><strong>Zertifikate &amp; Geheimnisse</strong> → <em>Neuer geheimer Clientschlüssel</em> → den <strong>Wert</strong> (nicht die ID) als Client-Geheimnis eintragen. Läuft das Geheimnis ab, hier ein neues anlegen und in der Werkbank ersetzen.</li>
+<li><strong>API-Berechtigungen</strong> → <em>Berechtigung hinzufügen</em> → <em>APIs, die meine Organisation verwendet</em> → <strong>Office 365 Exchange Online</strong> (bzw. unter <em>Microsoft Graph</em>) → <em>Delegierte Berechtigungen</em> → <strong>IMAP.AccessAsUser.All</strong>; dazu <strong>offline_access</strong>. In Microsoft 365 die <em>Administratorzustimmung erteilen</em>.</li>
+<li>Für den <strong>Gerätecode</strong>: <em>Authentifizierung</em> → <em>Erweiterte Einstellungen</em> → <strong>Öffentliche Clientflows zulassen</strong> auf <em>Ja</em>.</li>
+<li>In Microsoft 365 muss <strong>IMAP für das Postfach</strong> eingeschaltet sein (Microsoft 365 Admin Center → Benutzer → <em>E-Mail</em> → <em>E-Mail-Apps verwalten</em> → IMAP).</li>
+</ol>
+<h3 id="google-cloud-gmail-google-workspace">Google Cloud (Gmail, Google Workspace)<a class="headerlink" href="#google-cloud-gmail-google-workspace" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">Privates Gmail-Konto: lieber App-Passwort</p>
+<p>Für Gmail braucht OAuth den eingeschränkten Bereich <code>https://mail.google.com/</code>. Eine selbst angelegte App im Status <strong>„Test“</strong> bekommt Anmeldungen, die <strong>nach 7 Tagen ablaufen</strong> – du müsstest jede Woche neu anmelden. Ohne diese Grenze geht es nur mit einer App vom Typ <strong>„Intern“</strong> in Google Workspace oder nach Googles Prüfung (für Privatleute kaum machbar). Für private Konten ist daher ein <a href="#app-passworter">App-Passwort</a> die bessere Wahl.</p>
+</div>
+<ol>
+<li>In der <a href="https://console.cloud.google.com">Google Cloud Console</a> ein Projekt anlegen; unter <em>APIs &amp; Dienste</em> → <em>Bibliothek</em> die <strong>Gmail API</strong> aktivieren.</li>
+<li><em>OAuth-Zustimmungsbildschirm</em>: Nutzertyp <strong>Intern</strong> (Workspace) oder <strong>Extern</strong>; bei <em>Extern</em> im Status <em>Test</em> dich selbst als <strong>Testnutzer</strong> eintragen. Bereich <code>https://mail.google.com/</code> hinzufügen.</li>
+<li><em>Anmeldedaten</em> → <em>Anmeldedaten erstellen</em> → <strong>OAuth-Client-ID</strong>, Typ <strong>Webanwendung</strong>; <em>Autorisierte Weiterleitungs-URIs</em>: die Adresse aus der Werkbank.</li>
+<li><strong>Client-ID</strong> und <strong>Clientschlüssel</strong> in die Werkbank eintragen.</li>
+</ol>
+<p>Google bietet für Gmail keinen Gerätecode an; das DMS braucht dafür eine Adresse, die dein Browser erreicht (https).</p>
+<h3 id="anderer-anbieter">Anderer Anbieter<a class="headerlink" href="#anderer-anbieter" title="Permanent link">&para;</a></h3>
+<p>Für andere Anbieter mit IMAP und OAuth 2.0 trägst du <em>Autorisierungs-Endpunkt</em>, <em>Token-Endpunkt</em>, wahlweise den <em>Gerätecode-Endpunkt</em> und den <em>Bereich</em> (Scope, meist mit <code>offline_access</code>) selbst ein – sie stehen in der Dokumentation des Anbieters. Je DMS gibt es eine solche Einstellung.</p>
 <h2 id="was-beim-ubernehmen-passiert">Was beim Übernehmen passiert<a class="headerlink" href="#was-beim-ubernehmen-passiert" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Jede Mail wird eine Post</strong>: Kanal <em>E-Mail</em>, Richtung eingehend, Stand <em>Neu</em>; Betreff, Datum und Absender (Name und Adresse) aus der Mail; <em>Für</em> aus dem Postfach. Angelegt hat sie das <em>Postfach</em>, kein Benutzer. Die Historie nennt Postfach, Absender und Zeit.</li>
@@ -2049,7 +2247,7 @@
 <li>Der <strong>Text der Mail</strong> steht als reiner Text an der Post. HTML wird in Text umgewandelt; Bilder oder andere Inhalte aus dem Internet lädt das DMS nie.</li>
 <li>Es gelten die Grenzen wie beim Hochladen. Ein zu großer Anhang steht mit Grund in der Historie; die übrigen werden übernommen. Ist die <a href="../speicherplatz/">Speicherplatz</a>-Grenze erreicht, bleibt die Mail im Postfach.</li>
 <li><strong>Keine doppelte Übernahme</strong> – auch nicht nach einem Neustart, einem Absturz mitten im Abruf oder wenn der Server seine Nummerierung neu beginnt (UIDVALIDITY). Erst wenn die Post gespeichert ist, wird die Mail verschoben, markiert oder gelöscht.</li>
-<li>Im <a href="../wartungsmodus/">Wartungsmodus</a> und während einer <a href="../wiederherstellen/">Wiederherstellung</a> ruht der Abruf. Laufen mehrere Instanzen, ruft nur eine ab. Die Einstellungen sind Teil der <a href="../sicherung/">Sicherung</a>, das Passwort bleibt verschlüsselt.</li>
+<li>Im <a href="../wartungsmodus/">Wartungsmodus</a> und während einer <a href="../wiederherstellen/">Wiederherstellung</a> ruht der Abruf. Laufen mehrere Instanzen, ruft nur eine ab. Die Einstellungen sind Teil der <a href="../sicherung/">Sicherung</a>, Passwort und Token bleiben verschlüsselt.</li>
 </ul>
 
 

@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.85/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.86/neu/">
       
       
         <link rel="prev" href="../original/">
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-085" class="md-skip">
+        <a href="#neu-in-version-086" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -419,15 +419,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0850" class="md-nav__link">
+  <a href="#0860" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.85.0
+        0.86.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.85.0">
+    <nav class="md-nav" aria-label="0.86.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -435,6 +435,17 @@
     <span class="md-ellipsis">
       
         Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sicherheit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheit
       
     </span>
   </a>
@@ -1121,15 +1132,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0850" class="md-nav__link">
+  <a href="#0860" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.85.0
+        0.86.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.85.0">
+    <nav class="md-nav" aria-label="0.86.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1137,6 +1148,17 @@
     <span class="md-ellipsis">
       
         Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sicherheit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheit
       
     </span>
   </a>
@@ -1190,25 +1212,32 @@
   
 
 
-<h1 id="neu-in-version-085">Neu in Version 0.85<a class="headerlink" href="#neu-in-version-085" title="Permanent link">&para;</a></h1>
-<h2 id="0850">0.85.0<a class="headerlink" href="#0850" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-086">Neu in Version 0.86<a class="headerlink" href="#neu-in-version-086" title="Permanent link">&para;</a></h1>
+<h2 id="0860">0.86.0<a class="headerlink" href="#0860" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Paket selbst erstellen</strong> (#374): Unter Werkbank → Pakete → <strong>Paket erstellen</strong> machst du aus eigenen Mappentypen und Ansichten ein Paket im Format der Registry und nimmst es als <code>.zip</code> in ein anderes DMS mit (dort: Expertenmodus → Paket hochladen).</li>
-<li>Assistent in vier Schritten: <strong>Auswählen</strong> (mit Suche, optional ausdrücklich gewählte Beispiel-Mappen), <strong>Prüfen</strong> (automatisch), <strong>Angaben</strong> (Name, Id, Version, Beschreibung, Autor, Lizenz aus der Liste der Registry, nötige DMS-Version, Änderungen), <strong>Exportieren</strong>.</li>
-<li>Typen und Ansichten aus installierten Paketen kommen als <strong>Abhängigkeit</strong> (<code>&gt;=</code> installierte Version) statt als Kopie; Verweise auf Benutzer, Rolle und Ablageort werden <code>dms:…</code>; eigene, nicht gewählte Typen meldet die Prüfung mit „Mit aufnehmen“; lokal geänderte Paket-Typen bekommen einen Hinweis.</li>
-<li>Vor dem Download dieselbe Prüfung wie beim Hochladen. Das Paket enthält README, CHANGELOG, den vollen Lizenztext und <code>tests/erwartung.yaml</code> und besteht <code>pruefen.py</code> der Registry.</li>
-<li>Keine Mappendaten, Benutzer oder Passwörter im Paket. Id, Version, Autor, Lizenz und Auswahl werden gemerkt: Der nächste Export schlägt dieselbe Id mit höherer Version vor, das andere DMS aktualisiert dann.</li>
-<li>Handbücher: <em>Pakete → Paket aus deinem DMS erstellen</em> (Administratoren), <em>Pakete entwickeln → Paket aus deinem DMS erstellen</em>.</li>
+<li><strong>Postfächer: Anmeldung per OAuth 2.0</strong> (#358) – für Microsoft 365, Outlook.com und Gmail, wo Benutzername und Passwort für IMAP nicht mehr genügen.</li>
+<li>Je Postfach <em>Anmeldung</em> „Passwort“ (Standard, bestehende Postfächer unverändert) oder „OAuth 2.0“ mit Voreinstellungen für <strong>Microsoft 365 / Outlook.com</strong> und <strong>Gmail / Google Workspace</strong>, dazu „anderer Anbieter“ mit freien Endpunkten.</li>
+<li>Eigene App-Registrierung je Installation: Client-ID, Client-Geheimnis (und bei Microsoft der Mandant) in der Werkbank; die Umleitungs-URI steht daneben.</li>
+<li><strong>Im Browser anmelden</strong> (Autorisierungscode mit PKCE) oder <strong>mit Gerätecode</strong> (Microsoft) für ein DMS ohne öffentliche Adresse.</li>
+<li>Token und Client-Geheimnis nur verschlüsselt gespeichert, nie in der Oberfläche, im Export oder im Protokoll; <strong>Abmelden</strong> löscht sie. Das DMS erneuert die Anmeldung selbst.</li>
+<li>Abgelaufene oder entzogene Anmeldung: Hinweis am Postfach, in der Übersicht und in der Leiste der Werkbank, eine Mail an die Administratoren; der Abruf ruht bis zur neuen Anmeldung.</li>
+<li>Administratorhandbuch <em>Postfächer → Anmeldung mit OAuth</em> mit Anleitungen für Microsoft Entra und Google Cloud (und dem ehrlichen Hinweis: privat bei Gmail lieber ein App-Passwort).</li>
+</ul>
+<h3 id="sicherheit">Sicherheit<a class="headerlink" href="#sicherheit" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Verbindung testen</strong> schickt ein gespeichertes Geheimnis nur noch an den gespeicherten Server: Mit gespeichertem Token <strong>oder gespeichertem Passwort</strong> müssen Server, Port und Verschlüsselung den gespeicherten Werten entsprechen, sonst fragt das DMS nach dem Passwort bzw. „erst speichern und neu anmelden“. Ein eben eingegebenes Passwort lässt sich weiter an jeden Server testen. Auch Speichern mit neuem Server verlangt das Passwort neu bzw. meldet die OAuth-Anmeldung ab (#358).</li>
+<li>Unverschlüsselte Verbindungen beim Testen nur noch nach ausdrücklicher Bestätigung wie beim Speichern; OAuth 2.0 nie ohne Verschlüsselung (#358).</li>
+<li>Abmelden oder Entfernen eines Postfachs während einer laufenden Token-Erneuerung bleibt wirksam; eine Erneuerung oder ein Ablauf schreibt nie über eine neuere Anmeldung (#358).</li>
+<li>Neuer Mandant bzw. Token-Endpunkt einer App meldet deren Postfächer ab; die Anmeldung im Browser nur mit https-Rückrufadresse (http nur über localhost); Steuerzeichen im Benutzernamen abgelehnt; nach der Rückkehr vom Anbieter zeigt die Werkbank nur feste Fehlertexte, Einzelheiten stehen im Protokoll (#358).</li>
 </ul>
 <h3 id="noch-nicht-dabei">Noch nicht dabei<a class="headerlink" href="#noch-nicht-dabei" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Nummernkreise, weitere Trefferlisten, Berechtigungen, Archivmodus und Bedingungen auf Anzahlen, Favoriten oder Fristen kennt das Paketformat nicht; sie bleiben draußen (die Prüfung nennt sie).</li>
-<li>„In dms-registry einreichen“ (Pull Request vorbereiten) kommt mit einem eigenen Issue.</li>
+<li>E-Mail-Versand (SMTP) mit OAuth 2.0 – kommt als eigener Schritt.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.84.9 im Detail: <a href="https://github.com/motom001/dms/compare/v0.84.9...v0.85.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.85.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.85.0...v0.86.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 
