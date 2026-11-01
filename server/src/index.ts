@@ -7,6 +7,7 @@ import { Zweifaktor } from './zweifaktor';
 import { Konsolenzugang, lokaleUrl } from './konsole';
 import { Oidc } from './oidc';
 import { Eingangsordner } from './eingangsordner';
+import { Webdav } from './webdav';
 import { einbettenAus } from './koepfe';
 import { proxyVertrauen } from './proxy';
 import { mkdir, readdir } from 'node:fs/promises';
@@ -255,7 +256,11 @@ const konsole = new Konsolenzugang();
 // Anmeldung über einen Anbieter (#241); Client-Secret verschlüsselt mit dem Schlüssel des DMS.
 const oidc = new Oidc({ einstellungen: pgEinstellungen(sql, cfg.haushalt), verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w) });
 konten.verbindeAnbieter(() => oidc.bereit());
+const apiSchluessel = new ApiSchluesselDienst(messung.umhuelle(pgApiSchluesselRepo(sql), 'apischluessel'));
+// WebDAV-Laufwerk (#346): Anmeldung mit API-Schlüssel, im Standard aus (Werkbank → WebDAV-Laufwerk).
+const webdav = new Webdav({ dienst, konten, schluessel: apiSchluessel, einstellungen: pgEinstellungen(sql, cfg.haushalt), adresse: () => betrieb.adresseFuerLinks(), wartung });
 const app = await baueApp(dienst, konten, {
+  webdav,
   konsole,
   oidc,
   einbetten: cfg.einbetten,
@@ -269,7 +274,7 @@ const app = await baueApp(dienst, konten, {
   anbindung: anbindungVerwaltung,
   mandantHinweis: mandant.hinweis,
   mandantName: () => mandantNamen(sql, cfg.haushalt).name(),
-  apiSchluessel: new ApiSchluesselDienst(messung.umhuelle(pgApiSchluesselRepo(sql), 'apischluessel')),
+  apiSchluessel,
   betrieb,
   tresor,
   texterkennung,

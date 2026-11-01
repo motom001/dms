@@ -1,3 +1,4 @@
+import type { Readable } from 'node:stream';
 import type { Speicherplatz } from './speicherplatz';
 import type { ProxyVertrauen } from './proxy';
 import type { Einrichtung } from './einrichtung';
@@ -28,6 +29,8 @@ import { WartungFehler, type Wartung } from './wartung';
 import type { Notfallzugang } from './notfall';
 import type { Sicherung } from './sicherung';
 import type { Wiederherstellung } from './wiederherstellung';
+import { MAX_DATEIGROESSE } from '../../shared/src/model';
+import { WEBDAV_METHODEN, WEBDAV_ZUSATZMETHODEN, type Webdav } from './webdav';
 import { anfrageStufe, dateiKoepfe, leseCookie, modulAus, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage } from './routen';
 
 type MitKontext = FastifyRequest & { dms?: Kontext; lesend?: boolean };
@@ -78,6 +81,8 @@ interface Optionen {
   abruf?: (url: string) => Promise<unknown>;
   /** Erlaubte Ursprünge zum Einbetten (#239, DMS_EINBETTEN). */
   einbetten?: Einbetten;
+  /** WebDAV-Laufwerk (#346) unter /webdav. */
+  webdav?: Webdav;
 }
 
 export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}) {
@@ -175,6 +180,43 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
         reply.code(antwort.status ?? 200);
         return antwort.status === 204 || antwort.body === undefined ? reply.send() : reply.send(antwort.body);
       },
+    });
+  }
+
+  // WebDAV-Laufwerk (#346): eigene Methoden (PROPFIND, LOCK …) und rohe Körper beliebigen Typs.
+  // Eigener Plugin-Bereich, damit der Parser für „alles“ nur hier gilt.
+  if (opt.webdav) {
+    const wd = opt.webdav;
+    const bekannt = new Set<string>((app.supportedMethods as string[] | undefined) ?? []);
+    for (const [m, koerper] of WEBDAV_ZUSATZMETHODEN) if (!bekannt.has(m)) app.addHttpMethod(m, { hasBody: koerper });
+    await app.register(async (bereich) => {
+      bereich.removeAllContentTypeParsers();
+      bereich.addContentTypeParser('*', (_req, nutzlast, fertig) => fertig(null, nutzlast));
+      const handler = async (req: FastifyRequest, reply: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        const k: Kontext = { anfrage: req.id, pfad: `${req.method} ${req.url.split('?')[0]}`, db: { anzahl: 0, ms: 0 }, ursprung: `${req.protocol}://${req.host}` };
+        (req as MitKontext).dms = k;
+        const koerper: Readable = req.body && typeof (req.body as { pipe?: unknown }).pipe === 'function' ? req.body as Readable : req.raw;
+        const antwort = await kontext.run(k, () => wd.anfrage({
+          methode: req.method, url: req.url, ip: req.ip, koerper: ['GET', 'HEAD', 'OPTIONS', 'DELETE', 'COPY', 'MOVE', 'UNLOCK'].includes(req.method) ? null : koerper,
+          kopf: (n: string) => { const v = req.headers[n]; return Array.isArray(v) ? v[0] : v; },
+        }));
+        if (antwort.lesend) (req as MitKontext).lesend = true;
+        reply.code(antwort.status);
+        for (const [n, v] of Object.entries(antwort.koepfe)) reply.header(n, v);
+        if (!reply.hasHeader('cache-control')) reply.header('cache-control', 'no-store');
+        return antwort.body === undefined || req.method === 'HEAD' || antwort.status === 204 || antwort.status === 304 ? reply.send() : reply.send(antwort.body);
+      };
+      // Der Parser reicht den Körper als Strom durch – dafür wirkt `bodyLimit` nicht (Fastify zählt nur, was es
+      // selbst liest). Begrenzt wird in webdav.ts beim Lesen (`lies()`/`leere()`, 100 MB); die Angabe hier
+      // ist nur eine Obergrenze, falls ein Parser den Körper doch einmal selbst liest.
+      for (const url of ['/webdav', '/webdav/*']) bereich.route({ method: [...WEBDAV_METHODEN], url, exposeHeadRoute: false, bodyLimit: MAX_DATEIGROESSE + 1024 * 1024, handler });
+      // Windows fragt beim Verbinden manchmal erst OPTIONS auf „/“: dort dieselben DAV-Köpfe (ausgeschaltet 404).
+      bereich.route({ method: 'OPTIONS', url: '/', handler: async (req: FastifyRequest, reply: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        const r = await wd.anfrage({ methode: 'OPTIONS', url: '/webdav/', ip: req.ip, kopf: () => undefined, koerper: null });
+        reply.code(r.status);
+        for (const [n, v] of Object.entries(r.koepfe)) reply.header(n, v);
+        return r.body === undefined ? reply.send() : reply.send(r.body);
+      } });
     });
   }
 

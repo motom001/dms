@@ -88,6 +88,7 @@ nav:
       - Texterkennung und Wartung: texterkennung.md
       - Eingangsordner: eingangsordner.md
       - Postfächer: postfaecher.md
+      - WebDAV-Laufwerk: webdav.md
       - Demo-Daten: demo.md
   - Wartung und Notfall:
       - Sicherung: sicherung.md

@@ -476,6 +476,8 @@ export const api = {
   system: () => anfrage<Systemuebersicht>('GET', '/api/werkbank/system'),
   speicherplatz: () => anfrage<SpeicherplatzStand>('GET', '/api/werkbank/speicherplatz'),
   eingangsordner: () => anfrage<EingangStand>('GET', '/api/werkbank/eingangsordner'),
+  webdav: () => anfrage<WebdavStand>('GET', '/api/werkbank/webdav'),
+  webdavSetzen: (e: WebdavEinstellung) => anfrage<WebdavStand>('PUT', '/api/werkbank/webdav', e),
   postfaecher: () => anfrage<PostfachAnsicht[]>('GET', '/api/werkbank/postfaecher'),
   anmeldeschutz: () => anfrage<AnmeldeschutzStand>('GET', '/api/werkbank/anmeldeschutz'),
   anmeldeschutzSetzen: (e: Partial<SperrEinstellung>) => anfrage<AnmeldeschutzStand>('PUT', '/api/werkbank/anmeldeschutz', e),
@@ -744,6 +746,11 @@ export interface EingangStand {
   vorhanden: boolean; pfad?: string; einstellung?: EingangEinstellung; letztePruefung?: string | null; wartend?: number;
   pausiert?: string | null; uebernommen?: EingangEreignis[]; fehler?: EingangEreignis[]; andereInstanz?: boolean;
 }
+
+/** WebDAV-Laufwerk (#346). */
+export interface WebdavEinstellung { aktiv: boolean }
+export interface WebdavZugriff { zeit: string; benutzer: string; methode: string; pfad: string; status: number }
+export interface WebdavStand { einstellung: WebdavEinstellung; adresse: string; https: boolean; grenze: number; anfragen: number; zugriffe: WebdavZugriff[] }
 
 /** Postfächer (#196). */
 export interface PostfachEingabe {

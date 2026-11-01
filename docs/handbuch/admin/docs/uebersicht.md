@@ -7,7 +7,7 @@ Die **Werkbank** sehen nur Administratoren. Links stehen ihre Bereiche in vier G
 | --- | --- |
 | **Ablage einrichten** | [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Pakete](pakete.md), [Darf weg](archiv.md#nach-der-frist-darf-weg) (nur mit Archivmodus) |
 | **Benutzer und Zusammenarbeit** | [Benutzer](benutzer.md), [Anmeldeschutz](anmeldeschutz.md), [Aufgaben](aufgaben.md) |
-| **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Verschlüsselung](verschluesselung.md), [Designs](designs.md), [Papierkorb](papierkorb.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung), [Speicherplatz](speicherplatz.md), [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [Texterkennung](texterkennung.md) |
+| **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Verschlüsselung](verschluesselung.md), [Designs](designs.md), [Papierkorb](papierkorb.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung), [Speicherplatz](speicherplatz.md), [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Texterkennung](texterkennung.md) |
 | **Wartung und Fehlersuche** | [Protokoll](fehlersuche.md#protokoll), [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler), [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md), [Vollexport](export.md), [Wartungsmodus](wartungsmodus.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen), [Datenbank](fehlersuche.md#datenbank), [Technik](fehlersuche.md#technik), [Demo-Daten](demo.md) |
 <!-- /bereiche:gruppen -->
 
@@ -97,6 +97,7 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Speicherplatz](speicherplatz.md) | Sehen, wie voll das Gerät ist | Haushalt, Betrieb |
 | [Postfächer](postfaecher.md) | Post aus einem E-Mail-Konto abholen | Betrieb |
 | [Eingangsordner](eingangsordner.md) | Scans aus einem Ordner übernehmen | Betrieb |
+| [WebDAV-Laufwerk](webdav.md) | Die Ablage im Explorer, Finder oder in der Dateien-App einbinden | Haushalt, Betrieb |
 | [Texterkennung](texterkennung.md) | Text in gescannten Dokumenten finden | Betrieb |
 | [Protokoll](fehlersuche.md#protokoll) | Das technische Protokoll lesen | Betrieb |
 | [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) | Fehler, die Benutzer gemeldet haben | Betrieb |

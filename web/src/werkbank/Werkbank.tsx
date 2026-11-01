@@ -6,6 +6,7 @@ import { PaketeListe, PaketLink, PaketePanel, usePakete } from './Pakete';
 import { useVollexport, VollexportListe, VollexportPanel } from './Vollexport';
 import { PostfachEditor, PostfaecherListe, usePostfaecher } from './Postfaecher';
 import { EingangsordnerListe, EingangsordnerPanel, useEingangsordner } from './Eingangsordner';
+import { useWebdav, WebdavListe, WebdavPanel } from './Webdav';
 import { useEffect, type ReactNode } from 'react';
 import { Dreiteilung } from '../bereiche';
 import { useDaten } from '../daten';
@@ -59,6 +60,7 @@ import { useBeiWiederErreichbar } from '../erreichbar';
  * /werkbank/wiederherstellung      Sicherung einspielen (#107)
  * /werkbank/anbindung            Datenbank-Anbindung (#119)
  * /werkbank/speicherplatz         Speicherplatz je Ordner, Warnschwelle und Grenze (#115, #116)
+ * /werkbank/webdav                WebDAV-Laufwerk an/aus, Stand, letzte Zugriffe (#346)
  */
 export function Werkbank({ teile }: { teile: string[] }) {
   const d = useDaten();
@@ -79,6 +81,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const sicherung = useSicherung(bereich === 'sicherung');
   const speicherplatz = useSpeicherplatz(bereich === 'speicherplatz');
   const eingang = useEingangsordner(bereich === 'eingangsordner');
+  const webdav = useWebdav(bereich === 'webdav');
   const postfaecher = usePostfaecher(bereich === 'postfaecher');
   const nummernkreise = useNummernkreise(bereich === 'nummernkreise');
   const darfWeg = useDarfWeg(bereich === 'darfweg');
@@ -97,7 +100,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
       protokoll: protokoll.neu, datenbank: datenbank.laden, technik: technik.laden, betrieb: betrieb.laden,
       verschluesselung: tresor.laden, papierkorb: papierkorb.laden, aufgaben: aufgaben.laden, texterkennung: ocr.laden,
       wartung: ocr.laden, fehlermeldungen: meldungen.laden, wartungsmodus: wartungsmodus.laden, sicherung: sicherung.laden,
-      speicherplatz: speicherplatz.laden, anbindung: anbindung.laden, benutzer: benutzer.laden,
+      speicherplatz: speicherplatz.laden, anbindung: anbindung.laden, benutzer: benutzer.laden, webdav: webdav.laden,
     };
     void offen[bereich]?.();
   });
@@ -186,6 +189,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'eingangsordner') {
     liste = <EingangsordnerListe z={eingang} />;
     rechts = <EingangsordnerPanel z={eingang} />;
+  } else if (bereich === 'webdav') {
+    liste = <WebdavListe z={webdav} />;
+    rechts = <WebdavPanel z={webdav} />;
   } else if (bereich === 'speicherplatz') {
     liste = <SpeicherplatzListe z={speicherplatz} />;
     rechts = <SpeicherplatzPanel z={speicherplatz} nachAenderung={() => { void uebersicht.laden(); void wartungsmodus.laden(); }} />;
@@ -227,6 +233,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'speicherplatz', name: 'Speicherplatz', gruppe: 'einstellungen', warn: uebersicht.stand?.speicherplatz && uebersicht.stand.speicherplatz.zustand !== 'ok' ? (uebersicht.stand.speicherplatz.zustand === 'grenze' ? 'voll' : 'knapp') : undefined, warnTitel: 'Speicherplatz knapp' },
           { pfad: 'postfaecher', name: 'Postfächer', gruppe: 'einstellungen', zahl: zahl(postfaecher.liste?.length, uz?.postfaecher), warn: uebersicht.stand?.postfachAnmeldung?.length || postfaecher.liste?.some((p) => p.stand.fehlerFolge > 0 || (p.oauth && p.oauth.zustand !== 'ok')) ? '!' : undefined, warnTitel: uebersicht.stand?.postfachAnmeldung?.length ? 'Anmeldung abgelaufen oder fehlt' : 'Abruf fehlgeschlagen' },
           ...(eingang.stand?.vorhanden ? [{ pfad: 'eingangsordner', name: 'Eingangsordner', gruppe: 'einstellungen' as const, warn: eingang.stand.fehler?.length ? String(eingang.stand.fehler.length) : undefined, warnTitel: 'abgelehnte Dateien' }] : []),
+          { pfad: 'webdav', name: 'WebDAV-Laufwerk', gruppe: 'einstellungen', warn: webdav.stand?.einstellung.aktiv ? 'an' : undefined, warnTitel: 'Das Laufwerk ist eingeschaltet' },
           { pfad: 'texterkennung', name: 'Texterkennung', gruppe: 'einstellungen', warn: uebersicht.stand?.texterkennung?.fehler ? String(uebersicht.stand.texterkennung.fehler) : undefined, warnTitel: 'Dokumente mit Fehler' },
           { pfad: 'protokoll', name: 'Protokoll', gruppe: 'wartung', warn: protokoll.debug?.an ? 'Debug' : undefined, warnTitel: 'Debug-Modus ist an' },
           { pfad: 'fehlermeldungen', name: 'Gemeldete Fehler', gruppe: 'wartung', warn: uebersicht.stand?.fehlermeldungen ? String(uebersicht.stand.fehlermeldungen) : undefined, warnTitel: 'offene Meldungen' },
@@ -246,7 +253,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   }
 
   return (
-    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'darfweg', 'vollexport', 'ansicht'].includes(bereich) || (bereich === 'pakete' && !id) ? 'mappe' : 'liste'} offen={id}>
+    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung', 'eingangsordner', 'webdav', 'anmeldeschutz', 'darfweg', 'vollexport', 'ansicht'].includes(bereich) || (bereich === 'pakete' && !id) ? 'mappe' : 'liste'} offen={id}>
       <aside className="spalte sichten" aria-label="Bereiche">
         <h2 className="ueber">Werkbank</h2>
         <WerkbankNavigation bereich={bereich} eintraege={eintraege} zeigen={ansicht.zeigen} benutzt={ansicht.stand?.benutzt} />

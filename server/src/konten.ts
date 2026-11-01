@@ -222,6 +222,11 @@ export class Konten {
     return b?.aktiv ? b : undefined;
   }
 
+  /** Gehört die E-Mail-Adresse zu einem aktiven Konto? (Anmeldeschutz #368: Sofortmeldung, z. B. für WebDAV.) */
+  async istAktiveEmail(email: string): Promise<boolean> {
+    return !!email && !!(await this.repo.holeHash(email.toLowerCase()))?.benutzer.aktiv;
+  }
+
   async benutzerZu(schluessel?: string): Promise<Benutzer | undefined> {
     return (await this.anmeldungZu(schluessel))?.benutzer;
   }

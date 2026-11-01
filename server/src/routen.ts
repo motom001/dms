@@ -32,6 +32,7 @@ import type { Sicherung } from './sicherung';
 import type { Wiederherstellung } from './wiederherstellung';
 import type { Speicherplatz } from './speicherplatz';
 import type { Eingangsordner } from './eingangsordner';
+import type { Webdav } from './webdav';
 import type { Postfaecher } from './postfach';
 import { RueckrufFehler, type PostfachOAuth } from './postfach-oauth';
 import type { OrdnerPruefung } from './ordner';
@@ -177,6 +178,8 @@ export interface RoutenExtras {
   vorschau?: Vorschaubilder;
   /** Eingangsordner (#195). */
   eingangsordner?: Eingangsordner;
+  /** WebDAV-Laufwerk (#346). */
+  webdav?: Webdav;
   /** Postfächer (#196). */
   postfaecher?: Postfaecher;
   /** Anmeldung der Postfächer per OAuth 2.0 (#358). */
@@ -1087,6 +1090,15 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       }
     } },
     // Eingangsordner (#195): nur sichtbar, wenn /eingang eingebunden ist.
+    // WebDAV-Laufwerk (#346): an/aus (Standard aus), Adresse, Stand und letzte Zugriffe.
+    { methode: 'GET', pfad: '/api/werkbank/webdav', zugang: 'admin', handler: async () => {
+      if (!x.webdav) throw new Fachfehler(404, 'Das WebDAV-Laufwerk ist nicht eingerichtet.');
+      return ok(await x.webdav.stand());
+    } },
+    { methode: 'PUT', pfad: '/api/werkbank/webdav', zugang: 'admin', handler: async (a) => {
+      if (!x.webdav) throw new Fachfehler(404, 'Das WebDAV-Laufwerk ist nicht eingerichtet.');
+      return ok(await x.webdav.speichere(a.body, ich(a).email));
+    } },
     { methode: 'GET', pfad: '/api/werkbank/eingangsordner', zugang: 'admin', handler: async () => ok(x.eingangsordner ? await x.eingangsordner.stand() : { vorhanden: false }) },
     { methode: 'PUT', pfad: '/api/werkbank/eingangsordner', zugang: 'admin', handler: async (a) => {
       if (!x.eingangsordner?.vorhanden) throw new Fachfehler(404, 'Es ist kein Eingangsordner eingebunden.');

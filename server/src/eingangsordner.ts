@@ -59,7 +59,7 @@ export interface EingangDeps {
 const SYSTEMNAME = 'Eingangsordner';
 const UEBERSPRINGEN_DATEI = /^(\..*|~.*|.*\.(tmp|part|crdownload|partial)|thumbs\.db|desktop\.ini)$/i;
 const UEBERSPRINGEN_ORDNER = /^(\..*|@eadir|#recycle|\.@__thumb|@recycle|\.trash.*|erledigt|fehler)$/i;
-const MIME: Record<string, string> = {
+export const MIME: Record<string, string> = {
   '.pdf': 'application/pdf', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp',
   '.tif': 'image/tiff', '.tiff': 'image/tiff', '.txt': 'text/plain', '.eml': 'message/rfc822', '.xml': 'application/xml',
   '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

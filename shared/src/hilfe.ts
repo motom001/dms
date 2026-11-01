@@ -43,6 +43,7 @@ export const HILFE = {
   'werkbank.papierkorb': admin('papierkorb/', 'Papierkorb'),
   'werkbank.texterkennung': admin('texterkennung/', 'Texterkennung'),
   'werkbank.eingangsordner': admin('eingangsordner/', 'Eingangsordner'),
+  'werkbank.webdav': admin('webdav/', 'WebDAV-Laufwerk'),
   'werkbank.postfaecher': admin('postfaecher/', 'Postfächer'),
   'werkbank.postfaecher.oauth': admin('postfaecher/', 'Anmeldung mit OAuth', 'anmeldung-mit-oauth'),
   'werkbank.nummernkreise': admin('nummernkreise/', 'Nummernkreise'),
@@ -90,6 +91,7 @@ export const HILFE = {
   // Ablage und Profil: Benutzerhandbuch
   'ablage.eingang': benutzer('eingang/', 'Zu erledigen und Aufgaben'),
   'ablage.start': benutzer('startseite/', 'Startseite'),
+  'profil.laufwerk': benutzer('laufwerk/', 'Als Laufwerk einbinden'),
   'ablage.email': benutzer('versenden/', 'mehreren Mappen per E-Mail', 'mehrere-mappen-per-e-mail'),
   'ablage.anstehend': benutzer('eingang/', 'Anstehend', 'anstehend'),
   'ablage.erinnern': benutzer('eingang/', 'Erinnern', 'erinnern'),
