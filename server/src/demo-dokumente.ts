@@ -250,7 +250,7 @@ async function rastere(pdf: Buffer, o: { format: 'jpeg' | 'png'; dpi?: number; b
     if (o.format === 'jpeg') args.push('-jpegopt', `quality=${o.qualitaet ?? 85}`);
     await starte('pdftoppm', [...args, join(dir, 'q.pdf'), join(dir, 's')]);
     const dateien = (await readdir(dir)).filter((f) => f.startsWith('s')).sort();
-    return Promise.all(dateien.map((f) => readFile(join(dir, f))));
+    return await Promise.all(dateien.map((f) => readFile(join(dir, f))));
   } finally { await rm(dir, { recursive: true, force: true }); }
 }
 

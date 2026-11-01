@@ -144,6 +144,6 @@ export async function popplerSeiten(inhalt: Buffer): Promise<Buffer[]> {
     await starte('pdftoppm', ['-f', '1', '-l', String(SEITENBILDER_MAX), '-scale-to', String(SEITENBILD_PX), '-jpeg', '-jpegopt', 'quality=75', pdf, join(dir, 's')], 300_000);
     // pdftoppm nummeriert mit führenden Nullen je nach Seitenzahl (s-1.jpg, s-01.jpg …).
     const namen = (await readdir(dir)).filter((n) => /^s-\d+\.jpg$/.test(n)).sort((a, b) => Number(a.slice(2, -4)) - Number(b.slice(2, -4)));
-    return Promise.all(namen.map((n) => readFile(join(dir, n))));
+    return await Promise.all(namen.map((n) => readFile(join(dir, n))));
   } finally { await rm(dir, { recursive: true, force: true }); }
 }
