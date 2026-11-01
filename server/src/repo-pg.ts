@@ -11,6 +11,7 @@ import { datumIn, ziehe, type Nummernkreis } from '../../shared/src/nummernkreis
 import type { Quelle } from '../../shared/src/model';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { istUuid, type AuskunftLinkIntern, type DokumentImPapierkorb, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
+import { istSha, type LoeschDokument, type LoeschEintrag } from '../../shared/src/loeschprotokoll';
 
 type Sql = postgres.Sql;
 type Zeile = Record<string, unknown>;
@@ -165,6 +166,24 @@ const alsPapierkorb = (r: Zeile): PapierkorbEintrag => {
 };
 // postgres.js erwartet für jsonb einen JSON-Wert; unsere Typen sind JSON-kompatibel.
 const json = (sql: Sql, v: unknown) => sql.json(v as postgres.JSONValue);
+
+/* Löschprotokoll (#470) */
+const loeschDok = (d: Zeile): LoeschDokument => ({
+  dokumentId: d.id as string, version: Number(d.version ?? 1), sha256: d.sha256 as string, groesse: Number(d.groesse), mime: String(d.mime ?? ''),
+  seiten: d.ocr_seiten === null || d.ocr_seiten === undefined ? null : Number(d.ocr_seiten), archivnummer: (d.archivnummer as string | null) ?? null,
+});
+const loeschVersion = (v: Zeile): LoeschDokument => ({
+  dokumentId: v.dokument_id as string, version: Number(v.nummer), sha256: v.sha256 as string, groesse: Number(v.groesse), mime: String(v.mime ?? ''), seiten: null, archivnummer: null,
+});
+const alsLoeschEintrag = (r: Zeile): LoeschEintrag => ({
+  id: r.id as string, zeit: iso(r.zeit), art: r.art as LoeschEintrag['art'], schritt: r.schritt as LoeschEintrag['schritt'], weg: r.weg as LoeschEintrag['weg'],
+  mappeId: r.mappe_id as string, typId: (r.typ_id as string | null) ?? null, typ: r.typ_name as string, nummer: (r.nummer as string | null) ?? null, archivnummer: (r.archivnummer as string | null) ?? null,
+  dokumentId: (r.dokument_id as string | null) ?? null, version: r.version === null ? null : Number(r.version), sha256: (r.sha256 as string | null) ?? null,
+  groesse: r.groesse === null ? null : Number(r.groesse), mime: (r.mime as string | null) ?? null, seiten: r.seiten === null ? null : Number(r.seiten),
+  anzahl: (r.anzahl as LoeschEintrag['anzahl']) ?? null, vonId: (r.von_id as string | null) ?? null, von: r.von_name as string,
+  ausloeser: r.ausloeser as LoeschEintrag['ausloeser'], grund: (r.grund as LoeschEintrag['grund']) ?? null, grundText: r.grund_text as string,
+  vorgang: (r.vorgang as string | null) ?? null, startId: (r.start_id as string | null) ?? null,
+});
 
 const alsSicht = (r: Zeile): Sicht => ({
   id: r.id as string,
@@ -1218,6 +1237,60 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       if (!gueltig.length) return [];
       const r = await sql`DELETE FROM papierkorb_dokumente WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) RETURNING dokument, versionen`;
       return [...new Set<string>(r.flatMap((z: Zeile) => [(z.dokument as Zeile).sha256 as string, ...((z.versionen as Zeile[]) ?? []).map((v) => v.sha256 as string)]))];
+    },
+    /* ---------- Löschprotokoll (#470) ---------- */
+    async papierkorbInhalt(ids) {
+      const g = ids.filter(istUuid);
+      if (!g.length) return [];
+      const r = await sql`
+        SELECT id, typ_id, mappe -> 'werte' AS werte, coalesce((mappe ->> 'demo')::boolean, false) AS demo, vorgang,
+          jsonb_array_length(coalesce(entkoppelt, '[]'::jsonb)) AS entkoppelt, jsonb_array_length(coalesce(notizen, '[]'::jsonb)) AS notizen, dokumente, versionen
+        FROM papierkorb WHERE haushalt_id = ${haushaltId} AND id = ANY(${g}::uuid[])`;
+      return r.map((z: Zeile) => ({
+        id: z.id as string, typId: z.typ_id as string, werte: (z.werte as Werte) ?? {}, demo: !!z.demo, vorgang: (z.vorgang as string | null) ?? null,
+        entkoppelt: Number(z.entkoppelt), notizen: Number(z.notizen),
+        dokumente: [...((z.dokumente as Zeile[]) ?? []).map(loeschDok), ...((z.versionen as Zeile[] | null) ?? []).map(loeschVersion)],
+      }));
+    },
+    async papierkorbDokumentInhalt(ids) {
+      const g = ids.filter(istUuid);
+      if (!g.length) return [];
+      const r = await sql`SELECT id, mappe_id, dokument - 'volltext' AS dokument, versionen FROM papierkorb_dokumente WHERE haushalt_id = ${haushaltId} AND id = ANY(${g}::uuid[])`;
+      return r.map((z: Zeile) => ({ id: z.id as string, mappeId: z.mappe_id as string, dokumente: [loeschDok(z.dokument as Zeile), ...((z.versionen as Zeile[]) ?? []).map(loeschVersion)] }));
+    },
+    async loeschprotokollSchreibe(liste) {
+      if (!liste.length) return;
+      const u = (v: string | null) => (v && istUuid(v) ? v : null);
+      const zeilen = liste.map((e) => ({
+        id: e.id, haushalt_id: haushaltId, zeit: e.zeit, art: e.art, schritt: e.schritt, weg: e.weg, mappe_id: e.mappeId, typ_id: u(e.typId), typ_name: e.typ,
+        nummer: e.nummer, archivnummer: e.archivnummer, dokument_id: u(e.dokumentId), version: e.version, sha256: e.sha256, groesse: e.groesse, mime: e.mime, seiten: e.seiten,
+        anzahl: e.anzahl ? json(sql, e.anzahl) : null, von_id: u(e.vonId), von_name: e.von, ausloeser: e.ausloeser, grund: e.grund, grund_text: e.grundText,
+        vorgang: u(e.vorgang), start_id: u(e.startId),
+      }));
+      for (let i = 0; i < zeilen.length; i += 500) await sql`INSERT INTO loeschprotokoll ${sql(zeilen.slice(i, i + 500))}`;
+    },
+    async loeschprotokoll(f) {
+      const such = f.suche?.trim().toLowerCase();
+      const bed = sql`haushalt_id = ${haushaltId}
+        ${f.von ? sql`AND (zeit AT TIME ZONE 'Europe/Berlin')::date >= ${f.von}::date` : sql``}
+        ${f.bis ? sql`AND (zeit AT TIME ZONE 'Europe/Berlin')::date <= ${f.bis}::date` : sql``}
+        ${f.typId ? sql`AND typ_id = ${istUuid(f.typId) ? f.typId : null}::uuid` : sql``}
+        ${f.grund ? (f.grund === 'ohne' ? sql`AND grund IS NULL` : sql`AND grund = ${f.grund}`) : sql``}
+        ${f.schritt ? sql`AND schritt = ${f.schritt}` : sql``}
+        ${f.art ? sql`AND art = ${f.art}` : sql``}
+        ${f.vorgang ? sql`AND (vorgang = ${istUuid(f.vorgang) ? f.vorgang : null}::uuid OR mappe_id = ${istUuid(f.vorgang) ? f.vorgang : null}::uuid)` : sql``}
+        ${f.ids ? sql`AND (mappe_id = ANY(${f.ids.filter(istUuid)}::uuid[]) OR dokument_id = ANY(${f.ids.filter(istUuid)}::uuid[]))` : sql``}
+        ${such ? (istSha(such) ? sql`AND sha256 = ${such}` : sql`AND (lower(coalesce(nummer, '') || ' ' || coalesce(archivnummer, '')) LIKE ${'%' + such.replace(/[\\%_]/g, (c) => '\\' + c) + '%'} OR mappe_id::text = ${such} OR dokument_id::text = ${such})`) : sql``}`;
+      const [{ n }] = await sql`SELECT count(*)::int AS n FROM loeschprotokoll WHERE ${bed}`;
+      const r = await sql`SELECT * FROM loeschprotokoll WHERE ${bed} ORDER BY zeit DESC, art DESC, id LIMIT ${f.max ?? 500}`;
+      return { eintraege: r.map(alsLoeschEintrag), gesamt: n as number };
+    },
+    async loeschprotokollAufraeumen(vor) {
+      return sql.begin(async (tx) => {
+        await tx`SELECT set_config('dms.loeschprotokoll_aufraeumen', 'ja', true)`;
+        const r = await tx`DELETE FROM loeschprotokoll WHERE haushalt_id = ${haushaltId} AND zeit < ${vor}`;
+        return r.count;
+      });
     },
     async dateiBenutzt(sha256) {
       const [r] = await sql`

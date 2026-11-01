@@ -25,6 +25,7 @@ import { EmailMehrere } from './EmailMehrere';
 import { PostKnopf } from './Post';
 import type { Hilfeort } from '../../../shared/src/hilfe';
 import { Suchchips, Suchformular, suchFehler, suchTypen } from './Suche';
+import { mitGrund } from './Loeschgrund';
 import { rueckfrage } from '../rueckfrage';
 
 /**
@@ -419,8 +420,9 @@ function Liste(p: {
       const titel = `${zahl(probe.mappen)} ${probe.mappen === 1 ? 'Mappe' : 'Mappen'}${probe.dokumente ? ` mit ${zahl(probe.dokumente)} ${probe.dokumente === 1 ? 'Dokument' : 'Dokumenten'}` : ''} ${korb ? 'in den Papierkorb legen' : 'endgültig löschen'}?`;
       const text = [korb ? 'Dort lassen sie sich wiederherstellen.' : 'Das lässt sich nicht rückgängig machen.',
         probe.ausgelassen.length ? `${zahl(probe.ausgelassen.length)} ${probe.ausgelassen.length === 1 ? 'Mappe wird' : 'Mappen werden'} ausgelassen (kein Recht oder noch verwiesen).` : ''].filter(Boolean).join('\n\n');
-      if (!(await rueckfrage({ titel, text, ja: korb ? 'In den Papierkorb' : 'Endgültig löschen', gefahr: true }))) return;
-      const r = await api.mappenLoeschen(ids, false);
+      const anlass = await mitGrund({ titel, text, ja: korb ? 'In den Papierkorb' : 'Endgültig löschen', gefahr: true });
+      if (!anlass) return;
+      const r = await api.mappenLoeschen(ids, false, anlass);
       w.leeren();
       await d.neuLaden();
       setErgebnis({ text: `${zahl(r.geloescht)} ${r.geloescht === 1 ? 'Mappe' : 'Mappen'} ${korb ? 'in den Papierkorb gelegt' : 'gelöscht'}.${r.ausgelassen.length ? ` ${zahl(r.ausgelassen.length)} ausgelassen:` : ''}`, liste: r.ausgelassen });
