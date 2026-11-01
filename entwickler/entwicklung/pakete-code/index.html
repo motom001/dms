@@ -1042,28 +1042,34 @@
 <thead>
 <tr>
 <th>Ereignis</th>
+<th>Auslöser</th>
 <th><code>daten</code></th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>post.angelegt</code></td>
+<td>Neue Post: in der Oberfläche, über die API, aus Eingangsordner und Postfach, beim <strong>Post teilen</strong> je neuer Post</td>
 <td><code>mappe</code>, <code>kanal</code></td>
 </tr>
 <tr>
 <td><code>dokument.hochgeladen</code></td>
+<td>Jedes neue Dokument: Hochladen (Oberfläche, API, Eingangskanäle) und die neuen Dokumente beim <strong>PDF teilen</strong>, <strong>Zusammenfügen</strong> und <strong>Post teilen</strong>. Eine neue Version eines vorhandenen Dokuments ist kein neues Dokument.</td>
 <td><code>dokument</code>, <code>mappe</code>, <code>name</code>, <code>mime</code>, <code>groesse</code>, <code>volltextGeplant</code> (ob die Texterkennung des DMS noch läuft)</td>
 </tr>
 <tr>
 <td><code>texterkennung.fertig</code></td>
+<td>Die Texterkennung des DMS ist mit einem Dokument fertig</td>
 <td><code>dokument</code>, <code>mappe</code>, <code>seiten</code></td>
 </tr>
 <tr>
 <td><code>paket.einstellungen_geaendert</code></td>
+<td>Ein Administrator hat die Einstellungen des Pakets gespeichert</td>
 <td><code>felder</code> (geänderte Kennungen)</td>
 </tr>
 </tbody>
 </table>
+<p>Das Ereignis entsteht in <strong>derselben Datenbank-Transaktion</strong> wie die Änderung: Entweder ist beides gespeichert oder nichts. Fällt das DMS genau dazwischen aus, fehlt also kein Ereignis.</p>
 <p>Ereignisse stehen im DMS in einem <strong>Ausgangskorb</strong>: Je Paket stellt der Läufer sie der Reihe nach zu; ein langsames Paket hält die anderen nicht auf. Schlägt ein Aufruf fehl (Fehlercode, Absturz, Zeitgrenze), versucht er es nach 1, 5, 30, 120 und 360 Minuten erneut und gibt dann auf – so lange warten die späteren Ereignisse desselben Pakets. Was ein Paket selbst ändert (z. B. eine Post, die es anlegt), meldet das DMS ihm nicht zurück; andere Pakete bekommen es. Code muss deshalb <strong>wiederholbar</strong> sein: dasselbe Ereignis kann zweimal kommen (<code>id</code> bleibt gleich, <code>versuch</code> zählt hoch). Während einer Wartung stellt der Läufer nichts zu.</p>
 <h2 id="schnittstelle-abi-1">Schnittstelle (ABI 1)<a class="headerlink" href="#schnittstelle-abi-1" title="Permanent link">&para;</a></h2>
 <h3 id="exporte-des-moduls">Exporte des Moduls<a class="headerlink" href="#exporte-des-moduls" title="Permanent link">&para;</a></h3>
