@@ -132,7 +132,7 @@ function Hinweise() {
 
 /** Menü unter dem eigenen Namen (#69): Konto, Einstellungen, Hilfe, Fehler melden, Abmelden. */
 function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<void> }) {
-  const { ich, vertretung, aktualisieren } = useKonto();
+  const { ich, vertretung } = useKonto();
   const handbuch = useHandbuch();
   const [offen, setOffen] = useState(false);
   const abwesend = abwesenheitWirkt(ich.abwesenheit, heuteIn());
@@ -158,9 +158,10 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
             {vertretung && <span className="chip warn">Als {ich.name || ich.email} angemeldet</span>}
             {abwesend && <Link to="/profil/abwesenheit" className="chip warn">Du bist abwesend{ich.abwesenheit?.bis ? ` (bis ${ich.abwesenheit.bis.split('-').reverse().join('.')})` : ''}</Link>}
           </div>
-          {vertretung && <button type="button" className="menuepunkt" onClick={() => { setOffen(false); void api.vertretungBeenden().then(() => { geheZu('/werkbank/benutzer', true); return aktualisieren(); }); }}>Zurück zum eigenen Konto</button>}
+          {/* #418: Kein „Zurück zum eigenen Konto“ hier – der Rückweg ist nur der gelbe Banner. In Vertretung zeigt
+              „Mein Konto“ das Konto des vertretenen Benutzers; damit es nicht verwechselt wird, heißt es dann so. */}
           {/* Jeder Weg nur einmal (#175): Darstellung, Abwesenheit usw. sind Reiter unter „Mein Konto“. */}
-          <Link to="/profil/konto" className="menuepunkt">Mein Konto</Link>
+          <Link to="/profil/konto" className="menuepunkt">{vertretung ? `Konto von ${ich.name || ich.email}` : 'Mein Konto'}</Link>
           <a href={handbuch('benutzer')} target="_blank" rel="noreferrer" className="menuepunkt" onClick={() => setOffen(false)}>Hilfe <span aria-hidden="true">↗</span></a>
           <Link to="/profil/fehler-melden" className="menuepunkt">Fehler melden</Link>
           <button type="button" className="menuepunkt" onClick={() => void abmelden()}>Abmelden</button>
