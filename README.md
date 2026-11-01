@@ -1,5 +1,7 @@
 # DMS
 
+**Deutsch** · [English](README.en.md)
+
 <!-- Abzeichen (#252): Zeile 1 Stand, Zeile 2 Sicherheit, Zeile 3 Offenheit. -->
 [![Release](https://img.shields.io/github/v/release/motom001/dms?label=Release&sort=semver)](https://github.com/motom001/dms/releases/latest)
 [![Prüfungen](https://img.shields.io/github/actions/workflow/status/motom001/dms/image.yml?branch=main&label=Pr%C3%BCfungen)](https://github.com/motom001/dms/actions/workflows/image.yml)
@@ -102,7 +104,7 @@ Das DMS verwaltet persönliche Dokumente – deshalb ist alles offen nachprüfba
 
 ## Wünsche und Fehler
 
-Als [Issue](https://github.com/motom001/dms/issues/new/choose) im Format einer User Story mit Akzeptanzkriterien. Umgesetzt wird, was der Maintainer mit dem Label `freigegeben` versieht. Was als Nächstes kommt und in welcher Reihenfolge, steht im [Fahrplan](ROADMAP.md). Wie Mitarbeit läuft, steht in [CONTRIBUTING.md](CONTRIBUTING.md) und im [Entwicklerhandbuch](https://motom001.github.io/dms/entwickler/aktuell/).
+Als [Issue](https://github.com/motom001/dms/issues/new/choose) im Format einer User Story mit Akzeptanzkriterien – auf Deutsch oder Englisch. Umgesetzt wird, was der Maintainer mit dem Label `freigegeben` versieht. Was als Nächstes kommt und in welcher Reihenfolge, steht im [Fahrplan](ROADMAP.md). Wie Mitarbeit läuft, steht in [CONTRIBUTING.md](CONTRIBUTING.md) und im [Entwicklerhandbuch](https://motom001.github.io/dms/entwickler/aktuell/).
 
 ## Mitmachen
 
@@ -121,7 +123,7 @@ npm run dev -w web              # Oberfläche auf http://localhost:5173
 
 Tests: `npm test`. Aufbau, Tests gegen PostgreSQL, Pakete und der Weg zum Release stehen im [Entwicklerhandbuch](https://motom001.github.io/dms/entwickler/aktuell/).
 
-**Neue Version:** Versionsnummer in den drei `package.json` erhöhen und `docs/releases/v<version>.md` schreiben – Release, Image, Handbuch und das Bildschirmfoto oben entstehen nach dem Merge automatisch. Dabei kurz prüfen, ob „Was du davon hast“, „Für Bastler und Administratoren“ und der Schnellstart noch stimmen; alles Ausführliche gehört ins Handbuch, nicht hierher.
+**Neue Version:** Versionsnummer in den drei `package.json` erhöhen und `docs/releases/v<version>.md` schreiben – Release, Image, Handbuch und das Bildschirmfoto oben entstehen nach dem Merge automatisch. Dabei kurz prüfen, ob „Was du davon hast“, „Für Bastler und Administratoren“ und der Schnellstart noch stimmen – in beiden Sprachfassungen dieser README; alles Ausführliche gehört ins Handbuch, nicht hierher.
 
 Wichtig: **Keine echten Dokumente oder persönlichen Daten committen** – nur Code und Beispieldaten.
 
@@ -141,4 +143,4 @@ Die Entwicklung kostet Zeit und Geld – für Testgeräte, Server und Werkzeuge.
 
 [Apache License 2.0](LICENSE) (Apache-2.0), Hinweise in [NOTICE](NOTICE). Versionen bis einschließlich 0.92.0 stehen unter der GNU Affero General Public License v3.0 (AGPL-3.0-only).
 
-Jeder darf das DMS nutzen, verändern und weitergeben. Wer eine veränderte Fassung weitergibt oder anderen über ein Netzwerk zur Nutzung anbietet, muss deren Quellcode unter derselben Lizenz zugänglich machen.
+Jeder darf das DMS nutzen, verändern und weitergeben – auch in eigenen Produkten. Wer es weitergibt, legt die Lizenz und die Hinweise aus NOTICE bei und kennzeichnet geänderte Dateien. Den Quellcode einer veränderten Fassung offenzulegen ist nicht Pflicht.

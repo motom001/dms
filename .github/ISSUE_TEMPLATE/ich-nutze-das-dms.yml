@@ -1,7 +1,7 @@
 # Mitmach-Seite „Wer nutzt das DMS?“ (#446): freiwillig erzählen, wie du das DMS einsetzt.
 # Das DMS selbst meldet nichts (keine Telemetrie, #389) – Rückmeldung gibt es nur auf diesem Weg.
-name: Ich nutze das DMS
-description: Erzähl freiwillig, seit wann und wofür du das DMS einsetzt – alle Felder sind freiwillig.
+name: Ich nutze das DMS · I use the DMS
+description: Erzähl freiwillig, seit wann und wofür du das DMS einsetzt – alle Felder sind freiwillig. · Tell us voluntarily since when and what for you use the DMS – all fields are optional.
 title: "Ich nutze das DMS"
 labels: ["nutzt-das-dms"]
 body:
@@ -15,17 +15,23 @@ body:
         **Alles ist freiwillig.** Fülle nur aus, was du erzählen möchtest; leere Felder sind in Ordnung.
 
         > **Dieser Beitrag ist öffentlich sichtbar.** Trage keine persönlichen Daten ein – keine Namen, Adressen, Domains, IP-Adressen, Bildschirmfotos mit echten Unterlagen oder Zugangsdaten.
+
+        ---
+
+        **English:** Great that you use the DMS! With this form you tell us **that and how** you use it – in German or English. The DMS itself sends **no usage data**, not even anonymous data. **Everything is optional.** Fill in only what you would like to share; empty fields are fine.
+
+        > **This post is publicly visible.** Do not enter personal data – no names, addresses, domains, IP addresses, screenshots of real documents or credentials.
   - type: input
     id: seit
     attributes:
-      label: Seit wann nutzt du das DMS?
-      description: Ungefähr reicht, z. B. „seit Frühjahr 2026“ oder „seit Version 0.60“.
+      label: Seit wann nutzt du das DMS? · Since when do you use the DMS?
+      description: Ungefähr reicht, z. B. „seit Frühjahr 2026“ oder „seit Version 0.60“. · Roughly is enough, e.g. "since spring 2026" or "since version 0.60".
     validations:
       required: false
   - type: dropdown
     id: plattform
     attributes:
-      label: Worauf läuft es?
+      label: Worauf läuft es? · What does it run on?
       multiple: true
       options:
         - umbrelOS
@@ -35,45 +41,45 @@ body:
         - QNAP
         - TrueNAS
         - Unraid
-        - Docker Compose auf eigenem Rechner (PC, Mini-PC, Raspberry Pi, VM)
-        - Ein Container (dms-komplett)
-        - Bei einem Anbieter (vServer, Docker-Plattform, fertige App)
-        - Etwas anderes
+        - Docker Compose auf eigenem Rechner (PC, Mini-PC, Raspberry Pi, VM) · on your own computer
+        - Ein Container (dms-komplett) · single container
+        - Bei einem Anbieter (vServer, Docker-Plattform, fertige App) · at a provider
+        - Etwas anderes · Something else
     validations:
       required: false
   - type: dropdown
     id: fuer-wen
     attributes:
-      label: Grob für wen?
+      label: Grob für wen? · Roughly for whom?
       multiple: true
       options:
-        - Für mich allein
-        - Haushalt oder Familie
-        - Für meine Eltern bzw. Angehörige
-        - Vermietung
-        - Selbständig oder freiberuflich
-        - Kleiner Betrieb
-        - Verein oder Ehrenamt
-        - Etwas anderes
+        - Für mich allein · Just for me
+        - Haushalt oder Familie · Household or family
+        - Für meine Eltern bzw. Angehörige · For my parents or relatives
+        - Vermietung · Renting out
+        - Selbständig oder freiberuflich · Self-employed or freelance
+        - Kleiner Betrieb · Small business
+        - Verein oder Ehrenamt · Club or volunteering
+        - Etwas anderes · Something else
     validations:
       required: false
   - type: textarea
     id: pakete
     attributes:
-      label: Welche Pakete nutzt du?
-      description: Aus dem Paketkatalog (Werkbank → Pakete) oder eigene Mappentypen – soweit du es erzählen möchtest.
+      label: Welche Pakete nutzt du? · Which packages do you use?
+      description: Aus dem Paketkatalog (Werkbank → Pakete) oder eigene Mappentypen – soweit du es erzählen möchtest. · From the package catalogue (Werkbank → Pakete) or your own Mappe types – as far as you want to share.
     validations:
       required: false
   - type: textarea
     id: gut
     attributes:
-      label: Was läuft gut?
+      label: Was läuft gut? · What works well?
     validations:
       required: false
   - type: textarea
     id: fehlt
     attributes:
-      label: Was fehlt dir?
-      description: Größere Wünsche gern zusätzlich als eigenes Issue mit der Vorlage „Wunsch“.
+      label: Was fehlt dir? · What are you missing?
+      description: Größere Wünsche gern zusätzlich als eigenes Issue mit der Vorlage „Wunsch“. · Larger requests are welcome as a separate issue with the template "Wunsch / Feature request".
     validations:
       required: false
