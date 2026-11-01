@@ -419,6 +419,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0911" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.91.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.91.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sicherheit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0910" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1149,6 +1188,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0911" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.91.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.91.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sicherheit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0910" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1223,6 +1301,19 @@
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
+<h2 id="0911">0.91.1<a class="headerlink" href="#0911" title="Permanent link">&para;</a></h2>
+<h3 id="behoben">Behoben<a class="headerlink" href="#behoben" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Zwei-Faktor für Administratoren vorschreiben sperrte den einschaltenden Admin sofort aus</strong> (#416). Wer den Haken setzte, ohne selbst Zwei-Faktor zu haben, konnte danach nichts mehr außer „Mein Konto“ – auch den Haken nicht wieder entfernen.</li>
+<li>Die Pflicht greift jetzt wie beschrieben <strong>erst bei der nächsten Anmeldung</strong>: Laufende Sitzungen arbeiten weiter und zeigen oben einen Hinweis mit <strong>Jetzt einrichten</strong>.</li>
+<li>Wer die Pflicht für die eigene Rolle ohne eigenes Zwei-Faktor einschaltet, bekommt vorher eine Rückfrage: <strong>Jetzt einrichten</strong> (Profil → Sicherheit) oder <strong>Trotzdem vorschreiben</strong>.</li>
+<li>Schlägt das Speichern fehl, springt das Kästchen auf den gespeicherten Stand zurück.</li>
+<li>Hilfetext und Administratorhandbuch (<em>Anmeldeschutz → Ausgesperrt?</em> mit <code>dms zweifaktor-zuruecksetzen</code>) angeglichen.</li>
+</ul>
+<h3 id="sicherheit">Sicherheit<a class="headerlink" href="#sicherheit" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Die Einstellung „Zwei-Faktor vorschreiben“ bleibt für Administratoren immer erreichbar: lesen und <strong>ausschalten</strong> auch dann, wenn sie die Einrichtung selbst noch vor sich haben (auch auf der Einrichtungsseite nach der Anmeldung). Einschalten oder andere Werkbank-Funktionen gehen in diesem Zustand weiterhin nicht. Eine Pflicht, die vor 0.91.1 eingeschaltet wurde, gilt unverändert für alle Sitzungen.</li>
+</ul>
 <h2 id="0910">0.91.0<a class="headerlink" href="#0910" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
