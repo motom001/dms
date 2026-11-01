@@ -2018,6 +2018,130 @@
         }
       }
     },
+    "/aufgaben/weitergeben": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Mehrere Aufgaben auf einmal weitergeben",
+        "description": "Sammel-Weitergabe (#415, #419): je Aufgabe dieselben Rechte wie beim einzelnen Weitergeben (eigene, als Administrator alle); das Ziel muss die jeweilige Mappe lesen dürfen. Was nicht geht, steht mit Grund unter nicht. Jede Weitergabe steht in der Historie ihrer Mappe; der Empfänger bekommt eine Sammelbenachrichtigung unter „Zu erledigen“. Höchstens 1000 Aufgaben.",
+        "operationId": "postAufgabenWeitergeben",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SammelWeitergabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SammelErgebnis"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/aufgaben/erledigt": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Mehrere Aufgaben auf einmal erledigen",
+        "description": "Wie /aufgaben/{id}/erledigt für jede Aufgabe; „Passt nicht“-Aufgaben und fremde Aufgaben stehen mit Grund unter nicht.",
+        "operationId": "postAufgabenErledigt",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SammelAuswahl"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SammelErgebnis"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/anstehend": {
       "get": {
         "tags": [
@@ -7248,6 +7372,79 @@
           "empfaengerId": {
             "type": "string",
             "format": "uuid"
+          }
+        }
+      },
+      "SammelAuswahl": {
+        "type": "object",
+        "required": [
+          "ids"
+        ],
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 1000
+          }
+        }
+      },
+      "SammelWeitergabe": {
+        "type": "object",
+        "required": [
+          "ids",
+          "empfaengerId"
+        ],
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 1000
+          },
+          "empfaengerId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "SammelErgebnis": {
+        "type": "object",
+        "properties": {
+          "weitergegeben": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "nur bei /aufgaben/weitergeben"
+          },
+          "erledigt": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "nur bei /aufgaben/erledigt"
+          },
+          "nicht": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "grund": {
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       },
