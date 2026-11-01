@@ -252,7 +252,7 @@ Siehe auch: [Darstellung](#darstellung).
 Ein Ordner, den das DMS beobachtet, z. B. für „Scan to Folder“. Jede Datei darin wird Post.
 
 <a id="expertenmodus"></a>**Expertenmodus** · ✗ Fachwort · Fortgeschrittene  
-Ein Schalter unter Werkbank → Pakete. Er blendet „Weitere Quellen“ und „Paket hochladen“ ein – für Paketentwickler und DMS ohne Internet. Gilt je Benutzer und ist zu Beginn aus.  
+Ein aufklappbarer Abschnitt unter Werkbank → Pakete, direkt unter den Knöpfen. Aufgeklappt zeigt er „Weitere Quellen“ und „Paket hochladen“ – für Paketentwickler und DMS ohne Internet. Zu Beginn zugeklappt; der Browser merkt sich je Benutzer, ob er offen ist.  
 Siehe auch: [Paket](#paket), [Paketkatalog](#paketkatalog).
 
 <a id="fehler-nachstellen"></a>**Fehler nachstellen** · ~ mit Erklärung · Administratoren  
@@ -482,7 +482,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Dokument | – | `Dokument` |
 | Erinnerung | – | `Erinnerung` |
 | Erweiterte Suche | – | `Suchformular` |
-| Expertenmodus | Erweiterte Ansicht | `pakete_erweitert` |
+| Expertenmodus | Erweiterte Ansicht | `useExperteOffen` |
 | Fehler nachstellen | Impersonation, Vertretung beenden | `Vertretung` |
 | Feld | – | `Feld` |
 | Feldart | Feldtyp, Datentyp, Art (allein) | `Feldtyp, FELDTYPEN, Feld.typ` |
