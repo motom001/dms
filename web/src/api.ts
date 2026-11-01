@@ -13,6 +13,7 @@ import type { InstalliertesPaket, Katalog, LaeuferZustand, RechtePunkt } from '.
 import type { Einstellungsbeschreibung } from '../../shared/src/paketeinstellungen';
 import type { ErstellenStand, PaketErstellenEingabe, PaketPruefung } from '../../shared/src/paketerstellung';
 import type { EigeneAnsicht, WerkbankAnsicht } from '../../shared/src/werkbankansicht';
+import type { FavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
 import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src/sichtrechte';
 import type { Anstehend, Erinnerung } from '../../shared/src/fristen';
 import type { Auftrag } from '../../shared/src/auftrag';
@@ -205,7 +206,10 @@ export interface KontoStatus {
   version?: string | null;
   /** Einrichtungsassistent (#119). */
   einrichtung?: EinrichtungStatus | null;
+  /** Favoriten benachrichtigen (#506): für diesen Benutzer in der Werkbank erlaubt? */
+  favoritenBenachrichtigung?: boolean | null;
 }
+type FreigabeStand = { freigabe: FavoritenFreigabe; rollen: Array<{ id: string; name: string; system: boolean }> };
 export interface AnbindungAnsicht { host: string; port: number; datenbank: string; benutzer: string; passwortGesetzt: boolean }
 export interface AnbindungEingabe { host: string; port: number; datenbank: string; benutzer: string; passwort: string }
 export type AnbindungPruefung = { ok: true; postgres: string; eingerichtet: boolean; benutzer: number } | { ok: false; art: 'nicht_erreichbar' | 'anmeldung' | 'datenbank_fehlt' | 'sonst'; text: string; anlegenMoeglich?: boolean; technisch: string };
@@ -496,6 +500,10 @@ export const api = {
   zusammenfassung: () => anfrage<Zusammenfassung>('GET', '/api/konto/zusammenfassung'),
   zusammenfassungSetzen: (z: { aktiv: boolean; uhrzeit: string | null; tage: number[]; feiertage: boolean }) => anfrage<Zusammenfassung>('PUT', '/api/konto/zusammenfassung', z),
   aufgabenMailSenden: () => anfrage<{ verschickt: number }>('POST', '/api/werkbank/aufgaben/mail/senden'),
+  /** Favoriten benachrichtigen (#506): Freigabe für alle, je Rolle oder gar nicht; Vorgabe für neue Benutzer. */
+  favoritenFreigabe: () => anfrage<FreigabeStand>('GET', '/api/werkbank/favoriten-freigabe'),
+  favoritenFreigabeSpeichern: (f: FavoritenFreigabe) => anfrage<FreigabeStand>('PUT', '/api/werkbank/favoriten-freigabe', f),
+  favoritenVorgabeAnwenden: () => anfrage<{ benutzer: number }>('POST', '/api/werkbank/favoriten-freigabe/anwenden'),
   notizAnlegen: (mappeId: string, text: string) => anfrage<Notiz>('POST', `/api/mappen/${mappeId}/notizen`, { text }),
   notizAendern: (id: string, text: string) => anfrage<Notiz>('PUT', `/api/notizen/${id}`, { text }),
   notizLoeschen: (id: string) => anfrage<null>('DELETE', `/api/notizen/${id}`),

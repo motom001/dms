@@ -319,6 +319,8 @@ function Liste(p: {
   kopf?: ReactNode; immerSuche?: boolean;
 }) {
   const d = useDaten();
+  // Favoriten benachrichtigen (#506): ohne Freigabe der Werkbank kein Schalter an den Favoriten.
+  const { favoritenBenachrichtigung } = useKonto();
   const anhang = p.anhang ?? '';
   const [eingabe, setEingabe] = useState('');
   const [suche, setSuche] = useState('');
@@ -523,7 +525,7 @@ function Liste(p: {
                         : m.passt === false && <span className="problem">{p.typ ? 'passt nicht zur Definition' : m.problem}</span>}
                     </Link>
                     {/* Favorit = Abo (#422): je Favorit „bei Änderungen benachrichtigen“ – nur in der Favoritenliste. */}
-                    {p.sicht === 'favoriten' && !m.verborgen && (
+                    {p.sicht === 'favoriten' && !m.verborgen && favoritenBenachrichtigung && (
                       <label className="haken klein abo-schalter">
                         <input type="checkbox" checked={!s.stumm.has(m.id)} onChange={(e) => {
                           const an = e.target.checked; s.setzeStumm(m.id, !an);

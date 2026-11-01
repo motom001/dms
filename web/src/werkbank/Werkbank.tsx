@@ -27,6 +27,7 @@ import { ProtokollDetail, ProtokollListe, useProtokoll } from './Protokoll';
 import { TechnikPanel, useTechnik } from './Technik';
 import { TresorPanel, useTresor } from './Verschluesselung';
 import { AufgabenListe, AufgabenPanel, useAufgaben } from './Aufgaben';
+import { useFavoritenFreigabe } from './Benachrichtigungen';
 import { TexterkennungPanel, useTexterkennung, WartungPanel } from './Texterkennung';
 import { Hilfe, useHandbuch } from '../Hilfe';
 import { AnsichtPanel, useWerkbankAnsicht, type BereichZustand } from './Ansicht';
@@ -89,6 +90,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const installieren = bereich === 'pakete' && !id ? new URLSearchParams(location.search).get('installieren') : null;
   const aufgabenFilter = filterAusAdresse(new URLSearchParams(location.search));
   const aufgaben = useAufgaben(bereich === 'aufgaben', !!aufgabenFilter.erledigt);
+  const favoritenFreigabe = useFavoritenFreigabe(bereich === 'aufgaben');
   const ocr = useTexterkennung(bereich === 'texterkennung' || bereich === 'wartung');
   const uebersicht = useUebersicht();
   const meldungen = useFehlermeldungen(bereich === 'fehlermeldungen');
@@ -172,7 +174,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'betrieb') {
     rechts = <BetriebPanel b={betrieb} />;
   } else if (bereich === 'aufgaben') {
-    liste = <AufgabenListe z={aufgaben} filter={aufgabenFilter} offen={id} mailAn={uebersicht.stand?.mail} />;
+    liste = <AufgabenListe z={aufgaben} filter={aufgabenFilter} offen={id} mailAn={uebersicht.stand?.mail} favoriten={favoritenFreigabe} />;
     rechts = <AufgabenPanel z={aufgaben} id={id} />;
   } else if (bereich === 'texterkennung') {
     rechts = <TexterkennungPanel t={ocr} wartungAn={wartungAn} />;

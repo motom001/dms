@@ -562,6 +562,8 @@ export class Konten {
       benutzer: () => this.repo.listeBenutzer(),
       // Favorit = Abo (#422): persönliche Einstellungen (Benachrichtigen, Hervorheben).
       einstellungen: (id: string) => this.repo.einstellungen(id),
+      // #506: Vorgabe für neue Benutzer und „auf alle anwenden“.
+      setzeEinstellung: (id: string, schluessel: string, wert: unknown) => this.repo.setzeEinstellung(id, schluessel, wert ?? null),
       wiederda: async (id: string, von: string | null) => {
         const b = await this.person(id);
         if (b && !b.aktiv) await this.spiegle(await this.repo.aendereBenutzer(id, { aktiv: true }), von);

@@ -1353,6 +1353,10 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .mitpasswoertern { border-left: 3px solid var(--schlecht); padding-left: 10px; }
 /* Namen in der Leiste nicht abschneiden, wenn eine Plakette danebensteht (#366). */
 @media (min-width: 821px) { .werkbankleiste .sicht .nm { white-space: normal; overflow-wrap: anywhere; } }
+/* Favoriten benachrichtigen (#506): Rollen eingerückt unter „nur für bestimmte Rollen“. Präfix fz-. */
+.fz-rollen { display: flex; flex-direction: column; gap: 2px; padding-left: 24px; }
+.fz-rollen .haken { margin: 0; }
+.fz-rollen-titel { margin: 6px 0 2px; font-weight: 600; }
 /* Werkbank → Aufgaben (#366): Filter in der Mitte. */
 .aufgabenfilter { gap: 8px; }
 .aufgabenfilter input[type="search"] { width: 100%; }
