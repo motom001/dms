@@ -2,6 +2,8 @@
 
 Nach der Anmeldung öffnet die Ablage mit der **Startseite**. Sie zeigt auf einen Blick, wo du anfängst – wenige Kacheln, jede mit **einer** Zahl und **einem** Klick dahinter. Du erreichst sie jederzeit über **Start** ganz oben links in der Ablage oder über das Logo.
 
+Die Startseite nutzt die ganze Breite neben den Ansichten: Auf einem großen Bildschirm stehen die Kacheln nebeneinander, auf einem kleineren in mehreren Reihen.
+
 ![Startseite](bilder/startseite.png)
 
 ## Die Kacheln
@@ -15,7 +17,9 @@ Nach der Anmeldung öffnet die Ablage mit der **Startseite**. Sie zeigt auf eine
 
 Ist eine Kachel leer, steht dort statt einer Null ein grünes Häkchen, z. B. „✓ Nichts zu erledigen“. *Zu erledigen* ist hervorgehoben, solange es etwas zu tun gibt. Alle Zahlen zählen nur, was du sehen darfst.
 
-Darunter stehen die **zuletzt geöffneten** Mappen – die letzten fünf, die du geöffnet hast und noch sehen darfst. Ein Klick öffnet sie rechts daneben. Am Handy stehen die Kacheln untereinander.
+Darunter stehen die **zuletzt geöffneten** Mappen – die letzten fünf, die du geöffnet hast und noch sehen darfst. Ein Klick öffnet die Mappe rechts; die Startseite rückt dann wie jede Liste in die Mitte, sodass du zwischen den zuletzt geöffneten Mappen wechseln kannst. **Start** links zeigt sie wieder in voller Breite. Am Handy stehen die Kacheln untereinander.
+
+![Startseite mit geöffneter Mappe](bilder/startseite-mappe.png)
 
 ## Wenn die Ablage noch leer ist
 
