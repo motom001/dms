@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-090" class="md-skip">
+        <a href="#neu-in-version-091" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -419,15 +419,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0900" class="md-nav__link">
+  <a href="#0910" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.90.0
+        0.91.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.90.0">
+    <nav class="md-nav" aria-label="0.91.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -435,17 +435,6 @@
     <span class="md-ellipsis">
       
         Neu
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#behoben" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Behoben
       
     </span>
   </a>
@@ -804,7 +793,7 @@
   <span class="md-ellipsis">
     
   
-    E-Mail, PDF und Link
+    E-Mail, PDF, Link und Stempel
   
 
     
@@ -1160,15 +1149,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0900" class="md-nav__link">
+  <a href="#0910" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.90.0
+        0.91.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.90.0">
+    <nav class="md-nav" aria-label="0.91.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1176,17 +1165,6 @@
     <span class="md-ellipsis">
       
         Neu
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#behoben" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Behoben
       
     </span>
   </a>
@@ -1240,33 +1218,33 @@
   
 
 
-<h1 id="neu-in-version-090">Neu in Version 0.90<a class="headerlink" href="#neu-in-version-090" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-091">Neu in Version 0.91<a class="headerlink" href="#neu-in-version-091" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0900">0.90.0<a class="headerlink" href="#0900" title="Permanent link">&para;</a></h2>
+<h2 id="0910">0.91.0<a class="headerlink" href="#0910" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Texterkennung erkennt die Sprache selbst</strong> (#395, Teil): Einstellung <em>Sprache: Automatisch</em> (Standard für neue Installationen) oder <em>Fest</em>. Bei <em>Automatisch</em> liest das DMS zuerst mit den eingestellten Sprachen, bestimmt dann offline die Sprache des Texts (Deutsch, Englisch, Französisch, Spanisch, Italienisch, Niederländisch, Türkisch, Polnisch, Portugiesisch, Russisch, Ukrainisch, Arabisch) und liest nur bei Bedarf ein zweites Mal – wenn die Sprache abweicht, das Sprachpaket da ist und der erste Durchlauf unsicher war. Das bessere Ergebnis gilt.</li>
-<li><strong>Gedrehte Seiten</strong> (#395): Mit der Lageerkennung von Tesseract (<code>osd</code>, jetzt im Image) werden quer liegende und auf dem Kopf stehende Scans vor dem Lesen aufgerichtet; eine andere Schrift (z. B. Kyrillisch) nimmt ein passendes installiertes Sprachpaket dazu.</li>
-<li><strong>Erkannte Sprache am Dokument</strong> (#395): neben dem Stand des Volltexts, z. B. „Volltext: fertig · Französisch“.</li>
-<li><strong>Werkbank → Texterkennung</strong> (#395): „Eingestellt, aber nicht installiert“ für fehlende Sprachpakete (mit Warnung im Protokoll und Hinweis am Dokument), Statistik <em>Erkannte Sprachen</em> mit Vorschlag wie „12 Dokumente auf Französisch – Sprachpaket fra installieren?“, Ordner der Sprachpakete und Stand der Lageerkennung.</li>
-<li>Admin-Handbuch: <em>Texterkennung → Sprache automatisch erkennen</em> und <em>Sprachpakete nachinstallieren</em> (eigenes Image oder einzelne Datei über ein Volume).</li>
-</ul>
-<h3 id="behoben">Behoben<a class="headerlink" href="#behoben" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Das Image enthielt das englische Sprachpaket nicht, obwohl <code>deu+eng</code> eingestellt war – die Texterkennung lief still nur mit Deutsch (#395). <code>tesseract-ocr-data-eng</code> und <code>tesseract-ocr-data-osd</code> sind jetzt dabei.</li>
+<li><strong>Stempel und Wasserzeichen beim Weitergeben</strong> (#394): Die ausgegebene Kopie bekommt z. B. „Kopie für Hausverwaltung Müller – 01.11.2026“, „Nur zur Vorlage bei …“ oder „ENTWURF“ – das gespeicherte Original bleibt unverändert.</li>
+<li><strong>Herunterladen mit Stempel</strong> an jedem PDF und Bild, Option <strong>Mit Stempel</strong> beim Versenden per E-Mail (eine oder mehrere Mappen) und beim Export als ZIP oder PDF.</li>
+<li>Text frei mit Platzhaltern <code>{datum}</code>, <code>{empfänger}</code>, <code>{benutzer}</code>, <code>{mappe}</code>; Lage diagonal (Wasserzeichen), Kopf-, Fußzeile oder Ecke; Deckkraft; alle Seiten oder nur die erste. Optional Fußzeile mit Seitenzahlen „Seite x von y“ und Archivnummer.</li>
+<li>Bilder (JPEG, PNG) werden beim Stempeln zum PDF. Der Stempel ist Seiteninhalt (keine Anmerkung) und steckt im selben Inhaltsstrom wie die Seite.</li>
+<li><strong>Werkbank → Stempel:</strong> Vorlagen bearbeiten; dabei sind „Kopie für …“, „Nur zur Vorlage bei …“, „Entwurf“, „Vertraulich“.</li>
+<li><strong>Je Mappentyp:</strong> Stempel beim Weitergeben <strong>vorschlagen</strong> oder <strong>Pflicht</strong> (mit Vorlage). Pflicht gilt beim Herunterladen, im Export, per E-Mail und über die API.</li>
+<li>Die <strong>Historie</strong> der Mappe vermerkt „weitergegeben: mit Stempel „…“ an …“; bei E-Mails steht der Stempel im Eintrag der E-Mail, die Post enthält die gestempelte Kopie.</li>
+<li>Schnittstelle: <code>GET /dokumente/{id}/inhalt</code> und <code>…/versionen/{nummer}/inhalt</code> mit Stempel-Parametern (<code>vorlage</code>, <code>stempel</code>, <code>empfaenger</code>, <code>lage</code>, <code>deckkraft</code>, <code>seiten</code>, <code>seitenzahlen</code>, <code>archivnummer</code>), neu <code>GET /stempel/vorlagen</code>, <code>stempel</code> am Mappentyp. Abrufe mit API-Schlüssel gelten als Weitergeben.</li>
+<li>Ohne Migration: Vorlagen und Einstellung je Mappentyp liegen in den Einstellungen.</li>
+<li>Handbücher: <em>E-Mail, PDF, Link und Stempel → Weitergeben mit Stempel</em>, Administratorhandbuch <em>Stempel beim Weitergeben</em>.</li>
 </ul>
 <h3 id="noch-nicht-dabei">Noch nicht dabei<a class="headerlink" href="#noch-nicht-dabei" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Die <strong>Volltextsuche</strong> nutzt weiter für alle Dokumente die deutschen Wortstämme; die passende Konfiguration je Sprache braucht eine eigene Spalte (Migration) und kommt später.</li>
-<li>Sprachpakete lädt das DMS nicht selbst nach; das Handbuch erklärt, wie (Image oder Volume).</li>
-<li>Gedrehte Seiten werden nur für die Texterkennung aufgerichtet, nicht in der gespeicherten Datei oder der Vorschau. Bei Bildern (JPEG, PNG …) richtet Tesseract quer liegende Seiten auf, auf dem Kopf stehende noch nicht.</li>
+<li>Freigabelinks und WebDAV stempeln nicht; die Anzeige im DMS zeigt immer das Original.</li>
+<li>Der Stempel wird nicht in die Bildpunkte eingebrannt – wer PDF-Werkzeuge beherrscht, kann ihn entfernen (steht im Handbuch).</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.89.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.89.0...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.90.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.90.0...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 
