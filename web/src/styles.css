@@ -1112,7 +1112,8 @@ a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
 /* Papierkorb: einzelne Dokumente (#344) */
 .korbdokumente { margin-top: 18px; }
 .korbdokument { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-.korbdokument .eintrag { flex: 1; min-width: 0; }
+/* Schmale Mitte (#366): erst umbrechen, dann die Knöpfe unter den Eintrag statt den Namen zu zerquetschen. */
+.korbdokument .eintrag { flex: 1 1 16em; min-width: 0; overflow-wrap: anywhere; }
 .korbdokument .knoepfe { flex: none; }
 
 /* Startseite (#334): wenige Kacheln, je eine Zahl und eine Handlung */
@@ -1168,3 +1169,32 @@ dialog.rueckfrage .eigenschaft { display: flex; flex-direction: column; gap: 4px
 /* Archivnummer (#345) */
 .asnform { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0; }
 .asnform input { width: 12em; }
+
+/* Werkbank ohne Mitte (#366): kleine oder nur lesende Listen stehen rechts, mit fester Höhe (etwa zehn Einträge). */
+.festhoehe { max-height: 27em; overflow-y: auto; }
+.festhoehe thead th { position: sticky; top: 0; z-index: 1; }
+.festhoehe tfoot th { position: sticky; bottom: 0; background: var(--senke); }
+th.zahlzelle, td.zahlzelle { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(--r); padding: 0 12px; }
+.aufklappliste { list-style: none; margin: 0; padding: 0; border: 1px solid var(--linie); border-radius: var(--r); }
+.aufklappliste li { border-top: 1px solid var(--linie); }
+.aufklappliste li:first-child { border-top: 0; }
+.aufklappliste li.an { background: var(--senke); }
+.aufklappliste dl { margin: 0; padding: 0 12px 10px; }
+.aufklappzeile { display: block; width: 100%; text-align: left; padding: 7px 12px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; overflow-wrap: anywhere; }
+.aufklappzeile:hover { background: var(--senke); }
+.aufklappzeile::before { content: '▸ '; color: var(--leise); }
+.aufklappzeile[aria-expanded="true"]::before { content: '▾ '; }
+.standzeile { margin: 0; color: var(--leise); }
+.mitpasswoertern { border-left: 3px solid var(--schlecht); padding-left: 10px; }
+/* Namen in der Leiste nicht abschneiden, wenn eine Plakette danebensteht (#366). */
+@media (min-width: 821px) { .werkbankleiste .sicht .nm { white-space: normal; overflow-wrap: anywhere; } }
+/* Werkbank → Aufgaben (#366): Filter in der Mitte. */
+.aufgabenfilter { gap: 8px; }
+.aufgabenfilter input[type="search"] { width: 100%; }
+.filterraster { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px 10px; }
+.filterraster select { width: 100%; }
+.zwischen .zusatz { text-transform: none; letter-spacing: 0; font-weight: normal; }
+/* Mitte mit Einstellungen oben (#366: Papierkorb, Aufgaben): die ganze Spalte scrollt, sonst bleibt der Liste nur ein Streifen. */
+.spalte.liste:has(> .blatt) { overflow-y: auto; padding-bottom: 32px; }
+.spalte.liste:has(> .blatt) > .listenrumpf { flex: none; min-height: auto; overflow: visible; padding-bottom: 0; }

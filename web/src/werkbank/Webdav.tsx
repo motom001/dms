@@ -6,6 +6,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 /**
  * Werkbank → WebDAV-Laufwerk (#346, Stufe 1): an/aus (Standard aus), Adresse zum Einbinden,
  * Stand und die letzten Zugriffe (nur im Arbeitsspeicher, nach einem Neustart leer).
+ * Ohne mittlere Spalte (#366): die letzten Zugriffe stehen rechts mit fester Höhe, neueste oben.
  */
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'medium' });
@@ -25,25 +26,6 @@ export function useWebdav(offen: boolean) {
   return { stand, fehler, laden, setStand };
 }
 export type WebdavZustand = ReturnType<typeof useWebdav>;
-
-export function WebdavListe({ z }: { z: WebdavZustand }) {
-  const s = z.stand;
-  return (
-    <>
-      <div className="listenkopf"><div><h1>WebDAV-Laufwerk</h1><p className="leise klein">Letzte Zugriffe über das Laufwerk. <Hilfe ort="werkbank.webdav" /></p></div></div>
-      {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
-      <ul className="mappenliste">
-        {(s?.zugriffe ?? []).map((e, i) => (
-          <li key={`${e.zeit}-${i}`}><span className="eintrag werk">
-            <span className="titel">{e.methode} {e.pfad}</span>
-            <span className="unter">{zeit(e.zeit)} · {e.benutzer} · {e.status}</span>
-          </span></li>
-        ))}
-        {s && !s.zugriffe.length && <li className="leise leerliste">Seit dem letzten Start noch keine Zugriffe.</li>}
-      </ul>
-    </>
-  );
-}
 
 export function WebdavPanel({ z }: { z: WebdavZustand }) {
   const s = z.stand;
@@ -81,6 +63,22 @@ export function WebdavPanel({ z }: { z: WebdavZustand }) {
           <dt>Grenze</dt><dd>{s.grenze} Anfragen je Benutzer und Minute</dd>
         </dl>
         <p className="leise klein">Benutzer erzeugen den Schlüssel selbst unter Profil → Sicherheit → API-Schlüssel („lesen und schreiben“, damit sie ablegen können). Administratoren bekommen keine API-Schlüssel und nutzen das Laufwerk darum nicht.</p>
+      </div>
+      {/* #366: früher die mittlere Spalte; ganz unten, mit fester Höhe (etwa zehn Einträge), neueste oben. */}
+      <div className="blatt" id="zugriffe">
+        <h2 className="h3">Letzte Zugriffe{s.zugriffe.length > 0 && <> <span className="chip">{s.zugriffe.length}</span></>}</h2>
+        {!s.zugriffe.length ? <p className="leise">Seit dem letzten Start noch keine Zugriffe.</p> : (
+          <ul className="sitzungsliste festhoehe">
+            {s.zugriffe.map((z, i) => (
+              <li key={`${z.zeit}-${i}`}>
+                <span><strong className="mono">{z.methode}</strong> <span className="mono umbrechen">{z.pfad}</span>
+                  <span className="leise klein"> – {zeit(z.zeit)} · {z.benutzer}</span></span>
+                <span className={`chip ${z.status >= 400 ? 'schlecht' : ''}`} title="HTTP-Status">{z.status}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="leise klein">Nur im Arbeitsspeicher; nach einem Neustart ist die Liste leer.</p>
       </div>
     </div>
   );

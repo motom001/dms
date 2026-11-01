@@ -33,7 +33,7 @@ Die Mails gehen an alle aktiven Administratoren mit E-Mail-Adresse und brauchen 
 
 ## Gesperrte Adressen
 
-Die Liste zeigt jede gesperrte IP mit Grund, Beginn und Ende. **Entsperren** gibt sie sofort frei. Oben auf der Seite steht deine eigene Adresse, wie das DMS sie sieht.
+Ganz unten auf der Seite zeigt der Abschnitt **Gesperrte Adressen** jede gesperrte IP mit Grund, Beginn und Ende – bei vielen Sperren in einer Liste mit fester Höhe, in der du scrollst. **Freigeben** hebt die Sperre sofort auf. Oben auf der Seite steht deine eigene Adresse, wie das DMS sie sieht.
 
 !!! warning "Hinter einem Reverse-Proxy"
     Damit die Sperre je IP die richtige Adresse trifft, muss das DMS die Angaben des Proxys glauben. Sitzt der Proxy auf demselben Rechner oder in einem privaten Netz, erkennt das DMS das von selbst (`TRUST_PROXY` nicht gesetzt oder `auto`). Prüfe oben auf der Seite: Steht dort bei deiner Adresse die Adresse des Proxys statt die deines Geräts, sieht das DMS für alle Anmeldungen dieselbe Adresse und sperrt im Ernstfall alle aus. Siehe [Hinter einem Reverse-Proxy](installation.md#hinter-einem-reverse-proxy).

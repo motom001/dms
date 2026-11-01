@@ -6,12 +6,6 @@ import { Hilfe } from '../Hilfe';
 
 /** Werkbank → Wiederherstellen (#107): nur im aktiven Wartungsmodus. */
 
-export function WiederherstellungListe() {
-  return (
-    <div className="listenkopf"><div><h1>Wiederherstellen</h1><p className="leise klein">Eine Sicherung einspielen – mit Abgleich und Fortschritt. <Hilfe ort="werkbank.wiederherstellung" /></p></div></div>
-  );
-}
-
 export function WiederherstellungPanel() {
   const { aktualisieren } = useKonto();
   const { stand } = useWartung();
@@ -20,7 +14,7 @@ export function WiederherstellungPanel() {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Wiederherstellen</h1>
-        <p className="leise">Ersetzt den jetzigen Stand durch eine Sicherung. Vorher sichert das DMS den jetzigen Stand selbst. Eingespielt wird erst in einen eigenen Bereich; umgeschaltet wird nur, wenn alles geklappt hat – bricht etwas ab, bleibt alles, wie es ist. Danach startet das DMS neu, und alle melden sich neu an.</p>
+        <p className="leise">Ersetzt den jetzigen Stand durch eine Sicherung. Vorher sichert das DMS den jetzigen Stand selbst. Eingespielt wird erst in einen eigenen Bereich; umgeschaltet wird nur, wenn alles geklappt hat – bricht etwas ab, bleibt alles, wie es ist. Danach startet das DMS neu, und alle melden sich neu an. <Hilfe ort="werkbank.wiederherstellung" /></p>
       </div>
       {stand && stand.stufe !== 'aktiv' ? (
         <div className="hinweis warn stapel">

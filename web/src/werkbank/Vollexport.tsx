@@ -23,21 +23,6 @@ export function useVollexport(offen: boolean) {
 }
 export type VollexportZustand = ReturnType<typeof useVollexport>;
 
-export function VollexportListe({ z }: { z: VollexportZustand }) {
-  const s = z.stand;
-  return (
-    <>
-      <div className="listenkopf"><div><h1>Vollexport</h1><p className="leise klein">Alle Daten in offenen Formaten. <Hilfe ort="werkbank.vollexport" /></p></div></div>
-      {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
-      {!s ? <p className="leise">Lade …</p> : !s.exporte.length ? <p className="leise leerliste">Noch kein Export.</p> : (
-        <ul className="mappenliste">
-          {s.exporte.map((e) => <li key={e.name}><span className="eintrag werk"><span className="titel">{e.erstellt ? zeit(e.erstellt) : e.name}</span><span className="unter">{mb(e.bytes)} · {e.dateien} Dateien{e.passwoerter ? ' · mit Passwörtern' : ''}</span></span></li>)}
-        </ul>
-      )}
-    </>
-  );
-}
-
 export function VollexportPanel({ z }: { z: VollexportZustand }) {
   const d = useDaten();
   const s = z.stand;
@@ -57,7 +42,7 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
     setMeldung(undefined);
     try { setMeldung({ art: 'gut', text: await f() }); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
   }
-  if (!s) return <p className="leise">Lade …</p>;
+  if (!s) return <p className="leise">{z.fehler ?? 'Lade …'}</p>;
   const noetig = s.abschaetzung.bytes * 1.1 + 50 * 1024 ** 2;
   const fertig = auftrag?.status === 'fertig' && auftrag.art === 'vollexport' ? auftrag.ergebnis as { name: string; dateien: number; bytes: number } : null;
   return (
@@ -65,7 +50,7 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Vollexport</h1>
-        <p className="leise">Deine Daten gehören dir: Der Vollexport schreibt <strong>alles</strong> – Mappen, Dokumente im Original mit allen Versionen, Notizen, Aufgaben, Historie, Struktur – in offenen Formaten (CSV, JSON, Excel, PDF, iCalendar, vCard) in einen Ordner, den du ohne das DMS lesen kannst. Anders als die Sicherung ist er <strong>unverschlüsselt</strong> – bewahre ihn sicher auf.</p>
+        <p className="leise">Deine Daten gehören dir: Der Vollexport schreibt <strong>alles</strong> – Mappen, Dokumente im Original mit allen Versionen, Notizen, Aufgaben, Historie, Struktur – in offenen Formaten (CSV, JSON, Excel, PDF, iCalendar, vCard) in einen Ordner, den du ohne das DMS lesen kannst. Anders als die Sicherung ist er <strong>unverschlüsselt</strong> – bewahre ihn sicher auf. <Hilfe ort="werkbank.vollexport" /></p>
       </div>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       <div className="blatt">
@@ -111,23 +96,23 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
         <label className="haken"><input type="checkbox" checked={s.persoenlich} onChange={(e) => void tu(async () => { await api.persoenlicherExport(e.target.checked); await z.laden(); return e.target.checked ? 'Benutzer dürfen ihre Daten exportieren.' : 'Meine Daten exportieren abgeschaltet.'; })} />
           <span>Benutzer dürfen ihre eigenen Daten exportieren<small className="hilfe">Profil → Konto → Meine Daten exportieren: Mappen, die sie lesen dürfen, ihre Aufgaben und Erinnerungen – im selben Format (Recht auf Datenübertragbarkeit, DSGVO Art. 20).</small></span></label>
       </div>
-      {s.exporte.length > 0 && (
-        <div className="blatt">
-          <h2 className="h3">Vorhandene Exporte</h2>
-          <ul className="stapel">
-            {s.exporte.map((e) => (
-              <li key={e.name}>
-                <strong>{e.erstellt ? zeit(e.erstellt) : e.name}</strong> <span className="leise klein">{mb(e.bytes)} · {e.dateien} Dateien{e.mappen !== null ? ` · ${e.mappen} Mappen` : ''}{e.passwoerter ? ' · mit Passwörtern im Klartext' : ''}</span>
-                <span className="knoepfe">
-                  <a className="knopf klein" href={`/api/werkbank/export/${encodeURIComponent(e.name)}/zip`}>Als ZIP herunterladen</a>
-                  <button type="button" className="knopf klein" onClick={() => void tu(async () => { const r = await api.vollexportPruefen(e.name); return r.ok ? `Alle ${r.dateien} Dateien vollständig und unverändert.` : `Abweichungen: ${[...r.fehlend.map((x) => `fehlt ${x}`), ...r.abweichend.map((x) => `verändert ${x}`)].slice(0, 5).join(', ')}${r.fehlend.length + r.abweichend.length > 5 ? ' …' : ''}`; })}>Prüfen</button>
-                  <button type="button" className="knopf klein gefahr-rand" onClick={async () => { if (await rueckfrage({ titel: 'Diesen Export löschen?', text: e.name, ja: 'Löschen', gefahr: true })) void tu(async () => { await api.vollexportLoeschen(e.name); await z.laden(); return 'Export gelöscht.'; }); }}>Löschen</button>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <div className="blatt" id="exporte">
+        <h2 className="h3">Vorhandene Exporte</h2>
+        {!s.exporte.length ? <p className="leise">Noch kein Export.</p> : <ul className="stapel">
+          {s.exporte.map((e) => (
+            <li key={e.name} className={e.passwoerter ? 'mitpasswoertern' : undefined}>
+              <strong>{e.erstellt ? zeit(e.erstellt) : e.name}</strong> <span className="leise klein">{mb(e.bytes)} · {e.dateien} Dateien{e.mappen !== null ? ` · ${e.mappen} Mappen` : ''}</span>
+              {/* #366: liegt unverschlüsselt im Sicherungsordner – deutlich markieren. */}
+              {e.passwoerter && <span className="fehlertext klein blockzeile"><strong>Enthält Passwörter im Klartext</strong> – nach dem Import in den Passwortmanager löschen.</span>}
+              <span className="knoepfe">
+                <a className="knopf klein" href={`/api/werkbank/export/${encodeURIComponent(e.name)}/zip`}>Als ZIP herunterladen</a>
+                <button type="button" className="knopf klein" onClick={() => void tu(async () => { const r = await api.vollexportPruefen(e.name); return r.ok ? `Alle ${r.dateien} Dateien vollständig und unverändert.` : `Abweichungen: ${[...r.fehlend.map((x) => `fehlt ${x}`), ...r.abweichend.map((x) => `verändert ${x}`)].slice(0, 5).join(', ')}${r.fehlend.length + r.abweichend.length > 5 ? ' …' : ''}`; })}>Prüfen</button>
+                <button type="button" className="knopf klein gefahr-rand" onClick={async () => { if (await rueckfrage({ titel: 'Diesen Export löschen?', text: e.name, ja: 'Löschen', gefahr: true })) void tu(async () => { await api.vollexportLoeschen(e.name); await z.laden(); return 'Export gelöscht.'; }); }}>Löschen</button>
+              </span>
+            </li>
+          ))}
+        </ul>}
+      </div>
     </div>
   );
 }

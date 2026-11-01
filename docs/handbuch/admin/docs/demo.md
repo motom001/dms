@@ -58,6 +58,8 @@ Damit du nebenher normal weiterarbeiten kannst, legt der Lauf nach jedem Dokumen
 
 ## Entfernen
 
+Unter dem Knopf steht je Mappentyp, wie viele Mappen es gibt und wie viele davon Demo-Mappen sind, mit Summe.
+
 **Alle Demo-Mappen entfernen** löscht alle Demo-Mappen samt ihrer Dokumente – in Paketen zu je 1.000 mit Fortschritt, auch bei vielen Dateien. Echte Mappen bleiben unberührt. Verweist eine echte Mappe auf eine Demo-Mappe, wird nichts gelöscht – entferne dann zuerst diesen Verweis.
 
 !!! tip "Ausprobieren ohne Risiko"

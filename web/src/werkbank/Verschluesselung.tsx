@@ -55,28 +55,6 @@ export function TresorBanner() {
   );
 }
 
-export function TresorListe({ t }: { t: TresorZustand }) {
-  const s = t.stand;
-  return (
-    <>
-      <div className="listenkopf"><div><h1>Verschlüsselung</h1><p className="leise klein">Schlüssel für Passwörter, die das DMS speichert. <Hilfe ort="werkbank.verschluesselung" /></p></div></div>
-      {s && (
-        <ul className="mappenliste">
-          <li><a className="eintrag werk" href="#schluessel">
-            <span className="titel">Schlüssel</span>
-            <span className="unter">{s.fingerabdruck ?? 'keiner'}</span>
-            <span><span className={`chip ${s.zustand === 'vorhanden' ? 'gut' : 'schlecht'}`}>{TEXT[s.zustand]}</span></span>
-          </a></li>
-          <li><a className="eintrag werk" href="#betroffen">
-            <span className="titel">Nicht lesbare Werte</span>
-            <span className="unter">{s.betroffen.length ? `${s.betroffen.length} neu einzugeben` : 'keine'}</span>
-          </a></li>
-        </ul>
-      )}
-    </>
-  );
-}
-
 export function TresorPanel({ t }: { t: TresorZustand }) {
   const { aktualisieren } = useKonto();
   const [laeuft, setLaeuft] = useState(false);
@@ -108,7 +86,7 @@ export function TresorPanel({ t }: { t: TresorZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Verschlüsselung</h1>
-        <p className="leise">Passwörter (E-Mail-Versand, Passwortfelder in Mappen) speichert das DMS verschlüsselt. Den Schlüssel dazu hält es in einer eigenen Datei, nie in der Datenbank.</p>
+        <p className="leise">Passwörter (E-Mail-Versand, Passwortfelder in Mappen) speichert das DMS verschlüsselt. Den Schlüssel dazu hält es in einer eigenen Datei, nie in der Datenbank. <Hilfe ort="werkbank.verschluesselung" /></p>
       </div>
 
       <section className="blatt" id="schluessel">

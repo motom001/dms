@@ -17,22 +17,6 @@ export function useAnbindung(offen: boolean) {
 }
 export type AnbindungZustand = ReturnType<typeof useAnbindung>;
 
-export function AnbindungListe({ z }: { z: AnbindungZustand }) {
-  const s = z.stand;
-  return (
-    <>
-      <div className="listenkopf"><div><h1>Datenbank-Anbindung</h1><p className="leise klein">Wo die Datenbank liegt. <Hilfe ort="werkbank.anbindung" /></p></div></div>
-      {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
-      {s && (
-        <ul className="mappenliste">
-          <li><a className="eintrag werk" href="#anbindung"><span className="titel mono">{s.anbindung.benutzer}@{s.anbindung.host}:{s.anbindung.port}/{s.anbindung.datenbank}</span><span className="unter">{s.neustartNoetig ? 'geändert – gilt nach dem Neustart' : 'in Betrieb'}</span>{s.neustartNoetig && <span className="problem">Neustart</span>}</a></li>
-          <li><a className="eintrag werk" href="#anbindung"><span className="titel">DATABASE_URL</span><span className="unter">{s.imContainer ? 'vom Container gesetzt (dms-komplett)' : s.umgebung === 'fehlt' ? 'nicht gesetzt' : s.umgebung === 'gleich' ? 'gleich – kann entfernt werden' : 'weicht ab – wird ignoriert'}</span>{s.umgebung === 'abweichend' && <span className="problem">abweichend</span>}</a></li>
-        </ul>
-      )}
-    </>
-  );
-}
-
 export function AnbindungPanel({ z, nachAenderung }: { z: AnbindungZustand; nachAenderung?: () => void }) {
   const s = z.stand;
   const [a, setA] = useState<AnbindungEingabe | null>(null);
@@ -69,9 +53,9 @@ export function AnbindungPanel({ z, nachAenderung }: { z: AnbindungZustand; nach
   return (
     <div className="einspaltig">
       <div className="mappenkopf">
-        <p className="ueber">Werkbank · Einstellungen</p>
+        <p className="ueber">Werkbank</p>
         <h1>Datenbank-Anbindung</h1>
-        <p className="leise">Die Anbindung steht in der Datei <span className="mono">{s.datei}</span> und ist führend – auch wenn in der Compose-Datei <span className="mono">DATABASE_URL</span> gesetzt ist. Das Passwort zeigt das DMS nie an.</p>
+        <p className="leise">Die Anbindung steht in der Datei <span className="mono">{s.datei}</span> und ist führend – auch wenn in der Compose-Datei <span className="mono">DATABASE_URL</span> gesetzt ist. Das Passwort zeigt das DMS nie an. <Hilfe ort="werkbank.anbindung" /></p>
       </div>
       {s.umgebung === 'abweichend' && <div className="hinweis warn"><p><strong>DATABASE_URL weicht von dieser Anbindung ab und wird ignoriert.</strong> Entferne die Variable aus der Compose-Datei, damit es nicht zu Verwechslungen kommt.</p></div>}
       {s.imContainer && <div className="hinweis info"><p><strong>Die Datenbank läuft in diesem Container (dms-komplett).</strong> Hier ist nichts einzustellen. Zum Umzug auf eine eigene Datenbank: Sicherung hier anlegen und dort wiederherstellen – siehe „Wachsen und umziehen“ im Administratorhandbuch.</p></div>}
@@ -84,6 +68,8 @@ export function AnbindungPanel({ z, nachAenderung }: { z: AnbindungZustand; nach
       )}
       <form id="anbindung" className="blatt" onSubmit={(ev) => { ev.preventDefault(); void tu(async () => setP(await api.anbindungPruefen(a))); }}>
         <h2 className="h3">Verbindung</h2>
+        <p className="klein">Aktuell verbunden: <span className="mono">{s.anbindung.benutzer}@{s.anbindung.host}:{s.anbindung.port}/{s.anbindung.datenbank}</span>{' '}
+          {s.neustartNoetig ? <span className="chip warn">geändert – gilt nach dem Neustart</span> : <span className="chip gut">in Betrieb</span>}</p>
         <AnbindungFormular wert={a} setWert={(x) => { setA(x); setP(null); setLeer(false); }} passwortGesetzt={s.anbindung.passwortGesetzt} felder={felder} />
         {p && <PruefungAnzeige p={p} />}
         {leer && <div className="hinweis warn"><p><strong>Diese Datenbank ist leer.</strong> Nach dem Neustart beginnt dort die Einrichtung von vorn (mit Einrichtungscode); die bisherigen Daten bleiben in der alten Datenbank.</p></div>}

@@ -10,7 +10,7 @@ Unter **Werkbank → WebDAV-Laufwerk**:
 
 - **WebDAV-Laufwerk einschalten** – Standard: **aus**. Ausgeschaltet antwortet das DMS unter `/webdav/` mit „nicht gefunden“, als gäbe es das Laufwerk nicht.
 - **Stand** – die Adresse zum Einbinden (die Adresse des DMS aus *E-Mail und Adresse* plus `/webdav/`), die Zahl der Anfragen seit dem Start und die Grenze je Benutzer.
-- **Letzte Zugriffe** – links in der Liste die letzten 50 Anfragen mit Zeit, Benutzer, Methode, Pfad und Ergebnis. Sie stehen nur im Arbeitsspeicher; nach einem Neustart ist die Liste leer.
+- **Letzte Zugriffe** – ganz unten auf der Seite die letzten 50 Anfragen mit Methode, Pfad, Zeit, Benutzer und Ergebnis (HTTP-Status, Fehler rot), neueste oben. Der Abschnitt hat eine feste Höhe für etwa zehn Einträge; ältere erreichst du durch Scrollen. Die Zugriffe stehen nur im Arbeitsspeicher; nach einem Neustart ist die Liste leer.
 
 ## Voraussetzungen
 

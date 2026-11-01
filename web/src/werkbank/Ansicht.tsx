@@ -28,15 +28,6 @@ export type WerkbankAnsichtZustand = ReturnType<typeof useWerkbankAnsicht>;
 /** Was der Dialog aus der Leiste über einen Bereich wissen muss: ein Hinweis. */
 export interface BereichZustand { warn?: string | number }
 
-export function AnsichtListe() {
-  return (
-    <>
-      <div className="listenkopf"><div><h1>Werkbank anpassen</h1><p className="leise klein">Welche Bereiche links stehen. <Hilfe ort="werkbank.ansicht" /></p></div></div>
-      <p className="leise klein">Ausgeblendete Bereiche laufen weiter. Hinweise dazu erscheinen trotzdem in der <Link to="/werkbank" className="verweis">Übersicht</Link>.</p>
-    </>
-  );
-}
-
 export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustand: Record<string, BereichZustand> }) {
   const s = z.stand;
   const [vorlage, setVorlage] = useState<Vorlage>('haushalt');
@@ -89,7 +80,7 @@ export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustan
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Werkbank anpassen</h1>
-        <p className="leise">Blende aus, was du nicht brauchst. <strong>Ausblenden schaltet nichts ab:</strong> Alles läuft weiter, Links und Hilfe führen weiter hin, und Hinweise wie „Sicherung zu alt“ erscheinen immer in der Übersicht. <Hilfe ort="werkbank.ansicht" /></p>
+        <p className="leise">Blende aus, was du nicht brauchst. <strong>Ausblenden schaltet nichts ab:</strong> Alles läuft weiter, Links und Hilfe führen weiter hin, und Hinweise wie „Sicherung zu alt“ erscheinen immer in der <Link to="/werkbank" className="verweis">Übersicht</Link>. <Hilfe ort="werkbank.ansicht" /></p>
       </div>
       {!s.eingestellt && <div className="hinweis"><p>Noch nicht eingestellt – bisher siehst du alle Bereiche. Für einen Haushalt reicht meist die Vorlage <strong>Haushalt</strong>.</p></div>}
       <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>

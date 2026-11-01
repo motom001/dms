@@ -1,38 +1,40 @@
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
-import { AnmeldeschutzListe, AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
+import { AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
 import { NummernkreisEditor, NummernkreiseListe, useNummernkreise } from './Nummernkreise';
-import { DarfWegListe, DarfWegPanel, useDarfWeg } from './Archiv';
+import { DarfWegPanel, useDarfWeg } from './Archiv';
 import { PaketeListe, PaketLink, PaketePanel, usePakete } from './Pakete';
-import { useVollexport, VollexportListe, VollexportPanel } from './Vollexport';
+import { useVollexport, VollexportPanel } from './Vollexport';
 import { PostfachEditor, PostfaecherListe, usePostfaecher } from './Postfaecher';
-import { EingangsordnerListe, EingangsordnerPanel, useEingangsordner } from './Eingangsordner';
-import { useWebdav, WebdavListe, WebdavPanel } from './Webdav';
+import { EingangsordnerPanel, useEingangsordner } from './Eingangsordner';
+import { useWebdav, WebdavPanel } from './Webdav';
 import { useEffect, type ReactNode } from 'react';
 import { Dreiteilung } from '../bereiche';
 import { useDaten } from '../daten';
 import { TypEditor } from '../einrichtung/Einrichtung';
-import { Link } from '../ort';
+import { geheZu, Link } from '../ort';
+import { hatMitte, wartungsPlakette, werkbankEbene, werkbankUmleitung, werkbankZurueck } from '../../../shared/src/werkbankansicht';
 import { BenutzerDetail, BenutzerListe, BenutzerNeu, useBenutzer } from './Benutzer';
-import { BetriebListe, BetriebPanel, useBetrieb } from './Betrieb';
+import { BetriebPanel, useBetrieb } from './Betrieb';
 import { SichtEditor, SichtenListe } from './Sichten';
-import { DatenbankPanel, LanglaeuferListe, useDatenbank } from './Datenbank';
-import { DemoListe, DemoPanel } from './Demo';
+import { DatenbankPanel, useDatenbank } from './Datenbank';
+import { DemoPanel } from './Demo';
 import { DesignEditor, DesignListe } from './Designs';
 import { ProtokollDetail, ProtokollListe, useProtokoll } from './Protokoll';
-import { TechnikListe, TechnikPanel, useTechnik } from './Technik';
-import { TresorListe, TresorPanel, useTresor } from './Verschluesselung';
+import { TechnikPanel, useTechnik } from './Technik';
+import { TresorPanel, useTresor } from './Verschluesselung';
 import { AufgabenListe, AufgabenPanel, useAufgaben } from './Aufgaben';
-import { TexterkennungListe, TexterkennungPanel, useTexterkennung, WartungListe, WartungPanel } from './Texterkennung';
+import { TexterkennungPanel, useTexterkennung, WartungPanel } from './Texterkennung';
 import { Hilfe, useHandbuch } from '../Hilfe';
-import { AnsichtListe, AnsichtPanel, useWerkbankAnsicht, type BereichZustand } from './Ansicht';
+import { AnsichtPanel, useWerkbankAnsicht, type BereichZustand } from './Ansicht';
 import { UebersichtListe, UebersichtPanel, useUebersicht, WerkbankNavigation, type WerkbankEintrag } from './Uebersicht';
-import { useWartungsmodus, WartungsmodusListe, WartungsmodusPanel } from './Wartungsmodus';
-import { SicherungListe, SicherungPanel, useSicherung } from './Sicherung';
-import { WiederherstellungListe, WiederherstellungPanel } from './Wiederherstellung';
+import { useWartungsmodus, WartungsmodusPanel } from './Wartungsmodus';
+import { SicherungPanel, useSicherung } from './Sicherung';
+import { WiederherstellungPanel } from './Wiederherstellung';
 import { FehlermeldungDetail, FehlermeldungenListe, useFehlermeldungen } from './Fehlermeldungen';
-import { AnbindungListe, AnbindungPanel, useAnbindung } from './Anbindung';
-import { SpeicherplatzListe, SpeicherplatzPanel, useSpeicherplatz } from './Speicherplatz';
-import { PapierkorbDetail, PapierkorbEinstellungen, PapierkorbListe, usePapierkorb } from '../ablage/Papierkorb';
+import { AnbindungPanel, useAnbindung } from './Anbindung';
+import { SpeicherplatzPanel, useSpeicherplatz } from './Speicherplatz';
+import { PapierkorbDetail, PapierkorbListe, usePapierkorb } from '../ablage/Papierkorb';
+import { filterAusAdresse } from '../../../shared/src/aufgabenfilter';
 import { useBeiWiederErreichbar } from '../erreichbar';
 
 /**
@@ -45,14 +47,14 @@ import { useBeiWiederErreichbar } from '../erreichbar';
  * /werkbank/sichten[/:id|/neu]       Sichten der Ablage (#38)
  * /werkbank/demo
  * /werkbank/protokoll[/:nr]
- * /werkbank/datenbank[/:id]
+ * /werkbank/datenbank[?offen=:id]   lange Zugriffe rechts, aufklappbar (#366)
  * /werkbank/technik
  * /werkbank/designs[/:id|/neu]
  * /werkbank/betrieb                 E-Mail-Versand und Adresse des DMS (#37)
  * /werkbank/verschluesselung        Schlüssel für Passwörter (#39)
  * /werkbank/papierkorb[/:id]        Papierkorb aller Benutzer und Aufbewahrung (#43)
  * /werkbank/texterkennung           Texterkennung und Volltext (#45)
- * /werkbank/aufgaben               Aufgaben aller Benutzer, tägliche Zusammenfassung (#54)
+ * /werkbank/aufgaben[/:id][?filter] Aufgaben aller Benutzer mit Filter, tägliche Zusammenfassung (#54, #366)
  * /werkbank/wartung                 Wartungsoperationen, z. B. Volltext nachholen (#45)
  * /werkbank/fehlermeldungen[/:id]  Fehlermeldungen der Benutzer (#70)
  * /werkbank/wartungsmodus          Wartungsmodus (#102)
@@ -60,7 +62,10 @@ import { useBeiWiederErreichbar } from '../erreichbar';
  * /werkbank/wiederherstellung      Sicherung einspielen (#107)
  * /werkbank/anbindung            Datenbank-Anbindung (#119)
  * /werkbank/speicherplatz         Speicherplatz je Ordner, Warnschwelle und Grenze (#115, #116)
- * /werkbank/webdav                WebDAV-Laufwerk an/aus, Stand, letzte Zugriffe (#346)
+ * /werkbank/webdav                WebDAV-Laufwerk an/aus, Stand, letzte Zugriffe (#346, rechts seit #366)
+ *
+ * Die Mitte gibt es nur für große Sammlungen, die man bearbeitet (#366, `hatMitte`); alle anderen
+ * Bereiche sind zweiteilig: links die Bereiche, rechts die ganze Seite.
  */
 export function Werkbank({ teile }: { teile: string[] }) {
   const d = useDaten();
@@ -73,7 +78,10 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const betrieb = useBetrieb();
   const tresor = useTresor();
   const papierkorb = usePapierkorb(true, bereich === 'papierkorb');
-  const aufgaben = useAufgaben(bereich === 'aufgaben');
+  // Pakete: Installation über einen Link (?installieren=…) steht rechts, auch ohne gewähltes Paket.
+  const installieren = bereich === 'pakete' && !id ? new URLSearchParams(location.search).get('installieren') : null;
+  const aufgabenFilter = filterAusAdresse(new URLSearchParams(location.search));
+  const aufgaben = useAufgaben(bereich === 'aufgaben', !!aufgabenFilter.erledigt);
   const ocr = useTexterkennung(bereich === 'texterkennung' || bereich === 'wartung');
   const uebersicht = useUebersicht();
   const meldungen = useFehlermeldungen(bereich === 'fehlermeldungen');
@@ -106,6 +114,11 @@ export function Werkbank({ teile }: { teile: string[] }) {
   });
   // Anmeldungen und Aktivität ändern sich laufend: beim Öffnen der Benutzer neu laden.
   useEffect(() => { if (bereich === 'benutzer') void benutzer.laden(); }, [bereich, id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Alte Direktlinks in Bereiche ohne Mitte (#366), z. B. /werkbank/datenbank/:id → Seite, Eintrag aufgeklappt.
+  const umleitung = werkbankUmleitung(bereich, id);
+  useEffect(() => { if (umleitung) geheZu(umleitung, true); }, [umleitung]);
+  // Hintergrundarbeit ruht nur im aktiven Wartungsmodus (#366: Hinweis bei Texterkennung und Volltext).
+  const wartungAn = wartungsPlakette(wartungsmodus.stand?.stufe ?? 'aus', wartungsmodus.stand?.aktivAb ?? null) === 'an';
 
   let liste: ReactNode = null;
   let rechts: ReactNode = <div className="platzhalter"><p>Wähle in der Liste ein Element aus.</p></div>;
@@ -141,44 +154,33 @@ export function Werkbank({ teile }: { teile: string[] }) {
       rechts = b ? <BenutzerDetail key={b.id} b={b} neuLaden={benutzer.laden} /> : benutzer.geladen ? <div className="leer"><p>Diesen Benutzer gibt es nicht (mehr).</p></div> : <p className="leise">Lade …</p>;
     }
   } else if (bereich === 'demo') {
-    liste = <DemoListe />;
     rechts = <DemoPanel />;
   } else if (bereich === 'designs') {
     liste = <DesignListe offen={id} />;
     rechts = id ? <DesignEditor key={id} id={id} /> : <div className="platzhalter"><p>Wähle ein Design zum Bearbeiten oder lege mit „+ Neu“ ein eigenes an.</p></div>;
   } else if (bereich === 'betrieb') {
-    liste = <BetriebListe b={betrieb} />;
     rechts = <BetriebPanel b={betrieb} />;
   } else if (bereich === 'aufgaben') {
-    liste = <AufgabenListe z={aufgaben} />;
-    rechts = <AufgabenPanel z={aufgaben} />;
+    liste = <AufgabenListe z={aufgaben} filter={aufgabenFilter} offen={id} mailAn={uebersicht.stand?.mail} />;
+    rechts = <AufgabenPanel z={aufgaben} id={id} />;
   } else if (bereich === 'texterkennung') {
-    liste = <TexterkennungListe t={ocr} />;
-    rechts = <TexterkennungPanel t={ocr} />;
+    rechts = <TexterkennungPanel t={ocr} wartungAn={wartungAn} />;
   } else if (bereich === 'wartung') {
-    liste = <WartungListe t={ocr} />;
-    rechts = <WartungPanel t={ocr} />;
+    rechts = <WartungPanel t={ocr} wartungAn={wartungAn} />;
   } else if (bereich === 'wiederherstellung') {
-    liste = <WiederherstellungListe />;
     rechts = <WiederherstellungPanel />;
   } else if (bereich === 'sicherung') {
-    liste = <SicherungListe z={sicherung} />;
     rechts = <SicherungPanel z={sicherung} />;
   } else if (bereich === 'anbindung') {
-    liste = <AnbindungListe z={anbindung} />;
     rechts = <AnbindungPanel z={anbindung} nachAenderung={() => void uebersicht.laden()} />;
   } else if (bereich === 'anmeldeschutz') {
-    liste = <AnmeldeschutzListe z={anmeldeschutz} />;
     rechts = <AnmeldeschutzPanel z={anmeldeschutz} />;
   } else if (bereich === 'pakete') {
     liste = <PaketeListe z={pakete} offen={id} />;
-    const installieren = !id ? new URLSearchParams(location.search).get('installieren') : null;
     rechts = installieren ? <PaketLink key={installieren} z={pakete} wert={installieren} /> : <PaketePanel z={pakete} id={id} />;
   } else if (bereich === 'vollexport') {
-    liste = <VollexportListe z={vollexport} />;
     rechts = <VollexportPanel z={vollexport} />;
   } else if (bereich === 'darfweg') {
-    liste = <DarfWegListe z={darfWeg} />;
     rechts = <DarfWegPanel z={darfWeg} />;
   } else if (bereich === 'nummernkreise') {
     liste = <NummernkreiseListe z={nummernkreise} offen={id} />;
@@ -187,29 +189,22 @@ export function Werkbank({ teile }: { teile: string[] }) {
     liste = <PostfaecherListe z={postfaecher} offen={id} />;
     rechts = id ? <PostfachEditor key={`${id}-${postfaecher.liste ? 1 : 0}`} z={postfaecher} id={id} /> : <div className="platzhalter"><p>Wähle links ein Postfach oder lege mit „+ Neu“ eines an.</p></div>;
   } else if (bereich === 'eingangsordner') {
-    liste = <EingangsordnerListe z={eingang} />;
     rechts = <EingangsordnerPanel z={eingang} />;
   } else if (bereich === 'webdav') {
-    liste = <WebdavListe z={webdav} />;
     rechts = <WebdavPanel z={webdav} />;
   } else if (bereich === 'speicherplatz') {
-    liste = <SpeicherplatzListe z={speicherplatz} />;
     rechts = <SpeicherplatzPanel z={speicherplatz} nachAenderung={() => { void uebersicht.laden(); void wartungsmodus.laden(); }} />;
   } else if (bereich === 'wartungsmodus') {
-    liste = <WartungsmodusListe w={wartungsmodus} />;
     rechts = <WartungsmodusPanel w={wartungsmodus} />;
   } else if (bereich === 'papierkorb') {
     liste = <PapierkorbListe z={papierkorb} werkbank offen={id} />;
-    rechts = id ? <PapierkorbDetail key={id} id={id} werkbank /> : <PapierkorbEinstellungen z={papierkorb} />;
+    rechts = id ? <PapierkorbDetail key={id} id={id} werkbank /> : <div className="platzhalter"><p>Wähle links eine gelöschte Mappe aus, um sie anzusehen oder wiederherzustellen.</p></div>;
   } else if (bereich === 'verschluesselung') {
-    liste = <TresorListe t={tresor} />;
     rechts = <TresorPanel t={tresor} />;
   } else if (bereich === 'technik') {
-    liste = <TechnikListe t={technik} />;
     rechts = <TechnikPanel t={technik} />;
   } else if (bereich === 'datenbank') {
-    liste = <LanglaeuferListe z={datenbank} offen={id} />;
-    rechts = <DatenbankPanel z={datenbank} id={id} />;
+    rechts = <DatenbankPanel z={datenbank} offen={new URLSearchParams(location.search).get('offen') ?? undefined} />;
   } else if (bereich === 'protokoll') {
     liste = <ProtokollListe p={protokoll} offen={id} />;
     rechts = <ProtokollDetail p={protokoll} nr={id} />;
@@ -225,10 +220,10 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'benutzer', name: 'Benutzer', gruppe: 'benutzer', zahl: zahl(benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined, uz?.benutzer) },
           { pfad: 'anmeldeschutz', name: 'Anmeldeschutz', gruppe: 'benutzer', zahl: anmeldeschutz.stand?.gesperrt.length || undefined },
           { pfad: 'aufgaben', name: 'Aufgaben', gruppe: 'benutzer', zahl: zahl(aufgaben.liste?.filter((a) => !a.erledigt).length, uebersicht.stand?.aufgaben.offen) },
-          { pfad: 'betrieb', name: 'E-Mail und Adresse', gruppe: 'einstellungen', warn: uebersicht.stand && !uebersicht.stand.mail ? 'aus' : undefined },
+          { pfad: 'betrieb', name: 'E-Mail und Adresse', gruppe: 'einstellungen', warn: uebersicht.stand && !uebersicht.stand.mail ? 'aus' : undefined, warnTitel: 'E-Mail-Versand aus' },
           { pfad: 'verschluesselung', name: 'Verschlüsselung', gruppe: 'einstellungen', warn: tresor.stand && tresor.stand.zustand !== 'vorhanden' ? 'fehlt' : undefined },
           { pfad: 'designs', name: 'Designs', gruppe: 'einstellungen', zahl: d.designs.length || undefined },
-          { pfad: 'papierkorb', name: 'Papierkorb', gruppe: 'einstellungen', zahl: zahl(papierkorb.eintraege?.length, uebersicht.stand?.papierkorb.anzahl) },
+          { pfad: 'papierkorb', name: 'Papierkorb', gruppe: 'einstellungen', zahl: zahl(papierkorb.eintraege ? papierkorb.eintraege.length + papierkorb.dokumente.length : undefined, uebersicht.stand?.papierkorb.anzahl) },
           { pfad: 'anbindung', name: 'Datenbank-Anbindung', gruppe: 'einstellungen', warn: uebersicht.stand?.anbindung && (uebersicht.stand.anbindung.umgebung === 'abweichend' || uebersicht.stand.anbindung.neustartNoetig) ? '!' : undefined, warnTitel: 'DATABASE_URL weicht ab oder Neustart nötig' },
           { pfad: 'speicherplatz', name: 'Speicherplatz', gruppe: 'einstellungen', warn: uebersicht.stand?.speicherplatz && uebersicht.stand.speicherplatz.zustand !== 'ok' ? (uebersicht.stand.speicherplatz.zustand === 'grenze' ? 'voll' : 'knapp') : undefined, warnTitel: 'Speicherplatz knapp' },
           { pfad: 'postfaecher', name: 'Postfächer', gruppe: 'einstellungen', zahl: zahl(postfaecher.liste?.length, uz?.postfaecher), warn: uebersicht.stand?.postfachAnmeldung?.length || postfaecher.liste?.some((p) => p.stand.fehlerFolge > 0 || (p.oauth && p.oauth.zustand !== 'ok')) ? '!' : undefined, warnTitel: uebersicht.stand?.postfachAnmeldung?.length ? 'Anmeldung abgelaufen oder fehlt' : 'Abruf fehlgeschlagen' },
@@ -240,7 +235,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'sicherung', name: 'Sicherung', gruppe: 'wartung', warn: uebersicht.stand?.sicherung && (uebersicht.stand.sicherung.fehler || (uebersicht.stand.sicherung.schluessel && uebersicht.stand.sicherung.zuAlt)) ? '!' : undefined, warnTitel: 'Sicherung fehlgeschlagen oder zu alt' },
           { pfad: 'wiederherstellung', name: 'Wiederherstellen', gruppe: 'wartung' },
           { pfad: 'vollexport', name: 'Vollexport', gruppe: 'wartung' },
-          { pfad: 'wartungsmodus', name: 'Wartungsmodus', gruppe: 'wartung', warn: wartungsmodus.stand && wartungsmodus.stand.stufe !== 'aus' ? (wartungsmodus.stand.stufe === 'aktiv' ? 'aktiv' : 'an') : undefined, warnTitel: 'Wartungsmodus ist an' },
+          { pfad: 'wartungsmodus', name: 'Wartungsmodus', gruppe: 'wartung', warn: wartungsPlakette(wartungsmodus.stand?.stufe ?? 'aus', wartungsmodus.stand?.aktivAb ?? null), warnTitel: wartungAn ? 'Wartungsmodus ist an' : 'Wartungsmodus ist angekündigt' },
           { pfad: 'wartung', name: 'Wartungsoperationen', gruppe: 'wartung' },
           { pfad: 'datenbank', name: 'Datenbank', gruppe: 'wartung' },
           { pfad: 'technik', name: 'Technik', gruppe: 'wartung' },
@@ -248,14 +243,12 @@ export function Werkbank({ teile }: { teile: string[] }) {
   ];
   const zustand: Record<string, BereichZustand> = Object.fromEntries(eintraege.map((e) => [e.pfad, { warn: e.warn }]));
   if (bereich === 'ansicht') {
-    liste = <AnsichtListe />;
     rechts = <AnsichtPanel z={ansicht} zustand={zustand} />;
   }
 
   return (
-    <Dreiteilung ort="werkbank" ebene={id || ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung', 'speicherplatz', 'anbindung', 'eingangsordner', 'webdav', 'anmeldeschutz', 'darfweg', 'vollexport', 'ansicht'].includes(bereich) || (bereich === 'pakete' && !id) ? 'mappe' : 'liste'} offen={id}>
+    <Dreiteilung ort="werkbank" ebene={werkbankEbene(bereich, id, !!installieren)} mitte={hatMitte(bereich)} offen={id}>
       <aside className="spalte sichten" aria-label="Bereiche">
-        <h2 className="ueber">Werkbank</h2>
         <WerkbankNavigation bereich={bereich} eintraege={eintraege} zeigen={ansicht.zeigen} benutzt={ansicht.stand?.benutzt} />
         {/* Freiwillig, ohne Gebühren für beide Seiten (GitHub Sponsors von persönlichen Konten). */}
         <a className="unterstuetzen" href="https://github.com/sponsors/motom001" target="_blank" rel="noreferrer">
@@ -266,7 +259,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
       </aside>
       <section className="spalte liste" aria-label="Elemente">{liste}</section>
       <section className="spalte mappe" aria-label="Bearbeitung">
-        <Link to={`/werkbank/${bereich}`} className="verweis nur-schmal">← Zur Liste</Link>
+        <Link to={werkbankZurueck(bereich)} className="verweis nur-schmal">{hatMitte(bereich) ? '← Zur Liste' : '← Bereiche'}</Link>
         {rechts}
       </section>
     </Dreiteilung>

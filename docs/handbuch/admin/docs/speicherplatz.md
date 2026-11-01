@@ -16,7 +16,7 @@ Gemessen werden die drei festen Ordner im Container (siehe [Ordner und Volumes](
 | `/data/geheim` | Schlüssel und Notfallzugang |
 | `/data/sicherung` | Sicherungen |
 
-Je Ordner zeigt die Seite belegt, frei und die Größe des Datenträgers, als Balken mit Marken für Warnschwelle und Grenze. Liegen mehrere Ordner auf demselben Datenträger, steht das dabei. Darunter steht, wie viel davon die **Vorschaubilder** der Dokumente belegen (Ordner `/data/files/vorschau`, meist wenige Kilobyte je Dokument). Sie werden **nicht gesichert** – nach einer Wiederherstellung entstehen sie beim Anzeigen oder über **Wartungsoperationen → Vorschaubilder nachholen** neu. **Werkbank → Technik** zeigt dieselben Zahlen in der Übersicht für den Support.
+Je Ordner zeigt die Seite belegt, frei und die Größe des Datenträgers, als Balken mit Marken für Warnschwelle und Grenze. Liegen alle drei auf demselben Datenträger (der übliche Fall auf dem NAS), zeigt die Seite **einen** Balken „Ein Datenträger für Dateien, Schlüssel und Sicherungen“ mit den Ordnern darunter – und den Hinweis, dass die Sicherungen damit auf derselben Platte liegen wie die Dokumente. Liegen nur einige auf demselben Datenträger, steht das beim jeweiligen Ordner. Darunter steht, wie viel davon die **Vorschaubilder** der Dokumente belegen (Ordner `/data/files/vorschau`, meist wenige Kilobyte je Dokument). Sie werden **nicht gesichert** – nach einer Wiederherstellung entstehen sie beim Anzeigen oder über **Wartungsoperationen → Vorschaubilder nachholen** neu. **Werkbank → Technik** zeigt dieselben Zahlen in der Übersicht für den Support.
 
 !!! note "Die Datenbank wird nicht gemessen"
     Bei zwei Containern läuft PostgreSQL in einem eigenen Container; sein Volume kann das DMS nicht sehen. Bei [dms-komplett](https://motom001.github.io/dms/installieren/aktuell/komplett/) liegt die Datenbank im vierten Ordner `/data/postgres` – auch den misst das DMS nicht. Liegen alle Ordner auf derselben Platte des NAS (der übliche Fall), reicht die Messung trotzdem. Liegt die Datenbank auf einer anderen Platte, behalte deren Platz in der Speicherverwaltung des NAS im Blick.
@@ -39,7 +39,7 @@ Die Warnschwelle muss mehr freien Platz verlangen als die Grenze – sonst käme
     - alte Sicherungen unter **Werkbank → [Sicherung](sicherung.md)** löschen oder die Aufbewahrung verringern,
     - den **[Papierkorb](papierkorb.md)** leeren bzw. die Aufbewahrung verkürzen,
     - auf dem NAS andere Daten aufräumen oder das Volume vergrößern.
-3. **Neu messen**. Reicht der Platz wieder, zeigen diese Seite und die Übersicht: „Wieder … frei – Wartung beenden?“
+3. **Neu messen** (im Abschnitt *Ordner*, neben der Uhrzeit der letzten Messung). Reicht der Platz wieder, zeigen diese Seite und die Übersicht: „Wieder … frei – Wartung beenden?“
 4. **Wartung beenden** – der Modus endet **nicht von selbst**, damit das DMS an der Grenze nicht hin- und herspringt.
 
 Beendest du die Wartung, obwohl die Grenze noch unterschritten ist, startet sie nicht erneut von selbst; das Hochladen bleibt aber gesperrt, bis wieder genug Platz frei ist. Läuft gerade eine Wartung, die du selbst eingeschaltet hast, lässt das DMS sie unverändert.

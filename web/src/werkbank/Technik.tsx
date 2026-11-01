@@ -89,18 +89,19 @@ export function useTechnik(sichtbar: boolean) {
 }
 export type TechnikZustand = ReturnType<typeof useTechnik>;
 
-export function TechnikListe({ t }: { t: TechnikZustand }) {
+/** Was installiert ist (#366: früher die mittlere Spalte), als Abschnitt unter „Neuere Versionen“. */
+function Installiert({ t }: { t: TechnikZustand }) {
   return (
-    <>
-      <div className="listenkopf"><div><h1>Technik</h1><p className="leise klein">Was auf diesem System installiert ist. <Hilfe ort="werkbank.technik" /></p></div></div>
+    <section className="blatt" id="installiert">
+      <h2 className="h3">Installiert</h2>
       {t.fehler && <div className="hinweis schlecht"><p>{t.fehler}</p></div>}
       {!t.u ? <p className="leise">Lade …</p> : zeilenAus(t.u).map(([gruppe, liste]) => (
         <section key={gruppe} className="technikgruppe">
-          <h2 className="ueber">{gruppe}</h2>
+          <h3 className="ueber">{gruppe}</h3>
           <dl>{liste.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className={/^\d|^[0-9a-f]{7}$/.test(v) ? 'mono' : ''}>{v}</dd></div>)}</dl>
         </section>
       ))}
-    </>
+    </section>
   );
 }
 
@@ -129,7 +130,7 @@ export function TechnikPanel({ t }: { t: TechnikZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Technik und Versionen</h1>
-        <p className="leise">Für Fragen an den Support: Übersicht kopieren und in ein <a className="verweis" href="https://github.com/motom001/dms/issues/new?template=wunsch.md" target="_blank" rel="noreferrer">GitHub-Issue</a> einfügen. Passwörter und Zugangsdaten stehen nicht darin. Wie alles zusammenhängt, beschreibt <a className="verweis" href={handbuch('admin', 'technik/')} target="_blank" rel="noreferrer">das Administratorhandbuch</a>.</p>
+        <p className="leise">Für Fragen an den Support: Übersicht kopieren und in ein <a className="verweis" href="https://github.com/motom001/dms/issues/new?template=wunsch.md" target="_blank" rel="noreferrer">GitHub-Issue</a> einfügen. Passwörter und Zugangsdaten stehen nicht darin. Wie alles zusammenhängt, beschreibt <a className="verweis" href={handbuch('admin', 'technik/')} target="_blank" rel="noreferrer">das Administratorhandbuch</a>. <Hilfe ort="werkbank.technik" /></p>
       </div>
       <div className="blatt">
         <h2 className="h3">Für den Support</h2>
@@ -173,6 +174,7 @@ export function TechnikPanel({ t }: { t: TechnikZustand }) {
           </>
         )}
       </div>
+      <Installiert t={t} />
     </div>
   );
 }

@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { api, type DatenbankStand } from '../api';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 
 /**
- * Lange Datenbankzugriffe (#12): Mitte die gespeicherten Langläufer, rechts
- * Einstellungen (Schwelle, Aufbewahrung) und was gerade in der Datenbank läuft.
+ * Lange Datenbankzugriffe (#12): Einstellungen (Schwelle, Aufbewahrung) mit der Liste der
+ * gespeicherten Langläufer darunter (#366) und was gerade in der Datenbank läuft.
  */
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'medium' });
 const dauer = (ms: number) => (ms >= 10_000 ? `${(ms / 1000).toFixed(1).replace('.', ',')} s` : `${ms.toLocaleString('de-DE')} ms`);
@@ -27,65 +27,69 @@ export function useDatenbank(sichtbar: boolean) {
 }
 export type DatenbankZustand = ReturnType<typeof useDatenbank>;
 
-export function LanglaeuferListe({ z, offen }: { z: DatenbankZustand; offen?: string }) {
-  const liste = z.stand?.langlaeufer ?? [];
-  const e = z.stand?.einstellungen;
-  return (
-    <>
-      <div className="listenkopf">
-        <div><h1>Lange Datenbankzugriffe</h1>
-          <p className="leise klein">{e ? `Ab ${dauer(e.schwelleMs)}, aufbewahrt ${e.tage} Tage.` : ''} Neueste oben. <Hilfe ort="werkbank.datenbank" /></p></div>
-      </div>
-      {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
-      {!z.stand ? <p className="leise">Lade …</p> : !liste.length
-        ? <p className="leise leerliste">Keine – alle Zugriffe waren schneller als die Schwelle.</p>
-        : <ul className="mappenliste">
-            {liste.map((l) => (
-              <li key={l.id}>
-                <Link to={`/werkbank/datenbank/${l.id}`} className={`eintrag werk ${offen === String(l.id) ? 'an' : ''}`}>
-                  <span className="zeile1"><span className="mono klein">{zeit(l.zeit)}</span> <span className={`chip ${l.dauerMs >= 5000 ? 'stufe-error' : 'stufe-warn'}`}>{dauer(l.dauerMs)}</span></span>
-                  <span className="titel mono">{l.zugriff}</span>
-                  <span className="unter">{[l.anfrage, l.benutzer].filter(Boolean).join(' · ') || 'außerhalb einer Anfrage'}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>}
-    </>
-  );
-}
-
-export function DatenbankPanel({ z, id }: { z: DatenbankZustand; id?: string }) {
-  const l = id ? z.stand?.langlaeufer.find((x) => String(x.id) === id) : undefined;
-  if (id && l) return (
-    <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">Langer Datenbankzugriff</p>
-        <h1 className="mono">{l.zugriff}</h1>
-        <dl className="index">
-          <div><dt>Zeit</dt><dd>{zeit(l.zeit)}</dd></div>
-          <div><dt>Dauer</dt><dd>{dauer(l.dauerMs)}</dd></div>
-          {l.anfrage && <div><dt>Anfrage</dt><dd className="mono">{l.anfrage}</dd></div>}
-          {l.benutzer && <div><dt>Benutzer</dt><dd>{l.benutzer}</dd></div>}
-        </dl>
-      </div>
-      <p className="leise">Ein Datenbankzugriff ist eine Methode der Datenzugriffsschicht (z. B. <span className="mono">mappen.seite</span> für eine Seite einer Ansicht) und kann mehrere SQL-Anweisungen umfassen. Mehr Einzelheiten zur selben Zeit stehen im <Link to="/werkbank/protokoll" className="verweis">Protokoll</Link> (Modul datenbank).</p>
-      <div className="knoepfe"><Link to="/werkbank/datenbank" className="knopf">Schließen</Link></div>
-    </div>
-  );
+export function DatenbankPanel({ z, offen }: { z: DatenbankZustand; offen?: string }) {
   return (
     <div className="einspaltig">
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Datenbank</h1>
-        <p className="leise">Jeder Datenbankzugriff wird gestoppt. Was länger dauert als die Schwelle, landet links in der Liste und als Warnung im Protokoll.</p>
+        <p className="leise">Jeder Datenbankzugriff wird gestoppt. Was länger dauert als die Schwelle, landet unten in der Liste „Lange Datenbankzugriffe“ und als Warnung im Protokoll. <Hilfe ort="werkbank.datenbank" /></p>
       </div>
-      {z.stand?.einstellungen && <Einstellungen z={z} />}
+      {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
+      {z.stand?.einstellungen ? <Einstellungen z={z} offen={offen} /> : !z.stand && <p className="leise">Lade …</p>}
       <Laufend z={z} />
     </div>
   );
 }
 
-function Einstellungen({ z }: { z: DatenbankZustand }) {
+/**
+ * Lange Datenbankzugriffe (#366: früher die mittlere Spalte): feste Höhe für etwa zehn Einträge,
+ * neueste oben; ein Klick klappt den Eintrag auf statt die Seite zu wechseln.
+ */
+function Langlaeufer({ z, offen }: { z: DatenbankZustand; offen?: string }) {
+  const liste = z.stand?.langlaeufer ?? [];
+  const [auf, setAuf] = useState<Set<string>>(() => new Set(offen ? [offen] : []));
+  const rahmen = useRef<HTMLUListElement>(null);
+  // Alter Direktlink (/werkbank/datenbank/:id): Eintrag aufgeklappt und sichtbar.
+  useEffect(() => {
+    if (!offen || !liste.length) return;
+    setAuf((x) => new Set(x).add(offen));
+    rahmen.current?.querySelector(`[data-id="${CSS.escape(offen)}"]`)?.scrollIntoView({ block: 'nearest' });
+  }, [offen, liste.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  const umschalten = (id: string) => setAuf((x) => { const n = new Set(x); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  return (
+    <div className="stapel">
+      <h3 className="zwischen">Lange Datenbankzugriffe <span className="zusatz">· neueste oben</span></h3>
+      {!liste.length
+        ? <p className="leise">Keine – alle Zugriffe waren schneller als die Schwelle.</p>
+        : <ul ref={rahmen} className="aufklappliste festhoehe">
+            {liste.map((l) => {
+              const id = String(l.id);
+              const offenHier = auf.has(id);
+              return (
+                <li key={id} data-id={id} className={offenHier ? 'an' : undefined}>
+                  <button type="button" className="aufklappzeile" aria-expanded={offenHier} onClick={() => umschalten(id)}>
+                    <span className="mono klein">{zeit(l.zeit)}</span> <span className={`chip ${l.dauerMs >= 5000 ? 'stufe-error' : 'stufe-warn'}`}>{dauer(l.dauerMs)}</span>{' '}
+                    <span className="mono">{l.zugriff}</span>
+                  </button>
+                  {offenHier && (
+                    <dl className="eigenschaften klein">
+                      <dt>Abfrage</dt><dd className="mono">{l.zugriff}</dd>
+                      <dt>Aufrufer</dt><dd>{[l.anfrage, l.benutzer].filter(Boolean).join(' · ') || 'außerhalb einer Anfrage'}</dd>
+                      <dt>Dauer</dt><dd>{dauer(l.dauerMs)}</dd>
+                      <dt>Zeit</dt><dd>{zeit(l.zeit)}</dd>
+                    </dl>
+                  )}
+                </li>
+              );
+            })}
+          </ul>}
+      <p className="leise klein">Ein Datenbankzugriff ist eine Methode der Datenzugriffsschicht (z. B. <span className="mono">mappen.seite</span> für eine Seite einer Ansicht) und kann mehrere SQL-Anweisungen umfassen. Mehr Einzelheiten zur selben Zeit stehen im <Link to="/werkbank/protokoll" className="verweis">Protokoll</Link> (Modul datenbank).</p>
+    </div>
+  );
+}
+
+function Einstellungen({ z, offen }: { z: DatenbankZustand; offen?: string }) {
   const e = z.stand!.einstellungen!;
   const [schwelle, setSchwelle] = useState(String(e.schwelleMs));
   const [tage, setTage] = useState(String(e.tage));
@@ -107,6 +111,7 @@ function Einstellungen({ z }: { z: DatenbankZustand }) {
         <label className="eigenschaft"><span>Lang ab <small>Millisekunden, Standard 500</small></span><input type="number" min={1} max={600000} value={schwelle} onChange={(x) => setSchwelle(x.target.value)} /></label>
         <label className="eigenschaft"><span>Aufbewahren <small>Tage, Standard 30</small></span><input type="number" min={1} max={3650} value={tage} onChange={(x) => setTage(x.target.value)} /></label>
       </div>
+      <Langlaeufer z={z} offen={offen} />
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'}>{meldung.text}</p>}
       <Speicherleiste ent={ent} gegenstand="Einstellungen" sendet={sendet} />
     </form>

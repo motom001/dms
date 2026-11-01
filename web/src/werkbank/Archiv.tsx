@@ -22,25 +22,6 @@ export function useDarfWeg(offen: boolean) {
 }
 export type DarfWegZustand = ReturnType<typeof useDarfWeg>;
 
-export function DarfWegListe({ z }: { z: DarfWegZustand }) {
-  return (
-    <>
-      <div className="listenkopf"><div><h1>Darf weg</h1><p className="leise klein">Archivierte Mappen nach Ablauf der Frist. <Hilfe ort="werkbank.darfweg" /></p></div></div>
-      {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
-      {!z.liste ? <p className="leise">Lade …</p> : !z.liste.length ? <p className="leise leerliste">Nichts – keine Frist ist abgelaufen.</p> : (
-        <ul className="mappenliste">
-          {z.liste.map((m) => (
-            <li key={m.id}><Link to={`/ablage/${m.typId}/${m.id}`} className="eintrag werk">
-              <span className="titel">{titelOder(m.titel)}</span>
-              <span className="unter">{m.typ} · aufbewahren bis {datumText(m.aufbewahrenBis)}</span>
-            </Link></li>
-          ))}
-        </ul>
-      )}
-    </>
-  );
-}
-
 export function DarfWegPanel({ z }: { z: DarfWegZustand }) {
   const d = useDaten();
   const [gewaehlt, setGewaehlt] = useState<Set<string>>(new Set());
@@ -63,9 +44,11 @@ export function DarfWegPanel({ z }: { z: DarfWegZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Darf weg</h1>
-        <p className="leise">Mappen aus Mappentypen im Archivmodus, deren Aufbewahrungsfrist abgelaufen ist. Gelöscht wird nichts automatisch – entscheide selbst, was weg darf.</p>
+        <p className="leise">Mappen aus Mappentypen im Archivmodus, deren Aufbewahrungsfrist abgelaufen ist. Gelöscht wird nichts automatisch – entscheide selbst, was weg darf. <Hilfe ort="werkbank.darfweg" /></p>
       </div>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
+      {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
+      {!z.liste ? <p className="leise">Lade …</p> : !liste.length && <p className="leise">Nichts – keine Frist ist abgelaufen.</p>}
       {liste.length > 0 && (
         <div className="blatt">
           <label className="haken"><input type="checkbox" checked={alle} onChange={() => setGewaehlt(alle ? new Set() : new Set(liste.map((m) => m.id)))} /><span>{gewaehlt.size ? `${gewaehlt.size} von ${liste.length} ausgewählt` : 'Alle auswählen'}</span></label>

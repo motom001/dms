@@ -109,3 +109,51 @@ export function ansichtAus(vorlage: Vorlage, sichtbareBereiche: Iterable<string>
     aus: BEREICHE.filter((b) => !an.has(b.pfad) && inVorlage(vorlage, b.pfad)).map((b) => b.pfad),
   };
 }
+
+/* ---------- Mittlere Spalte (#366) ---------- */
+
+/**
+ * Die Mitte gibt es nur für große Sammlungen, die man bearbeitet (Mappentypen, Ansichten, Benutzer …).
+ * Kleine oder nur lesende Listen (lange Zugriffe, Demo-Übersicht, Technik, Exporte, gesperrte Adressen)
+ * stehen rechts im passenden Abschnitt. Alle anderen Bereiche – auch künftige – sind zweiteilig.
+ */
+export const MIT_MITTE: ReadonlySet<string> = new Set([
+  'uebersicht', 'typen', 'sichten', 'nummernkreise', 'pakete', 'benutzer', 'aufgaben',
+  'designs', 'papierkorb', 'postfaecher', 'protokoll', 'fehlermeldungen',
+]);
+
+export const hatMitte = (bereich: string) => MIT_MITTE.has(bereich);
+
+/**
+ * Welche Spalte am Handy zu sehen ist: Liste (Mitte) oder die Seite rechts. `rechtsOhneAuswahl`:
+ * rechts steht schon ohne gewählten Eintrag etwas zu tun (Pakete: Installation über einen Link).
+ * Ohne Auswahl sonst immer die Liste – sonst führte „← Zur Liste“ wieder auf dieselbe Seite.
+ */
+export function werkbankEbene(bereich: string, id?: string, rechtsOhneAuswahl = false): 'liste' | 'mappe' {
+  return !hatMitte(bereich) || id || rechtsOhneAuswahl ? 'mappe' : 'liste';
+}
+
+/** Ziel von „← Zurück“ am Handy: ohne Mitte gleich zu den Bereichen, sonst zur Liste des Bereichs. */
+export const werkbankZurueck = (bereich: string) => (hatMitte(bereich) ? `/werkbank/${bereich}` : '/werkbank');
+
+/**
+ * Alte Direktlinks in Bereiche ohne Mitte (z. B. /werkbank/datenbank/:id) führen auf die Seite;
+ * der Eintrag steht dann als ?offen=… in der Adresse und ist aufgeklappt. `null` = nichts umzuleiten.
+ */
+export function werkbankUmleitung(bereich: string, id?: string): string | null {
+  if (!id || hatMitte(bereich)) return null;
+  return bereich === 'datenbank' ? `/werkbank/datenbank?offen=${encodeURIComponent(id)}` : `/werkbank/${bereich}`;
+}
+
+/** Plakette links für den Wartungsmodus (#366): „angekündigt“, solange er noch nicht wirkt, „an“ erst danach. */
+export function wartungsPlakette(stufe: 'aus' | 'angekuendigt' | 'aktiv', aktivAb: string | null, jetzt = Date.now()): string | undefined {
+  if (stufe === 'aus') return undefined;
+  if (stufe === 'aktiv' || (aktivAb && Date.parse(aktivAb) <= jetzt)) return 'an';
+  return 'angekündigt';
+}
+
+/** Speicherplatz (#366): Liegen alle messbaren Ordner auf demselben Datenträger, genügt ein Balken. */
+export function einDatentraeger(ordner: Array<{ geraet: string | null; gesamt: number | null }>): boolean {
+  const gemessen = ordner.filter((o) => o.gesamt !== null);
+  return ordner.length > 1 && gemessen.length === ordner.length && !!gemessen[0].geraet && gemessen.every((o) => o.geraet === gemessen[0].geraet);
+}

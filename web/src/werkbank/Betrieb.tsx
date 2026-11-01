@@ -19,25 +19,6 @@ export function useBetrieb() {
 }
 export type BetriebZustand = ReturnType<typeof useBetrieb>;
 
-export function BetriebListe({ b }: { b: BetriebZustand }) {
-  const s = b.stand;
-  return (
-    <>
-      <div className="listenkopf"><div><h1>E-Mail und Adresse</h1><p className="leise klein">Wie das DMS E-Mails verschickt und unter welcher Adresse es erreichbar ist. <Hilfe ort="werkbank.betrieb" /></p></div></div>
-      {s && (
-        <ul className="mappenliste">
-          <li><a className="eintrag werk" href="#adresse"><span className="titel">Adresse des DMS</span><span className="unter">{s.adresse || 'nicht gepflegt – Adresse der Anfrage'}</span></a></li>
-          <li><a className="eintrag werk" href="#mail">
-            <span className="titel">E-Mail-Versand</span>
-            <span className="unter">{s.mail.aktiv ? `über ${s.mail.host}` : 'aus – Links werden zum Kopieren angezeigt'}</span>
-            {s.mail.aktiv ? <span><span className="chip gut">aktiv</span></span> : <span><span className="chip">aus</span></span>}
-          </a></li>
-        </ul>
-      )}
-    </>
-  );
-}
-
 export function BetriebPanel({ b }: { b: BetriebZustand }) {
   useEffect(() => { void b.laden(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   if (b.fehler) return <div className="hinweis schlecht"><p>{b.fehler}</p></div>;
@@ -47,7 +28,7 @@ export function BetriebPanel({ b }: { b: BetriebZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>E-Mail und Adresse</h1>
-        <p className="leise">Änderungen gelten sofort, ohne Neustart.</p>
+        <p className="leise">Wie das DMS E-Mails verschickt und unter welcher Adresse es erreichbar ist. Änderungen gelten sofort, ohne Neustart. <Hilfe ort="werkbank.betrieb" /></p>
       </div>
       <Adresse b={b} />
       <Mail key={JSON.stringify(b.stand.mail)} b={b} />

@@ -17,7 +17,9 @@ Neben den Bereichen steht, wie viel dort eingerichtet ist – etwa die Zahl der 
 
 ## So arbeitest du in der Werkbank
 
-Wählst du links einen Bereich, steht in der Mitte seine Liste und rechts das Formular des gewählten Eintrags; mit **+ Neu** legst du einen an.
+Bereiche mit vielen Einträgen, die du bearbeitest – Mappentypen, Ansichten, Nummernkreise, Pakete, Benutzer, Aufgaben, Designs, Papierkorb, Postfächer, Protokoll und Gemeldete Fehler –, sind **dreiteilig**: Wählst du links einen Bereich, steht in der Mitte seine Liste und rechts das Formular des gewählten Eintrags; mit **+ Neu** legst du einen an.
+
+Alle anderen Bereiche sind **zweiteilig**: links die Bereiche, rechts die ganze Seite. Kleine oder nur lesende Listen – etwa die langen Datenbankzugriffe, die gesperrten Adressen, die vorhandenen Exporte oder die letzten Zugriffe auf das WebDAV-Laufwerk – stehen dort als eigener Abschnitt mit fester Höhe, in dem du scrollst. Am Smartphone führt **← Bereiche** von einer solchen Seite direkt zurück zur Auswahl der Bereiche.
 
 Jedes Formular endet mit derselben Leiste, die beim Scrollen unten sichtbar bleibt: rechts der Hauptknopf mit dem Gegenstand im Namen – etwa **Nummernkreis anlegen** oder **Postfach speichern** –, links daneben **Verwerfen**:
 

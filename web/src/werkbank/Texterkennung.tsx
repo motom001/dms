@@ -6,6 +6,8 @@ import { api, type OcrEinstellungen, type OcrStatus } from '../api';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
+import { rueckfrage } from '../rueckfrage';
+import { WARTUNG_GEAENDERT } from '../wartung';
 
 /**
  * Werkbank → Texterkennung (#45): Werkzeuge, Einstellungen, Warteschlange.
@@ -45,28 +47,38 @@ function Warteschlange({ s }: { s: OcrStatus }) {
   );
 }
 
-export function TexterkennungListe({ t }: { t: TexterkennungZustand }) {
-  const s = t.stand;
-  return (
-    <>
-      <div className="listenkopf"><div><h1>Texterkennung</h1><p className="leise klein">Volltext für die Suche: Textebene von PDFs und Texterkennung für Scans und Bilder. <Hilfe ort="werkbank.texterkennung" /></p></div></div>
-      {s && (
-        <ul className="mappenliste">
-          <li><a className="eintrag werk" href="#werkzeuge"><span className="titel">Werkzeuge</span><span className="unter">{s.werkzeuge.tesseract ?? 'Texterkennung nicht installiert'}</span></a></li>
-          <li><a className="eintrag werk" href="#einstellungen">
-            <span className="titel">Einstellungen</span>
-            <span className="unter">{s.einstellungen.aktiv ? `${s.einstellungen.auftraege} ${s.einstellungen.auftraege === 1 ? 'Auftrag' : 'Aufträge'} gleichzeitig · höchstens ${s.einstellungen.maxSeiten} Seiten` : 'ausgeschaltet'}</span>
-            <span><span className={`chip ${s.einstellungen.aktiv ? 'gut' : ''}`}>{s.einstellungen.aktiv ? 'an' : 'aus'}</span></span>
-          </a></li>
-          <li><a className="eintrag werk" href="#auftraege"><span className="titel">Aufträge</span><span className="unter">einsehen, neu starten, abbrechen</span>{s.zaehler.fehler > 0 && <span><span className="chip schlecht">{zahl(s.zaehler.fehler)} Fehler</span></span>}</a></li>
-          <li><a className="eintrag werk" href="#warteschlange"><span className="titel">Warteschlange</span><span className="unter">{zahl(s.zaehler.wartet + s.zaehler.laeuft)} offen · {zahl(s.zaehler.fehler)} mit Fehler</span></a></li>
-        </ul>
-      )}
-    </>
+/**
+ * Warum die Warteschlange steht (#366): ausgeschaltet oder Wartungsmodus – mit dem Knopf, der es behebt.
+ * Steht bei der Texterkennung und bei „Volltext nachholen“.
+ */
+function PauseHinweis({ t, wartungAn }: { t: TexterkennungZustand; wartungAn?: boolean }) {
+  const s = t.stand!;
+  const [meldung, setMeldung] = useState<string>();
+  const offen = s.zaehler.wartet + s.zaehler.laeuft;
+  const warten = offen ? ` ${zahl(offen)} ${offen === 1 ? 'Dokument wartet' : 'Dokumente warten'}.` : '';
+  async function einschalten() {
+    try { t.setStand(await api.texterkennungSpeichern({ ...s.einstellungen, aktiv: true })); } catch (e) { setMeldung((e as Error).message); }
+  }
+  async function wartungBeenden() {
+    if (!(await rueckfrage({ titel: 'Wartungsmodus beenden?', text: 'Alle können sich wieder anmelden, die Hintergrundarbeit läuft weiter.', ja: 'Wartung beenden' }))) return;
+    try { await api.wartungAus(); dispatchEvent(new Event(WARTUNG_GEAENDERT)); await t.laden(); } catch (e) { setMeldung((e as Error).message); }
+  }
+  if (!s.einstellungen.aktiv) return (
+    <div className="hinweis warn hinweiszeile" role="status">
+      <p><strong>Die Texterkennung ist ausgeschaltet.</strong>{warten} Neue Dokumente bleiben in der Warteschlange, bis du sie einschaltest.{meldung && <span className="fehlertext blockzeile">{meldung}</span>}</p>
+      <button type="button" className="knopf primaer klein" onClick={() => void einschalten()}>Einschalten</button>
+    </div>
   );
+  if (wartungAn) return (
+    <div className="hinweis warn hinweiszeile" role="status">
+      <p><strong>Pausiert, solange der Wartungsmodus an ist.</strong>{warten}{meldung && <span className="fehlertext blockzeile">{meldung}</span>}</p>
+      <button type="button" className="knopf klein" onClick={() => void wartungBeenden()}>Wartungsmodus beenden</button>
+    </div>
+  );
+  return null;
 }
 
-export function TexterkennungPanel({ t }: { t: TexterkennungZustand }) {
+export function TexterkennungPanel({ t, wartungAn }: { t: TexterkennungZustand; wartungAn?: boolean }) {
   if (t.fehler) return <div className="hinweis schlecht"><p>{t.fehler}</p></div>;
   if (!t.stand) return <p className="leise">Lade …</p>;
   const s = t.stand;
@@ -76,8 +88,9 @@ export function TexterkennungPanel({ t }: { t: TexterkennungZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Texterkennung</h1>
-        <p className="leise">Neue Dokumente bekommen im Hintergrund einen Volltext: Bei PDFs liest das DMS zuerst die vorhandene Textebene, nur Seiten ohne Text gehen durch die Texterkennung. Ob ein Dokumentenregister einen Volltext erzeugt, stellst du am Mappentyp ein.</p>
+        <p className="leise">Volltext für die Suche: Textebene von PDFs und Texterkennung für Scans und Bilder. Neue Dokumente bekommen im Hintergrund einen Volltext: Bei PDFs liest das DMS zuerst die vorhandene Textebene, nur Seiten ohne Text gehen durch die Texterkennung. Ob ein Dokumentenregister einen Volltext erzeugt, stellst du am Mappentyp ein. <Hilfe ort="werkbank.texterkennung" /></p>
       </div>
+      <PauseHinweis t={t} wartungAn={wartungAn} />
 
       <section className="blatt" id="werkzeuge">
         <h2 className="h3">Werkzeuge</h2>
@@ -93,6 +106,7 @@ export function TexterkennungPanel({ t }: { t: TexterkennungZustand }) {
 
       <section className="blatt" id="warteschlange">
         <h2 className="h3">Warteschlange</h2>
+        <p><strong>{zahl(s.zaehler.wartet + s.zaehler.laeuft)} offen</strong> · {zahl(s.zaehler.fehler)} mit Fehler{!s.einstellungen.aktiv ? ' · ausgeschaltet' : wartungAn ? ' · pausiert (Wartungsmodus)' : ''}</p>
         <Warteschlange s={s} />
         <p className="leise klein">Dokumente ohne Volltext aus der Zeit vor der Texterkennung holst du unter „Wartungsoperationen“ nach.</p>
       </section>
@@ -109,6 +123,8 @@ function Einstellungen({ t }: { t: TexterkennungZustand }) {
   const [sendet, setSendet] = useState(false);
   const ent = useEntwurf(s.einstellungen, e, { zuruecksetzen: () => { setE(s.einstellungen); setMeldung(undefined); } });
   const setze = (p: Partial<OcrEinstellungen>) => { setE((x) => ({ ...x, ...p })); setMeldung(undefined); };
+  // Eingestellte, aber nicht installierte Sprachen überspringt die Texterkennung (#366).
+  const fehlt = s.werkzeuge.tesseract && s.werkzeuge.sprachen.length ? e.sprachen.split('+').map((x) => x.trim()).filter((x) => x && !s.werkzeuge.sprachen.includes(x)) : [];
   async function speichern() {
     setSendet(true);
     try { t.setStand(await api.texterkennungSpeichern(e)); setMeldung({ art: 'gut', text: 'Gespeichert – gilt ab sofort.' }); }
@@ -125,9 +141,11 @@ function Einstellungen({ t }: { t: TexterkennungZustand }) {
           <input type="number" min={1} max={1000} value={e.maxSeiten} onChange={(ev) => setze({ maxSeiten: Number(ev.target.value) })} /></label>
         <label className="eigenschaft"><span>Größere Dateien auslassen <small>ab MB</small></span>
           <input type="number" min={1} max={100} value={e.maxMB} onChange={(ev) => setze({ maxMB: Number(ev.target.value) })} /></label>
-        <label className="eigenschaft"><span>Sprachen <small>z. B. deu+eng</small></span>
-          <input className="mono" value={e.sprachen} onChange={(ev) => setze({ sprachen: ev.target.value })} /></label>
+        <label className="eigenschaft"><span>Sprachen <small>z. B. deu+eng; installiert: {s.werkzeuge.sprachen.join(', ') || '–'}</small></span>
+          <input className="mono" value={e.sprachen} aria-describedby={fehlt.length ? 'ocr-sprachen-fehlt' : undefined} onChange={(ev) => setze({ sprachen: ev.target.value })} /></label>
       </div>
+      {/* Unter dem Raster, damit die Felder einer Zeile bündig bleiben. */}
+      {fehlt.length > 0 && <p id="ocr-sprachen-fehlt" className="fehlertext klein">Sprachen: {fehlt.join(', ')} {fehlt.length === 1 ? 'ist' : 'sind'} nicht installiert – {fehlt.length === 1 ? 'wird' : 'werden'} übersprungen.</p>}
       <p className="leise klein">Mehr gleichzeitige Aufträge sind schneller, brauchen aber mehr Prozessor und Speicher – auf einem NAS reicht meist einer. Seiten über der Höchstzahl werden nicht gelesen.</p>
       <h3 className="zwischen">Je Dateityp</h3>
       <div className="trefferliste">
@@ -154,23 +172,7 @@ function Einstellungen({ t }: { t: TexterkennungZustand }) {
 
 /* ---------- Wartungsoperationen ---------- */
 
-export function WartungListe({ t }: { t: TexterkennungZustand }) {
-  return (
-    <>
-      <div className="listenkopf"><div><h1>Wartungsoperationen</h1><p className="leise klein">Einmalige Arbeiten am Bestand. <Hilfe ort="werkbank.wartung" /></p></div></div>
-      <ul className="mappenliste">
-        <li><a className="eintrag werk" href="#volltext">
-          <span className="titel">Volltext nachholen</span>
-          <span className="unter">{t.stand ? `${zahl(t.stand.zaehler.keiner)} Dokumente ohne Volltext` : '…'}</span>
-        </a></li>
-        <li><a className="eintrag werk" href="#dateien"><span className="titel">Alle Dateien prüfen</span><span className="unter">Prüfwerte aller Dateien vergleichen</span></a></li>
-        <li><a className="eintrag werk" href="#nummern"><span className="titel">Nummern nachträglich vergeben</span><span className="unter">für Mappen ohne Nummer</span></a></li>
-      </ul>
-    </>
-  );
-}
-
-export function WartungPanel({ t }: { t: TexterkennungZustand }) {
+export function WartungPanel({ t, wartungAn }: { t: TexterkennungZustand; wartungAn?: boolean }) {
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const s = t.stand;
@@ -188,11 +190,12 @@ export function WartungPanel({ t }: { t: TexterkennungZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Wartungsoperationen</h1>
-        <p className="leise">Arbeiten am ganzen Bestand, die du bei Bedarf anstößt. Sie laufen im Hintergrund; das DMS bleibt benutzbar.</p>
+        <p className="leise">Arbeiten am ganzen Bestand, die du bei Bedarf anstößt. Sie laufen im Hintergrund; das DMS bleibt benutzbar. <Hilfe ort="werkbank.wartung" /></p>
       </div>
       <section className="blatt" id="volltext">
         <h2 className="h3">Volltext für vorhandene Dokumente nachholen</h2>
         <p className="leise">Dokumente, die vor der Texterkennung hochgeladen wurden, haben noch keinen Volltext. Das hier stellt alle in die Warteschlange, deren Dokumentenregister einen Volltext erzeugt. Je nach Menge und Seitenzahl kann das Stunden dauern.</p>
+        {s && <PauseHinweis t={t} wartungAn={wartungAn} />}
         {s && <Warteschlange s={s} />}
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         <div className="knoepfe"><button type="button" className="knopf primaer" disabled={laeuft || !s?.zaehler.keiner} onClick={() => void nachholen()}>{laeuft ? 'Stelle ein …' : 'Volltext nachholen'}</button></div>
@@ -242,7 +245,7 @@ function Auftraege({ t }: { t: TexterkennungZustand }) {
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       {liste === null ? <p className="leise">Lade …</p> : !alle.length ? <p className="leise">Keine Dokumente in diesem Stand.</p> : (
         <>
-          <div className="tabellenrahmen">
+          <div className="tabellenrahmen festhoehe">
             <table className="auftraege">
               <thead><tr>
                 <th><input type="checkbox" aria-label="Alle wählen" checked={auswahl.size === alle.length} onChange={(e) => setAuswahl(e.target.checked ? new Set(alle.map((a) => a.dokument.id)) : new Set())} /></th>
