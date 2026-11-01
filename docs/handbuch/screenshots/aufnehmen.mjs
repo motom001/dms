@@ -678,6 +678,18 @@ async function main() {
     await blatt.scrollIntoViewIfNeeded();
     const box = await blatt.boundingBox();
     await bild(sm, 'meine-rechte', { clip: { x: box.x - 8, y: box.y - 8, width: box.width + 16, height: box.height + 16 } });
+    // #419: Profil → Abwesenheit mit den eigenen offenen Aufgaben, alle ausgewählt.
+    await geheZu(sm, '/profil/abwesenheit');
+    const meine = sm.locator('#meine-aufgaben');
+    await meine.waitFor();
+    if (await meine.getByLabel('Alle angezeigten auswählen').count()) {
+      await meine.getByLabel('Alle angezeigten auswählen').check();
+      await meine.locator('.sammel-leiste').waitFor();
+    }
+    await meine.scrollIntoViewIfNeeded();
+    const mb = await meine.boundingBox();
+    const oben = await sm.evaluate(() => scrollY);
+    await bild(sm, 'profil-abwesenheit-aufgaben', { clip: { x: mb.x - 8, y: mb.y + oben - 8, width: mb.width + 16, height: Math.min(mb.height + 16, 900) }, fullPage: true });
     await km.close();
   }
 
