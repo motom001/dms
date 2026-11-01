@@ -33,8 +33,10 @@ LABEL org.opencontainers.image.source="https://github.com/motom001/dms" \
 # Alpine-Pakete aktuell halten (#214): Die Kalenderwoche gehört zur Cache-Kennung dieser Schicht,
 # also holt jeder Bau in einer neuen Woche die neuesten Pakete (sonst nähme der Build-Cache ewig die alten).
 ARG APK_WOCHE=""
-# Texterkennung (#45): tesseract mit Deutsch (Englisch ist enthalten) und poppler für PDFs.
-RUN echo "Alpine-Pakete Stand ${APK_WOCHE}" && apk upgrade --no-cache && apk add --no-cache tesseract-ocr tesseract-ocr-data-deu poppler-utils
+# Texterkennung (#45): tesseract mit Deutsch und Englisch und poppler für PDFs. Englisch ist ein eigenes
+# Paket (#395: vorher fehlte es still). osd: Lage und Schrift erkennen, gedrehte Seiten richtig lesen.
+# Weitere Sprachen: eigenes Image mit „apk add tesseract-ocr-data-fra“ o. Ä. (Admin-Handbuch → Texterkennung).
+RUN echo "Alpine-Pakete Stand ${APK_WOCHE}" && apk upgrade --no-cache && apk add --no-cache tesseract-ocr tesseract-ocr-data-deu tesseract-ocr-data-eng tesseract-ocr-data-osd poppler-utils
 # Stand des Images für die Versionsübersicht in der Werkbank (setzt GitHub Actions).
 ARG DMS_COMMIT=""
 ARG DMS_GEBAUT=""

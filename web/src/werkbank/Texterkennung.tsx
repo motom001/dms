@@ -8,6 +8,7 @@ import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { rueckfrage } from '../rueckfrage';
 import { WARTUNG_GEAENDERT } from '../wartung';
+import { sprachname, sprachvorschlaege, TEXTSPRACHEN } from '../../../shared/src/textsprache';
 
 /**
  * Werkbank → Texterkennung (#45): Werkzeuge, Einstellungen, Warteschlange.
@@ -96,13 +97,17 @@ export function TexterkennungPanel({ t, wartungAn }: { t: TexterkennungZustand; 
         <h2 className="h3">Werkzeuge</h2>
         <dl className="eigenschaften">
           <dt>Texterkennung</dt><dd>{w.tesseract ?? <span className="fehlertext">nicht installiert – nur PDFs mit Textebene bekommen einen Volltext</span>}</dd>
-          <dt>Sprachen</dt><dd>{w.sprachen.join(', ') || '–'}</dd>
+          <dt>Sprachpakete</dt><dd>{w.sprachen.join(', ') || '–'}{w.ordner && <span className="leise mono klein"> · {w.ordner}</span>}</dd>
+          <dt>Lage und Schrift (osd)</dt><dd>{w.osd ? 'vorhanden – gedrehte Seiten werden richtig gelesen' : <span className="leise">fehlt – gedrehte Seiten werden schlechter erkannt</span>}</dd>
           <dt>PDF-Text (poppler)</dt><dd>{w.pdftotext && w.pdftoppm ? 'vorhanden' : <span className="fehlertext">fehlt</span>}</dd>
         </dl>
+        <FehlendeSprachen s={s} />
         <div className="knoepfe"><button type="button" className="knopf klein" onClick={() => void t.laden(true)}>Erneut prüfen</button></div>
       </section>
 
       <Einstellungen key={JSON.stringify(s.einstellungen)} t={t} />
+
+      <ErkannteSprachen s={s} />
 
       <section className="blatt" id="warteschlange">
         <h2 className="h3">Warteschlange</h2>
@@ -141,12 +146,19 @@ function Einstellungen({ t }: { t: TexterkennungZustand }) {
           <input type="number" min={1} max={1000} value={e.maxSeiten} onChange={(ev) => setze({ maxSeiten: Number(ev.target.value) })} /></label>
         <label className="eigenschaft"><span>Größere Dateien auslassen <small>ab MB</small></span>
           <input type="number" min={1} max={100} value={e.maxMB} onChange={(ev) => setze({ maxMB: Number(ev.target.value) })} /></label>
-        <label className="eigenschaft"><span>Sprachen <small>z. B. deu+eng; installiert: {s.werkzeuge.sprachen.join(', ') || '–'}</small></span>
+      </div>
+      <p className="leise klein">Mehr gleichzeitige Aufträge sind schneller, brauchen aber mehr Prozessor und Speicher – auf einem NAS reicht meist einer. Seiten über der Höchstzahl werden nicht gelesen.</p>
+      <fieldset className="eigenschaft">
+        <legend>Sprache</legend>
+        <label className="haken"><input type="radio" name="ocr-sprache" checked={e.automatisch} onChange={() => setze({ automatisch: true })} /><span>Automatisch<small className="hilfe">Das DMS liest zuerst mit den Sprachen unten, erkennt dann die Sprache des Texts und liest unsichere Seiten in einer anderen Sprache ein zweites Mal – wenn das Sprachpaket installiert ist. Das bessere Ergebnis gilt.</small></span></label>
+        <label className="haken"><input type="radio" name="ocr-sprache" checked={!e.automatisch} onChange={() => setze({ automatisch: false })} /><span>Fest<small className="hilfe">Immer genau die Sprachen unten, kein zweiter Durchlauf.</small></span></label>
+      </fieldset>
+      <div className="raster">
+        <label className="eigenschaft"><span>{e.automatisch ? 'Sprachen des ersten Durchlaufs' : 'Sprachen'} <small>z. B. deu+eng; installiert: {s.werkzeuge.sprachen.join(', ') || '–'}</small></span>
           <input className="mono" value={e.sprachen} aria-describedby={fehlt.length ? 'ocr-sprachen-fehlt' : undefined} onChange={(ev) => setze({ sprachen: ev.target.value })} /></label>
       </div>
       {/* Unter dem Raster, damit die Felder einer Zeile bündig bleiben. */}
       {fehlt.length > 0 && <p id="ocr-sprachen-fehlt" className="fehlertext klein">Sprachen: {fehlt.join(', ')} {fehlt.length === 1 ? 'ist' : 'sind'} nicht installiert – {fehlt.length === 1 ? 'wird' : 'werden'} übersprungen.</p>}
-      <p className="leise klein">Mehr gleichzeitige Aufträge sind schneller, brauchen aber mehr Prozessor und Speicher – auf einem NAS reicht meist einer. Seiten über der Höchstzahl werden nicht gelesen.</p>
       <h3 className="zwischen">Je Dateityp</h3>
       <div className="trefferliste">
         <table>
@@ -167,6 +179,42 @@ function Einstellungen({ t }: { t: TexterkennungZustand }) {
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <Speicherleiste ent={ent} gegenstand="Einstellungen" sendet={sendet} />
     </form>
+  );
+}
+
+/** Eingestellte Sprachen ohne Sprachpaket (#395) – deutlich, mit Weg zum Nachinstallieren. */
+function FehlendeSprachen({ s }: { s: OcrStatus }) {
+  const fehlen = s.fehlendeSprachen ?? [];
+  if (!fehlen.length) return null;
+  return (
+    <div className="hinweis schlecht stapel" role="alert">
+      <p><strong>Eingestellt, aber nicht installiert:</strong> {fehlen.map((x) => `${x} (${sprachname(x)})`).join(', ')}. Die Texterkennung liest diese {fehlen.length === 1 ? 'Sprache' : 'Sprachen'} nicht – Umlaute und Sonderzeichen werden falsch erkannt, die Suche findet weniger.</p>
+      <p className="klein">Entweder das Sprachpaket nachinstallieren ({fehlen.map((x, i) => <span key={x}>{i > 0 && ', '}<code>{TEXTSPRACHEN[x]?.paket ?? `tesseract-ocr-data-${x}`}</code></span>)}) oder die Sprache in den Einstellungen streichen. <Hilfe ort="werkbank.texterkennung.sprachpakete" /></p>
+    </div>
+  );
+}
+
+/** Statistik der erkannten Sprachen mit Vorschlägen für fehlende Sprachpakete (#395). */
+function ErkannteSprachen({ s }: { s: OcrStatus }) {
+  const erkannt = s.erkannteSprachen ?? {};
+  const liste = Object.entries(erkannt).sort((a, b) => b[1] - a[1]);
+  const vorschlaege = s.werkzeuge.tesseract ? sprachvorschlaege(erkannt, s.werkzeuge.sprachen) : [];
+  return (
+    <section className="blatt" id="sprachen">
+      <h2 className="h3">Erkannte Sprachen</h2>
+      {!liste.length ? <p className="leise">Noch keine – die Sprache steht an jedem Dokument, das nach diesem Update einen Volltext bekommt.</p> : (
+        <table className="tabelle klein">
+          <thead><tr><th>Sprache</th><th className="zahlzelle">Dokumente</th><th>Sprachpaket</th></tr></thead>
+          <tbody>{liste.map(([k, n]) => (
+            <tr key={k}><td>{sprachname(k)} <span className="leise mono">{k}</span></td><td className="zahlzelle">{zahl(n)}</td>
+              <td>{s.werkzeuge.sprachen.includes(k) ? 'installiert' : <span className="fehlertext">fehlt</span>}</td></tr>
+          ))}</tbody>
+        </table>
+      )}
+      {vorschlaege.map((v) => (
+        <div key={v.sprache} className="hinweis info stapel"><p>{zahl(v.anzahl)} {v.anzahl === 1 ? 'Dokument' : 'Dokumente'} auf {sprachname(v.sprache)} – Sprachpaket <code>{v.sprache}</code> installieren?</p><p className="leise klein">Paket <code>{v.paket}</code>; danach diese Dokumente unter „Aufträge → fertig“ neu starten. <Hilfe ort="werkbank.texterkennung.sprachpakete" /></p></div>
+      ))}
+    </section>
   );
 }
 

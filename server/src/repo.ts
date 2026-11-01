@@ -271,6 +271,8 @@ export interface Repo {
   ocrAuftraege(f: { stand: OcrStandArt; von: number; anzahl: number }): Promise<{ gesamt: number; eintraege: OcrAuftrag[] }>;
   /** Dokumente ohne Volltext (noch nie erkannt) mit Typ und Register ihrer Mappe. */
   ocrOhneVolltext(): Promise<Array<{ id: string; typId: string; registerKey: string }>>;
+  /** Erkannte Sprachen (#395): Anzahl fertiger Dokumente je Sprachkennung (aus dem Hinweis der Texterkennung). */
+  ocrSprachen(): Promise<Record<string, number>>;
   volltext(id: string): Promise<string | null>;
   /** Volltexte mehrerer Dokumente (#367); Dokumente ohne Volltext fehlen. Listen lesen ihn nie mit. */
   volltexte(ids: string[]): Promise<Map<string, string>>;

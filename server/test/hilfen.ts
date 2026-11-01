@@ -1,12 +1,13 @@
 /** Hilfen für Tests (keine eigenen Tests). */
 
 /** Ein einfaches PDF mit Textebene (Helvetica), Text je Zeile. */
-export function pdfMitText(zeilen: string[], groesse = 24): Buffer {
+/** Einseitiges PDF mit Textebene; drehung (z. B. 90) setzt /Rotate der Seite (#395). */
+export function pdfMitText(zeilen: string[], groesse = 24, drehung = 0): Buffer {
   const inhalt = `BT /F1 ${groesse} Tf 72 720 Td ${zeilen.map((z, i) => `${i ? `0 -${groesse * 1.4} Td ` : ''}(${z.replace(/[()\\]/g, '\\$&')}) Tj`).join(' ')} ET`;
   const objekte = [
     '<< /Type /Catalog /Pages 2 0 R >>',
     '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842]${drehung ? ` /Rotate ${drehung}` : ''} /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>`,
     `<< /Length ${Buffer.byteLength(inhalt, 'latin1')} >>\nstream\n${inhalt}\nendstream`,
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
   ];

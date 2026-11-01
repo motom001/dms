@@ -1,6 +1,7 @@
 import type postgres from 'postgres';
 import { teilwoerter } from '../../shared/src/suche';
 import { alsText } from '../../shared/src/markdown';
+import { SPRACHE_SQL_MUSTER } from '../../shared/src/textsprache';
 import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type DokumentVersion, type Herkunft, type Historienart, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type OcrStandArt, type Werte } from '../../shared/src/model';
 import type { Filter, Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ausdruck, Lesefilter } from '../../shared/src/rechte';
@@ -1126,6 +1127,15 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         SELECT d.id, m.typ_id, d.register_key FROM dokumente d JOIN mappen m ON m.id = d.mappe_id
         WHERE d.haushalt_id = ${haushaltId} AND coalesce(d.ocr_stand, 'keiner') = 'keiner'`)
         .map((r: Zeile) => ({ id: r.id as string, typId: r.typ_id as string, registerKey: r.register_key as string }));
+    },
+    async ocrSprachen() {
+      const z: Record<string, number> = {};
+      for (const r of await sql`
+        SELECT substring(ocr_info from ${SPRACHE_SQL_MUSTER}::text) AS s, count(*)::int AS n FROM dokumente
+        WHERE haushalt_id = ${haushaltId} AND ocr_stand = 'fertig' AND ocr_info LIKE '%· Sprache: %' GROUP BY 1`) {
+        if (r.s) z[r.s as string] = r.n as number;
+      }
+      return z;
     },
     async volltext(id) {
       if (!istUuid(id)) return null;
