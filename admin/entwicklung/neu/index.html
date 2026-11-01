@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-097" class="md-skip">
+        <a href="#neu-in-version-098" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,43 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0971" class="md-nav__link">
+  <a href="#0980" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.97.1
+        0.98.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.97.1">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#behoben" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Behoben
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#0970" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        0.97.0
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="0.97.0">
+    <nav class="md-nav" aria-label="0.98.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -881,7 +853,35 @@
   <span class="md-ellipsis">
     
   
-    Datenschutz und Auskunft
+    Datenschutz im DMS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../loeschkonzept/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Löschkonzept (Vorlage)
   
 
     
@@ -2004,43 +2004,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0971" class="md-nav__link">
+  <a href="#0980" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.97.1
+        0.98.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.97.1">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#behoben" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Behoben
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#0970" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        0.97.0
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="0.97.0">
+    <nav class="md-nav" aria-label="0.98.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2101,39 +2073,30 @@
   
 
 
-<h1 id="neu-in-version-097">Neu in Version 0.97<a class="headerlink" href="#neu-in-version-097" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-098">Neu in Version 0.98<a class="headerlink" href="#neu-in-version-098" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0971">0.97.1<a class="headerlink" href="#0971" title="Permanent link">&para;</a></h2>
-<h3 id="behoben">Behoben<a class="headerlink" href="#behoben" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Kein eigenes Release 0.97.0:</strong> Die Prüfung auf <code>main</code> scheiterte an einem Test, der zu kurz auf den Abruf-Nachweis von „Auskunft zustellen“ (#455) wartete. Der Test wartet jetzt, bis Nachweis und Meldungen da sind. Dieses Release enthält alles aus 0.97.0 – siehe dort.</li>
-</ul>
-<h2 id="0970">0.97.0<a class="headerlink" href="#0970" title="Permanent link">&para;</a></h2>
+<h2 id="0980">0.98.0<a class="headerlink" href="#0980" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Auskunft zustellen</strong> (#455): Die fertige Auskunft nach Art. 15 DSGVO (#396) geht direkt aus dem DMS an die Person – unter <strong>Werkbank → Datenschutz → Bereitliegende Auskünfte → Zustellen …</strong> (auch gleich nach dem Erzeugen; aus der Mappe der Person stehen ihre Auskünfte oben).</li>
-<li><strong>Per E-Mail:</strong> die ZIP als Anhang über den E-Mail-Versand des DMS – <strong>nur verschlüsselt</strong>; das Passwort steht nie in der E-Mail. Vorbereiteter Text in Du-Form, Warnung ab 10 MB, über 50 MB nur noch als Abruf-Link.</li>
-<li><strong>Abruf-Link mit Abrufcode:</strong> Link (Zufallsschlüssel mit 256 Bit, nur hinter dem <code>#</code>) auf eine schlichte, öffentliche Abrufseite ohne Anmeldung, Menü oder Hinweis auf den Haushalt; dazu ein Abrufcode (8 Zeichen oder ein eigener wie die Vertragsnummer), den du auf einem anderen Weg mitteilst. Gültigkeit (Vorgabe 30 Tage) und Zahl der Abrufe (Vorgabe 3) einstellbar, jederzeit zurückziehbar. Den Link verschickt das DMS auf Wunsch per E-Mail – ohne Code.</li>
-<li><strong>Sicherheit:</strong> nur Hashes gespeichert (SHA-256, scrypt), Vergleich in konstanter Zeit, gleiche Antwort für unbekannte Links und falsche Codes, Sperre nach 10 falschen Codes am Link und zusätzlich über den Anmeldeschutz je IP, Download über ein Einmal-Ticket, Protokoll nur mit gekürzter IP und ohne Code.</li>
-<li><strong>Nachweis:</strong> Jeder Versand, jeder Abruf und jeder Fehlversuch steht in der Historie der Person (ohne IP); Liste <strong>Abruf-Links</strong> mit „zuletzt abgerufen am …“. Wer die Auskunft erstellt hat und wer die Person als Favorit hat, bekommt die Aufgabe <strong>Auskunft</strong> („… wurde abgerufen“, gebündelt je Link) – ebenso, wenn ein Link gesperrt wird.</li>
-<li>Vorschlag des Weges nach der Adresse des DMS: Abruf-Link, wenn sie nach Internet aussieht, sonst E-Mail.</li>
-<li>Die ZIP bleibt, solange ein Abruf-Link gilt (statt nach dem eigenen Herunterladen gelöscht zu werden), und wird gelöscht, sobald alle Abrufe verbraucht sind.</li>
-<li>Schnittstelle: <code>POST /werkbank/auskunft/{id}/email</code>, <code>POST /werkbank/auskunft/{id}/link</code>, <code>POST /werkbank/auskunft/link/{id}/widerrufen</code>; <code>GET /werkbank/datenschutz</code> liefert dazu die Abruf-Links.</li>
-<li>Datenbank: Migration <strong>041</strong> (Tabelle <code>auskunft_links</code>, Aufgabenart „auskunft“).</li>
-<li>Handbücher: <em>Datenschutz im DMS → Auskunft zustellen</em> (Wahl des Weges, Sicherheit der Abrufseite, Erreichbarkeit aus dem Internet), Aufgabenart <em>Auskunft</em>.</li>
+<li><strong>Datenschutz eingebaut</strong> (#389): README und Handbücher zeigen, wie das DMS datenschutzgerechtes Arbeiten unterstützt – ehrlich als „auf Datenschutz ausgelegt“ (Art. 25 DSGVO), nicht als Siegel.</li>
+<li>Administratorhandbuch <strong>Datenschutz im DMS</strong>: Übersicht DSGVO-Artikel → Funktion → Ort in der Werkbank, <strong>Keine Telemetrie</strong> (welche Verbindungen nach außen es gibt – alle nur auf Knopfdruck oder wenn eingerichtet), <strong>Was du selbst regeln musst</strong> und Hinweis „keine Rechtsberatung“.</li>
+<li>Schritt-für-Schritt-Anleitungen: Auskunft an einen Benutzer, Auskunft an eine Person, die kein Benutzer ist, <strong>Löschen auf Verlangen</strong> (Frist prüfen, sperren statt löschen, sonst löschen und Papierkorb leeren, was danach noch bleibt) und <strong>Sperr- und Löschkonzept aufsetzen</strong> mit Archivmodus, „Darf weg“ und Papierkorb.</li>
+<li>Neue <strong>Vorlage Löschkonzept</strong> (Markdown, Word, LibreOffice) analog zur Verfahrensdokumentation: Datenarten = Mappentypen, Frist, Grund, Sperre, Löschweg, Kopien außerhalb der Ablage.</li>
+<li><strong>Keine Telemetrie</strong> als Grundsatz in README, Handbuch-Startseite, Benutzer- und Administratorhandbuch: Das DMS sendet keine Nutzungsdaten, auch keine anonymen.</li>
+<li>Benutzerhandbuch: Abschnitt <strong>Meine Daten</strong> im Profil (Export, wen du fragst, wenn etwas gelöscht werden soll).</li>
+<li>README: Abschnitt <strong>Datenschutz eingebaut</strong>; Startseite der Handbücher mit den Kernversprechen.</li>
 </ul>
 <h3 id="noch-nicht-dabei">Noch nicht dabei<a class="headerlink" href="#noch-nicht-dabei" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Stempel und Verkleinern beim Versand per E-Mail: Die Auskunft ist eine verschlüsselte ZIP-Datei, daran lässt sich nichts stempeln.</li>
-<li>Ein Eintrag in der Post für die versendete Auskunft – der Nachweis steht in der Historie der Person; die ZIP-Datei selbst wird bewusst nicht dauerhaft abgelegt.</li>
-<li>Die Sicherheits-Nachprüfung der neuen öffentlichen Schnittstelle durch den Chat Sicherheit steht noch aus.</li>
+<li>Eine automatisch aus den Mappentypen mit Archivmodus erzeugte Fassung des Löschkonzepts, eine „Alles zu einer Person“-Suche über alle Mappentypen, ein Löschprotokoll (nur <em>dass</em> gelöscht wurde) und eine Vorlage für das Verzeichnis der Verarbeitungstätigkeiten – Kandidaten für eigene Issues.</li>
+<li>Eine englische Fassung des README-Abschnitts: Das README gibt es bisher nur auf Deutsch.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.96.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.96.0...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.97.1 im Detail: <a href="https://github.com/motom001/dms/compare/v0.97.1...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
