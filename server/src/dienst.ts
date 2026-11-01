@@ -3,7 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_AUSWAHL, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, ROLLEN, freierSchluessel, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
-  AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Aufgabenart, type Benutzer, type Dokument, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Werte,
+  AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Aufgabenart, type Benutzer, type Dokument, type DokumentVersion, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
@@ -32,11 +32,13 @@ import { liesLoeschAuswahl, loeschErinnerung, loeschVorschlag, LOESCH_TIEFE, pla
 import { AUSKUNFT_PASSWORT_MIN, auswahlProbleme as auskunftProbleme, fristBis, liesAuswahl, liesDatenschutz, personenTypen, type AuskunftErwaehnung, type AuskunftMappe, type AuskunftVorschau, type Datenschutz } from '../../shared/src/auskunft';
 import { auskunftMail, LINK_FEHLVERSUCHE_MAX, LINK_STATUS, liesLinkEingabe, linkStatus, normiereCode, type AuskunftLink, type AuskunftStand } from '../../shared/src/auskunft';
 import { neuerAbrufcode, SCHLUESSEL_MUSTER } from './abruf';
+import { alsZeile, liesAnlass, liesFilter, LOESCH_MAX, LOESCH_SPALTEN, LOESCHGRUENDE, LOESCHPROTOKOLL_JAHRE_MAX, LOESCHPROTOKOLL_STANDARD_JAHRE, LOESCHSCHRITTE, LOESCHWEGE, AUSLOESER, nummerVon, type Ausloeser, type LoeschAnlass, type LoeschDokument, type LoeschEintrag, type LoeschKontext, type Loeschweg } from '../../shared/src/loeschprotokoll';
 import { hashePasswort, hasheSchluessel, neuerSchluessel, pruefePasswort } from './passwort';
 import type { AuskunftLinkIntern } from './repo';
 import type { AuskunftDaten } from './auskunft';
 import { datumIn, KREIS_SCHLUESSEL, kreisVon, naechste, neubeginn, pruefeMuster, type Nummernkreis } from '../../shared/src/nummernkreis';
 import { csvAus, xlsxAus } from './xlsx';
+import { schriftstueckPdf } from './schriftstueck';
 import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile } from './export';
 import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
 import { fuerAusgabe, kannStempeln, weitergabeWas, type Ausgabe } from './ausgabe';
@@ -58,6 +60,15 @@ import { ALLES, RECHTE_LISTE, kurzStandard, systemSperre, bereinigeRegelwerk, FA
 /* ---------- Eingaben bereinigen: nur bekannte Eigenschaften übernehmen ---------- */
 
 const text = (v: unknown) => (v == null ? '' : String(v)).trim();
+
+/* Löschprotokoll (#470) */
+/** Grund und Auslöser einer Löschung (aus Oberfläche/Schnittstelle) und wie gelöscht wurde. */
+export type Anlass = LoeschAnlass & { ausloeser?: Ausloeser; weg?: Loeschweg };
+/** Ein Eintrag ohne Zeit, Id und „wer/warum“ (kommt aus dem Kontext). */
+type ProtokollTeil = Omit<LoeschEintrag, 'id' | 'zeit' | 'vonId' | 'von' | 'ausloeser' | 'grund' | 'grundText'>;
+interface ProtokollMappe { id: string; typId: string; typ: Mappentyp | undefined; werte: Werte; notizen: number; dokumente: LoeschDokument[]; vorgang?: string | null }
+const dokInfo = (d: Dokument): LoeschDokument => ({ dokumentId: d.id, version: d.version ?? 1, sha256: d.sha256, groesse: d.groesse, mime: d.mime, seiten: d.ocr?.seiten ?? null, archivnummer: d.archivnummer ?? null });
+const versionInfo = (v: DokumentVersion): LoeschDokument => ({ dokumentId: v.dokumentId, version: v.nummer, sha256: v.sha256, groesse: v.groesse, mime: v.mime, seiten: null, archivnummer: null });
 
 /** Zugriff eines Benutzers (#124): Rollen, Auflösung dynamischer Werte, Lesefilter (null = alles). */
 /** Dokument im Papierkorb mit Mappe und Register (#344). */
@@ -2408,7 +2419,11 @@ export class Dienst {
   }
 
   /** Nur für das Zurückrollen einer fehlgeschlagenen Paketinstallation: Mappen ohne Papierkorb entfernen. */
-  async entferneMappenEndgueltig(ids: string[]) { for (const id of ids) await this.repo.loescheMappe(id); }
+  async entferneMappenEndgueltig(ids: string[]) {
+    const vorher = await this.lebendInhalt(await this.repo.holeMappen(ids));
+    for (const id of ids) await this.repo.loescheMappe(id);
+    await this.protokolliere(this.mappenEintraege(vorher, { schritt: 'endgueltig', weg: 'zurueckgerollt' }), await this.loeschKontext(null, { ausloeser: 'automatisch' }));
+  }
 
   /* ---------- Nummernkreise (#171) ---------- */
 
@@ -2925,7 +2940,7 @@ export class Dienst {
    * Mehrere Mappen löschen (#150): je Mappe das Recht D am Mappentyp; Verweise innerhalb der Auswahl halten
    * nicht auf. `probe`: nur zählen, nichts löschen. Was nicht geht, steht mit Grund in `ausgelassen`.
    */
-  async loescheMappen(e: unknown, benutzerId: string, z: Zugriff): Promise<{ mappen: number; dokumente: number; geloescht: number; ausgelassen: Array<{ id: string; titel: string; grund: string }> }> {
+  async loescheMappen(e: unknown, benutzerId: string, z: Zugriff, quelle?: Ausloeser): Promise<{ mappen: number; dokumente: number; geloescht: number; ausgelassen: Array<{ id: string; titel: string; grund: string }> }> {
     const x = (e ?? {}) as { ids?: unknown; probe?: unknown };
     const ids = [...new Set((Array.isArray(x.ids) ? x.ids : []).map(String).filter(istUuid))];
     if (!ids.length) throw new Fachfehler(422, 'Keine Mappen ausgewählt.');
@@ -2952,7 +2967,7 @@ export class Dienst {
     while (offen.length) {
       const rest: Mappe[] = [];
       for (const m of offen) {
-        try { await this.loescheMappe(m.id, benutzerId, z); geloescht++; }
+        try { await this.loescheMappe(m.id, benutzerId, z, { ...liesAnlass(x), ausloeser: quelle, weg: 'mehrere' }); geloescht++; }
         catch (err) {
           if (err instanceof Fachfehler && err.status === 409) rest.push(m);
           else ausgelassen.push({ id: m.id, titel: m.titel ?? '', grund: (err as Error).message });
@@ -2964,7 +2979,7 @@ export class Dienst {
     return { mappen: kandidaten.length, dokumente, geloescht, ausgelassen };
   }
 
-  async loescheMappe(id: string, benutzerId: string | null = null, z?: Zugriff): Promise<void> {
+  async loescheMappe(id: string, benutzerId: string | null = null, z?: Zugriff, anlass?: Anlass): Promise<void> {
     if (z) await this.pruefeRecht(z, id, 'D');
     const m = await this.repo.holeMappe(id);
     if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
@@ -2972,6 +2987,8 @@ export class Dienst {
     const p = await this.loeschPruefung(m, typ, await this.repo.rueckverweise(id));
     if (!p.ok) throw new Fachfehler(p.status, p.grund, p.fremd.length ? { rueckverweise: p.fremd } : undefined);
     const { zuordnungen, emails, benutzerTyp, emailTyp } = p;
+    // Löschprotokoll (#470): was mit der Mappe geht, bevor es weg ist.
+    const vorher = await this.lebendInhalt([m]);
     for (const z of zuordnungen) {
       const b = await this.repo.holeMappe(z.quelleId);
       if (b) await this.schreibeSystemMappe(benutzerTyp!, b.id, { ...b.werte, rollen: alsListe(b.werte.rollen).filter((r) => r !== id) }, benutzerId);
@@ -2980,8 +2997,11 @@ export class Dienst {
       const x = await this.repo.holeMappe(e.quelleId);
       if (x) await this.schreibeSystemMappe(emailTyp!, x.id, { ...x.werte, bezug: alsListe(x.werte.bezug).filter((b) => b !== id) }, benutzerId);
     }
-    if (await this.papierkorbTage() > 0) await this.legeInPapierkorb(id, typ, benutzerId);
+    const korb = await this.papierkorbTage() > 0;
+    if (korb) await this.legeInPapierkorb(id, typ, benutzerId);
     else await this.loescheMappeIntern(id, typ, benutzerId);
+    await this.protokolliere(this.mappenEintraege(vorher, { schritt: korb ? 'papierkorb' : 'endgueltig', weg: anlass?.weg ?? 'einzeln', verweise: { [id]: zuordnungen.length + emails.length } }),
+      await this.loeschKontext(benutzerId, anlass));
   }
 
   /** In den Papierkorb (#43): eindeutige Werte werden frei, Dateien bleiben bis zum Leeren. */
@@ -3492,13 +3512,14 @@ export class Dienst {
   }
 
   /** Aufbewahrung ändern. 0 schaltet den Papierkorb aus und leert ihn sofort. */
-  async setzePapierkorbTage(eingabe: unknown): Promise<{ tage: number; geleert: number }> {
+  async setzePapierkorbTage(eingabe: unknown, von?: string | null): Promise<{ tage: number; geleert: number }> {
     if (!this.einstellungen) throw new Fachfehler(404, 'Der Papierkorb ist nicht eingerichtet.');
     const tage = Number(eingabe);
     if (!Number.isInteger(tage) || tage < 0 || tage > 3650) throw new Fachfehler(422, 'Bitte eine ganze Zahl von 0 bis 3650 Tagen angeben (0 = kein Papierkorb).');
     await this.einstellungen.schreibe('papierkorb', { tage });
     protokoll.modul('werkbank').info(tage ? 'Aufbewahrung im Papierkorb geändert' : 'Papierkorb ausgeschaltet', { tage });
-    const geleert = tage ? await this.raeumePapierkorbAuf() : await this.leere((await this.repo.papierkorb()).map((e) => e.id)) + await this.leereDokumente((await this.repo.papierkorbDokumente()).map((d) => d.id));
+    const aus = { weg: 'ausgeschaltet' as const, kontext: await this.loeschKontext(von ?? null) };
+    const geleert = tage ? await this.raeumePapierkorbAuf() : await this.leere((await this.repo.papierkorb()).map((e) => e.id), von ?? null, false, aus) + await this.leereDokumente((await this.repo.papierkorbDokumente()).map((d) => d.id), aus);
     return { tage, geleert };
   }
 
@@ -3542,7 +3563,7 @@ export class Dienst {
   }
 
   /** Dokument zurück in sein Register (#344). Rechte: wer es gelöscht hat (und die Mappe noch bearbeiten darf) oder ein Administrator. */
-  async stelleDokumentWiederHer(id: string, ich: { id: string; rolle: string }, z: Zugriff | undefined, alle = false) {
+  async stelleDokumentWiederHer(id: string, ich: { id: string; rolle: string }, z: Zugriff | undefined, alle = false, quelle?: Ausloeser) {
     const e = await this.dokEintrag(id, ich, alle);
     const [x] = await this.mitMappe([e]);
     if (x.mappe === 'papierkorb') throw new Fachfehler(409, `Die Mappe „${x.mappeTitel || 'ohne Titel'}“ liegt selbst im Papierkorb. Stelle zuerst die Mappe wieder her – ihre Dokumente kommen mit; danach dieses Dokument.`);
@@ -3550,8 +3571,11 @@ export class Dienst {
     if (!(alle && ich.rolle === 'admin')) await this.pruefeRecht(z, e.mappeId, 'U');
     const typ = (await this.repo.holeTyp(x.typId))!;
     if (!typ.register.some((r) => r.key === e.registerKey && r.art === 'dokumente')) throw new Fachfehler(409, `Das Register „${x.register}“ gibt es an der Mappe nicht mehr. Lege es im Mappentyp wieder an, dann klappt das Wiederherstellen.`);
+    const inhalt = (await this.repo.papierkorbDokumentInhalt([id]))[0];
     await this.repo.stelleDokumentWiederHer(id);
     await this.notiere(e.mappeId, ich.id, 'dokument_wiederhergestellt', { dokument: e.name, register: x.register });
+    if (inhalt) await this.protokolliere(this.dokEintraege(inhalt.dokumente.slice(0, 1), { ...(await this.mappenInfo([e.mappeId], new Map()))(e.mappeId, id), schritt: 'wiederhergestellt', weg: 'dokument' }),
+      await this.loeschKontext(ich.id, { ausloeser: quelle }));
     await this.beruehre(e.mappeId, typ, ich.id);
     this.vorschau?.einreihen([(await this.repo.holeDokument(id))!]);
     protokoll.modul('ablage').info('Dokument wiederhergestellt', { dokument: e.name, id, mappe: e.mappeId });
@@ -3559,16 +3583,22 @@ export class Dienst {
   }
 
   /** Dokumente endgültig löschen (ohne Rechteprüfung); Archivmodus der Mappe gilt weiter. */
-  private async leereDokumente(ids: string[]): Promise<number> {
+  private async leereDokumente(ids: string[], wie: { weg: Loeschweg; kontext?: LoeschKontext } = { weg: 'papierkorb' }): Promise<number> {
     if (!ids.length) return 0;
+    const inhalt = await this.repo.papierkorbDokumentInhalt(ids);
     const dateien = await this.repo.leereDokumentPapierkorb(ids);
     for (const sha of dateien) await this.raeumeAuf(sha);
+    // Löschprotokoll (#470): je Dokument und Version; Mappe, Typ und Grund vom Schritt „in den Papierkorb“.
+    const frueher = await this.letzteSchritte(inhalt.map((x) => x.id));
+    const mappen = await this.mappenInfo(inhalt.map((x) => x.mappeId), frueher);
+    const kontext = wie.kontext ?? await this.loeschKontext(null, { ausloeser: wie.weg === 'ablauf' ? 'automatisch' : undefined });
+    await this.protokolliere(inhalt.flatMap((x) => this.dokEintraege(x.dokumente, { ...mappen(x.mappeId, x.id), schritt: 'endgueltig', weg: wie.weg })), kontext, true);
     return ids.length;
   }
 
-  async loescheDokumentEndgueltig(ids: string[], ich: { id: string; rolle: string }, alle = false): Promise<number> {
+  async loescheDokumentEndgueltig(ids: string[], ich: { id: string; rolle: string }, alle = false, quelle?: Ausloeser): Promise<number> {
     for (const id of ids) await this.dokEintrag(id, ich, alle);
-    const n = await this.leereDokumente(ids);
+    const n = await this.leereDokumente(ids, { weg: 'papierkorb', kontext: await this.loeschKontext(ich.id, { ausloeser: quelle }) });
     if (n) protokoll.modul('ablage').info('Dokumente aus dem Papierkorb endgültig gelöscht', { anzahl: n });
     return n;
   }
@@ -3586,7 +3616,7 @@ export class Dienst {
    * Wiederherstellen. Verweise auf Mappen, die es nicht mehr gibt, und eindeutige Werte, die
    * inzwischen eine andere Mappe hat, lassen die Mappe „nicht passen“: Sie erscheint im Eingang.
    */
-  async stelleWiederHer(id: string, ich: { id: string; rolle: string }, alle = false) {
+  async stelleWiederHer(id: string, ich: { id: string; rolle: string }, alle = false, quelle?: Ausloeser) {
     const e = await this.eintrag(id, ich, alle);
     const typ = await this.repo.holeTyp(e.typId);
     if (!typ) throw new Fachfehler(409, 'Den Mappentyp dieser Mappe gibt es nicht mehr.');
@@ -3595,6 +3625,7 @@ export class Dienst {
     const zurueck = e.entkoppelt.length ? await this.verbindeWieder(id, e.entkoppelt, ich.id) : { wieder: 0, entfallen: 0 };
     const verweiseEntfallen = r.verweiseEntfallen + zurueck.entfallen;
     await this.notiere(id, ich.id, 'wiederhergestellt', verweiseEntfallen ? { verweiseEntfallen } : undefined);
+    await this.protokolliere([this.wiederEintrag(e, typ, e.vorgang)], await this.loeschKontext(ich.id, { ausloeser: quelle }));
     await this.aktualisiereTitel([id]);
     await this.passungFuer(typ, [id]);
     if (typ.system === 'benutzer') await this.konten?.wiederda(id, ich.id);
@@ -3604,7 +3635,7 @@ export class Dienst {
   }
 
   /** Endgültig löschen (ohne Rechteprüfung): Dateien, an denen nichts mehr hängt, und Konten von Benutzer-Mappen. */
-  private async leere(ids: string[], von: string | null = null, streng = false): Promise<number> {
+  private async leere(ids: string[], von: string | null = null, streng = false, wie: { weg: Loeschweg; kontext?: LoeschKontext } = { weg: 'papierkorb' }): Promise<number> {
     // Archivmodus (#212): Mappen in der Frist bleiben im Papierkorb (lagen dort schon vor dem Einschalten).
     if (ids.length) {
       const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
@@ -3617,26 +3648,31 @@ export class Dienst {
     await this.repo.historieSchreibe(ids.map((mappeId) => ({ mappeId, benutzerId: von, art: 'endgueltig' as const })));
     const benutzerTyp = (await this.repo.listeTypen()).find((t) => t.system === 'benutzer');
     const benutzer = benutzerTyp ? (await this.repo.papierkorb({ typId: benutzerTyp.id })).filter((e) => ids.includes(e.id)).map((e) => e.id) : [];
+    // Löschprotokoll (#470): Inhalt vor dem Leeren; Grund vom Schritt „in den Papierkorb“.
+    const inhalt = await this.repo.papierkorbInhalt(ids);
     const dateien = await this.repo.leerePapierkorb(ids);
     for (const sha of dateien) await this.raeumeAuf(sha);
+    const kontext = wie.kontext ?? await this.loeschKontext(von, { ausloeser: wie.weg === 'ablauf' ? 'automatisch' : undefined });
+    await this.protokolliere(this.mappenEintraege(await this.korbAlsInhalt(inhalt), { schritt: 'endgueltig', weg: wie.weg, verweise: Object.fromEntries(inhalt.map((k) => [k.id, k.entkoppelt])) }), kontext, true);
     // Einzeln gelöschte Dokumente dieser Mappen (#344) gehen mit – ohne Mappe lassen sie sich nicht mehr wiederherstellen.
-    await this.leereDokumente((await this.repo.papierkorbDokumente({ mappeIds: ids })).map((d) => d.id));
+    await this.leereDokumente((await this.repo.papierkorbDokumente({ mappeIds: ids })).map((d) => d.id), { weg: wie.weg, kontext });
     for (const id of benutzer) await this.konten?.endgueltig(id);
     return ids.length;
   }
 
   /** Einzelne Mappen endgültig löschen: eigene oder (in der Werkbank) alle. */
-  async loescheEndgueltig(ids: string[], ich: { id: string; rolle: string }, alle = false): Promise<number> {
+  async loescheEndgueltig(ids: string[], ich: { id: string; rolle: string }, alle = false, quelle?: Ausloeser): Promise<number> {
     for (const id of ids) await this.eintrag(id, ich, alle);
-    const n = await this.leere(ids, ich.id, true);
+    const n = await this.leere(ids, ich.id, true, { weg: 'papierkorb', kontext: await this.loeschKontext(ich.id, { ausloeser: quelle }) });
     if (n) protokoll.modul('ablage').info('Aus dem Papierkorb endgültig gelöscht', { anzahl: n });
     return n;
   }
 
   /** Papierkorb leeren: eigener (Ablage) oder ganz (Werkbank). */
-  async leerePapierkorb(ich: { id: string; rolle: string }, alle = false): Promise<number> {
-    const n = await this.leere((await this.papierkorb(ich, alle)).map((e) => e.id), ich.id)
-      + await this.leereDokumente((await this.repo.papierkorbDokumente(alle && ich.rolle === 'admin' ? {} : { von: ich.id })).map((d) => d.id));
+  async leerePapierkorb(ich: { id: string; rolle: string }, alle = false, wie: { weg?: 'leeren' | 'abmelden'; quelle?: Ausloeser } = {}): Promise<number> {
+    const w = { weg: wie.weg ?? 'leeren' as const, kontext: await this.loeschKontext(ich.id, { ausloeser: wie.quelle }) };
+    const n = await this.leere((await this.papierkorb(ich, alle)).map((e) => e.id), ich.id, false, w)
+      + await this.leereDokumente((await this.repo.papierkorbDokumente(alle && ich.rolle === 'admin' ? {} : { von: ich.id })).map((d) => d.id), w);
     if (n) protokoll.modul('ablage').info(alle ? 'Papierkorb aller Benutzer geleert' : 'Papierkorb geleert', { anzahl: n });
     return n;
   }
@@ -3645,15 +3681,173 @@ export class Dienst {
   async raeumePapierkorbAuf(jetzt = Date.now()): Promise<number> {
     const tage = await this.papierkorbTage();
     const vor = new Date(jetzt - tage * 24 * 60 * 60 * 1000).toISOString();
-    const n = await this.leere((await this.repo.papierkorb(tage ? { vor } : {})).map((e) => e.id));
+    const n = await this.leere((await this.repo.papierkorb(tage ? { vor } : {})).map((e) => e.id), null, false, { weg: 'ablauf' });
     if (n) protokoll.modul('system').info('Abgelaufene Mappen aus dem Papierkorb gelöscht', { anzahl: n, tage });
-    const nd = await this.leereDokumente((await this.repo.papierkorbDokumente(tage ? { vor } : {})).map((d) => d.id));
+    const nd = await this.leereDokumente((await this.repo.papierkorbDokumente(tage ? { vor } : {})).map((d) => d.id), { weg: 'ablauf' });
     if (nd) protokoll.modul('system').info('Abgelaufene Dokumente aus dem Papierkorb gelöscht', { anzahl: nd, tage });
     // Historie endgültig gelöschter Mappen nach ihrer Frist (#57).
     const ht = await this.historieTage();
     const weg = await this.repo.historieAufraeumen(new Date(jetzt - ht * 24 * 60 * 60 * 1000).toISOString());
     if (weg) protokoll.modul('system').info('Historie endgültig gelöschter Mappen entfernt', { eintraege: weg, tage: ht });
+    // Löschprotokoll (#470): eigene Aufbewahrung in Jahren.
+    const lj = await this.loeschprotokollJahre();
+    const lweg = await this.repo.loeschprotokollAufraeumen(new Date(jetzt - lj * 365.25 * 24 * 60 * 60 * 1000).toISOString());
+    if (lweg) protokoll.modul('system').info('Alte Einträge des Löschprotokolls entfernt', { eintraege: lweg, jahre: lj });
     return n;
+  }
+
+  /* ---------- Löschprotokoll (#470) ---------- */
+
+  /** Wer und warum. Ohne Benutzer: „DMS“ (automatisch). */
+  private async loeschKontext(von: string | null, anlass: Anlass = {}): Promise<LoeschKontext> {
+    const a = liesAnlass({ grund: anlass.grund, text: anlass.text });
+    const ausloeser: Ausloeser = anlass.ausloeser ?? (von ? 'benutzer' : 'automatisch');
+    return { vonId: von, von: von ? await this.name(von) : 'DMS', ausloeser, grund: a.grund ?? null, grundText: a.text ?? '' };
+  }
+
+  /** Lebende Mappen samt Dokumenten (aller Versionen) und Notizen – für Einträge vor dem Löschen. Demo-Mappen bleiben draußen. */
+  private async lebendInhalt(mappen: Mappe[]): Promise<ProtokollMappe[]> {
+    const echt = mappen.filter((m) => !m.demo);
+    if (!echt.length) return [];
+    const ids = echt.map((m) => m.id);
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    const dok = await this.dokumenteJeMappe(ids);
+    const alle = [...dok.values()].flat();
+    const versionen = alle.length ? await this.repo.versionenVonDokumenten(alle.map((d) => d.id)) : [];
+    const notizen = await this.repo.notizenVon(ids);
+    return echt.map((m) => {
+      const d = dok.get(m.id) ?? [];
+      const ds = new Set(d.map((x) => x.id));
+      return { id: m.id, typId: m.typId, typ: typen.get(m.typId), werte: m.werte, notizen: notizen.filter((n) => n.mappeId === m.id).length,
+        dokumente: [...d.map(dokInfo), ...versionen.filter((v) => ds.has(v.dokumentId)).map(versionInfo)] };
+    });
+  }
+
+  private async korbAlsInhalt(liste: Awaited<ReturnType<Repo['papierkorbInhalt']>>): Promise<ProtokollMappe[]> {
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    return liste.filter((k) => !k.demo).map((k) => ({ id: k.id, typId: k.typId, typ: typen.get(k.typId), werte: k.werte, notizen: k.notizen, dokumente: k.dokumente, vorgang: k.vorgang }));
+  }
+
+  /** Einträge für Mappen und ihre Dokumente. */
+  private mappenEintraege(liste: ProtokollMappe[], x: { schritt: LoeschEintrag['schritt']; weg: Loeschweg; vorgang?: string; startId?: string; verweise?: Record<string, number> }): ProtokollTeil[] {
+    return liste.flatMap((m) => {
+      const nummer = nummerVon(m.typ, m.werte);
+      const vorgang = x.vorgang ?? m.vorgang ?? null;
+      const gemeinsam = { mappeId: m.id, typId: m.typId, typ: m.typ?.name ?? '', nummer, vorgang, startId: vorgang ? (x.startId ?? (m.id === vorgang ? m.id : null)) : null, schritt: x.schritt, weg: x.weg };
+      const dokumente = new Set(m.dokumente.map((d) => d.dokumentId)).size;
+      return [
+        { ...gemeinsam, art: 'mappe' as const, dokumentId: null, archivnummer: null, version: null, sha256: null, groesse: null, mime: null, seiten: null,
+          anzahl: { dokumente, versionen: m.dokumente.length - dokumente, notizen: m.notizen, verweise: x.verweise?.[m.id] ?? 0 } },
+        ...this.dokEintraege(m.dokumente, gemeinsam),
+      ];
+    });
+  }
+
+  private dokEintraege(liste: LoeschDokument[], x: { mappeId: string; typId: string | null; typ: string; nummer: string | null; vorgang: string | null; startId: string | null; schritt: LoeschEintrag['schritt']; weg: Loeschweg }): ProtokollTeil[] {
+    return liste.map((d) => ({ ...x, art: 'dokument' as const, dokumentId: d.dokumentId, archivnummer: d.archivnummer, version: d.version, sha256: d.sha256, groesse: d.groesse, mime: d.mime, seiten: d.seiten, anzahl: null }));
+  }
+
+  private wiederEintrag(e: PapierkorbEintrag, typ: Mappentyp | undefined, vorgang: string | null): ProtokollTeil {
+    return { art: 'mappe', schritt: 'wiederhergestellt', weg: vorgang ? 'verknuepft' : 'einzeln', mappeId: e.id, typId: e.typId, typ: typ?.name ?? '', nummer: nummerVon(typ, e.werte),
+      archivnummer: null, dokumentId: null, version: null, sha256: null, groesse: null, mime: null, seiten: null, anzahl: null, vorgang, startId: vorgang && e.id === vorgang ? e.id : null };
+  }
+
+  /** Letzter Eintrag „in den Papierkorb“ je Mappen- bzw. Dokument-Id (für Grund, Typ und Nummer beim endgültigen Löschen). */
+  private async letzteSchritte(ids: string[]): Promise<Map<string, LoeschEintrag>> {
+    const r = new Map<string, LoeschEintrag>();
+    for (let i = 0; i < ids.length; i += 500) {
+      const teil = ids.slice(i, i + 500);
+      const { eintraege } = await this.repo.loeschprotokoll({ ids: teil, schritt: 'papierkorb', max: LOESCH_MAX * 5 });
+      // Neueste zuerst: der erste Treffer je Id zählt.
+      for (const e of eintraege) { const k = e.art === 'dokument' ? e.dokumentId! : e.mappeId; if (!r.has(k)) r.set(k, e); }
+    }
+    return r;
+  }
+
+  /** Typ, Nummer und Vorgang der Mappe eines Dokuments – lebend, im Papierkorb oder aus dem Protokoll. */
+  private async mappenInfo(mappeIds: string[], frueher: Map<string, LoeschEintrag>) {
+    const ids = [...new Set(mappeIds)];
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    const lebend = new Map((await this.repo.holeMappen(ids)).map((m) => [m.id, m] as const));
+    const korb = new Map((await this.repo.papierkorbInhalt(ids.filter((id) => !lebend.has(id)))).map((k) => [k.id, k] as const));
+    return (mappeId: string, dokumentId: string) => {
+      const m = lebend.get(mappeId); const k = korb.get(mappeId); const f = frueher.get(dokumentId);
+      const typId = m?.typId ?? k?.typId ?? f?.typId ?? null;
+      const typ = typId ? typen.get(typId) : undefined;
+      return { mappeId, typId, typ: typ?.name ?? f?.typ ?? '', nummer: m ? nummerVon(typ, m.werte) : k ? nummerVon(typ, k.werte) : f?.nummer ?? null, vorgang: k?.vorgang ?? f?.vorgang ?? null, startId: f?.startId ?? null };
+    };
+  }
+
+  /**
+   * Einträge schreiben. `nachGrund`: Grund und Text vom Schritt „in den Papierkorb“ übernehmen, wenn dieser
+   * Schritt selbst keinen hat (endgültig löschen, Ablauf). Ein Fehler hier macht das Löschen nicht rückgängig,
+   * steht aber im Protokoll.
+   */
+  private async protokolliere(teile: ProtokollTeil[], k: LoeschKontext, nachGrund = false) {
+    if (!teile.length) return;
+    try {
+      const frueher = nachGrund && !k.grund ? await this.letzteSchritte([...new Set(teile.map((t) => (t.art === 'dokument' ? t.dokumentId! : t.mappeId)))]) : new Map<string, LoeschEintrag>();
+      const zeit = new Date().toISOString();
+      await this.repo.loeschprotokollSchreibe(teile.map((t) => {
+        const f = frueher.get(t.art === 'dokument' ? t.dokumentId! : t.mappeId) ?? frueher.get(t.mappeId);
+        return { ...t, id: randomUUID(), zeit, vonId: k.vonId, von: k.von, ausloeser: k.ausloeser, grund: k.grund ?? f?.grund ?? null, grundText: k.grund ? k.grundText : (f?.grundText ?? k.grundText),
+          vorgang: t.vorgang ?? f?.vorgang ?? null, startId: t.startId ?? f?.startId ?? null };
+      }));
+    } catch (e) {
+      protokoll.modul('datenschutz').error('Löschprotokoll nicht geschrieben', { fehler: (e as Error).message, eintraege: teile.length });
+    }
+  }
+
+  async loeschprotokollJahre(): Promise<number> {
+    const e = this.einstellungen ? ((await this.einstellungen.lies('loeschprotokoll')) as { jahre?: number } | null) : null;
+    return typeof e?.jahre === 'number' ? e.jahre : LOESCHPROTOKOLL_STANDARD_JAHRE;
+  }
+
+  async setzeLoeschprotokollJahre(eingabe: unknown, von: string): Promise<number> {
+    if (!this.einstellungen) throw new Fachfehler(404, 'Einstellungen sind nicht eingerichtet.');
+    const jahre = Number(eingabe);
+    if (!Number.isInteger(jahre) || jahre < 1 || jahre > LOESCHPROTOKOLL_JAHRE_MAX) throw new Fachfehler(422, `Bitte eine ganze Zahl von 1 bis ${LOESCHPROTOKOLL_JAHRE_MAX} Jahren angeben.`);
+    await this.einstellungen.schreibe('loeschprotokoll', { jahre });
+    protokoll.modul('datenschutz').info('Aufbewahrung des Löschprotokolls geändert', { jahre, von });
+    return jahre;
+  }
+
+  /** Ansicht (Werkbank → Datenschutz): Einträge nach Filter, neueste zuerst. */
+  async loeschprotokoll(q: Record<string, unknown>) {
+    const f = liesFilter(q);
+    const r = await this.repo.loeschprotokoll(f);
+    return { ...r, jahre: await this.loeschprotokollJahre(), max: f.max };
+  }
+
+  /** Ausgabe als CSV oder PDF (Nachweis); höchstens LOESCH_MAX × 10 Einträge. */
+  async loeschprotokollAusgabe(q: Record<string, unknown>, format: 'csv' | 'pdf', x: { von: string; mandant: string; version: string }) {
+    const f = { ...liesFilter(q), max: LOESCH_MAX * 10 };
+    const { eintraege, gesamt } = await this.repo.loeschprotokoll(f);
+    const tag = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(new Date());
+    if (format === 'csv') { const b = csvAus(LOESCH_SPALTEN, eintraege.map(alsZeile)); return { name: `Löschprotokoll ${tag}.csv`, mime: 'text/csv; charset=utf-8', inhalt: b }; }
+    const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { timeZone: 'Europe/Berlin', dateStyle: 'short', timeStyle: 'short' });
+    const filter = [f.von && `ab ${datumText(f.von)}`, f.bis && `bis ${datumText(f.bis)}`, f.typId && `Mappentyp ${eintraege.find((e) => e.typId === f.typId)?.typ ?? f.typId}`,
+      f.grund && (f.grund === 'ohne' ? 'ohne Grund' : LOESCHGRUENDE[f.grund]), f.schritt && LOESCHSCHRITTE[f.schritt], f.vorgang && `Vorgang ${f.vorgang}`, f.suche && `Suche „${f.suche}“`].filter(Boolean).join(', ');
+    const b = await schriftstueckPdf({
+      titel: 'Löschprotokoll', untertitel: x.mandant, quer: true,
+      stand: `Erstellt am ${zeit(new Date().toISOString())} von ${x.von} · DMS ${x.version} · ${eintraege.length}${gesamt > eintraege.length ? ` von ${gesamt}` : ''} Einträge${filter ? ` · Filter: ${filter}` : ''}`,
+      vorbemerkung: 'Nachweis über gelöschte Mappen und Dokumente (Art. 5 Abs. 2 DSGVO). Das Löschprotokoll enthält keine Titel, Feldwerte oder Dateinamen; Dokumente sind über ihre Prüfsumme (SHA-256) wiedererkennbar. Es lässt sich nicht ändern.',
+      abschnitte: [{ titel: 'Einträge', bloecke: [{ art: 'tabelle', breiten: [0.9, 0.85, 0.95, 0.8, 1.6, 2.1, 0.9, 1.0, 1.1], kopf: ['Zeit', 'Schritt', 'Mappentyp · Nummer', 'Wie', 'Mappe / Dokument', 'Inhalt', 'Von', 'Grund', 'Vorgang'],
+        zeilen: eintraege.map((e) => [
+          zeit(e.zeit), LOESCHSCHRITTE[e.schritt], [e.typ, e.nummer].filter(Boolean).join(' · '), LOESCHWEGE[e.weg] ?? e.weg,
+          e.art === 'mappe' ? `Mappe ${e.mappeId}` : `Dokument ${e.dokumentId}${e.version && e.version > 1 ? ` (Version ${e.version})` : ''}${e.archivnummer ? ` · Archivnummer ${e.archivnummer}` : ''}`,
+          e.art === 'mappe' ? (e.anzahl ? `${e.anzahl.dokumente} Dokumente, ${e.anzahl.versionen} ältere Versionen, ${e.anzahl.notizen} Notizen, ${e.anzahl.verweise} Verweise entfernt` : '')
+            : `SHA-256 ${e.sha256} · ${e.groesse} Bytes · ${e.mime}${e.seiten ? ` · ${e.seiten} Seiten` : ''}`,
+          `${e.von}${e.ausloeser !== 'benutzer' ? ` (${AUSLOESER[e.ausloeser]})` : ''}`, [e.grund ? LOESCHGRUENDE[e.grund] : '', e.grundText].filter(Boolean).join(': '), e.vorgang ? `${e.vorgang}${e.startId === e.mappeId ? ' (Start)' : ''}` : '',
+        ]) }] }],
+    });
+    return { name: `Löschprotokoll ${tag}.pdf`, mime: 'application/pdf', inhalt: b };
+  }
+
+  /** Für den Vollexport: alle Einträge (älteste zuerst). */
+  async loeschprotokollAlle(): Promise<LoeschEintrag[]> {
+    const { eintraege } = await this.repo.loeschprotokoll({ max: Number.MAX_SAFE_INTEGER });
+    return eintraege.reverse();
   }
 
   /* ---------- Demo-Daten ---------- */
@@ -3990,7 +4184,7 @@ export class Dienst {
     return { name: a.name, mime: a.mime, anzeigbar: true, groesse: a.inhalt.length, inhalt: a.inhalt as Buffer | Readable, gestempelt: !!a.gestempelt, verkleinert: a.verkleinert ?? null };
   }
 
-  async loescheDokument(id: string, benutzerId: string | null = null) {
+  async loescheDokument(id: string, benutzerId: string | null = null, anlass: Anlass = { weg: 'ersetzt' }) {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
     // Archivmodus (#212): Dokumente bleiben bis Fristende; ändern nur als neue Version.
@@ -4001,6 +4195,10 @@ export class Dienst {
     const korb = (await this.papierkorbTage()) > 0;
     if (korb) await this.repo.legeDokumentInPapierkorb(id, benutzerId);
     else await this.repo.loescheDokument(id);
+    // Löschprotokoll (#470)
+    const info = (await this.mappenInfo([d.mappeId], new Map()))(d.mappeId, id);
+    await this.protokolliere(this.dokEintraege([dokInfo(d), ...aeltere.map(versionInfo)], { ...info, schritt: korb ? 'papierkorb' : 'endgueltig', weg: anlass.weg ?? 'dokument' }),
+      await this.loeschKontext(benutzerId, anlass));
     await this.notiere(d.mappeId, benutzerId, korb ? 'dokument_papierkorb' : 'dokument_geloescht', { dokument: d.name, groesse: d.groesse, mime: d.mime, ...(aeltere.length ? { versionen: aeltere.length + 1 } : {}) });
     const m = await this.repo.holeMappe(d.mappeId);
     if (m) await this.beruehre(m.id, await this.repo.holeTyp(m.typId), benutzerId);
@@ -4334,8 +4532,10 @@ export class Dienst {
       this.vorschau?.einreihen([v]);
       neu = await this.nachNeuerVersion(d, v, typ, reg, von);
       if (e.ohneOriginal === true && (await this.archivErlaubt(d.mappeId))) {
+        const alt = (await this.repo.versionenVon(d.id)).find((x) => x.nummer === v.version! - 1);
         const sha = await this.repo.loescheVersion(d.id, v.version! - 1);
         if (sha) await this.raeumeAuf(sha);
+        if (sha && alt) await this.protokolliere(this.dokEintraege([versionInfo(alt)], { ...(await this.mappenInfo([d.mappeId], new Map()))(d.mappeId, d.id), schritt: 'endgueltig', weg: 'version' }), await this.loeschKontext(von));
         neu = (await this.repo.holeDokument(d.id)) ?? neu;
       }
     } else {
@@ -4634,6 +4834,7 @@ export class Dienst {
       mappen: (typId) => r.listeMappen(typId),
       papierkorb: () => r.papierkorb(),
       papierkorbDokumente: () => r.papierkorbDokumente(),
+      loeschprotokoll: () => this.loeschprotokollAlle(),
       // Gebündelt (#367): ein Zugriff je Paket, nicht je Mappe oder Dokument.
       dokumente: (ids) => r.dokumenteVon(ids),
       versionen: (ids) => r.versionenVonDokumenten(ids),
@@ -4773,7 +4974,7 @@ export class Dienst {
    * (für das Wiederherstellen gemerkt) und alle Mappen samt Dokumenten in den Papierkorb. Rechte und
    * Aufbewahrungsfristen werden dabei nie übergangen. Historie und Protokoll ohne Inhalte.
    */
-  async loescheMitVerknuepften(startId: string, eingabe: unknown, benutzerId: string, z: Zugriff) {
+  async loescheMitVerknuepften(startId: string, eingabe: unknown, benutzerId: string, z: Zugriff, quelle?: Ausloeser) {
     const e = (eingabe && typeof eingabe === 'object' ? eingabe : {}) as Record<string, unknown>;
     if (!e.auswahl || typeof e.auswahl !== 'object') throw new Fachfehler(422, 'Bitte die Auswahl angeben (Mappen-Id → loeschen, entkoppeln oder behalten; z. B. der Vorschlag aus der Vorschau).');
     const v = await this.loeschVorschau(startId, e, z);
@@ -4807,7 +5008,11 @@ export class Dienst {
       await this.schreibeVerweisWerte(typ, m, werte, benutzerId);
     }
     const vorgang = weg.has(startId) ? startId : randomUUID();
+    const vorher = await this.lebendInhalt(plan.loeschen.map((id) => mappen.get(id)!));
     await this.repo.legeVorgangInPapierkorb(plan.loeschen, benutzerId, vorgang, entkoppelt);
+    const kontext = await this.loeschKontext(benutzerId, { ...liesAnlass(e), ausloeser: quelle });
+    await this.protokolliere(this.mappenEintraege(vorher, { schritt: 'papierkorb', weg: 'verknuepft', vorgang, startId: v.baum.knoten[0].id,
+      verweise: Object.fromEntries(Object.entries(entkoppelt).map(([id, l]) => [id, l.length])) }), kontext);
     const start = v.baum.knoten[0];
     const z_ = plan.zahlen;
     const text = `mit verknüpften Mappen gelöscht (${z_.mappen} ${z_.mappen === 1 ? 'Mappe' : 'Mappen'}, ${z_.dokumente} ${z_.dokumente === 1 ? 'Dokument' : 'Dokumente'})`;
@@ -4819,7 +5024,7 @@ export class Dienst {
       if (typ?.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
     }
     const tage = await this.papierkorbTage();
-    if (!tage) await this.leere(plan.loeschen, benutzerId);
+    if (!tage) await this.leere(plan.loeschen, benutzerId, false, { weg: 'ausgeschaltet', kontext });
     const erinnerung = await this.loeschErinnerungAn(v, plan, benutzerId);
     protokoll.modul('ablage').info(tage ? 'Mappe mit verknüpften Mappen in den Papierkorb gelegt' : 'Mappe mit verknüpften Mappen endgültig gelöscht', {
       von: benutzerId, start: startId, vorgang, mappen: z_.mappen, dokumente: z_.dokumente, verweiseEntfernt: z_.verweise,
@@ -4882,7 +5087,7 @@ export class Dienst {
    * Einen ganzen Vorgang (#424) wiederherstellen: alle Mappen mit ihren Dokumenten und Verweisen, dazu die
    * beim Löschen entfernten Verweise bleibender Mappen. Rechte wie beim einzelnen Wiederherstellen.
    */
-  async stelleVorgangWiederHer(vorgang: string, ich: { id: string; rolle: string }, alle = false) {
+  async stelleVorgangWiederHer(vorgang: string, ich: { id: string; rolle: string }, alle = false, quelle?: Ausloeser) {
     const eintraege = (await this.repo.papierkorb(alle && ich.rolle === 'admin' ? {} : { von: ich.id })).filter((e) => e.vorgang === vorgang);
     if (!istUuid(vorgang) || !eintraege.length) throw new Fachfehler(404, 'Diesen Vorgang gibt es (im Papierkorb) nicht mehr.');
     const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
@@ -4891,6 +5096,7 @@ export class Dienst {
     const ids = eintraege.map((e) => e.id);
     const { verweiseEntfallen } = await this.repo.stelleMehrereWiederHer(ids);
     await this.repo.historieSchreibe(ids.map((mappeId) => ({ mappeId, benutzerId: ich.id, art: 'wiederhergestellt' as const, daten: { vorgang } })));
+    await this.protokolliere(eintraege.map((e) => this.wiederEintrag(e, typen.get(e.typId), vorgang)), await this.loeschKontext(ich.id, { ausloeser: quelle }));
     await this.aktualisiereTitel(ids);
     let wieder = 0; let entfallen = verweiseEntfallen;
     for (const e of eintraege) if (e.entkoppelt.length) { const r = await this.verbindeWieder(e.id, e.entkoppelt, ich.id); wieder += r.wieder; entfallen += r.entfallen; }
@@ -5330,7 +5536,15 @@ export class Dienst {
     });
     await this.beruehre(neu.mappeId, typ, benutzerId);
     // „Nur die letzten N“ (mit der aktuellen): ältere entfernen, Dateien aufräumen.
-    if (reg.versionenBehalten) for (const sha of await this.repo.kuerzeVersionen(neu.id, reg.versionenBehalten - 1)) await this.raeumeAuf(sha);
+    if (reg.versionenBehalten) {
+      const vorher = await this.repo.versionenVon(neu.id);
+      for (const sha of await this.repo.kuerzeVersionen(neu.id, reg.versionenBehalten - 1)) await this.raeumeAuf(sha);
+      // Löschprotokoll (#470): auch ältere Versionen, die über die eingestellte Anzahl hinaus wegfallen.
+      const bleiben = new Set((await this.repo.versionenVon(neu.id)).map((v) => v.nummer));
+      const weg = vorher.filter((v) => !bleiben.has(v.nummer));
+      if (weg.length) await this.protokolliere(this.dokEintraege(weg.map(versionInfo), { ...(await this.mappenInfo([neu.mappeId], new Map()))(neu.mappeId, neu.id), schritt: 'endgueltig', weg: 'version' }),
+        await this.loeschKontext(benutzerId, { ausloeser: 'automatisch' }));
+    }
     if (neu.ocr?.stand !== 'fertig' && Dienst.volltextAn(typ, reg.key)) {
       await this.repo.ocrEinreihen([neu.id]);
       this.ocr?.anstossen();

@@ -23,6 +23,7 @@ import { linkZuMappe } from '../../../shared/src/direktlink';
 import { Person } from '../Person';
 import { Dokumente, type NeueDatei } from './Dokumente';
 import { hinweis, rueckfrage } from '../rueckfrage';
+import { mitGrund } from './Loeschgrund';
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -366,12 +367,13 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     if (!mappe) return;
     const n = details?.dokumente.length ?? 0;
     const korb = d.zaehler.papierkorbTage ?? 0;
-    const ok = await rueckfrage(korb
+    // Grund fürs Löschprotokoll (#470).
+    const anlass = await mitGrund(korb
       ? { titel: `Mappe „${titelOder(mappe.titel)}“ in den Papierkorb legen?`, text: `${n ? `Ihre ${n} Dokument${n === 1 ? '' : 'e'} kommen mit. ` : ''}Dort lässt sie sich ${korb === 1 ? 'einen Tag' : `${korb} Tage`} lang wiederherstellen.`, ja: 'In den Papierkorb', gefahr: true }
       : { titel: `Mappe „${titelOder(mappe.titel)}“ endgültig löschen?`, text: `${n ? `Ihre ${n} Dokument${n === 1 ? '' : 'e'} werden mitgelöscht. ` : ''}Das lässt sich nicht rückgängig machen.`, ja: 'Endgültig löschen', gefahr: true });
-    if (!ok) return;
+    if (!anlass) return;
     try {
-      await api.mappeLoeschen(mappe.id);
+      await api.mappeLoeschen(mappe.id, anlass);
       loeseWache(); await d.neuLaden(); geheZu(`/ablage/${sicht}${anhang}`);
     } catch (e) { setMeldung((e as Error).message); }
   }

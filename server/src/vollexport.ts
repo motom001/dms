@@ -13,6 +13,7 @@ import { exportSpalten, sichererName, spaltenKopf, zeile } from './export';
 import { Fachfehler } from './fehler';
 import type { PapierkorbEintrag } from './repo';
 import { xlsxAus } from './xlsx';
+import { alsZeile, LOESCH_SPALTEN, type LoeschEintrag } from '../../shared/src/loeschprotokoll';
 
 /**
  * Vollexport aller Daten in offenen Formaten (#254): ein Ordner, lesbar ohne das DMS.
@@ -46,6 +47,7 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   favoriten: 'daten/favoriten.csv',
   papierkorb: 'daten/papierkorb.jsonl',
   papierkorb_dokumente: 'daten/papierkorb-dokumente.jsonl (ohne Datei)',
+  loeschprotokoll: 'daten/loeschprotokoll.csv (#470, Nachweis gelöschter Mappen und Dokumente ohne Inhalte)',
   vertretungen: 'daten/vertretungen.jsonl',
   fehlermeldungen: 'nicht enthalten: gemeldete Fehler an die Administratoren (technisch)',
   langlaeufer: 'nicht enthalten: Messwerte langsamer Datenbankzugriffe (technisch)',
@@ -87,6 +89,8 @@ export interface ExportQuelle {
   papierkorb(): Promise<PapierkorbEintrag[]>;
   /** Einzeln gelöschte Dokumente (#344); fehlt bei älteren Quellen. */
   papierkorbDokumente?(): Promise<unknown[]>;
+  /** Löschprotokoll (#470), älteste zuerst; fehlt bei Auskunft und persönlichem Export. */
+  loeschprotokoll?(): Promise<LoeschEintrag[]>;
   /*
    * Gebündelt je Paket von Mappen bzw. Dokumenten (#367): ein Zugriff je Paket statt je Mappe
    * oder Dokument. Die Reihenfolge innerhalb einer Mappe bzw. eines Dokuments zählt, die zwischen
@@ -344,6 +348,7 @@ export async function vollexport(q: ExportQuelle, ziel: string, opt: ExportOptio
   await w.schreibe('daten/favoriten.csv', csv(['benutzer_id', 'mappe_id'], (await q.favoriten()).map((f) => [f.benutzerId, f.mappeId])));
   await w.schreibe('daten/papierkorb.jsonl', jsonl((await q.papierkorb()).map((p) => ({ ...p, werte: ohnePasswoerter(typVon.get(p.typId), p.werte) }))));
   await w.schreibe('daten/papierkorb-dokumente.jsonl', jsonl(q.papierkorbDokumente ? await q.papierkorbDokumente() : []));
+  if (q.loeschprotokoll) await w.schreibe('daten/loeschprotokoll.csv', csv(LOESCH_SPALTEN, (await q.loeschprotokoll()).map(alsZeile)));
   await w.schreibe('daten/vertretungen.jsonl', jsonl(b.vertretungen));
   abschluss();
 

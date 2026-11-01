@@ -11,6 +11,7 @@ import { ausschnittAus } from './repo-pg';
 import { teilwoerter, woerterIn } from '../../shared/src/suche';
 import { inSicht, type Sicht, type SichtDaten, type Zaehlquelle } from '../../shared/src/sichten';
 import type { AuskunftLinkIntern, PapierkorbEintrag, Repo, Rueckverweis, SortierungIntern, Verweis } from './repo';
+import { passt as passtLoesch, type LoeschDokument, type LoeschEintrag } from '../../shared/src/loeschprotokoll';
 
 /** Trefferlisten (#75) immer in beiden Formen: Liste der Trefferlisten und Spalten der Standardliste. */
 const listen = (d: MappentypDaten) => ({ trefferlisten: structuredClone(trefferlistenVon(d)), trefferliste: [...standardliste(d).spalten] });
@@ -70,6 +71,10 @@ export function speicherRepo(): Repo {
     const im = woerterIn(text);
     return woerter(q).every((w) => im.has(w));
   };
+  /** Löschprotokoll (#470): nur anfügen. */
+  const loeschprotokoll: LoeschEintrag[] = [];
+  const loeschDok = (d: Dokument): LoeschDokument => ({ dokumentId: d.id, version: d.version ?? 1, sha256: d.sha256, groesse: d.groesse, mime: d.mime, seiten: d.ocr?.seiten ?? null, archivnummer: d.archivnummer ?? null });
+  const loeschVersion = (v: V): LoeschDokument => ({ dokumentId: v.dokumentId, version: v.nummer, sha256: v.sha256, groesse: v.groesse, mime: v.mime, seiten: null, archivnummer: null });
   /** Papierkorb (#43): Mappe mit ihren Verweisen und Dokumenten, wie beim Löschen. */
   /** Einzelne Dokumente im Papierkorb (#344). */
   const dokKorb = new Map<string, { dokument: Dokument; text: string | null; versionen: V[]; geloescht: string; geloeschtVon: string | null }>();
@@ -717,6 +722,27 @@ export function speicherRepo(): Repo {
       if (k.versionen.length) versionen.set(id, kopie(k.versionen));
       texte.set(id, k.text);
       dokKorb.delete(id);
+    },
+    async papierkorbInhalt(ids) {
+      return ids.map((id) => korb.get(id)).filter((k) => !!k).map((k) => ({
+        id: k.mappe.id, typId: k.mappe.typId, werte: kopie(k.mappe.werte), demo: !!k.mappe.demo, vorgang: k.vorgang ?? null,
+        entkoppelt: (k.entkoppelt ?? []).length, notizen: (k.notizen ?? []).length,
+        dokumente: [...k.dokumente.map(loeschDok), ...(k.versionen ?? []).flatMap(([, v]) => v.map(loeschVersion))],
+      }));
+    },
+    async papierkorbDokumentInhalt(ids) {
+      return ids.map((id) => dokKorb.get(id)).filter((k) => !!k).map((k) => ({ id: k.dokument.id, mappeId: k.dokument.mappeId, dokumente: [loeschDok(k.dokument), ...k.versionen.map(loeschVersion)] }));
+    },
+    async loeschprotokollSchreibe(e) { loeschprotokoll.push(...e.map(kopie)); },
+    async loeschprotokoll(f) {
+      const alle = loeschprotokoll.filter((e) => passtLoesch(e, f)).sort((a, b) => b.zeit.localeCompare(a.zeit) || (a.art === b.art ? 0 : a.art === 'mappe' ? -1 : 1));
+      return { eintraege: alle.slice(0, f.max ?? 500).map(kopie), gesamt: alle.length };
+    },
+    async loeschprotokollAufraeumen(vor) {
+      const vorher = loeschprotokoll.length;
+      const bleibt = loeschprotokoll.filter((e) => e.zeit >= vor);
+      loeschprotokoll.splice(0, loeschprotokoll.length, ...bleibt);
+      return vorher - bleibt.length;
     },
     async leereDokumentPapierkorb(ids) {
       const dateien = new Set<string>();

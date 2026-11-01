@@ -29,6 +29,7 @@ Jede Mappe hat eine **Historie** (wer wann was geändert hat). Wird eine Mappe e
 - Ein Mappentyp lässt sich nicht löschen, solange Mappen von ihm im Papierkorb liegen.
 - Mappen eines Mappentyps im [Archivmodus](archiv.md) bleiben im Papierkorb, bis ihre Aufbewahrungsfrist endet – auch wenn die Aufbewahrung des Papierkorbs vorher abläuft. Endgültig löschen lassen sie sich vorher nicht, auch nicht als Administrator.
 - Die Dateien bleiben im Dateiordner, bis der Papierkorb geleert ist.
+- Jeder Schritt – in den Papierkorb, wiederhergestellt, endgültig gelöscht (von Hand, geleert oder nach Ablauf) – steht im [Löschprotokoll](datenschutz.md#loschprotokoll), ohne Titel und Inhalte.
 
 ## Einzelne Dokumente
 

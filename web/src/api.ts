@@ -19,6 +19,11 @@ import type { Auftrag } from '../../shared/src/auftrag';
 import type { Baum } from '../../shared/src/baum';
 import type { LoeschAktion, LoeschPlan, LoeschVorschau } from '../../shared/src/loeschbaum';
 import type { Luecke } from '../../shared/src/loeschkonzept';
+import type { LoeschAnlass, LoeschEintrag } from '../../shared/src/loeschprotokoll';
+
+/** Grund fürs Löschprotokoll (#470) als Body-Teil bzw. Query. */
+const grundAus = (a?: LoeschAnlass) => (a?.grund ? { grund: a.grund, grundText: a.text ?? '' } : {});
+const anlassQuery = (a?: LoeschAnlass) => (a?.grund ? `?${new URLSearchParams({ grund: a.grund, ...(a.text ? { grundText: a.text } : {}) })}` : '');
 import type { AuskunftAuswahl, AuskunftLink, AuskunftStand, AuskunftVorschau, Datenschutz } from '../../shared/src/auskunft';
 import type { Dokumentart } from '../../shared/src/demodaten';
 import { merkeAnfrage } from './diagnose';
@@ -342,8 +347,8 @@ export const api = {
       sicht, ...(link !== undefined ? { link } : {}), ...(suche ? { suche } : {}), ...(suche && volltext ? { volltext: 'true' } : {}), ...(suche && notizen ? { notizen: 'true' } : {}),
     })}`),
   /** Mehrere Mappen löschen (#150); probe = nur zählen. */
-  mappenLoeschen: (ids: string[], probe = false) =>
-    anfrage<{ mappen: number; dokumente: number; geloescht: number; ausgelassen: Array<{ id: string; titel: string; grund: string }> }>('POST', '/api/mappen/loeschen', { ids, probe }),
+  mappenLoeschen: (ids: string[], probe = false, anlass?: LoeschAnlass) =>
+    anfrage<{ mappen: number; dokumente: number; geloescht: number; ausgelassen: Array<{ id: string; titel: string; grund: string }> }>('POST', '/api/mappen/loeschen', { ids, probe, ...grundAus(anlass) }),
   einstellungen: () => anfrage<Record<string, unknown>>('GET', '/api/konto/einstellungen'),
   designs: () => anfrage<{ designs: Design[]; standard: string | null }>('GET', '/api/designs'),
   apiSchluessel: () => anfrage<ApiSchluessel[]>('GET', '/api/konto/api-schluessel'),
@@ -394,10 +399,10 @@ export const api = {
   gesehen: (ids: string[]) => anfrage<null>('POST', '/api/gesehen', { ids }),
   mappeAnlegen: (m: unknown) => anfrage<Mappe & { hinweis?: string }>('POST', '/api/mappen', m),
   mappeAendern: (id: string, m: unknown) => anfrage<Mappe & { hinweis?: string }>('PUT', `/api/mappen/${id}`, m),
-  mappeLoeschen: (id: string) => anfrage<null>('DELETE', `/api/mappen/${id}`),
+  mappeLoeschen: (id: string, anlass?: LoeschAnlass) => anfrage<null>('DELETE', `/api/mappen/${id}${anlassQuery(anlass)}`),
   /** Mit allen verknüpften Mappen löschen (#424). */
   loeschVorschau: (id: string, tiefe: number) => anfrage<LoeschVorschau>('GET', `/api/mappen/${id}/loeschvorschau?tiefe=${tiefe}`),
-  mitVerknuepftenLoeschen: (id: string, e: { tiefe: number; auswahl: Record<string, LoeschAktion> }) =>
+  mitVerknuepftenLoeschen: (id: string, e: { tiefe: number; auswahl: Record<string, LoeschAktion>; grund?: string; grundText?: string }) =>
     anfrage<{ vorgang: string; endgueltig: boolean; zahlen: LoeschPlan['zahlen']; loeschen: string[]; erinnerung: { id: string; datum: string; text: string } | null }>('POST', `/api/mappen/${id}/mit-verknuepften-loeschen`, e),
   vorgangWiederherstellen: (vorgang: string, werkbank = false) =>
     anfrage<{ mappen: number; verweiseWieder: number; verweiseEntfallen: number; startId: string | null }>('POST', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/vorgang/${vorgang}/wiederherstellen`),
@@ -564,7 +569,7 @@ export const api = {
   entwicklermodus: (an: boolean) => anfrage<Benutzer>('PUT', '/api/konto/profil', { entwicklermodus: an }),
   emailAendern: (email: string, passwort: string) => anfrage<Benutzer>('PUT', '/api/konto/email', { email, passwort }),
   passwortAendern: (passwortAlt: string, passwortNeu: string) => anfrage<{ benutzer: Benutzer }>('PUT', '/api/konto/passwort', { passwortAlt, passwortNeu }),
-  dokumentLoeschen: (id: string) => anfrage<null>('DELETE', `/api/dokumente/${id}`),
+  dokumentLoeschen: (id: string, anlass?: LoeschAnlass) => anfrage<null>('DELETE', `/api/dokumente/${id}${anlassQuery(anlass)}`),
   /* Vollexport (#254) */
   vollexport: () => anfrage<VollexportStand>('GET', '/api/werkbank/export'),
   vollexportStarten: (o: { passwoerter: boolean; passwoerterBestaetigt: boolean; protokolle: boolean; kontakte: Record<string, KontaktZuordnung> }) => anfrage<Auftrag>('POST', '/api/werkbank/export', o),
@@ -597,6 +602,9 @@ export const api = {
     anfrage<Baum>('GET', `/api/mappen/${id}/baum?${new URLSearchParams(Object.entries(o).filter(([, v]) => v !== undefined).map(([k, v]) => [k, Array.isArray(v) ? v.join(',') : String(v)]))}`),
   /** Datenschutz: Auskunft nach Art. 15 DSGVO (#396). */
   datenschutz: () => anfrage<DatenschutzStand>('GET', '/api/werkbank/datenschutz'),
+  /** Löschprotokoll (#470) */
+  loeschprotokoll: (f: Record<string, string>) => anfrage<{ eintraege: LoeschEintrag[]; gesamt: number; jahre: number; max: number }>('GET', `/api/werkbank/loeschprotokoll?${new URLSearchParams(f)}`),
+  loeschprotokollJahre: (jahre: number) => anfrage<{ jahre: number }>('PUT', '/api/werkbank/loeschprotokoll/einstellungen', { jahre }),
   /** Auskunft zustellen (#455): per E-Mail (nur verschlüsselt) oder als Abruf-Link mit Abrufcode. */
   auskunftEmail: (id: string, e: { an: string; betreff: string; nachricht: string }) => anfrage<{ an: string[] }>('POST', `/api/werkbank/auskunft/${id}/email`, e),
   auskunftLink: (id: string, e: { tage: number; abrufe: number; code?: string; an?: string; senden: boolean }) => anfrage<{ link: AuskunftLink; url: string; code: string; gesendet: boolean }>('POST', `/api/werkbank/auskunft/${id}/link`, e),

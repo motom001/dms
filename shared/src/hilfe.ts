@@ -71,6 +71,7 @@ export const HILFE = {
   'werkbank.auskunft': admin('datenschutz/', 'Auskunft nach Art. 15 DSGVO', 'auskunft-nach-art-15-dsgvo'),
   'werkbank.auskunft.zustellen': admin('datenschutz/', 'Auskunft zustellen', 'auskunft-zustellen'),
   'werkbank.loeschkonzept': admin('loeschkonzept/', 'Löschkonzept aus dem DMS erzeugen', 'aus-dem-dms-erzeugen'),
+  'werkbank.loeschprotokoll': admin('datenschutz/', 'Löschprotokoll', 'loschprotokoll'),
   'werkbank.dateienpruefen': admin('archiv/', 'Alle Dateien prüfen', 'alle-dateien-prufen'),
   'werkbank.auswahlfilter': admin('mappentypen/', 'Auswahlfilter am Verweisfeld', 'auswahl-einschranken'),
   'werkbank.nummernkreise.nachtragen': admin('nummernkreise/', 'Nummern nachträglich vergeben', 'nummern-nachtraglich-vergeben'),
