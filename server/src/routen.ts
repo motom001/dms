@@ -1277,9 +1277,10 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
 
     /* ---------- Datenbank: lange Zugriffe ---------- */
     { methode: 'GET', pfad: '/api/werkbank/datenbank', zugang: 'admin', handler: async () => {
-      if (!messung) return ok({ einstellungen: null, langlaeufer: [], laufend: [] });
+      if (!messung) return ok({ einstellungen: null, langlaeufer: [], laufend: [], auslastung: null });
       const [langlaeufer, laufend] = await Promise.all([messung.speicher.liste(500), messung.speicher.laufende()]);
-      return ok({ einstellungen: messung.einstellungen, langlaeufer, laufend });
+      // Verzögerung der Ereignisschleife (#477): wie lange Anfragen auf den Server warten.
+      return ok({ einstellungen: messung.einstellungen, langlaeufer, laufend, auslastung: messung.auslastung.stand() });
     } },
     { methode: 'PUT', pfad: '/api/werkbank/datenbank', zugang: 'admin', handler: async (a) => {
       if (!messung) throw new Fachfehler(404, 'Messung ist nicht aktiv.');

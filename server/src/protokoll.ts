@@ -41,6 +41,11 @@ export interface Kontext {
   pfad?: string;
   benutzer?: string;
   db: { anzahl: number; ms: number };
+  /**
+   * Rechte-Auswertung (#477): Wandzeit, in der mindestens eine Auswertung lief (überlappende zählen
+   * einmal), und die Datenbankzeit darin (die zählt schon bei `db`).
+   */
+  rechte?: { ms: number; dbMs: number; offen: number; seit: number };
   /** Adresse, unter der die Anfrage kam, z. B. https://dms.example.org (für Links, solange keine Adresse gepflegt ist). */
   ursprung?: string;
 }

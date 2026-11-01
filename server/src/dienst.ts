@@ -9,6 +9,7 @@ import type { Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
 import { Auftraege } from './auftrag';
 import { protokoll } from './protokoll';
+import { rechteMessen } from './messung';
 import { graubild } from './graubild';
 import { Fachfehler } from './fehler';
 import { fuegeZusammen, pruefeAuswahl, pruefeTeile, SEITENBILDER_MAX, Seitenbilder, seitenInfo, teile, teilName } from './pdfseiten';
@@ -1000,7 +1001,8 @@ export class Dienst {
     }
     // Kommende Fristen: Datumsfelder mit Erinnerung, die noch keine Aufgabe sind.
     for (const typ of [...z.typen.values()].filter((x) => fristFelder(x).length)) {
-      const kandidaten = (await this.repo.listeMappen(typ.id)).filter((m) => fristFelder(typ).some((f) => {
+      // Nur Mappen mit einem Datum im Zeitraum aus der Datenbank holen (#477), nicht alle des Typs.
+      const kandidaten = (await this.repo.mappenMitDatum(typ.id, fristFelder(typ).map((f) => f.key), heute, bis)).filter((m) => fristFelder(typ).some((f) => {
         const w = m.werte[f.key];
         return istDatum(w) && w >= heute && w <= bis && meins(fristEmpfaenger(f.frist!, m));
       }));
@@ -1674,8 +1676,9 @@ export class Dienst {
   async zaehler(ich: { id: string; rolle: string }, zg?: Zugriff) {
     const lesen = zg?.lesen ?? null;
     const z = await this.repo.zaehler(ich.id, ich.rolle === 'admin', lesen);
-    // Der Eingang zählt auch Aufgaben zu Mappen, die man nicht lesen darf (#127).
-    const eingang = lesen ? (await this.repo.zaehler(ich.id, ich.rolle === 'admin')).eingang : z.eingang;
+    // Der Eingang zählt auch Aufgaben zu Mappen, die man nicht lesen darf (#127) – das liefert zaehler
+    // gleich mit (#477); früher lief für Mitglieder dafür ein zweiter Durchgang über alle Mappen.
+    const eingang = z.eingang;
     const alleSichten = await this.repo.listeSichten();
     // Verborgene Sichten (#148): kein Zähler, und ihre Mappen zählen auch in der Elternsicht nicht.
     const verborgen = this.verborgeneSichten(alleSichten, zg);
@@ -1710,6 +1713,10 @@ export class Dienst {
    * lesen = null (alles). Wird je Anfrage einmal gebildet.
    */
   async zugriff(ich: { id: string; rolle: string; art?: 'dienst'; paketId?: string }): Promise<Zugriff> {
+    return rechteMessen(() => this.bildeZugriff(ich));
+  }
+
+  private async bildeZugriff(ich: { id: string; rolle: string; art?: 'dienst'; paketId?: string }): Promise<Zugriff> {
     const a = await this.aufloesung(ich.id);
     const typen = await this.repo.listeTypen();
     const admin = ich.rolle === 'admin' && ich.art !== 'dienst';
@@ -1748,6 +1755,10 @@ export class Dienst {
 
   /** Wirksame Rechte an einer Mappe (Administrator: alles im Rahmen der Haken am Mappentyp). */
   async rechteAn(z: Zugriff, m: Mappe, neu = false): Promise<Rechte> {
+    return rechteMessen(() => this.rechteAnEine(z, m, neu));
+  }
+
+  private async rechteAnEine(z: Zugriff, m: Mappe, neu: boolean): Promise<Rechte> {
     const typ = z.typen.get(m.typId);
     if (!typ) return { ...NICHTS };
     if (z.admin) return wirksamVon(ALLES, typ);
@@ -1758,8 +1769,14 @@ export class Dienst {
 
   /** Wie `rechteAn` für viele Mappen mit einem Zugriff (#367). */
   async rechteAnVielen(z: Zugriff, ms: Mappe[]): Promise<Map<string, Rechte>> {
+    return rechteMessen(() => this.rechteAnMehreren(z, ms));
+  }
+
+  private async rechteAnMehreren(z: Zugriff, ms: Mappe[]): Promise<Map<string, Rechte>> {
     const r = new Map<string, Rechte>();
     if (z.admin) { for (const m of ms) { const typ = z.typen.get(m.typId); r.set(m.id, typ ? wirksamVon(ALLES, typ) : { ...NICHTS }); } return r; }
+    // Dienstkonto (#338): wie in rechteAn, ohne Regeln.
+    if (z.paket) { for (const m of ms) r.set(m.id, await this.rechteAnEine(z, m, false)); return r; }
     const quelle = await this.mappenquelle(z.wer.id, ms.map((m) => m.id));
     for (const m of ms) { const typ = z.typen.get(m.typId); r.set(m.id, typ ? rechteAnMappe(typ, m, z.wer, z.a, quelle, false).wirksam : { ...NICHTS }); }
     return r;
@@ -1785,7 +1802,7 @@ export class Dienst {
   /** Welche dieser Mappen darf der Benutzer lesen? */
   async lesbare(z: Zugriff | undefined, ids: string[]): Promise<Set<string>> {
     if (!z || !z.lesen) return new Set(ids);
-    return this.repo.lesbare(ids, z.lesen);
+    return rechteMessen(() => this.repo.lesbare(ids, z.lesen!));
   }
 
   /** Titel nicht lesbarer Mappen ausblenden (#124). */
@@ -1942,7 +1959,9 @@ export class Dienst {
   /** Klartext von Passwortfeldern nur dort, wo P gilt (#124). */
   async mitPasswortRecht<T extends Mappe>(z: Zugriff, mappen: T[]): Promise<{ mit: T[]; ohne: T[] }> {
     const mit: T[] = []; const ohne: T[] = [];
-    for (const m of mappen) ((await this.rechteAn(z, m)).P ? mit : ohne).push(m);
+    // Gebündelt (#477): eine Abfrage für alle Mappen statt einer je Mappe.
+    const r = await this.rechteAnVielen(z, mappen);
+    for (const m of mappen) (r.get(m.id)?.P ? mit : ohne).push(m);
     return { mit, ohne };
   }
 

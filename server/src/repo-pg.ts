@@ -477,6 +477,14 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         : await sql`SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} ORDER BY erstellt`;
       return r.map(alsMappe);
     },
+    async mappenMitDatum(typId, felder, von, bis) {
+      if (!istUuid(typId) || !felder.length) return [];
+      // Datumswerte stehen als Text JJJJ-MM-TT in werte; der Textvergleich ordnet sie richtig.
+      const r = await sql`SELECT * FROM mappen WHERE haushalt_id = ${haushaltId} AND typ_id = ${typId}
+        AND EXISTS (SELECT 1 FROM unnest(${felder}::text[]) AS f(k) WHERE werte->>f.k BETWEEN ${von} AND ${bis})
+        ORDER BY erstellt`;
+      return r.map(alsMappe);
+    },
     async mappenKurz() {
       return (await sql`SELECT id, typ_id, coalesce(titel, '') AS titel FROM mappen WHERE haushalt_id = ${haushaltId}`)
         .map((r) => ({ id: r.id as string, typId: r.typ_id as string, titel: r.titel as string }));
@@ -776,16 +784,18 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const r = await sql`
         SELECT typ_id, count(*)::int AS anzahl,
           count(*) FILTER (WHERE passt IS NOT TRUE)::int AS unpassend,
-          count(*) FILTER (WHERE demo)::int AS demo,
-          count(*) FILTER (WHERE EXISTS (SELECT 1 FROM aufgaben a WHERE a.mappe_id = mappen.id AND a.erledigt IS NULL
-            AND (a.empfaenger_id = ${istUuid(benutzerId) ? benutzerId : null}::uuid OR (${admin} AND a.empfaenger_id IS NULL))))::int AS eingang
+          count(*) FILTER (WHERE demo)::int AS demo
         FROM mappen WHERE haushalt_id = ${haushaltId} ${lesen} GROUP BY typ_id`;
+      // Eingang (#477): von den offenen Aufgaben aus statt je Mappe (EXISTS über alle Mappen), ohne Lesefilter.
+      const [e] = await sql`SELECT count(DISTINCT a.mappe_id)::int AS n FROM aufgaben a JOIN mappen m ON m.id = a.mappe_id
+        WHERE m.haushalt_id = ${haushaltId} AND a.erledigt IS NULL
+          AND (a.empfaenger_id = ${istUuid(benutzerId) ? benutzerId : null}::uuid OR (${admin} AND a.empfaenger_id IS NULL))`;
       const [f] = await sql`SELECT count(*)::int AS n FROM favoriten f JOIN mappen ON mappen.id = f.mappe_id
         WHERE f.haushalt_id = ${haushaltId} AND f.benutzer_id = ${istUuid(benutzerId) ? benutzerId : null}::uuid ${lesen}`;
       return {
         favoriten: f.n as number,
         typen: new Map(r.map((z) => [z.typ_id as string, { anzahl: z.anzahl as number, unpassend: z.unpassend as number, demo: z.demo as number }])),
-        eingang: r.reduce((a, z) => a + (z.eingang as number), 0),
+        eingang: e.n as number,
       };
     },
     async zaehleKlauseln(liste, lesefilter) {
