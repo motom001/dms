@@ -425,6 +425,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Baum über Verweise">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mit-verknupften-mappen-loschen-424" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mit verknüpften Mappen löschen (#424)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -776,6 +793,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Baum über Verweise">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mit-verknupften-mappen-loschen-424" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mit verknüpften Mappen löschen (#424)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -820,12 +854,18 @@ docs/glossar.yml  Glossar – die eine Quelle für alle Begriffe (daraus entsteh
 <h2 id="baum-uber-verweise">Baum über Verweise<a class="headerlink" href="#baum-uber-verweise" title="Permanent link">&para;</a></h2>
 <p>Alles, was über Verweise an einer Mappe hängt, sammelt <strong>ein</strong> Modul – genutzt von der Auskunft nach Art. 15 DSGVO (#396) und von „Mappe mit allen verknüpften Mappen löschen“ (#424). Neue Funktionen, die „alles zu dieser Mappe“ brauchen, nehmen es statt eigener Schleifen.</p>
 <ul>
-<li><strong>Typen und Optionen:</strong> <code>shared/src/baum.ts</code> – <code>BaumOptionen</code> (<code>richtungen</code>: <code>verwiesenVon</code> = Mappen, die auf den Knoten verweisen, „nach unten“; <code>verweistAuf</code> = Mappen, auf die er verweist; <code>tiefe</code> 1–10; <code>max</code> bis 5000; <code>seitwaerts</code>; <code>ohneTypen</code>), <code>bereinigeBaumOptionen(eingabe, standard)</code>, <code>Baum</code>, <code>BaumKnoten</code>, Hilfen <code>kinderVon</code>, <code>haengtAuchAnderswo</code>, <code>wirdAnderswoGebraucht</code>, <code>baumZahlen</code>.</li>
-<li><strong>Algorithmus:</strong> <code>server/src/baum.ts</code> – <code>sammleBaum(quelle, startId, optionen)</code>: Breitensuche, je Ebene ein Zugriff auf Verweise (<code>Repo.kantenVon</code>), Mappen und Lesbarkeit. Ohne <code>seitwaerts</code> geht ein Knoten nur in der Richtung weiter, über die er erreicht wurde (die Start-Mappe in alle gewählten). Kreise und mehrfache Wege landen in <code>auchUeber</code> und <code>kreise</code>, jeder Knoten steht einmal da. Über <code>max</code> hinaus: <code>abgeschnitten</code>.</li>
+<li><strong>Typen und Optionen:</strong> <code>shared/src/baum.ts</code> – <code>BaumOptionen</code> (<code>richtungen</code>: <code>verwiesenVon</code> = Mappen, die auf den Knoten verweisen, „nach unten“; <code>verweistAuf</code> = Mappen, auf die er verweist; <code>tiefe</code> 1–10; <code>max</code> bis 5000; <code>seitwaerts</code>; <code>ohneTypen</code>; <code>nurZugehoerigkeit</code>), <code>bereinigeBaumOptionen(eingabe, standard)</code>, <code>Baum</code>, <code>BaumKnoten</code>, Hilfen <code>kinderVon</code>, <code>haengtAuchAnderswo</code>, <code>wirdAnderswoGebraucht</code>, <code>baumZahlen</code>.</li>
+<li><strong>Algorithmus:</strong> <code>server/src/baum.ts</code> – <code>sammleBaum(quelle, startId, optionen)</code>: Breitensuche, je Ebene ein Zugriff auf Verweise (<code>Repo.kantenVon</code>), Mappen und Lesbarkeit. Ohne <code>seitwaerts</code> geht ein Knoten nur in der Richtung weiter, über die er erreicht wurde (die Start-Mappe in alle gewählten). Kreise und mehrfache Wege landen in <code>auchUeber</code> und <code>kreise</code>, jeder Knoten steht einmal da. Über <code>max</code> hinaus: <code>abgeschnitten</code>. Mit <code>nurZugehoerigkeit</code> geht es nur über Verweisfelder der Art Zugehörigkeit weiter (<code>verweisartVon(typ, feldKey)</code>, Standard Bezug); Knoten, die nur über Bezug dranhängen, sind Blätter mit <code>nurBezug</code> – erreicht die Suche sie später über eine Zugehörigkeit, werden sie dort eingehängt und weiterverfolgt (innerhalb einer Ebene haben Zugehörigkeiten Vorrang).</li>
 <li><strong>Rechte:</strong> Die <code>BaumQuelle</code> baut <code>Dienst.baumQuelle(zugriff)</code>; nur lesbare Mappen werden aufgenommen <strong>und</strong> weiterverfolgt, nicht lesbare zählen nur in <code>verborgen</code>. Zum Aufrufen: <code>await dienst.baum(startId, eingabe, zugriff)</code> (Benutzer und Rollen sind ohne <code>ohneTypen</code> ausgenommen), über HTTP <code>GET /api/v1/mappen/{id}/baum</code>.</li>
-<li><strong>Je Knoten:</strong> <code>typ</code>, <code>titel</code>, <code>ebene</code>, <code>ueber</code> (Elternknoten, Richtung, Feld), <code>dokumente</code>, <code>aussen</code> (Verweise zu Mappen außerhalb des Baums je Richtung, nicht lesbare ohne Titel), <code>aufbewahrenBis</code>/<code>gesperrt</code> (Archivmodus #212) und <code>rechte</code> (CRUDP des Aufrufers).</li>
+<li><strong>Je Knoten:</strong> <code>typ</code>, <code>titel</code>, <code>ebene</code>, <code>ueber</code> (Elternknoten, Richtung, Feld, <code>verweisart</code>), <code>nurBezug</code>, <code>dokumente</code>, <code>aussen</code> (Verweise zu Mappen außerhalb des Baums je Richtung, nicht lesbare ohne Titel), <code>aufbewahrenBis</code>/<code>gesperrt</code> (Archivmodus #212) und <code>rechte</code> (CRUDP des Aufrufers).</li>
 </ul>
-<p>Für #424 heißt das: 🔒 = <code>gesperrt</code>, ⛔ = <code>!rechte.D</code>, 🔗 = <code>haengtAuchAnderswo(k)</code> (der Knoten verweist noch auf eine Mappe außerhalb – nur den Verweis entfernen), und <code>wirdAnderswoGebraucht(k)</code> zeigt, dass eine Mappe außerhalb auf ihn verweist (Löschen würde dort einen Verweis kappen). Tests: <code>server/test/auskunft.test.ts</code> (Kreise, Rechte, Obergrenze, seitwärts).</p>
+<p>Tests: <code>server/test/auskunft.test.ts</code> (Kreise, Rechte, Obergrenze, seitwärts).</p>
+<h3 id="mit-verknupften-mappen-loschen-424">Mit verknüpften Mappen löschen (#424)<a class="headerlink" href="#mit-verknupften-mappen-loschen-424" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Vorschau und Plan</strong> (reine Funktionen, Server und Oberfläche): <code>shared/src/loeschbaum.ts</code>. <code>Dienst.loeschVorschau(startId, { tiefe, max }, zugriff)</code> sammelt den Baum nur <code>verwiesenVon</code> mit <code>nurZugehoerigkeit</code> (Standardtiefe 5) und ergänzt <code>kanten</code> (alle Verweise zwischen Knoten, nicht nur die Baumwege), <code>geteilt</code> und <code>nichtLoeschbar</code>. Kennzeichen (<code>kennzeichen(v, k)</code>): 🔒 = <code>gesperrt</code>, 📎 = <code>nurBezug</code> (wird nie gelöscht, <code>loeschen</code> gilt als <code>entkoppeln</code>), ⛔ = <code>!rechte.D</code> oder <code>nichtLoeschbar</code>, 🔗 = <code>geteilt</code> – enger als <code>haengtAuchAnderswo(k)</code>: zählt nur Verweise der Art Zugehörigkeit nach außen über ein Feld, über das der Knoten im Baum hängt, oder auf eine Mappe desselben Typs wie im Baum; Verweise auf Stammdaten (Ablageort, Kategorie) und Benutzer zählen nicht, sonst wäre fast alles 🔗.</li>
+<li><strong>Plan:</strong> <code>planeLoeschung(vorschau, auswahl)</code> – Auswahl je Id <code>loeschen | entkoppeln | behalten</code> (fehlende Ids bleiben). Fixpunkt: Eine Mappe bleibt, wenn <code>wirdAnderswoGebraucht(k)</code> oder eine bleibende Mappe im Baum ohne <code>entkoppeln</code> auf sie verweist. Gesperrte Mappen werden nie entkoppelt.</li>
+<li><strong>Ausführen:</strong> <code>Dienst.loescheMitVerknuepften</code> sammelt neu, plant, prüft jede Mappe wie beim einzelnen Löschen (<code>loeschPruefung</code> mit allen Rückverweisen), kappt die Verweise (<code>entkoppeln</code>, Recht U) und legt alles mit <code>Repo.legeVorgangInPapierkorb</code> in <strong>einer</strong> Transaktion in den Papierkorb (Verweise untereinander zuerst – so gehen auch Kreise). Spalten <code>papierkorb.vorgang</code> und <code>papierkorb.entkoppelt</code> (Migration 042). <code>stelleVorgangWiederHer</code> bzw. <code>Repo.stelleMehrereWiederHer</code> legen erst alle Mappen, dann die Verweise an und setzen die entkoppelten Verweise wieder. Tests: <code>server/test/loeschbaum.test.ts</code>.</li>
+</ul>
 <p>Mehr Hintergrund im Administratorhandbuch: <a href="https://motom001.github.io/dms/admin/aktuell/technik/">Technik</a> und <a href="https://motom001.github.io/dms/admin/aktuell/entscheidungen/">Entscheidungen</a>.</p>
 
 

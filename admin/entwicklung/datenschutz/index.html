@@ -1044,6 +1044,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#mit-verknupften-mappen-loschen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Löschen mit verknüpften Mappen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#schnittstelle" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2433,6 +2444,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#mit-verknupften-mappen-loschen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Löschen mit verknüpften Mappen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#schnittstelle" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2625,7 +2647,7 @@
 <li><strong>Archivmodus einschalten</strong> für jeden Mappentyp mit gesetzlicher Frist: Frist in Jahren und Stichtag (z. B. Rechnungsdatum). Bis Fristende ist die Mappe gegen Löschen gesperrt; danach steht sie unter <strong>Darf weg</strong>. Siehe <a href="../archiv/#einschalten">Archivmodus</a>.</li>
 <li><strong>Kürzere Fristen ohne Archivmodus</strong> (z. B. Interessenten, Bewerbungen): Lege eine <a href="../sichten/">Ansicht</a> an, die die fälligen Mappen nach einem Datumsfeld zeigt, und schau sie regelmäßig durch.</li>
 <li><strong>Wie lange Gelöschtes nachwirkt:</strong> Aufbewahrung des <a href="../papierkorb/#aufbewahrung">Papierkorbs</a> (Standard 30 Tage), Historie gelöschter Mappen (Standard 365 Tage) und Aufbewahrung der <a href="../sicherung/#zeitplan-und-aufbewahrung">Sicherungen</a> passend zu deinem Konzept einstellen.</li>
-<li><strong>Regelmäßig prüfen:</strong> z. B. jedes Jahr im Januar <strong>Werkbank → Darf weg</strong> durchgehen und löschen, was weg darf. Gelöscht wird nie automatisch.</li>
+<li><strong>Regelmäßig prüfen:</strong> z. B. jedes Jahr im Januar <strong>Werkbank → Darf weg</strong> durchgehen und löschen, was weg darf – einen Kunden oder Vertragspartner samt allem, was dranhängt, mit <a href="#mit-verknupften-mappen-loschen">Mit verknüpften Mappen löschen</a>. Gelöscht wird nie automatisch.</li>
 <li><strong>Sperren auf Verlangen</strong> wie unter <a href="#loschen-auf-verlangen">Löschen auf Verlangen</a> beschrieben.</li>
 <li><strong>Dokumentieren:</strong> Das ausgefüllte Löschkonzept legst du selbst als Mappe im DMS ab und hältst es aktuell.</li>
 </ol>
@@ -2760,8 +2782,24 @@
 </ul>
 <h3 id="erreichbarkeit-aus-dem-internet">Erreichbarkeit aus dem Internet<a class="headerlink" href="#erreichbarkeit-aus-dem-internet" title="Permanent link">&para;</a></h3>
 <p>Der Abruf-Link funktioniert nur, wenn die Person dein DMS von außen erreicht. Viele Installationen zu Hause sind das nicht – dann nimm den Weg per E-Mail. Soll das DMS erreichbar sein, geht das über einen <a href="../installation/#hinter-einem-reverse-proxy">Reverse-Proxy</a> mit HTTPS (z. B. auf dem NAS mit Portfreigabe), einen Tunnel (z. B. Cloudflare Tunnel, Tailscale Funnel) oder <a href="https://motom001.github.io/dms/installieren/aktuell/anbieter/">bei einem Anbieter</a>. Trage unter <a href="../installation/#e-mail-und-adresse">E-Mail und Adresse</a> die Adresse ein, unter der es von außen erreichbar ist – sie steht im Link. Wer nur die Abrufseite nach außen geben will, gibt am Proxy <code>/abruf</code>, <code>/api/abruf</code>, <code>/api/abruf/datei</code> und die Dateien der Oberfläche (<code>/assets/</code>) frei.</p>
+<h2 id="mit-verknupften-mappen-loschen">Löschen mit verknüpften Mappen<a class="headerlink" href="#mit-verknupften-mappen-loschen" title="Permanent link">&para;</a></h2>
+<p>Der dritte Baustein eines <a href="#sperr-und-loschkonzept-aufsetzen">Sperr- und Löschkonzepts</a> neben Archivmodus und <strong>Darf weg</strong>: An einer Mappe, z. B. einem Kunden oder Vertragspartner ohne Aktivität seit Jahren, löscht <strong>Mappe ▾ → Mit verknüpften Mappen löschen …</strong> die Mappe mit Verträgen, Rechnungen, Post und Dokumenten – nach einer Vorschau als Baum (<a href="https://motom001.github.io/dms/benutzer/aktuell/mappen/#mit-verknupften-mappen-loschen">Benutzerhandbuch</a>).</p>
+<p>Dabei gilt:</p>
+<ul>
+<li><strong>Nur nach unten:</strong> Mitgelöscht werden Mappen, die auf die gelöschte verweisen (Rechnung → Vertrag → Vertragspartner: Wer den Vertragspartner löscht, löscht Verträge und Rechnungen mit). Was nach oben zeigt, bleibt – auch nicht über ein Kind seitwärts zu dessen anderen Eltern: Löschst du eine Rechnung, geht der Lieferschein mit, der auf sie verweist; sein Verweis auf den Vertragspartner wird nicht verfolgt. Jede Mappe zählt nur einmal (Kreise).</li>
+<li><strong>Nur über Zugehörigkeit:</strong> Mitgelöscht und weitergesammelt wird nur über Verweisfelder der <a href="../mappentypen/#verweise-mappen-verbinden">Verweisart</a> <strong>Zugehörigkeit</strong>. Hängt eine Mappe nur über einen <strong>Bezug</strong> dran (📎, z. B. <em>Ansprechpartner</em>, <em>Für</em>, <em>Zugeordnet zu</em>), wird nur der Verweis entfernt; die Mappe bleibt, und was an ihr hängt, wird nicht gesammelt. Prüfe darum die Verweisart deiner Felder: Soll ein Vertrag mit dem Vertragspartner gehen, muss sein Feld <em>Vertragspartner</em> eine Zugehörigkeit sein.</li>
+<li><strong>Fristen werden nie übergangen.</strong> Eine Mappe in der Aufbewahrungsfrist (🔒) bleibt – und mit ihr alles, worauf sie verweist (ihr Vertrag, der Vertragspartner), damit sie nachvollziehbar bleibt. Verweise einer gesperrten Mappe werden nicht entfernt.</li>
+<li><strong>Nur im Rahmen der Rechte:</strong> Mappen ohne Löschrecht (⛔) bleiben, ebenso Mappen, die der Benutzer nicht sehen darf oder die außerhalb der Vorschau noch darauf verweisen.</li>
+<li><strong>Geteilte Mappen werden nur entkoppelt:</strong> Hängt eine Mappe auch an einer anderen (🔗, z. B. eine Rechnung zu zwei Verträgen), wird nur der Verweis entfernt; die Mappe bleibt.</li>
+<li><strong>Alles über den Papierkorb:</strong> Als ein Vorgang, gemeinsam wiederherstellbar. Endgültig weg ist es nach der <a href="../papierkorb/#aufbewahrung">Aufbewahrung des Papierkorbs</a> oder mit <em>Papierkorb leeren</em>; ist der Papierkorb ausgeschaltet, sofort.</li>
+<li><strong>Nachvollziehbar, ohne Inhalte:</strong> Die Historie jeder Mappe hält „in den Papierkorb gelegt – mit verknüpften Mappen gelöscht“ mit der Zahl der Mappen und Dokumente fest, die Start-Mappe auch, wie viele aus welchem Grund blieben. Das <a href="../fehlersuche/#protokoll">Protokoll</a> (Modul „ablage“) nennt wer, Start-Mappe und Vorgang (als Id), Anzahl Mappen, Dokumente, entfernte Verweise und was warum blieb – keine Titel oder Feldwerte. Nach dem endgültigen Löschen bleibt die Historie so lange, wie unter <a href="../papierkorb/#historie-endgultig-geloschter-mappen">Historie endgültig gelöschter Mappen</a> eingestellt.</li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Löschkonzept dokumentieren</p>
+<p>Halte in deiner <a href="../verfahrensdokumentation/">Verfahrensdokumentation</a> fest, welche Fristen je Mappentyp gelten, wer wann prüft, was weg darf (z. B. einmal im Jahr über <em>Darf weg</em>), und dass dabei „Mit verknüpften Mappen löschen“ verwendet wird.</p>
+</div>
 <h2 id="schnittstelle">Schnittstelle<a class="headerlink" href="#schnittstelle" title="Permanent link">&para;</a></h2>
-<p>Alles geht auch über die <a href="../api/">API</a>: <code>POST /api/v1/werkbank/auskunft/vorschau</code> (Prüfliste), <code>POST /api/v1/werkbank/auskunft</code> (erzeugen, Hintergrundauftrag), <code>GET /api/v1/werkbank/auskunft/{id}/zip</code>, <code>POST /api/v1/werkbank/auskunft/frist</code> und <code>GET</code>/<code>PUT /api/v1/werkbank/datenschutz</code>; zum Zustellen <code>POST /api/v1/werkbank/auskunft/{id}/email</code>, <code>POST /api/v1/werkbank/auskunft/{id}/link</code> und <code>POST /api/v1/werkbank/auskunft/link/{id}/widerrufen</code>. Die Abrufseite selbst (<code>POST /api/abruf</code>, <code>GET /api/abruf/datei</code>) gehört nicht zur API. Die Sammlung über Verweise selbst steht jedem Benutzer mit seinen Rechten unter <code>GET /api/v1/mappen/{id}/baum</code> zur Verfügung.</p>
+<p>Alles geht auch über die <a href="../api/">API</a>: <code>POST /api/v1/werkbank/auskunft/vorschau</code> (Prüfliste), <code>POST /api/v1/werkbank/auskunft</code> (erzeugen, Hintergrundauftrag), <code>GET /api/v1/werkbank/auskunft/{id}/zip</code>, <code>POST /api/v1/werkbank/auskunft/frist</code> und <code>GET</code>/<code>PUT /api/v1/werkbank/datenschutz</code>; zum Zustellen <code>POST /api/v1/werkbank/auskunft/{id}/email</code>, <code>POST /api/v1/werkbank/auskunft/{id}/link</code> und <code>POST /api/v1/werkbank/auskunft/link/{id}/widerrufen</code>. Die Abrufseite selbst (<code>POST /api/abruf</code>, <code>GET /api/abruf/datei</code>) gehört nicht zur API. Die Sammlung über Verweise selbst steht jedem Benutzer mit seinen Rechten unter <code>GET /api/v1/mappen/{id}/baum</code> zur Verfügung. Für das Löschkonzept: <code>GET /api/v1/mappen/{id}/loeschvorschau</code> (Vorschau mit Vorschlag), <code>POST /api/v1/mappen/{id}/mit-verknuepften-loeschen</code> (ausführen, mit denselben Prüfungen) und <code>POST /api/v1/papierkorb/vorgang/{id}/wiederherstellen</code>.</p>
 
 
 
