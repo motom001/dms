@@ -5523,7 +5523,7 @@
           "Werkbank"
         ],
         "summary": "Auskunft: sammeln und Prüfliste (Administrator)",
-        "description": "Auskunft nach Art. 15 DSGVO (#396): Baum ab der Mappe des Betroffenen (wie GET /mappen/{id}/baum, ohne Benutzer und Rollen), je Mappe Dokumente (mit geschwärzten Fassungen), Notizen, Anzahl Einträge der Historie, Hinweis auf Daten Dritter und die Passwortfelder, die nie mitgehen; dazu Treffer für Name, E-Mail, Kundennummer, IBAN außerhalb des Baums als Vorschläge.",
+        "description": "Auskunft nach Art. 15 DSGVO (#396, #472): Baum ab der Mappe des Betroffenen (wie GET /mappen/{id}/baum mit nurZugehoerigkeit, ohne Benutzer und Rollen): nach unten alles, nach oben nur weiter nach oben; weiter nur über Verweise der Art Zugehörigkeit. Mappen, die nur über Bezug verbunden sind (baum.knoten[].nurBezug, z. B. Vertrag mit der Person als Ansprechpartner), gehen standardmäßig nur als Erwähnung hinaus (auswahl.erwaehnungen). Je Mappe Dokumente (mit geschwärzten Fassungen), Notizen, Anzahl Einträge der Historie, Hinweis auf Daten Dritter und die Passwortfelder, die nie mitgehen. Volltext-Vorschläge gibt es nicht mehr; die Eingabe vorschlaege wird ignoriert.",
         "operationId": "postWerkbankAuskunftVorschau",
         "requestBody": {
           "required": true,
@@ -8408,10 +8408,6 @@
             "items": {
               "type": "string"
             }
-          },
-          "vorschlaege": {
-            "type": "boolean",
-            "description": "false = ohne Volltext-Vorschläge"
           }
         }
       },
@@ -8423,22 +8419,7 @@
           },
           "mappen": {
             "type": "object",
-            "description": "Mappe-Id → { dokumente, notizen, historie, dritte, ohneFelder }"
-          },
-          "vorschlaege": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            }
-          },
-          "vorschlagMappen": {
-            "type": "object"
-          },
-          "begriffe": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "description": "Mappe-Id → { dokumente, notizen, historie, dritte, ohneFelder } (auch für Bezug-Mappen, falls man sie ganz aufnimmt)"
           },
           "frist": {
             "type": "string",
@@ -8513,6 +8494,14 @@
                     }
                   }
                 }
+              },
+              "erwaehnungen": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Bezug-Mappen (nurBezug), die nur mit Art, Titel und Feld hinausgehen – ohne Dokumente, Notizen und übrige Werte (#472); ganz aufgenommene stehen in mappen"
               }
             }
           },
