@@ -363,6 +363,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0871" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.87.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.87.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0870" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1931,6 +1959,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0871" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.87.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.87.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0870" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2012,6 +2068,16 @@
 
 
 <h1 id="neu-in-version-087">Neu in Version 0.87<a class="headerlink" href="#neu-in-version-087" title="Permanent link">&para;</a></h1>
+<h2 id="0871">0.87.1<a class="headerlink" href="#0871" title="Permanent link">&para;</a></h2>
+<h3 id="behoben">Behoben<a class="headerlink" href="#behoben" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Lange Datenbankzugriffe bei vielen Mappen</strong> (#367), gemessen mit 10.000 Mappen und 20.000 Dokumenten:</li>
+<li><strong>Während Demo-Daten entstehen, bleibt die Bedienung flüssig.</strong> Die Erzeugung legt nach jedem Dokument und jedem Paket (jetzt 250 statt 500 Mappen) eine kurze Pause ein; große Dateien, Bilder und lange PDFs blockieren den Server nicht mehr sekundenlang. Vorher hielten einzelne Dokumente alle Anfragen bis zu 6,5 Sekunden an – das erschien in <em>Werkbank → Datenbank</em> als „langer Zugriff“, z. B. beim Öffnen einer Mappe. Die Erzeugung dauert dafür etwas länger.</li>
+<li><strong>Export ohne Abfrage je Mappe und Dokument:</strong> „Meine Daten exportieren“ und der Vollexport lesen Dokumente, Volltexte, Versionen, Notizen, Aufgaben und Historie gebündelt – bei 2.000 Mappen 117 statt knapp 18.000 Zugriffe, die Zeit in der Datenbank sinkt von 6 auf unter 1 Sekunde. Auch der Export als ZIP/PDF und „Per E-Mail senden“ lesen die Dokumente gebündelt.</li>
+<li><strong>Listen lesen keinen Volltext mehr:</strong> Dokumentlisten, Texterkennungs-Aufträge, gleiche Dateien und der Papierkorb laden den (oft viele KB großen) Volltext nicht mehr mit.</li>
+<li><strong>Statistik der Datenbank nach Massenläufen</strong> (<code>ANALYZE</code>): nach dem Erzeugen und Entfernen von Demo-Daten und nach einer Wiederherstellung.</li>
+<li>Entwicklerhandbuch: neue Seite <em>Leistung</em> mit Messlatte (Mappe öffnen und Dokumentliste unter 200 ms bei 10.000 Mappen), Leistungstest in der CI (nur Warnung) und Mess-Skript.</li>
+</ul>
 <h2 id="0870">0.87.0<a class="headerlink" href="#0870" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
@@ -2038,7 +2104,7 @@
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.86.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.86.0...v0.87.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.86.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.86.0...v0.87.1">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
