@@ -105,7 +105,7 @@
   "bereich.technik.name": "Technik",
   "bereich.technik.wann": "Version, Updates und die Übersicht für GitHub",
   "bereich.systemzustand.name": "Systemzustand",
-  "bereich.systemzustand.wann": "sehen, wie es dem Server geht: Speicherplatz mit Warnschwellen",
+  "bereich.systemzustand.wann": "sehen, wie es dem Server geht: Speicherplatz mit Warnschwellen, Auslastung von CPU, Arbeitsspeicher und Netzwerk",
   "bereich.protokoll.name": "Protokoll",
   "bereich.protokoll.wann": "das technische Protokoll lesen",
   "bereich.fehlermeldungen.name": "Gemeldete Fehler",

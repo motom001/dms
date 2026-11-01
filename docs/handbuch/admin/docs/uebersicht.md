@@ -110,7 +110,7 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Designs](designs.md) | Logo, Farben und eigenes CSS | Betrieb |
 | [Datenbank-Anbindung](installation.md#datenbank-anbindung) | Die Verbindung zur Datenbank, lange Datenbankzugriffe und was gerade läuft | nur Alles |
 | [Technik](fehlersuche.md#technik) | Version, Updates und die Übersicht für GitHub | Haushalt, Betrieb |
-| [Systemzustand](speicherplatz.md) | Sehen, wie es dem Server geht: Speicherplatz mit Warnschwellen | Haushalt, Betrieb |
+| [Systemzustand](speicherplatz.md) | Sehen, wie es dem Server geht: Speicherplatz mit Warnschwellen, Auslastung von CPU, Arbeitsspeicher und Netzwerk | Haushalt, Betrieb |
 | [Protokoll](fehlersuche.md#protokoll) | Das technische Protokoll lesen | Betrieb |
 | [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) | Fehler, die Benutzer gemeldet haben | Betrieb |
 | [Wartungsmodus](wartungsmodus.md) | Benutzer vorübergehend aussperren | Betrieb |

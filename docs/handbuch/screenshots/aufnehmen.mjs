@@ -909,6 +909,10 @@ async function main() {
   await geheZu(s, '/werkbank/systemzustand');
   await s.getByRole('heading', { name: 'Schwellen für den Speicherplatz' }).waitFor();
   await bild(s, 'werkbank-speicherplatz');
+  // #409: Auslastung zwischen Schwellen und Ordnern (Kurven erst nach zwei Minuten).
+  await s.locator('#auslastung').scrollIntoViewIfNeeded();
+  await s.getByRole('heading', { name: /^Auslastung\b/ }).first().waitFor();
+  await bild(s, 'werkbank-auslastung');
   await geheZu(s, '/werkbank/demo');
   // Mit Dokumenten (#365): Schieberegler, Mischung und Abschätzung sichtbar.
   await s.locator('#demo-dokumente').check();

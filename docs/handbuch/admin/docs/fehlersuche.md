@@ -42,7 +42,7 @@ docker logs <app-container>
 
 ## Datenbank
 
-Lange Datenbankzugriffe und Anfragen, die **Auslastung des Servers** und was gerade in der Datenbank läuft stehen unter **Werkbank → Einstellungen → Datenbank-Anbindung**, unter der Verbindung – siehe [Lange Datenbankzugriffe](installation.md#lange-datenbankzugriffe). Wirkt das DMS langsam, schau dort zuerst nach.
+Lange Datenbankzugriffe und Anfragen, die **Auslastung des Servers** und was gerade in der Datenbank läuft stehen unter **Werkbank → Einstellungen → Datenbank-Anbindung**, unter der Verbindung – siehe [Lange Datenbankzugriffe](installation.md#lange-datenbankzugriffe). Wirkt das DMS langsam, schau dort zuerst nach – und unter **Wartung und Fehlersuche → [Systemzustand](speicherplatz.md#auslastung)**, wie ausgelastet CPU, Arbeitsspeicher und Netzwerk sind.
 
 Einträge, die mit **Anfrage:** beginnen, betreffen eine ganze Anfrage; aufgeklappt zeigen sie die **Aufteilung**: Warten vor dem Handler, Datenbank (mit Anzahl der Zugriffe), Rechte, Aufbereitung und JSON. Einzelheiten zur selben Zeit stehen im [Protokoll](#protokoll) (Modul *datenbank*).
 

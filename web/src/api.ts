@@ -560,6 +560,8 @@ export const api = {
   datenbank: () => anfrage<DatenbankStand>('GET', '/api/werkbank/datenbank'),
   system: () => anfrage<Systemuebersicht>('GET', '/api/werkbank/system'),
   speicherplatz: () => anfrage<SpeicherplatzStand>('GET', '/api/werkbank/speicherplatz'),
+  /** Auslastung (#409): CPU, Arbeitsspeicher, Netzwerk, Wartezeit der Ereignisschleife (#477). */
+  systemlast: () => anfrage<SystemlastAntwort>('GET', '/api/werkbank/systemlast'),
   eingangsordner: () => anfrage<EingangStand>('GET', '/api/werkbank/eingangsordner'),
   webdav: () => anfrage<WebdavStand>('GET', '/api/werkbank/webdav'),
   webdavSetzen: (e: WebdavEinstellung) => anfrage<WebdavStand>('PUT', '/api/werkbank/webdav', e),
@@ -809,6 +811,7 @@ export interface Langlaeufer { id: number; zeit: string; dauerMs: number; zugrif
 export interface LaufendeAbfrage { pid: number; seitMs: number; zustand: string; abfrage: string; anwendung: string }
 /** Verzögerung der Ereignisschleife in ms (#477). */
 export interface Schleifenverzoegerung { median: number; p99: number; max: number; seitSekunden: number }
+export type SystemlastAntwort = import('../../shared/src/systemlast').SystemlastStand & { schleife: { aktuell: Schleifenverzoegerung | null; vorher: Schleifenverzoegerung | null } | null };
 export interface DatenbankStand { einstellungen: MessEinstellungen | null; langlaeufer: Langlaeufer[]; laufend: LaufendeAbfrage[]; auslastung?: { aktuell: Schleifenverzoegerung | null; vorher: Schleifenverzoegerung | null } | null }
 export interface WerkbankUebersicht {
   tresor: { zustand: string; eingebunden: boolean | null; betroffen: number } | null;
@@ -828,6 +831,8 @@ export interface WerkbankUebersicht {
   sicherung?: SicherungsZustand | null;
   /** Speicherplatz (#116). */
   speicherplatz?: SpeicherplatzStand | null;
+  /** Auslastung (#409): CPU oder Arbeitsspeicher seit 5 Minuten über 90 %. */
+  auslastung?: Array<'cpu' | 'speicher'>;
   /** Frühere Variablen, die aus der Compose-Datei entfernt werden können (#115), je mit Grund (#478). */
   variablen?: UeberfluessigeVariable[];
   /** API-Schlüssel von Administratoren (#128). */

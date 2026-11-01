@@ -38,6 +38,7 @@ import { WiederherstellungPanel } from './Wiederherstellung';
 import { FehlermeldungDetail, FehlermeldungenListe, useFehlermeldungen } from './Fehlermeldungen';
 import { AnbindungPanel, useAnbindung } from './Anbindung';
 import { SpeicherplatzPanel, useSpeicherplatz } from './Speicherplatz';
+import { AuslastungAbschnitt, useSystemlast } from './Auslastung';
 import { PapierkorbDetail, PapierkorbListe, usePapierkorb } from '../ablage/Papierkorb';
 import { filterAusAdresse } from '../../../shared/src/aufgabenfilter';
 import { useBeiWiederErreichbar } from '../erreichbar';
@@ -97,6 +98,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const wartungsmodus = useWartungsmodus(bereich === 'wartungsmodus');
   const sicherung = useSicherung(bereich === 'sicherung');
   const speicherplatz = useSpeicherplatz(bereich === 'systemzustand');
+  const systemlast = useSystemlast(bereich === 'systemzustand');
   const eingang = useEingangsordner(bereich === 'eingangsordner');
   const webdav = useWebdav(bereich === 'webdav');
   const postfaecher = usePostfaecher(bereich === 'postfaecher');
@@ -119,7 +121,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
       protokoll: protokoll.neu, technik: technik.laden, betrieb: betrieb.laden,
       verschluesselung: tresor.laden, papierkorb: papierkorb.laden, aufgaben: aufgaben.laden, texterkennung: ocr.laden,
       wartung: ocr.laden, fehlermeldungen: meldungen.laden, wartungsmodus: wartungsmodus.laden, sicherung: sicherung.laden,
-      systemzustand: speicherplatz.laden, anbindung: async () => { await anbindung.laden(); await datenbank.laden(); }, benutzer: benutzer.laden, webdav: webdav.laden,
+      systemzustand: async () => { await speicherplatz.laden(); await systemlast.laden(); }, anbindung: async () => { await anbindung.laden(); await datenbank.laden(); }, benutzer: benutzer.laden, webdav: webdav.laden,
       datenschutz: datenschutz.laden,
     };
     void offen[bereich]?.();
@@ -211,7 +213,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'webdav') {
     rechts = <WebdavPanel z={webdav} />;
   } else if (bereich === 'systemzustand') {
-    rechts = <SpeicherplatzPanel z={speicherplatz} nachAenderung={() => { void uebersicht.laden(); void wartungsmodus.laden(); }} />;
+    rechts = <SpeicherplatzPanel z={speicherplatz} nachAenderung={() => { void uebersicht.laden(); void wartungsmodus.laden(); }} auslastung={<AuslastungAbschnitt z={systemlast} />} />;
   } else if (bereich === 'wartungsmodus') {
     rechts = <WartungsmodusPanel w={wartungsmodus} />;
   } else if (bereich === 'papierkorb') {
@@ -259,7 +261,10 @@ export function Werkbank({ teile }: { teile: string[] }) {
     { pfad: 'anbindung', name: n('anbindung'), gruppe: 'einstellungen', warn: uebersicht.stand?.anbindung && (uebersicht.stand.anbindung.umgebung === 'abweichend' || uebersicht.stand.anbindung.neustartNoetig) ? '!' : undefined, warnTitel: t('werkbank.leiste.anbindung') },
     { pfad: 'technik', name: n('technik'), gruppe: 'einstellungen' },
     // Wartung und Fehlersuche
-    { pfad: 'systemzustand', name: n('systemzustand'), gruppe: 'wartung', warn: uebersicht.stand?.speicherplatz && uebersicht.stand.speicherplatz.zustand !== 'ok' ? (uebersicht.stand.speicherplatz.zustand === 'grenze' ? t('werkbank.leiste.speicher.voll') : t('werkbank.leiste.speicher.knapp')) : undefined, warnTitel: t('werkbank.leiste.speicher') },
+    { pfad: 'systemzustand', name: n('systemzustand'), gruppe: 'wartung', ...(uebersicht.stand?.speicherplatz && uebersicht.stand.speicherplatz.zustand !== 'ok'
+      ? { warn: uebersicht.stand.speicherplatz.zustand === 'grenze' ? t('werkbank.leiste.speicher.voll') : t('werkbank.leiste.speicher.knapp'), warnTitel: t('werkbank.leiste.speicher') }
+      // Auslastung (#409): CPU oder Arbeitsspeicher seit 5 Minuten über 90 %.
+      : (systemlast.stand?.warnung.length || uebersicht.stand?.auslastung?.length) ? { warn: t('systemzustand.warnung.plakette'), warnTitel: t('systemzustand.warnung.leiste') } : {}) },
     { pfad: 'protokoll', name: n('protokoll'), gruppe: 'wartung', warn: protokoll.debug?.an ? t('werkbank.leiste.debug') : undefined, warnTitel: t('werkbank.leiste.debug.titel') },
     { pfad: 'fehlermeldungen', name: n('fehlermeldungen'), gruppe: 'wartung', warn: uebersicht.stand?.fehlermeldungen ? String(uebersicht.stand.fehlermeldungen) : undefined, warnTitel: t('werkbank.leiste.fehlermeldungen') },
     { pfad: 'wartungsmodus', name: n('wartungsmodus'), gruppe: 'wartung', warn: wartungsPlakette(wartungsmodus.stand?.stufe ?? 'aus', wartungsmodus.stand?.aktivAb ?? null), warnTitel: wartungAn ? t('werkbank.leiste.wartung.an') : t('werkbank.leiste.wartung.angekuendigt') },
