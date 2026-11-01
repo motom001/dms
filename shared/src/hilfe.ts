@@ -42,6 +42,7 @@ export const HILFE = {
   'werkbank.designs': admin('designs/', 'Designs'),
   'werkbank.papierkorb': admin('papierkorb/', 'Papierkorb'),
   'werkbank.texterkennung': admin('texterkennung/', 'Texterkennung'),
+  'werkbank.texterkennung.sprachpakete': admin('texterkennung/', 'Sprachpakete nachinstallieren', 'sprachpakete-nachinstallieren'),
   'werkbank.eingangsordner': admin('eingangsordner/', 'Eingangsordner'),
   'werkbank.webdav': admin('webdav/', 'WebDAV-Laufwerk'),
   'werkbank.postfaecher': admin('postfaecher/', 'Postfächer'),

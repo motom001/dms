@@ -142,6 +142,13 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Deutsche Volltextsuche von PostgreSQL** (`to_tsvector('german', …)`, GIN-Index, `websearch_to_tsquery`): findet Wortformen; die Fundstelle kommt aus `ts_headline` mit Steuerzeichen als Markierung – nie als HTML.
 - Office-Dokumente und externe Dienste kommen später.
 
+## Sprache automatisch erkennen (#395)
+
+- **Eigene, kleine Spracherkennung statt Bibliothek:** Neue npm-Abhängigkeiten (franc, CLD) sollten nicht ins Image. Für Briefe, Rechnungen und Belege reicht das Zählen typischer Funktionswörter und Sonderzeichen je Sprache (selbst zusammengestellte Listen, `shared/src/textsprache.ts`), offline und ohne messbaren Rechenaufwand. Bei sehr wenig Text bleibt die Sprache bewusst offen.
+- **Zweiter Durchlauf nur im Zweifel:** nur bei anderer, eindeutig erkannter Sprache mit installiertem Sprachpaket und unsicherem ersten Durchlauf (mittlere Tesseract-Konfidenz unter 85 %); entschieden wird nach der ersten gelesenen Seite, das bessere Ergebnis gilt für das ganze Dokument.
+- **Lage über Tesseract OSD:** gescannte PDF-Seiten werden als Graustufenbild (PGM) gerendert und bei Bedarf im DMS selbst gedreht – ohne zusätzliches Bildwerkzeug im Image. Bilder dreht Tesseract mit `--psm 1` selbst (quer liegend).
+- **Sprache im Hinweis der Texterkennung** (`ocr_info`, „· Sprache: fra (87 %)“) statt einer neuen Spalte: keine Migration nötig; eine spätere Spalte kann den Wert von dort übernehmen. Die Volltextsuche nutzt deshalb noch für alle Dokumente die deutsche Wortstamm-Konfiguration.
+
 ## Image je Architektur nativ bauen (#88)
 
 - **Kein QEMU mehr:** Das arm64-Image entstand bisher emuliert auf Intel-Rechnern; die Emulation stürzte beim `npm install` mehrfach mit Fehler 132 ab (0.8.1, 0.13.0), und damit blieben Image, Tag und Release aus. Jetzt baut jede Architektur auf einem passenden Rechner von GitHub (`ubuntu-24.04` bzw. `ubuntu-24.04-arm`, für öffentliche Repos kostenlos).

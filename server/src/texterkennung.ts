@@ -1,11 +1,13 @@
 import { execFile } from 'node:child_process';
-import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Readable } from 'node:stream';
 import { OCR_STAENDE, type Dokument, type OcrStandArt } from '../../shared/src/model';
 import { PAKET_TEXT } from '../../shared/src/pakete';
+import { erkenneSprache, spracheZuInfo, type ErkannteSprache } from '../../shared/src/textsprache';
 import type { Dateispeicher } from './dateispeicher';
+import { dreheGraubild, lesePgm, schreibePgm } from './graubild';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
@@ -20,6 +22,10 @@ import type { OcrErgebnis, Repo } from './repo';
  * - Eine Warteschlange in der Datenbank (ocr_stand); die Arbeit läuft im Hintergrund mit
  *   einstellbar vielen gleichzeitigen Aufträgen. Nach einem Neustart geht es weiter.
  * - Gleiche Datei schon erkannt? Dann wird der Text übernommen.
+ * - Sprache (#395): Die erkannte Sprache steht am Ende des Hinweises (ocr_info). Bei „Automatisch“
+ *   liest das DMS eine Seite in einer anderen Sprache ein zweites Mal, wenn das Sprachpaket da ist
+ *   und das erste Ergebnis unsicher war; das bessere Ergebnis gilt. Mit osd.traineddata dreht
+ *   tesseract Seiten selbst richtig (--psm 1) und erkennt die Schrift (Kyrillisch, Arabisch …).
  */
 
 const log = protokoll.modul('texterkennung');
@@ -47,14 +53,16 @@ export interface OcrEinstellungen {
   maxSeiten: number;
   /** Größere Dateien werden ausgelassen (MB). */
   maxMB: number;
-  /** Sprachen für tesseract, z. B. deu+eng. */
+  /** Sprachen für tesseract, z. B. deu+eng (bei „Automatisch“: die Sprachen des ersten Durchlaufs). */
   sprachen: string;
+  /** Sprache selbst erkennen und bei Bedarf ein zweites Mal lesen (#395). */
+  automatisch: boolean;
   /** Verfahren je Dateityp; „aus“ = Dateityp ausgeschlossen. */
   typen: Record<string, Verfahren>;
 }
 
 export const OCR_STANDARD: OcrEinstellungen = {
-  aktiv: true, auftraege: 1, maxSeiten: 50, maxMB: 50, sprachen: 'deu+eng',
+  aktiv: true, auftraege: 1, maxSeiten: 50, maxMB: 50, sprachen: 'deu+eng', automatisch: true,
   typen: Object.fromEntries(Object.keys(DATEITYPEN).map((t) => [t, 'tesseract' as Verfahren])),
 };
 
@@ -80,8 +88,74 @@ export function bereinigeOcr(e: unknown, alt: OcrEinstellungen = OCR_STANDARD): 
     maxSeiten: ganz(x.maxSeiten, 1, 1000, alt.maxSeiten, 'Höchstens Seiten'),
     maxMB: ganz(x.maxMB, 1, 100, alt.maxMB, 'Höchstens MB'),
     sprachen,
+    automatisch: x.automatisch === undefined ? alt.automatisch : x.automatisch === true,
     typen,
   };
+}
+
+/**
+ * Gespeicherte Einstellungen aus der Zeit vor #395 kennen „automatisch“ nicht: Wer die Sprachen
+ * selbst gewählt hat, behält sie; wer die alte Vorgabe deu+eng hatte, bekommt „Automatisch“.
+ */
+export function ocrAusGespeichert(e: unknown): OcrEinstellungen {
+  const x = { ...((e ?? {}) as Record<string, unknown>) };
+  if (x.automatisch === undefined) x.automatisch = (x.sprachen ?? OCR_STANDARD.sprachen) === OCR_STANDARD.sprachen;
+  return bereinigeOcr(x);
+}
+
+/* ---------- Sprache (#395) ---------- */
+
+/** Ab dieser Eindeutigkeit der Spracherkennung (0–1) lohnt ein zweiter Durchlauf. */
+export const SPRACHE_SICHER = 0.5;
+/** Ab dieser mittleren Tesseract-Konfidenz (0–100) gilt der erste Durchlauf als gut genug. */
+export const OCR_GUT = 85;
+
+/**
+ * Zweiter Durchlauf nötig? Nur bei „Automatisch“, wenn die erkannte Sprache sicher ist, nicht schon
+ * dabei war, ihr Sprachpaket installiert ist und der erste Durchlauf unsicher war.
+ * Ergebnis: die Sprachen für den zweiten Durchlauf (erkannte Sprache zuerst) oder null.
+ */
+export function zweiterDurchlauf(a: { automatisch: boolean; sprachen: string; erkannt: ErkannteSprache | null; ocrKonfidenz: number | null; installiert: string[] }): string | null {
+  if (!a.automatisch || !a.erkannt || a.erkannt.konfidenz < SPRACHE_SICHER) return null;
+  if (a.ocrKonfidenz === null || a.ocrKonfidenz >= OCR_GUT) return null;
+  const bisher = a.sprachen.split('+');
+  if (bisher.includes(a.erkannt.sprache) || !a.installiert.includes(a.erkannt.sprache)) return null;
+  return [a.erkannt.sprache, ...bisher.filter((s) => a.installiert.includes(s))].join('+');
+}
+
+/** Sprachen für eine von Tesseract OSD erkannte Schrift (in dieser Reihenfolge versucht). */
+const SCHRIFT_SPRACHEN: Record<string, string[]> = {
+  Cyrillic: ['rus', 'ukr', 'bel', 'bul', 'srp', 'mkd'],
+  Arabic: ['ara', 'fas', 'urd'],
+  Greek: ['ell', 'grc'],
+  Hebrew: ['heb'],
+};
+/**
+ * Erkennt OSD eine andere Schrift, als die eingestellten Sprachen lesen, nimmt der erste Durchlauf
+ * gleich ein passendes, installiertes Sprachpaket dazu (sonst käme aus kyrillischen Briefen nur Unsinn).
+ */
+export function spracheFuerSchrift(schrift: string | null, sprachen: string, installiert: string[]): string | null {
+  const passend = schrift ? SCHRIFT_SPRACHEN[schrift] : undefined;
+  if (!passend || sprachen.split('+').some((s) => passend.includes(s))) return null;
+  const s = passend.find((x) => installiert.includes(x));
+  return s ? `${s}+${sprachen}` : null;
+}
+
+/** Eingestellte Sprachen, deren Sprachpaket fehlt. */
+export const fehlendeSprachen = (sprachen: string, installiert: string[]) => sprachen.split('+').filter((s) => !installiert.includes(s));
+
+/** Mittlere Konfidenz aus der TSV-Ausgabe von tesseract (nach Wortlänge gewichtet; null ohne Wörter). */
+export function konfidenzAusTsv(tsv: string): number | null {
+  let summe = 0, gewicht = 0;
+  for (const zeile of tsv.split('\n').slice(1)) {
+    const f = zeile.split('\t');
+    if (f.length < 12) continue;
+    const conf = Number(f[10]);
+    const wort = f[11].trim();
+    if (!wort || !(conf >= 0)) continue;
+    summe += conf * wort.length; gewicht += wort.length;
+  }
+  return gewicht ? Math.round((summe / gewicht) * 10) / 10 : null;
 }
 
 /* ---------- Werkzeuge ---------- */
@@ -102,6 +176,10 @@ function starte(cmd: string, args: string[], ms: number, signal?: AbortSignal): 
 export interface Werkzeuge {
   tesseract: string | null;
   sprachen: string[];
+  /** osd.traineddata vorhanden: Lage und Schrift erkennen (#395). */
+  osd?: boolean;
+  /** Ordner der Sprachpakete laut tesseract --list-langs (#395). */
+  ordner?: string | null;
   pdftotext: boolean;
   pdftoppm: boolean;
 }
@@ -109,28 +187,94 @@ export interface Werkzeuge {
 /** Was ist installiert? (Für die Werkbank und die Wahl der Sprachen.) */
 export async function pruefeWerkzeuge(): Promise<Werkzeuge> {
   const version = await starte('tesseract', ['--version'], 10_000).then((r) => (r.stdout || r.stderr).split('\n')[0].trim(), () => null);
-  const sprachen = version
-    ? await starte('tesseract', ['--list-langs'], 10_000).then((r) => (r.stdout + r.stderr).split('\n').slice(1).map((s) => s.trim()).filter((s) => /^[a-z_]+$/.test(s) && s !== 'osd'), () => [])
-    : [];
+  const liste = version ? await starte('tesseract', ['--list-langs'], 10_000).then((r) => r.stdout + r.stderr, () => '') : '';
+  const alle = liste.split('\n').slice(1).map((s) => s.trim()).filter((s) => /^[a-z_]+$/.test(s));
+  const ordner = /"([^"]+)"/.exec(liste.split('\n')[0] ?? '')?.[1] ?? null;
   const da = (cmd: string) => starte(cmd, ['-v'], 10_000).then(() => true, (e: Error) => !/nicht installiert/.test(e.message));
-  return { tesseract: version, sprachen, pdftotext: await da('pdftotext'), pdftoppm: await da('pdftoppm') };
+  return { tesseract: version, sprachen: alle.filter((s) => s !== 'osd'), osd: alle.includes('osd'), ordner, pdftotext: await da('pdftotext'), pdftoppm: await da('pdftoppm') };
 }
 
 /** Text eines Dokuments (Datei liegt unter pfad). */
-export type Engine = (pfad: string, mime: string, o: { maxSeiten: number; sprachen: string; werkzeuge: Werkzeuge; signal?: AbortSignal }) => Promise<{ text: string; seiten: number; info: string }>;
+export type Engine = (pfad: string, mime: string, o: { maxSeiten: number; sprachen: string; automatisch?: boolean; werkzeuge: Werkzeuge; signal?: AbortSignal }) => Promise<{ text: string; seiten: number; info: string }>;
 
 const sauber = (t: string) => t.replace(/\r/g, '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
 /** Seite mit nennenswertem Text (sonst: gescannt). */
 const hatText = (t: string) => t.replace(/\s/g, '').length >= 20;
 
-export const tesseractEngine: Engine = async (pfad, mime, o) => {
-  const sprachen = o.sprachen.split('+').filter((s) => o.werkzeuge.sprachen.includes(s)).join('+') || o.werkzeuge.sprachen[0] || 'eng';
-  const ocr = async (bild: string) => {
-    if (!o.werkzeuge.tesseract) throw new Error('Die Texterkennung (tesseract) ist nicht installiert.');
-    return (await starte('tesseract', [bild, 'stdout', '-l', sprachen], 180_000, o.signal)).stdout;
+/** Ein Durchlauf von tesseract: Text und mittlere Konfidenz. */
+async function lies(bild: string, sprachen: string, osd: boolean, signal?: AbortSignal): Promise<{ text: string; konfidenz: number | null }> {
+  const dir = await mkdtemp(join(tmpdir(), 'dms-tess-'));
+  try {
+    const aus = join(dir, 'aus');
+    // --psm 1: Seitenaufteilung mit Lageerkennung – gedrehte Seiten werden richtig gelesen (braucht osd).
+    await starte('tesseract', [bild, aus, '-l', sprachen, ...(osd ? ['--psm', '1'] : []), 'txt', 'tsv'], 180_000, signal);
+    const text = await readFile(aus + '.txt', 'utf8').catch(() => '');
+    const tsv = await readFile(aus + '.tsv', 'utf8').catch(() => '');
+    return { text, konfidenz: konfidenzAusTsv(tsv) };
+  } finally { await rm(dir, { recursive: true, force: true }); }
+}
+
+/** Ab dieser Sicherheit von OSD wird eine Seite gedreht (tesseract meldet bei wenig Text Werte um 2–5). */
+export const DREHUNG_SICHER = 2;
+
+/** Lage und Schrift einer Seite laut Tesseract OSD (--psm 0): Drehung im Uhrzeigersinn, Schrift wie „Latin“ oder „Cyrillic“. */
+export function leseOsd(ausgabe: string): { drehung: number; schrift: string | null } {
+  const zahl = (re: RegExp) => Number(re.exec(ausgabe)?.[1] ?? 0);
+  const drehung = zahl(/^Rotate:\s*(\d+)/m);
+  const schrift = /^Script:\s*(\S+)/m.exec(ausgabe)?.[1] ?? null;
+  return {
+    drehung: [90, 180, 270].includes(drehung) && zahl(/^Orientation confidence:\s*([\d.]+)/m) >= DREHUNG_SICHER ? drehung : 0,
+    schrift: schrift && zahl(/^Script confidence:\s*([\d.]+)/m) >= 1 ? schrift : null,
   };
+}
+const lageDerSeite = (bild: string, signal?: AbortSignal) =>
+  starte('tesseract', [bild, 'stdout', '--psm', '0'], 60_000, signal).then((x) => leseOsd(x.stdout + x.stderr), () => ({ drehung: 0, schrift: null }));
+
+export const tesseractEngine: Engine = async (pfad, mime, o) => {
+  const w = o.werkzeuge;
+  const fehlen = fehlendeSprachen(o.sprachen, w.sprachen);
+  let sprachen = o.sprachen.split('+').filter((s) => w.sprachen.includes(s)).join('+') || w.sprachen[0] || 'eng';
+  const osd = !!w.osd;
+  // Sprachwahl bei „Automatisch“ (#395): Schrift einmal prüfen, Sprache nach der ersten gelesenen Seite
+  // (höchstens drei Versuche, falls die ersten Seiten kaum Text haben).
+  let schriftGeprueft = !o.automatisch, versuche = 0, entschieden = !o.automatisch, zweiter = '', gedreht = 0;
+  const bisher: string[] = [];
+  const ocr = async (bild: string) => {
+    if (!w.tesseract) throw new Error('Die Texterkennung (tesseract) ist nicht installiert.');
+    // Lage und Schrift (OSD): gescannte PDF-Seiten (Graustufen-PGM) werden aufgerichtet; bei Bildern
+    // dreht tesseract mit --psm 1 selbst (quer liegende Seiten).
+    let lesen = bild;
+    if (osd) {
+      const lage = await lageDerSeite(bild, o.signal);
+      if (!schriftGeprueft) { schriftGeprueft = true; sprachen = spracheFuerSchrift(lage.schrift, sprachen, w.sprachen) ?? sprachen; }
+      const g = lage.drehung && bild.endsWith('.pgm') ? lesePgm(await readFile(bild)) : null;
+      if (g) { lesen = bild.replace(/\.pgm$/, '-gedreht.pgm'); await writeFile(lesen, schreibePgm(dreheGraubild(g, lage.drehung))); }
+    }
+    let r = await lies(lesen, sprachen, osd, o.signal);
+    if (lesen !== bild) {
+      // Unsicher nach dem Drehen? Dann die Seite auch ungedreht lesen – das bessere Ergebnis gilt.
+      const ungedreht = (r.konfidenz ?? 0) < 60 ? await lies(bild, sprachen, osd, o.signal) : null;
+      if (ungedreht && (ungedreht.konfidenz ?? 0) > (r.konfidenz ?? 0)) r = ungedreht; else gedreht++;
+    }
+    if (!entschieden) {
+      versuche++;
+      const erkannt = erkenneSprache([...bisher, r.text].join('\n'));
+      entschieden = !!erkannt || versuche >= 3;
+      const neu = zweiterDurchlauf({ automatisch: true, sprachen, erkannt, ocrKonfidenz: r.konfidenz, installiert: w.sprachen });
+      if (neu) {
+        const r2 = await lies(lesen, neu, osd, o.signal);
+        zweiter = `zweiter Durchlauf mit ${neu}: Konfidenz ${Math.round(r2.konfidenz ?? 0)} statt ${Math.round(r.konfidenz ?? 0)} %`;
+        if ((r2.konfidenz ?? 0) > (r.konfidenz ?? 0)) { sprachen = neu; r = r2; } else zweiter += ', erster blieb';
+        entschieden = true;
+      }
+    }
+    bisher.push(r.text);
+    return r.text;
+  };
+  const zusatz = () => (fehlen.length ? ` – Sprachpaket fehlt: ${fehlen.join(', ')}` : '') + (gedreht ? ` – ${gedreht} ${gedreht === 1 ? 'Seite' : 'Seiten'} gedreht` : '') + (zweiter ? ` – ${zweiter}` : '');
   if (mime !== 'application/pdf') {
-    return { text: sauber(await ocr(pfad)), seiten: 1, info: `Texterkennung (${sprachen})` };
+    const text = sauber(await ocr(pfad));
+    return { text, seiten: 1, info: `Texterkennung (${sprachen})${zusatz()}` };
   }
   if (!o.werkzeuge.pdftotext) throw new Error('pdftotext (poppler) ist nicht installiert.');
   const info = await starte('pdfinfo', [pfad], 30_000, o.signal).then((r) => r.stdout, () => '');
@@ -142,18 +286,19 @@ export const tesseractEngine: Engine = async (pfad, mime, o) => {
   const texte: string[] = [];
   for (let i = 0; i < seiten; i++) {
     const t = ebene[i] ?? '';
-    if (hatText(t) || !o.werkzeuge.tesseract || !o.werkzeuge.pdftoppm) { texte.push(t); continue; }
+    if (hatText(t) || !o.werkzeuge.tesseract || !o.werkzeuge.pdftoppm) { texte.push(t); bisher.push(t); continue; }
     const dir = await mkdtemp(join(tmpdir(), 'dms-seite-'));
     try {
-      await starte('pdftoppm', ['-f', String(i + 1), '-l', String(i + 1), '-r', '300', '-gray', '-png', pfad, join(dir, 's')], 120_000, o.signal);
-      const [bild] = (await readdir(dir)).filter((f) => f.endsWith('.png'));
+      // Graustufen als PGM (#395): lässt sich ohne Bildwerkzeug drehen, tesseract liest es direkt.
+      await starte('pdftoppm', ['-f', String(i + 1), '-l', String(i + 1), '-r', '300', '-gray', pfad, join(dir, 's')], 120_000, o.signal);
+      const [bild] = (await readdir(dir)).filter((f) => f.endsWith('.pgm'));
       texte.push(bild ? await ocr(join(dir, bild)) : '');
       erkannt++;
     } finally { await rm(dir, { recursive: true, force: true }); }
   }
   const woher = erkannt === 0 ? 'Textebene des PDFs' : erkannt === seiten ? `Texterkennung (${sprachen})` : `Textebene und Texterkennung für ${erkannt} von ${seiten} Seiten (${sprachen})`;
   const gekuerzt = gesamt > seiten ? ` – nur die ersten ${seiten} von ${gesamt} Seiten` : '';
-  return { text: sauber(texte.join('\n\n')), seiten, info: woher + gekuerzt };
+  return { text: sauber(texte.join('\n\n')), seiten, info: woher + gekuerzt + (erkannt ? zusatz() : '') };
 };
 
 /* ---------- Warteschlange ---------- */
@@ -186,14 +331,14 @@ export class Texterkennung {
 
   async optionen(): Promise<OcrEinstellungen> {
     const e = this.einstellungen ? await this.einstellungen.lies('ocr') : null;
-    return e ? bereinigeOcr(e) : OCR_STANDARD;
+    return e ? ocrAusGespeichert(e) : OCR_STANDARD;
   }
 
   async speichere(e: unknown): Promise<OcrEinstellungen> {
     if (!this.einstellungen) throw new Fachfehler(404, 'Die Texterkennung ist nicht eingerichtet.');
     const neu = bereinigeOcr(e, await this.optionen());
     await this.einstellungen.schreibe('ocr', neu);
-    log.info('Einstellungen der Texterkennung geändert', { aktiv: neu.aktiv, auftraege: neu.auftraege, maxSeiten: neu.maxSeiten, maxMB: neu.maxMB, sprachen: neu.sprachen });
+    log.info('Einstellungen der Texterkennung geändert', { aktiv: neu.aktiv, auftraege: neu.auftraege, maxSeiten: neu.maxSeiten, maxMB: neu.maxMB, sprachen: neu.sprachen, automatisch: neu.automatisch });
     this.anstossen();
     return neu;
   }
@@ -208,7 +353,9 @@ export class Texterkennung {
     const n = await this.repo.ocrZurueckstellen();
     if (n) log.info('Unterbrochene Texterkennung wird fortgesetzt', { dokumente: n });
     const w = await this.werkzeugeLaden();
-    log.info(w.tesseract ? `Texterkennung bereit: ${w.tesseract} (${w.sprachen.join(', ') || 'keine Sprachen'})` : 'Texterkennung (tesseract) nicht installiert – nur PDFs mit Textebene bekommen einen Volltext.');
+    log.info(w.tesseract ? `Texterkennung bereit: ${w.tesseract} (${w.sprachen.join(', ') || 'keine Sprachen'}${w.osd ? ', Lageerkennung' : ''})` : 'Texterkennung (tesseract) nicht installiert – nur PDFs mit Textebene bekommen einen Volltext.');
+    const fehlen = w.tesseract ? fehlendeSprachen((await this.optionen()).sprachen, w.sprachen) : [];
+    if (fehlen.length) log.warn('Eingestellte Sprachpakete der Texterkennung fehlen – Werkbank → Texterkennung', { fehlen: fehlen.join(', ') });
     this.anstossen();
   }
 
@@ -269,8 +416,10 @@ export class Texterkennung {
       const pfad = join(dir, 'datei');
       await writeFile(pfad, await alsBuffer(await this.dateien.lies(d.sha256)));
       if (signal?.aborted) throw new Error('abgebrochen');
-      const r = await this.engine(pfad, d.mime, { maxSeiten: o.maxSeiten, sprachen: o.sprachen, werkzeuge: await this.werkzeugeLaden(), signal });
-      return { stand: 'fertig', text: r.text, seiten: r.seiten, info: r.info };
+      const r = await this.engine(pfad, d.mime, { maxSeiten: o.maxSeiten, sprachen: o.sprachen, automatisch: o.automatisch, werkzeuge: await this.werkzeugeLaden(), signal });
+      // Erkannte Sprache am Ende des Hinweises (#395) – für Anzeige und Statistik.
+      const sprache = erkenneSprache(r.text);
+      return { stand: 'fertig', text: r.text, seiten: r.seiten, info: r.info + (sprache ? spracheZuInfo(sprache) : '') };
     } finally { await rm(dir, { recursive: true, force: true }); }
   }
 
@@ -325,6 +474,13 @@ export class Texterkennung {
   zaehler() { return this.repo.ocrZaehler(); }
 
   async status(werkzeugeNeu = false) {
-    return { zaehler: await this.repo.ocrZaehler(), laufend: this.laufend, werkzeuge: await this.werkzeugeLaden(werkzeugeNeu), einstellungen: await this.optionen(), verfahren: VERFAHREN, dateitypen: DATEITYPEN };
+    const werkzeuge = await this.werkzeugeLaden(werkzeugeNeu);
+    const einstellungen = await this.optionen();
+    return {
+      zaehler: await this.repo.ocrZaehler(), laufend: this.laufend, werkzeuge, einstellungen, verfahren: VERFAHREN, dateitypen: DATEITYPEN,
+      // #395: eingestellt, aber nicht installiert; erkannte Sprachen der fertigen Dokumente.
+      fehlendeSprachen: werkzeuge.tesseract ? fehlendeSprachen(einstellungen.sprachen, werkzeuge.sprachen) : [],
+      erkannteSprachen: await this.repo.ocrSprachen(),
+    };
   }
 }

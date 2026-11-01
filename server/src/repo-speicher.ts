@@ -6,6 +6,7 @@ import { datumIn, ziehe, type Nummernkreis } from '../../shared/src/nummernkreis
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type DokumentVersion, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
 import { alsText } from '../../shared/src/markdown';
+import { spracheAusInfo } from '../../shared/src/textsprache';
 import { ausschnittAus } from './repo-pg';
 import { teilwoerter, woerterIn } from '../../shared/src/suche';
 import { inSicht, type Sicht, type SichtDaten, type Zaehlquelle } from '../../shared/src/sichten';
@@ -424,6 +425,14 @@ export function speicherRepo(): Repo {
     async ocrOhneVolltext() {
       return [...dokumente.values()].filter((d) => (d.ocr?.stand ?? 'keiner') === 'keiner' && mappen.has(d.mappeId))
         .map((d) => ({ id: d.id, typId: mappen.get(d.mappeId)!.typId, registerKey: d.registerKey }));
+    },
+    async ocrSprachen() {
+      const z: Record<string, number> = {};
+      for (const d of dokumente.values()) {
+        const s = d.ocr?.stand === 'fertig' ? spracheAusInfo(d.ocr.info) : null;
+        if (s) z[s.sprache] = (z[s.sprache] ?? 0) + 1;
+      }
+      return z;
     },
     async volltext(id) { return texte.get(id) ?? null; },
     async volltexte(ids) {

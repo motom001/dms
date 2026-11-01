@@ -829,7 +829,9 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
       stand = (await anfrage('GET', `/api/mappen/${m.id}`)).body.dokumente[0].ocr;
     }
     assert.equal(stand.stand, 'fertig', JSON.stringify(stand));
-    assert.equal(stand.info, 'Textebene des PDFs');
+    assert.match(stand.info, /^Textebene des PDFs/);
+    // #395: Statistik der erkannten Sprachen aus der Datenbank (Muster im Hinweis der Texterkennung).
+    assert.equal(typeof (await anfrage('GET', '/api/werkbank/texterkennung')).body.erkannteSprachen, 'object');
     const volltext = (await anfrage('GET', `/api/dokumente/${dok.id}/volltext`)).body;
     assert.match(volltext.text, /Jahresabrechnung der Stadtwerke/);
     const ohne = (await anfrage('GET', `/api/mappen?sicht=typ:${typ.id}&suche=${encodeURIComponent('Abrechnungen Stadtwerk')}`)).body;

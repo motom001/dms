@@ -30,6 +30,7 @@ import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile }
 import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
 import { alleSichtRechte, bereinigeSichtRegelwerk, sichtRegelProblem, sichtTestlauf, type SichtRegelwerk } from '../../shared/src/sichtrechte';
 import { liesDirektlink } from '../../shared/src/direktlink';
+import { erkenneSprache, SPRACHE_MARKE, spracheZuInfo } from '../../shared/src/textsprache';
 import { ALLE_TYPEN, PAKET_TEXT, type EreignisArt, type InstalliertesPaket, type PaketCode } from '../../shared/src/pakete';
 import type { PaketEntwurf } from '../../shared/src/paketerstellung';
 import { abfrageAus, liesSuche } from '../../shared/src/erweitertesuche';
@@ -419,8 +420,12 @@ export class Dienst {
     if (e.text.length > VOLLTEXT_MAX) throw new Fachfehler(413, `Der Text ist zu lang (höchstens ${VOLLTEXT_MAX} Zeichen).`);
     const seiten = Number.isInteger(e.seiten) && (e.seiten as number) > 0 ? e.seiten as number : null;
     // Nur Text eines Pakets schützt vor der eingebauten Texterkennung (PAKET_TEXT); über die API gesetzter nicht.
-    const info = (von.paket ? `${PAKET_TEXT}${von.herkunft}` : `Volltext ${von.herkunft}`).slice(0, 200);
-    await this.repo.ocrSetze(id, { stand: 'fertig', text: e.text.replace(/\u0000/g, ''), seiten: seiten ?? d.ocr?.seiten ?? null, info });
+    // Die Herkunft darf die Sprachmarke nicht vortäuschen (#395); die erkannte Sprache hängt am Ende an.
+    const herkunft = von.herkunft.split(SPRACHE_MARKE.trim()).join('Sprache:');
+    const info = (von.paket ? `${PAKET_TEXT}${herkunft}` : `Volltext ${herkunft}`).slice(0, 200);
+    const text = e.text.replace(/\u0000/g, '');
+    const sprache = erkenneSprache(text);
+    await this.repo.ocrSetze(id, { stand: 'fertig', text, seiten: seiten ?? d.ocr?.seiten ?? null, info: info + (sprache ? spracheZuInfo(sprache) : '') });
     await this.notiere(d.mappeId, von.id, 'volltext', { dokument: d.name, text: info });
     protokoll.modul('ablage').info('Volltext geschrieben', { dokument: id, zeichen: e.text.length, herkunft: von.herkunft });
     return (await this.repo.holeDokument(id))!;

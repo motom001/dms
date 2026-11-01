@@ -104,11 +104,13 @@ export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: 
 export type Bezuege = Record<string, MappenBezug>;
 export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; /** Favoriten des Benutzers unter den Mappen dieser Seite (#62). */ favoriten?: string[] }
 /** Texterkennung (#45): Stand, Werkzeuge und Einstellungen für die Werkbank. */
-export interface OcrEinstellungen { aktiv: boolean; auftraege: number; maxSeiten: number; maxMB: number; sprachen: string; typen: Record<string, 'tesseract' | 'aus'> }
+export interface OcrEinstellungen { aktiv: boolean; auftraege: number; maxSeiten: number; maxMB: number; sprachen: string; automatisch: boolean; typen: Record<string, 'tesseract' | 'aus'> }
 export interface OcrStatus {
   zaehler: Record<OcrStandArt, number>; laufend: number;
-  werkzeuge: { tesseract: string | null; sprachen: string[]; pdftotext: boolean; pdftoppm: boolean };
+  werkzeuge: { tesseract: string | null; sprachen: string[]; osd?: boolean; ordner?: string | null; pdftotext: boolean; pdftoppm: boolean };
   einstellungen: OcrEinstellungen; verfahren: Record<string, string>; dateitypen: Record<string, string>;
+  /** #395: eingestellt, aber nicht installiert; erkannte Sprachen (Kennung → Anzahl Dokumente). */
+  fehlendeSprachen?: string[]; erkannteSprachen?: Record<string, number>;
 }
 export interface Zaehler {
   typen: Record<string, { anzahl: number; unpassend: number; demo: number }>; eingang: number; sichten?: Record<string, number>;

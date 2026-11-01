@@ -5,6 +5,7 @@ import { Fundstellen, fundstellenFuer } from './Doppelt';
 import { useMappenZiel } from './NeuePost';
 import { useEffect, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from 'react';
 import { HERKUNFT, MAX_DATEIGROESSE, OCR_STAENDE, type Mappe, type Dokument, type DokumentVersion, type Herkunft, type OcrStand, type Register } from '../../../shared/src/model';
+import { spracheAusInfo, sprachname } from '../../../shared/src/textsprache';
 import { api, dokumentUrl, versionUrl, type Fundstelle } from '../api';
 import { useDaten } from '../daten';
 import { Person } from '../Person';
@@ -340,10 +341,12 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
 /** Stand der Texterkennung an einem Dokument (#45). */
 function OcrAnzeige({ s, erneut, text, textOffen }: { s?: OcrStand; erneut(): void; text(): void; textOffen: boolean }) {
   if (!s || s.stand === 'keiner') return null;
+  // Erkannte Sprache (#395) aus dem Hinweis der Texterkennung.
+  const sprache = s.stand === 'fertig' ? spracheAusInfo(s.info) : null;
   const klasse = s.stand === 'fertig' ? 'gut' : s.stand === 'fehler' ? 'schlecht' : s.stand === 'ausgelassen' ? '' : 'warn';
   return (
     <span className="ocrstand klein">
-      <span className={`chip ${klasse}`} title={s.info ?? undefined}>Volltext: {OCR_STAENDE[s.stand]}{s.stand === 'fertig' && s.seiten ? ` · ${s.seiten} ${s.seiten === 1 ? 'Seite' : 'Seiten'}` : ''}</span>
+      <span className={`chip ${klasse}`} title={s.info ?? undefined}>Volltext: {OCR_STAENDE[s.stand]}{s.stand === 'fertig' && s.seiten ? ` · ${s.seiten} ${s.seiten === 1 ? 'Seite' : 'Seiten'}` : ''}{sprache ? ` · ${sprachname(sprache.sprache)}` : ''}</span>
       {(s.stand === 'fehler' || s.stand === 'ausgelassen') && s.info && <span className="leise">{s.info}</span>}
       {s.stand === 'fertig' && <button type="button" className="textknopf" onClick={text}>{textOffen ? 'Text ausblenden' : 'Text anzeigen'}</button>}
       {(s.stand === 'fehler' || s.stand === 'ausgelassen') && <button type="button" className="textknopf" onClick={erneut}>Erneut versuchen</button>}
