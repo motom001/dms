@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.84/pakete/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.85/pakete/">
       
       
         <link rel="prev" href="../nummernkreise/">
@@ -842,6 +842,17 @@
     <span class="md-ellipsis">
       
         Expertenmodus: weitere Kataloge und Hochladen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#paket-aus-deinem-dms-erstellen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paket aus deinem DMS erstellen
       
     </span>
   </a>
@@ -2043,6 +2054,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#paket-aus-deinem-dms-erstellen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paket aus deinem DMS erstellen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#eigene-pakete" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2168,8 +2190,28 @@
 </div>
 <p>Die Liste der installierten Pakete zeigt bei jedem die <strong>Herkunft</strong>: „offizieller Katalog“, die Katalogadresse oder „hochgeladen von … am …“. <strong>Updates sucht das DMS nur in der Quelle, aus der das Paket stammt.</strong> Ein hochgeladenes Paket aktualisierst du, indem du eine höhere Version hochlädst; dann gelten dieselben Regeln wie bei jedem Update (nur ergänzen). Ist die Quelle eines Pakets abgeschaltet oder entfernt, gibt es dafür keine Updates.</p>
 <p>Das Protokoll vermerkt, wer welche Quelle hinzugefügt, abgeschaltet oder entfernt und wer welches Paket hochgeladen hat.</p>
+<h2 id="paket-aus-deinem-dms-erstellen">Paket aus deinem DMS erstellen<a class="headerlink" href="#paket-aus-deinem-dms-erstellen" title="Permanent link">&para;</a></h2>
+<p>Hast du dir eigene Mappentypen und Ansichten gebaut – etwa für Verträge mit Zahlungen –, nimmst du sie als Paket zu einer anderen Familie mit, ohne YAML von Hand zu schreiben. Unter <strong>Werkbank → Pakete → Paket erstellen</strong> führt dich ein Assistent in vier Schritten; unten stehen <strong>Zurück</strong>, <strong>Weiter</strong> und am Ende <strong>Als .zip exportieren</strong>.</p>
+<ol>
+<li><strong>Auswählen</strong> – Mappentypen und Ansichten mit Haken, oben eine Suche. Optional <strong>Beispiel-Mappen</strong>: Ohne Auswahl enthält das Paket keine einzige Mappe. Wählst du Mappen der gewählten Typen aus, kommen ihre Feldwerte als Beispiele mit – nimm nur Mappen mit erfundenen Daten, z. B. Demo-Mappen.</li>
+<li><strong>Prüfen</strong> – das DMS prüft automatisch und sagt, was es daraus macht:<ul>
+<li><strong>Aus einem Paket:</strong> Ein Mappentyp oder eine Ansicht, die ein installiertes Paket mitgebracht hat (etwa „Organisation“ aus <em>Basis</em>), wird <strong>nicht kopiert</strong>, sondern als <strong>Abhängigkeit</strong> eingetragen, z. B. <code>basis: "&gt;=1.1.0"</code> mit der hier installierten Version. Hast du so einen Typ hier nachträglich geändert, weist das DMS darauf hin: Deine Änderungen gehören nicht zu deinem Paket – lege dafür einen eigenen Typ an.</li>
+<li><strong>Benutzer, Rolle, Ablageort:</strong> Verweise darauf werden zu <code>dms:benutzer</code>, <code>dms:rolle</code>, <code>dms:ablageort</code> – die bringt jedes DMS mit.</li>
+<li><strong>Nicht gewählt:</strong> Verweist ein gewählter Typ (Feld, Verknüpfungsregister) oder eine Ansicht auf einen <strong>eigenen</strong> Typ, den du nicht gewählt hast, steht er unter „Nicht gewählt, aber gebraucht“ mit <strong>Mit aufnehmen</strong>. So lange geht der Export nicht. Eine Ansicht, deren Elternansicht fehlt, kommt auf die oberste Ebene.</li>
+<li><strong>Was nicht ins Paket passt</strong>, nennt die Prüfung als Hinweis: weitere Trefferlisten (nur die Standard-Trefferliste kommt mit), Berechtigungen, Archivmodus, Nummernkreise an Feldern, Bedingungen auf Anzahlen, Favoriten oder Fristen und alles, was auf bestimmte Mappen oder Benutzer dieses DMS zeigt.</li>
+</ul>
+</li>
+<li><strong>Angaben</strong> – Name, Id (Kleinbuchstaben, Ziffern und <code>_</code>, wird aus dem Namen vorgeschlagen), Version (Vorschlag <code>1.0.0</code>), Beschreibung (ein, zwei Sätze, daraus wird auch die README), Autor und optional dein GitHub-Name, <strong>Lizenz</strong> aus der Liste der Registry (im Zweifel MIT; der volle Lizenztext kommt mit) und die nötige DMS-Version (Vorschlag: dieses DMS). Unter „Was ist neu“ steht, was ins CHANGELOG kommt.</li>
+<li><strong>Exportieren</strong> – vor dem Download prüft das DMS das fertige Archiv genauso wie beim Hochladen; erst dann gibt es die Datei <code>&lt;id&gt;-&lt;version&gt;.zip</code> (Format der Registry mit <code>manifest.yaml</code>, <code>inhalt/…</code>, README, CHANGELOG, LICENSE).</li>
+</ol>
+<p>Im anderen DMS installierst du zuerst die Abhängigkeiten (z. B. <em>Basis</em> aus dem Katalog) und lädst die Datei dann unter <strong>Expertenmodus → Paket hochladen</strong> hoch.</p>
+<p><strong>Nächste Version:</strong> Das DMS merkt sich Id, Version, Autor, Lizenz und Auswahl jedes Exports. Beim nächsten Mal schlägt der Assistent dieselbe Id mit höherer Version vor (1.0.0 → 1.1.0); frühere Pakete holst du unter „Früher exportiert“ zurück. Lädt die andere Familie die höhere Version hoch, <strong>aktualisiert</strong> ihr DMS das Paket wie jedes Update: Es ergänzt neue Felder, Register und Ansichten und löscht nichts.</p>
+<div class="admonition note">
+<p class="admonition-title">Keine Daten im Paket</p>
+<p>Ein Paket enthält nur den Aufbau – Mappentypen und Ansichten. Mappen, Dokumente, Notizen, Benutzer und Passwörter kommen nie mit; aus ausdrücklich gewählten Beispiel-Mappen nur Feldwerte ohne Passwörter. Paket erstellen dürfen nur Administratoren; das Protokoll vermerkt jeden Export.</p>
+</div>
 <h2 id="eigene-pakete">Eigene Pakete<a class="headerlink" href="#eigene-pakete" title="Permanent link">&para;</a></h2>
-<p>Wie ein Paket aufgebaut ist und wie es in den Katalog kommt, steht im <a href="https://motom001.github.io/dms/entwickler/aktuell/pakete/">Entwicklerhandbuch</a>.</p>
+<p>Ein selbst erstelltes Paket kannst du auch in die Registry einreichen. Wie ein Paket aufgebaut ist und wie es in den Katalog kommt, steht im <a href="https://motom001.github.io/dms/entwickler/aktuell/pakete/">Entwicklerhandbuch</a>.</p>
 
 
 
