@@ -11,7 +11,7 @@ export type Zweck = 'einladung' | 'zuruecksetzen';
 export interface NeuerBenutzer { id: string; email: string; name: string; rolle: Rolle; passwortHash: string | null }
 export interface Link { benutzerId: string; zweck: Zweck; ablauf: Date; benutzt: Date | null }
 export interface SitzungsInfo { geraet: string; ip: string; vertretungId?: string | null }
-export interface SitzungIntern { id: string; benutzerId: string; ablauf: Date; zuletztAktiv: Date; vertretungId: string | null }
+export interface SitzungIntern { id: string; benutzerId: string; ablauf: Date; zuletztAktiv: Date; vertretungId: string | null; /** Beginn der Sitzung (#416: Zwei-Faktor-Pflicht erst für neue Sitzungen). */ erstellt?: Date }
 
 /** Datenzugriff für Benutzer, Sitzungen und Passwort-Links. */
 export interface KontoRepo {
@@ -254,10 +254,11 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
       await sql`DELETE FROM sitzungen WHERE ablauf < now()`;
     },
     async holeSitzung(hash) {
-      const [r] = await sql`SELECT id, benutzer_id, ablauf, zuletzt_aktiv, vertretung_id FROM sitzungen WHERE schluessel_hash = ${hash}`;
+      const [r] = await sql`SELECT id, benutzer_id, ablauf, zuletzt_aktiv, vertretung_id, erstellt FROM sitzungen WHERE schluessel_hash = ${hash}`;
       return r ? {
         id: r.id as string, benutzerId: r.benutzer_id as string, ablauf: new Date(r.ablauf as string),
         zuletztAktiv: new Date(r.zuletzt_aktiv as string), vertretungId: (r.vertretung_id as string | null) ?? null,
+        erstellt: r.erstellt ? new Date(r.erstellt as string) : undefined,
       } : undefined;
     },
     async beruehreSitzung(hash) { await sql`UPDATE sitzungen SET zuletzt_aktiv = now() WHERE schluessel_hash = ${hash}`; },

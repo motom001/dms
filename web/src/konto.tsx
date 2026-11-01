@@ -8,6 +8,7 @@ import { AssistentAngemeldet, Einrichtungsassistent } from './einrichtung';
 import { geheZu, useOrt } from './ort';
 import { Marke } from './Marke';
 import { ZweifaktorEinrichten } from './profil/Zweifaktor';
+import { rueckfrage } from './rueckfrage';
 
 /** Logo und Schriftzug des Standard-Designs für Anmeldung und Passwortseiten (#72). */
 let MARKE: { schriftzug: string | null; logo: string | null } = { schriftzug: null, logo: null };
@@ -20,6 +21,8 @@ interface Konto {
   hinweise: NonNullable<KontoStatus['hinweise']>;
   /** Version der Installation – für Links ins passende Handbuch (#111). */
   version: string | null;
+  /** Zwei-Faktor (#242, #416): eingerichtet? Vorgeschrieben, aber erst ab der nächsten Anmeldung (Hinweis oben)? */
+  zweifaktor: { aktiv: boolean; ausstehend: boolean };
 }
 const Ctx = createContext<Konto | null>(null);
 
@@ -94,14 +97,33 @@ export function KontoProvider({ children }: { children: ReactNode }) {
     <Karte titel="Zwei-Faktor-Anmeldung einrichten" unter="Für deine Rolle ist neben dem Passwort ein Code aus einer App auf dem Handy vorgeschrieben. Richte sie jetzt ein – es dauert eine Minute.">
       <ZweifaktorEinrichten fertig={() => void laden()} />
       <button className="textknopf" onClick={() => void abmelden()}>Abmelden</button>
+      {status.benutzer.rolle === 'admin' && <PflichtAusschalten fertig={laden} />}
     </Karte>
   );
   // key: Beim Wechsel des Benutzers (Vertretung) alles neu aufbauen und laden.
   return (
-    <Ctx.Provider key={status.benutzer.id} value={{ ich: status.benutzer, mail: status.mail, passwoerterMoeglich: status.passwoerterMoeglich ?? false, abmelden, aktualisieren: laden, vertretung: status.vertretung ?? null, hinweise: status.hinweise ?? [], version: status.version ?? null }}>
+    <Ctx.Provider key={status.benutzer.id} value={{ ich: status.benutzer, mail: status.mail, passwoerterMoeglich: status.passwoerterMoeglich ?? false, abmelden, aktualisieren: laden, vertretung: status.vertretung ?? null, hinweise: status.hinweise ?? [], version: status.version ?? null, zweifaktor: { aktiv: !!status.zweifaktor?.aktiv, ausstehend: !!status.zweifaktor?.ausstehend } }}>
       {/* … danach als Administrator: Benutzer, Schlüssel, Optionales, Fertig. */}
       {status.einrichtung?.assistent ? <AssistentAngemeldet /> : children}
     </Ctx.Provider>
+  );
+}
+
+/**
+ * #416: Die Pflicht selbst bleibt für Administratoren immer erreichbar – auch hier, bevor sie eingerichtet ist.
+ * Nur ausschalten; der Server lässt in diesem Zustand nichts anderes zu.
+ */
+function PflichtAusschalten({ fertig }: { fertig: () => Promise<void> }) {
+  const [fehler, setFehler] = useState<string>();
+  async function aus() {
+    if (!(await rueckfrage({ titel: 'Pflicht für Administratoren ausschalten?', text: 'Administratoren melden sich dann wieder nur mit dem Passwort an. Mitglieder betrifft das nicht. Du kannst die Zwei-Faktor-Anmeldung später unter Profil → Sicherheit einrichten.', ja: 'Pflicht ausschalten', gefahr: true }))) return;
+    try { await api.zweifaktorPflichtSetzen({ admin: false }); await fertig(); } catch (e) { setFehler((e as Error).message); }
+  }
+  return (
+    <p className="leise klein">Als Administrator kannst du die Pflicht auch wieder zurücknehmen:{' '}
+      <button className="textknopf" onClick={() => void aus()}>Pflicht für Administratoren ausschalten</button>
+      {fehler && <span className="fehlertext" role="alert"> {fehler}</span>}
+    </p>
   );
 }
 

@@ -70,16 +70,38 @@ export class Zweifaktor {
   }
 
   async pflicht(): Promise<Pflicht> { return { admin: false, mitglied: false, ...((await this.speicher.lies('zweifaktor_pflicht')) as Partial<Pflicht> | null ?? {}) }; }
+  /** Seit wann die Pflicht je Rolle gilt (#416); fehlt der Zeitpunkt (eingeschaltet vor 0.91.1), gilt sie für alle Sitzungen. */
+  private async pflichtSeit(): Promise<Partial<Record<Rolle, string>>> { return ((await this.speicher.lies('zweifaktor_pflicht_seit')) as Partial<Record<Rolle, string>> | null) ?? {}; }
   async setzePflicht(x: unknown, von: string): Promise<Pflicht> {
     const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
     const alt = await this.pflicht();
     const neu: Pflicht = { admin: o.admin === undefined ? alt.admin : o.admin === true, mitglied: o.mitglied === undefined ? alt.mitglied : o.mitglied === true };
+    // #416: Die Pflicht gilt erst für Sitzungen, die nach dem Einschalten beginnen – laufende arbeiten weiter.
+    const seit = await this.pflichtSeit();
+    const jetzt = new Date(this.jetzt()).toISOString();
+    for (const r of ['admin', 'mitglied'] as const) {
+      if (neu[r] && !alt[r]) seit[r] = jetzt;
+      if (!neu[r]) delete seit[r];
+    }
+    await this.speicher.schreibe('zweifaktor_pflicht_seit', seit);
     await this.speicher.schreibe('zweifaktor_pflicht', neu);
     log.info('Pflicht zur Zwei-Faktor-Anmeldung geändert', { von, ...neu });
     return neu;
   }
-  /** Muss dieser Benutzer die Zwei-Faktor-Anmeldung noch einrichten? */
-  async fehlt(b: { id: string; rolle: Rolle }): Promise<boolean> { return (await this.pflicht())[b.rolle] && !(await this.aktiv(b.id)); }
+  /**
+   * Muss dieser Benutzer die Zwei-Faktor-Anmeldung noch einrichten?
+   * - 'fehlt': ja, und diese Sitzung begann nach dem Einschalten der Pflicht – erst einrichten (#242).
+   * - 'ausstehend': ja, aber die Sitzung lief schon vorher – weiterarbeiten, mit Hinweis (#416).
+   * - 'ok': nein.
+   * Ohne Sitzungsbeginn (z. B. reine Prüfung) zählt jede Pflicht als 'fehlt'.
+   */
+  async lage(b: { id: string; rolle: Rolle }, sitzungSeit?: Date): Promise<'ok' | 'ausstehend' | 'fehlt'> {
+    if (!(await this.pflicht())[b.rolle] || (await this.aktiv(b.id))) return 'ok';
+    const ab = (await this.pflichtSeit())[b.rolle];
+    if (sitzungSeit && ab && sitzungSeit.getTime() < Date.parse(ab)) return 'ausstehend';
+    return 'fehlt';
+  }
+  async fehlt(b: { id: string; rolle: Rolle }, sitzungSeit?: Date): Promise<boolean> { return (await this.lage(b, sitzungSeit)) === 'fehlt'; }
 
   /** Einrichten, Schritt 1: neues Geheimnis (noch nicht gespeichert) und Adresse für den QR-Code. */
   beginne(b: { id: string; email: string }, aussteller = 'DMS') {

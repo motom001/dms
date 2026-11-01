@@ -51,11 +51,15 @@ Bist du selbst gesperrt und kein anderer Administrator kann dich freigeben, hilf
 
 Ohne Zugriff auf den Container warte die Sperrdauer ab oder melde dich von einem anderen Gerät oder Netz an. Gibt es keinen Administrator mehr, hilft der [Notfallzugang](notfall.md).
 
+Kommst du wegen der [Zwei-Faktor-Anmeldung](#zwei-faktor-anmeldung) nicht weiter – Handy und Wiederherstellungscodes weg –, entfernt `dms zweifaktor-zuruecksetzen <email>` sie bei deinem Benutzer; danach reicht wieder das Passwort. Ist sie vorgeschrieben und du hast sie noch nicht eingerichtet, kannst du die Pflicht unter **Werkbank → Anmeldeschutz** trotzdem jederzeit ausschalten – auch auf der Einrichtungsseite nach der Anmeldung.
+
 ## Zwei-Faktor-Anmeldung
 
 Jeder Benutzer kann unter **Profil → Sicherheit** eine Zwei-Faktor-Anmeldung mit einer Authenticator-App einrichten (TOTP, 6 Stellen, 30 Sekunden) und bekommt dazu zehn Wiederherstellungscodes. Wie das für Benutzer aussieht, beschreibt das [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/aktuell/profil/#zwei-faktor-anmeldung).
 
-Unter **Werkbank → Anmeldeschutz** im Block **Zwei-Faktor-Anmeldung** **schreibst du sie je Systemrolle vor**: mit den Haken **Für Administratoren vorschreiben** und **Für Mitglieder vorschreiben**. Wer sie dann noch nicht hat, sieht nach der Anmeldung nur die Einrichtung und kommt erst danach weiter. Abschalten kann er sie selbst nicht mehr.
+Unter **Werkbank → Anmeldeschutz** im Block **Zwei-Faktor-Anmeldung** **schreibst du sie je Systemrolle vor**: mit den Haken **Für Administratoren vorschreiben** und **Für Mitglieder vorschreiben**. Die Pflicht greift **bei der nächsten Anmeldung**: Wer sie dann noch nicht hat, sieht nach der Anmeldung nur die Einrichtung und kommt erst danach weiter. Abschalten kann er sie selbst nicht mehr. Wer gerade angemeldet ist, arbeitet weiter und sieht oben einen Hinweis mit dem Weg zur Einrichtung.
+
+Schreibst du sie für Administratoren vor und hast sie selbst noch nicht, fragt das DMS vorher nach: **Jetzt einrichten** führt dich zu **Profil → Sicherheit**, **Trotzdem vorschreiben** schaltet die Pflicht ein – du richtest sie dann bei deiner nächsten Anmeldung ein. Die Einstellung selbst bleibt für Administratoren immer erreichbar: Ausschalten geht auch, solange du die Einrichtung noch vor dir hast; die Einrichtungsseite nach der Anmeldung bietet dafür **Pflicht für Administratoren ausschalten** an.
 
 Falsche Codes zählen wie falsche Passwörter für den [Anmeldeschutz](#zwei-sperren). Ein Link zum Zurücksetzen des Passworts ersetzt nur das Passwort; den Code fragt das DMS trotzdem ab.
 
