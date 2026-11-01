@@ -76,6 +76,15 @@ input, select, textarea { width: 100%; min-width: 0; background: var(--flaeche);
 textarea { resize: vertical; }
 input:disabled { background: var(--senke); color: var(--leise); }
 input[type="checkbox"], input[type="radio"] { width: 16px; height: 16px; padding: 0; margin: 2px 0 0; flex: none; accent-color: var(--akzent); }
+/* Schieberegler (#365): nativ, mit Akzentfarbe; am Handy hoch genug zum Greifen. */
+input[type="range"] { padding: 0; border: 0; background: transparent; accent-color: var(--akzent); min-height: 32px; cursor: pointer; }
+input[type="range"]:disabled { background: transparent; cursor: default; }
+.regler { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.regler > span { display: flex; justify-content: space-between; gap: 8px; font-size: calc(12.5px * var(--skala, 1)); font-weight: 600; }
+.regler > span output { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--akzent); white-space: nowrap; }
+.regler small { font-weight: 400; color: var(--leise); }
+fieldset.mischung { border: 1px solid var(--linie); border-radius: 8px; padding: 10px 12px 12px; margin: 0; min-width: 0; }
+fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 /* iPhone (#174): Safari auf iOS zeichnet Datums- und Zeitfelder als eigenes Bedienelement mit
    fester Mindestbreite – sie ragten über den Kasten hinaus. Nur auf iOS (-webkit-touch-callout gibt
    es nur dort) wie ein normales Eingabefeld behandeln: volle Breite, gleiche Höhe, linksbündig. */

@@ -26,7 +26,14 @@ Ein **Startwert** (z. B. `messung-1`) macht einen Lauf wiederholbar: Gleicher St
 
 ### Dokumente erzeugen
 
-Mit **Dokumente erzeugen** bekommen die neuen Mappen auch Dokumente – nur Mappentypen mit Dokumentenregister. Einstellbar sind der Anteil der Mappen mit Dokumenten, wie viele Dokumente je Mappe (z. B. 1 bis 3) und die **Mischung** der Arten:
+Mit **Dokumente erzeugen** bekommen die neuen Mappen auch Dokumente – nur Mappentypen mit Dokumentenregister. Alles stellst du mit **Schiebereglern** ein; die Zahl daneben zeigt den Wert. Die Regler lassen sich auch mit der Tastatur bedienen (Pfeiltasten in kleinen, Bild auf/ab in großen Schritten), unmögliche Werte lassen sich gar nicht erst einstellen:
+
+- **Mappen mit Dokumenten:** 0 bis 100 %.
+- **Dokumente je Mappe von … bis:** 1 bis 250. Die Stufen werden nach oben gröber (1, 2, 3, 4, 5, 7, 10, 15, 20, 30, 50, 75, 100, 150, 200, 250), damit kleine Werte gut einstellbar bleiben. Ziehst du „von“ über „bis“, geht „bis“ mit – und umgekehrt.
+- **Gewollte Duplikate:** 0 bis 50 %.
+- **Mischung** der Arten: fünf Regler, die zusammen **immer 100 %** ergeben. Bewegst du einen, passen sich die anderen im bisherigen Verhältnis an.
+
+Die Arten:
 
 | Art | Was | Wofür |
 | --- | --- | --- |
@@ -36,9 +43,9 @@ Mit **Dokumente erzeugen** bekommen die neuen Mappen auch Dokumente – nur Mapp
 | Bild | JPEG oder PNG, vom Bildschirmfoto bis zum Handyfoto (12 MP), teils Foto eines Belegs mit lesbarem Text | Vorschau, Texterkennung, Speicherplatz |
 | Große Datei | PDF mit 20–100 MB | Hochladen, Vorschau, Export, Sicherung |
 
-Die drei Stufen **leicht**, **realistisch** und **schwer** sind fertige Mischungen; jede Art lässt sich auch einzeln einstellen. Jede Datei ist einzigartig. Ein Anteil **gewollter Duplikate** legt dieselbe Datei in mehrere Mappen – sie liegt dann nur einmal auf der Platte.
+Die Vorlagen **leicht**, **realistisch** und **schwer** sind fertige Mischungen; bewegst du danach einen Regler, steht dort *eigene Mischung*. Jede Datei ist einzigartig. Ein Anteil **gewollter Duplikate** legt dieselbe Datei in mehrere Mappen – sie liegt dann nur einmal auf der Platte.
 
-Vor dem Start steht eine **Abschätzung** auf der Seite: Mappen, Dokumente, Seiten, Größe, Seiten für die Texterkennung und der freie Platz. Reicht der Platz nicht – frei bleiben müssen der *Mindest-Speicherplatz* der [Sicherung](sicherung.md) und die Grenze unter [Speicherplatz](speicherplatz.md) –, lässt sich der Lauf nicht starten. Wird der Platz während des Laufs knapp, hört er sauber auf und sagt das im Ergebnis.
+Vor dem Start steht eine **Abschätzung** auf der Seite und ändert sich beim Schieben sofort: Mappen, Dokumente, Seiten, Größe, Seiten für die Texterkennung und der freie Platz – z. B. „≈ 1.000 Mappen, ≈ 600 Dokumente mit ≈ 4.224 Seiten, zusammen ≈ 559 MB; ≈ 348 Seiten für die Texterkennung“. Bei sehr großen Mengen (ab etwa 20.000 Dokumenten oder 20 GB) warnt sie deutlich, denn das dauert auf einem NAS Stunden. Mehr als 250.000 Dokumente je Lauf sind nicht möglich – dann lieber mehrere Läufe. Reicht der Platz nicht – frei bleiben müssen der *Mindest-Speicherplatz* der [Sicherung](sicherung.md) und die Grenze unter [Speicherplatz](speicherplatz.md) –, lässt sich der Lauf nicht starten. Wird der Platz während des Laufs knapp, hört er sauber auf und sagt das im Ergebnis.
 
 !!! warning "Texterkennung braucht Zeit"
     Die Texterkennung vieler „gescannter“ PDFs und Bilder dauert auf einem NAS eher Tage als Stunden; sie läuft nach dem Erzeugen im Hintergrund weiter. Sicherungen werden entsprechend größer.

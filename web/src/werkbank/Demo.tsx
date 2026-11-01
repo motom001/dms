@@ -4,6 +4,7 @@ import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { rueckfrage } from '../rueckfrage';
 import { fortschrittText } from '../../../shared/src/auftrag';
+import { JE_MAPPE_STUFEN, MAX_DEMO, MAX_DEMO_DOKUMENTE, MAX_DUPLIKATE, mengenWarnung, MISCHUNGEN, schaetzeMenge, stelleMischung, stelleVonBis, stufeVon } from '../../../shared/src/demodaten';
 
 type Uebersicht = Array<{ typId: string; name: string; demo: number; gesamt: number }>;
 
@@ -37,12 +38,20 @@ export function DemoListe() {
 type Meldung = { art: 'gut' | 'warn' | 'schlecht'; text: string; liste?: string[] };
 
 const ARTNAME: Record<Dokumentart, string> = { brief: 'Brief/Rechnung (1 Seite)', mehrseitig: 'Mehrseitiges PDF', scan: '„Gescanntes“ PDF', bild: 'Bild (JPEG/PNG)', gross: 'Große Datei (20–100 MB)' };
-const MISCHUNGEN: Record<DemoStufe, Record<Dokumentart, number>> = {
-  leicht: { brief: 70, mehrseitig: 25, scan: 5, bild: 0, gross: 0 },
-  realistisch: { brief: 45, mehrseitig: 20, scan: 20, bild: 14, gross: 1 },
-  schwer: { brief: 20, mehrseitig: 25, scan: 30, bild: 20, gross: 5 },
-};
 const STUFENTEXT: Record<DemoStufe | 'eigen', string> = { leicht: 'leicht', realistisch: 'realistisch', schwer: 'schwer', eigen: 'eigene Mischung' };
+
+/** Schieberegler mit Wertanzeige (#365): nativ, also mit Pfeiltasten und Bild auf/ab bedienbar. */
+function Regler({ id, name, hinweis, wert, min, max, anzeige, onChange }: {
+  id: string; name: string; hinweis?: string; wert: number; min: number; max: number; anzeige: string; onChange: (n: number) => void;
+}) {
+  return (
+    <label className="regler" htmlFor={id}>
+      <span><span>{name}{hinweis && <> <small>{hinweis}</small></>}</span><output htmlFor={id} aria-hidden="true">{anzeige}</output></span>
+      <input id={id} type="range" min={min} max={max} step={1} value={wert} aria-valuetext={anzeige} onChange={(e) => onChange(Number(e.target.value))} />
+    </label>
+  );
+}
+const dokumente = (n: number) => `${n.toLocaleString('de-DE')} ${n === 1 ? 'Dokument' : 'Dokumente'}`;
 
 const groesse = (b: number) => b >= 1024 ** 3 ? `${(b / 1024 ** 3).toFixed(1).replace('.', ',')} GB` : `${Math.max(1, Math.round(b / 1024 ** 2)).toLocaleString('de-DE')} MB`;
 const dauer = (ms: number) => ms < 60_000 ? `${Math.round(ms / 1000)} s` : ms < 3_600_000 ? `${Math.round(ms / 60_000)} min` : `${(ms / 3_600_000).toFixed(1).replace('.', ',')} h`;
@@ -99,23 +108,28 @@ export function DemoPanel() {
   const [anzahl, setAnzahl] = useState('1000');
   const [startwert, setStartwert] = useState('');
   const [mitDok, setMitDok] = useState(false);
-  const [anteil, setAnteil] = useState('30');
-  const [von, setVon] = useState('1');
-  const [bis, setBis] = useState('3');
+  const [anteil, setAnteil] = useState(30);
+  const [jeMappe, setJeMappe] = useState({ von: 1, bis: 3 });
   const [stufe, setStufe] = useState<DemoStufe | 'eigen'>('realistisch');
   const [mischung, setMischung] = useState<Record<Dokumentart, number>>(MISCHUNGEN.realistisch);
-  const [duplikate, setDuplikate] = useState('0');
+  const [duplikate, setDuplikate] = useState(0);
   const [schaetzung, setSchaetzung] = useState<DemoAbschaetzung | null>(null);
-  const optionen: DemoOptionen = {
-    anzahl: Number(anzahl), startwert: startwert.trim() || undefined,
-    dokumente: mitDok ? { anteil: Number(anteil), von: Number(von), bis: Number(bis), mischung, duplikate: Number(duplikate) } : null,
-  };
+  const dok = mitDok ? { anteil, von: jeMappe.von, bis: jeMappe.bis, mischung, duplikate } : null;
+  const optionen: DemoOptionen = { anzahl: Number(anzahl), startwert: startwert.trim() || undefined, dokumente: dok };
   const schluessel = JSON.stringify(optionen);
-  // Abschätzung vor dem Start: kurz nach der letzten Änderung neu berechnen.
+  const anzahlOk = Number.isInteger(Number(anzahl)) && Number(anzahl) >= 1 && Number(anzahl) <= MAX_DEMO;
+  // Abschätzung live beim Schieben (#365): dieselbe Rechnung wie auf dem Server …
+  const menge = anzahlOk ? schaetzeMenge(d.typen, { anzahl: Number(anzahl), dokumente: dok }) : null;
+  const warnung = menge ? mengenWarnung(menge) : null;
+  const zuViele = (menge?.dokumente?.dokumente ?? 0) > MAX_DEMO_DOKUMENTE;
+  // … den freien Platz (und ob pdftoppm da ist) liefert der Server kurz nach der letzten Änderung.
   useEffect(() => {
+    if (!anzahlOk || zuViele) return;
     const t = setTimeout(() => { api.demoAbschaetzung(JSON.parse(schluessel) as DemoOptionen).then(setSchaetzung, () => setSchaetzung(null)); }, 400);
     return () => clearTimeout(t);
-  }, [schluessel]);
+  }, [schluessel, anzahlOk, zuViele]);
+  const bytes = menge?.dokumente?.bytes ?? 0;
+  const reicht = !schaetzung || schaetzung.frei === null || schaetzung.frei - bytes >= schaetzung.mindest;
   const [meldung, setMeldung] = useState<Meldung>();
   const { auftrag, setze } = useAuftrag((a) => { setMeldung(meldungAus(a)); void d.neuLaden(); });
   const laeuft = auftrag?.status === 'laeuft';
@@ -167,37 +181,40 @@ export function DemoPanel() {
           <label className="haken"><input id="demo-dokumente" type="checkbox" checked={mitDok} onChange={(e) => setMitDok(e.target.checked)} /><span>Dokumente erzeugen <small className="leise">(nur für Mappentypen mit Dokumentenregister)</small></span></label>
           {mitDok && <>
             <div className="raster">
-              <label className="eigenschaft"><span>Mappen mit Dokumenten <small>in Prozent</small></span>
-                <input id="demo-anteil" type="number" min={0} max={100} value={anteil} onChange={(e) => setAnteil(e.target.value)} /></label>
-              <label className="eigenschaft"><span>Dokumente je Mappe von</span>
-                <input id="demo-von" type="number" min={1} max={20} value={von} onChange={(e) => setVon(e.target.value)} /></label>
-              <label className="eigenschaft"><span>bis</span>
-                <input id="demo-bis" type="number" min={1} max={20} value={bis} onChange={(e) => setBis(e.target.value)} /></label>
-              <label className="eigenschaft"><span>Mischung</span>
+              <Regler id="demo-anteil" name="Mappen mit Dokumenten" wert={anteil} min={0} max={100} anzeige={`${anteil} %`} onChange={setAnteil} />
+              <Regler id="demo-von" name="Dokumente je Mappe von" wert={stufeVon(jeMappe.von)} min={0} max={JE_MAPPE_STUFEN.length - 1}
+                anzeige={dokumente(jeMappe.von)} onChange={(i) => setJeMappe(stelleVonBis(jeMappe, 'von', JE_MAPPE_STUFEN[i]))} />
+              <Regler id="demo-bis" name="bis" wert={stufeVon(jeMappe.bis)} min={0} max={JE_MAPPE_STUFEN.length - 1}
+                anzeige={dokumente(jeMappe.bis)} onChange={(i) => setJeMappe(stelleVonBis(jeMappe, 'bis', JE_MAPPE_STUFEN[i]))} />
+              <Regler id="demo-duplikate" name="Gewollte Duplikate" hinweis="gleiche Datei in mehreren Mappen" wert={duplikate} min={0} max={MAX_DUPLIKATE} anzeige={`${duplikate} %`} onChange={setDuplikate} />
+            </div>
+            <fieldset className="stapel mischung">
+              <legend>Mischung <small className="leise">– zusammen immer 100 %</small></legend>
+              <label className="eigenschaft schmal"><span>Vorlage</span>
                 <select id="demo-stufe" value={stufe} onChange={(e) => { const v = e.target.value as DemoStufe | 'eigen'; setStufe(v); if (v !== 'eigen') setMischung(MISCHUNGEN[v]); }}>
                   {(['leicht', 'realistisch', 'schwer', 'eigen'] as const).map((x) => <option key={x} value={x}>{STUFENTEXT[x]}</option>)}
                 </select></label>
-              <label className="eigenschaft"><span>Gewollte Duplikate <small>in Prozent; gleiche Datei in mehreren Mappen</small></span>
-                <input id="demo-duplikate" type="number" min={0} max={50} value={duplikate} onChange={(e) => setDuplikate(e.target.value)} /></label>
-            </div>
-            <div className="raster">
-              {DOKUMENTARTEN.map((a) => (
-                <label key={a} className="eigenschaft"><span>{ARTNAME[a]} <small>Anteil in %</small></span>
-                  <input id={`demo-mischung-${a}`} type="number" min={0} max={100} value={mischung[a]} onChange={(e) => { setStufe('eigen'); setMischung({ ...mischung, [a]: Number(e.target.value) }); }} /></label>
-              ))}
-            </div>
+              <div className="raster">
+                {DOKUMENTARTEN.map((a) => (
+                  <Regler key={a} id={`demo-mischung-${a}`} name={ARTNAME[a]} wert={mischung[a]} min={0} max={100} anzeige={`${mischung[a]} %`}
+                    onChange={(n) => { setStufe('eigen'); setMischung(stelleMischung(mischung, a, n)); }} />
+                ))}
+              </div>
+              <p className="leise klein">Bewegst du einen Regler, passen sich die anderen im bisherigen Verhältnis an. Summe: {DOKUMENTARTEN.reduce((x, a) => x + mischung[a], 0)} %</p>
+            </fieldset>
             <p className="leise klein">Die Texterkennung vieler „gescannter“ PDFs und Bilder dauert auf einem NAS eher Tage als Stunden; sie läuft danach im Hintergrund. Sicherungen werden entsprechend größer.</p>
           </>}
-          {schaetzung && (
-            <div className={`hinweis ${schaetzung.reicht ? 'info' : 'schlecht'} stapel`}>
-              <p><strong>Abschätzung:</strong> etwa {schaetzung.mappen.toLocaleString('de-DE')} Mappen
-                {schaetzung.dokumente && <>, {schaetzung.dokumente.dokumente.toLocaleString('de-DE')} Dokumente mit {schaetzung.dokumente.seiten.toLocaleString('de-DE')} Seiten, zusammen etwa {groesse(schaetzung.dokumente.bytes)}; {schaetzung.dokumente.ocrSeiten.toLocaleString('de-DE')} Seiten für die Texterkennung</>}.
-                {schaetzung.frei !== null && <> Frei: {groesse(schaetzung.frei)}, frei bleiben müssen mindestens {groesse(schaetzung.mindest)}.</>}</p>
-              {!schaetzung.reicht && <p>Der Speicherplatz reicht dafür nicht. Weniger Mappen, weniger Dokumente oder eine leichtere Mischung wählen.</p>}
-              {mitDok && !schaetzung.rastern && <p className="klein">Ohne pdftoppm (nur in der Entwicklung) werden Scans und Bilder als einfache PDFs erzeugt.</p>}
+          {menge && (
+            <div className={`hinweis ${!reicht || zuViele ? 'schlecht' : warnung ? 'warn' : 'info'} stapel`} role="status" aria-live="polite">
+              <p><strong>Abschätzung:</strong> ≈ {menge.mappen.toLocaleString('de-DE')} Mappen
+                {menge.dokumente && <>, ≈ {dokumente(menge.dokumente.dokumente)} mit ≈ {menge.dokumente.seiten.toLocaleString('de-DE')} Seiten, zusammen ≈ {groesse(menge.dokumente.bytes)}; ≈ {menge.dokumente.ocrSeiten.toLocaleString('de-DE')} Seiten für die Texterkennung</>}.
+                {schaetzung && schaetzung.frei !== null && <> Frei: {groesse(schaetzung.frei)}, frei bleiben müssen mindestens {groesse(schaetzung.mindest)}.</>}</p>
+              {warnung && <p>{warnung}</p>}
+              {!reicht && <p>Der Speicherplatz reicht dafür nicht. Weniger Mappen, weniger Dokumente oder eine leichtere Mischung wählen.</p>}
+              {mitDok && schaetzung && !schaetzung.rastern && <p className="klein">Ohne pdftoppm (nur in der Entwicklung) werden Scans und Bilder als einfache PDFs erzeugt.</p>}
             </div>
           )}
-          <div className="knoepfe"><button className="knopf primaer" disabled={laeuft || (schaetzung ? !schaetzung.reicht : false)}>Demo-Daten erzeugen</button></div>
+          <div className="knoepfe"><button className="knopf primaer" disabled={laeuft || !anzahlOk || zuViele || !reicht}>Demo-Daten erzeugen</button></div>
         </form>
       )}
 

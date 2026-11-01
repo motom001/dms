@@ -660,6 +660,9 @@ async function main() {
   await s.getByRole('heading', { name: 'Schwellen', exact: true }).waitFor();
   await bild(s, 'werkbank-speicherplatz');
   await geheZu(s, '/werkbank/demo');
+  // Mit Dokumenten (#365): Schieberegler, Mischung und Abschätzung sichtbar.
+  await s.locator('#demo-dokumente').check();
+  await s.getByText('Abschätzung:').waitFor();
   await bild(s, 'werkbank-demo');
 
   // Sicherung (#103–#106): jetzt sichern, Notfallblatt herunterladen (als Bild fürs Handbuch), Zeitplan
