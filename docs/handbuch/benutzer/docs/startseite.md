@@ -17,7 +17,7 @@ Die Startseite nutzt die ganze Breite neben den Ansichten: Auf einem großen Bil
 
 Ist eine Kachel leer, steht dort statt einer Null ein grünes Häkchen, z. B. „✓ Nichts zu erledigen“. *Zu erledigen* ist hervorgehoben, solange es etwas zu tun gibt. Alle Zahlen zählen nur, was du sehen darfst.
 
-Darunter stehen die **zuletzt geöffneten** Mappen – die letzten fünf, die du geöffnet hast und noch sehen darfst. Ein Klick öffnet die Mappe rechts; die Startseite rückt dann wie jede Liste in die Mitte, sodass du zwischen den zuletzt geöffneten Mappen wechseln kannst. **Start** links zeigt sie wieder in voller Breite. Am Handy stehen die Kacheln untereinander.
+Darunter stehen die **zuletzt geöffneten** Mappen – die letzten fünf, die du geöffnet hast und noch sehen darfst. Ein Klick öffnet die Mappe rechts; die Startseite rückt dann wie jede Liste in die Mitte, sodass du zwischen den zuletzt geöffneten Mappen wechseln kannst. **Start** links zeigt sie wieder in voller Breite. Am Handy stehen die Kacheln untereinander, je eine Zeile mit der Zahl rechts.
 
 ![Startseite mit geöffneter Mappe](bilder/startseite-mappe.png)
 

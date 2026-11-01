@@ -152,6 +152,7 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
       <button type="button" className={`wer ${an ? 'an' : ''}`} aria-haspopup="menu" aria-expanded={offen} onClick={() => setOffen(!offen)}>
         {ich.name || ich.email}{abwesend && <span className="abwesend-punkt" title="Du bist abwesend" aria-label="(abwesend)" />} <span aria-hidden="true">▾</span>
       </button>
+      {offen && <div className="hy-schleier" aria-hidden="true" onClick={() => setOffen(false)} />}
       {offen && (
         <div className="menue" role="menu">
           <div className="menuekopf">

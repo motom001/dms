@@ -21,7 +21,7 @@ export const EMAIL_WARNUNG = 20 * 1024 * 1024;
 const EMAIL_HOECHSTENS = 50_000_000;
 
 /** Ein weiterer Löschweg im Menü (#424), z. B. „Mit verknüpften Mappen löschen …“. */
-export interface Loeschweg { text: string; titel?: string; tu(): void }
+export interface Loeschweg { text: string; titel?: string; tu(): void; /** Nur auf dem Handy (#489), z. B. „Mappe löschen …“ statt in der Speicherleiste. */ nurSchmal?: boolean }
 
 /**
  * Menü „Mappe ▾“ (#427, früher „Aktionen“): steht in der Kopfzeile neben dem Stern und betrifft
@@ -45,6 +45,7 @@ export function Aktionsmenue({ aufgabe, erinnern, email, drucken, link, auskunft
       <button type="button" className={`knopf klein ${offen ? 'an' : ''}`} aria-haspopup="menu" aria-expanded={offen} onClick={() => setOffen(!offen)} title="Was du mit dieser Mappe tun kannst">
         Mappe <span aria-hidden="true">▾</span>
       </button>
+      {offen && <div className="hy-schleier" aria-hidden="true" onClick={() => setOffen(false)} />}
       {offen && (
         <div className="menue" role="menu">
           <button type="button" role="menuitem" onClick={waehle(aufgabe)}><Symbol name="aufgabe" /> Aufgabe vergeben</button>
@@ -53,8 +54,8 @@ export function Aktionsmenue({ aufgabe, erinnern, email, drucken, link, auskunft
           {drucken && <button type="button" role="menuitem" onClick={waehle(drucken)}><Symbol name="pdf" /> Als PDF exportieren</button>}
           {link && <button type="button" role="menuitem" onClick={waehle(link)} title="Link über Mappentyp und Feldwerte, z. B. zum Weitergeben per Mail oder Chat"><Symbol name="link" /> Link kopieren</button>}
           {auskunft && <button type="button" role="menuitem" onClick={waehle(auskunft)} title="Alles zu dieser Person sammeln, prüfen und als ZIP ausgeben (Werkbank → Datenschutz)"><Symbol name="auskunft" /> Auskunft erstellen …</button>}
-          {loeschwege.length > 0 && <div role="separator" className="aktionsmenue-trenner" />}
-          {loeschwege.map((w) => <button key={w.text} type="button" role="menuitem" className="aktionsmenue-gefahr" onClick={waehle(w.tu)} title={w.titel}>{w.text}</button>)}
+          {loeschwege.length > 0 && <div role="separator" className={`aktionsmenue-trenner${loeschwege.every((w) => w.nurSchmal) ? ' hy-nur-schmal' : ''}`} />}
+          {loeschwege.map((w) => <button key={w.text} type="button" role="menuitem" className={`aktionsmenue-gefahr${w.nurSchmal ? ' hy-nur-schmal' : ''}`} onClick={waehle(w.tu)} title={w.titel}>{w.text}</button>)}
         </div>
       )}
     </div>
