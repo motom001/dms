@@ -7,12 +7,12 @@ import { protokoll } from './protokoll';
 /**
  * Einrichtungsassistent (#119), sobald die Datenbank steht:
  *   Mandant + Administrator (mit Einrichtungscode) → danach angemeldet als Administrator:
- *   erster normaler Benutzer, Schlüssel und Notfallblatt, Optionales, Fertig.
+ *   erster normaler Benutzer, Schlüssel und Notfallblatt, Pakete dazuholen (#460), Optionales, Fertig.
  * Der Stand der Schritte nach dem Anlegen liegt in den Einstellungen („einrichtung“).
  */
 
 const log = protokoll.modul('system');
-export const SCHRITTE = ['benutzer', 'schluessel', 'optional', 'fertig'] as const;
+export const SCHRITTE = ['benutzer', 'schluessel', 'pakete', 'optional', 'fertig'] as const;
 export type Schritt = (typeof SCHRITTE)[number];
 export interface EinrichtungStand { offen: boolean; erledigt: Schritt[]; uebersprungen: Schritt[]; mandant: string | null }
 

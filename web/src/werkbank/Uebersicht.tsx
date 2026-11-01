@@ -53,6 +53,7 @@ export function hinweiseAus(u: WerkbankUebersicht): Hinweis[] {
   const nachholen: Record<string, { text: string; ziel: string; knopf: string }> = {
     benutzer: { text: 'einen normalen Benutzer für die Ablage anlegen – Administratoren arbeiten nicht in der Ablage', ziel: '/werkbank/benutzer/neu', knopf: 'Benutzer anlegen' },
     optional: { text: 'Adresse, E-Mail-Versand und Bundesland einstellen', ziel: '/werkbank/betrieb', knopf: 'Zu E-Mail und Adresse' },
+    pakete: { text: 'Pakete dazuholen, z. B. die Texterkennung, damit gescannte Dokumente durchsuchbar werden', ziel: '/werkbank/pakete', knopf: 'Zu den Paketen' },
   };
   for (const x of u.einrichtung?.uebersprungen ?? []) if (nachholen[x] && !(x === 'optional' && u.mail) && !(x === 'benutzer' && (u.bestand?.benutzer ?? 0) > 1)) h.push({ art: 'info', text: <><strong>Aus der Einrichtung übersprungen:</strong> {nachholen[x].text}.</>, ziel: nachholen[x].ziel, knopf: nachholen[x].knopf });
   // Überflüssige Umgebungsvariablen (#115, #119), je mit Grund (#478).

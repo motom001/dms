@@ -11,7 +11,7 @@ Das DMS läuft – **empfohlen** – als zwei Container: die Anwendung (`ghcr.io
 
 ## Der Einrichtungsassistent
 
-Beim ersten Aufruf führt ein Assistent in neun Schritten durch die Einrichtung. Jeder Schritt hat oben ein **?**, das genau den passenden Abschnitt hier öffnet. Übersprungenes lässt sich in der Werkbank nachholen; die Übersicht erinnert daran.
+Beim ersten Aufruf führt ein Assistent in zehn Schritten durch die Einrichtung. Jeder Schritt hat oben ein **?**, das genau den passenden Abschnitt hier öffnet. Übersprungenes lässt sich in der Werkbank nachholen; die Übersicht erinnert daran.
 
 ### Einrichtungscode
 
@@ -61,6 +61,19 @@ Administratoren richten ein, arbeiten aber nicht in der Ablage. Lege deshalb ein
 ![Schlüssel und Notfallblatt](bilder/einrichtung-schluessel.png)
 
 Der Schlüssel verschlüsselt gespeicherte Passwörter und alle Sicherungen (siehe [Verschlüsselung](verschluesselung.md)); das [Notfallblatt](sicherung.md#notfallblatt) enthält ihn zum Ausdrucken. Druck es aus und leg es zu deinen wichtigen Unterlagen – ohne Schlüssel lässt sich keine Sicherung zurückholen.
+
+### Pakete dazuholen
+
+![Pakete dazuholen](bilder/einrichtung-pakete.png)
+
+Erst in diesem Schritt fragt das DMS den [offiziellen Paketkatalog](pakete.md) ab – vorher baut es keine Verbindung dafür auf. Die Liste zeigt je Paket Name, Beschreibung und was es darf: Pakete ohne Code legen nur Mappentypen und Ansichten an; bei Paketen mit Code zeigt **Was darf das Paket?** die [Rechte](pakete.md#rechte-eines-pakets).
+
+- **Texterkennung ist vorausgewählt** – ohne sie werden gescannte Dokumente nicht durchsuchbar. Alles andere kreuzt du an.
+- **Abhängigkeiten kommen mit**, z. B. „Basis“ für „Haushalt“; sie sind mit „kommt mit – gebraucht von …“ markiert.
+- Danach installiert das DMS die Pakete **nacheinander**, Abhängigkeiten zuerst. Jedes zeigt seine eigene Vorschau; ein Paket mit Code installierst du erst, wenn du **seine** Rechte bestätigt hast – eine Sammelbestätigung gibt es nicht. Mit **Auslassen** überspringst du ein einzelnes Paket.
+- **Überspringen** geht jederzeit; Pakete holst du später unter **Werkbank → [Pakete](pakete.md)**.
+
+Ist der Katalog nicht erreichbar (kein Internet), sagt der Schritt das deutlich: Es fehlen dann die Pakete, etwa die Texterkennung. Überspringe ihn und hol die Pakete später nach.
 
 ### Optionales
 

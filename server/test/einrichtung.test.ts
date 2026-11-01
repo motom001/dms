@@ -173,10 +173,12 @@ describe('Mandant und Administrator mit Code (#119)', () => {
     assert.ok(!existsSync(code.datei));
     assert.deepEqual(await e.stand(), { offen: true, erledigt: [], uebersprungen: [], mandant: 'Familie Muster' });
     await e.merke('benutzer', false, 'admin');
+    // Pakete dazuholen (#460): ein eigener Schritt, überspringbar.
+    await e.merke('pakete', true, 'admin');
     await e.merke('optional', true, 'admin');
     const s = await e.merke('fertig', false, 'admin');
     assert.equal(s.offen, false);
-    assert.deepEqual(s.uebersprungen, ['optional']);
+    assert.deepEqual(s.uebersprungen, ['pakete', 'optional']);
     await assert.rejects(e.einrichten(daten, c, { ip: '1', geraet: '' }), /bereits abgeschlossen/);
   });
 });
