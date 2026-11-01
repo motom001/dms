@@ -43,11 +43,17 @@ Steht neben einer Überschrift ein kleines **?**, öffnet es in einem neuen Tab 
 
 ### Spalten anpassen
 
-Zwischen den Spalten liegen schmale Griffe:
+Zwischen den Spalten liegen Griffe mit einem Pfeil. Der Pfeil zeigt, wohin die Spalte beim Einklappen verschwindet; fährst du mit der Maus darüber, steht da zum Beispiel „Mappe einklappen“.
 
 - **Ziehen** verändert die Breite.
-- **Kurz klicken** klappt die Ansichten bzw. die Mappe ein und wieder aus.
-- Mit der Tastatur: Griff anwählen, dann ++arrow-left++ und ++arrow-right++; ++home++ setzt die Breite zurück.
+- **Kurz klicken** klappt die Ansichten bzw. die Mappe ein.
+- **Eingeklappt** bleibt am Rand eine schmale, beschriftete Leiste: links **Ansichten**, rechts **Mappe** oder der Titel der geöffneten Mappe. Ein Klick darauf öffnet die Spalte wieder.
+- Öffnest du eine Mappe aus der Liste, klappt die rechte Spalte immer auf – auch wenn sie vorher eingeklappt war.
+- Mit der Tastatur: Griff oder Leiste anwählen, ++enter++ oder ++space++ klappt ein bzw. auf; am Griff ändern ++arrow-left++ und ++arrow-right++ die Breite, ++home++ setzt sie zurück.
+
+![Ansichten und Mappe eingeklappt: schmale Leisten am Rand, rechts mit dem Titel der Mappe](bilder/spalten-eingeklappt.png)
+
+In der Werkbank funktionieren die Griffe genauso; die Leisten heißen dort **Bereiche** und **Bearbeitung**.
 
 Dein Gerät merkt sich die Breiten für dich. Ist etwas verschwunden, hilft im [Profil](profil.md#darstellung) **Standard-Darstellung wiederherstellen**.
 

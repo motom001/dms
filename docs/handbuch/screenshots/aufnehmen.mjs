@@ -582,6 +582,11 @@ async function main() {
   await geheZu(s, `/ablage/${rechnung.id}`);
   await s.locator('.trefferliste table').waitFor();
   await bild(s, 'tabelle');
+  // Eingeklappte Spalten (#536): links die Leiste „Ansichten“, rechts der Titel der geöffneten Mappe.
+  await s.evaluate(([key]) => localStorage.setItem(key, JSON.stringify({ l: 220, m: 340, linksZu: true, rechtsZu: true })), [breitSchluessel]);
+  await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
+  await s.locator('.spl-lasche-rechts').getByText('Stromvertrag Haus').waitFor();
+  await bild(s, 'spalten-eingeklappt');
   await s.evaluate(([key]) => localStorage.removeItem(key), [breitSchluessel]);
 
   // Favoriten (#62): zwei Mappen mit Stern, Sicht „Favoriten“ mit geöffneter Mappe

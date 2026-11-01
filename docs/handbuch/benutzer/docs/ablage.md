@@ -44,7 +44,7 @@ Wie die Liste aussieht, hängt von ihrer Breite ab:
 - **Schmal:** Jede Mappe ist ein kompakter Eintrag – die erste Angabe fett, zwei weitere darunter.
 - **Breit:** Die Liste wird zur **Tabelle** mit einer Spalte je Angabe.
 
-Zieh die Liste einfach am Griff zwischen Liste und Mappe breiter, oder klapp die Mappe mit einem kurzen Klick auf den Griff ein.
+Zieh die Liste einfach am Griff zwischen Liste und Mappe breiter, oder klapp die Mappe mit einem kurzen Klick auf den Griff ein. Eingeklappt bleibt rechts eine schmale Leiste mit dem Titel der Mappe; ein Klick darauf holt sie zurück (siehe [Spalten anpassen](erste-schritte.md#spalten-anpassen)).
 
 ![Breite Liste als Tabelle](bilder/tabelle.png)
 
