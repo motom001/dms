@@ -1,4 +1,5 @@
 import type { Readable } from 'node:stream';
+import { t } from './sprache';
 /** Anhang einer E-Mail (#58). */
 export interface MailAnhang { name: string; mime: string; inhalt: Buffer | Readable }
 /** Weitere Angaben einer E-Mail: „Antworten an“ und Anhänge (#58). */
@@ -20,47 +21,27 @@ export async function anAlleAdmins(benutzer: Array<{ email: string; rolle: strin
   return n;
 }
 
+/** Gerüst der Mails an Benutzer: Anrede, Absätze, Leerzeile am Ende. */
+const brief = (name: string, ...absaetze: string[]) => `${[t('mail.hallo', { name }), ...absaetze].join('\n\n')}\n`;
+
+/** Mails rund um den eigenen Zugang; Texte im Bereich `mail` der Sprachdateien (#473). */
 export const mailtexte = {
   emailGeaendert: (name: string, alt: string, neu: string) => ({
-    betreff: 'Deine E-Mail-Adresse im DMS wurde geändert',
-    text: `Hallo ${name || alt},
-
-die E-Mail-Adresse deines Zugangs zum DMS wurde von ${alt} auf ${neu} geändert. Anmelden kannst du dich ab jetzt nur noch mit der neuen Adresse.
-
-Falls du das nicht warst, wende dich bitte sofort an deinen Administrator.
-`,
+    betreff: t('mail.email-geaendert.betreff'),
+    text: brief(name || alt, t('mail.email-geaendert.text', { alt, neu }), t('mail.nicht-du')),
   }),
   passwortGeaendert: (name: string, email: string) => ({
-    betreff: 'Dein Passwort für das DMS wurde geändert',
-    text: `Hallo ${name || email},
-
-das Passwort deines Zugangs zum DMS wurde soeben geändert. Alle anderen Anmeldungen wurden dabei beendet.
-
-Falls du das nicht warst, wende dich bitte sofort an deinen Administrator.
-`,
+    betreff: t('mail.passwort-geaendert.betreff'),
+    text: brief(name || email, t('mail.passwort-geaendert.text'), t('mail.nicht-du')),
   }),
   einladung: (name: string, email: string, link: string, tage: number) => ({
-    betreff: 'Dein Zugang zum DMS',
-    text: `Hallo ${name || email},
-
-für dich wurde ein Zugang zum DMS angelegt.
-
-Anmeldung mit: ${email}
-
-Lege hier dein Passwort fest (der Link ist ${tage} Tage gültig und funktioniert nur einmal):
-${link}
-`,
+    betreff: t('mail.einladung.betreff'),
+    text: brief(name || email, t('mail.einladung.text'), t('mail.einladung.mit', { email }),
+      `${t('mail.einladung.link', { dauer: t('mail.dauer.tage', { anzahl: tage }) })}\n${link}`),
   }),
   zuruecksetzen: (name: string, email: string, link: string, stunden: number) => ({
-    betreff: 'Passwort für das DMS zurücksetzen',
-    text: `Hallo ${name || email},
-
-für deinen Zugang zum DMS wurde ein neues Passwort angefordert.
-
-Lege hier ein neues Passwort fest (der Link ist ${stunden} Stunde${stunden === 1 ? '' : 'n'} gültig und funktioniert nur einmal):
-${link}
-
-Falls du das nicht warst, kannst du diese Nachricht ignorieren. Dein bisheriges Passwort bleibt dann gültig.
-`,
+    betreff: t('mail.zuruecksetzen.betreff'),
+    text: brief(name || email, t('mail.zuruecksetzen.text'),
+      `${t('mail.zuruecksetzen.link', { dauer: t('mail.dauer.stunden', { anzahl: stunden }) })}\n${link}`, t('mail.zuruecksetzen.ignorieren')),
   }),
 };

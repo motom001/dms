@@ -124,7 +124,7 @@ describe('Auskunft zustellen: reine Funktionen (#455)', () => {
     const platzhalter = (t: string) => [...t.matchAll(/\{([^{}]+)\}/g)].map((x) => x[1]).sort().join();
     assert.deepEqual(Object.keys(TEXTE_DRITTE.sie).sort(), Object.keys(TEXTE_DRITTE.du).sort());
     for (const k of Object.keys(TEXTE_DRITTE.du) as Array<keyof typeof TEXTE_DRITTE.du>) assert.equal(platzhalter(TEXTE_DRITTE.sie[k]), platzhalter(TEXTE_DRITTE.du[k]), k);
-    assert.equal(textDritte('sie', 'abruf.rest', { 'wie oft': 'zweimal' }), 'Sie können sie mit diesem Link noch zweimal herunterladen.');
+    assert.equal(textDritte('sie', 'abruf.rest', { wieOft: 'zweimal' }), 'Sie können sie mit diesem Link noch zweimal herunterladen.');
     assert.equal(liesAnrede('sie'), 'sie');
     for (const x of [undefined, null, 'Sie', 'ihr', 3]) assert.equal(liesAnrede(x), 'du');
   });

@@ -16,6 +16,8 @@ import { join, relative } from 'node:path';
 import { describe, it } from 'node:test';
 
 const WEB = new URL('../../web/src', import.meta.url).pathname;
+/** Sprachdateien (#473): Texte der Oberfläche stehen dort – dieselben Regeln. */
+const SPRACHEN = new URL('../../shared/src/sprachen', import.meta.url).pathname;
 
 /** Pfeile mit Textdarstellung als Standard; dürfen Textzeichen bleiben (#425). */
 const ERLAUBT = new Set(['↔', '↕', '↖', '↗', '↘', '↙']);
@@ -46,14 +48,14 @@ function dateien(ordner: string): string[] {
   return readdirSync(ordner).flatMap((n) => {
     const p = join(ordner, n);
     if (statSync(p).isDirectory()) return dateien(p);
-    return /\.(ts|tsx|css)$/.test(n) ? [p] : [];
+    return /\.(ts|tsx|css|json)$/.test(n) ? [p] : [];
   });
 }
 
 describe('Einheitliche Symbole (#425)', () => {
   it('keine bunten Emoji in web/src', () => {
     const funde: string[] = [];
-    for (const p of dateien(WEB)) {
+    for (const p of [...dateien(WEB), ...dateien(SPRACHEN)]) {
       readFileSync(p, 'utf8').split('\n').forEach((z, i) => {
         const b = bunteZeichen(z);
         if (b.length) funde.push(`${relative(WEB, p)}:${i + 1}: ${b.join(' ')}`);
@@ -64,7 +66,7 @@ describe('Einheitliche Symbole (#425)', () => {
 
   it('keine Textzeichen als Symbol-Ersatz in web/src (#507)', () => {
     const funde: string[] = [];
-    for (const p of dateien(WEB)) {
+    for (const p of [...dateien(WEB), ...dateien(SPRACHEN)]) {
       const rel = relative(WEB, p);
       if (ERSATZ_ERLAUBT[rel]) continue;
       readFileSync(p, 'utf8').split('\n').forEach((z, i) => {

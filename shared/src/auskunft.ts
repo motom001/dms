@@ -299,6 +299,6 @@ export const auskunftMail = {
   }),
   link: (anrede: Anrede, link: string, bis: string, abrufe: number, absender: string) => ({
     betreff: textDritte(anrede, 'mail.link.betreff'),
-    nachricht: `${textDritte(anrede, 'mail.link.text', { bis, link, 'wie oft': abrufe > 1 ? textDritte(anrede, 'mail.link.mehrmals', { anzahl: abrufe }) : textDritte(anrede, 'mail.link.einmal') })}\n${absender ? `\n${absender}\n` : ''}`,
+    nachricht: `${textDritte(anrede, 'mail.link.text', { bis, link, wieOft: textDritte(anrede, 'mail.link.abrufe', { anzahl: abrufe }) })}\n${absender ? `\n${absender}\n` : ''}`,
   }),
 };
