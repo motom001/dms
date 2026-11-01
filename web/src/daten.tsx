@@ -118,5 +118,5 @@ export function abwesenheitText(p: Person | undefined): string {
   const wann = a.wirkt ? (a.bis ? `abwesend bis ${tag(a.bis)}` : 'abwesend') : `abwesend ab ${tag(a.von ?? '')}${a.bis ? ` bis ${tag(a.bis)}` : ''}`;
   return `${wann}${a.vertreter ? `, vertreten durch ${a.vertreter}` : ''}`;
 }
-/** Name mit Abwesenheit, z. B. „Sabrina – abwesend bis 15.11., vertreten durch Thomas“. */
+/** Name mit Abwesenheit, z. B. „Lena – abwesend bis 15.11., vertreten durch Jonas“. */
 export const nameMitAbwesenheit = (p: Person) => (p.abwesend ? `${p.name} – ${abwesenheitText(p)}` : p.name);
