@@ -32,7 +32,7 @@ Das DMS sendet **keine Nutzungsdaten** – weder an das Projekt noch an sonst je
 | **Pakete mit Code** | nur, wenn ein Paket es braucht und du es bei der Installation bestätigst | nur die Adressen, die das Paket angibt ([Rechte eines Pakets](pakete.md#recht-netzwerk-und-internet)) |
 | **Handbuch** | wenn du auf **Hilfe** oder ein **?** klickst | Das mitgelieferte Handbuch unter `/hilfe/` kommt ohne Internet aus ([Hilfe ohne Internet](technik.md#hilfe-ohne-internet)); Links auf das Online-Handbuch öffnet dein Browser. |
 
-Wer dem Projekt sagen möchte, dass und wie er das DMS nutzt, entscheidet das selbst und tut es bewusst – das DMS meldet nichts.
+Wer dem Projekt sagen möchte, dass und wie er das DMS nutzt, tut das bewusst und selbst – über die Mitmach-Seite [Wer nutzt das DMS?](https://github.com/motom001/dms/issues?q=label%3Anutzt-das-dms) mit dem Formular [Ich nutze das DMS](https://github.com/motom001/dms/issues/new?template=ich-nutze-das-dms.yml). Das DMS meldet nichts.
 
 ## Was du selbst regeln musst { #grenzen }
 

@@ -35,6 +35,10 @@ Oben rechts kannst du das ganze Handbuch durchsuchen. Was sich in neuen Versione
 !!! tip "Hilfe aus dem DMS heraus"
     Im DMS führt der Punkt **Hilfe** im Menü unter deinem Namen direkt hierher.
 
+## Wer nutzt das DMS?
+
+Du nutzt das DMS? [Erzähl, wie](https://github.com/motom001/dms/issues/new?template=ich-nutze-das-dms.yml) – freiwillig und öffentlich, alle Felder optional; was andere erzählen, steht unter [Wer nutzt das DMS?](https://github.com/motom001/dms/issues?q=label%3Anutzt-das-dms). Das DMS selbst meldet nichts.
+
 ## Projekt unterstützen
 
 Das DMS ist freie Software und kostenlos. Wenn es dir hilft, freut sich das Projekt über eine Unterstützung:

@@ -1,0 +1,79 @@
+# Mitmach-Seite „Wer nutzt das DMS?“ (#446): freiwillig erzählen, wie du das DMS einsetzt.
+# Das DMS selbst meldet nichts (keine Telemetrie, #389) – Rückmeldung gibt es nur auf diesem Weg.
+name: Ich nutze das DMS
+description: Erzähl freiwillig, seit wann und wofür du das DMS einsetzt – alle Felder sind freiwillig.
+title: "Ich nutze das DMS"
+labels: ["nutzt-das-dms"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Schön, dass du das DMS nutzt! Mit diesem Formular erzählst du, **dass und wie** du es einsetzt. Das hilft zu sehen, dass es echte Installationen gibt, was gut läuft und was fehlt – und anderen Interessierten, dass das DMS im Alltag läuft.
+
+        Das DMS selbst sendet **keine Nutzungsdaten** – auch keine anonymen. Rückmeldung gibt es nur, wenn du dich bewusst dafür entscheidest, so wie hier.
+
+        **Alles ist freiwillig.** Fülle nur aus, was du erzählen möchtest; leere Felder sind in Ordnung.
+
+        > **Dieser Beitrag ist öffentlich sichtbar.** Trage keine persönlichen Daten ein – keine Namen, Adressen, Domains, IP-Adressen, Bildschirmfotos mit echten Unterlagen oder Zugangsdaten.
+  - type: input
+    id: seit
+    attributes:
+      label: Seit wann nutzt du das DMS?
+      description: Ungefähr reicht, z. B. „seit Frühjahr 2026“ oder „seit Version 0.60“.
+    validations:
+      required: false
+  - type: dropdown
+    id: plattform
+    attributes:
+      label: Worauf läuft es?
+      multiple: true
+      options:
+        - umbrelOS
+        - CasaOS oder ZimaOS
+        - Synology
+        - UGREEN
+        - QNAP
+        - TrueNAS
+        - Unraid
+        - Docker Compose auf eigenem Rechner (PC, Mini-PC, Raspberry Pi, VM)
+        - Ein Container (dms-komplett)
+        - Bei einem Anbieter (vServer, Docker-Plattform, fertige App)
+        - Etwas anderes
+    validations:
+      required: false
+  - type: dropdown
+    id: fuer-wen
+    attributes:
+      label: Grob für wen?
+      multiple: true
+      options:
+        - Für mich allein
+        - Haushalt oder Familie
+        - Für meine Eltern bzw. Angehörige
+        - Vermietung
+        - Selbständig oder freiberuflich
+        - Kleiner Betrieb
+        - Verein oder Ehrenamt
+        - Etwas anderes
+    validations:
+      required: false
+  - type: textarea
+    id: pakete
+    attributes:
+      label: Welche Pakete nutzt du?
+      description: Aus dem Paketkatalog (Werkbank → Pakete) oder eigene Mappentypen – soweit du es erzählen möchtest.
+    validations:
+      required: false
+  - type: textarea
+    id: gut
+    attributes:
+      label: Was läuft gut?
+    validations:
+      required: false
+  - type: textarea
+    id: fehlt
+    attributes:
+      label: Was fehlt dir?
+      description: Größere Wünsche gern zusätzlich als eigenes Issue mit der Vorlage „Wunsch“.
+    validations:
+      required: false
