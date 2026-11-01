@@ -4,6 +4,7 @@ import { Link } from '../ort';
 import { Hilfe, useHandbuch } from '../Hilfe';
 import { sicherungsHinweise } from './Sicherung';
 import { GRUPPEN, type Gruppe } from '../../../shared/src/werkbankansicht';
+import { variablenHinweis } from '../../../shared/src/umgebungsvariablen';
 
 /** Werkbank → Übersicht (#68): was zu tun ist, auf einen Blick; Gruppen der Leiste. */
 
@@ -54,8 +55,11 @@ export function hinweiseAus(u: WerkbankUebersicht): Hinweis[] {
     optional: { text: 'Adresse, E-Mail-Versand und Bundesland einstellen', ziel: '/werkbank/betrieb', knopf: 'Zu E-Mail und Adresse' },
   };
   for (const x of u.einrichtung?.uebersprungen ?? []) if (nachholen[x] && !(x === 'optional' && u.mail) && !(x === 'benutzer' && (u.bestand?.benutzer ?? 0) > 1)) h.push({ art: 'info', text: <><strong>Aus der Einrichtung übersprungen:</strong> {nachholen[x].text}.</>, ziel: nachholen[x].ziel, knopf: nachholen[x].knopf });
-  // Feste Ordner (#115): frühere Variablen mit dem festen Wert sind überflüssig.
-  if (u.variablen?.length) h.push({ art: 'info', text: <><strong>{u.variablen.length === 1 ? 'Eine Umgebungsvariable ist' : `${u.variablen.length} Umgebungsvariablen sind`} nicht mehr nötig:</strong> <span className="mono">{u.variablen.join(', ')}</span>. Die Ordner im Container sind fest – entferne sie beim nächsten Update aus der Compose-Datei.</>, ziel: '/werkbank/technik', knopf: 'Zur Technik' });
+  // Überflüssige Umgebungsvariablen (#115, #119), je mit Grund (#478).
+  const vh = variablenHinweis(u.variablen ?? []);
+  if (vh) h.push({ art: 'info', text: vh.zeilen.length === 1
+    ? <><strong>{vh.titel}</strong> <span className="mono">{vh.zeilen[0].name}</span> – {vh.zeilen[0].grund}. {vh.schluss}</>
+    : <><strong>{vh.titel}</strong>{vh.zeilen.map((z) => <span key={z.name} style={{ display: 'block' }}>· <span className="mono">{z.name}</span> – {z.grund}</span>)}{vh.schluss}</>, ziel: vh.ziel, knopf: vh.knopf });
   if (!u.mail) h.push({ art: 'warn', text: <><strong>Der E-Mail-Versand ist nicht eingerichtet.</strong> Einladungen, die tägliche Zusammenfassung der Aufgaben und „Per E-Mail versenden“ gehen erst danach.</>, ziel: '/werkbank/betrieb', knopf: 'E-Mail einrichten' });
   if (u.fehlermeldungen) h.push({ art: 'warn', text: <><strong>{u.fehlermeldungen === 1 ? 'Ein gemeldeter Fehler' : `${zahl(u.fehlermeldungen)} gemeldete Fehler`}</strong> von Benutzern.</>, ziel: '/werkbank/fehlermeldungen', knopf: 'Ansehen' });
   if (u.texterkennung?.fehler) h.push({ art: 'warn', text: <><strong>{u.texterkennung.fehler === 1 ? 'Ein Dokument' : `${zahl(u.texterkennung.fehler)} Dokumente`}</strong> mit Fehler in der Texterkennung.</>, ziel: '/werkbank/texterkennung', knopf: 'Zur Texterkennung' });

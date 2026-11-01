@@ -5,6 +5,7 @@ import type { StempelVorlage, StempelWunsch } from '../../shared/src/stempel';
 import type { Stufe as KleinStufe } from '../../shared/src/verkleinern';
 import type { Bereich, SchwaerzSeite } from '../../shared/src/schwaerzen';
 import type { Archiv } from '../../shared/src/archiv';
+import type { UeberfluessigeVariable } from '../../shared/src/umgebungsvariablen';
 import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, DokumentVersion, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Feldbedingung, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
@@ -761,8 +762,8 @@ export interface WerkbankUebersicht {
   sicherung?: SicherungsZustand | null;
   /** Speicherplatz (#116). */
   speicherplatz?: SpeicherplatzStand | null;
-  /** Frühere Variablen, die aus der Compose-Datei entfernt werden können (#115). */
-  variablen?: string[];
+  /** Frühere Variablen, die aus der Compose-Datei entfernt werden können (#115), je mit Grund (#478). */
+  variablen?: UeberfluessigeVariable[];
   /** API-Schlüssel von Administratoren (#128). */
   adminSchluessel?: number;
   /** Datenbank-Anbindung (#119): DATABASE_URL abweichend, Neustart nötig. */

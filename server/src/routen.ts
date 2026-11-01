@@ -49,6 +49,7 @@ import { notfallblatt } from './notfallblatt';
 import { dirname } from 'node:path';
 import { WartungFehler } from './wartung';
 import { werkbankZahlen } from './werkbankzahlen';
+import { ueberfluessigeVariablen } from '../../shared/src/umgebungsvariablen';
 import { MAIL_STANDARD, pruefeZeit, STANDARD_TAGE, wirksameZeit, type Aufgabenmail, type MailZeit } from './aufgabenmail';
 
 const L = {
@@ -1140,7 +1141,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
           for (const b of (await konten.listeBenutzer()).filter((y) => y.rolle === 'admin')) n += (await x.apiSchluessel!.liste(b)).length;
           return n;
         }) ?? 0 : 0,
-        variablen: [...(x.ordner?.ueberfluessig ?? []), ...(x.anbindung?.stand().umgebung === 'gleich' ? ['DATABASE_URL'] : []), ...(x.mandantHinweis && process.env.HAUSHALT_ID ? ['HAUSHALT_ID'] : [])],
+        // Je Variable mit Grund (#478).
+        variablen: ueberfluessigeVariablen({ ordner: x.ordner?.ueberfluessig, datenbank: x.anbindung?.stand().umgebung === 'gleich', haushalt: !!(x.mandantHinweis && process.env.HAUSHALT_ID) }),
         // DATABASE_URL weicht von der Anbindung in /data/geheim ab und wird ignoriert (#119).
         anbindung: x.anbindung ? { umgebung: x.anbindung.stand().umgebung, neustartNoetig: x.anbindung.stand().neustartNoetig } : null,
         einrichtung: x.einrichtung ? await sicher(() => x.einrichtung!.stand()) : null,
