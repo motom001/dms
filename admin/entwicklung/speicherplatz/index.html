@@ -27,7 +27,7 @@
     
     
       
-        <title>Speicherplatz - DMS – Administratorhandbuch</title>
+        <title>Systemzustand - DMS – Administratorhandbuch</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#speicherplatz" class="md-skip">
+        <a href="#systemzustand" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -128,7 +128,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Speicherplatz
+              Systemzustand
             
           </span>
         </div>
@@ -1358,7 +1358,7 @@
   <span class="md-ellipsis">
     
   
-    Speicherplatz
+    Systemzustand
   
 
     
@@ -1376,7 +1376,7 @@
   <span class="md-ellipsis">
     
   
-    Speicherplatz
+    Systemzustand
   
 
     
@@ -1402,10 +1402,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#was-gemessen-wird" class="md-nav__link">
+  <a href="#warnschwelle-und-grenze" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Was gemessen wird
+        Warnschwelle und Grenze
       
     </span>
   </a>
@@ -1413,10 +1413,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#warnschwelle-und-grenze" class="md-nav__link">
+  <a href="#was-gemessen-wird" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Warnschwelle und Grenze
+        Was gemessen wird
       
     </span>
   </a>
@@ -2017,10 +2017,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#was-gemessen-wird" class="md-nav__link">
+  <a href="#warnschwelle-und-grenze" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Was gemessen wird
+        Warnschwelle und Grenze
       
     </span>
   </a>
@@ -2028,10 +2028,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#warnschwelle-und-grenze" class="md-nav__link">
+  <a href="#was-gemessen-wird" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Warnschwelle und Grenze
+        Was gemessen wird
       
     </span>
   </a>
@@ -2097,13 +2097,38 @@
   
 
 
-<h1 id="speicherplatz">Speicherplatz<a class="headerlink" href="#speicherplatz" title="Permanent link">&para;</a></h1>
-<p>Läuft die Platte voll, können beim Speichern oder Hochladen Daten verloren gehen. Das DMS misst deshalb selbst, wie viel Platz frei ist, warnt rechtzeitig und hält sich an der Grenze selbst an: <strong>Werkbank → Speicherplatz</strong> (Gruppe <em>Einstellungen</em>).</p>
+<h1 id="systemzustand">Systemzustand<a class="headerlink" href="#systemzustand" title="Permanent link">&para;</a></h1>
+<p>Wie geht es dem Server gerade? Das zeigt <strong>Werkbank → Wartung und Fehlersuche → Systemzustand</strong> – bisher vor allem den <strong>Speicherplatz</strong>. (Früher hieß der Bereich <em>Speicherplatz</em> und stand unter <em>Einstellungen</em>; alte Links und Lesezeichen führen hierher.)</p>
+<p>Läuft die Platte voll, können beim Speichern oder Hochladen Daten verloren gehen. Das DMS misst deshalb selbst, wie viel Platz frei ist, warnt rechtzeitig und hält sich an der Grenze selbst an. Oben auf der Seite stehen die <strong>Schwellen</strong>, darunter die <strong>Ordner</strong> mit ihrer Belegung, ganz unten <strong>Große PDFs verkleinern</strong>.</p>
 <div class="admonition tip">
 <p class="admonition-title">Einen Bereich nicht in der Leiste gefunden?</p>
 <p>Manche Bereiche der Werkbank, zum Beispiel <em>Wartungsmodus</em>, <em>Datenbank-Anbindung</em> oder <em>Wartungsoperationen</em>, sind in der Vorlage <em>Haushalt</em> ausgeblendet. Unten in der Leiste steht, wie viele Bereiche ausgeblendet sind; ein Klick zeigt sie. Dauerhaft einblenden kannst du sie unter <a href="https://motom001.github.io/dms/admin/aktuell/uebersicht/#werkbank-anpassen">Werkbank anpassen</a>. <strong>Ausgeblendet heißt nicht abgeschaltet.</strong></p>
 </div>
-<p><img alt="Werkbank → Speicherplatz" src="../bilder/werkbank-speicherplatz.png" /></p>
+<p><img alt="Werkbank → Systemzustand" src="../bilder/werkbank-speicherplatz.png" /></p>
+<h2 id="warnschwelle-und-grenze">Warnschwelle und Grenze<a class="headerlink" href="#warnschwelle-und-grenze" title="Permanent link">&para;</a></h2>
+<p>Ganz oben auf der Seite. Beide stellst du in <strong>GB frei</strong> oder <strong>% frei</strong> ein; Prozent beziehen sich auf die Größe des jeweiligen Datenträgers. Sie gelten für jeden Ordner einzeln.</p>
+<table>
+<thead>
+<tr>
+<th>Stufe</th>
+<th>Standard</th>
+<th>Was passiert</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Warnschwelle</strong></td>
+<td>unter 10 % frei</td>
+<td>Hinweis in der <a href="../uebersicht/">Übersicht</a> und auf dieser Seite, <strong>eine Mail</strong> an alle Administratoren (einmal je Unterschreiten – erst wenn wieder genug frei war, gibt es beim nächsten Mal eine neue). Alle arbeiten normal weiter.</td>
+</tr>
+<tr>
+<td><strong>Grenze</strong></td>
+<td>unter 2 GB frei</td>
+<td><strong>Hochladen sofort gesperrt</strong> (neue Dokumente, Logos); Werte speichern geht noch. Mail an alle Administratoren, und der <a href="../wartungsmodus/">Wartungsmodus</a> startet mit <strong>5 Minuten Vorlauf</strong> und dem Text <strong>„Speicherplatzlimit erreicht“</strong>.</td>
+</tr>
+</tbody>
+</table>
+<p>Die Warnschwelle muss mehr freien Platz verlangen als die Grenze – sonst käme die Warnung erst danach.</p>
 <h2 id="was-gemessen-wird">Was gemessen wird<a class="headerlink" href="#was-gemessen-wird" title="Permanent link">&para;</a></h2>
 <p>Gemessen werden die drei festen Ordner im Container (siehe <a href="../installation/#ordner-und-volumes">Ordner und Volumes</a>) – jede Minute und zusätzlich vor jedem Hochladen:</p>
 <table>
@@ -2133,32 +2158,8 @@
 <p class="admonition-title">Die Datenbank wird nicht gemessen</p>
 <p>Bei zwei Containern läuft PostgreSQL in einem eigenen Container; sein Volume kann das DMS nicht sehen. Bei <a href="https://motom001.github.io/dms/installieren/aktuell/komplett/">dms-komplett</a> liegt die Datenbank im vierten Ordner <code>/data/postgres</code> – auch den misst das DMS nicht. Liegen alle Ordner auf derselben Platte des NAS (der übliche Fall), reicht die Messung trotzdem. Liegt die Datenbank auf einer anderen Platte, behalte deren Platz in der Speicherverwaltung des NAS im Blick.</p>
 </div>
-<h2 id="warnschwelle-und-grenze">Warnschwelle und Grenze<a class="headerlink" href="#warnschwelle-und-grenze" title="Permanent link">&para;</a></h2>
-<p>Beide stellst du in <strong>GB frei</strong> oder <strong>% frei</strong> ein; Prozent beziehen sich auf die Größe des jeweiligen Datenträgers. Sie gelten für jeden Ordner einzeln.</p>
-<table>
-<thead>
-<tr>
-<th>Stufe</th>
-<th>Standard</th>
-<th>Was passiert</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Warnschwelle</strong></td>
-<td>unter 10 % frei</td>
-<td>Hinweis in der <a href="../uebersicht/">Übersicht</a> und auf dieser Seite, <strong>eine Mail</strong> an alle Administratoren (einmal je Unterschreiten – erst wenn wieder genug frei war, gibt es beim nächsten Mal eine neue). Alle arbeiten normal weiter.</td>
-</tr>
-<tr>
-<td><strong>Grenze</strong></td>
-<td>unter 2 GB frei</td>
-<td><strong>Hochladen sofort gesperrt</strong> (neue Dokumente, Logos); Werte speichern geht noch. Mail an alle Administratoren, und der <a href="../wartungsmodus/">Wartungsmodus</a> startet mit <strong>5 Minuten Vorlauf</strong> und dem Text <strong>„Speicherplatzlimit erreicht“</strong>.</td>
-</tr>
-</tbody>
-</table>
-<p>Die Warnschwelle muss mehr freien Platz verlangen als die Grenze – sonst käme die Warnung erst danach.</p>
 <h2 id="grosse-pdfs-verkleinern">Große PDFs verkleinern<a class="headerlink" href="#grosse-pdfs-verkleinern" title="Permanent link">&para;</a></h2>
-<p>Gescannte und fotografierte PDFs sind oft viel größer als nötig: Ein Scanner mit 600 dpi oder ein Foto-PDF vom Handy legt Bilder ab, von denen 150 dpi zum Lesen und Drucken reichen. Unter den Schwellen listet <strong>Große PDFs verkleinern</strong> die PDF-Dokumente ab einer Größe (1 bis 20 MB, Standard 2 MB), <strong>größte zuerst</strong>, mit der geschätzten Größe danach. Die Liste hat eine feste Höhe und zeigt höchstens die 200 größten; geschätzt werden die ersten 60.</p>
+<p>Gescannte und fotografierte PDFs sind oft viel größer als nötig: Ein Scanner mit 600 dpi oder ein Foto-PDF vom Handy legt Bilder ab, von denen 150 dpi zum Lesen und Drucken reichen. Unter den Ordnern listet <strong>Große PDFs verkleinern</strong> die PDF-Dokumente ab einer Größe (1 bis 20 MB, Standard 2 MB), <strong>größte zuerst</strong>, mit der geschätzten Größe danach. Die Liste hat eine feste Höhe und zeigt höchstens die 200 größten; geschätzt werden die ersten 60.</p>
 <ol>
 <li><strong>Stufe</strong> wählen: <strong>Bildschirm</strong> (≈ 100 dpi), <strong>Standard</strong> (≈ 150 dpi, Vorgabe) oder <strong>Druck</strong> (≈ 300 dpi).</li>
 <li>Dokumente ankreuzen – vorgewählt sind alle, bei denen es sich lohnt (mindestens 10 % kleiner). Unten steht, wie viel Platz geschätzt frei wird.</li>
