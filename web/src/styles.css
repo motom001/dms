@@ -103,6 +103,8 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 .knopf.klein { padding: 4px 10px; font-size: calc(12.5px * var(--skala, 1)); }
 .knopf:disabled { opacity: 0.5; cursor: default; }
 .knoepfe { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Knopfzeile mit beschriftetem Feld (z. B. „Version“ + Auswahl, #448): Knöpfe unten bündig mit dem Feld, nicht gestreckt. */
+.knoepfe.feld-buendig { align-items: flex-end; }
 /* Aufklappbarer Abschnitt, z. B. Expertenmodus der Pakete (#369): Kopf als Knopf mit aria-expanded. */
 .aufklappbereich { border: 1px solid var(--linie); border-radius: 6px; margin: 4px 0; }
 .aufklappkopf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; width: 100%; padding: 6px 10px; border: 0; border-radius: 6px; background: none; font: inherit; font-weight: 600; color: var(--tinte); text-align: left; cursor: pointer; }
