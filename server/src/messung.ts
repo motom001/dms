@@ -1,5 +1,6 @@
+import { monitorEventLoopDelay } from 'node:perf_hooks';
 import type postgres from 'postgres';
-import { kontext, protokoll } from './protokoll';
+import { kontext, protokoll, type Kontext } from './protokoll';
 
 /**
  * Messung der Datenbankzugriffe (#11, #12).
@@ -29,6 +30,8 @@ const log = protokoll.modul('datenbank');
 
 export class Messung {
   einstellungen: MessEinstellungen = { ...STANDARD };
+  /** Verzögerung der Ereignisschleife (#477); läuft erst nach auslastung.start() (index.ts). */
+  readonly auslastung = new Auslastung();
   private zuletztAufgeraeumt = 0;
 
   constructor(readonly speicher: MessSpeicher) {}
@@ -66,9 +69,21 @@ export class Messung {
     });
   }
 
+  /**
+   * Ganze Anfrage (#477): dauert sie ab Eingang länger als die Schwelle, wird sie mit ihrer
+   * Aufteilung als Langläufer gemerkt (Zugriff „Anfrage: …“).
+   */
+  erfasseAnfrage(k: Pick<Kontext, 'pfad' | 'benutzer'>, t: Zeitaufteilung) {
+    if (t.gesamt < this.einstellungen.schwelleMs) return;
+    const zugriff = `Anfrage: ${aufteilungText(t)}`;
+    log.warn(`Lange Anfrage: ${k.pfad ?? ''} dauerte ${Math.round(t.gesamt)} ms`, { anfrage: k.pfad, ms: Math.round(t.gesamt), vor: Math.round(t.vor), db: Math.round(t.db), rechte: Math.round(t.rechte), json: Math.round(t.json) });
+    this.speicher.merke({ zeit: new Date().toISOString(), dauerMs: Math.round(t.gesamt), zugriff, anfrage: k.pfad ?? '', benutzer: k.benutzer ?? '' })
+      .catch((e) => log.error('Langläufer nicht gespeichert', { fehler: (e as Error).message }));
+  }
+
   private erfasse(zugriff: string, ms: number) {
     const k = kontext.getStore();
-    if (k) { k.db.anzahl++; k.db.ms += ms; }
+    if (k) { k.db.anzahl++; k.db.ms += ms; if (k.rechte?.offen) k.rechte.dbMs += ms; }
     if (ms >= this.einstellungen.schwelleMs) {
       const l: Langlaeufer = { zeit: new Date().toISOString(), dauerMs: Math.round(ms), zugriff, anfrage: k?.pfad ?? '', benutzer: k?.benutzer ?? '' };
       log.warn(`Langer Datenbankzugriff: ${zugriff} dauerte ${Math.round(ms)} ms`, { zugriff, ms: Math.round(ms), anfrage: l.anfrage || undefined });
@@ -82,6 +97,108 @@ export class Messung {
     } else {
       log.trace(`Datenbankzugriff ${zugriff}: ${Math.round(ms)} ms`);
     }
+  }
+}
+
+/* ---------- Zeitaufteilung je Anfrage (#477) ---------- */
+
+/**
+ * Misst, wie lange Rechte ausgewertet werden (Zugriff bilden, Lesefilter, Rechte je Mappe).
+ * Verschachtelte und gleichzeitige Aufrufe zählen nur einmal; die Datenbankzugriffe darin
+ * werden mitgezählt und später abgezogen (sie stehen schon unter „db“). Außerhalb einer Anfrage: nur f().
+ */
+export function rechteMessen<T>(f: () => T): T {
+  const k = kontext.getStore();
+  if (!k) return f();
+  const r = (k.rechte ??= { ms: 0, dbMs: 0, offen: 0, seit: 0 });
+  if (r.offen++ === 0) r.seit = performance.now();
+  const ende = () => { if (--r.offen === 0) r.ms += performance.now() - r.seit; };
+  let x: T;
+  try { x = f(); } catch (e) { ende(); throw e; }
+  if (x instanceof Promise) return x.finally(ende) as T;
+  ende();
+  return x;
+}
+
+/** Zeiten einer Anfrage auf dem Server in ms (Header Server-Timing). */
+export interface Zeitaufteilung {
+  /** Eingang der Anfrage bis Beginn des Handlers (Körper lesen, Warten auf den Server). */
+  vor: number;
+  /** Handler (wie bisher „app“), enthält db und rechte. */
+  app: number;
+  db: number;
+  dbAnzahl: number;
+  /** Rechte-Auswertung ohne die Datenbankzugriffe darin. */
+  rechte: number;
+  /** Antwort in Text umwandeln (JSON). */
+  json: number;
+  /** Eingang bis zum Absenden. */
+  gesamt: number;
+}
+
+/** Zeitpunkte (performance.now()) und Zähler einer Anfrage → Aufteilung. */
+export function zeitaufteilung(p: { eingang: number; start: number; ende: number; senden?: number; jetzt: number; db: { anzahl: number; ms: number }; rechte?: { ms: number; dbMs: number } }): Zeitaufteilung {
+  const nn = (x: number) => (Number.isFinite(x) && x > 0 ? x : 0);
+  const app = nn(p.ende - p.start);
+  return {
+    vor: nn(p.start - p.eingang), app, db: nn(p.db.ms), dbAnzahl: p.db.anzahl,
+    rechte: Math.min(app, nn((p.rechte?.ms ?? 0) - (p.rechte?.dbMs ?? 0))),
+    json: p.senden === undefined ? 0 : nn(p.jetzt - p.senden),
+    gesamt: nn(p.jetzt - p.eingang),
+  };
+}
+
+/** Header Server-Timing: vor, app (Handler), db (Anzahl in desc), rechte, json, gesamt. */
+export function serverTiming(t: Zeitaufteilung): string {
+  const d = (x: number) => x.toFixed(1);
+  return `vor;dur=${d(t.vor)}, app;dur=${d(t.app)}, db;dur=${d(t.db)};desc="${t.dbAnzahl}", rechte;dur=${d(t.rechte)}, json;dur=${d(t.json)}, gesamt;dur=${d(t.gesamt)}`;
+}
+
+/** Kurztext für Langläufer und Protokoll: „1.234 ms gesamt · vor 3 · Datenbank 120 (5) · …“. */
+export function aufteilungText(t: Zeitaufteilung): string {
+  const r = (x: number) => Math.round(x).toLocaleString('de-DE');
+  const aufb = Math.max(0, t.app - t.db - t.rechte);
+  return `${r(t.gesamt)} ms gesamt · Warten vor dem Handler ${r(t.vor)} · Datenbank ${r(t.db)} (${t.dbAnzahl}) · Rechte ${r(t.rechte)} · Aufbereitung ${r(aufb)} · JSON ${r(t.json)}`;
+}
+
+/* ---------- Auslastung: Verzögerung der Ereignisschleife (#477) ---------- */
+
+export interface Schleifenverzoegerung { median: number; p99: number; max: number; seitSekunden: number }
+
+/**
+ * Wie lange Zeitgeber und Anfragen auf den einen Faden von Node.js warten müssen. Rechnet eine
+ * Anfrage lange im Arbeitsspeicher, steigt der Wert – die anderen Anfragen warten so lange.
+ * Gemessen über ein gleitendes Fenster (aktuelles und vorheriges Minutenfenster).
+ */
+const AUFLOESUNG_MS = 20;
+
+export class Auslastung {
+  private h: ReturnType<typeof monitorEventLoopDelay> | null = null;
+  private vorher: Schleifenverzoegerung | null = null;
+  private seit = Date.now();
+  private zeitgeber?: NodeJS.Timeout;
+
+  start(fensterMs = 60_000) {
+    if (this.h) return;
+    this.h = monitorEventLoopDelay({ resolution: AUFLOESUNG_MS });
+    this.h.enable();
+    this.seit = Date.now();
+    this.zeitgeber = setInterval(() => { this.vorher = this.jetzt(); this.h?.reset(); this.seit = Date.now(); }, fensterMs);
+    this.zeitgeber.unref();
+  }
+
+  stop() { this.h?.disable(); this.h = null; if (this.zeitgeber) clearInterval(this.zeitgeber); }
+
+  private jetzt(): Schleifenverzoegerung | null {
+    if (!this.h || !this.h.count) return null;
+    // Werte in Nanosekunden; sie enthalten die Auflösung (20 ms), die ziehen wir ab.
+    const ms = (x: number) => Math.max(0, Math.round((x / 1e6 - AUFLOESUNG_MS) * 10) / 10);
+    return { median: ms(this.h.percentile(50)), p99: ms(this.h.percentile(99)), max: ms(this.h.max), seitSekunden: Math.round((Date.now() - this.seit) / 1000) };
+  }
+
+  /** Aktuelles Fenster, solange es noch kaum Werte hat das vorherige. */
+  stand(): { aktuell: Schleifenverzoegerung | null; vorher: Schleifenverzoegerung | null } {
+    return { aktuell: this.jetzt(), vorher: this.vorher };
   }
 }
 

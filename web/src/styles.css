@@ -493,6 +493,12 @@ progress::-moz-progress-bar { background: var(--akzent); border-radius: 999px; }
 .messbalken .ueb, .messung li.ueb::before { background: var(--m-ueb); }
 .messbalken .ausw, .messung li.ausw::before { background: var(--m-ausw); }
 .messbalken .darst, .messung li.darst::before { background: var(--m-darst); }
+/* Zeitmessung genauer (#477): Warten im Browser und im Server, Rechte, JSON. */
+.messpanel { --m-wbrow: #c7ccd6; --m-wserv: #334155; --m-rechte: #0e7490; --m-json: #be185d; }
+.messbalken .m-wbrow, .messung li.m-wbrow::before { background: var(--m-wbrow); }
+.messbalken .m-wserv, .messung li.m-wserv::before { background: var(--m-wserv); }
+.messbalken .m-rechte, .messung li.m-rechte::before { background: var(--m-rechte); }
+.messbalken .m-json, .messung li.m-json::before { background: var(--m-json); }
 .messung li::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: 0; }
 
 /* Technik */

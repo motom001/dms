@@ -11,7 +11,7 @@ import Fastify, { type FastifyBaseLogger, type FastifyRequest } from 'fastify';
 import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import type { Konten } from './konten';
-import type { Messung } from './messung';
+import { serverTiming, zeitaufteilung, type Messung } from './messung';
 import type { SystemQuelle } from './system';
 import type { Designs } from './designs';
 import type { ApiSchluesselDienst } from './apischluessel';
@@ -33,7 +33,8 @@ import { MAX_DATEIGROESSE } from '../../shared/src/model';
 import { WEBDAV_METHODEN, WEBDAV_ZUSATZMETHODEN, type Webdav } from './webdav';
 import { anfrageStufe, dateiKoepfe, leseCookie, modulAus, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage } from './routen';
 
-type MitKontext = FastifyRequest & { dms?: Kontext; lesend?: boolean };
+/** zeit (#477): Zeitpunkte der Anfrage (performance.now()) für Server-Timing. */
+type MitKontext = FastifyRequest & { dms?: Kontext; lesend?: boolean; zeit?: { eingang: number; start?: number; ende?: number; senden?: number } };
 
 interface Optionen {
   /** Paketverwaltung mit Paket-Läufer (#338); ohne: Paketverwaltung ohne Läufer. */
@@ -109,6 +110,20 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     return reply.code(500).send({ fehler: `Interner Fehler (Anfrage ${req.id}). Details stehen im Protokoll.` });
   });
 
+  // Zeitmessung (#477): Eingang der Anfrage – das Warten bis zum Handler steht in Server-Timing als „vor“.
+  app.addHook('onRequest', async (req) => { (req as MitKontext).zeit = { eingang: performance.now() }; });
+  // Server-Timing erst hier: Die Antwort ist jetzt in Text umgewandelt (JSON), das gehört mit zur Messung.
+  app.addHook('onSend', async (req, reply, nutzlast) => {
+    const r = req as MitKontext;
+    if (r.dms && r.zeit?.start !== undefined && r.zeit.ende !== undefined) {
+      const t = zeitaufteilung({ eingang: r.zeit.eingang, start: r.zeit.start, ende: r.zeit.ende, senden: r.zeit.senden, jetzt: performance.now(), db: r.dms.db, rechte: r.dms.rechte });
+      reply.header('server-timing', serverTiming(t));
+      const k = r.dms;
+      kontext.run(k, () => opt.messung?.erfasseAnfrage(k, t));
+    }
+    return nutzlast;
+  });
+
   // Eine Zeile je Anfrage: Methode, Pfad, Status, Dauer, Benutzer.
   app.addHook('onResponse', async (req, reply) => {
     const url = req.url.split('?')[0];
@@ -151,6 +166,8 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
           einrichtungscode: typeof req.headers['x-einrichtungscode'] === 'string' ? req.headers['x-einrichtungscode'] : undefined,
         };
         const start = performance.now();
+        const zeit = ((req as MitKontext).zeit ??= { eingang: start });
+        zeit.start = start;
         if (r.lesend) (req as MitKontext).lesend = true;
         const k: Kontext = { anfrage: req.id, pfad: `${req.method} ${req.url.split('?')[0]}`, db: { anzahl: 0, ms: 0 }, ursprung: `${req.protocol}://${req.host}` };
         (req as MitKontext).dms = k;
@@ -162,8 +179,8 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
           if (!a.konsole) opt.wartung?.pruefeAnfrage(r, a.benutzer);
           return r.handler(a);
         });
-        // Für den Entwicklermodus: Dauer auf dem Server, davon Datenbank (Anzahl Zugriffe in desc).
-        reply.header('server-timing', `app;dur=${(performance.now() - start).toFixed(1)}, db;dur=${k.db.ms.toFixed(1)};desc="${k.db.anzahl}"`);
+        // Für den Entwicklermodus: Server-Timing setzt der onSend-Hook (#477), dann mit JSON und gesamt.
+        zeit.ende = performance.now();
         if (antwort.sitzungSetzen !== undefined || antwort.cookies?.length) {
           const sicher = typeof opt.sicher === 'function' ? kontext.run(k, opt.sicher) : opt.sicher ?? false;
           reply.header('set-cookie', [
@@ -181,6 +198,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
         }
         reply.header('cache-control', 'no-store');
         reply.code(antwort.status ?? 200);
+        zeit.senden = performance.now();
         return antwort.status === 204 || antwort.body === undefined ? reply.send() : reply.send(antwort.body);
       },
     });

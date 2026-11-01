@@ -743,7 +743,9 @@ export interface ProtokollAntwort { eintraege: Protokolleintrag[]; letzte: numbe
 export interface MessEinstellungen { schwelleMs: number; tage: number }
 export interface Langlaeufer { id: number; zeit: string; dauerMs: number; zugriff: string; anfrage: string; benutzer: string }
 export interface LaufendeAbfrage { pid: number; seitMs: number; zustand: string; abfrage: string; anwendung: string }
-export interface DatenbankStand { einstellungen: MessEinstellungen | null; langlaeufer: Langlaeufer[]; laufend: LaufendeAbfrage[] }
+/** Verzögerung der Ereignisschleife in ms (#477). */
+export interface Schleifenverzoegerung { median: number; p99: number; max: number; seitSekunden: number }
+export interface DatenbankStand { einstellungen: MessEinstellungen | null; langlaeufer: Langlaeufer[]; laufend: LaufendeAbfrage[]; auslastung?: { aktuell: Schleifenverzoegerung | null; vorher: Schleifenverzoegerung | null } | null }
 export interface WerkbankUebersicht {
   tresor: { zustand: string; eingebunden: boolean | null; betroffen: number } | null;
   mail: boolean; adresse: boolean;

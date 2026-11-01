@@ -34,6 +34,7 @@ export function DatenbankAbschnitte({ z, offen }: { z: DatenbankZustand; offen?:
     <>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       {z.stand?.einstellungen ? <Einstellungen z={z} offen={offen} /> : !z.stand && <p className="leise">Lade …</p>}
+      <Auslastung z={z} />
       <Laufend z={z} />
     </>
   );
@@ -56,7 +57,7 @@ function Langlaeufer({ z, offen }: { z: DatenbankZustand; offen?: string }) {
   const umschalten = (id: string) => setAuf((x) => { const n = new Set(x); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   return (
     <div className="stapel">
-      <h3 className="zwischen">Gespeicherte Zugriffe <span className="zusatz">· neueste oben</span></h3>
+      <h3 className="zwischen">Gespeicherte Zugriffe und Anfragen <span className="zusatz">· neueste oben</span></h3>
       {!liste.length
         ? <p className="leise">Keine – alle Zugriffe waren schneller als die Schwelle.</p>
         : <ul ref={rahmen} className="aufklappliste festhoehe">
@@ -71,7 +72,9 @@ function Langlaeufer({ z, offen }: { z: DatenbankZustand; offen?: string }) {
                   </button>
                   {offenHier && (
                     <dl className="eigenschaften klein">
-                      <dt>Abfrage</dt><dd className="mono">{l.zugriff}</dd>
+                      {l.zugriff.startsWith('Anfrage: ')
+                        ? <><dt>Aufteilung</dt><dd>{l.zugriff.slice(9)}</dd></>
+                        : <><dt>Abfrage</dt><dd className="mono">{l.zugriff}</dd></>}
                       <dt>Aufrufer</dt><dd>{[l.anfrage, l.benutzer].filter(Boolean).join(' · ') || 'außerhalb einer Anfrage'}</dd>
                       <dt>Dauer</dt><dd>{dauer(l.dauerMs)}</dd>
                       <dt>Zeit</dt><dd>{zeit(l.zeit)}</dd>
@@ -81,7 +84,7 @@ function Langlaeufer({ z, offen }: { z: DatenbankZustand; offen?: string }) {
               );
             })}
           </ul>}
-      <p className="leise klein">Ein Datenbankzugriff ist eine Methode der Datenzugriffsschicht (z. B. <span className="mono">mappen.seite</span> für eine Seite einer Ansicht) und kann mehrere SQL-Anweisungen umfassen. Mehr Einzelheiten zur selben Zeit stehen im <Link to="/werkbank/protokoll" className="verweis">Protokoll</Link> (Modul datenbank).</p>
+      <p className="leise klein">Ein Datenbankzugriff ist eine Methode der Datenzugriffsschicht (z. B. <span className="mono">mappen.seite</span> für eine Seite einer Ansicht) und kann mehrere SQL-Anweisungen umfassen. Einträge „Anfrage“ betreffen eine ganze Anfrage, aufgeteilt in Warten, Datenbank, Rechte, Aufbereitung und JSON. Mehr Einzelheiten zur selben Zeit stehen im <Link to="/werkbank/protokoll" className="verweis">Protokoll</Link> (Modul datenbank).</p>
     </div>
   );
 }
@@ -113,6 +116,33 @@ function Einstellungen({ z, offen }: { z: DatenbankZustand; offen?: string }) {
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'}>{meldung.text}</p>}
       <Speicherleiste ent={ent} gegenstand="Einstellungen" sendet={sendet} />
     </form>
+  );
+}
+
+/**
+ * Auslastung des Servers (#477): Verzögerung der Ereignisschleife. Node.js arbeitet Anfragen auf einem
+ * Faden ab; rechnet eine Anfrage lange im Arbeitsspeicher, warten die anderen so lange.
+ */
+function Auslastung({ z }: { z: DatenbankZustand }) {
+  const a = z.stand?.auslastung;
+  if (!a) return null;
+  const w = a.aktuell && (a.aktuell.seitSekunden >= 10 || !a.vorher) ? a.aktuell : a.vorher ?? a.aktuell;
+  const zahl = (x: number) => `${x.toLocaleString('de-DE', { maximumFractionDigits: 1 })} ms`;
+  return (
+    <div className="blatt">
+      <h2 className="h3">Auslastung des Servers</h2>
+      {!w
+        ? <p className="leise">Noch keine Messwerte.</p>
+        : <>
+            {w.p99 >= 100 && <div className="hinweis warn"><p>Der Server war zeitweise beschäftigt: Anfragen mussten bis zu {zahl(w.max)} warten, bevor er sie bearbeiten konnte.</p></div>}
+            <dl className="eigenschaften">
+              <dt>Wartezeit üblich</dt><dd>{zahl(w.median)}</dd>
+              <dt>Wartezeit 99 %</dt><dd>{zahl(w.p99)}</dd>
+              <dt>Wartezeit höchstens</dt><dd>{zahl(w.max)}</dd>
+            </dl>
+          </>}
+      <p className="leise klein">Verzögerung der Ereignisschleife in der letzten Minute: So lange musste eine Anfrage höchstens warten, weil der Server gerade etwas anderes rechnete. Werte unter 50 ms sind unauffällig. In der Zeitmessung (Entwicklermodus) erscheint dieses Warten bei den anderen Anfragen als „Leitung“.</p>
+    </div>
   );
 }
 
