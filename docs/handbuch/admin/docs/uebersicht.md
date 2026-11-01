@@ -42,7 +42,7 @@ Die Werkbank beginnt mit der **Übersicht**. Sie zeigt oben, was zu tun ist – 
 - kein Schlüssel für Passwörter oder Schlüsseldatei nicht auf eigenem Volume,
 - Datenbank-Anbindung weicht ab oder braucht einen Neustart,
 - im Einrichtungsassistenten übersprungene Schritte,
-- Umgebungsvariablen, die nicht mehr nötig sind,
+- Umgebungsvariablen, die nicht mehr nötig sind – je Variable mit Grund (feste Ordner, Datenbank-Anbindung in einer Datei, gespeicherte Kennung des Haushalts),
 - E-Mail-Versand nicht eingerichtet,
 - offene gemeldete Fehler,
 - Dokumente mit Fehler in der Texterkennung,
