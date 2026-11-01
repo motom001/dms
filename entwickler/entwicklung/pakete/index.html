@@ -643,6 +643,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../pakete-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pakete mit Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -657,10 +684,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
             
   
   
@@ -678,8 +705,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1086,20 +1113,12 @@ werkzeuge/neues-paket.sh<span class="w"> </span>mein_paket<span class="w"> </spa
 <li>Höchstens <strong>zwei Ebenen</strong>: Abschnitte (<code>abschnitt</code>, <code>hilfe</code>, <code>felder</code>) und Listen (<code>liste</code>, <code>name</code>, <code>eintrag</code>, <code>hilfe</code>, <code>sortierbar</code>, <code>felder</code>).</li>
 <li><strong>Typen:</strong> <code>text</code>, <code>mehrzeilig</code>, <code>zahl</code> (<code>min</code>/<code>max</code>), <code>janein</code>, <code>datum</code>, <code>auswahl</code> und <code>mehrfachauswahl</code> (<code>optionen</code>), <code>geheim</code>, Verweise <code>mappentyp</code>, <code>feld</code> (mit <code>mappentyp:</code>), <code>benutzer</code>, <code>rolle</code>, <code>sicht</code>.</li>
 <li><strong>Werte</strong>, wie das Paket sie bekommt: Abschnittsfelder unter ihrer Kennung, Listen als Liste von Objekten (mit <code>_id</code> je Eintrag). Verweise sind Ids (bei <code>feld</code>: <code>{ typ, feld }</code>), Geheimnisse im Klartext – nur für das eigene Paket.</li>
-<li>Zu <code>code</code> verlangt das Schema außerdem <code>sprache</code>, <code>quelle</code> und <code>rechte</code> (siehe Vorlage); das Beispiel oben zeigt nur Einstellungen und Aktionen.</li>
+<li>Zu <code>code</code> gehören außerdem <code>sprache</code>, <code>quelle</code>, <code>ereignisse</code>, <code>rechte</code> und <code>netz</code> (siehe <a href="../pakete-code/#im-manifest">Pakete mit Code</a>); das Beispiel oben zeigt nur Einstellungen und Aktionen.</li>
 <li><strong>Zugangsdaten nur als <code>geheim</code></strong>, nie als <code>text</code> und nie mit <code>standard</code>.</li>
 <li>Bei einem <strong>Update</strong> bekommen neue Felder ihre Vorgabe, vorhandene Werte bleiben, wegfallende werden entfernt.</li>
 </ul>
 <p><code>werkzeuge/pruefen.py</code> prüft Kennungen, Vorgaben, Optionen, Geheimnisse und Verweise. Zum Ausprobieren eignet sich der Expertenmodus mit <strong>Paket hochladen</strong>.</p>
-<div class="admonition warning">
-<p class="admonition-title">Erst mit dem Paket-Läufer</p>
-<p>Code in Paketen läuft erst mit dem Paket-Läufer, und den gibt es im DMS noch nicht (geplant, #197). Bis dahin gilt:</p>
-<ul>
-<li>Einstellungen lassen sich in der Werkbank pflegen; das DMS prüft und speichert sie.</li>
-<li>Das Ereignis <code>paket.einstellungen_geaendert</code> bei einer Änderung und das Lesen der Werte mit <code>dms.einstellungen()</code> wirken erst mit dem Paket-Läufer.</li>
-<li><strong>Aktionen</strong> melden „Pakete mit Code laufen in diesem DMS noch nicht“, statt etwas zu tun.</li>
-</ul>
-</div>
+<p>Was das Paket mit den Einstellungen macht und welche Rechte es braucht, beschreibt <a href="../pakete-code/">Pakete mit Code</a>.</p>
 <h2 id="prufen">Prüfen<a class="headerlink" href="#prufen" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pyyaml<span class="w"> </span>jsonschema
 python3<span class="w"> </span>werkzeuge/pruefen.py<span class="w"> </span>pakete/mein_paket<span class="w">      </span><span class="c1"># Schema, Pflichtdateien, Verweise, Lizenz, Changelog</span>
@@ -1124,7 +1143,7 @@ python3<span class="w"> </span>werkzeuge/katalog.py<span class="w"> </span>--pro
 <p>Mehrere Pakete testest du auch als eigenen Katalog: <code>python3 werkzeuge/katalog.py &lt;ordner&gt;</code> baut <code>katalog.json</code> und die Archive; leg den Ordner auf einen HTTPS-Server und trage die Adresse von <code>katalog.json</code> im Expertenmodus unter <strong>Weitere Quellen</strong> ein.</p>
 <h2 id="ausblick">Ausblick<a class="headerlink" href="#ausblick" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Geplant: <strong>Pakete mit Code</strong>, die auf Ereignisse reagieren und mit eigenen, bei der Installation bestätigten Rechten über die API arbeiten – abgeschottet als WebAssembly. Dafür kommt der Paket-Läufer.</li>
+<li><strong>Pakete mit Code</strong> gibt es seit 0.88.0: WebAssembly-Module, die auf Ereignisse reagieren und mit bestätigten Rechten über die API arbeiten – siehe <a href="../pakete-code/">Pakete mit Code</a>.</li>
 </ul>
 
 

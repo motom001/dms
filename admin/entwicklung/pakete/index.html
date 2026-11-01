@@ -838,6 +838,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pakete-mit-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pakete mit Code
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#expertenmodus-weitere-kataloge-und-hochladen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2071,6 +2082,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pakete-mit-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pakete mit Code
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#expertenmodus-weitere-kataloge-und-hochladen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2142,6 +2164,7 @@
 <li>die Ansichten, mit Elternansicht</li>
 <li>die Abhängigkeiten und ob sie installiert sind</li>
 <li>wie viele Beispiel-Mappen es gibt</li>
+<li>bei Paketen mit Code: <strong>was der Code darf</strong> (siehe <a href="#pakete-mit-code">Pakete mit Code</a>) – du bestätigst es mit einem Haken, sonst bleibt <strong>Installieren</strong> grau</li>
 </ul>
 </li>
 <li><strong>Namen:</strong> Gibt es einen Mappentyp oder eine Ansicht (auf oberster Ebene) mit gleichem Namen schon, sagt die Vorschau das und schlägt einen anderen vor, z. B. „Organisation (Basis)“. Du kannst jeden Namen ändern.</li>
@@ -2200,9 +2223,20 @@
 <li><strong>Entfernen</strong> fragt, ob die Einstellungen für eine spätere Neuinstallation <strong>bleiben</strong> sollen (Standard: nein).</li>
 </ul>
 <p>Die Einstellungen sind <strong>Teil der Sicherung</strong>; Geheimnisse bleiben dabei verschlüsselt und werden beim Schlüsselwechsel mit umgeschlüsselt. Über die API v1 sind sie nicht lesbar; das Paket selbst bekommt sie über den Paket-Läufer. Das Protokoll vermerkt „Einstellungen von Paket … geändert (Felder …)“ – nie die Werte von Geheimnissen. Nur Administratoren sehen und ändern Einstellungen.</p>
+<h2 id="pakete-mit-code">Pakete mit Code<a class="headerlink" href="#pakete-mit-code" title="Permanent link">&para;</a></h2>
+<p>Manche Pakete bringen <strong>Code</strong> mit – etwa eine eigene Texterkennung oder Regeln, die neue Post zuordnen. Der Code reagiert auf Ereignisse (neue Post, hochgeladenes Dokument, fertige Texterkennung, geänderte Einstellungen) und auf die <strong>Aktionen</strong> im Reiter „Einstellungen“. Das DMS führt ihn im <strong>Paket-Läufer</strong> aus:</p>
+<ul>
+<li><strong>Abgeschottet:</strong> Der Code ist WebAssembly und läuft in einem eigenen Prozess des DMS, ohne Zugriff auf Dateien, Schlüssel oder Datenbank. Das Netz erreicht er nur unter den Adressen, die das Paket angibt.</li>
+<li><strong>Nur bestätigte Rechte:</strong> Vor der Installation zeigt die Vorschau, was der Code darf – welche Mappentypen er lesen bzw. anlegen und ändern darf, ob er Dokumente lesen oder schreiben darf, welche Adressen im Netz er erreicht und auf welche Ereignisse er reagiert. Erst wenn du das bestätigst, installiert das DMS. Will ein <strong>Update</strong> mehr Rechte oder anderes Netz, fragt das DMS erneut.</li>
+<li><strong>Dienstkonto:</strong> Für jedes Paket mit Code legt das DMS ein Dienstkonto „Paket <em>Name</em>“ an. Mit ihm arbeitet der Code über die API; die Historie zeigt deshalb, was ein Paket geändert hat. Dienstkonten erscheinen nicht unter <strong>Benutzer</strong>, melden sich nie an und können <strong>nie löschen</strong> – auch nicht mit Rechten auf alle Mappentypen. Benutzer und Passwörter sehen sie nicht.</li>
+<li><strong>Grenzen:</strong> Jeder Aufruf hat höchstens 256 MB Speicher und 2 Minuten Zeit; es laufen höchstens zwei Aufrufe gleichzeitig. Was die Grenzen reißt, bricht ab, ohne das DMS zu stören.</li>
+<li><strong>Wiederholen:</strong> Ereignisse merkt sich das DMS. Scheitert ein Aufruf, versucht es der Läufer nach 1, 5, 30, 120 und 360 Minuten erneut und gibt dann auf. Während einer Wartung (z. B. beim Wiederherstellen) ruht der Läufer.</li>
+</ul>
+<p><strong>Werkbank → Pakete → <em>Paket</em></strong> zeigt im Abschnitt <strong>Paket-Läufer</strong>, ob der Läufer läuft, die letzten Aufrufe mit Dauer und Speicher, offene und aufgegebene Ereignisse und das Protokoll des Pakets. Meldungen stehen zusätzlich im <a href="../fehlersuche/#protokoll">Protokoll</a> des DMS.</p>
+<p><strong>Entfernen</strong> beendet den Code, löscht seine offenen Ereignisse und seinen Speicher und schaltet das Dienstkonto ab.</p>
 <div class="admonition note">
-<p class="admonition-title">Pakete mit Code</p>
-<p>Einstellungen gehören zu Paketen mit Code. Solange es im DMS den <strong>Paket-Läufer</strong> noch nicht gibt, läuft der Code nicht: Du kannst solche Pakete installieren und ihre Einstellungen pflegen, Aktionen melden aber, dass sie noch nicht ausgeführt werden können.</p>
+<p class="admonition-title">Volltext aus einem Paket</p>
+<p>Setzt ein Paket den Volltext eines Dokuments (z. B. das Paket <strong>Texterkennung</strong>), vermerkt die Historie „Volltext gesetzt“ mit dem Namen des Pakets, und die Texterkennung des DMS überschreibt diesen Text nicht.</p>
 </div>
 <h2 id="expertenmodus-weitere-kataloge-und-hochladen">Expertenmodus: weitere Kataloge und Hochladen<a class="headerlink" href="#expertenmodus-weitere-kataloge-und-hochladen" title="Permanent link">&para;</a></h2>
 <p>Für Paketentwickler und für ein DMS ohne Internetzugang gibt es unter <strong>Werkbank → Pakete</strong> direkt unter den Knöpfen den Abschnitt <strong>Expertenmodus</strong>. Er ist zugeklappt; ein Klick auf <strong>▸ Expertenmodus</strong> (oder Enter bzw. Leertaste) klappt ihn an Ort und Stelle auf. Ob er auf- oder zugeklappt ist, merkt sich dein Browser für dich – das ist nur Bequemlichkeit, kein Recht: Was dort steht, dürfen alle Administratoren.</p>

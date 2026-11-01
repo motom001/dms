@@ -1448,6 +1448,9 @@ Die Liste der Mappen, deren Aufbewahrungsfrist abgelaufen ist.</p>
 <p><a id="design"></a><strong>Design</strong> · ✓ Alltagswort · Administratoren<br />
 Wie die Oberfläche aussieht – Logo, Schriftzug, Farben (hell, dunkel, hoher Kontrast oder nach Gerät) und eigenes CSS. Administratoren legen Designs unter Werkbank → Designs an und bestimmen den Standard; jeder Benutzer wählt seines im Profil unter „Darstellung“.<br />
 Siehe auch: <a href="#darstellung">Darstellung</a>.</p>
+<p><a id="dienstkonto"></a><strong>Dienstkonto</strong> · ~ mit Erklärung · Administratoren<br />
+Das Konto, mit dem ein Paket mit Code im DMS arbeitet, z. B. „Paket Texterkennung“. Es meldet sich nie an, steht nicht unter Benutzer, löscht nie und hat nur die Rechte aus dem Paket. In der Historie steht es dort, wo das Paket etwas geändert hat.<br />
+Siehe auch: <a href="#paket-laufer">Paket-Läufer</a>, <a href="#benutzer">Benutzer</a>.</p>
 <p><a id="eingangsordner"></a><strong>Eingangsordner</strong> · ~ mit Erklärung · Administratoren<br />
 Ein Ordner, den das DMS beobachtet, z. B. für „Scan to Folder“. Jede Datei darin wird Post.</p>
 <p><a id="expertenmodus"></a><strong>Expertenmodus</strong> · ✗ Fachwort · Fortgeschrittene<br />
@@ -1461,8 +1464,8 @@ Fortlaufende Nummern nach einem Muster wie {jjjj}-R{zaehler:4} (ergibt z. B. 202
 Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Basis“. Ein Update ergänzt nur; es entfernt und ändert nichts.<br />
 Siehe auch: <a href="#paketkatalog">Paketkatalog</a>, <a href="#expertenmodus">Expertenmodus</a>, <a href="#paket-laufer">Paket-Läufer</a>.</p>
 <p><a id="paket-laufer"></a><strong>Paket-Läufer</strong> · ✗ Fachwort · Fortgeschrittene<br />
-Der Teil des DMS, der den Code von Paketen ausführt. Geplant – bis dahin läuft Code in Paketen nicht; ihre Einstellungen lassen sich schon pflegen.<br />
-Siehe auch: <a href="#paket">Paket</a>.</p>
+Der Teil des DMS, der den Code von Paketen ausführt – abgeschottet in einem eigenen Prozess, mit Grenzen für Speicher und Zeit und nur mit den Rechten, die ein Administrator bei der Installation bestätigt hat. Seinen Stand zeigt Werkbank → Pakete → Paket im Abschnitt „Paket-Läufer“.<br />
+Siehe auch: <a href="#paket">Paket</a>, <a href="#dienstkonto">Dienstkonto</a>.</p>
 <p><a id="paketkatalog"></a><strong>Paketkatalog</strong> · ~ mit Erklärung · Administratoren<br />
 Die Liste der Pakete, die ein DMS installieren kann (eine Datei katalog.json im Netz). Das DMS fragt den offiziellen Katalog nur auf Knopfdruck ab („Katalog abrufen“). Weitere Kataloge trägt man im Expertenmodus unter „Weitere Quellen“ ein.<br />
 Siehe auch: <a href="#paket">Paket</a>, <a href="#expertenmodus">Expertenmodus</a>.</p>
@@ -1683,6 +1686,11 @@ Die Aufgabenart heißt „Post für dich“; die Ansicht „Neue Post“ bleibt.
 <td>–</td>
 </tr>
 <tr>
+<td>Dienstkonto</td>
+<td>Systembenutzer, Bot, technischer Benutzer</td>
+<td><code>benutzer.art = 'dienst'</code></td>
+</tr>
+<tr>
 <td>Dokument</td>
 <td>–</td>
 <td><code>Dokument</code></td>
@@ -1784,8 +1792,8 @@ Die Aufgabenart heißt „Post für dich“; die Ansicht „Neue Post“ bleibt.
 </tr>
 <tr>
 <td>Paket-Läufer</td>
-<td>–</td>
-<td><code>PaketLaeufer</code></td>
+<td>Code im Paket-Läufer, Plugin-Host</td>
+<td><code>Paketlaeufer, PaketLaeufer</code></td>
 </tr>
 <tr>
 <td>Paketkatalog</td>

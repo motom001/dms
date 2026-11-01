@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-087" class="md-skip">
+        <a href="#neu-in-version-088" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -419,43 +419,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0871" class="md-nav__link">
+  <a href="#0880" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.87.1
+        0.88.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.87.1">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#behoben" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Behoben
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#0870" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        0.87.0
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="0.87.0">
+    <nav class="md-nav" aria-label="0.88.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -463,6 +435,17 @@
     <span class="md-ellipsis">
       
         Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#technik" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technik
       
     </span>
   </a>
@@ -1188,43 +1171,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0871" class="md-nav__link">
+  <a href="#0880" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.87.1
+        0.88.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.87.1">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#behoben" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Behoben
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#0870" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        0.87.0
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="0.87.0">
+    <nav class="md-nav" aria-label="0.88.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1232,6 +1187,17 @@
     <span class="md-ellipsis">
       
         Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#technik" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technik
       
     </span>
   </a>
@@ -1296,48 +1262,47 @@
   
 
 
-<h1 id="neu-in-version-087">Neu in Version 0.87<a class="headerlink" href="#neu-in-version-087" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-088">Neu in Version 0.88<a class="headerlink" href="#neu-in-version-088" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0871">0.87.1<a class="headerlink" href="#0871" title="Permanent link">&para;</a></h2>
-<h3 id="behoben">Behoben<a class="headerlink" href="#behoben" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Lange Datenbankzugriffe bei vielen Mappen</strong> (#367), gemessen mit 10.000 Mappen und 20.000 Dokumenten:</li>
-<li><strong>Während Demo-Daten entstehen, bleibt die Bedienung flüssig.</strong> Die Erzeugung legt nach jedem Dokument und jedem Paket (jetzt 250 statt 500 Mappen) eine kurze Pause ein; große Dateien, Bilder und lange PDFs blockieren den Server nicht mehr sekundenlang. Vorher hielten einzelne Dokumente alle Anfragen bis zu 6,5 Sekunden an – das erschien in <em>Werkbank → Datenbank</em> als „langer Zugriff“, z. B. beim Öffnen einer Mappe. Die Erzeugung dauert dafür etwas länger.</li>
-<li><strong>Export ohne Abfrage je Mappe und Dokument:</strong> „Meine Daten exportieren“ und der Vollexport lesen Dokumente, Volltexte, Versionen, Notizen, Aufgaben und Historie gebündelt – bei 2.000 Mappen 117 statt knapp 18.000 Zugriffe, die Zeit in der Datenbank sinkt von 6 auf unter 1 Sekunde. Auch der Export als ZIP/PDF und „Per E-Mail senden“ lesen die Dokumente gebündelt.</li>
-<li><strong>Listen lesen keinen Volltext mehr:</strong> Dokumentlisten, Texterkennungs-Aufträge, gleiche Dateien und der Papierkorb laden den (oft viele KB großen) Volltext nicht mehr mit.</li>
-<li><strong>Statistik der Datenbank nach Massenläufen</strong> (<code>ANALYZE</code>): nach dem Erzeugen und Entfernen von Demo-Daten und nach einer Wiederherstellung.</li>
-<li>Entwicklerhandbuch: neue Seite <em>Leistung</em> mit Messlatte (Mappe öffnen und Dokumentliste unter 200 ms bei 10.000 Mappen), Leistungstest in der CI (nur Warnung) und Mess-Skript.</li>
-</ul>
-<h2 id="0870">0.87.0<a class="headerlink" href="#0870" title="Permanent link">&para;</a></h2>
+<h2 id="0880">0.88.0<a class="headerlink" href="#0880" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>WebDAV-Laufwerk, Stufe 1: lesen und ablegen</strong> (#346): Die Ablage lässt sich im Windows-Explorer, im Finder und in der Dateien-App auf iPhone und iPad als Laufwerk einbinden – Adresse <code>https://&lt;dms&gt;/webdav/</code>.</li>
-<li>Ordner <strong>Neue Post</strong> (Datei hineinlegen = neue Post, Kanal „WebDAV“) und <strong>Ablage</strong> → Ansichten → Mappen → Register-Ordner mit den Dokumenten; je Mappe ein Ordner <strong>Verknüpft</strong> mit den verknüpften Mappen (nur eine Ebene).</li>
-<li>Datei in einen Register-Ordner legen = Dokument dort; gleicher Name mit Versionierung = <strong>neue Version</strong>, ohne Versionierung wird nichts überschrieben.</li>
-<li>Rechte wie in der Oberfläche; <strong>Herunterladen nur mit Exportrecht E</strong>. Namen bereinigt (<code>\ / : * ? " &lt; &gt; |</code> usw.) und eindeutig (Kurzcode bei gleichen Titeln); Hilfsdateien wie <code>desktop.ini</code>, <code>.DS_Store</code>, <code>._…</code>, <code>~$…</code> werden still verworfen. ETag, Änderungsdatum und Größe je Dokument.</li>
-<li><strong>Werkbank → WebDAV-Laufwerk:</strong> an/aus (Standard <strong>aus</strong>), Adresse, Stand und die letzten 50 Zugriffe. Im Profil beim API-Schlüssel ein Hinweis auf das Laufwerk.</li>
-<li>Handbücher: neue Seiten <em>Als Laufwerk einbinden</em> (Benutzer: Windows, Mac, iPhone/iPad) und <em>WebDAV-Laufwerk</em> (Administratoren: Einschalten, HTTPS, Reverse-Proxy, Schutz).</li>
+<li><strong>Paket-Läufer: Pakete mit Code</strong> (#338). Pakete können ein WebAssembly-Modul mitbringen, das auf Ereignisse im DMS reagiert und Aktionen aus der Werkbank ausführt.</li>
+<li><strong>Ereignisse:</strong> neue Post, hochgeladenes Dokument, fertige Texterkennung, geänderte Einstellungen des Pakets. Sie stehen in einem Ausgangskorb und werden je Paket der Reihe nach zugestellt; nach einem Fehler versucht der Läufer es nach 1, 5, 30, 120 und 360 Minuten erneut. Während einer Wartung ruht der Läufer.</li>
+<li><strong>Abgeschottet:</strong> eigener Prozess unter dem Berechtigungsmodell von Node (nur der Programmordner lesbar, keine Kindprozesse, kein Schreiben), je Aufruf ein frischer Worker mit Grenzen (256 MB, 2 Minuten, höchstens zwei gleichzeitig). Das Modul sieht kein Dateisystem; das Netz nur unter den Adressen aus dem Manifest, ohne Weiterleitungen.</li>
+<li><strong>Rechte aus dem Manifest, bei der Installation bestätigt:</strong> Mappentypen lesen bzw. anlegen und ändern, Dokumente lesen oder schreiben, Netzadressen. Ändert ein Update Rechte oder Netz, muss der Administrator neu bestätigen.</li>
+<li><strong>Dienstkonto je Paket:</strong> Der Code arbeitet über die API v1 mit einem eigenen Konto „Paket <em>Name</em>“, dessen Schlüssel das DMS nie verlässt. Dienstkonten melden sich nie an, stehen nicht unter Benutzer, löschen nie und sehen keine Benutzer und Passwörter; Verwaltung, Vertretung und Links kennen sie nicht.</li>
+<li><strong>Werkbank → Pakete → <em>Paket</em></strong>: Abschnitt <strong>Paket-Läufer</strong> mit Zustand, letzten Aufrufen (Dauer, Speicher), offenen und aufgegebenen Ereignissen und dem Protokoll des Pakets.</li>
+<li>Schnittstelle „DMS-Paket-ABI 1“: Import <code>env.memory</code>, Funktionen unter <code>dms</code> (<code>api</code>, <code>netz</code>, <code>datei</code>, <code>speicher_*</code>, <code>log</code>, <code>ergebnis</code> …), Exporte <code>dms_puffer</code>, <code>dms_ereignis</code>, optional <code>dms_aktion</code>. Gebaut z. B. mit wasi-sdk.</li>
+<li><strong>API v1:</strong> <code>PUT /dokumente/{id}/volltext</code> setzt den Volltext (z. B. aus einer eigenen Texterkennung; Historie „Volltext gesetzt“ mit dem Paket; Text eines Pakets überschreibt die Texterkennung des DMS nicht) und <code>GET /dokumente/{id}/seiten/{nr}/scan?dpi=</code> liefert eine Seite als Graustufenbild (PGM, 72–400 dpi).</li>
+<li>Handbücher: <em>Pakete → Pakete mit Code</em> (Administratoren), neue Seite <em>Pakete mit Code</em> (Entwickler), <em>API</em> um Volltext und Seitenbild ergänzt.</li>
+</ul>
+<h3 id="technik">Technik<a class="headerlink" href="#technik" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Migration <strong>039</strong>: <code>benutzer.art</code> (<code>person</code>/<code>dienst</code>) und <code>benutzer.paket_id</code>, Tabellen <code>paket_ereignisse</code> (Ausgangskorb) und <code>paket_code</code> (Module und Daten der Pakete). Zugestellte Ereignisse bleiben 7 Tage, aufgegebene 30 Tage.</li>
+<li><code>npm run build</code> erzeugt zusätzlich <code>dist/prozess.mjs</code> und <code>dist/arbeiter.mjs</code> (der Läufer startet sie als eigenen Prozess).</li>
+<li>Ein Paket mit <code>code:</code>, aber ohne <code>code/modul.wasm</code> lässt sich weiter installieren (Einstellungen pflegen); im Läufer läuft dann nichts, die Vorschau sagt das.</li>
 </ul>
 <h3 id="sicherheit">Sicherheit<a class="headerlink" href="#sicherheit" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Anmeldung am Laufwerk nur mit <strong>E-Mail-Adresse und API-Schlüssel</strong> (HTTP Basic), nie mit dem Passwort – die Zwei-Faktor-Anmeldung bleibt wirksam. Zum Ablegen braucht der Schlüssel „lesen und schreiben“. Fehlversuche zählen im <strong>Anmeldeschutz</strong> (Sperre je Konto und IP).</li>
-<li><strong>HTTPS-Pflicht</strong> im Handbuch, Warnung in der Werkbank bei einer Adresse ohne <code>https://</code>. Ausgeschaltet antwortet <code>/webdav/</code> mit 404.</li>
-<li>Schutz gegen Endlosschleifen und Massenabrufe: <code>Depth: infinity</code> abgelehnt, „Verknüpft“ nur eine Ebene, höchstens 1000 Mappen je Ordner, <strong>600 Anfragen je Benutzer und Minute</strong>; abgelegte Dateien und abgelehnte Anmeldungen im Protokoll (Lesezugriffe nur auf Debug).</li>
-<li><strong>Nachbesserungen aus dem Sicherheits-Review:</strong> Eine neue Version über das Laufwerk landet immer auf dem Dokument hinter dem Dateinamen (per Kennung, nicht per Name – wichtig bei gleichen oder nach dem Bereinigen gleichen Namen). Hilfsdateien werden nur gezählt, nicht zwischengespeichert; höchstens <strong>drei gleichzeitige Uploads</strong> je Benutzer (darüber 503 mit <code>Retry-After</code>). <strong>Dienstkonten</strong> (#338) kommen nie in das Laufwerk. Fehlversuche mit der Adresse eines aktiven Kontos lösen die Sofortmeldung des Anmeldeschutzes aus (#368). Der <strong>ETag</strong> ist ein Hash aus Dokument-Kennung und Inhalt, nicht mehr der Inhalts-Prüfwert selbst. Fremde E-Mail-Eingaben stehen höchstens 254 Zeichen lang im Protokoll.</li>
-<li>Im Administratorhandbuch: Ein <strong>abgelaufener oder gelöschter Schlüssel</strong>, mit dem Explorer oder Finder es weiter versuchen, kann die IP-Adresse sperren – auch für die Anmeldung mit Passwort.</li>
-<li>Dokumente gehen immer als Download hinaus (<code>Content-Disposition: attachment</code>, Sandbox), Pfade mit <code>..</code> oder kaputter Kodierung werden abgewiesen. LOCK beantwortet das DMS nur zum Schein und nur dort, wo Ablegen erlaubt ist (Windows und macOS brauchen das zum Hochladen).</li>
+<li>Der Code eines Pakets bekommt nur die bestätigten Rechte; Rollen, Ansichten und Administratorrechte gelten für Dienstkonten nicht. Löschen (Recht D) und Berechtigungen (Recht P) haben sie nie.</li>
+<li>Dienstkonten versenden keine E-Mails; ohne Dokumentrecht sehen sie an der Mappe auch die Liste der Dokumente nicht. Was ein Paket selbst ändert, löst bei ihm kein Ereignis aus (keine Schleifen).</li>
+<li>Netzanfragen eines Pakets gehen nur an <code>https://</code>-Adressen aus dem Manifest (gleicher Ursprung, Pfad darunter), mit Zeit- und Größengrenze; Kopfzeilen wie <code>Cookie</code> und <code>Host</code> filtert der Läufer.</li>
 </ul>
 <h3 id="noch-nicht-dabei">Noch nicht dabei<a class="headerlink" href="#noch-nicht-dabei" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Stufe 2: Löschen (Papierkorb), Umbenennen, Verschieben zwischen Registern und Office-Dateien direkt bearbeiten mit echter Sperre (MKCOL, DELETE, MOVE und COPY antworten mit 403).</li>
-<li>Bilder der Einrichtungsschritte im Benutzerhandbuch; Unteransichten stehen im Laufwerk nebeneinander statt verschachtelt.</li>
+<li>Das Ereignis landet nach dem Speichern im Ausgangskorb, nicht in derselben Datenbank-Transaktion: Fällt das DMS genau dazwischen aus, fehlt das Ereignis.</li>
+<li>PDF teilen, zusammenfügen und „Post teilen“ melden noch kein <code>dokument.hochgeladen</code>.</li>
+<li>Abhängigkeiten mit Code installiert das DMS nicht automatisch mit – man installiert sie vorher selbst und bestätigt dabei ihre Rechte.</li>
+<li>Weitere Ereignisse (z. B. Mappe geändert, Frist fällig) und zeitgesteuerte Aufrufe.</li>
+<li>Grenzen des Läufers in der Werkbank einstellen.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.86.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.86.0...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.87.1 im Detail: <a href="https://github.com/motom001/dms/compare/v0.87.1...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 

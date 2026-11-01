@@ -2109,6 +2109,10 @@
 <td><strong>Texterkennung</strong></td>
 <td><code>POST /api/v1/dokumente/{id}/texterkennung</code> stößt sie für ein Dokument (erneut) an; <code>GET /api/v1/dokumente/{id}/volltext</code> liefert den Text</td>
 </tr>
+<tr>
+<td><strong>Volltext setzen</strong></td>
+<td><code>PUT /api/v1/dokumente/{id}/volltext</code> mit <code>{ "text": "…" }</code> (Recht U auf die Mappe) ersetzt den Volltext, z. B. aus einer eigenen Texterkennung; <code>GET /api/v1/dokumente/{id}/seiten/{nr}/scan?dpi=300</code> liefert eine Seite als Graustufenbild (PGM)</td>
+</tr>
 </tbody>
 </table>
 <h3 id="post-anlegen-und-zuordnen">Post anlegen und zuordnen<a class="headerlink" href="#post-anlegen-und-zuordnen" title="Permanent link">&para;</a></h3>
