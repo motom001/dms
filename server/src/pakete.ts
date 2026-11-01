@@ -12,7 +12,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { inflateRawSync } from 'node:zlib';
 import { parse as yamlLesen } from 'yaml';
 import type { Feld, Mappentyp, Register } from '../../shared/src/model';
-import { BEREICH, CODE_MAX, DMS_RECHTE_TYPEN, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../shared/src/pakete';
+import { BEREICH, CODE_MAX, DMS_RECHTE_TYPEN, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../shared/src/pakete';
 import { kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
 import { EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand } from '../../shared/src/paketeinstellungen';
 import type { Dienst } from './dienst';
@@ -29,32 +29,50 @@ export const ARCHIV_MAX = 10 * 1024 * 1024;
 const ENTPACKT_MAX = 20 * 1024 * 1024;
 const DATEIEN_MAX = 500;
 
-/** Liest ein ZIP-Archiv (gespeichert oder Deflate) mit Obergrenzen gegen ZIP-Bomben. */
-export function liesZip(buf: Buffer): Map<string, Buffer> {
+/** Obergrenzen beim Entpacken; budget wird über mehrere Archive geteilt (Sammeldatei, #461). */
+export interface ZipGrenzen { dateien: number; entpackt: number; budget?: { rest: number } }
+const PAKET_GRENZEN: ZipGrenzen = { dateien: DATEIEN_MAX, entpackt: ENTPACKT_MAX };
+
+/** Einträge des Inhaltsverzeichnisses (Central Directory), ohne etwas zu entpacken. */
+function zipEintraege(buf: Buffer, max: number) {
   const kaputt = () => new Fachfehler(422, 'Das Archiv ist kein gültiges ZIP.');
   let e = -1;
   for (let i = buf.length - 22; i >= Math.max(0, buf.length - 22 - 65535); i--) if (buf.readUInt32LE(i) === 0x06054b50) { e = i; break; }
   if (e < 0) throw kaputt();
   const anzahl = buf.readUInt16LE(e + 10);
-  if (anzahl > DATEIEN_MAX) throw new Fachfehler(422, `Das Archiv enthält mehr als ${DATEIEN_MAX} Dateien.`);
+  if (anzahl > max) throw new Fachfehler(422, `Das Archiv enthält mehr als ${max} Dateien.`);
   let p = buf.readUInt32LE(e + 16);
-  const dateien = new Map<string, Buffer>();
-  let gesamt = 0, code = 0;
+  const liste: Array<{ name: string; flags: number; methode: number; crc: number; csize: number; usize: number; lokal: number }> = [];
   for (let n = 0; n < anzahl; n++) {
     if (p + 46 > buf.length || buf.readUInt32LE(p) !== 0x02014b50) throw kaputt();
-    const flags = buf.readUInt16LE(p + 8), methode = buf.readUInt16LE(p + 10), crc = buf.readUInt32LE(p + 16);
-    const csize = buf.readUInt32LE(p + 20), usize = buf.readUInt32LE(p + 24);
     const nlen = buf.readUInt16LE(p + 28), elen = buf.readUInt16LE(p + 30), klen = buf.readUInt16LE(p + 32);
-    const lokal = buf.readUInt32LE(p + 42);
-    const name = buf.toString('utf8', p + 46, p + 46 + nlen).replace(/\\/g, '/');
+    liste.push({
+      name: buf.toString('utf8', p + 46, p + 46 + nlen).replace(/\\/g, '/'), flags: buf.readUInt16LE(p + 8), methode: buf.readUInt16LE(p + 10), crc: buf.readUInt32LE(p + 16),
+      csize: buf.readUInt32LE(p + 20), usize: buf.readUInt32LE(p + 24), lokal: buf.readUInt32LE(p + 42),
+    });
     p += 46 + nlen + elen + klen;
+  }
+  return liste;
+}
+
+/** Dateinamen eines ZIP-Archivs, ohne zu entpacken (z. B. um eine Sammeldatei zu erkennen, #461). */
+export const zipNamen = (buf: Buffer, max = DATEIEN_MAX): string[] => zipEintraege(buf, max).map((x) => x.name);
+
+/** Liest ein ZIP-Archiv (gespeichert oder Deflate) mit Obergrenzen gegen ZIP-Bomben. */
+export function liesZip(buf: Buffer, grenzen: ZipGrenzen = PAKET_GRENZEN): Map<string, Buffer> {
+  const kaputt = () => new Fachfehler(422, 'Das Archiv ist kein gültiges ZIP.');
+  const dateien = new Map<string, Buffer>();
+  let gesamt = 0, code = 0;
+  for (const { name, flags, methode, crc, csize, usize, lokal } of zipEintraege(buf, grenzen.dateien)) {
     if (name.endsWith('/')) continue;
     if (flags & 1) throw new Fachfehler(422, 'Verschlüsselte Archive gehen nicht.');
     if (name.startsWith('/') || name.split('/').includes('..')) throw new Fachfehler(422, `Ungültiger Dateiname im Archiv: ${name}`);
+    if (dateien.has(name)) throw new Fachfehler(422, `Die Datei ${name} steht zweimal im Archiv.`);
     if (name.startsWith('code/')) code += usize; else gesamt += usize;
-    if (gesamt > ENTPACKT_MAX) throw new Fachfehler(422, 'Das Archiv ist entpackt zu groß.');
+    if (gesamt > grenzen.entpackt) throw new Fachfehler(422, 'Das Archiv ist entpackt zu groß.');
     // Grobe Obergrenze gegen ZIP-Bomben; die genaue Meldung zu code/ kommt aus liesCode.
     if (code > 2 * CODE_MAX) throw new Fachfehler(422, `Die Dateien unter code/ sind zu groß (höchstens ${CODE_MAX / 1048576} MB je Paket).`);
+    if (grenzen.budget && (grenzen.budget.rest -= usize) < 0) throw new Fachfehler(422, 'Die Pakete der Sammeldatei sind entpackt zusammen zu groß.');
     if (lokal + 30 > buf.length || buf.readUInt32LE(lokal) !== 0x04034b50) throw kaputt();
     const start = lokal + 30 + buf.readUInt16LE(lokal + 26) + buf.readUInt16LE(lokal + 28);
     const roh = buf.subarray(start, start + csize);
@@ -383,6 +401,70 @@ export interface Abruf { url: string; offiziell: boolean; katalog: Katalog | nul
 interface Hochgeladen { paket: Paket; von: Handelnder; am: string; zeit: number }
 const UPLOAD_GUELTIG = 30 * 60_000;
 
+/* ---------- Sammeldatei (#461) ---------- */
+
+/**
+ * Sammeldatei: ein ZIP mit dem Verzeichnis sammeldatei.json und den Paket-Archiven unter pakete/<id>-<version>.zip
+ * (unverändert aus dem Katalog), optional LIESMICH.txt. Format: dms-registry, schema/sammeldatei.schema.json.
+ */
+export const SAMMEL_VERZEICHNIS = 'sammeldatei.json';
+const SAMMEL_LIESMICH = 'LIESMICH.txt';
+/** Höchstens so groß ist eine Sammeldatei; so viele Pakete; entpackt alle Pakete zusammen höchstens. */
+export const SAMMEL_MAX = 64 * 1024 * 1024;
+export const SAMMEL_PAKETE_MAX = 50;
+const SAMMEL_ENTPACKT_MAX = 256 * 1024 * 1024;
+const VERZEICHNIS_MAX = 1024 * 1024;
+
+export interface SammelEintrag { id: string; version: string; name: string; archiv: string; sha256: string; groesse: number; gewaehlt: boolean }
+export interface SammelVerzeichnis { format: 1; erstellt: string; quelle: string; katalog: string; dms: string | null; pakete: SammelEintrag[] }
+
+/** Prüft sammeldatei.json; wirft mit allen Fehlern auf einmal. */
+export function liesSammelVerzeichnis(roh: Buffer | undefined): SammelVerzeichnis {
+  const ungueltig = (gruende: string[]) => new Fachfehler(422, 'Das ist keine gültige Sammeldatei.', { gruende });
+  if (!roh) throw ungueltig([`${SAMMEL_VERZEICHNIS} fehlt.`]);
+  if (roh.length > VERZEICHNIS_MAX) throw ungueltig([`${SAMMEL_VERZEICHNIS} ist zu groß.`]);
+  let j: unknown;
+  try { j = JSON.parse(roh.toString('utf8')); } catch { throw ungueltig([`${SAMMEL_VERZEICHNIS} ist kein gültiges JSON.`]); }
+  if (!istObjekt(j)) throw ungueltig([`${SAMMEL_VERZEICHNIS} ist leer.`]);
+  const fehler: string[] = [];
+  if (j.art !== 'dms-sammeldatei') fehler.push(`${SAMMEL_VERZEICHNIS}: „art“ muss „dms-sammeldatei“ sein.`);
+  if (j.format !== 1) fehler.push(`Sammeldatei-Format ${str(j.format) || '–'} kennt dieses DMS nicht – bitte das DMS aktualisieren.`);
+  const liste = Array.isArray(j.pakete) ? j.pakete : [];
+  if (!liste.length) fehler.push('Die Sammeldatei enthält keine Pakete.');
+  if (liste.length > SAMMEL_PAKETE_MAX) fehler.push(`Die Sammeldatei enthält mehr als ${SAMMEL_PAKETE_MAX} Pakete.`);
+  const pakete: SammelEintrag[] = [];
+  for (const [i, x] of liste.slice(0, SAMMEL_PAKETE_MAX).entries()) {
+    const wo = `pakete[${i + 1}]`;
+    if (!istObjekt(x)) { fehler.push(`${wo}: kein Eintrag.`); continue; }
+    const id = str(x.id), version = str(x.version);
+    if (!PAKET_ID.test(id)) { fehler.push(`${wo}: ungültige Id.`); continue; }
+    if (!VERSION.test(version)) { fehler.push(`${wo}: ungültige Version.`); continue; }
+    if (x.archiv !== `pakete/${id}-${version}.zip`) fehler.push(`${wo}: Archiv muss pakete/${id}-${version}.zip heißen.`);
+    if (!/^[0-9a-f]{64}$/.test(str(x.sha256))) fehler.push(`${wo}: ungültige Prüfsumme (sha256).`);
+    if (!Number.isInteger(x.groesse) || (x.groesse as number) <= 0 || (x.groesse as number) > ARCHIV_MAX) fehler.push(`${wo}: ungültige Größe.`);
+    if (pakete.some((p) => p.id === id)) fehler.push(`${wo}: „${id}“ steht zweimal in der Sammeldatei.`);
+    pakete.push({ id, version, name: str(x.name).trim().slice(0, 100) || id, archiv: `pakete/${id}-${version}.zip`, sha256: str(x.sha256), groesse: Number(x.groesse), gewaehlt: x.gewaehlt !== false });
+  }
+  if (fehler.length) throw ungueltig(fehler);
+  return { format: 1, erstellt: str(j.erstellt), quelle: str(j.quelle), katalog: str(j.katalog), dms: j.dms ? str(j.dms) : null, pakete };
+}
+
+/** Ein Paket der Sammeldatei, geprüft und zum Installieren bereit (Upload-Kennung wie beim einzelnen Hochladen). */
+export interface SammelPaket {
+  upload: string; id: string; name: string; version: string; gewaehlt: boolean; abhaengigkeiten: Record<string, string>;
+  /** Prüfsumme gegen den offiziellen Katalog: gleich, oder unbekannt (Katalog nicht abgerufen bzw. Version nicht darin). */
+  katalog: 'gleich' | 'unbekannt';
+  /** Gegenüber dem installierten Paket. */
+  stand: 'neu' | 'neuer' | 'gleich' | 'aelter';
+  installiert: string | null;
+  vorschau: Vorschau;
+}
+export interface Sammeldatei {
+  datei: { sha256: string; groesse: number; erstellt: string; quelle: string; katalog: string; dms: string | null };
+  /** In der Reihenfolge zum Installieren: Abhängigkeiten zuerst. */
+  pakete: SammelPaket[];
+}
+
 export class Paketverwaltung {
   private kataloge = new Map<string, { katalog: Katalog; zeit: number }>();
   private uploads = new Map<string, Hochgeladen>();
@@ -513,6 +595,70 @@ export class Paketverwaltung {
     this.uploads.set(upload, { paket, von, am: new Date().toISOString(), zeit: Date.now() });
     log.warn('Paket hochgeladen', { von: von.email, paket: paket.manifest.id, version: paket.manifest.version, bytes: daten.length });
     return { upload, vorschau: await this.plane(paket, undefined, await this.offiziell().catch(() => undefined)) };
+  }
+
+  /** Hochgeladene Datei (#461): eine Sammeldatei erkennt das DMS an sammeldatei.json, sonst ein einzelnes Paket. */
+  async hochladenDatei(daten: unknown, von: Handelnder): Promise<{ upload: string; vorschau: Vorschau } | { sammeldatei: Sammeldatei }> {
+    if (!Buffer.isBuffer(daten) || !daten.length) throw new Fachfehler(422, 'Bitte eine .zip-Datei hochladen.');
+    if (daten.length > SAMMEL_MAX) throw new Fachfehler(422, `Die Datei ist zu groß (höchstens ${SAMMEL_MAX / 1048576} MB).`);
+    if (zipNamen(daten).includes(SAMMEL_VERZEICHNIS)) return { sammeldatei: await this.sammeldatei(daten, von) };
+    return this.hochladen(daten, von);
+  }
+
+  /**
+   * Sammeldatei prüfen (#461) – alles oder nichts: Verzeichnis, nur erwartete Dateien, je Archiv Größe und
+   * SHA-256 wie im Verzeichnis, und gegen den offiziellen Katalog, falls er schon abgerufen ist (keine neue
+   * Verbindung). Danach jedes Paket mit denselben Prüfungen wie ein einzeln hochgeladenes (liesPaket).
+   * Installiert wird nichts; jedes Paket bekommt eine Upload-Kennung und wird einzeln installiert.
+   */
+  async sammeldatei(daten: Buffer, von: Handelnder): Promise<Sammeldatei> {
+    const dateien = liesZip(daten, { dateien: SAMMEL_PAKETE_MAX + 2, entpackt: SAMMEL_MAX });
+    const vz = liesSammelVerzeichnis(dateien.get(SAMMEL_VERZEICHNIS));
+    const gruende: string[] = [];
+    const erwartet = new Set([SAMMEL_VERZEICHNIS, SAMMEL_LIESMICH, ...vz.pakete.map((p) => p.archiv)]);
+    for (const n of dateien.keys()) if (!erwartet.has(n)) gruende.push(`${n}: steht nicht im Verzeichnis der Sammeldatei.`);
+    const katalog = await this.offiziell();
+    const imKatalog = (e: SammelEintrag) => katalog?.pakete.find((p) => p.id === e.id)?.versionen.find((v) => v.version === e.version);
+    for (const e of vz.pakete) {
+      const a = dateien.get(e.archiv);
+      if (!a) { gruende.push(`${e.archiv} fehlt.`); continue; }
+      if (a.length !== e.groesse) gruende.push(`${e.name} ${e.version}: Die Größe passt nicht zum Verzeichnis.`);
+      else if (createHash('sha256').update(a).digest('hex') !== e.sha256) gruende.push(`${e.name} ${e.version}: Die Prüfsumme passt nicht zum Verzeichnis.`);
+      const kv = imKatalog(e);
+      if (kv && kv.sha256 !== e.sha256) gruende.push(`${e.name} ${e.version}: Die Prüfsumme passt nicht zum offiziellen Katalog.`);
+    }
+    if (gruende.length) throw new Fachfehler(422, 'Die Sammeldatei ist beschädigt oder verändert. Es wird nichts installiert.', { gruende });
+    const budget = { rest: SAMMEL_ENTPACKT_MAX };
+    const gelesen = vz.pakete.map((e) => {
+      let paket: Paket;
+      try { paket = liesPaket(liesZip(dateien.get(e.archiv)!, { ...PAKET_GRENZEN, budget })); }
+      catch (x) {
+        if (!(x instanceof Fachfehler)) throw x;
+        throw new Fachfehler(422, `${e.name} ${e.version} in der Sammeldatei: ${x.message} Es wird nichts installiert.`, x.details);
+      }
+      if (paket.manifest.id !== e.id || paket.manifest.version !== e.version) throw new Fachfehler(422, `Das Archiv ${e.archiv} enthält ${paket.manifest.id} ${paket.manifest.version}. Es wird nichts installiert.`);
+      return { e, paket, id: e.id, abhaengigkeiten: paket.manifest.abhaengigkeiten };
+    });
+    const reihenfolge = nachAbhaengigkeiten(gelesen);
+    if (!reihenfolge) throw new Fachfehler(422, 'Die Abhängigkeiten der Pakete in der Sammeldatei bilden einen Kreis. Es wird nichts installiert.');
+    for (const [k, u] of this.uploads) if (Date.now() - u.zeit > UPLOAD_GUELTIG) this.uploads.delete(k);
+    const am = new Date().toISOString();
+    const installierte = await this.d.listePakete();
+    const pakete: SammelPaket[] = [];
+    for (const { e, paket } of reihenfolge) {
+      const upload = randomUUID();
+      this.uploads.set(upload, { paket, von, am, zeit: Date.now() });
+      const da = installierte.find((p) => p.id === e.id)?.version ?? null;
+      const c = da ? vergleicheVersion(e.version, da) : 1;
+      pakete.push({
+        upload, id: e.id, name: paket.manifest.name, version: e.version, gewaehlt: e.gewaehlt, abhaengigkeiten: paket.manifest.abhaengigkeiten,
+        katalog: imKatalog(e) ? 'gleich' : 'unbekannt', installiert: da, stand: !da ? 'neu' : c > 0 ? 'neuer' : c === 0 ? 'gleich' : 'aelter',
+        vorschau: await this.plane(paket, undefined, katalog),
+      });
+    }
+    const sha256 = createHash('sha256').update(daten).digest('hex');
+    log.warn('Sammeldatei hochgeladen', { von: von.email, sha256, bytes: daten.length, pakete: pakete.map((p) => `${p.id}@${p.version}`).join(', '), katalog: pakete.every((p) => p.katalog === 'gleich') ? 'abgeglichen' : 'nicht abgeglichen' });
+    return { datei: { sha256, groesse: daten.length, erstellt: vz.erstellt, quelle: vz.quelle, katalog: vz.katalog, dms: vz.dms }, pakete };
   }
 
   private hochgeladen(token: unknown): Hochgeladen {

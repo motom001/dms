@@ -1,6 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { auswahlMitAbhaengigkeiten, dmsPasst, vergleicheVersion, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, type RechtePunkt } from '../../../shared/src/pakete';
-import { api, type PaketVorschau } from '../api';
+import { useEffect, useState } from 'react';
+import { auswahlMitAbhaengigkeiten, dmsPasst, herkunftText, KATALOG_SEITE, vergleicheVersion, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, type RechtePunkt } from '../../../shared/src/pakete';
+import { api, ApiFehler, type PaketVorschau, type Sammeldatei, type SammelPaket } from '../api';
 import { Hilfe } from '../Hilfe';
 import { alsMeldung, MeldungBox, VorschauBlock, type Meldung } from './Pakete';
 
@@ -109,10 +109,10 @@ function RechteAufWunsch({ id, version }: { id: string; version: string }) {
 
 /**
  * Auswahl aus dem offiziellen Katalog und Installation, z. B. im Einrichtungsassistenten (#460).
- * ohneKatalog: Inhalt, wenn der Katalog nicht erreichbar ist (z. B. Sammeldatei hochladen, #461).
+ * Ist der Katalog nicht erreichbar: Sammeldatei hochladen (#461) oder überspringen.
  */
-export function PaketeDazuholen({ weiter, ueberspringen, ohneKatalog, geaendert }: {
-  weiter(e: Ergebnis[]): void; ueberspringen(): void; ohneKatalog?: ReactNode;
+export function PaketeDazuholen({ weiter, ueberspringen, geaendert }: {
+  weiter(e: Ergebnis[]): void; ueberspringen(): void;
   /** Nach jeder Installation (z. B. Daten neu laden). */
   geaendert?(): void;
 }) {
@@ -123,6 +123,7 @@ export function PaketeDazuholen({ weiter, ueberspringen, ohneKatalog, geaendert 
   const [gewaehlt, setGewaehlt] = useState<string[] | null>(null);
   const [phase, setPhase] = useState<'auswahl' | 'installieren' | 'fertig'>('auswahl');
   const [ergebnisse, setErgebnisse] = useState<Ergebnis[]>([]);
+  const [sammel, setSammel] = useState<{ s: Sammeldatei; datei: string } | null>(null);
   useEffect(() => {
     let aktuell = true;
     setFehler(undefined); setKatalog(null);
@@ -141,13 +142,27 @@ export function PaketeDazuholen({ weiter, ueberspringen, ohneKatalog, geaendert 
     return () => { aktuell = false; };
   }, [versuch]);
 
+  if (phase === 'fertig') return (
+    <>
+      <ErgebnisListe e={ergebnisse} />
+      <div className="knoepfe"><button type="button" className="knopf primaer" onClick={() => weiter(ergebnisse)}>Weiter</button></div>
+    </>
+  );
+  if (sammel && stand) return (
+    // Die Ansicht zeigt das Ergebnis schon selbst – „Weiter“ dort führt direkt zum nächsten Schritt.
+    <SammeldateiAnsicht s={sammel.s} datei={sammel.datei} dms={stand.dms} geaendert={geaendert} abbrechen={() => setSammel(null)} fertig={weiter} />
+  );
   if (fehler) return (
     <>
       <div className="hinweis warn" role="status">
         <p><strong>Der Paketkatalog ist gerade nicht erreichbar.</strong> Ohne Internet fehlen die Pakete – etwa die Texterkennung, ohne die gescannte Dokumente nicht durchsuchbar sind.</p>
         <p className="leise klein">{fehler}</p>
       </div>
-      {ohneKatalog ?? <p className="leise">Du kannst Pakete später unter Werkbank → Pakete holen, sobald das DMS ins Internet kommt.</p>}
+      <section className="stapel" aria-label="Ohne Internet">
+        <h2 className="h3">Ohne Internet: Sammeldatei hochladen</h2>
+        <p className="leise">Stell die Pakete an einem Gerät mit Internet auf der <a className="verweis" href={sammelSeite(stand?.dms ?? '')} target="_blank" rel="noreferrer">Katalog-Webseite ↗</a> zusammen (die Texterkennung ist dort vorausgewählt) und lade die heruntergeladene Datei hier hoch. Oder überspring den Schritt und hol die Pakete später unter Werkbank → Pakete. <Hilfe ort="werkbank.pakete.sammeldatei" /></p>
+        {stand && <SammeldateiWahl geladen={(x, datei) => setSammel({ s: x, datei })} />}
+      </section>
       <div className="knoepfe">
         <button type="button" className="knopf" onClick={ueberspringen}>Überspringen</button>
         <button type="button" className="knopf" onClick={() => setVersuch((n) => n + 1)}>Nochmal versuchen</button>
@@ -175,13 +190,6 @@ export function PaketeDazuholen({ weiter, ueberspringen, ohneKatalog, geaendert 
       }))}
       fertig={(e) => { setErgebnisse(e); setPhase('fertig'); }} />
   );
-  if (phase === 'fertig') return (
-    <>
-      <ErgebnisListe e={ergebnisse} />
-      <div className="knoepfe"><button type="button" className="knopf primaer" onClick={() => weiter(ergebnisse)}>Weiter</button></div>
-    </>
-  );
-
   return (
     <>
       {!angebot.length ? <p className="leise">Alle Pakete des Katalogs sind schon installiert.</p> : (
@@ -224,5 +232,118 @@ export function PaketeDazuholen({ weiter, ueberspringen, ohneKatalog, geaendert 
         </button>
       </div>
     </>
+  );
+}
+
+/* ---------- Sammeldatei (#461) ---------- */
+
+/** Adresse der Katalog-Webseite zum Zusammenstellen einer Sammeldatei – mit der Version dieses DMS. */
+export const sammelSeite = (dms: string) => `${KATALOG_SEITE}sammeldatei.html${/^\d+\.\d+\.\d+$/.test(dms) ? `?dms=${encodeURIComponent(dms)}` : ''}`;
+
+/** Datei wählen und hochladen: eine Sammeldatei (oder ein einzelnes Paket, falls gewollt). */
+export function SammeldateiWahl({ geladen, einzeln }: { geladen(s: Sammeldatei, datei: string): void; einzeln?(r: { upload: string; vorschau: PaketVorschau }, datei: string): void }) {
+  const [fehler, setFehler] = useState<string>();
+  const [laedt, setLaedt] = useState(false);
+  async function hochladen(f: File | undefined) {
+    if (!f) return;
+    setFehler(undefined); setLaedt(true);
+    try {
+      const r = await api.paketHochladen(f);
+      if ('sammeldatei' in r) geladen(r.sammeldatei, f.name);
+      else if (einzeln) einzeln(r, f.name);
+      else setFehler('Das ist ein einzelnes Paket, keine Sammeldatei. Einzelne Pakete lädst du unter Werkbank → Pakete → Expertenmodus hoch.');
+    } catch (e) { setFehler([(e as Error).message, ...(e instanceof ApiFehler ? e.gruende : [])].join(' ')); }
+    finally { setLaedt(false); }
+  }
+  return (
+    <div className="stapel">
+      <label className="pd-datei">
+        <span className="knopf">{laedt ? 'Prüfe …' : 'Sammeldatei wählen …'}</span>
+        <input type="file" accept=".zip,application/zip" disabled={laedt} aria-label="Sammeldatei (.zip) hochladen" onChange={(e) => { void hochladen(e.target.files?.[0]); e.target.value = ''; }} />
+      </label>
+      {fehler && <p className="fehlertext klein" role="alert">{fehler}</p>}
+    </div>
+  );
+}
+
+/** Was mit einem Paket der Sammeldatei passiert. */
+function sammelStand(p: SammelPaket): { text: string; chip: 'gut' | 'warn' | '' ; installierbar: boolean } {
+  if (p.stand === 'gleich') return { text: `schon installiert (${p.installiert})`, chip: '', installierbar: false };
+  if (p.stand === 'aelter') return { text: `älter als installiert (${p.installiert})`, chip: '', installierbar: false };
+  if (!p.vorschau.dmsOk) return { text: `braucht DMS ${p.vorschau.paket.dms}`, chip: 'warn', installierbar: false };
+  if (p.stand === 'neuer' && p.vorschau.herkunft?.art === 'katalog') return { text: `Update von ${p.installiert} – stammt aus dem Katalog, Updates nur von dort`, chip: 'warn', installierbar: false };
+  if (p.stand === 'neuer') return { text: `Update von ${p.installiert}`, chip: 'gut', installierbar: true };
+  return { text: 'neu', chip: 'gut', installierbar: true };
+}
+
+/**
+ * Inhalt einer Sammeldatei zeigen und nacheinander installieren (#461). Die Prüfsummen hat der Server schon
+ * geprüft; die Herkunft bestätigst du einmal für die Datei, die Rechte je Paket mit Code.
+ */
+export function SammeldateiAnsicht({ s, datei, dms, fertig, abbrechen, geaendert }: {
+  s: Sammeldatei; datei: string; dms: string; fertig(e: Ergebnis[]): void; abbrechen(): void; geaendert?(): void;
+}) {
+  const [herkunftOk, setHerkunftOk] = useState(false);
+  const [phase, setPhase] = useState<'inhalt' | 'installieren' | 'fertig'>('inhalt');
+  const [ergebnisse, setErgebnisse] = useState<Ergebnis[]>([]);
+  const zuInstallieren = s.pakete.filter((p) => sammelStand(p).installierbar);
+  const abgeglichen = s.pakete.every((p) => p.katalog === 'gleich');
+  const name = (id: string) => s.pakete.find((p) => p.id === id)?.name ?? id;
+  const datum = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso || '–' : d.toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }); };
+
+  if (phase === 'installieren') return (
+    <Nacheinander
+      schritte={zuInstallieren.map((p): Schritt => ({
+        schluessel: p.upload, name: p.name, version: p.version, fuer: p.gewaehlt ? undefined : s.pakete.filter((x) => p.id in x.abhaengigkeiten).map((x) => x.name),
+        vorschau: () => api.paketVorschau({ upload: p.upload }),
+        installieren: async (x) => { const r = await api.paketInstallieren({ upload: p.upload, bestaetigt: true, ...x, mitAbhaengigkeiten: false }); geaendert?.(); return r; },
+      }))}
+      fertig={(e) => { setErgebnisse(e); setPhase('fertig'); }} />
+  );
+  if (phase === 'fertig') return (
+    <>
+      <ErgebnisListe e={ergebnisse} />
+      <div className="knoepfe"><button type="button" className="knopf primaer" onClick={() => fertig(ergebnisse)}>Weiter</button></div>
+    </>
+  );
+  return (
+    <section className="blatt stapel" aria-label="Sammeldatei">
+      <h2 className="h3">Sammeldatei „{datei}“</h2>
+      <dl className="eigenschaften">
+        <dt>Zusammengestellt</dt><dd>{datum(s.datei.erstellt)}{s.datei.dms ? ` für DMS ${s.datei.dms}` : ''} (dieses DMS: {dms})</dd>
+        <dt>Prüfwert der Datei</dt><dd><code className="pd-pruefwert" title={s.datei.sha256}>SHA-256 {s.datei.sha256}</code></dd>
+      </dl>
+      <div className="hinweis gut klein"><p><strong>Geprüft:</strong> Jedes Archiv hat genau die Größe und Prüfsumme aus dem Verzeichnis der Sammeldatei, jedes Paket ist gültig, und es liegt nichts anderes darin.
+        {abgeglichen ? ' Alle Prüfsummen stimmen außerdem mit dem offiziellen Katalog überein.' : ' Mit dem offiziellen Katalog konnte das DMS sie nicht abgleichen (nicht abgerufen oder ohne Internet).'}</p></div>
+      <ul className="pd-liste" aria-label="Pakete in der Sammeldatei">
+        {s.pakete.map((p) => {
+          const st = sammelStand(p);
+          const fuer = s.pakete.filter((x) => p.id in x.abhaengigkeiten).map((x) => x.name);
+          return (
+            <li key={p.upload} className={st.installierbar ? 'an' : undefined}>
+              <span><strong>{p.name}</strong> <span className="leise klein">{p.version}</span> <span className={`chip ${st.chip}`}>{st.text}</span>
+                {p.vorschau.laeufer && <> <span className="chip">mit Code</span></>}</span>
+              <div className="klein leise">{p.vorschau.paket.beschreibung}</div>
+              {(!p.gewaehlt || fuer.length > 0) && <div className="klein leise">{!p.gewaehlt ? 'Als Abhängigkeit dabei' : 'Gebraucht'}{fuer.length ? ` – gebraucht von ${fuer.join(', ')}` : ''}.</div>}
+              {Object.keys(p.abhaengigkeiten).length > 0 && <div className="klein leise">Braucht: {Object.entries(p.abhaengigkeiten).map(([k, b]) => `${name(k)} ${b}`).join(', ')}</div>}
+              {p.vorschau.herkunft && p.stand !== 'neu' && <div className="klein leise">Installiert: {herkunftText(p.vorschau.herkunft)}</div>}
+            </li>
+          );
+        })}
+      </ul>
+      {zuInstallieren.length > 0 ? (
+        <div className="hinweis warn" role="alert">
+          <p><strong>Nicht über das Internet vom DMS-Projekt bestätigt.</strong> Die Prüfsummen zeigen, dass die Datei vollständig und seit dem Zusammenstellen unverändert ist – nicht, wer sie zusammengestellt hat. Installiere nur eine Sammeldatei, die du selbst aus dem offiziellen Paketkatalog geladen hast oder deren Herkunft du kennst.</p>
+          <label className="haken"><input type="checkbox" checked={herkunftOk} onChange={(e) => setHerkunftOk(e.target.checked)} /><span>Ich weiß, woher die Sammeldatei stammt, und installiere auf eigene Verantwortung.</span></label>
+        </div>
+      ) : <p className="leise">In dieser Sammeldatei ist nichts zu installieren.</p>}
+      <p className="leise klein">Installiert wird Paket für Paket, Abhängigkeiten zuerst. Jedes zeigt vorher, was es anlegt; Pakete mit Code fragen einzeln nach ihren Rechten. Als Herkunft steht danach „hochgeladen von … am …“.</p>
+      <div className="knoepfe">
+        <button type="button" className="knopf primaer" disabled={!zuInstallieren.length || !herkunftOk} onClick={() => setPhase('installieren')}>
+          {zuInstallieren.length ? `${zuInstallieren.length} ${zuInstallieren.length === 1 ? 'Paket' : 'Pakete'} nacheinander installieren …` : 'Installieren'}
+        </button>
+        <button type="button" className="textknopf" onClick={abbrechen}>Abbrechen</button>
+      </div>
+    </section>
   );
 }

@@ -73,7 +73,7 @@ Erst in diesem Schritt fragt das DMS den [offiziellen Paketkatalog](pakete.md) a
 - Danach installiert das DMS die Pakete **nacheinander**, Abhängigkeiten zuerst. Jedes zeigt seine eigene Vorschau; ein Paket mit Code installierst du erst, wenn du **seine** Rechte bestätigt hast – eine Sammelbestätigung gibt es nicht. Mit **Auslassen** überspringst du ein einzelnes Paket.
 - **Überspringen** geht jederzeit; Pakete holst du später unter **Werkbank → [Pakete](pakete.md)**.
 
-Ist der Katalog nicht erreichbar (kein Internet), sagt der Schritt das deutlich: Es fehlen dann die Pakete, etwa die Texterkennung. Überspringe ihn und hol die Pakete später nach.
+Ist der Katalog nicht erreichbar (kein Internet), sagt der Schritt das deutlich: Es fehlen dann die Pakete, etwa die Texterkennung. Dann lädst du hier eine **Sammeldatei** hoch, die du an einem anderen Gerät auf der Katalog-Webseite zusammengestellt hast (siehe [Pakete ohne Internet installieren](pakete.md#pakete-ohne-internet-installieren)) – oder du überspringst den Schritt und holst die Pakete später nach.
 
 ### Optionales
 

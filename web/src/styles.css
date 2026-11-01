@@ -1174,6 +1174,10 @@ a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
 .pd-fortschritt { margin: 0; padding-left: 20px; display: grid; gap: 2px; font-size: calc(13px * var(--skala, 1)); color: var(--leise); }
 .pd-fortschritt li.aktiv { color: inherit; font-weight: 600; }
 .pd-fortschritt li.installiert::marker { color: var(--gruen); }
+.pd-datei { position: relative; display: inline-flex; align-self: flex-start; cursor: pointer; }
+.pd-datei input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+.pd-datei:focus-within .knopf { outline: 2px solid var(--akzent); outline-offset: 2px; }
+.pd-pruefwert { overflow-wrap: anywhere; word-break: break-all; }
 .umbrechen { overflow-wrap: anywhere; }
 
 /* Einrichtungsassistent (#278): Hilfe je Schritt, gut sichtbar oben rechts */

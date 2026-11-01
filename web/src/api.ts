@@ -492,7 +492,8 @@ export const api = {
   paketQuelleHinzu: (url: string) => anfrage<PaketQuelle[]>('POST', '/api/werkbank/pakete/quellen', { url }),
   paketQuelleSchalten: (url: string, aktiv: boolean) => anfrage<PaketQuelle[]>('PUT', '/api/werkbank/pakete/quellen', { url, aktiv }),
   paketQuelleEntfernen: (url: string) => anfrage<PaketQuelle[]>('DELETE', `/api/werkbank/pakete/quellen?${new URLSearchParams({ url })}`),
-  paketHochladen: (datei: File) => sendeDatei('/api/werkbank/pakete/hochladen', datei) as Promise<{ upload: string; vorschau: PaketVorschau }>,
+  /** Ein Paket oder eine Sammeldatei mit mehreren Paketen (#461) – das DMS erkennt es am Inhalt. */
+  paketHochladen: (datei: File) => sendeDatei('/api/werkbank/pakete/hochladen', datei) as Promise<{ upload: string; vorschau: PaketVorschau } | { sammeldatei: Sammeldatei }>,
   paketVorschau: (e: { id?: string; version?: string; quelle?: string; upload?: string }) => anfrage<PaketVorschau>('POST', '/api/werkbank/pakete/vorschau', e),
   paketInstallieren: (e: { id?: string; version?: string; quelle?: string; upload?: string; bestaetigt?: boolean; rechteBestaetigt?: boolean; namen?: Record<string, string>; sichtNamen?: Record<string, string>; beispiele?: boolean; mitAbhaengigkeiten?: boolean }) => anfrage<InstalliertesPaket>('POST', '/api/werkbank/pakete/installieren', e),
   paketUpdates: () => anfrage<Array<{ id: string; installiert: string; neu: string; changelog: string | null; quelle: string }>>('POST', '/api/werkbank/pakete/updates'),
@@ -678,6 +679,12 @@ export interface PaketVorschau {
   /** Paket mit Code (#338): Rechte, Netzwerkzugriff und Ereignisse (#449); bestaetigen = muss ausdrücklich erlaubt werden. */
   laeufer?: { rechte: RechtePunkt[]; bestaetigen: boolean } | null;
 }
+/** Sammeldatei (#461): geprüft, Pakete in der Reihenfolge zum Installieren (Abhängigkeiten zuerst). */
+export interface SammelPaket {
+  upload: string; id: string; name: string; version: string; gewaehlt: boolean; abhaengigkeiten: Record<string, string>;
+  katalog: 'gleich' | 'unbekannt'; stand: 'neu' | 'neuer' | 'gleich' | 'aelter'; installiert: string | null; vorschau: PaketVorschau;
+}
+export interface Sammeldatei { datei: { sha256: string; groesse: number; erstellt: string; quelle: string; katalog: string; dms: string | null }; pakete: SammelPaket[] }
 /** Paket-Läufer (#338): Stand je Paket mit Code. */
 export interface PaketlaeuferStand {
   laeuft: boolean; pausiert: boolean; grenzen: { speicherMB: number; sekunden: number; parallel: number };

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Symbol } from '../Symbol';
 import { herkunftText, laeuferZustandText, vergleicheVersion, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
-import { api, ApiFehler, type PaketlaeuferStand, type PaketQuelle, type PaketVorschau } from '../api';
+import { api, ApiFehler, type PaketlaeuferStand, type PaketQuelle, type PaketVorschau, type Sammeldatei } from '../api';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { darfVerlassen, geheZu, Link } from '../ort';
@@ -9,6 +9,7 @@ import { PaketEinstellungen } from './PaketEinstellungen';
 import { PaketErstellen } from './PaketErstellen';
 import { rueckfrage } from '../rueckfrage';
 import { useKonto } from '../konto';
+import { sammelSeite, SammeldateiAnsicht, SammeldateiWahl } from './PaketeDazuholen';
 
 /**
  * Werkbank → Pakete (#188): Konfigurationspakete aus dem offiziellen Katalog.
@@ -23,6 +24,8 @@ const host = (url: string) => { try { return new URL(url).host; } catch { return
 export const UPLOAD = '~hochgeladen';
 /** Assistent „Paket erstellen“ (#374). */
 export const ERSTELLEN = '~erstellen';
+/** Hochgeladene Sammeldatei mit mehreren Paketen (#461). */
+export const SAMMEL = '~sammeldatei';
 
 /**
  * Abschnitt „Expertenmodus“ auf- oder zugeklappt (#369): reiner Komfort, kein Recht – gemerkt im
@@ -47,6 +50,7 @@ export function usePakete(offen: boolean) {
   const [kataloge, setKataloge] = useState<{ liste: Abruf[]; abgerufen: string } | null>(null);
   const [updates, setUpdates] = useState<Array<{ id: string; installiert: string; neu: string; changelog: string | null; quelle: string }> | null>(null);
   const [upload, setUpload] = useState<{ upload: string; vorschau: PaketVorschau; datei: string } | null>(null);
+  const [sammel, setSammel] = useState<{ sammeldatei: Sammeldatei; datei: string } | null>(null);
   const [fehler, setFehler] = useState<string>();
   const [laedt, setLaedt] = useState(false);
   const laden = useCallback(async () => { try { setStand(await api.pakete()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
@@ -67,7 +71,7 @@ export function usePakete(offen: boolean) {
     const kp = k?.katalog?.pakete.find((p) => p.id === id);
     return kp && k ? { kp, url: k.url, offiziell: k.offiziell } : undefined;
   };
-  return { stand, kataloge, updates, upload, setUpload, fehler, laedt, laden, abrufen, pruefen, paketAus, setStand };
+  return { stand, kataloge, updates, upload, setUpload, sammel, setSammel, fehler, laedt, laden, abrufen, pruefen, paketAus, setStand };
 }
 export type PaketeZustand = ReturnType<typeof usePakete>;
 
@@ -82,7 +86,12 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
   async function hochladen(f: File | undefined) {
     if (!f) return;
     setHochFehler(undefined);
-    try { const r = await api.paketHochladen(f); z.setUpload({ ...r, datei: f.name }); geheZu(`/werkbank/pakete/${UPLOAD}`); }
+    try {
+      const r = await api.paketHochladen(f);
+      // Eine Sammeldatei (#461) erkennt das DMS selbst.
+      if ('sammeldatei' in r) { z.setSammel({ sammeldatei: r.sammeldatei, datei: f.name }); geheZu(`/werkbank/pakete/${SAMMEL}`); }
+      else { z.setUpload({ ...r, datei: f.name }); geheZu(`/werkbank/pakete/${UPLOAD}`); }
+    }
     catch (e) { setHochFehler([(e as Error).message, ...(e instanceof ApiFehler ? e.gruende : [])].join(' ')); }
   }
   return (
@@ -94,12 +103,13 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
         <button type="button" className="knopf klein" disabled={z.laedt} onClick={() => void z.abrufen()}>{z.laedt ? 'Frage ab …' : 'Katalog abrufen'}</button>
         {installiert.length > 0 && <button type="button" className="knopf klein" disabled={z.laedt} onClick={() => void z.pruefen()}>Auf neue Versionen prüfen</button>}
         <Link to={`/werkbank/pakete/${ERSTELLEN}`} className={`knopf klein ${offen === ERSTELLEN ? 'an' : ''}`}>Paket erstellen</Link>
+        <Link to={`/werkbank/pakete/${SAMMEL}`} className={`knopf klein ${offen === SAMMEL ? 'an' : ''}`}>Ohne Internet …</Link>
       </div>
       <section className="aufklappbereich">
         <button type="button" className="aufklappkopf" aria-expanded={experte} aria-controls="pakete-experte" onClick={() => setExperte(!experte)}>
           <span className="zeichen" aria-hidden="true">{experte ? '▾' : '▸'}</span>
           <span>Expertenmodus</span>
-          <span className="leise klein">Weitere Quellen, Paket hochladen</span>
+          <span className="leise klein">Weitere Quellen, Paket oder Sammeldatei hochladen</span>
         </button>
         {experte && (
           <div id="pakete-experte" className="aufklappinhalt">
@@ -107,8 +117,8 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
             <h2 className="ueber">Weitere Quellen</h2>
             <Quellen z={z} />
             <h2 className="ueber">Paket hochladen</h2>
-            <p className="leise klein">Eine <code>.zip</code>-Datei im Format der Registry, z. B. zum Testen eines eigenen Pakets oder ohne Internet.</p>
-            <input type="file" accept=".zip,application/zip" aria-label="Paket als ZIP hochladen" onChange={(e) => { void hochladen(e.target.files?.[0]); e.target.value = ''; }} />
+            <p className="leise klein">Eine <code>.zip</code>-Datei im Format der Registry, z. B. zum Testen eines eigenen Pakets, oder eine Sammeldatei mit mehreren Paketen aus dem Katalog (ohne Internet).</p>
+            <input type="file" accept=".zip,application/zip" aria-label="Paket oder Sammeldatei als ZIP hochladen" onChange={(e) => { void hochladen(e.target.files?.[0]); e.target.value = ''; }} />
             {hochFehler && <p className="fehlertext klein">{hochFehler}</p>}
           </div>
         )}
@@ -185,6 +195,7 @@ export function PaketePanel({ z, id }: { z: PaketeZustand; id?: string }) {
     </div>
   );
   if (id === UPLOAD) return <UploadDetail z={z} />;
+  if (id === SAMMEL) return <SammelDetail z={z} />;
   if (id === ERSTELLEN) return <PaketErstellen />;
   const quelle = new URLSearchParams(location.search).get('quelle') ?? undefined;
   return <PaketDetail key={`${id}|${quelle ?? ''}`} z={z} id={id} quelle={quelle} />;
@@ -252,6 +263,28 @@ export const alsMeldung = (e: unknown): Meldung => ({ art: 'schlecht', text: (e 
 
 export function MeldungBox({ m }: { m?: Meldung }) {
   return m ? <div className={`hinweis ${m.art}`} role="status"><p>{m.text}</p>{!!m.gruende?.length && <ul>{m.gruende.map((g) => <li key={g}>{g}</li>)}</ul>}</div> : null;
+}
+
+/**
+ * Pakete ohne Internet (#461): Sammeldatei aus der Katalog-Webseite hochladen, Inhalt ansehen und Paket für
+ * Paket installieren.
+ */
+function SammelDetail({ z }: { z: PaketeZustand }) {
+  const d = useDaten();
+  const dms = z.stand?.dms ?? '';
+  const s = z.sammel;
+  return (
+    <div className="einspaltig">
+      <div className="mappenkopf"><p className="ueber">Pakete ohne Internet</p><h1>Sammeldatei hochladen</h1>
+        <p className="leise">Kommt dein DMS nicht ins Internet, stellst du die Pakete an einem anderen Gerät auf der <a className="verweis" href={sammelSeite(dms)} target="_blank" rel="noreferrer">Katalog-Webseite ↗</a> zusammen – Abhängigkeiten kommen automatisch mit – und lädst die eine Datei hier hoch. <Hilfe ort="werkbank.pakete.sammeldatei" /></p>
+      </div>
+      {!s ? <SammeldateiWahl geladen={(x, datei) => z.setSammel({ sammeldatei: x, datei })} einzeln={(r, datei) => { z.setUpload({ ...r, datei }); geheZu(`/werkbank/pakete/${UPLOAD}`); }} />
+        : <SammeldateiAnsicht key={s.sammeldatei.datei.sha256} s={s.sammeldatei} datei={s.datei} dms={dms}
+            geaendert={() => { void z.laden(); void d.neuLaden(); }}
+            abbrechen={() => z.setSammel(null)}
+            fertig={() => { z.setSammel(null); void z.laden(); geheZu('/werkbank/pakete'); }} />}
+    </div>
+  );
 }
 
 function UploadDetail({ z }: { z: PaketeZustand }) {
