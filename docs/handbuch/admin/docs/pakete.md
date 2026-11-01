@@ -102,7 +102,19 @@ Manche Pakete bringen **Code** mit – etwa eine eigene Texterkennung oder Regel
 - **Grenzen:** Jeder Aufruf hat höchstens 256 MB Speicher und 2 Minuten Zeit; es laufen höchstens zwei Aufrufe gleichzeitig. Was die Grenzen reißt, bricht ab, ohne das DMS zu stören.
 - **Wiederholen:** Ereignisse merkt sich das DMS. Scheitert ein Aufruf, versucht es der Läufer nach 1, 5, 30, 120 und 360 Minuten erneut und gibt dann auf. Während einer Wartung (z. B. beim Wiederherstellen) ruht der Läufer.
 
-**Werkbank → Pakete → *Paket*** zeigt im Abschnitt **Paket-Läufer**, ob der Läufer läuft, die letzten Aufrufe mit Dauer und Speicher, offene und aufgegebene Ereignisse und das Protokoll des Pakets. Meldungen stehen zusätzlich im [Protokoll](fehlersuche.md#protokoll) des DMS.
+**Werkbank → Pakete → *Paket*** zeigt im Abschnitt **Paket-Läufer** den Stand, die letzten Aufrufe mit Dauer und Speicher, offene und aufgegebene Ereignisse und das Protokoll des Pakets. Meldungen stehen zusätzlich im [Protokoll](fehlersuche.md#protokoll) des DMS. Der **Stand** ist einer von diesen:
+
+| Stand | Bedeutung |
+|---|---|
+| **startet …** | Der Läufer startet oder lädt das Modul des Pakets – etwa direkt nach der Installation. Die Seite fragt von selbst nach. |
+| **bereit – wartet auf das erste Ereignis** | Das Modul ist geladen; das Paket wurde aber noch nie aufgerufen. Es läuft, sobald ein Ereignis kommt, auf das es reagiert, oder du eine Aktion auslöst. |
+| **bereit** | Das Modul ist geladen und wurde schon aufgerufen. |
+| **abgestürzt um … – startet neu …** | Der Läufer-Prozess ist abgestürzt. Das DMS startet ihn nach einer kurzen Pause selbst neu (bei wiederholten Abstürzen wartet es länger, höchstens eine Minute). Ereignisse gehen dabei nicht verloren. |
+| **neu gestartet nach Absturz um …** | Der Läufer läuft wieder; die Zeit nennt den letzten Absturz. Die Ursache steht im Protokoll des DMS. |
+| **pausiert (Wartungsmodus)** | Während einer Wartung ruht der Läufer. |
+| *Fehlermeldung in Rot* | Das Modul ließ sich nicht laden (z. B. fehlt der Code nach einer Wiederherstellung) – das Paket neu installieren. |
+
+Schlägt ein **Update** fehl, bleibt die alte Version mit ihrem alten Code installiert. Den Code aller Dateien unter `code/` begrenzt das DMS auf **32 MB je Paket**.
 
 **Entfernen** beendet den Code, löscht seine offenen Ereignisse und seinen Speicher und schaltet das Dienstkonto ab.
 

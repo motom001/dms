@@ -177,10 +177,18 @@ export interface PaketCode {
 const SPRACHEN = ['rust', 'go', 'c', 'assemblyscript', 'javascript'];
 const TYPVERWEIS_ODER_ALLE = /^(\*|([a-z][a-z0-9_]{1,19}:)?[a-z][a-z0-9_]{0,39})$/;
 
-/** Liest code: aus dem Manifest (ohne einstellungen/aktionen – die liest paketeinstellungen.ts). */
-export function liesCode(c: unknown): { code: PaketCode | null; fehler: string[] } {
-  if (c === undefined || c === null) return { code: null, fehler: [] };
+/** Höchstens so groß sind alle Dateien unter code/ eines Pakets zusammen (#403); dms-registry prüft dieselbe Grenze. */
+export const CODE_MAX = 32 * 1024 * 1024;
+
+/**
+ * Liest code: aus dem Manifest (ohne einstellungen/aktionen – die liest paketeinstellungen.ts).
+ * dateien: Dateien unter code/ des Pakets (Name, Größe in Bytes) für die Größengrenze.
+ */
+export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: number }> = []): { code: PaketCode | null; fehler: string[] } {
   const fehler: string[] = [];
+  const summe = dateien.filter((d) => d.name.startsWith('code/')).reduce((n, d) => n + d.groesse, 0);
+  if (summe > CODE_MAX) fehler.push(`code/: Die Dateien unter code/ sind zusammen ${(summe / 1048576).toFixed(1).replace('.', ',')} MB groß – erlaubt sind höchstens ${CODE_MAX / 1048576} MB je Paket (modul.wasm, daten/ und Quellcode).`);
+  if (c === undefined || c === null) return { code: null, fehler };
   if (typeof c !== 'object' || Array.isArray(c)) return { code: null, fehler: ['code: muss ein Objekt sein.'] };
   const x = c as Record<string, unknown>;
   const sprache = String(x.sprache ?? '');
@@ -209,6 +217,25 @@ export function liesCode(c: unknown): { code: PaketCode | null; fehler: string[]
   // Schreiben setzt Lesen voraus.
   const lesenAlle = [...new Set([...lesen, ...schreiben])];
   return { code: fehler.length ? null : { sprache, ereignisse: ereignisse as EreignisArt[], rechte: { lesen: lesenAlle, schreiben, dokumente }, netz }, fehler };
+}
+
+/** Zustand des Paket-Läufers (#403): aus (kein Paket mit Code), startet, bereit, neustart (nach Absturz), pausiert (Wartung). */
+export type LaeuferZustand = 'aus' | 'startet' | 'bereit' | 'neustart' | 'pausiert';
+
+/**
+ * Text für „Stand“ in der Werkbank – passend zu dem, was der Läufer gerade tut. wartet: Stand ändert sich gleich
+ * von selbst (die Werkbank fragt dann nach).
+ */
+export function laeuferZustandText(
+  x: { zustand: LaeuferZustand; absturz: string | null; paket: { geladen: boolean; fehler: string | null; aufrufe: number } | null },
+  zeit: (iso: string) => string,
+): { text: string; fehler: boolean; wartet: boolean } {
+  if (x.paket?.fehler) return { text: x.paket.fehler, fehler: true, wartet: false };
+  if (x.zustand === 'pausiert') return { text: 'pausiert (Wartungsmodus)', fehler: false, wartet: false };
+  if (x.zustand === 'neustart') return { text: `abgestürzt${x.absturz ? ` um ${zeit(x.absturz)}` : ''} – startet neu …`, fehler: true, wartet: true };
+  if (x.zustand !== 'bereit' || !x.paket?.geladen) return { text: 'startet …', fehler: false, wartet: true };
+  if (x.absturz) return { text: `neu gestartet nach Absturz um ${zeit(x.absturz)}`, fehler: false, wartet: false };
+  return { text: x.paket.aufrufe ? 'bereit' : 'bereit – wartet auf das erste Ereignis', fehler: false, wartet: false };
 }
 
 /** Rechte und Netz für die Rückfrage bei der Installation (und für den Vergleich beim Update). */

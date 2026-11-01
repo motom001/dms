@@ -93,6 +93,7 @@ Alle Funktionen sind synchron; Zeiger und Längen beziehen sich auf den importie
 | Zeit je Aufruf | 120 s (danach Abbruch, gilt als Fehler) |
 | gleichzeitige Aufrufe | 2 (alle Pakete zusammen) |
 | Speicher des Pakets | 64 KB |
+| Dateien unter `code/` (`modul.wasm`, `daten/`, Quellcode) | 32 MB je Paket zusammen; größere Pakete lehnen das DMS und `pruefen.py` ab |
 
 Ein Paket, das die Grenzen reißt, beeinträchtigt das DMS nicht; der Aufruf bricht ab und steht in der Übersicht des Läufers.
 
