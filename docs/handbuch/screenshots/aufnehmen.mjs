@@ -730,6 +730,30 @@ async function main() {
   await s.getByRole('heading', { name: '3. Prüfen' }).waitFor();
   await s.getByRole('heading', { name: '3. Prüfen' }).evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-datenschutz');
+  // Auskunft zustellen (#455): Auskunft mit Passwort erzeugen, Abruf-Link erstellen (ohne Mail) – Link und Code.
+  {
+    const v = await api('POST', '/api/werkbank/auskunft/vorschau', { mappeId: d.stadtwerke.id, tiefe: 1, vorschlaege: false });
+    const x = v.mappen[d.stadtwerke.id];
+    await api('POST', '/api/werkbank/auskunft', { mappeId: d.stadtwerke.id, tiefe: 1, geprueft: true, passwort: 'Handbuch-Passwort-2026',
+      auswahl: { mappen: [d.stadtwerke.id], dokumente: x.dokumente.map((y) => y.id), notizen: x.notizen.map((y) => y.id), historie: [d.stadtwerke.id], ohneNotizen: [] } });
+    await warteAufAuftrag();
+    await geheZu(s, '/werkbank/datenschutz');
+    await s.getByRole('button', { name: 'Zustellen …' }).first().click();
+    await s.getByRole('radio', { name: /Abruf-Link mit Abrufcode/ }).check();
+    await s.getByRole('checkbox', { name: /Link per E-Mail/ }).uncheck();
+    await s.getByRole('button', { name: 'Abruf-Link erstellen' }).click();
+    await s.locator('.auskunft-code').waitFor();
+    const url = await s.locator('.auskunft-url').inputValue();
+    await s.locator('.auskunft-zustellen').evaluate((e) => e.scrollIntoView({ block: 'center' }));
+    await bild(s, 'werkbank-datenschutz-zustellen');
+    // Öffentliche Abrufseite: ohne Sitzung, wie die Person sie sieht.
+    const ka = await kontext(false, 900, 640);
+    const sa = await ka.newPage();
+    await geheZu(sa, new URL(url).pathname + new URL(url).hash);
+    await sa.getByRole('heading', { name: 'Auskunft abrufen' }).waitFor();
+    await bild(sa, 'abrufseite');
+    await ka.close();
+  }
   // Pakete (#369): Abschnitt „Expertenmodus“ aufgeklappt unter den Knöpfen (ohne Katalogabruf).
   await geheZu(s, '/werkbank/pakete');
   await s.getByRole('button', { name: /Expertenmodus/ }).click();

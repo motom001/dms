@@ -16,8 +16,9 @@ import type { Oidc } from './oidc';
 import { exportDateien, exporteIn, exportOrdner, freierPlatz, loescheExport, pruefeExport, vollexport, VOLLEXPORT_PHASEN, type ExportOptionen, type KontaktZuordnung } from './vollexport';
 import { createReadStream } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
-import { AUSKUNFT_PHASEN, auskuenfteIn, auskunftDatei, auskunftOrdner, erzeugeAuskunft, loescheAuskunft } from './auskunft';
-import { AUSKUNFT_TAGE } from '../../shared/src/auskunft';
+import { AUSKUNFT_PHASEN, auskuenfteIn, auskunftDatei, auskunftOrdner, erzeugeAuskunft, haltenBis, loescheAuskunft } from './auskunft';
+import { AUSKUNFT_TAGE, linkStatus, oeffentlichErreichbar } from '../../shared/src/auskunft';
+import { AbrufTickets, kuerzeIp } from './abruf';
 import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
 import { join } from 'node:path';
 import { ALS_KOPF, KONSOLE_KOPF, istLoopback, konsolenBenutzer, type Konsolenzugang } from './konsole';
@@ -280,6 +281,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   // Vollexport (#254): neben den Sicherungen, Unterordner export/.
   // Auskünfte (#396): neben den Exporten, ohne Sicherungsordner im temporären Ordner.
   const auskunftZiel = () => auskunftOrdner(x.sicherung?.ordner);
+  /** Auskunft zustellen (#455): Einmal-Tickets der öffentlichen Abrufseite. */
+  const abrufTickets = new AbrufTickets();
+  /** Gemeinsamer Schlüssel im Anmeldeschutz: Fehlversuche je IP über alle Abruf-Links. */
+  const ABRUF_SPERRE = 'auskunft-abruf';
+  const ABRUF_FALSCH = 'Das hat nicht geklappt: Der Link oder der Abrufcode stimmt nicht, oder der Link gilt nicht mehr. Prüfe den Code (Groß- und Kleinschreibung sind egal). Nach mehreren falschen Eingaben wird der Link gesperrt – wende dich dann an den Absender der Auskunft.';
+  const ABRUF_UNGUELTIG = 'Dieser Link gilt nicht mehr – er ist abgelaufen, wurde so oft abgerufen wie vorgesehen oder zurückgezogen. Bitte wende dich an den Absender der Auskunft.';
   const exportZiel = () => { if (!x.sicherung) throw new Fachfehler(404, 'Ohne Sicherungsordner gibt es keinen Vollexport.'); return join(x.sicherung.ordner, 'export'); };
   const oidc = () => { if (!x.oidc) throw new Fachfehler(404, 'Die Anmeldung über einen Anbieter ist nicht eingerichtet.'); return x.oidc; };
   const adresse = () => (x.betrieb?.adresseFuerLinks() ?? '').replace(/\/+$/, '');
@@ -822,7 +829,11 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     /* ---------- Baum über Verweise (#396, #424): mit den Rechten des Aufrufers ---------- */
     { methode: 'GET', pfad: '/api/mappen/:id/baum', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.baum(a.params.id, a.query, await zg(a))) },
     /* ---------- Datenschutz: Auskunft nach Art. 15 DSGVO (#396), nur Administratoren ---------- */
-    { methode: 'GET', pfad: '/api/werkbank/datenschutz', zugang: 'admin', handler: async () => ok({ einstellung: await dienst.datenschutz(), auskuenfte: await auskuenfteIn(auskunftZiel()), tage: AUSKUNFT_TAGE }) },
+    { methode: 'GET', pfad: '/api/werkbank/datenschutz', zugang: 'admin', handler: async () => ok({
+      einstellung: await dienst.datenschutz(), auskuenfte: await auskuenfteIn(auskunftZiel()), tage: AUSKUNFT_TAGE,
+      // Zustellen (#455): Abruf-Links (Nachweis, auch nach dem Löschen der ZIP), Erreichbarkeit, E-Mail-Versand.
+      links: await dienst.auskunftLinks({ max: 200 }), adresse: adresse(), oeffentlich: oeffentlichErreichbar(adresse()), mail: !!x.betrieb?.mailer(),
+    }) },
     { methode: 'PUT', pfad: '/api/werkbank/datenschutz', zugang: 'admin', handler: async (a) => ok(await dienst.setzeDatenschutz(a.body, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/auskunft/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.auskunftVorschau(a.body, await zg(a))) },
     { methode: 'POST', pfad: '/api/werkbank/auskunft/frist', zugang: 'admin', handler: async (a) => ok(await dienst.auskunftFrist(a.body, await zg(a), ich(a).id), 201) },
@@ -843,15 +854,91 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/werkbank/auskunft/:id/zip', zugang: 'admin', handler: async (a) => {
       const ziel = auskunftZiel();
       const { stand, pfad, groesse } = await auskunftDatei(ziel, a.params.id);
-      // Nach dem Herunterladen gelöscht (#396): erst, wenn die Datei ganz gelesen ist.
+      // Nach dem Herunterladen gelöscht (#396): erst, wenn die Datei ganz gelesen ist – außer, ein Abruf-Link
+      // gilt noch (#455): Dann bleibt sie, bis die Person sie abgerufen hat oder der Link abläuft.
+      const halten = await dienst.auskunftLinkAktiv(stand.id);
       const strom = createReadStream(pfad);
-      strom.on('end', () => void loescheAuskunft(ziel, stand.id).then(() => L.datenschutz.info('Auskunft heruntergeladen und gelöscht', { mappeId: stand.mappeId, von: ich(a).email })));
+      strom.on('end', () => (halten ? L.datenschutz.info('Auskunft heruntergeladen (bleibt für den Abruf-Link)', { mappeId: stand.mappeId, von: ich(a).email })
+        : void loescheAuskunft(ziel, stand.id).then(() => L.datenschutz.info('Auskunft heruntergeladen und gelöscht', { mappeId: stand.mappeId, von: ich(a).email }))));
       return { datei: { inhalt: strom, name: `${stand.name}.zip`, mime: 'application/zip', anzeigen: false, groesse } };
     } },
     { methode: 'DELETE', pfad: '/api/werkbank/auskunft/:id', zugang: 'admin', handler: async (a) => {
       await loescheAuskunft(auskunftZiel(), a.params.id);
+      // Ohne ZIP kein Abruf (#455): gültige Links gleich mit zurückziehen.
+      for (const l of await dienst.auskunftLinks({ auskunftId: a.params.id })) if (linkStatus(l) === 'aktiv') await dienst.auskunftLinkWiderrufen(l.id, ich(a));
       L.datenschutz.info('Auskunft gelöscht', { id: a.params.id, von: ich(a).email });
       return leer;
+    } },
+    /* ---------- Auskunft zustellen (#455) ---------- */
+    { methode: 'POST', pfad: '/api/werkbank/auskunft/:id/email', zugang: 'admin', handler: async (a) => {
+      const { stand, pfad } = await auskunftDatei(auskunftZiel(), a.params.id);
+      const i = ich(a);
+      return ok(await dienst.auskunftPerEmail(stand, () => createReadStream(pfad), a.body, { id: i.id, name: i.name, email: i.email }, x.betrieb?.mailer() ?? null));
+    } },
+    { methode: 'POST', pfad: '/api/werkbank/auskunft/:id/link', zugang: 'admin', handler: async (a) => {
+      const ziel = auskunftZiel();
+      const { stand } = await auskunftDatei(ziel, a.params.id);
+      const i = ich(a);
+      const r = await dienst.auskunftLinkAnlegen(stand, a.body, { id: i.id, name: i.name, email: i.email }, { adresse: adresse(), mailer: x.betrieb?.mailer() ?? null });
+      // Die ZIP bleibt, solange der Link gilt.
+      await haltenBis(ziel, stand.id, r.link.ablauf);
+      return ok(r, 201);
+    } },
+    { methode: 'POST', pfad: '/api/werkbank/auskunft/link/:id/widerrufen', zugang: 'admin', handler: async (a) => {
+      const l = await dienst.auskunftLinkWiderrufen(a.params.id, ich(a));
+      // Ohne gültigen Link gilt für die ZIP wieder das ursprüngliche Ende.
+      if (!(await dienst.auskunftLinkAktiv(l.auskunftId))) await haltenBis(auskunftZiel(), l.auskunftId, null);
+      return ok(l);
+    } },
+    /*
+     * Öffentliche Abrufseite (#455) – der einzige Weg ohne Anmeldung zu einer Auskunft. Schlüssel und Code
+     * kommen per POST (mit X-DMS, also nicht von fremden Seiten); Fehlversuche zählen im Anmeldeschutz je IP
+     * und am Link (Sperre nach LINK_FEHLVERSUCHE_MAX). Antworten verraten nicht, ob es einen Link gibt.
+     * Im Protokoll stehen weder Schlüssel noch Code, die IP nur gekürzt.
+     */
+    { methode: 'POST', pfad: '/api/abruf', zugang: 'offen', handler: async (a) => {
+      const o = (a.body ?? {}) as Record<string, unknown>;
+      try { await konten.sperre.pruefe(ABRUF_SPERRE, a.ip); } catch (e) {
+        if (e instanceof Fachfehler && e.status === 429) throw new Fachfehler(429, 'Zu viele falsche Eingaben von deinem Anschluss. Bitte versuche es später noch einmal.');
+        throw e;
+      }
+      const r = await dienst.auskunftAbrufPruefen(o.schluessel, o.code);
+      if (r.art === 'falsch') {
+        await konten.sperre.fehlschlag(ABRUF_SPERRE, a.ip);
+        L.datenschutz.warn('Abruf einer Auskunft fehlgeschlagen', { ip: kuerzeIp(a.ip), ...(r.link ? { link: r.link.id } : {}) });
+        throw new Fachfehler(403, ABRUF_FALSCH);
+      }
+      await konten.sperre.erfolg(ABRUF_SPERRE, a.ip);
+      if (r.art === 'ungueltig') throw new Fachfehler(410, ABRUF_UNGUELTIG);
+      const link = r.link!;
+      const datei = await auskunftDatei(auskunftZiel(), link.auskunftId).catch(() => null);
+      if (!datei) throw new Fachfehler(410, ABRUF_UNGUELTIG);
+      L.datenschutz.info('Abrufcode einer Auskunft bestätigt', { link: link.id, ip: kuerzeIp(a.ip) });
+      return ok({ ticket: abrufTickets.stelleAus(link.id), groesse: datei.groesse, verschluesselt: datei.stand.verschluesselt, bis: link.ablauf, abrufe: link.abrufe, maxAbrufe: link.maxAbrufe });
+    } },
+    { methode: 'GET', pfad: '/api/abruf/datei', zugang: 'offen', handler: async (a) => {
+      const id = abrufTickets.loese(a.query.ticket);
+      const link = id ? await dienst.auskunftLinkMitId(id) : undefined;
+      if (!link) throw new Fachfehler(410, 'Dieser Download ist abgelaufen. Gib deinen Abrufcode bitte noch einmal ein.');
+      const ziel = auskunftZiel();
+      const datei = await auskunftDatei(ziel, link.auskunftId).catch(() => null);
+      if (!datei) throw new Fachfehler(410, ABRUF_UNGUELTIG);
+      const nr = await dienst.auskunftAbrufZaehlen(link.id);
+      if (nr === null) throw new Fachfehler(410, ABRUF_UNGUELTIG);
+      const { stand, pfad, groesse } = datei;
+      const strom = createReadStream(pfad);
+      let fertig = false;
+      strom.on('end', () => {
+        fertig = true;
+        void (async () => {
+          await dienst.auskunftAbgerufen(link, nr, true, stand.vonId);
+          L.datenschutz.info('Auskunft abgerufen', { mappeId: link.mappeId, link: link.id, nr, ip: kuerzeIp(a.ip) });
+          // Alle Abrufe verbraucht: Die ZIP wird nicht mehr gebraucht.
+          if (nr >= link.maxAbrufe) await loescheAuskunft(ziel, stand.id);
+        })().catch((e) => L.datenschutz.error('Abruf nicht vermerkt', { fehler: (e as Error).message }));
+      });
+      strom.on('close', () => { if (!fertig) void dienst.auskunftAbgerufen(link, nr, false).catch(() => {}); });
+      return { datei: { inhalt: strom, name: `${stand.name}.zip`, mime: 'application/zip', anzeigen: false, groesse } };
     } },
     /* ---------- Archivmodus (#212) ---------- */
     { methode: 'POST', pfad: '/api/werkbank/archiv/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.archivVorschau(String((a.body as { typId?: unknown })?.typId ?? ''), (a.body as { archiv?: unknown })?.archiv)) },

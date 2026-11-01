@@ -54,6 +54,7 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   paket_code: 'nicht enthalten: Code installierter Pakete (#338, steht im Paket selbst)',
   paket_ereignisse: 'nicht enthalten: Ereignisse für Pakete mit Code (#338, technisch)',
   passwort_links: 'nicht enthalten: Geheimnisse',
+  auskunft_links: 'nicht enthalten: Abruf-Links von Auskünften (#455, Hashes; der Nachweis steht in daten/historie.jsonl)',
   sitzungen: 'nicht enthalten: Anmeldungen',
   schema_migrationen: 'nicht enthalten: Stand der Datenbank (steht als Version im Manifest)',
 };

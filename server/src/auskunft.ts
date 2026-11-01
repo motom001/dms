@@ -245,7 +245,7 @@ export async function erzeugeAuskunft(d: AuskunftDaten, ordner: string, x: { von
     const bis = new Date(jetzt.getTime() + AUSKUNFT_TAGE * 24 * 3600 * 1000).toISOString();
     const stand: AuskunftErgebnis = {
       id, name: d.passwort ? `Auskunft-${tag(jetzt)}` : name, mappeId: d.start.id, titel: d.start.titel, erstellt: jetzt.toISOString(), bis, bytes: groesse,
-      mappen: d.anzahl.mappen, dokumente: d.anzahl.dokumente, verschluesselt: !!d.passwort, von: x.von.name || x.von.email,
+      mappen: d.anzahl.mappen, dokumente: d.anzahl.dokumente, verschluesselt: !!d.passwort, von: x.von.name || x.von.email, vonId: x.von.id, bisOhneLink: bis,
     };
     await writeFile(join(ordner, `${id}.json`), JSON.stringify(stand, null, 2));
     return stand;
@@ -285,6 +285,23 @@ export async function loescheAuskunft(ordner: string, id: string) {
   if (!istUuid(id)) throw new Fachfehler(404, 'Diese Auskunft gibt es nicht (mehr).');
   await rm(join(ordner, `${id}.zip`), { force: true });
   await rm(join(ordner, `${id}.json`), { force: true });
+}
+
+/**
+ * Bereithalten bis (#455): Ein Abruf-Link hält die ZIP bis zu seinem Ablauf; ohne Link gilt wieder das
+ * ursprüngliche Ende (Erstellung + AUSKUNFT_TAGE). Liegt das schon zurück, ist sie gleich weg.
+ */
+export async function haltenBis(ordner: string, id: string, bis: string | null, jetzt = new Date()): Promise<AuskunftErgebnis | null> {
+  if (!istUuid(id)) return null;
+  const datei = join(ordner, `${id}.json`);
+  let s: AuskunftErgebnis;
+  try { s = JSON.parse(await readFile(datei, 'utf8')) as AuskunftErgebnis; } catch { return null; }
+  const ohne = s.bisOhneLink ?? new Date(new Date(s.erstellt).getTime() + AUSKUNFT_TAGE * 24 * 3600 * 1000).toISOString();
+  const neu = bis && bis > ohne ? bis : ohne;
+  const n: AuskunftErgebnis = { ...s, bisOhneLink: ohne, bis: neu };
+  if (new Date(neu).getTime() <= jetzt.getTime()) { await loescheAuskunft(ordner, id); return null; }
+  await writeFile(datei, JSON.stringify(n, null, 2));
+  return n;
 }
 
 /** Eine bereitliegende Auskunft zum Herunterladen; 404, wenn sie abgelaufen oder schon heruntergeladen ist. */

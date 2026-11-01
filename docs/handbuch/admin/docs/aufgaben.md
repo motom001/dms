@@ -13,6 +13,7 @@ Aufgaben entstehen auf diesen Wegen:
 | **Erinnerung** | am gewählten Tag nach *Aktionen →* **Erinnern** an der Mappe | der gewählte Benutzer | per Knopf *Erledigt* |
 | **Vertretung** | wenn für einen Benutzer eine [Abwesenheit](benutzer.md#abwesenheit) mit Vertreter eingetragen wird | der Vertreter; die Aufgabe hängt an der Benutzer-Mappe des Abwesenden | von selbst, sobald die Abwesenheit endet oder sich Zeitraum oder Vertreter ändern; oder per Knopf *Erledigt* |
 | **Post für dich** | wenn bei neuer [Post](https://motom001.github.io/dms/benutzer/aktuell/post/) ein Benutzer unter *Für* steht | der Benutzer bei *Für* | von selbst, sobald die Post zugeordnet, erledigt oder weitergegeben ist |
+| **Auskunft** | wenn eine Person ihre [Auskunft](datenschutz.md#auskunft-zustellen) über den Abruf-Link heruntergeladen hat oder der Link nach Fehlversuchen gesperrt wurde | wer den Link bzw. die Auskunft erstellt hat und wer die Mappe der Person als Favorit hat | per Knopf *Erledigt*; solange sie offen ist, kommt für denselben Link keine zweite |
 
 - Empfänger sind immer **Benutzer**, keine Rollen – eine Aufgabe für alle bleibt sonst gern liegen.
 - Wer sich selbst erwähnt, bekommt keine Aufgabe; erneutes Speichern erzeugt keine zweite. Wird eine Erwähnung wieder entfernt, bleibt die Aufgabe offen; in der Historie der Mappe steht, dass sie entfernt wurde.

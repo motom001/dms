@@ -4,8 +4,11 @@ import type { Ausdruck, Lesefilter, Regelwerk } from '../../shared/src/rechte';
 import type { Erinnerung } from '../../shared/src/fristen';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
+import type { AuskunftLink } from '../../shared/src/auskunft';
 
 export interface Verweis { feldKey: string; zielId: string }
+/** Abruf-Link (#455) mit den Hashes von Schlüssel und Abrufcode – verlässt den Server nie. */
+export interface AuskunftLinkIntern extends AuskunftLink { schluessel: string; code: string }
 /** Ein gespeicherter Verweis mit beiden Enden (#396). */
 export interface Kante { quelleId: string; feldKey: string; zielId: string }
 /** Sortierung, wie sie das Repo braucht: Art der Spalte (für den richtigen Vergleich) und ggf. Feldschlüssel. */
@@ -167,6 +170,19 @@ export interface Repo {
   setzeFavorit(benutzerId: string, mappeId: string, an: boolean): Promise<void>;
   /** Vollexport (#254): alle Favoriten. */
   alleFavoriten(): Promise<Array<{ benutzerId: string; mappeId: string }>>;
+
+  /* ---------- Abruf-Links einer Auskunft (#455) ---------- */
+  legeAuskunftLinkAn(l: AuskunftLinkIntern): Promise<void>;
+  /** Über den Hash des Schlüssels (öffentliche Abrufseite). */
+  auskunftLinkPerSchluessel(schluesselHash: string): Promise<AuskunftLinkIntern | undefined>;
+  /** Neueste zuerst; ohne Angabe alle (höchstens `max`). */
+  auskunftLinks(f?: { mappeId?: string; auskunftId?: string; max?: number }): Promise<AuskunftLinkIntern[]>;
+  /** Fehlversuch zählen (atomar); ab `max` gesperrt. Liefert den neuen Stand. */
+  auskunftLinkFehlversuch(id: string, max: number): Promise<{ fehlversuche: number; gesperrt: boolean } | undefined>;
+  /** Einen Abruf zählen – nur, solange der Link gilt (atomar). Liefert die neue Anzahl oder null. */
+  auskunftLinkAbruf(id: string): Promise<number | null>;
+  /** Zurückziehen; false, wenn er schon nicht mehr galt. */
+  widerrufeAuskunftLink(id: string): Promise<boolean>;
   favoritenVon(benutzerId: string, mappeIds: string[]): Promise<Set<string>>;
   /** Anzahl Mappen je Klauselliste (eine je Sicht), in derselben Reihenfolge. */
   zaehleKlauseln(liste: Klausel[][], lesen?: Lesefilter | null): Promise<number[]>;

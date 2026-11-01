@@ -161,6 +161,24 @@ function einzelheiten(e: Historieneintrag, emailTyp: string | undefined): { hinw
     case 'auskunft': {
       // Auskunft nach Art. 15 DSGVO (#396): nur Zahlen, keine Inhalte; Begründungen für zurückgehaltene Notizen.
       const n = (k: string) => (typeof d[k] === 'number' ? d[k] as number : 0);
+      // Zustellen (#455): per E-Mail, Abruf-Link, Abruf – Zeitpunkt und Ergebnis, ohne IP und ohne Code.
+      const zustellung = str(d.zustellung);
+      if (zustellung) {
+        const an = Array.isArray(d.an) ? (d.an as unknown[]).filter((x): x is string => typeof x === 'string') : [];
+        const wie = zustellung === 'email' ? 'per E-Mail (verschlüsselt)' : zustellung === 'link' ? 'Abruf-Link' : 'Abruf über den Link';
+        return {
+          hinweis: str(d.text) ?? wie,
+          inhalt: (
+            <dl className="eigenschaften einzeln">
+              <dt>Weg</dt><dd>{wie}</dd>
+              {an.length > 0 && <><dt>An</dt><dd>{an.join(', ')}</dd></>}
+              {typeof d.erfolg === 'boolean' && <><dt>Ergebnis</dt><dd>{d.erfolg ? 'erfolgreich' : 'fehlgeschlagen'}</dd></>}
+              {str(d.ablauf) && <><dt>Gültig bis</dt><dd>{new Date(str(d.ablauf)!).toLocaleDateString('de-DE')}</dd></>}
+              {n('maxAbrufe') > 0 && <><dt>Abrufe</dt><dd>höchstens {n('maxAbrufe')}</dd></>}
+            </dl>
+          ),
+        };
+      }
       const gruende = Array.isArray(d.gruende) ? (d.gruende as unknown[]).filter((g): g is string => typeof g === 'string') : [];
       return {
         hinweis: `${n('mappen')} Mappen, ${n('dokumente')} Dokumente`,

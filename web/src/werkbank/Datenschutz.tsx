@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { AUSKUNFT_PASSWORT_MIN, GRUND_MIN, personenTypen, type AuskunftAuswahl, type AuskunftMappe, type AuskunftStand, type AuskunftVorschau, type Datenschutz } from '../../../shared/src/auskunft';
+import { Zustellen, Zustellungen } from './Zustellen';
 import { BAUM_RICHTUNGEN, kinderVon, type BaumKnoten, type BaumRichtung } from '../../../shared/src/baum';
 import { datumText } from '../../../shared/src/archiv';
-import { api, type Auftrag } from '../api';
+import { api, type Auftrag, type DatenschutzStand } from '../api';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
@@ -16,7 +17,8 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
  *   1. Betroffenen wählen (Mappentypen „betrifft eine Person“), optional Frist als Aufgabe
  *   2. Sammeln über Verweise (Baum, Tiefe einstellbar) und prüfen: Häkchen je Mappe, Dokument, Notiz, Historie
  *   3. Erzeugen als Hintergrundauftrag, optional mit Passwort (AES); Download, danach gelöscht
- * Unten: bereitliegende Auskünfte und die Einstellungen (Absender, Rechte, Zwecke je Mappentyp).
+ *   4. Zustellen (#455): per E-Mail (nur verschlüsselt) oder als Abruf-Link mit Abrufcode
+ * Unten: bereitliegende Auskünfte, Abruf-Links (Nachweis) und die Einstellungen (Absender, Rechte, Zwecke je Mappentyp).
  */
 
 const groesse = (b: number) => (b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);
@@ -24,7 +26,7 @@ const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle:
 const heute = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(new Date());
 
 export function useDatenschutz(offen: boolean) {
-  const [stand, setStand] = useState<{ einstellung: Datenschutz; auskuenfte: AuskunftStand[]; tage: number } | null>(null);
+  const [stand, setStand] = useState<DatenschutzStand | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => { try { setStand(await api.datenschutz()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
@@ -34,6 +36,9 @@ export type DatenschutzZustand = ReturnType<typeof useDatenschutz>;
 
 export function DatenschutzPanel({ z }: { z: DatenschutzZustand }) {
   const s = z.stand;
+  // Zustellen (#455): welche bereitliegende Auskunft gerade aufgeklappt ist.
+  const [zustellen, setZustellen] = useState<string | null>(null);
+  const oeffne = (id: string) => { setZustellen(id); window.setTimeout(() => document.getElementById(`auskunft-${id}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 50); };
   if (!s) return <p className="leise">{z.fehler ?? 'Lade …'}</p>;
   return (
     <div className="einspaltig">
@@ -42,8 +47,9 @@ export function DatenschutzPanel({ z }: { z: DatenschutzZustand }) {
         <h1>Datenschutz</h1>
         <p className="leise">Fragt ein Kunde, Mieter oder Kontakt nach seinen Daten (Auskunft nach Art. 15 DSGVO), sammelt das DMS alles, was mit ihm verknüpft ist. Du prüfst die Liste und bekommst eine ZIP-Datei mit Deckblatt, Übersicht, Dokumenten und maschinenlesbaren Daten. <Hilfe ort="werkbank.datenschutz" /></p>
       </div>
-      <AuskunftErteilen einstellung={s.einstellung} nachher={z.laden} />
-      <Bereitliegend z={z} />
+      <AuskunftErteilen einstellung={s.einstellung} nachher={z.laden} zustellen={oeffne} />
+      <Bereitliegend z={z} offen={zustellen} setOffen={setZustellen} />
+      <Zustellungen z={z} />
       <Einstellungen z={z} />
     </div>
   );
@@ -66,7 +72,7 @@ function vorgabe(inhalte: Record<string, AuskunftMappe>, ids: string[], w: Wahl 
   return n;
 }
 
-function AuskunftErteilen({ einstellung, nachher }: { einstellung: Datenschutz; nachher(): Promise<void> }) {
+function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Datenschutz; nachher(): Promise<void>; zustellen(id: string): void }) {
   const d = useDaten();
   const personTypen = personenTypen(einstellung).map((id) => d.typ(id)).filter((t) => !!t);
   const [typId, setTypId] = useState(personTypen[0]?.id ?? '');
@@ -237,8 +243,9 @@ function AuskunftErteilen({ einstellung, nachher }: { einstellung: Datenschutz; 
           {ohneGrund > 0 && <p className="fehlertext klein">{ohneGrund === 1 ? 'Eine abgewählte Notiz braucht' : `${ohneGrund} abgewählte Notizen brauchen`} eine Begründung.</p>}
           {auftrag?.status === 'laeuft' && <p className="leise" role="status">{fortschrittText(auftrag)}</p>}
           {auftrag?.status === 'fehler' && <p className="fehlertext" role="alert">{auftrag.fehler}</p>}
-          {fertig && <div className="hinweis gut" role="status"><p>Fertig: {fertig.mappen} Mappen, {fertig.dokumente} Dokumente ({groesse(fertig.bytes)}){fertig.verschluesselt ? ', mit Passwort' : ''}. Die Datei wird nach dem Herunterladen gelöscht, spätestens am {zeit(fertig.bis)}. In der Historie der Person ist die Auskunft vermerkt.</p>
-            <p><a className="knopf primaer" href={`/api/werkbank/auskunft/${fertig.id}/zip`} onClick={() => window.setTimeout(() => void nachher(), 3000)}>Herunterladen</a></p></div>}
+          {fertig && <div className="hinweis gut" role="status"><p>Fertig: {fertig.mappen} Mappen, {fertig.dokumente} Dokumente ({groesse(fertig.bytes)}){fertig.verschluesselt ? ', mit Passwort' : ''}. Die Datei wird nach dem Herunterladen gelöscht, spätestens am {zeit(fertig.bis)} – außer, du stellst sie über einen Abruf-Link zu. In der Historie der Person ist die Auskunft vermerkt.</p>
+            <p className="knoepfe"><button type="button" className="knopf primaer" onClick={() => zustellen(fertig.id)}>Zustellen …</button>
+              <a className="knopf" href={`/api/werkbank/auskunft/${fertig.id}/zip`} onClick={() => window.setTimeout(() => void nachher(), 3000)}>Herunterladen</a></p></div>}
           <div className="knoepfe"><button type="button" className="knopf primaer" disabled={!geprueft || !auswahl.mappen.length || ohneGrund > 0 || !!pwFehler || auftrag?.status === 'laeuft'} onClick={() => void erzeugen()}>
             {auftrag?.status === 'laeuft' ? 'Wird erzeugt …' : 'Auskunft erzeugen'}</button></div>
         </>
@@ -291,24 +298,29 @@ function MappeEintrag({ id, titel, typ, typId, inhalt, wahl, schalte, setGrund, 
 
 /* ---------- Bereitliegende Auskünfte ---------- */
 
-function Bereitliegend({ z }: { z: DatenschutzZustand }) {
+function Bereitliegend({ z, offen, setOffen }: { z: DatenschutzZustand; offen: string | null; setOffen(id: string | null): void }) {
   const s = z.stand!;
   const [fehler, setFehler] = useState<string>();
+  // Aus der Mappe der Person (?mappe=…): ihre Auskünfte zuerst.
+  const person = new URLSearchParams(location.search).get('mappe');
+  const liste = person ? [...s.auskuenfte].sort((a, b) => Number(b.mappeId === person) - Number(a.mappeId === person)) : s.auskuenfte;
   return (
     <section className="blatt" id="auskuenfte">
-      <h2 className="h3">Bereitliegende Auskünfte</h2>
-      <p className="leise klein">Eine erzeugte Auskunft liegt bereit, bis du sie herunterlädst – höchstens {s.tage} Tage. Danach wird sie gelöscht; in der Historie der Person bleibt der Nachweis.</p>
+      <h2 className="h3">Bereitliegende Auskünfte <Hilfe ort="werkbank.auskunft.zustellen" /></h2>
+      <p className="leise klein">Eine erzeugte Auskunft liegt bereit, bis du sie herunterlädst – höchstens {s.tage} Tage, mit Abruf-Link bis zu dessen Ablauf. Danach wird sie gelöscht; in der Historie der Person bleibt der Nachweis. Mit <strong>Zustellen …</strong> schickst du sie per E-Mail oder als Abruf-Link.</p>
       {fehler && <p className="fehlertext">{fehler}</p>}
-      {!s.auskuenfte.length ? <p className="leise">Keine.</p> : <ul className="stapel">{s.auskuenfte.map((a) => (
-        <li key={a.id}>
+      {!liste.length ? <p className="leise">Keine.</p> : <ul className="stapel">{liste.map((a) => (
+        <li key={a.id} id={`auskunft-${a.id}`} className="auskunft-bereit">
           <strong>{titelOder(a.titel)}</strong> <span className="leise klein">{zeit(a.erstellt)} · {a.mappen} Mappen, {a.dokumente} Dokumente, {groesse(a.bytes)}{a.verschluesselt ? ' · mit Passwort' : ''} · bis {zeit(a.bis)} · von {a.von}</span>
           <span className="knoepfe">
+            <button type="button" className={`knopf klein${offen === a.id ? '' : ' primaer'}`} aria-expanded={offen === a.id} onClick={() => setOffen(offen === a.id ? null : a.id)}>{offen === a.id ? 'Zustellen schließen' : 'Zustellen …'}</button>
             <a className="knopf klein" href={`/api/werkbank/auskunft/${a.id}/zip`} onClick={() => window.setTimeout(() => void z.laden(), 3000)}>Herunterladen</a>
             <button type="button" className="knopf klein gefahr-rand" onClick={async () => {
               if (!(await rueckfrage({ titel: 'Diese Auskunft löschen?', text: `${titelOder(a.titel)}, erstellt ${zeit(a.erstellt)}. Der Nachweis in der Historie bleibt.`, ja: 'Löschen', gefahr: true }))) return;
               try { await api.auskunftLoeschen(a.id); await z.laden(); } catch (e) { setFehler((e as Error).message); }
             }}>Löschen</button>
           </span>
+          {offen === a.id && <Zustellen a={a} s={s} nachher={z.laden} />}
         </li>
       ))}</ul>}
     </section>

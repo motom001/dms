@@ -16,7 +16,7 @@ import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src
 import type { Anstehend, Erinnerung } from '../../shared/src/fristen';
 import type { Auftrag } from '../../shared/src/auftrag';
 import type { Baum } from '../../shared/src/baum';
-import type { AuskunftAuswahl, AuskunftStand, AuskunftVorschau, Datenschutz } from '../../shared/src/auskunft';
+import type { AuskunftAuswahl, AuskunftLink, AuskunftStand, AuskunftVorschau, Datenschutz } from '../../shared/src/auskunft';
 import type { Dokumentart } from '../../shared/src/demodaten';
 import { merkeAnfrage } from './diagnose';
 import { erreichbarkeit, NICHT_ERREICHBAR } from './erreichbar';
@@ -575,7 +575,11 @@ export const api = {
   baum: (id: string, o: { tiefe?: number; richtungen?: string[]; max?: number; seitwaerts?: boolean } = {}) =>
     anfrage<Baum>('GET', `/api/mappen/${id}/baum?${new URLSearchParams(Object.entries(o).filter(([, v]) => v !== undefined).map(([k, v]) => [k, Array.isArray(v) ? v.join(',') : String(v)]))}`),
   /** Datenschutz: Auskunft nach Art. 15 DSGVO (#396). */
-  datenschutz: () => anfrage<{ einstellung: Datenschutz; auskuenfte: AuskunftStand[]; tage: number }>('GET', '/api/werkbank/datenschutz'),
+  datenschutz: () => anfrage<DatenschutzStand>('GET', '/api/werkbank/datenschutz'),
+  /** Auskunft zustellen (#455): per E-Mail (nur verschlüsselt) oder als Abruf-Link mit Abrufcode. */
+  auskunftEmail: (id: string, e: { an: string; betreff: string; nachricht: string }) => anfrage<{ an: string[] }>('POST', `/api/werkbank/auskunft/${id}/email`, e),
+  auskunftLink: (id: string, e: { tage: number; abrufe: number; code?: string; an?: string; senden: boolean }) => anfrage<{ link: AuskunftLink; url: string; code: string; gesendet: boolean }>('POST', `/api/werkbank/auskunft/${id}/link`, e),
+  auskunftLinkWiderrufen: (id: string) => anfrage<AuskunftLink>('POST', `/api/werkbank/auskunft/link/${id}/widerrufen`),
   setzeDatenschutz: (d: Datenschutz) => anfrage<Datenschutz>('PUT', '/api/werkbank/datenschutz', d),
   auskunftVorschau: (e: { mappeId: string; tiefe: number; richtungen: string[] }) => anfrage<AuskunftVorschau>('POST', '/api/werkbank/auskunft/vorschau', e),
   auskunftStarten: (e: { mappeId: string; tiefe: number; richtungen: string[]; auswahl: AuskunftAuswahl; geprueft: boolean; passwort: string; empfaenger: string; anmerkung: string }) => anfrage<Auftrag>('POST', '/api/werkbank/auskunft', e),
@@ -654,6 +658,8 @@ export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
   return d?.verborgen ? d.aufgaben ?? [] : null;
 };
 export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */ unpassend?: Record<string, string[]>; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean; /** Auskunft nach Art. 15 DSGVO möglich (#396, Administratoren). */ auskunft?: boolean }
+/** Werkbank → Datenschutz (#396, #455). */
+export interface DatenschutzStand { einstellung: Datenschutz; auskuenfte: AuskunftStand[]; tage: number; links: AuskunftLink[]; adresse: string; oeffentlich: boolean; mail: boolean }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 /** Vorschaubild der ersten Seite (#332); der Prüfwert in der Adresse sorgt für ein neues Bild nach einer neuen Version. */
 export interface SchwaerzenVorschau {

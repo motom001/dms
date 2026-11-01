@@ -146,7 +146,7 @@ Das Menü an einer Mappe – Aufgabe vergeben, Erinnern, Versenden, Exportieren 
 Die Ansicht mit meinen Fristen und Erinnerungen der nächsten Tage (Standard 30) – kommende und solche, die schon fällig sind und unter „Zu erledigen“ stehen.
 
 <a id="aufgabe"></a>**Aufgabe** · ✓ Alltagswort · alle  
-Etwas, das ein Mensch an einer Mappe tun soll. Arten sind Passt nicht, Erwähnung, Zugewiesen (von Hand vergeben), Post für dich, Frist, Erinnerung und Vertretung.  
+Etwas, das ein Mensch an einer Mappe tun soll. Arten sind Passt nicht, Erwähnung, Zugewiesen (von Hand vergeben), Post für dich, Frist, Erinnerung, Vertretung und Auskunft.  
 Siehe auch: [Zu erledigen](#zu-erledigen), [Frist](#frist), [Erinnerung](#erinnerung), [Auftrag](#auftrag).
 
 <a id="erinnerung"></a>**Erinnerung** · ✓ Alltagswort · alle  

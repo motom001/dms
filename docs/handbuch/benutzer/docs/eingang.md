@@ -17,6 +17,7 @@ In der Liste steht bei jeder Mappe, was zu tun ist. In der Mappe selbst steht ob
 | **Erinnerung** | Du oder jemand anderes hat über **Aktionen → Erinnern** an diese Mappe erinnert, und der Tag ist da. | Klicke auf **Erledigt**. |
 | **Vertretung** | Jemand hat dich als [Vertreter](profil.md#abwesenheit) für seine Abwesenheit eingetragen. Die Aufgabe steht an seiner Benutzer-Mappe und nennt den Zeitraum. | **Erledigt** heißt „zur Kenntnis genommen“. Ändert sich die Abwesenheit oder endet sie, erledigt sie sich von selbst. |
 | **Post für dich** | Bei neuer [Post](post.md) steht dein Name unter **Für**. | Ordne die Post zu, erledige sie oder gib sie weiter. Dann erledigt sie sich von selbst. |
+| **Auskunft** | Eine Person hat ihre Auskunft nach Art. 15 DSGVO über den Abruf-Link heruntergeladen – oder der Link wurde nach zu vielen falschen Abrufcodes gesperrt. Du bekommst das, wenn du die Auskunft erstellt hast oder die Mappe der Person ein [Favorit](ablage.md#favoriten) von dir ist. | **Erledigt** heißt „zur Kenntnis genommen“. Bis dahin kommt für denselben Link keine zweite Meldung. |
 
 Bei „Passt nicht“ löscht oder ändert das DMS nichts von selbst; die betroffenen Felder sind in der Mappe markiert, und geprüft wird beim nächsten Speichern.
 
