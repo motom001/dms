@@ -247,7 +247,7 @@ export async function seitenbild(inhalt: Buffer, mime: string, nr: number, px = 
       await starte('pdftoppm', ['-cropbox', '-f', String(nr), '-l', String(nr), '-scale-to', String(px), '-jpeg', '-jpegopt', 'quality=80', ein, join(dir, 's')]);
     } catch (e) { popplerFehler(e, 'Die Seite ließ sich nicht anzeigen'); }
     const datei = (await readdir(dir)).find((n) => n.startsWith('s-') && n.endsWith('.jpg'));
-    return datei ? readFile(join(dir, datei)) : null;
+    return datei ? await readFile(join(dir, datei)) : null;
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
