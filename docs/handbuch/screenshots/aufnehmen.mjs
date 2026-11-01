@@ -725,6 +725,13 @@ async function main() {
   await geheZu(s, '/profil/sicherheit');
   await s.getByRole('heading', { name: 'Meine angemeldeten Geräte' }).waitFor();
   await bild(s, 'profil', { fullPage: true });
+  // #420: Startseite und Anstehend unter Darstellung, Benachrichtigungen nur noch Benachrichtigungen.
+  await geheZu(s, '/profil/darstellung');
+  await s.getByRole('heading', { name: 'Anstehend' }).waitFor();
+  await bild(s, 'profil-darstellung', { fullPage: true });
+  await geheZu(s, '/profil/benachrichtigungen');
+  await s.getByRole('heading', { name: /Aufgaben/ }).waitFor();
+  await bild(s, 'profil-benachrichtigungen', { fullPage: true });
   await geheZu(s, '/profil/fehler-melden');
   await s.getByPlaceholder(/Beim Speichern/).fill('Beim Speichern einer Rechnung kam „Fehler 500“, nachdem ich ein Dokument hinzugefügt hatte.');
   await s.getByText('Technische Angaben ansehen').click();

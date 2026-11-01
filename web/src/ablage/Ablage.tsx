@@ -195,7 +195,7 @@ function AnstehendListe({ z, offen }: { z: ReturnType<typeof useAnstehend>; offe
     <>
       <div className="listenkopf">
         <div><h1>Anstehend</h1>
-          <p className="leise klein">Deine Fristen und Erinnerungen der nächsten {l?.tage ?? ANSTEHEND_TAGE} Tage – auch die, die noch nicht unter „Zu erledigen“ stehen. Den Zeitraum stellst du im <Link to="/profil/benachrichtigungen" className="verweis">Profil</Link> ein. <Hilfe ort="ablage.anstehend" /></p></div>
+          <p className="leise klein">Deine Fristen und Erinnerungen der nächsten {l?.tage ?? ANSTEHEND_TAGE} Tage – auch die, die noch nicht unter „Zu erledigen“ stehen. Den Zeitraum stellst du im <Link to="/profil/darstellung" className="verweis">Profil unter Darstellung</Link> ein. <Hilfe ort="ablage.anstehend" /></p></div>
       </div>
       {z.fehler && <p className="fehlertext">{z.fehler}</p>}
       {!l ? <p className="leise leerliste">Lade …</p> : !l.eintraege.length ? <p className="leise leerliste">Nichts in Ansicht.</p> : (
