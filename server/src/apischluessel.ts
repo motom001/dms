@@ -67,6 +67,18 @@ export class ApiSchluesselDienst {
     return { ...s, schluessel };
   }
 
+  /**
+   * Schlüssel für ein Dienstkonto (#338): ersetzt alle bisherigen. Der Klartext bleibt nur im Speicher
+   * des Läufers; nach einem Neustart gibt es einen neuen.
+   */
+  async fuerDienstkonto(b: Benutzer, recht: Recht): Promise<string> {
+    if (b.art !== 'dienst') throw new Error('Nur für Dienstkonten.');
+    for (const s of await this.repo.liste(b.id)) await this.repo.loesche(s.id);
+    const schluessel = `${PRAEFIX}${randomBytes(30).toString('base64url')}`;
+    await this.repo.lege({ id: randomUUID(), benutzerId: b.id, name: 'Paket-Läufer', praefix: sichtbar(schluessel), recht, passwoerter: false, ablauf: null, erstellt: new Date().toISOString(), zuletztBenutzt: null, hash: hasheSchluessel(schluessel) });
+    return schluessel;
+  }
+
   private async eigener(ich: Benutzer, id: string) {
     const s = istUuid(id) ? await this.repo.hole(id) : undefined;
     if (!s || s.benutzerId !== ich.id) throw new Fachfehler(404, 'Diesen Schlüssel gibt es nicht.');

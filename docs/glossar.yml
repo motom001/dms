@@ -482,11 +482,20 @@ begriffe:
     code: useExperteOffen
   - begriff: Paket-Läufer
     bereich: werkbank
-    beschreibung: Der Teil des DMS, der den Code von Paketen ausführt. Geplant – bis dahin läuft Code in Paketen nicht; ihre Einstellungen lassen sich schon pflegen.
+    beschreibung: Der Teil des DMS, der den Code von Paketen ausführt – abgeschottet in einem eigenen Prozess, mit Grenzen für Speicher und Zeit und nur mit den Rechten, die ein Administrator bei der Installation bestätigt hat. Seinen Stand zeigt Werkbank → Pakete → Paket im Abschnitt „Paket-Läufer“.
     einsteiger: fachwort
     begegnet: fortgeschritten
-    verwandt: [Paket]
-    code: PaketLaeufer
+    nicht_verwenden: [Code im Paket-Läufer, Plugin-Host]
+    verwandt: [Paket, Dienstkonto]
+    code: Paketlaeufer, PaketLaeufer
+  - begriff: Dienstkonto
+    bereich: werkbank
+    beschreibung: Das Konto, mit dem ein Paket mit Code im DMS arbeitet, z. B. „Paket Texterkennung“. Es meldet sich nie an, steht nicht unter Benutzer, löscht nie und hat nur die Rechte aus dem Paket. In der Historie steht es dort, wo das Paket etwas geändert hat.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Systembenutzer, Bot, technischer Benutzer]
+    verwandt: [Paket-Läufer, Benutzer]
+    code: "benutzer.art = 'dienst'"
   - begriff: Werkbank anpassen
     bereich: werkbank
     beschreibung: Legt fest, welche Bereiche links in der Werkbank stehen – nach einer Vorlage („Haushalt“, „Betrieb“ oder „Alles“) und mit Abweichungen. Ausblenden schaltet nichts ab. Neue Installationen starten mit „Haushalt“; Installationen von vor dieser Einstellung zeigen alles.

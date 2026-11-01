@@ -23,6 +23,7 @@ Das DMS lädt den Katalog von `https://raw.githubusercontent.com/motom001/dms-re
     - die Ansichten, mit Elternansicht
     - die Abhängigkeiten und ob sie installiert sind
     - wie viele Beispiel-Mappen es gibt
+    - bei Paketen mit Code: **was der Code darf** (siehe [Pakete mit Code](#pakete-mit-code)) – du bestätigst es mit einem Haken, sonst bleibt **Installieren** grau
 3. **Namen:** Gibt es einen Mappentyp oder eine Ansicht (auf oberster Ebene) mit gleichem Namen schon, sagt die Vorschau das und schlägt einen anderen vor, z. B. „Organisation (Basis)“. Du kannst jeden Namen ändern.
 4. **Beispiel-Mappen** legt das DMS nur an, wenn du den Haken setzt.
 5. **Fehlende Pakete mitinstallieren:** Braucht das Paket ein anderes, das noch fehlt, installiert das DMS es auf Wunsch vorher mit (die neueste passende Version aus dem Katalog).
@@ -91,8 +92,22 @@ Manche Pakete brauchen Einstellungen – etwa Regeln, nach denen sie Post zuordn
 
 Die Einstellungen sind **Teil der Sicherung**; Geheimnisse bleiben dabei verschlüsselt und werden beim Schlüsselwechsel mit umgeschlüsselt. Über die API v1 sind sie nicht lesbar; das Paket selbst bekommt sie über den Paket-Läufer. Das Protokoll vermerkt „Einstellungen von Paket … geändert (Felder …)“ – nie die Werte von Geheimnissen. Nur Administratoren sehen und ändern Einstellungen.
 
-!!! note "Pakete mit Code"
-    Einstellungen gehören zu Paketen mit Code. Solange es im DMS den **Paket-Läufer** noch nicht gibt, läuft der Code nicht: Du kannst solche Pakete installieren und ihre Einstellungen pflegen, Aktionen melden aber, dass sie noch nicht ausgeführt werden können.
+## Pakete mit Code
+
+Manche Pakete bringen **Code** mit – etwa eine eigene Texterkennung oder Regeln, die neue Post zuordnen. Der Code reagiert auf Ereignisse (neue Post, hochgeladenes Dokument, fertige Texterkennung, geänderte Einstellungen) und auf die **Aktionen** im Reiter „Einstellungen“. Das DMS führt ihn im **Paket-Läufer** aus:
+
+- **Abgeschottet:** Der Code ist WebAssembly und läuft in einem eigenen Prozess des DMS, ohne Zugriff auf Dateien, Schlüssel oder Datenbank. Das Netz erreicht er nur unter den Adressen, die das Paket angibt.
+- **Nur bestätigte Rechte:** Vor der Installation zeigt die Vorschau, was der Code darf – welche Mappentypen er lesen bzw. anlegen und ändern darf, ob er Dokumente lesen oder schreiben darf, welche Adressen im Netz er erreicht und auf welche Ereignisse er reagiert. Erst wenn du das bestätigst, installiert das DMS. Will ein **Update** mehr Rechte oder anderes Netz, fragt das DMS erneut.
+- **Dienstkonto:** Für jedes Paket mit Code legt das DMS ein Dienstkonto „Paket *Name*“ an. Mit ihm arbeitet der Code über die API; die Historie zeigt deshalb, was ein Paket geändert hat. Dienstkonten erscheinen nicht unter **Benutzer**, melden sich nie an und können **nie löschen** – auch nicht mit Rechten auf alle Mappentypen. Benutzer und Passwörter sehen sie nicht.
+- **Grenzen:** Jeder Aufruf hat höchstens 256 MB Speicher und 2 Minuten Zeit; es laufen höchstens zwei Aufrufe gleichzeitig. Was die Grenzen reißt, bricht ab, ohne das DMS zu stören.
+- **Wiederholen:** Ereignisse merkt sich das DMS. Scheitert ein Aufruf, versucht es der Läufer nach 1, 5, 30, 120 und 360 Minuten erneut und gibt dann auf. Während einer Wartung (z. B. beim Wiederherstellen) ruht der Läufer.
+
+**Werkbank → Pakete → *Paket*** zeigt im Abschnitt **Paket-Läufer**, ob der Läufer läuft, die letzten Aufrufe mit Dauer und Speicher, offene und aufgegebene Ereignisse und das Protokoll des Pakets. Meldungen stehen zusätzlich im [Protokoll](fehlersuche.md#protokoll) des DMS.
+
+**Entfernen** beendet den Code, löscht seine offenen Ereignisse und seinen Speicher und schaltet das Dienstkonto ab.
+
+!!! note "Volltext aus einem Paket"
+    Setzt ein Paket den Volltext eines Dokuments (z. B. das Paket **Texterkennung**), vermerkt die Historie „Volltext gesetzt“ mit dem Namen des Pakets, und die Texterkennung des DMS überschreibt diesen Text nicht.
 
 ## Expertenmodus: weitere Kataloge und Hochladen
 

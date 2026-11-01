@@ -222,7 +222,7 @@ export interface WhAbgleich {
 export interface ProbeStand { ampel: 'gruen' | 'gelb' | 'rot' | null; letzte: { name: string; am: string; ok: boolean; info: string } | null; plan: { aktiv: boolean; wochentag: number; uhrzeit: string } }
 export interface WartungWerkbank extends WartungOeffentlich { beginn: string | null; von: string | null; sitzungen: WartungSitzung[] }
 /** Benutzer für Namen und Empfängerauswahl; abwesend, solange die Abwesenheit an ist (#78). */
-export interface Person { id: string; name: string; aktiv?: boolean; abwesend?: { wirkt: boolean; von: string | null; bis: string | null; vertreter: string } }
+export interface Person { id: string; name: string; aktiv?: boolean; /** Dienstkonto eines Pakets (#338) */ art?: 'dienst'; abwesend?: { wirkt: boolean; von: string | null; bis: string | null; vertreter: string } }
 /** Werkbank: tägliche Zusammenfassung (#54, #92, #94). */
 export interface MailEinstellung { aktiv: boolean; uhrzeit: string; bundesland: string | null }
 export interface Zusammenfassung {
@@ -452,9 +452,10 @@ export const api = {
   paketQuelleEntfernen: (url: string) => anfrage<PaketQuelle[]>('DELETE', `/api/werkbank/pakete/quellen?${new URLSearchParams({ url })}`),
   paketHochladen: (datei: File) => sendeDatei('/api/werkbank/pakete/hochladen', datei) as Promise<{ upload: string; vorschau: PaketVorschau }>,
   paketVorschau: (e: { id?: string; version?: string; quelle?: string; upload?: string }) => anfrage<PaketVorschau>('POST', '/api/werkbank/pakete/vorschau', e),
-  paketInstallieren: (e: { id?: string; version?: string; quelle?: string; upload?: string; bestaetigt?: boolean; namen?: Record<string, string>; sichtNamen?: Record<string, string>; beispiele?: boolean; mitAbhaengigkeiten?: boolean }) => anfrage<InstalliertesPaket>('POST', '/api/werkbank/pakete/installieren', e),
+  paketInstallieren: (e: { id?: string; version?: string; quelle?: string; upload?: string; bestaetigt?: boolean; rechteBestaetigt?: boolean; namen?: Record<string, string>; sichtNamen?: Record<string, string>; beispiele?: boolean; mitAbhaengigkeiten?: boolean }) => anfrage<InstalliertesPaket>('POST', '/api/werkbank/pakete/installieren', e),
   paketUpdates: () => anfrage<Array<{ id: string; installiert: string; neu: string; changelog: string | null; quelle: string }>>('POST', '/api/werkbank/pakete/updates'),
-  paketAktualisieren: (id: string, version?: string, bestaetigt?: boolean) => anfrage<InstalliertesPaket>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/aktualisieren`, { version, bestaetigt }),
+  paketAktualisieren: (id: string, version?: string, bestaetigt?: boolean, rechteBestaetigt?: boolean) => anfrage<InstalliertesPaket>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/aktualisieren`, { version, bestaetigt, rechteBestaetigt }),
+  paketLaeufer: () => anfrage<PaketlaeuferStand | null>('GET', '/api/werkbank/pakete/laeufer'),
   paketEntfernen: (id: string, einstellungenBehalten = false) => anfrage<void>('DELETE', `/api/werkbank/pakete/${encodeURIComponent(id)}${einstellungenBehalten ? '?einstellungenBehalten=1' : ''}`),
   paketEinstellungen: (id: string) => anfrage<PaketEinstellungenStand>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`),
   paketEinstellungenSpeichern: (id: string, werte: Record<string, unknown>) => anfrage<PaketEinstellungenStand>('PUT', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`, { werte }),
@@ -596,6 +597,13 @@ export interface PaketVorschau {
   typen: Array<{ schluessel: string; dmsSchluessel: string; name: string; felder: number; vorhanden: boolean; neueFelder: string[]; neueRegister: string[]; konflikt: string | null; vorschlag: string | null; geloescht?: boolean }>;
   sichten: Array<{ schluessel: string; name: string; eltern: string | null; vorhanden: boolean; konflikt: string | null; vorschlag: string | null }>;
   beispiele: number; probleme: string[]; hinweise: string[]; einstellungen: { neu: string[]; weg: string[] } | null;
+  /** Paket mit Code (#338): Rechte und Netz; bestaetigen = muss ausdrücklich erlaubt werden. */
+  laeufer?: { rechte: string[]; bestaetigen: boolean } | null;
+}
+/** Paket-Läufer (#338): Stand je Paket mit Code. */
+export interface PaketlaeuferStand {
+  laeuft: boolean; pausiert: boolean; grenzen: { speicherMB: number; sekunden: number; parallel: number };
+  pakete: Array<{ id: string; name: string; version: string; dienstkonto: string | null; geladen: boolean; fehler: string | null; aufrufe: number; fehlgeschlagen: number; letzterAufruf: string | null; dauerMs: number | null; speicherMB: number | null; ereignisse: { offen: number; aufgegeben: number; zugestellt: number }; letzte: Array<{ zeit: string; art: string; ok: boolean; text: string }>; protokoll: Array<{ zeit: string; stufe: number; text: string }> }>;
 }
 export type RechtStufe = 'immer' | 'nie' | 'teils';
 export interface BerechtigungEintrag { typId: string; name: string; system: string | null; berechtigungen: Regelwerk }

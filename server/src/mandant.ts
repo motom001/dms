@@ -29,7 +29,7 @@ export async function bestimmeMandant(sql: postgres.Sql, a: Anbindung, env: Reco
   } else if (ausEnv) {
     e = { id: ausEnv, quelle: 'umgebung', hinweis: 'HAUSHALT_ID wurde übernommen und kann aus der Compose-Datei entfernt werden.' };
   } else {
-    const [r] = await sql`SELECT haushalt_id, count(*)::int AS n FROM benutzer GROUP BY haushalt_id ORDER BY n DESC, (haushalt_id = ${STANDARD_MANDANT}) DESC LIMIT 1`;
+    const [r] = await sql`SELECT haushalt_id, count(*)::int AS n FROM benutzer WHERE art = 'person' GROUP BY haushalt_id ORDER BY n DESC, (haushalt_id = ${STANDARD_MANDANT}) DESC LIMIT 1`;
     e = r ? { id: String(r.haushalt_id), quelle: 'bestand', hinweis: null } : { id: STANDARD_MANDANT, quelle: 'neu', hinweis: null };
   }
   await sql`INSERT INTO haushalte (id, name) VALUES (${e.id}, 'Mandant') ON CONFLICT (id) DO NOTHING`;

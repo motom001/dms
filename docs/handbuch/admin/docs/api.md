@@ -67,6 +67,7 @@ Die API-Dokumentation beschreibt alle Endpunkte mit ihren Parametern. Ein Überb
 | **E-Mail** | `POST /api/v1/mappen/{id}/email` versendet eine Mappe mit Dokumenten (zusammen höchstens 50 MB) |
 | **Dokumente und Versionen** | `POST /api/v1/mappen/{id}/dokumente` (hochladen), `POST /api/v1/dokumente/{id}/ersetzen` (neue Version), `GET /api/v1/dokumente/{id}/versionen`, ältere Version herunterladen und `…/zurueckholen` |
 | **Texterkennung** | `POST /api/v1/dokumente/{id}/texterkennung` stößt sie für ein Dokument (erneut) an; `GET /api/v1/dokumente/{id}/volltext` liefert den Text |
+| **Volltext setzen** | `PUT /api/v1/dokumente/{id}/volltext` mit `{ "text": "…" }` (Recht U auf die Mappe) ersetzt den Volltext, z. B. aus einer eigenen Texterkennung; `GET /api/v1/dokumente/{id}/seiten/{nr}/scan?dpi=300` liefert eine Seite als Graustufenbild (PGM) |
 
 ### Post anlegen und zuordnen
 

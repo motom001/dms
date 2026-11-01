@@ -20,6 +20,7 @@ import type { Messung } from './messung';
 import type { Vorschaubilder } from './vorschau';
 import { Paketverwaltung, type InstallierenEingabe } from './pakete';
 import { Paketerstellung } from './paketerstellung';
+import type { Paketlaeufer } from './laeufer/verwaltung';
 import { eigeneVersion, standKennung, uebersicht, versionsabgleich, type SystemQuelle } from './system';
 import type { Fehlermeldungen } from './fehlermeldungen';
 import { MODULE, protokoll, STUFEN, type Stufe } from './protokoll';
@@ -188,6 +189,8 @@ export interface RoutenExtras {
   ordner?: OrdnerPruefung;
   /** Paketverwaltung (#188); ohne Angabe: offizieller Katalog über das Netz. */
   pakete?: Paketverwaltung;
+  /** Paket-Läufer (#338): Stand für die Werkbank. */
+  paketlaeufer?: Paketlaeufer;
   /** Einrichtungsassistent und Datenbank-Anbindung (#119). */
   einrichtung?: Einrichtung;
   anbindung?: AnbindungVerwaltung;
@@ -512,7 +515,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/personen', zugang: 'angemeldet', handler: async (a) => {
       const alle = await konten.personen();
       const sichtbar = await dienst.lesbare(await zg(a), alle.map((p) => p.id));
-      return ok(alle.filter((p) => sichtbar.has(p.id)));
+      // Dienstkonten der Pakete haben keine Benutzer-Mappe; ihr Name („Paket …“) ist für alle sichtbar (#338).
+      return ok(alle.filter((p) => sichtbar.has(p.id) || ('art' in p && p.art === 'dienst')));
     } },
     { methode: 'GET', pfad: '/api/benutzer', zugang: 'admin', handler: async () => {
       const rollen = await dienst.weitereRollen();
@@ -814,7 +818,9 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/werkbank/pakete/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await pakete.vorschau((a.body ?? {}) as { id?: string; version?: string; quelle?: string; upload?: string })) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/installieren', zugang: 'admin', handler: async (a) => ok(await pakete.installiere((a.body ?? {}) as InstallierenEingabe, wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/updates', zugang: 'admin', handler: async () => ok(await pakete.updates()) },
-    { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktualisieren', zugang: 'admin', handler: async (a) => ok(await pakete.aktualisiere(a.params.id, (a.body ?? {}) as { version?: string; bestaetigt?: boolean }, wer(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktualisieren', zugang: 'admin', handler: async (a) => ok(await pakete.aktualisiere(a.params.id, (a.body ?? {}) as { version?: string; bestaetigt?: boolean; rechteBestaetigt?: boolean }, wer(a))) },
+    // Paket-Läufer (#338): Stand je Paket mit Code – geladen, Aufrufe, Fehler, Ereignisse.
+    { methode: 'GET', pfad: '/api/werkbank/pakete/laeufer', zugang: 'admin', handler: async () => ok(x.paketlaeufer ? await x.paketlaeufer.uebersicht() : null) },
     { methode: 'DELETE', pfad: '/api/werkbank/pakete/:id', zugang: 'admin', handler: async (a) => { await pakete.entferne(a.params.id, wer(a), a.query.einstellungenBehalten === '1'); return leer; } },
     // Paket-Einstellungen (#197): nur Administratoren, nicht über die API v1.
     { methode: 'GET', pfad: '/api/werkbank/pakete/:id/einstellungen', zugang: 'admin', handler: async (a) => ok(await pakete.einstellungen(a.params.id)) },
@@ -1390,6 +1396,21 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const r = await dienst.volltext(a.params.id);
       return ok({ id: r.dokument.id, name: r.dokument.name, ocr: r.dokument.ocr, text: r.text });
     } },
+    // Volltext schreiben (#338): für Pakete wie die Texterkennung – Dienstkonto mit „Dokumente schreiben“ oder Recht Bearbeiten.
+    { methode: 'PUT', pfad: '/api/dokumente/:id/volltext', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), a.benutzer?.art === 'dienst' ? 'R' : 'U');
+      const p = a.benutzer?.art === 'dienst' ? (await dienst.listePakete()).find((x) => x.id === a.benutzer!.paketId) : undefined;
+      const herkunft = p ? `${p.name} ${p.version}` : `über die API (${ich(a).name || ich(a).email})`;
+      const d = await dienst.schreibeVolltext(a.params.id, a.body, { id: ich(a).id, herkunft, paket: !!p });
+      return ok({ id: d.id, name: d.name, ocr: d.ocr });
+    } },
+    // Seite als Graustufenbild (#338): Eingabe für eine Texterkennung im Paket (PGM, 8 Bit).
+    { methode: 'GET', pfad: '/api/dokumente/:id/seiten/:nr/scan', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      const dpi = a.query.dpi === undefined ? 300 : Number(a.query.dpi);
+      const bild = await dienst.seiteAlsGraubild(a.params.id, Number(a.params.nr), dpi);
+      return { datei: { inhalt: bild, name: `seite-${a.params.nr}.pgm`, mime: 'image/x-portable-graymap', anzeigen: false, groesse: bild.length } };
+    } },
     { methode: 'POST', pfad: '/api/dokumente/:id/texterkennung', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
       const d = await dienst.texterkennungErneut(a.params.id);
@@ -1480,11 +1501,34 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   ];
   // Kein verschlüsselter Wert verlässt den Server: Passwortfelder erscheinen als { gesetzt, lesbar } (#46).
   const lesbar = (v: string) => !!x.tresor?.lesbar(v);
+  // Dienstkonten (#338): Dokumente nur mit dem bestätigten Recht – lesen (GET) bzw. schreiben.
+  // Dienstkonten von Paketen (#338): Dokumente nur mit dem Recht aus dem Manifest; E-Mail-Versand nie (Anhänge, Netz).
+  const dokumentRoute = (r: Route) => /\/dokumente\b|\/archivnummern\b/.test(r.pfad);
+  const nieFuerPakete = (r: Route) => /\/email\b/.test(r.pfad);
+  const lesendePost = (r: Route) => /\/dokumente\/gleiche$/.test(r.pfad);
+  const dokumentRecht = async (r: Route, a: Anfrage): Promise<'keine' | 'lesen' | 'schreiben' | null> => {
+    if (a.benutzer?.art !== 'dienst') return null;
+    if (nieFuerPakete(r)) throw new Fachfehler(403, 'Pakete dürfen keine E-Mails versenden.');
+    const recht = (await zg(a)).paket?.dokumente ?? 'keine';
+    if (!dokumentRoute(r)) return recht;
+    const schreibt = r.methode !== 'GET' && !lesendePost(r);
+    if (recht === 'keine' || (schreibt && recht !== 'schreiben')) throw new Fachfehler(403, 'Dieses Paket darf das mit Dokumenten nicht (Rechte aus dem Manifest).');
+    return recht;
+  };
+  /** Ohne Dokumentrecht sieht ein Paket an der Mappe auch die Liste der Dokumente nicht. */
+  const ohneDokumente = (body: unknown) => {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return body;
+    const { dokumente: _weg, ...rest } = body as Record<string, unknown>;
+    return rest;
+  };
   return alle.map((r) => ({
     ...r,
     handler: async (a: Anfrage) => {
+      const paketRecht = await dokumentRecht(r, a);
       const antwort = await r.handler(a);
-      return antwort.body === undefined ? antwort : { ...antwort, body: maskiere(antwort.body, lesbar) };
+      if (antwort.body === undefined) return antwort;
+      const body = paketRecht === 'keine' && r.methode === 'GET' && /\/mappen\/:id$/.test(r.pfad) ? ohneDokumente(antwort.body) : antwort.body;
+      return { ...antwort, body: maskiere(body, lesbar) };
     },
   }));
 }

@@ -86,18 +86,13 @@ code:
 - Höchstens **zwei Ebenen**: Abschnitte (`abschnitt`, `hilfe`, `felder`) und Listen (`liste`, `name`, `eintrag`, `hilfe`, `sortierbar`, `felder`).
 - **Typen:** `text`, `mehrzeilig`, `zahl` (`min`/`max`), `janein`, `datum`, `auswahl` und `mehrfachauswahl` (`optionen`), `geheim`, Verweise `mappentyp`, `feld` (mit `mappentyp:`), `benutzer`, `rolle`, `sicht`.
 - **Werte**, wie das Paket sie bekommt: Abschnittsfelder unter ihrer Kennung, Listen als Liste von Objekten (mit `_id` je Eintrag). Verweise sind Ids (bei `feld`: `{ typ, feld }`), Geheimnisse im Klartext – nur für das eigene Paket.
-- Zu `code` verlangt das Schema außerdem `sprache`, `quelle` und `rechte` (siehe Vorlage); das Beispiel oben zeigt nur Einstellungen und Aktionen.
+- Zu `code` gehören außerdem `sprache`, `quelle`, `ereignisse`, `rechte` und `netz` (siehe [Pakete mit Code](pakete-code.md#im-manifest)); das Beispiel oben zeigt nur Einstellungen und Aktionen.
 - **Zugangsdaten nur als `geheim`**, nie als `text` und nie mit `standard`.
 - Bei einem **Update** bekommen neue Felder ihre Vorgabe, vorhandene Werte bleiben, wegfallende werden entfernt.
 
 `werkzeuge/pruefen.py` prüft Kennungen, Vorgaben, Optionen, Geheimnisse und Verweise. Zum Ausprobieren eignet sich der Expertenmodus mit **Paket hochladen**.
 
-!!! warning "Erst mit dem Paket-Läufer"
-    Code in Paketen läuft erst mit dem Paket-Läufer, und den gibt es im DMS noch nicht (geplant, #197). Bis dahin gilt:
-
-    - Einstellungen lassen sich in der Werkbank pflegen; das DMS prüft und speichert sie.
-    - Das Ereignis `paket.einstellungen_geaendert` bei einer Änderung und das Lesen der Werte mit `dms.einstellungen()` wirken erst mit dem Paket-Läufer.
-    - **Aktionen** melden „Pakete mit Code laufen in diesem DMS noch nicht“, statt etwas zu tun.
+Was das Paket mit den Einstellungen macht und welche Rechte es braucht, beschreibt [Pakete mit Code](pakete-code.md).
 
 ## Prüfen
 
@@ -127,4 +122,4 @@ Mehrere Pakete testest du auch als eigenen Katalog: `python3 werkzeuge/katalog.p
 
 ## Ausblick
 
-- Geplant: **Pakete mit Code**, die auf Ereignisse reagieren und mit eigenen, bei der Installation bestätigten Rechten über die API arbeiten – abgeschottet als WebAssembly. Dafür kommt der Paket-Läufer.
+- **Pakete mit Code** gibt es seit 0.88.0: WebAssembly-Module, die auf Ereignisse reagieren und mit bestätigten Rechten über die API arbeiten – siehe [Pakete mit Code](pakete-code.md).

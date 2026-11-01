@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Readable } from 'node:stream';
 import { OCR_STAENDE, type Dokument, type OcrStandArt } from '../../shared/src/model';
+import { PAKET_TEXT } from '../../shared/src/pakete';
 import type { Dateispeicher } from './dateispeicher';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
@@ -170,6 +171,8 @@ export class Texterkennung {
   private laeufe = new Map<string, AbortController>();
   private werkzeuge?: Promise<Werkzeuge>;
   private aus = false;
+  /** Nach jedem fertigen Ergebnis (#338: Ereignis für Pakete). */
+  nachher: ((d: Dokument, e: OcrErgebnis) => void) | null = null;
   /** Im aktiven Wartungsmodus (#102) keine neuen Aufträge; danach anstossen(). */
   pause: () => boolean = () => false;
 
@@ -245,9 +248,13 @@ export class Texterkennung {
         : /password|passwort|encrypt/i.test(m) ? { stand: 'ausgelassen', info: 'Das PDF ist mit einem Passwort geschützt.', text: null }
         : { stand: 'fehler', info: m.slice(0, 500) };
     } finally { this.laeufe.delete(d.id); }
+    // Hat inzwischen ein Paket den Volltext geschrieben (#338), bleibt der stehen.
+    const jetzt = await this.repo.holeDokument(d.id).catch(() => undefined);
+    if (jetzt?.ocr?.stand === 'fertig' && jetzt.ocr.info?.startsWith(PAKET_TEXT)) { log.info('Texterkennung verworfen: Volltext kam schon von einem Paket', { dokument: d.name, id: d.id }); return; }
     try { await this.repo.ocrSetze(d.id, e); } catch (f) { log.error('Ergebnis der Texterkennung nicht gespeichert', { dokument: d.name, fehler: (f as Error).message }); return; }
     const daten = { dokument: d.name, id: d.id, stand: e.stand, seiten: e.seiten ?? undefined, ms: Date.now() - start, info: e.info ?? undefined };
     if (e.stand === 'fehler') log.warn('Texterkennung fehlgeschlagen', daten); else if (e.stand === 'ausgelassen') log.info('Texterkennung ausgelassen', daten); else log.info('Texterkennung abgeschlossen', daten);
+    try { this.nachher?.(d, e); } catch { /* nur Benachrichtigung */ }
   }
 
   private async ergebnis(d: Dokument, o: OcrEinstellungen, signal?: AbortSignal): Promise<OcrErgebnis> {

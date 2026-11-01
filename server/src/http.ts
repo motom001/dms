@@ -36,6 +36,9 @@ import { anfrageStufe, dateiKoepfe, leseCookie, modulAus, pruefeZugang, routen, 
 type MitKontext = FastifyRequest & { dms?: Kontext; lesend?: boolean };
 
 interface Optionen {
+  /** Paketverwaltung mit Paket-Läufer (#338); ohne: Paketverwaltung ohne Läufer. */
+  pakete?: import('./pakete').Paketverwaltung;
+  paketlaeufer?: import('./laeufer/verwaltung').Paketlaeufer;
   /** Verzeichnis der gebauten Weboberfläche; fehlt es, gibt es nur die API. */
   webDir?: string;
   /** @deprecated Protokoll läuft immer über protokoll.ts; bleibt für ältere Aufrufer. */

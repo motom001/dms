@@ -8,6 +8,7 @@ import type { Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
 import { Auftraege } from './auftrag';
 import { protokoll } from './protokoll';
+import { graubild } from './graubild';
 import { Fachfehler } from './fehler';
 import { fuegeZusammen, pruefeAuswahl, pruefeTeile, SEITENBILDER_MAX, Seitenbilder, seitenInfo, teile, teilName } from './pdfseiten';
 import { aufkleberPdf, ETIKETTEN, type Etikett } from './aufkleber';
@@ -29,7 +30,7 @@ import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile }
 import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
 import { alleSichtRechte, bereinigeSichtRegelwerk, sichtRegelProblem, sichtTestlauf, type SichtRegelwerk } from '../../shared/src/sichtrechte';
 import { liesDirektlink } from '../../shared/src/direktlink';
-import type { InstalliertesPaket } from '../../shared/src/pakete';
+import { ALLE_TYPEN, PAKET_TEXT, type EreignisArt, type InstalliertesPaket, type PaketCode } from '../../shared/src/pakete';
 import type { PaketEntwurf } from '../../shared/src/paketerstellung';
 import { abfrageAus, liesSuche } from '../../shared/src/erweitertesuche';
 import type { Lesefilter } from '../../shared/src/rechte';
@@ -52,8 +53,15 @@ export interface Zugriff {
   a: Aufloesung;
   typen: Map<string, Mappentyp>;
   lesen: Lesefilter | null;
+  /**
+   * Dienstkonto eines Pakets (#338): Rechte fest aus dem bestätigten Manifest statt aus Regeln.
+   * typen enthält dann nur die lesbaren Typen; schreiben = Ids der Typen mit Anlegen/Bearbeiten.
+   */
+  paket?: { id: string; schreiben: Set<string>; dokumente: PaketCode['rechte']['dokumente'] };
 }
 export const NICHT_SICHTBAR = 'nicht sichtbare Mappe';
+/** Obergrenze für geschriebenen Volltext (Zeichen). */
+export const VOLLTEXT_MAX = 5_000_000;
 /** Auswahlfilter (#172) zählen nichts – nur Bedingungen auf Felder. */
 const KEINE_ZAEHLUNG = { dokumente: () => 0, verknuepfungen: () => 0 };
 const VERBOTEN: Record<Recht, string> = {
@@ -396,6 +404,26 @@ export class Dienst {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
     return { dokument: d, text: await this.repo.volltext(id) };
+  }
+
+  /**
+   * Volltext schreiben (#338, für die Texterkennung als Paket): ersetzt den Volltext eines Dokuments.
+   * Die Herkunft steht in ocr.info und in der Historie der Mappe; die eingebaute Texterkennung
+   * überschreibt diesen Text danach nicht mehr von selbst (nur „Texterkennung erneut“).
+   */
+  async schreibeVolltext(id: string, eingabe: unknown, von: { id: string; herkunft: string; paket: boolean }) {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    if (typeof e.text !== 'string') throw new Fachfehler(422, 'text fehlt.');
+    if (e.text.length > VOLLTEXT_MAX) throw new Fachfehler(413, `Der Text ist zu lang (höchstens ${VOLLTEXT_MAX} Zeichen).`);
+    const seiten = Number.isInteger(e.seiten) && (e.seiten as number) > 0 ? e.seiten as number : null;
+    // Nur Text eines Pakets schützt vor der eingebauten Texterkennung (PAKET_TEXT); über die API gesetzter nicht.
+    const info = (von.paket ? `${PAKET_TEXT}${von.herkunft}` : `Volltext ${von.herkunft}`).slice(0, 200);
+    await this.repo.ocrSetze(id, { stand: 'fertig', text: e.text.replace(/\u0000/g, ''), seiten: seiten ?? d.ocr?.seiten ?? null, info });
+    await this.notiere(d.mappeId, von.id, 'volltext', { dokument: d.name, text: info });
+    protokoll.modul('ablage').info('Volltext geschrieben', { dokument: id, zeichen: e.text.length, herkunft: von.herkunft });
+    return (await this.repo.holeDokument(id))!;
   }
 
   private verschluessele = (klartext: string) => (this.tresor ? this.tresor.verschluessele(klartext) : keinSchluessel());
@@ -1412,12 +1440,40 @@ export class Dienst {
    * Wer greift zu, und was darf er lesen? Für Administratoren gelten die Regeln nicht (#128):
    * lesen = null (alles). Wird je Anfrage einmal gebildet.
    */
-  async zugriff(ich: { id: string; rolle: string }): Promise<Zugriff> {
+  async zugriff(ich: { id: string; rolle: string; art?: 'dienst'; paketId?: string }): Promise<Zugriff> {
     const a = await this.aufloesung(ich.id);
     const typen = await this.repo.listeTypen();
-    const admin = ich.rolle === 'admin';
+    const admin = ich.rolle === 'admin' && ich.art !== 'dienst';
     const wer: Wer = { id: ich.id, rollen: a.meineRollen };
+    if (ich.art === 'dienst') return this.paketZugriff(ich, a, wer, typen);
     return { ich, admin, wer, a, typen: new Map(typen.map((t) => [t.id, t])), lesen: admin ? null : lesefilter(typen, wer, a) };
+  }
+
+  /** Zugriff eines Dienstkontos (#338): nur die Typen und Rechte, die bei der Installation bestätigt wurden. */
+  private async paketZugriff(ich: { id: string; rolle: string; paketId?: string }, a: Aufloesung, wer: Wer, typen: Mappentyp[]): Promise<Zugriff> {
+    const pakete = await this.repo.listePakete();
+    const p = pakete.find((x) => x.id === ich.paketId);
+    const r = p?.laeufer?.rechte ?? { lesen: [], schreiben: [], dokumente: 'keine' as const };
+    const dms = await this.sichereSystem();
+    const ablageort = await this.ablageortId();
+    const aufloesen = (liste: string[]): Set<string> => {
+      const ids = new Set<string>();
+      for (const vw of liste) {
+        if (vw === ALLE_TYPEN) { for (const t of typen) if (t.system !== 'benutzer') ids.add(t.id); continue; }
+        const [pk, sl] = vw.includes(':') ? vw.split(':') : [p?.id ?? '', vw];
+        const id = pk === 'dms' ? (sl === 'ablageort' ? ablageort : sl === 'benutzer' ? dms.benutzer.id : sl === 'rolle' ? dms.rolle.id : null)
+          : pakete.find((x) => x.id === pk)?.typen[sl];
+        if (id) ids.add(id);
+      }
+      return ids;
+    };
+    const lesbar = aufloesen(r.lesen);
+    const sichtbar = typen.filter((t) => lesbar.has(t.id));
+    return {
+      ich: { id: ich.id, rolle: 'mitglied' }, admin: false, wer, a, typen: new Map(sichtbar.map((t) => [t.id, t])),
+      lesen: { offen: sichtbar.map((t) => t.id), je: [] },
+      paket: { id: p?.id ?? '', schreiben: aufloesen(r.schreiben), dokumente: r.dokumente },
+    };
   }
 
   /** Wirksame Rechte an einer Mappe (Administrator: alles im Rahmen der Haken am Mappentyp). */
@@ -1425,6 +1481,8 @@ export class Dienst {
     const typ = z.typen.get(m.typId);
     if (!typ) return { ...NICHTS };
     if (z.admin) return wirksamVon(ALLES, typ);
+    // Dienstkonto (#338): lesen, was bestätigt ist; anlegen/bearbeiten nur die Typen unter „schreiben“; nie löschen, nie Passwörter.
+    if (z.paket) { const w = wirksamVon(ALLES, typ); const s = z.paket.schreiben.has(typ.id); return { C: w.C && s, R: w.R, U: w.U && s, D: false, P: false }; }
     return rechteAnMappe(typ, m, z.wer, z.a, await this.mappenquelle(z.wer.id, neu ? [] : [m.id]), neu).wirksam;
   }
 
@@ -1964,6 +2022,36 @@ export class Dienst {
   /* ---------- Pakete (#188): Ablage der installierten Pakete; die Logik steckt in pakete.ts ---------- */
 
   listePakete() { return this.repo.listePakete(); }
+  speicherePaketCode(id: string, dateien: Array<{ name: string; inhalt: Buffer }>) { return this.repo.speicherePaketCode(id, dateien); }
+  paketCode(id: string) { return this.repo.paketCode(id); }
+  loeschePaketCode(id: string) { return this.repo.loeschePaketCode(id); }
+  loescheEreignisse(id: string) { return this.repo.loescheEreignisse(id); }
+  /** Ereignisse für Pakete (#338). */
+  faelligeEreignisse(n: number) { return this.repo.faelligeEreignisse(n); }
+  ereignisZugestellt(id: string) { return this.repo.ereignisZugestellt(id); }
+  ereignisFehlgeschlagen(id: string, fehler: string, naechster: Date | null) { return this.repo.ereignisFehlgeschlagen(id, fehler, naechster); }
+  ereignisStand() { return this.repo.ereignisStand(); }
+  /** Wird beim Anlegen eines Ereignisses aufgerufen (der Läufer stellt dann gleich zu). */
+  ereignisWecker: (() => void) | null = null;
+  /** Dienstkonten der Pakete (Benutzer-Id → Paket-Id), vom Paket-Läufer gepflegt. */
+  paketKonten = new Map<string, string>();
+
+  /**
+   * Ereignis für alle Pakete mit Code, die es abonniert haben (#338). Nicht blockierend: Fehler hier
+   * dürfen die eigentliche Änderung nie verhindern, sie landen nur im Protokoll.
+   */
+  /** von: wer es ausgelöst hat – ein Paket bekommt seine eigenen Änderungen nicht gemeldet (sonst Schleifen). */
+  async melde(art: EreignisArt, daten: Record<string, unknown>, nurPaket?: string, von?: string | null): Promise<void> {
+    try {
+      const selbst = von ? this.paketKonten.get(von) : undefined;
+      const pakete = (await this.repo.listePakete()).filter((p) => p.laeufer?.ereignisse.includes(art) && (!nurPaket || p.id === nurPaket) && p.id !== selbst);
+      if (!pakete.length) return;
+      await this.repo.legeEreignisseAn(pakete.map((p) => ({ id: randomUUID(), paketId: p.id, art, daten })));
+      this.ereignisWecker?.();
+    } catch (e) {
+      protokoll.modul('werkbank').error('Ereignis für Pakete nicht gespeichert', { art, fehler: (e as Error).message });
+    }
+  }
   speicherePaket(p: InstalliertesPaket) { return this.repo.speicherePaket(p); }
   loeschePaket(id: string) { return this.repo.loeschePaket(id); }
 
@@ -1995,6 +2083,15 @@ export class Dienst {
   async setzePaketEinstellungen(id: string, v: { werte: Record<string, unknown>; status?: { letzterLauf: string | null; meldungen: string[] } } | null) {
     if (!this.einstellungen) throw new Fachfehler(404, 'Einstellungen sind nicht eingerichtet.');
     await this.einstellungen.schreibe(`paket:${id}`, v);
+  }
+  /** Kleiner eigener Speicher eines Pakets mit Code (#338), getrennt von den Einstellungen. */
+  async paketSpeicher(id: string): Promise<Record<string, string>> {
+    const v = await this.einstellungen?.lies(`paketspeicher:${id}`);
+    return v && typeof v === 'object' ? v as Record<string, string> : {};
+  }
+  async setzePaketSpeicher(id: string, werte: Record<string, string> | null) {
+    if (!this.einstellungen) throw new Fachfehler(404, 'Einstellungen sind nicht eingerichtet.');
+    await this.einstellungen.schreibe(`paketspeicher:${id}`, werte);
   }
   /** Geheimnisse von Paketen mit dem Tresor des DMS. */
   verschluesselePaketGeheimnis(text: string): string {
@@ -2768,6 +2865,7 @@ export class Dienst {
     const titel = (await this.aktualisiereTitel([m.id])).get(m.id);
     await this.postAufgaben(m.id, ich.id);
     protokoll.modul('ablage').info('Post angelegt', { mappe: m.id, kanal: werte.kanal });
+    await this.melde('post.angelegt', { mappe: m.id, kanal: werte.kanal }, undefined, ich.id);
     return { ...m, titel };
   }
 
@@ -3336,6 +3434,7 @@ export class Dienst {
       neu = (await this.repo.holeDokument(dokument.id)) ?? dokument;
       this.ocr?.anstossen();
     }
+    await this.melde('dokument.hochgeladen', { dokument: dokument.id, mappe: mappeId, name, mime: dokument.mime, groesse: inhalt.length, volltextGeplant: neu.ocr?.stand === 'wartet' }, undefined, benutzerId);
     const bezuege = await this.repo.bezuege(gleicherInhalt.map((d) => d.mappeId));
     return { dokument: neu, gleicherInhalt: gleicherInhalt.map((d) => ({ mappeId: d.mappeId, name: d.name, ...bezuege.get(d.mappeId) })) };
   }
@@ -3392,6 +3491,12 @@ export class Dienst {
     if (d.mime !== 'application/pdf') throw new Fachfehler(422, `„${d.name}“ ist kein PDF – bearbeiten lassen sich nur PDF-Dokumente.`);
     const s = await this.dateien.lies(d.sha256);
     return { d, inhalt: Buffer.isBuffer(s) ? s : Buffer.concat(await s.toArray() as Buffer[]) };
+  }
+
+  /** Eine Seite als Graustufenbild (PGM) für eine Texterkennung im Paket (#338). */
+  async seiteAlsGraubild(id: string, nr: number, dpi: number): Promise<Buffer> {
+    const { inhalt } = await this.pdfVon(id);
+    return graubild(inhalt, nr, dpi);
   }
 
   /** Seitenzahl und Drehung je Seite. */

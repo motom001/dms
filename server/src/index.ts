@@ -36,6 +36,8 @@ import { Einrichtung } from './einrichtung';
 import { bestimmeMandant, mandantNamen } from './mandant';
 import { ordnerAblage, Vorschaubilder } from './vorschau';
 import { Texterkennung } from './texterkennung';
+import { Paketlaeufer } from './laeufer/verwaltung';
+import { Paketverwaltung } from './pakete';
 import { Aufgabenmail } from './aufgabenmail';
 import { Fehlermeldungen, pgFehlerRepo } from './fehlermeldungen';
 import { Wartung } from './wartung';
@@ -256,11 +258,34 @@ const konsole = new Konsolenzugang();
 // Anmeldung über einen Anbieter (#241); Client-Secret verschlüsselt mit dem Schlüssel des DMS.
 const oidc = new Oidc({ einstellungen: pgEinstellungen(sql, cfg.haushalt), verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w) });
 konten.verbindeAnbieter(() => oidc.bereit());
+// Paket-Läufer (#338): Pakete mit Code in einem eigenen Prozess; ihre API-Anfragen laufen über app.inject.
 const apiSchluessel = new ApiSchluesselDienst(messung.umhuelle(pgApiSchluesselRepo(sql), 'apischluessel'));
+let appFuerPakete: Awaited<ReturnType<typeof baueApp>> | null = null;
+const paketlaeufer: Paketlaeufer = new Paketlaeufer({
+  dienst, konten, schluessel: apiSchluessel,
+  api: async (q) => {
+    if (!appFuerPakete) return { status: 503, kopf: {}, body: Buffer.from('DMS startet noch.') };
+    const r = await appFuerPakete.inject({ method: q.methode as 'GET', url: q.pfad, headers: q.kopf, payload: q.body, remoteAddress: '127.0.0.1' });
+    return { status: r.statusCode, kopf: Object.fromEntries(Object.entries(r.headers).map(([k, v]) => [k, String(v)])), body: r.rawPayload };
+  },
+  einstellungen: (id): Promise<Record<string, unknown>> => pakete.einstellungenFuerPaket(id).catch(() => ({})),
+  speicher: { lies: (id) => dienst.paketSpeicher(id), schreibe: (id, w) => dienst.setzePaketSpeicher(id, w) },
+  pausiert: () => wartung.aktiv,
+});
+const pakete: Paketverwaltung = new Paketverwaltung(dienst, {
+  version: eigeneVersion,
+  benutzer: async () => (await konten.listeBenutzer()).filter((b) => b.aktiv !== false).map((b) => ({ id: b.id, name: b.name || b.email })),
+  laeufer: paketlaeufer,
+});
+texterkennung.nachher = (d, e) => { if (e.stand === 'fertig') void dienst.melde('texterkennung.fertig', { dokument: d.id, mappe: d.mappeId, seiten: e.seiten ?? null }); };
+wartung.beimAusschalten(() => void paketlaeufer.stelleZu());
+
 // WebDAV-Laufwerk (#346): Anmeldung mit API-Schlüssel, im Standard aus (Werkbank → WebDAV-Laufwerk).
 const webdav = new Webdav({ dienst, konten, schluessel: apiSchluessel, einstellungen: pgEinstellungen(sql, cfg.haushalt), adresse: () => betrieb.adresseFuerLinks(), wartung });
 const app = await baueApp(dienst, konten, {
   webdav,
+  pakete,
+  paketlaeufer,
   konsole,
   oidc,
   einbetten: cfg.einbetten,
@@ -333,7 +358,9 @@ setInterval(() => void fristen().then(() => (wartung.aktiv ? 0 : aufgabenmail.pr
   .catch((e) => log.error('Fristen oder Aufgaben-Mail fehlgeschlagen', { fehler: (e as Error).message })), 5 * 60 * 1000).unref();
 if (einrichtungNoetig) log.warn(`Noch kein Benutzer vorhanden: Öffne das DMS im Browser (Port ${cfg.port}) und richte es mit dem Einrichtungscode ein.`);
 
+appFuerPakete = app;
 await texterkennung.start();
+await paketlaeufer.start().catch((e: unknown) => log.error('Paket-Läufer startet nicht', { fehler: (e as Error).message }));
 notfall.start();
 sicherung.start();
 speicherplatz.start();
@@ -344,6 +371,7 @@ setInterval(() => void wiederherstellung.tick().catch((e) => log.error('Zeitplan
 const beenden = async () => {
   log.info('DMS wird beendet');
   texterkennung.stop();
+  await paketlaeufer.stop();
   vorschau.stop();
   wartung.stop();
   notfall.stop();

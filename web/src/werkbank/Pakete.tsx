@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { herkunftText, vergleicheVersion, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
-import { api, ApiFehler, type PaketQuelle, type PaketVorschau } from '../api';
+import { api, ApiFehler, type PaketlaeuferStand, type PaketQuelle, type PaketVorschau } from '../api';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { darfVerlassen, geheZu, Link } from '../ort';
@@ -235,7 +235,7 @@ export function PaketLink({ z, wert }: { z: PaketeZustand; wert: string }) {
         <VorschauBlock v={vorschau} warnung={null} abbrechen={() => geheZu('/werkbank/pakete')}
           los={async (x) => {
             try {
-              const r = vorschau.update ? await api.paketAktualisieren(id, vorschau.paket.version) : await api.paketInstallieren({ id, version: vorschau.paket.version, ...x });
+              const r = vorschau.update ? await api.paketAktualisieren(id, vorschau.paket.version, undefined, x.rechteBestaetigt) : await api.paketInstallieren({ id, version: vorschau.paket.version, ...x });
               await z.laden(); await d.neuLaden(); await z.abrufen(false);
               geheZu(`/werkbank/pakete/${r.id}`);
             } catch (e) { setMeldung(alsMeldung(e)); }
@@ -360,6 +360,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
           {v && <><dt>Inhalt</dt><dd>Mappentypen: {v.inhalt.mappentypen.map((t) => t.name).join(', ') || '–'}<br />Ansichten: {v.inhalt.sichten.map((s) => s.name).join(', ') || '–'}{v.inhalt.beispiele ? <><br />{v.inhalt.beispiele} Beispiel-Mappen (optional)</> : null}</dd></>}
           {(v?.readme || inst?.links?.readme) && <><dt>Mehr</dt><dd><a className="verweis" href={v?.readme || inst!.links!.readme} target="_blank" rel="noreferrer">README ↗</a>{(v?.changelog || inst?.links?.changelog) && <> · <a className="verweis" href={v?.changelog || inst!.links!.changelog} target="_blank" rel="noreferrer">Änderungen ↗</a></>}</dd></>}
         </dl>
+        {inst?.laeufer && <LaeuferStand paket={inst.id} />}
         {inst && (
           <>
             <h2 className="h3">Gehört dazu</h2>
@@ -390,7 +391,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
       {vorschau && (
         <VorschauBlock v={vorschau} warnung={offiziell ? null : `Aus dem Katalog ${inst?.herkunft.art === 'katalog' ? inst.herkunft.url : quelle}`} abbrechen={() => setVorschau(null)}
           los={(x) => tu(async () => {
-            if (vorschau.update) { const r = await api.paketAktualisieren(id, vorschau.paket.version, !offiziell); return `${r.name} ist jetzt auf Version ${r.version}.`; }
+            if (vorschau.update) { const r = await api.paketAktualisieren(id, vorschau.paket.version, !offiziell, x.rechteBestaetigt); return `${r.name} ist jetzt auf Version ${r.version}.`; }
             const r = await api.paketInstallieren({ id, version: vorschau.paket.version, quelle, bestaetigt: !offiziell || undefined, ...x });
             return `${r.name} ${r.version} ist installiert.`;
           })} />
@@ -400,20 +401,50 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
   );
 }
 
+/** Paket mit Code (#338): läuft es, was ist zuletzt passiert, offene und aufgegebene Ereignisse. */
+function LaeuferStand({ paket }: { paket: string }) {
+  const [s, setS] = useState<PaketlaeuferStand | null | undefined>(undefined);
+  const laden = useCallback(() => { api.paketLaeufer().then(setS, () => setS(null)); }, []);
+  useEffect(() => { laden(); }, [laden]);
+  if (s === undefined) return null;
+  const p = s?.pakete.find((x) => x.id === paket);
+  return (
+    <>
+      <h2 className="h3">Paket-Läufer</h2>
+      {!s || !p ? <p className="leise">Der Paket-Läufer läuft nicht.</p> : (
+        <>
+          <dl className="eigenschaften">
+            <dt>Stand</dt><dd>{p.fehler ? <span className="fehlertext">{p.fehler}</span> : s.pausiert ? 'pausiert (Wartungsmodus)' : s.laeuft && p.geladen ? 'bereit' : 'startet …'}</dd>
+            <dt>Dienstkonto</dt><dd>{p.dienstkonto ?? '–'}</dd>
+            <dt>Aufrufe</dt><dd>{p.aufrufe}{p.fehlgeschlagen ? `, davon ${p.fehlgeschlagen} fehlgeschlagen` : ''}{p.dauerMs !== null ? ` · zuletzt ${Math.round(p.dauerMs / 100) / 10} s, ${p.speicherMB} MB` : ''}</dd>
+            <dt>Ereignisse</dt><dd>{p.ereignisse.zugestellt} zugestellt · {p.ereignisse.offen} offen{p.ereignisse.aufgegeben ? <> · <strong>{p.ereignisse.aufgegeben} aufgegeben</strong></> : ''}</dd>
+            <dt>Grenzen</dt><dd>{s.grenzen.speicherMB} MB Speicher, {s.grenzen.sekunden} s je Aufruf, {s.grenzen.parallel} gleichzeitig</dd>
+          </dl>
+          {p.letzte.length > 0 && <ul className="klein">{p.letzte.slice(0, 10).map((x) => <li key={x.zeit + x.art}>{datum(x.zeit)} · {x.art} · {x.ok ? 'ok' : <span className="fehlertext">{x.text}</span>}{x.ok && x.text ? ` – ${x.text}` : ''}</li>)}</ul>}
+          {p.protokoll.length > 0 && <details className="klein"><summary>Ausgaben des Pakets</summary><ul>{p.protokoll.slice(0, 30).map((x, i) => <li key={i} className={x.stufe >= 2 ? 'fehlertext' : undefined}>{datum(x.zeit)} · {x.text}</li>)}</ul></details>}
+          <button type="button" className="textknopf" onClick={laden}>Aktualisieren</button>
+        </>
+      )}
+    </>
+  );
+}
+
 /**
  * Vorschau mit Namen, Abhängigkeiten und Beispielen. Bei Paketen außerhalb des offiziellen
  * Katalogs (#189) eine deutliche Warnung, die man ausdrücklich bestätigen muss.
  */
 function VorschauBlock({ v, warnung, los, abbrechen }: {
   v: PaketVorschau; warnung: string | null; abbrechen(): void;
-  los(x: { namen: Record<string, string>; sichtNamen: Record<string, string>; beispiele: boolean; mitAbhaengigkeiten: boolean }): Promise<void>;
+  los(x: { namen: Record<string, string>; sichtNamen: Record<string, string>; beispiele: boolean; mitAbhaengigkeiten: boolean; rechteBestaetigt?: boolean }): Promise<void>;
 }) {
   const [namen, setNamen] = useState<Record<string, string>>(() => Object.fromEntries(v.typen.filter((t) => !t.vorhanden).map((t) => [t.schluessel, t.vorschlag ?? t.name])));
   const [sichtNamen, setSichtNamen] = useState<Record<string, string>>(() => Object.fromEntries(v.sichten.filter((s) => !s.vorhanden).map((s) => [s.schluessel, s.vorschlag ?? s.name])));
   const [beispiele, setBeispiele] = useState(false);
   const [mit, setMit] = useState(true);
   const [ok, setOk] = useState(false);
+  const [rechteOk, setRechteOk] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
+  const rechteFehlen = !!v.laeufer?.bestaetigen && !rechteOk;
   const fehlend = v.abhaengigkeiten.filter((a) => !a.installiert);
   const konflikt = v.typen.some((t) => !t.vorhanden && t.konflikt && (namen[t.schluessel] ?? '').trim().toLowerCase() === t.name.toLowerCase())
     || v.sichten.some((s) => !s.vorhanden && s.konflikt && (sichtNamen[s.schluessel] ?? '').trim().toLowerCase() === s.name.toLowerCase());
@@ -425,6 +456,15 @@ function VorschauBlock({ v, warnung, los, abbrechen }: {
         <div className="hinweis warn" role="alert">
           <p><strong>Nicht vom DMS-Projekt geprüft.</strong> {warnung}. Installiere nur Pakete, deren Herkunft du kennst und der du vertraust.</p>
           <label className="haken"><input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} /><span>Ich weiß, woher das Paket stammt, und installiere es auf eigene Verantwortung.</span></label>
+        </div>
+      )}
+      {v.laeufer && (
+        <div className={`hinweis ${v.laeufer.bestaetigen ? 'warn' : 'info'}`} role={v.laeufer.bestaetigen ? 'alert' : undefined}>
+          <p><strong>Das Paket enthält Code.</strong> Er läuft im Paket-Läufer des DMS, abgeschottet und mit einem eigenen Dienstkonto – nur mit diesen Rechten:</p>
+          <ul>{v.laeufer.rechte.map((r) => <li key={r}>{r}</li>)}</ul>
+          {v.laeufer.bestaetigen
+            ? <label className="haken"><input type="checkbox" checked={rechteOk} onChange={(e) => setRechteOk(e.target.checked)} /><span>{v.update ? 'Die Rechte haben sich geändert. Ich erlaube sie.' : 'Ich erlaube dem Paket diese Rechte.'}</span></label>
+            : <p className="leise">Die Rechte sind dieselben wie bisher.</p>}
         </div>
       )}
       {v.probleme.length > 0 && <div className="hinweis schlecht"><ul>{v.probleme.map((p) => <li key={p}>{p}</li>)}</ul></div>}
@@ -470,8 +510,8 @@ function VorschauBlock({ v, warnung, los, abbrechen }: {
       )}
       {!v.update && v.beispiele > 0 && <label className="haken"><input type="checkbox" checked={beispiele} onChange={(e) => setBeispiele(e.target.checked)} /><span>{v.beispiele} Beispiel-Mappen anlegen</span></label>}
       <div className="knoepfe">
-        <button type="button" className="knopf primaer" disabled={laeuft || v.probleme.length > 0 || konflikt || leer || (!!warnung && !ok)}
-          onClick={() => { setLaeuft(true); void los({ namen, sichtNamen, beispiele, mitAbhaengigkeiten: mit }).finally(() => setLaeuft(false)); }}>
+        <button type="button" className="knopf primaer" disabled={laeuft || v.probleme.length > 0 || konflikt || leer || (!!warnung && !ok) || rechteFehlen}
+          onClick={() => { setLaeuft(true); void los({ namen, sichtNamen, beispiele, mitAbhaengigkeiten: mit, ...(rechteOk ? { rechteBestaetigt: true } : {}) }).finally(() => setLaeuft(false)); }}>
           {laeuft ? (v.update ? 'Aktualisiere …' : 'Installiere …') : v.update ? 'Aktualisieren' : 'Installieren'}
         </button>
         <button type="button" className="textknopf" onClick={abbrechen}>Abbrechen</button>
