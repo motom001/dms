@@ -117,7 +117,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     const r = req as MitKontext;
     if (r.dms && r.zeit?.start !== undefined && r.zeit.ende !== undefined) {
       const t = zeitaufteilung({ eingang: r.zeit.eingang, start: r.zeit.start, ende: r.zeit.ende, senden: r.zeit.senden, jetzt: performance.now(), db: r.dms.db, rechte: r.dms.rechte });
-      reply.header('server-timing', serverTiming(t));
+      reply.header('server-timing', serverTiming(t, r.dms.zwischenspeicher));
       const k = r.dms;
       kontext.run(k, () => opt.messung?.erfasseAnfrage(k, t));
     }

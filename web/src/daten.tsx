@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { pruefeMappe, type Mappentyp, type Pruefergebnis, type Werte } from '../../shared/src/model';
 import { wirksameTypen, type Sicht } from '../../shared/src/sichten';
 import { api, type Person, type Zaehler } from './api';
@@ -17,6 +17,11 @@ interface Daten {
   /** Der eine Mappentyp, den eine Sicht (samt Untersichten) zeigt – oder für eine Typ-Id dieser Typ. Sonst undefined. */
   typDerSicht(id: string | undefined): Mappentyp | undefined;
   zaehler: Zaehler;
+  /**
+   * Sind die Zahlen der Ansichten da (#512)? Die Ablage erscheint ohne sie (geladen), die Zahlen
+   * kommen danach. Beim Neuladen bleiben die alten stehen, bis die neuen da sind.
+   */
+  zahlenDa: boolean;
   geladen: boolean;
   fehler?: string;
   /** Zählt jedes Neuladen hoch; Ansichten können darauf reagieren. */
@@ -49,6 +54,8 @@ export function DatenProvider({ children }: { children: ReactNode }) {
   const [typen, setTypen] = useState<Mappentyp[]>([]);
   const [sichten, setSichten] = useState<Sicht[]>([]);
   const [zaehler, setZaehler] = useState<Zaehler>(LEER);
+  const [zahlenDa, setZahlenDa] = useState(false);
+  const zahlenNr = useRef(0);
   const [personen, setPersonen] = useState<Person[]>([]);
   const [geladen, setGeladen] = useState(false);
   const [fehler, setFehler] = useState<string>();
@@ -69,9 +76,13 @@ export function DatenProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (meinDesign) wendeAn(meinDesign, !rettung); }, [meinDesign, rettung]);
 
   const neuLaden = useCallback(async () => {
+    // Zahlen der Ansichten nicht abwarten (#512): Sie kommen nach; nur die jüngste Antwort zählt.
+    const nr = ++zahlenNr.current;
+    const zahlen = api.sichten().then((z) => { if (nr === zahlenNr.current) { setZaehler(z); setZahlenDa(true); } });
+    zahlen.catch(() => {});
     try {
-      const [t, z, p, s] = await Promise.all([api.typen(), api.sichten(), api.personen(), api.sichtDefinitionen()]);
-      setTypen(t); setZaehler(z); setPersonen(p); setSichten(s); setFehler(undefined);
+      const [t, r, p, s] = await Promise.all([api.typen(), api.sichtenRahmen(), api.personen(), api.sichtDefinitionen()]);
+      setTypen(t); setZaehler((z) => ({ ...z, ...r })); setPersonen(p); setSichten(s); setFehler(undefined);
     } catch (e) {
       setFehler((e as Error).message);
     } finally {
@@ -84,7 +95,7 @@ export function DatenProvider({ children }: { children: ReactNode }) {
     const typNachId = new Map<string, Mappentyp>(typen.map((t) => [t.id, t] as const));
     const sichtNachId = new Map<string, Sicht>(sichten.map((s) => [s.id, s] as const));
     return {
-      typen, sichten, zaehler,
+      typen, sichten, zaehler, zahlenDa,
       sicht: (id) => (id ? sichtNachId.get(id) : undefined),
       typDerSicht: (id) => {
         if (!id || id === 'eingang' || id === 'favoriten') return undefined;
@@ -99,7 +110,7 @@ export function DatenProvider({ children }: { children: ReactNode }) {
       person: (id) => (id ? personen.find((p) => p.id === id)?.name ?? 'gelöschter Benutzer' : 'unbekannt'),
       pruefe: (t, werte, typVon) => pruefeMappe(t, werte, { typVon, doppelt: () => undefined }),
     };
-  }, [typen, sichten, zaehler, personen, geladen, fehler, stand, neuLaden, einstellungen, setzeEinstellung, designs, meinDesign, designsLaden]);
+  }, [typen, sichten, zaehler, zahlenDa, personen, geladen, fehler, stand, neuLaden, einstellungen, setzeEinstellung, designs, meinDesign, designsLaden]);
 
   return <Ctx.Provider value={wert}>{children}</Ctx.Provider>;
 }

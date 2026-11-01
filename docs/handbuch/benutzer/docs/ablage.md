@@ -2,7 +2,7 @@
 
 ## Ansichten
 
-Links stehen die **Ansichten**. Ganz oben stehen fest, jeweils mit einem Symbol: [Erweiterte Suche](#erweiterte-suche), [Start](startseite.md), [Zu erledigen](eingang.md), [Neue Post](post.md), [Anstehend](eingang.md#anstehend), deine [Favoriten](#favoriten) und der [Papierkorb](#papierkorb) (solange er an ist oder etwas darin liegt). Unter dem Trenner stehen – ohne Symbol – die Ansichten, die ein Administrator eingerichtet hat – zum Beispiel *Vertrag*, *Rechnung*, *Vertragspartner* oder *Kündigung in den nächsten 12 Monaten*. Die Zahl dahinter sagt, wie viele Mappen die Ansicht gerade zeigt.
+Links stehen die **Ansichten**. Ganz oben stehen fest, jeweils mit einem Symbol: [Erweiterte Suche](#erweiterte-suche), [Start](startseite.md), [Zu erledigen](eingang.md), [Neue Post](post.md), [Anstehend](eingang.md#anstehend), deine [Favoriten](#favoriten) und der [Papierkorb](#papierkorb) (solange er an ist oder etwas darin liegt). Unter dem Trenner stehen – ohne Symbol – die Ansichten, die ein Administrator eingerichtet hat – zum Beispiel *Vertrag*, *Rechnung*, *Vertragspartner* oder *Kündigung in den nächsten 12 Monaten*. Die Zahl dahinter sagt, wie viele Mappen die Ansicht gerade zeigt. Die Ablage wartet nicht auf die Zahlen: Bis sie da sind, steht an ihrer Stelle kurz „…“.
 
 Ein Klick auf eine Ansicht zeigt ihre Mappen in der Liste. Welche Ansichten du siehst, kann ein Administrator festlegen; eine Ansicht, die für dich verborgen ist, fehlt samt ihrer Mappen auch in der Elternansicht. Mappen findest du trotzdem über die Suche, wenn du sie lesen darfst.
 

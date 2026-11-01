@@ -8,7 +8,8 @@ import {
 import type { Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
 import { Auftraege } from './auftrag';
-import { protokoll } from './protokoll';
+import { kontext, protokoll } from './protokoll';
+import { fingerabdruck, Haushaltsstand, zeitabhaengig, Zaehlerspeicher } from './zaehlerspeicher';
 import { rechteMessen } from './messung';
 import { graubild } from './graubild';
 import { Fachfehler } from './fehler';
@@ -401,7 +402,13 @@ export class Dienst {
   private einstellungen?: Einstellungen;
   private konten?: KontenHaken;
 
+  /** Stand des Haushalts (#512): zählt nach jeder Änderung über das Repo hoch. */
+  readonly stand = new Haushaltsstand();
+  /** Zahlen der Ansichten je Benutzer und Rechte (#512). */
+  private readonly zahlen = new Zaehlerspeicher<Awaited<ReturnType<Dienst['zaehle']>>>(this.stand);
+
   constructor(private grundRepo: Repo, private dateien: Dateispeicher, opt: DienstOptionen = {}) {
+    this.grundRepo = this.stand.umhuelle(grundRepo);
     this.tresor = opt.tresor;
     this.einstellungen = opt.einstellungen;
     this.tresor?.registriere(() => this.unlesbarePasswoerter());
@@ -1683,26 +1690,47 @@ export class Dienst {
     };
   }
 
-  /** Anzahl Mappen je Typ (davon unpassend, Demo), je Sicht und im Eingang des Benutzers. */
+  /**
+   * Anzahl Mappen je Typ (davon unpassend, Demo), je Sicht und im Eingang des Benutzers.
+   * Zwischengespeichert je Benutzer und Rechte (#512), solange sich am Haushalt nichts ändert
+   * (`Haushaltsstand`); zeitabhängige Ansichten laufen nach Minuten bzw. um Mitternacht ab. Ob der
+   * Zwischenspeicher traf, steht im Header Server-Timing (`zs`).
+   */
   async zaehler(ich: { id: string; rolle: string }, zg?: Zugriff) {
     const lesen = zg?.lesen ?? null;
-    const z = await this.repo.zaehler(ich.id, ich.rolle === 'admin', lesen);
-    // Der Eingang zählt auch Aufgaben zu Mappen, die man nicht lesen darf (#127) – das liefert zaehler
-    // gleich mit (#477); früher lief für Mitglieder dafür ein zweiter Durchgang über alle Mappen.
-    const eingang = z.eingang;
     const alleSichten = await this.repo.listeSichten();
     // Verborgene Sichten (#148): kein Zähler, und ihre Mappen zählen auch in der Elternsicht nicht.
     const verborgen = this.verborgeneSichten(alleSichten, zg);
+    const a = await this.aufloesung(ich.id);
+    // Alles, was außer dem Stand des Haushalts in die Zählung eingeht: wer, mit welchen Rechten und Rollen.
+    const schluessel = `${ich.id}|${ich.rolle}|${fingerabdruck({ lesen, verborgen: [...verborgen].sort(), rollen: a.meineRollen })}`;
+    const beginn = performance.now();
+    const z = await this.zahlen.hole(schluessel, async () => ({ wert: await this.zaehle(ich, lesen, alleSichten, verborgen, a), zeitabhaengig: alleSichten.some((x) => zeitabhaengig(x.bedingungen)) }));
+    const k = kontext.getStore();
+    if (k) k.zwischenspeicher = { art: z.art, ms: performance.now() - beginn };
+    return { ...z.wert, ...await this.zaehlerRahmen() };
+  }
+
+  /**
+   * Was die Ablage ohne Zählen sofort braucht (#512): Tage im Papierkorb (0 = aus) und die Sicht
+   * „Neue Post“. Die Oberfläche lädt das vorab, die Zahlen danach.
+   */
+  async zaehlerRahmen() {
+    // Post (#192): Zahl der Sicht „Neue Post“ hervorheben wie im Eingang.
+    return { papierkorbTage: await this.papierkorbTage(), neuePost: await this.neuePostSicht() };
+  }
+
+  private async zaehle(ich: { id: string; rolle: string }, lesen: Lesefilter | null, alleSichten: Sicht[], verborgen: Set<string>, a: Aufloesung) {
+    const z = await this.repo.zaehler(ich.id, ich.rolle === 'admin', lesen);
+    // Der Eingang zählt auch Aufgaben zu Mappen, die man nicht lesen darf (#127) – das liefert zaehler
+    // gleich mit (#477); früher lief für Mitglieder dafür ein zweiter Durchgang über alle Mappen.
     const sichten = alleSichten.filter((x) => !verborgen.has(x.id));
     const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
-    const a = await this.aufloesung(ich.id);
     const n = await this.repo.zaehleKlauseln(sichten.map((x) => klauselnFuer(alleSichten, x.id, typen, a, verborgen)), lesen);
     return {
-      typen: Object.fromEntries(z.typen), eingang, favoriten: z.favoriten, sichten: Object.fromEntries(sichten.map((x, i) => [x.id, n[i]])),
-      // Papierkorb (#43): eigene gelöschte Mappen; Tage 0 = aus.
-      papierkorb: await this.repo.zaehlePapierkorb(ich.id), papierkorbTage: await this.papierkorbTage(),
-      // Post (#192): Zahl der Sicht „Neue Post“ hervorheben wie im Eingang.
-      neuePost: await this.neuePostSicht(),
+      typen: Object.fromEntries(z.typen), eingang: z.eingang, favoriten: z.favoriten, sichten: Object.fromEntries(sichten.map((x, i) => [x.id, n[i]])),
+      // Papierkorb (#43): eigene gelöschte Mappen.
+      papierkorb: await this.repo.zaehlePapierkorb(ich.id),
     };
   }
 

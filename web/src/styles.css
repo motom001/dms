@@ -285,6 +285,8 @@ tbody tr:last-child > * { border-bottom: 0; }
 .aufklapper { position: absolute; left: calc(var(--tiefe, 0) * 14px - 16px); width: 16px; height: 26px; padding: 0; border: 0; background: none; color: var(--leise); cursor: pointer; font: inherit; font-size: calc(11px * var(--skala, 1)); border-radius: 4px; }
 button.aufklapper:hover { background: var(--flaeche); color: var(--tinte); }
 .sicht .zahl { font-size: calc(12px * var(--skala, 1)); color: var(--leise); font-variant-numeric: tabular-nums; }
+/* Zahl einer Ansicht kommt noch (#512): gleicher Platz, blass. */
+.sz-warte { opacity: .45; min-width: 2ch; text-align: right; }
 .zaehler { font-size: calc(11.5px * var(--skala, 1)); font-weight: 700; min-width: 20px; text-align: center; padding: 1px 7px; border-radius: 999px; background: var(--warn); color: var(--flaeche); }
 .listenkopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .listenkopf h1 { font-size: calc(19px * var(--skala, 1)); }
