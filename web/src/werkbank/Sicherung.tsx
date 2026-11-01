@@ -217,7 +217,7 @@ function Zeitplan({ plan, notfallblatt, gespeichert }: { plan: SicherungsPlan; n
     <form className="blatt" id="zeitplan" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
       <h2 className="h3">Zeitplan und Aufbewahrung <Hilfe ort="sicherung.zeitplan" /></h2>
       <label className="haken"><input type="checkbox" checked={p.aktiv} disabled={!p.aktiv && !notfallblatt} onChange={(e) => setP({ ...p, aktiv: e.target.checked })} /><span>Automatisch sichern</span></label>
-      {!notfallblatt && !p.aktiv && <p className="leise klein">Erst einschaltbar, wenn du das <a href="#notfallblatt" className="verweis">Notfallblatt</a> heruntergeladen hast – ohne den Schlüssel darauf ist eine Sicherung wertlos.</p>}
+      {!notfallblatt && !p.aktiv && <p className="leise klein">Erst einschaltbar, wenn du das Notfallblatt heruntergeladen hast – ohne den Schlüssel darauf ist eine Sicherung wertlos. <a className="knopf klein" href={NOTFALLBLATT_URL} download onClick={() => { setTimeout(gespeichert, 1500); setTimeout(meldeSicherung, 1500); }}>Notfallblatt herunterladen</a></p>}
       <div className="raster">
         <label className="eigenschaft"><span>Häufigkeit</span>
           <select value={p.haeufigkeit} onChange={(e) => setP({ ...p, haeufigkeit: e.target.value as SicherungsPlan['haeufigkeit'] })}><option value="taeglich">täglich</option><option value="woechentlich">wöchentlich</option></select></label>
@@ -255,6 +255,11 @@ export function Notfallblatt({ stand, schluessel, geladen }: { stand: Sicherungs
       </div>
     </section>
   );
+}
+
+/** Häkchen vor einem erledigten Schritt (#414). */
+export function Erledigt() {
+  return <span className="nfb-haken" role="img" aria-label="erledigt" title="erledigt">✓ </span>;
 }
 
 const AMPEL = { gruen: ['gut', 'in Ordnung'], gelb: ['warn', 'zu alt oder noch nie'], rot: ['schlecht', 'fehlgeschlagen'] } as const;
