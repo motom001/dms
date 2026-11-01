@@ -55,7 +55,7 @@ import { ALLE_TYPEN, PAKET_TEXT, type EreignisArt, type InstalliertesPaket, type
 import type { PaketEntwurf } from '../../shared/src/paketerstellung';
 import { abfrageAus, liesSuche } from '../../shared/src/erweitertesuche';
 import type { Lesefilter } from '../../shared/src/rechte';
-import { liesFeldErkennung } from '../../shared/src/erkennung';
+import { liesAusDokument, liesFeldErkennung, type AusDokument } from '../../shared/src/erkennung';
 import { Erkennung } from './erkennung';
 import { ANSTEHEND_MAX, ANSTEHEND_TAGE, bereinigeFrist, datumDe, empfaengerFelder, ERINNERUNG_TEXT_MAX, fristAb, fristEmpfaenger, fristFelder, fristText, istDatum, naechsterTermin, type Anstehend, type Erinnerung } from '../../shared/src/fristen';
 import { ALLES, RECHTE_LISTE, kurzStandard, systemSperre, bereinigeRegelwerk, FALSCH, istOffen, kopiereRegel, kurz, leseAusdruck, lesefilter, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, wirksamVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../shared/src/rechte';
@@ -475,8 +475,22 @@ export class Dienst {
   verbindeKonten(h: KontenHaken) { this.konten = h; }
 
   /** Texterkennung anbinden (#45): neue Dokumente stoßen sie an. */
-  private ocr?: { anstossen(): void };
-  verbindeTexterkennung(t: { anstossen(): void }) { this.ocr = t; }
+  private ocr?: { anstossen(): void; erkenneSofort?(inhalt: Buffer, mime: string): Promise<{ text: string; info: string }> };
+  verbindeTexterkennung(t: { anstossen(): void; erkenneSofort?(inhalt: Buffer, mime: string): Promise<{ text: string; info: string }> }) { this.ocr = t; }
+
+  /**
+   * Text einer Datei sofort, ohne Warteschlange (#391, „Aus Dokument ausfüllen“): vCard und Text direkt, PDFs
+   * und Bilder über die Texterkennung. Die Datei wird dabei nicht gespeichert.
+   */
+  async textAusDatei(inhalt: Buffer, name: string, mime: string): Promise<{ text: string; info: string }> {
+    const art = erkenneAnzeigbar(inhalt) ?? mime;
+    if (/\.(vcf|vcard|txt)$/i.test(name) || /^text\/(vcard|x-vcard|plain)$/.test(mime) || inhalt.subarray(0, 64).toString('utf8').includes('BEGIN:VCARD')) {
+      return { text: inhalt.toString('utf8').slice(0, VOLLTEXT_MAX), info: 'Text der Datei' };
+    }
+    if (!this.ocr?.erkenneSofort) throw new Fachfehler(503, 'Die Texterkennung ist nicht eingerichtet.');
+    if (!/^(application\/pdf|image\/(jpeg|png|tiff|webp|gif|bmp))$/.test(art)) throw new Fachfehler(415, 'Diese Datei lässt sich nicht lesen. Möglich sind Fotos (JPEG, PNG …), PDFs und vCards (.vcf).');
+    return this.ocr.erkenneSofort(inhalt, art);
+  }
 
   /** Vorschaubilder anbinden (#332): neue Dateien einreihen, gelöschte mit entfernen. */
   private vorschau?: { einreihen(d: Dokument[]): unknown; entferne(sha: string): Promise<void>; nachholen(d: Dokument[]): Promise<number> };
@@ -1470,9 +1484,29 @@ export class Dienst {
   private async mitStempelEingabe(eingabe: unknown, f: (e: unknown) => Promise<Mappentyp>): Promise<Mappentyp> {
     const hat = !!eingabe && typeof eingabe === 'object' && 'stempel' in eingabe;
     const st = hat ? await this.pruefeStempelTyp((eingabe as { stempel: unknown }).stempel) : undefined;
+    // „Aus Dokument ausfüllen“ (#391): Beschriftung bzw. ausgeblendet – liegt wie der Stempel in den Einstellungen.
+    const hatAd = !!eingabe && typeof eingabe === 'object' && 'ausDokument' in eingabe;
     const t = await f(eingabe);
     if (hat) await this.setzeStempelTyp(t.id, st ?? null);
+    if (hatAd) await this.setzeTypErkennung(t.id, { ausDokument: liesAusDokument((eingabe as { ausDokument: unknown }).ausDokument) });
     return (await this.mitStempel([t]))[0];
+  }
+
+  /** Einstellungen der Erkennung je Mappentyp (#391, #337): Einstellung erkennung_typen, Typ-Id → Angaben. */
+  private async typErkennungen(): Promise<Record<string, { ausDokument?: AusDokument | null; auto?: boolean }>> {
+    const v = await this.einstellungen?.lies('erkennung_typen');
+    return v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, { ausDokument?: AusDokument | null; auto?: boolean }> : {};
+  }
+  private async setzeTypErkennung(typId: string, teil: { ausDokument?: AusDokument | null; auto?: boolean }) {
+    if (!this.einstellungen) return;
+    const alle = await this.typErkennungen();
+    const neu = { ...(alle[typId] ?? {}), ...teil };
+    if (!neu.ausDokument) delete neu.ausDokument;
+    if (!neu.auto) delete neu.auto;
+    if (JSON.stringify(neu) === JSON.stringify(alle[typId] ?? {})) return;
+    if (Object.keys(neu).length) alle[typId] = neu; else delete alle[typId];
+    await this.einstellungen.schreibe('erkennung_typen', Object.keys(alle).length ? alle : null);
+    protokoll.modul('werkbank').info('Erkennung am Mappentyp eingestellt', { typ: typId, ...teil });
   }
 
   private async legeTypAnIntern(eingabe: unknown): Promise<Mappentyp> {
@@ -4185,7 +4219,8 @@ export class Dienst {
   /** Mappentypen mit ihrer Stempel-Einstellung (für die Oberfläche). */
   private async mitStempel<T extends Mappentyp>(typen: T[]): Promise<T[]> {
     const { typen: s } = await this.stempelDaten();
-    return typen.map((t) => ({ ...t, stempel: s[t.id] ?? null }));
+    const e = await this.typErkennungen();
+    return typen.map((t) => ({ ...t, stempel: s[t.id] ?? null, ausDokument: e[t.id]?.ausDokument ?? null }));
   }
 
   /** Welcher Stempel für eine Mappe dieses Typs gilt (Wunsch, Pflicht); Fehler als 422. */

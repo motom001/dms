@@ -121,6 +121,25 @@ export function merkmalsfelder(t: Pick<Mappentyp, 'felder'>): Array<{ feld: Feld
 /** Ist ein Typ ein möglicher Absender? Er hat markierte Felder mit Name oder Kontaktangaben. */
 export const istAbsenderTyp = (t: Pick<Mappentyp, 'felder' | 'system'>) => !t.system && merkmalsfelder(t).some((x) => ABSENDER_ARTEN.includes(x.art));
 
+/* ---------- Einstellung am Mappentyp (#391) ---------- */
+
+/** „Aus Dokument ausfüllen“ je Mappentyp: eigene Beschriftung oder ausgeblendet. Liegt in den Einstellungen (wie der Stempel). */
+export interface AusDokument { aus?: boolean; beschriftung?: string }
+export const AUS_DOKUMENT_STANDARD = 'Aus Dokument ausfüllen';
+export const BESCHRIFTUNG_MAX = 40;
+export function liesAusDokument(v: unknown): AusDokument | null {
+  if (!v || typeof v !== 'object') return null;
+  const o = v as Record<string, unknown>;
+  const b = typeof o.beschriftung === 'string' ? o.beschriftung.trim().slice(0, BESCHRIFTUNG_MAX) : '';
+  const e: AusDokument = { ...(o.aus === true ? { aus: true } : {}), ...(b ? { beschriftung: b } : {}) };
+  return Object.keys(e).length ? e : null;
+}
+/** Beschriftung des Knopfs; null = ausgeblendet. Systemtypen (Benutzer, Rolle, Post) haben keinen. */
+export function ausDokumentKnopf(t: Pick<Mappentyp, 'system'> & { ausDokument?: AusDokument | null }): string | null {
+  if (t.system || t.ausDokument?.aus) return null;
+  return t.ausDokument?.beschriftung || AUS_DOKUMENT_STANDARD;
+}
+
 /* ---------- Angaben aus dem Text ---------- */
 
 export type Sicherheit = 'hoch' | 'mittel' | 'niedrig';

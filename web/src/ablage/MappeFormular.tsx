@@ -9,7 +9,7 @@ import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } fr
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
-import { leeresPasswort, rohAusWerten, standardRoh, werteAusRoh, zuRoh, type Roh, type RohBetrag, type RohPasswort, type RohWerte } from '../werte';
+import { ausRoh, leeresPasswort, rohAusWerten, standardRoh, werteAusRoh, zuRoh, type Roh, type RohBetrag, type RohPasswort, type RohWerte } from '../werte';
 import { titelOder } from '../seiten';
 import { Formatiert, FormatiertEingabe } from './Formatiert';
 import { Historie } from './Historie';
@@ -24,6 +24,9 @@ import { Person } from '../Person';
 import { Dokumente, type NeueDatei } from './Dokumente';
 import { hinweis, rueckfrage } from '../rueckfrage';
 import { mitGrund } from './Loeschgrund';
+import { AusDokument, type AusDokumentErgebnis } from './AusDokument';
+import { ausDokumentKnopf, type Sicherheit } from '../../../shared/src/erkennung';
+import type { TypVorschlaege } from '../api';
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -261,6 +264,12 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   const [meldung, setMeldung] = useState<string>();
   const [hinweise, setHinweise] = useState<Array<{ art: 'warn' | 'schlecht'; text: ReactNode }>>([]);
   const [sendet, setSendet] = useState(false);
+  // „Aus Dokument ausfüllen“ (#391): Vorschläge je Feld – eingetragen (Feld war leer) oder als Alternative.
+  const knopf = nurLesen ? null : ausDokumentKnopf(typ);
+  const [adOffen, setAdOffen] = useState(false);
+  const [vorschlaege, setVorschlaege] = useState<Record<string, FeldVorschlag>>({});
+  const [adNeu, setAdNeu] = useState<TypVorschlaege['neu']>({});
+  const [adMeldung, setAdMeldung] = useState<string>();
   // Titel und Typ der Mappen, auf die verwiesen wird (vom Server und aus der Auswahl).
   const [bekannt, setBekannt] = useState<Bezuege>(details?.bezuege ?? {});
   useEffect(() => { if (details) setBekannt((b) => ({ ...b, ...details.bezuege })); }, [details]);
@@ -282,7 +291,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     if (r.art === 'verknuepfungen') return verknuepfungsGruppen(d, mappe, typ.id, r, details).reduce((a, g) => a + g.treffer.length, 0);
     return undefined;
   };
-  const verwerfen = () => { setRoh(JSON.parse(basis)); setNeueDateien([]); setEntfernt([]); setFehler(null); setMeldung(undefined); setHinweise([]); };
+  const verwerfen = () => { setRoh(JSON.parse(basis)); setNeueDateien([]); setEntfernt([]); setFehler(null); setMeldung(undefined); setHinweise([]); setVorschlaege({}); setAdNeu({}); setAdMeldung(undefined); };
 
   const reg = register.find((r) => r.key === aktiv) ?? register[0];
   const felderAuf = (r: Register) => typ.felder.filter((f) => r.felder?.includes(f.key));
@@ -299,6 +308,72 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     setRoh((r) => ({ ...r, [k]: v }));
     if (fehler?.felder[k]) setFehler((f) => f && { ...f, felder: Object.fromEntries(Object.entries(f.felder).filter(([x]) => x !== k)) });
   };
+
+  /** Vorschläge eintragen (#391): leere Felder bekommen den Wert, gefüllte eine Alternative; nichts ist gespeichert. */
+  function uebernimmVorschlaege({ r, dateien, ablegen }: AusDokumentErgebnis) {
+    const neu: Record<string, FeldVorschlag> = {};
+    const werte: RohWerte = {};
+    for (const [k, v] of Object.entries(r.vorschlaege)) {
+      const f = typ.felder.find((x) => x.key === k);
+      if (!f || geschuetzt[k] !== undefined) continue;
+      const vorschlag = zuRoh(f, v.wert);
+      if (istLeer(ausRoh(f, roh[k]))) { werte[k] = vorschlag; neu[k] = { ...v, art: 'eingetragen', vorher: roh[k] }; }
+      else if (JSON.stringify(roh[k]) !== JSON.stringify(vorschlag)) neu[k] = { ...v, art: 'alternative' };
+    }
+    for (const [id, b] of Object.entries(r.bezuege)) merke(id, b);
+    setRoh((x) => ({ ...x, ...werte }));
+    setVorschlaege(neu);
+    setAdNeu(Object.fromEntries(Object.entries(r.neu).filter(([k]) => istLeer(ausRoh(typ.felder.find((x) => x.key === k)!, roh[k])))));
+    if (ablegen && dateien.length) setNeueDateien((x) => [...x, ...dateien.map((datei) => ({ uid: `n${++zaehler}`, datei, register: ablegen }))]);
+    const n = Object.values(neu).filter((v) => v.art === 'eingetragen').length;
+    const alt = Object.values(neu).filter((v) => v.art === 'alternative').length;
+    const teile = [n ? `${n === 1 ? '1 Feld' : `${n} Felder`} als Vorschlag eingetragen` : '', alt ? `${alt === 1 ? '1 Alternative' : `${alt} Alternativen`} zu ausgefüllten Feldern` : ''].filter(Boolean);
+    setAdMeldung(teile.length ? `Verstanden – ${teile.join(', ')}. Bitte prüfen und speichern.` : 'Gelesen, aber keine passenden Angaben für diese Felder gefunden.');
+    setAdOffen(false);
+    // Zum ersten Feldregister mit einem Vorschlag.
+    const ziel = register.find((x) => x.art === 'felder' && felderAuf(x).some((f) => neu[f.key]));
+    if (ziel) setAktiv(ziel.key);
+  }
+  function vorschlagZuruecknehmen(k: string) {
+    const v = vorschlaege[k];
+    if (v?.art === 'eingetragen') setRoh((x) => ({ ...x, [k]: v.vorher ?? zuRoh(typ.felder.find((f) => f.key === k)!, null) }));
+    setVorschlaege((x) => Object.fromEntries(Object.entries(x).filter(([y]) => y !== k)));
+  }
+  function alternativeUebernehmen(k: string) {
+    const v = vorschlaege[k]; const f = typ.felder.find((x) => x.key === k);
+    if (!v || !f) return;
+    const vorher = roh[k];
+    setze(k, zuRoh(f, v.wert));
+    setVorschlaege((x) => ({ ...x, [k]: { ...v, art: 'eingetragen', vorher } }));
+  }
+  async function neuAnlegen(k: string) {
+    const n = adNeu[k]; const f = typ.felder.find((x) => x.key === k); const ziel = d.typ(n?.typId);
+    if (!n || !f || !ziel) return;
+    const liste = Object.entries(n.werte).map(([key, w]) => `${ziel.felder.find((x) => x.key === key)?.label ?? key}: ${w}`).join(' · ');
+    if (!(await rueckfrage({ titel: `Neue Mappe „${ziel.name}“ anlegen?`, text: `Mit diesen Angaben: ${liste}. Du kannst sie danach dort ändern.`, ja: 'Anlegen' }))) return;
+    try {
+      const m = await api.mappeAnlegen({ typId: ziel.id, werte: n.werte });
+      merke(m.id, { titel: m.titel ?? '', typId: m.typId });
+      const vorher = roh[k];
+      setze(k, f.mehrfach ? [m.id] : m.id);
+      setVorschlaege((x) => ({ ...x, [k]: { wert: m.id, sicherheit: 'mittel', fundstelle: `neu angelegt: ${titelOder(m.titel)}`, art: 'eingetragen', vorher } }));
+      setAdNeu((x) => Object.fromEntries(Object.entries(x).filter(([y]) => y !== k)));
+      await d.neuLaden();
+    } catch (e) { await hinweis({ titel: 'Nicht angelegt', text: (e as Error).message }); }
+  }
+  /** Hinweis am Feld: Vorschlag (solange der Wert noch so ist) bzw. Alternative aus dem Dokument. */
+  function vorschlagAm(f: Feld): ReactNode {
+    const v = vorschlaege[f.key];
+    if (!v) return null;
+    const sicher = v.sicherheit === 'hoch' ? 'sicher' : v.sicherheit === 'mittel' ? 'wahrscheinlich' : 'unsicher';
+    if (v.art === 'eingetragen') {
+      if (JSON.stringify(roh[f.key]) !== JSON.stringify(zuRoh(f, v.wert))) return null;
+      return <p className="ad-hinweis"><span className="chip">Vorschlag</span> <span className="leise">{sicher}{v.fundstelle ? <> – „{v.fundstelle}“</> : null}</span> <button type="button" className="textknopf klein" onClick={() => vorschlagZuruecknehmen(f.key)}>Zurücknehmen</button></p>;
+    }
+    const text = f.typ === 'referenz' ? titelOder(bekannt[String(Array.isArray(v.wert) ? v.wert[0] : v.wert)]?.titel) : formatiere(f, v.wert);
+    return <p className="ad-hinweis"><span className="chip">Im Dokument</span> <strong>{text}</strong> <span className="leise">({sicher})</span> <button type="button" className="textknopf klein" onClick={() => alternativeUebernehmen(f.key)}>Übernehmen</button> <button type="button" className="textknopf klein" onClick={() => vorschlagZuruecknehmen(f.key)}>Verwerfen</button></p>;
+  }
+  const alternativen = Object.entries(vorschlaege).filter(([, v]) => v.art === 'alternative').map(([k]) => k);
 
   function zeigeFehler(p: Pruefergebnis) {
     setFehler(p);
@@ -357,6 +432,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
       try { await api.dokumentLoeschen(id); } catch (e) { nichtEntfernt.push(id); neu.push({ art: 'schlecht', text: (e as Error).message }); }
     }
     setNeueDateien(offen); setEntfernt(nichtEntfernt); setHinweise(neu);
+    setVorschlaege({}); setAdNeu({}); setAdMeldung(undefined);
     if (!offen.length && !nichtEntfernt.length) loeseWache();
     // Lesen verloren (#126): zurück zur Liste, mit Hinweis.
     const verloren = gespeichert?.hinweis?.includes('nicht mehr sehen');
@@ -400,7 +476,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     inhalt = felder.length
       ? <div className="formular">{felder.map((f) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke}
           typId={typ.id} unpassend={details?.unpassend?.[f.key]} eigene={eigeneWerte(f)}
-          gesperrt={geschuetzt[f.key] ?? (nurLesen && f.typ !== 'passwort' ? '' : undefined)} nurLesen={nurLesen} passwortSehen={!rechte || rechte.P} />)}</div>
+          gesperrt={geschuetzt[f.key] ?? (nurLesen && f.typ !== 'passwort' ? '' : undefined)} nurLesen={nurLesen} passwortSehen={!rechte || rechte.P} zusatz={vorschlagAm(f)} />)}</div>
       : <p className="leise">Auf diesem Register liegen keine Felder.</p>;
   } else if (reg.art === 'dokumente') {
     inhalt = mappe && !details ? <p className="leise">Lade …</p> : (
@@ -427,6 +503,24 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   }
 
   return (
+    <>
+    {knopf && (adOffen
+      ? <AusDokument typ={typ} titel={knopf} mappeId={mappe?.id} dokumente={(details?.dokumente ?? []).filter((x) => x.ocr?.stand === 'fertig')} fertig={uebernimmVorschlaege} schliessen={() => setAdOffen(false)} />
+      : <div className="ad-leiste"><button type="button" className="knopf klein" onClick={() => setAdOffen(true)}><Symbol name="kamera" /> {knopf}</button></div>)}
+    {(adMeldung || Object.keys(adNeu).length > 0) && (
+      <div className="hinweis info ad-ergebnis" role="status">
+        {adMeldung && <p>{adMeldung}</p>}
+        {Object.entries(adNeu).map(([k, n]) => {
+          const f = typ.felder.find((x) => x.key === k); const ziel = d.typ(n.typId);
+          return f && ziel ? <p key={k}>Für „{f.label}“ gibt es noch keine passende Mappe: {Object.values(n.werte).slice(0, 3).join(', ')}{' '}
+            {darfErstellen(ziel) && <button type="button" className="textknopf" onClick={() => void neuAnlegen(k)}>„{ziel.name}“ mit diesen Angaben anlegen</button>}</p> : null;
+        })}
+        {(alternativen.length > 0 || Object.keys(vorschlaege).length > 0) && <div className="knoepfe">
+          {alternativen.length > 0 && <button type="button" className="knopf klein" onClick={() => alternativen.forEach(alternativeUebernehmen)}>Alle Alternativen übernehmen</button>}
+          <button type="button" className="textknopf klein" onClick={() => { Object.keys(vorschlaege).forEach(vorschlagZuruecknehmen); setAdMeldung(undefined); setAdNeu({}); }}>Alle Vorschläge zurücknehmen</button>
+        </div>}
+      </div>
+    )}
     <form className="blatt mitregistern" onSubmit={(e) => { e.preventDefault(); void speichern(); }} noValidate>
       <RegisterReihe aktiv={reg?.key}>
         {register.map((r) => {
@@ -460,11 +554,17 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
         </div>
       </div>}
     </form>
+    </>
   );
 }
 
-function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, gesperrt, nurLesen, passwortSehen = true, typId, unpassend, eigene }: {
+/** Ein Vorschlag aus „Aus Dokument ausfüllen“ (#391) am Feld. */
+interface FeldVorschlag { wert: Wert; sicherheit: Sicherheit; fundstelle: string; art: 'eingetragen' | 'alternative'; vorher?: Roh }
+
+function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, gesperrt, nurLesen, passwortSehen = true, typId, unpassend, eigene, zusatz }: {
   feld: Feld; roh: Roh | undefined; fehler?: string; setze: (v: Roh) => void; eigeneId?: string;
+  /** Unter dem Feld, z. B. ein Vorschlag aus „Aus Dokument ausfüllen“ (#391). */
+  zusatz?: ReactNode;
   /** Typ der Mappe und Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */
   typId?: string; unpassend?: string[];
   /** Werte dieser Mappe, von denen der Auswahlfilter abhängt (#173). */
@@ -573,6 +673,7 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
         {f.typ === 'referenz' && <span className="chip">{VERWEISARTEN[f.verweisart ?? 'bezug']}</span>}
       </div>
       {ctl}
+      {zusatz}
       {f.hilfe && <span className="hilfe">{f.hilfe}</span>}
       {fehler && <p className="fehlertext">{fehler}</p>}
     </div>

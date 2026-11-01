@@ -257,3 +257,97 @@ describe('Erkennung: Ablage in PostgreSQL (#336)', { skip: !process.env.TEST_DAT
     } finally { await sql.end(); }
   });
 });
+
+describe('Aus Dokument ausfüllen (#391, Stufe 1)', () => {
+  async function mitPerson() {
+    const x = await aufbau();
+    const person = await x.d.legeTypAn({ name: 'Person', ausDokument: { beschriftung: 'Visitenkarte scannen' }, felder: [
+      { key: 'vorname', label: 'Vorname', typ: 'text', erkennung: {} },
+      { key: 'nachname', label: 'Nachname', typ: 'text', pflicht: true, erkennung: {} },
+      { key: 'funktion', label: 'Funktion', typ: 'text', erkennung: {} },
+      { key: 'organisation', label: 'Organisation', typ: 'referenz', zielTyp: x.organisation.id, erkennung: {} },
+      { key: 'telefon', label: 'Telefon', typ: 'text', erkennung: {} },
+      { key: 'mobil', label: 'Mobil', typ: 'text', erkennung: {} },
+      { key: 'email', label: 'E-Mail', typ: 'text', muster: '[^@\\s]+@[^@\\s]+\\.[^@\\s]+', erkennung: {} },
+      { key: 'plz', label: 'PLZ', typ: 'text', erkennung: {} },
+      { key: 'ort', label: 'Ort', typ: 'text', erkennung: {} },
+      { key: 'geheim', label: 'Kennwort', typ: 'passwort' },
+      { key: 'notiz', label: 'Notiz', typ: 'langtext' },
+    ], register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder' }, { key: 'dokumente', name: 'Dokumente', art: 'dokumente' }] });
+    return { ...x, person };
+  }
+
+  it('Visitenkarte → Person: Felder, Organisation neu anlegen; Passwort und unmarkierte Felder nie', async () => {
+    const { d, A, person, organisation } = await mitPerson();
+    const r = await d.erkennung.fuerTyp(person.id, { text: KARTE }, await d.zugriff(A));
+    const werte = Object.fromEntries(Object.entries(r.vorschlaege).map(([k, v]) => [k, v.wert]));
+    assert.deepEqual(werte, { vorname: 'Anna', nachname: 'Beispiel', funktion: 'Elektromeisterin', telefon: '0351 7654321', mobil: '0171 1234567', email: 'anna.beispiel@elektro-muster.de', plz: '01234', ort: 'Musterstadt' });
+    assert.equal(r.vorschlaege.email.sicherheit, 'hoch');
+    assert.deepEqual(r.neu.organisation, { typId: organisation.id, werte: { name: 'Elektro Muster GmbH', strasse: 'Musterweg', hausnummer: '12', plz: '01234', ort: 'Musterstadt' }, fundstelle: 'Elektro Muster GmbH · Musterweg 12 · 01234 Musterstadt' });
+    assert.ok(r.zeichen > 50);
+    // Gibt es die Organisation schon (hier am Namen), ist sie vorgeschlagen.
+    const elektro = await d.legeMappeAn({ typId: organisation.id, werte: { name: 'Elektro Muster GmbH' } }, null);
+    const r2 = await d.erkennung.fuerTyp(person.id, { text: KARTE }, await d.zugriff(A));
+    assert.equal(r2.vorschlaege.organisation.wert, elektro.id);
+    assert.equal(r2.bezuege[elektro.id].titel, 'Elektro Muster GmbH');
+    assert.deepEqual(r2.neu, {});
+  });
+
+  it('Schema aus dem Mappentyp; die Prüfung verwirft falsche Werte, unbekannte Felder und Passwörter', async () => {
+    const { d, A, person } = await mitPerson();
+    const schema = await d.erkennung.schema(person.id, await d.zugriff(A)) as { properties: Record<string, { 'x-dms-erkennung'?: string; properties: { wert: unknown } }> };
+    assert.ok(!('geheim' in schema.properties), 'kein Passwortfeld');
+    assert.equal(schema.properties.email['x-dms-erkennung'], 'email');
+    assert.deepEqual(schema.properties.organisation.properties.wert, { type: 'string', format: 'uuid' });
+    const { pruefeVorschlaege } = await import('../../shared/src/erkennung');
+    const p = pruefeVorschlaege(person, { email: { wert: 'kein-mail' }, plz: '01234', geheim: { wert: 'x' }, unbekannt: { wert: 1 }, organisation: { wert: 'keine-id' }, vorname: { wert: 'Anna', sicherheit: 'hoch', fundstelle: 'Karte' } });
+    assert.deepEqual(Object.keys(p.vorschlaege).sort(), ['plz', 'vorname']);
+    assert.deepEqual(p.vorschlaege.vorname, { wert: 'Anna', sicherheit: 'hoch', fundstelle: 'Karte' });
+    assert.equal(p.verworfen.length, 4);
+  });
+
+  it('Rechte: neue Mappe braucht Anlegen, bestehende Bearbeiten; Dokumente nur lesbare; Systemtypen nie', async () => {
+    const { d, A, B, person, anna } = await mitPerson();
+    await d.setzeBerechtigungen(person.id, { grund: { ...NICHTS, R: true }, regeln: [] }, true);
+    await assert.rejects(d.erkennung.fuerTyp(person.id, { text: KARTE }, await d.zugriff(B)), (e: Error & { status?: number }) => e.status === 403);
+    const m = await d.legeMappeAn({ typId: person.id, werte: { nachname: 'Muster' } }, anna.id);
+    await assert.rejects(d.erkennung.fuerTyp(person.id, { text: KARTE, mappe: m.id }, await d.zugriff(B)), (e: Error & { status?: number }) => e.status === 403);
+    const r = await d.erkennung.fuerTyp(person.id, { text: KARTE, mappe: m.id }, await d.zugriff(A));
+    assert.equal(r.vorschlaege.nachname.wert, 'Beispiel', 'Vorschlag auch für gefüllte Felder – die Oberfläche zeigt ihn als Alternative');
+    const post = (await d.listeTypen()).find((t) => t.system === 'post')!;
+    await assert.rejects(d.erkennung.fuerTyp(post.id, { text: KARTE }, await d.zugriff(A)), (e: Error & { status?: number }) => e.status === 422);
+  });
+
+  it('Dokumente der Mappe und Dateien über die API: vCard direkt, unbekannte Dateiarten 415; Beschriftung am Mappentyp', async () => {
+    const { d, A, person, anna, rufe } = await mitPerson();
+    const m = await d.legeMappeAn({ typId: person.id, werte: { nachname: 'Muster' } }, anna.id);
+    const dok = (await d.ladeHoch(m.id, { register: 'dokumente', name: 'karte.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 karte'), anna.id)).dokument;
+    await assert.rejects(d.erkennung.fuerTyp(person.id, { dokumente: [dok.id], mappe: m.id }, await d.zugriff(A)), (e: Error & { status?: number }) => e.status === 409);
+    await d.schreibeVolltext(dok.id, { text: KARTE }, { id: anna.id, herkunft: 'Test', paket: false });
+    assert.equal((await d.erkennung.fuerTyp(person.id, { dokumente: [dok.id], mappe: m.id }, await d.zugriff(A))).vorschlaege.mobil.wert, '0171 1234567');
+    const vcf = Buffer.from('BEGIN:VCARD\nVERSION:3.0\nN:Beispiel;Ben;;;\nTITLE:Kundenberater\nEMAIL:ben@beispiel-ag.de\nEND:VCARD\n');
+    const r = await rufe(A, 'POST', '/api/typen/:id/vorschlaege/datei', { params: { id: person.id }, query: { name: 'ben.vcf', typ: 'text/vcard' }, body: vcf }) as { body: { vorschlaege: Record<string, { wert: unknown }>; text: string } };
+    assert.deepEqual([r.body.vorschlaege.vorname.wert, r.body.vorschlaege.nachname.wert, r.body.vorschlaege.funktion.wert, r.body.vorschlaege.email.wert], ['Ben', 'Beispiel', 'Kundenberater', 'ben@beispiel-ag.de']);
+    assert.match(r.body.text, /BEGIN:VCARD/);
+    await assert.rejects(rufe(A, 'POST', '/api/typen/:id/vorschlaege/datei', { params: { id: person.id }, query: { name: 'x.zip', typ: 'application/zip' }, body: Buffer.from('PK\u0003\u0004') }), (e: Error & { status?: number }) => e.status === 503 || e.status === 415);
+    const typ = (await d.typenFuer(await d.zugriff(A))).find((t) => t.id === person.id)!;
+    assert.deepEqual(typ.ausDokument, { beschriftung: 'Visitenkarte scannen' });
+    await d.aendereTyp(person.id, { ...typ, ausDokument: { aus: true } });
+    assert.deepEqual((await d.typenFuer(await d.zugriff(A))).find((t) => t.id === person.id)!.ausDokument, { aus: true });
+  });
+});
+
+describe('Aus Dokument ausfüllen: Texterkennung sofort (#391)', () => {
+  it('liest die Textebene eines PDFs ohne Warteschlange (nur mit pdftotext)', async (t) => {
+    const { pruefeWerkzeuge, Texterkennung } = await import('../src/texterkennung');
+    if (!(await pruefeWerkzeuge()).pdftotext) { t.skip('pdftotext fehlt'); return; }
+    const { pdfMitText } = await import('./hilfen');
+    const ocr = new Texterkennung(speicherRepo(), speicherDateien());
+    const r = await ocr.erkenneSofort(pdfMitText(['Elektro Muster GmbH', 'anna.beispiel@elektro-muster.de'], 12), 'application/pdf');
+    assert.match(r.text, /anna\.beispiel@elektro-muster\.de/);
+    const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+    d.verbindeTexterkennung(ocr);
+    assert.match((await d.textAusDatei(pdfMitText(['Mobil 0171 1234567']), 'karte.pdf', 'application/pdf')).text, /0171 1234567/);
+    await assert.rejects(d.textAusDatei(Buffer.from('PK\u0003\u0004'), 'x.zip', 'application/zip'), (e: Error & { status?: number }) => e.status === 415);
+  });
+});
