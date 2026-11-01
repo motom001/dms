@@ -129,6 +129,8 @@ export interface MappentypDaten {
   stempel?: import('./stempel').StempelTyp | null;
   /** „Aus Dokument ausfüllen“ (#391): eigene Beschriftung oder ausgeblendet; wie der Stempel in den Einstellungen. */
   ausDokument?: import('./erkennung').AusDokument | null;
+  /** Erkannte Post automatisch zuordnen (#337), Standard aus; wie der Stempel in den Einstellungen. */
+  autoZuordnen?: boolean;
 }
 export interface Mappentyp extends MappentypDaten {
   id: string;
@@ -733,7 +735,7 @@ export interface DokumentVersion {
 }
 
 /* ---------- Aufgaben (#54, #56) ---------- */
-export const AUFGABENARTEN = { passung: 'Passt nicht', erwaehnung: 'Erwähnung', manuell: 'Zugewiesen', vertretung: 'Vertretung', frist: 'Frist', erinnerung: 'Erinnerung', post: 'Post für dich', auskunft: 'Auskunft', aenderung: 'Geändert' } as const;
+export const AUFGABENARTEN = { passung: 'Passt nicht', erwaehnung: 'Erwähnung', manuell: 'Zugewiesen', vertretung: 'Vertretung', frist: 'Frist', erinnerung: 'Erinnerung', post: 'Post für dich', auskunft: 'Auskunft', aenderung: 'Geändert', zugeordnet: 'Automatisch zugeordnet' } as const;
 export type Aufgabenart = keyof typeof AUFGABENARTEN;
 export interface Aufgabe {
   id: string; mappeId: string;

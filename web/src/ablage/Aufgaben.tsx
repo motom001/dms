@@ -57,7 +57,13 @@ function Zeile({ a, neuLaden, setBestaetigt, setFolge, zuNotizen }: { a: Aufgabe
       {darf && !weiter && (
         <div className="aufgabenaktionen">
           {zuNotizen && ausNotiz(a) && <button type="button" className="textknopf klein" onClick={zuNotizen}>Zur Notiz</button>}
-          {a.art !== 'passung' && <button type="button" className="knopf klein" onClick={() => void tu(() => api.aufgabeErledigt(a.id))}>Erledigt</button>}
+          {/* Automatisch zugeordnet (#337): „Passt“ bestätigt, „Rückgängig“ nimmt die Zuordnung zurück. */}
+          {a.art === 'zugeordnet' && <button type="button" className="knopf klein" onClick={() => void (async () => {
+            if (await rueckfrage({ titel: 'Zuordnung rückgängig machen?', text: 'Die Dokumente kommen zurück in die Post, der Verweis fällt weg, und die Post ist wieder neu. Automatisch zugeordnet wird sie danach nicht mehr.', ja: 'Rückgängig machen' })) {
+              await tu(() => api.zuordnungRueckgaengig(a.id), 'Zuordnung rückgängig gemacht – die Post ist wieder neu.');
+            }
+          })()}>Rückgängig</button>}
+          {a.art !== 'passung' && <button type="button" className={`knopf klein ${a.art === 'zugeordnet' ? 'primaer' : ''}`} onClick={() => void tu(() => api.aufgabeErledigt(a.id))}>{a.art === 'zugeordnet' ? 'Passt' : 'Erledigt'}</button>}
           <button type="button" className="knopf klein" onClick={() => setWeiter(true)}>Weitergeben</button>
         </div>
       )}

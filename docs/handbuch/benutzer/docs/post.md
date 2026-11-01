@@ -100,6 +100,17 @@ Unter **Zuordnen …** stehen oben die **Vorschläge** für die Zielmappe, der b
 
 Woran das DMS Absender wiedererkennt, legt der Mappentyp fest: Felder, die ein Administrator „für die Erkennung“ markiert hat (die Pakete *Basis* & Co. bringen das mit). Hast du gerade eine Organisation angelegt oder eine Kundennummer nachgetragen, klick im Kasten auf **Neu erkennen**. Vorgeschlagen werden nur Mappen, die du sehen darfst.
 
+### Automatisch zugeordnet
+
+Ist die Erkennung **sicher**, kann das DMS Post selbst zuordnen – aber nur, wenn ein Administrator das für den Mappentyp der Zielmappe eingeschaltet hat (Standard: aus). Sicher heißt: Der Absender ist eindeutig erkannt (z. B. an Kundennummer oder IBAN) **und** es gibt genau eine passende Mappe dieses Typs – oder genau eine, deren Nummer (z. B. Vertragsnummer) im Brief steht. Neue Mappen legt das DMS dabei nie an.
+
+Danach steht bei dir unter [Zu erledigen](eingang.md) die Aufgabe **Automatisch zugeordnet zu „…“ – bitte prüfen** – bei der Person aus *Für*, sonst bei der, die die Post ins DMS gebracht hat (ist sie abwesend, bei ihrer Vertretung). In der Post steht dieselbe Aufgabe oben mit zwei Knöpfen:
+
+- **Passt** bestätigt die Zuordnung.
+- **Rückgängig** holt die Dokumente zurück in die Post, entfernt den Verweis und setzt den Stand wieder auf *Neu*. Diese Post ordnet das DMS danach nicht mehr von selbst zu.
+
+Warum zugeordnet wurde („Absender … eindeutig erkannt (Kundennummer 100-4711), einzige passende Mappe …“), steht im Kasten **Erkannt** und in der [Historie](zusammenarbeit.md#historie) der Post und der Mappe. Nie automatisch zugeordnet wird Post, deren Empfänger die Zielmappe nicht lesen darf, und Post zu Mappentypen im Archivmodus.
+
 **Kopie in der Post behalten** lässt die Dokumente zusätzlich in der Post liegen. Das kostet keinen Platz, denn das DMS speichert jede Datei nur einmal. Das ist praktisch, wenn ein Brief zu **mehreren** Mappen gehört, z. B. zur Rechnung und zum Vertrag. Du kannst eine Post beliebig oft zuordnen.
 
 Ohne Zuordnung geht es auch: **Erledigt** für Werbung oder Dinge, die schon erledigt sind; **Wieder neu**, wenn doch noch etwas zu tun ist. Unnötige Post löschst du wie jede Mappe.

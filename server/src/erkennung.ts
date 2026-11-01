@@ -18,7 +18,32 @@ import type { Repo } from './repo';
 const log = protokoll.modul('ablage');
 
 /** Ein Vorschlag für die Zielmappe; die Gründe stehen ohne Titel da (die setzt erst das Lesen ein). */
-export interface Zielvorschlag { mappeId: string; typId: string; punkte: number; gruende: string[] }
+export interface Zielvorschlag { mappeId: string; typId: string; punkte: number; gruende: string[]; /** Direkt im Text gefunden (z. B. Vertragsnummer). */ direkt?: boolean }
+
+/** Automatische Zuordnung (#337), festgehalten an der Erkennung der Post – für „Rückgängig“. */
+export interface AutoZuordnung {
+  ziel: string; zeit: string; grund: string;
+  /** Dokumente, die zur Zielmappe gewandert sind, mit ihrem Register in der Post. */
+  dokumente: Array<{ id: string; register: string }>;
+  aufgabe: string | null;
+  /** Rückgängig gemacht: dann nie wieder automatisch. */
+  rueckgaengig?: { zeit: string; von: string | null };
+}
+
+/**
+ * Ist die Erkennung „sicher“ (#337)? Absender eindeutig an einem starken Merkmal (Kundennummer, IBAN …) und genau
+ * eine passende Zielmappe unter den Mappentypen mit „automatisch zuordnen“ – bei mehreren gewinnt die eine,
+ * die direkt im Text steht (z. B. über ihre Vertragsnummer). Liefert Ziel und Begründung oder den Grund dagegen.
+ */
+export function sichereZuordnung(e: Pick<PostErkennung, 'absender' | 'eindeutig' | 'ziele'>, autoTypen: Set<string>): { ziel: Zielvorschlag; grund: string } | { ziel: null; grund: string } {
+  const abs = e.absender.find((x) => x.mappeId === e.eindeutig);
+  if (!abs || !abs.stark) return { ziel: null, grund: 'Absender nicht eindeutig erkannt' };
+  const kandidaten = e.ziele.filter((z) => autoTypen.has(z.typId));
+  const direkt = kandidaten.filter((z) => z.direkt);
+  const ziel = direkt.length === 1 ? direkt[0] : !direkt.length && kandidaten.length === 1 ? kandidaten[0] : null;
+  if (!ziel) return { ziel: null, grund: kandidaten.length ? `${kandidaten.length} passende Mappen – nicht eindeutig` : 'keine passende Mappe eines Typs mit automatischer Zuordnung' };
+  return { ziel, grund: `Absender eindeutig erkannt (${abs.gruende.join(', ')}), einzige passende Mappe (${ziel.gruende.join(', ')})` };
+}
 
 /** Was an einer Post gespeichert ist. */
 export interface PostErkennung {
@@ -33,6 +58,8 @@ export interface PostErkennung {
   /** Absender aus dem Briefkopf, wenn keiner der vorhandenen passt. */
   briefkopf: Briefkopf | null;
   ziele: Zielvorschlag[];
+  /** Automatisch zugeordnet (#337). */
+  auto?: AutoZuordnung;
 }
 
 /** Was ein Benutzer davon sieht: nur lesbare Mappen, mit Titeln. */
@@ -46,6 +73,8 @@ export interface ErkennungAntwort {
   neuerAbsender: { typId: string; werte: Record<string, string>; fundstelle: string } | null;
   ziele: Array<Zielvorschlag & { titel: string }>;
   bezuege: Record<string, MappenBezug>;
+  /** Automatisch zugeordnet (#337) – nur, wenn der Benutzer Ziel und Absender lesen darf. */
+  auto: { ziel: string; zeit: string; grund: string; rueckgaengig: boolean } | null;
 }
 
 /** „Aus Dokument ausfüllen“ (#391): Vorschläge für die Felder eines Mappentyps. */
@@ -76,7 +105,10 @@ export class Erkennung {
     if (!m) return null;
     const t = await this.repo().holeTyp(m.typId);
     if (t?.system !== 'post') return null;
-    return this.fuerPost(m.id);
+    const ergebnis = await this.fuerPost(m.id);
+    // Automatisch zuordnen (#337): nur nach neuem Volltext, nie beim bloßen Lesen.
+    if (ergebnis) await this.d.automatischZuordnen(m.id, ergebnis);
+    return ergebnis;
   }
 
   /** Text, an dem die Erkennung einer Post arbeitet: Absender, Betreff und Nachricht, dann die Volltexte. */
@@ -121,14 +153,15 @@ export class Erkennung {
     // Ziele: direkte Treffer (z. B. Vertrag über die Vertragsnummer), Mappen, die auf den Absender verweisen,
     // frühere Post dieses Absenders und der Absender selbst.
     const ziele = new Map<string, Zielvorschlag>();
-    const dazu = (mappeId: string, typId: string, punkte: number, grund: string) => {
+    const dazu = (mappeId: string, typId: string, punkte: number, grund: string, direkt = false) => {
       if (mappeId === post.id) return;
       const z = ziele.get(mappeId) ?? { mappeId, typId, punkte: 0, gruende: [] };
       z.punkte += punkte;
+      if (direkt) z.direkt = true;
       if (!z.gruende.includes(grund)) z.gruende.push(grund);
       ziele.set(mappeId, z);
     };
-    for (const x of treffer) if (!istAbsenderTyp(typVon.get(x.typId)!)) dazu(x.mappeId, x.typId, x.punkte + 1, `gefunden: ${x.gruende.join(', ')}`);
+    for (const x of treffer) if (!istAbsenderTyp(typVon.get(x.typId)!)) dazu(x.mappeId, x.typId, x.punkte + 1, `gefunden: ${x.gruende.join(', ')}`, true);
     if (haupt) {
       const alleTypen = new Map((await repo.listeTypen()).map((t) => [t.id, t]));
       for (const r of (await repo.rueckverweise(haupt.mappeId)).slice(0, 200)) {
@@ -148,7 +181,10 @@ export class Erkennung {
       const at = alleTypen.get(haupt.typId);
       if (at?.register.some((r) => r.art === 'dokumente')) dazu(haupt.mappeId, haupt.typId, 1, 'der Absender selbst');
     }
+    const vorher = await repo.erkennungLies(post.id);
+    const auto = (vorher?.ergebnis as PostErkennung | undefined)?.auto;
     const ergebnis: PostErkennung = {
+      ...(auto ? { auto } : {}),
       zeit: new Date().toISOString(),
       dokumente,
       absender,
@@ -175,7 +211,7 @@ export class Erkennung {
     if (typ?.system !== 'post') throw new Fachfehler(422, 'Vorschläge beim Zuordnen gibt es nur für Post.');
     const e = await this.ergebnis(postId);
     if (!e) throw new Fachfehler(404, 'Diese Post gibt es nicht.');
-    const ids = [...e.absender.map((x) => x.mappeId), ...e.ziele.map((x) => x.mappeId)];
+    const ids = [...e.absender.map((x) => x.mappeId), ...e.ziele.map((x) => x.mappeId), ...(e.auto ? [e.auto.ziel] : [])];
     const lesbar = await this.d.lesbare(z, ids);
     const bezuege = await this.repo().bezuege(ids.filter((id) => lesbar.has(id)));
     const titel = (id: string) => bezuege.get(id)?.titel ?? '';
@@ -188,6 +224,7 @@ export class Erkennung {
       neuerAbsender: e.briefkopf && !absender.length ? await this.neuerAbsender(e.briefkopf, z) : null,
       ziele,
       bezuege: Object.fromEntries(bezuege),
+      auto: e.auto && lesbar.has(e.auto.ziel) && (!e.eindeutig || lesbar.has(e.eindeutig)) ? { ziel: e.auto.ziel, zeit: e.auto.zeit, grund: e.auto.grund, rueckgaengig: !!e.auto.rueckgaengig } : null,
     };
   }
 

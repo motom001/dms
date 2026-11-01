@@ -189,6 +189,9 @@ function Erkannt({ post, e, darf, neuLaden, neu }: { post: Mappe; e: PostErkennu
         <button type="button" className="textknopf klein" disabled={laeuft} onClick={() => { setLaeuft(true); void neu().finally(() => setLaeuft(false)); }} title="Nach einer neuen Organisation oder Änderungen an Kundennummern noch einmal suchen">Neu erkennen</button>
         <Hilfe ort="post.erkennung" />
       </div>
+      {e.auto && <p className="klein er-auto">{e.auto.rueckgaengig ? 'Die automatische Zuordnung wurde rückgängig gemacht' : 'Automatisch zugeordnet'}
+        {e.bezuege[e.auto.ziel] && <> {e.auto.rueckgaengig ? 'von' : 'zu'} <Link to={`/ablage/${e.bezuege[e.auto.ziel].typId}/${e.auto.ziel}`} className="verweis">{titelOder(e.bezuege[e.auto.ziel].titel)}</Link></>}
+        {!e.auto.rueckgaengig && <span className="leise"> – {e.auto.grund}</span>}</p>}
       {leer ? <p className="leise klein">Im Text dieser Post hat die Erkennung nichts gefunden.</p> : (
         <dl className="er-liste">
           {absender && <div className="er-paar">
