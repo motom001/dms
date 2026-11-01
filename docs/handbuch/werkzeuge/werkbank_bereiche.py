@@ -28,7 +28,7 @@ SEITE = {
     'texterkennung': 'texterkennung.md', 'protokoll': 'fehlersuche.md#protokoll',
     'fehlermeldungen': 'fehlersuche.md#gemeldete-fehler', 'sicherung': 'sicherung.md',
     'wiederherstellung': 'wiederherstellen.md', 'vollexport': 'export.md', 'wartungsmodus': 'wartungsmodus.md',
-    'wartung': 'texterkennung.md#wartungsoperationen', 'datenbank': 'fehlersuche.md#datenbank', 'technik': 'fehlersuche.md#technik',
+    'wartung': 'texterkennung.md#wartungsoperationen', 'technik': 'fehlersuche.md#technik',
     'demo': 'demo.md',
 }
 # Bereiche, die nur unter einer Bedingung in der Leiste stehen.

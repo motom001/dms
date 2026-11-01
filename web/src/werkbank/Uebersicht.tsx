@@ -124,7 +124,7 @@ function Kacheln({ s }: { s: WerkbankUebersicht }) {
             <Kachel titel="Texterkennung" ziel="/werkbank/texterkennung" wert={s.texterkennung ? zahl(s.texterkennung.wartet + s.texterkennung.laeuft) : '–'} unter={s.texterkennung ? `in der Warteschlange · ${zahl(s.texterkennung.fehler)} mit Fehler` : 'nicht eingerichtet'} />
             <Kachel titel="Papierkorb" ziel="/werkbank/papierkorb" wert={zahl(s.papierkorb.anzahl)} unter={s.papierkorb.tage ? (s.papierkorb.aeltester ? `älteste vom ${datum(s.papierkorb.aeltester)} · ${s.papierkorb.tage} Tage` : `${s.papierkorb.tage} Tage Aufbewahrung`) : 'ausgeschaltet'} />
             <Kachel titel="Gemeldete Fehler" ziel="/werkbank/fehlermeldungen" wert={s.fehlermeldungen === null ? '–' : zahl(s.fehlermeldungen)} unter="offen" />
-            {s.bestand && <Kachel titel="Bestand" ziel="/werkbank/datenbank" wert={zahl(s.bestand.mappen)} unter={`Mappen · ${zahl(s.bestand.dokumente)} Dokumente (${bytes(s.bestand.dokumenteBytes)}) · ${zahl(s.bestand.benutzer)} Benutzer`} />}
+            {s.bestand && <Kachel titel="Bestand" ziel="/werkbank/anbindung" wert={zahl(s.bestand.mappen)} unter={`Mappen · ${zahl(s.bestand.dokumente)} Dokumente (${bytes(s.bestand.dokumenteBytes)}) · ${zahl(s.bestand.benutzer)} Benutzer`} />}
             <Kachel titel="Version" ziel="/werkbank/technik" wert={s.version.version} unter={s.version.commit ? `Build ${s.version.commit.slice(0, 7)} · unter Technik auf Updates prüfen` : 'unter Technik auf Updates prüfen'} />
           </div>
   );

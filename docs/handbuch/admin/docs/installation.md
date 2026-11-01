@@ -89,6 +89,23 @@ Unter **Werkbank → Datenbank-Anbindung** siehst und änderst du die Anbindung.
 
 In der Datei steht auch die interne Id des **Haushalts** (früher die Umgebungsvariable `HAUSHALT_ID`). Bisherige Installationen übernehmen sie beim ersten Start; die Variable kann danach entfernt werden.
 
+Unter der Verbindung zeigt die Seite, wie es der Datenbank im Betrieb geht: die **langen Datenbankzugriffe** und **was gerade läuft**. Früher stand das unter *Wartung und Fehlersuche → Datenbank*; alte Links und Lesezeichen führen hierher.
+
+![Datenbank-Anbindung: lange Datenbankzugriffe](bilder/werkbank-datenbank.png)
+
+### Lange Datenbankzugriffe
+
+Jeder Datenbankzugriff wird gestoppt. Was länger dauert als eine Schwelle, landet in der Liste und als Warnung im [Protokoll](fehlersuche.md#protokoll) (Modul *datenbank*). Direkt über der Liste stellst du ein:
+
+- **Lang ab** – die Schwelle in Millisekunden (Standard 500),
+- **Aufbewahren** – wie viele Tage die Einträge bleiben (Standard 30).
+
+Die Liste zeigt die neuesten oben, etwa zehn Einträge; darin scrollst du. Ein Klick auf einen Eintrag klappt ihn auf: Abfrage, Aufrufer (Anfrage und Benutzer), Dauer und Zeit. Ein Datenbankzugriff ist eine Methode der Datenzugriffsschicht (z. B. `mappen.seite` für eine Seite einer Ansicht) und kann mehrere SQL-Anweisungen umfassen.
+
+### Was läuft gerade
+
+Die Abfragen, die gerade in der Datenbank laufen, mit Dauer, Zustand und Prozess – alle fünf Sekunden aktualisiert. Laufen welche schon länger als die Schwelle, weist ein Hinweis darauf hin.
+
 ## E-Mail und Adresse
 
 Unter **Werkbank → E-Mail und Adresse** stellst du ein, was früher Umgebungsvariablen waren. Änderungen gelten sofort, ohne Neustart.

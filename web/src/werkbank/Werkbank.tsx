@@ -19,7 +19,7 @@ import { hatMitte, wartungsPlakette, werkbankEbene, werkbankUmleitung, werkbankZ
 import { BenutzerDetail, BenutzerListe, BenutzerNeu, useBenutzer } from './Benutzer';
 import { BetriebPanel, useBetrieb } from './Betrieb';
 import { SichtEditor, SichtenListe } from './Sichten';
-import { DatenbankPanel, useDatenbank } from './Datenbank';
+import { DatenbankAbschnitte, useDatenbank } from './Datenbank';
 import { DemoPanel } from './Demo';
 import { DesignEditor, DesignListe } from './Designs';
 import { ProtokollDetail, ProtokollListe, useProtokoll } from './Protokoll';
@@ -50,7 +50,6 @@ import { useBeiWiederErreichbar } from '../erreichbar';
  * /werkbank/sichten[/:id|/neu]       Sichten der Ablage (#38)
  * /werkbank/demo
  * /werkbank/protokoll[/:nr]
- * /werkbank/datenbank[?offen=:id]   lange Zugriffe rechts, aufklappbar (#366)
  * /werkbank/technik
  * /werkbank/designs[/:id|/neu]
  * /werkbank/betrieb                 E-Mail-Versand und Adresse des DMS (#37)
@@ -63,7 +62,8 @@ import { useBeiWiederErreichbar } from '../erreichbar';
  * /werkbank/wartungsmodus          Wartungsmodus (#102)
  * /werkbank/sicherung              Sicherung, Zeitplan, Notfallblatt, Probe (#103–#106, #109)
  * /werkbank/wiederherstellung      Sicherung einspielen (#107)
- * /werkbank/anbindung            Datenbank-Anbindung (#119)
+ * /werkbank/anbindung[?offen=:id] Datenbank-Anbindung (#119), darunter lange Zugriffe, aufklappbar,
+ *                                 und was gerade läuft (#407; früher /werkbank/datenbank, leitet weiter)
  * /werkbank/speicherplatz         Speicherplatz je Ordner, Warnschwelle und Grenze (#115, #116)
  * /werkbank/webdav                WebDAV-Laufwerk an/aus, Stand, letzte Zugriffe (#346, rechts seit #366)
  * /werkbank/stempel                Vorlagen für Stempel beim Weitergeben (#394), zweiteilig
@@ -78,7 +78,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const [, bereich = 'uebersicht', id] = teile;
   const benutzer = useBenutzer();
   const protokoll = useProtokoll(bereich === 'protokoll');
-  const datenbank = useDatenbank(bereich === 'datenbank');
+  const datenbank = useDatenbank(bereich === 'anbindung');
   const technik = useTechnik(bereich === 'technik');
   const betrieb = useBetrieb();
   const tresor = useTresor();
@@ -112,18 +112,19 @@ export function Werkbank({ teile }: { teile: string[] }) {
   useBeiWiederErreichbar(() => {
     void uebersicht.laden();
     const offen: Record<string, (() => Promise<unknown>) | undefined> = {
-      protokoll: protokoll.neu, datenbank: datenbank.laden, technik: technik.laden, betrieb: betrieb.laden,
+      protokoll: protokoll.neu, technik: technik.laden, betrieb: betrieb.laden,
       verschluesselung: tresor.laden, papierkorb: papierkorb.laden, aufgaben: aufgaben.laden, texterkennung: ocr.laden,
       wartung: ocr.laden, fehlermeldungen: meldungen.laden, wartungsmodus: wartungsmodus.laden, sicherung: sicherung.laden,
-      speicherplatz: speicherplatz.laden, anbindung: anbindung.laden, benutzer: benutzer.laden, webdav: webdav.laden,
+      speicherplatz: speicherplatz.laden, anbindung: async () => { await anbindung.laden(); await datenbank.laden(); }, benutzer: benutzer.laden, webdav: webdav.laden,
       datenschutz: datenschutz.laden,
     };
     void offen[bereich]?.();
   });
   // Anmeldungen und Aktivität ändern sich laufend: beim Öffnen der Benutzer neu laden.
   useEffect(() => { if (bereich === 'benutzer') void benutzer.laden(); }, [bereich, id]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Alte Direktlinks in Bereiche ohne Mitte (#366), z. B. /werkbank/datenbank/:id → Seite, Eintrag aufgeklappt.
-  const umleitung = werkbankUmleitung(bereich, id);
+  // Alte Direktlinks in Bereiche ohne Mitte (#366), z. B. /werkbank/stempel/:id → Seite, Eintrag aufgeklappt;
+  // umgezogene Bereiche (#407: /werkbank/datenbank → /werkbank/anbindung) an die neue Stelle.
+  const umleitung = werkbankUmleitung(bereich, id, location.search);
   useEffect(() => { if (umleitung) geheZu(umleitung, true); }, [umleitung]);
   // Hintergrundarbeit ruht nur im aktiven Wartungsmodus (#366: Hinweis bei Texterkennung und Volltext).
   const wartungAn = wartungsPlakette(wartungsmodus.stand?.stufe ?? 'aus', wartungsmodus.stand?.aktivAb ?? null) === 'an';
@@ -180,7 +181,8 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'sicherung') {
     rechts = <SicherungPanel z={sicherung} />;
   } else if (bereich === 'anbindung') {
-    rechts = <AnbindungPanel z={anbindung} nachAenderung={() => void uebersicht.laden()} />;
+    rechts = <AnbindungPanel z={anbindung} nachAenderung={() => void uebersicht.laden()}
+      unten={<DatenbankAbschnitte z={datenbank} offen={new URLSearchParams(location.search).get('offen') ?? undefined} />} />;
   } else if (bereich === 'anmeldeschutz') {
     rechts = <AnmeldeschutzPanel z={anmeldeschutz} />;
   } else if (bereich === 'pakete') {
@@ -215,8 +217,6 @@ export function Werkbank({ teile }: { teile: string[] }) {
     rechts = <TresorPanel t={tresor} />;
   } else if (bereich === 'technik') {
     rechts = <TechnikPanel t={technik} />;
-  } else if (bereich === 'datenbank') {
-    rechts = <DatenbankPanel z={datenbank} offen={new URLSearchParams(location.search).get('offen') ?? undefined} />;
   } else if (bereich === 'protokoll') {
     liste = <ProtokollListe p={protokoll} offen={id} />;
     rechts = <ProtokollDetail p={protokoll} nr={id} />;
@@ -251,7 +251,6 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'vollexport', name: 'Vollexport', gruppe: 'wartung' },
           { pfad: 'wartungsmodus', name: 'Wartungsmodus', gruppe: 'wartung', warn: wartungsPlakette(wartungsmodus.stand?.stufe ?? 'aus', wartungsmodus.stand?.aktivAb ?? null), warnTitel: wartungAn ? 'Wartungsmodus ist an' : 'Wartungsmodus ist angekündigt' },
           { pfad: 'wartung', name: 'Wartungsoperationen', gruppe: 'wartung' },
-          { pfad: 'datenbank', name: 'Datenbank', gruppe: 'wartung' },
           { pfad: 'technik', name: 'Technik', gruppe: 'wartung' },
           { pfad: 'demo', name: 'Demo-Daten', gruppe: 'wartung', zahl: Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || undefined },
   ];

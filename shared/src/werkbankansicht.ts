@@ -48,7 +48,7 @@ export const BEREICHE: Bereich[] = [
   { pfad: 'verschluesselung', gruppe: 'einstellungen', name: 'Verschlüsselung', in: [...H], wann: 'den Schlüssel für Passwörter und Sicherungen' },
   { pfad: 'designs', gruppe: 'einstellungen', name: 'Designs', in: [...O], wann: 'Logo, Farben und eigenes CSS' },
   { pfad: 'papierkorb', gruppe: 'einstellungen', name: 'Papierkorb', in: [...H], wann: 'gelöschte Mappen zurückholen' },
-  { pfad: 'anbindung', gruppe: 'einstellungen', name: 'Datenbank-Anbindung', in: [], wann: 'die Verbindung zur Datenbank ändern' },
+  { pfad: 'anbindung', gruppe: 'einstellungen', name: 'Datenbank-Anbindung', in: [], wann: 'die Verbindung zur Datenbank, lange Datenbankzugriffe und was gerade läuft' },
   { pfad: 'speicherplatz', gruppe: 'einstellungen', name: 'Speicherplatz', in: [...H], wann: 'sehen, wie voll das Gerät ist' },
   { pfad: 'postfaecher', gruppe: 'einstellungen', name: 'Postfächer', in: [...O], wann: 'Post aus einem E-Mail-Konto abholen' },
   { pfad: 'eingangsordner', gruppe: 'einstellungen', name: 'Eingangsordner', in: [...O], wann: 'Scans aus einem Ordner übernehmen' },
@@ -61,12 +61,17 @@ export const BEREICHE: Bereich[] = [
   { pfad: 'vollexport', gruppe: 'wartung', name: 'Vollexport', in: [...H], wann: 'alle Daten in offenen Formaten mitnehmen' },
   { pfad: 'wartungsmodus', gruppe: 'wartung', name: 'Wartungsmodus', in: [...O], wann: 'Benutzer vorübergehend aussperren' },
   { pfad: 'wartung', gruppe: 'wartung', name: 'Wartungsoperationen', in: [], wann: 'einmalige Pflegearbeiten' },
-  { pfad: 'datenbank', gruppe: 'wartung', name: 'Datenbank', in: [], wann: 'Tabellen und Größen der Datenbank' },
   { pfad: 'technik', gruppe: 'wartung', name: 'Technik', in: [...H], wann: 'Version, Updates und die Übersicht für GitHub' },
   { pfad: 'demo', gruppe: 'wartung', name: 'Demo-Daten', in: [], wann: 'Beispielmappen zum Ausprobieren' },
 ];
 
 const BEKANNT = new Set(BEREICHE.map((b) => b.pfad));
+
+/**
+ * Umgezogene Bereiche: alte Kennung → neue. Alte Links und Lesezeichen leiten weiter, gespeicherte
+ * Ansichten übernehmen die neue Kennung (#407: Datenbank → Datenbank-Anbindung).
+ */
+export const UMGEZOGEN: Readonly<Record<string, string>> = { datenbank: 'anbindung' };
 
 /** Für die ganze Installation: Vorlage plus Abweichungen. */
 export interface WerkbankAnsicht { vorlage: Vorlage; ein: string[]; aus: string[] }
@@ -76,7 +81,9 @@ export interface EigeneAnsicht { ein: string[] }
 /** Ohne Einstellung bleibt alles sichtbar – so ändert sich für bestehende Installationen nichts. */
 export const OHNE_EINSTELLUNG: WerkbankAnsicht = { vorlage: 'alles', ein: [], aus: [] };
 
-const liste = (v: unknown) => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && BEKANNT.has(x)))] : []);
+const liste = (v: unknown) => (Array.isArray(v)
+  ? [...new Set(v.filter((x): x is string => typeof x === 'string').map((x) => UMGEZOGEN[x] ?? x).filter((x) => BEKANNT.has(x)))]
+  : []);
 
 /** Liest einen gespeicherten Wert; Unbekanntes fällt weg. `null` = noch nicht eingestellt. */
 export function liesAnsicht(v: unknown): WerkbankAnsicht | null {
@@ -116,7 +123,7 @@ export function ansichtAus(vorlage: Vorlage, sichtbareBereiche: Iterable<string>
 
 /**
  * Die Mitte gibt es nur für große Sammlungen, die man bearbeitet (Mappentypen, Ansichten, Benutzer …).
- * Kleine oder nur lesende Listen (lange Zugriffe, Demo-Übersicht, Technik, Exporte, gesperrte Adressen,
+ * Kleine oder nur lesende Listen (lange Datenbankzugriffe unter Datenbank-Anbindung #407, Demo-Übersicht, Technik, Exporte, gesperrte Adressen,
  * Stempel-Vorlagen #394, Datenschutz #396)
  * stehen rechts im passenden Abschnitt. Alle anderen Bereiche – auch künftige – sind zweiteilig.
  */
@@ -140,12 +147,15 @@ export function werkbankEbene(bereich: string, id?: string, rechtsOhneAuswahl = 
 export const werkbankZurueck = (bereich: string) => (hatMitte(bereich) ? `/werkbank/${bereich}` : '/werkbank');
 
 /**
- * Alte Direktlinks in Bereiche ohne Mitte (z. B. /werkbank/datenbank/:id) führen auf die Seite;
- * der Eintrag steht dann als ?offen=… in der Adresse und ist aufgeklappt. `null` = nichts umzuleiten.
+ * Alte Direktlinks in Bereiche ohne Mitte (z. B. /werkbank/stempel/:id) führen auf die Seite;
+ * der Eintrag steht dann als ?offen=… in der Adresse und ist aufgeklappt. Umgezogene Bereiche
+ * (`UMGEZOGEN`) leiten samt Suche (`?offen=…`) auf die neue Stelle. `null` = nichts umzuleiten.
  */
-export function werkbankUmleitung(bereich: string, id?: string): string | null {
+export function werkbankUmleitung(bereich: string, id?: string, suche = ''): string | null {
+  const neu = UMGEZOGEN[bereich];
+  if (neu) return id ? werkbankUmleitung(neu, id) ?? `/werkbank/${neu}` : `/werkbank/${neu}${suche}`;
   if (!id || hatMitte(bereich)) return null;
-  return bereich === 'datenbank' || bereich === 'stempel' ? `/werkbank/${bereich}?offen=${encodeURIComponent(id)}` : `/werkbank/${bereich}`;
+  return bereich === 'anbindung' || bereich === 'stempel' ? `/werkbank/${bereich}?offen=${encodeURIComponent(id)}` : `/werkbank/${bereich}`;
 }
 
 /** Plakette links für den Wartungsmodus (#366): „angekündigt“, solange er noch nicht wirkt, „an“ erst danach. */
