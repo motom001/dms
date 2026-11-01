@@ -1999,7 +1999,7 @@
 </tr>
 <tr>
 <td><strong>Sprachen</strong></td>
-<td>z. B. <code>deu+eng</code>.</td>
+<td>z. B. <code>deu+eng</code>. Ist eine eingestellte Sprache nicht installiert, steht das am Feld; die Texterkennung überspringt sie.</td>
 </tr>
 <tr>
 <td><strong>Je Dateityp</strong></td>
@@ -2009,8 +2009,9 @@
 </table>
 <p>Ob ein Dokumentenregister überhaupt einen Volltext erzeugt, stellst du am <a href="../mappentypen/#register">Mappentyp</a> ein (<em>Volltext erzeugen</em>, Standard: an).</p>
 <p>Darunter zeigt die Seite, welche Werkzeuge installiert sind, und die <strong>Warteschlange</strong>: wie viele Dokumente warten, gerade laufen, fertig sind, einen Fehler hatten oder ausgelassen wurden.</p>
+<p>Steht die Warteschlange, sagt ein Hinweis oben auf der Seite und bei <em>Volltext nachholen</em> warum: <strong>ausgeschaltet</strong> (mit <strong>Einschalten</strong>) oder <strong>pausiert, solange der Wartungsmodus an ist</strong> (mit <strong>Wartungsmodus beenden</strong>). Ein nur angekündigter Wartungsmodus hält die Texterkennung nicht an.</p>
 <h2 id="auftrage">Aufträge<a class="headerlink" href="#auftrage" title="Permanent link">&para;</a></h2>
-<p>Unter <strong>Aufträge</strong> siehst du die Dokumente je Stand (<em>Fehler</em>, <em>wartet</em>, <em>läuft</em>, <em>ausgelassen</em>, <em>fertig</em>) – mit Mappe (als Link), Größe, Zeitpunkt und dem <strong>Grund</strong> bei Fehlern oder ausgelassenen Dokumenten.</p>
+<p>Unter <strong>Aufträge</strong> siehst du in einer Liste mit fester Höhe die Dokumente je Stand (<em>Fehler</em>, <em>wartet</em>, <em>läuft</em>, <em>ausgelassen</em>, <em>fertig</em>) – mit Mappe (als Link), Größe, Zeitpunkt und dem <strong>Grund</strong> bei Fehlern oder ausgelassenen Dokumenten.</p>
 <ul>
 <li>Dokumente auswählen und <strong>Neu starten</strong>: Sie kommen wieder in die Warteschlange.</li>
 <li>Wartende <strong>aus der Warteschlange nehmen</strong> bzw. laufende <strong>abbrechen</strong>: Sie gelten dann als <em>ausgelassen</em> („Vom Administrator abgebrochen“); ein laufender Vorgang (tesseract, pdftoppm) wird beendet.</li>
