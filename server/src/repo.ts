@@ -189,6 +189,19 @@ export interface Repo {
   /** Zurückziehen; false, wenn er schon nicht mehr galt. */
   widerrufeAuskunftLink(id: string): Promise<boolean>;
   favoritenVon(benutzerId: string, mappeIds: string[]): Promise<Set<string>>;
+  /** Favorit = Abo (#422): wer die Mappe als Favorit hat und ob er bei Änderungen benachrichtigt werden will. */
+  favoritenDerMappe(mappeId: string): Promise<Array<{ benutzerId: string; benachrichtigen: boolean }>>;
+  /** Je Favorit „bei Änderungen benachrichtigen“ an/aus (#422). */
+  setzeFavoritBenachrichtigen(benutzerId: string, mappeId: string, an: boolean): Promise<void>;
+  /** Welche dieser Mappen sind Favoriten des Benutzers mit ausgeschalteter Benachrichtigung? */
+  stummeFavoriten(benutzerId: string, mappeIds: string[]): Promise<Set<string>>;
+  /** Mappen als gesehen merken (geöffnet oder „als gesehen markiert“, #422). */
+  merkeGesehen(benutzerId: string, mappeIds: string[]): Promise<void>;
+  /**
+   * Hervorhebung (#422): Welche dieser Mappen – nur Favoriten und selbst angelegte – haben andere seit dem letzten
+   * Sehen (sonst seit Favorit bzw. Anlegen) geändert? Zählt nur Historieneinträge der Arten `arten` mit Benutzer.
+   */
+  geaendertVonAnderen(benutzerId: string, mappeIds: string[], arten: readonly string[]): Promise<Set<string>>;
   /** Anzahl Mappen je Klauselliste (eine je Sicht), in derselben Reihenfolge. */
   zaehleKlauseln(liste: Klausel[][], lesen?: Lesefilter | null): Promise<number[]>;
   /** Berechtigungen (#124): welche dieser Mappen der Filter durchlässt. */

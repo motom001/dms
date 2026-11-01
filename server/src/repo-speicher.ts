@@ -43,6 +43,10 @@ export function speicherRepo(): Repo {
   /** Favoriten (#62): Benutzer → Mappen. */
   const favoriten = new Map<string, Set<string>>();
   const istFavorit = (mappeId: string, benutzerId: string) => !!favoriten.get(benutzerId)?.has(mappeId);
+  // Favorit = Abo (#422): seit wann Favorit, ausgeschaltete Benachrichtigung, zuletzt gesehen – je „Benutzer|Mappe“.
+  const favoritSeit = new Map<string, string>();
+  const favoritStumm = new Set<string>();
+  const gesehen = new Map<string, string>();
   const offenFuer = (m: Mappe, benutzerId: string, admin: boolean) =>
     [...aufgaben.values()].some((a) => a.mappeId === m.id && !a.erledigt && (a.empfaengerId === benutzerId || (admin && !a.empfaengerId)));
   const mitMappe = (a: Aufgabe): Aufgabe => ({ ...kopie(a), mappeTitel: mappen.get(a.mappeId)?.titel ?? '', typId: mappen.get(a.mappeId)?.typId });
@@ -580,8 +584,28 @@ export function speicherRepo(): Repo {
 
     async setzeFavorit(benutzerId, mappeId, an) {
       const s = favoriten.get(benutzerId) ?? new Set<string>();
-      if (an) s.add(mappeId); else s.delete(mappeId);
+      if (an) { if (!s.has(mappeId)) favoritSeit.set(`${benutzerId}|${mappeId}`, jetzt()); s.add(mappeId); }
+      else { s.delete(mappeId); favoritSeit.delete(`${benutzerId}|${mappeId}`); favoritStumm.delete(`${benutzerId}|${mappeId}`); }
       favoriten.set(benutzerId, s);
+    },
+    async favoritenDerMappe(mappeId) {
+      return [...favoriten].filter(([, s]) => s.has(mappeId)).map(([benutzerId]) => ({ benutzerId, benachrichtigen: !favoritStumm.has(`${benutzerId}|${mappeId}`) }));
+    },
+    async setzeFavoritBenachrichtigen(benutzerId, mappeId, an) {
+      if (!istFavorit(mappeId, benutzerId)) return;
+      if (an) favoritStumm.delete(`${benutzerId}|${mappeId}`); else favoritStumm.add(`${benutzerId}|${mappeId}`);
+    },
+    async stummeFavoriten(benutzerId, mappeIds) { return new Set(mappeIds.filter((id) => istFavorit(id, benutzerId) && favoritStumm.has(`${benutzerId}|${id}`))); },
+    async merkeGesehen(benutzerId, mappeIds) { for (const id of mappeIds) if (mappen.has(id)) gesehen.set(`${benutzerId}|${id}`, jetzt()); },
+    async geaendertVonAnderen(benutzerId, mappeIds, arten) {
+      const erg = new Set<string>();
+      for (const id of new Set(mappeIds)) {
+        const m = mappen.get(id);
+        if (!m || !(istFavorit(id, benutzerId) || m.erstelltVon === benutzerId)) continue;
+        const seit = [gesehen.get(`${benutzerId}|${id}`), favoritSeit.get(`${benutzerId}|${id}`), m.erstellt].filter((x): x is string => !!x).sort().at(-1)!;
+        if (historie.some((h) => h.mappeId === id && h.zeit > seit && h.benutzerId && h.benutzerId !== benutzerId && arten.includes(h.art) && h.daten?.aufgabenart !== 'aenderung')) erg.add(id);
+      }
+      return erg;
     },
     async legeAuskunftLinkAn(l) { links.set(l.id, { ...kopie(l), erstellt: l.erstellt || jetzt(), abrufe: 0, fehlversuche: 0, gesperrt: null, widerrufen: null, abgerufen: null }); },
     async auskunftLinkPerSchluessel(hash) { const l = [...links.values()].find((x) => x.schluessel === hash && mappen.has(x.mappeId)); return l ? kopie(l) : undefined; },

@@ -232,6 +232,18 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
         <ZusammenfassungEinstellen />
       </div>
 
+      {/* Favorit = Abo (#422): Stern an einer Mappe heißt auch „bei Änderungen benachrichtigen“. */}
+      <div className="blatt" id="favoriten">
+        <h2 className="h3">Favoriten <Hilfe ort="profil.favoriten" /></h2>
+        <p className="leise">Was dir wichtig ist, bekommt einen Stern. Ändert jemand anderes einen deiner Favoriten, bekommst du <strong>eine</strong> Benachrichtigung „Geändert“ unter „Zu erledigen“ – sie zählt weitere Änderungen nur hoch, bis du die Mappe öffnest. Einzelne Favoriten schaltest du in der Favoritenliste stumm.</p>
+        <label className="haken"><input type="checkbox" checked={d.einstellungen.favoriten_benachrichtigen !== false}
+          onChange={(e) => d.setzeEinstellung('favoriten_benachrichtigen', e.target.checked ? null : false)} />
+          <span>Bei Änderungen an meinen Favoriten benachrichtigen</span></label>
+        <label className="haken"><input type="checkbox" checked={d.einstellungen.geaenderte_hervorheben !== false}
+          onChange={(e) => d.setzeEinstellung('geaenderte_hervorheben', e.target.checked ? null : false)} />
+          <span>Geänderte Favoriten und eigene Mappen in Listen hervorheben<small className="hilfe">Mit einem Punkt vor dem Titel, bis du die Mappe öffnest – wie „ungelesen“ im E-Mail-Programm.</small></span></label>
+      </div>
+
       </>}
     </div>
   );

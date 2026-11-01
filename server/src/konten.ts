@@ -559,6 +559,8 @@ export class Konten {
         if (b && !b.aktiv && !b.hatPasswort && !b.letzteAnmeldung) await this.repo.loescheBenutzer(id);
       },
       benutzer: () => this.repo.listeBenutzer(),
+      // Favorit = Abo (#422): persönliche Einstellungen (Benachrichtigen, Hervorheben).
+      einstellungen: (id: string) => this.repo.einstellungen(id),
       wiederda: async (id: string, von: string | null) => {
         const b = await this.person(id);
         if (b && !b.aktiv) await this.spiegle(await this.repo.aendereBenutzer(id, { aktiv: true }), von);

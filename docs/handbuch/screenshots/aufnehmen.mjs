@@ -585,6 +585,15 @@ async function main() {
   await geheZu(s, `/ablage/favoriten/${d.strom.id}`);
   await s.getByRole('heading', { name: 'Stromvertrag Haus' }).waitFor();
   await bild(s, 'favoriten');
+  // Favorit = Abo (#422): Ben ändert einen Favoriten von Anna – Punkt in der Liste, „Geändert“ unter Zu erledigen.
+  {
+    const anm = await fetch(`${BASIS}/api/konto/anmelden`, { method: 'POST', headers: { 'x-dms': '1', 'content-type': 'application/json' }, body: JSON.stringify({ email: MITGLIED.email, passwort: MITGLIED.passwort }) });
+    const benCookie = (anm.headers.get('set-cookie') ?? '').split(';')[0];
+    await fetch(`${BASIS}/api/mappen/${d.stadtwerke.id}/notizen`, { method: 'POST', headers: { 'x-dms': '1', cookie: benCookie, 'content-type': 'application/json' }, body: JSON.stringify({ text: 'Neue Abschlagshöhe ab Januar notiert.' }) });
+    await geheZu(s, '/ablage/favoriten');
+    await s.locator('li.abo-geaendert').first().waitFor();
+    await bild(s, 'favoriten-geaendert');
+  }
 
   // Mehrere Trefferlisten (#75): „Kurz“ bei Rechnung, im Register des Vertragspartners als Tabelle
   const rechnungAktuell = (await api('GET', '/api/typen')).find((t) => t.id === rechnung.id);

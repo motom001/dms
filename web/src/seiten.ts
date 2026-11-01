@@ -22,6 +22,9 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
   const [bezuege, setBezuege] = useState<Bezuege>({});
   /** Favoriten unter den geladenen Mappen (#62). */
   const [favoriten, setFavoriten] = useState<Set<string>>(new Set());
+  /** Favorit = Abo (#422): von anderen geändert seit dem letzten Sehen; Favoriten ohne Benachrichtigung. */
+  const [geaendert, setGeaendert] = useState<Set<string>>(new Set());
+  const [stumm, setStumm] = useState<Set<string>>(new Set());
   const [gesamt, setGesamt] = useState<number | null>(null);
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string>();
@@ -41,6 +44,8 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
       setAusschnitte((alt) => (ersetzen ? s.ausschnitte ?? {} : { ...alt, ...s.ausschnitte }));
       setAufgaben((alt) => (ersetzen ? s.aufgaben ?? {} : { ...alt, ...s.aufgaben }));
       setFavoriten((alt) => new Set([...(ersetzen ? [] : alt), ...(s.favoriten ?? [])]));
+      setGeaendert((alt) => new Set([...(ersetzen ? [] : alt), ...(s.geaendert ?? [])]));
+      setStumm((alt) => new Set([...(ersetzen ? [] : alt), ...(s.stumm ?? [])]));
       geladen.current = (ersetzen ? 0 : geladen.current) + s.mappen.length;
       setFehler(undefined);
     } catch (e) {
@@ -64,5 +69,8 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
     void lade(mappen.length, SEITE, false);
   }, [laedt, gesamt, mappen.length, lade]);
 
-  return { mappen, bezuege, ausschnitte, aufgaben, favoriten, gesamt, laedt, fehler, mehr, alle: gesamt !== null && mappen.length >= gesamt };
+  /** Gesehen (geöffnet oder „Alle als gesehen markieren“): Hervorhebung sofort weg. */
+  const gesehen = useCallback((ids: string[]) => setGeaendert((alt) => { if (!ids.some((id) => alt.has(id))) return alt; const n = new Set(alt); for (const id of ids) n.delete(id); return n; }), []);
+  const setzeStumm = useCallback((id: string, an: boolean) => setStumm((alt) => { const n = new Set(alt); if (an) n.add(id); else n.delete(id); return n; }), []);
+  return { mappen, bezuege, ausschnitte, aufgaben, favoriten, geaendert, gesehen, stumm, setzeStumm, gesamt, laedt, fehler, mehr, alle: gesamt !== null && mappen.length >= gesamt };
 }

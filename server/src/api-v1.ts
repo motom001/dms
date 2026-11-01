@@ -341,7 +341,7 @@ const SCHEMAS: Record<string, Schema> = {
   Aufgabe: {
     type: 'object',
     properties: {
-      id: uuid, mappeId: uuid, empfaengerId: { ...uuid, nullable: true, description: 'null = Administratoren' }, art: { type: 'string', enum: ['passung', 'erwaehnung', 'manuell', 'vertretung', 'frist', 'erinnerung', 'post'] },
+      id: uuid, mappeId: uuid, empfaengerId: { ...uuid, nullable: true, description: 'null = Administratoren' }, art: { type: 'string', enum: ['passung', 'erwaehnung', 'manuell', 'vertretung', 'frist', 'erinnerung', 'post', 'auskunft', 'aenderung'] },
       text: { type: 'string' }, feldKey: { type: 'string', nullable: true }, datum: { type: 'string', format: 'date', nullable: true, description: 'Frist und Erinnerung: das Datum, um das es geht' }, erstellt: zeit, erstelltVon: { ...uuid, nullable: true },
       erledigt: { ...zeit, nullable: true }, erledigtVon: { ...uuid, nullable: true }, mappeTitel: { type: 'string' }, typId: uuid,
     },

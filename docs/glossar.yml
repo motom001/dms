@@ -187,7 +187,7 @@ begriffe:
     code: Bedingung
   - begriff: Favoriten
     bereich: grundbegriffe
-    beschreibung: Mappen, die ein Benutzer mit dem Stern markiert hat. Die Ansicht „Favoriten“ zeigt sie.
+    beschreibung: Mappen, die ein Benutzer mit dem Stern markiert hat. Die Ansicht „Favoriten“ zeigt sie. Ein Favorit ist zugleich ein Abo – ändern andere die Mappe, gibt es eine gebündelte Benachrichtigung „Geändert“ (je Favorit abschaltbar).
     einsteiger: alltag
     begegnet: alle
   - begriff: Archivnummer

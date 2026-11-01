@@ -45,7 +45,7 @@ Siehe auch: [Version](#version).
 Ein Feldwert, der in diesem Mappentyp nur einmal vorkommen darf, z. B. eine Rechnungsnummer.
 
 <a id="favoriten"></a>**Favoriten** · ✓ Alltagswort · alle  
-Mappen, die ein Benutzer mit dem Stern markiert hat. Die Ansicht „Favoriten“ zeigt sie.
+Mappen, die ein Benutzer mit dem Stern markiert hat. Die Ansicht „Favoriten“ zeigt sie. Ein Favorit ist zugleich ein Abo – ändern andere die Mappe, gibt es eine gebündelte Benachrichtigung „Geändert“ (je Favorit abschaltbar).
 
 <a id="feld"></a>**Feld** · ~ mit Erklärung · alle  
 Eine Angabe in einer Mappe, z. B. die Vertragsnummer. Jedes Feld hat eine Feldart – Text, Langtext, Formatierter Text, Zahl, Betrag, Datum, Ja/Nein, Auswahlliste, Verweis oder Passwort.  

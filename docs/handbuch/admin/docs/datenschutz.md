@@ -194,7 +194,7 @@ Unter **Abruf-Links** stehen alle Links mit Stand (*aktiv*, *abgelaufen*, *alle 
 
 ![Zustellen an einer bereitliegenden Auskunft](bilder/werkbank-datenschutz-zustellen.png)
 
-**Nachweis und Benachrichtigung:** Jeder Abruf und jeder falsche Code steht in der **Historie der Person** (Zeitpunkt, erfolgreich oder nicht – **ohne IP-Adresse**, ohne Code). Wer den Link oder die Auskunft erstellt hat und wer die Person als **Favorit** (★) hat, bekommt unter „Zu erledigen“ die Aufgabe **Auskunft** – „Auskunft an … wurde abgerufen“. Solange sie offen ist, kommt für denselben Link keine zweite. Sind alle Abrufe verbraucht, wird die ZIP-Datei gelöscht.
+**Nachweis und Benachrichtigung:** Jeder Abruf und jeder falsche Code steht in der **Historie der Person** (Zeitpunkt, erfolgreich oder nicht – **ohne IP-Adresse**, ohne Code). Wer den Link oder die Auskunft erstellt hat und wer die Person als **Favorit** (★) hat – sofern er die Benachrichtigung für diesen Favoriten nicht abgeschaltet hat ([Favorit = Abo](https://motom001.github.io/dms/benutzer/aktuell/ablage/#favoriten-als-abo)) –, bekommt unter „Zu erledigen“ die Aufgabe **Auskunft** – „Auskunft an … wurde abgerufen“. Solange sie offen ist, kommt für denselben Link keine zweite. Sind alle Abrufe verbraucht, wird die ZIP-Datei gelöscht.
 
 ### Sicherheit der Abrufseite
 

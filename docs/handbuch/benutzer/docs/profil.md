@@ -105,6 +105,8 @@ Auch ein Link zum Zurücksetzen des Passworts fragt danach den Code ab. Handy ve
     - **Wochentage** – Standard Montag bis Freitag. Ohne Wochentag kommt keine Zusammenfassung.
     - **Nicht an Feiertagen** – an gesetzlichen Feiertagen des Bundeslands, das der Administrator gewählt hat, kommt keine (Standard: an). Ohne Bundesland ist der Haken ausgegraut.
 
+- **Favoriten** – **Bei Änderungen an meinen Favoriten benachrichtigen** und **Geänderte Favoriten und eigene Mappen in Listen hervorheben** (beides Standard: an). Was dahintersteckt, steht unter [Favoriten als Abo](ablage.md#favoriten-als-abo).
+
 ![Profil → Benachrichtigungen](bilder/profil-benachrichtigungen.png){ loading=lazy }
 
 ### Abwesenheit
