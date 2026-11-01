@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { erwaehnung } from '../../shared/src/markdown';
+import { ALLES } from '../../shared/src/rechte';
 import { Aufgabenmail } from '../src/aufgabenmail';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
@@ -110,5 +111,70 @@ describe('Aufgaben (#54, #56)', () => {
     await konten.setzeEinstellung((await konten.listeBenutzer()).find((b) => b.id === ben.id)!, 'aufgaben_mail', false);
     assert.equal(await mail.sende(), 0, 'abbestellt');
     await assert.rejects(mail.speichere({ uhrzeit: '25:00' }), status(422));
+  });
+});
+
+describe('Sammel-Weitergabe (#415, #419)', () => {
+  it('gibt mehrere Aufgaben weiter, meldet was nicht geht, und bündelt die Benachrichtigung', async () => {
+    const { d, konten, t, A, B, ben, anna } = await aufbau();
+    d.verbindeKonten(konten.papierkorbHaken());
+    const { benutzer: carl } = await konten.legeBenutzerAn({ email: 'carl@example.org', name: 'Carl', rolle: 'mitglied' });
+    await d.gleicheBenutzerAb(await konten.listeBenutzer());
+    const C = { id: carl.id, rolle: 'mitglied' };
+    // „Privat“ darf Carl nicht lesen – auch nicht über eine Aufgabe.
+    await d.setzeBerechtigungen(t.id, { grund: ALLES, regeln: [
+      { id: 'p', name: 'Privat', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'nr', op: 'gleich', wert: { art: 'fest', wert: 'privat' } } }], dann: { R: 'entziehen' }, stopp: true },
+    ] }, true);
+    const m = await Promise.all(['1', '2', '3', 'privat'].map((nr) => d.legeMappeAn({ typId: t.id, werte: { nr } }, A.id)));
+    const auf = await Promise.all(m.map((x, i) => d.legeAufgabeAn(x.id, { empfaengerId: ben.id, text: `Aufgabe ${i + 1}` }, A.id)));
+    const fuerAnna = await d.legeAufgabeAn(m[0].id, { empfaengerId: anna.id, text: 'Annas eigene' }, A.id);
+
+    await assert.rejects(d.aufgabenWeitergeben([], carl.id, B), status(422));
+    await assert.rejects(d.aufgabenWeitergeben([auf[0].id], m[0].id, B), status(422), 'Ziel muss ein Benutzer sein');
+    // Ben (Mitglied) darf nur seine eigenen weitergeben.
+    const r = await d.aufgabenWeitergeben([...auf.map((a) => a.id), fuerAnna.id], carl.id, B);
+    assert.deepEqual(r.weitergegeben, [auf[0].id, auf[1].id, auf[2].id]);
+    assert.deepEqual(r.nicht.map((x) => x.id), [auf[3].id, fuerAnna.id]);
+    assert.match(r.nicht[0].grund, /Carl darf die Mappe nicht lesen/);
+    assert.match(r.nicht[1].grund, /nicht deine Aufgabe/);
+    assert.equal((await d.aufgabenVon(m[3].id)).find((a) => a.id === auf[3].id)?.empfaengerId, ben.id, 'nicht lesbar: bleibt bei Ben');
+    // Historie je Mappe
+    const h = (await d.historie(m[1].id)).filter((x) => x.art === 'aufgabe').map((x) => x.daten.text);
+    assert.equal(h[0], 'weitergegeben von Ben an Carl: Aufgabe 2');
+    // Eine Sammelbenachrichtigung statt dreier
+    const hinweis = () => d.meineAufgaben(C).then((l) => l.filter((a) => a.art === 'manuell' && a.feldKey === 'weitergabe'));
+    let n = await hinweis();
+    assert.equal(n.length, 1);
+    assert.equal(n[0].mappeId, ben.id, 'an der Benutzer-Mappe dessen, der weitergegeben hat');
+    assert.match(n[0].text, /Ben hat dir 3 Aufgaben weitergegeben/);
+    // Noch nicht gesehen: zählt hoch statt einer zweiten
+    const neu = await d.legeAufgabeAn(m[2].id, { empfaengerId: ben.id, text: 'Nachzügler' }, A.id);
+    await d.aufgabenWeitergeben([neu.id], carl.id, B);
+    n = await hinweis();
+    assert.equal(n.length, 1);
+    assert.match(n[0].text, /4 Aufgaben/);
+    // Erledigt: die nächste Weitergabe bringt eine neue
+    await d.erledigeAufgabe(n[0].id, C);
+    const noch = await d.legeAufgabeAn(m[2].id, { empfaengerId: ben.id, text: 'Noch eine' }, A.id);
+    await d.aufgabenWeitergeben([noch.id], carl.id, B);
+    n = await hinweis();
+    assert.equal(n.length, 1);
+    assert.match(n[0].text, /eine Aufgabe weitergegeben/);
+    // Administrator darf alle; schon beim Ziel: mit Grund
+    const r2 = await d.aufgabenWeitergeben([fuerAnna.id, noch.id], carl.id, A);
+    assert.deepEqual(r2.weitergegeben, [fuerAnna.id]);
+    assert.match(r2.nicht[0].grund, /liegt schon bei Carl/);
+  });
+
+  it('erledigt mehrere auf einmal; „passt nicht“ bleibt mit Grund', async () => {
+    const { d, t, A, B, ben } = await aufbau();
+    const m = await d.legeMappeAn({ typId: t.id, werte: { nr: '1' } }, B.id);
+    const a1 = await d.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'eins' }, A.id);
+    const a2 = await d.legeAufgabeAn(m.id, { empfaengerId: ben.id, text: 'zwei' }, A.id);
+    await d.aendereTyp(t.id, { ...t, felder: [...t.felder, { key: 'pflicht', label: 'Pflicht', typ: 'text', pflicht: true }], register: undefined });
+    const passung = (await d.meineAufgaben(B)).find((a) => a.art === 'passung')!;
+    const r = await d.aufgabenErledigen([a1.id, a2.id, passung.id], B);
+    assert.deepEqual(r.erledigt, [a1.id, a2.id]);
+    assert.deepEqual(r.nicht.map((x) => x.id), [passung.id]);
   });
 });

@@ -10,10 +10,12 @@ import { titelOder } from '../seiten';
 import { Person } from '../Person';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
+import { SammelHaken, SammelKopf, SammelLeiste, useSammelauswahl } from '../ablage/Sammelweitergabe';
 
 /**
- * Werkbank → Aufgaben (#54, #366): Mitte oben die tägliche Zusammenfassung, darunter alle Aufgaben
- * mit Filter (in der Adresse); rechts die Mappe der gewählten Aufgabe.
+ * Werkbank → Aufgaben (#54, #366): Mitte oben die tägliche Zusammenfassung (zuklappbar, #415), darunter alle
+ * Aufgaben mit Filter (in der Adresse) und Mehrfachauswahl zum gesammelten Weitergeben (#415); rechts die Mappe
+ * der gewählten Aufgabe – mit „Weitergeben an“.
  */
 const datum = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
 const tag = (iso: string) => new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString('de-DE');
@@ -49,6 +51,8 @@ export function AufgabenListe({ z, filter, offen, mailAn }: { z: AufgabenZustand
   const liste = filtereAufgaben(alle, filter, { jetzt: new Date(), ohneVertretung });
   const suche = filterInAdresse(filter);
   const setze = (neu: Partial<AufgabenFilter>) => geheZu(`/werkbank/aufgaben${offen ? `/${offen}` : ''}${filterInAdresse({ ...filter, ...neu })}`, true);
+  const wahl = useSammelauswahl(z.erledigt ? [] : liste.map((a) => a.id));
+  const titelVon = (id: string) => { const a = alle.find((x) => x.id === id); return a ? `${titelOder(a.mappeTitel)} – ${a.text}` : 'Aufgabe'; };
   async function weiter(a: Aufgabe, an: string) {
     setFehler(undefined);
     try { await api.aufgabeDelegieren(a.id, an); await z.laden(); await d.neuLaden(); } catch (e) { setFehler((e as Error).message); }
@@ -91,14 +95,18 @@ export function AufgabenListe({ z, filter, offen, mailAn }: { z: AufgabenZustand
           {z.liste === null ? 'Lade …' : filterAktiv(filter) ? `${liste.length} von ${alle.length} ${alle.length === 1 ? 'Aufgabe' : 'Aufgaben'}` : `${alle.length} ${alle.length === 1 ? 'Aufgabe' : 'Aufgaben'}`}
           {filterAktiv(filter) && <> · <button type="button" className="verweis" onClick={() => geheZu(`/werkbank/aufgaben${filterInAdresse({ erledigt: filter.erledigt })}`, true)}>Filter zurücksetzen</button></>}
         </p>
+        {!z.erledigt && <SammelKopf s={wahl} />}
       </section>
+      {!z.erledigt && <SammelLeiste s={wahl} titel={titelVon} erledigen nachher={async () => { await z.laden(); await d.neuLaden(); }} />}
       {(z.fehler || fehler) && <div className="hinweis schlecht"><p>{z.fehler ?? fehler}</p></div>}
       {!z.erledigt && z.unlesbar.size > 0 && <div className="hinweis warn"><p>{z.unlesbar.size === 1 ? 'Eine Frist oder Erinnerung ging' : `${z.unlesbar.size} Fristen oder Erinnerungen gingen`} an jemanden, der die Mappe nach den Berechtigungen nicht lesen darf. Gib sie weiter oder passe die Berechtigungen an.</p></div>}
-      <div className="listenrumpf">
+      {/* Kästchen auch am Handy sichtbar (#415) – deshalb immer „mit-auswahl“. */}
+      <div className={`listenrumpf${z.erledigt ? '' : ' mit-auswahl'}`}>
         {z.liste === null ? null : !liste.length ? <p className="leise leerliste">{alle.length ? 'Keine Aufgabe passt zum Filter.' : z.erledigt ? 'Noch nichts erledigt.' : 'Keine offenen Aufgaben.'}</p> : (
-          <ul className="mappenliste">
+          <ul className={`mappenliste${z.erledigt ? '' : ' sammel-liste'}`}>
             {liste.map((a) => (
-              <li key={a.id}>
+              <li key={a.id} className={z.erledigt ? undefined : `mit-haken${wahl.ist(a.id) ? ' gewaehlt' : ''}`}>
+                {!z.erledigt && <SammelHaken s={wahl} id={a.id} titel={`${titelOder(a.mappeTitel)}: ${a.text}`} />}
                 <Link to={`/werkbank/aufgaben/${a.id}${suche}`} className={`eintrag ${offen === a.id ? 'an' : ''}`}>
                   <span className="titel">{titelOder(a.mappeTitel)}</span>
                   <span className="unter">{d.typ(a.typId ?? '')?.name} · {AUFGABENARTEN[a.art]}{a.datum ? ` · ${tag(a.datum)}` : ''} · {datum(z.erledigt && a.erledigt ? a.erledigt : a.erstellt)}</span>
@@ -121,7 +129,9 @@ export function AufgabenListe({ z, filter, offen, mailAn }: { z: AufgabenZustand
 }
 
 /** Tägliche Zusammenfassung (#92): Einstellungen oben in der Mitte (#366). */
+const ZUSAMMENFASSUNG_ZU = 'werkbank_zusammenfassung_zu';
 function Zusammenfassung({ z, mailAn }: { z: AufgabenZustand; mailAn?: boolean }) {
+  const d = useDaten();
   const [e, setE] = useState<MailEinstellung>(z.mail ?? { aktiv: true, uhrzeit: '07:00', bundesland: null });
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
@@ -135,12 +145,26 @@ function Zusammenfassung({ z, mailAn }: { z: AufgabenZustand; mailAn?: boolean }
     try { const r = await api.aufgabenMailSenden(); setMeldung({ art: 'gut', text: r.verschickt ? `${r.verschickt} ${r.verschickt === 1 ? 'Mail' : 'Mails'} verschickt.` : 'Niemand hat gerade offene Aufgaben (oder alle haben abbestellt).' }); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
+  // Auf- und zuklappen (#415), je Benutzer gemerkt; zugeklappt steht der Stand in der Kopfzeile.
+  const zu = d.einstellungen[ZUSAMMENFASSUNG_ZU] === true;
+  const wirktNicht = e.aktiv && mailAn === false;
+  const warnung = <><strong>Der E-Mail-Versand ist ausgeschaltet</strong> – es wird nichts verschickt.</>;
   return (
-    <form className="blatt" id="zusammenfassung" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
-      <h2 className="h3">Tägliche Zusammenfassung</h2>
+    <form className="blatt sammel-zusammenfassung" id="zusammenfassung" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
+      <h2 className="h3">
+        <button type="button" className="sammel-aufklapper" aria-expanded={!zu} aria-controls="zusammenfassung-inhalt"
+          onClick={() => d.setzeEinstellung(ZUSAMMENFASSUNG_ZU, zu ? null : true)}>
+          <span className="sammel-pfeil" aria-hidden="true">{zu ? '▸' : '▾'}</span>Tägliche Zusammenfassung
+        </button>
+        {zu && <span className="leise klein sammel-stand">{z.mail ? `Standard ${z.mail.uhrzeit} · ${z.mail.aktiv ? 'an' : 'aus'}` : ''}</span>}
+      </h2>
+      {zu && wirktNicht && (
+        <div className="hinweis warn hinweiszeile"><p>{warnung}</p><Link to="/werkbank/betrieb" className="knopf klein">E-Mail einrichten</Link></div>
+      )}
+      <div id="zusammenfassung-inhalt" className="sammel-inhalt" hidden={zu}>
       <p className="leise klein">Statt einer Mail je Aufgabe bekommt jeder mit offenen Aufgaben die Tägliche Zusammenfassung. Jeder kann sie im Profil anpassen (Uhrzeit, Wochentage, Feiertage) oder abbestellen.</p>
-      {e.aktiv && mailAn === false && (
-        <div className="hinweis warn hinweiszeile"><p><strong>Der E-Mail-Versand ist ausgeschaltet</strong> – es wird nichts verschickt.</p><Link to="/werkbank/betrieb" className="knopf klein">E-Mail einrichten</Link></div>
+      {wirktNicht && (
+        <div className="hinweis warn hinweiszeile"><p>{warnung}</p><Link to="/werkbank/betrieb" className="knopf klein">E-Mail einrichten</Link></div>
       )}
       <label className="haken"><input type="checkbox" checked={e.aktiv} onChange={(x) => setE({ ...e, aktiv: x.target.checked })} /><span>Zusammenfassung verschicken</span></label>
       <label className="eigenschaft"><span>Standard-Uhrzeit <small>für alle ohne eigene im Profil</small></span><input type="time" step={900} value={e.uhrzeit} onChange={(x) => setE({ ...e, uhrzeit: x.target.value })} /></label>
@@ -153,7 +177,8 @@ function Zusammenfassung({ z, mailAn }: { z: AufgabenZustand; mailAn?: boolean }
       <div className="knoepfe">
         <button type="button" className="knopf klein" onClick={() => void senden()}>Jetzt senden</button>
       </div>
-      <Speicherleiste ent={ent} gegenstand="Zusammenfassung" sendet={sendet} />
+      </div>
+      {(!zu || ent.geaendert) && <Speicherleiste ent={ent} gegenstand="Zusammenfassung" sendet={sendet} />}
     </form>
   );
 }
@@ -166,11 +191,25 @@ export function AufgabenPanel({ z, id }: { z: AufgabenZustand; id?: string }) {
   );
   const a = z.liste?.find((x) => x.id === id);
   if (!a) return z.liste === null ? <p className="leise">Lade …</p> : <div className="leer"><p>Diese Aufgabe gibt es hier nicht (mehr) – vielleicht ist sie erledigt.</p></div>;
-  return <AufgabeMappe key={a.id} a={a} />;
+  return <AufgabeMappe key={a.id} a={a} z={z} />;
 }
 
-function AufgabeMappe({ a }: { a: Aufgabe }) {
+function AufgabeMappe({ a, z }: { a: Aufgabe; z: AufgabenZustand }) {
   const d = useDaten();
+  const [an, setAn] = useState('');
+  const [sendet, setSendet] = useState(false);
+  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  /** Weitergeben rechts (#415): wie in der Liste; danach Liste und rechte Seite neu. */
+  async function weitergeben() {
+    const name = d.personen.find((p) => p.id === an)?.name ?? '';
+    setSendet(true); setMeldung(undefined);
+    try {
+      const r = await api.aufgabeDelegieren(a.id, an);
+      setAn(''); setMeldung({ art: 'gut', text: [`An ${name} weitergegeben.`, r.hinweis].filter(Boolean).join(' ') });
+      await z.laden(); await d.neuLaden();
+    } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
+    finally { setSendet(false); }
+  }
   const [m, setM] = useState<MappeDetails | null | 'fehlt'>(null);
   useEffect(() => { api.mappe(a.mappeId).then(setM, () => setM('fehlt')); }, [a.mappeId]);
   const typ = d.typ(a.typId ?? '');
@@ -205,7 +244,17 @@ function AufgabeMappe({ a }: { a: Aufgabe }) {
             </dl>
           </section>
         )}
-      <div className="knoepfe"><Link to={ablage} className="knopf primaer">In der Ablage öffnen</Link></div>
+      <div className="knoepfe sammel-rechts">
+        <Link to={ablage} className="knopf primaer">In der Ablage öffnen</Link>
+        {!a.erledigt && (
+          <span className="sammel-ziel">
+            <span className="klein">Weitergeben an</span>
+            <BenutzerWahl label={`Aufgabe „${a.text}“ weitergeben an`} wert={an} setze={setAn} ohne={a.empfaengerId} />
+            <button type="button" className="knopf" disabled={!an || sendet} onClick={() => void weitergeben()}>Weitergeben</button>
+          </span>
+        )}
+      </div>
+      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
     </div>
   );
 }
