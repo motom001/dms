@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
 import { fortschrittText } from '../../../shared/src/auftrag';
-import { AUSKUNFT_PASSWORT_MIN, erwaehnungText, GRUND_MIN, personenTypen, type AuskunftAuswahl, type AuskunftMappe, type AuskunftStand, type AuskunftVorschau, type Datenschutz } from '../../../shared/src/auskunft';
+import { ANREDE_BEISPIEL, ANREDE_NAME, ANREDEN, textDritte, type Anrede } from '../../../shared/src/anrede';
+import { AUSKUNFT_PASSWORT_MIN, erwaehnungText, GRUND_MIN, istRechteStandard, personenTypen, rechteStandard, type AuskunftAuswahl, type AuskunftMappe, type AuskunftStand, type AuskunftVorschau, type Datenschutz } from '../../../shared/src/auskunft';
 import { Zustellen, Zustellungen } from './Zustellen';
 import { BAUM_RICHTUNGEN, kinderVon, type BaumKnoten, type BaumRichtung } from '../../../shared/src/baum';
 import { datumText } from '../../../shared/src/archiv';
@@ -356,6 +357,7 @@ function Einstellungen({ z }: { z: DatenschutzZustand }) {
         <label className="eigenschaft breit"><span>Empfänger <small>Vorschlag für jede Auskunft</small></span><textarea rows={2} value={e.empfaenger} onChange={(x) => setE({ ...e, empfaenger: x.target.value })} /></label>
         <label className="eigenschaft breit"><span>Rechte der Person <small>Text auf dem Deckblatt</small></span><textarea rows={4} value={e.rechte} onChange={(x) => setE({ ...e, rechte: x.target.value })} /></label>
       </div>
+      <AnredeWahl anrede={e.anrede} setAnrede={(anrede) => setE({ ...e, anrede, rechte: istRechteStandard(e.rechte) ? rechteStandard(anrede) : e.rechte })} />
       <h3 className="h4">Mappentypen</h3>
       <p className="leise klein">Welche Mappentypen betreffen eine Person (nur sie lassen sich als Betroffene wählen)? Der Zweck steht je Mappentyp auf dem Deckblatt, die Speicherdauer kommt aus dem Archivmodus.</p>
       <ul className="stapel auskunft-typen">{typen.map((t) => (
@@ -368,5 +370,26 @@ function Einstellungen({ z }: { z: DatenschutzZustand }) {
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <Speicherleiste ent={ent} gegenstand="Einstellungen" sendet={laeuft} />
     </form>
+  );
+}
+
+/**
+ * Anrede in Unterlagen für Dritte (#474): du oder Sie für alles, was an die Person geht – Deckblatt, Übersicht,
+ * LIESMICH, Abrufseite, E-Mails. Die Oberfläche bleibt beim „du“. Vorschau: ein Satz in beiden Formen.
+ */
+function AnredeWahl({ anrede, setAnrede }: { anrede: Anrede; setAnrede(a: Anrede): void }) {
+  return (
+    <fieldset className="anrede-dritte" id="anrede">
+      <legend>Anrede in Unterlagen für Dritte <Hilfe ort="werkbank.datenschutz.anrede" /></legend>
+      <p className="leise klein">Gilt für alles, was an die Person geht: Deckblatt, Übersicht und LIESMICH der Auskunft, die Abrufseite und die E-Mails dazu. Das DMS selbst spricht dich weiter mit „du“ an.</p>
+      <div className="anrede-dritte-wahl" role="radiogroup" aria-label="Anrede">
+        {ANREDEN.map((a) => (
+          <label key={a} className={`anrede-dritte-form${a === anrede ? ' gewaehlt' : ''}`}>
+            <span className="anrede-dritte-kopf"><input type="radio" name="anrede-dritte" checked={a === anrede} onChange={() => setAnrede(a)} /><strong>{ANREDE_NAME[a]}</strong>{a === 'du' && <span className="leise klein"> (Vorgabe)</span>}</span>
+            <q className="klein">{textDritte(a, ANREDE_BEISPIEL)}</q>
+          </label>
+        ))}
+      </div>
+    </fieldset>
   );
 }

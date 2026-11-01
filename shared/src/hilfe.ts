@@ -67,6 +67,7 @@ export const HILFE = {
   'werkbank.vollexport.kontakte': admin('export/', 'Kontakte als vCard', 'kontakte-als-vcard'),
   'werkbank.darfweg': admin('archiv/', '„Darf weg“', 'nach-der-frist-darf-weg'),
   'werkbank.datenschutz': admin('datenschutz/', 'Datenschutz im DMS'),
+  'werkbank.datenschutz.anrede': admin('datenschutz/', 'Anrede in Unterlagen für Dritte', 'anrede'),
   'werkbank.auskunft': admin('datenschutz/', 'Auskunft nach Art. 15 DSGVO', 'auskunft-nach-art-15-dsgvo'),
   'werkbank.auskunft.zustellen': admin('datenschutz/', 'Auskunft zustellen', 'auskunft-zustellen'),
   'werkbank.dateienpruefen': admin('archiv/', 'Alle Dateien prüfen', 'alle-dateien-prufen'),
