@@ -2260,7 +2260,46 @@
 <li><strong>Grenzen:</strong> Jeder Aufruf hat höchstens 256 MB Speicher und 2 Minuten Zeit; es laufen höchstens zwei Aufrufe gleichzeitig. Was die Grenzen reißt, bricht ab, ohne das DMS zu stören.</li>
 <li><strong>Wiederholen:</strong> Ereignisse merkt sich das DMS. Scheitert ein Aufruf, versucht es der Läufer nach 1, 5, 30, 120 und 360 Minuten erneut und gibt dann auf. Während einer Wartung (z. B. beim Wiederherstellen) ruht der Läufer.</li>
 </ul>
-<p><strong>Werkbank → Pakete → <em>Paket</em></strong> zeigt im Abschnitt <strong>Paket-Läufer</strong>, ob der Läufer läuft, die letzten Aufrufe mit Dauer und Speicher, offene und aufgegebene Ereignisse und das Protokoll des Pakets. Meldungen stehen zusätzlich im <a href="../fehlersuche/#protokoll">Protokoll</a> des DMS.</p>
+<p><strong>Werkbank → Pakete → <em>Paket</em></strong> zeigt im Abschnitt <strong>Paket-Läufer</strong> den Stand, die letzten Aufrufe mit Dauer und Speicher, offene und aufgegebene Ereignisse und das Protokoll des Pakets. Meldungen stehen zusätzlich im <a href="../fehlersuche/#protokoll">Protokoll</a> des DMS. Der <strong>Stand</strong> ist einer von diesen:</p>
+<table>
+<thead>
+<tr>
+<th>Stand</th>
+<th>Bedeutung</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>startet …</strong></td>
+<td>Der Läufer startet oder lädt das Modul des Pakets – etwa direkt nach der Installation. Die Seite fragt von selbst nach.</td>
+</tr>
+<tr>
+<td><strong>bereit – wartet auf das erste Ereignis</strong></td>
+<td>Das Modul ist geladen; das Paket wurde aber noch nie aufgerufen. Es läuft, sobald ein Ereignis kommt, auf das es reagiert, oder du eine Aktion auslöst.</td>
+</tr>
+<tr>
+<td><strong>bereit</strong></td>
+<td>Das Modul ist geladen und wurde schon aufgerufen.</td>
+</tr>
+<tr>
+<td><strong>abgestürzt um … – startet neu …</strong></td>
+<td>Der Läufer-Prozess ist abgestürzt. Das DMS startet ihn nach einer kurzen Pause selbst neu (bei wiederholten Abstürzen wartet es länger, höchstens eine Minute). Ereignisse gehen dabei nicht verloren.</td>
+</tr>
+<tr>
+<td><strong>neu gestartet nach Absturz um …</strong></td>
+<td>Der Läufer läuft wieder; die Zeit nennt den letzten Absturz. Die Ursache steht im Protokoll des DMS.</td>
+</tr>
+<tr>
+<td><strong>pausiert (Wartungsmodus)</strong></td>
+<td>Während einer Wartung ruht der Läufer.</td>
+</tr>
+<tr>
+<td><em>Fehlermeldung in Rot</em></td>
+<td>Das Modul ließ sich nicht laden (z. B. fehlt der Code nach einer Wiederherstellung) – das Paket neu installieren.</td>
+</tr>
+</tbody>
+</table>
+<p>Schlägt ein <strong>Update</strong> fehl, bleibt die alte Version mit ihrem alten Code installiert. Den Code aller Dateien unter <code>code/</code> begrenzt das DMS auf <strong>32 MB je Paket</strong>.</p>
 <p><strong>Entfernen</strong> beendet den Code, löscht seine offenen Ereignisse und seinen Speicher und schaltet das Dienstkonto ab.</p>
 <div class="admonition note">
 <p class="admonition-title">Volltext aus einem Paket</p>
