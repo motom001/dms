@@ -637,11 +637,13 @@ function Trefferliste({ treffer }: { treffer: Rueckverweis[] }) {
 
 /* ---------- Auswahl verwiesener Mappen (mit Suche statt langer Klappliste) ---------- */
 
-export function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze, sicht, vorbelegen, unpassend: vomServer = [], eigene }: {
+export function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze, sicht, vorbelegen, unpassend: vomServer = [], eigene, ohneAnlegen }: {
   id: string; ziel: Mappentyp; mehrfach: boolean; wert: string | string[] | undefined; eigeneId?: string;
   bekannt: Bezuege; merke: (id: string, b: { titel: string; typId: string }) => void; setze: (v: Roh) => void;
   /** Auswahlfilter (#172): Sicht „feld:<typ>:<feld>“ und Vorbelegung für „+ anlegen“. */
   sicht?: string; vorbelegen?: Record<string, unknown>; unpassend?: string[]; eigene?: Werte;
+  /** Ohne „+ … anlegen“, z. B. im Testlauf der Werkbank (#371). */
+  ohneAnlegen?: boolean;
 }) {
   const eigeneText = eigene ? JSON.stringify(eigene) : '';
   const gewaehlt = (Array.isArray(wert) ? wert : wert ? [wert] : []).filter(Boolean);
@@ -688,7 +690,7 @@ export function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke,
   }
   const auswahl = (treffer ?? []).filter((m) => m.id !== eigeneId && !gewaehlt.includes(m.id));
   const vor = vorbelegen && Object.keys(vorbelegen).length ? `?vorbelegen=${encodeURIComponent(JSON.stringify(vorbelegen))}` : '';
-  const anlegen = darfErstellen(ziel) ? <Link to={`/ablage/${ziel.id}/neu${vor}`} className="verweis klein">+ {ziel.name} anlegen</Link> : null;
+  const anlegen = !ohneAnlegen && darfErstellen(ziel) ? <Link to={`/ablage/${ziel.id}/neu${vor}`} className="verweis klein">+ {ziel.name} anlegen</Link> : null;
 
   return (
     <div className="refbox">

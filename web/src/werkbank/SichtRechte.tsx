@@ -1,5 +1,4 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import type { Benutzer } from '../../../shared/src/model';
 import { beschreibeRegelBedingung, type Wirkung } from '../../../shared/src/rechte';
 import {
   kurzSicht, kurzSichtRegel, offeneSicht, SICHT_RECHTE, SICHT_RECHTE_LISTE, sichtRegelProblem, sichtRegelwerkVon,
@@ -13,6 +12,8 @@ import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import { MappenSuche } from './Sichten';
+import { testlaufSchluessel } from '../../../shared/src/testlauf';
+import { TestBenutzerWahl, useTestlauf } from './TestlaufWahl';
 
 /**
  * Berechtigungen an Sichten (#148): Standard (nur oberste Sicht), geerbte Regeln schreibgeschützt,
@@ -236,29 +237,21 @@ function RechteZeile({ r }: { r: SichtRechte }) {
 
 /** „Was sieht Benutzer X an dieser Sicht?“ – mit dem Entwurf, auch ungespeichert. */
 export function SichtTestlauf({ id, e, klappe }: { id: string | null; e: SichtDaten; klappe: Klappe }) {
-  const [benutzer, setBenutzer] = useState<Benutzer[]>([]);
-  useEffect(() => { api.benutzer().then((l) => setBenutzer(l.filter((b) => b.aktiv))).catch(() => {}); }, []);
   const [b, setB] = useState('');
-  const [erg, setErg] = useState<Awaited<ReturnType<typeof api.sichtTestlauf>>>();
-  const [fehler, setFehler] = useState<string>();
-  const stand = JSON.stringify([e.berechtigungen, e.elternId]);
-  useEffect(() => { setErg(undefined); }, [stand]);
-  async function los() {
-    setFehler(undefined);
-    try { setErg(await api.sichtTestlauf({ sichtId: id, benutzerId: b, elternId: e.elternId, berechtigungen: e.berechtigungen ?? null })); }
-    catch (x) { setFehler((x as Error).message); setErg(undefined); }
-  }
+  // Das Ergebnis gehört zu (Benutzer, Regeln, Elternansicht) – wechselt eines davon, ist es sofort weg (#371).
+  const stand = JSON.stringify([id, e.berechtigungen, e.elternId]);
+  const schluessel = testlaufSchluessel({ benutzerId: b, stand }, false);
+  const { erg, fehler, los } = useTestlauf(schluessel, b,
+    () => api.sichtTestlauf({ sichtId: id, benutzerId: b, elternId: e.elternId, berechtigungen: e.berechtigungen ?? null }));
   return (
     <Bereich id="testlauf" titel="Testlauf" hilfe={<Hilfe ort="sicht.berechtigungen" />} klappe={klappe}
       kurz="Was ein Benutzer an dieser Ansicht darf – auch mit ungespeicherten Regeln"
       beschreibung="Sieht ein Benutzer diese Ansicht, und bekommt er „+ Neu“? Geprüft werden die Regeln, wie sie oben stehen, mit den geerbten.">
-      <div className="bedingungszeile">
-        <select aria-label="Benutzer" value={b} onChange={(x) => setB(x.target.value)}>
-          <option value="">– Benutzer wählen –</option>
-          {benutzer.map((x) => <option key={x.id} value={x.id}>{x.name || x.email}{x.rolle === 'admin' ? ' (Administrator)' : ''}</option>)}
-        </select>
-        <button type="button" className="knopf klein primaer" disabled={!b} onClick={() => void los()}>Prüfen</button>
+      <div className="formular">
+        <TestBenutzerWahl id="sicht-testlauf-benutzer" wert={b} setze={setB} />
       </div>
+      {!schluessel && <p className="leise klein">Wähle einen Benutzer – das Ergebnis erscheint sofort.</p>}
+      {schluessel && !erg && !fehler && <div className="knoepfe"><button type="button" className="knopf klein primaer" onClick={() => void los()}>Prüfen</button></div>}
       {fehler && <p className="fehlertext klein">{fehler}</p>}
       {erg && (
         <div className="testlauf" role="status">

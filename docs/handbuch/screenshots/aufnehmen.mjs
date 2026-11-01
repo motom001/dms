@@ -550,10 +550,11 @@ async function main() {
   {
     await s.locator('.sprungleiste').getByRole('button', { name: 'Testlauf' }).click();
     const test = s.locator('#testlauf');
-    await test.getByLabel('Benutzer', { exact: true }).selectOption({ label: MITGLIED.name });
-    await test.getByLabel('Mappe suchen').fill('Stromvertrag');
+    // Benutzer und Testmappe wie im Verweisfeld (#371); das Ergebnis erscheint ohne „Prüfen“.
+    await test.getByLabel('Benutzer', { exact: true }).fill(MITGLIED.name);
     await test.locator('.wahlliste button').first().click();
-    await test.getByRole('button', { name: 'Prüfen' }).click();
+    await test.getByLabel('Testmappe', { exact: true }).fill('Stromvertrag');
+    await test.locator('.wahlliste button').first().click();
     await s.locator('.testlauf table').waitFor();
     await test.evaluate((e) => e.scrollIntoView({ block: 'start' }));
     await bild(s, 'werkbank-berechtigungen-testlauf');

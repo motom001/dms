@@ -124,7 +124,7 @@ Mit Berechtigungen legst du fest, **wer eine Ansicht sieht**, **wer dort neue Ma
 
 ### Testlauf
 
-Unter den Berechtigungen prüfst du, was ein Benutzer an der Ansicht darf – mit den Regeln, wie sie gerade im Editor stehen, auch ungespeichert und mit einer geänderten Elternansicht. Die Tabelle zeigt je Ansicht der Kette, welche Regel zutraf und wie der Stand danach war.
+Unter den Berechtigungen prüfst du, was ein Benutzer an der Ansicht darf – mit den Regeln, wie sie gerade im Editor stehen, auch ungespeichert und mit einer geänderten Elternansicht. Den **Benutzer** wählst du wie in einem Verweisfeld einer Mappe; das Ergebnis erscheint sofort. Die Tabelle zeigt je Ansicht der Kette, welche Regel zutraf und wie der Stand danach war. Wechselst du den Benutzer, wird neu geprüft; änderst du Regeln oder Elternansicht, verschwindet das alte Ergebnis, bis du erneut auf **Prüfen** klickst – so steht nie ein Ergebnis zu einer anderen Auswahl da.
 
 ### Beispiel: „Haus“ nur für die Eltern
 
