@@ -621,13 +621,18 @@ export const api = {
   /** gleicherName (#194): zaehler (Standard), version oder ersetzen. */
   /** Doppelte Dateien (#333): Prüfwerte → Fundstellen in Mappen, die man lesen darf. */
   gleicheDateien: (pruefwerte: string[], ohneMappe?: string) => anfrage<{ fundstellen: Record<string, Fundstelle[]> }>('POST', '/api/dokumente/gleiche', { pruefwerte, ...(ohneMappe ? { ohneMappe } : {}) }),
+  /** Post fotografieren (#490): ein Foto in den Stapel; „Fertig“ macht aus den Fotos ein PDF. */
+  async fotoAblegen(foto: Blob): Promise<{ id: string }> { return sendeDatei('/api/fotostapel', foto) as Promise<{ id: string }>; },
+  postAusFotos: (e: { stapel: string[]; betreff?: string }) => anfrage<{ post: Mappe; dokument: Dokument; seiten: number }>('POST', '/api/post/fotos', e),
+  fotosAnMappe: (mappeId: string, e: { stapel: string[]; dokument?: string }) => anfrage<{ dokument: Dokument; seiten: number }>('POST', `/api/mappen/${mappeId}/fotos`, e),
+  postZusammenlegen: (zielId: string, quelle: string) => anfrage<{ post: Mappe; dokument: Dokument; seiten: number }>('POST', `/api/post/${zielId}/zusammenlegen`, { quelle }),
   async ladeHoch(mappeId: string, register: string, datei: File, gleicherName?: 'zaehler' | 'version' | 'ersetzen'): Promise<Hochgeladen> {
     const q = new URLSearchParams({ register, name: datei.name, typ: datei.type || 'application/octet-stream', ...(gleicherName ? { gleicherName } : {}) });
     return sendeDatei(`/api/mappen/${mappeId}/dokumente?${q}`, datei) as Promise<Hochgeladen>;
   },
 };
 
-async function sendeDatei(url: string, datei: File): Promise<unknown> {
+async function sendeDatei(url: string, datei: Blob): Promise<unknown> {
     let r: Response;
     try {
       r = await fetch(url, {

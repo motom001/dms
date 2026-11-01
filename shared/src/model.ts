@@ -612,6 +612,10 @@ export type Indexwerte = Partial<Pick<Mappe, 'erstellt' | 'geaendert'>>;
 
 /** Zeitzone für Datumsangaben aus Zeitstempeln (Server und Browser sollen denselben Tag zeigen). */
 export const ZEITZONE = 'Europe/Berlin';
+/** Betreff einer fotografierten Post (#490): „Post vom 01.11.2026, 20:52“ statt des Dateinamens „image“. */
+export function fotoBetreff(d: Date = new Date()): string {
+  return `Post vom ${new Intl.DateTimeFormat('de-DE', { timeZone: ZEITZONE, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(d)}`;
+}
 const TAG_FORMAT = new Intl.DateTimeFormat('de-DE', { timeZone: ZEITZONE, day: '2-digit', month: '2-digit', year: 'numeric' });
 
 /** Tag eines Zeitstempels als TT.MM.JJJJ in der Zeitzone des Haushalts. */

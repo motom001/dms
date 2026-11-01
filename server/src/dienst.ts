@@ -3,7 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_AUSWAHL, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, ROLLEN, freierSchluessel, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
-  AUFGABE_MAX, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Aufgabenart, type Benutzer, type Dokument, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Werte,
+  AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Aufgabenart, type Benutzer, type Dokument, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
@@ -12,7 +12,7 @@ import { protokoll } from './protokoll';
 import { rechteMessen } from './messung';
 import { graubild } from './graubild';
 import { Fachfehler } from './fehler';
-import { fuegeZusammen, pruefeAuswahl, pruefeTeile, SEITENBILDER_MAX, Seitenbilder, seitenInfo, teile, teilName } from './pdfseiten';
+import { bilderZuPdf, fuegeZusammen, pruefeAuswahl, pruefeTeile, SEITENBILDER_MAX, Seitenbilder, seitenInfo, teile, teilName } from './pdfseiten';
 import { aufkleberPdf, ETIKETTEN, type Etikett } from './aufkleber';
 import { alsText, erwaehnungen } from '../../shared/src/markdown';
 import { liesAnsicht, liesEigene, OHNE_EINSTELLUNG } from '../../shared/src/werkbankansicht';
@@ -4171,6 +4171,114 @@ export class Dienst {
     }
     protokoll.modul('dokumente').info('PDFs zusammengefügt', { ziel: ziel.id, anzahl: quellen.length, entfernt: entfernen });
     return { dokument: neu, erledigtePost: erledigt };
+  }
+
+  /* ---------- Post fotografieren (#490) ---------- */
+
+  /**
+   * Fotos als eine Post: Aus den Fotos (in dieser Reihenfolge) wird ein PDF, daraus eine neue Post
+   * (Betreff „Post vom …“, wenn keiner angegeben ist). Die Fotos kommen vom Handy einzeln über den
+   * Fotostapel; ein mehrseitiger Brief ist so ein PDF und eine Post.
+   */
+  async postAusFotos(eingabe: unknown, fotos: Buffer[], ich: { id: string | null; name: string }, z?: Zugriff, kanal: string = POST_KANAL.hochgeladen): Promise<{ post: Mappe; dokument: Dokument; seiten: number }> {
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const pdf = await bilderZuPdf(fotos);
+    if (pdf.length > MAX_DATEIGROESSE) throw new Fachfehler(413, 'Als PDF wären die Fotos größer als 100 MB – bitte weniger Seiten auf einmal.');
+    const betreff = text(e.betreff).replace(/[\r\n]+/g, ' ').trim().slice(0, 250) || fotoBetreff();
+    const post = await this.legePostAn({ betreff, ...(e.fuer ? { fuer: e.fuer } : {}) }, ich, z, kanal);
+    const typ = await this.postTyp();
+    const register = typ.register.find((r) => r.art === 'dokumente')?.key;
+    const dokument = (await this.ladeHoch(post.id, { register, name: `${dateiname(betreff)}.pdf`, typ: 'application/pdf', herkunft: 'hochgeladen' }, pdf, ich.id)).dokument;
+    protokoll.modul('ablage').info('Post fotografiert', { mappe: post.id, seiten: fotos.length });
+    return { post: (await this.repo.holeMappe(post.id))!, dokument, seiten: fotos.length };
+  }
+
+  /**
+   * Seiten an ein PDF anhängen (#490, „Seite hinzufügen“; Mechanik aus #335 „zusammenfügen“): neue Version,
+   * ohne Versionierung ersetzt das Ergebnis das bisherige (es kommt in den Papierkorb – verloren geht nichts,
+   * alle Seiten stecken im neuen PDF). `pdfs`: weitere PDFs, `fotos`: Fotos als Seiten, in dieser Reihenfolge.
+   */
+  private async haengeSeitenAn(d: Dokument, inhalt: Buffer, anhang: Buffer[], von: string | null, text: string): Promise<{ dokument: Dokument; seiten: number }> {
+    const { m, reg } = await this.registerVon(d).then(async (x) => ({ ...x, m: await this.repo.holeMappe(d.mappeId) }));
+    if (!m || !reg) throw new Fachfehler(409, 'Das Register dieses Dokuments gibt es nicht mehr.');
+    await this.pruefeArchivDokument(m.id, 'ersetzen');
+    const buf = await fuegeZusammen([inhalt, ...anhang]);
+    if (buf.length > MAX_DATEIGROESSE) throw new Fachfehler(413, 'Zusammen wäre das PDF größer als 100 MB.');
+    let dokument: Dokument;
+    if (reg.versionierung) dokument = await this.ersetzeDokument(d.id, { name: d.name, typ: 'application/pdf', herkunft: 'bearbeitet' }, buf, von);
+    else {
+      await this.loescheDokument(d.id, von);
+      dokument = (await this.ladeHoch(m.id, { register: reg.key, name: d.name, typ: 'application/pdf', herkunft: 'bearbeitet' }, buf, von)).dokument;
+    }
+    const seiten = (await seitenInfo(buf)).anzahl;
+    await this.notiere(m.id, von, 'pdf_bearbeitet', { dokument: d.name, seiten, vorher: (await seitenInfo(inhalt)).anzahl, text });
+    return { dokument, seiten };
+  }
+
+  /**
+   * Fotos als Seiten an eine Mappe (#490): mit `dokument` ans Ende dieses PDFs, sonst als neues PDF
+   * „Fotos vom ….pdf“ im ersten Dokumentenregister (bzw. `register`).
+   */
+  async fotosAnMappe(mappeId: string, eingabe: unknown, fotos: Buffer[], von: string | null, z?: Zugriff): Promise<{ dokument: Dokument; seiten: number }> {
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const m = z ? await this.pruefeRecht(z, mappeId, 'U') : await this.repo.holeMappe(mappeId);
+    if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
+    const neu = await bilderZuPdf(fotos);
+    if (e.dokument) {
+      const { d, inhalt } = await this.pdfVon(text(e.dokument));
+      if (d.mappeId !== m.id) throw new Fachfehler(422, 'Das Dokument gehört nicht zu dieser Mappe.');
+      const n = fotos.length;
+      return this.haengeSeitenAn(d, inhalt, [neu], von, n === 1 ? `Eine Seite an „${d.name}“ angehängt (fotografiert)` : `${n} Seiten an „${d.name}“ angehängt (fotografiert)`);
+    }
+    const typ = await this.repo.holeTyp(m.typId);
+    const regs = typ?.register.filter((r) => r.art === 'dokumente') ?? [];
+    const reg = e.register ? regs.find((r) => r.key === text(e.register)) : regs[0];
+    if (!reg) throw new Fachfehler(422, 'Die Mappe hat kein Dokumentenregister.');
+    const dokument = (await this.ladeHoch(m.id, { register: reg.key, name: `${dateiname(fotoBetreff().replace(/^Post/, 'Fotos'))}.pdf`, typ: 'application/pdf', herkunft: 'hochgeladen' }, neu, von)).dokument;
+    return { dokument, seiten: fotos.length };
+  }
+
+  /**
+   * Zwei Posts zusammenlegen (#490): Die Seiten der zweiten Post (PDFs und Fotos, in ihrer Reihenfolge)
+   * kommen ans Ende des ersten PDFs der ersten Post (hat sie keins, entsteht eins), die zweite Post kommt
+   * in den Papierkorb. Andere Dateien (z. B. Word) lassen sich nicht anhängen – dann 422.
+   */
+  async legePostZusammen(zielId: string, eingabe: unknown, von: string | null, z?: Zugriff): Promise<{ post: Mappe; dokument: Dokument; seiten: number }> {
+    const quelleId = text((eingabe as Record<string, unknown> | null)?.quelle);
+    if (!istUuid(quelleId) || quelleId === zielId) throw new Fachfehler(422, 'Bitte die Post wählen, deren Seiten angehängt werden.');
+    const ziel = z ? await this.pruefeRecht(z, zielId, 'U') : await this.repo.holeMappe(zielId);
+    const quelle = z ? await this.pruefeRecht(z, quelleId, 'D') : await this.repo.holeMappe(quelleId);
+    if (!ziel || !quelle) throw new Fachfehler(404, 'Diese Post gibt es nicht.');
+    const typ = await this.postTyp();
+    if (ziel.typId !== typ.id || quelle.typId !== typ.id) throw new Fachfehler(422, 'Zusammenlegen geht nur mit zwei Posts.');
+    if (istVersendet(ziel.werte) || istVersendet(quelle.werte)) throw new Fachfehler(422, 'Versendete E-Mails bleiben, wie sie verschickt wurden.');
+    const quellDoks = await this.repo.listeDokumente(quelleId);
+    if (!quellDoks.length) throw new Fachfehler(422, 'Die gewählte Post hat keine Dokumente.');
+    const fremd = quellDoks.filter((d) => d.mime !== 'application/pdf' && d.mime !== 'image/jpeg' && d.mime !== 'image/png');
+    if (fremd.length) throw new Fachfehler(422, `„${fremd[0].name}“ ist kein PDF und kein Foto – solche Dateien lassen sich nicht anhängen. Ordne die Post stattdessen zu.`);
+    const anhang: Buffer[] = [];
+    for (const d of quellDoks) {
+      const s = await this.dateien.lies(d.sha256);
+      const b = Buffer.isBuffer(s) ? s : Buffer.concat(await s.toArray() as Buffer[]);
+      anhang.push(d.mime === 'application/pdf' ? b : await bilderZuPdf([b]));
+    }
+    const zielPdf = (await this.repo.listeDokumente(zielId)).find((d) => d.mime === 'application/pdf');
+    const qTitel = await this.titel(quelle);
+    let erg: { dokument: Dokument; seiten: number };
+    if (zielPdf) {
+      const { inhalt } = await this.pdfVon(zielPdf.id);
+      erg = await this.haengeSeitenAn(zielPdf, inhalt, anhang, von, `Seiten aus der Post „${qTitel}“ angehängt`);
+    } else {
+      const buf = await fuegeZusammen(anhang);
+      const reg = typ.register.find((r) => r.art === 'dokumente')!;
+      const dokument = (await this.ladeHoch(zielId, { register: reg.key, name: `${dateiname(auswahlText(ziel.werte.betreff) || 'Post')}.pdf`, typ: 'application/pdf', herkunft: 'bearbeitet' }, buf, von)).dokument;
+      erg = { dokument, seiten: (await seitenInfo(buf)).anzahl };
+      await this.notiere(zielId, von, 'pdf_bearbeitet', { dokument: dokument.name, seiten: erg.seiten, text: `Seiten aus der Post „${qTitel}“ übernommen` });
+    }
+    await this.notiere(quelleId, von, 'zugeordnet', { text: `Seiten an die Post „${await this.titel(ziel)}“ angehängt (zusammengelegt)`, ziel: zielId, zielTyp: typ.id });
+    await this.loescheMappe(quelleId, von);
+    protokoll.modul('ablage').info('Posts zusammengelegt', { ziel: zielId, quelle: quelleId, seiten: erg.seiten });
+    return { post: (await this.repo.holeMappe(zielId))!, ...erg };
   }
 
   /* ---------- PDF verkleinern (#393) ---------- */
