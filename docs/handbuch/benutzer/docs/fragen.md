@@ -15,8 +15,10 @@
     - Bei *Post* heißt der Knopf **+ Post** (siehe [Post](post.md)).
 
 ??? question "Ich kann eine Mappe nicht löschen."
+    Klicke neben dem ausgegrauten **Mappe löschen** auf **Warum nicht?** – dort steht der Grund:
+
     - Es verweisen noch andere Mappen auf sie – dann zeigt das DMS, welche. Entferne dort zuerst den Verweis.
-    - Du darfst Mappen dieses Mappentyps nicht löschen; dann fehlt **Mappe löschen** ganz. Das legt ein Administrator in den Berechtigungen fest.
+    - Du darfst Mappen dieses Mappentyps nicht löschen. Das legt ein Administrator in den Berechtigungen fest.
     - Der Mappentyp ist im **Archivmodus**, und die Aufbewahrungsfrist der Mappe läuft noch. Dann lässt sie sich erst nach dem Fristende löschen – von niemandem.
 
 ??? question "Ich kann ein Feld nicht ändern."

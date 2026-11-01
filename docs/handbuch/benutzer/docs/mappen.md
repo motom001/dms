@@ -112,9 +112,15 @@ Bei einer neuen Mappe ist das Register noch leer: Verknüpfungen entstehen erst,
 
 Unten links in der Mappe steht **Mappe löschen**. Nach einer Rückfrage kommt die Mappe mit ihren Dokumenten in den [Papierkorb](ablage.md#papierkorb); dort lässt sie sich eine Zeit lang wiederherstellen. Ist der Papierkorb ausgeschaltet, ist sie sofort endgültig weg.
 
-Eine Mappe, auf die noch andere verweisen, lässt sich nicht löschen. Der Knopf ist dann ausgegraut, und darüber steht gleich, welche Mappen das sind – mit Links dorthin. Entferne zuerst dort den Verweis. So kann kein Vertrag verschwinden, zu dem noch Rechnungen gehören. Verschickte E-Mails und andere [Post](post.md) halten das Löschen nicht auf.
+Geht Löschen gerade nicht, ist der Knopf ausgegraut, und daneben steht **Warum nicht?**. Ein Klick darauf klappt die Begründung direkt am Knopf auf:
 
-Fehlt der Knopf, dürfen Mappen dieses Mappentyps nicht gelöscht werden.
+- **Es verweisen noch andere Mappen darauf.** Die Begründung zählt sie auf – mit Links dorthin (bei vielen die ersten acht und „und … weitere“). Entferne zuerst dort den Verweis. So kann kein Vertrag verschwinden, zu dem noch Rechnungen gehören. Verschickte E-Mails und andere [Post](post.md) halten das Löschen nicht auf.
+- **Archivmodus:** Die Aufbewahrungsfrist läuft noch; vorher lässt sich die Mappe von niemandem löschen.
+- **Berechtigungen:** Du darfst Mappen dieses Mappentyps nicht löschen. Das legt ein Administrator fest.
+
+![Ausgegrauter Knopf „Mappe löschen“ mit aufgeklappter Begründung „Warum nicht?“](bilder/mappe-loeschen-warum.png)
+
+Benutzer und Systemrollen lassen sich in der Ablage gar nicht löschen; dort fehlt der Knopf.
 
 ## Was du sehen und ändern darfst
 
@@ -126,7 +132,7 @@ Das merkst du so:
 
 - **Mappen, die du nicht lesen darfst**, tauchen in Listen, Suche, Zählern und Favoriten nicht auf. Verweist eine Mappe auf eine solche, steht dort *nicht sichtbare Mappe* ohne Link.
 - **Ohne Bearbeiten** zeigt eine Mappe ihre Felder und Dokumente nur an; unten steht „Nur lesen“. Notizen und Aufgaben gehen trotzdem.
-- **Ohne Löschen** fehlt „Mappe löschen“, **ohne Anlegen** fehlt „+ Neu“, **ohne Passwörter sehen** fehlt das Auge an Passwortfeldern.
+- **Ohne Löschen** ist „Mappe löschen“ ausgegraut (mit „Warum nicht?“), **ohne Anlegen** fehlt „+ Neu“, **ohne Passwörter sehen** fehlt das Auge an Passwortfeldern.
 - **Ohne Exportieren** fehlen in einer Ansicht die Knöpfe zum Exportieren; Ansichten, die du nicht sehen darfst, fehlen im Baum.
 - Hängen deine Rechte von einem Feld ab (etwa „Verantwortlich“) und würdest du dir mit einer Änderung selbst das Lesen oder Bearbeiten nehmen, fragt das DMS vor dem Speichern nach.
 - Bei der Auswahl von Benutzern (Verantwortlich, Erwähnungen, Vertretung, Aufgaben) erscheinen nur die, die du sehen darfst.
