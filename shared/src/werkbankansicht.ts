@@ -50,6 +50,7 @@ export const BEREICHE: Bereich[] = [
   { pfad: 'speicherplatz', gruppe: 'einstellungen', name: 'Speicherplatz', in: [...H], wann: 'sehen, wie voll das Gerät ist' },
   { pfad: 'postfaecher', gruppe: 'einstellungen', name: 'Postfächer', in: [...O], wann: 'Post aus einem E-Mail-Konto abholen' },
   { pfad: 'eingangsordner', gruppe: 'einstellungen', name: 'Eingangsordner', in: [...O], wann: 'Scans aus einem Ordner übernehmen' },
+  { pfad: 'webdav', gruppe: 'einstellungen', name: 'WebDAV-Laufwerk', in: [...H], wann: 'die Ablage im Explorer, Finder oder in der Dateien-App einbinden' },
   { pfad: 'texterkennung', gruppe: 'einstellungen', name: 'Texterkennung', in: [...O], wann: 'Text in gescannten Dokumenten finden' },
   { pfad: 'protokoll', gruppe: 'wartung', name: 'Protokoll', in: [...O], wann: 'das technische Protokoll lesen' },
   { pfad: 'fehlermeldungen', gruppe: 'wartung', name: 'Gemeldete Fehler', in: [...O], wann: 'Fehler, die Benutzer gemeldet haben' },

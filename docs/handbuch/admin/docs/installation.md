@@ -159,6 +159,8 @@ Das DMS spricht selbst nur HTTP und verwaltet keine Zertifikate. Das übernimmt 
 
 Für Let's Encrypt braucht es eine eigene Domain, die auf deinen Anschluss zeigt. Soll das DMS nur zu Hause erreichbar sein, reicht HTTP im Heimnetz.
 
+Nutzt ihr das [WebDAV-Laufwerk](webdav.md), braucht es **HTTPS** auch zu Hause (Windows verlangt es), und der Proxy muss die WebDAV-Methoden wie `PROPFIND` und `LOCK` durchlassen – siehe [Hinter einem Reverse-Proxy](webdav.md#hinter-einem-reverse-proxy).
+
 ### Was der Proxy dem DMS mitteilt
 
 Der Proxy leitet jede Anfrage an das DMS weiter. Für das DMS sieht sie deshalb so aus, als käme sie vom Proxy. Was das Gerät dahinter ist, schreibt der Proxy in Zusatzangaben (`X-Forwarded-For`, `X-Forwarded-Proto`). Das DMS braucht sie für:

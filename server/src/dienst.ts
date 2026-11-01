@@ -1586,6 +1586,21 @@ export class Dienst {
     return x.mappeId;
   }
 
+  /**
+   * WebDAV-Laufwerk (#346): eine Mappe mit Lesen-Recht – Typ, Dokumente und die verknüpften Mappen
+   * (Verweise in beide Richtungen, nur lesbare). Ohne Notizen, Aufgaben und Historie.
+   */
+  async laufwerkMappe(id: string, z: Zugriff) {
+    const mappe = await this.pruefeRecht(z, id, 'R');
+    const typ = z.typen.get(mappe.typId) ?? await this.repo.holeTyp(mappe.typId);
+    const ziele = typ ? verweiseVon(typ, mappe.werte).map((v) => v.zielId) : [];
+    const rueck = await this.repo.rueckverweise(id);
+    const bezuege = await this.repo.bezuege([...new Set([...ziele, ...rueck.map((r) => r.quelleId)])].filter((x) => x !== id));
+    const lesbar = await this.lesbare(z, [...bezuege.keys()]);
+    const verknuepft = [...bezuege].filter(([k]) => lesbar.has(k)).map(([mid, x]) => ({ id: mid, titel: x.titel, typId: x.typId }));
+    return { mappe, typ, dokumente: await this.repo.listeDokumente(id), verknuepft };
+  }
+
   /** Klartext von Passwortfeldern nur dort, wo P gilt (#124). */
   async mitPasswortRecht<T extends Mappe>(z: Zugriff, mappen: T[]): Promise<{ mit: T[]; ohne: T[] }> {
     const mit: T[] = []; const ohne: T[] = [];
