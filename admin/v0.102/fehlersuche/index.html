@@ -2188,9 +2188,54 @@
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>logs<span class="w"> </span>&lt;app-container&gt;
 </code></pre></div>
 <h2 id="datenbank">Datenbank<a class="headerlink" href="#datenbank" title="Permanent link">&para;</a></h2>
-<p>Lange Datenbankzugriffe und was gerade in der Datenbank läuft stehen unter <strong>Werkbank → Einstellungen → Datenbank-Anbindung</strong>, unter der Verbindung – siehe <a href="../installation/#lange-datenbankzugriffe">Lange Datenbankzugriffe</a>. Wirkt das DMS langsam, schau dort zuerst nach.</p>
+<p>Lange Datenbankzugriffe und Anfragen, die <strong>Auslastung des Servers</strong> und was gerade in der Datenbank läuft stehen unter <strong>Werkbank → Einstellungen → Datenbank-Anbindung</strong>, unter der Verbindung – siehe <a href="../installation/#lange-datenbankzugriffe">Lange Datenbankzugriffe</a>. Wirkt das DMS langsam, schau dort zuerst nach.</p>
+<p>Einträge, die mit <strong>Anfrage:</strong> beginnen, betreffen eine ganze Anfrage; aufgeklappt zeigen sie die <strong>Aufteilung</strong>: Warten vor dem Handler, Datenbank (mit Anzahl der Zugriffe), Rechte, Aufbereitung und JSON. Einzelheiten zur selben Zeit stehen im <a href="#protokoll">Protokoll</a> (Modul <em>datenbank</em>).</p>
+<p><strong>Auslastung des Servers:</strong> Das DMS arbeitet Anfragen auf einem Faden ab. Rechnet eine Anfrage lange, warten alle anderen so lange. Die Werte zeigen, wie lange in der letzten Minute üblicherweise, in 99 % der Fälle und höchstens gewartet wurde. Unter 50 ms ist unauffällig; ab 100 ms (99 %) erscheint ein Hinweis.</p>
 <h2 id="zeitmessung-entwicklermodus">Zeitmessung (Entwicklermodus)<a class="headerlink" href="#zeitmessung-entwicklermodus" title="Permanent link">&para;</a></h2>
-<p>Wirkt eine Seite langsam, schalte im <strong>Profil</strong> den <strong>Entwicklermodus</strong> ein. Dann zeigt das DMS unten rechts bei jedem Seitenaufruf, wie lange Netzwerk, Aufbereitung auf dem Server, Datenbankzugriffe, Übertragung und Darstellung im Browser gedauert haben. Er gilt nur für dein Konto.</p>
+<p>Wirkt eine Seite langsam, schalte im <strong>Profil</strong> den <strong>Entwicklermodus</strong> ein. Dann zeigt das DMS unten rechts bei jedem Seitenaufruf je Anfrage, wo die Zeit geblieben ist, oben die Summe über alle Anfragen der Seite. Er gilt nur für dein Konto.</p>
+<table>
+<thead>
+<tr>
+<th>Abschnitt</th>
+<th>Was es ist</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Warten (Browser)</td>
+<td>Die Anfrage wartet im Browser. Er schickt höchstens etwa 6 Anfragen gleichzeitig an einen Server, die übrigen warten.</td>
+</tr>
+<tr>
+<td>Leitung</td>
+<td>Hin- und Rückweg ohne die Zeit im Server – eine Näherung. Sie enthält auch das Warten, bevor der Server die Anfrage überhaupt annimmt; ist er beschäftigt, zeigt das die <strong>Auslastung</strong> unter Werkbank → Datenbank.</td>
+</tr>
+<tr>
+<td>Warten (Server)</td>
+<td>Vom Eingang im Server bis zur Bearbeitung, z. B. Körper der Anfrage lesen.</td>
+</tr>
+<tr>
+<td>Rechte</td>
+<td>Berechtigungen auswerten (Zugriff bilden, Lesefilter, Rechte je Mappe), ohne die Datenbankzugriffe darin.</td>
+</tr>
+<tr>
+<td>Datenbank</td>
+<td>Anzahl und Dauer der Datenbankzugriffe.</td>
+</tr>
+<tr>
+<td>Aufbereitung</td>
+<td>Die übrige Zeit im Server.</td>
+</tr>
+<tr>
+<td>JSON</td>
+<td>Die Antwort im Server in Text umwandeln.</td>
+</tr>
+<tr>
+<td>Übertragung, Auswerten, Darstellung</td>
+<td>Antwort senden, im Browser lesen und zeichnen.</td>
+</tr>
+</tbody>
+</table>
+<p>Die Werte kommen vom Server im Header <code>Server-Timing</code> (<code>vor</code>, <code>app</code>, <code>db</code>, <code>rechte</code>, <code>json</code>, <code>gesamt</code>) und aus der Zeitmessung des Browsers.</p>
 <h2 id="technik">Technik<a class="headerlink" href="#technik" title="Permanent link">&para;</a></h2>
 <p><strong>Werkbank → Technik</strong> zeigt im Abschnitt <strong>Installiert</strong> (unter <em>Neuere Versionen</em>), was installiert ist: Version und Stand des DMS, Laufzeit (Node.js, Betriebssystem), Datenbank, Bibliotheken und Oberfläche.</p>
 <p><img alt="Technik und Versionen" src="../bilder/werkbank-technik.png" /></p>
