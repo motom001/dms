@@ -8,7 +8,8 @@ import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
+import type { Repo } from '../src/repo';
 import { Paketlaeufer, type ApiAufruf } from '../src/laeufer/verwaltung';
 import { ladeArgumente, pruefeModul } from '../src/laeufer/modul';
 import { netzErlaubt } from '../src/laeufer/prozess';
@@ -61,6 +62,25 @@ async function pdf(seiten: number): Promise<Buffer> {
   const d = await PDFDocument.create();
   for (let i = 0; i < seiten; i++) d.addPage([100 + i, 200]);
   return Buffer.from(await d.save());
+}
+
+/** Eigene PostgreSQL-Datenbank (TEST_DATABASE_URL) mit Repo und Konto-Repo; `ende` räumt sie ab. */
+async function pgDatenbank() {
+  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
+  const { verbinde, migriere } = await import('../src/db');
+  const { pgRepo } = await import('../src/repo-pg');
+  const { pgKontoRepo } = await import('../src/konto-repo');
+  const H = '00000000-0000-4000-8000-000000000001';
+  const basis = ausUrl(process.env.TEST_DATABASE_URL)!;
+  const a = { ...basis, datenbank: `dms_lf_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}` };
+  await legeDatenbankAn(a);
+  const sql = verbinde(alsUrl(a));
+  await migriere(sql, new URL('../migrations', import.meta.url).pathname, () => {});
+  await sql`INSERT INTO haushalte (id, name) VALUES (${H}, 'Test') ON CONFLICT DO NOTHING`;
+  return {
+    repo: pgRepo(sql, H) as never as Repo, konto: pgKontoRepo(sql, H) as never as KontoRepo,
+    ende: async () => { await sql.end(); const admin = verbinde(alsUrl(basis)); await admin.unsafe(`DROP DATABASE IF EXISTS "${a.datenbank}" WITH (FORCE)`); await admin.end(); },
+  };
 }
 
 /* ---------- Paket als Archiv-Dateien ---------- */
@@ -184,9 +204,9 @@ describe('Paket-Läufer (#338): Ablauf', () => {
   const laeufer: Paketlaeufer[] = [];
   after(async () => { for (const l of laeufer) await l.stop(); });
 
-  async function aufbau(grenzen = {}) {
-    const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost');
+  async function aufbau(grenzen = {}, db?: { repo: Repo; konto: KontoRepo }) {
+    const d = new Dienst(db?.repo ?? speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+    const konten = new Konten(db?.konto ?? speicherKontoRepo(), () => null, () => 'http://localhost', d.benutzerspiegel());
     const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const tabelle = routen(d, konten, { apiSchluessel: schluessel });
     // Wie http.ts: Route suchen, Zugang prüfen (API-Schlüssel), Handler.
@@ -339,6 +359,45 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     await assert.rejects(rufe('PUT', '/api/v1/dokumente/:id/volltext', { id: vdok.id }, { text: 'x' }), verborgen);
     await assert.rejects(rufe('POST', '/api/v1/dokumente/:id/seiten', { id: vdok.id }, { seiten: [{ nr: 1 }], teile: [0] }), verborgen);
   });
+
+  for (const pg of [false, true]) {
+    it(`Post mit „Für“ teilen (#445): übernimmt „Für“; ein neues „Für“ setzt ein Paket nicht${pg ? ' – PostgreSQL' : ''}`, { skip: pg && !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, async () => {
+      const db = pg ? await pgDatenbank() : undefined;
+      try {
+        const { d, konten, schluessel } = await aufbau({}, db);
+        await installiere(d, 'trenner', ECHO, '{ lesen: ["dms:post"], schreiben: ["dms:post"], dokumente: schreiben }');
+        const konto = await konten.dienstkonto('trenner', 'Trenner');
+        const { benutzer: anna } = await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
+        const { benutzer: ben } = await konten.legeBenutzerAn({ email: 'ben@example.org', name: 'Ben', rolle: 'mitglied' }, anna.id);
+        const sys = await d.sichereSystem();
+        const z = await d.zugriff(konto);
+        assert.equal((await d.lesbare(z, [ben.id])).size, 0, 'Pakete sehen keine Benutzer');
+        // „Für“ setzt ein Benutzer im DMS (hier: Anna als Administratorin).
+        const post = await d.legePostAn({ betreff: 'Stapel', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.zugriff({ id: anna.id, rolle: 'admin' }));
+        assert.deepEqual(post.werte.fuer, ben.id);
+        const reg = sys.post.register.find((x) => x.art === 'dokumente')!.key;
+        const pdok = (await d.ladeHoch(post.id, { register: reg, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(3), anna.id)).dokument;
+        const tabelle = routen(d, konten, { apiSchluessel: schluessel });
+        const rufe = async (methode: string, pfad: string, params: Record<string, string>, body: unknown = {}) => {
+          const r = tabelle.find((x) => x.methode === methode && x.pfad === pfad)!;
+          const a = { body, params, query: {}, ip: '127.0.0.1' } as unknown as Anfrage;
+          const key = await schluessel.fuerDienstkonto(konto, methode === 'GET' ? 'lesen' : 'schreiben');
+          await pruefeZugang(r as Route, a, (n) => (n === 'authorization' ? `Bearer ${key}` : undefined), konten, schluessel);
+          return r.handler(a);
+        };
+        const geteilt = (await rufe('POST', '/api/v1/dokumente/:id/seiten', { id: pdok.id }, { seiten: [{ nr: 1 }, { nr: 2 }, { nr: 3 }], teile: [0, 2] })).body as { posten: Array<{ id: string }> };
+        assert.equal(geteilt.posten.length, 2);
+        for (const p of geteilt.posten) assert.deepEqual((await d.holeMappe(p.id)).mappe.werte.fuer, ben.id, 'dasselbe „Für“ wie die Ausgangspost');
+        // Neues „Für“ über die API: weiterhin abgelehnt – beim Anlegen und beim Ändern.
+        const abgelehnt = (e: { status?: number; message?: string }) => e.status === 422 && /nicht sehen darfst/.test(e.message ?? '');
+        await assert.rejects(rufe('POST', '/api/v1/post', {}, { betreff: 'Neu', fuer: ben.id }), abgelehnt);
+        const ohne = await d.legePostAn({ betreff: 'Ohne' }, { id: null, name: 'Test' });
+        await assert.rejects(rufe('PUT', '/api/v1/mappen/:id', { id: ohne.id }, { werte: { fuer: ben.id } }), abgelehnt);
+        await assert.rejects(rufe('PUT', '/api/v1/mappen/:id', { id: post.id }, { werte: { fuer: anna.id } }), abgelehnt);
+        assert.equal((await rufe('POST', '/api/v1/post', {}, { betreff: 'Ohne Für' })).status, 201, 'ohne „Für“ geht es');
+      } finally { await db?.ende(); }
+    });
+  }
 
   it('Entfernen während eines Aufrufs hängt nichts; Reihenfolge je Paket; eigene Änderungen werden nicht gemeldet', async () => {
     const { d, l, konten } = await aufbau({ sekunden: 5 });

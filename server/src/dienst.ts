@@ -2986,8 +2986,9 @@ export class Dienst {
   /**
    * Post anlegen. `ich.id` null: kein echter Benutzer, sondern ein Eingangskanal (#195: „Eingangsordner“);
    * `herkunft` steht dann als eigener Eintrag in der Historie.
+   * `alt` (Teilen, #445): Werte der Ausgangspost – Verweise, die dort schon stehen (z. B. „Für“), gelten nicht als neu.
    */
-  async legePostAn(eingabe: unknown, ich: { id: string | null; name: string }, z?: Zugriff, kanal: string = POST_KANAL.hochgeladen, herkunft?: Historieneintrag['daten'], id: string = randomUUID()): Promise<Mappe> {
+  async legePostAn(eingabe: unknown, ich: { id: string | null; name: string }, z?: Zugriff, kanal: string = POST_KANAL.hochgeladen, herkunft?: Historieneintrag['daten'], id: string = randomUUID(), alt: Werte = {}): Promise<Mappe> {
     const { post: typ } = await this.sichereSystem();
     if (!darfPostAnlegen(typ)) throw new Fachfehler(403, 'Post lässt sich nicht anlegen.');
     const e = (eingabe ?? {}) as Record<string, unknown>;
@@ -3004,7 +3005,7 @@ export class Dienst {
       const entwurf: Mappe = { id: '00000000-0000-4000-8000-000000000000', typId: typ.id, werte, erstellt: new Date().toISOString(), erstelltVon: ich.id, geaendert: new Date().toISOString(), geaendertVon: ich.id };
       if (!(await this.rechteAn(z, entwurf, true)).C) throw new Fachfehler(403, 'Post anlegen darfst du nicht.');
     }
-    await this.pruefeVerweisziele(z, typ, werte, {});
+    await this.pruefeVerweisziele(z, typ, werte, alt);
     await this.pruefeWerte(typ, werte);
     // Vorgegebene Id (#196): Eingangskanäle merken sie sich vorher und erkennen nach einem Absturz, dass es die Post schon gibt.
     // Post samt Historie, Aufgabe und Ereignis in einer Transaktion (#404).
@@ -3863,7 +3864,7 @@ export class Dienst {
         const neu = await this.legePostAn({
           betreff: `${betreff} (Teil ${i + 1})`, datum: post.werte.datum, absender: post.werte.absender ?? '', kanal: auswahlText(post.werte.kanal),
           fuer: alsListe(post.werte.fuer)[0] ?? null,
-        }, { id: von, name: '' }, z);
+        }, { id: von, name: '' }, z, undefined, undefined, undefined, post.werte);
         await this.notiere(neu.id, von, 'post_geteilt', { text: `Teil ${i + 1} von ${teileBuf.length} aus „${betreff}“`, post: post.id, postTyp: typ.id });
         dokumente.push((await this.ladeHoch(neu.id, { register: reg.key, name: teilName(d.name, i + 1), typ: 'application/pdf', herkunft: 'bearbeitet' }, b, von)).dokument);
         posten.push((await this.repo.holeMappe(neu.id))!);
