@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.88/installation/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.89/installation/">
       
       
         <link rel="prev" href="../neu/">
@@ -2366,7 +2366,7 @@
 <li><strong>Gibt es sie nicht, aber <code>DMS_DB_PASSWORT</code></strong> (Vorlagen für Synology, UGREEN, QNAP, TrueNAS, Unraid), nimmt das DMS die Standard-Anbindung – Server <code>db</code> (oder <code>DMS_DB_HOST</code>), Port 5432, Datenbank und Benutzer <code>dms</code> – mit diesem Passwort und übernimmt sie ebenso. Das Passwort steht so nur einmal in der Compose-Datei, ohne Sonderzeichen für eine URL maskieren zu müssen.</li>
 <li><strong>Gibt es beides nicht</strong> – oder klappt die Verbindung nicht –, startet das DMS im <strong>Einrichtungsmodus</strong>: Es liefert nur den Assistenten aus und fragt die Anbindung ab (mit Einrichtungscode). Alle anderen Schnittstellen antworten bis dahin mit 503. Eine gespeicherte Anbindung, deren Datenbank nur noch nicht erreichbar ist (der Datenbank-Container startet noch), versucht es alle zehn Sekunden weiter.</li>
 </ul>
-<p>Unter <strong>Werkbank → Datenbank-Anbindung</strong> siehst und änderst du die Anbindung: erst <strong>Verbindung prüfen</strong>, dann <strong>Übernehmen</strong>. Die neue Anbindung gilt nach einem Neustart (<strong>Jetzt neu starten</strong> – im Container startet Docker das DMS gleich wieder). Die Daten wandern dabei nicht mit; für einen Umzug in eine andere Datenbank nimm eine <a href="../sicherung/">Sicherung</a>.</p>
+<p>Unter <strong>Werkbank → Datenbank-Anbindung</strong> siehst und änderst du die Anbindung. Im Abschnitt <em>Verbindung</em> steht, womit das DMS gerade verbunden ist („Aktuell verbunden: dms@postgres:5432/dms · in Betrieb“). Ändern: erst <strong>Verbindung prüfen</strong>, dann <strong>Übernehmen</strong>. Die neue Anbindung gilt nach einem Neustart (<strong>Jetzt neu starten</strong> – im Container startet Docker das DMS gleich wieder). Die Daten wandern dabei nicht mit; für einen Umzug in eine andere Datenbank nimm eine <a href="../sicherung/">Sicherung</a>.</p>
 <p>In der Datei steht auch die interne Id des <strong>Haushalts</strong> (früher die Umgebungsvariable <code>HAUSHALT_ID</code>). Bisherige Installationen übernehmen sie beim ersten Start; die Variable kann danach entfernt werden.</p>
 <h2 id="e-mail-und-adresse">E-Mail und Adresse<a class="headerlink" href="#e-mail-und-adresse" title="Permanent link">&para;</a></h2>
 <p>Unter <strong>Werkbank → E-Mail und Adresse</strong> stellst du ein, was früher Umgebungsvariablen waren. Änderungen gelten sofort, ohne Neustart.</p>

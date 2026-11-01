@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.88/export/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.89/export/">
       
       
         <link rel="prev" href="../sicherung/">
@@ -2114,7 +2114,7 @@
 </ul>
 <p><code>manifest.json</code> nennt unter <code>tabellen</code> für jede Tabelle der Datenbank, wo sie im Export steht – oder warum nicht (z. B. Sitzungen, API-Schlüssel, Zugangsdaten für Mail und Postfächer). Ein Test sorgt dafür, dass keine neue Tabelle unbemerkt fehlt.</p>
 <h2 id="passworter">Passwörter<a class="headerlink" href="#passworter" title="Permanent link">&para;</a></h2>
-<p>Passwortfelder stehen nie in den Daten – nur „gesetzt“. Wählst du <strong>Passwortfelder im Klartext</strong> und bestätigst ausdrücklich, kommt <code>passwoerter.csv</code> dazu, im CSV-Format von <strong>Bitwarden</strong> (lässt sich auch in KeePassXC importieren). Das steht im Protokoll. Importiere die Datei und lösche sie danach. Schlüssel, Zugangsdaten (Datenbank, Mail, Postfächer), API-Schlüssel und Sitzungen sind nie dabei.</p>
+<p>Passwortfelder stehen nie in den Daten – nur „gesetzt“. Wählst du <strong>Passwortfelder im Klartext</strong> und bestätigst ausdrücklich, kommt <code>passwoerter.csv</code> dazu, im CSV-Format von <strong>Bitwarden</strong> (lässt sich auch in KeePassXC importieren). Das steht im Protokoll. Importiere die Datei und lösche sie danach – unter <strong>Vorhandene Exporte</strong> ist ein solcher Export rot markiert („Enthält Passwörter im Klartext“), weil er unverschlüsselt im Sicherungsordner liegt. Schlüssel, Zugangsdaten (Datenbank, Mail, Postfächer), API-Schlüssel und Sitzungen sind nie dabei.</p>
 <h2 id="kontakte-als-vcard">Kontakte als vCard<a class="headerlink" href="#kontakte-als-vcard" title="Permanent link">&para;</a></h2>
 <p>Das DMS schlägt Mappentypen vor, die nach Kontakten aussehen (Felder wie Name, E-Mail, Telefon, Adresse), und ordnet die Felder zu. Prüfe die Zuordnung vor dem Export; abgewählte Mappentypen bekommen keine vCard.</p>
 <h2 id="meine-daten-exportieren">Meine Daten exportieren<a class="headerlink" href="#meine-daten-exportieren" title="Permanent link">&para;</a></h2>
