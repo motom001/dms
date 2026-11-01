@@ -16,6 +16,7 @@ import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src
 import type { Anstehend, Erinnerung } from '../../shared/src/fristen';
 import type { Auftrag } from '../../shared/src/auftrag';
 import type { Baum } from '../../shared/src/baum';
+import type { LoeschAktion, LoeschPlan, LoeschVorschau } from '../../shared/src/loeschbaum';
 import type { AuskunftAuswahl, AuskunftLink, AuskunftStand, AuskunftVorschau, Datenschutz } from '../../shared/src/auskunft';
 import type { Dokumentart } from '../../shared/src/demodaten';
 import { merkeAnfrage } from './diagnose';
@@ -136,6 +137,9 @@ export interface PapierkorbEintrag {
   id: string; typId: string; titel: string; werte: Werte; demo: boolean;
   erstellt: string; erstelltVon: string | null; geaendert: string; geaendertVon: string | null;
   geloescht: string; geloeschtVon: string | null; dokumente: number;
+  /** Mit verknüpften Mappen gelöscht (#424): gemeinsame Id des Vorgangs. */
+  vorgang?: string | null;
+  entkoppelt?: Array<{ quelleId: string; feldKey: string }>;
 }
 /** Anmeldung über einen Anbieter, OpenID Connect (#241). */
 export interface AnbieterEingabe {
@@ -387,6 +391,12 @@ export const api = {
   mappeAnlegen: (m: unknown) => anfrage<Mappe & { hinweis?: string }>('POST', '/api/mappen', m),
   mappeAendern: (id: string, m: unknown) => anfrage<Mappe & { hinweis?: string }>('PUT', `/api/mappen/${id}`, m),
   mappeLoeschen: (id: string) => anfrage<null>('DELETE', `/api/mappen/${id}`),
+  /** Mit allen verknüpften Mappen löschen (#424). */
+  loeschVorschau: (id: string, tiefe: number) => anfrage<LoeschVorschau>('GET', `/api/mappen/${id}/loeschvorschau?tiefe=${tiefe}`),
+  mitVerknuepftenLoeschen: (id: string, e: { tiefe: number; auswahl: Record<string, LoeschAktion> }) =>
+    anfrage<{ vorgang: string; endgueltig: boolean; zahlen: LoeschPlan['zahlen']; loeschen: string[] }>('POST', `/api/mappen/${id}/mit-verknuepften-loeschen`, e),
+  vorgangWiederherstellen: (vorgang: string, werkbank = false) =>
+    anfrage<{ mappen: number; verweiseWieder: number; verweiseEntfallen: number; startId: string | null }>('POST', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/vorgang/${vorgang}/wiederherstellen`),
   /* Volltext und Texterkennung (#45) */
   volltext: (id: string) => anfrage<{ id: string; name: string; text: string | null }>('GET', `/api/dokumente/${id}/volltext`),
   texterkennungErneut: (id: string) => anfrage<Dokument>('POST', `/api/dokumente/${id}/texterkennung`),

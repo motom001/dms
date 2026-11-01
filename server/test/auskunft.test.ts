@@ -147,8 +147,9 @@ describe('Baum und Auskunft: reine Funktionen (#396)', () => {
   });
   it('Optionen: begrenzt, Unbekanntes fällt weg', () => {
     const o = bereinigeBaumOptionen({ tiefe: 99, max: '0', richtungen: 'verweistAuf,quer', seitwaerts: 'true' });
-    assert.deepEqual(o, { richtungen: ['verweistAuf'], tiefe: 10, max: 1, seitwaerts: true, ohneTypen: [] });
+    assert.deepEqual(o, { richtungen: ['verweistAuf'], tiefe: 10, max: 1, seitwaerts: true, ohneTypen: [], nurZugehoerigkeit: false });
     assert.equal(bereinigeBaumOptionen({}).tiefe, 2);
+    assert.equal(bereinigeBaumOptionen({ nurZugehoerigkeit: 'true' }).nurZugehoerigkeit, true);
   });
   it('Auswahl: nichts Fremdes, jede abgewählte Notiz mit Begründung', () => {
     const bekannt = { a: { dokumente: [{ id: 'd1' }], notizen: [{ id: 'n1' }, { id: 'n2' }], historie: 1, dritte: [], ohneFelder: [] } } as never;

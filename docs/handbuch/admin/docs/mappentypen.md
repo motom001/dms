@@ -66,6 +66,8 @@ Ein Feld der Feldart **Verweis** zeigt auf Mappen eines anderen Mappentyps (oder
     - **Zugehörigkeit** – „gehört zu“: Die Rechnung gehört zum Vertrag. Zählt später bei Auswertungen wie „alles zum Haus“ mit.
     - **Bezug** – „hat zu tun mit“: Die Rechnung kommt von diesem Aussteller. Nur eine Verknüpfung.
 
+    Die Verweisart entscheidet auch beim **Löschen mit verknüpften Mappen** und bei der **Auskunft** ([Datenschutz im DMS](datenschutz.md#mit-verknupften-mappen-loschen)): Mitgelöscht und vollständig herausgegeben wird nur, was über **Zugehörigkeit** dranhängt. Soll z. B. ein Vertrag mit seinem Vertragspartner gehen, stell das Feld *Vertragspartner* im Vertrag auf Zugehörigkeit (bei den Beispiel-Mappentypen ist das so).
+
 #### Auswahl einschränken
 
 In der Zeile unter Ziel-Mappentyp, Art des Verweises und *Mehrere Mappen erlaubt* legst du mit **Nur Mappen, die …** fest, welche Mappen das Feld anbietet – etwa beim Feld *Arzt* im Arztbericht nur Vertragspartner mit *Art = Arzt*. Die Bedingungen funktionieren wie bei [Ansichten](sichten.md): Felder des Zieltyps und Systemwerte (angelegt, geändert, von wem), feste und dynamische Werte (heute ± n, aktueller Benutzer, seine Rollen). Mehrere Bedingungen gelten zusammen. Darunter steht, wie viele Mappen passen, z. B. „12 von 85 Vertragspartner passen“.
