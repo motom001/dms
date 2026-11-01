@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.92/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.93/neu/">
       
       
         <link rel="prev" href="..">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-092" class="md-skip">
+        <a href="#neu-in-version-093" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0920" class="md-nav__link">
+  <a href="#0930" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.92.0
+        0.93.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.92.0">
+    <nav class="md-nav" aria-label="0.93.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -386,10 +386,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#technik" class="md-nav__link">
+  <a href="#lizenz" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Technik
+        Lizenz
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#noch-nicht-dabei" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Noch nicht dabei
       
     </span>
   </a>
@@ -1948,15 +1959,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0920" class="md-nav__link">
+  <a href="#0930" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.92.0
+        0.93.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.92.0">
+    <nav class="md-nav" aria-label="0.93.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1971,10 +1982,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#technik" class="md-nav__link">
+  <a href="#lizenz" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Technik
+        Lizenz
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#noch-nicht-dabei" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Noch nicht dabei
       
     </span>
   </a>
@@ -2017,21 +2039,33 @@
   
 
 
-<h1 id="neu-in-version-092">Neu in Version 0.92<a class="headerlink" href="#neu-in-version-092" title="Permanent link">&para;</a></h1>
-<h2 id="0920">0.92.0<a class="headerlink" href="#0920" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-093">Neu in Version 0.93<a class="headerlink" href="#neu-in-version-093" title="Permanent link">&para;</a></h1>
+<h2 id="0930">0.93.0<a class="headerlink" href="#0930" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Paket-Läufer: Ereignis in derselben Transaktion</strong> (#404). Neue Post und neues Dokument stehen zusammen mit ihrem Ereignis im Ausgangskorb in einer Datenbank-Transaktion: Entweder ist beides gespeichert oder nichts – fällt das DMS genau dazwischen aus, fehlt kein Ereignis mehr.</li>
-<li><strong>Ereignisse beim Teilen und Zusammenfügen</strong> (#404): PDF teilen, zusammenfügen und „Post teilen“ melden für jedes neue Dokument <code>dokument.hochgeladen</code>, „Post teilen“ für jede neue Post außerdem <code>post.angelegt</code>. Das taten sie schon seit 0.88.0 – anders als dort unter „Noch nicht dabei“ stand; jetzt ist es mit Tests abgesichert und beschrieben. Neu: Beim „Post teilen“ sind je Teil Post, Dokument und Ereignisse ganz oder gar nicht gespeichert. Was das Dienstkonto eines Pakets selbst teilt oder zusammenfügt, meldet das DMS diesem Paket nicht.</li>
-<li>Entwicklerhandbuch <em>Pakete mit Code → Ereignisse</em>: wann welches Ereignis kommt.</li>
+<li><strong>PDF verkleinern</strong> (#393): Große Scans und Foto-PDFs werden deutlich kleiner – für weniger Speicher und Sicherungsplatz und für E-Mail-Anbieter mit 10–25 MB Grenze.</li>
+<li>Am PDF-Dokument <strong>Verkleinern</strong> mit drei Stufen: <strong>Bildschirm</strong> (≈ 100 dpi), <strong>Standard</strong> (≈ 150 dpi, Vorgabe), <strong>Druck</strong> (≈ 300 dpi), jeweils mit geschätzter Größe; danach z. B. „verkleinert von 18,4 MB auf 2,1 MB (−89 %)“.</li>
+<li>Ergebnis als <strong>neue Version</strong>; ohne Versionierung nach Rückfrage als Ersatz, das bisherige kommt in den Papierkorb (wie „PDF bearbeiten“). <strong>Verkleinert herunterladen</strong> gibt nur eine Kopie aus.</li>
+<li>Bilder werden heruntergerechnet und als JPEG neu komprimiert, doppelte und unbenutzte Objekte entfernt. <strong>Textebene und Volltext bleiben</strong> – keine neue Texterkennung. Bringt es weniger als 10 %, bleibt das Dokument unverändert (mit Meldung).</li>
+<li><strong>Verkleinert weitergeben:</strong> beim Versenden per E-Mail, beim Export (ZIP, PDF) und beim Herunterladen mit Stempel das Kästchen <strong>PDFs verkleinert senden</strong>; das gespeicherte Dokument bleibt unverändert. Mit Stempel wird erst verkleinert, dann gestempelt.</li>
+<li><strong>Werkbank → Speicherplatz:</strong> <strong>Große PDFs verkleinern</strong> – Liste nach Größe mit geschätzter Ersparnis, Sammelaktion als Hintergrundauftrag mit Fortschritt, wahlweise ohne das Original als ältere Version. Dazu <strong>Neue PDFs automatisch verkleinern</strong> ab einer Größe (Hochladen, Eingangsordner, Postfächer, API, WebDAV; Standard aus).</li>
+<li>Historie: „PDF bearbeitet: verkleinert von … auf …“, „weitergegeben: verkleinert (… → …)“. Eine Version durch Verkleinern löst wie andere Versionen kein Ereignis <code>dokument.hochgeladen</code> aus.</li>
+<li>Schnittstelle: <code>GET</code>/<code>POST /dokumente/{id}/verkleinern</code>, Parameter <code>verkleinern</code> an <code>GET /dokumente/{id}/inhalt</code> und <code>…/versionen/{nummer}/inhalt</code> (Kopf <code>X-DMS-Verkleinert</code>), <code>GET</code>/<code>POST /werkbank/verkleinern</code>.</li>
+<li><strong>Image:</strong> neu das Alpine-Paket <strong>qpdf</strong> (Apache-2.0) für die Struktur; die Bilder rechnet pdftoppm (poppler, schon im Image). Bewusst ohne Ghostscript (AGPL).</li>
+<li>Handbücher: <em>Dokumente → PDF verkleinern</em>, <em>E-Mail, PDF, Link und Stempel → Verkleinert weitergeben</em>, Administratorhandbuch <em>Speicherplatz → Große PDFs verkleinern</em>.</li>
 </ul>
-<h3 id="technik">Technik<a class="headerlink" href="#technik" title="Permanent link">&para;</a></h3>
+<h3 id="lizenz">Lizenz<a class="headerlink" href="#lizenz" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Repo: <code>transaktion(f)</code>; im PostgreSQL-Repo werden verschachtelte Transaktionen darin zu Sicherungspunkten. Vorschau, Texterkennung und Läufer werden erst nach dem Speichern angestoßen.</li>
+<li><strong>Ab dieser Version steht das DMS unter der Apache-2.0-Lizenz</strong> (bis einschließlich 0.92.0 AGPL-3.0), siehe <code>LICENSE</code> und <code>NOTICE</code>.</li>
+</ul>
+<h3 id="noch-nicht-dabei">Noch nicht dabei<a class="headerlink" href="#noch-nicht-dabei" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Bilder (JPEG, PNG) selbst werden nicht verkleinert, nur PDFs. Schwarz-Weiß-Scans (1 Bit) und Bilder mit Sonderfarben bleiben unverändert.</li>
+<li>Freigabelinks und WebDAV geben weiterhin das gespeicherte Dokument aus.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.91.2 im Detail: <a href="https://github.com/motom001/dms/compare/v0.91.2...v0.92.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.92.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.92.0...v0.93.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
@@ -2110,7 +2144,7 @@
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      DMS steht unter der AGPL-3.0 · <a href="https://github.com/sponsors/motom001">Projekt unterstützen</a>
+      DMS steht unter der Apache-2.0 · <a href="https://github.com/sponsors/motom001">Projekt unterstützen</a>
     </div>
   
   

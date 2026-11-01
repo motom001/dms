@@ -5,8 +5,8 @@
     "version": "handbuch",
     "description": "Schnittstelle des selbst gehosteten DMS. Anmeldung mit einem API-Schlüssel aus dem Profil: `Authorization: Bearer dms_…`. Ein Schlüssel hat höchstens die Rechte seines Benutzers; Schlüssel „nur lesen“ erlauben nur GET. Diese Beschreibung entsteht aus der installierten Version.",
     "license": {
-      "name": "AGPL-3.0-only",
-      "url": "https://www.gnu.org/licenses/agpl-3.0.html"
+      "name": "Apache-2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0"
     }
   },
   "servers": [
@@ -2938,7 +2938,7 @@
           "Dokumente"
         ],
         "summary": "Ältere Version herunterladen",
-        "description": "Wie der Inhalt des Dokuments, mit denselben Stempel-Parametern. Stempel (#394): Mit Stempel-Parametern entsteht eine gestempelte Kopie als PDF (Bilder werden zum PDF); das gespeicherte Original bleibt unverändert, die Historie der Mappe vermerkt die Weitergabe, die Antwort trägt den Kopf X-DMS-Stempel: 1. Verlangt der Mappentyp einen Stempel (Pflicht), wird ohne Parameter seine Vorlage verwendet. 422, wenn sich die Datei nicht stempeln lässt (nur PDF, JPEG, PNG; nicht verschlüsselt) oder der Empfänger fehlt.",
+        "description": "Wie der Inhalt des Dokuments, mit denselben Stempel-Parametern und verkleinern. Stempel (#394): Mit Stempel-Parametern entsteht eine gestempelte Kopie als PDF (Bilder werden zum PDF); das gespeicherte Original bleibt unverändert, die Historie der Mappe vermerkt die Weitergabe, die Antwort trägt den Kopf X-DMS-Stempel: 1. Verlangt der Mappentyp einen Stempel (Pflicht), wird ohne Parameter seine Vorlage verwendet. 422, wenn sich die Datei nicht stempeln lässt (nur PDF, JPEG, PNG; nicht verschlüsselt) oder der Empfänger fehlt. Verkleinert (#393): Mit verkleinern=bildschirm|standard|druck (oder true = standard) kommt eine verkleinerte Kopie eines PDFs (Bilder auf ca. 100, 150 oder 300 dpi); das gespeicherte Dokument bleibt unverändert, die Antwort trägt den Kopf X-DMS-Verkleinert: <Bytes vorher>/<Bytes nachher>. Bringt es weniger als 10 %, kommt das Original (ohne diesen Kopf). Erst wird verkleinert, dann gestempelt. 422 bei anderen Dateitypen ohne Stempel.",
         "operationId": "getDokumenteMitidVersionenMitnummerInhalt",
         "parameters": [
           {
@@ -3038,6 +3038,15 @@
             "description": "true = Archivnummer des Dokuments in der Fußzeile",
             "schema": {
               "type": "boolean"
+            }
+          },
+          {
+            "name": "verkleinern",
+            "in": "query",
+            "required": false,
+            "description": "bildschirm (≈ 100 dpi), standard (≈ 150 dpi) oder druck (≈ 300 dpi): verkleinerte Kopie eines PDFs (#393)",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -3226,7 +3235,7 @@
           "Dokumente"
         ],
         "summary": "Inhalt eines Dokuments herunterladen",
-        "description": "Ohne Parameter die gespeicherte Datei. Stempel (#394): Mit Stempel-Parametern entsteht eine gestempelte Kopie als PDF (Bilder werden zum PDF); das gespeicherte Original bleibt unverändert, die Historie der Mappe vermerkt die Weitergabe, die Antwort trägt den Kopf X-DMS-Stempel: 1. Verlangt der Mappentyp einen Stempel (Pflicht), wird ohne Parameter seine Vorlage verwendet. 422, wenn sich die Datei nicht stempeln lässt (nur PDF, JPEG, PNG; nicht verschlüsselt) oder der Empfänger fehlt. Beispiel: ?vorlage=kopie&empfaenger=Hausverwaltung%20M%C3%BCller oder ?stempel=ENTWURF&lage=diagonal&deckkraft=0.2&seitenzahlen=true.",
+        "description": "Ohne Parameter die gespeicherte Datei. Stempel (#394): Mit Stempel-Parametern entsteht eine gestempelte Kopie als PDF (Bilder werden zum PDF); das gespeicherte Original bleibt unverändert, die Historie der Mappe vermerkt die Weitergabe, die Antwort trägt den Kopf X-DMS-Stempel: 1. Verlangt der Mappentyp einen Stempel (Pflicht), wird ohne Parameter seine Vorlage verwendet. 422, wenn sich die Datei nicht stempeln lässt (nur PDF, JPEG, PNG; nicht verschlüsselt) oder der Empfänger fehlt. Verkleinert (#393): Mit verkleinern=bildschirm|standard|druck (oder true = standard) kommt eine verkleinerte Kopie eines PDFs (Bilder auf ca. 100, 150 oder 300 dpi); das gespeicherte Dokument bleibt unverändert, die Antwort trägt den Kopf X-DMS-Verkleinert: <Bytes vorher>/<Bytes nachher>. Bringt es weniger als 10 %, kommt das Original (ohne diesen Kopf). Erst wird verkleinert, dann gestempelt. 422 bei anderen Dateitypen ohne Stempel. Beispiel: ?vorlage=kopie&empfaenger=Hausverwaltung%20M%C3%BCller oder ?stempel=ENTWURF&lage=diagonal&deckkraft=0.2&seitenzahlen=true oder ?verkleinern=standard.",
         "operationId": "getDokumenteMitidInhalt",
         "parameters": [
           {
@@ -3317,6 +3326,15 @@
             "description": "true = Archivnummer des Dokuments in der Fußzeile",
             "schema": {
               "type": "boolean"
+            }
+          },
+          {
+            "name": "verkleinern",
+            "in": "query",
+            "required": false,
+            "description": "bildschirm (≈ 100 dpi), standard (≈ 150 dpi) oder druck (≈ 300 dpi): verkleinerte Kopie eines PDFs (#393)",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -3975,6 +3993,150 @@
         }
       }
     },
+    "/dokumente/{id}/verkleinern": {
+      "get": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "PDF verkleinern: Schätzung",
+        "description": "PDF verkleinern (#393): Größe, Seiten, Anzahl Bilder, höchste Bildauflösung (dpi) und je Stufe (bildschirm ≈ 100 dpi, standard ≈ 150 dpi, druck ≈ 300 dpi) die geschätzte Größe danach und ob es sich lohnt (mindestens 10 % kleiner). Dazu, ob das Register versioniert ist. 422 bei anderen Dateitypen oder verschlüsselten PDFs. Braucht Lesen.",
+        "operationId": "getDokumenteMitidVerkleinern",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerkleinernSchaetzung"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "PDF verkleinern",
+        "description": "PDF verkleinern (#393): Bilder werden auf die Auflösung der Stufe heruntergerechnet und als JPEG neu komprimiert, doppelte und unbenutzte Objekte entfernt; Textebene und Volltext bleiben (keine neue Texterkennung). Ergebnis ist eine neue Version (Herkunft „im DMS bearbeitet“, kein Ereignis dokument.hochgeladen); ist die Versionierung des Registers aus, ersetzt es das Dokument nur mit bestaetigt=true (sonst 409 mit rueckfrage), das bisherige kommt in den Papierkorb. Bringt es weniger als 10 %, bleibt das Dokument unverändert: 200 mit unveraendert=true und meldung; sonst 201. Braucht Bearbeiten.",
+        "operationId": "postDokumenteMitidVerkleinern",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Verkleinern"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Verkleinert"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/dokumente/{id}/archivnummer": {
       "put": {
         "tags": [
@@ -4569,6 +4731,128 @@
           },
           "409": {
             "description": "Kann (noch) nicht gelöscht werden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/werkbank/verkleinern": {
+      "get": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Große PDFs (Administrator)",
+        "description": "PDF verkleinern (#393): PDF-Dokumente ab einer Größe, größte zuerst (höchstens 200), für die ersten 60 mit geschätzter Größe nach dem Verkleinern in der Stufe.",
+        "operationId": "getWerkbankVerkleinern",
+        "parameters": [
+          {
+            "name": "ab",
+            "in": "query",
+            "required": false,
+            "description": "Ab dieser Größe in MB (Standard 2)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stufe",
+            "in": "query",
+            "required": false,
+            "description": "bildschirm, standard (Standard) oder druck",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GrossePdfs"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Große PDFs verkleinern (Administrator)",
+        "description": "Sammelaktion (#393) als Hintergrundauftrag (Stand: GET /api/werkbank/auftrag): jedes Dokument wie POST /dokumente/{id}/verkleinern. ohneOriginal=true behält die bisherige Version nicht (gibt den Platz sofort frei; nicht während einer Aufbewahrungsfrist). Register ohne Versionierung nur mit bestaetigt=true.",
+        "operationId": "postWerkbankVerkleinern",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerkleinernViele"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Auftrag"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
             "content": {
               "application/json": {
                 "schema": {
@@ -6057,6 +6341,241 @@
           "favoriten": {
             "type": "integer",
             "description": "Eigene Favoriten"
+          }
+        }
+      },
+      "VerkleinernSchaetzung": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "groesse": {
+            "type": "integer"
+          },
+          "seiten": {
+            "type": "integer"
+          },
+          "bilder": {
+            "type": "integer"
+          },
+          "hoechsteDpi": {
+            "type": "integer",
+            "nullable": true
+          },
+          "versioniert": {
+            "type": "boolean"
+          },
+          "papierkorb": {
+            "type": "boolean"
+          },
+          "mindestens": {
+            "type": "number",
+            "description": "Mindestersparnis (0.1)"
+          },
+          "stufen": {
+            "type": "object",
+            "description": "je Stufe (bildschirm, standard, druck)",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "dpi": {
+                  "type": "integer"
+                },
+                "geschaetzt": {
+                  "type": "integer"
+                },
+                "lohnt": {
+                  "type": "boolean"
+                },
+                "bilder": {
+                  "type": "integer",
+                  "description": "Bilder, die neu gerechnet würden"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Verkleinern": {
+        "type": "object",
+        "properties": {
+          "stufe": {
+            "type": "string",
+            "enum": [
+              "bildschirm",
+              "standard",
+              "druck"
+            ],
+            "description": "Standard: standard"
+          },
+          "bestaetigt": {
+            "type": "boolean",
+            "description": "Nötig ohne Versionierung"
+          }
+        }
+      },
+      "Verkleinert": {
+        "type": "object",
+        "properties": {
+          "dokument": {
+            "$ref": "#/components/schemas/Dokument"
+          },
+          "unveraendert": {
+            "type": "boolean"
+          },
+          "vorher": {
+            "type": "integer"
+          },
+          "nachher": {
+            "type": "integer"
+          },
+          "stufe": {
+            "type": "string"
+          },
+          "meldung": {
+            "type": "string",
+            "description": "z. B. „Verkleinert von 18,4 MB auf 2,1 MB (−89 %).“"
+          }
+        }
+      },
+      "Auftrag": {
+        "type": "object",
+        "description": "Hintergrundauftrag (#364)",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "art": {
+            "type": "string"
+          },
+          "titel": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "laeuft",
+              "fertig",
+              "fehler"
+            ]
+          },
+          "fertig": {
+            "type": "integer"
+          },
+          "gesamt": {
+            "type": "integer"
+          },
+          "phase": {
+            "type": "string",
+            "nullable": true
+          },
+          "phasen": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "gestartet": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "beendet": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ergebnis": {
+            "type": "object"
+          },
+          "fehler": {
+            "type": "string"
+          }
+        }
+      },
+      "VerkleinernViele": {
+        "type": "object",
+        "required": [
+          "ids"
+        ],
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "stufe": {
+            "type": "string",
+            "enum": [
+              "bildschirm",
+              "standard",
+              "druck"
+            ]
+          },
+          "ohneOriginal": {
+            "type": "boolean"
+          },
+          "bestaetigt": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GrossePdfs": {
+        "type": "object",
+        "properties": {
+          "stufe": {
+            "type": "string"
+          },
+          "ab": {
+            "type": "number"
+          },
+          "geschaetzteErsparnis": {
+            "type": "integer"
+          },
+          "mehr": {
+            "type": "boolean"
+          },
+          "eintraege": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "groesse": {
+                  "type": "integer"
+                },
+                "mappeId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "mappeTitel": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "integer"
+                },
+                "geschaetzt": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "lohnt": {
+                  "type": "boolean",
+                  "nullable": true
+                }
+              }
+            }
           }
         }
       },
