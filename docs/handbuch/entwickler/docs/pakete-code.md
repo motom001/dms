@@ -29,7 +29,16 @@ code:
   aktionen: [...]
 ```
 
-- **Mappentypen** in `rechte` schreibst du wie in Verweisen: eigene mit ihrer Kennung (`rechnung`), fremde als `paket:kennung`, Typen des DMS als `dms:ablageort` oder `dms:rolle`. `"*"` heißt alle Mappentypen außer Benutzern; `dms:benutzer` ist nicht erlaubt.
+- **Mappentypen** in `rechte` schreibst du wie in Verweisen: eigene mit ihrer Kennung (`rechnung`), fremde als `paket:kennung`, Typen des DMS als `dms:ablageort`, `dms:rolle` oder `dms:post`. `"*"` heißt alle Mappentypen außer Benutzern; `dms:benutzer` ist nicht erlaubt, andere `dms:`-Kennungen gibt es nicht.
+- **Nur Post** (seit 0.94.0): Braucht dein Paket nur die Post – etwa um eingehende Scans zu teilen –, gib `dms:post` statt `"*"` an. Mit `lesen`/`schreiben: ["dms:post"]` und `dokumente: schreiben` darf es Post lesen, **Post teilen** (`POST /dokumente/{id}/seiten` legt je Teil eine neue Post an), die **Archivnummer** und den **Volltext** ihrer Dokumente setzen – andere Mappen sieht es nicht. Die Vorschau bei der Installation zeigt dann „Post“. Anders als in Verweisen (`ziel`, `typen`) ist `dms:post` nur in `rechte` erlaubt. Ein Paket damit gibt `dms: ">=0.94.0"` an; ältere DMS-Versionen kennen die Kennung nicht und geben dem Paket dann gar keine Post.
+
+  ```yaml
+  rechte:
+    lesen: ["dms:post"]
+    schreiben: ["dms:post"]   # neue Post beim Teilen, Archivnummer
+    dokumente: schreiben      # Seiten lesen, PDF teilen, Volltext setzen
+  ```
+
 - **Dokumente:** `lesen` erlaubt Dokumente zu lesen (Datei, Volltext, Seiten als Bild), `schreiben` zusätzlich hochzuladen, zu ersetzen und den Volltext zu setzen. Dokumente gibt es nur in Mappen, die das Paket lesen darf.
 - **Netz:** nur `https://`, ohne Zugangsdaten. Weiterleitungen folgt der Läufer nicht.
 - Bei der **Installation** zeigt das DMS diese Rechte und lässt sie bestätigen. Ändern sich Rechte oder Netz in einem Update, muss der Administrator neu bestätigen.

@@ -2,6 +2,7 @@
 // hier von Hand gebauten WebAssembly-Modulen (kein Compiler in der CI nötig).
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
+import { PDFDocument } from 'pdf-lib';
 import { speicherApiSchluesselRepo, ApiSchluesselDienst } from '../src/apischluessel';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
@@ -54,6 +55,13 @@ const ECHO = modul({
 });
 const SCHLEIFE = modul({ ereignis: [0x03, 0x40, 0x0c, 0x00, 0x0b, 0x41, 0] });
 const GIERIG = modul({ ereignis: [0x41, ...s(20000), 0x40, 0x00, 0x41, ...s(-1), 0x46, 0x04, 0x40, 0x00, 0x0b, 0x41, 0] });
+
+/** PDF mit leeren Seiten (für das Teilen von Post). */
+async function pdf(seiten: number): Promise<Buffer> {
+  const d = await PDFDocument.create();
+  for (let i = 0; i < seiten; i++) d.addPage([100 + i, 200]);
+  return Buffer.from(await d.save());
+}
 
 /* ---------- Paket als Archiv-Dateien ---------- */
 const manifest = (id: string, rechte: string, ereignisse = '[dokument.hochgeladen]') => `schema: 1\nid: ${id}\nname: Probe ${id}\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: MIT\ndms: ">=0.60.0"\ninhalt: {}\ncode:\n  sprache: c\n  quelle: code/\n  ereignisse: ${ereignisse}\n  rechte: ${rechte}\n`;
@@ -149,6 +157,26 @@ describe('Paket-Läufer: Nacharbeiten (#403)', () => {
     scheitern = false;
     await installiere('1.1.0', NEU);
     assert.deepEqual((await d.paketCode('wechsel')).find((x) => x.name === 'modul.wasm')?.inhalt, NEU);
+  });
+});
+
+describe('Paket-Läufer: Recht nur für Post (#435)', () => {
+  it('code.rechte kennt dms:post; unbekannte dms:-Kennungen und dms:benutzer nicht', () => {
+    const r = liesCode({ sprache: 'c', rechte: { lesen: ['dms:post'], schreiben: ['dms:post'], dokumente: 'schreiben' } });
+    assert.deepEqual([r.fehler, r.code?.rechte], [[], { lesen: ['dms:post'], schreiben: ['dms:post'], dokumente: 'schreiben' }]);
+    assert.deepEqual(liesCode({ sprache: 'c', rechte: { lesen: ['dms:ablageort', 'dms:rolle'] } }).fehler, []);
+    assert.match(liesCode({ sprache: 'c', rechte: { lesen: ['dms:brief'] } }).fehler.join(), /„dms:brief“ – diesen Mappentyp bringt das DMS nicht mit\. Erlaubt sind dms:ablageort, dms:rolle, dms:post/);
+    assert.match(liesCode({ sprache: 'c', rechte: { schreiben: ['dms:benutzer'] } }).fehler.join(), /Pakete sehen keine Benutzer/);
+  });
+
+  it('die Rechte-Rückfrage bei der Installation nennt „Post“', async () => {
+    const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+    const p = new Paketverwaltung(d, { version: () => '0.94.0', abruf: async () => { throw new Error('offline'); }, katalogUrl: 'https://katalog.test/katalog.json' });
+    const zip = zipPuffer([{ name: 'manifest.yaml', daten: Buffer.from(manifest('trenner', '{ lesen: ["dms:post"], schreiben: ["dms:post"], dokumente: schreiben }')) }, { name: 'code/modul.wasm', daten: ECHO }]);
+    const { upload } = await p.hochladen(zip, { id: null, email: 'admin@example.org' });
+    const v = await p.vorschau({ upload });
+    assert.deepEqual(v.laeufer?.rechte.slice(0, 2), ['Mappen lesen: Post', 'Mappen anlegen und ändern: Post']);
+    assert.equal(v.laeufer?.bestaetigen, true);
   });
 });
 
@@ -267,6 +295,49 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     const personen = await konten.personen();
     const p = personen.find((x) => x.id === mit.id) as { art?: string; aktiv?: boolean; name: string };
     assert.deepEqual([p.art, p.aktiv, p.name], ['dienst', false, 'Paket Mit']);
+  });
+
+  it('Recht nur für Post (dms:post, #435): Post lesen, teilen, Archivnummer und Volltext setzen – keine anderen Mappen', async () => {
+    const { d, konten, schluessel } = await aufbau();
+    await installiere(d, 'trenner', ECHO, '{ lesen: ["dms:post"], schreiben: ["dms:post"], dokumente: schreiben }');
+    const konto = await konten.dienstkonto('trenner', 'Trenner');
+    const sys = await d.sichereSystem();
+    const z = await d.zugriff(konto);
+    assert.deepEqual([...z.typen.keys()], [sys.post.id], 'sieht nur den Mappentyp Post');
+    const vertragTyp = await d.legeTypAn({ name: 'Vertrag', titelVorlage: '{nr}', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }], register: [
+      { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['nr'] }, { key: 'dokumente', name: 'Unterlagen', art: 'dokumente' },
+    ] });
+    const vertrag = await d.legeMappeAn({ typId: vertragTyp.id, werte: { nr: 'Strom' } }, null);
+    const vdok = (await d.ladeHoch(vertrag.id, { register: 'dokumente', name: 'v.pdf', typ: 'application/pdf' }, await pdf(1), null)).dokument;
+    const post = await d.legePostAn({ betreff: 'Stapel' }, { id: null, name: 'Test' });
+    const reg = sys.post.register.find((x) => x.art === 'dokumente')!.key;
+    const pdok = (await d.ladeHoch(post.id, { register: reg, name: 'Stapel.pdf', typ: 'application/pdf' }, await pdf(2), null)).dokument;
+    assert.deepEqual(await d.rechteAn(z, post), { C: true, R: true, U: true, D: false, P: false });
+    assert.equal((await d.rechteAn(z, vertrag)).R, false);
+    assert.deepEqual([...await d.lesbare(z, [post.id, vertrag.id])], [post.id]);
+    // Über die API wie im Paket-Läufer.
+    const tabelle = routen(d, konten, { apiSchluessel: schluessel });
+    const rufe = async (methode: string, pfad: string, params: Record<string, string>, body: unknown = {}) => {
+      const r = tabelle.find((x) => x.methode === methode && x.pfad === pfad)!;
+      const a = { body, params, query: {}, ip: '127.0.0.1' } as unknown as Anfrage;
+      const key = await schluessel.fuerDienstkonto(konto, methode === 'GET' ? 'lesen' : 'schreiben');
+      await pruefeZugang(r as Route, a, (n) => (n === 'authorization' ? `Bearer ${key}` : undefined), konten, schluessel);
+      return r.handler(a);
+    };
+    const gelesen = (await rufe('GET', '/api/v1/mappen/:id', { id: post.id })).body as { dokumente?: unknown[] };
+    assert.equal(gelesen.dokumente?.length, 1);
+    await rufe('PUT', '/api/v1/dokumente/:id/volltext', { id: pdok.id }, { text: 'Sehr geehrte Damen und Herren' });
+    assert.match((await d.volltext(pdok.id)).text ?? '', /Sehr geehrte/);
+    await rufe('PUT', '/api/v1/dokumente/:id/archivnummer', { id: pdok.id }, { archivnummer: 'A-17' });
+    const geteilt = (await rufe('POST', '/api/v1/dokumente/:id/seiten', { id: pdok.id }, { seiten: [{ nr: 1 }, { nr: 2 }], teile: [0, 1] })).body as { posten: Array<{ typId: string }> };
+    assert.equal(geteilt.posten.length, 2);
+    assert.ok(geteilt.posten.every((p) => p.typId === sys.post.id));
+    // Andere Mappen: nicht sichtbar, nicht änderbar.
+    const verborgen = (e: { status?: number }) => e.status === 404;
+    await assert.rejects(rufe('GET', '/api/v1/mappen/:id', { id: vertrag.id }), verborgen);
+    await assert.rejects(rufe('PUT', '/api/v1/dokumente/:id/archivnummer', { id: vdok.id }, { archivnummer: 'B-1' }), verborgen);
+    await assert.rejects(rufe('PUT', '/api/v1/dokumente/:id/volltext', { id: vdok.id }, { text: 'x' }), verborgen);
+    await assert.rejects(rufe('POST', '/api/v1/dokumente/:id/seiten', { id: vdok.id }, { seiten: [{ nr: 1 }], teile: [0] }), verborgen);
   });
 
   it('Entfernen während eines Aufrufs hängt nichts; Reihenfolge je Paket; eigene Änderungen werden nicht gemeldet', async () => {

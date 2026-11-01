@@ -174,6 +174,15 @@ export interface PaketCode {
   daten?: string[];
 }
 
+/**
+ * Mappentypen des DMS, die `code.rechte` mit `dms:<kennung>` nennen darf (#435): Ablageort, Rolle und Post.
+ * `dms:benutzer` ist verboten (Pakete sehen keine Benutzer). Post gibt es hier – anders als bei Verweisen in
+ * Inhalten –, damit ein Paket wie Trennblatt nur Post lesen und schreiben darf statt aller Typen („*“).
+ */
+export const DMS_RECHTE_TYPEN: Record<string, string> = { ablageort: 'Ablageort', rolle: 'Rolle', post: 'Post' };
+/** Ab dieser Version kennt das DMS `dms:post` in code.rechte (#435); ältere ignorieren die Kennung. */
+export const DMS_POST_RECHT_AB = '0.94.0';
+
 const SPRACHEN = ['rust', 'go', 'c', 'assemblyscript', 'javascript'];
 const TYPVERWEIS_ODER_ALLE = /^(\*|([a-z][a-z0-9_]{1,19}:)?[a-z][a-z0-9_]{0,39})$/;
 
@@ -206,6 +215,7 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
   for (const t of [...lesen, ...schreiben]) if (!TYPVERWEIS_ODER_ALLE.test(t)) fehler.push(`code.rechte: „${t}“ ist kein gültiger Mappentyp-Verweis.`);
   // Benutzer sehen Pakete nie (auch nicht mit "*"), siehe Handbuch „Pakete mit Code“.
   for (const t of [...lesen, ...schreiben]) if (t === 'dms:benutzer') fehler.push('code.rechte: dms:benutzer ist für Pakete nicht erlaubt – Pakete sehen keine Benutzer.');
+  else if (t.startsWith('dms:') && !DMS_RECHTE_TYPEN[t.slice(4)]) fehler.push(`code.rechte: „${t}“ – diesen Mappentyp bringt das DMS nicht mit. Erlaubt sind ${Object.keys(DMS_RECHTE_TYPEN).map((k) => `dms:${k}`).join(', ')}.`);
   const dokumente = (r.dokumente ?? 'keine') as DokumentRecht;
   if (!(dokumente in DOKUMENT_RECHTE)) fehler.push('code.rechte.dokumente: keine, lesen oder schreiben.');
   const netz = liste(x.netz, 'code.netz');
