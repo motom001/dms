@@ -259,6 +259,8 @@ const konsole = new Konsolenzugang();
 // Anmeldung über einen Anbieter (#241); Client-Secret verschlüsselt mit dem Schlüssel des DMS.
 const oidc = new Oidc({ einstellungen: pgEinstellungen(sql, cfg.haushalt), verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w) });
 konten.verbindeAnbieter(() => oidc.bereit());
+// Nach dem Schlüsselwechsel das zwischengespeicherte Client-Secret neu lesen (#410).
+tresor.beimWechsel(async () => oidc.vergiss());
 // Paket-Läufer (#338): Pakete mit Code in einem eigenen Prozess; ihre API-Anfragen laufen über app.inject.
 const apiSchluessel = new ApiSchluesselDienst(messung.umhuelle(pgApiSchluesselRepo(sql), 'apischluessel'));
 let appFuerPakete: Awaited<ReturnType<typeof baueApp>> | null = null;

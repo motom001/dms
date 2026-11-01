@@ -384,6 +384,9 @@ export class Dienst {
     this.tresor = opt.tresor;
     this.einstellungen = opt.einstellungen;
     this.tresor?.registriere(() => this.unlesbarePasswoerter());
+    // Was verschlüsselt ist, je Art (#410): dieselben Stellen, die der Schlüsselwechsel umschlüsselt.
+    // Passwortfelder meldet unlesbarePasswoerter genauer (mit Feldnamen), den Mailserver der Betrieb.
+    this.tresor?.registriereBestand(() => this.repo.verschluesselteFundstellen(), ['passwortfeld', 'mail']);
   }
 
   /** Das Repo – innerhalb von `inTransaktion` das der Transaktion. */
