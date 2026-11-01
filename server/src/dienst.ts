@@ -28,7 +28,7 @@ import type { ExportQuelle } from './vollexport';
 import { sammleBaum, type BaumQuelle } from './baum';
 import { BAUM_STANDARD, bereinigeBaumOptionen, verweisartVon, type Baum } from '../../shared/src/baum';
 import { liesLoeschAuswahl, loeschErinnerung, loeschVorschlag, LOESCH_TIEFE, planeLoeschung, type LoeschKante, type LoeschPlan, type LoeschVorschau } from '../../shared/src/loeschbaum';
-import { AUSKUNFT_PASSWORT_MIN, auswahlProbleme as auskunftProbleme, fristBis, liesAuswahl, liesDatenschutz, personenTypen, type AuskunftMappe, type AuskunftVorschau, type AuskunftVorschlag, type Datenschutz } from '../../shared/src/auskunft';
+import { AUSKUNFT_PASSWORT_MIN, auswahlProbleme as auskunftProbleme, fristBis, liesAuswahl, liesDatenschutz, personenTypen, type AuskunftErwaehnung, type AuskunftMappe, type AuskunftVorschau, type Datenschutz } from '../../shared/src/auskunft';
 import { auskunftMail, LINK_FEHLVERSUCHE_MAX, LINK_STATUS, liesLinkEingabe, linkStatus, normiereCode, type AuskunftLink, type AuskunftStand } from '../../shared/src/auskunft';
 import { neuerAbrufcode, SCHLUESSEL_MUSTER } from './abruf';
 import { hashePasswort, hasheSchluessel, neuerSchluessel, pruefePasswort } from './passwort';
@@ -4616,51 +4616,25 @@ export class Dienst {
     return erg;
   }
 
-  /** Suchbegriffe aus der Mappe des Betroffenen: Titel, E-Mail, Kundennummer, IBAN, Name. */
-  private auskunftBegriffe(m: Mappe, typ: Mappentyp | undefined): string[] {
-    const b = new Set<string>();
-    if ((m.titel ?? '').trim().length >= 4) b.add(m.titel!.trim());
-    for (const f of typ?.felder ?? []) {
-      if (f.typ !== 'text') continue;
-      const v = auswahlText(m.werte[f.key]).trim();
-      if (v.length < 4 || istVerschluesselt(v)) continue;
-      if (/mail|kunden|nummer|iban|name|vertrags/i.test(`${f.key} ${f.label}`) || istEmail(v)) b.add(v);
-    }
-    return [...b].slice(0, 6);
-  }
-
   /**
-   * Prüfliste einer Auskunft (#396): Baum ab der Mappe des Betroffenen (Tiefe einstellbar, Vorgabe 2,
-   * beide Richtungen, ohne Benutzer und Rollen), je Mappe Dokumente, Notizen, Historie; dazu
-   * Volltext-Treffer außerhalb des Baums als Vorschläge.
+   * Prüfliste einer Auskunft (#396, #472): Baum ab der Mappe des Betroffenen (Tiefe einstellbar, Vorgabe 2,
+   * beide Richtungen, nach oben nie wieder nach unten, ohne Benutzer und Rollen), nur über Verweise der Art
+   * Zugehörigkeit weiter – Bezug-Mappen stehen als Blatt da (`nurBezug`). Je Mappe Dokumente, Notizen,
+   * Historie. Keine Volltext-Vorschläge mehr (#472); die Eingabe `vorschlaege` wird ignoriert.
    */
   async auskunftVorschau(e: unknown, z: Zugriff): Promise<AuskunftVorschau> {
     const o = (e ?? {}) as Record<string, unknown>;
     const mappeId = String(o.mappeId ?? '');
     const sys = await this.sichereSystem();
     const ohne = new Set([sys.benutzer.id, sys.rolle.id]);
-    const baum = await this.baum(mappeId, { tiefe: o.tiefe, richtungen: o.richtungen, max: 1000, seitwaerts: false, ohneTypen: [...ohne] }, z);
+    const baum = await this.baum(mappeId, { tiefe: o.tiefe, richtungen: o.richtungen, max: 1000, seitwaerts: false, ohneTypen: [...ohne], nurZugehoerigkeit: true }, z);
     const im = new Set(baum.knoten.map((k) => k.id));
     // „Daten Dritter?“: Nachbarn außerhalb der Sammlung, die selbst eine Person sind (Mappentyp „betrifft eine Person“).
     const person = new Set(personenTypen(await this.datenschutz()));
     const dritte = new Map(baum.knoten.map((k) => [k.id, [...new Set([...k.aussen.verweistAuf, ...k.aussen.verwiesenVon]
       .filter((a) => !!a.typId && person.has(a.typId) && !ohne.has(a.typId)).map((a) => a.titel))]] as [string, string[]]));
     const mappen = await this.auskunftInhalte([...im], z.typen, dritte);
-    // Volltext-Treffer (Name, E-Mail, Kundennummer, IBAN) – nur als Vorschlag.
-    const start = (await this.repo.holeMappe(mappeId))!;
-    const begriffe = o.vorschlaege === false ? [] : this.auskunftBegriffe(start, z.typen.get(start.typId));
-    const vorschlaege: AuskunftVorschlag[] = [];
-    const gesehen = new Set<string>();
-    for (const begriff of begriffe) {
-      const s = await this.repo.seite({ suche: begriff, volltext: true, notizen: true, lesen: z.lesen, von: 0, anzahl: 25 });
-      for (const m of s.mappen) {
-        if (im.has(m.id) || gesehen.has(m.id) || ohne.has(m.typId) || !z.typen.has(m.typId)) continue;
-        gesehen.add(m.id);
-        if (vorschlaege.length < 30) vorschlaege.push({ mappeId: m.id, typId: m.typId, typ: z.typen.get(m.typId)?.name ?? '', titel: m.titel ?? '', begriff });
-      }
-    }
-    const vorschlagMappen = await this.auskunftInhalte(vorschlaege.map((v) => v.mappeId), z.typen, new Map());
-    return { baum, mappen, vorschlaege, vorschlagMappen, begriffe, frist: fristBis(heuteIn()) };
+    return { baum, mappen, frist: fristBis(heuteIn()) };
   }
 
   /**
@@ -4671,11 +4645,15 @@ export class Dienst {
   async auskunftDaten(e: unknown, z: Zugriff, x: { mandant: string; version: string }): Promise<AuskunftDaten> {
     const o = (e ?? {}) as Record<string, unknown>;
     if (o.geprueft !== true) throw new Fachfehler(422, 'Bitte bestätige, dass du die Auswahl geprüft hast – ungeprüft geht nichts hinaus.');
-    const vorschau = await this.auskunftVorschau({ mappeId: o.mappeId, tiefe: o.tiefe, richtungen: o.richtungen, vorschlaege: Array.isArray((o.auswahl as Record<string, unknown> | undefined)?.mappen) }, z);
-    const bekannt = { ...vorschau.vorschlagMappen, ...vorschau.mappen };
+    const vorschau = await this.auskunftVorschau({ mappeId: o.mappeId, tiefe: o.tiefe, richtungen: o.richtungen }, z);
+    const bekannt = vorschau.mappen;
+    const bezug = new Map(vorschau.baum.knoten.filter((k) => k.nurBezug && k.ueber).map((k) => [k.id, k] as const));
     const a = liesAuswahl(o.auswahl);
-    const p = auskunftProbleme(a, bekannt);
+    const p = auskunftProbleme(a, bekannt, new Set(bezug.keys()));
     if (p.length) throw new Fachfehler(422, p.join(' '));
+    // Bezug-Mappen (#472), die nicht ganz aufgenommen sind: nur Art, Titel und Feld.
+    const erwaehnungen: AuskunftErwaehnung[] = a.erwaehnungen.filter((id) => !a.mappen.includes(id)).map((id) => bezug.get(id)!)
+      .map((k) => ({ mappeId: k.id, typ: k.typ, titel: k.titel, feld: k.ueber!.feld, richtung: k.ueber!.richtung }));
     const passwort = typeof o.passwort === 'string' && o.passwort ? o.passwort : null;
     if (passwort && passwort.length < AUSKUNFT_PASSWORT_MIN) throw new Fachfehler(422, `Das Passwort für die ZIP-Datei braucht mindestens ${AUSKUNFT_PASSWORT_MIN} Zeichen.`);
     const start = (await this.repo.holeMappe(vorschau.baum.startId))!;
@@ -4717,7 +4695,8 @@ export class Dienst {
       titel,
       start: { id: start.id, titel: start.titel ?? '', typ: z.typen.get(start.typId)?.name ?? '' },
       datenschutz: ds, quelle, mappen, typen, kanaele, passwort,
-      anzahl: { mappen: mappen.length, dokumente: dokumente.length, bytes: dokumente.reduce((s, d) => s + d.groesse, 0), notizen: not.size, historie: hist.size, ohneNotizen: a.ohneNotizen.filter((n) => !not.has(n.id)).length },
+      erwaehnungen,
+      anzahl: { mappen: mappen.length, dokumente: dokumente.length, bytes: dokumente.reduce((s, d) => s + d.groesse, 0), notizen: not.size, historie: hist.size, ohneNotizen: a.ohneNotizen.filter((n) => !not.has(n.id)).length, erwaehnungen: erwaehnungen.length },
       gruende: a.ohneNotizen.filter((n) => !not.has(n.id)).map((n) => n.grund),
       empfaenger: typeof o.empfaenger === 'string' ? o.empfaenger.trim().slice(0, 2000) : ds.empfaenger,
       anmerkung: typeof o.anmerkung === 'string' ? o.anmerkung.trim().slice(0, 2000) : '',
@@ -4733,7 +4712,7 @@ export class Dienst {
     const n = d.anzahl;
     await this.notiere(d.start.id, von.id, 'auskunft', {
       text: `Auskunft nach Art. 15 DSGVO erstellt: ${n.mappen} ${n.mappen === 1 ? 'Mappe' : 'Mappen'}, ${n.dokumente} ${n.dokumente === 1 ? 'Dokument' : 'Dokumente'}`,
-      mappen: n.mappen, dokumente: n.dokumente, notizen: n.notizen, historie: n.historie, ohneNotizen: n.ohneNotizen,
+      mappen: n.mappen, dokumente: n.dokumente, notizen: n.notizen, historie: n.historie, ohneNotizen: n.ohneNotizen, ...(n.erwaehnungen ? { erwaehnungen: n.erwaehnungen } : {}),
       ...(d.gruende.length ? { gruende: d.gruende } : {}), verschluesselt: !!d.passwort, auskunft: info.id,
     });
     protokoll.modul('datenschutz').info('Auskunft erstellt', { mappeId: d.start.id, mappen: n.mappen, dokumente: n.dokumente, notizen: n.notizen, ohneNotizen: n.ohneNotizen, verschluesselt: !!d.passwort, mb: Math.round(info.bytes / 1024 ** 2), von: von.email });

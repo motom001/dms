@@ -3,7 +3,7 @@
  * und Werkbank. Gesammelt wird mit der Baum-Sammlung (baum.ts); erzeugt wird eine ZIP-Datei mit
  * Deckblatt, Übersicht, Dokumenten und JSON im Format des Vollexports.
  */
-import type { Baum } from './baum';
+import type { Baum, BaumRichtung } from './baum';
 
 /** Je Mappentyp: betrifft eine Person? Zweck der Verarbeitung (für das Deckblatt). */
 export interface DatenschutzTyp { person: boolean; zweck: string }
@@ -90,18 +90,28 @@ export interface AuskunftMappe {
   /** Passwortfelder werden nie mitgegeben (Bezeichnungen). */
   ohneFelder: string[];
 }
-/** Volltext-Treffer außerhalb des Baums – nur als Vorschlag, standardmäßig nicht ausgewählt. */
-export interface AuskunftVorschlag { mappeId: string; typId: string; typ: string; titel: string; begriff: string }
-
+/**
+ * Prüfliste (#396, #472): Baum ab der Person – nach unten alles, nach oben nur weiter nach oben – und nur
+ * über Verweise der Art „Zugehörigkeit“ weiter. Mappen, die nur über „Bezug“ verbunden sind
+ * (`baum.knoten[].nurBezug`, z. B. ein Vertrag mit der Person als Ansprechpartner), gehen standardmäßig
+ * nur als Erwähnung hinaus (Art, Titel, Feld); ganz aufnehmen kann man sie bewusst. Volltext-Vorschläge
+ * gibt es nicht (#472: Verwechslungen, Gefahr fremder Inhalte).
+ */
 export interface AuskunftVorschau {
   baum: Baum;
+  /** Inhalte je Mappe des Baums – auch der Bezug-Mappen (für „ganz aufnehmen“). */
   mappen: Record<string, AuskunftMappe>;
-  /** Vorgeschlagene Mappen außerhalb des Baums, mit ihren Inhalten wie oben. */
-  vorschlaege: AuskunftVorschlag[];
-  vorschlagMappen: Record<string, AuskunftMappe>;
-  begriffe: string[];
   /** Ende der Antwortfrist, wenn heute eingegangen. */
   frist: string;
+}
+
+/** Eine Bezug-Mappe, die nur als Erwähnung hinausgeht: „als Ansprechpartner eingetragen in Vertrag „W-1““. */
+export interface AuskunftErwaehnung { mappeId: string; typ: string; titel: string; feld: string; richtung: BaumRichtung }
+
+/** Text einer Erwähnung – ohne Dokumente, Notizen und übrige Feldwerte der Mappe. */
+export function erwaehnungText(e: Pick<AuskunftErwaehnung, 'typ' | 'titel' | 'feld' | 'richtung'>): string {
+  const mappe = `${e.typ ? `${e.typ} ` : ''}„${e.titel || 'Ohne Titel'}“`;
+  return e.richtung === 'verwiesenVon' ? `als „${e.feld}“ eingetragen in ${mappe}` : `verweist über „${e.feld}“ auf ${mappe}`;
 }
 
 /** Was hinausgeht: nur ausdrücklich Ausgewähltes. */
@@ -113,6 +123,8 @@ export interface AuskunftAuswahl {
   historie: string[];
   /** Abgewählte Notizen ausgewählter Mappen – je mit Begründung. */
   ohneNotizen: Array<{ id: string; grund: string }>;
+  /** Bezug-Mappen (#472), die nur als Erwähnung hinausgehen (Art, Titel, Feld); ganz aufgenommene stehen in `mappen`. */
+  erwaehnungen: string[];
 }
 
 const ids = (v: unknown) => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string'))] : []);
@@ -122,7 +134,7 @@ export function liesAuswahl(v: unknown): AuskunftAuswahl {
   const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
   const ohne = Array.isArray(o.ohneNotizen) ? o.ohneNotizen : [];
   return {
-    mappen: ids(o.mappen), dokumente: ids(o.dokumente), notizen: ids(o.notizen), historie: ids(o.historie),
+    mappen: ids(o.mappen), dokumente: ids(o.dokumente), notizen: ids(o.notizen), historie: ids(o.historie), erwaehnungen: ids(o.erwaehnungen),
     ohneNotizen: ohne.map((x) => (x && typeof x === 'object' ? x as Record<string, unknown> : {})).filter((x) => typeof x.id === 'string')
       .map((x) => ({ id: x.id as string, grund: text(x.grund, GRUND_MAX) })),
   };
@@ -131,10 +143,11 @@ export function liesAuswahl(v: unknown): AuskunftAuswahl {
 /**
  * Prüft die Auswahl gegen die gesammelten Mappen. Liefert Fehlermeldungen (leer = in Ordnung):
  * nur bekannte Mappen; Dokumente und Notizen nur aus ausgewählten Mappen; jede Notiz einer
- * ausgewählten Mappe ist entweder dabei oder hat eine Begründung.
+ * ausgewählten Mappe ist entweder dabei oder hat eine Begründung; Erwähnungen nur von Bezug-Mappen.
  */
-export function auswahlProbleme(a: AuskunftAuswahl, bekannt: Record<string, AuskunftMappe>): string[] {
+export function auswahlProbleme(a: AuskunftAuswahl, bekannt: Record<string, AuskunftMappe>, bezug: ReadonlySet<string> = new Set()): string[] {
   const p: string[] = [];
+  if (a.erwaehnungen.some((id) => !bezug.has(id))) p.push('Erwähnungen nur von Mappen, die über einen Bezug verbunden sind – bitte neu sammeln.');
   if (!a.mappen.length) p.push('Bitte mindestens eine Mappe auswählen.');
   const fremd = a.mappen.filter((id) => !bekannt[id]);
   if (fremd.length) p.push(`${fremd.length} ausgewählte Mappen gehören nicht zur Sammlung – bitte neu sammeln.`);

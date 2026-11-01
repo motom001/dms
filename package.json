@@ -1,7 +1,7 @@
 {
   "name": "dms",
   "private": true,
-  "version": "0.99.1",
+  "version": "0.99.2",
   "license": "Apache-2.0",
   "description": "Selbst gehostetes, persönliches Informations- und Dokumentenmanagementsystem",
   "type": "module",

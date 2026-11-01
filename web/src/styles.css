@@ -1313,6 +1313,8 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .auskunft-dritte { color: var(--warn); margin: 0; }
 .auskunft-typen .eigenschaft input { width: 100%; }
 @media (max-width: 820px) { .auskunft-baum { padding-left: 10px; } .auskunft-inhalt { margin-left: 18px; } }
+.auskunft-ganz { margin-left: 26px; }
+@media (max-width: 820px) { .auskunft-ganz { margin-left: 18px; } }
 /* Auskunft zustellen (#455): Werkbank → Datenschutz und öffentliche Abrufseite. Eigene Klassen – nichts Globales umdefinieren. */
 .auskunft-bereit { min-width: 0; overflow-wrap: anywhere; }
 .auskunft-zustellen { margin-top: 10px; padding: 12px; border: 1px solid var(--linie); border-radius: 8px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
