@@ -168,10 +168,17 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
   useEffect(() => {
     if (ansicht) offenRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [ansicht]);
-  const umschalten = (x: Dokument) => { if (x.anzeigbar && !entfernt.includes(x.id)) setAnsicht(x.id === ansicht ? undefined : x.id); };
+  // Handy (#505): kein eingebetteter Rahmen – Tippen öffnet das Dokument im Vollbild (Anzeige des Browsers, Zwei-Finger-Zoom, Zurück mit einem Tipp).
+  const handy = useHandy();
+  const [menue, setMenue] = useState<string>();
+  const umschalten = (x: Dokument) => {
+    if (!x.anzeigbar || entfernt.includes(x.id)) return;
+    if (handy) { location.assign(dokumentUrl(x.id)); return; }
+    setAnsicht(x.id === ansicht ? undefined : x.id);
+  };
   const zeilenKlick = (x: Dokument, e: MouseEvent) => {
     // Knöpfe, Links, Kästchen, der Volltext und die Dialoge (Seiten, Verkleinern, Schwärzen) behalten ihre eigene Funktion.
-    if ((e.target as HTMLElement).closest('a, button, input, label, pre, .dokansicht, .pdfseiten')) return;
+    if ((e.target as HTMLElement).closest('a, button, input, label, pre, .dokansicht, .pdfseiten, .hy-schleier, .dk-blatt, form')) return;
     umschalten(x);
   };
 
@@ -320,6 +327,38 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                         {!weg && <OcrAnzeige s={standVon(x)} erneut={() => void erneut(x.id)} text={() => void zeigeText(x.id)} textOffen={text?.id === x.id} />}
                         {!weg && text?.id === x.id && <pre className="volltext">{text.text ?? 'Kein Volltext vorhanden.'}</pre>}
                       </div>
+                      {handy ? (
+                        <div className="zeilenaktionen dk-handy">
+                          {klickbar && <a className="knopf primaer dk-gross" href={dokumentUrl(x.id)} aria-label={`${x.name} öffnen`}>Öffnen</a>}
+                          {!weg && !stempelPflicht && <DokTeilen d={x} />}
+                          <button type="button" className="knopf dk-gross dk-mehr" aria-haspopup="menu" aria-expanded={menue === x.id} aria-label={`Weitere Aktionen für ${x.name}`} onClick={() => setMenue(x.id)}>⋯</button>
+                          {menue === x.id && <>
+                            <div className="hy-schleier" aria-hidden="true" onClick={() => setMenue(undefined)} />
+                            <div className="dk-blatt" role="menu" aria-label={`Aktionen für ${x.name}`} onClick={(e) => { if ((e.target as HTMLElement).closest('a, button')) setMenue(undefined); }}>
+                              <p className="dk-titel">{x.name}</p>
+                        {!weg && !stempelPflicht && <a className="textknopf" href={dokumentUrl(x.id, true)}>Herunterladen</a>}
+                        {!weg && kannStempeln(x.mime) && typ && <button type="button" className="textknopf" aria-expanded={stempelOffen?.id === x.id && !stempelOffen.version}
+                          title="Eine Kopie mit Stempel oder Wasserzeichen herunterladen; das Original bleibt unverändert"
+                          onClick={() => setStempelOffen(stempelOffen?.id === x.id && !stempelOffen.version ? undefined : { id: x.id })}>{stempelPflicht ? 'Herunterladen mit Stempel' : 'Mit Stempel …'}</button>}
+                        {bearbeitbar && !weg && x.mime === 'application/pdf' && <button type="button" className="textknopf" aria-expanded={seitenOffen === x.id}
+                          onClick={() => { setPdfMeldung(undefined); setKleinOffen(undefined); setSchwarzOffen(undefined); setSeitenOffen(seitenOffen === x.id ? undefined : x.id); }} title="Seiten drehen, löschen, umsortieren oder teilen">Seiten</button>}
+                        {!weg && x.mime === 'application/pdf' && x.groesse >= VERKLEINERN_AB && <button type="button" className="textknopf" aria-expanded={kleinOffen === x.id}
+                          onClick={() => { setPdfMeldung(undefined); setSeitenOffen(undefined); setSchwarzOffen(undefined); setKleinOffen(kleinOffen === x.id ? undefined : x.id); }} title="Bilder im PDF herunterrechnen – als neue Version oder als Kopie zum Herunterladen">Verkleinern</button>}
+                        {bearbeitbar && !weg && kannSchwaerzen(x.mime) && <button type="button" className="textknopf" aria-expanded={schwarzOffen === x.id}
+                          onClick={() => { setPdfMeldung(undefined); setSeitenOffen(undefined); setKleinOffen(undefined); setSchwarzOffen(schwarzOffen === x.id ? undefined : x.id); }} title="Stellen endgültig schwärzen – als Kopie, das Original bleibt">Schwärzen</button>}
+                        {!weg && !nurLesen && neuLaden && !x.archivnummer && asn?.id !== x.id && <button type="button" className="textknopf" title="Nummer vom Aufkleber auf dem Papieroriginal eintragen" onClick={() => setAsn({ id: x.id, wert: '' })}>Archivnummer</button>}
+                        {!nurLesen && versioniert && !weg && <button type="button" className="textknopf" onClick={() => { setErsetzeId(x.id); ersetzFeld.current?.click(); }} title="Neue Version hochladen; die bisherige bleibt erhalten">Ersetzen</button>}
+                        {!nurLesen && <button type="button" className={`textknopf ${weg ? '' : 'gefahr'}`} onClick={async () => {
+                          // Mit allen Versionen (#194): nachfragen, mit Zahl.
+                          if (!weg && (x.aeltere ?? 0) > 0 && !(await rueckfrage({ titel: `„${x.name}“ mit allen ${(x.aeltere ?? 0) + 1} Versionen löschen?`, text: d.zaehler.papierkorbTage ? 'Sie kommen beim Speichern in den Papierkorb und lassen sich von dort wiederherstellen.' : 'Das ist endgültig.', ja: 'Löschen', gefahr: true }))) return;
+                          entferne(x.id);
+                        }}>{weg ? 'Behalten' : 'Löschen'}</button>}
+
+                              <button type="button" className="textknopf dk-zu">Schließen</button>
+                            </div>
+                          </>}
+                        </div>
+                      ) : (
                       <div className="zeilenaktionen">
                         {klickbar && <a className="symbolverweis" href={dokumentUrl(x.id)} target="_blank" rel="noreferrer" title="In neuem Tab öffnen" aria-label={`${x.name} in neuem Tab öffnen`}>↗</a>}
                         {!weg && !stempelPflicht && <a className="textknopf" href={dokumentUrl(x.id, true)}>Herunterladen</a>}
@@ -339,7 +378,9 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                           if (!weg && (x.aeltere ?? 0) > 0 && !(await rueckfrage({ titel: `„${x.name}“ mit allen ${(x.aeltere ?? 0) + 1} Versionen löschen?`, text: d.zaehler.papierkorbTage ? 'Sie kommen beim Speichern in den Papierkorb und lassen sich von dort wiederherstellen.' : 'Das ist endgültig.', ja: 'Löschen', gefahr: true }))) return;
                           entferne(x.id);
                         }}>{weg ? 'Behalten' : 'Löschen'}</button>}
+
                       </div>
+                      )}
                     </div>
                     {stempelOffen?.id === x.id && !weg && (
                       <StempelDialog key={`${x.id}-${stempelOffen.version ?? ''}`} d={x} typ={typ} mappe={mappeTitel} version={stempelOffen.version} schliessen={() => setStempelOffen(undefined)} />
@@ -369,6 +410,57 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
             </ul>
           </>}
     </div>
+  );
+}
+
+/** Schmaler Bildschirm (Handy, #505) – wie die Blätter von unten in styles.css (bis 600 px). */
+function useHandy() {
+  const abfrage = '(max-width: 600px)';
+  const [an, setAn] = useState(() => typeof matchMedia === 'function' && matchMedia(abfrage).matches);
+  useEffect(() => {
+    if (typeof matchMedia !== 'function') return;
+    const m = matchMedia(abfrage);
+    const f = () => setAn(m.matches);
+    m.addEventListener('change', f);
+    return () => m.removeEventListener('change', f);
+  }, []);
+  return an;
+}
+
+/**
+ * Teilen (#505, Web Share API): „An … senden“ mit der Datei, wo der Browser das kann. Safari verlangt das
+ * Teilen direkt aus dem Tipp; dauert das Laden zu lange, steht danach „Jetzt teilen“ da (zweiter Tipp).
+ */
+function DokTeilen({ d }: { d: Dokument }) {
+  const [datei, setDatei] = useState<File | null>(null);
+  const [laeuft, setLaeuft] = useState(false);
+  const [fehler, setFehler] = useState<string>();
+  const kann = typeof navigator !== 'undefined' && typeof navigator.share === 'function' && typeof navigator.canShare === 'function'
+    && navigator.canShare({ files: [new File([''], d.name, { type: d.mime })] });
+  if (!kann) return null;
+  async function teile() {
+    setFehler(undefined);
+    let f = datei;
+    try {
+      if (!f) {
+        setLaeuft(true);
+        const r = await fetch(dokumentUrl(d.id, true), { credentials: 'same-origin', headers: { 'x-dms': '1' } });
+        if (!r.ok) throw new Error('Das Dokument ließ sich nicht laden.');
+        f = new File([await r.blob()], d.name, { type: d.mime });
+        setDatei(f);
+      }
+      await navigator.share({ files: [f], title: d.name });
+    } catch (e) {
+      const n = (e as Error).name;
+      if (n === 'NotAllowedError') return; // zweiter Tipp: „Jetzt teilen“
+      if (n !== 'AbortError') setFehler((e as Error).message);
+    } finally { setLaeuft(false); }
+  }
+  return (
+    <>
+      <button type="button" className="knopf dk-gross" disabled={laeuft} onClick={() => void teile()}>{laeuft ? 'Lade …' : datei ? 'Jetzt teilen' : 'Teilen'}</button>
+      {fehler && <span className="fehlertext klein">{fehler}</span>}
+    </>
   );
 }
 
