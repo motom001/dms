@@ -70,6 +70,7 @@ export const HILFE = {
   'werkbank.datenschutz.anrede': admin('datenschutz/', 'Anrede in Unterlagen für Dritte', 'anrede'),
   'werkbank.auskunft': admin('datenschutz/', 'Auskunft nach Art. 15 DSGVO', 'auskunft-nach-art-15-dsgvo'),
   'werkbank.auskunft.zustellen': admin('datenschutz/', 'Auskunft zustellen', 'auskunft-zustellen'),
+  'werkbank.loeschkonzept': admin('loeschkonzept/', 'Löschkonzept aus dem DMS erzeugen', 'aus-dem-dms-erzeugen'),
   'werkbank.dateienpruefen': admin('archiv/', 'Alle Dateien prüfen', 'alle-dateien-prufen'),
   'werkbank.auswahlfilter': admin('mappentypen/', 'Auswahlfilter am Verweisfeld', 'auswahl-einschranken'),
   'werkbank.nummernkreise.nachtragen': admin('nummernkreise/', 'Nummern nachträglich vergeben', 'nummern-nachtraglich-vergeben'),
