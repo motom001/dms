@@ -688,6 +688,30 @@ async function main() {
   await bild(s, 'benutzermenue', { clip: { x: 1440 - 420, y: 0, width: 420, height: 360 } });
   await s.keyboard.press('Escape');
 
+  // Fehler nachstellen (#418): eigene Admin-Sitzung, als Ben anmelden; zurück nur über den gelben Banner.
+  {
+    const anm = await fetch(`${BASIS}/api/konto/anmelden`, { method: 'POST', headers: { 'x-dms': '1', 'content-type': 'application/json' }, body: JSON.stringify({ email: ADMIN.email, passwort: ADMIN.passwort }) });
+    const adminCookie = (anm.headers.get('set-cookie') ?? '').split(';')[0];
+    const ben = (await api('GET', '/api/benutzer')).find((b) => b.email === MITGLIED.email);
+    const v = await fetch(`${BASIS}/api/benutzer/${ben.id}/vertreten`, { method: 'POST', headers: { 'x-dms': '1', cookie: adminCookie } });
+    const vc = (v.headers.get('set-cookie') ?? adminCookie).split(';')[0];
+    const [name, wert] = vc.split('=');
+    const kv = await browser.newContext({ viewport: { width: 1100, height: 520 }, colorScheme: 'light', locale: 'de-DE', timezoneId: 'Europe/Berlin' });
+    await kv.addCookies([{ name, value: wert, url: BASIS }]);
+    const sv = await kv.newPage();
+    await geheZu(sv, '/ablage/eingang');
+    await sv.locator('.vertretungsbanner').waitFor();
+    await sv.locator('.benutzermenue .wer').click();
+    const menue = sv.locator('.benutzermenue .menue');
+    await menue.waitFor();
+    if (await menue.getByText('Zurück zum eigenen Konto').count()) throw new Error('#418: „Zurück zum eigenen Konto“ steht wieder im Benutzermenü.');
+    await bild(sv, 'vertretung', { clip: { x: 0, y: 0, width: 1100, height: 420 } });
+    await sv.keyboard.press('Escape');
+    await sv.locator('.vertretungsbanner').getByRole('button', { name: 'Zurück zum eigenen Konto' }).click();
+    await sv.locator('.vertretungsbanner').waitFor({ state: 'detached' });
+    await kv.close();
+  }
+
   // Profil (#69) und Fehler melden (#70)
   await geheZu(s, '/profil/sicherheit');
   await s.getByRole('heading', { name: 'Meine angemeldeten Geräte' }).waitFor();
