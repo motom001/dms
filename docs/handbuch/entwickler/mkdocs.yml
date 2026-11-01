@@ -71,6 +71,7 @@ nav:
   - Release: release.md
   - Pakete entwickeln: pakete.md
   - Leistung: leistung.md
+  - Pakete mit Code: pakete-code.md
   - Weiteres:
       - Begriffe (Glossar): https://motom001.github.io/dms/benutzer/aktuell/begriffe/
       - Issues auf GitHub: https://github.com/motom001/dms/issues

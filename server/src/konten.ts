@@ -216,6 +216,29 @@ export class Konten {
     return { benutzer: b, sitzung: s };
   }
 
+  /** Dienstkonto eines Pakets mit Code (#338) anlegen bzw. wieder einschalten; meldet sich nie an. */
+  async dienstkonto(paketId: string, name: string): Promise<Benutzer> {
+    const anzeige = `Paket ${name}`.slice(0, 120);
+    const da = await this.repo.dienstkonto(paketId);
+    if (!da) return this.repo.legeDienstkontoAn({ id: randomUUID(), paketId, name: anzeige });
+    if (!da.aktiv || da.name !== anzeige) return this.repo.aendereBenutzer(da.id, { aktiv: true, name: anzeige });
+    return da;
+  }
+
+  /** Dienstkonto ausschalten (Paket entfernt): Historie behält den Namen, Schlüssel gelten nicht mehr. */
+  async dienstkontoAus(paketId: string): Promise<void> {
+    const da = await this.repo.dienstkonto(paketId);
+    if (da?.aktiv) await this.repo.aendereBenutzer(da.id, { aktiv: false });
+  }
+
+  listeDienstkonten() { return this.repo.listeDienstkonten(); }
+
+  /** Benutzer für Verwaltung, Vertretung, Abwesenheit, Links (#338): Dienstkonten von Paketen gibt es dort nicht. */
+  private async person(id: string): Promise<Benutzer | undefined> {
+    const b = await this.repo.holeBenutzer(id);
+    return b?.art === 'dienst' ? undefined : b;
+  }
+
   /** Aktiver Benutzer zur Id (für API-Schlüssel). */
   async benutzerMitId(id: string): Promise<Benutzer | undefined> {
     const b = await this.repo.holeBenutzer(id);
@@ -234,7 +257,7 @@ export class Konten {
   /* ---------- Sitzungen (Admin) ---------- */
 
   async sitzungenVon(benutzerId: string, aktuelleId?: string) {
-    if (!(await this.repo.holeBenutzer(benutzerId))) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');
+    if (!(await this.person(benutzerId))) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');
     return (await this.repo.listeSitzungen(benutzerId)).map(({ hash: _h, ...x }) => ({ ...x, aktuell: x.id === aktuelleId }));
   }
 
@@ -289,7 +312,7 @@ export class Konten {
    */
   async vertrete(admin: Benutzer, adminSchluessel: string | undefined, zielId: string, info: Geraet) {
     if (admin.rolle !== 'admin') throw new Fachfehler(403, 'Dafür sind Administratorrechte nötig.');
-    const ziel = await this.repo.holeBenutzer(zielId);
+    const ziel = await this.person(zielId);
     if (!ziel) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');
     if (ziel.id === admin.id) throw new Fachfehler(409, 'Du bist bereits du selbst.');
     if (!ziel.aktiv) throw new Fachfehler(409, 'Der Benutzer ist deaktiviert.');
@@ -417,14 +440,17 @@ export class Konten {
       const abwesend = a?.an && (!a.bis || a.bis >= heute)
         ? { wirkt: abwesenheitWirkt(a, heute), von: a.von, bis: a.bis, vertreter: name(a.vertreterId) } : undefined;
       return { id: b.id, name: b.name || b.email, aktiv: b.aktiv, ...(abwesend ? { abwesend } : {}) };
-    });
+    }).concat(
+      // Dienstkonten der Pakete (#338): nur für Namen in Historie und „angelegt von“ – nie auswählbar (aktiv: false).
+      (await this.repo.listeDienstkonten()).map((b) => ({ id: b.id, name: b.name, aktiv: false, art: 'dienst' as const })),
+    );
   }
 
   /* ---------- Abwesenheit mit Vertreter (#78) ---------- */
 
   /** Abwesenheit setzen – für sich selbst oder (Administrator) für andere. Vertreter ist Pflicht, sobald sie an ist. */
   async setzeAbwesenheit(ich: Benutzer, id: string, e: { an?: unknown; von?: unknown; bis?: unknown; vertreterId?: unknown }) {
-    const b = await this.repo.holeBenutzer(id);
+    const b = await this.person(id);
     if (!b) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');
     if (id !== ich.id && ich.rolle !== 'admin') throw new Fachfehler(403, 'Die Abwesenheit anderer pflegen nur Administratoren.');
     const datum = (v: unknown, was: string): string | null => {
@@ -438,7 +464,7 @@ export class Konten {
     if (a.an && a.bis && a.bis < heuteIn()) throw new Fachfehler(422, '„bis“ liegt in der Vergangenheit.');
     if (a.vertreterId) {
       if (a.vertreterId === id) throw new Fachfehler(422, 'Als Vertreter bitte einen anderen Benutzer wählen.');
-      const v = await this.repo.holeBenutzer(a.vertreterId);
+      const v = await this.person(a.vertreterId);
       if (!v || !v.aktiv) throw new Fachfehler(422, 'Der Vertreter muss ein aktiver Benutzer sein.');
     } else if (a.an || !b.aktiv) throw new Fachfehler(422, 'Bitte einen Vertreter wählen.');
     const alt = b.abwesenheit ?? KEINE_ABWESENHEIT;
@@ -451,7 +477,7 @@ export class Konten {
   /** Alle offenen Aufgaben an den hinterlegten Vertreter geben. */
   async aufgabenAnVertreter(ich: Benutzer, id: string) {
     if (id !== ich.id && ich.rolle !== 'admin') throw new Fachfehler(403, 'Nur für dich selbst oder als Administrator.');
-    const b = await this.repo.holeBenutzer(id);
+    const b = await this.person(id);
     if (!b) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');
     const v = b.abwesenheit?.vertreterId;
     if (!v) throw new Fachfehler(409, 'Es ist kein Vertreter hinterlegt.');
@@ -485,7 +511,7 @@ export class Konten {
   }
 
   async aendereBenutzer(ich: Benutzer, id: string, e: { name?: unknown; rolle?: unknown; aktiv?: unknown }) {
-    const b = await this.repo.holeBenutzer(id);
+    const b = await this.person(id);
     if (!b) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');
     const d: Partial<Pick<Benutzer, 'name' | 'rolle' | 'aktiv'>> = {};
     if (e.name !== undefined) d.name = text(e.name);
@@ -506,7 +532,7 @@ export class Konten {
   }
 
   async loescheBenutzer(ich: Benutzer, id: string) {
-    const b = await this.repo.holeBenutzer(id);
+    const b = await this.person(id);
     if (!b) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');
     if (id === ich.id) throw new Fachfehler(409, 'Du kannst dich nicht selbst löschen.');
     if (b.rolle === 'admin' && b.aktiv && (await this.anzahlAktiverAdmins(id)) === 0) throw new Fachfehler(409, 'Es muss mindestens einen aktiven Administrator geben.');
@@ -528,13 +554,13 @@ export class Konten {
   papierkorbHaken() {
     return {
       endgueltig: async (id: string) => {
-        const b = await this.repo.holeBenutzer(id);
+        const b = await this.person(id);
         // Nur Einladungen, die nie angenommen wurden (wie beim Löschen); sonst bleibt das Konto deaktiviert.
         if (b && !b.aktiv && !b.hatPasswort && !b.letzteAnmeldung) await this.repo.loescheBenutzer(id);
       },
       benutzer: () => this.repo.listeBenutzer(),
       wiederda: async (id: string, von: string | null) => {
-        const b = await this.repo.holeBenutzer(id);
+        const b = await this.person(id);
         if (b && !b.aktiv) await this.spiegle(await this.repo.aendereBenutzer(id, { aktiv: true }), von);
       },
     };
@@ -559,7 +585,7 @@ export class Konten {
   }
 
   async neuerLink(id: string): Promise<Ergebnis> {
-    const b = await this.repo.holeBenutzer(id);
+    const b = await this.person(id);
     if (!b) throw new Fachfehler(404, 'Diesen Benutzer gibt es nicht.');
     return this.verschickeLink(b, b.hatPasswort ? 'zuruecksetzen' : 'einladung');
   }

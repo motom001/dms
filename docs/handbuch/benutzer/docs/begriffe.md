@@ -248,6 +248,10 @@ Die Liste der Mappen, deren Aufbewahrungsfrist abgelaufen ist.
 Wie die Oberfläche aussieht – Logo, Schriftzug, Farben (hell, dunkel, hoher Kontrast oder nach Gerät) und eigenes CSS. Administratoren legen Designs unter Werkbank → Designs an und bestimmen den Standard; jeder Benutzer wählt seines im Profil unter „Darstellung“.  
 Siehe auch: [Darstellung](#darstellung).
 
+<a id="dienstkonto"></a>**Dienstkonto** · ~ mit Erklärung · Administratoren  
+Das Konto, mit dem ein Paket mit Code im DMS arbeitet, z. B. „Paket Texterkennung“. Es meldet sich nie an, steht nicht unter Benutzer, löscht nie und hat nur die Rechte aus dem Paket. In der Historie steht es dort, wo das Paket etwas geändert hat.  
+Siehe auch: [Paket-Läufer](#paket-laufer), [Benutzer](#benutzer).
+
 <a id="eingangsordner"></a>**Eingangsordner** · ~ mit Erklärung · Administratoren  
 Ein Ordner, den das DMS beobachtet, z. B. für „Scan to Folder“. Jede Datei darin wird Post.
 
@@ -266,8 +270,8 @@ Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem 
 Siehe auch: [Paketkatalog](#paketkatalog), [Expertenmodus](#expertenmodus), [Paket-Läufer](#paket-laufer).
 
 <a id="paket-laufer"></a>**Paket-Läufer** · ✗ Fachwort · Fortgeschrittene  
-Der Teil des DMS, der den Code von Paketen ausführt. Geplant – bis dahin läuft Code in Paketen nicht; ihre Einstellungen lassen sich schon pflegen.  
-Siehe auch: [Paket](#paket).
+Der Teil des DMS, der den Code von Paketen ausführt – abgeschottet in einem eigenen Prozess, mit Grenzen für Speicher und Zeit und nur mit den Rechten, die ein Administrator bei der Installation bestätigt hat. Seinen Stand zeigt Werkbank → Pakete → Paket im Abschnitt „Paket-Läufer“.  
+Siehe auch: [Paket](#paket), [Dienstkonto](#dienstkonto).
 
 <a id="paketkatalog"></a>**Paketkatalog** · ~ mit Erklärung · Administratoren  
 Die Liste der Pakete, die ein DMS installieren kann (eine Datei katalog.json im Netz). Das DMS fragt den offiziellen Katalog nur auf Knopfdruck ab („Katalog abrufen“). Weitere Kataloge trägt man im Expertenmodus unter „Weitere Quellen“ ein.  
@@ -479,6 +483,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Betrieb | Organisation (für die Vorlage) | `organisation (Vorlage)` |
 | Darstellung | Theme, Ansicht (für das Aussehen) | – |
 | Design | Theme | – |
+| Dienstkonto | Systembenutzer, Bot, technischer Benutzer | `benutzer.art = 'dienst'` |
 | Dokument | – | `Dokument` |
 | Erinnerung | – | `Erinnerung` |
 | Erweiterte Suche | – | `Suchformular` |
@@ -499,7 +504,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Nummernkreis | – | `Nummernkreis` |
 | Organisation | – | `basis_organisation` |
 | Paket | Plugin, Erweiterung, App, Modul | `InstalliertesPaket` |
-| Paket-Läufer | – | `PaketLaeufer` |
+| Paket-Läufer | Code im Paket-Läufer, Plugin-Host | `Paketlaeufer, PaketLaeufer` |
 | Paketkatalog | – | `Katalog, OFFIZIELLER_KATALOG` |
 | Person | Kontakt (als Mappentyp), Benutzer (für Kontakte) | `basis_person` |
 | Post | Posteingang, Inbox | – |

@@ -106,7 +106,7 @@ export function pgSystemQuelle(sql: postgres.Sql, haushaltId: string): SystemQue
           pg_database_size(current_database())::bigint AS groesse,
           (SELECT count(*) FROM mappen WHERE haushalt_id = ${haushaltId})::int AS mappen,
           (SELECT count(*) FROM mappentypen WHERE haushalt_id = ${haushaltId})::int AS typen,
-          (SELECT count(*) FROM benutzer WHERE haushalt_id = ${haushaltId})::int AS benutzer,
+          (SELECT count(*) FROM benutzer WHERE haushalt_id = ${haushaltId} AND art = 'person')::int AS benutzer,
           (SELECT count(*) FROM dokumente WHERE haushalt_id = ${haushaltId})::int AS dokumente,
           ((SELECT coalesce(sum(groesse), 0) FROM dokumente WHERE haushalt_id = ${haushaltId})
             -- Ältere Versionen (#194) zählen mit.

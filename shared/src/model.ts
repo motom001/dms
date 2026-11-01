@@ -323,6 +323,10 @@ export interface Benutzer {
   deaktiviert?: string | null;
   /** Offene Aufgaben (nur in der Benutzerverwaltung). */
   offeneAufgaben?: number;
+  /** Dienstkonto eines Pakets mit Code (#338): meldet sich nie an, erscheint in keiner Benutzerliste. */
+  art?: 'dienst';
+  /** Paket, zu dem das Dienstkonto gehört. */
+  paketId?: string;
 }
 
 /** Abwesenheit (#78): an/aus, optionaler Zeitraum (JJJJ-MM-TT, jeweils einschließlich), Vertreter. */
@@ -744,7 +748,7 @@ export const HISTORIENARTEN = {
   zugeordnet: 'Post zugeordnet', uebernommen: 'übernommen', dokument_version: 'neue Version',
   dokument_papierkorb: 'Dokument in den Papierkorb', dokument_wiederhergestellt: 'Dokument wiederhergestellt',
   pdf_bearbeitet: 'PDF bearbeitet', post_geteilt: 'Post geteilt',
-  archivnummer: 'Archivnummer',
+  archivnummer: 'Archivnummer', volltext: 'Volltext gesetzt',
 } as const;
 export type Historienart = keyof typeof HISTORIENARTEN;
 /** Eine Feldänderung: Werte lesbar zum Zeitpunkt der Änderung; Passwörter nur als „geändert“. */

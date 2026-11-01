@@ -16,6 +16,8 @@ export function Person({ id, ersatz, vor = '', className }: { id: string | null 
   if (!id) return <span className={className}>{vor}{ersatz ?? 'unbekannt'}</span>;
   const p = d.personen.find((x) => x.id === id);
   if (!p) return <span className={`person weg ${className ?? ''}`} title="Diesen Benutzer gibt es nicht mehr">{vor}{ersatz ?? 'gelöschter Benutzer'}</span>;
+  // Dienstkonto eines Pakets (#338): Name ohne Link, es gibt keine Benutzer-Mappe dazu.
+  if (p.art === 'dienst') return <span className={`person paket ${className ?? ''}`} title="Paket mit Code (Dienstkonto)">{vor}{p.name}</span>;
   const typ = d.typen.find((t) => t.system === 'benutzer');
   if (!typ || ohneLinks) return <span className={className}>{vor}{p.name}</span>;
   return <Link to={`/ablage/${typ.id}/${id}`} className={`person ${className ?? ''}`} title={`Mappe von ${p.name} öffnen${p.abwesend ? ` – ${abwesenheitText(p)}` : ''}`}>{vor}{p.name}</Link>;

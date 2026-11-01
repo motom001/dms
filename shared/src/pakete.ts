@@ -57,8 +57,10 @@ export interface InstalliertesPaket {
   einstellungen?: import('./paketeinstellungen').Einstellungsbeschreibung | null;
   /** Nur in der Antwort der Werkbank: Pflichtfelder der Einstellungen fehlen (#197). */
   einstellungenNoetig?: boolean;
-  /** Das Paket enthält Code (läuft erst mit dem Paket-Läufer). */
+  /** Das Paket enthält Code (#338: läuft im Paket-Läufer). */
   code?: boolean;
+  /** Code des Pakets (#338): Ereignisse, bestätigte Rechte und Netzadressen, Prüfwert des Moduls. */
+  laeufer?: PaketCode;
   /** Links aus dem Katalog (README, Changelog, Quelle), sofern bekannt. */
   links?: { readme?: string; changelog?: string; quelle?: string };
 }
@@ -140,3 +142,89 @@ export function herkunftText(h: Herkunft, person: (id: string | null) => string 
   if (h.art === 'katalog') return h.url === OFFIZIELLER_KATALOG ? 'offizieller Katalog' : `Katalog ${h.url}`;
   return `hochgeladen von ${person(h.von)} am ${new Date(h.am).toLocaleDateString('de-DE')}`;
 }
+
+/* ---------- Pakete mit Code (#338) ---------- */
+
+/** Volltext von einem Paket: so beginnt ocr.info; die eingebaute Texterkennung lässt ihn stehen. */
+export const PAKET_TEXT = 'Texterkennung durch Paket ';
+
+/** Was ein Paket mit Dokumenten darf. */
+export type DokumentRecht = 'keine' | 'lesen' | 'schreiben';
+export const DOKUMENT_RECHTE: Record<DokumentRecht, string> = { keine: 'keine Dokumente', lesen: 'Dokumente lesen', schreiben: 'Dokumente lesen und Volltext schreiben' };
+/** Ereignisse, die ein Paket abonnieren kann (nicht blockierend, mit Wiederholung). */
+export const EREIGNISSE = {
+  'post.angelegt': 'Neue Post ist angelegt',
+  'dokument.hochgeladen': 'Ein Dokument wurde hochgeladen',
+  'texterkennung.fertig': 'Die Texterkennung eines Dokuments ist fertig',
+  'paket.einstellungen_geaendert': 'Die Einstellungen des Pakets wurden geändert',
+} as const;
+export type EreignisArt = keyof typeof EREIGNISSE;
+/** Alle Mappentypen (außer Benutzer) – für Pakete wie die Texterkennung, die an jedes Dokument müssen. */
+export const ALLE_TYPEN = '*';
+
+export interface PaketCode {
+  sprache: string;
+  ereignisse: EreignisArt[];
+  /** Typverweise wie in Inhalten (eigene ohne Präfix, <paket>:<schluessel>, dms:<kennung>) oder „*“. */
+  rechte: { lesen: string[]; schreiben: string[]; dokumente: DokumentRecht };
+  /** Erlaubte Adressen (https://host…); alles andere ist gesperrt. */
+  netz: string[];
+  /** Das WebAssembly-Modul (code/modul.wasm) und Daten (code/daten/…), nur im installierten Paket. */
+  modul?: { sha256: string; groesse: number };
+  daten?: string[];
+}
+
+const SPRACHEN = ['rust', 'go', 'c', 'assemblyscript', 'javascript'];
+const TYPVERWEIS_ODER_ALLE = /^(\*|([a-z][a-z0-9_]{1,19}:)?[a-z][a-z0-9_]{0,39})$/;
+
+/** Liest code: aus dem Manifest (ohne einstellungen/aktionen – die liest paketeinstellungen.ts). */
+export function liesCode(c: unknown): { code: PaketCode | null; fehler: string[] } {
+  if (c === undefined || c === null) return { code: null, fehler: [] };
+  const fehler: string[] = [];
+  if (typeof c !== 'object' || Array.isArray(c)) return { code: null, fehler: ['code: muss ein Objekt sein.'] };
+  const x = c as Record<string, unknown>;
+  const sprache = String(x.sprache ?? '');
+  if (!SPRACHEN.includes(sprache)) fehler.push(`code.sprache: eine von ${SPRACHEN.join(', ')}.`);
+  const liste = (v: unknown, wo: string): string[] => {
+    if (v === undefined) return [];
+    if (!Array.isArray(v) || v.some((y) => typeof y !== 'string')) { fehler.push(`${wo}: Liste von Texten erwartet.`); return []; }
+    return [...new Set(v as string[])];
+  };
+  const ereignisse = liste(x.ereignisse, 'code.ereignisse');
+  for (const e of ereignisse) if (!(e in EREIGNISSE)) fehler.push(`code.ereignisse: „${e}“ gibt es nicht. Möglich: ${Object.keys(EREIGNISSE).join(', ')}.`);
+  const r = (x.rechte ?? {}) as Record<string, unknown>;
+  if (typeof r !== 'object' || Array.isArray(r)) fehler.push('code.rechte: muss ein Objekt sein.');
+  const lesen = liste(r.lesen, 'code.rechte.lesen'), schreiben = liste(r.schreiben, 'code.rechte.schreiben');
+  for (const t of [...lesen, ...schreiben]) if (!TYPVERWEIS_ODER_ALLE.test(t)) fehler.push(`code.rechte: „${t}“ ist kein gültiger Mappentyp-Verweis.`);
+  // Benutzer sehen Pakete nie (auch nicht mit "*"), siehe Handbuch „Pakete mit Code“.
+  for (const t of [...lesen, ...schreiben]) if (t === 'dms:benutzer') fehler.push('code.rechte: dms:benutzer ist für Pakete nicht erlaubt – Pakete sehen keine Benutzer.');
+  const dokumente = (r.dokumente ?? 'keine') as DokumentRecht;
+  if (!(dokumente in DOKUMENT_RECHTE)) fehler.push('code.rechte.dokumente: keine, lesen oder schreiben.');
+  const netz = liste(x.netz, 'code.netz');
+  for (const n of netz) {
+    let ok = false;
+    try { const u = new URL(n); ok = u.protocol === 'https:' && !u.username && !u.password && !u.search && !u.hash; } catch { /* unten */ }
+    if (!ok) fehler.push(`code.netz: „${n}“ ist keine erlaubte Adresse (nur https://…, ohne Zugangsdaten).`);
+  }
+  // Schreiben setzt Lesen voraus.
+  const lesenAlle = [...new Set([...lesen, ...schreiben])];
+  return { code: fehler.length ? null : { sprache, ereignisse: ereignisse as EreignisArt[], rechte: { lesen: lesenAlle, schreiben, dokumente }, netz }, fehler };
+}
+
+/** Rechte und Netz für die Rückfrage bei der Installation (und für den Vergleich beim Update). */
+export function rechteText(c: PaketCode, typName: (verweis: string) => string): string[] {
+  const t = (l: string[]) => l.map((v) => (v === ALLE_TYPEN ? 'alle Mappentypen' : typName(v))).join(', ');
+  const z: string[] = [];
+  if (c.rechte.lesen.length) z.push(`Mappen lesen: ${t(c.rechte.lesen)}`);
+  if (c.rechte.schreiben.length) z.push(`Mappen anlegen und ändern: ${t(c.rechte.schreiben)}`);
+  if (c.rechte.dokumente !== 'keine') z.push(DOKUMENT_RECHTE[c.rechte.dokumente]);
+  z.push(c.netz.length ? `Netz: ${c.netz.join(', ')}` : 'kein Netz');
+  if (c.ereignisse.length) z.push(`reagiert auf: ${c.ereignisse.map((e) => EREIGNISSE[e]).join('; ')}`);
+  return z;
+}
+
+/** Gleiche Rechte und gleiches Netz? (Sonst muss ein Update neu bestätigt werden.) */
+export const gleicheRechte = (a: PaketCode | undefined, b: PaketCode | undefined) =>
+  JSON.stringify(rechteSchluessel(a)) === JSON.stringify(rechteSchluessel(b));
+const rechteSchluessel = (c: PaketCode | undefined) => c ? [[...c.rechte.lesen].sort(), [...c.rechte.schreiben].sort(), c.rechte.dokumente, [...c.netz].sort()] : null;
+

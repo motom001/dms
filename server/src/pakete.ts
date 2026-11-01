@@ -12,7 +12,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { inflateRawSync } from 'node:zlib';
 import { parse as yamlLesen } from 'yaml';
 import type { Feld, Mappentyp, Register } from '../../shared/src/model';
-import { BEREICH, dmsPasst, liesKatalog, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../shared/src/pakete';
+import { BEREICH, gleicheRechte, liesCode, rechteText, type PaketCode, dmsPasst, liesKatalog, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../shared/src/pakete';
 import { kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
 import { EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand } from '../../shared/src/paketeinstellungen';
 import type { Dienst } from './dienst';
@@ -112,7 +112,12 @@ export function ordneBeispiele(beispiele: PaketBeispiel[]): PaketBeispiel[] | nu
   for (const b of beispiele) if (!besuche(b)) return null;
   return erg;
 }
-export interface Paket { manifest: Manifest; typen: PaketTyp[]; sichten: PaketSicht[]; beispiele: PaketBeispiel[]; readme: string; einstellungen: Einstellungsbeschreibung | null }
+/** Code eines Pakets (#338): Angaben aus dem Manifest und die Dateien unter code/ (modul.wasm, daten/…). */
+export interface PaketCodeTeil { info: PaketCode; dateien: Array<{ name: string; inhalt: Buffer }> }
+export interface Paket { manifest: Manifest; typen: PaketTyp[]; sichten: PaketSicht[]; beispiele: PaketBeispiel[]; readme: string; einstellungen: Einstellungsbeschreibung | null; code: PaketCodeTeil | null }
+/** WebAssembly-Magie und Version 1. */
+const WASM_KOPF = Buffer.from([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00]);
+const CODE_DATEI = /^code\/(modul\.wasm|daten\/[A-Za-z0-9._-]{1,80})$/;
 
 const SCHLUESSEL = /^[a-z][a-z0-9_]{0,39}$/;
 const TYPVERWEIS = /^([a-z][a-z0-9_]{1,19}:)?[a-z][a-z0-9_]{0,39}$/;
@@ -222,6 +227,18 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
   // Einstellungen (#197): code.einstellungen und code.aktionen.
   const einst = liesBeschreibung(m.code);
   fehler.push(...einst.fehler.map((f) => `manifest.yaml: code.${f}`));
+  // Code (#338): Manifest-Angaben, gebautes Modul und Daten.
+  const cl = liesCode(m.code);
+  fehler.push(...cl.fehler.map((f) => `manifest.yaml: ${f}`));
+  let code: PaketCodeTeil | null = null;
+  if (cl.code) {
+    const modul = dateien.get('code/modul.wasm');
+    // Ohne gebautes Modul (z. B. nur Einstellungen) lässt sich das Paket installieren; es läuft dann kein Code.
+    if (!modul) { /* Hinweis in der Vorschau */ }
+    else if (modul.length < 8 || !modul.subarray(0, 8).equals(WASM_KOPF)) fehler.push('code/modul.wasm ist kein WebAssembly-Modul.');
+    // Andere Dateien unter code/ (Quellcode) stören nicht; geladen werden nur modul.wasm und daten/….
+    if (modul) code = { info: cl.code, dateien: [...dateien].filter(([n]) => CODE_DATEI.test(n)).map(([n, inhalt]) => ({ name: n.slice('code/'.length), inhalt })) };
+  }
   if (fehler.length) throw new Fachfehler(422, 'Das Paket ist ungültig.', { gruende: fehler });
   return {
     manifest: {
@@ -230,7 +247,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       lizenz: str(m.lizenz), dms: str(m.dms), abhaengigkeiten: Object.fromEntries(Object.entries(abh).map(([k, v]) => [k, str(v)])),
       ...(m.code !== undefined ? { code: m.code } : {}),
     },
-    typen, sichten, beispiele, readme: dateien.get('README.md')?.toString('utf8') ?? '', einstellungen: einst.beschreibung,
+    typen, sichten, beispiele, readme: dateien.get('README.md')?.toString('utf8') ?? '', einstellungen: einst.beschreibung, code,
   };
 }
 
@@ -261,6 +278,8 @@ export interface Vorschau {
   hinweise: string[];
   /** Einstellungen des Pakets (#197): bei einem Update neue und wegfallende Felder. */
   einstellungen: { neu: string[]; weg: string[] } | null;
+  /** Code (#338): Rechte, Netz, Ereignisse – muss bestätigt werden (bei einem Update nur, wenn sie sich ändern). */
+  laeufer: { rechte: string[]; bestaetigen: boolean } | null;
 }
 export interface InstallierenEingabe {
   id?: string; version?: string; namen?: Record<string, string>; sichtNamen?: Record<string, string>; beispiele?: boolean; mitAbhaengigkeiten?: boolean;
@@ -270,7 +289,14 @@ export interface InstallierenEingabe {
   upload?: string;
   /** Herkunft außerhalb des offiziellen Katalogs ausdrücklich bestätigt (#189). */
   bestaetigt?: boolean;
+  /** Rechte und Netzadressen eines Pakets mit Code bestätigt (#338). */
+  rechteBestaetigt?: boolean;
 }
+
+const modulInfo = (c: PaketCodeTeil) => {
+  const m = c.dateien.find((d) => d.name === 'modul.wasm')!.inhalt;
+  return { sha256: createHash('sha256').update(m).digest('hex'), groesse: m.length };
+};
 
 const freierName = (name: string, paket: string, belegt: Set<string>) => {
   const k = (n: string) => n.trim().toLowerCase();
@@ -325,6 +351,8 @@ export interface PaketOptionen {
 export interface PaketLaeufer {
   aktion(paket: string, aktion: string, einstellungen: Record<string, unknown>): Promise<string>;
   ereignis?(paket: string, name: 'paket.einstellungen_geaendert', felder: string[]): void;
+  /** Code eines Pakets installiert, aktualisiert oder entfernt (#338): Läufer lädt neu. */
+  codeGeaendert?(): void;
 }
 /** Zeitgrenze für Aktionen, damit ein Knopf nicht hängt. */
 export const AKTION_MS = 30_000;
@@ -514,7 +542,7 @@ export class Paketverwaltung {
     if (!dmsOk) probleme.push(`Das Paket braucht DMS ${m.dms}; dieses DMS hat Version ${dmsVersion}. Bitte zuerst das DMS aktualisieren.`);
     const hinweise: string[] = [];
     // Code läuft erst mit dem Paket-Läufer; Einstellungen lassen sich schon pflegen (#197).
-    if (m.code !== undefined) hinweise.push('Das Paket enthält Code. Er läuft erst, wenn es im DMS den Paket-Läufer gibt; Einstellungen lassen sich schon pflegen.');
+    if (m.code !== undefined && !paket.code) hinweise.push('Das Paket enthält Code, aber kein gebautes Modul (code/modul.wasm) – im Paket-Läufer läuft deshalb nichts; Einstellungen lassen sich schon pflegen.');
     if (ich && vergleicheVersion(m.version, ich.version) <= 0) probleme.push(`Version ${ich.version} ist schon installiert.`);
     // Verweise auf Mappentypen des DMS (#310), z. B. dms:ablageort.
     const dmsTypen = await this.dmsTypen();
@@ -572,7 +600,24 @@ export class Paketverwaltung {
       herkunft: ich?.herkunft ?? null,
       abhaengigkeiten, typen: typPlaene, sichten: sichtPlaene, beispiele: paket.beispiele.length, probleme, hinweise,
       einstellungen: paket.einstellungen || ich?.einstellungen ? einstellungsAenderung(ich?.einstellungen ?? null, paket.einstellungen) : null,
+      laeufer: paket.code ? { rechte: rechteText(paket.code.info, (vw) => this.typName(vw, paket, installierte, typen)), bestaetigen: !ich || !gleicheRechte(ich.laeufer, paket.code.info) } : null,
     };
+  }
+
+  /** Lesbarer Name eines Typverweises für die Rechte-Rückfrage. */
+  private typName(vw: string, paket: Paket, installierte: InstalliertesPaket[], typen: Mappentyp[]): string {
+    const [p, s] = vw.includes(':') ? vw.split(':') : [paket.manifest.id, vw];
+    if (p === paket.manifest.id) return paket.typen.find((t) => t.schluessel === s)?.name ?? s;
+    if (p === 'dms') return DMS_TYPEN[s] ?? s;
+    const id = installierte.find((x) => x.id === p)?.typen[s];
+    return `${typen.find((t) => t.id === id)?.name ?? s} (${p})`;
+  }
+
+  /** Rechte eines Pakets mit Code verlangen eine ausdrückliche Bestätigung (#338). */
+  private static rechteBestaetigen(plan: Vorschau, e: { rechteBestaetigt?: boolean }) {
+    if (plan.laeufer?.bestaetigen && e.rechteBestaetigt !== true) {
+      throw new Fachfehler(409, `„${plan.paket.name}“ enthält Code, der im DMS laufen soll. Bitte die Rechte bestätigen.`, { rechte: plan.laeufer.rechte });
+    }
   }
 
   /**
@@ -601,6 +646,13 @@ export class Paketverwaltung {
       throw new Fachfehler(409, `Es fehlen Pakete, die „${paket.manifest.name}“ braucht: ${fehlen.map((a) => `${a.id} ${a.bereich}`).join(', ')}.`, { gruende: fehlen.map((a) => (a.verfuegbar ? `${a.id}: im Katalog gibt es ${a.verfuegbar}` : `${a.id}: nicht im Katalog`)) });
     }
     if (vorschau.probleme.length) throw new Fachfehler(409, vorschau.probleme[0], { gruende: vorschau.probleme });
+    Paketverwaltung.rechteBestaetigen(vorschau, e);
+    // Abhängigkeiten mit Code installiert das DMS nicht still mit: ihre Rechte bestätigt man an ihnen selbst (#338).
+    for (const a of fehlen) {
+      if (!a.verfuegbar) continue;
+      const dep = await this.lade(a.id, a.verfuegbar, quelle ?? this.katalogUrl);
+      if (dep.paket.code) throw new Fachfehler(409, `Die Abhängigkeit „${dep.paket.manifest.name}“ enthält Code. Bitte installiere sie zuerst selbst – dabei bestätigst du ihre Rechte.`, { gruende: [`${a.id}: enthält Code`] });
+    }
     for (const a of fehlen) {
       if (!a.verfuegbar) throw new Fachfehler(409, `Die Abhängigkeit „${a.id}“ (${a.bereich}) gibt es im Katalog nicht.`);
       // Abhängigkeiten aus derselben Quelle; bei hochgeladenen Paketen aus dem offiziellen Katalog.
@@ -764,9 +816,14 @@ export class Paketverwaltung {
         // Beispiel-Mappen mit Schlüssel (#347), damit spätere Pakete auf sie verweisen können.
         ...(beispielIds.size ? { beispiele: Object.fromEntries(beispielIds) } : alt?.beispiele ? { beispiele: alt.beispiele } : {}),
         einstellungen: paket.einstellungen, code: m.code !== undefined,
+        ...(paket.code ? { laeufer: { ...paket.code.info, modul: modulInfo(paket.code), daten: paket.code.dateien.filter((d) => d.name !== 'modul.wasm').map((d) => d.name) } } : {}),
         ...(v ? { links: { readme: v.readme, changelog: v.changelog, quelle: v.quelle } } : alt?.links ? { links: alt.links } : {}),
       };
+      // Code (#338): ersetzt den bisherigen; ohne Code im neuen Paket fällt er weg.
+      if (paket.code) await this.d.speicherePaketCode(m.id, paket.code.dateien);
+      else if (alt?.laeufer) await this.d.loeschePaketCode(m.id);
       await this.d.speicherePaket(datensatz);
+      if (paket.code || alt?.laeufer) this.o.laeufer?.codeGeaendert?.();
       return datensatz;
     } catch (f) {
       await zurueck();
@@ -793,7 +850,7 @@ export class Paketverwaltung {
   }
 
   /** Update aus der Quelle des Pakets: ergänzt nur – neue Typen, Felder, Register, Sichten. */
-  async aktualisiere(id: string, e: { version?: string; bestaetigt?: boolean }, von: Handelnder): Promise<InstalliertesPaket> {
+  async aktualisiere(id: string, e: { version?: string; bestaetigt?: boolean; rechteBestaetigt?: boolean }, von: Handelnder): Promise<InstalliertesPaket> {
     const alt = (await this.d.listePakete()).find((p) => p.id === id);
     if (!alt) throw new Fachfehler(404, `„${id}“ ist nicht installiert.`);
     if (alt.herkunft.art !== 'katalog') throw new Fachfehler(409, 'Ein hochgeladenes Paket aktualisierst du durch erneutes Hochladen einer höheren Version.');
@@ -804,6 +861,7 @@ export class Paketverwaltung {
     const fehlen = plan.abhaengigkeiten.filter((a) => !a.installiert);
     if (fehlen.length) plan.probleme.push(`Es fehlen Pakete: ${fehlen.map((a) => `${a.id} ${a.bereich}`).join(', ')}.`);
     if (plan.probleme.length) throw new Fachfehler(409, plan.probleme[0], { gruende: plan.probleme });
+    Paketverwaltung.rechteBestaetigen(plan, e);
     const neu = await this.lege(paket, alt.herkunft, v, plan, false, von, alt);
     log.info('Paket aktualisiert', { von: von.email, paket: id, vorher: alt.version, version: neu.version, neueTypen: plan.typen.filter((t) => !t.vorhanden && !t.geloescht).length, neueSichten: plan.sichten.filter((s) => !s.vorhanden).length });
     return neu;
@@ -960,6 +1018,7 @@ export class Paketverwaltung {
       }
     }
     await this.d.loeschePaket(id);
+    if (p.laeufer) { await this.d.loeschePaketCode(id); await this.d.loescheEreignisse(id); await this.d.setzePaketSpeicher(id, null).catch(() => {}); this.o.laeufer?.codeGeaendert?.(); }
     // Einstellungen (#197): nur auf ausdrücklichen Wunsch für eine spätere Neuinstallation behalten.
     if (!behalten) await this.d.setzePaketEinstellungen(id, null);
     log.info('Paket entfernt', { von: von.email, paket: id, version: p.version, einstellungenBehalten: behalten });

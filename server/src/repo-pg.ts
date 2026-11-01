@@ -315,6 +315,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
   const DOK = sql.unsafe(DOKUMENT_SPALTEN.map((c) => `d.${c}`).join(', '));
   const DOK_RUECK = sql.unsafe(DOKUMENT_SPALTEN.join(', '));
   const VERS = sql.unsafe(VERSION_SPALTEN);
+  let ereignisseAufgeraeumt = 0;
   /** Nummer ziehen (#171) – nur innerhalb einer Transaktion; die Zeile bleibt bis zu deren Ende gesperrt. */
   async function zieheIn(tx: postgres.TransactionSql, schluessel: string, mappeId: string | null, jetzt: Date): Promise<string> {
     const [r] = await tx`SELECT * FROM nummernkreise WHERE haushalt_id = ${haushaltId} AND schluessel = ${schluessel} FOR UPDATE`;
@@ -437,6 +438,50 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         ON CONFLICT (haushalt_id, id) DO UPDATE SET version = EXCLUDED.version, daten = EXCLUDED.daten`;
     },
     async loeschePaket(id) { await sql`DELETE FROM pakete WHERE haushalt_id = ${haushaltId} AND id = ${id}`; },
+    async speicherePaketCode(id, dateien) {
+      await sql.begin(async (tx) => {
+        await tx`DELETE FROM paket_code WHERE haushalt_id = ${haushaltId} AND paket_id = ${id}`;
+        for (const d of dateien) await tx`INSERT INTO paket_code (haushalt_id, paket_id, name, inhalt) VALUES (${haushaltId}, ${id}, ${d.name}, ${d.inhalt})`;
+      });
+    },
+    async paketCode(id) {
+      return (await sql`SELECT name, inhalt FROM paket_code WHERE haushalt_id = ${haushaltId} AND paket_id = ${id} ORDER BY name`).map((r) => ({ name: r.name as string, inhalt: Buffer.from(r.inhalt as Uint8Array) }));
+    },
+    async loeschePaketCode(id) { await sql`DELETE FROM paket_code WHERE haushalt_id = ${haushaltId} AND paket_id = ${id}`; },
+    async legeEreignisseAn(liste) {
+      if (!liste.length) return;
+      await sql`INSERT INTO paket_ereignisse ${sql(liste.map((e) => ({ id: e.id, haushalt_id: haushaltId, paket_id: e.paketId, art: e.art, daten: json(sql, e.daten) })))}`;
+    },
+    async faelligeEreignisse(anzahl) {
+      // Reihenfolge je Paket: Wartet ein älteres Ereignis auf seine Wiederholung, warten die späteren mit.
+      return (await sql`SELECT e.id, e.paket_id, e.art, e.daten, e.erstellt, e.versuche FROM paket_ereignisse e
+        WHERE e.haushalt_id = ${haushaltId} AND e.zugestellt IS NULL AND e.faellig <= now()
+          AND NOT EXISTS (SELECT 1 FROM paket_ereignisse a WHERE a.haushalt_id = e.haushalt_id AND a.paket_id = e.paket_id
+            AND a.zugestellt IS NULL AND a.faellig > now() AND a.faellig <> 'infinity' AND a.erstellt < e.erstellt)
+        ORDER BY e.erstellt, e.id LIMIT ${anzahl}`)
+        .map((r) => ({ id: r.id as string, paketId: r.paket_id as string, art: r.art as string, daten: r.daten as Record<string, unknown>, erstellt: (r.erstellt as Date).toISOString(), versuche: r.versuche as number }));
+    },
+    async ereignisZugestellt(id) {
+      await sql`UPDATE paket_ereignisse SET zugestellt = now(), fehler = NULL WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      // Aufräumen höchstens alle 10 Minuten: Zugestelltes bleibt 7 Tage (für die Übersicht), Aufgegebenes 30 Tage.
+      if (Date.now() - ereignisseAufgeraeumt < 600_000) return;
+      ereignisseAufgeraeumt = Date.now();
+      await sql`DELETE FROM paket_ereignisse WHERE haushalt_id = ${haushaltId} AND (zugestellt < now() - interval '7 days' OR (zugestellt IS NULL AND faellig = 'infinity' AND erstellt < now() - interval '30 days'))`;
+    },
+    async ereignisFehlgeschlagen(id, fehler, naechster) {
+      await sql`UPDATE paket_ereignisse SET versuche = versuche + 1, fehler = ${fehler.slice(0, 1000)},
+        faellig = ${naechster ? sql`${naechster}` : sql`'infinity'::timestamptz`} WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+    },
+    async ereignisStand() {
+      const erg: Record<string, { offen: number; aufgegeben: number; zugestellt: number }> = {};
+      for (const r of await sql`SELECT paket_id,
+          count(*) FILTER (WHERE zugestellt IS NULL AND faellig <> 'infinity')::int AS offen,
+          count(*) FILTER (WHERE zugestellt IS NULL AND faellig = 'infinity')::int AS aufgegeben,
+          count(*) FILTER (WHERE zugestellt IS NOT NULL)::int AS zugestellt
+        FROM paket_ereignisse WHERE haushalt_id = ${haushaltId} GROUP BY paket_id`) erg[r.paket_id as string] = { offen: r.offen as number, aufgegeben: r.aufgegeben as number, zugestellt: r.zugestellt as number };
+      return erg;
+    },
+    async loescheEreignisse(id) { await sql`DELETE FROM paket_ereignisse WHERE haushalt_id = ${haushaltId} AND paket_id = ${id}`; },
     async listeNummernkreise() {
       return (await sql`SELECT * FROM nummernkreise WHERE haushalt_id = ${haushaltId} ORDER BY name`).map(alsKreis);
     },

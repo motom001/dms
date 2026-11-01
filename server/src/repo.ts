@@ -76,6 +76,9 @@ export interface PapierkorbFilter {
  * Datenzugriff für einen Haushalt. Die Fachlogik (Dienst) kennt nur diese
  * Schnittstelle; PostgreSQL und der Arbeitsspeicher (für Tests) setzen sie um.
  */
+/** Ein Ereignis für ein Paket (#338). */
+export interface PaketEreignis { id: string; paketId: string; art: string; daten: Record<string, unknown>; erstellt: string; versuche: number }
+
 export interface Repo {
   listeTypen(): Promise<Mappentyp[]>;
   holeTyp(id: string): Promise<Mappentyp | undefined>;
@@ -99,6 +102,21 @@ export interface Repo {
   /** Anlegen oder ersetzen (gleiche Id). */
   speicherePaket(p: InstalliertesPaket): Promise<void>;
   loeschePaket(id: string): Promise<void>;
+  /** Code eines Pakets (#338): code/modul.wasm und code/daten/…; ersetzt den bisherigen ganz. */
+  speicherePaketCode(paketId: string, dateien: Array<{ name: string; inhalt: Buffer }>): Promise<void>;
+  paketCode(paketId: string): Promise<Array<{ name: string; inhalt: Buffer }>>;
+  loeschePaketCode(paketId: string): Promise<void>;
+  /** Ereignisse für Pakete (#338): Ausgangskorb mit Wiederholung. */
+  legeEreignisseAn(e: Array<{ id: string; paketId: string; art: string; daten: Record<string, unknown> }>): Promise<void>;
+  /** Fällige, noch nicht zugestellte Ereignisse, älteste zuerst. */
+  faelligeEreignisse(anzahl: number): Promise<PaketEreignis[]>;
+  ereignisZugestellt(id: string): Promise<void>;
+  /** Fehlschlag merken; naechster null = aufgeben. */
+  ereignisFehlgeschlagen(id: string, fehler: string, naechster: Date | null): Promise<void>;
+  /** Je Paket: offen, aufgegeben, zuletzt zugestellt. */
+  ereignisStand(): Promise<Record<string, { offen: number; aufgegeben: number; zugestellt: number }>>;
+  /** Alle Ereignisse eines entfernten Pakets verwerfen. */
+  loescheEreignisse(paketId: string): Promise<void>;
   /* ---------- Nummernkreise (#171) ---------- */
   listeNummernkreise(): Promise<Nummernkreis[]>;
   /** Anlegen oder Name, Muster und Start ändern; Zählerstände bleiben. */

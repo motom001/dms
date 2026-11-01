@@ -924,6 +924,42 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal((await anfrage('POST', '/api/werkbank/wartung/dateien')).status, 202);
   });
 
+  it('Paket-Läufer (#338): Dienstkonten, Paket-Code und Ereignisse in PostgreSQL', async () => {
+    const { pgKontoRepo, dienstEmail } = await import('../src/konto-repo');
+    const { pgRepo } = await import('../src/repo-pg');
+    const kr = pgKontoRepo(sql, HAUSHALT);
+    const vorher = await kr.anzahlBenutzer();
+    const konto = await kr.legeDienstkontoAn({ id: '00000000-0000-4000-8000-0000000003a8', paketId: 'probe', name: 'Paket Probe' });
+    assert.equal(konto.art, 'dienst');
+    assert.equal(konto.paketId, 'probe');
+    assert.equal((await kr.dienstkonto('probe'))?.id, konto.id);
+    assert.equal(await kr.anzahlBenutzer(), vorher, 'zählt nicht als Benutzer');
+    assert.ok(!(await kr.listeBenutzer()).some((b) => b.id === konto.id), 'nicht in der Benutzerliste');
+    assert.equal(await kr.holeHash(dienstEmail('probe', HAUSHALT)), undefined, 'keine Anmeldung');
+    await assert.rejects(kr.legeDienstkontoAn({ id: '00000000-0000-4000-8000-0000000003a9', paketId: 'probe', name: 'doppelt' }), 'ein Dienstkonto je Paket');
+    await assert.rejects(sql`UPDATE benutzer SET art = 'roboter' WHERE id = ${konto.id}`, 'nur person oder dienst');
+
+    const repo = pgRepo(sql, HAUSHALT);
+    await repo.speicherePaketCode('probe', [{ name: 'modul.wasm', inhalt: Buffer.from([0, 97, 115, 109]) }, { name: 'daten/x', inhalt: Buffer.from('x') }]);
+    assert.deepEqual((await repo.paketCode('probe')).map((d) => d.name).sort(), ['daten/x', 'modul.wasm']);
+    await repo.speicherePaketCode('probe', [{ name: 'modul.wasm', inhalt: Buffer.from([0, 97, 115, 109, 1]) }]);
+    assert.deepEqual((await repo.paketCode('probe')).map((d) => d.inhalt.length), [5], 'ersetzt den alten Stand ganz');
+
+    const id = (n: number) => `00000000-0000-4000-8000-00000000e${String(n).padStart(3, '0')}`;
+    await repo.legeEreignisseAn([1, 2, 3].map((n) => ({ id: id(n), paketId: 'probe', art: 'post.angelegt', daten: { n } })));
+    const faellig = await repo.faelligeEreignisse(10);
+    assert.deepEqual(faellig.map((e) => e.daten.n), [1, 2, 3], 'älteste zuerst');
+    await repo.ereignisZugestellt(id(1));
+    await repo.ereignisFehlgeschlagen(id(2), 'kaputt', new Date(Date.now() + 60_000));
+    await repo.ereignisFehlgeschlagen(id(3), 'aufgegeben', null);
+    assert.deepEqual(await repo.faelligeEreignisse(10), [], 'zugestellt, später fällig oder aufgegeben');
+    assert.deepEqual((await repo.ereignisStand()).probe, { offen: 1, aufgegeben: 1, zugestellt: 1 });
+    await repo.loescheEreignisse('probe');
+    await repo.loeschePaketCode('probe');
+    assert.deepEqual(await repo.paketCode('probe'), []);
+    assert.equal((await repo.ereignisStand()).probe, undefined);
+  });
+
   it('Vollexport kennt jede Tabelle der Datenbank (#254)', async () => {
     const { tabellenIn } = await import('../src/datenbankabzug');
     const { EXPORT_TABELLEN } = await import('../src/vollexport');

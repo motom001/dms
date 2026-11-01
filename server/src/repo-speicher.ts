@@ -20,6 +20,8 @@ export function speicherRepo(): Repo {
   const mappen = new Map<string, Mappe>();
   const kreise = new Map<string, Nummernkreis>();
   const pakete = new Map<string, InstalliertesPaket>();
+  const paketCode = new Map<string, Array<{ name: string; inhalt: Buffer }>>();
+  const ereignisse = new Map<string, { id: string; paketId: string; art: string; daten: Record<string, unknown>; erstellt: string; faellig: number; versuche: number; zugestellt: string | null; fehler: string | null }>();
   /** Nummer ziehen (#171); synchron, damit gleichzeitiges Anlegen keine doppelten Nummern ergibt. */
   const zieheSync = (schluessel: string, mappeId: string | null, j: Date) => {
     const k = kreise.get(schluessel);
@@ -153,6 +155,38 @@ export function speicherRepo(): Repo {
     async listePakete() { return [...pakete.values()].map(kopie).sort((a, b) => a.id.localeCompare(b.id)); },
     async speicherePaket(p) { pakete.set(p.id, kopie(p)); },
     async loeschePaket(id) { pakete.delete(id); },
+    async speicherePaketCode(id, dateien) { paketCode.set(id, dateien.map((d) => ({ name: d.name, inhalt: Buffer.from(d.inhalt) }))); },
+    async paketCode(id) { return (paketCode.get(id) ?? []).map((d) => ({ name: d.name, inhalt: Buffer.from(d.inhalt) })); },
+    async loeschePaketCode(id) { paketCode.delete(id); },
+    async legeEreignisseAn(liste) {
+      for (const e of liste) ereignisse.set(e.id, { ...e, daten: kopie(e.daten), erstellt: jetzt(), faellig: Date.now(), versuche: 0, zugestellt: null, fehler: null });
+    },
+    async faelligeEreignisse(anzahl) {
+      const t = Date.now();
+      const alle = [...ereignisse.values()];
+      // Reihenfolge je Paket: Wartet ein älteres Ereignis auf seine Wiederholung, warten die späteren mit.
+      const blockiert = (e: typeof alle[number]) => alle.some((a) => a.paketId === e.paketId && !a.zugestellt && a.faellig > t && a.faellig !== Number.POSITIVE_INFINITY && a.erstellt < e.erstellt);
+      return alle.filter((e) => !e.zugestellt && e.faellig <= t && !blockiert(e)).sort((a, b) => a.erstellt.localeCompare(b.erstellt)).slice(0, anzahl)
+        .map((e) => ({ id: e.id, paketId: e.paketId, art: e.art, daten: kopie(e.daten), erstellt: e.erstellt, versuche: e.versuche }));
+    },
+    async ereignisZugestellt(id) {
+      const e = ereignisse.get(id); if (e) e.zugestellt = jetzt();
+      const t = Date.now();
+      for (const [k, x] of ereignisse) if ((x.zugestellt && Date.parse(x.zugestellt) < t - 7 * 864e5) || (!x.zugestellt && x.faellig === Number.POSITIVE_INFINITY && Date.parse(x.erstellt) < t - 30 * 864e5)) ereignisse.delete(k);
+    },
+    async ereignisFehlgeschlagen(id, fehler, naechster) {
+      const e = ereignisse.get(id); if (!e) return;
+      e.versuche++; e.fehler = fehler; e.faellig = naechster ? naechster.getTime() : Number.POSITIVE_INFINITY;
+    },
+    async ereignisStand() {
+      const erg: Record<string, { offen: number; aufgegeben: number; zugestellt: number }> = {};
+      for (const e of ereignisse.values()) {
+        const x = (erg[e.paketId] ??= { offen: 0, aufgegeben: 0, zugestellt: 0 });
+        if (e.zugestellt) x.zugestellt++; else if (e.faellig === Number.POSITIVE_INFINITY) x.aufgegeben++; else x.offen++;
+      }
+      return erg;
+    },
+    async loescheEreignisse(id) { for (const [k, e] of ereignisse) if (e.paketId === id) ereignisse.delete(k); },
     async listeNummernkreise() { return [...kreise.values()].map(kopie).sort((a, b) => a.name.localeCompare(b.name, 'de')); },
     async speichereNummernkreis(k) {
       const alt = kreise.get(k.schluessel);

@@ -3,6 +3,10 @@ import type postgres from 'postgres';
 import { KEINE_ABWESENHEIT, type Abwesenheit, type Benutzer, type Rolle, type Sitzung, type Vertretung } from '../../shared/src/model';
 import { istUuid } from './repo';
 
+/** Adresse eines Dienstkontos: nie zustellbar (.invalid, RFC 2606). */
+/** Adresse eines Dienstkontos – mit Haushalt, weil die Adresse über alle Haushalte eindeutig ist (benutzer_email_uq). */
+export const dienstEmail = (paketId: string, haushaltId: string) => `paket-${paketId}.${haushaltId}@dienst.invalid`;
+
 export type Zweck = 'einladung' | 'zuruecksetzen';
 export interface NeuerBenutzer { id: string; email: string; name: string; rolle: Rolle; passwortHash: string | null }
 export interface Link { benutzerId: string; zweck: Zweck; ablauf: Date; benutzt: Date | null }
@@ -22,6 +26,10 @@ export interface KontoRepo {
   setzeHash(id: string, hash: string): Promise<void>;
   notiereAnmeldung(id: string): Promise<void>;
   loescheBenutzer(id: string): Promise<void>;
+  /** Dienstkonto eines Pakets (#338); nicht in listeBenutzer, anzahlBenutzer, holeHash. */
+  dienstkonto(paketId: string): Promise<Benutzer | undefined>;
+  legeDienstkontoAn(d: { id: string; paketId: string; name: string }): Promise<Benutzer>;
+  listeDienstkonten(): Promise<Benutzer[]>;
 
   legeSitzungAn(hash: string, benutzerId: string, ablauf: Date, info: SitzungsInfo): Promise<void>;
   holeSitzung(hash: string): Promise<SitzungIntern | undefined>;
@@ -65,19 +73,26 @@ export function speicherKontoRepo(): KontoRepo {
   const ohneHash = ({ hash: _h, ...b }: Benutzer & { hash: string | null }): Benutzer => ({ ...b, hatPasswort: !!_h });
 
   return {
-    async anzahlBenutzer() { return benutzer.size; },
+    async anzahlBenutzer() { return [...benutzer.values()].filter((b) => b.art !== 'dienst').length; },
     async listeBenutzer() {
       const zuletzt = (id: string) => {
         const t = [...sitzungen.values()].filter((x) => x.benutzerId === id && x.ablauf.getTime() > Date.now()).map((x) => x.zuletztAktiv.getTime());
         return t.length ? new Date(Math.max(...t)).toISOString() : null;
       };
-      return [...benutzer.values()].map((b) => ({ ...ohneHash(b), zuletztAktiv: zuletzt(b.id) })).sort((a, b) => a.name.localeCompare(b.name, 'de'));
+      return [...benutzer.values()].filter((b) => b.art !== 'dienst').map((b) => ({ ...ohneHash(b), zuletztAktiv: zuletzt(b.id) })).sort((a, b) => a.name.localeCompare(b.name, 'de'));
     },
     async holeBenutzer(id) { const b = benutzer.get(id); return b && ohneHash(b); },
     async holeHash(email) {
-      const b = [...benutzer.values()].find((x) => x.email.toLowerCase() === email.toLowerCase());
+      const b = [...benutzer.values()].find((x) => x.art !== 'dienst' && x.email.toLowerCase() === email.toLowerCase());
       return b && { benutzer: ohneHash(b), hash: b.hash };
     },
+    async dienstkonto(paketId) { const b = [...benutzer.values()].find((x) => x.art === 'dienst' && x.paketId === paketId); return b && ohneHash(b); },
+    async legeDienstkontoAn(d) {
+      const b = { id: d.id, email: dienstEmail(d.paketId, 'speicher'), name: d.name, rolle: 'mitglied' as Rolle, aktiv: true, hatPasswort: false, erstellt: new Date().toISOString(), letzteAnmeldung: null, entwicklermodus: false, hash: null, abwesenheit: { ...KEINE_ABWESENHEIT }, deaktiviert: null, art: 'dienst' as const, paketId: d.paketId };
+      benutzer.set(d.id, b);
+      return ohneHash(b);
+    },
+    async listeDienstkonten() { return [...benutzer.values()].filter((b) => b.art === 'dienst').map(ohneHash); },
     async legeBenutzerAn(n) {
       if ([...benutzer.values()].some((x) => x.email.toLowerCase() === n.email.toLowerCase())) throw Object.assign(new Error('doppelt'), { code: '23505' });
       const b = { id: n.id, email: n.email, name: n.name, rolle: n.rolle, aktiv: true, hatPasswort: !!n.passwortHash, erstellt: new Date().toISOString(), letzteAnmeldung: null, entwicklermodus: false, hash: n.passwortHash, abwesenheit: { ...KEINE_ABWESENHEIT }, deaktiviert: null };
@@ -151,6 +166,7 @@ const alsBenutzer = (r: Zeile): Benutzer => ({
   entwicklermodus: !!r.entwicklermodus,
   abwesenheit: { an: !!r.abwesend, von: tag(r.abwesend_von), bis: tag(r.abwesend_bis), vertreterId: (r.vertreter_id as string | null) ?? null },
   deaktiviert: iso(r.deaktiviert),
+  ...(r.art === 'dienst' ? { art: 'dienst' as const, paketId: r.paket_id as string } : {}),
 });
 /** date-Spalte als JJJJ-MM-TT (ohne Zeitzonenverschiebung). */
 const tag = (v: unknown): string | null => {
@@ -167,13 +183,13 @@ const alsVertretung = (r: Zeile): Vertretung => ({
 export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
   return {
     async anzahlBenutzer() {
-      const [r] = await sql`SELECT count(*)::int AS n FROM benutzer`;
+      const [r] = await sql`SELECT count(*)::int AS n FROM benutzer WHERE art = 'person'`;
       return r.n as number;
     },
     async listeBenutzer() {
       const r = await sql`
         SELECT b.*, (SELECT max(s.zuletzt_aktiv) FROM sitzungen s WHERE s.benutzer_id = b.id AND s.ablauf > now()) AS zuletzt_aktiv
-        FROM benutzer b WHERE b.haushalt_id = ${haushaltId} ORDER BY lower(b.name), lower(b.email)`;
+        FROM benutzer b WHERE b.haushalt_id = ${haushaltId} AND b.art = 'person' ORDER BY lower(b.name), lower(b.email)`;
       return r.map((z) => ({ ...alsBenutzer(z), zuletztAktiv: iso(z.zuletzt_aktiv) }));
     },
     async holeBenutzer(id) {
@@ -182,9 +198,21 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
       return r ? alsBenutzer(r) : undefined;
     },
     async holeHash(email) {
-      const [r] = await sql`SELECT * FROM benutzer WHERE lower(email) = lower(${email}) AND haushalt_id = ${haushaltId}`;
+      const [r] = await sql`SELECT * FROM benutzer WHERE lower(email) = lower(${email}) AND haushalt_id = ${haushaltId} AND art = 'person'`;
       return r ? { benutzer: alsBenutzer(r), hash: (r.passwort_hash as string | null) ?? null } : undefined;
     },
+    async dienstkonto(paketId) {
+      const [r] = await sql`SELECT * FROM benutzer WHERE haushalt_id = ${haushaltId} AND art = 'dienst' AND paket_id = ${paketId}`;
+      return r ? alsBenutzer(r) : undefined;
+    },
+    async legeDienstkontoAn(d) {
+      const [r] = await sql`
+        INSERT INTO benutzer (id, haushalt_id, email, name, rolle, passwort_hash, art, paket_id)
+        VALUES (${d.id}, ${haushaltId}, ${dienstEmail(d.paketId, haushaltId)}, ${d.name}, 'mitglied', NULL, 'dienst', ${d.paketId})
+        RETURNING *`;
+      return alsBenutzer(r);
+    },
+    async listeDienstkonten() { return (await sql`SELECT * FROM benutzer WHERE haushalt_id = ${haushaltId} AND art = 'dienst' ORDER BY paket_id`).map(alsBenutzer); },
     async legeBenutzerAn(n) {
       const [r] = await sql`
         INSERT INTO benutzer (id, haushalt_id, email, name, rolle, passwort_hash)
