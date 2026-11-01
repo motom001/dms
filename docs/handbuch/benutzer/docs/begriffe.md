@@ -270,11 +270,11 @@ Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem 
 Siehe auch: [Paketkatalog](#paketkatalog), [Expertenmodus](#expertenmodus), [Paket-Läufer](#paket-laufer).
 
 <a id="paket-laufer"></a>**Paket-Läufer** · ✗ Fachwort · Fortgeschrittene  
-Der Teil des DMS, der den Code von Paketen ausführt – abgeschottet in einem eigenen Prozess, mit Grenzen für Speicher und Zeit und nur mit den Rechten, die ein Administrator bei der Installation bestätigt hat. Seinen Stand zeigt Werkbank → Pakete → Paket im Abschnitt „Paket-Läufer“.  
+Der Teil des DMS, der den Code von Paketen ausführt – abgeschottet in einem eigenen Prozess, mit Grenzen für Speicher und Zeit und nur mit den Rechten, die ein Administrator bei der Installation bestätigt hat. Netzwerk und Internet erreicht der Code nur unter den Adressen, die das Paket nennt – die Vorschau zeigt das als „kein Zugriff auf Netzwerk und Internet“ oder „Zugriff auf Netzwerk/Internet nur zu …“. Seinen Stand zeigt Werkbank → Pakete → Paket im Abschnitt „Paket-Läufer“.  
 Siehe auch: [Paket](#paket), [Dienstkonto](#dienstkonto).
 
 <a id="paketkatalog"></a>**Paketkatalog** · ~ mit Erklärung · Administratoren  
-Die Liste der Pakete, die ein DMS installieren kann (eine Datei katalog.json im Netz). Das DMS fragt den offiziellen Katalog nur auf Knopfdruck ab („Katalog abrufen“). Weitere Kataloge trägt man im Expertenmodus unter „Weitere Quellen“ ein.  
+Die Liste der Pakete, die ein DMS installieren kann (eine Datei katalog.json im Internet). Das DMS fragt den offiziellen Katalog nur auf Knopfdruck ab („Katalog abrufen“). Weitere Kataloge trägt man im Expertenmodus unter „Weitere Quellen“ ein.  
 Siehe auch: [Paket](#paket), [Expertenmodus](#expertenmodus).
 
 <a id="postfach"></a>**Postfach** · ~ mit Erklärung · Administratoren  

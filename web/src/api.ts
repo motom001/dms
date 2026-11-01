@@ -8,7 +8,7 @@ import type { Archiv } from '../../shared/src/archiv';
 import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, DokumentVersion, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Feldbedingung, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
-import type { InstalliertesPaket, Katalog, LaeuferZustand } from '../../shared/src/pakete';
+import type { InstalliertesPaket, Katalog, LaeuferZustand, RechtePunkt } from '../../shared/src/pakete';
 import type { Einstellungsbeschreibung } from '../../shared/src/paketeinstellungen';
 import type { ErstellenStand, PaketErstellenEingabe, PaketPruefung } from '../../shared/src/paketerstellung';
 import type { EigeneAnsicht, WerkbankAnsicht } from '../../shared/src/werkbankansicht';
@@ -623,8 +623,8 @@ export interface PaketVorschau {
   typen: Array<{ schluessel: string; dmsSchluessel: string; name: string; felder: number; vorhanden: boolean; neueFelder: string[]; neueRegister: string[]; konflikt: string | null; vorschlag: string | null; geloescht?: boolean }>;
   sichten: Array<{ schluessel: string; name: string; eltern: string | null; vorhanden: boolean; konflikt: string | null; vorschlag: string | null }>;
   beispiele: number; probleme: string[]; hinweise: string[]; einstellungen: { neu: string[]; weg: string[] } | null;
-  /** Paket mit Code (#338): Rechte und Netz; bestaetigen = muss ausdrücklich erlaubt werden. */
-  laeufer?: { rechte: string[]; bestaetigen: boolean } | null;
+  /** Paket mit Code (#338): Rechte, Netzwerkzugriff und Ereignisse (#449); bestaetigen = muss ausdrücklich erlaubt werden. */
+  laeufer?: { rechte: RechtePunkt[]; bestaetigen: boolean } | null;
 }
 /** Paket-Läufer (#338): Stand je Paket mit Code. */
 export interface PaketlaeuferStand {

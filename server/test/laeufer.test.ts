@@ -17,7 +17,8 @@ import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
 import { zipPuffer } from '../src/zip';
 import { speicherRepo } from '../src/repo-speicher';
 import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
-import { CODE_MAX, laeuferZustandText, liesCode } from '../../shared/src/pakete';
+import { CODE_MAX, laeuferZustandText, liesCode, netzText, rechtePunkte, rechteText } from '../../shared/src/pakete';
+import { HILFE } from '../../shared/src/hilfe';
 
 /* ---------- Kleiner WebAssembly-Assembler ---------- */
 const u = (n: number): number[] => { const b: number[] = []; do { let x = n & 0x7f; n >>>= 7; if (n) x |= 0x80; b.push(x); } while (n); return b; };
@@ -195,8 +196,21 @@ describe('Paket-Läufer: Recht nur für Post (#435)', () => {
     const zip = zipPuffer([{ name: 'manifest.yaml', daten: Buffer.from(manifest('trenner', '{ lesen: ["dms:post"], schreiben: ["dms:post"], dokumente: schreiben }')) }, { name: 'code/modul.wasm', daten: ECHO }]);
     const { upload } = await p.hochladen(zip, { id: null, email: 'admin@example.org' });
     const v = await p.vorschau({ upload });
-    assert.deepEqual(v.laeufer?.rechte.slice(0, 2), ['Mappen lesen: Post', 'Mappen anlegen und ändern: Post']);
+    assert.deepEqual(v.laeufer?.rechte.slice(0, 2).map((r) => r.text), ['Mappen lesen: Post', 'Mappen anlegen und ändern: Post']);
     assert.equal(v.laeufer?.bestaetigen, true);
+  });
+
+  it('Rechte-Vorschau (#449): Netzwerkzugriff ausgeschrieben, Ereignisse als Unterliste, je Punkt eine Handbuch-Stelle', () => {
+    assert.equal(netzText([]), 'kein Zugriff auf Netzwerk und Internet');
+    assert.equal(netzText(['https://a.example/v1', 'https://b.example']), 'Zugriff auf Netzwerk/Internet nur zu: https://a.example/v1, https://b.example');
+    const c = liesCode({ sprache: 'c', rechte: { lesen: ['dms:post'], schreiben: ['dms:post'], dokumente: 'schreiben' }, ereignisse: ['post.angelegt', 'dokument.hochgeladen'] }).code!;
+    const p = rechtePunkte(c, (v) => (v === 'dms:post' ? 'Post' : v));
+    assert.deepEqual(p.map((x) => x.text), ['Mappen lesen: Post', 'Mappen anlegen und ändern: Post', 'Dokumente lesen und Volltext schreiben', 'kein Zugriff auf Netzwerk und Internet', 'Reagiert auf diese Ereignisse:']);
+    assert.deepEqual(p[4].unter?.map((u) => u.text), ['Neue Post ist angelegt', 'Ein Dokument wurde hochgeladen']);
+    // Jede Stelle steht in der Hilfe-Tabelle (die CI prüft die Anker gegen das gebaute Handbuch).
+    for (const h of [...p.map((x) => x.hilfe), ...p[4].unter!.map((u) => u.hilfe)]) assert.equal(HILFE[h].seite, 'pakete/', h);
+    assert.ok(!rechteText(c, (v) => v).some((z) => /\bNetz\b/.test(z)), 'kein „Netz“ als Kurzform');
+    assert.equal(rechteText(c, (v) => v).at(-1), 'Reagiert auf diese Ereignisse: Neue Post ist angelegt; Ein Dokument wurde hochgeladen');
   });
 });
 
