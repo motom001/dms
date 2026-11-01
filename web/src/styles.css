@@ -954,6 +954,7 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
 .wahlkarte:hover, .wahlkarte:focus-visible { border-color: var(--akzent); }
 .anleitung { padding-left: 1.3em; display: grid; gap: 10px; margin: 8px 0 14px; }
 .anleitung li.erledigt { color: var(--leise); }
+.nfb-haken { color: var(--gruen); font-weight: 700; } /* #414: erledigter Schritt */
 .linkliste { padding-left: 1.1em; display: grid; gap: 6px; margin: 10px 0 16px; }
 .karte.assistent details.blatt > summary { cursor: pointer; }
 

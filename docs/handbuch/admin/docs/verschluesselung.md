@@ -46,8 +46,10 @@ Werte, die schon vorher nicht lesbar waren, bleiben, wie sie sind; das DMS sagt,
 
 **Danach:**
 
-- **Neues Notfallblatt herunterladen.** Bis dahin weisen Übersicht und Sicherung darauf hin.
-- **Neue Sicherung anlegen** – der Knopf steht gleich auf der Seite.
+Die Seite zeigt die beiden nächsten Schritte mit je einem Knopf; ein erledigter Schritt bekommt ein Häkchen:
+
+- **Neues Notfallblatt herunterladen** – der Knopf **Notfallblatt herunterladen** lädt das PDF direkt herunter (wie der Knopf im Abschnitt *Notfallblatt* darunter). Bis dahin weisen Übersicht und Sicherung darauf hin.
+- **Neue Sicherung anlegen** – mit **Jetzt sichern**.
 - **Ältere Sicherungen** bleiben mit dem alten Schlüssel verschlüsselt. Die Liste unter [Sicherung](sicherung.md) kennzeichnet sie mit „früherer Schlüssel“. Zum [Wiederherstellen](wiederherstellen.md) einer solchen Sicherung fragt das DMS nach dem Schlüssel vom alten Notfallblatt. Bewahre es auf, solange du diese Sicherungen brauchst – oder lösche sie mit **Sicherungen mit früherem Schlüssel löschen**.
 
 !!! warning "Schlüsseldatei-Kopien"
