@@ -22,7 +22,7 @@ import { STEMPEL_MODI, type StempelModus, type StempelTyp } from '../../../share
 import { useStempelVorlagen } from '../ablage/Stempel';
 import { Bereich, liesOffen, merkeOffen, TYP_BEREICHE, type Klappe, type TypBereich } from './Bereich';
 import { hinweis, rueckfrage } from '../rueckfrage';
-import { artenFuer, artVon, ERKENNUNG_FELDTYPEN, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, type Erkennungsart } from '../../../shared/src/erkennung';
+import { artenFuer, artVon, AUS_DOKUMENT_STANDARD, BESCHRIFTUNG_MAX, ERKENNUNG_FELDTYPEN, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, merkmalsfelder, type AusDokument, type Erkennungsart } from '../../../shared/src/erkennung';
 
 /** Entfernen im Editor wirkt erst beim Speichern (#136). */
 const ERST_BEIM_SPEICHERN = ' Das wird erst mit „Mappentyp speichern“ wirksam.';
@@ -48,6 +48,8 @@ interface Entwurf {
   archiv: Archiv | null;
   /** Stempel beim Weitergeben (#394): vorschlagen oder Pflicht. */
   stempel: StempelTyp | null;
+  /** „Aus Dokument ausfüllen“ (#391). */
+  ausDokument: AusDokument | null;
 }
 
 function neueId(): string {
@@ -62,13 +64,14 @@ function neueId(): string {
 const alsEntwurfRegister = ({ felder: _f, ...r }: Register): EntwurfRegister => ({ ...r, _uid: neueId() });
 
 function entwurfAus(t?: Mappentyp): Entwurf {
-  if (!t) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], berechtigungen: structuredClone(OFFENES_REGELWERK), archiv: null, stempel: null };
+  if (!t) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], berechtigungen: structuredClone(OFFENES_REGELWERK), archiv: null, stempel: null, ausDokument: null };
   const erstes = t.register.find((r) => r.art === 'felder')?.key ?? '';
   const e: Entwurf = {
     id: t.id, name: t.name, schluessel: t.schluessel ?? '', beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '',
     berechtigungen: structuredClone(regelwerkVon(t)),
     archiv: t.archiv ?? null,
     stempel: t.stempel ?? null,
+    ausDokument: t.ausDokument ?? null,
     register: t.register.map(alsEntwurfRegister),
     felder: t.felder.map((f) => ({
       ...f, _uid: neueId(),
@@ -378,6 +381,11 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
         kurz={e.stempel ? STEMPEL_MODI[e.stempel.modus] : 'aus'}>
         <StempelEinstellung stempel={e.stempel} setze={(stempel) => setE({ ...e, stempel })} />
       </Bereich>
+
+      {!system && <Bereich id="erkennung" titel="Erkennung" hilfe={<Hilfe ort="mappentyp.erkennungstyp" />} klappe={klappe('erkennung')}
+        kurz={[e.ausDokument?.aus ? 'Knopf aus' : `„${e.ausDokument?.beschriftung || AUS_DOKUMENT_STANDARD}“`, `${e.felder.filter((f) => f.erkennung).length} Felder markiert`].join(' · ')}>
+        <ErkennungTyp ad={e.ausDokument} setze={(ausDokument) => setE((x) => ({ ...x, ausDokument }))} markiert={merkmalsfelder({ felder: e.felder as unknown as Feld[] }).length} felder={e.felder.filter((f) => f.erkennung).map((f) => f.label || f.key)} />
+      </Bereich>}
 
       <RegelwerkAbschnitt rw={e.berechtigungen} setRw={(f) => setE((x) => ({ ...x, berechtigungen: f(x.berechtigungen) }))} neu={neu}
         gespeichert={gespeichert ? regelwerkVon(gespeichert) : null} typ={entwurfTyp} klappe={klappe('berechtigungen')} />
@@ -984,6 +992,24 @@ function ArchivEinstellung({ archiv, setze, datumsfelder, typId }: { archiv: Arc
         </div>
         {vorschau && <p className="hinweis info">{vorschau.mappen === 1 ? '1 Mappe ist' : `${vorschau.mappen} Mappen sind`} betroffen{vorschau.darfWeg ? `, davon ${vorschau.darfWeg === 1 ? 'wäre 1' : `wären ${vorschau.darfWeg}`} schon „darf weg“` : ''}.</p>}
       </>}
+    </div>
+  );
+}
+
+/** Erkennung am Mappentyp (#391): Knopf „Aus Dokument ausfüllen“ mit eigener Beschriftung oder ausgeblendet. */
+function ErkennungTyp({ ad, setze, markiert, felder }: { ad: AusDokument | null; setze: (a: AusDokument | null) => void; markiert: number; felder: string[] }) {
+  const an = !ad?.aus;
+  return (
+    <div className="raster">
+      <div className="eigenschaft unten">
+        <label className="haken"><input type="checkbox" checked={an} onChange={(ev) => setze(ev.target.checked ? (ad?.beschriftung ? { beschriftung: ad.beschriftung } : null) : { ...ad, aus: true })} />
+          <span>Knopf „Aus Dokument ausfüllen“ zeigen<small className="hilfe">In jeder Mappe dieses Typs: Foto machen oder Datei wählen, die Erkennung trägt die Angaben als Vorschlag in die Felder ein.</small></span></label>
+      </div>
+      {an && <label className="eigenschaft" htmlFor="typ-ad-beschriftung"><span>Beschriftung <small>optional</small></span>
+        <input id="typ-ad-beschriftung" maxLength={BESCHRIFTUNG_MAX} placeholder={`${AUS_DOKUMENT_STANDARD} – z. B. „Visitenkarte scannen“`} value={ad?.beschriftung ?? ''} onChange={(ev) => setze(ev.target.value ? { beschriftung: ev.target.value } : null)} /></label>}
+      <p className="leise klein" style={{ gridColumn: '1 / -1' }}>{felder.length
+        ? `Für die Erkennung markiert: ${felder.join(', ')}${markiert ? '' : ' (keines taugt zum Wiedererkennen von Absendern)'}. Nur diese Felder füllt „Aus Dokument ausfüllen“.`
+        : 'Kein Feld ist für die Erkennung markiert – dann füllt „Aus Dokument ausfüllen“ alle Felder, deren Art sich aus der Bezeichnung ergibt (z. B. „E-Mail“, „Telefon“, „PLZ“). Markieren lässt es sich an jedem Feld unter „Für die Erkennung nutzen“.'}</p>
     </div>
   );
 }

@@ -8,8 +8,8 @@
  */
 
 import type { Fund, Nummernfund, Briefkopf, Treffer } from '../../shared/src/erkennung';
-import { eindeutigerTreffer, findeAngaben, findeMappen, istAbsenderTyp, merkmalsfelder, vorschlaegeAus, type Vergleichsmappe } from '../../shared/src/erkennung';
-import { auswahlText, type Betrag, type Mappe, type Mappentyp, type MappenBezug } from '../../shared/src/model';
+import { eindeutigerTreffer, findeAngaben, findeMappen, fuellfelder, istAbsenderTyp, merkmalsfelder, pruefeVorschlaege, schemaFuer, vorschlaegeAus, type Angaben, type Vergleichsmappe, type Vorschlaege } from '../../shared/src/erkennung';
+import { auswahlText, geschuetzteFelder, type Betrag, type Feld, type Mappe, type Mappentyp, type MappenBezug } from '../../shared/src/model';
 import type { Dienst, Zugriff } from './dienst';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
@@ -47,6 +47,21 @@ export interface ErkennungAntwort {
   ziele: Array<Zielvorschlag & { titel: string }>;
   bezuege: Record<string, MappenBezug>;
 }
+
+/** „Aus Dokument ausfüllen“ (#391): Vorschläge für die Felder eines Mappentyps. */
+export interface TypVorschlaege {
+  /** Je Feld Wert, Sicherheit und Fundstelle – geprüft gegen die Feldtypen; Verweise als Mappen-Id. */
+  vorschlaege: Vorschlaege;
+  /** Titel der vorgeschlagenen Mappen in Verweisfeldern. */
+  bezuege: Record<string, MappenBezug>;
+  /** Verweisfeld ohne passende Mappe: „neue Organisation mit diesen Angaben anlegen“. */
+  neu: Record<string, { typId: string; werte: Record<string, string>; fundstelle: string }>;
+  /** Wie viele Werte die Prüfung verworfen hat. */
+  verworfen: number;
+  /** Länge des gelesenen Texts (0 = nichts gelesen). */
+  zeichen: number;
+}
+export const TEXT_MAX = 200_000;
 
 const MAX_ABSENDER = 5;
 const MAX_ZIELE = 8;
@@ -174,6 +189,93 @@ export class Erkennung {
       ziele,
       bezuege: Object.fromEntries(bezuege),
     };
+  }
+
+  /** Felder, die „Aus Dokument ausfüllen“ für diesen Benutzer füllen darf (#391): keine Passwörter, keine festen Felder. */
+  private erlaubteFelder(typ: Mappentyp, mappe?: Mappe): (f: Feld) => boolean {
+    const fest = geschuetzteFelder(typ, mappe);
+    return (f) => f.typ !== 'passwort' && !fest[f.key];
+  }
+
+  /** Typ und Zugriff prüfen: bestehende Mappe braucht Bearbeiten, eine neue das Anlegen. */
+  private async typFuer(typId: string, mappeId: string | undefined, z?: Zugriff): Promise<{ typ: Mappentyp; mappe?: Mappe }> {
+    const typ = z ? z.typen.get(typId) : await this.repo().holeTyp(typId);
+    if (!typ) throw new Fachfehler(404, 'Diesen Mappentyp gibt es nicht.');
+    if (typ.system) throw new Fachfehler(422, `„${typ.name}“ ist ein Systemmappentyp – dort gibt es „Aus Dokument ausfüllen“ nicht.`);
+    if (mappeId) {
+      const mappe = await this.d.pruefeRecht(z, mappeId, 'U');
+      if (mappe.typId !== typ.id) throw new Fachfehler(422, 'Die Mappe hat einen anderen Mappentyp.');
+      return { typ, mappe };
+    }
+    if (z && !(await this.d.rechteAn(z, { id: '', typId: typ.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)).C) throw new Fachfehler(403, 'Mappen dieses Typs darfst du nicht anlegen.');
+    return { typ };
+  }
+
+  /** JSON Schema der Felder, die die Erkennung füllen darf (#391; für Clients und künftige Engines aus Paketen). */
+  async schema(typId: string, z?: Zugriff): Promise<Record<string, unknown>> {
+    const typ = z ? z.typen.get(typId) : await this.repo().holeTyp(typId);
+    if (!typ) throw new Fachfehler(404, 'Diesen Mappentyp gibt es nicht.');
+    return schemaFuer(typ, this.erlaubteFelder(typ));
+  }
+
+  /**
+   * „Aus Dokument ausfüllen“ (#391, Stufe 1): eingebaute Erkennung gegen die Felder des Typs. Text aus `text`
+   * (z. B. von Fotos, die gerade gelesen wurden) und den Volltexten der Dokumente `dokumente` (muss man lesen
+   * dürfen). Verweisfelder: vorhandene Mappe des Zieltyps, die sich im Text wiederfindet – sonst ein Vorschlag
+   * „neu anlegen“. Jede Antwort geht durch die Prüfung gegen die Feldtypen; nichts wird gespeichert.
+   */
+  async fuerTyp(typId: string, eingabe: unknown, z?: Zugriff): Promise<TypVorschlaege> {
+    const e = (eingabe ?? {}) as { text?: unknown; dokumente?: unknown; mappe?: unknown };
+    const { typ, mappe } = await this.typFuer(typId, typeof e.mappe === 'string' && e.mappe ? e.mappe : undefined, z);
+    const teile: string[] = [];
+    if (typeof e.text === 'string' && e.text.trim()) teile.push(e.text.slice(0, TEXT_MAX));
+    for (const id of (Array.isArray(e.dokumente) ? e.dokumente : []).filter((x): x is string => typeof x === 'string').slice(0, 10)) {
+      const d = await this.repo().holeDokument(id);
+      if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+      await this.d.pruefeRecht(z, d.mappeId, 'R');
+      const t = await this.repo().volltext(id);
+      if (!t?.trim()) throw new Fachfehler(409, `„${d.name}“ hat noch keinen Volltext. Warte, bis die Texterkennung fertig ist, oder wähle ein Foto.`);
+      teile.push(t);
+    }
+    const text = teile.join('\n\n').slice(0, TEXT_MAX);
+    const erlaubt = this.erlaubteFelder(typ, mappe);
+    const angaben = findeAngaben(text);
+    const roh: Record<string, unknown> = vorschlaegeAus(typ, text, angaben);
+    const bezuege: Record<string, MappenBezug> = {};
+    const neu: TypVorschlaege['neu'] = {};
+    for (const { feld: f } of fuellfelder(typ)) {
+      if (f.typ !== 'referenz' || !f.zielTyp || f.zielTyp === '*' || !erlaubt(f)) continue;
+      const v = await this.verweisFuer(f, text, angaben, z);
+      if (v?.mappe) { roh[f.key] = { wert: f.mehrfach ? [v.mappe.id] : v.mappe.id, sicherheit: v.sicherheit, fundstelle: v.fundstelle }; bezuege[v.mappe.id] = { titel: v.mappe.titel ?? '', typId: v.mappe.typId }; }
+      else if (v?.neu) neu[f.key] = v.neu;
+    }
+    const { vorschlaege, verworfen } = pruefeVorschlaege(typ, roh, erlaubt);
+    if (verworfen.length) log.warn('Vorschläge der Erkennung verworfen', { typ: typ.name, felder: verworfen.map((x) => `${x.feld}: ${x.grund}`).join('; ') });
+    log.info('Aus Dokument ausfüllen', { typ: typ.name, zeichen: text.length, vorschlaege: Object.keys(vorschlaege).length, neu: Object.keys(neu).length });
+    return { vorschlaege, bezuege, neu, verworfen: verworfen.length, zeichen: text.length };
+  }
+
+  /** Verweisfeld: Mappe des Zieltyps, die im Text steht (markierte Felder, sonst der Titel); sonst „neu anlegen“. */
+  private async verweisFuer(f: Feld, text: string, a: Angaben, z?: Zugriff): Promise<{ mappe?: Mappe; sicherheit: 'hoch' | 'mittel' | 'niedrig'; fundstelle: string; neu?: TypVorschlaege['neu'][string] } | null> {
+    const ziel = await this.repo().holeTyp(f.zielTyp!);
+    if (!ziel || (z && !z.typen.has(ziel.id))) return null;
+    const alle = await this.repo().listeMappen(ziel.id);
+    const lesbar = await this.d.lesbare(z, alle.map((m) => m.id));
+    const mappen = alle.filter((m) => lesbar.has(m.id));
+    // Ohne markierte Felder zählt der Titel als Name.
+    const markiert = merkmalsfelder(ziel).length > 0;
+    const vergleich = markiert ? ziel : { id: ziel.id, felder: [{ key: '_titel', label: 'Name', typ: 'text' as const, erkennung: { art: 'name' as const } }] };
+    const treffer = findeMappen(text, [vergleich], mappen.map((m) => ({ id: m.id, typId: m.typId, werte: markiert ? m.werte : { _titel: m.titel ?? '' } })));
+    const best = eindeutigerTreffer(treffer) ?? (treffer.length === 1 ? treffer[0] : null);
+    if (best) return { mappe: mappen.find((m) => m.id === best.mappeId), sicherheit: best.stark ? 'hoch' : 'mittel', fundstelle: `gefunden: ${best.gruende.join(', ')}` };
+    if (!istAbsenderTyp(ziel) && markiert) return null;
+    const firma = a.briefkopf?.name ?? a.person?.organisation;
+    if (!firma) return null;
+    if (z && !(await this.d.rechteAn(z, { id: '', typId: ziel.id, werte: {}, titel: '', erstellt: '', geaendert: '' } as Mappe, true)).C) return null;
+    const werte = Object.fromEntries(Object.entries(vorschlaegeAus(ziel, text, { ...a, person: null, briefkopf: { ...(a.briefkopf ?? { fundstelle: a.person?.fundstelle ?? '' }), name: firma } }))
+      .filter(([k, v]) => typeof v.wert === 'string' && ziel.felder.some((x) => x.key === k && x.typ !== 'referenz')).map(([k, v]) => [k, v.wert as string]));
+    if (!Object.keys(werte).length) { const n = ziel.felder.find((x) => x.typ === 'text'); if (n) werte[n.key] = firma; }
+    return { sicherheit: 'mittel', fundstelle: a.briefkopf?.fundstelle ?? a.person?.fundstelle ?? '', neu: { typId: ziel.id, werte, fundstelle: a.briefkopf?.fundstelle ?? a.person?.fundstelle ?? firma } };
   }
 
   /** „Neue Organisation anlegen“: der erste Absender-Typ mit Namensfeld, den der Benutzer sieht und anlegen darf. */

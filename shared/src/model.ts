@@ -127,6 +127,8 @@ export interface MappentypDaten {
    * Einstellungen (nicht in der Tabelle der Mappentypen); beim Lesen und Speichern hier mitgeliefert.
    */
   stempel?: import('./stempel').StempelTyp | null;
+  /** „Aus Dokument ausfüllen“ (#391): eigene Beschriftung oder ausgeblendet; wie der Stempel in den Einstellungen. */
+  ausDokument?: import('./erkennung').AusDokument | null;
 }
 export interface Mappentyp extends MappentypDaten {
   id: string;

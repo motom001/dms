@@ -1506,6 +1506,17 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     } },
     { methode: 'POST', pfad: '/api/post/:id/zusammenlegen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.legePostZusammen(a.params.id, b(a), ich(a).id, await zg(a))) },
     { methode: 'POST', pfad: '/api/mappen/:id/zuordnen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.ordneZu(a.params.id, b(a), ich(a).id, await zg(a))) },
+    // „Aus Dokument ausfüllen“ (#391): Vorschläge für die Felder eines Mappentyps aus Text, Dokumenten oder einer Datei.
+    { methode: 'POST', pfad: '/api/typen/:id/vorschlaege', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erkennung.fuerTyp(a.params.id, b(a), await zg(a))) },
+    { methode: 'POST', pfad: '/api/typen/:id/vorschlaege/datei', zugang: 'angemeldet', lesend: true, roh: 30 * 1024 * 1024, handler: async (a) => {
+      const z = await zg(a);
+      if (!Buffer.isBuffer(a.body) || !a.body.length) throw new Fachfehler(422, 'Die Datei ist leer.');
+      // Erst Zugriff prüfen, dann die (teure) Texterkennung.
+      await dienst.erkennung.fuerTyp(a.params.id, { mappe: a.query.mappe }, z);
+      const { text, info } = await dienst.textAusDatei(a.body, String(a.query.name ?? ''), String(a.query.typ ?? ''));
+      return ok({ ...(await dienst.erkennung.fuerTyp(a.params.id, { text, mappe: a.query.mappe }, z)), text: text.slice(0, 200_000), info });
+    } },
+    { methode: 'GET', pfad: '/api/typen/:id/erkennungsschema', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erkennung.schema(a.params.id, await zg(a))) },
     // Erkennung (#336): Vorschläge beim Zuordnen; POST rechnet neu (z. B. nach dem Anlegen einer Organisation).
     { methode: 'GET', pfad: '/api/mappen/:id/erkennung', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erkennung.fuerBenutzer(a.params.id, await zg(a))) },
     { methode: 'POST', pfad: '/api/mappen/:id/erkennung', zugang: 'angemeldet', handler: async (a) => {

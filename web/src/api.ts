@@ -6,7 +6,7 @@ import type { Stufe as KleinStufe } from '../../shared/src/verkleinern';
 import type { Bereich, SchwaerzSeite } from '../../shared/src/schwaerzen';
 import type { Archiv } from '../../shared/src/archiv';
 import type { UeberfluessigeVariable } from '../../shared/src/umgebungsvariablen';
-import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, DokumentVersion, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
+import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, DokumentVersion, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Wert, Werte } from '../../shared/src/model';
 import type { Feldbedingung, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
 import type { InstalliertesPaket, Katalog, LaeuferZustand, RechtePunkt } from '../../shared/src/pakete';
@@ -32,6 +32,14 @@ export interface PostErkennung {
   neuerAbsender: { typId: string; werte: Record<string, string>; fundstelle: string } | null;
   ziele: Array<{ mappeId: string; typId: string; titel: string; punkte: number; gruende: string[] }>;
   bezuege: Bezuege;
+}
+
+/** „Aus Dokument ausfüllen“ (#391), wie POST /api/typen/:id/vorschlaege sie liefert. */
+export interface TypVorschlaege {
+  vorschlaege: Record<string, { wert: Wert; sicherheit: Sicherheit; fundstelle: string }>;
+  bezuege: Bezuege;
+  neu: Record<string, { typId: string; werte: Record<string, string>; fundstelle: string }>;
+  verworfen: number; zeichen: number;
 }
 
 /** Grund fürs Löschprotokoll (#470) als Body-Teil bzw. Query. */
@@ -444,6 +452,10 @@ export const api = {
   postAnlegen: (e: { betreff?: string; fuer?: string | null }) => anfrage<Mappe>('POST', '/api/post', e),
   zuordnen: (postId: string, e: { ziel: string; register?: string; dokumente?: string[]; kopieren?: boolean }) =>
     anfrage<{ post: Mappe; ziel: Mappe }>('POST', `/api/mappen/${postId}/zuordnen`, e),
+  /** „Aus Dokument ausfüllen“ (#391): Vorschläge aus Text bzw. Dokumenten; aus einer Datei (Foto, PDF, vCard) mit dem gelesenen Text. */
+  vorschlaege: (typId: string, e: { text?: string; dokumente?: string[]; mappe?: string }) => anfrage<TypVorschlaege>('POST', `/api/typen/${typId}/vorschlaege`, e),
+  vorschlaegeDatei: (typId: string, datei: Blob, name: string, mappe?: string) =>
+    sendeDatei(`/api/typen/${typId}/vorschlaege/datei?${new URLSearchParams({ name, typ: datei.type || 'application/octet-stream', ...(mappe ? { mappe } : {}) })}`, datei) as Promise<TypVorschlaege & { text: string; info: string }>,
   /** Erkennung (#336): Vorschläge beim Zuordnen; neu = jetzt neu rechnen. */
   erkennung: (postId: string, neu = false) => anfrage<PostErkennung>(neu ? 'POST' : 'GET', `/api/mappen/${postId}/erkennung`),
   /** Mehrere Mappen per E-Mail (#151). */
