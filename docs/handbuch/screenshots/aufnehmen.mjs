@@ -806,8 +806,10 @@ async function main() {
   await s.getByRole('heading', { name: 'Aufträge', exact: true }).waitFor();
   await bild(s, 'werkbank-texterkennung');
   // Ohne Mitte (#366): lange Zugriffe unter den Einstellungen, „Installiert“ unter „Neuere Versionen“.
-  await geheZu(s, '/werkbank/datenbank');
+  // #407: unter Einstellungen → Datenbank-Anbindung, unter der Verbindung.
+  await geheZu(s, '/werkbank/anbindung');
   await s.getByRole('heading', { name: /Lange Datenbankzugriffe/ }).waitFor();
+  await s.locator('#lange-zugriffe').evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-datenbank');
   await geheZu(s, '/werkbank/technik');
   await s.getByRole('heading', { name: 'Installiert', exact: true }).waitFor();

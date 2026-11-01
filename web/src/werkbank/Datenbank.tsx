@@ -5,8 +5,9 @@ import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 
 /**
- * Lange Datenbankzugriffe (#12): Einstellungen (Schwelle, Aufbewahrung) mit der Liste der
- * gespeicherten Langläufer darunter (#366) und was gerade in der Datenbank läuft.
+ * Lange Datenbankzugriffe (#12) und was gerade in der Datenbank läuft – seit #407 unter
+ * Einstellungen → Datenbank-Anbindung, unter der Verbindung: Einstellungen (Schwelle, Aufbewahrung)
+ * direkt bei der Liste der gespeicherten Langläufer (#366), darunter „Was läuft gerade“.
  */
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'medium' });
 const dauer = (ms: number) => (ms >= 10_000 ? `${(ms / 1000).toFixed(1).replace('.', ',')} s` : `${ms.toLocaleString('de-DE')} ms`);
@@ -27,18 +28,14 @@ export function useDatenbank(sichtbar: boolean) {
 }
 export type DatenbankZustand = ReturnType<typeof useDatenbank>;
 
-export function DatenbankPanel({ z, offen }: { z: DatenbankZustand; offen?: string }) {
+/** Abschnitte unter der Verbindung (#407): lange Datenbankzugriffe, was gerade läuft. */
+export function DatenbankAbschnitte({ z, offen }: { z: DatenbankZustand; offen?: string }) {
   return (
-    <div className="einspaltig">
-      <div className="mappenkopf">
-        <p className="ueber">Werkbank</p>
-        <h1>Datenbank</h1>
-        <p className="leise">Jeder Datenbankzugriff wird gestoppt. Was länger dauert als die Schwelle, landet unten in der Liste „Lange Datenbankzugriffe“ und als Warnung im Protokoll. <Hilfe ort="werkbank.datenbank" /></p>
-      </div>
+    <>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       {z.stand?.einstellungen ? <Einstellungen z={z} offen={offen} /> : !z.stand && <p className="leise">Lade …</p>}
       <Laufend z={z} />
-    </div>
+    </>
   );
 }
 
@@ -59,7 +56,7 @@ function Langlaeufer({ z, offen }: { z: DatenbankZustand; offen?: string }) {
   const umschalten = (id: string) => setAuf((x) => { const n = new Set(x); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   return (
     <div className="stapel">
-      <h3 className="zwischen">Lange Datenbankzugriffe <span className="zusatz">· neueste oben</span></h3>
+      <h3 className="zwischen">Gespeicherte Zugriffe <span className="zusatz">· neueste oben</span></h3>
       {!liste.length
         ? <p className="leise">Keine – alle Zugriffe waren schneller als die Schwelle.</p>
         : <ul ref={rahmen} className="aufklappliste festhoehe">
@@ -105,8 +102,9 @@ function Einstellungen({ z, offen }: { z: DatenbankZustand; offen?: string }) {
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   return (
-    <form className="blatt" onSubmit={speichern} onKeyDown={ent.tasten}>
-      <h2 className="h3">Einstellungen</h2>
+    <form className="blatt" id="lange-zugriffe" onSubmit={speichern} onKeyDown={ent.tasten}>
+      <h2 className="h3">Lange Datenbankzugriffe <Hilfe ort="werkbank.datenbank" /></h2>
+      <p className="leise">Jeder Datenbankzugriff wird gestoppt. Was länger dauert als die Schwelle, landet in der Liste und als Warnung im Protokoll.</p>
       <div className="raster">
         <label className="eigenschaft"><span>Lang ab <small>Millisekunden, Standard 500</small></span><input type="number" min={1} max={600000} value={schwelle} onChange={(x) => setSchwelle(x.target.value)} /></label>
         <label className="eigenschaft"><span>Aufbewahren <small>Tage, Standard 30</small></span><input type="number" min={1} max={3650} value={tage} onChange={(x) => setTage(x.target.value)} /></label>
@@ -123,8 +121,8 @@ function Laufend({ z }: { z: DatenbankZustand }) {
   const schwelle = z.stand?.einstellungen?.schwelleMs ?? 500;
   const lang = liste.filter((q) => q.seitMs >= schwelle).length;
   return (
-    <div className="blatt">
-      <h2 className="h3">Läuft gerade</h2>
+    <div className="blatt" id="laeuft-gerade">
+      <h2 className="h3">Was läuft gerade</h2>
       {lang > 0 && <div className="hinweis warn"><p>{lang} {lang === 1 ? 'Abfrage läuft' : 'Abfragen laufen'} schon länger als {dauer(schwelle)}.</p></div>}
       {!liste.length
         ? <p className="leise">Gerade keine Abfrage in der Datenbank (außer dieser). Wird alle fünf Sekunden aktualisiert.</p>

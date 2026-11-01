@@ -56,7 +56,7 @@ Jede Zeile im [Protokoll](fehlersuche.md#protokoll) gehört zu einem Modul. Für
 | --- | --- |
 | Protokoll dauerhaft | Container-Logs: `docker logs <app-container>` |
 | Protokoll der letzten 24 Stunden | Werkbank → Protokoll |
-| Lange Datenbankzugriffe | Werkbank → Datenbank (Tabelle `langlaeufer`) |
+| Lange Datenbankzugriffe | Werkbank → Datenbank-Anbindung (Tabelle `langlaeufer`) |
 | Datenbank sichern | am besten über **Werkbank → Sicherung**; zusätzlich mit zwei Containern `docker exec <db-container> pg_dump -U dms dms > dms.sql`, bei dms-komplett `docker exec <container> pg_dump -h 127.0.0.1 -U dms dms > dms.sql` |
 | Dateien sichern | Ordner `files` aus der Compose-Vorlage |
 

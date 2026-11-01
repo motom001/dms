@@ -1,8 +1,8 @@
 # Fehlersuche und Support
 
-Alles dazu steht in der Werkbank unter **Wartung und Fehlersuche**. Die Gruppe enthält Protokoll, Gemeldete Fehler, Sicherung, Wiederherstellen, Vollexport, Wartungsmodus, Wartungsoperationen, Datenbank, Technik und Demo-Daten. Diese Seite beschreibt die Werkzeuge zur Fehlersuche; [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md), [Vollexport](export.md), [Wartungsmodus](wartungsmodus.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen) und [Demo-Daten](demo.md) haben eigene Seiten.
+Alles dazu steht in der Werkbank unter **Wartung und Fehlersuche**. Die Gruppe enthält Protokoll, Gemeldete Fehler, Sicherung, Wiederherstellen, Vollexport, Wartungsmodus, Wartungsoperationen, Technik und Demo-Daten. Diese Seite beschreibt die Werkzeuge zur Fehlersuche; [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md), [Vollexport](export.md), [Wartungsmodus](wartungsmodus.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen) und [Demo-Daten](demo.md) haben eigene Seiten.
 
-*Protokoll* und *Gemeldete Fehler* gehören zur Vorlage **Betrieb**, *Datenbank* nur zur Vorlage **Alles**. *Technik* steht in jeder Vorlage.
+*Protokoll* und *Gemeldete Fehler* gehören zur Vorlage **Betrieb**. *Technik* steht in jeder Vorlage.
 
 --8<-- "ausgeblendet-schritt.md"
 
@@ -42,11 +42,7 @@ docker logs <app-container>
 
 ## Datenbank
 
-**Werkbank → Datenbank** zeigt **lange Datenbankzugriffe** – Zugriffe, die länger als eine Schwelle gedauert haben (Standard 500 ms, aufbewahrt 30 Tage; beides einstellbar) – und was **gerade** in der Datenbank läuft.
-
-Die Liste steht im Abschnitt **Einstellungen** unter *Lang ab* und *Aufbewahren*, die neuesten oben; sie zeigt etwa zehn Einträge, darin scrollst du. Ein Klick auf einen Eintrag klappt ihn auf: Abfrage, Aufrufer (Anfrage und Benutzer), Dauer und Zeit. Einzelheiten zur selben Zeit stehen im [Protokoll](#protokoll) (Modul *datenbank*).
-
-![Datenbank](bilder/werkbank-datenbank.png)
+Lange Datenbankzugriffe und was gerade in der Datenbank läuft stehen unter **Werkbank → Einstellungen → Datenbank-Anbindung**, unter der Verbindung – siehe [Lange Datenbankzugriffe](installation.md#lange-datenbankzugriffe). Wirkt das DMS langsam, schau dort zuerst nach.
 
 ## Zeitmessung (Entwicklermodus)
 
