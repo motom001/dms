@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/entwickler/v0.94/pakete-code/">
+        <link rel="canonical" href="https://motom001.github.io/dms/entwickler/v0.95/pakete-code/">
       
       
         <link rel="prev" href="../leistung/">
@@ -1251,6 +1251,7 @@
 <li><code>GET /dokumente/{id}/seiten/{nr}/scan?dpi=300</code> – eine Seite als Graustufenbild (PGM), z. B. für eigene Texterkennung (72–400 dpi).</li>
 <li><code>PUT /dokumente/{id}/volltext</code> mit <code>{ "text": "…" }</code> – Volltext setzen (Recht <code>dokumente: schreiben</code>). Die Historie vermerkt, wer den Text gesetzt hat; setzt ein Paket den Text, überschreibt die Texterkennung des DMS ihn nicht mehr.</li>
 <li><code>POST /dokumente/{id}/seiten</code>, <code>POST /dokumente/zusammenfuegen</code>, <code>PUT /dokumente/{id}/archivnummer</code> – Seiten teilen und zusammenfügen, Archivnummer setzen.</li>
+<li><code>GET /dokumente/{id}/schwaerzen</code> und <code>POST /dokumente/{id}/schwaerzen</code> mit <code>{ "bereiche": [{ "seite": 1, "x": 0.1, "y": 0.2, "b": 0.3, "h": 0.05 }], "begriffe": ["Mustermann"], "muster": ["iban"], "ziel": "kopie" }</code> – Stellen endgültig schwärzen (#392). Koordinaten relativ zur angezeigten Seite (0 bis 1, Ursprung oben links); <code>GET</code> liefert die Wörter mit Lage zum Selbst-Suchen. Ergebnis ist ein neues Dokument „… (geschwärzt)“ (Ereignis <code>dokument.hochgeladen</code>) oder mit <code>"ziel": "version"</code> eine neue Version.</li>
 </ul>
 
 

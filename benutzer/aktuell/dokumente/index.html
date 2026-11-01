@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.94/dokumente/">
+        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.95/dokumente/">
       
       
         <link rel="prev" href="../mappen/">
@@ -705,6 +705,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#schwaerzen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schwärzen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#volltext" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1277,6 +1288,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#schwaerzen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schwärzen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#volltext" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1462,6 +1484,31 @@
 <li>Schwarz-Weiß-Scans (1 Bit) und Bilder mit Sonderfarben bleiben, wie sie sind – dort wäre ein JPEG größer oder unschärfer.</li>
 <li>Verschlüsselte PDFs lassen sich nicht verkleinern.</li>
 <li>Beim <strong>Weitergeben</strong> (E-Mail, Export, Herunterladen mit Stempel) gibt es zusätzlich das Kästchen <strong>PDFs verkleinert senden</strong> – siehe <a href="../versenden/#verkleinert-weitergeben">Verkleinert weitergeben</a>. Große PDFs auf einmal verkleinert der Administrator in der Werkbank.</li>
+</ul>
+<h2 id="schwaerzen">Schwärzen<a class="headerlink" href="#schwaerzen" title="Permanent link">&para;</a></h2>
+<p>Bevor du einen Kontoauszug an die Familienkasse, eine Gehaltsabrechnung an den Vermieter oder einen Beleg an einen Kunden gibst, willst du manches unkenntlich machen: Kontonummer, Gehalt, Gesundheitsangaben, Namen anderer Leute. <strong>Schwärzen</strong> neben einem PDF oder Bild (JPEG, PNG) macht daraus eine <strong>geschwärzte Kopie</strong>, in der diese Stellen wirklich fehlen – nicht nur schwarz überdeckt.</p>
+<p><img alt="Schwärzen: Suchbegriff und IBAN-Vorschlag, Vorschau der schwarzen Bereiche" src="../bilder/schwaerzen.png" /></p>
+<p>So wählst du aus, was schwarz wird:</p>
+<ul>
+<li><strong>Bereiche aufziehen</strong> – mit der Maus (oder dem Finger) ein Rechteck über die Stelle ziehen. Ein <strong>Wort antippen</strong> schwärzt genau dieses Wort; einen eigenen Bereich nochmal antippen nimmt ihn wieder weg. Am Handy schaltest du mit <strong>✎ Aufziehen an/aus</strong> zwischen Aufziehen und Blättern um.</li>
+<li><strong>Überall schwärzen</strong> – einen Suchbegriff eingeben, z. B. einen Namen oder eine IBAN, und <strong>Hinzufügen</strong>: Er wird auf allen Seiten geschwärzt, egal ob groß oder klein geschrieben und auch mit oder ohne Leerzeichen („DE89 3704“ findet „DE893704“). Daneben steht, wie oft er vorkommt.</li>
+<li><strong>Vorschläge</strong> – das DMS sucht selbst nach <strong>IBAN</strong>, <strong>Steuer-Id</strong>, <strong>Geburtsdatum</strong> (ein Datum mit „geb.“ davor), <strong>E-Mail</strong> und <strong>Telefon</strong> und listet die Fundstellen zum Anhaken auf. Das passiert auf deinem Rechner bzw. im DMS, ohne Internet. IBAN und Steuer-Id werden mit ihrer Prüfziffer geprüft, Telefonnummern können auch einmal danebenliegen – sieh dir die Liste an.</li>
+<li><strong>Vorschau</strong> zeigt die Seiten so, wie sie danach aussehen. <strong>Textstellen zeigen</strong> blendet ein, wo das DMS Text erkannt hat – so siehst du, ob die Textebene genau über dem sichtbaren Text liegt.</li>
+</ul>
+<p>Mit <strong>Geschwärzt speichern</strong> kommt eine Rückfrage: Schwärzen lässt sich nicht rückgängig machen. Danach liegt im selben Register ein neues Dokument <strong>„… (geschwärzt)“</strong>; das Original bleibt unverändert in der Mappe. Ist für das Register die <a href="#versionen">Versionierung</a> an, kannst du stattdessen <strong>Neue Version</strong> wählen – dann bleibt die ungeschwärzte Fassung als ältere Version erhalten und ist für alle mit Leserecht weiter zu sehen. Zum Weitergeben ist die Kopie meist besser.</p>
+<p>Was dabei passiert:</p>
+<ul>
+<li><strong>Alle Seiten</strong> werden neu als Bild aufgebaut (150 dpi), die Bereiche in den Bildpunkten schwarz gefüllt. Aus dem Original kommt nichts mit: keine Textebene darunter, keine Anmerkungen, Formularfelder, Lesezeichen, eingebetteten Dateien, Autor, Titel oder andere Metadaten. Bilder bleiben Bilder desselben Typs, ohne EXIF-Daten (z. B. Aufnahmeort).</li>
+<li>Die <strong>Textebene</strong> entsteht neu – ohne die geschwärzten Wörter. Die Kopie bleibt also durchsuchbar und kopierbar, nur die Stellen nicht; der <a href="#volltext">Volltext</a> der Kopie enthält sie nicht, die Suche findet sie dort nicht.</li>
+<li>Ein Wort, das ein Bereich auch nur teilweise berührt, fehlt in der Textebene ganz.</li>
+<li>Die Historie der Mappe vermerkt „geschwärzte Fassung erstellt“ mit der Zahl der Stellen – nie die Suchbegriffe oder den geschwärzten Text.</li>
+</ul>
+<p>Gut zu wissen:</p>
+<ul>
+<li>Bei <strong>Scans ohne Textebene</strong> liest die Texterkennung die Seiten zuerst; das dauert etwas. Ohne Texterkennung gehen nur Bereiche, keine Suchbegriffe und Vorschläge.</li>
+<li>Vektortext wird dabei zu einem Bild – die Kopie ist meist etwas größer und nicht ganz so scharf wie ein PDF direkt aus einem Programm.</li>
+<li>Schwärzen geht mit dem Recht „Bearbeiten“ an der Mappe, für höchstens 300 Seiten auf einmal (längere PDFs vorher <a href="#pdf-bearbeiten">teilen</a>), nicht bei PDFs mit Passwortschutz.</li>
+<li>Das <strong>Original</strong> enthält weiterhin alles. Gib die geschwärzte Kopie weiter – per <a href="../versenden/">E-Mail, Export oder Link</a>.</li>
 </ul>
 <h2 id="volltext">Volltext<a class="headerlink" href="#volltext" title="Permanent link">&para;</a></h2>
 <p>Damit die <a href="../ablage/#im-text-der-dokumente-suchen">Volltextsuche</a> ein Dokument findet, liest das DMS nach dem Hochladen im Hintergrund seinen Text: bei PDFs die Textebene, bei Scans und Fotos per Texterkennung. Neben dem Dokument steht, wie weit es ist:</p>

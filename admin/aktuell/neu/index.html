@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.94/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.95/neu/">
       
       
         <link rel="prev" href="..">
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-094" class="md-skip">
+        <a href="#neu-in-version-095" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0940" class="md-nav__link">
+  <a href="#0950" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.94.0
+        0.95.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.94.0">
+    <nav class="md-nav" aria-label="0.95.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -379,6 +379,17 @@
     <span class="md-ellipsis">
       
         Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#noch-nicht-dabei" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Noch nicht dabei
       
     </span>
   </a>
@@ -1937,15 +1948,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0940" class="md-nav__link">
+  <a href="#0950" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.94.0
+        0.95.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.94.0">
+    <nav class="md-nav" aria-label="0.95.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1953,6 +1964,17 @@
     <span class="md-ellipsis">
       
         Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#noch-nicht-dabei" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Noch nicht dabei
       
     </span>
   </a>
@@ -1995,17 +2017,27 @@
   
 
 
-<h1 id="neu-in-version-094">Neu in Version 0.94<a class="headerlink" href="#neu-in-version-094" title="Permanent link">&para;</a></h1>
-<h2 id="0940">0.94.0<a class="headerlink" href="#0940" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-095">Neu in Version 0.95<a class="headerlink" href="#neu-in-version-095" title="Permanent link">&para;</a></h1>
+<h2 id="0950">0.95.0<a class="headerlink" href="#0950" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Paket-Läufer: Recht nur für Post</strong> (#435): Pakete mit Code können in <code>code.rechte</code> jetzt <code>dms:post</code> angeben statt aller Mappentypen (<code>"*"</code>). Mit <code>lesen</code>/<code>schreiben: ["dms:post"]</code> darf ein Paket Post lesen, teilen und die Archivnummer und den Volltext ihrer Dokumente setzen – andere Mappen sieht es nicht. Die Rechte-Rückfrage bei der Installation zeigt „Post“. Erstes Paket damit: <strong>Trennblatt</strong> 1.0.1.</li>
-<li>Unbekannte Kennungen <code>dms:…</code> in <code>code.rechte</code> lehnt das DMS jetzt beim Installieren mit einer klaren Meldung ab (bisher wurden sie stillschweigend ignoriert). Erlaubt sind <code>dms:ablageort</code>, <code>dms:rolle</code> und <code>dms:post</code>.</li>
-<li>Entwicklerhandbuch <em>Pakete mit Code → Im Manifest</em>: <code>dms:post</code> mit Beispiel.</li>
+<li><strong>Dokumente endgültig schwärzen</strong> (#392): Kontonummer, Gehalt, Gesundheitsangaben oder Namen Dritter vor dem Weitergeben unkenntlich machen – wirklich entfernt, nicht nur schwarz überdeckt.</li>
+<li>Am PDF oder Bild (JPEG, PNG) <strong>Schwärzen</strong>: Seitenansicht zum <strong>Aufziehen von Bereichen</strong> (Maus und Touch) und <strong>Antippen einzelner Wörter</strong>, <strong>Suchbegriff überall schwärzen</strong> (ohne Groß-/Kleinschreibung, auch über Leerzeichen hinweg) und <strong>Vorschläge</strong> zum Anhaken: IBAN und Steuer-Id (mit Prüfziffer), Geburtsdatum, E-Mail, Telefon – ohne Internet. <strong>Vorschau</strong> der schwarzen Bereiche, Rückfrage „nicht rückgängig zu machen“.</li>
+<li>Ergebnis ist ein eigenes Dokument <strong>„… (geschwärzt)“</strong> im selben Register; das Original bleibt unverändert. Mit Versionierung wahlweise als <strong>neue Version</strong> (die ungeschwärzte bleibt als ältere Version).</li>
+<li>Sicher: <strong>alle Seiten</strong> werden neu gerendert (150 dpi), die Bereiche in den Bildpunkten schwarz gefüllt, das PDF neu aufgebaut – ohne Metadaten, XMP, Anmerkungen, Formulare, eingebettete Dateien und JavaScript. Die <strong>Textebene</strong> entsteht neu ohne die geschwärzten Wörter; Volltext und Suche finden sie nicht mehr. Bilder bleiben Bilder (ohne EXIF), Scans ohne Text liest vorher die Texterkennung.</li>
+<li>Historie „geschwärzte Fassung erstellt“ nur mit der Zahl der Stellen – ohne Suchbegriffe und Inhalt. Eine Kopie löst wie das Hochladen das Ereignis <code>dokument.hochgeladen</code> aus.</li>
+<li>Schnittstelle: <code>GET</code>/<code>POST /dokumente/{id}/schwaerzen</code> (Bereiche, Suchbegriffe, Muster → neues Dokument oder Version), <code>GET /dokumente/{id}/schwaerzen/seiten/{nr}</code>; Herkunft <code>geschwaerzt</code>.</li>
+<li>Ohne neue Bibliothek: poppler (pdftoppm, pdftotext), Tesseract und pdf-lib, alle schon im Image; bewusst kein MuPDF und kein Ghostscript (AGPL).</li>
+<li>Handbücher: <em>Dokumente → Schwärzen</em>, Entwicklerhandbuch (API), Administratorhandbuch <em>Technik</em>.</li>
+</ul>
+<h3 id="noch-nicht-dabei">Noch nicht dabei<a class="headerlink" href="#noch-nicht-dabei" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Schwärzen läuft beim Speichern direkt (kein Hintergrundauftrag); höchstens 300 Seiten auf einmal.</li>
+<li>Vorschläge nur per Muster; eine Erkennung von Namen (z. B. mit Presidio) kommt später als Paket.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.93.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.93.0...v0.94.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.94.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.94.0...v0.95.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
