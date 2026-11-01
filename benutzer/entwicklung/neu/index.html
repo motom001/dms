@@ -419,6 +419,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0843" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.84.3
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.84.3">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0842" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -431,7 +459,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#behoben" class="md-nav__link">
+  <a href="#behoben_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Behoben
@@ -459,7 +487,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#behoben_1" class="md-nav__link">
+  <a href="#behoben_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Behoben
@@ -1177,6 +1205,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0843" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.84.3
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.84.3">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0842" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1189,7 +1245,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#behoben" class="md-nav__link">
+  <a href="#behoben_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Behoben
@@ -1217,7 +1273,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#behoben_1" class="md-nav__link">
+  <a href="#behoben_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Behoben
@@ -1307,8 +1363,18 @@
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="0842">0.84.2<a class="headerlink" href="#0842" title="Permanent link">&para;</a></h2>
+<h2 id="0843">0.84.3<a class="headerlink" href="#0843" title="Permanent link">&para;</a></h2>
 <h3 id="behoben">Behoben<a class="headerlink" href="#behoben" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Mappentyp-Editor: ruhigeres Layout</strong> (#372).</li>
+<li>Verknüpfungsregister: Das Anhaken einer Quelle verschiebt keine Zeilen mehr. Die Auswahl der Trefferliste ist kompakt und hält ihren Platz auch ohne Haken frei (unsichtbar, nicht bedienbar), auf dem Handy ebenso.</li>
+<li>Verweisfeld: <strong>Nur Mappen, die …</strong> steht in einer eigenen Zeile in voller Breite unter Ziel-Mappentyp, Art des Verweises und <em>Mehrere Mappen erlaubt</em>.</li>
+<li>Feld-Editor: Der <strong>Hilfetext</strong> steht bei allen Feldarten oben neben der Bezeichnung; die Eigenschaften der Feldart folgen darunter.</li>
+<li>Abstand zwischen Seitenkopf (z. B. <strong>Mappentyp kopieren</strong>), Sprungleiste („Alle aufklappen“) und Bereichen – im Mappentyp- und im Ansichten-Editor.</li>
+<li>Handbuch: <em>Mappentypen</em> angepasst.</li>
+</ul>
+<h2 id="0842">0.84.2<a class="headerlink" href="#0842" title="Permanent link">&para;</a></h2>
+<h3 id="behoben_1">Behoben<a class="headerlink" href="#behoben_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Archivmodus: Protokolleintrag erst beim Speichern</strong> (#373). Das Ein- und Ausschalten im noch nicht gespeicherten Mappentyp erzeugte schon einen Eintrag: Die Oberfläche fragt dabei die Vorschau („… Mappen betroffen“) per <code>POST /api/werkbank/archiv/vorschau</code> ab, und das Protokoll schrieb jede POST-Anfrage auf Stufe „info“.</li>
 <li>Anfragen, die nur lesen – Vorschauen, Zählungen und Testläufe per POST (Archivmodus, Ansichten, Berechtigungen, Auswahlfilter, Pakete, Demodaten, gleiche Dokumente) –, stehen jetzt nur noch auf Stufe „debug“, wie GET-Anfragen.</li>
@@ -1316,7 +1382,7 @@
 <li>Handbuch: <em>Archivmodus</em> und <em>Technik → Module</em> ergänzt.</li>
 </ul>
 <h2 id="0841">0.84.1<a class="headerlink" href="#0841" title="Permanent link">&para;</a></h2>
-<h3 id="behoben_1">Behoben<a class="headerlink" href="#behoben_1" title="Permanent link">&para;</a></h3>
+<h3 id="behoben_2">Behoben<a class="headerlink" href="#behoben_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Werkbank:</strong> Die Zahlen neben den Bereichen (z. B. Nummernkreise, Pakete, Benutzer, Postfächer, Darf weg) stehen sofort da, wenn du die Werkbank öffnest – nicht erst, nachdem du den Bereich einmal angeklickt hast. Die Übersicht liefert sie in einem Aufruf mit; nach Anlegen oder Löschen im Bereich ändert sich die Zahl sofort (#375).</li>
 <li>Schnittstelle (intern): <code>GET /api/werkbank/uebersicht</code> liefert zusätzlich <code>zahlen</code> (Nummernkreise, Pakete, aktive Benutzer, Postfächer, Darf weg).</li>
