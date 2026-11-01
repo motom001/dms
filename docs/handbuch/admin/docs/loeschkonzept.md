@@ -13,6 +13,9 @@ Statt die Vorlage von Hand auszufüllen, lässt du das DMS ein Löschkonzept erz
 - **Was das DMS nicht wissen kann** – Rechtsgrundlage und Grund der Frist, Zuständige, eigene Ansichten für kürzere Fristen –, bleibt als **[eckige Klammer]** stehen; in der Word-Datei gelb markiert.
 - **Lücken** meldet das DMS in der Werkbank und im Dokument unter „Bitte ergänzen“: Mappentyp mit Personenbezug **ohne Zweck** oder **ohne Frist** (kein Archivmodus), kein Verantwortlicher hinterlegt.
 - Im Kopf stehen **Stand und DMS-Version**; der Hinweis „keine Rechtsberatung“ wie in der Vorlage.
+- **Abschnitt 8 „Nachweis“** verweist auf das [Löschprotokoll](datenschutz.md#loschprotokoll) mit seiner Aufbewahrung.
+
+![Werkbank → Datenschutz → Löschkonzept mit den Lücken „Bitte ergänzen“ und den Knöpfen für PDF und Word](bilder/werkbank-loeschkonzept.png)
 
 Aus den Mappen selbst kommt nichts in das Dokument – keine Titel, keine Feldwerte, keine Dokumente. Erzeuge das Löschkonzept neu, wenn du Mappentypen oder Fristen änderst, und trage die Änderung in Abschnitt 9 ein.
 
@@ -33,7 +36,7 @@ Sie ist gegliedert in:
 5. **Wer löschen darf** – Berechtigungen, Papierkorb, Administratoren
 6. **Kopien außerhalb der Ablage** – Sicherungen, Exporte, Auskünfte, Protokoll, Ausdrucke
 7. **Benutzerkonten** – deaktivieren statt löschen
-8. **Nachweis** – Löschungen festhalten, ohne die Daten selbst
+8. **Nachweis** – Löschungen festhalten, ohne die Daten selbst: das [Löschprotokoll](datenschutz.md#loschprotokoll)
 9. **Änderungen des Löschkonzepts**
 
 ## Gut zu wissen

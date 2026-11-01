@@ -5,7 +5,7 @@ import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { datumText } from '../../../shared/src/archiv';
 import { titelOder } from '../seiten';
-import { rueckfrage } from '../rueckfrage';
+import { mitGrund } from '../ablage/Loeschgrund';
 import { fortschrittText } from '../../../shared/src/auftrag';
 
 /** Werkbank → Darf weg (#212): Mappen im Archivmodus, deren Aufbewahrungsfrist abgelaufen ist. */
@@ -31,10 +31,13 @@ export function DarfWegPanel({ z }: { z: DarfWegZustand }) {
   const alle = liste.length > 0 && gewaehlt.size === liste.length;
   async function loeschen() {
     const ids = liste.filter((m) => gewaehlt.has(m.id)).map((m) => m.id);
-    if (!ids.length || !(await rueckfrage({ titel: `${ids.length === 1 ? 'Diese Mappe' : `Diese ${ids.length} Mappen`} löschen?`, text: 'Mit eingeschaltetem Papierkorb landen sie dort, sonst sind sie endgültig weg.', ja: 'Löschen', gefahr: true }))) return;
+    if (!ids.length) return;
+    // Löschprotokoll (#470): Grund „Frist abgelaufen“ vorgeschlagen.
+    const anlass = await mitGrund({ titel: `${ids.length === 1 ? 'Diese Mappe' : `Diese ${ids.length} Mappen`} löschen?`, text: 'Mit eingeschaltetem Papierkorb landen sie dort, sonst sind sie endgültig weg.', ja: 'Löschen', gefahr: true }, 'frist');
+    if (!anlass) return;
     setLaeuft(true); setMeldung(undefined);
     const fehler: string[] = [];
-    for (const id of ids) { try { await api.mappeLoeschen(id); } catch (e) { fehler.push((e as Error).message); } }
+    for (const id of ids) { try { await api.mappeLoeschen(id, anlass); } catch (e) { fehler.push((e as Error).message); } }
     setLaeuft(false); setGewaehlt(new Set());
     setMeldung(fehler.length ? { art: 'schlecht', text: `${ids.length - fehler.length} gelöscht, ${fehler.length} nicht: ${fehler[0]}` } : { art: 'gut', text: `${ids.length} gelöscht.` });
     await z.laden(); await d.neuLaden();

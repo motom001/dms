@@ -834,6 +834,17 @@ async function main() {
     await bild(sa, 'abrufseite');
     await ka.close();
   }
+  // Löschkonzept (#469) und Löschprotokoll (#470): einen alten Vertragspartner löschen (Grund „Nicht mehr nötig“), dann beide Abschnitte.
+  {
+    const alt = await api('POST', '/api/mappen', { typId: d.typ('Vertragspartner').id, werte: { name: 'Alter Stromanbieter' } });
+    await api('DELETE', `/api/mappen/${alt.id}?grund=nicht_noetig`);
+    await geheZu(s, '/werkbank/datenschutz');
+    await s.locator('#loeschkonzept').evaluate((e) => e.scrollIntoView({ block: 'start' }));
+    await bild(s, 'werkbank-loeschkonzept');
+    await s.locator('#loeschprotokoll .lp-eintrag').first().waitFor();
+    await s.locator('#loeschprotokoll').evaluate((e) => e.scrollIntoView({ block: 'start' }));
+    await bild(s, 'werkbank-loeschprotokoll');
+  }
   // Pakete (#369): Abschnitt „Expertenmodus“ aufgeklappt unter den Knöpfen (ohne Katalogabruf).
   await geheZu(s, '/werkbank/pakete');
   await s.getByRole('button', { name: /Expertenmodus/ }).click();
