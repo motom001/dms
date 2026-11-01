@@ -91,7 +91,7 @@ describe('Werkbank: mittlere Spalte nur für große Sammlungen (#366)', () => {
   it('Sammlungen behalten die Mitte, Seiten sind zweiteilig', () => {
     for (const b of ['typen', 'sichten', 'benutzer', 'pakete', 'postfaecher', 'papierkorb', 'protokoll']) assert.ok(hatMitte(b), b);
     for (const b of ['demo', 'technik', 'betrieb', 'verschluesselung', 'texterkennung', 'wartung', 'wartungsmodus', 'sicherung', 'wiederherstellung',
-      'speicherplatz', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'darfweg', 'vollexport', 'ansicht', 'datenbank', 'webdav', 'stempel']) assert.ok(!hatMitte(b), b);
+      'speicherplatz', 'anbindung', 'eingangsordner', 'anmeldeschutz', 'darfweg', 'vollexport', 'ansicht', 'webdav', 'stempel']) assert.ok(!hatMitte(b), b);
     // Jeder Bereich der Leiste ist eingeordnet; neue Bereiche sind ohne Zutun zweiteilig.
     assert.ok(BEREICHE.every((b) => typeof hatMitte(b.pfad) === 'boolean'));
   });
@@ -109,11 +109,22 @@ describe('Werkbank: mittlere Spalte nur für große Sammlungen (#366)', () => {
   });
 
   it('alte Direktlinks führen auf die Seite', () => {
-    assert.equal(werkbankUmleitung('datenbank', '42'), '/werkbank/datenbank?offen=42');
+    assert.equal(werkbankUmleitung('anbindung', '42'), '/werkbank/anbindung?offen=42');
     assert.equal(werkbankUmleitung('technik', 'irgendwas'), '/werkbank/technik');
     assert.equal(werkbankUmleitung('stempel', 'kopie'), '/werkbank/stempel?offen=kopie');
-    assert.equal(werkbankUmleitung('datenbank'), null);
+    assert.equal(werkbankUmleitung('anbindung'), null);
     assert.equal(werkbankUmleitung('typen', 'abc'), null);
+  });
+
+  it('#407: „Wartung und Fehlersuche → Datenbank“ ist umgezogen nach „Einstellungen → Datenbank-Anbindung“', () => {
+    assert.ok(!BEREICHE.some((b) => b.pfad === 'datenbank'));
+    assert.equal(BEREICHE.find((b) => b.pfad === 'anbindung')?.gruppe, 'einstellungen');
+    assert.equal(werkbankUmleitung('datenbank'), '/werkbank/anbindung');
+    assert.equal(werkbankUmleitung('datenbank', undefined, '?offen=7'), '/werkbank/anbindung?offen=7');
+    assert.equal(werkbankUmleitung('datenbank', '42'), '/werkbank/anbindung?offen=42', 'alter Direktlink auf einen langen Zugriff');
+    // Gespeicherte Ansichten übernehmen die neue Kennung.
+    assert.deepEqual(liesAnsicht({ vorlage: 'haushalt', ein: ['datenbank', 'demo'], aus: [] }), { vorlage: 'haushalt', ein: ['anbindung', 'demo'], aus: [] });
+    assert.deepEqual(liesEigene({ ein: ['datenbank', 'anbindung'] }), { ein: ['anbindung'] });
   });
 
   it('Plakette Wartungsmodus: angekündigt, dann an', () => {

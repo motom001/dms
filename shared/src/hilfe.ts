@@ -79,7 +79,7 @@ export const HILFE = {
   'werkbank.wartung': admin('texterkennung/', 'Wartungsoperationen', 'wartungsoperationen'),
   'werkbank.protokoll': admin('fehlersuche/', 'Protokoll', 'protokoll'),
   'werkbank.fehlermeldungen': admin('fehlersuche/', 'Gemeldete Fehler', 'gemeldete-fehler'),
-  'werkbank.datenbank': admin('fehlersuche/', 'Datenbank', 'datenbank'),
+  'werkbank.datenbank': admin('installation/', 'Lange Datenbankzugriffe', 'lange-datenbankzugriffe'),
   'werkbank.technik': admin('fehlersuche/', 'Technik', 'technik'),
   'werkbank.demo': admin('demo/', 'Demo-Daten'),
   'werkbank.sicherung': admin('sicherung/', 'Sicherung'),

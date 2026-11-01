@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { api, ApiFehler, type AnbindungEingabe, type AnbindungPruefung, type AnbindungStand } from '../api';
 import { AnbindungFormular, PruefungAnzeige } from '../einrichtung';
 import { Hilfe } from '../Hilfe';
@@ -7,6 +7,7 @@ import { Link } from '../ort';
 /**
  * Werkbank → Datenbank-Anbindung (#119): ansehen und ändern – erst testen, dann übernehmen.
  * Die Anbindung steht in /data/geheim/datenbank.json und gilt nach einem Neustart.
+ * Darunter (#407, `unten`): lange Datenbankzugriffe und was gerade läuft.
  */
 export function useAnbindung(offen: boolean) {
   const [stand, setStand] = useState<AnbindungStand | null>(null);
@@ -17,7 +18,7 @@ export function useAnbindung(offen: boolean) {
 }
 export type AnbindungZustand = ReturnType<typeof useAnbindung>;
 
-export function AnbindungPanel({ z, nachAenderung }: { z: AnbindungZustand; nachAenderung?: () => void }) {
+export function AnbindungPanel({ z, nachAenderung, unten }: { z: AnbindungZustand; nachAenderung?: () => void; unten?: ReactNode }) {
   const s = z.stand;
   const [a, setA] = useState<AnbindungEingabe | null>(null);
   const [p, setP] = useState<AnbindungPruefung | null>(null);
@@ -27,7 +28,7 @@ export function AnbindungPanel({ z, nachAenderung }: { z: AnbindungZustand; nach
   const [laeuft, setLaeuft] = useState(false);
   const [neustart, setNeustart] = useState(false);
   useEffect(() => { if (s && !a) setA({ host: s.anbindung.host, port: s.anbindung.port, datenbank: s.anbindung.datenbank, benutzer: s.anbindung.benutzer, passwort: '' }); }, [s, a]);
-  if (!s || !a) return <p className="leise">{z.fehler ?? 'Lade …'}</p>;
+  if (!s || !a) return <div className="einspaltig"><p className="leise">{z.fehler ?? 'Lade …'}</p>{unten}</div>;
 
   async function tu(f: () => Promise<void>) {
     setLaeuft(true); setMeldung(undefined); setFelder(undefined);
@@ -55,7 +56,7 @@ export function AnbindungPanel({ z, nachAenderung }: { z: AnbindungZustand; nach
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Datenbank-Anbindung</h1>
-        <p className="leise">Die Anbindung steht in der Datei <span className="mono">{s.datei}</span> und ist führend – auch wenn in der Compose-Datei <span className="mono">DATABASE_URL</span> gesetzt ist. Das Passwort zeigt das DMS nie an. <Hilfe ort="werkbank.anbindung" /></p>
+        <p className="leise">Die Anbindung steht in der Datei <span className="mono">{s.datei}</span> und ist führend – auch wenn in der Compose-Datei <span className="mono">DATABASE_URL</span> gesetzt ist. Das Passwort zeigt das DMS nie an. Darunter siehst du lange Datenbankzugriffe und was gerade in der Datenbank läuft. <Hilfe ort="werkbank.anbindung" /></p>
       </div>
       {s.umgebung === 'abweichend' && <div className="hinweis warn"><p><strong>DATABASE_URL weicht von dieser Anbindung ab und wird ignoriert.</strong> Entferne die Variable aus der Compose-Datei, damit es nicht zu Verwechslungen kommt.</p></div>}
       {s.imContainer && <div className="hinweis info"><p><strong>Die Datenbank läuft in diesem Container (dms-komplett).</strong> Hier ist nichts einzustellen. Zum Umzug auf eine eigene Datenbank: Sicherung hier anlegen und dort wiederherstellen – siehe „Wachsen und umziehen“ im Administratorhandbuch.</p></div>}
@@ -84,6 +85,7 @@ export function AnbindungPanel({ z, nachAenderung }: { z: AnbindungZustand; nach
         </div>
         <p className="leise klein">Übernehmen geht erst nach erfolgreicher Prüfung. Die Daten wandern dabei nicht mit – für einen Umzug in eine andere Datenbank nimm eine <Link to="/werkbank/sicherung" className="verweis">Sicherung</Link> und spiele sie dort ein.</p>
       </form>
+      {unten}
     </div>
   );
 }
