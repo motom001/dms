@@ -363,6 +363,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0845" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.84.5
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.84.5">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0844" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -375,7 +403,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#behoben" class="md-nav__link">
+  <a href="#behoben_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Behoben
@@ -403,7 +431,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#behoben_1" class="md-nav__link">
+  <a href="#behoben_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Behoben
@@ -431,7 +459,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#behoben_2" class="md-nav__link">
+  <a href="#behoben_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Behoben
@@ -459,7 +487,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#behoben_3" class="md-nav__link">
+  <a href="#behoben_4" class="md-nav__link">
     <span class="md-ellipsis">
       
         Behoben
@@ -2004,6 +2032,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0845" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.84.5
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.84.5">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0844" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2016,7 +2072,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#behoben" class="md-nav__link">
+  <a href="#behoben_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Behoben
@@ -2044,7 +2100,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#behoben_1" class="md-nav__link">
+  <a href="#behoben_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Behoben
@@ -2072,7 +2128,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#behoben_2" class="md-nav__link">
+  <a href="#behoben_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Behoben
@@ -2100,7 +2156,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#behoben_3" class="md-nav__link">
+  <a href="#behoben_4" class="md-nav__link">
     <span class="md-ellipsis">
       
         Behoben
@@ -2186,14 +2242,22 @@
 
 
 <h1 id="neu-in-version-084">Neu in Version 0.84<a class="headerlink" href="#neu-in-version-084" title="Permanent link">&para;</a></h1>
-<h2 id="0844">0.84.4<a class="headerlink" href="#0844" title="Permanent link">&para;</a></h2>
+<h2 id="0845">0.84.5<a class="headerlink" href="#0845" title="Permanent link">&para;</a></h2>
 <h3 id="behoben">Behoben<a class="headerlink" href="#behoben" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Fortschritt mit Phase und Einheit</strong> (#364): Hintergrundaufträge sagen jetzt, <strong>was</strong> sie zählen. Demo-Daten mit Dokumenten zeigen z. B. „Mappen anlegen: 1.000 von 1.000 ✓ · Dokumente erzeugen: 1.326 von 1.907“ statt „2.326 von 2.907“; ohne Dokumente „Mappen anlegen: x von 1.000“.</li>
+<li>Ebenso in der Werkbank: Demo-Mappen entfernen (Mappen), Nummern nachträglich vergeben (Mappen), Alle Dateien prüfen (Dateien), Vollexport (Mappen, danach Listen und Prüfwerte).</li>
+<li>Demo-Daten erzeugen genau so viele Mappen wie angegeben (bisher durch Rundung bei der Verteilung auf die Mappentypen manchmal ein paar mehr oder weniger).</li>
+<li>Schnittstelle: <code>GET /api/werkbank/auftrag</code> liefert zusätzlich <code>phase</code> und <code>phasen</code> (je Phase <code>name</code>, <code>einheit</code>, <code>status</code>, <code>fertig</code>, <code>gesamt</code>); <code>fertig</code>/<code>gesamt</code> bleiben als Summe erhalten.</li>
+</ul>
+<h2 id="0844">0.84.4<a class="headerlink" href="#0844" title="Permanent link">&para;</a></h2>
+<h3 id="behoben_1">Behoben<a class="headerlink" href="#behoben_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Testlauf zeigte ein altes Ergebnis</strong> (#371): Wechselte man im Testlauf am Mappentyp Mappe oder Benutzer, blieb das Ergebnis der vorherigen Auswahl stehen – z. B. „Karl an ‚Fitnessstudio Auto‘“, obwohl „Haftpflicht Wohnung“ gewählt war. Jetzt gehört ein Ergebnis fest zu Benutzer, Mappe und Regeln: Wechselt eines davon, ist es sofort weg; auch eine verspätete Antwort zur alten Auswahl wird verworfen. Gleiches gilt im Testlauf der Ansichten und bei „Was sieht dieser Benutzer?“.</li>
 <li><strong>Testlauf: Auswahl wie im Verweisfeld</strong> (#371): Benutzer und Testmappe wählst du in allen Testläufen der Werkbank (Mappentyp, Ansicht) mit derselben Auswahl wie ein Verweisfeld in einer Mappe – mit Suche, Titel und „Ändern“. Administratoren sind gekennzeichnet. Sobald alles gewählt ist, erscheint das Ergebnis von selbst; nach einer Regeländerung prüfst du mit „Prüfen“ neu.</li>
 </ul>
 <h2 id="0843">0.84.3<a class="headerlink" href="#0843" title="Permanent link">&para;</a></h2>
-<h3 id="behoben_1">Behoben<a class="headerlink" href="#behoben_1" title="Permanent link">&para;</a></h3>
+<h3 id="behoben_2">Behoben<a class="headerlink" href="#behoben_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Mappentyp-Editor: ruhigeres Layout</strong> (#372).</li>
 <li>Verknüpfungsregister: Das Anhaken einer Quelle verschiebt keine Zeilen mehr. Die Auswahl der Trefferliste ist kompakt und hält ihren Platz auch ohne Haken frei (unsichtbar, nicht bedienbar), auf dem Handy ebenso.</li>
@@ -2203,7 +2267,7 @@
 <li>Handbuch: <em>Mappentypen</em> angepasst.</li>
 </ul>
 <h2 id="0842">0.84.2<a class="headerlink" href="#0842" title="Permanent link">&para;</a></h2>
-<h3 id="behoben_2">Behoben<a class="headerlink" href="#behoben_2" title="Permanent link">&para;</a></h3>
+<h3 id="behoben_3">Behoben<a class="headerlink" href="#behoben_3" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Archivmodus: Protokolleintrag erst beim Speichern</strong> (#373). Das Ein- und Ausschalten im noch nicht gespeicherten Mappentyp erzeugte schon einen Eintrag: Die Oberfläche fragt dabei die Vorschau („… Mappen betroffen“) per <code>POST /api/werkbank/archiv/vorschau</code> ab, und das Protokoll schrieb jede POST-Anfrage auf Stufe „info“.</li>
 <li>Anfragen, die nur lesen – Vorschauen, Zählungen und Testläufe per POST (Archivmodus, Ansichten, Berechtigungen, Auswahlfilter, Pakete, Demodaten, gleiche Dokumente) –, stehen jetzt nur noch auf Stufe „debug“, wie GET-Anfragen.</li>
@@ -2211,7 +2275,7 @@
 <li>Handbuch: <em>Archivmodus</em> und <em>Technik → Module</em> ergänzt.</li>
 </ul>
 <h2 id="0841">0.84.1<a class="headerlink" href="#0841" title="Permanent link">&para;</a></h2>
-<h3 id="behoben_3">Behoben<a class="headerlink" href="#behoben_3" title="Permanent link">&para;</a></h3>
+<h3 id="behoben_4">Behoben<a class="headerlink" href="#behoben_4" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Werkbank:</strong> Die Zahlen neben den Bereichen (z. B. Nummernkreise, Pakete, Benutzer, Postfächer, Darf weg) stehen sofort da, wenn du die Werkbank öffnest – nicht erst, nachdem du den Bereich einmal angeklickt hast. Die Übersicht liefert sie in einem Aufruf mit; nach Anlegen oder Löschen im Bereich ändert sich die Zahl sofort (#375).</li>
 <li>Schnittstelle (intern): <code>GET /api/werkbank/uebersicht</code> liefert zusätzlich <code>zahlen</code> (Nummernkreise, Pakete, aktive Benutzer, Postfächer, Darf weg).</li>
@@ -2235,7 +2299,7 @@
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.83.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.83.0...v0.84.4">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.83.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.83.0...v0.84.5">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
