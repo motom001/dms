@@ -30,6 +30,9 @@ import { csvAus, xlsxAus } from './xlsx';
 import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile } from './export';
 import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
 import { fuerAusgabe, kannStempeln, weitergabeWas, type Ausgabe } from './ausgabe';
+import { analysiere as schwaerzAnalyse, schwaerze, seitenbild as schwaerzSeitenbild, type Analyse as SchwaerzAnalyse } from './schwaerzen';
+import { ocrAusGespeichert, pruefeWerkzeuge } from './texterkennung';
+import { bereicheVon, findeBegriff, findeMuster, geschwaerztName, istMuster, kannSchwaerzen, MUSTER, pruefeBegriffe, pruefeBereiche, SCHWAERZEN_MAX_SEITEN, stellenText, type Bereich } from '../../shared/src/schwaerzen';
 import { analysiere, ergebnisText, istStufe, MIN_ERSPARNIS, STANDARD_STUFE, stufeAus, STUFEN, verkleinere, type Analyse, type Stufe } from './verkleinern';
 import { geltenderStempel, liesStempelTyp, liesVorlagen, pruefeVorlage, stempelAus, StempelFehler, STEMPEL_MODI, STEMPEL_NAME_MAX, STEMPEL_VORLAGEN_MAX, wunschAus, type GeltenderStempel, type StempelTyp, type StempelVorlage, type StempelWunsch } from '../../shared/src/stempel';
 import { alleSichtRechte, bereinigeSichtRegelwerk, sichtRegelProblem, sichtTestlauf, type SichtRegelwerk } from '../../shared/src/sichtrechte';
@@ -4095,6 +4098,127 @@ export class Dienst {
       protokoll.modul('werkbank').info('Große Dokumente verkleinert', { von: von.email, stufe, verkleinert, unveraendert, fehler: fehler.length, vorher, nachher });
       return { stufe, verkleinert, unveraendert, fehler, vorher, nachher, ohneOriginal };
     }, [{ key: 'dokumente', name: 'PDFs verkleinern', einheit: 'Dokumente' }]);
+  }
+
+  /* ---------- Schwärzen (#392) ---------- */
+
+  /** Wörter mit Lage je Prüfwert (die Analyse kann Texterkennung brauchen – der Dialog fragt Seite für Seite). */
+  private readonly schwaerzAnalysen = new Map<string, Promise<SchwaerzAnalyse>>();
+  private ocrWerkzeuge?: Promise<string[]>;
+
+  /** Sprachen für die Texterkennung beim Schwärzen: wie eingestellt, soweit installiert; null ohne tesseract. */
+  private async schwaerzSprachen(): Promise<string | null> {
+    this.ocrWerkzeuge ??= pruefeWerkzeuge().then((w) => (w.tesseract && w.pdftoppm ? w.sprachen : []), () => []);
+    const da = await this.ocrWerkzeuge;
+    if (!da.length) return null;
+    const e = ocrAusGespeichert(await this.einstellungen?.lies('ocr') ?? null);
+    return e.sprachen.split('+').filter((x) => da.includes(x)).join('+') || da[0];
+  }
+
+  private async schwaerzbar(id: string): Promise<{ d: Dokument; inhalt: Buffer }> {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    if (!kannSchwaerzen(d.mime)) throw new Fachfehler(422, `„${d.name}“ lässt sich nicht schwärzen – das geht mit PDFs und Bildern (JPEG, PNG).`);
+    return { d, inhalt: await this.liesGanz(d.sha256) };
+  }
+
+  private schwaerzAnalyseVon(d: Dokument, inhalt: () => Promise<Buffer>): Promise<SchwaerzAnalyse> {
+    let p = this.schwaerzAnalysen.get(d.sha256);
+    if (!p) {
+      p = (async () => schwaerzAnalyse(await inhalt(), d.mime, { sprachen: await this.schwaerzSprachen(), maxErkennung: SCHWAERZEN_MAX_SEITEN }))();
+      this.schwaerzAnalysen.set(d.sha256, p);
+      p.catch(() => this.schwaerzAnalysen.delete(d.sha256));
+      while (this.schwaerzAnalysen.size > 20) this.schwaerzAnalysen.delete(this.schwaerzAnalysen.keys().next().value!);
+    }
+    return p;
+  }
+
+  /** Für den Dialog: Seiten mit Größe und Wörtern (für Suchbegriffe und Vorschläge), was mit dem Ergebnis geschieht. */
+  async schwaerzenVorschau(id: string) {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    if (!kannSchwaerzen(d.mime)) throw new Fachfehler(422, `„${d.name}“ lässt sich nicht schwärzen – das geht mit PDFs und Bildern (JPEG, PNG).`);
+    const a = await this.schwaerzAnalyseVon(d, () => this.liesGanz(d.sha256));
+    const { reg } = await this.registerVon(d);
+    return { id: d.id, name: d.name, mime: d.mime, sha256: d.sha256, ...a, versioniert: !!reg?.versionierung, kopieName: geschwaerztName(d.name), muster: MUSTER };
+  }
+
+  /** Seitenbild für den Dialog (größer als die Seitenansicht; Bilder in derselben Ausrichtung wie beim Schwärzen). */
+  private readonly schwaerzBilder = new Map<string, Promise<Buffer | null>>();
+  async schwaerzSeitenbild(id: string, nr: number): Promise<Buffer | null> {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    if (!kannSchwaerzen(d.mime) || !Number.isInteger(nr) || nr < 1 || nr > SCHWAERZEN_MAX_SEITEN) return null;
+    const k = `${d.sha256}:${nr}`;
+    let p = this.schwaerzBilder.get(k);
+    if (!p) {
+      p = (async () => schwaerzSeitenbild(await this.liesGanz(d.sha256), d.mime, nr))();
+      this.schwaerzBilder.set(k, p);
+      p.catch(() => this.schwaerzBilder.delete(k));
+      while (this.schwaerzBilder.size > 40) this.schwaerzBilder.delete(this.schwaerzBilder.keys().next().value!);
+    }
+    return p;
+  }
+
+  /**
+   * Schwärzen (#392): `bereiche` (Seite ab 1, x, y, b, h relativ), `begriffe` (überall schwärzen) und/oder
+   * `muster` (alle Vorschläge dieser Arten) → neues Dokument „… (geschwärzt)“ im selben Register (`ziel`
+   * „kopie“, Standard) oder neue Version (`ziel` „version“, nur mit Versionierung). Das Original bleibt.
+   * Historie und Protokoll nennen nur Zahlen, nie die Suchbegriffe oder den geschwärzten Text.
+   */
+  async schwaerzeDokument(id: string, eingabe: unknown, von: string | null) {
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const ziel = e.ziel === undefined || e.ziel === null || e.ziel === '' ? 'kopie' : e.ziel;
+    if (ziel !== 'kopie' && ziel !== 'version') throw new Fachfehler(422, 'ziel: kopie oder version.');
+    const { d, inhalt } = await this.schwaerzbar(id);
+    const { typ, reg } = await this.registerVon(d);
+    if (!reg) throw new Fachfehler(409, 'Das Register dieses Dokuments gibt es nicht mehr.');
+    if (ziel === 'version' && !reg.versionierung) throw new Fachfehler(409, 'Für dieses Register ist die Versionierung ausgeschaltet – die geschwärzte Fassung kann nur ein eigenes Dokument werden (ziel: kopie).');
+    let begriffe: string[];
+    try { begriffe = pruefeBegriffe(e.begriffe); } catch (x) { throw new Fachfehler(422, (x as Error).message); }
+    const roh = e.muster === undefined || e.muster === null ? [] : Array.isArray(e.muster) ? e.muster : [e.muster];
+    if (roh.some((m) => !istMuster(m))) throw new Fachfehler(422, `muster: ${Object.keys(MUSTER).join(', ')}.`);
+    const muster = [...new Set(roh)] as Array<keyof typeof MUSTER>;
+    const a = await this.schwaerzAnalyseVon(d, async () => inhalt);
+    let bereiche: Bereich[];
+    try { bereiche = pruefeBereiche(e.bereiche, a.seiten.length); } catch (x) { throw new Fachfehler(422, (x as Error).message); }
+    const gefunden = begriffe.map((b) => findeBegriff(a.seiten, b));
+    bereiche = [...bereiche, ...bereicheVon(a.seiten, gefunden.flat()), ...(muster.length ? bereicheVon(a.seiten, findeMuster(a.seiten, muster)) : [])];
+    if (!bereiche.length) {
+      throw new Fachfehler(422, begriffe.length || muster.length
+        ? `Nichts zu schwärzen: ${begriffe.length ? (begriffe.length === 1 ? 'Der Suchbegriff kommt im Text des Dokuments nicht vor' : 'Keiner der Suchbegriffe kommt im Text des Dokuments vor') : 'Keines der Muster kommt im Text des Dokuments vor'}${a.quelle === 'keine' ? ' (das Dokument hat keinen lesbaren Text)' : ''}.`
+        : 'Nichts zu schwärzen: Bitte Bereiche, Suchbegriffe oder Muster angeben.');
+    }
+    const r = await schwaerze(inhalt, d.mime, a, bereiche);
+    const volltext = r.text !== null ? { text: r.text, seiten: r.seiten, info: 'Textebene nach dem Schwärzen (ohne die geschwärzten Stellen)' } : null;
+    const stellen = stellenText(bereiche);
+    let neu: Dokument;
+    if (ziel === 'version') {
+      const sha256 = await this.legeDateiAb(r.inhalt);
+      neu = await this.inTransaktion(async () => {
+        const v = await this.repo.ersetzeDokument(d.id, {
+          name: d.name, mime: r.mime, groesse: r.inhalt.length, sha256, anzeigbar: true, erstelltVon: von, herkunft: 'geschwaerzt',
+          ...(volltext ? { volltext: volltext.text } : {}),
+        });
+        if (volltext) await this.repo.ocrSetze(v.id, { stand: 'fertig', ...volltext });
+        this.danach(() => this.vorschau?.einreihen([v]));
+        const x = await this.nachNeuerVersion(d, { ...v, ocr: volltext ? { stand: 'fertig' } as Dokument['ocr'] : v.ocr }, typ, reg, von);
+        await this.notiere(d.mappeId, von, 'geschwaerzt', { dokument: d.name, text: `geschwärzte Fassung als Version ${x.version ?? ''} von „${d.name}“ erstellt (${stellen})`, version: x.version, stellen: r.bereiche, seiten: r.betroffen });
+        return x;
+      });
+    } else {
+      neu = await this.inTransaktion(async () => {
+        const x = (await this.ladeHoch(d.mappeId, { register: reg.key, name: geschwaerztName(d.name), typ: r.mime, herkunft: 'geschwaerzt', ...(volltext ? { volltext } : {}) }, r.inhalt, von)).dokument;
+        await this.notiere(d.mappeId, von, 'geschwaerzt', { dokument: x.name, text: `geschwärzte Fassung „${x.name}“ von „${d.name}“ erstellt (${stellen})`, quelle: d.name, stellen: r.bereiche, seiten: r.betroffen });
+        return x;
+      });
+    }
+    protokoll.modul('dokumente').info('Dokument geschwärzt', { id: d.id, neu: neu.id, ziel, stellen: r.bereiche, seiten: r.betroffen, begriffe: begriffe.length, muster });
+    return {
+      dokument: neu, ziel, stellen: r.bereiche, seiten: r.betroffen,
+      begriffe: gefunden.map((f) => ({ gefunden: f.length })),
+      meldung: ziel === 'version' ? `Geschwärzt (${stellen}) – Version ${neu.version ?? ''}; die ungeschwärzte Fassung bleibt als ältere Version.` : `„${neu.name}“ angelegt (${stellen}); das Original bleibt unverändert.`,
+    };
   }
 
   /* ---------- Archivnummer (#345) ---------- */

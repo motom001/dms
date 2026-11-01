@@ -3,6 +3,7 @@ import { messung } from './messung';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import type { StempelVorlage, StempelWunsch } from '../../shared/src/stempel';
 import type { Stufe as KleinStufe } from '../../shared/src/verkleinern';
+import type { Bereich, SchwaerzSeite } from '../../shared/src/schwaerzen';
 import type { Archiv } from '../../shared/src/archiv';
 import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, DokumentVersion, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Feldbedingung, Sicht, SichtDaten } from '../../shared/src/sichten';
@@ -564,6 +565,10 @@ export const api = {
   pdfSeiten: (id: string) => anfrage<PdfSeiten>('GET', `/api/dokumente/${id}/seiten`),
   bearbeitePdf: (id: string, e: { seiten: Array<{ nr: number; drehung?: number }>; teile?: number[]; bestaetigt?: boolean }) =>
     anfrage<{ dokumente: Dokument[]; posten: Mappe[] }>('POST', `/api/dokumente/${id}/seiten`, e),
+  /** Schwärzen (#392). */
+  schwaerzenVorschau: (id: string) => anfrage<SchwaerzenVorschau>('GET', `/api/dokumente/${id}/schwaerzen`),
+  schwaerzen: (id: string, e: { bereiche: Bereich[]; begriffe: string[]; ziel: 'kopie' | 'version' }) =>
+    anfrage<{ dokument: Dokument; ziel: 'kopie' | 'version'; stellen: number; seiten: number; begriffe: Array<{ gefunden: number }>; meldung: string }>('POST', `/api/dokumente/${id}/schwaerzen`, e),
   /** PDF verkleinern (#393). */
   verkleinernVorschau: (id: string) => anfrage<VerkleinernVorschau>('GET', `/api/dokumente/${id}/verkleinern`),
   verkleinern: (id: string, e: { stufe: KleinStufe; bestaetigt?: boolean }) =>
@@ -639,6 +644,11 @@ export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
 export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */ unpassend?: Record<string, string[]>; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 /** Vorschaubild der ersten Seite (#332); der Prüfwert in der Adresse sorgt für ein neues Bild nach einer neuen Version. */
+export interface SchwaerzenVorschau {
+  id: string; name: string; mime: string; sha256: string; seiten: SchwaerzSeite[];
+  quelle: 'textebene' | 'texterkennung' | 'gemischt' | 'keine'; erkannt: number; versioniert: boolean; kopieName: string;
+}
+export const schwaerzBildUrl = (d: { id: string; sha256: string }, nr: number) => `/api/dokumente/${d.id}/schwaerzen/seiten/${nr}?v=${d.sha256.slice(0, 12)}`;
 export interface VerkleinernVorschau {
   id: string; name: string; groesse: number; seiten: number; bilder: number; hoechsteDpi: number | null; versioniert: boolean; papierkorb: boolean; mindestens: number;
   stufen: Record<KleinStufe, { dpi: number; geschaetzt: number; lohnt: boolean; bilder: number }>;

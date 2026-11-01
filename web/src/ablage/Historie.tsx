@@ -144,6 +144,20 @@ function einzelheiten(e: Historieneintrag, emailTyp: string | undefined): { hinw
         ),
       };
     }
+    case 'geschwaerzt': {
+      // Schwärzen (#392): nur Zahlen – die Suchbegriffe und der geschwärzte Text stehen nirgends.
+      return {
+        hinweis: typeof d.stellen === 'number' ? `${d.stellen} ${d.stellen === 1 ? 'Stelle' : 'Stellen'}` : 'Einzelheiten',
+        inhalt: (
+          <dl className="eigenschaften einzeln">
+            <dt>Datei</dt><dd>{d.dokument}</dd>
+            {str(d.quelle) && <><dt>Aus</dt><dd>{str(d.quelle)}</dd></>}
+            {typeof d.version === 'number' && <><dt>Version</dt><dd>{d.version}</dd></>}
+            {str(d.text) && <><dt>Was</dt><dd>{str(d.text)}</dd></>}
+          </dl>
+        ),
+      };
+    }
     case 'volltext': {
       // Texterkennung als Paket (#338): welches Paket den Volltext geschrieben hat.
       return { hinweis: str(d.dokument) ?? 'Volltext', inhalt: <dl className="eigenschaften einzeln"><dt>Datei</dt><dd>{str(d.dokument)}</dd>{str(d.text) && <><dt>Von</dt><dd>{str(d.text)}</dd></>}</dl> };
