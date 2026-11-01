@@ -13,7 +13,8 @@ import { RegelwerkAbschnitt, TestlaufBlatt } from '../werkbank/Berechtigungen';
 import { FRIST_STANDARD, FRIST_TEXT, fristText, VORLAUF_EINHEITEN, wiederholungText, type FristEinstellung } from '../../../shared/src/fristen';
 import { api, ApiFehler, type Bezuege } from '../api';
 import { useDaten } from '../daten';
-import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
+import { geheZu, Link, loeseWache } from '../ort';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { titelOder } from '../seiten';
 import { Hilfe } from '../Hilfe';
 import { FRISTEN, JAHRE_MAX, type Archiv } from '../../../shared/src/archiv';
@@ -166,8 +167,11 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
   const [meldung, setMeldung] = useState<string>();
   const [gruende, setGruende] = useState<string[]>([]);
   const [sendet, setSendet] = useState(false);
-  const geaendert = neu || JSON.stringify(e) !== basis;
-  useUngespeichert(JSON.stringify(e) !== basis && (!neu || e.felder.length > 0 || e.name !== ''));
+  // Ein leerer neuer Mappentyp gilt nicht als Änderung – Verlassen ohne Rückfrage.
+  const ent = useEntwurf(basis, JSON.stringify(e), {
+    neu, liste: '/werkbank/typen', aus: neu && e.felder.length === 0 && e.name === '',
+    zuruecksetzen: () => { setE(JSON.parse(basis)); setFehler(null); setMeldung(undefined); setOffen(null); },
+  });
 
   const gespeichert = d.typ(e.id);
   // Der Entwurf als Mappentyp, für Regeln und Prüfungen im Editor.
@@ -279,7 +283,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
   const feldregister = e.register.filter((r) => r.art === 'felder');
 
   return (
-    <form className="editorform" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} noValidate>
+    <form className="editorform" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten} noValidate>
       <div className="seitenkopf"><div>
         <p className="ueber">Mappentyp</p>
         <h1>{e.name || (neu ? 'Neuer Mappentyp' : 'Ohne Namen')}{system && <span className="chip">System</span>}</h1>
@@ -367,16 +371,10 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
         gespeichert={gespeichert ? regelwerkVon(gespeichert) : null} typ={entwurfTyp} klappe={klappe('berechtigungen')} />
       <TestlaufBlatt typId={gespeichert?.id ?? ''} entwurf={e.berechtigungen} klappe={klappe('testlauf')} />
 
-      <div className="speicherleiste">
-        {system || (!neu && typ?.schluessel === 'ablageort')
-          ? <span className="leise klein">{system ? '' : 'Gehört zum Standard (Ablageorte) – lässt sich erweitern, aber nicht löschen.'}</span>
-          : <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>{neu ? 'Entwurf verwerfen' : 'Mappentyp löschen'}</button>}
-        <span className={`status ${fehler ? 'schlecht' : ''}`} role="status">{meldung ?? (geaendert && !neu ? 'Ungespeicherte Änderungen' : '')}</span>
-        <div className="knoepfe">
-          {!neu && <button type="button" className="knopf" disabled={!geaendert || sendet} onClick={() => { setE(JSON.parse(basis)); setFehler(null); setMeldung(undefined); setOffen(null); }}>Änderungen verwerfen</button>}
-          <button type="submit" className="knopf primaer" disabled={sendet}>{sendet ? 'Speichere …' : 'Mappentyp speichern'}</button>
-        </div>
-      </div>
+      <Speicherleiste ent={ent} gegenstand="Mappentyp" sendet={sendet} meldung={meldung ? { art: fehler ? 'schlecht' : 'gut', text: meldung } : undefined}
+        links={neu || system ? undefined : typ?.schluessel === 'ablageort'
+          ? <span className="leise klein">Gehört zum Standard (Ablageorte) – lässt sich erweitern, aber nicht löschen.</span>
+          : <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>Mappentyp löschen</button>} />
     </form>
   );
 }

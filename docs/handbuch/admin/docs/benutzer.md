@@ -8,7 +8,7 @@ Unter **Werkbank → Benutzer** legst du fest, wer sich anmelden darf und mit we
 
 1. **+ Neu**
 2. E-Mail-Adresse, Name und **Systemrolle** (*Administrator* oder *Mitglied*) eintragen, bei Bedarf **Rollen** anhaken.
-3. **Anlegen und einladen** – ohne E-Mail-Versand heißt der Knopf **Anlegen**.
+3. **Benutzer anlegen und einladen** – ohne E-Mail-Versand heißt der Knopf **Benutzer anlegen**. **Entwurf verwerfen** bricht ab.
 
 ![Neuen Benutzer anlegen](bilder/werkbank-benutzer-neu.png)
 

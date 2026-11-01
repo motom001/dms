@@ -6,6 +6,7 @@ import { geheZu, Link } from '../ort';
 import { titelOder } from '../seiten';
 import { Person } from '../Person';
 import { Hilfe } from '../Hilfe';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { hinweis, rueckfrage } from '../rueckfrage';
 
 /**
@@ -272,7 +273,9 @@ export function PapierkorbEinstellungen({ z }: { z: PapierkorbZustand }) {
   useEffect(() => { if (z.historieTage !== null) setHTage(String(z.historieTage)); }, [z.historieTage]);
   const n = Number(tage);
   const h = Number(hTage);
-  const geaendert = String(z.tage) !== tage || String(z.historieTage) !== hTage;
+  const ent = useEntwurf({ tage: String(z.tage), hTage: String(z.historieTage) }, { tage, hTage }, {
+    aus: z.tage === null, zuruecksetzen: () => { setTage(String(z.tage)); setHTage(String(z.historieTage)); setMeldung(undefined); },
+  });
   async function speichern() {
     const anzahl = z.eintraege?.length ?? 0;
     if (n === 0 && anzahl && !(await rueckfrage({ titel: 'Papierkorb ausschalten?', text: `Die ${anzahl === 1 ? 'eine Mappe darin wird' : `${anzahl} Mappen darin werden`} sofort endgültig gelöscht.`, ja: 'Ausschalten und leeren', gefahr: true }))) return;
@@ -289,7 +292,7 @@ export function PapierkorbEinstellungen({ z }: { z: PapierkorbZustand }) {
         <h1>Papierkorb</h1>
         <p className="leise">{aufbewahrung(z.tage)} Jeder Benutzer sieht in der Ablage, was er selbst gelöscht hat, und kann es wiederherstellen oder endgültig löschen. Hier siehst du alles.</p>
       </div>
-      <form className="blatt" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }}>
+      <form className="blatt" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <h2 className="h3">Aufbewahrung</h2>
         <label className="eigenschaft"><span>Tage <small>0 = kein Papierkorb, Löschen ist sofort endgültig</small></span>
           <input type="number" min={0} max={3650} value={tage} onChange={(ev) => { setTage(ev.target.value); setMeldung(undefined); }} /></label>
@@ -297,7 +300,7 @@ export function PapierkorbEinstellungen({ z }: { z: PapierkorbZustand }) {
         <label className="eigenschaft"><span>Historie endgültig gelöschter Mappen behalten <small>Tage, danach wird ihre Änderungshistorie gelöscht</small></span>
           <input type="number" min={0} max={36500} value={hTage} onChange={(ev) => { setHTage(ev.target.value); setMeldung(undefined); }} /></label>
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
-        <div className="knoepfe"><button className="knopf primaer" disabled={!Number.isInteger(n) || n < 0 || !Number.isInteger(h) || h < 0 || !geaendert}>Speichern</button></div>
+        <Speicherleiste ent={ent} gegenstand="Aufbewahrung" ungueltig={!Number.isInteger(n) || n < 0 || !Number.isInteger(h) || h < 0} />
       </form>
     </div>
   );

@@ -180,6 +180,10 @@ tbody tr:last-child > * { border-bottom: 0; }
 .speicherleiste .status:empty { display: none; }
 .speicherleiste .status { font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
 .speicherleiste .status.schlecht { color: var(--schlecht); font-weight: 600; }
+/* Werkbank-Formulare (#370): Leiste als unterer Rand des Blatts statt Kasten im Kasten. */
+.blatt > .speicherleiste { margin: 4px -20px -18px; border-width: 1px 0 0; border-radius: 0 0 var(--r) var(--r); }
+.speicherleiste .knoepfe { align-items: center; }
+.textknopf:disabled { color: var(--leise); cursor: not-allowed; }
 
 /* Rückverweise */
 .gruppen { display: flex; flex-direction: column; gap: 12px; }

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, type BetriebAnsicht, type MailEingabe, type Probe, type Verbindung } from '../api';
 import { useKonto } from '../konto';
-import { Link, useUngespeichert } from '../ort';
+import { Link } from '../ort';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Hilfe } from '../Hilfe';
 
 /**
@@ -58,14 +59,14 @@ function Adresse({ b }: { b: BetriebZustand }) {
   const s = b.stand!;
   const [adresse, setAdresse] = useState(s.adresse);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const geaendert = adresse.trim() !== s.adresse;
+  const ent = useEntwurf(s.adresse, adresse.trim(), { zuruecksetzen: () => { setAdresse(s.adresse); setMeldung(undefined); } });
   async function speichern(ev?: FormEvent, wert = adresse) {
     ev?.preventDefault();
     try { const n = await api.adresseSpeichern(wert); b.setStand(n); setAdresse(n.adresse); setMeldung({ art: 'gut', text: n.adresse ? 'Gespeichert.' : 'Keine Adresse gepflegt – Links nutzen die Adresse der Anfrage.' }); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   return (
-    <form className="blatt" id="adresse" onSubmit={speichern}>
+    <form className="blatt" id="adresse" onSubmit={speichern} onKeyDown={ent.tasten}>
       <h2 className="h3">Adresse des DMS</h2>
       <p className="leise">Unter dieser Adresse öffnen die Benutzer das DMS. Sie steht in den Links der E-Mails (Einladungen, Passwort vergessen). Beginnt sie mit <span className="mono">https://</span>, gilt die Anmeldung nur noch über HTTPS.</p>
       <label className="eigenschaft"><span>Adresse <small>z. B. http://nas.local:8080 oder https://dms.example.org</small></span>
@@ -79,7 +80,7 @@ function Adresse({ b }: { b: BetriebZustand }) {
         <div className="hinweis warn"><p>Du rufst das DMS gerade über HTTP auf, die Adresse ist aber HTTPS. Nach der nächsten Anmeldung geht das nur noch über HTTPS. Läuft ein Reverse-Proxy davor und steht <span className="mono">TRUST_PROXY</span> auf <span className="mono">false</span>, die Variable entfernen.</p></div>
       )}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
-      <div className="knoepfe"><button className="knopf primaer" disabled={!geaendert}>Adresse speichern</button></div>
+      <Speicherleiste ent={ent} gegenstand="Adresse" />
     </form>
   );
 }
@@ -97,15 +98,14 @@ function Mail({ b }: { b: BetriebZustand }) {
   const [laeuft, setLaeuft] = useState<string | null>(null);
   const [probe, setProbe] = useState<Probe & { was: string }>();
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const geaendert = JSON.stringify({ ...m, passwort: '' }) !== JSON.stringify({ ...start(), passwort: '' }) || !!m.passwort || loeschen;
-  useUngespeichert(geaendert);
+  const ent = useEntwurf({ ...start(), loeschen: false }, { ...m, loeschen }, { zuruecksetzen: () => { setM(start()); setLoeschen(false); setMeldung(undefined); } });
   const setze = (p: Partial<typeof m>) => { setM((x) => ({ ...x, ...p })); setMeldung(undefined); };
   const eingabe = (): MailEingabe => ({ ...m, passwortLoeschen: loeschen || undefined });
 
   async function speichern(ev: FormEvent) {
     ev.preventDefault();
     setLaeuft('speichern');
-    try { b.setStand(await api.mailSpeichern(eingabe())); await aktualisieren(); setMeldung({ art: 'gut', text: 'Gespeichert – gilt ab sofort.' }); }
+    try { b.setStand(await api.mailSpeichern(eingabe())); setM((x) => ({ ...x, passwort: '' })); setLoeschen(false); await aktualisieren(); setMeldung({ art: 'gut', text: 'Gespeichert – gilt ab sofort.' }); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
     finally { setLaeuft(null); }
   }
@@ -118,7 +118,7 @@ function Mail({ b }: { b: BetriebZustand }) {
   const portFuer = (v: Verbindung) => (v === 'ssl' ? 465 : v === 'starttls' ? 587 : 25);
 
   return (
-    <form className="blatt" id="mail" onSubmit={speichern} noValidate>
+    <form className="blatt" id="mail" onSubmit={speichern} onKeyDown={ent.tasten} noValidate>
       <h2 className="h3">E-Mail-Versand</h2>
       <p className="leise">Für Einladungen, „Passwort vergessen“ und Hinweise bei geänderter E-Mail-Adresse oder geändertem Passwort. Ohne E-Mail-Versand zeigt die Benutzerverwaltung die Links zum Kopieren an.</p>
       <label className="haken"><input type="checkbox" checked={m.aktiv} onChange={(e) => setze({ aktiv: e.target.checked })} /><span>E-Mails verschicken</span></label>
@@ -154,10 +154,7 @@ function Mail({ b }: { b: BetriebZustand }) {
       {probe && <div className={`hinweis ${probe.ok ? 'gut' : 'schlecht'}`} role="status"><p>{probe.meldung}</p></div>}
 
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
-      <div className="knoepfe">
-        {geaendert && <button type="button" className="knopf" onClick={() => { setM(start()); setLoeschen(false); setMeldung(undefined); }}>Änderungen verwerfen</button>}
-        <button className="knopf primaer" disabled={!geaendert || laeuft === 'speichern'}>{laeuft === 'speichern' ? 'Speichere …' : 'E-Mail-Einstellungen speichern'}</button>
-      </div>
+      <Speicherleiste ent={ent} gegenstand="E-Mail-Einstellungen" sendet={laeuft === 'speichern'} />
     </form>
   );
 }

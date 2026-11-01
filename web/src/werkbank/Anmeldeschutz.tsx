@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { api, type AnbieterEingabe, type AnbieterStand, type AnmeldeschutzStand, type SperrEinstellung, type ZweifaktorPflicht } from '../api';
 import { Hilfe } from '../Hilfe';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 
 /** Werkbank → Anmeldeschutz (#240): Fehlversuche je Konto und je IP, gesperrte IPs, Ausnahmen. */
+
+type SperrFormular = Omit<SperrEinstellung, 'ausnahmen'> & { ausnahmen: string };
+const sperrFormular = (s: SperrEinstellung): SperrFormular => ({ ...s, ausnahmen: s.ausnahmen.join(', ') });
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
 
@@ -38,12 +42,16 @@ export function AnmeldeschutzListe({ z }: { z: AnmeldeschutzZustand }) {
 
 export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
   const s = z.stand;
-  const [e, setE] = useState<(Omit<SperrEinstellung, 'ausnahmen'> & { ausnahmen: string }) | null>(null);
+  const [e, setE] = useState<SperrFormular | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  useEffect(() => { if (s && !e) setE({ ...s.einstellung, ausnahmen: s.einstellung.ausnahmen.join(', ') }); }, [s, e]);
+  const [sendet, setSendet] = useState(false);
+  useEffect(() => { if (s && !e) setE(sperrFormular(s.einstellung)); }, [s, e]);
+  const gespeichert = s ? sperrFormular(s.einstellung) : null;
+  const ent = useEntwurf(gespeichert, e, { aus: !e, zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); } });
   if (!s || !e) return <p className="leise">Lade …</p>;
   async function speichern() {
-    try { const n = await api.anmeldeschutzSetzen({ ...e!, ausnahmen: e!.ausnahmen.split(/[\s,;]+/).filter(Boolean) }); z.setStand(n); setMeldung({ art: 'gut', text: 'Gespeichert.' }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    setSendet(true);
+    try { const n = await api.anmeldeschutzSetzen({ ...e!, ausnahmen: e!.ausnahmen.split(/[\s,;]+/).filter(Boolean) }); z.setStand(n); setE(sperrFormular(n.einstellung)); setMeldung({ art: 'gut', text: 'Gespeichert.' }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   async function entsperren(ip: string) {
     try { z.setStand(await api.entsperren(ip)); setMeldung({ art: 'gut', text: `${ip} entsperrt.` }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
@@ -68,7 +76,7 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
           </ul>
         </div>
       )}
-      <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }}>
+      <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <h2 className="h3">Je E-Mail-Adresse und IP</h2>
         <div className="raster">
           <label className="eigenschaft"><span>Fehlversuche</span>{zahl(e.konto.versuche, (n) => setE({ ...e, konto: { ...e.konto, versuche: n } }), 1, 'as-konto-versuche')}</label>
@@ -87,7 +95,7 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
           <small className="leise">höchstens eine Mail am Tag, über die Sperren des Vortags – nicht eine je gesperrter IP</small></span></label>
         <label className="haken"><input id="as-mail-konto" type="checkbox" checked={e.mailKonto} onChange={(x) => setE({ ...e, mailKonto: x.target.checked })} /><span>Sofort melden, wenn ein Benutzerkonto gesperrt wird
           <small className="leise">nur für bestehende Konten, je Konto höchstens einmal am Tag</small></span></label>
-        <div className="knoepfe"><button className="knopf primaer">Speichern</button></div>
+        <Speicherleiste ent={ent} gegenstand="Anmeldeschutz" sendet={sendet} />
       </form>
       <ZweifaktorPflichtBlatt />
       <AnbieterBlatt />
@@ -122,7 +130,10 @@ function AnbieterBlatt() {
   const [e, setE] = useState<Omit<AnbieterEingabe, 'clientSecretLoeschen'> | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
-  const uebernehmen = (s: AnbieterStand) => { setStand(s); const { secretGesetzt: _s, rueckkehr: _r, abmeldenZurueck: _a, ...rest } = s; setE({ ...rest, clientSecret: '' }); };
+  const alsFormular = (s: AnbieterStand) => { const { secretGesetzt: _s, rueckkehr: _r, abmeldenZurueck: _a, ...rest } = s; return { ...rest, clientSecret: '' }; };
+  const uebernehmen = (s: AnbieterStand) => { setStand(s); setE(alsFormular(s)); };
+  const gespeichert = stand ? alsFormular(stand) : null;
+  const ent = useEntwurf(gespeichert, e, { aus: !e, zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); } });
   useEffect(() => { api.anbieter().then(uebernehmen).catch((x) => setMeldung({ art: 'schlecht', text: (x as Error).message })); }, []);
   async function tu(f: () => Promise<string>) {
     setSendet(true); setMeldung(undefined);
@@ -139,7 +150,7 @@ function AnbieterBlatt() {
     <label className="eigenschaft"><span>{titel}</span><input id={`oidc-${k}`} value={e[k]} placeholder={platzhalter} onChange={(x) => setE({ ...e, [k]: x.target.value })} /></label>
   );
   return (
-    <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }}>
+    <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
       <h2 className="h3">Anmeldung über einen Anbieter <Hilfe ort="werkbank.anbieter" /></h2>
       <p className="leise">Anmelden mit dem Konto eines Identitätsanbieters per OpenID Connect – z. B. Microsoft Entra ID (Microsoft 365), Google Workspace, Keycloak, Authentik oder Authelia. Zugeordnet wird über die E-Mail-Adresse.</p>
       <p className="klein">Beim Anbieter als Weiterleitungs-URI eintragen: <code className="mono">{stand.rueckkehr}</code><br />
@@ -165,10 +176,10 @@ function AnbieterBlatt() {
       <label className="haken"><input id="oidc-aktiv" type="checkbox" checked={e.aktiv} onChange={(x) => setE({ ...e, aktiv: x.target.checked })} /><span>Eingeschaltet – Knopf auf der Anmeldeseite</span></label>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <div className="knoepfe">
-        {stand.secretGesetzt && <button type="button" className="knopf gefahr-rand" disabled={sendet} onClick={() => void tu(async () => { uebernehmen(await api.anbieterSetzen({ clientSecretLoeschen: true })); return 'Client-Secret gelöscht.'; })}>Secret löschen</button>}
         <button type="button" className="knopf" disabled={sendet || !e.aussteller} onClick={() => void pruefen()}>Verbindung prüfen</button>
-        <button className="knopf primaer" disabled={sendet}>Speichern</button>
       </div>
+      <Speicherleiste ent={ent} gegenstand="Anbieter" sendet={sendet}
+        links={stand.secretGesetzt && <button type="button" className="textknopf gefahr" disabled={sendet} onClick={() => void tu(async () => { uebernehmen(await api.anbieterSetzen({ clientSecretLoeschen: true })); return 'Client-Secret gelöscht.'; })}>Secret löschen</button>} />
     </form>
   );
 }

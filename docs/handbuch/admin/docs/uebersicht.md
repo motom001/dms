@@ -15,6 +15,19 @@ Welche Bereiche dort stehen, legst du unter [Werkbank anpassen](#werkbank-anpass
 
 Neben den Bereichen steht, wie viel dort eingerichtet ist – etwa die Zahl der Mappentypen, Nummernkreise, installierten Pakete, aktiven Benutzer oder offenen Aufgaben. Die Zahlen stehen sofort da, wenn du die Werkbank öffnest, und ändern sich, sobald du im Bereich etwas anlegst oder löschst. Ist nichts eingerichtet, steht keine Zahl da.
 
+## So arbeitest du in der Werkbank
+
+Wählst du links einen Bereich, steht in der Mitte seine Liste und rechts das Formular des gewählten Eintrags; mit **+ Neu** legst du einen an.
+
+Jedes Formular endet mit derselben Leiste, die beim Scrollen unten sichtbar bleibt: rechts der Hauptknopf mit dem Gegenstand im Namen – etwa **Nummernkreis anlegen** oder **Postfach speichern** –, links daneben **Verwerfen**:
+
+- **Neu anlegen:** **Entwurf verwerfen** schließt das Formular, ohne etwas anzulegen, und du bist zurück in der Liste.
+- **Bearbeiten:** **Änderungen verwerfen** setzt alle Felder auf den gespeicherten Stand zurück. Beide Knöpfe gehen erst, wenn du etwas geändert hast; solange steht in der Leiste „Ungespeicherte Änderungen“.
+- **Esc** im Formular wirkt wie Verwerfen. Hast du etwas geändert, fragt das DMS vorher nach.
+- Klickst du mit ungespeicherten Änderungen einen anderen Eintrag oder Bereich an oder schließt den Tab, fragt das DMS nach, ob du die Änderungen verwerfen willst.
+
+Knöpfe wie **Verbindung testen** oder **Jetzt prüfen** stehen darüber im Formular; links in der Leiste steht, wo es das gibt, **Löschen** bzw. **Entfernen**.
+
 ## Übersicht
 
 Die Werkbank beginnt mit der **Übersicht**. Sie zeigt oben, was zu tun ist – jeweils mit einem Knopf in den passenden Bereich. **Das gilt auch für Bereiche, die in deiner Vorlage ausgeblendet sind.** Zum Beispiel:

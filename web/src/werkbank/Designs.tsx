@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import { useDaten } from '../daten';
 import { designCss, GRUNDLAGEN, palette, rettungsweg, wendeAn, type Design, type Grundlage } from '../design';
-import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
+import { geheZu, Link, loeseWache } from '../ort';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { logoUrl, Marke } from '../Marke';
 import { Hilfe } from '../Hilfe';
 import { rueckfrage } from '../rueckfrage';
@@ -55,8 +56,9 @@ export function DesignEditor({ id }: { id: string }) {
   const start = vorhanden ? { name: vorhanden.name, grundlage: vorhanden.grundlage, primaer: vorhanden.primaer, sekundaer: vorhanden.sekundaer, css: vorhanden.css, schriftzug: vorhanden.schriftzug ?? null } : LEER;
   const [e, setE] = useState(start);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const geaendert = JSON.stringify(e) !== JSON.stringify(start);
-  useUngespeichert(geaendert);
+  const ent = useEntwurf(start, e, { neu, liste: '/werkbank/designs', zuruecksetzen: () => { setE(start); setMeldung(undefined); } });
+  const { geaendert } = ent;
+  const [sendet, setSendet] = useState(false);
   // Vorschau: das bearbeitete Design gilt sofort für die eigene Ansicht.
   useEffect(() => { wendeAn({ id: 'vorschau', ...e }); }, [e]);
   // Beim Verlassen wieder das eigene Design – das aktuelle, nicht das beim Öffnen gültige.
@@ -73,18 +75,19 @@ export function DesignEditor({ id }: { id: string }) {
   const setze = (p: Partial<typeof e>) => setE((x) => ({ ...x, ...p }));
 
   return (
-    <form className="einspaltig" onSubmit={(ev) => {
+    <form className="einspaltig" onKeyDown={ent.tasten} onSubmit={(ev) => {
       ev.preventDefault();
+      setSendet(true);
       void aktion(async () => {
         const r = neu ? await api.designAnlegen(e) : await api.designAendern(id, e);
         loeseWache(); await d.designsLaden();
         if (neu) geheZu(`/werkbank/designs/${r.id}`);
-      }, 'Design gespeichert.');
+      }, 'Design gespeichert.').finally(() => setSendet(false));
     }}>
       <div className="mappenkopf">
         <p className="ueber">Design</p>
         <h1>{e.name || (neu ? 'Neues Design' : 'Ohne Namen')}{standard && <span className="chip">Standard</span>}</h1>
-        <p className="leise">Die Vorschau gilt schon jetzt für deine Darstellung; gespeichert wird mit „Design speichern“.</p>
+        <p className="leise">Die Vorschau gilt schon jetzt für deine Darstellung; gespeichert wird mit „{neu ? 'Design anlegen' : 'Design speichern'}“.</p>
       </div>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       <div className="blatt">
@@ -136,19 +139,14 @@ export function DesignEditor({ id }: { id: string }) {
         <textarea className="mono" rows={8} value={e.css} onChange={(x) => setze({ css: x.target.value })} placeholder={'.kopf { border-bottom-width: 3px; }'} spellCheck={false} />
         <details><summary className="leise klein">Verfügbare Farbwerte</summary><pre className="protokolldaten">{designCss({ ...e, css: '' })}</pre></details>
       </div>
-      <div className="speicherleiste">
-        {!neu && !standard ? <button type="button" className="textknopf gefahr" onClick={async () => {
+      <Speicherleiste ent={ent} gegenstand="Design" sendet={sendet}
+        links={!neu && !standard && <button type="button" className="textknopf gefahr" onClick={async () => {
           if (await rueckfrage({ titel: `Design „${vorhanden!.name}“ löschen?`, text: 'Wer es nutzt, bekommt das Standard-Design.', ja: 'Löschen', gefahr: true })) {
             void aktion(async () => { await api.designLoeschen(id); loeseWache(); await d.designsLaden(); geheZu('/werkbank/designs'); }, 'Gelöscht.');
           }
-        }}>Design löschen</button> : <span />}
-        <div className="knoepfe">
-          {!neu && !standard && <button type="button" className="knopf" disabled={geaendert} title={geaendert ? 'Erst speichern' : undefined}
-            onClick={() => void aktion(async () => { await api.designStandard(id); await d.designsLaden(); }, 'Als Standard festgelegt.')}>Als Standard festlegen</button>}
-          {geaendert && <button type="button" className="knopf" onClick={() => setE(start)}>Änderungen verwerfen</button>}
-          <button className="knopf gruen" disabled={!geaendert && !neu}>Design speichern</button>
-        </div>
-      </div>
+        }}>Design löschen</button>}
+        weitere={!neu && !standard && <button type="button" className="knopf" disabled={geaendert} title={geaendert ? 'Erst speichern' : undefined}
+          onClick={() => void aktion(async () => { await api.designStandard(id); await d.designsLaden(); }, 'Als Standard festgelegt.')}>Als Standard festlegen</button>} />
     </form>
   );
 }

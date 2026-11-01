@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, type PostfachAnsicht, type PostfachEingabe } from '../api';
 import { useDaten } from '../daten';
-import { geheZu, Link } from '../ort';
+import { geheZu, Link, loeseWache } from '../ort';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Hilfe } from '../Hilfe';
 import { rueckfrage } from '../rueckfrage';
 
@@ -16,6 +17,11 @@ const NEU: PostfachEingabe = {
   fuer: null, absender: '', nachher: 'verschieben', zielordner: 'DMS', nurMitAnhang: false, original: true,
 };
 const PORT = { ssl: 993, starttls: 143, keine: 143 } as const;
+/** Nur die Felder des Formulars – der Stand (letzter Abruf …) ändert sich beim Abfragen. */
+const alsEingabe = (v: PostfachAnsicht): PostfachEingabe => ({
+  ...(Object.fromEntries(Object.keys(NEU).map((k) => [k, (v as unknown as Record<string, unknown>)[k]])) as unknown as PostfachEingabe),
+  absender: v.absender.join(', '), passwort: '',
+});
 
 export function usePostfaecher(offen: boolean) {
   const [liste, setListe] = useState<PostfachAnsicht[] | null>(null);
@@ -55,21 +61,26 @@ export function PostfaecherListe({ z, offen }: { z: PostfachZustand; offen?: str
 export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
   const d = useDaten();
   const vorhanden = id !== 'neu' ? z.liste?.find((p) => p.id === id) : undefined;
-  const [e, setE] = useState<PostfachEingabe>(() => (vorhanden ? { ...vorhanden, absender: vorhanden.absender.join(', '), passwort: '' } : NEU));
+  const gespeichert = vorhanden ? alsEingabe(vorhanden) : NEU;
+  const [e, setE] = useState<PostfachEingabe>(gespeichert);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht' | 'info'; text: string }>();
   const [bestaetigt, setBestaetigt] = useState(false);
+  const [sendet, setSendet] = useState(false);
+  const ent = useEntwurf(gespeichert, e, { neu: !vorhanden, liste: '/werkbank/postfaecher', zuruecksetzen: () => { setE(gespeichert); setBestaetigt(false); setMeldung(undefined); } });
   if (id !== 'neu' && !vorhanden) return z.liste ? <div className="leer"><p>Dieses Postfach gibt es nicht (mehr).</p></div> : <p className="leise">Lade …</p>;
   const setze = (x: Partial<PostfachEingabe>) => setE({ ...e, ...x });
   const eingabe = { ...e, unverschluesseltBestaetigt: bestaetigt };
 
   async function speichern() {
+    setSendet(true);
     try {
       const l = vorhanden ? await api.postfachAendern(vorhanden.id, eingabe) : await api.postfachAnlegen(eingabe);
       z.setListe(l);
       setMeldung({ art: 'gut', text: 'Gespeichert.' });
-      setE({ ...e, passwort: '' });
-      if (!vorhanden) geheZu(`/werkbank/postfaecher/${l[l.length - 1].id}`, true);
-    } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+      const n = vorhanden && l.find((p) => p.id === vorhanden.id);
+      setE(n ? alsEingabe(n) : { ...e, passwort: '' });
+      if (!vorhanden) { loeseWache(); geheZu(`/werkbank/postfaecher/${l[l.length - 1].id}`, true); }
+    } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   async function testen() {
     setMeldung({ art: 'info', text: 'Verbinde …' });
@@ -82,7 +93,7 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
   }
   async function loeschen() {
     if (!vorhanden || !(await rueckfrage({ titel: `Postfach „${vorhanden.name}“ entfernen?`, text: 'Die Mails im Postfach bleiben, wie sie sind.', ja: 'Entfernen', gefahr: true }))) return;
-    try { await api.postfachLoeschen(vorhanden.id); await z.laden(); geheZu('/werkbank/postfaecher'); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    try { await api.postfachLoeschen(vorhanden.id); await z.laden(); loeseWache(); geheZu('/werkbank/postfaecher'); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
 
   const s = vorhanden?.stand;
@@ -94,7 +105,7 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
         <p className="leise">Am besten ein eigenes Postfach oder eine Weiterleitung, z. B. <code>dms@…</code> – nicht das private Hauptpostfach. Viele Anbieter verlangen ein <strong>App-Passwort</strong>, siehe Handbuch.</p>
       </div>
       {meldung && <div className={`hinweis ${meldung.art}`} role="status"><p>{meldung.text}</p></div>}
-      <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }}>
+      <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <label className="haken"><input id="pf-aktiv" type="checkbox" checked={e.aktiv} onChange={(x) => setze({ aktiv: x.target.checked })} /><span>Abrufen</span></label>
         <div className="raster">
           <label className="eigenschaft"><span>Name</span><input id="pf-name" value={e.name} maxLength={80} placeholder="z. B. Rechnungen" onChange={(x) => setze({ name: x.target.value })} /></label>
@@ -129,11 +140,11 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
             <label className="haken"><input id="pf-unsicher" type="checkbox" checked={bestaetigt} onChange={(x) => setBestaetigt(x.target.checked)} /><span>Trotzdem ohne Verschlüsselung verbinden</span></label></div>
         )}
         <div className="knoepfe">
-          <button className="knopf primaer">Speichern</button>
           <button type="button" className="knopf" onClick={() => void testen()}>Verbindung testen</button>
-          {vorhanden && <button type="button" className="knopf" onClick={() => void abrufen()}>Jetzt abrufen</button>}
-          {vorhanden && <button type="button" className="knopf gefahr-rand" onClick={() => void loeschen()}>Entfernen</button>}
+          {vorhanden && <button type="button" className="knopf" disabled={ent.geaendert} title={ent.geaendert ? 'Erst speichern' : undefined} onClick={() => void abrufen()}>Jetzt abrufen</button>}
         </div>
+        <Speicherleiste ent={ent} gegenstand="Postfach" sendet={sendet}
+          links={vorhanden && <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>Postfach entfernen</button>} />
       </form>
       {s && (
         <div className="blatt">

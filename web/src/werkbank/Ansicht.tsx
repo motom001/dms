@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, type WerkbankAnsichtStand } from '../api';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import {
   ansichtAus, BEREICHE, fuerAlle, GRUPPEN, inVorlage, OHNE_EINSTELLUNG, sichtbar, VORLAGEN, type Gruppe, type Vorlage,
 } from '../../../shared/src/werkbankansicht';
@@ -57,8 +58,10 @@ export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustan
     const a = ansichtAus(vorlage, alle);
     const b = s.installation;
     const gleich = (x: string[], y: string[]) => x.length === y.length && x.every((v) => y.includes(v));
-    return !s.eingestellt || a.vorlage !== b.vorlage || !gleich(a.ein, b.ein) || !gleich(a.aus, b.aus) || !gleich([...ich].filter((p) => !alle.has(p)), s.eigene.ein);
+    return a.vorlage !== b.vorlage || !gleich(a.ein, b.ein) || !gleich(a.aus, b.aus) || !gleich([...ich].filter((p) => !alle.has(p)), s.eigene.ein);
   }, [s, vorlage, alle, ich]);
+  // Noch nie eingestellt: Speichern geht auch ohne Änderung (übernimmt die Vorlage).
+  const ent = useEntwurf(false, geaendert, { zuruecksetzen: () => { zuruecksetzen(); setMeldung(undefined); } });
 
   if (z.fehler) return <div className="hinweis schlecht"><p>{z.fehler}</p></div>;
   if (!s) return <p className="leise">Lade …</p>;
@@ -89,7 +92,7 @@ export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustan
         <p className="leise">Blende aus, was du nicht brauchst. <strong>Ausblenden schaltet nichts ab:</strong> Alles läuft weiter, Links und Hilfe führen weiter hin, und Hinweise wie „Sicherung zu alt“ erscheinen immer in der Übersicht. <Hilfe ort="werkbank.ansicht" /></p>
       </div>
       {!s.eingestellt && <div className="hinweis"><p>Noch nicht eingestellt – bisher siehst du alle Bereiche. Für einen Haushalt reicht meist die Vorlage <strong>Haushalt</strong>.</p></div>}
-      <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }}>
+      <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <fieldset className="wahl">
           <legend className="h3">Vorlage für alle Administratoren</legend>
           {(Object.keys(VORLAGEN) as Vorlage[]).map((v) => (
@@ -122,10 +125,7 @@ export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustan
           </div>
         ))}
         {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
-        <div className="knoepfe">
-          <button className="knopf primaer" disabled={laeuft || !geaendert}>Speichern</button>
-          <button type="button" className="knopf" disabled={laeuft || !geaendert} onClick={zuruecksetzen}>Verwerfen</button>
-        </div>
+        <Speicherleiste ent={ent} gegenstand="Auswahl" sendet={laeuft} speicherbar={!s.eingestellt} />
       </form>
     </div>
   );

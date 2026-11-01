@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, speichereDatei, type Auftrag, type NummernkreisAnsicht } from '../api';
 import { useDaten } from '../daten';
-import { geheZu, Link } from '../ort';
+import { geheZu, Link, loeseWache } from '../ort';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Hilfe } from '../Hilfe';
 import { NEUBEGINN_TEXT, pruefeMuster, formatiereNummer, datumIn, kreisVon, neubeginn as neubeginnVon } from '../../../shared/src/nummernkreis';
 import { rueckfrage } from '../rueckfrage';
@@ -47,9 +48,12 @@ export function NummernkreiseListe({ z, offen }: { z: NummernkreisZustand; offen
 export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; schluessel: string }) {
   const neu = schluessel === 'neu';
   const k = neu ? undefined : z.liste?.find((x) => x.schluessel === schluessel);
-  const [e, setE] = useState(() => ({ schluessel: k?.schluessel ?? '', name: k?.name ?? '', muster: k?.muster ?? '{jjjj}{mm}-R{zaehler:7}', start: String(k?.start ?? 1) }));
+  const gespeichert = { schluessel: k?.schluessel ?? '', name: k?.name ?? '', muster: k?.muster ?? '{jjjj}{mm}-R{zaehler:7}', start: String(k?.start ?? 1) };
+  const [e, setE] = useState(gespeichert);
   const [zaehler, setZaehler] = useState('');
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const [sendet, setSendet] = useState(false);
+  const ent = useEntwurf(gespeichert, e, { neu, liste: '/werkbank/nummernkreise', zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); } });
   if (!neu && !k) return z.liste ? <div className="leer"><p>Diesen Nummernkreis gibt es nicht (mehr).</p></div> : <p className="leise">Lade …</p>;
   const musterFehler = pruefeMuster(e.muster);
   const heute = datumIn(new Date());
@@ -59,12 +63,12 @@ export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; 
     setMeldung(undefined);
     try { setMeldung({ art: 'gut', text: await f() }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
-  const speichern = () => tu(async () => {
+  const speichern = async () => { setSendet(true); try { await tu(async () => {
     const daten = { name: e.name, muster: e.muster, start: Number(e.start) };
     z.setListe(neu ? await api.nummernkreisAnlegen({ ...daten, schluessel: e.schluessel }) : await api.nummernkreisAendern(k!.schluessel, daten));
-    if (neu) geheZu(`/werkbank/nummernkreise/${e.schluessel}`, true);
+    if (neu) { loeseWache(); geheZu(`/werkbank/nummernkreise/${e.schluessel}`, true); }
     return neu ? 'Angelegt.' : 'Gespeichert. Das Muster gilt für neue Nummern.';
-  });
+  }); } finally { setSendet(false); } };
   const schluesselAusName = (name: string) => name.toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').replace(/^(\d)/, 'n$1').slice(0, 40);
   return (
     <div className="einspaltig">
@@ -74,7 +78,7 @@ export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; 
         {!neu && <p className="leise">Im Standardwert eines Textfelds: <code className="mono">{`{nummernkreis:${k!.schluessel}}`}</code></p>}
       </div>
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
-      <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }}>
+      <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <div className="raster">
           <label className="eigenschaft"><span>Name</span><input id="nk-name" value={e.name} onChange={(x) => setE({ ...e, name: x.target.value, ...(neu && (!e.schluessel || e.schluessel === schluesselAusName(e.name)) ? { schluessel: schluesselAusName(x.target.value) } : {}) })} required /></label>
           <label className="eigenschaft"><span>Kennung <small>{neu ? 'nach dem Anlegen fest' : 'fest'}</small></span><input id="nk-schluessel" className="mono" value={e.schluessel} disabled={!neu} onChange={(x) => setE({ ...e, schluessel: x.target.value })} required /></label>
@@ -83,11 +87,9 @@ export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; 
           <label className="eigenschaft"><span>Startwert</span><input id="nk-start" type="number" min={0} value={e.start} onChange={(x) => setE({ ...e, start: x.target.value })} /></label>
         </div>
         {musterFehler ? <p className="fehlertext">{musterFehler}</p> : <p className="klein">Beispiel heute: <code className="mono">{beispiel}</code> · Zähler beginnt neu: <strong>{NEUBEGINN_TEXT[neubeginn]}</strong></p>}
-        <div className="knoepfe">
-          {!neu && <button type="button" className="knopf gefahr-rand" disabled={k!.verwendet.length > 0} title={k!.verwendet.length ? 'Wird noch verwendet' : undefined}
-            onClick={async () => { if (await rueckfrage({ titel: `Nummernkreis „${k!.name}“ löschen?`, ja: 'Löschen', gefahr: true })) void tu(async () => { z.setListe(await api.nummernkreisLoeschen(k!.schluessel)); geheZu('/werkbank/nummernkreise', true); return 'Gelöscht.'; }); }}>Löschen</button>}
-          <button className="knopf primaer" disabled={!!musterFehler}>{neu ? 'Anlegen' : 'Speichern'}</button>
-        </div>
+        <Speicherleiste ent={ent} gegenstand="Nummernkreis" sendet={sendet} ungueltig={!!musterFehler}
+          links={!neu && <button type="button" className="textknopf gefahr" disabled={k!.verwendet.length > 0} title={k!.verwendet.length ? 'Wird noch verwendet' : undefined}
+            onClick={async () => { if (await rueckfrage({ titel: `Nummernkreis „${k!.name}“ löschen?`, ja: 'Löschen', gefahr: true })) void tu(async () => { z.setListe(await api.nummernkreisLoeschen(k!.schluessel)); loeseWache(); geheZu('/werkbank/nummernkreise', true); return 'Gelöscht.'; }); }}>Nummernkreis löschen</button>} />
       </form>
       {!neu && <>
         <div className="blatt">

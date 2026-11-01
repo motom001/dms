@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, type EingangEinstellung, type EingangStand } from '../api';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 
 /**
  * Werkbank → Eingangsordner (#195): Ein/Aus, Prüfabstand, was nach dem Übernehmen geschieht,
@@ -51,7 +52,9 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
   const s = z.stand;
   const [e, setE] = useState<EingangEinstellung | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const [sendet, setSendet] = useState(false);
   useEffect(() => { if (s?.einstellung && !e) setE(s.einstellung); }, [s, e]);
+  const ent = useEntwurf(s?.einstellung ?? null, e, { aus: !e, zuruecksetzen: () => { setE(s?.einstellung ?? null); setMeldung(undefined); } });
   if (!s) return <p className="leise">Lade …</p>;
   if (!s.vorhanden || !e) {
     return (
@@ -60,7 +63,8 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
     );
   }
   async function speichern() {
-    try { const n = await api.eingangsordnerSetzen(e!); z.setStand(n); setE(n.einstellung ?? e); setMeldung({ art: 'gut', text: 'Gespeichert.' }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    setSendet(true);
+    try { const n = await api.eingangsordnerSetzen(e!); z.setStand(n); setE(n.einstellung ?? e); setMeldung({ art: 'gut', text: 'Gespeichert.' }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   async function jetzt() {
     try { const r = await api.eingangsordnerPruefen(); z.setStand(r.stand); setMeldung({ art: 'gut', text: r.uebernommen ? `${r.uebernommen} ${r.uebernommen === 1 ? 'Datei' : 'Dateien'} übernommen.` : 'Geprüft – nichts Fertiges gefunden. Eine Datei wird erst übernommen, wenn sie sich zwischen zwei Prüfungen nicht mehr ändert.' }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
@@ -75,7 +79,7 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       {s.pausiert && <div className="hinweis warn"><p>Ruht gerade: {s.pausiert}.</p></div>}
       {s.andereInstanz && <div className="hinweis warn"><p>Eine andere Instanz des DMS übernimmt den Eingangsordner; diese hier wartet.</p></div>}
-      <div className="blatt">
+      <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <h2 className="h3">Einstellungen</h2>
         <label className="haken"><input id="eingang-aktiv" type="checkbox" checked={e.aktiv} onChange={(x) => setE({ ...e, aktiv: x.target.checked })} /><span>Eingangsordner prüfen</span></label>
         <div className="raster">
@@ -90,10 +94,10 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
         <label className="haken"><input type="checkbox" checked={e.doppelteUeberspringen === true} onChange={(x) => setE({ ...e, doppelteUeberspringen: x.target.checked })} />
           <span>Doppelte Dateien überspringen <small className="leise">– liegt genau diese Datei schon im DMS, wird keine Post angelegt; die Datei wird wie oben weggeräumt</small></span></label>
         <div className="knoepfe">
-          <button type="button" className="knopf primaer" onClick={() => void speichern()}>Speichern</button>
           <button type="button" className="knopf" onClick={() => void jetzt()}>Jetzt prüfen</button>
         </div>
-      </div>
+        <Speicherleiste ent={ent} gegenstand="Einstellungen" sendet={sendet} />
+      </form>
       <div className="blatt">
         <h2 className="h3">Stand</h2>
         <dl className="eigenschaften">

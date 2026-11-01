@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, type DatenbankStand } from '../api';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 
 /**
  * Lange Datenbankzugriffe (#12): Mitte die gespeicherten Langläufer, rechts
@@ -89,21 +90,25 @@ function Einstellungen({ z }: { z: DatenbankZustand }) {
   const [schwelle, setSchwelle] = useState(String(e.schwelleMs));
   const [tage, setTage] = useState(String(e.tage));
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const [sendet, setSendet] = useState(false);
+  const ent = useEntwurf({ schwelle: String(e.schwelleMs), tage: String(e.tage) }, { schwelle, tage }, {
+    zuruecksetzen: () => { setSchwelle(String(e.schwelleMs)); setTage(String(e.tage)); setMeldung(undefined); },
+  });
   async function speichern(ev: FormEvent) {
     ev.preventDefault();
+    setSendet(true);
     try { await api.datenbankEinstellen({ schwelleMs: Number(schwelle), tage: Number(tage) }); setMeldung({ art: 'gut', text: 'Gespeichert.' }); await z.laden(); }
-    catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
-  const geaendert = schwelle !== String(e.schwelleMs) || tage !== String(e.tage);
   return (
-    <form className="blatt" onSubmit={speichern}>
+    <form className="blatt" onSubmit={speichern} onKeyDown={ent.tasten}>
       <h2 className="h3">Einstellungen</h2>
       <div className="raster">
         <label className="eigenschaft"><span>Lang ab <small>Millisekunden, Standard 500</small></span><input type="number" min={1} max={600000} value={schwelle} onChange={(x) => setSchwelle(x.target.value)} /></label>
         <label className="eigenschaft"><span>Aufbewahren <small>Tage, Standard 30</small></span><input type="number" min={1} max={3650} value={tage} onChange={(x) => setTage(x.target.value)} /></label>
       </div>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'}>{meldung.text}</p>}
-      <div className="knoepfe"><button className="knopf primaer" disabled={!geaendert}>Speichern</button></div>
+      <Speicherleiste ent={ent} gegenstand="Einstellungen" sendet={sendet} />
     </form>
   );
 }
