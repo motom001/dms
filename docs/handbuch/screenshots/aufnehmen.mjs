@@ -685,8 +685,17 @@ async function main() {
   await geheZu(s, '/ablage');
   await s.locator('.benutzermenue .wer').click();
   await s.locator('.benutzermenue .menue').waitFor();
-  await bild(s, 'benutzermenue', { clip: { x: 1440 - 420, y: 0, width: 420, height: 360 } });
+  await bild(s, 'benutzermenue', { clip: { x: 1440 - 420, y: 0, width: 420, height: 400 } });
+  // Über das DMS (#430): Version, Lizenz, Quellcode der laufenden Version.
+  await s.getByRole('button', { name: 'Über das DMS' }).click();
+  const ueber = s.locator('dialog.ueber-dms');
+  await ueber.waitFor();
+  {
+    const box = await ueber.boundingBox();
+    await bild(s, 'ueber-dms', { clip: { x: box.x - 8, y: box.y - 8, width: box.width + 16, height: box.height + 16 } });
+  }
   await s.keyboard.press('Escape');
+  await ueber.waitFor({ state: 'detached' });
 
   // Fehler nachstellen (#418): eigene Admin-Sitzung, als Ben anmelden; zurück nur über den gelben Banner.
   {
