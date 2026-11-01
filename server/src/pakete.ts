@@ -12,7 +12,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { inflateRawSync } from 'node:zlib';
 import { parse as yamlLesen } from 'yaml';
 import type { Feld, Mappentyp, Register } from '../../shared/src/model';
-import { BEREICH, CODE_MAX, gleicheRechte, liesCode, rechteText, type PaketCode, dmsPasst, liesKatalog, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../shared/src/pakete';
+import { BEREICH, CODE_MAX, DMS_RECHTE_TYPEN, gleicheRechte, liesCode, rechteText, type PaketCode, dmsPasst, liesKatalog, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../shared/src/pakete';
 import { kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
 import { EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand } from '../../shared/src/paketeinstellungen';
 import type { Dienst } from './dienst';
@@ -611,7 +611,7 @@ export class Paketverwaltung {
   private typName(vw: string, paket: Paket, installierte: InstalliertesPaket[], typen: Mappentyp[]): string {
     const [p, s] = vw.includes(':') ? vw.split(':') : [paket.manifest.id, vw];
     if (p === paket.manifest.id) return paket.typen.find((t) => t.schluessel === s)?.name ?? s;
-    if (p === 'dms') return DMS_TYPEN[s] ?? s;
+    if (p === 'dms') return DMS_TYPEN[s] ?? DMS_RECHTE_TYPEN[s] ?? s;
     const id = installierte.find((x) => x.id === p)?.typen[s];
     return `${typen.find((t) => t.id === id)?.name ?? s} (${p})`;
   }

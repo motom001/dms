@@ -1563,7 +1563,8 @@ export class Dienst {
       for (const vw of liste) {
         if (vw === ALLE_TYPEN) { for (const t of typen) if (t.system !== 'benutzer') ids.add(t.id); continue; }
         const [pk, sl] = vw.includes(':') ? vw.split(':') : [p?.id ?? '', vw];
-        const id = pk === 'dms' ? (sl === 'ablageort' ? ablageort : sl === 'benutzer' ? dms.benutzer.id : sl === 'rolle' ? dms.rolle.id : null)
+        // dms:benutzer lehnt liesCode ab; hier trotzdem nie auflösen (Pakete sehen keine Benutzer). dms:post seit #435.
+        const id = pk === 'dms' ? (sl === 'ablageort' ? ablageort : sl === 'rolle' ? dms.rolle.id : sl === 'post' ? dms.post.id : null)
           : pakete.find((x) => x.id === pk)?.typen[sl];
         if (id) ids.add(id);
       }
