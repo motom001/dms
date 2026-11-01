@@ -5,6 +5,7 @@ import { PASSWORT_MINDESTLAENGE } from '../../shared/src/model';
 import { api, ApiFehler, hatEinrichtungscode, setzeEinrichtungscode, type AnbindungEingabe, type AnbindungPruefung, type EinrichtungSchritt, type EinrichtungStand, type KontoStatus, type LinkErgebnis, type MailEinstellung, type TresorStatus } from './api';
 import { WiederherstellungsAssistent } from './wiederherstellen';
 import { BetriebPanel, useBetrieb } from './werkbank/Betrieb';
+import { Erledigt } from './werkbank/Sicherung';
 import { useKonto } from './konto';
 import { geheZu } from './ort';
 
@@ -326,10 +327,10 @@ function SchluesselSchritt({ weiter }: { weiter: (uebersprungen: boolean) => Pro
           {t.eingebunden === false && <div className="hinweis warn"><p><strong>Der Ordner /data/geheim ist kein eigenes Volume.</strong> Der Schlüssel ginge beim Neuerstellen des Containers verloren – ergänze das Volume in der Compose-Datei.</p></div>}
           <ol className="anleitung">
             <li className={da ? 'erledigt' : ''}>
-              <strong>Schlüssel erzeugen.</strong> {da ? <>Erledigt – Fingerabdruck <span className="mono">{t.fingerabdruck}</span>.</> : <button type="button" className="knopf klein" disabled={s.sendet} onClick={() => void s.los(async () => setT(await api.tresorErzeugen()))}>Schlüssel erzeugen</button>}
+              {da && <Erledigt />}<strong>Schlüssel erzeugen.</strong> {da ? <>Erledigt – Fingerabdruck <span className="mono">{t.fingerabdruck}</span>.</> : <button type="button" className="knopf klein" disabled={s.sendet} onClick={() => void s.los(async () => setT(await api.tresorErzeugen()))}>Schlüssel erzeugen</button>}
             </li>
             <li className={geladen ? 'erledigt' : ''}>
-              <strong>Notfallblatt herunterladen, ausdrucken und sicher aufbewahren.</strong> Es enthält den Schlüssel – ohne ihn lässt sich keine Sicherung wiederherstellen, wenn das NAS ausfällt.{' '}
+              {geladen && <Erledigt />}<strong>Notfallblatt herunterladen, ausdrucken und sicher aufbewahren.</strong> Es enthält den Schlüssel – ohne ihn lässt sich keine Sicherung wiederherstellen, wenn das NAS ausfällt.{' '}
               {da ? <a className="knopf klein" href="/api/werkbank/notfallblatt" download onClick={() => setGeladen(true)}>Notfallblatt herunterladen</a> : <span className="leise">(erst nach dem Schlüssel)</span>}
             </li>
           </ol>

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, type TresorStatus } from '../api';
 import { useKonto } from '../konto';
 import { Link } from '../ort';
-import { Notfallblatt } from './Sicherung';
+import { Erledigt, Notfallblatt, NOTFALLBLATT_URL, meldeSicherung } from './Sicherung';
 import { Hilfe } from '../Hilfe';
 import { rueckfrage } from '../rueckfrage';
 
@@ -60,7 +60,8 @@ export function TresorPanel({ t }: { t: TresorZustand }) {
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [wechsel, setWechsel] = useState<{ alt: string; neu: string; umgeschluesselt: number; unlesbar: number; alteSicherungen: number }>();
-  const [gesichert, setGesichert] = useState<string>();
+  const [gesichert, setGesichert] = useState<{ ok: boolean; text: string }>();
+  const [blattGeladen, setBlattGeladen] = useState(false);
   if (t.fehler) return <div className="hinweis schlecht"><p>{t.fehler}</p></div>;
   const s = t.stand;
   if (!s) return <p className="leise">Lade …</p>;
@@ -136,9 +137,17 @@ export function TresorPanel({ t }: { t: TresorZustand }) {
             <div className="hinweis gut stapel" role="status">
               <p><strong>Schlüssel gewechselt:</strong> <span className="mono">{wechsel.alt}</span> → <span className="mono">{wechsel.neu}</span>. {wechsel.umgeschluesselt === 1 ? 'Ein Wert wurde' : `${wechsel.umgeschluesselt} Werte wurden`} neu verschlüsselt{wechsel.unlesbar ? `; ${wechsel.unlesbar} waren schon vorher nicht lesbar und bleiben es` : ''}.</p>
               <p><strong>Jetzt noch zwei Schritte:</strong></p>
-              <ol>
-                <li>Das <a href="#notfallblatt" className="verweis">neue Notfallblatt</a> herunterladen und sicher aufbewahren.</li>
-                <li>Eine neue Sicherung anlegen – sie ist mit dem neuen Schlüssel verschlüsselt. <button type="button" className="knopf klein" disabled={!!gesichert} onClick={() => void api.sicherungJetzt().then(() => setGesichert('Sicherung läuft – den Stand siehst du unter Sicherung.')).catch((x) => setGesichert((x as Error).message))}>Jetzt sichern</button>{gesichert && <span className="leise klein"> {gesichert} <Link to="/werkbank/sicherung" className="verweis">Zur Sicherung</Link></span>}</li>
+              <ol className="anleitung">
+                <li className={blattGeladen ? 'erledigt' : ''}>
+                  {blattGeladen && <Erledigt />}Das neue Notfallblatt herunterladen und sicher aufbewahren.{' '}
+                  {/* #414: lädt direkt herunter – wie der Knopf im Abschnitt „Notfallblatt“ darunter. */}
+                  <a className="knopf klein" href={NOTFALLBLATT_URL} download onClick={() => { setBlattGeladen(true); setTimeout(() => void t.laden(), 1500); setTimeout(meldeSicherung, 1500); }}>Notfallblatt herunterladen</a>
+                </li>
+                <li className={gesichert?.ok ? 'erledigt' : ''}>
+                  {gesichert?.ok && <Erledigt />}Eine neue Sicherung anlegen – sie ist mit dem neuen Schlüssel verschlüsselt.{' '}
+                  <button type="button" className="knopf klein" disabled={gesichert?.ok} onClick={() => void api.sicherungJetzt().then(() => setGesichert({ ok: true, text: 'Sicherung läuft – den Stand siehst du unter Sicherung.' })).catch((x) => setGesichert({ ok: false, text: (x as Error).message }))}>Jetzt sichern</button>
+                  {gesichert && <span className={gesichert.ok ? 'leise klein' : 'fehlertext klein'}> {gesichert.text} <Link to="/werkbank/sicherung" className="verweis">Zur Sicherung</Link></span>}
+                </li>
               </ol>
               {wechsel.alteSicherungen > 0 && <p>{wechsel.alteSicherungen === 1 ? 'Eine ältere Sicherung ist' : `${wechsel.alteSicherungen} ältere Sicherungen sind`} noch mit dem alten Schlüssel verschlüsselt. Bewahre das alte Notfallblatt auf, solange du sie brauchst – oder lösche sie unter <Link to="/werkbank/sicherung" className="verweis">Sicherung</Link>.</p>}
             </div>
@@ -157,3 +166,4 @@ export function TresorPanel({ t }: { t: TresorZustand }) {
     </div>
   );
 }
+
