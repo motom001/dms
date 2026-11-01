@@ -228,7 +228,7 @@ describe('Erkennung: Vorschläge beim Zuordnen (#336)', () => {
   });
 });
 
-describe('Erkennung: Ablage in PostgreSQL (#336)', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
+describe('Erkennung: Ablage in PostgreSQL (#336, #337)', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
   it('speichert je Post, ersetzt, findet frühere Post des Absenders und fällt mit der Post weg', async () => {
     const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
     const { verbinde, migriere } = await import('../src/db');
@@ -254,6 +254,9 @@ describe('Erkennung: Ablage in PostgreSQL (#336)', { skip: !process.env.TEST_DAT
       await repo.loescheMappe(p1.id);
       assert.equal(await repo.erkennungLies(p1.id), undefined);
       assert.deepEqual(await repo.erkennungenMitAbsender(abs, 10), [p2.id]);
+      // #337: Aufgabe der Art „zugeordnet“ (Migration 047).
+      const a = await repo.legeAufgabeAn({ id: '00000000-0000-4000-8000-0000000000d1', mappeId: p2.id, empfaengerId: null, art: 'zugeordnet', text: 'Automatisch zugeordnet – bitte prüfen', feldKey: 'auto:x', erstellt: new Date().toISOString(), erstelltVon: null, erledigt: null, erledigtVon: null });
+      assert.equal((await repo.holeAufgabe(a.id))?.art, 'zugeordnet');
     } finally { await sql.end(); }
   });
 });
@@ -349,5 +352,74 @@ describe('Aus Dokument ausfüllen: Texterkennung sofort (#391)', () => {
     d.verbindeTexterkennung(ocr);
     assert.match((await d.textAusDatei(pdfMitText(['Mobil 0171 1234567']), 'karte.pdf', 'application/pdf')).text, /0171 1234567/);
     await assert.rejects(d.textAusDatei(Buffer.from('PK\u0003\u0004'), 'x.zip', 'application/zip'), (e: Error & { status?: number }) => e.status === 415);
+  });
+});
+
+describe('Erkannte Post automatisch zuordnen (#337)', () => {
+  it('Standard aus; an je Mappentyp: sicher = Absender eindeutig und genau eine Zielmappe; Aufgabe mit Rückgängig', async () => {
+    const { d, A, B, anna, ben, vertrag, strom, post } = await aufbau();
+    const aus = await post(BRIEF, 'Ohne Einstellung');
+    assert.equal((await d.holeMappe(aus.id)).mappe.werte.stand, 'Neu', 'Standard: aus');
+    const typ = (await d.typenFuer(await d.zugriff(A))).find((t) => t.id === vertrag.id)!;
+    assert.equal(typ.autoZuordnen, false);
+    await d.aendereTyp(vertrag.id, { ...typ, autoZuordnen: true });
+    assert.equal((await d.typenFuer(await d.zugriff(A))).find((t) => t.id === vertrag.id)!.autoZuordnen, true);
+
+    // Für Ben: er bekommt die Aufgabe; das Dokument wandert zum Strom-Vertrag (der einzige, der auf den Absender verweist).
+    const p = await d.legePostAn({ betreff: 'Abschlag', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.zugriff(A));
+    const dok = (await d.ladeHoch(p.id, { register: 'dokumente', name: 'abschlag.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 abschlag'), anna.id)).dokument;
+    await d.schreibeVolltext(dok.id, { text: BRIEF }, { id: anna.id, herkunft: 'Test', paket: false });
+    const nachher = (await d.holeMappe(p.id)).mappe;
+    assert.equal(nachher.werte.stand, 'Zugeordnet');
+    assert.deepEqual(nachher.werte.bezug, [strom.id]);
+    assert.equal((await d.holeDokument(dok.id)).mappeId, strom.id);
+    const aufgaben = (await d.holeMappe(p.id)).aufgaben.filter((a) => !a.erledigt);
+    assert.deepEqual(aufgaben.map((a) => [a.art, a.empfaengerId, a.text]), [['zugeordnet', ben.id, 'Automatisch zugeordnet zu „Strom Haus“ – bitte prüfen']]);
+    const hist = await d.historie(p.id);
+    assert.ok(hist.some((h) => h.art === 'zugeordnet' && /automatisch zugeordnet zu „Strom Haus“.*Absender „Stadtwerke Musterstadt“ eindeutig erkannt \(.*Kundennummer 100-4711.*\)/.test(String(h.daten.text))), JSON.stringify(hist.map((h) => h.daten.text)));
+    assert.ok((await d.historie(strom.id)).some((h) => h.art === 'zugeordnet' && /automatisch zugeordnet/.test(String(h.daten.text))));
+    const e = await d.erkennung.fuerBenutzer(p.id, await d.zugriff(B));
+    assert.equal(e.auto?.ziel, strom.id);
+
+    // Rückgängig durch Ben: Dokument zurück, Stand neu, wieder „Post für dich“.
+    const r = await d.automatikRueckgaengig(aufgaben[0].id, B);
+    assert.equal(r.dokumente, 1);
+    const zurueck = (await d.holeMappe(p.id)).mappe;
+    assert.equal(zurueck.werte.stand, 'Neu');
+    assert.ok(!zurueck.werte.bezug || (zurueck.werte.bezug as string[]).length === 0);
+    assert.equal((await d.holeDokument(dok.id)).mappeId, p.id);
+    const offen = (await d.holeMappe(p.id)).aufgaben.filter((a) => !a.erledigt);
+    assert.deepEqual(offen.map((a) => a.art), ['post']);
+    await assert.rejects(d.automatikRueckgaengig(aufgaben[0].id, B), (x: Error & { status?: number }) => x.status === 409);
+    // Neuer Volltext: nicht noch einmal automatisch.
+    await d.schreibeVolltext(dok.id, { text: BRIEF }, { id: anna.id, herkunft: 'Test', paket: false });
+    assert.equal((await d.holeMappe(p.id)).mappe.werte.stand, 'Neu');
+    void A;
+  });
+
+  it('nicht sicher → nicht automatisch; eine direkt gefundene Nummer gewinnt; Empfänger ohne Leserecht, Archivmodus nie', async () => {
+    const { d, A, anna, ben, vertrag, gas, sw, post } = await aufbau();
+    const typ = (await d.typenFuer(await d.zugriff(A))).find((t) => t.id === vertrag.id)!;
+    await d.aendereTyp(vertrag.id, { ...typ, autoZuordnen: true });
+    // Zweiter Vertrag mit dem Absender: zwei Kandidaten → nicht eindeutig.
+    await d.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Fernwärme', partner: sw.id } }, anna.id);
+    const p1 = await post(BRIEF, 'Zwei Kandidaten');
+    assert.equal((await d.holeMappe(p1.id)).mappe.werte.stand, 'Neu');
+    // Mit Vertragsnummer im Text: genau dieser Vertrag.
+    const p2 = await post(`${BRIEF}\nVertragsnummer GV-998877`, 'Mit Nummer');
+    assert.deepEqual((await d.holeMappe(p2.id)).mappe.werte.bezug, [gas.id]);
+    assert.equal((await d.holeMappe(p2.id)).aufgaben.find((a) => a.art === 'zugeordnet')?.empfaengerId, anna.id, 'ohne „Für“: wer die Post ins DMS gebracht hat');
+    // Empfänger Ben darf Verträge nicht lesen → nicht automatisch.
+    await d.setzeBerechtigungen(vertrag.id, { grund: { ...NICHTS }, regeln: [] }, true);
+    const p3 = await d.legePostAn({ betreff: 'Für Ben', fuer: ben.id }, { id: anna.id, name: 'Anna' }, await d.zugriff(A));
+    const dok3 = (await d.ladeHoch(p3.id, { register: 'dokumente', name: 'b.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 ben'), anna.id)).dokument;
+    await d.schreibeVolltext(dok3.id, { text: `${BRIEF}\nVertragsnummer GV-998877` }, { id: anna.id, herkunft: 'Test', paket: false });
+    assert.equal((await d.holeMappe(p3.id)).mappe.werte.stand, 'Neu');
+    // Archivmodus: nie automatisch, auch wenn eingeschaltet.
+    await d.setzeBerechtigungen(vertrag.id, { grund: { ...NICHTS, C: true, R: true, U: true, D: true, P: true }, regeln: [] }, true);
+    const t2 = (await d.typenFuer(await d.zugriff(A))).find((t) => t.id === vertrag.id)!;
+    await d.aendereTyp(vertrag.id, { ...t2, archiv: { jahre: 10, stichtag: null } });
+    const p4 = await post(`${BRIEF}\nVertragsnummer GV-998877`, 'Archiv');
+    assert.equal((await d.holeMappe(p4.id)).mappe.werte.stand, 'Neu');
   });
 });

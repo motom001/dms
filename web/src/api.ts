@@ -32,6 +32,8 @@ export interface PostErkennung {
   neuerAbsender: { typId: string; werte: Record<string, string>; fundstelle: string } | null;
   ziele: Array<{ mappeId: string; typId: string; titel: string; punkte: number; gruende: string[] }>;
   bezuege: Bezuege;
+  /** Automatisch zugeordnet (#337). */
+  auto?: { ziel: string; zeit: string; grund: string; rueckgaengig: boolean } | null;
 }
 
 /** „Aus Dokument ausfüllen“ (#391), wie POST /api/typen/:id/vorschlaege sie liefert. */
@@ -473,6 +475,8 @@ export const api = {
   aufgabeAnlegen: (mappeId: string, empfaengerId: string, text: string) => anfrage<Aufgabe & { hinweis?: string }>('POST', `/api/mappen/${mappeId}/aufgaben`, { empfaengerId, text }),
   /** Mit folgetermin bei wiederkehrenden Fristen (#130). */
   aufgabeErledigt: (id: string) => anfrage<Aufgabe & { folgetermin?: string }>('POST', `/api/aufgaben/${id}/erledigt`),
+  /** Automatisch zugeordnet (#337): Rückgängig aus der Aufgabe. */
+  zuordnungRueckgaengig: (id: string) => anfrage<{ post: Mappe; dokumente: number }>('POST', `/api/aufgaben/${id}/rueckgaengig`),
   folgetermin: (id: string) => anfrage<Mappe & { hinweis?: string }>('POST', `/api/aufgaben/${id}/folgetermin`),
   /* Fristen und Erinnerungen (#129–#132) */
   /** Startseite (#334): zuletzt geöffnete Mappen und ob es schon eigene Mappen gibt. */

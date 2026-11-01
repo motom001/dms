@@ -182,10 +182,15 @@ export function istIban(s: string): boolean {
   return rest === 1;
 }
 
+/** Textstelle um einen Fund: seine Zeile, höchstens 40 Zeichen davor und danach, an Wortgrenzen mit „…“ gekürzt. */
 const ausschnitt = (text: string, i: number, laenge: number) => {
-  const a = Math.max(0, text.lastIndexOf('\n', i) + 1, i - 40);
-  const e = Math.min(text.length, (() => { const n = text.indexOf('\n', i + laenge); return n < 0 ? text.length : n; })(), i + laenge + 40);
-  return text.slice(a, e).replace(/\s+/g, ' ').trim();
+  const zeile = text.lastIndexOf('\n', i) + 1;
+  const ende = (() => { const n = text.indexOf('\n', i + laenge); return n < 0 ? text.length : n; })();
+  let a = Math.max(zeile, i - 40);
+  let e = Math.min(ende, i + laenge + 40);
+  if (a > zeile) { const l = text.indexOf(' ', a); a = l >= 0 && l < i ? l + 1 : a; }
+  if (e < ende) { const l = text.lastIndexOf(' ', e); e = l > i + laenge ? l : e; }
+  return `${a > zeile ? '… ' : ''}${text.slice(a, e).replace(/\s+/g, ' ').trim()}${e < ende ? ' …' : ''}`;
 };
 const datumIso = (t: number, m: number, j: number) => {
   if (j < 100) j += j < 70 ? 2000 : 1900;

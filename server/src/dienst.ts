@@ -56,7 +56,7 @@ import type { PaketEntwurf } from '../../shared/src/paketerstellung';
 import { abfrageAus, liesSuche } from '../../shared/src/erweitertesuche';
 import type { Lesefilter } from '../../shared/src/rechte';
 import { liesAusDokument, liesFeldErkennung, type AusDokument } from '../../shared/src/erkennung';
-import { Erkennung } from './erkennung';
+import { Erkennung, sichereZuordnung, type PostErkennung } from './erkennung';
 import { ANSTEHEND_MAX, ANSTEHEND_TAGE, bereinigeFrist, datumDe, empfaengerFelder, ERINNERUNG_TEXT_MAX, fristAb, fristEmpfaenger, fristFelder, fristText, istDatum, naechsterTermin, type Anstehend, type Erinnerung } from '../../shared/src/fristen';
 import { ALLES, RECHTE_LISTE, kurzStandard, systemSperre, bereinigeRegelwerk, FALSCH, istOffen, kopiereRegel, kurz, leseAusdruck, lesefilter, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, wirksamVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../shared/src/rechte';
 
@@ -1489,6 +1489,8 @@ export class Dienst {
     const t = await f(eingabe);
     if (hat) await this.setzeStempelTyp(t.id, st ?? null);
     if (hatAd) await this.setzeTypErkennung(t.id, { ausDokument: liesAusDokument((eingabe as { ausDokument: unknown }).ausDokument) });
+    // Post automatisch zuordnen (#337), Standard aus.
+    if (!!eingabe && typeof eingabe === 'object' && 'autoZuordnen' in eingabe) await this.setzeTypErkennung(t.id, { auto: (eingabe as { autoZuordnen: unknown }).autoZuordnen === true && !t.system });
     return (await this.mitStempel([t]))[0];
   }
 
@@ -3366,7 +3368,7 @@ export class Dienst {
    * Dokumentenregister der Zielmappe (oder werden kopiert – dieselbe Datei, kein zweiter Platz),
    * die Post verweist auf die Mappe und hat danach Stand „Zugeordnet“. Mehrmals möglich.
    */
-  async ordneZu(postId: string, eingabe: unknown, von: string | null, z?: Zugriff) {
+  async ordneZu(postId: string, eingabe: unknown, von: string | null, z?: Zugriff, auto?: { grund: string }) {
     const post = z ? await this.pruefeRecht(z, postId, 'U') : await this.repo.holeMappe(postId);
     if (!post) throw new Fachfehler(404, 'Diese Post gibt es nicht.');
     const typ = await this.repo.holeTyp(post.typId);
@@ -3405,8 +3407,11 @@ export class Dienst {
     const doks = n ? ` mit ${n} ${n === 1 ? 'Dokument' : 'Dokumenten'}${kopieren ? ' (kopiert)' : ''} ins Register „${reg!.name}“` : '';
     const bezug = [...new Set([...alsListe(post.werte.bezug), ziel.id])];
     await this.schreibeSystemMappe(typ, post.id, { ...post.werte, bezug, stand: POST_STAND.zugeordnet }, von);
-    await this.notiere(post.id, von, 'zugeordnet', { text: `zugeordnet zu „${zielTitel}“${doks}`, ziel: ziel.id, zielTyp: ziel.typId, dokumente: n, kopiert: kopieren });
-    await this.notiere(ziel.id, von, 'zugeordnet', { text: `Post „${betreff}“ zugeordnet${doks}`, post: post.id, postTyp: typ.id, dokumente: n, kopiert: kopieren });
+    // Automatisch (#337): Begründung in der Historie beider Mappen.
+    const wie = auto ? { automatisch: true, grund: auto.grund, system: 'Erkennung' } : {};
+    const warum = auto ? ` – automatisch: ${auto.grund}` : '';
+    await this.notiere(post.id, von, 'zugeordnet', { text: `${auto ? 'automatisch ' : ''}zugeordnet zu „${zielTitel}“${doks}${warum}`, ziel: ziel.id, zielTyp: ziel.typId, dokumente: n, kopiert: kopieren, ...wie });
+    await this.notiere(ziel.id, von, 'zugeordnet', { text: `Post „${betreff}“ ${auto ? 'automatisch ' : ''}zugeordnet${doks}${warum}`, post: post.id, postTyp: typ.id, dokumente: n, kopiert: kopieren, ...wie });
     if (n) {
       await this.beruehre(ziel.id, zielTyp, von);
       await this.beruehre(post.id, typ, von);
@@ -3414,6 +3419,93 @@ export class Dienst {
     await this.postAufgaben(post.id, von);
     protokoll.modul('ablage').info('Post zugeordnet', { post: post.id, ziel: ziel.id, dokumente: n, kopiert: kopieren });
     return { post: (await this.repo.holeMappe(post.id))!, ziel: (await this.repo.holeMappe(ziel.id))! };
+  }
+
+  /** Mappentypen mit „Post automatisch zuordnen“ (#337); Archivmodus- und Systemtypen nie (dort nur mit Bestätigung). */
+  private async autoTypen(): Promise<Set<string>> {
+    const e = await this.typErkennungen();
+    return new Set((await this.repo.listeTypen()).filter((t) => e[t.id]?.auto && !t.archiv && !t.system).map((t) => t.id));
+  }
+
+  /**
+   * Erkannte Post automatisch zuordnen (#337), wenn die Erkennung sicher ist (siehe sichereZuordnung) und der
+   * Zieltyp das erlaubt (Standard aus). Nie: neue Mappen anlegen, Post ohne Leserecht des Empfängers zuordnen,
+   * Archivmodus-Typen. Danach eine Aufgabe „Automatisch zugeordnet – bitte prüfen“ an den Empfänger (Feld „Für“,
+   * sonst wer die Post ins DMS gebracht hat), mit Rückgängig. Je Post höchstens einmal.
+   */
+  async automatischZuordnen(postId: string, e: PostErkennung): Promise<{ ziel: string } | { nicht: string }> {
+    const log = protokoll.modul('ablage');
+    if (e.auto) return { nicht: 'schon einmal automatisch zugeordnet' };
+    const autoTypen = await this.autoTypen();
+    if (!autoTypen.size) return { nicht: 'bei keinem Mappentyp eingeschaltet' };
+    const post = await this.repo.holeMappe(postId);
+    const typ = post && await this.repo.holeTyp(post.typId);
+    if (!post || typ?.system !== 'post') return { nicht: 'keine Post' };
+    if (auswahlText(post.werte.stand) !== POST_STAND.neu || auswahlText(post.werte.richtung) === POST_RICHTUNG.ausgehend) return { nicht: 'nicht neu oder ausgehend' };
+    const s = sichereZuordnung(e, autoTypen);
+    const nicht = (grund: string) => { log.info('Post nicht automatisch zugeordnet', { post: postId, grund }); return { nicht: grund }; };
+    if (!s.ziel) return nicht(s.grund);
+    const empfaenger = alsListe(post.werte.fuer)[0] ?? post.erstelltVon;
+    if (!empfaenger) return nicht('niemand, der es prüfen könnte (kein „Für“, kein Ersteller)');
+    if (!(await this.sichtbarFuer(empfaenger, [s.ziel.mappeId])).has(s.ziel.mappeId)) return nicht('der Empfänger darf die Zielmappe nicht lesen');
+    const ziel = await this.repo.holeMappe(s.ziel.mappeId);
+    const zielTyp = ziel && await this.repo.holeTyp(ziel.typId);
+    if (!ziel || !zielTyp || zielTyp.archiv) return nicht('Zielmappe fehlt oder ist im Archivmodus');
+    const dokumente = await this.repo.listeDokumente(post.id);
+    if (dokumente.length && !zielTyp.register.some((r) => r.art === 'dokumente')) return nicht('Zielmappe hat kein Dokumentenregister');
+    const absender = (await this.repo.bezuege([e.eindeutig!])).get(e.eindeutig!)?.titel ?? '';
+    const grund = s.grund.replace('Absender eindeutig', `Absender „${absender}“ eindeutig`);
+    const zielTitel = await this.titel(ziel);
+    let aufgabe: Aufgabe | null = null;
+    await this.inTransaktion(async () => {
+      await this.ordneZu(post.id, { ziel: ziel.id }, null, undefined, { grund });
+      aufgabe = await this.repo.legeAufgabeAn({
+        id: randomUUID(), mappeId: post.id, empfaengerId: empfaenger, art: 'zugeordnet', text: `Automatisch zugeordnet zu „${zielTitel}“ – bitte prüfen`, feldKey: `auto:${ziel.id}`,
+        erstellt: new Date().toISOString(), erstelltVon: null, erledigt: null, erledigtVon: null,
+      });
+      aufgabe = await this.leiteUm(aufgabe);
+      await this.repo.erkennungSchreibe(post.id, { ...e, auto: { ziel: ziel.id, zeit: new Date().toISOString(), grund, dokumente: dokumente.map((d) => ({ id: d.id, register: d.registerKey })), aufgabe: aufgabe.id } }, e.eindeutig);
+    });
+    log.info('Post automatisch zugeordnet', { post: post.id, ziel: ziel.id, empfaenger, dokumente: dokumente.length });
+    return { ziel: ziel.id };
+  }
+
+  /**
+   * Rückgängig aus der Aufgabe „Automatisch zugeordnet – bitte prüfen“ (#337): Dokumente zurück in die Post (in ihr
+   * altes Register), Verweis weg, Stand wieder „Neu“ (wenn sie sonst nirgends zugeordnet ist), Aufgabe erledigt.
+   * Danach ordnet die Erkennung diese Post nie wieder von selbst zu.
+   */
+  async automatikRueckgaengig(aufgabeId: string, ich: { id: string; rolle: string }, z?: Zugriff) {
+    const a = await this.eigeneAufgabe(aufgabeId, ich);
+    if (a.art !== 'zugeordnet' || a.erledigt) throw new Fachfehler(409, 'Diese Aufgabe gehört zu keiner offenen automatischen Zuordnung.');
+    const post = await this.pruefeRecht(z, a.mappeId, 'U');
+    const typ = (await this.repo.holeTyp(post.typId))!;
+    const gespeichert = (await this.repo.erkennungLies(post.id))?.ergebnis as PostErkennung | undefined;
+    const auto = gespeichert?.auto;
+    if (!gespeichert || !auto || auto.rueckgaengig) throw new Fachfehler(409, 'Diese automatische Zuordnung ist schon zurückgenommen.');
+    const ziel = await this.repo.holeMappe(auto.ziel);
+    let zurueck = 0;
+    await this.inTransaktion(async () => {
+      for (const x of auto.dokumente) {
+        const d = await this.repo.holeDokument(x.id);
+        if (!d || d.mappeId !== auto.ziel) continue;
+        const reg = typ.register.find((r) => r.key === x.register && r.art === 'dokumente') ?? typ.register.find((r) => r.art === 'dokumente');
+        if (!reg) continue;
+        await this.repo.verschiebeDokument(d.id, post.id, reg.key);
+        zurueck++;
+      }
+      const bezug = alsListe(post.werte.bezug).filter((id) => id !== auto.ziel);
+      await this.schreibeSystemMappe(typ, post.id, { ...post.werte, bezug, stand: bezug.length ? post.werte.stand : POST_STAND.neu }, ich.id);
+      const zielTitel = ziel ? await this.titel(ziel) : 'eine gelöschte Mappe';
+      const doks = zurueck ? ` – ${zurueck} ${zurueck === 1 ? 'Dokument' : 'Dokumente'} zurück in der Post` : '';
+      await this.notiere(post.id, ich.id, 'zugeordnet', { text: `automatische Zuordnung zu „${zielTitel}“ rückgängig gemacht${doks}`, ziel: auto.ziel, rueckgaengig: true, dokumente: zurueck });
+      if (ziel) await this.notiere(ziel.id, ich.id, 'zugeordnet', { text: `automatische Zuordnung der Post „${auswahlText(post.werte.betreff) || 'Post'}“ rückgängig gemacht${doks}`, post: post.id, rueckgaengig: true, dokumente: zurueck });
+      await this.repo.erledigeAufgabe(a.id, ich.id);
+      await this.repo.erkennungSchreibe(post.id, { ...gespeichert, auto: { ...auto, rueckgaengig: { zeit: new Date().toISOString(), von: ich.id } } }, gespeichert.eindeutig);
+      await this.postAufgaben(post.id, ich.id);
+    });
+    protokoll.modul('ablage').info('Automatische Zuordnung rückgängig gemacht', { post: post.id, ziel: auto.ziel, dokumente: zurueck });
+    return { post: (await this.repo.holeMappe(post.id))!, dokumente: zurueck };
   }
 
   /**
@@ -4220,7 +4312,7 @@ export class Dienst {
   private async mitStempel<T extends Mappentyp>(typen: T[]): Promise<T[]> {
     const { typen: s } = await this.stempelDaten();
     const e = await this.typErkennungen();
-    return typen.map((t) => ({ ...t, stempel: s[t.id] ?? null, ausDokument: e[t.id]?.ausDokument ?? null }));
+    return typen.map((t) => ({ ...t, stempel: s[t.id] ?? null, ausDokument: e[t.id]?.ausDokument ?? null, autoZuordnen: !!e[t.id]?.auto }));
   }
 
   /** Welcher Stempel für eine Mappe dieses Typs gilt (Wunsch, Pflicht); Fehler als 422. */

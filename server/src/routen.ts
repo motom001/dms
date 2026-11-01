@@ -1420,6 +1420,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return ok({ ...auf, ...await leseHinweis(auf.empfaengerId, a.params.id) }, 201);
     } },
     { methode: 'POST', pfad: '/api/aufgaben/:id/erledigt', zugang: 'angemeldet', handler: async (a) => ok(await dienst.erledigeAufgabe(a.params.id, ich(a))) },
+    // Automatisch zugeordnet (#337): Rückgängig direkt aus der Aufgabe.
+    { methode: 'POST', pfad: '/api/aufgaben/:id/rueckgaengig', zugang: 'angemeldet', handler: async (a) => ok(await dienst.automatikRueckgaengig(a.params.id, ich(a), await zg(a))) },
     // Sammel-Weitergabe und -Erledigen (#415, #419): Werkbank → Aufgaben und Profil → Abwesenheit.
     { methode: 'POST', pfad: '/api/aufgaben/weitergeben', zugang: 'angemeldet', handler: async (a) => {
       await empfaengerSichtbar(a, b(a).empfaengerId);

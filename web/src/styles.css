@@ -1092,6 +1092,7 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
 .er-paar dt { color: var(--leise); font-size: calc(12.5px * var(--skala, 1)); }
 .er-paar dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .er-weitere { display: block; }
+.er-auto { margin: 6px 0 0; overflow-wrap: anywhere; }
 .er-ziele ul { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .er-ziele button { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 2px; padding: 7px 10px; border: 1px solid var(--linie); border-radius: var(--r); background: none; font: inherit; color: inherit; cursor: pointer; overflow-wrap: anywhere; }
 .er-ziele button:hover, .er-ziele button:focus-visible { background: var(--akzent-zart); outline: none; }

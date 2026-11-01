@@ -50,6 +50,8 @@ interface Entwurf {
   stempel: StempelTyp | null;
   /** „Aus Dokument ausfüllen“ (#391). */
   ausDokument: AusDokument | null;
+  /** Post automatisch zuordnen (#337). */
+  autoZuordnen: boolean;
 }
 
 function neueId(): string {
@@ -64,7 +66,7 @@ function neueId(): string {
 const alsEntwurfRegister = ({ felder: _f, ...r }: Register): EntwurfRegister => ({ ...r, _uid: neueId() });
 
 function entwurfAus(t?: Mappentyp): Entwurf {
-  if (!t) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], berechtigungen: structuredClone(OFFENES_REGELWERK), archiv: null, stempel: null, ausDokument: null };
+  if (!t) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], berechtigungen: structuredClone(OFFENES_REGELWERK), archiv: null, stempel: null, ausDokument: null, autoZuordnen: false };
   const erstes = t.register.find((r) => r.art === 'felder')?.key ?? '';
   const e: Entwurf = {
     id: t.id, name: t.name, schluessel: t.schluessel ?? '', beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '',
@@ -72,6 +74,7 @@ function entwurfAus(t?: Mappentyp): Entwurf {
     archiv: t.archiv ?? null,
     stempel: t.stempel ?? null,
     ausDokument: t.ausDokument ?? null,
+    autoZuordnen: !!t.autoZuordnen,
     register: t.register.map(alsEntwurfRegister),
     felder: t.felder.map((f) => ({
       ...f, _uid: neueId(),
@@ -383,8 +386,16 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
       </Bereich>
 
       {!system && <Bereich id="erkennung" titel="Erkennung" hilfe={<Hilfe ort="mappentyp.erkennungstyp" />} klappe={klappe('erkennung')}
-        kurz={[e.ausDokument?.aus ? 'Knopf aus' : `„${e.ausDokument?.beschriftung || AUS_DOKUMENT_STANDARD}“`, `${e.felder.filter((f) => f.erkennung).length} Felder markiert`].join(' · ')}>
+        kurz={[e.ausDokument?.aus ? 'Knopf aus' : `„${e.ausDokument?.beschriftung || AUS_DOKUMENT_STANDARD}“`, `${e.felder.filter((f) => f.erkennung).length} Felder markiert`, ...(e.autoZuordnen && !e.archiv ? ['Post automatisch zuordnen'] : [])].join(' · ')}>
         <ErkennungTyp ad={e.ausDokument} setze={(ausDokument) => setE((x) => ({ ...x, ausDokument }))} markiert={merkmalsfelder({ felder: e.felder as unknown as Feld[] }).length} felder={e.felder.filter((f) => f.erkennung).map((f) => f.label || f.key)} />
+        <div className="raster">
+          <div className="eigenschaft unten">
+            <label className="haken"><input type="checkbox" checked={e.autoZuordnen && !e.archiv} disabled={!!e.archiv} onChange={(ev) => setE((x) => ({ ...x, autoZuordnen: ev.target.checked }))} />
+              <span>Post automatisch zuordnen, wenn die Erkennung sicher ist<small className="hilfe">{e.archiv
+                ? 'Im Archivmodus nicht möglich – Post für diesen Typ wird nur von Hand zugeordnet.'
+                : 'Sicher heißt: Absender eindeutig erkannt (z. B. Kundennummer, IBAN) und genau eine passende Mappe dieses Typs. Der Empfänger bekommt die Aufgabe „Automatisch zugeordnet – bitte prüfen“ mit Rückgängig. Neue Mappen legt das DMS nie selbst an.'}</small></span></label>
+          </div>
+        </div>
       </Bereich>}
 
       <RegelwerkAbschnitt rw={e.berechtigungen} setRw={(f) => setE((x) => ({ ...x, berechtigungen: f(x.berechtigungen) }))} neu={neu}
