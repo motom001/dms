@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/entwickler/v0.93/pakete-code/">
+        <link rel="canonical" href="https://motom001.github.io/dms/entwickler/v0.94/pakete-code/">
       
       
         <link rel="prev" href="../leistung/">
@@ -1032,7 +1032,15 @@
 <span class="w">  </span><span class="nt">aktionen</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">...</span><span class="p p-Indicator">]</span>
 </code></pre></div>
 <ul>
-<li><strong>Mappentypen</strong> in <code>rechte</code> schreibst du wie in Verweisen: eigene mit ihrer Kennung (<code>rechnung</code>), fremde als <code>paket:kennung</code>, Typen des DMS als <code>dms:ablageort</code> oder <code>dms:rolle</code>. <code>"*"</code> heißt alle Mappentypen außer Benutzern; <code>dms:benutzer</code> ist nicht erlaubt.</li>
+<li><strong>Mappentypen</strong> in <code>rechte</code> schreibst du wie in Verweisen: eigene mit ihrer Kennung (<code>rechnung</code>), fremde als <code>paket:kennung</code>, Typen des DMS als <code>dms:ablageort</code>, <code>dms:rolle</code> oder <code>dms:post</code>. <code>"*"</code> heißt alle Mappentypen außer Benutzern; <code>dms:benutzer</code> ist nicht erlaubt, andere <code>dms:</code>-Kennungen gibt es nicht.</li>
+<li><strong>Nur Post</strong> (seit 0.94.0): Braucht dein Paket nur die Post – etwa um eingehende Scans zu teilen –, gib <code>dms:post</code> statt <code>"*"</code> an. Mit <code>lesen</code>/<code>schreiben: ["dms:post"]</code> und <code>dokumente: schreiben</code> darf es Post lesen, <strong>Post teilen</strong> (<code>POST /dokumente/{id}/seiten</code> legt je Teil eine neue Post an), die <strong>Archivnummer</strong> und den <strong>Volltext</strong> ihrer Dokumente setzen – andere Mappen sieht es nicht. Die Vorschau bei der Installation zeigt dann „Post“. Anders als in Verweisen (<code>ziel</code>, <code>typen</code>) ist <code>dms:post</code> nur in <code>rechte</code> erlaubt. Ein Paket damit gibt <code>dms: "&gt;=0.94.0"</code> an; ältere DMS-Versionen kennen die Kennung nicht und geben dem Paket dann gar keine Post.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nt">rechte</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">lesen</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"dms:post"</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">schreiben</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"dms:post"</span><span class="p p-Indicator">]</span><span class="w">   </span><span class="c1"># neue Post beim Teilen, Archivnummer</span>
+<span class="w">  </span><span class="nt">dokumente</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">schreiben</span><span class="w">      </span><span class="c1"># Seiten lesen, PDF teilen, Volltext setzen</span>
+</code></pre></div>
+<ul>
 <li><strong>Dokumente:</strong> <code>lesen</code> erlaubt Dokumente zu lesen (Datei, Volltext, Seiten als Bild), <code>schreiben</code> zusätzlich hochzuladen, zu ersetzen und den Volltext zu setzen. Dokumente gibt es nur in Mappen, die das Paket lesen darf.</li>
 <li><strong>Netz:</strong> nur <code>https://</code>, ohne Zugangsdaten. Weiterleitungen folgt der Läufer nicht.</li>
 <li>Bei der <strong>Installation</strong> zeigt das DMS diese Rechte und lässt sie bestätigen. Ändern sich Rechte oder Netz in einem Update, muss der Administrator neu bestätigen.</li>
