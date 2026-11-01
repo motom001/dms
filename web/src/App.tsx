@@ -16,6 +16,8 @@ import { WartungsBanner } from './wartung';
 import { NeuKnopf, PostAblage } from './ablage/NeuePost';
 import { ErreichbarkeitsBanner, useBeiWiederErreichbar } from './erreichbar';
 import { useHandbuch } from './Hilfe';
+import { Pikto } from './piktogramme';
+import { UeberDms } from './UeberDms';
 
 export function App() {
   const { pfad, suche } = useOrt();
@@ -87,9 +89,8 @@ export function App() {
         </nav>
         <NeuKnopf />
         <div className="konto">
+          {/* Quellcode, Version und Lizenz stehen unter Benutzermenü → „Über das DMS“ (#430). */}
           <Benutzermenue an={bereich === 'profil'} abmelden={abmelden} />
-          {/* Quellcode-Link (früher Pflicht nach AGPL § 13, seit Apache-2.0 freiwillig – #430). */}
-          <a className="quelle" href="https://github.com/motom001/dms" target="_blank" rel="noreferrer">Quellcode</a>
         </div>
       </header>
       <main className="rumpf" key={ansicht}>
@@ -130,11 +131,12 @@ function Hinweise() {
   );
 }
 
-/** Menü unter dem eigenen Namen (#69): Konto, Einstellungen, Hilfe, Fehler melden, Abmelden. */
+/** Menü unter dem eigenen Namen (#69): Konto, Einstellungen, Hilfe, Fehler melden, Über das DMS (#430), Abmelden. */
 function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<void> }) {
   const { ich, vertretung } = useKonto();
   const handbuch = useHandbuch();
   const [offen, setOffen] = useState(false);
+  const [ueber, setUeber] = useState(false);
   const abwesend = abwesenheitWirkt(ich.abwesenheit, heuteIn());
   const rahmen = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -161,12 +163,14 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
           {/* #418: Kein „Zurück zum eigenen Konto“ hier – der Rückweg ist nur der gelbe Banner. In Vertretung zeigt
               „Mein Konto“ das Konto des vertretenen Benutzers; damit es nicht verwechselt wird, heißt es dann so. */}
           {/* Jeder Weg nur einmal (#175): Darstellung, Abwesenheit usw. sind Reiter unter „Mein Konto“. */}
-          <Link to="/profil/konto" className="menuepunkt">{vertretung ? `Konto von ${ich.name || ich.email}` : 'Mein Konto'}</Link>
-          <a href={handbuch('benutzer')} target="_blank" rel="noreferrer" className="menuepunkt" onClick={() => setOffen(false)}>Hilfe <span aria-hidden="true">↗</span></a>
-          <Link to="/profil/fehler-melden" className="menuepunkt">Fehler melden</Link>
-          <button type="button" className="menuepunkt" onClick={() => void abmelden()}>Abmelden</button>
+          <Link to="/profil/konto" className="menuepunkt"><Pikto name="person" />{vertretung ? `Konto von ${ich.name || ich.email}` : 'Mein Konto'}</Link>
+          <a href={handbuch('benutzer')} target="_blank" rel="noreferrer" className="menuepunkt" onClick={() => setOffen(false)}><Pikto name="hilfe" />Hilfe <span aria-hidden="true">↗</span></a>
+          <Link to="/profil/fehler-melden" className="menuepunkt"><Pikto name="fehler" />Fehler melden</Link>
+          <button type="button" className="menuepunkt" onClick={() => { setOffen(false); setUeber(true); }}><Pikto name="info" />Über das DMS</button>
+          <button type="button" className="menuepunkt" onClick={() => void abmelden()}><Pikto name="abmelden" />Abmelden</button>
         </div>
       )}
+      {ueber && <UeberDms schliessen={() => setUeber(false)} />}
     </div>
   );
 }
