@@ -28,6 +28,12 @@ import { routen, type Anfrage } from '../src/routen';
 import { Tresor } from '../src/tresor';
 import { pdfMitText } from './hilfen';
 
+/** Wartet, bis die Bedingung gilt (Abruf-Nachweis und Meldungen entstehen erst nach dem Ende des Downloads) – höchstens 5 s. */
+async function bis(ok: () => Promise<boolean> | boolean): Promise<void> {
+  for (let i = 0; i < 100; i++) { if (await ok()) return; await new Promise((x) => setTimeout(x, 50)); }
+}
+
+
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 const H = '00000000-0000-4000-8000-000000000001';
 
@@ -244,7 +250,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.equal(daten.length, a.bytes);
       assert.equal(dl.datei!.name, `${a.name}.zip`);
       await assert.rejects(rufe(null, 'GET', '/api/abruf/datei', { query: { ticket: ok.ticket } }), status(410), 'Ticket nur einmal');
-      await new Promise((x) => setTimeout(x, 50));
+      await bis(async () => (await d.historie(max.id)).some((x) => x.daten.zustellung === 'abruf' && x.daten.erfolg === true));
       const h = await d.historie(max.id);
       assert.ok(h.some((x) => x.daten.zustellung === 'link' && /Abruf-Link erstellt: gültig bis .*höchstens 2 Abrufe, per E-Mail an max@example\.net/.test(String(x.daten.text))));
       assert.ok(h.some((x) => x.daten.zustellung === 'abruf' && x.daten.erfolg === true && /Auskunft abgerufen \(1\. von höchstens 2/.test(String(x.daten.text))));
@@ -252,12 +258,13 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.ok(!JSON.stringify(h).includes(code), 'kein Code in der Historie');
       // Benachrichtigung an Ersteller und Favoriten-Inhaberin, je eine.
       const meldungen = async () => (await r.repo.offeneAufgaben({ mappeIds: [max.id] })).filter((x) => x.art === 'auskunft');
+      await bis(async () => (await meldungen()).length >= 2);
       assert.deepEqual((await meldungen()).map((x) => x.empfaengerId).sort(), [admin.id, anna.id].sort());
       assert.match((await meldungen())[0].text, /Auskunft an Max Mustermieter wurde abgerufen/);
       // Zweiter (letzter) Abruf: gebündelt – keine weitere Meldung; danach ist die ZIP weg.
       const ok2 = (await rufe(null, 'POST', '/api/abruf', { body: { schluessel, code } })).body as { ticket: string };
       await zip((await rufe(null, 'GET', '/api/abruf/datei', { query: { ticket: ok2.ticket } })).datei!.inhalt);
-      await new Promise((x) => setTimeout(x, 50));
+      await bis(async () => ((await rufe(admin, 'GET', '/api/werkbank/datenschutz')).body as { auskuenfte: unknown[] }).auskuenfte.length === 0);
       assert.equal((await meldungen()).length, 2);
       const st = (await rufe(admin, 'GET', '/api/werkbank/datenschutz')).body as { links: Array<{ abrufe: number; abgerufen: string | null }>; auskuenfte: unknown[] };
       assert.equal(st.links[0].abrufe, 2);
@@ -330,7 +337,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const t = (await rufe(null, 'POST', '/api/abruf', { body: { schluessel: url.split('#')[1], code } })).body as { ticket: string };
       const dl = await rufe(null, 'GET', '/api/abruf/datei', { query: { ticket: t.ticket } });
       (dl.datei!.inhalt as { destroy(): void }).destroy();
-      await new Promise((x) => setTimeout(x, 50));
+      await bis(async () => (await d.historie(max.id)).some((h) => /abgebrochen/.test(String(h.daten.text))));
       assert.ok((await d.historie(max.id)).some((h) => h.daten.zustellung === 'abruf' && h.daten.erfolg === false && /abgebrochen/.test(String(h.daten.text))));
     });
   });
