@@ -6,11 +6,13 @@ import { Hilfe } from '../Hilfe';
 import { geheZu, Link } from '../ort';
 import { PaketEinstellungen } from './PaketEinstellungen';
 import { rueckfrage } from '../rueckfrage';
+import { useKonto } from '../konto';
 
 /**
  * Werkbank → Pakete (#188): Konfigurationspakete aus dem offiziellen Katalog.
  * Den Katalog fragt das DMS nur auf Knopfdruck ab, nie im Hintergrund.
- * Erweiterte Ansicht (#189): weitere Katalogadressen und Hochladen als Datei.
+ * Expertenmodus (#189, #369): weitere Katalogadressen und Hochladen als Datei, in einem
+ * aufklappbaren Abschnitt direkt unter den Knöpfen.
  */
 
 const datum = (iso: string | null) => (iso ? new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }) : '–');
@@ -19,10 +21,20 @@ const host = (url: string) => { try { return new URL(url).host; } catch { return
 export const UPLOAD = '~hochgeladen';
 
 /**
- * Erweiterte Ansicht je Benutzer, standardmäßig aus. Ein späterer allgemeiner Expertenmodus der
- * Werkbank (Einstellung werkbank_experte) schaltet sie mit ein.
+ * Abschnitt „Expertenmodus“ auf- oder zugeklappt (#369): reiner Komfort, kein Recht – gemerkt im
+ * Browser je Benutzer, standardmäßig zu. Er zeigt nur etwas an; welche Kataloge abgefragt werden,
+ * bestimmen die Quellen selbst (eingeschaltet oder nicht), nicht der Abschnitt.
  */
-export const erweiterteAnsicht = (e: Record<string, unknown>) => e.werkbank_experte === true || e.pakete_erweitert === true;
+function useExperteOffen(): [boolean, (offen: boolean) => void] {
+  const { ich } = useKonto();
+  const schluessel = `dms:pakete-experte:${ich.id}`;
+  const [offen, setOffen] = useState(() => { try { return localStorage.getItem(schluessel) === '1'; } catch { return false; } });
+  const setzen = (n: boolean) => {
+    setOffen(n);
+    try { if (n) localStorage.setItem(schluessel, '1'); else localStorage.removeItem(schluessel); } catch { /* nur für diese Sitzung */ }
+  };
+  return [offen, setzen];
+}
 
 type Abruf = { url: string; offiziell: boolean; katalog: Katalog | null; fehler: string | null };
 
@@ -35,13 +47,15 @@ export function usePakete(offen: boolean) {
   const [laedt, setLaedt] = useState(false);
   const laden = useCallback(async () => { try { setStand(await api.pakete()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
-  const abrufen = useCallback(async (alle: boolean) => {
+  // Abgefragt werden der offizielle Katalog und die eingeschalteten weiteren Quellen (#369);
+  // der Link aus der Katalog-Webseite (#191) fragt nur den offiziellen ab (alle = false).
+  const abrufen = useCallback(async (alle = true) => {
     setLaedt(true); setFehler(undefined);
     try { const k = await api.paketKatalog(alle); setKataloge({ liste: k.kataloge, abgerufen: k.abgerufen }); } catch (e) { setFehler((e as Error).message); } finally { setLaedt(false); }
   }, []);
-  const pruefen = useCallback(async (alle: boolean) => {
+  const pruefen = useCallback(async () => {
     setLaedt(true); setFehler(undefined);
-    try { setUpdates(await api.paketUpdates()); const k = await api.paketKatalog(alle); setKataloge({ liste: k.kataloge, abgerufen: k.abgerufen }); } catch (e) { setFehler((e as Error).message); } finally { setLaedt(false); }
+    try { setUpdates(await api.paketUpdates()); const k = await api.paketKatalog(true); setKataloge({ liste: k.kataloge, abgerufen: k.abgerufen }); } catch (e) { setFehler((e as Error).message); } finally { setLaedt(false); }
   }, []);
   /** Katalogpaket aus einer Quelle (ohne Angabe: offizieller Katalog). */
   const paketAus = (id: string, quelle?: string): { kp: KatalogPaket; url: string; offiziell: boolean } | undefined => {
@@ -54,11 +68,10 @@ export function usePakete(offen: boolean) {
 export type PaketeZustand = ReturnType<typeof usePakete>;
 
 export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) {
-  const d = useDaten();
-  const erweitert = erweiterteAnsicht(d.einstellungen);
+  const [experte, setExperte] = useExperteOffen();
   const installiert = z.stand?.installiert ?? [];
   const quelleOffen = new URLSearchParams(location.search).get('quelle');
-  const verfuegbar = (z.kataloge?.liste ?? []).filter((k) => erweitert || k.offiziell)
+  const verfuegbar = (z.kataloge?.liste ?? [])
     .flatMap((k) => (k.katalog?.pakete ?? []).filter((p) => !installiert.some((i) => i.id === p.id)).map((p) => ({ p, url: k.url, offiziell: k.offiziell })));
   const neuer = (id: string) => z.updates?.find((u) => u.id === id);
   const [hochFehler, setHochFehler] = useState<string>();
@@ -74,12 +87,27 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
         <div><h1>Pakete</h1><p className="leise klein">Fertige Mappentypen und Ansichten aus dem offiziellen Katalog. <Hilfe ort="werkbank.pakete" /></p></div>
       </div>
       <div className="knoepfe">
-        <button type="button" className="knopf klein" disabled={z.laedt} onClick={() => void z.abrufen(erweitert)}>{z.laedt ? 'Frage ab …' : 'Katalog abrufen'}</button>
-        {installiert.length > 0 && <button type="button" className="knopf klein" disabled={z.laedt} onClick={() => void z.pruefen(erweitert)}>Auf neue Versionen prüfen</button>}
+        <button type="button" className="knopf klein" disabled={z.laedt} onClick={() => void z.abrufen()}>{z.laedt ? 'Frage ab …' : 'Katalog abrufen'}</button>
+        {installiert.length > 0 && <button type="button" className="knopf klein" disabled={z.laedt} onClick={() => void z.pruefen()}>Auf neue Versionen prüfen</button>}
       </div>
-      <label className="haken klein" title="Weitere Katalogadressen und Hochladen als Datei – für Paketentwickler und DMS ohne Internet">
-        <input type="checkbox" checked={erweitert} onChange={(e) => void d.setzeEinstellung('pakete_erweitert', e.target.checked || null)} /><span>Expertenmodus</span>
-      </label>
+      <section className="aufklappbereich">
+        <button type="button" className="aufklappkopf" aria-expanded={experte} aria-controls="pakete-experte" onClick={() => setExperte(!experte)}>
+          <span className="zeichen" aria-hidden="true">{experte ? '▾' : '▸'}</span>
+          <span>Expertenmodus</span>
+          <span className="leise klein">Weitere Quellen, Paket hochladen</span>
+        </button>
+        {experte && (
+          <div id="pakete-experte" className="aufklappinhalt">
+            <div className="hinweis warn klein"><p>Pakete außerhalb des offiziellen Katalogs – nur, wenn du der Quelle vertraust. Sie hat niemand vom DMS-Projekt geprüft.</p></div>
+            <h2 className="ueber">Weitere Quellen</h2>
+            <Quellen z={z} />
+            <h2 className="ueber">Paket hochladen</h2>
+            <p className="leise klein">Eine <code>.zip</code>-Datei im Format der Registry, z. B. zum Testen eines eigenen Pakets oder ohne Internet.</p>
+            <input type="file" accept=".zip,application/zip" aria-label="Paket als ZIP hochladen" onChange={(e) => { void hochladen(e.target.files?.[0]); e.target.value = ''; }} />
+            {hochFehler && <p className="fehlertext klein">{hochFehler}</p>}
+          </div>
+        )}
+      </section>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       <h2 className="ueber">Installiert</h2>
       {!z.stand ? <p className="leise">Lade …</p> : !installiert.length ? <p className="leise leerliste">Noch keine Pakete installiert.</p> : (
@@ -93,7 +121,7 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
         </ul>
       )}
       <h2 className="ueber">Verfügbar</h2>
-      {z.kataloge?.liste.filter((k) => k.fehler && (erweitert || k.offiziell)).map((k) => <div key={k.url} className="hinweis warn klein"><p>{k.offiziell ? 'Offizieller Katalog' : host(k.url)}: {k.fehler}</p></div>)}
+      {z.kataloge?.liste.filter((k) => k.fehler).map((k) => <div key={k.url} className="hinweis warn klein"><p>{k.offiziell ? 'Offizieller Katalog' : host(k.url)}: {k.fehler}</p></div>)}
       {!z.kataloge ? <p className="leise klein">Klicke „Katalog abrufen“, um die Pakete des offiziellen Katalogs zu sehen.</p>
         : !verfuegbar.length ? <p className="leise leerliste">Alle Pakete des Katalogs sind installiert.</p> : (
           <ul className="mappenliste">
@@ -106,16 +134,6 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
           </ul>
         )}
       {z.kataloge && <p className="leise klein">Abgerufen {datum(z.kataloge.abgerufen)}.</p>}
-      {erweitert && (
-        <>
-          <h2 className="ueber">Weitere Quellen</h2>
-          <Quellen z={z} />
-          <h2 className="ueber">Paket hochladen</h2>
-          <p className="leise klein">Eine <code>.zip</code>-Datei im Format der Registry, z. B. zum Testen eines eigenen Pakets oder ohne Internet.</p>
-          <input type="file" accept=".zip,application/zip" aria-label="Paket als ZIP hochladen" onChange={(e) => { void hochladen(e.target.files?.[0]); e.target.value = ''; }} />
-          {hochFehler && <p className="fehlertext klein">{hochFehler}</p>}
-        </>
-      )}
     </>
   );
 }
@@ -263,7 +281,6 @@ function UploadDetail({ z }: { z: PaketeZustand }) {
 
 function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?: string }) {
   const d = useDaten();
-  const erweitert = erweiterteAnsicht(d.einstellungen);
   const inst = z.stand?.installiert.find((p) => p.id === id) ?? null;
   // Installierte Pakete: Updates nur aus ihrer Quelle.
   const eigeneQuelle = inst?.herkunft.art === 'katalog' && inst.herkunft.url !== z.stand?.katalogUrl ? inst.herkunft.url : undefined;
@@ -304,7 +321,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
   if (!inst && !kp) return (
     <div className="leer">
       <p>{z.kataloge ? 'Dieses Paket gibt es in dieser Quelle nicht (mehr).' : 'Lade …'}</p>
-      {!z.kataloge && <button type="button" className="knopf" onClick={() => void z.abrufen(erweitert)}>Katalog abrufen</button>}
+      {!z.kataloge && <button type="button" className="knopf" onClick={() => void z.abrufen()}>Katalog abrufen</button>}
     </div>
   );
   const autor = inst?.autor ?? kp?.autor;

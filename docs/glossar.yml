@@ -474,12 +474,12 @@ begriffe:
     code: Katalog, OFFIZIELLER_KATALOG
   - begriff: Expertenmodus
     bereich: werkbank
-    beschreibung: Ein Schalter unter Werkbank → Pakete. Er blendet „Weitere Quellen“ und „Paket hochladen“ ein – für Paketentwickler und DMS ohne Internet. Gilt je Benutzer und ist zu Beginn aus.
+    beschreibung: Ein aufklappbarer Abschnitt unter Werkbank → Pakete, direkt unter den Knöpfen. Aufgeklappt zeigt er „Weitere Quellen“ und „Paket hochladen“ – für Paketentwickler und DMS ohne Internet. Zu Beginn zugeklappt; der Browser merkt sich je Benutzer, ob er offen ist.
     einsteiger: fachwort
     begegnet: fortgeschritten
     nicht_verwenden: [Erweiterte Ansicht]
     verwandt: [Paket, Paketkatalog]
-    code: pakete_erweitert
+    code: useExperteOffen
   - begriff: Paket-Läufer
     bereich: werkbank
     beschreibung: Der Teil des DMS, der den Code von Paketen ausführt. Geplant – bis dahin läuft Code in Paketen nicht; ihre Einstellungen lassen sich schon pflegen.

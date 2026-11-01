@@ -96,11 +96,13 @@ Die Einstellungen sind **Teil der Sicherung**; Geheimnisse bleiben dabei verschl
 
 ## Expertenmodus: weitere Kataloge und Hochladen
 
-Für Paketentwickler und für ein DMS ohne Internetzugang gibt es unter **Werkbank → Pakete** den Schalter **Expertenmodus**. Er gilt nur für dich (je Benutzer gemerkt) und ist standardmäßig aus. Ohne Expertenmodus gibt es nur den offiziellen Katalog.
+Für Paketentwickler und für ein DMS ohne Internetzugang gibt es unter **Werkbank → Pakete** direkt unter den Knöpfen den Abschnitt **Expertenmodus**. Er ist zugeklappt; ein Klick auf **▸ Expertenmodus** (oder Enter bzw. Leertaste) klappt ihn an Ort und Stelle auf. Ob er auf- oder zugeklappt ist, merkt sich dein Browser für dich – das ist nur Bequemlichkeit, kein Recht: Was dort steht, dürfen alle Administratoren.
+
+![Werkbank → Pakete mit aufgeklapptem Expertenmodus](bilder/werkbank-pakete.png)
 
 Im Expertenmodus kannst du:
 
-- **Weitere Katalogadressen** hinzufügen, abschalten und entfernen, höchstens 20. Erlaubt ist nur HTTPS, das Format ist dasselbe wie beim offiziellen Katalog (`katalog.json` der Registry). **Katalog abrufen** fragt dann auch die eingeschalteten weiteren Kataloge ab; ihre Pakete tragen die Adresse als Kennzeichen.
+- **Weitere Quellen** – Katalogadressen hinzufügen, abschalten und entfernen, höchstens 20. Erlaubt ist nur HTTPS, das Format ist dasselbe wie beim offiziellen Katalog (`katalog.json` der Registry). **Katalog abrufen** fragt neben dem offiziellen Katalog alle **eingeschalteten** weiteren Kataloge ab – egal, ob der Abschnitt gerade auf- oder zugeklappt ist; ihre Pakete tragen die Adresse als Kennzeichen. Willst du eine Quelle nicht mehr nutzen, schalte sie ab oder entferne sie. Ohne weitere Quellen gibt es nur den offiziellen Katalog.
 - Ein **Paket als Datei hochladen** (`.zip` im Format der Registry, z. B. der Paketordner gepackt, höchstens 10 MB). Das DMS prüft es genauso wie ein Katalogpaket, nur ohne Prüfsumme aus dem Katalog, und zeigt die Vorschau.
 
 !!! warning "Nicht vom DMS-Projekt geprüft"

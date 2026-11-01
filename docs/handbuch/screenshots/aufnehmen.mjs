@@ -631,6 +631,12 @@ async function main() {
   await s.getByRole('heading', { name: /Aufkleber drucken/ }).waitFor();
   await s.getByRole('heading', { name: /Aufkleber drucken/ }).evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-aufkleber');
+  // Pakete (#369): Abschnitt „Expertenmodus“ aufgeklappt unter den Knöpfen (ohne Katalogabruf).
+  await geheZu(s, '/werkbank/pakete');
+  await s.getByRole('button', { name: /Expertenmodus/ }).click();
+  await s.getByRole('heading', { name: 'Paket hochladen' }).waitFor();
+  await bild(s, 'werkbank-pakete');
+  await s.getByRole('button', { name: /Expertenmodus/ }).click();
   await geheZu(s, '/werkbank/designs');
   await s.locator('.spalte.liste a.eintrag').first().click();
   await bild(s, 'werkbank-designs');

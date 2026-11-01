@@ -103,6 +103,14 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 .knopf.klein { padding: 4px 10px; font-size: calc(12.5px * var(--skala, 1)); }
 .knopf:disabled { opacity: 0.5; cursor: default; }
 .knoepfe { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Aufklappbarer Abschnitt, z. B. Expertenmodus der Pakete (#369): Kopf als Knopf mit aria-expanded. */
+.aufklappbereich { border: 1px solid var(--linie); border-radius: 6px; margin: 4px 0; }
+.aufklappkopf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; width: 100%; padding: 6px 10px; border: 0; border-radius: 6px; background: none; font: inherit; font-weight: 600; color: var(--tinte); text-align: left; cursor: pointer; }
+.aufklappkopf:hover { background: var(--senke); }
+.aufklappkopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+.aufklappkopf .zeichen { flex: none; width: 1em; color: var(--akzent); font-size: calc(11px * var(--skala, 1)); }
+.aufklappkopf .leise { font-weight: 400; }
+.aufklappinhalt { display: flex; flex-direction: column; gap: 8px; padding: 4px 10px 10px; min-width: 0; }
 .textknopf { background: none; border: 0; padding: 0; cursor: pointer; font-weight: 600; color: var(--akzent); }
 .textknopf.gefahr { color: var(--schlecht); }
 .verweis { color: var(--akzent); font-weight: 600; text-decoration: none; }
