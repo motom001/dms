@@ -6,6 +6,7 @@
 import { uebersetzer } from '../../shared/src/sprache';
 import anmeldung from '../../shared/src/sprachen/de/anmeldung.json';
 import profil from '../../shared/src/sprachen/de/profil.json';
+import systemzustand from '../../shared/src/sprachen/de/systemzustand.json';
 import werkbank from '../../shared/src/sprachen/de/werkbank.json';
 
-export const t = uebersetzer({ anmeldung, profil, werkbank });
+export const t = uebersetzer({ anmeldung, profil, systemzustand, werkbank });

@@ -43,6 +43,7 @@ import type { Notfallzugang } from './notfall';
 import type { Sicherung } from './sicherung';
 import type { Wiederherstellung } from './wiederherstellung';
 import type { Speicherplatz } from './speicherplatz';
+import type { Systemlast } from './systemlast';
 import type { Eingangsordner } from './eingangsordner';
 import type { Webdav } from './webdav';
 import type { Postfaecher } from './postfach';
@@ -161,6 +162,8 @@ export interface RoutenExtras {
   /** Fotos vom Handy bis „Fertig“ (#490); Standard: Arbeitsordner im Temp-Verzeichnis. */
   fotostapel?: Fotostapel;
   messung?: Messung;
+  /** Systemzustand → Auslastung (#409). */
+  systemlast?: Systemlast;
   /** Datenbankangaben für die Versionsübersicht. */
   system?: SystemQuelle;
   /** E-Mail-Versand und Adresse des DMS (#37). */
@@ -1184,6 +1187,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
         sicherung: x.sicherung ? await sicher(() => x.sicherung!.zustand()) : null,
         // Speicherplatz (#116) und frühere Variablen, die entfernt werden können (#115).
         speicherplatz: x.speicherplatz ? await sicher(() => x.speicherplatz!.stand()) : null,
+        // Auslastung (#409): CPU oder Arbeitsspeicher seit 5 Minuten über 90 %.
+        auslastung: x.systemlast?.warnung() ?? [],
         // #128: Schlüssel, die Administratoren gehören (aus der Zeit vor 0.26), durch die eines normalen Benutzers ersetzen.
         adminSchluessel: x.apiSchluessel ? await sicher(async () => {
           let n = 0;
@@ -1316,6 +1321,11 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     // Mit der Belegung der Vorschaubilder (#332) – sie liegen im Ordner der Dateien, werden aber nicht gesichert.
     { methode: 'GET', pfad: '/api/werkbank/speicherplatz', zugang: 'admin', handler: async () => ok({ ...(await speicherplatz().pruefe()), vorschau: x.vorschau ? await x.vorschau.belegung() : null }) },
     { methode: 'PUT', pfad: '/api/werkbank/speicherplatz', zugang: 'admin', handler: async (a) => ok(await speicherplatz().speichere(a.body, ich(a).email)) },
+    // Auslastung (#409): CPU, Arbeitsspeicher, Netzwerk des Containers; dazu die Wartezeit der Ereignisschleife (#477).
+    { methode: 'GET', pfad: '/api/werkbank/systemlast', zugang: 'admin', handler: async () => {
+      if (!x.systemlast) throw new Fachfehler(404, 'Die Messung der Auslastung ist nicht eingerichtet.');
+      return ok({ ...x.systemlast.stand(), schleife: x.messung?.auslastung.stand() ?? null });
+    } },
     { methode: 'POST', pfad: '/api/werkbank/system/abgleich', zugang: 'admin', handler: async (a) => {
       const browser = Object.fromEntries(Object.entries((b(a).browser ?? {}) as Record<string, unknown>).map(([k, v]) => [k, String(v)]));
       const start = Date.now();

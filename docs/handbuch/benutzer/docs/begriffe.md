@@ -371,7 +371,7 @@ Wie voll die Datenordner sind, mit Schwellen für Warnungen (unter Systemzustand
 Siehe auch: [Systemzustand](#systemzustand).
 
 <a id="systemzustand"></a>**Systemzustand** · ~ mit Erklärung · Administratoren  
-Wie es dem Server gerade geht – Speicherplatz mit Warnschwellen, später auch die Auslastung (Werkbank → Wartung und Fehlersuche → Systemzustand). Gemeint ist der Zustand im Betrieb, nicht die Konfiguration.  
+Wie es dem Server gerade geht – Speicherplatz mit Warnschwellen und die Auslastung von CPU, Arbeitsspeicher und Netzwerk (Werkbank → Wartung und Fehlersuche → Systemzustand). Gemeint ist der Zustand im Betrieb, nicht die Konfiguration.  
 Siehe auch: [Speicherplatz](#speicherplatz).
 
 <a id="version-des-dms"></a>**Version des DMS** · ✓ Alltagswort · alle  

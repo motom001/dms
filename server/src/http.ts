@@ -74,6 +74,8 @@ interface Optionen {
   wiederherstellung?: Wiederherstellung;
   /** Speicherplatz-Überwachung (#116) und feste Ordner (#115). */
   speicherplatz?: Speicherplatz;
+  /** Systemzustand → Auslastung (#409). */
+  systemlast?: import('./systemlast').Systemlast;
   eingangsordner?: import('./eingangsordner').Eingangsordner;
   postfaecher?: import('./postfach').Postfaecher;
   postfachOAuth?: import('./postfach-oauth').PostfachOAuth;
