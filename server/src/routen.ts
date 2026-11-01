@@ -33,6 +33,7 @@ import type { Wiederherstellung } from './wiederherstellung';
 import type { Speicherplatz } from './speicherplatz';
 import type { Eingangsordner } from './eingangsordner';
 import type { Postfaecher } from './postfach';
+import { RueckrufFehler, type PostfachOAuth } from './postfach-oauth';
 import type { OrdnerPruefung } from './ordner';
 import type { Einrichtung } from './einrichtung';
 import type { AnbindungVerwaltung } from './anbindung';
@@ -178,6 +179,8 @@ export interface RoutenExtras {
   eingangsordner?: Eingangsordner;
   /** Postfächer (#196). */
   postfaecher?: Postfaecher;
+  /** Anmeldung der Postfächer per OAuth 2.0 (#358). */
+  postfachOAuth?: PostfachOAuth;
   /** Feste Ordner und überflüssige frühere Variablen (#115). */
   ordner?: OrdnerPruefung;
   /** Paketverwaltung (#188); ohne Angabe: offizieller Katalog über das Netz. */
@@ -257,6 +260,14 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const adresse = () => (x.betrieb?.adresseFuerLinks() ?? '').replace(/\/+$/, '');
   const zf = () => { if (!konten.zweifaktor) throw new Fachfehler(404, 'Die Zwei-Faktor-Anmeldung ist nicht eingerichtet.'); return konten.zweifaktor; };
   const postfaecher = () => { if (!x.postfaecher) throw new Fachfehler(404, 'Postfächer sind nicht eingerichtet.'); return x.postfaecher; };
+  const pfOAuth = () => { if (!x.postfachOAuth) throw new Fachfehler(404, 'Die Anmeldung per OAuth ist nicht eingerichtet.'); return x.postfachOAuth; };
+  /** #358: Rückruf-Adresse fest aus der eingestellten Adresse des DMS – nie aus der Anfrage. */
+  const pfRueckruf = () => (adresse() ? `${adresse()}/api/oauth/postfach/rueckruf` : '');
+  const oauthPostfach = async (id: string) => {
+    const p = await postfaecher().hole(id);
+    if (p.anmeldung !== 'oauth' || !p.anbieter) throw new Fachfehler(409, 'Dieses Postfach meldet sich mit Passwort an. Erst „OAuth 2.0“ wählen und speichern.');
+    return { id: p.id, anbieter: p.anbieter, benutzer: p.benutzer };
+  };
   /** Demo-Dokumente (#248): freier Platz bei den Dateien; frei bleiben müssen Mindest-Speicherplatz der Sicherung bzw. die Speicherplatz-Grenze. */
   const demoPlatz: DemoPlatz | undefined = x.speicherplatz ? {
     frei: async () => (await x.speicherplatz!.messe()).ordner.find((o) => o.art === 'dateien')?.frei ?? null,
@@ -985,6 +996,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
           postfaecher: x.postfaecher ? () => x.postfaecher!.ansicht() : undefined,
           darfWeg: () => dienst.darfWeg(),
         }),
+        // Postfächer mit abgelaufener oder fehlender OAuth-Anmeldung (#358).
+        postfachAnmeldung: x.postfaecher ? await sicher(() => x.postfaecher!.anmeldungFehlt()) ?? [] : [],
       });
     } },
     { methode: 'GET', pfad: '/api/werkbank/system', zugang: 'admin', handler: async () => {
@@ -1037,6 +1050,42 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'PUT', pfad: '/api/werkbank/postfaecher/:id', zugang: 'admin', handler: async (a) => ok(await postfaecher().speichere(a.body, a.params.id, ich(a).email)) },
     { methode: 'DELETE', pfad: '/api/werkbank/postfaecher/:id', zugang: 'admin', handler: async (a) => { await postfaecher().loesche(a.params.id, ich(a).email); return leer; } },
     { methode: 'POST', pfad: '/api/werkbank/postfaecher/:id/abrufen', zugang: 'admin', handler: async (a) => ok({ uebernommen: await postfaecher().abrufen(a.params.id) }) },
+    /* ---------- Postfächer: Anmeldung per OAuth 2.0 (#358) ---------- */
+    // Gerätecode-Status wird alle paar Sekunden abgefragt: lesend (#373); die erfolgreiche Anmeldung protokolliert postfach-oauth.ts selbst.
+    { methode: 'GET', pfad: '/api/werkbank/postfaecher-oauth', zugang: 'admin', handler: async () => ok({ apps: await pfOAuth().appsAnsicht(), rueckruf: pfRueckruf() }) },
+    { methode: 'PUT', pfad: '/api/werkbank/postfaecher-oauth/:anbieter', zugang: 'admin', handler: async (a) => ok({
+      // Neuer Mandant bzw. Token-Endpunkt: Postfächer dieses Anbieters abmelden (Sicherheits-Review #358).
+      apps: await pfOAuth().speichereApp(a.params.anbieter, a.body, ich(a).email, async (an) => (x.postfaecher ? (await x.postfaecher.liste()).filter((p) => p.anmeldung === 'oauth' && p.anbieter === an).map((p) => p.id) : [])),
+      rueckruf: pfRueckruf(),
+    }) },
+    { methode: 'POST', pfad: '/api/werkbank/postfaecher/:id/oauth/start', zugang: 'admin', handler: async (a) => {
+      const s = await pfOAuth().start(await oauthPostfach(a.params.id), { id: ich(a).id, email: ich(a).email }, pfRueckruf());
+      return { body: { url: s.url }, cookies: [kurzCookie(POSTFACH_BINDUNG_COOKIE, s.bindung, 600, '/api/oauth/postfach')] };
+    } },
+    { methode: 'POST', pfad: '/api/werkbank/postfaecher/:id/oauth/geraet', zugang: 'admin', handler: async (a) => ok(await pfOAuth().geraetStart(await oauthPostfach(a.params.id), { id: ich(a).id, email: ich(a).email })) },
+    { methode: 'POST', pfad: '/api/werkbank/postfaecher/:id/oauth/geraet/pruefen', zugang: 'admin', lesend: true, handler: async (a) => ok(await pfOAuth().geraetPruefen(a.params.id, { id: ich(a).id })) },
+    { methode: 'POST', pfad: '/api/werkbank/postfaecher/:id/oauth/abmelden', zugang: 'admin', handler: async (a) => {
+      await postfaecher().hole(a.params.id);
+      await pfOAuth().abmelden(a.params.id, ich(a).email);
+      return ok(await postfaecher().ansicht());
+    } },
+    // Rückruf des Anbieters: nur für den Administrator, der die Anmeldung begonnen hat (state, Sitzung, Bindungs-Cookie).
+    // Ziel der Rückkehr ist immer ein fester Pfad in der Werkbank – das Postfach stammt aus dem gespeicherten state.
+    { methode: 'GET', pfad: '/api/oauth/postfach/rueckruf', zugang: 'offen', handler: async (a) => {
+      const raus = [kurzCookie(POSTFACH_BINDUNG_COOKIE, '', 0, '/api/oauth/postfach')];
+      const admin = a.benutzer?.rolle === 'admin' ? { id: a.benutzer.id } : null;
+      try {
+        const r = await pfOAuth().rueckruf(a.query, admin, leseCookie(a.cookieKopf, POSTFACH_BINDUNG_COOKIE));
+        return { weiterleiten: `/werkbank/postfaecher/${encodeURIComponent(r.postfachId)}?oauth=angemeldet`, cookies: raus };
+      } catch (e) {
+        const text = (e as Error).message;
+        L.ablage.warn('Postfach: OAuth-Rückruf abgelehnt', { ip: a.ip, grund: text });
+        // Nur ein fester Fehlercode in der Adresse – die Texte stehen in der Oberfläche (kein fremder Text als Meldung).
+        const id = e instanceof RueckrufFehler && e.postfachId && admin ? `/${encodeURIComponent(e.postfachId)}` : '';
+        const code = e instanceof RueckrufFehler ? e.code : 'unbekannt';
+        return { weiterleiten: `/werkbank/postfaecher${id}?oauthfehler=${code}`, cookies: raus };
+      }
+    } },
     // Eingangsordner (#195): nur sichtbar, wenn /eingang eingebunden ist.
     { methode: 'GET', pfad: '/api/werkbank/eingangsordner', zugang: 'admin', handler: async () => ok(x.eingangsordner ? await x.eingangsordner.stand() : { vorhanden: false }) },
     { methode: 'PUT', pfad: '/api/werkbank/eingangsordner', zugang: 'admin', handler: async (a) => {
@@ -1482,6 +1531,8 @@ export function leseCookie(header: string | undefined, name: string): string | u
 /** Hilfs-Cookies der Anmeldung über einen Anbieter (#241). */
 export const BINDUNG_COOKIE = 'dms_anbieter_bindung';
 export const ANBIETER_COOKIE = 'dms_anbieter';
+/** #358: bindet den OAuth-Fluss eines Postfachs an den Browser, in dem er begonnen wurde. */
+export const POSTFACH_BINDUNG_COOKIE = 'dms_postfach_bindung';
 export function kurzCookie(name: string, wert: string, sekunden: number, pfad: string): string {
   // Secure ergänzt http.ts wie beim Sitzungs-Cookie.
   return [`${name}=${encodeURIComponent(wert)}`, `Path=${pfad}`, 'HttpOnly', 'SameSite=Lax', `Max-Age=${sekunden}`].join('; ');

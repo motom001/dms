@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { liesMail, verbindeImap } from './imap';
 import { Postfaecher } from './postfach';
+import { PostfachOAuth } from './postfach-oauth';
 import { Anmeldesperre } from './anmeldesperre';
 import { Zweifaktor } from './zweifaktor';
 import { Konsolenzugang, lokaleUrl } from './konsole';
@@ -233,8 +234,10 @@ const eingangsordner = new Eingangsordner(env.DMS_EINGANG ?? '/eingang', {
 });
 // Postfächer (#196): Mails per IMAP abholen; nur eine Instanz ruft ab.
 let postSperre: Promise<boolean> | null = null;
+// Anmeldung per OAuth 2.0 (#358): Token verschlüsselt mit dem Schlüssel des DMS.
+const postfachOAuth = new PostfachOAuth({ einstellungen: pgEinstellungen(sql, cfg.haushalt), verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w), anAdmins });
 const postfaecher = new Postfaecher({
-  dienst, einstellungen: pgEinstellungen(sql, cfg.haushalt), verbinde: verbindeImap, lies: liesMail,
+  dienst, einstellungen: pgEinstellungen(sql, cfg.haushalt), verbinde: verbindeImap, lies: liesMail, oauth: postfachOAuth,
   verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w),
   pause: () => (wartung.aktiv ? 'Wartungsmodus' : wiederherstellung.laeuft() ? 'Wiederherstellung läuft' : null),
   platz: () => speicherplatz.pruefeHochladen(),
@@ -280,6 +283,7 @@ const app = await baueApp(dienst, konten, {
   speicherplatz,
   eingangsordner,
   postfaecher,
+  postfachOAuth,
   ordner: ordnerPruefung,
   fehlermeldungen: new Fehlermeldungen(pgFehlerRepo(sql, cfg.haushalt), ordnerSpeicher(ordner.dateien, `${cfg.haushalt}/fehlermeldungen`)),
 });

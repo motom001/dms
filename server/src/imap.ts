@@ -13,7 +13,8 @@ export const verbindeImap: ImapVerbinder = async (z, ordner) => {
     secure: z.verschluesselung === 'ssl',
     // STARTTLS: verlangen (kein stilles Zurückfallen auf Klartext); „keine“: ausdrücklich ohne.
     doSTARTTLS: z.verschluesselung === 'starttls' ? true : z.verschluesselung === 'keine' ? false : undefined,
-    auth: { user: z.benutzer, pass: z.passwort },
+    // OAuth 2.0 (#358): imapflow meldet sich dann per OAUTHBEARER bzw. XOAUTH2 an.
+    auth: z.zugriffstoken ? { user: z.benutzer, accessToken: z.zugriffstoken } : { user: z.benutzer, pass: z.passwort },
     logger: false,
     connectionTimeout: 20_000,
     socketTimeout: 120_000,
