@@ -6,6 +6,8 @@ import {
 } from '../../../shared/src/stempel';
 import { api } from '../api';
 import { Hilfe } from '../Hilfe';
+import { VerkleinertWahl } from './VerkleinertWahl';
+import type { Stufe } from '../../../shared/src/verkleinern';
 import { useKonto } from '../konto';
 
 /**
@@ -137,6 +139,8 @@ export function StempelDialog({ d, typ, mappe, version, schliessen }: { d: Dokum
   const [wahl, setWahl] = useState<StempelWahl | null>(null);
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  // Verkleinert (#393): erst verkleinern, dann stempeln – nur für PDFs.
+  const [klein, setKlein] = useState<Stufe | null>(null);
   useEffect(() => { if (vorlagen && !wahl) setWahl({ ...stempelStart(vorlagen, typ?.stempel), an: true }); }, [vorlagen, wahl, typ]);
   const pflicht = typ?.stempel?.modus === 'pflicht';
   const fehler = stempelFehler(wahl);
@@ -144,7 +148,7 @@ export function StempelDialog({ d, typ, mappe, version, schliessen }: { d: Dokum
     if (!wahl) return;
     setLaeuft(true); setMeldung(undefined);
     try {
-      const r = await api.herunterladenMitStempel(d.id, alsWunsch({ ...wahl, an: true }), d.name, version);
+      const r = await api.herunterladenMitStempel(d.id, alsWunsch({ ...wahl, an: true }), d.name, version, d.mime === 'application/pdf' ? klein : null);
       setMeldung({ art: 'gut', text: `„${r.name}“ gespeichert. Die Historie der Mappe vermerkt die Weitergabe.` });
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setLaeuft(false); }
   }
@@ -157,6 +161,7 @@ export function StempelDialog({ d, typ, mappe, version, schliessen }: { d: Dokum
         // Kein eigenes <form>: Der Dialog steht im Formular der Mappe; Enter lädt herunter statt die Mappe zu speichern.
         <div onKeyDown={(e) => { if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') { e.preventDefault(); if (!fehler && !laeuft) void los(); } }}>
           <StempelFelder wahl={{ ...wahl, an: true }} setze={setWahl} vorlagen={vorlagen} pflicht={pflicht} mappe={mappe} id={`stempel-${d.id}`} immer />
+          {d.mime === 'application/pdf' && <VerkleinertWahl wert={klein} setze={setKlein} wie="herunterladen" id={`stempel-klein-${d.id}`} />}
           {fehler && <p className="leise klein">{fehler}</p>}
           {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
           <div className="knoepfe">

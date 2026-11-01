@@ -29,7 +29,8 @@ import { datumIn, KREIS_SCHLUESSEL, kreisVon, naechste, neubeginn, pruefeMuster,
 import { csvAus, xlsxAus } from './xlsx';
 import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile } from './export';
 import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
-import { fuerAusgabe, kannStempeln, type Ausgabe } from './ausgabe';
+import { fuerAusgabe, kannStempeln, weitergabeWas, type Ausgabe } from './ausgabe';
+import { analysiere, ergebnisText, istStufe, MIN_ERSPARNIS, STANDARD_STUFE, stufeAus, STUFEN, verkleinere, type Analyse, type Stufe } from './verkleinern';
 import { geltenderStempel, liesStempelTyp, liesVorlagen, pruefeVorlage, stempelAus, StempelFehler, STEMPEL_MODI, STEMPEL_NAME_MAX, STEMPEL_VORLAGEN_MAX, wunschAus, type GeltenderStempel, type StempelTyp, type StempelVorlage, type StempelWunsch } from '../../shared/src/stempel';
 import { alleSichtRechte, bereinigeSichtRegelwerk, sichtRegelProblem, sichtTestlauf, type SichtRegelwerk } from '../../shared/src/sichtrechte';
 import { liesDirektlink } from '../../shared/src/direktlink';
@@ -262,6 +263,26 @@ export function sortierungAus(spalte: string, absteigend: boolean, typ?: Mappent
 }
 
 /** Dateiname ohne Pfadanteile und Steuerzeichen. */
+/** Automatisch verkleinern (#393): Einstellung in der Werkbank → Speicherplatz; Standard aus. */
+export interface VerkleinernEinstellung { automatisch: boolean; abMb: number; stufe: Stufe }
+export const VERKLEINERN_STANDARD: VerkleinernEinstellung = { automatisch: false, abMb: 5, stufe: STANDARD_STUFE };
+export function verkleinernEinstellungAus(v: unknown): VerkleinernEinstellung {
+  const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
+  const abMb = Number(o.abMb);
+  return {
+    automatisch: o.automatisch === true,
+    abMb: Number.isFinite(abMb) && abMb >= 1 && abMb <= 100 ? abMb : VERKLEINERN_STANDARD.abMb,
+    stufe: istStufe(o.stufe) ? o.stufe : VERKLEINERN_STANDARD.stufe,
+  };
+}
+/** Neue Dateien von außen, die automatisch verkleinert werden dürfen – nicht im DMS Bearbeitetes oder Zurückgeholtes. */
+const AUTOMATISCH_VERKLEINERN: ReadonlySet<Herkunft> = new Set<Herkunft>(['hochgeladen', 'api', 'webdav', 'eingang']);
+/** Werkbank: so viele große PDFs in der Liste und in einer Sammelaktion, davon so viele mit Schätzung. */
+export const GROSSE_MAX = 200;
+export const GROSSE_MIT_SCHAETZUNG = 60;
+/** Volltext übernehmen statt neu erkennen (Verkleinern ohne Versionierung). */
+interface Volltextuebernahme { text: string; seiten: number | null; info: string | null }
+
 /** Kurztext der Historie für „PDF bearbeitet“ (#335). */
 function pdfText(w: { seiten: number; vorher: number; gedreht?: number; teile?: number }): string {
   const t: string[] = [];
@@ -998,11 +1019,13 @@ export class Dienst {
     // Stempel (#394): je Mappe, weil die Pflicht am Mappentyp hängt; {empfänger} ohne Angabe = die Adressen.
     const wunsch = wunschAus(e.stempel);
     const stempelDaten = await this.stempelDaten();
+    // Verkleinert senden (#393): PDFs als verkleinerte Kopie, vor dem Stempeln.
+    const klein = stufeAus(e.verkleinern);
     for (const m of mappen) {
       const docs = (dokJe.get(m.id) ?? []).filter((d) => !gewaehlt || gewaehlt.has(d.id));
       const pdf = angaben ? await mappenPdf(m.titel || 'Ohne Titel', [{ mappe: m, typ: z.typen.get(m.typId), dokumente: [], inhalt: lies }], quelle, null) : null;
       const plan = docs.length ? await this.stempelPlan(m.typId, wunsch, an.join(', '), stempelDaten) : null;
-      const ausgaben = plan ? await Promise.all(docs.map(async (d) => fuerAusgabe({ name: d.name, mime: d.mime, inhalt: await lies(d) }, { stempel: plan },
+      const ausgaben = plan || (klein && docs.length) ? await Promise.all(docs.map(async (d) => fuerAusgabe({ name: d.name, mime: d.mime, inhalt: await lies(d) }, { stempel: plan, verkleinern: klein },
         { benutzer: ich.name, mappe: m.titel || 'Ohne Titel', archivnummer: d.archivnummer }))) : null;
       je.push({ m, dokumente: docs, pdf, plan, ausgaben });
     }
@@ -1050,9 +1073,10 @@ export class Dienst {
     for (const x of je) {
       const n = x.dokumente.length + (x.pdf ? 1 : 0);
       const stempeltext = x.ausgaben?.find((y) => y.stempeltext)?.stempeltext;
-      const mitStempel = x.ausgaben?.some((y) => !y.unveraendert) ? (stempeltext ? `, mit Stempel „${stempeltext}“` : ', mit Seitenzahlen') : '';
+      const mitStempel = x.ausgaben?.some((y) => y.gestempelt);
+      const was = weitergabeWas(x.ausgaben);
       await this.notiere(x.m.id, ich.id, 'email', {
-        text: `„${betreff}“ an ${an.join(', ')} mit ${mappen.length} Mappen${n ? ` (von dieser ${n} ${n === 1 ? 'Anhang' : 'Anhänge'})` : ''}${mitStempel}`, email: id,
+        text: `„${betreff}“ an ${an.join(', ')} mit ${mappen.length} Mappen${n ? ` (von dieser ${n} ${n === 1 ? 'Anhang' : 'Anhänge'})` : ''}${was ? `, ${was}` : ''}`, email: id,
         an, betreff, nachricht: nachricht.slice(0, NOTIZ_MAX), mappen: mappen.length,
         anhaenge: [...(x.pdf ? [{ name: `${sichererName(x.m.titel || 'Ohne Titel')}.pdf`, groesse: x.pdf.length }] : []), ...x.dokumente.map((d, j) => ({ name: x.ausgaben?.[j].name ?? d.name, groesse: x.ausgaben?.[j].inhalt.length ?? d.groesse }))],
         ...(mitStempel ? { stempel: stempeltext ?? null, stempelAn: x.plan?.empfaenger ?? null } : {}),
@@ -1084,7 +1108,8 @@ export class Dienst {
     if (dokumente.some((d) => !d)) throw new Fachfehler(422, 'Ein ausgewähltes Dokument gehört nicht (mehr) zu dieser Mappe.');
     // Stempel (#394): gewünscht oder vom Mappentyp verlangt; {empfänger} sind ohne Angabe die Adressen.
     const plan = dokumente.length ? await this.stempelPlan(m.typId, wunschAus(e.stempel), an.join(', ')) : null;
-    const ausgaben = plan ? await Promise.all(dokumente.map(async (d) => fuerAusgabe({ name: d!.name, mime: d!.mime, inhalt: await this.liesGanz(d!.sha256) }, { stempel: plan },
+    const klein = stufeAus(e.verkleinern);
+    const ausgaben = plan || (klein && dokumente.length) ? await Promise.all(dokumente.map(async (d) => fuerAusgabe({ name: d!.name, mime: d!.mime, inhalt: await this.liesGanz(d!.sha256) }, { stempel: plan, verkleinern: klein },
       { benutzer: ich.name, mappe: m.titel || 'Ohne Titel', archivnummer: d!.archivnummer }))) : null;
     const groesse = ausgaben ? ausgaben.reduce((a, x) => a + x.inhalt.length, 0) : dokumente.reduce((a, d) => a + d!.groesse, 0);
     if (groesse > EMAIL_MAX_ANHAENGE) throw new Fachfehler(413, `Die Anhänge sind zusammen größer als ${Math.round(EMAIL_MAX_ANHAENGE / 1e6)} MB.`);
@@ -1107,8 +1132,9 @@ export class Dienst {
     // In der Post liegt, was verschickt wurde: gestempelt die Kopie, sonst dieselbe Datei.
     if (reg) for (const [i, d] of dokumente.entries()) await this.legeVersandkopieAn(d!, ausgaben?.[i], id, reg.key, ich.id);
     const stempeltext = ausgaben?.find((x) => x.stempeltext)?.stempeltext;
-    const mitStempel = ausgaben?.some((x) => !x.unveraendert) ? (stempeltext ? `, mit Stempel „${stempeltext}“` : ', mit Seitenzahlen') : '';
-    await this.notiere(mappeId, ich.id, 'email', { text: `„${betreff}“ an ${an.join(', ')}${dokumente.length ? ` mit ${dokumente.length} ${dokumente.length === 1 ? 'Anhang' : 'Anhängen'}` : ''}${mitStempel}`, email: id,
+    const mitStempel = ausgaben?.some((x) => x.gestempelt);
+    const was = weitergabeWas(ausgaben);
+    await this.notiere(mappeId, ich.id, 'email', { text: `„${betreff}“ an ${an.join(', ')}${dokumente.length ? ` mit ${dokumente.length} ${dokumente.length === 1 ? 'Anhang' : 'Anhängen'}` : ''}${was ? `, ${was}` : ''}`, email: id,
       an, betreff, nachricht: nachricht.slice(0, NOTIZ_MAX), anhaenge: ausgaben ? ausgaben.map((x) => ({ name: x.name, groesse: x.inhalt.length })) : dokumente.map((d) => ({ name: d!.name, groesse: d!.groesse })),
       ...(mitStempel ? { stempel: stempeltext ?? null, stempelAn: plan?.empfaenger ?? null } : {}) });
     protokoll.modul('ablage').info('E-Mail aus Mappe verschickt', { mappe: mappeId, empfaenger: an.length, anhaenge: dokumente.length, bytes: groesse });
@@ -2576,25 +2602,29 @@ export class Dienst {
       const p = await this.stempelPlan(m.typId, wunsch, '', stempelDaten);
       if (p) plaene.set(m.id, p);
     }
+    // Verkleinert exportieren (#393): PDFs als verkleinerte Kopie, vor dem Stempeln.
+    const klein = stufeAus(x.verkleinern);
     const wie = format === 'pdf' ? 'als PDF exportiert' : 'als ZIP exportiert';
     const gestempelt = new Map<string, Ausgabe[]>();
     const ausgabe = async (m: Mappe, d: Dokument, streng: boolean): Promise<Ausgabe> => {
-      const a = await fuerAusgabe({ name: d.name, mime: d.mime, inhalt: await this.liesGanz(d.sha256) }, { stempel: plaene.get(m.id) },
+      const a = await fuerAusgabe({ name: d.name, mime: d.mime, inhalt: await this.liesGanz(d.sha256) }, { stempel: plaene.get(m.id), verkleinern: klein },
         { benutzer: ich.name ?? '', mappe: m.titel || 'Ohne Titel', archivnummer: d.archivnummer }, streng);
       gestempelt.set(m.id, [...(gestempelt.get(m.id) ?? []), a]);
       return a;
     };
-    const historie = async () => { for (const [id, a] of gestempelt) await this.notiereWeitergabe(id, ich.id, wie, plaene.get(id)!, a); };
+    const historie = async () => { for (const [id, a] of gestempelt) await this.notiereWeitergabe(id, ich.id, wie, plaene.get(id) ?? null, a); };
+    const bearbeiten = (m: Mappe) => plaene.has(m.id) || (!!klein && (dokJe.get(m.id) ?? []).some((d) => d.mime === 'application/pdf'));
     if (format === 'pdf') {
       const b = await mappenPdf(titel, await Promise.all(mappen.map(async (m) => {
         const docs = dokJe.get(m.id) ?? [];
         const mitStempel = plaene.has(m.id);
+        const mitAusgabe = bearbeiten(m);
         // Gestempelte Bilder kommen als PDF zurück und werden darum wie PDFs eingebunden.
         return {
           mappe: m, typ: z.typen.get(m.typId),
           dokumente: mitStempel ? docs.map((d) => (kannStempeln(d.mime) ? { ...d, mime: 'application/pdf' } : d)) : docs,
           inhalt: async (d: Dokument) => {
-            if (!mitStempel) return this.liesGanz(d.sha256);
+            if (!mitAusgabe) return this.liesGanz(d.sha256);
             const original = docs.find((y) => y.id === d.id)!;
             return (await ausgabe(m, original, false)).inhalt;
           },
@@ -2612,7 +2642,7 @@ export class Dienst {
     for (const [i, m] of mappen.entries()) {
       const docs = dokJe.get(m.id) ?? [];
       // Gestempelte Kopien entstehen vorab: das ZIP braucht die Größen im Voraus.
-      const aus = plaene.has(m.id) ? await Promise.all(docs.map((d) => ausgabe(m, d, false))) : null;
+      const aus = bearbeiten(m) ? await Promise.all(docs.map((d) => ausgabe(m, d, false))) : null;
       const namen = eindeutig(docs.map((d, j) => sichererName(aus?.[j].name ?? d.name, 120)));
       docs.forEach((d, j) => {
         const a = aus?.[j];
@@ -3505,7 +3535,7 @@ export class Dienst {
    * „version“ (neue Version des vorhandenen, nur mit Versionierung) oder „ersetzen“ (vorhandenes löschen,
    * nur ohne Versionierung).
    */
-  async ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string; gleicherName?: string; herkunft?: Herkunft }, inhalt: unknown, benutzerId: string | null) {
+  async ladeHoch(mappeId: string, e: { register?: string; name?: string; typ?: string; gleicherName?: string; herkunft?: Herkunft; volltext?: Volltextuebernahme }, inhalt: unknown, benutzerId: string | null) {
     const m = await this.repo.holeMappe(mappeId);
     if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
     const typ = await this.repo.holeTyp(m.typId);
@@ -3513,6 +3543,13 @@ export class Dienst {
     if (!reg) throw new Fachfehler(422, 'Dieses Dokumentenregister gibt es an der Mappe nicht.');
     if (!Buffer.isBuffer(inhalt) || inhalt.length === 0) throw new Fachfehler(422, 'Die Datei ist leer.');
     if (inhalt.length > MAX_DATEIGROESSE) throw new Fachfehler(413, 'Die Datei ist zu groß.');
+    // Automatisch verkleinern (#393): neue PDFs von außen (Hochladen, Eingangsordner, Postfach, API, WebDAV) ab einer Größe.
+    let automatisch: { vorher: number; nachher: number; stufe: Stufe } | null = null;
+    if (AUTOMATISCH_VERKLEINERN.has(e.herkunft ?? 'hochgeladen') && !e.volltext) {
+      const r = await this.automatischVerkleinert(inhalt, e.name ?? '');
+      if (r) { automatisch = { vorher: r.vorher, nachher: r.nachher, stufe: r.stufe }; inhalt = r.inhalt; }
+    }
+    if (!Buffer.isBuffer(inhalt)) throw new Fachfehler(422, 'Die Datei ist leer.');
     const art = e.gleicherName ?? 'zaehler';
     if (!['zaehler', 'version', 'ersetzen'].includes(art)) throw new Fachfehler(422, 'gleicherName: zaehler, version oder ersetzen.');
     const vorhanden = (await this.repo.listeDokumente(mappeId)).filter((d) => d.registerKey === reg.key);
@@ -3540,7 +3577,8 @@ export class Dienst {
     await this.dateien.schreibe(sha256, inhalt);
     // Dokument, Historie und Ereignis in einer Transaktion (#404); die Datei liegt schon (bleibt sie übrig, räumt die Wartung auf).
     const neu = await this.inTransaktion(async () => {
-      await this.notiere(mappeId, benutzerId, 'dokument_hochgeladen', { dokument: name, groesse: inhalt.length, mime: erkannt ?? angegeben, register: reg.name });
+      await this.notiere(mappeId, benutzerId, 'dokument_hochgeladen', { dokument: name, groesse: inhalt.length, mime: erkannt ?? angegeben, register: reg.name,
+        ...(automatisch ? { verkleinert: `automatisch ${ergebnisText(automatisch.vorher, automatisch.nachher)} (${STUFEN[automatisch.stufe].name})` } : {}) });
       await this.beruehre(mappeId, typ, benutzerId);
       const dokument = await this.repo.legeDokumentAn({
         id: randomUUID(), mappeId, registerKey: reg.key, name, mime: erkannt ?? angegeben,
@@ -3549,7 +3587,11 @@ export class Dienst {
       this.danach(() => this.vorschau?.einreihen([dokument]));
       // Volltext (#45): neues Dokument in die Warteschlange, wenn das Register das will.
       let neu = dokument;
-      if (Dienst.volltextAn(typ, reg.key)) {
+      if (e.volltext) {
+        // Verkleinert ohne Versionierung (#393): Der Volltext des bisherigen bleibt, keine neue Texterkennung.
+        await this.repo.ocrSetze(dokument.id, { stand: 'fertig', ...e.volltext });
+        neu = (await this.repo.holeDokument(dokument.id)) ?? dokument;
+      } else if (Dienst.volltextAn(typ, reg.key)) {
         await this.repo.ocrEinreihen([dokument.id]);
         neu = (await this.repo.holeDokument(dokument.id)) ?? dokument;
         this.danach(() => this.ocr?.anstossen());
@@ -3558,7 +3600,7 @@ export class Dienst {
       return neu;
     });
     const bezuege = await this.repo.bezuege(gleicherInhalt.map((d) => d.mappeId));
-    return { dokument: neu, gleicherInhalt: gleicherInhalt.map((d) => ({ mappeId: d.mappeId, name: d.name, ...bezuege.get(d.mappeId) })) };
+    return { dokument: neu, gleicherInhalt: gleicherInhalt.map((d) => ({ mappeId: d.mappeId, name: d.name, ...bezuege.get(d.mappeId) })), ...(automatisch ? { verkleinert: automatisch } : {}) };
   }
 
   /** Titel und Typ zu Mappen-Ids (ohne Rechteprüfung – vorher filtern). */
@@ -3672,15 +3714,16 @@ export class Dienst {
     return Buffer.isBuffer(x) ? x : Buffer.concat(await x.toArray() as Buffer[]);
   }
 
-  /** Historie (#394): „weitergegeben mit Stempel ‚…‘ an …“. */
-  private async notiereWeitergabe(mappeId: string, von: string | null, wie: string, plan: GeltenderStempel, ausgaben: Ausgabe[]) {
-    const gestempelt = ausgaben.filter((a) => !a.unveraendert);
-    if (!gestempelt.length) return;
-    const text = gestempelt.find((a) => a.stempeltext)?.stempeltext ?? null;
-    const was = text ? `mit Stempel „${text}“` : 'mit Seitenzahlen';
+  /** Historie (#394, #393): „weitergegeben mit Stempel ‚…‘, verkleinert (… → …) an …“. */
+  private async notiereWeitergabe(mappeId: string, von: string | null, wie: string, plan: GeltenderStempel | null, ausgaben: Ausgabe[]) {
+    const bearbeitet = ausgaben.filter((a) => a.gestempelt || a.verkleinert);
+    if (!bearbeitet.length) return;
+    const text = bearbeitet.find((a) => a.stempeltext)?.stempeltext ?? null;
+    const klein = bearbeitet.filter((a) => a.verkleinert);
     await this.notiere(mappeId, von, 'weitergegeben', {
-      text: `${was}${plan.empfaenger ? ` an ${plan.empfaenger}` : ''} (${wie}: ${gestempelt.map((a) => a.name).join(', ')})`,
-      stempel: text, an: plan.empfaenger || null, wie, vorlage: plan.vorlage, pflicht: plan.pflicht, dokumente: gestempelt.map((a) => a.name),
+      text: `${weitergabeWas(ausgaben)}${plan?.empfaenger ? ` an ${plan.empfaenger}` : ''} (${wie}: ${bearbeitet.map((a) => a.name).join(', ')})`,
+      stempel: text, an: plan?.empfaenger || null, wie, vorlage: plan?.vorlage ?? null, pflicht: plan?.pflicht ?? false, dokumente: bearbeitet.map((a) => a.name),
+      ...(klein.length ? { verkleinert: { vorher: klein.reduce((s, a) => s + a.verkleinert!.vorher, 0), nachher: klein.reduce((s, a) => s + a.verkleinert!.nachher, 0) } } : {}),
     });
   }
 
@@ -3688,18 +3731,22 @@ export class Dienst {
    * Ein Dokument oder eine ältere Version herunterladen (#394): mit Stempel, wenn gewünscht (`stempel`,
    * aus Anfragekörper oder Abfrageparametern) oder vom Mappentyp verlangt. Ohne Stempel unverändert als Strom.
    */
-  async dokumentFuerAusgabe(id: string, o: { version?: number; stempel?: unknown; ich: { id: string | null; name: string } }) {
+  async dokumentFuerAusgabe(id: string, o: { version?: number; stempel?: unknown; verkleinern?: unknown; ich: { id: string | null; name: string } }) {
     const dokument = await this.repo.holeDokument(id);
     if (!dokument) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
     const datei = o.version != null ? (await this.versionInhalt(id, o.version)).version : dokument;
     const m = await this.repo.holeMappe(dokument.mappeId);
     const plan = m ? await this.stempelPlan(m.typId, wunschAus(o.stempel)) : null;
-    if (!plan) return { name: datei.name, mime: datei.mime, anzeigbar: datei.anzeigbar, groesse: datei.groesse, inhalt: await this.dateien.lies(datei.sha256) as Buffer | Readable, gestempelt: false };
-    const a = await fuerAusgabe({ name: datei.name, mime: datei.mime, inhalt: await this.liesGanz(datei.sha256) }, { stempel: plan },
+    // Verkleinert herunterladen (#393): nur PDFs; das gespeicherte Dokument bleibt, wie es ist.
+    const klein = stufeAus(o.verkleinern);
+    if (klein && datei.mime !== 'application/pdf' && !plan) throw new Fachfehler(422, `„${datei.name}“ ist kein PDF – verkleinern lassen sich nur PDFs.`);
+    if (!plan && !klein) return { name: datei.name, mime: datei.mime, anzeigbar: datei.anzeigbar, groesse: datei.groesse, inhalt: await this.dateien.lies(datei.sha256) as Buffer | Readable, gestempelt: false };
+    const a = await fuerAusgabe({ name: datei.name, mime: datei.mime, inhalt: await this.liesGanz(datei.sha256) }, { stempel: plan, verkleinern: klein },
       { benutzer: o.ich.name, mappe: m!.titel || 'Ohne Titel', archivnummer: dokument.archivnummer }, true);
     await this.notiereWeitergabe(m!.id, o.ich.id, o.version != null ? `heruntergeladen, Version ${o.version}` : 'heruntergeladen', plan, [a]);
-    protokoll.modul('dokumente').info('Dokument mit Stempel heruntergeladen', { id, mappe: m!.id, pflicht: plan.pflicht });
-    return { name: a.name, mime: a.mime, anzeigbar: true, groesse: a.inhalt.length, inhalt: a.inhalt as Buffer | Readable, gestempelt: true };
+    if (plan) protokoll.modul('dokumente').info('Dokument mit Stempel heruntergeladen', { id, mappe: m!.id, pflicht: plan.pflicht });
+    if (a.verkleinert) protokoll.modul('dokumente').info('Dokument verkleinert heruntergeladen', { id, mappe: m!.id, vorher: a.verkleinert.vorher, nachher: a.verkleinert.nachher });
+    return { name: a.name, mime: a.mime, anzeigbar: true, groesse: a.inhalt.length, inhalt: a.inhalt as Buffer | Readable, gestempelt: !!a.gestempelt, verkleinert: a.verkleinert ?? null };
   }
 
   async loescheDokument(id: string, benutzerId: string | null = null) {
@@ -3883,6 +3930,170 @@ export class Dienst {
     }
     protokoll.modul('dokumente').info('PDFs zusammengefügt', { ziel: ziel.id, anzahl: quellen.length, entfernt: entfernen });
     return { dokument: neu, erledigtePost: erledigt };
+  }
+
+  /* ---------- PDF verkleinern (#393) ---------- */
+
+  /** Schätzungen je Prüfwert (Analyse ist schnell, aber nicht kostenlos – die Werkbank fragt viele ab). */
+  private readonly analysen = new Map<string, Analyse>();
+  private async analyseVon(d: Dokument): Promise<Analyse> {
+    const da = this.analysen.get(d.sha256);
+    if (da) return da;
+    const a = await analysiere(await this.liesGanz(d.sha256));
+    if (this.analysen.size > 500) this.analysen.delete(this.analysen.keys().next().value!);
+    this.analysen.set(d.sha256, a);
+    return a;
+  }
+
+  /** Für den Dialog: Größe, Bilder und geschätzte Größe je Stufe; dazu, was mit dem Ergebnis geschieht. */
+  async verkleinernVorschau(id: string) {
+    const { d } = await this.pdfVon(id);
+    const { reg } = await this.registerVon(d);
+    return { id: d.id, name: d.name, ...(await this.analyseVon(d)), versioniert: !!reg?.versionierung, papierkorb: (await this.papierkorbTage()) > 0, mindestens: MIN_ERSPARNIS };
+  }
+
+  /**
+   * Verkleinern am Dokument: Ergebnis als neue Version (Versionierung) bzw. – ohne Versionierung – Ersetzen
+   * nach Rückfrage (`bestaetigt`), das bisherige kommt in den Papierkorb (wie „PDF bearbeiten“, #335).
+   * Der Volltext bleibt (die Textebene ist unverändert), es gibt keine neue Texterkennung.
+   * Bringt es weniger als 10 %, bleibt alles, wie es ist (`unveraendert: true`). `ohneOriginal` (Sammelaktion):
+   * die bisherige Version nicht behalten – nur außerhalb einer Aufbewahrungsfrist.
+   */
+  async verkleinereDokument(id: string, eingabe: unknown, von: string | null): Promise<{ dokument: Dokument; unveraendert: boolean; vorher: number; nachher: number; stufe: Stufe; meldung: string }> {
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const stufe = e.stufe === undefined ? STANDARD_STUFE : stufeAus(e.stufe) ?? STANDARD_STUFE;
+    const { d, inhalt } = await this.pdfVon(id);
+    const { typ, reg } = await this.registerVon(d);
+    if (!reg) throw new Fachfehler(409, 'Das Register dieses Dokuments gibt es nicht mehr.');
+    const korb = (await this.papierkorbTage()) > 0;
+    if (!reg.versionierung && e.bestaetigt !== true) {
+      throw new Fachfehler(409, `Für dieses Register ist die Versionierung ausgeschaltet: Das verkleinerte PDF ersetzt das bisherige${korb ? ', das bisherige kommt in den Papierkorb' : ' – das bisherige ist danach weg'}. Bitte bestätigen.`, { rueckfrage: true, papierkorb: korb });
+    }
+    const r = await verkleinere(inhalt, stufe);
+    if (!r.lohnt) {
+      const meldung = `„${d.name}“ lässt sich kaum verkleinern (weniger als ${Math.round(MIN_ERSPARNIS * 100)} %) – das Dokument bleibt unverändert.`;
+      return { dokument: d, unveraendert: true, vorher: r.vorher, nachher: r.vorher, stufe, meldung };
+    }
+    const ocr = d.ocr?.stand === 'fertig' ? { text: (await this.repo.volltext(d.id)) ?? '', seiten: d.ocr.seiten ?? null, info: d.ocr.info ?? null } : null;
+    let neu: Dokument;
+    if (reg.versionierung) {
+      const v = await this.repo.ersetzeDokument(d.id, {
+        name: d.name, mime: 'application/pdf', groesse: r.inhalt.length, sha256: await this.legeDateiAb(r.inhalt), anzeigbar: true,
+        erstelltVon: von, herkunft: 'bearbeitet', ...(ocr ? { volltext: ocr.text } : {}),
+      });
+      if (ocr) await this.repo.ocrSetze(v.id, { stand: 'fertig', ...ocr });
+      this.vorschau?.einreihen([v]);
+      neu = await this.nachNeuerVersion(d, v, typ, reg, von);
+      if (e.ohneOriginal === true && (await this.archivErlaubt(d.mappeId))) {
+        const sha = await this.repo.loescheVersion(d.id, v.version! - 1);
+        if (sha) await this.raeumeAuf(sha);
+        neu = (await this.repo.holeDokument(d.id)) ?? neu;
+      }
+    } else {
+      await this.loescheDokument(d.id, von);
+      neu = (await this.ladeHoch(d.mappeId, { register: reg.key, name: d.name, typ: 'application/pdf', herkunft: 'bearbeitet', ...(ocr ? { volltext: ocr } : {}) }, r.inhalt, von)).dokument;
+      if (d.archivnummer) neu = await this.setzeArchivnummer(neu.id, d.archivnummer, von).catch(() => neu);
+    }
+    const text = `verkleinert ${ergebnisText(r.vorher, r.nachher)}, Stufe ${STUFEN[stufe].name} (${STUFEN[stufe].dpi} dpi)`;
+    await this.notiere(d.mappeId, von, 'pdf_bearbeitet', { dokument: d.name, text, verkleinert: { vorher: r.vorher, nachher: r.nachher, stufe }, seiten: r.seiten, vorher: r.seiten });
+    protokoll.modul('dokumente').info('PDF verkleinert', { id: d.id, stufe, vorher: r.vorher, nachher: r.nachher, bilder: r.bilder });
+    return { dokument: neu, unveraendert: false, vorher: r.vorher, nachher: r.nachher, stufe, meldung: `Verkleinert ${ergebnisText(r.vorher, r.nachher)}.` };
+  }
+
+  private async legeDateiAb(inhalt: Buffer): Promise<string> {
+    const sha256 = createHash('sha256').update(inhalt).digest('hex');
+    await this.dateien.schreibe(sha256, inhalt);
+    return sha256;
+  }
+
+  /** Darf eine ältere Version weg? Nicht während einer Aufbewahrungsfrist (Archivmodus, #212). */
+  private async archivErlaubt(mappeId: string): Promise<boolean> {
+    try { await this.pruefeArchivDokument(mappeId, 'löschen'); return true; } catch { return false; }
+  }
+
+  /** Einstellung „automatisch verkleinern“ (Werkbank → Speicherplatz); Standard aus. */
+  async verkleinernEinstellung(): Promise<VerkleinernEinstellung> {
+    return verkleinernEinstellungAus(await this.einstellungen?.lies('verkleinern'));
+  }
+  async setzeVerkleinernEinstellung(eingabe: unknown): Promise<VerkleinernEinstellung> {
+    if (!this.einstellungen) throw new Fachfehler(409, 'Einstellungen sind nicht verfügbar.');
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const abMb = Number(e.abMb);
+    if (!Number.isFinite(abMb) || abMb < 1 || abMb > 100) throw new Fachfehler(422, 'Ab welcher Größe: 1 bis 100 MB.');
+    if (!istStufe(e.stufe)) throw new Fachfehler(422, 'Stufe: bildschirm, standard oder druck.');
+    const neu: VerkleinernEinstellung = { automatisch: e.automatisch === true, abMb: Math.round(abMb * 10) / 10, stufe: e.stufe };
+    await this.einstellungen.schreibe('verkleinern', neu);
+    protokoll.modul('werkbank').info('Automatisch verkleinern geändert', { ...neu });
+    return neu;
+  }
+
+  /** Verkleinert ein neues PDF, wenn das eingeschaltet ist und es groß genug ist; null = unverändert lassen. */
+  private async automatischVerkleinert(inhalt: Buffer, name: string) {
+    if (erkenneAnzeigbar(inhalt) !== 'application/pdf') return null;
+    const e = await this.verkleinernEinstellung();
+    if (!e.automatisch || inhalt.length < e.abMb * 1024 * 1024) return null;
+    try {
+      const r = await verkleinere(inhalt, e.stufe);
+      if (!r.lohnt) return null;
+      protokoll.modul('dokumente').info('Neues PDF automatisch verkleinert', { name, vorher: r.vorher, nachher: r.nachher, stufe: e.stufe });
+      return r;
+    } catch (x) {
+      // Lässt es sich nicht verkleinern (verschlüsselt, beschädigt), wird es so abgelegt, wie es kam.
+      protokoll.modul('dokumente').warn('Automatisch verkleinern übersprungen', { name, fehler: (x as Error).message });
+      return null;
+    }
+  }
+
+  /**
+   * Werkbank: große PDF-Dokumente nach Größe, mit geschätzter Ersparnis der Stufe. Geschätzt werden nur die
+   * ersten `GROSSE_MIT_SCHAETZUNG` (die Liste soll schnell da sein); `ab` in MB.
+   */
+  async grosseDokumente(f: { ab?: unknown; stufe?: unknown }) {
+    const ab = Number(f.ab ?? 2);
+    if (!Number.isFinite(ab) || ab < 0 || ab > 100) throw new Fachfehler(422, 'ab: 0 bis 100 MB.');
+    const stufe = f.stufe === undefined || f.stufe === '' ? STANDARD_STUFE : stufeAus(f.stufe) ?? STANDARD_STUFE;
+    const docs = await this.repo.grossePdfs(Math.round(ab * 1024 * 1024), GROSSE_MAX);
+    const bezuege = await this.repo.bezuege([...new Set(docs.map((d) => d.mappeId))]);
+    const eintraege = [];
+    for (const [i, d] of docs.entries()) {
+      let geschaetzt: number | null = null, lohnt: boolean | null = null, fehler: string | null = null;
+      if (i < GROSSE_MIT_SCHAETZUNG) {
+        try { const a = (await this.analyseVon(d)).stufen[stufe]; geschaetzt = a.geschaetzt; lohnt = a.lohnt; } catch (x) { fehler = (x as Error).message; }
+      }
+      const b = bezuege.get(d.mappeId);
+      eintraege.push({ id: d.id, name: d.name, groesse: d.groesse, mappeId: d.mappeId, mappeTitel: b?.titel ?? '', typId: b?.typId ?? null, version: d.version ?? 1, geschaetzt, lohnt, fehler });
+    }
+    const geschaetzteErsparnis = eintraege.reduce((s, x) => s + (x.lohnt && x.geschaetzt != null ? x.groesse - x.geschaetzt : 0), 0);
+    return { stufe, ab, eintraege, geschaetzteErsparnis, mehr: docs.length === GROSSE_MAX };
+  }
+
+  /** Sammelaktion „Große Dokumente verkleinern“ als Hintergrundauftrag (eine Phase, Einheit Dokumente). */
+  verkleinereViele(eingabe: unknown, von: { id: string | null; email: string }) {
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const ids = Array.isArray(e.ids) ? [...new Set(e.ids.map(String))].filter(istUuid) : [];
+    if (!ids.length) throw new Fachfehler(422, 'Bitte mindestens ein Dokument wählen.');
+    if (ids.length > GROSSE_MAX) throw new Fachfehler(422, `Höchstens ${GROSSE_MAX} Dokumente auf einmal.`);
+    const stufe = stufeAus(e.stufe ?? STANDARD_STUFE) ?? STANDARD_STUFE;
+    const ohneOriginal = e.ohneOriginal === true;
+    // Ohne Versionierung ersetzt das Verkleinern das Dokument – das muss hier einmal für alle bestätigt sein.
+    const bestaetigt = e.bestaetigt === true;
+    return this.auftraege.starte('pdf-verkleinern', `${ids.length} ${ids.length === 1 ? 'PDF' : 'PDFs'} verkleinern (${STUFEN[stufe].name})`, async (fortschritt) => {
+      let vorher = 0, nachher = 0, verkleinert = 0, unveraendert = 0;
+      const fehler: Array<{ id: string; name: string; grund: string }> = [];
+      fortschritt(0, ids.length);
+      for (const [i, id] of ids.entries()) {
+        try {
+          const r = await this.verkleinereDokument(id, { stufe, bestaetigt, ohneOriginal }, von.id);
+          if (r.unveraendert) unveraendert++; else { verkleinert++; vorher += r.vorher; nachher += r.nachher; }
+        } catch (x) {
+          const d = await this.repo.holeDokument(id).catch(() => undefined);
+          fehler.push({ id, name: d?.name ?? id, grund: (x as Error).message });
+        }
+        fortschritt(i + 1, ids.length);
+      }
+      protokoll.modul('werkbank').info('Große Dokumente verkleinert', { von: von.email, stufe, verkleinert, unveraendert, fehler: fehler.length, vorher, nachher });
+      return { stufe, verkleinert, unveraendert, fehler, vorher, nachher, ohneOriginal };
+    }, [{ key: 'dokumente', name: 'PDFs verkleinern', einheit: 'Dokumente' }]);
   }
 
   /* ---------- Archivnummer (#345) ---------- */

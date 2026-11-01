@@ -2,6 +2,7 @@ import type { Design } from './design';
 import { messung } from './messung';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import type { StempelVorlage, StempelWunsch } from '../../shared/src/stempel';
+import type { Stufe as KleinStufe } from '../../shared/src/verkleinern';
 import type { Archiv } from '../../shared/src/archiv';
 import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, DokumentVersion, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Feldbedingung, Sicht, SichtDaten } from '../../shared/src/sichten';
@@ -411,10 +412,10 @@ export const api = {
   stempelVorlageAnlegen: (v: Omit<StempelVorlage, 'id'>) => anfrage<StempelVorlage[]>('POST', '/api/werkbank/stempel/vorlagen', v),
   stempelVorlageAendern: (id: string, v: Omit<StempelVorlage, 'id'>) => anfrage<StempelVorlage[]>('PUT', `/api/werkbank/stempel/vorlagen/${encodeURIComponent(id)}`, v),
   stempelVorlageLoeschen: (id: string) => anfrage<StempelVorlage[]>('DELETE', `/api/werkbank/stempel/vorlagen/${encodeURIComponent(id)}`),
-  herunterladenMitStempel: (id: string, stempel: StempelWunsch | null, name: string, version?: number) => speichereDatei(`/api/dokumente/${id}/herunterladen`, { stempel, version }, name),
-  emailMehrere: (e: { ids: string[]; an: string; betreff: string; nachricht: string; angaben: boolean; dokumente: 'alle' | string[]; stempel?: StempelWunsch | null }) =>
+  herunterladenMitStempel: (id: string, stempel: StempelWunsch | null, name: string, version?: number, verkleinern?: KleinStufe | null) => speichereDatei(`/api/dokumente/${id}/herunterladen`, { stempel, version, verkleinern }, name),
+  emailMehrere: (e: { ids: string[]; an: string; betreff: string; nachricht: string; angaben: boolean; dokumente: 'alle' | string[]; stempel?: StempelWunsch | null; verkleinern?: KleinStufe | null }) =>
     anfrage<{ id: string; typId: string; mappen: number; anhaenge: number }>('POST', '/api/mappen/email', e),
-  emailSenden: (mappeId: string, e: { an: string; betreff: string; nachricht: string; dokumente: string[]; stempel?: StempelWunsch | null }) => anfrage<{ id: string; typId: string }>('POST', `/api/mappen/${mappeId}/email`, e),
+  emailSenden: (mappeId: string, e: { an: string; betreff: string; nachricht: string; dokumente: string[]; stempel?: StempelWunsch | null; verkleinern?: KleinStufe | null }) => anfrage<{ id: string; typId: string }>('POST', `/api/mappen/${mappeId}/email`, e),
   papierkorbTage: (e: { tage?: number; historieTage?: number }) => anfrage<{ tage: number; geleert: number; historieTage: number }>('PUT', '/api/werkbank/papierkorb/einstellungen', e),
   /* Aufgaben (#54) */
   aufgabeAnlegen: (mappeId: string, empfaengerId: string, text: string) => anfrage<Aufgabe & { hinweis?: string }>('POST', `/api/mappen/${mappeId}/aufgaben`, { empfaengerId, text }),
@@ -563,6 +564,14 @@ export const api = {
   pdfSeiten: (id: string) => anfrage<PdfSeiten>('GET', `/api/dokumente/${id}/seiten`),
   bearbeitePdf: (id: string, e: { seiten: Array<{ nr: number; drehung?: number }>; teile?: number[]; bestaetigt?: boolean }) =>
     anfrage<{ dokumente: Dokument[]; posten: Mappe[] }>('POST', `/api/dokumente/${id}/seiten`, e),
+  /** PDF verkleinern (#393). */
+  verkleinernVorschau: (id: string) => anfrage<VerkleinernVorschau>('GET', `/api/dokumente/${id}/verkleinern`),
+  verkleinern: (id: string, e: { stufe: KleinStufe; bestaetigt?: boolean }) =>
+    anfrage<{ dokument: Dokument; unveraendert: boolean; vorher: number; nachher: number; stufe: KleinStufe; meldung: string }>('POST', `/api/dokumente/${id}/verkleinern`, e),
+  grosseDokumente: (ab: number, stufe: KleinStufe) => anfrage<GrossePdfs>('GET', `/api/werkbank/verkleinern?${new URLSearchParams({ ab: String(ab), stufe })}`),
+  verkleinereViele: (e: { ids: string[]; stufe: KleinStufe; ohneOriginal: boolean; bestaetigt: boolean }) => anfrage<Auftrag>('POST', '/api/werkbank/verkleinern', e),
+  verkleinernEinstellung: () => anfrage<VerkleinernEinstellung>('GET', '/api/werkbank/verkleinern/einstellung'),
+  setzeVerkleinernEinstellung: (e: VerkleinernEinstellung) => anfrage<VerkleinernEinstellung>('PUT', '/api/werkbank/verkleinern/einstellung', e),
   fuegePdfZusammen: (e: { dokumente: string[]; name?: string; ziel?: string; register?: string; originaleEntfernen?: boolean; bestaetigt?: boolean }) =>
     anfrage<{ dokument: Dokument; erledigtePost: string[] }>('POST', '/api/dokumente/zusammenfuegen', e),
   /** Archivnummer (#345). */
@@ -630,6 +639,15 @@ export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
 export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */ unpassend?: Record<string, string[]>; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 /** Vorschaubild der ersten Seite (#332); der Prüfwert in der Adresse sorgt für ein neues Bild nach einer neuen Version. */
+export interface VerkleinernVorschau {
+  id: string; name: string; groesse: number; seiten: number; bilder: number; hoechsteDpi: number | null; versioniert: boolean; papierkorb: boolean; mindestens: number;
+  stufen: Record<KleinStufe, { dpi: number; geschaetzt: number; lohnt: boolean; bilder: number }>;
+}
+export interface GrossePdfs {
+  stufe: KleinStufe; ab: number; geschaetzteErsparnis: number; mehr: boolean;
+  eintraege: Array<{ id: string; name: string; groesse: number; mappeId: string; mappeTitel: string; typId: string | null; version: number; geschaetzt: number | null; lohnt: boolean | null; fehler: string | null }>;
+}
+export interface VerkleinernEinstellung { automatisch: boolean; abMb: number; stufe: KleinStufe }
 export interface PdfSeiten { id: string; name: string; version: number; sha256: string; anzahl: number; drehungen: number[]; bilderBis: number }
 /** Bild einer Seite (#335); die Adresse trägt den Prüfwert, ein neues PDF hat neue Bilder. */
 export const seitenbildUrl = (d: { id: string; sha256: string }, nr: number) => `/api/dokumente/${d.id}/seiten/${nr}/bild?v=${d.sha256.slice(0, 12)}`;

@@ -48,7 +48,7 @@ jobs:
           }
       # Texterkennung (#45): dieselben Werkzeuge wie im Image.
       - name: Texterkennung installieren
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-deu poppler-utils >/dev/null
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-deu poppler-utils qpdf >/dev/null
       # IMAP-Testserver für die Postfächer (#196); fehlt das Image, laufen die übrigen Tests trotzdem.
       - name: IMAP-Testserver (GreenMail) starten
         run: |

@@ -52,6 +52,8 @@ Den Stempel gibt es an drei Stellen:
 - **Per E-Mail versenden** (eine oder mehrere Mappen): unter den Anhängen das Kästchen **Mit Stempel**.
 - **Exportieren** als ZIP oder PDF: im Exportdialog das Kästchen **Mit Stempel**.
 
+Überall dort kannst du PDFs zusätzlich [verkleinert weitergeben](#verkleinert-weitergeben).
+
 ![Herunterladen mit Stempel](bilder/stempel-herunterladen.png)
 
 So gehst du vor:
@@ -81,6 +83,16 @@ Gut zu wissen:
 
 !!! note "Wie sicher ist der Stempel?"
     Der Stempel wird als Inhalt der Seite gezeichnet, nicht als Kommentar oder Anmerkung, die man mit einem Klick löscht. Er sitzt im selben Inhalt wie der übrige Text der Seite. Wer sich mit PDF-Werkzeugen auskennt, kann ihn trotzdem entfernen – ein Stempel ist ein deutlicher Hinweis und erschwert Missbrauch, aber kein Kopierschutz. Schicke deshalb nur, was der Empfänger wirklich braucht.
+
+## Verkleinert weitergeben
+
+Viele E-Mail-Anbieter nehmen keine Anhänge über 10 bis 25 MB an. Beim Versenden per E-Mail (eine oder mehrere Mappen), beim **Exportieren** als ZIP oder PDF und beim **Herunterladen mit Stempel** gibt es deshalb das Kästchen **PDFs verkleinert senden** (bzw. *exportieren*, *herunterladen*) mit der Stufe **Bildschirm**, **Standard** (Vorgabe) oder **Druck** – dieselben Stufen wie bei [PDF verkleinern](dokumente.md#pdf-verkleinern).
+
+- Verkleinert wird nur die **Kopie**, die hinausgeht. **Das gespeicherte Dokument bleibt unverändert.**
+- Nur PDFs werden verkleinert; Bilder und andere Dateien gehen unverändert mit. Bringt es bei einem PDF weniger als 10 %, geht das Original.
+- Mit Stempel wird **erst verkleinert, dann gestempelt** – der Stempel bleibt scharf.
+- Die angezeigte Größe der Anhänge ist die vor dem Verkleinern; ob die E-Mail danach klein genug ist, prüft das DMS beim Senden. Ist das Kästchen an, darf die Auswahl darum auch größer als 50 MB sein.
+- Die [Historie](zusammenarbeit.md#historie) vermerkt es, z. B. „weitergegeben: verkleinert (18,4 MB → 2,1 MB) (heruntergeladen: Scan.pdf)“ bzw. „…, verkleinert (…)“ im Eintrag der E-Mail. In der [Post](post.md#versendete-e-mails) liegt die verkleinerte Kopie.
 
 ## Als PDF exportieren
 

@@ -519,6 +519,17 @@ export function speicherRepo(): Repo {
     },
 
     async dokumenteMitSha(sha) { return [...dokumente.values()].filter((d) => d.sha256 === sha).map(kopie); },
+    async grossePdfs(ab, max) {
+      return [...dokumente.values()].filter((d) => d.mime === 'application/pdf' && d.groesse >= ab).sort((a, b) => b.groesse - a.groesse).slice(0, max)
+        .map((d) => ({ ...kopie(d), aeltere: versionen.get(d.id)?.length ?? 0 }));
+    },
+    async loescheVersion(id, nummer) {
+      const v = versionen.get(id) ?? [];
+      const weg = v.find((x) => x.nummer === nummer);
+      if (!weg) return null;
+      versionen.set(id, v.filter((x) => x !== weg));
+      return weg.sha256;
+    },
     async zaehleDemo() {
       const r = new Map<string, number>();
       for (const m of mappen.values()) if (m.demo) r.set(m.typId, (r.get(m.typId) ?? 0) + 1);

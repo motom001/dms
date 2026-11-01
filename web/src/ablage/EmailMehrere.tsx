@@ -8,6 +8,8 @@ import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { EMAIL_WARNUNG } from './Aktionen';
 import { alsWunsch, stempelFehler, StempelFelder, stempelStart, stempelVon, useStempelVorlagen, type StempelWahl } from './Stempel';
+import { VerkleinertWahl } from './VerkleinertWahl';
+import type { Stufe } from '../../../shared/src/verkleinern';
 
 /**
  * Mehrere Mappen per E-Mail (#151): eine E-Mail, je Mappe ihre Angaben als PDF und – wählbar – ihre
@@ -56,6 +58,11 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
   const alleDocs = (liste ?? []).flatMap((m) => m.dokumente);
   const docs = umfang === 'alle' ? alleDocs : umfang === 'keine' ? [] : alleDocs.filter((x) => gewaehlt.has(x.id));
   const summe = docs.reduce((a, x) => a + x.groesse, 0);
+  // Verkleinert senden (#393): die Größe danach prüft der Server vor dem Versand.
+  const [klein, setKlein] = useState<Stufe | null>(null);
+  const mitPdf = docs.some((x) => x.mime === 'application/pdf');
+  const kleinAn = !!klein && mitPdf;
+  const zuGross = summe > EMAIL_HOECHSTENS && !kleinAn;
   // Stempel (#394): je Mappentyp vorgeschlagen oder Pflicht; Pflicht gilt dann für Mappen dieses Typs.
   const vorlagen = useStempelVorlagen();
   const typStempel = liste ? stempelVon(liste.map((m) => d.typ(m.typId))) : null;
@@ -67,7 +74,7 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
   async function senden() {
     setFehler(undefined); setLaeuft(true);
     try {
-      const r = await api.emailMehrere({ ids, an, betreff, nachricht, angaben, dokumente: umfang === 'alle' ? 'alle' : umfang === 'keine' ? [] : [...gewaehlt], stempel: alsWunsch(stempel) });
+      const r = await api.emailMehrere({ ids, an, betreff, nachricht, angaben, dokumente: umfang === 'alle' ? 'alle' : umfang === 'keine' ? [] : [...gewaehlt], stempel: alsWunsch(stempel), verkleinern: kleinAn ? klein : null });
       setErgebnis(r); await d.neuLaden();
     } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(false); }
   }
@@ -114,8 +121,9 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
             ))}
             {docs.length > 0 && stempel && vorlagen && <StempelFelder wahl={stempel} setze={setStempel} vorlagen={vorlagen} empfaengerErsatz={an.trim() || 'die Adressen unter „An“'} id="emails-stempel" />}
             {docs.length > 0 && typStempel?.modus === 'pflicht' && <p className="leise klein">Mappen, deren Mappentyp einen Stempel verlangt, bekommen ihn auch ohne diese Angabe.</p>}
-            {liste && <p className={`klein ${summe > EMAIL_WARNUNG ? 'fehlertext' : 'leise'}`}>
-              Dokumente zusammen {groesse(summe)}{angaben ? `, dazu ${ids.length} kleine PDFs mit den Angaben` : ''}.{summe > EMAIL_HOECHSTENS ? ' Das ist zu groß zum Versenden; bitte weniger auswählen.' : summe > EMAIL_WARNUNG ? ' Viele Mailserver nehmen E-Mails über 20 MB nicht an.' : ''}
+            {mitPdf && <VerkleinertWahl wert={klein} setze={setKlein} id="emails-verkleinert" />}
+            {liste && <p className={`klein ${summe > EMAIL_WARNUNG && !kleinAn ? 'fehlertext' : 'leise'}`}>
+              Dokumente zusammen {groesse(summe)}{kleinAn ? ' vor dem Verkleinern' : ''}{angaben ? `, dazu ${ids.length} kleine PDFs mit den Angaben` : ''}.{zuGross ? ' Das ist zu groß zum Versenden; bitte weniger auswählen.' : summe > EMAIL_WARNUNG && !kleinAn ? ` Viele Mailserver nehmen E-Mails über 20 MB nicht an.${mitPdf ? ' Tipp: PDFs verkleinert senden.' : ''}` : ''}
             </p>}
           </fieldset>
           <p className="leise klein">Eine E-Mail an alle Empfänger. Absender ist die Adresse des DMS, Antworten gehen an dich ({ich?.email}).</p>
@@ -123,7 +131,7 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
           {stempelProblem && <p className="leise klein">{stempelProblem}</p>}
           <div className="knoepfe">
             <button type="button" className="knopf" onClick={() => fertig()}>Abbrechen</button>
-            <button className="knopf primaer" disabled={laeuft || bereit === null || !liste || !an.trim() || !betreff.trim() || summe > EMAIL_HOECHSTENS || !!stempelProblem}>{laeuft ? 'Wird verschickt …' : 'Senden'}</button>
+            <button className="knopf primaer" disabled={laeuft || bereit === null || !liste || !an.trim() || !betreff.trim() || zuGross || !!stempelProblem}>{laeuft ? 'Wird verschickt …' : 'Senden'}</button>
           </div>
         </form>
       )}

@@ -1353,6 +1353,16 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async dokumenteMitSha(sha256) {
       return (await sql`SELECT ${DOK} FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.sha256 = ${sha256}`).map(alsDokument);
     },
+    async grossePdfs(ab, max) {
+      return (await sql`
+        SELECT ${DOK}, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere FROM dokumente d
+        WHERE d.haushalt_id = ${haushaltId} AND d.mime = 'application/pdf' AND d.groesse >= ${ab}
+        ORDER BY d.groesse DESC, d.id LIMIT ${max}`).map(alsDokument);
+    },
+    async loescheVersion(dokumentId, nummer) {
+      const [r] = await sql`DELETE FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId} AND nummer = ${nummer} RETURNING sha256`;
+      return r ? r.sha256 as string : null;
+    },
     async zaehleDemo() {
       const r = await sql`SELECT typ_id, count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} AND demo GROUP BY typ_id`;
       return new Map(r.map((z) => [z.typ_id as string, z.n as number]));

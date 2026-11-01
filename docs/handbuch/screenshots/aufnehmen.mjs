@@ -12,6 +12,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 
@@ -76,6 +77,46 @@ function beispielPdf(zeile) {
   pdf += `xref\n0 ${objekte.length + 1}\n0000000000 65535 f \n${pos.map((p) => `${String(p).padStart(10, '0')} 00000 n \n`).join('')}`;
   pdf += `trailer\n<< /Size ${objekte.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
   return Buffer.from(pdf, 'latin1');
+}
+
+/**
+ * Ein „Foto-Scan“ für PDF verkleinern (#393): die Seiten von beispielPdf mit pdftoppm als JPEG in hoher
+ * Auflösung gerastert und als Bild-PDF zusammengesetzt – ohne zusätzliche Bibliothek.
+ */
+function fotoPdf(zeilen, dpi = 600) {
+  const dir = join(ZIEL, '..', '.fotopdf');
+  execFileSync('mkdir', ['-p', dir]);
+  writeFileSync(join(dir, 'q.pdf'), beispielPdf(zeilen));
+  execFileSync('pdftoppm', ['-r', String(dpi), '-jpeg', '-jpegopt', 'quality=95', join(dir, 'q.pdf'), join(dir, 's')]);
+  const bilder = execFileSync('ls', [dir]).toString().split('\n').filter((n) => n.startsWith('s-') && n.endsWith('.jpg')).sort();
+  const teile = [];
+  const pos = [];
+  let laenge = 0;
+  const schreibe = (b) => { teile.push(b); laenge += b.length; };
+  const n = bilder.length;
+  schreibe(Buffer.from('%PDF-1.4\n', 'latin1'));
+  const obj = (nr, kopf, strom) => {
+    pos[nr] = laenge;
+    if (!strom) { schreibe(Buffer.from(`${nr} 0 obj\n${kopf}\nendobj\n`, 'latin1')); return; }
+    schreibe(Buffer.from(`${nr} 0 obj\n${kopf}\nstream\n`, 'latin1')); schreibe(strom); schreibe(Buffer.from('\nendstream\nendobj\n', 'latin1'));
+  };
+  obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2, `<< /Type /Pages /Kids [${bilder.map((_, i) => `${3 + i * 3} 0 R`).join(' ')}] /Count ${n} >>`);
+  bilder.forEach((name, i) => {
+    const jpg = readFileSync(join(dir, name));
+    // Breite und Höhe aus dem SOF-Kopf des JPEG.
+    let k = 2; let b = 0; let h = 0;
+    while (k < jpg.length) { const m = jpg[k + 1]; const l = jpg.readUInt16BE(k + 2); if (m >= 0xc0 && m <= 0xc2) { h = jpg.readUInt16BE(k + 5); b = jpg.readUInt16BE(k + 7); break; } k += 2 + l; }
+    const inhalt = Buffer.from('q 595 0 0 842 0 0 cm /Im Do Q', 'latin1');
+    obj(3 + i * 3, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /XObject << /Im ${5 + i * 3} 0 R >> >> /Contents ${4 + i * 3} 0 R >>`);
+    obj(4 + i * 3, `<< /Length ${inhalt.length} >>`, inhalt);
+    obj(5 + i * 3, `<< /Type /XObject /Subtype /Image /Width ${b} /Height ${h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>`, jpg);
+  });
+  const anzahl = 2 + n * 3;
+  const xref = laenge;
+  schreibe(Buffer.from(`xref\n0 ${anzahl + 1}\n0000000000 65535 f \n${pos.slice(1).map((p) => `${String(p).padStart(10, '0')} 00000 n \n`).join('')}trailer\n<< /Size ${anzahl + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`, 'latin1'));
+  execFileSync('rm', ['-rf', dir]);
+  return Buffer.concat(teile);
 }
 
 async function vorbereiten() {
@@ -345,6 +386,20 @@ async function main() {
   await stempel.screenshot({ path: join(ZIEL, 'stempel-herunterladen.png') });
   erstellt.push('stempel-herunterladen');
   await stempel.getByRole('button', { name: 'Schließen' }).click();
+
+  // PDF verkleinern (#393): ein Foto-Scan mit 600 dpi, Dialog mit den drei Stufen.
+  await api('POST', `/api/mappen/${d.strom.id}/dokumente?register=dokumente&name=${encodeURIComponent('Foto Zählerstand.pdf')}&typ=application/pdf`,
+    fotoPdf(['Zählerstand 12.345 kWh', 'Ablesekarte Rückseite']), true);
+  await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
+  await s.getByRole('tab', { name: 'Vertragsunterlagen' }).click();
+  const foto = s.locator('.dokumentliste li', { hasText: 'Foto Zählerstand.pdf' });
+  await foto.getByRole('button', { name: 'Verkleinern', exact: true }).click();
+  const klein = s.locator('.pdfseiten.verkleinern');
+  await klein.locator('.stufenwahl').waitFor({ timeout: 30_000 });
+  await klein.scrollIntoViewIfNeeded();
+  await klein.screenshot({ path: join(ZIEL, 'pdf-verkleinern.png') });
+  erstellt.push('pdf-verkleinern');
+  await klein.getByRole('button', { name: 'Abbrechen' }).click();
 
   // Verknüpfungsregister beim Vertragspartner
   await geheZu(s, `/ablage/${partner.id}/${d.stadtwerke.id}`);
