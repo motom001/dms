@@ -42,8 +42,8 @@ function WeitereRollen({ gewaehlt, setze, sperre }: { gewaehlt: string[]; setze:
 export function useBenutzer() {
   const [liste, setListe] = useState<Benutzer[]>([]);
   const [geladen, setGeladen] = useState(false);
+  // Geladen wird erst beim Öffnen des Bereichs; die Zahl links kommt bis dahin aus der Übersicht (#375).
   const laden = useCallback(async () => { try { setListe(await api.benutzer()); } finally { setGeladen(true); } }, []);
-  useEffect(() => { void laden(); }, [laden]);
   return { liste, geladen, laden };
 }
 

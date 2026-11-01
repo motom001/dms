@@ -671,6 +671,8 @@ export interface WerkbankUebersicht {
   anbindung?: { umgebung: 'fehlt' | 'gleich' | 'abweichend'; neustartNoetig: boolean } | null;
   /** Einrichtungsassistent (#119): übersprungene Schritte. */
   einrichtung?: EinrichtungStand | null;
+  /** Zahlen für die linke Spalte (#375), bis der Bereich selbst geladen ist; null = unbekannt. */
+  zahlen?: { nummernkreise: number | null; pakete: number | null; benutzer: number | null; postfaecher: number | null; darfWeg: number | null };
 }
 /* Feste Ordner (#115) und Speicherplatz (#116) */
 export type OrdnerArt = 'dateien' | 'geheim' | 'sicherung';

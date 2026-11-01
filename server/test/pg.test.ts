@@ -767,6 +767,10 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal(u.status, 200, JSON.stringify(u.body));
     assert.equal(typeof u.body.aufgaben.offen, 'number');
     assert.ok(u.body.bestand && u.body.bestand.mappen >= 0);
+    // Zahlen der Navigation (#375): ohne den Bereich zu öffnen.
+    assert.equal(u.body.zahlen.nummernkreise, (await anfrage('GET', '/api/werkbank/nummernkreise')).body.length);
+    assert.equal(u.body.zahlen.pakete, (await anfrage('GET', '/api/werkbank/pakete')).body.installiert.length);
+    assert.equal(u.body.zahlen.benutzer, (await anfrage('GET', '/api/benutzer')).body.filter((b: { aktiv: boolean }) => b.aktiv).length);
     assert.equal(u.body.version.version, (await anfrage('GET', '/api/werkbank/system')).body.dms.version);
     const dg = await anfrage('GET', '/api/konto/diagnose');
     assert.equal(dg.status, 200);
