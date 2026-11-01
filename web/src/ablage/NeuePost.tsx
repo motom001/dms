@@ -224,6 +224,7 @@ export function NeuKnopf() {
   return (
     <div className="neuknopf" ref={rahmen}>
       <button type="button" className="knopf gruen klein" aria-haspopup="menu" aria-expanded={offen} onClick={() => { setOffen(!offen); setMappe(false); }}>+ Neu</button>
+      {offen && <div className="hy-schleier" aria-hidden="true" onClick={() => { setOffen(false); setMappe(false); }} />}
       {offen && (
         <div className="menue" role="menu">
           {!mappe ? <>
