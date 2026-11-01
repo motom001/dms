@@ -12,9 +12,24 @@ Links in der Leiste steht neben dem Wartungsmodus **angekündigt**, solange er n
 
 ## Einschalten
 
-1. Optional einen **Text für alle** eintragen, z. B. „Update auf die neue Version“, und das **erwartete Ende**.
-2. Die **Vorlaufzeit** wählen (Standard 30 Minuten; 0 = sofort).
-3. **Wartung ankündigen**.
+1. Optional einen **Text für alle** eintragen, z. B. „Update auf die neue Version“.
+2. Den **Beginn** wählen – vorbelegt ist *jetzt + 30 Minuten*; mit **+15 min**, **+30 min** und **+1 Std** stellst du ihn schnell ab jetzt. Zu diesem Zeitpunkt werden alle anderen abgemeldet. Er darf nicht in der Vergangenheit und höchstens 24 Stunden in der Zukunft liegen, denn schon ab der Ankündigung können sich nur noch Administratoren anmelden.
+3. Optional das **erwartete Ende** – es muss nach dem Beginn liegen.
+4. **Wartung ankündigen**.
+
+Unter den Feldern fasst ein Satz die Wirkung zusammen, z. B. „Ab jetzt sehen alle einen Hinweis mit Countdown; anmelden können sich nur noch Administratoren. Um 12:45 Uhr werden alle anderen abgemeldet. Ende voraussichtlich 13:45 Uhr.“
+
+## Jetzt sofort sperren
+
+Für Notfälle, z. B. einen **Sicherheitsvorfall** (ein Passwort oder Gerät ist in falsche Hände geraten, du siehst unbekannte Anmeldungen): Der rote Knopf **Jetzt sofort sperren** überspringt die Ankündigung. Nach einer Rückfrage
+
+- werden alle anderen Sitzungen sofort beendet, auch die anderer Administratoren,
+- antwortet die Schnittstelle mit **503**,
+- bleibst du selbst angemeldet.
+
+Text für alle und erwartetes Ende werden übernommen, wenn du sie ausgefüllt hast; nötig sind sie nicht. Im [Protokoll](fehlersuche.md#protokoll) steht „Wartungsmodus sofort gesperrt“, unter **Stand** „sofort gesperrt“ – so unterscheidest du es von einer angekündigten Wartung.
+
+Danach in Ruhe aufräumen, z. B. betroffene Passwörter ändern, unter **Werkbank → Benutzer** einen Zugang sperren, die Zwei-Faktor-Anmeldung vorschreiben oder den [Schlüssel wechseln](verschluesselung.md#schlussel-wechseln) – und dann **Wartung beenden**.
 
 ## Stufe 1: angekündigt
 
@@ -26,7 +41,7 @@ Links in der Leiste steht neben dem Wartungsmodus **angekündigt**, solange er n
 
 ## Stufe 2: aktiv
 
-Nach Ablauf der Vorlaufzeit – oder sofort mit **Alle jetzt abmelden**:
+Zum gewählten Beginn – oder sofort mit **Alle jetzt abmelden** bzw. [Jetzt sofort sperren](#jetzt-sofort-sperren):
 
 - Alle Sitzungen außer deiner enden, auch die anderer Administratoren (sie können sich wieder anmelden).
 - Die Anmeldeseite zeigt den Wartungshinweis mit Text und erwartetem Ende; anmelden können sich nur Administratoren.
@@ -50,4 +65,4 @@ Unter **Angemeldete Sitzungen** siehst du, wer gerade mit welchem Gerät angemel
 Ein, Aus und das Abmelden stehen im [Protokoll](fehlersuche.md#protokoll) (Modul *system*).
 
 !!! tip "Vor jedem Update"
-    Unter **Werkbank → Sicherung** mit **Jetzt sichern** eine Sicherung anlegen. Dann Wartung ankündigen, nach der Vorlaufzeit das Image aktualisieren (siehe [Aktualisieren](aktualisieren.md)), kurz prüfen, dann **Wartung beenden**.
+    Unter **Werkbank → Sicherung** mit **Jetzt sichern** eine Sicherung anlegen. Dann Wartung ankündigen, ab dem Beginn das Image aktualisieren (siehe [Aktualisieren](aktualisieren.md)), kurz prüfen, dann **Wartung beenden**.

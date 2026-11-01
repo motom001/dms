@@ -85,6 +85,7 @@ export const HILFE = {
   'werkbank.sicherung': admin('sicherung/', 'Sicherung'),
   'werkbank.wiederherstellung': admin('wiederherstellen/', 'Wiederherstellen'),
   'werkbank.wartungsmodus': admin('wartungsmodus/', 'Wartungsmodus'),
+  'wartungsmodus.sofort': admin('wartungsmodus/', 'Jetzt sofort sperren', 'jetzt-sofort-sperren'),
   'werkbank.speicherplatz': admin('speicherplatz/', 'Speicherplatz'),
   'werkbank.verkleinern': admin('speicherplatz/', 'Große PDFs verkleinern', 'grosse-pdfs-verkleinern'),
   'werkbank.anbindung': admin('installation/', 'der Datenbank-Anbindung', 'datenbank-anbindung'),

@@ -31,7 +31,7 @@ Die Seite prüft auch, ob der Ordner wirklich ein eigenes Volume ist. Wenn nicht
 
 ## Schlüssel wechseln
 
-Könnte der Schlüssel bekannt geworden sein – etwa weil ein ausgedrucktes Notfallblatt verloren ging – oder willst du ihn turnusmäßig erneuern: **Werkbank → Verschlüsselung → Schlüssel wechseln.**
+Könnte der Schlüssel bekannt geworden sein – etwa weil ein ausgedrucktes Notfallblatt verloren ging – oder willst du ihn turnusmäßig erneuern: **Werkbank → Verschlüsselung → Schlüssel wechseln.** Bei einem Sicherheitsvorfall sperrst du vorher mit [Jetzt sofort sperren](wartungsmodus.md#jetzt-sofort-sperren) alle anderen aus.
 
 ![Schlüssel gewechselt](bilder/werkbank-schluesselwechsel.png)
 
