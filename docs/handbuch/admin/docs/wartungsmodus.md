@@ -60,7 +60,7 @@ Unter **Angemeldete Sitzungen** siehst du, wer gerade mit welchem Gerät angemel
 **Wartung beenden** schaltet den Modus aus; alle können sich wieder anmelden, und die Hintergrundarbeiten laufen weiter. Der Modus überdauert einen Neustart des DMS – nach einem Update ist er also noch an, bis du ihn beendest.
 
 !!! note "Automatisch bei vollem Speicher"
-    Erreicht der freie Platz die eingestellte Grenze, schaltet das DMS den Wartungsmodus selbst ein – mit 5 Minuten Vorlauf und dem Text „Speicherplatzlimit erreicht“. Beenden musst du ihn selbst, sobald wieder Platz ist (siehe [Speicherplatz](speicherplatz.md#im-ernstfall)).
+    Erreicht der freie Platz die eingestellte Grenze, schaltet das DMS den Wartungsmodus selbst ein – mit 5 Minuten Vorlauf und dem Text „Speicherplatzlimit erreicht“. Beenden musst du ihn selbst, sobald wieder Platz ist (siehe [Systemzustand](speicherplatz.md#im-ernstfall)).
 
 Ein, Aus und das Abmelden stehen im [Protokoll](fehlersuche.md#protokoll) (Modul *system*).
 

@@ -48,7 +48,7 @@ Im Container geht das auch ohne Browser mit dem [Befehl `dms`](konsole.md#betrie
 
 ## Speicherplatz
 
-Die Seite zeigt, wie groß Dokumente und Datenbank heute sind, eine **Hochrechnung** für die gewählte Aufbewahrung (jede Sicherung ist vollständig; die Datenbank lässt sich gut packen, Dokumente kaum), wie viel die Sicherungen belegen und wie viel im Ordner frei ist. Wird es knapp – weniger frei als der Mindest-Speicherplatz oder als zwei weitere Sicherungen –, warnt sie. Unabhängig davon überwacht **Werkbank → [Speicherplatz](speicherplatz.md)** alle Ordner des DMS mit Warnschwelle und Grenze.
+Die Seite zeigt, wie groß Dokumente und Datenbank heute sind, eine **Hochrechnung** für die gewählte Aufbewahrung (jede Sicherung ist vollständig; die Datenbank lässt sich gut packen, Dokumente kaum), wie viel die Sicherungen belegen und wie viel im Ordner frei ist. Wird es knapp – weniger frei als der Mindest-Speicherplatz oder als zwei weitere Sicherungen –, warnt sie. Unabhängig davon überwacht **Werkbank → [Systemzustand](speicherplatz.md)** alle Ordner des DMS mit Warnschwelle und Grenze.
 
 ## Hinweise bei Problemen
 

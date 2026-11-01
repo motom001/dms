@@ -42,7 +42,7 @@ Eine Datenbank einer älteren Hauptversion (z. B. 17) lässt sich nicht einfach 
 
 ## Wenn es mehr wird
 
-- **Viele Dokumente:** Der Ordner `files` wächst mit den Dokumenten, die Datenbank viel langsamer. Lege `files` und `sicherung` dorthin, wo Platz ist. Die Ordner lassen sich einzeln verschieben, solange das Volume danach wieder auf denselben Ordner im Container zeigt. **Werkbank → Speicherplatz** zeigt, was wie viel belegt.
+- **Viele Dokumente:** Der Ordner `files` wächst mit den Dokumenten, die Datenbank viel langsamer. Lege `files` und `sicherung` dorthin, wo Platz ist. Die Ordner lassen sich einzeln verschieben, solange das Volume danach wieder auf denselben Ordner im Container zeigt. **Werkbank → Systemzustand** zeigt, was wie viel belegt.
 - **Mehr Leistung:** Texterkennung und Volltextsuche profitieren von mehr Prozessorkernen und Arbeitsspeicher. Ein Umzug auf einen stärkeren Rechner geht wie oben.
 - **Datenbank auf einem eigenen Server:** Umzug von `dms-komplett` auf das schlanke Image `dms` mit eigener Datenbank, wie oben beschrieben.
 

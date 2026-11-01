@@ -8,8 +8,9 @@ import { einDatentraeger } from '../../../shared/src/werkbankansicht';
 import { AutomatischVerkleinern, GrossePdfsVerkleinern } from './Verkleinern';
 
 /**
- * Werkbank → Speicherplatz (#116): belegt/frei je fester Ordner (#115), Warnschwelle und Grenze.
- * An der Grenze startet der Wartungsmodus von selbst; beenden muss ihn ein Administrator.
+ * Werkbank → Wartung und Fehlersuche → Systemzustand (#408, früher Einstellungen → Speicherplatz, #116):
+ * oben Warnschwelle und Grenze, darunter belegt/frei je fester Ordner (#115). An der Grenze startet
+ * der Wartungsmodus von selbst; beenden muss ihn ein Administrator. Auslastung folgt (#409).
  */
 
 const GB = 1024 ** 3;
@@ -100,8 +101,8 @@ export function SpeicherplatzPanel({ z, nachAenderung }: { z: SpeicherplatzZusta
     <div className="einspaltig">
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
-        <h1>Speicherplatz</h1>
-        <p className="leise">Das DMS misst jede Minute und vor jedem Hochladen, wie viel Platz in seinen Ordnern frei ist. Unter der <strong>Warnschwelle</strong> gibt es einen Hinweis hier und in der Übersicht sowie eine Mail an alle Administratoren. Unter der <strong>Grenze</strong> ist das Hochladen sofort gesperrt, und nach 5 Minuten Vorlauf beginnt der Wartungsmodus („Speicherplatzlimit erreicht“). <Hilfe ort="werkbank.speicherplatz" /></p>
+        <h1>Systemzustand</h1>
+        <p className="leise">Wie es dem Server gerade geht. <strong>Speicherplatz:</strong> Das DMS misst jede Minute und vor jedem Hochladen, wie viel Platz in seinen Ordnern frei ist. Unter der <strong>Warnschwelle</strong> gibt es einen Hinweis hier und in der Übersicht sowie eine Mail an alle Administratoren. Unter der <strong>Grenze</strong> ist das Hochladen sofort gesperrt, und nach 5 Minuten Vorlauf beginnt der Wartungsmodus („Speicherplatzlimit erreicht“). <Hilfe ort="werkbank.speicherplatz" /></p>
       </div>
 
       {s.zustand === 'grenze' && <div className="hinweis schlecht"><p><strong>Speicherplatzlimit erreicht.</strong> Hochladen ist gesperrt. Schaffe Platz – alte <Link to="/werkbank/sicherung" className="verweis">Sicherungen</Link> löschen, den <Link to="/werkbank/papierkorb" className="verweis">Papierkorb</Link> leeren, <a href="#verkleinern" className="verweis">große PDFs verkleinern</a> – oder vergrößere den Speicher des NAS. Danach beendest du den <Link to="/werkbank/wartungsmodus" className="verweis">Wartungsmodus</Link> selbst.</p></div>}
@@ -114,7 +115,18 @@ export function SpeicherplatzPanel({ z, nachAenderung }: { z: SpeicherplatzZusta
       )}
 
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
-      <section className="blatt">
+      <form className="blatt" id="schwellen" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
+        <h2 className="h3">Schwellen für den Speicherplatz</h2>
+        <div className="raster">
+          <SchwelleFeld name="Warnschwelle" hilfe="Hinweis und Mail" wert={e.warnung} aendern={(w) => setE({ ...e, warnung: w })} />
+          <SchwelleFeld name="Grenze" hilfe="Hochladen gesperrt, Wartungsmodus" wert={e.grenze} aendern={(g) => setE({ ...e, grenze: g })} />
+        </div>
+        <p className="leise klein">Gilt für jeden Ordner einzeln; Prozent beziehen sich auf die Größe seines Datenträgers. Standard: Warnung unter 10 % frei, Grenze unter 2 GB frei.</p>
+        {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
+        <Speicherleiste ent={ent} gegenstand="Schwellen" sendet={laeuft} />
+      </form>
+
+      <section className="blatt" id="ordner">
         <h2 className="h3">Ordner</h2>
         <p className="leise klein">Die Ordner im Container sind fest; auf welchen Ordner des NAS sie zeigen, bestimmen die Volumes der Compose-Datei. Die Datenbank liegt in ihrem eigenen Container und lässt sich von hier nicht messen – liegt alles auf derselben Platte (üblich auf dem NAS), genügt diese Messung.</p>
         {ein ? (
@@ -151,16 +163,6 @@ export function SpeicherplatzPanel({ z, nachAenderung }: { z: SpeicherplatzZusta
         </div>
       </section>
 
-      <form className="blatt" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
-        <h2 className="h3">Schwellen</h2>
-        <div className="raster">
-          <SchwelleFeld name="Warnschwelle" hilfe="Hinweis und Mail" wert={e.warnung} aendern={(w) => setE({ ...e, warnung: w })} />
-          <SchwelleFeld name="Grenze" hilfe="Hochladen gesperrt, Wartungsmodus" wert={e.grenze} aendern={(g) => setE({ ...e, grenze: g })} />
-        </div>
-        <p className="leise klein">Gilt für jeden Ordner einzeln; Prozent beziehen sich auf die Größe seines Datenträgers. Standard: Warnung unter 10 % frei, Grenze unter 2 GB frei.</p>
-        {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
-        <Speicherleiste ent={ent} gegenstand="Schwellen" sendet={laeuft} />
-      </form>
 
       {/* PDF verkleinern (#393): Platz schaffen bei großen Scans. */}
       <GrossePdfsVerkleinern />

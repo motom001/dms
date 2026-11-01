@@ -367,7 +367,12 @@ Eine verschlüsselte Gesamtsicherung, die sich in ein DMS zurückspielen lässt.
 Siehe auch: [Wiederherstellen](#wiederherstellen), [Probe-Wiederherstellung](#probe-wiederherstellung), [Vollexport](#vollexport).
 
 <a id="speicherplatz"></a>**Speicherplatz** · ✓ Alltagswort · Administratoren  
-Wie voll die Datenordner sind, mit Schwellen für Warnungen.
+Wie voll die Datenordner sind, mit Schwellen für Warnungen (unter Systemzustand).  
+Siehe auch: [Systemzustand](#systemzustand).
+
+<a id="systemzustand"></a>**Systemzustand** · ~ mit Erklärung · Administratoren  
+Wie es dem Server gerade geht – Speicherplatz mit Warnschwellen, später auch die Auslastung (Werkbank → Wartung und Fehlersuche → Systemzustand). Gemeint ist der Zustand im Betrieb, nicht die Konfiguration.  
+Siehe auch: [Speicherplatz](#speicherplatz).
 
 <a id="version-des-dms"></a>**Version des DMS** · ✓ Alltagswort · alle  
 Der Stand des Programms, z. B. 0.73. Ein Update bringt eine neue Version des DMS; an Dokumenten und ihren Versionen ändert das nichts. Was neu ist, steht unter „Neu in dieser Version“.  
@@ -515,6 +520,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Standardwert | Defaultwert | – |
 | Systemmappentyp | – | `Systemtyp` |
 | Systemrolle | Rolle (für Administrator/Mitglied) | `Rolle, Benutzer.rolle` |
+| Systemzustand | Systemumgebung | – |
 | Texterkennung | OCR (in der Oberfläche) | `OcrStand` |
 | Trefferliste | – | `Trefferliste` |
 | Tägliche Zusammenfassung | Übersicht per E-Mail, Digest | – |

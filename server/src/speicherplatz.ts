@@ -136,7 +136,7 @@ export class Speicherplatz {
         await this.mail('Speicherplatz wird knapp',
           `Der freie Speicherplatz des DMS liegt unter der Warnschwelle (${schwelleText(s.einstellung.warnung)}):\n\n${knapp.join('\n')}\n\n`
           + `Unter der Grenze (${schwelleText(s.einstellung.grenze)}) sperrt das DMS das Hochladen und geht in den Wartungsmodus. `
-          + 'Schaffe rechtzeitig Platz (alte Sicherungen löschen, Papierkorb leeren) oder vergrößere den Speicher. Details: Werkbank → Speicherplatz.');
+          + 'Schaffe rechtzeitig Platz (alte Sicherungen löschen, Papierkorb leeren) oder vergrößere den Speicher. Details: Werkbank → Wartung und Fehlersuche → Systemzustand.');
       }
     } else {
       neu.gewarnt = true;

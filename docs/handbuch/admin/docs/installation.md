@@ -135,7 +135,7 @@ Die Ordner im Container sind fest. Wohin sie auf dem NAS zeigen, bestimmst du al
 | `/data/sicherung` | [Sicherungen](sicherung.md), verschlüsselt | `/volume1/docker/dms/sicherung` |
 | `/eingang` (optional) | [Eingangsordner](eingangsordner.md) für Scanner und NAS | `/volume1/docker/dms/eingang` |
 
-Jeder der drei Ordner unter `/data` muss ein eigenes Volume sein; sonst ist sein Inhalt weg, sobald der Container neu erstellt wird (z. B. beim Update). Die Datenbank liegt im Volume des PostgreSQL-Containers – beim Image [dms-komplett](https://motom001.github.io/dms/installieren/aktuell/komplett/) im vierten Ordner `/data/postgres`. Wie viel Platz in jedem Ordner frei ist, zeigen **Werkbank → [Speicherplatz](speicherplatz.md)** und **Werkbank → Technik**.
+Jeder der drei Ordner unter `/data` muss ein eigenes Volume sein; sonst ist sein Inhalt weg, sobald der Container neu erstellt wird (z. B. beim Update). Die Datenbank liegt im Volume des PostgreSQL-Containers – beim Image [dms-komplett](https://motom001.github.io/dms/installieren/aktuell/komplett/) im vierten Ordner `/data/postgres`. Wie viel Platz in jedem Ordner frei ist, zeigen **Werkbank → [Systemzustand](speicherplatz.md)** und **Werkbank → Technik**.
 
 ```yaml
     volumes:

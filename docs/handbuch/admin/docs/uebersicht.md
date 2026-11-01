@@ -7,8 +7,8 @@ Die **Werkbank** sehen nur Administratoren. Links stehen ihre Bereiche in vier G
 | --- | --- |
 | **Ablage einrichten** | [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Stempel](stempel.md), [Pakete](pakete.md), [Darf weg](archiv.md#nach-der-frist-darf-weg) (nur mit Archivmodus), [Datenschutz](datenschutz.md) |
 | **Benutzer und Zusammenarbeit** | [Benutzer](benutzer.md), [Anmeldeschutz](anmeldeschutz.md), [Aufgaben](aufgaben.md) |
-| **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Verschlüsselung](verschluesselung.md), [Designs](designs.md), [Papierkorb](papierkorb.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung), [Speicherplatz](speicherplatz.md), [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Texterkennung](texterkennung.md) |
-| **Wartung und Fehlersuche** | [Protokoll](fehlersuche.md#protokoll), [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler), [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md), [Vollexport](export.md), [Wartungsmodus](wartungsmodus.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen), [Technik](fehlersuche.md#technik), [Demo-Daten](demo.md) |
+| **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Verschlüsselung](verschluesselung.md), [Designs](designs.md), [Papierkorb](papierkorb.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung), [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Texterkennung](texterkennung.md) |
+| **Wartung und Fehlersuche** | [Protokoll](fehlersuche.md#protokoll), [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler), [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md), [Vollexport](export.md), [Wartungsmodus](wartungsmodus.md), [Systemzustand](speicherplatz.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen), [Technik](fehlersuche.md#technik), [Demo-Daten](demo.md) |
 <!-- /bereiche:gruppen -->
 
 Welche Bereiche dort stehen, legst du unter [Werkbank anpassen](#werkbank-anpassen) fest. Am Smartphone wählst du oben erst die Gruppe, darunter den Bereich. Ganz unten in der Leiste stehen *Projekt unterstützen* und der Link zu diesem Handbuch.
@@ -98,7 +98,6 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Designs](designs.md) | Logo, Farben und eigenes CSS | Betrieb |
 | [Papierkorb](papierkorb.md) | Gelöschte Mappen zurückholen | Haushalt, Betrieb |
 | [Datenbank-Anbindung](installation.md#datenbank-anbindung) | Die Verbindung zur Datenbank, lange Datenbankzugriffe und was gerade läuft | nur Alles |
-| [Speicherplatz](speicherplatz.md) | Sehen, wie voll das Gerät ist | Haushalt, Betrieb |
 | [Postfächer](postfaecher.md) | Post aus einem E-Mail-Konto abholen | Betrieb |
 | [Eingangsordner](eingangsordner.md) | Scans aus einem Ordner übernehmen | Betrieb |
 | [WebDAV-Laufwerk](webdav.md) | Die Ablage im Explorer, Finder oder in der Dateien-App einbinden | Haushalt, Betrieb |
@@ -109,6 +108,7 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Wiederherstellen](wiederherstellen.md) | Eine Sicherung zurückspielen | Haushalt, Betrieb |
 | [Vollexport](export.md) | Alle Daten in offenen Formaten mitnehmen | Haushalt, Betrieb |
 | [Wartungsmodus](wartungsmodus.md) | Benutzer vorübergehend aussperren | Betrieb |
+| [Systemzustand](speicherplatz.md) | Sehen, wie es dem Server geht: Speicherplatz mit Warnschwellen | Haushalt, Betrieb |
 | [Wartungsoperationen](texterkennung.md#wartungsoperationen) | Einmalige Pflegearbeiten | nur Alles |
 | [Technik](fehlersuche.md#technik) | Version, Updates und die Übersicht für GitHub | Haushalt, Betrieb |
 | [Demo-Daten](demo.md) | Beispielmappen zum Ausprobieren | nur Alles |
