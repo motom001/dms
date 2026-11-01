@@ -11,10 +11,11 @@ import { speicherKontoRepo } from '../src/konto-repo';
 import { Paketlaeufer, type ApiAufruf } from '../src/laeufer/verwaltung';
 import { ladeArgumente, pruefeModul } from '../src/laeufer/modul';
 import { netzErlaubt } from '../src/laeufer/prozess';
-import { liesPaket } from '../src/pakete';
+import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
+import { zipPuffer } from '../src/zip';
 import { speicherRepo } from '../src/repo-speicher';
 import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
-import { liesCode } from '../../shared/src/pakete';
+import { CODE_MAX, laeuferZustandText, liesCode } from '../../shared/src/pakete';
 
 /* ---------- Kleiner WebAssembly-Assembler ---------- */
 const u = (n: number): number[] => { const b: number[] = []; do { let x = n & 0x7f; n >>>= 7; if (n) x |= 0x80; b.push(x); } while (n); return b; };
@@ -88,6 +89,66 @@ describe('Paket-Läufer (#338): Modul und Manifest', () => {
     assert.equal(netzErlaubt('https://api.example.org.boese.example/v1', erlaubt), false);
     assert.equal(netzErlaubt('http://api.example.org/v1', erlaubt), false);
     assert.equal(netzErlaubt('https://user:pw@api.example.org/v1', erlaubt), false);
+  });
+});
+
+describe('Paket-Läufer: Nacharbeiten (#403)', () => {
+  it('Größengrenze für code/: höchstens 32 MB je Paket, mit klarer Meldung', () => {
+    assert.equal(CODE_MAX, 32 * 1024 * 1024);
+    assert.deepEqual(liesCode({ sprache: 'c' }, [{ name: 'code/modul.wasm', groesse: CODE_MAX - 10 }, { name: 'README.md', groesse: 100 }]).fehler, []);
+    const zuGross = liesCode({ sprache: 'c' }, [{ name: 'code/modul.wasm', groesse: 30 * 1048576 }, { name: 'code/daten/deu.traineddata', groesse: 3 * 1048576 }]);
+    assert.equal(zuGross.code, null);
+    assert.match(zuGross.fehler.join(), /zusammen 33,0 MB groß – erlaubt sind höchstens 32 MB je Paket/);
+    // Im Paket: Meldung ohne „manifest.yaml:“ davor.
+    const a = archiv('gross', ECHO);
+    a.set('code/daten/gross.bin', Buffer.alloc(CODE_MAX));
+    assert.throws(() => liesPaket(a), (e: Error & { details?: { gruende: string[] } }) => /^Die Dateien unter code\/ sind zusammen 32,0 MB groß – erlaubt sind höchstens 32 MB/.test(e.details!.gruende[0]));
+    // Als ZIP: code/ zählt nicht zur allgemeinen Grenze von 20 MB, sondern zu seiner eigenen.
+    const zip = zipPuffer([{ name: 'manifest.yaml', daten: Buffer.from(manifest('gross', '{ dokumente: keine }')) }, { name: 'code/modul.wasm', daten: ECHO }, { name: 'code/daten/gross.bin', daten: Buffer.alloc(25 * 1048576) }]);
+    assert.equal(liesZip(zip).get('code/daten/gross.bin')?.length, 25 * 1048576);
+    assert.ok(liesPaket(liesZip(zip)).code, '25 MB unter code/ sind erlaubt');
+  });
+
+  it('Zustandstexte passen zu dem, was der Läufer tut', () => {
+    const zeit = (iso: string) => iso.slice(11, 16);
+    const p = (x: Partial<{ geladen: boolean; fehler: string | null; aufrufe: number }> = {}) => ({ geladen: true, fehler: null, aufrufe: 0, ...x });
+    const t = (zustand: Parameters<typeof laeuferZustandText>[0]['zustand'], paket: ReturnType<typeof p> | null, absturz: string | null = null) => laeuferZustandText({ zustand, absturz, paket }, zeit);
+    assert.deepEqual(t('bereit', p()), { text: 'bereit – wartet auf das erste Ereignis', fehler: false, wartet: false });
+    assert.equal(t('bereit', p({ aufrufe: 3 })).text, 'bereit');
+    assert.deepEqual(t('startet', null), { text: 'startet …', fehler: false, wartet: true }, 'direkt nach der Installation: nicht „läuft nicht“');
+    assert.equal(t('bereit', p({ geladen: false })).text, 'startet …');
+    assert.deepEqual(t('neustart', p(), '2026-11-01T14:03:00.000Z'), { text: 'abgestürzt um 14:03 – startet neu …', fehler: true, wartet: true });
+    assert.equal(t('bereit', p({ aufrufe: 3 }), '2026-11-01T14:03:00.000Z').text, 'neu gestartet nach Absturz um 14:03');
+    assert.equal(t('pausiert', p()).text, 'pausiert (Wartungsmodus)');
+    assert.deepEqual(t('bereit', p({ geladen: false, fehler: 'Modul abgelehnt' })), { text: 'Modul abgelehnt', fehler: true, wartet: false });
+  });
+
+  it('Update scheitert: der alte Code ist wieder da (und bei einer Neuinstallation keiner)', async () => {
+    const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+    const geaendert: string[] = [];
+    const p = new Paketverwaltung(d, { version: () => '0.91.2', abruf: async () => { throw new Error('offline'); }, katalogUrl: 'https://katalog.test/katalog.json', laeufer: { aktion: async () => '', codeGeaendert: () => { geaendert.push('x'); } } });
+    const ICH = { id: null, email: 'admin@example.org' };
+    const zip = (version: string, wasm: Buffer) => zipPuffer([{ name: 'manifest.yaml', daten: Buffer.from(manifest('wechsel', '{ dokumente: keine }').replace('version: 1.0.0', `version: ${version}`)) }, { name: 'code/modul.wasm', daten: wasm }]);
+    const installiere = async (version: string, wasm: Buffer) => { const { upload } = await p.hochladen(zip(version, wasm), ICH); return p.installiere({ upload, bestaetigt: true, rechteBestaetigt: true }, ICH); };
+    const NEU = modul({ ereignis: [0x41, 1] });
+    // Neuinstallation scheitert beim Speichern des Eintrags: kein Code bleibt zurück.
+    const speichere = d.speicherePaket.bind(d);
+    let scheitern = true;
+    d.speicherePaket = async (x) => { if (scheitern) throw new Error('Platte voll'); return speichere(x); };
+    await assert.rejects(installiere('1.0.0', ECHO), /Platte voll/);
+    assert.deepEqual(await d.paketCode('wechsel'), []);
+    scheitern = false;
+    await installiere('1.0.0', ECHO);
+    assert.deepEqual((await d.paketCode('wechsel')).find((x) => x.name === 'modul.wasm')?.inhalt, ECHO);
+    // Update scheitert nach dem Speichern des neuen Codes: altes Modul zurück, alter Eintrag bleibt.
+    scheitern = true;
+    await assert.rejects(installiere('1.1.0', NEU), /Platte voll/);
+    assert.deepEqual((await d.paketCode('wechsel')).find((x) => x.name === 'modul.wasm')?.inhalt, ECHO, 'alter Code wiederhergestellt');
+    assert.equal((await d.listePakete()).find((x) => x.id === 'wechsel')?.version, '1.0.0');
+    assert.equal(geaendert.length, 1, 'der Läufer lädt nach dem gescheiterten Update nichts neu');
+    scheitern = false;
+    await installiere('1.1.0', NEU);
+    assert.deepEqual((await d.paketCode('wechsel')).find((x) => x.name === 'modul.wasm')?.inhalt, NEU);
   });
 });
 
@@ -246,6 +307,40 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     assert.deepEqual(await d.faelligeEreignisse(10), [], 'Nr. 2 wartet auf die Wiederholung von Nr. 1');
     await d.ereignisFehlgeschlagen(e1.id, 'x', null);
     assert.deepEqual((await d.faelligeEreignisse(10)).map((e) => e.daten.n), [2], 'aufgegeben: Nr. 2 ist dran');
+  });
+
+  it('lädt bei einer Änderung nur das geänderte Modul; Zustand nach Installation und nach Absturz (#403)', async () => {
+    const { d, l } = await aufbau();
+    const gelesen: string[] = [];
+    const lies = d.paketCode.bind(d);
+    d.paketCode = async (id: string) => { gelesen.push(id); return lies(id); };
+    await installiere(d, 'eins', ECHO);
+    await installiere(d, 'zwei', ECHO);
+    await l.start();
+    await warte(async () => (await l.uebersicht()).pakete.every((p) => p.geladen));
+    const u0 = await l.uebersicht();
+    assert.equal(u0.zustand, 'bereit');
+    assert.deepEqual(u0.pakete.map((p) => laeuferZustandText({ zustand: u0.zustand, absturz: u0.absturz, paket: p }, String).text), ['bereit – wartet auf das erste Ereignis', 'bereit – wartet auf das erste Ereignis']);
+    assert.deepEqual(gelesen.sort(), ['eins', 'zwei']);
+    gelesen.length = 0;
+    await installiere(d, 'drei', ECHO);
+    await l.codeGeaendert();
+    await warte(async () => (await l.uebersicht()).pakete.length === 3 && (await l.uebersicht()).pakete.every((p) => p.geladen));
+    assert.deepEqual(gelesen, ['drei'], 'nur das neue Paket aus der Datenbank');
+    // Die anderen laufen mit ihrem behaltenen Modul weiter.
+    await d.melde('dokument.hochgeladen', { dokument: 'd1' });
+    await warte(async () => { const e = await d.ereignisStand(); return e.eins?.zugestellt === 1 && e.zwei?.zugestellt === 1 && e.drei?.zugestellt === 1; });
+    // Absturz: Zustand „neustart“ mit Zeit, danach „neu gestartet nach Absturz“; nach dem Neustart wieder alle Module.
+    gelesen.length = 0;
+    (l as unknown as { kind: { kill(s: string): void } }).kind.kill('SIGKILL');
+    await warte(async () => (await l.uebersicht()).zustand === 'neustart');
+    const u1 = await l.uebersicht();
+    assert.ok(u1.absturz);
+    assert.match(laeuferZustandText({ zustand: u1.zustand, absturz: u1.absturz, paket: u1.pakete[0] }, () => 'HH:MM').text, /^abgestürzt um HH:MM – startet neu/);
+    await warte(async () => { const u = await l.uebersicht(); return u.zustand === 'bereit' && u.pakete.every((p) => p.geladen); });
+    const u2 = await l.uebersicht();
+    assert.equal(laeuferZustandText({ zustand: u2.zustand, absturz: u2.absturz, paket: u2.pakete[0] }, () => 'HH:MM').text, 'neu gestartet nach Absturz um HH:MM');
+    assert.deepEqual(gelesen.sort(), ['drei', 'eins', 'zwei'], 'neuer Prozess: alle Module');
   });
 
   it('Grenzen: Endlosschleife und zu viel Speicher brechen ab und erscheinen in der Übersicht', async () => {

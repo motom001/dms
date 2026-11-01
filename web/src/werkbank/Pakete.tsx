@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { herkunftText, vergleicheVersion, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
+import { herkunftText, laeuferZustandText, vergleicheVersion, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
 import { api, ApiFehler, type PaketlaeuferStand, type PaketQuelle, type PaketVorschau } from '../api';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
@@ -406,15 +406,22 @@ function LaeuferStand({ paket }: { paket: string }) {
   const [s, setS] = useState<PaketlaeuferStand | null | undefined>(undefined);
   const laden = useCallback(() => { api.paketLaeufer().then(setS, () => setS(null)); }, []);
   useEffect(() => { laden(); }, [laden]);
+  const p = s?.pakete.find((x) => x.id === paket) ?? null;
+  // Zustand passend zu dem, was der Läufer tut (#403); solange er startet, von selbst nachfragen.
+  const stand = s ? laeuferZustandText({ zustand: s.zustand, absturz: s.absturz, paket: p }, datum) : null;
+  useEffect(() => {
+    if (!stand?.wartet) return;
+    const uhr = setTimeout(laden, 2000);
+    return () => clearTimeout(uhr);
+  }, [s, stand?.wartet, laden]);
   if (s === undefined) return null;
-  const p = s?.pakete.find((x) => x.id === paket);
   return (
     <>
       <h2 className="h3">Paket-Läufer</h2>
-      {!s || !p ? <p className="leise">Der Paket-Läufer läuft nicht.</p> : (
+      {!s || !stand ? <p className="leise">Der Paket-Läufer läuft nicht.</p> : !p ? <p className="leise">{stand.text}</p> : (
         <>
           <dl className="eigenschaften">
-            <dt>Stand</dt><dd>{p.fehler ? <span className="fehlertext">{p.fehler}</span> : s.pausiert ? 'pausiert (Wartungsmodus)' : s.laeuft && p.geladen ? 'bereit' : 'startet …'}</dd>
+            <dt>Stand</dt><dd>{stand.fehler ? <span className="fehlertext">{stand.text}</span> : stand.text}</dd>
             <dt>Dienstkonto</dt><dd>{p.dienstkonto ?? '–'}</dd>
             <dt>Aufrufe</dt><dd>{p.aufrufe}{p.fehlgeschlagen ? `, davon ${p.fehlgeschlagen} fehlgeschlagen` : ''}{p.dauerMs !== null ? ` · zuletzt ${Math.round(p.dauerMs / 100) / 10} s, ${p.speicherMB} MB` : ''}</dd>
             <dt>Ereignisse</dt><dd>{p.ereignisse.zugestellt} zugestellt · {p.ereignisse.offen} offen{p.ereignisse.aufgegeben ? <> · <strong>{p.ereignisse.aufgegeben} aufgegeben</strong></> : ''}</dd>

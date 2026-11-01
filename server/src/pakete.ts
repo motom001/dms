@@ -12,7 +12,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { inflateRawSync } from 'node:zlib';
 import { parse as yamlLesen } from 'yaml';
 import type { Feld, Mappentyp, Register } from '../../shared/src/model';
-import { BEREICH, gleicheRechte, liesCode, rechteText, type PaketCode, dmsPasst, liesKatalog, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../shared/src/pakete';
+import { BEREICH, CODE_MAX, gleicheRechte, liesCode, rechteText, type PaketCode, dmsPasst, liesKatalog, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../shared/src/pakete';
 import { kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
 import { EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand } from '../../shared/src/paketeinstellungen';
 import type { Dienst } from './dienst';
@@ -25,6 +25,7 @@ const log = protokoll.modul('werkbank');
 /* ---------- ZIP lesen ---------- */
 
 export const ARCHIV_MAX = 10 * 1024 * 1024;
+/** Entpackt höchstens – ohne code/; dafür gilt CODE_MAX (#403, geprüft in liesCode). */
 const ENTPACKT_MAX = 20 * 1024 * 1024;
 const DATEIEN_MAX = 500;
 
@@ -38,7 +39,7 @@ export function liesZip(buf: Buffer): Map<string, Buffer> {
   if (anzahl > DATEIEN_MAX) throw new Fachfehler(422, `Das Archiv enthält mehr als ${DATEIEN_MAX} Dateien.`);
   let p = buf.readUInt32LE(e + 16);
   const dateien = new Map<string, Buffer>();
-  let gesamt = 0;
+  let gesamt = 0, code = 0;
   for (let n = 0; n < anzahl; n++) {
     if (p + 46 > buf.length || buf.readUInt32LE(p) !== 0x02014b50) throw kaputt();
     const flags = buf.readUInt16LE(p + 8), methode = buf.readUInt16LE(p + 10), crc = buf.readUInt32LE(p + 16);
@@ -50,8 +51,10 @@ export function liesZip(buf: Buffer): Map<string, Buffer> {
     if (name.endsWith('/')) continue;
     if (flags & 1) throw new Fachfehler(422, 'Verschlüsselte Archive gehen nicht.');
     if (name.startsWith('/') || name.split('/').includes('..')) throw new Fachfehler(422, `Ungültiger Dateiname im Archiv: ${name}`);
-    gesamt += usize;
+    if (name.startsWith('code/')) code += usize; else gesamt += usize;
     if (gesamt > ENTPACKT_MAX) throw new Fachfehler(422, 'Das Archiv ist entpackt zu groß.');
+    // Grobe Obergrenze gegen ZIP-Bomben; die genaue Meldung zu code/ kommt aus liesCode.
+    if (code > 2 * CODE_MAX) throw new Fachfehler(422, `Die Dateien unter code/ sind zu groß (höchstens ${CODE_MAX / 1048576} MB je Paket).`);
     if (lokal + 30 > buf.length || buf.readUInt32LE(lokal) !== 0x04034b50) throw kaputt();
     const start = lokal + 30 + buf.readUInt16LE(lokal + 26) + buf.readUInt16LE(lokal + 28);
     const roh = buf.subarray(start, start + csize);
@@ -228,8 +231,8 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
   const einst = liesBeschreibung(m.code);
   fehler.push(...einst.fehler.map((f) => `manifest.yaml: code.${f}`));
   // Code (#338): Manifest-Angaben, gebautes Modul und Daten.
-  const cl = liesCode(m.code);
-  fehler.push(...cl.fehler.map((f) => `manifest.yaml: ${f}`));
+  const cl = liesCode(m.code, [...dateien].map(([name, inhalt]) => ({ name, groesse: inhalt.length })));
+  fehler.push(...cl.fehler.map((f) => (f.startsWith('code/:') ? f.slice('code/: '.length) : `manifest.yaml: ${f}`)));
   let code: PaketCodeTeil | null = null;
   if (cl.code) {
     const modul = dateien.get('code/modul.wasm');
@@ -351,8 +354,8 @@ export interface PaketOptionen {
 export interface PaketLaeufer {
   aktion(paket: string, aktion: string, einstellungen: Record<string, unknown>): Promise<string>;
   ereignis?(paket: string, name: 'paket.einstellungen_geaendert', felder: string[]): void;
-  /** Code eines Pakets installiert, aktualisiert oder entfernt (#338): Läufer lädt neu. */
-  codeGeaendert?(): void;
+  /** Code eines Pakets installiert, aktualisiert oder entfernt (#338): Läufer lädt neu (fertig, wenn er die Pakete kennt). */
+  codeGeaendert?(): void | Promise<void>;
 }
 /** Zeitgrenze für Aktionen, damit ein Knopf nicht hängt. */
 export const AKTION_MS = 30_000;
@@ -718,6 +721,9 @@ export class Paketverwaltung {
     };
     const alteEinstellungen = await this.d.paketEinstellungen(m.id);
     let einstellungenGeschrieben = false;
+    // Code (#403): Der alte Code kommt bei einem Fehler zurück – sonst liefe das alte Paket mit dem neuen Modul.
+    const alterCode = alt?.laeufer ? await this.d.paketCode(m.id) : [];
+    let codeGeschrieben = false;
     const typMap: Record<string, string> = { ...(alt?.typen ?? {}) };
     const sichtMap: Record<string, string> = { ...(alt?.sichten ?? {}) };
     try {
@@ -820,13 +826,15 @@ export class Paketverwaltung {
         ...(v ? { links: { readme: v.readme, changelog: v.changelog, quelle: v.quelle } } : alt?.links ? { links: alt.links } : {}),
       };
       // Code (#338): ersetzt den bisherigen; ohne Code im neuen Paket fällt er weg.
+      if (paket.code || alt?.laeufer) codeGeschrieben = true;
       if (paket.code) await this.d.speicherePaketCode(m.id, paket.code.dateien);
       else if (alt?.laeufer) await this.d.loeschePaketCode(m.id);
       await this.d.speicherePaket(datensatz);
-      if (paket.code || alt?.laeufer) this.o.laeufer?.codeGeaendert?.();
+      if (paket.code || alt?.laeufer) await Promise.resolve(this.o.laeufer?.codeGeaendert?.()).catch(() => {});
       return datensatz;
     } catch (f) {
       await zurueck();
+      if (codeGeschrieben) await (alterCode.length ? this.d.speicherePaketCode(m.id, alterCode) : this.d.loeschePaketCode(m.id)).catch((e) => log.error('Paket: alten Code nicht wiederhergestellt', { paket: m.id, fehler: (e as Error).message }));
       if (einstellungenGeschrieben) await this.d.setzePaketEinstellungen(m.id, alteEinstellungen).catch(() => {});
       throw f;
     }
@@ -1018,7 +1026,7 @@ export class Paketverwaltung {
       }
     }
     await this.d.loeschePaket(id);
-    if (p.laeufer) { await this.d.loeschePaketCode(id); await this.d.loescheEreignisse(id); await this.d.setzePaketSpeicher(id, null).catch(() => {}); this.o.laeufer?.codeGeaendert?.(); }
+    if (p.laeufer) { await this.d.loeschePaketCode(id); await this.d.loescheEreignisse(id); await this.d.setzePaketSpeicher(id, null).catch(() => {}); await this.o.laeufer?.codeGeaendert?.(); }
     // Einstellungen (#197): nur auf ausdrücklichen Wunsch für eine spätere Neuinstallation behalten.
     if (!behalten) await this.d.setzePaketEinstellungen(id, null);
     log.info('Paket entfernt', { von: von.email, paket: id, version: p.version, einstellungenBehalten: behalten });

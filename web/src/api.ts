@@ -6,7 +6,7 @@ import type { Archiv } from '../../shared/src/archiv';
 import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, DokumentVersion, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
 import type { Feldbedingung, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
-import type { InstalliertesPaket, Katalog } from '../../shared/src/pakete';
+import type { InstalliertesPaket, Katalog, LaeuferZustand } from '../../shared/src/pakete';
 import type { Einstellungsbeschreibung } from '../../shared/src/paketeinstellungen';
 import type { ErstellenStand, PaketErstellenEingabe, PaketPruefung } from '../../shared/src/paketerstellung';
 import type { EigeneAnsicht, WerkbankAnsicht } from '../../shared/src/werkbankansicht';
@@ -615,6 +615,8 @@ export interface PaketVorschau {
 /** Paket-Läufer (#338): Stand je Paket mit Code. */
 export interface PaketlaeuferStand {
   laeuft: boolean; pausiert: boolean; grenzen: { speicherMB: number; sekunden: number; parallel: number };
+  /** Was der Läufer gerade tut (#403); absturz: Zeit des letzten Absturzes. */
+  zustand: LaeuferZustand; absturz: string | null;
   pakete: Array<{ id: string; name: string; version: string; dienstkonto: string | null; geladen: boolean; fehler: string | null; aufrufe: number; fehlgeschlagen: number; letzterAufruf: string | null; dauerMs: number | null; speicherMB: number | null; ereignisse: { offen: number; aufgegeben: number; zugestellt: number }; letzte: Array<{ zeit: string; art: string; ok: boolean; text: string }>; protokoll: Array<{ zeit: string; stufe: number; text: string }> }>;
 }
 export type RechtStufe = 'immer' | 'nie' | 'teils';

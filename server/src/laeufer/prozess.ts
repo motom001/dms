@@ -17,7 +17,8 @@ export interface Grenzen { speicherMB: number; sekunden: number; parallel: numbe
 export interface PaketImLaeufer { id: string; version: string; modul: Uint8Array; daten: Array<{ name: string; inhalt: Uint8Array }>; netz: string[] }
 /** Nachrichten DMS → Läufer. */
 export type AnLaeufer =
-  | { art: 'pakete'; pakete: PaketImLaeufer[]; grenzen: Grenzen }
+  /** pakete: neue bzw. geänderte Pakete (werden neu geladen); behalten: unveränderte, schon geladene (#403). Alle anderen fallen weg. */
+  | { art: 'pakete'; pakete: PaketImLaeufer[]; behalten?: string[]; grenzen: Grenzen }
   | { art: 'aufruf'; nr: number; paket: string; eingang: { art: 'ereignis' | 'aktion'; json: string } }
   | { art: 'antwort'; nr: number; antwort: Hostantwort };
 /** Nachrichten Läufer → DMS. */
@@ -44,8 +45,10 @@ const sende = (m: VomLaeufer) => process.send?.(m);
 const bytes = (t: string) => new TextEncoder().encode(t);
 const fehlerAntwort = (status: number, t: string): Hostantwort => ({ status, body: bytes(t) });
 
-function lade(liste: PaketImLaeufer[]) {
+function lade(liste: PaketImLaeufer[], behalten: string[] = []) {
   const neu = new Map<string, Geladen>();
+  // Unveränderte Pakete behalten ihr übersetztes Modul – nur das geänderte wird neu geladen (#403).
+  for (const id of behalten) { const g = pakete.get(id); if (g) neu.set(id, g); }
   for (const p of liste) {
     let modul: WebAssembly.Module | null = null, pruefung: Modulpruefung | null = null, fehler: string | null = null;
     try { modul = new WebAssembly.Module(p.modul); pruefung = pruefeModul(modul, p.modul); } catch (e) { fehler = (e as Error).message; }
@@ -130,7 +133,7 @@ async function fuehreAus(a: Extract<AnLaeufer, { art: 'aufruf' }>) {
 }
 
 process.on('message', (m: AnLaeufer) => {
-  if (m.art === 'pakete') { grenzen = m.grenzen; lade(m.pakete); return; }
+  if (m.art === 'pakete') { grenzen = m.grenzen; lade(m.pakete, m.behalten); return; }
   if (m.art === 'aufruf') { warteschlange.push(m); weiter(); return; }
   if (m.art === 'antwort') { const f = offen.get(m.nr); offen.delete(m.nr); f?.(m.antwort); }
 });

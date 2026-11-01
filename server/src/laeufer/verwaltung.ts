@@ -7,7 +7,7 @@ import { fork, type ChildProcess } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import type { Benutzer } from '../../../shared/src/model';
-import type { InstalliertesPaket } from '../../../shared/src/pakete';
+import type { InstalliertesPaket, LaeuferZustand } from '../../../shared/src/pakete';
 import type { ApiSchluesselDienst } from '../apischluessel';
 import type { Dienst } from '../dienst';
 import type { PaketEreignis } from '../repo';
@@ -79,6 +79,10 @@ export class Paketlaeufer implements PaketLaeufer {
   private schluesselRecht = new Map<string, string>();
   private neustarts = 0;
   private aus = false;
+  /** Zeitpunkt des letzten Absturzes (für die Werkbank, #403). */
+  private absturz: string | null = null;
+  /** Was der laufende Läufer-Prozess schon hat: Paket → Stand (Version, Modul, Zeitpunkt). Nur Geändertes wird neu geschickt (#403). */
+  private gesendet = new Map<string, string>();
   readonly grenzen: Grenzen;
 
   constructor(private o: LaeuferOptionen) {
@@ -112,7 +116,7 @@ export class Paketlaeufer implements PaketLaeufer {
 
   /* ---------- PaketLaeufer (für die Paketverwaltung) ---------- */
 
-  codeGeaendert() { void this.synchronisiere().catch((e) => log.error('Paket-Läufer: Pakete nicht neu geladen', { fehler: (e as Error).message })); }
+  codeGeaendert(): Promise<void> { return this.synchronisiere().catch((e) => log.error('Paket-Läufer: Pakete nicht neu geladen', { fehler: (e as Error).message })); }
 
 
   ereignis(paket: string, name: 'paket.einstellungen_geaendert', felder: string[]) { void this.o.dienst.melde(name, { felder }, paket); }
@@ -156,15 +160,22 @@ export class Paketlaeufer implements PaketLaeufer {
     else if (this.bereit) await this.sendePakete();
   }
 
+  /** Schickt dem Läufer die Pakete – Code aus der Datenbank nur für neue und geänderte; unveränderte behält er (#403). */
   private async sendePakete() {
     const liste: Extract<AnLaeufer, { art: 'pakete' }>['pakete'] = [];
+    const behalten: string[] = [];
+    const gesendet = new Map<string, string>();
     for (const p of this.pakete) {
+      const stand = JSON.stringify([p.version, p.laeufer!.modul, p.laeufer!.daten ?? [], p.laeufer!.netz, p.aktualisiert ?? p.installiert]);
+      if (this.gesendet.get(p.id) === stand) { behalten.push(p.id); gesendet.set(p.id, stand); continue; }
       const code = await this.o.dienst.paketCode(p.id);
       const modul = code.find((d) => d.name === 'modul.wasm');
       if (!modul) { this.ladefehler.set(p.id, 'Der Code fehlt (nach einer Wiederherstellung bitte das Paket neu installieren).'); continue; }
       liste.push({ id: p.id, version: p.version, modul: new Uint8Array(modul.inhalt), daten: code.filter((d) => d.name.startsWith('daten/')).map((d) => ({ name: d.name.slice('daten/'.length), inhalt: new Uint8Array(d.inhalt) })), netz: p.laeufer!.netz });
+      gesendet.set(p.id, stand);
     }
-    this.sende({ art: 'pakete', pakete: liste, grenzen: this.grenzen });
+    this.gesendet = gesendet;
+    this.sende({ art: 'pakete', pakete: liste, behalten, grenzen: this.grenzen });
   }
 
   private starteKind() {
@@ -180,6 +191,7 @@ export class Paketlaeufer implements PaketLaeufer {
     const kind = fork(pfad, [], { serialization: 'advanced', execArgv: [...ladeArgumente(process.execArgv), ...rechte], stdio: ['ignore', 'pipe', 'pipe', 'ipc'], env: { NODE_ENV: process.env.NODE_ENV ?? 'production', PATH: process.env.PATH ?? '' } });
     this.kind = kind;
     this.bereit = false;
+    this.gesendet = new Map(); // neuer Prozess: alles laden
     let zuletzt = '';
     kind.stdout?.on('data', (d: Buffer) => log.info('Paket-Läufer', { ausgabe: d.toString('utf8').slice(0, 500) }));
     kind.stderr?.on('data', (d: Buffer) => { const t = d.toString('utf8'); zuletzt = (zuletzt + t).slice(-600); log.warn('Paket-Läufer', { ausgabe: t.slice(0, 500) }); });
@@ -187,6 +199,7 @@ export class Paketlaeufer implements PaketLaeufer {
     kind.on('exit', (code, sig) => {
       if (this.kind !== kind) return;
       this.kind = null; this.bereit = false;
+      if (!this.aus) this.absturz = new Date().toISOString();
       this.beendeAufrufe(abbruch(`Der Paket-Läufer ist abgestürzt (${sig ?? code})${zuletzt.trim() ? `: ${zuletzt.trim().split('\n').slice(-3).join(' ')}` : ''}.`));
       if (this.aus) return;
       log.error('Paket-Läufer beendet – Neustart', { code, signal: sig, neustarts: this.neustarts, ausgabe: zuletzt.slice(-300) });
@@ -317,10 +330,12 @@ export class Paketlaeufer implements PaketLaeufer {
   }
 
   /** Für die Werkbank: Stand je Paket mit Code. */
-  async uebersicht(): Promise<{ laeuft: boolean; pausiert: boolean; grenzen: Grenzen; pakete: PaketStand[] }> {
+  async uebersicht(): Promise<{ laeuft: boolean; pausiert: boolean; zustand: LaeuferZustand; absturz: string | null; grenzen: Grenzen; pakete: PaketStand[] }> {
     const ereignisse = await this.o.dienst.ereignisStand();
+    const laeuft = !!this.kind && this.bereit;
+    const zustand: LaeuferZustand = this.o.pausiert?.() ? 'pausiert' : laeuft ? 'bereit' : !this.pakete.length ? 'aus' : !this.kind && this.absturz ? 'neustart' : 'startet';
     return {
-      laeuft: !!this.kind && this.bereit, pausiert: !!this.o.pausiert?.(), grenzen: this.grenzen,
+      laeuft, pausiert: !!this.o.pausiert?.(), zustand, absturz: this.absturz, grenzen: this.grenzen,
       pakete: this.pakete.map((p) => {
         const s = this.standVon(p.id);
         return {
