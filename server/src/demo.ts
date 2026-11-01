@@ -116,6 +116,21 @@ function reihenfolge(typen: Mappentyp[]): Mappentyp[] {
   return fertig;
 }
 
+/**
+ * Nachgeben (#367): Die Demo-Daten entstehen im selben Prozess, der auch die Oberfläche bedient.
+ * Nach jedem Schritt kommt die Ereignisschleife an die Reihe (wartende Anfragen werden bedient), und
+ * nach längerer Arbeit folgt eine kurze Pause (`anteil` der Arbeitszeit, höchstens `maxMs`) – so
+ * bleibt die Bedienung daneben flüssig; die Erzeugung dauert dafür etwas länger.
+ */
+export function takt(anteil = 0.25, maxMs = 250) {
+  let seit = performance.now();
+  return async () => {
+    const pause = Math.min(maxMs, (performance.now() - seit) * anteil);
+    await new Promise<void>((r) => (pause >= 5 ? setTimeout(r, pause) : setImmediate(r)));
+    seit = performance.now();
+  };
+}
+
 export interface Fortschritt { (fertig: number, gesamt: number, phase?: 'mappen' | 'dokumente'): void }
 
 /** Phasen des Auftrags (#364): erst Mappen, dann wahlweise Dokumente – jeweils mit eigener Zahl. */
@@ -237,7 +252,9 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
   let fertig = 0;
   fortschritt(0, mappenZiel, 'mappen');
   let paket: NeueMappe[] = [];
-  const schreibe = async () => { await dienst.legeMappenAn(paket); fertig += paket.length; paket = []; fortschritt(fertig, mappenZiel, 'mappen'); };
+  const weiter = takt();
+  // Kleinere Transaktionen (#367): 250 Mappen je Paket, danach nachgeben.
+  const schreibe = async () => { await dienst.legeMappenAn(paket); fertig += paket.length; paket = []; fortschritt(fertig, mappenZiel, 'mappen'); await weiter(); };
   const jetzt = new Date().toISOString();
 
   for (const t of typen) {
@@ -273,13 +290,15 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
       (pools.get(t.id) ?? pools.set(t.id, []).get(t.id)!).push(id);
       typVon.set(id, t.id); titel.set(id, tt);
       for (const [k, set] of vergeben) if (werte[k] != null) set.add(String(werte[k]).trim().toLowerCase());
-      if (paket.length >= 500) await schreibe();
+      if (paket.length >= 250) await schreibe();
     }
     erzeugt[t.name] = ok;
     if (ok < ziel.get(t.id)!) uebersprungen.push({ typ: t.name, grund: letzterFehler || 'unbekannt' });
   }
   await schreibe();
   const mappen = fertig;
+  // Statistik nach dem Massen-Einfügen (#367), sonst plant PostgreSQL mit veralteten Zahlen.
+  if (mappen) await dienst.aktualisiereStatistik();
   const ergebnis: DemoErgebnis = { erzeugt, uebersprungen, gesamt: mappen, startwert: z.startwert, dauerMs: 0, dokumente: null };
 
   if (o.dokumente) {
@@ -298,41 +317,49 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
     let ocr: string[] = [];
     let seitPruefung = 0;
     const docBeginn = Date.now();
-    aussen: for (const { m, anzahl } of plan) {
-      const register = dokumentRegister(m.t);
-      const inhalt = inhaltVon(m.t, m.werte, m.titel, (x) => titel.get(x) || 'Ohne Titel');
-      for (let i = 0; i < anzahl; i++) {
-        let datei: { name: string; mime: string; inhalt: Buffer };
-        if (vorrat.length && z.chance(d.duplikate / 100)) {
-          datei = z.eins(vorrat);
-          statistik.duplikate++;
-        } else {
-          const art = DOKUMENTARTEN[z.gewichtet(gewichte)];
-          const kennung = `${z.int(2 ** 31).toString(16).padStart(8, '0')}${z.int(2 ** 31).toString(16).padStart(8, '0')}`;
-          const e = await erzeugeDokument(z, art, inhalt, kennung, rastern);
-          datei = e;
-          jeArt[e.art]++;
-          statistik.seiten += e.seiten;
-          if (e.inhalt.length < 5 * 1024 * 1024) { vorrat.push(datei); if (vorrat.length > 50) vorrat.shift(); }
-          statistik.bytes += e.inhalt.length;
-          seitPruefung += e.inhalt.length;
-        }
-        const reg = z.eins(register);
-        const r = await dienst.legeDemoDokumentAn(m.id, m.t, reg.key, datei.name, datei.mime, datei.inhalt, benutzerId);
-        if (r.volltext) { ocr.push(r.id); statistik.texterkennung++; }
-        if (ocr.length >= 200) { await dienst.demoTexterkennung(ocr); ocr = []; }
-        statistik.anzahl++;
-        erzeugtDok++;
-        if (statistik.anzahl % 10 === 0) fortschritt(erzeugtDok, gesamt, 'dokumente');
-        // Alle 200 MB: Reicht der Platz noch? Sonst sauber aufhören (Sicherung braucht ihn).
-        if (platz && seitPruefung > 200 * 1024 * 1024) {
-          seitPruefung = 0;
-          const [frei, mindest] = await Promise.all([platz.frei().catch(() => null), platz.mindest().catch(() => 0)]);
-          if (frei !== null && frei < mindest) { ergebnis.abgebrochen = `Zu wenig Speicherplatz: nur noch ${gb(frei)} frei, mindestens ${gb(mindest)} müssen frei bleiben.`; break aussen; }
+    let seitStatistik = 0;
+    try {
+      aussen: for (const { m, anzahl } of plan) {
+        const register = dokumentRegister(m.t);
+        const inhalt = inhaltVon(m.t, m.werte, m.titel, (x) => titel.get(x) || 'Ohne Titel');
+        for (let i = 0; i < anzahl; i++) {
+          let datei: { name: string; mime: string; inhalt: Buffer };
+          if (vorrat.length && z.chance(d.duplikate / 100)) {
+            datei = z.eins(vorrat);
+            statistik.duplikate++;
+          } else {
+            const art = DOKUMENTARTEN[z.gewichtet(gewichte)];
+            const kennung = `${z.int(2 ** 31).toString(16).padStart(8, '0')}${z.int(2 ** 31).toString(16).padStart(8, '0')}`;
+            const e = await erzeugeDokument(z, art, inhalt, kennung, rastern);
+            datei = e;
+            jeArt[e.art]++;
+            statistik.seiten += e.seiten;
+            if (e.inhalt.length < 5 * 1024 * 1024) { vorrat.push(datei); if (vorrat.length > 50) vorrat.shift(); }
+            statistik.bytes += e.inhalt.length;
+            seitPruefung += e.inhalt.length;
+          }
+          const reg = z.eins(register);
+          const r = await dienst.legeDemoDokumentAn(m.id, m.t, reg.key, datei.name, datei.mime, datei.inhalt, benutzerId);
+          if (r.volltext) { ocr.push(r.id); statistik.texterkennung++; }
+          if (ocr.length >= 200) { await dienst.demoTexterkennung(ocr); ocr = []; }
+          statistik.anzahl++;
+          erzeugtDok++;
+          await weiter();
+          // Zwischendurch die Statistik auffrischen (#367): Bei vielen Dokumenten wächst die Tabelle stark.
+          if (++seitStatistik >= 5000) { seitStatistik = 0; await dienst.aktualisiereStatistik(); }
+          if (statistik.anzahl % 10 === 0) fortschritt(erzeugtDok, gesamt, 'dokumente');
+          // Alle 200 MB: Reicht der Platz noch? Sonst sauber aufhören (Sicherung braucht ihn).
+          if (platz && seitPruefung > 200 * 1024 * 1024) {
+            seitPruefung = 0;
+            const [frei, mindest] = await Promise.all([platz.frei().catch(() => null), platz.mindest().catch(() => 0)]);
+            if (frei !== null && frei < mindest) { ergebnis.abgebrochen = `Zu wenig Speicherplatz: nur noch ${gb(frei)} frei, mindestens ${gb(mindest)} müssen frei bleiben.`; break aussen; }
+          }
         }
       }
+      await dienst.demoTexterkennung(ocr);
+    } finally {
+      if (erzeugtDok) await dienst.aktualisiereStatistik();
     }
-    await dienst.demoTexterkennung(ocr);
     statistik.dauerMs = Date.now() - docBeginn;
     ergebnis.dokumente = statistik;
     if (!rastern) ergebnis.ohneRastern = true;

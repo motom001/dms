@@ -930,8 +930,9 @@ export class Dienst {
     const bezuege = await this.maskiereBezuege(z, await this.repo.bezuege([...new Set(verweise)]));
     const quelle = { typen: z.typen, titel: (id: string | null | undefined) => (id ? bezuege[id]?.titel || NICHT_SICHTBAR : '') };
     const je: Array<{ m: Mappe; dokumente: Dokument[]; pdf: Buffer | null }> = [];
+    const dokJe = await this.dokumenteJeMappe(mappen.map((m) => m.id));
     for (const m of mappen) {
-      const docs = (await this.repo.listeDokumente(m.id)).filter((d) => !gewaehlt || gewaehlt.has(d.id));
+      const docs = (dokJe.get(m.id) ?? []).filter((d) => !gewaehlt || gewaehlt.has(d.id));
       const pdf = angaben ? await mappenPdf(m.titel || 'Ohne Titel', [{ mappe: m, typ: z.typen.get(m.typId), dokumente: [], inhalt: lies }], quelle, null) : null;
       je.push({ m, dokumente: docs, pdf });
     }
@@ -1425,6 +1426,15 @@ export class Dienst {
     if (!typ) return { ...NICHTS };
     if (z.admin) return wirksamVon(ALLES, typ);
     return rechteAnMappe(typ, m, z.wer, z.a, await this.mappenquelle(z.wer.id, neu ? [] : [m.id]), neu).wirksam;
+  }
+
+  /** Wie `rechteAn` für viele Mappen mit einem Zugriff (#367). */
+  async rechteAnVielen(z: Zugriff, ms: Mappe[]): Promise<Map<string, Rechte>> {
+    const r = new Map<string, Rechte>();
+    if (z.admin) { for (const m of ms) { const typ = z.typen.get(m.typId); r.set(m.id, typ ? wirksamVon(ALLES, typ) : { ...NICHTS }); } return r; }
+    const quelle = await this.mappenquelle(z.wer.id, ms.map((m) => m.id));
+    for (const m of ms) { const typ = z.typen.get(m.typId); r.set(m.id, typ ? rechteAnMappe(typ, m, z.wer, z.a, quelle, false).wirksam : { ...NICHTS }); }
+    return r;
   }
 
   /** Für die Auswertung im Arbeitsspeicher: nur Aufgaben werden nachgeschlagen. */
@@ -2303,6 +2313,12 @@ export class Dienst {
 
   /** Viele neue Mappen auf einmal (Demo-Daten); Werte sind bereits geprüft. */
   legeMappenAn(liste: NeueMappe[]) { return this.repo.legeMappenAn(liste); }
+  /** Nach Massenläufen (#367): Statistik der Datenbank auffrischen; ein Fehler dabei ist nur ein Hinweis. */
+  async aktualisiereStatistik() {
+    const t = Date.now();
+    try { await this.repo.aktualisiereStatistik(); protokoll.modul('datenbank').info('Statistik aufgefrischt (ANALYZE)', { ms: Date.now() - t }); }
+    catch (e) { protokoll.modul('datenbank').warn('Statistik ließ sich nicht auffrischen (ANALYZE)', { fehler: (e as Error).message }); }
+  }
 
   /**
    * Ob und warum nicht eine Mappe gelöscht werden kann (#79). Dieselbe Prüfung nutzt das Löschen,
@@ -2373,9 +2389,11 @@ export class Dienst {
     };
     if (format === 'csv') { const t = tabelle(); const b = csvAus(t.kopf, t.text); return { name: `${datei}.csv`, mime: 'text/csv; charset=utf-8', inhalt: b, groesse: b.length, mappen: mappen.length, ausgelassen }; }
     if (format === 'xlsx') { const t = tabelle(); const b = xlsxAus(titel, t.kopf, t.werte); return { name: `${datei}.xlsx`, mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', inhalt: b, groesse: b.length, mappen: mappen.length, ausgelassen }; }
+    // Dokumente aller Mappen in einem Zugriff (#367).
+    const dokJe = (format === 'pdf' || format === 'zip') ? await this.dokumenteJeMappe(mappen.map((m) => m.id)) : new Map<string, Dokument[]>();
     if (format === 'pdf') {
       const b = await mappenPdf(titel, await Promise.all(mappen.map(async (m) => ({
-        mappe: m, typ: z.typen.get(m.typId), dokumente: await this.repo.listeDokumente(m.id),
+        mappe: m, typ: z.typen.get(m.typId), dokumente: dokJe.get(m.id) ?? [],
         inhalt: async (d: Dokument) => { const s = await this.dateien.lies(d.sha256); return Buffer.isBuffer(s) ? s : Buffer.concat(await s.toArray() as Buffer[]); },
       }))), quelle, x.uebersicht === true ? { spalten, typen } : null);
       return { name: `${datei}.pdf`, mime: 'application/pdf', inhalt: b, groesse: b.length, mappen: mappen.length, ausgelassen };
@@ -2387,13 +2405,22 @@ export class Dienst {
     ].map((d) => ({ name: d.name, groesse: d.daten.length, inhalt: async () => d.daten }));
     const ordner = eindeutig(mappen.map((m) => sichererName(m.titel || 'Ohne Titel')));
     for (const [i, m] of mappen.entries()) {
-      const docs = await this.repo.listeDokumente(m.id);
+      const docs = dokJe.get(m.id) ?? [];
       const namen = eindeutig(docs.map((d) => sichererName(d.name, 120)));
       docs.forEach((d, j) => eintraege.push({ name: `${ordner[i]}/${namen[j]}`, groesse: d.groesse, inhalt: () => this.dateien.lies(d.sha256) }));
     }
     const groesse = zipGroesse(eintraege);
     if (groesse > ZIP_MAX) throw new Fachfehler(422, 'Der Export wäre größer als 4 GB. Bitte weniger Mappen auswählen.');
     return { name: `${datei}.zip`, mime: 'application/zip', inhalt: zipStrom(eintraege), groesse, mappen: mappen.length, ausgelassen };
+  }
+
+  /** Dokumente mehrerer Mappen mit einem Zugriff je 500 Mappen (#367), je Mappe neueste zuerst. */
+  private async dokumenteJeMappe(ids: string[]): Promise<Map<string, Dokument[]>> {
+    const r = new Map<string, Dokument[]>();
+    for (let i = 0; i < ids.length; i += 500) {
+      for (const d of await this.repo.dokumenteVon(ids.slice(i, i + 500))) { const l = r.get(d.mappeId); if (l) l.push(d); else r.set(d.mappeId, [d]); }
+    }
+    return r;
   }
 
   /**
@@ -3166,6 +3193,7 @@ export class Dienst {
       fortschritt(Math.min(entfernt, gesamt), gesamt);
       if (anzahl < paket) break;
     }
+    if (entfernt) await this.aktualisiereStatistik();
     return { entfernt };
   }
 
@@ -3567,6 +3595,7 @@ export class Dienst {
   /** Datenquelle für den Vollexport; Benutzer, Designs und Protokoll kommen von außen. */
   vollexportQuelle(x: { mandant: string; version: string; benutzer: ExportQuelle['benutzer']; designs: ExportQuelle['designs']; protokoll: ExportQuelle['protokoll'] }): ExportQuelle {
     const r = this.repo;
+    const bezugCache = new Map<string, MappenBezug | undefined>();
     return {
       ...x,
       typen: () => r.listeTypen(),
@@ -3576,19 +3605,23 @@ export class Dienst {
       mappen: (typId) => r.listeMappen(typId),
       papierkorb: () => r.papierkorb(),
       papierkorbDokumente: () => r.papierkorbDokumente(),
-      dokumente: (mappeId) => r.listeDokumente(mappeId),
-      versionen: (id) => r.versionenVon(id),
-      volltext: (id) => r.volltext(id),
+      // Gebündelt (#367): ein Zugriff je Paket, nicht je Mappe oder Dokument.
+      dokumente: (ids) => r.dokumenteVon(ids),
+      versionen: (ids) => r.versionenVonDokumenten(ids),
+      volltexte: (ids) => r.volltexte(ids),
       datei: (sha) => this.dateien.lies(sha),
-      notizen: (id) => r.notizen(id),
-      aufgaben: (id) => r.aufgabenVon(id),
+      notizen: (ids) => r.notizenVon(ids),
+      aufgaben: (ids) => r.aufgabenVonMappen(ids),
       erinnerungen: () => r.erinnerungen(),
-      historie: (id) => r.historie(id),
+      historie: (ids) => r.historieVon(ids),
       favoriten: () => r.alleFavoriten(),
       passwort: (w) => (istVerschluesselt(w) ? this.tresor?.entschluessele(w) ?? null : null),
       pdf: async (titel, mappen, typ, uebersicht) => {
         const ids = mappen.flatMap((m) => [...verweiseVon(typ, m.werte).map((v) => v.zielId), m.erstelltVon, m.geaendertVon].filter((v): v is string => !!v));
-        const b = await r.bezuege([...new Set(ids)]);
+        // Bezüge merken (#367): je Mappe ein PDF, die Ziele wiederholen sich (Benutzer, Partner).
+        const fehlt = [...new Set(ids)].filter((id) => !bezugCache.has(id));
+        if (fehlt.length) { const neu = await r.bezuege(fehlt); for (const id of fehlt) bezugCache.set(id, neu.get(id)); }
+        const b = new Map([...new Set(ids)].map((id) => [id, bezugCache.get(id)] as const));
         const quelle = { typen: new Map([[typ.id, typ]]), titel: (id: string | null | undefined) => (id ? b.get(id)?.titel ?? '' : '') };
         return mappenPdf(titel, mappen.map((m) => ({ mappe: m, typ, dokumente: [], inhalt: async () => Buffer.alloc(0) })), quelle, uebersicht ? { spalten: exportSpalten([typ], 'liste'), typen: [typ] } : null);
       },
@@ -3612,7 +3645,9 @@ export class Dienst {
       const ms = alle.filter((m) => ok.has(m.id));
       if (!ms.length) continue;
       mappenJeTyp.set(t.id, ms);
-      for (const m of ms) { lesbar.add(m.id); if (z.admin || (await this.rechteAn(z, m)).P) pwErlaubt.add(m.id); }
+      // Rechte gebündelt je Typ (#367) statt einer Abfrage je Mappe.
+      const p = await this.rechteAnVielen(z, ms);
+      for (const m of ms) { lesbar.add(m.id); if (z.admin || p.get(m.id)?.P) pwErlaubt.add(m.id); }
     }
     const typen = (await this.repo.listeTypen()).filter((t) => mappenJeTyp.has(t.id));
     const passwortVon = new Map<unknown, boolean>();
@@ -3625,7 +3660,7 @@ export class Dienst {
       pakete: async () => [],
       mappen: async (typId) => mappenJeTyp.get(typId) ?? [],
       papierkorb: async () => (await this.repo.papierkorb({ von: ich })),
-      aufgaben: async (id) => (await this.repo.aufgabenVon(id)).filter((a) => a.empfaengerId === ich || a.erstelltVon === ich),
+      aufgaben: async (ids) => (await this.repo.aufgabenVonMappen(ids)).filter((a) => a.empfaengerId === ich || a.erstelltVon === ich),
       erinnerungen: async () => (await this.repo.erinnerungen({ empfaengerId: ich })).filter((e) => lesbar.has(e.mappeId)),
       favoriten: async () => (await this.repo.alleFavoriten()).filter((f) => f.benutzerId === ich),
       passwort: (w) => (passwortVon.get(w) ? voll.passwort(w) : null),

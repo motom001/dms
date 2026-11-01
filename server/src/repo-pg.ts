@@ -81,6 +81,22 @@ const alsDokument = (r: Zeile): Dokument => ({
   herkunft: (r.herkunft as Herkunft | null) ?? null,
   ...(r.aeltere !== undefined ? { aeltere: Number(r.aeltere) } : {}),
 });
+/**
+ * Spalten eines Dokuments ohne `volltext` (#367): Der Volltext kann je Dokument viele KB bis MB groß
+ * sein und wird nur über `volltext()`/`volltexte()` gelesen, nie in Listen.
+ */
+export const DOKUMENT_SPALTEN = ['id', 'haushalt_id', 'mappe_id', 'register_key', 'name', 'mime', 'groesse', 'sha256', 'anzeigbar', 'erstellt', 'erstellt_von',
+  'ocr_stand', 'ocr_info', 'ocr_seiten', 'ocr_zeit', 'version', 'herkunft', 'archivnummer'] as const;
+/**
+ * ANALYZE (#367) für Tabellen mit Volltext nur über diese Spalten: Ohne Spaltenliste rechnet PostgreSQL
+ * auch die Statistik des Index `to_tsvector('german', volltext)` – über eine Minute bei 20.000 Dokumenten.
+ */
+export const STATISTIK_SPALTEN: Record<string, string> = {
+  dokumente: 'id, haushalt_id, mappe_id, register_key, sha256, erstellt, erstellt_von, ocr_stand, archivnummer',
+  dokument_versionen: 'dokument_id, haushalt_id, sha256',
+};
+/** Spalten einer älteren Version ohne `volltext`. */
+const VERSION_SPALTEN = 'dokument_id, haushalt_id, nummer, name, mime, groesse, sha256, anzeigbar, erstellt, erstellt_von, herkunft';
 /** Ausschnitte aus dem Volltext: höchstens zwei Stellen, Treffer markiert (#45). */
 const AUSSCHNITT = `StartSel=${TREFFER_ANFANG}, StopSel=${TREFFER_ENDE}, MaxFragments=2, MaxWords=18, MinWords=6, FragmentDelimiter=" … "`;
 const alsAufgabe = (r: Zeile): Aufgabe => ({
@@ -90,6 +106,10 @@ const alsAufgabe = (r: Zeile): Aufgabe => ({
   erstellt: iso(r.erstellt), erstelltVon: (r.erstellt_von as string | null) ?? null,
   erledigt: r.erledigt ? iso(r.erledigt) : null, erledigtVon: (r.erledigt_von as string | null) ?? null,
   ...(r.mappe_titel !== undefined ? { mappeTitel: (r.mappe_titel as string | null) ?? '', typId: r.typ_id as string } : {}),
+});
+const alsHistorie = (r: Zeile): Historieneintrag => ({
+  id: Number(r.id), mappeId: r.mappe_id as string, zeit: iso(r.zeit), benutzerId: (r.benutzer_id as string | null) ?? null,
+  art: r.art as Historienart, daten: (r.daten as Historieneintrag['daten']) ?? {},
 });
 /** date-Spalte → JJJJ-MM-TT (postgres.js liest „2027-09-30“ als Mitternacht UTC). */
 const tag = (v: unknown): string => {
@@ -291,6 +311,10 @@ export function lesefilterSql(sql: Sql, f: Lesefilter | null | undefined): Teil 
 
 /** PostgreSQL-Umsetzung für genau einen Haushalt. */
 export function pgRepo(sql: Sql, haushaltId: string): Repo {
+  // Dokumente immer mit ausdrücklichen Spalten, nie `d.*` (#367): sonst kommt der Volltext mit.
+  const DOK = sql.unsafe(DOKUMENT_SPALTEN.map((c) => `d.${c}`).join(', '));
+  const DOK_RUECK = sql.unsafe(DOKUMENT_SPALTEN.join(', '));
+  const VERS = sql.unsafe(VERSION_SPALTEN);
   /** Nummer ziehen (#171) – nur innerhalb einer Transaktion; die Zeile bleibt bis zu deren Ende gesperrt. */
   async function zieheIn(tx: postgres.TransactionSql, schluessel: string, mappeId: string | null, jetzt: Date): Promise<string> {
     const [r] = await tx`SELECT * FROM nummernkreise WHERE haushalt_id = ${haushaltId} AND schluessel = ${schluessel} FOR UPDATE`;
@@ -387,6 +411,11 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         return alsMappe(r);
       });
     },
+    async aktualisiereStatistik() {
+      // Ohne frische Statistik plant PostgreSQL nach zehntausenden neuen Zeilen mit alten Zahlen (#367).
+      // Dokumente nur über ausgewählte Spalten (STATISTIK_SPALTEN): 0,1 s statt über einer Minute.
+      await sql.unsafe(`ANALYZE mappen, verweise, aufgaben, notizen, historie, favoriten, ${Object.entries(STATISTIK_SPALTEN).map(([t, c]) => `${t} (${c})`).join(', ')}`);
+    },
     async legeMappenAn(liste) {
       if (!liste.length) return;
       await sql.begin(async (tx) => {
@@ -453,7 +482,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       return true;
     },
     async findeArchivnummer(nummer) {
-      const [r] = await sql`SELECT d.*, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
+      const [r] = await sql`SELECT ${DOK}, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
         FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND lower(d.archivnummer) = lower(${nummer})`;
       return r ? alsDokument(r) : undefined;
     },
@@ -732,12 +761,18 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
 
     async listeDokumente(mappeId) {
       if (!istUuid(mappeId)) return [];
-      return (await sql`SELECT d.*, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
+      return (await sql`SELECT ${DOK}, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
         FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.mappe_id = ${mappeId} ORDER BY d.erstellt DESC`).map(alsDokument);
+    },
+    async dokumenteVon(mappeIds) {
+      const gueltig = [...new Set(mappeIds.filter(istUuid))];
+      if (!gueltig.length) return [];
+      return (await sql`SELECT ${DOK}, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
+        FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.mappe_id = ANY(${gueltig}::uuid[]) ORDER BY d.mappe_id, d.erstellt DESC`).map(alsDokument);
     },
     async holeDokument(id) {
       if (!istUuid(id)) return undefined;
-      const [r] = await sql`SELECT d.*, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
+      const [r] = await sql`SELECT ${DOK}, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = d.id) AS aeltere
         FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.id = ${id}`;
       return r ? alsDokument(r) : undefined;
     },
@@ -745,13 +780,18 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const [r] = await sql`
         INSERT INTO dokumente (id, haushalt_id, mappe_id, register_key, name, mime, groesse, sha256, anzeigbar, erstellt_von, herkunft)
         VALUES (${d.id}, ${haushaltId}, ${d.mappeId}, ${d.registerKey}, ${d.name}, ${d.mime}, ${d.groesse}, ${d.sha256}, ${d.anzeigbar}, ${d.erstelltVon}, ${d.herkunft ?? null})
-        RETURNING *`;
+        RETURNING ${DOK_RUECK}`;
       return alsDokument(r);
     },
     /* ---------- Versionierung (#194) ---------- */
     async versionenVon(dokumentId) {
       if (!istUuid(dokumentId)) return [];
-      return (await sql`SELECT * FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId} ORDER BY nummer DESC`).map(alsVersion);
+      return (await sql`SELECT ${VERS} FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND dokument_id = ${dokumentId} ORDER BY nummer DESC`).map(alsVersion);
+    },
+    async versionenVonDokumenten(dokumentIds) {
+      const gueltig = [...new Set(dokumentIds.filter(istUuid))];
+      if (!gueltig.length) return [];
+      return (await sql`SELECT ${VERS} FROM dokument_versionen WHERE haushalt_id = ${haushaltId} AND dokument_id = ANY(${gueltig}::uuid[]) ORDER BY dokument_id, nummer DESC`).map(alsVersion);
     },
     async holeVersion(dokumentId, nummer) {
       if (!istUuid(dokumentId) || !Number.isInteger(nummer)) return undefined;
@@ -760,13 +800,14 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     },
     async ersetzeDokument(id, neu) {
       return sql.begin(async (tx) => {
-        const [alt] = await tx`SELECT * FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id} FOR UPDATE`;
+        const [alt] = await tx`SELECT version FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id} FOR UPDATE`;
         if (!alt) throw new Error('Dokument fehlt');
         const nummer = (alt.version as number | null) ?? 1;
+        // In der Datenbank kopieren: der Volltext muss nicht zum Server und zurück (#367).
         await tx`
           INSERT INTO dokument_versionen (dokument_id, haushalt_id, nummer, name, mime, groesse, sha256, anzeigbar, erstellt, erstellt_von, herkunft, volltext)
-          VALUES (${id}, ${haushaltId}, ${nummer}, ${alt.name as string}, ${alt.mime as string}, ${alt.groesse as number}, ${alt.sha256 as string}, ${alt.anzeigbar as boolean},
-            ${alt.erstellt as Date}, ${alt.erstellt_von as string | null}, ${alt.herkunft as string | null}, ${alt.volltext as string | null})`;
+          SELECT id, haushalt_id, ${nummer}, name, mime, groesse, sha256, anzeigbar, erstellt, erstellt_von, herkunft, volltext
+          FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
         const uebernehmen = neu.volltext !== undefined;
         const [r] = await tx`
           UPDATE dokumente SET name = ${neu.name}, mime = ${neu.mime}, groesse = ${neu.groesse}, sha256 = ${neu.sha256}, anzeigbar = ${neu.anzeigbar},
@@ -774,7 +815,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
             volltext = ${uebernehmen ? neu.volltext ?? null : null}, ocr_stand = ${uebernehmen && neu.volltext != null ? 'fertig' : 'keiner'},
             ocr_info = NULL, ocr_seiten = NULL, ocr_zeit = ${uebernehmen && neu.volltext != null ? sql`now()` : null}
           WHERE haushalt_id = ${haushaltId} AND id = ${id}
-          RETURNING *, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = ${id}) AS aeltere`;
+          RETURNING ${DOK_RUECK}, (SELECT count(*) FROM dokument_versionen v WHERE v.dokument_id = ${id}) AS aeltere`;
         return alsDokument(r);
       });
     },
@@ -939,7 +980,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async papierkorbDokumente(f = {}) {
       const ids = (f.mappeIds ?? []).filter(istUuid);
       return (await sql`
-        SELECT id, mappe_id, dokument, geloescht, geloescht_von, jsonb_array_length(versionen) AS anzahl_versionen
+        SELECT id, mappe_id, dokument - 'volltext' AS dokument, geloescht, geloescht_von, jsonb_array_length(versionen) AS anzahl_versionen
         FROM papierkorb_dokumente WHERE haushalt_id = ${haushaltId}
           ${f.von ? sql`AND geloescht_von = ${istUuid(f.von) ? f.von : null}::uuid` : sql``}
           ${f.vor ? sql`AND geloescht < ${f.vor}` : sql``}
@@ -949,7 +990,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async holeDokumentAusPapierkorb(id) {
       if (!istUuid(id)) return undefined;
       const [r] = await sql`
-        SELECT id, mappe_id, dokument, geloescht, geloescht_von, jsonb_array_length(versionen) AS anzahl_versionen
+        SELECT id, mappe_id, dokument - 'volltext' AS dokument, geloescht, geloescht_von, jsonb_array_length(versionen) AS anzahl_versionen
         FROM papierkorb_dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       return r ? alsDokPapierkorb(r) : undefined;
     },
@@ -999,7 +1040,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const [r] = await sql`
         UPDATE dokumente SET ocr_stand = 'laeuft', ocr_zeit = now()
         WHERE id = (SELECT id FROM dokumente WHERE haushalt_id = ${haushaltId} AND ocr_stand = 'wartet' ORDER BY erstellt, id LIMIT 1 FOR UPDATE SKIP LOCKED)
-        RETURNING *`;
+        RETURNING ${DOK_RUECK}`;
       return r ? alsDokument(r) : undefined;
     },
     async ocrSetze(id, e) {
@@ -1030,7 +1071,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       const bed = stand === 'keiner' ? sql`coalesce(d.ocr_stand, 'keiner') = 'keiner'` : sql`d.ocr_stand = ${stand}`;
       const [{ n }] = await sql`SELECT count(*)::int AS n FROM dokumente d JOIN mappen m ON m.id = d.mappe_id WHERE d.haushalt_id = ${haushaltId} AND ${bed}`;
       const r = await sql`
-        SELECT d.*, m.titel AS mappe_titel, m.typ_id AS mappe_typ FROM dokumente d JOIN mappen m ON m.id = d.mappe_id
+        SELECT ${DOK}, m.titel AS mappe_titel, m.typ_id AS mappe_typ FROM dokumente d JOIN mappen m ON m.id = d.mappe_id
         WHERE d.haushalt_id = ${haushaltId} AND ${bed}
         ORDER BY coalesce(d.ocr_zeit, d.erstellt) DESC, d.id LIMIT ${anzahl} OFFSET ${von}`;
       return { gesamt: n as number, eintraege: r.map((x) => ({ dokument: alsDokument(x), mappeTitel: (x.mappe_titel as string) ?? '', typId: x.mappe_typ as string })) };
@@ -1045,6 +1086,13 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       if (!istUuid(id)) return null;
       const [r] = await sql`SELECT volltext FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       return r ? ((r.volltext as string | null) ?? null) : null;
+    },
+    async volltexte(ids) {
+      const r = new Map<string, string>();
+      const gueltig = [...new Set(ids.filter(istUuid))];
+      if (!gueltig.length) return r;
+      for (const z of await sql`SELECT id, volltext FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) AND volltext IS NOT NULL`) r.set(z.id as string, z.volltext as string);
+      return r;
     },
 
     /* ---------- Aufgaben (#54) ---------- */
@@ -1083,6 +1131,11 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async aufgabenVon(mappeId) {
       if (!istUuid(mappeId)) return [];
       return (await sql`SELECT * FROM aufgaben WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY erledigt IS NOT NULL, erstellt DESC, id`).map(alsAufgabe);
+    },
+    async aufgabenVonMappen(mappeIds) {
+      const gueltig = [...new Set(mappeIds.filter(istUuid))];
+      if (!gueltig.length) return [];
+      return (await sql`SELECT * FROM aufgaben WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${gueltig}::uuid[]) ORDER BY mappe_id, erledigt IS NOT NULL, erstellt DESC, id`).map(alsAufgabe);
     },
     async offeneAufgaben(f = {}) {
       const wer = f.benutzerId
@@ -1177,6 +1230,11 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       if (!istUuid(mappeId)) return [];
       return (await sql`SELECT * FROM notizen WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY erstellt, id`).map(alsNotiz);
     },
+    async notizenVon(mappeIds) {
+      const gueltig = [...new Set(mappeIds.filter(istUuid))];
+      if (!gueltig.length) return [];
+      return (await sql`SELECT * FROM notizen WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${gueltig}::uuid[]) ORDER BY mappe_id, erstellt, id`).map(alsNotiz);
+    },
     async holeNotiz(id) {
       if (!istUuid(id)) return undefined;
       const [r] = await sql`SELECT * FROM notizen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
@@ -1205,10 +1263,12 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     },
     async historie(mappeId) {
       if (!istUuid(mappeId)) return [];
-      return (await sql`SELECT * FROM historie WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY zeit DESC, id DESC`).map((r: Zeile) => ({
-        id: Number(r.id), mappeId: r.mappe_id as string, zeit: iso(r.zeit), benutzerId: (r.benutzer_id as string | null) ?? null,
-        art: r.art as Historienart, daten: (r.daten as Historieneintrag['daten']) ?? {},
-      }));
+      return (await sql`SELECT * FROM historie WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY zeit DESC, id DESC`).map(alsHistorie);
+    },
+    async historieVon(mappeIds) {
+      const gueltig = [...new Set(mappeIds.filter(istUuid))];
+      if (!gueltig.length) return [];
+      return (await sql`SELECT * FROM historie WHERE haushalt_id = ${haushaltId} AND mappe_id = ANY(${gueltig}::uuid[]) ORDER BY mappe_id, zeit DESC, id DESC`).map(alsHistorie);
     },
     async historieAufraeumen(vor) {
       const r = await sql`
@@ -1220,7 +1280,7 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     },
 
     async dokumenteMitSha(sha256) {
-      return (await sql`SELECT * FROM dokumente WHERE haushalt_id = ${haushaltId} AND sha256 = ${sha256}`).map(alsDokument);
+      return (await sql`SELECT ${DOK} FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.sha256 = ${sha256}`).map(alsDokument);
     },
     async zaehleDemo() {
       const r = await sql`SELECT typ_id, count(*)::int AS n FROM mappen WHERE haushalt_id = ${haushaltId} AND demo GROUP BY typ_id`;

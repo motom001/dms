@@ -54,6 +54,8 @@ Vor dem Start steht eine **Abschätzung** auf der Seite und ändert sich beim Sc
 
 Das Ergebnis jedes Laufs nennt Dauer, Anzahl, Größe, Seiten und Startwert (auch im [Protokoll](fehlersuche.md#protokoll)), damit Läufe vergleichbar sind. Wie sich das DMS dabei verhält, zeigen die vorhandenen Werkzeuge: **Werkbank → Datenbank** (lange Zugriffe), **Texterkennung** (Warteschlange), **Speicherplatz** und die Zeiten im Browser unter *Server-Timing*.
 
+Damit du nebenher normal weiterarbeiten kannst, legt der Lauf nach jedem Dokument und jedem Paket Mappen eine kurze Pause ein und frischt danach die Statistik der Datenbank auf (`ANALYZE`). Er dauert dadurch etwas länger. Die Texterkennung läuft trotzdem parallel und braucht auf einem NAS viel Rechenzeit – einzelne lange Zugriffe in **Werkbank → Datenbank** sind in dieser Zeit möglich.
+
 ## Entfernen
 
 **Alle Demo-Mappen entfernen** löscht alle Demo-Mappen samt ihrer Dokumente – in Paketen zu je 1.000 mit Fortschritt, auch bei vielen Dateien. Echte Mappen bleiben unberührt. Verweist eine echte Mappe auf eine Demo-Mappe, wird nichts gelöscht – entferne dann zuerst diesen Verweis.

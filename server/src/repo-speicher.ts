@@ -142,6 +142,7 @@ export function speicherRepo(): Repo {
       mappen.set(id, m); verweise.set(id, kopie(vs));
       return kopie(m);
     },
+    async aktualisiereStatistik() { /* nur PostgreSQL */ },
     async legeMappenAn(liste) {
       const t = jetzt();
       for (const m of liste) {
@@ -317,10 +318,15 @@ export function speicherRepo(): Repo {
     },
 
     async listeDokumente(mappeId) { return [...dokumente.values()].filter((d) => d.mappeId === mappeId).map((d) => ({ ...kopie(d), aeltere: versionen.get(d.id)?.length ?? 0 })).reverse(); },
+    async dokumenteVon(mappeIds) {
+      const ids = new Set(mappeIds);
+      return [...dokumente.values()].filter((d) => ids.has(d.mappeId)).map((d) => ({ ...kopie(d), aeltere: versionen.get(d.id)?.length ?? 0 })).reverse();
+    },
     async holeDokument(id) { const d = dokumente.get(id); return d && { ...kopie(d), aeltere: versionen.get(d.id)?.length ?? 0 }; },
     async legeDokumentAn(d) { const n = { version: 1, herkunft: null, ...kopie(d), archivnummer: null, ocr: d.ocr ?? { stand: 'keiner' as const } }; dokumente.set(d.id, n); return kopie(n); },
     async loescheDokument(id) { dokumente.delete(id); versionen.delete(id); },
     async versionenVon(id) { return [...(versionen.get(id) ?? [])].reverse().map(({ volltext: _v, ...x }) => kopie(x)); },
+    async versionenVonDokumenten(ids) { return [...new Set(ids)].flatMap((id) => [...(versionen.get(id) ?? [])].reverse().map(({ volltext: _v, ...x }) => kopie(x))); },
     async holeVersion(id, nummer) { const v = versionen.get(id)?.find((x) => x.nummer === nummer); return v && kopie(v); },
     async ersetzeDokument(id, neu) {
       const alt = dokumente.get(id);
@@ -386,6 +392,11 @@ export function speicherRepo(): Repo {
         .map((d) => ({ id: d.id, typId: mappen.get(d.mappeId)!.typId, registerKey: d.registerKey }));
     },
     async volltext(id) { return texte.get(id) ?? null; },
+    async volltexte(ids) {
+      const r = new Map<string, string>();
+      for (const id of ids) { const t = texte.get(id); if (t != null) r.set(id, t); }
+      return r;
+    },
     async aufgabenZurPassung(liste) {
       for (const { id, problem } of liste) {
         const offen = [...aufgaben.values()].find((a) => a.mappeId === id && a.art === 'passung' && !a.erledigt);
@@ -404,6 +415,11 @@ export function speicherRepo(): Repo {
     async aufgabenVon(mappeId) {
       return [...aufgaben.values()].filter((a) => a.mappeId === mappeId)
         .sort((a, b) => Number(!!a.erledigt) - Number(!!b.erledigt) || b.erstellt.localeCompare(a.erstellt)).map(kopie);
+    },
+    async aufgabenVonMappen(mappeIds) {
+      const ids = new Set(mappeIds);
+      return [...aufgaben.values()].filter((a) => ids.has(a.mappeId))
+        .sort((a, b) => a.mappeId.localeCompare(b.mappeId) || Number(!!a.erledigt) - Number(!!b.erledigt) || b.erstellt.localeCompare(a.erstellt)).map(kopie);
     },
     async offeneAufgaben(f = {}) {
       return [...aufgaben.values()].filter((a) => !a.erledigt && mappen.has(a.mappeId)
@@ -438,6 +454,10 @@ export function speicherRepo(): Repo {
     async aendereErinnerung(id, e) { const x = erinnerungen.get(id); if (!x) return undefined; Object.assign(x, e); return kopie(x); },
     async loescheErinnerung(id) { erinnerungen.delete(id); },
     async notizen(mappeId) { return [...notizen.values()].filter((n) => n.mappeId === mappeId).sort((a, b) => a.erstellt.localeCompare(b.erstellt)).map(kopie); },
+    async notizenVon(mappeIds) {
+      const ids = new Set(mappeIds);
+      return [...notizen.values()].filter((n) => ids.has(n.mappeId)).sort((a, b) => a.mappeId.localeCompare(b.mappeId) || a.erstellt.localeCompare(b.erstellt)).map(kopie);
+    },
     async holeNotiz(id) { const n = notizen.get(id); return n && kopie(n); },
     async legeNotizAn(n) { const x = { ...kopie(n), erstellt: jetzt(), geaendert: jetzt(), geaendertVon: n.erstelltVon }; notizen.set(n.id, x); return kopie(x); },
     async aendereNotiz(id, text, von) { const n = notizen.get(id)!; n.text = text; n.geaendert = jetzt(); n.geaendertVon = von; return kopie(n); },
@@ -446,6 +466,7 @@ export function speicherRepo(): Repo {
       for (const x of e) historie.push({ id: ++historieNr, mappeId: x.mappeId, zeit: jetzt(), benutzerId: x.benutzerId, art: x.art, daten: kopie(x.daten ?? {}) });
     },
     async historie(mappeId) { return historie.filter((h) => h.mappeId === mappeId).map(kopie).reverse(); },
+    async historieVon(mappeIds) { const ids = new Set(mappeIds); return historie.filter((h) => ids.has(h.mappeId)).map(kopie).reverse(); },
     async historieAufraeumen(vor) {
       const weg = new Set(historie.filter((h) => h.art === 'endgueltig' && h.zeit < vor && !mappen.has(h.mappeId) && !korb.has(h.mappeId)).map((h) => h.mappeId));
       const vorher = historie.length;

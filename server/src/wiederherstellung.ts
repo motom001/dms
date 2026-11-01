@@ -12,6 +12,7 @@ import { protokoll } from './protokoll';
 import { ortszeit, type Metadaten, type Sicherung } from './sicherung';
 import { liesKopf, liesSicherung, sha256Von, ZWECK } from './sicherungsformat';
 import { entschluesseleMit, fingerabdruck, leiteAb, PRUEFWORT, schluesselAusText } from './tresor';
+import { STATISTIK_SPALTEN } from './repo-pg';
 
 /**
  * Wiederherstellen einer Sicherung (#107) und Probe-Wiederherstellung (#109).
@@ -368,6 +369,13 @@ export class Wiederherstellung {
         const t = `${bezeichner(schema)}.${bezeichner(r.table_name as string)}`;
         await neu.unsafe(`SELECT setval(pg_get_serial_sequence('${t.replace(/'/g, "''")}', '${String(r.column_name).replace(/'/g, "''")}'), coalesce((SELECT max(${bezeichner(r.column_name as string)}) FROM ${t}), 0) + 1, false)`);
       }
+      // Statistik der eingespielten Tabellen (#367): COPY füllt sie, ANALYZE erst macht sie dem Planer bekannt.
+      try {
+        for (const r of await neu`SELECT table_name FROM information_schema.tables WHERE table_schema = ${schema} AND table_type = 'BASE TABLE'`) {
+          const spalten = STATISTIK_SPALTEN[r.table_name as string];
+          await neu.unsafe(`ANALYZE ${bezeichner(schema)}.${bezeichner(r.table_name as string)}${spalten ? ` (${spalten})` : ''}`);
+        }
+      } catch { /* nur Leistung: der Autovacuum-Dienst holt es später nach */ }
 
       schritt('Prüfwort');
       const [pw] = await neu`SELECT wert FROM einstellungen WHERE schluessel = 'pruefwort' LIMIT 1`;

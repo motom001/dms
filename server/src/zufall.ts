@@ -38,15 +38,24 @@ export class Zufall {
   /** Bytes, deterministisch aus dem Startwert (für große, nicht komprimierbare Dateien). */
   bytes(n: number): Buffer {
     const b = Buffer.allocUnsafe(n);
-    let i = 0;
-    while (i < n) {
-      const h = createHash('sha256').update(`${this.startwert}:${this.int(2 ** 31)}`).digest();
-      // Ein Hash als Keim, daraus schnell viele Bytes (xorshift); reicht gegen Kompression.
-      let x = h.readUInt32LE(0) || 1;
-      const ende = Math.min(n, i + (1 << 20));
-      for (; i + 4 <= ende; i += 4) { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; b.writeUInt32LE(x >>> 0, i); }
-      for (; i < ende; i++) b[i] = h[i & 31];
-    }
+    for (let i = 0; i < n;) i = this.bytesStueck(b, i);
     return b;
+  }
+  /** Wie `bytes`, gibt aber nach jedem MB die Ereignisschleife frei (#367) – gleiche Bytes. */
+  async bytesNachgebend(n: number): Promise<Buffer> {
+    const b = Buffer.allocUnsafe(n);
+    for (let i = 0; i < n;) { i = this.bytesStueck(b, i); await new Promise<void>((r) => setImmediate(r)); }
+    return b;
+  }
+  /** Ein Stück von höchstens 1 MB ab `i`; liefert das neue Ende. */
+  private bytesStueck(b: Buffer, i: number): number {
+    const n = b.length;
+    const h = createHash('sha256').update(`${this.startwert}:${this.int(2 ** 31)}`).digest();
+    // Ein Hash als Keim, daraus schnell viele Bytes (xorshift); reicht gegen Kompression.
+    let x = h.readUInt32LE(0) || 1;
+    const ende = Math.min(n, i + (1 << 20));
+    for (; i + 4 <= ende; i += 4) { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; b.writeUInt32LE(x >>> 0, i); }
+    for (; i < ende; i++) b[i] = h[i & 31];
+    return i;
   }
 }

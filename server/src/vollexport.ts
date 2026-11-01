@@ -79,14 +79,20 @@ export interface ExportQuelle {
   papierkorb(): Promise<PapierkorbEintrag[]>;
   /** Einzeln gelöschte Dokumente (#344); fehlt bei älteren Quellen. */
   papierkorbDokumente?(): Promise<unknown[]>;
-  dokumente(mappeId: string): Promise<Dokument[]>;
-  versionen(dokumentId: string): Promise<DokumentVersion[]>;
-  volltext(dokumentId: string): Promise<string | null>;
+  /*
+   * Gebündelt je Paket von Mappen bzw. Dokumenten (#367): ein Zugriff je Paket statt je Mappe
+   * oder Dokument. Die Reihenfolge innerhalb einer Mappe bzw. eines Dokuments zählt, die zwischen
+   * ihnen nicht.
+   */
+  dokumente(mappeIds: string[]): Promise<Dokument[]>;
+  versionen(dokumentIds: string[]): Promise<DokumentVersion[]>;
+  /** Volltexte; Dokumente ohne fehlen. */
+  volltexte(dokumentIds: string[]): Promise<Map<string, string>>;
   datei(sha256: string): Promise<Readable | Buffer>;
-  notizen(mappeId: string): Promise<Notiz[]>;
-  aufgaben(mappeId: string): Promise<Aufgabe[]>;
+  notizen(mappeIds: string[]): Promise<Notiz[]>;
+  aufgaben(mappeIds: string[]): Promise<Aufgabe[]>;
   erinnerungen(): Promise<Erinnerung[]>;
-  historie(mappeId: string): Promise<unknown[]>;
+  historie(mappeIds: string[]): Promise<Array<{ mappeId: string }>>;
   favoriten(): Promise<Array<{ benutzerId: string; mappeId: string }>>;
   benutzer(): Promise<{ benutzer: Array<Record<string, unknown>>; vertretungen: Vertretung[] }>;
   passwort(wert: unknown): string | null;
@@ -170,6 +176,15 @@ function namen() {
 
 /* ---------- Export ---------- */
 
+/** Mappen je Zugriff beim Export (#367) und Dokumente je Zugriff auf die Volltexte. */
+const EXPORT_PAKET = 200;
+const VOLLTEXT_PAKET = 100;
+function gruppiere<T>(liste: T[], schluessel: (x: T) => string): Map<string, T[]> {
+  const r = new Map<string, T[]>();
+  for (const x of liste) { const k = schluessel(x); const l = r.get(k); if (l) l.push(x); else r.set(k, [x]); }
+  return r;
+}
+
 export interface ExportErgebnis { ordner: string; name: string; dateien: number; bytes: number; mappen: number; dokumente: number }
 
 /** Phasen des Auftrags (#364): je Mappe ein Schritt, danach Listen, Kalender und Manifest. */
@@ -232,45 +247,59 @@ export async function vollexport(q: ExportQuelle, ziel: string, opt: ExportOptio
     await w.schreibe(`daten/${dateiname}.xlsx`, xlsxAus(t.name, spalten.map((k) => spaltenKopf(k, [t])), ms.map((m) => zeile({ ...m, werte: ohnePasswoerter(t, m.werte) }, spalten, quelle).werte)));
     if (ms.length) await w.schreibe(`uebersicht/${dateiname}.pdf`, () => q.pdf(t.name, ms.map((m) => ({ ...m, werte: ohnePasswoerter(t, m.werte) })), t, true));
 
-    // Ablage: je Mappe ein Ordner
+    // Ablage: je Mappe ein Ordner. Dokumente, Volltexte, Versionen, Notizen, Aufgaben und Historie
+    // je Paket von Mappen in einem Zugriff (#367) – nicht je Mappe oder Dokument.
     const tOrdner = ordnerTyp(t.name);
     const mOrdner = namen();
-    for (const m of ms) {
-      const pfad = `ablage/${tOrdner}/${mOrdner(`${m.titel || 'Ohne Titel'} [${m.id.slice(0, 8)}]`)}`;
-      await w.schreibe(`${pfad}/mappe.json`, json({ ...m, werte: ohnePasswoerter(t, m.werte), typ: t.name, ...(t.archiv ? { aufbewahrenBis: aufbewahrenBis(t.archiv, m) } : {}) }));
-      await w.schreibe(`${pfad}/mappe.pdf`, () => q.pdf(m.titel || t.name, [{ ...m, werte: ohnePasswoerter(t, m.werte) }], t, false));
-      for (const v of verweiseVon(t, m.werte)) verweise.push([m.id, t.felder.find((f) => f.key === v.feldKey)?.label ?? v.feldKey, v.feldKey, v.zielId, titel(v.zielId)]);
-      const dateiNamen = new Map<string, ReturnType<typeof namen>>();
-      for (const d of await q.dokumente(m.id)) {
-        const reg = t.register.find((r) => r.key === d.registerKey)?.name ?? d.registerKey;
-        const regName = sichererName(reg, 60);
-        if (!dateiNamen.has(regName)) dateiNamen.set(regName, namen());
-        const dn = dateiNamen.get(regName)!(d.name);
-        const rel = `${pfad}/${regName}/${dn}`;
-        await w.schreibe(rel, () => q.datei(d.sha256));
-        const text = await q.volltext(d.id);
-        if (text) await w.schreibe(`${rel}.txt`, Buffer.from(text, 'utf8'));
-        dokZeilen.push([d.id, m.id, d.registerKey, d.name, d.mime, String(d.groesse), d.sha256, d.erstellt, d.erstelltVon ?? '', String(d.version ?? 1), 'aktuell', rel]);
-        dokumente++;
-        const vn = namen();
-        for (const v of await q.versionen(d.id)) {
-          const vrel = `${pfad}/${regName}/Versionen/${vn(`v${v.nummer} ${v.name}`)}`;
-          await w.schreibe(vrel, () => q.datei(v.sha256));
-          dokZeilen.push([d.id, m.id, d.registerKey, v.name, v.mime, String(v.groesse), v.sha256, v.erstellt, v.erstelltVon ?? '', String(v.nummer), 'aelter', vrel]);
+    for (let i = 0; i < ms.length; i += EXPORT_PAKET) {
+      const paket = ms.slice(i, i + EXPORT_PAKET);
+      const ids = paket.map((m) => m.id);
+      const [dokJe, notizJe, aufgabeJe, historieJe] = await Promise.all([
+        q.dokumente(ids).then((x) => gruppiere(x, (d) => d.mappeId)), q.notizen(ids).then((x) => gruppiere(x, (n) => n.mappeId)),
+        q.aufgaben(ids).then((x) => gruppiere(x, (a) => a.mappeId)), q.historie(ids).then((x) => gruppiere(x, (h) => h.mappeId)),
+      ]);
+      const dokIds = [...dokJe.values()].flat().map((d) => d.id);
+      const versionJe = gruppiere(await q.versionen(dokIds), (v) => v.dokumentId);
+      // Volltexte in kleineren Paketen: sie können je Dokument groß sein.
+      const texte = new Map<string, string>();
+      for (let j = 0; j < dokIds.length; j += VOLLTEXT_PAKET) for (const [k, v] of await q.volltexte(dokIds.slice(j, j + VOLLTEXT_PAKET))) texte.set(k, v);
+      for (const m of paket) {
+        const pfad = `ablage/${tOrdner}/${mOrdner(`${m.titel || 'Ohne Titel'} [${m.id.slice(0, 8)}]`)}`;
+        await w.schreibe(`${pfad}/mappe.json`, json({ ...m, werte: ohnePasswoerter(t, m.werte), typ: t.name, ...(t.archiv ? { aufbewahrenBis: aufbewahrenBis(t.archiv, m) } : {}) }));
+        await w.schreibe(`${pfad}/mappe.pdf`, () => q.pdf(m.titel || t.name, [{ ...m, werte: ohnePasswoerter(t, m.werte) }], t, false));
+        for (const v of verweiseVon(t, m.werte)) verweise.push([m.id, t.felder.find((f) => f.key === v.feldKey)?.label ?? v.feldKey, v.feldKey, v.zielId, titel(v.zielId)]);
+        const dateiNamen = new Map<string, ReturnType<typeof namen>>();
+        for (const d of dokJe.get(m.id) ?? []) {
+          const reg = t.register.find((r) => r.key === d.registerKey)?.name ?? d.registerKey;
+          const regName = sichererName(reg, 60);
+          if (!dateiNamen.has(regName)) dateiNamen.set(regName, namen());
+          const dn = dateiNamen.get(regName)!(d.name);
+          const rel = `${pfad}/${regName}/${dn}`;
+          await w.schreibe(rel, () => q.datei(d.sha256));
+          const text = texte.get(d.id);
+          if (text) await w.schreibe(`${rel}.txt`, Buffer.from(text, 'utf8'));
+          dokZeilen.push([d.id, m.id, d.registerKey, d.name, d.mime, String(d.groesse), d.sha256, d.erstellt, d.erstelltVon ?? '', String(d.version ?? 1), 'aktuell', rel]);
+          dokumente++;
+          const vn = namen();
+          for (const v of versionJe.get(d.id) ?? []) {
+            const vrel = `${pfad}/${regName}/Versionen/${vn(`v${v.nummer} ${v.name}`)}`;
+            await w.schreibe(vrel, () => q.datei(v.sha256));
+            dokZeilen.push([d.id, m.id, d.registerKey, v.name, v.mime, String(v.groesse), v.sha256, v.erstellt, v.erstelltVon ?? '', String(v.nummer), 'aelter', vrel]);
+          }
         }
+        notizen.push(...notizJe.get(m.id) ?? []);
+        aufgaben.push(...aufgabeJe.get(m.id) ?? []);
+        historie.push(...historieJe.get(m.id) ?? []);
+        if (opt.passwoerter) for (const f of t.felder.filter((x) => x.typ === 'passwort' && typeof m.werte[x.key] === 'string' && m.werte[x.key] !== '')) {
+          const klar = q.passwort(m.werte[f.key]);
+          if (klar === null) continue;
+          const nutzer = t.felder.find((x) => x.typ === 'text' && /benutzer|login|user|e-?mail|konto/i.test(`${x.key} ${x.label}`));
+          const url = t.felder.find((x) => x.typ === 'text' && /url|adresse|web|seite/i.test(`${x.key} ${x.label}`));
+          passwoerter.push([t.name, '', 'login', `${m.titel || 'Ohne Titel'}${t.felder.filter((x) => x.typ === 'passwort').length > 1 ? ` – ${f.label}` : ''}`, '', '', '0',
+            url ? auswahlText(m.werte[url.key]) : '', nutzer ? auswahlText(m.werte[nutzer.key]) : '', klar, '']);
+        }
+        weiter();
       }
-      notizen.push(...await q.notizen(m.id));
-      aufgaben.push(...await q.aufgaben(m.id));
-      historie.push(...await q.historie(m.id));
-      if (opt.passwoerter) for (const f of t.felder.filter((x) => x.typ === 'passwort' && typeof m.werte[x.key] === 'string' && m.werte[x.key] !== '')) {
-        const klar = q.passwort(m.werte[f.key]);
-        if (klar === null) continue;
-        const nutzer = t.felder.find((x) => x.typ === 'text' && /benutzer|login|user|e-?mail|konto/i.test(`${x.key} ${x.label}`));
-        const url = t.felder.find((x) => x.typ === 'text' && /url|adresse|web|seite/i.test(`${x.key} ${x.label}`));
-        passwoerter.push([t.name, '', 'login', `${m.titel || 'Ohne Titel'}${t.felder.filter((x) => x.typ === 'passwort').length > 1 ? ` – ${f.label}` : ''}`, '', '', '0',
-          url ? auswahlText(m.werte[url.key]) : '', nutzer ? auswahlText(m.werte[nutzer.key]) : '', klar, '']);
-      }
-      weiter();
     }
 
     // vCard (#254): nur mit bestätigter Zuordnung

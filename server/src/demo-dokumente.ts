@@ -2,12 +2,15 @@ import { execFile } from 'node:child_process';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { crc32, deflateSync } from 'node:zlib';
-import { degrees, PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage } from 'pdf-lib';
+import { crc32, deflate, deflateSync } from 'node:zlib';
+import { promisify } from 'node:util';
+import { concatTransformationMatrix, degrees, drawObject, PDFDocument, popGraphicsState, pushGraphicsState, rgb, setGraphicsState, StandardFonts, type PDFFont, type PDFPage } from 'pdf-lib';
 import { DOKUMENTARTEN, MAX_DUPLIKATE, MAX_JE_MAPPE, MISCHUNGEN, STUFEN, type DokumentOptionen, type Dokumentart, type Mischung, type Stufe } from '../../shared/src/demodaten';
 import { absatz, anschrift, euro, person, position, satz, ueberschrift } from './demo-text';
 import { Fachfehler } from './fehler';
 import type { Zufall } from './zufall';
+
+const deflateAsync = promisify(deflate);
 
 /**
  * Demo-Dokumente für Wachstumstests (#248). Fünf Arten, jede Datei einzigartig:
@@ -154,8 +157,15 @@ async function rausche(z: Zufall, doc: PDFDocument, s: PDFPage, [w, h]: [number,
   // Etwa die Auflösung des Zielbilds (höchstens 3000 Pixel breit), damit das Rauschen fein bleibt.
   const bw = Math.max(64, Math.min(3000, Math.round(pixelBreite)));
   const bh = Math.max(64, Math.round(bw * h / w));
-  const img = await doc.embedPng(png(bw, bh, z.bytes(bw * bh * 3)));
-  s.drawImage(img, { x: 0, y: 0, width: w, height: h, opacity: staerke });
+  // Ohne embedPng (#367): pdf-lib würde die bis zu 70 MB Pixel im Hauptthread entpacken und neu packen
+  // (Sekunden ohne Antwort für die Oberfläche). Stattdessen die Pixel im Thread-Pool von zlib packen
+  // und als Bild-Objekt direkt einsetzen – sieht gleich aus.
+  const gepackt = await deflateAsync(await z.bytesNachgebend(bw * bh * 3), { level: 1 });
+  const ctx = doc.context;
+  const bildRef = ctx.register(ctx.stream(gepackt, { Type: 'XObject', Subtype: 'Image', Width: bw, Height: bh, ColorSpace: 'DeviceRGB', BitsPerComponent: 8, Filter: 'FlateDecode' }));
+  const bildName = s.node.newXObject('Rauschen', bildRef);
+  const gs = s.node.newExtGState('Rauschen', ctx.obj({ Type: 'ExtGState', ca: staerke, CA: staerke }));
+  s.pushOperators(pushGraphicsState(), setGraphicsState(gs), concatTransformationMatrix(w, 0, 0, h, 0, 0), drawObject(bildName), popGraphicsState());
 }
 
 /** Brief oder Rechnung; die Werte der Mappe stehen im Text. */
@@ -200,6 +210,8 @@ async function mehrseitig(z: Zufall, m: MappenInhalt, kennung: string, seitenZie
   let abschnitt = 0;
   while (b.seiten < seitenZiel) {
     abschnitt++;
+    // Nachgeben (#367): lange Dokumente nicht in einem Stück setzen.
+    await new Promise<void>((r) => setImmediate(r));
     b.text(`${abschnitt}. ${ueberschrift(z)}`, { fett: true, groesse: 12.5, abstand: 16 });
     for (let i = z.von(1, 3); i > 0; i--) b.text(absatz(z), { abstand: 6 });
     if (z.chance(0.5)) for (let i = z.von(2, 5); i > 0; i--) b.text(`•  ${satz(z)}`, { einzug: 12 });
@@ -210,7 +222,7 @@ async function mehrseitig(z: Zufall, m: MappenInhalt, kennung: string, seitenZie
       ]), [90, 300, 100]);
     }
   }
-  return { inhalt: Buffer.from(await doc.save()), seiten: b.seiten };
+  return { inhalt: Buffer.from(await doc.save({ objectsPerTick: 5 })), seiten: b.seiten };
 }
 
 /* ---------- Rastern mit pdftoppm ---------- */
@@ -295,7 +307,14 @@ async function gross(z: Zufall, m: MappenInhalt, kennung: string): Promise<{ inh
   b.text(`Große Datei: ${m.titel}`, { fett: true, groesse: 14 });
   b.text(`Dokument-Nr. ${kennung} · Anhang mit ${(groesse / 1024 / 1024).toFixed(0)} MB Messdaten zum Testen von Hochladen, Vorschau, Export und Sicherung.`);
   b.text(absatz(z), { abstand: 8 });
-  await doc.attach(z.bytes(groesse), 'messdaten.bin', { mimeType: 'application/octet-stream', description: 'Demo-Messdaten', creationDate: new Date(Date.UTC(2026, 0, 1)), modificationDate: new Date(Date.UTC(2026, 0, 1)) });
+  // Nicht blockieren (#367): Bytes stückweise, Komprimieren im Thread-Pool von zlib statt mit pako im
+  // Hauptthread (das hielt die Oberfläche bei 60 MB mehrere Sekunden an). pdf-lib bekommt den fertigen Strom.
+  const roh = await z.bytesNachgebend(groesse);
+  const gepackt = await deflateAsync(roh);
+  const ctx = doc.context;
+  const flate = ctx.flateStream.bind(ctx);
+  ctx.flateStream = ((daten: unknown, dict?: Record<string, unknown>) => (daten === roh ? ctx.stream(gepackt, { ...dict, Filter: 'FlateDecode' } as never) : flate(daten as never, dict as never))) as typeof ctx.flateStream;
+  await doc.attach(roh, 'messdaten.bin', { mimeType: 'application/octet-stream', description: 'Demo-Messdaten', creationDate: new Date(Date.UTC(2026, 0, 1)), modificationDate: new Date(Date.UTC(2026, 0, 1)) });
   return { inhalt: Buffer.from(await doc.save({ useObjectStreams: false })), seiten: 1 };
 }
 

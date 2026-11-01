@@ -41,7 +41,7 @@ sudo test -s "$arbeit/postgres/daten/PG_VERSION" || fehler "keine Datenbank unte
 echo "::notice::dms-komplett enthält $(docker exec "$NAME" postgres --version)"
 # Offline-Hilfe (#219): Startseite und eine Seite je Handbuch, ohne Anmeldung.
 for h in "" benutzer/ admin/ installieren/ entwickler/ admin/sicherung/; do
-  curl -fsS "http://127.0.0.1:$PORT/hilfe/$h" | grep -q "<html" || fehler "Hilfe /hilfe/$h fehlt"
+  curl -fsS "http://127.0.0.1:$PORT/hilfe/$h" | grep "<html" >/dev/null || fehler "Hilfe /hilfe/$h fehlt"
 done
 echo "::notice::Offline-Hilfe: $(docker exec "$NAME" du -sh /app/web/dist/hilfe | cut -f1)"
 echo "::endgroup::"; echo "::notice::dms-komplett: Schritt erledigt"
@@ -76,9 +76,9 @@ sudo test -f "$arbeit/eingang/erledigt/Probe Scan.pdf" || fehler "Datei nicht na
 echo "::endgroup::"; echo "::notice::dms-komplett: Eingangsordner übernimmt (Post $uebernommen)"
 
 echo "::group::2c. Befehl dms im Container (#244)"
-docker exec "$NAME" dms hilfe | grep -q "passwort <email>" || fehler "dms hilfe"
+docker exec "$NAME" dms hilfe | grep "passwort <email>" >/dev/null || fehler "dms hilfe"
 [ "$(docker exec "$NAME" dms status --json | jq -r '.dms.variante')" = komplett ] || fehler "dms status"
-docker exec "$NAME" dms benutzer | grep -q "admin@probe.invalid" || fehler "dms benutzer"
+docker exec "$NAME" dms benutzer | grep "admin@probe.invalid" >/dev/null || fehler "dms benutzer"
 docker exec "$NAME" dms passwort admin@probe.invalid --passwort ein-neues-probe-passwort >/dev/null || fehler "dms passwort"
 curl -fsS -X POST "http://127.0.0.1:$PORT/api/konto/anmelden" -H 'x-dms: 1' -H 'content-type: application/json' \
   -d '{"email":"admin@probe.invalid","passwort":"ein-neues-probe-passwort"}' >/dev/null || fehler "Anmeldung mit dem Passwort aus dms passwort"
