@@ -1,5 +1,6 @@
 import { DateienPruefen } from './Archiv';
 import { NummernNachtragen } from './Nummernkreise';
+import { AbsenderBereinigen } from './AbsenderBereinigen';
 import { useCallback, useEffect, useState } from 'react';
 import { OCR_STAENDE, type OcrStandArt } from '../../../shared/src/model';
 import { api, type OcrEinstellungen, type OcrStatus } from '../api';
@@ -251,6 +252,7 @@ export function WartungPanel({ t, wartungAn }: { t: TexterkennungZustand; wartun
       <VorschauNachholen />
       <DateienPruefen />
       <NummernNachtragen />
+      <AbsenderBereinigen />
     </div>
   );
 }

@@ -503,6 +503,8 @@ export const api = {
   nummernkreisLoeschen: (s: string) => anfrage<NummernkreisAnsicht[]>('DELETE', `/api/werkbank/nummernkreise/${encodeURIComponent(s)}`),
   nummernkreisZaehler: (s: string, naechster: number) => anfrage<NummernkreisAnsicht[]>('POST', `/api/werkbank/nummernkreise/${encodeURIComponent(s)}/zaehler`, { naechster }),
   nummernVorschau: (typId: string, feldKey: string) => anfrage<{ anzahl: number; von: string | null; bis: string | null }>('GET', `/api/werkbank/wartung/nummern?typ=${encodeURIComponent(typId)}&feld=${encodeURIComponent(feldKey)}`),
+  absenderVorschau: () => anfrage<{ posten: Array<{ id: string; titel: string; absender: string; kanal: string; erstellt: string }> }>('GET', '/api/werkbank/wartung/absender'),
+  absenderBereinigen: (ids: string[]) => anfrage<{ bereinigt: number }>('POST', '/api/werkbank/wartung/absender', { ids }),
   nummernNachtragen: (typId: string, feldKey: string) => anfrage<Auftrag>('POST', '/api/werkbank/wartung/nummern', { typId, feldKey }),
   protokoll: (f: Record<string, string | number | undefined>) =>
     anfrage<ProtokollAntwort>('GET', `/api/werkbank/protokoll?${new URLSearchParams(Object.entries(f).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]))}`),

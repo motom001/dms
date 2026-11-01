@@ -43,7 +43,7 @@ describe('Eingangsordner (#195)', () => {
     assert.equal(p.length, 1);
     assert.equal(p[0].m.werte.kanal, POST_KANAL.ordner);
     assert.equal(p[0].m.werte.betreff, 'Scan_0042');
-    assert.equal(p[0].m.werte.absender, 'Eingangsordner');
+    assert.equal(p[0].m.werte.absender ?? null, null, 'kein Absender „Eingangsordner“ (#494)');
     assert.equal(p[0].docs.length, 1);
     assert.ok(existsSync(join(ordner, 'erledigt', 'Scan_0042.pdf')));
     assert.ok(!existsSync(join(ordner, 'Scan_0042.pdf')));
