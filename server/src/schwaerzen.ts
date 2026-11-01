@@ -29,6 +29,7 @@ import {
 import { Fachfehler } from './fehler';
 import { jpegMasse } from './verkleinern';
 import { SCHWAERZEN_MAX_SEITEN, wortIn, type Bereich, type SchwaerzSeite, type Wort } from '../../shared/src/schwaerzen';
+import { eigenerPuffer } from './pdf-puffer';
 
 /** Auflösung des Ergebnisses (PDF). */
 export const SCHWAERZEN_DPI = 150;
@@ -93,7 +94,7 @@ export async function arbeitsPdf(inhalt: Buffer, mime: string): Promise<Buffer> 
   if (mime === 'application/pdf') return inhalt;
   const doc = await PDFDocument.create({ updateMetadata: false });
   let bild;
-  try { bild = mime === 'image/png' ? await doc.embedPng(inhalt) : await doc.embedJpg(inhalt); } catch { throw new Fachfehler(422, 'Das Bild lässt sich nicht lesen.'); }
+  try { bild = mime === 'image/png' ? await doc.embedPng(eigenerPuffer(inhalt)) : await doc.embedJpg(eigenerPuffer(inhalt)); } catch { throw new Fachfehler(422, 'Das Bild lässt sich nicht lesen.'); }
   const seite = doc.addPage([bild.width, bild.height]);
   seite.drawImage(bild, { x: 0, y: 0, width: bild.width, height: bild.height });
   const d = mime === 'image/jpeg' ? DREHUNG_AUS_EXIF[exifAusrichtung(inhalt)] : undefined;
@@ -430,7 +431,7 @@ export async function schwaerze(inhalt: Buffer, mime: string, analyse: Analyse, 
       if (!m) throw new Fachfehler(422, 'Die Seiten ließen sich nicht neu aufbauen.');
       const b = (m.breite * 72) / dpi, h = (m.hoehe * 72) / dpi;
       const seite = doc.addPage([b, h]);
-      const jpg = await doc.embedJpg(f.daten);
+      const jpg = await doc.embedJpg(eigenerPuffer(f.daten));
       seite.drawImage(jpg, { x: 0, y: 0, width: b, height: h });
       textebene(doc, font, zeichen, seite, bleiben[i], b, h);
       seite.node.delete(PDFName.of('Annots')); // pdf-lib legt eine leere Liste an
