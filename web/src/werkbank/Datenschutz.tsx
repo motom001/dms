@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
 import { fortschrittText } from '../../../shared/src/auftrag';
-import { AUSKUNFT_PASSWORT_MIN, GRUND_MIN, personenTypen, type AuskunftAuswahl, type AuskunftMappe, type AuskunftStand, type AuskunftVorschau, type Datenschutz } from '../../../shared/src/auskunft';
+import { AUSKUNFT_PASSWORT_MIN, erwaehnungText, GRUND_MIN, personenTypen, type AuskunftAuswahl, type AuskunftMappe, type AuskunftStand, type AuskunftVorschau, type Datenschutz } from '../../../shared/src/auskunft';
 import { Zustellen, Zustellungen } from './Zustellen';
 import { BAUM_RICHTUNGEN, kinderVon, type BaumKnoten, type BaumRichtung } from '../../../shared/src/baum';
 import { datumText } from '../../../shared/src/archiv';
@@ -16,7 +16,8 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 /**
  * Werkbank → Datenschutz (#396): Auskunft nach Art. 15 DSGVO als ZIP.
  *   1. Betroffenen wählen (Mappentypen „betrifft eine Person“), optional Frist als Aufgabe
- *   2. Sammeln über Verweise (Baum, Tiefe einstellbar) und prüfen: Häkchen je Mappe, Dokument, Notiz, Historie
+ *   2. Sammeln über Verweise (Baum, Tiefe einstellbar, nur über Zugehörigkeit weiter) und prüfen: Häkchen je
+ *      Mappe, Dokument, Notiz, Historie; Bezug-Mappen nur als Erwähnung, bewusst ganz aufnehmbar (#472)
  *   3. Erzeugen als Hintergrundauftrag, optional mit Passwort (AES); Download, danach gelöscht
  *   4. Zustellen (#455): per E-Mail (nur verschlüsselt) oder als Abruf-Link mit Abrufcode
  * Unten: bereitliegende Auskünfte, Abruf-Links (Nachweis) und die Einstellungen (Absender, Rechte, Zwecke je Mappentyp).
@@ -58,12 +59,12 @@ export function DatenschutzPanel({ z }: { z: DatenschutzZustand }) {
 
 /* ---------- Auskunft erteilen ---------- */
 
-interface Wahl { mappen: Set<string>; dokumente: Set<string>; notizen: Set<string>; historie: Set<string>; gruende: Record<string, string> }
-const LEER: Wahl = { mappen: new Set(), dokumente: new Set(), notizen: new Set(), historie: new Set(), gruende: {} };
+interface Wahl { mappen: Set<string>; dokumente: Set<string>; notizen: Set<string>; historie: Set<string>; gruende: Record<string, string>; erwaehnungen: Set<string> }
+const LEER: Wahl = { mappen: new Set(), dokumente: new Set(), notizen: new Set(), historie: new Set(), gruende: {}, erwaehnungen: new Set() };
 
 /** Vorgabe: alles an – außer Originalen, zu denen es eine geschwärzte Fassung gibt. */
 function vorgabe(inhalte: Record<string, AuskunftMappe>, ids: string[], w: Wahl = LEER): Wahl {
-  const n: Wahl = { mappen: new Set(w.mappen), dokumente: new Set(w.dokumente), notizen: new Set(w.notizen), historie: new Set(w.historie), gruende: { ...w.gruende } };
+  const n: Wahl = { mappen: new Set(w.mappen), dokumente: new Set(w.dokumente), notizen: new Set(w.notizen), historie: new Set(w.historie), gruende: { ...w.gruende }, erwaehnungen: new Set(w.erwaehnungen) };
   for (const id of ids) {
     const x = inhalte[id]; if (!x) continue;
     n.mappen.add(id); n.historie.add(id);
@@ -84,7 +85,6 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
   const [richtungen, setRichtungen] = useState<BaumRichtung[]>(['verwiesenVon', 'verweistAuf']);
   const [vorschau, setVorschau] = useState<AuskunftVorschau | null>(null);
   const [wahl, setWahl] = useState<Wahl>(LEER);
-  const [vorschlaege, setVorschlaege] = useState<Set<string>>(new Set());
   const [eingang, setEingang] = useState(heute());
   const [empfaenger, setEmpfaenger] = useState(einstellung.empfaenger);
   const [anmerkung, setAnmerkung] = useState('');
@@ -117,8 +117,9 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
     setLaeuft(true); setMeldung(undefined); setVorschau(null); setGeprueft(false); setAuftrag(null);
     try {
       const v = await api.auskunftVorschau({ mappeId: betroffen.id, tiefe, richtungen });
-      setVorschau(v); setVorschlaege(new Set());
-      setWahl(vorgabe(v.mappen, v.baum.knoten.map((k) => k.id)));
+      setVorschau(v);
+      // Zugehörige Mappen ganz; Bezug-Mappen (#472) nur als Erwähnung – ganz aufnehmen nur bewusst.
+      setWahl({ ...vorgabe(v.mappen, v.baum.knoten.filter((k) => !k.nurBezug).map((k) => k.id)), erwaehnungen: new Set(v.baum.knoten.filter((k) => k.nurBezug).map((k) => k.id)) });
     } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } finally { setLaeuft(false); }
   }
   async function frist() {
@@ -127,10 +128,10 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
     catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
   }
 
-  const inhalte = useMemo(() => ({ ...(vorschau?.vorschlagMappen ?? {}), ...(vorschau?.mappen ?? {}) }), [vorschau]);
-  const schalte = (art: 'mappen' | 'dokumente' | 'notizen' | 'historie', id: string, an: boolean) => setWahl((w) => { const n = new Set(w[art]); if (an) n.add(id); else n.delete(id); setGeprueft(false); return { ...w, [art]: n }; });
-  const vorschlag = (id: string, an: boolean) => {
-    setVorschlaege((v) => { const n = new Set(v); if (an) n.add(id); else n.delete(id); return n; });
+  const inhalte = useMemo(() => vorschau?.mappen ?? {}, [vorschau]);
+  const schalte = (art: 'mappen' | 'dokumente' | 'notizen' | 'historie' | 'erwaehnungen', id: string, an: boolean) => setWahl((w) => { const n = new Set(w[art]); if (an) n.add(id); else n.delete(id); setGeprueft(false); return { ...w, [art]: n }; });
+  /** Bezug-Mappe (#472) bewusst ganz aufnehmen – mit Dokumenten, Notizen und allen Angaben. */
+  const ganz = (id: string, an: boolean) => {
     setWahl((w) => (an ? vorgabe(inhalte, [id], w) : { ...w, mappen: new Set([...w.mappen].filter((x) => x !== id)) }));
     setGeprueft(false);
   };
@@ -141,6 +142,7 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
     notizen: gewaehlt.flatMap((id) => inhalte[id].notizen.filter((x) => wahl.notizen.has(x.id)).map((x) => x.id)),
     historie: gewaehlt.filter((id) => wahl.historie.has(id)),
     ohneNotizen: gewaehlt.flatMap((id) => inhalte[id].notizen.filter((x) => !wahl.notizen.has(x.id)).map((x) => ({ id: x.id, grund: wahl.gruende[x.id] ?? '' }))),
+    erwaehnungen: [...wahl.erwaehnungen].filter((id) => !wahl.mappen.has(id) && vorschau?.baum.knoten.some((k) => k.id === id && k.nurBezug)),
   };
   const ohneGrund = auswahl.ohneNotizen.filter((x) => x.grund.trim().length < GRUND_MIN).length;
   const pwFehler = passwort && passwort.length < AUSKUNFT_PASSWORT_MIN;
@@ -157,7 +159,20 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
 
   const knoten = vorschau?.baum.knoten ?? [];
   const wurzel = knoten[0];
-  const zeigeKnoten = (k: BaumKnoten): ReactNode => (
+  const zeigeKnoten = (k: BaumKnoten): ReactNode => (k.nurBezug && k.ueber ? (
+    <li key={k.id}>
+      <div className={`auskunft-mappe ${wahl.erwaehnungen.has(k.id) || wahl.mappen.has(k.id) ? '' : 'aus'}`}>
+        <label className="haken"><input type="checkbox" checked={wahl.erwaehnungen.has(k.id) || wahl.mappen.has(k.id)} disabled={wahl.mappen.has(k.id)} onChange={(e) => schalte('erwaehnungen', k.id, e.target.checked)} />
+          <span>{erwaehnungText({ typ: k.typ, titel: titelOder(k.titel), feld: k.ueber.feld, richtung: k.ueber.richtung })}{' '}
+            <span className="chip" title="Nur über einen Verweis der Art Bezug verbunden: Es geht nur hinaus, dass die Person hier genannt ist – ohne Dokumente, Notizen und übrige Angaben. Über diese Mappe wird nicht weitergesammelt.">Bezug</span>{' '}
+            <a href={`/ablage/${k.typId}/${k.id}`} className="verweis klein" target="_blank" rel="noreferrer">öffnen</a></span></label>
+        <label className="haken klein auskunft-ganz"><input type="checkbox" checked={wahl.mappen.has(k.id)} onChange={(e) => ganz(k.id, e.target.checked)} />
+          <span>ganz aufnehmen <span className="leise">– mit Dokumenten, Notizen und allen Angaben; nur, wenn sie wirklich die Person betreffen</span></span></label>
+        {wahl.mappen.has(k.id) && <MappeEintrag id={k.id} titel={k.titel} typ={k.typ} typId={k.typId} inhalt={inhalte[k.id]} wahl={wahl} schalte={schalte} nurInhalt
+          setGrund={(id, g) => setWahl((w) => ({ ...w, gruende: { ...w.gruende, [id]: g } }))} />}
+      </div>
+    </li>
+  ) : (
     <li key={k.id}>
       <MappeEintrag id={k.id} titel={k.titel} typ={k.typ} typId={k.typId} inhalt={inhalte[k.id]} wahl={wahl} schalte={schalte}
         setGrund={(id, g) => setWahl((w) => ({ ...w, gruende: { ...w.gruende, [id]: g } }))}
@@ -166,7 +181,7 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
           {k.gesperrt && k.aufbewahrenBis && <span className="chip" title="Archivmodus: Aufbewahrungsfrist"><Symbol name="schloss" /> bis {datumText(k.aufbewahrenBis)}</span>}</>} />
       {kinderVon(vorschau!.baum, k.id).length > 0 && <ul className="auskunft-baum">{kinderVon(vorschau!.baum, k.id).map(zeigeKnoten)}</ul>}
     </li>
-  );
+  ));
 
   return (
     <section className="blatt" id="auskunft">
@@ -196,7 +211,7 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
             <label className="inline">Anfrage eingegangen am <input type="date" value={eingang} max={heute()} onChange={(e) => setEingang(e.target.value)} /></label>
             <button type="button" className="knopf klein" onClick={() => void frist()} title="Aufgabe für dich, fällig einen Monat nach Eingang (Art. 12 Abs. 3 DSGVO)">Frist als Aufgabe anlegen</button>
           </div>
-          <p className="leise klein">2. Sammeln: alle Mappen, die über Verweise mit der Person verbunden sind.</p>
+          <p className="leise klein">2. Sammeln: alle Mappen, die zur Person gehören (Verweise der Art Zugehörigkeit) – nach unten über mehrere Stufen, nach oben nur weiter nach oben. Mappen, in denen die Person nur genannt ist (Bezug, z. B. als Ansprechpartner), stehen ohne ihre Inhalte da. Eine Volltext-Suche gibt es bewusst nicht – zu viele Verwechslungen.</p>
           <div className="zeile-umbruch">
             <label className="inline">Tiefe <select value={tiefe} onChange={(e) => setTiefe(Number(e.target.value))}>{[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n} {n === 1 ? 'Ebene' : 'Ebenen'}</option>)}</select></label>
             {(Object.keys(BAUM_RICHTUNGEN) as BaumRichtung[]).map((r) => (
@@ -217,20 +232,8 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
             {vorschau.baum.tieferMoeglich && ' Mit mehr Ebenen kämen weitere Mappen dazu.'}</p>
           <div className="hinweis warn"><p><strong>Daten Dritter?</strong> Enthalten Dokumente Angaben zu anderen Personen (z. B. Nachbarn in einer Nebenkostenabrechnung), schwärze sie vorher: Dokument in der Ablage öffnen → „Schwärzen“, danach hier „Neu sammeln“. Die geschwärzte Fassung wird dann statt des Originals vorgeschlagen.</p></div>
           <ul className="auskunft-baum wurzel">{zeigeKnoten(wurzel)}</ul>
-          {vorschau.vorschlaege.length > 0 && <>
-            <h4 className="h4">Vorschläge aus der Suche</h4>
-            <p className="leise klein">Diese Mappen hängen nicht über Verweise an der Person, enthalten aber {vorschau.begriffe.map((b) => `„${b}“`).join(', ')}. Nimm sie nur auf, wenn sie wirklich zu ihr gehören.</p>
-            <ul className="auskunft-baum wurzel">{vorschau.vorschlaege.map((v) => (
-              <li key={v.mappeId}>
-                <label className="haken"><input type="checkbox" checked={vorschlaege.has(v.mappeId)} onChange={(e) => vorschlag(v.mappeId, e.target.checked)} />
-                  <span>{titelOder(v.titel)} <span className="leise klein">{v.typ} · enthält „{v.begriff}“</span></span></label>
-                {vorschlaege.has(v.mappeId) && <ul className="auskunft-baum"><li><MappeEintrag id={v.mappeId} titel={v.titel} typ={v.typ} typId={v.typId} inhalt={inhalte[v.mappeId]} wahl={wahl} schalte={schalte} nurInhalt
-                  setGrund={(id, g) => setWahl((w) => ({ ...w, gruende: { ...w.gruende, [id]: g } }))} /></li></ul>}
-              </li>
-            ))}</ul>
-          </>}
           <h3 className="h4">4. Erzeugen</h3>
-          <p>{auswahl.mappen.length} {auswahl.mappen.length === 1 ? 'Mappe' : 'Mappen'}, {auswahl.dokumente.length} {auswahl.dokumente.length === 1 ? 'Dokument' : 'Dokumente'} ({groesse(bytes)}), {auswahl.notizen.length} {auswahl.notizen.length === 1 ? 'Notiz' : 'Notizen'}{auswahl.ohneNotizen.length ? `, ${auswahl.ohneNotizen.length} zurückgehalten` : ''}.</p>
+          <p>{auswahl.mappen.length} {auswahl.mappen.length === 1 ? 'Mappe' : 'Mappen'}{auswahl.erwaehnungen.length ? ` und ${auswahl.erwaehnungen.length} ${auswahl.erwaehnungen.length === 1 ? 'Erwähnung' : 'Erwähnungen'}` : ''}, {auswahl.dokumente.length} {auswahl.dokumente.length === 1 ? 'Dokument' : 'Dokumente'} ({groesse(bytes)}), {auswahl.notizen.length} {auswahl.notizen.length === 1 ? 'Notiz' : 'Notizen'}{auswahl.ohneNotizen.length ? `, ${auswahl.ohneNotizen.length} zurückgehalten` : ''}.</p>
           <div className="raster">
             <label className="eigenschaft breit"><span>Empfänger der Daten <small>steht auf dem Deckblatt, z. B. Steuerberatung, Hausmeisterdienst</small></span><textarea rows={2} value={empfaenger} onChange={(e) => setEmpfaenger(e.target.value)} /></label>
             <label className="eigenschaft breit"><span>Anmerkung <small>optional, steht auf dem Deckblatt</small></span><textarea rows={2} value={anmerkung} onChange={(e) => setAnmerkung(e.target.value)} /></label>
@@ -264,7 +267,7 @@ function zufallsPasswort() {
 
 function MappeEintrag({ id, titel, typ, typId, inhalt, wahl, schalte, setGrund, info, nurInhalt }: {
   id: string; titel: string; typ: string; typId: string; inhalt?: AuskunftMappe; wahl: Wahl; info?: ReactNode; nurInhalt?: boolean;
-  schalte(art: 'mappen' | 'dokumente' | 'notizen' | 'historie', id: string, an: boolean): void; setGrund(id: string, g: string): void;
+  schalte(art: 'mappen' | 'dokumente' | 'notizen' | 'historie' | 'erwaehnungen', id: string, an: boolean): void; setGrund(id: string, g: string): void;
 }) {
   const an = wahl.mappen.has(id);
   return (

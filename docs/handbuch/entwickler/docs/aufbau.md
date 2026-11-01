@@ -30,7 +30,9 @@ Alles, was über Verweise an einer Mappe hängt, sammelt **ein** Modul – genut
 - **Rechte:** Die `BaumQuelle` baut `Dienst.baumQuelle(zugriff)`; nur lesbare Mappen werden aufgenommen **und** weiterverfolgt, nicht lesbare zählen nur in `verborgen`. Zum Aufrufen: `await dienst.baum(startId, eingabe, zugriff)` (Benutzer und Rollen sind ohne `ohneTypen` ausgenommen), über HTTP `GET /api/v1/mappen/{id}/baum`.
 - **Je Knoten:** `typ`, `titel`, `ebene`, `ueber` (Elternknoten, Richtung, Feld, `verweisart`), `nurBezug`, `dokumente`, `aussen` (Verweise zu Mappen außerhalb des Baums je Richtung, nicht lesbare ohne Titel), `aufbewahrenBis`/`gesperrt` (Archivmodus #212) und `rechte` (CRUDP des Aufrufers).
 
-Tests: `server/test/auskunft.test.ts` (Kreise, Rechte, Obergrenze, seitwärts).
+Die Auskunft (`Dienst.auskunftVorschau`) und das Löschen sammeln beide mit `nurZugehoerigkeit` (#472, #424): Bezug-Knoten gehen bei der Auskunft nur als Erwähnung hinaus (`AuskunftAuswahl.erwaehnungen`, `erwaehnungText` in `shared/src/auskunft.ts`), beim Löschen wird nur ihr Verweis entfernt. Volltext-Vorschläge gibt es bei der Auskunft nicht (mehr).
+
+Tests: `server/test/auskunft.test.ts` (Kreise, Rechte, Obergrenze, seitwärts, Zugehörigkeit/Bezug).
 
 ### Mit verknüpften Mappen löschen (#424)
 
