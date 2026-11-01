@@ -5,5 +5,6 @@
  */
 import { uebersetzer } from '../../shared/src/sprache';
 import anmeldung from '../../shared/src/sprachen/de/anmeldung.json';
+import werkbank from '../../shared/src/sprachen/de/werkbank.json';
 
-export const t = uebersetzer({ anmeldung });
+export const t = uebersetzer({ anmeldung, werkbank });

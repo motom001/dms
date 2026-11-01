@@ -25,7 +25,7 @@ Das DMS ist ein **modularer Monolith**: ein Prozess, eine Datenbank. Server und 
 
 Texte für Benutzer stehen nicht im Code, sondern in **Sprachdateien** (#473, Teil von #357). Sichtbar ist bisher nur Deutsch mit **du**; die Technik für weitere Sprachen ist da.
 
-**Regel:** Wer einen Text neu schreibt oder ändert, legt ihn in der Sprachdatei ab – auch wenn der Rest der Datei noch Texte im Code hat. Ganze Bereiche ziehen nach und nach in eigenen Issues um. Umgestellt sind bisher die Anmeldung (Weboberfläche, Fehlermeldungen der API, E-Mails zum Zugang) und die Texte für Dritte.
+**Regel:** Wer einen Text neu schreibt oder ändert, legt ihn in der Sprachdatei ab – auch wenn der Rest der Datei noch Texte im Code hat. Ganze Bereiche ziehen nach und nach in eigenen Issues um. Umgestellt sind bisher die Anmeldung (Weboberfläche, Fehlermeldungen der API, E-Mails zum Zugang), die Texte für Dritte und die Leiste der Werkbank (Gruppen, Bereiche, Vorlagen; `werkbank.json`, auch für `werkbank_bereiche.py`).
 
 ```
 shared/src/sprachen/de/<bereich>.json         Ausgangssprache Deutsch (du), immer vollständig

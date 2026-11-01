@@ -18,11 +18,13 @@ Aufgaben entstehen auf diesen Wegen:
 
 - Empfänger sind immer **Benutzer**, keine Rollen – eine Aufgabe für alle bleibt sonst gern liegen.
 - Wer sich selbst erwähnt, bekommt keine Aufgabe; erneutes Speichern erzeugt keine zweite. Wird eine Erwähnung wieder entfernt, bleibt die Aufgabe offen; in der Historie der Mappe steht, dass sie entfernt wurde.
-- **Weitergeben** dürfen der Empfänger selbst und Administratoren; das steht in der Historie der Mappe. Mehrere auf einmal gehen in [Werkbank → Aufgaben](#mehrere-aufgaben-auf-einmal-weitergeben) und für die eigenen unter Profil → [Abwesenheit](https://motom001.github.io/dms/benutzer/aktuell/profil/#abwesenheit).
+- **Weitergeben** dürfen der Empfänger selbst und Administratoren; das steht in der Historie der Mappe. Mehrere auf einmal gehen in [Werkbank → Benachrichtigungen und Aufgaben](#mehrere-aufgaben-auf-einmal-weitergeben) und für die eigenen unter Profil → [Abwesenheit](https://motom001.github.io/dms/benutzer/aktuell/profil/#abwesenheit).
 
-## Werkbank → Aufgaben
+## Werkbank → Benachrichtigungen und Aufgaben { #werkbank-aufgaben }
 
-![Werkbank → Aufgaben](bilder/werkbank-aufgaben.png)
+Alles rund um Aufgaben und die Mails dazu steht an einer Stelle: **Werkbank → Einstellungen → Benachrichtigungen und Aufgaben**.
+
+![Werkbank → Benachrichtigungen und Aufgaben](bilder/werkbank-aufgaben.png)
 
 In der Mitte steht oben die [Tägliche Zusammenfassung](#tagliche-zusammenfassung), darunter alle offenen Aufgaben aller Benutzer mit Mappe, Art, Datum und Empfänger. Über die Auswahl unter einer Aufgabe gibst du sie an jemand anderen weiter. Wählst du eine Aufgabe, steht rechts ihre Mappe mit den wichtigsten Feldern, **In der Ablage öffnen** und daneben **Weitergeben an** – wie die Auswahl in der Liste. Danach stimmen Empfänger rechts und in der Liste sofort.
 

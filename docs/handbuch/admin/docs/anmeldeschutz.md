@@ -1,6 +1,6 @@
 # Anmeldeschutz
 
-Nach zu vielen falschen Passwörtern sperrt das DMS die Anmeldung. Unter **Werkbank → Einstellungen → Anmeldeschutz** stellst du ein, wann und wie lange. Der Bereich steht bei den Einstellungen gleich nach der [Verschlüsselung](verschluesselung.md) – sicherheitsrelevante Grundeinstellungen stehen so beieinander.
+Nach zu vielen falschen Passwörtern sperrt das DMS die Anmeldung. Unter **Werkbank → Einstellungen → Anmeldeschutz** stellst du ein, wann und wie lange. Den Schlüssel für Passwörter und Sicherungen findest du unter **Benutzer und Sicherheit → [Verschlüsselung](verschluesselung.md)**.
 
 --8<-- "ausgeblendet-organisation.md"
 

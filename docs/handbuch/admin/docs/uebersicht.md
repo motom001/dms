@@ -1,17 +1,21 @@
 # Werkbank und Übersicht
 
-Die **Werkbank** sehen nur Administratoren. Links stehen ihre Bereiche in vier Gruppen. Welche davon du siehst, hängt von der [Vorlage](#werkbank-anpassen) ab:
+Die **Werkbank** sehen nur Administratoren. Links stehen ihre Bereiche in sechs Gruppen, geordnet nach dem, was du gerade tun willst – die Ablage aufbauen, Benutzer verwalten, Post hereinholen, Daten sichern, Grundeinstellungen ändern oder einem Fehler nachgehen. Welche Bereiche du siehst, hängt von der [Vorlage](#werkbank-anpassen) ab:
 
 <!-- bereiche:gruppen -->
 | Gruppe | Bereiche |
 | --- | --- |
-| **Ablage einrichten** | [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Stempel](stempel.md), [Pakete](pakete.md), [Darf weg](archiv.md#nach-der-frist-darf-weg) (nur mit Archivmodus), [Datenschutz](datenschutz.md) |
-| **Benutzer und Zusammenarbeit** | [Benutzer](benutzer.md), [Aufgaben](aufgaben.md) |
-| **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Verschlüsselung](verschluesselung.md), [Anmeldeschutz](anmeldeschutz.md), [Designs](designs.md), [Papierkorb](papierkorb.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung), [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Texterkennung](texterkennung.md) |
-| **Wartung und Fehlersuche** | [Protokoll](fehlersuche.md#protokoll), [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler), [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md), [Vollexport](export.md), [Wartungsmodus](wartungsmodus.md), [Systemzustand](speicherplatz.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen), [Technik](fehlersuche.md#technik), [Demo-Daten](demo.md) |
+| **Ablage aufbauen** | [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Stempel](stempel.md), [Pakete](pakete.md), [Darf weg](archiv.md#nach-der-frist-darf-weg) (nur mit Archivmodus), [Datenschutz](datenschutz.md) |
+| **Benutzer und Sicherheit** | [Benutzer](benutzer.md), [Verschlüsselung](verschluesselung.md) |
+| **Post und Eingänge** | [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Texterkennung](texterkennung.md) |
+| **Daten sichern** | [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md), [Vollexport](export.md), [Papierkorb](papierkorb.md) |
+| **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Benachrichtigungen und Aufgaben](aufgaben.md), [Anmeldeschutz](anmeldeschutz.md), [Designs](designs.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung), [Technik](fehlersuche.md#technik) |
+| **Wartung und Fehlersuche** | [Systemzustand](speicherplatz.md), [Protokoll](fehlersuche.md#protokoll), [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler), [Wartungsmodus](wartungsmodus.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen), [Demo-Daten](demo.md) |
 <!-- /bereiche:gruppen -->
 
-Welche Bereiche dort stehen, legst du unter [Werkbank anpassen](#werkbank-anpassen) fest. Am Smartphone wählst du oben erst die Gruppe, darunter den Bereich. Ganz unten in der Leiste stehen *Projekt unterstützen* und der Link zu diesem Handbuch.
+Jede Einstellung hat genau einen Ort. Die Adressen der Bereiche (`/werkbank/sicherung` …) sind beim Umsortieren in Version 0.116 gleich geblieben; Lesezeichen und eine gespeicherte Auswahl unter *Werkbank anpassen* gelten weiter.
+
+Welche Bereiche dort stehen, legst du unter [Werkbank anpassen](#werkbank-anpassen) fest. Am Smartphone gehst du in Schritten: oben die Gruppe wählen, darunter den Bereich, bei großen Sammlungen dann den Eintrag – mit **← Bereiche** bzw. **← Zur Liste** kommst du zurück. Ganz unten in der Leiste stehen *Projekt unterstützen* und der Link zu diesem Handbuch.
 
 Neben den Bereichen steht, wie viel dort eingerichtet ist – etwa die Zahl der Mappentypen, Nummernkreise, installierten Pakete, aktiven Benutzer oder offenen Aufgaben. Die Zahlen stehen sofort da, wenn du die Werkbank öffnest, und ändern sich, sobald du im Bereich etwas anlegst oder löschst. Ist nichts eingerichtet, steht keine Zahl da.
 
@@ -65,7 +69,7 @@ Nicht jeder braucht jeden Bereich. Ein Haushalt fasst Nummernkreise, Postfächer
 
 - **Haushalt**: schlank, nur was ein Haushalt zum Einrichten und Sichern braucht. Neue Installationen beginnen damit.
 <!-- bereiche:organisation -->
-- **Betrieb**: zusätzlich Nummernkreise, Darf weg, Datenschutz, Anmeldeschutz, Designs, Postfächer, Eingangsordner, Texterkennung, Protokoll, Gemeldete Fehler, Wartungsmodus.
+- **Betrieb**: zusätzlich Nummernkreise, Darf weg, Datenschutz, Postfächer, Eingangsordner, Texterkennung, Anmeldeschutz, Designs, Protokoll, Gemeldete Fehler, Wartungsmodus.
 <!-- /bereiche:organisation -->
 - **Alles**: jeder Bereich. So bleibt es bei Installationen, die vor Version 0.70 eingerichtet wurden, bis du etwas anderes wählst.
 
@@ -91,25 +95,25 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Darf weg](archiv.md#nach-der-frist-darf-weg) | Mappen mit abgelaufener Aufbewahrungsfrist (nur mit Archivmodus) | Betrieb |
 | [Datenschutz](datenschutz.md) | Auskunft nach Art. 15 DSGVO an Kunden, Mieter und Kontakte als ZIP | Betrieb |
 | [Benutzer](benutzer.md) | Benutzer und Rollen anlegen | Haushalt, Betrieb |
-| [Aufgaben](aufgaben.md) | Alle offenen Aufgaben im Blick behalten | Haushalt, Betrieb |
-| [E-Mail und Adresse](installation.md#e-mail-und-adresse) | E-Mail-Versand und Adresse des DMS | Haushalt, Betrieb |
 | [Verschlüsselung](verschluesselung.md) | Den Schlüssel für Passwörter und Sicherungen | Haushalt, Betrieb |
-| [Anmeldeschutz](anmeldeschutz.md) | Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen | Betrieb |
-| [Designs](designs.md) | Logo, Farben und eigenes CSS | Betrieb |
-| [Papierkorb](papierkorb.md) | Gelöschte Mappen zurückholen | Haushalt, Betrieb |
-| [Datenbank-Anbindung](installation.md#datenbank-anbindung) | Die Verbindung zur Datenbank, lange Datenbankzugriffe und was gerade läuft | nur Alles |
 | [Postfächer](postfaecher.md) | Post aus einem E-Mail-Konto abholen | Betrieb |
 | [Eingangsordner](eingangsordner.md) | Scans aus einem Ordner übernehmen | Betrieb |
-| [WebDAV-Laufwerk](webdav.md) | Die Ablage im Explorer, Finder oder in der Dateien-App einbinden | Haushalt, Betrieb |
+| [WebDAV-Laufwerk](webdav.md) | Die Ablage im Explorer, Finder oder in der Dateien-App einbinden und Dateien hineinlegen | Haushalt, Betrieb |
 | [Texterkennung](texterkennung.md) | Text in gescannten Dokumenten finden | Betrieb |
-| [Protokoll](fehlersuche.md#protokoll) | Das technische Protokoll lesen | Betrieb |
-| [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) | Fehler, die Benutzer gemeldet haben | Betrieb |
 | [Sicherung](sicherung.md) | Sicherungen einrichten und prüfen | Haushalt, Betrieb |
 | [Wiederherstellen](wiederherstellen.md) | Eine Sicherung zurückspielen | Haushalt, Betrieb |
 | [Vollexport](export.md) | Alle Daten in offenen Formaten mitnehmen | Haushalt, Betrieb |
-| [Wartungsmodus](wartungsmodus.md) | Benutzer vorübergehend aussperren | Betrieb |
-| [Systemzustand](speicherplatz.md) | Sehen, wie es dem Server geht: Speicherplatz mit Warnschwellen | Haushalt, Betrieb |
-| [Wartungsoperationen](texterkennung.md#wartungsoperationen) | Einmalige Pflegearbeiten | nur Alles |
+| [Papierkorb](papierkorb.md) | Gelöschte Mappen zurückholen | Haushalt, Betrieb |
+| [E-Mail und Adresse](installation.md#e-mail-und-adresse) | E-Mail-Versand und Adresse des DMS | Haushalt, Betrieb |
+| [Benachrichtigungen und Aufgaben](aufgaben.md) | Die Tägliche Zusammenfassung einstellen und alle offenen Aufgaben im Blick behalten | Haushalt, Betrieb |
+| [Anmeldeschutz](anmeldeschutz.md) | Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen | Betrieb |
+| [Designs](designs.md) | Logo, Farben und eigenes CSS | Betrieb |
+| [Datenbank-Anbindung](installation.md#datenbank-anbindung) | Die Verbindung zur Datenbank, lange Datenbankzugriffe und was gerade läuft | nur Alles |
 | [Technik](fehlersuche.md#technik) | Version, Updates und die Übersicht für GitHub | Haushalt, Betrieb |
+| [Systemzustand](speicherplatz.md) | Sehen, wie es dem Server geht: Speicherplatz mit Warnschwellen | Haushalt, Betrieb |
+| [Protokoll](fehlersuche.md#protokoll) | Das technische Protokoll lesen | Betrieb |
+| [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) | Fehler, die Benutzer gemeldet haben | Betrieb |
+| [Wartungsmodus](wartungsmodus.md) | Benutzer vorübergehend aussperren | Betrieb |
+| [Wartungsoperationen](texterkennung.md#wartungsoperationen) | Einmalige Pflegearbeiten | nur Alles |
 | [Demo-Daten](demo.md) | Beispielmappen zum Ausprobieren | nur Alles |
 <!-- /bereiche:wofuer -->

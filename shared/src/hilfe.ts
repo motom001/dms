@@ -37,7 +37,7 @@ export const HILFE = {
   'berechtigungen.grund': admin('berechtigungen/', 'Standard', 'standard'),
   'berechtigungen.regeln': admin('berechtigungen/', 'Regeln', 'regeln'),
   'berechtigungen.testlauf': admin('berechtigungen/', 'Testlauf', 'testlauf'),
-  'werkbank.aufgaben': admin('aufgaben/', 'Aufgaben', 'tagliche-zusammenfassung'),
+  'werkbank.aufgaben': admin('aufgaben/', 'Benachrichtigungen und Aufgaben', 'tagliche-zusammenfassung'),
   'werkbank.betrieb': admin('installation/', 'E-Mail und Adresse', 'e-mail-und-adresse'),
   'werkbank.verschluesselung': admin('verschluesselung/', 'Verschlüsselung'),
   'werkbank.designs': admin('designs/', 'Designs'),
