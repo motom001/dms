@@ -282,7 +282,12 @@ const pakete: Paketverwaltung = new Paketverwaltung(dienst, {
   benutzer: async () => (await konten.listeBenutzer()).filter((b) => b.aktiv !== false).map((b) => ({ id: b.id, name: b.name || b.email })),
   laeufer: paketlaeufer,
 });
-texterkennung.nachher = (d, e) => { if (e.stand === 'fertig') void dienst.melde('texterkennung.fertig', { dokument: d.id, mappe: d.mappeId, seiten: e.seiten ?? null }); };
+texterkennung.nachher = (d, e) => {
+  if (e.stand !== 'fertig') return;
+  void dienst.melde('texterkennung.fertig', { dokument: d.id, mappe: d.mappeId, seiten: e.seiten ?? null });
+  // Internes Ereignis „Volltext fertig“ (#336): z. B. die Erkennung an Post.
+  void dienst.volltextFertig({ dokument: d.id, mappe: d.mappeId });
+};
 wartung.beimAusschalten(() => void paketlaeufer.stelleZu());
 
 // WebDAV-Laufwerk (#346): Anmeldung mit API-Schlüssel, im Standard aus (Werkbank → WebDAV-Laufwerk).

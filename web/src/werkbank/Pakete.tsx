@@ -532,7 +532,7 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
         {v.typen.map((t) => (
           <li key={t.schluessel}>
             {t.vorhanden
-              ? <span><strong>{t.name}</strong> – {t.neueFelder.length || t.neueRegister.length ? `neu: ${[...t.neueFelder.map((f) => `Feld „${f}“`), ...t.neueRegister.map((r) => `Register „${r}“`)].join(', ')}` : 'keine Änderung'}</span>
+              ? <span><strong>{t.name}</strong> – {t.neueFelder.length || t.neueRegister.length || t.erkennung?.length ? [t.neueFelder.length || t.neueRegister.length ? `neu: ${[...t.neueFelder.map((f) => `Feld „${f}“`), ...t.neueRegister.map((r) => `Register „${r}“`)].join(', ')}` : '', t.erkennung?.length ? `für die Erkennung: ${t.erkennung.map((f) => `„${f}“`).join(', ')}` : ''].filter(Boolean).join('; ') : 'keine Änderung'}</span>
               : t.geloescht ? <span className="leise">{t.name}: hast du gelöscht – bleibt weg.</span>
               : <label className="paketname"><span>{t.felder} Felder, Kennung <code>{t.dmsSchluessel}</code></span>
                   <input value={namen[t.schluessel] ?? t.name} aria-label={`Name für ${t.name}`} onChange={(e) => setNamen({ ...namen, [t.schluessel]: e.target.value })} />

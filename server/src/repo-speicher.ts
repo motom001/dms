@@ -48,6 +48,8 @@ export function speicherRepo(): Repo {
   const favoritSeit = new Map<string, string>();
   const favoritStumm = new Set<string>();
   const gesehen = new Map<string, string>();
+  // Erkennung (#336): Ergebnis je Post.
+  const erkennungen = new Map<string, { ergebnis: unknown; absenderId: string | null; zeit: string }>();
   const offenFuer = (m: Mappe, benutzerId: string, admin: boolean) =>
     [...aufgaben.values()].some((a) => a.mappeId === m.id && !a.erledigt && (a.empfaengerId === benutzerId || (admin && !a.empfaengerId)));
   const mitMappe = (a: Aufgabe): Aufgabe => ({ ...kopie(a), mappeTitel: mappen.get(a.mappeId)?.titel ?? '', typId: mappen.get(a.mappeId)?.typId });
@@ -466,6 +468,11 @@ export function speicherRepo(): Repo {
       return z;
     },
     async volltext(id) { return texte.get(id) ?? null; },
+    async erkennungLies(mappeId) { const e = erkennungen.get(mappeId); return e && mappen.has(mappeId) ? kopie({ ergebnis: e.ergebnis, zeit: e.zeit }) : undefined; },
+    async erkennungSchreibe(mappeId, ergebnis, absenderId) { if (mappen.has(mappeId)) erkennungen.set(mappeId, { ergebnis: kopie(ergebnis), absenderId, zeit: jetzt() }); },
+    async erkennungenMitAbsender(absenderId, max) {
+      return [...erkennungen].filter(([id, e]) => e.absenderId === absenderId && mappen.has(id)).sort((a, b) => b[1].zeit.localeCompare(a[1].zeit)).slice(0, max).map(([id]) => id);
+    },
     async volltexte(ids) {
       const r = new Map<string, string>();
       for (const id of ids) { const t = texte.get(id); if (t != null) r.set(id, t); }

@@ -4,12 +4,12 @@ import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
 import { eigeneFelderIm, vorbelegungAus } from '../../../shared/src/sichten';
 import { datumText, inFrist } from '../../../shared/src/archiv';
-import { darfErstellen, darfLoeschen, formatiere, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register, type Werte } from '../../../shared/src/model';
+import { darfErstellen, darfLoeschen, formatiere, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register, type Wert, type Werte } from '../../../shared/src/model';
 import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
-import { leeresPasswort, rohAusWerten, standardRoh, werteAusRoh, type Roh, type RohBetrag, type RohPasswort, type RohWerte } from '../werte';
+import { leeresPasswort, rohAusWerten, standardRoh, werteAusRoh, zuRoh, type Roh, type RohBetrag, type RohPasswort, type RohWerte } from '../werte';
 import { titelOder } from '../seiten';
 import { Formatiert, FormatiertEingabe } from './Formatiert';
 import { Historie } from './Historie';
@@ -31,7 +31,7 @@ const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle:
 const registerVon = (t: Mappentyp): Register[] => (t.register?.length ? t.register : standardRegister(t.felder));
 
 /** Neue Mappe als Ziel von „Zuordnen“ (#192): danach wird die Post ihr zugeordnet. */
-export interface ZuordnenNachher { post: string; register?: string; dokumente: string[]; kopieren: boolean; vorschlag: Record<string, string> }
+export interface ZuordnenNachher { post: string; register?: string; dokumente: string[]; kopieren: boolean; vorschlag: Record<string, Wert> }
 
 export function NeueMappe({ typ, verweis, sicht, zuordnen, vorbelegen }: { typ: Mappentyp; verweis?: string; sicht: string; zuordnen?: ZuordnenNachher; vorbelegen?: string }) {
   const start = standardRoh(typ);
@@ -45,10 +45,15 @@ export function NeueMappe({ typ, verweis, sicht, zuordnen, vorbelegen }: { typ: 
       else if (typeof v === 'string' && !f.mehrfach) start[k] = v;
     }
   } catch { /* ohne Vorbelegung */ }
-  // Vorschläge aus der Post (Betreff, Datum) für Text- und Datumsfelder.
+  // Vorschläge aus der Post (Betreff, Datum) und aus der Erkennung (#336: Betrag, Nummern, Verweis auf den Absender).
+  const vorbelegt: string[] = [];
   for (const [k, v] of Object.entries(zuordnen?.vorschlag ?? {})) {
     const f = typ.felder.find((x) => x.key === k);
-    if (f && (f.typ === 'text' || f.typ === 'datum') && typeof v === 'string') start[k] = v;
+    if (!f || f.typ === 'passwort' || v == null) continue;
+    if ((f.typ === 'text' || f.typ === 'langtext' || f.typ === 'datum' || f.typ === 'referenz') && typeof v !== 'string') continue;
+    if (f.typ === 'betrag' && (typeof v !== 'object' || Array.isArray(v) || typeof (v as { betrag?: unknown }).betrag !== 'number')) continue;
+    start[k] = zuRoh(f, v);
+    vorbelegt.push(f.label);
   }
   // ?verweis=feldKey:mappeId belegt ein Referenzfeld vor („+ Vertrag anlegen“ beim Vertragspartner).
   if (verweis) {
@@ -62,7 +67,7 @@ export function NeueMappe({ typ, verweis, sicht, zuordnen, vorbelegen }: { typ: 
         <p className="ueber">{typ.name}</p>
         <h1>Neue Mappe</h1>
       </div>
-      {zuordnen && <div className="hinweis info"><p>Nach dem Speichern wird die Post dieser Mappe zugeordnet{zuordnen.dokumente.length ? `, ${zuordnen.dokumente.length === 1 ? 'ihr Dokument kommt' : `ihre ${zuordnen.dokumente.length} Dokumente kommen`} hierher` : ''}.</p></div>}
+      {zuordnen && <div className="hinweis info"><p>Nach dem Speichern wird die Post dieser Mappe zugeordnet{zuordnen.dokumente.length ? `, ${zuordnen.dokumente.length === 1 ? 'ihr Dokument kommt' : `ihre ${zuordnen.dokumente.length} Dokumente kommen`} hierher` : ''}.{vorbelegt.length > 0 && <> Als Vorschlag aus der Post eingetragen: {vorbelegt.join(', ')} – bitte prüfen.</>}</p></div>}
       <Formular typ={typ} start={start} sicht={sicht} zuordnen={zuordnen} />
     </>
   );

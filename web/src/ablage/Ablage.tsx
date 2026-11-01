@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { beschreibeBedingung, heuteIn, kinderVon, mitNachkommen, spaltenDerSicht, wirksameTypen, type Sicht } from '../../../shared/src/sichten';
 import { ANSTEHEND_TAGE, datumDe, type Anstehend } from '../../../shared/src/fristen';
 import { liesDirektlink, type Direktlink } from '../../../shared/src/direktlink';
-import { auswahlText, darfErstellen, POST_RICHTUNG, darfPostAnlegen, formatiere, GEMISCHTE_SPALTEN, sortierbar, standardliste, TREFFER_ANFANG, TREFFER_ENDE, vorlageFelder, wirksameVorlage, type Ausschnitt, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
+import { auswahlText, darfErstellen, POST_RICHTUNG, darfPostAnlegen, formatiere, GEMISCHTE_SPALTEN, sortierbar, standardliste, TREFFER_ANFANG, TREFFER_ENDE, vorlageFelder, wirksameVorlage, type Ausschnitt, type Mappe, type Mappentyp, type Sortierung, type Wert } from '../../../shared/src/model';
 import { api, verborgeneAufgaben, type Bezuege, type MappeDetails } from '../api';
 import type { Aufgabe } from '../../../shared/src/model';
 import { AufgabenHinweis } from './Aufgaben';
@@ -176,7 +176,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
 function zuordnenAus(q: URLSearchParams) {
   const post = q.get('zuordnen');
   if (!post) return undefined;
-  let vorschlag: Record<string, string> = {};
+  let vorschlag: Record<string, Wert> = {};
   try { const v = JSON.parse(q.get('vorschlag') ?? '{}'); if (v && typeof v === 'object') vorschlag = v; } catch { /* ohne Vorschlag */ }
   return { post, register: q.get('register') ?? undefined, dokumente: (q.get('dokumente') ?? '').split(',').filter(Boolean), kopieren: q.get('kopieren') === '1', vorschlag };
 }

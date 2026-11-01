@@ -1364,6 +1364,21 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       }
       return z;
     },
+    async erkennungLies(mappeId) {
+      if (!istUuid(mappeId)) return undefined;
+      const [r] = await sql`SELECT ergebnis, zeit FROM erkennungen WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId}`;
+      return r ? { ergebnis: r.ergebnis, zeit: (r.zeit as Date).toISOString() } : undefined;
+    },
+    async erkennungSchreibe(mappeId, ergebnis, absenderId) {
+      if (!istUuid(mappeId)) return;
+      await sql`INSERT INTO erkennungen (mappe_id, haushalt_id, absender_id, ergebnis)
+        SELECT m.id, m.haushalt_id, ${absenderId && istUuid(absenderId) ? absenderId : null}::uuid, ${json(sql, ergebnis)} FROM mappen m WHERE m.haushalt_id = ${haushaltId} AND m.id = ${mappeId}
+        ON CONFLICT (mappe_id) DO UPDATE SET absender_id = EXCLUDED.absender_id, ergebnis = EXCLUDED.ergebnis, zeit = now()`;
+    },
+    async erkennungenMitAbsender(absenderId, max) {
+      if (!istUuid(absenderId)) return [];
+      return (await sql`SELECT mappe_id FROM erkennungen WHERE haushalt_id = ${haushaltId} AND absender_id = ${absenderId} ORDER BY zeit DESC LIMIT ${max}`).map((r) => r.mappe_id as string);
+    },
     async volltext(id) {
       if (!istUuid(id)) return null;
       const [r] = await sql`SELECT volltext FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;

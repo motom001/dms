@@ -1506,6 +1506,14 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     } },
     { methode: 'POST', pfad: '/api/post/:id/zusammenlegen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.legePostZusammen(a.params.id, b(a), ich(a).id, await zg(a))) },
     { methode: 'POST', pfad: '/api/mappen/:id/zuordnen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.ordneZu(a.params.id, b(a), ich(a).id, await zg(a))) },
+    // Erkennung (#336): Vorschläge beim Zuordnen; POST rechnet neu (z. B. nach dem Anlegen einer Organisation).
+    { methode: 'GET', pfad: '/api/mappen/:id/erkennung', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erkennung.fuerBenutzer(a.params.id, await zg(a))) },
+    { methode: 'POST', pfad: '/api/mappen/:id/erkennung', zugang: 'angemeldet', handler: async (a) => {
+      const z = await zg(a);
+      await dienst.pruefeRecht(z, a.params.id, 'R');
+      await dienst.erkennung.fuerPost(a.params.id);
+      return ok(await dienst.erkennung.fuerBenutzer(a.params.id, z));
+    } },
     // Notizen brauchen nur Lesen (#124).
     { methode: 'GET', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.notizen(a.params.id)); } },
     { methode: 'POST', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.legeNotizAn(a.params.id, b(a).text, ich(a).id), 201); } },

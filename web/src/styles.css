@@ -1083,6 +1083,21 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
 .zuordnen-treffer button { width: 100%; text-align: left; background: none; border: 0; padding: 7px 10px; border-radius: 6px; font: inherit; color: inherit; cursor: pointer; }
 .zuordnen-treffer button:hover, .zuordnen-treffer button:focus-visible { background: var(--akzent-zart); outline: none; }
 .zuordnen-treffer button.an { background: var(--gruen-zart); color: var(--gruen); font-weight: 600; }
+/* Erkennung (#336): „Erkannt“ an der Post und Vorschläge beim Zuordnen; eigenes Präfix er- */
+.er-blatt { margin: 0 0 10px; padding: 8px 10px; border: 1px dashed var(--linie); border-radius: var(--r); }
+.er-kopf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+.er-kopf .luecke { flex: 1; }
+.er-liste { margin: 6px 0 0; display: grid; gap: 4px; }
+.er-paar { display: grid; grid-template-columns: minmax(90px, 140px) 1fr; gap: 2px 10px; align-items: baseline; }
+.er-paar dt { color: var(--leise); font-size: calc(12.5px * var(--skala, 1)); }
+.er-paar dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.er-weitere { display: block; }
+.er-ziele ul { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.er-ziele button { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 2px; padding: 7px 10px; border: 1px solid var(--linie); border-radius: var(--r); background: none; font: inherit; color: inherit; cursor: pointer; overflow-wrap: anywhere; }
+.er-ziele button:hover, .er-ziele button:focus-visible { background: var(--akzent-zart); outline: none; }
+.er-ziele button.an { border-color: var(--gruen); background: var(--gruen-zart); }
+.er-zieltitel { font-weight: 600; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+@media (max-width: 600px) { .er-paar { grid-template-columns: 1fr; } }
 fieldset.eigenschaft { border: 0; padding: 0; margin: 8px 0; display: flex; flex-direction: column; gap: 4px; }
 fieldset.eigenschaft legend { font-size: calc(12.5px * var(--skala, 1)); font-weight: 600; color: var(--leise); margin-bottom: 4px; }
 
