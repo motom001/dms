@@ -97,15 +97,15 @@ async function aufbau(pg: boolean) {
   const wohnungTyp = await d.legeTypAn({ name: 'Wohnung', titelVorlage: '{lage}', felder: [{ key: 'lage', label: 'Lage', typ: 'text' }] });
   const mieterTyp = await d.legeTypAn({ name: 'Mieter', schluessel: 'mieter', titelVorlage: '{name}', felder: [
     { key: 'name', label: 'Name', typ: 'text' }, { key: 'email', label: 'E-Mail', typ: 'text' }, { key: 'kundennummer', label: 'Kundennummer', typ: 'text' },
-    { key: 'portal', label: 'Portal-Passwort', typ: 'passwort' }, { key: 'wohnung', label: 'Wohnung', typ: 'referenz', zielTyp: wohnungTyp.id },
+    { key: 'portal', label: 'Portal-Passwort', typ: 'passwort' }, { key: 'wohnung', label: 'Wohnung', typ: 'referenz', zielTyp: wohnungTyp.id, verweisart: 'zugehoerigkeit' },
   ], register: reg });
   const vertragTyp = await d.legeTypAn({ name: 'Mietvertrag', titelVorlage: '{nr}', archiv: { jahre: 10, stichtag: null }, felder: [
-    { key: 'nr', label: 'Vertragsnummer', typ: 'text' }, { key: 'mieter', label: 'Mieter', typ: 'referenz', zielTyp: mieterTyp.id },
+    { key: 'nr', label: 'Vertragsnummer', typ: 'text' }, { key: 'mieter', label: 'Mieter', typ: 'referenz', zielTyp: mieterTyp.id, verweisart: 'zugehoerigkeit' },
     { key: 'wohnung', label: 'Wohnung', typ: 'referenz', zielTyp: wohnungTyp.id },
   ], register: reg });
-  await d.aendereTyp(vertragTyp.id, { ...(await d.listeTypen()).find((t) => t.id === vertragTyp.id)!, felder: [...vertragTyp.felder, { key: 'vorgaenger', label: 'Vorgänger', typ: 'referenz', zielTyp: vertragTyp.id }] });
+  await d.aendereTyp(vertragTyp.id, { ...(await d.listeTypen()).find((t) => t.id === vertragTyp.id)!, felder: [...vertragTyp.felder, { key: 'vorgaenger', label: 'Vorgänger', typ: 'referenz', zielTyp: vertragTyp.id, verweisart: 'zugehoerigkeit' }] });
   const nkTyp = await d.legeTypAn({ name: 'Nebenkostenabrechnung', titelVorlage: 'NK {jahr}', felder: [
-    { key: 'jahr', label: 'Jahr', typ: 'text' }, { key: 'vertrag', label: 'Mietvertrag', typ: 'referenz', zielTyp: vertragTyp.id }, { key: 'privat', label: 'Privat', typ: 'janein' },
+    { key: 'jahr', label: 'Jahr', typ: 'text' }, { key: 'vertrag', label: 'Mietvertrag', typ: 'referenz', zielTyp: vertragTyp.id, verweisart: 'zugehoerigkeit' }, { key: 'privat', label: 'Privat', typ: 'janein' },
   ], register: reg });
   const hinweisTyp = await d.legeTypAn({ name: 'Hinweis', titelVorlage: '{text}', felder: [{ key: 'text', label: 'Text', typ: 'text' }] });
 
@@ -271,12 +271,15 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.deepEqual(v.mappen[m.max.id].ohneFelder, ['Portal-Passwort']);
       assert.ok(v.mappen[m.wohnung.id].dritte.includes('Bea Beispiel'), 'Hinweis „Daten Dritter?“');
       assert.equal(v.mappen[m.max.id].notizen.length, 2);
-      // Volltext-/Werte-Treffer außerhalb des Baums nur als Vorschlag
-      assert.ok(v.vorschlaege.some((x) => x.mappeId === m.hinweis.id), 'Hinweis mit der E-Mail-Adresse');
-      assert.ok(!v.vorschlaege.some((x) => v.mappen[x.mappeId]));
+      // Keine Volltext-Vorschläge mehr (#472): der Hinweis mit der E-Mail-Adresse taucht nirgends auf
+      assert.ok(!('vorschlaege' in v) && !('vorschlagMappen' in v) && !('begriffe' in v));
+      assert.ok(!v.mappen[m.hinweis.id] && !JSON.stringify(v).includes('Rückruf'));
+      // Post „Zugeordnet zu“ ist ein Bezug: nur als Erwähnung vorgesehen, ganz aufnehmen geht bewusst
+      assert.equal(v.baum.knoten.find((x) => x.id === m.post.id)?.nurBezug, true);
+      await assert.rejects(rufe(admin, 'POST', '/api/werkbank/auskunft', { body: { mappeId: m.max.id, geprueft: true, auswahl: { mappen: [m.max.id, m.hinweis.id], notizen: [notizen.notizOk.id, notizen.notizIntern.id] } } }), /nicht zur Sammlung/);
 
       const auswahl = {
-        mappen: [m.max.id, m.v2.id, m.nk1.id, m.post.id, m.hinweis.id],
+        mappen: [m.max.id, m.v2.id, m.nk1.id, m.post.id],
         dokumente: [doks.nkGeschwaerzt.id, doks.vertragPdf.id],
         notizen: [notizen.notizOk.id], historie: [m.max.id],
         ohneNotizen: [{ id: notizen.notizIntern.id, grund: 'Interne Bewertung (Art. 15 Abs. 4 DSGVO)' }],
@@ -293,7 +296,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const daten = await d.auskunftDaten(body, z, { mandant: 'Hausverwaltung', version: '0.96.0' });
       assert.deepEqual(daten.gruende, ['Interne Bewertung (Art. 15 Abs. 4 DSGVO)']);
       const r = await erzeugeAuskunft(daten, ordner, { von: { id: admin.id, name: 'Vera Verwalter', email: 'verwalter@example.org' }, mandant: 'Hausverwaltung' });
-      assert.equal(r.mappen, 5); assert.equal(r.dokumente, 2);
+      assert.equal(r.mappen, 4); assert.equal(r.dokumente, 2);
       assert.match(r.name, /^Auskunft-Max-Mustermieter-\d{4}-\d{2}-\d{2}$/);
       const zip = readFileSync(join(ordner, `${r.id}.zip`));
       const e = new Map(liesZip(zip).map((x) => [x.name.slice(r.name.length + 1), x]));
@@ -325,13 +328,78 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       // Nachweis: Historie des Betroffenen ohne Inhalte
       await d.auskunftNachweis(daten, { id: admin.id, email: 'verwalter@example.org' }, r);
       const h = (await d.historie(m.max.id)).find((x) => x.art === 'auskunft')!;
-      assert.match(String(h.daten.text), /5 Mappen, 2 Dokumente/);
+      assert.match(String(h.daten.text), /4 Mappen, 2 Dokumente/);
       assert.equal(h.daten.ohneNotizen, 1);
       assert.ok(!JSON.stringify(h).includes('pünktlich') && !JSON.stringify(h).includes('Mustermieter'));
       // Bereit zum Herunterladen; nach 7 Tagen weg
       assert.equal((await auskuenfteIn(ordner)).length, 1);
       assert.equal((await auskuenfteIn(ordner, new Date(Date.now() + 8 * 24 * 3600 * 1000))).length, 0);
       assert.deepEqual(await readdir(ordner), []);
+    });
+
+    it('Nacharbeit (#472): Bezug-Mappen nur mit Art, Titel und Feld, ohne Dokumente und Notizen, keine Weitersammlung; nach oben nie wieder nach unten', async () => {
+      const { d, admin, m, typen, rufe } = await aufbau(pg);
+      const reg = [{ key: 'daten', name: 'Daten', art: 'felder' as const }, { key: 'dok', name: 'Unterlagen', art: 'dokumente' as const }];
+      // Firma der Person mit Muttergesellschaft und einem Firmenvertrag (gehört zur Firma, nicht zur Person)
+      const orgTyp = await d.legeTypAn({ name: 'Organisation', titelVorlage: '{name}', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+      await d.aendereTyp(orgTyp.id, { ...(await d.listeTypen()).find((t) => t.id === orgTyp.id)!, felder: [...orgTyp.felder, { key: 'mutter', label: 'Muttergesellschaft', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' }] });
+      const mt = (await d.listeTypen()).find((t) => t.id === typen.mieterTyp.id)!;
+      await d.aendereTyp(mt.id, { ...mt, felder: [...mt.felder, { key: 'arbeitgeber', label: 'Arbeitgeber', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' }] });
+      const konzern = await d.legeMappeAn({ typId: orgTyp.id, werte: { name: 'Beispiel Holding AG' } }, admin.id);
+      const firma = await d.legeMappeAn({ typId: orgTyp.id, werte: { name: 'Beispiel Bau GmbH', mutter: konzern.id } }, admin.id);
+      const mx = (await d.holeMappe(m.max.id)).mappe;
+      await d.aendereMappe(m.max.id, { werte: { ...mx.werte, arbeitgeber: firma.id } }, admin.id);
+      // Wartungsvertrag eines Dienstleisters mit Max nur als Ansprechpartner (Bezug), mit Dokument, Notiz und Betrag
+      const wartungTyp = await d.legeTypAn({ name: 'Wartungsvertrag', titelVorlage: '{nr}', felder: [
+        { key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'betrag', label: 'Betrag', typ: 'text' },
+        { key: 'ansprechpartner', label: 'Ansprechpartner', typ: 'referenz', zielTyp: typen.mieterTyp.id, verweisart: 'bezug' },
+        { key: 'firma', label: 'Firma', typ: 'referenz', zielTyp: orgTyp.id, verweisart: 'zugehoerigkeit' },
+      ], register: reg });
+      const rechnungTyp = await d.legeTypAn({ name: 'Wartungsrechnung', titelVorlage: '{nr}', felder: [
+        { key: 'nr', label: 'Nummer', typ: 'text' }, { key: 'vertrag', label: 'Vertrag', typ: 'referenz', zielTyp: wartungTyp.id, verweisart: 'zugehoerigkeit' },
+      ] });
+      const wartung = await d.legeMappeAn({ typId: wartungTyp.id, werte: { nr: 'W-1', betrag: 'Geheimpreis 9.999 EUR', ansprechpartner: m.max.id, firma: firma.id } }, admin.id);
+      const wDok = (await d.ladeHoch(wartung.id, { register: 'dok', name: 'Wartung-intern.pdf' }, pdfMitText(['Wartung W-1']), admin.id)).dokument;
+      await d.legeNotizAn(wartung.id, 'Internes Besprechungsprotokoll zur Wartung', admin.id);
+      const wr = await d.legeMappeAn({ typId: rechnungTyp.id, werte: { nr: 'WR-1', vertrag: wartung.id } }, admin.id);
+
+      const v = (await rufe(admin, 'POST', '/api/werkbank/auskunft/vorschau', { body: { mappeId: m.max.id, vorschlaege: true } })).body as AuskunftVorschau;
+      const k = new Map(v.baum.knoten.map((x) => [x.id, x]));
+      const kw = k.get(wartung.id)!;
+      assert.equal(kw.nurBezug, true);
+      assert.deepEqual([kw.ueber?.feld, kw.ueber?.verweisart, kw.ueber?.richtung], ['Ansprechpartner', 'bezug', 'verwiesenVon']);
+      assert.ok(!k.has(wr.id), 'über die Bezug-Mappe wird nicht weitergesammelt');
+      // Richtung: Person → Firma → Muttergesellschaft nach oben; die Verträge der Firma (nach unten) nie
+      assert.equal(k.get(firma.id)?.ueber?.richtung, 'verweistAuf');
+      assert.equal(k.get(konzern.id)?.ueber?.vonId, firma.id);
+      assert.ok(!k.get(firma.id)?.nurBezug);
+      assert.equal(kinderVon(v.baum, firma.id).filter((x) => x.ueber?.richtung === 'verwiesenVon').length, 0, 'nach oben nie wieder nach unten');
+      // Zugehörige Mappen ganz (Mietvertrag mit Abrechnungen)
+      assert.ok(k.has(m.nk1.id) && !k.get(m.v2.id)?.nurBezug);
+      assert.ok(!('vorschlaege' in v), 'auch mit vorschlaege: true keine Vorschläge');
+
+      const z = await d.zugriff({ id: admin.id, rolle: 'admin' });
+      const ordner = await mkdtemp(join(tmpdir(), 'dms-ausk-bezug-'));
+      const basis = { mappeId: m.max.id, geprueft: true, passwort: '' };
+      // Erwähnung nur von Bezug-Mappen
+      await assert.rejects(d.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id], notizen: [], ohneNotizen: [{ id: 'x', grund: 'xxxxxxxxxxxx' }], erwaehnungen: [m.v2.id] } }, z, { mandant: 'H', version: '0' }), /Bezug/);
+      const ohneNotiz = (await d.holeMappe(m.max.id)).notizen.map((n) => ({ id: n.id, grund: 'interne Bewertung – Art. 15 Abs. 4' }));
+      const daten = await d.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id], ohneNotizen: ohneNotiz, erwaehnungen: [wartung.id, m.post.id] } }, z, { mandant: 'H', version: '0' });
+      assert.equal(daten.anzahl.erwaehnungen, 2);
+      assert.deepEqual(daten.erwaehnungen.find((e) => e.mappeId === wartung.id), { mappeId: wartung.id, typ: 'Wartungsvertrag', titel: 'W-1', feld: 'Ansprechpartner', richtung: 'verwiesenVon' });
+      const r = await erzeugeAuskunft(daten, ordner, { von: { id: admin.id, name: 'Vera', email: 'v@example.org' }, mandant: 'H' });
+      const zip = readFileSync(join(ordner, `${r.id}.zip`));
+      const e = new Map(liesZip(zip).map((x) => [x.name.slice(r.name.length + 1), x]));
+      const html = e.get('Uebersicht.html')!.daten.toString('utf8');
+      assert.match(html, /als „Ansprechpartner“ eingetragen in Wartungsvertrag „W-1“/);
+      assert.match(e.get('Uebersicht.csv')!.daten.toString('utf8'), /als „Ansprechpartner“ eingetragen in Wartungsvertrag „W-1“/);
+      for (const geheim of ['Geheimpreis', 'Besprechungsprotokoll', 'Wartung-intern.pdf', 'WR-1']) assert.ok(!zip.includes(Buffer.from(geheim)), `${geheim} darf nicht hinaus`);
+      assert.ok(![...e.keys()].some((n) => n.includes('Wartungsvertrag/')), 'kein Ordner für die Bezug-Mappe');
+
+      // Bewusst ganz aufnehmen: dann mit Dokument und Angaben
+      const ganz = await d.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id, wartung.id], dokumente: [wDok.id], ohneNotizen: [...ohneNotiz, ...(await d.holeMappe(wartung.id)).notizen.map((n) => ({ id: n.id, grund: 'intern, betrifft die Person nicht' }))], erwaehnungen: [wartung.id] } }, z, { mandant: 'H', version: '0' });
+      assert.equal(ganz.erwaehnungen.length, 0, 'ganz aufgenommen – keine zusätzliche Erwähnung');
+      assert.ok(ganz.mappen.some((x) => x.id === wartung.id && x.werte.betrag === 'Geheimpreis 9.999 EUR'));
     });
 
     it('über den Hintergrundauftrag: verschlüsselt, Herunterladen löscht die Datei; Frist als Aufgabe', async () => {

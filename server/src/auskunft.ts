@@ -20,7 +20,7 @@ import { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { datumText } from '../../shared/src/archiv';
-import { AUSKUNFT_TAGE, auskunftDateiname, type AuskunftStand, type Datenschutz } from '../../shared/src/auskunft';
+import { AUSKUNFT_TAGE, auskunftDateiname, erwaehnungText, type AuskunftErwaehnung, type AuskunftStand, type Datenschutz } from '../../shared/src/auskunft';
 import { formatiere, istLeer, type Mappe, type Mappentyp } from '../../shared/src/model';
 import { Fachfehler } from './fehler';
 import { PdfSchreiber, pdfSicher } from './export';
@@ -41,7 +41,9 @@ export interface AuskunftDaten {
   /** Post (#192): Anzahl je Kanal – Herkunft der Daten. */
   kanaele: Record<string, number>;
   passwort: string | null;
-  anzahl: { mappen: number; dokumente: number; bytes: number; notizen: number; historie: number; ohneNotizen: number };
+  /** Bezug-Mappen (#472), die nur als Erwähnung hinausgehen: Art, Titel und Feld – ohne Dokumente, Notizen, übrige Werte. */
+  erwaehnungen: AuskunftErwaehnung[];
+  anzahl: { mappen: number; dokumente: number; bytes: number; notizen: number; historie: number; ohneNotizen: number; erwaehnungen: number };
   /** Begründungen abgewählter Notizen (nur für den Nachweis, nicht in der ZIP). */
   gruende: string[];
   empfaenger: string;
@@ -99,6 +101,11 @@ export async function deckblatt(d: AuskunftDaten, x: { von: string; jetzt: Date;
     punkt(`${t.name}: ${mehrzahl(jeTyp.get(t.id) ?? 0, 'Eintrag', 'Einträge')}${felder.length ? ` – ${felder.slice(0, 12).join(', ')}${felder.length > 12 ? ' …' : ''}` : ''}`);
   }
   punkt(`${mehrzahl(n.dokumente, 'Dokument', 'Dokumente')} im Original${n.notizen ? `, ${mehrzahl(n.notizen, 'Notiz', 'Notizen')}` : ''}${n.historie ? `, Änderungshistorie zu ${mehrzahl(n.historie, 'Eintrag', 'Einträgen')}` : ''}`);
+  if (d.erwaehnungen.length) {
+    punkt(`Außerdem bist du in ${mehrzahl(d.erwaehnungen.length, 'weiterem Eintrag', 'weiteren Einträgen')} genannt (gespeichert ist dort nur der Verweis auf dich):`);
+    for (const e of d.erwaehnungen.slice(0, 15)) s.text(`– ${erwaehnungText(e)}`, { groesse: 10, abstand: 1, x: 72 });
+    if (d.erwaehnungen.length > 15) s.text('– … (vollständig in Uebersicht.html)', { groesse: 10, abstand: 1, x: 72 });
+  }
 
   abschnitt('2. Zwecke der Verarbeitung');
   const zwecke = d.typen.map((t) => [t.name, d.datenschutz.typen[t.id]?.zweck ?? ''] as const);
@@ -140,6 +147,8 @@ export function uebersichtCsv(d: AuskunftDaten, pfade: Map<string, string>): Buf
     const t = typ.get(m.typId);
     return [t?.name ?? '', m.titel ?? '', felderVon(m, t, d.titel).map(([k, v]) => `${k}: ${v}`).join('; '), m.erstellt.slice(0, 10), m.geaendert.slice(0, 10), pfade.get(m.id) ?? '', m.id];
   });
+  // Erwähnungen (#472): nur Art, Titel und das Feld, über das die Person genannt ist.
+  for (const e of d.erwaehnungen) zeilen.push([e.typ, e.titel, erwaehnungText(e), '', '', '', e.mappeId]);
   return csv(['Art', 'Titel', 'Angaben', 'Angelegt', 'Geändert', 'Ordner', 'Id'], zeilen);
 }
 
@@ -161,6 +170,9 @@ ${ds.length ? `<ul>${ds.map((dk) => { const p = x.pfade.dokumente.get(dk.id); re
 ${ordner ? `<p><small>Ordner: <a href="${esc(link(ordner))}/">${esc(ordner)}</a></small></p>` : ''}</section>`;
     }).join('\n')}`;
   }).join('\n');
+  const erwaehnt = d.erwaehnungen.length ? `<h2>Hier bist du genannt <small>(${d.erwaehnungen.length})</small></h2>
+<p><small>In diesen Einträgen steht nur ein Verweis auf dich – weitere Angaben daraus betreffen dich nicht.</small></p>
+<ul>${d.erwaehnungen.map((e) => `<li>${esc(erwaehnungText(e))}</li>`).join('')}</ul>` : '';
   return Buffer.from(`<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Auskunft – ${esc(d.start.titel)}</title>
@@ -175,6 +187,7 @@ dl{display:grid;grid-template-columns:minmax(8rem,14rem) 1fr;gap:.2rem 1rem;marg
 <p>für <strong>${esc(d.start.titel || 'Ohne Titel')}</strong>${d.start.typ ? ` (${esc(d.start.typ)})` : ''} · erstellt am ${esc(zeit(x.jetzt))}<br>
 <small>${mehrzahl(d.anzahl.mappen, 'Eintrag', 'Einträge')}, ${mehrzahl(d.anzahl.dokumente, 'Dokument', 'Dokumente')}. Die Pflichtangaben stehen im Deckblatt (Deckblatt.pdf).</small></p>
 ${abschnitte}
+${erwaehnt}
 </body></html>
 `, 'utf8');
 }
@@ -185,7 +198,7 @@ function liesmichText(d: AuskunftDaten, jetzt: Date): string {
 Für ${d.start.titel || 'Ohne Titel'}, erstellt am ${zeit(jetzt)}. ${mehrzahl(d.anzahl.mappen, 'Eintrag', 'Einträge')}, ${mehrzahl(d.anzahl.dokumente, 'Dokument', 'Dokumente')}.
 
 - **Deckblatt.pdf** – Pflichtangaben: welche Daten, Zwecke, Herkunft, Empfänger, Speicherdauer, deine Rechte.
-- **Uebersicht.html** – im Browser öffnen: alle Einträge mit Angaben und Links zu den Dokumenten. **Uebersicht.csv** – dasselbe als Tabelle.
+- **Uebersicht.html** – im Browser öffnen: alle Einträge mit Angaben und Links zu den Dokumenten, dazu die Einträge, in denen du nur genannt bist. **Uebersicht.csv** – dasselbe als Tabelle.
 - **ablage/** – je Eintrag ein Ordner mit den Dokumenten im Original (\`.txt\` = erkannter Text) und \`mappe.pdf\`/\`mappe.json\`.
 - **daten/** – maschinenlesbar: je Art eine Tabelle (\`.csv\`, \`.jsonl\`, \`.xlsx\`), Verweise, Dokumentliste, Notizen, Änderungshistorie (\`.jsonl\`).
 - **struktur/mappentypen.json** – welche Angaben es je Art gibt. **manifest.json** – Größe und SHA-256 jeder Datei.

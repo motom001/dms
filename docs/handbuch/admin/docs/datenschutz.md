@@ -63,8 +63,8 @@ Ein Mieter, Kunde oder Kontakt fragt nach seinen Daten. Das erledigt **Werkbank 
 
 1. **Einmal einrichten:** Verantwortlicher, Empfänger und die Mappentypen, die eine Person betreffen, jeweils mit Zweck ([Einstellungen](#einstellungen)).
 2. **Person wählen** – oder an ihrer Mappe **Mappe ▾ → Auskunft erstellen …** – und den Eingang der Anfrage eintragen. **Frist als Aufgabe anlegen** erinnert dich unter „Zu erledigen“.
-3. **Sammeln:** Das DMS folgt den Verweisen von der Mappe der Person aus (Mietvertrag, Abrechnungen, Post, Wohnung). Darunter stehen **Vorschläge aus der Suche** – Mappen, in denen Name, E-Mail-Adresse, Kundennummer oder IBAN vorkommen, auch im Text der Dokumente und Notizen.
-4. **Weitersuchen**, wenn die Person auch anderswo vorkommt: In der Ablage findet die [erweiterte Suche](https://motom001.github.io/dms/benutzer/aktuell/ablage/#erweiterte-suche) ohne gewählten Mappentyp über alle Mappentypen, mit **Volltext** auch in Dokumenten und Notizen. Was dazugehört, nimmst du in der Prüfliste aus den Vorschlägen auf oder verknüpfst es mit der Mappe der Person und sammelst neu.
+3. **Sammeln:** Das DMS folgt den Verweisen von der Mappe der Person aus (Mietvertrag, Abrechnungen, Wohnung) – vollständig nur, was über eine **Zugehörigkeit** zu ihr gehört. Mappen, in denen sie nur über einen **Bezug** genannt ist (z. B. als Ansprechpartner), stehen ohne ihre Inhalte da ([Zugehörigkeit oder Bezug](#zugehorigkeit-oder-bezug)).
+4. **Weitersuchen**, wenn die Person auch anderswo vorkommt: Eine Volltext-Suche macht das DMS bewusst nicht ([warum](#warum-keine-volltext-suche)). Such selbst in der Ablage mit der [erweiterten Suche](https://motom001.github.io/dms/benutzer/aktuell/ablage/#erweiterte-suche) ohne gewählten Mappentyp, mit **Volltext** auch in Dokumenten und Notizen. Was wirklich zur Person gehört, verknüpfst du mit ihrer Mappe (als Zugehörigkeit) und sammelst neu.
 5. **Prüfen und schwärzen:** Nur Angehaktes geht hinaus; Angaben zu anderen Personen schwärzt du vorher.
 6. **Erzeugen und zustellen:** am besten mit Passwort, dann per [Abruf-Link oder E-Mail](#auskunft-zustellen). Der Nachweis steht in der Historie der Person.
 
@@ -72,7 +72,7 @@ Ein Mieter, Kunde oder Kontakt fragt nach seinen Daten. Das erledigt **Werkbank 
 
 Jemand verlangt, dass seine Daten gelöscht werden (Art. 17 DSGVO).
 
-1. **Finden, was zur Person gehört:** wie bei der Auskunft – die Prüfliste unter **Werkbank → Datenschutz** zeigt alle Mappen, die an der Person hängen, und Vorschläge aus der Suche. Erzeugen musst du dafür nichts.
+1. **Finden, was zur Person gehört:** wie bei der Auskunft – die Prüfliste unter **Werkbank → Datenschutz** zeigt alle Mappen, die zur Person gehören, und die, in denen sie nur genannt ist. Erzeugen musst du dafür nichts.
 2. **Prüfen, ob eine Aufbewahrungsfrist entgegensteht** (Art. 17 Abs. 3): Mappen eines Mappentyps im [Archivmodus](archiv.md) tragen **Archiv · aufbewahren bis …** und lassen sich vor Fristende ohnehin nicht löschen – auch nicht von Administratoren. Prüfe auch Mappen ohne Archivmodus: Rechnungen oder Verträge können Fristen haben, die du (noch) nicht eingetragen hast.
 3. **Frist steht entgegen → sperren statt löschen.** Die Mappe bleibt bis Fristende; benutze sie nur noch dafür, wofür du sie aufbewahren musst.
     - **Zugriff einschränken:** Gib dem Mappentyp ein Ja/Nein-Feld wie *Gesperrt* und lege in den [Berechtigungen](berechtigungen.md#bedingungen) eine Regel an: Wenn „Gesperrt ist ja“, dann Lesen und Bearbeiten nur für eine Rolle wie *Datenschutz*. Administratoren sehen weiter alles.
@@ -126,19 +126,24 @@ Die **Speicherdauer** auf dem Deckblatt kommt aus dem [Archivmodus](archiv.md): 
 
 1. **Person wählen:** Art (einer der markierten Mappentypen) und Name suchen – oder direkt an der Mappe unter **Mappe ▾ → Auskunft erstellen …** (nur für Administratoren und nur bei Mappentypen, die eine Person betreffen).
 2. **Frist:** Trage ein, wann die Anfrage eingegangen ist, und lege mit **Frist als Aufgabe anlegen** eine Aufgabe für dich an – „Auskunft nach Art. 15 DSGVO an … bis …“, fällig einen Monat nach Eingang (Art. 12 Abs. 3 DSGVO). Sie steht wie jede Aufgabe unter „Zu erledigen“.
-3. **Sammeln:** Das DMS folgt den Verweisen von der Mappe der Person aus – **Mappen, die darauf verweisen** (Mietvertrag → Nebenkostenabrechnungen, Post) und **Mappen, auf die sie verweist** (Wohnung). Die **Tiefe** stellst du ein (Vorgabe 2: Vertrag und dessen Rechnungen). Jede Mappe geht nur in der Richtung weiter, über die sie erreicht wurde: Von der Wohnung aus sammelt das DMS also nicht die anderen Mieter. Kreise (zwei Verträge, die aufeinander verweisen) werden erkannt; jede Mappe steht nur einmal da. Benutzer und Rollen sind nie dabei.
+3. **Sammeln:** Das DMS folgt den Verweisen von der Mappe der Person aus – **Mappen, die darauf verweisen** (Mietvertrag → Nebenkostenabrechnungen) und **Mappen, auf die sie verweist** (Wohnung, Arbeitgeber). Die **Tiefe** stellst du ein (Vorgabe 2: Vertrag und dessen Rechnungen). Kreise (zwei Verträge, die aufeinander verweisen) werden erkannt; jede Mappe steht nur einmal da. Benutzer und Rollen sind nie dabei.
+    - **Richtung:** Nach unten (Mappen, die zur Person gehören) sammelt das DMS alles, über mehrere Stufen. Nach oben (Person → Firma → Muttergesellschaft) geht es nur weiter nach oben, **nie wieder hinunter**: Von der Wohnung aus sammelt es nicht die anderen Mieter, von der Firma aus nicht deren Verträge.
+    - <a id="zugehorigkeit-oder-bezug"></a>**Zugehörigkeit oder Bezug:** Vollständig – mit Dokumenten, Notizen und allen Angaben – kommt nur, was über einen Verweis der [Verweisart](mappentypen.md#verweise-mappen-verbinden) **Zugehörigkeit** verbunden ist. Ist die Person in einer Mappe nur über einen **Bezug** eingetragen – z. B. ein Wartungsvertrag mit ihr als *Ansprechpartner*, Post mit *Zugeordnet zu* –, steht die Mappe in der Prüfliste als „als Ansprechpartner eingetragen in Wartungsvertrag „W-1““: In die Auskunft geht nur das – Art, Titel und Feld –, **ohne ihre Dokumente, Notizen und übrigen Angaben**, und über sie sammelt das DMS nicht weiter. Gehört sie doch ganz dazu, setzt du **ganz aufnehmen** (Vorgabe: aus). Prüfe darum die Verweisart deiner Felder: Soll Post zur Person ganz hinausgehen, nimm sie bewusst auf oder verknüpfe sie über ein Feld der Art Zugehörigkeit.
 4. **Prüfen:** Die Liste zeigt den Baum mit Häkchen je **Mappe**, **Dokument**, **Notiz** und **Historie**. Nur Angehaktes geht hinaus, und erst wenn du **„Ich habe die Auswahl geprüft“** bestätigst, lässt sich die Auskunft erzeugen.
     - **Daten Dritter?** Ist eine Mappe noch mit anderen Personen verbunden (Mappen eines Typs, der eine Person betrifft – z. B. eine Wohnung, in der auch andere Mieter wohnen), steht das dabei. Enthält ein Dokument Angaben zu anderen Personen, öffne es über **schwärzen …** in einem neuen Tab, schwärze die Stellen ([Schwärzen](https://motom001.github.io/dms/benutzer/aktuell/dokumente/)) und sammle neu: Die **geschwärzte Fassung** ist dann angehakt, das Original nicht.
     - **Notizen** sind vorgewählt. Hältst du eine zurück (z. B. eine interne Bewertung), ist eine **Begründung Pflicht**; sie steht im Nachweis, nicht in der Auskunft.
-    - **Vorschläge aus der Suche:** Mappen, die nicht über Verweise an der Person hängen, aber ihren Namen, ihre E-Mail-Adresse, Kundennummer oder IBAN enthalten (auch in Dokumenten und Notizen). Sie sind nicht angehakt – nimm sie nur auf, wenn sie wirklich zur Person gehören.
 5. **Erzeugen:** Empfänger und eine Anmerkung fürs Deckblatt, optional ein **Passwort** (mindestens 10 Zeichen, „Vorschlagen“ erzeugt eines). Die Auskunft entsteht im Hintergrund; danach erscheint **Herunterladen**.
+
+### Warum keine Volltext-Suche? { #warum-keine-volltext-suche }
+
+Früher schlug die Prüfliste auch Mappen vor, in denen Name, E-Mail-Adresse, Kundennummer oder IBAN irgendwo im Text vorkamen. Das gibt es nicht mehr, auch nicht zum Einschalten: Zu oft trifft die Suche die Falschen („Meissner“ und „Meißner“), und zu leicht gingen fremde Inhalte hinaus – etwa ein internes Besprechungsprotokoll, in dem die Person nur erwähnt ist. In die Auskunft kommt nur, was über Verweise mit der Person verbunden ist. Kommt sie anderswo vor, suchst du selbst und verknüpfst, was dazugehört.
 
 ### Was die ZIP-Datei enthält
 
 | Datei/Ordner | Inhalt |
 | --- | --- |
 | `Deckblatt.pdf` | „Auskunft nach Art. 15 DSGVO“ mit Absender: welche Daten (Arten und Felder), Zwecke, Herkunft (Kanäle der Post: E-Mail, Scan …), Empfänger, Speicherdauer, Rechte der Person |
-| `Uebersicht.html` | alle Mappen mit ihren Angaben und Links zu den Dokumenten – im Browser zu öffnen |
+| `Uebersicht.html` | alle Mappen mit ihren Angaben und Links zu den Dokumenten, dazu „Hier bist du genannt“ mit den Bezug-Mappen (nur Art, Titel und Feld) – im Browser zu öffnen |
 | `Uebersicht.csv` | dasselbe als Tabelle |
 | `ablage/<Art>/<Titel>/` | je Mappe die Dokumente im Original (bzw. geschwärzt), dazu `mappe.pdf` und `mappe.json` |
 | `daten/`, `struktur/`, `manifest.json` | maschinenlesbar im Format des [Vollexports](export.md) (CSV, JSON Lines, Excel) – deckt auch die Datenübertragbarkeit (Art. 20) ab |
