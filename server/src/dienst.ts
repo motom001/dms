@@ -5078,7 +5078,8 @@ export class Dienst {
     if (!stand.verschluesselt) throw new Fachfehler(422, 'Per E-Mail geht eine Auskunft nur mit Passwort (verschlüsselt). Erzeuge sie mit Passwort neu oder stelle sie über einen Abruf-Link zu.');
     if (stand.bytes > EMAIL_MAX_ANHAENGE) throw new Fachfehler(413, `Die Auskunft ist mit ${Math.round(stand.bytes / 1e6)} MB zu groß für eine E-Mail (höchstens ${Math.round(EMAIL_MAX_ANHAENGE / 1e6)} MB). Stelle sie über einen Abruf-Link zu.`);
     const e = (eingabe ?? {}) as Record<string, unknown>;
-    const { an, betreff, nachricht } = Dienst.emailKopf({ betreff: auskunftMail.zip().betreff, nachricht: auskunftMail.zip().nachricht, ...e });
+    const vorlage = auskunftMail.zip((await this.datenschutz()).anrede);
+    const { an, betreff, nachricht } = Dienst.emailKopf({ betreff: vorlage.betreff, nachricht: vorlage.nachricht, ...e });
     const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;
     try {
       await mailer.sende(an.join(', '), betreff, nachricht, { antwortAn, anhaenge: [{ name: `${stand.name}.zip`, mime: 'application/zip', inhalt: datei() }] });
@@ -5117,7 +5118,7 @@ export class Dienst {
     const bis = datumText(link.ablauf.slice(0, 10));
     if (e.senden) {
       const ds = await this.datenschutz();
-      const m = auskunftMail.link(url, bis, link.maxAbrufe, ds.verantwortlicher);
+      const m = auskunftMail.link(ds.anrede, url, bis, link.maxAbrufe, ds.verantwortlicher);
       const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;
       try { await x.mailer!.sende(e.an, m.betreff, m.nachricht, { antwortAn }); } catch (f) {
         await this.repo.widerrufeAuskunftLink(link.id);

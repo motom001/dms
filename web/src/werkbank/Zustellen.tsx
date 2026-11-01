@@ -117,7 +117,8 @@ function LinkErstellen({ a, s, nachher }: { a: AuskunftStand; s: DatenschutzStan
 }
 
 function PerEmail({ a, s, nachher }: { a: AuskunftStand; s: DatenschutzStand; nachher(): Promise<void> }) {
-  const vorlage = auskunftMail.zip();
+  // Vorlage in der Anrede für Dritte (#474); Betreff und Text lassen sich ändern.
+  const vorlage = auskunftMail.zip(s.einstellung.anrede);
   const [an, setAn] = useState('');
   const [betreff, setBetreff] = useState(vorlage.betreff);
   const [nachricht, setNachricht] = useState(vorlage.nachricht);

@@ -117,10 +117,25 @@ Einmal einrichten, unten auf der Seite unter **Einstellungen**:
 
 - **Verantwortlicher:** Name und Anschrift – steht als Absender auf dem Deckblatt.
 - **Empfänger:** an wen du Daten weitergibst (z. B. Steuerberatung, Hausmeisterdienst). Das ist der Vorschlag für jede Auskunft; du kannst ihn je Auskunft ändern.
-- **Rechte der Person:** der Text auf dem Deckblatt (Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerspruch, Beschwerde). Ein Vorschlag steht schon drin. Wie überall im DMS spricht auch das Deckblatt die Person mit „du“ an – du kannst den Text hier anpassen.
+- **Rechte der Person:** der Text auf dem Deckblatt (Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerspruch, Beschwerde). Ein Vorschlag steht schon drin – in der eingestellten [Anrede](#anrede). Du kannst den Text hier anpassen; einen eigenen Text ändert das DMS beim Wechsel der Anrede nicht.
+- **Anrede in Unterlagen für Dritte:** siehe [unten](#anrede).
 - **Mappentypen:** Hake an, welche Mappentypen **eine Person betreffen** – z. B. Mieter, Kunde, Vertragspartner, Kontakt. Nur Mappen dieser Typen lassen sich als Betroffene wählen. Je Mappentyp trägst du den **Zweck** ein (z. B. „Durchführung des Mietverhältnisses“); er steht auf dem Deckblatt bei jeder Art von Daten, die herausgeht.
 
 Die **Speicherdauer** auf dem Deckblatt kommt aus dem [Archivmodus](archiv.md): Hat ein Mappentyp eine Aufbewahrungsfrist, steht sie dort mit dem spätesten „aufbewahren bis“; sonst „solange für den Zweck nötig“.
+
+### Anrede in Unterlagen für Dritte: du oder Sie { #anrede }
+
+Das DMS spricht dich mit „du“ an – und standardmäßig auch die Personen, an die eine Auskunft geht. Schreibst du deinen Mietern oder Kunden sonst mit „Sie“, stellst du unter **Einstellungen → Anrede in Unterlagen für Dritte** auf **Sie** um. Ein Beispielsatz zeigt beide Formen nebeneinander; wirksam wird die Wahl mit **Speichern**. Sie gilt für die ganze Installation und für alles, was an Personen **außerhalb** des DMS geht:
+
+| Was | Wo |
+| --- | --- |
+| Deckblatt, Übersicht und LIESMICH der Auskunft | in der ZIP-Datei, beim nächsten Erzeugen |
+| Vorlage für die E-Mail mit der ZIP-Datei und die E-Mail mit dem Abruf-Link | [Auskunft zustellen](#auskunft-zustellen) |
+| Abrufseite mit ihren Meldungen (falscher Code, Link abgelaufen …) | `/abruf` |
+
+**Die Oberfläche bleibt in jedem Fall beim „du“** – auch für dich als Administrator. Ändert sich die Anrede, gilt sie für alle danach erzeugten Auskünfte und verschickten E-Mails; schon erzeugte ZIP-Dateien und verschickte E-Mails bleiben, wie sie sind. Die Abrufseite zeigt immer die aktuelle Einstellung.
+
+E-Mails mit Mappen und Dokumenten (*Per E-Mail versenden*) schreibst du selbst – das DMS gibt dort nur den Betreff „Mappentyp: Titel“ vor, ohne Anrede.
 
 ## Auskunft nach Art. 15 DSGVO
 
@@ -143,7 +158,7 @@ Früher schlug die Prüfliste auch Mappen vor, in denen Name, E-Mail-Adresse, Ku
 | Datei/Ordner | Inhalt |
 | --- | --- |
 | `Deckblatt.pdf` | „Auskunft nach Art. 15 DSGVO“ mit Absender: welche Daten (Arten und Felder), Zwecke, Herkunft (Kanäle der Post: E-Mail, Scan …), Empfänger, Speicherdauer, Rechte der Person |
-| `Uebersicht.html` | alle Mappen mit ihren Angaben und Links zu den Dokumenten, dazu „Hier bist du genannt“ mit den Bezug-Mappen (nur Art, Titel und Feld) – im Browser zu öffnen |
+| `Uebersicht.html` | alle Mappen mit ihren Angaben und Links zu den Dokumenten, dazu „Hier bist du genannt“ (bzw. „Hier sind Sie genannt“) mit den Bezug-Mappen (nur Art, Titel und Feld) – im Browser zu öffnen |
 | `Uebersicht.csv` | dasselbe als Tabelle |
 | `ablage/<Art>/<Titel>/` | je Mappe die Dokumente im Original (bzw. geschwärzt), dazu `mappe.pdf` und `mappe.json` |
 | `daten/`, `struktur/`, `manifest.json` | maschinenlesbar im Format des [Vollexports](export.md) (CSV, JSON Lines, Excel) – deckt auch die Datenübertragbarkeit (Art. 20) ab |
@@ -177,7 +192,7 @@ Vorgeschlagen ist der Abruf-Link, wenn die [Adresse des DMS](installation.md#e-m
 
 ### Weg 1: per E-Mail
 
-Nur für Auskünfte **mit Passwort** – unverschlüsselt geht keine Auskunft per E-Mail hinaus. Gib die Adresse ein; Betreff und Text sind vorbereitet (in Du-Form) und lassen sich ändern. **Das Passwort steht nie in der E-Mail** – das DMS kennt es nach dem Erzeugen gar nicht mehr. Teile es auf einem anderen Weg mit. Antworten gehen an deine Adresse. In der Historie der Person steht „Auskunft per E-Mail gesendet an …“.
+Nur für Auskünfte **mit Passwort** – unverschlüsselt geht keine Auskunft per E-Mail hinaus. Gib die Adresse ein; Betreff und Text sind vorbereitet (in der eingestellten [Anrede](#anrede)) und lassen sich ändern. **Das Passwort steht nie in der E-Mail** – das DMS kennt es nach dem Erzeugen gar nicht mehr. Teile es auf einem anderen Weg mit. Antworten gehen an deine Adresse. In der Historie der Person steht „Auskunft per E-Mail gesendet an …“.
 
 ### Weg 2: Abruf-Link mit Abrufcode
 
@@ -186,7 +201,7 @@ Nur für Auskünfte **mit Passwort** – unverschlüsselt geht keine Auskunft pe
 3. **Abrufcode:** Am besten **vom DMS erzeugen** (8 Zeichen ohne Verwechsler wie 0/O und 1/I). Alternativ ein **eigener Code**, den nur die Person kennt – z. B. die Vertragsnummer (mindestens 6 Zeichen). Eine **Kundennummer allein ist schwach**: Sie steht oft auf Briefen und Rechnungen.
 4. **Abruf-Link erstellen:** Link und Code stehen **nur jetzt** auf dem Bildschirm. Teile den Code auf einem anderen Weg mit – per Brief, Telefon oder SMS, **nie in derselben E-Mail wie den Link**. Geht er verloren, erstelle einen neuen Link; der alte gilt dann nicht mehr.
 
-Die Person öffnet den Link und sieht nur: „Du hast eine Auskunft nach Art. 15 DSGVO über die hier gespeicherten Daten angefordert. Zur Sicherheit gib bitte deinen Abrufcode ein.“ – kein Menü, kein Logo, kein Name des Haushalts, keine Anmeldung. Mit dem richtigen Code startet der Download.
+Die Person öffnet den Link und sieht nur: „Du hast eine Auskunft nach Art. 15 DSGVO über die hier gespeicherten Daten angefordert. Zur Sicherheit gib bitte deinen Abrufcode ein.“ (mit der [Anrede](#anrede) „Sie“: „Sie haben … Zur Sicherheit geben Sie bitte Ihren Abrufcode ein.“) – kein Menü, kein Logo, kein Name des Haushalts, keine Anmeldung. Mit dem richtigen Code startet der Download.
 
 ![Öffentliche Abrufseite einer Auskunft](bilder/abrufseite.png)
 
@@ -206,11 +221,11 @@ Die Abrufseite ist der **einzige** Weg, ohne Anmeldung an Daten im DMS zu kommen
 - **Sperre:** Nach **10 falschen Codes** ist der Link gesperrt – dann hilft auch der richtige nicht mehr; du erfährst es über die Aufgabe *Auskunft*. Zusätzlich zählt der [Anmeldeschutz](anmeldeschutz.md) Fehlversuche je IP-Adresse (Vorgabe: 5 je Minute, 30 je Stunde über alle Links und Anmeldungen).
 - **Download über ein Einmal-Ticket:** Nach dem richtigen Code gibt es ein Ticket für genau einen Download, zwei Minuten gültig. Gezählt wird beim Start des Downloads; ein abgebrochener Download steht als *abgebrochen* in der Historie.
 - **Protokoll ohne Geheimnisse:** Im [Protokoll](fehlersuche.md#protokoll) (Modul „datenschutz“) stehen Abrufe und Fehlversuche mit **gekürzter IP** (z. B. `203.0.113.0`), nie Schlüssel oder Code.
-- Die Anfrage mit dem Code braucht die Kennung der eigenen Oberfläche (Schutz vor fremden Seiten, CSRF); die Seite lädt sonst nichts aus dem DMS (keinen Kontostatus, kein Design).
+- Die Anfrage mit dem Code braucht die Kennung der eigenen Oberfläche (Schutz vor fremden Seiten, CSRF); die Seite lädt sonst nur die eingestellte [Anrede](#anrede) aus dem DMS (keinen Kontostatus, kein Design).
 
 ### Erreichbarkeit aus dem Internet
 
-Der Abruf-Link funktioniert nur, wenn die Person dein DMS von außen erreicht. Viele Installationen zu Hause sind das nicht – dann nimm den Weg per E-Mail. Soll das DMS erreichbar sein, geht das über einen [Reverse-Proxy](installation.md#hinter-einem-reverse-proxy) mit HTTPS (z. B. auf dem NAS mit Portfreigabe), einen Tunnel (z. B. Cloudflare Tunnel, Tailscale Funnel) oder [bei einem Anbieter](https://motom001.github.io/dms/installieren/aktuell/anbieter/). Trage unter [E-Mail und Adresse](installation.md#e-mail-und-adresse) die Adresse ein, unter der es von außen erreichbar ist – sie steht im Link. Wer nur die Abrufseite nach außen geben will, gibt am Proxy `/abruf`, `/api/abruf`, `/api/abruf/datei` und die Dateien der Oberfläche (`/assets/`) frei.
+Der Abruf-Link funktioniert nur, wenn die Person dein DMS von außen erreicht. Viele Installationen zu Hause sind das nicht – dann nimm den Weg per E-Mail. Soll das DMS erreichbar sein, geht das über einen [Reverse-Proxy](installation.md#hinter-einem-reverse-proxy) mit HTTPS (z. B. auf dem NAS mit Portfreigabe), einen Tunnel (z. B. Cloudflare Tunnel, Tailscale Funnel) oder [bei einem Anbieter](https://motom001.github.io/dms/installieren/aktuell/anbieter/). Trage unter [E-Mail und Adresse](installation.md#e-mail-und-adresse) die Adresse ein, unter der es von außen erreichbar ist – sie steht im Link. Wer nur die Abrufseite nach außen geben will, gibt am Proxy `/abruf`, `/api/abruf`, `/api/abruf/anrede`, `/api/abruf/datei` und die Dateien der Oberfläche (`/assets/`) frei.
 
 ## Löschen mit verknüpften Mappen { #mit-verknupften-mappen-loschen }
 
