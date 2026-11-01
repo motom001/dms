@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { Symbol } from '../Symbol';
 import { erwaehnung, zerlege, type Block, type Inline } from '../../../shared/src/markdown';
 import { abwesenheitText, useDaten } from '../daten';
 import { Person } from '../Person';
@@ -53,7 +54,7 @@ const WERKZEUGE: Werkzeug[] = [
   { titel: 'Liste', zeichen: '•', vor: '- ', zeile: true, platzhalter: 'Punkt' },
   { titel: 'Nummerierte Liste', zeichen: '1.', vor: '1. ', zeile: true, platzhalter: 'Punkt' },
   { titel: 'Zitat', zeichen: '„“', vor: '> ', zeile: true, platzhalter: 'Zitat' },
-  { titel: 'Link', zeichen: '🔗', vor: '[', nach: '](https://)', platzhalter: 'Linktext' },
+  { titel: 'Link', zeichen: <Symbol name="link" />, vor: '[', nach: '](https://)', platzhalter: 'Linktext' },
 ];
 
 

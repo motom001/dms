@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Symbol } from '../Symbol';
 import { herkunftText, laeuferZustandText, vergleicheVersion, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
 import { api, ApiFehler, type PaketlaeuferStand, type PaketQuelle, type PaketVorschau } from '../api';
 import { useDaten } from '../daten';
@@ -342,7 +343,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
       {inst?.einstellungen && (
         <div className="registertaben" role="tablist" aria-label="Paket">
           <button type="button" role="tab" aria-selected={reiter === 'uebersicht'} className={`registertab ${reiter === 'uebersicht' ? 'an' : ''}`} onClick={() => void darfVerlassen().then((ok) => { if (ok) setReiter('uebersicht'); })}>Übersicht</button>
-          <button type="button" role="tab" aria-selected={reiter === 'einstellungen'} className={`registertab ${reiter === 'einstellungen' ? 'an' : ''}`} onClick={() => setReiter('einstellungen')}>Einstellungen{inst.einstellungenNoetig ? ' ⚠' : ''}</button>
+          <button type="button" role="tab" aria-selected={reiter === 'einstellungen'} className={`registertab ${reiter === 'einstellungen' ? 'an' : ''}`} onClick={() => setReiter('einstellungen')}>Einstellungen{inst.einstellungenNoetig && <> <Symbol name="warnung" className="sym-warn" /><span className="sr-only">(Einstellungen nötig)</span></>}</button>
         </div>
       )}
       {inst?.einstellungen && reiter === 'einstellungen' ? <PaketEinstellungen id={id} gespeichert={() => void z.laden()} /> : <>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Symbol } from '../Symbol';
 import { AUFGABENARTEN, type Aufgabe } from '../../../shared/src/model';
 import { datumDe, type Erinnerung } from '../../../shared/src/fristen';
 import { heuteIn, verschiebe } from '../../../shared/src/sichten';
@@ -134,7 +135,7 @@ export function Erinnerungen({ liste, neuLaden }: { liste: Erinnerung[]; neuLade
           ? <li key={e.id}><ErinnerungFormular mappeId={e.mappeId} e={e} neuLaden={neuLaden} schliessen={() => setBearbeiten(undefined)} eingebettet /></li>
           : (
             <li key={e.id}>
-              <div className="aufgabentext"><span aria-hidden="true">⏰ </span><strong>{datumDe(e.datum)}</strong> für {e.empfaengerId === ich.id ? 'dich' : <Person id={e.empfaengerId} />}: {e.text}</div>
+              <div className="aufgabentext"><Symbol name="erinnern" />{' '}<strong>{datumDe(e.datum)}</strong> für {e.empfaengerId === ich.id ? 'dich' : <Person id={e.empfaengerId} />}: {e.text}</div>
               {darf && <div className="aufgabenaktionen">
                 <button type="button" className="knopf klein" onClick={() => setBearbeiten(e.id)}>Ändern</button>
                 <button type="button" className="textknopf gefahr klein" onClick={() => void loeschen(e)}>Löschen</button>

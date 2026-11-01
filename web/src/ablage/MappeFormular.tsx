@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { Symbol } from '../Symbol';
 import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
 import { eigeneFelderIm, vorbelegungAus } from '../../../shared/src/sichten';
@@ -95,7 +96,7 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { t
         {mappe.systemKennung && <p className="leise klein"><span className="chip">Systemrolle</span> Wer sie hat, ergibt sich aus der Rolle in der Benutzerverwaltung.</p>}
         <div className="mappenleiste">
           <button type="button" className={`knopf klein ${notizenOffen ? 'an' : ''}`} aria-expanded={notizenOffen} onClick={() => setNotizenOffen(!notizenOffen)} title="Notizen zu dieser Mappe">
-            <span aria-hidden="true">🗒</span> Notizen{notizen.length ? ` (${notizen.length})` : ''}
+            <Symbol name="notiz" /> Notizen{notizen.length ? ` (${notizen.length})` : ''}
           </button>
           <Aktionsmenue aufgabe={() => setAufgabeOffen(true)} erinnern={() => setErinnernOffen(true)} email={details.exportierbar === false ? undefined : () => setEmailOffen(true)} drucken={details.exportierbar === false ? undefined : () => setDrucken(true)}
             link={direktlink ? () => { const l = location.origin + direktlink; void kopiere(l).then((ok) => setKopiert({ link: l, ok })); } : undefined}
@@ -506,7 +507,7 @@ function PasswortEingabe({ id, feld: f, roh: p, setze, mappeId, nurLesen, sehen 
   const [aendern, setAendern] = useState(false);
   // Nach dem Speichern (neuer Stand vom Server) die Anzeige zurücksetzen.
   useEffect(() => { if (!p.neu) { setKlartext(null); setAendern(false); setZeigen(false); } }, [p.gesetzt, p.lesbar]); // eslint-disable-line react-hooks/exhaustive-deps
-  const auge = (an: boolean) => <span aria-hidden="true">{an ? '🙈' : '👁'}</span>;
+  const auge = (an: boolean) => <Symbol name={an ? 'auge-aus' : 'auge'} />;
 
   if (p.entfernen) return (
     <div className="passwort">

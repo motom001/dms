@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Symbol } from './Symbol';
 import { messung, type Anfragemessung } from './messung';
 
 const ms = (x: number | undefined) => (x === undefined ? '–' : `${x < 10 ? x.toFixed(1).replace('.', ',') : Math.round(x)} ms`);
@@ -14,7 +15,7 @@ export function Messpanel() {
   return (
     <aside className={`messpanel ${offen ? 'offen' : ''}`} aria-label="Zeitmessung">
       <button type="button" className="messkopf" onClick={() => setOffen(!offen)} aria-expanded={offen}>
-        <span>⏱ {s.bisAnzeige !== undefined ? `${ms(s.bisAnzeige)} bis zur Anzeige` : 'Messung'}</span>
+        <span><Symbol name="stoppuhr" /> {s.bisAnzeige !== undefined ? `${ms(s.bisAnzeige)} bis zur Anzeige` : 'Messung'}</span>
         <span className="leise">{s.anfragen.length} {s.anfragen.length === 1 ? 'Anfrage' : 'Anfragen'}{s.anfragen.some((a) => a.dbAnzahl) ? ` · ${summe('dbAnzahl')} DB-Zugriffe` : ''}</span>
       </button>
       {offen && (

@@ -5,3 +5,9 @@ Dieses Produkt steht ab Version 0.93.0 unter der Apache License, Version 2.0
 (siehe LICENSE). Versionen bis einschließlich 0.92.0 wurden unter der
 GNU Affero General Public License v3.0 (AGPL-3.0-only) veröffentlicht und
 bleiben unter dieser Lizenz.
+
+Die Symbole der Oberfläche (web/src/Symbol.tsx) stammen aus Lucide
+(https://lucide.dev), ISC-Lizenz:
+Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part
+of Feather (MIT). All other copyright (c) for Lucide are held by Lucide
+Contributors 2022.
