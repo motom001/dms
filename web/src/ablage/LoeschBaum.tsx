@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { BAUM_TIEFE_MAX, kinderVon, type BaumKnoten } from '../../../shared/src/baum';
 import { datumText } from '../../../shared/src/archiv';
-import { kennzeichen, KENNZEICHEN, LOESCH_TIEFE, loeschZusammenfassung, planeLoeschung, type LoeschAktion, type LoeschKennzeichen, type LoeschVorschau } from '../../../shared/src/loeschbaum';
+import { kennzeichen, KENNZEICHEN, LOESCH_TIEFE, loeschErinnerung, loeschZusammenfassung, planeLoeschung, type LoeschAktion, type LoeschKennzeichen, type LoeschVorschau } from '../../../shared/src/loeschbaum';
 import { api } from '../api';
 import { Symbol } from '../Symbol';
 import { useDaten } from '../daten';
@@ -37,6 +37,7 @@ export function LoeschBaum({ mappeId, titel, sicht, schliessen, neuLaden }: { ma
   }, [mappeId, tiefe]);
 
   const plan = useMemo(() => (v ? planeLoeschung(v, auswahl) : null), [v, auswahl]);
+  const erinnerung = useMemo(() => (v && plan ? loeschErinnerung(v, plan) : null), [v, plan]);
   const korb = (v?.papierkorbTage ?? d.zaehler.papierkorbTage ?? 0) > 0;
   const setze = (id: string, a: LoeschAktion) => setAuswahl((x) => ({ ...x, [id]: a }));
   const klappe = (id: string) => setZu((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -57,7 +58,8 @@ export function LoeschBaum({ mappeId, titel, sicht, schliessen, neuLaden }: { ma
       // Ist die Mappe selbst weg, erst zur Liste – sonst lädt die Ansicht sie noch einmal (404).
       if (start) geheZu(`/ablage/${sicht}`);
       await d.neuLaden();
-      await hinweis({ titel: korb ? 'In den Papierkorb gelegt' : 'Endgültig gelöscht', text: `${loeschZusammenfassung({ ...plan, zahlen: r.zahlen }, korb, true)}${start ? '' : ` „${titelOder(titel)}“ selbst bleibt.`}${korb ? ' Im Papierkorb stellst du alles mit „Alle wiederherstellen“ gemeinsam wieder her.' : ''}` });
+      const erinnert = r.erinnerung ? ` Am ${datumText(r.erinnerung.datum)} erinnert dich das DMS unter „Zu erledigen“ daran, das Löschen zu wiederholen – dann ist die Aufbewahrungsfrist abgelaufen.` : '';
+      await hinweis({ titel: korb ? 'In den Papierkorb gelegt' : 'Endgültig gelöscht', text: `${loeschZusammenfassung({ ...plan, zahlen: r.zahlen }, korb, true)}${start ? '' : ` „${titelOder(titel)}“ selbst bleibt.`}${korb ? ' Im Papierkorb stellst du alles mit „Alle wiederherstellen“ gemeinsam wieder her.' : ''}${erinnert}` });
       if (!start) { await neuLaden(); schliessen(); }
     } catch (e) { setFehler((e as Error).message); setLaeuft(false); }
   }
@@ -130,7 +132,7 @@ export function LoeschBaum({ mappeId, titel, sicht, schliessen, neuLaden }: { ma
           )}
           <ul className="lb-baum lb-wurzel">{zeige(v.baum.knoten[0])}</ul>
           {v.baum.knoten.filter((k) => k.gesperrt).length > 0 && (
-            <p className="leise klein"><Symbol name="schloss" /> Aufbewahrung: {v.baum.knoten.filter((k) => k.gesperrt).slice(0, 5).map((k) => `„${titelOder(k.titel)}“ bis ${datumText(k.aufbewahrenBis!)}`).join(', ')}{v.baum.knoten.filter((k) => k.gesperrt).length > 5 ? ' …' : ''}.</p>
+            <p className="leise klein"><Symbol name="schloss" /> Aufbewahrung: {v.baum.knoten.filter((k) => k.gesperrt).slice(0, 5).map((k) => `„${titelOder(k.titel)}“ bis ${datumText(k.aufbewahrenBis!)}`).join(', ')}{v.baum.knoten.filter((k) => k.gesperrt).length > 5 ? ' …' : ''}.{erinnerung && <> Bleibt „{titelOder(titel)}“ deshalb stehen, legt das DMS dir eine Erinnerung zum {datumText(erinnerung.datum)} an.</>}</p>
           )}
           <div className={`hinweis ${plan!.zahlen.mappen ? 'warn' : 'info'} lb-summe`} role="status"><p>{loeschZusammenfassung(plan!, korb)}</p></div>
           <div className="knoepfe">

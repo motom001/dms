@@ -27,7 +27,7 @@ import { aufbewahrenBis, datumText, inFrist, JAHRE_MAX } from '../../shared/src/
 import type { ExportQuelle } from './vollexport';
 import { sammleBaum, type BaumQuelle } from './baum';
 import { BAUM_STANDARD, bereinigeBaumOptionen, verweisartVon, type Baum } from '../../shared/src/baum';
-import { liesLoeschAuswahl, loeschVorschlag, LOESCH_TIEFE, planeLoeschung, type LoeschKante, type LoeschPlan, type LoeschVorschau } from '../../shared/src/loeschbaum';
+import { liesLoeschAuswahl, loeschErinnerung, loeschVorschlag, LOESCH_TIEFE, planeLoeschung, type LoeschKante, type LoeschPlan, type LoeschVorschau } from '../../shared/src/loeschbaum';
 import { AUSKUNFT_PASSWORT_MIN, auswahlProbleme as auskunftProbleme, fristBis, liesAuswahl, liesDatenschutz, personenTypen, type AuskunftMappe, type AuskunftVorschau, type AuskunftVorschlag, type Datenschutz } from '../../shared/src/auskunft';
 import { auskunftMail, LINK_FEHLVERSUCHE_MAX, LINK_STATUS, liesLinkEingabe, linkStatus, normiereCode, type AuskunftLink, type AuskunftStand } from '../../shared/src/auskunft';
 import { neuerAbrufcode, SCHLUESSEL_MUSTER } from './abruf';
@@ -4493,11 +4493,29 @@ export class Dienst {
     }
     const tage = await this.papierkorbTage();
     if (!tage) await this.leere(plan.loeschen, benutzerId);
+    const erinnerung = await this.loeschErinnerungAn(v, plan, benutzerId);
     protokoll.modul('ablage').info(tage ? 'Mappe mit verknüpften Mappen in den Papierkorb gelegt' : 'Mappe mit verknüpften Mappen endgültig gelöscht', {
       von: benutzerId, start: startId, vorgang, mappen: z_.mappen, dokumente: z_.dokumente, verweiseEntfernt: z_.verweise,
       bleiben: { frist: z_.frist, ohneRecht: z_.ohneRecht, verweis: z_.gehalten, abgewaehlt: z_.abgewaehlt }, abgeschnitten: v.baum.abgeschnitten || undefined,
+      erinnerung: erinnerung?.datum,
     });
-    return { vorgang, endgueltig: !tage, zahlen: z_, loeschen: plan.loeschen, entkoppeln: plan.entkoppeln };
+    return { vorgang, endgueltig: !tage, zahlen: z_, loeschen: plan.loeschen, entkoppeln: plan.entkoppeln, erinnerung };
+  }
+
+  /**
+   * Erinnerung zum Fristende (#424, Option D): Blieben Mappen wegen der Aufbewahrungsfrist stehen (und damit
+   * die Start-Mappe), bekommt der Löschende an der Start-Mappe eine Erinnerung (#131) zum Tag nach dem
+   * spätesten Fristende; dann steht sie als Aufgabe unter „Zu erledigen“. Gibt es dieselbe schon, keine zweite.
+   */
+  private async loeschErinnerungAn(v: LoeschVorschau, plan: LoeschPlan, benutzerId: string): Promise<{ id: string; datum: string; text: string } | null> {
+    const x = loeschErinnerung(v, plan);
+    if (!x) return null;
+    const startId = v.baum.knoten[0].id;
+    const da = (await this.repo.erinnerungen({ mappeId: startId, empfaengerId: benutzerId })).find((e) => e.text === x.text && e.datum === x.datum);
+    if (da) return { id: da.id, datum: da.datum, text: da.text };
+    const r = await this.repo.legeErinnerungAn({ id: randomUUID(), mappeId: startId, empfaengerId: benutzerId, datum: x.datum, text: x.text, erstellt: '', erstelltVon: benutzerId });
+    await this.notiere(startId, benutzerId, 'aufgabe', { text: `Erinnerung für ${await this.name(benutzerId)} am ${datumDe(x.datum)}: ${x.text}`, aufgabenart: 'erinnerung', fuer: benutzerId, aufgabentext: x.text });
+    return { id: r.id, datum: r.datum, text: r.text };
   }
 
   /** Verweisfelder einer Mappe neu schreiben (#424) – mit Historie, Titel und Passung wie beim Speichern. */

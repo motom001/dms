@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
 import type { Baum, BaumKnoten } from '../../shared/src/baum';
-import { kennzeichen, liesLoeschAuswahl, loeschVorschlag, loeschZusammenfassung, planeLoeschung, type LoeschVorschau } from '../../shared/src/loeschbaum';
+import { kennzeichen, liesLoeschAuswahl, loeschErinnerung, loeschVorschlag, loeschZusammenfassung, planeLoeschung, type LoeschVorschau } from '../../shared/src/loeschbaum';
 import { ALLES } from '../../shared/src/rechte';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
@@ -104,6 +104,19 @@ describe('Mit verknüpften Mappen löschen: Plan (#424)', () => {
     const pf = planeLoeschung(frist, loeschVorschlag(frist));
     assert.deepEqual(pf.loeschen, []);
     assert.match(pf.bleibt.x.text, /auch der Verweis bleibt/);
+  });
+
+  it('Erinnerung zum Fristende (Option D): Tag nach dem spätesten Fristende, nur wenn die Start-Mappe bleibt', () => {
+    const v = vorschau([
+      knoten('p', { ebene: 0, titel: 'Müller GmbH' }), knoten('a'), knoten('b', { gesperrt: true, aufbewahrenBis: '2031-12-31' }), knoten('c', { gesperrt: true, aufbewahrenBis: '2029-12-31' }), knoten('d'),
+    ], [['a', 'p'], ['b', 'a'], ['c', 'a'], ['d', 'p']]);
+    const p = planeLoeschung(v, loeschVorschlag(v));
+    assert.deepEqual(p.loeschen, ['d']);
+    assert.deepEqual(loeschErinnerung(v, p), { datum: '2032-01-01', text: '„Müller GmbH“ kann ab 01.01.2032 gelöscht werden – „Mit verknüpften Mappen löschen“ erneut ausführen' });
+    // Nichts in der Frist → keine Erinnerung; Start-Mappe gelöscht → keine Erinnerung
+    const ohne = vorschau([knoten('p', { ebene: 0 }), knoten('a', { rechte: { ...R, D: false } })], [['a', 'p']]);
+    assert.equal(loeschErinnerung(ohne, planeLoeschung(ohne, loeschVorschlag(ohne))), null);
+    assert.equal(loeschErinnerung(v, { loeschen: ['p'], bleibt: p.bleibt }), null);
   });
 
   it('Verweise von außen halten; Fehlendes in der Auswahl bleibt; Unsinn in der Auswahl fällt weg', () => {
@@ -251,6 +264,21 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.notEqual(e.vorgang, m.p.id, 'Start bleibt → eigene Vorgangs-Id');
       assert.ok(await d.holeMappe(r3.id));
       assert.ok(await d.holeMappe(m.p.id));
+
+      // Option D: Erinnerung für den Löschenden an der Start-Mappe zum Tag nach dem Fristende
+      const bis = k3.aufbewahrenBis!;
+      const ab = `${Number(bis.slice(0, 4)) + 1}-01-01`;
+      assert.equal(e.erinnerung?.datum, ab);
+      assert.match(e.erinnerung!.text, /^„Stadtwerke Beispiel“ kann ab \d\d\.\d\d\.\d{4} gelöscht werden – „Mit verknüpften Mappen löschen“ erneut ausführen$/);
+      const er = (await d.holeMappe(m.p.id)).erinnerungen;
+      assert.equal(er.length, 1);
+      assert.equal(er[0].empfaengerId, admin.id);
+      assert.ok((await d.historie(m.p.id)).some((x) => x.art === 'aufgabe' && String(x.daten.text).includes('kann ab')));
+      // Fällig → Aufgabe „Erinnerung“ unter „Zu erledigen“, verlinkt mit der Start-Mappe
+      await d.erinnerungenFaellig(ab);
+      const aufgaben = (await d.meineAufgaben({ id: admin.id, rolle: 'admin' })).filter((a) => a.art === 'erinnerung');
+      assert.equal(aufgaben.length, 1);
+      assert.equal(aufgaben[0].mappeId, m.p.id);
 
       // Nichts mehr zu löschen → 422
       await assert.rejects(d.loescheMitVerknuepften(m.p.id, { auswahl: { [r3.id]: 'loeschen' } }, admin.id, z), status(422));
