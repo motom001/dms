@@ -3993,6 +3993,223 @@
         }
       }
     },
+    "/dokumente/{id}/schwaerzen": {
+      "get": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "Schwärzen: Seiten und Wörter",
+        "description": "Schwärzen (#392): je Seite die Größe (pt, wie angezeigt) und die Wörter mit Lage als [Text, x, y, b, h] relativ zur Seite (0 bis 1, Ursprung oben links) – aus der Textebene, für Seiten ohne Text per Texterkennung (quelle). Damit lassen sich Suchbegriffe und Muster selbst verorten. Dazu, ob das Register versioniert ist, der Name der Kopie und die Muster. Nur PDF, JPEG und PNG (sonst 422). Braucht Lesen.",
+        "operationId": "getDokumenteMitidSchwaerzen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchwaerzenAnalyse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "Dokument schwärzen",
+        "description": "Schwärzen (#392): Bereiche (Seite ab 1, x, y, b, h relativ zur Seite), Suchbegriffe (überall, ohne Groß-/Kleinschreibung, auch über Wortgrenzen; getroffen wird das ganze Wort) und/oder Muster (alle Vorschläge dieser Arten) werden endgültig entfernt: Alle Seiten werden neu gerendert (150 dpi), die Bereiche schwarz gefüllt, die Textebene ohne die Wörter darin neu aufgebaut; Metadaten, Anmerkungen, Formulare, eingebettete Dateien und JavaScript entfallen. Bilder bleiben Bilder desselben Typs (ohne EXIF). Ergebnis ist ein neues Dokument „… (geschwärzt)“ im selben Register (ziel=kopie, Standard; Ereignis dokument.hochgeladen) oder eine neue Version (ziel=version, nur mit Versionierung; die ungeschwärzte bleibt als ältere Version). Das Original bleibt unverändert; nicht rückgängig zu machen. Historie „geschwärzte Fassung erstellt“ ohne Suchbegriffe und Inhalt. 422, wenn nichts zu schwärzen ist (kein Suchbegriff gefunden, keine Bereiche). Braucht Bearbeiten.",
+        "operationId": "postDokumenteMitidSchwaerzen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Schwaerzen"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Geschwaerzt"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dokumente/{id}/schwaerzen/seiten/{nr}": {
+      "get": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "Schwärzen: Seitenbild",
+        "description": "Schwärzen (#392): Seite als JPEG (längste Seite 1400 px) in derselben Lage wie die Koordinaten (Bilder nach EXIF-Ausrichtung gedreht). Braucht Lesen.",
+        "operationId": "getDokumenteMitidSchwaerzenSeitenMitnr",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nr",
+            "in": "path",
+            "required": true,
+            "description": "Seite ab 1",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/dokumente/{id}/verkleinern": {
       "get": {
         "tags": [
@@ -5527,6 +5744,7 @@
               "eingang",
               "zurueckgeholt",
               "bearbeitet",
+              "geschwaerzt",
               null
             ],
             "description": "Woher die aktuelle Version kam"
@@ -6341,6 +6559,181 @@
           "favoriten": {
             "type": "integer",
             "description": "Eigene Favoriten"
+          }
+        }
+      },
+      "SchwaerzenAnalyse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "mime": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "seiten": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "breite": {
+                  "type": "number",
+                  "description": "pt, wie angezeigt"
+                },
+                "hoehe": {
+                  "type": "number"
+                },
+                "woerter": {
+                  "type": "array",
+                  "description": "[Text, x, y, b, h], relativ zur Seite",
+                  "items": {
+                    "type": "array",
+                    "items": {}
+                  }
+                }
+              }
+            }
+          },
+          "quelle": {
+            "type": "string",
+            "enum": [
+              "textebene",
+              "texterkennung",
+              "gemischt",
+              "keine"
+            ]
+          },
+          "erkannt": {
+            "type": "integer",
+            "description": "Seiten per Texterkennung"
+          },
+          "versioniert": {
+            "type": "boolean"
+          },
+          "kopieName": {
+            "type": "string"
+          },
+          "muster": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Schwaerzen": {
+        "type": "object",
+        "properties": {
+          "bereiche": {
+            "type": "array",
+            "maxItems": 5000,
+            "items": {
+              "type": "object",
+              "required": [
+                "seite",
+                "x",
+                "y",
+                "b",
+                "h"
+              ],
+              "properties": {
+                "seite": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "x": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "y": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "b": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "h": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            }
+          },
+          "begriffe": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Überall schwärzen, z. B. ein Name oder eine IBAN"
+          },
+          "muster": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "iban",
+                "steuerid",
+                "geburtsdatum",
+                "email",
+                "telefon"
+              ]
+            },
+            "description": "Alle Fundstellen dieser Muster schwärzen"
+          },
+          "ziel": {
+            "type": "string",
+            "enum": [
+              "kopie",
+              "version"
+            ],
+            "description": "Standard: kopie"
+          }
+        }
+      },
+      "Geschwaerzt": {
+        "type": "object",
+        "properties": {
+          "dokument": {
+            "$ref": "#/components/schemas/Dokument"
+          },
+          "ziel": {
+            "type": "string"
+          },
+          "stellen": {
+            "type": "integer"
+          },
+          "seiten": {
+            "type": "integer",
+            "description": "betroffene Seiten"
+          },
+          "begriffe": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "gefunden": {
+                  "type": "integer"
+                }
+              }
+            },
+            "description": "je Suchbegriff (in der Reihenfolge der Eingabe, ohne doppelte und leere)"
+          },
+          "meldung": {
+            "type": "string"
           }
         }
       },
