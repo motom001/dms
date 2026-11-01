@@ -803,6 +803,8 @@ a.person:hover, a.person:focus-visible { text-decoration: underline; }
   .werkbankleiste .wbgruppe { display: none; }
   .werkbankleiste .wbgruppe.gewaehlt { display: contents; }
   .werkbankleiste .gruppentitel { display: none; }
+  /* #354: Die Reiterleiste der Ablage ist am Handy ausgeblendet (#498, `.spalte.sichten .sichtliste`) – die Werkbank braucht ihre Leiste. */
+  .spalte.sichten .sichtliste.werkbankleiste { display: flex; flex-direction: column; overflow-x: visible; }
 }
 
 /* Fehlermeldungen (#70) */

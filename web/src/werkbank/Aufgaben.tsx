@@ -11,9 +11,10 @@ import { Person } from '../Person';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { SammelHaken, SammelKopf, SammelLeiste, useSammelauswahl } from '../ablage/Sammelweitergabe';
+import { t } from '../sprache';
 
 /**
- * Werkbank → Aufgaben (#54, #366): Mitte oben die tägliche Zusammenfassung (zuklappbar, #415), darunter alle
+ * Werkbank → Einstellungen → Benachrichtigungen und Aufgaben (#54, #366, #354): Mitte oben die tägliche Zusammenfassung (zuklappbar, #415), darunter alle
  * Aufgaben mit Filter (in der Adresse) und Mehrfachauswahl zum gesammelten Weitergeben (#415); rechts die Mappe
  * der gewählten Aufgabe – mit „Weitergeben an“.
  */
@@ -60,7 +61,7 @@ export function AufgabenListe({ z, filter, offen, mailAn }: { z: AufgabenZustand
   return (
     <>
       <div className="listenkopf">
-        <div><h1>Aufgaben</h1><p className="leise klein">Was an welcher Mappe für wen zu tun ist. <Hilfe ort="werkbank.aufgaben" /></p></div>
+        <div><h1>{t('werkbank.bereich.aufgaben.name')}</h1><p className="leise klein">{t('werkbank.aufgaben.unter')} <Hilfe ort="werkbank.aufgaben" /></p></div>
       </div>
       <Zusammenfassung z={z} mailAn={mailAn} />
       <section className="aufgabenfilter stapel" aria-label="Filter">

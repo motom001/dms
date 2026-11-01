@@ -15,7 +15,8 @@ import { Dreiteilung } from '../bereiche';
 import { useDaten } from '../daten';
 import { TypEditor } from '../einrichtung/Einrichtung';
 import { geheZu, Link } from '../ort';
-import { hatMitte, wartungsPlakette, werkbankEbene, werkbankUmleitung, werkbankZurueck } from '../../../shared/src/werkbankansicht';
+import { bereichName, hatMitte, wartungsPlakette, werkbankEbene, werkbankUmleitung, werkbankZurueck } from '../../../shared/src/werkbankansicht';
+import { t } from '../sprache';
 import { BenutzerDetail, BenutzerListe, BenutzerNeu, useBenutzer } from './Benutzer';
 import { BetriebPanel, useBetrieb } from './Betrieb';
 import { SichtEditor, SichtenListe } from './Sichten';
@@ -56,7 +57,7 @@ import { useBeiWiederErreichbar } from '../erreichbar';
  * /werkbank/verschluesselung        Schlüssel für Passwörter (#39)
  * /werkbank/papierkorb[/:id]        Papierkorb aller Benutzer und Aufbewahrung (#43)
  * /werkbank/texterkennung           Texterkennung und Volltext (#45)
- * /werkbank/aufgaben[/:id][?filter] Aufgaben aller Benutzer mit Filter, tägliche Zusammenfassung (#54, #366)
+ * /werkbank/aufgaben[/:id][?filter] Benachrichtigungen und Aufgaben: tägliche Zusammenfassung, Aufgaben aller Benutzer mit Filter (#54, #366, #354)
  * /werkbank/wartung                 Wartungsoperationen, z. B. Volltext nachholen (#45)
  * /werkbank/fehlermeldungen[/:id]  Fehlermeldungen der Benutzer (#70)
  * /werkbank/wartungsmodus          Wartungsmodus (#102)
@@ -223,37 +224,45 @@ export function Werkbank({ teile }: { teile: string[] }) {
     rechts = <ProtokollDetail p={protokoll} nr={id} />;
   }
 
+  // Reihenfolge und Gruppen wie in BEREICHE (#354); Namen aus der Sprachdatei (#473).
+  const n = bereichName;
   const eintraege: WerkbankEintrag[] = [
-          { pfad: 'uebersicht', name: 'Übersicht', gruppe: null, warn: uebersicht.hinweise || undefined },
-          { pfad: 'typen', name: 'Mappentypen', gruppe: 'ablage', zahl: d.typen.length },
-          { pfad: 'sichten', name: 'Ansichten', gruppe: 'ablage', zahl: d.sichten.length || undefined },
-          { pfad: 'nummernkreise', name: 'Nummernkreise', gruppe: 'ablage', zahl: zahl(nummernkreise.liste?.length, uz?.nummernkreise) },
-          { pfad: 'stempel', name: 'Stempel', gruppe: 'ablage', zahl: stempel.liste?.length || undefined },
-          { pfad: 'pakete', name: 'Pakete', gruppe: 'ablage', zahl: zahl(pakete.stand?.installiert.length, uz?.pakete) },
-          ...(d.typen.some((t) => t.archiv) ? [{ pfad: 'darfweg', name: 'Darf weg', gruppe: 'ablage' as const, zahl: zahl(darfWeg.liste?.length, uz?.darfWeg) }] : []),
-          { pfad: 'datenschutz', name: 'Datenschutz', gruppe: 'ablage', zahl: datenschutz.stand?.auskuenfte.length || undefined },
-          { pfad: 'benutzer', name: 'Benutzer', gruppe: 'benutzer', zahl: zahl(benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined, uz?.benutzer) },
-          { pfad: 'aufgaben', name: 'Aufgaben', gruppe: 'benutzer', zahl: zahl(aufgaben.liste?.filter((a) => !a.erledigt).length, uebersicht.stand?.aufgaben.offen) },
-          { pfad: 'betrieb', name: 'E-Mail und Adresse', gruppe: 'einstellungen', warn: uebersicht.stand && !uebersicht.stand.mail ? 'aus' : undefined, warnTitel: 'E-Mail-Versand aus' },
-          { pfad: 'verschluesselung', name: 'Verschlüsselung', gruppe: 'einstellungen', warn: tresor.stand && tresor.stand.zustand !== 'vorhanden' ? 'fehlt' : undefined },
-          { pfad: 'anmeldeschutz', name: 'Anmeldeschutz', gruppe: 'einstellungen', zahl: anmeldeschutz.stand?.gesperrt.length || undefined },
-          { pfad: 'designs', name: 'Designs', gruppe: 'einstellungen', zahl: d.designs.length || undefined },
-          { pfad: 'papierkorb', name: 'Papierkorb', gruppe: 'einstellungen', zahl: zahl(papierkorb.eintraege ? papierkorb.eintraege.length + papierkorb.dokumente.length : undefined, uebersicht.stand?.papierkorb.anzahl) },
-          { pfad: 'anbindung', name: 'Datenbank-Anbindung', gruppe: 'einstellungen', warn: uebersicht.stand?.anbindung && (uebersicht.stand.anbindung.umgebung === 'abweichend' || uebersicht.stand.anbindung.neustartNoetig) ? '!' : undefined, warnTitel: 'DATABASE_URL weicht ab oder Neustart nötig' },
-          { pfad: 'postfaecher', name: 'Postfächer', gruppe: 'einstellungen', zahl: zahl(postfaecher.liste?.length, uz?.postfaecher), warn: uebersicht.stand?.postfachAnmeldung?.length || postfaecher.liste?.some((p) => p.stand.fehlerFolge > 0 || (p.oauth && p.oauth.zustand !== 'ok')) ? '!' : undefined, warnTitel: uebersicht.stand?.postfachAnmeldung?.length ? 'Anmeldung abgelaufen oder fehlt' : 'Abruf fehlgeschlagen' },
-          ...(eingang.stand?.vorhanden ? [{ pfad: 'eingangsordner', name: 'Eingangsordner', gruppe: 'einstellungen' as const, warn: eingang.stand.fehler?.length ? String(eingang.stand.fehler.length) : undefined, warnTitel: 'abgelehnte Dateien' }] : []),
-          { pfad: 'webdav', name: 'WebDAV-Laufwerk', gruppe: 'einstellungen', warn: webdav.stand?.einstellung.aktiv ? 'an' : undefined, warnTitel: 'Das Laufwerk ist eingeschaltet' },
-          { pfad: 'texterkennung', name: 'Texterkennung', gruppe: 'einstellungen', warn: uebersicht.stand?.texterkennung?.fehler ? String(uebersicht.stand.texterkennung.fehler) : undefined, warnTitel: 'Dokumente mit Fehler' },
-          { pfad: 'protokoll', name: 'Protokoll', gruppe: 'wartung', warn: protokoll.debug?.an ? 'Debug' : undefined, warnTitel: 'Debug-Modus ist an' },
-          { pfad: 'fehlermeldungen', name: 'Gemeldete Fehler', gruppe: 'wartung', warn: uebersicht.stand?.fehlermeldungen ? String(uebersicht.stand.fehlermeldungen) : undefined, warnTitel: 'offene Meldungen' },
-          { pfad: 'sicherung', name: 'Sicherung', gruppe: 'wartung', warn: uebersicht.stand?.sicherung && (uebersicht.stand.sicherung.fehler || (uebersicht.stand.sicherung.schluessel && uebersicht.stand.sicherung.zuAlt)) ? '!' : undefined, warnTitel: 'Sicherung fehlgeschlagen oder zu alt' },
-          { pfad: 'wiederherstellung', name: 'Wiederherstellen', gruppe: 'wartung' },
-          { pfad: 'vollexport', name: 'Vollexport', gruppe: 'wartung' },
-          { pfad: 'wartungsmodus', name: 'Wartungsmodus', gruppe: 'wartung', warn: wartungsPlakette(wartungsmodus.stand?.stufe ?? 'aus', wartungsmodus.stand?.aktivAb ?? null), warnTitel: wartungAn ? 'Wartungsmodus ist an' : 'Wartungsmodus ist angekündigt' },
-          { pfad: 'systemzustand', name: 'Systemzustand', gruppe: 'wartung', warn: uebersicht.stand?.speicherplatz && uebersicht.stand.speicherplatz.zustand !== 'ok' ? (uebersicht.stand.speicherplatz.zustand === 'grenze' ? 'voll' : 'knapp') : undefined, warnTitel: 'Speicherplatz knapp' },
-          { pfad: 'wartung', name: 'Wartungsoperationen', gruppe: 'wartung' },
-          { pfad: 'technik', name: 'Technik', gruppe: 'wartung' },
-          { pfad: 'demo', name: 'Demo-Daten', gruppe: 'wartung', zahl: Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || undefined },
+    { pfad: 'uebersicht', name: n('uebersicht'), gruppe: null, warn: uebersicht.hinweise || undefined },
+    // Ablage aufbauen
+    { pfad: 'typen', name: n('typen'), gruppe: 'ablage', zahl: d.typen.length },
+    { pfad: 'sichten', name: n('sichten'), gruppe: 'ablage', zahl: d.sichten.length || undefined },
+    { pfad: 'nummernkreise', name: n('nummernkreise'), gruppe: 'ablage', zahl: zahl(nummernkreise.liste?.length, uz?.nummernkreise) },
+    { pfad: 'stempel', name: n('stempel'), gruppe: 'ablage', zahl: stempel.liste?.length || undefined },
+    { pfad: 'pakete', name: n('pakete'), gruppe: 'ablage', zahl: zahl(pakete.stand?.installiert.length, uz?.pakete) },
+    ...(d.typen.some((x) => x.archiv) ? [{ pfad: 'darfweg', name: n('darfweg'), gruppe: 'ablage' as const, zahl: zahl(darfWeg.liste?.length, uz?.darfWeg) }] : []),
+    { pfad: 'datenschutz', name: n('datenschutz'), gruppe: 'ablage', zahl: datenschutz.stand?.auskuenfte.length || undefined },
+    // Benutzer und Sicherheit
+    { pfad: 'benutzer', name: n('benutzer'), gruppe: 'benutzer', zahl: zahl(benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined, uz?.benutzer) },
+    { pfad: 'verschluesselung', name: n('verschluesselung'), gruppe: 'benutzer', warn: tresor.stand && tresor.stand.zustand !== 'vorhanden' ? t('werkbank.leiste.fehlt') : undefined },
+    // Post und Eingänge
+    { pfad: 'postfaecher', name: n('postfaecher'), gruppe: 'post', zahl: zahl(postfaecher.liste?.length, uz?.postfaecher), warn: uebersicht.stand?.postfachAnmeldung?.length || postfaecher.liste?.some((p) => p.stand.fehlerFolge > 0 || (p.oauth && p.oauth.zustand !== 'ok')) ? '!' : undefined, warnTitel: uebersicht.stand?.postfachAnmeldung?.length ? t('werkbank.leiste.postfach.anmeldung') : t('werkbank.leiste.postfach.abruf') },
+    ...(eingang.stand?.vorhanden ? [{ pfad: 'eingangsordner', name: n('eingangsordner'), gruppe: 'post' as const, warn: eingang.stand.fehler?.length ? String(eingang.stand.fehler.length) : undefined, warnTitel: t('werkbank.leiste.eingangsordner') }] : []),
+    { pfad: 'webdav', name: n('webdav'), gruppe: 'post', warn: webdav.stand?.einstellung.aktiv ? t('werkbank.leiste.an') : undefined, warnTitel: t('werkbank.leiste.webdav') },
+    { pfad: 'texterkennung', name: n('texterkennung'), gruppe: 'post', warn: uebersicht.stand?.texterkennung?.fehler ? String(uebersicht.stand.texterkennung.fehler) : undefined, warnTitel: t('werkbank.leiste.texterkennung') },
+    // Daten sichern
+    { pfad: 'sicherung', name: n('sicherung'), gruppe: 'sichern', warn: uebersicht.stand?.sicherung && (uebersicht.stand.sicherung.fehler || (uebersicht.stand.sicherung.schluessel && uebersicht.stand.sicherung.zuAlt)) ? '!' : undefined, warnTitel: t('werkbank.leiste.sicherung') },
+    { pfad: 'wiederherstellung', name: n('wiederherstellung'), gruppe: 'sichern' },
+    { pfad: 'vollexport', name: n('vollexport'), gruppe: 'sichern' },
+    { pfad: 'papierkorb', name: n('papierkorb'), gruppe: 'sichern', zahl: zahl(papierkorb.eintraege ? papierkorb.eintraege.length + papierkorb.dokumente.length : undefined, uebersicht.stand?.papierkorb.anzahl) },
+    // Einstellungen
+    { pfad: 'betrieb', name: n('betrieb'), gruppe: 'einstellungen', warn: uebersicht.stand && !uebersicht.stand.mail ? t('werkbank.leiste.aus') : undefined, warnTitel: t('werkbank.leiste.mail') },
+    { pfad: 'aufgaben', name: n('aufgaben'), gruppe: 'einstellungen', zahl: zahl(aufgaben.liste?.filter((a) => !a.erledigt).length, uebersicht.stand?.aufgaben.offen) },
+    { pfad: 'anmeldeschutz', name: n('anmeldeschutz'), gruppe: 'einstellungen', zahl: anmeldeschutz.stand?.gesperrt.length || undefined },
+    { pfad: 'designs', name: n('designs'), gruppe: 'einstellungen', zahl: d.designs.length || undefined },
+    { pfad: 'anbindung', name: n('anbindung'), gruppe: 'einstellungen', warn: uebersicht.stand?.anbindung && (uebersicht.stand.anbindung.umgebung === 'abweichend' || uebersicht.stand.anbindung.neustartNoetig) ? '!' : undefined, warnTitel: t('werkbank.leiste.anbindung') },
+    { pfad: 'technik', name: n('technik'), gruppe: 'einstellungen' },
+    // Wartung und Fehlersuche
+    { pfad: 'systemzustand', name: n('systemzustand'), gruppe: 'wartung', warn: uebersicht.stand?.speicherplatz && uebersicht.stand.speicherplatz.zustand !== 'ok' ? (uebersicht.stand.speicherplatz.zustand === 'grenze' ? t('werkbank.leiste.speicher.voll') : t('werkbank.leiste.speicher.knapp')) : undefined, warnTitel: t('werkbank.leiste.speicher') },
+    { pfad: 'protokoll', name: n('protokoll'), gruppe: 'wartung', warn: protokoll.debug?.an ? t('werkbank.leiste.debug') : undefined, warnTitel: t('werkbank.leiste.debug.titel') },
+    { pfad: 'fehlermeldungen', name: n('fehlermeldungen'), gruppe: 'wartung', warn: uebersicht.stand?.fehlermeldungen ? String(uebersicht.stand.fehlermeldungen) : undefined, warnTitel: t('werkbank.leiste.fehlermeldungen') },
+    { pfad: 'wartungsmodus', name: n('wartungsmodus'), gruppe: 'wartung', warn: wartungsPlakette(wartungsmodus.stand?.stufe ?? 'aus', wartungsmodus.stand?.aktivAb ?? null), warnTitel: wartungAn ? t('werkbank.leiste.wartung.an') : t('werkbank.leiste.wartung.angekuendigt') },
+    { pfad: 'wartung', name: n('wartung'), gruppe: 'wartung' },
+    { pfad: 'demo', name: n('demo'), gruppe: 'wartung', zahl: Object.values(d.zaehler.typen).reduce((a, z) => a + z.demo, 0) || undefined },
   ];
   const zustand: Record<string, BereichZustand> = Object.fromEntries(eintraege.map((e) => [e.pfad, { warn: e.warn }]));
   if (bereich === 'ansicht') {

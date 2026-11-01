@@ -1,6 +1,6 @@
 # Fehlersuche und Support
 
-Alles dazu steht in der Werkbank unter **Wartung und Fehlersuche**. Die Gruppe enthält Protokoll, Gemeldete Fehler, Sicherung, Wiederherstellen, Vollexport, Wartungsmodus, Wartungsoperationen, Technik und Demo-Daten. Diese Seite beschreibt die Werkzeuge zur Fehlersuche; [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md), [Vollexport](export.md), [Wartungsmodus](wartungsmodus.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen) und [Demo-Daten](demo.md) haben eigene Seiten.
+Alles dazu steht in der Werkbank unter **Wartung und Fehlersuche**. Die Gruppe enthält Systemzustand, Protokoll, Gemeldete Fehler, Wartungsmodus, Wartungsoperationen und Demo-Daten. Diese Seite beschreibt die Werkzeuge zur Fehlersuche und die *Technik* (Version und Updates), die unter **Einstellungen** steht; [Systemzustand](speicherplatz.md), [Wartungsmodus](wartungsmodus.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen) und [Demo-Daten](demo.md) haben eigene Seiten. Sicherung, Wiederherstellen und Vollexport stehen unter **Daten sichern**.
 
 *Protokoll* und *Gemeldete Fehler* gehören zur Vorlage **Betrieb**. *Technik* steht in jeder Vorlage.
 
@@ -67,7 +67,7 @@ Die Werte kommen vom Server im Header `Server-Timing` (`vor`, `app`, `db`, `rech
 
 ## Technik
 
-**Werkbank → Technik** zeigt im Abschnitt **Installiert** (unter *Neuere Versionen*), was installiert ist: Version und Stand des DMS, Laufzeit (Node.js, Betriebssystem), Datenbank, Bibliotheken und Oberfläche.
+**Werkbank → Einstellungen → Technik** zeigt im Abschnitt **Installiert** (unter *Neuere Versionen*), was installiert ist: Version und Stand des DMS, Laufzeit (Node.js, Betriebssystem), Datenbank, Bibliotheken und Oberfläche.
 
 ![Technik und Versionen](bilder/werkbank-technik.png)
 
