@@ -69,6 +69,7 @@ interface Optionen {
   speicherplatz?: Speicherplatz;
   eingangsordner?: import('./eingangsordner').Eingangsordner;
   postfaecher?: import('./postfach').Postfaecher;
+  postfachOAuth?: import('./postfach-oauth').PostfachOAuth;
   ordner?: OrdnerPruefung;
   /** Einrichtungsassistent und Datenbank-Anbindung (#119). */
   einrichtung?: Einrichtung;

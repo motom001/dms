@@ -485,6 +485,13 @@ export const api = {
   postfachLoeschen: (id: string) => anfrage<void>('DELETE', `/api/werkbank/postfaecher/${id}`),
   postfachTesten: (p: PostfachEingabe & { id?: string }) => anfrage<{ ok: boolean; text: string; ordner?: string[]; anzahl?: number }>('POST', '/api/werkbank/postfaecher/testen', p),
   postfachAbrufen: (id: string) => anfrage<{ uebernommen: number }>('POST', `/api/werkbank/postfaecher/${id}/abrufen`),
+  /* Postfächer: OAuth 2.0 (#358) */
+  postfachOAuthApps: () => anfrage<OAuthAppsStand>('GET', '/api/werkbank/postfaecher-oauth'),
+  postfachOAuthApp: (anbieter: OAuthAnbieter, app: OAuthAppEingabe) => anfrage<OAuthAppsStand>('PUT', `/api/werkbank/postfaecher-oauth/${anbieter}`, app),
+  postfachOAuthStart: (id: string) => anfrage<{ url: string }>('POST', `/api/werkbank/postfaecher/${id}/oauth/start`),
+  postfachOAuthGeraet: (id: string) => anfrage<{ code: string; adresse: string; bis: string; intervall: number }>('POST', `/api/werkbank/postfaecher/${id}/oauth/geraet`),
+  postfachOAuthGeraetPruefen: (id: string) => anfrage<{ fertig: boolean; text: string }>('POST', `/api/werkbank/postfaecher/${id}/oauth/geraet/pruefen`),
+  postfachOAuthAbmelden: (id: string) => anfrage<PostfachAnsicht[]>('POST', `/api/werkbank/postfaecher/${id}/oauth/abmelden`),
   eingangsordnerSetzen: (e: Partial<EingangEinstellung>) => anfrage<EingangStand>('PUT', '/api/werkbank/eingangsordner', e),
   eingangsordnerPruefen: () => anfrage<{ uebernommen: number; stand: EingangStand }>('POST', '/api/werkbank/eingangsordner/pruefen'),
   speicherplatzSetzen: (e: SpeicherplatzEinstellung) => anfrage<SpeicherplatzStand>('PUT', '/api/werkbank/speicherplatz', e),
@@ -677,6 +684,8 @@ export interface WerkbankUebersicht {
   einrichtung?: EinrichtungStand | null;
   /** Zahlen für die linke Spalte (#375), bis der Bereich selbst geladen ist; null = unbekannt. */
   zahlen?: { nummernkreise: number | null; pakete: number | null; benutzer: number | null; postfaecher: number | null; darfWeg: number | null };
+  /** Postfächer mit abgelaufener oder fehlender OAuth-Anmeldung (#358). */
+  postfachAnmeldung?: Array<{ id: string; name: string; zustand: 'abgelaufen' | 'abgemeldet' }>;
 }
 /* Feste Ordner (#115) und Speicherplatz (#116) */
 export type OrdnerArt = 'dateien' | 'geheim' | 'sicherung';
@@ -741,10 +750,18 @@ export interface PostfachEingabe {
   name: string; aktiv: boolean; server: string; port: number; verschluesselung: 'ssl' | 'starttls' | 'keine'; benutzer: string; passwort?: string;
   ordner: string; abstand: number; fuer: string | null; absender: string[] | string; nachher: 'verschieben' | 'gelesen' | 'loeschen'; zielordner: string;
   nurMitAnhang: boolean; original: boolean; unverschluesseltBestaetigt?: boolean;
+  /** #358 */
+  anmeldung?: 'passwort' | 'oauth'; anbieter?: OAuthAnbieter;
 }
+/** Postfächer: OAuth 2.0 (#358). */
+export type OAuthAnbieter = 'microsoft' | 'google' | 'andere';
+export interface OAuthStatus { angemeldet: boolean; zustand: 'ok' | 'abgelaufen' | 'abgemeldet'; ablauf: string | null; angemeldetAm: string | null; von: string | null; fehler: string | null }
+export interface OAuthAppAnsicht { clientId: string; secretGesetzt: boolean; tenant?: string; autorisierung?: string; token?: string; geraet?: string; bereich?: string }
+export interface OAuthAppEingabe { clientId: string; clientSecret?: string; clientSecretLoeschen?: boolean; tenant?: string; autorisierung?: string; token?: string; geraet?: string; bereich?: string }
+export interface OAuthAppsStand { apps: Partial<Record<OAuthAnbieter, OAuthAppAnsicht>>; rueckruf: string }
 export interface PostfachEreignis { zeit: string; betreff?: string; absender?: string; mappeId?: string; fehler?: string }
 export interface PostfachAnsicht extends Omit<PostfachEingabe, 'passwort' | 'absender'> {
-  id: string; absender: string[]; passwortGesetzt: boolean;
+  id: string; absender: string[]; passwortGesetzt: boolean; oauth: OAuthStatus | null;
   stand: { letzterAbruf: string | null; naechsterAbruf: string | null; fehlerFolge: number; uebernommen: PostfachEreignis[]; fehler: PostfachEreignis[] };
 }
 

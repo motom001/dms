@@ -36,6 +36,7 @@ Die Werkbank beginnt mit der **Übersicht**. Sie zeigt oben, was zu tun ist – 
 - Speicherplatz knapp oder voll,
 - Wartungsmodus angekündigt oder aktiv,
 - ein Notfallzugang ist noch aktiv,
+- ein [Postfach mit OAuth](postfaecher.md#anmeldung-mit-oauth) ist abgelaufen oder noch nicht angemeldet,
 - kein Schlüssel für Passwörter oder Schlüsseldatei nicht auf eigenem Volume,
 - Datenbank-Anbindung weicht ab oder braucht einen Neustart,
 - im Einrichtungsassistenten übersprungene Schritte,

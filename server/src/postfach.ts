@@ -4,6 +4,7 @@ import type { Dienst } from './dienst';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
+import { AnmeldungAbgelaufen, OAUTH_ANBIETER, type OAuthAnbieter, type OAuthStatus, type PostfachOAuth } from './postfach-oauth';
 
 /**
  * Postfächer (#196): Das DMS holt Mails per IMAP ab und macht aus jeder eine neue Post
@@ -20,6 +21,8 @@ import { protokoll } from './protokoll';
 
 export type Verschluesselung = 'ssl' | 'starttls' | 'keine';
 export type Nachher = 'verschieben' | 'gelesen' | 'loeschen';
+/** #358: Anmeldung mit Passwort (Standard, auch für alle älteren Postfächer) oder OAuth 2.0. */
+export type Anmeldeart = 'passwort' | 'oauth';
 
 export interface Postfach {
   id: string;
@@ -31,6 +34,10 @@ export interface Postfach {
   benutzer: string;
   /** Verschlüsselt mit dem Tresor; nie an die Oberfläche. */
   passwort: string;
+  /** Fehlt bei Postfächern von vor 0.85: Passwort. */
+  anmeldung?: Anmeldeart;
+  /** Bei OAuth: Anbieter (App-Registrierung je Installation). */
+  anbieter?: OAuthAnbieter;
   ordner: string;
   /** Abrufabstand in Minuten. */
   abstand: number;
@@ -42,13 +49,13 @@ export interface Postfach {
   nurMitAnhang: boolean;
   original: boolean;
 }
-export type PostfachAnsicht = Omit<Postfach, 'passwort'> & { passwortGesetzt: boolean; stand: PostfachStand };
+export type PostfachAnsicht = Omit<Postfach, 'passwort'> & { passwortGesetzt: boolean; stand: PostfachStand; /** #358: ohne Token. */ oauth: OAuthStatus | null };
 
 export interface PostfachEreignis { zeit: string; betreff?: string; absender?: string; mappeId?: string; fehler?: string }
 export interface PostfachStand { letzterAbruf: string | null; naechsterAbruf: string | null; fehlerFolge: number; uebernommen: PostfachEreignis[]; fehler: PostfachEreignis[] }
 
-/** Zugangsdaten mit Klartext-Passwort, nur für die Verbindung. */
-export interface Zugang { server: string; port: number; verschluesselung: Verschluesselung; benutzer: string; passwort: string }
+/** Zugangsdaten mit Klartext-Passwort bzw. Zugriffstoken (OAuth, #358), nur für die Verbindung. */
+export interface Zugang { server: string; port: number; verschluesselung: Verschluesselung; benutzer: string; passwort: string; zugriffstoken?: string }
 
 export interface ImapSitzung {
   uidValidity: string;
@@ -89,6 +96,8 @@ export interface PostfachDeps {
   platz?: () => Promise<void>;
   /** Meldung an die Administratoren nach wiederholten Fehlern. */
   anAdmins?: (betreff: string, text: string) => Promise<void>;
+  /** Anmeldung per OAuth 2.0 (#358). */
+  oauth?: PostfachOAuth;
   jetzt?: () => number;
 }
 
@@ -128,12 +137,23 @@ export function pruefePostfach(x: unknown, alt: Postfach | null, verschluessele:
   if (absender.some((a) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$|^[^\s@]+\.[^\s@]+$/.test(a))) fehler.push('Absender: Adressen (name@example.org) oder Domains (example.org).');
   const benutzer = o.benutzer === undefined ? basis.benutzer : text(o.benutzer, 200);
   if (!benutzer) fehler.push('Bitte den Benutzernamen des Postfachs angeben.');
-  const neuesPasswort = typeof o.passwort === 'string' && o.passwort !== '' ? o.passwort.slice(0, 500) : null;
-  if (!neuesPasswort && !basis.passwort) fehler.push('Bitte das Passwort (bei vielen Anbietern ein App-Passwort) angeben.');
+  // Steuerzeichen (#358): Der Benutzername steht bei OAuth im XOAUTH2-Feld „user=…“.
+  else if (/[\x00-\x1f\x7f]/.test(benutzer)) fehler.push('Benutzername: ohne Zeilenumbrüche und Steuerzeichen.');
+  const anmeldung = (o.anmeldung ?? basis.anmeldung ?? 'passwort') as Anmeldeart;
+  if (!['passwort', 'oauth'].includes(anmeldung)) fehler.push('Anmeldung: Passwort oder OAuth 2.0.');
+  const anbieter = (o.anbieter ?? basis.anbieter ?? 'microsoft') as OAuthAnbieter;
+  if (anmeldung === 'oauth' && !OAUTH_ANBIETER.includes(anbieter)) fehler.push('Anbieter: Microsoft, Google oder anderer Anbieter.');
+  if (anmeldung === 'oauth' && v === 'keine') fehler.push('OAuth 2.0 nur mit Verschlüsselung (SSL/TLS oder STARTTLS).');
+  const neuesPasswort = anmeldung === 'passwort' && typeof o.passwort === 'string' && o.passwort !== '' ? o.passwort.slice(0, 500) : null;
+  if (anmeldung === 'passwort' && !neuesPasswort && !basis.passwort) fehler.push('Bitte das Passwort (bei vielen Anbietern ein App-Passwort) angeben.');
+  // Das gespeicherte Passwort geht nur an den Server, für den es eingegeben wurde (#358, Sicherheits-Review).
+  else if (anmeldung === 'passwort' && !neuesPasswort && alt && alt.anmeldung !== 'oauth' && !gleicherServer(alt, { server, port, verschluesselung: v })) fehler.push('Server, Port oder Verschlüsselung geändert: Bitte das Passwort neu eingeben – das gespeicherte geht nur an den bisherigen Server.');
   if (fehler.length) throw new Fachfehler(422, fehler.join(' '));
   return {
-    ...basis, name, server, port, verschluesselung: v, benutzer, abstand, nachher, absender,
-    passwort: neuesPasswort ? verschluessele(neuesPasswort) : basis.passwort,
+    ...basis, name, server, port, verschluesselung: v, benutzer, abstand, nachher, absender, anmeldung,
+    ...(anmeldung === 'oauth' ? { anbieter } : { anbieter: undefined }),
+    // Beim Wechsel auf OAuth bleibt kein Passwort liegen.
+    passwort: anmeldung === 'oauth' ? '' : neuesPasswort ? verschluessele(neuesPasswort) : basis.passwort,
     aktiv: o.aktiv === undefined ? basis.aktiv : o.aktiv === true,
     ordner: o.ordner === undefined ? basis.ordner : text(o.ordner, 200) || 'INBOX',
     zielordner: o.zielordner === undefined ? basis.zielordner : text(o.zielordner, 200) || 'DMS',
@@ -141,6 +161,11 @@ export function pruefePostfach(x: unknown, alt: Postfach | null, verschluessele:
     nurMitAnhang: o.nurMitAnhang === undefined ? basis.nurMitAnhang : o.nurMitAnhang === true,
     original: o.original === undefined ? basis.original : o.original === true,
   };
+}
+
+/** Gleicher Server, Port und gleiche Verschlüsselung – nur dann darf ein gespeichertes Geheimnis mit (#358). */
+export function gleicherServer(a: Pick<Postfach, 'server' | 'port' | 'verschluesselung'>, b: Pick<Postfach, 'server' | 'port' | 'verschluesselung'>): boolean {
+  return a.server.toLowerCase() === b.server.toLowerCase() && a.port === b.port && a.verschluesselung === b.verschluesselung;
 }
 
 /** Passt der Absender zum Filter (Adresse genau oder Domain samt Subdomains)? */
@@ -152,9 +177,10 @@ export function absenderPasst(adresse: string, filter: string[]): boolean {
 }
 
 /** Fehler der Verbindung in verständlichen Worten. */
-export function verstaendlich(e: unknown): string {
+export function verstaendlich(e: unknown, oauth = false): string {
   const x = e as { authenticationFailed?: boolean; code?: string; message?: string; responseText?: string };
   const m = `${x.message ?? ''} ${x.responseText ?? ''}`;
+  if (oauth && (x.authenticationFailed || /AUTHENTICATIONFAILED|authentication failed|invalid credentials|AUTHENTICATE failed/i.test(m))) return 'Anmeldung per OAuth abgelehnt: Stimmt der Benutzername (die Mail-Adresse des angemeldeten Kontos)? Hat die App die Berechtigung für IMAP (Microsoft: IMAP.AccessAsUser.All) und ist IMAP für das Postfach eingeschaltet?';
   if (x.authenticationFailed || /AUTHENTICATIONFAILED|authentication failed|invalid credentials|LOGIN failed/i.test(m)) return 'Anmeldung abgelehnt: Benutzername oder Passwort stimmen nicht. Viele Anbieter verlangen ein App-Passwort.';
   if (['ENOTFOUND', 'EAI_AGAIN', 'ECONNREFUSED', 'ETIMEDOUT', 'EHOSTUNREACH', 'ENETUNREACH', 'ECONNRESET'].includes(x.code ?? '') || /timeout|getaddrinfo|connect/i.test(m)) return `Server nicht erreichbar (${x.code ?? 'keine Antwort'}). Adresse und Port prüfen.`;
   if (/CERT|certificate|self[- ]signed|SSL|TLS/i.test(`${x.code ?? ''} ${m}`)) return `Zertifikat ungültig oder Verschlüsselung passt nicht (${x.code ?? x.message}). Verschlüsselung und Port prüfen (SSL/TLS meist 993, STARTTLS meist 143).`;
@@ -190,8 +216,27 @@ export class Postfaecher {
   async ansicht(): Promise<PostfachAnsicht[]> {
     return Promise.all((await this.liste()).map(async (p) => {
       const { passwort, ...rest } = p;
-      return { ...rest, passwortGesetzt: !!passwort, stand: await this.stand(p.id) };
+      return { ...rest, anmeldung: p.anmeldung ?? 'passwort', passwortGesetzt: !!passwort, stand: await this.stand(p.id), oauth: p.anmeldung === 'oauth' && this.d.oauth ? await this.d.oauth.status(p.id) : null };
     }));
+  }
+
+  /** Für die Übersicht der Werkbank (#358): OAuth-Postfächer, die abgelaufen oder nicht angemeldet sind. */
+  async anmeldungFehlt(): Promise<Array<{ id: string; name: string; zustand: 'abgelaufen' | 'abgemeldet' }>> {
+    if (!this.d.oauth) return [];
+    const aus: Array<{ id: string; name: string; zustand: 'abgelaufen' | 'abgemeldet' }> = [];
+    for (const p of await this.liste()) {
+      if (p.anmeldung !== 'oauth' || !p.aktiv) continue;
+      const s = await this.d.oauth.status(p.id);
+      if (s.zustand !== 'ok') aus.push({ id: p.id, name: p.name, zustand: s.zustand });
+    }
+    return aus;
+  }
+
+  /** Das Postfach (für den OAuth-Ablauf in den Routen). */
+  async hole(id: string): Promise<Postfach> {
+    const p = (await this.liste()).find((x) => x.id === id);
+    if (!p) throw new Fachfehler(404, 'Dieses Postfach gibt es nicht.');
+    return p;
   }
 
   async speichere(x: unknown, id: string | null, von: string): Promise<PostfachAnsicht[]> {
@@ -206,6 +251,9 @@ export class Postfaecher {
       const m = await this.merker(neu.id);
       await this.d.einstellungen.schreibe(`postfach_merker_${neu.id}`, { ...m, uidValidity: '', maxUid: 0 });
     }
+    // OAuth (#358): Anmeldeart, Anbieter, Konto oder Server geändert – die gespeicherte Anmeldung gilt nicht mehr
+    // (das Token geht nur an den Server, für den angemeldet wurde).
+    if (alt && alt.anmeldung === 'oauth' && (neu.anmeldung !== 'oauth' || alt.anbieter !== neu.anbieter || alt.benutzer !== neu.benutzer || !gleicherServer(alt, neu))) await this.d.oauth?.abmelden(neu.id, von);
     this.naechster.delete(neu.id);
     log.info(alt ? 'Postfach geändert' : 'Postfach angelegt', { von, postfach: neu.name, server: neu.server });
     return this.ansicht();
@@ -217,28 +265,51 @@ export class Postfaecher {
     if (!p) throw new Fachfehler(404, 'Dieses Postfach gibt es nicht.');
     await this.speichereListe(l.filter((x) => x.id !== id));
     for (const k of ['stand', 'merker']) await this.d.einstellungen.schreibe(`postfach_${k}_${id}`, null);
+    if (p.anmeldung === 'oauth') await this.d.oauth?.abmelden(id, von);
+    await this.d.oauth?.vergiss(id);
     log.info('Postfach gelöscht', { von, postfach: p.name });
   }
 
-  private zugang(p: Postfach): Zugang {
+  private async zugang(p: Postfach): Promise<Zugang> {
+    if (p.anmeldung === 'oauth') {
+      if (!this.d.oauth || !p.anbieter) throw new Fachfehler(409, 'Die Anmeldung per OAuth ist nicht eingerichtet.');
+      const zugriffstoken = await this.d.oauth.zugriffstoken({ id: p.id, name: p.name, benutzer: p.benutzer, anbieter: p.anbieter });
+      return { server: p.server, port: p.port, verschluesselung: p.verschluesselung, benutzer: p.benutzer, passwort: '', zugriffstoken };
+    }
     const passwort = p.passwort ? this.d.entschluessele(p.passwort) : null;
     if (!passwort) throw new Fachfehler(409, 'Das Passwort des Postfachs ist nicht lesbar. Bitte in der Werkbank neu eingeben.');
     return { server: p.server, port: p.port, verschluesselung: p.verschluesselung, benutzer: p.benutzer, passwort };
   }
 
-  /** Verbindung testen – mit gespeicherten oder eben eingegebenen Angaben. */
+  /**
+   * Verbindung testen – mit gespeicherten oder eben eingegebenen Angaben. Ein eben eingegebenes Passwort darf an
+   * jeden Server; ein gespeichertes Geheimnis (Passwort oder OAuth-Token) nur an den gespeicherten Server, Port und
+   * die gespeicherte Verschlüsselung (#358, Sicherheits-Review) – sonst 400.
+   */
   async teste(x: unknown, id: string | null): Promise<{ ok: boolean; text: string; ordner?: string[]; anzahl?: number }> {
     const alt = id ? (await this.liste()).find((p) => p.id === id) ?? null : null;
+    const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
     let p: Postfach;
-    try { p = pruefePostfach({ ...(x as object ?? {}), unverschluesseltBestaetigt: true }, alt, (k) => `klar:${k}`); } catch (e) { return { ok: false, text: (e as Error).message }; }
-    const zugang: Zugang = p.passwort.startsWith('klar:') ? { ...p, passwort: p.passwort.slice(5) } : this.zugang(p);
+    // Ein geändertes gespeichertes Passwort meldet pruefePostfach schon (422) – beim Testen als 400 mit Hinweis.
+    try { p = pruefePostfach(o, alt, (k) => `klar:${k}`); } catch (e) {
+      if (/Passwort neu eingeben/.test((e as Error).message)) throw new Fachfehler(400, 'Server, Port oder Verschlüsselung geändert: Das gespeicherte Passwort geht nur an den gespeicherten Server. Bitte das Passwort neu eingeben oder erst speichern.');
+      return { ok: false, text: (e as Error).message };
+    }
+    if (p.anmeldung === 'oauth') {
+      if (!alt || alt.anmeldung !== 'oauth' || alt.anbieter !== p.anbieter || alt.benutzer !== p.benutzer) return { ok: false, text: 'Bitte zuerst speichern und dann beim Anbieter anmelden.' };
+      if (!gleicherServer(alt, p)) throw new Fachfehler(400, 'Server, Port oder Verschlüsselung geändert: Bitte erst speichern und dann beim Anbieter neu anmelden – das Token geht nur an den gespeicherten Server.');
+    }
+    const frisch = p.anmeldung === 'passwort' && typeof o.passwort === 'string' && o.passwort !== '';
+    if (p.anmeldung === 'passwort' && !frisch && (!alt || !gleicherServer(alt, p))) throw new Fachfehler(400, 'Server, Port oder Verschlüsselung geändert: Das gespeicherte Passwort geht nur an den gespeicherten Server. Bitte das Passwort neu eingeben oder erst speichern.');
+    let zugang: Zugang;
+    try { zugang = frisch ? { ...p, passwort: p.passwort.slice(5) } : await this.zugang(p); } catch (e) { return { ok: false, text: (e as Error).message }; }
     try {
       const s = await this.d.verbinde(zugang, p.ordner);
       try {
         const ordner = await s.ordnerListe();
         return { ok: true, text: `Verbunden. Im Ordner „${p.ordner}“ ${s.anzahl === 1 ? 'liegt 1 Mail' : `liegen ${s.anzahl} Mails`}.`, ordner, anzahl: s.anzahl };
       } finally { await s.schliessen().catch(() => {}); }
-    } catch (e) { return { ok: false, text: verstaendlich(e) }; }
+    } catch (e) { return { ok: false, text: verstaendlich(e, p.anmeldung === 'oauth') }; }
   }
 
   start(ms = 30_000) {
@@ -254,6 +325,8 @@ export class Postfaecher {
       if (!p.aktiv) continue;
       const n = this.naechster.get(p.id);
       if (n && n > this.jetzt()) continue;
+      // OAuth (#358): abgelaufen oder noch nicht angemeldet – nicht immer wieder versuchen; die Werkbank warnt.
+      if (p.anmeldung === 'oauth' && this.d.oauth && (await this.d.oauth.status(p.id)).zustand !== 'ok') continue;
       await this.abrufen(p.id).catch(() => {});
     }
   }
@@ -270,21 +343,22 @@ export class Postfaecher {
     this.laeuft.add(id);
     let n = 0;
     try {
-      const s = await this.d.verbinde(this.zugang(p), p.ordner);
+      const s = await this.d.verbinde(await this.zugang(p), p.ordner);
       try { n = await this.uebernimmAlle(p, s); } finally { await s.schliessen().catch(() => {}); }
       await this.setzeStand(p.id, (st) => ({ ...st, letzterAbruf: new Date(this.jetzt()).toISOString(), fehlerFolge: 0 }));
       this.naechster.set(p.id, this.jetzt() + p.abstand * 60_000);
       return n;
     } catch (e) {
-      const text = e instanceof Fachfehler ? e.message : verstaendlich(e);
+      const text = e instanceof Fachfehler ? e.message : verstaendlich(e, p.anmeldung === 'oauth');
       const st = await this.stand(p.id);
       const folge = st.fehlerFolge + 1;
       await this.setzeStand(p.id, (x) => ({ ...x, letzterAbruf: new Date(this.jetzt()).toISOString(), fehlerFolge: folge, fehler: [{ zeit: new Date(this.jetzt()).toISOString(), fehler: text }, ...x.fehler].slice(0, MAX_EREIGNISSE) }));
       // Immer länger warten: Abstand × 2^Fehler, höchstens 6 Stunden.
       this.naechster.set(p.id, this.jetzt() + Math.min(p.abstand * 60_000 * 2 ** folge, 6 * 3600_000));
       log.warn('Postfach: Abruf fehlgeschlagen', { postfach: p.name, fehler: text, folge });
-      if (folge === FEHLER_MELDEN_AB) await this.d.anAdmins?.(`DMS: Postfach „${p.name}“ lässt sich nicht abrufen`, `Der Abruf des Postfachs „${p.name}“ (${p.benutzer} auf ${p.server}) ist ${folge}-mal hintereinander fehlgeschlagen:\n\n${text}\n\nDas DMS versucht es weiter, mit wachsendem Abstand. Einstellungen: Werkbank → Postfächer.`).catch(() => {});
-      throw new Fachfehler(502, text);
+      // Abgelaufene OAuth-Anmeldung meldet postfach-oauth.ts selbst, einmal.
+      if (folge === FEHLER_MELDEN_AB && !(e instanceof AnmeldungAbgelaufen)) await this.d.anAdmins?.(`DMS: Postfach „${p.name}“ lässt sich nicht abrufen`, `Der Abruf des Postfachs „${p.name}“ (${p.benutzer} auf ${p.server}) ist ${folge}-mal hintereinander fehlgeschlagen:\n\n${text}\n\nDas DMS versucht es weiter, mit wachsendem Abstand. Einstellungen: Werkbank → Postfächer.`).catch(() => {});
+      throw e instanceof AnmeldungAbgelaufen ? e : new Fachfehler(502, text);
     } finally { this.laeuft.delete(id); }
   }
 

@@ -44,6 +44,7 @@ export const HILFE = {
   'werkbank.texterkennung': admin('texterkennung/', 'Texterkennung'),
   'werkbank.eingangsordner': admin('eingangsordner/', 'Eingangsordner'),
   'werkbank.postfaecher': admin('postfaecher/', 'Postfächer'),
+  'werkbank.postfaecher.oauth': admin('postfaecher/', 'Anmeldung mit OAuth', 'anmeldung-mit-oauth'),
   'werkbank.nummernkreise': admin('nummernkreise/', 'Nummernkreise'),
   'werkbank.pakete': admin('pakete/', 'Pakete'),
   'werkbank.pakete.erstellen': admin('pakete/', 'Paket aus deinem DMS erstellen', 'paket-aus-deinem-dms-erstellen'),

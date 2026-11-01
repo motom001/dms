@@ -637,6 +637,13 @@ async function main() {
   await s.getByRole('heading', { name: 'Paket hochladen' }).waitFor();
   await bild(s, 'werkbank-pakete');
   await s.getByRole('button', { name: /Expertenmodus/ }).click();
+  // Postfächer (#358): Anmeldung mit OAuth 2.0 – App eingetragen, noch nicht angemeldet (kein echter Anbieter).
+  await api('PUT', '/api/werkbank/postfaecher-oauth/microsoft', { clientId: '0b5c6a1e-1234-4c8d-9e0f-5a6b7c8d9e0f', clientSecret: 'nur-fuer-bilder', tenant: 'common' });
+  const pfOauth = (await api('POST', '/api/werkbank/postfaecher', { name: 'Büro', aktiv: false, server: 'outlook.office365.com', benutzer: 'buero@example.org', anmeldung: 'oauth', anbieter: 'microsoft' })).at(-1);
+  await geheZu(s, `/werkbank/postfaecher/${pfOauth.id}`);
+  await s.getByRole('heading', { name: /Anmeldung per OAuth 2.0/ }).waitFor();
+  await s.getByRole('heading', { name: /Anmeldung per OAuth 2.0/ }).evaluate((e) => e.scrollIntoView({ block: 'start' }));
+  await bild(s, 'werkbank-postfach-oauth');
   await geheZu(s, '/werkbank/designs');
   await s.locator('.spalte.liste a.eintrag').first().click();
   await bild(s, 'werkbank-designs');

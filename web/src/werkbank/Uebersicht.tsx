@@ -37,6 +37,10 @@ export function hinweiseAus(u: WerkbankUebersicht): Hinweis[] {
   else if (t && t.zustand === 'falsch') h.push({ art: 'schlecht', text: <><strong>Die Schlüsseldatei passt nicht zu den gespeicherten Passwörtern.</strong></>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
   else if (t && t.eingebunden === false) h.push({ art: 'warn', text: <><strong>Die Schlüsseldatei liegt nicht auf einem eigenen Volume.</strong> Wird der Container neu erstellt (z. B. beim Update), ist sie weg.</>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
   else if (t && t.betroffen) h.push({ art: 'warn', text: <><strong>{t.betroffen === 1 ? 'Ein Passwort ist' : `${t.betroffen} Passwörter sind`} nicht lesbar oder unverschlüsselt.</strong></>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
+  // Postfächer mit OAuth (#358): Anmeldung abgelaufen/entzogen oder noch nicht erfolgt – bis dahin kein Abruf.
+  for (const p of u.postfachAnmeldung ?? []) h.push(p.zustand === 'abgelaufen'
+    ? { art: 'schlecht', text: <><strong>Postfach „{p.name}“: Die Anmeldung ist abgelaufen oder wurde entzogen.</strong> Bis zur neuen Anmeldung holt das DMS dort keine Mails ab.</>, ziel: `/werkbank/postfaecher/${p.id}`, knopf: 'Neu anmelden' }
+    : { art: 'warn', text: <><strong>Postfach „{p.name}“ ist noch nicht angemeldet.</strong> Mit OAuth 2.0 erst nach der Anmeldung beim Anbieter abrufbar.</>, ziel: `/werkbank/postfaecher/${p.id}`, knopf: 'Anmelden' });
   // Sicherung (#105): fehlgeschlagen, zu alt, Notfallblatt, Speicherort.
   if (u.sicherung) for (const x of sicherungsHinweise(u.sicherung)) h.push({ ...x, ziel: '/werkbank/sicherung', knopf: 'Zur Sicherung' });
   // #128: API-Schlüssel gehören zu normalen Benutzern.
