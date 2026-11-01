@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.96/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.97/neu/">
       
       
         <link rel="prev" href="../original/">
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-096" class="md-skip">
+        <a href="#neu-in-version-097" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -419,15 +419,43 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0960" class="md-nav__link">
+  <a href="#0971" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.96.0
+        0.97.1
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.96.0">
+    <nav class="md-nav" aria-label="0.97.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0970" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.97.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.97.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1149,15 +1177,43 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0960" class="md-nav__link">
+  <a href="#0971" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.96.0
+        0.97.1
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.96.0">
+    <nav class="md-nav" aria-label="0.97.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#behoben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behoben
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0970" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.97.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.97.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1218,31 +1274,35 @@
   
 
 
-<h1 id="neu-in-version-096">Neu in Version 0.96<a class="headerlink" href="#neu-in-version-096" title="Permanent link">&para;</a></h1>
-<h2 id="0960">0.96.0<a class="headerlink" href="#0960" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-097">Neu in Version 0.97<a class="headerlink" href="#neu-in-version-097" title="Permanent link">&para;</a></h1>
+<h2 id="0971">0.97.1<a class="headerlink" href="#0971" title="Permanent link">&para;</a></h2>
+<h3 id="behoben">Behoben<a class="headerlink" href="#behoben" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Kein eigenes Release 0.97.0:</strong> Die Prüfung auf <code>main</code> scheiterte an einem Test, der zu kurz auf den Abruf-Nachweis von „Auskunft zustellen“ (#455) wartete. Der Test wartet jetzt, bis Nachweis und Meldungen da sind. Dieses Release enthält alles aus 0.97.0 – siehe dort.</li>
+</ul>
+<h2 id="0970">0.97.0<a class="headerlink" href="#0970" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Auskunft nach Art. 15 DSGVO als ZIP</strong> (#396): Fragt ein Kunde, Mieter oder Kontakt nach seinen Daten, ist die Antwort in wenigen Minuten fertig – unter <strong>Werkbank → Datenschutz</strong> oder an der Mappe unter <strong>Aktionen → Auskunft erstellen …</strong> (nur Administratoren).</li>
-<li>Person wählen (Mappentypen, die „eine Person betreffen“), <strong>Frist als Aufgabe</strong> („Auskunft an … bis Eingang + 1 Monat“), <strong>sammeln</strong> über Verweise mit einstellbarer Tiefe (Vorgabe 2), Kreise erkannt; Treffer für Name, E-Mail, Kundennummer und IBAN außerhalb davon nur als <strong>Vorschlag</strong>.</li>
-<li><strong>Prüfliste</strong> mit Häkchen je Mappe, Dokument, Notiz und Historie; nichts geht ungeprüft hinaus. Hinweis <strong>„Daten Dritter?“</strong> mit Weg zum Schwärzen (#392) – eine vorhandene <strong>geschwärzte Fassung</strong> wird statt des Originals vorgeschlagen. Zurückgehaltene Notizen brauchen eine Begründung.</li>
-<li><strong>ZIP</strong> mit Deckblatt (PDF: Kategorien, Zwecke, Herkunft, Empfänger, Speicherdauer aus dem Archivmodus, Rechte, Absender), Übersicht als HTML und CSV, Dokumenten im Original je Mappe und den Daten im Format des Vollexports (JSON/CSV, auch für Art. 20). <strong>Passwortfelder und verschlüsselte Werte nie</strong>, ältere Versionen nie.</li>
-<li>Optional <strong>mit Passwort (AES-256)</strong> – ohne neue Bibliothek; die Dateinamen sind mitverschlüsselt.</li>
-<li><strong>Hintergrundauftrag</strong> mit Fortschritt; die Datei wird nach dem Herunterladen gelöscht, spätestens nach 7 Tagen. <strong>Nachweis</strong> in der Historie der Person und im Protokoll – ohne Inhalte.</li>
-<li>Einstellungen: Verantwortlicher, Empfänger, Text zu den Rechten, je Mappentyp „betrifft eine Person“ und Zweck.</li>
-<li><strong>Baum über Verweise</strong> (#396, Grundlage für #424): alle Mappen, die an einer Mappe hängen – Richtung, Tiefe, Obergrenze, Kreise, nur im Rahmen der eigenen Rechte; je Mappe Ebene, Weg, Dokumente, Verweise nach außen, Aufbewahrungsfrist und Rechte. Schnittstelle <code>GET /api/v1/mappen/{id}/baum</code>.</li>
-<li>Schnittstelle: <code>GET</code>/<code>PUT /werkbank/datenschutz</code>, <code>POST /werkbank/auskunft/vorschau</code>, <code>POST /werkbank/auskunft</code>, <code>POST /werkbank/auskunft/frist</code>, <code>GET /werkbank/auskunft/{id}/zip</code>, <code>DELETE /werkbank/auskunft/{id}</code>.</li>
-<li>Handbücher: neue Seite <em>Datenschutz im DMS</em> im Administratorhandbuch, <em>Baum über Verweise</em> im Entwicklerhandbuch.</li>
+<li><strong>Auskunft zustellen</strong> (#455): Die fertige Auskunft nach Art. 15 DSGVO (#396) geht direkt aus dem DMS an die Person – unter <strong>Werkbank → Datenschutz → Bereitliegende Auskünfte → Zustellen …</strong> (auch gleich nach dem Erzeugen; aus der Mappe der Person stehen ihre Auskünfte oben).</li>
+<li><strong>Per E-Mail:</strong> die ZIP als Anhang über den E-Mail-Versand des DMS – <strong>nur verschlüsselt</strong>; das Passwort steht nie in der E-Mail. Vorbereiteter Text in Du-Form, Warnung ab 10 MB, über 50 MB nur noch als Abruf-Link.</li>
+<li><strong>Abruf-Link mit Abrufcode:</strong> Link (Zufallsschlüssel mit 256 Bit, nur hinter dem <code>#</code>) auf eine schlichte, öffentliche Abrufseite ohne Anmeldung, Menü oder Hinweis auf den Haushalt; dazu ein Abrufcode (8 Zeichen oder ein eigener wie die Vertragsnummer), den du auf einem anderen Weg mitteilst. Gültigkeit (Vorgabe 30 Tage) und Zahl der Abrufe (Vorgabe 3) einstellbar, jederzeit zurückziehbar. Den Link verschickt das DMS auf Wunsch per E-Mail – ohne Code.</li>
+<li><strong>Sicherheit:</strong> nur Hashes gespeichert (SHA-256, scrypt), Vergleich in konstanter Zeit, gleiche Antwort für unbekannte Links und falsche Codes, Sperre nach 10 falschen Codes am Link und zusätzlich über den Anmeldeschutz je IP, Download über ein Einmal-Ticket, Protokoll nur mit gekürzter IP und ohne Code.</li>
+<li><strong>Nachweis:</strong> Jeder Versand, jeder Abruf und jeder Fehlversuch steht in der Historie der Person (ohne IP); Liste <strong>Abruf-Links</strong> mit „zuletzt abgerufen am …“. Wer die Auskunft erstellt hat und wer die Person als Favorit hat, bekommt die Aufgabe <strong>Auskunft</strong> („… wurde abgerufen“, gebündelt je Link) – ebenso, wenn ein Link gesperrt wird.</li>
+<li>Vorschlag des Weges nach der Adresse des DMS: Abruf-Link, wenn sie nach Internet aussieht, sonst E-Mail.</li>
+<li>Die ZIP bleibt, solange ein Abruf-Link gilt (statt nach dem eigenen Herunterladen gelöscht zu werden), und wird gelöscht, sobald alle Abrufe verbraucht sind.</li>
+<li>Schnittstelle: <code>POST /werkbank/auskunft/{id}/email</code>, <code>POST /werkbank/auskunft/{id}/link</code>, <code>POST /werkbank/auskunft/link/{id}/widerrufen</code>; <code>GET /werkbank/datenschutz</code> liefert dazu die Abruf-Links.</li>
+<li>Datenbank: Migration <strong>041</strong> (Tabelle <code>auskunft_links</code>, Aufgabenart „auskunft“).</li>
+<li>Handbücher: <em>Datenschutz im DMS → Auskunft zustellen</em> (Wahl des Weges, Sicherheit der Abrufseite, Erreichbarkeit aus dem Internet), Aufgabenart <em>Auskunft</em>.</li>
 </ul>
 <h3 id="noch-nicht-dabei">Noch nicht dabei<a class="headerlink" href="#noch-nicht-dabei" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Ein eigenes Recht „Auskunft erteilen“ – vorerst nur Administratoren (die Berechtigungen gelten je Mappentyp; abgestufte Administratorrechte kommen später).</li>
-<li>Felder als „intern“ markieren gibt es noch nicht; ausgeschlossen sind Passwortfelder und verschlüsselte Werte. Zurückhalten geht je Mappe, Dokument und Notiz.</li>
-<li>Benachrichtigung per E-Mail, wenn die Auskunft fertig ist (die Werkbank zeigt den Fortschritt und den Download).</li>
-<li>„Löschen auf Verlangen“ und „Mappe mit allen verknüpften Mappen löschen“ (#424) bauen auf dem Baum auf und folgen.</li>
+<li>Stempel und Verkleinern beim Versand per E-Mail: Die Auskunft ist eine verschlüsselte ZIP-Datei, daran lässt sich nichts stempeln.</li>
+<li>Ein Eintrag in der Post für die versendete Auskunft – der Nachweis steht in der Historie der Person; die ZIP-Datei selbst wird bewusst nicht dauerhaft abgelegt.</li>
+<li>Die Sicherheits-Nachprüfung der neuen öffentlichen Schnittstelle durch den Chat Sicherheit steht noch aus.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.95.4 im Detail: <a href="https://github.com/motom001/dms/compare/v0.95.4...v0.96.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.96.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.96.0...v0.97.1">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 

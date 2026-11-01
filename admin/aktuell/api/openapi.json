@@ -5537,6 +5537,7 @@
           "Werkbank"
         ],
         "summary": "Auskunft löschen (Administrator)",
+        "description": "Gültige Abruf-Links dieser Auskunft werden dabei zurückgezogen (#455).",
         "operationId": "deleteWerkbankAuskunftMitid",
         "parameters": [
           {
@@ -5585,6 +5586,235 @@
           },
           "409": {
             "description": "Kann (noch) nicht gelöscht werden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/werkbank/auskunft/{id}/email": {
+      "post": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Auskunft per E-Mail senden (Administrator)",
+        "description": "Auskunft zustellen, Weg 1 (#455): die ZIP als Anhang über den E-Mail-Versand des DMS. Nur für Auskünfte mit Passwort (sonst 422); das Passwort kennt das DMS nicht und schickt es nie mit – teile es auf einem anderen Weg mit. Größer als 50 MB: 413, dann den Abruf-Link nutzen. Ohne betreff/nachricht gilt ein Vorschlag in Du-Form. Nachweis in der Historie der Person.",
+        "operationId": "postWerkbankAuskunftMitidEmail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Auskunft (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuskunftEmail"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuskunftEmailErgebnis"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/werkbank/auskunft/{id}/link": {
+      "post": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Abruf-Link für eine Auskunft erstellen (Administrator)",
+        "description": "Auskunft zustellen, Weg 2 (#455): Link auf die öffentliche Abrufseite (/abruf#<Schlüssel>, 256 Bit) mit Abrufcode (8 Zeichen, oder ein eigener ab 6 Zeichen). Link und Code stehen nur in dieser Antwort im Klartext. Gültig tage Tage (1–90, Standard 30), höchstens abrufe Abrufe (1–10, Standard 3); ein noch gültiger Link derselben Auskunft wird zurückgezogen. Mit senden=true geht der Link – ohne Code – per E-Mail an an. Die ZIP bleibt, solange der Link gilt.",
+        "operationId": "postWerkbankAuskunftMitidLink",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Auskunft (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuskunftLinkEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuskunftLinkNeu"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/werkbank/auskunft/link/{id}/widerrufen": {
+      "post": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Abruf-Link zurückziehen (Administrator)",
+        "description": "Der Link gilt sofort nicht mehr (#455); der Eintrag bleibt als Nachweis. Für die ZIP gilt wieder das ursprüngliche Ende (7 Tage nach dem Erstellen).",
+        "operationId": "postWerkbankAuskunftLinkMitidWiderrufen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Links (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuskunftLink"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
             "content": {
               "application/json": {
                 "schema": {
@@ -7557,6 +7787,168 @@
           },
           "tage": {
             "type": "integer"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuskunftLink"
+            },
+            "description": "Abruf-Links (#455), neueste zuerst – auch nach dem Löschen der ZIP als Nachweis"
+          },
+          "adresse": {
+            "type": "string",
+            "description": "Adresse des DMS für Links"
+          },
+          "oeffentlich": {
+            "type": "boolean",
+            "description": "Adresse sieht nach Internet aus (nicht localhost, kein privates Netz) – Vorschlag: Abruf-Link"
+          },
+          "mail": {
+            "type": "boolean",
+            "description": "E-Mail-Versand eingerichtet"
+          }
+        }
+      },
+      "AuskunftLink": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "auskunftId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mappeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titel": {
+            "type": "string"
+          },
+          "empfaenger": {
+            "type": "string",
+            "nullable": true
+          },
+          "codeArt": {
+            "type": "string",
+            "enum": [
+              "erzeugt",
+              "eigen"
+            ]
+          },
+          "erstellt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "erstelltVon": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "ablauf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "maxAbrufe": {
+            "type": "integer"
+          },
+          "abrufe": {
+            "type": "integer"
+          },
+          "fehlversuche": {
+            "type": "integer"
+          },
+          "gesperrt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "nach zu vielen falschen Abrufcodes"
+          },
+          "widerrufen": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "abgerufen": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "zuletzt erfolgreich abgerufen"
+          }
+        }
+      },
+      "AuskunftLinkEingabe": {
+        "type": "object",
+        "properties": {
+          "tage": {
+            "type": "integer",
+            "description": "1–90, Standard 30"
+          },
+          "abrufe": {
+            "type": "integer",
+            "description": "1–10, Standard 3"
+          },
+          "code": {
+            "type": "string",
+            "description": "eigener Abrufcode (z. B. Vertragsnummer, mindestens 6 Zeichen); ohne Angabe erzeugt das DMS einen"
+          },
+          "an": {
+            "type": "string",
+            "format": "email"
+          },
+          "senden": {
+            "type": "boolean",
+            "description": "Link per E-Mail an „an“ schicken (ohne Code)"
+          }
+        }
+      },
+      "AuskunftLinkNeu": {
+        "type": "object",
+        "properties": {
+          "link": {
+            "$ref": "#/components/schemas/AuskunftLink"
+          },
+          "url": {
+            "type": "string",
+            "description": "nur jetzt im Klartext"
+          },
+          "code": {
+            "type": "string",
+            "description": "Abrufcode, nur jetzt im Klartext – auf anderem Weg mitteilen"
+          },
+          "gesendet": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AuskunftEmail": {
+        "type": "object",
+        "required": [
+          "an"
+        ],
+        "properties": {
+          "an": {
+            "type": "string",
+            "description": "Adressen, durch Komma getrennt"
+          },
+          "betreff": {
+            "type": "string"
+          },
+          "nachricht": {
+            "type": "string"
+          }
+        }
+      },
+      "AuskunftEmailErgebnis": {
+        "type": "object",
+        "properties": {
+          "an": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
