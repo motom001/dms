@@ -1262,3 +1262,17 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .stempelbild .fuss { position: absolute; right: 4px; bottom: 3px; font-size: 5px; color: #333; }
 .stempelvorlagen .stempeleditor { padding: 4px 12px 12px; display: flex; flex-direction: column; gap: 10px; }
 .stempelvorlagen .stempeleditor form { display: flex; flex-direction: column; gap: 10px; }
+/* Werkbank → Datenschutz: Auskunft nach Art. 15 DSGVO (#396). Eigene Klassen – nichts Globales umdefinieren. */
+.auskunft-baum { list-style: none; margin: 0; padding: 0 0 0 18px; border-left: 1px solid var(--linie); }
+.auskunft-baum.wurzel { padding-left: 0; border-left: 0; margin: 8px 0; }
+.auskunft-baum > li { margin: 4px 0; min-width: 0; }
+.auskunft-mappe { min-width: 0; overflow-wrap: anywhere; }
+.auskunft-mappe .haken > span, .auskunft-baum .haken > span { display: block; font-weight: normal; }
+.auskunft-mappe > .haken > span > .verweis { font-weight: 600; }
+.auskunft-mappe.aus > .haken > span { color: var(--leise); text-decoration: line-through; }
+.auskunft-mappe .chip { margin-left: 6px; }
+.auskunft-inhalt { margin: 2px 0 6px 26px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.auskunft-inhalt .haken { align-items: flex-start; }
+.auskunft-dritte { color: var(--warn); margin: 0; }
+.auskunft-typen .eigenschaft input { width: 100%; }
+@media (max-width: 820px) { .auskunft-baum { padding-left: 10px; } .auskunft-inhalt { margin-left: 18px; } }

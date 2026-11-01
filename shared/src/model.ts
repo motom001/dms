@@ -754,7 +754,7 @@ export const HISTORIENARTEN = {
   dokument_papierkorb: 'Dokument in den Papierkorb', dokument_wiederhergestellt: 'Dokument wiederhergestellt',
   pdf_bearbeitet: 'PDF bearbeitet', post_geteilt: 'Post geteilt',
   archivnummer: 'Archivnummer', volltext: 'Volltext gesetzt', weitergegeben: 'weitergegeben',
-  geschwaerzt: 'geschwärzte Fassung erstellt',
+  geschwaerzt: 'geschwärzte Fassung erstellt', auskunft: 'Auskunft erteilt',
 } as const;
 export type Historienart = keyof typeof HISTORIENARTEN;
 /** Eine Feldänderung: Werte lesbar zum Zeitpunkt der Änderung; Passwörter nur als „geändert“. */

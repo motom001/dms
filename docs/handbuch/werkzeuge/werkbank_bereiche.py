@@ -21,7 +21,7 @@ ZIEL = WURZEL / 'docs' / 'handbuch' / 'admin' / 'docs' / 'uebersicht.md'
 # Seite im Administratorhandbuch je Bereich (Pfad unter /werkbank).
 SEITE = {
     'typen': 'mappentypen.md', 'sichten': 'sichten.md', 'nummernkreise': 'nummernkreise.md', 'stempel': 'stempel.md', 'pakete': 'pakete.md',
-    'darfweg': 'archiv.md#nach-der-frist-darf-weg', 'benutzer': 'benutzer.md', 'anmeldeschutz': 'anmeldeschutz.md',
+    'darfweg': 'archiv.md#nach-der-frist-darf-weg', 'datenschutz': 'datenschutz.md', 'benutzer': 'benutzer.md', 'anmeldeschutz': 'anmeldeschutz.md',
     'aufgaben': 'aufgaben.md', 'betrieb': 'installation.md#e-mail-und-adresse', 'verschluesselung': 'verschluesselung.md',
     'designs': 'designs.md', 'papierkorb': 'papierkorb.md', 'anbindung': 'installation.md#datenbank-anbindung',
     'speicherplatz': 'speicherplatz.md', 'postfaecher': 'postfaecher.md', 'eingangsordner': 'eingangsordner.md', 'webdav': 'webdav.md',

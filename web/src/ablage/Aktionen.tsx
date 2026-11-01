@@ -19,7 +19,7 @@ const groesse = (b: number) => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 
 export const EMAIL_WARNUNG = 20 * 1024 * 1024;
 const EMAIL_HOECHSTENS = 50_000_000;
 
-export function Aktionsmenue({ aufgabe, erinnern, email, drucken, link }: { aufgabe(): void; erinnern?: () => void; email?: () => void; drucken?: () => void; link?: () => void }) {
+export function Aktionsmenue({ aufgabe, erinnern, email, drucken, link, auskunft }: { aufgabe(): void; erinnern?: () => void; email?: () => void; drucken?: () => void; link?: () => void; auskunft?: () => void }) {
   const [offen, setOffen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -43,6 +43,7 @@ export function Aktionsmenue({ aufgabe, erinnern, email, drucken, link }: { aufg
           {email && <button type="button" role="menuitem" onClick={waehle(email)}><span aria-hidden="true">✉</span> Per E-Mail versenden</button>}
           {drucken && <button type="button" role="menuitem" onClick={waehle(drucken)}><span aria-hidden="true">⎙</span> Als PDF exportieren</button>}
           {link && <button type="button" role="menuitem" onClick={waehle(link)} title="Link über Mappentyp und Feldwerte, z. B. zum Weitergeben per Mail oder Chat"><span aria-hidden="true">🔗</span> Link kopieren</button>}
+          {auskunft && <button type="button" role="menuitem" onClick={waehle(auskunft)} title="Alles zu dieser Person sammeln, prüfen und als ZIP ausgeben (Werkbank → Datenschutz)"><span aria-hidden="true">§</span> Auskunft erstellen …</button>}
         </div>
       )}
     </div>

@@ -723,6 +723,13 @@ async function main() {
   await geheZu(s, '/werkbank/stempel?offen=kopie');
   await s.locator('.stempeleditor').waitFor();
   await bild(s, 'werkbank-stempel');
+  // Datenschutz (#396): Vertragspartner „betrifft eine Person“, Auskunft für die Stadtwerke gesammelt – Prüfliste.
+  await api('PUT', '/api/werkbank/datenschutz', { verantwortlicher: 'Familie Beispiel\nMusterweg 1, 01067 Dresden', empfaenger: '', typen: { [d.typ('Vertragspartner').id]: { person: true, zweck: 'Verträge und Rechnungen des Haushalts' } } });
+  await geheZu(s, `/werkbank/datenschutz?mappe=${d.stadtwerke.id}`);
+  await s.getByRole('button', { name: 'Sammeln', exact: true }).click();
+  await s.getByRole('heading', { name: '3. Prüfen' }).waitFor();
+  await s.getByRole('heading', { name: '3. Prüfen' }).evaluate((e) => e.scrollIntoView({ block: 'start' }));
+  await bild(s, 'werkbank-datenschutz');
   // Pakete (#369): Abschnitt „Expertenmodus“ aufgeklappt unter den Knöpfen (ohne Katalogabruf).
   await geheZu(s, '/werkbank/pakete');
   await s.getByRole('button', { name: /Expertenmodus/ }).click();

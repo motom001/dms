@@ -25,6 +25,10 @@ import {
 import type { Readable } from 'node:stream';
 import { aufbewahrenBis, datumText, inFrist, JAHRE_MAX } from '../../shared/src/archiv';
 import type { ExportQuelle } from './vollexport';
+import { sammleBaum, type BaumQuelle } from './baum';
+import { BAUM_STANDARD, bereinigeBaumOptionen, type Baum } from '../../shared/src/baum';
+import { AUSKUNFT_PASSWORT_MIN, auswahlProbleme as auskunftProbleme, fristBis, liesAuswahl, liesDatenschutz, personenTypen, type AuskunftMappe, type AuskunftVorschau, type AuskunftVorschlag, type Datenschutz } from '../../shared/src/auskunft';
+import type { AuskunftDaten } from './auskunft';
 import { datumIn, KREIS_SCHLUESSEL, kreisVon, naechste, neubeginn, pruefeMuster, type Nummernkreis } from '../../shared/src/nummernkreis';
 import { csvAus, xlsxAus } from './xlsx';
 import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile } from './export';
@@ -1422,6 +1426,8 @@ export class Dienst {
       unpassend: await this.unpassendeVerweise(typ, mappe.werte, z?.ich.id ?? ''),
       /** Archivmodus (#212): aufbewahren bis (JJJJ-12-31) oder null. */
       aufbewahrenBis: aufbewahrenBis(typ?.archiv, mappe),
+      /** Auskunft nach Art. 15 DSGVO (#396): Administratoren, Mappentyp „betrifft eine Person“. */
+      ...(z?.admin && (await this.datenschutz()).typen[mappe.typId]?.person ? { auskunft: true } : {}),
     };
   }
 
@@ -4350,6 +4356,211 @@ export class Dienst {
       favoriten: async () => (await this.repo.alleFavoriten()).filter((f) => f.benutzerId === ich),
       passwort: (w) => (passwortVon.get(w) ? voll.passwort(w) : null),
     };
+  }
+
+  /* ---------- Baum-Sammlung über Verweise (#396, #424) ---------- */
+
+  /** Datenquelle der Baum-Sammlung für einen Zugriff (Rechte des Aufrufers). */
+  baumQuelle(z: Zugriff): BaumQuelle {
+    const r = this.repo;
+    return {
+      typen: z.typen,
+      mappen: (ids) => r.holeMappen(ids),
+      kanten: (ids) => r.kantenVon(ids),
+      lesbare: (ids) => this.lesbare(z, ids),
+      bezuege: (ids) => r.bezuege(ids),
+      dokumente: (ids) => r.zaehleDokumente(ids),
+      rechte: (ms) => this.rechteAnVielen(z, ms),
+    };
+  }
+
+  /**
+   * Alle Mappen, die über Verweise an `startId` hängen (#396, #424) – innerhalb der Rechte des
+   * Aufrufers. Benutzer und Rollen sind ohne Angabe von `ohneTypen` ausgenommen.
+   */
+  async baum(startId: string, eingabe: unknown, z: Zugriff): Promise<Baum> {
+    const sys = await this.sichereSystem();
+    const opt = bereinigeBaumOptionen(eingabe, { ...BAUM_STANDARD, ohneTypen: [sys.benutzer.id, sys.rolle.id] });
+    return sammleBaum(this.baumQuelle(z), startId, opt);
+  }
+
+  /* ---------- Datenschutz: Auskunft nach Art. 15 DSGVO (#396) ---------- */
+
+  async datenschutz(): Promise<Datenschutz> { return liesDatenschutz(await this.einstellungen?.lies('datenschutz')); }
+
+  async setzeDatenschutz(eingabe: unknown, von: string): Promise<Datenschutz> {
+    const sys = await this.sichereSystem();
+    const typen = new Set((await this.repo.listeTypen()).filter((t) => t.id !== sys.benutzer.id && t.id !== sys.rolle.id).map((t) => t.id));
+    const d = liesDatenschutz(eingabe);
+    d.typen = Object.fromEntries(Object.entries(d.typen).filter(([id]) => typen.has(id)));
+    await this.einstellungen?.schreibe('datenschutz', d);
+    protokoll.modul('datenschutz').info('Einstellungen für Auskünfte gespeichert', { von, personentypen: personenTypen(d).length });
+    return d;
+  }
+
+  /** Inhalte je Mappe für die Prüfliste: Dokumente, Notizen, Historie, Hinweis auf Dritte. */
+  private async auskunftInhalte(ids: string[], typen: Map<string, Mappentyp>, dritte: Map<string, string[]>): Promise<Record<string, AuskunftMappe>> {
+    const r = this.repo;
+    const mappen = new Map((await r.holeMappen(ids)).map((m) => [m.id, m] as const));
+    const erg: Record<string, AuskunftMappe> = {};
+    for (const id of ids) erg[id] = { dokumente: [], notizen: [], historie: 0, dritte: dritte.get(id) ?? [], ohneFelder: [] };
+    for (let i = 0; i < ids.length; i += 500) {
+      const teil = ids.slice(i, i + 500);
+      const [doks, notizen, historie] = await Promise.all([r.dokumenteVon(teil), r.notizenVon(teil), r.historieVon(teil)]);
+      const geschwaerzt = new Map<string, string>();
+      for (const d of doks) if (d.herkunft === 'geschwaerzt') geschwaerzt.set(`${d.mappeId}|${d.name}`, d.id);
+      for (const d of doks) {
+        const typ = typen.get(mappen.get(d.mappeId)?.typId ?? '');
+        erg[d.mappeId]?.dokumente.push({
+          id: d.id, name: d.name, register: typ?.register.find((x) => x.key === d.registerKey)?.name ?? d.registerKey, mime: d.mime, groesse: d.groesse,
+          geschwaerzt: d.herkunft === 'geschwaerzt',
+          geschwaerzteFassung: d.herkunft === 'geschwaerzt' ? null : geschwaerzt.get(`${d.mappeId}|${geschwaerztName(d.name)}`) ?? null,
+          aeltere: d.aeltere ?? 0, schwaerzbar: kannSchwaerzen(d.mime),
+        });
+      }
+      for (const n of notizen) erg[n.mappeId]?.notizen.push({ id: n.id, erstellt: n.erstellt, text: alsText(n.text).slice(0, 300) });
+      for (const h of historie) if (erg[h.mappeId]) erg[h.mappeId].historie++;
+    }
+    for (const [id, m] of mappen) {
+      const typ = typen.get(m.typId);
+      erg[id].ohneFelder = (typ?.felder ?? []).filter((f) => f.typ === 'passwort' && !istLeer(m.werte[f.key])).map((f) => f.label);
+    }
+    return erg;
+  }
+
+  /** Suchbegriffe aus der Mappe des Betroffenen: Titel, E-Mail, Kundennummer, IBAN, Name. */
+  private auskunftBegriffe(m: Mappe, typ: Mappentyp | undefined): string[] {
+    const b = new Set<string>();
+    if ((m.titel ?? '').trim().length >= 4) b.add(m.titel!.trim());
+    for (const f of typ?.felder ?? []) {
+      if (f.typ !== 'text') continue;
+      const v = auswahlText(m.werte[f.key]).trim();
+      if (v.length < 4 || istVerschluesselt(v)) continue;
+      if (/mail|kunden|nummer|iban|name|vertrags/i.test(`${f.key} ${f.label}`) || istEmail(v)) b.add(v);
+    }
+    return [...b].slice(0, 6);
+  }
+
+  /**
+   * Prüfliste einer Auskunft (#396): Baum ab der Mappe des Betroffenen (Tiefe einstellbar, Vorgabe 2,
+   * beide Richtungen, ohne Benutzer und Rollen), je Mappe Dokumente, Notizen, Historie; dazu
+   * Volltext-Treffer außerhalb des Baums als Vorschläge.
+   */
+  async auskunftVorschau(e: unknown, z: Zugriff): Promise<AuskunftVorschau> {
+    const o = (e ?? {}) as Record<string, unknown>;
+    const mappeId = String(o.mappeId ?? '');
+    const sys = await this.sichereSystem();
+    const ohne = new Set([sys.benutzer.id, sys.rolle.id]);
+    const baum = await this.baum(mappeId, { tiefe: o.tiefe, richtungen: o.richtungen, max: 1000, seitwaerts: false, ohneTypen: [...ohne] }, z);
+    const im = new Set(baum.knoten.map((k) => k.id));
+    // „Daten Dritter?“: Nachbarn außerhalb der Sammlung, die selbst eine Person sind (Mappentyp „betrifft eine Person“).
+    const person = new Set(personenTypen(await this.datenschutz()));
+    const dritte = new Map(baum.knoten.map((k) => [k.id, [...new Set([...k.aussen.verweistAuf, ...k.aussen.verwiesenVon]
+      .filter((a) => !!a.typId && person.has(a.typId) && !ohne.has(a.typId)).map((a) => a.titel))]] as [string, string[]]));
+    const mappen = await this.auskunftInhalte([...im], z.typen, dritte);
+    // Volltext-Treffer (Name, E-Mail, Kundennummer, IBAN) – nur als Vorschlag.
+    const start = (await this.repo.holeMappe(mappeId))!;
+    const begriffe = o.vorschlaege === false ? [] : this.auskunftBegriffe(start, z.typen.get(start.typId));
+    const vorschlaege: AuskunftVorschlag[] = [];
+    const gesehen = new Set<string>();
+    for (const begriff of begriffe) {
+      const s = await this.repo.seite({ suche: begriff, volltext: true, notizen: true, lesen: z.lesen, von: 0, anzahl: 25 });
+      for (const m of s.mappen) {
+        if (im.has(m.id) || gesehen.has(m.id) || ohne.has(m.typId) || !z.typen.has(m.typId)) continue;
+        gesehen.add(m.id);
+        if (vorschlaege.length < 30) vorschlaege.push({ mappeId: m.id, typId: m.typId, typ: z.typen.get(m.typId)?.name ?? '', titel: m.titel ?? '', begriff });
+      }
+    }
+    const vorschlagMappen = await this.auskunftInhalte(vorschlaege.map((v) => v.mappeId), z.typen, new Map());
+    return { baum, mappen, vorschlaege, vorschlagMappen, begriffe, frist: fristBis(heuteIn()) };
+  }
+
+  /**
+   * Auskunft vorbereiten (#396): Auswahl gegen eine frische Sammlung prüfen und die Daten für die ZIP
+   * zusammenstellen. Passwortfelder und verschlüsselte Werte fallen weg (auch aus den Mappentypen),
+   * ältere Versionen von Dokumenten ebenso.
+   */
+  async auskunftDaten(e: unknown, z: Zugriff, x: { mandant: string; version: string }): Promise<AuskunftDaten> {
+    const o = (e ?? {}) as Record<string, unknown>;
+    if (o.geprueft !== true) throw new Fachfehler(422, 'Bitte bestätige, dass du die Auswahl geprüft hast – ungeprüft geht nichts hinaus.');
+    const vorschau = await this.auskunftVorschau({ mappeId: o.mappeId, tiefe: o.tiefe, richtungen: o.richtungen, vorschlaege: Array.isArray((o.auswahl as Record<string, unknown> | undefined)?.mappen) }, z);
+    const bekannt = { ...vorschau.vorschlagMappen, ...vorschau.mappen };
+    const a = liesAuswahl(o.auswahl);
+    const p = auskunftProbleme(a, bekannt);
+    if (p.length) throw new Fachfehler(422, p.join(' '));
+    const passwort = typeof o.passwort === 'string' && o.passwort ? o.passwort : null;
+    if (passwort && passwort.length < AUSKUNFT_PASSWORT_MIN) throw new Fachfehler(422, `Das Passwort für die ZIP-Datei braucht mindestens ${AUSKUNFT_PASSWORT_MIN} Zeichen.`);
+    const start = (await this.repo.holeMappe(vorschau.baum.startId))!;
+    const ds = await this.datenschutz();
+    const ohneGeheim = (t: Mappentyp, w: Werte): Werte => Object.fromEntries(Object.entries(w).filter(([k, v]) => !istVerschluesselt(v) && t.felder.find((f) => f.key === k)?.typ !== 'passwort'));
+    const mappen = (await this.repo.holeMappen(a.mappen)).filter((m) => z.typen.has(m.typId)).map((m) => ({ ...m, werte: ohneGeheim(z.typen.get(m.typId)!, m.werte) }));
+    const typIds = new Set(mappen.map((m) => m.typId));
+    const typen = [...typIds].map((id) => z.typen.get(id)!).map((t) => {
+      const { berechtigungen: _b, stempel: _s, darfAnlegen: _d, ...rest } = t;
+      return { ...rest, felder: t.felder.filter((f) => f.typ !== 'passwort') } as Mappentyp;
+    });
+    const dok = new Set(a.dokumente); const not = new Set(a.notizen); const hist = new Set(a.historie);
+    const mitZurueckgehaltenen = new Set(Object.entries(bekannt).filter(([id, x]) => a.mappen.includes(id) && x.notizen.some((n) => !not.has(n.id))).map(([id]) => id));
+    const jeTyp = new Map<string, Mappe[]>();
+    for (const m of mappen) jeTyp.set(m.typId, [...jeTyp.get(m.typId) ?? [], m]);
+    const voll = this.vollexportQuelle({ mandant: x.mandant, version: x.version, benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] });
+    const quelle: ExportQuelle = {
+      ...voll,
+      typen: async () => typen, sichten: async () => [], nummernkreise: async () => [], pakete: async () => [],
+      mappen: async (typId) => jeTyp.get(typId) ?? [],
+      papierkorb: async () => [], papierkorbDokumente: async () => [],
+      dokumente: async (ids) => (await this.repo.dokumenteVon(ids)).filter((d) => dok.has(d.id)),
+      versionen: async () => [],
+      notizen: async (ids) => (await this.repo.notizenVon(ids)).filter((n) => not.has(n.id)),
+      aufgaben: async () => [], erinnerungen: async () => [], favoriten: async () => [],
+      // Historie: ohne frühere Auskünfte (deren Begründungen sind intern); Mappen mit zurückgehaltenen
+      // Notizen ohne Notiz-Einträge – die Historie nennt den Text einer Notiz.
+      historie: async (ids) => (await this.repo.historieVon(ids)).filter((h) => hist.has(h.mappeId) && h.art !== 'auskunft' && !(h.art === 'notiz' && mitZurueckgehaltenen.has(h.mappeId))),
+      passwort: () => null,
+    };
+    // Herkunft (Kanal der Post) und Speicherdauer (Archivmodus) für das Deckblatt.
+    const post = (await this.sichereSystem()).post;
+    const kanaele: Record<string, number> = {};
+    for (const m of jeTyp.get(post.id) ?? []) { const k = auswahlText(m.werte.kanal) || 'unbekannt'; kanaele[k] = (kanaele[k] ?? 0) + 1; }
+    const dokumente = (await this.repo.dokumenteVon(a.mappen)).filter((d) => dok.has(d.id));
+    const ziele = mappen.flatMap((m) => [...verweiseVon(z.typen.get(m.typId)!, m.werte).map((v) => v.zielId), m.erstelltVon, m.geaendertVon].filter((v): v is string => !!v));
+    const titel = Object.fromEntries(Object.entries(await this.maskiereBezuege(z, await this.repo.bezuege([...new Set(ziele)]))).map(([id, b]) => [id, b.titel]));
+    return {
+      titel,
+      start: { id: start.id, titel: start.titel ?? '', typ: z.typen.get(start.typId)?.name ?? '' },
+      datenschutz: ds, quelle, mappen, typen, kanaele, passwort,
+      anzahl: { mappen: mappen.length, dokumente: dokumente.length, bytes: dokumente.reduce((s, d) => s + d.groesse, 0), notizen: not.size, historie: hist.size, ohneNotizen: a.ohneNotizen.filter((n) => !not.has(n.id)).length },
+      gruende: a.ohneNotizen.filter((n) => !not.has(n.id)).map((n) => n.grund),
+      empfaenger: typeof o.empfaenger === 'string' ? o.empfaenger.trim().slice(0, 2000) : ds.empfaenger,
+      anmerkung: typeof o.anmerkung === 'string' ? o.anmerkung.trim().slice(0, 2000) : '',
+      aufbewahrung: typen.map((t) => {
+        const bis = (jeTyp.get(t.id) ?? []).map((m) => aufbewahrenBis(t.archiv, m)).filter((b): b is string => !!b).sort();
+        return { typ: t.name, archiv: t.archiv ? { jahre: t.archiv.jahre, stichtag: t.archiv.stichtag ? t.felder.find((f) => f.key === t.archiv!.stichtag)?.label ?? t.archiv.stichtag : null } : null, bis: bis.at(-1) ?? null };
+      }),
+    };
+  }
+
+  /** Nachweis (#396): Historie des Betroffenen und Protokoll – nur Zahlen, keine Inhalte. */
+  async auskunftNachweis(d: AuskunftDaten, von: { id: string; email: string }, info: { id: string; bytes: number }) {
+    const n = d.anzahl;
+    await this.notiere(d.start.id, von.id, 'auskunft', {
+      text: `Auskunft nach Art. 15 DSGVO erstellt: ${n.mappen} ${n.mappen === 1 ? 'Mappe' : 'Mappen'}, ${n.dokumente} ${n.dokumente === 1 ? 'Dokument' : 'Dokumente'}`,
+      mappen: n.mappen, dokumente: n.dokumente, notizen: n.notizen, historie: n.historie, ohneNotizen: n.ohneNotizen,
+      ...(d.gruende.length ? { gruende: d.gruende } : {}), verschluesselt: !!d.passwort, auskunft: info.id,
+    });
+    protokoll.modul('datenschutz').info('Auskunft erstellt', { mappeId: d.start.id, mappen: n.mappen, dokumente: n.dokumente, notizen: n.notizen, ohneNotizen: n.ohneNotizen, verschluesselt: !!d.passwort, mb: Math.round(info.bytes / 1024 ** 2), von: von.email });
+  }
+
+  /** Frist (#396): Aufgabe „Auskunft an … bis <Eingang + 1 Monat>“ am Betroffenen, für den Administrator. */
+  async auskunftFrist(e: unknown, z: Zugriff, von: string): Promise<Aufgabe> {
+    const o = (e ?? {}) as Record<string, unknown>;
+    const m = await this.pruefeRecht(z, String(o.mappeId ?? ''), 'R');
+    const eingang = typeof o.eingang === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(o.eingang) ? o.eingang : heuteIn();
+    const bis = fristBis(eingang);
+    const text = `Auskunft nach Art. 15 DSGVO an ${m.titel || 'Ohne Titel'} bis ${datumText(bis)} (Anfrage vom ${datumText(eingang)})`;
+    const a = await this.repo.legeAufgabeAn({ id: randomUUID(), mappeId: m.id, empfaengerId: von, art: 'manuell', text, datum: bis, erstellt: '', erstelltVon: von, erledigt: null, erledigtVon: null });
+    await this.notiere(m.id, von, 'aufgabe', { text: `für ${await this.name(von)}: ${text}`, aufgabe: a.id, aufgabenart: 'manuell', fuer: von, aufgabentext: text });
+    return this.leiteUm(a);
   }
 
   /** Dürfen Benutzer ihre Daten selbst exportieren (#255)? Standard: ja. */

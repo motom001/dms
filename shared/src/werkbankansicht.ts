@@ -10,7 +10,7 @@ export type Vorlage = 'haushalt' | 'organisation' | 'alles';
 
 export const VORLAGEN: Record<Vorlage, { name: string; text: string }> = {
   haushalt: { name: 'Haushalt', text: 'Schlank: nur, was ein Haushalt zum Einrichten und Sichern braucht.' },
-  organisation: { name: 'Betrieb', text: 'Für Selbständige und kleine Betriebe. Dazu Nummernkreise, Darf weg, Anmeldeschutz, Designs, Postfächer, Eingangsordner, Texterkennung, Protokoll, Gemeldete Fehler und Wartungsmodus.' },
+  organisation: { name: 'Betrieb', text: 'Für Selbständige und kleine Betriebe. Dazu Nummernkreise, Darf weg, Datenschutz, Anmeldeschutz, Designs, Postfächer, Eingangsordner, Texterkennung, Protokoll, Gemeldete Fehler und Wartungsmodus.' },
   alles: { name: 'Alles', text: 'Jeder Bereich der Werkbank.' },
 };
 
@@ -40,6 +40,7 @@ export const BEREICHE: Bereich[] = [
   { pfad: 'stempel', gruppe: 'ablage', name: 'Stempel', in: [...H], wann: 'Vorlagen für Stempel und Wasserzeichen beim Weitergeben' },
   { pfad: 'pakete', gruppe: 'ablage', name: 'Pakete', in: [...H], wann: 'fertige Mappentypen und Ansichten installieren' },
   { pfad: 'darfweg', gruppe: 'ablage', name: 'Darf weg', in: [...O], wann: 'Mappen mit abgelaufener Aufbewahrungsfrist (nur mit Archivmodus)' },
+  { pfad: 'datenschutz', gruppe: 'ablage', name: 'Datenschutz', in: [...O], wann: 'Auskunft nach Art. 15 DSGVO an Kunden, Mieter und Kontakte als ZIP' },
   { pfad: 'benutzer', gruppe: 'benutzer', name: 'Benutzer', in: [...H], wann: 'Benutzer und Rollen anlegen' },
   { pfad: 'anmeldeschutz', gruppe: 'benutzer', name: 'Anmeldeschutz', in: [...O], wann: 'Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen' },
   { pfad: 'aufgaben', gruppe: 'benutzer', name: 'Aufgaben', in: [...H], wann: 'alle offenen Aufgaben im Blick behalten' },
@@ -116,7 +117,7 @@ export function ansichtAus(vorlage: Vorlage, sichtbareBereiche: Iterable<string>
 /**
  * Die Mitte gibt es nur für große Sammlungen, die man bearbeitet (Mappentypen, Ansichten, Benutzer …).
  * Kleine oder nur lesende Listen (lange Zugriffe, Demo-Übersicht, Technik, Exporte, gesperrte Adressen,
- * Stempel-Vorlagen #394)
+ * Stempel-Vorlagen #394, Datenschutz #396)
  * stehen rechts im passenden Abschnitt. Alle anderen Bereiche – auch künftige – sind zweiteilig.
  */
 export const MIT_MITTE: ReadonlySet<string> = new Set([

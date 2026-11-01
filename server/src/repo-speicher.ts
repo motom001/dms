@@ -354,6 +354,21 @@ export function speicherRepo(): Repo {
     },
 
     async listeDokumente(mappeId) { return [...dokumente.values()].filter((d) => d.mappeId === mappeId).map((d) => ({ ...kopie(d), aeltere: versionen.get(d.id)?.length ?? 0 })).reverse(); },
+    async kantenVon(ids) {
+      const z = new Set(ids);
+      const r: Array<{ quelleId: string; feldKey: string; zielId: string }> = [];
+      for (const [quelleId, vs] of verweise) {
+        if (!mappen.has(quelleId)) continue;
+        for (const v of vs) if (z.has(quelleId) || z.has(v.zielId)) r.push({ quelleId, feldKey: v.feldKey, zielId: v.zielId });
+      }
+      return r;
+    },
+    async zaehleDokumente(ids) {
+      const z = new Set(ids);
+      const r = new Map<string, number>();
+      for (const d of dokumente.values()) if (z.has(d.mappeId)) r.set(d.mappeId, (r.get(d.mappeId) ?? 0) + 1);
+      return r;
+    },
     async dokumenteVon(mappeIds) {
       const ids = new Set(mappeIds);
       return [...dokumente.values()].filter((d) => ids.has(d.mappeId)).map((d) => ({ ...kopie(d), aeltere: versionen.get(d.id)?.length ?? 0 })).reverse();

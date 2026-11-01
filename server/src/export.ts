@@ -112,7 +112,7 @@ export interface PdfMappe {
 const A4 = { b: 595.28, h: 841.89 };
 const RAND = 50;
 
-class Schreiber {
+export class PdfSchreiber {
   seite!: PDFPage;
   y = 0;
   constructor(private doc: PDFDocument, private f: { normal: PDFFont; fett: PDFFont }, private quer = false) {}
@@ -167,7 +167,7 @@ export async function mappenPdf(titel: string, mappen: PdfMappe[], q: Quelle, ue
   const f = { normal: await doc.embedFont(StandardFonts.Helvetica), fett: await doc.embedFont(StandardFonts.HelveticaBold) };
 
   if (uebersicht && mappen.length) {
-    const s = new Schreiber(doc, f, true);
+    const s = new PdfSchreiber(doc, f, true);
     s.neueSeite();
     s.text(titel, { groesse: 16, fett: true });
     s.text(`${mappen.length} ${mappen.length === 1 ? 'Mappe' : 'Mappen'} · ${zeit(new Date().toISOString())}`, { groesse: 9, farbe: 0.4, abstand: 2 });
@@ -199,7 +199,7 @@ export async function mappenPdf(titel: string, mappen: PdfMappe[], q: Quelle, ue
         else hinweis.set(d.id, 'nicht eingebunden');
       } catch { hinweis.set(d.id, 'konnte nicht eingebunden werden'); }
     }
-    const s = new Schreiber(doc, f);
+    const s = new PdfSchreiber(doc, f);
     s.neueSeite();
     s.text(titelOder(m.titel), { groesse: 16, fett: true });
     s.text(`${typ?.name ?? ''} · angelegt ${zeit(m.erstellt)}${m.erstelltVon ? ` von ${q.titel(m.erstelltVon)}` : ''} · geändert ${zeit(m.geaendert)}${m.geaendertVon ? ` von ${q.titel(m.geaendertVon)}` : ''}`, { groesse: 8.5, farbe: 0.4, abstand: 2 });

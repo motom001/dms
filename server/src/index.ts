@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { auskuenfteIn, auskunftOrdner } from './auskunft';
 import { liesMail, verbindeImap } from './imap';
 import { Postfaecher } from './postfach';
 import { PostfachOAuth } from './postfach-oauth';
@@ -332,7 +333,8 @@ await dienst.hakenUeberfuehren();
 const geprueft = await dienst.passungNachziehen();
 if (geprueft) log.info(`Mappen von ${geprueft} Mappentypen gegen ihre Definition geprüft`);
 // Papierkorb (#43): Abgelaufenes stündlich endgültig löschen.
-const papierkorb = async () => { if (!wartung.aktiv) await dienst.raeumePapierkorbAuf(); };
+// Auskünfte (#396): nach 7 Tagen weg – im selben stündlichen Lauf.
+const papierkorb = async () => { if (!wartung.aktiv) await dienst.raeumePapierkorbAuf(); await auskuenfteIn(auskunftOrdner(sicherung.ordner)); };
 const papierkorbLauf = () => papierkorb().catch((e) => log.error('Papierkorb aufräumen fehlgeschlagen', { fehler: (e as Error).message }));
 await papierkorbLauf();
 setInterval(papierkorbLauf, 60 * 60 * 1000).unref();
