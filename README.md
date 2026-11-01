@@ -103,6 +103,10 @@ Das DMS verwaltet persönliche Dokumente – deshalb ist alles offen nachprüfba
 
 Als [Issue](https://github.com/motom001/dms/issues/new/choose) im Format einer User Story mit Akzeptanzkriterien. Umgesetzt wird, was der Maintainer mit dem Label `freigegeben` versieht. Was als Nächstes kommt und in welcher Reihenfolge, steht im [Fahrplan](ROADMAP.md). Wie Mitarbeit läuft, steht in [CONTRIBUTING.md](CONTRIBUTING.md) und im [Entwicklerhandbuch](https://motom001.github.io/dms/entwickler/aktuell/).
 
+## Mitmachen
+
+Du nutzt das DMS? **[Erzähl uns, wie](https://github.com/motom001/dms/issues/new?template=ich-nutze-das-dms.yml)** – freiwillig, mit einem kurzen Formular, alle Felder optional. Was andere erzählen, steht unter **[Wer nutzt das DMS?](https://github.com/motom001/dms/issues?q=label%3Anutzt-das-dms)**. Das DMS selbst meldet nichts: keine Telemetrie, auch nicht anonym.
+
 ## Entwicklung
 
 Voraussetzungen: Node.js 24 (LTS), Docker.
