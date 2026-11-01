@@ -3,6 +3,7 @@
  * und Werkbank. Gesammelt wird mit der Baum-Sammlung (baum.ts); erzeugt wird eine ZIP-Datei mit
  * Deckblatt, Übersicht, Dokumenten und JSON im Format des Vollexports.
  */
+import { liesAnrede, TEXTE_DRITTE, textDritte, type Anrede } from './anrede';
 import type { Baum, BaumRichtung } from './baum';
 
 /** Je Mappentyp: betrifft eine Person? Zweck der Verarbeitung (für das Deckblatt). */
@@ -16,11 +17,16 @@ export interface Datenschutz {
   /** Rechte der betroffenen Person – Text auf dem Deckblatt. */
   rechte: string;
   typen: Record<string, DatenschutzTyp>;
+  /** Anrede in Unterlagen für Dritte (#474): Deckblatt, Übersicht, LIESMICH, Abrufseite, E-Mails an die Person. Vorgabe „du“. */
+  anrede: Anrede;
 }
 
-/** Das Deckblatt geht an Kunden, Mieter und Kontakte – wie überall im DMS mit „du“ (Thomas, 01.11.2026; förmlich ggf. später mit #357). */
-export const RECHTE_STANDARD = 'Du hast das Recht auf Berichtigung (Art. 16 DSGVO), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21). Außerdem kannst du dich bei einer Datenschutz-Aufsichtsbehörde beschweren (Art. 77). Die Daten im Ordner „daten“ sind maschinenlesbar (CSV und JSON) und lassen sich in andere Systeme übernehmen.';
-export const DATENSCHUTZ_STANDARD: Datenschutz = { verantwortlicher: '', empfaenger: '', rechte: RECHTE_STANDARD, typen: {} };
+/** Vorschlag für die Rechte auf dem Deckblatt – in der eingestellten Anrede (#474). */
+export const rechteStandard = (anrede: Anrede) => TEXTE_DRITTE[anrede]['auskunft.rechte'];
+export const RECHTE_STANDARD = rechteStandard('du');
+/** Ist das der unveränderte Vorschlag (in irgendeiner Anrede)? Dann folgt er der Anrede. */
+export const istRechteStandard = (t: string) => Object.values(TEXTE_DRITTE).some((x) => x['auskunft.rechte'] === t.trim());
+export const DATENSCHUTZ_STANDARD: Datenschutz = { verantwortlicher: '', empfaenger: '', rechte: RECHTE_STANDARD, typen: {}, anrede: 'du' };
 
 export const TEXT_MAX = 2000;
 export const ZWECK_MAX = 500;
@@ -46,11 +52,15 @@ export function liesDatenschutz(v: unknown): Datenschutz {
       if (person || zweck) typen[id] = { person, zweck };
     }
   }
+  const anrede = liesAnrede(o.anrede);
+  const rechte = typeof o.rechte === 'string' ? text(o.rechte, TEXT_MAX) : '';
   return {
     verantwortlicher: text(o.verantwortlicher, TEXT_MAX),
     empfaenger: text(o.empfaenger, TEXT_MAX),
-    rechte: typeof o.rechte === 'string' && o.rechte.trim() ? text(o.rechte, TEXT_MAX) : RECHTE_STANDARD,
+    // Leer oder der unveränderte Vorschlag: der Vorschlag in der eingestellten Anrede.
+    rechte: rechte && !istRechteStandard(rechte) ? rechte : rechteStandard(anrede),
     typen,
+    anrede,
   };
 }
 
@@ -281,26 +291,14 @@ export function oeffentlichErreichbar(adresse: string): boolean {
   return true;
 }
 
-/** Texte der E-Mails an die Person – in Du-Form (Thomas, 01.11.2026). */
+/** Texte der E-Mails an die Person – in der eingestellten Anrede (#474; Texte in anrede.ts). */
 export const auskunftMail = {
-  zip: (bis?: string) => ({
-    betreff: 'Deine Auskunft nach Art. 15 DSGVO',
-    nachricht: `Hallo,
-
-du hast eine Auskunft über die Daten angefordert, die wir zu dir gespeichert haben (Art. 15 DSGVO). Du findest sie im Anhang als ZIP-Datei.
-
-Die Datei ist mit einem Passwort geschützt (AES-256). Das Passwort bekommst du auf einem anderen Weg – zum Beispiel per Telefon, SMS oder Brief –, nicht per E-Mail. Öffnen lässt sie sich zum Beispiel mit 7-Zip (Windows), Keka (macOS) oder WinZip; das eingebaute Entpacken von Windows kann das nicht.${bis ? `\n\nBitte antworte bis ${bis}, falls etwas fehlt oder du Fragen hast.` : ''}
-`,
+  zip: (anrede: Anrede, bis?: string) => ({
+    betreff: textDritte(anrede, 'mail.zip.betreff'),
+    nachricht: `${textDritte(anrede, 'mail.zip.text')}${bis ? `\n\n${textDritte(anrede, 'mail.zip.frist', { bis })}` : ''}\n`,
   }),
-  link: (link: string, bis: string, abrufe: number, absender: string) => ({
-    betreff: 'Deine Auskunft nach Art. 15 DSGVO zum Abrufen',
-    nachricht: `Hallo,
-
-du hast eine Auskunft über die Daten angefordert, die wir zu dir gespeichert haben (Art. 15 DSGVO). Du kannst sie bis ${bis} hier abrufen${abrufe > 1 ? ` (höchstens ${abrufe}-mal)` : ' (einmal)'}:
-
-${link}
-
-Zum Abrufen brauchst du deinen Abrufcode. Den bekommst du auf einem anderen Weg – zum Beispiel per Brief, Telefon oder SMS –, nicht per E-Mail. Gib den Link bitte nicht weiter.
-${absender ? `\n${absender}\n` : ''}`,
+  link: (anrede: Anrede, link: string, bis: string, abrufe: number, absender: string) => ({
+    betreff: textDritte(anrede, 'mail.link.betreff'),
+    nachricht: `${textDritte(anrede, 'mail.link.text', { bis, link, 'wie oft': abrufe > 1 ? textDritte(anrede, 'mail.link.mehrmals', { anzahl: abrufe }) : textDritte(anrede, 'mail.link.einmal') })}\n${absender ? `\n${absender}\n` : ''}`,
   }),
 };

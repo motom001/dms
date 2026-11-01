@@ -19,6 +19,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
+import { textDritte } from '../../shared/src/anrede';
 import { datumText } from '../../shared/src/archiv';
 import { AUSKUNFT_TAGE, auskunftDateiname, erwaehnungText, type AuskunftErwaehnung, type AuskunftStand, type Datenschutz } from '../../shared/src/auskunft';
 import { formatiere, istLeer, type Mappe, type Mappentyp } from '../../shared/src/model';
@@ -80,6 +81,8 @@ export async function deckblatt(d: AuskunftDaten, x: { von: string; jetzt: Date;
   doc.setTitle(pdfSicher(`Auskunft nach Art. 15 DSGVO – ${d.start.titel}`)); doc.setProducer('DMS'); doc.setCreator('DMS');
   const f = { normal: await doc.embedFont(StandardFonts.Helvetica), fett: await doc.embedFont(StandardFonts.HelveticaBold) };
   const s = new PdfSchreiber(doc, f);
+  // Anrede der Person (#474): alle Sätze an sie aus anrede.ts.
+  const t = (k: Parameters<typeof textDritte>[1], w?: Record<string, string | number>) => textDritte(d.datenschutz.anrede, k, w);
   s.neueSeite();
   const absender = d.datenschutz.verantwortlicher || x.mandant;
   if (absender) s.text(absender, { groesse: 9, farbe: 0.35 });
@@ -87,34 +90,34 @@ export async function deckblatt(d: AuskunftDaten, x: { von: string; jetzt: Date;
   s.text(`für ${d.start.titel || 'Ohne Titel'}${d.start.typ ? ` (${d.start.typ})` : ''}`, { groesse: 12, abstand: 2 });
   s.text(`Erstellt am ${zeit(x.jetzt)}${x.von ? ` von ${x.von}` : ''}`, { groesse: 9, farbe: 0.4, abstand: 2 });
   s.linie();
-  s.text('Ja, wir verarbeiten personenbezogene Daten zu deiner Person. Diese Datei enthält eine Kopie dieser Daten und die Angaben nach Art. 15 Abs. 1 DSGVO.', { groesse: 10, abstand: 4 });
+  s.text(t('auskunft.deckblatt.einleitung'), { groesse: 10, abstand: 4 });
 
-  const abschnitt = (t: string) => s.text(t, { groesse: 12, fett: true, abstand: 12 });
-  const punkt = (t: string) => s.text(`• ${t}`, { groesse: 10, abstand: 2, x: 60 });
+  const abschnitt = (x: string) => s.text(x, { groesse: 12, fett: true, abstand: 12 });
+  const punkt = (x: string) => s.text(`• ${x}`, { groesse: 10, abstand: 2, x: 60 });
   const n = d.anzahl;
 
   abschnitt('1. Welche Daten (Kategorien)');
   const jeTyp = new Map<string, number>();
   for (const m of d.mappen) jeTyp.set(m.typId, (jeTyp.get(m.typId) ?? 0) + 1);
-  for (const t of d.typen) {
-    const felder = t.felder.filter((fd) => d.mappen.some((m) => m.typId === t.id && !istLeer(m.werte[fd.key]))).map((fd) => fd.label);
-    punkt(`${t.name}: ${mehrzahl(jeTyp.get(t.id) ?? 0, 'Eintrag', 'Einträge')}${felder.length ? ` – ${felder.slice(0, 12).join(', ')}${felder.length > 12 ? ' …' : ''}` : ''}`);
+  for (const ty of d.typen) {
+    const felder = ty.felder.filter((fd) => d.mappen.some((m) => m.typId === ty.id && !istLeer(m.werte[fd.key]))).map((fd) => fd.label);
+    punkt(`${ty.name}: ${mehrzahl(jeTyp.get(ty.id) ?? 0, 'Eintrag', 'Einträge')}${felder.length ? ` – ${felder.slice(0, 12).join(', ')}${felder.length > 12 ? ' …' : ''}` : ''}`);
   }
   punkt(`${mehrzahl(n.dokumente, 'Dokument', 'Dokumente')} im Original${n.notizen ? `, ${mehrzahl(n.notizen, 'Notiz', 'Notizen')}` : ''}${n.historie ? `, Änderungshistorie zu ${mehrzahl(n.historie, 'Eintrag', 'Einträgen')}` : ''}`);
   if (d.erwaehnungen.length) {
-    punkt(`Außerdem bist du in ${mehrzahl(d.erwaehnungen.length, 'weiterem Eintrag', 'weiteren Einträgen')} genannt (gespeichert ist dort nur der Verweis auf dich):`);
+    punkt(t('auskunft.deckblatt.erwaehnungen', { anzahl: mehrzahl(d.erwaehnungen.length, 'weiterem Eintrag', 'weiteren Einträgen') }));
     for (const e of d.erwaehnungen.slice(0, 15)) s.text(`– ${erwaehnungText(e)}`, { groesse: 10, abstand: 1, x: 72 });
     if (d.erwaehnungen.length > 15) s.text('– … (vollständig in Uebersicht.html)', { groesse: 10, abstand: 1, x: 72 });
   }
 
   abschnitt('2. Zwecke der Verarbeitung');
-  const zwecke = d.typen.map((t) => [t.name, d.datenschutz.typen[t.id]?.zweck ?? ''] as const);
+  const zwecke = d.typen.map((ty) => [ty.name, d.datenschutz.typen[ty.id]?.zweck ?? ''] as const);
   for (const [name, zweck] of zwecke) punkt(`${name}: ${zweck || 'kein Zweck hinterlegt'}`);
 
   abschnitt('3. Herkunft der Daten');
   const k = Object.entries(d.kanaele);
   if (k.length) punkt(`Post und Schriftverkehr: ${k.map(([kanal, z]) => `${kanal} (${z})`).join(', ')}`);
-  punkt(k.length ? 'Alle übrigen Daten wurden bei uns im Rahmen unserer Geschäftsbeziehung mit dir erfasst.' : 'Die Daten wurden bei uns im Rahmen unserer Geschäftsbeziehung mit dir erfasst.');
+  punkt(t(k.length ? 'auskunft.deckblatt.herkunft.uebrige' : 'auskunft.deckblatt.herkunft.alle'));
 
   abschnitt('4. Empfänger');
   s.text(d.empfaenger || 'Keine Empfänger außerhalb unseres Hauses.', { groesse: 10, abstand: 2 });
@@ -126,7 +129,7 @@ export async function deckblatt(d: AuskunftDaten, x: { von: string; jetzt: Date;
       : `${a.typ}: solange für den Zweck nötig; keine feste Frist hinterlegt`);
   }
 
-  abschnitt('6. Deine Rechte');
+  abschnitt(t('auskunft.deckblatt.rechte'));
   s.text(d.datenschutz.rechte, { groesse: 10, abstand: 2 });
 
   if (d.anmerkung) { abschnitt('Anmerkung'); s.text(d.anmerkung, { groesse: 10, abstand: 2 }); }
@@ -170,8 +173,8 @@ ${ds.length ? `<ul>${ds.map((dk) => { const p = x.pfade.dokumente.get(dk.id); re
 ${ordner ? `<p><small>Ordner: <a href="${esc(link(ordner))}/">${esc(ordner)}</a></small></p>` : ''}</section>`;
     }).join('\n')}`;
   }).join('\n');
-  const erwaehnt = d.erwaehnungen.length ? `<h2>Hier bist du genannt <small>(${d.erwaehnungen.length})</small></h2>
-<p><small>In diesen Einträgen steht nur ein Verweis auf dich – weitere Angaben daraus betreffen dich nicht.</small></p>
+  const erwaehnt = d.erwaehnungen.length ? `<h2>${esc(textDritte(d.datenschutz.anrede, 'auskunft.uebersicht.genannt'))} <small>(${d.erwaehnungen.length})</small></h2>
+<p><small>${esc(textDritte(d.datenschutz.anrede, 'auskunft.uebersicht.genannt.hinweis'))}</small></p>
 <ul>${d.erwaehnungen.map((e) => `<li>${esc(erwaehnungText(e))}</li>`).join('')}</ul>` : '';
   return Buffer.from(`<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -192,13 +195,13 @@ ${erwaehnt}
 `, 'utf8');
 }
 
-function liesmichText(d: AuskunftDaten, jetzt: Date): string {
+export function liesmichText(d: AuskunftDaten, jetzt: Date): string {
   return `# Auskunft nach Art. 15 DSGVO
 
 Für ${d.start.titel || 'Ohne Titel'}, erstellt am ${zeit(jetzt)}. ${mehrzahl(d.anzahl.mappen, 'Eintrag', 'Einträge')}, ${mehrzahl(d.anzahl.dokumente, 'Dokument', 'Dokumente')}.
 
-- **Deckblatt.pdf** – Pflichtangaben: welche Daten, Zwecke, Herkunft, Empfänger, Speicherdauer, deine Rechte.
-- **Uebersicht.html** – im Browser öffnen: alle Einträge mit Angaben und Links zu den Dokumenten, dazu die Einträge, in denen du nur genannt bist. **Uebersicht.csv** – dasselbe als Tabelle.
+- ${textDritte(d.datenschutz.anrede, 'auskunft.liesmich.deckblatt')}
+- ${textDritte(d.datenschutz.anrede, 'auskunft.liesmich.uebersicht')}
 - **ablage/** – je Eintrag ein Ordner mit den Dokumenten im Original (\`.txt\` = erkannter Text) und \`mappe.pdf\`/\`mappe.json\`.
 - **daten/** – maschinenlesbar: je Art eine Tabelle (\`.csv\`, \`.jsonl\`, \`.xlsx\`), Verweise, Dokumentliste, Notizen, Änderungshistorie (\`.jsonl\`).
 - **struktur/mappentypen.json** – welche Angaben es je Art gibt. **manifest.json** – Größe und SHA-256 jeder Datei.
