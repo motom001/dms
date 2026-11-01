@@ -80,6 +80,9 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { t
   const [emailOffen, setEmailOffen] = useState(false);
   const [drucken, setDrucken] = useState(false);
   const [loeschBaum, setLoeschBaum] = useState(false);
+  // Handy (#489): „Mappe löschen“ steht im Menü „Mappe ▾“ statt in der Speicherleiste; der Formular-Teil löscht.
+  const [loeschWunsch, setLoeschWunsch] = useState(0);
+  const loeschbarHier = darfLoeschen(typ, mappe);
   const druckEnde = useCallback(() => setDrucken(false), []);
   // Sprechender Link (#98) über ein eindeutiges Feld oder die Titelfelder.
   const direktlink = linkZuMappe(typ, mappe);
@@ -101,7 +104,10 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { t
             <Aktionsmenue aufgabe={() => setAufgabeOffen(true)} erinnern={() => setErinnernOffen(true)} email={details.exportierbar === false ? undefined : () => setEmailOffen(true)} drucken={details.exportierbar === false ? undefined : () => setDrucken(true)}
               link={direktlink ? () => { const l = location.origin + direktlink; void kopiere(l).then((ok) => setKopiert({ link: l, ok })); } : undefined}
               auskunft={details.auskunft ? () => geheZu(`/werkbank/datenschutz?mappe=${encodeURIComponent(details.mappe.id)}`) : undefined}
-              loeschwege={mitVerknuepften ? [{ text: 'Mit verknüpften Mappen löschen …', titel: 'Diese Mappe samt allen Mappen, die zu ihr gehören – nach einer Vorschau als Baum', tu: mitVerknuepften }] : []} />
+              loeschwege={[
+                ...(loeschbarHier ? [{ text: 'Mappe löschen …', tu: () => setLoeschWunsch((n) => n + 1), nurSchmal: true }] : []),
+                ...(mitVerknuepften ? [{ text: 'Mit verknüpften Mappen löschen …', titel: 'Diese Mappe samt allen Mappen, die zu ihr gehören – nach einer Vorschau als Baum', tu: mitVerknuepften }] : []),
+              ]} />
           </div>
         </div>
         <dl className="index">
@@ -125,7 +131,7 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { t
       {mappe.passt === false && (
         <div className="hinweis warn"><p>Diese Mappe passt nicht mehr zur aktuellen Definition von „{typ.name}“{mappe.problem ? ` (${mappe.problem})` : ''}. Beim nächsten Speichern müssen die markierten Felder stimmen.</p></div>
       )}
-      <Formular typ={typ} mappe={mappe} start={rohAusWerten(typ, mappe.werte)} sicht={sicht} anhang={anhang} details={details} neuLaden={neuLaden} registerWunsch={registerWunsch} mitVerknuepften={mitVerknuepften} />
+      <Formular typ={typ} mappe={mappe} start={rohAusWerten(typ, mappe.werte)} sicht={sicht} anhang={anhang} details={details} neuLaden={neuLaden} registerWunsch={registerWunsch} mitVerknuepften={mitVerknuepften} loeschWunsch={loeschWunsch} />
       {verwaist.length > 0 && (
         <section className="blatt">
           <h2 className="h3">Werte ohne Felddefinition</h2>
@@ -209,12 +215,14 @@ function verknuepfungsGruppen(d: ReturnType<typeof useDaten>, mappe: Mappe | und
     })));
 }
 
-function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zuordnen, registerWunsch, mitVerknuepften }: {
+function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zuordnen, registerWunsch, mitVerknuepften, loeschWunsch = 0 }: {
   typ: Mappentyp; mappe?: Mappe; start: RohWerte; sicht: string; anhang?: string; details?: MappeDetails | null; neuLaden?: () => Promise<void>; zuordnen?: ZuordnenNachher;
   /** „Mit verknüpften Mappen löschen …“ (#424) – als weiterer Weg unter „Warum nicht?“ (#423). */
   mitVerknuepften?: () => void;
   /** Register von außen öffnen (#427); `n` zählt, damit derselbe Wunsch erneut wirkt. */
   registerWunsch?: { key: string; n: number };
+  /** „Mappe löschen …“ aus dem Menü „Mappe ▾“ (Handy, #489): zählt hoch, jeder neue Wert löscht (mit Rückfrage). */
+  loeschWunsch?: number;
 }) {
   const d = useDaten();
   const { ich } = useKonto();
@@ -368,6 +376,16 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     } catch (e) { setMeldung((e as Error).message); }
   }
 
+  const loeschenRef = useRef({ loeschen, loeschSperre });
+  loeschenRef.current = { loeschen, loeschSperre };
+  const ersterLoeschWunsch = useRef(loeschWunsch);
+  useEffect(() => {
+    if (loeschWunsch === ersterLoeschWunsch.current) return;
+    const { loeschen: tu, loeschSperre: sperre } = loeschenRef.current;
+    if (sperre) void hinweis({ titel: 'Löschen nicht möglich', text: sperre.grund });
+    else void tu();
+  }, [loeschWunsch]);
+
   let inhalt: ReactNode = null;
   if (!reg) inhalt = <p className="leise">Dieser Mappentyp hat keine Register.</p>;
   else if (reg.art === 'felder') {
@@ -421,17 +439,17 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
       {hinweise.map((h, i) => <div key={i} className={`hinweis ${h.art}`}><p>{h.text}</p></div>)}
       <div className="registerinhalt" role="tabpanel">{inhalt}</div>
       {nurLesen ? <div className="speicherleiste">
-        {loeschKnopf}
+        <span className="hy-nur-breit">{loeschKnopf}</span>
         <span className="status" role="status">{meldung ?? 'Nur lesen – bearbeiten darfst du diese Mappe nach den Berechtigungen nicht.'}</span>
         <span />
-      </div> : <div className="speicherleiste">
-        {loeschKnopf}
+      </div> : <div className={`speicherleiste${mappe && !werteGeaendert && !dokumenteGeaendert && !sendet && !meldung ? ' hy-ruhig' : ''}`}>
+        <span className="hy-nur-breit">{loeschKnopf}</span>
         <span className={`status ${meldung && fehler ? 'schlecht' : ''}`} role="status">{sendet ? 'Speichere …' : meldung ?? (mappe && (werteGeaendert || dokumenteGeaendert) ? 'Ungespeicherte Änderungen' : '')}</span>
         <div className="knoepfe">
           {mappe
-            ? <button type="button" className="knopf" disabled={!(werteGeaendert || dokumenteGeaendert) || sendet} onClick={verwerfen}>Änderungen verwerfen</button>
+            ? <button type="button" className="knopf" disabled={!(werteGeaendert || dokumenteGeaendert) || sendet} onClick={verwerfen}><span className="hy-nur-breit">Änderungen verwerfen</span><span className="hy-nur-schmal">Verwerfen</span></button>
             : <Link to={`/ablage/${sicht}`} className="knopf">Abbrechen</Link>}
-          <button type="submit" className="knopf gruen" disabled={sendet}>{sendet ? 'Speichere …' : 'Mappe speichern'}</button>
+          <button type="submit" className="knopf gruen" disabled={sendet}>{sendet ? 'Speichere …' : <><span className="hy-nur-breit">Mappe speichern</span><span className="hy-nur-schmal">Speichern</span></>}</button>
         </div>
       </div>}
     </form>

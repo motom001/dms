@@ -1398,3 +1398,45 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .lb-status select { width: auto; max-width: 100%; font-size: inherit; }
 .lb-summe { margin-top: 8px; }
 @media (max-width: 820px) { .lb-baum { padding-left: 8px; } .lb-status { margin-left: 0; } }
+/* Handy (#489): iPhone/Safari ohne abgeschnittene Seite. Eigene Klassen mit Präfix hy-. */
+/* iOS vergrößert die Seite beim Tippen in ein Feld mit weniger als 16 px Schrift (z. B. bei der Anmeldung) und
+   bleibt vergrößert – dann wirkt alles links und rechts abgeschnitten. Auf Touch-Geräten daher mindestens 16 px. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), select, textarea { font-size: max(16px, 1em); }
+}
+@supports (-webkit-touch-callout: none) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), select, textarea { font-size: max(16px, 1em); }
+}
+/* Speicherleiste der Mappe am unteren Rand der Spalte: Die Spalte hat unten 32 px Innenabstand – ohne Ausgleich
+   schaute darunter Formularinhalt hervor („Hochgeladen …“ unter der Leiste). */
+.spalte.mappe .speicherleiste { bottom: -32px; }
+/* „+ Neu“ öffnet am rechten Rand des Knopfs, nie breiter als der Bildschirm. */
+.neuknopf .menue { left: auto; right: 0; max-width: calc(100vw - 32px); }
+.hy-schleier { display: none; }
+.hy-nur-schmal { display: none; }
+.aktionsmenue .menue .hy-nur-schmal, .aktionsmenue .menue .aktionsmenue-trenner.hy-nur-schmal { display: none; }
+@media (max-width: 600px) {
+  /* Aufklappmenüs als Blatt von unten mit großen Einträgen: + Neu, Benutzermenü, „Mappe ▾“. */
+  .hy-schleier { display: block; position: fixed; inset: 0; z-index: 40; background: rgb(0 0 0 / .35); }
+  .neuknopf .menue, .benutzermenue .menue, .aktionsmenue .menue {
+    position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 41; min-width: 0; max-width: none; max-height: 80vh; overflow-y: auto;
+    border-radius: 14px 14px 0 0; padding: 10px max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+  .neuknopf .menuepunkt, .benutzermenue .menuepunkt, .aktionsmenue .menue button { min-height: 48px; padding: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .aktionsmenue .menue .hy-nur-schmal { display: flex; }
+  .aktionsmenue .menue .aktionsmenue-trenner.hy-nur-schmal { display: block; }
+  span.hy-nur-schmal { display: inline; }
+  .hy-nur-breit { display: none; }
+  /* Speicherleiste kompakt: eine Zeile, nur bei ungespeicherten Änderungen; „Mappe löschen“ steht im Menü „Mappe ▾“. */
+  .speicherleiste.hy-ruhig { display: none; }
+  .speicherleiste:has(> .knoepfe) .status:not(.schlecht) { display: none; }
+  /* Haupt-Einstieg „+ Neu“ gut erkennbar. */
+  .neuknopf > .knopf { padding: 8px 14px; font-size: 15px; box-shadow: 0 1px 3px rgb(0 0 0 / .25); }
+}
+/* Startseite unter ca. 420 px: Kacheln einspaltig als Zeile – Titel links, Zahl rechts. */
+@media (max-width: 420px) {
+  .start-raster { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .start-raster .kachel { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; align-items: center; min-height: 0; padding: 12px 14px; }
+  .start-raster .kacheltitel, .start-raster .kachelunter, .start-raster .kachelleer { grid-column: 1; }
+  .start-raster .kachelzahl { grid-column: 2; grid-row: 1 / span 2; font-size: 1.6rem; }
+}

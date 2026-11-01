@@ -98,7 +98,7 @@ jobs:
           DB_HOST: localhost
           DB_PASSWORT: dms
 
-      # iPhone-Größe mit WebKit (#174): kein Eingabefeld ragt über den Rand.
+      # iPhone-Größe mit WebKit (#174, #489): kein Eingabefeld und kein Element ragt über den Rand, Menüs im Bild.
       - name: Oberfläche in iPhone-Größe prüfen
         working-directory: docs/handbuch/screenshots
         run: |
@@ -119,8 +119,9 @@ jobs:
         env:
           DMS_URL: http://localhost:3000
 
+      # Immer (#489): Bilder in iPhone SE/15/17 Pro-Größe zum Nachsehen, bei Fehlern mit den Fundstellen.
       - name: Bilder der iPhone-Prüfung hochladen
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mobil-pruefung

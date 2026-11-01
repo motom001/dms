@@ -87,7 +87,7 @@ Ein Klick auf einen gesetzten Verweis öffnet die andere Mappe.
 
 Willst du die Mappe mit ungespeicherten Änderungen verlassen, fragt das DMS nach.
 
-Neben dem Titel stehen der Stern für die [Favoriten](ablage.md#favoriten) und das Menü **Mappe ▾** (Aufgabe vergeben, Erinnern, per E-Mail versenden, als PDF exportieren, Link kopieren). Bei jeder Mappe gibt es außerdem die Register **Notizen** (mit Zahl) und **Historie** – siehe [Notizen, Erwähnungen, Historie](zusammenarbeit.md) und [E-Mail, PDF und Link](versenden.md). Am Handy rollt die Reihe der Register waagerecht; ein Schatten am Rand zeigt, dass weitere folgen.
+Neben dem Titel stehen der Stern für die [Favoriten](ablage.md#favoriten) und das Menü **Mappe ▾** (Aufgabe vergeben, Erinnern, per E-Mail versenden, als PDF exportieren, Link kopieren). Bei jeder Mappe gibt es außerdem die Register **Notizen** (mit Zahl) und **Historie** – siehe [Notizen, Erwähnungen, Historie](zusammenarbeit.md) und [E-Mail, PDF und Link](versenden.md). Am Handy rollt die Reihe der Register waagerecht; ein Schatten am Rand zeigt, dass weitere folgen. Menüs wie **Mappe ▾**, **+ Neu** und dein Benutzermenü öffnen am Handy als Blatt von unten mit großen Einträgen; tippst du daneben, schließt es. Dort steht am Handy auch **Mappe löschen …**. Die Leiste mit **Verwerfen** und **Speichern** erscheint am Handy erst, wenn du etwas geändert hast.
 
 Manche Angaben sind nur zum Lesen da und haben einen gestrichelten Rahmen – zum Beispiel Name und E-Mail-Adresse in der Mappe eines Benutzers. Daneben steht, wo man sie ändert.
 
