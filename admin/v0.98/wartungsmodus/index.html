@@ -1385,6 +1385,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#jetzt-sofort-sperren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Jetzt sofort sperren
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#stufe-1-angekundigt" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2011,6 +2022,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#jetzt-sofort-sperren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Jetzt sofort sperren
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#stufe-1-angekundigt" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2074,10 +2096,21 @@
 <p>Links in der Leiste steht neben dem Wartungsmodus <strong>angekündigt</strong>, solange er noch nicht wirkt, und <strong>an</strong>, sobald er aktiv ist.</p>
 <h2 id="einschalten">Einschalten<a class="headerlink" href="#einschalten" title="Permanent link">&para;</a></h2>
 <ol>
-<li>Optional einen <strong>Text für alle</strong> eintragen, z. B. „Update auf die neue Version“, und das <strong>erwartete Ende</strong>.</li>
-<li>Die <strong>Vorlaufzeit</strong> wählen (Standard 30 Minuten; 0 = sofort).</li>
+<li>Optional einen <strong>Text für alle</strong> eintragen, z. B. „Update auf die neue Version“.</li>
+<li>Den <strong>Beginn</strong> wählen – vorbelegt ist <em>jetzt + 30 Minuten</em>; mit <strong>+15 min</strong>, <strong>+30 min</strong> und <strong>+1 Std</strong> stellst du ihn schnell ab jetzt. Zu diesem Zeitpunkt werden alle anderen abgemeldet. Er darf nicht in der Vergangenheit und höchstens 24 Stunden in der Zukunft liegen, denn schon ab der Ankündigung können sich nur noch Administratoren anmelden.</li>
+<li>Optional das <strong>erwartete Ende</strong> – es muss nach dem Beginn liegen.</li>
 <li><strong>Wartung ankündigen</strong>.</li>
 </ol>
+<p>Unter den Feldern fasst ein Satz die Wirkung zusammen, z. B. „Ab jetzt sehen alle einen Hinweis mit Countdown; anmelden können sich nur noch Administratoren. Um 12:45 Uhr werden alle anderen abgemeldet. Ende voraussichtlich 13:45 Uhr.“</p>
+<h2 id="jetzt-sofort-sperren">Jetzt sofort sperren<a class="headerlink" href="#jetzt-sofort-sperren" title="Permanent link">&para;</a></h2>
+<p>Für Notfälle, z. B. einen <strong>Sicherheitsvorfall</strong> (ein Passwort oder Gerät ist in falsche Hände geraten, du siehst unbekannte Anmeldungen): Der rote Knopf <strong>Jetzt sofort sperren</strong> überspringt die Ankündigung. Nach einer Rückfrage</p>
+<ul>
+<li>werden alle anderen Sitzungen sofort beendet, auch die anderer Administratoren,</li>
+<li>antwortet die Schnittstelle mit <strong>503</strong>,</li>
+<li>bleibst du selbst angemeldet.</li>
+</ul>
+<p>Text für alle und erwartetes Ende werden übernommen, wenn du sie ausgefüllt hast; nötig sind sie nicht. Im <a href="../fehlersuche/#protokoll">Protokoll</a> steht „Wartungsmodus sofort gesperrt“, unter <strong>Stand</strong> „sofort gesperrt“ – so unterscheidest du es von einer angekündigten Wartung.</p>
+<p>Danach in Ruhe aufräumen, z. B. betroffene Passwörter ändern, unter <strong>Werkbank → Benutzer</strong> einen Zugang sperren, die Zwei-Faktor-Anmeldung vorschreiben oder den <a href="../verschluesselung/#schlussel-wechseln">Schlüssel wechseln</a> – und dann <strong>Wartung beenden</strong>.</p>
 <h2 id="stufe-1-angekundigt">Stufe 1: angekündigt<a class="headerlink" href="#stufe-1-angekundigt" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Alle Angemeldeten sehen sofort – ohne die Seite neu zu laden – ein Banner mit Countdown: „Wartung – du wirst in 29 Minuten abgemeldet. Bitte speichere deine Arbeit.“</li>
@@ -2086,7 +2119,7 @@
 </ul>
 <p><img alt="Banner bei einem Mitglied" src="../bilder/wartung-banner.png" /></p>
 <h2 id="stufe-2-aktiv">Stufe 2: aktiv<a class="headerlink" href="#stufe-2-aktiv" title="Permanent link">&para;</a></h2>
-<p>Nach Ablauf der Vorlaufzeit – oder sofort mit <strong>Alle jetzt abmelden</strong>:</p>
+<p>Zum gewählten Beginn – oder sofort mit <strong>Alle jetzt abmelden</strong> bzw. <a href="#jetzt-sofort-sperren">Jetzt sofort sperren</a>:</p>
 <ul>
 <li>Alle Sitzungen außer deiner enden, auch die anderer Administratoren (sie können sich wieder anmelden).</li>
 <li>Die Anmeldeseite zeigt den Wartungshinweis mit Text und erwartetem Ende; anmelden können sich nur Administratoren.</li>
@@ -2110,7 +2143,7 @@
 <p>Ein, Aus und das Abmelden stehen im <a href="../fehlersuche/#protokoll">Protokoll</a> (Modul <em>system</em>).</p>
 <div class="admonition tip">
 <p class="admonition-title">Vor jedem Update</p>
-<p>Unter <strong>Werkbank → Sicherung</strong> mit <strong>Jetzt sichern</strong> eine Sicherung anlegen. Dann Wartung ankündigen, nach der Vorlaufzeit das Image aktualisieren (siehe <a href="../aktualisieren/">Aktualisieren</a>), kurz prüfen, dann <strong>Wartung beenden</strong>.</p>
+<p>Unter <strong>Werkbank → Sicherung</strong> mit <strong>Jetzt sichern</strong> eine Sicherung anlegen. Dann Wartung ankündigen, ab dem Beginn das Image aktualisieren (siehe <a href="../aktualisieren/">Aktualisieren</a>), kurz prüfen, dann <strong>Wartung beenden</strong>.</p>
 </div>
 
 
