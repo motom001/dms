@@ -38,6 +38,7 @@ import type { AnbindungVerwaltung } from './anbindung';
 import { notfallblatt } from './notfallblatt';
 import { dirname } from 'node:path';
 import { WartungFehler } from './wartung';
+import { werkbankZahlen } from './werkbankzahlen';
 import { MAIL_STANDARD, pruefeZeit, STANDARD_TAGE, wirksameZeit, type Aufgabenmail, type MailZeit } from './aufgabenmail';
 
 const L = {
@@ -951,6 +952,14 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
         // DATABASE_URL weicht von der Anbindung in /data/geheim ab und wird ignoriert (#119).
         anbindung: x.anbindung ? { umgebung: x.anbindung.stand().umgebung, neustartNoetig: x.anbindung.stand().neustartNoetig } : null,
         einrichtung: x.einrichtung ? await sicher(() => x.einrichtung!.stand()) : null,
+        // Zahlen für die linke Spalte (#375), bis der Bereich selbst geladen ist.
+        zahlen: await werkbankZahlen({
+          nummernkreise: () => dienst.listeNummernkreise(),
+          pakete: () => pakete.installierte(),
+          benutzer: () => konten.listeBenutzer(),
+          postfaecher: x.postfaecher ? () => x.postfaecher!.ansicht() : undefined,
+          darfWeg: () => dienst.darfWeg(),
+        }),
       });
     } },
     { methode: 'GET', pfad: '/api/werkbank/system', zugang: 'admin', handler: async () => {

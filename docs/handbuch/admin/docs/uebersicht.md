@@ -13,6 +13,8 @@ Die **Werkbank** sehen nur Administratoren. Links stehen ihre Bereiche in vier G
 
 Welche Bereiche dort stehen, legst du unter [Werkbank anpassen](#werkbank-anpassen) fest. Am Smartphone wählst du oben erst die Gruppe, darunter den Bereich. Ganz unten in der Leiste stehen *Projekt unterstützen* und der Link zu diesem Handbuch.
 
+Neben den Bereichen steht, wie viel dort eingerichtet ist – etwa die Zahl der Mappentypen, Nummernkreise, installierten Pakete, aktiven Benutzer oder offenen Aufgaben. Die Zahlen stehen sofort da, wenn du die Werkbank öffnest, und ändern sich, sobald du im Bereich etwas anlegst oder löschst. Ist nichts eingerichtet, steht keine Zahl da.
+
 ## Übersicht
 
 Die Werkbank beginnt mit der **Übersicht**. Sie zeigt oben, was zu tun ist – jeweils mit einem Knopf in den passenden Bereich. **Das gilt auch für Bereiche, die in deiner Vorlage ausgeblendet sind.** Zum Beispiel:

@@ -87,6 +87,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const anmeldeschutz = useAnmeldeschutz(bereich === 'anmeldeschutz');
   const anbindung = useAnbindung(bereich === 'anbindung');
   const ansicht = useWerkbankAnsicht();
+  // Zahlen links (#375): die des geladenen Bereichs, sonst die aus der Übersicht; nur > 0 anzeigen.
+  const uz = uebersicht.stand?.zahlen;
+  const zahl = (geladen: number | null | undefined, ersatz: number | null | undefined) => (geladen ?? ersatz) || undefined;
   // Wieder erreichbar nach Update oder Neustart (#122): Übersicht und offenen Bereich neu laden.
   useBeiWiederErreichbar(() => {
     void uebersicht.laden();
@@ -210,19 +213,19 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'uebersicht', name: 'Übersicht', gruppe: null, warn: uebersicht.hinweise || undefined },
           { pfad: 'typen', name: 'Mappentypen', gruppe: 'ablage', zahl: d.typen.length },
           { pfad: 'sichten', name: 'Ansichten', gruppe: 'ablage', zahl: d.sichten.length || undefined },
-          { pfad: 'nummernkreise', name: 'Nummernkreise', gruppe: 'ablage', zahl: nummernkreise.liste?.length || undefined },
-          { pfad: 'pakete', name: 'Pakete', gruppe: 'ablage', zahl: pakete.stand?.installiert.length || undefined },
-          ...(d.typen.some((t) => t.archiv) ? [{ pfad: 'darfweg', name: 'Darf weg', gruppe: 'ablage' as const, zahl: darfWeg.liste?.length || undefined }] : []),
-          { pfad: 'benutzer', name: 'Benutzer', gruppe: 'benutzer', zahl: benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined },
+          { pfad: 'nummernkreise', name: 'Nummernkreise', gruppe: 'ablage', zahl: zahl(nummernkreise.liste?.length, uz?.nummernkreise) },
+          { pfad: 'pakete', name: 'Pakete', gruppe: 'ablage', zahl: zahl(pakete.stand?.installiert.length, uz?.pakete) },
+          ...(d.typen.some((t) => t.archiv) ? [{ pfad: 'darfweg', name: 'Darf weg', gruppe: 'ablage' as const, zahl: zahl(darfWeg.liste?.length, uz?.darfWeg) }] : []),
+          { pfad: 'benutzer', name: 'Benutzer', gruppe: 'benutzer', zahl: zahl(benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined, uz?.benutzer) },
           { pfad: 'anmeldeschutz', name: 'Anmeldeschutz', gruppe: 'benutzer', warn: anmeldeschutz.stand?.gesperrt.length ? String(anmeldeschutz.stand.gesperrt.length) : undefined, warnTitel: 'gesperrte IP-Adressen' },
-          { pfad: 'aufgaben', name: 'Aufgaben', gruppe: 'benutzer', zahl: uebersicht.stand?.aufgaben.offen || undefined },
+          { pfad: 'aufgaben', name: 'Aufgaben', gruppe: 'benutzer', zahl: zahl(aufgaben.liste?.filter((a) => !a.erledigt).length, uebersicht.stand?.aufgaben.offen) },
           { pfad: 'betrieb', name: 'E-Mail und Adresse', gruppe: 'einstellungen', warn: uebersicht.stand && !uebersicht.stand.mail ? 'aus' : undefined },
           { pfad: 'verschluesselung', name: 'Verschlüsselung', gruppe: 'einstellungen', warn: tresor.stand && tresor.stand.zustand !== 'vorhanden' ? 'fehlt' : undefined },
           { pfad: 'designs', name: 'Designs', gruppe: 'einstellungen', zahl: d.designs.length || undefined },
-          { pfad: 'papierkorb', name: 'Papierkorb', gruppe: 'einstellungen', zahl: papierkorb.eintraege?.length || uebersicht.stand?.papierkorb.anzahl || undefined },
+          { pfad: 'papierkorb', name: 'Papierkorb', gruppe: 'einstellungen', zahl: zahl(papierkorb.eintraege?.length, uebersicht.stand?.papierkorb.anzahl) },
           { pfad: 'anbindung', name: 'Datenbank-Anbindung', gruppe: 'einstellungen', warn: uebersicht.stand?.anbindung && (uebersicht.stand.anbindung.umgebung === 'abweichend' || uebersicht.stand.anbindung.neustartNoetig) ? '!' : undefined, warnTitel: 'DATABASE_URL weicht ab oder Neustart nötig' },
           { pfad: 'speicherplatz', name: 'Speicherplatz', gruppe: 'einstellungen', warn: uebersicht.stand?.speicherplatz && uebersicht.stand.speicherplatz.zustand !== 'ok' ? (uebersicht.stand.speicherplatz.zustand === 'grenze' ? 'voll' : 'knapp') : undefined, warnTitel: 'Speicherplatz knapp' },
-          { pfad: 'postfaecher', name: 'Postfächer', gruppe: 'einstellungen', zahl: postfaecher.liste?.length || undefined, warn: postfaecher.liste?.some((p) => p.stand.fehlerFolge > 0) ? '!' : undefined, warnTitel: 'Abruf fehlgeschlagen' },
+          { pfad: 'postfaecher', name: 'Postfächer', gruppe: 'einstellungen', zahl: zahl(postfaecher.liste?.length, uz?.postfaecher), warn: postfaecher.liste?.some((p) => p.stand.fehlerFolge > 0) ? '!' : undefined, warnTitel: 'Abruf fehlgeschlagen' },
           ...(eingang.stand?.vorhanden ? [{ pfad: 'eingangsordner', name: 'Eingangsordner', gruppe: 'einstellungen' as const, warn: eingang.stand.fehler?.length ? String(eingang.stand.fehler.length) : undefined, warnTitel: 'abgelehnte Dateien' }] : []),
           { pfad: 'texterkennung', name: 'Texterkennung', gruppe: 'einstellungen', warn: uebersicht.stand?.texterkennung?.fehler ? String(uebersicht.stand.texterkennung.fehler) : undefined, warnTitel: 'Dokumente mit Fehler' },
           { pfad: 'protokoll', name: 'Protokoll', gruppe: 'wartung', warn: protokoll.debug?.an ? 'Debug' : undefined, warnTitel: 'Debug-Modus ist an' },

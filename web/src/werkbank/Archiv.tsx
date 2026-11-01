@@ -15,7 +15,8 @@ export function useDarfWeg(offen: boolean) {
   const [liste, setListe] = useState<Eintrag[] | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => { try { setListe(await api.darfWeg()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
-  useEffect(() => { void laden(); }, [laden, offen]);
+  // Erst beim Öffnen laden; die Zahl links kommt bis dahin aus der Übersicht (#375).
+  useEffect(() => { if (offen) void laden(); }, [laden, offen]);
   return { liste, fehler, laden };
 }
 export type DarfWegZustand = ReturnType<typeof useDarfWeg>;
