@@ -462,11 +462,12 @@ async function main() {
   await s.locator('.formateingabe').first().evaluate((e) => e.scrollIntoView({ block: 'center' }));
   await bild(s, 'formatiert');
   await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
-  await s.getByRole('button', { name: /Notizen/ }).click();
+  // Notizen als Register vor der Historie, „Mappe ▾“ neben dem Stern (#427)
+  await s.getByRole('tab', { name: /Notizen/ }).click();
   await s.locator('.notizliste li').first().waitFor();
   await bild(s, 'notizen');
-  await s.getByRole('button', { name: /Notizen/ }).click();
-  await s.getByRole('button', { name: /Aktionen/ }).click();
+  await s.getByRole('tab', { name: 'Vertrag', exact: true }).click();
+  await s.getByRole('button', { name: 'Mappe', exact: true }).click();
   await s.getByRole('menuitem', { name: /Aufgabe vergeben/ }).click();
   const neueAufgabe = s.getByRole('region', { name: 'Aufgabe vergeben' });
   await neueAufgabe.getByLabel('Empfänger').selectOption({ label: MITGLIED.name });
@@ -474,7 +475,7 @@ async function main() {
   await bild(s, 'aufgabe-vergeben');
   await neueAufgabe.getByRole('button', { name: 'Schließen' }).click();
   // Erinnern (#131) und Anstehend (#132)
-  await s.getByRole('button', { name: /Aktionen/ }).click();
+  await s.getByRole('button', { name: 'Mappe', exact: true }).click();
   await s.getByRole('menuitem', { name: /Erinnern/ }).click();
   const erinnern = s.getByRole('region', { name: 'Erinnern' });
   await erinnern.getByPlaceholder(/Angebote/).fill('Angebote der anderen Stromanbieter vergleichen');
@@ -488,7 +489,7 @@ async function main() {
   await s.getByRole('tab', { name: 'Historie' }).click();
   await s.locator('.historie details').first().click();
   await bild(s, 'protokoll');
-  await s.getByRole('button', { name: /Aktionen/ }).click();
+  await s.getByRole('button', { name: 'Mappe', exact: true }).click();
   await bild(s, 'aktionen');
   await s.getByRole('menuitem', { name: /E-Mail/ }).click();
   const email = s.getByRole('region', { name: 'Per E-Mail versenden' });
@@ -553,7 +554,7 @@ async function main() {
   await s.locator('.spalte.mappe .mappenkopf h1').waitFor();
   await bild(s, 'direktlink');
   await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
-  await s.getByRole('button', { name: /Aktionen/ }).click();
+  await s.getByRole('button', { name: 'Mappe', exact: true }).click();
   await s.getByRole('menuitem', { name: /Link kopieren/ }).click();
   await s.locator('.linkkopiert').waitFor();
   await bild(s, 'link-kopieren');

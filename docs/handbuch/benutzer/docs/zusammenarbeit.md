@@ -6,7 +6,7 @@ Notizen sind kurze, formatierte Texte an einer Mappe – „Mit Herrn Müller te
 
 ![Notizen an einer Mappe](bilder/notizen.png)
 
-- **Notizen** über den Registern öffnet sie; die Zahl dahinter sagt, wie viele es gibt.
+- Notizen haben bei jeder Mappe ein eigenes Register **Notizen**, direkt vor der **Historie**; die Zahl daneben sagt, wie viele es gibt. Erwähnt dich jemand in einer Notiz, öffnet sich die Mappe gleich dort.
 - Jede Notiz zeigt, wer sie wann geschrieben und zuletzt geändert hat.
 - **Jeder** darf Notizen ändern und löschen – wie Zettel in einer gemeinsamen Mappe. In der [Historie](#historie) bleibt sichtbar, was geschah.
 - Mit dem Haken **Notizen** neben dem Suchfeld durchsucht die Suche auch die Notizen.

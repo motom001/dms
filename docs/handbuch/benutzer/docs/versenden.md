@@ -1,12 +1,12 @@
 # E-Mail, PDF, Link und Stempel
 
-Rechts über den Registern einer Mappe steht das Menü **Aktionen**.
+Rechts neben dem Titel einer Mappe, neben dem Stern, steht das Menü **Mappe ▾** (früher „Aktionen“).
 
-![Das Menü Aktionen](bilder/aktionen.png)
+![Das Menü Mappe](bilder/aktionen.png)
 
 ## Per E-Mail versenden
 
-1. **Aktionen → Per E-Mail versenden**.
+1. **Mappe ▾ → Per E-Mail versenden**.
 2. Trage bei **An** eine oder mehrere Adressen ein (durch Komma getrennt).
 3. Prüfe den **Betreff** – vorgeschlagen sind Mappentyp und Titel – und schreibe bei Bedarf eine **Nachricht**.
 4. Wähle unter **Anhänge**, welche Dokumente der Mappe mitgehen. Darunter steht, wie groß sie zusammen sind; ab 20 MB warnt das DMS, weil viele Mailserver größere E-Mails nicht annehmen; mehr als 50 MB lassen sich nicht versenden.
@@ -96,13 +96,13 @@ Viele E-Mail-Anbieter nehmen keine Anhänge über 10 bis 25 MB an. Beim Versende
 
 ## Als PDF exportieren
 
-**Aktionen → Als PDF exportieren** öffnet den Druckdialog des Browsers mit der **Druckansicht** der Mappe: Titel, alle Angaben, die Liste der Dokumente und die Notizen. Wähle als Drucker **Als PDF speichern** (bzw. „Microsoft Print to PDF“ unter Windows) – oder drucke sie gleich auf Papier.
+**Mappe ▾ → Als PDF exportieren** öffnet den Druckdialog des Browsers mit der **Druckansicht** der Mappe: Titel, alle Angaben, die Liste der Dokumente und die Notizen. Wähle als Drucker **Als PDF speichern** (bzw. „Microsoft Print to PDF“ unter Windows) – oder drucke sie gleich auf Papier.
 
 Passwörter erscheinen auch dort nur als „••••••••“.
 
 ## Link kopieren
 
-**Aktionen → Link kopieren** legt einen Link auf die Mappe in die Zwischenablage, den du per Mail oder Chat an jemanden mit eigenem Zugang zum DMS schicken kannst. Der Link nennt die Mappe nicht über eine Nummer, sondern über ihre Angaben, z. B.
+**Mappe ▾ → Link kopieren** legt einen Link auf die Mappe in die Zwischenablage, den du per Mail oder Chat an jemanden mit eigenem Zugang zum DMS schicken kannst. Der Link nennt die Mappe nicht über eine Nummer, sondern über ihre Angaben, z. B.
 
 ```
 http://nas:8080/ablage/link?typ=vertrag&vertragsnummer=SV-4711

@@ -13,6 +13,7 @@ import { leeresPasswort, rohAusWerten, standardRoh, werteAusRoh, type Roh, type 
 import { titelOder } from '../seiten';
 import { Formatiert, FormatiertEingabe } from './Formatiert';
 import { Historie } from './Historie';
+import { mitNotizen, NOTIZEN_REGISTER, startRegister, type AnsichtsRegister } from '../../../shared/src/mappenansicht';
 import { Notizen } from './Notizen';
 import { AufgabenHinweis, ErinnerungFormular, Erinnerungen, NeueAufgabe } from './Aufgaben';
 import { Aktionsmenue, Druckansicht, EmailMaske } from './Aktionen';
@@ -71,13 +72,13 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { t
   const mappe = details.mappe;
   const bekannt = new Set(typ.felder.map((f) => f.key));
   const verwaist = Object.entries(mappe.werte).filter(([k, v]) => !bekannt.has(k) && !istLeer(v));
-  const [notizenOffen, setNotizenOffen] = useState(false);
+  // Sprung auf einen Register von außen, z. B. „Zur Notiz“ im Aufgaben-Banner (#427).
+  const [registerWunsch, setRegisterWunsch] = useState<{ key: string; n: number }>();
   const [aufgabeOffen, setAufgabeOffen] = useState(false);
   const [erinnernOffen, setErinnernOffen] = useState(false);
   const [emailOffen, setEmailOffen] = useState(false);
   const [drucken, setDrucken] = useState(false);
   const druckEnde = useCallback(() => setDrucken(false), []);
-  const notizen = details.notizen ?? [];
   // Sprechender Link (#98) über ein eindeutiges Feld oder die Titelfelder.
   const direktlink = linkZuMappe(typ, mappe);
   const [kopiert, setKopiert] = useState<{ link: string; ok: boolean } | null>(null);
@@ -85,7 +86,15 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { t
     <>
       <div className="mappenkopf">
         <p className="ueber">{typ.name}</p>
-        <div className="titelzeile"><h1>{titelOder(mappe.titel)}</h1><Stern mappeId={mappe.id} an={!!details.favorit} /></div>
+        {/* Kopfzeile (#427): „Mappe ▾“ neben dem Stern – gehört sichtbar zur Mappe, nicht zum Aufgaben-Banner. */}
+        <div className="titelzeile"><h1>{titelOder(mappe.titel)}</h1>
+          <div className="mappenkopf-knoepfe">
+            <Stern mappeId={mappe.id} an={!!details.favorit} />
+            <Aktionsmenue aufgabe={() => setAufgabeOffen(true)} erinnern={() => setErinnernOffen(true)} email={details.exportierbar === false ? undefined : () => setEmailOffen(true)} drucken={details.exportierbar === false ? undefined : () => setDrucken(true)}
+              link={direktlink ? () => { const l = location.origin + direktlink; void kopiere(l).then((ok) => setKopiert({ link: l, ok })); } : undefined}
+              auskunft={details.auskunft ? () => geheZu(`/werkbank/datenschutz?mappe=${encodeURIComponent(details.mappe.id)}`) : undefined} />
+          </div>
+        </div>
         <dl className="index">
           <div><dt>Angelegt</dt><dd>{zeit(mappe.erstellt)} von <Person id={mappe.erstelltVon} /></dd></div>
           <div><dt>Zuletzt geändert</dt><dd>{zeit(mappe.geaendert)} von <Person id={mappe.geaendertVon} /></dd></div>
@@ -94,28 +103,19 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { t
         </dl>
         {typ.system === 'benutzer' && ich.rolle === 'admin' && <p className="leise klein"><Link to={`/werkbank/benutzer/${mappe.id}`} className="verweis">In der Benutzerverwaltung öffnen →</Link></p>}
         {mappe.systemKennung && <p className="leise klein"><span className="chip">Systemrolle</span> Wer sie hat, ergibt sich aus der Rolle in der Benutzerverwaltung.</p>}
-        <div className="mappenleiste">
-          <button type="button" className={`knopf klein ${notizenOffen ? 'an' : ''}`} aria-expanded={notizenOffen} onClick={() => setNotizenOffen(!notizenOffen)} title="Notizen zu dieser Mappe">
-            <Symbol name="notiz" /> Notizen{notizen.length ? ` (${notizen.length})` : ''}
-          </button>
-          <Aktionsmenue aufgabe={() => setAufgabeOffen(true)} erinnern={() => setErinnernOffen(true)} email={details.exportierbar === false ? undefined : () => setEmailOffen(true)} drucken={details.exportierbar === false ? undefined : () => setDrucken(true)}
-            link={direktlink ? () => { const l = location.origin + direktlink; void kopiere(l).then((ok) => setKopiert({ link: l, ok })); } : undefined}
-            auskunft={details.auskunft ? () => geheZu(`/werkbank/datenschutz?mappe=${encodeURIComponent(details.mappe.id)}`) : undefined} />
-        </div>
         {kopiert && <LinkKopiert {...kopiert} schliessen={() => setKopiert(null)} />}
       </div>
       {typ.system === 'post' && <PostLeiste typ={typ} details={details} neuLaden={neuLaden} />}
-      <AufgabenHinweis aufgaben={details.aufgaben ?? []} neuLaden={neuLaden} />
+      <AufgabenHinweis aufgaben={details.aufgaben ?? []} neuLaden={neuLaden} zuNotizen={() => setRegisterWunsch((w) => ({ key: NOTIZEN_REGISTER, n: (w?.n ?? 0) + 1 }))} />
       <Erinnerungen liste={details.erinnerungen ?? []} neuLaden={neuLaden} />
       {aufgabeOffen && <NeueAufgabe mappeId={mappe.id} neuLaden={neuLaden} schliessen={() => setAufgabeOffen(false)} />}
       {erinnernOffen && <ErinnerungFormular mappeId={mappe.id} neuLaden={neuLaden} schliessen={() => setErinnernOffen(false)} />}
       {emailOffen && <EmailMaske key={mappe.id} typ={typ} details={details} neuLaden={neuLaden} schliessen={() => setEmailOffen(false)} />}
       {drucken && <Druckansicht typ={typ} details={details} fertig={druckEnde} />}
-      {notizenOffen && <Notizen mappeId={mappe.id} notizen={notizen} neuLaden={neuLaden} schliessen={() => setNotizenOffen(false)} />}
       {mappe.passt === false && (
         <div className="hinweis warn"><p>Diese Mappe passt nicht mehr zur aktuellen Definition von „{typ.name}“{mappe.problem ? ` (${mappe.problem})` : ''}. Beim nächsten Speichern müssen die markierten Felder stimmen.</p></div>
       )}
-      <Formular typ={typ} mappe={mappe} start={rohAusWerten(typ, mappe.werte)} sicht={sicht} anhang={anhang} details={details} neuLaden={neuLaden} />
+      <Formular typ={typ} mappe={mappe} start={rohAusWerten(typ, mappe.werte)} sicht={sicht} anhang={anhang} details={details} neuLaden={neuLaden} registerWunsch={registerWunsch} />
       {verwaist.length > 0 && (
         <section className="blatt">
           <h2 className="h3">Werte ohne Felddefinition</h2>
@@ -124,6 +124,42 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { t
         </section>
       )}
     </>
+  );
+}
+
+/**
+ * Register-Reihe (#427): Am Handy ist sie breiter als der Bildschirm und rollt waagerecht.
+ * Ein Schatten am Rand zeigt, dass es weitergeht; der aktive Register rollt immer in den Blick.
+ */
+function RegisterReihe({ aktiv, children }: { aktiv?: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [rand, setRand] = useState({ links: false, rechts: false });
+  const messe = useCallback(() => {
+    const e = ref.current;
+    if (!e) return;
+    const links = e.scrollLeft > 2, rechts = e.scrollLeft + e.clientWidth < e.scrollWidth - 2;
+    setRand((r) => (r.links === links && r.rechts === rechts ? r : { links, rechts }));
+  }, []);
+  useEffect(() => {
+    const e = ref.current;
+    if (!e) return;
+    messe();
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(messe);
+    ro?.observe(e);
+    return () => ro?.disconnect();
+  }, [messe]);
+  useEffect(() => {
+    const e = ref.current, t = e?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!e || !t || e.scrollWidth <= e.clientWidth) return;
+    // Nur waagerecht rollen – scrollIntoView würde auch die Seite verschieben.
+    if (t.offsetLeft < e.scrollLeft) e.scrollLeft = t.offsetLeft - 16;
+    else if (t.offsetLeft + t.offsetWidth > e.scrollLeft + e.clientWidth) e.scrollLeft = t.offsetLeft + t.offsetWidth - e.clientWidth + 16;
+    messe();
+  }, [aktiv, messe]);
+  return (
+    <div className={`registerreihe${rand.links ? ' registerreihe-links' : ''}${rand.rechts ? ' registerreihe-rechts' : ''}`}>
+      <div className="registertaben" role="tablist" aria-label="Register" ref={ref} onScroll={messe}>{children}</div>
+    </div>
   );
 }
 
@@ -163,12 +199,15 @@ function verknuepfungsGruppen(d: ReturnType<typeof useDaten>, mappe: Mappe | und
     })));
 }
 
-function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zuordnen }: {
+function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zuordnen, registerWunsch }: {
   typ: Mappentyp; mappe?: Mappe; start: RohWerte; sicht: string; anhang?: string; details?: MappeDetails | null; neuLaden?: () => Promise<void>; zuordnen?: ZuordnenNachher;
+  /** Register von außen öffnen (#427); `n` zählt, damit derselbe Wunsch erneut wirkt. */
+  registerWunsch?: { key: string; n: number };
 }) {
   const d = useDaten();
   const { ich } = useKonto();
-  const register = registerVon(typ);
+  // Register des Typs plus System-Register „Notizen“ vor der Historie (#427).
+  const register = mitNotizen(registerVon(typ));
   // Nur lesbar: Systemfelder von Benutzern, Name einer Systemrolle (#26, #27).
   const geschuetzt = geschuetzteFelder(typ, mappe);
   // Berechtigungen (#126): ohne „Bearbeiten“ nur ansehen; Löschen und Passwörter je nach Recht.
@@ -184,7 +223,9 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   // Weitere Löschwege trotz Sperre (z. B. „Mit verknüpften Mappen löschen …“, #424) kommen über `wege` dazu.
   const loeschKnopf = loeschenZeigen ? <LoeschKnopf sperre={loeschSperre} loeschen={() => void loeschen()} /> : <span />;
   // Sprung aus der Suche nach einer Archivnummer (#345): ?register=… öffnet das Register.
-  const [aktiv, setAktiv] = useState(() => { const w = new URLSearchParams(location.search).get('register'); return register.find((x) => x.key === w)?.key ?? register[0]?.key; });
+  // Erwähnung in einer Notiz (#427): gleich den Register „Notizen“.
+  const [aktiv, setAktiv] = useState(() => startRegister(register, new URLSearchParams(location.search).get('register'), details?.aufgaben, ich.id));
+  useEffect(() => { if (registerWunsch) setAktiv(registerWunsch.key); }, [registerWunsch]);
   const [basis, setBasis] = useState(() => JSON.stringify(start));
   const [roh, setRoh] = useState<RohWerte>(start);
   const [neueDateien, setNeueDateien] = useState<NeueDatei[]>([]);
@@ -208,7 +249,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   useUngespeichert(werteGeaendert || dokumenteGeaendert);
 
   const dokumenteIn = (key: string) => (details?.dokumente ?? []).filter((x) => x.registerKey === key);
-  const anzahl = (r: Register): number | undefined => {
+  const anzahl = (r: AnsichtsRegister): number | undefined => {
+    if (r.art === 'notizen') return mappe ? details?.notizen?.length ?? 0 : undefined;
     if (r.art === 'dokumente') return dokumenteIn(r.key).filter((x) => !entfernt.includes(x.id)).length + neueDateien.filter((n) => n.register === r.key).length;
     if (r.art === 'verknuepfungen') return verknuepfungsGruppen(d, mappe, typ.id, r, details).reduce((a, g) => a + g.treffer.length, 0);
     return undefined;
@@ -217,7 +259,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
 
   const reg = register.find((r) => r.key === aktiv) ?? register[0];
   const felderAuf = (r: Register) => typ.felder.filter((f) => r.felder?.includes(f.key));
-  const fehlerAuf = (r: Register) => (r.art === 'felder' ? felderAuf(r).filter((f) => fehler?.felder[f.key]).length : 0);
+  const fehlerAuf = (r: AnsichtsRegister) => (r.art === 'felder' ? felderAuf(r).filter((f) => fehler?.felder[f.key]).length : 0);
 
   /** Auswahlfilter mit Werten dieser Mappe (#173): nur die Felder, von denen er abhängt. */
   const eigeneWerte = (f: Feld): Werte | undefined => {
@@ -332,6 +374,10 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
         setzeNeue={(uid, patch) => setNeueDateien((x) => x.map((n) => (n.uid === uid ? { ...n, ...patch } : n)))}
         neuLaden={mappe ? async () => { await neuLaden?.(); await d.neuLaden(); } : undefined} post={typ.system === 'post'} typ={typ} mappeTitel={mappe?.titel ?? ''} />
     );
+  } else if (reg.art === 'notizen') {
+    inhalt = !mappe ? <p className="leise">Notizen gehen nach dem ersten Speichern.</p>
+      : !details ? <p className="leise">Lade …</p>
+      : <Notizen mappeId={mappe.id} notizen={details.notizen ?? []} neuLaden={async () => { await neuLaden?.(); }} />;
   } else if (reg.art === 'protokoll') {
     inhalt = mappe ? <Historie mappeId={mappe.id} stand={mappe.geaendert} /> : <p className="leise">Die Historie beginnt mit dem ersten Speichern.</p>;
   } else if (!mappe) {
@@ -344,7 +390,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
 
   return (
     <form className="blatt mitregistern" onSubmit={(e) => { e.preventDefault(); void speichern(); }} noValidate>
-      <div className="registertaben" role="tablist" aria-label="Register">
+      <RegisterReihe aktiv={reg?.key}>
         {register.map((r) => {
           const n = fehlerAuf(r);
           const zahl = anzahl(r);
@@ -357,7 +403,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
             </button>
           );
         })}
-      </div>
+      </RegisterReihe>
       {fehler?.allgemein.length ? <div className="hinweis schlecht"><p>{fehler.allgemein.join(' ')}</p></div> : null}
       {hinweise.map((h, i) => <div key={i} className={`hinweis ${h.art}`}><p>{h.text}</p></div>)}
       <div className="registerinhalt" role="tabpanel">{inhalt}</div>
