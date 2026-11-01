@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.99/api/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.100/api/">
       
       
         <link rel="prev" href="../fehlersuche/">
@@ -2171,7 +2171,7 @@
 </tr>
 <tr>
 <td><strong>Aufgaben</strong></td>
-<td><code>GET /api/v1/aufgaben</code> (eigene offene), <code>POST /api/v1/mappen/{id}/aufgaben</code> (vergeben), <code>POST /api/v1/aufgaben/{id}/erledigt</code> und <code>…/delegieren</code>; Fristen und Erinnerungen über <code>GET /api/v1/anstehend</code> und <code>…/erinnerungen</code></td>
+<td><code>GET /api/v1/aufgaben</code> (eigene offene), <code>POST /api/v1/mappen/{id}/aufgaben</code> (vergeben), <code>POST /api/v1/aufgaben/{id}/erledigt</code> und <code>…/delegieren</code>, mehrere auf einmal mit <code>POST /api/v1/aufgaben/weitergeben</code> bzw. <code>…/aufgaben/erledigt</code> (#415); Fristen und Erinnerungen über <code>GET /api/v1/anstehend</code> und <code>…/erinnerungen</code></td>
 </tr>
 <tr>
 <td><strong>Notizen</strong></td>
