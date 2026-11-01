@@ -137,6 +137,7 @@ export const HILFE = {
   'profil.export': benutzer('profil/', 'Meine Daten exportieren', 'meine-daten-exportieren'),
   'profil.zweifaktor': benutzer('profil/', 'Zwei-Faktor-Anmeldung', 'zwei-faktor-anmeldung'),
   'profil.benachrichtigungen': benutzer('profil/', 'Benachrichtigungen', 'benachrichtigungen'),
+  'profil.favoriten': benutzer('ablage/', 'Favoriten als Abo', 'favoriten-als-abo'),
 } as const satisfies Record<string, Hilfeziel>;
 export type Hilfeort = keyof typeof HILFE;
 

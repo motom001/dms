@@ -150,6 +150,17 @@ Mappen, die du oft brauchst, markierst du mit dem **Stern ☆** – oben rechts 
 - Löschst du eine Mappe, verschwindet sie aus den Favoriten; stellst du sie aus dem Papierkorb wieder her, ist sie wieder Favorit.
 - Ein Administrator kann Ansichten mit der Bedingung **ist mein Favorit** einrichten, etwa *Meine wichtigen Verträge*. Jeder sieht darin seine eigenen Favoriten.
 
+### Favoriten als Abo { #favoriten-als-abo }
+
+Ein Stern heißt auch: **Sag mir, wenn sich hier etwas tut.** Ändert jemand anderes einen deiner Favoriten – Felder, Dokumente, Notizen, Register oder Aufgaben –, bekommst du unter [Zu erledigen](eingang.md) **eine** Benachrichtigung der Art **Geändert**, etwa „3 Änderungen von Anna und Paul seit 01.11.“. Weitere Änderungen zählen nur hoch, solange du sie nicht gesehen hast. Sobald du die Mappe öffnest (oder bei der Benachrichtigung **Erledigt** klickst), ist sie weg; die nächste Änderung bringt wieder eine neue. Eigene Änderungen melden sich nie.
+
+- **Hervorhebung:** In allen Listen steht ein **Punkt** vor dem Titel von Favoriten und von Mappen, die du selbst angelegt hast, wenn andere sie seit deinem letzten Öffnen geändert haben – wie „ungelesen“ im E-Mail-Programm. Eigene Mappen werden nur hervorgehoben, eine Benachrichtigung gibt es für sie nur, wenn sie auch Favorit sind. Über der Liste steht dann „2 geändert · **Alle als gesehen markieren**“.
+- **Stumm schalten:** In der Ansicht *Favoriten* steht unter jedem Eintrag **Bei Änderungen benachrichtigen**. Nimm den Haken weg bei Mappen, die du oft brauchst, die sich aber ständig ändern – der Stern bleibt.
+- **Ganz abschalten:** unter Profil → [Benachrichtigungen](profil.md#benachrichtigungen) – Benachrichtigung und Hervorhebung getrennt.
+- Benachrichtigt wird nur, wer die Mappe lesen darf; die Benachrichtigung verrät nichts, was du nicht sehen darfst. Hat jemand eine [Auskunft](https://motom001.github.io/dms/admin/aktuell/datenschutz/) zu einer Person abgerufen, deren Mappe dein Favorit ist, bekommst du dazu eine eigene Benachrichtigung *Auskunft* – ebenfalls nur, solange die Benachrichtigung für diesen Favoriten an ist.
+
+![Favoriten: geänderte Mappe mit Punkt, Schalter je Favorit](bilder/favoriten-geaendert.png){ loading=lazy }
+
 ## Eine Mappe öffnen
 
 Ein Klick auf einen Eintrag öffnet die Mappe rechts. Jede Mappe hat eine eigene Adresse – du kannst sie als Lesezeichen speichern oder einem anderen Benutzer schicken.

@@ -245,6 +245,8 @@ export interface KontenHaken {
   wiederda(id: string, von: string | null): Promise<void>;
   /** Alle Konten mit Abwesenheit und Vertreter – für die Umleitung von Aufgaben (#78). */
   benutzer?(): Promise<Benutzer[]>;
+  /** Persönliche Einstellungen eines Benutzers (#422: Favoriten benachrichtigen, Geänderte hervorheben). */
+  einstellungen?(id: string): Promise<Record<string, unknown>>;
 }
 
 export const PAPIERKORB_STANDARD_TAGE = 30;
@@ -257,6 +259,9 @@ export const HISTORIE_STANDARD_TAGE = 365;
 /** Sammel-Weitergabe (#415): höchstens so viele Aufgaben auf einmal; Schlüssel der Sammelbenachrichtigung. */
 export const SAMMEL_MAX = 1000;
 export const SAMMEL_WEITERGABE = 'weitergabe';
+/** Favorit = Abo (#422): Diese Historieneinträge sind Änderungen an der Mappe (Felder, Dokumente, Notizen, Register, Aufgaben). */
+export const ABO_ARTEN = ['geaendert', 'dokument_hochgeladen', 'dokument_geloescht', 'dokument_version', 'dokument_papierkorb', 'dokument_wiederhergestellt',
+  'pdf_bearbeitet', 'geschwaerzt', 'notiz', 'aufgabe', 'papierkorb', 'wiederhergestellt', 'zugeordnet', 'archivnummer'] as const satisfies readonly Historienart[];
 export interface DienstOptionen {
   /** Schlüssel für Passwortfelder (#39, #46). */
   tresor?: Tresor;
@@ -744,6 +749,8 @@ export class Dienst {
   async erledigeAufgabe(id: string, ich: { id: string; rolle: string }) {
     const a = await this.eigeneAufgabe(id, ich);
     if (a.art === 'passung') throw new Fachfehler(409, 'Diese Aufgabe erledigt sich selbst, sobald die Mappe wieder zur Definition passt.');
+    // „Geändert“ bestätigen (#422) = gesehen; ohne Eintrag in der Historie der Mappe.
+    if (a.art === 'aenderung') { await this.gesehen(ich, [a.mappeId]); return (await this.repo.holeAufgabe(id))!; }
     await this.repo.erledigeAufgabe(id, ich.id);
     await this.notiere(a.mappeId, ich.id, 'aufgabe', { text: `erledigt: ${a.text}`, aufgabe: id, aufgabenart: a.art, fuer: a.empfaengerId, aufgabentext: a.text });
     protokoll.modul('ablage').info('Aufgabe erledigt', { mappeId: a.mappeId, aufgabe: a.text });
@@ -814,9 +821,9 @@ export class Dienst {
    * Schlüssel. Ist schon eine offen, kommt keine zweite – `text` bekommt die bisherige und baut daraus den neuen
    * Text (etwa hochgezählt). Erst wenn der Empfänger sie erledigt hat, entsteht bei Bedarf wieder eine neue.
    */
-  async benachrichtigeGebuendelt(e: { empfaengerId: string; mappeId: string; art: Aufgabenart; schluessel: string; von: string | null; text: (bisher: Aufgabe | undefined) => string }) {
+  async benachrichtigeGebuendelt(e: { empfaengerId: string; mappeId: string; art: Aufgabenart; schluessel: string; von: string | null; text: (bisher: Aufgabe | undefined) => string | Promise<string> }) {
     const offen = (await this.repo.offeneAufgaben({ mappeIds: [e.mappeId] })).find((a) => a.art === e.art && a.feldKey === e.schluessel && a.empfaengerId === e.empfaengerId);
-    const text = e.text(offen).slice(0, AUFGABE_MAX);
+    const text = (await e.text(offen)).slice(0, AUFGABE_MAX);
     if (offen) { if (offen.text !== text) await this.repo.aendereAufgabeText(offen.id, text); return offen.id; }
     const a = await this.repo.legeAufgabeAn({ id: randomUUID(), mappeId: e.mappeId, empfaengerId: e.empfaengerId, art: e.art, feldKey: e.schluessel, text, erstellt: '', erstelltVon: e.von, erledigt: null, erledigtVon: null });
     return a.id;
@@ -1261,9 +1268,72 @@ export class Dienst {
 
   /* ---------- Änderungshistorie (#57) ---------- */
 
-  /** Ein Eintrag in die Historie einer Mappe. */
-  private notiere(mappeId: string, benutzerId: string | null, art: Historienart, daten?: Historieneintrag['daten']) {
-    return this.repo.historieSchreibe([{ mappeId, benutzerId, art, daten }]);
+  /** Ein Eintrag in die Historie einer Mappe – und bei Favoriten anderer die gebündelte Benachrichtigung (#422). */
+  private async notiere(mappeId: string, benutzerId: string | null, art: Historienart, daten?: Historieneintrag['daten']) {
+    await this.repo.historieSchreibe([{ mappeId, benutzerId, art, daten }]);
+    if (benutzerId && (ABO_ARTEN as readonly string[]).includes(art) && daten?.aufgabenart !== 'aenderung') {
+      try { await this.aboMelden(mappeId, benutzerId); }
+      catch (e) { protokoll.modul('ablage').warn('Benachrichtigung zu Favoriten nicht angelegt', { mappeId, fehler: (e as Error).message }); }
+    }
+  }
+
+  /* ---------- Favorit = Abo (#422) ---------- */
+
+  /** Persönliche Einstellung (Vorgabe an): „favoriten_benachrichtigen“ bzw. „geaenderte_hervorheben“ = false schaltet ab. */
+  private async persoenlichAn(benutzerId: string, schluessel: string): Promise<boolean> {
+    return (await this.konten?.einstellungen?.(benutzerId))?.[schluessel] !== false;
+  }
+
+  /**
+   * Hat jemand eine Mappe geändert, die andere als Favorit haben, bekommen die – sofern sie es nicht abgeschaltet
+   * haben und die Mappe lesen dürfen – **eine** Aufgabe „Geändert“. Solange sie offen ist, zählt sie nur hoch
+   * („3 Änderungen von Anna und Paul seit 01.11.“); erst nach dem Öffnen der Mappe oder „Erledigt“ kommt wieder eine.
+   * Eigene Änderungen benachrichtigen nie.
+   */
+  private async aboMelden(mappeId: string, von: string) {
+    const fav = (await this.repo.favoritenDerMappe(mappeId)).filter((f) => f.benachrichtigen && f.benutzerId !== von);
+    if (!fav.length) return;
+    const aktiv = this.konten?.benutzer ? new Set((await this.konten.benutzer()).filter((b) => b.aktiv).map((b) => b.id)) : null;
+    for (const { benutzerId } of fav) {
+      if (aktiv && !aktiv.has(benutzerId)) continue;
+      if (!(await this.persoenlichAn(benutzerId, 'favoriten_benachrichtigen'))) continue;
+      if (!(await this.kannLesen(benutzerId, mappeId))) continue;
+      await this.benachrichtigeGebuendelt({
+        empfaengerId: benutzerId, mappeId, art: 'aenderung', schluessel: 'aenderung', von,
+        text: async (bisher) => {
+          const seit = bisher?.erstellt ?? '';
+          const h = (await this.repo.historie(mappeId)).filter((x) => x.zeit > seit && x.benutzerId && x.benutzerId !== benutzerId
+            && (ABO_ARTEN as readonly string[]).includes(x.art) && x.daten?.aufgabenart !== 'aenderung');
+          // Die erste Änderung steht vor der Aufgabe in der Historie; ihr Urheber ist erstelltVon der Aufgabe.
+          const n = bisher ? 1 + h.length : 1;
+          const namen = [...new Set(bisher ? [bisher.erstelltVon ?? von, ...h.map((x) => x.benutzerId!)] : [von])];
+          const liste = await Promise.all(namen.slice(0, 3).map((id) => this.name(id)));
+          const wer = namen.length > 3 ? `${liste.join(', ')} und weiteren` : liste.length > 1 ? `${liste.slice(0, -1).join(', ')} und ${liste.at(-1)}` : liste[0];
+          const tag = new Date(bisher?.erstellt || Date.now()).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', timeZone: 'Europe/Berlin' });
+          return `${n === 1 ? 'Eine Änderung' : `${n} Änderungen`} von ${wer} seit ${tag}`;
+        },
+      });
+    }
+  }
+
+  /**
+   * Mappen gesehen (#422): geöffnet oder „Alle als gesehen markieren“. Die Hervorhebung verschwindet, und eine
+   * offene Benachrichtigung „Geändert“ erledigt sich – die nächste Änderung bringt wieder eine.
+   */
+  async gesehen(ich: { id: string }, mappeIds: unknown) {
+    const ids = (Array.isArray(mappeIds) ? mappeIds : [mappeIds]).filter((x): x is string => istUuid(x)).slice(0, 1000);
+    if (!ids.length) return;
+    await this.repo.merkeGesehen(ich.id, ids);
+    for (const a of (await this.repo.offeneAufgaben({ mappeIds: ids })).filter((x) => x.art === 'aenderung' && x.empfaengerId === ich.id)) {
+      await this.repo.erledigeAufgabe(a.id, ich.id);
+    }
+  }
+
+  /** Je Favorit „bei Änderungen benachrichtigen“ (#422, Schalter in der Favoritenliste). */
+  async setzeFavoritBenachrichtigen(ich: { id: string }, mappeId: string, an: unknown) {
+    if (!(await this.repo.favoritenVon(ich.id, [mappeId])).has(mappeId)) throw new Fachfehler(404, 'Diese Mappe ist kein Favorit von dir.');
+    await this.repo.setzeFavoritBenachrichtigen(ich.id, mappeId, an !== false);
+    return { benachrichtigen: an !== false };
   }
 
   /** Was sich zwischen zwei Ständen geändert hat – lesbar, wie es zu diesem Zeitpunkt aussah. */
@@ -1592,6 +1662,11 @@ export class Dienst {
       ...(r.ausschnitte ? { ausschnitte: r.ausschnitte } : {}), ...(q.sicht === 'eingang' ? { aufgaben } : {}),
       /** Welche Mappen dieser Seite Favoriten des Benutzers sind (#62). */
       favoriten: [...await this.repo.favoritenVon(ich.id, r.mappen.map((m) => m.id))],
+      /** Favorit = Abo (#422): Favoriten und eigene Mappen, die andere seit dem letzten Sehen geändert haben. */
+      geaendert: await this.persoenlichAn(ich.id, 'geaenderte_hervorheben')
+        ? [...await this.repo.geaendertVonAnderen(ich.id, r.mappen.filter((m) => !m.verborgen).map((m) => m.id), ABO_ARTEN)] : [],
+      /** In der Favoritenliste: Favoriten mit ausgeschalteter Benachrichtigung (#422). */
+      ...(q.sicht === 'favoriten' ? { stumm: [...await this.repo.stummeFavoriten(ich.id, r.mappen.map((m) => m.id))] } : {}),
     };
   }
 
@@ -4942,7 +5017,11 @@ export class Dienst {
    * Gebündelt: Solange eine solche Aufgabe offen ist, kommt für denselben Link keine zweite.
    */
   private async auskunftMelden(link: AuskunftLink, text: string, anlass: 'abgerufen' | 'gesperrt', standVon?: string) {
-    const fav = (await this.repo.alleFavoriten()).filter((f) => f.mappeId === link.mappeId).map((f) => f.benutzerId);
+    // Favorit = Abo (#422): nur Favoriten mit eingeschalteter Benachrichtigung.
+    const fav: string[] = [];
+    for (const f of await this.repo.favoritenDerMappe(link.mappeId)) {
+      if (f.benachrichtigen && await this.persoenlichAn(f.benutzerId, 'favoriten_benachrichtigen')) fav.push(f.benutzerId);
+    }
     let an = [...new Set([link.erstelltVon, standVon, ...fav].filter((x): x is string => !!x && istUuid(x)))];
     if (this.konten?.benutzer) { const aktiv = new Set((await this.konten.benutzer()).filter((b) => b.aktiv).map((b) => b.id)); an = an.filter((id) => aktiv.has(id)); }
     const key = `${anlass}:${link.id}`;
