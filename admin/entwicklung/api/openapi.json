@@ -1011,6 +1011,105 @@
         }
       }
     },
+    "/mappen/{id}/baum": {
+      "get": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Alle Mappen, die über Verweise an einer Mappe hängen",
+        "description": "Baum-Sammlung (#396, #424): Breitensuche ab der Mappe über Verweise – verwiesenVon (Mappen, die darauf verweisen, „nach unten“) und/oder verweistAuf (Mappen, auf die sie verweist). Ohne seitwaerts geht jede Mappe nur in der Richtung weiter, über die sie erreicht wurde. Kreise werden erkannt (auchUeber, kreise), die Obergrenze max kappt große Bäume (abgeschnitten). Nur Mappen, die der Aufrufer lesen darf; über nicht lesbare geht es nicht weiter (gezählt in verborgen). Benutzer und Rollen sind ausgenommen. Je Knoten: Ebene, über welchen Verweis erreicht, Anzahl Dokumente, Verweise zu Mappen außerhalb des Baums (aussen), Aufbewahrungsfrist (aufbewahrenBis, gesperrt) und die eigenen Rechte.",
+        "operationId": "getMappenMitidBaum",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Start-Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tiefe",
+            "in": "query",
+            "required": false,
+            "description": "Ebenen, 1 bis 10 (Standard 2)",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "richtungen",
+            "in": "query",
+            "required": false,
+            "description": "verwiesenVon, verweistAuf oder beide mit Komma (Standard beide)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max",
+            "in": "query",
+            "required": false,
+            "description": "höchstens so viele Mappen, 1 bis 5000 (Standard 1000)",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "seitwaerts",
+            "in": "query",
+            "required": false,
+            "description": "true: jede Mappe in alle Richtungen weiter (Standard false)",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Baum"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/papierkorb": {
       "get": {
         "tags": [
@@ -5081,6 +5180,422 @@
         }
       }
     },
+    "/werkbank/datenschutz": {
+      "get": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Datenschutz: Einstellungen und bereitliegende Auskünfte (Administrator)",
+        "description": "Auskunft nach Art. 15 DSGVO (#396): Verantwortlicher, Empfänger, Text zu den Rechten, je Mappentyp „betrifft eine Person“ und Zweck; dazu die erzeugten Auskünfte, die noch zum Herunterladen bereitliegen (höchstens 7 Tage, nach dem Herunterladen gelöscht).",
+        "operationId": "getWerkbankDatenschutz",
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatenschutzStand"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Datenschutz: Einstellungen speichern (Administrator)",
+        "operationId": "putWerkbankDatenschutz",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Datenschutz"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Datenschutz"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/werkbank/auskunft/vorschau": {
+      "post": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Auskunft: sammeln und Prüfliste (Administrator)",
+        "description": "Auskunft nach Art. 15 DSGVO (#396): Baum ab der Mappe des Betroffenen (wie GET /mappen/{id}/baum, ohne Benutzer und Rollen), je Mappe Dokumente (mit geschwärzten Fassungen), Notizen, Anzahl Einträge der Historie, Hinweis auf Daten Dritter und die Passwortfelder, die nie mitgehen; dazu Treffer für Name, E-Mail, Kundennummer, IBAN außerhalb des Baums als Vorschläge.",
+        "operationId": "postWerkbankAuskunftVorschau",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuskunftVorschauEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuskunftVorschau"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/werkbank/auskunft": {
+      "post": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Auskunft als ZIP erzeugen (Administrator)",
+        "description": "Hintergrundauftrag (Stand: GET /api/werkbank/auftrag, Ergebnis AuskunftStand). Nur ausdrücklich Ausgewähltes geht hinaus, geprueft=true ist Pflicht; jede abgewählte Notiz einer ausgewählten Mappe braucht eine Begründung. Passwortfelder, verschlüsselte Werte und ältere Versionen sind nie enthalten. Mit passwort (mindestens 10 Zeichen) liegt die Auskunft als „Auskunft.zip“ in einer AES-256-verschlüsselten ZIP. Nachweis in der Historie des Betroffenen und im Protokoll, ohne Inhalte.",
+        "operationId": "postWerkbankAuskunft",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuskunftEingabe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Auftrag"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/werkbank/auskunft/frist": {
+      "post": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Auskunft: Frist als Aufgabe (Administrator)",
+        "description": "Aufgabe „Auskunft nach Art. 15 DSGVO an … bis …“ an der Mappe des Betroffenen für den Aufrufer, fällig einen Monat nach dem Eingang der Anfrage (Art. 12 Abs. 3 DSGVO).",
+        "operationId": "postWerkbankAuskunftFrist",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuskunftFrist"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aufgabe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/werkbank/auskunft/{id}/zip": {
+      "get": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Auskunft herunterladen (Administrator)",
+        "description": "Die ZIP-Datei; danach wird sie gelöscht (404 beim zweiten Abruf).",
+        "operationId": "getWerkbankAuskunftMitidZip",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Auskunft (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/werkbank/auskunft/{id}": {
+      "delete": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Auskunft löschen (Administrator)",
+        "operationId": "deleteWerkbankAuskunftMitid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Auskunft (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Erledigt"
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Kann (noch) nicht gelöscht werden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/rollen": {
       "get": {
         "tags": [
@@ -6833,6 +7348,372 @@
           "meldung": {
             "type": "string",
             "description": "z. B. „Verkleinert von 18,4 MB auf 2,1 MB (−89 %).“"
+          }
+        }
+      },
+      "BaumKnoten": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "typId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "typ": {
+            "type": "string"
+          },
+          "titel": {
+            "type": "string"
+          },
+          "ebene": {
+            "type": "integer",
+            "description": "0 = Start-Mappe"
+          },
+          "ueber": {
+            "type": "object",
+            "nullable": true,
+            "description": "über welchen Verweis erreicht",
+            "properties": {
+              "vonId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "richtung": {
+                "type": "string",
+                "enum": [
+                  "verwiesenVon",
+                  "verweistAuf"
+                ]
+              },
+              "feldKey": {
+                "type": "string"
+              },
+              "feld": {
+                "type": "string"
+              }
+            }
+          },
+          "auchUeber": {
+            "type": "array",
+            "description": "weitere Wege innerhalb des Baums (Kreise)",
+            "items": {
+              "type": "object"
+            }
+          },
+          "dokumente": {
+            "type": "integer"
+          },
+          "aussen": {
+            "type": "object",
+            "description": "Verweise zu Mappen außerhalb des Baums (je Richtung höchstens 20 einzeln, anzahl zählt alle); nicht lesbare ohne Titel",
+            "properties": {
+              "verweistAuf": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "verwiesenVon": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "anzahl": {
+                "type": "object"
+              }
+            }
+          },
+          "aufbewahrenBis": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "gesperrt": {
+            "type": "boolean",
+            "description": "in der Aufbewahrungsfrist (#212)"
+          },
+          "rechte": {
+            "type": "object",
+            "description": "C, R, U, D, P des Aufrufers"
+          }
+        }
+      },
+      "Baum": {
+        "type": "object",
+        "properties": {
+          "startId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "optionen": {
+            "type": "object"
+          },
+          "knoten": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BaumKnoten"
+            }
+          },
+          "abgeschnitten": {
+            "type": "boolean"
+          },
+          "kreise": {
+            "type": "integer"
+          },
+          "verborgen": {
+            "type": "integer"
+          },
+          "tieferMoeglich": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Datenschutz": {
+        "type": "object",
+        "properties": {
+          "verantwortlicher": {
+            "type": "string"
+          },
+          "empfaenger": {
+            "type": "string"
+          },
+          "rechte": {
+            "type": "string"
+          },
+          "typen": {
+            "type": "object",
+            "description": "Typ-Id → { person: boolean, zweck: string }",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "person": {
+                  "type": "boolean"
+                },
+                "zweck": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "AuskunftStand": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "mappeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titel": {
+            "type": "string"
+          },
+          "erstellt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bis": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bytes": {
+            "type": "integer"
+          },
+          "mappen": {
+            "type": "integer"
+          },
+          "dokumente": {
+            "type": "integer"
+          },
+          "verschluesselt": {
+            "type": "boolean"
+          },
+          "von": {
+            "type": "string"
+          }
+        }
+      },
+      "DatenschutzStand": {
+        "type": "object",
+        "properties": {
+          "einstellung": {
+            "$ref": "#/components/schemas/Datenschutz"
+          },
+          "auskuenfte": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuskunftStand"
+            }
+          },
+          "tage": {
+            "type": "integer"
+          }
+        }
+      },
+      "AuskunftVorschauEingabe": {
+        "type": "object",
+        "required": [
+          "mappeId"
+        ],
+        "properties": {
+          "mappeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tiefe": {
+            "type": "integer"
+          },
+          "richtungen": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "vorschlaege": {
+            "type": "boolean",
+            "description": "false = ohne Volltext-Vorschläge"
+          }
+        }
+      },
+      "AuskunftVorschau": {
+        "type": "object",
+        "properties": {
+          "baum": {
+            "$ref": "#/components/schemas/Baum"
+          },
+          "mappen": {
+            "type": "object",
+            "description": "Mappe-Id → { dokumente, notizen, historie, dritte, ohneFelder }"
+          },
+          "vorschlaege": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "vorschlagMappen": {
+            "type": "object"
+          },
+          "begriffe": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "frist": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "AuskunftEingabe": {
+        "type": "object",
+        "required": [
+          "mappeId",
+          "auswahl",
+          "geprueft"
+        ],
+        "properties": {
+          "mappeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tiefe": {
+            "type": "integer"
+          },
+          "richtungen": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "auswahl": {
+            "type": "object",
+            "properties": {
+              "mappen": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "dokumente": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "notizen": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "historie": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Mappen, deren Historie mitgeht"
+              },
+              "ohneNotizen": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "grund": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "geprueft": {
+            "type": "boolean"
+          },
+          "passwort": {
+            "type": "string"
+          },
+          "empfaenger": {
+            "type": "string"
+          },
+          "anmerkung": {
+            "type": "string"
+          }
+        }
+      },
+      "AuskunftFrist": {
+        "type": "object",
+        "required": [
+          "mappeId"
+        ],
+        "properties": {
+          "mappeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eingang": {
+            "type": "string",
+            "format": "date",
+            "description": "Eingang der Anfrage (Standard heute)"
           }
         }
       },
