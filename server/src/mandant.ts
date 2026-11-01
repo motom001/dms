@@ -1,6 +1,7 @@
 import type postgres from 'postgres';
 import type { Anbindung } from './anbindung';
 import { protokoll } from './protokoll';
+import { VARIABLEN_GRUND } from '../../shared/src/umgebungsvariablen';
 
 /**
  * Mandant (#119): früher „Haushalt“ (intern weiter haushalt_id). Seine Id steht in der Datei der
@@ -25,9 +26,9 @@ export async function bestimmeMandant(sql: postgres.Sql, a: Anbindung, env: Reco
   if (env.HAUSHALT_ID && !ausEnv) log.warn('HAUSHALT_ID ist keine gültige Id und wird ignoriert');
   let e: MandantErgebnis;
   if (a.mandant && UUID.test(a.mandant)) {
-    e = { id: a.mandant, quelle: 'datei', hinweis: ausEnv ? (ausEnv === a.mandant ? 'HAUSHALT_ID ist nicht mehr nötig und kann aus der Compose-Datei entfernt werden.' : 'HAUSHALT_ID weicht von der Id des Haushalts ab und wird ignoriert; sie kann aus der Compose-Datei entfernt werden.') : null };
+    e = { id: a.mandant, quelle: 'datei', hinweis: ausEnv ? (ausEnv === a.mandant ? `HAUSHALT_ID ist nicht mehr nötig und kann aus der Compose-Datei entfernt werden. ${VARIABLEN_GRUND.haushalt}` : 'HAUSHALT_ID weicht von der Id des Haushalts ab und wird ignoriert; sie kann aus der Compose-Datei entfernt werden.') : null };
   } else if (ausEnv) {
-    e = { id: ausEnv, quelle: 'umgebung', hinweis: 'HAUSHALT_ID wurde übernommen und kann aus der Compose-Datei entfernt werden.' };
+    e = { id: ausEnv, quelle: 'umgebung', hinweis: `HAUSHALT_ID wurde übernommen und kann aus der Compose-Datei entfernt werden. ${VARIABLEN_GRUND.haushalt}` };
   } else {
     const [r] = await sql`SELECT haushalt_id, count(*)::int AS n FROM benutzer WHERE art = 'person' GROUP BY haushalt_id ORDER BY n DESC, (haushalt_id = ${STANDARD_MANDANT}) DESC LIMIT 1`;
     e = r ? { id: String(r.haushalt_id), quelle: 'bestand', hinweis: null } : { id: STANDARD_MANDANT, quelle: 'neu', hinweis: null };

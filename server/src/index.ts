@@ -51,6 +51,7 @@ import { Sicherung } from './sicherung';
 import { eigeneVersion } from './system';
 import { Wiederherstellung } from './wiederherstellung';
 import { heuteIn } from '../../shared/src/sichten';
+import { VARIABLEN_GRUND } from '../../shared/src/umgebungsvariablen';
 
 const pfad = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));
 const env = process.env;
@@ -84,7 +85,7 @@ if (ordnerPruefung.fehler.length) {
   log.error('Start abgebrochen: frühere Variable für einen Ordner mit abweichendem Wert', { variablen: ordnerPruefung.fehler.length });
   process.exit(1);
 }
-for (const v of ordnerPruefung.ueberfluessig) log.warn(`${v} ist nicht mehr nötig und kann aus der Compose-Datei entfernt werden (die Ordner im Container sind fest).`);
+for (const v of ordnerPruefung.ueberfluessig) log.warn(`${v} ist nicht mehr nötig und kann aus der Compose-Datei entfernt werden. ${VARIABLEN_GRUND.ordner}`);
 
 for (const o of Object.values(ordner)) await mkdir(o, { recursive: true });
 
@@ -116,7 +117,7 @@ if (kandidat) {
 if (verbunden && !anbindung && umgebung) {
   await schreibeAnbindung(ordner.geheim, umgebung);
   anbindung = umgebung;
-  if (env.DATABASE_URL) log.info(`DATABASE_URL in ${ANBINDUNG_DATEI} übernommen – die Variable ist nicht mehr nötig und kann aus der Compose-Datei entfernt werden`);
+  if (env.DATABASE_URL) log.info(`DATABASE_URL in ${ANBINDUNG_DATEI} übernommen – die Variable ist nicht mehr nötig und kann aus der Compose-Datei entfernt werden. ${VARIABLEN_GRUND.datenbank}`);
   else log.info(`Datenbank-Anbindung aus DMS_DB_PASSWORT in ${ANBINDUNG_DATEI} übernommen`);
 }
 if (!verbunden) {
