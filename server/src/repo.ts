@@ -121,6 +121,8 @@ export interface Repo {
   beruehreMappe(id: string, benutzerId: string | null): Promise<void>;
   /** Viele neue Mappen auf einmal (Demo-Daten): eine Transaktion, Titel schon berechnet. */
   legeMappenAn(liste: NeueMappe[]): Promise<void>;
+  /** Statistik der großen Tabellen auffrischen (ANALYZE, #367) – nach Massenläufen wie Demo-Daten. */
+  aktualisiereStatistik(): Promise<void>;
   loescheMappe(id: string): Promise<void>;
 
   /** Mehrere Mappen auf einmal (unbekannte Ids fehlen im Ergebnis). */
@@ -176,11 +178,15 @@ export interface Repo {
   rueckverweise(zielId: string): Promise<Rueckverweis[]>;
 
   listeDokumente(mappeId: string): Promise<Dokument[]>;
+  /** Dokumente mehrerer Mappen in einem Zugriff (#367: Export ohne N+1), je Mappe neueste zuerst. */
+  dokumenteVon(mappeIds: string[]): Promise<Dokument[]>;
   holeDokument(id: string): Promise<Dokument | undefined>;
   legeDokumentAn(d: Dokument): Promise<Dokument>;
   /* ---------- Versionierung (#194) ---------- */
   /** Ältere Versionen, neueste zuerst. */
   versionenVon(dokumentId: string): Promise<DokumentVersion[]>;
+  /** Ältere Versionen mehrerer Dokumente (#367), je Dokument neueste zuerst. */
+  versionenVonDokumenten(dokumentIds: string[]): Promise<DokumentVersion[]>;
   /** Volltext einer älteren Version (für „Zurückholen“). */
   holeVersion(dokumentId: string, nummer: number): Promise<(DokumentVersion & { volltext: string | null }) | undefined>;
   /**
@@ -248,6 +254,8 @@ export interface Repo {
   /** Dokumente ohne Volltext (noch nie erkannt) mit Typ und Register ihrer Mappe. */
   ocrOhneVolltext(): Promise<Array<{ id: string; typId: string; registerKey: string }>>;
   volltext(id: string): Promise<string | null>;
+  /** Volltexte mehrerer Dokumente (#367); Dokumente ohne Volltext fehlen. Listen lesen ihn nie mit. */
+  volltexte(ids: string[]): Promise<Map<string, string>>;
 
   /* ---------- Aufgaben (#54) ---------- */
   /** Passung → Aufgaben: offene „passt nicht“-Aufgabe anlegen oder Text nachziehen; passt sie, erledigt. */
@@ -256,6 +264,8 @@ export interface Repo {
   holeAufgabe(id: string): Promise<Aufgabe | undefined>;
   /** Aufgaben einer Mappe (offen und erledigt), neueste zuerst. */
   aufgabenVon(mappeId: string): Promise<Aufgabe[]>;
+  /** Aufgaben mehrerer Mappen (#367), je Mappe wie `aufgabenVon`. */
+  aufgabenVonMappen(mappeIds: string[]): Promise<Aufgabe[]>;
   /** Offene Aufgaben: alle, oder die eines Benutzers (mit admin auch die der Administratoren). */
   offeneAufgaben(f?: { benutzerId?: string; admin?: boolean; mappeIds?: string[] }): Promise<Aufgabe[]>;
   /** Erledigte Aufgaben (Werkbank), neueste zuerst. */
@@ -280,6 +290,8 @@ export interface Repo {
 
   /* ---------- Notizen (#55) ---------- */
   notizen(mappeId: string): Promise<Notiz[]>;
+  /** Notizen mehrerer Mappen (#367), je Mappe älteste zuerst. */
+  notizenVon(mappeIds: string[]): Promise<Notiz[]>;
   holeNotiz(id: string): Promise<Notiz | undefined>;
   legeNotizAn(n: Notiz): Promise<Notiz>;
   aendereNotiz(id: string, text: string, von: string | null): Promise<Notiz>;
@@ -288,6 +300,8 @@ export interface Repo {
   /* ---------- Änderungshistorie (#57) ---------- */
   historieSchreibe(e: Array<{ mappeId: string; benutzerId: string | null; art: Historienart; daten?: Historieneintrag['daten'] }>): Promise<void>;
   historie(mappeId: string): Promise<Historieneintrag[]>;
+  /** Historie mehrerer Mappen (#367), je Mappe neueste zuerst. */
+  historieVon(mappeIds: string[]): Promise<Historieneintrag[]>;
   /** Löscht die Historie von Mappen, die vor diesem Zeitpunkt endgültig gelöscht wurden. */
   historieAufraeumen(vor: string): Promise<number>;
 }
