@@ -590,6 +590,11 @@ async function main() {
   await s.getByRole('tab', { name: /Rechnungen/ }).click();
   await s.locator('.verweistabelle table').waitFor();
   await bild(s, 'verknuepfungen-tabelle');
+  // Mappe löschen (#423): Auf die Stadtwerke verweisen Verträge – „Warum nicht?“ am grauen Knopf.
+  await s.getByRole('button', { name: 'Warum nicht?' }).click();
+  await s.locator('.loeschwahl-begruendung').waitFor();
+  await bild(s, 'mappe-loeschen-warum');
+  await s.keyboard.press('Escape');
 
   // Eingang: eine Pflichtfeld-Änderung macht Mappen unpassend
   // Ein neues Pflichtfeld trifft sicher alle Vertragspartner (Demo-Daten sind zufällig).
