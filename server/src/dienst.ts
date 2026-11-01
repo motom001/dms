@@ -57,6 +57,8 @@ import { abfrageAus, liesSuche } from '../../shared/src/erweitertesuche';
 import type { Lesefilter } from '../../shared/src/rechte';
 import { liesAusDokument, liesFeldErkennung, type AusDokument } from '../../shared/src/erkennung';
 import { Erkennung, sichereZuordnung, type PostErkennung } from './erkennung';
+import { favoritenErlaubt, freigabeZumSpeichern, liesFavoritenFreigabe, type FavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
+import { t } from './sprache';
 import { ANSTEHEND_MAX, ANSTEHEND_TAGE, bereinigeFrist, datumDe, empfaengerFelder, ERINNERUNG_TEXT_MAX, fristAb, fristEmpfaenger, fristFelder, fristText, istDatum, naechsterTermin, type Anstehend, type Erinnerung } from '../../shared/src/fristen';
 import { ALLES, RECHTE_LISTE, kurzStandard, systemSperre, bereinigeRegelwerk, FALSCH, istOffen, kopiereRegel, kurz, leseAusdruck, lesefilter, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, wirksamVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../shared/src/rechte';
 
@@ -264,6 +266,8 @@ export interface KontenHaken {
   benutzer?(): Promise<Benutzer[]>;
   /** Persönliche Einstellungen eines Benutzers (#422: Favoriten benachrichtigen, Geänderte hervorheben). */
   einstellungen?(id: string): Promise<Record<string, unknown>>;
+  /** Persönliche Einstellung setzen (#506: Vorgabe für neue Benutzer, „auf alle anwenden“); `null` löscht. */
+  setzeEinstellung?(id: string, schluessel: string, wert: unknown): Promise<void>;
 }
 
 export const PAPIERKORB_STANDARD_TAGE = 30;
@@ -1337,9 +1341,54 @@ export class Dienst {
 
   /* ---------- Favorit = Abo (#422) ---------- */
 
-  /** Persönliche Einstellung (Vorgabe an): „favoriten_benachrichtigen“ bzw. „geaenderte_hervorheben“ = false schaltet ab. */
+  /**
+   * Persönliche Einstellung (Vorgabe an): „favoriten_benachrichtigen“ bzw. „geaenderte_hervorheben“ = false schaltet ab.
+   * Benachrichtigen nur, wenn die Werkbank es für den Benutzer erlaubt (#506); seine Einstellung bleibt dabei gespeichert.
+   */
   private async persoenlichAn(benutzerId: string, schluessel: string): Promise<boolean> {
+    if (schluessel === 'favoriten_benachrichtigen' && !(await this.favoritenBenachrichtigungErlaubt(benutzerId))) return false;
     return (await this.konten?.einstellungen?.(benutzerId))?.[schluessel] !== false;
+  }
+
+  /* ---------- Favoriten benachrichtigen: Freigabe in der Werkbank (#506) ---------- */
+
+  async favoritenFreigabe(): Promise<FavoritenFreigabe> {
+    return liesFavoritenFreigabe(await this.einstellungen?.lies('favoriten_freigabe'));
+  }
+
+  /** Für alle, je Rolle (Systemrollen und fachliche Rollen) oder gar nicht; dazu die Vorgabe für neue Benutzer. */
+  async setzeFavoritenFreigabe(eingabe: unknown, von: string) {
+    if (!this.einstellungen) throw new Fachfehler(404, 'Einstellungen sind nicht eingerichtet.');
+    const f = liesFavoritenFreigabe(eingabe);
+    if (f.erlaubt === 'rollen') {
+      const bekannt = new Set((await this.listeRollen()).map((r) => r.id));
+      f.rollen = f.rollen.filter((r) => bekannt.has(r));
+      if (!f.rollen.length) throw new Fachfehler(422, t('werkbank.fehler.freigabe.rollen'));
+    }
+    await this.einstellungen.schreibe('favoriten_freigabe', freigabeZumSpeichern(f));
+    protokoll.modul('werkbank').info('Benachrichtigung für Favoriten eingestellt', { von, erlaubt: f.erlaubt, rollen: f.rollen.length, vorgabe: f.vorgabe });
+    return this.favoritenFreigabe();
+  }
+
+  /** Darf dieser Benutzer bei Änderungen an Favoriten benachrichtigt werden? Rollen aus seiner Benutzer-Mappe. */
+  async favoritenBenachrichtigungErlaubt(benutzerId: string): Promise<boolean> {
+    const f = await this.favoritenFreigabe();
+    if (f.erlaubt !== 'rollen') return f.erlaubt === 'alle';
+    return favoritenErlaubt(f, alsListe((await this.repo.holeMappe(benutzerId))?.werte.rollen));
+  }
+
+  /** „Auf alle anwenden“: die Vorgabe für neue Benutzer bei allen bestehenden setzen; Anzahl. */
+  async favoritenVorgabeAnwenden(von: string): Promise<number> {
+    if (!this.konten?.benutzer || !this.konten.setzeEinstellung) throw new Fachfehler(404, 'Benutzerkonten sind nicht eingerichtet.');
+    const { vorgabe } = await this.favoritenFreigabe();
+    let n = 0;
+    for (const b of await this.konten.benutzer()) {
+      if (b.art === 'dienst') continue;
+      await this.konten.setzeEinstellung(b.id, 'favoriten_benachrichtigen', vorgabe ? null : false);
+      n++;
+    }
+    protokoll.modul('werkbank').info('Vorgabe für Favoriten auf alle Benutzer angewandt', { von, vorgabe, benutzer: n });
+    return n;
   }
 
   /**
@@ -3593,6 +3642,8 @@ export class Dienst {
     if (await this.repo.holeAusPapierkorb(b.id)) return;
     const { benutzer: typ, systemrollen } = await this.sichereSystem();
     const alt = await this.repo.holeMappe(b.id);
+    // Neuer Benutzer (#506): Vorgabe „Favoriten benachrichtigen“ aus der Werkbank – nur, wenn sie aus ist.
+    if (!alt && b.art !== 'dienst' && !(await this.favoritenFreigabe()).vorgabe) await this.konten?.setzeEinstellung?.(b.id, 'favoriten_benachrichtigen', false);
     const system = new Set(systemrollen.values());
     const weitere = alt ? alsListe(alt.werte.rollen).filter((r) => !system.has(r)) : [];
     const ab = b.abwesenheit;

@@ -105,7 +105,7 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Vollexport](export.md) | Alle Daten in offenen Formaten mitnehmen | Haushalt, Betrieb |
 | [Papierkorb](papierkorb.md) | Gelöschte Mappen zurückholen | Haushalt, Betrieb |
 | [E-Mail und Adresse](installation.md#e-mail-und-adresse) | E-Mail-Versand und Adresse des DMS | Haushalt, Betrieb |
-| [Benachrichtigungen und Aufgaben](aufgaben.md) | Die Tägliche Zusammenfassung einstellen und alle offenen Aufgaben im Blick behalten | Haushalt, Betrieb |
+| [Benachrichtigungen und Aufgaben](aufgaben.md) | Die Tägliche Zusammenfassung und die Benachrichtigung für Favoriten einstellen, alle offenen Aufgaben im Blick behalten | Haushalt, Betrieb |
 | [Anmeldeschutz](anmeldeschutz.md) | Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen | Betrieb |
 | [Designs](designs.md) | Logo, Farben und eigenes CSS | Betrieb |
 | [Datenbank-Anbindung](installation.md#datenbank-anbindung) | Die Verbindung zur Datenbank, lange Datenbankzugriffe und was gerade läuft | nur Alles |

@@ -64,3 +64,15 @@ Statt bei jeder neuen Aufgabe eine E-Mail zu schicken, verschickt das DMS **einm
 - **Bundesland** – damit niemand an gesetzlichen Feiertagen eine Zusammenfassung bekommt (jeder kann das im Profil abwählen). Das DMS berechnet die Feiertage selbst: die bundesweiten und die landesweiten des gewählten Landes, Ostern und die davon abhängigen Tage nach der Gaußschen Osterformel. Feiertage, die nur in einzelnen Gemeinden gelten – etwa Mariä Himmelfahrt in Teilen Bayerns oder das Augsburger Friedensfest –, und einmalige Feiertage werden nicht berücksichtigt. *Keins* schaltet das ab.
 - **Jetzt senden** verschickt sie sofort an alle mit offenen Aufgaben – unabhängig von Uhrzeit, Wochentag und Feiertag, z. B. zum Ausprobieren.
 - Voraussetzung ist der eingerichtete [E-Mail-Versand](installation.md#e-mail-und-adresse). Ist er aus, steht im Abschnitt „E-Mail-Versand ist ausgeschaltet – es wird nichts verschickt“ mit **E-Mail einrichten**.
+
+## Favoriten benachrichtigen
+
+Wer eine Mappe als **Favorit** markiert, bekommt eine Benachrichtigung „Geändert“ unter *Zu erledigen*, wenn jemand anderes sie ändert (siehe Benutzerhandbuch, [Favoriten als Abo](https://motom001.github.io/dms/benutzer/aktuell/ablage/#favoriten-als-abo)). Unter der Täglichen Zusammenfassung legst du fest, für wen es das gibt:
+
+- **Erlaubt** – *für alle* (Standard), *nur für bestimmte Rollen* oder *für niemanden*.
+- **Nur für bestimmte Rollen:** oben die Systemrollen **Administrator** und **Mitglied**, darunter die weiteren Rollen aus der [Benutzerverwaltung](benutzer.md). Ein Benutzer bekommt die Benachrichtigung, wenn er mindestens eine der gewählten Rollen hat. Mindestens eine Rolle muss gewählt sein.
+- Wer nicht dazugehört, sieht den Schalter **Bei Änderungen benachrichtigen** in seiner Favoritenliste und im Profil nicht mehr; im Profil steht stattdessen ein Hinweis. Was er selbst eingestellt hat, bleibt gespeichert und gilt wieder, sobald du die Benachrichtigung für ihn erlaubst. Der Stern selbst und das Hervorheben geänderter Mappen bleiben.
+- **Für neue Benutzer eingeschaltet** – die Vorgabe für alle, die ab jetzt dazukommen (Standard: an). Bestehende Benutzer behalten ihre Einstellung.
+- **Vorgabe auf alle anwenden** setzt die gespeicherte Vorgabe nach einer Rückfrage bei allen bestehenden Benutzern – auch über das hinweg, was sie im Profil gewählt haben. Einzeln stumm geschaltete Favoriten bleiben stumm.
+
+Den Abschnitt klappst du wie die Tägliche Zusammenfassung mit einem Klick auf die Überschrift zu; daneben steht dann der Stand. Die Tägliche Zusammenfassung zeigt geänderte Favoriten nicht eigens – die Aufgabe „Geändert“ steht dort ohnehin mit.
