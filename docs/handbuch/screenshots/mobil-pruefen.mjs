@@ -11,7 +11,8 @@
  *    - Eingabefelder mit mindestens 16 px Schrift (sonst vergrößert iOS die Seite beim Tippen und sie
  *      bleibt links und rechts abgeschnitten);
  *    - Kacheln der Startseite einspaltig;
- *    - geöffnete Menüs („+ Neu“, Benutzermenü, „Mappe ▾“) liegen vollständig im Bildschirm.
+ *    - geöffnete Menüs („+ Neu“, Benutzermenü, „Mappe ▾“) liegen vollständig im Bildschirm;
+ *    - Suchfeld der Startseite (#497) liefert Treffer, ohne dass etwas zu breit wird.
  *    Von jeder Seite und jedem Menü entsteht ein Bild im Bilderordner (<breite>/<name>.png).
  *
  * Läuft im Workflow „Handbuch“ nach aufnehmen.mjs (gleiche Daten, gleicher Administrator).
@@ -189,6 +190,19 @@ for (const g of GROESSEN) {
       await s.evaluate(() => scrollTo(0, 0));
       await pruefeMenue(s, `${ort} „+ Neu“`, '.neuknopf > button', '.neuknopf .menue', join(ordner, 'menue-neu.png'));
       await pruefeMenue(s, `${ort} Benutzermenü`, '.benutzermenue .wer', '.benutzermenue .menue', join(ordner, 'menue-benutzer.png'));
+      // Schnell finden (#497): Suchfeld oben, Treffer in unter einer Sekunde, nichts zu breit.
+      const feld = s.locator('#ss-feld');
+      if (!(await feld.count())) fehler.push(`${ort}: Suchfeld der Startseite fehlt`);
+      else {
+        const t0 = Date.now();
+        await feld.fill('Strom');
+        await s.locator('.ss-treffer').waitFor({ timeout: 5000 }).catch(() => fehler.push(`${ort}: keine Treffer-Anzeige für „Strom“`));
+        if (Date.now() - t0 > 1500) fehler.push(`${ort}: Suche brauchte ${Date.now() - t0} ms`);
+        const raus = await s.evaluate(zuBreiteElemente);
+        await s.screenshot({ path: join(ordner, 'start-suche.png') });
+        if (raus.length) fehler.push(`${ort} Suche:\n  ${raus.slice(0, 10).join('\n  ')}`);
+        await feld.fill('');
+      }
     }
     if (seite.mappenmenue) await pruefeMenue(s, `${ort} „Mappe ▾“`, '.aktionsmenue > button', '.aktionsmenue .menue', join(ordner, 'menue-mappe.png'));
   }
