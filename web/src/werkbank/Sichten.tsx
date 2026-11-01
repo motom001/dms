@@ -207,7 +207,7 @@ export function SichtEditor({ id }: { id: string }) {
   const setzeTyp = (t: string, an: boolean) => setE((x) => ({ ...x, typen: an ? [...x.typen, t] : x.typen.filter((y) => y !== t) }));
 
   return (
-    <form onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} noValidate>
+    <form className="editorform" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} noValidate>
       <div className="seitenkopf"><div>
         <p className="ueber">Ansicht</p>
         <h1>{e.name || (neu ? 'Neue Ansicht' : 'Ohne Namen')}</h1>

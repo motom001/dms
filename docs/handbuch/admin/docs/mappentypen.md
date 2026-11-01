@@ -48,7 +48,7 @@ Jedes Feld hat eine **Bezeichnung** (änderbar), eine **Kennung** (fest, sobald 
 | Verweis | Ziel-Mappentyp, Art des Verweises, mehrere Mappen erlaubt |
 | Passwort | – (wird verschlüsselt gespeichert, siehe unten) |
 
-Für alle gilt: **Pflichtfeld** und ein **Hilfetext**, der beim Ausfüllen unter dem Feld steht; die meisten Mappentypen haben außerdem einen **Standardwert** für neue Mappen. **Eindeutig** heißt: Den Wert darf es in diesem Mappentyp nur einmal geben – Groß- und Kleinschreibung zählen dabei nicht.
+Für alle gilt: **Pflichtfeld** und ein **Hilfetext**, der beim Ausfüllen unter dem Feld steht (im Feld-Editor gleich neben der Bezeichnung); die meisten Mappentypen haben außerdem einen **Standardwert** für neue Mappen. **Eindeutig** heißt: Den Wert darf es in diesem Mappentyp nur einmal geben – Groß- und Kleinschreibung zählen dabei nicht.
 
 Steht im Standardwert eines Textfelds `{nummernkreis:<kennung>}`, bekommt jede neue Mappe eine fortlaufende Nummer aus diesem [Nummernkreis](nummernkreise.md); das Feld ist dann schreibgeschützt.
 
@@ -68,7 +68,7 @@ Ein Feld der Feldart **Verweis** zeigt auf Mappen eines anderen Mappentyps (oder
 
 #### Auswahl einschränken
 
-Unter dem Ziel-Mappentyp legst du mit **Nur Mappen, die …** fest, welche Mappen das Feld anbietet – etwa beim Feld *Arzt* im Arztbericht nur Vertragspartner mit *Art = Arzt*. Die Bedingungen funktionieren wie bei [Ansichten](sichten.md): Felder des Zieltyps und Systemwerte (angelegt, geändert, von wem), feste und dynamische Werte (heute ± n, aktueller Benutzer, seine Rollen). Mehrere Bedingungen gelten zusammen. Darunter steht, wie viele Mappen passen, z. B. „12 von 85 Vertragspartner passen“.
+In der Zeile unter Ziel-Mappentyp, Art des Verweises und *Mehrere Mappen erlaubt* legst du mit **Nur Mappen, die …** fest, welche Mappen das Feld anbietet – etwa beim Feld *Arzt* im Arztbericht nur Vertragspartner mit *Art = Arzt*. Die Bedingungen funktionieren wie bei [Ansichten](sichten.md): Felder des Zieltyps und Systemwerte (angelegt, geändert, von wem), feste und dynamische Werte (heute ± n, aktueller Benutzer, seine Rollen). Mehrere Bedingungen gelten zusammen. Darunter steht, wie viele Mappen passen, z. B. „12 von 85 Vertragspartner passen“.
 
 - In der Mappe bietet die Suche im Feld nur passende Mappen an – und nur solche, die der Benutzer lesen darf. **+ … anlegen** belegt die neue Mappe mit dem vor, was sich eindeutig aus dem Filter ergibt (z. B. *Art = Arzt*).
 - **Streng:** Ein neuer oder geänderter Wert muss passen, sonst lehnt das DMS das Speichern ab – auch über die [Schnittstelle](api.md).

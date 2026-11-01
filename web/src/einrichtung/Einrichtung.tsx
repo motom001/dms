@@ -279,7 +279,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
   const feldregister = e.register.filter((r) => r.art === 'felder');
 
   return (
-    <form onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} noValidate>
+    <form className="editorform" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} noValidate>
       <div className="seitenkopf"><div>
         <p className="ueber">Mappentyp</p>
         <h1>{e.name || (neu ? 'Neuer Mappentyp' : 'Ohne Namen')}{system && <span className="chip">System</span>}</h1>
@@ -457,7 +457,7 @@ function FeldZeile(p: {
   </div>;
   else if (f.typ === 'datum') besonders = <FristEditor f={f} id={id} setze={setze} benutzerFelder={p.benutzerFelder} />;
   else if (f.typ === 'passwort') besonders = <p className="leise klein">Wird verschlüsselt gespeichert und erscheint nie im Titel, in der Trefferliste, in der Suche oder in Demo-Daten. Anzeigen lässt es sich nur einzeln über das Auge; das steht in der Historie.</p>;
-  else if (f.typ === 'referenz') besonders = <div className="raster">
+  else if (f.typ === 'referenz') besonders = <><div className="raster">
     <label className="eigenschaft" htmlFor={id('ziel')}><span>Verweist auf Mappen vom Mappentyp</span>
       <select id={id('ziel')} value={f.zielTyp ?? ''} onChange={(e) => setze({ zielTyp: e.target.value })}>
         <option value="">– bitte wählen –</option>
@@ -471,13 +471,14 @@ function FeldZeile(p: {
       <label className="haken"><input type="radio" name={id('va')} checked={f.verweisart !== 'zugehoerigkeit'} onChange={() => setze({ verweisart: 'bezug' })} /><span>Bezug<small className="hilfe">nur verknüpft, z. B. Aussteller</small></span></label>
     </fieldset>
     <div className="eigenschaft unten">{haken('mehrfach', 'Mehrere Mappen erlaubt', 'z. B. eine Zahlung für mehrere Rechnungen')}</div>
-    {/* Auswahlfilter (#172): nicht für „jede Mappe“. */}
-    {f.zielTyp && f.zielTyp !== '*' && (() => {
-      const ziel = p.typen.find((t) => t.id === f.zielTyp);
-      return ziel ? <div className="breit"><AuswahlFilter ziel={ziel} bedingungen={f.auswahlFilter ?? []} setze={(b) => setze({ auswahlFilter: b })} eigeneFelder={p.alleFelder} feldKey={f.key} /></div>
-        : f.zielTyp === p.eigeneId ? <p className="leise klein breit">Einen Auswahlfilter auf diesen Mappentyp selbst kannst du nach dem ersten Speichern festlegen.</p> : null;
-    })()}
-  </div>;
+  </div>
+  {/* Auswahlfilter (#172): nicht für „jede Mappe“. Eigene Zeile in voller Breite (#372) – Bedingungen brauchen Platz. */}
+  {f.zielTyp && f.zielTyp !== '*' && (() => {
+    const ziel = p.typen.find((t) => t.id === f.zielTyp);
+    return ziel ? <div><AuswahlFilter ziel={ziel} bedingungen={f.auswahlFilter ?? []} setze={(b) => setze({ auswahlFilter: b })} eigeneFelder={p.alleFelder} feldKey={f.key} /></div>
+      : f.zielTyp === p.eigeneId ? <p className="leise klein">Einen Auswahlfilter auf diesen Mappentyp selbst kannst du nach dem ersten Speichern festlegen.</p> : null;
+  })()}
+  </>;
 
   let standard = null;
   if (f.typ === 'text' || f.typ === 'langtext' || f.typ === 'formatiert' || f.typ === 'zahl' || f.typ === 'betrag')
@@ -512,6 +513,8 @@ function FeldZeile(p: {
           {f.system && <p className="leise klein">Systemfeld: Bezeichnung, Hilfetext und Register lassen sich ändern, Feldart und Eigenschaften sind fest.</p>}
           <div className="raster">
             <label className="eigenschaft" htmlFor={id('label')}><span>Bezeichnung</span><input id={id('label')} value={f.label} placeholder="z. B. Kündigung bis" onChange={(e) => setze({ label: e.target.value })} autoFocus={f._neu} /></label>
+            {/* Hilfetext neben der Bezeichnung, bei allen Feldarten an derselben Stelle (#372). */}
+            <label className="eigenschaft" htmlFor={id('hilfe')}><span>Hilfetext</span><input id={id('hilfe')} placeholder="Erklärung, die beim Ausfüllen erscheint" value={f.hilfe ?? ''} onChange={(e) => setze({ hilfe: e.target.value })} /></label>
             {p.feldregister.length > 1 && (
               <label className="eigenschaft" htmlFor={id('reg')}><span>Register</span>
                 <select id={id('reg')} value={f._register} onChange={(e) => setze({ _register: e.target.value })}>
@@ -536,7 +539,6 @@ function FeldZeile(p: {
           </div>
           {besonders && <><h3 className="zwischen">Eigenschaften für {FELDTYPEN[f.typ]}</h3>{besonders}</>}
           </fieldset>
-          <label className="eigenschaft" htmlFor={id('hilfe')}><span>Hilfetext</span><input id={id('hilfe')} placeholder="Erklärung, die beim Ausfüllen erscheint" value={f.hilfe ?? ''} onChange={(e) => setze({ hilfe: e.target.value })} /></label>
           <div className="feldfuss">
             {f.system ? <span className="leise klein">Systemfelder lassen sich nicht entfernen.</span> : <button type="button" className="textknopf gefahr" onClick={p.entferne}>Feld entfernen</button>}
             <button type="button" className="knopf klein" onClick={p.umschalten}>Zuklappen</button>
@@ -766,14 +768,14 @@ function RegisterEditor({ e, setE, feldAblage, klappe }: { e: Entwurf; setE: (f:
                             <label className="haken"><input type="checkbox" checked={an}
                               onChange={() => setzeReg(i, { quellen: an ? gewaehlt.filter((x) => !(x.typId === q.typId && x.feldKey === q.feldKey)) : [...gewaehlt, { typId: q.typId, feldKey: q.feldKey }] })} />
                               <span>{q.text}</span></label>
-                            {an && (
-                              <select aria-label={`Trefferliste für ${q.text}`} className={`klein ${fehlt ? 'fehlerhaft' : ''}`} value={g?.trefferliste ?? ''}
-                                onChange={(ev) => setzeReg(i, { quellen: gewaehlt.map((x) => (x === g ? { typId: x.typId, feldKey: x.feldKey, ...(ev.target.value ? { trefferliste: ev.target.value } : {}) } : x)) })}>
-                                <option value="">einfache Liste (Titel)</option>
-                                {fehlt && <option value={g!.trefferliste}>– {g!.trefferliste} (fehlt, einfache Liste) –</option>}
-                                {listen.map((l) => <option key={l.key} value={l.key}>Tabelle: {l.name}</option>)}
-                              </select>
-                            )}
+                            {/* Immer da, bis zum Anhaken unsichtbar: so springt beim An- und Abhaken keine Zeile (#372). */}
+                            <select aria-label={`Trefferliste für ${q.text}`} className={`klein ${fehlt ? 'fehlerhaft' : ''} ${an ? '' : 'platzhalter'}`} value={g?.trefferliste ?? ''}
+                              disabled={!an}
+                              onChange={(ev) => setzeReg(i, { quellen: gewaehlt.map((x) => (x === g ? { typId: x.typId, feldKey: x.feldKey, ...(ev.target.value ? { trefferliste: ev.target.value } : {}) } : x)) })}>
+                              <option value="">einfache Liste (Titel)</option>
+                              {fehlt && <option value={g!.trefferliste}>– {g!.trefferliste} (fehlt, einfache Liste) –</option>}
+                              {listen.map((l) => <option key={l.key} value={l.key}>Tabelle: {l.name}</option>)}
+                            </select>
                           </div>
                         );
                       })}
