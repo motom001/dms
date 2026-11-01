@@ -2085,7 +2085,7 @@ export class Dienst {
       await this.aktualisiereTitel(ohne.map((m) => m.id));
       protokoll.modul('werkbank').info('Nummern nachträglich vergeben', { von, typ: typ.name, feld: label, vergeben, erste, letzte });
       return { vergeben, erste, letzte };
-    });
+    }, [{ key: 'nummern', name: 'Nummern vergeben', einheit: 'Mappen' }]);
   }
 
   async titelNachziehen(): Promise<number> {
@@ -3673,7 +3673,7 @@ export class Dienst {
       if (abweichungen.length) log.error('Dateien prüfen: Abweichungen gefunden', { von, dateien: shas.length, abweichungen: abweichungen.length, erste: abweichungen[0].dokumente[0]?.name });
       else log.info('Dateien prüfen: alle in Ordnung', { von, dateien: shas.length });
       return { dateien: shas.length, abweichungen };
-    });
+    }, [{ key: 'dateien', name: 'Dateien prüfen', einheit: 'Dateien' }]);
   }
 
   /* ---------- Versionierung (#194) ---------- */

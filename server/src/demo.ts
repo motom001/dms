@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { formatiere, istOk, pruefeMappe, titelAus, verweiseVon, type Feld, type Mappentyp, type Wert, type Werte } from '../../shared/src/model';
 import { DOKUMENTARTEN, erzeugeDokument, kannRastern, pruefeDokumentOptionen, schaetze, type Abschaetzung, type DokumentOptionen, type Dokumentart, type MappenInhalt } from './demo-dokumente';
 import { NACHNAMEN, ORTE, STRASSEN, VORNAMEN } from './demo-text';
+import type { PhasenPlan } from './auftrag';
 import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import type { NeueMappe } from './repo';
@@ -114,7 +115,15 @@ function reihenfolge(typen: Mappentyp[]): Mappentyp[] {
   return fertig;
 }
 
-export interface Fortschritt { (fertig: number, gesamt: number): void }
+export interface Fortschritt { (fertig: number, gesamt: number, phase?: 'mappen' | 'dokumente'): void }
+
+/** Phasen des Auftrags (#364): erst Mappen, dann wahlweise Dokumente – jeweils mit eigener Zahl. */
+export function demoPhasen(mitDokumenten: boolean): PhasenPlan[] {
+  return [
+    { key: 'mappen', name: 'Mappen anlegen', einheit: 'Mappen' },
+    ...(mitDokumenten ? [{ key: 'dokumente', name: 'Dokumente erzeugen', einheit: 'Dokumente' }] : []),
+  ];
+}
 
 export interface DemoOptionen {
   anzahl: number;
@@ -136,7 +145,13 @@ export function pruefeDemoOptionen(x: unknown): DemoOptionen {
 function verteilung(typen: Mappentyp[], n: number) {
   const gewicht = (t: Mappentyp) => 1 + 2 * t.felder.filter((f) => f.typ === 'referenz' && f.zielTyp !== t.id).length;
   const summe = typen.reduce((a, t) => a + gewicht(t), 0);
-  return new Map(typen.map((t) => [t.id, Math.max(1, Math.round((n * gewicht(t)) / summe))]));
+  // Größte Reste (#364): Die Summe ergibt genau n – sonst stünde bei „40 Mappen“ im Fortschritt „39“.
+  const roh = typen.map((t) => (n * gewicht(t)) / summe);
+  const anzahl = roh.map(Math.floor);
+  let rest = n - anzahl.reduce((a, b) => a + b, 0);
+  for (const i of roh.map((_, i) => i).sort((i, j) => (roh[j] - anzahl[j]) - (roh[i] - anzahl[i]) || i - j)) { if (rest-- <= 0) break; anzahl[i]++; }
+  // Jeder Typ bekommt mindestens eine Mappe (bei sehr kleinen Anzahlen also etwas mehr als n).
+  return new Map(typen.map((t, i) => [t.id, Math.max(1, anzahl[i])]));
 }
 const dokumentRegister = (t: Mappentyp) => t.register.filter((r) => r.art === 'dokumente');
 
@@ -232,9 +247,9 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
   const uebersprungen: Array<{ typ: string; grund: string }> = [];
   const mitDokumenten: Array<{ id: string; t: Mappentyp; werte: Werte; titel: string }> = [];
   let fertig = 0;
-  let gesamt = mappenZiel;
+  fortschritt(0, mappenZiel, 'mappen');
   let paket: NeueMappe[] = [];
-  const schreibe = async () => { await dienst.legeMappenAn(paket); fertig += paket.length; paket = []; fortschritt(fertig, gesamt); };
+  const schreibe = async () => { await dienst.legeMappenAn(paket); fertig += paket.length; paket = []; fortschritt(fertig, mappenZiel, 'mappen'); };
   const jetzt = new Date().toISOString();
 
   for (const t of typen) {
@@ -283,8 +298,10 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
     const d = o.dokumente;
     // Erst planen (wie viele je Mappe), damit der Fortschritt die Gesamtzahl kennt.
     const plan = mitDokumenten.map((m) => ({ m, anzahl: z.chance(d.anteil / 100) ? z.von(d.von, d.bis) : 0 })).filter((x) => x.anzahl > 0);
-    gesamt = mappen + plan.reduce((a, x) => a + x.anzahl, 0);
-    fortschritt(fertig, gesamt);
+    // Ab hier zählt die Phase „Dokumente erzeugen“; die Mappen-Phase gilt damit als fertig.
+    const gesamt = plan.reduce((a, x) => a + x.anzahl, 0);
+    let erzeugtDok = 0;
+    fortschritt(0, gesamt, 'dokumente');
     const rastern = await kannRastern();
     const gewichte = DOKUMENTARTEN.map((a) => d.mischung[a]);
     const jeArt = Object.fromEntries(DOKUMENTARTEN.map((a) => [a, 0])) as Record<Dokumentart, number>;
@@ -317,8 +334,8 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
         if (r.volltext) { ocr.push(r.id); statistik.texterkennung++; }
         if (ocr.length >= 200) { await dienst.demoTexterkennung(ocr); ocr = []; }
         statistik.anzahl++;
-        fertig++;
-        if (statistik.anzahl % 10 === 0) fortschritt(fertig, gesamt);
+        erzeugtDok++;
+        if (statistik.anzahl % 10 === 0) fortschritt(erzeugtDok, gesamt, 'dokumente');
         // Alle 200 MB: Reicht der Platz noch? Sonst sauber aufhören (Sicherung braucht ihn).
         if (platz && seitPruefung > 200 * 1024 * 1024) {
           seitPruefung = 0;
@@ -331,7 +348,7 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
     statistik.dauerMs = Date.now() - docBeginn;
     ergebnis.dokumente = statistik;
     if (!rastern) ergebnis.ohneRastern = true;
-    fortschritt(fertig, fertig);
+    fortschritt(erzeugtDok, erzeugtDok, 'dokumente');
   }
   ergebnis.dauerMs = Date.now() - beginn;
   return ergebnis;

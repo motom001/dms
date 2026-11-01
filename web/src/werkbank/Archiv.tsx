@@ -6,6 +6,7 @@ import { Hilfe } from '../Hilfe';
 import { datumText } from '../../../shared/src/archiv';
 import { titelOder } from '../seiten';
 import { rueckfrage } from '../rueckfrage';
+import { fortschrittText } from '../../../shared/src/auftrag';
 
 /** Werkbank → Darf weg (#212): Mappen im Archivmodus, deren Aufbewahrungsfrist abgelaufen ist. */
 
@@ -96,7 +97,7 @@ export function DateienPruefen() {
     <section className="blatt" id="dateien">
       <h2 className="h3">Alle Dateien prüfen <Hilfe ort="werkbank.dateienpruefen" /></h2>
       <p className="leise">Liest jede gespeicherte Datei – auch ältere Versionen – und vergleicht sie mit ihrem Prüfwert. So fällt auf, wenn eine Datei auf dem Speicher verändert wurde oder fehlt. Das Ergebnis steht auch im Protokoll.</p>
-      {auftrag?.status === 'laeuft' && <p className="leise">Prüfe … {auftrag.fertig} von {auftrag.gesamt}</p>}
+      {auftrag?.status === 'laeuft' && <p className="leise" role="status">{fortschrittText(auftrag, 'Dateien')}</p>}
       {e && (e.abweichungen.length
         ? <div className="hinweis schlecht"><p>{e.abweichungen.length} von {e.dateien} Dateien weichen ab:</p>
             <ul>{e.abweichungen.map((a) => <li key={a.sha256}>{a.grund}: {a.dokumente.map((x, i) => <span key={i}>{i > 0 && ', '}<Link to={`/ablage/eingang/${x.mappeId}`} className="verweis">{x.name}</Link>{x.version > 1 ? ` (Version ${x.version})` : ''}</span>)}</li>)}</ul></div>

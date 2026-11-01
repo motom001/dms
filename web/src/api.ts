@@ -10,6 +10,7 @@ import type { Einstellungsbeschreibung } from '../../shared/src/paketeinstellung
 import type { EigeneAnsicht, WerkbankAnsicht } from '../../shared/src/werkbankansicht';
 import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src/sichtrechte';
 import type { Anstehend, Erinnerung } from '../../shared/src/fristen';
+import type { Auftrag } from '../../shared/src/auftrag';
 import { merkeAnfrage } from './diagnose';
 import { erreichbarkeit, NICHT_ERREICHBAR } from './erreichbar';
 import { istAusfall } from '../../shared/src/erreichbarkeit';
@@ -615,10 +616,8 @@ export interface VollexportStand {
   /** Dürfen Benutzer ihre Daten selbst exportieren (#255)? */
   persoenlich: boolean;
 }
-export interface Auftrag {
-  id: string; art: string; titel: string; status: 'laeuft' | 'fertig' | 'fehler';
-  fertig: number; gesamt: number; gestartet: string; beendet?: string; ergebnis?: unknown; fehler?: string;
-}
+// Hintergrundaufträge mit Phase und Einheit (#364).
+export type { Auftrag, AuftragPhase } from '../../shared/src/auftrag';
 export const DOKUMENTARTEN = ['brief', 'mehrseitig', 'scan', 'bild', 'gross'] as const;
 export type Dokumentart = (typeof DOKUMENTARTEN)[number];
 export type DemoStufe = 'leicht' | 'realistisch' | 'schwer';

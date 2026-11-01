@@ -3,6 +3,7 @@ import { api, type Auftrag, type KontaktZuordnung, type VollexportStand } from '
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { rueckfrage } from '../rueckfrage';
+import { fortschrittText } from '../../../shared/src/auftrag';
 
 /**
  * Werkbank → Vollexport (#254): alle Daten in offenen Formaten, lesbar ohne das DMS.
@@ -96,7 +97,7 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
             );
           })}
         </>}
-        {auftrag?.status === 'laeuft' && <p className="leise">Exportiere … {auftrag.fertig} von {auftrag.gesamt}</p>}
+        {auftrag?.status === 'laeuft' && <p className="leise" role="status">{fortschrittText(auftrag)}</p>}
         {fertig && <p className="gutertext" role="status">Fertig: {fertig.dateien} Dateien, {mb(fertig.bytes)} in {fertig.name}.</p>}
         {auftrag?.status === 'fehler' && <p className="fehlertext">{auftrag.fehler}</p>}
         <div className="knoepfe"><button type="button" className="knopf primaer" disabled={auftrag?.status === 'laeuft' || (pw && !pwOk)}
