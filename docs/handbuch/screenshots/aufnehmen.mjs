@@ -613,6 +613,10 @@ async function main() {
   await geheZu(s, '/ablage/start');
   await s.locator('.kacheln').waitFor();
   await bild(s, 'startseite');
+  // Startseite über Mitte und rechts (#429); eine zuletzt geöffnete Mappe öffnet wieder die Dreiteilung.
+  await s.locator('.zuletzt .eintrag').first().click();
+  await s.locator('.spalte.mappe .mappenkopf h1').waitFor();
+  await bild(s, 'startseite-mappe');
   await api('PUT', `/api/typen/${partner.id}`, partner);
 
   // Sichten als Baum in der Ablage und in der Werkbank (#38)

@@ -33,12 +33,17 @@ export function bereicheZuruecksetzen(benutzer: string) {
   dispatchEvent(new Event(RESET));
 }
 
-export function Dreiteilung({ ort, ebene, offen, mitte = true, children }: {
+export function Dreiteilung({ ort, ebene, offen, mitte = true, rechts = true, children }: {
   ort: Ort; ebene: string;
   /** Was rechts geöffnet ist; wechselt es, wird ein eingeklappter rechter Bereich wieder gezeigt. */
   offen?: string;
   /** Ohne Mitte (#366): links die Bereiche, rechts die ganze Seite – ohne rechten Griff. */
   mitte?: boolean;
+  /**
+   * Ohne rechten Bereich (#429, Startseite ohne geöffnete Mappe): die Mitte nimmt die ganze
+   * restliche Breite – gleiche Regel wie #366, nur von der anderen Seite. Am Handy unverändert.
+   */
+  rechts?: boolean;
   children: [ReactNode, ReactNode, ReactNode];
 }) {
   const { ich } = useKonto();
@@ -75,15 +80,15 @@ export function Dreiteilung({ ort, ebene, offen, mitte = true, children }: {
   const gesamt = rahmen.current?.clientWidth ?? innerWidth;
   const l = s.linksZu ? 0 : Math.min(MAX_L, Math.max(MIN_L, s.l));
   const m = Math.max(MIN_M, Math.min(s.m, gesamt - l - MIN_RECHTS));
-  const rechtsZu = s.rechtsZu && mitte;
-  const spalten = !mitte ? `${l}px minmax(0, 1fr)` : rechtsZu ? `${l}px minmax(0, 1fr) 0` : `${l}px ${m}px minmax(0, 1fr)`;
+  const rechtsZu = s.rechtsZu && mitte && rechts;
+  const spalten = !mitte || !rechts ? `${l}px minmax(0, 1fr)` : rechtsZu ? `${l}px minmax(0, 1fr) 0` : `${l}px ${m}px minmax(0, 1fr)`;
   const style = breit ? ({ gridTemplateColumns: spalten } as CSSProperties) : undefined;
 
   return (
-    <div ref={rahmen} className={`drei ${s.linksZu ? 'links-zu' : ''} ${rechtsZu ? 'rechts-zu' : ''} ${mitte ? '' : 'ohne-mitte'}`} data-ebene={ebene} style={style}>
+    <div ref={rahmen} className={`drei ${s.linksZu ? 'links-zu' : ''} ${rechtsZu ? 'rechts-zu' : ''} ${mitte ? '' : 'ohne-mitte'} ${rechts ? '' : 'ohne-rechts'}`} data-ebene={ebene} style={style}>
       {children[0]}
       {mitte && children[1]}
-      {children[2]}
+      {(rechts || !mitte) && children[2]}
       {breit && <>
         <Griff seite="links" x={l} zu={s.linksZu} wert={l}
           titel={s.linksZu ? 'Ansichten einblenden' : 'Ansichten ausblenden (ziehen ändert die Breite)'}
@@ -91,7 +96,7 @@ export function Dreiteilung({ ort, ebene, offen, mitte = true, children }: {
           start={() => (s.linksZu ? MIN_L : l)}
           umschalten={() => merke({ ...s, linksZu: !s.linksZu })}
           zuruecksetzen={() => merke({ ...s, linksZu: false, l: standard().l })} />
-        {mitte && <Griff seite="rechts" x={s.rechtsZu ? gesamt : l + m} zu={s.rechtsZu} wert={m}
+        {mitte && rechts && <Griff seite="rechts" x={s.rechtsZu ? gesamt : l + m} zu={s.rechtsZu} wert={m}
           titel={s.rechtsZu ? 'Mappe einblenden' : 'Mappe ausblenden (ziehen ändert die Breite der Liste)'}
           ziehe={(dx, start) => merke({ ...s, rechtsZu: false, m: Math.max(MIN_M, Math.min(start + dx, gesamt - l - MIN_RECHTS)) })}
           start={() => (s.rechtsZu ? gesamt - l - MIN_RECHTS : m)}

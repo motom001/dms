@@ -13,21 +13,27 @@ import { neuePost } from './NeuePost';
  * Zu erledigen, Neue Post, Anstehend, eine wählbare Kachel (Favoriten oder eine Ansicht) und
  * „Zuletzt geöffnet“. In einer leeren Installation stattdessen drei Einstiege.
  * Abschalten und Kachel wählen: im Profil (Einstellungen „startseite“, „startseite_kachel“).
+ *
+ * Ohne geöffnete Mappe nutzt sie Mitte und rechten Bereich zusammen (#429, `breit`): ein Raster,
+ * in dem jede Kachel einen festen Schlüssel (`data-kachel`) hat – Grundlage dafür, sie später
+ * frei anzuordnen (#421). Mit geöffneter Mappe steht sie wie jede Liste in der Mitte.
  */
 const zahl = (n: number) => n.toLocaleString('de-DE');
 
-function Kachel({ to, art, titel, anzahl, leer, unter }: { to: string; art: 'auffaellig' | 'ruhig' | 'post'; titel: string; anzahl: number | null; leer: string; unter?: string }) {
+function Kachel({ name, to, art, titel, anzahl, leer, unter }: { name: string; to: string; art: 'auffaellig' | 'ruhig' | 'post'; titel: string; anzahl: number | null; leer: string; unter?: string }) {
   const nichts = anzahl === 0;
   return (
-    <Link to={to} className={`kachel ${art} ${nichts ? 'erledigt' : ''}`}>
-      <span className="kacheltitel">{titel}</span>
-      {anzahl === null ? <span className="kachelzahl leise">…</span> : nichts ? <span className="kachelleer">✓ {leer}</span> : <span className="kachelzahl">{zahl(anzahl)}</span>}
-      {unter && !nichts && <span className="kachelunter leise klein">{unter}</span>}
-    </Link>
+    <div className="start-feld" data-kachel={name}>
+      <Link to={to} className={`kachel ${art} ${nichts ? 'erledigt' : ''}`}>
+        <span className="kacheltitel">{titel}</span>
+        {anzahl === null ? <span className="kachelzahl leise">…</span> : nichts ? <span className="kachelleer">✓ {leer}</span> : <span className="kachelzahl">{zahl(anzahl)}</span>}
+        {unter && !nichts && <span className="kachelunter leise klein">{unter}</span>}
+      </Link>
+    </div>
   );
 }
 
-export function Startseite({ anstehend, offen }: { anstehend: { liste?: { tage: number; eintraege: Anstehend[] } }; offen?: string }) {
+export function Startseite({ anstehend, offen, breit = false }: { anstehend: { liste?: { tage: number; eintraege: Anstehend[] } }; offen?: string; breit?: boolean }) {
   const d = useDaten();
   const { ich } = useKonto();
   const handbuch = useHandbuch();
@@ -52,7 +58,7 @@ export function Startseite({ anstehend, offen }: { anstehend: { liste?: { tage: 
           <p className="leise klein">Hallo {ich.name?.split(/\s+/)[0] || ich.email}! Hier fängst du an. <Hilfe ort="ablage.start" /></p>
         </div>
       </div>
-      <div className="listenrumpf startseite">
+      <div className={`listenrumpf startseite${breit ? ' start-breit' : ''}`}>
         {daten?.leer ? (
           <div className="einstiege">
             <p>Noch ist die Ablage leer. So geht es los:</p>
@@ -70,17 +76,17 @@ export function Startseite({ anstehend, offen }: { anstehend: { liste?: { tage: 
             </a>
           </div>
         ) : (
-          <div className="kacheln">
-            <Kachel to="/ablage/eingang" art="auffaellig" titel="Zu erledigen" anzahl={d.zaehler.eingang} leer="Nichts zu erledigen" unter="Aufgaben und Mappen, an denen du etwas tun sollst" />
-            {postSicht && <Kachel to={`/ablage/${postSicht.id}`} art="post" titel={postSicht.name} anzahl={d.zaehler.sichten?.[postSicht.id] ?? 0} leer="Keine neue Post" unter="Noch nicht zugeordnet" />}
-            <Kachel to="/ablage/anstehend" art="ruhig" titel="Anstehend" anzahl={anstehend.liste ? anstehend.liste.eintraege.length : null} leer={`Nichts in den nächsten ${tage ?? 30} Tagen`} unter={tage ? `Fristen und Erinnerungen der nächsten ${tage} Tage` : undefined} />
+          <div className="kacheln start-raster">
+            <Kachel name="eingang" to="/ablage/eingang" art="auffaellig" titel="Zu erledigen" anzahl={d.zaehler.eingang} leer="Nichts zu erledigen" unter="Aufgaben und Mappen, an denen du etwas tun sollst" />
+            {postSicht && <Kachel name="post" to={`/ablage/${postSicht.id}`} art="post" titel={postSicht.name} anzahl={d.zaehler.sichten?.[postSicht.id] ?? 0} leer="Keine neue Post" unter="Noch nicht zugeordnet" />}
+            <Kachel name="anstehend" to="/ablage/anstehend" art="ruhig" titel="Anstehend" anzahl={anstehend.liste ? anstehend.liste.eintraege.length : null} leer={`Nichts in den nächsten ${tage ?? 30} Tagen`} unter={tage ? `Fristen und Erinnerungen der nächsten ${tage} Tage` : undefined} />
             {lieblings
-              ? <Kachel to={`/ablage/${lieblings.id}`} art="ruhig" titel={lieblings.name} anzahl={d.zaehler.sichten?.[lieblings.id] ?? 0} leer="Leer" />
-              : <Kachel to="/ablage/favoriten" art="ruhig" titel="Favoriten" anzahl={d.zaehler.favoriten ?? 0} leer="Noch keine – ★ an einer Mappe merkt sie dir" />}
+              ? <Kachel name="wahl" to={`/ablage/${lieblings.id}`} art="ruhig" titel={lieblings.name} anzahl={d.zaehler.sichten?.[lieblings.id] ?? 0} leer="Leer" />
+              : <Kachel name="wahl" to="/ablage/favoriten" art="ruhig" titel="Favoriten" anzahl={d.zaehler.favoriten ?? 0} leer="Noch keine – ★ an einer Mappe merkt sie dir" />}
           </div>
         )}
         {daten && daten.zuletzt.length > 0 && (
-          <section className="zuletzt">
+          <section className="zuletzt" data-kachel="zuletzt">
             <h2 className="h3">Zuletzt geöffnet</h2>
             <ul className="mappenliste">
               {daten.zuletzt.map((m) => (
