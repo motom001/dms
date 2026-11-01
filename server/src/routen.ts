@@ -104,6 +104,11 @@ export interface Route {
   api?: boolean;
   /** Nur über den Befehl `dms` im Container (#244). */
   konsole?: boolean;
+  /**
+   * Liest nur, auch wenn es ein POST ist (Vorschau, Zählen, Testlauf): Die Anfragezeile steht
+   * dann nur auf Stufe „debug“ im Protokoll, wie bei GET (#373).
+   */
+  lesend?: boolean;
   handler(a: Anfrage): Promise<Antwort>;
 }
 
@@ -111,6 +116,19 @@ export const SITZUNG_COOKIE = 'dms_sitzung';
 export const SITZUNG_SEKUNDEN = SITZUNG_TAGE * 24 * 60 * 60;
 
 const ok = (body: unknown, status = 200): Antwort => ({ status, body });
+
+/**
+ * Archivmodus (#212, #373): genau ein Eintrag je gespeicherter Änderung, mit vorher/nachher
+ * (an/aus, Frist, Stichtag). Ausschalten ist eine Warnung.
+ */
+function archivProtokoll(t: { name: string; archiv?: Mappentyp['archiv'] }, vorher: Mappentyp['archiv'] | null) {
+  const nachher = t.archiv ?? null;
+  if (JSON.stringify(vorher) === JSON.stringify(nachher)) return;
+  const zustand = (x: Mappentyp['archiv'] | null) => (x ? { an: true, jahre: x.jahre, stichtag: x.stichtag ?? 'Anlagedatum' } : { an: false });
+  const daten = { typ: t.name, vorher: zustand(vorher), nachher: zustand(nachher) };
+  if (!nachher) L.werkbank.warn('Archivmodus ausgeschaltet', daten);
+  else L.werkbank.info(vorher ? 'Archivmodus geändert' : 'Archivmodus eingeschaltet', daten);
+}
 const leer: Antwort = { status: 204 };
 const b = (a: Anfrage) => (a.body ?? {}) as Record<string, unknown>;
 const info = (a: Anfrage) => ({ ip: a.ip, geraet: a.geraet ?? '' });
@@ -556,6 +574,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/typen', zugang: 'admin', handler: async (a) => {
       const t = await dienst.legeTypAn(a.body);
       L.werkbank.info('Mappentyp angelegt', { typ: t.name, id: t.id, felder: t.felder.length });
+      if (t.archiv) archivProtokoll(t, null);
       return ok(t, 201);
     } },
     { methode: 'PUT', pfad: '/api/typen/:id', zugang: 'admin', handler: async (a) => {
@@ -563,11 +582,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const vorher = (await dienst.listeTypen()).find((x) => x.id === a.params.id);
       const t = await dienst.aendereTyp(a.params.id, a.body);
       L.werkbank.info('Mappentyp geändert, Titel und Passung neu berechnet', { typ: t.name, id: t.id, ms: Date.now() - start });
-      // Archivmodus (#212): Ein-, Aus- und Umschalten festhalten.
-      if (JSON.stringify(vorher?.archiv ?? null) !== JSON.stringify(t.archiv ?? null)) {
-        if (!t.archiv) L.werkbank.warn('Archivmodus ausgeschaltet', { typ: t.name, vorher: vorher?.archiv });
-        else L.werkbank.info(vorher?.archiv ? 'Archivmodus geändert' : 'Archivmodus eingeschaltet', { typ: t.name, jahre: t.archiv.jahre, stichtag: t.archiv.stichtag ?? 'Anlagedatum' });
-      }
+      // Archivmodus (#212): Ein-, Aus- und Umschalten festhalten – erst hier beim Speichern (#373).
+      archivProtokoll(t, vorher?.archiv ?? null);
       // Versionierung (#194): Ein- und Ausschalten je Register festhalten.
       for (const r of t.register.filter((x) => x.art === 'dokumente')) {
         const war = !!vorher?.register.find((x) => x.key === r.key)?.versionierung;
@@ -600,7 +616,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       }), 202);
     } },
     // Abschätzung vor dem Start (#248): Mappen, Dokumente, Größe, Seiten für die Texterkennung, freier Platz.
-    { methode: 'POST', pfad: '/api/werkbank/demo/abschaetzung', zugang: 'admin', handler: async (a) => ok(await schaetzeDemo(dienst, pruefeDemoOptionen(b(a)), demoPlatz)) },
+    { methode: 'POST', pfad: '/api/werkbank/demo/abschaetzung', zugang: 'admin', lesend: true, handler: async (a) => ok(await schaetzeDemo(dienst, pruefeDemoOptionen(b(a)), demoPlatz)) },
     { methode: 'DELETE', pfad: '/api/werkbank/demo', zugang: 'admin', handler: async () =>
       ok(dienst.auftraege.starte('demo-entfernen', 'Demo-Mappen entfernen', (f) => dienst.entferneDemo(f)), 202) },
     { methode: 'GET', pfad: '/api/werkbank/auftrag', zugang: 'admin', handler: async () => ok(dienst.auftraege.aktuell()) },
@@ -758,12 +774,12 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return { datei: { inhalt: zipStrom(eintraege), name: `${fertig.name}.zip`, mime: 'application/zip', anzeigen: false, groesse } };
     } },
     /* ---------- Archivmodus (#212) ---------- */
-    { methode: 'POST', pfad: '/api/werkbank/archiv/vorschau', zugang: 'admin', handler: async (a) => ok(await dienst.archivVorschau(String((a.body as { typId?: unknown })?.typId ?? ''), (a.body as { archiv?: unknown })?.archiv)) },
+    { methode: 'POST', pfad: '/api/werkbank/archiv/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.archivVorschau(String((a.body as { typId?: unknown })?.typId ?? ''), (a.body as { archiv?: unknown })?.archiv)) },
     { methode: 'GET', pfad: '/api/werkbank/darf-weg', zugang: 'admin', handler: async () => ok(await dienst.darfWeg()) },
     { methode: 'POST', pfad: '/api/werkbank/wartung/dateien', zugang: 'admin', handler: async (a) => ok(dienst.pruefeDateien(ich(a).email), 202) },
     /* ---------- Auswahlfilter am Referenzfeld (#172, #173) ---------- */
-    { methode: 'POST', pfad: '/api/mappen/auswahl-pruefen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.auswahlPruefen(a.body, ich(a).id, await zg(a))) },
-    { methode: 'POST', pfad: '/api/werkbank/auswahlfilter/zaehlen', zugang: 'admin', handler: async (a) => ok(await dienst.zaehleAuswahl(a.body, ich(a).id)) },
+    { methode: 'POST', pfad: '/api/mappen/auswahl-pruefen', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.auswahlPruefen(a.body, ich(a).id, await zg(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/auswahlfilter/zaehlen', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.zaehleAuswahl(a.body, ich(a).id)) },
     /* ---------- Nummernkreise (#171) ---------- */
     // Paketverwaltung (#188, #189): Kataloge nur auf Knopfdruck; weitere Quellen und Hochladen in der erweiterten Ansicht.
     { methode: 'GET', pfad: '/api/werkbank/pakete', zugang: 'admin', handler: async () => ok({ installiert: await pakete.installierte(), katalogUrl: pakete.katalogUrl, quellen: await pakete.quellen(), dms: eigeneVersion() }) },
@@ -772,7 +788,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'PUT', pfad: '/api/werkbank/pakete/quellen', zugang: 'admin', handler: async (a) => ok(await pakete.quelleSchalten((a.body ?? {}) as { url?: unknown; aktiv?: unknown }, wer(a))) },
     { methode: 'DELETE', pfad: '/api/werkbank/pakete/quellen', zugang: 'admin', handler: async (a) => ok(await pakete.quelleEntfernen(String(a.query.url ?? ''), wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/hochladen', zugang: 'admin', roh: 10 * 1024 * 1024 + 1024, handler: async (a) => ok(await pakete.hochladen(a.body, wer(a))) },
-    { methode: 'POST', pfad: '/api/werkbank/pakete/vorschau', zugang: 'admin', handler: async (a) => ok(await pakete.vorschau((a.body ?? {}) as { id?: string; version?: string; quelle?: string; upload?: string })) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await pakete.vorschau((a.body ?? {}) as { id?: string; version?: string; quelle?: string; upload?: string })) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/installieren', zugang: 'admin', handler: async (a) => ok(await pakete.installiere((a.body ?? {}) as InstallierenEingabe, wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/updates', zugang: 'admin', handler: async () => ok(await pakete.updates()) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktualisieren', zugang: 'admin', handler: async (a) => ok(await pakete.aktualisiere(a.params.id, (a.body ?? {}) as { version?: string; bestaetigt?: boolean }, wer(a))) },
@@ -978,8 +994,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       L.werkbank.info('Regel kopiert', { typ: a.params.typId, regel: String(b(a).regelId ?? ''), kopiert: r.kopiert, ausgelassen: r.ausgelassen, von: ich(a).email });
       return ok(r);
     } },
-    { methode: 'POST', pfad: '/api/werkbank/berechtigungen/testlauf', zugang: 'admin', handler: async (a) => ok(await dienst.testlauf(b(a))) },
-    { methode: 'POST', pfad: '/api/werkbank/sichten/testlauf', zugang: 'admin', handler: async (a) => ok(await dienst.sichtTestlauf(b(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/berechtigungen/testlauf', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.testlauf(b(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/sichten/testlauf', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.sichtTestlauf(b(a))) },
     { methode: 'GET', pfad: '/api/werkbank/berechtigungen/sicht/:benutzerId', zugang: 'admin', handler: async (a) => ok(await dienst.wasSieht(a.params.benutzerId)) },
 
     /* ---------- Einrichtungsassistent (#119) ---------- */
@@ -1093,7 +1109,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return ok(r);
     } },
     { methode: 'PUT', pfad: '/api/sichten/reihenfolge', zugang: 'admin', handler: async (a) => ok(await dienst.ordneSichten(b(a).elternId, b(a).ids)) },
-    { methode: 'POST', pfad: '/api/sichten/vorschau', zugang: 'admin', handler: async (a) => ok(await dienst.sichtVorschau(ich(a), b(a).id, b(a).sicht)) },
+    { methode: 'POST', pfad: '/api/sichten/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.sichtVorschau(ich(a), b(a).id, b(a).sicht)) },
     { methode: 'GET', pfad: '/api/typen/:id/belegung', zugang: 'admin', handler: async (a) => ok(await dienst.belegung(a.params.id)) },
     { methode: 'GET', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => {
       const klartext = passwoerterAnzeigen(a);
@@ -1197,7 +1213,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     // Passwortfeld anzeigen (#46): einzeln, mit Protokolleintrag (ohne den Wert).
     { methode: 'POST', pfad: '/api/mappen/:id/passwoerter/:feld', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'P'); return ok(await dienst.zeigePasswort(a.params.id, a.params.feld, ich(a).id)); } },
     // Vor dem Speichern (#126): Rechte mit den neuen Werten – für die Warnung beim Selbst-Entziehen.
-    { methode: 'POST', pfad: '/api/mappen/:id/rechte-vorschau', zugang: 'angemeldet', handler: async (a) => ok(await dienst.rechteVorschau(a.params.id, a.body, await zg(a))) },
+    { methode: 'POST', pfad: '/api/mappen/:id/rechte-vorschau', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.rechteVorschau(a.params.id, a.body, await zg(a))) },
     { methode: 'POST', pfad: '/api/mappen', zugang: 'angemeldet', handler: async (a) => {
       const m = await dienst.legeMappeAn(a.body, ich(a).id, false, await zg(a));
       L.ablage.info('Mappe angelegt', { typ: await typName(m.typId), titel: m.titel, id: m.id });
@@ -1278,7 +1294,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return ok(r, 201);
     } },
     // Doppelte Dateien vor dem Hochladen erkennen (#333): Prüfwerte (SHA-256) → Fundstellen in lesbaren Mappen.
-    { methode: 'POST', pfad: '/api/dokumente/gleiche', zugang: 'angemeldet', handler: async (a) => {
+    { methode: 'POST', pfad: '/api/dokumente/gleiche', zugang: 'angemeldet', lesend: true, handler: async (a) => {
       const e = (a.body ?? {}) as { pruefwerte?: unknown; ohneMappe?: unknown };
       return ok({ fundstellen: await dienst.fundstellen(await zg(a), e.pruefwerte, typeof e.ohneMappe === 'string' ? e.ohneMappe : undefined) });
     } },
@@ -1405,6 +1421,21 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
 
 
 /** Zu welchem Modul eine Anfrage gehört (für das Protokoll). */
+/**
+ * Stufe der Anfragezeile im Protokoll („POST /api/… 200“): Fehler des Servers immer, Lesendes
+ * (GET oder als lesend markierte POSTs wie Vorschauen, #373 – dort auch abgewiesene) nur auf „debug“,
+ * häufige Abfragen auf „trace“. Ändernde Aufrufe stehen auf „info“.
+ */
+export function anfrageStufe(x: { methode: string; url: string; status: number; lesend?: boolean }): Stufe {
+  const api = x.url.startsWith('/api/');
+  if (x.status >= 500) return 'error';
+  if (!api) return 'debug';
+  if (/^\/api\/(werkbank\/(protokoll|auftrag)|gesundheit)\b/.test(x.url)) return 'trace';
+  if (x.status === 401 && x.url === '/api/konto/status') return 'debug';
+  if (x.lesend || (x.methode === 'GET' && x.status < 400)) return 'debug';
+  return 'info';
+}
+
 export function modulAus(url: string): string {
   if (/^\/api\/(konto|benutzer|personen|rollen)\b/.test(url)) return 'konto';
   if (/^\/api\/(dokumente|mappen\/[^/]+\/dokumente)\b/.test(url)) return 'dokumente';

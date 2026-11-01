@@ -15,7 +15,7 @@ Im Mappentyp unter **Archivmodus**:
 - **Aufbewahrungsfrist** in Jahren: Vorschläge 2, 6, 8, 10 oder eine eigene Zahl (bis 30).
 - **Stichtag:** welches Datumsfeld zählt, z. B. *Rechnungsdatum*; ohne Feld das Anlagedatum der Mappe. Die Frist läuft bis zum **31.12.** des Stichtagsjahres plus die Jahre – eine Rechnung vom 2. März 2026 mit 8 Jahren also bis zum 31.12.2034. Ist das Datumsfeld einer Mappe leer, zählt ihr Anlagedatum.
 
-Das gilt sofort auch für vorhandene Mappen. Beim Einschalten zeigt das DMS, wie viele Mappen betroffen sind und wie viele davon schon „darf weg“ wären. Ein-, Um- und Ausschalten stehen im [Protokoll](fehlersuche.md#protokoll); das Ausschalten fragt vorher nach.
+Das gilt sofort auch für vorhandene Mappen. Beim Einschalten zeigt das DMS, wie viele Mappen betroffen sind und wie viele davon schon „darf weg“ wären. Ein-, Um- und Ausschalten stehen im [Protokoll](fehlersuche.md#protokoll) – erst beim **Speichern** des Mappentyps, mit dem Zustand vorher und nachher (an/aus, Frist, Stichtag); Ausprobieren im Editor ohne Speichern hinterlässt keinen Eintrag. Das Ausschalten fragt vorher nach.
 
 ## Während der Frist
 
