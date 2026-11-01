@@ -886,6 +886,7 @@
 <li><strong>Sprache:</strong> Oberfläche, Handbuch, Release-Notizen und Commit-Nachrichten auf Deutsch. Auch Bezeichner im Code sind deutsch (<code>mappe</code>, <code>schreibe</code>, <code>laden</code>). Fachbegriffe ohne gutes deutsches Wort bleiben, wie sie sind.</li>
 <li><strong>Begriffe:</strong> Verwende die Wörter aus dem <a href="https://motom001.github.io/dms/benutzer/aktuell/begriffe/">Glossar</a> und nicht die, die dort unter „nicht verwenden“ stehen. Ein neuer Begriff kommt mit demselben Pull Request in <code>docs/glossar.yml</code>, mit Beschreibung und der Einstufung für Einsteiger (siehe <a href="../personas/">Für wen wir bauen</a>). <code>python3 docs/handbuch/werkzeuge/glossar.py</code> erzeugt daraus die Seite „Begriffe“.</li>
 <li><strong>Texte für Nutzer:</strong> kurz, freundlich, ohne Fachjargon, aus dem Blick des Lesers („Speichere deine Arbeit“).</li>
+<li><strong>Symbole:</strong> einfarbig und aus einer Sammlung – <code>&lt;Symbol name="…" /&gt;</code> aus <code>web/src/Symbol.tsx</code> (Formen aus Lucide, Farbe = Textfarbe, <code>aria-hidden</code>; die Beschriftung trägt die Bedeutung). Keine Emoji in der Oberfläche, die CI prüft das (<code>server/test/symbole.test.ts</code>). Farbe nur mit Bedeutung, z. B. Warnung oder Erfolg.</li>
 <li><strong>Code:</strong> TypeScript strikt, kleine Funktionen, Kommentare erklären das <em>Warum</em> und verweisen auf das Issue (<code>// Abwesenheit (#78): …</code>).</li>
 <li><strong>Commits:</strong> eine Zeile Zusammenfassung, darunter bei Bedarf Stichpunkte.</li>
 </ul>
