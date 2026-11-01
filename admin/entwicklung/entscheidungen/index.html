@@ -1794,6 +1794,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#sprache-automatisch-erkennen-395" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sprache automatisch erkennen (#395)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#image-je-architektur-nativ-bauen-88" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2277,6 +2288,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#sprache-automatisch-erkennen-395" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sprache automatisch erkennen (#395)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#image-je-architektur-nativ-bauen-88" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2517,6 +2539,13 @@
 <li><strong>Gleicher Inhalt, gleicher Text</strong>: Dateien sind über ihren Prüfwert bekannt; ein schon erkannter Text wird übernommen.</li>
 <li><strong>Deutsche Volltextsuche von PostgreSQL</strong> (<code>to_tsvector('german', …)</code>, GIN-Index, <code>websearch_to_tsquery</code>): findet Wortformen; die Fundstelle kommt aus <code>ts_headline</code> mit Steuerzeichen als Markierung – nie als HTML.</li>
 <li>Office-Dokumente und externe Dienste kommen später.</li>
+</ul>
+<h2 id="sprache-automatisch-erkennen-395">Sprache automatisch erkennen (#395)<a class="headerlink" href="#sprache-automatisch-erkennen-395" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Eigene, kleine Spracherkennung statt Bibliothek:</strong> Neue npm-Abhängigkeiten (franc, CLD) sollten nicht ins Image. Für Briefe, Rechnungen und Belege reicht das Zählen typischer Funktionswörter und Sonderzeichen je Sprache (selbst zusammengestellte Listen, <code>shared/src/textsprache.ts</code>), offline und ohne messbaren Rechenaufwand. Bei sehr wenig Text bleibt die Sprache bewusst offen.</li>
+<li><strong>Zweiter Durchlauf nur im Zweifel:</strong> nur bei anderer, eindeutig erkannter Sprache mit installiertem Sprachpaket und unsicherem ersten Durchlauf (mittlere Tesseract-Konfidenz unter 85 %); entschieden wird nach der ersten gelesenen Seite, das bessere Ergebnis gilt für das ganze Dokument.</li>
+<li><strong>Lage über Tesseract OSD:</strong> gescannte PDF-Seiten werden als Graustufenbild (PGM) gerendert und bei Bedarf im DMS selbst gedreht – ohne zusätzliches Bildwerkzeug im Image. Bilder dreht Tesseract mit <code>--psm 1</code> selbst (quer liegend).</li>
+<li><strong>Sprache im Hinweis der Texterkennung</strong> (<code>ocr_info</code>, „· Sprache: fra (87 %)“) statt einer neuen Spalte: keine Migration nötig; eine spätere Spalte kann den Wert von dort übernehmen. Die Volltextsuche nutzt deshalb noch für alle Dokumente die deutsche Wortstamm-Konfiguration.</li>
 </ul>
 <h2 id="image-je-architektur-nativ-bauen-88">Image je Architektur nativ bauen (#88)<a class="headerlink" href="#image-je-architektur-nativ-bauen-88" title="Permanent link">&para;</a></h2>
 <ul>
