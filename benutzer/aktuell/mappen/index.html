@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.98/mappen/">
+        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.99/mappen/">
       
       
         <link rel="prev" href="../post/">
@@ -713,6 +713,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Löschen">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mit-verknupften-mappen-loschen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mit verknüpften Mappen löschen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1319,6 +1336,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Löschen">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mit-verknupften-mappen-loschen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mit verknüpften Mappen löschen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1481,7 +1515,7 @@
 <p>Bei einer neuen Mappe ist das Register noch leer: Verknüpfungen entstehen erst, wenn die Mappe gespeichert ist und andere auf sie verweisen.</p>
 <div class="admonition info">
 <p class="admonition-title">Zugehörigkeit oder Bezug</p>
-<p>Neben jedem Verweis steht, welcher Art er ist. <strong>Zugehörigkeit</strong> heißt: gehört dazu (die Rechnung gehört zum Vertrag). <strong>Bezug</strong> heißt: hat nur damit zu tun (die Rechnung kommt von diesem Aussteller). Das hilft später bei Auswertungen wie „alles zum Haus“, damit dort nicht jede Rechnung desselben Handwerkers auftaucht.</p>
+<p>Neben jedem Verweis steht, welcher Art er ist. <strong>Zugehörigkeit</strong> heißt: gehört dazu (die Rechnung gehört zum Vertrag). <strong>Bezug</strong> heißt: hat nur damit zu tun (die Rechnung kommt von diesem Aussteller). Das hilft bei Auswertungen wie „alles zum Haus“, damit dort nicht jede Rechnung desselben Handwerkers auftaucht – und beim <a href="#mit-verknupften-mappen-loschen">Löschen mit verknüpften Mappen</a>: Mitgelöscht wird nur, was dazugehört.</p>
 </div>
 <h2 id="loschen">Löschen<a class="headerlink" href="#loschen" title="Permanent link">&para;</a></h2>
 <p>Unten links in der Mappe steht <strong>Mappe löschen</strong>. Nach einer Rückfrage kommt die Mappe mit ihren Dokumenten in den <a href="../ablage/#papierkorb">Papierkorb</a>; dort lässt sie sich eine Zeit lang wiederherstellen. Ist der Papierkorb ausgeschaltet, ist sie sofort endgültig weg.</p>
@@ -1493,6 +1527,29 @@
 </ul>
 <p><img alt="Ausgegrauter Knopf „Mappe löschen“ mit aufgeklappter Begründung „Warum nicht?“" src="../bilder/mappe-loeschen-warum.png" /></p>
 <p>Benutzer und Systemrollen lassen sich in der Ablage gar nicht löschen; dort fehlt der Knopf.</p>
+<h3 id="mit-verknupften-mappen-loschen">Mit verknüpften Mappen löschen<a class="headerlink" href="#mit-verknupften-mappen-loschen" title="Permanent link">&para;</a></h3>
+<p>Willst du eine Mappe <strong>mit allem, was an ihr hängt</strong>, loswerden – etwa einen Vertragspartner, mit dem es seit Jahren nichts mehr gab, samt Verträgen, Rechnungen und Dokumenten –, nimm <strong>Mappe ▾ → Mit verknüpften Mappen löschen …</strong> (unten im Menü, rot). Lässt sich die Mappe allein nicht löschen, weil noch andere auf sie verweisen, steht derselbe Weg auch unter <strong>Warum nicht?</strong> am Löschknopf. Du brauchst dafür das Recht, die Mappe zu löschen.</p>
+<p><img alt="Vorschau als Baum: was mitgeht und was bleibt" src="../bilder/mit-verknuepften-loeschen.png" /></p>
+<ol>
+<li><strong>Vorschau als Baum:</strong> Das DMS sammelt alle Mappen, die zu dieser Mappe gehören, und die Mappen, die wiederum zu diesen gehören (Vertragspartner → Verträge → Rechnungen → Lieferscheine …), mit der Zahl ihrer Dokumente. Die <strong>Tiefe</strong> stellst du ein (Vorgabe 5 Ebenen); Äste klappst du mit ▸/▾ auf und zu. Jede Mappe steht nur einmal da, auch bei Kreisen.<ul>
+<li><strong>Nur nach unten:</strong> Mitgelöscht wird nur, was auf die gelöschte Mappe verweist. Mappen, auf die sie selbst verweist (z. B. eine Kategorie, ein Ablageort oder beim Löschen einer Rechnung der Vertragspartner), gehören nie dazu – auch nicht über eine mitgelöschte Mappe: Der Lieferschein einer Rechnung geht mit, sein Verweis auf den Vertragspartner wird aber nicht verfolgt.</li>
+<li><strong>Nur über Zugehörigkeit:</strong> Mitgelöscht wird nur über Verweise der <a href="../begriffe/#verweisart">Verweisart</a> <strong>Zugehörigkeit</strong> (die Rechnung gehört zum Vertrag). Hängt eine Mappe nur über einen <strong>Bezug</strong> dran – z. B. ein Vertrag mit diesem Vertragspartner als <em>Ansprechpartner</em>, Post mit <em>Für</em> oder <em>Zugeordnet zu</em> –, bleibt sie; nur der Verweis wird entfernt. Was an ihr hängt, sammelt das DMS nicht.</li>
+</ul>
+</li>
+<li><strong>Kennzeichnungen</strong> je Mappe:<ul>
+<li>✅ <strong>wird gelöscht</strong>.</li>
+<li>📎 <strong>nur über Bezug verbunden</strong> – bleibt immer, nur der Verweis wird entfernt (dabei steht das Feld, z. B. „über Ansprechpartner (Bezug)“). Nimmst du den Haken weg, bleibt auch der Verweis – und damit die Mappe, auf die er zeigt.</li>
+<li>🔗 <strong>hängt auch an anderen Mappen</strong> – z. B. eine Rechnung, die zusätzlich auf einen anderen Vertrag verweist. Vorschlag: <strong>nur den Verweis entfernen, Mappe behalten</strong>; im Auswahlfeld kannst du sie stattdessen <strong>mitlöschen</strong>.</li>
+<li>🔒 <strong>Aufbewahrungsfrist läuft noch</strong> (<a href="../begriffe/#archivmodus">Archivmodus</a>) – wird <strong>nie</strong> gelöscht; dabei steht, ab wann sie weg darf.</li>
+<li>⛔ <strong>kein Löschrecht</strong> – wird nie gelöscht.</li>
+</ul>
+</li>
+<li><strong>Auswählen:</strong> Jede Mappe hat ein Kästchen (Vorgabe: an). Nimmst du den Haken weg, bleibt sie. <strong>Was bleibt, hält fest, worauf es verweist:</strong> Bleibt eine Rechnung (abgewählt, gesperrt oder ohne Recht), bleiben auch ihr Vertrag und der Vertragspartner – dabei steht, warum. Dasselbe gilt, wenn eine Mappe außerhalb der Vorschau (zu tief, nicht sichtbar) noch darauf verweist. Verweise werden nur entfernt, wo du „nur Verweis entfernen“ gewählt hast.</li>
+<li><strong>Zusammenfassung:</strong> Unten steht, was geschieht, z. B. „37 Mappen und 112 Dokumente werden in den Papierkorb gelegt; 3 bleiben wegen Aufbewahrungsfrist; 2 Verweise werden entfernt.“</li>
+<li><strong>Bestätigen:</strong> Zum Bestätigen tippst du den Namen der Mappe ein.</li>
+</ol>
+<p>Alles geht als <strong>ein Vorgang</strong> in den <a href="../ablage/#papierkorb">Papierkorb</a>: Dort stellst du mit <strong>Alle wiederherstellen</strong> alle Mappen und Dokumente gemeinsam wieder her – auch die Verweise untereinander und die Verweise, die an bleibenden Mappen entfernt wurden. In der Historie jeder Mappe steht „in den Papierkorb gelegt – mit verknüpften Mappen gelöscht“ mit der Zahl der Mappen und Dokumente. Ist der Papierkorb ausgeschaltet, ist das Löschen sofort endgültig; die Rückfrage sagt das.</p>
+<p>Fehlt der Knopf, dürfen Mappen dieses Mappentyps nicht gelöscht werden.</p>
 <h2 id="was-du-sehen-und-andern-darfst">Was du sehen und ändern darfst<a class="headerlink" href="#was-du-sehen-und-andern-darfst" title="Permanent link">&para;</a></h2>
 <p>Ein Administrator kann je Mappentyp festlegen, wer Mappen anlegen, lesen, bearbeiten, löschen und Passwörter darin sehen darf – zum Beispiel, dass nur die Buchhaltung Rechnungen bearbeitet oder dass vertrauliche Mappen nur ihre Verantwortlichen sehen. Was für dich gilt, steht in deinem Profil unter <a href="../profil/#meine-rechte">Meine Rechte</a>.</p>
 <p>Auch an jeder <strong>Ansicht</strong> kann er Rechte setzen: wer sie <strong>sieht</strong>, wer dort mit <strong>+ Neu</strong> <strong>anlegen</strong> darf und wer aus ihr <strong>exportieren</strong> darf. Eine Ansicht zeigt dir aber nie Mappen, die du am Mappentyp nicht lesen darfst.</p>

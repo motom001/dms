@@ -1017,7 +1017,7 @@
           "Ablage"
         ],
         "summary": "Alle Mappen, die über Verweise an einer Mappe hängen",
-        "description": "Baum-Sammlung (#396, #424): Breitensuche ab der Mappe über Verweise – verwiesenVon (Mappen, die darauf verweisen, „nach unten“) und/oder verweistAuf (Mappen, auf die sie verweist). Ohne seitwaerts geht jede Mappe nur in der Richtung weiter, über die sie erreicht wurde. Kreise werden erkannt (auchUeber, kreise), die Obergrenze max kappt große Bäume (abgeschnitten). Nur Mappen, die der Aufrufer lesen darf; über nicht lesbare geht es nicht weiter (gezählt in verborgen). Benutzer und Rollen sind ausgenommen. Je Knoten: Ebene, über welchen Verweis erreicht, Anzahl Dokumente, Verweise zu Mappen außerhalb des Baums (aussen), Aufbewahrungsfrist (aufbewahrenBis, gesperrt) und die eigenen Rechte.",
+        "description": "Baum-Sammlung (#396, #424): Breitensuche ab der Mappe über Verweise – verwiesenVon (Mappen, die darauf verweisen, „nach unten“) und/oder verweistAuf (Mappen, auf die sie verweist). Ohne seitwaerts geht jede Mappe nur in der Richtung weiter, über die sie erreicht wurde. Mit nurZugehoerigkeit geht es nur über Verweisfelder der Art Zugehörigkeit weiter; Mappen, die nur über Bezug verbunden sind, stehen als Blatt da (nurBezug). Kreise werden erkannt (auchUeber, kreise), die Obergrenze max kappt große Bäume (abgeschnitten). Nur Mappen, die der Aufrufer lesen darf; über nicht lesbare geht es nicht weiter (gezählt in verborgen). Benutzer und Rollen sind ausgenommen. Je Knoten: Ebene, über welchen Verweis erreicht, Anzahl Dokumente, Verweise zu Mappen außerhalb des Baums (aussen), Aufbewahrungsfrist (aufbewahrenBis, gesperrt) und die eigenen Rechte.",
         "operationId": "getMappenMitidBaum",
         "parameters": [
           {
@@ -1064,6 +1064,15 @@
             "schema": {
               "type": "boolean"
             }
+          },
+          {
+            "name": "nurZugehoerigkeit",
+            "in": "query",
+            "required": false,
+            "description": "true: nur über Verweise der Art Zugehörigkeit weitersammeln (Standard false)",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -1099,6 +1108,170 @@
           },
           "404": {
             "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mappen/{id}/loeschvorschau": {
+      "get": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Mit verknüpften Mappen löschen: Vorschau",
+        "description": "Mappe mit allen verknüpften Mappen löschen (#424): Baum „nach unten“ (Mappen, die auf die Mappe verweisen, und so weiter; nie nach oben oder seitwärts; ohne Benutzer und Rollen) wie GET /mappen/{id}/baum mit nurZugehoerigkeit: Mitgelöscht und weitergesammelt wird nur über Verweise der Art Zugehörigkeit; Mappen, die nur über Bezug dranhängen (knoten[].nurBezug, 📎), werden nie gelöscht – bei ihnen wird nur der Verweis entfernt. Dazu kanten (alle Verweise im Baum), geteilt (🔗: gehört über Zugehörigkeit auch zu einer Mappe außerhalb – gleicher Typ oder gleiches Feld), nichtLoeschbar (Id → Grund), papierkorbTage und vorschlag (Id → loeschen | entkoppeln | behalten). Gesperrte Mappen (Aufbewahrungsfrist, knoten[].gesperrt) und Mappen ohne Löschrecht (knoten[].rechte.D) werden nie gelöscht. Die Vorschau ändert nichts.",
+        "operationId": "getMappenMitidLoeschvorschau",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Start-Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tiefe",
+            "in": "query",
+            "required": false,
+            "description": "Ebenen, 1 bis 10 (Standard 5)",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "max",
+            "in": "query",
+            "required": false,
+            "description": "höchstens so viele Mappen, 1 bis 5000 (Standard 1000)",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoeschVorschau"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mappen/{id}/mit-verknuepften-loeschen": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Mit verknüpften Mappen löschen: ausführen",
+        "description": "Sammelt die Vorschau neu (gleiche tiefe/max angeben) und löscht nach auswahl (Id → loeschen | entkoppeln | behalten; fehlende Ids bleiben – z. B. vorschlag aus der Vorschau übernehmen). Dieselben Prüfungen wie in der Vorschau: Rechte, Aufbewahrungsfristen; eine Mappe, auf die eine bleibende Mappe noch verweist, bleibt. entkoppeln entfernt nur die Verweise dieser Mappe auf gelöschte Mappen (Recht „Bearbeiten“). Alles geht als ein Vorgang in den Papierkorb (bei 0 Tagen Aufbewahrung sofort endgültig) und lässt sich mit POST /papierkorb/vorgang/{vorgang}/wiederherstellen gemeinsam wiederherstellen. 422, wenn nach der Auswahl nichts gelöscht würde.",
+        "operationId": "postMappenMitidMit-verknuepften-loeschen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Start-Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoeschAusfuehren"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoeschErgebnis"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1227,6 +1400,69 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Wiederhergestellt"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/papierkorb/vorgang/{id}/wiederherstellen": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Einen Vorgang gemeinsam wiederherstellen",
+        "description": "Alle Mappen, die zusammen „mit verknüpften Mappen“ gelöscht wurden (#424, Feld vorgang im Papierkorb), samt Dokumenten und Verweisen untereinander; Verweise bleibender Mappen, die beim Löschen entfernt wurden, werden wieder gesetzt.",
+        "operationId": "postPapierkorbVorgangMitidWiederherstellen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id des Vorgangs (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VorgangWiederhergestellt"
                 }
               }
             }
@@ -6376,6 +6612,28 @@
           "dokumente": {
             "type": "integer",
             "description": "Anzahl Dokumente, die mit ihr im Papierkorb liegen"
+          },
+          "vorgang": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Mit verknüpften Mappen gelöscht (#424): gemeinsame Id des Vorgangs"
+          },
+          "entkoppelt": {
+            "type": "array",
+            "description": "Verweise bleibender Mappen auf diese, die beim Löschen entfernt wurden (#424)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "quelleId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "feldKey": {
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       },
@@ -6394,6 +6652,157 @@
           "verweiseEntfallen": {
             "type": "integer",
             "description": "Verweise auf Mappen, die es nicht mehr gibt"
+          }
+        }
+      },
+      "LoeschVorschau": {
+        "type": "object",
+        "properties": {
+          "baum": {
+            "$ref": "#/components/schemas/Baum"
+          },
+          "kanten": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "quelleId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "feldKey": {
+                  "type": "string"
+                },
+                "zielId": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "geteilt": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "nichtLoeschbar": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "vorschlag": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "loeschen",
+                "entkoppeln",
+                "behalten"
+              ]
+            }
+          },
+          "papierkorbTage": {
+            "type": "integer"
+          }
+        }
+      },
+      "LoeschAusfuehren": {
+        "type": "object",
+        "required": [
+          "auswahl"
+        ],
+        "properties": {
+          "auswahl": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "loeschen",
+                "entkoppeln",
+                "behalten"
+              ]
+            },
+            "description": "Mappen-Id → Aktion; fehlende Ids bleiben"
+          },
+          "tiefe": {
+            "type": "integer"
+          },
+          "max": {
+            "type": "integer"
+          }
+        }
+      },
+      "LoeschErgebnis": {
+        "type": "object",
+        "properties": {
+          "vorgang": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "endgueltig": {
+            "type": "boolean",
+            "description": "true = kein Papierkorb, sofort endgültig"
+          },
+          "zahlen": {
+            "type": "object",
+            "properties": {
+              "mappen": {
+                "type": "integer"
+              },
+              "dokumente": {
+                "type": "integer"
+              },
+              "frist": {
+                "type": "integer"
+              },
+              "ohneRecht": {
+                "type": "integer"
+              },
+              "verweise": {
+                "type": "integer"
+              },
+              "gehalten": {
+                "type": "integer"
+              },
+              "abgewaehlt": {
+                "type": "integer"
+              }
+            }
+          },
+          "loeschen": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "entkoppeln": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "VorgangWiederhergestellt": {
+        "type": "object",
+        "properties": {
+          "mappen": {
+            "type": "integer"
+          },
+          "verweiseWieder": {
+            "type": "integer"
+          },
+          "verweiseEntfallen": {
+            "type": "integer"
+          },
+          "startId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         }
       },
@@ -7623,8 +8032,19 @@
               },
               "feld": {
                 "type": "string"
+              },
+              "verweisart": {
+                "type": "string",
+                "enum": [
+                  "zugehoerigkeit",
+                  "bezug"
+                ]
               }
             }
+          },
+          "nurBezug": {
+            "type": "boolean",
+            "description": "mit nurZugehoerigkeit: nur über Bezug verbunden – Blatt, nicht weiterverfolgt"
           },
           "auchUeber": {
             "type": "array",
