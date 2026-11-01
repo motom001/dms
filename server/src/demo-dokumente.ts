@@ -9,6 +9,7 @@ import { DOKUMENTARTEN, MAX_DUPLIKATE, MAX_JE_MAPPE, MISCHUNGEN, STUFEN, type Do
 import { absatz, anschrift, euro, person, position, satz, ueberschrift } from './demo-text';
 import { Fachfehler } from './fehler';
 import type { Zufall } from './zufall';
+import { eigenerPuffer } from './pdf-puffer';
 
 const deflateAsync = promisify(deflate);
 
@@ -263,7 +264,7 @@ async function scan(z: Zufall, m: MappenInhalt, kennung: string): Promise<{ inha
   doc.setCreationDate(new Date(Date.UTC(2026, 0, 1)));
   doc.setModificationDate(new Date(Date.UTC(2026, 0, 1)));
   for (const bild of bilder) {
-    const img = await doc.embedJpg(bild);
+    const img = await doc.embedJpg(eigenerPuffer(bild));
     const seite = doc.addPage(A4);
     seite.drawRectangle({ x: 0, y: 0, width: A4[0], height: A4[1], color: rgb(0.97, 0.97, 0.95) });
     seite.drawImage(img, { x: z.zwischen(-4, 4), y: z.zwischen(-4, 4), width: A4[0], height: A4[1], rotate: degrees(z.zwischen(-0.8, 0.8)) });

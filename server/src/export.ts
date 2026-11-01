@@ -6,6 +6,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf
 import { formatiere, istSystemspalte, SYSTEMSPALTEN, trefferlistenVon, type Dokument, type Feld, type Mappe, type Mappentyp } from '../../shared/src/model';
 import { spaltenDerSicht } from '../../shared/src/sichten';
 import type { Zelle } from './xlsx';
+import { eigenerPuffer } from './pdf-puffer';
 
 export type Spaltenart = 'liste' | 'alle';
 
@@ -227,7 +228,7 @@ export async function mappenPdf(titel: string, mappen: PdfMappe[], q: Quelle, ue
     }
     for (const b of bilder) {
       try {
-        const bild = b.png ? await doc.embedPng(b.b) : await doc.embedJpg(b.b);
+        const bild = b.png ? await doc.embedPng(eigenerPuffer(b.b)) : await doc.embedJpg(eigenerPuffer(b.b));
         const seite = doc.addPage([A4.b, A4.h]);
         const max = { b: A4.b - 2 * RAND, h: A4.h - 2 * RAND - 24 };
         const k = Math.min(1, max.b / bild.width, max.h / bild.height);

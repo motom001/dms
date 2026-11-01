@@ -7,6 +7,7 @@ import { PDFDocument } from 'pdf-lib';
 import type { Dokument } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import { protokoll } from './protokoll';
+import { eigenerPuffer } from './pdf-puffer';
 
 /**
  * Vorschaubilder der ersten Seite (#332).
@@ -112,7 +113,7 @@ function starte(cmd: string, args: string[], ms: number): Promise<void> {
 /** Bild in ein einseitiges PDF in Bildgröße legen (pdftoppm liest nur PDFs). */
 async function bildAlsPdf(inhalt: Buffer, mime: string): Promise<Buffer> {
   const doc = await PDFDocument.create();
-  const bild = mime === 'image/png' ? await doc.embedPng(inhalt) : await doc.embedJpg(inhalt);
+  const bild = mime === 'image/png' ? await doc.embedPng(eigenerPuffer(inhalt)) : await doc.embedJpg(eigenerPuffer(inhalt));
   const seite = doc.addPage([bild.width, bild.height]);
   seite.drawImage(bild, { x: 0, y: 0, width: bild.width, height: bild.height });
   return Buffer.from(await doc.save());
