@@ -878,6 +878,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#mail-an-die-administratoren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mail an die Administratoren
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#gesperrte-adressen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1949,6 +1960,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#mail-an-die-administratoren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mail an die Administratoren
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#gesperrte-adressen" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2080,7 +2102,33 @@
 </tbody>
 </table>
 <p>Die Sperrdauer je IP darf auch <strong>0</strong> sein: Dann bleibt die Adresse gesperrt, bis ein Administrator sie freigibt. Die Fehlversuche je IP zählen innerhalb der Sperrdauer (bei „dauerhaft“ innerhalb einer Stunde).</p>
-<p>Sperren stehen in der Datenbank und überstehen einen Neustart. Jede Sperre und jedes Entsperren steht im <a href="../fehlersuche/#protokoll">Protokoll</a>. Sobald eine IP gesperrt wird, bekommen die Administratoren eine Mail. Das ist Standard; abschalten lässt es sich mit dem Haken <strong>Administratoren per Mail informieren, wenn eine IP gesperrt wird</strong>.</p>
+<p>Sperren stehen in der Datenbank und überstehen einen Neustart. Jede Sperre und jedes Entsperren steht im <a href="../fehlersuche/#protokoll">Protokoll</a>.</p>
+<h2 id="mail-an-die-administratoren">Mail an die Administratoren<a class="headerlink" href="#mail-an-die-administratoren" title="Permanent link">&para;</a></h2>
+<p>Ist das DMS aus dem Internet erreichbar, probieren Fremde ständig Passwörter durch. Das ist normal, und die Sperren passieren automatisch. Darum schickt das DMS im Standard <strong>keine Mail</strong>, wenn es sperrt. Was gesperrt ist, siehst du jederzeit unter <strong>Werkbank → Anmeldeschutz</strong> und im Protokoll.</p>
+<p>Wer trotzdem Bescheid wissen will, setzt im Block <strong>Mail an die Administratoren</strong> einen oder beide Haken:</p>
+<table>
+<thead>
+<tr>
+<th>Haken</th>
+<th>Was kommt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Einmal am Tag eine Sammelmeldung über die Sperren schicken</strong></td>
+<td>Höchstens eine Mail am Tag, kurz nach Mitternacht, über die Sperren des Vortags: wie viele IP-Adressen und Benutzerkonten gesperrt wurden, dazu die fünf Adressen mit den meisten Fehlversuchen. War das DMS aus, kommt die Meldung beim nächsten Start und fasst die verpassten Tage zusammen. An Tagen ohne Sperre kommt nichts.</td>
+</tr>
+<tr>
+<td><strong>Sofort melden, wenn ein Benutzerkonto gesperrt wird</strong></td>
+<td>Eine Mail, sobald für ein bestehendes Konto zu viele falsche Passwörter oder Codes kamen. Das ist seltener und wichtiger als eine gesperrte IP: Vielleicht hat jemand das Passwort dieses Kontos im Visier. Je Konto höchstens eine Mail am Tag; Fehlversuche mit unbekannten Adressen lösen keine Mail aus.</td>
+</tr>
+</tbody>
+</table>
+<p>Die Mails gehen an alle aktiven Administratoren mit E-Mail-Adresse und brauchen einen eingerichteten <a href="../installation/#e-mail-und-adresse">Mailversand</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Bis Version 0.84.7</p>
+<p>Früher kam im Standard bei jeder gesperrten IP sofort eine Mail. Mit 0.84.8 ist die Mail im Standard aus – auch in bestehenden Installationen, in denen niemand den Haken selbst umgelegt hat. Wer ihn seit 0.84.8 einschaltet, bekommt die tägliche Sammelmeldung statt einer Mail je Sperre.</p>
+</div>
 <h2 id="gesperrte-adressen">Gesperrte Adressen<a class="headerlink" href="#gesperrte-adressen" title="Permanent link">&para;</a></h2>
 <p>Die Liste zeigt jede gesperrte IP mit Grund, Beginn und Ende. <strong>Entsperren</strong> gibt sie sofort frei. Oben auf der Seite steht deine eigene Adresse, wie das DMS sie sieht.</p>
 <div class="admonition warning">
