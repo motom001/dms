@@ -249,7 +249,7 @@ Unter Registern und Archivmodus legst du fest, wer Mappen dieses Mappentyps anle
 
 ## Mappentyp kopieren
 
-**Mappentyp kopieren** oben rechts legt einen neuen Mappentyp als **Entwurf** an – mit denselben Feldern, Titel, Trefferlisten, Registern und Berechtigungen. Er heißt „Kopie von …“ und bekommt eine eigene Kennung; beides kannst du vor dem Speichern ändern. Angelegt wird er erst mit **Mappentyp speichern**. Mappen werden nicht kopiert. Felder, die auf den Mappentyp selbst verweisen, zeigen in der Kopie auf die Kopie. Systemtypen lassen sich nicht kopieren.
+**Mappentyp kopieren** oben rechts legt einen neuen Mappentyp als **Entwurf** an – mit denselben Feldern, Titel, Trefferlisten, Registern und Berechtigungen. Er heißt „Kopie von …“ und bekommt eine eigene Kennung; beides kannst du vor dem Speichern ändern. Angelegt wird er erst mit **Mappentyp anlegen**; **Entwurf verwerfen** bricht ab. Mappen werden nicht kopiert. Felder, die auf den Mappentyp selbst verweisen, zeigen in der Kopie auf die Kopie. Systemtypen lassen sich nicht kopieren.
 
 ## Mappentyp löschen
 

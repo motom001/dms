@@ -5,6 +5,7 @@ import { OCR_STAENDE, type OcrStandArt } from '../../../shared/src/model';
 import { api, type OcrEinstellungen, type OcrStatus } from '../api';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 
 /**
  * Werkbank → Texterkennung (#45): Werkzeuge, Einstellungen, Warteschlange.
@@ -105,14 +106,16 @@ function Einstellungen({ t }: { t: TexterkennungZustand }) {
   const s = t.stand!;
   const [e, setE] = useState<OcrEinstellungen>(s.einstellungen);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const geaendert = JSON.stringify(e) !== JSON.stringify(s.einstellungen);
+  const [sendet, setSendet] = useState(false);
+  const ent = useEntwurf(s.einstellungen, e, { zuruecksetzen: () => { setE(s.einstellungen); setMeldung(undefined); } });
   const setze = (p: Partial<OcrEinstellungen>) => { setE((x) => ({ ...x, ...p })); setMeldung(undefined); };
   async function speichern() {
+    setSendet(true);
     try { t.setStand(await api.texterkennungSpeichern(e)); setMeldung({ art: 'gut', text: 'Gespeichert – gilt ab sofort.' }); }
-    catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   return (
-    <form className="blatt" id="einstellungen" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }}>
+    <form className="blatt" id="einstellungen" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
       <h2 className="h3">Einstellungen</h2>
       <label className="haken"><input type="checkbox" checked={e.aktiv} onChange={(ev) => setze({ aktiv: ev.target.checked })} /><span>Volltext erzeugen<small className="hilfe">Ausgeschaltet bleiben neue Dokumente in der Warteschlange, bis es wieder an ist.</small></span></label>
       <div className="raster">
@@ -144,10 +147,7 @@ function Einstellungen({ t }: { t: TexterkennungZustand }) {
       </div>
       <p className="leise klein">Andere Dateitypen (z. B. Office-Dokumente) bekommen vorerst keinen Volltext. Externe Dienste für die Texterkennung kommen später dazu.</p>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
-      <div className="knoepfe">
-        {geaendert && <button type="button" className="knopf" onClick={() => { setE(s.einstellungen); setMeldung(undefined); }}>Änderungen verwerfen</button>}
-        <button className="knopf primaer" disabled={!geaendert}>Speichern</button>
-      </div>
+      <Speicherleiste ent={ent} gegenstand="Einstellungen" sendet={sendet} />
     </form>
   );
 }

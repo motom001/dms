@@ -3,11 +3,12 @@ import { rueckfrage } from './rueckfrage';
 
 /* Kleiner Router: der Pfad ist der Zustand, Links schieben ihn in die History. */
 
-type Wache = () => Promise<boolean>;
-let wache: Wache | null = null;
+/** Formulare mit ungespeicherten Änderungen; mehrere auf einer Seite gehen (#370). */
+const wachen = new Set<object>();
+const wache = () => rueckfrage({ titel: 'Änderungen verwerfen?', text: 'Es gibt ungespeicherte Änderungen. Verlässt du die Seite, gehen sie verloren.', ja: 'Verwerfen und verlassen', nein: 'Hierbleiben', gefahr: true });
 
 /** Nach erfolgreichem Speichern: ohne Nachfrage weiter. */
-export function loeseWache() { wache = null; }
+export function loeseWache() { wachen.clear(); }
 
 export function geheZu(pfad: string, ersetzen = false) {
   if (pfad === location.pathname + location.search) return;
@@ -16,8 +17,16 @@ export function geheZu(pfad: string, ersetzen = false) {
     dispatchEvent(new PopStateEvent('popstate'));
   };
   // Ungespeicherte Änderungen (#355: eigene Rückfrage statt confirm): erst nach „Verwerfen“ weiter.
-  if (wache) void wache().then((ok) => { if (ok) { wache = null; weiter(); } });
+  if (wachen.size) void darfVerlassen().then((ok) => { if (ok) weiter(); });
   else weiter();
+}
+
+/** Für Wechsel ohne neuen Pfad (z. B. Reiter): fragt nach, wenn Ungespeichertes offen ist. */
+export async function darfVerlassen(): Promise<boolean> {
+  if (!wachen.size) return true;
+  const ok = await wache();
+  if (ok) wachen.clear();
+  return ok;
 }
 
 export function useOrt() {
@@ -44,10 +53,10 @@ export function Link({ to, className, children, title }: { to: string; className
 export function useUngespeichert(ungespeichert: boolean) {
   useEffect(() => {
     if (!ungespeichert) return;
-    const vorher = wache;
-    wache = () => rueckfrage({ titel: 'Änderungen verwerfen?', text: 'Es gibt ungespeicherte Änderungen. Verlässt du die Seite, gehen sie verloren.', ja: 'Verwerfen und verlassen', nein: 'Hierbleiben', gefahr: true });
-    const unload = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    const marke = {};
+    wachen.add(marke);
+    const unload = (e: BeforeUnloadEvent) => { if (wachen.has(marke)) e.preventDefault(); };
     addEventListener('beforeunload', unload);
-    return () => { wache = vorher; removeEventListener('beforeunload', unload); };
+    return () => { wachen.delete(marke); removeEventListener('beforeunload', unload); };
   }, [ungespeichert]);
 }

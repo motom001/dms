@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, type OrdnerStand, type Schwelle, type SpeicherplatzEinstellung, type SpeicherplatzStand } from '../api';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { WARTUNG_GEAENDERT } from '../wartung';
 
 /**
@@ -79,8 +80,8 @@ export function SpeicherplatzPanel({ z, nachAenderung }: { z: SpeicherplatzZusta
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [laeuft, setLaeuft] = useState(false);
   useEffect(() => { if (s && !e) setE(s.einstellung); }, [s, e]);
+  const ent = useEntwurf(s?.einstellung ?? null, e, { aus: !s || !e, zuruecksetzen: () => { if (s) setE(s.einstellung); setMeldung(undefined); } });
   if (!s || !e) return <p className="leise">{z.fehler ?? 'Lade …'}</p>;
-  const geaendert = JSON.stringify(e) !== JSON.stringify(s.einstellung);
   const gleicherTraeger = datentraeger(s.ordner);
 
   async function speichern() {
@@ -143,7 +144,7 @@ export function SpeicherplatzPanel({ z, nachAenderung }: { z: SpeicherplatzZusta
         <p className="leise klein">Gemessen {new Date(s.gemessen).toLocaleTimeString('de-DE', { timeStyle: 'short' })} Uhr.</p>
       </section>
 
-      <form className="blatt" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }}>
+      <form className="blatt" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <h2 className="h3">Schwellen</h2>
         <div className="raster">
           <SchwelleFeld name="Warnschwelle" hilfe="Hinweis und Mail" wert={e.warnung} aendern={(w) => setE({ ...e, warnung: w })} />
@@ -151,10 +152,7 @@ export function SpeicherplatzPanel({ z, nachAenderung }: { z: SpeicherplatzZusta
         </div>
         <p className="leise klein">Gilt für jeden Ordner einzeln; Prozent beziehen sich auf die Größe seines Datenträgers. Standard: Warnung unter 10 % frei, Grenze unter 2 GB frei.</p>
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
-        <div className="knoepfe">
-          {geaendert && <button type="button" className="knopf" onClick={() => setE(s.einstellung)}>Änderungen verwerfen</button>}
-          <button className="knopf primaer" disabled={!geaendert || laeuft}>{laeuft ? 'Speichere …' : 'Speichern'}</button>
-        </div>
+        <Speicherleiste ent={ent} gegenstand="Schwellen" sendet={laeuft} />
       </form>
     </div>
   );

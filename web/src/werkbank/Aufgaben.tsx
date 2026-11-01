@@ -8,6 +8,7 @@ import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { Person } from '../Person';
 import { Hilfe } from '../Hilfe';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 
 /** Werkbank → Aufgaben (#54): alle offenen (oder erledigten) Aufgaben, weitergeben, tägliche Mail. */
 const datum = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
@@ -71,9 +72,12 @@ export function AufgabenListe({ z }: { z: AufgabenZustand }) {
 export function AufgabenPanel({ z }: { z: AufgabenZustand }) {
   const [e, setE] = useState<MailEinstellung>(z.mail ?? { aktiv: true, uhrzeit: '07:00', bundesland: null });
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const [sendet, setSendet] = useState(false);
   useEffect(() => { if (z.mail) setE(z.mail); }, [z.mail]);
+  const ent = useEntwurf(z.mail, e, { aus: !z.mail, zuruecksetzen: () => { if (z.mail) setE(z.mail); setMeldung(undefined); } });
   async function speichern() {
-    try { z.setMail(await api.aufgabenMailSpeichern(e)); setMeldung({ art: 'gut', text: 'Gespeichert.' }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    setSendet(true);
+    try { z.setMail(await api.aufgabenMailSpeichern(e)); setMeldung({ art: 'gut', text: 'Gespeichert.' }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   async function senden() {
     try { const r = await api.aufgabenMailSenden(); setMeldung({ art: 'gut', text: r.verschickt ? `${r.verschickt} ${r.verschickt === 1 ? 'Mail' : 'Mails'} verschickt.` : 'Niemand hat gerade offene Aufgaben (oder alle haben abbestellt).' }); }
@@ -86,7 +90,7 @@ export function AufgabenPanel({ z }: { z: AufgabenZustand }) {
         <h1>Aufgaben</h1>
         <p className="leise">Aufgaben entstehen, wenn eine Mappe nicht mehr zur Definition passt (für ihren Ersteller), wenn jemand in einem formatierten Text erwähnt wird, oder von Hand an der Mappe. Jede Mappe mit offener Aufgabe steht unter „Zu erledigen“ ihres Empfängers. Weitergeben dürfen der Empfänger und Administratoren; das steht im Protokoll.</p>
       </div>
-      <form className="blatt" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }}>
+      <form className="blatt" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <h2 className="h3">Tägliche Zusammenfassung</h2>
         <p className="leise">Statt einer Mail je Aufgabe bekommt jeder mit offenen Aufgaben die Tägliche Zusammenfassung. Jeder kann sie im Profil anpassen oder abbestellen. Braucht den E-Mail-Versand (Werkbank → E-Mail und Adresse).</p>
         <label className="haken"><input type="checkbox" checked={e.aktiv} onChange={(x) => setE({ ...e, aktiv: x.target.checked })} /><span>Zusammenfassung verschicken</span></label>
@@ -102,8 +106,8 @@ export function AufgabenPanel({ z }: { z: AufgabenZustand }) {
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         <div className="knoepfe">
           <button type="button" className="knopf" onClick={() => void senden()}>Jetzt senden</button>
-          <button className="knopf primaer" disabled={JSON.stringify(e) === JSON.stringify(z.mail)}>Speichern</button>
         </div>
+        <Speicherleiste ent={ent} gegenstand="Zusammenfassung" sendet={sendet} />
       </form>
     </div>
   );

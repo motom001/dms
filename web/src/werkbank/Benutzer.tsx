@@ -6,7 +6,8 @@ import { AbwesenheitFormular, zeitraumText } from '../profil/Abwesenheit';
 import { api, type LinkErgebnis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
-import { geheZu, Link } from '../ort';
+import { geheZu, Link, loeseWache } from '../ort';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Hilfe } from '../Hilfe';
 import { rueckfrage } from '../rueckfrage';
 
@@ -97,6 +98,8 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
   const [name, setName] = useState(b.name);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [ergebnis, setErgebnis] = useState<LinkErgebnis>();
+  const [sendet, setSendet] = useState(false);
+  const ent = useEntwurf(b.name, name, { zuruecksetzen: () => setName(b.name) });
   const selbst = b.id === ich.id;
   const s = status(b);
 
@@ -122,7 +125,7 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       {ergebnis && <LinkAnzeige e={ergebnis} schliessen={() => setErgebnis(undefined)} />}
 
-      <form className="blatt" onSubmit={(e) => { e.preventDefault(); void aktion(() => api.benutzerAendern(b.id, { name }), 'Gespeichert.'); }}>
+      <form className="blatt" onKeyDown={ent.tasten} onSubmit={(e) => { e.preventDefault(); setSendet(true); void aktion(() => api.benutzerAendern(b.id, { name }), 'Gespeichert.').finally(() => setSendet(false)); }}>
         <div className="raster">
           <label className="eigenschaft"><span>Name</span><input value={name} onChange={(e) => setName(e.target.value)} /></label>
           <label className="eigenschaft"><span>E-Mail-Adresse <small>{selbst ? 'änderst du in deinem Profil' : 'ändert der Benutzer selbst'}</small></span><input value={b.email} readOnly disabled /></label>
@@ -132,7 +135,7 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
             </select></label>
         </div>
         <WeitereRollen gewaehlt={b.rollen ?? []} setze={(rollen) => void aktion(() => api.benutzerAendern(b.id, { rollen }), 'Rollen gespeichert.')} />
-        <div className="knoepfe"><button className="knopf primaer" disabled={name === b.name}>Name speichern</button></div>
+        <Speicherleiste ent={ent} gegenstand="Name" sendet={sendet} />
       </form>
 
       <div className="blatt">
@@ -202,7 +205,7 @@ function ZugangSperren({ b, selbst, loeschbar, aktion }: { b: Benutzer; selbst: 
       {gruende.length > 0 && <div className="hinweis warn"><p>Deaktivieren geht erst, wenn ein Vertreter hinterlegt ist und keine Aufgaben mehr offen sind.</p><ul>{gruende.map((g) => <li key={g}>{g}</li>)}</ul></div>}
       <div className="knoepfe">
         {loeschbar && <button className="knopf gefahr-rand" onClick={async () => {
-          if (await rueckfrage({ titel: 'Einladung löschen?', text: `Die Einladung an ${b.email} wird zurückgezogen und der Benutzer gelöscht.`, ja: 'Einladung löschen', gefahr: true })) void aktion(async () => { await api.benutzerLoeschen(b.id); geheZu('/werkbank/benutzer'); });
+          if (await rueckfrage({ titel: 'Einladung löschen?', text: `Die Einladung an ${b.email} wird zurückgezogen und der Benutzer gelöscht.`, ja: 'Einladung löschen', gefahr: true })) void aktion(async () => { await api.benutzerLoeschen(b.id); loeseWache(); geheZu('/werkbank/benutzer'); });
         }}>Einladung löschen</button>}
         <button className="knopf gefahr" disabled={gruende.length > 0} onClick={async () => {
           if (await rueckfrage({ titel: `${name} deaktivieren?`, text: `Der Zugang ist sofort gesperrt, alle Sitzungen enden. Aufgaben, die noch für ${name} entstehen, gehen an ${vertreter}.`, ja: 'Deaktivieren', gefahr: true })) {
@@ -286,6 +289,7 @@ export function BenutzerNeu({ neuLaden }: { neuLaden: () => Promise<void> }) {
   const [sendet, setSendet] = useState(false);
   const [fehler, setFehler] = useState<string>();
   const [ergebnis, setErgebnis] = useState<LinkErgebnis>();
+  const ent = useEntwurf({ email: '', name: '', rolle: 'mitglied', rollen: [] as string[] }, { email, name, rolle, rollen }, { neu: true, aus: !!ergebnis, liste: '/werkbank/benutzer', zuruecksetzen: () => undefined });
 
   async function anlegen(e: FormEvent) {
     e.preventDefault();
@@ -304,7 +308,7 @@ export function BenutzerNeu({ neuLaden }: { neuLaden: () => Promise<void> }) {
   );
 
   return (
-    <form className="einspaltig" onSubmit={anlegen}>
+    <form className="einspaltig" onSubmit={anlegen} onKeyDown={ent.tasten}>
       <div className="mappenkopf"><p className="ueber">Benutzer</p><h1>Neuer Benutzer</h1>
         <p className="leise">{mail ? 'Er bekommt eine E-Mail mit einem Link, über den er sein Passwort festlegt.' : 'Kein E-Mail-Versand eingerichtet: Nach dem Anlegen erscheint ein Link, den du selbst weitergibst.'}</p></div>
       <div className="blatt">
@@ -318,7 +322,7 @@ export function BenutzerNeu({ neuLaden }: { neuLaden: () => Promise<void> }) {
         </div>
         <WeitereRollen gewaehlt={rollen} setze={setRollen} />
         {fehler && <p className="fehlertext">{fehler}</p>}
-        <div className="knoepfe"><button className="knopf primaer" disabled={sendet}>{sendet ? 'Lege an …' : mail ? 'Anlegen und einladen' : 'Anlegen'}</button></div>
+        <Speicherleiste ent={ent} gegenstand="Benutzer" sendet={sendet} haupttext={mail ? 'Benutzer anlegen und einladen' : undefined} />
       </div>
     </form>
   );

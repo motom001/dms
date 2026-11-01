@@ -3,7 +3,7 @@ import { herkunftText, vergleicheVersion, type InstalliertesPaket, type Katalog,
 import { api, ApiFehler, type PaketQuelle, type PaketVorschau } from '../api';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
-import { geheZu, Link } from '../ort';
+import { darfVerlassen, geheZu, Link } from '../ort';
 import { PaketEinstellungen } from './PaketEinstellungen';
 import { rueckfrage } from '../rueckfrage';
 import { useKonto } from '../konto';
@@ -335,7 +335,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
       <MeldungBox m={meldung} />
       {inst?.einstellungen && (
         <div className="registertaben" role="tablist" aria-label="Paket">
-          <button type="button" role="tab" aria-selected={reiter === 'uebersicht'} className={`registertab ${reiter === 'uebersicht' ? 'an' : ''}`} onClick={() => setReiter('uebersicht')}>Übersicht</button>
+          <button type="button" role="tab" aria-selected={reiter === 'uebersicht'} className={`registertab ${reiter === 'uebersicht' ? 'an' : ''}`} onClick={() => void darfVerlassen().then((ok) => { if (ok) setReiter('uebersicht'); })}>Übersicht</button>
           <button type="button" role="tab" aria-selected={reiter === 'einstellungen'} className={`registertab ${reiter === 'einstellungen' ? 'an' : ''}`} onClick={() => setReiter('einstellungen')}>Einstellungen{inst.einstellungenNoetig ? ' ⚠' : ''}</button>
         </div>
       )}

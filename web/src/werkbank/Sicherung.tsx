@@ -4,6 +4,7 @@ import { Schritte } from '../wiederherstellen';
 import { Hilfe, useHandbuch } from '../Hilfe';
 import { Link } from '../ort';
 import { rueckfrage } from '../rueckfrage';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 
 /**
  * Werkbank → Sicherung (#103–#106): jetzt sichern, Liste mit Prüfsumme, Zeitplan und
@@ -209,16 +210,17 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
 function Zeitplan({ plan, notfallblatt, gespeichert }: { plan: SicherungsPlan; notfallblatt: boolean; gespeichert(): void }) {
   const [p, setP] = useState(plan);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const geaendert = JSON.stringify(p) !== JSON.stringify(plan);
+  const [sendet, setSendet] = useState(false);
+  const ent = useEntwurf(plan, p, { zuruecksetzen: () => { setP(plan); setMeldung(undefined); } });
   const a = p.aufbewahrung;
   const setA = (k: keyof typeof a, v: string) => setP({ ...p, aufbewahrung: { ...a, [k]: Math.max(0, Math.trunc(Number(v) || 0)) } });
   async function speichern() {
-    setMeldung(undefined);
+    setMeldung(undefined); setSendet(true);
     try { await api.sicherungPlan(p); setMeldung({ art: 'gut', text: 'Gespeichert.' }); gespeichert(); }
-    catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   return (
-    <section className="blatt" id="zeitplan">
+    <form className="blatt" id="zeitplan" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
       <h2 className="h3">Zeitplan und Aufbewahrung <Hilfe ort="sicherung.zeitplan" /></h2>
       <label className="haken"><input type="checkbox" checked={p.aktiv} disabled={!p.aktiv && !notfallblatt} onChange={(e) => setP({ ...p, aktiv: e.target.checked })} /><span>Automatisch sichern</span></label>
       {!notfallblatt && !p.aktiv && <p className="leise klein">Erst einschaltbar, wenn du das <a href="#notfallblatt" className="verweis">Notfallblatt</a> heruntergeladen hast – ohne den Schlüssel darauf ist eine Sicherung wertlos.</p>}
@@ -239,8 +241,8 @@ function Zeitplan({ plan, notfallblatt, gespeichert }: { plan: SicherungsPlan; n
         <label className="eigenschaft"><span>Mindest-Speicherplatz in GB <small>darunter beginnt keine Sicherung</small></span><input type="number" min={0} value={p.mindestFreiGB} onChange={(e) => setP({ ...p, mindestFreiGB: Math.max(0, Math.trunc(Number(e.target.value) || 0)) })} /></label>
       </div>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
-      <div className="knoepfe"><button className="knopf primaer" disabled={!geaendert} onClick={() => void speichern()}>Speichern</button></div>
-    </section>
+      <Speicherleiste ent={ent} gegenstand="Zeitplan" sendet={sendet} />
+    </form>
   );
 }
 
@@ -267,14 +269,16 @@ const AMPEL = { gruen: ['gut', 'in Ordnung'], gelb: ['warn', 'zu alt oder noch n
 function Probe({ stand, lauf, sicherungen, gesperrt, neuLaden }: { stand: ProbeStand; lauf: WhLauf | null; sicherungen: boolean; gesperrt: boolean; neuLaden(): void }) {
   const [plan, setPlan] = useState(stand.plan);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const geaendert = JSON.stringify(plan) !== JSON.stringify(stand.plan);
+  const [sendet, setSendet] = useState(false);
+  const ent = useEntwurf(stand.plan, plan, { zuruecksetzen: () => { setPlan(stand.plan); setMeldung(undefined); } });
   const laeuft = lauf?.art === 'probe' && lauf.status === 'laeuft';
   async function tu(f: () => Promise<unknown>, gut?: string) {
     setMeldung(undefined);
     try { await f(); neuLaden(); if (gut) setMeldung({ art: 'gut', text: gut }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   return (
-    <section className="blatt" id="probe">
+    <form className="blatt" id="probe" onKeyDown={ent.tasten}
+      onSubmit={(x) => { x.preventDefault(); setSendet(true); void tu(() => api.probePlan(plan), 'Gespeichert.').finally(() => setSendet(false)); }}>
       <h2 className="h3">Probe-Wiederherstellung <Hilfe ort="sicherung.probe" /></h2>
       <p>Spielt die neueste Sicherung in einen eigenen, vorübergehenden Bereich der Datenbank ein und prüft sie: Prüfsumme, Entschlüsselung, Prüfwort, Anzahl Mappen, Dokumente und Benutzer, Prüfwerte von bis zu 20 Dateien. Das laufende DMS bleibt unberührt; der Bereich wird danach entfernt.</p>
       <dl className="eigenschaften">
@@ -290,9 +294,9 @@ function Probe({ stand, lauf, sicherungen, gesperrt, neuLaden }: { stand: ProbeS
       </div>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <div className="knoepfe">
-        <button className="knopf" disabled={!geaendert} onClick={() => void tu(() => api.probePlan(plan), 'Gespeichert.')}>Zeitplan speichern</button>
-        <button className="knopf primaer" disabled={!sicherungen || laeuft || gesperrt} onClick={() => void tu(() => api.probeStarten())}>{laeuft ? 'Probe läuft …' : 'Jetzt probeweise wiederherstellen'}</button>
+        <button type="button" className="knopf" disabled={!sicherungen || laeuft || gesperrt} onClick={() => void tu(() => api.probeStarten())}>{laeuft ? 'Probe läuft …' : 'Jetzt probeweise wiederherstellen'}</button>
       </div>
-    </section>
+      <Speicherleiste ent={ent} gegenstand="Zeitplan" sendet={sendet} />
+    </form>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { abschnittsfelder, EINTRAG_ID, listen, type EinstellungBlock, type EinstellungFeld, type FeldVerweis, type GeheimStand } from '../../../shared/src/paketeinstellungen';
 import { api, ApiFehler, type PaketEinstellungenStand } from '../api';
 import { rueckfrage } from '../rueckfrage';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 
 /**
  * Werkbank → Pakete → Paket → Einstellungen (#197): Formular aus der Beschreibung im Manifest.
@@ -30,6 +31,10 @@ export function PaketEinstellungen({ id, gespeichert }: { id: string; gespeicher
   const [fehler, setFehler] = useState<Record<string, string>>({});
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht' | 'info'; text: string }>();
   const [laeuft, setLaeuft] = useState(false);
+  // Neu aufbauen beim Verwerfen: Geheimnis-Felder merken sich „neu eingeben“ selbst.
+  const [runde, setRunde] = useState(0);
+  const gespeichertWerte = stand ? zumFormular(stand) : null;
+  const ent = useEntwurf(gespeichertWerte, werte, { aus: !stand, zuruecksetzen: () => { if (stand) setWerte(zumFormular(stand)); setFehler({}); setMeldung(undefined); setRunde((r) => r + 1); } });
   useEffect(() => {
     let aktuell = true;
     api.paketEinstellungen(id).then((s) => { if (aktuell) { setStand(s); setWerte(zumFormular(s)); } }, (e) => aktuell && setMeldung({ art: 'schlecht', text: (e as Error).message }));
@@ -59,13 +64,11 @@ export function PaketEinstellungen({ id, gespeichert }: { id: string; gespeicher
   }
   const b = stand.beschreibung;
   return (
-    <div className="stapel paketeinstellungen">
+    <div className="stapel paketeinstellungen" onKeyDown={ent.tasten}>
       {stand.fehlend.length > 0 && <div className="hinweis warn" role="status"><p><strong>Einstellungen nötig.</strong> Es fehlen: {stand.fehlend.join(', ')}. Erst danach läuft das Paket.</p></div>}
       {meldung && <div className={`hinweis ${meldung.art}`} role="status"><p>{meldung.text}</p></div>}
-      {b.bloecke.map((blk, i) => <Block key={i} blk={blk} werte={werte} setze={setWerte} fehler={fehler} auswahl={stand.auswahl} />)}
-      <div className="knoepfe">
-        <button type="button" className="knopf primaer" disabled={laeuft} onClick={() => void speichern()}>{laeuft ? 'Speichere …' : 'Speichern'}</button>
-      </div>
+      {b.bloecke.map((blk, i) => <Block key={`${runde}-${i}`} blk={blk} werte={werte} setze={setWerte} fehler={fehler} auswahl={stand.auswahl} />)}
+      <Speicherleiste ent={ent} gegenstand="Einstellungen" sendet={laeuft} speicherbar={stand.fehlend.length > 0} speichern={() => void speichern()} />
       {b.aktionen.length > 0 && (
         <section className="blatt">
           <h2 className="h3">Aktionen</h2>

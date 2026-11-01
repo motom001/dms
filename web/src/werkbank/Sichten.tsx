@@ -7,7 +7,8 @@ import {
 } from '../../../shared/src/sichten';
 import { api } from '../api';
 import { useDaten } from '../daten';
-import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
+import { geheZu, Link, loeseWache } from '../ort';
+import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { titelOder } from '../seiten';
 import { Hilfe } from '../Hilfe';
 import { Bereich, SICHT_BEREICHE, useBereiche, type Klappe, type SichtBereich } from '../einrichtung/Bereich';
@@ -139,8 +140,8 @@ export function SichtEditor({ id }: { id: string }) {
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
   const [vorschau, setVorschau] = useState<number | null>(null);
-  const geaendert = JSON.stringify(e) !== basis;
-  useUngespeichert(geaendert);
+  const ent = useEntwurf(basis, JSON.stringify(e), { neu, liste: '/werkbank/sichten', zuruecksetzen: () => { setE(JSON.parse(basis)); setMeldung(undefined); } });
+  const { geaendert } = ent;
   // Bereiche (#148) wie am Mappentyp: neu offen, bestehend eingeklappt bzw. wie zuletzt.
   const b = useBereiche(SICHT_BEREICHE, 'sicht', neu ? null : id);
   const [fehlerOrte, setFehlerOrte] = useState<Set<SichtBereich>>(new Set());
@@ -207,7 +208,7 @@ export function SichtEditor({ id }: { id: string }) {
   const setzeTyp = (t: string, an: boolean) => setE((x) => ({ ...x, typen: an ? [...x.typen, t] : x.typen.filter((y) => y !== t) }));
 
   return (
-    <form className="editorform" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} noValidate>
+    <form className="editorform" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten} noValidate>
       <div className="seitenkopf"><div>
         <p className="ueber">Ansicht</p>
         <h1>{e.name || (neu ? 'Neue Ansicht' : 'Ohne Namen')}</h1>
@@ -261,14 +262,8 @@ export function SichtEditor({ id }: { id: string }) {
         <p>{vorschau === null ? 'Vorschau wird berechnet …' : <>Diese Ansicht zeigt zurzeit <strong>{vorschau.toLocaleString('de-DE')} {vorschau === 1 ? 'Mappe' : 'Mappen'}</strong>{untersichten > 0 ? ' (mit Unteransichten)' : ''}.</>}</p>
       </div>
 
-      <div className="speicherleiste">
-        {neu ? <Link to="/werkbank/sichten" className="textknopf">Entwurf verwerfen</Link> : <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>Ansicht löschen</button>}
-        <span className={`status ${meldung?.art === 'schlecht' ? 'schlecht' : ''}`} role="status">{meldung?.text ?? (geaendert && !neu ? 'Ungespeicherte Änderungen' : '')}</span>
-        <div className="knoepfe">
-          {!neu && <button type="button" className="knopf" disabled={!geaendert || sendet} onClick={() => { setE(JSON.parse(basis)); setMeldung(undefined); }}>Änderungen verwerfen</button>}
-          <button className="knopf primaer" disabled={sendet || (!geaendert && !neu)}>{sendet ? 'Speichere …' : 'Ansicht speichern'}</button>
-        </div>
-      </div>
+      <Speicherleiste ent={ent} gegenstand="Ansicht" sendet={sendet} meldung={meldung}
+        links={!neu && <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>Ansicht löschen</button>} />
     </form>
   );
 }
