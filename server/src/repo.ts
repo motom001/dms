@@ -335,6 +335,8 @@ export interface Repo {
   erledigteAufgaben(max: number): Promise<Aufgabe[]>;
   erledigeAufgabe(id: string, von: string | null): Promise<void>;
   delegiereAufgabe(id: string, an: string | null): Promise<void>;
+  /** Text einer offenen Aufgabe ersetzen – für gebündelte Benachrichtigungen, die hochzählen (#415, #422). */
+  aendereAufgabeText(id: string, text: string): Promise<void>;
   /** Fristen (#129): alle Aufgaben der Art „frist“ (offen und erledigt), ggf. nur dieser Mappen. */
   fristAufgaben(mappeIds?: string[]): Promise<Aufgabe[]>;
 

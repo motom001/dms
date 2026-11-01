@@ -3,7 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_AUSWAHL, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, ROLLEN, freierSchluessel, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
-  AUFGABE_MAX, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Benutzer, type Dokument, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Werte,
+  AUFGABE_MAX, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Aufgabenart, type Benutzer, type Dokument, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
@@ -254,6 +254,9 @@ export const EMAIL_MAX_EMPFAENGER = 20;
 /** Höchstens so viele Mappen in einer E-Mail (#151). */
 export const EMAIL_MAX_MAPPEN = 100;
 export const HISTORIE_STANDARD_TAGE = 365;
+/** Sammel-Weitergabe (#415): höchstens so viele Aufgaben auf einmal; Schlüssel der Sammelbenachrichtigung. */
+export const SAMMEL_MAX = 1000;
+export const SAMMEL_WEITERGABE = 'weitergabe';
 export interface DienstOptionen {
   /** Schlüssel für Passwortfelder (#39, #46). */
   tresor?: Tresor;
@@ -758,6 +761,78 @@ export class Dienst {
     await this.notiere(a.mappeId, ich.id, 'aufgabe', { text: `weitergegeben von ${von} an ${nach}: ${a.text}`, aufgabe: id, aufgabenart: a.art, vonId: a.empfaengerId, anId: ziel, aufgabentext: a.text });
     protokoll.modul('ablage').info('Aufgabe weitergegeben', { mappeId: a.mappeId, von, an: nach, aufgabe: a.text });
     return (await this.repo.holeAufgabe(id))!;
+  }
+
+  /**
+   * Sammel-Weitergabe (#415, #419): mehrere Aufgaben an einen Benutzer. Je Aufgabe dieselben Rechte wie beim
+   * einzelnen Weitergeben (eigene oder – als Administrator – alle); zusätzlich muss das Ziel die Mappe lesen
+   * dürfen. Was nicht geht, kommt mit Grund zurück. Jede Weitergabe steht in der Historie ihrer Mappe; der
+   * Empfänger bekommt dafür **eine** Sammelbenachrichtigung statt vieler einzelner.
+   */
+  async aufgabenWeitergeben(ids: unknown, an: unknown, ich: { id: string; rolle: string }): Promise<{
+    weitergegeben: string[]; nicht: Array<{ id: string; grund: string }>;
+  }> {
+    if (!Array.isArray(ids) || !ids.length) throw new Fachfehler(422, 'Bitte mindestens eine Aufgabe wählen.');
+    if (ids.length > SAMMEL_MAX) throw new Fachfehler(422, `Höchstens ${SAMMEL_MAX} Aufgaben auf einmal.`);
+    const ziel = await this.pruefeEmpfaenger(an);
+    const nach = await this.name(ziel);
+    const weitergegeben: string[] = [];
+    const nicht: Array<{ id: string; grund: string }> = [];
+    for (const id of [...new Set(ids.map(String))]) {
+      let a: Aufgabe;
+      try { a = await this.eigeneAufgabe(id, ich); } catch (e) { if (!(e instanceof Fachfehler)) throw e; nicht.push({ id, grund: e.message }); continue; }
+      if (a.empfaengerId === ziel) { nicht.push({ id, grund: `liegt schon bei ${nach}` }); continue; }
+      // Lesen kann auch erst die Aufgabe selbst erlauben (Regel „hat eine Aufgabe“) – deshalb nach dem Umhängen
+      // prüfen und bei Bedarf zurückhängen.
+      await this.repo.delegiereAufgabe(id, ziel);
+      if (!(await this.kannLesen(ziel, a.mappeId))) { await this.repo.delegiereAufgabe(id, a.empfaengerId); nicht.push({ id, grund: `${nach} darf die Mappe nicht lesen` }); continue; }
+      const von = await this.name(a.empfaengerId);
+      await this.notiere(a.mappeId, ich.id, 'aufgabe', { text: `weitergegeben von ${von} an ${nach}: ${a.text}`, aufgabe: id, aufgabenart: a.art, vonId: a.empfaengerId, anId: ziel, aufgabentext: a.text, sammel: true });
+      weitergegeben.push(id);
+    }
+    if (weitergegeben.length) {
+      protokoll.modul('ablage').info('Aufgaben gesammelt weitergegeben', { an: nach, anzahl: weitergegeben.length, nicht: nicht.length });
+      if (ziel !== ich.id) await this.sammelHinweisWeitergabe(ziel, ich.id, weitergegeben.length);
+    }
+    return { weitergegeben, nicht };
+  }
+
+  /** Sammelaktion „erledigt“ (#415): wie erledigeAufgabe je Aufgabe; was nicht geht, mit Grund. */
+  async aufgabenErledigen(ids: unknown, ich: { id: string; rolle: string }): Promise<{ erledigt: string[]; nicht: Array<{ id: string; grund: string }> }> {
+    if (!Array.isArray(ids) || !ids.length) throw new Fachfehler(422, 'Bitte mindestens eine Aufgabe wählen.');
+    if (ids.length > SAMMEL_MAX) throw new Fachfehler(422, `Höchstens ${SAMMEL_MAX} Aufgaben auf einmal.`);
+    const erledigt: string[] = [];
+    const nicht: Array<{ id: string; grund: string }> = [];
+    for (const id of [...new Set(ids.map(String))]) {
+      try { await this.erledigeAufgabe(id, ich); erledigt.push(id); } catch (e) { if (!(e instanceof Fachfehler)) throw e; nicht.push({ id, grund: e.message }); }
+    }
+    return { erledigt, nicht };
+  }
+
+  /**
+   * Gebündelte Benachrichtigung (#415, #419; auch #422): eine offene Aufgabe je Empfänger, Mappe, Art und
+   * Schlüssel. Ist schon eine offen, kommt keine zweite – `text` bekommt die bisherige und baut daraus den neuen
+   * Text (etwa hochgezählt). Erst wenn der Empfänger sie erledigt hat, entsteht bei Bedarf wieder eine neue.
+   */
+  async benachrichtigeGebuendelt(e: { empfaengerId: string; mappeId: string; art: Aufgabenart; schluessel: string; von: string | null; text: (bisher: Aufgabe | undefined) => string }) {
+    const offen = (await this.repo.offeneAufgaben({ mappeIds: [e.mappeId] })).find((a) => a.art === e.art && a.feldKey === e.schluessel && a.empfaengerId === e.empfaengerId);
+    const text = e.text(offen).slice(0, AUFGABE_MAX);
+    if (offen) { if (offen.text !== text) await this.repo.aendereAufgabeText(offen.id, text); return offen.id; }
+    const a = await this.repo.legeAufgabeAn({ id: randomUUID(), mappeId: e.mappeId, empfaengerId: e.empfaengerId, art: e.art, feldKey: e.schluessel, text, erstellt: '', erstelltVon: e.von, erledigt: null, erledigtVon: null });
+    return a.id;
+  }
+
+  /** Sammelbenachrichtigung der Weitergabe: an der Benutzer-Mappe dessen, der weitergegeben hat (#415). */
+  private async sammelHinweisWeitergabe(ziel: string, von: string, n: number) {
+    if (!(await this.repo.holeMappe(von))) return;
+    const name = await this.name(von);
+    await this.benachrichtigeGebuendelt({
+      empfaengerId: ziel, mappeId: von, art: 'manuell', schluessel: SAMMEL_WEITERGABE, von,
+      text: (bisher) => {
+        const gesamt = n + Number(/(\d+) Aufgaben/.exec(bisher?.text ?? '')?.[1] ?? (bisher ? 1 : 0));
+        return `${name} hat dir ${gesamt === 1 ? 'eine Aufgabe' : `${gesamt} Aufgaben`} weitergegeben – sie stehen unter „Zu erledigen“.`;
+      },
+    });
   }
 
   /** Meine offenen Aufgaben (mit denen der Administratoren, wenn ich einer bin). */

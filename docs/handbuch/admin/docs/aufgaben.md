@@ -17,13 +17,13 @@ Aufgaben entstehen auf diesen Wegen:
 
 - Empfänger sind immer **Benutzer**, keine Rollen – eine Aufgabe für alle bleibt sonst gern liegen.
 - Wer sich selbst erwähnt, bekommt keine Aufgabe; erneutes Speichern erzeugt keine zweite. Wird eine Erwähnung wieder entfernt, bleibt die Aufgabe offen; in der Historie der Mappe steht, dass sie entfernt wurde.
-- **Weitergeben** dürfen der Empfänger selbst und Administratoren; das steht in der Historie der Mappe.
+- **Weitergeben** dürfen der Empfänger selbst und Administratoren; das steht in der Historie der Mappe. Mehrere auf einmal gehen in [Werkbank → Aufgaben](#mehrere-aufgaben-auf-einmal-weitergeben) und für die eigenen unter Profil → [Abwesenheit](https://motom001.github.io/dms/benutzer/aktuell/profil/#abwesenheit).
 
 ## Werkbank → Aufgaben
 
 ![Werkbank → Aufgaben](bilder/werkbank-aufgaben.png)
 
-In der Mitte steht oben die [Tägliche Zusammenfassung](#tagliche-zusammenfassung), darunter alle offenen Aufgaben aller Benutzer mit Mappe, Art, Datum und Empfänger. Über die Auswahl unter einer Aufgabe gibst du sie an jemand anderen weiter. Wählst du eine Aufgabe, steht rechts ihre Mappe mit den wichtigsten Feldern und **In der Ablage öffnen**.
+In der Mitte steht oben die [Tägliche Zusammenfassung](#tagliche-zusammenfassung), darunter alle offenen Aufgaben aller Benutzer mit Mappe, Art, Datum und Empfänger. Über die Auswahl unter einer Aufgabe gibst du sie an jemand anderen weiter. Wählst du eine Aufgabe, steht rechts ihre Mappe mit den wichtigsten Feldern, **In der Ablage öffnen** und daneben **Weitergeben an** – wie die Auswahl in der Liste. Danach stimmen Empfänger rechts und in der Liste sofort.
 
 Der **Filter** über der Liste grenzt ein nach:
 
@@ -34,6 +34,20 @@ Der **Filter** über der Liste grenzt ein nach:
 
 **Erledigte zeigen** schaltet auf die zuletzt erledigten Aufgaben um. Der Filter steht in der Adresse – so lässt sich ein gefilterter Blick als Link merken oder weitergeben. Darunter steht, wie viele Aufgaben passen.
 
+### Mehrere Aufgaben auf einmal weitergeben
+
+Bei Urlaub, Krankheit oder wenn die Zuständigkeit wechselt, verteilst du viele Aufgaben in einem Schritt neu:
+
+1. Grenze die Liste mit dem Filter ein, z. B. *Empfänger: Ben*.
+2. Hake die Aufgaben links an – oder **Alle angezeigten auswählen** (das gilt nur für die gerade gefilterten). Daneben steht, wie viele ausgewählt sind.
+3. In der Leiste darüber **Ausgewählte weitergeben an** einen Benutzer wählen und **Weitergeben**. Eine Rückfrage nennt Anzahl und Ziel.
+
+Danach steht dort, wie viele weitergegeben wurden – und welche nicht und warum, etwa „Carl darf die Mappe nicht lesen“ oder „liegt schon bei Carl“. Was nicht ging, bleibt ausgewählt; du kannst es gleich an jemand anderen geben. Jede Weitergabe steht in der Historie ihrer Mappe. Der neue Empfänger bekommt **eine** Sammelbenachrichtigung unter „Zu erledigen“ (Art *Zugewiesen*, an deiner Benutzer-Mappe: „Anna hat dir 12 Aufgaben weitergegeben“) statt vieler einzelner; gibst du ihm weitere, bevor er sie erledigt hat, zählt sie nur hoch.
+
+Als Ziel gehen nur Benutzer, die die jeweilige Mappe lesen dürfen – wie beim einzelnen Weitergeben; Dienstkonten von Paketen stehen nicht zur Wahl. **Als erledigt markieren** erledigt die Auswahl auf einmal; *Passt nicht*-Aufgaben bleiben offen, bis die Mappe wieder passt. Für andere Programme gibt es dasselbe über die [Schnittstelle](api.md) (`POST /api/v1/aufgaben/weitergeben` und `…/erledigt`).
+
+![Mehrere Aufgaben ausgewählt](bilder/werkbank-aufgaben-auswahl.png){ loading=lazy }
+
 Ging eine Frist oder Erinnerung an jemanden, der die Mappe nach den [Berechtigungen](berechtigungen.md) nicht lesen darf, steht oben ein Hinweis und an der Aufgabe „Empfänger darf die Mappe nicht lesen“. Gib sie weiter oder passe die Berechtigungen an.
 
 ## Tägliche Zusammenfassung
@@ -41,6 +55,7 @@ Ging eine Frist oder Erinnerung an jemanden, der die Mappe nach den [Berechtigun
 Statt bei jeder neuen Aufgabe eine E-Mail zu schicken, verschickt das DMS **einmal am Tag** eine Übersicht an jeden, der offene Aufgaben hat – mit Links zu den Mappen.
 
 - Oben in der Mitte stellst du ein, ob sie verschickt wird, und die **Standard-Uhrzeit** (deutsche Zeit). Standard: an, 7:00 Uhr.
+- Den Abschnitt kannst du mit einem Klick auf die Überschrift **zuklappen**; das DMS merkt sich das für dich. Zugeklappt steht daneben der Stand (z. B. „Standard 07:00 · an“) – und darunter die Warnung, wenn die Zusammenfassung nicht verschickt werden kann, weil der E-Mail-Versand aus ist.
 - **Jeder Benutzer** wählt in seinem **Profil** eine eigene Uhrzeit (im 15-Minuten-Raster) und die **Wochentage**; ohne eigene Wahl gelten die Standard-Uhrzeit und **Montag bis Freitag**. Änderst du die Standard-Uhrzeit, gilt sie für alle ohne eigene Uhrzeit. Abbestellen kann er sie dort auch.
 - Die Mail kommt höchstens einmal am Tag, frühestens zur gewählten Uhrzeit. War das DMS zu dieser Zeit aus, kommt sie nach dem Start noch am selben Tag; am nächsten Tag wird nichts nachgeholt. Wer abwesend ist oder nichts offen hat, bekommt keine.
 - **Bundesland** – damit niemand an gesetzlichen Feiertagen eine Zusammenfassung bekommt (jeder kann das im Profil abwählen). Das DMS berechnet die Feiertage selbst: die bundesweiten und die landesweiten des gewählten Landes, Ostern und die davon abhängigen Tage nach der Gaußschen Osterformel. Feiertage, die nur in einzelnen Gemeinden gelten – etwa Mariä Himmelfahrt in Teilen Bayerns oder das Augsburger Friedensfest –, und einmalige Feiertage werden nicht berücksichtigt. *Keins* schaltet das ab.

@@ -61,7 +61,7 @@ Die API-Dokumentation beschreibt alle Endpunkte mit ihren Parametern. Ein Überb
 | Wofür | Endpunkte |
 | --- | --- |
 | **Erweiterte Suche** | `GET /api/v1/mappen?sicht=suche&link=…` mit den Parametern der erweiterten Suche als ein kodierter Wert, z. B. `typ%3Drechnung%26volltext%3DBackofen` |
-| **Aufgaben** | `GET /api/v1/aufgaben` (eigene offene), `POST /api/v1/mappen/{id}/aufgaben` (vergeben), `POST /api/v1/aufgaben/{id}/erledigt` und `…/delegieren`; Fristen und Erinnerungen über `GET /api/v1/anstehend` und `…/erinnerungen` |
+| **Aufgaben** | `GET /api/v1/aufgaben` (eigene offene), `POST /api/v1/mappen/{id}/aufgaben` (vergeben), `POST /api/v1/aufgaben/{id}/erledigt` und `…/delegieren`, mehrere auf einmal mit `POST /api/v1/aufgaben/weitergeben` bzw. `…/aufgaben/erledigt` (#415); Fristen und Erinnerungen über `GET /api/v1/anstehend` und `…/erinnerungen` |
 | **Notizen** | `GET`/`POST /api/v1/mappen/{id}/notizen`, `PUT`/`DELETE /api/v1/notizen/{id}` |
 | **Historie** einer Mappe | `GET /api/v1/mappen/{id}/historie` |
 | **E-Mail** | `POST /api/v1/mappen/{id}/email` versendet eine Mappe mit Dokumenten (zusammen höchstens 50 MB) |
