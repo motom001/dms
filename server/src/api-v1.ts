@@ -356,7 +356,7 @@ const SCHEMAS: Record<string, Schema> = {
   Notiz: { type: 'object', properties: { id: uuid, mappeId: uuid, text: { type: 'string', description: 'Markdown' }, erstellt: zeit, erstelltVon: { ...uuid, nullable: true }, geaendert: zeit, geaendertVon: { ...uuid, nullable: true } } },
   NotizListe: liste('Notiz'),
   PostEingabe: { type: 'object', properties: {
-    betreff: { type: 'string', description: 'Standard „Neue Post“' }, datum: { type: 'string', format: 'date' }, absender: { type: 'string', description: 'Standard: Name des Benutzers' },
+    betreff: { type: 'string', description: 'Standard „Neue Post“' }, datum: { type: 'string', format: 'date' }, absender: { type: 'string', description: 'Wer die Post geschickt hat; ohne Angabe leer (bis 0.99: Name des Benutzers, #494)' },
     fuer: { ...uuid, description: 'Id eines Benutzers: Er bekommt die Aufgabe „Post für dich“ unter „Zu erledigen“, solange die Post neu ist.' }, nachricht: { type: 'string' },
     kanal: { type: 'string', enum: ['Hochgeladen', 'E-Mail', 'Scan', 'Ordner', 'Import', 'API', 'WebDAV'] },
     werte: { ...ref('Werte'), description: 'Werte weiterer Felder, die der Administrator am Typ Post ergänzt hat' },

@@ -100,5 +100,12 @@ Am Dokument sehen alle Benutzer den Stand (*wartet*, *läuft*, *fertig*, *Fehler
 - **Vorschaubilder nachholen** erzeugt für ältere PDFs und Bilder das kleine Bild der ersten Seite, das neben jedem Dokument steht. Neue Dokumente bekommen es gleich nach dem Hochladen, ältere sonst beim ersten Anzeigen. Die Bilder entstehen eins nach dem anderen mit `pdftoppm` (poppler, im Image enthalten).
 - **Alle Dateien prüfen** liest jede gespeicherte Datei, auch ältere Versionen, und vergleicht sie mit ihrem Prüfwert. So fällt auf, wenn eine Datei auf dem Speicher verändert wurde oder fehlt. Mehr dazu unter [Alle Dateien prüfen](archiv.md#alle-dateien-prufen).
 - **Nummern nachträglich vergeben** gibt Mappen eine Nummer, die angelegt wurden, bevor ihr Feld einen Nummernkreis bekam. Mehr dazu unter [Nummern nachträglich vergeben](nummernkreise.md#nummern-nachtraglich-vergeben).
+- **Absender bereinigen** leert falsche Absender bei älterer Post, siehe unten.
 
-Alle vier laufen im Hintergrund; das DMS bleibt dabei benutzbar.
+Alle laufen im Hintergrund; das DMS bleibt dabei benutzbar.
+
+### Absender bereinigen
+
+Bis Version 0.99 trug das DMS bei hochgeladener Post ohne Absender den **Namen dessen ein, der sie angelegt hat** – bei Post aus dem Eingangsordner „Eingangsordner“. Absender ist aber, wer den Brief geschickt hat. Neue Post bekommt seitdem keinen Absender mehr, solange niemand ihn einträgt.
+
+Für den Bestand zeigt **Absender bereinigen** eine Vorschau: eingehende Post mit Kanal *Hochgeladen*, *API*, *WebDAV* oder *Ordner*, deren Absender genau der Name des Anlegenden (bzw. „Eingangsordner“) ist. Post aus Postfächern und versendete E-Mails sind nie dabei. Nimm den Haken weg, wo der Absender doch stimmt, und tippe auf **Absender leeren**. In der Historie jeder Post steht danach, was vorher im Feld stand und wer bereinigt hat.

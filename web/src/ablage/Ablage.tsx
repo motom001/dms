@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { beschreibeBedingung, heuteIn, kinderVon, mitNachkommen, spaltenDerSicht, wirksameTypen, type Sicht } from '../../../shared/src/sichten';
 import { ANSTEHEND_TAGE, datumDe, type Anstehend } from '../../../shared/src/fristen';
 import { liesDirektlink, type Direktlink } from '../../../shared/src/direktlink';
-import { darfErstellen, darfPostAnlegen, formatiere, GEMISCHTE_SPALTEN, sortierbar, standardliste, TREFFER_ANFANG, TREFFER_ENDE, vorlageFelder, wirksameVorlage, type Ausschnitt, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
+import { auswahlText, darfErstellen, POST_RICHTUNG, darfPostAnlegen, formatiere, GEMISCHTE_SPALTEN, sortierbar, standardliste, TREFFER_ANFANG, TREFFER_ENDE, vorlageFelder, wirksameVorlage, type Ausschnitt, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
 import { api, verborgeneAufgaben, type Bezuege, type MappeDetails } from '../api';
 import type { Aufgabe } from '../../../shared/src/model';
 import { AufgabenHinweis } from './Aufgaben';
@@ -531,10 +531,14 @@ function GeaendertPunkt() {
   return <><span className="abo-punkt" title="Von anderen geändert, seit du die Mappe zuletzt geöffnet hast" aria-hidden="true" /><span className="sr-only">Geändert: </span></>;
 }
 
+const absenderFehlt = (typ: Mappentyp | undefined, m: Mappe) => typ?.system === 'post' && !m.werte.absender && auswahlText(m.werte.richtung) === POST_RICHTUNG.eingehend;
+
 /** Kompakter Eintrag: mit Trefferliste Spalte 1 fett, 2 und 3 darunter; sonst Titel und zwei Nebenfelder (bzw. der Typ). */
 function kompakt(liste: string[], einTyp: boolean, typ: Mappentyp | undefined, m: Mappe, bezuege: Bezuege, person: (id: string | null) => string) {
   if (liste.length) {
     const [a, ...rest] = liste.slice(0, 3).map((k) => zelle(k, m, typ, bezuege, person));
+    // Post ohne Absender (#494): Hinweis zum Ergänzen beim Zuordnen, auch wenn die Spalte nicht unter den ersten drei ist.
+    if (absenderFehlt(typ, m) && liste.includes('absender')) rest.push('Absender fehlt');
     return { titel: a || titelOder(m.titel), unter: rest.filter(Boolean).join(' · ') };
   }
   return { titel: titelOder(m.titel), unter: einTyp ? (typ ? unterzeile(typ, m, bezuege) : '') : typ?.name ?? '' };
@@ -588,7 +592,9 @@ function Tabelle(p: {
                 <td className="sternspalte"><Stern mappeId={m.id} an={p.favoriten.has(m.id)} titel={titelOder(m.titel)} klein /></td>
                 {p.spalten.map((k, i) => {
                   const text = zelle(k, m, typ, p.bezuege, d.person);
-                  return <td key={k} className={rechts(k) ? 'rechts' : kurz(k) ? 'kurz' : ''}>{i === 0 ? <>{p.geaendert?.has(m.id) && <GeaendertPunkt />}<Link to={ziel}>{text || titelOder(m.titel)}</Link>{p.ausschnitte?.[m.id] && <Fundstelle a={p.ausschnitte[m.id]} />}</> : text}</td>;
+                  // Post ohne Absender (#494): „–“ als Hinweis zum Ergänzen beim Zuordnen.
+                  const fehlt = i > 0 && k === 'absender' && absenderFehlt(typ, m);
+                  return <td key={k} className={rechts(k) ? 'rechts' : kurz(k) ? 'kurz' : ''}>{i === 0 ? <>{p.geaendert?.has(m.id) && <GeaendertPunkt />}<Link to={ziel}>{text || titelOder(m.titel)}</Link>{p.ausschnitte?.[m.id] && <Fundstelle a={p.ausschnitte[m.id]} />}</> : fehlt ? <span className="leise" title="Absender fehlt – trag ihn beim Zuordnen ein">–</span> : text}</td>;
                 })}
                 {p.sicht === 'eingang' && <td className="problemzelle">{p.aufgaben?.[m.id] ?? m.problem}</td>}
               </tr>
