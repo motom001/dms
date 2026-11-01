@@ -42,7 +42,7 @@ Ob es zu dir passt, zeigt [Ist das DMS etwas für mich?](https://motom001.github
 Das DMS ist auf Datenschutz ausgelegt (Art. 25 DSGVO) – für die Daten deiner Familie genauso wie für Mieter und Kunden:
 
 - **Keine Telemetrie:** Das DMS sendet keine Nutzungsdaten, auch keine anonymen und auch nicht regelmäßig. Von sich aus baut es keine Verbindung ins Internet auf; den Versionsabgleich mit GitHub startest du selbst per Knopfdruck.
-- **Selbst gehostet:** Deine Unterlagen liegen auf deinem Gerät – kein Tracking, keine Werbung, keine KI-Dienste. Wer was sieht, regeln Rechte je Mappentyp.
+- **Selbst gehostet:** Deine Unterlagen liegen auf deinem Gerät – kein Tracking, keine Werbung, keine KI im Kern. KI-Funktionen kommen als Pakete und laufen lokal; ein externer KI-Dienst wird nur angebunden, wenn du ihn ausdrücklich als Paket installierst. Wer was sieht, regeln Rechte je Mappentyp.
 - **Auskunft nach Art. 15:** Alles zu einem Mieter, Kunden oder Kontakt als ZIP mit Deckblatt – geprüft, geschwärzt, mit Nachweis.
 - **Aufbewahren, sperren, löschen:** Archivmodus mit Löschsperre bis Fristende, die Liste „Darf weg“ und ein Papierkorb – Bausteine für dein Löschkonzept, mit Vorlage.
 - **Daten mitnehmen:** Jeder Benutzer exportiert seine eigenen Daten, Administratoren alles – in offenen Formaten.
