@@ -61,6 +61,10 @@ export interface PapierkorbEintrag {
   geloescht: string; geloeschtVon: string | null;
   /** Anzahl Dokumente, die mit ihr im Papierkorb liegen. */
   dokumente: number;
+  /** Mit verknüpften Mappen gelöscht (#424): gemeinsame Id des Vorgangs, sonst null. */
+  vorgang: string | null;
+  /** Verweise bleibender Mappen auf diese, die beim Löschen entfernt wurden (#424). */
+  entkoppelt: Array<{ quelleId: string; feldKey: string }>;
 }
 /** Ein einzelnes Dokument im Papierkorb (#344). */
 export interface DokumentImPapierkorb {
@@ -273,6 +277,13 @@ export interface Repo {
   holeAusPapierkorb(id: string): Promise<PapierkorbEintrag | undefined>;
   /** Legt die Mappe wieder an; Verweise auf Mappen, die es nicht mehr gibt, entfallen (Anzahl). */
   stelleWiederHer(id: string): Promise<{ verweiseEntfallen: number }>;
+  /**
+   * Mit verknüpften Mappen löschen (#424): alle in einer Transaktion in den Papierkorb, als ein Vorgang –
+   * auch bei Kreisen (Verweise untereinander gehen mit). `entkoppelt`: je Mappe die entfernten Verweise.
+   */
+  legeVorgangInPapierkorb(ids: string[], benutzerId: string | null, vorgang: string, entkoppelt: Record<string, Array<{ quelleId: string; feldKey: string }>>): Promise<void>;
+  /** Mehrere zusammen wiederherstellen (#424): erst alle Mappen, dann die Verweise (auch untereinander). */
+  stelleMehrereWiederHer(ids: string[]): Promise<{ verweiseEntfallen: number }>;
   /** Löscht endgültig; liefert die Prüfwerte der Dateien, die dabei frei werden könnten. */
   leerePapierkorb(ids: string[]): Promise<string[]>;
   /** Mappen und einzelne Dokumente (#344). */

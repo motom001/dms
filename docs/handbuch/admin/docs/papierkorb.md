@@ -25,6 +25,7 @@ Jede Mappe hat eine **Historie** (wer wann was geändert hat). Wird eine Mappe e
 - Sie blockieren keine **eindeutigen Werte**: Eine neue Mappe darf dieselbe Rechnungsnummer bekommen.
 - Wie bisher lässt sich eine Mappe, auf die noch andere verweisen, gar nicht erst löschen.
 - **Wiederherstellen** bringt Dokumente und Verweise zurück. Verweise auf Mappen, die es inzwischen nicht mehr gibt, entfallen. Ist ein eindeutiger Wert inzwischen vergeben, landet die Mappe bei dem, der sie angelegt hat, unter **Zu erledigen**.
+- **Mit verknüpften Mappen löschen** ([Benutzerhandbuch](https://motom001.github.io/dms/benutzer/aktuell/mappen/#mit-verknupften-mappen-loschen)) legt alle Mappen als **einen Vorgang** in den Papierkorb. Sie lassen sich gemeinsam wiederherstellen (**Alle wiederherstellen**) – mit den Verweisen untereinander (auch im Kreis) und den Verweisen, die an bleibenden Mappen entfernt wurden. Einzeln geht es auch; dann kommen nur die Verweise dieser einen Mappe zurück.
 - Ein Mappentyp lässt sich nicht löschen, solange Mappen von ihm im Papierkorb liegen.
 - Mappen eines Mappentyps im [Archivmodus](archiv.md) bleiben im Papierkorb, bis ihre Aufbewahrungsfrist endet – auch wenn die Aufbewahrung des Papierkorbs vorher abläuft. Endgültig löschen lassen sie sich vorher nicht, auch nicht als Administrator.
 - Die Dateien bleiben im Dateiordner, bis der Papierkorb geleert ist.

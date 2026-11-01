@@ -85,6 +85,13 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
     ['Gelöscht', (e) => datumZeit(e.geloescht)],
   ];
 
+  // Mit verknüpften Mappen gelöscht (#424): Mappen eines Vorgangs gehören zusammen.
+  const imVorgang = new Map<string, number>();
+  for (const e of liste) if (e.vorgang) imVorgang.set(e.vorgang, (imVorgang.get(e.vorgang) ?? 0) + 1);
+  const vorgangChip = (e: PapierkorbEintrag) => {
+    const n = e.vorgang ? imVorgang.get(e.vorgang) ?? 0 : 0;
+    return n > 1 ? <span className="chip lb-chip" title={`Zusammen mit ${n - 1} weiteren Mappen gelöscht – lassen sich gemeinsam wiederherstellen`}>{e.id === e.vorgang ? `mit ${n - 1} verknüpften` : 'verknüpft'}</span> : null;
+  };
   const tabelle = breite >= spalten.length * 110;
   const leerenKnopf = liste.length + z.dokumente.length > 0
     ? <button type="button" className="knopf klein gefahr-rand" disabled={laeuft} onClick={() => void leeren()}>{laeuft ? 'Leere …' : 'Papierkorb leeren'}</button> : null;
@@ -114,7 +121,7 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
                   {liste.map((e) => (
                     <li key={e.id}>
                       <Link to={`${basis(werkbank)}/${e.id}`} className={`eintrag ${offen === e.id ? 'an' : ''}`}>
-                        <span className="titel">{titelOder(e.titel)}</span>
+                        <span className="titel">{titelOder(e.titel)}{vorgangChip(e)}</span>
                         <span className="unter">{d.typ(e.typId)?.name ?? ''} · gelöscht {datumZeit(e.geloescht)}{werkbank ? ` von ${d.person(e.geloeschtVon)}` : ''}</span>
                       </Link>
                     </li>
@@ -131,7 +138,7 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
                         <tr key={e.id} className={offen === e.id ? 'an' : ''} onClick={(ev) => { if (!(ev.target as HTMLElement).closest('a')) geheZu(ziel); }}>
                           {spalten.map(([n, wert], i) => (
                             <td key={n} className={n === 'Gelöscht' || n === SYSTEMSPALTEN._erstellt || n === SYSTEMSPALTEN._geaendert ? 'kurz' : ''}>
-                              {i === 1 ? <Link to={ziel}>{wert(e)}</Link> : wert(e)}
+                              {i === 1 ? <><Link to={ziel}>{wert(e)}</Link>{vorgangChip(e)}</> : wert(e)}
                             </td>
                           ))}
                         </tr>
@@ -206,14 +213,32 @@ export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boole
   const [e, setE] = useState<PapierkorbEintrag | null | 'fehlt'>(null);
   const [laeuft, setLaeuft] = useState<string | null>(null);
   const [meldung, setMeldung] = useState<string>();
+  const [gruppe, setGruppe] = useState<PapierkorbEintrag[] | null>(null);
   useEffect(() => {
     setE(null);
-    api.papierkorbEintrag(id, werkbank).then(setE, () => setE('fehlt'));
+    api.papierkorbEintrag(id, werkbank).then((x) => {
+      setE(x);
+      // Vorgang (#424): die anderen Mappen, die zusammen gelöscht wurden.
+      if (x.vorgang) (werkbank ? api.papierkorbWerkbank().then((r) => r.eintraege) : api.papierkorb()).then(setGruppe, () => setGruppe([]));
+    }, () => setE('fehlt'));
   }, [id, werkbank]);
 
   if (e === null) return <p className="leise">Lade …</p>;
   if (e === 'fehlt') return <div className="leer"><p>Diese Mappe liegt nicht (mehr) im Papierkorb.</p></div>;
   const typ = d.typ(e.typId);
+  const zusammen = e.vorgang ? (gruppe ?? []).filter((x) => x.vorgang === e.vorgang) : [];
+
+  async function alleWiederherstellen() {
+    if (!e || e === 'fehlt' || !e.vorgang) return;
+    setLaeuft('alle'); setMeldung(undefined);
+    try {
+      const r = await api.vorgangWiederherstellen(e.vorgang, werkbank);
+      melde(); await d.neuLaden();
+      await hinweis({ titel: 'Wiederhergestellt', text: `${r.mappen} ${r.mappen === 1 ? 'Mappe' : 'Mappen'} samt Dokumenten${r.verweiseWieder ? `; ${r.verweiseWieder === 1 ? 'ein entfernter Verweis ist' : `${r.verweiseWieder} entfernte Verweise sind`} wieder gesetzt` : ''}${r.verweiseEntfallen ? `; ${r.verweiseEntfallen} ${r.verweiseEntfallen === 1 ? 'Verweis' : 'Verweise'} auf Mappen, die es nicht mehr gibt, entfallen` : ''}.` });
+      const start = r.startId ? zusammen.find((x) => x.id === r.startId) : undefined;
+      geheZu(start ? `/ablage/${start.typId}/${start.id}` : basis(werkbank));
+    } catch (x) { setMeldung((x as Error).message); setLaeuft(null); }
+  }
 
   async function wiederherstellen() {
     setLaeuft('zurueck'); setMeldung(undefined);
@@ -257,11 +282,19 @@ export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boole
           <dt>Dokumente</dt><dd>{e.dokumente || <span className="leise">keine</span>}</dd>
         </dl>
       </section>
+      {zusammen.length > 1 && (
+        <div className="hinweis info"><p>
+          Zusammen mit {zusammen.length - 1} weiteren {zusammen.length === 2 ? 'Mappe' : 'Mappen'} gelöscht („mit verknüpften Mappen löschen“)
+          {zusammen.some((x) => x.id === x.vorgang) ? <>, ausgehend von „{titelOder(zusammen.find((x) => x.id === x.vorgang)!.titel)}“</> : null}.
+          {' '}<strong>Alle wiederherstellen</strong> holt alle zurück – samt der Verweise untereinander und der Verweise, die dabei an anderen Mappen entfernt wurden.
+        </p></div>
+      )}
       <p className="leise klein">Beim Wiederherstellen kommen Dokumente und Verweise mit. Verweise auf Mappen, die es nicht mehr gibt, entfallen; ist ein eindeutiger Wert inzwischen vergeben, landet die Mappe unter „Zu erledigen“.</p>
       {meldung && <div className="hinweis schlecht"><p>{meldung}</p></div>}
       <div className="knoepfe">
         <button type="button" className="knopf gefahr-rand" disabled={!!laeuft} onClick={() => void endgueltig()}>{laeuft === 'weg' ? 'Lösche …' : 'Endgültig löschen'}</button>
-        <button type="button" className="knopf gruen" disabled={!!laeuft} onClick={() => void wiederherstellen()}>{laeuft === 'zurueck' ? 'Stelle wieder her …' : 'Wiederherstellen'}</button>
+        <button type="button" className={`knopf ${zusammen.length > 1 ? '' : 'gruen'}`} disabled={!!laeuft} onClick={() => void wiederherstellen()}>{laeuft === 'zurueck' ? 'Stelle wieder her …' : zusammen.length > 1 ? 'Nur diese wiederherstellen' : 'Wiederherstellen'}</button>
+        {zusammen.length > 1 && <button type="button" className="knopf gruen" disabled={!!laeuft} onClick={() => void alleWiederherstellen()}>{laeuft === 'alle' ? 'Stelle wieder her …' : `Alle ${zusammen.length} wiederherstellen`}</button>}
       </div>
     </div>
   );

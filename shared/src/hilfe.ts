@@ -118,6 +118,7 @@ export const HILFE = {
   'mappentyp.frist': admin('mappentypen/', 'Erinnerungen an Datumsfeldern', 'fristen-erinnerungen-an-datumsfeldern'),
   'ablage.favoriten': benutzer('ablage/', 'Favoriten', 'favoriten'),
   'ablage.papierkorb': benutzer('ablage/', 'Papierkorb', 'papierkorb'),
+  'mappe.mitVerknuepften': benutzer('mappen/', 'Mit verknüpften Mappen löschen', 'mit-verknupften-mappen-loschen'),
   'ablage.sicht': benutzer('ablage/', 'Ansichten und Listen', 'die-liste'),
   'ablage.erweitertesuche': benutzer('ablage/', 'Erweiterte Suche', 'erweiterte-suche'),
   'ablage.suchvolltext': benutzer('ablage/', 'Volltext in der erweiterten Suche', 'volltext-in-dokumenten-und-notizen'),

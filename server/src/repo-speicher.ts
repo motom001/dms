@@ -74,11 +74,12 @@ export function speicherRepo(): Repo {
     groesse: k.dokument.groesse, sha256: k.dokument.sha256, erstellt: k.dokument.erstellt, erstelltVon: k.dokument.erstelltVon,
     versionen: k.versionen.length, geloescht: k.geloescht, geloeschtVon: k.geloeschtVon,
   });
-  const korb = new Map<string, { mappe: Mappe; verweise: Verweis[]; dokumente: Dokument[]; versionen?: Array<[string, V[]]>; notizen?: Notiz[]; aufgaben?: Aufgabe[]; erinnerungen?: Erinnerung[]; geloescht: string; geloeschtVon: string | null }>();
-  const alsEintrag = (k: { mappe: Mappe; dokumente: Dokument[]; geloescht: string; geloeschtVon: string | null }): PapierkorbEintrag => ({
+  const korb = new Map<string, { mappe: Mappe; verweise: Verweis[]; dokumente: Dokument[]; versionen?: Array<[string, V[]]>; notizen?: Notiz[]; aufgaben?: Aufgabe[]; erinnerungen?: Erinnerung[]; geloescht: string; geloeschtVon: string | null; vorgang?: string | null; entkoppelt?: Array<{ quelleId: string; feldKey: string }> }>();
+  const alsEintrag = (k: { mappe: Mappe; dokumente: Dokument[]; geloescht: string; geloeschtVon: string | null; vorgang?: string | null; entkoppelt?: Array<{ quelleId: string; feldKey: string }> }): PapierkorbEintrag => ({
     id: k.mappe.id, typId: k.mappe.typId, titel: k.mappe.titel ?? '', werte: kopie(k.mappe.werte), demo: !!k.mappe.demo,
     erstellt: k.mappe.erstellt, erstelltVon: k.mappe.erstelltVon, geaendert: k.mappe.geaendert, geaendertVon: k.mappe.geaendertVon,
     geloescht: k.geloescht, geloeschtVon: k.geloeschtVon, dokumente: k.dokumente.length,
+    vorgang: k.vorgang ?? null, entkoppelt: kopie(k.entkoppelt ?? []),
   });
   /** Zählt wie PostgreSQL: Dokumente je Register, Rückverweise (ohne sich selbst) je Quelle. */
   const zaehl: Zaehlquelle = {
@@ -615,6 +616,17 @@ export function speicherRepo(): Repo {
       });
       await this.loescheMappe(id);
     },
+    async legeVorgangInPapierkorb(ids, benutzerId, vorgang, entkoppelt) {
+      const alle = [...new Set(ids)].filter((id) => mappen.has(id));
+      const weg = new Set(alle);
+      // Wie der Fremdschlüssel in PostgreSQL: verweist noch eine Mappe außerhalb darauf, geht nichts.
+      for (const [q, vs] of verweise) if (!weg.has(q) && mappen.has(q) && vs.some((v) => weg.has(v.zielId))) throw new Error('Auf eine der Mappen verweist noch eine andere Mappe.');
+      for (const id of alle) {
+        await this.legeInPapierkorb(id, benutzerId);
+        const k = korb.get(id)!;
+        k.vorgang = vorgang; k.entkoppelt = kopie(entkoppelt[id] ?? []);
+      }
+    },
     async papierkorb(f = {}) {
       return [...korb.values()]
         .filter((k) => (!f.von || k.geloeschtVon === f.von) && (!f.vor || k.geloescht < f.vor) && (!f.typId || k.mappe.typId === f.typId))
@@ -622,19 +634,25 @@ export function speicherRepo(): Repo {
         .map(alsEintrag);
     },
     async holeAusPapierkorb(id) { const k = korb.get(id); return k && alsEintrag(k); },
-    async stelleWiederHer(id) {
-      const k = korb.get(id);
-      if (!k) return { verweiseEntfallen: 0 };
-      mappen.set(id, kopie(k.mappe));
-      const bleiben = k.verweise.filter((v) => mappen.has(v.zielId));
-      verweise.set(id, bleiben);
-      for (const d of k.dokumente) dokumente.set(d.id, kopie(d));
-      for (const [d, v] of k.versionen ?? []) versionen.set(d, kopie(v));
-      for (const n of k.notizen ?? []) notizen.set(n.id, kopie(n));
-      for (const a of k.aufgaben ?? []) aufgaben.set(a.id, kopie(a));
-      for (const e of k.erinnerungen ?? []) erinnerungen.set(e.id, kopie(e));
-      korb.delete(id);
-      return { verweiseEntfallen: k.verweise.length - bleiben.length };
+    async stelleWiederHer(id) { return this.stelleMehrereWiederHer([id]); },
+    async stelleMehrereWiederHer(ids) {
+      // Erst alle Mappen, dann die Verweise (#424: auch untereinander und im Kreis).
+      const ks = [...new Set(ids)].map((id) => korb.get(id)).filter((k) => !!k);
+      for (const k of ks) mappen.set(k.mappe.id, kopie(k.mappe));
+      let entfallen = 0;
+      for (const k of ks) {
+        const id = k.mappe.id;
+        const bleiben = k.verweise.filter((v) => mappen.has(v.zielId));
+        entfallen += k.verweise.length - bleiben.length;
+        verweise.set(id, bleiben);
+        for (const d of k.dokumente) dokumente.set(d.id, kopie(d));
+        for (const [d, v] of k.versionen ?? []) versionen.set(d, kopie(v));
+        for (const n of k.notizen ?? []) notizen.set(n.id, kopie(n));
+        for (const a of k.aufgaben ?? []) aufgaben.set(a.id, kopie(a));
+        for (const e of k.erinnerungen ?? []) erinnerungen.set(e.id, kopie(e));
+        korb.delete(id);
+      }
+      return { verweiseEntfallen: entfallen };
     },
     async leerePapierkorb(ids) {
       const dateien = new Set<string>();

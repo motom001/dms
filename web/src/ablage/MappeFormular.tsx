@@ -17,6 +17,7 @@ import { mitNotizen, NOTIZEN_REGISTER, startRegister, type AnsichtsRegister } fr
 import { Notizen } from './Notizen';
 import { AufgabenHinweis, ErinnerungFormular, Erinnerungen, NeueAufgabe } from './Aufgaben';
 import { Aktionsmenue, Druckansicht, EmailMaske } from './Aktionen';
+import { LoeschBaum } from './LoeschBaum';
 import { PostLeiste } from './Post';
 import { linkZuMappe } from '../../../shared/src/direktlink';
 import { Person } from '../Person';
@@ -78,10 +79,17 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { t
   const [erinnernOffen, setErinnernOffen] = useState(false);
   const [emailOffen, setEmailOffen] = useState(false);
   const [drucken, setDrucken] = useState(false);
+  const [loeschBaum, setLoeschBaum] = useState(false);
   const druckEnde = useCallback(() => setDrucken(false), []);
   // Sprechender Link (#98) über ein eindeutiges Feld oder die Titelfelder.
   const direktlink = linkZuMappe(typ, mappe);
   const [kopiert, setKopiert] = useState<{ link: string; ok: boolean } | null>(null);
+  // Mit verknüpften Mappen löschen (#424): im Menü „Mappe ▾“ unter den Löschwegen (#427) und unter
+  // „Warum nicht?“ am Löschknopf (#423); die Vorschau steht oben unter dem Kopf.
+  const mitVerknuepften = darfLoeschen(typ, mappe) && details.rechte?.D !== false ? () => {
+    setLoeschBaum(true);
+    window.setTimeout(() => document.querySelector('.lb-blatt')?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 50);
+  } : undefined;
   return (
     <>
       <div className="mappenkopf">
@@ -92,7 +100,8 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { t
             <Stern mappeId={mappe.id} an={!!details.favorit} />
             <Aktionsmenue aufgabe={() => setAufgabeOffen(true)} erinnern={() => setErinnernOffen(true)} email={details.exportierbar === false ? undefined : () => setEmailOffen(true)} drucken={details.exportierbar === false ? undefined : () => setDrucken(true)}
               link={direktlink ? () => { const l = location.origin + direktlink; void kopiere(l).then((ok) => setKopiert({ link: l, ok })); } : undefined}
-              auskunft={details.auskunft ? () => geheZu(`/werkbank/datenschutz?mappe=${encodeURIComponent(details.mappe.id)}`) : undefined} />
+              auskunft={details.auskunft ? () => geheZu(`/werkbank/datenschutz?mappe=${encodeURIComponent(details.mappe.id)}`) : undefined}
+              loeschwege={mitVerknuepften ? [{ text: 'Mit verknüpften Mappen löschen …', titel: 'Diese Mappe samt allen Mappen, die zu ihr gehören – nach einer Vorschau als Baum', tu: mitVerknuepften }] : []} />
           </div>
         </div>
         <dl className="index">
@@ -110,12 +119,13 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden }: { t
       <Erinnerungen liste={details.erinnerungen ?? []} neuLaden={neuLaden} />
       {aufgabeOffen && <NeueAufgabe mappeId={mappe.id} neuLaden={neuLaden} schliessen={() => setAufgabeOffen(false)} />}
       {erinnernOffen && <ErinnerungFormular mappeId={mappe.id} neuLaden={neuLaden} schliessen={() => setErinnernOffen(false)} />}
+      {loeschBaum && <LoeschBaum key={mappe.id} mappeId={mappe.id} titel={mappe.titel ?? ''} sicht={sicht} schliessen={() => setLoeschBaum(false)} neuLaden={neuLaden} />}
       {emailOffen && <EmailMaske key={mappe.id} typ={typ} details={details} neuLaden={neuLaden} schliessen={() => setEmailOffen(false)} />}
       {drucken && <Druckansicht typ={typ} details={details} fertig={druckEnde} />}
       {mappe.passt === false && (
         <div className="hinweis warn"><p>Diese Mappe passt nicht mehr zur aktuellen Definition von „{typ.name}“{mappe.problem ? ` (${mappe.problem})` : ''}. Beim nächsten Speichern müssen die markierten Felder stimmen.</p></div>
       )}
-      <Formular typ={typ} mappe={mappe} start={rohAusWerten(typ, mappe.werte)} sicht={sicht} anhang={anhang} details={details} neuLaden={neuLaden} registerWunsch={registerWunsch} />
+      <Formular typ={typ} mappe={mappe} start={rohAusWerten(typ, mappe.werte)} sicht={sicht} anhang={anhang} details={details} neuLaden={neuLaden} registerWunsch={registerWunsch} mitVerknuepften={mitVerknuepften} />
       {verwaist.length > 0 && (
         <section className="blatt">
           <h2 className="h3">Werte ohne Felddefinition</h2>
@@ -199,8 +209,10 @@ function verknuepfungsGruppen(d: ReturnType<typeof useDaten>, mappe: Mappe | und
     })));
 }
 
-function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zuordnen, registerWunsch }: {
+function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zuordnen, registerWunsch, mitVerknuepften }: {
   typ: Mappentyp; mappe?: Mappe; start: RohWerte; sicht: string; anhang?: string; details?: MappeDetails | null; neuLaden?: () => Promise<void>; zuordnen?: ZuordnenNachher;
+  /** „Mit verknüpften Mappen löschen …“ (#424) – als weiterer Weg unter „Warum nicht?“ (#423). */
+  mitVerknuepften?: () => void;
   /** Register von außen öffnen (#427); `n` zählt, damit derselbe Wunsch erneut wirkt. */
   registerWunsch?: { key: string; n: number };
 }) {
@@ -221,7 +233,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     : details?.loeschbar?.ok === false ? { grund: details.loeschbar.grund ?? 'Diese Mappe lässt sich gerade nicht löschen.', rueckverweise: details.loeschbar.rueckverweise }
     : undefined;
   // Weitere Löschwege trotz Sperre (z. B. „Mit verknüpften Mappen löschen …“, #424) kommen über `wege` dazu.
-  const loeschKnopf = loeschenZeigen ? <LoeschKnopf sperre={loeschSperre} loeschen={() => void loeschen()} /> : <span />;
+  const loeschKnopf = loeschenZeigen ? <LoeschKnopf sperre={loeschSperre} loeschen={() => void loeschen()}
+    wege={mitVerknuepften && <button type="button" className="textknopf gefahr klein" onClick={mitVerknuepften}>Mit verknüpften Mappen löschen …</button>} /> : <span />;
   // Sprung aus der Suche nach einer Archivnummer (#345): ?register=… öffnet das Register.
   // Erwähnung in einer Notiz (#427): gleich den Register „Notizen“.
   const [aktiv, setAktiv] = useState(() => startRegister(register, new URLSearchParams(location.search).get('register'), details?.aufgaben, ich.id));

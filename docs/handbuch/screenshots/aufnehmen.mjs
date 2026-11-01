@@ -497,6 +497,15 @@ async function main() {
   await email.getByLabel('Nachricht').fill('Hallo Frau Berger,\n\nanbei der Stromvertrag und die Preisanpassung.\n\nViele Grüße');
   await bild(s, 'email');
   await email.getByRole('button', { name: 'Schließen' }).click();
+  // Mit verknüpften Mappen löschen (#424): Vorschau als Baum beim Vertragspartner – nur ansehen, nicht löschen.
+  await geheZu(s, `/ablage/${partner.id}/${d.stadtwerke.id}`);
+  await s.getByRole('button', { name: 'Mappe', exact: true }).click();
+  await s.getByRole('menuitem', { name: /Mit verknüpften Mappen löschen/ }).click();
+  const loeschBaum = s.getByRole('region', { name: 'Mit verknüpften Mappen löschen' });
+  await loeschBaum.locator('.lb-summe').waitFor();
+  await loeschBaum.evaluate((e) => e.scrollIntoView({ block: 'start' }));
+  await bild(s, 'mit-verknuepften-loeschen');
+  await loeschBaum.getByRole('button', { name: 'Schließen' }).click();
 
   // Post (#192): neuer Brief in „Neue Post“, Zuordnen zum Stromvertrag
   const brief = await api('POST', '/api/post', { betreff: 'Preisanpassung Strom 2027' });
