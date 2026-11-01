@@ -547,6 +547,10 @@ th[aria-sort] .spaltenknopf .pfeil { opacity: 1; }
 .spaltenliste .aktionen { display: flex; gap: 2px; }
 .eigenschaft.schmal { max-width: 320px; }
 
+/* Einheitliche Symbole (#425): einfarbig in Textfarbe, so groß wie die Schrift. */
+.sym { display: inline-block; width: 1em; height: 1em; vertical-align: -0.14em; flex: none; }
+.sym.sym-warn { color: var(--warn); }
+
 /* Benutzermenü (#21) */
 .benutzermenue { position: relative; }
 .benutzermenue .wer { background: none; border: 0; font: inherit; cursor: pointer; }
@@ -692,7 +696,7 @@ input.kurz { width: 7em; }
 /* Aktionen an der Mappe (#58) */
 .aktionsmenue { position: relative; }
 .aktionsmenue .menue { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 220px; display: flex; flex-direction: column; padding: 4px; background: var(--flaeche, #fff); border: 1px solid var(--linie); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
-.aktionsmenue .menue button { text-align: left; background: none; border: 0; padding: 8px 10px; border-radius: 6px; font: inherit; color: inherit; cursor: pointer; }
+.aktionsmenue .menue button { text-align: left; background: none; border: 0; padding: 8px 10px; border-radius: 6px; font: inherit; color: inherit; cursor: pointer; display: flex; align-items: center; gap: 8px; }
 .aktionsmenue .menue button:hover, .aktionsmenue .menue button:focus-visible { background: var(--senke); }
 .mappenleiste .aktionsmenue { margin-left: auto; }
 .anhaenge { border: 0; padding: 0; margin: 12px 0; }

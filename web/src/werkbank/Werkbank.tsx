@@ -1,4 +1,5 @@
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
+import { Symbol } from '../Symbol';
 import { AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
 import { NummernkreisEditor, NummernkreiseListe, useNummernkreise } from './Nummernkreise';
 import { StempelPanel, useStempelVorlagenWerkbank } from './Stempel';
@@ -265,7 +266,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
         <WerkbankNavigation bereich={bereich} eintraege={eintraege} zeigen={ansicht.zeigen} benutzt={ansicht.stand?.benutzt} />
         {/* Freiwillig, ohne Gebühren für beide Seiten (GitHub Sponsors von persönlichen Konten). */}
         <a className="unterstuetzen" href="https://github.com/sponsors/motom001" target="_blank" rel="noreferrer">
-          <span aria-hidden="true">♥</span> Projekt unterstützen
+          <Symbol name="herz" /> Projekt unterstützen
           <span className="leise klein">freiwillig, Betrag frei wählbar</span>
         </a>
         <a className="unterstuetzen handbuchlink" href={handbuch('admin')} target="_blank" rel="noreferrer">Administratorhandbuch ↗</a>

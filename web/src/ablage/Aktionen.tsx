@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Symbol } from '../Symbol';
 import { createPortal } from 'react-dom';
 import { formatiere, standardRegister, type Mappentyp } from '../../../shared/src/model';
 import { api, type MappeDetails } from '../api';
@@ -38,12 +39,12 @@ export function Aktionsmenue({ aufgabe, erinnern, email, drucken, link, auskunft
       </button>
       {offen && (
         <div className="menue" role="menu">
-          <button type="button" role="menuitem" onClick={waehle(aufgabe)}><span aria-hidden="true">✓</span> Aufgabe vergeben</button>
-          {erinnern && <button type="button" role="menuitem" onClick={waehle(erinnern)} title="Zu einem Datum an diese Mappe erinnern – dich oder jemand anderen"><span aria-hidden="true">⏰</span> Erinnern</button>}
-          {email && <button type="button" role="menuitem" onClick={waehle(email)}><span aria-hidden="true">✉</span> Per E-Mail versenden</button>}
-          {drucken && <button type="button" role="menuitem" onClick={waehle(drucken)}><span aria-hidden="true">⎙</span> Als PDF exportieren</button>}
-          {link && <button type="button" role="menuitem" onClick={waehle(link)} title="Link über Mappentyp und Feldwerte, z. B. zum Weitergeben per Mail oder Chat"><span aria-hidden="true">🔗</span> Link kopieren</button>}
-          {auskunft && <button type="button" role="menuitem" onClick={waehle(auskunft)} title="Alles zu dieser Person sammeln, prüfen und als ZIP ausgeben (Werkbank → Datenschutz)"><span aria-hidden="true">§</span> Auskunft erstellen …</button>}
+          <button type="button" role="menuitem" onClick={waehle(aufgabe)}><Symbol name="aufgabe" /> Aufgabe vergeben</button>
+          {erinnern && <button type="button" role="menuitem" onClick={waehle(erinnern)} title="Zu einem Datum an diese Mappe erinnern – dich oder jemand anderen"><Symbol name="erinnern" /> Erinnern</button>}
+          {email && <button type="button" role="menuitem" onClick={waehle(email)}><Symbol name="email" /> Per E-Mail versenden</button>}
+          {drucken && <button type="button" role="menuitem" onClick={waehle(drucken)}><Symbol name="pdf" /> Als PDF exportieren</button>}
+          {link && <button type="button" role="menuitem" onClick={waehle(link)} title="Link über Mappentyp und Feldwerte, z. B. zum Weitergeben per Mail oder Chat"><Symbol name="link" /> Link kopieren</button>}
+          {auskunft && <button type="button" role="menuitem" onClick={waehle(auskunft)} title="Alles zu dieser Person sammeln, prüfen und als ZIP ausgeben (Werkbank → Datenschutz)"><Symbol name="auskunft" /> Auskunft erstellen …</button>}
         </div>
       )}
     </div>

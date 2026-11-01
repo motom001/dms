@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Symbol } from '../Symbol';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { AUSKUNFT_PASSWORT_MIN, GRUND_MIN, personenTypen, type AuskunftAuswahl, type AuskunftMappe, type AuskunftStand, type AuskunftVorschau, type Datenschutz } from '../../../shared/src/auskunft';
 import { Zustellen, Zustellungen } from './Zustellen';
@@ -162,7 +163,7 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
         setGrund={(id, g) => setWahl((w) => ({ ...w, gruende: { ...w.gruende, [id]: g } }))}
         info={<>{k.ueber && <span className="leise klein"> · {k.ueber.richtung === 'verwiesenVon' ? `verweist über „${k.ueber.feld}“ darauf` : `über „${k.ueber.feld}“`}</span>}
           {k.auchUeber.length > 0 && <span className="chip" title="Diese Mappe ist auf mehreren Wegen erreichbar (Kreis) – sie steht nur einmal in der Liste">↻ {k.auchUeber.length}</span>}
-          {k.gesperrt && k.aufbewahrenBis && <span className="chip" title="Archivmodus: Aufbewahrungsfrist">🔒 bis {datumText(k.aufbewahrenBis)}</span>}</>} />
+          {k.gesperrt && k.aufbewahrenBis && <span className="chip" title="Archivmodus: Aufbewahrungsfrist"><Symbol name="schloss" /> bis {datumText(k.aufbewahrenBis)}</span>}</>} />
       {kinderVon(vorschau!.baum, k.id).length > 0 && <ul className="auskunft-baum">{kinderVon(vorschau!.baum, k.id).map(zeigeKnoten)}</ul>}
     </li>
   );
@@ -275,7 +276,7 @@ function MappeEintrag({ id, titel, typ, typId, inhalt, wahl, schalte, setGrund, 
           {inhalt.dritte.length > 0 && <p className="klein auskunft-dritte">Daten Dritter? Hängt auch an: {inhalt.dritte.slice(0, 4).join(', ')}{inhalt.dritte.length > 4 ? ' …' : ''}</p>}
           {inhalt.dokumente.map((x) => (
             <label key={x.id} className="haken klein"><input type="checkbox" checked={wahl.dokumente.has(x.id)} onChange={(e) => schalte('dokumente', x.id, e.target.checked)} />
-              <span>📄 {x.name} <span className="leise">{x.register} · {groesse(x.groesse)}</span>
+              <span><Symbol name="dokument" /> {x.name} <span className="leise">{x.register} · {groesse(x.groesse)}</span>
                 {x.geschwaerzt && <span className="chip">geschwärzt</span>}
                 {x.geschwaerzteFassung && <span className="leise"> – geschwärzte Fassung vorhanden</span>}
                 {!x.geschwaerzt && x.schwaerzbar && <> · <a href={`/ablage/${typId}/${id}`} className="verweis" target="_blank" rel="noreferrer" title="Mappe in einem neuen Tab öffnen; dort am Dokument „Schwärzen“">schwärzen …</a></>}</span></label>
@@ -283,12 +284,12 @@ function MappeEintrag({ id, titel, typ, typId, inhalt, wahl, schalte, setGrund, 
           {inhalt.notizen.map((n) => (
             <div key={n.id}>
               <label className="haken klein"><input type="checkbox" checked={wahl.notizen.has(n.id)} onChange={(e) => schalte('notizen', n.id, e.target.checked)} />
-                <span>🗒 {n.text.length > 120 ? `${n.text.slice(0, 120)} …` : n.text} <span className="leise">{zeit(n.erstellt)}</span></span></label>
+                <span><Symbol name="notiz" /> {n.text.length > 120 ? `${n.text.slice(0, 120)} …` : n.text} <span className="leise">{zeit(n.erstellt)}</span></span></label>
               {!wahl.notizen.has(n.id) && <label className="eigenschaft einzug klein"><span>Warum zurückhalten? <small>Pflicht, z. B. „interne Bewertung, Art. 15 Abs. 4 DSGVO“</small></span>
                 <input value={wahl.gruende[n.id] ?? ''} maxLength={500} onChange={(e) => setGrund(n.id, e.target.value)} /></label>}
             </div>
           ))}
-          {inhalt.historie > 0 && <label className="haken klein"><input type="checkbox" checked={wahl.historie.has(id)} onChange={(e) => schalte('historie', id, e.target.checked)} /><span>🕓 Historie ({inhalt.historie} {inhalt.historie === 1 ? 'Eintrag' : 'Einträge'})</span></label>}
+          {inhalt.historie > 0 && <label className="haken klein"><input type="checkbox" checked={wahl.historie.has(id)} onChange={(e) => schalte('historie', id, e.target.checked)} /><span><Symbol name="historie" /> Historie ({inhalt.historie} {inhalt.historie === 1 ? 'Eintrag' : 'Einträge'})</span></label>}
           {inhalt.ohneFelder.length > 0 && <p className="leise klein">Nie enthalten: {inhalt.ohneFelder.join(', ')}</p>}
         </div>
       )}
