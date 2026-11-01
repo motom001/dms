@@ -18,7 +18,7 @@ In der Ablage steht die Ansicht **Neue Post** über den übrigen Ansichten (ein 
 
 **Gibt es eine Datei schon?** Bevor die Post entsteht, prüft das DMS jede Datei. Liegt eine schon in einer Mappe, die du sehen darfst, fragt es nach: je Datei steht, wo sie liegt (mit Link), und du hakst **trotzdem ablegen** an oder lässt sie weg. **Weiter** legt die Post mit den übrigen Dateien an, **Abbrechen** legt gar nichts an, ein Klick auf den Link bringt dich zur vorhandenen Mappe.
 
-Den Betreff nimmt das DMS aus dem ersten Dateinamen; ändern kannst du ihn jederzeit. Absender bist du, der Kanal heißt *Hochgeladen*. Dateien über 100 MB oder bei erreichter Speicherplatz-Grenze werden mit Grund gemeldet, die übrigen trotzdem abgelegt.
+Den Betreff nimmt das DMS aus dem ersten Dateinamen; ändern kannst du ihn jederzeit. Der **Absender** bleibt leer, bis du ihn einträgst – du hast den Brief ja nur erfasst, nicht geschickt (wer erfasst hat, steht unter „Angelegt“ und in der Historie). In der Liste *Neue Post* steht dann „–“. Der Kanal heißt *Hochgeladen*. Dateien über 100 MB oder bei erreichter Speicherplatz-Grenze werden mit Grund gemeldet, die übrigen trotzdem abgelegt.
 
 **Auf einer geöffneten Mappe** mit Dokumentenregister teilt sich die Fläche: **In diese Mappe** legt die Dateien wie bisher ins Register (übernommen mit *Mappe speichern*), **Als neue Post** macht eine neue Post daraus.
 

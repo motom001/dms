@@ -2513,6 +2513,55 @@ export class Dienst {
     }, [{ key: 'nummern', name: 'Nummern vergeben', einheit: 'Mappen' }]);
   }
 
+  /**
+   * Wartung „Absender bereinigen“ (#494): Bis 0.99 bekam eingehende Post ohne Absender den Namen dessen,
+   * der sie angelegt hat (beim Eingangsordner „Eingangsordner“). Gesucht wird eingehende Post aus
+   * Hochladen, API, WebDAV und Eingangsordner, deren Absender genau so lautet. Postfach-Abrufe und
+   * versendete Post bleiben außen vor – dort kommt der Absender aus der E-Mail bzw. ist richtig.
+   */
+  async absenderVorschau(): Promise<{ posten: Array<{ id: string; titel: string; absender: string; kanal: string; erstellt: string }> }> {
+    const typ = await this.postTyp();
+    const kanaele = new Set<string>([POST_KANAL.hochgeladen, POST_KANAL.api, POST_KANAL.webdav, POST_KANAL.ordner]);
+    const kandidaten = (await this.repo.listeMappen(typ.id)).filter((m) => auswahlText(m.werte.richtung) === POST_RICHTUNG.eingehend
+      && kanaele.has(auswahlText(m.werte.kanal)) && typeof m.werte.absender === 'string' && m.werte.absender.trim() !== '');
+    const namen = new Map<string, string>();
+    const posten: Array<{ id: string; titel: string; absender: string; kanal: string; erstellt: string }> = [];
+    for (const m of kandidaten) {
+      const absender = String(m.werte.absender).trim();
+      let passt = auswahlText(m.werte.kanal) === POST_KANAL.ordner && absender === 'Eingangsordner';
+      if (!passt && m.erstelltVon) {
+        if (!namen.has(m.erstelltVon)) namen.set(m.erstelltVon, await this.name(m.erstelltVon));
+        passt = absender === namen.get(m.erstelltVon);
+      }
+      if (passt) posten.push({ id: m.id, titel: m.titel ?? '', absender, kanal: auswahlText(m.werte.kanal), erstellt: m.erstellt });
+    }
+    posten.sort((a, b) => b.erstellt.localeCompare(a.erstellt));
+    return { posten };
+  }
+
+  /** Absender der gewählten Posts leeren (#494) – nur, wenn sie noch zur Vorschau passen; mit Eintrag in der Historie. */
+  async absenderBereinigen(ids: unknown, von: { id: string | null; email: string }): Promise<{ bereinigt: number }> {
+    const gewaehlt = new Set(Array.isArray(ids) ? ids.map(String) : []);
+    if (!gewaehlt.size) throw new Fachfehler(422, 'Bitte mindestens eine Post wählen.');
+    const typ = await this.postTyp();
+    const passend = (await this.absenderVorschau()).posten.filter((p) => gewaehlt.has(p.id));
+    for (const p of passend) {
+      const m = await this.repo.holeMappe(p.id);
+      if (!m) continue;
+      const werte = { ...m.werte, absender: null };
+      await this.inTransaktion(async () => {
+        await this.repo.aendereMappe(m.id, werte, verweiseVon(typ, werte), von.id);
+        await this.notiere(m.id, von.id, 'geaendert', {
+          aenderungen: await this.aenderungen(typ, m.werte, werte),
+          text: 'Absender bereinigt (Wartung): Er war der Name dessen, der die Post angelegt hat.',
+        });
+      });
+      await this.aktualisiereTitel([m.id]);
+    }
+    protokoll.modul('werkbank').info('Absender bereinigt', { von: von.email, anzahl: passend.length });
+    return { bereinigt: passend.length };
+  }
+
   async titelNachziehen(): Promise<number> {
     const ids = await this.repo.ohneTitel();
     await this.aktualisiereTitel(ids);
@@ -3181,7 +3230,8 @@ export class Dienst {
       ...(e.werte && typeof e.werte === 'object' ? e.werte as Record<string, unknown> : {}),
       betreff, datum, kanal: Object.values(POST_KANAL).includes(text(e.kanal) as never) ? text(e.kanal) : kanal,
       richtung: POST_RICHTUNG.eingehend, stand: POST_STAND.neu,
-      absender: text(e.absender).slice(0, 250) || ich.name || null, bezug: null,
+      // Kein Rückgriff auf den Namen des Anlegenden (#494): Absender ist, wer den Brief geschickt hat.
+      absender: text(e.absender).trim().slice(0, 250) || null, bezug: null,
       ...(e.fuer !== undefined ? { fuer: e.fuer || null } : {}), ...(typeof e.nachricht === 'string' ? { nachricht: e.nachricht.slice(0, NOTIZ_MAX) } : {}),
     }, {}, this.verschluessele);
     if (z && !z.admin) {

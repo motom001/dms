@@ -77,6 +77,7 @@ export const HILFE = {
   'werkbank.anbieter': admin('anmeldeschutz/', 'Anmeldung über einen Anbieter', 'anmeldung-uber-einen-anbieter-openid-connect'),
   'werkbank.zweifaktor': admin('anmeldeschutz/', 'Zwei-Faktor-Anmeldung', 'zwei-faktor-anmeldung'),
   'werkbank.wartung': admin('texterkennung/', 'Wartungsoperationen', 'wartungsoperationen'),
+  'werkbank.wartung.absender': admin('texterkennung/', 'Absender bereinigen', 'absender-bereinigen'),
   'werkbank.protokoll': admin('fehlersuche/', 'Protokoll', 'protokoll'),
   'werkbank.fehlermeldungen': admin('fehlersuche/', 'Gemeldete Fehler', 'gemeldete-fehler'),
   'werkbank.datenbank': admin('installation/', 'Lange Datenbankzugriffe', 'lange-datenbankzugriffe'),

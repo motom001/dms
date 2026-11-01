@@ -62,7 +62,7 @@ describe('Systemtyp Post (#192)', () => {
     assert.equal(m.werte.stand, POST_STAND.neu);
     assert.equal(m.werte.kanal, POST_KANAL.hochgeladen);
     assert.equal(m.werte.richtung, 'Eingehend');
-    assert.equal(m.werte.absender, 'Anna');
+    assert.equal(m.werte.absender ?? null, null, 'Absender bleibt leer, nicht der Name des Anlegenden (#494)');
     assert.match(String(m.werte.datum), /^\d{4}-\d{2}-\d{2}$/);
     await d.ladeHoch(m.id, { register: 'dokumente', name: 'scan.pdf', typ: 'application/pdf' }, Buffer.from('%PDF-1.4 a'), anna.id);
     const z = await d.zaehler(A, await d.zugriff(A));
@@ -166,6 +166,50 @@ describe('Systemtyp Post (#192)', () => {
     await assert.rejects(d.aendereMappe(r.id, { werte: { betreff: 'anders' } }, anna.id), status(403));
     // Stand und „Für“ bleiben änderbar.
     await d.aendereMappe(r.id, { werte: { stand: POST_STAND.neu } }, anna.id);
+  });
+});
+
+describe('Absender eingehender Post (#494)', () => {
+  it('bleibt leer ohne Angabe – Hochladen, API, WebDAV; eine Angabe bleibt', async () => {
+    const { d, anna, A, rufe } = await aufbau();
+    const hoch = await d.legePostAn({ betreff: 'Brief' }, { id: anna.id, name: 'Anna' }, await d.zugriff(A));
+    assert.equal(hoch.werte.absender ?? null, null);
+    const api = await rufe(A, 'POST', '/api/post', { body: { betreff: 'per API' }, apiSchluessel: { id: 'k', name: 'Skript' } as never }) as { body: { id: string; werte: Record<string, unknown> } };
+    assert.equal((await d.holeMappe(api.body.id)).mappe.werte.kanal, POST_KANAL.api);
+    assert.equal((await d.holeMappe(api.body.id)).mappe.werte.absender ?? null, null);
+    const dav = await d.legePostAn({ betreff: 'x.pdf' }, { id: anna.id, name: 'Anna' }, undefined, POST_KANAL.webdav);
+    assert.equal(dav.werte.absender ?? null, null);
+    const leer = await d.legePostAn({ betreff: 'Leerzeichen', absender: '   ' }, { id: anna.id, name: 'Anna' });
+    assert.equal(leer.werte.absender ?? null, null);
+    const mit = await d.legePostAn({ betreff: 'Stadtwerke', absender: 'Stadtwerke' }, { id: anna.id, name: 'Anna' });
+    assert.equal(mit.werte.absender, 'Stadtwerke');
+  });
+
+  it('Bestand bereinigen: Vorschau findet den eigenen Namen bzw. „Eingangsordner“, leert nur die gewählten, mit Historie', async () => {
+    const { d, anna, ben, A, rufe } = await aufbau();
+    // Altbestand wie bis 0.99: Absender = Name des Anlegenden.
+    const alt1 = await d.legePostAn({ betreff: 'Alt Anna', absender: 'Anna' }, { id: anna.id, name: 'Anna' });
+    const alt2 = await d.legePostAn({ betreff: 'Alt Ben', absender: 'Ben' }, { id: ben.id, name: 'Ben' });
+    const ordner = await d.legePostAn({ betreff: 'Scan', absender: 'Eingangsordner' }, { id: null, name: 'Eingangsordner' }, undefined, POST_KANAL.ordner);
+    // Nicht betroffen: echter Absender, fremder Name, Postfach-Abruf, ohne Absender.
+    await d.legePostAn({ betreff: 'Echt', absender: 'Finanzamt' }, { id: anna.id, name: 'Anna' });
+    await d.legePostAn({ betreff: 'Von Ben an Anna', absender: 'Ben' }, { id: anna.id, name: 'Anna' });
+    await d.legePostAn({ betreff: 'Mail', absender: 'Anna' }, { id: null, name: 'Postfach' }, undefined, POST_KANAL.email);
+    await d.legePostAn({ betreff: 'Leer' }, { id: anna.id, name: 'Anna' });
+    const v = (await rufe(A, 'GET', '/api/werkbank/wartung/absender')) as { body: { posten: Array<{ id: string; absender: string }> } };
+    assert.deepEqual(new Set(v.body.posten.map((p) => p.id)), new Set([alt1.id, alt2.id, ordner.id]));
+    await assert.rejects(d.absenderBereinigen([], { id: anna.id, email: 'anna@example.org' }), status(422));
+    // Nur die gewählten; eine fremde Id wird übergangen.
+    const r = await rufe(A, 'POST', '/api/werkbank/wartung/absender', { body: { ids: [alt1.id, ordner.id, '00000000-0000-4000-8000-000000000001'] } }) as { body: { bereinigt: number } };
+    assert.equal(r.body.bereinigt, 2);
+    assert.equal((await d.holeMappe(alt1.id)).mappe.werte.absender ?? null, null);
+    assert.equal((await d.holeMappe(ordner.id)).mappe.werte.absender ?? null, null);
+    assert.equal((await d.holeMappe(alt2.id)).mappe.werte.absender, 'Ben');
+    const h = (await d.historie(alt1.id)).find((x) => x.art === 'geaendert')!;
+    assert.equal(h.benutzerId, anna.id);
+    assert.deepEqual(h.daten.aenderungen!.map((a) => [a.feld, a.alt]), [['absender', 'Anna']]);
+    assert.match(String(h.daten.text), /Absender bereinigt/);
+    assert.deepEqual((await d.absenderVorschau()).posten.map((p) => p.id), [alt2.id]);
   });
 });
 
