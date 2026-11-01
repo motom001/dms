@@ -56,12 +56,13 @@ Software allein macht noch keinen Datenschutz – dazu gehören deine Abläufe. 
 | einen Heimserver mit **umbrelOS, ZimaOS oder CasaOS** | aus dem [DMS App Store](https://github.com/motom001/dms-appstore) mit einem Klick: [umbrelOS](https://motom001.github.io/dms/installieren/aktuell/umbrel/), [ZimaOS](https://motom001.github.io/dms/installieren/aktuell/zimaos/), [CasaOS](https://motom001.github.io/dms/installieren/aktuell/casaos/) |
 | ein **NAS** von Synology, UGREEN, QNAP, TrueNAS oder Unraid | eine fertige Vorlage in die Docker-Oberfläche einfügen: [Anleitungen](https://motom001.github.io/dms/installieren/aktuell/) |
 | einen **PC, Raspberry Pi oder Server mit Docker** | [Docker Compose](https://motom001.github.io/dms/installieren/aktuell/docker/) oder, zum Ausprobieren, [ein einziger Container](https://motom001.github.io/dms/installieren/aktuell/komplett/) |
+| **keinen eigenen Server** | [Ohne eigenen Server: das DMS bei einem Anbieter](https://motom001.github.io/dms/installieren/aktuell/anbieter/) – drei Wege und eine Checkliste, worauf du beim Anbieter achtest |
 
 Alle Wege im Überblick: **[Wie komme ich an ein DMS?](https://motom001.github.io/dms/installieren/aktuell/)**
 
 ## Was das DMS nicht ist
 
-- **Kein Cloud-Dienst.** Es läuft bei dir zu Hause; es gibt keinen Anbieter, der deine Unterlagen sieht.
+- **Kein Cloud-Dienst.** Es läuft bei dir zu Hause – oder, wenn du willst, bei einem Anbieter, den du selbst wählst. Das Projekt betreibt keinen Dienst, der deine Unterlagen sieht.
 - **Keine Lizenzkosten**, kein Abo. Wer möchte, unterstützt freiwillig.
 - **Kein „GoBD-zertifiziertes“ Archiv.** Für Selbständige gibt es einen Archivmodus und eine Vorlage für die Verfahrensdokumentation – Werkzeuge, kein Zertifikat.
 - **Nicht für große Unternehmen gebaut.**

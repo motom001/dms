@@ -81,6 +81,7 @@ nav:
       - Windows: windows.md
       - Proxmox und Co.: proxmox.md
       - Jeder Server mit Docker: docker.md
+  - "Ohne eigenen Server: bei einem Anbieter": anbieter.md
   - So läuft es beim Entwickler: beispiel.md
   - Weiteres:
       - Administratorhandbuch: https://motom001.github.io/dms/admin/aktuell/
