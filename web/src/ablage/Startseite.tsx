@@ -50,6 +50,8 @@ export function Startseite({ anstehend, offen, breit = false }: { anstehend: { l
   }, [d.stand]);
 
   const postSicht = d.zaehler.neuePost ? d.sicht(d.zaehler.neuePost) : undefined;
+  // Zahlen kommen nach (#512): bis dahin „…“ in der Kachel.
+  const z = (n: number) => (d.zahlenDa ? n : null);
   const wahl = typeof d.einstellungen.startseite_kachel === 'string' ? d.einstellungen.startseite_kachel : 'favoriten';
   const lieblings = wahl !== 'favoriten' ? d.sicht(wahl) : undefined;
   const tage = anstehend.liste?.tage;
@@ -87,12 +89,12 @@ export function Startseite({ anstehend, offen, breit = false }: { anstehend: { l
           </div>
         ) : (
           <div className="kacheln start-raster">
-            <Kachel name="eingang" to="/ablage/eingang" art="auffaellig" titel="Zu erledigen" anzahl={d.zaehler.eingang} leer="Nichts zu erledigen" unter="Aufgaben und Mappen, an denen du etwas tun sollst" />
-            {postSicht && <Kachel name="post" to={`/ablage/${postSicht.id}`} art="post" titel={postSicht.name} anzahl={d.zaehler.sichten?.[postSicht.id] ?? 0} leer="Keine neue Post" unter="Noch nicht zugeordnet" />}
+            <Kachel name="eingang" to="/ablage/eingang" art="auffaellig" titel="Zu erledigen" anzahl={z(d.zaehler.eingang)} leer="Nichts zu erledigen" unter="Aufgaben und Mappen, an denen du etwas tun sollst" />
+            {postSicht && <Kachel name="post" to={`/ablage/${postSicht.id}`} art="post" titel={postSicht.name} anzahl={z(d.zaehler.sichten?.[postSicht.id] ?? 0)} leer="Keine neue Post" unter="Noch nicht zugeordnet" />}
             <Kachel name="anstehend" to="/ablage/anstehend" art="ruhig" titel="Anstehend" anzahl={anstehend.liste ? anstehend.liste.eintraege.length : null} leer={`Nichts in den nächsten ${tage ?? 30} Tagen`} unter={tage ? `Fristen und Erinnerungen der nächsten ${tage} Tage` : undefined} />
             {lieblings
-              ? <Kachel name="wahl" to={`/ablage/${lieblings.id}`} art="ruhig" titel={lieblings.name} anzahl={d.zaehler.sichten?.[lieblings.id] ?? 0} leer="Leer" />
-              : <Kachel name="wahl" to="/ablage/favoriten" art="ruhig" titel="Favoriten" anzahl={d.zaehler.favoriten ?? 0} leer="Noch keine – der Stern an einer Mappe merkt sie dir" />}
+              ? <Kachel name="wahl" to={`/ablage/${lieblings.id}`} art="ruhig" titel={lieblings.name} anzahl={z(d.zaehler.sichten?.[lieblings.id] ?? 0)} leer="Leer" />
+              : <Kachel name="wahl" to="/ablage/favoriten" art="ruhig" titel="Favoriten" anzahl={z(d.zaehler.favoriten ?? 0)} leer="Noch keine – der Stern an einer Mappe merkt sie dir" />}
           </div>
         )}
         {daten && daten.zuletzt.length > 0 && (

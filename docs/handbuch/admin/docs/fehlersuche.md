@@ -63,7 +63,7 @@ Wirkt eine Seite langsam, schalte im **Profil** den **Entwicklermodus** ein. Dan
 | JSON | Die Antwort im Server in Text umwandeln. |
 | Übertragung, Auswerten, Darstellung | Antwort senden, im Browser lesen und zeichnen. |
 
-Die Werte kommen vom Server im Header `Server-Timing` (`vor`, `app`, `db`, `rechte`, `json`, `gesamt`) und aus der Zeitmessung des Browsers.
+Die Werte kommen vom Server im Header `Server-Timing` (`vor`, `app`, `db`, `rechte`, `json`, `gesamt`) und aus der Zeitmessung des Browsers. Bei den Zahlen der Ansichten (`/api/sichten`) steht dort zusätzlich `zs`: `treffer`, wenn sie aus dem Zwischenspeicher kamen, `neu`, wenn sie gezählt wurden – gezählt wird nach jeder Änderung im Haushalt, sonst spätestens nach 5 Minuten (Ansichten mit Datumsbezug) bzw. 30 Minuten und um Mitternacht.
 
 ## Technik
 

@@ -46,6 +46,8 @@ export interface Kontext {
    * einmal), und die Datenbankzeit darin (die zählt schon bei `db`).
    */
   rechte?: { ms: number; dbMs: number; offen: number; seit: number };
+  /** Zahlen der Ansichten (#512): aus dem Zwischenspeicher („treffer“) oder neu gezählt, mit Dauer. */
+  zwischenspeicher?: { art: 'treffer' | 'neu'; ms: number };
   /** Adresse, unter der die Anfrage kam, z. B. https://dms.example.org (für Links, solange keine Adresse gepflegt ist). */
   ursprung?: string;
 }
