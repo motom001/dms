@@ -11,7 +11,13 @@
  * Ohne `seitwaerts` geht jeder Knoten nur in der Richtung weiter, über die er erreicht wurde; nur die
  * Start-Mappe geht in alle gewählten Richtungen. Sonst würde z. B. von einer Rechnung „nach oben“ auch
  * der Handwerker gesammelt und von dort alle seine anderen Rechnungen.
+ *
+ * Verweisart (Entscheidung Thomas zu #424, #472): Jedes Referenzfeld ist „Zugehörigkeit“ (die Rechnung
+ * gehört zum Vertrag) oder „Bezug“ (nur verknüpft, z. B. Ansprechpartner, Für, Zugeordnet zu). Mit
+ * `nurZugehoerigkeit` geht die Sammlung nur über Zugehörigkeit weiter: Eine Mappe, die nur über Bezug
+ * verbunden ist, steht als Blatt im Baum (`nurBezug`) – über sie wird nicht weitergesammelt.
  */
+import type { Verweisart } from './model';
 import type { Rechte } from './rechte';
 
 export type BaumRichtung = 'verwiesenVon' | 'verweistAuf';
@@ -33,9 +39,14 @@ export interface BaumOptionen {
   seitwaerts: boolean;
   /** Mappen dieser Typen nicht aufnehmen (z. B. Benutzer und Rollen); sie zählen als „außerhalb“. */
   ohneTypen: string[];
+  /**
+   * Nur über Verweise der Art „Zugehörigkeit“ weitersammeln (#424, #472). Mappen, die nur über „Bezug“
+   * verbunden sind, stehen als Blatt im Baum (`nurBezug`); über sie geht es nicht weiter. Standard: nein.
+   */
+  nurZugehoerigkeit: boolean;
 }
 
-export const BAUM_STANDARD: BaumOptionen = { richtungen: ['verwiesenVon', 'verweistAuf'], tiefe: 2, max: 1000, seitwaerts: false, ohneTypen: [] };
+export const BAUM_STANDARD: BaumOptionen = { richtungen: ['verwiesenVon', 'verweistAuf'], tiefe: 2, max: 1000, seitwaerts: false, ohneTypen: [], nurZugehoerigkeit: false };
 
 /** Über welchen Verweis ein Knoten erreicht wurde: `vonId` ist der Knoten eine Ebene darüber. */
 export interface BaumKante {
@@ -44,6 +55,8 @@ export interface BaumKante {
   /** Feld des Verweises (in der verweisenden Mappe) mit Bezeichnung. */
   feldKey: string;
   feld: string;
+  /** Verweisart des Feldes (Zugehörigkeit oder Bezug, Standard Bezug). */
+  verweisart: Verweisart;
 }
 
 /** Ein Verweis zu einer Mappe außerhalb des Baums. Nicht lesbare Mappen ohne Titel (`verborgen`). */
@@ -68,6 +81,11 @@ export interface BaumKnoten {
   ueber: BaumKante | null;
   /** Weitere Wege zu diesem Knoten innerhalb des Baums (Kreise, mehrere Eltern). */
   auchUeber: BaumKante[];
+  /**
+   * Mit `nurZugehoerigkeit`: nur über Verweise der Art „Bezug“ mit dem Baum verbunden – Blatt, über das
+   * nicht weitergesammelt wird (#424: nur den Verweis entfernen; #472: nur Kennung und Feldname).
+   */
+  nurBezug?: boolean;
   /** Anzahl (aktueller) Dokumente. */
   dokumente: number;
   /**
@@ -115,7 +133,13 @@ export function bereinigeBaumOptionen(e: unknown, standard: BaumOptionen = BAUM_
     max: ganz(o.max, standard.max, 1, BAUM_MAX),
     seitwaerts: o.seitwaerts === undefined ? standard.seitwaerts : o.seitwaerts === true || o.seitwaerts === 'true',
     ohneTypen: o.ohneTypen === undefined ? [...standard.ohneTypen] : [...new Set(liste(o.ohneTypen))],
+    nurZugehoerigkeit: o.nurZugehoerigkeit === undefined ? standard.nurZugehoerigkeit : o.nurZugehoerigkeit === true || o.nurZugehoerigkeit === 'true',
   };
+}
+
+/** Verweisart eines Referenzfeldes; fehlt sie (ältere Felder, Systemfelder), gilt „Bezug“. */
+export function verweisartVon(typ: { felder: Array<{ key: string; verweisart?: Verweisart }> } | undefined, feldKey: string): Verweisart {
+  return typ?.felder.find((f) => f.key === feldKey)?.verweisart === 'zugehoerigkeit' ? 'zugehoerigkeit' : 'bezug';
 }
 
 /** Kinder eines Knotens (über `ueber`), in der Reihenfolge des Baums – zum Zeichnen. */

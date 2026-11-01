@@ -26,7 +26,8 @@ import type { Readable } from 'node:stream';
 import { aufbewahrenBis, datumText, inFrist, JAHRE_MAX } from '../../shared/src/archiv';
 import type { ExportQuelle } from './vollexport';
 import { sammleBaum, type BaumQuelle } from './baum';
-import { BAUM_STANDARD, bereinigeBaumOptionen, type Baum } from '../../shared/src/baum';
+import { BAUM_STANDARD, bereinigeBaumOptionen, verweisartVon, type Baum } from '../../shared/src/baum';
+import { liesLoeschAuswahl, loeschVorschlag, LOESCH_TIEFE, planeLoeschung, type LoeschKante, type LoeschPlan, type LoeschVorschau } from '../../shared/src/loeschbaum';
 import { AUSKUNFT_PASSWORT_MIN, auswahlProbleme as auskunftProbleme, fristBis, liesAuswahl, liesDatenschutz, personenTypen, type AuskunftMappe, type AuskunftVorschau, type AuskunftVorschlag, type Datenschutz } from '../../shared/src/auskunft';
 import { auskunftMail, LINK_FEHLVERSUCHE_MAX, LINK_STATUS, liesLinkEingabe, linkStatus, normiereCode, type AuskunftLink, type AuskunftStand } from '../../shared/src/auskunft';
 import { neuerAbrufcode, SCHLUESSEL_MUSTER } from './abruf';
@@ -3370,7 +3371,10 @@ export class Dienst {
     const e = await this.eintrag(id, ich, alle);
     const typ = await this.repo.holeTyp(e.typId);
     if (!typ) throw new Fachfehler(409, 'Den Mappentyp dieser Mappe gibt es nicht mehr.');
-    const { verweiseEntfallen } = await this.repo.stelleWiederHer(id);
+    const r = await this.repo.stelleWiederHer(id);
+    // Beim Löschen mit verknüpften Mappen entfernte Verweise (#424) kommen mit.
+    const zurueck = e.entkoppelt.length ? await this.verbindeWieder(id, e.entkoppelt, ich.id) : { wieder: 0, entfallen: 0 };
+    const verweiseEntfallen = r.verweiseEntfallen + zurueck.entfallen;
     await this.notiere(id, ich.id, 'wiederhergestellt', verweiseEntfallen ? { verweiseEntfallen } : undefined);
     await this.aktualisiereTitel([id]);
     await this.passungFuer(typ, [id]);
@@ -4389,6 +4393,165 @@ export class Dienst {
     const sys = await this.sichereSystem();
     const opt = bereinigeBaumOptionen(eingabe, { ...BAUM_STANDARD, ohneTypen: [sys.benutzer.id, sys.rolle.id] });
     return sammleBaum(this.baumQuelle(z), startId, opt);
+  }
+
+  /* ---------- Mappe mit allen verknüpften Mappen löschen (#424) ---------- */
+
+  /**
+   * Vorschau (#424): Baum „nach unten“ (Mappen, die auf die Start-Mappe verweisen, und so weiter), ohne
+   * Benutzer und Rollen; dazu alle Verweise im Baum, welche Mappen auch an anderen hängen (🔗) und welche
+   * sich grundsätzlich nicht löschen lassen. Tiefe 1–10 (Standard 5), Obergrenze max (Standard 1000).
+   * Weiter geht es nur über Verweise der Art „Zugehörigkeit“; Mappen, die nur über „Bezug“ dranhängen
+   * (📎, z. B. Ansprechpartner), stehen als Blatt da – bei ihnen wird nur der Verweis entfernt.
+   */
+  async loeschVorschau(startId: string, eingabe: unknown, z: Zugriff): Promise<LoeschVorschau> {
+    const sys = await this.sichereSystem();
+    const ohne = new Set([sys.benutzer.id, sys.rolle.id]);
+    const e = (eingabe && typeof eingabe === 'object' ? eingabe : {}) as Record<string, unknown>;
+    const opt = bereinigeBaumOptionen({ tiefe: e.tiefe, max: e.max }, { ...BAUM_STANDARD, tiefe: LOESCH_TIEFE, richtungen: ['verwiesenVon'], seitwaerts: false, ohneTypen: [...ohne], nurZugehoerigkeit: true });
+    const baum = await sammleBaum(this.baumQuelle(z), startId, opt);
+    const imBaum = new Set(baum.knoten.map((k) => k.id));
+    const alle: LoeschKante[] = [];
+    for (let i = 0; i < baum.knoten.length; i += 500) alle.push(...await this.repo.kantenVon(baum.knoten.slice(i, i + 500).map((k) => k.id)));
+    const gesehen = new Set<string>();
+    const kanten = alle.filter((k) => imBaum.has(k.quelleId) && imBaum.has(k.zielId) && k.quelleId !== k.zielId && !gesehen.has(`${k.quelleId}|${k.feldKey}|${k.zielId}`) && !!gesehen.add(`${k.quelleId}|${k.feldKey}|${k.zielId}`));
+    // 🔗: gehört auch zu einer Mappe außerhalb – über ein Feld der Art Zugehörigkeit, über das sie im Baum
+    // hängt, oder zu einer Mappe desselben Typs wie im Baum (z. B. zusätzlich zu einem anderen Vertrag).
+    // Bezug-Verweise (Aussteller, Kategorie, Ablageort) und Verweise auf Benutzer zählen nicht.
+    const aussenZiele = [...new Set(alle.filter((k) => imBaum.has(k.quelleId) && !imBaum.has(k.zielId)).map((k) => k.zielId))];
+    const typVon = await this.repo.typenVon(aussenZiele);
+    const typIm = new Map(baum.knoten.map((k) => [k.id, k.typId] as const));
+    const zugehoerig = (x: LoeschKante) => verweisartVon(z.typen.get(typIm.get(x.quelleId) ?? ''), x.feldKey) === 'zugehoerigkeit';
+    const geteilt = baum.knoten.filter((k) => {
+      if (k.nurBezug) return false;
+      const innen = kanten.filter((x) => x.quelleId === k.id && zugehoerig(x));
+      if (!innen.length) return false;
+      const felder = new Set(innen.map((x) => x.feldKey));
+      const typen = new Set(innen.map((x) => typIm.get(x.zielId)));
+      return alle.some((x) => x.quelleId === k.id && !imBaum.has(x.zielId) && zugehoerig(x) && !ohne.has(typVon.get(x.zielId) ?? '') && (felder.has(x.feldKey) || typen.has(typVon.get(x.zielId))));
+    }).map((k) => k.id);
+    const nichtLoeschbar: Record<string, string> = {};
+    const mappen = new Map((await this.repo.holeMappen(baum.knoten.filter((k) => !k.gesperrt && k.rechte.D).map((k) => k.id))).map((m) => [m.id, m] as const));
+    for (const [id, m] of mappen) {
+      const typ = z.typen.get(m.typId);
+      if (!darfLoeschen(typ, m)) nichtLoeschbar[id] = m.systemKennung ? 'Systemrollen lassen sich nicht löschen' : `Mappen vom Typ „${typ?.name ?? ''}“ lassen sich nicht löschen`;
+    }
+    const v = { baum, kanten, geteilt, nichtLoeschbar };
+    return { ...v, vorschlag: loeschVorschlag(v), papierkorbTage: await this.papierkorbTage() };
+  }
+
+  /**
+   * Ausführen (#424): dieselbe Vorschau neu sammeln, Plan aus `auswahl` (Mappen-Id → loeschen |
+   * entkoppeln | behalten; was fehlt, bleibt), dann in einem Vorgang: Verweise bleibender Mappen kappen
+   * (für das Wiederherstellen gemerkt) und alle Mappen samt Dokumenten in den Papierkorb. Rechte und
+   * Aufbewahrungsfristen werden dabei nie übergangen. Historie und Protokoll ohne Inhalte.
+   */
+  async loescheMitVerknuepften(startId: string, eingabe: unknown, benutzerId: string, z: Zugriff) {
+    const e = (eingabe && typeof eingabe === 'object' ? eingabe : {}) as Record<string, unknown>;
+    if (!e.auswahl || typeof e.auswahl !== 'object') throw new Fachfehler(422, 'Bitte die Auswahl angeben (Mappen-Id → loeschen, entkoppeln oder behalten; z. B. der Vorschlag aus der Vorschau).');
+    const v = await this.loeschVorschau(startId, e, z);
+    const plan = planeLoeschung(v, liesLoeschAuswahl(e.auswahl));
+    if (!plan.loeschen.length) throw new Fachfehler(422, 'Nach dieser Auswahl wird keine Mappe gelöscht.', { plan });
+    const weg = new Set(plan.loeschen);
+    const gekappt = new Set(plan.entkoppeln.map((k) => `${k.quelleId}|${k.feldKey}|${k.zielId}`));
+    // Zur Sicherheit je Mappe wie beim einzelnen Löschen prüfen – mit allen Verweisen, nicht nur denen im Baum.
+    const mappen = new Map((await this.repo.holeMappen(plan.loeschen)).map((m) => [m.id, m] as const));
+    for (const id of plan.loeschen) {
+      const m = mappen.get(id);
+      if (!m) throw new Fachfehler(409, 'Eine der Mappen gibt es inzwischen nicht mehr. Bitte die Vorschau neu laden.');
+      const rueck = (await this.repo.rueckverweise(id)).filter((r) => !weg.has(r.quelleId) && !gekappt.has(`${r.quelleId}|${r.feldKey}|${id}`));
+      const p = await this.loeschPruefung(m, z.typen.get(m.typId), rueck);
+      if (!p.ok) throw new Fachfehler(p.status, `„${m.titel || 'Ohne Titel'}“: ${p.grund} Bitte die Vorschau neu laden.`);
+    }
+    // Verweise bleibender Mappen entfernen (🔗 „nur Verweis entfernen“).
+    const entkoppelt: Record<string, Array<{ quelleId: string; feldKey: string }>> = {};
+    const jeQuelle = new Map<string, LoeschKante[]>();
+    for (const k of plan.entkoppeln) jeQuelle.set(k.quelleId, [...(jeQuelle.get(k.quelleId) ?? []), k]);
+    for (const [quelleId, ks] of jeQuelle) {
+      const m = await this.pruefeRecht(z, quelleId, 'U');
+      const typ = (await this.repo.holeTyp(m.typId))!;
+      const werte = { ...m.werte };
+      for (const k of ks) {
+        const rest = alsListe(werte[k.feldKey]).filter((x) => x !== k.zielId);
+        if (rest.length) werte[k.feldKey] = typ.felder.find((f) => f.key === k.feldKey)?.mehrfach ? rest : rest[0];
+        else delete werte[k.feldKey];
+        (entkoppelt[k.zielId] ??= []).push({ quelleId, feldKey: k.feldKey });
+      }
+      await this.schreibeVerweisWerte(typ, m, werte, benutzerId);
+    }
+    const vorgang = weg.has(startId) ? startId : randomUUID();
+    await this.repo.legeVorgangInPapierkorb(plan.loeschen, benutzerId, vorgang, entkoppelt);
+    const start = v.baum.knoten[0];
+    const z_ = plan.zahlen;
+    const text = `mit verknüpften Mappen gelöscht (${z_.mappen} ${z_.mappen === 1 ? 'Mappe' : 'Mappen'}, ${z_.dokumente} ${z_.dokumente === 1 ? 'Dokument' : 'Dokumente'})`;
+    await this.repo.historieSchreibe(plan.loeschen.map((mappeId) => ({ mappeId, benutzerId, art: 'papierkorb' as const, daten: {
+      vorgang, text, ...(mappeId === start.id ? { zahlen: z_ } : { start: start.id }),
+    } })));
+    for (const typId of new Set([...mappen.values()].map((m) => m.typId))) {
+      const typ = z.typen.get(typId);
+      if (typ?.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
+    }
+    const tage = await this.papierkorbTage();
+    if (!tage) await this.leere(plan.loeschen, benutzerId);
+    protokoll.modul('ablage').info(tage ? 'Mappe mit verknüpften Mappen in den Papierkorb gelegt' : 'Mappe mit verknüpften Mappen endgültig gelöscht', {
+      von: benutzerId, start: startId, vorgang, mappen: z_.mappen, dokumente: z_.dokumente, verweiseEntfernt: z_.verweise,
+      bleiben: { frist: z_.frist, ohneRecht: z_.ohneRecht, verweis: z_.gehalten, abgewaehlt: z_.abgewaehlt }, abgeschnitten: v.baum.abgeschnitten || undefined,
+    });
+    return { vorgang, endgueltig: !tage, zahlen: z_, loeschen: plan.loeschen, entkoppeln: plan.entkoppeln };
+  }
+
+  /** Verweisfelder einer Mappe neu schreiben (#424) – mit Historie, Titel und Passung wie beim Speichern. */
+  private async schreibeVerweisWerte(typ: Mappentyp, m: Mappe, werte: Werte, von: string | null) {
+    const aenderungen = await this.aenderungen(typ, m.werte, werte);
+    await this.repo.aendereMappe(m.id, werte, verweiseVon(typ, werte), von);
+    if (aenderungen.length) await this.notiere(m.id, von, 'geaendert', { aenderungen });
+    await this.aktualisiereTitel([m.id]);
+    await this.passungFuer(typ, [m.id]);
+  }
+
+  /** Beim Löschen entfernte Verweise wieder setzen (#424); liefert, wie viele nicht mehr gingen. */
+  private async verbindeWieder(zielId: string, liste: Array<{ quelleId: string; feldKey: string }>, von: string | null): Promise<{ wieder: number; entfallen: number }> {
+    let wieder = 0; let entfallen = 0;
+    const jeQuelle = new Map<string, string[]>();
+    for (const x of liste) jeQuelle.set(x.quelleId, [...(jeQuelle.get(x.quelleId) ?? []), x.feldKey]);
+    for (const [quelleId, felder] of jeQuelle) {
+      const m = await this.repo.holeMappe(quelleId);
+      const typ = m ? await this.repo.holeTyp(m.typId) : undefined;
+      if (!m || !typ || !(await this.repo.holeMappe(zielId))) { entfallen += felder.length; continue; }
+      const werte = { ...m.werte };
+      for (const key of felder) {
+        const f = typ.felder.find((x) => x.key === key && x.typ === 'referenz');
+        const da = alsListe(werte[key]);
+        if (!f) { entfallen++; continue; }
+        if (da.includes(zielId)) { wieder++; continue; }
+        if (f.mehrfach) { werte[key] = [...da, zielId]; wieder++; }
+        else if (!da.length) { werte[key] = zielId; wieder++; }
+        else entfallen++;
+      }
+      await this.schreibeVerweisWerte(typ, m, werte, von);
+    }
+    return { wieder, entfallen };
+  }
+
+  /**
+   * Einen ganzen Vorgang (#424) wiederherstellen: alle Mappen mit ihren Dokumenten und Verweisen, dazu die
+   * beim Löschen entfernten Verweise bleibender Mappen. Rechte wie beim einzelnen Wiederherstellen.
+   */
+  async stelleVorgangWiederHer(vorgang: string, ich: { id: string; rolle: string }, alle = false) {
+    const eintraege = (await this.repo.papierkorb(alle && ich.rolle === 'admin' ? {} : { von: ich.id })).filter((e) => e.vorgang === vorgang);
+    if (!istUuid(vorgang) || !eintraege.length) throw new Fachfehler(404, 'Diesen Vorgang gibt es (im Papierkorb) nicht mehr.');
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    const fehlt = eintraege.find((e) => !typen.has(e.typId));
+    if (fehlt) throw new Fachfehler(409, `Den Mappentyp von „${fehlt.titel || 'Ohne Titel'}“ gibt es nicht mehr.`);
+    const ids = eintraege.map((e) => e.id);
+    const { verweiseEntfallen } = await this.repo.stelleMehrereWiederHer(ids);
+    await this.repo.historieSchreibe(ids.map((mappeId) => ({ mappeId, benutzerId: ich.id, art: 'wiederhergestellt' as const, daten: { vorgang } })));
+    await this.aktualisiereTitel(ids);
+    let wieder = 0; let entfallen = verweiseEntfallen;
+    for (const e of eintraege) if (e.entkoppelt.length) { const r = await this.verbindeWieder(e.id, e.entkoppelt, ich.id); wieder += r.wieder; entfallen += r.entfallen; }
+    for (const typId of new Set(eintraege.map((e) => e.typId))) await this.passungFuer(typen.get(typId)!, eintraege.filter((e) => e.typId === typId).map((e) => e.id));
+    protokoll.modul('ablage').info('Vorgang aus dem Papierkorb wiederhergestellt', { von: ich.id, vorgang, mappen: ids.length, verweiseWieder: wieder, verweiseEntfallen: entfallen || undefined });
+    return { mappen: ids.length, verweiseWieder: wieder, verweiseEntfallen: entfallen, startId: ids.includes(vorgang) ? vorgang : null };
   }
 
   /* ---------- Datenschutz: Auskunft nach Art. 15 DSGVO (#396) ---------- */

@@ -41,7 +41,7 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: string | null = 
       ],
       felder: [
         feld('bezeichnung', 'Bezeichnung', 'text', { pflicht: true, hilfe: 'z. B. Stromvertrag Haus', maxLen: 120 }),
-        feld('vertragspartner', 'Vertragspartner', 'referenz', { pflicht: true, zielTyp: id.partner, verweisart: 'bezug' }),
+        feld('vertragspartner', 'Vertragspartner', 'referenz', { pflicht: true, zielTyp: id.partner, verweisart: 'zugehoerigkeit' }),
         feld('vertragsnummer', 'Vertragsnummer', 'text', { eindeutig: true, maxLen: 60 }),
         feld('beginn', 'Vertragsbeginn', 'datum'),
         feld('kuendigung_bis', 'Kündigung bis', 'datum', { hilfe: 'Letzter Tag, an dem die Kündigung eingehen muss',

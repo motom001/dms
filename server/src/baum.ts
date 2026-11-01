@@ -5,9 +5,13 @@
  * und die Lesbarkeit – nicht je Mappe. Nicht lesbare Mappen werden weder aufgenommen noch
  * weiterverfolgt (sonst ließe sich über sie etwas erfahren); sie zählen nur in `verborgen`.
  * Die Datenquelle (`BaumQuelle`) baut der Dienst aus Repo und Zugriff; Tests können sie selbst bauen.
+ *
+ * Mit `nurZugehoerigkeit` (#424, #472) wird über eine Mappe, die nur über „Bezug“ dranhängt, nicht
+ * weitergesammelt. Erreicht die Sammlung sie später doch über eine „Zugehörigkeit“, hängt sie dort ein
+ * und wird weiterverfolgt; innerhalb einer Ebene haben Wege über Zugehörigkeit Vorrang.
  */
 import { aufbewahrenBis, inFrist } from '../../shared/src/archiv';
-import { AUSSEN_MAX, type AussenVerweis, type Baum, type BaumKante, type BaumKnoten, type BaumOptionen, type BaumRichtung } from '../../shared/src/baum';
+import { AUSSEN_MAX, verweisartVon, type AussenVerweis, type Baum, type BaumKante, type BaumKnoten, type BaumOptionen, type BaumRichtung } from '../../shared/src/baum';
 import type { Mappe, MappenBezug, Mappentyp } from '../../shared/src/model';
 import { NICHTS, type Rechte } from '../../shared/src/rechte';
 import { Fachfehler } from './fehler';
@@ -58,8 +62,9 @@ export async function sammleBaum(q: BaumQuelle, startId: string, opt: BaumOption
   const ohne = new Set(opt.ohneTypen);
   const feldName = (typId: string | undefined, key: string) => (typId ? q.typen.get(typId)?.felder.find((f) => f.key === key)?.label : undefined) ?? key;
 
-  interface Eintrag { mappe: Mappe; ebene: number; ueber: BaumKante | null; auchUeber: BaumKante[]; richtung: BaumRichtung | null; reihe: number }
-  const gesammelt = new Map<string, Eintrag>([[start.id, { mappe: start, ebene: 0, ueber: null, auchUeber: [], richtung: null, reihe: 0 }]]);
+  /** `bezug`: nur über Bezug verbunden (mit nurZugehoerigkeit) – Blatt, wird nicht weiterverfolgt. */
+  interface Eintrag { mappe: Mappe; ebene: number; ueber: BaumKante | null; auchUeber: BaumKante[]; richtung: BaumRichtung | null; reihe: number; bezug: boolean }
+  const gesammelt = new Map<string, Eintrag>([[start.id, { mappe: start, ebene: 0, ueber: null, auchUeber: [], richtung: null, reihe: 0, bezug: false }]]);
   const reihenfolge: string[] = [start.id];
   const benutzt = new Set<string>();
   const verborgen = new Set<string>();
@@ -70,6 +75,7 @@ export async function sammleBaum(q: BaumQuelle, startId: string, opt: BaumOption
 
   /** Nachbarn eines Rand-Knotens über die Kanten, in den erlaubten Richtungen. */
   const nachbarn = (e: Eintrag, kanten: Kante[]) => {
+    if (e.bezug) return [];
     const erlaubt = e.richtung === null || opt.seitwaerts ? opt.richtungen : [e.richtung];
     const r: Array<{ id: string; kante: Kante; richtung: BaumRichtung }> = [];
     for (const k of kanten) {
@@ -80,7 +86,7 @@ export async function sammleBaum(q: BaumQuelle, startId: string, opt: BaumOption
     return r;
   };
   const kanteVon = (e: Eintrag, n: { kante: Kante; richtung: BaumRichtung }, typVonQuelle: string | undefined): BaumKante =>
-    ({ vonId: e.mappe.id, richtung: n.richtung, feldKey: n.kante.feldKey, feld: feldName(typVonQuelle, n.kante.feldKey) });
+    ({ vonId: e.mappe.id, richtung: n.richtung, feldKey: n.kante.feldKey, feld: feldName(typVonQuelle, n.kante.feldKey), verweisart: verweisartVon(typVonQuelle ? q.typen.get(typVonQuelle) : undefined, n.kante.feldKey) });
 
   // Alle Kanten je Knoten merken – für die Verweise nach außen am Ende (die letzte Ebene wird nachgeladen).
   const kantenJe = new Map<string, Kante[]>();
@@ -106,18 +112,37 @@ export async function sammleBaum(q: BaumQuelle, startId: string, opt: BaumOption
       else if (ohne.has(m.typId)) ausgeschlossen.add(id);
     }
     const neu: Eintrag[] = [];
-    for (const k of kandidaten) {
+    const hochgestuft = new Set<string>();
+    const mitKante = kandidaten.map((k) => {
+      const quelleTyp = (k.kante.quelleId === k.von.mappe.id ? k.von.mappe : gesammelt.get(k.id)?.mappe ?? mappen.get(k.id))?.typId;
+      return { ...k, baumKante: kanteVon(k.von, k, quelleTyp) };
+    });
+    // Wege über Zugehörigkeit zuerst (stabil sortiert): Wer auch zugehört, wird nicht nur als Bezug-Blatt aufgenommen.
+    if (opt.nurZugehoerigkeit) mitKante.sort((a, b) => Number(a.baumKante.verweisart !== 'zugehoerigkeit') - Number(b.baumKante.verweisart !== 'zugehoerigkeit'));
+    for (const k of mitKante) {
       const s = kantenSchluessel(k.kante);
       if (benutzt.has(s)) continue;
       if (verborgen.has(k.id) || ausgeschlossen.has(k.id)) continue;
       benutzt.add(s);
-      const quelleTyp = (k.kante.quelleId === k.von.mappe.id ? k.von.mappe : gesammelt.get(k.id)?.mappe ?? mappen.get(k.id))?.typId;
-      const kante = kanteVon(k.von, k, quelleTyp);
+      const kante = k.baumKante;
+      const bezug = opt.nurZugehoerigkeit && kante.verweisart !== 'zugehoerigkeit';
       const da = gesammelt.get(k.id);
-      if (da) { da.auchUeber.push(kante); kreise++; continue; }
+      if (da) {
+        kreise++;
+        // Bisher nur über Bezug dran, jetzt über Zugehörigkeit erreicht: dort einhängen und weiterverfolgen.
+        const pos = reihenfolge.indexOf(da.mappe.id);
+        if (da.bezug && !bezug && pos >= 0 && !hochgestuft.has(da.mappe.id)) {
+          if (da.ueber) da.auchUeber.push(da.ueber);
+          Object.assign(da, { ueber: kante, ebene, richtung: k.richtung, bezug: false });
+          reihenfolge.splice(pos, 1);
+          hochgestuft.add(da.mappe.id);
+          neu.push(da);
+        } else da.auchUeber.push(kante);
+        continue;
+      }
       if (gesammelt.size >= opt.max) { abgeschnitten = true; continue; }
       const m = mappen.get(k.id)!;
-      const x: Eintrag = { mappe: m, ebene, ueber: kante, auchUeber: [], richtung: k.richtung, reihe: 0 };
+      const x: Eintrag = { mappe: m, ebene, ueber: kante, auchUeber: [], richtung: k.richtung, reihe: 0, bezug };
       gesammelt.set(m.id, x);
       neu.push(x);
     }
@@ -165,7 +190,7 @@ export async function sammleBaum(q: BaumQuelle, startId: string, opt: BaumOption
     }
     const bis = aufbewahrenBis(typ?.archiv, e.mappe);
     return {
-      id, typId: e.mappe.typId, typ: typ?.name ?? '', titel: e.mappe.titel ?? '', ebene: e.ebene, ueber: e.ueber, auchUeber: e.auchUeber,
+      id, typId: e.mappe.typId, typ: typ?.name ?? '', titel: e.mappe.titel ?? '', ebene: e.ebene, ueber: e.ueber, auchUeber: e.auchUeber, ...(e.bezug ? { nurBezug: true } : {}),
       dokumente: doks.get(id) ?? 0, aussen, aufbewahrenBis: bis, gesperrt: inFrist(bis, jetzt), rechte: rechte.get(id) ?? { ...NICHTS },
     };
   });

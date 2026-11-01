@@ -106,7 +106,7 @@ Mit **+ … anlegen** in der Überschrift einer Gruppe legst du direkt eine neue
 Bei einer neuen Mappe ist das Register noch leer: Verknüpfungen entstehen erst, wenn die Mappe gespeichert ist und andere auf sie verweisen.
 
 !!! info "Zugehörigkeit oder Bezug"
-    Neben jedem Verweis steht, welcher Art er ist. **Zugehörigkeit** heißt: gehört dazu (die Rechnung gehört zum Vertrag). **Bezug** heißt: hat nur damit zu tun (die Rechnung kommt von diesem Aussteller). Das hilft später bei Auswertungen wie „alles zum Haus“, damit dort nicht jede Rechnung desselben Handwerkers auftaucht.
+    Neben jedem Verweis steht, welcher Art er ist. **Zugehörigkeit** heißt: gehört dazu (die Rechnung gehört zum Vertrag). **Bezug** heißt: hat nur damit zu tun (die Rechnung kommt von diesem Aussteller). Das hilft bei Auswertungen wie „alles zum Haus“, damit dort nicht jede Rechnung desselben Handwerkers auftaucht – und beim [Löschen mit verknüpften Mappen](#mit-verknupften-mappen-loschen): Mitgelöscht wird nur, was dazugehört.
 
 ## Löschen
 
@@ -121,6 +121,29 @@ Geht Löschen gerade nicht, ist der Knopf ausgegraut, und daneben steht **Warum 
 ![Ausgegrauter Knopf „Mappe löschen“ mit aufgeklappter Begründung „Warum nicht?“](bilder/mappe-loeschen-warum.png)
 
 Benutzer und Systemrollen lassen sich in der Ablage gar nicht löschen; dort fehlt der Knopf.
+
+### Mit verknüpften Mappen löschen
+
+Willst du eine Mappe **mit allem, was an ihr hängt**, loswerden – etwa einen Vertragspartner, mit dem es seit Jahren nichts mehr gab, samt Verträgen, Rechnungen und Dokumenten –, nimm **Mappe ▾ → Mit verknüpften Mappen löschen …** (unten im Menü, rot). Lässt sich die Mappe allein nicht löschen, weil noch andere auf sie verweisen, steht derselbe Weg auch unter **Warum nicht?** am Löschknopf. Du brauchst dafür das Recht, die Mappe zu löschen.
+
+![Vorschau als Baum: was mitgeht und was bleibt](bilder/mit-verknuepften-loeschen.png)
+
+1. **Vorschau als Baum:** Das DMS sammelt alle Mappen, die zu dieser Mappe gehören, und die Mappen, die wiederum zu diesen gehören (Vertragspartner → Verträge → Rechnungen → Lieferscheine …), mit der Zahl ihrer Dokumente. Die **Tiefe** stellst du ein (Vorgabe 5 Ebenen); Äste klappst du mit ▸/▾ auf und zu. Jede Mappe steht nur einmal da, auch bei Kreisen.
+    - **Nur nach unten:** Mitgelöscht wird nur, was auf die gelöschte Mappe verweist. Mappen, auf die sie selbst verweist (z. B. eine Kategorie, ein Ablageort oder beim Löschen einer Rechnung der Vertragspartner), gehören nie dazu – auch nicht über eine mitgelöschte Mappe: Der Lieferschein einer Rechnung geht mit, sein Verweis auf den Vertragspartner wird aber nicht verfolgt.
+    - **Nur über Zugehörigkeit:** Mitgelöscht wird nur über Verweise der [Verweisart](begriffe.md#verweisart) **Zugehörigkeit** (die Rechnung gehört zum Vertrag). Hängt eine Mappe nur über einen **Bezug** dran – z. B. ein Vertrag mit diesem Vertragspartner als *Ansprechpartner*, Post mit *Für* oder *Zugeordnet zu* –, bleibt sie; nur der Verweis wird entfernt. Was an ihr hängt, sammelt das DMS nicht.
+2. **Kennzeichnungen** je Mappe:
+    - ✅ **wird gelöscht**.
+    - 📎 **nur über Bezug verbunden** – bleibt immer, nur der Verweis wird entfernt (dabei steht das Feld, z. B. „über Ansprechpartner (Bezug)“). Nimmst du den Haken weg, bleibt auch der Verweis – und damit die Mappe, auf die er zeigt.
+    - 🔗 **hängt auch an anderen Mappen** – z. B. eine Rechnung, die zusätzlich auf einen anderen Vertrag verweist. Vorschlag: **nur den Verweis entfernen, Mappe behalten**; im Auswahlfeld kannst du sie stattdessen **mitlöschen**.
+    - 🔒 **Aufbewahrungsfrist läuft noch** ([Archivmodus](begriffe.md#archivmodus)) – wird **nie** gelöscht; dabei steht, ab wann sie weg darf.
+    - ⛔ **kein Löschrecht** – wird nie gelöscht.
+3. **Auswählen:** Jede Mappe hat ein Kästchen (Vorgabe: an). Nimmst du den Haken weg, bleibt sie. **Was bleibt, hält fest, worauf es verweist:** Bleibt eine Rechnung (abgewählt, gesperrt oder ohne Recht), bleiben auch ihr Vertrag und der Vertragspartner – dabei steht, warum. Dasselbe gilt, wenn eine Mappe außerhalb der Vorschau (zu tief, nicht sichtbar) noch darauf verweist. Verweise werden nur entfernt, wo du „nur Verweis entfernen“ gewählt hast.
+4. **Zusammenfassung:** Unten steht, was geschieht, z. B. „37 Mappen und 112 Dokumente werden in den Papierkorb gelegt; 3 bleiben wegen Aufbewahrungsfrist; 2 Verweise werden entfernt.“
+5. **Bestätigen:** Zum Bestätigen tippst du den Namen der Mappe ein.
+
+Alles geht als **ein Vorgang** in den [Papierkorb](ablage.md#papierkorb): Dort stellst du mit **Alle wiederherstellen** alle Mappen und Dokumente gemeinsam wieder her – auch die Verweise untereinander und die Verweise, die an bleibenden Mappen entfernt wurden. In der Historie jeder Mappe steht „in den Papierkorb gelegt – mit verknüpften Mappen gelöscht“ mit der Zahl der Mappen und Dokumente. Ist der Papierkorb ausgeschaltet, ist das Löschen sofort endgültig; die Rückfrage sagt das.
+
+Fehlt der Knopf, dürfen Mappen dieses Mappentyps nicht gelöscht werden.
 
 ## Was du sehen und ändern darfst
 

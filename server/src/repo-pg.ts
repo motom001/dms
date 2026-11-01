@@ -160,6 +160,7 @@ const alsPapierkorb = (r: Zeile): PapierkorbEintrag => {
     geaendert: iso(m.geaendert), geaendertVon: (m.geaendert_von as string | null) ?? null,
     geloescht: iso(r.geloescht), geloeschtVon: (r.geloescht_von as string | null) ?? null,
     dokumente: Number(r.anzahl_dokumente ?? 0),
+    vorgang: (r.vorgang as string | null) ?? null, entkoppelt: (r.entkoppelt as Array<{ quelleId: string; feldKey: string }> | null) ?? [],
   };
 };
 // postgres.js erwartet für jsonb einen JSON-Wert; unsere Typen sind JSON-kompatibel.
@@ -354,6 +355,75 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     if (!gueltig.length) return;
     const zeilen = gueltig.map((v) => ({ quelle_id: quelleId, feld_key: v.feldKey, ziel_id: v.zielId, haushalt_id: haushaltId }));
     await tx`INSERT INTO verweise ${tx(zeilen)} ON CONFLICT DO NOTHING`;
+  }
+
+  /** Papierkorb (#43, #424): mehrere zusammen wiederherstellen – erst alle Mappen, dann die Verweise. */
+  async function stelleMehrereWiederHer(alle: string[]): Promise<{ verweiseEntfallen: number }> {
+    const ids = [...new Set(alle.filter(istUuid))];
+    if (!ids.length) return { verweiseEntfallen: 0 };
+    return sql.begin(async (tx) => {
+      // Zuerst alle Mappen, dann die Verweise: so kommen auch Verweise untereinander (#424) und Kreise zurück.
+      const ps = await tx`SELECT id, verweise FROM papierkorb WHERE haushalt_id = ${haushaltId} AND id = ANY(${ids}::uuid[]) FOR UPDATE`;
+      if (!ps.length) return { verweiseEntfallen: 0 };
+      const da = ps.map((p) => p.id as string);
+      // Benutzer, die es nicht mehr gibt, werden zu „unbekannt“ (wie ON DELETE SET NULL).
+      await tx`
+        INSERT INTO mappen
+        SELECT (jsonb_populate_record(NULL::mappen, p.mappe || jsonb_build_object(
+          'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = p.mappe ->> 'erstellt_von') THEN p.mappe -> 'erstellt_von' ELSE 'null'::jsonb END,
+          'geaendert_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = p.mappe ->> 'geaendert_von') THEN p.mappe -> 'geaendert_von' ELSE 'null'::jsonb END))).*
+        FROM papierkorb p WHERE p.id = ANY(${da}::uuid[])`;
+      // Verweise nur auf Mappen, die es noch gibt; die übrigen bleiben als Wert stehen
+      // und lassen die Mappe „nicht passen“ (Eingang).
+      const v = await tx`
+        INSERT INTO verweise
+        SELECT r.* FROM papierkorb p, jsonb_populate_recordset(NULL::verweise, p.verweise) r
+        WHERE p.id = ANY(${da}::uuid[]) AND EXISTS (SELECT 1 FROM mappen z WHERE z.id = r.ziel_id)
+        ON CONFLICT DO NOTHING`;
+      await tx`
+        INSERT INTO dokumente
+        SELECT (jsonb_populate_record(NULL::dokumente, d.value || jsonb_build_object(
+          'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = d.value ->> 'erstellt_von') THEN d.value -> 'erstellt_von' ELSE 'null'::jsonb END,
+          -- Archivnummer (#345) inzwischen anderweitig vergeben: ohne Nummer zurück.
+          'archivnummer', CASE WHEN EXISTS (SELECT 1 FROM dokumente x WHERE x.haushalt_id = p.haushalt_id AND lower(x.archivnummer) = lower(d.value ->> 'archivnummer')) THEN 'null'::jsonb ELSE COALESCE(d.value -> 'archivnummer', 'null'::jsonb) END))).*
+        FROM papierkorb p, jsonb_array_elements(p.dokumente) d WHERE p.id = ANY(${da}::uuid[])`;
+      // Ältere Versionen (#194) mit ihren Dokumenten.
+      await tx`
+        INSERT INTO dokument_versionen
+        SELECT (jsonb_populate_record(NULL::dokument_versionen, x.value || jsonb_build_object(
+          'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'erstellt_von') THEN x.value -> 'erstellt_von' ELSE 'null'::jsonb END))).*
+        FROM papierkorb p, jsonb_array_elements(coalesce(p.versionen, '[]'::jsonb)) x WHERE p.id = ANY(${da}::uuid[])
+        ON CONFLICT DO NOTHING`;
+      await tx`
+        INSERT INTO notizen
+        SELECT (jsonb_populate_record(NULL::notizen, n.value || jsonb_build_object(
+          'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = n.value ->> 'erstellt_von') THEN n.value -> 'erstellt_von' ELSE 'null'::jsonb END,
+          'geaendert_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = n.value ->> 'geaendert_von') THEN n.value -> 'geaendert_von' ELSE 'null'::jsonb END))).*
+        FROM papierkorb p, jsonb_array_elements(p.notizen) n WHERE p.id = ANY(${da}::uuid[])`;
+      // Aufgaben: Empfänger und Beteiligte nur, wenn es sie noch gibt.
+      await tx`
+        INSERT INTO aufgaben
+        SELECT (jsonb_populate_record(NULL::aufgaben, x.value || jsonb_build_object(
+          'empfaenger_id', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'empfaenger_id') THEN x.value -> 'empfaenger_id' ELSE 'null'::jsonb END,
+          'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'erstellt_von') THEN x.value -> 'erstellt_von' ELSE 'null'::jsonb END,
+          'erledigt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'erledigt_von') THEN x.value -> 'erledigt_von' ELSE 'null'::jsonb END))).*
+        FROM papierkorb p, jsonb_array_elements(p.aufgaben) x WHERE p.id = ANY(${da}::uuid[])`;
+      // Favoriten (#62): wieder da – für Benutzer, die es noch gibt.
+      await tx`
+        INSERT INTO favoriten
+        SELECT r.* FROM papierkorb p, jsonb_populate_recordset(NULL::favoriten, coalesce(p.favoriten, '[]'::jsonb)) r
+        WHERE p.id = ANY(${da}::uuid[]) AND EXISTS (SELECT 1 FROM benutzer b WHERE b.id = r.benutzer_id)
+        ON CONFLICT DO NOTHING`;
+      // Erinnerungen (#131): wie Aufgaben.
+      await tx`
+        INSERT INTO erinnerungen
+        SELECT (jsonb_populate_record(NULL::erinnerungen, x.value || jsonb_build_object(
+          'empfaenger_id', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'empfaenger_id') THEN x.value -> 'empfaenger_id' ELSE 'null'::jsonb END,
+          'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'erstellt_von') THEN x.value -> 'erstellt_von' ELSE 'null'::jsonb END))).*
+        FROM papierkorb p, jsonb_array_elements(coalesce(p.erinnerungen, '[]'::jsonb)) x WHERE p.id = ANY(${da}::uuid[])`;
+      await tx`DELETE FROM papierkorb WHERE id = ANY(${da}::uuid[])`;
+      return { verweiseEntfallen: ps.reduce((s, p) => s + (p.verweise as unknown[]).length, 0) - v.count };
+    });
   }
 
   return {
@@ -991,9 +1061,32 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
         if (r.count) await tx`DELETE FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       });
     },
+    async legeVorgangInPapierkorb(alle, benutzerId, vorgang, entkoppelt) {
+      const ids = [...new Set(alle.filter(istUuid))];
+      if (!ids.length) return;
+      await sql.begin(async (tx) => {
+        await tx`
+          INSERT INTO papierkorb (id, haushalt_id, typ_id, mappe, verweise, dokumente, versionen, geloescht_von, notizen, aufgaben, favoriten, erinnerungen, vorgang, entkoppelt)
+          SELECT m.id, m.haushalt_id, m.typ_id, to_jsonb(m),
+            (SELECT coalesce(jsonb_agg(to_jsonb(v)), '[]'::jsonb) FROM verweise v WHERE v.quelle_id = m.id),
+            (SELECT coalesce(jsonb_agg(to_jsonb(d)), '[]'::jsonb) FROM dokumente d WHERE d.mappe_id = m.id),
+            (SELECT coalesce(jsonb_agg(to_jsonb(x)), '[]'::jsonb) FROM dokument_versionen x JOIN dokumente d ON d.id = x.dokument_id WHERE d.mappe_id = m.id),
+            ${istUuid(benutzerId) ? benutzerId : null}::uuid,
+            (SELECT coalesce(jsonb_agg(to_jsonb(n)), '[]'::jsonb) FROM notizen n WHERE n.mappe_id = m.id),
+            (SELECT coalesce(jsonb_agg(to_jsonb(a)), '[]'::jsonb) FROM aufgaben a WHERE a.mappe_id = m.id),
+            (SELECT coalesce(jsonb_agg(to_jsonb(f)), '[]'::jsonb) FROM favoriten f WHERE f.mappe_id = m.id),
+            (SELECT coalesce(jsonb_agg(to_jsonb(e)), '[]'::jsonb) FROM erinnerungen e WHERE e.mappe_id = m.id),
+            ${vorgang}::uuid, coalesce(${json(sql, entkoppelt)}::jsonb -> (m.id::text), '[]'::jsonb)
+          FROM mappen m WHERE m.haushalt_id = ${haushaltId} AND m.id = ANY(${ids}::uuid[])`;
+        // Verweise untereinander zuerst (Kreise), dann die Mappen; Dokumente usw. folgen per Kaskade.
+        // Verweist noch eine Mappe außerhalb darauf, scheitert alles (Fremdschlüssel) – nichts halb gelöscht.
+        await tx`DELETE FROM verweise WHERE haushalt_id = ${haushaltId} AND quelle_id = ANY(${ids}::uuid[])`;
+        await tx`DELETE FROM mappen WHERE haushalt_id = ${haushaltId} AND id = ANY(${ids}::uuid[])`;
+      });
+    },
     async papierkorb(f = {}) {
       return (await sql`
-        SELECT id, typ_id, mappe, geloescht, geloescht_von, jsonb_array_length(dokumente) AS anzahl_dokumente
+        SELECT id, typ_id, mappe, geloescht, geloescht_von, jsonb_array_length(dokumente) AS anzahl_dokumente, vorgang, entkoppelt
         FROM papierkorb WHERE haushalt_id = ${haushaltId}
           ${f.von ? sql`AND geloescht_von = ${istUuid(f.von) ? f.von : null}::uuid` : sql``}
           ${f.vor ? sql`AND geloescht < ${f.vor}` : sql``}
@@ -1003,73 +1096,14 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     async holeAusPapierkorb(id) {
       if (!istUuid(id)) return undefined;
       const [r] = await sql`
-        SELECT id, typ_id, mappe, geloescht, geloescht_von, jsonb_array_length(dokumente) AS anzahl_dokumente
+        SELECT id, typ_id, mappe, geloescht, geloescht_von, jsonb_array_length(dokumente) AS anzahl_dokumente, vorgang, entkoppelt
         FROM papierkorb WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       return r ? alsPapierkorb(r) : undefined;
     },
     async stelleWiederHer(id) {
-      return sql.begin(async (tx) => {
-        const [p] = await tx`SELECT verweise FROM papierkorb WHERE haushalt_id = ${haushaltId} AND id = ${id} FOR UPDATE`;
-        if (!p) return { verweiseEntfallen: 0 };
-        // Benutzer, die es nicht mehr gibt, werden zu „unbekannt“ (wie ON DELETE SET NULL).
-        await tx`
-          INSERT INTO mappen
-          SELECT (jsonb_populate_record(NULL::mappen, p.mappe || jsonb_build_object(
-            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = p.mappe ->> 'erstellt_von') THEN p.mappe -> 'erstellt_von' ELSE 'null'::jsonb END,
-            'geaendert_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = p.mappe ->> 'geaendert_von') THEN p.mappe -> 'geaendert_von' ELSE 'null'::jsonb END))).*
-          FROM papierkorb p WHERE p.id = ${id}`;
-        // Verweise nur auf Mappen, die es noch gibt; die übrigen bleiben als Wert stehen
-        // und lassen die Mappe „nicht passen“ (Eingang).
-        const v = await tx`
-          INSERT INTO verweise
-          SELECT r.* FROM papierkorb p, jsonb_populate_recordset(NULL::verweise, p.verweise) r
-          WHERE p.id = ${id} AND EXISTS (SELECT 1 FROM mappen z WHERE z.id = r.ziel_id)
-          ON CONFLICT DO NOTHING`;
-        await tx`
-          INSERT INTO dokumente
-          SELECT (jsonb_populate_record(NULL::dokumente, d.value || jsonb_build_object(
-            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = d.value ->> 'erstellt_von') THEN d.value -> 'erstellt_von' ELSE 'null'::jsonb END,
-            -- Archivnummer (#345) inzwischen anderweitig vergeben: ohne Nummer zurück.
-            'archivnummer', CASE WHEN EXISTS (SELECT 1 FROM dokumente x WHERE x.haushalt_id = p.haushalt_id AND lower(x.archivnummer) = lower(d.value ->> 'archivnummer')) THEN 'null'::jsonb ELSE COALESCE(d.value -> 'archivnummer', 'null'::jsonb) END))).*
-          FROM papierkorb p, jsonb_array_elements(p.dokumente) d WHERE p.id = ${id}`;
-        // Ältere Versionen (#194) mit ihren Dokumenten.
-        await tx`
-          INSERT INTO dokument_versionen
-          SELECT (jsonb_populate_record(NULL::dokument_versionen, x.value || jsonb_build_object(
-            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'erstellt_von') THEN x.value -> 'erstellt_von' ELSE 'null'::jsonb END))).*
-          FROM papierkorb p, jsonb_array_elements(coalesce(p.versionen, '[]'::jsonb)) x WHERE p.id = ${id}
-          ON CONFLICT DO NOTHING`;
-        await tx`
-          INSERT INTO notizen
-          SELECT (jsonb_populate_record(NULL::notizen, n.value || jsonb_build_object(
-            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = n.value ->> 'erstellt_von') THEN n.value -> 'erstellt_von' ELSE 'null'::jsonb END,
-            'geaendert_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = n.value ->> 'geaendert_von') THEN n.value -> 'geaendert_von' ELSE 'null'::jsonb END))).*
-          FROM papierkorb p, jsonb_array_elements(p.notizen) n WHERE p.id = ${id}`;
-        // Aufgaben: Empfänger und Beteiligte nur, wenn es sie noch gibt.
-        await tx`
-          INSERT INTO aufgaben
-          SELECT (jsonb_populate_record(NULL::aufgaben, x.value || jsonb_build_object(
-            'empfaenger_id', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'empfaenger_id') THEN x.value -> 'empfaenger_id' ELSE 'null'::jsonb END,
-            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'erstellt_von') THEN x.value -> 'erstellt_von' ELSE 'null'::jsonb END,
-            'erledigt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'erledigt_von') THEN x.value -> 'erledigt_von' ELSE 'null'::jsonb END))).*
-          FROM papierkorb p, jsonb_array_elements(p.aufgaben) x WHERE p.id = ${id}`;
-        // Favoriten (#62): wieder da – für Benutzer, die es noch gibt.
-        await tx`
-          INSERT INTO favoriten
-          SELECT r.* FROM papierkorb p, jsonb_populate_recordset(NULL::favoriten, coalesce(p.favoriten, '[]'::jsonb)) r
-          WHERE p.id = ${id} AND EXISTS (SELECT 1 FROM benutzer b WHERE b.id = r.benutzer_id)
-          ON CONFLICT DO NOTHING`;
-        // Erinnerungen (#131): wie Aufgaben.
-        await tx`
-          INSERT INTO erinnerungen
-          SELECT (jsonb_populate_record(NULL::erinnerungen, x.value || jsonb_build_object(
-            'empfaenger_id', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'empfaenger_id') THEN x.value -> 'empfaenger_id' ELSE 'null'::jsonb END,
-            'erstellt_von', CASE WHEN EXISTS (SELECT 1 FROM benutzer b WHERE b.id::text = x.value ->> 'erstellt_von') THEN x.value -> 'erstellt_von' ELSE 'null'::jsonb END))).*
-          FROM papierkorb p, jsonb_array_elements(coalesce(p.erinnerungen, '[]'::jsonb)) x WHERE p.id = ${id}`;
-        await tx`DELETE FROM papierkorb WHERE id = ${id}`;
-        return { verweiseEntfallen: (p.verweise as unknown[]).length - v.count };
-      });
+      return stelleMehrereWiederHer([id]);
     },
+    stelleMehrereWiederHer,
     async leerePapierkorb(ids) {
       const gueltig = ids.filter(istUuid);
       if (!gueltig.length) return [];

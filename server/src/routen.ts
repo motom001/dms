@@ -1474,6 +1474,10 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return leer;
     } },
 
+    // Mit allen verknüpften Mappen löschen (#424): Vorschau als Baum, dann Ausführen mit derselben Prüfung.
+    { methode: 'GET', pfad: '/api/mappen/:id/loeschvorschau', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.loeschVorschau(a.params.id, a.query, await zg(a))) },
+    { methode: 'POST', pfad: '/api/mappen/:id/mit-verknuepften-loeschen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.loescheMitVerknuepften(a.params.id, a.body, ich(a).id, await zg(a))) },
+
     /* ---------- Papierkorb (#43): in der Ablage nur, was ich gelöscht habe ---------- */
     { methode: 'GET', pfad: '/api/papierkorb', zugang: 'angemeldet', handler: async (a) => ok(await dienst.papierkorb(ich(a))) },
     // Einzelne Dokumente (#344): eigene Liste, damit die Antwort von /api/papierkorb gleich bleibt.
@@ -1489,6 +1493,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return ok(sichtbar ? r : { ...r, hinweis: 'Wiederhergestellt. Diese Mappe kannst du nach den Berechtigungen aber nicht mehr sehen.' });
     } },
     { methode: 'DELETE', pfad: '/api/papierkorb/:id', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.loescheEndgueltig([a.params.id], ich(a)) }) },
+    // Ein Vorgang (#424): alle Mappen, die zusammen gelöscht wurden.
+    { methode: 'POST', pfad: '/api/papierkorb/vorgang/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.stelleVorgangWiederHer(a.params.id, ich(a))) },
     /* … und in der Werkbank alles */
     { methode: 'GET', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ tage: await dienst.papierkorbTage(), historieTage: await dienst.historieTage(), eintraege: await dienst.papierkorb(ich(a), true), dokumente: await dienst.papierkorbDokumente(ich(a), true) }) },
     { methode: 'POST', pfad: '/api/werkbank/papierkorb/dokumente/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.stelleDokumentWiederHer(a.params.id, ich(a), undefined, true)) },
@@ -1501,6 +1507,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'DELETE', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.leerePapierkorb(ich(a), true) }) },
     { methode: 'GET', pfad: '/api/werkbank/papierkorb/:id', zugang: 'admin', handler: async (a) => ok(await dienst.papierkorbEintrag(a.params.id, ich(a), true)) },
     { methode: 'POST', pfad: '/api/werkbank/papierkorb/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.stelleWiederHer(a.params.id, ich(a), true)) },
+    { methode: 'POST', pfad: '/api/werkbank/papierkorb/vorgang/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.stelleVorgangWiederHer(a.params.id, ich(a), true)) },
     { methode: 'DELETE', pfad: '/api/werkbank/papierkorb/:id', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.loescheEndgueltig([a.params.id], ich(a), true) }) },
 
     /* ---------- Dokumente ---------- */
