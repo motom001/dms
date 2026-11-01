@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
 import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
@@ -175,6 +175,14 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   const rechte = mappe ? details?.rechte : undefined;
   const nurLesen = !!rechte && !rechte.U;
   const darfLoeschenHier = !rechte || rechte.D;
+  // „Mappe löschen“ (#423): nie kommentarlos grau – warum nicht, steht auf Klick direkt am Knopf.
+  const loeschenZeigen = !!mappe && darfLoeschen(typ, mappe);
+  const loeschSperre: Loeschsperre | undefined = !loeschenZeigen ? undefined
+    : !darfLoeschenHier ? { grund: 'Mappen dieses Mappentyps darfst du nach den Berechtigungen nicht löschen. Das legt ein Administrator fest.' }
+    : details?.loeschbar?.ok === false ? { grund: details.loeschbar.grund ?? 'Diese Mappe lässt sich gerade nicht löschen.', rueckverweise: details.loeschbar.rueckverweise }
+    : undefined;
+  // Weitere Löschwege trotz Sperre (z. B. „Mit verknüpften Mappen löschen …“, #424) kommen über `wege` dazu.
+  const loeschKnopf = loeschenZeigen ? <LoeschKnopf sperre={loeschSperre} loeschen={() => void loeschen()} /> : <span />;
   // Sprung aus der Suche nach einer Archivnummer (#345): ?register=… öffnet das Register.
   const [aktiv, setAktiv] = useState(() => { const w = new URLSearchParams(location.search).get('register'); return register.find((x) => x.key === w)?.key ?? register[0]?.key; });
   const [basis, setBasis] = useState(() => JSON.stringify(start));
@@ -353,18 +361,12 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
       {fehler?.allgemein.length ? <div className="hinweis schlecht"><p>{fehler.allgemein.join(' ')}</p></div> : null}
       {hinweise.map((h, i) => <div key={i} className={`hinweis ${h.art}`}><p>{h.text}</p></div>)}
       <div className="registerinhalt" role="tabpanel">{inhalt}</div>
-      {mappe && darfLoeschen(typ, mappe) && darfLoeschenHier && details?.loeschbar && !details.loeschbar.ok && <LoeschHindernis l={details.loeschbar} />}
       {nurLesen ? <div className="speicherleiste">
-        {mappe && darfLoeschen(typ, mappe) && darfLoeschenHier
-          ? <button type="button" className="textknopf gefahr" disabled={details?.loeschbar?.ok === false} title={details?.loeschbar?.ok === false ? details.loeschbar.grund : undefined} onClick={() => void loeschen()}>Mappe löschen</button>
-          : <span />}
+        {loeschKnopf}
         <span className="status" role="status">{meldung ?? 'Nur lesen – bearbeiten darfst du diese Mappe nach den Berechtigungen nicht.'}</span>
         <span />
       </div> : <div className="speicherleiste">
-        {mappe && darfLoeschen(typ, mappe) && darfLoeschenHier
-          ? <button type="button" className="textknopf gefahr" disabled={details?.loeschbar?.ok === false} title={details?.loeschbar?.ok === false ? details.loeschbar.grund : undefined}
-              aria-describedby={details?.loeschbar?.ok === false ? 'loeschhindernis' : undefined} onClick={() => void loeschen()}>Mappe löschen</button>
-          : <span />}
+        {loeschKnopf}
         <span className={`status ${meldung && fehler ? 'schlecht' : ''}`} role="status">{sendet ? 'Speichere …' : meldung ?? (mappe && (werteGeaendert || dokumenteGeaendert) ? 'Ungespeicherte Änderungen' : '')}</span>
         <div className="knoepfe">
           {mappe
@@ -558,17 +560,49 @@ function PasswortEingabe({ id, feld: f, roh: p, setze, mappeId, nurLesen, sehen 
 
 /* ---------- Verknüpfungsregister ---------- */
 
-/** Warum „Mappe löschen“ gerade nicht geht, mit Links zu den verweisenden Mappen (#79). */
-function LoeschHindernis({ l }: { l: NonNullable<MappeDetails['loeschbar']> }) {
+/** Warum sich die Mappe nicht löschen lässt: Grund und ggf. die Mappen, die noch verweisen (#79). */
+interface Loeschsperre { grund: string; rueckverweise?: Rueckverweis[] }
+
+/**
+ * „Mappe löschen“ mit der Begründung auf Klick (#423): Ist Löschen gesperrt (Verweise, Archivmodus,
+ * fehlendes Recht), steht neben dem grauen Knopf „Warum nicht?“ und klappt die Begründung direkt
+ * am Knopf auf. Bildschirmleser hören den Grund über aria-describedby schon am Knopf.
+ *
+ * `wege`: weitere Löschwege, die trotz Sperre gehen – sie stehen in der aufgeklappten Begründung
+ * unter „Stattdessen“ (z. B. „Mit verknüpften Mappen löschen …“, #424).
+ */
+function LoeschKnopf({ sperre, loeschen, wege }: { sperre?: Loeschsperre; loeschen(): void; wege?: ReactNode }) {
   const d = useDaten();
-  const quellen = [...new Map((l.rueckverweise ?? []).map((r) => [r.quelleId, r])).values()];
+  const [offen, setOffen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!offen) return;
+    const zu = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !ref.current?.contains(e.target as Node)) setOffen(false);
+    };
+    document.addEventListener('mousedown', zu); document.addEventListener('keydown', zu);
+    return () => { document.removeEventListener('mousedown', zu); document.removeEventListener('keydown', zu); };
+  }, [offen]);
+  useEffect(() => { if (!sperre) setOffen(false); }, [sperre]);
+  if (!sperre) return <button type="button" className="textknopf gefahr" onClick={loeschen}>Mappe löschen</button>;
+  const quellen = [...new Map((sperre.rueckverweise ?? []).map((r) => [r.quelleId, r])).values()];
   const zeige = quellen.slice(0, 8);
   return (
-    <div className="loeschhindernis leise klein" id="loeschhindernis">
-      <strong>Löschen nicht möglich:</strong> {l.grund}
-      {zeige.length > 0 && <ul>{zeige.map((r) => (
-        <li key={r.quelleId}>{r.verborgen ? <span className="verborgen-titel">{r.titel}</span> : <Link to={`/ablage/${r.quelleTypId}/${r.quelleId}`} className="verweis">{titelOder(r.titel)}</Link>} <span className="leise">({d.typ(r.quelleTypId)?.name ?? 'Mappe'})</span></li>
-      ))}{quellen.length > zeige.length && <li className="leise">und {quellen.length - zeige.length} weitere</li>}</ul>}
+    <div className="loeschwahl" ref={ref}>
+      <button type="button" className="textknopf gefahr" disabled aria-describedby="loeschwahl-grund">Mappe löschen</button>
+      <span id="loeschwahl-grund" className="sr-only">Löschen nicht möglich: {sperre.grund}</span>
+      <button type="button" className="textknopf klein loeschwahl-warum" aria-expanded={offen} aria-controls="loeschwahl-begruendung" onClick={() => setOffen(!offen)}>
+        <Symbol name="info" /> Warum nicht?
+      </button>
+      {offen && (
+        <div className="loeschwahl-begruendung klein" id="loeschwahl-begruendung" role="region" aria-label="Warum sich die Mappe nicht löschen lässt">
+          <p><strong>Löschen nicht möglich:</strong> {sperre.grund}</p>
+          {zeige.length > 0 && <ul>{zeige.map((r) => (
+            <li key={r.quelleId}>{r.verborgen ? <span className="verborgen-titel">{r.titel}</span> : <Link to={`/ablage/${r.quelleTypId}/${r.quelleId}`} className="verweis">{titelOder(r.titel)}</Link>} <span className="leise">({d.typ(r.quelleTypId)?.name ?? 'Mappe'})</span></li>
+          ))}{quellen.length > zeige.length && <li className="leise">und {quellen.length - zeige.length} weitere</li>}</ul>}
+          {wege && <div className="loeschwahl-wege"><p className="leise">Stattdessen:</p>{wege}</div>}
+        </div>
+      )}
     </div>
   );
 }

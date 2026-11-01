@@ -88,7 +88,7 @@ Wer eine **Ansicht** im Baum sieht, dort „+ Neu“ bekommt und aus ihr exporti
 
 - Mappen ohne Leserecht fehlen in Listen, Suche, Zählern, Favoriten und Trefferlisten. Verweist eine sichtbare Mappe auf eine unsichtbare, steht dort „nicht sichtbare Mappe“ ohne Link.
 - Hat jemand eine **Aufgabe** an einer Mappe, die er nicht lesen darf, steht sie trotzdem bei ihm unter „Zu erledigen“ – ohne Titel. Er kann sie erledigen oder an jemanden weitergeben, der die Mappe sehen darf. Wer eine Aufgabe vergibt, bekommt einen Hinweis, wenn der Empfänger die Mappe nicht lesen darf.
-- Ohne **Bearbeiten** zeigt die Mappe ihre Felder nur an; ohne **Löschen** fehlt „Mappe löschen“; ohne **Anlegen** fehlt „+ Neu“.
+- Ohne **Bearbeiten** zeigt die Mappe ihre Felder nur an; ohne **Löschen** ist „Mappe löschen“ ausgegraut, „Warum nicht?“ daneben nennt den Grund; ohne **Anlegen** fehlt „+ Neu“.
 - Bei der Auswahl von Benutzern (Verantwortlich, Erwähnungen, Vertreter, Aufgaben-Empfänger) erscheinen nur Benutzer, deren Benutzer-Mappe man sehen darf.
 - Im Profil zeigt **Meine Rechte** je Mappentyp, was man darf: ja, nein oder „je nach Mappe“ – die Regeln selbst bleiben verborgen.
 
