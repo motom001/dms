@@ -17,7 +17,7 @@ import type { ApiSchluesselDienst } from './apischluessel';
 import { wer } from './api-v1';
 import { hilfeAntwort, hilfeSenden } from './hilfe';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from './koepfe';
-import { kontext, protokoll, type Kontext, type Stufe } from './protokoll';
+import { kontext, protokoll, type Kontext } from './protokoll';
 import type { Betrieb } from './betrieb';
 import type { Tresor } from './tresor';
 import type { Texterkennung } from './texterkennung';
@@ -28,12 +28,9 @@ import { WartungFehler, type Wartung } from './wartung';
 import type { Notfallzugang } from './notfall';
 import type { Sicherung } from './sicherung';
 import type { Wiederherstellung } from './wiederherstellung';
-import { dateiKoepfe, leseCookie, modulAus, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage } from './routen';
+import { anfrageStufe, dateiKoepfe, leseCookie, modulAus, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage } from './routen';
 
-/** Häufige Abfragen, die das Protokoll sonst fluten würden. */
-const LEISE = /^\/api\/(werkbank\/(protokoll|auftrag)|gesundheit)\b/;
-
-type MitKontext = FastifyRequest & { dms?: Kontext };
+type MitKontext = FastifyRequest & { dms?: Kontext; lesend?: boolean };
 
 interface Optionen {
   /** Verzeichnis der gebauten Weboberfläche; fehlt es, gibt es nur die API. */
@@ -108,8 +105,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     const url = req.url.split('?')[0];
     const status = reply.statusCode;
     const api = url.startsWith('/api/');
-    let stufe: Stufe = status >= 500 ? 'error' : !api ? 'debug' : LEISE.test(url) ? 'trace' : req.method === 'GET' && status < 400 ? 'debug' : 'info';
-    if (status === 401 && url === '/api/konto/status') stufe = 'debug';
+    const stufe = anfrageStufe({ methode: req.method, url, status, lesend: (req as MitKontext).lesend });
     const k = (req as MitKontext).dms ?? { anfrage: req.id, db: { anzahl: 0, ms: 0 } };
     kontext.run(k, () => protokoll.schreibe(stufe, api ? modulAus(url) : 'http', `${req.method} ${url} ${status}`, {
       ms: Math.round(reply.elapsedTime), ...(k.db.anzahl ? { db: k.db.anzahl, dbMs: Math.round(k.db.ms) } : {}),
@@ -146,6 +142,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
           einrichtungscode: typeof req.headers['x-einrichtungscode'] === 'string' ? req.headers['x-einrichtungscode'] : undefined,
         };
         const start = performance.now();
+        if (r.lesend) (req as MitKontext).lesend = true;
         const k: Kontext = { anfrage: req.id, pfad: `${req.method} ${req.url.split('?')[0]}`, db: { anzahl: 0, ms: 0 }, ursprung: `${req.protocol}://${req.host}` };
         (req as MitKontext).dms = k;
         const antwort = await kontext.run(k, async () => {
