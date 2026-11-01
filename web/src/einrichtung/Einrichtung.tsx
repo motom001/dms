@@ -22,6 +22,7 @@ import { STEMPEL_MODI, type StempelModus, type StempelTyp } from '../../../share
 import { useStempelVorlagen } from '../ablage/Stempel';
 import { Bereich, liesOffen, merkeOffen, TYP_BEREICHE, type Klappe, type TypBereich } from './Bereich';
 import { hinweis, rueckfrage } from '../rueckfrage';
+import { artenFuer, artVon, ERKENNUNG_FELDTYPEN, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, type Erkennungsart } from '../../../shared/src/erkennung';
 
 /** Entfernen im Editor wirkt erst beim Speichern (#136). */
 const ERST_BEIM_SPEICHERN = ' Das wird erst mit „Mappentyp speichern“ wirksam.';
@@ -441,6 +442,7 @@ function FeldZeile(p: {
   if (f.typ === 'auswahl') chips.push(`${(f.optionen ?? []).length} Werte`);
   if (f.mehrfach && (f.typ === 'auswahl' || f.typ === 'referenz')) chips.push('mehrfach');
   if (p.feldregister.length > 1) chips.push(`Register: ${p.feldregister.find((r) => r.key === f._register)?.name ?? '–'}`);
+  if (f.erkennung && ERKENNUNG_FELDTYPEN.includes(f.typ)) chips.push('Erkennung');
   if (f.typ === 'datum' && f.frist) chips.push(`erinnert ${f.frist.vorlauf} ${VORLAUF_EINHEITEN[f.frist.einheit]} vorher${f.frist.wiederholung ? ` · ${wiederholungText(f.frist.wiederholung)}` : ''}`);
 
   const zahl = (prop: Zahlprop, label: string, platzhalter: string) => (
@@ -547,6 +549,7 @@ function FeldZeile(p: {
             {standard}
           </div>
           {besonders && <><h3 className="zwischen">Eigenschaften für {FELDTYPEN[f.typ]}</h3>{besonders}</>}
+          {ERKENNUNG_FELDTYPEN.includes(f.typ) && <ErkennungEditor f={f} id={id} setze={setze} />}
           </fieldset>
           <div className="feldfuss">
             {f.system ? <span className="leise klein">Systemfelder lassen sich nicht entfernen.</span> : <button type="button" className="textknopf gefahr" onClick={p.entferne}>Feld entfernen</button>}
@@ -554,6 +557,29 @@ function FeldZeile(p: {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Feld-Eigenschaft „für die Erkennung nutzen“ (#336, #391): Art und Erkennungshinweis. */
+function ErkennungEditor({ f, id, setze }: { f: EntwurfFeld; id: (x: string) => string; setze(p: Partial<EntwurfFeld>): void }) {
+  const an = !!f.erkennung;
+  const geschaetzt = artVon({ key: f.key, label: f.label, typ: f.typ });
+  return (
+    <div className="raster">
+      <div className="eigenschaft unten">
+        <label className="haken"><input type="checkbox" checked={an} onChange={(e) => setze({ erkennung: e.target.checked ? {} : null })} />
+          <span>Für die Erkennung nutzen <Hilfe ort="mappentyp.erkennung" /><small className="hilfe">Die Erkennung sucht diesen Wert im Text neuer Post (z. B. Kundennummer, IBAN, E-Mail) und füllt das Feld bei „Aus Dokument ausfüllen“.</small></span></label>
+      </div>
+      {an && artenFuer(f.typ).length > 1 && (
+        <label className="eigenschaft" htmlFor={id('erkart')}><span>Was steht im Feld?</span>
+          <select id={id('erkart')} value={f.erkennung?.art ?? ''} onChange={(e) => setze({ erkennung: { ...f.erkennung, art: (e.target.value || undefined) as Erkennungsart | undefined } })}>
+            <option value="">automatisch{geschaetzt ? ` – ${ERKENNUNGSARTEN[geschaetzt]}` : ' – nichts erkannt'}</option>
+            {artenFuer(f.typ).map((a) => <option key={a} value={a}>{ERKENNUNGSARTEN[a]}</option>)}
+          </select></label>
+      )}
+      {an && <label className="eigenschaft" htmlFor={id('erkhinweis')}><span>Erkennungshinweis <small>optional</small></span>
+        <input id={id('erkhinweis')} maxLength={ERKENNUNG_HINWEIS_MAX} placeholder="z. B. Kundennummer oben rechts, Muster 100-####" value={f.erkennung?.hinweis ?? ''} onChange={(e) => setze({ erkennung: { ...f.erkennung, hinweis: e.target.value } })} /></label>}
     </div>
   );
 }

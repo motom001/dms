@@ -94,6 +94,9 @@ const basis11 = {
   'manifest.yaml': basis['manifest.yaml'].replace('version: 1.0.0', 'version: 1.1.0'),
   'inhalt/mappentypen.yaml': basis['inhalt/mappentypen.yaml']
     .replace('    - key: beschreibung\n', '    - key: steuernummer\n      label: Steuernummer\n      typ: text\n    - key: beschreibung\n')
+    // Erkennung (#336): Kundennummer und Name werden für die Erkennung markiert.
+    .replace('      label: Kundennummer\n      typ: text\n', '      label: Kundennummer\n      typ: text\n      erkennung: { art: nummer, hinweis: oben rechts }\n')
+    .replace('      label: Name\n      typ: text\n', '      label: Name\n      typ: text\n      erkennung: {}\n')
     .replace('felder: [name, kuerzel, art, kundennummer, beschreibung]', 'felder: [name, kuerzel, art, kundennummer, steuernummer, beschreibung]')
     .replace('    - key: dokumente\n      name: Dokumente\n      art: dokumente\n', '    - key: dokumente\n      name: Dokumente\n      art: dokumente\n    - key: vertraege\n      name: Verträge\n      art: dokumente\n'),
   'inhalt/sichten.yaml': `${basis['inhalt/sichten.yaml']}\n- schluessel: vereine\n  name: Vereine\n  eltern: organisationen\n  typen: [organisation]\n  bedingungen:\n    - { feld: art, operator: einerVon, wert: [Verein] }\n`,
@@ -186,12 +189,13 @@ function faelle(pg: boolean) {
       assert.equal((await d.listePakete()).length, 1);
 
       // Der Administrator ändert selbst: Name, ein eigenes Feld. Das Update überschreibt das nicht.
-      await d.aendereTyp(typ.id, { ...typ, name: 'Firma', felder: [...typ.felder, { key: 'notiz', label: 'Notiz', typ: 'text' }] });
+      await d.aendereTyp(typ.id, { ...typ, name: 'Firma', felder: [...typ.felder.map((f) => (f.key === 'name' ? { ...f, erkennung: { art: 'name' as const, hinweis: 'eigener' } } : f)), { key: 'notiz', label: 'Notiz', typ: 'text' }] });
       assert.deepEqual(await p.updates(), [{ id: 'basis', installiert: '1.0.0', neu: '1.1.0', changelog: '', quelle: KATALOG }]);
       const uv = await p.vorschau({ id: 'basis' });
       assert.equal(uv.update, true);
       assert.deepEqual(uv.typen[0].neueFelder, ['Steuernummer']);
       assert.deepEqual(uv.typen[0].neueRegister, ['Verträge']);
+      assert.deepEqual(uv.typen[0].erkennung, ['Kundennummer'], 'Name hat der Administrator schon selbst eingestellt');
       assert.deepEqual(uv.sichten.filter((s) => !s.vorhanden).map((s) => s.name), ['Vereine']);
       const neu = await p.aktualisiere('basis', {}, ICH);
       assert.equal(neu.version, '1.1.0');
@@ -201,6 +205,8 @@ function faelle(pg: boolean) {
       assert.ok(t2.felder.some((f) => f.key === 'notiz') && t2.felder.some((f) => f.key === 'steuernummer'));
       assert.ok(t2.register.find((r) => r.key === 'stammdaten')!.felder!.includes('steuernummer'));
       assert.ok(t2.register.some((r) => r.key === 'vertraege'));
+      assert.deepEqual(t2.felder.find((f) => f.key === 'kundennummer')!.erkennung, { art: 'nummer', hinweis: 'oben rechts' });
+      assert.deepEqual(t2.felder.find((f) => f.key === 'name')!.erkennung, { art: 'name', hinweis: 'eigener' }, 'bleibt, wie der Administrator es eingestellt hat');
       assert.ok((await d.listeSichten()).some((s) => s.id === neu.sichten.vereine && s.elternId === oben.id));
       await assert.rejects(p.aktualisiere('basis', {}, ICH), /schon installiert/);
 

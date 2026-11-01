@@ -52,6 +52,16 @@ Für alle gilt: **Pflichtfeld** und ein **Hilfetext**, der beim Ausfüllen unter
 
 Steht im Standardwert eines Textfelds `{nummernkreis:<kennung>}`, bekommt jede neue Mappe eine fortlaufende Nummer aus diesem [Nummernkreis](nummernkreise.md); das Feld ist dann schreibgeschützt.
 
+### Für die Erkennung nutzen
+
+Mit dem Haken **Für die Erkennung nutzen** an einem Feld sagst du der Erkennung im DMS, dass sich der Wert zum Wiedererkennen eignet bzw. dass sie das Feld füllen darf. Die Erkennung läuft im DMS selbst, ohne KI und ohne Internet:
+
+- **Vorschläge beim Zuordnen von Post:** Steht der Wert eines markierten Felds – z. B. Kundennummer, IBAN, Umsatzsteuer-Id, E-Mail-Adresse, Internetseite (auch als Domain einer E-Mail-Adresse), Telefon oder Name – im Text eines Briefs, schlägt das DMS diese Mappe als **Absender** vor, mit Begründung („gefunden: Kundennummer 100-4711“). Ein Typ mit markiertem Namen oder Kontaktangaben gilt als möglicher Absender (Organisation, Niederlassung, Person); ein Typ, der nur Nummern markiert (z. B. Vertragsnummer), als mögliche **Zielmappe**. Leerzeichen, Punkte und Bindestriche in Nummern zählen nicht, `100-4711` findet also auch `100 4711`. Gerechnet wird einmal, sobald der Volltext einer Post fertig ist – egal ob von der eingebauten Texterkennung oder einem Paket.
+
+Geeignet sind Text, Langtext, Zahl, Betrag, Datum, Auswahlliste und Verweis – Passwortfelder nie. Ist der Haken an, wählst du optional **Was steht im Feld?** (Name oder Firma, Nummer, IBAN, E-Mail-Adresse, Telefon, Straße, PLZ, Ort …). Ohne Angabe schließt das DMS es aus Feldart, Kennung und Bezeichnung („Kundennummer“ → Nummer, „E-Mail“ → E-Mail-Adresse); was es erkannt hat, steht in der Auswahl hinter *automatisch*. Der **Erkennungshinweis** ist ein freier Text, z. B. „Kundennummer oben rechts, Muster 100-####“ – ein Muster nach dem Wort *Muster* (`#` = Ziffer, `A` = Großbuchstabe) sucht die Erkennung gezielt.
+
+Die Pakete der Registry (z. B. *Basis*) markieren ihre Felder selbst. Bei einem Update übernimmt das DMS die Markierung nur an Feldern, an denen du noch nichts eingestellt hast; die Vorschau nennt sie unter „für die Erkennung“.
+
 ### Die Kennung
 
 Unter der Kennung speichert das DMS die Werte, und die [Schnittstelle](api.md) verwendet sie. Deshalb ist sie nach dem ersten Speichern fest. Die Bezeichnung kannst du jederzeit ändern.

@@ -55,6 +55,8 @@ import { ALLE_TYPEN, PAKET_TEXT, type EreignisArt, type InstalliertesPaket, type
 import type { PaketEntwurf } from '../../shared/src/paketerstellung';
 import { abfrageAus, liesSuche } from '../../shared/src/erweitertesuche';
 import type { Lesefilter } from '../../shared/src/rechte';
+import { liesFeldErkennung } from '../../shared/src/erkennung';
+import { Erkennung } from './erkennung';
 import { ANSTEHEND_MAX, ANSTEHEND_TAGE, bereinigeFrist, datumDe, empfaengerFelder, ERINNERUNG_TEXT_MAX, fristAb, fristEmpfaenger, fristFelder, fristText, istDatum, naechsterTermin, type Anstehend, type Erinnerung } from '../../shared/src/fristen';
 import { ALLES, RECHTE_LISTE, kurzStandard, systemSperre, bereinigeRegelwerk, FALSCH, istOffen, kopiereRegel, kurz, leseAusdruck, lesefilter, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, wirksamVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../shared/src/rechte';
 
@@ -136,6 +138,8 @@ export function bereinigeFeld(e: unknown): Feld {
     verweisart: f.verweisart === 'zugehoerigkeit' ? 'zugehoerigkeit' : 'bezug',
     // Fristen (#129): nur an Datumsfeldern.
     ...(typ === 'datum' && bereinigeFrist(f.frist) ? { frist: bereinigeFrist(f.frist) } : {}),
+    // Für die Erkennung nutzen (#336): Art und Erkennungshinweis; nur bei geeigneten Feldarten.
+    ...(liesFeldErkennung(f.erkennung, typ) ? { erkennung: liesFeldErkennung(f.erkennung, typ) } : {}),
   };
 }
 
@@ -415,6 +419,25 @@ export class Dienst {
     // Was verschlüsselt ist, je Art (#410): dieselben Stellen, die der Schlüsselwechsel umschlüsselt.
     // Passwortfelder meldet unlesbarePasswoerter genauer (mit Feldnamen), den Mailserver der Betrieb.
     this.tresor?.registriereBestand(() => this.repo.verschluesselteFundstellen(), ['passwortfeld', 'mail']);
+    // Erkennung (#336): rechnet, sobald der Volltext eines Dokuments fertig ist – egal, wer ihn geliefert hat.
+    this.erkennung = new Erkennung(this, () => this.repo);
+    this.beiVolltextFertig(async (e) => { await this.erkennung.nachVolltext(e); });
+  }
+
+  /** Erkennung im Kern (#336, #391): Vorschläge aus dem Volltext. */
+  readonly erkennung: Erkennung;
+  private volltextHoerer: Array<(e: { dokument: string; mappe: string }) => Promise<void>> = [];
+  /** Internes Ereignis „Volltext fertig“ abonnieren (#336). */
+  beiVolltextFertig(f: (e: { dokument: string; mappe: string }) => Promise<void>) { this.volltextHoerer.push(f); }
+  /**
+   * Internes Ereignis „Volltext fertig“ (#336): Der Volltext eines Dokuments ist da – aus der eingebauten
+   * Texterkennung, von einem Paket (#338, #458) oder über die API. Nicht für Pakete (die haben
+   * texterkennung.fertig); Fehler eines Hörers landen nur im Protokoll.
+   */
+  async volltextFertig(e: { dokument: string; mappe: string }): Promise<void> {
+    for (const h of this.volltextHoerer) {
+      try { await h(e); } catch (x) { protokoll.modul('ablage').warn('Nach dem Volltext gestört', { dokument: e.dokument, fehler: (x as Error).message }); }
+    }
   }
 
   /** Das Repo – innerhalb von `inTransaktion` das der Transaktion. */
@@ -522,6 +545,7 @@ export class Dienst {
     await this.repo.ocrSetze(id, { stand: 'fertig', text, seiten: seiten ?? d.ocr?.seiten ?? null, info: info + (sprache ? spracheZuInfo(sprache) : '') });
     await this.notiere(d.mappeId, von.id, 'volltext', { dokument: d.name, text: info });
     protokoll.modul('ablage').info('Volltext geschrieben', { dokument: id, zeichen: e.text.length, herkunft: von.herkunft });
+    await this.volltextFertig({ dokument: id, mappe: d.mappeId });
     return (await this.repo.holeDokument(id))!;
   }
 
@@ -4054,6 +4078,7 @@ export class Dienst {
         // Verkleinert ohne Versionierung (#393): Der Volltext des bisherigen bleibt, keine neue Texterkennung.
         await this.repo.ocrSetze(dokument.id, { stand: 'fertig', ...e.volltext });
         neu = (await this.repo.holeDokument(dokument.id)) ?? dokument;
+        this.danach(() => void this.volltextFertig({ dokument: dokument.id, mappe: mappeId }));
       } else if (Dienst.volltextAn(typ, reg.key)) {
         await this.repo.ocrEinreihen([dokument.id]);
         neu = (await this.repo.holeDokument(dokument.id)) ?? dokument;

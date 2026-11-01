@@ -332,6 +332,14 @@ export interface Repo {
   /** Einträge vor diesem Zeitpunkt entfernen (eigene Aufbewahrung); liefert die Anzahl. */
   loeschprotokollAufraeumen(vor: string): Promise<number>;
 
+  /* ---------- Erkennung (#336) ---------- */
+  /** Gespeichertes Ergebnis der Erkennung einer Post. */
+  erkennungLies(mappeId: string): Promise<{ ergebnis: unknown; zeit: string } | undefined>;
+  /** Ergebnis speichern bzw. ersetzen; absenderId = eindeutig erkannter Absender. Gibt es die Mappe nicht (mehr), passiert nichts. */
+  erkennungSchreibe(mappeId: string, ergebnis: unknown, absenderId: string | null): Promise<void>;
+  /** Post mit diesem eindeutig erkannten Absender, neueste zuerst. */
+  erkennungenMitAbsender(absenderId: string, max: number): Promise<string[]>;
+
   /* ---------- Texterkennung (#45) ---------- */
   /** Dokumente in die Warteschlange stellen. */
   ocrEinreihen(ids: string[]): Promise<void>;

@@ -20,6 +20,19 @@ import type { Baum } from '../../shared/src/baum';
 import type { LoeschAktion, LoeschPlan, LoeschVorschau } from '../../shared/src/loeschbaum';
 import type { Luecke } from '../../shared/src/loeschkonzept';
 import type { LoeschAnlass, LoeschEintrag } from '../../shared/src/loeschprotokoll';
+import type { Sicherheit } from '../../shared/src/erkennung';
+
+/** Vorschläge beim Zuordnen (#336), wie GET /api/mappen/:id/erkennung sie liefert. */
+export interface ErkFund<T = string> { wert: T; sicherheit: Sicherheit; fundstelle: string }
+export interface PostErkennung {
+  zeit: string; dokumente: number;
+  absender: Array<{ mappeId: string; typId: string; titel: string; stark: boolean; punkte: number; gruende: string[] }>;
+  eindeutig: string | null;
+  angaben: { datum: ErkFund | null; betrag: ErkFund<{ betrag: number; waehrung: string }> | null; nummern: Array<ErkFund & { label: string }> };
+  neuerAbsender: { typId: string; werte: Record<string, string>; fundstelle: string } | null;
+  ziele: Array<{ mappeId: string; typId: string; titel: string; punkte: number; gruende: string[] }>;
+  bezuege: Bezuege;
+}
 
 /** Grund fürs Löschprotokoll (#470) als Body-Teil bzw. Query. */
 const grundAus = (a?: LoeschAnlass) => (a?.grund ? { grund: a.grund, grundText: a.text ?? '' } : {});
@@ -431,6 +444,8 @@ export const api = {
   postAnlegen: (e: { betreff?: string; fuer?: string | null }) => anfrage<Mappe>('POST', '/api/post', e),
   zuordnen: (postId: string, e: { ziel: string; register?: string; dokumente?: string[]; kopieren?: boolean }) =>
     anfrage<{ post: Mappe; ziel: Mappe }>('POST', `/api/mappen/${postId}/zuordnen`, e),
+  /** Erkennung (#336): Vorschläge beim Zuordnen; neu = jetzt neu rechnen. */
+  erkennung: (postId: string, neu = false) => anfrage<PostErkennung>(neu ? 'POST' : 'GET', `/api/mappen/${postId}/erkennung`),
   /** Mehrere Mappen per E-Mail (#151). */
   /* Stempel beim Weitergeben (#394) */
   stempelVorlagen: () => anfrage<StempelVorlage[]>('GET', '/api/stempel/vorlagen'),
@@ -673,7 +688,7 @@ export interface PaketVorschau {
   paket: { id: string; name: string; version: string; beschreibung: string; lizenz: string; autor: { name: string; github: string }; dms: string; abhaengigkeiten: Record<string, string>; readme: string | null; changelog: string | null; quelle: string | null };
   dmsVersion: string; dmsOk: boolean; installiert: string | null; update: boolean; herkunft: InstalliertesPaket['herkunft'] | null;
   abhaengigkeiten: Array<{ id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null }>;
-  typen: Array<{ schluessel: string; dmsSchluessel: string; name: string; felder: number; vorhanden: boolean; neueFelder: string[]; neueRegister: string[]; konflikt: string | null; vorschlag: string | null; geloescht?: boolean }>;
+  typen: Array<{ schluessel: string; dmsSchluessel: string; name: string; felder: number; vorhanden: boolean; neueFelder: string[]; neueRegister: string[]; erkennung?: string[]; konflikt: string | null; vorschlag: string | null; geloescht?: boolean }>;
   sichten: Array<{ schluessel: string; name: string; eltern: string | null; vorhanden: boolean; konflikt: string | null; vorschlag: string | null }>;
   beispiele: number; probleme: string[]; hinweise: string[]; einstellungen: { neu: string[]; weg: string[] } | null;
   /** Paket mit Code (#338): Rechte, Netzwerkzugriff und Ereignisse (#449); bestaetigen = muss ausdrücklich erlaubt werden. */

@@ -1,3 +1,4 @@
+import { ERKENNUNGSARTEN } from '../../shared/src/erkennung';
 import { FELDTYPEN, HERKUNFT, REGISTERARTEN, type Benutzer } from '../../shared/src/model';
 import { Fachfehler } from './fehler';
 import type { Anfrage, Antwort, Route } from './routen';
@@ -122,6 +123,12 @@ export const V1_TABELLE: V1[] = [
   { methode: 'POST', pfad: '/post/{id}/zuordnen', gruppe: 'Ablage', zusammenfassung: 'Post einer Mappe zuordnen',
     beschreibung: 'Die Post verweist danach auf die Mappe („Zugeordnet zu“) und hat Stand „Zugeordnet“. Die gewählten Dokumente (Standard: alle der Post) wandern in ein Dokumentenregister der Zielmappe; mit kopieren=true bleiben sie zusätzlich in der Post (gleiche Datei, kein zweiter Speicherplatz). Mehrmals möglich. Braucht Bearbeiten an Post und Zielmappe.',
     intern: { methode: 'POST', pfad: '/api/mappen/:id/zuordnen' }, parameter: [id('der Post')], body: 'Zuordnen', antwort: 'Zugeordnet' },
+  { methode: 'GET', pfad: '/post/{id}/erkennung', gruppe: 'Ablage', zusammenfassung: 'Vorschläge beim Zuordnen',
+    beschreibung: 'Erkennung (#336), ohne KI: Absender (Mappen, deren für die Erkennung markierte Felder wie Kundennummer, IBAN, E-Mail oder Internetseite im Text stehen – mit Begründung), Datum, Gesamtbetrag und Nummern aus dem Text sowie Vorschläge für die Zielmappe (direkte Treffer, Mappen, die auf den Absender verweisen, frühere Post dieses Absenders). Gerechnet einmal nach dem Volltext; nur Mappen, die der Benutzer des Schlüssels lesen darf. neuerAbsender: Vorschlag „neue Organisation anlegen“, wenn kein Absender passt und der Briefkopf sicher erkennbar ist.',
+    intern: { methode: 'GET', pfad: '/api/mappen/:id/erkennung' }, parameter: [id('der Post')], antwort: 'Erkennung' },
+  { methode: 'POST', pfad: '/post/{id}/erkennung', gruppe: 'Ablage', zusammenfassung: 'Erkennung neu rechnen',
+    beschreibung: 'Rechnet die Vorschläge beim Zuordnen (#336) jetzt neu, z. B. nachdem eine Organisation angelegt wurde. Braucht Lesen.',
+    intern: { methode: 'POST', pfad: '/api/mappen/:id/erkennung' }, parameter: [id('der Post')], antwort: 'Erkennung' },
   { methode: 'POST', pfad: '/fotostapel', gruppe: 'Ablage', zusammenfassung: 'Foto für eine Post ablegen',
     beschreibung: 'Post fotografieren (#490): ein Foto (JPEG oder PNG, roh im Körper, höchstens 100 MB) für später; liefert seine Kennung. Erst POST /post/fotos bzw. POST /mappen/{id}/fotos macht daraus Seiten eines PDFs. Nicht verwendete Fotos verfallen nach zwei Stunden.',
     intern: { methode: 'POST', pfad: '/api/fotostapel' }, body: 'binaer', antwort: 'FotoAbgelegt', status: 201 },
@@ -271,6 +278,7 @@ const SCHEMAS: Record<string, Schema> = {
       min: { type: 'number' }, max: { type: 'number' }, nachkomma: { type: 'integer' }, muster: { type: 'string' }, optionen: { type: 'array', items: { type: 'string' } },
       system: { type: 'boolean', readOnly: true, description: 'Systemfeld eines Systemmappentyps: nicht entfernbar, nur Bezeichnung und Hilfetext änderbar' },
       mehrfach: { type: 'boolean' }, zielTyp: { ...uuid, description: 'Bei typ=referenz: Id des Ziel-Mappentyps' }, verweisart: { type: 'string', enum: ['zugehoerigkeit', 'bezug'] }, waehrung: { type: 'string' },
+      erkennung: { type: 'object', nullable: true, description: 'Für die Erkennung nutzen (#336, #391); vorhanden = an. Nur bei Text, Langtext, Zahl, Betrag, Datum, Auswahl und Verweis. art: was im Feld steht (fehlt = aus Feldart und Bezeichnung), hinweis: Erkennungshinweis, z. B. „Muster 100-####“ (# = Ziffer).', properties: { art: { type: 'string', enum: Object.keys(ERKENNUNGSARTEN) }, hinweis: { type: 'string', maxLength: 300 } } },
     },
   },
   Register: { type: 'object', required: ['key', 'name', 'art'], properties: { key: { type: 'string' }, name: { type: 'string' }, art: { type: 'string', enum: Object.keys(REGISTERARTEN) }, felder: { type: 'array', items: { type: 'string' } }, quellen: { type: 'array', items: { type: 'object', properties: { typId: uuid, feldKey: { type: 'string' }, trefferliste: { type: 'string', description: 'Kennung einer Trefferliste des Quelltyps; das Register zeigt dann deren Spalten' } } } } } },
@@ -385,6 +393,14 @@ const SCHEMAS: Record<string, Schema> = {
     dokumente: { type: 'array', items: uuid, description: 'Ids von Dokumenten der Post; Standard: alle' }, kopieren: { type: 'boolean', description: 'true = Dokumente bleiben auch in der Post' },
   } },
   Zugeordnet: { type: 'object', properties: { post: ref('Mappe'), ziel: ref('Mappe') } },
+  Erkennung: { type: 'object', properties: {
+    zeit: { type: 'string', format: 'date-time' }, dokumente: { type: 'integer', description: 'Dokumente der Post mit Volltext' },
+    absender: { type: 'array', items: { type: 'object', properties: { mappeId: uuid, typId: uuid, titel: { type: 'string' }, stark: { type: 'boolean', description: 'an einem eindeutigen Merkmal erkannt (Kundennummer, IBAN, E-Mail …)' }, punkte: { type: 'number' }, gruende: { type: 'array', items: { type: 'string' }, description: 'z. B. „Kundennummer 100-4711“' } } } },
+    eindeutig: { ...uuid, nullable: true, description: 'Eindeutig erkannter Absender' },
+    angaben: { type: 'object', properties: { datum: { type: 'object', nullable: true, properties: { wert: { type: 'string', format: 'date' }, sicherheit: { type: 'string', enum: ['hoch', 'mittel', 'niedrig'] }, fundstelle: { type: 'string' } } }, betrag: { type: 'object', nullable: true, properties: { wert: { type: 'object', properties: { betrag: { type: 'number' }, waehrung: { type: 'string' } } }, sicherheit: { type: 'string' }, fundstelle: { type: 'string' } } }, nummern: { type: 'array', items: { type: 'object', properties: { label: { type: 'string' }, wert: { type: 'string' }, fundstelle: { type: 'string' } } } } } },
+    neuerAbsender: { type: 'object', nullable: true, properties: { typId: uuid, werte: { type: 'object', additionalProperties: { type: 'string' } }, fundstelle: { type: 'string' } } },
+    ziele: { type: 'array', items: { type: 'object', properties: { mappeId: uuid, typId: uuid, titel: { type: 'string' }, punkte: { type: 'number' }, gruende: { type: 'array', items: { type: 'string' } } } } },
+  } },
   FotoAbgelegt: { type: 'object', properties: { id: { ...uuid, description: 'Kennung des Fotos im Stapel' } } },
   PostFotos: { type: 'object', required: ['stapel'], properties: { stapel: { type: 'array', items: uuid, description: 'Kennungen aus POST /fotostapel, höchstens 50' }, betreff: { type: 'string' }, fuer: uuid } },
   FotosAnhaengen: { type: 'object', required: ['stapel'], properties: { stapel: { type: 'array', items: uuid }, dokument: { ...uuid, description: 'PDF der Mappe, an das die Seiten kommen' }, register: { type: 'string' } } },

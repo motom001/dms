@@ -8,6 +8,7 @@
  * - Scheitert etwas, wird zurückgerollt: Es bleibt nichts halb angelegt.
  * - Ein Update ergänzt nur (neue Typen, Felder, Register, Sichten); es löscht und überschreibt nichts.
  */
+import { liesFeldErkennung, type FeldErkennung } from '../../shared/src/erkennung';
 import { createHash, randomUUID } from 'node:crypto';
 import { inflateRawSync } from 'node:zlib';
 import { parse as yamlLesen } from 'yaml';
@@ -274,10 +275,21 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
 
 /* ---------- Plan: was angelegt bzw. ergänzt wird ---------- */
 
+/** Felder, die das Paket für die Erkennung markiert und die im DMS (gleiche Kennung, gleiche Feldart) noch ohne Einstellung sind (#336). */
+function erkennungNeu(t: PaketTyp, vorhanden: Pick<Mappentyp, 'felder'>): Array<{ key: string; label: string; erkennung: FeldErkennung }> {
+  return t.felder.flatMap((f) => {
+    const g = vorhanden.felder.find((x) => x.key === f.key && x.typ === f.typ);
+    const e = liesFeldErkennung(f.erkennung, f.typ);
+    return g && e && !g.erkennung ? [{ key: g.key, label: g.label, erkennung: e }] : [];
+  });
+}
+
 export interface TypPlan {
   schluessel: string; dmsSchluessel: string; name: string; felder: number;
   /** Bei Update: Typ gibt es schon; nur neue Felder und Register. */
   vorhanden: boolean; neueFelder: string[]; neueRegister: string[];
+  /** Bei Update (#336): vorhandene Felder, die das Paket jetzt „für die Erkennung“ markiert (nur wo noch nichts eingestellt ist). */
+  erkennung?: string[];
   /** Name schon vergeben (von einem anderen Typ) – mit Vorschlag. */
   konflikt: string | null; vorschlag: string | null;
   /** Fehlt im DMS, obwohl das Paket ihn installiert hatte (gelöscht) – wird nicht neu angelegt. */
@@ -722,6 +734,7 @@ export class Paketverwaltung {
           schluessel: t.schluessel, dmsSchluessel, name: vorhanden.name, felder: t.felder.length, vorhanden: true,
           neueFelder: t.felder.filter((f) => !vorhanden.felder.some((g) => g.key === f.key)).map((f) => f.label),
           neueRegister: t.register.filter((r) => !vorhanden.register.some((g) => g.key === r.key)).map((r) => r.name),
+          erkennung: erkennungNeu(t, vorhanden).map((f) => f.label),
           konflikt: null, vorschlag: null,
         };
       }
@@ -891,10 +904,12 @@ export class Paketverwaltung {
       // 2. Update: vorhandene Typen um neue Felder und Register ergänzen – sonst nichts ändern.
       for (const t of paket.typen) {
         const p = plan.typen.find((x) => x.schluessel === t.schluessel)!;
-        if (!p.vorhanden || (!p.neueFelder.length && !p.neueRegister.length)) continue;
+        if (!p.vorhanden || (!p.neueFelder.length && !p.neueRegister.length && !p.erkennung?.length)) continue;
         const aktuell = vorher.get(ids.get(t.schluessel)!)!;
         const neu = eingabe(t, false).daten;
-        const felder = [...aktuell.felder, ...neu.felder.filter((f) => !aktuell.felder.some((g) => g.key === f.key))];
+        // Erkennung (#336): Markierung des Pakets an vorhandene Felder, an denen der Administrator nichts eingestellt hat.
+        const markiert = new Map(erkennungNeu(t, aktuell).map((f) => [f.key, f.erkennung]));
+        const felder = [...aktuell.felder.map((f) => (markiert.has(f.key) ? { ...f, erkennung: markiert.get(f.key) } : f)), ...neu.felder.filter((f) => !aktuell.felder.some((g) => g.key === f.key))];
         const register = aktuell.register.map((r) => {
           const pr = t.register.find((x) => x.key === r.key);
           const dazu = (pr?.felder ?? []).filter((k) => !aktuell.felder.some((g) => g.key === k) && r.art === 'felder');

@@ -62,6 +62,8 @@ export interface Feld {
   frist?: import('./fristen').FristEinstellung | null;
   /** Referenzfeld (#172): nur Mappen des Zieltyps, die alle Bedingungen erfüllen. */
   auswahlFilter?: import('./sichten').Feldbedingung[];
+  /** Für die Erkennung nutzen (#336, #391): vorhanden = an, mit Art und Erkennungshinweis. */
+  erkennung?: import('./erkennung').FeldErkennung | null;
 }
 
 export const REGISTERARTEN = {
