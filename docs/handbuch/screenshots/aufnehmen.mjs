@@ -335,6 +335,17 @@ async function main() {
   await s.locator('.pdfseiten').scrollIntoViewIfNeeded();
   await bild(s, 'pdf-bearbeiten');
 
+  // Herunterladen mit Stempel (#394): Dialog am Scan, Vorlage „Kopie für …“ mit Empfänger.
+  await s.locator('.pdfseiten').getByRole('button', { name: 'Abbrechen' }).click().catch(() => {});
+  await scan.getByRole('button', { name: /Mit Stempel/ }).click();
+  const stempel = s.locator('.stempeldialog');
+  await stempel.locator('input[id$="-empfaenger"]').fill('Hausverwaltung Müller');
+  await s.addStyleTag({ content: '.speicherleiste { position: static !important; }' });
+  await stempel.scrollIntoViewIfNeeded();
+  await stempel.screenshot({ path: join(ZIEL, 'stempel-herunterladen.png') });
+  erstellt.push('stempel-herunterladen');
+  await stempel.getByRole('button', { name: 'Schließen' }).click();
+
   // Verknüpfungsregister beim Vertragspartner
   await geheZu(s, `/ablage/${partner.id}/${d.stadtwerke.id}`);
   await s.getByRole('tab', { name: 'Verträge' }).click();
@@ -631,6 +642,10 @@ async function main() {
   await s.getByRole('heading', { name: /Aufkleber drucken/ }).waitFor();
   await s.getByRole('heading', { name: /Aufkleber drucken/ }).evaluate((e) => e.scrollIntoView({ block: 'start' }));
   await bild(s, 'werkbank-aufkleber');
+  // Stempel (#394): Vorlage „Kopie für …“ mit Vorschau.
+  await geheZu(s, '/werkbank/stempel?offen=kopie');
+  await s.locator('.stempeleditor').waitFor();
+  await bild(s, 'werkbank-stempel');
   // Pakete (#369): Abschnitt „Expertenmodus“ aufgeklappt unter den Knöpfen (ohne Katalogabruf).
   await geheZu(s, '/werkbank/pakete');
   await s.getByRole('button', { name: /Expertenmodus/ }).click();

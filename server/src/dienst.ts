@@ -28,6 +28,8 @@ import { datumIn, KREIS_SCHLUESSEL, kreisVon, naechste, neubeginn, pruefeMuster,
 import { csvAus, xlsxAus } from './xlsx';
 import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile } from './export';
 import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
+import { fuerAusgabe, kannStempeln, type Ausgabe } from './ausgabe';
+import { geltenderStempel, liesStempelTyp, liesVorlagen, pruefeVorlage, stempelAus, StempelFehler, STEMPEL_MODI, STEMPEL_NAME_MAX, STEMPEL_VORLAGEN_MAX, wunschAus, type GeltenderStempel, type StempelTyp, type StempelVorlage, type StempelWunsch } from '../../shared/src/stempel';
 import { alleSichtRechte, bereinigeSichtRegelwerk, sichtRegelProblem, sichtTestlauf, type SichtRegelwerk } from '../../shared/src/sichtrechte';
 import { liesDirektlink } from '../../shared/src/direktlink';
 import { erkenneSprache, SPRACHE_MARKE, spracheZuInfo } from '../../shared/src/textsprache';
@@ -962,26 +964,35 @@ export class Dienst {
     const verweise = mappen.flatMap((m) => { const t = z.typen.get(m.typId); return [...(t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []), m.erstelltVon, m.geaendertVon].filter((v): v is string => !!v); });
     const bezuege = await this.maskiereBezuege(z, await this.repo.bezuege([...new Set(verweise)]));
     const quelle = { typen: z.typen, titel: (id: string | null | undefined) => (id ? bezuege[id]?.titel || NICHT_SICHTBAR : '') };
-    const je: Array<{ m: Mappe; dokumente: Dokument[]; pdf: Buffer | null }> = [];
+    const je: Array<{ m: Mappe; dokumente: Dokument[]; pdf: Buffer | null; plan: GeltenderStempel | null; ausgaben: Ausgabe[] | null }> = [];
     const dokJe = await this.dokumenteJeMappe(mappen.map((m) => m.id));
+    // Stempel (#394): je Mappe, weil die Pflicht am Mappentyp hängt; {empfänger} ohne Angabe = die Adressen.
+    const wunsch = wunschAus(e.stempel);
+    const stempelDaten = await this.stempelDaten();
     for (const m of mappen) {
       const docs = (dokJe.get(m.id) ?? []).filter((d) => !gewaehlt || gewaehlt.has(d.id));
       const pdf = angaben ? await mappenPdf(m.titel || 'Ohne Titel', [{ mappe: m, typ: z.typen.get(m.typId), dokumente: [], inhalt: lies }], quelle, null) : null;
-      je.push({ m, dokumente: docs, pdf });
+      const plan = docs.length ? await this.stempelPlan(m.typId, wunsch, an.join(', '), stempelDaten) : null;
+      const ausgaben = plan ? await Promise.all(docs.map(async (d) => fuerAusgabe({ name: d.name, mime: d.mime, inhalt: await lies(d) }, { stempel: plan },
+        { benutzer: ich.name, mappe: m.titel || 'Ohne Titel', archivnummer: d.archivnummer }))) : null;
+      je.push({ m, dokumente: docs, pdf, plan, ausgaben });
     }
     if (gewaehlt) {
       const bekannt = new Set(je.flatMap((x) => x.dokumente.map((d) => d.id)));
       if ([...gewaehlt].some((id) => !bekannt.has(id))) throw new Fachfehler(422, 'Ein ausgewähltes Dokument gehört nicht (mehr) zu diesen Mappen.');
     }
-    const groesse = je.reduce((a, x) => a + (x.pdf?.length ?? 0) + x.dokumente.reduce((b, d) => b + d.groesse, 0), 0);
+    const groesse = je.reduce((a, x) => a + (x.pdf?.length ?? 0) + (x.ausgaben ? x.ausgaben.reduce((b, y) => b + y.inhalt.length, 0) : x.dokumente.reduce((b, d) => b + d.groesse, 0)), 0);
     if (groesse > EMAIL_MAX_ANHAENGE) throw new Fachfehler(413, `Die Anhänge sind zusammen größer als ${Math.round(EMAIL_MAX_ANHAENGE / 1e6)} MB. Bitte weniger Mappen oder Dokumente wählen.`);
-    // Dateinamen eindeutig: „Titel.pdf“ der Angaben, dann die Dokumente.
-    const namen = eindeutig(je.flatMap((x) => [...(x.pdf ? [`${sichererName(x.m.titel || 'Ohne Titel')}.pdf`] : []), ...x.dokumente.map((d) => sichererName(d.name, 120))]));
+    // Dateinamen eindeutig: „Titel.pdf“ der Angaben, dann die Dokumente (gestempelte Bilder heißen .pdf).
+    const namen = eindeutig(je.flatMap((x) => [...(x.pdf ? [`${sichererName(x.m.titel || 'Ohne Titel')}.pdf`] : []), ...x.dokumente.map((d, j) => sichererName(x.ausgaben?.[j].name ?? d.name, 120))]));
     let i = 0;
     const anhaenge: Array<{ name: string; mime: string; inhalt: Buffer | Readable }> = [];
     for (const x of je) {
       if (x.pdf) anhaenge.push({ name: namen[i++], mime: 'application/pdf', inhalt: x.pdf });
-      for (const d of x.dokumente) anhaenge.push({ name: namen[i++], mime: d.mime, inhalt: await this.dateien.lies(d.sha256) });
+      for (const [j, d] of x.dokumente.entries()) {
+        const a = x.ausgaben?.[j];
+        anhaenge.push(a ? { name: namen[i++], mime: a.mime, inhalt: a.inhalt } : { name: namen[i++], mime: d.mime, inhalt: await this.dateien.lies(d.sha256) });
+      }
     }
     const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;
     try {
@@ -1005,18 +1016,31 @@ export class Dienst {
         const neu = await this.repo.legeDokumentAn({ id: randomUUID(), mappeId: id, registerKey: reg.key, name: namen[i++], mime: 'application/pdf', groesse: x.pdf.length, sha256, anzeigbar: true, erstellt: new Date().toISOString(), erstelltVon: ich.id, herkunft: 'hochgeladen' });
         this.vorschau?.einreihen([neu]);
       }
-      for (const d of x.dokumente) { await this.repo.legeDokumentAn({ ...d, id: randomUUID(), mappeId: id, registerKey: reg.key, name: namen[i++], erstellt: new Date().toISOString(), erstelltVon: ich.id }); }
+      for (const [j, d] of x.dokumente.entries()) await this.legeVersandkopieAn(d, x.ausgaben?.[j], id, reg.key, ich.id, namen[i++]);
     }
     for (const x of je) {
       const n = x.dokumente.length + (x.pdf ? 1 : 0);
+      const stempeltext = x.ausgaben?.find((y) => y.stempeltext)?.stempeltext;
+      const mitStempel = x.ausgaben?.some((y) => !y.unveraendert) ? (stempeltext ? `, mit Stempel „${stempeltext}“` : ', mit Seitenzahlen') : '';
       await this.notiere(x.m.id, ich.id, 'email', {
-        text: `„${betreff}“ an ${an.join(', ')} mit ${mappen.length} Mappen${n ? ` (von dieser ${n} ${n === 1 ? 'Anhang' : 'Anhänge'})` : ''}`, email: id,
+        text: `„${betreff}“ an ${an.join(', ')} mit ${mappen.length} Mappen${n ? ` (von dieser ${n} ${n === 1 ? 'Anhang' : 'Anhänge'})` : ''}${mitStempel}`, email: id,
         an, betreff, nachricht: nachricht.slice(0, NOTIZ_MAX), mappen: mappen.length,
-        anhaenge: [...(x.pdf ? [{ name: `${sichererName(x.m.titel || 'Ohne Titel')}.pdf`, groesse: x.pdf.length }] : []), ...x.dokumente.map((d) => ({ name: d.name, groesse: d.groesse }))],
+        anhaenge: [...(x.pdf ? [{ name: `${sichererName(x.m.titel || 'Ohne Titel')}.pdf`, groesse: x.pdf.length }] : []), ...x.dokumente.map((d, j) => ({ name: x.ausgaben?.[j].name ?? d.name, groesse: x.ausgaben?.[j].inhalt.length ?? d.groesse }))],
+        ...(mitStempel ? { stempel: stempeltext ?? null, stempelAn: x.plan?.empfaenger ?? null } : {}),
       });
     }
     protokoll.modul('ablage').info('E-Mail mit mehreren Mappen verschickt', { mappen: mappen.length, empfaenger: an.length, anhaenge: anhaenge.length, bytes: groesse });
     return { id, typId: typ.id, mappen: mappen.length, anhaenge: anhaenge.length };
+  }
+
+  /** Kopie eines verschickten Dokuments in der Post: gestempelt als eigene Datei (#394), sonst dieselbe Datei. */
+  private async legeVersandkopieAn(d: Dokument, a: Ausgabe | undefined, postId: string, registerKey: string, von: string, name?: string) {
+    const jetzt = new Date().toISOString();
+    if (!a || a.unveraendert) { await this.repo.legeDokumentAn({ ...d, id: randomUUID(), mappeId: postId, registerKey, name: name ?? d.name, erstellt: jetzt, erstelltVon: von }); return; }
+    const sha256 = createHash('sha256').update(a.inhalt).digest('hex');
+    await this.dateien.schreibe(sha256, a.inhalt);
+    const neu = await this.repo.legeDokumentAn({ id: randomUUID(), mappeId: postId, registerKey, name: name ?? a.name, mime: a.mime, groesse: a.inhalt.length, sha256, anzeigbar: true, erstellt: jetzt, erstelltVon: von, herkunft: 'hochgeladen' });
+    this.vorschau?.einreihen([neu]);
   }
 
   async versendeMappe(mappeId: string, eingabe: unknown, ich: { id: string; name: string; email: string }, mailer: Mailer | null) {
@@ -1029,9 +1053,14 @@ export class Dienst {
     const alle = await this.repo.listeDokumente(mappeId);
     const dokumente = ids.map((id) => alle.find((d) => d.id === id));
     if (dokumente.some((d) => !d)) throw new Fachfehler(422, 'Ein ausgewähltes Dokument gehört nicht (mehr) zu dieser Mappe.');
-    const groesse = dokumente.reduce((a, d) => a + d!.groesse, 0);
+    // Stempel (#394): gewünscht oder vom Mappentyp verlangt; {empfänger} sind ohne Angabe die Adressen.
+    const plan = dokumente.length ? await this.stempelPlan(m.typId, wunschAus(e.stempel), an.join(', ')) : null;
+    const ausgaben = plan ? await Promise.all(dokumente.map(async (d) => fuerAusgabe({ name: d!.name, mime: d!.mime, inhalt: await this.liesGanz(d!.sha256) }, { stempel: plan },
+      { benutzer: ich.name, mappe: m.titel || 'Ohne Titel', archivnummer: d!.archivnummer }))) : null;
+    const groesse = ausgaben ? ausgaben.reduce((a, x) => a + x.inhalt.length, 0) : dokumente.reduce((a, d) => a + d!.groesse, 0);
     if (groesse > EMAIL_MAX_ANHAENGE) throw new Fachfehler(413, `Die Anhänge sind zusammen größer als ${Math.round(EMAIL_MAX_ANHAENGE / 1e6)} MB.`);
-    const anhaenge = await Promise.all(dokumente.map(async (d) => ({ name: d!.name, mime: d!.mime, inhalt: await this.dateien.lies(d!.sha256) })));
+    const anhaenge = ausgaben ? ausgaben.map((x) => ({ name: x.name, mime: x.mime, inhalt: x.inhalt as Buffer | Readable }))
+      : await Promise.all(dokumente.map(async (d) => ({ name: d!.name, mime: d!.mime, inhalt: await this.dateien.lies(d!.sha256) })));
     const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;
     try {
       await mailer.sende(an.join(', '), betreff, nachricht, { antwortAn, anhaenge });
@@ -1046,11 +1075,13 @@ export class Dienst {
       kanal: POST_KANAL.email, richtung: POST_RICHTUNG.ausgehend, stand: POST_STAND.erledigt,
     }, ich.id);
     const reg = typ.register.find((r) => r.art === 'dokumente');
-    if (reg) for (const d of dokumente) {
-      await this.repo.legeDokumentAn({ ...d!, id: randomUUID(), mappeId: id, registerKey: reg.key, erstellt: new Date().toISOString(), erstelltVon: ich.id });
-    }
-    await this.notiere(mappeId, ich.id, 'email', { text: `„${betreff}“ an ${an.join(', ')}${dokumente.length ? ` mit ${dokumente.length} ${dokumente.length === 1 ? 'Anhang' : 'Anhängen'}` : ''}`, email: id,
-      an, betreff, nachricht: nachricht.slice(0, NOTIZ_MAX), anhaenge: dokumente.map((d) => ({ name: d!.name, groesse: d!.groesse })) });
+    // In der Post liegt, was verschickt wurde: gestempelt die Kopie, sonst dieselbe Datei.
+    if (reg) for (const [i, d] of dokumente.entries()) await this.legeVersandkopieAn(d!, ausgaben?.[i], id, reg.key, ich.id);
+    const stempeltext = ausgaben?.find((x) => x.stempeltext)?.stempeltext;
+    const mitStempel = ausgaben?.some((x) => !x.unveraendert) ? (stempeltext ? `, mit Stempel „${stempeltext}“` : ', mit Seitenzahlen') : '';
+    await this.notiere(mappeId, ich.id, 'email', { text: `„${betreff}“ an ${an.join(', ')}${dokumente.length ? ` mit ${dokumente.length} ${dokumente.length === 1 ? 'Anhang' : 'Anhängen'}` : ''}${mitStempel}`, email: id,
+      an, betreff, nachricht: nachricht.slice(0, NOTIZ_MAX), anhaenge: ausgaben ? ausgaben.map((x) => ({ name: x.name, groesse: x.inhalt.length })) : dokumente.map((d) => ({ name: d!.name, groesse: d!.groesse })),
+      ...(mitStempel ? { stempel: stempeltext ?? null, stempelAn: plan?.empfaenger ?? null } : {}) });
     protokoll.modul('ablage').info('E-Mail aus Mappe verschickt', { mappe: mappeId, empfaenger: an.length, anhaenge: dokumente.length, bytes: groesse });
     return { id, typId: typ.id };
   }
@@ -1131,7 +1162,7 @@ export class Dienst {
 
   /** Mappentypen für einen Benutzer: Administratoren mit Regeln, alle anderen ohne – dafür „darf anlegen“ (#126). */
   async typenFuer(z: Zugriff) {
-    const typen = [...z.typen.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    const typen = await this.mitStempel([...z.typen.values()].sort((a, b) => a.name.localeCompare(b.name, 'de')));
     if (z.admin) return typen;
     return typen.map(({ berechtigungen, ...t }) => ({ ...t, berechtigungen: null, darfAnlegen: rechteUebersicht({ ...t, berechtigungen }, z.wer, z.a).C !== 'nie' }));
   }
@@ -1174,7 +1205,18 @@ export class Dienst {
     if (!istOk(p)) throw new Fachfehler(422, 'Der Mappentyp ist so nicht gültig.', p);
   }
 
-  async legeTypAn(eingabe: unknown): Promise<Mappentyp> {
+  /** Mappentyp anlegen bzw. ändern; die Stempel-Einstellung (#394) liegt daneben in den Einstellungen. */
+  async legeTypAn(eingabe: unknown): Promise<Mappentyp> { return this.mitStempelEingabe(eingabe, (e) => this.legeTypAnIntern(e)); }
+  async aendereTyp(id: string, eingabe: unknown): Promise<Mappentyp> { return this.mitStempelEingabe(eingabe, (e) => this.aendereTypIntern(id, e)); }
+  private async mitStempelEingabe(eingabe: unknown, f: (e: unknown) => Promise<Mappentyp>): Promise<Mappentyp> {
+    const hat = !!eingabe && typeof eingabe === 'object' && 'stempel' in eingabe;
+    const st = hat ? await this.pruefeStempelTyp((eingabe as { stempel: unknown }).stempel) : undefined;
+    const t = await f(eingabe);
+    if (hat) await this.setzeStempelTyp(t.id, st ?? null);
+    return (await this.mitStempel([t]))[0];
+  }
+
+  private async legeTypAnIntern(eingabe: unknown): Promise<Mappentyp> {
     const roh = (eingabe ?? {}) as { id?: unknown };
     // Die Oberfläche darf die Id vorgeben, damit ein neuer Typ auf sich selbst verweisen kann.
     const id = istUuid(roh.id) && !(await this.repo.holeTyp(roh.id)) ? roh.id : randomUUID();
@@ -1190,7 +1232,7 @@ export class Dienst {
     return typ;
   }
 
-  async aendereTyp(id: string, eingabe: unknown): Promise<Mappentyp> {
+  private async aendereTypIntern(id: string, eingabe: unknown): Promise<Mappentyp> {
     const alt = await this.repo.holeTyp(id);
     if (!alt) throw new Fachfehler(404, 'Diesen Mappentyp gibt es nicht.');
     let d = bereinigeTyp(eingabe);
@@ -2451,7 +2493,7 @@ export class Dienst {
    * Export mehrerer Mappen (#152, #153): Tabelle (csv, xlsx), ZIP mit Dokumenten oder ein PDF.
    * Recht E an der Sicht, Lesen je Mappe; Reihenfolge wie in der Liste. Passwörter nie.
    */
-  async exportiere(ich: { id: string; rolle: string }, e: unknown, z: Zugriff): Promise<{ name: string; mime: string; inhalt: Buffer | Readable; groesse: number; mappen: number; ausgelassen: number }> {
+  async exportiere(ich: { id: string; rolle: string; name?: string }, e: unknown, z: Zugriff): Promise<{ name: string; mime: string; inhalt: Buffer | Readable; groesse: number; mappen: number; ausgelassen: number }> {
     const x = (e ?? {}) as Record<string, unknown>;
     const format = String(x.format ?? '');
     if (!['csv', 'xlsx', 'zip', 'pdf'].includes(format)) throw new Fachfehler(422, 'Unbekanntes Format.');
@@ -2493,11 +2535,40 @@ export class Dienst {
     if (format === 'xlsx') { const t = tabelle(); const b = xlsxAus(titel, t.kopf, t.werte); return { name: `${datei}.xlsx`, mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', inhalt: b, groesse: b.length, mappen: mappen.length, ausgelassen }; }
     // Dokumente aller Mappen in einem Zugriff (#367).
     const dokJe = (format === 'pdf' || format === 'zip') ? await this.dokumenteJeMappe(mappen.map((m) => m.id)) : new Map<string, Dokument[]>();
+    // Stempel (#394): je Mappe, weil die Pflicht am Mappentyp hängt. Nur PDFs und Bilder werden gestempelt.
+    const wunsch = wunschAus(x.stempel);
+    const stempelDaten = await this.stempelDaten();
+    const plaene = new Map<string, GeltenderStempel>();
+    for (const m of mappen) {
+      if (!(dokJe.get(m.id) ?? []).length) continue;
+      const p = await this.stempelPlan(m.typId, wunsch, '', stempelDaten);
+      if (p) plaene.set(m.id, p);
+    }
+    const wie = format === 'pdf' ? 'als PDF exportiert' : 'als ZIP exportiert';
+    const gestempelt = new Map<string, Ausgabe[]>();
+    const ausgabe = async (m: Mappe, d: Dokument, streng: boolean): Promise<Ausgabe> => {
+      const a = await fuerAusgabe({ name: d.name, mime: d.mime, inhalt: await this.liesGanz(d.sha256) }, { stempel: plaene.get(m.id) },
+        { benutzer: ich.name ?? '', mappe: m.titel || 'Ohne Titel', archivnummer: d.archivnummer }, streng);
+      gestempelt.set(m.id, [...(gestempelt.get(m.id) ?? []), a]);
+      return a;
+    };
+    const historie = async () => { for (const [id, a] of gestempelt) await this.notiereWeitergabe(id, ich.id, wie, plaene.get(id)!, a); };
     if (format === 'pdf') {
-      const b = await mappenPdf(titel, await Promise.all(mappen.map(async (m) => ({
-        mappe: m, typ: z.typen.get(m.typId), dokumente: dokJe.get(m.id) ?? [],
-        inhalt: async (d: Dokument) => { const s = await this.dateien.lies(d.sha256); return Buffer.isBuffer(s) ? s : Buffer.concat(await s.toArray() as Buffer[]); },
-      }))), quelle, x.uebersicht === true ? { spalten, typen } : null);
+      const b = await mappenPdf(titel, await Promise.all(mappen.map(async (m) => {
+        const docs = dokJe.get(m.id) ?? [];
+        const mitStempel = plaene.has(m.id);
+        // Gestempelte Bilder kommen als PDF zurück und werden darum wie PDFs eingebunden.
+        return {
+          mappe: m, typ: z.typen.get(m.typId),
+          dokumente: mitStempel ? docs.map((d) => (kannStempeln(d.mime) ? { ...d, mime: 'application/pdf' } : d)) : docs,
+          inhalt: async (d: Dokument) => {
+            if (!mitStempel) return this.liesGanz(d.sha256);
+            const original = docs.find((y) => y.id === d.id)!;
+            return (await ausgabe(m, original, false)).inhalt;
+          },
+        };
+      })), quelle, x.uebersicht === true ? { spalten, typen } : null);
+      await historie();
       return { name: `${datei}.pdf`, mime: 'application/pdf', inhalt: b, groesse: b.length, mappen: mappen.length, ausgelassen };
     }
     // ZIP: Tabelle als Excel und CSV, je Mappe ein Ordner mit ihren Dokumenten.
@@ -2508,11 +2579,17 @@ export class Dienst {
     const ordner = eindeutig(mappen.map((m) => sichererName(m.titel || 'Ohne Titel')));
     for (const [i, m] of mappen.entries()) {
       const docs = dokJe.get(m.id) ?? [];
-      const namen = eindeutig(docs.map((d) => sichererName(d.name, 120)));
-      docs.forEach((d, j) => eintraege.push({ name: `${ordner[i]}/${namen[j]}`, groesse: d.groesse, inhalt: () => this.dateien.lies(d.sha256) }));
+      // Gestempelte Kopien entstehen vorab: das ZIP braucht die Größen im Voraus.
+      const aus = plaene.has(m.id) ? await Promise.all(docs.map((d) => ausgabe(m, d, false))) : null;
+      const namen = eindeutig(docs.map((d, j) => sichererName(aus?.[j].name ?? d.name, 120)));
+      docs.forEach((d, j) => {
+        const a = aus?.[j];
+        eintraege.push(a ? { name: `${ordner[i]}/${namen[j]}`, groesse: a.inhalt.length, inhalt: async () => a.inhalt } : { name: `${ordner[i]}/${namen[j]}`, groesse: d.groesse, inhalt: () => this.dateien.lies(d.sha256) });
+      });
     }
     const groesse = zipGroesse(eintraege);
     if (groesse > ZIP_MAX) throw new Fachfehler(422, 'Der Export wäre größer als 4 GB. Bitte weniger Mappen auswählen.');
+    await historie();
     return { name: `${datei}.zip`, mime: 'application/zip', inhalt: zipStrom(eintraege), groesse, mappen: mappen.length, ausgelassen };
   }
 
@@ -3465,6 +3542,124 @@ export class Dienst {
     const dokument = await this.repo.holeDokument(id);
     if (!dokument) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
     return { dokument, inhalt: await this.dateien.lies(dokument.sha256) };
+  }
+
+  /* ---------- Stempel beim Weitergeben (#394) ---------- */
+
+  /** Vorlagen und Einstellung je Mappentyp – beides in den Einstellungen (Schlüssel „stempel“), ohne Migration. */
+  private async stempelDaten(): Promise<{ vorlagen: StempelVorlage[]; typen: Record<string, StempelTyp> }> {
+    const roh = (await this.einstellungen?.lies('stempel')) as { vorlagen?: unknown; typen?: unknown } | null;
+    const typen: Record<string, StempelTyp> = {};
+    if (roh?.typen && typeof roh.typen === 'object') for (const [k, v] of Object.entries(roh.typen)) { const t = liesStempelTyp(v); if (t) typen[k] = t; }
+    return { vorlagen: liesVorlagen(roh?.vorlagen), typen };
+  }
+  private async schreibeStempelDaten(d: { vorlagen: StempelVorlage[]; typen: Record<string, StempelTyp> }) {
+    if (!this.einstellungen) throw new Fachfehler(409, 'Einstellungen lassen sich hier nicht speichern.');
+    await this.einstellungen.schreibe('stempel', d);
+  }
+
+  /** Vorlagen für alle Angemeldeten (zum Auswählen beim Weitergeben). */
+  async stempelVorlagen(): Promise<StempelVorlage[]> { return (await this.stempelDaten()).vorlagen; }
+
+  /** Vorlage anlegen (`id` null) oder ändern (Werkbank). */
+  async speichereStempelVorlage(id: string | null, eingabe: unknown, von: string): Promise<StempelVorlage[]> {
+    const d = await this.stempelDaten();
+    const alt = id ? d.vorlagen.find((v) => v.id === id) : undefined;
+    if (id && !alt) throw new Fachfehler(404, 'Diese Stempel-Vorlage gibt es nicht (mehr).');
+    if (!id && d.vorlagen.length >= STEMPEL_VORLAGEN_MAX) throw new Fachfehler(422, `Höchstens ${STEMPEL_VORLAGEN_MAX} Stempel-Vorlagen.`);
+    const o = (eingabe ?? {}) as Record<string, unknown>;
+    const name = String(o.name ?? alt?.name ?? '').replace(/[\r\n\t]+/g, ' ').trim().slice(0, STEMPEL_NAME_MAX);
+    const v: StempelVorlage = { id: alt?.id ?? randomUUID(), name, ...stempelAus(o, alt) };
+    const fehler = pruefeVorlage(v, d.vorlagen.filter((x) => x.id !== v.id).map((x) => x.name));
+    if (Object.keys(fehler).length) throw new Fachfehler(422, Object.values(fehler).join(' '), { felder: fehler });
+    d.vorlagen = alt ? d.vorlagen.map((x) => (x.id === v.id ? v : x)) : [...d.vorlagen, v];
+    await this.schreibeStempelDaten(d);
+    protokoll.modul('werkbank').info(alt ? 'Stempel-Vorlage geändert' : 'Stempel-Vorlage angelegt', { name: v.name, text: v.text, von });
+    return d.vorlagen;
+  }
+
+  /** Vorlage löschen – nicht, solange ein Mappentyp sie nutzt. */
+  async loescheStempelVorlage(id: string, von: string): Promise<StempelVorlage[]> {
+    const d = await this.stempelDaten();
+    const v = d.vorlagen.find((x) => x.id === id);
+    if (!v) throw new Fachfehler(404, 'Diese Stempel-Vorlage gibt es nicht (mehr).');
+    const typen = await this.repo.listeTypen();
+    const nutzer = Object.entries(d.typen).filter(([t, s]) => s.vorlage === id && typen.some((x) => x.id === t)).map(([t]) => typen.find((x) => x.id === t)!.name);
+    if (nutzer.length) throw new Fachfehler(409, `Die Vorlage „${v.name}“ wird noch von ${nutzer.length === 1 ? 'dem Mappentyp' : 'den Mappentypen'} ${nutzer.map((n) => `„${n}“`).join(', ')} verwendet.`);
+    d.vorlagen = d.vorlagen.filter((x) => x.id !== id);
+    await this.schreibeStempelDaten(d);
+    protokoll.modul('werkbank').info('Stempel-Vorlage gelöscht', { name: v.name, von });
+    return d.vorlagen;
+  }
+
+  /** Stempel-Einstellung eines Mappentyps prüfen (vor dem Speichern des Typs). */
+  private async pruefeStempelTyp(v: unknown): Promise<StempelTyp | null> {
+    if (v && typeof v === 'object' && typeof (v as { modus?: unknown }).modus === 'string' && !((v as { modus: string }).modus in STEMPEL_MODI)) {
+      throw new Fachfehler(422, 'Stempel beim Weitergeben: unbekannte Einstellung.', { allgemein: ['Stempel beim Weitergeben: unbekannte Einstellung.'], felder: {}, orte: ['stempel'] });
+    }
+    const t = liesStempelTyp(v);
+    if (t?.vorlage && !(await this.stempelDaten()).vorlagen.some((x) => x.id === t.vorlage)) {
+      throw new Fachfehler(422, 'Stempel beim Weitergeben: Diese Vorlage gibt es nicht (mehr).', { allgemein: ['Stempel beim Weitergeben: Diese Vorlage gibt es nicht (mehr).'], felder: {}, orte: ['stempel'] });
+    }
+    return t;
+  }
+  private async setzeStempelTyp(typId: string, t: StempelTyp | null) {
+    if (!this.einstellungen) return;
+    const d = await this.stempelDaten();
+    const vorher = d.typen[typId] ?? null;
+    if (JSON.stringify(vorher) === JSON.stringify(t)) return;
+    if (t) d.typen[typId] = t; else delete d.typen[typId];
+    await this.schreibeStempelDaten(d);
+    protokoll.modul('werkbank').info('Stempel beim Weitergeben eingestellt', { typ: typId, modus: t?.modus ?? 'aus', vorlage: t?.vorlage ?? null });
+  }
+  /** Mappentypen mit ihrer Stempel-Einstellung (für die Oberfläche). */
+  private async mitStempel<T extends Mappentyp>(typen: T[]): Promise<T[]> {
+    const { typen: s } = await this.stempelDaten();
+    return typen.map((t) => ({ ...t, stempel: s[t.id] ?? null }));
+  }
+
+  /** Welcher Stempel für eine Mappe dieses Typs gilt (Wunsch, Pflicht); Fehler als 422. */
+  private async stempelPlan(typId: string, wunsch: StempelWunsch | null, empfaengerErsatz = '', daten?: Awaited<ReturnType<Dienst['stempelDaten']>>): Promise<GeltenderStempel | null> {
+    const d = daten ?? await this.stempelDaten();
+    try { return geltenderStempel(wunsch, d.typen[typId], d.vorlagen, empfaengerErsatz); } catch (x) {
+      if (x instanceof StempelFehler) throw new Fachfehler(422, x.message, { stempel: true, pflicht: d.typen[typId]?.modus === 'pflicht' });
+      throw x;
+    }
+  }
+
+  private async liesGanz(sha256: string): Promise<Buffer> {
+    const x = await this.dateien.lies(sha256);
+    return Buffer.isBuffer(x) ? x : Buffer.concat(await x.toArray() as Buffer[]);
+  }
+
+  /** Historie (#394): „weitergegeben mit Stempel ‚…‘ an …“. */
+  private async notiereWeitergabe(mappeId: string, von: string | null, wie: string, plan: GeltenderStempel, ausgaben: Ausgabe[]) {
+    const gestempelt = ausgaben.filter((a) => !a.unveraendert);
+    if (!gestempelt.length) return;
+    const text = gestempelt.find((a) => a.stempeltext)?.stempeltext ?? null;
+    const was = text ? `mit Stempel „${text}“` : 'mit Seitenzahlen';
+    await this.notiere(mappeId, von, 'weitergegeben', {
+      text: `${was}${plan.empfaenger ? ` an ${plan.empfaenger}` : ''} (${wie}: ${gestempelt.map((a) => a.name).join(', ')})`,
+      stempel: text, an: plan.empfaenger || null, wie, vorlage: plan.vorlage, pflicht: plan.pflicht, dokumente: gestempelt.map((a) => a.name),
+    });
+  }
+
+  /**
+   * Ein Dokument oder eine ältere Version herunterladen (#394): mit Stempel, wenn gewünscht (`stempel`,
+   * aus Anfragekörper oder Abfrageparametern) oder vom Mappentyp verlangt. Ohne Stempel unverändert als Strom.
+   */
+  async dokumentFuerAusgabe(id: string, o: { version?: number; stempel?: unknown; ich: { id: string | null; name: string } }) {
+    const dokument = await this.repo.holeDokument(id);
+    if (!dokument) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    const datei = o.version != null ? (await this.versionInhalt(id, o.version)).version : dokument;
+    const m = await this.repo.holeMappe(dokument.mappeId);
+    const plan = m ? await this.stempelPlan(m.typId, wunschAus(o.stempel)) : null;
+    if (!plan) return { name: datei.name, mime: datei.mime, anzeigbar: datei.anzeigbar, groesse: datei.groesse, inhalt: await this.dateien.lies(datei.sha256) as Buffer | Readable, gestempelt: false };
+    const a = await fuerAusgabe({ name: datei.name, mime: datei.mime, inhalt: await this.liesGanz(datei.sha256) }, { stempel: plan },
+      { benutzer: o.ich.name, mappe: m!.titel || 'Ohne Titel', archivnummer: dokument.archivnummer }, true);
+    await this.notiereWeitergabe(m!.id, o.ich.id, o.version != null ? `heruntergeladen, Version ${o.version}` : 'heruntergeladen', plan, [a]);
+    protokoll.modul('dokumente').info('Dokument mit Stempel heruntergeladen', { id, mappe: m!.id, pflicht: plan.pflicht });
+    return { name: a.name, mime: a.mime, anzeigbar: true, groesse: a.inhalt.length, inhalt: a.inhalt as Buffer | Readable, gestempelt: true };
   }
 
   async loescheDokument(id: string, benutzerId: string | null = null) {

@@ -10,7 +10,7 @@ Wie Benutzer mit den Mappen arbeiten, beschreibt das [Benutzerhandbuch](https://
 
 ## Aufbau des Editors
 
-Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: **Grunddaten → Felder → Titel → Trefferlisten → Register → Archivmodus → Berechtigungen → Testlauf**.
+Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: **Grunddaten → Felder → Titel → Trefferlisten → Register → Archivmodus → Stempel beim Weitergeben → Berechtigungen → Testlauf**.
 
 - Jeder Bereich lässt sich mit einem Klick auf seine Überschrift **ein- und ausklappen**. Eingeklappt zeigt er das Wichtigste in einer Zeile, z. B. „8 Felder, 2 Pflicht, 1 mit Erinnerung“, die Titel-Vorlage mit einem Beispiel oder „Standard: R · 3 Regeln“.
 - Ein **neuer** Mappentyp ist ganz aufgeklappt, ein **bestehender** startet eingeklappt. Was du auf- oder zuklappst, merkt sich dein Gerät je Mappentyp.
@@ -242,6 +242,10 @@ Jedes DMS hat seit 0.74 den Mappentyp **Ablageort** (Kennung `ablageort`). Damit
 ## Archivmodus
 
 Zwischen Registern und Berechtigungen schaltest du den **Archivmodus** ein: Mappen und Dokumente dieses Mappentyps lassen sich dann bis zum Ende einer Aufbewahrungsfrist nicht löschen, und Dokumente ändern sich nur noch als neue Version. Frist, Stichtag und was währenddessen gilt, stehen unter [Archivmodus und Aufbewahrung](archiv.md).
+
+## Stempel beim Weitergeben
+
+Nach dem Archivmodus stellst du ein, ob beim Herunterladen, Exportieren und Versenden von Dokumenten dieses Mappentyps ein Stempel **vorgeschlagen** wird oder **Pflicht** ist, und mit welcher Vorlage – z. B. für Ausweise „Kopie für {empfänger} – {datum}“. Alles Weitere steht unter [Stempel beim Weitergeben](stempel.md#stempel-je-mappentyp).
 
 ## Berechtigungen
 

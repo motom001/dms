@@ -18,6 +18,8 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { titelOder } from '../seiten';
 import { Hilfe } from '../Hilfe';
 import { FRISTEN, JAHRE_MAX, type Archiv } from '../../../shared/src/archiv';
+import { STEMPEL_MODI, type StempelModus, type StempelTyp } from '../../../shared/src/stempel';
+import { useStempelVorlagen } from '../ablage/Stempel';
 import { Bereich, liesOffen, merkeOffen, TYP_BEREICHE, type Klappe, type TypBereich } from './Bereich';
 import { hinweis, rueckfrage } from '../rueckfrage';
 
@@ -43,6 +45,8 @@ interface Entwurf {
   berechtigungen: Regelwerk;
   /** Archivmodus (#212). */
   archiv: Archiv | null;
+  /** Stempel beim Weitergeben (#394): vorschlagen oder Pflicht. */
+  stempel: StempelTyp | null;
 }
 
 function neueId(): string {
@@ -57,12 +61,13 @@ function neueId(): string {
 const alsEntwurfRegister = ({ felder: _f, ...r }: Register): EntwurfRegister => ({ ...r, _uid: neueId() });
 
 function entwurfAus(t?: Mappentyp): Entwurf {
-  if (!t) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], berechtigungen: structuredClone(OFFENES_REGELWERK), archiv: null };
+  if (!t) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], berechtigungen: structuredClone(OFFENES_REGELWERK), archiv: null, stempel: null };
   const erstes = t.register.find((r) => r.art === 'felder')?.key ?? '';
   const e: Entwurf = {
     id: t.id, name: t.name, schluessel: t.schluessel ?? '', beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '',
     berechtigungen: structuredClone(regelwerkVon(t)),
     archiv: t.archiv ?? null,
+    stempel: t.stempel ?? null,
     register: t.register.map(alsEntwurfRegister),
     felder: t.felder.map((f) => ({
       ...f, _uid: neueId(),
@@ -365,6 +370,11 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
       <Bereich id="archiv" titel="Archivmodus" hilfe={<Hilfe ort="mappentyp.archiv" />} klappe={klappe('archiv')}
         kurz={e.archiv ? <>an · {e.archiv.jahre} Jahre ab {e.archiv.stichtag ? e.felder.find((f) => f.key === e.archiv!.stichtag)?.label ?? e.archiv.stichtag : 'Anlagedatum'}</> : 'aus'}>
         <ArchivEinstellung archiv={e.archiv} setze={(archiv) => setE({ ...e, archiv })} datumsfelder={e.felder.filter((f) => f.typ === 'datum' && f.key).map((f) => ({ key: f.key, label: f.label || f.key }))} typId={gespeichert?.id} />
+      </Bereich>
+
+      <Bereich id="stempel" titel="Stempel beim Weitergeben" hilfe={<Hilfe ort="mappentyp.stempel" />} klappe={klappe('stempel')}
+        kurz={e.stempel ? STEMPEL_MODI[e.stempel.modus] : 'aus'}>
+        <StempelEinstellung stempel={e.stempel} setze={(stempel) => setE({ ...e, stempel })} />
       </Bereich>
 
       <RegelwerkAbschnitt rw={e.berechtigungen} setRw={(f) => setE((x) => ({ ...x, berechtigungen: f(x.berechtigungen) }))} neu={neu}
@@ -947,6 +957,32 @@ function ArchivEinstellung({ archiv, setze, datumsfelder, typId }: { archiv: Arc
         </div>
         {vorschau && <p className="hinweis info">{vorschau.mappen === 1 ? '1 Mappe ist' : `${vorschau.mappen} Mappen sind`} betroffen{vorschau.darfWeg ? `, davon ${vorschau.darfWeg === 1 ? 'wäre 1' : `wären ${vorschau.darfWeg}`} schon „darf weg“` : ''}.</p>}
       </>}
+    </div>
+  );
+}
+
+/** Stempel beim Weitergeben (#394): je Mappentyp aus, als Vorschlag oder als Pflicht – mit Vorlage. */
+function StempelEinstellung({ stempel, setze }: { stempel: StempelTyp | null; setze: (s: StempelTyp | null) => void }) {
+  const vorlagen = useStempelVorlagen();
+  const modus: StempelModus = stempel?.modus ?? 'aus';
+  return (
+    <div className="raster">
+      <label className="eigenschaft"><span>Beim Herunterladen, Exportieren und Versenden</span>
+        <select id="typ-stempel-modus" value={modus} onChange={(ev) => {
+          const m = ev.target.value as StempelModus;
+          setze(m === 'aus' ? null : { modus: m, vorlage: stempel?.vorlage ?? vorlagen?.[0]?.id ?? null });
+        }}>
+          {Object.entries(STEMPEL_MODI).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select></label>
+      {stempel && <label className="eigenschaft"><span>Vorlage <small><Link to="/werkbank/stempel" className="verweis">Vorlagen bearbeiten</Link></small></span>
+        <select id="typ-stempel-vorlage" value={stempel.vorlage ?? ''} onChange={(ev) => setze({ ...stempel, vorlage: ev.target.value || null })}>
+          {!vorlagen?.some((v) => v.id === stempel.vorlage) && <option value={stempel.vorlage ?? ''}>{stempel.vorlage ? 'unbekannte Vorlage' : '– Standard: „Kopie – {datum}“ –'}</option>}
+          {(vorlagen ?? []).map((v) => <option key={v.id} value={v.id}>{v.name} – {v.text}</option>)}
+        </select></label>}
+      <p className="leise klein" style={{ gridColumn: "1 / -1" }}>{modus === 'pflicht'
+        ? 'Pflicht: Dokumente dieses Mappentyps verlassen das DMS nur gestempelt – beim Herunterladen, im Export (PDF, ZIP), per E-Mail und über die API. Dokumente, die keine PDFs oder Bilder sind, lassen sich dann nicht weitergeben.'
+        : modus === 'vorschlag' ? 'Vorschlag: Beim Weitergeben ist „Mit Stempel“ schon angehakt, mit dieser Vorlage; man kann ihn abwählen.'
+        : 'Kein Stempel vorgegeben; Benutzer können beim Weitergeben trotzdem einen wählen.'}</p>
     </div>
   );
 }

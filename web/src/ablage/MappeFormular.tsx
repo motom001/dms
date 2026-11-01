@@ -320,7 +320,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
         entferneMehrere={(ids) => setEntfernt((x) => [...x, ...ids.filter((id) => !x.includes(id))])}
         vergiss={(uid) => setNeueDateien((x) => x.filter((n) => n.uid !== uid))} nurLesen={nurLesen}
         setzeNeue={(uid, patch) => setNeueDateien((x) => x.map((n) => (n.uid === uid ? { ...n, ...patch } : n)))}
-        neuLaden={mappe ? async () => { await neuLaden?.(); await d.neuLaden(); } : undefined} post={typ.system === 'post'} />
+        neuLaden={mappe ? async () => { await neuLaden?.(); await d.neuLaden(); } : undefined} post={typ.system === 'post'} typ={typ} mappeTitel={mappe?.titel ?? ''} />
     );
   } else if (reg.art === 'protokoll') {
     inhalt = mappe ? <Historie mappeId={mappe.id} stand={mappe.geaendert} /> : <p className="leise">Die Historie beginnt mit dem ersten Speichern.</p>;

@@ -1,4 +1,4 @@
-# E-Mail, PDF und Link
+# E-Mail, PDF, Link und Stempel
 
 Rechts über den Registern einer Mappe steht das Menü **Aktionen**.
 
@@ -39,6 +39,48 @@ Darunter steht wieder, wie groß die Anhänge zusammen sind (Warnung ab 20 MB, h
 Danach gibt es **eine** [Post](post.md#versendete-e-mails) unter **Post → Versendet**. Sie verweist unter „Zugeordnet zu“ auf alle versendeten Mappen und enthält, was verschickt wurde – die Dokumente und die PDFs mit den Angaben. In der [Historie](zusammenarbeit.md#historie) **jeder** versendeten Mappe steht die E-Mail mit Link.
 
 Das Recht ist dasselbe wie bei einer einzelnen Mappe: Du musst **jede** Mappe in einer Ansicht mit Exportrecht sehen. Fehlt es bei einer, verschickt das DMS gar nichts und sagt, bei wie vielen Mappen es fehlt – eine E-Mail mit stillen Lücken gibt es nicht. Den Knopf **Per E-Mail …** gibt es deshalb nur in Ansichten, aus denen du exportieren darfst.
+
+## Weitergeben mit Stempel
+
+Eine Ausweiskopie für den Vermieter, Unterlagen für die Hausverwaltung, ein Angebot als „Entwurf“: Beim Weitergeben kann das DMS einen **Stempel** oder ein **Wasserzeichen** auf die Kopie setzen – etwa „Kopie für Hausverwaltung Müller – 01.11.2026“. So ist klar, für wen und wofür die Kopie bestimmt ist, und eine missbräuchliche Weitergabe wird erschwert.
+
+**Das gespeicherte Original bleibt immer unverändert.** Der Stempel entsteht nur in der Kopie, die das DMS hinausgibt.
+
+Den Stempel gibt es an drei Stellen:
+
+- **Herunterladen:** In der Liste der Dokumente neben **Herunterladen** der Knopf **Mit Stempel …**.
+- **Per E-Mail versenden** (eine oder mehrere Mappen): unter den Anhängen das Kästchen **Mit Stempel**.
+- **Exportieren** als ZIP oder PDF: im Exportdialog das Kästchen **Mit Stempel**.
+
+![Herunterladen mit Stempel](bilder/stempel-herunterladen.png)
+
+So gehst du vor:
+
+1. Wähle eine **Vorlage**, z. B. „Kopie für …“, „Nur zur Vorlage bei …“, „Entwurf“ oder „Vertraulich“. Die Vorlagen legt der Administrator fest.
+2. Trage den **Empfänger** ein – er steht dort, wo im Text `{empfänger}` steht. Beim Versenden per E-Mail sind ohne Angabe die Adressen unter **An** der Empfänger.
+3. Bei Bedarf änderst du den **Text**, die **Lage** (diagonal über die Seite als Wasserzeichen, Kopfzeile, Fußzeile oder Ecke oben rechts), die **Deckkraft** und ob der Stempel auf **alle Seiten** oder **nur die erste** kommt.
+4. Auf Wunsch kommen **Seitenzahlen** („Seite 3 von 12“) und die **Archivnummer** des Dokuments als Fußzeile dazu – auch ohne Stempeltext.
+5. **Herunterladen** (bzw. **Senden**, **Exportieren**).
+
+Platzhalter im Text:
+
+| Platzhalter | wird zu |
+| --- | --- |
+| `{datum}` | heutiges Datum, z. B. 01.11.2026 |
+| `{empfänger}` | der Empfänger, den du angibst |
+| `{benutzer}` | dein Name |
+| `{mappe}` | Titel der Mappe |
+
+Gut zu wissen:
+
+- Stempeln lassen sich **PDFs** und **Bilder** (JPEG, PNG). Ein Bild wird dabei zu einem PDF mit einer Seite („Ausweis.jpg“ → „Ausweis.pdf“). Andere Dateien (z. B. Word) gehen beim Versenden und im Export ungestempelt mit; einzeln herunterladen mit Stempel geht bei ihnen nicht.
+- Verschlüsselte PDFs lassen sich nicht stempeln.
+- Die [Historie](zusammenarbeit.md#historie) der Mappe vermerkt jede Weitergabe mit Stempel, z. B. „weitergegeben: mit Stempel „Kopie für Hausverwaltung Müller – 01.11.2026“ an Hausverwaltung Müller (heruntergeladen: Ausweis.pdf)“. So lässt sich später nachweisen, wer welche Kopie bekommen hat. Bei E-Mails steht der Stempel im Eintrag der E-Mail; in der [Post](post.md#versendete-e-mails) liegt die gestempelte Kopie.
+- **Vorschlag und Pflicht:** Für manche Mappentypen schlägt der Administrator einen Stempel vor – dann ist **Mit Stempel** schon angehakt. Ist der Stempel **Pflicht**, lässt er sich nicht abwählen: Dokumente dieses Mappentyps gibt es dann nur noch über **Herunterladen mit Stempel**; Herunterladen mehrerer Dokumente auf einmal ist dort ausgeschaltet.
+- Das **Anzeigen** im DMS zeigt immer das Original.
+
+!!! note "Wie sicher ist der Stempel?"
+    Der Stempel wird als Inhalt der Seite gezeichnet, nicht als Kommentar oder Anmerkung, die man mit einem Klick löscht. Er sitzt im selben Inhalt wie der übrige Text der Seite. Wer sich mit PDF-Werkzeugen auskennt, kann ihn trotzdem entfernen – ein Stempel ist ein deutlicher Hinweis und erschwert Missbrauch, aber kein Kopierschutz. Schicke deshalb nur, was der Empfänger wirklich braucht.
 
 ## Als PDF exportieren
 

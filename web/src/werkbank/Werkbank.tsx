@@ -1,6 +1,7 @@
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
 import { NummernkreisEditor, NummernkreiseListe, useNummernkreise } from './Nummernkreise';
+import { StempelPanel, useStempelVorlagenWerkbank } from './Stempel';
 import { DarfWegPanel, useDarfWeg } from './Archiv';
 import { PaketeListe, PaketLink, PaketePanel, usePakete } from './Pakete';
 import { useVollexport, VollexportPanel } from './Vollexport';
@@ -63,6 +64,7 @@ import { useBeiWiederErreichbar } from '../erreichbar';
  * /werkbank/anbindung            Datenbank-Anbindung (#119)
  * /werkbank/speicherplatz         Speicherplatz je Ordner, Warnschwelle und Grenze (#115, #116)
  * /werkbank/webdav                WebDAV-Laufwerk an/aus, Stand, letzte Zugriffe (#346, rechts seit #366)
+ * /werkbank/stempel                Vorlagen für Stempel beim Weitergeben (#394), zweiteilig
  *
  * Die Mitte gibt es nur für große Sammlungen, die man bearbeitet (#366, `hatMitte`); alle anderen
  * Bereiche sind zweiteilig: links die Bereiche, rechts die ganze Seite.
@@ -92,6 +94,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const webdav = useWebdav(bereich === 'webdav');
   const postfaecher = usePostfaecher(bereich === 'postfaecher');
   const nummernkreise = useNummernkreise(bereich === 'nummernkreise');
+  const stempel = useStempelVorlagenWerkbank(bereich === 'stempel');
   const darfWeg = useDarfWeg(bereich === 'darfweg');
   const vollexport = useVollexport(bereich === 'vollexport');
   const pakete = usePakete(bereich === 'pakete' || bereich === 'typen');
@@ -185,6 +188,8 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'nummernkreise') {
     liste = <NummernkreiseListe z={nummernkreise} offen={id} />;
     rechts = id ? <NummernkreisEditor key={`${id}-${nummernkreise.liste ? 1 : 0}`} z={nummernkreise} schluessel={id} /> : <div className="platzhalter"><p>Wähle links einen Nummernkreis oder lege mit „+ Neu“ einen an.</p></div>;
+  } else if (bereich === 'stempel') {
+    rechts = <StempelPanel z={stempel} />;
   } else if (bereich === 'postfaecher') {
     liste = <PostfaecherListe z={postfaecher} offen={id} />;
     rechts = id ? <PostfachEditor key={`${id}-${postfaecher.liste ? 1 : 0}`} z={postfaecher} id={id} /> : <div className="platzhalter"><p>Wähle links ein Postfach oder lege mit „+ Neu“ eines an.</p></div>;
@@ -215,6 +220,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           { pfad: 'typen', name: 'Mappentypen', gruppe: 'ablage', zahl: d.typen.length },
           { pfad: 'sichten', name: 'Ansichten', gruppe: 'ablage', zahl: d.sichten.length || undefined },
           { pfad: 'nummernkreise', name: 'Nummernkreise', gruppe: 'ablage', zahl: zahl(nummernkreise.liste?.length, uz?.nummernkreise) },
+          { pfad: 'stempel', name: 'Stempel', gruppe: 'ablage', zahl: stempel.liste?.length || undefined },
           { pfad: 'pakete', name: 'Pakete', gruppe: 'ablage', zahl: zahl(pakete.stand?.installiert.length, uz?.pakete) },
           ...(d.typen.some((t) => t.archiv) ? [{ pfad: 'darfweg', name: 'Darf weg', gruppe: 'ablage' as const, zahl: zahl(darfWeg.liste?.length, uz?.darfWeg) }] : []),
           { pfad: 'benutzer', name: 'Benutzer', gruppe: 'benutzer', zahl: zahl(benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined, uz?.benutzer) },

@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { speichereDatei } from '../api';
+import { useDaten } from '../daten';
+import { alsWunsch, stempelFehler, StempelFelder, stempelStart, useStempelVorlagen, type StempelWahl } from './Stempel';
 import type { Sortierung } from '../../../shared/src/model';
 
 /**
@@ -25,6 +27,14 @@ export function ExportDialog({ sicht, link, ids, anzahl, gesamt, suche, volltext
   const [laeuft, setLaeuft] = useState(false);
   const [fehler, setFehler] = useState<string>();
   const n = umfang === 'auswahl' ? anzahl : gesamt;
+  // Stempel (#394): nur für Dokumente (ZIP, PDF); Mappentypen mit Pflicht stempeln ohnehin.
+  const d = useDaten();
+  const vorlagen = useStempelVorlagen();
+  const [stempel, setStempel] = useState<StempelWahl | null>(null);
+  useEffect(() => { if (vorlagen && !stempel) setStempel(stempelStart(vorlagen)); }, [vorlagen, stempel]);
+  const mitDokumenten = format === 'zip' || format === 'pdf';
+  const pflichtTypen = d.typen.filter((t) => t.stempel?.modus === 'pflicht').map((t) => t.name);
+  const stempelProblem = mitDokumenten ? stempelFehler(stempel) : null;
   async function los() {
     setLaeuft(true); setFehler(undefined);
     try {
@@ -33,6 +43,7 @@ export function ExportDialog({ sicht, link, ids, anzahl, gesamt, suche, volltext
         ids: umfang === 'auswahl' ? ids : null,
         suche: suche || undefined, volltext: suche ? volltext : undefined, notizen: suche ? notizen : undefined,
         sortierung: sortierung?.spalte, absteigend: sortierung?.absteigend,
+        ...(mitDokumenten ? { stempel: alsWunsch(stempel) } : {}),
       }, `Export.${format}`);
       const m = n - r.ausgelassen;
       const aus = r.ausgelassen ? ` ${r.ausgelassen.toLocaleString('de-DE')} ${r.ausgelassen === 1 ? 'Mappe' : 'Mappen'} ohne Exportrecht ausgelassen.` : '';
@@ -61,10 +72,12 @@ export function ExportDialog({ sicht, link, ids, anzahl, gesamt, suche, volltext
             <label className="haken"><input type="radio" name="spalten" checked={spalten === 'alle'} onChange={() => setSpalten('alle')} /><span>alle Felder</span></label>
           </fieldset>
         : <label className="haken"><input type="checkbox" checked={uebersicht} onChange={(e) => setUebersicht(e.target.checked)} /><span>Vorne eine Übersicht als Tabelle (Spalten der Liste)</span></label>}
+      {mitDokumenten && stempel && vorlagen && <StempelFelder wahl={stempel} setze={setStempel} vorlagen={vorlagen} id="export-stempel" />}
+      {mitDokumenten && pflichtTypen.length > 0 && <p className="leise klein">Dokumente aus {pflichtTypen.map((x) => `„${x}“`).join(', ')} bekommen immer einen Stempel (Pflicht des Mappentyps).</p>}
       <p className="leise klein">Passwörter werden nie exportiert. Der Export steht im Protokoll.</p>
       {fehler && <p className="fehlertext klein">{fehler}</p>}
       <div className="knoepfe">
-        <button type="button" className="knopf primaer klein" disabled={laeuft || !n} onClick={() => void los()}>{laeuft ? 'Exportiere …' : `${n.toLocaleString('de-DE')} ${n === 1 ? 'Mappe' : 'Mappen'} exportieren`}</button>
+        <button type="button" className="knopf primaer klein" disabled={laeuft || !n || !!stempelProblem} title={stempelProblem ?? undefined} onClick={() => void los()}>{laeuft ? 'Exportiere …' : `${n.toLocaleString('de-DE')} ${n === 1 ? 'Mappe' : 'Mappen'} exportieren`}</button>
         <button type="button" className="textknopf klein" onClick={() => fertig()}>Abbrechen</button>
       </div>
     </div>
