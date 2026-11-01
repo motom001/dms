@@ -10,12 +10,20 @@ import { umschluesseleTief } from './tresor';
 import { datumIn, ziehe, type Nummernkreis } from '../../shared/src/nummernkreis';
 import type { Quelle } from '../../shared/src/model';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
-import { istUuid, type DokumentImPapierkorb, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
+import { istUuid, type AuskunftLinkIntern, type DokumentImPapierkorb, type PapierkorbEintrag, type Repo, type Verweis } from './repo';
 
 type Sql = postgres.Sql;
 type Zeile = Record<string, unknown>;
 
 const iso = (v: unknown) => (v instanceof Date ? v.toISOString() : String(v));
+const isoOder = (v: unknown) => (v === null || v === undefined ? null : iso(v));
+/** Abruf-Link (#455) aus einer Zeile. */
+const alsLink = (r: Record<string, unknown>): AuskunftLinkIntern => ({
+  id: r.id as string, auskunftId: r.auskunft_id as string, mappeId: r.mappe_id as string, titel: (r.titel as string) ?? '',
+  schluessel: r.schluessel as string, code: r.code as string, codeArt: r.code_art as 'erzeugt' | 'eigen', empfaenger: (r.empfaenger as string | null) ?? null,
+  erstellt: iso(r.erstellt), erstelltVon: (r.erstellt_von as string | null) ?? null, ablauf: iso(r.ablauf), maxAbrufe: r.max_abrufe as number,
+  abrufe: r.abrufe as number, fehlversuche: r.fehlversuche as number, gesperrt: isoOder(r.gesperrt), widerrufen: isoOder(r.widerrufen), abgerufen: isoOder(r.abgerufen),
+});
 const alsTyp = (r: Zeile): Mappentyp => ({
   id: r.id as string,
   name: r.name as string,
@@ -924,6 +932,40 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
     },
     async alleFavoriten() {
       return (await sql`SELECT benutzer_id, mappe_id FROM favoriten WHERE haushalt_id = ${haushaltId} ORDER BY benutzer_id, mappe_id`).map((r) => ({ benutzerId: r.benutzer_id as string, mappeId: r.mappe_id as string }));
+    },
+    async legeAuskunftLinkAn(l) {
+      await sql`INSERT INTO auskunft_links (id, haushalt_id, auskunft_id, mappe_id, titel, schluessel, code, code_art, empfaenger, erstellt, erstellt_von, ablauf, max_abrufe)
+        VALUES (${l.id}, ${haushaltId}, ${l.auskunftId}, ${l.mappeId}, ${l.titel}, ${l.schluessel}, ${l.code}, ${l.codeArt}, ${l.empfaenger}, ${l.erstellt}, ${istUuid(l.erstelltVon ?? '') ? l.erstelltVon : null}, ${l.ablauf}, ${l.maxAbrufe})`;
+    },
+    async auskunftLinkPerSchluessel(hash) {
+      const [r] = await sql`SELECT * FROM auskunft_links WHERE haushalt_id = ${haushaltId} AND schluessel = ${hash}`;
+      return r ? alsLink(r) : undefined;
+    },
+    async auskunftLinks(f = {}) {
+      const r = await sql`SELECT * FROM auskunft_links WHERE haushalt_id = ${haushaltId}
+        ${f.mappeId ? sql`AND mappe_id = ${istUuid(f.mappeId) ? f.mappeId : null}::uuid` : sql``}
+        ${f.auskunftId ? sql`AND auskunft_id = ${istUuid(f.auskunftId) ? f.auskunftId : null}::uuid` : sql``}
+        ORDER BY erstellt DESC, id LIMIT ${f.max ?? 500}`;
+      return r.map(alsLink);
+    },
+    async auskunftLinkFehlversuch(id, max) {
+      if (!istUuid(id)) return undefined;
+      const [r] = await sql`UPDATE auskunft_links SET fehlversuche = fehlversuche + 1,
+          gesperrt = CASE WHEN gesperrt IS NULL AND fehlversuche + 1 >= ${max} THEN now() ELSE gesperrt END
+        WHERE haushalt_id = ${haushaltId} AND id = ${id} RETURNING fehlversuche, gesperrt`;
+      return r ? { fehlversuche: r.fehlversuche as number, gesperrt: r.gesperrt !== null } : undefined;
+    },
+    async auskunftLinkAbruf(id) {
+      if (!istUuid(id)) return null;
+      const [r] = await sql`UPDATE auskunft_links SET abrufe = abrufe + 1, abgerufen = now()
+        WHERE haushalt_id = ${haushaltId} AND id = ${id} AND abrufe < max_abrufe AND ablauf > now() AND gesperrt IS NULL AND widerrufen IS NULL
+        RETURNING abrufe`;
+      return r ? r.abrufe as number : null;
+    },
+    async widerrufeAuskunftLink(id) {
+      if (!istUuid(id)) return false;
+      const r = await sql`UPDATE auskunft_links SET widerrufen = now() WHERE haushalt_id = ${haushaltId} AND id = ${id} AND widerrufen IS NULL RETURNING id`;
+      return r.length > 0;
     },
     async favoritenVon(benutzerId, mappeIds) {
       const ids = mappeIds.filter(istUuid);

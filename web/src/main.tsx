@@ -7,18 +7,25 @@ import './styles.css';
 import { starteSammler } from './diagnose';
 import { starteErreichbarkeit } from './erreichbar';
 import { Rueckfragen } from './rueckfrage';
+import { Abrufseite } from './abruf';
 
-starteSammler();
-starteErreichbarkeit();
+const wurzel = createRoot(document.getElementById('root')!);
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <KontoProvider>
-      <DatenProvider>
-        <App />
-      </DatenProvider>
-    </KontoProvider>
-    {/* Rückfragen (#355) – außerhalb der Anmeldung, damit auch Einrichtung und Wiederherstellen sie haben. */}
-    <Rueckfragen />
-  </StrictMode>,
-);
+if (location.pathname === '/abruf') {
+  // Öffentliche Abrufseite einer Auskunft (#455): eigenständig – ohne Anmeldung, Kontostatus und Diagnose.
+  wurzel.render(<StrictMode><Abrufseite /></StrictMode>);
+} else {
+  starteSammler();
+  starteErreichbarkeit();
+  wurzel.render(
+    <StrictMode>
+      <KontoProvider>
+        <DatenProvider>
+          <App />
+        </DatenProvider>
+      </KontoProvider>
+      {/* Rückfragen (#355) – außerhalb der Anmeldung, damit auch Einrichtung und Wiederherstellen sie haben. */}
+      <Rueckfragen />
+    </StrictMode>,
+  );
+}

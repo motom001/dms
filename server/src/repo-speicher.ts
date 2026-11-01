@@ -10,7 +10,7 @@ import { spracheAusInfo } from '../../shared/src/textsprache';
 import { ausschnittAus } from './repo-pg';
 import { teilwoerter, woerterIn } from '../../shared/src/suche';
 import { inSicht, type Sicht, type SichtDaten, type Zaehlquelle } from '../../shared/src/sichten';
-import type { PapierkorbEintrag, Repo, Rueckverweis, SortierungIntern, Verweis } from './repo';
+import type { AuskunftLinkIntern, PapierkorbEintrag, Repo, Rueckverweis, SortierungIntern, Verweis } from './repo';
 
 /** Trefferlisten (#75) immer in beiden Formen: Liste der Trefferlisten und Spalten der Standardliste. */
 const listen = (d: MappentypDaten) => ({ trefferlisten: structuredClone(trefferlistenVon(d)), trefferliste: [...standardliste(d).spalten] });
@@ -20,6 +20,7 @@ export function speicherRepo(): Repo {
   const typen = new Map<string, Mappentyp>();
   const mappen = new Map<string, Mappe>();
   const kreise = new Map<string, Nummernkreis>();
+  const links = new Map<string, AuskunftLinkIntern>();
   const pakete = new Map<string, InstalliertesPaket>();
   const paketCode = new Map<string, Array<{ name: string; inhalt: Buffer }>>();
   const ereignisse = new Map<string, { id: string; paketId: string; art: string; daten: Record<string, unknown>; erstellt: string; faellig: number; versuche: number; zugestellt: string | null; fehler: string | null }>();
@@ -572,6 +573,25 @@ export function speicherRepo(): Repo {
       if (an) s.add(mappeId); else s.delete(mappeId);
       favoriten.set(benutzerId, s);
     },
+    async legeAuskunftLinkAn(l) { links.set(l.id, { ...kopie(l), erstellt: l.erstellt || jetzt(), abrufe: 0, fehlversuche: 0, gesperrt: null, widerrufen: null, abgerufen: null }); },
+    async auskunftLinkPerSchluessel(hash) { const l = [...links.values()].find((x) => x.schluessel === hash && mappen.has(x.mappeId)); return l ? kopie(l) : undefined; },
+    async auskunftLinks(f = {}) {
+      return [...links.values()].filter((l) => mappen.has(l.mappeId) && (!f.mappeId || l.mappeId === f.mappeId) && (!f.auskunftId || l.auskunftId === f.auskunftId))
+        .sort((a, b) => b.erstellt.localeCompare(a.erstellt)).slice(0, f.max ?? 500).map(kopie);
+    },
+    async auskunftLinkFehlversuch(id, max) {
+      const l = links.get(id); if (!l) return undefined;
+      l.fehlversuche++;
+      if (!l.gesperrt && l.fehlversuche >= max) l.gesperrt = jetzt();
+      return { fehlversuche: l.fehlversuche, gesperrt: !!l.gesperrt };
+    },
+    async auskunftLinkAbruf(id) {
+      const l = links.get(id);
+      if (!l || l.abrufe >= l.maxAbrufe || Date.parse(l.ablauf) <= Date.now() || l.gesperrt || l.widerrufen) return null;
+      l.abrufe++; l.abgerufen = jetzt();
+      return l.abrufe;
+    },
+    async widerrufeAuskunftLink(id) { const l = links.get(id); if (!l || l.widerrufen) return false; l.widerrufen = jetzt(); return true; },
     async alleFavoriten() { return [...favoriten].flatMap(([benutzerId, s]) => [...s].filter((m) => mappen.has(m)).map((mappeId) => ({ benutzerId, mappeId }))); },
     async favoritenVon(benutzerId, mappeIds) { return new Set(mappeIds.filter((id) => istFavorit(id, benutzerId) && mappen.has(id))); },
     async legeInPapierkorb(id, benutzerId) {

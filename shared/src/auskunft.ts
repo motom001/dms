@@ -164,6 +164,10 @@ export interface AuskunftStand {
   dokumente: number;
   verschluesselt: boolean;
   von: string;
+  /** Wer sie erstellt hat (Benutzer-Id, ab #455) – bekommt die Benachrichtigung über Abrufe. */
+  vonId?: string;
+  /** Ursprüngliches Ende (Erstellung + AUSKUNFT_TAGE); ein Abruf-Link verlängert `bis` bis zu seinem Ablauf (#455). */
+  bisOhneLink?: string;
 }
 
 /** Ein Dateiname ohne Sonderzeichen für die ZIP-Datei: Auskunft-<Titel>-<Datum>.zip */
@@ -171,3 +175,119 @@ export function auskunftDateiname(titel: string, datum: string): string {
   const t = titel.normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/ß/g, 'ss').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'Person';
   return `Auskunft-${t}-${datum.slice(0, 10)}`;
 }
+
+/* ---------- Zustellen (#455): per E-Mail oder Abruf-Link mit Abrufcode ---------- */
+
+/** Abruf-Link: Vorgaben und Grenzen. */
+export const LINK_TAGE_STANDARD = 30;
+export const LINK_TAGE_MAX = 90;
+export const LINK_ABRUFE_STANDARD = 3;
+export const LINK_ABRUFE_MAX = 10;
+/** Nach so vielen falschen Abrufcodes ist der Link gesperrt (zusätzlich zum Anmeldeschutz je IP). */
+export const LINK_FEHLVERSUCHE_MAX = 10;
+/** Erzeugter Abrufcode: 8 Zeichen aus 32 gut unterscheidbaren (40 Bit) – zusammen mit dem Link (256 Bit). */
+export const CODE_ZEICHEN = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export const CODE_LAENGE = 8;
+/** Selbst gewählter Code (z. B. Vertragsnummer): mindestens so viele Zeichen. */
+export const CODE_EIGEN_MIN = 6;
+/** Viele Mailserver nehmen höchstens 10–25 MB an. */
+export const EMAIL_WARNUNG_BYTES = 10 * 1024 * 1024;
+
+/** Abrufcode vergleichbar machen: Groß-/Kleinschreibung, Leerzeichen und Bindestriche egal. */
+export const normiereCode = (c: unknown) => (typeof c === 'string' ? c.normalize('NFKC').toUpperCase().replace(/[\s\-_.]/g, '').slice(0, 64) : '');
+/** Zur Anzeige in Vierergruppen: ABCD-EFGH. */
+export const zeigeCode = (c: string) => c.replace(/(.{4})(?=.)/g, '$1-');
+
+export type LinkStatus = 'aktiv' | 'abgelaufen' | 'verbraucht' | 'gesperrt' | 'widerrufen';
+export const LINK_STATUS: Record<LinkStatus, string> = {
+  aktiv: 'aktiv', abgelaufen: 'abgelaufen', verbraucht: 'alle Abrufe verbraucht', gesperrt: 'gesperrt nach Fehlversuchen', widerrufen: 'zurückgezogen',
+};
+
+/** Ein Abruf-Link, wie ihn die Werkbank sieht – ohne Schlüssel und Code (beide liegen nur als Hash vor). */
+export interface AuskunftLink {
+  id: string;
+  /** Die Auskunft (ZIP), für die er gilt. */
+  auskunftId: string;
+  mappeId: string;
+  titel: string;
+  /** An wen der Link per E-Mail ging (falls). */
+  empfaenger: string | null;
+  /** Code vom DMS erzeugt oder selbst gewählt (z. B. Vertragsnummer). */
+  codeArt: 'erzeugt' | 'eigen';
+  erstellt: string;
+  erstelltVon: string | null;
+  ablauf: string;
+  maxAbrufe: number;
+  abrufe: number;
+  fehlversuche: number;
+  gesperrt: string | null;
+  widerrufen: string | null;
+  /** Zuletzt erfolgreich abgerufen. */
+  abgerufen: string | null;
+}
+
+export function linkStatus(l: Pick<AuskunftLink, 'ablauf' | 'maxAbrufe' | 'abrufe' | 'gesperrt' | 'widerrufen'>, jetzt = new Date()): LinkStatus {
+  if (l.widerrufen) return 'widerrufen';
+  if (l.gesperrt) return 'gesperrt';
+  if (l.abrufe >= l.maxAbrufe) return 'verbraucht';
+  if (new Date(l.ablauf).getTime() <= jetzt.getTime()) return 'abgelaufen';
+  return 'aktiv';
+}
+
+/** Eingaben für einen neuen Abruf-Link prüfen. */
+export function liesLinkEingabe(v: unknown): { tage: number; abrufe: number; code: string | null; an: string; senden: boolean; fehler: string[] } {
+  const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
+  const fehler: string[] = [];
+  const zahl = (x: unknown, std: number) => (x === undefined || x === null || x === '' ? std : Math.round(Number(x)));
+  const tage = zahl(o.tage, LINK_TAGE_STANDARD);
+  const abrufe = zahl(o.abrufe, LINK_ABRUFE_STANDARD);
+  if (!Number.isInteger(tage) || tage < 1 || tage > LINK_TAGE_MAX) fehler.push(`Gültigkeit: 1 bis ${LINK_TAGE_MAX} Tage.`);
+  if (!Number.isInteger(abrufe) || abrufe < 1 || abrufe > LINK_ABRUFE_MAX) fehler.push(`Abrufe: 1 bis ${LINK_ABRUFE_MAX}.`);
+  const eigen = o.code === undefined || o.code === null || o.code === '' ? null : normiereCode(o.code);
+  if (eigen !== null && eigen.length < CODE_EIGEN_MIN) fehler.push(`Ein eigener Abrufcode braucht mindestens ${CODE_EIGEN_MIN} Zeichen (ohne Leerzeichen und Bindestriche).`);
+  const an = typeof o.an === 'string' ? o.an.trim().slice(0, 320) : '';
+  return { tage, abrufe, code: eigen, an, senden: o.senden === true, fehler };
+}
+
+/**
+ * Ist das DMS unter dieser Adresse wahrscheinlich aus dem Internet erreichbar? Nein bei localhost,
+ * privaten und lokalen Adressen (10.x, 192.168.x, 172.16–31.x, fe80::, fc/fd…, *.local, *.lan,
+ * *.home, *.internal, *.fritz.box) und Namen ohne Punkt. Nur ein Vorschlag für die Wahl des Weges.
+ */
+export function oeffentlichErreichbar(adresse: string): boolean {
+  let host: string;
+  try { host = new URL(adresse).hostname.toLowerCase().replace(/^\[|\]$/g, ''); } catch { return false; }
+  if (!host || host === 'localhost' || !host.includes('.') && !host.includes(':')) return false;
+  if (/\.(local|lan|home|internal|intranet|localdomain|fritz\.box|home\.arpa)$/.test(host) || host.endsWith('.localhost')) return false;
+  const v4 = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/.exec(host);
+  if (v4) {
+    const [a, b] = [Number(v4[1]), Number(v4[2])];
+    return !(a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127));
+  }
+  if (host.includes(':')) return !(host === '::1' || /^f[cd]/.test(host) || /^fe[89ab]/.test(host));
+  return true;
+}
+
+/** Texte der E-Mails an die Person – in Du-Form (Thomas, 01.11.2026). */
+export const auskunftMail = {
+  zip: (bis?: string) => ({
+    betreff: 'Deine Auskunft nach Art. 15 DSGVO',
+    nachricht: `Hallo,
+
+du hast eine Auskunft über die Daten angefordert, die wir zu dir gespeichert haben (Art. 15 DSGVO). Du findest sie im Anhang als ZIP-Datei.
+
+Die Datei ist mit einem Passwort geschützt (AES-256). Das Passwort bekommst du auf einem anderen Weg – zum Beispiel per Telefon, SMS oder Brief –, nicht per E-Mail. Öffnen lässt sie sich zum Beispiel mit 7-Zip (Windows), Keka (macOS) oder WinZip; das eingebaute Entpacken von Windows kann das nicht.${bis ? `\n\nBitte antworte bis ${bis}, falls etwas fehlt oder du Fragen hast.` : ''}
+`,
+  }),
+  link: (link: string, bis: string, abrufe: number, absender: string) => ({
+    betreff: 'Deine Auskunft nach Art. 15 DSGVO zum Abrufen',
+    nachricht: `Hallo,
+
+du hast eine Auskunft über die Daten angefordert, die wir zu dir gespeichert haben (Art. 15 DSGVO). Du kannst sie bis ${bis} hier abrufen${abrufe > 1 ? ` (höchstens ${abrufe}-mal)` : ' (einmal)'}:
+
+${link}
+
+Zum Abrufen brauchst du deinen Abrufcode. Den bekommst du auf einem anderen Weg – zum Beispiel per Brief, Telefon oder SMS –, nicht per E-Mail. Gib den Link bitte nicht weiter.
+${absender ? `\n${absender}\n` : ''}`,
+  }),
+};

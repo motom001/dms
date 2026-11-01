@@ -263,7 +263,7 @@ begriffe:
     code: eingang
   - begriff: Aufgabe
     bereich: ablage
-    beschreibung: Etwas, das ein Mensch an einer Mappe tun soll. Arten sind Passt nicht, Erwähnung, Zugewiesen (von Hand vergeben), Post für dich, Frist, Erinnerung und Vertretung.
+    beschreibung: Etwas, das ein Mensch an einer Mappe tun soll. Arten sind Passt nicht, Erwähnung, Zugewiesen (von Hand vergeben), Post für dich, Frist, Erinnerung, Vertretung und Auskunft.
     einsteiger: alltag
     begegnet: alle
     nicht_verwenden: [Auftrag, Task, Todo]

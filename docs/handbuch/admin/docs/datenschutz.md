@@ -48,13 +48,63 @@ Die **Speicherdauer** auf dem Deckblatt kommt aus dem [Archivmodus](archiv.md): 
 ### Nachweis und Aufbewahrung
 
 - In der **Historie der Person** steht „Auskunft erteilt“ mit Zeit, wer sie erstellt hat, Anzahl Mappen, Dokumente und Notizen, ob mit Passwort und die Begründungen zurückgehaltener Notizen – **ohne Inhalte**. Dasselbe steht ohne Begründungen im [Protokoll](fehlersuche.md#protokoll) (Modul „datenschutz“).
-- Die ZIP-Datei liegt unter **Bereitliegende Auskünfte**, bis du sie **herunterlädst** – danach wird sie gelöscht –, höchstens **7 Tage**. Gespeichert wird sie neben den Exporten (`export/auskunft/` im Sicherungsordner, ohne Sicherungsordner im temporären Ordner des Containers); sie ist nicht Teil der Sicherung.
+- Die ZIP-Datei liegt unter **Bereitliegende Auskünfte**, bis du sie **herunterlädst** – danach wird sie gelöscht –, höchstens **7 Tage**. Mit einem gültigen [Abruf-Link](#auskunft-zustellen) bleibt sie, bis die Person sie so oft abgerufen hat wie vorgesehen oder der Link abläuft. Gespeichert wird sie neben den Exporten (`export/auskunft/` im Sicherungsordner, ohne Sicherungsordner im temporären Ordner des Containers); sie ist nicht Teil der Sicherung.
 - Brauchst du sie noch einmal, erzeuge sie neu.
 
 ### Wer darf das?
 
 Nur **Administratoren**. Ein eigenes Recht „Auskunft erteilen“ gibt es (noch) nicht: Die [Berechtigungen](berechtigungen.md) regeln je Mappentyp Anlegen, Lesen, Bearbeiten, Löschen und Passwörter – eine Auskunft greift über alle Mappentypen. Abgestufte Rechte für Administratoren kommen später.
 
+## Auskunft zustellen
+
+Die fertige Auskunft schickst du direkt aus dem DMS – unter **Bereitliegende Auskünfte** mit **Zustellen …** (oder gleich nach dem Erzeugen). Kommst du von der Mappe der Person (*Aktionen → Auskunft erstellen …*), stehen ihre Auskünfte oben. Zwei Wege:
+
+| | Abruf-Link mit Abrufcode | ZIP per E-Mail |
+| --- | --- | --- |
+| **Wie** | Die Person bekommt einen Link auf eine schlichte Seite deines DMS und lädt die Datei dort mit einem Abrufcode herunter. | Die ZIP-Datei geht als Anhang über den [E-Mail-Versand](installation.md#e-mail-und-adresse) des DMS. |
+| **Voraussetzung** | Dein DMS ist **aus dem Internet erreichbar**. | Die Auskunft ist **mit Passwort** erzeugt; höchstens 50 MB (viele Mailserver nehmen nur 10–25 MB). |
+| **Nachweis** | Jeder Abruf mit Zeitpunkt, „abgerufen am …“, Benachrichtigung | „per E-Mail gesendet an … am …“ |
+| **Zweiter Weg** | Abrufcode per Brief, Telefon oder SMS | Passwort per Telefon, SMS oder Brief |
+
+Vorgeschlagen ist der Abruf-Link, wenn die [Adresse des DMS](installation.md#e-mail-und-adresse) nach Internet aussieht – sonst (z. B. `http://192.168.…`, `localhost`, `nas.local`) die E-Mail.
+
+### Weg 1: per E-Mail
+
+Nur für Auskünfte **mit Passwort** – unverschlüsselt geht keine Auskunft per E-Mail hinaus. Gib die Adresse ein; Betreff und Text sind vorbereitet (in Du-Form) und lassen sich ändern. **Das Passwort steht nie in der E-Mail** – das DMS kennt es nach dem Erzeugen gar nicht mehr. Teile es auf einem anderen Weg mit. Antworten gehen an deine Adresse. In der Historie der Person steht „Auskunft per E-Mail gesendet an …“.
+
+### Weg 2: Abruf-Link mit Abrufcode
+
+1. **Adresse der Person** (optional): Mit **Link per E-Mail an diese Adresse schicken** verschickt das DMS den Link – ohne Code. Ohne E-Mail-Versand kopierst du den Link und schickst ihn selbst.
+2. **Gültig** (Vorgabe 30 Tage, höchstens 90) und **Abrufe** (Vorgabe 3, höchstens 10).
+3. **Abrufcode:** Am besten **vom DMS erzeugen** (8 Zeichen ohne Verwechsler wie 0/O und 1/I). Alternativ ein **eigener Code**, den nur die Person kennt – z. B. die Vertragsnummer (mindestens 6 Zeichen). Eine **Kundennummer allein ist schwach**: Sie steht oft auf Briefen und Rechnungen.
+4. **Abruf-Link erstellen:** Link und Code stehen **nur jetzt** auf dem Bildschirm. Teile den Code auf einem anderen Weg mit – per Brief, Telefon oder SMS, **nie in derselben E-Mail wie den Link**. Geht er verloren, erstelle einen neuen Link; der alte gilt dann nicht mehr.
+
+Die Person öffnet den Link und sieht nur: „Du hast eine Auskunft nach Art. 15 DSGVO über die hier gespeicherten Daten angefordert. Zur Sicherheit gib bitte deinen Abrufcode ein.“ – kein Menü, kein Logo, kein Name des Haushalts, keine Anmeldung. Mit dem richtigen Code startet der Download.
+
+![Öffentliche Abrufseite einer Auskunft](bilder/abrufseite.png)
+
+Unter **Abruf-Links** stehen alle Links mit Stand (*aktiv*, *abgelaufen*, *alle Abrufe verbraucht*, *gesperrt nach Fehlversuchen*, *zurückgezogen*), Abrufen, „zuletzt abgerufen am …“ und falschen Codes – auch, wenn die ZIP-Datei längst gelöscht ist. **Zurückziehen** macht einen Link sofort ungültig; für die ZIP-Datei gilt dann wieder das Ende 7 Tage nach dem Erstellen.
+
+![Zustellen an einer bereitliegenden Auskunft](bilder/werkbank-datenschutz-zustellen.png)
+
+**Nachweis und Benachrichtigung:** Jeder Abruf und jeder falsche Code steht in der **Historie der Person** (Zeitpunkt, erfolgreich oder nicht – **ohne IP-Adresse**, ohne Code). Wer den Link oder die Auskunft erstellt hat und wer die Person als **Favorit** (★) hat, bekommt unter „Zu erledigen“ die Aufgabe **Auskunft** – „Auskunft an … wurde abgerufen“. Solange sie offen ist, kommt für denselben Link keine zweite. Sind alle Abrufe verbraucht, wird die ZIP-Datei gelöscht.
+
+### Sicherheit der Abrufseite
+
+Die Abrufseite ist der **einzige** Weg, ohne Anmeldung an Daten im DMS zu kommen. Darum:
+
+- **Nicht zu erraten:** Der Link enthält nur einen Zufallsschlüssel mit 256 Bit, sonst nichts – keine Id, keinen Namen. Er steht hinter dem `#` (`/abruf#…`): Diesen Teil schickt der Browser nie mit, er landet also in keinem Zugriffsprotokoll (auch nicht beim Reverse-Proxy) und in keinem Referer.
+- **Zwei Faktoren:** Link (E-Mail) und Abrufcode (anderer Weg). Gespeichert sind nur Hashes – der Schlüssel als SHA-256, der Code wie ein Passwort (scrypt); verglichen wird in konstanter Zeit.
+- **Keine Auskunft über Links:** Ein unbekannter Link, ein falscher Code und ein gesperrter Link ergeben dieselbe Meldung in derselben Zeit. Erst mit richtigem Code erfährt die Person, dass ihr Link abgelaufen, verbraucht oder zurückgezogen ist.
+- **Sperre:** Nach **10 falschen Codes** ist der Link gesperrt – dann hilft auch der richtige nicht mehr; du erfährst es über die Aufgabe *Auskunft*. Zusätzlich zählt der [Anmeldeschutz](anmeldeschutz.md) Fehlversuche je IP-Adresse (Vorgabe: 5 je Minute, 30 je Stunde über alle Links und Anmeldungen).
+- **Download über ein Einmal-Ticket:** Nach dem richtigen Code gibt es ein Ticket für genau einen Download, zwei Minuten gültig. Gezählt wird beim Start des Downloads; ein abgebrochener Download steht als *abgebrochen* in der Historie.
+- **Protokoll ohne Geheimnisse:** Im [Protokoll](fehlersuche.md#protokoll) (Modul „datenschutz“) stehen Abrufe und Fehlversuche mit **gekürzter IP** (z. B. `203.0.113.0`), nie Schlüssel oder Code.
+- Die Anfrage mit dem Code braucht die Kennung der eigenen Oberfläche (Schutz vor fremden Seiten, CSRF); die Seite lädt sonst nichts aus dem DMS (keinen Kontostatus, kein Design).
+
+### Erreichbarkeit aus dem Internet
+
+Der Abruf-Link funktioniert nur, wenn die Person dein DMS von außen erreicht. Viele Installationen zu Hause sind das nicht – dann nimm den Weg per E-Mail. Soll das DMS erreichbar sein, geht das über einen [Reverse-Proxy](installation.md#hinter-einem-reverse-proxy) mit HTTPS (z. B. auf dem NAS mit Portfreigabe), einen Tunnel (z. B. Cloudflare Tunnel, Tailscale Funnel) oder ein gemietetes Hosting. Trage unter [E-Mail und Adresse](installation.md#e-mail-und-adresse) die Adresse ein, unter der es von außen erreichbar ist – sie steht im Link. Wer nur die Abrufseite nach außen geben will, gibt am Proxy `/abruf`, `/api/abruf`, `/api/abruf/datei` und die Dateien der Oberfläche (`/assets/`) frei.
+
 ## Schnittstelle
 
-Alles geht auch über die [API](api.md): `POST /api/v1/werkbank/auskunft/vorschau` (Prüfliste), `POST /api/v1/werkbank/auskunft` (erzeugen, Hintergrundauftrag), `GET /api/v1/werkbank/auskunft/{id}/zip`, `POST /api/v1/werkbank/auskunft/frist` und `GET`/`PUT /api/v1/werkbank/datenschutz`. Die Sammlung über Verweise selbst steht jedem Benutzer mit seinen Rechten unter `GET /api/v1/mappen/{id}/baum` zur Verfügung.
+Alles geht auch über die [API](api.md): `POST /api/v1/werkbank/auskunft/vorschau` (Prüfliste), `POST /api/v1/werkbank/auskunft` (erzeugen, Hintergrundauftrag), `GET /api/v1/werkbank/auskunft/{id}/zip`, `POST /api/v1/werkbank/auskunft/frist` und `GET`/`PUT /api/v1/werkbank/datenschutz`; zum Zustellen `POST /api/v1/werkbank/auskunft/{id}/email`, `POST /api/v1/werkbank/auskunft/{id}/link` und `POST /api/v1/werkbank/auskunft/link/{id}/widerrufen`. Die Abrufseite selbst (`POST /api/abruf`, `GET /api/abruf/datei`) gehört nicht zur API. Die Sammlung über Verweise selbst steht jedem Benutzer mit seinen Rechten unter `GET /api/v1/mappen/{id}/baum` zur Verfügung.

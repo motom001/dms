@@ -28,6 +28,10 @@ import type { ExportQuelle } from './vollexport';
 import { sammleBaum, type BaumQuelle } from './baum';
 import { BAUM_STANDARD, bereinigeBaumOptionen, type Baum } from '../../shared/src/baum';
 import { AUSKUNFT_PASSWORT_MIN, auswahlProbleme as auskunftProbleme, fristBis, liesAuswahl, liesDatenschutz, personenTypen, type AuskunftMappe, type AuskunftVorschau, type AuskunftVorschlag, type Datenschutz } from '../../shared/src/auskunft';
+import { auskunftMail, LINK_FEHLVERSUCHE_MAX, LINK_STATUS, liesLinkEingabe, linkStatus, normiereCode, type AuskunftLink, type AuskunftStand } from '../../shared/src/auskunft';
+import { neuerAbrufcode, SCHLUESSEL_MUSTER } from './abruf';
+import { hashePasswort, hasheSchluessel, neuerSchluessel, pruefePasswort } from './passwort';
+import type { AuskunftLinkIntern } from './repo';
 import type { AuskunftDaten } from './auskunft';
 import { datumIn, KREIS_SCHLUESSEL, kreisVon, naechste, neubeginn, pruefeMuster, type Nummernkreis } from '../../shared/src/nummernkreis';
 import { csvAus, xlsxAus } from './xlsx';
@@ -4561,6 +4565,155 @@ export class Dienst {
     const a = await this.repo.legeAufgabeAn({ id: randomUUID(), mappeId: m.id, empfaengerId: von, art: 'manuell', text, datum: bis, erstellt: '', erstelltVon: von, erledigt: null, erledigtVon: null });
     await this.notiere(m.id, von, 'aufgabe', { text: `für ${await this.name(von)}: ${text}`, aufgabe: a.id, aufgabenart: 'manuell', fuer: von, aufgabentext: text });
     return this.leiteUm(a);
+  }
+
+  /* ---------- Auskunft zustellen (#455): per E-Mail oder Abruf-Link mit Abrufcode ---------- */
+
+  /** Abruf-Links für die Werkbank – ohne die Hashes von Schlüssel und Code. */
+  async auskunftLinks(f?: { mappeId?: string; auskunftId?: string; max?: number }): Promise<AuskunftLink[]> {
+    return (await this.repo.auskunftLinks(f)).map(({ schluessel: _s, code: _c, ...l }) => l);
+  }
+
+  /** Gilt für diese Auskunft gerade ein Abruf-Link? Dann bleibt die ZIP nach dem eigenen Herunterladen liegen. */
+  async auskunftLinkAktiv(auskunftId: string): Promise<boolean> {
+    return (await this.repo.auskunftLinks({ auskunftId })).some((l) => linkStatus(l) === 'aktiv');
+  }
+
+  /**
+   * Weg 1 (#455): die ZIP als Anhang über den E-Mail-Versand des DMS – nur verschlüsselt; das Passwort
+   * kennt das DMS nicht und schickt es darum auch nie mit. Zu groß für E-Mail → Abruf-Link.
+   */
+  async auskunftPerEmail(stand: AuskunftStand & { name: string }, datei: () => Readable, eingabe: unknown, ich: { id: string; name: string; email: string }, mailer: Mailer | null) {
+    if (!mailer) throw new Fachfehler(409, 'Der E-Mail-Versand ist nicht eingerichtet (Werkbank → E-Mail und Adresse). Nutze den Abruf-Link oder gib die Datei selbst weiter.');
+    if (!stand.verschluesselt) throw new Fachfehler(422, 'Per E-Mail geht eine Auskunft nur mit Passwort (verschlüsselt). Erzeuge sie mit Passwort neu oder stelle sie über einen Abruf-Link zu.');
+    if (stand.bytes > EMAIL_MAX_ANHAENGE) throw new Fachfehler(413, `Die Auskunft ist mit ${Math.round(stand.bytes / 1e6)} MB zu groß für eine E-Mail (höchstens ${Math.round(EMAIL_MAX_ANHAENGE / 1e6)} MB). Stelle sie über einen Abruf-Link zu.`);
+    const e = (eingabe ?? {}) as Record<string, unknown>;
+    const { an, betreff, nachricht } = Dienst.emailKopf({ betreff: auskunftMail.zip().betreff, nachricht: auskunftMail.zip().nachricht, ...e });
+    const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;
+    try {
+      await mailer.sende(an.join(', '), betreff, nachricht, { antwortAn, anhaenge: [{ name: `${stand.name}.zip`, mime: 'application/zip', inhalt: datei() }] });
+    } catch (x) {
+      throw new Fachfehler(502, `Die E-Mail wurde nicht verschickt: ${(x as Error).message}`);
+    }
+    await this.notiere(stand.mappeId, ich.id, 'auskunft', { text: `Auskunft per E-Mail gesendet an ${an.join(', ')} (verschlüsselt, ${Math.max(1, Math.round(stand.bytes / 1024))} KB)`, zustellung: 'email', an, betreff, auskunft: stand.id, bytes: stand.bytes });
+    protokoll.modul('datenschutz').info('Auskunft per E-Mail gesendet', { mappeId: stand.mappeId, empfaenger: an.length, mb: Math.round(stand.bytes / 1024 ** 2), von: ich.email });
+    return { an };
+  }
+
+  /**
+   * Weg 2 (#455): Abruf-Link für genau diese Auskunft. Schlüssel (256 Bit) und Abrufcode liefert nur diese
+   * Antwort im Klartext; gespeichert sind ihre Hashes. Ein noch gültiger Link derselben Auskunft wird
+   * zurückgezogen. Mit `senden` geht der Link (ohne Code) per E-Mail an die Person.
+   */
+  async auskunftLinkAnlegen(stand: AuskunftStand, eingabe: unknown, ich: { id: string; name: string; email: string }, x: { adresse: string; mailer: Mailer | null }) {
+    const e = liesLinkEingabe(eingabe);
+    if (e.fehler.length) throw new Fachfehler(422, e.fehler.join(' '));
+    if (e.senden && !x.mailer) throw new Fachfehler(409, 'Der E-Mail-Versand ist nicht eingerichtet (Werkbank → E-Mail und Adresse). Kopiere den Link und schicke ihn selbst.');
+    if (e.senden && !istEmail(e.an)) throw new Fachfehler(422, 'Bitte eine gültige E-Mail-Adresse für den Link angeben.');
+    if (!x.adresse) throw new Fachfehler(409, 'Die Adresse des DMS ist nicht bekannt (Werkbank → E-Mail und Adresse).');
+    for (const alt of await this.repo.auskunftLinks({ auskunftId: stand.id })) {
+      if (linkStatus(alt) === 'aktiv' && (await this.repo.widerrufeAuskunftLink(alt.id))) await this.notiere(alt.mappeId, ich.id, 'auskunft', { text: 'Abruf-Link zurückgezogen (ersetzt durch einen neuen)', zustellung: 'link', link: alt.id, auskunft: stand.id });
+    }
+    const schluessel = neuerSchluessel();
+    const code = e.code ?? neuerAbrufcode();
+    const jetzt = new Date();
+    const link: AuskunftLinkIntern = {
+      id: randomUUID(), auskunftId: stand.id, mappeId: stand.mappeId, titel: stand.titel, schluessel: hasheSchluessel(schluessel), code: await hashePasswort(code),
+      codeArt: e.code ? 'eigen' : 'erzeugt', empfaenger: e.an || null, erstellt: jetzt.toISOString(), erstelltVon: ich.id,
+      ablauf: new Date(jetzt.getTime() + e.tage * 24 * 3600 * 1000).toISOString(), maxAbrufe: e.abrufe, abrufe: 0, fehlversuche: 0, gesperrt: null, widerrufen: null, abgerufen: null,
+    };
+    await this.repo.legeAuskunftLinkAn(link);
+    const url = `${x.adresse.replace(/\/+$/, '')}/abruf#${schluessel}`;
+    const bis = datumText(link.ablauf.slice(0, 10));
+    if (e.senden) {
+      const ds = await this.datenschutz();
+      const m = auskunftMail.link(url, bis, link.maxAbrufe, ds.verantwortlicher);
+      const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;
+      try { await x.mailer!.sende(e.an, m.betreff, m.nachricht, { antwortAn }); } catch (f) {
+        await this.repo.widerrufeAuskunftLink(link.id);
+        throw new Fachfehler(502, `Die E-Mail mit dem Link wurde nicht verschickt: ${(f as Error).message}`);
+      }
+    }
+    await this.notiere(stand.mappeId, ich.id, 'auskunft', {
+      text: `Abruf-Link erstellt: gültig bis ${bis}, ${link.maxAbrufe === 1 ? 'ein Abruf' : `höchstens ${link.maxAbrufe} Abrufe`}${e.senden ? `, per E-Mail an ${e.an}` : ''}${link.codeArt === 'eigen' ? ', eigener Abrufcode' : ''}`,
+      zustellung: 'link', link: link.id, auskunft: stand.id, ablauf: link.ablauf, maxAbrufe: link.maxAbrufe, ...(e.senden ? { an: [e.an] } : {}),
+    });
+    protokoll.modul('datenschutz').info('Abruf-Link erstellt', { mappeId: stand.mappeId, link: link.id, tage: e.tage, abrufe: e.abrufe, code: link.codeArt, mail: e.senden, von: ich.email });
+    const { schluessel: _s, code: _c, ...ohne } = link;
+    return { link: ohne as AuskunftLink, url, code, gesendet: e.senden };
+  }
+
+  /** Zurückziehen (#455): Der Link gilt sofort nicht mehr; die Zeile bleibt als Nachweis. */
+  async auskunftLinkWiderrufen(id: string, ich: { id: string; email: string }): Promise<AuskunftLink> {
+    const l = (await this.repo.auskunftLinks()).find((x) => x.id === id);
+    if (!l) throw new Fachfehler(404, 'Diesen Abruf-Link gibt es nicht.');
+    if (await this.repo.widerrufeAuskunftLink(id)) {
+      await this.notiere(l.mappeId, ich.id, 'auskunft', { text: 'Abruf-Link zurückgezogen', zustellung: 'link', link: id, auskunft: l.auskunftId });
+      protokoll.modul('datenschutz').info('Abruf-Link zurückgezogen', { mappeId: l.mappeId, link: id, von: ich.email });
+    }
+    return (await this.auskunftLinks({ auskunftId: l.auskunftId })).find((x) => x.id === id)!;
+  }
+
+  /**
+   * Öffentliche Abrufseite (#455): Schlüssel und Abrufcode prüfen. Unbekannter Schlüssel, falscher Code und
+   * gesperrter Link sehen nach außen gleich aus („falsch“) und kosten gleich viel Zeit (scrypt auch ohne
+   * Treffer). Ein gesperrter Link prüft den Code gar nicht mehr. Erst mit richtigem Code sagt die Antwort,
+   * dass der Link abgelaufen, verbraucht oder zurückgezogen ist. Jeder Versuch an einem bekannten Link
+   * steht in der Historie (ohne IP, ohne Code).
+   */
+  async auskunftAbrufPruefen(schluessel: unknown, code: unknown): Promise<{ art: 'ok' | 'falsch' | 'ungueltig'; link?: AuskunftLinkIntern }> {
+    const s = typeof schluessel === 'string' && SCHLUESSEL_MUSTER.test(schluessel) ? schluessel : null;
+    const c = normiereCode(code);
+    const link = s ? await this.repo.auskunftLinkPerSchluessel(hasheSchluessel(s)) : undefined;
+    if (!link || link.gesperrt) { await pruefePasswort(c || '-', null); return { art: 'falsch' }; }
+    if (!c || !(await pruefePasswort(c, link.code))) {
+      const f = await this.repo.auskunftLinkFehlversuch(link.id, LINK_FEHLVERSUCHE_MAX);
+      const gesperrt = !!f?.gesperrt;
+      await this.notiere(link.mappeId, null, 'auskunft', { text: `Abruf fehlgeschlagen: falscher Abrufcode${gesperrt ? ` – Link nach ${f!.fehlversuche} Fehlversuchen gesperrt` : ''}`, zustellung: 'abruf', erfolg: false, link: link.id, auskunft: link.auskunftId });
+      if (gesperrt) {
+        protokoll.modul('datenschutz').warn('Abruf-Link nach Fehlversuchen gesperrt', { mappeId: link.mappeId, link: link.id, versuche: f!.fehlversuche });
+        await this.auskunftMelden(link, `Abruf-Link für die Auskunft an ${link.titel || 'Ohne Titel'} nach ${f!.fehlversuche} falschen Abrufcodes gesperrt`, 'gesperrt');
+      }
+      return { art: 'falsch', link };
+    }
+    const st = linkStatus(link);
+    if (st !== 'aktiv') {
+      await this.notiere(link.mappeId, null, 'auskunft', { text: `Abruf versucht, aber der Link ist ${LINK_STATUS[st]}`, zustellung: 'abruf', erfolg: false, link: link.id, auskunft: link.auskunftId });
+      return { art: 'ungueltig', link };
+    }
+    return { art: 'ok', link };
+  }
+
+  async auskunftLinkMitId(id: string): Promise<AuskunftLinkIntern | undefined> { return (await this.repo.auskunftLinks()).find((l) => l.id === id); }
+
+  /** Einen Abruf zählen, solange der Link gilt (atomar); null = gilt nicht mehr. */
+  auskunftAbrufZaehlen(id: string): Promise<number | null> { return this.repo.auskunftLinkAbruf(id); }
+
+  /** Nachweis eines Abrufs (#455): Historie und Benachrichtigung an Ersteller und Favoriten-Inhaber. */
+  async auskunftAbgerufen(link: AuskunftLink, nr: number, vollstaendig: boolean, standVon?: string) {
+    await this.notiere(link.mappeId, null, 'auskunft', {
+      text: vollstaendig ? `Auskunft abgerufen (${nr}. von höchstens ${link.maxAbrufe} Abrufen)` : `Abruf abgebrochen (${nr}. von höchstens ${link.maxAbrufe} Abrufen)`,
+      zustellung: 'abruf', erfolg: vollstaendig, link: link.id, auskunft: link.auskunftId, nr,
+    });
+    if (vollstaendig) await this.auskunftMelden(link, `Auskunft an ${link.titel || 'Ohne Titel'} wurde abgerufen`, 'abgerufen', standVon);
+  }
+
+  /**
+   * Benachrichtigung (#455) als Aufgabe „Auskunft“ an der Mappe der Person: an den, der den Link erstellt
+   * hat, den Ersteller der Auskunft und alle, die die Person als Favorit haben (Stern = Abo, #422).
+   * Gebündelt: Solange eine solche Aufgabe offen ist, kommt für denselben Link keine zweite.
+   */
+  private async auskunftMelden(link: AuskunftLink, text: string, anlass: 'abgerufen' | 'gesperrt', standVon?: string) {
+    const fav = (await this.repo.alleFavoriten()).filter((f) => f.mappeId === link.mappeId).map((f) => f.benutzerId);
+    let an = [...new Set([link.erstelltVon, standVon, ...fav].filter((x): x is string => !!x && istUuid(x)))];
+    if (this.konten?.benutzer) { const aktiv = new Set((await this.konten.benutzer()).filter((b) => b.aktiv).map((b) => b.id)); an = an.filter((id) => aktiv.has(id)); }
+    const key = `${anlass}:${link.id}`;
+    const offen = (await this.repo.offeneAufgaben({ mappeIds: [link.mappeId] })).filter((a) => a.art === 'auskunft' && a.feldKey === key);
+    for (const id of an) {
+      if (offen.some((a) => a.empfaengerId === id)) continue;
+      const a = await this.repo.legeAufgabeAn({ id: randomUUID(), mappeId: link.mappeId, empfaengerId: id, art: 'auskunft', feldKey: key, text: text.slice(0, AUFGABE_MAX), erstellt: '', erstelltVon: null, erledigt: null, erledigtVon: null });
+      await this.leiteUm(a);
+    }
   }
 
   /** Dürfen Benutzer ihre Daten selbst exportieren (#255)? Standard: ja. */
