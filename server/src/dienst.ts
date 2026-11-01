@@ -274,7 +274,7 @@ export function sortierungAus(spalte: string, absteigend: boolean, typ?: Mappent
 }
 
 /** Dateiname ohne Pfadanteile und Steuerzeichen. */
-/** Automatisch verkleinern (#393): Einstellung in der Werkbank → Speicherplatz; Standard aus. */
+/** Automatisch verkleinern (#393): Einstellung in der Werkbank → Systemzustand; Standard aus. */
 export interface VerkleinernEinstellung { automatisch: boolean; abMb: number; stufe: Stufe }
 export const VERKLEINERN_STANDARD: VerkleinernEinstellung = { automatisch: false, abMb: 5, stufe: STANDARD_STUFE };
 export function verkleinernEinstellungAus(v: unknown): VerkleinernEinstellung {
@@ -4026,7 +4026,7 @@ export class Dienst {
     try { await this.pruefeArchivDokument(mappeId, 'löschen'); return true; } catch { return false; }
   }
 
-  /** Einstellung „automatisch verkleinern“ (Werkbank → Speicherplatz); Standard aus. */
+  /** Einstellung „automatisch verkleinern“ (Werkbank → Systemzustand); Standard aus. */
   async verkleinernEinstellung(): Promise<VerkleinernEinstellung> {
     return verkleinernEinstellungAus(await this.einstellungen?.lies('verkleinern'));
   }
