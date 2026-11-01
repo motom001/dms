@@ -4,6 +4,7 @@ import type { Sicht } from '../../../shared/src/sichten';
 import { useDaten } from '../daten';
 import { Link } from '../ort';
 import { Symbol } from '../Symbol';
+import { ZahlWarte } from './ZahlWarte';
 
 /**
  * Ansicht wählen am Handy (#498): ein Knopf „<Ansicht> ▾“ statt einer Reiterleiste mit 40 Ansichten.
@@ -14,7 +15,7 @@ import { Symbol } from '../Symbol';
 
 const zahl = (n: number) => n.toLocaleString('de-DE');
 
-export interface FesterEintrag { pfad: string; name: ReactNode; text: string; zahl?: number; hervor?: boolean; an: boolean }
+export interface FesterEintrag { pfad: string; name: ReactNode; text: string; zahl?: number; /** Zahl kommt noch (#512). */ warte?: boolean; hervor?: boolean; an: boolean }
 /** #507: Ansichten, die oben als fester Eintrag stehen (Neue Post), erscheinen nicht noch einmal in den Gruppen. */
 
 function Zeile({ s, aktiv, angeheftet, tiefe = 0, pfad, anheften }: { s: Sicht; aktiv?: string; angeheftet: boolean; tiefe?: number; pfad?: string; anheften(id: string): void }) {
@@ -24,7 +25,7 @@ function Zeile({ s, aktiv, angeheftet, tiefe = 0, pfad, anheften }: { s: Sicht; 
     <li className="aw-zeile" style={{ paddingLeft: `${tiefe * 16}px` }}>
       <Link to={`/ablage/${s.id}`} className={`aw-link ${aktiv === s.id ? 'an' : ''}`}>
         <span className="aw-name">{pfad && <span className="leise klein">{pfad} › </span>}{s.name}</span>
-        {n !== undefined && <span className={s.id === d.zaehler.neuePost && n > 0 ? 'zaehler' : 'zahl'}>{zahl(n)}</span>}
+        {!d.zahlenDa ? <ZahlWarte /> : n !== undefined && <span className={s.id === d.zaehler.neuePost && n > 0 ? 'zaehler' : 'zahl'}>{zahl(n)}</span>}
       </Link>
       <button type="button" className={`aw-stern ${angeheftet ? 'an' : ''}`} aria-pressed={angeheftet} onClick={() => anheften(s.id)}
         aria-label={angeheftet ? `„${s.name}“ von „Meine Ansichten“ lösen` : `„${s.name}“ bei „Meine Ansichten“ anheften`}><Symbol name="stern" className={angeheftet ? 'sym-voll' : undefined} /></button>
@@ -92,7 +93,7 @@ export function AnsichtWahl({ aktiv, aktuell, feste, ohne = [] }: { aktiv?: stri
               : <p className="leise">Keine Ansicht heißt so.</p>
           ) : <>
             <ul className="aw-liste aw-feste">{feste.map((f) => (
-              <li key={f.pfad} className="aw-zeile"><Link to={f.pfad} className={`aw-link ${f.an ? 'an' : ''}`}><span className="aw-name">{f.name}</span>{!!f.zahl && <span className={f.hervor ? 'zaehler' : 'zahl'}>{zahl(f.zahl)}</span>}</Link></li>
+              <li key={f.pfad} className="aw-zeile"><Link to={f.pfad} className={`aw-link ${f.an ? 'an' : ''}`}><span className="aw-name">{f.name}</span>{f.warte ? <ZahlWarte /> : !!f.zahl && <span className={f.hervor ? 'zaehler' : 'zahl'}>{zahl(f.zahl)}</span>}</Link></li>
             ))}</ul>
             {a.meine.length > 0 && <><h3 className="ueber aw-abschnitt">Meine Ansichten</h3>
               <ul className="aw-liste">{a.meine.map((s) => <Zeile key={s.id} s={s} aktiv={aktiv} angeheftet anheften={anheften} />)}</ul></>}
@@ -129,7 +130,7 @@ export function AnsichtFilter({ aktiv, baum }: { aktiv?: string; baum: ReactNode
       {d.sichten.length > 12 && <input type="search" className="aw-filter" placeholder="Ansicht suchen …" aria-label="Ansicht suchen" value={suche} onChange={(e) => setSuche(e.target.value)} />}
       {a?.treffer ? a.treffer.map((t) => (
         <Link key={t.sicht.id} to={`/ablage/${t.sicht.id}`} className={`sicht ${aktiv === t.sicht.id ? 'an' : ''}`} title={t.pfad || undefined}>
-          <span className="nm">{t.sicht.name}</span>{d.zaehler.sichten?.[t.sicht.id] !== undefined && <span className="zahl">{zahl(d.zaehler.sichten[t.sicht.id])}</span>}
+          <span className="nm">{t.sicht.name}</span>{!d.zahlenDa ? <ZahlWarte /> : d.zaehler.sichten?.[t.sicht.id] !== undefined && <span className="zahl">{zahl(d.zaehler.sichten[t.sicht.id])}</span>}
         </Link>
       )) : baum}
       {a?.treffer && !a.treffer.length && <p className="leise klein">Keine Ansicht heißt so.</p>}

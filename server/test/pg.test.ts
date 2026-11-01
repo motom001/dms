@@ -359,8 +359,8 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
 
   it('misst Datenbankzugriffe und merkt sich lange', async () => {
     const r = await app.inject({ method: 'GET', url: '/api/sichten', headers: { cookie } });
-    // #477: dazu vor, rechte, json, gesamt
-    assert.match(String(r.headers['server-timing']), /^vor;dur=[\d.]+, app;dur=[\d.]+, db;dur=[\d.]+;desc="\d+", rechte;dur=[\d.]+, json;dur=[\d.]+, gesamt;dur=[\d.]+$/);
+    // #477: dazu vor, rechte, json, gesamt; #512: zs – Zahlen der Ansichten aus dem Zwischenspeicher oder neu gezählt
+    assert.match(String(r.headers['server-timing']), /^vor;dur=[\d.]+, app;dur=[\d.]+, db;dur=[\d.]+;desc="\d+", rechte;dur=[\d.]+, json;dur=[\d.]+, gesamt;dur=[\d.]+, zs;dur=[\d.]+;desc="(treffer|neu)"$/);
     assert.ok(Number(/desc="(\d+)"/.exec(String(r.headers['server-timing']))![1]) >= 2, 'Sitzung und Zähler');
     // Schwelle auf 1 ms: dann gilt praktisch jeder Zugriff als lang.
     assert.equal((await anfrage('PUT', '/api/werkbank/datenbank', { schwelleMs: 0, tage: 7 })).status, 422);

@@ -78,6 +78,8 @@ async function messen() {
     const rechnung = typen.find((t) => t.name === 'Rechnung');
     const mappe = (await (await ctx.request.get(`${BASIS}/api/mappen?sicht=${rechnung.id}&von=0&anzahl=1`, H)).json()).mappen[0].id;
     const seiten = { Startseite: '/ablage/start', 'Liste Rechnungen': `/ablage/${rechnung.id}`, 'Mappe öffnen': `/ablage/${rechnung.id}/${mappe}` };
+    // Woran man sieht, dass die Seite da ist (#512): Kacheln, erste Zeile der Liste, Kopf der Mappe.
+    const sichtbarAn = { Startseite: '[data-kachel]', 'Liste Rechnungen': '.mappenliste li, .trefferliste tbody tr', 'Mappe öffnen': '.mappenkopf' };
     const page = await ctx.newPage();
     for (const [seite, pfad] of Object.entries(seiten)) {
       const laeufe = [];
@@ -88,28 +90,38 @@ async function messen() {
           const t = res.request().timing();
           const st = (await res.allHeaders())['server-timing'] ?? '';
           const w = Object.fromEntries([...st.matchAll(/(\w+);dur=([\d.]+)/g)].map((m) => [m[1], Number(m[2])]));
+          // Zahlen der Ansichten (#512): wann sie im Browser ankommen und ob der Zwischenspeicher traf.
+          if (new URL(res.url()).pathname === '/api/sichten') { zahlen = Date.now() - t0; treffer = /zs;[^,]*desc="?treffer/.test(st); }
           anfragen.push({ url: res.url().replace(BASIS, ''), server: w.gesamt ?? w.app ?? 0, db: w.db ?? 0, rechte: w.rechte ?? 0, wbrow: Math.max(0, t.requestStart - Math.max(0, t.connectEnd - t.connectStart)) });
         };
-        page.on('response', hoerer);
+        let zahlen = 0, treffer = false;
         await page.goto('about:blank');
+        page.on('response', hoerer);
         const t0 = Date.now();
-        await page.goto(BASIS + pfad, { waitUntil: 'networkidle' });
+        const laden = page.goto(BASIS + pfad, { waitUntil: 'networkidle' });
+        await page.waitForSelector(sichtbarAn[seite], { state: 'visible' });
+        const sichtbar = Date.now() - t0;
+        await laden;
         const dauer = Date.now() - t0 - 500; // networkidle wartet 500 ms ohne Anfrage
         page.off('response', hoerer);
-        if (i > 0) laeufe.push({ dauer, anfragen }); // erster Lauf zum Aufwärmen
+        if (i > 0) laeufe.push({ dauer, sichtbar, zahlen, treffer, anfragen }); // erster Lauf zum Aufwärmen
       }
       const summe = (k) => Math.round(median(laeufe.map((l) => l.anfragen.reduce((s, a) => s + a[k], 0))));
       const langsam = Object.entries(laeufe.flatMap((l) => l.anfragen).reduce((m, a) => { const u = a.url.split('?')[0].replace(/[0-9a-f-]{36}/g, ':id'); (m[u] ??= []).push(a.server); return m; }, {}))
         .map(([u, z]) => [u, median(z)]).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([u, z]) => `${u} ${Math.round(z)}`).join(', ');
-      erg.push({ seite, wer, laden: median(laeufe.map((l) => l.dauer)), anfragen: laeufe[0].anfragen.length, server: summe('server'), db: summe('db'), rechte: summe('rechte'), wbrow: summe('wbrow'), langsam });
+      const zaehlen = median(laeufe.flatMap((l) => l.anfragen.filter((a) => a.url.split('?')[0] === '/api/sichten').map((a) => a.server)));
+      erg.push({ seite, wer, sichtbar: median(laeufe.map((l) => l.sichtbar)), zahlen: median(laeufe.map((l) => l.zahlen)), zaehlen: Math.round(zaehlen ?? 0), treffer: laeufe.filter((l) => l.treffer).length,
+        laden: median(laeufe.map((l) => l.dauer)), anfragen: laeufe[0].anfragen.length, server: summe('server'), db: summe('db'), rechte: summe('rechte'), wbrow: summe('wbrow'), langsam });
     }
     await ctx.close();
   }
   await browser.close();
   console.log(`Median aus ${N} Ladevorgängen; Summen über alle Anfragen der Seite (sie laufen teils gleichzeitig).\n`);
-  console.log('| Seite | Wer | Laden ms | Anfragen | Server ms | Datenbank ms | Rechte ms | Warten (Browser) ms | langsamste Anfragen (Server ms) |');
-  console.log('|---|---|---:|---:|---:|---:|---:|---:|---|');
-  for (const e of erg) console.log(`| ${e.seite} | ${e.wer} | ${e.laden} | ${e.anfragen} | ${e.server} | ${e.db} | ${e.rechte} | ${e.wbrow} | ${e.langsam} |`);
+  console.log('Sichtbar: bis Kacheln, erste Zeile der Liste bzw. Kopf der Mappe zu sehen sind; Zahlen: bis /api/sichten im Browser ist;');
+  console.log(`/api/sichten: Server-Zeit dieser Anfrage, Treffer: wie oft der Zwischenspeicher traf (von ${N}).\n`);
+  console.log('| Seite | Wer | Sichtbar ms | Zahlen ms | /api/sichten ms | Treffer | Laden ms | Anfragen | Server ms | Datenbank ms | Rechte ms | Warten (Browser) ms | langsamste Anfragen (Server ms) |');
+  console.log('|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|');
+  for (const e of erg) console.log(`| ${e.seite} | ${e.wer} | ${e.sichtbar} | ${e.zahlen} | ${e.zaehlen} | ${e.treffer} | ${e.laden} | ${e.anfragen} | ${e.server} | ${e.db} | ${e.rechte} | ${e.wbrow} | ${e.langsam} |`);
 }
 
 if (process.argv.includes('--einrichten')) await einrichten();

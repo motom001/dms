@@ -370,6 +370,8 @@ export const api = {
   designStandard: (id: string) => anfrage<{ designs: Design[]; standard: string | null }>('PUT', '/api/designs-standard', { id }),
   einstellungSetzen: (schluessel: string, wert: unknown) => anfrage<null>('PUT', `/api/konto/einstellungen/${encodeURIComponent(schluessel)}`, { wert }),
   sichten: () => anfrage<Zaehler>('GET', '/api/sichten'),
+  /** Ohne Zählen (#512): Papierkorb-Tage und „Neue Post“ – vor den Zahlen. */
+  sichtenRahmen: () => anfrage<Pick<Zaehler, 'papierkorbTage' | 'neuePost'>>('GET', '/api/sichten/rahmen'),
   /* Sichten verwalten (#38) */
   sichtDefinitionen: () => anfrage<Sicht[]>('GET', '/api/sichten/definitionen'),
   sichtAnlegen: (s: Partial<SichtDaten>) => anfrage<Sicht>('POST', '/api/sichten/definitionen', s),
