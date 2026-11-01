@@ -504,6 +504,14 @@ export function speicherRepo(): Repo {
       for (const [k, w] of korbNeu) k.mappe.werte = w;
       return { umgeschluesselt, unlesbar };
     },
+    async verschluesselteFundstellen() {
+      // Arbeitsspeicher: nur Mappen und Papierkorb (Einstellungen liegen anderswo), wie umschluesseln.
+      const hat = (w: unknown) => JSON.stringify(w).includes('dms1$');
+      return [
+        ...[...mappen.values()].filter((m) => hat(m.werte)).map((m) => ({ quelle: 'mappe' as const, schluessel: m.id, wert: structuredClone(m.werte), titel: m.titel })),
+        ...[...korb.values()].filter((k) => hat(k.mappe.werte)).map((k) => ({ quelle: 'papierkorb' as const, schluessel: k.mappe.id, wert: structuredClone(k.mappe.werte), titel: k.mappe.titel })),
+      ];
+    },
     async erinnerungen(f = {}) {
       return [...erinnerungen.values()].filter((e) => mappen.has(e.mappeId) && (!f.mappeId || e.mappeId === f.mappeId)
         && (!f.empfaengerId || e.empfaengerId === f.empfaengerId) && (!f.bis || e.datum <= f.bis))

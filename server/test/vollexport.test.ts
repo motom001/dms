@@ -19,7 +19,7 @@ describe('Vollexport (#254)', () => {
   });
 
   it('exportiert alles lesbar, ohne Passwörter; mit Bestätigung Passwörter; Prüfwerte', async () => {
-    const tresor = { bereit: true, registriere: () => {}, verschluessele: (k: string) => `dms1$${k}`, entschluessele: (w: string) => (w.startsWith('dms1$') ? w.slice(5) : null) };
+    const tresor = { bereit: true, registriere: () => {}, registriereBestand: () => {}, verschluessele: (k: string) => `dms1$${k}`, entschluessele: (w: string) => (w.startsWith('dms1$') ? w.slice(5) : null) };
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen(), tresor: tresor as never });
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
     await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });

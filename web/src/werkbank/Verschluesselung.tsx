@@ -42,7 +42,7 @@ export function TresorBanner() {
   const { stand } = useTresor();
   if (!stand || (stand.zustand === 'vorhanden' && stand.eingebunden !== false && !stand.betroffen.length)) return null;
   let text;
-  if (stand.zustand === 'fehlt') text = <><strong>Es gibt noch keinen Schlüssel für Passwörter.</strong> Bis dahin lassen sich keine Passwörter speichern (E-Mail-Versand, Passwortfelder).</>;
+  if (stand.zustand === 'fehlt') text = <><strong>Es gibt noch keinen Schlüssel für Passwörter.</strong> Bis dahin lassen sich keine Passwörter speichern (E-Mail-Versand, Postfächer, Passwortfelder).</>;
   else if (stand.zustand === 'verloren') text = <><strong>Der Schlüssel für Passwörter fehlt.</strong> Gespeicherte Passwörter sind nicht lesbar. Lege die Schlüsseldatei zurück oder erzeuge einen neuen Schlüssel und gib die Passwörter neu ein.</>;
   else if (stand.zustand === 'falsch') text = <><strong>Die Schlüsseldatei passt nicht zu den gespeicherten Passwörtern.</strong> Passwörter lassen sich erst wieder lesen und speichern, wenn die richtige Datei da ist.</>;
   else if (stand.eingebunden === false) text = <><strong>Die Schlüsseldatei liegt nicht auf einem eigenen Volume.</strong> Wird der Container neu erstellt (z. B. beim Update), ist sie weg.</>;
@@ -75,7 +75,7 @@ export function TresorPanel({ t }: { t: TresorZustand }) {
   const erzeugbar = s.zustand === 'fehlt' || s.zustand === 'verloren';
 
   async function wechseln() {
-    if (!(await rueckfrage({ titel: 'Schlüssel jetzt wechseln?', text: 'Alle gespeicherten Passwörter werden mit einem neuen Schlüssel verschlüsselt – ganz oder gar nicht. Danach brauchst du ein neues Notfallblatt.\n\nÄltere Sicherungen bleiben mit dem bisherigen Schlüssel verschlüsselt: Bewahre das alte Notfallblatt auf, solange du sie brauchst.', ja: 'Schlüssel wechseln', gefahr: true, bestaetigeMit: 'wechseln' }))) return;
+    if (!(await rueckfrage({ titel: 'Schlüssel jetzt wechseln?', text: 'Alle gespeicherten Passwörter und Geheimnisse (siehe „Was verschlüsselt ist“) werden mit einem neuen Schlüssel verschlüsselt – ganz oder gar nicht. Danach brauchst du ein neues Notfallblatt.\n\nÄltere Sicherungen bleiben mit dem bisherigen Schlüssel verschlüsselt: Bewahre das alte Notfallblatt auf, solange du sie brauchst.', ja: 'Schlüssel wechseln', gefahr: true, bestaetigeMit: 'wechseln' }))) return;
     setLaeuft(true); setMeldung(undefined); setWechsel(undefined);
     try { const r = await api.tresorWechseln(); t.setStand(r); setWechsel(r); melde(); await aktualisieren(); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
@@ -87,7 +87,7 @@ export function TresorPanel({ t }: { t: TresorZustand }) {
       <div className="mappenkopf">
         <p className="ueber">Werkbank</p>
         <h1>Verschlüsselung</h1>
-        <p className="leise">Passwörter (E-Mail-Versand, Passwortfelder in Mappen) speichert das DMS verschlüsselt. Den Schlüssel dazu hält es in einer eigenen Datei, nie in der Datenbank. <Hilfe ort="werkbank.verschluesselung" /></p>
+        <p className="leise">Passwörter und andere Geheimnisse – E-Mail-Versand, Postfächer, Anmeldung über einen Anbieter, Zwei-Faktor, Paket-Einstellungen, Passwortfelder in Mappen – speichert das DMS verschlüsselt; welche es gerade sind, steht unten unter „Was verschlüsselt ist“. Den Schlüssel dazu hält es in einer eigenen Datei, nie in der Datenbank. <Hilfe ort="werkbank.verschluesselung" /></p>
       </div>
 
       <section className="blatt" id="schluessel">
@@ -101,7 +101,7 @@ export function TresorPanel({ t }: { t: TresorZustand }) {
           <dt>Eigenes Volume</dt><dd>{s.eingebunden === null ? 'nicht feststellbar (läuft nicht im Container)' : s.eingebunden ? 'ja' : 'nein'}</dd>
         </dl>
 
-        {s.zustand === 'fehlt' && <div className="hinweis warn"><p>Noch kein Schlüssel. Solange er fehlt, lassen sich keine Passwörter speichern.</p></div>}
+        {s.zustand === 'fehlt' && <div className="hinweis warn"><p>Noch kein Schlüssel. Solange er fehlt, lassen sich keine Passwörter speichern (E-Mail-Versand, Postfächer, Passwortfelder).</p></div>}
         {s.zustand === 'verloren' && (
           <div className="hinweis schlecht stapel">
             <p><strong>Der Schlüssel mit dem Fingerabdruck <span className="mono">{s.erwartet}</span> fehlt.</strong> Liegt die Datei noch in einer Sicherung, lege sie wieder unter <span className="mono">{s.datei}</span> ab und starte das DMS neu – dann sind alle Passwörter wieder lesbar.</p>
@@ -131,7 +131,7 @@ export function TresorPanel({ t }: { t: TresorZustand }) {
       {s.zustand === 'vorhanden' && (
         <section className="blatt" id="wechseln">
           <h2 className="h3">Schlüssel wechseln <Hilfe ort="verschluesselung.wechseln" /></h2>
-          <p className="leise">Wenn der Schlüssel bekannt geworden sein könnte – etwa weil ein ausgedrucktes Notfallblatt verloren ging – oder du ihn turnusmäßig erneuern willst. Alle Passwörter werden mit einem neuen Schlüssel verschlüsselt, ganz oder gar nicht; bricht etwas ab, gilt weiter der bisherige. Der alte Schlüssel wird nicht aufbewahrt.</p>
+          <p className="leise">Wenn der Schlüssel bekannt geworden sein könnte – etwa weil ein ausgedrucktes Notfallblatt verloren ging – oder du ihn turnusmäßig erneuern willst. Alle Passwörter und Geheimnisse (siehe „Was verschlüsselt ist“) werden mit einem neuen Schlüssel verschlüsselt, ganz oder gar nicht; bricht etwas ab, gilt weiter der bisherige. Der alte Schlüssel wird nicht aufbewahrt.</p>
           {!wechsel && <div className="knoepfe"><button type="button" className="knopf gefahr-rand" disabled={laeuft} onClick={() => void wechseln()}>{laeuft ? 'Wechsle …' : 'Schlüssel wechseln'}</button></div>}
           {wechsel && (
             <div className="hinweis gut stapel" role="status">
@@ -157,10 +157,26 @@ export function TresorPanel({ t }: { t: TresorZustand }) {
 
       <Notfallblatt stand={s.notfallblatt} schluessel={s.zustand === 'vorhanden'} geladen={() => void t.laden()} />
 
+      {s.arten && s.arten.length > 0 && (
+        <section className="blatt" id="arten">
+          <h2 className="h3">Was verschlüsselt ist <Hilfe ort="verschluesselung.arten" /></h2>
+          <p className="leise klein">Alles hier verschlüsselt das DMS mit diesem Schlüssel und nimmt es beim Schlüsselwechsel mit. Die Sicherungen verschlüsselt es mit einem Schlüssel, der daraus abgeleitet ist.</p>
+          <table className="vs-arten">
+            <thead><tr><th>Art</th><th className="vs-zahl">Anzahl</th></tr></thead>
+            <tbody>{s.arten.map((a) => (
+              <tr key={a.art}>
+                <td>{a.name}</td>
+                <td className="vs-zahl">{a.anzahl.toLocaleString('de-DE')}{a.unlesbar > 0 && <> <span className="chip schlecht" title="mit dem vorhandenen Schlüssel nicht lesbar – siehe unten">{a.unlesbar} nicht lesbar</span></>}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </section>
+      )}
+
       <section className="blatt" id="betroffen">
         <h2 className="h3">Nicht lesbare oder unverschlüsselte Werte</h2>
         {!s.betroffen.length
-          ? <p className="leise">Keine – alle gespeicherten Passwörter sind mit dem vorhandenen Schlüssel lesbar.</p>
+          ? <p className="leise">Keine – alle gespeicherten Passwörter und Geheimnisse sind mit dem vorhandenen Schlüssel lesbar.</p>
           : <ul className="liste-einfach">{s.betroffen.map((b, i) => <li key={i}><strong>{b.bereich}:</strong> {b.was}{b.wo ? <span className="leise"> – {b.wo}</span> : null}</li>)}</ul>}
       </section>
     </div>

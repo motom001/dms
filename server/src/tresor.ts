@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { chmod, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { Fachfehler } from './fehler';
+import { bestandAus, type ArtStand, type Betroffen, type Fundstelle, type GeheimArt } from './geheimnisse';
 import { protokoll } from './protokoll';
 
 /**
@@ -27,8 +28,10 @@ export interface TresorEinstellungen {
 }
 
 /** Wer verschlüsselte Werte hält, meldet hier, welche davon gerade nicht lesbar sind. */
-export interface Betroffen { bereich: string; was: string; wo?: string }
+export type { Betroffen };
 export type Pruefer = () => Promise<Betroffen[]>;
+/** Alle verschlüsselten Werte mit Fundstelle (#410) – dieselben, die der Schlüsselwechsel umschlüsselt. */
+export type Bestand = () => Promise<Fundstelle[]>;
 
 export type Zustand = 'vorhanden' | 'fehlt' | 'verloren' | 'falsch';
 export interface TresorStatus {
@@ -41,6 +44,8 @@ export interface TresorStatus {
   /** null = nicht feststellbar (außerhalb eines Containers). */
   eingebunden: boolean | null;
   betroffen: Betroffen[];
+  /** Was verschlüsselt gespeichert ist, mit Anzahl je Art (#410); leer, wenn es niemand meldet. */
+  arten: ArtStand[];
 }
 
 interface Gespeichert { fingerabdruck: string; erstellt: string }
@@ -145,6 +150,8 @@ export class Tresor {
   private pruefer: Pruefer[] = [];
   private beiNeuemSchluessel: (() => Promise<void>)[] = [];
   private nachWechsel: ((um: (wert: string) => string | null) => Promise<void>)[] = [];
+  private bestand: Bestand | null = null;
+  private genauer = new Set<GeheimArt>();
   /** Datei mit dem neuen Schlüssel während eines Wechsels (#47). */
   get neueDatei() { return `${this.datei}.neu`; }
 
@@ -191,6 +198,15 @@ export class Tresor {
     if (nachNeuemSchluessel) this.beiNeuemSchluessel.push(nachNeuemSchluessel);
     if (nachWechsel) this.nachWechsel.push(nachWechsel);
   }
+
+  /**
+   * Bestand aller verschlüsselten Werte (#410) für die Anzeige je Art und die Liste nicht lesbarer Werte.
+   * `genauer`: Arten, deren nicht lesbare Werte ein Prüfer schon mit Namen meldet.
+   */
+  registriereBestand(b: Bestand, genauer: GeheimArt[] = []) { this.bestand = b; for (const a of genauer) this.genauer.add(a); }
+
+  /** Nur Nacharbeit nach einem Wechsel, z. B. zwischengespeicherte Einstellungen vergessen (#410). */
+  beimWechsel(f: (um: (wert: string) => string | null) => Promise<void>) { this.nachWechsel.push(f); }
 
   /**
    * Schlüssel wechseln (#47): neuen Schlüssel erzeugen, alle verschlüsselten Werte über `speichere`
@@ -260,9 +276,16 @@ export class Tresor {
     for (const p of this.pruefer) {
       try { betroffen.push(...(await p())); } catch (e) { log.warn('Prüfung verschlüsselter Werte fehlgeschlagen', { fehler: (e as Error).message }); }
     }
+    let arten: ArtStand[] = [];
+    if (this.bestand) {
+      try {
+        const b = bestandAus(await this.bestand(), (v) => this.lesbar(v), this.genauer);
+        arten = b.arten; betroffen.push(...b.betroffen);
+      } catch (e) { log.warn('Bestand verschlüsselter Werte nicht ermittelbar', { fehler: (e as Error).message }); }
+    }
     return {
       zustand: this.zustand, fingerabdruck: this.fingerabdruck, erwartet: this.gespeichert?.fingerabdruck ?? null,
-      erstellt: this.gespeichert?.erstellt ?? null, datei: this.datei, eingebunden: this.volume(dirname(this.datei)), betroffen,
+      erstellt: this.gespeichert?.erstellt ?? null, datei: this.datei, eingebunden: this.volume(dirname(this.datei)), betroffen, arten,
     };
   }
 
