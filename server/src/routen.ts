@@ -7,6 +7,7 @@ import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import { SITZUNG_TAGE, type Konten } from './konten';
 import type { SitzungIntern } from './konto-repo';
+import type { Zweifaktor } from './zweifaktor';
 import { openapi, v1Routen } from './api-v1';
 import { wunschAus } from '../../shared/src/stempel';
 import type { ApiSchluessel, ApiSchluesselDienst } from './apischluessel';
@@ -330,7 +331,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       // Anmeldung über einen Anbieter (#241): Knopf auf der Anmeldeseite.
       anbieter: !a.benutzer && x.oidc ? await x.oidc.bereit().then((e) => (e ? { knopf: e.knopf, lokalNurAdmins: e.lokalNurAdmins } : null)) : null,
       // Zwei-Faktor (#242): eingerichtet? Für die Rolle vorgeschrieben, aber noch nicht eingerichtet?
-      zweifaktor: a.benutzer && konten.zweifaktor ? { aktiv: await konten.zweifaktor.aktiv(a.benutzer.id), fehlt: !a.sitzungsDaten?.vertretungId && await konten.zweifaktor.fehlt(a.benutzer) } : null,
+      // #416: ausstehend = vorgeschrieben, aber diese Sitzung lief schon vorher – Hinweis statt Sperre.
+      zweifaktor: a.benutzer && konten.zweifaktor ? await zweifaktorStatus(konten.zweifaktor, a.benutzer, a.sitzungsDaten) : null,
       // Ohne Schlüssel (Werkbank → Verschlüsselung) lassen sich keine Passwörter speichern (#39, #46).
       passwoerterMoeglich: dienst.passwoerterMoeglich,
       // Logo und Schriftzug des Standard-Designs für die Anmeldeseite (#72).
@@ -1627,6 +1629,24 @@ export function sitzungsCookie(schluessel: string | null, sicher: boolean): stri
   return teile.join('; ');
 }
 
+/** Zwei-Faktor für /api/konto/status (#242, #416); beim Agieren als anderer Benutzer nie gesperrt. */
+async function zweifaktorStatus(zf: Zweifaktor, b: Benutzer, s?: SitzungIntern) {
+  const lage = s?.vertretungId ? 'ok' : await zf.lage(b, s?.erstellt);
+  return { aktiv: await zf.aktiv(b.id), fehlt: lage === 'fehlt', ausstehend: lage === 'ausstehend' };
+}
+
+/**
+ * Zwei-Faktor-Pflicht lesen oder nur ausschalten (#416): geht für Administratoren auch, solange sie die
+ * Zwei-Faktor-Anmeldung selbst noch einrichten müssen – so sperrt sich niemand mit dieser Einstellung aus.
+ * Einschalten (ein Wert true) gehört nicht dazu.
+ */
+export function pflichtZuruecknehmen(r: Pick<Route, 'methode' | 'pfad'>, a: Pick<Anfrage, 'body' | 'benutzer'>): boolean {
+  if (r.pfad !== '/api/werkbank/zweifaktor' || a.benutzer?.rolle !== 'admin') return false;
+  if (r.methode === 'GET') return true;
+  if (r.methode !== 'PUT' || !a.body || typeof a.body !== 'object') return false;
+  return Object.values(a.body as Record<string, unknown>).every((w) => w === false);
+}
+
 /**
  * Prüft Zugang und Schutz vor fremden Seiten (CSRF): Ändernde Anfragen
  * müssen den Header X-DMS tragen, den nur die eigene Oberfläche setzt.
@@ -1662,7 +1682,9 @@ export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => st
   if (r.zugang === 'offen') return;
   if (!a.benutzer) throw new Fachfehler(401, 'Bitte anmelden.');
   // Zwei-Faktor vorgeschrieben (#242), aber noch nicht eingerichtet: nur das eigene Konto.
-  if (konten.zweifaktor && !a.sitzungsDaten?.vertretungId && !r.pfad.startsWith('/api/konto/') && (await konten.zweifaktor.fehlt(a.benutzer))) {
+  // #416: gilt erst für Sitzungen ab dem Einschalten der Pflicht; die Pflicht selbst lesen und ausschalten geht immer.
+  if (konten.zweifaktor && !a.sitzungsDaten?.vertretungId && !r.pfad.startsWith('/api/konto/') && !pflichtZuruecknehmen(r, a)
+    && (await konten.zweifaktor.fehlt(a.benutzer, a.sitzungsDaten?.erstellt))) {
     throw new Fachfehler(403, 'Bitte zuerst die Zwei-Faktor-Anmeldung einrichten (Mein Konto).');
   }
   if (r.zugang === 'admin' && a.benutzer.rolle !== 'admin') throw new Fachfehler(403, 'Dafür sind Administratorrechte nötig.');

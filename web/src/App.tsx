@@ -20,7 +20,7 @@ import { useHandbuch } from './Hilfe';
 export function App() {
   const { pfad, suche } = useOrt();
   const d = useDaten();
-  const { ich, abmelden, vertretung, hinweise, aktualisieren, version } = useKonto();
+  const { ich, abmelden, vertretung, hinweise, aktualisieren, version, zweifaktor } = useKonto();
   // Nach einem Ausfall (#122): gemeinsame Daten neu holen; „Ansicht neu laden“ baut den Inhalt neu auf.
   const [ansicht, setAnsicht] = useState(0);
   useBeiWiederErreichbar(() => void d.neuLaden());
@@ -61,6 +61,13 @@ export function App() {
         </div>
       )}
       {!vertretung && hinweise.length > 0 && <Hinweise />}
+      {/* #416: Pflicht eingeschaltet, während diese Sitzung lief – weiterarbeiten, aber deutlich darauf hinweisen. */}
+      {!vertretung && zweifaktor.ausstehend && (
+        <div className="hinweisbanner" role="alert" id="zweifaktor-hinweis">
+          <p><strong>Die Zwei-Faktor-Anmeldung ist für deine Rolle vorgeschrieben.</strong> Richte sie jetzt ein – spätestens bei der nächsten Anmeldung geht es sonst erst nach der Einrichtung weiter.</p>
+          {!(bereich === 'profil' && teile[1] === 'sicherheit') && <Link to="/profil/sicherheit" className="knopf klein">Jetzt einrichten</Link>}
+        </div>
+      )}
       <ErreichbarkeitsBanner version={version} ansichtNeuLaden={() => { setAnsicht((n) => n + 1); void d.neuLaden(); }} />
       <WartungsBanner admin={admin} abgemeldet={() => void aktualisieren()} />
       {/* #128: Administratoren richten ein, arbeiten aber nicht in der Ablage. */}

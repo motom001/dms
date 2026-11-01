@@ -144,8 +144,11 @@ export interface ZweifaktorStand { aktiv: boolean; seit: string | null; codesUeb
 export interface ZweifaktorPflicht { admin: boolean; mitglied: boolean }
 export interface KontoStatus {
   einrichtungNoetig: boolean; mail: boolean; benutzer: Benutzer | null;
-  /** Zwei-Faktor (#242): eingerichtet; für die Rolle vorgeschrieben, aber noch nicht eingerichtet. */
-  zweifaktor?: { aktiv: boolean; fehlt: boolean } | null;
+  /**
+   * Zwei-Faktor (#242): eingerichtet; für die Rolle vorgeschrieben, aber noch nicht eingerichtet (fehlt: erst einrichten;
+   * ausstehend: die Sitzung lief schon vor dem Einschalten der Pflicht – weiterarbeiten mit Hinweis, #416).
+   */
+  zweifaktor?: { aktiv: boolean; fehlt: boolean; ausstehend?: boolean } | null;
   /** Anmeldung über einen Anbieter (#241), nur ohne Anmeldung. */
   anbieter?: { knopf: string; lokalNurAdmins: boolean } | null;
   /** Gibt es einen Schlüssel, um Passwörter zu speichern (#39, #46)? */

@@ -8,6 +8,7 @@ import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { speicherRepo } from '../src/repo-speicher';
+import { pflichtZuruecknehmen, pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
 import { ausBase32, base32, totp, Zweifaktor } from '../src/zweifaktor';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
@@ -77,6 +78,101 @@ describe('Zwei-Faktor-Anmeldung (#242)', () => {
     assert.deepEqual(await z.pflicht(), { admin: true, mitglied: false });
     assert.equal(await z.fehlt({ id: 'a', rolle: 'admin' }), true);
     assert.equal(await z.fehlt({ id: 'm', rolle: 'mitglied' }), false);
+  });
+
+  it('Pflicht gilt erst für Sitzungen ab dem Einschalten (#416)', async () => {
+    let t = 1_700_000_000_000;
+    const speicher = speicherEinstellungen();
+    const z = new Zweifaktor(speicher, ver, ent, () => t);
+    const vorher = new Date(t - 1000), nachher = new Date(t + 1000);
+    await z.setzePflicht({ admin: true }, 'test');
+    const a = { id: 'a', rolle: 'admin' as const };
+    assert.equal(await z.lage(a, vorher), 'ausstehend', 'laufende Sitzung arbeitet weiter');
+    assert.equal(await z.lage(a, nachher), 'fehlt', 'neue Sitzung: erst einrichten');
+    assert.equal(await z.fehlt(a), true, 'ohne Sitzungsbeginn streng');
+    assert.equal(await z.lage({ id: 'm', rolle: 'mitglied' }, vorher), 'ok');
+    // Erneutes Speichern ohne Änderung verschiebt den Zeitpunkt nicht.
+    t += 60_000;
+    await z.setzePflicht({ admin: true, mitglied: false }, 'test');
+    assert.equal(await z.lage(a, nachher), 'fehlt');
+    // Aus und wieder an: neuer Zeitpunkt.
+    await z.setzePflicht({ admin: false }, 'test');
+    assert.equal(await z.lage(a, nachher), 'ok');
+    await z.setzePflicht({ admin: true }, 'test');
+    assert.equal(await z.lage(a, nachher), 'ausstehend');
+    // Vor 0.91.1 eingeschaltet (ohne Zeitpunkt): gilt für alle Sitzungen.
+    await speicher.schreibe('zweifaktor_pflicht_seit', null);
+    assert.equal(await z.lage(a, vorher), 'fehlt');
+    // Mit eingerichteter Zwei-Faktor-Anmeldung nie.
+    const { geheimnis } = z.beginne({ id: 'a', email: 'a@x.de' });
+    await z.bestaetige('a', codeZu(geheimnis, t), 'a');
+    assert.equal(await z.lage(a, nachher), 'ok');
+  });
+
+  it('Pflicht ohne eigenes Zwei-Faktor einschalten: laufende Sitzung arbeitet weiter, Ausschalten geht immer (#416)', async () => {
+    const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.benutzerspiegel());
+    const z = new Zweifaktor(speicherEinstellungen(), ver, ent);
+    konten.verbindeZweifaktor(z);
+    await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
+    const warte = () => new Promise((r) => setTimeout(r, 5));
+    const anmelden = async () => {
+      const r = await konten.anmelden({ email: 'anna@example.org', passwort: 'ein-langes-passwort' }, '1.1.1.1', '');
+      assert.ok('schluessel' in r && r.schluessel, 'ohne eigenes Zwei-Faktor reicht das Passwort');
+      return r.schluessel;
+    };
+    const alle = routen(d, konten);
+    const route = (m: Route['methode'], p: string) => alle.find((x) => x.methode === m && x.pfad === p)!;
+    const typen = route('GET', '/api/typen'), pflichtLesen = route('GET', '/api/werkbank/zweifaktor'), pflichtSetzen = route('PUT', '/api/werkbank/zweifaktor');
+    const status = route('GET', '/api/konto/status');
+    const koepfe = (n: string) => (n === 'x-dms' ? '1' : undefined);
+    const frage = async (r: Route, sitzung: string, body: unknown = {}) => {
+      const a: Anfrage = { body, params: {}, query: {}, ip: '1.1.1.1', sitzung };
+      await pruefeZugang(r, a, koepfe, konten);
+      return a;
+    };
+    const statusVon = async (sitzung: string) => {
+      const a = await frage(status, sitzung);
+      return ((await status.handler(a)) as { body: { zweifaktor: { aktiv: boolean; fehlt: boolean; ausstehend: boolean } } }).body.zweifaktor;
+    };
+
+    const laufend = await anmelden();
+    await warte();
+    // Einschalten in der laufenden Sitzung (wie über die Werkbank).
+    await pflichtSetzen.handler(await frage(pflichtSetzen, laufend, { admin: true }));
+    assert.deepEqual(await z.pflicht(), { admin: true, mitglied: false });
+    // Laufende Sitzung: weiterarbeiten, mit Hinweis.
+    await frage(typen, laufend);
+    assert.deepEqual(await statusVon(laufend), { aktiv: false, fehlt: false, ausstehend: true });
+    await frage(pflichtSetzen, laufend, { mitglied: true });
+
+    // Nächste Anmeldung: erst einrichten.
+    await warte();
+    const neu = await anmelden();
+    assert.deepEqual(await statusVon(neu), { aktiv: false, fehlt: true, ausstehend: false });
+    await assert.rejects(frage(typen, neu), (e: unknown) => e instanceof Fachfehler && e.status === 403 && /Zwei-Faktor/.test(e.message));
+    await frage(route('GET', '/api/konto/zweifaktor'), neu);
+    // Die Pflicht selbst: lesen und ausschalten immer, einschalten nicht.
+    await frage(pflichtLesen, neu);
+    await assert.rejects(frage(pflichtSetzen, neu, { mitglied: true }), (e: unknown) => e instanceof Fachfehler && e.status === 403);
+    await assert.rejects(frage(pflichtSetzen, neu, { admin: false, mitglied: true }), (e: unknown) => e instanceof Fachfehler && e.status === 403);
+    await pflichtSetzen.handler(await frage(pflichtSetzen, neu, { admin: false }));
+    assert.deepEqual(await z.pflicht(), { admin: false, mitglied: false });
+    await frage(typen, neu);
+    assert.deepEqual(await statusVon(neu), { aktiv: false, fehlt: false, ausstehend: false });
+  });
+
+  it('pflichtZuruecknehmen: nur für Administratoren, nur lesen oder ausschalten (#416)', () => {
+    const admin = { rolle: 'admin' } as Anfrage['benutzer'], mitglied = { rolle: 'mitglied' } as Anfrage['benutzer'];
+    const r = (methode: Route['methode'], pfad = '/api/werkbank/zweifaktor') => ({ methode, pfad });
+    assert.equal(pflichtZuruecknehmen(r('GET'), { body: undefined, benutzer: admin }), true);
+    assert.equal(pflichtZuruecknehmen(r('PUT'), { body: { admin: false }, benutzer: admin }), true);
+    assert.equal(pflichtZuruecknehmen(r('PUT'), { body: { admin: false, mitglied: false }, benutzer: admin }), true);
+    assert.equal(pflichtZuruecknehmen(r('PUT'), { body: { admin: true }, benutzer: admin }), false);
+    assert.equal(pflichtZuruecknehmen(r('PUT'), { body: { admin: 'false' }, benutzer: admin }), false);
+    assert.equal(pflichtZuruecknehmen(r('PUT'), { body: null, benutzer: admin }), false);
+    assert.equal(pflichtZuruecknehmen(r('GET'), { body: undefined, benutzer: mitglied }), false);
+    assert.equal(pflichtZuruecknehmen(r('GET', '/api/werkbank/anmeldeschutz'), { body: undefined, benutzer: admin }), false);
   });
 
   it('Anmeldung: Passwort, dann Code; falsche Codes; Passwort-Link verlangt den Code ebenfalls', async () => {
