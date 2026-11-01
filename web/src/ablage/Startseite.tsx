@@ -7,6 +7,7 @@ import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { neuePost } from './NeuePost';
+import { StartSuche } from './StartSuche';
 import { istTouch, postFotografieren } from './PostKamera';
 import { Symbol } from '../Symbol';
 import { darfPostAnlegen } from '../../../shared/src/model';
@@ -64,6 +65,8 @@ export function Startseite({ anstehend, offen, breit = false }: { anstehend: { l
         </div>
       </div>
       <div className={`listenrumpf startseite${breit ? ' start-breit' : ''}`}>
+        {/* Schnell finden (#497) ganz oben; darunter (ohne Suchbegriff) die Kamera, Kacheln und „zuletzt geöffnet“. */}
+        <StartSuche ohneSuche={!!daten?.leer} sonst={<>
         {/* Handy (#490): mit einem Tipp in die Kamera – mehrseitig, ein PDF, eine Post. */}
         {kamera && <button type="button" className="knopf gruen pk-start" onClick={() => postFotografieren()}><Symbol name="kamera" /> Post fotografieren</button>}
         {daten?.leer ? (
@@ -107,6 +110,7 @@ export function Startseite({ anstehend, offen, breit = false }: { anstehend: { l
             </ul>
           </section>
         )}
+        </>} />
       </div>
     </>
   );
