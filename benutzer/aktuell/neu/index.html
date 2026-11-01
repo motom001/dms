@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.86/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.87/neu/">
       
       
         <link rel="prev" href="../original/">
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-086" class="md-skip">
+        <a href="#neu-in-version-087" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -419,15 +419,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0860" class="md-nav__link">
+  <a href="#0870" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.86.0
+        0.87.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.86.0">
+    <nav class="md-nav" aria-label="0.87.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -825,6 +825,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../laufwerk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Als Laufwerk einbinden
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../benutzer-und-rollen/" class="md-nav__link">
         
   
@@ -1132,15 +1160,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#0860" class="md-nav__link">
+  <a href="#0870" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.86.0
+        0.87.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.86.0">
+    <nav class="md-nav" aria-label="0.87.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1212,32 +1240,34 @@
   
 
 
-<h1 id="neu-in-version-086">Neu in Version 0.86<a class="headerlink" href="#neu-in-version-086" title="Permanent link">&para;</a></h1>
-<h2 id="0860">0.86.0<a class="headerlink" href="#0860" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-087">Neu in Version 0.87<a class="headerlink" href="#neu-in-version-087" title="Permanent link">&para;</a></h1>
+<h2 id="0870">0.87.0<a class="headerlink" href="#0870" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Postfächer: Anmeldung per OAuth 2.0</strong> (#358) – für Microsoft 365, Outlook.com und Gmail, wo Benutzername und Passwort für IMAP nicht mehr genügen.</li>
-<li>Je Postfach <em>Anmeldung</em> „Passwort“ (Standard, bestehende Postfächer unverändert) oder „OAuth 2.0“ mit Voreinstellungen für <strong>Microsoft 365 / Outlook.com</strong> und <strong>Gmail / Google Workspace</strong>, dazu „anderer Anbieter“ mit freien Endpunkten.</li>
-<li>Eigene App-Registrierung je Installation: Client-ID, Client-Geheimnis (und bei Microsoft der Mandant) in der Werkbank; die Umleitungs-URI steht daneben.</li>
-<li><strong>Im Browser anmelden</strong> (Autorisierungscode mit PKCE) oder <strong>mit Gerätecode</strong> (Microsoft) für ein DMS ohne öffentliche Adresse.</li>
-<li>Token und Client-Geheimnis nur verschlüsselt gespeichert, nie in der Oberfläche, im Export oder im Protokoll; <strong>Abmelden</strong> löscht sie. Das DMS erneuert die Anmeldung selbst.</li>
-<li>Abgelaufene oder entzogene Anmeldung: Hinweis am Postfach, in der Übersicht und in der Leiste der Werkbank, eine Mail an die Administratoren; der Abruf ruht bis zur neuen Anmeldung.</li>
-<li>Administratorhandbuch <em>Postfächer → Anmeldung mit OAuth</em> mit Anleitungen für Microsoft Entra und Google Cloud (und dem ehrlichen Hinweis: privat bei Gmail lieber ein App-Passwort).</li>
+<li><strong>WebDAV-Laufwerk, Stufe 1: lesen und ablegen</strong> (#346): Die Ablage lässt sich im Windows-Explorer, im Finder und in der Dateien-App auf iPhone und iPad als Laufwerk einbinden – Adresse <code>https://&lt;dms&gt;/webdav/</code>.</li>
+<li>Ordner <strong>Neue Post</strong> (Datei hineinlegen = neue Post, Kanal „WebDAV“) und <strong>Ablage</strong> → Ansichten → Mappen → Register-Ordner mit den Dokumenten; je Mappe ein Ordner <strong>Verknüpft</strong> mit den verknüpften Mappen (nur eine Ebene).</li>
+<li>Datei in einen Register-Ordner legen = Dokument dort; gleicher Name mit Versionierung = <strong>neue Version</strong>, ohne Versionierung wird nichts überschrieben.</li>
+<li>Rechte wie in der Oberfläche; <strong>Herunterladen nur mit Exportrecht E</strong>. Namen bereinigt (<code>\ / : * ? " &lt; &gt; |</code> usw.) und eindeutig (Kurzcode bei gleichen Titeln); Hilfsdateien wie <code>desktop.ini</code>, <code>.DS_Store</code>, <code>._…</code>, <code>~$…</code> werden still verworfen. ETag, Änderungsdatum und Größe je Dokument.</li>
+<li><strong>Werkbank → WebDAV-Laufwerk:</strong> an/aus (Standard <strong>aus</strong>), Adresse, Stand und die letzten 50 Zugriffe. Im Profil beim API-Schlüssel ein Hinweis auf das Laufwerk.</li>
+<li>Handbücher: neue Seiten <em>Als Laufwerk einbinden</em> (Benutzer: Windows, Mac, iPhone/iPad) und <em>WebDAV-Laufwerk</em> (Administratoren: Einschalten, HTTPS, Reverse-Proxy, Schutz).</li>
 </ul>
 <h3 id="sicherheit">Sicherheit<a class="headerlink" href="#sicherheit" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Verbindung testen</strong> schickt ein gespeichertes Geheimnis nur noch an den gespeicherten Server: Mit gespeichertem Token <strong>oder gespeichertem Passwort</strong> müssen Server, Port und Verschlüsselung den gespeicherten Werten entsprechen, sonst fragt das DMS nach dem Passwort bzw. „erst speichern und neu anmelden“. Ein eben eingegebenes Passwort lässt sich weiter an jeden Server testen. Auch Speichern mit neuem Server verlangt das Passwort neu bzw. meldet die OAuth-Anmeldung ab (#358).</li>
-<li>Unverschlüsselte Verbindungen beim Testen nur noch nach ausdrücklicher Bestätigung wie beim Speichern; OAuth 2.0 nie ohne Verschlüsselung (#358).</li>
-<li>Abmelden oder Entfernen eines Postfachs während einer laufenden Token-Erneuerung bleibt wirksam; eine Erneuerung oder ein Ablauf schreibt nie über eine neuere Anmeldung (#358).</li>
-<li>Neuer Mandant bzw. Token-Endpunkt einer App meldet deren Postfächer ab; die Anmeldung im Browser nur mit https-Rückrufadresse (http nur über localhost); Steuerzeichen im Benutzernamen abgelehnt; nach der Rückkehr vom Anbieter zeigt die Werkbank nur feste Fehlertexte, Einzelheiten stehen im Protokoll (#358).</li>
+<li>Anmeldung am Laufwerk nur mit <strong>E-Mail-Adresse und API-Schlüssel</strong> (HTTP Basic), nie mit dem Passwort – die Zwei-Faktor-Anmeldung bleibt wirksam. Zum Ablegen braucht der Schlüssel „lesen und schreiben“. Fehlversuche zählen im <strong>Anmeldeschutz</strong> (Sperre je Konto und IP).</li>
+<li><strong>HTTPS-Pflicht</strong> im Handbuch, Warnung in der Werkbank bei einer Adresse ohne <code>https://</code>. Ausgeschaltet antwortet <code>/webdav/</code> mit 404.</li>
+<li>Schutz gegen Endlosschleifen und Massenabrufe: <code>Depth: infinity</code> abgelehnt, „Verknüpft“ nur eine Ebene, höchstens 1000 Mappen je Ordner, <strong>600 Anfragen je Benutzer und Minute</strong>; abgelegte Dateien und abgelehnte Anmeldungen im Protokoll (Lesezugriffe nur auf Debug).</li>
+<li><strong>Nachbesserungen aus dem Sicherheits-Review:</strong> Eine neue Version über das Laufwerk landet immer auf dem Dokument hinter dem Dateinamen (per Kennung, nicht per Name – wichtig bei gleichen oder nach dem Bereinigen gleichen Namen). Hilfsdateien werden nur gezählt, nicht zwischengespeichert; höchstens <strong>drei gleichzeitige Uploads</strong> je Benutzer (darüber 503 mit <code>Retry-After</code>). <strong>Dienstkonten</strong> (#338) kommen nie in das Laufwerk. Fehlversuche mit der Adresse eines aktiven Kontos lösen die Sofortmeldung des Anmeldeschutzes aus (#368). Der <strong>ETag</strong> ist ein Hash aus Dokument-Kennung und Inhalt, nicht mehr der Inhalts-Prüfwert selbst. Fremde E-Mail-Eingaben stehen höchstens 254 Zeichen lang im Protokoll.</li>
+<li>Im Administratorhandbuch: Ein <strong>abgelaufener oder gelöschter Schlüssel</strong>, mit dem Explorer oder Finder es weiter versuchen, kann die IP-Adresse sperren – auch für die Anmeldung mit Passwort.</li>
+<li>Dokumente gehen immer als Download hinaus (<code>Content-Disposition: attachment</code>, Sandbox), Pfade mit <code>..</code> oder kaputter Kodierung werden abgewiesen. LOCK beantwortet das DMS nur zum Schein und nur dort, wo Ablegen erlaubt ist (Windows und macOS brauchen das zum Hochladen).</li>
 </ul>
 <h3 id="noch-nicht-dabei">Noch nicht dabei<a class="headerlink" href="#noch-nicht-dabei" title="Permanent link">&para;</a></h3>
 <ul>
-<li>E-Mail-Versand (SMTP) mit OAuth 2.0 – kommt als eigener Schritt.</li>
+<li>Stufe 2: Löschen (Papierkorb), Umbenennen, Verschieben zwischen Registern und Office-Dateien direkt bearbeiten mit echter Sperre (MKCOL, DELETE, MOVE und COPY antworten mit 403).</li>
+<li>Bilder der Einrichtungsschritte im Benutzerhandbuch; Unteransichten stehen im Laufwerk nebeneinander statt verschachtelt.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.85.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.85.0...v0.86.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.86.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.86.0...v0.87.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 

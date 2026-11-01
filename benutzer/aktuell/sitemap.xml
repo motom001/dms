@@ -1,75 +1,79 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/ablage/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/ablage/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/begriffe/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/begriffe/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/benutzer-und-rollen/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/benutzer-und-rollen/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/dokumente/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/dokumente/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/eingang/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/eingang/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/erste-schritte/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/erste-schritte/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/fragen/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/fragen/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/mappen/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/laufwerk/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/neu/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/mappen/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/original/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/neu/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/post/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/original/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/profil/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/post/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/startseite/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/profil/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/versenden/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/startseite/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/versionen/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/versenden/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/wofuer/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/versionen/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/benutzer/v0.86/zusammenarbeit/</loc>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/wofuer/</loc>
+         <lastmod>2026-11-01</lastmod>
+    </url>
+    <url>
+         <loc>https://motom001.github.io/dms/benutzer/v0.87/zusammenarbeit/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
 </urlset>
