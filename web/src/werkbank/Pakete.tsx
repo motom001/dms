@@ -370,7 +370,8 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
             </ul>
           </>
         )}
-        <div className="knoepfe">
+        {/* Mit Versionsauswahl: Knöpfe bündig mit dem Auswahlfeld statt auf Beschriftung + Feld gestreckt (#448). */}
+        <div className={`knoepfe${kp && kp.versionen.length > 1 && !inst ? ' feld-buendig' : ''}`}>
           {kp && kp.versionen.length > 1 && !inst && (
             <label className="klein">Version <select value={version || kp.aktuell} onChange={(e) => { setVersion(e.target.value); setVorschau(null); }}>{kp.versionen.map((x) => <option key={x.version} value={x.version}>{x.version}</option>)}</select></label>
           )}
