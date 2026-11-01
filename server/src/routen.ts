@@ -28,7 +28,7 @@ import { join } from 'node:path';
 import { ALS_KOPF, KONSOLE_KOPF, istLoopback, konsolenBenutzer, type Konsolenzugang } from './konsole';
 import type { Messung } from './messung';
 import type { Vorschaubilder } from './vorschau';
-import { Paketverwaltung, type InstallierenEingabe } from './pakete';
+import { Paketverwaltung, SAMMEL_MAX, type InstallierenEingabe } from './pakete';
 import { Paketerstellung } from './paketerstellung';
 import type { Paketlaeufer } from './laeufer/verwaltung';
 import { eigeneVersion, standKennung, uebersicht, versionsabgleich, type SystemQuelle } from './system';
@@ -1003,7 +1003,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const r = await paketerstellung.exportiere(a.body, wer(a));
       return { datei: { inhalt: r.daten, name: r.name, mime: 'application/zip', anzeigen: false, groesse: r.daten.length } };
     } },
-    { methode: 'POST', pfad: '/api/werkbank/pakete/hochladen', zugang: 'admin', roh: 10 * 1024 * 1024 + 1024, handler: async (a) => ok(await pakete.hochladen(a.body, wer(a))) },
+    // Ein Paket (höchstens 10 MB) oder eine Sammeldatei mit mehreren Paketen (#461, höchstens SAMMEL_MAX).
+    { methode: 'POST', pfad: '/api/werkbank/pakete/hochladen', zugang: 'admin', roh: SAMMEL_MAX + 1024, handler: async (a) => ok(await pakete.hochladenDatei(a.body, wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await pakete.vorschau((a.body ?? {}) as { id?: string; version?: string; quelle?: string; upload?: string })) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/installieren', zugang: 'admin', handler: async (a) => ok(await pakete.installiere((a.body ?? {}) as InstallierenEingabe, wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/updates', zugang: 'admin', handler: async () => ok(await pakete.updates()) },

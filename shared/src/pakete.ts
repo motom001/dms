@@ -6,6 +6,8 @@ import type { Hilfeort } from './hilfe';
 
 /** Der offizielle Katalog (Branch gh-pages der Registry). */
 export const OFFIZIELLER_KATALOG = 'https://raw.githubusercontent.com/motom001/dms-registry/gh-pages/katalog.json';
+/** Die Katalog-Webseite (GitHub Pages der Registry), u. a. zum Zusammenstellen einer Sammeldatei (#461). */
+export const KATALOG_SEITE = 'https://motom001.github.io/dms-registry/';
 /** Die Registry selbst – Quellen, Regeln, Vorlage. */
 export const REGISTRY = 'https://github.com/motom001/dms-registry';
 
