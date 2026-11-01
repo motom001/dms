@@ -8,6 +8,22 @@ Ein Klick auf eine Ansicht zeigt ihre Mappen in der Liste. Welche Ansichten du s
 
 ![Ansichten als Baum: Finanzen mit Unteransichten](bilder/sichten-baum.png)
 
+Gibt es viele Ansichten, filtert das kleine Feld **Ansicht suchen …** über der Liste nach dem Namen.
+
+### Ansicht wählen am Handy
+
+Am Handy steht statt der Liste ein Knopf mit der aktuellen Ansicht, z. B. **Ansicht Rechnung ▾**. Er öffnet ein Blatt von unten:
+
+- oben ein Suchfeld **Ansicht suchen …** – es filtert beim Tippen (auch Ansichten, die du ausgeblendet hast);
+- die festen Einträge wie *Start*, *Zu erledigen* und *Anstehend*;
+- **Meine Ansichten**: Ansichten, die du mit dem Stern ☆ angeheftet hast;
+- **Zuletzt benutzt**: die letzten fünf Ansichten, die du geöffnet hast (auch am Rechner);
+- danach alle Ansichten nach Gruppen – je Ansicht der obersten Ebene mit Unteransichten eine Gruppe (z. B. *Fahrzeuge*, *Haus*), die übrigen unter *Weitere Ansichten*. Gruppen klappst du mit einem Tipp auf und zu; die Gruppe der aktuellen Ansicht ist offen. Die Zahl rechts sagt, wie viele Mappen die Ansicht zeigt.
+
+**Ansichten ausblenden …** ganz unten: Nimm den Haken bei Ansichten weg, die du selten brauchst. Das gilt nur für dich und nur für diese Auswahl; die Ansicht selbst bleibt für alle, und über die Suche findest du sie weiter.
+
+Auch die Liste ist am Handy kompakter: Die Kopfzeile passt in eine Zeile, das Suchfeld bleibt beim Rollen oben, und *Volltext durchsuchen*, *Notizen*, *Erweiterte Suche* und *Exportieren …* stehen hinter **Filter ▾**.
+
 - **Ansichten können Unteransichten haben.** Ein Pfeil ▸ davor zeigt das; ein Klick darauf klappt sie auf oder zu. Dein Gerät merkt sich, was zugeklappt ist.
 - **Eine Ansicht mit Unteransichten zeigt alles zusammen:** *Finanzen* zeigt zum Beispiel alle offenen Rechnungen *und* die Zahlungen dieses Jahres.
 - **Manche Ansichten filtern:** *Offene Rechnungen* zeigt nur Rechnungen, die noch nicht bezahlt sind. Werte wie „heute“ oder „du selbst“ rechnet das DMS bei jedem Öffnen neu – eine Ansicht *Kündigung in den nächsten 12 Monaten* ist also immer aktuell.

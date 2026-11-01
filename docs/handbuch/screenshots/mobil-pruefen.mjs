@@ -12,7 +12,8 @@
  *      bleibt links und rechts abgeschnitten);
  *    - Kacheln der Startseite einspaltig;
  *    - geöffnete Menüs („+ Neu“, Benutzermenü, „Mappe ▾“) liegen vollständig im Bildschirm;
- *    - Suchfeld der Startseite (#497) liefert Treffer, ohne dass etwas zu breit wird.
+ *    - Suchfeld der Startseite (#497) liefert Treffer, ohne dass etwas zu breit wird;
+ *    - „Ansicht ▾“ (#498) öffnet ein Blatt im Bildschirm mit Tippzielen von mindestens 44 px.
  *    Von jeder Seite und jedem Menü entsteht ein Bild im Bilderordner (<breite>/<name>.png).
  *
  * Läuft im Workflow „Handbuch“ nach aufnehmen.mjs (gleiche Daten, gleicher Administrator).
@@ -190,6 +191,13 @@ for (const g of GROESSEN) {
       await s.evaluate(() => scrollTo(0, 0));
       await pruefeMenue(s, `${ort} „+ Neu“`, '.neuknopf > button', '.neuknopf .menue', join(ordner, 'menue-neu.png'));
       await pruefeMenue(s, `${ort} Benutzermenü`, '.benutzermenue .wer', '.benutzermenue .menue', join(ordner, 'menue-benutzer.png'));
+      // Ansicht wählen (#498): Blatt im Bildschirm, Tippziele mindestens 44 px hoch.
+      await pruefeMenue(s, `${ort} „Ansicht ▾“`, '.aw-knopf', '.aw-blatt', join(ordner, 'menue-ansicht.png'));
+      await s.locator('.aw-knopf').click();
+      const klein = await s.evaluate(() => [...document.querySelectorAll('.aw-blatt a, .aw-blatt button, .aw-blatt input')]
+        .filter((e) => { const r = e.getBoundingClientRect(); return r.height > 0 && r.height < 43.5; }).map((e) => `${(e.textContent || e.getAttribute('aria-label') || e.getAttribute('placeholder') || '').trim().slice(0, 30)} (${Math.round(e.getBoundingClientRect().height)} px)`));
+      if (klein.length) fehler.push(`${ort} „Ansicht ▾“: Tippziele unter 44 px: ${klein.join(', ')}`);
+      await s.keyboard.press('Escape');
       // Schnell finden (#497): Suchfeld oben, Treffer in unter einer Sekunde, nichts zu breit.
       const feld = s.locator('#ss-feld');
       if (!(await feld.count())) fehler.push(`${ort}: Suchfeld der Startseite fehlt`);

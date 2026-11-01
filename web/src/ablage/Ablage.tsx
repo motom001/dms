@@ -15,6 +15,7 @@ import { titelOder, useSeiten } from '../seiten';
 import { MappeAnsicht, NeueMappe } from './MappeFormular';
 import { PapierkorbDetail, PapierkorbListe, usePapierkorb } from './Papierkorb';
 import { Startseite } from './Startseite';
+import { AnsichtFilter, AnsichtWahl } from './AnsichtWahl';
 import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
 import { Hilfe } from '../Hilfe';
@@ -93,7 +94,17 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
         </aside>
       ) : (
       <aside className="spalte sichten" aria-label="Ansichten">
-        <h2 className="ueber">Ansichten</h2>
+        {/* Handy (#498): ein Knopf „<Ansicht> ▾“ mit Suche und Gruppen statt der Reiterleiste. */}
+        <AnsichtWahl aktiv={sicht} aktuell={sicht === 'start' ? 'Start' : sicht === 'eingang' ? 'Zu erledigen' : sicht === 'anstehend' ? 'Anstehend' : sicht === 'favoriten' ? 'Favoriten' : sicht === 'papierkorb' ? 'Papierkorb' : verwaltet?.name ?? typ?.name ?? 'Ansicht wählen'}
+          feste={[
+            ...(mitStart ? [{ pfad: '/ablage/start', name: 'Start', text: 'Start', an: sicht === 'start' }] : []),
+            { pfad: '/ablage/eingang', name: 'Zu erledigen', text: 'Zu erledigen', zahl: d.zaehler.eingang, hervor: true, an: sicht === 'eingang' },
+            { pfad: '/ablage/anstehend', name: 'Anstehend', text: 'Anstehend', zahl: anstehend.liste?.eintraege.length, an: sicht === 'anstehend' },
+            { pfad: '/ablage/favoriten', name: <><span aria-hidden="true" className="sternzeichen">★</span> Favoriten</>, text: 'Favoriten', zahl: d.zaehler.favoriten, an: sicht === 'favoriten' },
+            ...(!!d.zaehler.papierkorbTage || !!d.zaehler.papierkorb ? [{ pfad: '/ablage/papierkorb', name: 'Papierkorb', text: 'Papierkorb', zahl: d.zaehler.papierkorb, an: sicht === 'papierkorb' }] : []),
+            { pfad: '/ablage/suche', name: <><span aria-hidden="true">⌕</span> Erweiterte Suche</>, text: 'Erweiterte Suche', an: false },
+          ]} />
+        <h2 className="ueber aw-breit">Ansichten</h2>
         <nav className="sichtliste">
           <Link to="/ablage/suche" className="sicht" title="Mappentypen wählen, in Feldern und im Volltext suchen">
             <span className="nm"><span aria-hidden="true">⌕</span> Erweiterte Suche</span>
@@ -115,7 +126,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
             </Link>
           )}
           {d.sichten.length > 0 && <hr />}
-          <SichtBaum aktiv={sicht} />
+          <AnsichtFilter aktiv={sicht} baum={<SichtBaum aktiv={sicht} />} />
         </nav>
         {!d.typen.length && <p className="leise klein">Noch keine Mappentypen. {ich.rolle === 'admin' ? <Link to="/werkbank/typen" className="verweis">Zur Werkbank</Link> : 'Ein Administrator muss sie zuerst einrichten.'}</p>}
         {d.typen.length > 0 && !d.sichten.length && <p className="leise klein">Noch keine Ansichten. {ich.rolle === 'admin' ? <Link to="/werkbank/sichten" className="verweis">Ansichten einrichten</Link> : 'Ein Administrator muss sie zuerst einrichten.'}</p>}
@@ -313,6 +324,8 @@ function Liste(p: {
   const anhang = p.anhang ?? '';
   const [eingabe, setEingabe] = useState('');
   const [suche, setSuche] = useState('');
+  // Handy (#498): Haken, Erweiterte Suche und Exportieren hinter „Filter ▾“.
+  const [filter, setFilter] = useState(false);
   // Suche erst nach einer kurzen Tipppause an den Server schicken.
   useEffect(() => { const t = setTimeout(() => setSuche(eingabe.trim()), 250); return () => clearTimeout(t); }, [eingabe]);
 
@@ -434,7 +447,7 @@ function Liste(p: {
       </div>
       {p.kopf}
       {zeigeSuche && (
-        <div className="suchzeile">
+        <div className={`suchzeile${filter ? '' : ' lk-zu'}`}>
           <label className="suche"><span className="sr">Suchen</span>
             <input type="search" placeholder={volltext ? 'Suchen in Titel, Werten und Dokumenten …' : 'Suchen in Titel und Werten …'} value={eingabe} onChange={(e) => setEingabe(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') void zurArchivnummer(eingabe); }} />
@@ -446,13 +459,15 @@ function Liste(p: {
             <input type="checkbox" checked={inNotizen} onChange={(e) => d.setzeEinstellung('suche_notizen', e.target.checked || null)} /><span>Notizen</span>
           </label>
           {p.sicht !== 'suche' && <Link to={`/ablage/suche${p.typ ? `?typ=${encodeURIComponent(p.typ.schluessel ?? p.typ.id)}` : ''}`} className="verweis klein" title="Mappentypen wählen, in Feldern und im Volltext suchen">Erweiterte Suche</Link>}
+          {p.export && !wahl?.gewaehlt.size && !!s.gesamt && <button type="button" className="textknopf klein lk-nur-schmal" onClick={() => setExportOffen(true)}>Exportieren …</button>}
+          <button type="button" className={`knopf klein lk-filterknopf ${filter ? 'an' : ''}`} aria-expanded={filter} onClick={() => setFilter(!filter)}>Filter <span aria-hidden="true">▾</span>{(volltext || inNotizen) && <span className="lk-punkt" aria-label="(aktiv)" />}</button>
         </div>
       )}
       {anzahlText && (
         <p className="listenzahl leise klein" aria-live="polite">
           {anzahlText}{s.mappen.length < (s.gesamt ?? 0) ? `, ${zahl(s.mappen.length)} geladen` : ''}
           {sortierung && <> · sortiert nach {spaltenName(sortierung.spalte, p.typ)} {sortierung.absteigend ? '↓' : '↑'} <button type="button" className="textknopf" onClick={() => setzeSortierung(null)}>nach Titel</button></>}
-          {p.export && !wahl?.gewaehlt.size && !!s.gesamt && <> · <button type="button" className="textknopf" onClick={() => setExportOffen(true)}>Exportieren …</button></>}
+          {p.export && !wahl?.gewaehlt.size && !!s.gesamt && <span className="lk-nur-breit"> · <button type="button" className="textknopf" onClick={() => setExportOffen(true)}>Exportieren …</button></span>}
           {geaenderteHier.length > 0 && <> · <span className="abo-punkt" aria-hidden="true" /> {zahl(geaenderteHier.length)} geändert · <button type="button" className="textknopf" onClick={() => void alleGesehen()}>Alle als gesehen markieren</button></>}
         </p>
       )}
