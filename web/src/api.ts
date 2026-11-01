@@ -7,6 +7,7 @@ import type { Feldbedingung, Sicht, SichtDaten } from '../../shared/src/sichten'
 import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
 import type { InstalliertesPaket, Katalog } from '../../shared/src/pakete';
 import type { Einstellungsbeschreibung } from '../../shared/src/paketeinstellungen';
+import type { ErstellenStand, PaketErstellenEingabe, PaketPruefung } from '../../shared/src/paketerstellung';
 import type { EigeneAnsicht, WerkbankAnsicht } from '../../shared/src/werkbankansicht';
 import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src/sichtrechte';
 import type { Anstehend, Erinnerung } from '../../shared/src/fristen';
@@ -458,6 +459,10 @@ export const api = {
   paketEinstellungen: (id: string) => anfrage<PaketEinstellungenStand>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`),
   paketEinstellungenSpeichern: (id: string, werte: Record<string, unknown>) => anfrage<PaketEinstellungenStand>('PUT', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`, { werte }),
   paketAktion: (id: string, aktion: string) => anfrage<{ ok: boolean; text: string }>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/aktionen/${encodeURIComponent(aktion)}`),
+  /* Paket selbst erstellen (#374) */
+  paketErstellenStand: () => anfrage<ErstellenStand>('GET', '/api/werkbank/pakete/erstellen'),
+  paketErstellenPruefen: (e: PaketErstellenEingabe) => anfrage<PaketPruefung>('POST', '/api/werkbank/pakete/erstellen/pruefen', e),
+  paketExportieren: (e: PaketErstellenEingabe) => speichereDatei('/api/werkbank/pakete/erstellen/export', e, `${e.id}-${e.version}.zip`),
   nummernkreisAnlegen: (k: NummernkreisEingabe) => anfrage<NummernkreisAnsicht[]>('POST', '/api/werkbank/nummernkreise', k),
   nummernkreisAendern: (s: string, k: Omit<NummernkreisEingabe, 'schluessel'>) => anfrage<NummernkreisAnsicht[]>('PUT', `/api/werkbank/nummernkreise/${encodeURIComponent(s)}`, k),
   nummernkreisLoeschen: (s: string) => anfrage<NummernkreisAnsicht[]>('DELETE', `/api/werkbank/nummernkreise/${encodeURIComponent(s)}`),

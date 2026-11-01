@@ -24,6 +24,22 @@ Dann ausfüllen:
 | `README.md`, `LICENSE`, `CHANGELOG.md` | Beschreibung, Lizenztext, Änderungen je Version |
 | `tests/erwartung.yaml` | was nach der Installation da sein muss |
 
+### Paket aus deinem DMS erstellen
+
+Statt mit der Vorlage zu beginnen, kannst du Mappentypen und Ansichten, die du in einem DMS gebaut hast, unter **Werkbank → Pakete → Paket erstellen** exportieren (ab DMS 0.86.0, siehe [Administratorhandbuch → Paket aus deinem DMS erstellen](https://motom001.github.io/dms/admin/aktuell/pakete/#paket-aus-deinem-dms-erstellen)). Das Ergebnis ist ein ZIP mit einem Ordner `<id>/` im Format der Registry – `manifest.yaml`, `inhalt/mappentypen.yaml`, `inhalt/sichten.yaml`, ggf. `inhalt/beispiele.yaml`, `README.md` aus der Beschreibung, `CHANGELOG.md`, `LICENSE` mit dem vollen Lizenztext und `tests/erwartung.yaml`. Es besteht `werkzeuge/pruefen.py`; entpackt unter `pakete/` ist es ein fertiger Paketordner für einen Pull Request (README und Beschreibung lohnt es sich noch auszubauen).
+
+So bildet der Export das DMS auf das Paketformat ab:
+
+| Im DMS | Im Paket |
+| --- | --- |
+| eigener Mappentyp | Eintrag in `mappentypen.yaml`; Kennung aus der Kennung des Typs, bleibt über Versionen gleich (gemerkt) |
+| Typ oder Ansicht aus einem installierten Paket | nicht kopiert, sondern `abhaengigkeiten: { <paket>: ">=<installierte Version>" }`, Verweise als `<paket>:<kennung>` |
+| Verweis auf Benutzer, Rolle, Ablageort | `dms:benutzer`, `dms:rolle`, `dms:ablageort` (dann `dms` mindestens `>=0.75.0`) |
+| Standard-Trefferliste | `trefferliste`; weitere Trefferlisten fehlen |
+| Bedingung auf ein Feld | `{ feld, operator, wert }`, dynamische Werte (heute, ich …) als Objekt; Bedingungen auf Anzahlen, Favoriten, Fristen und auf feste Mappen fehlen |
+| gewählte Beispiel-Mappen | `beispiele.yaml` mit `schluessel` und `{ beispiel: … }` für Verweise untereinander; ohne Passwörter, Dokumente und Verweise auf nicht gewählte Mappen |
+| Nummernkreis am Feld, Berechtigungen, Archivmodus | fehlen (das Format kennt sie nicht); die Prüfung nennt sie |
+
 ## Paketformat (verbindlich)
 
 Das Format beschreiben die JSON-Schemas in der Registry: [`schema/manifest.schema.json`](https://github.com/motom001/dms-registry/blob/main/schema/manifest.schema.json) und [`schema/inhalt.schema.json`](https://github.com/motom001/dms-registry/blob/main/schema/inhalt.schema.json). Die Vorlage zeigt jede Angabe mit Kommentar. Das DMS liest genau dieses Format:

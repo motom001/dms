@@ -112,6 +112,26 @@ Die Liste der installierten Pakete zeigt bei jedem die **Herkunft**: „offiziel
 
 Das Protokoll vermerkt, wer welche Quelle hinzugefügt, abgeschaltet oder entfernt und wer welches Paket hochgeladen hat.
 
+## Paket aus deinem DMS erstellen
+
+Hast du dir eigene Mappentypen und Ansichten gebaut – etwa für Verträge mit Zahlungen –, nimmst du sie als Paket zu einer anderen Familie mit, ohne YAML von Hand zu schreiben. Unter **Werkbank → Pakete → Paket erstellen** führt dich ein Assistent in vier Schritten; unten stehen **Zurück**, **Weiter** und am Ende **Als .zip exportieren**.
+
+1. **Auswählen** – Mappentypen und Ansichten mit Haken, oben eine Suche. Optional **Beispiel-Mappen**: Ohne Auswahl enthält das Paket keine einzige Mappe. Wählst du Mappen der gewählten Typen aus, kommen ihre Feldwerte als Beispiele mit – nimm nur Mappen mit erfundenen Daten, z. B. Demo-Mappen.
+2. **Prüfen** – das DMS prüft automatisch und sagt, was es daraus macht:
+    - **Aus einem Paket:** Ein Mappentyp oder eine Ansicht, die ein installiertes Paket mitgebracht hat (etwa „Organisation“ aus *Basis*), wird **nicht kopiert**, sondern als **Abhängigkeit** eingetragen, z. B. `basis: ">=1.1.0"` mit der hier installierten Version. Hast du so einen Typ hier nachträglich geändert, weist das DMS darauf hin: Deine Änderungen gehören nicht zu deinem Paket – lege dafür einen eigenen Typ an.
+    - **Benutzer, Rolle, Ablageort:** Verweise darauf werden zu `dms:benutzer`, `dms:rolle`, `dms:ablageort` – die bringt jedes DMS mit.
+    - **Nicht gewählt:** Verweist ein gewählter Typ (Feld, Verknüpfungsregister) oder eine Ansicht auf einen **eigenen** Typ, den du nicht gewählt hast, steht er unter „Nicht gewählt, aber gebraucht“ mit **Mit aufnehmen**. So lange geht der Export nicht. Eine Ansicht, deren Elternansicht fehlt, kommt auf die oberste Ebene.
+    - **Was nicht ins Paket passt**, nennt die Prüfung als Hinweis: weitere Trefferlisten (nur die Standard-Trefferliste kommt mit), Berechtigungen, Archivmodus, Nummernkreise an Feldern, Bedingungen auf Anzahlen, Favoriten oder Fristen und alles, was auf bestimmte Mappen oder Benutzer dieses DMS zeigt.
+3. **Angaben** – Name, Id (Kleinbuchstaben, Ziffern und `_`, wird aus dem Namen vorgeschlagen), Version (Vorschlag `1.0.0`), Beschreibung (ein, zwei Sätze, daraus wird auch die README), Autor und optional dein GitHub-Name, **Lizenz** aus der Liste der Registry (im Zweifel MIT; der volle Lizenztext kommt mit) und die nötige DMS-Version (Vorschlag: dieses DMS). Unter „Was ist neu“ steht, was ins CHANGELOG kommt.
+4. **Exportieren** – vor dem Download prüft das DMS das fertige Archiv genauso wie beim Hochladen; erst dann gibt es die Datei `<id>-<version>.zip` (Format der Registry mit `manifest.yaml`, `inhalt/…`, README, CHANGELOG, LICENSE).
+
+Im anderen DMS installierst du zuerst die Abhängigkeiten (z. B. *Basis* aus dem Katalog) und lädst die Datei dann unter **Expertenmodus → Paket hochladen** hoch.
+
+**Nächste Version:** Das DMS merkt sich Id, Version, Autor, Lizenz und Auswahl jedes Exports. Beim nächsten Mal schlägt der Assistent dieselbe Id mit höherer Version vor (1.0.0 → 1.1.0); frühere Pakete holst du unter „Früher exportiert“ zurück. Lädt die andere Familie die höhere Version hoch, **aktualisiert** ihr DMS das Paket wie jedes Update: Es ergänzt neue Felder, Register und Ansichten und löscht nichts.
+
+!!! note "Keine Daten im Paket"
+    Ein Paket enthält nur den Aufbau – Mappentypen und Ansichten. Mappen, Dokumente, Notizen, Benutzer und Passwörter kommen nie mit; aus ausdrücklich gewählten Beispiel-Mappen nur Feldwerte ohne Passwörter. Paket erstellen dürfen nur Administratoren; das Protokoll vermerkt jeden Export.
+
 ## Eigene Pakete
 
-Wie ein Paket aufgebaut ist und wie es in den Katalog kommt, steht im [Entwicklerhandbuch](https://motom001.github.io/dms/entwickler/aktuell/pakete/).
+Ein selbst erstelltes Paket kannst du auch in die Registry einreichen. Wie ein Paket aufgebaut ist und wie es in den Katalog kommt, steht im [Entwicklerhandbuch](https://motom001.github.io/dms/entwickler/aktuell/pakete/).

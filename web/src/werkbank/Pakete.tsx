@@ -5,6 +5,7 @@ import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { darfVerlassen, geheZu, Link } from '../ort';
 import { PaketEinstellungen } from './PaketEinstellungen';
+import { PaketErstellen } from './PaketErstellen';
 import { rueckfrage } from '../rueckfrage';
 import { useKonto } from '../konto';
 
@@ -19,6 +20,8 @@ const datum = (iso: string | null) => (iso ? new Date(iso).toLocaleString('de-DE
 const host = (url: string) => { try { return new URL(url).host; } catch { return url; } };
 /** Kennung des hochgeladenen Pakets in der Adresse. */
 export const UPLOAD = '~hochgeladen';
+/** Assistent „Paket erstellen“ (#374). */
+export const ERSTELLEN = '~erstellen';
 
 /**
  * Abschnitt „Expertenmodus“ auf- oder zugeklappt (#369): reiner Komfort, kein Recht – gemerkt im
@@ -89,6 +92,7 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
       <div className="knoepfe">
         <button type="button" className="knopf klein" disabled={z.laedt} onClick={() => void z.abrufen()}>{z.laedt ? 'Frage ab …' : 'Katalog abrufen'}</button>
         {installiert.length > 0 && <button type="button" className="knopf klein" disabled={z.laedt} onClick={() => void z.pruefen()}>Auf neue Versionen prüfen</button>}
+        <Link to={`/werkbank/pakete/${ERSTELLEN}`} className={`knopf klein ${offen === ERSTELLEN ? 'an' : ''}`}>Paket erstellen</Link>
       </div>
       <section className="aufklappbereich">
         <button type="button" className="aufklappkopf" aria-expanded={experte} aria-controls="pakete-experte" onClick={() => setExperte(!experte)}>
@@ -175,10 +179,12 @@ export function PaketePanel({ z, id }: { z: PaketeZustand; id?: string }) {
       <div className="mappenkopf"><p className="ueber">Werkbank</p><h1>Pakete</h1>
         <p className="leise">Ein Paket bringt fertige Mappentypen, Ansichten und auf Wunsch Beispiel-Mappen mit – etwa eine „Organisation“ mit Kontakt und Anschrift. Pakete kommen aus dem offiziellen Katalog des DMS-Projekts; das DMS fragt ihn nur ab, wenn du „Katalog abrufen“ klickst.</p>
         <p className="leise">Ein Update ergänzt nur: neue Felder, Register und Ansichten. Was du selbst geändert hast, bleibt.</p>
+        <p className="leise">Eigene Mappentypen und Ansichten nimmst du mit „Paket erstellen“ als Paket in ein anderes DMS mit.</p>
       </div>
     </div>
   );
   if (id === UPLOAD) return <UploadDetail z={z} />;
+  if (id === ERSTELLEN) return <PaketErstellen />;
   const quelle = new URLSearchParams(location.search).get('quelle') ?? undefined;
   return <PaketDetail key={`${id}|${quelle ?? ''}`} z={z} id={id} quelle={quelle} />;
 }

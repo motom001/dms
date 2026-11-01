@@ -19,6 +19,7 @@ import { ALS_KOPF, KONSOLE_KOPF, istLoopback, konsolenBenutzer, type Konsolenzug
 import type { Messung } from './messung';
 import type { Vorschaubilder } from './vorschau';
 import { Paketverwaltung, type InstallierenEingabe } from './pakete';
+import { Paketerstellung } from './paketerstellung';
 import { eigeneVersion, standKennung, uebersicht, versionsabgleich, type SystemQuelle } from './system';
 import type { Fehlermeldungen } from './fehlermeldungen';
 import { MODULE, protokoll, STUFEN, type Stufe } from './protokoll';
@@ -196,6 +197,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const designs = () => { if (!x.designs) throw new Fachfehler(404, 'Designs sind nicht eingerichtet.'); return x.designs; };
   const log = x.log ?? ((m: string) => L.mail.warn(m));
   const pakete = x.pakete ?? new Paketverwaltung(dienst, { version: eigeneVersion, benutzer: async () => (await konten.listeBenutzer()).filter((b) => b.aktiv !== false).map((b) => ({ id: b.id, name: b.name || b.email })) });
+  const paketerstellung = new Paketerstellung(dienst, { version: eigeneVersion });
   const wer = (a: Anfrage) => ({ id: a.benutzer?.id ?? null, email: a.benutzer?.email ?? null });
   const typName = async (id: string) => (await dienst.listeTypen()).find((t) => t.id === id)?.name ?? id;
   const betrieb = () => { if (!x.betrieb) throw new Fachfehler(404, 'Betriebseinstellungen sind nicht eingerichtet.'); return x.betrieb; };
@@ -787,6 +789,13 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/werkbank/pakete/quellen', zugang: 'admin', handler: async (a) => ok(await pakete.quelleHinzufuegen((a.body ?? {}) as { url?: unknown }, wer(a))) },
     { methode: 'PUT', pfad: '/api/werkbank/pakete/quellen', zugang: 'admin', handler: async (a) => ok(await pakete.quelleSchalten((a.body ?? {}) as { url?: unknown; aktiv?: unknown }, wer(a))) },
     { methode: 'DELETE', pfad: '/api/werkbank/pakete/quellen', zugang: 'admin', handler: async (a) => ok(await pakete.quelleEntfernen(String(a.query.url ?? ''), wer(a))) },
+    // Paket selbst erstellen (#374): Auswahl, Prüfung, Export als .zip im Format der Registry.
+    { methode: 'GET', pfad: '/api/werkbank/pakete/erstellen', zugang: 'admin', handler: async () => ok(await paketerstellung.stand()) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/erstellen/pruefen', zugang: 'admin', handler: async (a) => ok(await paketerstellung.pruefe(a.body)) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/erstellen/export', zugang: 'admin', handler: async (a) => {
+      const r = await paketerstellung.exportiere(a.body, wer(a));
+      return { datei: { inhalt: r.daten, name: r.name, mime: 'application/zip', anzeigen: false, groesse: r.daten.length } };
+    } },
     { methode: 'POST', pfad: '/api/werkbank/pakete/hochladen', zugang: 'admin', roh: 10 * 1024 * 1024 + 1024, handler: async (a) => ok(await pakete.hochladen(a.body, wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await pakete.vorschau((a.body ?? {}) as { id?: string; version?: string; quelle?: string; upload?: string })) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/installieren', zugang: 'admin', handler: async (a) => ok(await pakete.installiere((a.body ?? {}) as InstallierenEingabe, wer(a))) },

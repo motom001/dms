@@ -46,6 +46,7 @@ export const HILFE = {
   'werkbank.postfaecher': admin('postfaecher/', 'Postfächer'),
   'werkbank.nummernkreise': admin('nummernkreise/', 'Nummernkreise'),
   'werkbank.pakete': admin('pakete/', 'Pakete'),
+  'werkbank.pakete.erstellen': admin('pakete/', 'Paket aus deinem DMS erstellen', 'paket-aus-deinem-dms-erstellen'),
   'mappentyp.archiv': admin('archiv/', 'Archivmodus und Aufbewahrung'),
   'werkbank.vollexport': admin('export/', 'Daten exportieren'),
   'werkbank.vollexport.kontakte': admin('export/', 'Kontakte als vCard', 'kontakte-als-vcard'),
