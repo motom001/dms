@@ -1,151 +1,155 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/aktualisieren/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/aktualisieren/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/anmeldeschutz/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/anmeldeschutz/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/api/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/api/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/app-store/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/app-store/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/archiv/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/archiv/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/aufgaben/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/aufgaben/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/benutzer/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/benutzer/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/berechtigungen/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/berechtigungen/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/demo/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/demo/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/designs/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/designs/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/direktlinks/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/direktlinks/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/eingangsordner/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/eingangsordner/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/entscheidungen/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/entscheidungen/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/export/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/export/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/fehlersuche/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/fehlersuche/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/installation/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/installation/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/konsole/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/konsole/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/mappentypen/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/mappentypen/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/neu/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/neu/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/notfall/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/notfall/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/nummernkreise/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/nummernkreise/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/pakete/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/pakete/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/papierkorb/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/papierkorb/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/postfaecher/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/postfaecher/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/sicherung/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/sicherung/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/sichten/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/sichten/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/speicherplatz/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/speicherplatz/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/technik/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/stempel/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/texterkennung/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/technik/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/uebersicht/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/texterkennung/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/verfahrensdokumentation/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/uebersicht/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/verschluesselung/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/verfahrensdokumentation/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/wachsen/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/verschluesselung/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/wartungsmodus/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/wachsen/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/webdav/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/wartungsmodus/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
     <url>
-         <loc>https://motom001.github.io/dms/admin/v0.90/wiederherstellen/</loc>
+         <loc>https://motom001.github.io/dms/admin/v0.91/webdav/</loc>
+         <lastmod>2026-11-01</lastmod>
+    </url>
+    <url>
+         <loc>https://motom001.github.io/dms/admin/v0.91/wiederherstellen/</loc>
          <lastmod>2026-11-01</lastmod>
     </url>
 </urlset>

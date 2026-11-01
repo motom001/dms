@@ -2938,6 +2938,7 @@
           "Dokumente"
         ],
         "summary": "Ältere Version herunterladen",
+        "description": "Wie der Inhalt des Dokuments, mit denselben Stempel-Parametern. Stempel (#394): Mit Stempel-Parametern entsteht eine gestempelte Kopie als PDF (Bilder werden zum PDF); das gespeicherte Original bleibt unverändert, die Historie der Mappe vermerkt die Weitergabe, die Antwort trägt den Kopf X-DMS-Stempel: 1. Verlangt der Mappentyp einen Stempel (Pflicht), wird ohne Parameter seine Vorlage verwendet. 422, wenn sich die Datei nicht stempeln lässt (nur PDF, JPEG, PNG; nicht verschlüsselt) oder der Empfänger fehlt.",
         "operationId": "getDokumenteMitidVersionenMitnummerInhalt",
         "parameters": [
           {
@@ -2956,6 +2957,87 @@
             "description": "Nummer der Version",
             "schema": {
               "type": "integer"
+            }
+          },
+          {
+            "name": "herunterladen",
+            "in": "query",
+            "required": false,
+            "description": "Beliebiger Wert: als Datei herunterladen. Über einen API-Schlüssel ist jeder Abruf ein Herunterladen (Weitergeben); Pakete bekommen immer das Original.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vorlage",
+            "in": "query",
+            "required": false,
+            "description": "Id einer Stempel-Vorlage (GET /stempel/vorlagen); eigene Angaben unten gehen vor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stempel",
+            "in": "query",
+            "required": false,
+            "description": "Text des Stempels (höchstens 200 Zeichen) mit Platzhaltern {datum}, {empfänger}, {benutzer}, {mappe}",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "empfaenger",
+            "in": "query",
+            "required": false,
+            "description": "Wert für {empfänger}; Pflicht, wenn der Text ihn nutzt",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lage",
+            "in": "query",
+            "required": false,
+            "description": "diagonal (Wasserzeichen, Standard), kopf, fuss oder ecke",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deckkraft",
+            "in": "query",
+            "required": false,
+            "description": "0.1 bis 1, Standard 0.25",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "seiten",
+            "in": "query",
+            "required": false,
+            "description": "alle (Standard) oder erste",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "seitenzahlen",
+            "in": "query",
+            "required": false,
+            "description": "true = Fußzeile „Seite x von y“ auf jeder Seite (auch ohne Stempeltext)",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "archivnummer",
+            "in": "query",
+            "required": false,
+            "description": "true = Archivnummer des Dokuments in der Fußzeile",
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -3144,6 +3226,7 @@
           "Dokumente"
         ],
         "summary": "Inhalt eines Dokuments herunterladen",
+        "description": "Ohne Parameter die gespeicherte Datei. Stempel (#394): Mit Stempel-Parametern entsteht eine gestempelte Kopie als PDF (Bilder werden zum PDF); das gespeicherte Original bleibt unverändert, die Historie der Mappe vermerkt die Weitergabe, die Antwort trägt den Kopf X-DMS-Stempel: 1. Verlangt der Mappentyp einen Stempel (Pflicht), wird ohne Parameter seine Vorlage verwendet. 422, wenn sich die Datei nicht stempeln lässt (nur PDF, JPEG, PNG; nicht verschlüsselt) oder der Empfänger fehlt. Beispiel: ?vorlage=kopie&empfaenger=Hausverwaltung%20M%C3%BCller oder ?stempel=ENTWURF&lage=diagonal&deckkraft=0.2&seitenzahlen=true.",
         "operationId": "getDokumenteMitidInhalt",
         "parameters": [
           {
@@ -3153,6 +3236,87 @@
             "description": "Id des Dokuments (UUID)",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "herunterladen",
+            "in": "query",
+            "required": false,
+            "description": "Beliebiger Wert: als Datei herunterladen. Über einen API-Schlüssel ist jeder Abruf ein Herunterladen (Weitergeben); Pakete bekommen immer das Original.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vorlage",
+            "in": "query",
+            "required": false,
+            "description": "Id einer Stempel-Vorlage (GET /stempel/vorlagen); eigene Angaben unten gehen vor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stempel",
+            "in": "query",
+            "required": false,
+            "description": "Text des Stempels (höchstens 200 Zeichen) mit Platzhaltern {datum}, {empfänger}, {benutzer}, {mappe}",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "empfaenger",
+            "in": "query",
+            "required": false,
+            "description": "Wert für {empfänger}; Pflicht, wenn der Text ihn nutzt",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lage",
+            "in": "query",
+            "required": false,
+            "description": "diagonal (Wasserzeichen, Standard), kopf, fuss oder ecke",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deckkraft",
+            "in": "query",
+            "required": false,
+            "description": "0.1 bis 1, Standard 0.25",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "seiten",
+            "in": "query",
+            "required": false,
+            "description": "alle (Standard) oder erste",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "seitenzahlen",
+            "in": "query",
+            "required": false,
+            "description": "true = Fußzeile „Seite x von y“ auf jeder Seite (auch ohne Stempeltext)",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "archivnummer",
+            "in": "query",
+            "required": false,
+            "description": "true = Archivnummer des Dokuments in der Fußzeile",
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -3190,6 +3354,48 @@
           },
           "404": {
             "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stempel/vorlagen": {
+      "get": {
+        "tags": [
+          "Dokumente"
+        ],
+        "summary": "Stempel-Vorlagen",
+        "description": "Vorlagen für Stempel beim Weitergeben (#394): id, name, text mit Platzhaltern, lage, deckkraft, seiten, seitenzahlen, archivnummer. Ob ein Mappentyp einen Stempel vorschlägt oder verlangt, steht an GET /typen unter stempel ({ modus: vorschlag|pflicht, vorlage }).",
+        "operationId": "getStempelVorlagen",
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StempelVorlagen"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
             "content": {
               "application/json": {
                 "schema": {
@@ -4738,6 +4944,24 @@
                 ],
                 "nullable": true,
                 "description": "Systemmappentyp: lässt sich erweitern, aber nicht löschen"
+              },
+              "stempel": {
+                "type": "object",
+                "nullable": true,
+                "description": "Stempel beim Weitergeben (#394): vorschlag oder pflicht, mit Id der Vorlage; null = kein Stempel",
+                "properties": {
+                  "modus": {
+                    "type": "string",
+                    "enum": [
+                      "vorschlag",
+                      "pflicht"
+                    ]
+                  },
+                  "vorlage": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
               }
             }
           }
@@ -5672,6 +5896,48 @@
               "type": "object",
               "additionalProperties": true,
               "description": "Je nach Art, z. B. aenderungen: [{feld, label, alt, neu}] oder dokument"
+            }
+          }
+        }
+      },
+      "StempelVorlagen": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "text": {
+              "type": "string"
+            },
+            "lage": {
+              "type": "string",
+              "enum": [
+                "diagonal",
+                "kopf",
+                "fuss",
+                "ecke"
+              ]
+            },
+            "deckkraft": {
+              "type": "number"
+            },
+            "seiten": {
+              "type": "string",
+              "enum": [
+                "alle",
+                "erste"
+              ]
+            },
+            "seitenzahlen": {
+              "type": "boolean"
+            },
+            "archivnummer": {
+              "type": "boolean"
             }
           }
         }
