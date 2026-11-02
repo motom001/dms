@@ -818,7 +818,7 @@
           "Ablage"
         ],
         "summary": "Mappe löschen",
-        "description": "Samt ihrer Dokumente. 409, solange andere Mappen auf sie verweisen. Ist der Papierkorb an, kommt sie dorthin und lässt sich wiederherstellen.",
+        "description": "Samt ihrer Dokumente. 409, solange andere Mappen auf sie verweisen. Ist der Papierkorb an, kommt sie dorthin und lässt sich wiederherstellen. Jede Löschung steht im Löschprotokoll (#470) – mit dem API-Schlüssel als „Schnittstelle“.",
         "operationId": "deleteMappenMitid",
         "parameters": [
           {
@@ -826,6 +826,24 @@
             "in": "path",
             "required": true,
             "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "grund",
+            "in": "query",
+            "required": false,
+            "description": "Grund fürs Löschprotokoll (#470): frist, verlangen, nicht_noetig oder sonstiges",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "grundText",
+            "in": "query",
+            "required": false,
+            "description": "Freier Text zum Grund, ohne Personenbezug (höchstens 200 Zeichen)",
             "schema": {
               "type": "string"
             }
@@ -5246,7 +5264,7 @@
           "Dokumente"
         ],
         "summary": "Dokument löschen",
-        "description": "Ist der Papierkorb eingeschaltet, kommt das Dokument mit allen Versionen in den Papierkorb (#344); sonst ist es endgültig weg.",
+        "description": "Ist der Papierkorb eingeschaltet, kommt das Dokument mit allen Versionen in den Papierkorb (#344); sonst ist es endgültig weg. Steht im Löschprotokoll (#470) mit Prüfsumme, ohne Dateinamen.",
         "operationId": "deleteDokumenteMitid",
         "parameters": [
           {
@@ -5254,6 +5272,24 @@
             "in": "path",
             "required": true,
             "description": "Id des Dokuments (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "grund",
+            "in": "query",
+            "required": false,
+            "description": "Grund fürs Löschprotokoll (#470): frist, verlangen, nicht_noetig oder sonstiges",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "grundText",
+            "in": "query",
+            "required": false,
+            "description": "Freier Text zum Grund, ohne Personenbezug (höchstens 200 Zeichen)",
             "schema": {
               "type": "string"
             }
@@ -5885,6 +5921,238 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Datenschutz"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/werkbank/loeschprotokoll": {
+      "get": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Löschprotokoll (Administrator)",
+        "description": "Löschprotokoll (#470), neueste zuerst: je Schritt (papierkorb, endgueltig, wiederhergestellt) ein Eintrag für die Mappe (Mappentyp, Id, Nummer, Anzahl Dokumente/Notizen/entfernte Verweise) und je Dokument bzw. ältere Version (SHA-256, Größe, Dateityp, Seiten, Archivnummer) – keine Titel, Feldwerte oder Dateinamen. Dazu wann, von wem (Benutzer, Schnittstelle, Paket, automatisch), warum und Vorgang (#424). Nicht änderbar.",
+        "operationId": "getWerkbankLoeschprotokoll",
+        "parameters": [
+          {
+            "name": "von",
+            "in": "query",
+            "required": false,
+            "description": "ab Tag (JJJJ-MM-TT)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bis",
+            "in": "query",
+            "required": false,
+            "description": "bis Tag (JJJJ-MM-TT)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "typId",
+            "in": "query",
+            "required": false,
+            "description": "Mappentyp",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "grund",
+            "in": "query",
+            "required": false,
+            "description": "frist, verlangen, nicht_noetig, sonstiges oder ohne",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "schritt",
+            "in": "query",
+            "required": false,
+            "description": "papierkorb, endgueltig oder wiederhergestellt",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vorgang",
+            "in": "query",
+            "required": false,
+            "description": "Vorgang oder Mappen-Id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "suche",
+            "in": "query",
+            "required": false,
+            "description": "Nummer, Archivnummer, Id oder Prüfsumme (SHA-256, 64 Zeichen)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max",
+            "in": "query",
+            "required": false,
+            "description": "höchstens (Standard 500, bis 2000)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Loeschprotokoll"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/werkbank/loeschprotokoll/datei": {
+      "get": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Löschprotokoll als PDF oder CSV (Administrator)",
+        "description": "Dieselben Filter wie GET /werkbank/loeschprotokoll (bis 20.000 Einträge).",
+        "operationId": "getWerkbankLoeschprotokollDatei",
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "description": "pdf (Standard) oder csv",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/werkbank/loeschprotokoll/einstellungen": {
+      "put": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Aufbewahrung des Löschprotokolls (Administrator)",
+        "description": "jahre: 1–30 (Standard 10); ältere Einträge fallen beim stündlichen Aufräumen weg.",
+        "operationId": "putWerkbankLoeschprotokollEinstellungen",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoeschprotokollEinstellung"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoeschprotokollEinstellung"
                 }
               }
             }
@@ -8881,6 +9149,175 @@
           "mail": {
             "type": "boolean",
             "description": "E-Mail-Versand eingerichtet"
+          }
+        }
+      },
+      "LoeschEintrag": {
+        "type": "object",
+        "description": "Ein Schritt einer Löschung (#470) – ohne Titel, Feldwerte und Dateinamen",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "zeit": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "art": {
+            "type": "string",
+            "enum": [
+              "mappe",
+              "dokument"
+            ]
+          },
+          "schritt": {
+            "type": "string",
+            "enum": [
+              "papierkorb",
+              "endgueltig",
+              "wiederhergestellt"
+            ]
+          },
+          "weg": {
+            "type": "string",
+            "description": "einzeln, mehrere, verknuepft, dokument, ersetzt, version, papierkorb, leeren, abmelden, ablauf, ausgeschaltet, zurueckgerollt"
+          },
+          "mappeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "typId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "typ": {
+            "type": "string",
+            "description": "Name des Mappentyps beim Löschen"
+          },
+          "nummer": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nummer aus dem Nummernkreis der Mappe"
+          },
+          "archivnummer": {
+            "type": "string",
+            "nullable": true
+          },
+          "dokumentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "version": {
+            "type": "integer",
+            "nullable": true
+          },
+          "sha256": {
+            "type": "string",
+            "nullable": true
+          },
+          "groesse": {
+            "type": "integer",
+            "nullable": true
+          },
+          "mime": {
+            "type": "string",
+            "nullable": true
+          },
+          "seiten": {
+            "type": "integer",
+            "nullable": true
+          },
+          "anzahl": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "dokumente": {
+                "type": "integer"
+              },
+              "versionen": {
+                "type": "integer"
+              },
+              "notizen": {
+                "type": "integer"
+              },
+              "verweise": {
+                "type": "integer"
+              }
+            }
+          },
+          "vonId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "von": {
+            "type": "string"
+          },
+          "ausloeser": {
+            "type": "string",
+            "enum": [
+              "benutzer",
+              "api",
+              "paket",
+              "automatisch"
+            ]
+          },
+          "grund": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "frist",
+              "verlangen",
+              "nicht_noetig",
+              "sonstiges"
+            ]
+          },
+          "grundText": {
+            "type": "string"
+          },
+          "vorgang": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "startId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
+      "Loeschprotokoll": {
+        "type": "object",
+        "properties": {
+          "eintraege": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoeschEintrag"
+            }
+          },
+          "gesamt": {
+            "type": "integer"
+          },
+          "jahre": {
+            "type": "integer",
+            "description": "Aufbewahrung in Jahren"
+          },
+          "max": {
+            "type": "integer"
+          }
+        }
+      },
+      "LoeschprotokollEinstellung": {
+        "type": "object",
+        "properties": {
+          "jahre": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
           }
         }
       },
