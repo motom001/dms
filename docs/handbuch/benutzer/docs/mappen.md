@@ -112,6 +112,8 @@ Bei einer neuen Mappe ist das Register noch leer: Verknüpfungen entstehen erst,
 
 Unten links in der Mappe steht **Mappe löschen**. Nach einer Rückfrage kommt die Mappe mit ihren Dokumenten in den [Papierkorb](ablage.md#papierkorb); dort lässt sie sich eine Zeit lang wiederherstellen. Ist der Papierkorb ausgeschaltet, ist sie sofort endgültig weg.
 
+In der Rückfrage wählst du den **Grund** – *Nicht mehr nötig*, *Frist abgelaufen*, *Auf Verlangen der betroffenen Person* oder *Sonstiges* – und kannst eine kurze Anmerkung dazuschreiben. Beides steht im Löschprotokoll, mit dem dein Administrator nachweisen kann, dass und warum gelöscht wurde; Titel und Inhalte der Mappe stehen dort nicht. Schreib in die Anmerkung deshalb keine Namen.
+
 Geht Löschen gerade nicht, ist der Knopf ausgegraut, und daneben steht **Warum nicht?**. Ein Klick darauf klappt die Begründung direkt am Knopf auf:
 
 - **Es verweisen noch andere Mappen darauf.** Die Begründung zählt sie auf – mit Links dorthin (bei vielen die ersten acht und „und … weitere“). Entferne zuerst dort den Verweis. So kann kein Vertrag verschwinden, zu dem noch Rechnungen gehören. Verschickte E-Mails und andere [Post](post.md) halten das Löschen nicht auf.

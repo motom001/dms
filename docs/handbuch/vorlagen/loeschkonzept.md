@@ -81,7 +81,8 @@ Gelöschte Daten können noch an diesen Stellen liegen; sie fallen so weg:
 
 ## 8. Nachweis
 
-- Löschungen auf Verlangen und das regelmäßige Löschen hält [Wer] in [einer Mappe „Datenschutzanfragen“ / einer Liste] fest: Datum, Anlass, welche Datenarten – **ohne** die gelöschten Daten selbst.
+- Das DMS führt ein **Löschprotokoll** (Werkbank → Datenschutz → Löschprotokoll): je gelöschter Mappe Mappentyp, Id und Nummer, wann, von wem, warum und in welchem Vorgang; je gelöschtem Dokument die Prüfsumme (SHA-256), Größe, Dateityp und Seitenzahl – **ohne** Titel, Feldwerte und Dateinamen. Es lässt sich nicht ändern und bleibt [10] Jahre.
+- Bei Löschungen auf Verlangen wählt, wer löscht, den Grund „Auf Verlangen der betroffenen Person“. [Wer] gibt das Löschprotokoll bei Bedarf als PDF aus.
 - Auskünfte nach Art. 15 DSGVO stehen mit Nachweis in der Historie der Person (Werkbank → Datenschutz).
 
 ## 9. Änderungen dieses Löschkonzepts

@@ -191,7 +191,7 @@ export function loeschkonzept(q: LoeschkonzeptQuelle): Loeschkonzept {
       `${FEHLT('Wer')} deaktiviert Konten von Personen, die gehen, ${FEHLT('am letzten Arbeitstag')}.`,
     ] }] },
     { titel: '8. Nachweis', bloecke: [{ art: 'punkte', punkte: q.loeschprotokoll ? [
-      `Das DMS führt ein Löschprotokoll (Werkbank → Datenschutz → Löschprotokoll): je gelöschter Mappe Mappentyp, Id und Nummer, wann, von wem, warum und in welchem Vorgang; je gelöschtem Dokument die Prüfsumme (SHA-256), Größe, Dateityp und Seitenzahl – ohne Titel, Feldwerte und Dateinamen. Es lässt sich nicht ändern, wird als PDF oder CSV ausgegeben und nach ${jahre(q.loeschprotokoll.jahre)} automatisch gekürzt.`,
+      `Das DMS führt ein Löschprotokoll (Werkbank → Datenschutz → Löschprotokoll): je gelöschter Mappe Mappentyp, Id und Nummer, wann, von wem, warum und in welchem Vorgang; je gelöschtem Dokument die Prüfsumme (SHA-256), Größe, Dateityp und Seitenzahl – ohne Titel, Feldwerte und Dateinamen. Es lässt sich nicht ändern, wird als PDF oder CSV ausgegeben und nach ${q.loeschprotokoll.jahre === 1 ? 'einem Jahr' : `${q.loeschprotokoll.jahre} Jahren`} automatisch gekürzt.`,
       'Bei Löschungen auf Verlangen wählt, wer löscht, den Grund „Auf Verlangen der betroffenen Person“.',
       'Auskünfte nach Art. 15 DSGVO stehen mit Nachweis in der Historie der Person (Werkbank → Datenschutz).',
     ] : [

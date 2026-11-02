@@ -14,7 +14,7 @@ Das DMS ist **auf Datenschutz ausgelegt** – „Datenschutz durch Technikgestal
 | Art. 18 – Einschränkung (Sperren) | **Löschsperre bis Fristende** im Archivmodus – der erste Baustein eines [Sperr- und Löschkonzepts](#sperr-und-loschkonzept-aufsetzen); den Zugriff schränkst du über Berechtigungen ein | Werkbank → Mappentypen |
 | Art. 15 – Auskunft | [Auskunft](#auskunft-nach-art-15-dsgvo) als ZIP mit Deckblatt, Prüfliste und Nachweis; [zustellen](#auskunft-zustellen) per Abruf-Link oder E-Mail | Werkbank → Datenschutz |
 | Art. 20 – Datenübertragbarkeit | **Persönlicher Export** für jeden Benutzer, **Vollexport** aller Daten – beides in offenen Formaten (CSV, JSON, Excel, Dokumente im Original) | Profil → Konto → Meine Daten exportieren; Werkbank → Vollexport ([Daten exportieren](export.md)) |
-| Art. 5 Abs. 2 – Rechenschaft; Art. 30 – Nachweis | **Historie** jeder Mappe (wer hat wann was geändert), [Protokoll](fehlersuche.md#protokoll), Nachweis jeder Auskunft in der Historie der Person; Vorlagen [Löschkonzept](loeschkonzept.md) und [Verfahrensdokumentation](verfahrensdokumentation.md) | Register *Historie* an jeder Mappe, Werkbank → Protokoll |
+| Art. 5 Abs. 2 – Rechenschaft; Art. 30 – Nachweis | **Historie** jeder Mappe (wer hat wann was geändert), [Protokoll](fehlersuche.md#protokoll), Nachweis jeder Auskunft in der Historie der Person, [Löschprotokoll](#loschprotokoll) mit Prüfsummen ohne Inhalte; [Löschkonzept](loeschkonzept.md) aus dem DMS erzeugen und Vorlage [Verfahrensdokumentation](verfahrensdokumentation.md) | Register *Historie* an jeder Mappe, Werkbank → Protokoll, Werkbank → Datenschutz |
 | Art. 32 – Sicherheit | [Verschlüsselte](verschluesselung.md) Passwortfelder und Zugangsdaten, verschlüsselte [Sicherung](sicherung.md) mit [Probe-Wiederherstellung](wiederherstellen.md#probe-wiederherstellung), [Anmeldeschutz und Zwei-Faktor-Anmeldung](anmeldeschutz.md), Prüfwerte für jede Datei, Hinweise zu [HTTPS](installation.md#https-und-zertifikate) | Werkbank → Verschlüsselung, Sicherung, Anmeldeschutz |
 
 ## Keine Telemetrie { #keine-telemetrie }
@@ -80,13 +80,13 @@ Jemand verlangt, dass seine Daten gelöscht werden (Art. 17 DSGVO).
     - **Nach Fristende** steht die Mappe unter **Werkbank → Darf weg**; dann löschst du sie wie unten.
     - Sag der Person, dass und bis wann ihre Daten gesperrt bleiben und warum.
 4. **Keine Frist → löschen:**
-    - In der Ablage die Mappen löschen – einzeln oder über die [Mehrfachauswahl](https://motom001.github.io/dms/benutzer/aktuell/ablage/#mehrere-mappen-loschen); einzelne Dokumente an der Dokumentzeile. Eine Mappe, auf die noch andere verweisen, lässt sich nicht löschen: Entferne zuerst den Verweis oder lösche die verweisende Mappe mit, wenn auch sie weg soll.
+    - In der Ablage die Mappen löschen – einzeln oder über die [Mehrfachauswahl](https://motom001.github.io/dms/benutzer/aktuell/ablage/#mehrere-mappen-loschen); einzelne Dokumente an der Dokumentzeile. Wähle beim Löschen den Grund **Auf Verlangen der betroffenen Person** – er steht im [Löschprotokoll](#loschprotokoll). Eine Mappe, auf die noch andere verweisen, lässt sich nicht löschen: Entferne zuerst den Verweis oder lösche die verweisende Mappe mit, wenn auch sie weg soll.
     - Unter **Werkbank → Papierkorb** die Mappen und Dokumente wählen und **endgültig löschen** (oder den ganzen Papierkorb leeren). Erst dann sind auch Dateien und Volltext weg.
 5. **Was danach noch bleibt** – sag es der Person, wenn sie fragt:
     - die **Historie der gelöschten Mappen** für die eingestellte Zeit (Standard 365 Tage, [einstellbar](papierkorb.md#historie-endgultig-geloschter-mappen); 0 löscht sie sofort mit – das gilt dann für alle Mappen),
     - ältere **Sicherungen**, bis sie nach der Aufbewahrung wegfallen,
     - **Exporte** unter `export/`, bereitliegende **Auskünfte** (höchstens 7 Tage oder bis ein Abruf-Link abläuft) und Kopien außerhalb des DMS.
-6. **Festhalten, dass gelöscht wurde:** Notiere Datum, Anfrage und welche Arten von Daten gelöscht wurden – ohne die Daten selbst –, z. B. in einer Mappe für Datenschutzanfragen.
+6. **Festhalten, dass gelöscht wurde:** Das macht das [Löschprotokoll](#loschprotokoll) – mit Grund, Mappentyp, Nummer und den Prüfsummen der Dokumente, ohne die Daten selbst. Filter nach dem Tag und dem Grund *Auf Verlangen der betroffenen Person* und gib es als PDF aus, wenn die Person oder eine Aufsichtsbehörde einen Nachweis möchte.
 
 Hat die Person ein **Benutzerkonto**, das schon benutzt wurde, [deaktivierst](benutzer.md#zugang-sperren) du es: Das DMS löscht solche Konten nicht, damit „angelegt von“ und Verweise stimmen. Ihr Name bleibt dort stehen.
 
@@ -245,6 +245,52 @@ Dabei gilt:
 !!! tip "Löschkonzept dokumentieren"
     Halte in deiner [Verfahrensdokumentation](verfahrensdokumentation.md) fest, welche Fristen je Mappentyp gelten, wer wann prüft, was weg darf (z. B. einmal im Jahr über *Darf weg*), und dass dabei „Mit verknüpften Mappen löschen“ verwendet wird.
 
+## Löschprotokoll { #loschprotokoll }
+
+**Werkbank → Datenschutz → Löschprotokoll** weist nach, **dass** und **wann** du gelöscht hast (Rechenschaftspflicht, Art. 5 Abs. 2 DSGVO) – ohne dass das Protokoll selbst wieder die gelöschten Daten enthält. Die Historie einer Mappe reicht dafür nicht: Sie geht mit der Mappe, und das technische [Protokoll](fehlersuche.md#protokoll) läuft nach 24 Stunden ab.
+
+### Was drinsteht
+
+Jeder Schritt ist ein eigener Eintrag: **in den Papierkorb**, **endgültig gelöscht**, **wiederhergestellt** – verbunden über die Id der Mappe bzw. des Dokuments.
+
+| Je Mappe | Je Dokument (auch ältere Versionen) |
+| --- | --- |
+| Mappentyp, Mappen-Id, **Nummer** aus dem [Nummernkreis](nummernkreise.md) (falls vorhanden) | **Prüfsumme (SHA-256)**, Größe, Dateityp, Seitenzahl, Archivnummer |
+| Anzahl Dokumente, ältere Versionen, Notizen, entfernte Verweise | zu welcher Mappe (Id, Nummer, Mappentyp) |
+
+Dazu bei jedem Eintrag: **wann**, **von wem** (Benutzer; *Schnittstelle* bei einem API-Schlüssel, *Paket* beim Dienstkonto eines Pakets, *DMS* bei automatischem Löschen), **wie** (einzeln, mehrere, mit verknüpften Mappen, aus dem Papierkorb, Papierkorb geleert, Aufbewahrung abgelaufen …), **warum** und der **Vorgang** beim [Löschen mit verknüpften Mappen](#mit-verknupften-mappen-loschen) – alle Mappen eines Vorgangs mit gemeinsamer Id und der Start-Mappe.
+
+**Nie drin:** Titel, Feldwerte, Dateinamen, Notizen – die sind personenbezogen und sollen ja weg.
+
+**Warum:** Beim Löschen fragt das DMS nach dem Grund – *Frist abgelaufen („Darf weg“)*, *Auf Verlangen der betroffenen Person*, *Nicht mehr nötig* oder *Sonstiges* – und optional nach einer kurzen Anmerkung. Schreib dort **keine Namen** hinein: Das Löschprotokoll bleibt, wenn die Daten weg sind. Beim endgültigen Löschen aus dem Papierkorb übernimmt das DMS den Grund vom Schritt „in den Papierkorb“. Über die Schnittstelle gibst du ihn mit `grund` und `grundText` an.
+
+### Wann ist „gelöscht“ wirklich gelöscht?
+
+- **In den Papierkorb:** Die Mappe ist aus Ablage, Suche und Schnittstelle verschwunden, liegt aber vollständig im Papierkorb – mit Feldwerten, Dokumenten, Volltext und Notizen – und lässt sich wiederherstellen.
+- **Endgültig gelöscht:** nach der [Aufbewahrung des Papierkorbs](papierkorb.md#aufbewahrung), mit *Endgültig löschen* oder *Papierkorb leeren*, sofort bei ausgeschaltetem Papierkorb. Dann sind Mappe, Dokumente, Volltext und Notizen aus der Datenbank entfernt, und die **Datei** ist vom Speicher gelöscht – es sei denn, ein anderes Dokument hat genau dieselbe Datei (gleiche Prüfsumme); sie ist ja nur einmal gespeichert.
+- **Was danach noch bleibt:** die Historie gelöschter Mappen für ihre eingestellte Zeit, ältere Sicherungen bis zu ihrer Aufbewahrung, Exporte und Kopien außerhalb des DMS (siehe [Löschen auf Verlangen](#loschen-auf-verlangen)). Das Löschprotokoll hält den Zeitpunkt des endgültigen Löschens fest; diese Fristen ergänzt du im [Löschkonzept](loeschkonzept.md).
+
+Erfasst werden alle Wege: einzeln, mehrere ausgewählt, mit verknüpften Mappen, „Darf weg“, einzelne Dokumente (auch beim Ersetzen, Bearbeiten und Zusammenfügen von PDFs), ältere Versionen über die eingestellte Anzahl hinaus, der Papierkorb (von Hand, geleert, beim Abmelden geleert, Aufbewahrung abgelaufen, ausgeschaltet), Schnittstelle und Pakete. Nicht erfasst werden [Demo-Mappen](demo.md) – sie enthalten keine echten Daten.
+
+### Ansehen und ausgeben
+
+![Werkbank → Datenschutz → Löschprotokoll mit Filtern, Suche per Datei und Einträgen](bilder/werkbank-loeschprotokoll.png)
+
+- **Filter:** Zeitraum, Mappentyp, Grund, Schritt; ein Klick auf einen Vorgang zeigt alle Mappen und Dokumente dieses Vorgangs.
+- **Suche nach Nummer** (Nummernkreis oder Archivnummer) oder **Prüfsumme**.
+- **„Wurde dieses Dokument gelöscht?“** Zieh die Datei auf das Feld: Dein Browser rechnet die Prüfsumme, das DMS sucht sie. Die Datei selbst wird nicht hochgeladen.
+- **Als PDF** (Nachweis, mit Filter und Stand im Kopf) oder **als CSV** – jeweils mit dem gewählten Filter.
+
+!!! info "Prüfsumme und Datenschutz"
+    Die Prüfsumme (SHA-256) ist ein Fingerabdruck der Datei: Aus ihr lässt sich der Inhalt nicht zurückgewinnen. Wer die Datei aber noch hat, kann zeigen, dass genau sie im DMS war und wann sie gelöscht wurde – genau das ist der Zweck. Die Prüfsumme ist damit ein **pseudonymes** Datum; behandle das Löschprotokoll wie andere Nachweise vertraulich.
+
+### Nicht änderbar, eigene Aufbewahrung
+
+- Einträge lassen sich **weder ändern noch löschen** – auch nicht von Administratoren oder über die Schnittstelle; die Datenbank selbst verhindert es.
+- Eigene **Aufbewahrung**: Standard **10 Jahre**, einstellbar von 1 bis 30 Jahren unter dem Löschprotokoll. Ältere Einträge fallen beim stündlichen Aufräumen automatisch weg.
+- Das Löschprotokoll ist in jeder [Sicherung](sicherung.md) und im [Vollexport](export.md) (`daten/loeschprotokoll.csv`) enthalten.
+- Abschnitt 8 „Nachweis“ des [Löschkonzepts](loeschkonzept.md#aus-dem-dms-erzeugen) verweist darauf.
+
 ## Schnittstelle
 
-Alles geht auch über die [API](api.md): `POST /api/v1/werkbank/auskunft/vorschau` (Prüfliste), `POST /api/v1/werkbank/auskunft` (erzeugen, Hintergrundauftrag), `GET /api/v1/werkbank/auskunft/{id}/zip`, `POST /api/v1/werkbank/auskunft/frist`, `GET`/`PUT /api/v1/werkbank/datenschutz` und `GET /api/v1/werkbank/datenschutz/loeschkonzept?format=pdf|docx` (Löschkonzept); zum Zustellen `POST /api/v1/werkbank/auskunft/{id}/email`, `POST /api/v1/werkbank/auskunft/{id}/link` und `POST /api/v1/werkbank/auskunft/link/{id}/widerrufen`. Die Abrufseite selbst (`POST /api/abruf`, `GET /api/abruf/datei`) gehört nicht zur API. Die Sammlung über Verweise selbst steht jedem Benutzer mit seinen Rechten unter `GET /api/v1/mappen/{id}/baum` zur Verfügung. Für das Löschkonzept: `GET /api/v1/mappen/{id}/loeschvorschau` (Vorschau mit Vorschlag), `POST /api/v1/mappen/{id}/mit-verknuepften-loeschen` (ausführen, mit denselben Prüfungen) und `POST /api/v1/papierkorb/vorgang/{id}/wiederherstellen`.
+Alles geht auch über die [API](api.md): `POST /api/v1/werkbank/auskunft/vorschau` (Prüfliste), `POST /api/v1/werkbank/auskunft` (erzeugen, Hintergrundauftrag), `GET /api/v1/werkbank/auskunft/{id}/zip`, `POST /api/v1/werkbank/auskunft/frist`, `GET`/`PUT /api/v1/werkbank/datenschutz` und `GET /api/v1/werkbank/datenschutz/loeschkonzept?format=pdf|docx` (Löschkonzept), `GET /api/v1/werkbank/loeschprotokoll` mit denselben Filtern wie in der Werkbank, `GET /api/v1/werkbank/loeschprotokoll/datei?format=pdf|csv` und `PUT /api/v1/werkbank/loeschprotokoll/einstellungen` (Aufbewahrung); zum Zustellen `POST /api/v1/werkbank/auskunft/{id}/email`, `POST /api/v1/werkbank/auskunft/{id}/link` und `POST /api/v1/werkbank/auskunft/link/{id}/widerrufen`. Die Abrufseite selbst (`POST /api/abruf`, `GET /api/abruf/datei`) gehört nicht zur API. Die Sammlung über Verweise selbst steht jedem Benutzer mit seinen Rechten unter `GET /api/v1/mappen/{id}/baum` zur Verfügung. Für das Löschkonzept: `GET /api/v1/mappen/{id}/loeschvorschau` (Vorschau mit Vorschlag), `POST /api/v1/mappen/{id}/mit-verknuepften-loeschen` (ausführen, mit denselben Prüfungen) und `POST /api/v1/papierkorb/vorgang/{id}/wiederherstellen`.
