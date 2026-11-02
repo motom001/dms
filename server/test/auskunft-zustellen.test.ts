@@ -9,8 +9,9 @@ import { mkdtemp, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
+import { liesAnrede, TEXTE_DRITTE, textDritte } from '../../shared/src/anrede';
 import {
-  auskunftMail, CODE_ZEICHEN, LINK_FEHLVERSUCHE_MAX, liesLinkEingabe, linkStatus, normiereCode, oeffentlichErreichbar, zeigeCode,
+  auskunftMail, CODE_ZEICHEN, liesDatenschutz, RECHTE_STANDARD, rechteStandard, LINK_FEHLVERSUCHE_MAX, liesLinkEingabe, linkStatus, normiereCode, oeffentlichErreichbar, zeigeCode,
 } from '../../shared/src/auskunft';
 import { AbrufTickets, kuerzeIp, neuerAbrufcode, TICKET_MS } from '../src/abruf';
 import { auskuenfteIn } from '../src/auskunft';
@@ -95,13 +96,47 @@ describe('Auskunft zustellen: reine Funktionen (#455)', () => {
   });
 
   it('E-Mail-Texte: Du-Form, Link ohne Code, Hinweis auf den anderen Weg', () => {
-    const l = auskunftMail.link('https://dms.example.org/abruf#abc', '01.12.2026', 3, 'Familie Beispiel');
+    const l = auskunftMail.link('du', 'https://dms.example.org/abruf#abc', '01.12.2026', 3, 'Familie Beispiel');
     assert.match(l.nachricht, /du hast eine Auskunft/);
     assert.match(l.nachricht, /https:\/\/dms\.example\.org\/abruf#abc/);
+    assert.match(l.nachricht, /bis 01\.12\.2026 hier abrufen \(höchstens 3-mal\):/);
     assert.match(l.nachricht, /anderen Weg/);
+    assert.match(l.nachricht, /\nFamilie Beispiel\n$/);
     assert.doesNotMatch(l.nachricht, /\bSie\b|\bIhre?\b/);
-    const z = auskunftMail.zip();
+    assert.match(auskunftMail.link('du', 'x', '01.12.2026', 1, '').nachricht, /\(einmal\):/);
+    const z = auskunftMail.zip('du');
     assert.match(z.nachricht, /Passwort bekommst du auf einem anderen Weg/);
+    assert.match(auskunftMail.zip('du', '01.12.2026').nachricht, /Bitte antworte bis 01\.12\.2026/);
+  });
+
+  it('Anrede für Dritte (#474): Sie-Fassung je Text, ohne „du“; beide Fassungen mit denselben Schlüsseln und Platzhaltern', () => {
+    const l = auskunftMail.link('sie', 'https://dms.example.org/abruf#abc', '01.12.2026', 3, 'Familie Beispiel');
+    assert.equal(l.betreff, 'Ihre Auskunft nach Art. 15 DSGVO zum Abrufen');
+    assert.match(l.nachricht, /^Guten Tag,\n\nSie haben eine Auskunft/);
+    assert.match(l.nachricht, /Ihren Abrufcode/);
+    assert.match(l.nachricht, /https:\/\/dms\.example\.org\/abruf#abc/);
+    const z = auskunftMail.zip('sie', '01.12.2026');
+    assert.equal(z.betreff, 'Ihre Auskunft nach Art. 15 DSGVO');
+    assert.match(z.nachricht, /Passwort erhalten Sie auf einem anderen Weg/);
+    assert.match(z.nachricht, /Bitte antworten Sie bis 01\.12\.2026/);
+    const duWort = /\b([Dd]u|[Dd]ich|[Dd]ir|[Dd]ein(e[mnrs]?)?)\b/;
+    for (const [k, t] of Object.entries(TEXTE_DRITTE.sie)) assert.doesNotMatch(t, duWort, k);
+    const platzhalter = (t: string) => [...t.matchAll(/\{([^{}]+)\}/g)].map((x) => x[1]).sort().join();
+    assert.deepEqual(Object.keys(TEXTE_DRITTE.sie).sort(), Object.keys(TEXTE_DRITTE.du).sort());
+    for (const k of Object.keys(TEXTE_DRITTE.du) as Array<keyof typeof TEXTE_DRITTE.du>) assert.equal(platzhalter(TEXTE_DRITTE.sie[k]), platzhalter(TEXTE_DRITTE.du[k]), k);
+    assert.equal(textDritte('sie', 'abruf.rest', { wieOft: 'zweimal' }), 'Sie können sie mit diesem Link noch zweimal herunterladen.');
+    assert.equal(liesAnrede('sie'), 'sie');
+    for (const x of [undefined, null, 'Sie', 'ihr', 3]) assert.equal(liesAnrede(x), 'du');
+  });
+
+  it('Einstellung (#474): Vorgabe du; der unveränderte Vorschlag für die Rechte folgt der Anrede, ein eigener Text bleibt', () => {
+    assert.equal(liesDatenschutz(undefined).anrede, 'du');
+    assert.equal(liesDatenschutz({}).rechte, RECHTE_STANDARD);
+    assert.equal(liesDatenschutz({ anrede: 'sie' }).rechte, rechteStandard('sie'));
+    assert.match(rechteStandard('sie'), /^Sie haben das Recht/);
+    assert.equal(liesDatenschutz({ anrede: 'sie', rechte: RECHTE_STANDARD }).rechte, rechteStandard('sie'));
+    assert.equal(liesDatenschutz({ anrede: 'du', rechte: rechteStandard('sie') }).rechte, RECHTE_STANDARD);
+    assert.equal(liesDatenschutz({ anrede: 'sie', rechte: 'Eigener Text.' }).rechte, 'Eigener Text.');
   });
 });
 
@@ -207,6 +242,32 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const s = (await rufe(admin, 'GET', '/api/werkbank/datenschutz')).body as { mail: boolean; oeffentlich: boolean };
       assert.equal(s.mail, false);
       assert.equal(s.oeffentlich, true);
+    });
+
+    it('Anrede Sie (#474): E-Mails, Meldungen der Abrufseite und ihre Anrede-Abfrage; Vorgabe du', async () => {
+      const { admin, gesendet, rufe, auskunft } = await aufbau(pg);
+      assert.deepEqual((await rufe(null, 'GET', '/api/abruf/anrede')).body, { anrede: 'du' });
+      await assert.rejects(rufe(null, 'POST', '/api/abruf', { body: { schluessel: neuerSchluessel(), code: 'AAAAAAAA' }, ip: '198.51.100.40' }), (e: unknown) => status(403)(e) && /Prüfe den Code/.test((e as Error).message));
+      await rufe(admin, 'PUT', '/api/werkbank/datenschutz', { body: { anrede: 'sie' } });
+      const st = (await rufe(admin, 'GET', '/api/werkbank/datenschutz')).body as { einstellung: { anrede: string; rechte: string } };
+      assert.equal(st.einstellung.anrede, 'sie');
+      assert.match(st.einstellung.rechte, /^Sie haben das Recht/);
+      const anrede = await rufe(null, 'GET', '/api/abruf/anrede');
+      assert.deepEqual(anrede.body, { anrede: 'sie' }, 'nur die Anrede, sonst nichts');
+      // E-Mail mit ZIP (Vorlage) und mit Link
+      const a = await auskunft('Sommer-im-Garten-2026');
+      await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/email', { params: { id: a.id }, body: { an: 'max@example.net' } });
+      assert.equal(gesendet[0].betreff, 'Ihre Auskunft nach Art. 15 DSGVO');
+      assert.match(gesendet[0].text, /Sie haben eine Auskunft/);
+      const { url, code } = (await rufe(admin, 'POST', '/api/werkbank/auskunft/:id/link', { params: { id: a.id }, body: { an: 'max@example.net', senden: true } })).body as { url: string; code: string };
+      assert.equal(gesendet[1].betreff, 'Ihre Auskunft nach Art. 15 DSGVO zum Abrufen');
+      assert.match(gesendet[1].text, /benötigen Sie Ihren Abrufcode/);
+      assert.doesNotMatch(gesendet[1].text, /\b(du|dich|dir|deinen?)\b/);
+      // Meldungen der Abrufseite
+      await assert.rejects(rufe(null, 'POST', '/api/abruf', { body: { schluessel: url.split('#')[1], code: 'AAAAAAAA' }, ip: '198.51.100.41' }), (e: unknown) => status(403)(e) && /Prüfen Sie den Code.*wenden Sie sich/.test((e as Error).message));
+      await assert.rejects(rufe(null, 'GET', '/api/abruf/datei', { query: { ticket: 'x'.repeat(43) } }), (e: unknown) => status(410)(e) && /Geben Sie Ihren Abrufcode/.test((e as Error).message));
+      for (let i = 0; i < 5; i++) await assert.rejects(rufe(null, 'POST', '/api/abruf', { body: { schluessel: url.split('#')[1], code: `FALSCH${i}X` }, ip: '192.0.2.77' }), status(403));
+      await assert.rejects(rufe(null, 'POST', '/api/abruf', { body: { schluessel: url.split('#')[1], code }, ip: '192.0.2.77' }), (e: unknown) => status(429)(e) && /von Ihrem Anschluss/.test((e as Error).message));
     });
 
     it('Weg 2: Link nur mit Schlüssel im Fragment, Code nie in der Mail, nur Hashes gespeichert; Abruf mit Ticket, Nachweis, Benachrichtigung gebündelt', async () => {

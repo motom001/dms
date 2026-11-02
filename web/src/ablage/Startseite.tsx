@@ -7,6 +7,10 @@ import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { neuePost } from './NeuePost';
+import { StartSuche } from './StartSuche';
+import { istTouch, postFotografieren } from './PostKamera';
+import { Symbol } from '../Symbol';
+import { darfPostAnlegen } from '../../../shared/src/model';
 
 /**
  * Startseite der Ablage (#334): wenige Kacheln mit je einer Zahl und einer Handlung.
@@ -26,7 +30,7 @@ function Kachel({ name, to, art, titel, anzahl, leer, unter }: { name: string; t
     <div className="start-feld" data-kachel={name}>
       <Link to={to} className={`kachel ${art} ${nichts ? 'erledigt' : ''}`}>
         <span className="kacheltitel">{titel}</span>
-        {anzahl === null ? <span className="kachelzahl leise">…</span> : nichts ? <span className="kachelleer">✓ {leer}</span> : <span className="kachelzahl">{zahl(anzahl)}</span>}
+        {anzahl === null ? <span className="kachelzahl leise">…</span> : nichts ? <span className="kachelleer"><Symbol name="haken" /> {leer}</span> : <span className="kachelzahl">{zahl(anzahl)}</span>}
         {unter && !nichts && <span className="kachelunter leise klein">{unter}</span>}
       </Link>
     </div>
@@ -46,9 +50,13 @@ export function Startseite({ anstehend, offen, breit = false }: { anstehend: { l
   }, [d.stand]);
 
   const postSicht = d.zaehler.neuePost ? d.sicht(d.zaehler.neuePost) : undefined;
+  // Zahlen kommen nach (#512): bis dahin „…“ in der Kachel.
+  const z = (n: number) => (d.zahlenDa ? n : null);
   const wahl = typeof d.einstellungen.startseite_kachel === 'string' ? d.einstellungen.startseite_kachel : 'favoriten';
   const lieblings = wahl !== 'favoriten' ? d.sicht(wahl) : undefined;
   const tage = anstehend.liste?.tage;
+  const postTyp = d.typen.find((t) => t.system === 'post');
+  const kamera = istTouch() && darfPostAnlegen(postTyp) && !!postTyp?.register.some((r) => r.art === 'dokumente');
 
   return (
     <>
@@ -59,6 +67,10 @@ export function Startseite({ anstehend, offen, breit = false }: { anstehend: { l
         </div>
       </div>
       <div className={`listenrumpf startseite${breit ? ' start-breit' : ''}`}>
+        {/* Schnell finden (#497) ganz oben; darunter (ohne Suchbegriff) die Kamera, Kacheln und „zuletzt geöffnet“. */}
+        <StartSuche ohneSuche={!!daten?.leer} sonst={<>
+        {/* Handy (#490): mit einem Tipp in die Kamera – mehrseitig, ein PDF, eine Post. */}
+        {kamera && <button type="button" className="knopf gruen pk-start" onClick={() => postFotografieren()}><Symbol name="kamera" /> Post fotografieren</button>}
         {daten?.leer ? (
           <div className="einstiege">
             <p>Noch ist die Ablage leer. So geht es los:</p>
@@ -77,12 +89,12 @@ export function Startseite({ anstehend, offen, breit = false }: { anstehend: { l
           </div>
         ) : (
           <div className="kacheln start-raster">
-            <Kachel name="eingang" to="/ablage/eingang" art="auffaellig" titel="Zu erledigen" anzahl={d.zaehler.eingang} leer="Nichts zu erledigen" unter="Aufgaben und Mappen, an denen du etwas tun sollst" />
-            {postSicht && <Kachel name="post" to={`/ablage/${postSicht.id}`} art="post" titel={postSicht.name} anzahl={d.zaehler.sichten?.[postSicht.id] ?? 0} leer="Keine neue Post" unter="Noch nicht zugeordnet" />}
+            <Kachel name="eingang" to="/ablage/eingang" art="auffaellig" titel="Zu erledigen" anzahl={z(d.zaehler.eingang)} leer="Nichts zu erledigen" unter="Aufgaben und Mappen, an denen du etwas tun sollst" />
+            {postSicht && <Kachel name="post" to={`/ablage/${postSicht.id}`} art="post" titel={postSicht.name} anzahl={z(d.zaehler.sichten?.[postSicht.id] ?? 0)} leer="Keine neue Post" unter="Noch nicht zugeordnet" />}
             <Kachel name="anstehend" to="/ablage/anstehend" art="ruhig" titel="Anstehend" anzahl={anstehend.liste ? anstehend.liste.eintraege.length : null} leer={`Nichts in den nächsten ${tage ?? 30} Tagen`} unter={tage ? `Fristen und Erinnerungen der nächsten ${tage} Tage` : undefined} />
             {lieblings
-              ? <Kachel name="wahl" to={`/ablage/${lieblings.id}`} art="ruhig" titel={lieblings.name} anzahl={d.zaehler.sichten?.[lieblings.id] ?? 0} leer="Leer" />
-              : <Kachel name="wahl" to="/ablage/favoriten" art="ruhig" titel="Favoriten" anzahl={d.zaehler.favoriten ?? 0} leer="Noch keine – ★ an einer Mappe merkt sie dir" />}
+              ? <Kachel name="wahl" to={`/ablage/${lieblings.id}`} art="ruhig" titel={lieblings.name} anzahl={z(d.zaehler.sichten?.[lieblings.id] ?? 0)} leer="Leer" />
+              : <Kachel name="wahl" to="/ablage/favoriten" art="ruhig" titel="Favoriten" anzahl={z(d.zaehler.favoriten ?? 0)} leer="Noch keine – der Stern an einer Mappe merkt sie dir" />}
           </div>
         )}
         {daten && daten.zuletzt.length > 0 && (
@@ -100,6 +112,7 @@ export function Startseite({ anstehend, offen, breit = false }: { anstehend: { l
             </ul>
           </section>
         )}
+        </>} />
       </div>
     </>
   );

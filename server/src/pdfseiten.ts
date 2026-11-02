@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { degrees, PDFDocument } from 'pdf-lib';
 import { Fachfehler } from './fehler';
+import { eigenerPuffer } from './pdf-puffer';
+import { exifAusrichtung } from './schwaerzen';
 
 /**
  * PDF bearbeiten (#335): Seiten drehen, löschen, umsortieren, teilen, zusammenfügen.
@@ -85,6 +87,40 @@ export async function fuegeZusammen(inhalte: Buffer[]): Promise<Buffer> {
     for (const p of await ziel.copyPages(q, q.getPageIndices())) ziel.addPage(p);
   }
   return Buffer.from(await ziel.save());
+}
+
+/** Art eines Fotos am Inhalt (nicht am Namen – das iPhone nennt alles „image.jpg“). */
+export function bildArt(b: Buffer): 'image/jpeg' | 'image/png' | null {
+  if (b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
+  if (b.length > 8 && b.readUInt32BE(0) === 0x89504e47 && b.readUInt32BE(4) === 0x0d0a1a0a) return 'image/png';
+  return null;
+}
+
+/** Längste Seite einer Fotoseite in Punkten (A4-Höhe). */
+const FOTOSEITE_PT = 842;
+const DREHUNG_EXIF: Record<number, number> = { 3: 180, 6: 90, 8: 270 };
+
+/**
+ * Fotos als PDF (#490, „Post fotografieren“): je Foto eine Seite, das Bild unverändert eingebettet
+ * (JPEG ohne neu zu packen), längste Seite so groß wie A4, Lage laut EXIF. Bilder nur über
+ * eigenerPuffer() an pdf-lib (sonst übersieht es den Versatz des Buffers).
+ */
+export async function bilderZuPdf(bilder: Buffer[]): Promise<Buffer> {
+  if (!bilder.length) throw new Fachfehler(422, 'Keine Fotos.');
+  const doc = await PDFDocument.create();
+  for (const [i, b] of bilder.entries()) {
+    const art = bildArt(b);
+    if (!art) throw new Fachfehler(422, `Foto ${i + 1}: nur JPEG und PNG lassen sich als Seite übernehmen.`);
+    let bild;
+    try { bild = art === 'image/png' ? await doc.embedPng(eigenerPuffer(b)) : await doc.embedJpg(eigenerPuffer(b)); } catch { throw new Fachfehler(422, `Foto ${i + 1} lässt sich nicht lesen.`); }
+    const f = FOTOSEITE_PT / Math.max(bild.width, bild.height);
+    const w = bild.width * f, h = bild.height * f;
+    const seite = doc.addPage([w, h]);
+    seite.drawImage(bild, { x: 0, y: 0, width: w, height: h });
+    const d = art === 'image/jpeg' ? DREHUNG_EXIF[exifAusrichtung(b)] : undefined;
+    if (d) seite.setRotation(degrees(d));
+  }
+  return Buffer.from(await doc.save());
 }
 
 /** „Rechnung.pdf“ → „Rechnung (Teil 2).pdf“ */

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { Symbol } from '../Symbol';
 import { api, type ProbeStand, type SicherungsPlan, type SicherungStand, type SicherungsZustand, type WhLauf } from '../api';
 import { Schritte } from '../wiederherstellen';
 import { Hilfe, useHandbuch } from '../Hilfe';
@@ -259,7 +260,7 @@ export function Notfallblatt({ stand, schluessel, geladen }: { stand: Sicherungs
 
 /** Häkchen vor einem erledigten Schritt (#414). */
 export function Erledigt() {
-  return <span className="nfb-haken" role="img" aria-label="erledigt" title="erledigt">✓ </span>;
+  return <span className="nfb-haken" role="img" aria-label="erledigt" title="erledigt"><Symbol name="haken" /> </span>;
 }
 
 const AMPEL = { gruen: ['gut', 'in Ordnung'], gelb: ['warn', 'zu alt oder noch nie'], rot: ['schlecht', 'fehlgeschlagen'] } as const;

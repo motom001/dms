@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Tabellen der Werkbank-Bereiche im Administratorhandbuch aus shared/src/werkbankansicht.ts (#296).
+Tabellen der Werkbank-Bereiche im Administratorhandbuch aus shared/src/werkbankansicht.ts (#296)
+und den Namen in der Sprachdatei shared/src/sprachen/de/werkbank.json (#473, #354).
 
     python3 docs/handbuch/werkzeuge/werkbank_bereiche.py            # schreibt admin/docs/uebersicht.md
     python3 docs/handbuch/werkzeuge/werkbank_bereiche.py --pruefen  # Fehler, wenn die Seite veraltet ist
@@ -11,11 +12,12 @@ Ersetzt in uebersicht.md die Abschnitte zwischen den Markern
   <!-- bereiche:wofuer -->         … <!-- /bereiche:wofuer -->         Wofür man welchen Bereich braucht
 So bleibt das Handbuch beim Ändern der Bereiche oder einer späteren Neugruppierung an einer Stelle aktuell.
 """
-import re, sys
+import json, re, sys
 from pathlib import Path
 
 WURZEL = Path(__file__).resolve().parents[3]
 QUELLE = WURZEL / 'shared' / 'src' / 'werkbankansicht.ts'
+TEXTE = WURZEL / 'shared' / 'src' / 'sprachen' / 'de' / 'werkbank.json'
 ZIEL = WURZEL / 'docs' / 'handbuch' / 'admin' / 'docs' / 'uebersicht.md'
 
 # Seite im Administratorhandbuch je Bereich (Pfad unter /werkbank).
@@ -37,14 +39,16 @@ BEDINGT = {'darfweg': 'nur mit Archivmodus', 'eingangsordner': 'nur wenn der Ord
 
 def lies():
     ts = QUELLE.read_text(encoding='utf-8')
-    gruppen = dict(re.findall(r"(\w+): '([^']+)'", re.search(r'export const GRUPPEN = \{([^}]*)\}', ts).group(1)))
+    texte = json.loads(TEXTE.read_text(encoding='utf-8'))
+    folge = re.findall(r"'(\w+)'", re.search(r'const GRUPPENFOLGE = \[([^\]]*)\]', ts).group(1))
+    gruppen = {g: texte[f'gruppe.{g}'] for g in folge}
     bereiche = []
-    for pfad, gruppe, name, inn, wann in re.findall(r"\{ pfad: '(\w+)', gruppe: '(\w+)', name: '([^']+)', in: \[([^\]]*)\], wann: '([^']+)' \}", ts):
-        vorlagen = ['Haushalt', 'Betrieb'] if '...H' in inn else ['Betrieb'] if '...O' in inn else []
-        bereiche.append({'pfad': pfad, 'gruppe': gruppe, 'name': name, 'vorlagen': vorlagen, 'wann': wann})
-    if not bereiche or any(b['pfad'] not in SEITE for b in bereiche):
-        fehlt = [b['pfad'] for b in bereiche if b['pfad'] not in SEITE]
-        sys.exit(f'werkbank_bereiche.py: Bereiche nicht gelesen oder ohne Handbuchseite: {fehlt}')
+    for pfad, gruppe, inn in re.findall(r"\{ pfad: '(\w+)', gruppe: '(\w+)', in: (H|O|\[\]) \}", ts):
+        vorlagen = ['Haushalt', 'Betrieb'] if inn == 'H' else ['Betrieb'] if inn == 'O' else []
+        bereiche.append({'pfad': pfad, 'gruppe': gruppe, 'name': texte[f'bereich.{pfad}.name'], 'vorlagen': vorlagen, 'wann': texte[f'bereich.{pfad}.wann']})
+    if not bereiche or any(b['pfad'] not in SEITE for b in bereiche) or any(b['gruppe'] not in gruppen for b in bereiche):
+        fehlt = [b['pfad'] for b in bereiche if b['pfad'] not in SEITE or b['gruppe'] not in gruppen]
+        sys.exit(f'werkbank_bereiche.py: Bereiche nicht gelesen, ohne Handbuchseite oder ohne Gruppe: {fehlt}')
     return gruppen, bereiche
 
 

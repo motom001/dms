@@ -10,7 +10,7 @@ Wie Benutzer mit den Mappen arbeiten, beschreibt das [Benutzerhandbuch](https://
 
 ## Aufbau des Editors
 
-Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: **Grunddaten → Felder → Titel → Trefferlisten → Register → Archivmodus → Stempel beim Weitergeben → Berechtigungen → Testlauf**.
+Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: **Grunddaten → Felder → Titel → Trefferlisten → Register → Archivmodus → Stempel beim Weitergeben → Erkennung → Berechtigungen → Testlauf**.
 
 - Jeder Bereich lässt sich mit einem Klick auf seine Überschrift **ein- und ausklappen**. Eingeklappt zeigt er das Wichtigste in einer Zeile, z. B. „8 Felder, 2 Pflicht, 1 mit Erinnerung“, die Titel-Vorlage mit einem Beispiel oder „Standard: R · 3 Regeln“.
 - Ein **neuer** Mappentyp ist ganz aufgeklappt, ein **bestehender** startet eingeklappt. Was du auf- oder zuklappst, merkt sich dein Gerät je Mappentyp.
@@ -51,6 +51,18 @@ Jedes Feld hat eine **Bezeichnung** (änderbar), eine **Kennung** (fest, sobald 
 Für alle gilt: **Pflichtfeld** und ein **Hilfetext**, der beim Ausfüllen unter dem Feld steht (im Feld-Editor gleich neben der Bezeichnung); die meisten Mappentypen haben außerdem einen **Standardwert** für neue Mappen. **Eindeutig** heißt: Den Wert darf es in diesem Mappentyp nur einmal geben – Groß- und Kleinschreibung zählen dabei nicht.
 
 Steht im Standardwert eines Textfelds `{nummernkreis:<kennung>}`, bekommt jede neue Mappe eine fortlaufende Nummer aus diesem [Nummernkreis](nummernkreise.md); das Feld ist dann schreibgeschützt.
+
+### Für die Erkennung nutzen
+
+Mit dem Haken **Für die Erkennung nutzen** an einem Feld sagst du der Erkennung im DMS, dass sich der Wert zum Wiedererkennen eignet bzw. dass sie das Feld füllen darf. Die Erkennung läuft im DMS selbst, ohne KI und ohne Internet:
+
+- **Vorschläge beim Zuordnen von Post:** Steht der Wert eines markierten Felds – z. B. Kundennummer, IBAN, Umsatzsteuer-Id, E-Mail-Adresse, Internetseite (auch als Domain einer E-Mail-Adresse), Telefon oder Name – im Text eines Briefs, schlägt das DMS diese Mappe als **Absender** vor, mit Begründung („gefunden: Kundennummer 100-4711“). Ein Typ mit markiertem Namen oder Kontaktangaben gilt als möglicher Absender (Organisation, Niederlassung, Person); ein Typ, der nur Nummern markiert (z. B. Vertragsnummer), als mögliche **Zielmappe**. Leerzeichen, Punkte und Bindestriche in Nummern zählen nicht, `100-4711` findet also auch `100 4711`. Gerechnet wird einmal, sobald der Volltext einer Post fertig ist – egal ob von der eingebauten Texterkennung oder einem Paket.
+
+- **Aus Dokument ausfüllen:** In einer Mappe füllt die Erkennung die markierten Felder aus einem Foto oder Dokument als Vorschlag (siehe [Erkennung](#erkennung)). Hat ein Mappentyp gar keine markierten Felder, nimmt sie alle, deren Art sie aus der Bezeichnung erkennt. Verweisfelder schlagen eine vorhandene Mappe des Zieltyps vor, die im Text steht – an ihren markierten Feldern, sonst am Titel.
+
+Geeignet sind Text, Langtext, Zahl, Betrag, Datum, Auswahlliste und Verweis – Passwortfelder nie. Ist der Haken an, wählst du optional **Was steht im Feld?** (Name oder Firma, Nummer, IBAN, E-Mail-Adresse, Telefon, Straße, PLZ, Ort …). Ohne Angabe schließt das DMS es aus Feldart, Kennung und Bezeichnung („Kundennummer“ → Nummer, „E-Mail“ → E-Mail-Adresse); was es erkannt hat, steht in der Auswahl hinter *automatisch*. Der **Erkennungshinweis** ist ein freier Text, z. B. „Kundennummer oben rechts, Muster 100-####“ – ein Muster nach dem Wort *Muster* (`#` = Ziffer, `A` = Großbuchstabe) sucht die Erkennung gezielt.
+
+Die Pakete der Registry (z. B. *Basis*) markieren ihre Felder selbst. Bei einem Update übernimmt das DMS die Markierung nur an Feldern, an denen du noch nichts eingestellt hast; die Vorschau nennt sie unter „für die Erkennung“.
 
 ### Die Kennung
 
@@ -121,7 +133,7 @@ So verhalten sich Fristen:
 - Das DMS prüft die Fristen beim Speichern einer Mappe, nach Änderungen am Mappentyp und jeden Tag kurz nach Mitternacht. Je Mappe, Feld und Datum entsteht **höchstens eine** Frist – auch nach dem Erledigen nicht noch einmal.
 - Wird das Datum **geändert oder geleert**, erledigt sich eine offene Frist von selbst (mit Eintrag in der Historie der Mappe); für das neue Datum entsteht zur rechten Zeit eine neue.
 - Daten, die schon vorbei sind, erzeugen keine Frist mehr.
-- Darf der Empfänger die Mappe nach den [Berechtigungen](berechtigungen.md) nicht lesen, bekommt er die Frist trotzdem; unter *Werkbank → Aufgaben* steht dann ein Hinweis.
+- Darf der Empfänger die Mappe nach den [Berechtigungen](berechtigungen.md) nicht lesen, bekommt er die Frist trotzdem; unter *Werkbank → Benachrichtigungen und Aufgaben* steht dann ein Hinweis.
 - Eine zusätzliche E-Mail am Stichtag gibt es nicht – die Fristen stehen in der täglichen Zusammenfassung.
 
 ## Wenn sich ein Mappentyp ändert
@@ -240,6 +252,16 @@ Jedes DMS hat seit 0.74 den Mappentyp **Ablageort** (Kennung `ablageort`). Damit
 
 !!! note "Bewusst einfach"
     Der Verbleib gilt für die ganze Mappe, nicht für jeden einzelnen Scan. *Liegt hier* zeigt nur, was direkt an diesem Ort liegt; was in Orten darunter liegt, siehst du über *Enthält* Ebene für Ebene. Wann man das Papier überhaupt aufheben sollte, steht im Benutzerhandbuch unter [Original behalten oder vernichten?](https://motom001.github.io/dms/benutzer/aktuell/original/).
+
+## Erkennung
+
+Unter **Erkennung** (nicht bei Systemmappentypen) stellst du den Knopf **Aus Dokument ausfüllen** ein, den Benutzer oben in jeder Mappe dieses Typs sehen:
+
+- **Knopf zeigen** (Standard: an) – abwählen blendet ihn aus, z. B. bei Mappentypen ohne Papier.
+- **Beschriftung** – z. B. „Visitenkarte scannen“ beim Mappentyp *Person* oder „Kassenbon fotografieren“; leer heißt er „Aus Dokument ausfüllen“.
+- **Post automatisch zuordnen, wenn die Erkennung sicher ist** (Standard: aus) – für Mappentypen, zu denen Post gehört, z. B. *Vertrag*. Sicher heißt: Absender eindeutig an einem starken Merkmal erkannt (Kundennummer, IBAN, Umsatzsteuer-Id, E-Mail, Internetseite, Telefon) **und** genau eine passende Mappe dieses Typs (sie verweist auf den Absender, frühere Post ging dorthin oder ihre Nummer steht im Brief; steht genau eine Nummer im Brief, gewinnt diese Mappe). Das DMS legt dabei nie neue Mappen an, ordnet nie zu, wenn der Empfänger die Mappe nicht lesen darf, und nie bei Mappentypen im [Archivmodus](archiv.md) (dort ist der Haken gesperrt). Der Empfänger (*Für*, sonst wer die Post gebracht hat) bekommt die Aufgabe **Automatisch zugeordnet – bitte prüfen** mit **Passt** und **Rückgängig**; die Begründung steht in der Historie von Post und Mappe. Je Post höchstens einmal, und nur nach neuem Volltext – vorhandene Post bleibt, wie sie ist.
+
+Darunter steht, welche Felder für die Erkennung markiert sind; markieren lässt sich jedes Feld unter [Für die Erkennung nutzen](#fur-die-erkennung-nutzen). Die Erkennung ist eingebaut und arbeitet ohne KI: Muster für E-Mail, Telefon, Internetseite, IBAN, Datum, Betrag, PLZ/Ort, Briefkopf und Visitenkarte sowie vCards (`.vcf`); Fotos und PDFs liest die [Texterkennung](texterkennung.md) sofort (höchstens 5 Seiten, mit den Sprachen ihrer Einstellungen). Jeder Wert wird gegen die Feldart geprüft, bevor er erscheint; gespeichert wird erst mit *Mappe speichern*. QR-Codes (z. B. vCard-QR auf Visitenkarten) liest sie noch nicht. Eine Erkennung über Pakete, etwa mit KI auf dem eigenen Rechner, kommt später.
 
 ## Archivmodus
 

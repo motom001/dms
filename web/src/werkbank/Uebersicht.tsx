@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { api, type WerkbankUebersicht } from '../api';
 import { Link } from '../ort';
+import { t } from '../sprache';
 import { Hilfe, useHandbuch } from '../Hilfe';
 import { sicherungsHinweise } from './Sicherung';
 import { GRUPPEN, type Gruppe } from '../../../shared/src/werkbankansicht';
@@ -24,20 +25,22 @@ export interface Hinweis { art: 'schlecht' | 'warn' | 'info'; text: ReactNode; z
 /** Die Hinweise, die in der Übersicht oben stehen (auch Zähler in der Leiste). */
 export function hinweiseAus(u: WerkbankUebersicht): Hinweis[] {
   const h: Hinweis[] = [];
-  const t = u.tresor;
+  const tr = u.tresor;
   // Notfallzugang (#108): bis er umbenannt oder deaktiviert ist.
   for (const n of u.notfallzugaenge ?? []) h.push({ art: 'schlecht', text: <><strong>Notfallzugang „{n.name}“ ist aktiv.</strong> Er entstand über eine RESCUE-Datei am {datum(n.erstellt)}. Gib ihm einen richtigen Namen oder deaktiviere ihn – warst du das nicht, sofort deaktivieren.</>, ziel: `/werkbank/benutzer/${n.id}`, knopf: 'Zum Benutzer' });
   // Speicherplatz (#116): Grenze, Warnschwelle, wieder genug Platz bei laufender Wartung.
   const sp = u.speicherplatz;
   if (sp?.zustand === 'grenze') h.push({ art: 'schlecht', text: <><strong>Speicherplatzlimit erreicht.</strong> Hochladen ist gesperrt{u.wartung?.ausloeser === 'speicherplatz' ? (u.wartung.stufe === 'aktiv' ? ', der Wartungsmodus läuft' : ', der Wartungsmodus beginnt gleich') : ''}. Schaffe Platz und beende danach den Wartungsmodus.</>, ziel: '/werkbank/systemzustand', knopf: 'Zum Systemzustand' });
   else if (sp?.zustand === 'warnung') h.push({ art: 'warn', text: <><strong>Der Speicherplatz wird knapp.</strong> Noch {platzText(sp.ordner)} frei – unter der Grenze wird das Hochladen gesperrt.</>, ziel: '/werkbank/systemzustand', knopf: 'Zum Systemzustand' });
+  // Auslastung (#409): CPU oder Arbeitsspeicher seit 5 Minuten über 90 %.
+  if (u.auslastung?.length) h.push({ art: 'warn', text: <><strong>{t('systemzustand.warnung.uebersicht')}</strong> {u.auslastung.map((w) => t.frei(`systemzustand.warnung.${w}`)).join(' ')}</>, ziel: '/werkbank/systemzustand#auslastung', knopf: t('systemzustand.warnung.knopf') });
   if (sp?.wartungBeenden) h.push({ art: 'warn', text: <><strong>Wieder {platzText(sp.ordner)} frei.</strong> Der Wartungsmodus wegen des Speicherplatzes endet nicht von selbst – Wartung beenden?</>, ziel: '/werkbank/systemzustand', knopf: 'Wartung beenden' });
   if (u.wartung && u.wartung.stufe !== 'aus' && !sp?.wartungBeenden) h.push({ art: 'warn', text: <><strong>Der Wartungsmodus ist {u.wartung.stufe === 'aktiv' ? 'aktiv' : 'angekündigt'}.</strong> {u.wartung.stufe === 'aktiv' ? 'Nur Administratoren können arbeiten.' : 'Bald werden alle anderen abgemeldet.'}</>, ziel: '/werkbank/wartungsmodus', knopf: 'Zum Wartungsmodus' });
-  if (t && t.zustand === 'fehlt') h.push({ art: 'warn', text: <><strong>Es gibt noch keinen Schlüssel für Passwörter.</strong> Bis dahin lassen sich keine Passwörter speichern (E-Mail-Versand, Postfächer, Passwortfelder).</>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
-  else if (t && t.zustand === 'verloren') h.push({ art: 'schlecht', text: <><strong>Der Schlüssel für Passwörter fehlt.</strong> Gespeicherte Passwörter sind nicht lesbar.</>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
-  else if (t && t.zustand === 'falsch') h.push({ art: 'schlecht', text: <><strong>Die Schlüsseldatei passt nicht zu den gespeicherten Passwörtern.</strong></>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
-  else if (t && t.eingebunden === false) h.push({ art: 'warn', text: <><strong>Die Schlüsseldatei liegt nicht auf einem eigenen Volume.</strong> Wird der Container neu erstellt (z. B. beim Update), ist sie weg.</>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
-  else if (t && t.betroffen) h.push({ art: 'warn', text: <><strong>{t.betroffen === 1 ? 'Ein Passwort ist' : `${t.betroffen} Passwörter sind`} nicht lesbar oder unverschlüsselt.</strong></>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
+  if (tr && tr.zustand === 'fehlt') h.push({ art: 'warn', text: <><strong>Es gibt noch keinen Schlüssel für Passwörter.</strong> Bis dahin lassen sich keine Passwörter speichern (E-Mail-Versand, Postfächer, Passwortfelder).</>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
+  else if (tr && tr.zustand === 'verloren') h.push({ art: 'schlecht', text: <><strong>Der Schlüssel für Passwörter fehlt.</strong> Gespeicherte Passwörter sind nicht lesbar.</>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
+  else if (tr && tr.zustand === 'falsch') h.push({ art: 'schlecht', text: <><strong>Die Schlüsseldatei passt nicht zu den gespeicherten Passwörtern.</strong></>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
+  else if (tr && tr.eingebunden === false) h.push({ art: 'warn', text: <><strong>Die Schlüsseldatei liegt nicht auf einem eigenen Volume.</strong> Wird der Container neu erstellt (z. B. beim Update), ist sie weg.</>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
+  else if (tr && tr.betroffen) h.push({ art: 'warn', text: <><strong>{tr.betroffen === 1 ? 'Ein Passwort ist' : `${tr.betroffen} Passwörter sind`} nicht lesbar oder unverschlüsselt.</strong></>, ziel: '/werkbank/verschluesselung', knopf: 'Zur Verschlüsselung' });
   // Postfächer mit OAuth (#358): Anmeldung abgelaufen/entzogen oder noch nicht erfolgt – bis dahin kein Abruf.
   for (const p of u.postfachAnmeldung ?? []) h.push(p.zustand === 'abgelaufen'
     ? { art: 'schlecht', text: <><strong>Postfach „{p.name}“: Die Anmeldung ist abgelaufen oder wurde entzogen.</strong> Bis zur neuen Anmeldung holt das DMS dort keine Mails ab.</>, ziel: `/werkbank/postfaecher/${p.id}`, knopf: 'Neu anmelden' }
@@ -53,6 +56,7 @@ export function hinweiseAus(u: WerkbankUebersicht): Hinweis[] {
   const nachholen: Record<string, { text: string; ziel: string; knopf: string }> = {
     benutzer: { text: 'einen normalen Benutzer für die Ablage anlegen – Administratoren arbeiten nicht in der Ablage', ziel: '/werkbank/benutzer/neu', knopf: 'Benutzer anlegen' },
     optional: { text: 'Adresse, E-Mail-Versand und Bundesland einstellen', ziel: '/werkbank/betrieb', knopf: 'Zu E-Mail und Adresse' },
+    pakete: { text: 'Pakete dazuholen, z. B. die Texterkennung, damit gescannte Dokumente durchsuchbar werden', ziel: '/werkbank/pakete', knopf: 'Zu den Paketen' },
   };
   for (const x of u.einrichtung?.uebersprungen ?? []) if (nachholen[x] && !(x === 'optional' && u.mail) && !(x === 'benutzer' && (u.bestand?.benutzer ?? 0) > 1)) h.push({ art: 'info', text: <><strong>Aus der Einrichtung übersprungen:</strong> {nachholen[x].text}.</>, ziel: nachholen[x].ziel, knopf: nachholen[x].knopf });
   // Überflüssige Umgebungsvariablen (#115, #119), je mit Grund (#478).

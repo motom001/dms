@@ -423,6 +423,24 @@ export class Texterkennung {
     } finally { await rm(dir, { recursive: true, force: true }); }
   }
 
+  /**
+   * Sofort und ohne Warteschlange (#391, „Aus Dokument ausfüllen“): Text einer Datei, die (noch) nicht
+   * gespeichert ist – mit den Sprachen der Einstellungen, höchstens 5 Seiten. Gilt auch, wenn die
+   * Texterkennung für die Warteschlange ausgeschaltet ist; ohne tesseract liest es nur die Textebene von PDFs.
+   */
+  async erkenneSofort(inhalt: Buffer, mime: string): Promise<{ text: string; info: string }> {
+    const o = await this.optionen();
+    const dir = await mkdtemp(join(tmpdir(), 'dms-sofort-'));
+    try {
+      const pfad = join(dir, 'datei');
+      await writeFile(pfad, inhalt);
+      const werkzeuge = await this.werkzeugeLaden();
+      if (mime !== 'application/pdf' && !werkzeuge.tesseract) throw new Fachfehler(503, 'Die Texterkennung (tesseract) ist nicht installiert – Fotos lassen sich nicht lesen.');
+      const r = await this.engine(pfad, mime, { maxSeiten: Math.min(o.maxSeiten, 5), sprachen: o.sprachen, automatisch: o.automatisch, werkzeuge });
+      return { text: r.text, info: r.info };
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  }
+
   /** Für die Werkbank: Stand der Warteschlange und der Werkzeuge. */
   /** Liste der Aufträge eines Stands für die Werkbank (#61). */
   auftraege(q: { stand?: unknown; von?: unknown; anzahl?: unknown }) {

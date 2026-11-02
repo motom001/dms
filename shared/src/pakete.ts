@@ -6,6 +6,8 @@ import type { Hilfeort } from './hilfe';
 
 /** Der offizielle Katalog (Branch gh-pages der Registry). */
 export const OFFIZIELLER_KATALOG = 'https://raw.githubusercontent.com/motom001/dms-registry/gh-pages/katalog.json';
+/** Die Katalog-Webseite (GitHub Pages der Registry), u. a. zum Zusammenstellen einer Sammeldatei (#461). */
+export const KATALOG_SEITE = 'https://motom001.github.io/dms-registry/';
 /** Die Registry selbst – Quellen, Regeln, Vorlage. */
 export const REGISTRY = 'https://github.com/motom001/dms-registry';
 
@@ -105,6 +107,74 @@ export const dmsPasst = (dms: string, bereich: string) => !/^\d+\.\d+\.\d+/.test
 /** Neueste Version eines Katalogpakets, die zu einem Bereich passt. */
 export function neuestePassende(p: KatalogPaket, bereich?: string): KatalogVersion | undefined {
   return [...p.versionen].sort((a, b) => vergleicheVersion(b.version, a.version)).find((v) => !bereich || passt(v.version, bereich));
+}
+
+/**
+ * Reihenfolge zum Installieren: Abhängigkeiten zuerst (#460, #461). Abhängigkeiten, die nicht in der Liste
+ * stehen, zählen nicht (sind schon installiert oder fehlen). null = Kreis.
+ */
+export function nachAbhaengigkeiten<T extends { id: string; abhaengigkeiten: Record<string, string> }>(liste: T[]): T[] | null {
+  const nach = new Map(liste.map((x) => [x.id, x]));
+  const fertig = new Set<string>(), unterwegs = new Set<string>();
+  const erg: T[] = [];
+  const besuche = (x: T): boolean => {
+    if (fertig.has(x.id)) return true;
+    if (unterwegs.has(x.id)) return false;
+    unterwegs.add(x.id);
+    for (const a of Object.keys(x.abhaengigkeiten)) { const z = nach.get(a); if (z && !besuche(z)) return false; }
+    unterwegs.delete(x.id); fertig.add(x.id); erg.push(x);
+    return true;
+  };
+  for (const x of liste) if (!besuche(x)) return null;
+  return erg;
+}
+
+/** Ein Paket in einer Auswahl aus dem Katalog (#460, #461): selbst gewählt oder als Abhängigkeit mitgenommen. */
+export interface AuswahlPaket {
+  id: string; name: string; version: string; code: boolean;
+  /** Selbst gewählt (sonst: kommt als Abhängigkeit mit). */
+  gewaehlt: boolean;
+  /** Von diesen Paketen gebraucht. */
+  fuer: string[];
+  abhaengigkeiten: Record<string, string>;
+}
+
+/**
+ * Pakete aus einem Katalog auswählen (#460, #461): je Paket die neueste Version, die zur DMS-Version passt;
+ * Abhängigkeiten kommen mit (neueste passende Version), außer sie sind schon passend installiert. Reihenfolge:
+ * Abhängigkeiten zuerst. probleme: was sich nicht auflösen lässt (dann fehlt das Paket in der Liste).
+ */
+export function auswahlMitAbhaengigkeiten(k: Katalog, gewaehlt: string[], dms: string, installiert: Array<{ id: string; version: string }> = []): { pakete: AuswahlPaket[]; probleme: string[] } {
+  const plan = new Map<string, AuswahlPaket>();
+  const probleme: string[] = [];
+  const name = (id: string) => k.pakete.find((p) => p.id === id)?.name ?? id;
+  const nimm = (id: string, bereich: string | null, von: string | null) => {
+    const da = installiert.find((x) => x.id === id);
+    if (von && da && (!bereich || passt(da.version, bereich))) return;
+    const schon = plan.get(id);
+    if (schon) {
+      if (von && !schon.fuer.includes(von)) schon.fuer.push(von);
+      if (bereich && !passt(schon.version, bereich)) probleme.push(`„${name(von ?? id)}“ braucht „${schon.name}“ ${bereich}, gewählt ist ${schon.version}.`);
+      return;
+    }
+    const kp = k.pakete.find((p) => p.id === id);
+    if (!kp) { probleme.push(`„${name(von ?? id)}“ braucht „${id}“ – das gibt es im Katalog nicht.`); return; }
+    const v = [...kp.versionen].sort((a, b) => vergleicheVersion(b.version, a.version)).find((x) => (!bereich || passt(x.version, bereich)) && dmsPasst(dms, x.dms));
+    if (!v) {
+      probleme.push(von ? `„${name(von)}“ braucht „${kp.name}“ ${bereich}; dazu passt keine Version für DMS ${dms}.` : `„${kp.name}“: keine Version passt zu DMS ${dms}.`);
+      return;
+    }
+    plan.set(id, { id, name: kp.name, version: v.version, code: v.code, gewaehlt: !von, fuer: von ? [von] : [], abhaengigkeiten: v.abhaengigkeiten });
+    for (const [a, b] of Object.entries(v.abhaengigkeiten)) nimm(a, b, id);
+  };
+  for (const id of gewaehlt) {
+    const x = plan.get(id);
+    if (x) x.gewaehlt = true; else nimm(id, null, null);
+  }
+  const liste = [...plan.values()];
+  const geordnet = nachAbhaengigkeiten(liste);
+  if (!geordnet) probleme.push('Die Abhängigkeiten der gewählten Pakete bilden einen Kreis.');
+  return { pakete: geordnet ?? liste, probleme };
 }
 
 /* ---------- Katalog lesen ---------- */

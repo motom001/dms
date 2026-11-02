@@ -17,6 +17,7 @@ import { Hilfe } from '../Hilfe';
 import { RECHTE, RECHTE_LISTE } from '../../../shared/src/rechte';
 import { ANSTEHEND_MAX, ANSTEHEND_TAGE } from '../../../shared/src/fristen';
 import { rueckfrage } from '../rueckfrage';
+import { t } from '../sprache';
 
 const STUFE = { immer: 'ja', nie: 'nein', teils: 'je nach Mappe' } as const;
 
@@ -78,7 +79,7 @@ export function Profil({ teile = [] }: { teile?: string[] }) {
 }
 
 function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
-  const { ich, mail, aktualisieren } = useKonto();
+  const { ich, mail, aktualisieren, favoritenBenachrichtigung } = useKonto();
   const d = useDaten();
   const [name, setName] = useState(ich.name);
   const [email, setEmail] = useState(ich.email);
@@ -236,9 +237,12 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
       <div className="blatt" id="favoriten">
         <h2 className="h3">Favoriten <Hilfe ort="profil.favoriten" /></h2>
         <p className="leise">Was dir wichtig ist, bekommt einen Stern. Ändert jemand anderes einen deiner Favoriten, bekommst du <strong>eine</strong> Benachrichtigung „Geändert“ unter „Zu erledigen“ – sie zählt weitere Änderungen nur hoch, bis du die Mappe öffnest. Einzelne Favoriten schaltest du in der Favoritenliste stumm.</p>
-        <label className="haken"><input type="checkbox" checked={d.einstellungen.favoriten_benachrichtigen !== false}
-          onChange={(e) => d.setzeEinstellung('favoriten_benachrichtigen', e.target.checked ? null : false)} />
-          <span>Bei Änderungen an meinen Favoriten benachrichtigen</span></label>
+        {/* #506: Hat die Werkbank die Benachrichtigung für dich abgeschaltet, fehlt der Schalter; die Einstellung bleibt. */}
+        {favoritenBenachrichtigung
+          ? <label className="haken"><input type="checkbox" checked={d.einstellungen.favoriten_benachrichtigen !== false}
+              onChange={(e) => d.setzeEinstellung('favoriten_benachrichtigen', e.target.checked ? null : false)} />
+              <span>Bei Änderungen an meinen Favoriten benachrichtigen</span></label>
+          : <p className="hinweis info">{t('profil.favoriten.abgeschaltet')}</p>}
         <label className="haken"><input type="checkbox" checked={d.einstellungen.geaenderte_hervorheben !== false}
           onChange={(e) => d.setzeEinstellung('geaenderte_hervorheben', e.target.checked ? null : false)} />
           <span>Geänderte Favoriten und eigene Mappen in Listen hervorheben<small className="hilfe">Mit einem Punkt vor dem Titel, bis du die Mappe öffnest – wie „ungelesen“ im E-Mail-Programm.</small></span></label>

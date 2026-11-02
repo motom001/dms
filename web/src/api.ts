@@ -6,18 +6,49 @@ import type { Stufe as KleinStufe } from '../../shared/src/verkleinern';
 import type { Bereich, SchwaerzSeite } from '../../shared/src/schwaerzen';
 import type { Archiv } from '../../shared/src/archiv';
 import type { UeberfluessigeVariable } from '../../shared/src/umgebungsvariablen';
-import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, DokumentVersion, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Werte } from '../../shared/src/model';
+import type { Abwesenheit, Aufgabe, Ausschnitt, Benutzer, Dokument, DokumentVersion, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Wert, Werte } from '../../shared/src/model';
 import type { Feldbedingung, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
 import type { InstalliertesPaket, Katalog, LaeuferZustand, RechtePunkt } from '../../shared/src/pakete';
 import type { Einstellungsbeschreibung } from '../../shared/src/paketeinstellungen';
 import type { ErstellenStand, PaketErstellenEingabe, PaketPruefung } from '../../shared/src/paketerstellung';
 import type { EigeneAnsicht, WerkbankAnsicht } from '../../shared/src/werkbankansicht';
+import type { FavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
 import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src/sichtrechte';
 import type { Anstehend, Erinnerung } from '../../shared/src/fristen';
 import type { Auftrag } from '../../shared/src/auftrag';
 import type { Baum } from '../../shared/src/baum';
 import type { LoeschAktion, LoeschPlan, LoeschVorschau } from '../../shared/src/loeschbaum';
+import type { Luecke } from '../../shared/src/loeschkonzept';
+import type { LoeschAnlass, LoeschEintrag } from '../../shared/src/loeschprotokoll';
+import type { Sicherheit } from '../../shared/src/erkennung';
+import type { Entscheidung, UmwandlungsFeld, Umwandlungsvorgang, UmwandlungsVorschau } from '../../shared/src/umwandlung';
+
+/** Vorschläge beim Zuordnen (#336), wie GET /api/mappen/:id/erkennung sie liefert. */
+export interface ErkFund<T = string> { wert: T; sicherheit: Sicherheit; fundstelle: string }
+export interface PostErkennung {
+  zeit: string; dokumente: number;
+  absender: Array<{ mappeId: string; typId: string; titel: string; stark: boolean; punkte: number; gruende: string[] }>;
+  eindeutig: string | null;
+  angaben: { datum: ErkFund | null; betrag: ErkFund<{ betrag: number; waehrung: string }> | null; nummern: Array<ErkFund & { label: string }> };
+  neuerAbsender: { typId: string; werte: Record<string, string>; fundstelle: string } | null;
+  ziele: Array<{ mappeId: string; typId: string; titel: string; punkte: number; gruende: string[] }>;
+  bezuege: Bezuege;
+  /** Automatisch zugeordnet (#337). */
+  auto?: { ziel: string; zeit: string; grund: string; rueckgaengig: boolean } | null;
+}
+
+/** „Aus Dokument ausfüllen“ (#391), wie POST /api/typen/:id/vorschlaege sie liefert. */
+export interface TypVorschlaege {
+  vorschlaege: Record<string, { wert: Wert; sicherheit: Sicherheit; fundstelle: string }>;
+  bezuege: Bezuege;
+  neu: Record<string, { typId: string; werte: Record<string, string>; fundstelle: string }>;
+  verworfen: number; zeichen: number;
+}
+
+/** Grund fürs Löschprotokoll (#470) als Body-Teil bzw. Query. */
+const grundAus = (a?: LoeschAnlass) => (a?.grund ? { grund: a.grund, grundText: a.text ?? '' } : {});
+const anlassQuery = (a?: LoeschAnlass) => (a?.grund ? `?${new URLSearchParams({ grund: a.grund, ...(a.text ? { grundText: a.text } : {}) })}` : '');
 import type { AuskunftAuswahl, AuskunftLink, AuskunftStand, AuskunftVorschau, Datenschutz } from '../../shared/src/auskunft';
 import type { Dokumentart } from '../../shared/src/demodaten';
 import { merkeAnfrage } from './diagnose';
@@ -176,7 +207,10 @@ export interface KontoStatus {
   version?: string | null;
   /** Einrichtungsassistent (#119). */
   einrichtung?: EinrichtungStatus | null;
+  /** Favoriten benachrichtigen (#506): für diesen Benutzer in der Werkbank erlaubt? */
+  favoritenBenachrichtigung?: boolean | null;
 }
+type FreigabeStand = { freigabe: FavoritenFreigabe; rollen: Array<{ id: string; name: string; system: boolean }> };
 export interface AnbindungAnsicht { host: string; port: number; datenbank: string; benutzer: string; passwortGesetzt: boolean }
 export interface AnbindungEingabe { host: string; port: number; datenbank: string; benutzer: string; passwort: string }
 export type AnbindungPruefung = { ok: true; postgres: string; eingerichtet: boolean; benutzer: number } | { ok: false; art: 'nicht_erreichbar' | 'anmeldung' | 'datenbank_fehlt' | 'sonst'; text: string; anlegenMoeglich?: boolean; technisch: string };
@@ -190,7 +224,7 @@ export interface EinrichtungStatus {
   quelle?: 'datei' | 'umgebung' | null;
   fehler?: string | null;
 }
-export type EinrichtungSchritt = 'benutzer' | 'schluessel' | 'optional' | 'fertig';
+export type EinrichtungSchritt = 'benutzer' | 'schluessel' | 'pakete' | 'optional' | 'fertig';
 export interface EinrichtungStand { offen: boolean; erledigt: EinrichtungSchritt[]; uebersprungen: EinrichtungSchritt[]; mandant: string | null }
 export interface AnbindungStand { anbindung: AnbindungAnsicht; datei: string; umgebung: 'fehlt' | 'gleich' | 'abweichend'; neustartNoetig: boolean; /** dms-komplett (#208) */ imContainer?: boolean }
 /** Wartungsmodus (#102), wie ihn jeder sieht; sekunden = bis zur aktiven Stufe. */
@@ -341,8 +375,8 @@ export const api = {
       sicht, ...(link !== undefined ? { link } : {}), ...(suche ? { suche } : {}), ...(suche && volltext ? { volltext: 'true' } : {}), ...(suche && notizen ? { notizen: 'true' } : {}),
     })}`),
   /** Mehrere Mappen löschen (#150); probe = nur zählen. */
-  mappenLoeschen: (ids: string[], probe = false) =>
-    anfrage<{ mappen: number; dokumente: number; geloescht: number; ausgelassen: Array<{ id: string; titel: string; grund: string }> }>('POST', '/api/mappen/loeschen', { ids, probe }),
+  mappenLoeschen: (ids: string[], probe = false, anlass?: LoeschAnlass) =>
+    anfrage<{ mappen: number; dokumente: number; geloescht: number; ausgelassen: Array<{ id: string; titel: string; grund: string }> }>('POST', '/api/mappen/loeschen', { ids, probe, ...grundAus(anlass) }),
   einstellungen: () => anfrage<Record<string, unknown>>('GET', '/api/konto/einstellungen'),
   designs: () => anfrage<{ designs: Design[]; standard: string | null }>('GET', '/api/designs'),
   apiSchluessel: () => anfrage<ApiSchluessel[]>('GET', '/api/konto/api-schluessel'),
@@ -364,6 +398,8 @@ export const api = {
   designStandard: (id: string) => anfrage<{ designs: Design[]; standard: string | null }>('PUT', '/api/designs-standard', { id }),
   einstellungSetzen: (schluessel: string, wert: unknown) => anfrage<null>('PUT', `/api/konto/einstellungen/${encodeURIComponent(schluessel)}`, { wert }),
   sichten: () => anfrage<Zaehler>('GET', '/api/sichten'),
+  /** Ohne Zählen (#512): Papierkorb-Tage und „Neue Post“ – vor den Zahlen. */
+  sichtenRahmen: () => anfrage<Pick<Zaehler, 'papierkorbTage' | 'neuePost'>>('GET', '/api/sichten/rahmen'),
   /* Sichten verwalten (#38) */
   sichtDefinitionen: () => anfrage<Sicht[]>('GET', '/api/sichten/definitionen'),
   sichtAnlegen: (s: Partial<SichtDaten>) => anfrage<Sicht>('POST', '/api/sichten/definitionen', s),
@@ -393,10 +429,10 @@ export const api = {
   gesehen: (ids: string[]) => anfrage<null>('POST', '/api/gesehen', { ids }),
   mappeAnlegen: (m: unknown) => anfrage<Mappe & { hinweis?: string }>('POST', '/api/mappen', m),
   mappeAendern: (id: string, m: unknown) => anfrage<Mappe & { hinweis?: string }>('PUT', `/api/mappen/${id}`, m),
-  mappeLoeschen: (id: string) => anfrage<null>('DELETE', `/api/mappen/${id}`),
+  mappeLoeschen: (id: string, anlass?: LoeschAnlass) => anfrage<null>('DELETE', `/api/mappen/${id}${anlassQuery(anlass)}`),
   /** Mit allen verknüpften Mappen löschen (#424). */
   loeschVorschau: (id: string, tiefe: number) => anfrage<LoeschVorschau>('GET', `/api/mappen/${id}/loeschvorschau?tiefe=${tiefe}`),
-  mitVerknuepftenLoeschen: (id: string, e: { tiefe: number; auswahl: Record<string, LoeschAktion> }) =>
+  mitVerknuepftenLoeschen: (id: string, e: { tiefe: number; auswahl: Record<string, LoeschAktion>; grund?: string; grundText?: string }) =>
     anfrage<{ vorgang: string; endgueltig: boolean; zahlen: LoeschPlan['zahlen']; loeschen: string[]; erinnerung: { id: string; datum: string; text: string } | null }>('POST', `/api/mappen/${id}/mit-verknuepften-loeschen`, e),
   vorgangWiederherstellen: (vorgang: string, werkbank = false) =>
     anfrage<{ mappen: number; verweiseWieder: number; verweiseEntfallen: number; startId: string | null }>('POST', `/api/${werkbank ? 'werkbank/' : ''}papierkorb/vorgang/${vorgang}/wiederherstellen`),
@@ -423,6 +459,12 @@ export const api = {
   postAnlegen: (e: { betreff?: string; fuer?: string | null }) => anfrage<Mappe>('POST', '/api/post', e),
   zuordnen: (postId: string, e: { ziel: string; register?: string; dokumente?: string[]; kopieren?: boolean }) =>
     anfrage<{ post: Mappe; ziel: Mappe }>('POST', `/api/mappen/${postId}/zuordnen`, e),
+  /** „Aus Dokument ausfüllen“ (#391): Vorschläge aus Text bzw. Dokumenten; aus einer Datei (Foto, PDF, vCard) mit dem gelesenen Text. */
+  vorschlaege: (typId: string, e: { text?: string; dokumente?: string[]; mappe?: string }) => anfrage<TypVorschlaege>('POST', `/api/typen/${typId}/vorschlaege`, e),
+  vorschlaegeDatei: (typId: string, datei: Blob, name: string, mappe?: string) =>
+    sendeDatei(`/api/typen/${typId}/vorschlaege/datei?${new URLSearchParams({ name, typ: datei.type || 'application/octet-stream', ...(mappe ? { mappe } : {}) })}`, datei) as Promise<TypVorschlaege & { text: string; info: string }>,
+  /** Erkennung (#336): Vorschläge beim Zuordnen; neu = jetzt neu rechnen. */
+  erkennung: (postId: string, neu = false) => anfrage<PostErkennung>(neu ? 'POST' : 'GET', `/api/mappen/${postId}/erkennung`),
   /** Mehrere Mappen per E-Mail (#151). */
   /* Stempel beim Weitergeben (#394) */
   stempelVorlagen: () => anfrage<StempelVorlage[]>('GET', '/api/stempel/vorlagen'),
@@ -438,6 +480,8 @@ export const api = {
   aufgabeAnlegen: (mappeId: string, empfaengerId: string, text: string) => anfrage<Aufgabe & { hinweis?: string }>('POST', `/api/mappen/${mappeId}/aufgaben`, { empfaengerId, text }),
   /** Mit folgetermin bei wiederkehrenden Fristen (#130). */
   aufgabeErledigt: (id: string) => anfrage<Aufgabe & { folgetermin?: string }>('POST', `/api/aufgaben/${id}/erledigt`),
+  /** Automatisch zugeordnet (#337): Rückgängig aus der Aufgabe. */
+  zuordnungRueckgaengig: (id: string) => anfrage<{ post: Mappe; dokumente: number }>('POST', `/api/aufgaben/${id}/rueckgaengig`),
   folgetermin: (id: string) => anfrage<Mappe & { hinweis?: string }>('POST', `/api/aufgaben/${id}/folgetermin`),
   /* Fristen und Erinnerungen (#129–#132) */
   /** Startseite (#334): zuletzt geöffnete Mappen und ob es schon eigene Mappen gibt. */
@@ -457,6 +501,10 @@ export const api = {
   zusammenfassung: () => anfrage<Zusammenfassung>('GET', '/api/konto/zusammenfassung'),
   zusammenfassungSetzen: (z: { aktiv: boolean; uhrzeit: string | null; tage: number[]; feiertage: boolean }) => anfrage<Zusammenfassung>('PUT', '/api/konto/zusammenfassung', z),
   aufgabenMailSenden: () => anfrage<{ verschickt: number }>('POST', '/api/werkbank/aufgaben/mail/senden'),
+  /** Favoriten benachrichtigen (#506): Freigabe für alle, je Rolle oder gar nicht; Vorgabe für neue Benutzer. */
+  favoritenFreigabe: () => anfrage<FreigabeStand>('GET', '/api/werkbank/favoriten-freigabe'),
+  favoritenFreigabeSpeichern: (f: FavoritenFreigabe) => anfrage<FreigabeStand>('PUT', '/api/werkbank/favoriten-freigabe', f),
+  favoritenVorgabeAnwenden: () => anfrage<{ benutzer: number }>('POST', '/api/werkbank/favoriten-freigabe/anwenden'),
   notizAnlegen: (mappeId: string, text: string) => anfrage<Notiz>('POST', `/api/mappen/${mappeId}/notizen`, { text }),
   notizAendern: (id: string, text: string) => anfrage<Notiz>('PUT', `/api/notizen/${id}`, { text }),
   notizLoeschen: (id: string) => anfrage<null>('DELETE', `/api/notizen/${id}`),
@@ -484,7 +532,8 @@ export const api = {
   paketQuelleHinzu: (url: string) => anfrage<PaketQuelle[]>('POST', '/api/werkbank/pakete/quellen', { url }),
   paketQuelleSchalten: (url: string, aktiv: boolean) => anfrage<PaketQuelle[]>('PUT', '/api/werkbank/pakete/quellen', { url, aktiv }),
   paketQuelleEntfernen: (url: string) => anfrage<PaketQuelle[]>('DELETE', `/api/werkbank/pakete/quellen?${new URLSearchParams({ url })}`),
-  paketHochladen: (datei: File) => sendeDatei('/api/werkbank/pakete/hochladen', datei) as Promise<{ upload: string; vorschau: PaketVorschau }>,
+  /** Ein Paket oder eine Sammeldatei mit mehreren Paketen (#461) – das DMS erkennt es am Inhalt. */
+  paketHochladen: (datei: File) => sendeDatei('/api/werkbank/pakete/hochladen', datei) as Promise<{ upload: string; vorschau: PaketVorschau } | { sammeldatei: Sammeldatei }>,
   paketVorschau: (e: { id?: string; version?: string; quelle?: string; upload?: string }) => anfrage<PaketVorschau>('POST', '/api/werkbank/pakete/vorschau', e),
   paketInstallieren: (e: { id?: string; version?: string; quelle?: string; upload?: string; bestaetigt?: boolean; rechteBestaetigt?: boolean; namen?: Record<string, string>; sichtNamen?: Record<string, string>; beispiele?: boolean; mitAbhaengigkeiten?: boolean }) => anfrage<InstalliertesPaket>('POST', '/api/werkbank/pakete/installieren', e),
   paketUpdates: () => anfrage<Array<{ id: string; installiert: string; neu: string; changelog: string | null; quelle: string }>>('POST', '/api/werkbank/pakete/updates'),
@@ -493,6 +542,11 @@ export const api = {
   paketEntfernen: (id: string, einstellungenBehalten = false) => anfrage<void>('DELETE', `/api/werkbank/pakete/${encodeURIComponent(id)}${einstellungenBehalten ? '?einstellungenBehalten=1' : ''}`),
   paketEinstellungen: (id: string) => anfrage<PaketEinstellungenStand>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`),
   paketEinstellungenSpeichern: (id: string, werte: Record<string, unknown>) => anfrage<PaketEinstellungenStand>('PUT', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`, { werte }),
+  /* Paket-Update: Text in Verweis umwandeln (#534) */
+  paketUmwandlungen: (id: string) => anfrage<{ felder: UmwandlungsFeld[]; vorgaenge: Umwandlungsvorgang[] }>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/umwandlungen`),
+  paketUmwandlungVorschau: (id: string, typId: string, feldKey: string) => anfrage<UmwandlungsVorschau>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/umwandlungen/vorschau`, { typId, feldKey }),
+  paketUmwandeln: (id: string, typId: string, feldKey: string, entscheidungen: Record<string, Entscheidung>) => anfrage<{ umgewandelt: number; neuePersonen: number; ausgelassen: UmwandlungsVorschau['ausgelassen'] }>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/umwandlungen`, { typId, feldKey, entscheidungen }),
+  paketUmwandlungZurueck: (id: string, vorgang: string) => anfrage<{ zurueck: number; ausgelassen: UmwandlungsVorschau['ausgelassen']; personenBehalten: number }>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/umwandlungen/${encodeURIComponent(vorgang)}/rueckgaengig`),
   paketAktion: (id: string, aktion: string) => anfrage<{ ok: boolean; text: string }>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/aktionen/${encodeURIComponent(aktion)}`),
   /* Paket selbst erstellen (#374) */
   paketErstellenStand: () => anfrage<ErstellenStand>('GET', '/api/werkbank/pakete/erstellen'),
@@ -512,6 +566,8 @@ export const api = {
   datenbank: () => anfrage<DatenbankStand>('GET', '/api/werkbank/datenbank'),
   system: () => anfrage<Systemuebersicht>('GET', '/api/werkbank/system'),
   speicherplatz: () => anfrage<SpeicherplatzStand>('GET', '/api/werkbank/speicherplatz'),
+  /** Auslastung (#409): CPU, Arbeitsspeicher, Netzwerk, Wartezeit der Ereignisschleife (#477). */
+  systemlast: () => anfrage<SystemlastAntwort>('GET', '/api/werkbank/systemlast'),
   eingangsordner: () => anfrage<EingangStand>('GET', '/api/werkbank/eingangsordner'),
   webdav: () => anfrage<WebdavStand>('GET', '/api/werkbank/webdav'),
   webdavSetzen: (e: WebdavEinstellung) => anfrage<WebdavStand>('PUT', '/api/werkbank/webdav', e),
@@ -563,7 +619,7 @@ export const api = {
   entwicklermodus: (an: boolean) => anfrage<Benutzer>('PUT', '/api/konto/profil', { entwicklermodus: an }),
   emailAendern: (email: string, passwort: string) => anfrage<Benutzer>('PUT', '/api/konto/email', { email, passwort }),
   passwortAendern: (passwortAlt: string, passwortNeu: string) => anfrage<{ benutzer: Benutzer }>('PUT', '/api/konto/passwort', { passwortAlt, passwortNeu }),
-  dokumentLoeschen: (id: string) => anfrage<null>('DELETE', `/api/dokumente/${id}`),
+  dokumentLoeschen: (id: string, anlass?: LoeschAnlass) => anfrage<null>('DELETE', `/api/dokumente/${id}${anlassQuery(anlass)}`),
   /* Vollexport (#254) */
   vollexport: () => anfrage<VollexportStand>('GET', '/api/werkbank/export'),
   vollexportStarten: (o: { passwoerter: boolean; passwoerterBestaetigt: boolean; protokolle: boolean; kontakte: Record<string, KontaktZuordnung> }) => anfrage<Auftrag>('POST', '/api/werkbank/export', o),
@@ -596,6 +652,9 @@ export const api = {
     anfrage<Baum>('GET', `/api/mappen/${id}/baum?${new URLSearchParams(Object.entries(o).filter(([, v]) => v !== undefined).map(([k, v]) => [k, Array.isArray(v) ? v.join(',') : String(v)]))}`),
   /** Datenschutz: Auskunft nach Art. 15 DSGVO (#396). */
   datenschutz: () => anfrage<DatenschutzStand>('GET', '/api/werkbank/datenschutz'),
+  /** Löschprotokoll (#470) */
+  loeschprotokoll: (f: Record<string, string>) => anfrage<{ eintraege: LoeschEintrag[]; gesamt: number; jahre: number; max: number }>('GET', `/api/werkbank/loeschprotokoll?${new URLSearchParams(f)}`),
+  loeschprotokollJahre: (jahre: number) => anfrage<{ jahre: number }>('PUT', '/api/werkbank/loeschprotokoll/einstellungen', { jahre }),
   /** Auskunft zustellen (#455): per E-Mail (nur verschlüsselt) oder als Abruf-Link mit Abrufcode. */
   auskunftEmail: (id: string, e: { an: string; betreff: string; nachricht: string }) => anfrage<{ an: string[] }>('POST', `/api/werkbank/auskunft/${id}/email`, e),
   auskunftLink: (id: string, e: { tage: number; abrufe: number; code?: string; an?: string; senden: boolean }) => anfrage<{ link: AuskunftLink; url: string; code: string; gesendet: boolean }>('POST', `/api/werkbank/auskunft/${id}/link`, e),
@@ -621,13 +680,18 @@ export const api = {
   /** gleicherName (#194): zaehler (Standard), version oder ersetzen. */
   /** Doppelte Dateien (#333): Prüfwerte → Fundstellen in Mappen, die man lesen darf. */
   gleicheDateien: (pruefwerte: string[], ohneMappe?: string) => anfrage<{ fundstellen: Record<string, Fundstelle[]> }>('POST', '/api/dokumente/gleiche', { pruefwerte, ...(ohneMappe ? { ohneMappe } : {}) }),
+  /** Post fotografieren (#490): ein Foto in den Stapel; „Fertig“ macht aus den Fotos ein PDF. */
+  async fotoAblegen(foto: Blob): Promise<{ id: string }> { return sendeDatei('/api/fotostapel', foto) as Promise<{ id: string }>; },
+  postAusFotos: (e: { stapel: string[]; betreff?: string }) => anfrage<{ post: Mappe; dokument: Dokument; seiten: number }>('POST', '/api/post/fotos', e),
+  fotosAnMappe: (mappeId: string, e: { stapel: string[]; dokument?: string }) => anfrage<{ dokument: Dokument; seiten: number }>('POST', `/api/mappen/${mappeId}/fotos`, e),
+  postZusammenlegen: (zielId: string, quelle: string) => anfrage<{ post: Mappe; dokument: Dokument; seiten: number }>('POST', `/api/post/${zielId}/zusammenlegen`, { quelle }),
   async ladeHoch(mappeId: string, register: string, datei: File, gleicherName?: 'zaehler' | 'version' | 'ersetzen'): Promise<Hochgeladen> {
     const q = new URLSearchParams({ register, name: datei.name, typ: datei.type || 'application/octet-stream', ...(gleicherName ? { gleicherName } : {}) });
     return sendeDatei(`/api/mappen/${mappeId}/dokumente?${q}`, datei) as Promise<Hochgeladen>;
   },
 };
 
-async function sendeDatei(url: string, datei: File): Promise<unknown> {
+async function sendeDatei(url: string, datei: Blob): Promise<unknown> {
     let r: Response;
     try {
       r = await fetch(url, {
@@ -656,12 +720,18 @@ export interface PaketVorschau {
   paket: { id: string; name: string; version: string; beschreibung: string; lizenz: string; autor: { name: string; github: string }; dms: string; abhaengigkeiten: Record<string, string>; readme: string | null; changelog: string | null; quelle: string | null };
   dmsVersion: string; dmsOk: boolean; installiert: string | null; update: boolean; herkunft: InstalliertesPaket['herkunft'] | null;
   abhaengigkeiten: Array<{ id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null }>;
-  typen: Array<{ schluessel: string; dmsSchluessel: string; name: string; felder: number; vorhanden: boolean; neueFelder: string[]; neueRegister: string[]; konflikt: string | null; vorschlag: string | null; geloescht?: boolean }>;
+  typen: Array<{ schluessel: string; dmsSchluessel: string; name: string; felder: number; vorhanden: boolean; neueFelder: string[]; neueRegister: string[]; erkennung?: string[]; umwandeln?: Array<{ feld: string; aus: string; anzahl: number }>; konflikt: string | null; vorschlag: string | null; geloescht?: boolean }>;
   sichten: Array<{ schluessel: string; name: string; eltern: string | null; vorhanden: boolean; konflikt: string | null; vorschlag: string | null }>;
   beispiele: number; probleme: string[]; hinweise: string[]; einstellungen: { neu: string[]; weg: string[] } | null;
   /** Paket mit Code (#338): Rechte, Netzwerkzugriff und Ereignisse (#449); bestaetigen = muss ausdrücklich erlaubt werden. */
   laeufer?: { rechte: RechtePunkt[]; bestaetigen: boolean } | null;
 }
+/** Sammeldatei (#461): geprüft, Pakete in der Reihenfolge zum Installieren (Abhängigkeiten zuerst). */
+export interface SammelPaket {
+  upload: string; id: string; name: string; version: string; gewaehlt: boolean; abhaengigkeiten: Record<string, string>;
+  katalog: 'gleich' | 'unbekannt'; stand: 'neu' | 'neuer' | 'gleich' | 'aelter'; installiert: string | null; vorschau: PaketVorschau;
+}
+export interface Sammeldatei { datei: { sha256: string; groesse: number; erstellt: string; quelle: string; katalog: string; dms: string | null }; pakete: SammelPaket[] }
 /** Paket-Läufer (#338): Stand je Paket mit Code. */
 export interface PaketlaeuferStand {
   laeuft: boolean; pausiert: boolean; grenzen: { speicherMB: number; sekunden: number; parallel: number };
@@ -679,7 +749,7 @@ export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
 };
 export interface MappeDetails { /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */ unpassend?: Record<string, string[]>; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean; /** Auskunft nach Art. 15 DSGVO möglich (#396, Administratoren). */ auskunft?: boolean }
 /** Werkbank → Datenschutz (#396, #455). */
-export interface DatenschutzStand { einstellung: Datenschutz; auskuenfte: AuskunftStand[]; tage: number; links: AuskunftLink[]; adresse: string; oeffentlich: boolean; mail: boolean }
+export interface DatenschutzStand { einstellung: Datenschutz; auskuenfte: AuskunftStand[]; tage: number; links: AuskunftLink[]; adresse: string; oeffentlich: boolean; mail: boolean; /** #469 */ loeschkonzept?: { luecken: Luecke[] } }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }
 /** Vorschaubild der ersten Seite (#332); der Prüfwert in der Adresse sorgt für ein neues Bild nach einer neuen Version. */
 export interface SchwaerzenVorschau {
@@ -747,6 +817,7 @@ export interface Langlaeufer { id: number; zeit: string; dauerMs: number; zugrif
 export interface LaufendeAbfrage { pid: number; seitMs: number; zustand: string; abfrage: string; anwendung: string }
 /** Verzögerung der Ereignisschleife in ms (#477). */
 export interface Schleifenverzoegerung { median: number; p99: number; max: number; seitSekunden: number }
+export type SystemlastAntwort = import('../../shared/src/systemlast').SystemlastStand & { schleife: { aktuell: Schleifenverzoegerung | null; vorher: Schleifenverzoegerung | null } | null };
 export interface DatenbankStand { einstellungen: MessEinstellungen | null; langlaeufer: Langlaeufer[]; laufend: LaufendeAbfrage[]; auslastung?: { aktuell: Schleifenverzoegerung | null; vorher: Schleifenverzoegerung | null } | null }
 export interface WerkbankUebersicht {
   tresor: { zustand: string; eingebunden: boolean | null; betroffen: number } | null;
@@ -766,6 +837,8 @@ export interface WerkbankUebersicht {
   sicherung?: SicherungsZustand | null;
   /** Speicherplatz (#116). */
   speicherplatz?: SpeicherplatzStand | null;
+  /** Auslastung (#409): CPU oder Arbeitsspeicher seit 5 Minuten über 90 %. */
+  auslastung?: Array<'cpu' | 'speicher'>;
   /** Frühere Variablen, die aus der Compose-Datei entfernt werden können (#115), je mit Grund (#478). */
   variablen?: UeberfluessigeVariable[];
   /** API-Schlüssel von Administratoren (#128). */

@@ -271,6 +271,11 @@ async function einrichtenImBrowser(browser, bild) {
   await s.getByText(/Erledigt – Fingerabdruck/).waitFor();
   await bild(s, 'einrichtung-schluessel');
   await s.getByRole('button', { name: 'Weiter' }).click();
+  // Pakete dazuholen (#460): Katalog abrufen (ohne Internet: Hinweis), dann überspringen.
+  await s.getByRole('heading', { name: 'Pakete dazuholen' }).waitFor();
+  await s.getByRole('button', { name: 'Überspringen' }).waitFor({ timeout: 30_000 });
+  await bild(s, 'einrichtung-pakete', { fullPage: true });
+  await s.getByRole('button', { name: 'Überspringen' }).click();
   await s.getByRole('heading', { name: 'Optionales' }).waitFor();
   await bild(s, 'einrichtung-optional', { fullPage: true });
   await s.getByRole('button', { name: 'Überspringen' }).click();
@@ -834,6 +839,17 @@ async function main() {
     await bild(sa, 'abrufseite');
     await ka.close();
   }
+  // Löschkonzept (#469) und Löschprotokoll (#470): einen alten Vertragspartner löschen (Grund „Nicht mehr nötig“), dann beide Abschnitte.
+  {
+    const alt = await api('POST', '/api/mappen', { typId: d.typ('Vertragspartner').id, werte: { name: 'Alter Stromanbieter' } });
+    await api('DELETE', `/api/mappen/${alt.id}?grund=nicht_noetig`);
+    await geheZu(s, '/werkbank/datenschutz');
+    await s.locator('#loeschkonzept').evaluate((e) => e.scrollIntoView({ block: 'start' }));
+    await bild(s, 'werkbank-loeschkonzept');
+    await s.locator('#loeschprotokoll .lp-eintrag').first().waitFor();
+    await s.locator('#loeschprotokoll').evaluate((e) => e.scrollIntoView({ block: 'start' }));
+    await bild(s, 'werkbank-loeschprotokoll');
+  }
   // Pakete (#369): Abschnitt „Expertenmodus“ aufgeklappt unter den Knöpfen (ohne Katalogabruf).
   await geheZu(s, '/werkbank/pakete');
   await s.getByRole('button', { name: /Expertenmodus/ }).click();
@@ -893,6 +909,10 @@ async function main() {
   await geheZu(s, '/werkbank/systemzustand');
   await s.getByRole('heading', { name: 'Schwellen für den Speicherplatz' }).waitFor();
   await bild(s, 'werkbank-speicherplatz');
+  // #409: Auslastung zwischen Schwellen und Ordnern (Kurven erst nach zwei Minuten).
+  await s.locator('#auslastung').scrollIntoViewIfNeeded();
+  await s.getByRole('heading', { name: /^Auslastung\b/ }).first().waitFor();
+  await bild(s, 'werkbank-auslastung');
   await geheZu(s, '/werkbank/demo');
   // Mit Dokumenten (#365): Schieberegler, Mischung und Abschätzung sichtbar.
   await s.locator('#demo-dokumente').check();

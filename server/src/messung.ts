@@ -148,10 +148,14 @@ export function zeitaufteilung(p: { eingang: number; start: number; ende: number
   };
 }
 
-/** Header Server-Timing: vor, app (Handler), db (Anzahl in desc), rechte, json, gesamt. */
-export function serverTiming(t: Zeitaufteilung): string {
+/**
+ * Header Server-Timing: vor, app (Handler), db (Anzahl in desc), rechte, json, gesamt; dazu zs, wenn
+ * die Anfrage die Zahlen der Ansichten brauchte (#512): Dauer und in desc „treffer“ oder „neu“.
+ */
+export function serverTiming(t: Zeitaufteilung, zs?: { art: string; ms: number }): string {
   const d = (x: number) => x.toFixed(1);
-  return `vor;dur=${d(t.vor)}, app;dur=${d(t.app)}, db;dur=${d(t.db)};desc="${t.dbAnzahl}", rechte;dur=${d(t.rechte)}, json;dur=${d(t.json)}, gesamt;dur=${d(t.gesamt)}`;
+  return `vor;dur=${d(t.vor)}, app;dur=${d(t.app)}, db;dur=${d(t.db)};desc="${t.dbAnzahl}", rechte;dur=${d(t.rechte)}, json;dur=${d(t.json)}, gesamt;dur=${d(t.gesamt)}`
+    + (zs ? `, zs;dur=${d(zs.ms)};desc="${zs.art}"` : '');
 }
 
 /** Kurztext für Langläufer und Protokoll: „1.234 ms gesamt · vor 3 · Datenbank 120 (5) · …“. */
