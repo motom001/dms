@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/entwickler/v0.102/pakete-code/">
+        <link rel="canonical" href="https://motom001.github.io/dms/entwickler/v0.103/pakete-code/">
       
       
         <link rel="prev" href="../leistung/">
@@ -1012,8 +1012,8 @@
 <h2 id="so-lauft-code-im-dms">So läuft Code im DMS<a class="headerlink" href="#so-lauft-code-im-dms" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>WebAssembly, kein Node, kein Python:</strong> Das Paket liefert ein gebautes Modul <code>code/modul.wasm</code> (WASI Preview 1, 32 Bit). Den Quelltext legst du daneben unter <code>code/</code> – das DMS liest ihn nicht, er gehört aber in den Pull Request (Lizenz, Prüfung).</li>
-<li><strong>Eigener Prozess:</strong> Der Paket-Läufer ist ein Kindprozess des DMS. Jeder Aufruf läuft in einem frischen Worker mit Grenzen für Speicher, Zeit und gleichzeitige Aufrufe. Im Betrieb startet der Läufer unter dem Berechtigungsmodell von Node: kein Schreiben ins Dateisystem, keine Programme starten, keine Schlüssel und Daten des DMS lesen.</li>
-<li><strong>Kein Dateisystem, kein freies Netz:</strong> Das Modul sieht nur eine kleine WASI-Schicht (Zeit, Zufall, Ausgabe ins Protokoll). Dateien des eigenen Pakets liest es mit <code>dms.datei</code>, das Netz erreicht es nur mit <code>dms.netz</code> und nur unter den Adressen aus dem Manifest.</li>
+<li><strong>Die tragende Grenze ist WebAssembly:</strong> Das Modul kann nur seinen eigenen Speicher lesen und schreiben und nur die Funktionen aufrufen, die der Läufer ihm übergibt: eine kleine WASI-Schicht (Zeit, Zufall, Ausgabe ins Protokoll) und die Funktionen unter <code>dms</code>. Dateisystem, Netz und Programme gibt es in dieser Schicht nicht – Datei- und Netzaufrufe aus WASI enden mit einem Fehler. Dateien des eigenen Pakets liest es mit <code>dms.datei</code> (aus dem Speicher des Läufers, nicht von der Festplatte), das Netz erreicht es nur mit <code>dms.netz</code> und nur unter den Adressen aus dem Manifest. Jede Funktion prüft Zeiger und Längen gegen den Speicher des Moduls.</li>
+<li><strong>Eigener Prozess als zweite Schicht:</strong> Der Paket-Läufer ist ein Kindprozess des DMS ohne dessen Umgebungsvariablen (keine Datenbank-Adresse, keine Schlüssel). Jeder Aufruf läuft in einem frischen Worker mit Grenzen für Speicher, Zeit und gleichzeitige Aufrufe. Im Betrieb startet der Läufer zusätzlich unter dem Berechtigungsmodell von Node (nur den eigenen Programmordner lesen, nichts schreiben, keine Programme starten). Das Berechtigungsmodell ist laut Node ein Sicherheitsgurt und <strong>kein Schutz gegen bösartigen Code</strong> – es greift erst, wenn jemand aus der WebAssembly-Umgebung ausbricht, und soll den Schaden dann begrenzen.</li>
 <li><strong>Dienstkonto:</strong> Zu jedem Paket mit Code legt das DMS ein <strong>Dienstkonto</strong> an („Paket <em>Name</em>“). Es meldet sich nie an, erscheint nicht in der Benutzerverwaltung und hat einen API-Schlüssel, der das DMS nie verlässt. Alle Anfragen des Pakets an die API laufen mit diesem Konto – mit den Rechten aus dem Manifest, nicht mit Rollen oder Ansichten. Löschen darf ein Dienstkonto nie, Passwörter und Benutzer sieht es nie, E-Mails versenden kann es nicht. In der Historie steht es mit seinem Namen.</li>
 </ul>
 <h2 id="im-manifest">Im Manifest<a class="headerlink" href="#im-manifest" title="Permanent link">&para;</a></h2>

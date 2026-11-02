@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 470" width="800" height="470" role="img" aria-label="Original behalten oder vernichten: was im Original bleibt, wo ein Scan genügt, worauf man achten muss" style="font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<title>Original behalten oder vernichten?</title>
+<rect x="0.5" y="0.5" width="799" height="469" rx="14" fill="#ffffff" stroke="#dde2e6"/>
+<text x="36" y="52" font-size="19" fill="#1c2328" font-weight="700">Original behalten oder vernichten?</text>
+<text x="36" y="76" font-size="13.5" fill="#5b6670">Faustregel: Behalten, was selbst etwas beweist oder einen Wert hat. Sonst genügt meist der Scan.</text>
+<rect x="36" y="100" width="232.0" height="340" rx="10" fill="#e8f5e9" stroke="#2e7d32" stroke-opacity=".35"/>
+<rect x="36" y="100" width="232.0" height="40" rx="10" fill="#2e7d32"/><rect x="36" y="125" width="232.0" height="15" fill="#2e7d32"/>
+<text x="52" y="126" font-size="15.5" fill="#ffffff" font-weight="700">Original behalten</text>
+<circle cx="56" cy="163.5" r="3" fill="#2e7d32"/>
+<text x="68" y="168" font-size="13" fill="#1c2328">Urkunden, Ausweise</text>
+<circle cx="56" cy="189.5" r="3" fill="#2e7d32"/>
+<text x="68" y="194" font-size="13" fill="#1c2328">Notarielle Verträge</text>
+<circle cx="56" cy="215.5" r="3" fill="#2e7d32"/>
+<text x="68" y="220" font-size="13" fill="#1c2328">Vollmachten, Verfügungen</text>
+<circle cx="56" cy="241.5" r="3" fill="#2e7d32"/>
+<text x="68" y="246" font-size="13" fill="#1c2328">Testament (amtlich verwahrt)</text>
+<circle cx="56" cy="267.5" r="3" fill="#2e7d32"/>
+<text x="68" y="272" font-size="13" fill="#1c2328">Fahrzeugbrief</text>
+<circle cx="56" cy="293.5" r="3" fill="#2e7d32"/>
+<text x="68" y="298" font-size="13" fill="#1c2328">Sparbücher, Wertpapiere</text>
+<circle cx="56" cy="319.5" r="3" fill="#2e7d32"/>
+<text x="68" y="324" font-size="13" fill="#1c2328">Urteile, Vollstreckungstitel</text>
+<circle cx="56" cy="345.5" r="3" fill="#2e7d32"/>
+<text x="68" y="350" font-size="13" fill="#1c2328">Unterschriebene Verträge</text>
+<circle cx="56" cy="371.5" r="3" fill="#2e7d32"/>
+<text x="68" y="376" font-size="13" fill="#1c2328">Lebens-, Rentenversicherung</text>
+<circle cx="56" cy="397.5" r="3" fill="#2e7d32"/>
+<text x="68" y="402" font-size="13" fill="#1c2328">Rentenunterlagen</text>
+<rect x="284.0" y="100" width="232.0" height="340" rx="10" fill="#e0f2f1" stroke="#00796b" stroke-opacity=".35"/>
+<rect x="284.0" y="100" width="232.0" height="40" rx="10" fill="#00796b"/><rect x="284.0" y="125" width="232.0" height="15" fill="#00796b"/>
+<text x="300.0" y="126" font-size="15.5" fill="#ffffff" font-weight="700">Scan genügt meist</text>
+<circle cx="304.0" cy="163.5" r="3" fill="#00796b"/>
+<text x="316.0" y="168" font-size="13" fill="#1c2328">Kontoauszüge</text>
+<circle cx="304.0" cy="189.5" r="3" fill="#00796b"/>
+<text x="316.0" y="194" font-size="13" fill="#1c2328">Gehaltsabrechnungen</text>
+<circle cx="304.0" cy="215.5" r="3" fill="#00796b"/>
+<text x="316.0" y="220" font-size="13" fill="#1c2328">Normale Rechnungen</text>
+<circle cx="304.0" cy="241.5" r="3" fill="#00796b"/>
+<text x="316.0" y="246" font-size="13" fill="#1c2328">Kassenbons (verblassen!)</text>
+<circle cx="304.0" cy="267.5" r="3" fill="#00796b"/>
+<text x="316.0" y="272" font-size="13" fill="#1c2328">Arztrechnungen</text>
+<circle cx="304.0" cy="293.5" r="3" fill="#00796b"/>
+<text x="316.0" y="298" font-size="13" fill="#1c2328">Schriftverkehr</text>
+<circle cx="304.0" cy="319.5" r="3" fill="#00796b"/>
+<text x="316.0" y="324" font-size="13" fill="#1c2328">Bedienungsanleitungen</text>
+<circle cx="304.0" cy="345.5" r="3" fill="#00796b"/>
+<text x="316.0" y="350" font-size="13" fill="#1c2328">Steuerbelege</text>
+<rect x="532.0" y="100" width="232.0" height="340" rx="10" fill="#fff4e5" stroke="#b26a00" stroke-opacity=".35"/>
+<rect x="532.0" y="100" width="232.0" height="40" rx="10" fill="#b26a00"/><rect x="532.0" y="125" width="232.0" height="15" fill="#b26a00"/>
+<text x="548.0" y="126" font-size="15.5" fill="#ffffff" font-weight="700">Achtung</text>
+<circle cx="552.0" cy="163.5" r="3" fill="#b26a00"/>
+<text x="564.0" y="168" font-size="13" fill="#1c2328">Rechnungen vom Handwerker:</text>
+<text x="564.0" y="194" font-size="13" fill="#1c2328">2 Jahre aufheben (§ 14b UStG),</text>
+<text x="564.0" y="220" font-size="13" fill="#1c2328">Scan plus Kontoauszug ablegen</text>
+<circle cx="552.0" cy="267.5" r="3" fill="#b26a00"/>
+<text x="564.0" y="272" font-size="13" fill="#1c2328">Garantie: manche Hersteller</text>
+<text x="564.0" y="298" font-size="13" fill="#1c2328">wollen den Original-Kaufbeleg</text>
+<circle cx="552.0" cy="345.5" r="3" fill="#b26a00"/>
+<text x="564.0" y="350" font-size="13" fill="#1c2328">Vor dem Vernichten:</text>
+<text x="564.0" y="376" font-size="13" fill="#1c2328">Sicherung des DMS prüfen</text>
+</svg>

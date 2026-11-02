@@ -3127,6 +3127,287 @@
         }
       }
     },
+    "/fotostapel": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Foto für eine Post ablegen",
+        "description": "Post fotografieren (#490): ein Foto (JPEG oder PNG, roh im Körper, höchstens 100 MB) für später; liefert seine Kennung. Erst POST /post/fotos bzw. POST /mappen/{id}/fotos macht daraus Seiten eines PDFs. Nicht verwendete Fotos verfallen nach zwei Stunden.",
+        "operationId": "postFotostapel",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FotoAbgelegt"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/post/fotos": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Post aus Fotos anlegen",
+        "description": "Post fotografieren (#490): Aus den Fotos des Stapels (in dieser Reihenfolge) wird ein PDF – je Foto eine Seite, Lage laut EXIF – und daraus eine neue Post wie mit POST /post (Betreff ohne Angabe „Post vom TT.MM.JJJJ, hh:mm“). Die Fotos sind danach aus dem Stapel. 410, wenn ein Foto verfallen ist.",
+        "operationId": "postPostFotos",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostFotos"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostAusFotos"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mappen/{id}/fotos": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Fotos als Seiten anhängen",
+        "description": "Seite hinzufügen (#490): Fotos des Stapels als Seiten ans Ende des PDFs dokument (neue Version; ohne Versionierung ersetzt das Ergebnis das bisherige, das in den Papierkorb kommt). Ohne dokument entsteht ein neues PDF „Fotos vom ….pdf“ im ersten (bzw. angegebenen) Dokumentenregister. Braucht Bearbeiten.",
+        "operationId": "postMappenMitidFotos",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Mappe (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FotosAnhaengen"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FotosAngehaengt"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/post/{id}/zusammenlegen": {
+      "post": {
+        "tags": [
+          "Ablage"
+        ],
+        "summary": "Zwei Posts zusammenlegen",
+        "description": "Zusammenlegen (#490): Die Seiten der Post quelle (PDFs und Fotos in ihrer Reihenfolge) kommen ans Ende des ersten PDFs dieser Post (hat sie keins, entsteht eins); quelle kommt in den Papierkorb. Andere Dateiarten: 422. Braucht Bearbeiten an dieser Post und Löschen an quelle.",
+        "operationId": "postPostMitidZusammenlegen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Id der Post, die bleibt (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Zusammenlegen"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostAusFotos"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nicht gefunden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Eingaben ungültig (details: Prüfergebnis)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/mappen/{id}/dokumente": {
       "post": {
         "tags": [
@@ -7569,6 +7850,100 @@
           },
           "ziel": {
             "$ref": "#/components/schemas/Mappe"
+          }
+        }
+      },
+      "FotoAbgelegt": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Kennung des Fotos im Stapel"
+          }
+        }
+      },
+      "PostFotos": {
+        "type": "object",
+        "required": [
+          "stapel"
+        ],
+        "properties": {
+          "stapel": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Kennungen aus POST /fotostapel, höchstens 50"
+          },
+          "betreff": {
+            "type": "string"
+          },
+          "fuer": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "FotosAnhaengen": {
+        "type": "object",
+        "required": [
+          "stapel"
+        ],
+        "properties": {
+          "stapel": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "dokument": {
+            "type": "string",
+            "format": "uuid",
+            "description": "PDF der Mappe, an das die Seiten kommen"
+          },
+          "register": {
+            "type": "string"
+          }
+        }
+      },
+      "FotosAngehaengt": {
+        "type": "object",
+        "properties": {
+          "dokument": {
+            "$ref": "#/components/schemas/Dokument"
+          },
+          "seiten": {
+            "type": "integer"
+          }
+        }
+      },
+      "Zusammenlegen": {
+        "type": "object",
+        "required": [
+          "quelle"
+        ],
+        "properties": {
+          "quelle": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id der Post, deren Seiten angehängt werden"
+          }
+        }
+      },
+      "PostAusFotos": {
+        "type": "object",
+        "properties": {
+          "post": {
+            "$ref": "#/components/schemas/Mappe"
+          },
+          "dokument": {
+            "$ref": "#/components/schemas/Dokument"
+          },
+          "seiten": {
+            "type": "integer"
           }
         }
       },
