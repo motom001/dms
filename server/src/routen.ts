@@ -18,6 +18,7 @@ import { createReadStream } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { AUSKUNFT_PHASEN, auskuenfteIn, auskunftDatei, auskunftOrdner, erzeugeAuskunft, haltenBis, loescheAuskunft } from './auskunft';
 import { AUSKUNFT_TAGE, linkStatus, oeffentlichErreichbar } from '../../shared/src/auskunft';
+import { textDritte, type TextDritte } from '../../shared/src/anrede';
 import { AbrufTickets, kuerzeIp } from './abruf';
 import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
 import { join } from 'node:path';
@@ -290,8 +291,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const abrufTickets = new AbrufTickets();
   /** Gemeinsamer Schlüssel im Anmeldeschutz: Fehlversuche je IP über alle Abruf-Links. */
   const ABRUF_SPERRE = 'auskunft-abruf';
-  const ABRUF_FALSCH = 'Das hat nicht geklappt: Der Link oder der Abrufcode stimmt nicht, oder der Link gilt nicht mehr. Prüfe den Code (Groß- und Kleinschreibung sind egal). Nach mehreren falschen Eingaben wird der Link gesperrt – wende dich dann an den Absender der Auskunft.';
-  const ABRUF_UNGUELTIG = 'Dieser Link gilt nicht mehr – er ist abgelaufen, wurde so oft abgerufen wie vorgesehen oder zurückgezogen. Bitte wende dich an den Absender der Auskunft.';
+  /** Meldungen der Abrufseite in der Anrede für Dritte (#474). */
+  const abrufText = async (k: TextDritte) => textDritte((await dienst.datenschutz()).anrede, k);
   const exportZiel = () => { if (!x.sicherung) throw new Fachfehler(404, 'Ohne Sicherungsordner gibt es keinen Vollexport.'); return join(x.sicherung.ordner, 'export'); };
   const oidc = () => { if (!x.oidc) throw new Fachfehler(404, 'Die Anmeldung über einen Anbieter ist nicht eingerichtet.'); return x.oidc; };
   const adresse = () => (x.betrieb?.adresseFuerLinks() ?? '').replace(/\/+$/, '');
@@ -901,35 +902,37 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
      * und am Link (Sperre nach LINK_FEHLVERSUCHE_MAX). Antworten verraten nicht, ob es einen Link gibt.
      * Im Protokoll stehen weder Schlüssel noch Code, die IP nur gekürzt.
      */
+    // Anrede (#474): Die Abrufseite fragt nur ab, ob sie „du“ oder „Sie“ schreibt – sonst nichts über das DMS.
+    { methode: 'GET', pfad: '/api/abruf/anrede', zugang: 'offen', handler: async () => ok({ anrede: (await dienst.datenschutz()).anrede }) },
     { methode: 'POST', pfad: '/api/abruf', zugang: 'offen', handler: async (a) => {
       const o = (a.body ?? {}) as Record<string, unknown>;
       try { await konten.sperre.pruefe(ABRUF_SPERRE, a.ip); } catch (e) {
-        if (e instanceof Fachfehler && e.status === 429) throw new Fachfehler(429, 'Zu viele falsche Eingaben von deinem Anschluss. Bitte versuche es später noch einmal.');
+        if (e instanceof Fachfehler && e.status === 429) throw new Fachfehler(429, await abrufText('abruf.fehler.zuviele'));
         throw e;
       }
       const r = await dienst.auskunftAbrufPruefen(o.schluessel, o.code);
       if (r.art === 'falsch') {
         await konten.sperre.fehlschlag(ABRUF_SPERRE, a.ip);
         L.datenschutz.warn('Abruf einer Auskunft fehlgeschlagen', { ip: kuerzeIp(a.ip), ...(r.link ? { link: r.link.id } : {}) });
-        throw new Fachfehler(403, ABRUF_FALSCH);
+        throw new Fachfehler(403, await abrufText('abruf.fehler.falsch'));
       }
       await konten.sperre.erfolg(ABRUF_SPERRE, a.ip);
-      if (r.art === 'ungueltig') throw new Fachfehler(410, ABRUF_UNGUELTIG);
+      if (r.art === 'ungueltig') throw new Fachfehler(410, await abrufText('abruf.fehler.ungueltig'));
       const link = r.link!;
       const datei = await auskunftDatei(auskunftZiel(), link.auskunftId).catch(() => null);
-      if (!datei) throw new Fachfehler(410, ABRUF_UNGUELTIG);
+      if (!datei) throw new Fachfehler(410, await abrufText('abruf.fehler.ungueltig'));
       L.datenschutz.info('Abrufcode einer Auskunft bestätigt', { link: link.id, ip: kuerzeIp(a.ip) });
       return ok({ ticket: abrufTickets.stelleAus(link.id), groesse: datei.groesse, verschluesselt: datei.stand.verschluesselt, bis: link.ablauf, abrufe: link.abrufe, maxAbrufe: link.maxAbrufe });
     } },
     { methode: 'GET', pfad: '/api/abruf/datei', zugang: 'offen', handler: async (a) => {
       const id = abrufTickets.loese(a.query.ticket);
       const link = id ? await dienst.auskunftLinkMitId(id) : undefined;
-      if (!link) throw new Fachfehler(410, 'Dieser Download ist abgelaufen. Gib deinen Abrufcode bitte noch einmal ein.');
+      if (!link) throw new Fachfehler(410, await abrufText('abruf.fehler.ticket'));
       const ziel = auskunftZiel();
       const datei = await auskunftDatei(ziel, link.auskunftId).catch(() => null);
-      if (!datei) throw new Fachfehler(410, ABRUF_UNGUELTIG);
+      if (!datei) throw new Fachfehler(410, await abrufText('abruf.fehler.ungueltig'));
       const nr = await dienst.auskunftAbrufZaehlen(link.id);
-      if (nr === null) throw new Fachfehler(410, ABRUF_UNGUELTIG);
+      if (nr === null) throw new Fachfehler(410, await abrufText('abruf.fehler.ungueltig'));
       const { stand, pfad, groesse } = datei;
       const strom = createReadStream(pfad);
       let fertig = false;

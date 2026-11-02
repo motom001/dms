@@ -21,6 +21,19 @@ Das DMS ist ein **modularer Monolith**: ein Prozess, eine Datenbank. Server und 
 - **Sicherung und Wiederherstellung** sichern alle Tabellen außer dem Inhalt von `sitzungen` und `schema_migrationen` (`OHNE_INHALT` in `server/src/datenbankabzug.ts`). Eine neue Tabelle ist automatisch dabei. Daten außerhalb der Datenbank brauchen einen Gedanken: Wo liegen sie, und kommen sie mit?
 
 
+## Unterlagen für Dritte: Anrede du oder Sie { #unterlagen-fur-dritte }
+
+Die Oberfläche duzt immer. Texte, die an Personen **außerhalb** des DMS gehen, folgen dagegen der Einstellung **Anrede in Unterlagen für Dritte** (#474, Werkbank → Datenschutz, `Datenschutz.anrede`, Vorgabe `du`). Alle diese Texte stehen gebündelt in `shared/src/anrede.ts`: je Anrede dieselben Schlüssel (`TEXTE_DRITTE.du` / `.sie`), Platzhalter als `{name}`, abgerufen mit `textDritte(anrede, schluessel, werte)`. Ein Test prüft, dass beide Fassungen dieselben Schlüssel und Platzhalter haben und die Sie-Fassung kein „du“ enthält. Mit den Sprachdateien (#357) wandern sie dorthin: `du` → „Deutsch“, `sie` → „Deutsch (förmlich)“.
+
+Neue Texte für Dritte kommen als Schlüssel in `anrede.ts` – keine `anrede === 'sie' ? … : …` im Code – und in diese Liste:
+
+| Ausgabe | Code | Schlüssel |
+| --- | --- | --- |
+| Auskunft: Deckblatt.pdf, Uebersicht.html, LIESMICH.md (#396) | `server/src/auskunft.ts` | `auskunft.*` (Rechte-Vorschlag: `rechteStandard`) |
+| E-Mail mit der Auskunft als ZIP, E-Mail mit dem Abruf-Link (#455) | `auskunftMail` in `shared/src/auskunft.ts` | `mail.*` |
+| Abrufseite `/abruf` und ihre Meldungen (#455) | `web/src/abruf.tsx`, `GET /api/abruf/anrede`, `/api/abruf` in `routen.ts` | `abruf.*` |
+| E-Mails mit Mappen und Dokumenten (#58, #151) | – | keine: Text schreibt der Benutzer, vorgegeben ist nur der Betreff ohne Anrede |
+
 ## Baum über Verweise
 
 Alles, was über Verweise an einer Mappe hängt, sammelt **ein** Modul – genutzt von der Auskunft nach Art. 15 DSGVO (#396) und von „Mappe mit allen verknüpften Mappen löschen“ (#424). Neue Funktionen, die „alles zu dieser Mappe“ brauchen, nehmen es statt eigener Schleifen.

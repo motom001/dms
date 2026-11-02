@@ -5,13 +5,14 @@
  * TEST_DATABASE_URL gesetzt ist – PostgreSQL.
  */
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { createCipheriv, createHmac, pbkdf2Sync } from 'node:crypto';
 import { mkdtemp, readdir } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
-import { auswahlProbleme, fristBis, liesAuswahl, type AuskunftVorschau } from '../../shared/src/auskunft';
+import { auswahlProbleme, fristBis, liesAuswahl, liesDatenschutz, type AuskunftVorschau } from '../../shared/src/auskunft';
 import { bereinigeBaumOptionen, haengtAuchAnderswo, kinderVon, wirdAnderswoGebraucht, type Baum } from '../../shared/src/baum';
 import { ALLES } from '../../shared/src/rechte';
 import { auskuenfteIn, erzeugeAuskunft } from '../src/auskunft';
@@ -29,6 +30,12 @@ import { zipStrom } from '../src/zip';
 import { pdfMitText } from './hilfen';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
+
+/** Text eines PDFs über pdftotext (poppler); null, wenn es hier fehlt – dann wird das Deckblatt nicht geprüft. */
+function pdfText(pdf: Buffer): string | null {
+  const r = spawnSync('pdftotext', ['-enc', 'UTF-8', '-', '-'], { input: pdf });
+  return r.status === 0 ? r.stdout.toString('utf8').replace(/\s+/g, ' ') : null;
+}
 const H = '00000000-0000-4000-8000-000000000001';
 
 /* ---------- ZIP lesen (unkomprimiert bzw. AES) ---------- */
@@ -395,6 +402,27 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       assert.match(e.get('Uebersicht.csv')!.daten.toString('utf8'), /als „Ansprechpartner“ eingetragen in Wartungsvertrag „W-1“/);
       for (const geheim of ['Geheimpreis', 'Besprechungsprotokoll', 'Wartung-intern.pdf', 'WR-1']) assert.ok(!zip.includes(Buffer.from(geheim)), `${geheim} darf nicht hinaus`);
       assert.ok(![...e.keys()].some((n) => n.includes('Wartungsvertrag/')), 'kein Ordner für die Bezug-Mappe');
+
+      // Anrede für Dritte (#474): Vorgabe du – mit „Sie“ ändern sich Deckblatt, Übersicht und LIESMICH.
+      assert.match(html, /Hier bist du genannt/);
+      assert.match(e.get('LIESMICH.md')!.daten.toString('utf8'), /deine Rechte/);
+      const deckDu = pdfText(e.get('Deckblatt.pdf')!.daten);
+      if (deckDu !== null) { assert.match(deckDu, /zu deiner Person/); assert.match(deckDu, /6\. Deine Rechte/); assert.match(deckDu, /Außerdem bist du in 2 weiteren Einträgen genannt/); }
+      const rSie = await erzeugeAuskunft({ ...daten, datenschutz: liesDatenschutz({ ...daten.datenschutz, anrede: 'sie' }) }, ordner, { von: { id: admin.id, name: 'Vera', email: 'v@example.org' }, mandant: 'H' });
+      const eSie = new Map(liesZip(readFileSync(join(ordner, `${rSie.id}.zip`))).map((x) => [x.name.slice(rSie.name.length + 1), x]));
+      const duWort = /\b([Dd]u|[Dd]ich|[Dd]ir|[Dd]ein(e[mnrs]?)?)\b/;
+      const htmlSie = eSie.get('Uebersicht.html')!.daten.toString('utf8');
+      assert.match(htmlSie, /Hier sind Sie genannt/);
+      assert.match(htmlSie, /Verweis auf Sie – weitere Angaben daraus betreffen Sie nicht/);
+      assert.doesNotMatch(htmlSie, duWort);
+      const liesSie = eSie.get('LIESMICH.md')!.daten.toString('utf8');
+      assert.match(liesSie, /Ihre Rechte/); assert.match(liesSie, /in denen Sie nur genannt sind/);
+      assert.doesNotMatch(liesSie, duWort);
+      const deckSie = pdfText(eSie.get('Deckblatt.pdf')!.daten);
+      if (deckSie !== null) {
+        for (const x of [/zu Ihrer Person/, /6\. Ihre Rechte/, /Außerdem sind Sie in 2 weiteren Einträgen genannt \(gespeichert ist dort nur der Verweis auf Sie\)/, /Geschäftsbeziehung mit Ihnen/, /Sie haben das Recht auf Berichtigung/]) assert.match(deckSie, x);
+        assert.doesNotMatch(deckSie, duWort);
+      }
 
       // Bewusst ganz aufnehmen: dann mit Dokument und Angaben
       const ganz = await d.auskunftDaten({ ...basis, auswahl: { mappen: [m.max.id, wartung.id], dokumente: [wDok.id], ohneNotizen: [...ohneNotiz, ...(await d.holeMappe(wartung.id)).notizen.map((n) => ({ id: n.id, grund: 'intern, betrifft die Person nicht' }))], erwaehnungen: [wartung.id] } }, z, { mandant: 'H', version: '0' });
