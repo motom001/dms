@@ -1,6 +1,6 @@
 # Fehlersuche und Support
 
-Alles dazu steht in der Werkbank unter **Wartung und Fehlersuche**. Die Gruppe enthält Protokoll, Gemeldete Fehler, Sicherung, Wiederherstellen, Vollexport, Wartungsmodus, Wartungsoperationen, Technik und Demo-Daten. Diese Seite beschreibt die Werkzeuge zur Fehlersuche; [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md), [Vollexport](export.md), [Wartungsmodus](wartungsmodus.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen) und [Demo-Daten](demo.md) haben eigene Seiten.
+Alles dazu steht in der Werkbank unter **Wartung und Fehlersuche**. Die Gruppe enthält Systemzustand, Protokoll, Gemeldete Fehler, Wartungsmodus, Wartungsoperationen und Demo-Daten. Diese Seite beschreibt die Werkzeuge zur Fehlersuche und die *Technik* (Version und Updates), die unter **Einstellungen** steht; [Systemzustand](speicherplatz.md), [Wartungsmodus](wartungsmodus.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen) und [Demo-Daten](demo.md) haben eigene Seiten. Sicherung, Wiederherstellen und Vollexport stehen unter **Daten sichern**.
 
 *Protokoll* und *Gemeldete Fehler* gehören zur Vorlage **Betrieb**. *Technik* steht in jeder Vorlage.
 
@@ -42,7 +42,7 @@ docker logs <app-container>
 
 ## Datenbank
 
-Lange Datenbankzugriffe und Anfragen, die **Auslastung des Servers** und was gerade in der Datenbank läuft stehen unter **Werkbank → Einstellungen → Datenbank-Anbindung**, unter der Verbindung – siehe [Lange Datenbankzugriffe](installation.md#lange-datenbankzugriffe). Wirkt das DMS langsam, schau dort zuerst nach.
+Lange Datenbankzugriffe und Anfragen, die **Auslastung des Servers** und was gerade in der Datenbank läuft stehen unter **Werkbank → Einstellungen → Datenbank-Anbindung**, unter der Verbindung – siehe [Lange Datenbankzugriffe](installation.md#lange-datenbankzugriffe). Wirkt das DMS langsam, schau dort zuerst nach – und unter **Wartung und Fehlersuche → [Systemzustand](speicherplatz.md#auslastung)**, wie ausgelastet CPU, Arbeitsspeicher und Netzwerk sind.
 
 Einträge, die mit **Anfrage:** beginnen, betreffen eine ganze Anfrage; aufgeklappt zeigen sie die **Aufteilung**: Warten vor dem Handler, Datenbank (mit Anzahl der Zugriffe), Rechte, Aufbereitung und JSON. Einzelheiten zur selben Zeit stehen im [Protokoll](#protokoll) (Modul *datenbank*).
 
@@ -63,11 +63,11 @@ Wirkt eine Seite langsam, schalte im **Profil** den **Entwicklermodus** ein. Dan
 | JSON | Die Antwort im Server in Text umwandeln. |
 | Übertragung, Auswerten, Darstellung | Antwort senden, im Browser lesen und zeichnen. |
 
-Die Werte kommen vom Server im Header `Server-Timing` (`vor`, `app`, `db`, `rechte`, `json`, `gesamt`) und aus der Zeitmessung des Browsers.
+Die Werte kommen vom Server im Header `Server-Timing` (`vor`, `app`, `db`, `rechte`, `json`, `gesamt`) und aus der Zeitmessung des Browsers. Bei den Zahlen der Ansichten (`/api/sichten`) steht dort zusätzlich `zs`: `treffer`, wenn sie aus dem Zwischenspeicher kamen, `neu`, wenn sie gezählt wurden – gezählt wird nach jeder Änderung im Haushalt, sonst spätestens nach 5 Minuten (Ansichten mit Datumsbezug) bzw. 30 Minuten und um Mitternacht.
 
 ## Technik
 
-**Werkbank → Technik** zeigt im Abschnitt **Installiert** (unter *Neuere Versionen*), was installiert ist: Version und Stand des DMS, Laufzeit (Node.js, Betriebssystem), Datenbank, Bibliotheken und Oberfläche.
+**Werkbank → Einstellungen → Technik** zeigt im Abschnitt **Installiert** (unter *Neuere Versionen*), was installiert ist: Version und Stand des DMS, Laufzeit (Node.js, Betriebssystem), Datenbank, Bibliotheken und Oberfläche.
 
 ![Technik und Versionen](bilder/werkbank-technik.png)
 

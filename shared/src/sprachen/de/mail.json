@@ -1,0 +1,20 @@
+{
+  "hallo": "Hallo {name},",
+  "nicht-du": "Falls du das nicht warst, wende dich bitte sofort an deinen Administrator.",
+  "email-geaendert.betreff": "Deine E-Mail-Adresse im DMS wurde geändert",
+  "email-geaendert.text": "die E-Mail-Adresse deines Zugangs zum DMS wurde von {alt} auf {neu} geändert. Anmelden kannst du dich ab jetzt nur noch mit der neuen Adresse.",
+  "passwort-geaendert.betreff": "Dein Passwort für das DMS wurde geändert",
+  "passwort-geaendert.text": "das Passwort deines Zugangs zum DMS wurde soeben geändert. Alle anderen Anmeldungen wurden dabei beendet.",
+  "einladung.betreff": "Dein Zugang zum DMS",
+  "einladung.text": "für dich wurde ein Zugang zum DMS angelegt.",
+  "einladung.mit": "Anmeldung mit: {email}",
+  "einladung.link": "Lege hier dein Passwort fest (der Link ist {dauer} gültig und funktioniert nur einmal):",
+  "zuruecksetzen.betreff": "Passwort für das DMS zurücksetzen",
+  "zuruecksetzen.text": "für deinen Zugang zum DMS wurde ein neues Passwort angefordert.",
+  "zuruecksetzen.link": "Lege hier ein neues Passwort fest (der Link ist {dauer} gültig und funktioniert nur einmal):",
+  "zuruecksetzen.ignorieren": "Falls du das nicht warst, kannst du diese Nachricht ignorieren. Dein bisheriges Passwort bleibt dann gültig.",
+  "dauer.tage_one": "{anzahl} Tag",
+  "dauer.tage_other": "{anzahl} Tage",
+  "dauer.stunden_one": "{anzahl} Stunde",
+  "dauer.stunden_other": "{anzahl} Stunden"
+}

@@ -4,12 +4,13 @@ import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
 import { eigeneFelderIm, vorbelegungAus } from '../../../shared/src/sichten';
 import { datumText, inFrist } from '../../../shared/src/archiv';
-import { darfErstellen, darfLoeschen, formatiere, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register, type Werte } from '../../../shared/src/model';
+import { deutschePlz, eingabemodus, formatFehler, mitSchema, pruefeFormate, telefonLink } from '../../../shared/src/feldformate';
+import { darfErstellen, darfLoeschen, formatiere, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, VERWEISARTEN, verweisAusText, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register, type Wert, type Werte } from '../../../shared/src/model';
 import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { geheZu, Link, loeseWache, useUngespeichert } from '../ort';
-import { leeresPasswort, rohAusWerten, standardRoh, werteAusRoh, type Roh, type RohBetrag, type RohPasswort, type RohWerte } from '../werte';
+import { ausRoh, leeresPasswort, rohAusWerten, standardRoh, werteAusRoh, zuRoh, type Roh, type RohBetrag, type RohPasswort, type RohWerte } from '../werte';
 import { titelOder } from '../seiten';
 import { Formatiert, FormatiertEingabe } from './Formatiert';
 import { Historie } from './Historie';
@@ -23,6 +24,12 @@ import { linkZuMappe } from '../../../shared/src/direktlink';
 import { Person } from '../Person';
 import { Dokumente, type NeueDatei } from './Dokumente';
 import { hinweis, rueckfrage } from '../rueckfrage';
+import { mitGrund } from './Loeschgrund';
+import { AusDokument, type AusDokumentErgebnis } from './AusDokument';
+import { ausDokumentKnopf, type Sicherheit } from '../../../shared/src/erkennung';
+import type { TypVorschlaege } from '../api';
+import { altesFeldAusblenden } from '../../../shared/src/umwandlung';
+import { t } from '../sprache';
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -30,7 +37,7 @@ const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle:
 const registerVon = (t: Mappentyp): Register[] => (t.register?.length ? t.register : standardRegister(t.felder));
 
 /** Neue Mappe als Ziel von „Zuordnen“ (#192): danach wird die Post ihr zugeordnet. */
-export interface ZuordnenNachher { post: string; register?: string; dokumente: string[]; kopieren: boolean; vorschlag: Record<string, string> }
+export interface ZuordnenNachher { post: string; register?: string; dokumente: string[]; kopieren: boolean; vorschlag: Record<string, Wert> }
 
 export function NeueMappe({ typ, verweis, sicht, zuordnen, vorbelegen }: { typ: Mappentyp; verweis?: string; sicht: string; zuordnen?: ZuordnenNachher; vorbelegen?: string }) {
   const start = standardRoh(typ);
@@ -44,10 +51,15 @@ export function NeueMappe({ typ, verweis, sicht, zuordnen, vorbelegen }: { typ: 
       else if (typeof v === 'string' && !f.mehrfach) start[k] = v;
     }
   } catch { /* ohne Vorbelegung */ }
-  // Vorschläge aus der Post (Betreff, Datum) für Text- und Datumsfelder.
+  // Vorschläge aus der Post (Betreff, Datum) und aus der Erkennung (#336: Betrag, Nummern, Verweis auf den Absender).
+  const vorbelegt: string[] = [];
   for (const [k, v] of Object.entries(zuordnen?.vorschlag ?? {})) {
     const f = typ.felder.find((x) => x.key === k);
-    if (f && (f.typ === 'text' || f.typ === 'datum') && typeof v === 'string') start[k] = v;
+    if (!f || f.typ === 'passwort' || v == null) continue;
+    if ((f.typ === 'text' || f.typ === 'langtext' || f.typ === 'datum' || f.typ === 'referenz') && typeof v !== 'string') continue;
+    if (f.typ === 'betrag' && (typeof v !== 'object' || Array.isArray(v) || typeof (v as { betrag?: unknown }).betrag !== 'number')) continue;
+    start[k] = zuRoh(f, v);
+    vorbelegt.push(f.label);
   }
   // ?verweis=feldKey:mappeId belegt ein Referenzfeld vor („+ Vertrag anlegen“ beim Vertragspartner).
   if (verweis) {
@@ -61,7 +73,7 @@ export function NeueMappe({ typ, verweis, sicht, zuordnen, vorbelegen }: { typ: 
         <p className="ueber">{typ.name}</p>
         <h1>Neue Mappe</h1>
       </div>
-      {zuordnen && <div className="hinweis info"><p>Nach dem Speichern wird die Post dieser Mappe zugeordnet{zuordnen.dokumente.length ? `, ${zuordnen.dokumente.length === 1 ? 'ihr Dokument kommt' : `ihre ${zuordnen.dokumente.length} Dokumente kommen`} hierher` : ''}.</p></div>}
+      {zuordnen && <div className="hinweis info"><p>Nach dem Speichern wird die Post dieser Mappe zugeordnet{zuordnen.dokumente.length ? `, ${zuordnen.dokumente.length === 1 ? 'ihr Dokument kommt' : `ihre ${zuordnen.dokumente.length} Dokumente kommen`} hierher` : ''}.{vorbelegt.length > 0 && <> Als Vorschlag aus der Post eingetragen: {vorbelegt.join(', ')} – bitte prüfen.</>}</p></div>}
       <Formular typ={typ} start={start} sicht={sicht} zuordnen={zuordnen} />
     </>
   );
@@ -255,6 +267,12 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   const [meldung, setMeldung] = useState<string>();
   const [hinweise, setHinweise] = useState<Array<{ art: 'warn' | 'schlecht'; text: ReactNode }>>([]);
   const [sendet, setSendet] = useState(false);
+  // „Aus Dokument ausfüllen“ (#391): Vorschläge je Feld – eingetragen (Feld war leer) oder als Alternative.
+  const knopf = nurLesen ? null : ausDokumentKnopf(typ);
+  const [adOffen, setAdOffen] = useState(false);
+  const [vorschlaege, setVorschlaege] = useState<Record<string, FeldVorschlag>>({});
+  const [adNeu, setAdNeu] = useState<TypVorschlaege['neu']>({});
+  const [adMeldung, setAdMeldung] = useState<string>();
   // Titel und Typ der Mappen, auf die verwiesen wird (vom Server und aus der Auswahl).
   const [bekannt, setBekannt] = useState<Bezuege>(details?.bezuege ?? {});
   useEffect(() => { if (details) setBekannt((b) => ({ ...b, ...details.bezuege })); }, [details]);
@@ -276,7 +294,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     if (r.art === 'verknuepfungen') return verknuepfungsGruppen(d, mappe, typ.id, r, details).reduce((a, g) => a + g.treffer.length, 0);
     return undefined;
   };
-  const verwerfen = () => { setRoh(JSON.parse(basis)); setNeueDateien([]); setEntfernt([]); setFehler(null); setMeldung(undefined); setHinweise([]); };
+  const verwerfen = () => { setRoh(JSON.parse(basis)); setNeueDateien([]); setEntfernt([]); setFehler(null); setMeldung(undefined); setHinweise([]); setVorschlaege({}); setAdNeu({}); setAdMeldung(undefined); };
 
   const reg = register.find((r) => r.key === aktiv) ?? register[0];
   const felderAuf = (r: Register) => typ.felder.filter((f) => r.felder?.includes(f.key));
@@ -294,6 +312,81 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     if (fehler?.felder[k]) setFehler((f) => f && { ...f, felder: Object.fromEntries(Object.entries(f.felder).filter(([x]) => x !== k)) });
   };
 
+  /** Vorschläge eintragen (#391): leere Felder bekommen den Wert, gefüllte eine Alternative; nichts ist gespeichert. */
+  function uebernimmVorschlaege({ r, dateien, ablegen }: AusDokumentErgebnis) {
+    const neu: Record<string, FeldVorschlag> = {};
+    const werte: RohWerte = {};
+    for (const [k, v] of Object.entries(r.vorschlaege)) {
+      const f = typ.felder.find((x) => x.key === k);
+      if (!f || geschuetzt[k] !== undefined) continue;
+      const vorschlag = zuRoh(f, v.wert);
+      if (istLeer(ausRoh(f, roh[k]))) { werte[k] = vorschlag; neu[k] = { ...v, art: 'eingetragen', vorher: roh[k] }; }
+      else if (JSON.stringify(roh[k]) !== JSON.stringify(vorschlag)) neu[k] = { ...v, art: 'alternative' };
+    }
+    for (const [id, b] of Object.entries(r.bezuege)) merke(id, b);
+    setRoh((x) => ({ ...x, ...werte }));
+    setVorschlaege(neu);
+    setAdNeu(Object.fromEntries(Object.entries(r.neu).filter(([k]) => istLeer(ausRoh(typ.felder.find((x) => x.key === k)!, roh[k])))));
+    if (ablegen && dateien.length) setNeueDateien((x) => [...x, ...dateien.map((datei) => ({ uid: `n${++zaehler}`, datei, register: ablegen }))]);
+    const n = Object.values(neu).filter((v) => v.art === 'eingetragen').length;
+    const alt = Object.values(neu).filter((v) => v.art === 'alternative').length;
+    const teile = [n ? `${n === 1 ? '1 Feld' : `${n} Felder`} als Vorschlag eingetragen` : '', alt ? `${alt === 1 ? '1 Alternative' : `${alt} Alternativen`} zu ausgefüllten Feldern` : ''].filter(Boolean);
+    setAdMeldung(teile.length ? `Verstanden – ${teile.join(', ')}. Bitte prüfen und speichern.` : 'Gelesen, aber keine passenden Angaben für diese Felder gefunden.');
+    setAdOffen(false);
+    // Zum ersten Feldregister mit einem Vorschlag.
+    const ziel = register.find((x) => x.art === 'felder' && felderAuf(x).some((f) => neu[f.key]));
+    if (ziel) setAktiv(ziel.key);
+  }
+  function vorschlagZuruecknehmen(k: string) {
+    const v = vorschlaege[k];
+    if (v?.art === 'eingetragen') setRoh((x) => ({ ...x, [k]: v.vorher ?? zuRoh(typ.felder.find((f) => f.key === k)!, null) }));
+    setVorschlaege((x) => Object.fromEntries(Object.entries(x).filter(([y]) => y !== k)));
+  }
+  function alternativeUebernehmen(k: string) {
+    const v = vorschlaege[k]; const f = typ.felder.find((x) => x.key === k);
+    if (!v || !f) return;
+    const vorher = roh[k];
+    setze(k, zuRoh(f, v.wert));
+    setVorschlaege((x) => ({ ...x, [k]: { ...v, art: 'eingetragen', vorher } }));
+  }
+  async function neuAnlegen(k: string) {
+    const n = adNeu[k]; const f = typ.felder.find((x) => x.key === k); const ziel = d.typ(n?.typId);
+    if (!n || !f || !ziel) return;
+    const liste = Object.entries(n.werte).map(([key, w]) => `${ziel.felder.find((x) => x.key === key)?.label ?? key}: ${w}`).join(' · ');
+    if (!(await rueckfrage({ titel: `Neue Mappe „${ziel.name}“ anlegen?`, text: `Mit diesen Angaben: ${liste}. Du kannst sie danach dort ändern.`, ja: 'Anlegen' }))) return;
+    try {
+      const m = await api.mappeAnlegen({ typId: ziel.id, werte: n.werte });
+      merke(m.id, { titel: m.titel ?? '', typId: m.typId });
+      const vorher = roh[k];
+      setze(k, f.mehrfach ? [m.id] : m.id);
+      setVorschlaege((x) => ({ ...x, [k]: { wert: m.id, sicherheit: 'mittel', fundstelle: `neu angelegt: ${titelOder(m.titel)}`, art: 'eingetragen', vorher } }));
+      setAdNeu((x) => Object.fromEntries(Object.entries(x).filter(([y]) => y !== k)));
+      await d.neuLaden();
+    } catch (e) { await hinweis({ titel: 'Nicht angelegt', text: (e as Error).message }); }
+  }
+  /** Hinweis am Feld: Vorschlag (solange der Wert noch so ist) bzw. Alternative aus dem Dokument. */
+  function vorschlagAm(f: Feld): ReactNode {
+    const v = vorschlaege[f.key];
+    if (!v) return null;
+    const sicher = v.sicherheit === 'hoch' ? 'sicher' : v.sicherheit === 'mittel' ? 'wahrscheinlich' : 'unsicher';
+    if (v.art === 'eingetragen') {
+      if (JSON.stringify(roh[f.key]) !== JSON.stringify(zuRoh(f, v.wert))) return null;
+      return <p className="ad-hinweis"><span className="chip">Vorschlag</span> <span className="leise">{sicher}{v.fundstelle ? <> – „{v.fundstelle}“</> : null}</span> <button type="button" className="textknopf klein" onClick={() => vorschlagZuruecknehmen(f.key)}>Zurücknehmen</button></p>;
+    }
+    const text = f.typ === 'referenz' ? titelOder(bekannt[String(Array.isArray(v.wert) ? v.wert[0] : v.wert)]?.titel) : formatiere(f, v.wert);
+    return <p className="ad-hinweis"><span className="chip">Im Dokument</span> <strong>{text}</strong> <span className="leise">({sicher})</span> <button type="button" className="textknopf klein" onClick={() => alternativeUebernehmen(f.key)}>Übernehmen</button> <button type="button" className="textknopf klein" onClick={() => vorschlagZuruecknehmen(f.key)}>Verwerfen</button></p>;
+  }
+  const alternativen = Object.entries(vorschlaege).filter(([, v]) => v.art === 'alternative').map(([k]) => k);
+  /** Altes Textfeld nach einem Paket-Update (#534): leer ausgeblendet, sonst mit Hinweis auf die Umwandlung. */
+  const altesFeld = (f: Feld) => verweisAusText(typ, f);
+  const sichtbar = (f: Feld) => !altesFeldAusblenden(f, mappe?.werte[f.key], altesFeld(f));
+  function hinweisAm(f: Feld): ReactNode {
+    const v = altesFeld(f);
+    const zusatz = vorschlagAm(f);
+    if (!v || istLeer(mappe?.werte[f.key])) return zusatz;
+    return <>{zusatz}<small className="hilfe">{t('pakete.formular.alttext', { feld: v.label })}</small></>;
+  }
+
   function zeigeFehler(p: Pruefergebnis) {
     setFehler(p);
     // Zum ersten Register mit Fehler springen, falls das aktuelle keinen hat.
@@ -306,6 +399,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     setMeldung(undefined);
     const werte = werteAusRoh(typ, roh);
     const p = d.pruefe(typ, werte, (id) => bekannt[id]?.typId);
+    // Formate und Datumsgrenzen (#535): neue Mappe ganz, sonst nur, was sich ändert.
+    for (const [k, m] of Object.entries(pruefeFormate(typ, werte, mappe?.werte))) p.felder[k] ??= m;
     if (!istOk(p)) { zeigeFehler(p); setMeldung('Bitte die markierten Felder prüfen.'); return; }
     // Würde man sich mit diesen Werten selbst das Lesen oder Bearbeiten entziehen? Dann erst fragen (#126).
     if (mappe && werteGeaendert && ich.rolle !== 'admin') {
@@ -351,6 +446,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
       try { await api.dokumentLoeschen(id); } catch (e) { nichtEntfernt.push(id); neu.push({ art: 'schlecht', text: (e as Error).message }); }
     }
     setNeueDateien(offen); setEntfernt(nichtEntfernt); setHinweise(neu);
+    setVorschlaege({}); setAdNeu({}); setAdMeldung(undefined);
     if (!offen.length && !nichtEntfernt.length) loeseWache();
     // Lesen verloren (#126): zurück zur Liste, mit Hinweis.
     const verloren = gespeichert?.hinweis?.includes('nicht mehr sehen');
@@ -366,12 +462,13 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     if (!mappe) return;
     const n = details?.dokumente.length ?? 0;
     const korb = d.zaehler.papierkorbTage ?? 0;
-    const ok = await rueckfrage(korb
+    // Grund fürs Löschprotokoll (#470).
+    const anlass = await mitGrund(korb
       ? { titel: `Mappe „${titelOder(mappe.titel)}“ in den Papierkorb legen?`, text: `${n ? `Ihre ${n} Dokument${n === 1 ? '' : 'e'} kommen mit. ` : ''}Dort lässt sie sich ${korb === 1 ? 'einen Tag' : `${korb} Tage`} lang wiederherstellen.`, ja: 'In den Papierkorb', gefahr: true }
       : { titel: `Mappe „${titelOder(mappe.titel)}“ endgültig löschen?`, text: `${n ? `Ihre ${n} Dokument${n === 1 ? '' : 'e'} werden mitgelöscht. ` : ''}Das lässt sich nicht rückgängig machen.`, ja: 'Endgültig löschen', gefahr: true });
-    if (!ok) return;
+    if (!anlass) return;
     try {
-      await api.mappeLoeschen(mappe.id);
+      await api.mappeLoeschen(mappe.id, anlass);
       loeseWache(); await d.neuLaden(); geheZu(`/ablage/${sicht}${anhang}`);
     } catch (e) { setMeldung((e as Error).message); }
   }
@@ -389,11 +486,11 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   let inhalt: ReactNode = null;
   if (!reg) inhalt = <p className="leise">Dieser Mappentyp hat keine Register.</p>;
   else if (reg.art === 'felder') {
-    const felder = felderAuf(reg);
+    const felder = felderAuf(reg).filter(sichtbar);
     inhalt = felder.length
       ? <div className="formular">{felder.map((f) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke}
           typId={typ.id} unpassend={details?.unpassend?.[f.key]} eigene={eigeneWerte(f)}
-          gesperrt={geschuetzt[f.key] ?? (nurLesen && f.typ !== 'passwort' ? '' : undefined)} nurLesen={nurLesen} passwortSehen={!rechte || rechte.P} />)}</div>
+          gesperrt={geschuetzt[f.key] ?? (nurLesen && f.typ !== 'passwort' ? '' : undefined)} nurLesen={nurLesen} plzDeutsch={f.format === 'plz' ? deutschePlz(f, typ.felder, roh as Werte) : undefined} passwortSehen={!rechte || rechte.P} zusatz={hinweisAm(f)} />)}</div>
       : <p className="leise">Auf diesem Register liegen keine Felder.</p>;
   } else if (reg.art === 'dokumente') {
     inhalt = mappe && !details ? <p className="leise">Lade …</p> : (
@@ -420,6 +517,24 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   }
 
   return (
+    <>
+    {knopf && (adOffen
+      ? <AusDokument typ={typ} titel={knopf} mappeId={mappe?.id} dokumente={(details?.dokumente ?? []).filter((x) => x.ocr?.stand === 'fertig')} fertig={uebernimmVorschlaege} schliessen={() => setAdOffen(false)} />
+      : <div className="ad-leiste"><button type="button" className="knopf klein" onClick={() => setAdOffen(true)}><Symbol name="kamera" /> {knopf}</button></div>)}
+    {(adMeldung || Object.keys(adNeu).length > 0) && (
+      <div className="hinweis info ad-ergebnis" role="status">
+        {adMeldung && <p>{adMeldung}</p>}
+        {Object.entries(adNeu).map(([k, n]) => {
+          const f = typ.felder.find((x) => x.key === k); const ziel = d.typ(n.typId);
+          return f && ziel ? <p key={k}>Für „{f.label}“ gibt es noch keine passende Mappe: {Object.values(n.werte).slice(0, 3).join(', ')}{' '}
+            {darfErstellen(ziel) && <button type="button" className="textknopf" onClick={() => void neuAnlegen(k)}>„{ziel.name}“ mit diesen Angaben anlegen</button>}</p> : null;
+        })}
+        {(alternativen.length > 0 || Object.keys(vorschlaege).length > 0) && <div className="knoepfe">
+          {alternativen.length > 0 && <button type="button" className="knopf klein" onClick={() => alternativen.forEach(alternativeUebernehmen)}>Alle Alternativen übernehmen</button>}
+          <button type="button" className="textknopf klein" onClick={() => { Object.keys(vorschlaege).forEach(vorschlagZuruecknehmen); setAdMeldung(undefined); setAdNeu({}); }}>Alle Vorschläge zurücknehmen</button>
+        </div>}
+      </div>
+    )}
     <form className="blatt mitregistern" onSubmit={(e) => { e.preventDefault(); void speichern(); }} noValidate>
       <RegisterReihe aktiv={reg?.key}>
         {register.map((r) => {
@@ -453,11 +568,19 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
         </div>
       </div>}
     </form>
+    </>
   );
 }
 
-function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, gesperrt, nurLesen, passwortSehen = true, typId, unpassend, eigene }: {
+/** Ein Vorschlag aus „Aus Dokument ausfüllen“ (#391) am Feld. */
+interface FeldVorschlag { wert: Wert; sicherheit: Sicherheit; fundstelle: string; art: 'eingetragen' | 'alternative'; vorher?: Roh }
+
+function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, gesperrt, nurLesen, passwortSehen = true, typId, unpassend, eigene, zusatz, plzDeutsch }: {
   feld: Feld; roh: Roh | undefined; fehler?: string; setze: (v: Roh) => void; eigeneId?: string;
+  /** Format PLZ (#535): gilt die deutsche Regel? Dann am Handy die Zifferntastatur. */
+  plzDeutsch?: boolean;
+  /** Unter dem Feld, z. B. ein Vorschlag aus „Aus Dokument ausfüllen“ (#391). */
+  zusatz?: ReactNode;
   /** Typ der Mappe und Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */
   typId?: string; unpassend?: string[];
   /** Werte dieser Mappe, von denen der Auswahlfilter abhängt (#173). */
@@ -481,7 +604,8 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
       f.typ === 'referenz'
         ? <ul>{ids.map((x) => <li key={x}>{bekannt[x]?.typId && !bekannt[x].verborgen ? <Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis">{titelOder(bekannt[x].titel)}</Link> : <span className={bekannt[x]?.verborgen ? 'verborgen-titel' : ''}>{titelOder(bekannt[x]?.titel)}</span>}</li>)}</ul>
         : f.typ === 'janein' ? (roh ? 'Ja' : 'Nein') : f.typ === 'formatiert' ? <Formatiert text={String(roh ?? '')} />
-        : f.typ === 'datum' ? formatiere(f, String(roh ?? '')) : f.typ === 'langtext' ? <span className="mehrzeilig">{String(roh ?? '')}</span> : String(roh ?? '')
+        : f.typ === 'datum' ? formatiere(f, String(roh ?? '')) : f.typ === 'langtext' ? <span className="mehrzeilig">{String(roh ?? '')}</span>
+        : f.typ === 'text' && f.format ? <FormatWert f={f} wert={String(roh ?? '')} /> : String(roh ?? '')
     }</div>;
     return (
       <div className={`feld ${f.typ === 'langtext' || f.typ === 'formatiert' ? 'breit' : ''}`}>
@@ -556,7 +680,13 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
       ctl = <PasswortEingabe id={id} feld={f} roh={(roh ?? leeresPasswort) as RohPasswort} setze={setze} mappeId={eigeneId} nurLesen={nurLesen} sehen={passwortSehen} />;
       break;
     default:
-      ctl = <input id={id} value={String(roh ?? '')} onChange={(e) => setze(e.target.value)} />;
+      ctl = <input id={id} value={String(roh ?? '')} onChange={(e) => setze(e.target.value)}
+        inputMode={eingabemodus(f, plzDeutsch)} {...(f.format === 'iban' ? { autoCapitalize: 'characters', spellCheck: false } : f.format ? { autoCapitalize: 'off', autoCorrect: 'off', spellCheck: false } : {})} />;
+      // E-Mail, Telefon, Internetseite (#535): daneben direkt antippen, sobald die Angabe passt.
+      if (f.format === 'email' || f.format === 'telefon' || f.format === 'internetseite') {
+        const w = String(roh ?? '').trim();
+        ctl = <div className="ff-eingabe">{ctl}{w && !formatFehler(f, w, { felder: [], werte: {} }) && <FormatLink f={f} wert={w} nurSymbol />}</div>;
+      }
   }
 
   return (
@@ -566,12 +696,30 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
         {f.typ === 'referenz' && <span className="chip">{VERWEISARTEN[f.verweisart ?? 'bezug']}</span>}
       </div>
       {ctl}
+      {zusatz}
       {f.hilfe && <span className="hilfe">{f.hilfe}</span>}
       {fehler && <p className="fehlertext">{fehler}</p>}
     </div>
   );
 }
 
+
+/** Link zu einer Angabe mit Format (#535): mailto:, tel: oder die Internetseite (neuer Tab). */
+function FormatLink({ f, wert, nurSymbol }: { f: Feld; wert: string; nurSymbol?: boolean }) {
+  const href = f.format === 'email' ? `mailto:${wert}` : f.format === 'telefon' ? telefonLink(wert) : mitSchema(wert);
+  const text = t(f.format === 'email' ? 'felder.eingabe.link.email' : f.format === 'telefon' ? 'felder.eingabe.link.telefon' : 'felder.eingabe.link.internetseite', { wert });
+  const extern = f.format === 'internetseite' ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+  return nurSymbol
+    ? <a href={href} className="ff-link" aria-label={text} title={text} {...extern}><Symbol name={f.format === 'email' ? 'email' : f.format === 'telefon' ? 'telefon' : 'extern'} /></a>
+    : <a href={href} className="verweis" title={text} {...extern}>{wert}</a>;
+}
+
+/** Nur lesbare Angabe mit Format (#535): E-Mail, Telefon und Internetseite als Link, IBAN in Vierergruppen. */
+function FormatWert({ f, wert }: { f: Feld; wert: string }) {
+  if (!wert) return null;
+  if ((f.format === 'email' || f.format === 'telefon' || f.format === 'internetseite') && !formatFehler(f, wert, { felder: [], werte: {} })) return <FormatLink f={f} wert={wert} />;
+  return <>{formatiere(f, wert)}</>;
+}
 
 /**
  * Passwortfeld (#46): Das gespeicherte Passwort kommt nie mit der Mappe. Das Auge holt es

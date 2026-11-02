@@ -81,6 +81,14 @@ begriffe:
     begegnet: admin
     nicht_verwenden: [Feldtyp, Datentyp, Art (allein)]
     code: Feldtyp, FELDTYPEN, Feld.typ
+  - begriff: Format
+    bereich: grundbegriffe
+    beschreibung: Was in einem Textfeld stehen darf – E-Mail, Telefon, Internetseite, IBAN oder PLZ. Neue und geänderte Angaben müssen passen, am Handy erscheint die passende Tastatur, E-Mail und Telefon lassen sich antippen. Gespeicherte Angaben bleiben gültig. Datumsfelder haben stattdessen Grenzen (frühestens, spätestens, auch „heute“).
+    einsteiger: alltag
+    begegnet: admin
+    nicht_verwenden: [Validierung, Datentyp]
+    verwandt: [Feld, Feldart]
+    code: Feld.format, Feld.landFeld, FELDFORMATE, shared/src/feldformate.ts
   - begriff: Kennung
     bereich: grundbegriffe
     beschreibung: Der feste, technische Name eines Felds, Registers, Mappentyps oder Nummernkreises, z. B. vertragsnummer. Nach dem Speichern bleibt er gleich, damit gespeicherte Werte, Links und Pakete passen.
@@ -519,7 +527,7 @@ begriffe:
     verwandt: [Werkbank]
   - begriff: Tägliche Zusammenfassung
     bereich: werkbank
-    beschreibung: Eine E-Mail, die einmal am Tag die offenen Aufgaben eines Benutzers auflistet – nur, wenn er welche hat und nicht abwesend ist. Administratoren schalten sie unter Werkbank → Aufgaben ein; Uhrzeit und Wochentage wählt jeder im Profil.
+    beschreibung: Eine E-Mail, die einmal am Tag die offenen Aufgaben eines Benutzers auflistet – nur, wenn er welche hat und nicht abwesend ist. Administratoren schalten sie unter Werkbank → Einstellungen → Benachrichtigungen und Aufgaben ein; Uhrzeit und Wochentage wählt jeder im Profil.
     einsteiger: alltag
     begegnet: alle
     nicht_verwenden: [Übersicht per E-Mail, Digest]
@@ -646,13 +654,11 @@ begriffe:
     beschreibung: Eine vorübergehende Sperre für Benutzer mit Ankündigung, z. B. während einer Wiederherstellung.
     einsteiger: erklaeren
     begegnet: admin
-    konflikt: [10]
   - begriff: Wartungsoperationen
     bereich: betrieb
     beschreibung: Einmalige Pflegearbeiten, z. B. Nummern nachträglich vergeben.
     einsteiger: fachwort
     begegnet: admin
-    konflikt: [10]
   - begriff: Protokoll
     bereich: betrieb
     beschreibung: Das laufende Betriebsprotokoll des Servers mit Modulen und Stufen (Werkbank → Protokoll). Die Geschichte einer Mappe heißt dagegen Historie.
@@ -672,7 +678,7 @@ begriffe:
     nicht_verwenden: [Fehlermeldungen]
   - begriff: Systemzustand
     bereich: betrieb
-    beschreibung: Wie es dem Server gerade geht – Speicherplatz mit Warnschwellen, später auch die Auslastung (Werkbank → Wartung und Fehlersuche → Systemzustand). Gemeint ist der Zustand im Betrieb, nicht die Konfiguration.
+    beschreibung: Wie es dem Server gerade geht – Speicherplatz mit Warnschwellen und die Auslastung von CPU, Arbeitsspeicher und Netzwerk (Werkbank → Wartung und Fehlersuche → Systemzustand). Gemeint ist der Zustand im Betrieb, nicht die Konfiguration.
     einsteiger: erklaeren
     begegnet: admin
     nicht_verwenden: [Systemumgebung]
@@ -764,6 +770,8 @@ konflikte:
   - nr: 10
     titel: „Wartung“ dreifach – Werkbank-Gruppe „Wartung und Fehlersuche“, Wartungsmodus, Wartungsoperationen
     vorschlag: Werkbank-Gruppe neu benennen („Betrieb“), „Wartungsoperationen“ → „Pflegearbeiten“.
+    entschieden: '2026-11-01'
+    entscheidung: Die Gruppe heißt weiter „Wartung und Fehlersuche“ (#354, #408); „Betrieb“ bleibt der Name der Werkbank-Vorlage und des Sprachprofils. Wartungsmodus und Wartungsoperationen behalten ihre Namen.
   - nr: 11
     titel: „Trefferliste“ am Mappentyp und an der Ansicht
     vorschlag: Beschreiben, wie beide zusammenspielen; für Einsteiger ggf. „Spalten“.

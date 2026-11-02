@@ -42,6 +42,7 @@ export function aufgabenBeschriftung(art: Aufgabenart, fuerMich: boolean): strin
     case 'post': return fuerMich ? 'Post für dich' : 'Post für';
     case 'erwaehnung': return fuerMich ? 'Du wurdest erwähnt' : 'Erwähnung für';
     case 'erinnerung': return fuerMich ? 'Deine Erinnerung' : 'Erinnerung für';
+    case 'zugeordnet': return fuerMich ? 'Bitte prüfen' : 'Zu prüfen von';
     default: return fuerMich ? 'Deine Aufgabe' : 'Aufgabe für';
   }
 }

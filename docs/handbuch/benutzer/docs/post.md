@@ -86,7 +86,30 @@ Oben in einer Post steht eine Leiste mit dem **Stand** und dem Knopf **Zuordnen 
 
 Danach liegen die Dokumente in der Mappe, und die Post verweist auf sie. Ihr Stand ist *Zugeordnet*. In der [Historie](zusammenarbeit.md#historie) beider Mappen steht, was passiert ist. Der Volltext der Dokumente zieht mit um.
 
-Bei **Weiter: neue Mappe ausfüllen** öffnet sich das Formular des Mappentyps. Betreff und Datum der Post sind als Vorschlag schon eingetragen. Nach **Mappe speichern** wird die Post der neuen Mappe zugeordnet.
+Bei **Weiter: neue Mappe ausfüllen** öffnet sich das Formular des Mappentyps. Betreff und Datum der Post sind als Vorschlag schon eingetragen, dazu – soweit die Erkennung etwas gefunden hat – Betrag, passende Nummern (z. B. die Rechnungsnummer) und der Verweis auf den Absender. Ein Hinweis oben nennt, was vorbelegt ist. Nach **Mappe speichern** wird die Post der neuen Mappe zugeordnet.
+
+### Vorschläge beim Zuordnen
+
+Sobald der Text einer Post da ist (aus der Texterkennung, der Textebene eines PDFs oder dem Text einer E-Mail), sucht das DMS darin – ohne KI und ohne Internet, nur mit Mustern und dem Abgleich mit deinen Mappen. Was es findet, steht oben in der Post im Kasten **Erkannt**:
+
+- **Absender:** eine Organisation (oder Niederlassung, Person), deren Kundennummer, IBAN, E-Mail-Adresse, Internetseite, Telefonnummer oder Name im Brief steht – mit Begründung, z. B. „gefunden: Kundennummer 100-4711“. **Als Absender eintragen** schreibt den Namen ins Feld *Absender* der Post. Passt keine, aber der Briefkopf ist sicher erkennbar (z. B. die kleine Absenderzeile über dem Anschriftfeld), steht dort **Als neue Organisation anlegen** – mit Name und Anschrift vorbelegt.
+- **Datum** des Schreibens (nicht Leistungszeitraum oder Fälligkeit) – **Als Datum der Post eintragen** übernimmt es.
+- **Betrag** (der Gesamtbetrag) und **Nummern** wie Kunden-, Rechnungs- oder Vertragsnummer.
+
+Unter **Zuordnen …** stehen oben die **Vorschläge** für die Zielmappe, der beste ist schon ausgewählt und als *Vorschlag* markiert: ein Vertrag, dessen Vertragsnummer im Brief steht; Mappen, die auf den Absender verweisen (z. B. sein Stromvertrag); Mappen, zu denen frühere Post dieses Absenders ging; der Absender selbst. Unter jedem Vorschlag steht, warum. Ein Klick wählt einen anderen, die Suche darunter geht wie immer – nichts passiert, bis du **Zu „…“ zuordnen** klickst.
+
+Woran das DMS Absender wiedererkennt, legt der Mappentyp fest: Felder, die ein Administrator „für die Erkennung“ markiert hat (die Pakete *Basis* & Co. bringen das mit). Hast du gerade eine Organisation angelegt oder eine Kundennummer nachgetragen, klick im Kasten auf **Neu erkennen**. Vorgeschlagen werden nur Mappen, die du sehen darfst.
+
+### Automatisch zugeordnet
+
+Ist die Erkennung **sicher**, kann das DMS Post selbst zuordnen – aber nur, wenn ein Administrator das für den Mappentyp der Zielmappe eingeschaltet hat (Standard: aus). Sicher heißt: Der Absender ist eindeutig erkannt (z. B. an Kundennummer oder IBAN) **und** es gibt genau eine passende Mappe dieses Typs – oder genau eine, deren Nummer (z. B. Vertragsnummer) im Brief steht. Neue Mappen legt das DMS dabei nie an.
+
+Danach steht bei dir unter [Zu erledigen](eingang.md) die Aufgabe **Automatisch zugeordnet zu „…“ – bitte prüfen** – bei der Person aus *Für*, sonst bei der, die die Post ins DMS gebracht hat (ist sie abwesend, bei ihrer Vertretung). In der Post steht dieselbe Aufgabe oben mit zwei Knöpfen:
+
+- **Passt** bestätigt die Zuordnung.
+- **Rückgängig** holt die Dokumente zurück in die Post, entfernt den Verweis und setzt den Stand wieder auf *Neu*. Diese Post ordnet das DMS danach nicht mehr von selbst zu.
+
+Warum zugeordnet wurde („Absender … eindeutig erkannt (Kundennummer 100-4711), einzige passende Mappe …“), steht im Kasten **Erkannt** und in der [Historie](zusammenarbeit.md#historie) der Post und der Mappe. Nie automatisch zugeordnet wird Post, deren Empfänger die Zielmappe nicht lesen darf, und Post zu Mappentypen im Archivmodus.
 
 **Kopie in der Post behalten** lässt die Dokumente zusätzlich in der Post liegen. Das kostet keinen Platz, denn das DMS speichert jede Datei nur einmal. Das ist praktisch, wenn ein Brief zu **mehreren** Mappen gehört, z. B. zur Rechnung und zum Vertrag. Du kannst eine Post beliebig oft zuordnen.
 

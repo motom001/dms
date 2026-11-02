@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { beschreibeBedingung, heuteIn, kinderVon, mitNachkommen, spaltenDerSicht, wirksameTypen, type Sicht } from '../../../shared/src/sichten';
 import { ANSTEHEND_TAGE, datumDe, type Anstehend } from '../../../shared/src/fristen';
 import { liesDirektlink, type Direktlink } from '../../../shared/src/direktlink';
-import { auswahlText, darfErstellen, POST_RICHTUNG, darfPostAnlegen, formatiere, GEMISCHTE_SPALTEN, sortierbar, standardliste, TREFFER_ANFANG, TREFFER_ENDE, vorlageFelder, wirksameVorlage, type Ausschnitt, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
+import { auswahlText, darfErstellen, POST_RICHTUNG, darfPostAnlegen, formatiere, GEMISCHTE_SPALTEN, sortierbar, standardliste, TREFFER_ANFANG, TREFFER_ENDE, vorlageFelder, wirksameVorlage, type Ausschnitt, type Mappe, type Mappentyp, type Sortierung, type Wert } from '../../../shared/src/model';
 import { api, verborgeneAufgaben, type Bezuege, type MappeDetails } from '../api';
 import type { Aufgabe } from '../../../shared/src/model';
 import { AufgabenHinweis } from './Aufgaben';
@@ -15,6 +15,8 @@ import { titelOder, useSeiten } from '../seiten';
 import { MappeAnsicht, NeueMappe } from './MappeFormular';
 import { PapierkorbDetail, PapierkorbListe, usePapierkorb } from './Papierkorb';
 import { Startseite } from './Startseite';
+import { Symbol, type SymbolName } from '../Symbol';
+import { AnsichtFilter, AnsichtWahl } from './AnsichtWahl';
 import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
 import { Hilfe } from '../Hilfe';
@@ -23,7 +25,9 @@ import { EmailMehrere } from './EmailMehrere';
 import { PostKnopf } from './Post';
 import type { Hilfeort } from '../../../shared/src/hilfe';
 import { Suchchips, Suchformular, suchFehler, suchTypen } from './Suche';
+import { mitGrund } from './Loeschgrund';
 import { rueckfrage } from '../rueckfrage';
+import { ZahlWarte } from './ZahlWarte';
 
 /**
  * Ablage in drei Spalten, von groß nach klein:
@@ -84,6 +88,21 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
     rechts = <div className="platzhalter"><p>Wähle in der Liste eine Mappe aus{typ ? ' oder lege eine neue an' : ''}.</p></div>;
   }
 
+  // Feste Einträge links (#507): Erweiterte Suche · Start · Zu erledigen · Neue Post · Anstehend · Favoriten · Papierkorb.
+  const neuePost = d.zaehler.neuePost ? d.sicht(d.zaehler.neuePost) : undefined;
+  // Zahlen kommen nach (#512): bis dahin ein Platzhalter (warte) bei den Einträgen, die aus dem Zähler kommen.
+  const warte = !d.zahlenDa;
+  const feste: Array<{ pfad: string; name: string; symbol: SymbolName; titel?: string; zahl?: number; warte?: boolean; hervor?: boolean; an: boolean }> = [
+    { pfad: '/ablage/suche', name: 'Erweiterte Suche', symbol: 'suche', titel: 'Mappentypen wählen, in Feldern und im Volltext suchen', an: false },
+    ...(mitStart ? [{ pfad: '/ablage/start', name: 'Start', symbol: 'haus' as const, an: sicht === 'start' }] : []),
+    { pfad: '/ablage/eingang', name: 'Zu erledigen', symbol: 'erledigen', zahl: d.zaehler.eingang, warte, hervor: true, an: sicht === 'eingang' },
+    ...(neuePost ? [{ pfad: `/ablage/${neuePost.id}`, name: neuePost.name, symbol: 'posteingang' as const, titel: neuePost.beschreibung || undefined, zahl: d.zaehler.sichten?.[neuePost.id], warte, hervor: true, an: sicht === neuePost.id }] : []),
+    { pfad: '/ablage/anstehend', name: 'Anstehend', symbol: 'kalender', titel: 'Fristen und Erinnerungen der nächsten Tage', zahl: anstehend.liste?.eintraege.length, an: sicht === 'anstehend' },
+    { pfad: '/ablage/favoriten', name: 'Favoriten', symbol: 'stern', zahl: d.zaehler.favoriten, warte, an: sicht === 'favoriten' },
+    // Papierkorb (#43): sichtbar, solange er an ist oder noch etwas darin liegt.
+    ...(!!d.zaehler.papierkorbTage || !!d.zaehler.papierkorb ? [{ pfad: '/ablage/papierkorb', name: 'Papierkorb', symbol: 'geloescht' as const, zahl: d.zaehler.papierkorb, warte, an: sicht === 'papierkorb' }] : []),
+  ];
+
   return (
     // Startseite ohne geöffnete Mappe (#429): ein großes Dashboard über Mitte und rechts.
     <Dreiteilung ort="ablage" ebene={ebene} offen={dritt} rechts={!(sicht === 'start' && !dritt)}>
@@ -93,29 +112,19 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
         </aside>
       ) : (
       <aside className="spalte sichten" aria-label="Ansichten">
-        <h2 className="ueber">Ansichten</h2>
+        {/* Handy (#498): ein Knopf „<Ansicht> ▾“ mit Suche und Gruppen statt der Reiterleiste. */}
+        <AnsichtWahl aktiv={sicht} aktuell={sicht === 'start' ? 'Start' : sicht === 'eingang' ? 'Zu erledigen' : sicht === 'anstehend' ? 'Anstehend' : sicht === 'favoriten' ? 'Favoriten' : sicht === 'papierkorb' ? 'Papierkorb' : verwaltet?.name ?? typ?.name ?? 'Ansicht wählen'}
+          feste={feste.map((f) => ({ pfad: f.pfad, name: <><Symbol name={f.symbol} /> {f.name}</>, text: f.name, zahl: f.zahl, warte: f.warte, hervor: f.hervor, an: f.an }))} ohne={neuePost ? [neuePost.id] : []} />
+        <h2 className="ueber aw-breit">Ansichten</h2>
         <nav className="sichtliste">
-          <Link to="/ablage/suche" className="sicht" title="Mappentypen wählen, in Feldern und im Volltext suchen">
-            <span className="nm"><span aria-hidden="true">⌕</span> Erweiterte Suche</span>
-          </Link>
-          {mitStart && <Link to="/ablage/start" className={`sicht ${sicht === 'start' ? 'an' : ''}`}><span className="nm">Start</span></Link>}
-          <Link to="/ablage/eingang" className={`sicht ${sicht === 'eingang' ? 'an' : ''}`}>
-            <span className="nm">Zu erledigen</span>{d.zaehler.eingang > 0 && <span className="zaehler">{zahl(d.zaehler.eingang)}</span>}
-          </Link>
-          <Link to="/ablage/anstehend" className={`sicht ${sicht === 'anstehend' ? 'an' : ''}`} title="Fristen und Erinnerungen der nächsten Tage">
-            <span className="nm">Anstehend</span>{!!anstehend.liste?.eintraege.length && <span className="zahl">{zahl(anstehend.liste.eintraege.length)}</span>}
-          </Link>
-          <Link to="/ablage/favoriten" className={`sicht ${sicht === 'favoriten' ? 'an' : ''}`}>
-            <span className="nm"><span aria-hidden="true" className="sternzeichen">★</span> Favoriten</span>{!!d.zaehler.favoriten && <span className="zahl">{zahl(d.zaehler.favoriten)}</span>}
-          </Link>
-          {/* Papierkorb (#43): sichtbar, solange er an ist oder noch etwas darin liegt. */}
-          {(!!d.zaehler.papierkorbTage || !!d.zaehler.papierkorb) && (
-            <Link to="/ablage/papierkorb" className={`sicht ${sicht === 'papierkorb' ? 'an' : ''}`}>
-              <span className="nm">Papierkorb</span>{!!d.zaehler.papierkorb && <span className="zahl">{zahl(d.zaehler.papierkorb)}</span>}
+          {/* Feste Einträge (#507): immer mit Symbol, in fester Reihenfolge; darunter nur die eingerichteten Ansichten. */}
+          {feste.map((f) => (
+            <Link key={f.pfad} to={f.pfad} className={`sicht ${f.an ? 'an' : ''}`} title={f.titel}>
+              <span className="nm"><Symbol name={f.symbol} className="fest-sym" /> {f.name}</span>{f.warte ? <ZahlWarte /> : !!f.zahl && <span className={f.hervor ? 'zaehler' : 'zahl'}>{zahl(f.zahl)}</span>}
             </Link>
-          )}
+          ))}
           {d.sichten.length > 0 && <hr />}
-          <SichtBaum aktiv={sicht} />
+          <AnsichtFilter aktiv={sicht} baum={<SichtBaum aktiv={sicht} ohne={neuePost && !kinderVon(d.sichten, neuePost.id).length ? neuePost.id : undefined} />} />
         </nav>
         {!d.typen.length && <p className="leise klein">Noch keine Mappentypen. {ich.rolle === 'admin' ? <Link to="/werkbank/typen" className="verweis">Zur Werkbank</Link> : 'Ein Administrator muss sie zuerst einrichten.'}</p>}
         {d.typen.length > 0 && !d.sichten.length && <p className="leise klein">Noch keine Ansichten. {ich.rolle === 'admin' ? <Link to="/werkbank/sichten" className="verweis">Ansichten einrichten</Link> : 'Ein Administrator muss sie zuerst einrichten.'}</p>}
@@ -148,7 +157,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
           : sicht === 'favoriten'
           ? <Liste key="favoriten" sicht="favoriten" titel="Favoriten" offen={dritt} hilfe="ablage.favoriten"
               beschreibung="Mappen, die du mit einem Stern markiert hast."
-              leerText="Noch keine Favoriten. Markiere eine Mappe mit dem Stern ☆, um sie hier zu finden." />
+              leerText="Noch keine Favoriten. Markiere eine Mappe mit dem Stern, um sie hier zu finden." />
           : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} spaltenTyp={typ ?? sichtTypen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []} titel={verwaltet?.name ?? typ!.name} beschreibung={verwaltet ? verwaltet.beschreibung : typ?.beschreibung}
               offen={dritt} neu={!!typ && darfErstellen(typ) && verwaltet?.rechte?.C !== false} post={!!typ && darfPostAnlegen(typ) && verwaltet?.rechte?.C !== false}
               leerText={typ?.system === 'post' ? 'Keine Post. Mit „+ Post“ legst du Dateien als neue Post ab.' : 'Noch keine Mappen in dieser Ansicht.'} hilfe={typ?.system === 'post' ? 'ablage.post' : 'ablage.sicht'} auswahl export={verwaltet ? verwaltet.rechte?.E !== false : exportOhneSicht(ich.rolle === 'admin', d.sichten)} />
@@ -167,7 +176,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
 function zuordnenAus(q: URLSearchParams) {
   const post = q.get('zuordnen');
   if (!post) return undefined;
-  let vorschlag: Record<string, string> = {};
+  let vorschlag: Record<string, Wert> = {};
   try { const v = JSON.parse(q.get('vorschlag') ?? '{}'); if (v && typeof v === 'object') vorschlag = v; } catch { /* ohne Vorschlag */ }
   return { post, register: q.get('register') ?? undefined, dokumente: (q.get('dokumente') ?? '').split(',').filter(Boolean), kopieren: q.get('kopieren') === '1', vorschlag };
 }
@@ -310,9 +319,13 @@ function Liste(p: {
   kopf?: ReactNode; immerSuche?: boolean;
 }) {
   const d = useDaten();
+  // Favoriten benachrichtigen (#506): ohne Freigabe der Werkbank kein Schalter an den Favoriten.
+  const { favoritenBenachrichtigung } = useKonto();
   const anhang = p.anhang ?? '';
   const [eingabe, setEingabe] = useState('');
   const [suche, setSuche] = useState('');
+  // Handy (#498): Haken, Erweiterte Suche und Exportieren hinter „Filter ▾“.
+  const [filter, setFilter] = useState(false);
   // Suche erst nach einer kurzen Tipppause an den Server schicken.
   useEffect(() => { const t = setTimeout(() => setSuche(eingabe.trim()), 250); return () => clearTimeout(t); }, [eingabe]);
 
@@ -363,7 +376,8 @@ function Liste(p: {
     return () => o.disconnect();
   }, [s.mehr, s.mappen.length, tabelle]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const gesamtSicht = p.sicht === 'eingang' ? d.zaehler.eingang : p.sicht === 'favoriten' ? d.zaehler.favoriten ?? 0 : d.zaehler.sichten?.[p.sicht] ?? (p.typ ? d.anzahl(p.typ.id) : 0);
+  // Solange die Zahlen der Ansichten nachkommen (#512), zählt die Liste selbst.
+  const gesamtSicht = !d.zahlenDa ? s.gesamt ?? 0 : p.sicht === 'eingang' ? d.zaehler.eingang : p.sicht === 'favoriten' ? d.zaehler.favoriten ?? 0 : d.zaehler.sichten?.[p.sicht] ?? (p.typ ? d.anzahl(p.typ.id) : 0);
   // Suche immer, sobald es Mappen gibt (#160) – der Volltext lohnt auch bei wenigen.
   const zeigeSuche = gesamtSicht > 0 || !!eingabe || (!!p.immerSuche && !!s.gesamt);
   const anzahlText = s.gesamt === null ? '' : suche || p.sicht === 'suche'
@@ -412,8 +426,9 @@ function Liste(p: {
       const titel = `${zahl(probe.mappen)} ${probe.mappen === 1 ? 'Mappe' : 'Mappen'}${probe.dokumente ? ` mit ${zahl(probe.dokumente)} ${probe.dokumente === 1 ? 'Dokument' : 'Dokumenten'}` : ''} ${korb ? 'in den Papierkorb legen' : 'endgültig löschen'}?`;
       const text = [korb ? 'Dort lassen sie sich wiederherstellen.' : 'Das lässt sich nicht rückgängig machen.',
         probe.ausgelassen.length ? `${zahl(probe.ausgelassen.length)} ${probe.ausgelassen.length === 1 ? 'Mappe wird' : 'Mappen werden'} ausgelassen (kein Recht oder noch verwiesen).` : ''].filter(Boolean).join('\n\n');
-      if (!(await rueckfrage({ titel, text, ja: korb ? 'In den Papierkorb' : 'Endgültig löschen', gefahr: true }))) return;
-      const r = await api.mappenLoeschen(ids, false);
+      const anlass = await mitGrund({ titel, text, ja: korb ? 'In den Papierkorb' : 'Endgültig löschen', gefahr: true });
+      if (!anlass) return;
+      const r = await api.mappenLoeschen(ids, false, anlass);
       w.leeren();
       await d.neuLaden();
       setErgebnis({ text: `${zahl(r.geloescht)} ${r.geloescht === 1 ? 'Mappe' : 'Mappen'} ${korb ? 'in den Papierkorb gelegt' : 'gelöscht'}.${r.ausgelassen.length ? ` ${zahl(r.ausgelassen.length)} ausgelassen:` : ''}`, liste: r.ausgelassen });
@@ -434,7 +449,7 @@ function Liste(p: {
       </div>
       {p.kopf}
       {zeigeSuche && (
-        <div className="suchzeile">
+        <div className={`suchzeile${filter ? '' : ' lk-zu'}`}>
           <label className="suche"><span className="sr">Suchen</span>
             <input type="search" placeholder={volltext ? 'Suchen in Titel, Werten und Dokumenten …' : 'Suchen in Titel und Werten …'} value={eingabe} onChange={(e) => setEingabe(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') void zurArchivnummer(eingabe); }} />
@@ -446,13 +461,15 @@ function Liste(p: {
             <input type="checkbox" checked={inNotizen} onChange={(e) => d.setzeEinstellung('suche_notizen', e.target.checked || null)} /><span>Notizen</span>
           </label>
           {p.sicht !== 'suche' && <Link to={`/ablage/suche${p.typ ? `?typ=${encodeURIComponent(p.typ.schluessel ?? p.typ.id)}` : ''}`} className="verweis klein" title="Mappentypen wählen, in Feldern und im Volltext suchen">Erweiterte Suche</Link>}
+          {p.export && !wahl?.gewaehlt.size && !!s.gesamt && <button type="button" className="textknopf klein lk-nur-schmal" onClick={() => setExportOffen(true)}>Exportieren …</button>}
+          <button type="button" className={`knopf klein lk-filterknopf ${filter ? 'an' : ''}`} aria-expanded={filter} onClick={() => setFilter(!filter)}>Filter <span aria-hidden="true">▾</span>{(volltext || inNotizen) && <span className="lk-punkt" aria-label="(aktiv)" />}</button>
         </div>
       )}
       {anzahlText && (
         <p className="listenzahl leise klein" aria-live="polite">
           {anzahlText}{s.mappen.length < (s.gesamt ?? 0) ? `, ${zahl(s.mappen.length)} geladen` : ''}
           {sortierung && <> · sortiert nach {spaltenName(sortierung.spalte, p.typ)} {sortierung.absteigend ? '↓' : '↑'} <button type="button" className="textknopf" onClick={() => setzeSortierung(null)}>nach Titel</button></>}
-          {p.export && !wahl?.gewaehlt.size && !!s.gesamt && <> · <button type="button" className="textknopf" onClick={() => setExportOffen(true)}>Exportieren …</button></>}
+          {p.export && !wahl?.gewaehlt.size && !!s.gesamt && <span className="lk-nur-breit"> · <button type="button" className="textknopf" onClick={() => setExportOffen(true)}>Exportieren …</button></span>}
           {geaenderteHier.length > 0 && <> · <span className="abo-punkt" aria-hidden="true" /> {zahl(geaenderteHier.length)} geändert · <button type="button" className="textknopf" onClick={() => void alleGesehen()}>Alle als gesehen markieren</button></>}
         </p>
       )}
@@ -508,7 +525,7 @@ function Liste(p: {
                         : m.passt === false && <span className="problem">{p.typ ? 'passt nicht zur Definition' : m.problem}</span>}
                     </Link>
                     {/* Favorit = Abo (#422): je Favorit „bei Änderungen benachrichtigen“ – nur in der Favoritenliste. */}
-                    {p.sicht === 'favoriten' && !m.verborgen && (
+                    {p.sicht === 'favoriten' && !m.verborgen && favoritenBenachrichtigung && (
                       <label className="haken klein abo-schalter">
                         <input type="checkbox" checked={!s.stumm.has(m.id)} onChange={(e) => {
                           const an = e.target.checked; s.setzeStumm(m.id, !an);
@@ -679,7 +696,7 @@ function Fundstelle({ a }: { a: Ausschnitt }) {
  * Verwaltete Sichten als Baum (#38). Untersichten lassen sich zuklappen; gemerkt je Gerät
  * und Benutzer. Die Vorfahren der geöffneten Sicht bleiben immer offen.
  */
-function SichtBaum({ aktiv }: { aktiv?: string }) {
+function SichtBaum({ aktiv, ohne }: { aktiv?: string; ohne?: string }) {
   const d = useDaten();
   const { ich } = useKonto();
   const schluessel = `dms:sichten-zu:${ich.id}`;
@@ -698,6 +715,7 @@ function SichtBaum({ aktiv }: { aktiv?: string }) {
   const zeilen: Array<{ s: Sicht; tiefe: number; kinder: boolean; offen: boolean }> = [];
   const gehe = (eltern: string | null, tiefe: number) => {
     for (const s of kinderVon(d.sichten, eltern)) {
+      if (s.id === ohne) continue;
       const kinder = kinderVon(d.sichten, s.id).length > 0;
       const offen = kinder && (!zu.has(s.id) || vorfahren.has(s.id));
       zeilen.push({ s, tiefe, kinder, offen });
@@ -718,7 +736,7 @@ function SichtBaum({ aktiv }: { aktiv?: string }) {
                   onClick={() => umschalten(s.id)}><span aria-hidden="true">{offen ? '▾' : '▸'}</span><span className="sr">{s.name} {offen ? 'zuklappen' : 'aufklappen'}</span></button>
               : null}
             <Link to={`/ablage/${s.id}`} className={`sicht ${aktiv === s.id ? 'an' : ''}`} title={s.beschreibung || undefined}>
-              <span className="nm">{s.name}</span>{n !== undefined && <span className={s.id === d.zaehler.neuePost && n > 0 ? 'zaehler' : 'zahl'}>{zahl(n)}</span>}
+              <span className="nm">{s.name}</span>{!d.zahlenDa ? <ZahlWarte /> : n !== undefined && <span className={s.id === d.zaehler.neuePost && n > 0 ? 'zaehler' : 'zahl'}>{zahl(n)}</span>}
             </Link>
           </div>
         );

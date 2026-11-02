@@ -157,6 +157,17 @@ Das DMS prüft beim Installieren, dass das Modul nur erlaubte Importe hat, Speic
 2. **Werkbank → Pakete → *Paket***: Der Abschnitt **Paket-Läufer** zeigt, ob der Läufer läuft, die letzten Aufrufe mit Dauer und Speicher, offene und aufgegebene Ereignisse und das Protokoll des Pakets.
 3. Ereignis auslösen (z. B. eine Datei hochladen) oder eine Aktion klicken.
 
+## Erkennung: Feldbeschreibung und Antwort
+
+Die eingebaute Erkennung (DMS #391) arbeitet gegen eine **Feldbeschreibung des Mappentyps**: `GET /api/v1/typen/{id}/erkennungsschema` liefert sie als JSON Schema 2020-12. Je Feld gibt es ein Objekt mit `wert` (Schema nach Feldart: Datum `JJJJ-MM-TT`, Betrag `{ betrag, waehrung }`, Auswahl nur aus der Liste, Verweis als Mappen-Id), `sicherheit` (`hoch`, `mittel`, `niedrig`) und `fundstelle` (Textstelle). Dazu `title` (Bezeichnung), `description` (Hilfetext und Erkennungshinweis), `x-dms-feldtyp`, `x-dms-erkennung` (Art, z. B. `email`) und `x-dms-markiert`. Passwortfelder und feste Felder stehen nie darin.
+
+```json
+{ "email": { "wert": "anna.beispiel@elektro-muster.de", "sicherheit": "hoch", "fundstelle": "anna.beispiel@elektro-muster.de" },
+  "plz":   { "wert": "01234", "sicherheit": "mittel", "fundstelle": "Elektro Muster GmbH · Musterweg 12 · 01234 Musterstadt" } }
+```
+
+So sieht die Antwort von `POST /api/v1/typen/{id}/vorschlaege` aus (unter `vorschlaege`), und so soll später auch eine Engine aus einem Paket antworten (DMS #511, nach dem Paket-Läufer): Das DMS prüft jede Antwort gegen die Feldtypen und verwirft unbekannte Felder, falsche Typen und Werte außerhalb der Auswahl. Schon heute nutzbar: Ein Paket mit dem Recht, Dokumente zu lesen, kann einen Volltext schreiben – die Erkennung startet danach von selbst (internes Ereignis „Volltext fertig“).
+
 ## Nützliche Endpunkte der API v1
 
 - `GET /dokumente/{id}/seiten/{nr}/scan?dpi=300` – eine Seite als Graustufenbild (PGM), z. B. für eigene Texterkennung (72–400 dpi).

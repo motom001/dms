@@ -1,6 +1,8 @@
 # Mitmachen
 
-Danke für dein Interesse am DMS! Wie Mitarbeit hier läuft, steht ausführlich im **[Entwicklerhandbuch](https://motom001.github.io/dms/entwickler/aktuell/)**. Das Wichtigste in Kürze:
+**Deutsch** · [English](CONTRIBUTING.en.md)
+
+Danke für dein Interesse am DMS! **Issues und Pull Requests sind auf Deutsch oder Englisch willkommen.** Wie Mitarbeit hier läuft, steht ausführlich im **[Entwicklerhandbuch](https://motom001.github.io/dms/entwickler/aktuell/)**. Das Wichtigste in Kürze:
 
 1. **Erst ein Issue**, als User Story („Als … möchte ich …, damit …“) mit Akzeptanzkriterien. Das gilt für Wünsche wie für Fehler.
 2. **Diskussion im Issue**, bis klar ist, was gebaut wird.

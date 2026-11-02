@@ -58,6 +58,10 @@ Welche Art von Angabe ein Feld aufnimmt, z. B. Datum oder Betrag. Die Oberfläch
 Formatiert einen Platzhalter in der Titel-Vorlage, z. B. nur das Jahr eines Datums oder gekürzter Text. Steht hinter einem senkrechten Strich, z. B. {datum|jahr}.  
 Siehe auch: [Titel](#titel).
 
+<a id="format"></a>**Format** · ✓ Alltagswort · Administratoren  
+Was in einem Textfeld stehen darf – E-Mail, Telefon, Internetseite, IBAN oder PLZ. Neue und geänderte Angaben müssen passen, am Handy erscheint die passende Tastatur, E-Mail und Telefon lassen sich antippen. Gespeicherte Angaben bleiben gültig. Datumsfelder haben stattdessen Grenzen (frühestens, spätestens, auch „heute“).  
+Siehe auch: [Feld](#feld), [Feldart](#feldart).
+
 <a id="kennung"></a>**Kennung** · ✗ Fachwort · Administratoren  
 Der feste, technische Name eines Felds, Registers, Mappentyps oder Nummernkreises, z. B. vertragsnummer. Nach dem Speichern bleibt er gleich, damit gespeicherte Werte, Links und Pakete passen.
 
@@ -298,7 +302,7 @@ Prüft, welche Rechte ein bestimmter Benutzer am Ende hat.
 Erkennt Text in Bildern und gescannten PDFs, damit er durchsuchbar wird.
 
 <a id="tagliche-zusammenfassung"></a>**Tägliche Zusammenfassung** · ✓ Alltagswort · alle  
-Eine E-Mail, die einmal am Tag die offenen Aufgaben eines Benutzers auflistet – nur, wenn er welche hat und nicht abwesend ist. Administratoren schalten sie unter Werkbank → Aufgaben ein; Uhrzeit und Wochentage wählt jeder im Profil.  
+Eine E-Mail, die einmal am Tag die offenen Aufgaben eines Benutzers auflistet – nur, wenn er welche hat und nicht abwesend ist. Administratoren schalten sie unter Werkbank → Einstellungen → Benachrichtigungen und Aufgaben ein; Uhrzeit und Wochentage wählt jeder im Profil.  
 Siehe auch: [Aufgabe](#aufgabe), [Anstehend](#anstehend).
 
 <a id="werkbank-anpassen"></a>**Werkbank anpassen** · ~ mit Erklärung · Administratoren  
@@ -371,7 +375,7 @@ Wie voll die Datenordner sind, mit Schwellen für Warnungen (unter Systemzustand
 Siehe auch: [Systemzustand](#systemzustand).
 
 <a id="systemzustand"></a>**Systemzustand** · ~ mit Erklärung · Administratoren  
-Wie es dem Server gerade geht – Speicherplatz mit Warnschwellen, später auch die Auslastung (Werkbank → Wartung und Fehlersuche → Systemzustand). Gemeint ist der Zustand im Betrieb, nicht die Konfiguration.  
+Wie es dem Server gerade geht – Speicherplatz mit Warnschwellen und die Auslastung von CPU, Arbeitsspeicher und Netzwerk (Werkbank → Wartung und Fehlersuche → Systemzustand). Gemeint ist der Zustand im Betrieb, nicht die Konfiguration.  
 Siehe auch: [Speicherplatz](#speicherplatz).
 
 <a id="version-des-dms"></a>**Version des DMS** · ✓ Alltagswort · alle  
@@ -382,12 +386,10 @@ Siehe auch: [Version](#version).
 Alle Daten in offenen Formaten, lesbar auch ohne DMS – damit niemand am DMS hängen bleibt.
 
 <a id="wartungsmodus"></a>**Wartungsmodus** · ~ mit Erklärung · Administratoren  
-Eine vorübergehende Sperre für Benutzer mit Ankündigung, z. B. während einer Wiederherstellung.  
-Noch offen: [Frage 10](#offen-10).
+Eine vorübergehende Sperre für Benutzer mit Ankündigung, z. B. während einer Wiederherstellung.
 
 <a id="wartungsoperationen"></a>**Wartungsoperationen** · ✗ Fachwort · Administratoren  
-Einmalige Pflegearbeiten, z. B. Nummern nachträglich vergeben.  
-Noch offen: [Frage 10](#offen-10).
+Einmalige Pflegearbeiten, z. B. Nummern nachträglich vergeben.
 
 <a id="wiederherstellen"></a>**Wiederherstellen** · ✓ Alltagswort · Administratoren  
 Eine Sicherung in ein DMS zurückspielen.
@@ -395,9 +397,6 @@ Eine Sicherung in ein DMS zurückspielen.
 ## Noch offen
 
 Manche Wörter stehen für mehr als eine Sache oder klingen zu ähnlich. Das wollen wir nach und nach klären. Bis dahin gelten die Begriffe oben.
-
-<a id="offen-10"></a>**10. „Wartung“ dreifach – Werkbank-Gruppe „Wartung und Fehlersuche“, Wartungsmodus, Wartungsoperationen**  
-Vorschlag: Werkbank-Gruppe neu benennen („Betrieb“), „Wartungsoperationen“ → „Pflegearbeiten“.
 
 ## Entschieden
 
@@ -429,6 +428,9 @@ Feldart „Verweis“, Register „Verknüpfungen“; Adressen heißen nur „Li
 
 <a id="offen-9"></a>**9. Export, Vollexport, persönlicher Export, Sicherung** (31.10.2026)  
 Überall „Meine Daten exportieren“; die Sicherung steht im Handbuch klar als „kein Export“.
+
+<a id="offen-10"></a>**10. „Wartung“ dreifach – Werkbank-Gruppe „Wartung und Fehlersuche“, Wartungsmodus, Wartungsoperationen** (1.11.2026)  
+Die Gruppe heißt weiter „Wartung und Fehlersuche“ (#354,
 
 <a id="offen-11"></a>**11. „Trefferliste“ am Mappentyp und an der Ansicht** (31.10.2026)  
 Kein neues Wort. Der Mappentyp legt seine Trefferlisten fest, eine davon ist der Standard; eine Ansicht wählt eine davon, sonst gilt der Standard (siehe „Trefferliste“).
@@ -496,6 +498,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Fehler nachstellen | Impersonation, Vertretung beenden | `Vertretung` |
 | Feld | – | `Feld` |
 | Feldart | Feldtyp, Datentyp, Art (allein) | `Feldtyp, FELDTYPEN, Feld.typ` |
+| Format | Validierung, Datentyp | `Feld.format, Feld.landFeld, FELDFORMATE, shared/src/feldformate.ts` |
 | Gemeldete Fehler | Fehlermeldungen | – |
 | Haushalt | Mandant (in der Oberfläche) | `mandant, haushalt_id` |
 | Historie | Protokoll (an der Mappe), Verlauf | `Historieneintrag` |

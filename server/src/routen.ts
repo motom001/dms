@@ -18,14 +18,20 @@ import { createReadStream } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { AUSKUNFT_PHASEN, auskuenfteIn, auskunftDatei, auskunftOrdner, erzeugeAuskunft, haltenBis, loescheAuskunft } from './auskunft';
 import { AUSKUNFT_TAGE, linkStatus, oeffentlichErreichbar } from '../../shared/src/auskunft';
+import { textDritte, type TextDritte } from '../../shared/src/anrede';
+import { t } from './sprache';
+import { loeschkonzept, luecken, type LoeschkonzeptQuelle } from '../../shared/src/loeschkonzept';
+import { DOCX_MIME, schriftstueckDocx, schriftstueckPdf } from './schriftstueck';
+import { liesAnlass, type Ausloeser } from '../../shared/src/loeschprotokoll';
 import { AbrufTickets, kuerzeIp } from './abruf';
 import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
 import { join } from 'node:path';
 import { ALS_KOPF, KONSOLE_KOPF, istLoopback, konsolenBenutzer, type Konsolenzugang } from './konsole';
 import type { Messung } from './messung';
 import type { Vorschaubilder } from './vorschau';
-import { Paketverwaltung, type InstallierenEingabe } from './pakete';
+import { Paketverwaltung, SAMMEL_MAX, type InstallierenEingabe } from './pakete';
 import { Paketerstellung } from './paketerstellung';
+import { Umwandlung } from './umwandlung';
 import type { Paketlaeufer } from './laeufer/verwaltung';
 import { eigeneVersion, standKennung, uebersicht, versionsabgleich, type SystemQuelle } from './system';
 import type { Fehlermeldungen } from './fehlermeldungen';
@@ -38,6 +44,7 @@ import type { Notfallzugang } from './notfall';
 import type { Sicherung } from './sicherung';
 import type { Wiederherstellung } from './wiederherstellung';
 import type { Speicherplatz } from './speicherplatz';
+import type { Systemlast } from './systemlast';
 import type { Eingangsordner } from './eingangsordner';
 import type { Webdav } from './webdav';
 import type { Postfaecher } from './postfach';
@@ -145,8 +152,10 @@ function archivProtokoll(t: { name: string; archiv?: Mappentyp['archiv'] }, vorh
 const leer: Antwort = { status: 204 };
 const b = (a: Anfrage) => (a.body ?? {}) as Record<string, unknown>;
 const info = (a: Anfrage) => ({ ip: a.ip, geraet: a.geraet ?? '' });
+/** Löschprotokoll (#470): wer löscht – Benutzer in der Oberfläche, Schnittstelle (API-Schlüssel) oder Paket (Dienstkonto). */
+const quelle = (a: Anfrage): Ausloeser => (a.benutzer?.art === 'dienst' ? 'paket' : a.apiSchluessel ? 'api' : 'benutzer');
 const ich = (a: Anfrage) => {
-  if (!a.benutzer) throw new Fachfehler(401, 'Bitte anmelden.');
+  if (!a.benutzer) throw new Fachfehler(401, t('anmeldung.fehler.bitte-anmelden'));
   return a.benutzer;
 };
 
@@ -154,6 +163,8 @@ export interface RoutenExtras {
   /** Fotos vom Handy bis „Fertig“ (#490); Standard: Arbeitsordner im Temp-Verzeichnis. */
   fotostapel?: Fotostapel;
   messung?: Messung;
+  /** Systemzustand → Auslastung (#409). */
+  systemlast?: Systemlast;
   /** Datenbankangaben für die Versionsübersicht. */
   system?: SystemQuelle;
   /** E-Mail-Versand und Adresse des DMS (#37). */
@@ -219,6 +230,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const log = x.log ?? ((m: string) => L.mail.warn(m));
   const pakete = x.pakete ?? new Paketverwaltung(dienst, { version: eigeneVersion, benutzer: async () => (await konten.listeBenutzer()).filter((b) => b.aktiv !== false).map((b) => ({ id: b.id, name: b.name || b.email })) });
   const paketerstellung = new Paketerstellung(dienst, { version: eigeneVersion });
+  const umwandlung = new Umwandlung(dienst);
   const wer = (a: Anfrage) => ({ id: a.benutzer?.id ?? null, email: a.benutzer?.email ?? null });
   /**
    * Ist ein Abruf ein Weitergeben (#394)? Herunterladen (?herunterladen), Stempel-Parameter oder ein API-Schlüssel
@@ -286,12 +298,21 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   // Vollexport (#254): neben den Sicherungen, Unterordner export/.
   // Auskünfte (#396): neben den Exporten, ohne Sicherungsordner im temporären Ordner.
   const auskunftZiel = () => auskunftOrdner(x.sicherung?.ordner);
+  /** Löschkonzept (#469): nur Typen, Einstellungen und Fristen – nichts aus Mappen. */
+  const loeschkonzeptQuelle = async (): Promise<LoeschkonzeptQuelle> => ({
+    typen: await dienst.listeTypen(), datenschutz: await dienst.datenschutz(),
+    papierkorbTage: await dienst.papierkorbTage(), historieTage: await dienst.historieTage(),
+    // Ohne eingerichtete Sicherung (oder wenn der Plan nicht lesbar ist) steht im Dokument „keine automatischen Sicherungen“.
+    sicherung: (await x.sicherung?.plan?.().catch(() => null)) ?? null, auskunftTage: AUSKUNFT_TAGE,
+    version: eigeneVersion(), stand: new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(new Date()), mandant: (await x.mandantName?.()) ?? '',
+    loeschprotokoll: { jahre: await dienst.loeschprotokollJahre() },
+  });
   /** Auskunft zustellen (#455): Einmal-Tickets der öffentlichen Abrufseite. */
   const abrufTickets = new AbrufTickets();
   /** Gemeinsamer Schlüssel im Anmeldeschutz: Fehlversuche je IP über alle Abruf-Links. */
   const ABRUF_SPERRE = 'auskunft-abruf';
-  const ABRUF_FALSCH = 'Das hat nicht geklappt: Der Link oder der Abrufcode stimmt nicht, oder der Link gilt nicht mehr. Prüfe den Code (Groß- und Kleinschreibung sind egal). Nach mehreren falschen Eingaben wird der Link gesperrt – wende dich dann an den Absender der Auskunft.';
-  const ABRUF_UNGUELTIG = 'Dieser Link gilt nicht mehr – er ist abgelaufen, wurde so oft abgerufen wie vorgesehen oder zurückgezogen. Bitte wende dich an den Absender der Auskunft.';
+  /** Meldungen der Abrufseite in der Anrede für Dritte (#474). */
+  const abrufText = async (k: TextDritte) => textDritte((await dienst.datenschutz()).anrede, k);
   const exportZiel = () => { if (!x.sicherung) throw new Fachfehler(404, 'Ohne Sicherungsordner gibt es keinen Vollexport.'); return join(x.sicherung.ordner, 'export'); };
   const oidc = () => { if (!x.oidc) throw new Fachfehler(404, 'Die Anmeldung über einen Anbieter ist nicht eingerichtet.'); return x.oidc; };
   const adresse = () => (x.betrieb?.adresseFuerLinks() ?? '').replace(/\/+$/, '');
@@ -366,6 +387,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       vertretung: await konten.vertretungZu(a.sitzungsDaten),
       // Hinweise für den Benutzer selbst (nicht, solange jemand als er agiert):
       hinweise: a.benutzer && !a.sitzungsDaten?.vertretungId ? await konten.hinweise(a.benutzer.id) : [],
+      // Favoriten benachrichtigen (#506): von der Werkbank für diesen Benutzer erlaubt? Sonst kein Schalter.
+      favoritenBenachrichtigung: a.benutzer ? await dienst.favoritenBenachrichtigungErlaubt(a.benutzer.id) : null,
     }) },
     { methode: 'POST', pfad: '/api/konto/hinweise/gesehen', zugang: 'angemeldet', handler: async (a) => {
       if (!a.sitzungsDaten?.vertretungId) await konten.hinweiseGesehen(ich(a).id);
@@ -394,7 +417,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       }
       // Zwei-Faktor (#242): Passwort stimmt, jetzt der Code.
       if ('zweiterSchritt' in r && r.zweiterSchritt) return ok({ zweiterSchritt: r.zweiterSchritt });
-      if (!r.benutzer || !r.schluessel) throw new Fachfehler(500, 'Anmeldung unvollständig.');
+      if (!r.benutzer || !r.schluessel) throw new Fachfehler(500, t('anmeldung.fehler.unvollstaendig'));
       await nurAdminsInWartung({ benutzer: r.benutzer, schluessel: r.schluessel });
       L.konto.info('Angemeldet', { email: r.benutzer.email, ip: a.ip, geraet: a.geraet });
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
@@ -429,7 +452,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
           L.konto.info('Anbieter bestätigt, Zwei-Faktor folgt', { email: id.email, ip: a.ip });
           return { weiterleiten: `/anmelden/code#${r.zweiterSchritt}`, cookies: raus };
         }
-        if (!r.benutzer || !r.schluessel) throw new Fachfehler(500, 'Anmeldung unvollständig.');
+        if (!r.benutzer || !r.schluessel) throw new Fachfehler(500, t('anmeldung.fehler.unvollstaendig'));
         await nurAdminsInWartung({ benutzer: r.benutzer, schluessel: r.schluessel });
         L.konto.info('Angemeldet über den Anbieter', { email: r.benutzer.email, ip: a.ip, geraet: a.geraet });
         return { weiterleiten: '/', sitzungSetzen: r.schluessel, cookies: raus };
@@ -472,7 +495,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/konto/abmelden', zugang: 'offen', handler: async (a) => {
       // Papierkorb beim Abmelden leeren, wenn im Profil so eingestellt (#43) – nicht, solange ein Administrator vertritt.
       if (a.benutzer && !a.sitzungsDaten?.vertretungId && (await konten.einstellungen(a.benutzer)).papierkorb_beim_abmelden === true) {
-        await dienst.leerePapierkorb(a.benutzer).catch((e) => L.ablage.warn('Papierkorb beim Abmelden nicht geleert', { fehler: (e as Error).message }));
+        await dienst.leerePapierkorb(a.benutzer, false, { weg: 'abmelden' }).catch((e) => L.ablage.warn('Papierkorb beim Abmelden nicht geleert', { fehler: (e as Error).message }));
       }
       await konten.abmelden(a.sitzung);
       if (a.benutzer) L.konto.info('Abgemeldet', { email: a.benutzer.email });
@@ -490,7 +513,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const r = await konten.passwortSetzen(b(a), info(a));
       L.konto.info('Passwort über Link gesetzt', { email: r.benutzer.email });
       if ('zweiterSchritt' in r && r.zweiterSchritt) return ok({ zweiterSchritt: r.zweiterSchritt });
-      if (!r.schluessel) throw new Fachfehler(500, 'Anmeldung unvollständig.');
+      if (!r.schluessel) throw new Fachfehler(500, t('anmeldung.fehler.unvollstaendig'));
       await nurAdminsInWartung({ benutzer: r.benutzer, schluessel: r.schluessel });
       return { body: { benutzer: r.benutzer }, sitzungSetzen: r.schluessel };
     } },
@@ -838,7 +861,27 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       einstellung: await dienst.datenschutz(), auskuenfte: await auskuenfteIn(auskunftZiel()), tage: AUSKUNFT_TAGE,
       // Zustellen (#455): Abruf-Links (Nachweis, auch nach dem Löschen der ZIP), Erreichbarkeit, E-Mail-Versand.
       links: await dienst.auskunftLinks({ max: 200 }), adresse: adresse(), oeffentlich: oeffentlichErreichbar(adresse()), mail: !!x.betrieb?.mailer(),
+      // Löschkonzept (#469): was im erzeugten Dokument noch fehlen würde.
+      loeschkonzept: { luecken: luecken(await loeschkonzeptQuelle()) },
     }) },
+    { methode: 'GET', pfad: '/api/werkbank/datenschutz/loeschkonzept', zugang: 'admin', handler: async (a) => {
+      const format = a.query.format === 'docx' ? 'docx' : 'pdf';
+      const q = await loeschkonzeptQuelle();
+      const k = loeschkonzept(q);
+      const s = { titel: k.titel, untertitel: k.untertitel, stand: k.stand, vorbemerkung: k.vorbemerkung, abschnitte: k.abschnitte };
+      const inhalt = format === 'docx' ? schriftstueckDocx(s) : await schriftstueckPdf(s);
+      L.datenschutz.info('Löschkonzept erzeugt', { format, datenarten: k.datenarten.length, luecken: k.luecken.length, von: ich(a).email });
+      return { datei: { inhalt, name: `Löschkonzept ${q.stand}.${format}`, mime: format === 'docx' ? DOCX_MIME : 'application/pdf', anzeigen: false, groesse: inhalt.length } };
+    } },
+    /* Löschprotokoll (#470): nur lesen und ausgeben; ändern lässt sich nur die Aufbewahrung. */
+    { methode: 'GET', pfad: '/api/werkbank/loeschprotokoll', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.loeschprotokoll(a.query)) },
+    { methode: 'GET', pfad: '/api/werkbank/loeschprotokoll/datei', zugang: 'admin', lesend: true, handler: async (a) => {
+      const format = a.query.format === 'csv' ? 'csv' : 'pdf';
+      const r = await dienst.loeschprotokollAusgabe(a.query, format, { von: ich(a).name || ich(a).email, mandant: (await x.mandantName?.()) ?? '', version: eigeneVersion() });
+      L.datenschutz.info('Löschprotokoll ausgegeben', { format, von: ich(a).email });
+      return { datei: { inhalt: r.inhalt, name: r.name, mime: r.mime, anzeigen: false, groesse: r.inhalt.length } };
+    } },
+    { methode: 'PUT', pfad: '/api/werkbank/loeschprotokoll/einstellungen', zugang: 'admin', handler: async (a) => ok({ jahre: await dienst.setzeLoeschprotokollJahre(b(a).jahre, ich(a).email) }) },
     { methode: 'PUT', pfad: '/api/werkbank/datenschutz', zugang: 'admin', handler: async (a) => ok(await dienst.setzeDatenschutz(a.body, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/auskunft/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await dienst.auskunftVorschau(a.body, await zg(a))) },
     { methode: 'POST', pfad: '/api/werkbank/auskunft/frist', zugang: 'admin', handler: async (a) => ok(await dienst.auskunftFrist(a.body, await zg(a), ich(a).id), 201) },
@@ -901,35 +944,37 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
      * und am Link (Sperre nach LINK_FEHLVERSUCHE_MAX). Antworten verraten nicht, ob es einen Link gibt.
      * Im Protokoll stehen weder Schlüssel noch Code, die IP nur gekürzt.
      */
+    // Anrede (#474): Die Abrufseite fragt nur ab, ob sie „du“ oder „Sie“ schreibt – sonst nichts über das DMS.
+    { methode: 'GET', pfad: '/api/abruf/anrede', zugang: 'offen', handler: async () => ok({ anrede: (await dienst.datenschutz()).anrede }) },
     { methode: 'POST', pfad: '/api/abruf', zugang: 'offen', handler: async (a) => {
       const o = (a.body ?? {}) as Record<string, unknown>;
       try { await konten.sperre.pruefe(ABRUF_SPERRE, a.ip); } catch (e) {
-        if (e instanceof Fachfehler && e.status === 429) throw new Fachfehler(429, 'Zu viele falsche Eingaben von deinem Anschluss. Bitte versuche es später noch einmal.');
+        if (e instanceof Fachfehler && e.status === 429) throw new Fachfehler(429, await abrufText('abruf.fehler.zuviele'));
         throw e;
       }
       const r = await dienst.auskunftAbrufPruefen(o.schluessel, o.code);
       if (r.art === 'falsch') {
         await konten.sperre.fehlschlag(ABRUF_SPERRE, a.ip);
         L.datenschutz.warn('Abruf einer Auskunft fehlgeschlagen', { ip: kuerzeIp(a.ip), ...(r.link ? { link: r.link.id } : {}) });
-        throw new Fachfehler(403, ABRUF_FALSCH);
+        throw new Fachfehler(403, await abrufText('abruf.fehler.falsch'));
       }
       await konten.sperre.erfolg(ABRUF_SPERRE, a.ip);
-      if (r.art === 'ungueltig') throw new Fachfehler(410, ABRUF_UNGUELTIG);
+      if (r.art === 'ungueltig') throw new Fachfehler(410, await abrufText('abruf.fehler.ungueltig'));
       const link = r.link!;
       const datei = await auskunftDatei(auskunftZiel(), link.auskunftId).catch(() => null);
-      if (!datei) throw new Fachfehler(410, ABRUF_UNGUELTIG);
+      if (!datei) throw new Fachfehler(410, await abrufText('abruf.fehler.ungueltig'));
       L.datenschutz.info('Abrufcode einer Auskunft bestätigt', { link: link.id, ip: kuerzeIp(a.ip) });
       return ok({ ticket: abrufTickets.stelleAus(link.id), groesse: datei.groesse, verschluesselt: datei.stand.verschluesselt, bis: link.ablauf, abrufe: link.abrufe, maxAbrufe: link.maxAbrufe });
     } },
     { methode: 'GET', pfad: '/api/abruf/datei', zugang: 'offen', handler: async (a) => {
       const id = abrufTickets.loese(a.query.ticket);
       const link = id ? await dienst.auskunftLinkMitId(id) : undefined;
-      if (!link) throw new Fachfehler(410, 'Dieser Download ist abgelaufen. Gib deinen Abrufcode bitte noch einmal ein.');
+      if (!link) throw new Fachfehler(410, await abrufText('abruf.fehler.ticket'));
       const ziel = auskunftZiel();
       const datei = await auskunftDatei(ziel, link.auskunftId).catch(() => null);
-      if (!datei) throw new Fachfehler(410, ABRUF_UNGUELTIG);
+      if (!datei) throw new Fachfehler(410, await abrufText('abruf.fehler.ungueltig'));
       const nr = await dienst.auskunftAbrufZaehlen(link.id);
-      if (nr === null) throw new Fachfehler(410, ABRUF_UNGUELTIG);
+      if (nr === null) throw new Fachfehler(410, await abrufText('abruf.fehler.ungueltig'));
       const { stand, pfad, groesse } = datei;
       const strom = createReadStream(pfad);
       let fertig = false;
@@ -966,7 +1011,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const r = await paketerstellung.exportiere(a.body, wer(a));
       return { datei: { inhalt: r.daten, name: r.name, mime: 'application/zip', anzeigen: false, groesse: r.daten.length } };
     } },
-    { methode: 'POST', pfad: '/api/werkbank/pakete/hochladen', zugang: 'admin', roh: 10 * 1024 * 1024 + 1024, handler: async (a) => ok(await pakete.hochladen(a.body, wer(a))) },
+    // Ein Paket (höchstens 10 MB) oder eine Sammeldatei mit mehreren Paketen (#461, höchstens SAMMEL_MAX).
+    { methode: 'POST', pfad: '/api/werkbank/pakete/hochladen', zugang: 'admin', roh: SAMMEL_MAX + 1024, handler: async (a) => ok(await pakete.hochladenDatei(a.body, wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await pakete.vorschau((a.body ?? {}) as { id?: string; version?: string; quelle?: string; upload?: string })) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/installieren', zugang: 'admin', handler: async (a) => ok(await pakete.installiere((a.body ?? {}) as InstallierenEingabe, wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/updates', zugang: 'admin', handler: async () => ok(await pakete.updates()) },
@@ -975,6 +1021,11 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/werkbank/pakete/laeufer', zugang: 'admin', handler: async () => ok(x.paketlaeufer ? await x.paketlaeufer.uebersicht() : null) },
     { methode: 'DELETE', pfad: '/api/werkbank/pakete/:id', zugang: 'admin', handler: async (a) => { await pakete.entferne(a.params.id, wer(a), a.query.einstellungenBehalten === '1'); return leer; } },
     // Paket-Einstellungen (#197): nur Administratoren, nicht über die API v1.
+    // Paket-Update: Text in Verweis umwandeln (#534) – Vorschau, Umwandeln, Rückgängig.
+    { methode: 'GET', pfad: '/api/werkbank/pakete/:id/umwandlungen', zugang: 'admin', handler: async (a) => ok(await umwandlung.liste(a.params.id)) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/:id/umwandlungen/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await umwandlung.vorschau(a.params.id, (a.body ?? {}) as { typId?: unknown; feldKey?: unknown }, await zg(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/:id/umwandlungen', zugang: 'admin', handler: async (a) => ok(await umwandlung.umwandeln(a.params.id, (a.body ?? {}) as { typId?: unknown; feldKey?: unknown; entscheidungen?: unknown }, wer(a), await zg(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/:id/umwandlungen/:vorgang/rueckgaengig', zugang: 'admin', handler: async (a) => ok(await umwandlung.rueckgaengig(a.params.vorgang, wer(a), await zg(a))) },
     { methode: 'GET', pfad: '/api/werkbank/pakete/:id/einstellungen', zugang: 'admin', handler: async (a) => ok(await pakete.einstellungen(a.params.id)) },
     { methode: 'PUT', pfad: '/api/werkbank/pakete/:id/einstellungen', zugang: 'admin', handler: async (a) => ok(await pakete.speichereEinstellungen(a.params.id, a.body, wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktionen/:aktion', zugang: 'admin', handler: async (a) => ok(await pakete.aktion(a.params.id, a.params.aktion, wer(a))) },
@@ -1000,6 +1051,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       ok(dienst.nummernNachtragen(String((a.body as { typId?: unknown })?.typId ?? ''), String((a.body as { feldKey?: unknown })?.feldKey ?? ''), ich(a).email), 202) },
     // Absender bereinigen (#494): Vorschau, dann nur die gewählten Posts.
     { methode: 'GET', pfad: '/api/werkbank/wartung/absender', zugang: 'admin', handler: async () => ok(await dienst.absenderVorschau()) },
+    // Angaben, die nicht zum Format passen (#535): je Mappentyp und Feld, mit Sprung zur Mappe.
+    { methode: 'GET', pfad: '/api/werkbank/wartung/formate', zugang: 'admin', handler: async () => ok({ typen: await dienst.unpassendeFormate() }) },
     { methode: 'POST', pfad: '/api/werkbank/wartung/absender', zugang: 'admin', handler: async (a) =>
       ok(await dienst.absenderBereinigen((a.body as { ids?: unknown })?.ids, { id: ich(a).id, email: ich(a).email })) },
     { methode: 'POST', pfad: '/api/werkbank/wartung/volltext', zugang: 'admin', handler: async () => ok({ eingereiht: await dienst.volltextNachholen() }) },
@@ -1143,6 +1196,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
         sicherung: x.sicherung ? await sicher(() => x.sicherung!.zustand()) : null,
         // Speicherplatz (#116) und frühere Variablen, die entfernt werden können (#115).
         speicherplatz: x.speicherplatz ? await sicher(() => x.speicherplatz!.stand()) : null,
+        // Auslastung (#409): CPU oder Arbeitsspeicher seit 5 Minuten über 90 %.
+        auslastung: x.systemlast?.warnung() ?? [],
         // #128: Schlüssel, die Administratoren gehören (aus der Zeit vor 0.26), durch die eines normalen Benutzers ersetzen.
         adminSchluessel: x.apiSchluessel ? await sicher(async () => {
           let n = 0;
@@ -1275,6 +1330,11 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     // Mit der Belegung der Vorschaubilder (#332) – sie liegen im Ordner der Dateien, werden aber nicht gesichert.
     { methode: 'GET', pfad: '/api/werkbank/speicherplatz', zugang: 'admin', handler: async () => ok({ ...(await speicherplatz().pruefe()), vorschau: x.vorschau ? await x.vorschau.belegung() : null }) },
     { methode: 'PUT', pfad: '/api/werkbank/speicherplatz', zugang: 'admin', handler: async (a) => ok(await speicherplatz().speichere(a.body, ich(a).email)) },
+    // Auslastung (#409): CPU, Arbeitsspeicher, Netzwerk des Containers; dazu die Wartezeit der Ereignisschleife (#477).
+    { methode: 'GET', pfad: '/api/werkbank/systemlast', zugang: 'admin', handler: async () => {
+      if (!x.systemlast) throw new Fachfehler(404, 'Die Messung der Auslastung ist nicht eingerichtet.');
+      return ok({ ...x.systemlast.stand(), schleife: x.messung?.auslastung.stand() ?? null });
+    } },
     { methode: 'POST', pfad: '/api/werkbank/system/abgleich', zugang: 'admin', handler: async (a) => {
       const browser = Object.fromEntries(Object.entries((b(a).browser ?? {}) as Record<string, unknown>).map(([k, v]) => [k, String(v)]));
       const start = Date.now();
@@ -1322,6 +1382,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'PUT', pfad: '/api/mappen/:id/favorit/benachrichtigen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.setzeFavoritBenachrichtigen(ich(a), a.params.id, b(a).an)) },
     { methode: 'POST', pfad: '/api/gesehen', zugang: 'angemeldet', handler: async (a) => { await dienst.gesehen(ich(a), b(a).ids); return leer; } },
     { methode: 'GET', pfad: '/api/sichten', zugang: 'angemeldet', handler: async (a) => ok(await dienst.zaehler(ich(a), await zg(a))) },
+    // Ohne Zählen (#512): Papierkorb-Tage und „Neue Post“ – die Ablage erscheint damit sofort, die Zahlen kommen danach.
+    { methode: 'GET', pfad: '/api/sichten/rahmen', zugang: 'angemeldet', handler: async () => ok(await dienst.zaehlerRahmen()) },
 
     /* ---------- Sichten verwalten (#38, #40, #41) ---------- */
     { methode: 'GET', pfad: '/api/sichten/definitionen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.listeSichten(await zg(a))) },
@@ -1380,6 +1442,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return ok({ ...auf, ...await leseHinweis(auf.empfaengerId, a.params.id) }, 201);
     } },
     { methode: 'POST', pfad: '/api/aufgaben/:id/erledigt', zugang: 'angemeldet', handler: async (a) => ok(await dienst.erledigeAufgabe(a.params.id, ich(a))) },
+    // Automatisch zugeordnet (#337): Rückgängig direkt aus der Aufgabe.
+    { methode: 'POST', pfad: '/api/aufgaben/:id/rueckgaengig', zugang: 'angemeldet', handler: async (a) => ok(await dienst.automatikRueckgaengig(a.params.id, ich(a), await zg(a))) },
     // Sammel-Weitergabe und -Erledigen (#415, #419): Werkbank → Aufgaben und Profil → Abwesenheit.
     { methode: 'POST', pfad: '/api/aufgaben/weitergeben', zugang: 'angemeldet', handler: async (a) => {
       await empfaengerSichtbar(a, b(a).empfaengerId);
@@ -1429,6 +1493,10 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     } },
     { methode: 'PUT', pfad: '/api/werkbank/aufgaben/mail', zugang: 'admin', handler: async (a) => ok(await mail().speichere(a.body)) },
     { methode: 'POST', pfad: '/api/werkbank/aufgaben/mail/senden', zugang: 'admin', handler: async () => ok({ verschickt: await mail().sende() }) },
+    // Favoriten benachrichtigen (#506): für alle, je Rolle oder gar nicht; Vorgabe für neue Benutzer.
+    { methode: 'GET', pfad: '/api/werkbank/favoriten-freigabe', zugang: 'admin', handler: async () => ok({ freigabe: await dienst.favoritenFreigabe(), rollen: await dienst.listeRollen() }) },
+    { methode: 'PUT', pfad: '/api/werkbank/favoriten-freigabe', zugang: 'admin', handler: async (a) => ok({ freigabe: await dienst.setzeFavoritenFreigabe(a.body, ich(a).email), rollen: await dienst.listeRollen() }) },
+    { methode: 'POST', pfad: '/api/werkbank/favoriten-freigabe/anwenden', zugang: 'admin', handler: async (a) => ok({ benutzer: await dienst.favoritenVorgabeAnwenden(ich(a).email) }) },
     // Notizen (#55)
     // E-Mail aus der Mappe (#58)
     { methode: 'GET', pfad: '/api/email/bereit', zugang: 'angemeldet', handler: async () => ok({ bereit: !!x.betrieb?.mailer() }) },
@@ -1466,6 +1534,25 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     } },
     { methode: 'POST', pfad: '/api/post/:id/zusammenlegen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.legePostZusammen(a.params.id, b(a), ich(a).id, await zg(a))) },
     { methode: 'POST', pfad: '/api/mappen/:id/zuordnen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.ordneZu(a.params.id, b(a), ich(a).id, await zg(a))) },
+    // „Aus Dokument ausfüllen“ (#391): Vorschläge für die Felder eines Mappentyps aus Text, Dokumenten oder einer Datei.
+    { methode: 'POST', pfad: '/api/typen/:id/vorschlaege', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erkennung.fuerTyp(a.params.id, b(a), await zg(a))) },
+    { methode: 'POST', pfad: '/api/typen/:id/vorschlaege/datei', zugang: 'angemeldet', lesend: true, roh: 30 * 1024 * 1024, handler: async (a) => {
+      const z = await zg(a);
+      if (!Buffer.isBuffer(a.body) || !a.body.length) throw new Fachfehler(422, 'Die Datei ist leer.');
+      // Erst Zugriff prüfen, dann die (teure) Texterkennung.
+      await dienst.erkennung.fuerTyp(a.params.id, { mappe: a.query.mappe }, z);
+      const { text, info } = await dienst.textAusDatei(a.body, String(a.query.name ?? ''), String(a.query.typ ?? ''));
+      return ok({ ...(await dienst.erkennung.fuerTyp(a.params.id, { text, mappe: a.query.mappe }, z)), text: text.slice(0, 200_000), info });
+    } },
+    { methode: 'GET', pfad: '/api/typen/:id/erkennungsschema', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erkennung.schema(a.params.id, await zg(a))) },
+    // Erkennung (#336): Vorschläge beim Zuordnen; POST rechnet neu (z. B. nach dem Anlegen einer Organisation).
+    { methode: 'GET', pfad: '/api/mappen/:id/erkennung', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erkennung.fuerBenutzer(a.params.id, await zg(a))) },
+    { methode: 'POST', pfad: '/api/mappen/:id/erkennung', zugang: 'angemeldet', handler: async (a) => {
+      const z = await zg(a);
+      await dienst.pruefeRecht(z, a.params.id, 'R');
+      await dienst.erkennung.fuerPost(a.params.id);
+      return ok(await dienst.erkennung.fuerBenutzer(a.params.id, z));
+    } },
     // Notizen brauchen nur Lesen (#124).
     { methode: 'GET', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.notizen(a.params.id)); } },
     { methode: 'POST', pfad: '/api/mappen/:id/notizen', zugang: 'angemeldet', handler: async (a) => { await darf(a, a.params.id, 'R'); return ok(await dienst.legeNotizAn(a.params.id, b(a).text, ich(a).id), 201); } },
@@ -1504,52 +1591,52 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       return ok(r, 201);
     } },
     { methode: 'POST', pfad: '/api/mappen/loeschen', zugang: 'angemeldet', handler: async (a) => {
-      const r = await dienst.loescheMappen(b(a), ich(a).id, await zg(a));
+      const r = await dienst.loescheMappen(b(a), ich(a).id, await zg(a), quelle(a));
       if (b(a).probe !== true) L.ablage.info('Mehrere Mappen gelöscht', { geloescht: r.geloescht, ausgelassen: r.ausgelassen.length });
       return ok(r);
     } },
     { methode: 'DELETE', pfad: '/api/mappen/:id', zugang: 'angemeldet', handler: async (a) => {
       const papierkorb = (await dienst.papierkorbTage()) > 0;
-      await dienst.loescheMappe(a.params.id, ich(a).id, await zg(a));
+      await dienst.loescheMappe(a.params.id, ich(a).id, await zg(a), { ...liesAnlass({ ...a.query, ...b(a) }), ausloeser: quelle(a), weg: 'einzeln' });
       L.ablage.info(papierkorb ? 'Mappe in den Papierkorb gelegt' : 'Mappe gelöscht', { id: a.params.id });
       return leer;
     } },
 
     // Mit allen verknüpften Mappen löschen (#424): Vorschau als Baum, dann Ausführen mit derselben Prüfung.
     { methode: 'GET', pfad: '/api/mappen/:id/loeschvorschau', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.loeschVorschau(a.params.id, a.query, await zg(a))) },
-    { methode: 'POST', pfad: '/api/mappen/:id/mit-verknuepften-loeschen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.loescheMitVerknuepften(a.params.id, a.body, ich(a).id, await zg(a))) },
+    { methode: 'POST', pfad: '/api/mappen/:id/mit-verknuepften-loeschen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.loescheMitVerknuepften(a.params.id, a.body, ich(a).id, await zg(a), quelle(a))) },
 
     /* ---------- Papierkorb (#43): in der Ablage nur, was ich gelöscht habe ---------- */
     { methode: 'GET', pfad: '/api/papierkorb', zugang: 'angemeldet', handler: async (a) => ok(await dienst.papierkorb(ich(a))) },
     // Einzelne Dokumente (#344): eigene Liste, damit die Antwort von /api/papierkorb gleich bleibt.
     { methode: 'GET', pfad: '/api/papierkorb/dokumente', zugang: 'angemeldet', handler: async (a) => ok(await dienst.papierkorbDokumente(ich(a))) },
-    { methode: 'POST', pfad: '/api/papierkorb/dokumente/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.stelleDokumentWiederHer(a.params.id, ich(a), await zg(a))) },
-    { methode: 'DELETE', pfad: '/api/papierkorb/dokumente/:id', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.loescheDokumentEndgueltig([a.params.id], ich(a)) }) },
-    { methode: 'DELETE', pfad: '/api/papierkorb', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.leerePapierkorb(ich(a)) }) },
+    { methode: 'POST', pfad: '/api/papierkorb/dokumente/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.stelleDokumentWiederHer(a.params.id, ich(a), await zg(a), false, quelle(a))) },
+    { methode: 'DELETE', pfad: '/api/papierkorb/dokumente/:id', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.loescheDokumentEndgueltig([a.params.id], ich(a), false, quelle(a)) }) },
+    { methode: 'DELETE', pfad: '/api/papierkorb', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.leerePapierkorb(ich(a), false, { quelle: quelle(a) }) }) },
     { methode: 'GET', pfad: '/api/papierkorb/:id', zugang: 'angemeldet', handler: async (a) => ok(await dienst.papierkorbEintrag(a.params.id, ich(a))) },
     { methode: 'POST', pfad: '/api/papierkorb/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => {
-      const r = await dienst.stelleWiederHer(a.params.id, ich(a));
+      const r = await dienst.stelleWiederHer(a.params.id, ich(a), false, quelle(a));
       // Eigener Papierkorb (#126): immer wiederherstellbar; danach gelten wieder die Regeln.
       const sichtbar = (await dienst.lesbare(await zg(a), [a.params.id])).has(a.params.id);
       return ok(sichtbar ? r : { ...r, hinweis: 'Wiederhergestellt. Diese Mappe kannst du nach den Berechtigungen aber nicht mehr sehen.' });
     } },
-    { methode: 'DELETE', pfad: '/api/papierkorb/:id', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.loescheEndgueltig([a.params.id], ich(a)) }) },
+    { methode: 'DELETE', pfad: '/api/papierkorb/:id', zugang: 'angemeldet', handler: async (a) => ok({ geloescht: await dienst.loescheEndgueltig([a.params.id], ich(a), false, quelle(a)) }) },
     // Ein Vorgang (#424): alle Mappen, die zusammen gelöscht wurden.
-    { methode: 'POST', pfad: '/api/papierkorb/vorgang/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.stelleVorgangWiederHer(a.params.id, ich(a))) },
+    { methode: 'POST', pfad: '/api/papierkorb/vorgang/:id/wiederherstellen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.stelleVorgangWiederHer(a.params.id, ich(a), false, quelle(a))) },
     /* … und in der Werkbank alles */
     { methode: 'GET', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ tage: await dienst.papierkorbTage(), historieTage: await dienst.historieTage(), eintraege: await dienst.papierkorb(ich(a), true), dokumente: await dienst.papierkorbDokumente(ich(a), true) }) },
-    { methode: 'POST', pfad: '/api/werkbank/papierkorb/dokumente/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.stelleDokumentWiederHer(a.params.id, ich(a), undefined, true)) },
-    { methode: 'DELETE', pfad: '/api/werkbank/papierkorb/dokumente/:id', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.loescheDokumentEndgueltig([a.params.id], ich(a), true) }) },
+    { methode: 'POST', pfad: '/api/werkbank/papierkorb/dokumente/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.stelleDokumentWiederHer(a.params.id, ich(a), undefined, true, quelle(a))) },
+    { methode: 'DELETE', pfad: '/api/werkbank/papierkorb/dokumente/:id', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.loescheDokumentEndgueltig([a.params.id], ich(a), true, quelle(a)) }) },
     { methode: 'PUT', pfad: '/api/werkbank/papierkorb/einstellungen', zugang: 'admin', handler: async (a) => {
       const historieTage = b(a).historieTage === undefined ? await dienst.historieTage() : await dienst.setzeHistorieTage(b(a).historieTage);
-      const r = b(a).tage === undefined ? { tage: await dienst.papierkorbTage(), geleert: 0 } : await dienst.setzePapierkorbTage(b(a).tage);
+      const r = b(a).tage === undefined ? { tage: await dienst.papierkorbTage(), geleert: 0 } : await dienst.setzePapierkorbTage(b(a).tage, ich(a).id);
       return ok({ ...r, historieTage });
     } },
-    { methode: 'DELETE', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.leerePapierkorb(ich(a), true) }) },
+    { methode: 'DELETE', pfad: '/api/werkbank/papierkorb', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.leerePapierkorb(ich(a), true, { quelle: quelle(a) }) }) },
     { methode: 'GET', pfad: '/api/werkbank/papierkorb/:id', zugang: 'admin', handler: async (a) => ok(await dienst.papierkorbEintrag(a.params.id, ich(a), true)) },
-    { methode: 'POST', pfad: '/api/werkbank/papierkorb/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.stelleWiederHer(a.params.id, ich(a), true)) },
-    { methode: 'POST', pfad: '/api/werkbank/papierkorb/vorgang/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.stelleVorgangWiederHer(a.params.id, ich(a), true)) },
-    { methode: 'DELETE', pfad: '/api/werkbank/papierkorb/:id', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.loescheEndgueltig([a.params.id], ich(a), true) }) },
+    { methode: 'POST', pfad: '/api/werkbank/papierkorb/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.stelleWiederHer(a.params.id, ich(a), true, quelle(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/papierkorb/vorgang/:id/wiederherstellen', zugang: 'admin', handler: async (a) => ok(await dienst.stelleVorgangWiederHer(a.params.id, ich(a), true, quelle(a))) },
+    { methode: 'DELETE', pfad: '/api/werkbank/papierkorb/:id', zugang: 'admin', handler: async (a) => ok({ geloescht: await dienst.loescheEndgueltig([a.params.id], ich(a), true, quelle(a)) }) },
 
     /* ---------- Dokumente ---------- */
     { methode: 'POST', pfad: '/api/mappen/:id/dokumente', zugang: 'angemeldet', roh: MAX_DATEIGROESSE, handler: async (a) => {
@@ -1702,7 +1789,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     } },
     { methode: 'DELETE', pfad: '/api/dokumente/:id', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.mappeVon('dokument', a.params.id), 'U');
-      const r = await dienst.loescheDokument(a.params.id, ich(a).id);
+      const r = await dienst.loescheDokument(a.params.id, ich(a).id, { ...liesAnlass({ ...a.query, ...b(a) }), ausloeser: quelle(a), weg: 'dokument' });
       L.dokumente.info(r.papierkorb ? 'Dokument in den Papierkorb gelegt' : 'Dokument gelöscht', { id: a.params.id });
       return leer;
     } },
@@ -1885,7 +1972,7 @@ export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => st
   a.sitzungsDaten = anmeldung?.sitzung;
   if (r.methode !== 'GET' && kopf('x-dms') !== '1') throw new Fachfehler(403, 'Anfrage ohne Kennung der Oberfläche abgelehnt.');
   if (r.zugang === 'offen') return;
-  if (!a.benutzer) throw new Fachfehler(401, 'Bitte anmelden.');
+  if (!a.benutzer) throw new Fachfehler(401, t('anmeldung.fehler.bitte-anmelden'));
   // Zwei-Faktor vorgeschrieben (#242), aber noch nicht eingerichtet: nur das eigene Konto.
   // #416: gilt erst für Sitzungen ab dem Einschalten der Pflicht; die Pflicht selbst lesen und ausschalten geht immer.
   if (konten.zweifaktor && !a.sitzungsDaten?.vertretungId && !r.pfad.startsWith('/api/konto/') && !pflichtZuruecknehmen(r, a)

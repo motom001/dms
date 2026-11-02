@@ -33,7 +33,7 @@ export function Bereich({ id, titel, hilfe, kurz, beschreibung, klappe, children
 
 export const TYP_BEREICHE = [
   ['grunddaten', 'Grunddaten'], ['felder', 'Felder'], ['titel', 'Titel'], ['trefferlisten', 'Trefferlisten'],
-  ['register', 'Register'], ['archiv', 'Archivmodus'], ['stempel', 'Stempel beim Weitergeben'], ['berechtigungen', 'Berechtigungen'], ['testlauf', 'Testlauf'],
+  ['register', 'Register'], ['archiv', 'Archivmodus'], ['stempel', 'Stempel beim Weitergeben'], ['erkennung', 'Erkennung'], ['berechtigungen', 'Berechtigungen'], ['testlauf', 'Testlauf'],
 ] as const;
 export type TypBereich = (typeof TYP_BEREICHE)[number][0];
 

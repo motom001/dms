@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { grenzeAlsTag, ibanGruppen, pruefeFormate } from '../../shared/src/feldformate';
 import { formatiere, istOk, pruefeMappe, titelAus, verweiseVon, type Feld, type Mappentyp, type Wert, type Werte } from '../../shared/src/model';
 import { dokumentRegister, MAX_DEMO, MAX_DEMO_DOKUMENTE, mengenWarnung, schaetzeMenge, verteilung } from '../../shared/src/demodaten';
 import { DOKUMENTARTEN, erzeugeDokument, kannRastern, pruefeDokumentOptionen, type Abschaetzung, type DokumentOptionen, type Dokumentart, type MappenInhalt } from './demo-dokumente';
@@ -38,8 +39,22 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 let heute = Date.now();
 const tageVonHeute = (von: number, bis: number) => iso(new Date(heute + Math.round(zwischen(von, bis)) * 86_400_000));
 
+/** Deutsche IBAN mit richtiger Prüfziffer (für Felder mit Format IBAN, #535). */
+function demoIban(): string {
+  const bban = Array.from({ length: 18 }, () => zufall(10)).join('');
+  let rest = 0;
+  for (const z of `${bban}131400`) rest = (rest * 10 + Number(z)) % 97;
+  return ibanGruppen(`DE${String(98 - rest).padStart(2, '0')}${bban}`);
+}
+
 function textFuer(f: Feld, nr: number): string {
   const s = `${f.key} ${f.label}`.toLowerCase();
+  // Feldformat (#535): Werte, die passen.
+  if (f.format === 'email') return `${eins(VORNAMEN).toLowerCase().replace(/[^a-z]/g, '')}.${eins(NACHNAMEN).toLowerCase().replace(/[^a-z]/g, '')}${nr}@example.org`;
+  if (f.format === 'telefon') return `0351 ${100000 + zufall(899999)}`;
+  if (f.format === 'internetseite') return `https://www.${eins(NACHNAMEN).toLowerCase().replace(/[^a-z]/g, '')}${nr}.example.org`;
+  if (f.format === 'iban') return demoIban();
+  if (f.format === 'plz') return String(10000 + zufall(89999));
   if (/mail/.test(s)) return `${eins(VORNAMEN).toLowerCase()}.${eins(NACHNAMEN).toLowerCase().replace(/[^a-z]/g, '')}${nr}@example.org`;
   if (/telefon|handy|mobil|tel\b/.test(s)) return `0351 ${100000 + zufall(899999)}`;
   if (/iban/.test(s)) return `DE${String(10 + zufall(89))}${Array.from({ length: 18 }, () => zufall(10)).join('')}`;
@@ -73,19 +88,23 @@ function wertFuer(f: Feld, nr: number, pools: Map<string, string[]>, vergeben: S
       return s;
     }
     case 'zahl': {
-      const min = f.min ?? 1, max = f.max ?? Math.max(min + 1000, 1000);
+      const min = typeof f.min === 'number' ? f.min : 1, max = typeof f.max === 'number' ? f.max : Math.max(min + 1000, 1000);
       const stellen = Math.min(f.nachkomma ?? 0, 4);
       let x = Number(zwischen(min, max).toFixed(stellen));
       if (f.eindeutig) while (vergeben.has(String(x))) x = Number(zwischen(min, max).toFixed(stellen));
       return x;
     }
     case 'betrag': {
-      const min = f.min ?? 5, max = f.max ?? Math.max(min + 100, 2500);
+      const min = typeof f.min === 'number' ? f.min : 5, max = typeof f.max === 'number' ? f.max : Math.max(min + 100, 2500);
       return { betrag: Number(zwischen(min, max).toFixed(2)), waehrung: f.waehrung || 'EUR' };
     }
     case 'datum': {
       const s = `${f.key} ${f.label}`.toLowerCase();
-      return /kuendig|kündig|ende|frist|ablauf|gueltig|gültig|bis\b|faellig|fällig/.test(s) ? tageVonHeute(10, 700) : tageVonHeute(-1100, 0);
+      const d = /kuendig|kündig|ende|frist|ablauf|gueltig|gültig|bis\b|faellig|fällig/.test(s) ? tageVonHeute(10, 700) : tageVonHeute(-1100, 0);
+      // Grenzen (#535), z. B. Geburtstag höchstens heute.
+      const tag = iso(new Date(heute));
+      const min = grenzeAlsTag(f.min, tag), max = grenzeAlsTag(f.max, tag);
+      return min && d < min ? min : max && d > max ? max : d;
     }
     case 'janein': return z.chance(0.5);
     case 'auswahl': {
@@ -276,6 +295,8 @@ export async function erzeugeDemo(dienst: Dienst, eingabe: unknown, benutzerId: 
         typVon: (id) => typVon.get(id),
         doppelt: (k, v) => (vergeben.get(k)?.has(String(v).trim().toLowerCase()) ? 'eine andere Mappe' : undefined),
       });
+      // Formate und Grenzen (#535) wie beim Anlegen.
+      Object.assign(p.felder, pruefeFormate(t, werte, undefined, iso(new Date(heute))));
       if (!istOk(p)) {
         fehlversuche++;
         const [k, msg] = Object.entries(p.felder)[0] ?? [];

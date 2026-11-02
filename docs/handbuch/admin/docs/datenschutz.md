@@ -14,7 +14,7 @@ Das DMS ist **auf Datenschutz ausgelegt** – „Datenschutz durch Technikgestal
 | Art. 18 – Einschränkung (Sperren) | **Löschsperre bis Fristende** im Archivmodus – der erste Baustein eines [Sperr- und Löschkonzepts](#sperr-und-loschkonzept-aufsetzen); den Zugriff schränkst du über Berechtigungen ein | Werkbank → Mappentypen |
 | Art. 15 – Auskunft | [Auskunft](#auskunft-nach-art-15-dsgvo) als ZIP mit Deckblatt, Prüfliste und Nachweis; [zustellen](#auskunft-zustellen) per Abruf-Link oder E-Mail | Werkbank → Datenschutz |
 | Art. 20 – Datenübertragbarkeit | **Persönlicher Export** für jeden Benutzer, **Vollexport** aller Daten – beides in offenen Formaten (CSV, JSON, Excel, Dokumente im Original) | Profil → Konto → Meine Daten exportieren; Werkbank → Vollexport ([Daten exportieren](export.md)) |
-| Art. 5 Abs. 2 – Rechenschaft; Art. 30 – Nachweis | **Historie** jeder Mappe (wer hat wann was geändert), [Protokoll](fehlersuche.md#protokoll), Nachweis jeder Auskunft in der Historie der Person; Vorlagen [Löschkonzept](loeschkonzept.md) und [Verfahrensdokumentation](verfahrensdokumentation.md) | Register *Historie* an jeder Mappe, Werkbank → Protokoll |
+| Art. 5 Abs. 2 – Rechenschaft; Art. 30 – Nachweis | **Historie** jeder Mappe (wer hat wann was geändert), [Protokoll](fehlersuche.md#protokoll), Nachweis jeder Auskunft in der Historie der Person, [Löschprotokoll](#loschprotokoll) mit Prüfsummen ohne Inhalte; [Löschkonzept](loeschkonzept.md) aus dem DMS erzeugen und Vorlage [Verfahrensdokumentation](verfahrensdokumentation.md) | Register *Historie* an jeder Mappe, Werkbank → Protokoll, Werkbank → Datenschutz |
 | Art. 32 – Sicherheit | [Verschlüsselte](verschluesselung.md) Passwortfelder und Zugangsdaten, verschlüsselte [Sicherung](sicherung.md) mit [Probe-Wiederherstellung](wiederherstellen.md#probe-wiederherstellung), [Anmeldeschutz und Zwei-Faktor-Anmeldung](anmeldeschutz.md), Prüfwerte für jede Datei, Hinweise zu [HTTPS](installation.md#https-und-zertifikate) | Werkbank → Verschlüsselung, Sicherung, Anmeldeschutz |
 
 ## Keine Telemetrie { #keine-telemetrie }
@@ -80,13 +80,13 @@ Jemand verlangt, dass seine Daten gelöscht werden (Art. 17 DSGVO).
     - **Nach Fristende** steht die Mappe unter **Werkbank → Darf weg**; dann löschst du sie wie unten.
     - Sag der Person, dass und bis wann ihre Daten gesperrt bleiben und warum.
 4. **Keine Frist → löschen:**
-    - In der Ablage die Mappen löschen – einzeln oder über die [Mehrfachauswahl](https://motom001.github.io/dms/benutzer/aktuell/ablage/#mehrere-mappen-loschen); einzelne Dokumente an der Dokumentzeile. Eine Mappe, auf die noch andere verweisen, lässt sich nicht löschen: Entferne zuerst den Verweis oder lösche die verweisende Mappe mit, wenn auch sie weg soll.
+    - In der Ablage die Mappen löschen – einzeln oder über die [Mehrfachauswahl](https://motom001.github.io/dms/benutzer/aktuell/ablage/#mehrere-mappen-loschen); einzelne Dokumente an der Dokumentzeile. Wähle beim Löschen den Grund **Auf Verlangen der betroffenen Person** – er steht im [Löschprotokoll](#loschprotokoll). Eine Mappe, auf die noch andere verweisen, lässt sich nicht löschen: Entferne zuerst den Verweis oder lösche die verweisende Mappe mit, wenn auch sie weg soll.
     - Unter **Werkbank → Papierkorb** die Mappen und Dokumente wählen und **endgültig löschen** (oder den ganzen Papierkorb leeren). Erst dann sind auch Dateien und Volltext weg.
 5. **Was danach noch bleibt** – sag es der Person, wenn sie fragt:
     - die **Historie der gelöschten Mappen** für die eingestellte Zeit (Standard 365 Tage, [einstellbar](papierkorb.md#historie-endgultig-geloschter-mappen); 0 löscht sie sofort mit – das gilt dann für alle Mappen),
     - ältere **Sicherungen**, bis sie nach der Aufbewahrung wegfallen,
     - **Exporte** unter `export/`, bereitliegende **Auskünfte** (höchstens 7 Tage oder bis ein Abruf-Link abläuft) und Kopien außerhalb des DMS.
-6. **Festhalten, dass gelöscht wurde:** Notiere Datum, Anfrage und welche Arten von Daten gelöscht wurden – ohne die Daten selbst –, z. B. in einer Mappe für Datenschutzanfragen.
+6. **Festhalten, dass gelöscht wurde:** Das macht das [Löschprotokoll](#loschprotokoll) – mit Grund, Mappentyp, Nummer und den Prüfsummen der Dokumente, ohne die Daten selbst. Filter nach dem Tag und dem Grund *Auf Verlangen der betroffenen Person* und gib es als PDF aus, wenn die Person oder eine Aufsichtsbehörde einen Nachweis möchte.
 
 Hat die Person ein **Benutzerkonto**, das schon benutzt wurde, [deaktivierst](benutzer.md#zugang-sperren) du es: Das DMS löscht solche Konten nicht, damit „angelegt von“ und Verweise stimmen. Ihr Name bleibt dort stehen.
 
@@ -94,14 +94,14 @@ Hat die Person ein **Benutzerkonto**, das schon benutzt wurde, [deaktivierst](be
 
 Für Vermieter, Selbständige und Betriebe: einmal festlegen, wie lange welche Daten bleiben, und das DMS so einrichten, dass es dich daran hält.
 
-1. **Datenarten erfassen:** Jeder Mappentyp ist eine Datenart – Mieter, Mietvertrag, Rechnung, Kunde, Bewerbung … Trage sie in die [Vorlage Löschkonzept](loeschkonzept.md) ein, mit Zweck und Grund für die Aufbewahrung.
+1. **Datenarten erfassen:** Jeder Mappentyp ist eine Datenart – Mieter, Mietvertrag, Rechnung, Kunde, Bewerbung … Markiere unter **Werkbank → Datenschutz → Einstellungen**, welche eine Person betreffen, und trage je Mappentyp den Zweck ein. Daraus [erzeugt das DMS das Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) mit ausgefüllter Tabelle „Datenarten und Fristen“ – oder du füllst die [Vorlage](loeschkonzept.md#die-vorlage) von Hand aus.
 2. **Fristen festlegen** – mit deiner Steuerberatung: z. B. Buchungsbelege 8 Jahre, Geschäftsbriefe 6 Jahre, Bewerbungen ohne Zusage 6 Monate.
 3. **Archivmodus einschalten** für jeden Mappentyp mit gesetzlicher Frist: Frist in Jahren und Stichtag (z. B. Rechnungsdatum). Bis Fristende ist die Mappe gegen Löschen gesperrt; danach steht sie unter **Darf weg**. Siehe [Archivmodus](archiv.md#einschalten).
 4. **Kürzere Fristen ohne Archivmodus** (z. B. Interessenten, Bewerbungen): Lege eine [Ansicht](sichten.md) an, die die fälligen Mappen nach einem Datumsfeld zeigt, und schau sie regelmäßig durch.
 5. **Wie lange Gelöschtes nachwirkt:** Aufbewahrung des [Papierkorbs](papierkorb.md#aufbewahrung) (Standard 30 Tage), Historie gelöschter Mappen (Standard 365 Tage) und Aufbewahrung der [Sicherungen](sicherung.md#zeitplan-und-aufbewahrung) passend zu deinem Konzept einstellen.
 6. **Regelmäßig prüfen:** z. B. jedes Jahr im Januar **Werkbank → Darf weg** durchgehen und löschen, was weg darf – einen Kunden oder Vertragspartner samt allem, was dranhängt, mit [Mit verknüpften Mappen löschen](#mit-verknupften-mappen-loschen). Gelöscht wird nie automatisch.
 7. **Sperren auf Verlangen** wie unter [Löschen auf Verlangen](#loschen-auf-verlangen) beschrieben.
-8. **Dokumentieren:** Das ausgefüllte Löschkonzept legst du selbst als Mappe im DMS ab und hältst es aktuell.
+8. **Dokumentieren:** Erzeuge das Löschkonzept unter **Werkbank → Datenschutz → Löschkonzept** (PDF oder Word), ergänze die [eckigen Klammern] und lege es als Mappe im DMS ab. Ändern sich Mappentypen oder Fristen, erzeugst du es neu.
 
 ## Auskunft erteilen: Werkbank → Datenschutz
 
@@ -117,10 +117,25 @@ Einmal einrichten, unten auf der Seite unter **Einstellungen**:
 
 - **Verantwortlicher:** Name und Anschrift – steht als Absender auf dem Deckblatt.
 - **Empfänger:** an wen du Daten weitergibst (z. B. Steuerberatung, Hausmeisterdienst). Das ist der Vorschlag für jede Auskunft; du kannst ihn je Auskunft ändern.
-- **Rechte der Person:** der Text auf dem Deckblatt (Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerspruch, Beschwerde). Ein Vorschlag steht schon drin. Wie überall im DMS spricht auch das Deckblatt die Person mit „du“ an – du kannst den Text hier anpassen.
+- **Rechte der Person:** der Text auf dem Deckblatt (Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerspruch, Beschwerde). Ein Vorschlag steht schon drin – in der eingestellten [Anrede](#anrede). Du kannst den Text hier anpassen; einen eigenen Text ändert das DMS beim Wechsel der Anrede nicht.
+- **Anrede in Unterlagen für Dritte:** siehe [unten](#anrede).
 - **Mappentypen:** Hake an, welche Mappentypen **eine Person betreffen** – z. B. Mieter, Kunde, Vertragspartner, Kontakt. Nur Mappen dieser Typen lassen sich als Betroffene wählen. Je Mappentyp trägst du den **Zweck** ein (z. B. „Durchführung des Mietverhältnisses“); er steht auf dem Deckblatt bei jeder Art von Daten, die herausgeht.
 
 Die **Speicherdauer** auf dem Deckblatt kommt aus dem [Archivmodus](archiv.md): Hat ein Mappentyp eine Aufbewahrungsfrist, steht sie dort mit dem spätesten „aufbewahren bis“; sonst „solange für den Zweck nötig“.
+
+### Anrede in Unterlagen für Dritte: du oder Sie { #anrede }
+
+Das DMS spricht dich mit „du“ an – und standardmäßig auch die Personen, an die eine Auskunft geht. Schreibst du deinen Mietern oder Kunden sonst mit „Sie“, stellst du unter **Einstellungen → Anrede in Unterlagen für Dritte** auf **Sie** um. Ein Beispielsatz zeigt beide Formen nebeneinander; wirksam wird die Wahl mit **Speichern**. Sie gilt für die ganze Installation und für alles, was an Personen **außerhalb** des DMS geht:
+
+| Was | Wo |
+| --- | --- |
+| Deckblatt, Übersicht und LIESMICH der Auskunft | in der ZIP-Datei, beim nächsten Erzeugen |
+| Vorlage für die E-Mail mit der ZIP-Datei und die E-Mail mit dem Abruf-Link | [Auskunft zustellen](#auskunft-zustellen) |
+| Abrufseite mit ihren Meldungen (falscher Code, Link abgelaufen …) | `/abruf` |
+
+**Die Oberfläche bleibt in jedem Fall beim „du“** – auch für dich als Administrator. Ändert sich die Anrede, gilt sie für alle danach erzeugten Auskünfte und verschickten E-Mails; schon erzeugte ZIP-Dateien und verschickte E-Mails bleiben, wie sie sind. Die Abrufseite zeigt immer die aktuelle Einstellung.
+
+E-Mails mit Mappen und Dokumenten (*Per E-Mail versenden*) schreibst du selbst – das DMS gibt dort nur den Betreff „Mappentyp: Titel“ vor, ohne Anrede.
 
 ## Auskunft nach Art. 15 DSGVO
 
@@ -143,7 +158,7 @@ Früher schlug die Prüfliste auch Mappen vor, in denen Name, E-Mail-Adresse, Ku
 | Datei/Ordner | Inhalt |
 | --- | --- |
 | `Deckblatt.pdf` | „Auskunft nach Art. 15 DSGVO“ mit Absender: welche Daten (Arten und Felder), Zwecke, Herkunft (Kanäle der Post: E-Mail, Scan …), Empfänger, Speicherdauer, Rechte der Person |
-| `Uebersicht.html` | alle Mappen mit ihren Angaben und Links zu den Dokumenten, dazu „Hier bist du genannt“ mit den Bezug-Mappen (nur Art, Titel und Feld) – im Browser zu öffnen |
+| `Uebersicht.html` | alle Mappen mit ihren Angaben und Links zu den Dokumenten, dazu „Hier bist du genannt“ (bzw. „Hier sind Sie genannt“) mit den Bezug-Mappen (nur Art, Titel und Feld) – im Browser zu öffnen |
 | `Uebersicht.csv` | dasselbe als Tabelle |
 | `ablage/<Art>/<Titel>/` | je Mappe die Dokumente im Original (bzw. geschwärzt), dazu `mappe.pdf` und `mappe.json` |
 | `daten/`, `struktur/`, `manifest.json` | maschinenlesbar im Format des [Vollexports](export.md) (CSV, JSON Lines, Excel) – deckt auch die Datenübertragbarkeit (Art. 20) ab |
@@ -177,7 +192,7 @@ Vorgeschlagen ist der Abruf-Link, wenn die [Adresse des DMS](installation.md#e-m
 
 ### Weg 1: per E-Mail
 
-Nur für Auskünfte **mit Passwort** – unverschlüsselt geht keine Auskunft per E-Mail hinaus. Gib die Adresse ein; Betreff und Text sind vorbereitet (in Du-Form) und lassen sich ändern. **Das Passwort steht nie in der E-Mail** – das DMS kennt es nach dem Erzeugen gar nicht mehr. Teile es auf einem anderen Weg mit. Antworten gehen an deine Adresse. In der Historie der Person steht „Auskunft per E-Mail gesendet an …“.
+Nur für Auskünfte **mit Passwort** – unverschlüsselt geht keine Auskunft per E-Mail hinaus. Gib die Adresse ein; Betreff und Text sind vorbereitet (in der eingestellten [Anrede](#anrede)) und lassen sich ändern. **Das Passwort steht nie in der E-Mail** – das DMS kennt es nach dem Erzeugen gar nicht mehr. Teile es auf einem anderen Weg mit. Antworten gehen an deine Adresse. In der Historie der Person steht „Auskunft per E-Mail gesendet an …“.
 
 ### Weg 2: Abruf-Link mit Abrufcode
 
@@ -186,7 +201,7 @@ Nur für Auskünfte **mit Passwort** – unverschlüsselt geht keine Auskunft pe
 3. **Abrufcode:** Am besten **vom DMS erzeugen** (8 Zeichen ohne Verwechsler wie 0/O und 1/I). Alternativ ein **eigener Code**, den nur die Person kennt – z. B. die Vertragsnummer (mindestens 6 Zeichen). Eine **Kundennummer allein ist schwach**: Sie steht oft auf Briefen und Rechnungen.
 4. **Abruf-Link erstellen:** Link und Code stehen **nur jetzt** auf dem Bildschirm. Teile den Code auf einem anderen Weg mit – per Brief, Telefon oder SMS, **nie in derselben E-Mail wie den Link**. Geht er verloren, erstelle einen neuen Link; der alte gilt dann nicht mehr.
 
-Die Person öffnet den Link und sieht nur: „Du hast eine Auskunft nach Art. 15 DSGVO über die hier gespeicherten Daten angefordert. Zur Sicherheit gib bitte deinen Abrufcode ein.“ – kein Menü, kein Logo, kein Name des Haushalts, keine Anmeldung. Mit dem richtigen Code startet der Download.
+Die Person öffnet den Link und sieht nur: „Du hast eine Auskunft nach Art. 15 DSGVO über die hier gespeicherten Daten angefordert. Zur Sicherheit gib bitte deinen Abrufcode ein.“ (mit der [Anrede](#anrede) „Sie“: „Sie haben … Zur Sicherheit geben Sie bitte Ihren Abrufcode ein.“) – kein Menü, kein Logo, kein Name des Haushalts, keine Anmeldung. Mit dem richtigen Code startet der Download.
 
 ![Öffentliche Abrufseite einer Auskunft](bilder/abrufseite.png)
 
@@ -206,11 +221,11 @@ Die Abrufseite ist der **einzige** Weg, ohne Anmeldung an Daten im DMS zu kommen
 - **Sperre:** Nach **10 falschen Codes** ist der Link gesperrt – dann hilft auch der richtige nicht mehr; du erfährst es über die Aufgabe *Auskunft*. Zusätzlich zählt der [Anmeldeschutz](anmeldeschutz.md) Fehlversuche je IP-Adresse (Vorgabe: 5 je Minute, 30 je Stunde über alle Links und Anmeldungen).
 - **Download über ein Einmal-Ticket:** Nach dem richtigen Code gibt es ein Ticket für genau einen Download, zwei Minuten gültig. Gezählt wird beim Start des Downloads; ein abgebrochener Download steht als *abgebrochen* in der Historie.
 - **Protokoll ohne Geheimnisse:** Im [Protokoll](fehlersuche.md#protokoll) (Modul „datenschutz“) stehen Abrufe und Fehlversuche mit **gekürzter IP** (z. B. `203.0.113.0`), nie Schlüssel oder Code.
-- Die Anfrage mit dem Code braucht die Kennung der eigenen Oberfläche (Schutz vor fremden Seiten, CSRF); die Seite lädt sonst nichts aus dem DMS (keinen Kontostatus, kein Design).
+- Die Anfrage mit dem Code braucht die Kennung der eigenen Oberfläche (Schutz vor fremden Seiten, CSRF); die Seite lädt sonst nur die eingestellte [Anrede](#anrede) aus dem DMS (keinen Kontostatus, kein Design).
 
 ### Erreichbarkeit aus dem Internet
 
-Der Abruf-Link funktioniert nur, wenn die Person dein DMS von außen erreicht. Viele Installationen zu Hause sind das nicht – dann nimm den Weg per E-Mail. Soll das DMS erreichbar sein, geht das über einen [Reverse-Proxy](installation.md#hinter-einem-reverse-proxy) mit HTTPS (z. B. auf dem NAS mit Portfreigabe), einen Tunnel (z. B. Cloudflare Tunnel, Tailscale Funnel) oder [bei einem Anbieter](https://motom001.github.io/dms/installieren/aktuell/anbieter/). Trage unter [E-Mail und Adresse](installation.md#e-mail-und-adresse) die Adresse ein, unter der es von außen erreichbar ist – sie steht im Link. Wer nur die Abrufseite nach außen geben will, gibt am Proxy `/abruf`, `/api/abruf`, `/api/abruf/datei` und die Dateien der Oberfläche (`/assets/`) frei.
+Der Abruf-Link funktioniert nur, wenn die Person dein DMS von außen erreicht. Viele Installationen zu Hause sind das nicht – dann nimm den Weg per E-Mail. Soll das DMS erreichbar sein, geht das über einen [Reverse-Proxy](installation.md#hinter-einem-reverse-proxy) mit HTTPS (z. B. auf dem NAS mit Portfreigabe), einen Tunnel (z. B. Cloudflare Tunnel, Tailscale Funnel) oder [bei einem Anbieter](https://motom001.github.io/dms/installieren/aktuell/anbieter/). Trage unter [E-Mail und Adresse](installation.md#e-mail-und-adresse) die Adresse ein, unter der es von außen erreichbar ist – sie steht im Link. Wer nur die Abrufseite nach außen geben will, gibt am Proxy `/abruf`, `/api/abruf`, `/api/abruf/anrede`, `/api/abruf/datei` und die Dateien der Oberfläche (`/assets/`) frei.
 
 ## Löschen mit verknüpften Mappen { #mit-verknupften-mappen-loschen }
 
@@ -230,6 +245,52 @@ Dabei gilt:
 !!! tip "Löschkonzept dokumentieren"
     Halte in deiner [Verfahrensdokumentation](verfahrensdokumentation.md) fest, welche Fristen je Mappentyp gelten, wer wann prüft, was weg darf (z. B. einmal im Jahr über *Darf weg*), und dass dabei „Mit verknüpften Mappen löschen“ verwendet wird.
 
+## Löschprotokoll { #loschprotokoll }
+
+**Werkbank → Datenschutz → Löschprotokoll** weist nach, **dass** und **wann** du gelöscht hast (Rechenschaftspflicht, Art. 5 Abs. 2 DSGVO) – ohne dass das Protokoll selbst wieder die gelöschten Daten enthält. Die Historie einer Mappe reicht dafür nicht: Sie geht mit der Mappe, und das technische [Protokoll](fehlersuche.md#protokoll) läuft nach 24 Stunden ab.
+
+### Was drinsteht
+
+Jeder Schritt ist ein eigener Eintrag: **in den Papierkorb**, **endgültig gelöscht**, **wiederhergestellt** – verbunden über die Id der Mappe bzw. des Dokuments.
+
+| Je Mappe | Je Dokument (auch ältere Versionen) |
+| --- | --- |
+| Mappentyp, Mappen-Id, **Nummer** aus dem [Nummernkreis](nummernkreise.md) (falls vorhanden) | **Prüfsumme (SHA-256)**, Größe, Dateityp, Seitenzahl, Archivnummer |
+| Anzahl Dokumente, ältere Versionen, Notizen, entfernte Verweise | zu welcher Mappe (Id, Nummer, Mappentyp) |
+
+Dazu bei jedem Eintrag: **wann**, **von wem** (Benutzer; *Schnittstelle* bei einem API-Schlüssel, *Paket* beim Dienstkonto eines Pakets, *DMS* bei automatischem Löschen), **wie** (einzeln, mehrere, mit verknüpften Mappen, aus dem Papierkorb, Papierkorb geleert, Aufbewahrung abgelaufen …), **warum** und der **Vorgang** beim [Löschen mit verknüpften Mappen](#mit-verknupften-mappen-loschen) – alle Mappen eines Vorgangs mit gemeinsamer Id und der Start-Mappe.
+
+**Nie drin:** Titel, Feldwerte, Dateinamen, Notizen – die sind personenbezogen und sollen ja weg.
+
+**Warum:** Beim Löschen fragt das DMS nach dem Grund – *Frist abgelaufen („Darf weg“)*, *Auf Verlangen der betroffenen Person*, *Nicht mehr nötig* oder *Sonstiges* – und optional nach einer kurzen Anmerkung. Schreib dort **keine Namen** hinein: Das Löschprotokoll bleibt, wenn die Daten weg sind. Beim endgültigen Löschen aus dem Papierkorb übernimmt das DMS den Grund vom Schritt „in den Papierkorb“. Über die Schnittstelle gibst du ihn mit `grund` und `grundText` an.
+
+### Wann ist „gelöscht“ wirklich gelöscht?
+
+- **In den Papierkorb:** Die Mappe ist aus Ablage, Suche und Schnittstelle verschwunden, liegt aber vollständig im Papierkorb – mit Feldwerten, Dokumenten, Volltext und Notizen – und lässt sich wiederherstellen.
+- **Endgültig gelöscht:** nach der [Aufbewahrung des Papierkorbs](papierkorb.md#aufbewahrung), mit *Endgültig löschen* oder *Papierkorb leeren*, sofort bei ausgeschaltetem Papierkorb. Dann sind Mappe, Dokumente, Volltext und Notizen aus der Datenbank entfernt, und die **Datei** ist vom Speicher gelöscht – es sei denn, ein anderes Dokument hat genau dieselbe Datei (gleiche Prüfsumme); sie ist ja nur einmal gespeichert.
+- **Was danach noch bleibt:** die Historie gelöschter Mappen für ihre eingestellte Zeit, ältere Sicherungen bis zu ihrer Aufbewahrung, Exporte und Kopien außerhalb des DMS (siehe [Löschen auf Verlangen](#loschen-auf-verlangen)). Das Löschprotokoll hält den Zeitpunkt des endgültigen Löschens fest; diese Fristen ergänzt du im [Löschkonzept](loeschkonzept.md).
+
+Erfasst werden alle Wege: einzeln, mehrere ausgewählt, mit verknüpften Mappen, „Darf weg“, einzelne Dokumente (auch beim Ersetzen, Bearbeiten und Zusammenfügen von PDFs), ältere Versionen über die eingestellte Anzahl hinaus, der Papierkorb (von Hand, geleert, beim Abmelden geleert, Aufbewahrung abgelaufen, ausgeschaltet), Schnittstelle und Pakete. Nicht erfasst werden [Demo-Mappen](demo.md) – sie enthalten keine echten Daten.
+
+### Ansehen und ausgeben
+
+![Werkbank → Datenschutz → Löschprotokoll mit Filtern, Suche per Datei und Einträgen](bilder/werkbank-loeschprotokoll.png)
+
+- **Filter:** Zeitraum, Mappentyp, Grund, Schritt; ein Klick auf einen Vorgang zeigt alle Mappen und Dokumente dieses Vorgangs.
+- **Suche nach Nummer** (Nummernkreis oder Archivnummer) oder **Prüfsumme**.
+- **„Wurde dieses Dokument gelöscht?“** Zieh die Datei auf das Feld: Dein Browser rechnet die Prüfsumme, das DMS sucht sie. Die Datei selbst wird nicht hochgeladen.
+- **Als PDF** (Nachweis, mit Filter und Stand im Kopf) oder **als CSV** – jeweils mit dem gewählten Filter.
+
+!!! info "Prüfsumme und Datenschutz"
+    Die Prüfsumme (SHA-256) ist ein Fingerabdruck der Datei: Aus ihr lässt sich der Inhalt nicht zurückgewinnen. Wer die Datei aber noch hat, kann zeigen, dass genau sie im DMS war und wann sie gelöscht wurde – genau das ist der Zweck. Die Prüfsumme ist damit ein **pseudonymes** Datum; behandle das Löschprotokoll wie andere Nachweise vertraulich.
+
+### Nicht änderbar, eigene Aufbewahrung
+
+- Einträge lassen sich **weder ändern noch löschen** – auch nicht von Administratoren oder über die Schnittstelle; die Datenbank selbst verhindert es.
+- Eigene **Aufbewahrung**: Standard **10 Jahre**, einstellbar von 1 bis 30 Jahren unter dem Löschprotokoll. Ältere Einträge fallen beim stündlichen Aufräumen automatisch weg.
+- Das Löschprotokoll ist in jeder [Sicherung](sicherung.md) und im [Vollexport](export.md) (`daten/loeschprotokoll.csv`) enthalten.
+- Abschnitt 8 „Nachweis“ des [Löschkonzepts](loeschkonzept.md#aus-dem-dms-erzeugen) verweist darauf.
+
 ## Schnittstelle
 
-Alles geht auch über die [API](api.md): `POST /api/v1/werkbank/auskunft/vorschau` (Prüfliste), `POST /api/v1/werkbank/auskunft` (erzeugen, Hintergrundauftrag), `GET /api/v1/werkbank/auskunft/{id}/zip`, `POST /api/v1/werkbank/auskunft/frist` und `GET`/`PUT /api/v1/werkbank/datenschutz`; zum Zustellen `POST /api/v1/werkbank/auskunft/{id}/email`, `POST /api/v1/werkbank/auskunft/{id}/link` und `POST /api/v1/werkbank/auskunft/link/{id}/widerrufen`. Die Abrufseite selbst (`POST /api/abruf`, `GET /api/abruf/datei`) gehört nicht zur API. Die Sammlung über Verweise selbst steht jedem Benutzer mit seinen Rechten unter `GET /api/v1/mappen/{id}/baum` zur Verfügung. Für das Löschkonzept: `GET /api/v1/mappen/{id}/loeschvorschau` (Vorschau mit Vorschlag), `POST /api/v1/mappen/{id}/mit-verknuepften-loeschen` (ausführen, mit denselben Prüfungen) und `POST /api/v1/papierkorb/vorgang/{id}/wiederherstellen`.
+Alles geht auch über die [API](api.md): `POST /api/v1/werkbank/auskunft/vorschau` (Prüfliste), `POST /api/v1/werkbank/auskunft` (erzeugen, Hintergrundauftrag), `GET /api/v1/werkbank/auskunft/{id}/zip`, `POST /api/v1/werkbank/auskunft/frist`, `GET`/`PUT /api/v1/werkbank/datenschutz` und `GET /api/v1/werkbank/datenschutz/loeschkonzept?format=pdf|docx` (Löschkonzept), `GET /api/v1/werkbank/loeschprotokoll` mit denselben Filtern wie in der Werkbank, `GET /api/v1/werkbank/loeschprotokoll/datei?format=pdf|csv` und `PUT /api/v1/werkbank/loeschprotokoll/einstellungen` (Aufbewahrung); zum Zustellen `POST /api/v1/werkbank/auskunft/{id}/email`, `POST /api/v1/werkbank/auskunft/{id}/link` und `POST /api/v1/werkbank/auskunft/link/{id}/widerrufen`. Die Abrufseite selbst (`POST /api/abruf`, `GET /api/abruf/datei`) gehört nicht zur API. Die Sammlung über Verweise selbst steht jedem Benutzer mit seinen Rechten unter `GET /api/v1/mappen/{id}/baum` zur Verfügung. Für das Löschkonzept: `GET /api/v1/mappen/{id}/loeschvorschau` (Vorschau mit Vorschlag), `POST /api/v1/mappen/{id}/mit-verknuepften-loeschen` (ausführen, mit denselben Prüfungen) und `POST /api/v1/papierkorb/vorgang/{id}/wiederherstellen`.
