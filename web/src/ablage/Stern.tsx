@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { useDaten } from '../daten';
+import { Symbol } from '../Symbol';
 
 /**
  * Favorit (#62): Stern zum Merken einer Mappe. Persönlich – ändert weder „zuletzt geändert“
@@ -22,7 +23,8 @@ export function Stern({ mappeId, an, titel, klein }: { mappeId: string; an: bool
   return (
     <button type="button" className={`stern ${jetzt ? 'an' : ''} ${klein ? 'klein' : ''}`} aria-pressed={jetzt}
       aria-label={titel ? `${titel}: ${text}` : text} title={text} onClick={(e) => void umschalten(e)}>
-      <span aria-hidden="true">{jetzt ? '★' : '☆'}</span>
+      {/* #507: Symbol statt Textzeichen; gesetzt = gefüllt. */}
+      <Symbol name="stern" className={jetzt ? 'sym-voll' : undefined} />
     </button>
   );
 }

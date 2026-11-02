@@ -8,7 +8,7 @@ Eine Mappe sammelt alles zu einer Sache: die Angaben, die Dokumente und die Verb
 
 Oben steht der **Titel** der Mappe. Ihn musst du nicht selbst schreiben: Das DMS setzt ihn aus den Angaben zusammen, zum Beispiel aus Rechnungsnummer und Datum – „R-2026-117 vom 02.03.2026“. Ändert sich eine Angabe, ändert sich der Titel mit.
 
-Darunter stehen die **Indexwerte**, die jede Mappe hat: wann und von wem sie angelegt und zuletzt geändert wurde. Als Änderung zählen auch hochgeladene und entfernte Dokumente, nicht aber Notizen oder Aufgaben. Ein Klick auf einen Namen öffnet die Mappe dieses Benutzers. Mit dem **Stern ☆** rechts neben dem Titel merkst du dir die Mappe als [Favorit](ablage.md#favoriten).
+Darunter stehen die **Indexwerte**, die jede Mappe hat: wann und von wem sie angelegt und zuletzt geändert wurde. Als Änderung zählen auch hochgeladene und entfernte Dokumente, nicht aber Notizen oder Aufgaben. Ein Klick auf einen Namen öffnet die Mappe dieses Benutzers. Mit dem **Stern** rechts neben dem Titel merkst du dir die Mappe als [Favorit](ablage.md#favoriten).
 
 Darunter folgen die **Register** – die Trennblätter der Mappe. Es gibt vier Arten:
 

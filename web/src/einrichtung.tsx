@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { Symbol } from './Symbol';
 import { BUNDESLAENDER } from '../../shared/src/feiertage';
 import { handbuchUrl, HILFE, hilfeOnlineUrl, INSTALLIEREN_URL, type Hilfeort } from '../../shared/src/hilfe';
 import { PASSWORT_MINDESTLAENGE } from '../../shared/src/model';
@@ -34,7 +35,7 @@ function Fortschritt({ aktiv }: { aktiv: number }) {
     <ol className="assistent-schritte" aria-label={`Schritt ${aktiv + 1} von ${SCHRITTE.length}: ${SCHRITTE[aktiv]}`}>
       {SCHRITTE.map((s, i) => (
         <li key={s} className={i < aktiv ? 'erledigt' : i === aktiv ? 'aktiv' : ''} aria-current={i === aktiv ? 'step' : undefined}>
-          <span className="nr" aria-hidden="true">{i < aktiv ? '✓' : i + 1}</span><span className="name">{s}</span>
+          <span className="nr" aria-hidden="true">{i < aktiv ? <Symbol name="haken" /> : i + 1}</span><span className="name">{s}</span>
         </li>
       ))}
     </ol>
