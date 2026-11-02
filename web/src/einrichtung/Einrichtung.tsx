@@ -222,7 +222,8 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
   }
   async function entferne(i: number) {
     const f = e.felder[i];
-    const n = gespeichert && d.anzahl(gespeichert.id) ? (await api.belegung(gespeichert.id).catch(() => ({} as Record<string, number>)))[f.key] ?? 0 : 0;
+    // Ohne Zahlen (#512, kommen noch) lieber nachsehen.
+    const n = gespeichert && (!d.zahlenDa || d.anzahl(gespeichert.id)) ? (await api.belegung(gespeichert.id).catch(() => ({} as Record<string, number>)))[f.key] ?? 0 : 0;
     const text = n
       ? `${n} ${n === 1 ? 'Mappe hat' : 'Mappen haben'} in „${f.label}“ einen Wert. Die Werte bleiben gespeichert, werden aber nicht mehr angezeigt.${ERST_BEIM_SPEICHERN}`
       : ERST_BEIM_SPEICHERN.trim();
@@ -292,7 +293,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
       <div className="seitenkopf"><div>
         <p className="ueber">Mappentyp</p>
         <h1>{e.name || (neu ? 'Neuer Mappentyp' : 'Ohne Namen')}{system && <span className="chip">System</span>}</h1>
-        {gespeichert && <p className="leise"><Link to={`/ablage/${gespeichert.id}`} className="verweis">{d.anzahl(gespeichert.id).toLocaleString('de-DE')} {d.anzahl(gespeichert.id) === 1 ? 'Mappe' : 'Mappen'} in der Ablage →</Link></p>}
+        {gespeichert && d.zahlenDa && <p className="leise"><Link to={`/ablage/${gespeichert.id}`} className="verweis">{d.anzahl(gespeichert.id).toLocaleString('de-DE')} {d.anzahl(gespeichert.id) === 1 ? 'Mappe' : 'Mappen'} in der Ablage →</Link></p>}
         {vorlage && neu && <p className="leise">Kopie von „{vorlage.name}“ – noch nicht gespeichert. Mappen werden nicht kopiert.</p>}
       </div>
       {gespeichert && !system && <div className="knoepfe"><Link to={`/werkbank/typen/neu?kopie=${gespeichert.id}`} className="knopf klein" title="Neuen Mappentyp mit Feldern, Titel, Trefferlisten, Registern und Berechtigungen dieses Mappentyps anlegen">Mappentyp kopieren</Link></div>}
@@ -606,7 +607,7 @@ function TitelEditor({ e, setze, klappe }: { e: Entwurf; setze: (v: string) => v
   const [bezuege, setBezuege] = useState<Bezuege>({});
   const [beispielId, setBeispielId] = useState<string>('');
   useEffect(() => {
-    if (!d.anzahl(e.id)) return;
+    if (d.zahlenDa && !d.anzahl(e.id)) return;
     api.seite(`typ:${e.id}`, 0, 50).then((s) => { setMappen(s.mappen); setBezuege(s.bezuege); setBeispielId((b) => b || s.mappen[0]?.id || ''); }).catch(() => {});
   }, [e.id, d.stand]); // eslint-disable-line react-hooks/exhaustive-deps
   const felder = e.felder as unknown as Feld[];

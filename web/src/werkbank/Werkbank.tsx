@@ -301,7 +301,7 @@ function TypenListe({ offen, pakete }: { offen?: string; pakete: InstalliertesPa
                   <Link to={`/werkbank/typen/${t.id}`} className={`eintrag werk ${offen === t.id ? 'an' : ''}`}>
                     <span className="titel">{t.name}{t.system && <span className="chip" title="Systemmappentyp: lässt sich erweitern, aber nicht löschen">System</span>}
                       {(() => { const p = pakete.find((x) => Object.values(x.typen).includes(t.id)); return p ? <> <span className="chip" title={`Aus dem Paket „${p.name}“ ${p.version}`}>Paket {p.name}</span></> : null; })()}</span>
-                    <span className="unter">{t.felder.length} Felder · {t.register.length} Register · {anzahl.toLocaleString('de-DE')} {anzahl === 1 ? 'Mappe' : 'Mappen'}</span>
+                    <span className="unter">{t.felder.length} Felder · {t.register.length} Register{d.zahlenDa && <> · {anzahl.toLocaleString('de-DE')} {anzahl === 1 ? 'Mappe' : 'Mappen'}</>}</span>
                     {unpassend > 0 && <span className="problem">{unpassend} passen nicht zur Definition</span>}
                   </Link>
                 </li>

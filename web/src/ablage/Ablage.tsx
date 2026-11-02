@@ -27,6 +27,7 @@ import type { Hilfeort } from '../../../shared/src/hilfe';
 import { Suchchips, Suchformular, suchFehler, suchTypen } from './Suche';
 import { mitGrund } from './Loeschgrund';
 import { rueckfrage } from '../rueckfrage';
+import { ZahlWarte } from './ZahlWarte';
 
 /**
  * Ablage in drei Spalten, von groß nach klein:
@@ -89,15 +90,17 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
 
   // Feste Einträge links (#507): Erweiterte Suche · Start · Zu erledigen · Neue Post · Anstehend · Favoriten · Papierkorb.
   const neuePost = d.zaehler.neuePost ? d.sicht(d.zaehler.neuePost) : undefined;
-  const feste: Array<{ pfad: string; name: string; symbol: SymbolName; titel?: string; zahl?: number; hervor?: boolean; an: boolean }> = [
+  // Zahlen kommen nach (#512): bis dahin ein Platzhalter (warte) bei den Einträgen, die aus dem Zähler kommen.
+  const warte = !d.zahlenDa;
+  const feste: Array<{ pfad: string; name: string; symbol: SymbolName; titel?: string; zahl?: number; warte?: boolean; hervor?: boolean; an: boolean }> = [
     { pfad: '/ablage/suche', name: 'Erweiterte Suche', symbol: 'suche', titel: 'Mappentypen wählen, in Feldern und im Volltext suchen', an: false },
     ...(mitStart ? [{ pfad: '/ablage/start', name: 'Start', symbol: 'haus' as const, an: sicht === 'start' }] : []),
-    { pfad: '/ablage/eingang', name: 'Zu erledigen', symbol: 'erledigen', zahl: d.zaehler.eingang, hervor: true, an: sicht === 'eingang' },
-    ...(neuePost ? [{ pfad: `/ablage/${neuePost.id}`, name: neuePost.name, symbol: 'posteingang' as const, titel: neuePost.beschreibung || undefined, zahl: d.zaehler.sichten?.[neuePost.id], hervor: true, an: sicht === neuePost.id }] : []),
+    { pfad: '/ablage/eingang', name: 'Zu erledigen', symbol: 'erledigen', zahl: d.zaehler.eingang, warte, hervor: true, an: sicht === 'eingang' },
+    ...(neuePost ? [{ pfad: `/ablage/${neuePost.id}`, name: neuePost.name, symbol: 'posteingang' as const, titel: neuePost.beschreibung || undefined, zahl: d.zaehler.sichten?.[neuePost.id], warte, hervor: true, an: sicht === neuePost.id }] : []),
     { pfad: '/ablage/anstehend', name: 'Anstehend', symbol: 'kalender', titel: 'Fristen und Erinnerungen der nächsten Tage', zahl: anstehend.liste?.eintraege.length, an: sicht === 'anstehend' },
-    { pfad: '/ablage/favoriten', name: 'Favoriten', symbol: 'stern', zahl: d.zaehler.favoriten, an: sicht === 'favoriten' },
+    { pfad: '/ablage/favoriten', name: 'Favoriten', symbol: 'stern', zahl: d.zaehler.favoriten, warte, an: sicht === 'favoriten' },
     // Papierkorb (#43): sichtbar, solange er an ist oder noch etwas darin liegt.
-    ...(!!d.zaehler.papierkorbTage || !!d.zaehler.papierkorb ? [{ pfad: '/ablage/papierkorb', name: 'Papierkorb', symbol: 'geloescht' as const, zahl: d.zaehler.papierkorb, an: sicht === 'papierkorb' }] : []),
+    ...(!!d.zaehler.papierkorbTage || !!d.zaehler.papierkorb ? [{ pfad: '/ablage/papierkorb', name: 'Papierkorb', symbol: 'geloescht' as const, zahl: d.zaehler.papierkorb, warte, an: sicht === 'papierkorb' }] : []),
   ];
 
   return (
@@ -111,13 +114,13 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
       <aside className="spalte sichten" aria-label="Ansichten">
         {/* Handy (#498): ein Knopf „<Ansicht> ▾“ mit Suche und Gruppen statt der Reiterleiste. */}
         <AnsichtWahl aktiv={sicht} aktuell={sicht === 'start' ? 'Start' : sicht === 'eingang' ? 'Zu erledigen' : sicht === 'anstehend' ? 'Anstehend' : sicht === 'favoriten' ? 'Favoriten' : sicht === 'papierkorb' ? 'Papierkorb' : verwaltet?.name ?? typ?.name ?? 'Ansicht wählen'}
-          feste={feste.map((f) => ({ pfad: f.pfad, name: <><Symbol name={f.symbol} /> {f.name}</>, text: f.name, zahl: f.zahl, hervor: f.hervor, an: f.an }))} ohne={neuePost ? [neuePost.id] : []} />
+          feste={feste.map((f) => ({ pfad: f.pfad, name: <><Symbol name={f.symbol} /> {f.name}</>, text: f.name, zahl: f.zahl, warte: f.warte, hervor: f.hervor, an: f.an }))} ohne={neuePost ? [neuePost.id] : []} />
         <h2 className="ueber aw-breit">Ansichten</h2>
         <nav className="sichtliste">
           {/* Feste Einträge (#507): immer mit Symbol, in fester Reihenfolge; darunter nur die eingerichteten Ansichten. */}
           {feste.map((f) => (
             <Link key={f.pfad} to={f.pfad} className={`sicht ${f.an ? 'an' : ''}`} title={f.titel}>
-              <span className="nm"><Symbol name={f.symbol} className="fest-sym" /> {f.name}</span>{!!f.zahl && <span className={f.hervor ? 'zaehler' : 'zahl'}>{zahl(f.zahl)}</span>}
+              <span className="nm"><Symbol name={f.symbol} className="fest-sym" /> {f.name}</span>{f.warte ? <ZahlWarte /> : !!f.zahl && <span className={f.hervor ? 'zaehler' : 'zahl'}>{zahl(f.zahl)}</span>}
             </Link>
           ))}
           {d.sichten.length > 0 && <hr />}
@@ -371,7 +374,8 @@ function Liste(p: {
     return () => o.disconnect();
   }, [s.mehr, s.mappen.length, tabelle]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const gesamtSicht = p.sicht === 'eingang' ? d.zaehler.eingang : p.sicht === 'favoriten' ? d.zaehler.favoriten ?? 0 : d.zaehler.sichten?.[p.sicht] ?? (p.typ ? d.anzahl(p.typ.id) : 0);
+  // Solange die Zahlen der Ansichten nachkommen (#512), zählt die Liste selbst.
+  const gesamtSicht = !d.zahlenDa ? s.gesamt ?? 0 : p.sicht === 'eingang' ? d.zaehler.eingang : p.sicht === 'favoriten' ? d.zaehler.favoriten ?? 0 : d.zaehler.sichten?.[p.sicht] ?? (p.typ ? d.anzahl(p.typ.id) : 0);
   // Suche immer, sobald es Mappen gibt (#160) – der Volltext lohnt auch bei wenigen.
   const zeigeSuche = gesamtSicht > 0 || !!eingabe || (!!p.immerSuche && !!s.gesamt);
   const anzahlText = s.gesamt === null ? '' : suche || p.sicht === 'suche'
@@ -730,7 +734,7 @@ function SichtBaum({ aktiv, ohne }: { aktiv?: string; ohne?: string }) {
                   onClick={() => umschalten(s.id)}><span aria-hidden="true">{offen ? '▾' : '▸'}</span><span className="sr">{s.name} {offen ? 'zuklappen' : 'aufklappen'}</span></button>
               : null}
             <Link to={`/ablage/${s.id}`} className={`sicht ${aktiv === s.id ? 'an' : ''}`} title={s.beschreibung || undefined}>
-              <span className="nm">{s.name}</span>{n !== undefined && <span className={s.id === d.zaehler.neuePost && n > 0 ? 'zaehler' : 'zahl'}>{zahl(n)}</span>}
+              <span className="nm">{s.name}</span>{!d.zahlenDa ? <ZahlWarte /> : n !== undefined && <span className={s.id === d.zaehler.neuePost && n > 0 ? 'zaehler' : 'zahl'}>{zahl(n)}</span>}
             </Link>
           </div>
         );
