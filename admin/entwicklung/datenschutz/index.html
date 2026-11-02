@@ -927,6 +927,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#anrede" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anrede in Unterlagen für Dritte: du oder Sie
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2338,6 +2349,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#anrede" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anrede in Unterlagen für Dritte: du oder Sie
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2685,10 +2707,37 @@
 <ul>
 <li><strong>Verantwortlicher:</strong> Name und Anschrift – steht als Absender auf dem Deckblatt.</li>
 <li><strong>Empfänger:</strong> an wen du Daten weitergibst (z. B. Steuerberatung, Hausmeisterdienst). Das ist der Vorschlag für jede Auskunft; du kannst ihn je Auskunft ändern.</li>
-<li><strong>Rechte der Person:</strong> der Text auf dem Deckblatt (Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerspruch, Beschwerde). Ein Vorschlag steht schon drin. Wie überall im DMS spricht auch das Deckblatt die Person mit „du“ an – du kannst den Text hier anpassen.</li>
+<li><strong>Rechte der Person:</strong> der Text auf dem Deckblatt (Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerspruch, Beschwerde). Ein Vorschlag steht schon drin – in der eingestellten <a href="#anrede">Anrede</a>. Du kannst den Text hier anpassen; einen eigenen Text ändert das DMS beim Wechsel der Anrede nicht.</li>
+<li><strong>Anrede in Unterlagen für Dritte:</strong> siehe <a href="#anrede">unten</a>.</li>
 <li><strong>Mappentypen:</strong> Hake an, welche Mappentypen <strong>eine Person betreffen</strong> – z. B. Mieter, Kunde, Vertragspartner, Kontakt. Nur Mappen dieser Typen lassen sich als Betroffene wählen. Je Mappentyp trägst du den <strong>Zweck</strong> ein (z. B. „Durchführung des Mietverhältnisses“); er steht auf dem Deckblatt bei jeder Art von Daten, die herausgeht.</li>
 </ul>
 <p>Die <strong>Speicherdauer</strong> auf dem Deckblatt kommt aus dem <a href="../archiv/">Archivmodus</a>: Hat ein Mappentyp eine Aufbewahrungsfrist, steht sie dort mit dem spätesten „aufbewahren bis“; sonst „solange für den Zweck nötig“.</p>
+<h3 id="anrede">Anrede in Unterlagen für Dritte: du oder Sie<a class="headerlink" href="#anrede" title="Permanent link">&para;</a></h3>
+<p>Das DMS spricht dich mit „du“ an – und standardmäßig auch die Personen, an die eine Auskunft geht. Schreibst du deinen Mietern oder Kunden sonst mit „Sie“, stellst du unter <strong>Einstellungen → Anrede in Unterlagen für Dritte</strong> auf <strong>Sie</strong> um. Ein Beispielsatz zeigt beide Formen nebeneinander; wirksam wird die Wahl mit <strong>Speichern</strong>. Sie gilt für die ganze Installation und für alles, was an Personen <strong>außerhalb</strong> des DMS geht:</p>
+<table>
+<thead>
+<tr>
+<th>Was</th>
+<th>Wo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Deckblatt, Übersicht und LIESMICH der Auskunft</td>
+<td>in der ZIP-Datei, beim nächsten Erzeugen</td>
+</tr>
+<tr>
+<td>Vorlage für die E-Mail mit der ZIP-Datei und die E-Mail mit dem Abruf-Link</td>
+<td><a href="#auskunft-zustellen">Auskunft zustellen</a></td>
+</tr>
+<tr>
+<td>Abrufseite mit ihren Meldungen (falscher Code, Link abgelaufen …)</td>
+<td><code>/abruf</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Die Oberfläche bleibt in jedem Fall beim „du“</strong> – auch für dich als Administrator. Ändert sich die Anrede, gilt sie für alle danach erzeugten Auskünfte und verschickten E-Mails; schon erzeugte ZIP-Dateien und verschickte E-Mails bleiben, wie sie sind. Die Abrufseite zeigt immer die aktuelle Einstellung.</p>
+<p>E-Mails mit Mappen und Dokumenten (<em>Per E-Mail versenden</em>) schreibst du selbst – das DMS gibt dort nur den Betreff „Mappentyp: Titel“ vor, ohne Anrede.</p>
 <h2 id="auskunft-nach-art-15-dsgvo">Auskunft nach Art. 15 DSGVO<a class="headerlink" href="#auskunft-nach-art-15-dsgvo" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>Person wählen:</strong> Art (einer der markierten Mappentypen) und Name suchen – oder direkt an der Mappe unter <strong>Mappe ▾ → Auskunft erstellen …</strong> (nur für Administratoren und nur bei Mappentypen, die eine Person betreffen).</li>
@@ -2722,7 +2771,7 @@
 </tr>
 <tr>
 <td><code>Uebersicht.html</code></td>
-<td>alle Mappen mit ihren Angaben und Links zu den Dokumenten, dazu „Hier bist du genannt“ mit den Bezug-Mappen (nur Art, Titel und Feld) – im Browser zu öffnen</td>
+<td>alle Mappen mit ihren Angaben und Links zu den Dokumenten, dazu „Hier bist du genannt“ (bzw. „Hier sind Sie genannt“) mit den Bezug-Mappen (nur Art, Titel und Feld) – im Browser zu öffnen</td>
 </tr>
 <tr>
 <td><code>Uebersicht.csv</code></td>
@@ -2783,7 +2832,7 @@
 </table>
 <p>Vorgeschlagen ist der Abruf-Link, wenn die <a href="../installation/#e-mail-und-adresse">Adresse des DMS</a> nach Internet aussieht – sonst (z. B. <code>http://192.168.…</code>, <code>localhost</code>, <code>nas.local</code>) die E-Mail.</p>
 <h3 id="weg-1-per-e-mail">Weg 1: per E-Mail<a class="headerlink" href="#weg-1-per-e-mail" title="Permanent link">&para;</a></h3>
-<p>Nur für Auskünfte <strong>mit Passwort</strong> – unverschlüsselt geht keine Auskunft per E-Mail hinaus. Gib die Adresse ein; Betreff und Text sind vorbereitet (in Du-Form) und lassen sich ändern. <strong>Das Passwort steht nie in der E-Mail</strong> – das DMS kennt es nach dem Erzeugen gar nicht mehr. Teile es auf einem anderen Weg mit. Antworten gehen an deine Adresse. In der Historie der Person steht „Auskunft per E-Mail gesendet an …“.</p>
+<p>Nur für Auskünfte <strong>mit Passwort</strong> – unverschlüsselt geht keine Auskunft per E-Mail hinaus. Gib die Adresse ein; Betreff und Text sind vorbereitet (in der eingestellten <a href="#anrede">Anrede</a>) und lassen sich ändern. <strong>Das Passwort steht nie in der E-Mail</strong> – das DMS kennt es nach dem Erzeugen gar nicht mehr. Teile es auf einem anderen Weg mit. Antworten gehen an deine Adresse. In der Historie der Person steht „Auskunft per E-Mail gesendet an …“.</p>
 <h3 id="weg-2-abruf-link-mit-abrufcode">Weg 2: Abruf-Link mit Abrufcode<a class="headerlink" href="#weg-2-abruf-link-mit-abrufcode" title="Permanent link">&para;</a></h3>
 <ol>
 <li><strong>Adresse der Person</strong> (optional): Mit <strong>Link per E-Mail an diese Adresse schicken</strong> verschickt das DMS den Link – ohne Code. Ohne E-Mail-Versand kopierst du den Link und schickst ihn selbst.</li>
@@ -2791,7 +2840,7 @@
 <li><strong>Abrufcode:</strong> Am besten <strong>vom DMS erzeugen</strong> (8 Zeichen ohne Verwechsler wie 0/O und 1/I). Alternativ ein <strong>eigener Code</strong>, den nur die Person kennt – z. B. die Vertragsnummer (mindestens 6 Zeichen). Eine <strong>Kundennummer allein ist schwach</strong>: Sie steht oft auf Briefen und Rechnungen.</li>
 <li><strong>Abruf-Link erstellen:</strong> Link und Code stehen <strong>nur jetzt</strong> auf dem Bildschirm. Teile den Code auf einem anderen Weg mit – per Brief, Telefon oder SMS, <strong>nie in derselben E-Mail wie den Link</strong>. Geht er verloren, erstelle einen neuen Link; der alte gilt dann nicht mehr.</li>
 </ol>
-<p>Die Person öffnet den Link und sieht nur: „Du hast eine Auskunft nach Art. 15 DSGVO über die hier gespeicherten Daten angefordert. Zur Sicherheit gib bitte deinen Abrufcode ein.“ – kein Menü, kein Logo, kein Name des Haushalts, keine Anmeldung. Mit dem richtigen Code startet der Download.</p>
+<p>Die Person öffnet den Link und sieht nur: „Du hast eine Auskunft nach Art. 15 DSGVO über die hier gespeicherten Daten angefordert. Zur Sicherheit gib bitte deinen Abrufcode ein.“ (mit der <a href="#anrede">Anrede</a> „Sie“: „Sie haben … Zur Sicherheit geben Sie bitte Ihren Abrufcode ein.“) – kein Menü, kein Logo, kein Name des Haushalts, keine Anmeldung. Mit dem richtigen Code startet der Download.</p>
 <p><img alt="Öffentliche Abrufseite einer Auskunft" src="../bilder/abrufseite.png" /></p>
 <p>Unter <strong>Abruf-Links</strong> stehen alle Links mit Stand (<em>aktiv</em>, <em>abgelaufen</em>, <em>alle Abrufe verbraucht</em>, <em>gesperrt nach Fehlversuchen</em>, <em>zurückgezogen</em>), Abrufen, „zuletzt abgerufen am …“ und falschen Codes – auch, wenn die ZIP-Datei längst gelöscht ist. <strong>Zurückziehen</strong> macht einen Link sofort ungültig; für die ZIP-Datei gilt dann wieder das Ende 7 Tage nach dem Erstellen.</p>
 <p><img alt="Zustellen an einer bereitliegenden Auskunft" src="../bilder/werkbank-datenschutz-zustellen.png" /></p>
@@ -2805,10 +2854,10 @@
 <li><strong>Sperre:</strong> Nach <strong>10 falschen Codes</strong> ist der Link gesperrt – dann hilft auch der richtige nicht mehr; du erfährst es über die Aufgabe <em>Auskunft</em>. Zusätzlich zählt der <a href="../anmeldeschutz/">Anmeldeschutz</a> Fehlversuche je IP-Adresse (Vorgabe: 5 je Minute, 30 je Stunde über alle Links und Anmeldungen).</li>
 <li><strong>Download über ein Einmal-Ticket:</strong> Nach dem richtigen Code gibt es ein Ticket für genau einen Download, zwei Minuten gültig. Gezählt wird beim Start des Downloads; ein abgebrochener Download steht als <em>abgebrochen</em> in der Historie.</li>
 <li><strong>Protokoll ohne Geheimnisse:</strong> Im <a href="../fehlersuche/#protokoll">Protokoll</a> (Modul „datenschutz“) stehen Abrufe und Fehlversuche mit <strong>gekürzter IP</strong> (z. B. <code>203.0.113.0</code>), nie Schlüssel oder Code.</li>
-<li>Die Anfrage mit dem Code braucht die Kennung der eigenen Oberfläche (Schutz vor fremden Seiten, CSRF); die Seite lädt sonst nichts aus dem DMS (keinen Kontostatus, kein Design).</li>
+<li>Die Anfrage mit dem Code braucht die Kennung der eigenen Oberfläche (Schutz vor fremden Seiten, CSRF); die Seite lädt sonst nur die eingestellte <a href="#anrede">Anrede</a> aus dem DMS (keinen Kontostatus, kein Design).</li>
 </ul>
 <h3 id="erreichbarkeit-aus-dem-internet">Erreichbarkeit aus dem Internet<a class="headerlink" href="#erreichbarkeit-aus-dem-internet" title="Permanent link">&para;</a></h3>
-<p>Der Abruf-Link funktioniert nur, wenn die Person dein DMS von außen erreicht. Viele Installationen zu Hause sind das nicht – dann nimm den Weg per E-Mail. Soll das DMS erreichbar sein, geht das über einen <a href="../installation/#hinter-einem-reverse-proxy">Reverse-Proxy</a> mit HTTPS (z. B. auf dem NAS mit Portfreigabe), einen Tunnel (z. B. Cloudflare Tunnel, Tailscale Funnel) oder <a href="https://motom001.github.io/dms/installieren/aktuell/anbieter/">bei einem Anbieter</a>. Trage unter <a href="../installation/#e-mail-und-adresse">E-Mail und Adresse</a> die Adresse ein, unter der es von außen erreichbar ist – sie steht im Link. Wer nur die Abrufseite nach außen geben will, gibt am Proxy <code>/abruf</code>, <code>/api/abruf</code>, <code>/api/abruf/datei</code> und die Dateien der Oberfläche (<code>/assets/</code>) frei.</p>
+<p>Der Abruf-Link funktioniert nur, wenn die Person dein DMS von außen erreicht. Viele Installationen zu Hause sind das nicht – dann nimm den Weg per E-Mail. Soll das DMS erreichbar sein, geht das über einen <a href="../installation/#hinter-einem-reverse-proxy">Reverse-Proxy</a> mit HTTPS (z. B. auf dem NAS mit Portfreigabe), einen Tunnel (z. B. Cloudflare Tunnel, Tailscale Funnel) oder <a href="https://motom001.github.io/dms/installieren/aktuell/anbieter/">bei einem Anbieter</a>. Trage unter <a href="../installation/#e-mail-und-adresse">E-Mail und Adresse</a> die Adresse ein, unter der es von außen erreichbar ist – sie steht im Link. Wer nur die Abrufseite nach außen geben will, gibt am Proxy <code>/abruf</code>, <code>/api/abruf</code>, <code>/api/abruf/anrede</code>, <code>/api/abruf/datei</code> und die Dateien der Oberfläche (<code>/assets/</code>) frei.</p>
 <h2 id="mit-verknupften-mappen-loschen">Löschen mit verknüpften Mappen<a class="headerlink" href="#mit-verknupften-mappen-loschen" title="Permanent link">&para;</a></h2>
 <p>Der dritte Baustein eines <a href="#sperr-und-loschkonzept-aufsetzen">Sperr- und Löschkonzepts</a> neben Archivmodus und <strong>Darf weg</strong>: An einer Mappe, z. B. einem Kunden oder Vertragspartner ohne Aktivität seit Jahren, löscht <strong>Mappe ▾ → Mit verknüpften Mappen löschen …</strong> die Mappe mit Verträgen, Rechnungen, Post und Dokumenten – nach einer Vorschau als Baum (<a href="https://motom001.github.io/dms/benutzer/aktuell/mappen/#mit-verknupften-mappen-loschen">Benutzerhandbuch</a>).</p>
 <p>Dabei gilt:</p>

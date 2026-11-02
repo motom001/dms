@@ -8724,7 +8724,16 @@
             "type": "string"
           },
           "rechte": {
-            "type": "string"
+            "type": "string",
+            "description": "Text auf dem Deckblatt; leer oder unverändert = Vorschlag in der eingestellten Anrede"
+          },
+          "anrede": {
+            "type": "string",
+            "enum": [
+              "du",
+              "sie"
+            ],
+            "description": "Anrede in Unterlagen für Dritte (#474): Deckblatt, Übersicht, LIESMICH, Abrufseite, E-Mails an die Person. Vorgabe du; die Oberfläche bleibt bei du."
           },
           "typen": {
             "type": "object",
