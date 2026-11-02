@@ -56,6 +56,7 @@ import type { PaketEntwurf } from '../../shared/src/paketerstellung';
 import { abfrageAus, liesSuche } from '../../shared/src/erweitertesuche';
 import type { Lesefilter } from '../../shared/src/rechte';
 import { liesAusDokument, liesFeldErkennung, type AusDokument } from '../../shared/src/erkennung';
+import { gleicheFormateAn, hatVorgaben, HEUTE, pruefeFormate, unpassendeAngaben, type Feldformat } from '../../shared/src/feldformate';
 import { Erkennung, sichereZuordnung, type PostErkennung } from './erkennung';
 import { favoritenErlaubt, freigabeZumSpeichern, liesFavoritenFreigabe, type FavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
 import { t } from './sprache';
@@ -128,8 +129,9 @@ export function bereinigeFeld(e: unknown): Feld {
     minLen: zahlOderNull(f.minLen),
     maxLen: zahlOderNull(f.maxLen),
     muster: text(f.muster),
-    min: zahlOderNull(f.min),
-    max: zahlOderNull(f.max),
+    // Datum (#535): „heute“ oder ein Datum; ungültige Angaben bleiben stehen, damit die Prüfung sie meldet.
+    min: typ === 'datum' ? datumsgrenze(f.min) : zahlOderNull(f.min),
+    max: typ === 'datum' ? datumsgrenze(f.max) : zahlOderNull(f.max),
     nachkomma: zahlOderNull(f.nachkomma),
     waehrung: typ === 'betrag' ? (text(f.waehrung) || 'EUR').toUpperCase().slice(0, 3) : undefined,
     optionen: Array.isArray(f.optionen) ? f.optionen.map(text).filter(Boolean) : [],
@@ -144,7 +146,16 @@ export function bereinigeFeld(e: unknown): Feld {
     ...(liesFeldErkennung(f.erkennung, typ) ? { erkennung: liesFeldErkennung(f.erkennung, typ) } : {}),
     // Paket-Update (#534): Verweisfeld, das sich aus einem alten Textfeld füllen lässt.
     ...(typ === 'referenz' && /^[a-z][a-z0-9_]{0,39}$/.test(text(f.ausText)) && text(f.ausText) !== text(f.key) ? { ausText: text(f.ausText) } : {}),
+    // Feldformat (#535): nur an Textfeldern; das Land-Feld nur beim Format PLZ.
+    ...(typ === 'text' && text(f.format) ? { format: text(f.format) as Feldformat } : {}),
+    ...(typ === 'text' && text(f.format) === 'plz' && text(f.landFeld) ? { landFeld: text(f.landFeld) } : {}),
   };
+}
+
+/** Datumsgrenze (#535) aus einer Eingabe: leer = keine, sonst getrimmt („Heute“ → „heute“). */
+function datumsgrenze(v: unknown): string | null {
+  const x = v == null ? '' : String(v).trim();
+  return !x ? null : x.toLowerCase() === HEUTE ? HEUTE : x;
 }
 
 export function bereinigeRegister(e: unknown, felder: Feld[]): Register[] {
@@ -395,7 +406,8 @@ function bereinigeWerte(typ: Mappentyp, eingabe: unknown, bisher: Werte = {}, ve
     const v = f.key in roh ? roh[f.key] : bisher[f.key];
     werte[f.key] = istLeer(v) ? (f.typ === 'janein' ? false : null) : (v as Werte[string]);
   }
-  return werte;
+  // Feldformate (#535): geänderte Eingaben angleichen (https:// ergänzen, IBAN in Vierergruppen).
+  return gleicheFormateAn(typ, werte, bisher);
 }
 
 const keinSchluessel = (): never => {
@@ -2734,7 +2746,7 @@ export class Dienst {
     return ids.length;
   }
 
-  private async pruefeWerte(typ: Mappentyp, werte: Werte, eigeneId?: string) {
+  private async pruefeWerte(typ: Mappentyp, werte: Werte, eigeneId?: string, alt?: Werte) {
     const ids = [...new Set(verweiseVon(typ, werte).map((v) => v.zielId))].filter(istUuid);
     const typen = await this.repo.typenVon(ids);
     const doppelt = new Map<string, string>();
@@ -2744,7 +2756,33 @@ export class Dienst {
       if (d) doppelt.set(f.key, await this.titel(d));
     }
     const p = pruefeMappe(typ, werte, { typVon: (id) => typen.get(id), doppelt: (k) => doppelt.get(k) });
-    if (!istOk(p)) throw new Fachfehler(422, 'Bitte die markierten Felder prüfen.', p);
+    // Formate und Datumsgrenzen (#535): beim Bearbeiten nur, was sich ändert – der Bestand bleibt gültig.
+    for (const [k, m] of Object.entries(pruefeFormate(typ, werte, alt))) p.felder[k] ??= m;
+    if (!istOk(p)) {
+      const namen = Object.keys(p.felder).map((k) => typ.felder.find((f) => f.key === k)?.label ?? k);
+      throw new Fachfehler(422, namen.length ? `Bitte die markierten Felder prüfen: ${namen.join(', ')}.` : 'Bitte die markierten Felder prüfen.', p);
+    }
+  }
+
+  /**
+   * Angaben, die nicht zum Format bzw. zu den Datumsgrenzen passen (#535) – je Mappentyp und Feld, für die
+   * Werkbank (Wartungsoperationen). Gespeichert bleiben sie gültig; beim nächsten Ändern des Felds müssen sie passen.
+   */
+  async unpassendeFormate(): Promise<Array<{ typId: string; typ: string; felder: Array<{ key: string; label: string; anzahl: number; mappen: Array<{ id: string; titel: string; wert: string; grund: string }> }> }>> {
+    const heute = heuteIn();
+    const aus = [];
+    for (const typ of await this.repo.listeTypen()) {
+      if (!typ.felder.some(hatVorgaben)) continue;
+      const funde = unpassendeAngaben(typ, await this.repo.listeMappen(typ.id), heute);
+      if (!funde.length) continue;
+      const titel = new Map((await this.repo.holeMappen([...new Set(funde.map((f) => f.mappeId))])).map((m) => [m.id, m.titel || 'Ohne Titel'] as const));
+      const felder = typ.felder.flatMap((f) => {
+        const je = funde.filter((x) => x.feldKey === f.key);
+        return je.length ? [{ key: f.key, label: f.label, anzahl: je.length, mappen: je.slice(0, 200).map((x) => ({ id: x.mappeId, titel: titel.get(x.mappeId) ?? 'Ohne Titel', wert: x.wert.slice(0, 120), grund: x.grund })) }] : [];
+      });
+      aus.push({ typId: typ.id, typ: typ.name, felder });
+    }
+    return aus;
   }
 
   async legeMappeAn(eingabe: unknown, benutzerId: string | null = null, demo = false, z?: Zugriff): Promise<Mappe & { hinweis?: string }> {
@@ -2896,7 +2934,7 @@ export class Dienst {
     }
     await this.pruefeVerweisziele(z, typ, werte, m.werte);
     await this.pruefeAuswahlfilter(typ, werte, m.werte, benutzerId);
-    await this.pruefeWerte(typ, werte, id);
+    await this.pruefeWerte(typ, werte, id, m.werte);
     const aenderungen = await this.aenderungen(typ, m.werte, werte);
     // Archivmodus (#212): eine neue Frist steht in der Historie.
     const bisAlt = aufbewahrenBis(typ.archiv, m), bisNeu = aufbewahrenBis(typ.archiv, { ...m, werte });

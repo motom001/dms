@@ -13,6 +13,7 @@
  */
 
 import type { Betrag, Feld, Feldtyp, Mappentyp, Wert } from './model';
+import { formatFehler, type Feldformat } from './feldformate';
 
 /* ---------- Feld-Eigenschaft ---------- */
 
@@ -78,13 +79,18 @@ export function liesFeldErkennung(v: unknown, typ: Feldtyp): FeldErkennung | nul
 const klein = (s: string) => s.toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
 
 /** Art eines Felds: die eingestellte, sonst geschätzt aus Feldart, Kennung und Bezeichnung; null = keine. */
-export function artVon(f: Pick<Feld, 'key' | 'label' | 'typ'> & { erkennung?: FeldErkennung | null }): Erkennungsart | null {
+/** Art, die ein Feldformat vorgibt (#535). */
+const FORMAT_ART: Partial<Record<Feldformat, Erkennungsart>> = { email: 'email', telefon: 'telefon', internetseite: 'internet', iban: 'iban', plz: 'plz' };
+
+export function artVon(f: Pick<Feld, 'key' | 'label' | 'typ'> & { erkennung?: FeldErkennung | null; format?: Feld['format'] }): Erkennungsart | null {
   if (f.erkennung?.art && artenFuer(f.typ).includes(f.erkennung.art)) return f.erkennung.art;
   if (f.typ === 'datum') return 'datum';
   if (f.typ === 'betrag') return 'betrag';
   if (f.typ === 'referenz') return 'verweis';
   if (f.typ === 'auswahl') return 'auswahl';
   if (f.typ !== 'text' && f.typ !== 'langtext' && f.typ !== 'zahl') return null;
+  // Feldformat (#535): sagt sicher, was im Feld steht.
+  if (f.typ === 'text' && f.format && FORMAT_ART[f.format]) return FORMAT_ART[f.format]!;
   const s = ` ${klein(`${f.key} ${f.label}`).replace(/[^a-z0-9]+/g, ' ')} `;
   const hat = (re: RegExp) => re.test(s);
   if (hat(/ e ?mail /)) return 'email';
@@ -172,10 +178,22 @@ const STRASSE = /^(.{2,50}?(?:stra(?:ß|ss)e|str\.|weg|allee|platz|gasse|ring|da
 const STRASSE_LOCKER = /^([A-Za-zÄÖÜäöüß][\wÄÖÜäöüß.\- ]{2,50}?)\s+(\d{1,4}\s?[a-zA-Z]?(?:\s?[-–/]\s?\d{1,4}\s?[a-zA-Z]?)?)$/;
 const PLZ_ORT = /^(?:D-)?(\d{5})\s+([A-ZÄÖÜ][\wäöüßÄÖÜ.\-]*(?:[ /][A-ZÄÖÜa-zäöüß(][\wäöüßÄÖÜ.\-()]*){0,3})$/;
 
-/** IBAN prüfen (Prüfziffer nach ISO 13616). */
+/** Länge einer IBAN je Land (SWIFT IBAN Registry); auch für das Feldformat IBAN (#535). */
+export const IBAN_LAENGEN: Readonly<Record<string, number>> = {
+  AD: 24, AE: 23, AL: 28, AT: 20, AZ: 28, BA: 20, BE: 16, BG: 22, BH: 22, BI: 27, BR: 29, BY: 28, CH: 21, CR: 22, CY: 28, CZ: 24,
+  DE: 22, DJ: 27, DK: 18, DO: 28, EE: 20, EG: 29, ES: 24, FI: 18, FK: 18, FO: 18, FR: 27, GB: 22, GE: 22, GI: 23, GL: 18, GR: 27,
+  GT: 28, HR: 21, HU: 28, IE: 22, IL: 23, IQ: 23, IS: 26, IT: 27, JO: 30, KW: 30, KZ: 20, LB: 28, LC: 32, LI: 21, LT: 20, LU: 20,
+  LV: 21, LY: 25, MC: 27, MD: 24, ME: 22, MK: 19, MN: 20, MR: 27, MT: 31, MU: 30, NI: 28, NL: 18, NO: 15, OM: 23, PK: 24, PL: 28,
+  PS: 29, PT: 25, QA: 29, RO: 24, RS: 22, RU: 33, SA: 24, SC: 31, SD: 18, SE: 24, SI: 19, SK: 24, SM: 27, SO: 23, ST: 25, SV: 28,
+  TL: 23, TN: 24, TR: 26, UA: 29, VA: 22, VG: 24, XK: 20, YE: 30,
+};
+
+/** IBAN prüfen (Länge je Land und Prüfziffer nach ISO 13616). */
 export function istIban(s: string): boolean {
   const i = s.replace(/\s/g, '').toUpperCase();
   if (!/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(i)) return false;
+  const laenge = IBAN_LAENGEN[i.slice(0, 2)];
+  if (laenge && i.length !== laenge) return false;
   const umgestellt = (i.slice(4) + i.slice(0, 4)).replace(/[A-Z]/g, (c) => String(c.charCodeAt(0) - 55));
   let rest = 0;
   for (const z of umgestellt) rest = (rest * 10 + Number(z)) % 97;
@@ -504,7 +522,9 @@ export function vorschlaegeAus(t: Pick<Mappentyp, 'felder'>, text: string, a: An
   const felder = fuellfelder(t);
   const hatArt = (x: Erkennungsart) => felder.some((f) => f.art === x);
   const personTyp = hatArt('vorname') || hatArt('nachname');
-  const setze = (f: Feld, wert: Wert, fund: { sicherheit: Sicherheit; fundstelle: string }) => { if (wert !== '' && wert != null && !v[f.key]) v[f.key] = { wert, sicherheit: fund.sicherheit, fundstelle: fund.fundstelle }; };
+  // Nur Werte, die zum Format bzw. zu den Grenzen des Felds passen (#535) – so landet z. B. keine Faxnummer mit Buchstaben im Feld.
+  const passt = (f: Feld, wert: Wert) => !formatFehler(f, wert, { felder: t.felder, werte: {} });
+  const setze = (f: Feld, wert: Wert, fund: { sicherheit: Sicherheit; fundstelle: string }) => { if (wert !== '' && wert != null && !v[f.key] && passt(f, wert)) v[f.key] = { wert, sicherheit: fund.sicherheit, fundstelle: fund.fundstelle }; };
   const benutzt = new Set<string>();
   const erste = (l: Fund[]) => l.find((x) => !benutzt.has(x.wert)) ?? null;
   for (const { feld: f, art } of felder) {
@@ -556,7 +576,7 @@ function wertSchema(f: Feld): Record<string, unknown> {
   switch (f.typ) {
     case 'datum': return { type: 'string', format: 'date' };
     case 'betrag': return { type: 'object', properties: { betrag: { type: 'number' }, waehrung: { type: 'string', pattern: '^[A-Z]{3}$' } }, required: ['betrag'] };
-    case 'zahl': return { type: 'number', ...(f.min != null ? { minimum: f.min } : {}), ...(f.max != null ? { maximum: f.max } : {}) };
+    case 'zahl': return { type: 'number', ...(typeof f.min === 'number' ? { minimum: f.min } : {}), ...(typeof f.max === 'number' ? { maximum: f.max } : {}) };
     case 'janein': return { type: 'boolean' };
     case 'auswahl': return f.mehrfach ? { type: 'array', items: { enum: f.optionen ?? [] } } : { enum: f.optionen ?? [] };
     case 'referenz': return f.mehrfach ? { type: 'array', items: { type: 'string', format: 'uuid' } } : { type: 'string', format: 'uuid' };
@@ -585,6 +605,7 @@ export function schemaFuer(t: Pick<Mappentyp, 'name' | 'felder'>, nur?: (f: Feld
       ...(art ? { 'x-dms-erkennung': art } : {}),
       ...(f.erkennung ? { 'x-dms-markiert': true } : {}),
       ...(f.typ === 'betrag' ? { 'x-dms-waehrung': f.waehrung || 'EUR' } : {}),
+      ...(f.typ === 'text' && f.format ? { 'x-dms-format': f.format } : {}),
     };
   }
   return { $schema: 'https://json-schema.org/draft/2020-12/schema', title: t.name, type: 'object', properties, additionalProperties: false };
@@ -617,10 +638,10 @@ export function pruefeVorschlaege(t: Pick<Mappentyp, 'felder'>, antwort: unknown
       case 'betrag': {
         const b = w as Record<string, unknown> | null;
         gut = b && typeof b === 'object' && typeof b.betrag === 'number' && Number.isFinite(b.betrag) ? { betrag: Math.round(b.betrag * 100) / 100, waehrung: typeof b.waehrung === 'string' && /^[A-Z]{3}$/.test(b.waehrung) ? b.waehrung : (f.waehrung || 'EUR') } : undefined;
-        if (gut && ((f.min != null && (gut as Betrag).betrag < f.min) || (f.max != null && (gut as Betrag).betrag > f.max))) gut = undefined;
+        if (gut && ((typeof f.min === 'number' && (gut as Betrag).betrag < f.min) || (typeof f.max === 'number' && (gut as Betrag).betrag > f.max))) gut = undefined;
         break;
       }
-      case 'zahl': gut = typeof w === 'number' && Number.isFinite(w) && (f.min == null || w >= f.min) && (f.max == null || w <= f.max) ? w : undefined; break;
+      case 'zahl': gut = typeof w === 'number' && Number.isFinite(w) && (typeof f.min !== 'number' || w >= f.min) && (typeof f.max !== 'number' || w <= f.max) ? w : undefined; break;
       case 'janein': gut = typeof w === 'boolean' ? w : undefined; break;
       case 'auswahl': {
         const liste = Array.isArray(w) ? w : [w];
@@ -640,7 +661,7 @@ export function pruefeVorschlaege(t: Pick<Mappentyp, 'felder'>, antwort: unknown
         gut = ok ? txt! : undefined;
       }
     }
-    if (gut === undefined) { weg(`Der Wert passt nicht zur Feldart „${f.typ}“ bzw. zu den Vorgaben des Felds.`); continue; }
+    if (gut === undefined || formatFehler(f, gut, { felder: t.felder, werte: {} })) { weg(`Der Wert passt nicht zur Feldart „${f.typ}“ bzw. zu den Vorgaben des Felds.`); continue; }
     vorschlaege[key] = { wert: gut, sicherheit: s, fundstelle };
   }
   return { vorschlaege, verworfen };

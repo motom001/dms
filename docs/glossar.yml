@@ -81,6 +81,14 @@ begriffe:
     begegnet: admin
     nicht_verwenden: [Feldtyp, Datentyp, Art (allein)]
     code: Feldtyp, FELDTYPEN, Feld.typ
+  - begriff: Format
+    bereich: grundbegriffe
+    beschreibung: Was in einem Textfeld stehen darf – E-Mail, Telefon, Internetseite, IBAN oder PLZ. Neue und geänderte Angaben müssen passen, am Handy erscheint die passende Tastatur, E-Mail und Telefon lassen sich antippen. Gespeicherte Angaben bleiben gültig. Datumsfelder haben stattdessen Grenzen (frühestens, spätestens, auch „heute“).
+    einsteiger: alltag
+    begegnet: admin
+    nicht_verwenden: [Validierung, Datentyp]
+    verwandt: [Feld, Feldart]
+    code: Feld.format, Feld.landFeld, FELDFORMATE, shared/src/feldformate.ts
   - begriff: Kennung
     bereich: grundbegriffe
     beschreibung: Der feste, technische Name eines Felds, Registers, Mappentyps oder Nummernkreises, z. B. vertragsnummer. Nach dem Speichern bleibt er gleich, damit gespeicherte Werte, Links und Pakete passen.

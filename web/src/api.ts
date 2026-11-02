@@ -559,6 +559,8 @@ export const api = {
   nummernVorschau: (typId: string, feldKey: string) => anfrage<{ anzahl: number; von: string | null; bis: string | null }>('GET', `/api/werkbank/wartung/nummern?typ=${encodeURIComponent(typId)}&feld=${encodeURIComponent(feldKey)}`),
   absenderVorschau: () => anfrage<{ posten: Array<{ id: string; titel: string; absender: string; kanal: string; erstellt: string }> }>('GET', '/api/werkbank/wartung/absender'),
   absenderBereinigen: (ids: string[]) => anfrage<{ bereinigt: number }>('POST', '/api/werkbank/wartung/absender', { ids }),
+  /** Angaben, die nicht zum Format passen (#535). */
+  formateUnpassend: () => anfrage<{ typen: Array<{ typId: string; typ: string; felder: Array<{ key: string; label: string; anzahl: number; mappen: Array<{ id: string; titel: string; wert: string; grund: string }> }> }> }>('GET', '/api/werkbank/wartung/formate'),
   nummernNachtragen: (typId: string, feldKey: string) => anfrage<Auftrag>('POST', '/api/werkbank/wartung/nummern', { typId, feldKey }),
   protokoll: (f: Record<string, string | number | undefined>) =>
     anfrage<ProtokollAntwort>('GET', `/api/werkbank/protokoll?${new URLSearchParams(Object.entries(f).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]))}`),
@@ -720,7 +722,7 @@ export interface PaketVorschau {
   paket: { id: string; name: string; version: string; beschreibung: string; lizenz: string; autor: { name: string; github: string }; dms: string; abhaengigkeiten: Record<string, string>; readme: string | null; changelog: string | null; quelle: string | null };
   dmsVersion: string; dmsOk: boolean; installiert: string | null; update: boolean; herkunft: InstalliertesPaket['herkunft'] | null;
   abhaengigkeiten: Array<{ id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null }>;
-  typen: Array<{ schluessel: string; dmsSchluessel: string; name: string; felder: number; vorhanden: boolean; neueFelder: string[]; neueRegister: string[]; erkennung?: string[]; umwandeln?: Array<{ feld: string; aus: string; anzahl: number }>; konflikt: string | null; vorschlag: string | null; geloescht?: boolean }>;
+  typen: Array<{ schluessel: string; dmsSchluessel: string; name: string; felder: number; vorhanden: boolean; neueFelder: string[]; neueRegister: string[]; erkennung?: string[]; formate?: string[]; umwandeln?: Array<{ feld: string; aus: string; anzahl: number }>; konflikt: string | null; vorschlag: string | null; geloescht?: boolean }>;
   sichten: Array<{ schluessel: string; name: string; eltern: string | null; vorhanden: boolean; konflikt: string | null; vorschlag: string | null }>;
   beispiele: number; probleme: string[]; hinweise: string[]; einstellungen: { neu: string[]; weg: string[] } | null;
   /** Paket mit Code (#338): Rechte, Netzwerkzugriff und Ereignisse (#449); bestaetigen = muss ausdrücklich erlaubt werden. */

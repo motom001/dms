@@ -249,6 +249,27 @@ function faelle(pg: boolean) {
       assert.ok(vg.every((x) => x.rueckgaengig));
     });
 
+    it('Zusammen mit Formaten (#535): dasselbe Update bringt Verweis mit aus_text und eine Datumsgrenze', async () => {
+      const d = new Dienst(await repo(pg), speicherDateien(), { einstellungen: speicherEinstellungen() });
+      const mitGrenze = { ...autos11, 'inhalt/mappentypen.yaml': autos11['inhalt/mappentypen.yaml'].replace('    - { key: ab, label: Seit, typ: datum }', '    - { key: ab, label: Seit, typ: datum, max: heute }') };
+      const p = new Paketverwaltung(d, { version: () => '0.121.0', abruf: katalog([personen, autos10, mitGrenze]), katalogUrl: KATALOG });
+      await p.installiere({ id: 'autos', version: '1.0.0', mitAbhaengigkeiten: true }, ICH);
+      const auto = (await d.listeTypen()).find((t) => t.name === 'Auto')!;
+      const m = await d.legeMappeAn({ typId: auto.id, werte: { bez: 'Familienauto', halter: 'Lena Muster', ab: '2099-01-01' } });
+      const v = await p.vorschau({ id: 'autos' });
+      const plan = v.typen.find((t) => t.name === 'Auto')!;
+      assert.deepEqual(plan.formate, ['Seit']);
+      assert.deepEqual(plan.umwandeln?.map((x) => [x.feld, x.aus, x.anzahl]), [['Halter', 'Halter', 1]]);
+      await p.aktualisiere('autos', {}, ICH);
+      const neu = (await d.listeTypen()).find((t) => t.id === auto.id)!;
+      assert.equal(neu.felder.find((f) => f.key === 'ab')!.max, 'heute');
+      assert.equal(neu.felder.find((f) => f.key === 'halter_verweis')!.ausText, 'halter');
+      // Der Bestand bleibt gültig; die Werkbank listet das Datum in der Zukunft.
+      assert.deepEqual((await d.unpassendeFormate())[0].felder.map((f) => f.label), ['Seit']);
+      const nachher = await d.aendereMappe(m.id, { werte: { bez: 'Familienauto' } });
+      assert.equal(nachher.werte.ab, '2099-01-01');
+    });
+
     it('Neue Person ohne Pflichtangabe: nichts wird geändert', async () => {
       const d = new Dienst(await repo(pg), speicherDateien(), { einstellungen: speicherEinstellungen() });
       const p = new Paketverwaltung(d, { version: () => '0.120.0', abruf: katalog([personen, autos10, autos11]), katalogUrl: KATALOG });

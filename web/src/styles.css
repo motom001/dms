@@ -1648,3 +1648,14 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .umw-zeile { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; }
 .umw-zeile > span { min-width: 0; overflow-wrap: anywhere; }
 .umw-wahl { width: 100%; max-width: 22rem; min-width: 0; }
+
+/* Feldformate (#535): Eingabe mit Link daneben, Hinweis im Editor, Liste in der Wartung */
+.ff-eingabe { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ff-eingabe > input { flex: 1; min-width: 0; }
+.ff-link { flex: none; display: inline-grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--linie-stark); border-radius: 6px; color: var(--akzent); background: var(--flaeche); }
+.ff-link:hover, .ff-link:focus-visible { background: var(--akzent-zart); border-color: var(--akzent); outline: none; }
+.ff-link .sym { width: 18px; height: 18px; }
+.ff-hinweis { grid-column: 1 / -1; margin: 0; }
+.ff-typ { display: flex; flex-direction: column; gap: 6px; }
+.ff-feld > summary { cursor: pointer; padding: 8px 10px; font-weight: 600; }
+.ff-wert { overflow-wrap: anywhere; font-family: var(--mono, monospace); }

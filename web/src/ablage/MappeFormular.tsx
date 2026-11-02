@@ -4,6 +4,7 @@ import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
 import { eigeneFelderIm, vorbelegungAus } from '../../../shared/src/sichten';
 import { datumText, inFrist } from '../../../shared/src/archiv';
+import { deutschePlz, eingabemodus, formatFehler, mitSchema, pruefeFormate, telefonLink } from '../../../shared/src/feldformate';
 import { darfErstellen, darfLoeschen, formatiere, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, VERWEISARTEN, verweisAusText, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register, type Wert, type Werte } from '../../../shared/src/model';
 import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
@@ -398,6 +399,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     setMeldung(undefined);
     const werte = werteAusRoh(typ, roh);
     const p = d.pruefe(typ, werte, (id) => bekannt[id]?.typId);
+    // Formate und Datumsgrenzen (#535): neue Mappe ganz, sonst nur, was sich ändert.
+    for (const [k, m] of Object.entries(pruefeFormate(typ, werte, mappe?.werte))) p.felder[k] ??= m;
     if (!istOk(p)) { zeigeFehler(p); setMeldung('Bitte die markierten Felder prüfen.'); return; }
     // Würde man sich mit diesen Werten selbst das Lesen oder Bearbeiten entziehen? Dann erst fragen (#126).
     if (mappe && werteGeaendert && ich.rolle !== 'admin') {
@@ -487,7 +490,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     inhalt = felder.length
       ? <div className="formular">{felder.map((f) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke}
           typId={typ.id} unpassend={details?.unpassend?.[f.key]} eigene={eigeneWerte(f)}
-          gesperrt={geschuetzt[f.key] ?? (nurLesen && f.typ !== 'passwort' ? '' : undefined)} nurLesen={nurLesen} passwortSehen={!rechte || rechte.P} zusatz={hinweisAm(f)} />)}</div>
+          gesperrt={geschuetzt[f.key] ?? (nurLesen && f.typ !== 'passwort' ? '' : undefined)} nurLesen={nurLesen} plzDeutsch={f.format === 'plz' ? deutschePlz(f, typ.felder, roh as Werte) : undefined} passwortSehen={!rechte || rechte.P} zusatz={hinweisAm(f)} />)}</div>
       : <p className="leise">Auf diesem Register liegen keine Felder.</p>;
   } else if (reg.art === 'dokumente') {
     inhalt = mappe && !details ? <p className="leise">Lade …</p> : (
@@ -572,8 +575,10 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
 /** Ein Vorschlag aus „Aus Dokument ausfüllen“ (#391) am Feld. */
 interface FeldVorschlag { wert: Wert; sicherheit: Sicherheit; fundstelle: string; art: 'eingetragen' | 'alternative'; vorher?: Roh }
 
-function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, gesperrt, nurLesen, passwortSehen = true, typId, unpassend, eigene, zusatz }: {
+function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, gesperrt, nurLesen, passwortSehen = true, typId, unpassend, eigene, zusatz, plzDeutsch }: {
   feld: Feld; roh: Roh | undefined; fehler?: string; setze: (v: Roh) => void; eigeneId?: string;
+  /** Format PLZ (#535): gilt die deutsche Regel? Dann am Handy die Zifferntastatur. */
+  plzDeutsch?: boolean;
   /** Unter dem Feld, z. B. ein Vorschlag aus „Aus Dokument ausfüllen“ (#391). */
   zusatz?: ReactNode;
   /** Typ der Mappe und Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */
@@ -599,7 +604,8 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
       f.typ === 'referenz'
         ? <ul>{ids.map((x) => <li key={x}>{bekannt[x]?.typId && !bekannt[x].verborgen ? <Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis">{titelOder(bekannt[x].titel)}</Link> : <span className={bekannt[x]?.verborgen ? 'verborgen-titel' : ''}>{titelOder(bekannt[x]?.titel)}</span>}</li>)}</ul>
         : f.typ === 'janein' ? (roh ? 'Ja' : 'Nein') : f.typ === 'formatiert' ? <Formatiert text={String(roh ?? '')} />
-        : f.typ === 'datum' ? formatiere(f, String(roh ?? '')) : f.typ === 'langtext' ? <span className="mehrzeilig">{String(roh ?? '')}</span> : String(roh ?? '')
+        : f.typ === 'datum' ? formatiere(f, String(roh ?? '')) : f.typ === 'langtext' ? <span className="mehrzeilig">{String(roh ?? '')}</span>
+        : f.typ === 'text' && f.format ? <FormatWert f={f} wert={String(roh ?? '')} /> : String(roh ?? '')
     }</div>;
     return (
       <div className={`feld ${f.typ === 'langtext' || f.typ === 'formatiert' ? 'breit' : ''}`}>
@@ -674,7 +680,13 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
       ctl = <PasswortEingabe id={id} feld={f} roh={(roh ?? leeresPasswort) as RohPasswort} setze={setze} mappeId={eigeneId} nurLesen={nurLesen} sehen={passwortSehen} />;
       break;
     default:
-      ctl = <input id={id} value={String(roh ?? '')} onChange={(e) => setze(e.target.value)} />;
+      ctl = <input id={id} value={String(roh ?? '')} onChange={(e) => setze(e.target.value)}
+        inputMode={eingabemodus(f, plzDeutsch)} {...(f.format === 'iban' ? { autoCapitalize: 'characters', spellCheck: false } : f.format ? { autoCapitalize: 'off', autoCorrect: 'off', spellCheck: false } : {})} />;
+      // E-Mail, Telefon, Internetseite (#535): daneben direkt antippen, sobald die Angabe passt.
+      if (f.format === 'email' || f.format === 'telefon' || f.format === 'internetseite') {
+        const w = String(roh ?? '').trim();
+        ctl = <div className="ff-eingabe">{ctl}{w && !formatFehler(f, w, { felder: [], werte: {} }) && <FormatLink f={f} wert={w} nurSymbol />}</div>;
+      }
   }
 
   return (
@@ -691,6 +703,23 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
   );
 }
 
+
+/** Link zu einer Angabe mit Format (#535): mailto:, tel: oder die Internetseite (neuer Tab). */
+function FormatLink({ f, wert, nurSymbol }: { f: Feld; wert: string; nurSymbol?: boolean }) {
+  const href = f.format === 'email' ? `mailto:${wert}` : f.format === 'telefon' ? telefonLink(wert) : mitSchema(wert);
+  const text = t(f.format === 'email' ? 'felder.eingabe.link.email' : f.format === 'telefon' ? 'felder.eingabe.link.telefon' : 'felder.eingabe.link.internetseite', { wert });
+  const extern = f.format === 'internetseite' ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+  return nurSymbol
+    ? <a href={href} className="ff-link" aria-label={text} title={text} {...extern}><Symbol name={f.format === 'email' ? 'email' : f.format === 'telefon' ? 'telefon' : 'extern'} /></a>
+    : <a href={href} className="verweis" title={text} {...extern}>{wert}</a>;
+}
+
+/** Nur lesbare Angabe mit Format (#535): E-Mail, Telefon und Internetseite als Link, IBAN in Vierergruppen. */
+function FormatWert({ f, wert }: { f: Feld; wert: string }) {
+  if (!wert) return null;
+  if ((f.format === 'email' || f.format === 'telefon' || f.format === 'internetseite') && !formatFehler(f, wert, { felder: [], werte: {} })) return <FormatLink f={f} wert={wert} />;
+  return <>{formatiere(f, wert)}</>;
+}
 
 /**
  * Passwortfeld (#46): Das gespeicherte Passwort kommt nie mit der Mappe. Das Auge holt es

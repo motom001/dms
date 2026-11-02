@@ -9,6 +9,7 @@
  * - Ein Update ergänzt nur (neue Typen, Felder, Register, Sichten); es löscht und überschreibt nichts.
  */
 import { liesFeldErkennung, type FeldErkennung } from '../../shared/src/erkennung';
+import { istDatumsgrenze, istFeldformat } from '../../shared/src/feldformate';
 import { createHash, randomUUID } from 'node:crypto';
 import { inflateRawSync } from 'node:zlib';
 import { parse as yamlLesen } from 'yaml';
@@ -295,6 +296,26 @@ function erkennungNeu(t: PaketTyp, vorhanden: Pick<Mappentyp, 'felder'>): Array<
   });
 }
 
+/**
+ * Formate und Datumsgrenzen (#535), die das Paket an Feldern vorgibt und die im DMS (gleiche Kennung, gleiche Feldart)
+ * noch fehlen – nur, wo der Administrator weder Format noch Grenzen eingestellt hat. Gespeicherte Werte bleiben gültig.
+ */
+function formatNeu(t: PaketTyp, vorhanden: Pick<Mappentyp, 'felder'>): Array<{ key: string; label: string; vorgaben: Partial<Feld> }> {
+  return t.felder.flatMap((f): Array<{ key: string; label: string; vorgaben: Partial<Feld> }> => {
+    const g = vorhanden.felder.find((x) => x.key === f.key && x.typ === f.typ);
+    if (!g) return [];
+    if (f.typ === 'text' && istFeldformat(f.format) && !g.format) {
+      // Das Land-Feld gibt es schon – oder das Update bringt es mit (z. B. Haus 1.1.0).
+      const land = f.format === 'plz' && f.landFeld && (vorhanden.felder.some((x) => x.key === f.landFeld) || t.felder.some((x) => x.key === f.landFeld)) ? { landFeld: f.landFeld } : {};
+      return [{ key: g.key, label: g.label, vorgaben: { format: f.format, ...land } }];
+    }
+    if (f.typ === 'datum' && (istDatumsgrenze(f.min) || istDatumsgrenze(f.max)) && g.min == null && g.max == null) {
+      return [{ key: g.key, label: g.label, vorgaben: { ...(istDatumsgrenze(f.min) ? { min: f.min } : {}), ...(istDatumsgrenze(f.max) ? { max: f.max } : {}) } }];
+    }
+    return [];
+  });
+}
+
 export interface TypPlan {
   schluessel: string; dmsSchluessel: string; name: string; felder: number;
   /** Bei Update: Typ gibt es schon; nur neue Felder und Register. */
@@ -303,6 +324,8 @@ export interface TypPlan {
   erkennung?: string[];
   /** Bei Update (#534): Verweisfelder mit aus_text und wie viele Angaben im alten Textfeld danach umgewandelt werden können. */
   umwandeln?: Array<{ feld: string; aus: string; anzahl: number }>;
+  /** Bei Update (#535): vorhandene Felder, die das Paket jetzt mit Format bzw. Datumsgrenzen prüft (nur wo noch nichts eingestellt ist). */
+  formate?: string[];
   /** Name schon vergeben (von einem anderen Typ) – mit Vorschlag. */
   konflikt: string | null; vorschlag: string | null;
   /** Fehlt im DMS, obwohl das Paket ihn installiert hatte (gelöscht) – wird nicht neu angelegt. */
@@ -761,6 +784,7 @@ export class Paketverwaltung {
           neueRegister: t.register.filter((r) => !vorhanden.register.some((g) => g.key === r.key)).map((r) => r.name),
           erkennung: erkennungNeu(t, vorhanden).map((f) => f.label),
           umwandeln: await umwandelbar(t),
+          formate: formatNeu(t, vorhanden).map((f) => f.label),
           konflikt: null, vorschlag: null,
         };
       }
@@ -930,12 +954,14 @@ export class Paketverwaltung {
       // 2. Update: vorhandene Typen um neue Felder und Register ergänzen – sonst nichts ändern.
       for (const t of paket.typen) {
         const p = plan.typen.find((x) => x.schluessel === t.schluessel)!;
-        if (!p.vorhanden || (!p.neueFelder.length && !p.neueRegister.length && !p.erkennung?.length)) continue;
+        if (!p.vorhanden || (!p.neueFelder.length && !p.neueRegister.length && !p.erkennung?.length && !p.formate?.length)) continue;
         const aktuell = vorher.get(ids.get(t.schluessel)!)!;
         const neu = eingabe(t, false).daten;
         // Erkennung (#336): Markierung des Pakets an vorhandene Felder, an denen der Administrator nichts eingestellt hat.
         const markiert = new Map(erkennungNeu(t, aktuell).map((f) => [f.key, f.erkennung]));
-        const felder = [...aktuell.felder.map((f) => (markiert.has(f.key) ? { ...f, erkennung: markiert.get(f.key) } : f)), ...neu.felder.filter((f) => !aktuell.felder.some((g) => g.key === f.key))];
+        // Formate und Datumsgrenzen (#535) genauso: nur an Feldern ohne eigene Einstellung.
+        const vorgaben = new Map(formatNeu(t, aktuell).map((f) => [f.key, f.vorgaben]));
+        const felder = [...aktuell.felder.map((f) => ({ ...f, ...(markiert.has(f.key) ? { erkennung: markiert.get(f.key) } : {}), ...vorgaben.get(f.key) })), ...neu.felder.filter((f) => !aktuell.felder.some((g) => g.key === f.key))];
         const register = aktuell.register.map((r) => {
           const pr = t.register.find((x) => x.key === r.key);
           const dazu = (pr?.felder ?? []).filter((k) => !aktuell.felder.some((g) => g.key === k) && r.art === 'felder');

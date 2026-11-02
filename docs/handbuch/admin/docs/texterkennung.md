@@ -101,6 +101,7 @@ Am Dokument sehen alle Benutzer den Stand (*wartet*, *läuft*, *fertig*, *Fehler
 - **Alle Dateien prüfen** liest jede gespeicherte Datei, auch ältere Versionen, und vergleicht sie mit ihrem Prüfwert. So fällt auf, wenn eine Datei auf dem Speicher verändert wurde oder fehlt. Mehr dazu unter [Alle Dateien prüfen](archiv.md#alle-dateien-prufen).
 - **Nummern nachträglich vergeben** gibt Mappen eine Nummer, die angelegt wurden, bevor ihr Feld einen Nummernkreis bekam. Mehr dazu unter [Nummern nachträglich vergeben](nummernkreise.md#nummern-nachtraglich-vergeben).
 - **Absender bereinigen** leert falsche Absender bei älterer Post, siehe unten.
+- **Angaben, die nicht zum Format passen** listet gespeicherte Werte auf, die nicht zu einem Format oder zu Datumsgrenzen passen, siehe unten.
 
 Alle laufen im Hintergrund; das DMS bleibt dabei benutzbar.
 
@@ -109,3 +110,9 @@ Alle laufen im Hintergrund; das DMS bleibt dabei benutzbar.
 Bis Version 0.99 trug das DMS bei hochgeladener Post ohne Absender den **Namen dessen ein, der sie angelegt hat** – bei Post aus dem Eingangsordner „Eingangsordner“. Absender ist aber, wer den Brief geschickt hat. Neue Post bekommt seitdem keinen Absender mehr, solange niemand ihn einträgt.
 
 Für den Bestand zeigt **Absender bereinigen** eine Vorschau: eingehende Post mit Kanal *Hochgeladen*, *API*, *WebDAV* oder *Ordner*, deren Absender genau der Name des Anlegenden (bzw. „Eingangsordner“) ist. Post aus Postfächern und versendete E-Mails sind nie dabei. Nimm den Haken weg, wo der Absender doch stimmt, und tippe auf **Absender leeren**. In der Historie jeder Post steht danach, was vorher im Feld stand und wer bereinigt hat.
+
+### Angaben, die nicht zum Format passen
+
+Bekommt ein Feld ein [Format oder Datumsgrenzen](mappentypen.md#formate-und-datumsgrenzen) – selbst eingestellt oder mit einem Paket-Update –, bleiben gespeicherte Angaben gültig. Diese Liste zeigt sie je Mappentyp und Feld: die Mappe (ein Klick öffnet sie in der Ablage), die Angabe und was nicht passt, z. B. „Eine deutsche PLZ hat genau 5 Ziffern“ oder „Das Datum darf nicht in der Zukunft liegen“. Je Feld stehen höchstens 200 Mappen da.
+
+Korrigieren musst du nichts sofort: Sobald jemand das Feld in der Mappe ändert, muss die Angabe passen. Andere Felder der Mappe lassen sich wie bisher speichern.

@@ -17,12 +17,13 @@ import { geheZu, Link, loeseWache } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { titelOder } from '../seiten';
 import { Hilfe } from '../Hilfe';
-import { t as tx } from '../sprache';
+import { t, t as tx } from '../sprache';
 import { FRISTEN, JAHRE_MAX, type Archiv } from '../../../shared/src/archiv';
 import { STEMPEL_MODI, type StempelModus, type StempelTyp } from '../../../shared/src/stempel';
 import { useStempelVorlagen } from '../ablage/Stempel';
 import { Bereich, liesOffen, merkeOffen, TYP_BEREICHE, type Klappe, type TypBereich } from './Bereich';
 import { hinweis, rueckfrage } from '../rueckfrage';
+import { FELDFORMATE, formatName, HEUTE, istFeldformat, type Feldformat } from '../../../shared/src/feldformate';
 import { artenFuer, artVon, AUS_DOKUMENT_STANDARD, BESCHRIFTUNG_MAX, ERKENNUNG_FELDTYPEN, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, merkmalsfelder, type AusDokument, type Erkennungsart } from '../../../shared/src/erkennung';
 
 /** Entfernen im Editor wirkt erst beim Speichern (#136). */
@@ -465,6 +466,11 @@ function FeldZeile(p: {
   if (f.erkennung && ERKENNUNG_FELDTYPEN.includes(f.typ)) chips.push('Erkennung');
   // Paket-Update (#534): Verweisfeld, das sich aus einem alten Textfeld füllen lässt.
   if (f.typ === 'referenz' && f.ausText) chips.push(tx('pakete.typ.austext', { aus: p.alleFelder.find((x) => x.key === f.ausText)?.label ?? f.ausText }));
+  // Format und Datumsgrenzen (#535).
+  if (f.typ === 'text' && istFeldformat(f.format)) chips.push(t('felder.editor.chip.format', { format: formatName(f.format) }));
+  const grenzeText = (g: string) => (g === HEUTE ? t('felder.editor.datum.heute') : /^\d{4}-\d{2}-\d{2}$/.test(g) ? `${g.slice(8, 10)}.${g.slice(5, 7)}.${g.slice(0, 4)}` : g);
+  if (f.typ === 'datum' && f.min) chips.push(t('felder.editor.chip.min', { datum: grenzeText(f.min) }));
+  if (f.typ === 'datum' && f.max) chips.push(t('felder.editor.chip.max', { datum: grenzeText(f.max) }));
   if (f.typ === 'datum' && f.frist) chips.push(`erinnert ${f.frist.vorlauf} ${VORLAUF_EINHEITEN[f.frist.einheit]} vorher${f.frist.wiederholung ? ` · ${wiederholungText(f.frist.wiederholung)}` : ''}`);
 
   const zahl = (prop: Zahlprop, label: string, platzhalter: string) => (
@@ -479,6 +485,7 @@ function FeldZeile(p: {
   if (f.typ === 'text' || f.typ === 'langtext' || f.typ === 'formatiert') besonders = <div className="raster">
     {zahl('minLen', 'Mindestlänge', 'keine')}{zahl('maxLen', 'Höchstlänge', 'keine')}
     {f.typ === 'text' && <label className="eigenschaft" htmlFor={id('muster')}><span>Muster <small>regulärer Ausdruck</small></span><input id={id('muster')} className="mono" placeholder="z. B. [A-Z]{2}-\d+" value={f.muster ?? ''} onChange={(e) => setze({ muster: e.target.value })} /></label>}
+    {f.typ === 'text' && <FormatEditor f={f} id={id} setze={setze} alleFelder={p.alleFelder} />}
   </div>;
   else if (f.typ === 'zahl') besonders = <div className="raster">{zahl('min', 'Minimum', 'keins')}{zahl('max', 'Maximum', 'keins')}{zahl('nachkomma', 'Nachkommastellen', 'beliebig')}</div>;
   else if (f.typ === 'betrag') besonders = <div className="raster">{zahl('min', 'Minimum', 'keins')}{zahl('max', 'Maximum', 'keins')}
@@ -488,7 +495,7 @@ function FeldZeile(p: {
       <textarea id={id('optionen')} rows={4} defaultValue={(f.optionen ?? []).join('\n')} onBlur={(e) => setze({ optionen: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) })} /></label>
     <div className="eigenschaft unten">{haken('mehrfach', 'Mehrfachauswahl', 'Mehrere Werte gleichzeitig wählbar')}</div>
   </div>;
-  else if (f.typ === 'datum') besonders = <FristEditor f={f} id={id} setze={setze} benutzerFelder={p.benutzerFelder} />;
+  else if (f.typ === 'datum') besonders = <><DatumGrenzen f={f} id={id} setze={setze} /><FristEditor f={f} id={id} setze={setze} benutzerFelder={p.benutzerFelder} /></>;
   else if (f.typ === 'passwort') besonders = <p className="leise klein">Wird verschlüsselt gespeichert und erscheint nie im Titel, in der Trefferliste, in der Suche oder in Demo-Daten. Anzeigen lässt es sich nur einzeln über das Auge; das steht in der Historie.</p>;
   else if (f.typ === 'referenz') besonders = <><div className="raster">
     <label className="eigenschaft" htmlFor={id('ziel')}><span>Verweist auf Mappen vom Mappentyp</span>
@@ -583,10 +590,55 @@ function FeldZeile(p: {
   );
 }
 
+/** Format eines Textfelds (#535); bei PLZ das Feld mit dem Land. */
+function FormatEditor({ f, id, setze, alleFelder }: { f: EntwurfFeld; id: (x: string) => string; setze(p: Partial<EntwurfFeld>): void; alleFelder: Feld[] }) {
+  const laender = alleFelder.filter((x) => x.key !== f.key && (x.typ === 'text' || x.typ === 'auswahl'));
+  return <>
+    <label className="eigenschaft" htmlFor={id('format')}><span>{t('felder.editor.format')} <Hilfe ort="mappentyp.format" /></span>
+      <select id={id('format')} value={f.format ?? ''} onChange={(e) => setze({ format: (e.target.value || null) as Feldformat | null, ...(e.target.value !== 'plz' ? { landFeld: null } : {}) })}>
+        <option value="">{t('felder.editor.format.keins')}</option>
+        {FELDFORMATE.map((x) => <option key={x} value={x}>{formatName(x)}</option>)}
+      </select>
+      {f.format && <small className="hilfe">{t('felder.editor.format.hilfe')}</small>}</label>
+    {f.format === 'plz' && <label className="eigenschaft" htmlFor={id('landfeld')}><span>{t('felder.editor.landfeld')}</span>
+      <select id={id('landfeld')} value={f.landFeld ?? ''} onChange={(e) => setze({ landFeld: e.target.value || null })}>
+        <option value="">{t('felder.editor.landfeld.keins')}</option>
+        {laender.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
+        {f.landFeld && !laender.some((x) => x.key === f.landFeld) && <option value={f.landFeld}>{f.landFeld}</option>}
+      </select>
+      <small className="hilfe">{t('felder.editor.landfeld.hilfe')}</small></label>}
+  </>;
+}
+
+/** Grenzen eines Datumsfelds (#535): keine, heute oder ein festes Datum. */
+function DatumGrenzen({ f, id, setze }: { f: EntwurfFeld; id: (x: string) => string; setze(p: Partial<EntwurfFeld>): void }) {
+  const eine = (prop: 'min' | 'max') => {
+    const w = f[prop] ?? '';
+    const art = !w ? '' : w === HEUTE ? HEUTE : 'fest';
+    return (
+      <label className="eigenschaft" htmlFor={id(prop)}><span>{t(prop === 'min' ? 'felder.editor.datum.min' : 'felder.editor.datum.max')}</span>
+        <span className="wertgruppe">
+          <select id={id(prop)} value={art} onChange={(e) => setze({ [prop]: e.target.value === HEUTE ? HEUTE : e.target.value === 'fest' ? (art === 'fest' ? w : new Date().toISOString().slice(0, 10)) : '' } as Partial<EntwurfFeld>)}>
+            <option value="">{t('felder.editor.datum.keine')}</option>
+            <option value={HEUTE}>{t('felder.editor.datum.heute')}</option>
+            <option value="fest">{t('felder.editor.datum.fest')}</option>
+          </select>
+          {art === 'fest' && <input type="date" aria-label={t(prop === 'min' ? 'felder.editor.datum.min' : 'felder.editor.datum.max')} value={w} onChange={(e) => setze({ [prop]: e.target.value } as Partial<EntwurfFeld>)} />}
+        </span></label>
+    );
+  };
+  return (
+    <div className="raster">
+      {eine('min')}{eine('max')}
+      <p className="leise klein ff-hinweis">{t('felder.editor.datum.hilfe')}</p>
+    </div>
+  );
+}
+
 /** Feld-Eigenschaft „für die Erkennung nutzen“ (#336, #391): Art und Erkennungshinweis. */
 function ErkennungEditor({ f, id, setze }: { f: EntwurfFeld; id: (x: string) => string; setze(p: Partial<EntwurfFeld>): void }) {
   const an = !!f.erkennung;
-  const geschaetzt = artVon({ key: f.key, label: f.label, typ: f.typ });
+  const geschaetzt = artVon({ key: f.key, label: f.label, typ: f.typ, format: f.format });
   return (
     <div className="raster">
       <div className="eigenschaft unten">

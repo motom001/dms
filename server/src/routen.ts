@@ -1051,6 +1051,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       ok(dienst.nummernNachtragen(String((a.body as { typId?: unknown })?.typId ?? ''), String((a.body as { feldKey?: unknown })?.feldKey ?? ''), ich(a).email), 202) },
     // Absender bereinigen (#494): Vorschau, dann nur die gewählten Posts.
     { methode: 'GET', pfad: '/api/werkbank/wartung/absender', zugang: 'admin', handler: async () => ok(await dienst.absenderVorschau()) },
+    // Angaben, die nicht zum Format passen (#535): je Mappentyp und Feld, mit Sprung zur Mappe.
+    { methode: 'GET', pfad: '/api/werkbank/wartung/formate', zugang: 'admin', handler: async () => ok({ typen: await dienst.unpassendeFormate() }) },
     { methode: 'POST', pfad: '/api/werkbank/wartung/absender', zugang: 'admin', handler: async (a) =>
       ok(await dienst.absenderBereinigen((a.body as { ids?: unknown })?.ids, { id: ich(a).id, email: ich(a).email })) },
     { methode: 'POST', pfad: '/api/werkbank/wartung/volltext', zugang: 'admin', handler: async () => ok({ eingereiht: await dienst.volltextNachholen() }) },

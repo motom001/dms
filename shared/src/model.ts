@@ -10,6 +10,7 @@
 import { LEER, liesFilter, ohneLeereTeile, PLATZHALTER_MIT_FILTERN, pruefeFilter, wendeFilterAn } from './titelfilter';
 import { alsText } from './markdown';
 import { kreisImStandard, kreisVon } from './nummernkreis';
+import { ibanGruppen, pruefeFormatDefinition } from './feldformate';
 
 export const FELDTYPEN = {
   text: 'Text',
@@ -47,8 +48,9 @@ export interface Feld {
   maxLen?: number | null;
   /** Regulärer Ausdruck, muss den ganzen Text treffen. */
   muster?: string;
-  min?: number | null;
-  max?: number | null;
+  /** Zahl und Betrag: Zahl. Datum (#535): „heute“ oder JJJJ-MM-TT. */
+  min?: number | string | null;
+  max?: number | string | null;
   nachkomma?: number | null;
   waehrung?: string;
   optionen?: string[];
@@ -69,6 +71,10 @@ export interface Feld {
    * (`aus_text` im Paket). Solange der Verweis leer ist, zeigen Titel und Trefferliste den alten Text.
    */
   ausText?: string;
+  /** Textfeld (#535): Format E-Mail, Telefon, Internetseite, IBAN oder PLZ; fehlt = frei. */
+  format?: import('./feldformate').Feldformat | null;
+  /** Format PLZ (#535): Kennung des Felds mit dem Land; Deutschland (oder leer) heißt genau 5 Ziffern. */
+  landFeld?: string | null;
 }
 
 export const REGISTERARTEN = {
@@ -507,8 +513,10 @@ export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebn
     if (f.typ === 'auswahl' && !(f.optionen ?? []).length) m.push('Mindestens einen Auswahlwert eintragen.');
     if ((f.typ === 'text' || f.typ === 'langtext' || f.typ === 'formatiert') && f.minLen != null && f.maxLen != null && f.minLen > f.maxLen)
       m.push('Mindestlänge ist größer als Höchstlänge.');
-    if ((f.typ === 'zahl' || f.typ === 'betrag') && f.min != null && f.max != null && f.min > f.max)
+    if ((f.typ === 'zahl' || f.typ === 'betrag') && typeof f.min === 'number' && typeof f.max === 'number' && f.min > f.max)
       m.push('Minimum ist größer als Maximum.');
+    // Format und Datumsgrenzen (#535).
+    m.push(...pruefeFormatDefinition(f, t.felder));
     if (f.typ === 'text' && f.muster) {
       try { new RegExp(f.muster); } catch { m.push('Das Muster ist kein gültiger regulärer Ausdruck.'); }
     }
@@ -559,8 +567,8 @@ export function pruefeMappe(t: Pick<Mappentyp, 'felder'>, werte: Werte, ctx: Map
       case 'betrag': {
         const x = f.typ === 'betrag' ? (v as Betrag)?.betrag : v;
         if (typeof x !== 'number' || !Number.isFinite(x)) { fehler(f.key, f.typ === 'betrag' ? 'Kein gültiger Betrag.' : 'Keine gültige Zahl.'); break; }
-        if (f.min != null && x < f.min) fehler(f.key, `Mindestens ${f.min.toLocaleString('de-DE')}.`);
-        else if (f.max != null && x > f.max) fehler(f.key, `Höchstens ${f.max.toLocaleString('de-DE')}.`);
+        if (typeof f.min === 'number' && x < f.min) fehler(f.key, `Mindestens ${f.min.toLocaleString('de-DE')}.`);
+        else if (typeof f.max === 'number' && x > f.max) fehler(f.key, `Höchstens ${f.max.toLocaleString('de-DE')}.`);
         else if (f.typ === 'zahl' && f.nachkomma != null && (String(x).split('.')[1] ?? '').length > f.nachkomma)
           fehler(f.key, `Höchstens ${f.nachkomma} Nachkommastellen.`);
         if (f.typ === 'betrag' && !p.felder[f.key] && !/^[A-Z]{3}$/.test((v as Betrag).waehrung ?? ''))
@@ -837,6 +845,8 @@ export function formatiere(f: Feld, v: Wert | undefined, titelVon: (id: string) 
     case 'referenz': return (Array.isArray(v) ? v : [String(v)]).map(titelVon).join(', ');
     case 'passwort': return istPasswortWert(v) && !v.gesetzt && !v.neu ? '' : '••••••••';
     case 'formatiert': return alsText(String(v));
+    // IBAN in Vierergruppen (#535), auch gespeicherte ohne Leerzeichen.
+    case 'text': return f.format === 'iban' && typeof v === 'string' && /^[A-Za-z]{2}\d{2}[A-Za-z0-9 ]+$/.test(v.trim()) ? ibanGruppen(v) : String(v);
     default: return String(v);
   }
 }

@@ -37,12 +37,12 @@ Jedes Feld hat eine **Bezeichnung** (änderbar), eine **Kennung** (fest, sobald 
 
 | Feldart | Eigenschaften |
 | --- | --- |
-| Text | Mindest- und Höchstlänge, Muster (regulärer Ausdruck, muss den ganzen Text treffen), eindeutig |
+| Text | Mindest- und Höchstlänge, Muster (regulärer Ausdruck, muss den ganzen Text treffen), eindeutig, [Format](#formate-und-datumsgrenzen) |
 | Langtext | Mindest- und Höchstlänge |
 | Formatierter Text | Mindest- und Höchstlänge (siehe unten) |
 | Zahl | Minimum, Maximum, Nachkommastellen, eindeutig |
 | Betrag | Minimum, Maximum, Standardwährung |
-| Datum | – |
+| Datum | [Frühestens, Spätestens](#formate-und-datumsgrenzen) (fest oder „heute“), Erinnern |
 | Ja/Nein | – |
 | Auswahlliste | die Auswahlwerte (einer pro Zeile), Mehrfachauswahl |
 | Verweis | Ziel-Mappentyp, Art des Verweises, mehrere Mappen erlaubt |
@@ -51,6 +51,28 @@ Jedes Feld hat eine **Bezeichnung** (änderbar), eine **Kennung** (fest, sobald 
 Für alle gilt: **Pflichtfeld** und ein **Hilfetext**, der beim Ausfüllen unter dem Feld steht (im Feld-Editor gleich neben der Bezeichnung); die meisten Mappentypen haben außerdem einen **Standardwert** für neue Mappen. **Eindeutig** heißt: Den Wert darf es in diesem Mappentyp nur einmal geben – Groß- und Kleinschreibung zählen dabei nicht.
 
 Steht im Standardwert eines Textfelds `{nummernkreis:<kennung>}`, bekommt jede neue Mappe eine fortlaufende Nummer aus diesem [Nummernkreis](nummernkreise.md); das Feld ist dann schreibgeschützt.
+
+### Formate und Datumsgrenzen
+
+Ein **Textfeld** kann ein **Format** haben. Dann prüft das DMS die Angabe, und am Handy erscheint die passende Tastatur:
+
+| Format | Was passt | Anzeige |
+| --- | --- | --- |
+| E-Mail | `name@beispiel.de` – mit @ und einer Endung wie .de | daneben ein Knopf zum Schreiben (`mailto:`) |
+| Telefon | Ziffern, + am Anfang, Leerzeichen, `/`, `-` und Klammern – keine Buchstaben, z. B. `+49 30 123456` | daneben ein Knopf zum Anrufen (`tel:`) |
+| Internetseite | `www.beispiel.de` oder `https://www.beispiel.de`; ohne `https://` ergänzt das DMS es | daneben ein Knopf, der die Seite in einem neuen Tab öffnet |
+| IBAN | Länge des Landes und Prüfziffer stimmen, z. B. `DE89 3704 0044 0532 0130 00` | in Vierergruppen |
+| PLZ | in Deutschland genau 5 Ziffern, sonst frei (bis zur Höchstlänge) | – |
+
+Bei **PLZ** wählst du das **Feld mit dem Land** (ein Text- oder Auswahlfeld desselben Mappentyps). Steht dort Deutschland (auch „DE“) oder nichts und ist die Vorgabe des Felds Deutschland, gilt die deutsche Regel. Bei jedem anderen Land ist die PLZ frei. Ohne Land-Feld gilt immer Deutschland.
+
+Ein **Datumsfeld** kann **Frühestens** und **Spätestens** haben – ein festes Datum oder **heute**. Typisch ist *Spätestens: heute* für einen Geburtstag oder eine Erstzulassung.
+
+Die Fehlermeldungen sagen, was zu tun ist, z. B. „Eine Telefonnummer enthält nur Ziffern, + am Anfang, Leerzeichen, /, - und Klammern.“ Dieselben Prüfungen gelten für die [Schnittstelle](api.md), für Pakete und ihre Beispiele; die Meldung nennt die Felder.
+
+**Gespeicherte Angaben bleiben gültig.** Bekommt ein Feld nachträglich ein Format oder Grenzen, ändert das DMS keine Werte, und die Mappen landen nicht unter *Zu erledigen*. Erst wer das Feld ändert, muss eine passende Angabe eintragen; andere Felder der Mappe lassen sich wie bisher speichern. Welche Angaben nicht passen, zeigt [Werkbank → Wartungsoperationen](texterkennung.md#angaben-die-nicht-zum-format-passen).
+
+Die Erkennung nutzt das Format: Ein Feld mit Format Telefon gilt als Telefon, auch wenn es anders heißt, und sie schlägt nur Werte vor, die passen.
 
 ### Für die Erkennung nutzen
 
@@ -141,6 +163,7 @@ So verhalten sich Fristen:
 Du kannst Mappentypen jederzeit ändern, auch wenn es schon Mappen gibt:
 
 - **Felder entfernen** löscht keine Werte. Sie bleiben an der Mappe und erscheinen dort als „Werte ohne Felddefinition“. Fügst du das Feld mit derselben Kennung wieder hinzu, sind sie wieder da.
+- **Formate und Datumsgrenzen** machen gespeicherte Angaben nicht ungültig (siehe [oben](#formate-und-datumsgrenzen)).
 - **Neue Pflichtfelder, strengere Regeln, entfernte Auswahlwerte:** Mappen, die nicht mehr passen, werden markiert und bekommen eine [Aufgabe](aufgaben.md) „Passt nicht“ für ihren Ersteller; so landen sie bei ihm unter [Zu erledigen](https://motom001.github.io/dms/benutzer/eingang/). Die Aufgabe erledigt sich, sobald die Mappe wieder passt. Nichts wird stillschweigend geändert. Über dem Mappentyp steht, wie viele Mappen betroffen sind.
 
 ![Zu erledigen in der Ablage](bilder/eingang.png)

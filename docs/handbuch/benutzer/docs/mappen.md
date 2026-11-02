@@ -67,6 +67,8 @@ Welche Felder die Erkennung füllt, legt der Administrator am Mappentyp fest; Pa
 | Verweis | eine andere Mappe suchen und wählen (siehe unten) |
 | Passwort | eintippen; gespeichert wird es verschlüsselt (siehe unten) |
 
+Manche Textfelder haben ein **Format**: E-Mail, Telefon, Internetseite, IBAN oder PLZ. Am Handy erscheint dann die passende Tastatur, und offensichtlich falsche Angaben – etwa Buchstaben in einer Telefonnummer – lehnt das DMS mit einem Hinweis ab, was zu tun ist. Neben einer E-Mail-Adresse, Telefonnummer oder Internetseite steht ein Knopf, mit dem du gleich schreibst, anrufst oder die Seite öffnest. Eine IBAN steht in Vierergruppen; eine deutsche PLZ hat genau 5 Ziffern, für andere Länder trägst du das Land ein. Manche Datumsfelder haben Grenzen, ein Geburtstag darf zum Beispiel nicht in der Zukunft liegen. Was schon gespeichert ist, bleibt, bis du das Feld änderst.
+
 ### Formatierter Text
 
 Manche längeren Texte lassen sich formatieren. Über dem Feld steht eine kleine **Werkzeugleiste**: Markiere Text und klicke auf **F** (fett), *K* (kursiv), eine Überschrift, eine Liste, eine nummerierte Liste, ein Zitat oder einen Link. Mit **Schreiben** und **Vorschau** wechselst du zwischen Eingabe und fertiger Ansicht. Im Feld steht dann eine einfache Schreibweise, z. B. `**fett**` – das ist richtig so. **Vorschau** zeigt, wie es aussieht.

@@ -1,4 +1,5 @@
 import { ERKENNUNGSARTEN } from '../../shared/src/erkennung';
+import { FELDFORMATE } from '../../shared/src/feldformate';
 import { FELDTYPEN, HERKUNFT, REGISTERARTEN, type Benutzer } from '../../shared/src/model';
 import { Fachfehler } from './fehler';
 import type { Anfrage, Antwort, Route } from './routen';
@@ -153,8 +154,8 @@ export const V1_TABELLE: V1[] = [
   { methode: 'POST', pfad: '/post/{id}/zusammenlegen', gruppe: 'Ablage', zusammenfassung: 'Zwei Posts zusammenlegen',
     beschreibung: 'Zusammenlegen (#490): Die Seiten der Post quelle (PDFs und Fotos in ihrer Reihenfolge) kommen ans Ende des ersten PDFs dieser Post (hat sie keins, entsteht eins); quelle kommt in den Papierkorb. Andere Dateiarten: 422. Braucht Bearbeiten an dieser Post und Löschen an quelle.',
     intern: { methode: 'POST', pfad: '/api/post/:id/zusammenlegen' }, parameter: [id('der Post, die bleibt')], body: 'Zusammenlegen', antwort: 'PostAusFotos' },
-  { methode: 'POST', pfad: '/mappen', gruppe: 'Ablage', zusammenfassung: 'Mappe anlegen', beschreibung: 'Die Werte werden wie in der Oberfläche geprüft (Pflichtfelder, Längen, eindeutige Werte, Verweise). Bei Fehlern: 422 mit `details` je Feld.', intern: { methode: 'POST', pfad: '/api/mappen' }, body: 'MappeEingabe', antwort: 'Mappe', status: 201 },
-  { methode: 'PUT', pfad: '/mappen/{id}', gruppe: 'Ablage', zusammenfassung: 'Mappe ändern', beschreibung: 'Übergebene Werte ersetzen die bisherigen; Werte von Feldern, die es im Typ nicht mehr gibt, bleiben erhalten.', intern: { methode: 'PUT', pfad: '/api/mappen/:id' }, parameter: [id('der Mappe')], body: 'MappeAenderung', antwort: 'Mappe' },
+  { methode: 'POST', pfad: '/mappen', gruppe: 'Ablage', zusammenfassung: 'Mappe anlegen', beschreibung: 'Die Werte werden wie in der Oberfläche geprüft (Pflichtfelder, Längen, eindeutige Werte, Verweise, Formate und Datumsgrenzen). Bei Fehlern: 422 mit den Feldnamen in der Meldung und `details` je Feld.', intern: { methode: 'POST', pfad: '/api/mappen' }, body: 'MappeEingabe', antwort: 'Mappe', status: 201 },
+  { methode: 'PUT', pfad: '/mappen/{id}', gruppe: 'Ablage', zusammenfassung: 'Mappe ändern', beschreibung: 'Übergebene Werte ersetzen die bisherigen; Werte von Feldern, die es im Typ nicht mehr gibt, bleiben erhalten. Formate und Datumsgrenzen (#535) gelten nur für Werte, die sich ändern.', intern: { methode: 'PUT', pfad: '/api/mappen/:id' }, parameter: [id('der Mappe')], body: 'MappeAenderung', antwort: 'Mappe' },
   { methode: 'DELETE', pfad: '/mappen/{id}', gruppe: 'Ablage', zusammenfassung: 'Mappe löschen', beschreibung: 'Samt ihrer Dokumente. 409, solange andere Mappen auf sie verweisen. Ist der Papierkorb an, kommt sie dorthin und lässt sich wiederherstellen. Jede Löschung steht im Löschprotokoll (#470) – mit dem API-Schlüssel als „Schnittstelle“.', intern: { methode: 'DELETE', pfad: '/api/mappen/:id' }, parameter: [id('der Mappe'), { name: 'grund', wo: 'query', typ: 'string', beschreibung: 'Grund fürs Löschprotokoll (#470): frist, verlangen, nicht_noetig oder sonstiges' }, { name: 'grundText', wo: 'query', typ: 'string', beschreibung: 'Freier Text zum Grund, ohne Personenbezug (höchstens 200 Zeichen)' }], antwort: null, status: 204 },
 
   {
@@ -287,10 +288,13 @@ const SCHEMAS: Record<string, Schema> = {
     properties: {
       key: { type: 'string', pattern: '^[a-z][a-z0-9_]{0,39}$' }, label: { type: 'string' }, typ: { type: 'string', enum: Object.keys(FELDTYPEN) },
       pflicht: { type: 'boolean' }, eindeutig: { type: 'boolean' }, hilfe: { type: 'string' }, minLen: { type: 'integer' }, maxLen: { type: 'integer' },
-      min: { type: 'number' }, max: { type: 'number' }, nachkomma: { type: 'integer' }, muster: { type: 'string' }, optionen: { type: 'array', items: { type: 'string' } },
+      min: { oneOf: [{ type: 'number' }, { type: 'string' }], description: 'Zahl und Betrag: Zahl. Datum (#535): „heute“ oder JJJJ-MM-TT – frühestes erlaubtes Datum' },
+      max: { oneOf: [{ type: 'number' }, { type: 'string' }], description: 'Zahl und Betrag: Zahl. Datum (#535): „heute“ oder JJJJ-MM-TT – spätestes erlaubtes Datum, z. B. heute für einen Geburtstag' }, nachkomma: { type: 'integer' }, muster: { type: 'string' }, optionen: { type: 'array', items: { type: 'string' } },
       system: { type: 'boolean', readOnly: true, description: 'Systemfeld eines Systemmappentyps: nicht entfernbar, nur Bezeichnung und Hilfetext änderbar' },
       mehrfach: { type: 'boolean' }, zielTyp: { ...uuid, description: 'Bei typ=referenz: Id des Ziel-Mappentyps' }, verweisart: { type: 'string', enum: ['zugehoerigkeit', 'bezug'] }, waehrung: { type: 'string' },
       erkennung: { type: 'object', nullable: true, description: 'Für die Erkennung nutzen (#336, #391); vorhanden = an. Nur bei Text, Langtext, Zahl, Betrag, Datum, Auswahl und Verweis. art: was im Feld steht (fehlt = aus Feldart und Bezeichnung), hinweis: Erkennungshinweis, z. B. „Muster 100-####“ (# = Ziffer).', properties: { art: { type: 'string', enum: Object.keys(ERKENNUNGSARTEN) }, hinweis: { type: 'string', maxLength: 300 } } },
+      format: { type: 'string', nullable: true, enum: [...FELDFORMATE], description: 'Nur bei typ=text (#535): Format der Angabe. Neue und geänderte Werte müssen passen, gespeicherte bleiben gültig.' },
+      landFeld: { type: 'string', nullable: true, description: 'Bei format=plz (#535): Kennung des Felds mit dem Land. Steht dort Deutschland (oder nichts), hat die PLZ genau 5 Ziffern.' },
     },
   },
   Register: { type: 'object', required: ['key', 'name', 'art'], properties: { key: { type: 'string' }, name: { type: 'string' }, art: { type: 'string', enum: Object.keys(REGISTERARTEN) }, felder: { type: 'array', items: { type: 'string' } }, quellen: { type: 'array', items: { type: 'object', properties: { typId: uuid, feldKey: { type: 'string' }, trefferliste: { type: 'string', description: 'Kennung einer Trefferliste des Quelltyps; das Register zeigt dann deren Spalten' } } } } } },

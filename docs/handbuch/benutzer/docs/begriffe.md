@@ -58,6 +58,10 @@ Welche Art von Angabe ein Feld aufnimmt, z. B. Datum oder Betrag. Die Oberfläch
 Formatiert einen Platzhalter in der Titel-Vorlage, z. B. nur das Jahr eines Datums oder gekürzter Text. Steht hinter einem senkrechten Strich, z. B. {datum|jahr}.  
 Siehe auch: [Titel](#titel).
 
+<a id="format"></a>**Format** · ✓ Alltagswort · Administratoren  
+Was in einem Textfeld stehen darf – E-Mail, Telefon, Internetseite, IBAN oder PLZ. Neue und geänderte Angaben müssen passen, am Handy erscheint die passende Tastatur, E-Mail und Telefon lassen sich antippen. Gespeicherte Angaben bleiben gültig. Datumsfelder haben stattdessen Grenzen (frühestens, spätestens, auch „heute“).  
+Siehe auch: [Feld](#feld), [Feldart](#feldart).
+
 <a id="kennung"></a>**Kennung** · ✗ Fachwort · Administratoren  
 Der feste, technische Name eines Felds, Registers, Mappentyps oder Nummernkreises, z. B. vertragsnummer. Nach dem Speichern bleibt er gleich, damit gespeicherte Werte, Links und Pakete passen.
 
@@ -494,6 +498,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Fehler nachstellen | Impersonation, Vertretung beenden | `Vertretung` |
 | Feld | – | `Feld` |
 | Feldart | Feldtyp, Datentyp, Art (allein) | `Feldtyp, FELDTYPEN, Feld.typ` |
+| Format | Validierung, Datentyp | `Feld.format, Feld.landFeld, FELDFORMATE, shared/src/feldformate.ts` |
 | Gemeldete Fehler | Fehlermeldungen | – |
 | Haushalt | Mandant (in der Oberfläche) | `mandant, haushalt_id` |
 | Historie | Protokoll (an der Mappe), Verlauf | `Historieneintrag` |

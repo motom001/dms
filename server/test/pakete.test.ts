@@ -97,6 +97,9 @@ const basis11 = {
     // Erkennung (#336): Kundennummer und Name werden für die Erkennung markiert.
     .replace('      label: Kundennummer\n      typ: text\n', '      label: Kundennummer\n      typ: text\n      erkennung: { art: nummer, hinweis: oben rechts }\n')
     .replace('      label: Name\n      typ: text\n', '      label: Name\n      typ: text\n      erkennung: {}\n')
+    // Feldformate (#535): Telefon und PLZ (mit Land-Feld) bekommen ein Format.
+    .replace('      label: Telefon\n      typ: text\n', '      label: Telefon\n      typ: text\n      format: telefon\n')
+    .replace('      label: PLZ\n      typ: text\n', '      label: PLZ\n      typ: text\n      format: plz\n      landFeld: land\n')
     .replace('felder: [name, kuerzel, art, kundennummer, beschreibung]', 'felder: [name, kuerzel, art, kundennummer, steuernummer, beschreibung]')
     .replace('    - key: dokumente\n      name: Dokumente\n      art: dokumente\n', '    - key: dokumente\n      name: Dokumente\n      art: dokumente\n    - key: vertraege\n      name: Verträge\n      art: dokumente\n'),
   'inhalt/sichten.yaml': `${basis['inhalt/sichten.yaml']}\n- schluessel: vereine\n  name: Vereine\n  eltern: organisationen\n  typen: [organisation]\n  bedingungen:\n    - { feld: art, operator: einerVon, wert: [Verein] }\n`,
@@ -196,6 +199,7 @@ function faelle(pg: boolean) {
       assert.deepEqual(uv.typen[0].neueFelder, ['Steuernummer']);
       assert.deepEqual(uv.typen[0].neueRegister, ['Verträge']);
       assert.deepEqual(uv.typen[0].erkennung, ['Kundennummer'], 'Name hat der Administrator schon selbst eingestellt');
+      assert.deepEqual(uv.typen[0].formate, ['Telefon', 'PLZ']);
       assert.deepEqual(uv.sichten.filter((s) => !s.vorhanden).map((s) => s.name), ['Vereine']);
       const neu = await p.aktualisiere('basis', {}, ICH);
       assert.equal(neu.version, '1.1.0');
@@ -207,6 +211,8 @@ function faelle(pg: boolean) {
       assert.ok(t2.register.some((r) => r.key === 'vertraege'));
       assert.deepEqual(t2.felder.find((f) => f.key === 'kundennummer')!.erkennung, { art: 'nummer', hinweis: 'oben rechts' });
       assert.deepEqual(t2.felder.find((f) => f.key === 'name')!.erkennung, { art: 'name', hinweis: 'eigener' }, 'bleibt, wie der Administrator es eingestellt hat');
+      assert.equal(t2.felder.find((f) => f.key === 'telefon')!.format, 'telefon');
+      assert.deepEqual([t2.felder.find((f) => f.key === 'plz')!.format, t2.felder.find((f) => f.key === 'plz')!.landFeld], ['plz', 'land']);
       assert.ok((await d.listeSichten()).some((s) => s.id === neu.sichten.vereine && s.elternId === oben.id));
       await assert.rejects(p.aktualisiere('basis', {}, ICH), /schon installiert/);
 
