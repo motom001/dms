@@ -63,6 +63,7 @@ export function speicherRepo(): Repo {
   let historieNr = 0;
   /** Volltext je Dokument (#45). */
   const texte = new Map<string, string | null>();
+  const vektoren = new Map<string, { dokumentId: string; paket: string; modell: string; vektor: Float32Array }>();
   /** Grob wie die deutsche Volltextsuche: alle Wörter kommen vor (ohne Groß-/Kleinschreibung). */
   const woerter = (q: string) => q.toLowerCase().replace(/["„“”]/g, ' ').split(/\s+/).filter(Boolean);
   // Teilwörter (#161): „Ofen“ findet „Backofen“; in Anführungszeichen nur ganze Wörter.
@@ -468,6 +469,45 @@ export function speicherRepo(): Repo {
       return z;
     },
     async volltext(id) { return texte.get(id) ?? null; },
+    /* Vektoren (#442): mit dem Dokument weg wie ON DELETE CASCADE. */
+    async vektorSetze(e) {
+      if (!dokumente.has(e.dokumentId)) return false;
+      vektoren.set(`${e.dokumentId}|${e.modell}`, { dokumentId: e.dokumentId, paket: e.paket, modell: e.modell, vektor: Float32Array.from(e.vektor) });
+      return true;
+    },
+    async vektorLoesche(dokumentId, modell) {
+      let n = 0;
+      for (const [k, v] of vektoren) if (v.dokumentId === dokumentId && (modell === undefined || v.modell === modell)) { vektoren.delete(k); n++; }
+      return n;
+    },
+    async vektorenLoeschePaket(paket, ausser) {
+      let n = 0;
+      for (const [k, v] of vektoren) if (v.paket === paket && v.modell !== ausser) { vektoren.delete(k); n++; }
+      return n;
+    },
+    async vektorenLaden(modell, jeTeil) {
+      jeTeil([...vektoren.values()].filter((v) => v.modell === modell && dokumente.has(v.dokumentId))
+        .map((v) => ({ dokumentId: v.dokumentId, mappeId: dokumente.get(v.dokumentId)!.mappeId, vektor: Float32Array.from(v.vektor) })));
+    },
+    async vektorVon(dokumentId, modell) {
+      const v = vektoren.get(`${dokumentId}|${modell}`);
+      return v && dokumente.has(dokumentId) ? Float32Array.from(v.vektor) : null;
+    },
+    async vektorStand() {
+      const z = new Map<string, { paket: string; modell: string; anzahl: number }>();
+      for (const v of vektoren.values()) {
+        if (!dokumente.has(v.dokumentId)) continue;
+        const k = `${v.paket}|${v.modell}`;
+        z.set(k, { paket: v.paket, modell: v.modell, anzahl: (z.get(k)?.anzahl ?? 0) + 1 });
+      }
+      return [...z.values()].sort((a, b) => a.paket.localeCompare(b.paket) || a.modell.localeCompare(b.modell));
+    },
+    async ohneVektor(modell, max, nach) {
+      return [...dokumente.values()].filter((d) => texte.get(d.id) && !vektoren.has(`${d.id}|${modell}`) && (!nach || d.id > nach))
+        .sort((a, b) => (a.id < b.id ? -1 : 1)).slice(0, max).map((d) => ({ id: d.id, mappeId: d.mappeId }));
+    },
+    async mitVolltext() { return [...dokumente.keys()].filter((id) => !!texte.get(id)).length; },
+
     async erkennungLies(mappeId) { const e = erkennungen.get(mappeId); return e && mappen.has(mappeId) ? kopie({ ergebnis: e.ergebnis, zeit: e.zeit }) : undefined; },
     async erkennungSchreibe(mappeId, ergebnis, absenderId) { if (mappen.has(mappeId)) erkennungen.set(mappeId, { ergebnis: kopie(ergebnis), absenderId, zeit: jetzt() }); },
     async erkennungenMitAbsender(absenderId, max) {

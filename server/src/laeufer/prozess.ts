@@ -19,7 +19,8 @@ export interface PaketImLaeufer { id: string; version: string; modul: Uint8Array
 export type AnLaeufer =
   /** pakete: neue bzw. geänderte Pakete (werden neu geladen); behalten: unveränderte, schon geladene (#403). Alle anderen fallen weg. */
   | { art: 'pakete'; pakete: PaketImLaeufer[]; behalten?: string[]; grenzen: Grenzen }
-  | { art: 'aufruf'; nr: number; paket: string; eingang: { art: 'ereignis' | 'aktion'; json: string } }
+  /** vorrang: vor die wartenden Aufrufe (z. B. Vektor eines Suchbegriffs, #442 – jemand wartet darauf). */
+  | { art: 'aufruf'; nr: number; paket: string; eingang: { art: 'ereignis' | 'aktion'; json: string }; vorrang?: boolean }
   | { art: 'antwort'; nr: number; antwort: Hostantwort };
 /** Nachrichten Läufer → DMS. */
 export type VomLaeufer =
@@ -134,7 +135,7 @@ async function fuehreAus(a: Extract<AnLaeufer, { art: 'aufruf' }>) {
 
 process.on('message', (m: AnLaeufer) => {
   if (m.art === 'pakete') { grenzen = m.grenzen; lade(m.pakete, m.behalten); return; }
-  if (m.art === 'aufruf') { warteschlange.push(m); weiter(); return; }
+  if (m.art === 'aufruf') { if (m.vorrang) warteschlange.unshift(m); else warteschlange.push(m); weiter(); return; }
   if (m.art === 'antwort') { const f = offen.get(m.nr); offen.delete(m.nr); f?.(m.antwort); }
 });
 // Fehler im Läufer selbst beenden ihn nicht still: melden, das DMS startet ihn neu.

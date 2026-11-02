@@ -227,9 +227,20 @@ export const EREIGNISSE = {
   'post.angelegt': 'Neue Post ist angelegt',
   'dokument.hochgeladen': 'Ein Dokument wurde hochgeladen',
   'texterkennung.fertig': 'Die Texterkennung eines Dokuments ist fertig',
+  'volltext.fertig': 'Der Volltext eines Dokuments ist da',
   'paket.einstellungen_geaendert': 'Die Einstellungen des Pakets wurden geändert',
 } as const;
 export type EreignisArt = keyof typeof EREIGNISSE;
+/**
+ * Schnittstellen des Kerns, die ein Paket zusätzlich nutzen darf (`code.rechte.schnittstellen`, #442).
+ * Der Kern rechnet dabei nichts selbst: Er speichert und vergleicht nur, was das Paket liefert.
+ */
+export const SCHNITTSTELLEN = {
+  'dms:vektoren': 'Vektoren zu Dokumenten speichern und ähnliche Dokumente finden',
+} as const;
+export type Schnittstelle = keyof typeof SCHNITTSTELLEN;
+/** Ab dieser Version kennt das DMS `code.rechte.schnittstellen` und das Ereignis `volltext.fertig` (#442). */
+export const DMS_VEKTOREN_AB = '0.120.0';
 /** Alle Mappentypen (außer Benutzer) – für Pakete wie die Texterkennung, die an jedes Dokument müssen. */
 export const ALLE_TYPEN = '*';
 
@@ -237,7 +248,7 @@ export interface PaketCode {
   sprache: string;
   ereignisse: EreignisArt[];
   /** Typverweise wie in Inhalten (eigene ohne Präfix, <paket>:<schluessel>, dms:<kennung>) oder „*“. */
-  rechte: { lesen: string[]; schreiben: string[]; dokumente: DokumentRecht };
+  rechte: { lesen: string[]; schreiben: string[]; dokumente: DokumentRecht; schnittstellen?: Schnittstelle[] };
   /** Erlaubte Adressen (https://host…); alles andere ist gesperrt. */
   netz: string[];
   /** Das WebAssembly-Modul (code/modul.wasm) und Daten (code/daten/…), nur im installierten Paket. */
@@ -289,6 +300,10 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
   else if (t.startsWith('dms:') && !DMS_RECHTE_TYPEN[t.slice(4)]) fehler.push(`code.rechte: „${t}“ – diesen Mappentyp bringt das DMS nicht mit. Erlaubt sind ${Object.keys(DMS_RECHTE_TYPEN).map((k) => `dms:${k}`).join(', ')}.`);
   const dokumente = (r.dokumente ?? 'keine') as DokumentRecht;
   if (!(dokumente in DOKUMENT_RECHTE)) fehler.push('code.rechte.dokumente: keine, lesen oder schreiben.');
+  // Schnittstellen des Kerns (#442), z. B. dms:vektoren; Vektoren gibt es nur zu Dokumenten, die das Paket lesen darf.
+  const schnittstellen = liste(r.schnittstellen, 'code.rechte.schnittstellen');
+  for (const s of schnittstellen) if (!(s in SCHNITTSTELLEN)) fehler.push(`code.rechte.schnittstellen: „${s}“ gibt es nicht. Möglich: ${Object.keys(SCHNITTSTELLEN).join(', ')}.`);
+  if (schnittstellen.includes('dms:vektoren') && dokumente === 'keine') fehler.push('code.rechte.schnittstellen: dms:vektoren braucht auch code.rechte.dokumente: lesen – Vektoren gehören zu Dokumenten.');
   const netz = liste(x.netz, 'code.netz');
   for (const n of netz) {
     let ok = false;
@@ -297,7 +312,7 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
   }
   // Schreiben setzt Lesen voraus.
   const lesenAlle = [...new Set([...lesen, ...schreiben])];
-  return { code: fehler.length ? null : { sprache, ereignisse: ereignisse as EreignisArt[], rechte: { lesen: lesenAlle, schreiben, dokumente }, netz }, fehler };
+  return { code: fehler.length ? null : { sprache, ereignisse: ereignisse as EreignisArt[], rechte: { lesen: lesenAlle, schreiben, dokumente, ...(schnittstellen.length ? { schnittstellen: schnittstellen as Schnittstelle[] } : {}) }, netz }, fehler };
 }
 
 /** Zustand des Paket-Läufers (#403): aus (kein Paket mit Code), startet, bereit, neustart (nach Absturz), pausiert (Wartung). */
@@ -329,6 +344,7 @@ export const EREIGNIS_HILFE: Record<EreignisArt, Hilfeort> = {
   'post.angelegt': 'pakete.ereignis.post_angelegt',
   'dokument.hochgeladen': 'pakete.ereignis.dokument_hochgeladen',
   'texterkennung.fertig': 'pakete.ereignis.texterkennung_fertig',
+  'volltext.fertig': 'pakete.ereignis.volltext_fertig',
   'paket.einstellungen_geaendert': 'pakete.ereignis.einstellungen_geaendert',
 };
 
@@ -342,6 +358,7 @@ export function rechtePunkte(c: PaketCode, typName: (verweis: string) => string)
   if (c.rechte.lesen.length) z.push({ text: `Mappen lesen: ${t(c.rechte.lesen)}`, hilfe: 'pakete.recht.lesen' });
   if (c.rechte.schreiben.length) z.push({ text: `Mappen anlegen und ändern: ${t(c.rechte.schreiben)}`, hilfe: 'pakete.recht.schreiben' });
   if (c.rechte.dokumente !== 'keine') z.push({ text: DOKUMENT_RECHTE[c.rechte.dokumente], hilfe: 'pakete.recht.dokumente' });
+  for (const s of c.rechte.schnittstellen ?? []) z.push({ text: `${SCHNITTSTELLEN[s]} (${s})`, hilfe: 'pakete.recht.vektoren' });
   z.push({ text: netzText(c.netz), hilfe: 'pakete.recht.netz' });
   if (c.ereignisse.length) z.push({ text: 'Reagiert auf diese Ereignisse:', hilfe: 'pakete.ereignisse', unter: c.ereignisse.map((e) => ({ text: EREIGNISSE[e], hilfe: EREIGNIS_HILFE[e] })) });
   return z;
@@ -355,5 +372,7 @@ export const rechteText = (c: PaketCode, typName: (verweis: string) => string): 
 /** Gleiche Rechte und gleicher Netzwerkzugriff? (Sonst muss ein Update neu bestätigt werden.) */
 export const gleicheRechte = (a: PaketCode | undefined, b: PaketCode | undefined) =>
   JSON.stringify(rechteSchluessel(a)) === JSON.stringify(rechteSchluessel(b));
-const rechteSchluessel = (c: PaketCode | undefined) => c ? [[...c.rechte.lesen].sort(), [...c.rechte.schreiben].sort(), c.rechte.dokumente, [...c.netz].sort()] : null;
+const rechteSchluessel = (c: PaketCode | undefined) => c ? [[...c.rechte.lesen].sort(), [...c.rechte.schreiben].sort(), c.rechte.dokumente, [...c.netz].sort(), ...(c.rechte.schnittstellen?.length ? [[...c.rechte.schnittstellen].sort()] : [])] : null;
+/** Darf das Paket diese Schnittstelle des Kerns nutzen (#442)? */
+export const hatSchnittstelle = (c: PaketCode | undefined, s: Schnittstelle) => !!c?.rechte.schnittstellen?.includes(s);
 

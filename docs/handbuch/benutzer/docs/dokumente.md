@@ -156,6 +156,12 @@ Damit die [Volltextsuche](ablage.md#im-text-der-dokumente-suchen) ein Dokument f
 
 Erkannter Text aus Scans ist nicht immer fehlerfrei – je besser die Vorlage, desto besser das Ergebnis.
 
+## Ähnliche Dokumente { #aehnliche-dokumente }
+
+Hat dein Administrator ein Paket wie **KI lokal – Ähnlichkeit** installiert, steht unter den Dokumenten einer Mappe **„Ähnliche Dokumente“**: bis zu fünf andere Mappen, deren Dokumente inhaltlich ähnlich sind – zum Beispiel zur Rechnung des Heizungsbauers die Mappe mit dem Wartungsvertrag der Gastherme. Hinter jeder Mappe stehen das ähnliche Dokument und wie ähnlich es ist (in Prozent). Du siehst nur Mappen, die du lesen darfst.
+
+Die Ähnlichkeit berechnet das Paket aus dem [Volltext](#volltext), im DMS und ohne dass Daten es verlassen. Steht dort „noch nicht berechnet“, holt das Paket das gerade im Hintergrund nach. Ohne ein solches Paket gibt es den Abschnitt nicht.
+
 ## Versionen
 
 Warum du im DMS nichts mehr in `_v2` oder `_final` umbenennen musst, erklärt mit Bildern die Seite [Versionen verstehen](versionen.md). Kurz:

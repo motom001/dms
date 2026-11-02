@@ -1,6 +1,6 @@
 # Pakete mit Code
 
-Ein Paket kann neben Mappentypen und Ansichten **Code** mitbringen: ein WebAssembly-Modul, das auf Ereignisse im DMS reagiert (neue Post, hochgeladenes Dokument, fertige Texterkennung, geänderte Einstellungen) und Aktionen aus der Werkbank ausführt. Das DMS führt es im **Paket-Läufer** aus – abgeschottet und nur mit den Rechten, die der Administrator bei der Installation bestätigt hat.
+Ein Paket kann neben Mappentypen und Ansichten **Code** mitbringen: ein WebAssembly-Modul, das auf Ereignisse im DMS reagiert (neue Post, hochgeladenes Dokument, fertige Texterkennung, fertiger Volltext, geänderte Einstellungen) und Aktionen aus der Werkbank ausführt. Das DMS führt es im **Paket-Läufer** aus – abgeschottet und nur mit den Rechten, die der Administrator bei der Installation bestätigt hat.
 
 Diese Seite beschreibt die Schnittstelle („DMS-Paket-ABI 1“). Wie ein Paket aufgebaut ist und wie es in den Katalog kommt, steht unter [Pakete entwickeln](pakete.md).
 
@@ -40,6 +40,7 @@ code:
   ```
 
 - **Dokumente:** `lesen` erlaubt Dokumente zu lesen (Datei, Volltext, Seiten als Bild), `schreiben` zusätzlich hochzuladen, zu ersetzen und den Volltext zu setzen. Dokumente gibt es nur in Mappen, die das Paket lesen darf.
+- **Schnittstellen des Kerns (`schnittstellen`):** zusätzliche Rechte für Schnittstellen, bei denen der Kern nur speichert und vergleicht. Bisher gibt es `dms:vektoren` (seit 0.120.0) – siehe [Vektoren und Ähnlichkeit](#vektoren-und-ahnlichkeit). Es braucht `dokumente: lesen`.
 - **Netzwerk/Internet (`netz`):** nur `https://`, ohne Zugangsdaten. Weiterleitungen folgt der Läufer nicht. Die Vorschau zeigt „kein Zugriff auf Netzwerk und Internet“ bzw. „Zugriff auf Netzwerk/Internet nur zu: …“ (#449).
 - Bei der **Installation** zeigt das DMS diese Rechte und lässt sie bestätigen; die Ereignisse stehen dort als Unterliste mit Link ins Administratorhandbuch. Ändern sich Rechte oder Adressen in einem Update, muss der Administrator neu bestätigen.
 
@@ -50,6 +51,7 @@ code:
 | `post.angelegt` | Neue Post: in der Oberfläche, über die API, aus Eingangsordner und Postfach, beim **Post teilen** je neuer Post | `mappe`, `kanal` |
 | `dokument.hochgeladen` | Jedes neue Dokument: Hochladen (Oberfläche, API, Eingangskanäle) und die neuen Dokumente beim **PDF teilen**, **Zusammenfügen** und **Post teilen**. Eine neue Version eines vorhandenen Dokuments ist kein neues Dokument. | `dokument`, `mappe`, `name`, `mime`, `groesse`, `volltextGeplant` (ob die Texterkennung des DMS noch läuft) |
 | `texterkennung.fertig` | Die Texterkennung des DMS ist mit einem Dokument fertig | `dokument`, `mappe`, `seiten` |
+| `volltext.fertig` | Der Volltext eines Dokuments steht fest – egal woher: eingebaute Texterkennung, Textebene des PDFs, ein Paket, die API (seit 0.120.0). Für Pakete mit `dms:vektoren` schickt das DMS es auch für den Bestand nach (`nachberechnung: true`). | `dokument`, `mappe`, ggf. `nachberechnung` |
 | `paket.einstellungen_geaendert` | Ein Administrator hat die Einstellungen des Pakets gespeichert | `felder` (geänderte Kennungen) |
 
 Das Ereignis entsteht in **derselben Datenbank-Transaktion** wie die Änderung: Entweder ist beides gespeichert oder nichts. Fällt das DMS genau dazwischen aus, fehlt also kein Ereignis.
@@ -150,6 +152,39 @@ $WASI_SDK/bin/clang --target=wasm32-wasip1 -O2 -mexec-model=reactor \
 - Ein vollständiges Beispiel mit Speicher und API-Aufruf ist das Paket **Hallo Post** in der Registry; ein großes die **Texterkennung** (Tesseract als WebAssembly).
 
 Das DMS prüft beim Installieren, dass das Modul nur erlaubte Importe hat, Speicher importiert und `dms_puffer` und `dms_ereignis` exportiert. Fehlt `code/modul.wasm`, installiert das DMS das Paket trotzdem (Einstellungen lassen sich pflegen), im Läufer läuft dann aber nichts.
+
+## Vektoren und Ähnlichkeit { #vektoren-und-ahnlichkeit }
+
+Seit 0.120.0 (#442) kann ein Paket zu jedem Dokument einen **Vektor** ablegen; das DMS vergleicht sie (Kosinus) und zeigt damit ähnliche Dokumente an der Mappe und in der Suche. **Der Kern rechnet keine Vektoren** – das macht das Paket, etwa mit einem Embedding-Modell im Paket-Läufer (Beispiel: „KI lokal – Ähnlichkeit“ in der Registry).
+
+```yaml
+dms: ">=0.120.0"
+code:
+  ereignisse: [volltext.fertig]
+  rechte:
+    lesen: ["*"]
+    dokumente: lesen
+    schnittstellen: ["dms:vektoren"]
+  netz: []
+```
+
+**Ablauf:**
+
+1. Ereignis `volltext.fertig` → Volltext holen (`GET /dokumente/{id}/volltext`), Vektor rechnen, ablegen: `PUT /dokumente/{id}/vektor` mit `{ "modell": "mein-modell/256", "vektor": [0.01, …] }`. Das DMS normiert den Vektor; alle Vektoren eines Modells haben dieselbe Länge (8 bis 4096 Zahlen).
+2. **Suchbegriff:** Die Suche ruft `dms_aktion` mit `{ "aktion": "dms:vektor", "text": "Rechnung Heizung", … }`. Das Paket antwortet mit `ergebnis` als JSON: `{ "modell": "mein-modell/256", "vektor": [ … ], "schwelle": 0.45 }`. `schwelle` (optional, Kosinus) sagt, ab wann ein Dokument als ähnlich gilt (Standard 0,5). Mit leerem `text` genügt `{ "modell": "…" }` – so erfragt das DMS das aktuelle Modell. Die Suche wartet höchstens **1,5 s** (der Aufruf kommt vor die wartenden); antwortet das Paket nicht, sucht sie ohne Ähnlichkeit.
+3. **Bestand:** Hat das Paket keine offenen Ereignisse, schickt das DMS alle 30 s bis zu 50 Ereignisse `volltext.fertig` mit `nachberechnung: true` für Dokumente ohne Vektor des aktuellen Modells.
+4. **Modellwechsel:** Meldet das Paket ein anderes `modell` (z. B. nach einem Update), löscht das DMS dessen alte Vektoren und lässt sie wie unter 3. neu berechnen.
+
+**Endpunkte** (API v1, siehe `openapi.json`):
+
+| | |
+|---|---|
+| `PUT /dokumente/{id}/vektor` | Vektor setzen bzw. ersetzen (`modell`, `vektor`). Nur mit `dms:vektoren`, sonst 403. |
+| `DELETE /dokumente/{id}/vektor?modell=…` | Vektor löschen. Mit dem Dokument verschwinden seine Vektoren von selbst. |
+| `GET /dokumente/{id}/aehnliche?anzahl=10&schwelle=0.5` | ähnlichste Dokumente zu einem Dokument |
+| `POST /vektoren/aehnliche` | ähnlichste Dokumente zu einem Vektor (`vektor`, `anzahl`, `schwelle`, `modell`) |
+
+Treffer gibt es nur aus Mappen, die der Aufrufer lesen darf – für ein Paket also aus `rechte.lesen`, für Benutzer nach ihren Rechten. Vektoren sind abgeleitete Daten: nicht im Vollexport und nicht in der Historie.
 
 ## Ausprobieren
 

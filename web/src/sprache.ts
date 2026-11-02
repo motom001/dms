@@ -4,6 +4,7 @@
  * abgerufen; ein neuer Bereich wird unten ergänzt. Anleitung: Entwicklerhandbuch → Aufbau → Texte.
  */
 import { uebersetzer } from '../../shared/src/sprache';
+import aehnlich from '../../shared/src/sprachen/de/aehnlich.json';
 import anmeldung from '../../shared/src/sprachen/de/anmeldung.json';
 import pakete from '../../shared/src/sprachen/de/pakete.json';
 import felder from '../../shared/src/sprachen/de/felder.json';
@@ -12,4 +13,4 @@ import spalten from '../../shared/src/sprachen/de/spalten.json';
 import systemzustand from '../../shared/src/sprachen/de/systemzustand.json';
 import werkbank from '../../shared/src/sprachen/de/werkbank.json';
 
-export const t = uebersetzer({ anmeldung, felder, pakete, profil, spalten, systemzustand, werkbank });
+export const t = uebersetzer({ aehnlich, anmeldung, felder, pakete, profil, spalten, systemzustand, werkbank });

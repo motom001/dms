@@ -23,6 +23,7 @@ import { PostLeiste } from './Post';
 import { linkZuMappe } from '../../../shared/src/direktlink';
 import { Person } from '../Person';
 import { Dokumente, type NeueDatei } from './Dokumente';
+import { AehnlicheDokumente } from './Aehnlich';
 import { hinweis, rueckfrage } from '../rueckfrage';
 import { mitGrund } from './Loeschgrund';
 import { AusDokument, type AusDokumentErgebnis } from './AusDokument';
@@ -502,6 +503,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
         setzeNeue={(uid, patch) => setNeueDateien((x) => x.map((n) => (n.uid === uid ? { ...n, ...patch } : n)))}
         neuLaden={mappe ? async () => { await neuLaden?.(); await d.neuLaden(); } : undefined} post={typ.system === 'post'} typ={typ} mappeTitel={mappe?.titel ?? ''} />
     );
+    // Ähnliche Dokumente (#442): nur mit einem Paket mit dms:vektoren und wenn hier Dokumente liegen.
+    if (mappe && details && dokumenteIn(reg.key).length > 0) inhalt = <>{inhalt}<AehnlicheDokumente mappeId={mappe.id} /></>;
   } else if (reg.art === 'notizen') {
     inhalt = !mappe ? <p className="leise">Notizen gehen nach dem ersten Speichern.</p>
       : !details ? <p className="leise">Lade …</p>

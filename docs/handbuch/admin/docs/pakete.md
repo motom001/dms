@@ -120,7 +120,7 @@ Die Einstellungen sind **Teil der Sicherung**; Geheimnisse bleiben dabei verschl
 
 ## Pakete mit Code
 
-Manche Pakete bringen **Code** mit – etwa eine eigene Texterkennung oder Regeln, die neue Post zuordnen. Der Code reagiert auf Ereignisse (neue Post, hochgeladenes Dokument, fertige Texterkennung, geänderte Einstellungen) und auf die **Aktionen** im Reiter „Einstellungen“. Das DMS führt ihn im **Paket-Läufer** aus:
+Manche Pakete bringen **Code** mit – etwa eine eigene Texterkennung oder Regeln, die neue Post zuordnen. Der Code reagiert auf Ereignisse (neue Post, hochgeladenes Dokument, fertige Texterkennung, fertiger Volltext, geänderte Einstellungen) und auf die **Aktionen** im Reiter „Einstellungen“. Das DMS führt ihn im **Paket-Läufer** aus:
 
 - **Abgeschottet:** Der Code ist WebAssembly und läuft in einem eigenen Prozess des DMS, ohne Zugriff auf Dateien, Schlüssel oder Datenbank. Netzwerk und Internet erreicht er nur unter den Adressen, die das Paket angibt – meist gar nicht.
 - **Nur bestätigte Rechte:** Vor der Installation zeigt die Vorschau, was der Code darf – welche Mappentypen er lesen bzw. anlegen und ändern darf, ob er Dokumente lesen oder schreiben darf, ob er aufs Netzwerk oder Internet zugreifen darf und auf welche Ereignisse er reagiert (siehe [Rechte eines Pakets](#rechte-eines-pakets) und [Ereignisse](#ereignisse)). Erst wenn du das bestätigst, installiert das DMS. Will ein **Update** mehr Rechte oder andere Adressen, fragt das DMS erneut.
@@ -168,6 +168,10 @@ Was nicht in der Liste steht, darf der Code nicht. Benutzer und Passwörter sieh
 
 Steht keins von beiden in der Liste, sieht der Code keine Dokumente.
 
+#### Vektoren zu Dokumenten { #recht-vektoren }
+
+**„Vektoren zu Dokumenten speichern und ähnliche Dokumente finden (dms:vektoren)“** – Der Code darf zu Dokumenten, die er lesen darf, einen **Vektor** ablegen: eine Liste von Zahlen, die den Inhalt des Volltexts beschreibt. Das DMS vergleicht diese Vektoren und zeigt damit [ähnliche Dokumente](#aehnlichkeit) an der Mappe und in der Suche. Außerdem fragt die Suche das Paket nach dem Vektor des Suchbegriffs. Das DMS selbst rechnet dabei nichts – es speichert und vergleicht nur, was das Paket liefert. Dokumente, Mappen und Volltext ändern darf der Code mit diesem Recht nicht; ähnliche Dokumente sieht jeder nur aus Mappen, die er lesen darf.
+
 #### Zugriff auf Netzwerk und Internet { #recht-netzwerk-und-internet }
 
 - **„kein Zugriff auf Netzwerk und Internet“** – Der Code erreicht weder Geräte in deinem Heimnetz noch das Internet. Das ist der Normalfall: Die Daten bleiben im DMS.
@@ -197,11 +201,49 @@ Unter **„Reagiert auf diese Ereignisse:“** nennt die Vorschau, wann der Code
 
 **Typisch:** Mit dem Volltext arbeiten, z. B. Felder vorschlagen oder Post anhand von Wörtern zuordnen.
 
+#### Der Volltext eines Dokuments ist da { #ereignis-volltext-fertig }
+
+**Wann:** Sobald der Volltext eines Dokuments feststeht – egal, woher er kommt: von der eingebauten Texterkennung, aus der Textebene eines PDFs, von einem Paket wie **Texterkennung** oder über die API. Für ein Paket mit dem Recht [Vektoren zu Dokumenten](#recht-vektoren) schickt das DMS dieses Ereignis außerdem für den **Bestand** nach (siehe [Ähnlichkeit](#aehnlichkeit)).
+
+**Typisch:** Aus dem Volltext etwas berechnen – das Paket **KI lokal – Ähnlichkeit** rechnet daraus den Vektor des Dokuments.
+
 #### Die Einstellungen des Pakets wurden geändert { #ereignis-einstellungen-geandert }
 
 **Wann:** Wenn ein Administrator die [Einstellungen des Pakets](#einstellungen) speichert. Nur das Paket selbst bekommt dieses Ereignis.
 
 **Typisch:** Die neuen Werte übernehmen, z. B. eine Verbindung neu prüfen oder den Status aktualisieren.
+
+### Ähnlichkeit { #aehnlichkeit }
+
+Ein Paket mit dem Recht [Vektoren zu Dokumenten](#recht-vektoren) – etwa **KI lokal – Ähnlichkeit** – rechnet zu jedem Dokument mit Volltext einen Vektor. Damit zeigt das DMS:
+
+- an der Mappe unter den Dokumenten **„Ähnliche Dokumente“** aus anderen Mappen,
+- in der Suche der [Startseite](https://motom001.github.io/dms/benutzer/aktuell/startseite/#schnell-finden) mit **„auch in Dokumenten“** zusätzlich **ähnliche Treffer** – Mappen ohne passendes Wort, deren Dokument dem Suchbegriff ähnlich ist, gekennzeichnet mit **„ähnlich“**.
+
+Jeder sieht dabei nur Mappen, die er lesen darf. Den Vektor des Suchbegriffs liefert das Paket; antwortet es nicht innerhalb von 1,5 Sekunden, sucht das DMS wie bisher ohne Ähnlichkeit.
+
+**Werkbank → Pakete → *Paket*** zeigt im Abschnitt **Ähnlichkeit**:
+
+| Angabe | Bedeutung |
+|---|---|
+| **Modell** | womit das Paket rechnet (meldet das Paket selbst) |
+| **Stand** | für wie viele Dokumente mit Volltext es schon einen Vektor gibt |
+| **Zwischenspeicher** | wie viel Arbeitsspeicher die Vektoren im DMS belegen |
+| **Ähnliche Treffer in der Suche zeigen** | Einstellung, Standard: an. Aus: Die Suche fragt das Paket nicht mehr; „Ähnliche Dokumente“ an der Mappe bleiben. |
+| **Neu berechnen** | löscht alle Vektoren; das Paket rechnet sie im Hintergrund neu |
+
+**Bestand und Modellwechsel:** Nach der Installation rechnet das Paket zuerst nur neue Dokumente. Den Bestand holt das DMS gedrosselt nach: Hat das Paket nichts mehr offen, bekommt es alle 30 Sekunden bis zu 50 Dokumente ohne Vektor (Ereignis [Volltext ist da](#ereignis-volltext-fertig)). Meldet das Paket nach einem Update ein **anderes Modell**, sind die alten Vektoren ungültig: Das DMS löscht sie und lässt sie auf dieselbe Weise neu berechnen. Bis dahin fehlen ähnliche Dokumente für die noch offenen Dokumente.
+
+**Daten:** Vektoren sind abgeleitet. Sie stehen in der Datenbank (Tabelle `vektoren`), nicht im [Vollexport](export.md), und verschwinden mit ihrem Dokument. Nach einer Wiederherstellung rechnet das Paket sie neu.
+
+**Speicher und Antwortzeit** (256 Zahlen je Vektor, gemessen auf einem Rechner mit 2 Kernen, PostgreSQL 16):
+
+| Dokumente | Datenbank | Zwischenspeicher | erstes Laden | Ähnliche Dokumente | zum Vergleich: Kosinus in SQL |
+|---|---|---|---|---|---|
+| 10 000 | 12 MB | 4 MB | 0,4 s | 4 ms | 0,3 s |
+| 100 000 | 118 MB | 33 MB | 3,2 s | 37 ms | 3,0 s |
+
+Das DMS braucht dafür keine Datenbank-Erweiterung (wie pgvector, die im Image `postgres:17` fehlt). Es vergleicht im eigenen Arbeitsspeicher mit 8 Bit je Zahl; den Zwischenspeicher lädt es nach dem Start im Hintergrund – bis er da ist, sucht die Suche ohne Ähnlichkeit. Gemessen mit `server/test/vektoren-messen.ts`.
 
 ## Expertenmodus: weitere Kataloge und Hochladen
 

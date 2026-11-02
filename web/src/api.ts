@@ -140,7 +140,11 @@ async function anfrage<T>(methode: string, url: string, body?: unknown): Promise
 
 export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string; titel: string; /** Nicht lesbar (#126): ohne Link. */ verborgen?: boolean }
 export type Bezuege = Record<string, MappenBezug>;
-export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; /** Favoriten des Benutzers unter den Mappen dieser Seite (#62). */ favoriten?: string[]; /** Von anderen geändert seit dem letzten Sehen (#422). */ geaendert?: string[]; /** Favoriten ohne Benachrichtigung (#422, nur Favoritenliste). */ stumm?: string[] }
+export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; /** Favoriten des Benutzers unter den Mappen dieser Seite (#62). */ favoriten?: string[]; /** Von anderen geändert seit dem letzten Sehen (#422). */ geaendert?: string[]; /** Favoriten ohne Benachrichtigung (#422, nur Favoritenliste). */ stumm?: string[]; /** Ähnliche Treffer (#442): nur in der Suche über alle Mappen mit Volltext. */ aehnlich?: AehnlicheMappe[] }
+/** Eine Mappe mit einem ähnlichen Dokument (#442); aehnlichkeit = Kosinus (0 bis 1). */
+export interface AehnlicheMappe { id: string; titel: string; typId: string; dokument: { id: string; name: string }; aehnlichkeit: number }
+/** Vektoren in der Werkbank (#442). */
+export interface VektorStand { paket: string | null; modell: string | null; mitVektor: number; mitVolltext: number; modelle: Array<{ paket: string; modell: string; anzahl: number }>; suche: boolean; zwischenspeicherMB: number | null }
 /** Texterkennung (#45): Stand, Werkzeuge und Einstellungen für die Werkbank. */
 export interface OcrEinstellungen { aktiv: boolean; auftraege: number; maxSeiten: number; maxMB: number; sprachen: string; automatisch: boolean; typen: Record<string, 'tesseract' | 'aus'> }
 export interface OcrStatus {
@@ -539,6 +543,11 @@ export const api = {
   paketUpdates: () => anfrage<Array<{ id: string; installiert: string; neu: string; changelog: string | null; quelle: string }>>('POST', '/api/werkbank/pakete/updates'),
   paketAktualisieren: (id: string, version?: string, bestaetigt?: boolean, rechteBestaetigt?: boolean) => anfrage<InstalliertesPaket>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/aktualisieren`, { version, bestaetigt, rechteBestaetigt }),
   paketLaeufer: () => anfrage<PaketlaeuferStand | null>('GET', '/api/werkbank/pakete/laeufer'),
+  /* Vektoren (#442) */
+  vektorStand: () => anfrage<VektorStand>('GET', '/api/werkbank/vektoren'),
+  vektorSuche: (suche: boolean) => anfrage<VektorStand>('PUT', '/api/werkbank/vektoren', { suche }),
+  vektorenNeu: () => anfrage<{ entfernt: number }>('POST', '/api/werkbank/vektoren/neu'),
+  aehnlicheZurMappe: (id: string) => anfrage<{ verfuegbar: boolean; berechnet: boolean; mappen: AehnlicheMappe[] }>('GET', `/api/mappen/${id}/aehnliche`),
   paketEntfernen: (id: string, einstellungenBehalten = false) => anfrage<void>('DELETE', `/api/werkbank/pakete/${encodeURIComponent(id)}${einstellungenBehalten ? '?einstellungenBehalten=1' : ''}`),
   paketEinstellungen: (id: string) => anfrage<PaketEinstellungenStand>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`),
   paketEinstellungenSpeichern: (id: string, werte: Record<string, unknown>) => anfrage<PaketEinstellungenStand>('PUT', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`, { werte }),

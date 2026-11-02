@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Mappe } from '../../../shared/src/model';
 import { gruppiereTreffer, suchWoerter } from '../../../shared/src/schnellsuche';
-import { api, type Bezuege } from '../api';
+import { api, type AehnlicheMappe, type Bezuege } from '../api';
+import { AehnlichChip } from './Aehnlich';
+import { t } from '../sprache';
 import { useDaten } from '../daten';
 import { geheZu, Link } from '../ort';
 import { titelOder } from '../seiten';
@@ -28,7 +30,7 @@ export function StartSuche({ sonst, ohneSuche = false }: { sonst?: ReactNode; oh
   const d = useDaten();
   const [eingabe, setEingabe] = useState('');
   const [volltext, setVolltext] = useState(false);
-  const [stand, setStand] = useState<{ such: string; gesamt: number; mappen: Mappe[]; bezuege: Bezuege } | null>(null);
+  const [stand, setStand] = useState<{ such: string; gesamt: number; mappen: Mappe[]; bezuege: Bezuege; aehnlich: AehnlicheMappe[] } | null>(null);
   const [laeuft, setLaeuft] = useState(false);
   const [fehler, setFehler] = useState<string>();
   const nr = useRef(0);
@@ -40,7 +42,7 @@ export function StartSuche({ sonst, ohneSuche = false }: { sonst?: ReactNode; oh
     setLaeuft(true);
     const t = setTimeout(() => {
       api.seite('suche', 0, MAX, such, null, volltext, false, '')
-        .then((s) => { if (meine === nr.current) { setStand({ such, gesamt: s.gesamt, mappen: s.mappen.filter((m) => !m.verborgen), bezuege: s.bezuege }); setFehler(undefined); } })
+        .then((s) => { if (meine === nr.current) { setStand({ such, gesamt: s.gesamt, mappen: s.mappen.filter((m) => !m.verborgen), bezuege: s.bezuege, aehnlich: s.aehnlich ?? [] }); setFehler(undefined); } })
         .catch((e) => { if (meine === nr.current) setFehler((e as Error).message); })
         .finally(() => { if (meine === nr.current) setLaeuft(false); });
     }, 200);
@@ -74,7 +76,7 @@ export function StartSuche({ sonst, ohneSuche = false }: { sonst?: ReactNode; oh
       {such.length > 0 && such.length < 2 && <p className="leise klein">Noch ein Zeichen …</p>}
       {stand && (
         <div className="ss-treffer" aria-live="polite" aria-busy={laeuft}>
-          <p className="leise klein">{stand.gesamt === 0 ? `Nichts gefunden für „${stand.such}“.` : stand.gesamt === 1 ? 'Ein Treffer' : `${stand.gesamt} Treffer${stand.gesamt > stand.mappen.length ? ` – die ersten ${stand.mappen.length}; genauer suchen oder die ` : ''}`}
+          <p className="leise klein">{stand.gesamt === 0 && !stand.aehnlich.length ? `Nichts gefunden für „${stand.such}“.` : stand.gesamt === 0 ? '' : stand.gesamt === 1 ? 'Ein Treffer' : `${stand.gesamt} Treffer${stand.gesamt > stand.mappen.length ? ` – die ersten ${stand.mappen.length}; genauer suchen oder die ` : ''}`}
             {stand.gesamt > stand.mappen.length && <Link to="/ablage/suche" className="verweis">Erweiterte Suche</Link>}{laeuft ? ' · suche …' : ''}</p>
           {gruppen.map((g) => (
             <div key={g.typId} className="ss-gruppe">
@@ -92,6 +94,22 @@ export function StartSuche({ sonst, ohneSuche = false }: { sonst?: ReactNode; oh
               </ul>
             </div>
           ))}
+          {/* Ähnliche Treffer (#442): ohne Wort-Treffer, aber mit einem ähnlichen Dokument – gekennzeichnet. */}
+          {stand.aehnlich.length > 0 && (
+            <div className="ss-gruppe">
+              <h2 className="ueber">{t('aehnlich.gruppe')} <span className="anzahl">{stand.aehnlich.length}</span></h2>
+              <ul className="mappenliste">
+                {stand.aehnlich.map((a) => (
+                  <li key={a.id}>
+                    <Link to={`/ablage/start/${a.id}`} className="eintrag">
+                      <span className="titel">{titelOder(a.titel)} <AehnlichChip a={a} /></span>
+                      <span className="unter leise">{t('aehnlich.eintrag', { dokument: a.dokument.name, prozent: Math.round(Math.max(0, a.aehnlichkeit) * 100) })}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
       {such.length < 2 && sonst}

@@ -59,6 +59,7 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   auskunft_links: 'nicht enthalten: Abruf-Links von Auskünften (#455, Hashes; der Nachweis steht in daten/historie.jsonl)',
   sitzungen: 'nicht enthalten: Anmeldungen',
   erkennungen: 'nicht enthalten: Ergebnis der Erkennung je Post (#336, wird aus dem Volltext neu berechnet)',
+  vektoren: 'nicht enthalten: Vektoren zu Dokumenten (#442, abgeleitet – das Paket mit dms:vektoren rechnet sie neu)',
   gesehen: 'nicht enthalten: wann ein Benutzer eine Mappe zuletzt geöffnet hat (#422, nur für die Hervorhebung geänderter Mappen)',
   schema_migrationen: 'nicht enthalten: Stand der Datenbank (steht als Version im Manifest)',
 };

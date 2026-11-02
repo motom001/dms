@@ -30,7 +30,8 @@ export type Hostanfrage =
 export interface Hostantwort { status: number; body: Uint8Array }
 export type ArbeiterMeldung = { art: 'log'; stufe: number; text: string } | { art: 'ende'; rc: number | null; ergebnis: string; speicher: number; fehler?: string };
 
-const MAX_ERGEBNIS = 4000;
+/** Ergebnis eines Aufrufs (Zeichen): genug für einen Vektor als JSON (#442); die Werkbank zeigt davon nur den Anfang. */
+const MAX_ERGEBNIS = 64_000;
 
 function lauf(d: ArbeiterDaten) {
   const sig = new Int32Array(d.signal);

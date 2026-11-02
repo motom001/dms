@@ -7,7 +7,8 @@ import { fork, type ChildProcess } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import type { Benutzer } from '../../../shared/src/model';
-import type { InstalliertesPaket, LaeuferZustand } from '../../../shared/src/pakete';
+import { hatSchnittstelle, type InstalliertesPaket, type LaeuferZustand } from '../../../shared/src/pakete';
+import { liesModell, liesVektor, SCHWELLE_STANDARD } from '../vektoren';
 import type { ApiSchluesselDienst } from '../apischluessel';
 import type { Dienst } from '../dienst';
 import type { PaketEreignis } from '../repo';
@@ -26,6 +27,11 @@ const WARTEN_MIN = [1, 5, 30, 120, 360];
 
 const SPEICHER_MAX = 64 * 1024;
 const LETZTE = 20;
+/** Nachberechnung der Vektoren (#442): alle so viele ms höchstens so viele Dokumente – nur, wenn das Paket nichts offen hat. */
+const NACHLAUF_MS = 30_000;
+const NACHLAUF_JE_RUNDE = 50;
+/** Nach einem vollständigen Durchgang erst nach dieser Zeit wieder von vorn (Dokumente, deren Vektor fehlschlug). */
+const NACHLAUF_PAUSE_MS = 6 * 3600_000;
 
 /** Anfrage an die eigene API (im Betrieb über fastify.inject, ohne Netz). */
 export type ApiAufruf = (a: { methode: string; pfad: string; kopf: Record<string, string>; body?: Buffer }) => Promise<{ status: number; kopf: Record<string, string>; body: Buffer }>;
@@ -44,6 +50,7 @@ export interface LaeuferOptionen {
   grenzen?: Partial<Grenzen>;
   /** Tests: kürzere Abstände. */
   abrufMs?: number;
+  nachlaufMs?: number;
 }
 
 export interface PaketStand {
@@ -84,10 +91,16 @@ export class Paketlaeufer implements PaketLaeufer {
   /** Was der laufende Läufer-Prozess schon hat: Paket → Stand (Version, Modul, Zeitpunkt). Nur Geändertes wird neu geschickt (#403). */
   private gesendet = new Map<string, string>();
   readonly grenzen: Grenzen;
+  /** Nachberechnung der Vektoren je Paket (#442): Modell, Stelle im Bestand, Pause nach vollständigem Durchgang. */
+  private nachlauf = new Map<string, { modell: string; nach: string | null; pauseBis: number }>();
+  private nachlaufUhr: ReturnType<typeof setInterval> | null = null;
+  private nachlaufLaeuft = false;
 
   constructor(private o: LaeuferOptionen) {
     this.grenzen = { ...STANDARD_GRENZEN, ...o.grenzen };
     o.dienst.ereignisWecker = () => void this.stelleZu();
+    // Vektoren (#442): Der Kern fragt das Paket mit dms:vektoren nach dem Vektor eines Suchbegriffs.
+    o.dienst.vektorAnbieter = { paket: () => this.vektorPaket(), vektorFuer: (t, ms) => this.vektorFuer(t, ms) };
   }
 
   /** Startet den Läufer, wenn es Pakete mit Code gibt; sonst erst, wenn eins installiert wird. */
@@ -96,12 +109,16 @@ export class Paketlaeufer implements PaketLaeufer {
     await this.synchronisiere();
     this.uhr ??= setInterval(() => void this.stelleZu(), this.o.abrufMs ?? 5000);
     this.uhr.unref?.();
+    this.nachlaufUhr ??= setInterval(() => void this.nachberechnen(), this.o.nachlaufMs ?? NACHLAUF_MS);
+    this.nachlaufUhr.unref?.();
   }
 
   async stop() {
     this.aus = true;
     if (this.uhr) clearInterval(this.uhr);
     this.uhr = null;
+    if (this.nachlaufUhr) clearInterval(this.nachlaufUhr);
+    this.nachlaufUhr = null;
     const k = this.kind; this.kind = null; this.bereit = false;
     this.beendeAufrufe(abbruch('Der Paket-Läufer wurde beendet.', true));
     if (k && k.exitCode === null) { k.kill(); await new Promise((ok) => { k.once('exit', ok); setTimeout(ok, 2000); }); }
@@ -116,7 +133,7 @@ export class Paketlaeufer implements PaketLaeufer {
 
   /* ---------- PaketLaeufer (für die Paketverwaltung) ---------- */
 
-  codeGeaendert(): Promise<void> { return this.synchronisiere().catch((e) => log.error('Paket-Läufer: Pakete nicht neu geladen', { fehler: (e as Error).message })); }
+  codeGeaendert(): Promise<void> { this.nachlauf.clear(); this.suchvektoren.clear(); return this.synchronisiere().catch((e) => log.error('Paket-Läufer: Pakete nicht neu geladen', { fehler: (e as Error).message })); }
 
 
   ereignis(paket: string, name: 'paket.einstellungen_geaendert', felder: string[]) { void this.o.dienst.melde(name, { felder }, paket); }
@@ -143,7 +160,8 @@ export class Paketlaeufer implements PaketLaeufer {
     for (const p of this.pakete) {
       const b = await this.o.konten.dienstkonto(p.id, p.name);
       this.konto.set(p.id, b);
-      const recht = p.laeufer!.rechte.schreiben.length || p.laeufer!.rechte.dokumente === 'schreiben' ? 'schreiben' : 'lesen';
+      // Vektoren schreiben (#442) braucht einen Schlüssel „lesen und schreiben“; was er darf, prüft die Route je Recht.
+      const recht = p.laeufer!.rechte.schreiben.length || p.laeufer!.rechte.dokumente === 'schreiben' || hatSchnittstelle(p.laeufer, 'dms:vektoren') ? 'schreiben' : 'lesen';
       // Neuen Schlüssel nur für neue Pakete oder geänderte Rechte – laufende Aufrufe der anderen behalten ihren.
       if (!this.schluessel.has(p.id) || this.schluesselRecht.get(p.id) !== `${b.id}:${recht}`) {
         this.schluessel.set(p.id, await this.o.schluessel.fuerDienstkonto(b, recht));
@@ -224,6 +242,8 @@ export class Paketlaeufer implements PaketLaeufer {
       case 'bereit': this.bereit = true; this.neustarts = 0; await this.sendePakete(); void this.stelleZu(); return;
       case 'geladen':
         for (const p of m.pakete) { this.ladefehler.set(p.id, p.fehler); if (p.fehler) log.warn('Paket-Läufer: Modul abgelehnt', { paket: p.id, fehler: p.fehler }); }
+        // Vektoren (#442): gleich das Modell erfragen und den Zwischenspeicher laden, nicht erst nach 30 s.
+        if (this.vektorPaket() && !this.nachlauf.has(this.vektorPaket()!)) setTimeout(() => void this.nachberechnen(), 1000).unref?.();
         return;
       case 'log': this.notiere(m.paket, { stufe: m.stufe, text: m.text }); return;
       case 'ergebnis': { const a = this.aufrufe.get(m.nr); this.aufrufe.delete(m.nr); a?.ok(m); return; }
@@ -269,8 +289,89 @@ export class Paketlaeufer implements PaketLaeufer {
     return s;
   }
 
-  /** Einen Aufruf ausführen und auf das Ergebnis warten. */
-  private async rufe(paket: string, art: 'ereignis' | 'aktion', eingang: Record<string, unknown>): Promise<Ergebnis> {
+  /* ---------- Vektoren (#442) ---------- */
+
+  /** Das Paket mit dem Recht dms:vektoren (bei mehreren das erste nach Id), sofern der Läufer es geladen hat. */
+  vektorPaket(): string | null {
+    const p = this.pakete.filter((x) => hatSchnittstelle(x.laeufer, 'dms:vektoren') && !this.ladefehler.get(x.id)).sort((a, b) => a.id.localeCompare(b.id))[0];
+    return p?.id ?? null;
+  }
+
+  /**
+   * Fragt das Paket nach dem Vektor eines Textes: Aktion „dms:vektor“ mit { text }; Antwort (Ergebnis) als JSON
+   * { modell, vektor, schwelle? }. Leerer Text: nur das Modell. null = kein Paket, keine Antwort in ms, Fehler.
+   */
+  async vektorFuer(text: string, ms: number): Promise<{ paket: string; modell: string; vektor: Float32Array; schwelle: number } | null> {
+    // Die Suche fragt beim Tippen oft nach demselben Begriff: die letzten Antworten merken.
+    const k = text.trim().toLowerCase();
+    const alt = this.suchvektoren.get(k);
+    if (alt && alt.paket === this.vektorPaket()) return alt;
+    const r = await this.vektorAnfrage(text, ms);
+    if (!r?.vektor) return null;
+    const erg = { paket: r.paket, modell: r.modell, vektor: r.vektor, schwelle: r.schwelle };
+    this.suchvektoren.set(k, erg);
+    if (this.suchvektoren.size > 100) this.suchvektoren.delete(this.suchvektoren.keys().next().value!);
+    return erg;
+  }
+  private suchvektoren = new Map<string, { paket: string; modell: string; vektor: Float32Array; schwelle: number }>();
+
+  private async vektorAnfrage(text: string, ms: number): Promise<{ paket: string; modell: string; vektor: Float32Array | null; schwelle: number } | null> {
+    const paket = this.vektorPaket();
+    if (!paket || !this.laeuft()) return null;
+    const r = await this.rufe(paket, 'aktion', { aktion: 'dms:vektor', text: text.slice(0, 2000) }, { ms, vorrang: true, bezeichnung: text ? 'Vektor eines Suchbegriffs' : 'Modell abfragen' });
+    if (!r.ok) return null;
+    try {
+      const j = JSON.parse(r.text) as { modell?: unknown; vektor?: unknown; schwelle?: unknown };
+      const s = Number(j.schwelle);
+      return { paket, modell: liesModell(j.modell), vektor: text ? liesVektor(j.vektor) : null, schwelle: Number.isFinite(s) && s > -1 && s < 1 ? s : SCHWELLE_STANDARD };
+    } catch (e) {
+      this.notiere(paket, { stufe: 2, text: `Antwort auf „dms:vektor“ unbrauchbar: ${(e as Error).message}` });
+      return null;
+    }
+  }
+
+  /**
+   * Nachberechnung im Hintergrund (#442): Dokumente mit Volltext ohne Vektor des aktuellen Modells bekommen
+   * gedrosselt ein Ereignis „volltext.fertig“ – nur, wenn das Paket gerade nichts offen hat. So holt das Paket
+   * den Bestand nach (nach der Installation, nach einem Modellwechsel, nach „Neu berechnen“).
+   */
+  async nachberechnen(): Promise<void> {
+    const paket = this.vektorPaket();
+    if (!paket || this.nachlaufLaeuft || !this.laeuft()) return;
+    const p = this.pakete.find((x) => x.id === paket)!;
+    if (!p.laeufer?.ereignisse.includes('volltext.fertig')) return;
+    this.nachlaufLaeuft = true;
+    try {
+      let n = this.nachlauf.get(paket);
+      if (!n) {
+        const r = await this.vektorAnfrage('', 30_000);
+        if (!r) return;
+        await this.o.dienst.merkeVektorModell(paket, r.modell);
+        n = { modell: r.modell, nach: null, pauseBis: 0 };
+        this.nachlauf.set(paket, n);
+      }
+      if (Date.now() < n.pauseBis) return;
+      if (((await this.o.dienst.ereignisStand())[paket]?.offen ?? 0) > 0) return;
+      const ids = await this.o.dienst.vektorNachlauf(paket, n.modell, NACHLAUF_JE_RUNDE, n.nach);
+      if (ids.length) n.nach = ids[ids.length - 1];
+      else { n.nach = null; n.pauseBis = Date.now() + NACHLAUF_PAUSE_MS; }
+    } catch (e) {
+      log.warn('Paket-Läufer: Nachberechnung der Vektoren unterbrochen', { paket, fehler: (e as Error).message });
+    } finally { this.nachlaufLaeuft = false; }
+  }
+
+  /** „Neu berechnen“ (Werkbank): Vektoren weg, Nachberechnung sofort von vorn. */
+  async vektorenNeu(): Promise<{ entfernt: number }> {
+    const paket = this.vektorPaket();
+    if (!paket) throw new Error('Es ist kein Paket mit dem Recht „dms:vektoren“ installiert.');
+    const r = await this.o.dienst.vektorenNeu(paket);
+    this.nachlauf.delete(paket);
+    void this.nachberechnen();
+    return r;
+  }
+
+  /** Einen Aufruf ausführen und auf das Ergebnis warten. ms: eigene, kürzere Wartezeit; vorrang: vor die Warteschlange. */
+  private async rufe(paket: string, art: 'ereignis' | 'aktion', eingang: Record<string, unknown>, opt: { ms?: number; vorrang?: boolean; bezeichnung?: string } = {}): Promise<Ergebnis> {
     if (!this.kind || !this.bereit) return abbruch('Der Paket-Läufer läuft gerade nicht.', true);
     const p = this.pakete.find((x) => x.id === paket);
     if (!p) throw new Error('Dieses Paket hat keinen Code.');
@@ -278,15 +379,16 @@ export class Paketlaeufer implements PaketLaeufer {
     const json = JSON.stringify({ ...eingang, paket: { id: p.id, version: p.version }, einstellungen: eingang.einstellungen ?? await this.o.einstellungen(paket).catch(() => ({})) });
     // Eigene Zeitgrenze über der des Läufers: Antwortet der Läufer gar nicht mehr, hängt hier nichts.
     const r = await new Promise<Ergebnis>((ok) => {
-      const uhr = setTimeout(() => { if (this.aufrufe.delete(nr)) ok(abbruch('Der Paket-Läufer hat nicht geantwortet.')); }, this.grenzen.sekunden * 1000 + 15_000);
+      const uhr = setTimeout(() => { if (this.aufrufe.delete(nr)) ok(abbruch(opt.ms ? `Keine Antwort innerhalb von ${opt.ms} ms.` : 'Der Paket-Läufer hat nicht geantwortet.')); }, opt.ms ?? this.grenzen.sekunden * 1000 + 15_000);
       uhr.unref?.();
       this.aufrufe.set(nr, { ok: (x) => { clearTimeout(uhr); ok(x); } });
-      this.sende({ art: 'aufruf', nr, paket, eingang: { art, json } });
+      this.sende({ art: 'aufruf', nr, paket, eingang: { art, json }, ...(opt.vorrang ? { vorrang: true } : {}) });
     });
     const s = this.standVon(paket);
     s.aufrufe++; if (!r.ok) s.fehlgeschlagen++;
     s.letzterAufruf = new Date().toISOString(); s.dauerMs = r.ms; s.speicherMB = r.speicherMB;
-    s.letzte.push({ zeit: s.letzterAufruf, art: art === 'aktion' ? `Aktion ${String(eingang.aktion)}` : String(eingang.art), ok: r.ok, text: r.ok ? r.text : (r.fehler ?? '') });
+    // Das Ergebnis kann lang sein (Vektor als JSON, #442): in der Werkbank nur der Anfang.
+    s.letzte.push({ zeit: s.letzterAufruf, art: opt.bezeichnung ?? (art === 'aktion' ? `Aktion ${String(eingang.aktion)}` : String(eingang.art)), ok: r.ok, text: (r.ok ? r.text : (r.fehler ?? '')).slice(0, 300) });
     if (s.letzte.length > LETZTE) s.letzte.splice(0, s.letzte.length - LETZTE);
     if (!r.ok) log.warn(`Paket ${paket}: Aufruf fehlgeschlagen`, { paket, art, fehler: r.fehler, ms: r.ms });
     return r;

@@ -1019,6 +1019,13 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktualisieren', zugang: 'admin', handler: async (a) => ok(await pakete.aktualisiere(a.params.id, (a.body ?? {}) as { version?: string; bestaetigt?: boolean; rechteBestaetigt?: boolean }, wer(a))) },
     // Paket-Läufer (#338): Stand je Paket mit Code – geladen, Aufrufe, Fehler, Ereignisse.
     { methode: 'GET', pfad: '/api/werkbank/pakete/laeufer', zugang: 'admin', handler: async () => ok(x.paketlaeufer ? await x.paketlaeufer.uebersicht() : null) },
+    // Vektoren (#442): Stand der Berechnung, Einstellung „Ähnliche Treffer in der Suche“, neu berechnen.
+    { methode: 'GET', pfad: '/api/werkbank/vektoren', zugang: 'admin', handler: async () => ok(await dienst.vektorStand()) },
+    { methode: 'PUT', pfad: '/api/werkbank/vektoren', zugang: 'admin', handler: async (a) => { await dienst.setzeVektorEinstellung(a.body); return ok(await dienst.vektorStand()); } },
+    { methode: 'POST', pfad: '/api/werkbank/vektoren/neu', zugang: 'admin', handler: async () => {
+      if (!x.paketlaeufer) throw new Fachfehler(404, 'Pakete mit Code laufen in diesem DMS nicht.');
+      try { return ok(await x.paketlaeufer.vektorenNeu()); } catch (e) { throw e instanceof Fachfehler ? e : new Fachfehler(409, (e as Error).message); }
+    } },
     { methode: 'DELETE', pfad: '/api/werkbank/pakete/:id', zugang: 'admin', handler: async (a) => { await pakete.entferne(a.params.id, wer(a), a.query.einstellungenBehalten === '1'); return leer; } },
     // Paket-Einstellungen (#197): nur Administratoren, nicht über die API v1.
     // Paket-Update: Text in Verweis umwandeln (#534) – Vorschau, Umwandeln, Rückgängig.
@@ -1695,6 +1702,24 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
       const d = await dienst.schreibeVolltext(a.params.id, a.body, { id: ich(a).id, herkunft, paket: !!p });
       return ok({ id: d.id, name: d.name, ocr: d.ocr });
     } },
+    // Vektoren zu Dokumenten (#442): schreiben nur Pakete mit dms:vektoren, die das Dokument lesen dürfen.
+    { methode: 'PUT', pfad: '/api/dokumente/:id/vektor', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      return ok(await dienst.setzeVektor(await zg(a), a.params.id, (b(a) as { modell?: unknown }).modell, a.body));
+    } },
+    { methode: 'DELETE', pfad: '/api/dokumente/:id/vektor', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      return ok(await dienst.loescheVektor(await zg(a), a.params.id, a.query.modell));
+    } },
+    { methode: 'GET', pfad: '/api/dokumente/:id/aehnliche', zugang: 'angemeldet', handler: async (a) => {
+      await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
+      return ok(await dienst.aehnlicheDokumente(await zg(a), { dokument: a.params.id, modell: a.query.modell, anzahl: a.query.anzahl, schwelle: a.query.schwelle }));
+    } },
+    { methode: 'POST', pfad: '/api/vektoren/aehnliche', zugang: 'angemeldet', lesend: true, handler: async (a) => {
+      const e = b(a) as { modell?: unknown; vektor?: unknown; anzahl?: unknown; schwelle?: unknown };
+      return ok(await dienst.aehnlicheDokumente(await zg(a), { modell: e.modell, vektor: e.vektor, anzahl: e.anzahl, schwelle: e.schwelle }));
+    } },
+    { methode: 'GET', pfad: '/api/mappen/:id/aehnliche', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.aehnlicheZurMappe(await zg(a), a.params.id)) },
     // Seite als Graustufenbild (#338): Eingabe für eine Texterkennung im Paket (PGM, 8 Bit).
     { methode: 'GET', pfad: '/api/dokumente/:id/seiten/:nr/scan', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.mappeVon('dokument', a.params.id), 'R');
@@ -1824,9 +1849,10 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const lesbar = (v: string) => !!x.tresor?.lesbar(v);
   // Dienstkonten (#338): Dokumente nur mit dem bestätigten Recht – lesen (GET) bzw. schreiben.
   // Dienstkonten von Paketen (#338): Dokumente nur mit dem Recht aus dem Manifest; E-Mail-Versand nie (Anhänge, Netz).
-  const dokumentRoute = (r: Route) => /\/dokumente\b|\/archivnummern\b/.test(r.pfad);
+  const dokumentRoute = (r: Route) => /\/dokumente\b|\/archivnummern\b|\/vektoren\b/.test(r.pfad);
   const nieFuerPakete = (r: Route) => /\/email\b/.test(r.pfad);
-  const lesendePost = (r: Route) => /\/dokumente\/gleiche$/.test(r.pfad);
+  // Vektoren (#442) ändern das Dokument nicht: Lesen reicht, das Recht dms:vektoren prüft der Dienst.
+  const lesendePost = (r: Route) => /\/dokumente\/gleiche$|\/dokumente\/:id\/vektor$|\/vektoren\/aehnliche$/.test(r.pfad);
   const dokumentRecht = async (r: Route, a: Anfrage): Promise<'keine' | 'lesen' | 'schreiben' | null> => {
     if (a.benutzer?.art !== 'dienst') return null;
     if (nieFuerPakete(r)) throw new Fachfehler(403, 'Pakete dürfen keine E-Mails versenden.');

@@ -340,6 +340,24 @@ export interface Repo {
   /** Post mit diesem eindeutig erkannten Absender, neueste zuerst. */
   erkennungenMitAbsender(absenderId: string, max: number): Promise<string[]>;
 
+  /* ---------- Vektoren zu Dokumenten (#442) ---------- */
+  /** Vektor eines Dokuments für ein Modell setzen bzw. ersetzen. Gibt es das Dokument nicht (mehr): false. */
+  vektorSetze(e: { dokumentId: string; paket: string; modell: string; vektor: Float32Array }): Promise<boolean>;
+  /** Vektor(en) eines Dokuments löschen – eines Modells oder alle; liefert die Anzahl. */
+  vektorLoesche(dokumentId: string, modell?: string): Promise<number>;
+  /** Vektoren eines Pakets löschen, außer denen des Modells `ausser` (Modellwechsel, Neuberechnung); liefert die Anzahl. */
+  vektorenLoeschePaket(paket: string, ausser?: string): Promise<number>;
+  /** Alle Vektoren eines Modells mit der Mappe des Dokuments, in Teilen (für den Zwischenspeicher, ohne alles auf einmal im Speicher). */
+  vektorenLaden(modell: string, jeTeil: (teil: Array<{ dokumentId: string; mappeId: string; vektor: Float32Array }>) => void): Promise<void>;
+  /** Vektor eines Dokuments für ein Modell. */
+  vektorVon(dokumentId: string, modell: string): Promise<Float32Array | null>;
+  /** Anzahl je Paket und Modell. */
+  vektorStand(): Promise<Array<{ paket: string; modell: string; anzahl: number }>>;
+  /** Dokumente mit Volltext, aber ohne Vektor dieses Modells (nach Id, ab `nach`) – für die Nachberechnung des Bestands. */
+  ohneVektor(modell: string, max: number, nach?: string | null): Promise<Array<{ id: string; mappeId: string }>>;
+  /** Anzahl der Dokumente mit Volltext. */
+  mitVolltext(): Promise<number>;
+
   /* ---------- Texterkennung (#45) ---------- */
   /** Dokumente in die Warteschlange stellen. */
   ocrEinreihen(ids: string[]): Promise<void>;

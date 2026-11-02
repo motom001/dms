@@ -51,7 +51,8 @@ import { geltenderStempel, liesStempelTyp, liesVorlagen, pruefeVorlage, stempelA
 import { alleSichtRechte, bereinigeSichtRegelwerk, sichtRegelProblem, sichtTestlauf, type SichtRegelwerk } from '../../shared/src/sichtrechte';
 import { liesDirektlink } from '../../shared/src/direktlink';
 import { erkenneSprache, SPRACHE_MARKE, spracheZuInfo } from '../../shared/src/textsprache';
-import { ALLE_TYPEN, PAKET_TEXT, type EreignisArt, type InstalliertesPaket, type PaketCode } from '../../shared/src/pakete';
+import { ALLE_TYPEN, PAKET_TEXT, type EreignisArt, type InstalliertesPaket, type PaketCode, type Schnittstelle } from '../../shared/src/pakete';
+import { jeMappe, liesModell, liesVektor, SCHWELLE_STANDARD, Vektorindex, type Treffer } from './vektoren';
 import type { PaketEntwurf } from '../../shared/src/paketerstellung';
 import { abfrageAus, liesSuche } from '../../shared/src/erweitertesuche';
 import type { Lesefilter } from '../../shared/src/rechte';
@@ -92,9 +93,12 @@ export interface Zugriff {
    * Dienstkonto eines Pakets (#338): Rechte fest aus dem bestätigten Manifest statt aus Regeln.
    * typen enthält dann nur die lesbaren Typen; schreiben = Ids der Typen mit Anlegen/Bearbeiten.
    */
-  paket?: { id: string; schreiben: Set<string>; dokumente: PaketCode['rechte']['dokumente'] };
+  paket?: { id: string; schreiben: Set<string>; dokumente: PaketCode['rechte']['dokumente']; schnittstellen?: Schnittstelle[] };
 }
 export const NICHT_SICHTBAR = 'nicht sichtbare Mappe';
+/** So lange wartet die Suche höchstens auf den Vektor des Suchbegriffs (#442); danach ohne Ähnlichkeit. */
+export const SUCHE_VEKTOR_MS = 1500;
+const liesModellOder422 = (x: unknown) => { try { return liesModell(x); } catch (e) { throw new Fachfehler(422, (e as Error).message); } };
 /** Obergrenze für geschriebenen Volltext (Zeichen). */
 export const VOLLTEXT_MAX = 5_000_000;
 /** Auswahlfilter (#172) zählen nichts – nur Bedingungen auf Felder. */
@@ -453,9 +457,234 @@ export class Dienst {
    * texterkennung.fertig); Fehler eines Hörers landen nur im Protokoll.
    */
   async volltextFertig(e: { dokument: string; mappe: string }): Promise<void> {
+    // Für Pakete (#442): z. B. „KI lokal – Ähnlichkeit“ rechnet dann den Vektor des Dokuments.
+    await this.melde('volltext.fertig', { dokument: e.dokument, mappe: e.mappe });
     for (const h of this.volltextHoerer) {
       try { await h(e); } catch (x) { protokoll.modul('ablage').warn('Nach dem Volltext gestört', { dokument: e.dokument, fehler: (x as Error).message }); }
     }
+  }
+
+  /* ---------- Vektoren zu Dokumenten (#442) ---------- */
+
+  /**
+   * Wer den Vektor eines Suchbegriffs liefert (der Paket-Läufer, index.ts). null = kein Paket mit dms:vektoren
+   * oder es antwortet nicht in der Zeit – dann läuft die Suche wie bisher.
+   */
+  vektorAnbieter?: { paket(): string | null; vektorFuer(text: string, ms: number): Promise<{ paket: string; modell: string; vektor: Float32Array; schwelle: number } | null> };
+  /** Zwischenspeicher je Modell (beim ersten Bedarf aus der Datenbank geladen). */
+  private vektorIndizes = new Map<string, Promise<Vektorindex | null>>();
+  /** Aktuelles Modell je Paket: ändert es sich, sind die alten Vektoren ungültig. */
+  private vektorModelle = new Map<string, string>();
+
+  private vektorIndex(modell: string): Promise<Vektorindex | null> {
+    let x = this.vektorIndizes.get(modell);
+    if (!x) {
+      const t = Date.now();
+      let i: Vektorindex | null = null;
+      x = this.grundRepo.vektorenLaden(modell, (teil) => {
+        for (const e of teil) { i ??= new Vektorindex(e.vektor.length); if (e.vektor.length === i.dimension) i.setze(e.dokumentId, e.mappeId, e.vektor); }
+      }).then(() => {
+        this.vektorGeladen.add(modell);
+        if (i) protokoll.modul('ablage').info('Vektoren geladen', { modell, anzahl: i.anzahl, ms: Date.now() - t, mb: Math.round(i.bytes / 1048576) });
+        return i;
+      });
+      x.catch(() => { this.vektorIndizes.delete(modell); this.vektorGeladen.delete(modell); });
+      this.vektorIndizes.set(modell, x);
+    }
+    return x;
+  }
+  /** Modelle, deren Zwischenspeicher fertig geladen ist (die Suche wartet nicht auf das Laden). */
+  private vektorGeladen = new Set<string>();
+
+  /** Suche mit Ähnlichkeit an (Werkbank → Pakete, Einstellung des Kerns)? Standard: an. */
+  async vektorEinstellung(): Promise<{ suche: boolean }> {
+    const v = (await this.einstellungen?.lies('vektoren')) as { suche?: boolean } | null;
+    return { suche: v?.suche !== false };
+  }
+  async setzeVektorEinstellung(e: unknown): Promise<{ suche: boolean }> {
+    if (!this.einstellungen) throw new Fachfehler(404, 'Einstellungen sind nicht eingerichtet.');
+    const x = (e ?? {}) as { suche?: unknown };
+    if (typeof x.suche !== 'boolean') throw new Fachfehler(422, 'suche: true oder false.');
+    await this.einstellungen.schreibe('vektoren', x.suche ? null : { suche: false });
+    return this.vektorEinstellung();
+  }
+
+  /**
+   * Das Modell eines Pakets ist (wieder) bekannt. Neues Modell → die Vektoren des alten sind ungültig und
+   * fallen weg; die Nachberechnung (Paket-Läufer) rechnet sie im Hintergrund neu.
+   */
+  async merkeVektorModell(paket: string, modell: string): Promise<void> {
+    if (this.vektorModelle.get(paket) === modell) return;
+    this.vektorModelle.set(paket, modell);
+    const weg = await this.grundRepo.vektorenLoeschePaket(paket, modell);
+    if (weg) {
+      for (const k of [...this.vektorIndizes.keys()]) if (k !== modell) { this.vektorIndizes.delete(k); this.vektorGeladen.delete(k); }
+      protokoll.modul('werkbank').info('Vektoren eines alten Modells entfernt', { paket, modell, entfernt: weg });
+    }
+    // Zwischenspeicher schon jetzt im Hintergrund laden (bei 100 000 Dokumenten gut eine Sekunde).
+    void this.vektorIndex(modell).catch(() => {});
+  }
+
+  private pruefeVektorRecht(z: Zugriff | undefined): string {
+    if (!z?.paket) throw new Fachfehler(403, 'Vektoren schreiben nur Pakete mit dem Recht „dms:vektoren“.');
+    if (!z.paket.schnittstellen?.includes('dms:vektoren')) throw new Fachfehler(403, 'Dieses Paket hat das Recht „dms:vektoren“ nicht (Rechte aus dem Manifest).');
+    return z.paket.id;
+  }
+
+  /** Vektor eines Dokuments setzen (nur Pakete mit dms:vektoren; das Dokument muss das Paket lesen dürfen – prüft die Route). */
+  async setzeVektor(z: Zugriff | undefined, dokumentId: string, modellRoh: unknown, eingabe: unknown) {
+    const paket = this.pruefeVektorRecht(z);
+    const modell = liesModellOder422(modellRoh);
+    const index = await this.vektorIndex(modell);
+    let vektor: Float32Array;
+    try { vektor = liesVektor((eingabe as { vektor?: unknown } | null)?.vektor, index?.dimension); } catch (e) { throw new Fachfehler(422, (e as Error).message); }
+    await this.merkeVektorModell(paket, modell);
+    const d = await this.repo.holeDokument(dokumentId);
+    if (!d || !(await this.repo.vektorSetze({ dokumentId, paket, modell, vektor }))) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    const i = await this.vektorIndex(modell);
+    if (i) i.setze(dokumentId, d.mappeId, vektor);
+    else this.vektorIndizes.set(modell, Promise.resolve(new Vektorindex(vektor.length, [{ dokumentId, mappeId: d.mappeId, vektor }])));
+    return { dokument: dokumentId, modell, dimension: vektor.length };
+  }
+
+  async loescheVektor(z: Zugriff | undefined, dokumentId: string, modellRoh: unknown) {
+    this.pruefeVektorRecht(z);
+    const modell = liesModellOder422(modellRoh);
+    const n = await this.repo.vektorLoesche(dokumentId, modell);
+    (await this.vektorIndex(modell))?.entferne(dokumentId);
+    return { entfernt: n };
+  }
+
+  /**
+   * Ähnliche Dokumente zu einem Vektor oder zu einem Dokument – nur in Mappen, die der Aufrufer lesen darf.
+   * Ohne Modell: das aktuelle Modell des Pakets mit dms:vektoren.
+   */
+  async aehnlicheDokumente(z: Zugriff | undefined, q: { modell?: unknown; vektor?: unknown; dokument?: string; anzahl?: unknown; schwelle?: unknown }): Promise<{ modell: string; treffer: Treffer[] }> {
+    const modell = q.modell === undefined || q.modell === '' ? this.aktuellesVektorModell() : liesModellOder422(q.modell);
+    if (!modell) return { modell: '', treffer: [] };
+    const index = await this.vektorIndex(modell);
+    if (!index) return { modell, treffer: [] };
+    const anzahl = Math.min(100, Math.max(1, Math.floor(Number(q.anzahl) || 10)));
+    const schwelle = q.schwelle === undefined || q.schwelle === '' ? -1 : Number(q.schwelle);
+    if (!Number.isFinite(schwelle) || schwelle < -1 || schwelle > 1) throw new Fachfehler(422, 'schwelle: eine Zahl von -1 bis 1.');
+    let v: Float32Array;
+    const ohne = new Set<string>();
+    if (q.dokument) {
+      const x = index.vektor(q.dokument);
+      if (!x) throw new Fachfehler(404, 'Zu diesem Dokument gibt es (noch) keinen Vektor dieses Modells.');
+      v = x; ohne.add(q.dokument);
+    } else {
+      try { v = liesVektor(q.vektor, index.dimension); } catch (e) { throw new Fachfehler(422, (e as Error).message); }
+    }
+    return { modell, treffer: await this.lesbareTreffer(z, index, v, anzahl, { schwelle, ohne }) };
+  }
+
+  /** Die besten lesbaren Treffer: erst mehr Kandidaten holen, dann nach Rechten filtern (bei Bedarf mehr). */
+  private async lesbareTreffer(z: Zugriff | undefined, index: Vektorindex, v: Float32Array, anzahl: number, opt: { schwelle: number; ohne?: Set<string>; jeMappe?: boolean; ohneMappen?: Set<string> }): Promise<Treffer[]> {
+    for (let k = Math.max(50, anzahl * 5); ; k *= 4) {
+      const roh = index.suche(v, k, { schwelle: opt.schwelle, ohne: opt.ohne });
+      const ok = await this.lesbare(z, [...new Set(roh.map((t) => t.mappeId))]);
+      const lesbar = roh.filter((t) => ok.has(t.mappeId) && !opt.ohneMappen?.has(t.mappeId));
+      const erg = opt.jeMappe ? jeMappe(lesbar, anzahl) : lesbar.slice(0, anzahl);
+      if (erg.length >= anzahl || roh.length < k || k >= index.anzahl) return erg;
+    }
+  }
+
+  /** Aktuelles Modell (Paket mit dms:vektoren); ohne Antwort des Pakets das zuletzt gesehene. */
+  private aktuellesVektorModell(): string | null {
+    const p = this.vektorAnbieter?.paket();
+    return (p && this.vektorModelle.get(p)) ?? [...this.vektorModelle.values()][0] ?? null;
+  }
+
+  /**
+   * „Ähnliche Dokumente“ an einer Mappe: je Dokument der Mappe die ähnlichsten Dokumente anderer lesbarer
+   * Mappen, zusammengefasst je Mappe. verfuegbar = es gibt ein Paket mit dms:vektoren.
+   */
+  async aehnlicheZurMappe(z: Zugriff | undefined, mappeId: string): Promise<{ verfuegbar: boolean; berechnet: boolean; mappen: Array<{ id: string; titel: string; typId: string; dokument: { id: string; name: string }; aehnlichkeit: number }> }> {
+    const paket = this.vektorAnbieter?.paket() ?? null;
+    if (!paket) return { verfuegbar: false, berechnet: false, mappen: [] };
+    await this.pruefeRecht(z, mappeId, 'R');
+    const modell = this.aktuellesVektorModell();
+    const index = modell ? await this.vektorIndex(modell) : null;
+    const eigene = (await this.repo.dokumenteVon([mappeId])).map((d) => d.id);
+    const vektoren = index ? eigene.map((id) => index.vektor(id)).filter((v): v is Float32Array => !!v) : [];
+    if (!index || !vektoren.length) return { verfuegbar: true, berechnet: false, mappen: [] };
+    const schwelle = this.vektorSchwelle.get(modell!) ?? SCHWELLE_STANDARD;
+    const alle = (await Promise.all(vektoren.map((v) => this.lesbareTreffer(z, index, v, 5, { schwelle, jeMappe: true, ohneMappen: new Set([mappeId]) })))).flat();
+    return { verfuegbar: true, berechnet: true, mappen: await this.trefferMitTitel(jeMappe(alle, 5)) };
+  }
+
+  /** Schwelle je Modell, wie das Paket sie mit dem Vektor des Suchbegriffs meldet. */
+  private vektorSchwelle = new Map<string, number>();
+
+  private async trefferMitTitel(t: Treffer[]) {
+    if (!t.length) return [];
+    const b = await this.repo.bezuege(t.map((x) => x.mappeId));
+    const namen = new Map<string, string>();
+    for (const x of t) { const d = await this.repo.holeDokument(x.dokumentId); if (d) namen.set(x.dokumentId, d.name); }
+    return t.filter((x) => b.has(x.mappeId)).map((x) => ({ id: x.mappeId, titel: b.get(x.mappeId)!.titel, typId: b.get(x.mappeId)!.typId, dokument: { id: x.dokumentId, name: namen.get(x.dokumentId) ?? '' }, aehnlichkeit: Math.round(x.aehnlichkeit * 100) / 100 }));
+  }
+
+  /**
+   * Ähnliche Treffer zu einem Suchbegriff (#442): das Paket liefert den Vektor (mit Zeitgrenze), der Kern
+   * vergleicht. Leer, wenn die Einstellung aus ist, kein Paket da ist oder es nicht rechtzeitig antwortet.
+   * typen: nur Mappen dieser Typen (die der Ansicht); ohneMappen: schon in der normalen Trefferliste.
+   */
+  async aehnlicheZurSuche(z: Zugriff | undefined, suche: string, opt: { typen: Set<string> | null; ohneMappen: Set<string>; anzahl?: number; ms?: number }) {
+    if (!this.vektorAnbieter?.paket() || suche.trim().length < 3 || !(await this.vektorEinstellung()).suche) return [];
+    const ms = opt.ms ?? SUCHE_VEKTOR_MS, start = Date.now();
+    const q = await this.vektorAnbieter.vektorFuer(suche, ms).catch(() => null);
+    if (!q) return [];
+    await this.merkeVektorModell(q.paket, q.modell);
+    this.vektorSchwelle.set(q.modell, q.schwelle);
+    // Lädt der Zwischenspeicher noch (kurz nach dem Start): höchstens die restliche Zeit warten, sonst ohne Ähnlichkeit.
+    if (!this.vektorGeladen.has(q.modell)) {
+      const rest = Math.max(0, ms - (Date.now() - start));
+      await Promise.race([this.vektorIndex(q.modell).catch(() => null), new Promise((ok) => setTimeout(ok, rest).unref?.())]);
+      if (!this.vektorGeladen.has(q.modell)) return [];
+    }
+    const index = await this.vektorIndex(q.modell);
+    if (!index || index.dimension !== q.vektor.length) return [];
+    let treffer = await this.lesbareTreffer(z, index, q.vektor, (opt.anzahl ?? 5) * 3, { schwelle: q.schwelle, jeMappe: true, ohneMappen: opt.ohneMappen });
+    if (opt.typen) {
+      const b = await this.repo.bezuege(treffer.map((t) => t.mappeId));
+      treffer = treffer.filter((t) => opt.typen!.has(b.get(t.mappeId)?.typId ?? ''));
+    }
+    return this.trefferMitTitel(treffer.slice(0, opt.anzahl ?? 5));
+  }
+
+  /** Für die Werkbank: Vektoren je Modell, Dokumente mit Volltext, Einstellung. */
+  async vektorStand(): Promise<{ paket: string | null; modell: string | null; mitVektor: number; mitVolltext: number; modelle: Array<{ paket: string; modell: string; anzahl: number }>; suche: boolean; zwischenspeicherMB: number | null }> {
+    const paket = this.vektorAnbieter?.paket() ?? null;
+    const modell = paket ? this.vektorModelle.get(paket) ?? null : this.aktuellesVektorModell();
+    const modelle = await this.repo.vektorStand();
+    const index = modell && this.vektorIndizes.has(modell) ? await this.vektorIndex(modell) : null;
+    return {
+      paket, modell, modelle,
+      mitVektor: modelle.filter((m) => m.paket === paket && m.modell === modell).reduce((n, m) => n + m.anzahl, 0),
+      mitVolltext: await this.repo.mitVolltext(),
+      suche: (await this.vektorEinstellung()).suche,
+      zwischenspeicherMB: index ? Math.round(index.bytes / 104857.6) / 10 : null,
+    };
+  }
+
+  /** „Neu berechnen“ in der Werkbank: alle Vektoren des Pakets weg, die Nachberechnung beginnt von vorn. */
+  async vektorenNeu(paket: string): Promise<{ entfernt: number }> {
+    const n = await this.grundRepo.vektorenLoeschePaket(paket);
+    this.vektorIndizes.clear(); this.vektorGeladen.clear();
+    return { entfernt: n };
+  }
+
+  /**
+   * Nachberechnung des Bestands (#442): für bis zu `max` Dokumente mit Volltext ohne Vektor dieses Modells ein
+   * Ereignis „volltext.fertig“ an das Paket (nach = Dokument-Id, ab der weitergesucht wird). Liefert die Ids.
+   */
+  async vektorNachlauf(paket: string, modell: string, max: number, nach: string | null): Promise<string[]> {
+    const liste = await this.grundRepo.ohneVektor(modell, max, nach);
+    if (!liste.length) return [];
+    await this.grundRepo.legeEreignisseAn(liste.map((d) => ({ id: randomUUID(), paketId: paket, art: 'volltext.fertig', daten: { dokument: d.id, mappe: d.mappeId, nachberechnung: true } })));
+    this.ereignisWecker?.();
+    return liste.map((d) => d.id);
   }
 
   /** Das Repo – innerhalb von `inTransaktion` das der Transaktion. */
@@ -1802,9 +2031,15 @@ export class Dienst {
         aufgaben[a.mappeId] = aufgaben[a.mappeId] ? `${aufgaben[a.mappeId]} · ${a.text}` : a.text;
       }
     }
+    // Ähnliche Treffer (#442): nur in der Suche über alle Mappen bzw. der erweiterten Suche ohne Feldbedingungen,
+    // auf der ersten Seite und mit „auch in Dokumenten“ – Treffer aus Ansichten mit Bedingungen würden diese verletzen.
+    const aehnlich = erweitert && !erweitert.bedingungen.length && suche && volltext && von === 0
+      ? await this.aehnlicheZurSuche(z, suche, { typen: erweitert.typen.length ? new Set(erweitert.typen.map((t) => t.id)) : null, ohneMappen: new Set(r.mappen.map((m) => m.id)) })
+      : [];
     return {
       gesamt: r.gesamt, von, mappen: r.mappen, bezuege: await this.maskiereBezuege(z, await this.repo.bezuege(ziele)),
       ...(r.ausschnitte ? { ausschnitte: r.ausschnitte } : {}), ...(q.sicht === 'eingang' ? { aufgaben } : {}),
+      ...(aehnlich.length ? { aehnlich } : {}),
       /** Welche Mappen dieser Seite Favoriten des Benutzers sind (#62). */
       favoriten: [...await this.repo.favoritenVon(ich.id, r.mappen.map((m) => m.id))],
       /** Favorit = Abo (#422): Favoriten und eigene Mappen, die andere seit dem letzten Sehen geändert haben. */
@@ -1913,7 +2148,7 @@ export class Dienst {
     return {
       ich: { id: ich.id, rolle: 'mitglied' }, admin: false, wer, a, typen: new Map(sichtbar.map((t) => [t.id, t])),
       lesen: { offen: sichtbar.map((t) => t.id), je: [] },
-      paket: { id: p?.id ?? '', schreiben: aufloesen(r.schreiben), dokumente: r.dokumente },
+      paket: { id: p?.id ?? '', schreiben: aufloesen(r.schreiben), dokumente: r.dokumente, schnittstellen: r.schnittstellen ?? [] },
     };
   }
 
