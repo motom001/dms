@@ -7,6 +7,9 @@ import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { neuePost } from './NeuePost';
+import { istTouch, postFotografieren } from './PostKamera';
+import { Symbol } from '../Symbol';
+import { darfPostAnlegen } from '../../../shared/src/model';
 
 /**
  * Startseite der Ablage (#334): wenige Kacheln mit je einer Zahl und einer Handlung.
@@ -49,6 +52,8 @@ export function Startseite({ anstehend, offen, breit = false }: { anstehend: { l
   const wahl = typeof d.einstellungen.startseite_kachel === 'string' ? d.einstellungen.startseite_kachel : 'favoriten';
   const lieblings = wahl !== 'favoriten' ? d.sicht(wahl) : undefined;
   const tage = anstehend.liste?.tage;
+  const postTyp = d.typen.find((t) => t.system === 'post');
+  const kamera = istTouch() && darfPostAnlegen(postTyp) && !!postTyp?.register.some((r) => r.art === 'dokumente');
 
   return (
     <>
@@ -59,6 +64,8 @@ export function Startseite({ anstehend, offen, breit = false }: { anstehend: { l
         </div>
       </div>
       <div className={`listenrumpf startseite${breit ? ' start-breit' : ''}`}>
+        {/* Handy (#490): mit einem Tipp in die Kamera – mehrseitig, ein PDF, eine Post. */}
+        {kamera && <button type="button" className="knopf gruen pk-start" onClick={() => postFotografieren()}><Symbol name="kamera" /> Post fotografieren</button>}
         {daten?.leer ? (
           <div className="einstiege">
             <p>Noch ist die Ablage leer. So geht es los:</p>

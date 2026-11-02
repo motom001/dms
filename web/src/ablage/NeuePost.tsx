@@ -6,6 +6,8 @@ import { useDaten } from '../daten';
 import { useErreichbarkeit } from '../erreichbar';
 import { geheZu } from '../ort';
 import { wartungAktiv } from '../wartung';
+import { istTouch, postFotografieren } from './PostKamera';
+import { Symbol } from '../Symbol';
 
 /**
  * Neue Post von überall (#193): Dateien irgendwo ins Fenster ziehen oder über „+ Neu“ wählen –
@@ -210,6 +212,7 @@ export function NeuKnopf() {
   const typen = d.typen.filter((t) => darfErstellen(t)).sort((a, b) => a.name.localeCompare(b.name, 'de'));
   const [offen, setOffen] = useState(false);
   const [mappe, setMappe] = useState(false);
+  const touch = istTouch();
   const eingabe = useRef<HTMLInputElement>(null);
   const rahmen = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -228,7 +231,9 @@ export function NeuKnopf() {
       {offen && (
         <div className="menue" role="menu">
           {!mappe ? <>
-            {post && <button type="button" className="menuepunkt" role="menuitem" onClick={() => { setOffen(false); eingabe.current?.click(); }}>Post <span className="leise klein">– Dateien auswählen{' '}oder fotografieren</span></button>}
+            {/* Handy (#490): erster Eintrag öffnet direkt die Kamera; „Datei oder Foto wählen“ bleibt für alles andere. */}
+            {post && touch && <button type="button" className="menuepunkt" role="menuitem" onClick={() => { setOffen(false); postFotografieren(); }}><Symbol name="kamera" /> Post fotografieren</button>}
+            {post && <button type="button" className="menuepunkt" role="menuitem" onClick={() => { setOffen(false); eingabe.current?.click(); }}>{touch ? <>Post <span className="leise klein">– Datei oder Foto wählen</span></> : <>Post <span className="leise klein">– Dateien auswählen{' '}oder fotografieren</span></>}</button>}
             {typen.length > 0 && <button type="button" className="menuepunkt" role="menuitem" onClick={() => setMappe(true)}>Mappe … <span aria-hidden="true">›</span></button>}
           </> : <>
             <p className="leise klein">Neue Mappe vom Mappentyp</p>

@@ -1440,3 +1440,23 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
   .start-raster .kacheltitel, .start-raster .kachelunter, .start-raster .kachelleer { grid-column: 1; }
   .start-raster .kachelzahl { grid-column: 2; grid-row: 1 / span 2; font-size: 1.6rem; }
 }
+/* Post fotografieren (#490): Blatt von unten mit großen Knöpfen, Seiten als Vorschaubilder. Präfix pk-. */
+.pk-schleier { position: fixed; inset: 0; z-index: 70; background: rgb(0 0 0 / .4); }
+.pk-blatt { position: fixed; left: 0; right: 0; bottom: 0; z-index: 71; margin: 0 auto; max-width: 520px; max-height: 92vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+  background: var(--flaeche); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 30px rgb(0 0 0 / .25);
+  padding: 18px max(16px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+.pk-titel { font-size: calc(18px * var(--skala, 1)); font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.pk-gut { color: var(--gruen); }
+.pk-knoepfe { display: flex; flex-direction: column; gap: 8px; }
+.pk-gross { width: 100%; min-height: 48px; padding: 12px; font-size: 16px; white-space: normal; }
+.pk-seiten { list-style: none; margin: 0; padding: 2px 0 4px; display: flex; gap: 8px; overflow-x: auto; }
+.pk-seiten li { position: relative; flex: none; }
+.pk-seiten img, .pk-seiten canvas { display: block; width: 66px; height: 88px; object-fit: cover; border: 1px solid var(--linie-stark); border-radius: 6px; background: var(--senke); }
+.pk-seiten .pk-fehler img { border-color: var(--schlecht); }
+.pk-nr { position: absolute; left: 4px; bottom: 4px; min-width: 20px; padding: 0 5px; border-radius: 10px; background: rgb(0 0 0 / .65); color: #fff; font-size: 12px; text-align: center; }
+.pk-weg { position: absolute; right: -6px; top: -6px; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--linie-stark); background: var(--flaeche); color: var(--tinte); font-size: 18px; line-height: 1; cursor: pointer; }
+.pk-start { width: 100%; min-height: 52px; font-size: 17px; padding: 12px 16px; }
+.pk-postzeile { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; flex-basis: 100%; }
+.pk-postliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.pk-postliste .knopf { width: 100%; justify-content: space-between; white-space: normal; text-align: left; min-height: 44px; }
+.pk-postname { overflow-wrap: anywhere; }
