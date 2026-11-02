@@ -1,0 +1,18 @@
+{
+  "werkbank.titel": "Aus Dokument ausfüllen",
+  "werkbank.text": "Dieses Paket kann statt der eingebauten Erkennung Felder aus Dokumenten vorschlagen. Es bekommt den Text des Dokuments und die Beschreibung der Felder (ohne Passwortfelder und Felder, die der Benutzer nicht bearbeiten darf); das DMS prüft jede Antwort und zeigt sie nur als Vorschlag.",
+  "werkbank.standard": "Dieses Paket als Standard für alle Mappentypen nutzen",
+  "werkbank.standard.hilfe": "Ohne Haken bleibt die eingebaute Erkennung der Standard. Am Mappentyp kannst du die Wahl überschreiben.",
+  "werkbank.gespeichert": "Gespeichert.",
+  "werkbank.laeuft-nicht": "Das Paket läuft gerade nicht – bis dahin übernimmt die eingebaute Erkennung.",
+  "abfluss.titel": "Text der Dokumente an einen Dienst schicken?",
+  "abfluss.text": "„{paket}“ darf ins Netz. Mit dieser Wahl schickt es den Text der Dokumente, aus denen jemand Felder ausfüllt, an einen Dienst außerhalb des DMS. Läuft er im eigenen Netz, verlassen die Daten das Haus nicht; bei einem anderen Anbieter ist das eine Vertrauensbeziehung zu diesem Dienstleister.",
+  "abfluss.ja": "Bestätigen und wählen",
+  "typ.engine": "Erkennung",
+  "typ.engine.standard": "Standard aus der Werkbank ({name})",
+  "typ.engine.eingebaut": "eingebaut (ohne KI)",
+  "typ.engine.paket": "Paket „{name}“",
+  "typ.engine.netz": "Paket „{name}“ – schickt Text über das Netz",
+  "typ.engine.hilfe": "Die eingebaute Erkennung findet E-Mail, Telefon, Datum, Betrag und Ähnliches über Muster. Ein Paket wie ein KI-Assistent erkennt auch Freitext und schwierige Belege.",
+  "ergebnis.paket": "Erkannt mit „{name}“."
+}

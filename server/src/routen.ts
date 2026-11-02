@@ -1023,6 +1023,9 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/werkbank/pakete/laeufer', zugang: 'admin', handler: async () => ok(x.paketlaeufer ? await x.paketlaeufer.uebersicht() : null) },
     // Vektoren (#442): Stand der Berechnung, Einstellung „Ähnliche Treffer in der Suche“, neu berechnen.
     { methode: 'GET', pfad: '/api/werkbank/vektoren', zugang: 'admin', handler: async () => ok(await dienst.vektorStand()) },
+    // „Aus Dokument ausfüllen“ per Paket (#511): Standard-Erkennung (eingebaut oder Paket mit dms:erkennen).
+    { methode: 'GET', pfad: '/api/werkbank/erkennung', zugang: 'admin', handler: async () => ok(await dienst.erkennung.engineStand()) },
+    { methode: 'PUT', pfad: '/api/werkbank/erkennung', zugang: 'admin', handler: async (a) => ok(await dienst.erkennung.setzeStandard(a.body)) },
     // „Frag deine Ablage“ (#444): Höchstmenge je Frage (Ausschnitte, Zeichen).
     { methode: 'GET', pfad: '/api/werkbank/fragen', zugang: 'admin', handler: async () => ok(await dienst.fragen.stand()) },
     { methode: 'PUT', pfad: '/api/werkbank/fragen', zugang: 'admin', handler: async (a) => { await dienst.fragen.setzeGrenzen(a.body); return ok(await dienst.fragen.stand()); } },

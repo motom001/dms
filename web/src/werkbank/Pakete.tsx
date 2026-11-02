@@ -8,6 +8,7 @@ import { darfVerlassen, geheZu, Link } from '../ort';
 import { PaketEinstellungen } from './PaketEinstellungen';
 import { VektorStandBlock } from '../ablage/Aehnlich';
 import { FragenGrenzenBlock } from './FragenGrenzen';
+import { ErkennungPaketBlock } from './ErkennungPaket';
 import { PaketErstellen } from './PaketErstellen';
 import { rueckfrage } from '../rueckfrage';
 import { useKonto } from '../konto';
@@ -401,6 +402,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         {inst?.laeufer && <LaeuferStand paket={inst.id} />}
         {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:vektoren') && <VektorStandBlock />}
         {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:antworten') && <FragenGrenzenBlock />}
+        {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:erkennen') && <ErkennungPaketBlock paket={inst.id} />}
         {inst && (
           <>
             <h2 className="h3">Gehört dazu</h2>

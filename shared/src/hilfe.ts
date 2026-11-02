@@ -62,6 +62,8 @@ export const HILFE = {
   'pakete.recht.vektoren': admin('pakete/', 'dem Recht „Vektoren zu Dokumenten“', 'recht-vektoren'),
   'pakete.recht.netz': admin('pakete/', 'dem Zugriff auf Netzwerk und Internet', 'recht-netzwerk-und-internet'),
   'pakete.recht.antworten': admin('pakete/', 'dem Recht „Fragen an die Ablage beantworten“', 'recht-antworten'),
+  'pakete.recht.erkennen': admin('pakete/', 'dem Recht „Felder aus Dokumenten vorschlagen“', 'recht-erkennen'),
+  'pakete.erkennung': admin('pakete/', 'der Erkennung durch ein Paket', 'erkennung-durch-ein-paket'),
   'pakete.recht.adresse': admin('pakete/', 'der Dienst-Adresse eines Pakets', 'dienst-adresse'),
   'pakete.fragen': admin('pakete/', '„Frag deine Ablage“ (Höchstmenge je Frage)', 'frag-deine-ablage'),
   'pakete.ereignisse': admin('pakete/', 'den Ereignissen für Pakete', 'ereignisse'),

@@ -45,7 +45,12 @@ export interface TypVorschlaege {
   bezuege: Bezuege;
   neu: Record<string, { typId: string; werte: Record<string, string>; fundstelle: string }>;
   verworfen: number; zeichen: number;
+  /** Womit erkannt wurde (#511). */
+  engine?: { art: 'eingebaut' } | { art: 'paket'; id: string; name: string };
+  hinweis?: string;
 }
+/** Erkennung per Paket (#511): Standard in der Werkbank und Pakete mit dms:erkennen. */
+export interface ErkennungStand { standard: { paket: string | null; abfluss?: boolean }; pakete: Array<{ id: string; name: string; netz: boolean; laeuft: boolean }> }
 
 /** Grund fürs Löschprotokoll (#470) als Body-Teil bzw. Query. */
 const grundAus = (a?: LoeschAnlass) => (a?.grund ? { grund: a.grund, grundText: a.text ?? '' } : {});
@@ -585,6 +590,9 @@ export const api = {
   vektorStand: () => anfrage<VektorStand>('GET', '/api/werkbank/vektoren'),
   vektorSuche: (suche: boolean) => anfrage<VektorStand>('PUT', '/api/werkbank/vektoren', { suche }),
   vektorenNeu: () => anfrage<{ entfernt: number }>('POST', '/api/werkbank/vektoren/neu'),
+  /* Erkennung per Paket (#511) */
+  erkennungStand: () => anfrage<ErkennungStand>('GET', '/api/werkbank/erkennung'),
+  erkennungStandard: (paket: string | null, abfluss = false) => anfrage<ErkennungStand>('PUT', '/api/werkbank/erkennung', { paket, ...(abfluss ? { abfluss: true } : {}) }),
   /* „Frag deine Ablage“ (#444) */
   fragenVerfuegbar: () => anfrage<{ verfuegbar: boolean; paket: string | null }>('GET', '/api/fragen'),
   fragenStand: () => anfrage<FragenStand>('GET', '/api/werkbank/fragen'),

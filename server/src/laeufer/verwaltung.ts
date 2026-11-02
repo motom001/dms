@@ -7,7 +7,7 @@ import { fork, type ChildProcess } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import type { Benutzer } from '../../../shared/src/model';
-import { hatSchnittstelle, type InstalliertesPaket, type LaeuferZustand, type Schnittstelle } from '../../../shared/src/pakete';
+import { hatNetz, hatSchnittstelle, type InstalliertesPaket, type LaeuferZustand, type Schnittstelle } from '../../../shared/src/pakete';
 import { adressfelder, pruefeAdresse } from '../../../shared/src/paketeinstellungen';
 import { liesModell, liesVektor, SCHWELLE_STANDARD } from '../vektoren';
 import type { ApiSchluesselDienst } from '../apischluessel';
@@ -106,6 +106,12 @@ export class Paketlaeufer implements PaketLaeufer {
     o.dienst.fragen.anbieter = {
       paket: () => this.paketMit('dms:antworten'),
       antworte: (paket, eingang, teil) => this.schnittstelle(paket, 'dms:antworten', eingang, { bezeichnung: 'Frage beantwortet', teil }),
+    };
+    // „Aus Dokument ausfüllen“ per Paket (#511): Pakete mit dms:erkennen, mit Zeitlimit.
+    o.dienst.erkennung.anbieter = {
+      pakete: () => this.pakete.filter((x) => hatSchnittstelle(x.laeufer, 'dms:erkennen') && this.ladefehler.has(x.id) && !this.ladefehler.get(x.id))
+        .map((x) => ({ id: x.id, name: x.name, netz: hatNetz(x.laeufer) })),
+      erkenne: (paket, eingang, ms) => this.schnittstelle(paket, 'dms:erkennen', eingang, { bezeichnung: 'Felder erkannt', ms }),
     };
   }
 

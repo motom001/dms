@@ -186,6 +186,10 @@ Will ein Update andere Adressen, fragt das DMS erneut.
 
 **„Fragen an die Ablage beantworten („Frag deine Ablage“) – nur aus Ausschnitten, die das DMS mitgibt (dms:antworten)“** – Mit diesem Recht erscheint in der Ablage das Feld [Frag deine Ablage](#frag-deine-ablage). Das Paket bekommt je Frage nur die Frage, den bisherigen Chat und wenige Ausschnitte, die das DMS selbst herausgesucht hat – **mit den Rechten des Fragenden**. Es liest dabei nichts selbst aus der Ablage (dafür bräuchte es die Rechte oben) und kann nichts ändern: Das DMS zeigt nur seinen Text und prüft die Quellen.
 
+#### Felder aus Dokumenten vorschlagen { #recht-erkennen }
+
+**„Felder aus Dokumenten vorschlagen („Aus Dokument ausfüllen“) – nur aus dem Text, den das DMS mitgibt (dms:erkennen)“** – Das Paket kann statt der eingebauten Erkennung die Felder beim Knopf **Aus Dokument ausfüllen** vorschlagen, wenn du es wählst (siehe [Erkennung durch ein Paket](#erkennung-durch-ein-paket)). Es bekommt dabei nur den Text des Dokuments und die Beschreibung der Felder – keine Rechte an Mappen oder Dokumenten. Was es liefert, prüft das DMS und zeigt es nur als Vorschlag.
+
 ### Dienst-Adresse { #dienst-adresse }
 
 Ein Paket wie **KI-Assistent** rechnet nicht selbst, sondern fragt einen Dienst, den du betreibst oder wählst – z. B. **Ollama** auf deinem Heimserver. Die Adresse dieses Dienstes trägst du in den **Einstellungen** des Pakets ein (Werkbank → Pakete → *Paket* → Reiter „Einstellungen“):
@@ -194,6 +198,20 @@ Ein Paket wie **KI-Assistent** rechnet nicht selbst, sondern fragt einen Dienst,
 - **Bestätigen.** Beim Speichern einer neuen oder geänderten Adresse fragt das DMS **„Daten an diese Adresse schicken?“** und nennt sie. Erst mit **Adresse bestätigen und speichern** gilt sie; das Protokoll vermerkt „Dienst-Adresse von Paket … bestätigt“ mit der Adresse.
 - **Nur dorthin.** Der Paket-Läufer erlaubt Netz nur zu dieser Adresse und Pfaden darunter (gleicher Rechner, gleicher Port), ohne Weiterleitungen. Weil Dienste im Heimnetz selten HTTPS sprechen, ist hier auch `http://` erlaubt. Zugangsdaten gehören nicht in die Adresse, sondern in ein eigenes Feld (Geheimnis).
 - **Betrieb und Hosting dieses Dienstes liegen außerhalb des DMS.** Läuft er bei dir im eigenen Netz, verlassen die Daten das Haus nicht. Gehört er einem anderen Anbieter, ist das eine **Vertrauensbeziehung zu diesem Dienstleister** – wie beim Hosten des DMS selbst: Standort, Auftragsverarbeitung, Speicherung, Nutzung zum Training. Diese Entscheidung triffst du mit dem Eintragen und Bestätigen; das DMS hat dafür keinen weiteren Schalter. Den Hinweis zeigt es auch schon in der Vorschau vor der Installation.
+
+### Erkennung durch ein Paket { #erkennung-durch-ein-paket }
+
+**Aus Dokument ausfüllen** (Knopf in der Mappe) nutzt normalerweise die **eingebaute Erkennung** – Muster für E-Mail, Telefon, Datum, Betrag und Ähnliches, ohne KI. Ein Paket mit dem Recht [Felder aus Dokumenten vorschlagen](#recht-erkennen) – etwa ein KI-Assistent über Ollama – erkennt auch Freitext, Briefköpfe und schwierige Belege.
+
+- **Standard für alle Mappentypen:** Werkbank → Pakete → *Paket* → Abschnitt **Aus Dokument ausfüllen** → **Dieses Paket als Standard für alle Mappentypen nutzen**. Ohne Haken bleibt die eingebaute Erkennung der Standard.
+- **Je Mappentyp:** In der [Erkennung des Mappentyps](mappentypen.md#erkennung) wählst du *Standard aus der Werkbank*, *eingebaut* oder ein bestimmtes Paket.
+- **Datenabfluss:** Darf das Paket ins Netz (feste Adresse oder [Dienst-Adresse](#dienst-adresse)), schickt es den Text der Dokumente dorthin. Diese Wahl geht nur ausdrücklich: Das DMS fragt **„Text der Dokumente an einen Dienst schicken?“**, und erst mit **Bestätigen und wählen** gilt sie.
+
+**Was das Paket bekommt:** den Text, aus dem ausgefüllt wird (höchstens 50 000 Zeichen), den Namen des Mappentyps und eine Beschreibung der Felder als JSON Schema – **nie Passwortfelder** und nie Felder, die der Benutzer nicht bearbeiten darf. **Verweise** (z. B. *Organisation*) gleicht das DMS weiterhin selbst mit vorhandenen Mappen ab.
+
+**Was das DMS mit der Antwort macht:** Es prüft jeden Wert gegen die Feldart wie bei der eingebauten Erkennung. Falsche Typen, unbekannte Felder und Werte außerhalb einer Auswahl verwirft es und vermerkt das im [Protokoll](fehlersuche.md#protokoll) (Feld und Grund, ohne Werte). Die Werte erscheinen nur als **Vorschlag**; gespeichert wird erst mit *Mappe speichern*. Unter dem Ergebnis steht „Erkannt mit „*Paket*“.“
+
+**Wenn das Paket nicht antwortet** (läuft nicht, Dienst nicht erreichbar, keine Antwort nach 60 Sekunden, Antwort unbrauchbar), übernimmt die eingebaute Erkennung; der Benutzer sieht einen Hinweis darauf.
 
 ### Frag deine Ablage { #frag-deine-ablage }
 

@@ -443,7 +443,7 @@ export class Dienst {
     // Passwortfelder meldet unlesbarePasswoerter genauer (mit Feldnamen), den Mailserver der Betrieb.
     this.tresor?.registriereBestand(() => this.repo.verschluesselteFundstellen(), ['passwortfeld', 'mail']);
     // Erkennung (#336): rechnet, sobald der Volltext eines Dokuments fertig ist – egal, wer ihn geliefert hat.
-    this.erkennung = new Erkennung(this, () => this.repo);
+    this.erkennung = new Erkennung(this, () => this.repo, () => this.einstellungen);
     this.fragen = new FragenAnDieAblage(this, () => this.repo, () => this.einstellungen);
     this.beiVolltextFertig(async (e) => { await this.erkennung.nachVolltext(e); });
   }
@@ -1799,6 +1799,8 @@ export class Dienst {
     const st = hat ? await this.pruefeStempelTyp((eingabe as { stempel: unknown }).stempel) : undefined;
     // „Aus Dokument ausfüllen“ (#391): Beschriftung bzw. ausgeblendet – liegt wie der Stempel in den Einstellungen.
     const hatAd = !!eingabe && typeof eingabe === 'object' && 'ausDokument' in eingabe;
+    // Erkennung per Paket (#511): vor dem Speichern prüfen (Paket da, Datenabfluss bestätigt).
+    if (hatAd) await this.erkennung.pruefeTypWahl(liesAusDokument((eingabe as { ausDokument: unknown }).ausDokument));
     const t = await f(eingabe);
     if (hat) await this.setzeStempelTyp(t.id, st ?? null);
     if (hatAd) await this.setzeTypErkennung(t.id, { ausDokument: liesAusDokument((eingabe as { ausDokument: unknown }).ausDokument) });
@@ -1806,6 +1808,9 @@ export class Dienst {
     if (!!eingabe && typeof eingabe === 'object' && 'autoZuordnen' in eingabe) await this.setzeTypErkennung(t.id, { auto: (eingabe as { autoZuordnen: unknown }).autoZuordnen === true && !t.system });
     return (await this.mitStempel([t]))[0];
   }
+
+  /** „Aus Dokument ausfüllen“ eines Mappentyps (#391, #511): Beschriftung, ausgeblendet, Erkennung. */
+  async ausDokumentVon(typId: string): Promise<AusDokument | null> { return (await this.typErkennungen())[typId]?.ausDokument ?? null; }
 
   /** Einstellungen der Erkennung je Mappentyp (#391, #337): Einstellung erkennung_typen, Typ-Id → Angaben. */
   private async typErkennungen(): Promise<Record<string, { ausDokument?: AusDokument | null; auto?: boolean }>> {

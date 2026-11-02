@@ -24,7 +24,9 @@ import { useStempelVorlagen } from '../ablage/Stempel';
 import { Bereich, liesOffen, merkeOffen, TYP_BEREICHE, type Klappe, type TypBereich } from './Bereich';
 import { hinweis, rueckfrage } from '../rueckfrage';
 import { FELDFORMATE, formatName, HEUTE, istFeldformat, type Feldformat } from '../../../shared/src/feldformate';
-import { artenFuer, artVon, AUS_DOKUMENT_STANDARD, BESCHRIFTUNG_MAX, ERKENNUNG_FELDTYPEN, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, merkmalsfelder, type AusDokument, type Erkennungsart } from '../../../shared/src/erkennung';
+import { abflussBestaetigen } from '../werkbank/ErkennungPaket';
+import type { ErkennungStand } from '../api';
+import { artenFuer, artVon, AUS_DOKUMENT_STANDARD, BESCHRIFTUNG_MAX, ENGINE_EINGEBAUT, ERKENNUNG_FELDTYPEN, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, merkmalsfelder, type AusDokument, type Erkennungsart } from '../../../shared/src/erkennung';
 
 /** Entfernen im Editor wirkt erst beim Speichern (#136). */
 const ERST_BEIM_SPEICHERN = ' Das wird erst mit „Mappentyp speichern“ wirksam.';
@@ -1065,14 +1067,36 @@ function ArchivEinstellung({ archiv, setze, datumsfelder, typId }: { archiv: Arc
 /** Erkennung am Mappentyp (#391): Knopf „Aus Dokument ausfüllen“ mit eigener Beschriftung oder ausgeblendet. */
 function ErkennungTyp({ ad, setze, markiert, felder }: { ad: AusDokument | null; setze: (a: AusDokument | null) => void; markiert: number; felder: string[] }) {
   const an = !ad?.aus;
+  // Erkennung (#511): eingebaut oder ein Paket mit dms:erkennen; leer = Standard aus der Werkbank.
+  const [stand, setStand] = useState<ErkennungStand | null>(null);
+  useEffect(() => { api.erkennungStand().then(setStand, () => setStand(null)); }, []);
+  // Ohne leere Angaben speichern: nichts gesetzt → null.
+  const neu = (x: AusDokument) => { const o = Object.fromEntries(Object.entries(x).filter(([, v]) => v !== undefined && v !== '' && v !== false)) as AusDokument; return Object.keys(o).length ? o : null; };
+  const engine = ad?.engine ?? '';
+  const standardName = stand?.standard.paket ? stand.pakete.find((p) => p.id === stand.standard.paket)?.name ?? stand.standard.paket : tx('erkennung.typ.engine.eingebaut');
+  async function waehle(wert: string) {
+    const p = stand?.pakete.find((x) => x.id === wert);
+    if (p?.netz && !(await abflussBestaetigen(p.name))) return;
+    setze(neu({ ...ad, engine: wert || undefined, abfluss: p?.netz ? true : undefined }));
+  }
   return (
     <div className="raster">
       <div className="eigenschaft unten">
-        <label className="haken"><input type="checkbox" checked={an} onChange={(ev) => setze(ev.target.checked ? (ad?.beschriftung ? { beschriftung: ad.beschriftung } : null) : { ...ad, aus: true })} />
+        <label className="haken"><input type="checkbox" checked={an} onChange={(ev) => setze(neu({ ...ad, aus: ev.target.checked ? undefined : true }))} />
           <span>Knopf „Aus Dokument ausfüllen“ zeigen<small className="hilfe">In jeder Mappe dieses Typs: Foto machen oder Datei wählen, die Erkennung trägt die Angaben als Vorschlag in die Felder ein.</small></span></label>
       </div>
       {an && <label className="eigenschaft" htmlFor="typ-ad-beschriftung"><span>Beschriftung <small>optional</small></span>
-        <input id="typ-ad-beschriftung" maxLength={BESCHRIFTUNG_MAX} placeholder={`${AUS_DOKUMENT_STANDARD} – z. B. „Visitenkarte scannen“`} value={ad?.beschriftung ?? ''} onChange={(ev) => setze(ev.target.value ? { beschriftung: ev.target.value } : null)} /></label>}
+        <input id="typ-ad-beschriftung" maxLength={BESCHRIFTUNG_MAX} placeholder={`${AUS_DOKUMENT_STANDARD} – z. B. „Visitenkarte scannen“`} value={ad?.beschriftung ?? ''} onChange={(ev) => setze(neu({ ...ad, beschriftung: ev.target.value || undefined }))} /></label>}
+      {an && stand && (stand.pakete.length > 0 || engine) && (
+        <label className="eigenschaft" htmlFor="typ-ad-engine"><span>{tx('erkennung.typ.engine')}</span>
+          <select id="typ-ad-engine" value={engine} onChange={(ev) => void waehle(ev.target.value)}>
+            <option value="">{tx('erkennung.typ.engine.standard', { name: standardName })}</option>
+            <option value={ENGINE_EINGEBAUT}>{tx('erkennung.typ.engine.eingebaut')}</option>
+            {stand.pakete.map((p) => <option key={p.id} value={p.id}>{p.netz ? tx('erkennung.typ.engine.netz', { name: p.name }) : tx('erkennung.typ.engine.paket', { name: p.name })}</option>)}
+            {engine && engine !== ENGINE_EINGEBAUT && !stand.pakete.some((p) => p.id === engine) && <option value={engine}>{engine}</option>}
+          </select>
+          <small className="hilfe">{tx('erkennung.typ.engine.hilfe')}</small></label>
+      )}
       <p className="leise klein" style={{ gridColumn: '1 / -1' }}>{felder.length
         ? `Für die Erkennung markiert: ${felder.join(', ')}${markiert ? '' : ' (keines taugt zum Wiedererkennen von Absendern)'}. Nur diese Felder füllt „Aus Dokument ausfüllen“.`
         : 'Kein Feld ist für die Erkennung markiert – dann füllt „Aus Dokument ausfüllen“ alle Felder, deren Art sich aus der Bezeichnung ergibt (z. B. „E-Mail“, „Telefon“, „PLZ“). Markieren lässt es sich an jedem Feld unter „Für die Erkennung nutzen“.'}</p>

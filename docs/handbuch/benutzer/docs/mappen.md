@@ -51,7 +51,7 @@ Hast du eine **Visitenkarte**, einen Kassenbon oder einen Brief vor dir, musst d
 4. **Verweise**, z. B. *Organisation* bei einer Person: Gibt es die Firma schon (erkannt an Name, Internetseite oder E-Mail-Domain), ist sie vorgeschlagen. Gibt es sie noch nicht, legt **„Organisation“ mit diesen Angaben anlegen** sie nach einer Rückfrage an.
 5. **Mappe speichern.** Erst jetzt ist etwas gespeichert. Das Foto bzw. die Datei liegt dann im Dokumentenregister der Mappe – außer, du hast den Haken „im Register … ablegen“ abgewählt.
 
-Welche Felder die Erkennung füllt, legt der Administrator am Mappentyp fest; Passwortfelder füllt sie nie. Geht etwas schief (unscharfes Foto, kein Text), steht der Grund im Kasten – versuch es mit mehr Licht und gerade gehaltener Karte.
+Welche Felder die Erkennung füllt, legt der Administrator am Mappentyp fest; Passwortfelder füllt sie nie. Hat er dafür ein Paket gewählt, etwa einen KI-Assistenten, steht unter dem Ergebnis „Erkannt mit „…“.“ – auch dann sind es nur Vorschläge. Antwortet das Paket nicht, übernimmt die eingebaute Erkennung, und ein Satz sagt dir das. Geht etwas schief (unscharfes Foto, kein Text), steht der Grund im Kasten – versuch es mit mehr Licht und gerade gehaltener Karte.
 
 ### Die Felder
 

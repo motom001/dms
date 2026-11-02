@@ -238,6 +238,7 @@ export type EreignisArt = keyof typeof EREIGNISSE;
 export const SCHNITTSTELLEN = {
   'dms:vektoren': 'Vektoren zu Dokumenten speichern und ähnliche Dokumente finden',
   'dms:antworten': 'Fragen an die Ablage beantworten („Frag deine Ablage“) – nur aus Ausschnitten, die das DMS mitgibt',
+  'dms:erkennen': 'Felder aus Dokumenten vorschlagen („Aus Dokument ausfüllen“) – nur aus dem Text, den das DMS mitgibt',
 } as const;
 export type Schnittstelle = keyof typeof SCHNITTSTELLEN;
 /** Ab dieser Version kennt das DMS `code.rechte.schnittstellen` und das Ereignis `volltext.fertig` (#442). */
@@ -249,7 +250,11 @@ export const DMS_VEKTOREN_AB = '0.120.0';
  */
 export const DMS_ANTWORTEN_AB = '0.124.0';
 /** Hilfe-Ort je Schnittstelle (Administratorhandbuch, Pakete mit Code). */
-export const SCHNITTSTELLE_HILFE: Record<Schnittstelle, Hilfeort> = { 'dms:vektoren': 'pakete.recht.vektoren', 'dms:antworten': 'pakete.recht.antworten' };
+export const SCHNITTSTELLE_HILFE: Record<Schnittstelle, Hilfeort> = { 'dms:vektoren': 'pakete.recht.vektoren', 'dms:antworten': 'pakete.recht.antworten', 'dms:erkennen': 'pakete.recht.erkennen' };
+/** Ab dieser Version kennt das DMS die Schnittstelle `dms:erkennen` (#511): Erkennung für „Aus Dokument ausfüllen“. */
+export const DMS_ERKENNEN_AB = '0.125.0';
+/** Darf ein Paket mit Code ins Netz (feste Adressen oder Dienst-Adresse)? Dann verlassen Daten das DMS. */
+export const hatNetz = (c: PaketCode | undefined) => !!c && (c.netz.length > 0 || (c.adressen?.length ?? 0) > 0);
 /** Alle Mappentypen (außer Benutzer) – für Pakete wie die Texterkennung, die an jedes Dokument müssen. */
 export const ALLE_TYPEN = '*';
 

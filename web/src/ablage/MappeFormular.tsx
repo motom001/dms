@@ -332,7 +332,9 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     const n = Object.values(neu).filter((v) => v.art === 'eingetragen').length;
     const alt = Object.values(neu).filter((v) => v.art === 'alternative').length;
     const teile = [n ? `${n === 1 ? '1 Feld' : `${n} Felder`} als Vorschlag eingetragen` : '', alt ? `${alt === 1 ? '1 Alternative' : `${alt} Alternativen`} zu ausgefüllten Feldern` : ''].filter(Boolean);
-    setAdMeldung(teile.length ? `Verstanden – ${teile.join(', ')}. Bitte prüfen und speichern.` : 'Gelesen, aber keine passenden Angaben für diese Felder gefunden.');
+    // Erkennung per Paket (#511): womit erkannt wurde bzw. warum die eingebaute übernahm.
+    const herkunft = [r.engine?.art === 'paket' ? t('erkennung.ergebnis.paket', { name: r.engine.name }) : '', r.hinweis ?? ''].filter(Boolean).join(' ');
+    setAdMeldung(`${teile.length ? `Verstanden – ${teile.join(', ')}. Bitte prüfen und speichern.` : 'Gelesen, aber keine passenden Angaben für diese Felder gefunden.'}${herkunft ? ` ${herkunft}` : ''}`);
     setAdOffen(false);
     // Zum ersten Feldregister mit einem Vorschlag.
     const ziel = register.find((x) => x.art === 'felder' && felderAuf(x).some((f) => neu[f.key]));
