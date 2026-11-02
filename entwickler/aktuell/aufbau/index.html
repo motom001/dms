@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/entwickler/v0.106/aufbau/">
+        <link rel="canonical" href="https://motom001.github.io/dms/entwickler/v0.107/aufbau/">
       
       
         <link rel="prev" href="../loslegen/">
@@ -417,6 +417,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#unterlagen-fur-dritte" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unterlagen für Dritte: Anrede du oder Sie
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#baum-uber-verweise" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -785,6 +796,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#unterlagen-fur-dritte" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unterlagen für Dritte: Anrede du oder Sie
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#baum-uber-verweise" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -851,6 +873,40 @@ docs/glossar.yml  Glossar – die eine Quelle für alle Begriffe (daraus entsteh
 <li><strong>Hilfe:</strong> Jedes ?-Symbol in der Oberfläche zeigt auf eine Stelle im Handbuch. Die Tabelle dazu steht in <code>shared/src/hilfe.ts</code>, und die CI prüft, dass jeder Anker existiert.</li>
 <li><strong>Sicherung und Wiederherstellung</strong> sichern alle Tabellen außer dem Inhalt von <code>sitzungen</code> und <code>schema_migrationen</code> (<code>OHNE_INHALT</code> in <code>server/src/datenbankabzug.ts</code>). Eine neue Tabelle ist automatisch dabei. Daten außerhalb der Datenbank brauchen einen Gedanken: Wo liegen sie, und kommen sie mit?</li>
 </ul>
+<h2 id="unterlagen-fur-dritte">Unterlagen für Dritte: Anrede du oder Sie<a class="headerlink" href="#unterlagen-fur-dritte" title="Permanent link">&para;</a></h2>
+<p>Die Oberfläche duzt immer. Texte, die an Personen <strong>außerhalb</strong> des DMS gehen, folgen dagegen der Einstellung <strong>Anrede in Unterlagen für Dritte</strong> (#474, Werkbank → Datenschutz, <code>Datenschutz.anrede</code>, Vorgabe <code>du</code>). Alle diese Texte stehen gebündelt in <code>shared/src/anrede.ts</code>: je Anrede dieselben Schlüssel (<code>TEXTE_DRITTE.du</code> / <code>.sie</code>), Platzhalter als <code>{name}</code>, abgerufen mit <code>textDritte(anrede, schluessel, werte)</code>. Ein Test prüft, dass beide Fassungen dieselben Schlüssel und Platzhalter haben und die Sie-Fassung kein „du“ enthält. Mit den Sprachdateien (#357) wandern sie dorthin: <code>du</code> → „Deutsch“, <code>sie</code> → „Deutsch (förmlich)“.</p>
+<p>Neue Texte für Dritte kommen als Schlüssel in <code>anrede.ts</code> – keine <code>anrede === 'sie' ? … : …</code> im Code – und in diese Liste:</p>
+<table>
+<thead>
+<tr>
+<th>Ausgabe</th>
+<th>Code</th>
+<th>Schlüssel</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Auskunft: Deckblatt.pdf, Uebersicht.html, LIESMICH.md (#396)</td>
+<td><code>server/src/auskunft.ts</code></td>
+<td><code>auskunft.*</code> (Rechte-Vorschlag: <code>rechteStandard</code>)</td>
+</tr>
+<tr>
+<td>E-Mail mit der Auskunft als ZIP, E-Mail mit dem Abruf-Link (#455)</td>
+<td><code>auskunftMail</code> in <code>shared/src/auskunft.ts</code></td>
+<td><code>mail.*</code></td>
+</tr>
+<tr>
+<td>Abrufseite <code>/abruf</code> und ihre Meldungen (#455)</td>
+<td><code>web/src/abruf.tsx</code>, <code>GET /api/abruf/anrede</code>, <code>/api/abruf</code> in <code>routen.ts</code></td>
+<td><code>abruf.*</code></td>
+</tr>
+<tr>
+<td>E-Mails mit Mappen und Dokumenten (#58, #151)</td>
+<td>–</td>
+<td>keine: Text schreibt der Benutzer, vorgegeben ist nur der Betreff ohne Anrede</td>
+</tr>
+</tbody>
+</table>
 <h2 id="baum-uber-verweise">Baum über Verweise<a class="headerlink" href="#baum-uber-verweise" title="Permanent link">&para;</a></h2>
 <p>Alles, was über Verweise an einer Mappe hängt, sammelt <strong>ein</strong> Modul – genutzt von der Auskunft nach Art. 15 DSGVO (#396) und von „Mappe mit allen verknüpften Mappen löschen“ (#424). Neue Funktionen, die „alles zu dieser Mappe“ brauchen, nehmen es statt eigener Schleifen.</p>
 <ul>
