@@ -1,8 +1,11 @@
 blank_issues_enabled: true
 contact_links:
-  - name: Wie komme ich an ein DMS?
+  - name: Wie komme ich an ein DMS? · How do I get a DMS?
     url: https://motom001.github.io/dms/installieren/aktuell/
-    about: Anleitungen für Synology, UGREEN, QNAP, TrueNAS, Unraid, umbrelOS, ZimaOS und Docker
+    about: Anleitungen für Synology, UGREEN, QNAP, TrueNAS, Unraid, umbrelOS, ZimaOS und Docker · Guides for Synology, UGREEN, QNAP, TrueNAS, Unraid, umbrelOS, ZimaOS and Docker (in German)
   - name: Entwicklerhandbuch – so läuft Mitarbeit
     url: https://motom001.github.io/dms/entwickler/aktuell/
     about: User Stories, Freigabe durch den Maintainer, Pull Requests, Release
+  - name: Contributing (English)
+    url: https://github.com/motom001/dms/blob/main/CONTRIBUTING.en.md
+    about: User stories, approval by the maintainer, pull requests – issues and PRs welcome in German or English

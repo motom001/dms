@@ -14,6 +14,7 @@ import { Profil } from './profil/Profil';
 import { Werkbank } from './werkbank/Werkbank';
 import { WartungsBanner } from './wartung';
 import { NeuKnopf, PostAblage } from './ablage/NeuePost';
+import { PostKamera } from './ablage/PostKamera';
 import { ErreichbarkeitsBanner, useBeiWiederErreichbar } from './erreichbar';
 import { useHandbuch } from './Hilfe';
 import { Pikto } from './piktogramme';
@@ -98,6 +99,7 @@ export function App() {
         {inhalt}
       </main>
       <PostAblage />
+      <PostKamera />
       {ich.entwicklermodus && <Messpanel />}
     </div>
   );

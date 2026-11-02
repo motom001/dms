@@ -38,6 +38,7 @@ import { bestimmeMandant, mandantNamen } from './mandant';
 import { ordnerAblage, Vorschaubilder } from './vorschau';
 import { Texterkennung } from './texterkennung';
 import { Paketlaeufer } from './laeufer/verwaltung';
+import { Systemlast } from './systemlast';
 import { Paketverwaltung } from './pakete';
 import { Aufgabenmail } from './aufgabenmail';
 import { Fehlermeldungen, pgFehlerRepo } from './fehlermeldungen';
@@ -282,8 +283,16 @@ const pakete: Paketverwaltung = new Paketverwaltung(dienst, {
   benutzer: async () => (await konten.listeBenutzer()).filter((b) => b.aktiv !== false).map((b) => ({ id: b.id, name: b.name || b.email })),
   laeufer: paketlaeufer,
 });
-texterkennung.nachher = (d, e) => { if (e.stand === 'fertig') void dienst.melde('texterkennung.fertig', { dokument: d.id, mappe: d.mappeId, seiten: e.seiten ?? null }); };
+texterkennung.nachher = (d, e) => {
+  if (e.stand !== 'fertig') return;
+  void dienst.melde('texterkennung.fertig', { dokument: d.id, mappe: d.mappeId, seiten: e.seiten ?? null });
+  // Internes Ereignis „Volltext fertig“ (#336): z. B. die Erkennung an Post.
+  void dienst.volltextFertig({ dokument: d.id, mappe: d.mappeId });
+};
 wartung.beimAusschalten(() => void paketlaeufer.stelleZu());
+// Systemzustand → Auslastung (#409): CPU, Arbeitsspeicher, Netzwerk jede Minute, nur im Arbeitsspeicher.
+const systemlast = new Systemlast({ laeufer: () => paketlaeufer.pid, postgres: process.env.DMS_VARIANTE === 'komplett' });
+systemlast.start();
 
 // WebDAV-Laufwerk (#346): Anmeldung mit API-Schlüssel, im Standard aus (Werkbank → WebDAV-Laufwerk).
 const webdav = new Webdav({ dienst, konten, schluessel: apiSchluessel, einstellungen: pgEinstellungen(sql, cfg.haushalt), adresse: () => betrieb.adresseFuerLinks(), wartung });
@@ -316,6 +325,7 @@ const app = await baueApp(dienst, konten, {
   sicherung,
   wiederherstellung,
   speicherplatz,
+  systemlast,
   eingangsordner,
   postfaecher,
   postfachOAuth,

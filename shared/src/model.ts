@@ -62,6 +62,13 @@ export interface Feld {
   frist?: import('./fristen').FristEinstellung | null;
   /** Referenzfeld (#172): nur Mappen des Zieltyps, die alle Bedingungen erfüllen. */
   auswahlFilter?: import('./sichten').Feldbedingung[];
+  /** Für die Erkennung nutzen (#336, #391): vorhanden = an, mit Art und Erkennungshinweis. */
+  erkennung?: import('./erkennung').FeldErkennung | null;
+  /**
+   * Verweisfeld aus einem Paket-Update (#534): Kennung des bisherigen Textfelds, aus dem es sich füllen lässt
+   * (`aus_text` im Paket). Solange der Verweis leer ist, zeigen Titel und Trefferliste den alten Text.
+   */
+  ausText?: string;
 }
 
 export const REGISTERARTEN = {
@@ -125,6 +132,10 @@ export interface MappentypDaten {
    * Einstellungen (nicht in der Tabelle der Mappentypen); beim Lesen und Speichern hier mitgeliefert.
    */
   stempel?: import('./stempel').StempelTyp | null;
+  /** „Aus Dokument ausfüllen“ (#391): eigene Beschriftung oder ausgeblendet; wie der Stempel in den Einstellungen. */
+  ausDokument?: import('./erkennung').AusDokument | null;
+  /** Erkannte Post automatisch zuordnen (#337), Standard aus; wie der Stempel in den Einstellungen. */
+  autoZuordnen?: boolean;
 }
 export interface Mappentyp extends MappentypDaten {
   id: string;
@@ -612,6 +623,10 @@ export type Indexwerte = Partial<Pick<Mappe, 'erstellt' | 'geaendert'>>;
 
 /** Zeitzone für Datumsangaben aus Zeitstempeln (Server und Browser sollen denselben Tag zeigen). */
 export const ZEITZONE = 'Europe/Berlin';
+/** Betreff einer fotografierten Post (#490): „Post vom 01.11.2026, 20:52“ statt des Dateinamens „image“. */
+export function fotoBetreff(d: Date = new Date()): string {
+  return `Post vom ${new Intl.DateTimeFormat('de-DE', { timeZone: ZEITZONE, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(d)}`;
+}
 const TAG_FORMAT = new Intl.DateTimeFormat('de-DE', { timeZone: ZEITZONE, day: '2-digit', month: '2-digit', year: 'numeric' });
 
 /** Tag eines Zeitstempels als TT.MM.JJJJ in der Zeitzone des Haushalts. */
@@ -631,6 +646,21 @@ export function wirksameVorlage(t: Pick<Mappentyp, 'felder' | 'titelVorlage'>): 
   if (t.titelVorlage?.trim()) return t.titelVorlage;
   const f = t.felder.find((x) => x.typ === 'text');
   return f ? `{${f.key}}` : '';
+}
+
+/**
+ * Textfeld, aus dem ein Verweisfeld nach einem Paket-Update gefüllt wird (#534): nur Text oder Langtext
+ * desselben Mappentyps; sonst undefined.
+ */
+export function altesTextfeldVon(t: Pick<Mappentyp, 'felder'>, f: Feld): Feld | undefined {
+  if (f.typ !== 'referenz' || !f.ausText || f.ausText === f.key) return undefined;
+  const alt = t.felder.find((x) => x.key === f.ausText);
+  return alt && (alt.typ === 'text' || alt.typ === 'langtext') ? alt : undefined;
+}
+
+/** Ist dieses Feld das alte Textfeld eines Verweisfelds (#534)? Dann das Verweisfeld. */
+export function verweisAusText(t: Pick<Mappentyp, 'felder'>, f: Feld): Feld | undefined {
+  return t.felder.find((x) => x.key !== f.key && altesTextfeldVon(t, x)?.key === f.key);
 }
 
 /** Titel einer Mappe aus der Vorlage; Platzhalter werden formatiert eingesetzt. Deaktivierte Benutzer heißen „… (ehemalig)“. */
@@ -655,6 +685,9 @@ function titelAusVorlage(t: Pick<Mappentyp, 'felder' | 'titelVorlage'>, werte: W
         const f = t.felder.find((x) => x.key === k);
         // Passwörter nie im Titel – auch nicht, wenn eine ältere Vorlage sie noch nennt.
         if (f && f.typ !== 'passwort') { text = formatiere(f, werte[k], titelVon); roh = werte[k]; art = f.typ; }
+        // Verweis noch leer, alter Text da (#534): bis zur Umwandlung zählt der Text.
+        const alt = f ? altesTextfeldVon(t, f) : undefined;
+        if (alt && istLeer(werte[k]) && !istLeer(werte[alt.key])) { text = formatiere(alt, werte[alt.key], titelVon); roh = werte[alt.key]; art = alt.typ; }
       }
       const mitFiltern = wendeFilterAn(text, roh, art, liesFilter(kette));
       // Leere Teile fallen samt Trenner weg („Strom –  – 2026“ wird „Strom – 2026“).
@@ -725,7 +758,7 @@ export interface DokumentVersion {
 }
 
 /* ---------- Aufgaben (#54, #56) ---------- */
-export const AUFGABENARTEN = { passung: 'Passt nicht', erwaehnung: 'Erwähnung', manuell: 'Zugewiesen', vertretung: 'Vertretung', frist: 'Frist', erinnerung: 'Erinnerung', post: 'Post für dich', auskunft: 'Auskunft', aenderung: 'Geändert' } as const;
+export const AUFGABENARTEN = { passung: 'Passt nicht', erwaehnung: 'Erwähnung', manuell: 'Zugewiesen', vertretung: 'Vertretung', frist: 'Frist', erinnerung: 'Erinnerung', post: 'Post für dich', auskunft: 'Auskunft', aenderung: 'Geändert', zugeordnet: 'Automatisch zugeordnet' } as const;
 export type Aufgabenart = keyof typeof AUFGABENARTEN;
 export interface Aufgabe {
   id: string; mappeId: string;

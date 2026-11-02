@@ -71,39 +71,44 @@ nav:
       - Aktualisieren und Sichern: aktualisieren.md
       - Wachsen und umziehen: wachsen.md
       - Verschlüsselung: verschluesselung.md
-  - Einrichten in der Werkbank:
+  - Werkbank:
       - Werkbank und Übersicht: uebersicht.md
-      - Mappentypen: mappentypen.md
-      - Ansichten: sichten.md
-      - Nummernkreise: nummernkreise.md
-      - Pakete: pakete.md
-      - Archivmodus und Aufbewahrung: archiv.md
-      - Datenschutz im DMS: datenschutz.md
-      - Löschkonzept (Vorlage): loeschkonzept.md
-      - Stempel beim Weitergeben: stempel.md
-      - Links über Feldwerte: direktlinks.md
-      - Benutzer und Rollen: benutzer.md
-      - Anmeldeschutz: anmeldeschutz.md
-      - Berechtigungen: berechtigungen.md
-      - Designs: designs.md
-      - Aufgaben: aufgaben.md
-      - Papierkorb: papierkorb.md
-      - Texterkennung und Wartung: texterkennung.md
-      - Eingangsordner: eingangsordner.md
-      - Postfächer: postfaecher.md
-      - WebDAV-Laufwerk: webdav.md
-      - Demo-Daten: demo.md
-  - Wartung und Notfall:
-      - Sicherung: sicherung.md
-      - Daten exportieren: export.md
-      - Wiederherstellen: wiederherstellen.md
-      - Wartungsmodus: wartungsmodus.md
-      - Systemzustand: speicherplatz.md
+      - Ablage aufbauen:
+          - Mappentypen: mappentypen.md
+          - Ansichten: sichten.md
+          - Nummernkreise: nummernkreise.md
+          - Stempel beim Weitergeben: stempel.md
+          - Pakete: pakete.md
+          - Archivmodus und Aufbewahrung: archiv.md
+          - Datenschutz im DMS: datenschutz.md
+          - Löschkonzept (Vorlage): loeschkonzept.md
+          - Links über Feldwerte: direktlinks.md
+      - Benutzer und Sicherheit:
+          - Benutzer und Rollen: benutzer.md
+          - Berechtigungen: berechtigungen.md
+      - Post und Eingänge:
+          - Postfächer: postfaecher.md
+          - Eingangsordner: eingangsordner.md
+          - WebDAV-Laufwerk: webdav.md
+          - Texterkennung und Wartung: texterkennung.md
+      - Daten sichern:
+          - Sicherung: sicherung.md
+          - Wiederherstellen: wiederherstellen.md
+          - Daten exportieren: export.md
+          - Papierkorb: papierkorb.md
+      - Einstellungen:
+          - Benachrichtigungen und Aufgaben: aufgaben.md
+          - Anmeldeschutz: anmeldeschutz.md
+          - Designs: designs.md
+      - Wartung und Fehlersuche:
+          - Systemzustand: speicherplatz.md
+          - Protokoll, Datenbank, Technik: fehlersuche.md
+          - Wartungsmodus: wartungsmodus.md
+          - Demo-Daten: demo.md
+  - Notfall:
       - "Notfall: kein Admin mehr": notfall.md
       - "Konsole: Befehl dms": konsole.md
       - Verfahrensdokumentation (Vorlage): verfahrensdokumentation.md
-  - Fehlersuche und Support:
-      - Protokoll, Datenbank, Technik: fehlersuche.md
   - Schnittstelle (API): api.md
   - Hintergrund:
       - Technik: technik.md

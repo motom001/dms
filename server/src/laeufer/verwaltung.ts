@@ -178,6 +178,9 @@ export class Paketlaeufer implements PaketLaeufer {
     this.sende({ art: 'pakete', pakete: liste, behalten, grenzen: this.grenzen });
   }
 
+  /** Prozess-Id des Läufers, solange er läuft – für den Systemzustand (#409). */
+  get pid(): number | null { return this.kind?.pid ?? null; }
+
   private starteKind() {
     if (this.aus) return;
     const hier = fileURLToPath(import.meta.url);

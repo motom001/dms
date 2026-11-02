@@ -114,7 +114,7 @@ export function SichtenListe({ offen }: { offen?: string }) {
                       {t.length ? t.map((x) => x.name).join(', ') : 'nur zum Gruppieren'}
                       {s.bedingungen.length > 0 && ` · ${s.bedingungen.length} Bedingung${s.bedingungen.length === 1 ? '' : 'en'}`}
                       {kinder > 0 && ` · ${kinder} Unteransicht${kinder === 1 ? '' : 'en'}`}
-                      {` · ${(d.zaehler.sichten?.[s.id] ?? 0).toLocaleString('de-DE')} Mappen`}
+                      {d.zahlenDa && ` · ${(d.zaehler.sichten?.[s.id] ?? 0).toLocaleString('de-DE')} Mappen`}
                       {s.berechtigungen?.regeln.length ? ` · ${s.berechtigungen.regeln.length} Regel${s.berechtigungen.regeln.length === 1 ? '' : 'n'}` : ''}
                     </span>
                     {probleme > 0 && <span className="problem">{probleme} Bedingung{probleme === 1 ? '' : 'en'} ohne Wirkung – bitte prüfen</span>}

@@ -56,6 +56,7 @@ vor;dur=0.1, app;dur=211.5, db;dur=154.7;desc="8", rechte;dur=2.6, json;dur=0.7,
 | `rechte` | Rechte auswerten (`Dienst.zugriff`, `rechteAn`, `rechteAnVielen`, `lesbare`), überlappende Aufrufe einmal, ohne die Datenbankzugriffe darin (`rechteMessen` in `messung.ts`) |
 | `json` | `reply.send` bis zum Hook `onSend` – die Antwort in Text umwandeln |
 | `gesamt` | Eingang bis `onSend` |
+| `zs` | Nur bei Anfragen, die die Zahlen der Ansichten brauchen (#512): Dauer und in `desc` `treffer` (Zwischenspeicher) oder `neu` (gezählt) |
 
 Wartet eine Anfrage, weil der eine Faden von Node.js gerade für eine andere rechnet, nimmt der Server sie erst danach an – das steckt dann nicht in `vor`, sondern in der „Leitung“ der Zeitmessung im Browser. Dafür misst `Auslastung` (`perf_hooks.monitorEventLoopDelay`) die Verzögerung der Ereignisschleife; Werkbank → Datenbank zeigt sie. Ganze Anfragen über der Schwelle für lange Zugriffe landen mit ihrer Aufteilung bei den Langläufern (`zugriff` beginnt mit `Anfrage:`).
 
@@ -89,7 +90,32 @@ Befund: Die Rechte-Auswertung im Arbeitsspeicher kostet je Seite nur wenige Mill
 - `/api/anstehend` lud **alle** Mappen jedes Typs mit Fristfeldern und filterte das Datum im Arbeitsspeicher. Jetzt holt `mappenMitDatum` nur Mappen mit einem Datum im Zeitraum (einzeln gemessen etwa 250 → 30 ms).
 - `/api/sichten` zählte den Eingang mit einem `EXISTS` je Mappe; für Mitglieder mit Lesefilter lief der ganze Zähler dafür **ein zweites Mal** ohne Filter. Jetzt zählt eine Abfrage über die offenen Aufgaben den Eingang, einmal für alle.
 
-Zielwert: Ein Mitglied lädt Startseite und Ablage bei gleichen Daten höchstens 10 % langsamer als der Administrator – erfüllt (sogar schneller, weil für den Administrator auch Fristen ohne Empfänger anstehen). Die Verzögerung der Ereignisschleife blieb bei 99 % unter 16 ms. Größter Posten ist jetzt `/api/sichten` (Zähler je Typ und Ansicht, 150–230 ms bei 50.000 Mappen, für alle Benutzer gleich).
+Zielwert: Ein Mitglied lädt Startseite und Ablage bei gleichen Daten höchstens 10 % langsamer als der Administrator – erfüllt (sogar schneller, weil für den Administrator auch Fristen ohne Empfänger anstehen). Die Verzögerung der Ereignisschleife blieb bei 99 % unter 16 ms. Größter Posten ist jetzt `/api/sichten` (Zähler je Typ und Ansicht, 150–230 ms bei 50.000 Mappen, für alle Benutzer gleich). Das behebt #512 (nächster Abschnitt).
+
+## Zahlen der Ansichten (#512)
+
+Die Zahlen neben den Ansichten (`GET /api/sichten` → `Dienst.zaehler`) zählen mit **einer** Abfrage alle sichtbaren Ansichten per `count(*) FILTER (WHERE …)` über alle Mappen des Haushalts, dazu Typen, Eingang, Favoriten und Papierkorb – bei 50.000 Mappen 120–150 ms allein, unter Last der Seite 150–260 ms. Zwei Mittel:
+
+1. **Nicht blockieren.** Die Oberfläche (`web/src/daten.tsx`) lädt Typen, Personen, Ansichten und den Rahmen (`GET /api/sichten/rahmen`: Papierkorb-Tage, Ansicht „Neue Post“ – ohne Zählen) und zeigt die Ablage; die Zahlen kommen danach (`zahlenDa`). Bis dahin steht an ihrer Stelle „…“ (`ZahlWarte`, Kacheln der Startseite ebenso), es springt nichts. Beim Neuladen bleiben die alten Zahlen stehen, bis die neuen da sind. Was aus den Zahlen etwas ableitet (Suchfeld der Liste, Belegung beim Entfernen eines Feldes), wartet nicht auf sie.
+2. **Zwischenspeichern** (`server/src/zaehlerspeicher.ts`). Der **Stand des Haushalts** (`Haushaltsstand`) zählt hoch, sobald eine ändernde Methode des Repos fertig ist – der `Dienst` umhüllt sein Repo damit (`transaktion` zählt als Ganzes). Lesende und folgenlose Methoden (Historie, Ereignisse, Texterkennung, „gesehen“ …) stehen in `OHNE_FOLGEN`; eine neue Methode zählt, bis sie dort steht. Der Schlüssel je Eintrag: Benutzer, Rolle und ein Fingerabdruck von Lesefilter, verborgenen Ansichten und eigenen Rollen; gültig bei gleichem Stand und gleichem `heute`, also höchstens bis Mitternacht. Ansichten mit Datumsbezug (`heute`, Monat, Jahr, Frist) gelten höchstens 5 Minuten (`ZEITABHAENGIG_MS`), alle anderen höchstens 30 Minuten (`HOECHSTENS_MS`, Sicherheitsnetz für Änderungen an der Datenbank vorbei, etwa von Hand). Gleichzeitige Anfragen mit gleichem Schlüssel warten auf dieselbe Zählung. Ein Treffer kostet etwa 7 ms (Sitzung, Rechte, Ansichten laden), neu zählen 110–150 ms.
+
+**Messung zu #512** (dieselben Daten wie #477, `server/test/ladezeiten.mjs`, Median aus 5 Ladevorgängen, davon der Median aus drei abwechselnden Durchgängen; im Lauf trifft der Zwischenspeicher bei allen Ladevorgängen nach dem ersten):
+
+| Seite | Wer | Sichtbar vorher | Sichtbar nachher | Zahlen da vorher | Zahlen da nachher | `/api/sichten` vorher | `/api/sichten` nachher | Laden vorher | Laden nachher |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Startseite | Administrator | 388 | 273 | 337 | 176 | 213 | 56 | 460 | 312 |
+| Startseite | Mitglied mit Rolle | 381 | 269 | 310 | 182 | 185 | 60 | 388 | 255 |
+| Startseite | Mitglied ohne Rolle | 344 | 247 | 263 | 165 | 144 | 54 | 335 | 219 |
+| Liste Rechnungen | Administrator | 392 | 277 | 303 | 237 | 201 | 80 | 427 | 396 |
+| Liste Rechnungen | Mitglied mit Rolle | 385 | 263 | 302 | 141 | 189 | 36 | 405 | 226 |
+| Liste Rechnungen | Mitglied ohne Rolle | 312 | 271 | 264 | 155 | 146 | 36 | 374 | 261 |
+| Mappe öffnen | Administrator | 875 | 284 | 305 | 134 | 201 | 30 | 445 | 282 |
+| Mappe öffnen | Mitglied mit Rolle | 882 | 324 | 302 | 165 | 179 | 43 | 409 | 282 |
+| Mappe öffnen | Mitglied ohne Rolle | 487 | 283 | 293 | 153 | 173 | 33 | 439 | 268 |
+
+*Sichtbar* = bis Kacheln, erste Zeile der Liste bzw. Kopf der Mappe zu sehen sind; *Zahlen da* = bis die Antwort von `/api/sichten` im Browser ist; `/api/sichten` = Server-Zeit dieser Anfrage (unter Last der Seite; allein 6–9 ms bei einem Treffer); *Laden* = bis keine Anfrage mehr läuft. Alle Werte in ms, lokaler Rechner. „Sichtbar“ schwankt bei „Mappe öffnen“ stark (einzelne Läufe um 870 ms in beiden Fassungen).
+
+Nicht umgesetzt: **nur zählen, was zu sehen ist** (eingeklappte Gruppen, geschlossene Ansicht-Auswahl am Handy) – mit 1 und 2 wartet die Ablage nicht mehr auf die Zahlen, und ein Treffer kostet einstellige Millisekunden; ein Teilzählen würde den Zwischenspeicher nur aufsplitten. Auch ein **Index** für einzelne Bedingungen lohnt nicht: Die eine Abfrage liest ohnehin alle Mappen des Haushalts einmal (Seq Scan), und sie läuft nur noch nach Änderungen.
 
 ## Regeln
 

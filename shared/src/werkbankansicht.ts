@@ -6,17 +6,26 @@
  * abgestufte Administratorrechte sein können (#282); ihre Kennung ist der Pfad unter /werkbank.
  */
 
+import { uebersetzer } from './sprache';
+import werkbank from './sprachen/de/werkbank.json';
+
+/** Texte der Werkbank (#473): Gruppen, Bereiche, Vorlagen stehen in `sprachen/de/werkbank.json`. */
+const t = uebersetzer({ werkbank });
+
 export type Vorlage = 'haushalt' | 'organisation' | 'alles';
 
+const vorlage = (v: Vorlage) => ({ name: t.frei(`werkbank.vorlage.${v}.name`), text: t.frei(`werkbank.vorlage.${v}.text`) });
 export const VORLAGEN: Record<Vorlage, { name: string; text: string }> = {
-  haushalt: { name: 'Haushalt', text: 'Schlank: nur, was ein Haushalt zum Einrichten und Sichern braucht.' },
-  organisation: { name: 'Betrieb', text: 'Für Selbständige und kleine Betriebe. Dazu Nummernkreise, Darf weg, Datenschutz, Anmeldeschutz, Designs, Postfächer, Eingangsordner, Texterkennung, Protokoll, Gemeldete Fehler und Wartungsmodus.' },
-  alles: { name: 'Alles', text: 'Jeder Bereich der Werkbank.' },
+  haushalt: vorlage('haushalt'), organisation: vorlage('organisation'), alles: vorlage('alles'),
 };
 
-/** Gruppen der Leiste (#68). */
-export const GRUPPEN = { ablage: 'Ablage einrichten', benutzer: 'Benutzer und Zusammenarbeit', einstellungen: 'Einstellungen', wartung: 'Wartung und Fehlersuche' } as const;
-export type Gruppe = keyof typeof GRUPPEN;
+/**
+ * Gruppen der Leiste (#68), nach Aufgaben statt nach Technik (#354): höchstens sechs, je etwa 7 ± 2
+ * Bereiche. Die Kennung der Gruppe wird nirgends gespeichert – gespeichert sind nur Bereiche.
+ */
+const GRUPPENFOLGE = ['ablage', 'benutzer', 'post', 'sichern', 'einstellungen', 'wartung'] as const;
+export type Gruppe = (typeof GRUPPENFOLGE)[number];
+export const GRUPPEN = Object.fromEntries(GRUPPENFOLGE.map((g) => [g, t.frei(`werkbank.gruppe.${g}`)])) as Record<Gruppe, string>;
 
 export interface Bereich {
   /** Pfad unter /werkbank, zugleich die Kennung. */
@@ -31,39 +40,50 @@ export interface Bereich {
 
 const H = ['haushalt', 'organisation'] as const;
 const O = ['organisation'] as const;
+type Eintrag = { pfad: string; gruppe: Gruppe; in: readonly Exclude<Vorlage, 'alles'>[] };
 
-/** Alle Bereiche außer der Übersicht (die ist immer da), in der Reihenfolge der Leiste. */
-export const BEREICHE: Bereich[] = [
-  { pfad: 'typen', gruppe: 'ablage', name: 'Mappentypen', in: [...H], wann: 'eigene Arten von Mappen bauen' },
-  { pfad: 'sichten', gruppe: 'ablage', name: 'Ansichten', in: [...H], wann: 'die Sammlungen links in der Ablage ordnen' },
-  { pfad: 'nummernkreise', gruppe: 'ablage', name: 'Nummernkreise', in: [...O], wann: 'fortlaufende Nummern, z. B. für Rechnungen' },
-  { pfad: 'stempel', gruppe: 'ablage', name: 'Stempel', in: [...H], wann: 'Vorlagen für Stempel und Wasserzeichen beim Weitergeben' },
-  { pfad: 'pakete', gruppe: 'ablage', name: 'Pakete', in: [...H], wann: 'fertige Mappentypen und Ansichten installieren' },
-  { pfad: 'darfweg', gruppe: 'ablage', name: 'Darf weg', in: [...O], wann: 'Mappen mit abgelaufener Aufbewahrungsfrist (nur mit Archivmodus)' },
-  { pfad: 'datenschutz', gruppe: 'ablage', name: 'Datenschutz', in: [...O], wann: 'Auskunft nach Art. 15 DSGVO an Kunden, Mieter und Kontakte als ZIP' },
-  { pfad: 'benutzer', gruppe: 'benutzer', name: 'Benutzer', in: [...H], wann: 'Benutzer und Rollen anlegen' },
-  { pfad: 'aufgaben', gruppe: 'benutzer', name: 'Aufgaben', in: [...H], wann: 'alle offenen Aufgaben im Blick behalten' },
-  { pfad: 'betrieb', gruppe: 'einstellungen', name: 'E-Mail und Adresse', in: [...H], wann: 'E-Mail-Versand und Adresse des DMS' },
-  { pfad: 'verschluesselung', gruppe: 'einstellungen', name: 'Verschlüsselung', in: [...H], wann: 'den Schlüssel für Passwörter und Sicherungen' },
-  { pfad: 'anmeldeschutz', gruppe: 'einstellungen', name: 'Anmeldeschutz', in: [...O], wann: 'Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen' },
-  { pfad: 'designs', gruppe: 'einstellungen', name: 'Designs', in: [...O], wann: 'Logo, Farben und eigenes CSS' },
-  { pfad: 'papierkorb', gruppe: 'einstellungen', name: 'Papierkorb', in: [...H], wann: 'gelöschte Mappen zurückholen' },
-  { pfad: 'anbindung', gruppe: 'einstellungen', name: 'Datenbank-Anbindung', in: [], wann: 'die Verbindung zur Datenbank, lange Datenbankzugriffe und was gerade läuft' },
-  { pfad: 'postfaecher', gruppe: 'einstellungen', name: 'Postfächer', in: [...O], wann: 'Post aus einem E-Mail-Konto abholen' },
-  { pfad: 'eingangsordner', gruppe: 'einstellungen', name: 'Eingangsordner', in: [...O], wann: 'Scans aus einem Ordner übernehmen' },
-  { pfad: 'webdav', gruppe: 'einstellungen', name: 'WebDAV-Laufwerk', in: [...H], wann: 'die Ablage im Explorer, Finder oder in der Dateien-App einbinden' },
-  { pfad: 'texterkennung', gruppe: 'einstellungen', name: 'Texterkennung', in: [...O], wann: 'Text in gescannten Dokumenten finden' },
-  { pfad: 'protokoll', gruppe: 'wartung', name: 'Protokoll', in: [...O], wann: 'das technische Protokoll lesen' },
-  { pfad: 'fehlermeldungen', gruppe: 'wartung', name: 'Gemeldete Fehler', in: [...O], wann: 'Fehler, die Benutzer gemeldet haben' },
-  { pfad: 'sicherung', gruppe: 'wartung', name: 'Sicherung', in: [...H], wann: 'Sicherungen einrichten und prüfen' },
-  { pfad: 'wiederherstellung', gruppe: 'wartung', name: 'Wiederherstellen', in: [...H], wann: 'eine Sicherung zurückspielen' },
-  { pfad: 'vollexport', gruppe: 'wartung', name: 'Vollexport', in: [...H], wann: 'alle Daten in offenen Formaten mitnehmen' },
-  { pfad: 'wartungsmodus', gruppe: 'wartung', name: 'Wartungsmodus', in: [...O], wann: 'Benutzer vorübergehend aussperren' },
-  { pfad: 'systemzustand', gruppe: 'wartung', name: 'Systemzustand', in: [...H], wann: 'sehen, wie es dem Server geht: Speicherplatz mit Warnschwellen' },
-  { pfad: 'wartung', gruppe: 'wartung', name: 'Wartungsoperationen', in: [], wann: 'einmalige Pflegearbeiten' },
-  { pfad: 'technik', gruppe: 'wartung', name: 'Technik', in: [...H], wann: 'Version, Updates und die Übersicht für GitHub' },
-  { pfad: 'demo', gruppe: 'wartung', name: 'Demo-Daten', in: [], wann: 'Beispielmappen zum Ausprobieren' },
+/**
+ * Alle Bereiche außer der Übersicht (die ist immer da), in der Reihenfolge der Leiste (#354).
+ * Name und „wann“ kommen aus der Sprachdatei (`werkbank.bereich.<pfad>.name` / `.wann`).
+ */
+const EINTRAEGE: Eintrag[] = [
+  { pfad: 'typen', gruppe: 'ablage', in: H },
+  { pfad: 'sichten', gruppe: 'ablage', in: H },
+  { pfad: 'nummernkreise', gruppe: 'ablage', in: O },
+  { pfad: 'stempel', gruppe: 'ablage', in: H },
+  { pfad: 'pakete', gruppe: 'ablage', in: H },
+  { pfad: 'darfweg', gruppe: 'ablage', in: O },
+  { pfad: 'datenschutz', gruppe: 'ablage', in: O },
+  { pfad: 'benutzer', gruppe: 'benutzer', in: H },
+  { pfad: 'verschluesselung', gruppe: 'benutzer', in: H },
+  { pfad: 'postfaecher', gruppe: 'post', in: O },
+  { pfad: 'eingangsordner', gruppe: 'post', in: O },
+  { pfad: 'webdav', gruppe: 'post', in: H },
+  { pfad: 'texterkennung', gruppe: 'post', in: O },
+  { pfad: 'sicherung', gruppe: 'sichern', in: H },
+  { pfad: 'wiederherstellung', gruppe: 'sichern', in: H },
+  { pfad: 'vollexport', gruppe: 'sichern', in: H },
+  { pfad: 'papierkorb', gruppe: 'sichern', in: H },
+  { pfad: 'betrieb', gruppe: 'einstellungen', in: H },
+  { pfad: 'aufgaben', gruppe: 'einstellungen', in: H },
+  { pfad: 'anmeldeschutz', gruppe: 'einstellungen', in: O },
+  { pfad: 'designs', gruppe: 'einstellungen', in: O },
+  { pfad: 'anbindung', gruppe: 'einstellungen', in: [] },
+  { pfad: 'technik', gruppe: 'einstellungen', in: H },
+  { pfad: 'systemzustand', gruppe: 'wartung', in: H },
+  { pfad: 'protokoll', gruppe: 'wartung', in: O },
+  { pfad: 'fehlermeldungen', gruppe: 'wartung', in: O },
+  { pfad: 'wartungsmodus', gruppe: 'wartung', in: O },
+  { pfad: 'wartung', gruppe: 'wartung', in: [] },
+  { pfad: 'demo', gruppe: 'wartung', in: [] },
 ];
+
+export const BEREICHE: Bereich[] = EINTRAEGE.map((e) => ({
+  ...e, in: [...e.in], name: t.frei(`werkbank.bereich.${e.pfad}.name`), wann: t.frei(`werkbank.bereich.${e.pfad}.wann`),
+}));
+
+/** Name eines Bereichs (auch der Übersicht) für Leiste, Überschriften und Verweise. */
+export const bereichName = (pfad: string) => t.frei(`werkbank.bereich.${pfad}.name`);
 
 const BEKANNT = new Set(BEREICHE.map((b) => b.pfad));
 

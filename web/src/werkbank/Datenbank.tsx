@@ -3,6 +3,7 @@ import { api, type DatenbankStand } from '../api';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
+import { t } from '../sprache';
 
 /**
  * Lange Datenbankzugriffe (#12) und was gerade in der Datenbank läuft – seit #407 unter
@@ -142,6 +143,8 @@ function Auslastung({ z }: { z: DatenbankZustand }) {
             </dl>
           </>}
       <p className="leise klein">Verzögerung der Ereignisschleife in der letzten Minute: So lange musste eine Anfrage höchstens warten, weil der Server gerade etwas anderes rechnete. Werte unter 50 ms sind unauffällig. In der Zeitmessung (Entwicklermodus) erscheint dieses Warten bei den anderen Anfragen als „Leitung“.</p>
+      {/* #409: CPU, Arbeitsspeicher und Netzwerk stehen im Systemzustand. */}
+      <p className="leise klein">{t('systemzustand.verweis.systemzustand')} <Link to="/werkbank/systemzustand#auslastung" className="verweis">{t('systemzustand.verweis.systemzustand.ziel')}</Link>.</p>
     </div>
   );
 }

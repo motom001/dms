@@ -1,5 +1,7 @@
 # Vereinbarung über Verhaltenskodex für Mitwirkende
 
+**Deutsch** · [English (Original)](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
+
 ## Unsere Verpflichtung
 
 Wir als Mitglieder, Teilnehmende und Verantwortliche unserer Gemeinschaft verpflichten uns, allen Teilnehmenden an dem Projekt und unserer Gemeinschaft eine belästigungsfreie Beteiligung, unabhängig von Alter, Körpergröße, Behinderung, ethnischer Zuordnung, Geschlechtermerkmalen, -identität und -ausdruck, Grad der Erfahrung, Bildung, sozialem Status, Nationalität, persönlicher Erscheinung, Rasse, Kaste, Hautfarbe, Religion oder sexueller Identität und Orientierung zu ermöglichen.
@@ -73,6 +75,8 @@ Die Gemeinschaftsleitung wird sich bei der Bestimmung der Konsequenzen für jede
 Dieser Verhaltenskodex basiert auf dem [Contributor Covenant][homepage], Version 2.1, verfügbar unter [https://www.contributor-covenant.org/version/2/1/code_of_conduct.html][v2.1].
 
 Community Impact Guidelines wurden von [Mozillas Code of Conduct Enforcement Ladder][mozilla] inspiriert.
+
+Das englische Original steht unter [Contributor Covenant 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/); darauf verweist auch [CONTRIBUTING.en.md](CONTRIBUTING.en.md#code-of-conduct). Meldungen gehen in beiden Sprachen an dieselbe Adresse.
 
 Antworten auf häufig gestellte Fragen zu diesem Verhaltenskodex finden Sie in den häufig gestellten Fragen unter <https://www.contributor-covenant.org/faq> (in Englisch). Andere Übersetzungen sind verfügbar unter <https://www.contributor-covenant.org/translations>.
 

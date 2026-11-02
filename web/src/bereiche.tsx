@@ -1,13 +1,18 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { useKonto } from './konto';
+import { t } from './sprache';
+import { Symbol } from './Symbol';
 
 /**
  * Verschiebbare und einklappbare Bereiche der Dreiteilung (#23).
  *
- * Zwei Griffe („Picker“) sitzen mittig auf den Trennlinien:
- *   links:  zwischen Sichten und Liste  – ziehen ändert die Breite der Sichten, kurz klicken klappt sie ein/aus
- *   rechts: zwischen Liste und Mappe    – ziehen ändert die Breite der Liste,   kurz klicken klappt die Mappe ein/aus
- * Gemerkt wird je Benutzer und Gerät (localStorage mit der Benutzer-Id im Schlüssel).
+ * Zwei Griffe sitzen mittig auf den Trennlinien:
+ *   links:  zwischen Ansichten und Liste – ziehen ändert die Breite der Ansichten, kurz klicken klappt sie ein
+ *   rechts: zwischen Liste und Mappe     – ziehen ändert die Breite der Liste,     kurz klicken klappt die Mappe ein
+ * Der Pfeil im Griff zeigt, wohin die Spalte verschwindet (#536). Eingeklappt bleibt am Rand eine schmale,
+ * beschriftete Lasche („Ansichten“, „Mappe“ bzw. der Titel der geöffneten Mappe); ein Klick darauf öffnet
+ * die Spalte wieder. Gemerkt wird je Benutzer und Gerät (localStorage mit der Benutzer-Id im Schlüssel);
+ * eine neu geöffnete Mappe klappt die rechte Spalte aber immer auf.
  * Auf schmalen Bildschirmen (Handy) bleibt die Einzelansicht ohne Griffe.
  */
 export type Ort = 'ablage' | 'werkbank';
@@ -15,6 +20,10 @@ interface Stand { l: number; m: number; linksZu: boolean; rechtsZu: boolean }
 
 const SCHMAL = 820;
 const MIN_L = 140, MAX_L = 420, MIN_M = 240, MIN_RECHTS = 320;
+/** Breite der Lasche einer eingeklappten Spalte (#536). */
+const LASCHE = 32;
+/** Längster Titel auf der Lasche; länger wird mit „…“ gekürzt. */
+const TITEL_MAX = 40;
 const RESET = 'dms:bereiche-zurueckgesetzt';
 const schluessel = (ort: Ort, benutzer: string) => `dms:bereiche:${ort}:${benutzer}`;
 
@@ -75,41 +84,79 @@ export function Dreiteilung({ ort, ebene, offen, mitte = true, rechts = true, ch
     if (offen && offen !== vorher.current && s.rechtsZu) merke({ ...s, rechtsZu: false });
     vorher.current = offen;
   }, [offen]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Auch dieselbe Mappe noch einmal aus der Liste öffnen klappt rechts auf (#536): Die Adresse ändert sich
+  // dann nicht, deshalb zählt hier jeder Klick auf einen Link in der Mitte.
+  const linkInMitte = (e: MouseEvent<HTMLDivElement>) => {
+    if (!s.rechtsZu || !(e.target instanceof Element)) return;
+    const a = e.target.closest('a[href]');
+    if (a && a.closest('.spalte.liste')) merke({ ...s, rechtsZu: false });
+  };
+
+  const rechtsZu = s.rechtsZu && mitte && rechts;
+  // Titel der geöffneten Mappe für die Lasche (#536): aus der Überschrift der rechten Spalte, die eingeklappt
+  // weiter da ist (nur unsichtbar) und ihre Daten selbst nachlädt.
+  const [titel, setTitel] = useState('');
+  useEffect(() => {
+    const spalte = rahmen.current?.querySelector('.spalte.mappe');
+    if (!rechtsZu || !offen || !spalte) { setTitel(''); return; }
+    const lies = () => setTitel((spalte.querySelector('h1')?.textContent ?? '').trim());
+    lies();
+    const beobachter = new MutationObserver(lies);
+    beobachter.observe(spalte, { childList: true, subtree: true, characterData: true });
+    return () => beobachter.disconnect();
+  }, [rechtsZu, offen]);
 
   // Liste nie so breit, dass für die Mappe weniger als MIN_RECHTS bleibt.
   const gesamt = rahmen.current?.clientWidth ?? innerWidth;
-  const l = s.linksZu ? 0 : Math.min(MAX_L, Math.max(MIN_L, s.l));
+  const l = s.linksZu ? LASCHE : Math.min(MAX_L, Math.max(MIN_L, s.l));
   const m = Math.max(MIN_M, Math.min(s.m, gesamt - l - MIN_RECHTS));
-  const rechtsZu = s.rechtsZu && mitte && rechts;
-  const spalten = !mitte || !rechts ? `${l}px minmax(0, 1fr)` : rechtsZu ? `${l}px minmax(0, 1fr) 0` : `${l}px ${m}px minmax(0, 1fr)`;
+  const spalten = !mitte || !rechts ? `${l}px minmax(0, 1fr)` : rechtsZu ? `${l}px minmax(0, 1fr) ${LASCHE}px` : `${l}px ${m}px minmax(0, 1fr)`;
   const style = breit ? ({ gridTemplateColumns: spalten } as CSSProperties) : undefined;
+  const name = (seite: 'links' | 'rechts') => t.frei(`spalten.name.${ort}.${seite}`);
 
   return (
-    <div ref={rahmen} className={`drei ${s.linksZu ? 'links-zu' : ''} ${rechtsZu ? 'rechts-zu' : ''} ${mitte ? '' : 'ohne-mitte'} ${rechts ? '' : 'ohne-rechts'}`} data-ebene={ebene} style={style}>
+    <div ref={rahmen} className={`drei ${s.linksZu ? 'links-zu' : ''} ${rechtsZu ? 'rechts-zu' : ''} ${mitte ? '' : 'ohne-mitte'} ${rechts ? '' : 'ohne-rechts'}`} data-ebene={ebene} style={style} onClickCapture={linkInMitte}>
       {children[0]}
       {mitte && children[1]}
       {(rechts || !mitte) && children[2]}
       {breit && <>
-        <Griff seite="links" x={l} zu={s.linksZu} wert={l}
-          titel={s.linksZu ? 'Ansichten einblenden' : 'Ansichten ausblenden (ziehen ändert die Breite)'}
-          ziehe={(dx, start) => merke({ ...s, linksZu: false, l: Math.min(MAX_L, Math.max(MIN_L, start + dx)) })}
-          start={() => (s.linksZu ? MIN_L : l)}
-          umschalten={() => merke({ ...s, linksZu: !s.linksZu })}
-          zuruecksetzen={() => merke({ ...s, linksZu: false, l: standard().l })} />
-        {mitte && rechts && <Griff seite="rechts" x={s.rechtsZu ? gesamt : l + m} zu={s.rechtsZu} wert={m}
-          titel={s.rechtsZu ? 'Mappe einblenden' : 'Mappe ausblenden (ziehen ändert die Breite der Liste)'}
-          ziehe={(dx, start) => merke({ ...s, rechtsZu: false, m: Math.max(MIN_M, Math.min(start + dx, gesamt - l - MIN_RECHTS)) })}
-          start={() => (s.rechtsZu ? gesamt - l - MIN_RECHTS : m)}
-          umschalten={() => merke({ ...s, rechtsZu: !s.rechtsZu })}
-          zuruecksetzen={() => merke({ ...s, rechtsZu: false, m: standard().m })} />}
+        {s.linksZu
+          ? <Lasche seite="links" name={name('links')} oeffnen={() => merke({ ...s, linksZu: false })} />
+          : <Griff seite="links" x={l} wert={l} name={name('links')}
+            ziehe={(dx, start) => merke({ ...s, l: Math.min(MAX_L, Math.max(MIN_L, start + dx)) })}
+            start={() => l}
+            einklappen={() => merke({ ...s, linksZu: true })}
+            zuruecksetzen={() => merke({ ...s, linksZu: false, l: standard().l })} />}
+        {mitte && rechts && (rechtsZu
+          ? <Lasche seite="rechts" name={name('rechts')} titel={titel} oeffnen={() => merke({ ...s, rechtsZu: false })} />
+          : <Griff seite="rechts" x={l + m} wert={m} name={name('rechts')}
+            ziehe={(dx, start) => merke({ ...s, m: Math.max(MIN_M, Math.min(start + dx, gesamt - l - MIN_RECHTS)) })}
+            start={() => m}
+            einklappen={() => merke({ ...s, rechtsZu: true })}
+            zuruecksetzen={() => merke({ ...s, rechtsZu: false, m: standard().m })} />)}
       </>}
     </div>
   );
 }
 
+/**
+ * Eingeklappte Spalte (#536): schmale Leiste am Rand über die ganze Höhe, mit Pfeil in die Richtung, in die
+ * die Spalte aufgeht, und senkrechter Beschriftung. Klick, Enter oder Leertaste öffnen die Spalte wieder.
+ */
+function Lasche({ seite, name, titel, oeffnen }: { seite: 'links' | 'rechts'; name: string; titel?: string; oeffnen(): void }) {
+  const kurz = titel && titel.length > TITEL_MAX ? `${titel.slice(0, TITEL_MAX - 1).trimEnd()} …` : titel;
+  const text = titel ? t('spalten.lasche.aufklappen.titel', { name, titel }) : t('spalten.lasche.aufklappen', { name });
+  return (
+    <button type="button" className={`spl-lasche spl-lasche-${seite}`} onClick={oeffnen} aria-label={text} title={text}>
+      <Symbol name={seite === 'links' ? 'pfeil-rechts' : 'pfeil-links'} />
+      <span className="spl-lasche-text">{kurz || name}</span>
+    </button>
+  );
+}
+
 function Griff(p: {
-  seite: 'links' | 'rechts'; x: number; zu: boolean; wert: number; titel: string;
-  ziehe(dx: number, start: number): void; start(): number; umschalten(): void; zuruecksetzen(): void;
+  seite: 'links' | 'rechts'; x: number; wert: number; name: string;
+  ziehe(dx: number, start: number): void; start(): number; einklappen(): void; zuruecksetzen(): void;
 }) {
   const zug = useRef<{ x: number; start: number; bewegt: boolean } | null>(null);
   const runter = (e: PointerEvent<HTMLButtonElement>) => {
@@ -130,25 +177,19 @@ function Griff(p: {
     const z = zug.current;
     zug.current = null;
     document.body.classList.remove('zieht-bereich');
-    if (z && !z.bewegt) p.umschalten();
+    if (z && !z.bewegt) p.einklappen();
   };
   const taste = (e: KeyboardEvent<HTMLButtonElement>) => {
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); p.ziehe(e.key === 'ArrowLeft' ? -20 : 20, p.start()); }
     if (e.key === 'Home') { e.preventDefault(); p.zuruecksetzen(); }
   };
-  // Eingeklappt zeigt der Pfeil, wohin der Bereich beim Klick aufgeht.
-  const nachLinks = p.seite === 'rechts';
+  // Der Pfeil zeigt, wohin die Spalte beim Einklappen verschwindet (#536): links nach links, rechts nach rechts.
   return (
-    <button type="button" className={`griff griff-${p.seite} ${p.zu ? 'zu' : ''}`} style={{ left: p.x }}
-      role="separator" aria-orientation="vertical" aria-valuenow={Math.round(p.wert)} aria-label={p.titel} title={`${p.titel}. Doppelklick: Standardbreite.`}
+    <button type="button" className={`griff griff-${p.seite}`} style={{ left: p.x }}
+      role="separator" aria-orientation="vertical" aria-valuenow={Math.round(p.wert)} aria-label={t('spalten.griff.einklappen', { name: p.name })} title={t('spalten.griff.ziehen', { name: p.name })}
       onPointerDown={runter} onPointerMove={bewegen} onPointerUp={hoch} onPointerCancel={hoch}
-      onDoubleClick={p.zuruecksetzen} onKeyDown={taste} onClick={(e) => { if (e.detail === 0) p.umschalten(); }}>
-      {/* Offen: zwei gegenläufige Pfeile (ziehen oder einklappen); eingeklappt: Pfeil zum Aufklappen. */}
-      <svg viewBox="0 0 12 28" width="12" height="28" aria-hidden="true">
-        {p.zu
-          ? (nachLinks ? <path d="M8 8 4 14l4 6" /> : <path d="M4 8l4 6-4 6" />)
-          : <><path d="M5 4 2 9l3 5" /><path d="M7 14l3 5-3 5" /></>}
-      </svg>
+      onDoubleClick={p.zuruecksetzen} onKeyDown={taste} onClick={(e) => { if (e.detail === 0) p.einklappen(); }}>
+      <Symbol name={p.seite === 'links' ? 'pfeil-links' : 'pfeil-rechts'} />
     </button>
   );
 }

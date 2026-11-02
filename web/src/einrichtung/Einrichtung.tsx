@@ -17,11 +17,13 @@ import { geheZu, Link, loeseWache } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { titelOder } from '../seiten';
 import { Hilfe } from '../Hilfe';
+import { t as tx } from '../sprache';
 import { FRISTEN, JAHRE_MAX, type Archiv } from '../../../shared/src/archiv';
 import { STEMPEL_MODI, type StempelModus, type StempelTyp } from '../../../shared/src/stempel';
 import { useStempelVorlagen } from '../ablage/Stempel';
 import { Bereich, liesOffen, merkeOffen, TYP_BEREICHE, type Klappe, type TypBereich } from './Bereich';
 import { hinweis, rueckfrage } from '../rueckfrage';
+import { artenFuer, artVon, AUS_DOKUMENT_STANDARD, BESCHRIFTUNG_MAX, ERKENNUNG_FELDTYPEN, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, merkmalsfelder, type AusDokument, type Erkennungsart } from '../../../shared/src/erkennung';
 
 /** Entfernen im Editor wirkt erst beim Speichern (#136). */
 const ERST_BEIM_SPEICHERN = ' Das wird erst mit „Mappentyp speichern“ wirksam.';
@@ -47,6 +49,10 @@ interface Entwurf {
   archiv: Archiv | null;
   /** Stempel beim Weitergeben (#394): vorschlagen oder Pflicht. */
   stempel: StempelTyp | null;
+  /** „Aus Dokument ausfüllen“ (#391). */
+  ausDokument: AusDokument | null;
+  /** Post automatisch zuordnen (#337). */
+  autoZuordnen: boolean;
 }
 
 function neueId(): string {
@@ -61,13 +67,15 @@ function neueId(): string {
 const alsEntwurfRegister = ({ felder: _f, ...r }: Register): EntwurfRegister => ({ ...r, _uid: neueId() });
 
 function entwurfAus(t?: Mappentyp): Entwurf {
-  if (!t) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], berechtigungen: structuredClone(OFFENES_REGELWERK), archiv: null, stempel: null };
+  if (!t) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: 'Standard', spalten: [], standard: true }], berechtigungen: structuredClone(OFFENES_REGELWERK), archiv: null, stempel: null, ausDokument: null, autoZuordnen: false };
   const erstes = t.register.find((r) => r.art === 'felder')?.key ?? '';
   const e: Entwurf = {
     id: t.id, name: t.name, schluessel: t.schluessel ?? '', beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '',
     berechtigungen: structuredClone(regelwerkVon(t)),
     archiv: t.archiv ?? null,
     stempel: t.stempel ?? null,
+    ausDokument: t.ausDokument ?? null,
+    autoZuordnen: !!t.autoZuordnen,
     register: t.register.map(alsEntwurfRegister),
     felder: t.felder.map((f) => ({
       ...f, _uid: neueId(),
@@ -222,7 +230,8 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
   }
   async function entferne(i: number) {
     const f = e.felder[i];
-    const n = gespeichert && d.anzahl(gespeichert.id) ? (await api.belegung(gespeichert.id).catch(() => ({} as Record<string, number>)))[f.key] ?? 0 : 0;
+    // Ohne Zahlen (#512, kommen noch) lieber nachsehen.
+    const n = gespeichert && (!d.zahlenDa || d.anzahl(gespeichert.id)) ? (await api.belegung(gespeichert.id).catch(() => ({} as Record<string, number>)))[f.key] ?? 0 : 0;
     const text = n
       ? `${n} ${n === 1 ? 'Mappe hat' : 'Mappen haben'} in „${f.label}“ einen Wert. Die Werte bleiben gespeichert, werden aber nicht mehr angezeigt.${ERST_BEIM_SPEICHERN}`
       : ERST_BEIM_SPEICHERN.trim();
@@ -292,7 +301,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
       <div className="seitenkopf"><div>
         <p className="ueber">Mappentyp</p>
         <h1>{e.name || (neu ? 'Neuer Mappentyp' : 'Ohne Namen')}{system && <span className="chip">System</span>}</h1>
-        {gespeichert && <p className="leise"><Link to={`/ablage/${gespeichert.id}`} className="verweis">{d.anzahl(gespeichert.id).toLocaleString('de-DE')} {d.anzahl(gespeichert.id) === 1 ? 'Mappe' : 'Mappen'} in der Ablage →</Link></p>}
+        {gespeichert && d.zahlenDa && <p className="leise"><Link to={`/ablage/${gespeichert.id}`} className="verweis">{d.anzahl(gespeichert.id).toLocaleString('de-DE')} {d.anzahl(gespeichert.id) === 1 ? 'Mappe' : 'Mappen'} in der Ablage →</Link></p>}
         {vorlage && neu && <p className="leise">Kopie von „{vorlage.name}“ – noch nicht gespeichert. Mappen werden nicht kopiert.</p>}
       </div>
       {gespeichert && !system && <div className="knoepfe"><Link to={`/werkbank/typen/neu?kopie=${gespeichert.id}`} className="knopf klein" title="Neuen Mappentyp mit Feldern, Titel, Trefferlisten, Registern und Berechtigungen dieses Mappentyps anlegen">Mappentyp kopieren</Link></div>}
@@ -377,6 +386,19 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
         <StempelEinstellung stempel={e.stempel} setze={(stempel) => setE({ ...e, stempel })} />
       </Bereich>
 
+      {!system && <Bereich id="erkennung" titel="Erkennung" hilfe={<Hilfe ort="mappentyp.erkennungstyp" />} klappe={klappe('erkennung')}
+        kurz={[e.ausDokument?.aus ? 'Knopf aus' : `„${e.ausDokument?.beschriftung || AUS_DOKUMENT_STANDARD}“`, `${e.felder.filter((f) => f.erkennung).length} Felder markiert`, ...(e.autoZuordnen && !e.archiv ? ['Post automatisch zuordnen'] : [])].join(' · ')}>
+        <ErkennungTyp ad={e.ausDokument} setze={(ausDokument) => setE((x) => ({ ...x, ausDokument }))} markiert={merkmalsfelder({ felder: e.felder as unknown as Feld[] }).length} felder={e.felder.filter((f) => f.erkennung).map((f) => f.label || f.key)} />
+        <div className="raster">
+          <div className="eigenschaft unten">
+            <label className="haken"><input type="checkbox" checked={e.autoZuordnen && !e.archiv} disabled={!!e.archiv} onChange={(ev) => setE((x) => ({ ...x, autoZuordnen: ev.target.checked }))} />
+              <span>Post automatisch zuordnen, wenn die Erkennung sicher ist<small className="hilfe">{e.archiv
+                ? 'Im Archivmodus nicht möglich – Post für diesen Typ wird nur von Hand zugeordnet.'
+                : 'Sicher heißt: Absender eindeutig erkannt (z. B. Kundennummer, IBAN) und genau eine passende Mappe dieses Typs. Der Empfänger bekommt die Aufgabe „Automatisch zugeordnet – bitte prüfen“ mit Rückgängig. Neue Mappen legt das DMS nie selbst an.'}</small></span></label>
+          </div>
+        </div>
+      </Bereich>}
+
       <RegelwerkAbschnitt rw={e.berechtigungen} setRw={(f) => setE((x) => ({ ...x, berechtigungen: f(x.berechtigungen) }))} neu={neu}
         gespeichert={gespeichert ? regelwerkVon(gespeichert) : null} typ={entwurfTyp} klappe={klappe('berechtigungen')} />
       <TestlaufBlatt typId={gespeichert?.id ?? ''} entwurf={e.berechtigungen} klappe={klappe('testlauf')} />
@@ -440,6 +462,9 @@ function FeldZeile(p: {
   if (f.typ === 'auswahl') chips.push(`${(f.optionen ?? []).length} Werte`);
   if (f.mehrfach && (f.typ === 'auswahl' || f.typ === 'referenz')) chips.push('mehrfach');
   if (p.feldregister.length > 1) chips.push(`Register: ${p.feldregister.find((r) => r.key === f._register)?.name ?? '–'}`);
+  if (f.erkennung && ERKENNUNG_FELDTYPEN.includes(f.typ)) chips.push('Erkennung');
+  // Paket-Update (#534): Verweisfeld, das sich aus einem alten Textfeld füllen lässt.
+  if (f.typ === 'referenz' && f.ausText) chips.push(tx('pakete.typ.austext', { aus: p.alleFelder.find((x) => x.key === f.ausText)?.label ?? f.ausText }));
   if (f.typ === 'datum' && f.frist) chips.push(`erinnert ${f.frist.vorlauf} ${VORLAUF_EINHEITEN[f.frist.einheit]} vorher${f.frist.wiederholung ? ` · ${wiederholungText(f.frist.wiederholung)}` : ''}`);
 
   const zahl = (prop: Zahlprop, label: string, platzhalter: string) => (
@@ -546,6 +571,7 @@ function FeldZeile(p: {
             {standard}
           </div>
           {besonders && <><h3 className="zwischen">Eigenschaften für {FELDTYPEN[f.typ]}</h3>{besonders}</>}
+          {ERKENNUNG_FELDTYPEN.includes(f.typ) && <ErkennungEditor f={f} id={id} setze={setze} />}
           </fieldset>
           <div className="feldfuss">
             {f.system ? <span className="leise klein">Systemfelder lassen sich nicht entfernen.</span> : <button type="button" className="textknopf gefahr" onClick={p.entferne}>Feld entfernen</button>}
@@ -553,6 +579,29 @@ function FeldZeile(p: {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Feld-Eigenschaft „für die Erkennung nutzen“ (#336, #391): Art und Erkennungshinweis. */
+function ErkennungEditor({ f, id, setze }: { f: EntwurfFeld; id: (x: string) => string; setze(p: Partial<EntwurfFeld>): void }) {
+  const an = !!f.erkennung;
+  const geschaetzt = artVon({ key: f.key, label: f.label, typ: f.typ });
+  return (
+    <div className="raster">
+      <div className="eigenschaft unten">
+        <label className="haken"><input type="checkbox" checked={an} onChange={(e) => setze({ erkennung: e.target.checked ? {} : null })} />
+          <span>Für die Erkennung nutzen <Hilfe ort="mappentyp.erkennung" /><small className="hilfe">Die Erkennung sucht diesen Wert im Text neuer Post (z. B. Kundennummer, IBAN, E-Mail) und füllt das Feld bei „Aus Dokument ausfüllen“.</small></span></label>
+      </div>
+      {an && artenFuer(f.typ).length > 1 && (
+        <label className="eigenschaft" htmlFor={id('erkart')}><span>Was steht im Feld?</span>
+          <select id={id('erkart')} value={f.erkennung?.art ?? ''} onChange={(e) => setze({ erkennung: { ...f.erkennung, art: (e.target.value || undefined) as Erkennungsart | undefined } })}>
+            <option value="">automatisch{geschaetzt ? ` – ${ERKENNUNGSARTEN[geschaetzt]}` : ' – nichts erkannt'}</option>
+            {artenFuer(f.typ).map((a) => <option key={a} value={a}>{ERKENNUNGSARTEN[a]}</option>)}
+          </select></label>
+      )}
+      {an && <label className="eigenschaft" htmlFor={id('erkhinweis')}><span>Erkennungshinweis <small>optional</small></span>
+        <input id={id('erkhinweis')} maxLength={ERKENNUNG_HINWEIS_MAX} placeholder="z. B. Kundennummer oben rechts, Muster 100-####" value={f.erkennung?.hinweis ?? ''} onChange={(e) => setze({ erkennung: { ...f.erkennung, hinweis: e.target.value } })} /></label>}
     </div>
   );
 }
@@ -606,7 +655,7 @@ function TitelEditor({ e, setze, klappe }: { e: Entwurf; setze: (v: string) => v
   const [bezuege, setBezuege] = useState<Bezuege>({});
   const [beispielId, setBeispielId] = useState<string>('');
   useEffect(() => {
-    if (!d.anzahl(e.id)) return;
+    if (d.zahlenDa && !d.anzahl(e.id)) return;
     api.seite(`typ:${e.id}`, 0, 50).then((s) => { setMappen(s.mappen); setBezuege(s.bezuege); setBeispielId((b) => b || s.mappen[0]?.id || ''); }).catch(() => {});
   }, [e.id, d.stand]); // eslint-disable-line react-hooks/exhaustive-deps
   const felder = e.felder as unknown as Feld[];
@@ -957,6 +1006,24 @@ function ArchivEinstellung({ archiv, setze, datumsfelder, typId }: { archiv: Arc
         </div>
         {vorschau && <p className="hinweis info">{vorschau.mappen === 1 ? '1 Mappe ist' : `${vorschau.mappen} Mappen sind`} betroffen{vorschau.darfWeg ? `, davon ${vorschau.darfWeg === 1 ? 'wäre 1' : `wären ${vorschau.darfWeg}`} schon „darf weg“` : ''}.</p>}
       </>}
+    </div>
+  );
+}
+
+/** Erkennung am Mappentyp (#391): Knopf „Aus Dokument ausfüllen“ mit eigener Beschriftung oder ausgeblendet. */
+function ErkennungTyp({ ad, setze, markiert, felder }: { ad: AusDokument | null; setze: (a: AusDokument | null) => void; markiert: number; felder: string[] }) {
+  const an = !ad?.aus;
+  return (
+    <div className="raster">
+      <div className="eigenschaft unten">
+        <label className="haken"><input type="checkbox" checked={an} onChange={(ev) => setze(ev.target.checked ? (ad?.beschriftung ? { beschriftung: ad.beschriftung } : null) : { ...ad, aus: true })} />
+          <span>Knopf „Aus Dokument ausfüllen“ zeigen<small className="hilfe">In jeder Mappe dieses Typs: Foto machen oder Datei wählen, die Erkennung trägt die Angaben als Vorschlag in die Felder ein.</small></span></label>
+      </div>
+      {an && <label className="eigenschaft" htmlFor="typ-ad-beschriftung"><span>Beschriftung <small>optional</small></span>
+        <input id="typ-ad-beschriftung" maxLength={BESCHRIFTUNG_MAX} placeholder={`${AUS_DOKUMENT_STANDARD} – z. B. „Visitenkarte scannen“`} value={ad?.beschriftung ?? ''} onChange={(ev) => setze(ev.target.value ? { beschriftung: ev.target.value } : null)} /></label>}
+      <p className="leise klein" style={{ gridColumn: '1 / -1' }}>{felder.length
+        ? `Für die Erkennung markiert: ${felder.join(', ')}${markiert ? '' : ' (keines taugt zum Wiedererkennen von Absendern)'}. Nur diese Felder füllt „Aus Dokument ausfüllen“.`
+        : 'Kein Feld ist für die Erkennung markiert – dann füllt „Aus Dokument ausfüllen“ alle Felder, deren Art sich aus der Bezeichnung ergibt (z. B. „E-Mail“, „Telefon“, „PLZ“). Markieren lässt es sich an jedem Feld unter „Für die Erkennung nutzen“.'}</p>
     </div>
   );
 }
