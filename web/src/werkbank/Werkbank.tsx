@@ -239,10 +239,10 @@ export function Werkbank({ teile }: { teile: string[] }) {
     { pfad: 'stempel', name: n('stempel'), gruppe: 'ablage', zahl: stempel.liste?.length || undefined },
     { pfad: 'pakete', name: n('pakete'), gruppe: 'ablage', zahl: zahl(pakete.stand?.installiert.length, uz?.pakete) },
     ...(d.typen.some((x) => x.archiv) ? [{ pfad: 'darfweg', name: n('darfweg'), gruppe: 'ablage' as const, zahl: zahl(darfWeg.liste?.length, uz?.darfWeg) }] : []),
-    { pfad: 'datenschutz', name: n('datenschutz'), gruppe: 'ablage', zahl: datenschutz.stand?.auskuenfte.length || undefined },
     // Benutzer und Sicherheit
     { pfad: 'benutzer', name: n('benutzer'), gruppe: 'benutzer', zahl: zahl(benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined, uz?.benutzer) },
     { pfad: 'verschluesselung', name: n('verschluesselung'), gruppe: 'benutzer', warn: tresor.stand && tresor.stand.zustand !== 'vorhanden' ? t('werkbank.leiste.fehlt') : undefined },
+    { pfad: 'datenschutz', name: n('datenschutz'), gruppe: 'benutzer', zahl: datenschutz.stand?.auskuenfte.length || undefined },
     // Post und Eingänge
     { pfad: 'postfaecher', name: n('postfaecher'), gruppe: 'post', zahl: zahl(postfaecher.liste?.length, uz?.postfaecher), warn: uebersicht.stand?.postfachAnmeldung?.length || postfaecher.liste?.some((p) => p.stand.fehlerFolge > 0 || (p.oauth && p.oauth.zustand !== 'ok')) ? '!' : undefined, warnTitel: uebersicht.stand?.postfachAnmeldung?.length ? t('werkbank.leiste.postfach.anmeldung') : t('werkbank.leiste.postfach.abruf') },
     ...(eingang.stand?.vorhanden ? [{ pfad: 'eingangsordner', name: n('eingangsordner'), gruppe: 'post' as const, warn: eingang.stand.fehler?.length ? String(eingang.stand.fehler.length) : undefined, warnTitel: t('werkbank.leiste.eingangsordner') }] : []),

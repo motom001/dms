@@ -44,6 +44,7 @@ type Eintrag = { pfad: string; gruppe: Gruppe; in: readonly Exclude<Vorlage, 'al
 
 /**
  * Alle Bereiche außer der Übersicht (die ist immer da), in der Reihenfolge der Leiste (#354).
+ * Datenschutz steht unter „Benutzer und Sicherheit“ (#354, vorher „Ablage aufbauen“).
  * Name und „wann“ kommen aus der Sprachdatei (`werkbank.bereich.<pfad>.name` / `.wann`).
  */
 const EINTRAEGE: Eintrag[] = [
@@ -53,9 +54,9 @@ const EINTRAEGE: Eintrag[] = [
   { pfad: 'stempel', gruppe: 'ablage', in: H },
   { pfad: 'pakete', gruppe: 'ablage', in: H },
   { pfad: 'darfweg', gruppe: 'ablage', in: O },
-  { pfad: 'datenschutz', gruppe: 'ablage', in: O },
   { pfad: 'benutzer', gruppe: 'benutzer', in: H },
   { pfad: 'verschluesselung', gruppe: 'benutzer', in: H },
+  { pfad: 'datenschutz', gruppe: 'benutzer', in: O },
   { pfad: 'postfaecher', gruppe: 'post', in: O },
   { pfad: 'eingangsordner', gruppe: 'post', in: O },
   { pfad: 'webdav', gruppe: 'post', in: H },

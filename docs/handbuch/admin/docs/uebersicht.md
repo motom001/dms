@@ -5,8 +5,8 @@ Die **Werkbank** sehen nur Administratoren. Links stehen ihre Bereiche in sechs 
 <!-- bereiche:gruppen -->
 | Gruppe | Bereiche |
 | --- | --- |
-| **Ablage aufbauen** | [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Stempel](stempel.md), [Pakete](pakete.md), [Darf weg](archiv.md#nach-der-frist-darf-weg) (nur mit Archivmodus), [Datenschutz](datenschutz.md) |
-| **Benutzer und Sicherheit** | [Benutzer](benutzer.md), [Verschlüsselung](verschluesselung.md) |
+| **Ablage aufbauen** | [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Stempel](stempel.md), [Pakete](pakete.md), [Darf weg](archiv.md#nach-der-frist-darf-weg) (nur mit Archivmodus) |
+| **Benutzer und Sicherheit** | [Benutzer](benutzer.md), [Verschlüsselung](verschluesselung.md), [Datenschutz](datenschutz.md) |
 | **Post und Eingänge** | [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Texterkennung](texterkennung.md) |
 | **Daten sichern** | [Sicherung](sicherung.md), [Wiederherstellen](wiederherstellen.md), [Vollexport](export.md), [Papierkorb](papierkorb.md) |
 | **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Benachrichtigungen und Aufgaben](aufgaben.md), [Anmeldeschutz](anmeldeschutz.md), [Designs](designs.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung), [Technik](fehlersuche.md#technik) |
@@ -93,9 +93,9 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Stempel](stempel.md) | Vorlagen für Stempel und Wasserzeichen beim Weitergeben | Haushalt, Betrieb |
 | [Pakete](pakete.md) | Fertige Mappentypen und Ansichten installieren | Haushalt, Betrieb |
 | [Darf weg](archiv.md#nach-der-frist-darf-weg) | Mappen mit abgelaufener Aufbewahrungsfrist (nur mit Archivmodus) | Betrieb |
-| [Datenschutz](datenschutz.md) | Auskunft nach Art. 15 DSGVO an Kunden, Mieter und Kontakte als ZIP | Betrieb |
 | [Benutzer](benutzer.md) | Benutzer und Rollen anlegen | Haushalt, Betrieb |
 | [Verschlüsselung](verschluesselung.md) | Den Schlüssel für Passwörter und Sicherungen | Haushalt, Betrieb |
+| [Datenschutz](datenschutz.md) | Auskunft nach Art. 15 DSGVO an Kunden, Mieter und Kontakte als ZIP | Betrieb |
 | [Postfächer](postfaecher.md) | Post aus einem E-Mail-Konto abholen | Betrieb |
 | [Eingangsordner](eingangsordner.md) | Scans aus einem Ordner übernehmen | Betrieb |
 | [WebDAV-Laufwerk](webdav.md) | Die Ablage im Explorer, Finder oder in der Dateien-App einbinden und Dateien hineinlegen | Haushalt, Betrieb |

@@ -80,12 +80,12 @@ nav:
           - Stempel beim Weitergeben: stempel.md
           - Pakete: pakete.md
           - Archivmodus und Aufbewahrung: archiv.md
-          - Datenschutz im DMS: datenschutz.md
-          - Löschkonzept (Vorlage): loeschkonzept.md
           - Links über Feldwerte: direktlinks.md
       - Benutzer und Sicherheit:
           - Benutzer und Rollen: benutzer.md
           - Berechtigungen: berechtigungen.md
+          - Datenschutz im DMS: datenschutz.md
+          - Löschkonzept (Vorlage): loeschkonzept.md
       - Post und Eingänge:
           - Postfächer: postfaecher.md
           - Eingangsordner: eingangsordner.md

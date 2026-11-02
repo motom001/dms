@@ -136,8 +136,8 @@ describe('Werkbank: mittlere Spalte nur für große Sammlungen (#366)', () => {
   it('#354: sechs Gruppen nach Aufgaben, je höchstens 7 Bereiche, Kennungen unverändert', () => {
     assert.deepEqual(Object.values(GRUPPEN), ['Ablage aufbauen', 'Benutzer und Sicherheit', 'Post und Eingänge', 'Daten sichern', 'Einstellungen', 'Wartung und Fehlersuche']);
     const je = (g: string) => BEREICHE.filter((x) => x.gruppe === g).map((x) => x.pfad);
-    assert.deepEqual(je('ablage'), ['typen', 'sichten', 'nummernkreise', 'stempel', 'pakete', 'darfweg', 'datenschutz']);
-    assert.deepEqual(je('benutzer'), ['benutzer', 'verschluesselung']);
+    assert.deepEqual(je('ablage'), ['typen', 'sichten', 'nummernkreise', 'stempel', 'pakete', 'darfweg']);
+    assert.deepEqual(je('benutzer'), ['benutzer', 'verschluesselung', 'datenschutz']);
     assert.deepEqual(je('post'), ['postfaecher', 'eingangsordner', 'webdav', 'texterkennung']);
     assert.deepEqual(je('sichern'), ['sicherung', 'wiederherstellung', 'vollexport', 'papierkorb']);
     assert.deepEqual(je('einstellungen'), ['betrieb', 'aufgaben', 'anmeldeschutz', 'designs', 'anbindung', 'technik']);
@@ -155,6 +155,18 @@ describe('Werkbank: mittlere Spalte nur für große Sammlungen (#366)', () => {
     // Vorlagen: Haushalt und Betrieb enthalten dieselben Bereiche wie vor der Neugliederung.
     assert.deepEqual(BEREICHE.filter((b) => inVorlage('haushalt', b.pfad)).map((b) => b.pfad).sort(),
       ['aufgaben', 'benutzer', 'betrieb', 'pakete', 'papierkorb', 'sicherung', 'sichten', 'stempel', 'systemzustand', 'technik', 'typen', 'verschluesselung', 'vollexport', 'webdav', 'wiederherstellung']);
+  });
+
+  it('#354 Nacharbeit: Datenschutz steht unter „Benutzer und Sicherheit“, Kennung bleibt', () => {
+    const b = BEREICHE.find((x) => x.pfad === 'datenschutz');
+    assert.equal(b?.gruppe, 'benutzer');
+    assert.equal(GRUPPEN[b!.gruppe], 'Benutzer und Sicherheit');
+    assert.deepEqual(b?.in, ['organisation'], 'Vorlagen unverändert');
+    assert.equal(werkbankUmleitung('datenschutz'), null, 'Pfad bleibt, alte Links gelten weiter');
+    assert.deepEqual(liesAnsicht({ vorlage: 'haushalt', ein: ['datenschutz'], aus: [] }), { vorlage: 'haushalt', ein: ['datenschutz'], aus: [] });
+    // Verschlüsselung bleibt unter Benutzer und Sicherheit, WebDAV unter Post und Eingänge.
+    assert.equal(BEREICHE.find((x) => x.pfad === 'verschluesselung')?.gruppe, 'benutzer');
+    assert.equal(BEREICHE.find((x) => x.pfad === 'webdav')?.gruppe, 'post');
   });
 
   it('#408: „Speicherplatz“ heißt „Systemzustand“ und steht unter Wartung und Fehlersuche', () => {
