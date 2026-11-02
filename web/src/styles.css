@@ -1468,3 +1468,52 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .ss-treffer { display: flex; flex-direction: column; gap: 12px; }
 .ss-gruppe .ueber { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
 .ss-mark { background: var(--warn-zart); color: inherit; border-radius: 2px; padding: 0 1px; }
+/* Ansicht wählen (#498): am Handy ein Knopf mit Blatt von unten statt der Reiterleiste; am Rechner ein Filterfeld. Präfix aw-, lk-. */
+.aw { display: none; }
+.aw-filter { width: 100%; margin: 0 0 6px; padding: 5px 8px; font-size: calc(13px * var(--skala, 1)); }
+.lk-filterknopf, .lk-nur-schmal { display: none; }
+.lk-punkt { display: inline-block; width: 7px; height: 7px; margin-left: 4px; border-radius: 50%; background: var(--akzent); vertical-align: middle; }
+@media (max-width: 820px) {
+  .aw { display: block; }
+  .spalte.sichten .aw-breit, .spalte.sichten .sichtliste { display: none; }
+  .aw-knopf { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 8px 14px; border: 1px solid var(--linie-stark); border-radius: 10px; background: var(--flaeche); color: var(--tinte); font: inherit; cursor: pointer; text-align: left; }
+  .aw-aktuell { flex: 1; min-width: 0; font-weight: 600; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .aw-schleier { position: fixed; inset: 0; z-index: 40; background: rgb(0 0 0 / .35); }
+  .aw-blatt { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+    background: var(--flaeche); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 30px rgb(0 0 0 / .25);
+    padding: 12px max(12px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+  .aw-kopf { position: sticky; top: -12px; z-index: 1; display: flex; gap: 10px; align-items: center; padding: 4px 0 6px; background: var(--flaeche); }
+  .aw-suche { flex: 1; min-width: 0; min-height: 44px; }
+  .aw-kopf .textknopf { min-height: 44px; padding: 0 6px; }
+  .aw-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .aw-zeile { display: flex; align-items: center; gap: 4px; min-width: 0; }
+  .aw-link { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 8px 10px; border-radius: 8px; color: var(--tinte); text-decoration: none; font-size: 16px; }
+  .aw-link.an { background: var(--akzent-zart); color: var(--akzent); font-weight: 600; }
+  .aw-name { min-width: 0; overflow-wrap: anywhere; }
+  .aw-stern { flex: none; width: 44px; height: 44px; border: 0; background: none; color: var(--leise); font-size: 20px; cursor: pointer; }
+  .aw-stern.an { color: var(--warn); }
+  .aw-feste { border-bottom: 1px solid var(--linie); padding-bottom: 6px; }
+  .aw-abschnitt { margin: 8px 10px 2px; }
+  .aw-gruppenkopf { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 44px; padding: 8px 10px; border: 0; border-top: 1px solid var(--linie); background: none; color: var(--tinte); font: inherit; font-weight: 600; font-size: 15px; text-align: left; cursor: pointer; }
+  .aw-verwalten { align-self: flex-start; min-height: 44px; }
+  .aw-haken { min-height: 44px; align-items: center; font-size: 16px; }
+  .aw-gross { width: 100%; min-height: 48px; font-size: 16px; }
+  .aw-filter { display: none; }
+}
+@media (max-width: 600px) {
+  /* Kompakter Kopf (#498): Kopfzeile in einer Zeile, Liste mit mindestens zwei Dritteln für Treffer. */
+  .kopf { flex-wrap: nowrap; gap: 8px; }
+  .kopf .marke > span:not(.sr-only) { display: none; }
+  .kopf .quelle { display: none; }
+  .kopf .bereiche a { padding: 6px 8px; }
+  .kopf .konto { gap: 8px; }
+  .kopf .konto .wer { max-width: 9ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .spalte.sichten { padding-top: 10px; padding-bottom: 10px; }
+  .spalte.liste .listenkopf p.leise { display: none; }
+  .suchzeile { position: sticky; top: -18px; z-index: 2; flex-wrap: wrap; padding: 6px 0; background: var(--flaeche); }
+  .suchzeile > .suche { flex: 1 1 0; min-width: 0; }
+  .lk-filterknopf { display: inline-flex; min-height: 40px; }
+  .suchzeile.lk-zu > .haken, .suchzeile.lk-zu > .verweis, .suchzeile.lk-zu > .lk-nur-schmal { display: none; }
+  .suchzeile:not(.lk-zu) > .lk-nur-schmal { display: inline-flex; }
+  .lk-nur-breit { display: none; }
+}
