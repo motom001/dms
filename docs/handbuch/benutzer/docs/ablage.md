@@ -2,11 +2,27 @@
 
 ## Ansichten
 
-Links stehen die **Ansichten**. Ganz oben stehen fest die [Erweiterte Suche](#erweiterte-suche), [Zu erledigen](eingang.md), [Anstehend](eingang.md#anstehend), deine [Favoriten](#favoriten) und der [Papierkorb](#papierkorb), darunter die Ansichten, die ein Administrator eingerichtet hat – zum Beispiel *Vertrag*, *Rechnung*, *Vertragspartner* oder *Kündigung in den nächsten 12 Monaten*. Die Zahl dahinter sagt, wie viele Mappen die Ansicht gerade zeigt.
+Links stehen die **Ansichten**. Ganz oben stehen fest, jeweils mit einem Symbol: [Erweiterte Suche](#erweiterte-suche), [Start](startseite.md), [Zu erledigen](eingang.md), [Neue Post](post.md), [Anstehend](eingang.md#anstehend), deine [Favoriten](#favoriten) und der [Papierkorb](#papierkorb) (solange er an ist oder etwas darin liegt). Unter dem Trenner stehen – ohne Symbol – die Ansichten, die ein Administrator eingerichtet hat – zum Beispiel *Vertrag*, *Rechnung*, *Vertragspartner* oder *Kündigung in den nächsten 12 Monaten*. Die Zahl dahinter sagt, wie viele Mappen die Ansicht gerade zeigt. Die Ablage wartet nicht auf die Zahlen: Bis sie da sind, steht an ihrer Stelle kurz „…“.
 
 Ein Klick auf eine Ansicht zeigt ihre Mappen in der Liste. Welche Ansichten du siehst, kann ein Administrator festlegen; eine Ansicht, die für dich verborgen ist, fehlt samt ihrer Mappen auch in der Elternansicht. Mappen findest du trotzdem über die Suche, wenn du sie lesen darfst.
 
 ![Ansichten als Baum: Finanzen mit Unteransichten](bilder/sichten-baum.png)
+
+Gibt es viele Ansichten, filtert das kleine Feld **Ansicht suchen …** über der Liste nach dem Namen.
+
+### Ansicht wählen am Handy
+
+Am Handy steht statt der Liste ein Knopf mit der aktuellen Ansicht, z. B. **Ansicht Rechnung ▾**. Er öffnet ein Blatt von unten:
+
+- oben ein Suchfeld **Ansicht suchen …** – es filtert beim Tippen (auch Ansichten, die du ausgeblendet hast);
+- die festen Einträge in derselben Reihenfolge wie am Rechner, mit Symbol;
+- **Meine Ansichten**: Ansichten, die du mit dem Stern angeheftet hast;
+- **Zuletzt benutzt**: die letzten fünf Ansichten, die du geöffnet hast (auch am Rechner);
+- danach alle Ansichten nach Gruppen – je Ansicht der obersten Ebene mit Unteransichten eine Gruppe (z. B. *Fahrzeuge*, *Haus*), die übrigen unter *Weitere Ansichten*. Gruppen klappst du mit einem Tipp auf und zu; die Gruppe der aktuellen Ansicht ist offen. Die Zahl rechts sagt, wie viele Mappen die Ansicht zeigt.
+
+**Ansichten ausblenden …** ganz unten: Nimm den Haken bei Ansichten weg, die du selten brauchst. Das gilt nur für dich und nur für diese Auswahl; die Ansicht selbst bleibt für alle, und über die Suche findest du sie weiter.
+
+Auch die Liste ist am Handy kompakter: Die Kopfzeile passt in eine Zeile, das Suchfeld bleibt beim Rollen oben, und *Volltext durchsuchen*, *Notizen*, *Erweiterte Suche* und *Exportieren …* stehen hinter **Filter ▾**.
 
 - **Ansichten können Unteransichten haben.** Ein Pfeil ▸ davor zeigt das; ein Klick darauf klappt sie auf oder zu. Dein Gerät merkt sich, was zugeklappt ist.
 - **Eine Ansicht mit Unteransichten zeigt alles zusammen:** *Finanzen* zeigt zum Beispiel alle offenen Rechnungen *und* die Zahlungen dieses Jahres.
@@ -28,7 +44,7 @@ Wie die Liste aussieht, hängt von ihrer Breite ab:
 - **Schmal:** Jede Mappe ist ein kompakter Eintrag – die erste Angabe fett, zwei weitere darunter.
 - **Breit:** Die Liste wird zur **Tabelle** mit einer Spalte je Angabe.
 
-Zieh die Liste einfach am Griff zwischen Liste und Mappe breiter, oder klapp die Mappe mit einem kurzen Klick auf den Griff ein.
+Zieh die Liste einfach am Griff zwischen Liste und Mappe breiter, oder klapp die Mappe mit einem kurzen Klick auf den Griff ein. Eingeklappt bleibt rechts eine schmale Leiste mit dem Titel der Mappe; ein Klick darauf holt sie zurück (siehe [Spalten anpassen](erste-schritte.md#spalten-anpassen)).
 
 ![Breite Liste als Tabelle](bilder/tabelle.png)
 
@@ -122,7 +138,7 @@ In der Liste einer Ansicht wählst du mehrere Mappen aus, um sie in einem Schrit
 
 ### Mehrere Mappen löschen
 
-**Löschen** in der Aktionsleiste fragt erst nach, z. B. „12 Mappen mit 30 Dokumenten in den Papierkorb legen?“, und legt sie dann in den [Papierkorb](#papierkorb) – mit je einem Eintrag in der Historie der Mappe. Mappen, die du nicht löschen darfst oder auf die noch eine andere Mappe verweist, werden ausgelassen und danach mit Grund aufgelistet. Verweisen ausgewählte Mappen nur aufeinander, hält das nicht auf.
+**Löschen** in der Aktionsleiste fragt erst nach, z. B. „12 Mappen mit 30 Dokumenten in den Papierkorb legen?“, samt [Grund](mappen.md#loschen), und legt sie dann in den [Papierkorb](#papierkorb) – mit je einem Eintrag in der Historie der Mappe. Mappen, die du nicht löschen darfst oder auf die noch eine andere Mappe verweist, werden ausgelassen und danach mit Grund aufgelistet. Verweisen ausgewählte Mappen nur aufeinander, hält das nicht auf.
 
 ### Per E-Mail versenden
 
@@ -141,7 +157,7 @@ Als Spalten nimmst du die der Liste oder alle Felder. Verweise erscheinen mit de
 
 ## Favoriten
 
-Mappen, die du oft brauchst, markierst du mit dem **Stern ☆** – oben rechts in der Mappe oder direkt in der Liste (rechts im Eintrag bzw. vorn in der Tabellenzeile). Der Stern wird gelb ★, und die Mappe steht in der Ansicht **★ Favoriten** unterhalb von „Zu erledigen“; die Zahl dahinter zeigt, wie viele es sind. Ein zweiter Klick entfernt sie wieder.
+Mappen, die du oft brauchst, markierst du mit dem **Stern** – oben rechts in der Mappe oder direkt in der Liste (rechts im Eintrag bzw. vorn in der Tabellenzeile). Der Stern wird gelb ausgefüllt, und die Mappe steht in der Ansicht **Favoriten** oben bei den festen Einträgen; die Zahl dahinter zeigt, wie viele es sind. Ein zweiter Klick entfernt sie wieder.
 
 ![Die Ansicht Favoriten mit geöffneter Mappe](bilder/favoriten.png)
 
@@ -155,7 +171,7 @@ Mappen, die du oft brauchst, markierst du mit dem **Stern ☆** – oben rechts 
 Ein Stern heißt auch: **Sag mir, wenn sich hier etwas tut.** Ändert jemand anderes einen deiner Favoriten – Felder, Dokumente, Notizen, Register oder Aufgaben –, bekommst du unter [Zu erledigen](eingang.md) **eine** Benachrichtigung der Art **Geändert**, etwa „3 Änderungen von Anna und Paul seit 01.11.“. Weitere Änderungen zählen nur hoch, solange du sie nicht gesehen hast. Sobald du die Mappe öffnest (oder bei der Benachrichtigung **Erledigt** klickst), ist sie weg; die nächste Änderung bringt wieder eine neue. Eigene Änderungen melden sich nie.
 
 - **Hervorhebung:** In allen Listen steht ein **Punkt** vor dem Titel von Favoriten und von Mappen, die du selbst angelegt hast, wenn andere sie seit deinem letzten Öffnen geändert haben – wie „ungelesen“ im E-Mail-Programm. Eigene Mappen werden nur hervorgehoben, eine Benachrichtigung gibt es für sie nur, wenn sie auch Favorit sind. Über der Liste steht dann „2 geändert · **Alle als gesehen markieren**“.
-- **Stumm schalten:** In der Ansicht *Favoriten* steht unter jedem Eintrag **Bei Änderungen benachrichtigen**. Nimm den Haken weg bei Mappen, die du oft brauchst, die sich aber ständig ändern – der Stern bleibt.
+- **Stumm schalten:** In der Ansicht *Favoriten* steht unter jedem Eintrag **Bei Änderungen benachrichtigen**. Nimm den Haken weg bei Mappen, die du oft brauchst, die sich aber ständig ändern – der Stern bleibt. Fehlt der Schalter, hat ein Administrator die Benachrichtigung für deine Rolle abgeschaltet; deine Einstellung bleibt gespeichert.
 - **Ganz abschalten:** unter Profil → [Benachrichtigungen](profil.md#benachrichtigungen) – Benachrichtigung und Hervorhebung getrennt.
 - Benachrichtigt wird nur, wer die Mappe lesen darf; die Benachrichtigung verrät nichts, was du nicht sehen darfst. Hat jemand eine [Auskunft](https://motom001.github.io/dms/admin/aktuell/datenschutz/) zu einer Person abgerufen, deren Mappe dein Favorit ist, bekommst du dazu eine eigene Benachrichtigung *Auskunft* – ebenfalls nur, solange die Benachrichtigung für diesen Favoriten an ist.
 

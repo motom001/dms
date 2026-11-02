@@ -21,6 +21,59 @@ Das DMS ist ein **modularer Monolith**: ein Prozess, eine Datenbank. Server und 
 - **Sicherung und Wiederherstellung** sichern alle Tabellen außer dem Inhalt von `sitzungen` und `schema_migrationen` (`OHNE_INHALT` in `server/src/datenbankabzug.ts`). Eine neue Tabelle ist automatisch dabei. Daten außerhalb der Datenbank brauchen einen Gedanken: Wo liegen sie, und kommen sie mit?
 
 
+## Texte und Sprachdateien { #texte-und-sprachdateien }
+
+Texte für Benutzer stehen nicht im Code, sondern in **Sprachdateien** (#473, Teil von #357). Sichtbar ist bisher nur Deutsch mit **du**; die Technik für weitere Sprachen ist da.
+
+**Regel:** Wer einen Text neu schreibt oder ändert, legt ihn in der Sprachdatei ab – auch wenn der Rest der Datei noch Texte im Code hat. Ganze Bereiche ziehen nach und nach in eigenen Issues um. Umgestellt sind bisher die Anmeldung (Weboberfläche, Fehlermeldungen der API, E-Mails zum Zugang), die Texte für Dritte und die Leiste der Werkbank (Gruppen, Bereiche, Vorlagen; `werkbank.json`, auch für `werkbank_bereiche.py`).
+
+```
+shared/src/sprachen/de/<bereich>.json         Ausgangssprache Deutsch (du), immer vollständig
+shared/src/sprachen/de-formal/dritte.json     Texte für Dritte mit „Sie“ (siehe unten)
+shared/src/sprache.ts                         uebersetzer(), Platzhalter, Mehrzahl
+web/src/sprache.ts, server/src/sprache.ts     t() mit den Bereichen, die Oberfläche bzw. Server brauchen
+```
+
+**Text anlegen**
+
+1. Passenden Bereich wählen oder einen neuen anlegen (`anmeldung`, `mail`, `werkbank` …; Dateiname = Bereich, klein, ohne Punkt). Ein neuer Bereich wird in `web/src/sprache.ts` bzw. `server/src/sprache.ts` eingetragen.
+2. Schlüssel in die JSON-Datei schreiben – flach, Teile mit Punkt, klein beginnend: `"vergessen.knopf": "Link anfordern"`.
+3. Im Code abrufen: `t('anmeldung.vergessen.knopf')`. Die Typprüfung kennt alle Schlüssel und meldet Tippfehler.
+
+**Benennung:** vom Allgemeinen zum Besonderen, nach Ort und Zweck statt nach Wortlaut – `vergessen.titel`, `vergessen.knopf`, `fehler.link.abgelaufen`. Fehlermeldungen unter `fehler.*`, Rückfragen als `….frage`, `….frage.text`, `….frage.ja`. Wiederkehrende Wörter („Speichern“, „Abbrechen“) bekommen keinen gemeinsamen Schlüssel, solange der Bereich sie nicht braucht – so bleibt jede Übersetzung im Zusammenhang.
+
+**Platzhalter** stehen in einfachen geschweiften Klammern: `"passwort.zugang": "Für den Zugang {email}"` → `t('anmeldung.passwort.zugang', { email })`. Namen nur aus Buchstaben, Ziffern und `_`. Fehlt ein Wert, bleibt `{email}` stehen und fällt auf.
+
+**Mehrzahl** über zwei Schlüssel mit `_one` und `_other` und den Wert `anzahl`:
+
+```json
+"dauer.stunden_one": "{anzahl} Stunde",
+"dauer.stunden_other": "{anzahl} Stunden"
+```
+
+`t('mail.dauer.stunden', { anzahl: 2 })` ergibt „2 Stunden“. Die Formen richten sich nach `Intl.PluralRules`; fehlt eine, gilt `_other`.
+
+**Zusammengesetzte Schlüssel** (`werkbank.gruppe.${g}`) gehen mit `t.frei(…)` statt `t(…)`. Sie entgehen der Typprüfung; die Prüfung in der CI zählt alle Schlüssel mit dem festen Anfang (`werkbank.gruppe.`) als benutzt. Wo es geht, ganze Schlüssel ausschreiben.
+
+**Prüfung in der CI** (`server/test/sprachdateien.test.ts`, läuft mit `npm test`): Sie schlägt fehl, wenn der Code einen Schlüssel abruft, den es nicht gibt, wenn ein Schlüssel nirgends benutzt wird, wenn eine andere Sprache Schlüssel auslässt oder zusätzliche hat, wenn die Platzhalter zwischen den Sprachen abweichen, bei Mehrzahl ohne `_other` und bei leeren Texten. Die Symbol-Prüfung (keine bunten Emoji, keine Textzeichen als Symbol) gilt auch für die Sprachdateien. Lokal: `node --import tsx --test test/sprachdateien.test.ts` im Ordner `server`.
+
+**Bibliothek:** eine eigene, kleine Umsetzung in `shared/src/sprache.ts` statt i18next – keine neue Abhängigkeit, offline, dieselben Regeln in Oberfläche und Server. Das Format (flaches JSON, `_one`/`_other`) entspricht i18next; ein späterer Wechsel bleibt möglich.
+
+Nicht Teil von Stufe 1: weitere Sprachen, „Sie“ in der Oberfläche, Sprachwahl im Profil (#357, spätere Stufen).
+
+## Unterlagen für Dritte: Anrede du oder Sie { #unterlagen-fur-dritte }
+
+Die Oberfläche duzt immer. Texte, die an Personen **außerhalb** des DMS gehen, folgen dagegen der Einstellung **Anrede in Unterlagen für Dritte** (#474, Werkbank → Datenschutz, `Datenschutz.anrede`, Vorgabe `du`). Alle diese Texte stehen im Bereich `dritte` der [Sprachdateien](#texte-und-sprachdateien): die du-Fassung in `shared/src/sprachen/de/dritte.json`, die Sie-Fassung in `shared/src/sprachen/de-formal/dritte.json`, je mit denselben Schlüsseln und Platzhaltern. Abgerufen werden sie mit `textDritte(anrede, schluessel, werte)` aus `shared/src/anrede.ts`. Die Prüfung der Sprachdateien vergleicht beide Fassungen, ein Test prüft zusätzlich, dass die Sie-Fassung kein „du“ enthält.
+
+Neue Texte für Dritte kommen als Schlüssel in beide `dritte.json` – keine `anrede === 'sie' ? … : …` im Code – und in diese Liste:
+
+| Ausgabe | Code | Schlüssel |
+| --- | --- | --- |
+| Auskunft: Deckblatt.pdf, Uebersicht.html, LIESMICH.md (#396) | `server/src/auskunft.ts` | `auskunft.*` (Rechte-Vorschlag: `rechteStandard`) |
+| E-Mail mit der Auskunft als ZIP, E-Mail mit dem Abruf-Link (#455) | `auskunftMail` in `shared/src/auskunft.ts` | `mail.*` |
+| Abrufseite `/abruf` und ihre Meldungen (#455) | `web/src/abruf.tsx`, `GET /api/abruf/anrede`, `/api/abruf` in `routen.ts` | `abruf.*` |
+| E-Mails mit Mappen und Dokumenten (#58, #151) | – | keine: Text schreibt der Benutzer, vorgegeben ist nur der Betreff ohne Anrede |
+
 ## Baum über Verweise
 
 Alles, was über Verweise an einer Mappe hängt, sammelt **ein** Modul – genutzt von der Auskunft nach Art. 15 DSGVO (#396) und von „Mappe mit allen verknüpften Mappen löschen“ (#424). Neue Funktionen, die „alles zu dieser Mappe“ brauchen, nehmen es statt eigener Schleifen.

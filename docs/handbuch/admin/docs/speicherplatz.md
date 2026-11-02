@@ -1,8 +1,8 @@
 # Systemzustand
 
-Wie geht es dem Server gerade? Das zeigt **Werkbank → Wartung und Fehlersuche → Systemzustand** – bisher vor allem den **Speicherplatz**. (Früher hieß der Bereich *Speicherplatz* und stand unter *Einstellungen*; alte Links und Lesezeichen führen hierher.)
+Wie geht es dem Server gerade? Das zeigt **Werkbank → Wartung und Fehlersuche → Systemzustand**: den **Speicherplatz** und die **Auslastung** von CPU, Arbeitsspeicher und Netzwerk. (Früher hieß der Bereich *Speicherplatz* und stand unter *Einstellungen*; alte Links und Lesezeichen führen hierher.)
 
-Läuft die Platte voll, können beim Speichern oder Hochladen Daten verloren gehen. Das DMS misst deshalb selbst, wie viel Platz frei ist, warnt rechtzeitig und hält sich an der Grenze selbst an. Oben auf der Seite stehen die **Schwellen**, darunter die **Ordner** mit ihrer Belegung, ganz unten **Große PDFs verkleinern**.
+Läuft die Platte voll, können beim Speichern oder Hochladen Daten verloren gehen. Das DMS misst deshalb selbst, wie viel Platz frei ist, warnt rechtzeitig und hält sich an der Grenze selbst an. Oben auf der Seite stehen die **Schwellen**, darunter die [Auslastung](#auslastung), dann die **Ordner** mit ihrer Belegung, ganz unten **Große PDFs verkleinern**.
 
 --8<-- "ausgeblendet-schritt.md"
 
@@ -18,6 +18,31 @@ Ganz oben auf der Seite. Beide stellst du in **GB frei** oder **% frei** ein; Pr
 | **Grenze** | unter 2 GB frei | **Hochladen sofort gesperrt** (neue Dokumente, Logos); Werte speichern geht noch. Mail an alle Administratoren, und der [Wartungsmodus](wartungsmodus.md) startet mit **5 Minuten Vorlauf** und dem Text **„Speicherplatzlimit erreicht“**. |
 
 Die Warnschwelle muss mehr freien Platz verlangen als die Grenze – sonst käme die Warnung erst danach.
+
+## Auslastung
+
+Ist das DMS langsam, siehst du hier, woran es liegt – ohne Konsole des NAS. Das DMS misst **jede Minute** die Auslastung **seines Containers**; die kleinen Kurven zeigen die letzte Stunde, daneben steht der Wert **jetzt**. Die Werte stehen nur im Arbeitsspeicher, nach einem Neustart beginnen die Kurven neu.
+
+![Werkbank → Systemzustand → Auslastung](bilder/werkbank-auslastung.png)
+
+| Wert | Was er bedeutet |
+| --- | --- |
+| **CPU** | Anteil der Rechenzeit an den Kernen, die der Container nutzen darf (Grenze aus `cpus:` in der Compose-Datei). Ohne Grenze bezieht sich der Anteil auf alle Kerne. Darunter die **Systemlast** des ganzen Rechners (1, 5, 15 Minuten) – liegt sie dauerhaft über der Zahl der Kerne, ist das NAS insgesamt ausgelastet, nicht nur das DMS. |
+| **Arbeitsspeicher** | Belegt von der Grenze des Containers (`mem_limit:`); ohne Grenze verglichen mit dem ganzen Rechner. Darunter die Anteile von **DMS**, **Paket-Läufer** (läuft nur mit installierten Paketen mit Code) und – bei dms-komplett – **PostgreSQL**. |
+| **Netzwerk** | Empfangen und gesendet je Sekunde, über alle Netzwerkschnittstellen des Containers. |
+| **Wartezeit des Servers** | Wie lange eine Anfrage warten musste, weil das DMS gerade etwas anderes rechnete (Ereignisschleife). Die Einzelheiten stehen unter **Einstellungen → [Datenbank-Anbindung](installation.md#lange-datenbankzugriffe)**, zusammen mit den langen Datenbankzugriffen. |
+
+**Warnung:** Liegt CPU oder Arbeitsspeicher **5 Minuten lang über 90 %**, steht ein Hinweis hier, in der [Übersicht](uebersicht.md) und als **hoch** neben *Systemzustand* in der Leiste – auch wenn der Bereich ausgeblendet ist.
+
+**Typische Ursachen und was hilft:**
+
+- **Texterkennung** arbeitet viele neue Scans ab – das geht vorbei; die Warteschlange steht unter [Texterkennung](texterkennung.md).
+- **Demo-Daten** werden angelegt oder entfernt – ebenfalls vorübergehend.
+- Ein **Paket mit Code** rechnet viel – der Anteil *Paket-Läufer* zeigt das; die Auslastung je Paket folgt in einer späteren Version.
+- Der Arbeitsspeicher ist dauerhaft knapp – erhöhe `mem_limit` in der Compose-Datei (für einen Haushalt reichen meist 1–2 GB, mit Texterkennung eher 2 GB) oder gib dem NAS mehr Speicher.
+- Die Systemlast des Rechners ist hoch, die CPU des DMS aber nicht – dann bremst ein anderer Dienst auf dem NAS.
+
+**Nicht verfügbar** steht dort, wo der Container einen Wert nicht lesen kann – das DMS schätzt nichts und braucht keine zusätzlichen Rechte (kein privilegierter Container, kein Docker-Socket). Läuft die Datenbank in einem eigenen Container oder auf einem anderen Server, sieht das DMS **ihre** Auslastung nicht; das steht unter dem Arbeitsspeicher.
 
 ## Was gemessen wird
 

@@ -17,7 +17,7 @@ import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
 import { zipPuffer } from '../src/zip';
 import { speicherRepo } from '../src/repo-speicher';
 import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
-import { CODE_MAX, laeuferZustandText, liesCode, netzText, rechtePunkte, rechteText } from '../../shared/src/pakete';
+import { CODE_MAX, gleicheRechte, laeuferZustandText, liesCode, netzText, rechtePunkte, rechteText } from '../../shared/src/pakete';
 import { HILFE } from '../../shared/src/hilfe';
 
 /* ---------- Kleiner WebAssembly-Assembler ---------- */
@@ -499,6 +499,171 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     assert.match(u2.pakete.find((p) => p.id === 'schleife')!.letzte[0].text, /Zeitgrenze/);
     assert.match(u2.pakete.find((p) => p.id === 'gierig')!.letzte[0].text, /Abbruch im Modul|Speicher/);
     assert.equal((await d.ereignisStand()).schleife.offen, 1, 'wird später wiederholt');
+  });
+});
+
+/* ---------- Vektoren (#442) ---------- */
+const VEKTOR_JSON = JSON.stringify({ modell: 'probe/8', vektor: [1, 0.1, 0, 0, 0, 0, 0, 0], schwelle: 0.3 });
+/** Antwortet auf jede Aktion (auch „dms:vektor“) mit demselben Vektor; Ereignisse: nichts zu tun. */
+const VEKTOR = modul({ ereignis: [0x41, 0], aktion: [0x41, ...s(512), 0x41, ...s(VEKTOR_JSON.length), 0x10, ERGEBNIS, 0x1a, 0x41, 0], daten: [[512, VEKTOR_JSON]] });
+/** Antwortet nie (Endlosschleife in der Aktion). */
+const STUMM = modul({ ereignis: [0x41, 0], aktion: [0x03, 0x40, 0x0c, 0x00, 0x0b, 0x41, 0] });
+const KI_RECHTE = '{ lesen: ["*"], dokumente: lesen, schnittstellen: ["dms:vektoren"] }';
+
+describe('Vektoren (#442): Recht dms:vektoren im Manifest', () => {
+  it('code.rechte.schnittstellen: bekannt, braucht Dokumente lesen, erscheint in der Rückfrage, ändert die Rechte', () => {
+    const c = liesCode({ sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'lesen', schnittstellen: ['dms:vektoren'] } });
+    assert.deepEqual(c.fehler, []);
+    assert.deepEqual(c.code!.rechte.schnittstellen, ['dms:vektoren']);
+    assert.match(liesCode({ sprache: 'c', rechte: { schnittstellen: ['dms:alles'] } }).fehler.join(' '), /„dms:alles“ gibt es nicht/);
+    assert.match(liesCode({ sprache: 'c', rechte: { schnittstellen: ['dms:vektoren'] } }).fehler.join(' '), /braucht auch code.rechte.dokumente: lesen/);
+    const punkte = rechtePunkte(c.code!, (v) => v);
+    const p = punkte.find((x) => x.text.includes('dms:vektoren'))!;
+    assert.equal(p.text, 'Vektoren zu Dokumenten speichern und ähnliche Dokumente finden (dms:vektoren)');
+    assert.ok(HILFE[p.hilfe], 'Handbuch-Stelle');
+    assert.ok(punkte.some((x) => x.unter?.some((u) => u.text === 'Der Volltext eines Dokuments ist da' && HILFE[u.hilfe])));
+    const ohne = liesCode({ sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'lesen' } }).code!;
+    assert.equal(gleicheRechte(c.code!, ohne), false, 'neues Recht → beim Update neu bestätigen');
+    assert.equal(gleicheRechte(ohne, liesCode({ sprache: 'c', ereignisse: ['volltext.fertig'], rechte: { lesen: ['*'], dokumente: 'lesen' } }).code!), true);
+  });
+});
+
+describe('Vektoren (#442): Schnittstelle und Suche', () => {
+  const laeufer: Paketlaeufer[] = [];
+  after(async () => { for (const l of laeufer) await l.stop(); });
+  const warte = async (f: () => Promise<boolean> | boolean, ms = 10_000) => { const ende = Date.now() + ms; while (!(await f())) { if (Date.now() > ende) throw new Error('Zeit abgelaufen'); await new Promise((r) => setTimeout(r, 50)); } };
+
+  async function aufbau() {
+    const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+    const konten = new Konten(speicherKontoRepo(), () => null, () => 'http://localhost', d.benutzerspiegel());
+    const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
+    const tabelle = routen(d, konten, { apiSchluessel: schluessel });
+    const api: ApiAufruf = async () => ({ status: 404, kopf: {}, body: Buffer.from('{}') });
+    const l = new Paketlaeufer({ dienst: d, konten, schluessel, api, einstellungen: async () => ({}), speicher: { lies: async () => ({}), schreibe: async () => {} }, grenzen: { sekunden: 3, speicherMB: 16 }, abrufMs: 100, nachlaufMs: 3_600_000 });
+    laeufer.push(l);
+    const installiere = async (id: string, wasm: Buffer, rechte: string, ereignisse = '[volltext.fertig]') => {
+      const p = liesPaket(new Map([['manifest.yaml', Buffer.from(manifest(id, rechte, ereignisse))], ['code/modul.wasm', wasm]]));
+      await d.speicherePaketCode(id, p.code!.dateien);
+      await d.speicherePaket({ id, name: `Probe ${id}`, version: '1.0.0', beschreibung: '', lizenz: 'MIT', autor: { name: 'T', github: 't' }, herkunft: { art: 'hochgeladen', von: null, am: '' }, installiert: new Date().toISOString(), installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, laeufer: { ...p.code!.info, modul: { sha256: 'x', groesse: wasm.length } } });
+    };
+    /** Ein Aufruf der API v1 mit dem Schlüssel eines Dienstkontos – wie ein Paket. */
+    const rufe = async (paket: string, methode: string, pfad: string, params: Record<string, string>, body: unknown = {}, query: Record<string, string> = {}) => {
+      const konto = await konten.dienstkonto(paket, paket);
+      const r = tabelle.find((x) => x.methode === methode && x.pfad === pfad)!;
+      const a = { body, params, query, ip: '127.0.0.1' } as unknown as Anfrage;
+      const key = await schluessel.fuerDienstkonto(konto, 'schreiben');
+      await pruefeZugang(r as Route, a, (n) => (n === 'authorization' ? `Bearer ${key}` : undefined), konten, schluessel);
+      return (await r.handler(a)).body;
+    };
+    // Zwei Briefe (Post) und ein Vertrag mit je einem Dokument und Volltext.
+    const post = await d.legePostAn({ betreff: 'Heizung' }, { id: null, name: 'Test' });
+    const post2 = await d.legePostAn({ betreff: 'Strom' }, { id: null, name: 'Test' });
+    const reg = (await d.sichereSystem()).post.register.find((x) => x.art === 'dokumente')!.key;
+    const typ = await d.legeTypAn({ name: 'Vertrag', felder: [{ key: 'name', label: 'Name', typ: 'text' }] });
+    const vertrag = await d.legeMappeAn({ typId: typ.id, werte: { name: 'Gastherme' } });
+    const regV = typ.register.find((x) => x.art === 'dokumente')!.key;
+    const dok = async (m: string, r: string, name: string, text: string) => {
+      const x = (await d.ladeHoch(m, { register: r, name }, Buffer.from(`%PDF-1.4 ${name}`), null)).dokument;
+      await d.schreibeVolltext(x.id, { text }, { id: null as never, herkunft: 'Test', paket: false });
+      return x.id;
+    };
+    const d1 = await dok(post.id, reg, 'rechnung.pdf', 'Rechnung Heizung');
+    const d2 = await dok(post2.id, reg, 'strom.pdf', 'Abschlag Strom');
+    const d3 = await dok(vertrag.id, regV, 'wartung.pdf', 'Wartung Gastherme');
+    return { d, konten, l, installiere, rufe, post, post2, vertrag, d1, d2, d3 };
+  }
+
+  it('Pakete mit dms:vektoren setzen und löschen Vektoren; ohne das Recht 403; ähnliche nur aus lesbaren Mappen', async () => {
+    const x = await aufbau();
+    await x.installiere('ki', VEKTOR, KI_RECHTE);
+    await x.installiere('ohne', VEKTOR, '{ lesen: ["*"], dokumente: lesen }');
+    await x.installiere('nurpost', VEKTOR, '{ lesen: ["dms:post"], dokumente: lesen, schnittstellen: ["dms:vektoren"] }');
+    const setze = (paket: string, dok: string, vektor: number[], modell = 'probe/8') => x.rufe(paket, 'PUT', '/api/v1/dokumente/:id/vektor', { id: dok }, { modell, vektor });
+    assert.deepEqual(await setze('ki', x.d1, [1, 0, 0, 0, 0, 0, 0, 0]), { dokument: x.d1, modell: 'probe/8', dimension: 8 });
+    await setze('ki', x.d2, [0, 1, 0, 0, 0, 0, 0, 0]);
+    await setze('ki', x.d3, [0.9, 0.2, 0, 0, 0, 0, 0, 0]);
+    await assert.rejects(setze('ohne', x.d1, [1, 0, 0, 0, 0, 0, 0, 0]), /Recht „dms:vektoren“ nicht/);
+    await assert.rejects(setze('ki', x.d1, [1, 0, 0]), /8 bis 4096 Werte/);
+    await assert.rejects(setze('ki', x.d1, new Array(9).fill(1)), /haben 8 Werte, dieser hat 9/);
+    // Ein Paket, das nur Post lesen darf, kommt an den Vertrag nicht heran – weder schreiben noch finden.
+    await assert.rejects(setze('nurpost', x.d3, [1, 0, 0, 0, 0, 0, 0, 0]), (e: { status?: number }) => e.status === 404);
+    const ki = await x.rufe('ki', 'GET', '/api/v1/dokumente/:id/aehnliche', { id: x.d1 }) as { treffer: Array<{ dokumentId: string; aehnlichkeit: number }> };
+    assert.deepEqual(ki.treffer.map((t) => t.dokumentId), [x.d3, x.d2], 'absteigend, ohne das Dokument selbst');
+    assert.ok(ki.treffer[0].aehnlichkeit > 0.97);
+    const np = await x.rufe('nurpost', 'POST', '/api/v1/vektoren/aehnliche', {}, { vektor: [1, 0, 0, 0, 0, 0, 0, 0] }) as { treffer: Array<{ dokumentId: string }> };
+    assert.deepEqual(np.treffer.map((t) => t.dokumentId), [x.d1, x.d2], 'nur lesbare Mappen');
+    // An der Mappe (Oberfläche): je Mappe, ohne die eigene.
+    await x.l.start();
+    await warte(() => x.l.vektorPaket() === 'ki');
+    const anMappe = await x.d.aehnlicheZurMappe(undefined, x.post.id);
+    assert.equal(anMappe.verfuegbar, true);
+    assert.deepEqual(anMappe.mappen.map((m) => [m.id, m.dokument.name]), [[x.vertrag.id, 'wartung.pdf']], 'nur ab der Schwelle');
+    // Löschen: nur dieses Dokument und Modell.
+    assert.deepEqual(await x.rufe('ki', 'DELETE', '/api/v1/dokumente/:id/vektor', { id: x.d3 }, {}, { modell: 'probe/8' }), { entfernt: 1 });
+    await assert.rejects(x.rufe('ki', 'GET', '/api/v1/dokumente/:id/aehnliche', { id: x.d3 }), /noch\) keinen Vektor/);
+    // Modellwechsel: alte Vektoren des Pakets sind ungültig und weg.
+    await setze('ki', x.d3, [1, 0, 0, 0, 0, 0, 0, 0, 1], 'probe/9');
+    assert.deepEqual((await x.d.vektorStand()).modelle.map((m) => m.modell), ['probe/9']);
+  });
+
+  it('Suche fragt das Paket nach dem Vektor (Kennzeichen „ähnlich“); ohne Antwort in der Zeit wie bisher', async () => {
+    const x = await aufbau();
+    await x.installiere('ki', VEKTOR, KI_RECHTE);
+    await x.l.start();
+    await warte(() => x.l.vektorPaket() === 'ki' && x.l.uebersicht().then((u) => u.pakete[0]?.geladen));
+    await x.rufe('ki', 'PUT', '/api/v1/dokumente/:id/vektor', { id: x.d1 }, { modell: 'probe/8', vektor: [0, 1, 0, 0, 0, 0, 0, 0] });
+    await x.rufe('ki', 'PUT', '/api/v1/dokumente/:id/vektor', { id: x.d3 }, { modell: 'probe/8', vektor: [1, 0, 0, 0, 0, 0, 0, 0] });
+    const ich = { id: 'u1', rolle: 'admin' };
+    // „Heizung“ trifft die Post per Wort; der Vertrag (Gastherme) kommt als ähnlicher Treffer dazu.
+    const s1 = await x.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' });
+    assert.deepEqual(s1.mappen.map((m) => m.id), [x.post.id]);
+    assert.deepEqual(s1.aehnlich?.map((a) => [a.id, a.dokument.name]), [[x.vertrag.id, 'wartung.pdf']]);
+    assert.ok(s1.aehnlich![0].aehnlichkeit > 0.9);
+    // Nur mit „auch in Dokumenten“, nur auf der ersten Seite, nicht in Ansichten.
+    assert.equal((await x.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung' })).aehnlich, undefined);
+    assert.equal((await x.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true', von: 1 })).aehnlich, undefined);
+    assert.equal((await x.d.seite(ich, { sicht: x.post.typId, suche: 'Heizung', volltext: 'true' })).aehnlich, undefined);
+    // Einstellung aus: keine ähnlichen Treffer.
+    await x.d.setzeVektorEinstellung({ suche: false });
+    assert.equal((await x.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' })).aehnlich, undefined);
+    await x.d.setzeVektorEinstellung({ suche: true });
+    // Werkbank: Stand.
+    const st = await x.d.vektorStand();
+    assert.deepEqual([st.paket, st.modell, st.mitVektor, st.mitVolltext, st.suche], ['ki', 'probe/8', 2, 3, true]);
+
+    // Ein Paket, das nicht antwortet: die Suche wartet höchstens die Zeitgrenze und läuft wie bisher.
+    const y = await aufbau();
+    await y.installiere('ki', STUMM, KI_RECHTE);
+    await y.l.start();
+    await warte(() => y.l.vektorPaket() === 'ki' && y.l.uebersicht().then((u) => u.pakete[0]?.geladen));
+    const t0 = Date.now();
+    assert.equal(await y.d.aehnlicheZurSuche(undefined, 'Heizung', { typen: null, ohneMappen: new Set(), ms: 300 }).then((r) => r.length), 0);
+    assert.ok(Date.now() - t0 < 2000, `${Date.now() - t0} ms`);
+    const s2 = await y.d.seite(ich, { sicht: 'suche', link: '', suche: 'Heizung', volltext: 'true' });
+    assert.deepEqual(s2.mappen.map((m) => m.id), [y.post.id]);
+    assert.equal(s2.aehnlich, undefined);
+  });
+
+  it('Ereignis volltext.fertig an das Paket; Nachberechnung des Bestands gedrosselt bis alles da ist', async () => {
+    const x = await aufbau();
+    await x.installiere('ki', VEKTOR, KI_RECHTE);
+    const neu = await x.d.legePostAn({ betreff: 'Neu' }, { id: null, name: 'Test' });
+    const reg = (await x.d.sichereSystem()).post.register.find((r) => r.art === 'dokumente')!.key;
+    const d4 = (await x.d.ladeHoch(neu.id, { register: reg, name: 'neu.pdf' }, Buffer.from('%PDF-1.4 neu'), null)).dokument.id;
+    await x.d.schreibeVolltext(d4, { text: 'Neuer Text' }, { id: null as never, herkunft: 'Test', paket: false });
+    assert.equal((await x.d.ereignisStand()).ki?.offen, 1, 'nur das Dokument, das nach der Installation Volltext bekam');
+    await x.l.start();
+    await warte(async () => (await x.d.ereignisStand()).ki?.offen === 0);
+    // Bestand: die anderen 3 Dokumente (Volltext vor der Installation) holt die Nachberechnung.
+    await x.l.nachberechnen();
+    assert.equal((await x.d.vektorStand()).modell, 'probe/8', 'Modell beim Paket erfragt');
+    const offen = (await x.d.ereignisStand()).ki?.offen ?? 0;
+    const zugestellt = (await x.d.ereignisStand()).ki?.zugestellt ?? 0;
+    assert.ok(offen + zugestellt >= 4, `${offen} offen, ${zugestellt} zugestellt`);
+    // Solange etwas offen ist, kommt nichts dazu; das Paket hier schreibt keine Vektoren – der nächste Durchgang pausiert.
+    await warte(async () => (await x.d.ereignisStand()).ki?.offen === 0);
+    await x.l.nachberechnen();
+    assert.equal((await x.d.ereignisStand()).ki?.offen, 0, 'nach einem vollständigen Durchgang Pause');
   });
 });
 

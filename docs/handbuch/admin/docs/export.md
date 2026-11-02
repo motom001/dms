@@ -31,7 +31,8 @@ dms-export-2026-10-31-14-05-00/
     verweise.csv           Mappe → Feld → Mappe
     dokumente.csv          alle Dokumente und älteren Versionen mit Pfad im Export
     notizen.jsonl, aufgaben.jsonl, erinnerungen.jsonl, historie.jsonl,
-    papierkorb.jsonl, papierkorb-dokumente.jsonl, vertretungen.jsonl, favoriten.csv
+    papierkorb.jsonl, papierkorb-dokumente.jsonl, vertretungen.jsonl, favoriten.csv,
+    loeschprotokoll.csv  (Löschprotokoll, ohne Inhalte)
   ablage/<Typ>/<Titel> [Id]/
     mappe.json  mappe.pdf  <Register>/<Datei>  <Datei>.txt  <Register>/Versionen/
   uebersicht/<typ>.pdf   alle Mappen eines Typs

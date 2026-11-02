@@ -6,6 +6,8 @@ import type { Hilfeort } from './hilfe';
 
 /** Der offizielle Katalog (Branch gh-pages der Registry). */
 export const OFFIZIELLER_KATALOG = 'https://raw.githubusercontent.com/motom001/dms-registry/gh-pages/katalog.json';
+/** Die Katalog-Webseite (GitHub Pages der Registry), u. a. zum Zusammenstellen einer Sammeldatei (#461). */
+export const KATALOG_SEITE = 'https://motom001.github.io/dms-registry/';
 /** Die Registry selbst – Quellen, Regeln, Vorlage. */
 export const REGISTRY = 'https://github.com/motom001/dms-registry';
 
@@ -107,6 +109,74 @@ export function neuestePassende(p: KatalogPaket, bereich?: string): KatalogVersi
   return [...p.versionen].sort((a, b) => vergleicheVersion(b.version, a.version)).find((v) => !bereich || passt(v.version, bereich));
 }
 
+/**
+ * Reihenfolge zum Installieren: Abhängigkeiten zuerst (#460, #461). Abhängigkeiten, die nicht in der Liste
+ * stehen, zählen nicht (sind schon installiert oder fehlen). null = Kreis.
+ */
+export function nachAbhaengigkeiten<T extends { id: string; abhaengigkeiten: Record<string, string> }>(liste: T[]): T[] | null {
+  const nach = new Map(liste.map((x) => [x.id, x]));
+  const fertig = new Set<string>(), unterwegs = new Set<string>();
+  const erg: T[] = [];
+  const besuche = (x: T): boolean => {
+    if (fertig.has(x.id)) return true;
+    if (unterwegs.has(x.id)) return false;
+    unterwegs.add(x.id);
+    for (const a of Object.keys(x.abhaengigkeiten)) { const z = nach.get(a); if (z && !besuche(z)) return false; }
+    unterwegs.delete(x.id); fertig.add(x.id); erg.push(x);
+    return true;
+  };
+  for (const x of liste) if (!besuche(x)) return null;
+  return erg;
+}
+
+/** Ein Paket in einer Auswahl aus dem Katalog (#460, #461): selbst gewählt oder als Abhängigkeit mitgenommen. */
+export interface AuswahlPaket {
+  id: string; name: string; version: string; code: boolean;
+  /** Selbst gewählt (sonst: kommt als Abhängigkeit mit). */
+  gewaehlt: boolean;
+  /** Von diesen Paketen gebraucht. */
+  fuer: string[];
+  abhaengigkeiten: Record<string, string>;
+}
+
+/**
+ * Pakete aus einem Katalog auswählen (#460, #461): je Paket die neueste Version, die zur DMS-Version passt;
+ * Abhängigkeiten kommen mit (neueste passende Version), außer sie sind schon passend installiert. Reihenfolge:
+ * Abhängigkeiten zuerst. probleme: was sich nicht auflösen lässt (dann fehlt das Paket in der Liste).
+ */
+export function auswahlMitAbhaengigkeiten(k: Katalog, gewaehlt: string[], dms: string, installiert: Array<{ id: string; version: string }> = []): { pakete: AuswahlPaket[]; probleme: string[] } {
+  const plan = new Map<string, AuswahlPaket>();
+  const probleme: string[] = [];
+  const name = (id: string) => k.pakete.find((p) => p.id === id)?.name ?? id;
+  const nimm = (id: string, bereich: string | null, von: string | null) => {
+    const da = installiert.find((x) => x.id === id);
+    if (von && da && (!bereich || passt(da.version, bereich))) return;
+    const schon = plan.get(id);
+    if (schon) {
+      if (von && !schon.fuer.includes(von)) schon.fuer.push(von);
+      if (bereich && !passt(schon.version, bereich)) probleme.push(`„${name(von ?? id)}“ braucht „${schon.name}“ ${bereich}, gewählt ist ${schon.version}.`);
+      return;
+    }
+    const kp = k.pakete.find((p) => p.id === id);
+    if (!kp) { probleme.push(`„${name(von ?? id)}“ braucht „${id}“ – das gibt es im Katalog nicht.`); return; }
+    const v = [...kp.versionen].sort((a, b) => vergleicheVersion(b.version, a.version)).find((x) => (!bereich || passt(x.version, bereich)) && dmsPasst(dms, x.dms));
+    if (!v) {
+      probleme.push(von ? `„${name(von)}“ braucht „${kp.name}“ ${bereich}; dazu passt keine Version für DMS ${dms}.` : `„${kp.name}“: keine Version passt zu DMS ${dms}.`);
+      return;
+    }
+    plan.set(id, { id, name: kp.name, version: v.version, code: v.code, gewaehlt: !von, fuer: von ? [von] : [], abhaengigkeiten: v.abhaengigkeiten });
+    for (const [a, b] of Object.entries(v.abhaengigkeiten)) nimm(a, b, id);
+  };
+  for (const id of gewaehlt) {
+    const x = plan.get(id);
+    if (x) x.gewaehlt = true; else nimm(id, null, null);
+  }
+  const liste = [...plan.values()];
+  const geordnet = nachAbhaengigkeiten(liste);
+  if (!geordnet) probleme.push('Die Abhängigkeiten der gewählten Pakete bilden einen Kreis.');
+  return { pakete: geordnet ?? liste, probleme };
+}
+
 /* ---------- Katalog lesen ---------- */
 
 const text = (v: unknown) => (typeof v === 'string' ? v : '');
@@ -157,9 +227,20 @@ export const EREIGNISSE = {
   'post.angelegt': 'Neue Post ist angelegt',
   'dokument.hochgeladen': 'Ein Dokument wurde hochgeladen',
   'texterkennung.fertig': 'Die Texterkennung eines Dokuments ist fertig',
+  'volltext.fertig': 'Der Volltext eines Dokuments ist da',
   'paket.einstellungen_geaendert': 'Die Einstellungen des Pakets wurden geändert',
 } as const;
 export type EreignisArt = keyof typeof EREIGNISSE;
+/**
+ * Schnittstellen des Kerns, die ein Paket zusätzlich nutzen darf (`code.rechte.schnittstellen`, #442).
+ * Der Kern rechnet dabei nichts selbst: Er speichert und vergleicht nur, was das Paket liefert.
+ */
+export const SCHNITTSTELLEN = {
+  'dms:vektoren': 'Vektoren zu Dokumenten speichern und ähnliche Dokumente finden',
+} as const;
+export type Schnittstelle = keyof typeof SCHNITTSTELLEN;
+/** Ab dieser Version kennt das DMS `code.rechte.schnittstellen` und das Ereignis `volltext.fertig` (#442). */
+export const DMS_VEKTOREN_AB = '0.120.0';
 /** Alle Mappentypen (außer Benutzer) – für Pakete wie die Texterkennung, die an jedes Dokument müssen. */
 export const ALLE_TYPEN = '*';
 
@@ -167,7 +248,7 @@ export interface PaketCode {
   sprache: string;
   ereignisse: EreignisArt[];
   /** Typverweise wie in Inhalten (eigene ohne Präfix, <paket>:<schluessel>, dms:<kennung>) oder „*“. */
-  rechte: { lesen: string[]; schreiben: string[]; dokumente: DokumentRecht };
+  rechte: { lesen: string[]; schreiben: string[]; dokumente: DokumentRecht; schnittstellen?: Schnittstelle[] };
   /** Erlaubte Adressen (https://host…); alles andere ist gesperrt. */
   netz: string[];
   /** Das WebAssembly-Modul (code/modul.wasm) und Daten (code/daten/…), nur im installierten Paket. */
@@ -219,6 +300,10 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
   else if (t.startsWith('dms:') && !DMS_RECHTE_TYPEN[t.slice(4)]) fehler.push(`code.rechte: „${t}“ – diesen Mappentyp bringt das DMS nicht mit. Erlaubt sind ${Object.keys(DMS_RECHTE_TYPEN).map((k) => `dms:${k}`).join(', ')}.`);
   const dokumente = (r.dokumente ?? 'keine') as DokumentRecht;
   if (!(dokumente in DOKUMENT_RECHTE)) fehler.push('code.rechte.dokumente: keine, lesen oder schreiben.');
+  // Schnittstellen des Kerns (#442), z. B. dms:vektoren; Vektoren gibt es nur zu Dokumenten, die das Paket lesen darf.
+  const schnittstellen = liste(r.schnittstellen, 'code.rechte.schnittstellen');
+  for (const s of schnittstellen) if (!(s in SCHNITTSTELLEN)) fehler.push(`code.rechte.schnittstellen: „${s}“ gibt es nicht. Möglich: ${Object.keys(SCHNITTSTELLEN).join(', ')}.`);
+  if (schnittstellen.includes('dms:vektoren') && dokumente === 'keine') fehler.push('code.rechte.schnittstellen: dms:vektoren braucht auch code.rechte.dokumente: lesen – Vektoren gehören zu Dokumenten.');
   const netz = liste(x.netz, 'code.netz');
   for (const n of netz) {
     let ok = false;
@@ -227,7 +312,7 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
   }
   // Schreiben setzt Lesen voraus.
   const lesenAlle = [...new Set([...lesen, ...schreiben])];
-  return { code: fehler.length ? null : { sprache, ereignisse: ereignisse as EreignisArt[], rechte: { lesen: lesenAlle, schreiben, dokumente }, netz }, fehler };
+  return { code: fehler.length ? null : { sprache, ereignisse: ereignisse as EreignisArt[], rechte: { lesen: lesenAlle, schreiben, dokumente, ...(schnittstellen.length ? { schnittstellen: schnittstellen as Schnittstelle[] } : {}) }, netz }, fehler };
 }
 
 /** Zustand des Paket-Läufers (#403): aus (kein Paket mit Code), startet, bereit, neustart (nach Absturz), pausiert (Wartung). */
@@ -259,6 +344,7 @@ export const EREIGNIS_HILFE: Record<EreignisArt, Hilfeort> = {
   'post.angelegt': 'pakete.ereignis.post_angelegt',
   'dokument.hochgeladen': 'pakete.ereignis.dokument_hochgeladen',
   'texterkennung.fertig': 'pakete.ereignis.texterkennung_fertig',
+  'volltext.fertig': 'pakete.ereignis.volltext_fertig',
   'paket.einstellungen_geaendert': 'pakete.ereignis.einstellungen_geaendert',
 };
 
@@ -272,6 +358,7 @@ export function rechtePunkte(c: PaketCode, typName: (verweis: string) => string)
   if (c.rechte.lesen.length) z.push({ text: `Mappen lesen: ${t(c.rechte.lesen)}`, hilfe: 'pakete.recht.lesen' });
   if (c.rechte.schreiben.length) z.push({ text: `Mappen anlegen und ändern: ${t(c.rechte.schreiben)}`, hilfe: 'pakete.recht.schreiben' });
   if (c.rechte.dokumente !== 'keine') z.push({ text: DOKUMENT_RECHTE[c.rechte.dokumente], hilfe: 'pakete.recht.dokumente' });
+  for (const s of c.rechte.schnittstellen ?? []) z.push({ text: `${SCHNITTSTELLEN[s]} (${s})`, hilfe: 'pakete.recht.vektoren' });
   z.push({ text: netzText(c.netz), hilfe: 'pakete.recht.netz' });
   if (c.ereignisse.length) z.push({ text: 'Reagiert auf diese Ereignisse:', hilfe: 'pakete.ereignisse', unter: c.ereignisse.map((e) => ({ text: EREIGNISSE[e], hilfe: EREIGNIS_HILFE[e] })) });
   return z;
@@ -285,5 +372,7 @@ export const rechteText = (c: PaketCode, typName: (verweis: string) => string): 
 /** Gleiche Rechte und gleicher Netzwerkzugriff? (Sonst muss ein Update neu bestätigt werden.) */
 export const gleicheRechte = (a: PaketCode | undefined, b: PaketCode | undefined) =>
   JSON.stringify(rechteSchluessel(a)) === JSON.stringify(rechteSchluessel(b));
-const rechteSchluessel = (c: PaketCode | undefined) => c ? [[...c.rechte.lesen].sort(), [...c.rechte.schreiben].sort(), c.rechte.dokumente, [...c.netz].sort()] : null;
+const rechteSchluessel = (c: PaketCode | undefined) => c ? [[...c.rechte.lesen].sort(), [...c.rechte.schreiben].sort(), c.rechte.dokumente, [...c.netz].sort(), ...(c.rechte.schnittstellen?.length ? [[...c.rechte.schnittstellen].sort()] : [])] : null;
+/** Darf das Paket diese Schnittstelle des Kerns nutzen (#442)? */
+export const hatSchnittstelle = (c: PaketCode | undefined, s: Schnittstelle) => !!c?.rechte.schnittstellen?.includes(s);
 

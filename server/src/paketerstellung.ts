@@ -176,7 +176,8 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
   const paketTypen = eigene.map((t) => {
     const wo = (was: string) => `„${t.name}“ → ${was}`;
     const felder = t.felder.filter((f) => !f.system).map((f) => {
-      const { zielTyp, system: _s, auswahlFilter, frist, standard, ...rest } = f as Feld;
+      // ausText (#534) gehört zu einem Update aus der Registry, nicht in ein selbst erstelltes Paket.
+      const { zielTyp, system: _s, auswahlFilter, frist, standard, ausText: _a, ...rest } = f as Feld;
       const x: Record<string, unknown> = ohneLeere(rest as Record<string, unknown>);
       if (f.typ === 'referenz') x.ziel = ziel(zielTyp, wo(`Feld „${f.label}“`)) ?? undefined;
       else delete x.verweisart;

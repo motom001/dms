@@ -4,9 +4,24 @@ Wer Daten von Mietern, Kunden oder Beschäftigten verwaltet, sollte festhalten, 
 
 Das DMS **unterstützt** dabei: Mappentypen als Datenarten, der [Archivmodus](archiv.md) mit Löschsperre bis Fristende und der Liste **Darf weg**, der [Papierkorb](papierkorb.md) mit Aufbewahrung, die Aufbewahrung der [Sicherungen](sicherung.md#zeitplan-und-aufbewahrung). Wie du es Schritt für Schritt einrichtest, steht unter [Sperr- und Löschkonzept aufsetzen](datenschutz.md#sperr-und-loschkonzept-aufsetzen).
 
+## Aus dem DMS erzeugen
+
+Statt die Vorlage von Hand auszufüllen, lässt du das DMS ein Löschkonzept erzeugen: **Werkbank → Datenschutz → Löschkonzept → Als PDF erzeugen** oder **Als Word-Datei (.docx)** (nur Administratoren). Die Gliederung ist dieselbe wie in der Vorlage (Abschnitte 1–9), vorbelegt mit dem, was das DMS weiß:
+
+- **Abschnitt 2 „Datenarten und Fristen“** aus deinen Mappentypen. In der Tabelle steht jeder Mappentyp, der **eine Person betrifft** (Werkbank → Datenschutz → Einstellungen), der **auf einen solchen verweist** (z. B. Rechnung → Kunde) oder für den ein **Zweck** hinterlegt ist. Je Zeile: Betroffene, Zweck, Frist und Stichtag aus dem [Archivmodus](archiv.md), Sperre im DMS (Archivmodus oder keine) und der Löschweg („Darf weg“ → Papierkorb → endgültig nach … Tagen). Mappentypen ohne Personenbezug stehen darunter in einer Zeile, damit du siehst, ob einer fehlt.
+- **Weitere Abschnitte** mit deinen Einstellungen: Verantwortlicher, DMS-Version, Aufbewahrung im [Papierkorb](papierkorb.md) und der Historie gelöschter Mappen, Aufbewahrung der automatischen [Sicherungen](sicherung.md#zeitplan-und-aufbewahrung), bereitliegende Auskünfte, Benutzer werden deaktiviert statt gelöscht.
+- **Was das DMS nicht wissen kann** – Rechtsgrundlage und Grund der Frist, Zuständige, eigene Ansichten für kürzere Fristen –, bleibt als **[eckige Klammer]** stehen; in der Word-Datei gelb markiert.
+- **Lücken** meldet das DMS in der Werkbank und im Dokument unter „Bitte ergänzen“: Mappentyp mit Personenbezug **ohne Zweck** oder **ohne Frist** (kein Archivmodus), kein Verantwortlicher hinterlegt.
+- Im Kopf stehen **Stand und DMS-Version**; der Hinweis „keine Rechtsberatung“ wie in der Vorlage.
+- **Abschnitt 8 „Nachweis“** verweist auf das [Löschprotokoll](datenschutz.md#loschprotokoll) mit seiner Aufbewahrung.
+
+![Werkbank → Datenschutz → Löschkonzept mit den Lücken „Bitte ergänzen“ und den Knöpfen für PDF und Word](bilder/werkbank-loeschkonzept.png)
+
+Aus den Mappen selbst kommt nichts in das Dokument – keine Titel, keine Feldwerte, keine Dokumente. Erzeuge das Löschkonzept neu, wenn du Mappentypen oder Fristen änderst, und trage die Änderung in Abschnitt 9 ein.
+
 ## Die Vorlage
 
-Die Vorlage beschreibt vorformuliert, was das DMS tut, und markiert alles, was du selbst ergänzt, mit **[eckigen Klammern]**:
+Wer lieber von Hand ausfüllt (oder ohne DMS anfängt): Die Vorlage beschreibt vorformuliert, was das DMS tut, und markiert alles, was du selbst ergänzt, mit **[eckigen Klammern]**:
 
 - [Word (.docx)](vorlagen/loeschkonzept.docx)
 - [LibreOffice (.odt)](vorlagen/loeschkonzept.odt)
@@ -21,7 +36,7 @@ Sie ist gegliedert in:
 5. **Wer löschen darf** – Berechtigungen, Papierkorb, Administratoren
 6. **Kopien außerhalb der Ablage** – Sicherungen, Exporte, Auskünfte, Protokoll, Ausdrucke
 7. **Benutzerkonten** – deaktivieren statt löschen
-8. **Nachweis** – Löschungen festhalten, ohne die Daten selbst
+8. **Nachweis** – Löschungen festhalten, ohne die Daten selbst: das [Löschprotokoll](datenschutz.md#loschprotokoll)
 9. **Änderungen des Löschkonzepts**
 
 ## Gut zu wissen

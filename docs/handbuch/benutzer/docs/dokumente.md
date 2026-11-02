@@ -34,6 +34,16 @@ Neben jedem PDF und Bild (JPEG, PNG) steht ein **kleines Vorschaubild der ersten
 
 ![Dokument direkt unter seiner Zeile](bilder/dokumente.png)
 
+### Am Handy: Dokument vorzeigen
+
+Am Handy zeigt das DMS Dokumente **nicht eingebettet** in der Mappe – so bleibt die Seite beim Wischen nicht im Dokument hängen. Jede Karte hat stattdessen große Knöpfe:
+
+- **Öffnen** zeigt das Dokument mit einem Tipp **im Vollbild** in der Anzeige deines Browsers. Dort zoomst du mit zwei Fingern; **Zurück** im Browser bringt dich mit einem Tipp in die Mappe. Ein Tipp auf das (größere) Vorschaubild oder den Namen öffnet ebenso.
+- **Teilen** (wo der Browser es kann, z. B. Safari am iPhone) schickt die Datei über „An … senden“ – etwa per Mail oder Nachricht, wenn dich jemand am Tresen darum bittet. Beim ersten Tipp lädt das DMS die Datei; dauert das zu lange, tippst du danach auf **Jetzt teilen**.
+- **⋯** öffnet alle weiteren Aktionen als Blatt von unten: Herunterladen, Mit Stempel …, Seiten, Schwärzen, Archivnummer, Ersetzen und – nur hier – **Löschen**.
+
+Alle Knöpfe sind am Handy mindestens 44 Punkte groß. Muss das Dokument lange zu sehen sein, stell die automatische Sperre des Handys kurz länger ein – in der Anzeige des Browsers kann das DMS den Bildschirm nicht wach halten.
+
 ## Sortieren
 
 Über der Liste wählst du die Reihenfolge: **Name A–Z** (Standard), **Name Z–A**, **Neueste zuerst**, **Älteste zuerst** (nach dem Hochladen) oder **Größte zuerst**. Namen werden „natürlich“ sortiert – „Rechnung 2“ vor „Rechnung 10“, ohne Rücksicht auf Groß- und Kleinschreibung. Die Wahl gilt für alle Dokumentenregister und für dich auf allen Geräten. Noch nicht gespeicherte Dateien stehen immer oben.
@@ -145,6 +155,12 @@ Damit die [Volltextsuche](ablage.md#im-text-der-dokumente-suchen) ein Dokument f
 | *Volltext: ausgelassen* | Für diesen Dateityp (z. B. Word, Excel) oder diese Größe gibt es keinen Volltext. |
 
 Erkannter Text aus Scans ist nicht immer fehlerfrei – je besser die Vorlage, desto besser das Ergebnis.
+
+## Ähnliche Dokumente { #aehnliche-dokumente }
+
+Hat dein Administrator ein Paket wie **KI lokal – Ähnlichkeit** installiert, steht unter den Dokumenten einer Mappe **„Ähnliche Dokumente“**: bis zu fünf andere Mappen, deren Dokumente inhaltlich ähnlich sind – zum Beispiel zur Rechnung des Heizungsbauers die Mappe mit dem Wartungsvertrag der Gastherme. Hinter jeder Mappe stehen das ähnliche Dokument und wie ähnlich es ist (in Prozent). Du siehst nur Mappen, die du lesen darfst.
+
+Die Ähnlichkeit berechnet das Paket aus dem [Volltext](#volltext), im DMS und ohne dass Daten es verlassen. Steht dort „noch nicht berechnet“, holt das Paket das gerade im Hintergrund nach. Ohne ein solches Paket gibt es den Abschnitt nicht.
 
 ## Versionen
 

@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
-  ansichtAus, BEREICHE, fuerAlle, hatMitte, inVorlage, liesAnsicht, liesEigene, OHNE_EINSTELLUNG, sichtbar, wartungsPlakette,
+  ansichtAus, BEREICHE, bereichName, fuerAlle, GRUPPEN, hatMitte, inVorlage, liesAnsicht, liesEigene, OHNE_EINSTELLUNG, sichtbar, wartungsPlakette,
   werkbankEbene, werkbankUmleitung, werkbankZurueck, einDatentraeger,
 } from '../../shared/src/werkbankansicht';
 import { speicherDateien } from '../src/dateispeicher';
@@ -127,13 +127,34 @@ describe('Werkbank: mittlere Spalte nur für große Sammlungen (#366)', () => {
     assert.deepEqual(liesEigene({ ein: ['datenbank', 'anbindung'] }), { ein: ['anbindung'] });
   });
 
-  it('#417: Anmeldeschutz steht unter Einstellungen, gleich nach der Verschlüsselung', () => {
+  it('#417: Anmeldeschutz steht unter Einstellungen', () => {
     const b = BEREICHE.find((x) => x.pfad === 'anmeldeschutz');
     assert.equal(b?.gruppe, 'einstellungen');
-    const i = BEREICHE.findIndex((x) => x.pfad === 'verschluesselung');
-    assert.equal(BEREICHE[i + 1].pfad, 'anmeldeschutz');
-    assert.deepEqual(BEREICHE.filter((x) => x.gruppe === 'benutzer').map((x) => x.pfad), ['benutzer', 'aufgaben']);
     assert.equal(werkbankUmleitung('anmeldeschutz'), null, 'Pfad bleibt, alte Links gelten weiter');
+  });
+
+  it('#354: sechs Gruppen nach Aufgaben, je höchstens 7 Bereiche, Kennungen unverändert', () => {
+    assert.deepEqual(Object.values(GRUPPEN), ['Ablage aufbauen', 'Benutzer und Sicherheit', 'Post und Eingänge', 'Daten sichern', 'Einstellungen', 'Wartung und Fehlersuche']);
+    const je = (g: string) => BEREICHE.filter((x) => x.gruppe === g).map((x) => x.pfad);
+    assert.deepEqual(je('ablage'), ['typen', 'sichten', 'nummernkreise', 'stempel', 'pakete', 'darfweg', 'datenschutz']);
+    assert.deepEqual(je('benutzer'), ['benutzer', 'verschluesselung']);
+    assert.deepEqual(je('post'), ['postfaecher', 'eingangsordner', 'webdav', 'texterkennung']);
+    assert.deepEqual(je('sichern'), ['sicherung', 'wiederherstellung', 'vollexport', 'papierkorb']);
+    assert.deepEqual(je('einstellungen'), ['betrieb', 'aufgaben', 'anmeldeschutz', 'designs', 'anbindung', 'technik']);
+    assert.deepEqual(je('wartung'), ['systemzustand', 'protokoll', 'fehlermeldungen', 'wartungsmodus', 'wartung', 'demo']);
+    for (const g of Object.keys(GRUPPEN)) assert.ok(je(g).length <= 7, g);
+    // Aufgaben und Tägliche Zusammenfassung: ein Eintrag unter Einstellungen, Kennung bleibt „aufgaben“.
+    assert.equal(bereichName('aufgaben'), 'Benachrichtigungen und Aufgaben');
+    assert.equal(bereichName('uebersicht'), 'Übersicht');
+    // Jeder Bereich hat Name und „wann“ aus der Sprachdatei.
+    for (const b of BEREICHE) assert.ok(b.name && !b.name.startsWith('werkbank.') && b.wann && !b.wann.startsWith('werkbank.'), b.pfad);
+    // Gespeicherte Auswahl bestehender Installationen bleibt gültig (es werden nur Bereiche gespeichert).
+    const alt = { vorlage: 'haushalt', ein: ['nummernkreise', 'protokoll', 'anmeldeschutz'], aus: ['aufgaben', 'technik'] };
+    assert.deepEqual(liesAnsicht(alt), alt);
+    for (const p of ['aufgaben', 'verschluesselung', 'technik', 'papierkorb', 'webdav']) assert.equal(werkbankUmleitung(p), null, p);
+    // Vorlagen: Haushalt und Betrieb enthalten dieselben Bereiche wie vor der Neugliederung.
+    assert.deepEqual(BEREICHE.filter((b) => inVorlage('haushalt', b.pfad)).map((b) => b.pfad).sort(),
+      ['aufgaben', 'benutzer', 'betrieb', 'pakete', 'papierkorb', 'sicherung', 'sichten', 'stempel', 'systemzustand', 'technik', 'typen', 'verschluesselung', 'vollexport', 'webdav', 'wiederherstellung']);
   });
 
   it('#408: „Speicherplatz“ heißt „Systemzustand“ und steht unter Wartung und Fehlersuche', () => {

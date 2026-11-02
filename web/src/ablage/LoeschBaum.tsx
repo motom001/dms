@@ -7,7 +7,8 @@ import { Symbol } from '../Symbol';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { geheZu, Link } from '../ort';
-import { hinweis, rueckfrage } from '../rueckfrage';
+import { mitGrund } from './Loeschgrund';
+import { hinweis } from '../rueckfrage';
 import { titelOder } from '../seiten';
 
 /**
@@ -45,15 +46,15 @@ export function LoeschBaum({ mappeId, titel, sicht, schliessen, neuLaden }: { ma
   async function ausfuehren() {
     if (!v || !plan?.loeschen.length) return;
     const name = titelOder(titel);
-    const ok = await rueckfrage({
+    const anlass = await mitGrund({
       titel: `„${name}“ mit verknüpften Mappen ${korb ? 'in den Papierkorb legen' : 'endgültig löschen'}?`,
-      text: <>{loeschZusammenfassung(plan, korb)} {korb ? 'Im Papierkorb lässt sich alles gemeinsam wiederherstellen – auch die entfernten Verweise.' : 'Der Papierkorb ist ausgeschaltet: Das lässt sich nicht rückgängig machen.'}</>,
+      text: <p>{loeschZusammenfassung(plan, korb)} {korb ? 'Im Papierkorb lässt sich alles gemeinsam wiederherstellen – auch die entfernten Verweise.' : 'Der Papierkorb ist ausgeschaltet: Das lässt sich nicht rückgängig machen.'}</p>,
       ja: korb ? 'In den Papierkorb' : 'Endgültig löschen', gefahr: true, bestaetigeMit: name,
     });
-    if (!ok) return;
+    if (!anlass) return;
     setLaeuft(true); setFehler(undefined);
     try {
-      const r = await api.mitVerknuepftenLoeschen(mappeId, { tiefe, auswahl });
+      const r = await api.mitVerknuepftenLoeschen(mappeId, { tiefe, auswahl, grund: anlass.grund ?? undefined, grundText: anlass.text });
       const start = r.loeschen.includes(mappeId);
       // Ist die Mappe selbst weg, erst zur Liste – sonst lädt die Ansicht sie noch einmal (404).
       if (start) geheZu(`/ablage/${sicht}`);

@@ -64,6 +64,32 @@ Ein Update **ergänzt nur**:
 
 Es **löscht nichts** und **überschreibt nichts**, was du selbst geändert hast: Hast du einen Mappentyp umbenannt, Felder ergänzt oder eine Ansicht gelöscht, bleibt das so.
 
+## Text in Verweise umwandeln { #text-in-verweise-umwandeln }
+
+Manche Pakete hatten früher ein **Textfeld**, wo eigentlich ein **Verweis** hingehört – zum Beispiel „Halter: Lena Muster“ am Fahrzeug statt eines Verweises auf die **Person** Lena Muster. Eine neuere Version des Pakets bringt dafür ein Verweisfeld mit und sagt, aus welchem Textfeld es sich füllen lässt. **Updates ändern nichts heimlich:**
+
+- Das Update legt das Verweisfeld **zusätzlich** an. Das alte Textfeld bleibt mit allen Werten, nichts wird umgeschrieben. Die Vorschau des Updates sagt schon, wie viele Angaben sich danach umwandeln lassen.
+- Danach steht im Paket unter **Text in Verweise umwandeln**, was offen ist, etwa „Fahrzeug – Halter: 3 Angaben in „Halter“ (Text) können Verweise auf Person werden“.
+
+**Vorschau …** zeigt je Name einen Vorschlag, den du in jeder Zeile ändern kannst:
+
+- **vorhandene Person:** gleicher Name, ohne Groß- und Kleinschreibung und Leerzeichen („lena muster“ = „Lena Muster“, auch „Muster Lena“). Passen mehrere, steht das dabei – wähle dann die richtige.
+- **Neu anlegen:** legt eine Person mit Vor- und Nachname an. Vorgeschlagen, wenn der Text wie ein Name aussieht.
+- **Überspringen:** Der Text bleibt, z. B. bei „Familie“ oder „Auto MU-ST 123“.
+
+Darf ein Feld mehrere Verweise haben (Inhaber eines Kontos, Versicherte), teilt das DMS den Text an „und“, Komma, Schrägstrich oder „&“: „Lena und Tom Muster“ wird zu „Lena Muster“ und „Tom Muster“. Umgewandelt wird eine Mappe nur, wenn **jeder** ihrer Namen eine Person bekommt.
+
+**Ausgelassen** werden Mappen, die du nicht bearbeiten darfst, Mappen im [Archivmodus](archiv.md) innerhalb der Aufbewahrungsfrist und Mappen, deren Verweis schon gesetzt ist. Die Vorschau nennt jede mit Grund.
+
+**Umwandeln** setzt den Verweis und leert das Textfeld. Jede Änderung steht in der **Historie** der Mappe („Paket-Update: Text in Verweis umgewandelt“). Außerdem:
+
+- Das alte Textfeld ist keine Pflicht mehr. Ist es leer, zeigt die Ablage es in der Mappe nicht mehr.
+- Titel-Vorlage und Trefferlisten zeigen den Verweis statt des Texts, das Verweisfeld rückt an die Stelle des Textfelds. Mappen, die du übersprungen hast, zeigen dort weiter ihren Text.
+
+**Rückgängig …** unter „Bisherige Umwandlungen“ nimmt einen ganzen Vorgang zurück: Text zurück, Verweis leer, neu angelegte Personen in den Papierkorb, sofern nichts anderes mehr auf sie verweist, Mappentyp wie vorher. Was seit der Umwandlung jemand geändert hat, bleibt und wird genannt. Die Vorgänge sind Teil der [Sicherung](sicherung.md).
+
+Für Paket-Autoren steht das Format (`aus_text`) in den [Regeln der Registry](https://github.com/motom001/dms-registry/blob/main/REGELN.md#text-in-verweis-umwandeln).
+
 ## Entfernen
 
 **Entfernen** löscht die Mappentypen und Ansichten des Pakets und seinen Eintrag. Das geht nur,
@@ -94,7 +120,7 @@ Die Einstellungen sind **Teil der Sicherung**; Geheimnisse bleiben dabei verschl
 
 ## Pakete mit Code
 
-Manche Pakete bringen **Code** mit – etwa eine eigene Texterkennung oder Regeln, die neue Post zuordnen. Der Code reagiert auf Ereignisse (neue Post, hochgeladenes Dokument, fertige Texterkennung, geänderte Einstellungen) und auf die **Aktionen** im Reiter „Einstellungen“. Das DMS führt ihn im **Paket-Läufer** aus:
+Manche Pakete bringen **Code** mit – etwa eine eigene Texterkennung oder Regeln, die neue Post zuordnen. Der Code reagiert auf Ereignisse (neue Post, hochgeladenes Dokument, fertige Texterkennung, fertiger Volltext, geänderte Einstellungen) und auf die **Aktionen** im Reiter „Einstellungen“. Das DMS führt ihn im **Paket-Läufer** aus:
 
 - **Abgeschottet:** Der Code ist WebAssembly und läuft in einem eigenen Prozess des DMS, ohne Zugriff auf Dateien, Schlüssel oder Datenbank. Netzwerk und Internet erreicht er nur unter den Adressen, die das Paket angibt – meist gar nicht.
 - **Nur bestätigte Rechte:** Vor der Installation zeigt die Vorschau, was der Code darf – welche Mappentypen er lesen bzw. anlegen und ändern darf, ob er Dokumente lesen oder schreiben darf, ob er aufs Netzwerk oder Internet zugreifen darf und auf welche Ereignisse er reagiert (siehe [Rechte eines Pakets](#rechte-eines-pakets) und [Ereignisse](#ereignisse)). Erst wenn du das bestätigst, installiert das DMS. Will ein **Update** mehr Rechte oder andere Adressen, fragt das DMS erneut.
@@ -142,6 +168,10 @@ Was nicht in der Liste steht, darf der Code nicht. Benutzer und Passwörter sieh
 
 Steht keins von beiden in der Liste, sieht der Code keine Dokumente.
 
+#### Vektoren zu Dokumenten { #recht-vektoren }
+
+**„Vektoren zu Dokumenten speichern und ähnliche Dokumente finden (dms:vektoren)“** – Der Code darf zu Dokumenten, die er lesen darf, einen **Vektor** ablegen: eine Liste von Zahlen, die den Inhalt des Volltexts beschreibt. Das DMS vergleicht diese Vektoren und zeigt damit [ähnliche Dokumente](#aehnlichkeit) an der Mappe und in der Suche. Außerdem fragt die Suche das Paket nach dem Vektor des Suchbegriffs. Das DMS selbst rechnet dabei nichts – es speichert und vergleicht nur, was das Paket liefert. Dokumente, Mappen und Volltext ändern darf der Code mit diesem Recht nicht; ähnliche Dokumente sieht jeder nur aus Mappen, die er lesen darf.
+
 #### Zugriff auf Netzwerk und Internet { #recht-netzwerk-und-internet }
 
 - **„kein Zugriff auf Netzwerk und Internet“** – Der Code erreicht weder Geräte in deinem Heimnetz noch das Internet. Das ist der Normalfall: Die Daten bleiben im DMS.
@@ -171,11 +201,49 @@ Unter **„Reagiert auf diese Ereignisse:“** nennt die Vorschau, wann der Code
 
 **Typisch:** Mit dem Volltext arbeiten, z. B. Felder vorschlagen oder Post anhand von Wörtern zuordnen.
 
+#### Der Volltext eines Dokuments ist da { #ereignis-volltext-fertig }
+
+**Wann:** Sobald der Volltext eines Dokuments feststeht – egal, woher er kommt: von der eingebauten Texterkennung, aus der Textebene eines PDFs, von einem Paket wie **Texterkennung** oder über die API. Für ein Paket mit dem Recht [Vektoren zu Dokumenten](#recht-vektoren) schickt das DMS dieses Ereignis außerdem für den **Bestand** nach (siehe [Ähnlichkeit](#aehnlichkeit)).
+
+**Typisch:** Aus dem Volltext etwas berechnen – das Paket **KI lokal – Ähnlichkeit** rechnet daraus den Vektor des Dokuments.
+
 #### Die Einstellungen des Pakets wurden geändert { #ereignis-einstellungen-geandert }
 
 **Wann:** Wenn ein Administrator die [Einstellungen des Pakets](#einstellungen) speichert. Nur das Paket selbst bekommt dieses Ereignis.
 
 **Typisch:** Die neuen Werte übernehmen, z. B. eine Verbindung neu prüfen oder den Status aktualisieren.
+
+### Ähnlichkeit { #aehnlichkeit }
+
+Ein Paket mit dem Recht [Vektoren zu Dokumenten](#recht-vektoren) – etwa **KI lokal – Ähnlichkeit** – rechnet zu jedem Dokument mit Volltext einen Vektor. Damit zeigt das DMS:
+
+- an der Mappe unter den Dokumenten **„Ähnliche Dokumente“** aus anderen Mappen,
+- in der Suche der [Startseite](https://motom001.github.io/dms/benutzer/aktuell/startseite/#schnell-finden) mit **„auch in Dokumenten“** zusätzlich **ähnliche Treffer** – Mappen ohne passendes Wort, deren Dokument dem Suchbegriff ähnlich ist, gekennzeichnet mit **„ähnlich“**.
+
+Jeder sieht dabei nur Mappen, die er lesen darf. Den Vektor des Suchbegriffs liefert das Paket; antwortet es nicht innerhalb von 1,5 Sekunden, sucht das DMS wie bisher ohne Ähnlichkeit.
+
+**Werkbank → Pakete → *Paket*** zeigt im Abschnitt **Ähnlichkeit**:
+
+| Angabe | Bedeutung |
+|---|---|
+| **Modell** | womit das Paket rechnet (meldet das Paket selbst) |
+| **Stand** | für wie viele Dokumente mit Volltext es schon einen Vektor gibt |
+| **Zwischenspeicher** | wie viel Arbeitsspeicher die Vektoren im DMS belegen |
+| **Ähnliche Treffer in der Suche zeigen** | Einstellung, Standard: an. Aus: Die Suche fragt das Paket nicht mehr; „Ähnliche Dokumente“ an der Mappe bleiben. |
+| **Neu berechnen** | löscht alle Vektoren; das Paket rechnet sie im Hintergrund neu |
+
+**Bestand und Modellwechsel:** Nach der Installation rechnet das Paket zuerst nur neue Dokumente. Den Bestand holt das DMS gedrosselt nach: Hat das Paket nichts mehr offen, bekommt es alle 30 Sekunden bis zu 50 Dokumente ohne Vektor (Ereignis [Volltext ist da](#ereignis-volltext-fertig)). Meldet das Paket nach einem Update ein **anderes Modell**, sind die alten Vektoren ungültig: Das DMS löscht sie und lässt sie auf dieselbe Weise neu berechnen. Bis dahin fehlen ähnliche Dokumente für die noch offenen Dokumente.
+
+**Daten:** Vektoren sind abgeleitet. Sie stehen in der Datenbank (Tabelle `vektoren`), nicht im [Vollexport](export.md), und verschwinden mit ihrem Dokument. Nach einer Wiederherstellung rechnet das Paket sie neu.
+
+**Speicher und Antwortzeit** (256 Zahlen je Vektor, gemessen auf einem Rechner mit 2 Kernen, PostgreSQL 16):
+
+| Dokumente | Datenbank | Zwischenspeicher | erstes Laden | Ähnliche Dokumente | zum Vergleich: Kosinus in SQL |
+|---|---|---|---|---|---|
+| 10 000 | 12 MB | 4 MB | 0,4 s | 4 ms | 0,3 s |
+| 100 000 | 118 MB | 33 MB | 3,2 s | 37 ms | 3,0 s |
+
+Das DMS braucht dafür keine Datenbank-Erweiterung (wie pgvector, die im Image `postgres:17` fehlt). Es vergleicht im eigenen Arbeitsspeicher mit 8 Bit je Zahl; den Zwischenspeicher lädt es nach dem Start im Hintergrund – bis er da ist, sucht die Suche ohne Ähnlichkeit. Gemessen mit `server/test/vektoren-messen.ts`.
 
 ## Expertenmodus: weitere Kataloge und Hochladen
 
@@ -186,7 +254,7 @@ Für Paketentwickler und für ein DMS ohne Internetzugang gibt es unter **Werkba
 Im Expertenmodus kannst du:
 
 - **Weitere Quellen** – Katalogadressen hinzufügen, abschalten und entfernen, höchstens 20. Erlaubt ist nur HTTPS, das Format ist dasselbe wie beim offiziellen Katalog (`katalog.json` der Registry). **Katalog abrufen** fragt neben dem offiziellen Katalog alle **eingeschalteten** weiteren Kataloge ab – egal, ob der Abschnitt gerade auf- oder zugeklappt ist; ihre Pakete tragen die Adresse als Kennzeichen. Willst du eine Quelle nicht mehr nutzen, schalte sie ab oder entferne sie. Ohne weitere Quellen gibt es nur den offiziellen Katalog.
-- Ein **Paket als Datei hochladen** (`.zip` im Format der Registry, z. B. der Paketordner gepackt, höchstens 10 MB). Das DMS prüft es genauso wie ein Katalogpaket, nur ohne Prüfsumme aus dem Katalog, und zeigt die Vorschau.
+- Ein **Paket als Datei hochladen** (`.zip` im Format der Registry, z. B. der Paketordner gepackt, höchstens 10 MB). Das DMS prüft es genauso wie ein Katalogpaket, nur ohne Prüfsumme aus dem Katalog, und zeigt die Vorschau. Eine [Sammeldatei](#pakete-ohne-internet-installieren) erkennt es selbst.
 
 !!! warning "Nicht vom DMS-Projekt geprüft"
     Pakete aus einer anderen Quelle als dem offiziellen Katalog hat niemand vom DMS-Projekt angesehen. Vor der Installation zeigt das DMS deshalb deutlich die Herkunft, und du musst ausdrücklich bestätigen, dass du weißt, woher das Paket stammt.
@@ -194,6 +262,27 @@ Im Expertenmodus kannst du:
 Die Liste der installierten Pakete zeigt bei jedem die **Herkunft**: „offizieller Katalog“, die Katalogadresse oder „hochgeladen von … am …“. **Updates sucht das DMS nur in der Quelle, aus der das Paket stammt.** Ein hochgeladenes Paket aktualisierst du, indem du eine höhere Version hochlädst; dann gelten dieselben Regeln wie bei jedem Update (nur ergänzen). Ist die Quelle eines Pakets abgeschaltet oder entfernt, gibt es dafür keine Updates.
 
 Das Protokoll vermerkt, wer welche Quelle hinzugefügt, abgeschaltet oder entfernt und wer welches Paket hochgeladen hat.
+
+## Pakete ohne Internet installieren
+
+Kommt dein DMS nicht ins Internet, holst du mehrere Pakete auf einmal als **Sammeldatei**:
+
+1. Öffne an einem Gerät mit Internet die Seite **[Pakete ohne Internet](https://motom001.github.io/dms-registry/sammeldatei.html)** des Katalogs. Am schnellsten über **Werkbank → Pakete → Ohne Internet …** und den Link dort – dann ist die Version deines DMS schon eingetragen.
+2. Kreuze die Pakete an. Die **DMS-Version** bestimmt, welche Paketversionen passen (Vorgabe: die neueste). **Abhängigkeiten** wie „Basis“ kommen automatisch mit und sind mit „kommt mit – gebraucht von …“ markiert. Die Texterkennung ist vorausgewählt.
+3. **Sammeldatei herunterladen.** Die Seite holt die Pakete aus dem Katalog, prüft jedes gegen seine Prüfsumme und packt sie zusammen. Sie zeigt den **SHA-256** der fertigen Datei.
+4. Bring die Datei zum DMS (USB-Stick, Netzlaufwerk) und lade sie unter **Werkbank → Pakete → Ohne Internet …** hoch – oder im [Einrichtungsassistenten](installation.md#pakete-dazuholen), wenn der Katalog dort nicht erreichbar ist. Ein einzelnes Paket oder eine Sammeldatei nimmt auch **Paket hochladen** im Expertenmodus an.
+5. Das DMS zeigt den Inhalt: je Paket die Version und ob es **neu**, ein **Update**, **schon installiert** oder **älter als installiert** ist und ob es zur DMS-Version passt. Bestätige einmal, dass du weißt, woher die Datei stammt, dann installierst du **Paket für Paket**, Abhängigkeiten zuerst. Jedes zeigt seine Vorschau; Pakete mit Code installierst du erst, wenn du **ihre** Rechte bestätigt hast. Mit **Auslassen** überspringst du ein Paket.
+
+### Wie das DMS einer Sammeldatei traut
+
+Die Sammeldatei ist ein ZIP mit dem Verzeichnis `sammeldatei.json` (je Paket Id, Version, Größe und SHA-256), einer kurzen `LIESMICH.txt` und den Paket-Archiven aus dem Katalog, Byte für Byte unverändert. Das DMS nimmt sie **nur ganz oder gar nicht** an:
+
+- Jedes Archiv muss genau die **Größe und Prüfsumme (SHA-256)** aus dem Verzeichnis haben. Hat das DMS den offiziellen Katalog in dieser Sitzung schon abgerufen, muss die Prüfsumme **auch zum Katalog** passen – sonst lehnt es die Datei ab.
+- Es dürfen **keine anderen Dateien** darin liegen; Dateinamen mit `..` oder `/` am Anfang, verschlüsselte Einträge und doppelte Namen lehnt es ab.
+- **Grenzen gegen ZIP-Bomben:** höchstens 64 MB je Datei, 50 Pakete, 10 MB je Paket-Archiv, entpackt 20 MB je Paket (plus 32 MB für Code) und 256 MB für alle Pakete zusammen. Das DMS entpackt nie mehr, als im Archiv angegeben ist.
+- Jedes Paket durchläuft **dieselben Prüfungen wie ein einzeln hochgeladenes**; Id und Version im Paket müssen zum Verzeichnis passen. Ist eins ungültig, wird nichts übernommen.
+
+Die Prüfsummen beweisen, dass die Datei vollständig und seit dem Zusammenstellen **unverändert** ist – nicht, **wer** sie zusammengestellt hat. Deshalb gilt sie wie ein hochgeladenes Paket als „nicht vom DMS-Projekt geprüft“: Du bestätigst die Herkunft, und die installierten Pakete tragen als Herkunft „hochgeladen von … am …“. Vergleiche bei Zweifel den SHA-256, den das DMS nach dem Hochladen zeigt, mit dem auf der Katalog-Seite. Updates dieser Pakete holst du mit einer neuen Sammeldatei; Pakete, die aus dem Katalog installiert sind, aktualisiert eine Sammeldatei nicht.
 
 ## Paket aus deinem DMS erstellen
 

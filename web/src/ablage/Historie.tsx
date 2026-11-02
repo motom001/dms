@@ -29,12 +29,16 @@ function einzelheiten(e: Historieneintrag, emailTyp: string | undefined): { hinw
     return {
       hinweis: `${n} ${n === 1 ? 'Feld' : 'Felder'}`,
       inhalt: (
+        <>
+        {/* Anlass, z. B. die Umwandlung nach einem Paket-Update (#534). */}
+        {str(d.text) && <p className="leise klein">{str(d.text)}</p>}
         <table className="aenderungen">
           <thead><tr><th>Feld</th><th>vorher</th><th>nachher</th></tr></thead>
           <tbody>{d.aenderungen.map((a: Feldaenderung) => (
             <tr key={a.feld}><td>{a.label}</td>{a.geheim ? <td colSpan={2} className="leise">geändert (Passwort, ohne Werte)</td> : <><td className={a.alt ? '' : 'leise'}>{a.alt || '–'}</td><td className={a.neu ? '' : 'leise'}>{a.neu || '–'}</td></>}</tr>
           ))}</tbody>
         </table>
+        </>
       ),
     };
   }

@@ -10,6 +10,7 @@
 import { LEER, liesFilter, ohneLeereTeile, PLATZHALTER_MIT_FILTERN, pruefeFilter, wendeFilterAn } from './titelfilter';
 import { alsText } from './markdown';
 import { kreisImStandard, kreisVon } from './nummernkreis';
+import { ibanGruppen, pruefeFormatDefinition } from './feldformate';
 
 export const FELDTYPEN = {
   text: 'Text',
@@ -47,8 +48,9 @@ export interface Feld {
   maxLen?: number | null;
   /** Regulärer Ausdruck, muss den ganzen Text treffen. */
   muster?: string;
-  min?: number | null;
-  max?: number | null;
+  /** Zahl und Betrag: Zahl. Datum (#535): „heute“ oder JJJJ-MM-TT. */
+  min?: number | string | null;
+  max?: number | string | null;
   nachkomma?: number | null;
   waehrung?: string;
   optionen?: string[];
@@ -62,6 +64,17 @@ export interface Feld {
   frist?: import('./fristen').FristEinstellung | null;
   /** Referenzfeld (#172): nur Mappen des Zieltyps, die alle Bedingungen erfüllen. */
   auswahlFilter?: import('./sichten').Feldbedingung[];
+  /** Für die Erkennung nutzen (#336, #391): vorhanden = an, mit Art und Erkennungshinweis. */
+  erkennung?: import('./erkennung').FeldErkennung | null;
+  /**
+   * Verweisfeld aus einem Paket-Update (#534): Kennung des bisherigen Textfelds, aus dem es sich füllen lässt
+   * (`aus_text` im Paket). Solange der Verweis leer ist, zeigen Titel und Trefferliste den alten Text.
+   */
+  ausText?: string;
+  /** Textfeld (#535): Format E-Mail, Telefon, Internetseite, IBAN oder PLZ; fehlt = frei. */
+  format?: import('./feldformate').Feldformat | null;
+  /** Format PLZ (#535): Kennung des Felds mit dem Land; Deutschland (oder leer) heißt genau 5 Ziffern. */
+  landFeld?: string | null;
 }
 
 export const REGISTERARTEN = {
@@ -125,6 +138,10 @@ export interface MappentypDaten {
    * Einstellungen (nicht in der Tabelle der Mappentypen); beim Lesen und Speichern hier mitgeliefert.
    */
   stempel?: import('./stempel').StempelTyp | null;
+  /** „Aus Dokument ausfüllen“ (#391): eigene Beschriftung oder ausgeblendet; wie der Stempel in den Einstellungen. */
+  ausDokument?: import('./erkennung').AusDokument | null;
+  /** Erkannte Post automatisch zuordnen (#337), Standard aus; wie der Stempel in den Einstellungen. */
+  autoZuordnen?: boolean;
 }
 export interface Mappentyp extends MappentypDaten {
   id: string;
@@ -496,8 +513,10 @@ export function pruefeMappentyp(t: MappentypDaten, ctx: TypKontext): Pruefergebn
     if (f.typ === 'auswahl' && !(f.optionen ?? []).length) m.push('Mindestens einen Auswahlwert eintragen.');
     if ((f.typ === 'text' || f.typ === 'langtext' || f.typ === 'formatiert') && f.minLen != null && f.maxLen != null && f.minLen > f.maxLen)
       m.push('Mindestlänge ist größer als Höchstlänge.');
-    if ((f.typ === 'zahl' || f.typ === 'betrag') && f.min != null && f.max != null && f.min > f.max)
+    if ((f.typ === 'zahl' || f.typ === 'betrag') && typeof f.min === 'number' && typeof f.max === 'number' && f.min > f.max)
       m.push('Minimum ist größer als Maximum.');
+    // Format und Datumsgrenzen (#535).
+    m.push(...pruefeFormatDefinition(f, t.felder));
     if (f.typ === 'text' && f.muster) {
       try { new RegExp(f.muster); } catch { m.push('Das Muster ist kein gültiger regulärer Ausdruck.'); }
     }
@@ -548,8 +567,8 @@ export function pruefeMappe(t: Pick<Mappentyp, 'felder'>, werte: Werte, ctx: Map
       case 'betrag': {
         const x = f.typ === 'betrag' ? (v as Betrag)?.betrag : v;
         if (typeof x !== 'number' || !Number.isFinite(x)) { fehler(f.key, f.typ === 'betrag' ? 'Kein gültiger Betrag.' : 'Keine gültige Zahl.'); break; }
-        if (f.min != null && x < f.min) fehler(f.key, `Mindestens ${f.min.toLocaleString('de-DE')}.`);
-        else if (f.max != null && x > f.max) fehler(f.key, `Höchstens ${f.max.toLocaleString('de-DE')}.`);
+        if (typeof f.min === 'number' && x < f.min) fehler(f.key, `Mindestens ${f.min.toLocaleString('de-DE')}.`);
+        else if (typeof f.max === 'number' && x > f.max) fehler(f.key, `Höchstens ${f.max.toLocaleString('de-DE')}.`);
         else if (f.typ === 'zahl' && f.nachkomma != null && (String(x).split('.')[1] ?? '').length > f.nachkomma)
           fehler(f.key, `Höchstens ${f.nachkomma} Nachkommastellen.`);
         if (f.typ === 'betrag' && !p.felder[f.key] && !/^[A-Z]{3}$/.test((v as Betrag).waehrung ?? ''))
@@ -637,6 +656,21 @@ export function wirksameVorlage(t: Pick<Mappentyp, 'felder' | 'titelVorlage'>): 
   return f ? `{${f.key}}` : '';
 }
 
+/**
+ * Textfeld, aus dem ein Verweisfeld nach einem Paket-Update gefüllt wird (#534): nur Text oder Langtext
+ * desselben Mappentyps; sonst undefined.
+ */
+export function altesTextfeldVon(t: Pick<Mappentyp, 'felder'>, f: Feld): Feld | undefined {
+  if (f.typ !== 'referenz' || !f.ausText || f.ausText === f.key) return undefined;
+  const alt = t.felder.find((x) => x.key === f.ausText);
+  return alt && (alt.typ === 'text' || alt.typ === 'langtext') ? alt : undefined;
+}
+
+/** Ist dieses Feld das alte Textfeld eines Verweisfelds (#534)? Dann das Verweisfeld. */
+export function verweisAusText(t: Pick<Mappentyp, 'felder'>, f: Feld): Feld | undefined {
+  return t.felder.find((x) => x.key !== f.key && altesTextfeldVon(t, x)?.key === f.key);
+}
+
 /** Titel einer Mappe aus der Vorlage; Platzhalter werden formatiert eingesetzt. Deaktivierte Benutzer heißen „… (ehemalig)“. */
 export function titelAus(t: Pick<Mappentyp, 'felder' | 'titelVorlage'> & Pick<Partial<Mappentyp>, 'system'> | undefined, werte: Werte, titelVon: (id: string) => string = (id) => id, index: Indexwerte = {}): string {
   if (!t) return '';
@@ -659,6 +693,9 @@ function titelAusVorlage(t: Pick<Mappentyp, 'felder' | 'titelVorlage'>, werte: W
         const f = t.felder.find((x) => x.key === k);
         // Passwörter nie im Titel – auch nicht, wenn eine ältere Vorlage sie noch nennt.
         if (f && f.typ !== 'passwort') { text = formatiere(f, werte[k], titelVon); roh = werte[k]; art = f.typ; }
+        // Verweis noch leer, alter Text da (#534): bis zur Umwandlung zählt der Text.
+        const alt = f ? altesTextfeldVon(t, f) : undefined;
+        if (alt && istLeer(werte[k]) && !istLeer(werte[alt.key])) { text = formatiere(alt, werte[alt.key], titelVon); roh = werte[alt.key]; art = alt.typ; }
       }
       const mitFiltern = wendeFilterAn(text, roh, art, liesFilter(kette));
       // Leere Teile fallen samt Trenner weg („Strom –  – 2026“ wird „Strom – 2026“).
@@ -729,7 +766,7 @@ export interface DokumentVersion {
 }
 
 /* ---------- Aufgaben (#54, #56) ---------- */
-export const AUFGABENARTEN = { passung: 'Passt nicht', erwaehnung: 'Erwähnung', manuell: 'Zugewiesen', vertretung: 'Vertretung', frist: 'Frist', erinnerung: 'Erinnerung', post: 'Post für dich', auskunft: 'Auskunft', aenderung: 'Geändert' } as const;
+export const AUFGABENARTEN = { passung: 'Passt nicht', erwaehnung: 'Erwähnung', manuell: 'Zugewiesen', vertretung: 'Vertretung', frist: 'Frist', erinnerung: 'Erinnerung', post: 'Post für dich', auskunft: 'Auskunft', aenderung: 'Geändert', zugeordnet: 'Automatisch zugeordnet' } as const;
 export type Aufgabenart = keyof typeof AUFGABENARTEN;
 export interface Aufgabe {
   id: string; mappeId: string;
@@ -808,6 +845,8 @@ export function formatiere(f: Feld, v: Wert | undefined, titelVon: (id: string) 
     case 'referenz': return (Array.isArray(v) ? v : [String(v)]).map(titelVon).join(', ');
     case 'passwort': return istPasswortWert(v) && !v.gesetzt && !v.neu ? '' : '••••••••';
     case 'formatiert': return alsText(String(v));
+    // IBAN in Vierergruppen (#535), auch gespeicherte ohne Leerzeichen.
+    case 'text': return f.format === 'iban' && typeof v === 'string' && /^[A-Za-z]{2}\d{2}[A-Za-z0-9 ]+$/.test(v.trim()) ? ibanGruppen(v) : String(v);
     default: return String(v);
   }
 }

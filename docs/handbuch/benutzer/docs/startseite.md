@@ -6,6 +6,16 @@ Die Startseite nutzt die ganze Breite neben den Ansichten: Auf einem großen Bil
 
 ![Startseite](bilder/startseite.png)
 
+## Schnell finden
+
+Ganz oben auf der Startseite steht ein **Suchfeld**: „Suchen – Name, Nummer, Kennzeichen …“. Es sucht sofort beim Tippen (ab zwei Zeichen) über **alle Mappen, die du lesen darfst** – du musst nicht wissen, in welcher Ansicht etwas liegt. Gesucht wird in Titeln und Feldwerten wie in der Suche der Ansichten; mit **auch in Dokumenten** zusätzlich im Volltext (dauert etwas länger).
+
+Die Treffer stehen nach Mappentyp gruppiert, Mappen mit dem Suchbegriff im Titel zuerst. Unter jedem Treffer steht, **warum er passt**, mit hervorgehobenem Begriff – zum Beispiel „Vertragsnummer: KV-123456“. Ein Tipp öffnet die Mappe. Mehr als 60 Treffer: genauer suchen oder die [Erweiterte Suche](ablage.md#erweiterte-suche) nehmen.
+
+Mit **auch in Dokumenten** und einem Paket wie **KI lokal – Ähnlichkeit** stehen unter den Treffern zusätzlich **„Ähnliche Treffer“**: Mappen, in denen dein Suchbegriff nicht vorkommt, deren Dokument aber dazu passt – „Rechnung für die Heizung“ findet so auch „Wartung Gastherme“. Sie tragen das Kennzeichen **ähnlich**; darunter steht das passende Dokument. Mehr dazu unter [Ähnliche Dokumente](dokumente.md#aehnliche-dokumente).
+
+Am Handy kannst du auch **diktieren** (Mikrofon der Tastatur). Tippst du eine **Archivnummer** und dann Enter bzw. „Suchen“, springst du direkt zum Dokument – wie in den Ansichten. Leerst du das Feld, erscheinen wieder die Kacheln.
+
 ## Die Kacheln
 
 | Kachel | Zahl | Klick öffnet |

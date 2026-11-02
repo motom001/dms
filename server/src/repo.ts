@@ -6,6 +6,7 @@ import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import type { AuskunftLink } from '../../shared/src/auskunft';
 import type { Fundstelle } from './geheimnisse';
+import type { LoeschDokument, LoeschEintrag, LoeschFilter } from '../../shared/src/loeschprotokoll';
 
 export interface Verweis { feldKey: string; zielId: string }
 /** Abruf-Link (#455) mit den Hashes von Schlüssel und Abrufcode – verlässt den Server nie. */
@@ -66,6 +67,8 @@ export interface PapierkorbEintrag {
   /** Verweise bleibender Mappen auf diese, die beim Löschen entfernt wurden (#424). */
   entkoppelt: Array<{ quelleId: string; feldKey: string }>;
 }
+/** Eine Mappe im Papierkorb, wie das Löschprotokoll sie braucht (#470). */
+export interface KorbInhalt { id: string; typId: string; werte: Werte; demo: boolean; vorgang: string | null; entkoppelt: number; notizen: number; dokumente: LoeschDokument[] }
 /** Ein einzelnes Dokument im Papierkorb (#344). */
 export interface DokumentImPapierkorb {
   id: string; mappeId: string; registerKey: string; name: string; mime: string; groesse: number; sha256: string;
@@ -316,6 +319,44 @@ export interface Repo {
   stelleDokumentWiederHer(id: string): Promise<void>;
   /** Löscht endgültig; liefert die Prüfwerte der Dateien, die dabei frei werden könnten. */
   leereDokumentPapierkorb(ids: string[]): Promise<string[]>;
+
+  /* ---------- Löschprotokoll (#470) ---------- */
+  /** Was mit Mappen im Papierkorb endgültig geht: Zahlen und Prüfsummen, keine Namen. */
+  papierkorbInhalt(ids: string[]): Promise<KorbInhalt[]>;
+  /** Einzelne Dokumente im Papierkorb samt älterer Versionen, ohne Namen. */
+  papierkorbDokumentInhalt(ids: string[]): Promise<Array<{ id: string; mappeId: string; dokumente: LoeschDokument[] }>>;
+  /** Nur anfügen – ändern oder einzeln löschen lässt sich nichts. */
+  loeschprotokollSchreibe(e: LoeschEintrag[]): Promise<void>;
+  /** Neueste zuerst, höchstens f.max; gesamt = alle passenden. */
+  loeschprotokoll(f: LoeschFilter): Promise<{ eintraege: LoeschEintrag[]; gesamt: number }>;
+  /** Einträge vor diesem Zeitpunkt entfernen (eigene Aufbewahrung); liefert die Anzahl. */
+  loeschprotokollAufraeumen(vor: string): Promise<number>;
+
+  /* ---------- Erkennung (#336) ---------- */
+  /** Gespeichertes Ergebnis der Erkennung einer Post. */
+  erkennungLies(mappeId: string): Promise<{ ergebnis: unknown; zeit: string } | undefined>;
+  /** Ergebnis speichern bzw. ersetzen; absenderId = eindeutig erkannter Absender. Gibt es die Mappe nicht (mehr), passiert nichts. */
+  erkennungSchreibe(mappeId: string, ergebnis: unknown, absenderId: string | null): Promise<void>;
+  /** Post mit diesem eindeutig erkannten Absender, neueste zuerst. */
+  erkennungenMitAbsender(absenderId: string, max: number): Promise<string[]>;
+
+  /* ---------- Vektoren zu Dokumenten (#442) ---------- */
+  /** Vektor eines Dokuments für ein Modell setzen bzw. ersetzen. Gibt es das Dokument nicht (mehr): false. */
+  vektorSetze(e: { dokumentId: string; paket: string; modell: string; vektor: Float32Array }): Promise<boolean>;
+  /** Vektor(en) eines Dokuments löschen – eines Modells oder alle; liefert die Anzahl. */
+  vektorLoesche(dokumentId: string, modell?: string): Promise<number>;
+  /** Vektoren eines Pakets löschen, außer denen des Modells `ausser` (Modellwechsel, Neuberechnung); liefert die Anzahl. */
+  vektorenLoeschePaket(paket: string, ausser?: string): Promise<number>;
+  /** Alle Vektoren eines Modells mit der Mappe des Dokuments, in Teilen (für den Zwischenspeicher, ohne alles auf einmal im Speicher). */
+  vektorenLaden(modell: string, jeTeil: (teil: Array<{ dokumentId: string; mappeId: string; vektor: Float32Array }>) => void): Promise<void>;
+  /** Vektor eines Dokuments für ein Modell. */
+  vektorVon(dokumentId: string, modell: string): Promise<Float32Array | null>;
+  /** Anzahl je Paket und Modell. */
+  vektorStand(): Promise<Array<{ paket: string; modell: string; anzahl: number }>>;
+  /** Dokumente mit Volltext, aber ohne Vektor dieses Modells (nach Id, ab `nach`) – für die Nachberechnung des Bestands. */
+  ohneVektor(modell: string, max: number, nach?: string | null): Promise<Array<{ id: string; mappeId: string }>>;
+  /** Anzahl der Dokumente mit Volltext. */
+  mitVolltext(): Promise<number>;
 
   /* ---------- Texterkennung (#45) ---------- */
   /** Dokumente in die Warteschlange stellen. */

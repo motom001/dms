@@ -2,13 +2,14 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_AUSWAHL, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
-  REGISTERARTEN, ROLLEN, freierSchluessel, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
-  AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Aufgabenart, type Benutzer, type Dokument, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Werte,
+  REGISTERARTEN, ROLLEN, freierSchluessel, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon, verweisAusText,
+  AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Aufgabenart, type Benutzer, type Dokument, type DokumentVersion, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
 import { Auftraege } from './auftrag';
-import { protokoll } from './protokoll';
+import { kontext, protokoll } from './protokoll';
+import { fingerabdruck, Haushaltsstand, zeitabhaengig, Zaehlerspeicher } from './zaehlerspeicher';
 import { rechteMessen } from './messung';
 import { graubild } from './graubild';
 import { Fachfehler } from './fehler';
@@ -32,11 +33,13 @@ import { liesLoeschAuswahl, loeschErinnerung, loeschVorschlag, LOESCH_TIEFE, pla
 import { AUSKUNFT_PASSWORT_MIN, auswahlProbleme as auskunftProbleme, fristBis, liesAuswahl, liesDatenschutz, personenTypen, type AuskunftErwaehnung, type AuskunftMappe, type AuskunftVorschau, type Datenschutz } from '../../shared/src/auskunft';
 import { auskunftMail, LINK_FEHLVERSUCHE_MAX, LINK_STATUS, liesLinkEingabe, linkStatus, normiereCode, type AuskunftLink, type AuskunftStand } from '../../shared/src/auskunft';
 import { neuerAbrufcode, SCHLUESSEL_MUSTER } from './abruf';
+import { alsZeile, liesAnlass, liesFilter, LOESCH_MAX, LOESCH_SPALTEN, LOESCHGRUENDE, LOESCHPROTOKOLL_JAHRE_MAX, LOESCHPROTOKOLL_STANDARD_JAHRE, LOESCHSCHRITTE, LOESCHWEGE, AUSLOESER, nummerVon, type Ausloeser, type LoeschAnlass, type LoeschDokument, type LoeschEintrag, type LoeschKontext, type Loeschweg } from '../../shared/src/loeschprotokoll';
 import { hashePasswort, hasheSchluessel, neuerSchluessel, pruefePasswort } from './passwort';
 import type { AuskunftLinkIntern } from './repo';
 import type { AuskunftDaten } from './auskunft';
 import { datumIn, KREIS_SCHLUESSEL, kreisVon, naechste, neubeginn, pruefeMuster, type Nummernkreis } from '../../shared/src/nummernkreis';
 import { csvAus, xlsxAus } from './xlsx';
+import { schriftstueckPdf } from './schriftstueck';
 import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile } from './export';
 import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from './zip';
 import { fuerAusgabe, kannStempeln, weitergabeWas, type Ausgabe } from './ausgabe';
@@ -48,16 +51,31 @@ import { geltenderStempel, liesStempelTyp, liesVorlagen, pruefeVorlage, stempelA
 import { alleSichtRechte, bereinigeSichtRegelwerk, sichtRegelProblem, sichtTestlauf, type SichtRegelwerk } from '../../shared/src/sichtrechte';
 import { liesDirektlink } from '../../shared/src/direktlink';
 import { erkenneSprache, SPRACHE_MARKE, spracheZuInfo } from '../../shared/src/textsprache';
-import { ALLE_TYPEN, PAKET_TEXT, type EreignisArt, type InstalliertesPaket, type PaketCode } from '../../shared/src/pakete';
+import { ALLE_TYPEN, PAKET_TEXT, type EreignisArt, type InstalliertesPaket, type PaketCode, type Schnittstelle } from '../../shared/src/pakete';
+import { jeMappe, liesModell, liesVektor, SCHWELLE_STANDARD, Vektorindex, type Treffer } from './vektoren';
 import type { PaketEntwurf } from '../../shared/src/paketerstellung';
 import { abfrageAus, liesSuche } from '../../shared/src/erweitertesuche';
 import type { Lesefilter } from '../../shared/src/rechte';
+import { liesAusDokument, liesFeldErkennung, type AusDokument } from '../../shared/src/erkennung';
+import { gleicheFormateAn, hatVorgaben, HEUTE, pruefeFormate, unpassendeAngaben, type Feldformat } from '../../shared/src/feldformate';
+import { Erkennung, sichereZuordnung, type PostErkennung } from './erkennung';
+import { favoritenErlaubt, freigabeZumSpeichern, liesFavoritenFreigabe, type FavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
+import { t } from './sprache';
 import { ANSTEHEND_MAX, ANSTEHEND_TAGE, bereinigeFrist, datumDe, empfaengerFelder, ERINNERUNG_TEXT_MAX, fristAb, fristEmpfaenger, fristFelder, fristText, istDatum, naechsterTermin, type Anstehend, type Erinnerung } from '../../shared/src/fristen';
 import { ALLES, RECHTE_LISTE, kurzStandard, systemSperre, bereinigeRegelwerk, FALSCH, istOffen, kopiereRegel, kurz, leseAusdruck, lesefilter, NICHTS, nicht, oder, rechteAn as rechteAnMappe, rechteUebersicht, regelProblem, regelwerkVon, wirksamVon, type Ausdruck, type Regelwerk, type Mappenquelle, type Recht, type Rechte, type Wer } from '../../shared/src/rechte';
 
 /* ---------- Eingaben bereinigen: nur bekannte Eigenschaften übernehmen ---------- */
 
 const text = (v: unknown) => (v == null ? '' : String(v)).trim();
+
+/* Löschprotokoll (#470) */
+/** Grund und Auslöser einer Löschung (aus Oberfläche/Schnittstelle) und wie gelöscht wurde. */
+export type Anlass = LoeschAnlass & { ausloeser?: Ausloeser; weg?: Loeschweg };
+/** Ein Eintrag ohne Zeit, Id und „wer/warum“ (kommt aus dem Kontext). */
+type ProtokollTeil = Omit<LoeschEintrag, 'id' | 'zeit' | 'vonId' | 'von' | 'ausloeser' | 'grund' | 'grundText'>;
+interface ProtokollMappe { id: string; typId: string; typ: Mappentyp | undefined; werte: Werte; notizen: number; dokumente: LoeschDokument[]; vorgang?: string | null }
+const dokInfo = (d: Dokument): LoeschDokument => ({ dokumentId: d.id, version: d.version ?? 1, sha256: d.sha256, groesse: d.groesse, mime: d.mime, seiten: d.ocr?.seiten ?? null, archivnummer: d.archivnummer ?? null });
+const versionInfo = (v: DokumentVersion): LoeschDokument => ({ dokumentId: v.dokumentId, version: v.nummer, sha256: v.sha256, groesse: v.groesse, mime: v.mime, seiten: null, archivnummer: null });
 
 /** Zugriff eines Benutzers (#124): Rollen, Auflösung dynamischer Werte, Lesefilter (null = alles). */
 /** Dokument im Papierkorb mit Mappe und Register (#344). */
@@ -75,9 +93,12 @@ export interface Zugriff {
    * Dienstkonto eines Pakets (#338): Rechte fest aus dem bestätigten Manifest statt aus Regeln.
    * typen enthält dann nur die lesbaren Typen; schreiben = Ids der Typen mit Anlegen/Bearbeiten.
    */
-  paket?: { id: string; schreiben: Set<string>; dokumente: PaketCode['rechte']['dokumente'] };
+  paket?: { id: string; schreiben: Set<string>; dokumente: PaketCode['rechte']['dokumente']; schnittstellen?: Schnittstelle[] };
 }
 export const NICHT_SICHTBAR = 'nicht sichtbare Mappe';
+/** So lange wartet die Suche höchstens auf den Vektor des Suchbegriffs (#442); danach ohne Ähnlichkeit. */
+export const SUCHE_VEKTOR_MS = 1500;
+const liesModellOder422 = (x: unknown) => { try { return liesModell(x); } catch (e) { throw new Fachfehler(422, (e as Error).message); } };
 /** Obergrenze für geschriebenen Volltext (Zeichen). */
 export const VOLLTEXT_MAX = 5_000_000;
 /** Auswahlfilter (#172) zählen nichts – nur Bedingungen auf Felder. */
@@ -112,8 +133,9 @@ export function bereinigeFeld(e: unknown): Feld {
     minLen: zahlOderNull(f.minLen),
     maxLen: zahlOderNull(f.maxLen),
     muster: text(f.muster),
-    min: zahlOderNull(f.min),
-    max: zahlOderNull(f.max),
+    // Datum (#535): „heute“ oder ein Datum; ungültige Angaben bleiben stehen, damit die Prüfung sie meldet.
+    min: typ === 'datum' ? datumsgrenze(f.min) : zahlOderNull(f.min),
+    max: typ === 'datum' ? datumsgrenze(f.max) : zahlOderNull(f.max),
     nachkomma: zahlOderNull(f.nachkomma),
     waehrung: typ === 'betrag' ? (text(f.waehrung) || 'EUR').toUpperCase().slice(0, 3) : undefined,
     optionen: Array.isArray(f.optionen) ? f.optionen.map(text).filter(Boolean) : [],
@@ -124,7 +146,20 @@ export function bereinigeFeld(e: unknown): Feld {
     verweisart: f.verweisart === 'zugehoerigkeit' ? 'zugehoerigkeit' : 'bezug',
     // Fristen (#129): nur an Datumsfeldern.
     ...(typ === 'datum' && bereinigeFrist(f.frist) ? { frist: bereinigeFrist(f.frist) } : {}),
+    // Für die Erkennung nutzen (#336): Art und Erkennungshinweis; nur bei geeigneten Feldarten.
+    ...(liesFeldErkennung(f.erkennung, typ) ? { erkennung: liesFeldErkennung(f.erkennung, typ) } : {}),
+    // Paket-Update (#534): Verweisfeld, das sich aus einem alten Textfeld füllen lässt.
+    ...(typ === 'referenz' && /^[a-z][a-z0-9_]{0,39}$/.test(text(f.ausText)) && text(f.ausText) !== text(f.key) ? { ausText: text(f.ausText) } : {}),
+    // Feldformat (#535): nur an Textfeldern; das Land-Feld nur beim Format PLZ.
+    ...(typ === 'text' && text(f.format) ? { format: text(f.format) as Feldformat } : {}),
+    ...(typ === 'text' && text(f.format) === 'plz' && text(f.landFeld) ? { landFeld: text(f.landFeld) } : {}),
   };
+}
+
+/** Datumsgrenze (#535) aus einer Eingabe: leer = keine, sonst getrimmt („Heute“ → „heute“). */
+function datumsgrenze(v: unknown): string | null {
+  const x = v == null ? '' : String(v).trim();
+  return !x ? null : x.toLowerCase() === HEUTE ? HEUTE : x;
 }
 
 export function bereinigeRegister(e: unknown, felder: Feld[]): Register[] {
@@ -248,6 +283,8 @@ export interface KontenHaken {
   benutzer?(): Promise<Benutzer[]>;
   /** Persönliche Einstellungen eines Benutzers (#422: Favoriten benachrichtigen, Geänderte hervorheben). */
   einstellungen?(id: string): Promise<Record<string, unknown>>;
+  /** Persönliche Einstellung setzen (#506: Vorgabe für neue Benutzer, „auf alle anwenden“); `null` löscht. */
+  setzeEinstellung?(id: string, schluessel: string, wert: unknown): Promise<void>;
 }
 
 export const PAPIERKORB_STANDARD_TAGE = 30;
@@ -373,7 +410,8 @@ function bereinigeWerte(typ: Mappentyp, eingabe: unknown, bisher: Werte = {}, ve
     const v = f.key in roh ? roh[f.key] : bisher[f.key];
     werte[f.key] = istLeer(v) ? (f.typ === 'janein' ? false : null) : (v as Werte[string]);
   }
-  return werte;
+  // Feldformate (#535): geänderte Eingaben angleichen (https:// ergänzen, IBAN in Vierergruppen).
+  return gleicheFormateAn(typ, werte, bisher);
 }
 
 const keinSchluessel = (): never => {
@@ -390,13 +428,263 @@ export class Dienst {
   private einstellungen?: Einstellungen;
   private konten?: KontenHaken;
 
+  /** Stand des Haushalts (#512): zählt nach jeder Änderung über das Repo hoch. */
+  readonly stand = new Haushaltsstand();
+  /** Zahlen der Ansichten je Benutzer und Rechte (#512). */
+  private readonly zahlen = new Zaehlerspeicher<Awaited<ReturnType<Dienst['zaehle']>>>(this.stand);
+
   constructor(private grundRepo: Repo, private dateien: Dateispeicher, opt: DienstOptionen = {}) {
+    this.grundRepo = this.stand.umhuelle(grundRepo);
     this.tresor = opt.tresor;
     this.einstellungen = opt.einstellungen;
     this.tresor?.registriere(() => this.unlesbarePasswoerter());
     // Was verschlüsselt ist, je Art (#410): dieselben Stellen, die der Schlüsselwechsel umschlüsselt.
     // Passwortfelder meldet unlesbarePasswoerter genauer (mit Feldnamen), den Mailserver der Betrieb.
     this.tresor?.registriereBestand(() => this.repo.verschluesselteFundstellen(), ['passwortfeld', 'mail']);
+    // Erkennung (#336): rechnet, sobald der Volltext eines Dokuments fertig ist – egal, wer ihn geliefert hat.
+    this.erkennung = new Erkennung(this, () => this.repo);
+    this.beiVolltextFertig(async (e) => { await this.erkennung.nachVolltext(e); });
+  }
+
+  /** Erkennung im Kern (#336, #391): Vorschläge aus dem Volltext. */
+  readonly erkennung: Erkennung;
+  private volltextHoerer: Array<(e: { dokument: string; mappe: string }) => Promise<void>> = [];
+  /** Internes Ereignis „Volltext fertig“ abonnieren (#336). */
+  beiVolltextFertig(f: (e: { dokument: string; mappe: string }) => Promise<void>) { this.volltextHoerer.push(f); }
+  /**
+   * Internes Ereignis „Volltext fertig“ (#336): Der Volltext eines Dokuments ist da – aus der eingebauten
+   * Texterkennung, von einem Paket (#338, #458) oder über die API. Nicht für Pakete (die haben
+   * texterkennung.fertig); Fehler eines Hörers landen nur im Protokoll.
+   */
+  async volltextFertig(e: { dokument: string; mappe: string }): Promise<void> {
+    // Für Pakete (#442): z. B. „KI lokal – Ähnlichkeit“ rechnet dann den Vektor des Dokuments.
+    await this.melde('volltext.fertig', { dokument: e.dokument, mappe: e.mappe });
+    for (const h of this.volltextHoerer) {
+      try { await h(e); } catch (x) { protokoll.modul('ablage').warn('Nach dem Volltext gestört', { dokument: e.dokument, fehler: (x as Error).message }); }
+    }
+  }
+
+  /* ---------- Vektoren zu Dokumenten (#442) ---------- */
+
+  /**
+   * Wer den Vektor eines Suchbegriffs liefert (der Paket-Läufer, index.ts). null = kein Paket mit dms:vektoren
+   * oder es antwortet nicht in der Zeit – dann läuft die Suche wie bisher.
+   */
+  vektorAnbieter?: { paket(): string | null; vektorFuer(text: string, ms: number): Promise<{ paket: string; modell: string; vektor: Float32Array; schwelle: number } | null> };
+  /** Zwischenspeicher je Modell (beim ersten Bedarf aus der Datenbank geladen). */
+  private vektorIndizes = new Map<string, Promise<Vektorindex | null>>();
+  /** Aktuelles Modell je Paket: ändert es sich, sind die alten Vektoren ungültig. */
+  private vektorModelle = new Map<string, string>();
+
+  private vektorIndex(modell: string): Promise<Vektorindex | null> {
+    let x = this.vektorIndizes.get(modell);
+    if (!x) {
+      const t = Date.now();
+      let i: Vektorindex | null = null;
+      x = this.grundRepo.vektorenLaden(modell, (teil) => {
+        for (const e of teil) { i ??= new Vektorindex(e.vektor.length); if (e.vektor.length === i.dimension) i.setze(e.dokumentId, e.mappeId, e.vektor); }
+      }).then(() => {
+        this.vektorGeladen.add(modell);
+        if (i) protokoll.modul('ablage').info('Vektoren geladen', { modell, anzahl: i.anzahl, ms: Date.now() - t, mb: Math.round(i.bytes / 1048576) });
+        return i;
+      });
+      x.catch(() => { this.vektorIndizes.delete(modell); this.vektorGeladen.delete(modell); });
+      this.vektorIndizes.set(modell, x);
+    }
+    return x;
+  }
+  /** Modelle, deren Zwischenspeicher fertig geladen ist (die Suche wartet nicht auf das Laden). */
+  private vektorGeladen = new Set<string>();
+
+  /** Suche mit Ähnlichkeit an (Werkbank → Pakete, Einstellung des Kerns)? Standard: an. */
+  async vektorEinstellung(): Promise<{ suche: boolean }> {
+    const v = (await this.einstellungen?.lies('vektoren')) as { suche?: boolean } | null;
+    return { suche: v?.suche !== false };
+  }
+  async setzeVektorEinstellung(e: unknown): Promise<{ suche: boolean }> {
+    if (!this.einstellungen) throw new Fachfehler(404, 'Einstellungen sind nicht eingerichtet.');
+    const x = (e ?? {}) as { suche?: unknown };
+    if (typeof x.suche !== 'boolean') throw new Fachfehler(422, 'suche: true oder false.');
+    await this.einstellungen.schreibe('vektoren', x.suche ? null : { suche: false });
+    return this.vektorEinstellung();
+  }
+
+  /**
+   * Das Modell eines Pakets ist (wieder) bekannt. Neues Modell → die Vektoren des alten sind ungültig und
+   * fallen weg; die Nachberechnung (Paket-Läufer) rechnet sie im Hintergrund neu.
+   */
+  async merkeVektorModell(paket: string, modell: string): Promise<void> {
+    if (this.vektorModelle.get(paket) === modell) return;
+    this.vektorModelle.set(paket, modell);
+    const weg = await this.grundRepo.vektorenLoeschePaket(paket, modell);
+    if (weg) {
+      for (const k of [...this.vektorIndizes.keys()]) if (k !== modell) { this.vektorIndizes.delete(k); this.vektorGeladen.delete(k); }
+      protokoll.modul('werkbank').info('Vektoren eines alten Modells entfernt', { paket, modell, entfernt: weg });
+    }
+    // Zwischenspeicher schon jetzt im Hintergrund laden (bei 100 000 Dokumenten gut eine Sekunde).
+    void this.vektorIndex(modell).catch(() => {});
+  }
+
+  private pruefeVektorRecht(z: Zugriff | undefined): string {
+    if (!z?.paket) throw new Fachfehler(403, 'Vektoren schreiben nur Pakete mit dem Recht „dms:vektoren“.');
+    if (!z.paket.schnittstellen?.includes('dms:vektoren')) throw new Fachfehler(403, 'Dieses Paket hat das Recht „dms:vektoren“ nicht (Rechte aus dem Manifest).');
+    return z.paket.id;
+  }
+
+  /** Vektor eines Dokuments setzen (nur Pakete mit dms:vektoren; das Dokument muss das Paket lesen dürfen – prüft die Route). */
+  async setzeVektor(z: Zugriff | undefined, dokumentId: string, modellRoh: unknown, eingabe: unknown) {
+    const paket = this.pruefeVektorRecht(z);
+    const modell = liesModellOder422(modellRoh);
+    const index = await this.vektorIndex(modell);
+    let vektor: Float32Array;
+    try { vektor = liesVektor((eingabe as { vektor?: unknown } | null)?.vektor, index?.dimension); } catch (e) { throw new Fachfehler(422, (e as Error).message); }
+    await this.merkeVektorModell(paket, modell);
+    const d = await this.repo.holeDokument(dokumentId);
+    if (!d || !(await this.repo.vektorSetze({ dokumentId, paket, modell, vektor }))) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
+    const i = await this.vektorIndex(modell);
+    if (i) i.setze(dokumentId, d.mappeId, vektor);
+    else this.vektorIndizes.set(modell, Promise.resolve(new Vektorindex(vektor.length, [{ dokumentId, mappeId: d.mappeId, vektor }])));
+    return { dokument: dokumentId, modell, dimension: vektor.length };
+  }
+
+  async loescheVektor(z: Zugriff | undefined, dokumentId: string, modellRoh: unknown) {
+    this.pruefeVektorRecht(z);
+    const modell = liesModellOder422(modellRoh);
+    const n = await this.repo.vektorLoesche(dokumentId, modell);
+    (await this.vektorIndex(modell))?.entferne(dokumentId);
+    return { entfernt: n };
+  }
+
+  /**
+   * Ähnliche Dokumente zu einem Vektor oder zu einem Dokument – nur in Mappen, die der Aufrufer lesen darf.
+   * Ohne Modell: das aktuelle Modell des Pakets mit dms:vektoren.
+   */
+  async aehnlicheDokumente(z: Zugriff | undefined, q: { modell?: unknown; vektor?: unknown; dokument?: string; anzahl?: unknown; schwelle?: unknown }): Promise<{ modell: string; treffer: Treffer[] }> {
+    const modell = q.modell === undefined || q.modell === '' ? this.aktuellesVektorModell() : liesModellOder422(q.modell);
+    if (!modell) return { modell: '', treffer: [] };
+    const index = await this.vektorIndex(modell);
+    if (!index) return { modell, treffer: [] };
+    const anzahl = Math.min(100, Math.max(1, Math.floor(Number(q.anzahl) || 10)));
+    const schwelle = q.schwelle === undefined || q.schwelle === '' ? -1 : Number(q.schwelle);
+    if (!Number.isFinite(schwelle) || schwelle < -1 || schwelle > 1) throw new Fachfehler(422, 'schwelle: eine Zahl von -1 bis 1.');
+    let v: Float32Array;
+    const ohne = new Set<string>();
+    if (q.dokument) {
+      const x = index.vektor(q.dokument);
+      if (!x) throw new Fachfehler(404, 'Zu diesem Dokument gibt es (noch) keinen Vektor dieses Modells.');
+      v = x; ohne.add(q.dokument);
+    } else {
+      try { v = liesVektor(q.vektor, index.dimension); } catch (e) { throw new Fachfehler(422, (e as Error).message); }
+    }
+    return { modell, treffer: await this.lesbareTreffer(z, index, v, anzahl, { schwelle, ohne }) };
+  }
+
+  /** Die besten lesbaren Treffer: erst mehr Kandidaten holen, dann nach Rechten filtern (bei Bedarf mehr). */
+  private async lesbareTreffer(z: Zugriff | undefined, index: Vektorindex, v: Float32Array, anzahl: number, opt: { schwelle: number; ohne?: Set<string>; jeMappe?: boolean; ohneMappen?: Set<string> }): Promise<Treffer[]> {
+    for (let k = Math.max(50, anzahl * 5); ; k *= 4) {
+      const roh = index.suche(v, k, { schwelle: opt.schwelle, ohne: opt.ohne });
+      const ok = await this.lesbare(z, [...new Set(roh.map((t) => t.mappeId))]);
+      const lesbar = roh.filter((t) => ok.has(t.mappeId) && !opt.ohneMappen?.has(t.mappeId));
+      const erg = opt.jeMappe ? jeMappe(lesbar, anzahl) : lesbar.slice(0, anzahl);
+      if (erg.length >= anzahl || roh.length < k || k >= index.anzahl) return erg;
+    }
+  }
+
+  /** Aktuelles Modell (Paket mit dms:vektoren); ohne Antwort des Pakets das zuletzt gesehene. */
+  private aktuellesVektorModell(): string | null {
+    const p = this.vektorAnbieter?.paket();
+    return (p && this.vektorModelle.get(p)) ?? [...this.vektorModelle.values()][0] ?? null;
+  }
+
+  /**
+   * „Ähnliche Dokumente“ an einer Mappe: je Dokument der Mappe die ähnlichsten Dokumente anderer lesbarer
+   * Mappen, zusammengefasst je Mappe. verfuegbar = es gibt ein Paket mit dms:vektoren.
+   */
+  async aehnlicheZurMappe(z: Zugriff | undefined, mappeId: string): Promise<{ verfuegbar: boolean; berechnet: boolean; mappen: Array<{ id: string; titel: string; typId: string; dokument: { id: string; name: string }; aehnlichkeit: number }> }> {
+    const paket = this.vektorAnbieter?.paket() ?? null;
+    if (!paket) return { verfuegbar: false, berechnet: false, mappen: [] };
+    await this.pruefeRecht(z, mappeId, 'R');
+    const modell = this.aktuellesVektorModell();
+    const index = modell ? await this.vektorIndex(modell) : null;
+    const eigene = (await this.repo.dokumenteVon([mappeId])).map((d) => d.id);
+    const vektoren = index ? eigene.map((id) => index.vektor(id)).filter((v): v is Float32Array => !!v) : [];
+    if (!index || !vektoren.length) return { verfuegbar: true, berechnet: false, mappen: [] };
+    const schwelle = this.vektorSchwelle.get(modell!) ?? SCHWELLE_STANDARD;
+    const alle = (await Promise.all(vektoren.map((v) => this.lesbareTreffer(z, index, v, 5, { schwelle, jeMappe: true, ohneMappen: new Set([mappeId]) })))).flat();
+    return { verfuegbar: true, berechnet: true, mappen: await this.trefferMitTitel(jeMappe(alle, 5)) };
+  }
+
+  /** Schwelle je Modell, wie das Paket sie mit dem Vektor des Suchbegriffs meldet. */
+  private vektorSchwelle = new Map<string, number>();
+
+  private async trefferMitTitel(t: Treffer[]) {
+    if (!t.length) return [];
+    const b = await this.repo.bezuege(t.map((x) => x.mappeId));
+    const namen = new Map<string, string>();
+    for (const x of t) { const d = await this.repo.holeDokument(x.dokumentId); if (d) namen.set(x.dokumentId, d.name); }
+    return t.filter((x) => b.has(x.mappeId)).map((x) => ({ id: x.mappeId, titel: b.get(x.mappeId)!.titel, typId: b.get(x.mappeId)!.typId, dokument: { id: x.dokumentId, name: namen.get(x.dokumentId) ?? '' }, aehnlichkeit: Math.round(x.aehnlichkeit * 100) / 100 }));
+  }
+
+  /**
+   * Ähnliche Treffer zu einem Suchbegriff (#442): das Paket liefert den Vektor (mit Zeitgrenze), der Kern
+   * vergleicht. Leer, wenn die Einstellung aus ist, kein Paket da ist oder es nicht rechtzeitig antwortet.
+   * typen: nur Mappen dieser Typen (die der Ansicht); ohneMappen: schon in der normalen Trefferliste.
+   */
+  async aehnlicheZurSuche(z: Zugriff | undefined, suche: string, opt: { typen: Set<string> | null; ohneMappen: Set<string>; anzahl?: number; ms?: number }) {
+    if (!this.vektorAnbieter?.paket() || suche.trim().length < 3 || !(await this.vektorEinstellung()).suche) return [];
+    const ms = opt.ms ?? SUCHE_VEKTOR_MS, start = Date.now();
+    const q = await this.vektorAnbieter.vektorFuer(suche, ms).catch(() => null);
+    if (!q) return [];
+    await this.merkeVektorModell(q.paket, q.modell);
+    this.vektorSchwelle.set(q.modell, q.schwelle);
+    // Lädt der Zwischenspeicher noch (kurz nach dem Start): höchstens die restliche Zeit warten, sonst ohne Ähnlichkeit.
+    if (!this.vektorGeladen.has(q.modell)) {
+      const rest = Math.max(0, ms - (Date.now() - start));
+      await Promise.race([this.vektorIndex(q.modell).catch(() => null), new Promise((ok) => setTimeout(ok, rest).unref?.())]);
+      if (!this.vektorGeladen.has(q.modell)) return [];
+    }
+    const index = await this.vektorIndex(q.modell);
+    if (!index || index.dimension !== q.vektor.length) return [];
+    let treffer = await this.lesbareTreffer(z, index, q.vektor, (opt.anzahl ?? 5) * 3, { schwelle: q.schwelle, jeMappe: true, ohneMappen: opt.ohneMappen });
+    if (opt.typen) {
+      const b = await this.repo.bezuege(treffer.map((t) => t.mappeId));
+      treffer = treffer.filter((t) => opt.typen!.has(b.get(t.mappeId)?.typId ?? ''));
+    }
+    return this.trefferMitTitel(treffer.slice(0, opt.anzahl ?? 5));
+  }
+
+  /** Für die Werkbank: Vektoren je Modell, Dokumente mit Volltext, Einstellung. */
+  async vektorStand(): Promise<{ paket: string | null; modell: string | null; mitVektor: number; mitVolltext: number; modelle: Array<{ paket: string; modell: string; anzahl: number }>; suche: boolean; zwischenspeicherMB: number | null }> {
+    const paket = this.vektorAnbieter?.paket() ?? null;
+    const modell = paket ? this.vektorModelle.get(paket) ?? null : this.aktuellesVektorModell();
+    const modelle = await this.repo.vektorStand();
+    const index = modell && this.vektorIndizes.has(modell) ? await this.vektorIndex(modell) : null;
+    return {
+      paket, modell, modelle,
+      mitVektor: modelle.filter((m) => m.paket === paket && m.modell === modell).reduce((n, m) => n + m.anzahl, 0),
+      mitVolltext: await this.repo.mitVolltext(),
+      suche: (await this.vektorEinstellung()).suche,
+      zwischenspeicherMB: index ? Math.round(index.bytes / 104857.6) / 10 : null,
+    };
+  }
+
+  /** „Neu berechnen“ in der Werkbank: alle Vektoren des Pakets weg, die Nachberechnung beginnt von vorn. */
+  async vektorenNeu(paket: string): Promise<{ entfernt: number }> {
+    const n = await this.grundRepo.vektorenLoeschePaket(paket);
+    this.vektorIndizes.clear(); this.vektorGeladen.clear();
+    return { entfernt: n };
+  }
+
+  /**
+   * Nachberechnung des Bestands (#442): für bis zu `max` Dokumente mit Volltext ohne Vektor dieses Modells ein
+   * Ereignis „volltext.fertig“ an das Paket (nach = Dokument-Id, ab der weitergesucht wird). Liefert die Ids.
+   */
+  async vektorNachlauf(paket: string, modell: string, max: number, nach: string | null): Promise<string[]> {
+    const liste = await this.grundRepo.ohneVektor(modell, max, nach);
+    if (!liste.length) return [];
+    await this.grundRepo.legeEreignisseAn(liste.map((d) => ({ id: randomUUID(), paketId: paket, art: 'volltext.fertig', daten: { dokument: d.id, mappe: d.mappeId, nachberechnung: true } })));
+    this.ereignisWecker?.();
+    return liste.map((d) => d.id);
   }
 
   /** Das Repo – innerhalb von `inTransaktion` das der Transaktion. */
@@ -434,8 +722,22 @@ export class Dienst {
   verbindeKonten(h: KontenHaken) { this.konten = h; }
 
   /** Texterkennung anbinden (#45): neue Dokumente stoßen sie an. */
-  private ocr?: { anstossen(): void };
-  verbindeTexterkennung(t: { anstossen(): void }) { this.ocr = t; }
+  private ocr?: { anstossen(): void; erkenneSofort?(inhalt: Buffer, mime: string): Promise<{ text: string; info: string }> };
+  verbindeTexterkennung(t: { anstossen(): void; erkenneSofort?(inhalt: Buffer, mime: string): Promise<{ text: string; info: string }> }) { this.ocr = t; }
+
+  /**
+   * Text einer Datei sofort, ohne Warteschlange (#391, „Aus Dokument ausfüllen“): vCard und Text direkt, PDFs
+   * und Bilder über die Texterkennung. Die Datei wird dabei nicht gespeichert.
+   */
+  async textAusDatei(inhalt: Buffer, name: string, mime: string): Promise<{ text: string; info: string }> {
+    const art = erkenneAnzeigbar(inhalt) ?? mime;
+    if (/\.(vcf|vcard|txt)$/i.test(name) || /^text\/(vcard|x-vcard|plain)$/.test(mime) || inhalt.subarray(0, 64).toString('utf8').includes('BEGIN:VCARD')) {
+      return { text: inhalt.toString('utf8').slice(0, VOLLTEXT_MAX), info: 'Text der Datei' };
+    }
+    if (!this.ocr?.erkenneSofort) throw new Fachfehler(503, 'Die Texterkennung ist nicht eingerichtet.');
+    if (!/^(application\/pdf|image\/(jpeg|png|tiff|webp|gif|bmp))$/.test(art)) throw new Fachfehler(415, 'Diese Datei lässt sich nicht lesen. Möglich sind Fotos (JPEG, PNG …), PDFs und vCards (.vcf).');
+    return this.ocr.erkenneSofort(inhalt, art);
+  }
 
   /** Vorschaubilder anbinden (#332): neue Dateien einreihen, gelöschte mit entfernen. */
   private vorschau?: { einreihen(d: Dokument[]): unknown; entferne(sha: string): Promise<void>; nachholen(d: Dokument[]): Promise<number> };
@@ -504,6 +806,7 @@ export class Dienst {
     await this.repo.ocrSetze(id, { stand: 'fertig', text, seiten: seiten ?? d.ocr?.seiten ?? null, info: info + (sprache ? spracheZuInfo(sprache) : '') });
     await this.notiere(d.mappeId, von.id, 'volltext', { dokument: d.name, text: info });
     protokoll.modul('ablage').info('Volltext geschrieben', { dokument: id, zeichen: e.text.length, herkunft: von.herkunft });
+    await this.volltextFertig({ dokument: id, mappe: d.mappeId });
     return (await this.repo.holeDokument(id))!;
   }
 
@@ -1281,9 +1584,54 @@ export class Dienst {
 
   /* ---------- Favorit = Abo (#422) ---------- */
 
-  /** Persönliche Einstellung (Vorgabe an): „favoriten_benachrichtigen“ bzw. „geaenderte_hervorheben“ = false schaltet ab. */
+  /**
+   * Persönliche Einstellung (Vorgabe an): „favoriten_benachrichtigen“ bzw. „geaenderte_hervorheben“ = false schaltet ab.
+   * Benachrichtigen nur, wenn die Werkbank es für den Benutzer erlaubt (#506); seine Einstellung bleibt dabei gespeichert.
+   */
   private async persoenlichAn(benutzerId: string, schluessel: string): Promise<boolean> {
+    if (schluessel === 'favoriten_benachrichtigen' && !(await this.favoritenBenachrichtigungErlaubt(benutzerId))) return false;
     return (await this.konten?.einstellungen?.(benutzerId))?.[schluessel] !== false;
+  }
+
+  /* ---------- Favoriten benachrichtigen: Freigabe in der Werkbank (#506) ---------- */
+
+  async favoritenFreigabe(): Promise<FavoritenFreigabe> {
+    return liesFavoritenFreigabe(await this.einstellungen?.lies('favoriten_freigabe'));
+  }
+
+  /** Für alle, je Rolle (Systemrollen und fachliche Rollen) oder gar nicht; dazu die Vorgabe für neue Benutzer. */
+  async setzeFavoritenFreigabe(eingabe: unknown, von: string) {
+    if (!this.einstellungen) throw new Fachfehler(404, 'Einstellungen sind nicht eingerichtet.');
+    const f = liesFavoritenFreigabe(eingabe);
+    if (f.erlaubt === 'rollen') {
+      const bekannt = new Set((await this.listeRollen()).map((r) => r.id));
+      f.rollen = f.rollen.filter((r) => bekannt.has(r));
+      if (!f.rollen.length) throw new Fachfehler(422, t('werkbank.fehler.freigabe.rollen'));
+    }
+    await this.einstellungen.schreibe('favoriten_freigabe', freigabeZumSpeichern(f));
+    protokoll.modul('werkbank').info('Benachrichtigung für Favoriten eingestellt', { von, erlaubt: f.erlaubt, rollen: f.rollen.length, vorgabe: f.vorgabe });
+    return this.favoritenFreigabe();
+  }
+
+  /** Darf dieser Benutzer bei Änderungen an Favoriten benachrichtigt werden? Rollen aus seiner Benutzer-Mappe. */
+  async favoritenBenachrichtigungErlaubt(benutzerId: string): Promise<boolean> {
+    const f = await this.favoritenFreigabe();
+    if (f.erlaubt !== 'rollen') return f.erlaubt === 'alle';
+    return favoritenErlaubt(f, alsListe((await this.repo.holeMappe(benutzerId))?.werte.rollen));
+  }
+
+  /** „Auf alle anwenden“: die Vorgabe für neue Benutzer bei allen bestehenden setzen; Anzahl. */
+  async favoritenVorgabeAnwenden(von: string): Promise<number> {
+    if (!this.konten?.benutzer || !this.konten.setzeEinstellung) throw new Fachfehler(404, 'Benutzerkonten sind nicht eingerichtet.');
+    const { vorgabe } = await this.favoritenFreigabe();
+    let n = 0;
+    for (const b of await this.konten.benutzer()) {
+      if (b.art === 'dienst') continue;
+      await this.konten.setzeEinstellung(b.id, 'favoriten_benachrichtigen', vorgabe ? null : false);
+      n++;
+    }
+    protokoll.modul('werkbank').info('Vorgabe für Favoriten auf alle Benutzer angewandt', { von, vorgabe, benutzer: n });
+    return n;
   }
 
   /**
@@ -1349,9 +1697,11 @@ export class Dienst {
       const t = formatiere(f, v, (id) => titel.get(id) || 'Ohne Titel');
       return t.length > 500 ? `${t.slice(0, 497)} …` : t;
     };
+    // Altes Textfeld neben seinem Verweis (#534): „Halter (Text)“ statt zweimal „Halter“.
+    const label = (f: Feld) => (verweisAusText(typ, f) ? t('pakete.historie.alttext', { label: f.label }) : f.label);
     return felder.map((f) => (f.typ === 'passwort'
-      ? { feld: f.key, label: f.label, geheim: true }
-      : { feld: f.key, label: f.label, alt: lesbar(f, alt[f.key]), neu: lesbar(f, neu[f.key]) }));
+      ? { feld: f.key, label: label(f), geheim: true }
+      : { feld: f.key, label: label(f), alt: lesbar(f, alt[f.key]), neu: lesbar(f, neu[f.key]) }));
   }
 
   /** Historie einer Mappe (auch im Papierkorb). */
@@ -1428,9 +1778,31 @@ export class Dienst {
   private async mitStempelEingabe(eingabe: unknown, f: (e: unknown) => Promise<Mappentyp>): Promise<Mappentyp> {
     const hat = !!eingabe && typeof eingabe === 'object' && 'stempel' in eingabe;
     const st = hat ? await this.pruefeStempelTyp((eingabe as { stempel: unknown }).stempel) : undefined;
+    // „Aus Dokument ausfüllen“ (#391): Beschriftung bzw. ausgeblendet – liegt wie der Stempel in den Einstellungen.
+    const hatAd = !!eingabe && typeof eingabe === 'object' && 'ausDokument' in eingabe;
     const t = await f(eingabe);
     if (hat) await this.setzeStempelTyp(t.id, st ?? null);
+    if (hatAd) await this.setzeTypErkennung(t.id, { ausDokument: liesAusDokument((eingabe as { ausDokument: unknown }).ausDokument) });
+    // Post automatisch zuordnen (#337), Standard aus.
+    if (!!eingabe && typeof eingabe === 'object' && 'autoZuordnen' in eingabe) await this.setzeTypErkennung(t.id, { auto: (eingabe as { autoZuordnen: unknown }).autoZuordnen === true && !t.system });
     return (await this.mitStempel([t]))[0];
+  }
+
+  /** Einstellungen der Erkennung je Mappentyp (#391, #337): Einstellung erkennung_typen, Typ-Id → Angaben. */
+  private async typErkennungen(): Promise<Record<string, { ausDokument?: AusDokument | null; auto?: boolean }>> {
+    const v = await this.einstellungen?.lies('erkennung_typen');
+    return v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, { ausDokument?: AusDokument | null; auto?: boolean }> : {};
+  }
+  private async setzeTypErkennung(typId: string, teil: { ausDokument?: AusDokument | null; auto?: boolean }) {
+    if (!this.einstellungen) return;
+    const alle = await this.typErkennungen();
+    const neu = { ...(alle[typId] ?? {}), ...teil };
+    if (!neu.ausDokument) delete neu.ausDokument;
+    if (!neu.auto) delete neu.auto;
+    if (JSON.stringify(neu) === JSON.stringify(alle[typId] ?? {})) return;
+    if (Object.keys(neu).length) alle[typId] = neu; else delete alle[typId];
+    await this.einstellungen.schreibe('erkennung_typen', Object.keys(alle).length ? alle : null);
+    protokoll.modul('werkbank').info('Erkennung am Mappentyp eingestellt', { typ: typId, ...teil });
   }
 
   private async legeTypAnIntern(eingabe: unknown): Promise<Mappentyp> {
@@ -1659,9 +2031,15 @@ export class Dienst {
         aufgaben[a.mappeId] = aufgaben[a.mappeId] ? `${aufgaben[a.mappeId]} · ${a.text}` : a.text;
       }
     }
+    // Ähnliche Treffer (#442): nur in der Suche über alle Mappen bzw. der erweiterten Suche ohne Feldbedingungen,
+    // auf der ersten Seite und mit „auch in Dokumenten“ – Treffer aus Ansichten mit Bedingungen würden diese verletzen.
+    const aehnlich = erweitert && !erweitert.bedingungen.length && suche && volltext && von === 0
+      ? await this.aehnlicheZurSuche(z, suche, { typen: erweitert.typen.length ? new Set(erweitert.typen.map((t) => t.id)) : null, ohneMappen: new Set(r.mappen.map((m) => m.id)) })
+      : [];
     return {
       gesamt: r.gesamt, von, mappen: r.mappen, bezuege: await this.maskiereBezuege(z, await this.repo.bezuege(ziele)),
       ...(r.ausschnitte ? { ausschnitte: r.ausschnitte } : {}), ...(q.sicht === 'eingang' ? { aufgaben } : {}),
+      ...(aehnlich.length ? { aehnlich } : {}),
       /** Welche Mappen dieser Seite Favoriten des Benutzers sind (#62). */
       favoriten: [...await this.repo.favoritenVon(ich.id, r.mappen.map((m) => m.id))],
       /** Favorit = Abo (#422): Favoriten und eigene Mappen, die andere seit dem letzten Sehen geändert haben. */
@@ -1672,26 +2050,47 @@ export class Dienst {
     };
   }
 
-  /** Anzahl Mappen je Typ (davon unpassend, Demo), je Sicht und im Eingang des Benutzers. */
+  /**
+   * Anzahl Mappen je Typ (davon unpassend, Demo), je Sicht und im Eingang des Benutzers.
+   * Zwischengespeichert je Benutzer und Rechte (#512), solange sich am Haushalt nichts ändert
+   * (`Haushaltsstand`); zeitabhängige Ansichten laufen nach Minuten bzw. um Mitternacht ab. Ob der
+   * Zwischenspeicher traf, steht im Header Server-Timing (`zs`).
+   */
   async zaehler(ich: { id: string; rolle: string }, zg?: Zugriff) {
     const lesen = zg?.lesen ?? null;
-    const z = await this.repo.zaehler(ich.id, ich.rolle === 'admin', lesen);
-    // Der Eingang zählt auch Aufgaben zu Mappen, die man nicht lesen darf (#127) – das liefert zaehler
-    // gleich mit (#477); früher lief für Mitglieder dafür ein zweiter Durchgang über alle Mappen.
-    const eingang = z.eingang;
     const alleSichten = await this.repo.listeSichten();
     // Verborgene Sichten (#148): kein Zähler, und ihre Mappen zählen auch in der Elternsicht nicht.
     const verborgen = this.verborgeneSichten(alleSichten, zg);
+    const a = await this.aufloesung(ich.id);
+    // Alles, was außer dem Stand des Haushalts in die Zählung eingeht: wer, mit welchen Rechten und Rollen.
+    const schluessel = `${ich.id}|${ich.rolle}|${fingerabdruck({ lesen, verborgen: [...verborgen].sort(), rollen: a.meineRollen })}`;
+    const beginn = performance.now();
+    const z = await this.zahlen.hole(schluessel, async () => ({ wert: await this.zaehle(ich, lesen, alleSichten, verborgen, a), zeitabhaengig: alleSichten.some((x) => zeitabhaengig(x.bedingungen)) }));
+    const k = kontext.getStore();
+    if (k) k.zwischenspeicher = { art: z.art, ms: performance.now() - beginn };
+    return { ...z.wert, ...await this.zaehlerRahmen() };
+  }
+
+  /**
+   * Was die Ablage ohne Zählen sofort braucht (#512): Tage im Papierkorb (0 = aus) und die Sicht
+   * „Neue Post“. Die Oberfläche lädt das vorab, die Zahlen danach.
+   */
+  async zaehlerRahmen() {
+    // Post (#192): Zahl der Sicht „Neue Post“ hervorheben wie im Eingang.
+    return { papierkorbTage: await this.papierkorbTage(), neuePost: await this.neuePostSicht() };
+  }
+
+  private async zaehle(ich: { id: string; rolle: string }, lesen: Lesefilter | null, alleSichten: Sicht[], verborgen: Set<string>, a: Aufloesung) {
+    const z = await this.repo.zaehler(ich.id, ich.rolle === 'admin', lesen);
+    // Der Eingang zählt auch Aufgaben zu Mappen, die man nicht lesen darf (#127) – das liefert zaehler
+    // gleich mit (#477); früher lief für Mitglieder dafür ein zweiter Durchgang über alle Mappen.
     const sichten = alleSichten.filter((x) => !verborgen.has(x.id));
     const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
-    const a = await this.aufloesung(ich.id);
     const n = await this.repo.zaehleKlauseln(sichten.map((x) => klauselnFuer(alleSichten, x.id, typen, a, verborgen)), lesen);
     return {
-      typen: Object.fromEntries(z.typen), eingang, favoriten: z.favoriten, sichten: Object.fromEntries(sichten.map((x, i) => [x.id, n[i]])),
-      // Papierkorb (#43): eigene gelöschte Mappen; Tage 0 = aus.
-      papierkorb: await this.repo.zaehlePapierkorb(ich.id), papierkorbTage: await this.papierkorbTage(),
-      // Post (#192): Zahl der Sicht „Neue Post“ hervorheben wie im Eingang.
-      neuePost: await this.neuePostSicht(),
+      typen: Object.fromEntries(z.typen), eingang: z.eingang, favoriten: z.favoriten, sichten: Object.fromEntries(sichten.map((x, i) => [x.id, n[i]])),
+      // Papierkorb (#43): eigene gelöschte Mappen.
+      papierkorb: await this.repo.zaehlePapierkorb(ich.id),
     };
   }
 
@@ -1749,7 +2148,7 @@ export class Dienst {
     return {
       ich: { id: ich.id, rolle: 'mitglied' }, admin: false, wer, a, typen: new Map(sichtbar.map((t) => [t.id, t])),
       lesen: { offen: sichtbar.map((t) => t.id), je: [] },
-      paket: { id: p?.id ?? '', schreiben: aufloesen(r.schreiben), dokumente: r.dokumente },
+      paket: { id: p?.id ?? '', schreiben: aufloesen(r.schreiben), dokumente: r.dokumente, schnittstellen: r.schnittstellen ?? [] },
     };
   }
 
@@ -2357,6 +2756,16 @@ export class Dienst {
     await this.einstellungen.schreibe('paket_kataloge', liste.length ? liste : null);
   }
 
+  /** Umwandlungen Text → Verweis nach Paket-Updates (#534): die letzten Vorgänge zum Rückgängigmachen (Einstellung, Teil der Sicherung). */
+  async paketUmwandlungen(): Promise<unknown[]> {
+    const v = await this.einstellungen?.lies('paket_umwandlungen');
+    return Array.isArray(v) ? v : [];
+  }
+  async setzePaketUmwandlungen(liste: unknown[]) {
+    if (!this.einstellungen) throw new Fachfehler(404, 'Einstellungen sind nicht eingerichtet.');
+    await this.einstellungen.schreibe('paket_umwandlungen', liste.length ? liste : null);
+  }
+
   /** Selbst erstellte Pakete (#374): Angaben des letzten Exports je Paket-Id (Einstellung, Teil der Sicherung). */
   async paketEntwuerfe(): Promise<PaketEntwurf[]> {
     const v = await this.einstellungen?.lies('paket_entwuerfe');
@@ -2408,7 +2817,11 @@ export class Dienst {
   }
 
   /** Nur für das Zurückrollen einer fehlgeschlagenen Paketinstallation: Mappen ohne Papierkorb entfernen. */
-  async entferneMappenEndgueltig(ids: string[]) { for (const id of ids) await this.repo.loescheMappe(id); }
+  async entferneMappenEndgueltig(ids: string[]) {
+    const vorher = await this.lebendInhalt(await this.repo.holeMappen(ids));
+    for (const id of ids) await this.repo.loescheMappe(id);
+    await this.protokolliere(this.mappenEintraege(vorher, { schritt: 'endgueltig', weg: 'zurueckgerollt' }), await this.loeschKontext(null, { ausloeser: 'automatisch' }));
+  }
 
   /* ---------- Nummernkreise (#171) ---------- */
 
@@ -2568,7 +2981,7 @@ export class Dienst {
     return ids.length;
   }
 
-  private async pruefeWerte(typ: Mappentyp, werte: Werte, eigeneId?: string) {
+  private async pruefeWerte(typ: Mappentyp, werte: Werte, eigeneId?: string, alt?: Werte) {
     const ids = [...new Set(verweiseVon(typ, werte).map((v) => v.zielId))].filter(istUuid);
     const typen = await this.repo.typenVon(ids);
     const doppelt = new Map<string, string>();
@@ -2578,7 +2991,33 @@ export class Dienst {
       if (d) doppelt.set(f.key, await this.titel(d));
     }
     const p = pruefeMappe(typ, werte, { typVon: (id) => typen.get(id), doppelt: (k) => doppelt.get(k) });
-    if (!istOk(p)) throw new Fachfehler(422, 'Bitte die markierten Felder prüfen.', p);
+    // Formate und Datumsgrenzen (#535): beim Bearbeiten nur, was sich ändert – der Bestand bleibt gültig.
+    for (const [k, m] of Object.entries(pruefeFormate(typ, werte, alt))) p.felder[k] ??= m;
+    if (!istOk(p)) {
+      const namen = Object.keys(p.felder).map((k) => typ.felder.find((f) => f.key === k)?.label ?? k);
+      throw new Fachfehler(422, namen.length ? `Bitte die markierten Felder prüfen: ${namen.join(', ')}.` : 'Bitte die markierten Felder prüfen.', p);
+    }
+  }
+
+  /**
+   * Angaben, die nicht zum Format bzw. zu den Datumsgrenzen passen (#535) – je Mappentyp und Feld, für die
+   * Werkbank (Wartungsoperationen). Gespeichert bleiben sie gültig; beim nächsten Ändern des Felds müssen sie passen.
+   */
+  async unpassendeFormate(): Promise<Array<{ typId: string; typ: string; felder: Array<{ key: string; label: string; anzahl: number; mappen: Array<{ id: string; titel: string; wert: string; grund: string }> }> }>> {
+    const heute = heuteIn();
+    const aus = [];
+    for (const typ of await this.repo.listeTypen()) {
+      if (!typ.felder.some(hatVorgaben)) continue;
+      const funde = unpassendeAngaben(typ, await this.repo.listeMappen(typ.id), heute);
+      if (!funde.length) continue;
+      const titel = new Map((await this.repo.holeMappen([...new Set(funde.map((f) => f.mappeId))])).map((m) => [m.id, m.titel || 'Ohne Titel'] as const));
+      const felder = typ.felder.flatMap((f) => {
+        const je = funde.filter((x) => x.feldKey === f.key);
+        return je.length ? [{ key: f.key, label: f.label, anzahl: je.length, mappen: je.slice(0, 200).map((x) => ({ id: x.mappeId, titel: titel.get(x.mappeId) ?? 'Ohne Titel', wert: x.wert.slice(0, 120), grund: x.grund })) }] : [];
+      });
+      aus.push({ typId: typ.id, typ: typ.name, felder });
+    }
+    return aus;
   }
 
   async legeMappeAn(eingabe: unknown, benutzerId: string | null = null, demo = false, z?: Zugriff): Promise<Mappe & { hinweis?: string }> {
@@ -2715,7 +3154,8 @@ export class Dienst {
     return this.rechteAn(z, { ...m, werte });
   }
 
-  async aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null, z?: Zugriff): Promise<Mappe & { hinweis?: string }> {
+  /** `anlass`: steht zusätzlich im Eintrag der Historie, z. B. die Umwandlung nach einem Paket-Update (#534). */
+  async aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null, z?: Zugriff, anlass?: Record<string, unknown>): Promise<Mappe & { hinweis?: string }> {
     const m = z ? await this.pruefeRecht(z, id, 'U') : await this.repo.holeMappe(id);
     if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
     const typ = await this.repo.holeTyp(m.typId);
@@ -2729,13 +3169,13 @@ export class Dienst {
     }
     await this.pruefeVerweisziele(z, typ, werte, m.werte);
     await this.pruefeAuswahlfilter(typ, werte, m.werte, benutzerId);
-    await this.pruefeWerte(typ, werte, id);
+    await this.pruefeWerte(typ, werte, id, m.werte);
     const aenderungen = await this.aenderungen(typ, m.werte, werte);
     // Archivmodus (#212): eine neue Frist steht in der Historie.
     const bisAlt = aufbewahrenBis(typ.archiv, m), bisNeu = aufbewahrenBis(typ.archiv, { ...m, werte });
     if (bisAlt !== bisNeu) aenderungen.push({ feld: '_aufbewahrenBis', label: 'Aufbewahren bis', alt: bisAlt ? datumText(bisAlt) : '', neu: bisNeu ? datumText(bisNeu) : '' });
     const neu = await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), benutzerId);
-    if (aenderungen.length) await this.notiere(id, benutzerId, 'geaendert', { aenderungen });
+    if (aenderungen.length) await this.notiere(id, benutzerId, 'geaendert', { ...anlass, aenderungen });
     // Gespeichert heißt: passt wieder – eine „passt nicht“-Aufgabe ist damit erledigt.
     await this.passungsAufgaben([{ id, problem: null }]);
     await this.pruefeErwaehnungen(typ, id, m.werte, werte, benutzerId);
@@ -2925,7 +3365,7 @@ export class Dienst {
    * Mehrere Mappen löschen (#150): je Mappe das Recht D am Mappentyp; Verweise innerhalb der Auswahl halten
    * nicht auf. `probe`: nur zählen, nichts löschen. Was nicht geht, steht mit Grund in `ausgelassen`.
    */
-  async loescheMappen(e: unknown, benutzerId: string, z: Zugriff): Promise<{ mappen: number; dokumente: number; geloescht: number; ausgelassen: Array<{ id: string; titel: string; grund: string }> }> {
+  async loescheMappen(e: unknown, benutzerId: string, z: Zugriff, quelle?: Ausloeser): Promise<{ mappen: number; dokumente: number; geloescht: number; ausgelassen: Array<{ id: string; titel: string; grund: string }> }> {
     const x = (e ?? {}) as { ids?: unknown; probe?: unknown };
     const ids = [...new Set((Array.isArray(x.ids) ? x.ids : []).map(String).filter(istUuid))];
     if (!ids.length) throw new Fachfehler(422, 'Keine Mappen ausgewählt.');
@@ -2952,7 +3392,7 @@ export class Dienst {
     while (offen.length) {
       const rest: Mappe[] = [];
       for (const m of offen) {
-        try { await this.loescheMappe(m.id, benutzerId, z); geloescht++; }
+        try { await this.loescheMappe(m.id, benutzerId, z, { ...liesAnlass(x), ausloeser: quelle, weg: 'mehrere' }); geloescht++; }
         catch (err) {
           if (err instanceof Fachfehler && err.status === 409) rest.push(m);
           else ausgelassen.push({ id: m.id, titel: m.titel ?? '', grund: (err as Error).message });
@@ -2964,7 +3404,7 @@ export class Dienst {
     return { mappen: kandidaten.length, dokumente, geloescht, ausgelassen };
   }
 
-  async loescheMappe(id: string, benutzerId: string | null = null, z?: Zugriff): Promise<void> {
+  async loescheMappe(id: string, benutzerId: string | null = null, z?: Zugriff, anlass?: Anlass): Promise<void> {
     if (z) await this.pruefeRecht(z, id, 'D');
     const m = await this.repo.holeMappe(id);
     if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
@@ -2972,6 +3412,8 @@ export class Dienst {
     const p = await this.loeschPruefung(m, typ, await this.repo.rueckverweise(id));
     if (!p.ok) throw new Fachfehler(p.status, p.grund, p.fremd.length ? { rueckverweise: p.fremd } : undefined);
     const { zuordnungen, emails, benutzerTyp, emailTyp } = p;
+    // Löschprotokoll (#470): was mit der Mappe geht, bevor es weg ist.
+    const vorher = await this.lebendInhalt([m]);
     for (const z of zuordnungen) {
       const b = await this.repo.holeMappe(z.quelleId);
       if (b) await this.schreibeSystemMappe(benutzerTyp!, b.id, { ...b.werte, rollen: alsListe(b.werte.rollen).filter((r) => r !== id) }, benutzerId);
@@ -2980,8 +3422,11 @@ export class Dienst {
       const x = await this.repo.holeMappe(e.quelleId);
       if (x) await this.schreibeSystemMappe(emailTyp!, x.id, { ...x.werte, bezug: alsListe(x.werte.bezug).filter((b) => b !== id) }, benutzerId);
     }
-    if (await this.papierkorbTage() > 0) await this.legeInPapierkorb(id, typ, benutzerId);
+    const korb = await this.papierkorbTage() > 0;
+    if (korb) await this.legeInPapierkorb(id, typ, benutzerId);
     else await this.loescheMappeIntern(id, typ, benutzerId);
+    await this.protokolliere(this.mappenEintraege(vorher, { schritt: korb ? 'papierkorb' : 'endgueltig', weg: anlass?.weg ?? 'einzeln', verweise: { [id]: zuordnungen.length + emails.length } }),
+      await this.loeschKontext(benutzerId, anlass));
   }
 
   /** In den Papierkorb (#43): eindeutige Werte werden frei, Dateien bleiben bis zum Leeren. */
@@ -3260,7 +3705,7 @@ export class Dienst {
    * Dokumentenregister der Zielmappe (oder werden kopiert – dieselbe Datei, kein zweiter Platz),
    * die Post verweist auf die Mappe und hat danach Stand „Zugeordnet“. Mehrmals möglich.
    */
-  async ordneZu(postId: string, eingabe: unknown, von: string | null, z?: Zugriff) {
+  async ordneZu(postId: string, eingabe: unknown, von: string | null, z?: Zugriff, auto?: { grund: string }) {
     const post = z ? await this.pruefeRecht(z, postId, 'U') : await this.repo.holeMappe(postId);
     if (!post) throw new Fachfehler(404, 'Diese Post gibt es nicht.');
     const typ = await this.repo.holeTyp(post.typId);
@@ -3299,8 +3744,11 @@ export class Dienst {
     const doks = n ? ` mit ${n} ${n === 1 ? 'Dokument' : 'Dokumenten'}${kopieren ? ' (kopiert)' : ''} ins Register „${reg!.name}“` : '';
     const bezug = [...new Set([...alsListe(post.werte.bezug), ziel.id])];
     await this.schreibeSystemMappe(typ, post.id, { ...post.werte, bezug, stand: POST_STAND.zugeordnet }, von);
-    await this.notiere(post.id, von, 'zugeordnet', { text: `zugeordnet zu „${zielTitel}“${doks}`, ziel: ziel.id, zielTyp: ziel.typId, dokumente: n, kopiert: kopieren });
-    await this.notiere(ziel.id, von, 'zugeordnet', { text: `Post „${betreff}“ zugeordnet${doks}`, post: post.id, postTyp: typ.id, dokumente: n, kopiert: kopieren });
+    // Automatisch (#337): Begründung in der Historie beider Mappen.
+    const wie = auto ? { automatisch: true, grund: auto.grund, system: 'Erkennung' } : {};
+    const warum = auto ? ` – automatisch: ${auto.grund}` : '';
+    await this.notiere(post.id, von, 'zugeordnet', { text: `${auto ? 'automatisch ' : ''}zugeordnet zu „${zielTitel}“${doks}${warum}`, ziel: ziel.id, zielTyp: ziel.typId, dokumente: n, kopiert: kopieren, ...wie });
+    await this.notiere(ziel.id, von, 'zugeordnet', { text: `Post „${betreff}“ ${auto ? 'automatisch ' : ''}zugeordnet${doks}${warum}`, post: post.id, postTyp: typ.id, dokumente: n, kopiert: kopieren, ...wie });
     if (n) {
       await this.beruehre(ziel.id, zielTyp, von);
       await this.beruehre(post.id, typ, von);
@@ -3308,6 +3756,93 @@ export class Dienst {
     await this.postAufgaben(post.id, von);
     protokoll.modul('ablage').info('Post zugeordnet', { post: post.id, ziel: ziel.id, dokumente: n, kopiert: kopieren });
     return { post: (await this.repo.holeMappe(post.id))!, ziel: (await this.repo.holeMappe(ziel.id))! };
+  }
+
+  /** Mappentypen mit „Post automatisch zuordnen“ (#337); Archivmodus- und Systemtypen nie (dort nur mit Bestätigung). */
+  private async autoTypen(): Promise<Set<string>> {
+    const e = await this.typErkennungen();
+    return new Set((await this.repo.listeTypen()).filter((t) => e[t.id]?.auto && !t.archiv && !t.system).map((t) => t.id));
+  }
+
+  /**
+   * Erkannte Post automatisch zuordnen (#337), wenn die Erkennung sicher ist (siehe sichereZuordnung) und der
+   * Zieltyp das erlaubt (Standard aus). Nie: neue Mappen anlegen, Post ohne Leserecht des Empfängers zuordnen,
+   * Archivmodus-Typen. Danach eine Aufgabe „Automatisch zugeordnet – bitte prüfen“ an den Empfänger (Feld „Für“,
+   * sonst wer die Post ins DMS gebracht hat), mit Rückgängig. Je Post höchstens einmal.
+   */
+  async automatischZuordnen(postId: string, e: PostErkennung): Promise<{ ziel: string } | { nicht: string }> {
+    const log = protokoll.modul('ablage');
+    if (e.auto) return { nicht: 'schon einmal automatisch zugeordnet' };
+    const autoTypen = await this.autoTypen();
+    if (!autoTypen.size) return { nicht: 'bei keinem Mappentyp eingeschaltet' };
+    const post = await this.repo.holeMappe(postId);
+    const typ = post && await this.repo.holeTyp(post.typId);
+    if (!post || typ?.system !== 'post') return { nicht: 'keine Post' };
+    if (auswahlText(post.werte.stand) !== POST_STAND.neu || auswahlText(post.werte.richtung) === POST_RICHTUNG.ausgehend) return { nicht: 'nicht neu oder ausgehend' };
+    const s = sichereZuordnung(e, autoTypen);
+    const nicht = (grund: string) => { log.info('Post nicht automatisch zugeordnet', { post: postId, grund }); return { nicht: grund }; };
+    if (!s.ziel) return nicht(s.grund);
+    const empfaenger = alsListe(post.werte.fuer)[0] ?? post.erstelltVon;
+    if (!empfaenger) return nicht('niemand, der es prüfen könnte (kein „Für“, kein Ersteller)');
+    if (!(await this.sichtbarFuer(empfaenger, [s.ziel.mappeId])).has(s.ziel.mappeId)) return nicht('der Empfänger darf die Zielmappe nicht lesen');
+    const ziel = await this.repo.holeMappe(s.ziel.mappeId);
+    const zielTyp = ziel && await this.repo.holeTyp(ziel.typId);
+    if (!ziel || !zielTyp || zielTyp.archiv) return nicht('Zielmappe fehlt oder ist im Archivmodus');
+    const dokumente = await this.repo.listeDokumente(post.id);
+    if (dokumente.length && !zielTyp.register.some((r) => r.art === 'dokumente')) return nicht('Zielmappe hat kein Dokumentenregister');
+    const absender = (await this.repo.bezuege([e.eindeutig!])).get(e.eindeutig!)?.titel ?? '';
+    const grund = s.grund.replace('Absender eindeutig', `Absender „${absender}“ eindeutig`);
+    const zielTitel = await this.titel(ziel);
+    let aufgabe: Aufgabe | null = null;
+    await this.inTransaktion(async () => {
+      await this.ordneZu(post.id, { ziel: ziel.id }, null, undefined, { grund });
+      aufgabe = await this.repo.legeAufgabeAn({
+        id: randomUUID(), mappeId: post.id, empfaengerId: empfaenger, art: 'zugeordnet', text: `Automatisch zugeordnet zu „${zielTitel}“ – bitte prüfen`, feldKey: `auto:${ziel.id}`,
+        erstellt: new Date().toISOString(), erstelltVon: null, erledigt: null, erledigtVon: null,
+      });
+      aufgabe = await this.leiteUm(aufgabe);
+      await this.repo.erkennungSchreibe(post.id, { ...e, auto: { ziel: ziel.id, zeit: new Date().toISOString(), grund, dokumente: dokumente.map((d) => ({ id: d.id, register: d.registerKey })), aufgabe: aufgabe.id } }, e.eindeutig);
+    });
+    log.info('Post automatisch zugeordnet', { post: post.id, ziel: ziel.id, empfaenger, dokumente: dokumente.length });
+    return { ziel: ziel.id };
+  }
+
+  /**
+   * Rückgängig aus der Aufgabe „Automatisch zugeordnet – bitte prüfen“ (#337): Dokumente zurück in die Post (in ihr
+   * altes Register), Verweis weg, Stand wieder „Neu“ (wenn sie sonst nirgends zugeordnet ist), Aufgabe erledigt.
+   * Danach ordnet die Erkennung diese Post nie wieder von selbst zu.
+   */
+  async automatikRueckgaengig(aufgabeId: string, ich: { id: string; rolle: string }, z?: Zugriff) {
+    const a = await this.eigeneAufgabe(aufgabeId, ich);
+    if (a.art !== 'zugeordnet' || a.erledigt) throw new Fachfehler(409, 'Diese Aufgabe gehört zu keiner offenen automatischen Zuordnung.');
+    const post = await this.pruefeRecht(z, a.mappeId, 'U');
+    const typ = (await this.repo.holeTyp(post.typId))!;
+    const gespeichert = (await this.repo.erkennungLies(post.id))?.ergebnis as PostErkennung | undefined;
+    const auto = gespeichert?.auto;
+    if (!gespeichert || !auto || auto.rueckgaengig) throw new Fachfehler(409, 'Diese automatische Zuordnung ist schon zurückgenommen.');
+    const ziel = await this.repo.holeMappe(auto.ziel);
+    let zurueck = 0;
+    await this.inTransaktion(async () => {
+      for (const x of auto.dokumente) {
+        const d = await this.repo.holeDokument(x.id);
+        if (!d || d.mappeId !== auto.ziel) continue;
+        const reg = typ.register.find((r) => r.key === x.register && r.art === 'dokumente') ?? typ.register.find((r) => r.art === 'dokumente');
+        if (!reg) continue;
+        await this.repo.verschiebeDokument(d.id, post.id, reg.key);
+        zurueck++;
+      }
+      const bezug = alsListe(post.werte.bezug).filter((id) => id !== auto.ziel);
+      await this.schreibeSystemMappe(typ, post.id, { ...post.werte, bezug, stand: bezug.length ? post.werte.stand : POST_STAND.neu }, ich.id);
+      const zielTitel = ziel ? await this.titel(ziel) : 'eine gelöschte Mappe';
+      const doks = zurueck ? ` – ${zurueck} ${zurueck === 1 ? 'Dokument' : 'Dokumente'} zurück in der Post` : '';
+      await this.notiere(post.id, ich.id, 'zugeordnet', { text: `automatische Zuordnung zu „${zielTitel}“ rückgängig gemacht${doks}`, ziel: auto.ziel, rueckgaengig: true, dokumente: zurueck });
+      if (ziel) await this.notiere(ziel.id, ich.id, 'zugeordnet', { text: `automatische Zuordnung der Post „${auswahlText(post.werte.betreff) || 'Post'}“ rückgängig gemacht${doks}`, post: post.id, rueckgaengig: true, dokumente: zurueck });
+      await this.repo.erledigeAufgabe(a.id, ich.id);
+      await this.repo.erkennungSchreibe(post.id, { ...gespeichert, auto: { ...auto, rueckgaengig: { zeit: new Date().toISOString(), von: ich.id } } }, gespeichert.eindeutig);
+      await this.postAufgaben(post.id, ich.id);
+    });
+    protokoll.modul('ablage').info('Automatische Zuordnung rückgängig gemacht', { post: post.id, ziel: auto.ziel, dokumente: zurueck });
+    return { post: (await this.repo.holeMappe(post.id))!, dokumente: zurueck };
   }
 
   /**
@@ -3395,6 +3930,8 @@ export class Dienst {
     if (await this.repo.holeAusPapierkorb(b.id)) return;
     const { benutzer: typ, systemrollen } = await this.sichereSystem();
     const alt = await this.repo.holeMappe(b.id);
+    // Neuer Benutzer (#506): Vorgabe „Favoriten benachrichtigen“ aus der Werkbank – nur, wenn sie aus ist.
+    if (!alt && b.art !== 'dienst' && !(await this.favoritenFreigabe()).vorgabe) await this.konten?.setzeEinstellung?.(b.id, 'favoriten_benachrichtigen', false);
     const system = new Set(systemrollen.values());
     const weitere = alt ? alsListe(alt.werte.rollen).filter((r) => !system.has(r)) : [];
     const ab = b.abwesenheit;
@@ -3492,13 +4029,14 @@ export class Dienst {
   }
 
   /** Aufbewahrung ändern. 0 schaltet den Papierkorb aus und leert ihn sofort. */
-  async setzePapierkorbTage(eingabe: unknown): Promise<{ tage: number; geleert: number }> {
+  async setzePapierkorbTage(eingabe: unknown, von?: string | null): Promise<{ tage: number; geleert: number }> {
     if (!this.einstellungen) throw new Fachfehler(404, 'Der Papierkorb ist nicht eingerichtet.');
     const tage = Number(eingabe);
     if (!Number.isInteger(tage) || tage < 0 || tage > 3650) throw new Fachfehler(422, 'Bitte eine ganze Zahl von 0 bis 3650 Tagen angeben (0 = kein Papierkorb).');
     await this.einstellungen.schreibe('papierkorb', { tage });
     protokoll.modul('werkbank').info(tage ? 'Aufbewahrung im Papierkorb geändert' : 'Papierkorb ausgeschaltet', { tage });
-    const geleert = tage ? await this.raeumePapierkorbAuf() : await this.leere((await this.repo.papierkorb()).map((e) => e.id)) + await this.leereDokumente((await this.repo.papierkorbDokumente()).map((d) => d.id));
+    const aus = { weg: 'ausgeschaltet' as const, kontext: await this.loeschKontext(von ?? null) };
+    const geleert = tage ? await this.raeumePapierkorbAuf() : await this.leere((await this.repo.papierkorb()).map((e) => e.id), von ?? null, false, aus) + await this.leereDokumente((await this.repo.papierkorbDokumente()).map((d) => d.id), aus);
     return { tage, geleert };
   }
 
@@ -3542,7 +4080,7 @@ export class Dienst {
   }
 
   /** Dokument zurück in sein Register (#344). Rechte: wer es gelöscht hat (und die Mappe noch bearbeiten darf) oder ein Administrator. */
-  async stelleDokumentWiederHer(id: string, ich: { id: string; rolle: string }, z: Zugriff | undefined, alle = false) {
+  async stelleDokumentWiederHer(id: string, ich: { id: string; rolle: string }, z: Zugriff | undefined, alle = false, quelle?: Ausloeser) {
     const e = await this.dokEintrag(id, ich, alle);
     const [x] = await this.mitMappe([e]);
     if (x.mappe === 'papierkorb') throw new Fachfehler(409, `Die Mappe „${x.mappeTitel || 'ohne Titel'}“ liegt selbst im Papierkorb. Stelle zuerst die Mappe wieder her – ihre Dokumente kommen mit; danach dieses Dokument.`);
@@ -3550,8 +4088,11 @@ export class Dienst {
     if (!(alle && ich.rolle === 'admin')) await this.pruefeRecht(z, e.mappeId, 'U');
     const typ = (await this.repo.holeTyp(x.typId))!;
     if (!typ.register.some((r) => r.key === e.registerKey && r.art === 'dokumente')) throw new Fachfehler(409, `Das Register „${x.register}“ gibt es an der Mappe nicht mehr. Lege es im Mappentyp wieder an, dann klappt das Wiederherstellen.`);
+    const inhalt = (await this.repo.papierkorbDokumentInhalt([id]))[0];
     await this.repo.stelleDokumentWiederHer(id);
     await this.notiere(e.mappeId, ich.id, 'dokument_wiederhergestellt', { dokument: e.name, register: x.register });
+    if (inhalt) await this.protokolliere(this.dokEintraege(inhalt.dokumente.slice(0, 1), { ...(await this.mappenInfo([e.mappeId], new Map()))(e.mappeId, id), schritt: 'wiederhergestellt', weg: 'dokument' }),
+      await this.loeschKontext(ich.id, { ausloeser: quelle }));
     await this.beruehre(e.mappeId, typ, ich.id);
     this.vorschau?.einreihen([(await this.repo.holeDokument(id))!]);
     protokoll.modul('ablage').info('Dokument wiederhergestellt', { dokument: e.name, id, mappe: e.mappeId });
@@ -3559,16 +4100,22 @@ export class Dienst {
   }
 
   /** Dokumente endgültig löschen (ohne Rechteprüfung); Archivmodus der Mappe gilt weiter. */
-  private async leereDokumente(ids: string[]): Promise<number> {
+  private async leereDokumente(ids: string[], wie: { weg: Loeschweg; kontext?: LoeschKontext } = { weg: 'papierkorb' }): Promise<number> {
     if (!ids.length) return 0;
+    const inhalt = await this.repo.papierkorbDokumentInhalt(ids);
     const dateien = await this.repo.leereDokumentPapierkorb(ids);
     for (const sha of dateien) await this.raeumeAuf(sha);
+    // Löschprotokoll (#470): je Dokument und Version; Mappe, Typ und Grund vom Schritt „in den Papierkorb“.
+    const frueher = await this.letzteSchritte(inhalt.map((x) => x.id));
+    const mappen = await this.mappenInfo(inhalt.map((x) => x.mappeId), frueher);
+    const kontext = wie.kontext ?? await this.loeschKontext(null, { ausloeser: wie.weg === 'ablauf' ? 'automatisch' : undefined });
+    await this.protokolliere(inhalt.flatMap((x) => this.dokEintraege(x.dokumente, { ...mappen(x.mappeId, x.id), schritt: 'endgueltig', weg: wie.weg })), kontext, true);
     return ids.length;
   }
 
-  async loescheDokumentEndgueltig(ids: string[], ich: { id: string; rolle: string }, alle = false): Promise<number> {
+  async loescheDokumentEndgueltig(ids: string[], ich: { id: string; rolle: string }, alle = false, quelle?: Ausloeser): Promise<number> {
     for (const id of ids) await this.dokEintrag(id, ich, alle);
-    const n = await this.leereDokumente(ids);
+    const n = await this.leereDokumente(ids, { weg: 'papierkorb', kontext: await this.loeschKontext(ich.id, { ausloeser: quelle }) });
     if (n) protokoll.modul('ablage').info('Dokumente aus dem Papierkorb endgültig gelöscht', { anzahl: n });
     return n;
   }
@@ -3586,7 +4133,7 @@ export class Dienst {
    * Wiederherstellen. Verweise auf Mappen, die es nicht mehr gibt, und eindeutige Werte, die
    * inzwischen eine andere Mappe hat, lassen die Mappe „nicht passen“: Sie erscheint im Eingang.
    */
-  async stelleWiederHer(id: string, ich: { id: string; rolle: string }, alle = false) {
+  async stelleWiederHer(id: string, ich: { id: string; rolle: string }, alle = false, quelle?: Ausloeser) {
     const e = await this.eintrag(id, ich, alle);
     const typ = await this.repo.holeTyp(e.typId);
     if (!typ) throw new Fachfehler(409, 'Den Mappentyp dieser Mappe gibt es nicht mehr.');
@@ -3595,6 +4142,7 @@ export class Dienst {
     const zurueck = e.entkoppelt.length ? await this.verbindeWieder(id, e.entkoppelt, ich.id) : { wieder: 0, entfallen: 0 };
     const verweiseEntfallen = r.verweiseEntfallen + zurueck.entfallen;
     await this.notiere(id, ich.id, 'wiederhergestellt', verweiseEntfallen ? { verweiseEntfallen } : undefined);
+    await this.protokolliere([this.wiederEintrag(e, typ, e.vorgang)], await this.loeschKontext(ich.id, { ausloeser: quelle }));
     await this.aktualisiereTitel([id]);
     await this.passungFuer(typ, [id]);
     if (typ.system === 'benutzer') await this.konten?.wiederda(id, ich.id);
@@ -3604,7 +4152,7 @@ export class Dienst {
   }
 
   /** Endgültig löschen (ohne Rechteprüfung): Dateien, an denen nichts mehr hängt, und Konten von Benutzer-Mappen. */
-  private async leere(ids: string[], von: string | null = null, streng = false): Promise<number> {
+  private async leere(ids: string[], von: string | null = null, streng = false, wie: { weg: Loeschweg; kontext?: LoeschKontext } = { weg: 'papierkorb' }): Promise<number> {
     // Archivmodus (#212): Mappen in der Frist bleiben im Papierkorb (lagen dort schon vor dem Einschalten).
     if (ids.length) {
       const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
@@ -3617,26 +4165,31 @@ export class Dienst {
     await this.repo.historieSchreibe(ids.map((mappeId) => ({ mappeId, benutzerId: von, art: 'endgueltig' as const })));
     const benutzerTyp = (await this.repo.listeTypen()).find((t) => t.system === 'benutzer');
     const benutzer = benutzerTyp ? (await this.repo.papierkorb({ typId: benutzerTyp.id })).filter((e) => ids.includes(e.id)).map((e) => e.id) : [];
+    // Löschprotokoll (#470): Inhalt vor dem Leeren; Grund vom Schritt „in den Papierkorb“.
+    const inhalt = await this.repo.papierkorbInhalt(ids);
     const dateien = await this.repo.leerePapierkorb(ids);
     for (const sha of dateien) await this.raeumeAuf(sha);
+    const kontext = wie.kontext ?? await this.loeschKontext(von, { ausloeser: wie.weg === 'ablauf' ? 'automatisch' : undefined });
+    await this.protokolliere(this.mappenEintraege(await this.korbAlsInhalt(inhalt), { schritt: 'endgueltig', weg: wie.weg, verweise: Object.fromEntries(inhalt.map((k) => [k.id, k.entkoppelt])) }), kontext, true);
     // Einzeln gelöschte Dokumente dieser Mappen (#344) gehen mit – ohne Mappe lassen sie sich nicht mehr wiederherstellen.
-    await this.leereDokumente((await this.repo.papierkorbDokumente({ mappeIds: ids })).map((d) => d.id));
+    await this.leereDokumente((await this.repo.papierkorbDokumente({ mappeIds: ids })).map((d) => d.id), { weg: wie.weg, kontext });
     for (const id of benutzer) await this.konten?.endgueltig(id);
     return ids.length;
   }
 
   /** Einzelne Mappen endgültig löschen: eigene oder (in der Werkbank) alle. */
-  async loescheEndgueltig(ids: string[], ich: { id: string; rolle: string }, alle = false): Promise<number> {
+  async loescheEndgueltig(ids: string[], ich: { id: string; rolle: string }, alle = false, quelle?: Ausloeser): Promise<number> {
     for (const id of ids) await this.eintrag(id, ich, alle);
-    const n = await this.leere(ids, ich.id, true);
+    const n = await this.leere(ids, ich.id, true, { weg: 'papierkorb', kontext: await this.loeschKontext(ich.id, { ausloeser: quelle }) });
     if (n) protokoll.modul('ablage').info('Aus dem Papierkorb endgültig gelöscht', { anzahl: n });
     return n;
   }
 
   /** Papierkorb leeren: eigener (Ablage) oder ganz (Werkbank). */
-  async leerePapierkorb(ich: { id: string; rolle: string }, alle = false): Promise<number> {
-    const n = await this.leere((await this.papierkorb(ich, alle)).map((e) => e.id), ich.id)
-      + await this.leereDokumente((await this.repo.papierkorbDokumente(alle && ich.rolle === 'admin' ? {} : { von: ich.id })).map((d) => d.id));
+  async leerePapierkorb(ich: { id: string; rolle: string }, alle = false, wie: { weg?: 'leeren' | 'abmelden'; quelle?: Ausloeser } = {}): Promise<number> {
+    const w = { weg: wie.weg ?? 'leeren' as const, kontext: await this.loeschKontext(ich.id, { ausloeser: wie.quelle }) };
+    const n = await this.leere((await this.papierkorb(ich, alle)).map((e) => e.id), ich.id, false, w)
+      + await this.leereDokumente((await this.repo.papierkorbDokumente(alle && ich.rolle === 'admin' ? {} : { von: ich.id })).map((d) => d.id), w);
     if (n) protokoll.modul('ablage').info(alle ? 'Papierkorb aller Benutzer geleert' : 'Papierkorb geleert', { anzahl: n });
     return n;
   }
@@ -3645,15 +4198,173 @@ export class Dienst {
   async raeumePapierkorbAuf(jetzt = Date.now()): Promise<number> {
     const tage = await this.papierkorbTage();
     const vor = new Date(jetzt - tage * 24 * 60 * 60 * 1000).toISOString();
-    const n = await this.leere((await this.repo.papierkorb(tage ? { vor } : {})).map((e) => e.id));
+    const n = await this.leere((await this.repo.papierkorb(tage ? { vor } : {})).map((e) => e.id), null, false, { weg: 'ablauf' });
     if (n) protokoll.modul('system').info('Abgelaufene Mappen aus dem Papierkorb gelöscht', { anzahl: n, tage });
-    const nd = await this.leereDokumente((await this.repo.papierkorbDokumente(tage ? { vor } : {})).map((d) => d.id));
+    const nd = await this.leereDokumente((await this.repo.papierkorbDokumente(tage ? { vor } : {})).map((d) => d.id), { weg: 'ablauf' });
     if (nd) protokoll.modul('system').info('Abgelaufene Dokumente aus dem Papierkorb gelöscht', { anzahl: nd, tage });
     // Historie endgültig gelöschter Mappen nach ihrer Frist (#57).
     const ht = await this.historieTage();
     const weg = await this.repo.historieAufraeumen(new Date(jetzt - ht * 24 * 60 * 60 * 1000).toISOString());
     if (weg) protokoll.modul('system').info('Historie endgültig gelöschter Mappen entfernt', { eintraege: weg, tage: ht });
+    // Löschprotokoll (#470): eigene Aufbewahrung in Jahren.
+    const lj = await this.loeschprotokollJahre();
+    const lweg = await this.repo.loeschprotokollAufraeumen(new Date(jetzt - lj * 365.25 * 24 * 60 * 60 * 1000).toISOString());
+    if (lweg) protokoll.modul('system').info('Alte Einträge des Löschprotokolls entfernt', { eintraege: lweg, jahre: lj });
     return n;
+  }
+
+  /* ---------- Löschprotokoll (#470) ---------- */
+
+  /** Wer und warum. Ohne Benutzer: „DMS“ (automatisch). */
+  private async loeschKontext(von: string | null, anlass: Anlass = {}): Promise<LoeschKontext> {
+    const a = liesAnlass({ grund: anlass.grund, text: anlass.text });
+    const ausloeser: Ausloeser = anlass.ausloeser ?? (von ? 'benutzer' : 'automatisch');
+    return { vonId: von, von: von ? await this.name(von) : 'DMS', ausloeser, grund: a.grund ?? null, grundText: a.text ?? '' };
+  }
+
+  /** Lebende Mappen samt Dokumenten (aller Versionen) und Notizen – für Einträge vor dem Löschen. Demo-Mappen bleiben draußen. */
+  private async lebendInhalt(mappen: Mappe[]): Promise<ProtokollMappe[]> {
+    const echt = mappen.filter((m) => !m.demo);
+    if (!echt.length) return [];
+    const ids = echt.map((m) => m.id);
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    const dok = await this.dokumenteJeMappe(ids);
+    const alle = [...dok.values()].flat();
+    const versionen = alle.length ? await this.repo.versionenVonDokumenten(alle.map((d) => d.id)) : [];
+    const notizen = await this.repo.notizenVon(ids);
+    return echt.map((m) => {
+      const d = dok.get(m.id) ?? [];
+      const ds = new Set(d.map((x) => x.id));
+      return { id: m.id, typId: m.typId, typ: typen.get(m.typId), werte: m.werte, notizen: notizen.filter((n) => n.mappeId === m.id).length,
+        dokumente: [...d.map(dokInfo), ...versionen.filter((v) => ds.has(v.dokumentId)).map(versionInfo)] };
+    });
+  }
+
+  private async korbAlsInhalt(liste: Awaited<ReturnType<Repo['papierkorbInhalt']>>): Promise<ProtokollMappe[]> {
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    return liste.filter((k) => !k.demo).map((k) => ({ id: k.id, typId: k.typId, typ: typen.get(k.typId), werte: k.werte, notizen: k.notizen, dokumente: k.dokumente, vorgang: k.vorgang }));
+  }
+
+  /** Einträge für Mappen und ihre Dokumente. */
+  private mappenEintraege(liste: ProtokollMappe[], x: { schritt: LoeschEintrag['schritt']; weg: Loeschweg; vorgang?: string; startId?: string; verweise?: Record<string, number> }): ProtokollTeil[] {
+    return liste.flatMap((m) => {
+      const nummer = nummerVon(m.typ, m.werte);
+      const vorgang = x.vorgang ?? m.vorgang ?? null;
+      const gemeinsam = { mappeId: m.id, typId: m.typId, typ: m.typ?.name ?? '', nummer, vorgang, startId: vorgang ? (x.startId ?? (m.id === vorgang ? m.id : null)) : null, schritt: x.schritt, weg: x.weg };
+      const dokumente = new Set(m.dokumente.map((d) => d.dokumentId)).size;
+      return [
+        { ...gemeinsam, art: 'mappe' as const, dokumentId: null, archivnummer: null, version: null, sha256: null, groesse: null, mime: null, seiten: null,
+          anzahl: { dokumente, versionen: m.dokumente.length - dokumente, notizen: m.notizen, verweise: x.verweise?.[m.id] ?? 0 } },
+        ...this.dokEintraege(m.dokumente, gemeinsam),
+      ];
+    });
+  }
+
+  private dokEintraege(liste: LoeschDokument[], x: { mappeId: string; typId: string | null; typ: string; nummer: string | null; vorgang: string | null; startId: string | null; schritt: LoeschEintrag['schritt']; weg: Loeschweg }): ProtokollTeil[] {
+    return liste.map((d) => ({ ...x, art: 'dokument' as const, dokumentId: d.dokumentId, archivnummer: d.archivnummer, version: d.version, sha256: d.sha256, groesse: d.groesse, mime: d.mime, seiten: d.seiten, anzahl: null }));
+  }
+
+  private wiederEintrag(e: PapierkorbEintrag, typ: Mappentyp | undefined, vorgang: string | null): ProtokollTeil {
+    return { art: 'mappe', schritt: 'wiederhergestellt', weg: vorgang ? 'verknuepft' : 'einzeln', mappeId: e.id, typId: e.typId, typ: typ?.name ?? '', nummer: nummerVon(typ, e.werte),
+      archivnummer: null, dokumentId: null, version: null, sha256: null, groesse: null, mime: null, seiten: null, anzahl: null, vorgang, startId: vorgang && e.id === vorgang ? e.id : null };
+  }
+
+  /** Letzter Eintrag „in den Papierkorb“ je Mappen- bzw. Dokument-Id (für Grund, Typ und Nummer beim endgültigen Löschen). */
+  private async letzteSchritte(ids: string[]): Promise<Map<string, LoeschEintrag>> {
+    const r = new Map<string, LoeschEintrag>();
+    for (let i = 0; i < ids.length; i += 500) {
+      const teil = ids.slice(i, i + 500);
+      const { eintraege } = await this.repo.loeschprotokoll({ ids: teil, schritt: 'papierkorb', max: LOESCH_MAX * 5 });
+      // Neueste zuerst: der erste Treffer je Id zählt.
+      for (const e of eintraege) { const k = e.art === 'dokument' ? e.dokumentId! : e.mappeId; if (!r.has(k)) r.set(k, e); }
+    }
+    return r;
+  }
+
+  /** Typ, Nummer und Vorgang der Mappe eines Dokuments – lebend, im Papierkorb oder aus dem Protokoll. */
+  private async mappenInfo(mappeIds: string[], frueher: Map<string, LoeschEintrag>) {
+    const ids = [...new Set(mappeIds)];
+    const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
+    const lebend = new Map((await this.repo.holeMappen(ids)).map((m) => [m.id, m] as const));
+    const korb = new Map((await this.repo.papierkorbInhalt(ids.filter((id) => !lebend.has(id)))).map((k) => [k.id, k] as const));
+    return (mappeId: string, dokumentId: string) => {
+      const m = lebend.get(mappeId); const k = korb.get(mappeId); const f = frueher.get(dokumentId);
+      const typId = m?.typId ?? k?.typId ?? f?.typId ?? null;
+      const typ = typId ? typen.get(typId) : undefined;
+      return { mappeId, typId, typ: typ?.name ?? f?.typ ?? '', nummer: m ? nummerVon(typ, m.werte) : k ? nummerVon(typ, k.werte) : f?.nummer ?? null, vorgang: k?.vorgang ?? f?.vorgang ?? null, startId: f?.startId ?? null };
+    };
+  }
+
+  /**
+   * Einträge schreiben. `nachGrund`: Grund und Text vom Schritt „in den Papierkorb“ übernehmen, wenn dieser
+   * Schritt selbst keinen hat (endgültig löschen, Ablauf). Ein Fehler hier macht das Löschen nicht rückgängig,
+   * steht aber im Protokoll.
+   */
+  private async protokolliere(teile: ProtokollTeil[], k: LoeschKontext, nachGrund = false) {
+    if (!teile.length) return;
+    try {
+      const frueher = nachGrund && !k.grund ? await this.letzteSchritte([...new Set(teile.map((t) => (t.art === 'dokument' ? t.dokumentId! : t.mappeId)))]) : new Map<string, LoeschEintrag>();
+      const zeit = new Date().toISOString();
+      await this.repo.loeschprotokollSchreibe(teile.map((t) => {
+        const f = frueher.get(t.art === 'dokument' ? t.dokumentId! : t.mappeId) ?? frueher.get(t.mappeId);
+        return { ...t, id: randomUUID(), zeit, vonId: k.vonId, von: k.von, ausloeser: k.ausloeser, grund: k.grund ?? f?.grund ?? null, grundText: k.grund ? k.grundText : (f?.grundText ?? k.grundText),
+          vorgang: t.vorgang ?? f?.vorgang ?? null, startId: t.startId ?? f?.startId ?? null };
+      }));
+    } catch (e) {
+      protokoll.modul('datenschutz').error('Löschprotokoll nicht geschrieben', { fehler: (e as Error).message, eintraege: teile.length });
+    }
+  }
+
+  async loeschprotokollJahre(): Promise<number> {
+    const e = this.einstellungen ? ((await this.einstellungen.lies('loeschprotokoll')) as { jahre?: number } | null) : null;
+    return typeof e?.jahre === 'number' ? e.jahre : LOESCHPROTOKOLL_STANDARD_JAHRE;
+  }
+
+  async setzeLoeschprotokollJahre(eingabe: unknown, von: string): Promise<number> {
+    if (!this.einstellungen) throw new Fachfehler(404, 'Einstellungen sind nicht eingerichtet.');
+    const jahre = Number(eingabe);
+    if (!Number.isInteger(jahre) || jahre < 1 || jahre > LOESCHPROTOKOLL_JAHRE_MAX) throw new Fachfehler(422, `Bitte eine ganze Zahl von 1 bis ${LOESCHPROTOKOLL_JAHRE_MAX} Jahren angeben.`);
+    await this.einstellungen.schreibe('loeschprotokoll', { jahre });
+    protokoll.modul('datenschutz').info('Aufbewahrung des Löschprotokolls geändert', { jahre, von });
+    return jahre;
+  }
+
+  /** Ansicht (Werkbank → Datenschutz): Einträge nach Filter, neueste zuerst. */
+  async loeschprotokoll(q: Record<string, unknown>) {
+    const f = liesFilter(q);
+    const r = await this.repo.loeschprotokoll(f);
+    return { ...r, jahre: await this.loeschprotokollJahre(), max: f.max };
+  }
+
+  /** Ausgabe als CSV oder PDF (Nachweis); höchstens LOESCH_MAX × 10 Einträge. */
+  async loeschprotokollAusgabe(q: Record<string, unknown>, format: 'csv' | 'pdf', x: { von: string; mandant: string; version: string }) {
+    const f = { ...liesFilter(q), max: LOESCH_MAX * 10 };
+    const { eintraege, gesamt } = await this.repo.loeschprotokoll(f);
+    const tag = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(new Date());
+    if (format === 'csv') { const b = csvAus(LOESCH_SPALTEN, eintraege.map(alsZeile)); return { name: `Löschprotokoll ${tag}.csv`, mime: 'text/csv; charset=utf-8', inhalt: b }; }
+    const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { timeZone: 'Europe/Berlin', dateStyle: 'short', timeStyle: 'short' });
+    const filter = [f.von && `ab ${datumText(f.von)}`, f.bis && `bis ${datumText(f.bis)}`, f.typId && `Mappentyp ${eintraege.find((e) => e.typId === f.typId)?.typ ?? f.typId}`,
+      f.grund && (f.grund === 'ohne' ? 'ohne Grund' : LOESCHGRUENDE[f.grund]), f.schritt && LOESCHSCHRITTE[f.schritt], f.vorgang && `Vorgang ${f.vorgang}`, f.suche && `Suche „${f.suche}“`].filter(Boolean).join(', ');
+    const b = await schriftstueckPdf({
+      titel: 'Löschprotokoll', untertitel: x.mandant, quer: true,
+      stand: `Erstellt am ${zeit(new Date().toISOString())} von ${x.von} · DMS ${x.version} · ${eintraege.length}${gesamt > eintraege.length ? ` von ${gesamt}` : ''} Einträge${filter ? ` · Filter: ${filter}` : ''}`,
+      vorbemerkung: 'Nachweis über gelöschte Mappen und Dokumente (Art. 5 Abs. 2 DSGVO). Das Löschprotokoll enthält keine Titel, Feldwerte oder Dateinamen; Dokumente sind über ihre Prüfsumme (SHA-256) wiedererkennbar. Es lässt sich nicht ändern.',
+      abschnitte: [{ titel: 'Einträge', bloecke: [{ art: 'tabelle', breiten: [0.9, 0.85, 0.95, 0.8, 1.6, 2.1, 0.9, 1.0, 1.1], kopf: ['Zeit', 'Schritt', 'Mappentyp · Nummer', 'Wie', 'Mappe / Dokument', 'Inhalt', 'Von', 'Grund', 'Vorgang'],
+        zeilen: eintraege.map((e) => [
+          zeit(e.zeit), LOESCHSCHRITTE[e.schritt], [e.typ, e.nummer].filter(Boolean).join(' · '), LOESCHWEGE[e.weg] ?? e.weg,
+          e.art === 'mappe' ? `Mappe ${e.mappeId}` : `Dokument ${e.dokumentId}${e.version && e.version > 1 ? ` (Version ${e.version})` : ''}${e.archivnummer ? ` · Archivnummer ${e.archivnummer}` : ''}`,
+          e.art === 'mappe' ? (e.anzahl ? `${e.anzahl.dokumente} Dokumente, ${e.anzahl.versionen} ältere Versionen, ${e.anzahl.notizen} Notizen, ${e.anzahl.verweise} Verweise entfernt` : '')
+            : `SHA-256 ${e.sha256} · ${e.groesse} Bytes · ${e.mime}${e.seiten ? ` · ${e.seiten} Seiten` : ''}`,
+          `${e.von}${e.ausloeser !== 'benutzer' ? ` (${AUSLOESER[e.ausloeser]})` : ''}`, [e.grund ? LOESCHGRUENDE[e.grund] : '', e.grundText].filter(Boolean).join(': '), e.vorgang ? `${e.vorgang}${e.startId === e.mappeId ? ' (Start)' : ''}` : '',
+        ]) }] }],
+    });
+    return { name: `Löschprotokoll ${tag}.pdf`, mime: 'application/pdf', inhalt: b };
+  }
+
+  /** Für den Vollexport: alle Einträge (älteste zuerst). */
+  async loeschprotokollAlle(): Promise<LoeschEintrag[]> {
+    const { eintraege } = await this.repo.loeschprotokoll({ max: Number.MAX_SAFE_INTEGER });
+    return eintraege.reverse();
   }
 
   /* ---------- Demo-Daten ---------- */
@@ -3832,6 +4543,7 @@ export class Dienst {
         // Verkleinert ohne Versionierung (#393): Der Volltext des bisherigen bleibt, keine neue Texterkennung.
         await this.repo.ocrSetze(dokument.id, { stand: 'fertig', ...e.volltext });
         neu = (await this.repo.holeDokument(dokument.id)) ?? dokument;
+        this.danach(() => void this.volltextFertig({ dokument: dokument.id, mappe: mappeId }));
       } else if (Dienst.volltextAn(typ, reg.key)) {
         await this.repo.ocrEinreihen([dokument.id]);
         neu = (await this.repo.holeDokument(dokument.id)) ?? dokument;
@@ -3938,7 +4650,8 @@ export class Dienst {
   /** Mappentypen mit ihrer Stempel-Einstellung (für die Oberfläche). */
   private async mitStempel<T extends Mappentyp>(typen: T[]): Promise<T[]> {
     const { typen: s } = await this.stempelDaten();
-    return typen.map((t) => ({ ...t, stempel: s[t.id] ?? null }));
+    const e = await this.typErkennungen();
+    return typen.map((t) => ({ ...t, stempel: s[t.id] ?? null, ausDokument: e[t.id]?.ausDokument ?? null, autoZuordnen: !!e[t.id]?.auto }));
   }
 
   /** Welcher Stempel für eine Mappe dieses Typs gilt (Wunsch, Pflicht); Fehler als 422. */
@@ -3990,7 +4703,7 @@ export class Dienst {
     return { name: a.name, mime: a.mime, anzeigbar: true, groesse: a.inhalt.length, inhalt: a.inhalt as Buffer | Readable, gestempelt: !!a.gestempelt, verkleinert: a.verkleinert ?? null };
   }
 
-  async loescheDokument(id: string, benutzerId: string | null = null) {
+  async loescheDokument(id: string, benutzerId: string | null = null, anlass: Anlass = { weg: 'ersetzt' }) {
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, 'Dieses Dokument gibt es nicht.');
     // Archivmodus (#212): Dokumente bleiben bis Fristende; ändern nur als neue Version.
@@ -4001,6 +4714,10 @@ export class Dienst {
     const korb = (await this.papierkorbTage()) > 0;
     if (korb) await this.repo.legeDokumentInPapierkorb(id, benutzerId);
     else await this.repo.loescheDokument(id);
+    // Löschprotokoll (#470)
+    const info = (await this.mappenInfo([d.mappeId], new Map()))(d.mappeId, id);
+    await this.protokolliere(this.dokEintraege([dokInfo(d), ...aeltere.map(versionInfo)], { ...info, schritt: korb ? 'papierkorb' : 'endgueltig', weg: anlass.weg ?? 'dokument' }),
+      await this.loeschKontext(benutzerId, anlass));
     await this.notiere(d.mappeId, benutzerId, korb ? 'dokument_papierkorb' : 'dokument_geloescht', { dokument: d.name, groesse: d.groesse, mime: d.mime, ...(aeltere.length ? { versionen: aeltere.length + 1 } : {}) });
     const m = await this.repo.holeMappe(d.mappeId);
     if (m) await this.beruehre(m.id, await this.repo.holeTyp(m.typId), benutzerId);
@@ -4334,8 +5051,10 @@ export class Dienst {
       this.vorschau?.einreihen([v]);
       neu = await this.nachNeuerVersion(d, v, typ, reg, von);
       if (e.ohneOriginal === true && (await this.archivErlaubt(d.mappeId))) {
+        const alt = (await this.repo.versionenVon(d.id)).find((x) => x.nummer === v.version! - 1);
         const sha = await this.repo.loescheVersion(d.id, v.version! - 1);
         if (sha) await this.raeumeAuf(sha);
+        if (sha && alt) await this.protokolliere(this.dokEintraege([versionInfo(alt)], { ...(await this.mappenInfo([d.mappeId], new Map()))(d.mappeId, d.id), schritt: 'endgueltig', weg: 'version' }), await this.loeschKontext(von));
         neu = (await this.repo.holeDokument(d.id)) ?? neu;
       }
     } else {
@@ -4634,6 +5353,7 @@ export class Dienst {
       mappen: (typId) => r.listeMappen(typId),
       papierkorb: () => r.papierkorb(),
       papierkorbDokumente: () => r.papierkorbDokumente(),
+      loeschprotokoll: () => this.loeschprotokollAlle(),
       // Gebündelt (#367): ein Zugriff je Paket, nicht je Mappe oder Dokument.
       dokumente: (ids) => r.dokumenteVon(ids),
       versionen: (ids) => r.versionenVonDokumenten(ids),
@@ -4773,7 +5493,7 @@ export class Dienst {
    * (für das Wiederherstellen gemerkt) und alle Mappen samt Dokumenten in den Papierkorb. Rechte und
    * Aufbewahrungsfristen werden dabei nie übergangen. Historie und Protokoll ohne Inhalte.
    */
-  async loescheMitVerknuepften(startId: string, eingabe: unknown, benutzerId: string, z: Zugriff) {
+  async loescheMitVerknuepften(startId: string, eingabe: unknown, benutzerId: string, z: Zugriff, quelle?: Ausloeser) {
     const e = (eingabe && typeof eingabe === 'object' ? eingabe : {}) as Record<string, unknown>;
     if (!e.auswahl || typeof e.auswahl !== 'object') throw new Fachfehler(422, 'Bitte die Auswahl angeben (Mappen-Id → loeschen, entkoppeln oder behalten; z. B. der Vorschlag aus der Vorschau).');
     const v = await this.loeschVorschau(startId, e, z);
@@ -4807,7 +5527,11 @@ export class Dienst {
       await this.schreibeVerweisWerte(typ, m, werte, benutzerId);
     }
     const vorgang = weg.has(startId) ? startId : randomUUID();
+    const vorher = await this.lebendInhalt(plan.loeschen.map((id) => mappen.get(id)!));
     await this.repo.legeVorgangInPapierkorb(plan.loeschen, benutzerId, vorgang, entkoppelt);
+    const kontext = await this.loeschKontext(benutzerId, { ...liesAnlass(e), ausloeser: quelle });
+    await this.protokolliere(this.mappenEintraege(vorher, { schritt: 'papierkorb', weg: 'verknuepft', vorgang, startId: v.baum.knoten[0].id,
+      verweise: Object.fromEntries(Object.entries(entkoppelt).map(([id, l]) => [id, l.length])) }), kontext);
     const start = v.baum.knoten[0];
     const z_ = plan.zahlen;
     const text = `mit verknüpften Mappen gelöscht (${z_.mappen} ${z_.mappen === 1 ? 'Mappe' : 'Mappen'}, ${z_.dokumente} ${z_.dokumente === 1 ? 'Dokument' : 'Dokumente'})`;
@@ -4819,7 +5543,7 @@ export class Dienst {
       if (typ?.felder.some((f) => f.eindeutig)) await this.pruefeUnpassende(typ);
     }
     const tage = await this.papierkorbTage();
-    if (!tage) await this.leere(plan.loeschen, benutzerId);
+    if (!tage) await this.leere(plan.loeschen, benutzerId, false, { weg: 'ausgeschaltet', kontext });
     const erinnerung = await this.loeschErinnerungAn(v, plan, benutzerId);
     protokoll.modul('ablage').info(tage ? 'Mappe mit verknüpften Mappen in den Papierkorb gelegt' : 'Mappe mit verknüpften Mappen endgültig gelöscht', {
       von: benutzerId, start: startId, vorgang, mappen: z_.mappen, dokumente: z_.dokumente, verweiseEntfernt: z_.verweise,
@@ -4882,7 +5606,7 @@ export class Dienst {
    * Einen ganzen Vorgang (#424) wiederherstellen: alle Mappen mit ihren Dokumenten und Verweisen, dazu die
    * beim Löschen entfernten Verweise bleibender Mappen. Rechte wie beim einzelnen Wiederherstellen.
    */
-  async stelleVorgangWiederHer(vorgang: string, ich: { id: string; rolle: string }, alle = false) {
+  async stelleVorgangWiederHer(vorgang: string, ich: { id: string; rolle: string }, alle = false, quelle?: Ausloeser) {
     const eintraege = (await this.repo.papierkorb(alle && ich.rolle === 'admin' ? {} : { von: ich.id })).filter((e) => e.vorgang === vorgang);
     if (!istUuid(vorgang) || !eintraege.length) throw new Fachfehler(404, 'Diesen Vorgang gibt es (im Papierkorb) nicht mehr.');
     const typen = new Map((await this.repo.listeTypen()).map((t) => [t.id, t] as const));
@@ -4891,6 +5615,7 @@ export class Dienst {
     const ids = eintraege.map((e) => e.id);
     const { verweiseEntfallen } = await this.repo.stelleMehrereWiederHer(ids);
     await this.repo.historieSchreibe(ids.map((mappeId) => ({ mappeId, benutzerId: ich.id, art: 'wiederhergestellt' as const, daten: { vorgang } })));
+    await this.protokolliere(eintraege.map((e) => this.wiederEintrag(e, typen.get(e.typId), vorgang)), await this.loeschKontext(ich.id, { ausloeser: quelle }));
     await this.aktualisiereTitel(ids);
     let wieder = 0; let entfallen = verweiseEntfallen;
     for (const e of eintraege) if (e.entkoppelt.length) { const r = await this.verbindeWieder(e.id, e.entkoppelt, ich.id); wieder += r.wieder; entfallen += r.entfallen; }
@@ -5078,7 +5803,8 @@ export class Dienst {
     if (!stand.verschluesselt) throw new Fachfehler(422, 'Per E-Mail geht eine Auskunft nur mit Passwort (verschlüsselt). Erzeuge sie mit Passwort neu oder stelle sie über einen Abruf-Link zu.');
     if (stand.bytes > EMAIL_MAX_ANHAENGE) throw new Fachfehler(413, `Die Auskunft ist mit ${Math.round(stand.bytes / 1e6)} MB zu groß für eine E-Mail (höchstens ${Math.round(EMAIL_MAX_ANHAENGE / 1e6)} MB). Stelle sie über einen Abruf-Link zu.`);
     const e = (eingabe ?? {}) as Record<string, unknown>;
-    const { an, betreff, nachricht } = Dienst.emailKopf({ betreff: auskunftMail.zip().betreff, nachricht: auskunftMail.zip().nachricht, ...e });
+    const vorlage = auskunftMail.zip((await this.datenschutz()).anrede);
+    const { an, betreff, nachricht } = Dienst.emailKopf({ betreff: vorlage.betreff, nachricht: vorlage.nachricht, ...e });
     const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;
     try {
       await mailer.sende(an.join(', '), betreff, nachricht, { antwortAn, anhaenge: [{ name: `${stand.name}.zip`, mime: 'application/zip', inhalt: datei() }] });
@@ -5117,7 +5843,7 @@ export class Dienst {
     const bis = datumText(link.ablauf.slice(0, 10));
     if (e.senden) {
       const ds = await this.datenschutz();
-      const m = auskunftMail.link(url, bis, link.maxAbrufe, ds.verantwortlicher);
+      const m = auskunftMail.link(ds.anrede, url, bis, link.maxAbrufe, ds.verantwortlicher);
       const antwortAn = ich.name ? `"${ich.name.replace(/["\\]/g, '')}" <${ich.email}>` : ich.email;
       try { await x.mailer!.sende(e.an, m.betreff, m.nachricht, { antwortAn }); } catch (f) {
         await this.repo.widerrufeAuskunftLink(link.id);
@@ -5329,7 +6055,15 @@ export class Dienst {
     });
     await this.beruehre(neu.mappeId, typ, benutzerId);
     // „Nur die letzten N“ (mit der aktuellen): ältere entfernen, Dateien aufräumen.
-    if (reg.versionenBehalten) for (const sha of await this.repo.kuerzeVersionen(neu.id, reg.versionenBehalten - 1)) await this.raeumeAuf(sha);
+    if (reg.versionenBehalten) {
+      const vorher = await this.repo.versionenVon(neu.id);
+      for (const sha of await this.repo.kuerzeVersionen(neu.id, reg.versionenBehalten - 1)) await this.raeumeAuf(sha);
+      // Löschprotokoll (#470): auch ältere Versionen, die über die eingestellte Anzahl hinaus wegfallen.
+      const bleiben = new Set((await this.repo.versionenVon(neu.id)).map((v) => v.nummer));
+      const weg = vorher.filter((v) => !bleiben.has(v.nummer));
+      if (weg.length) await this.protokolliere(this.dokEintraege(weg.map(versionInfo), { ...(await this.mappenInfo([neu.mappeId], new Map()))(neu.mappeId, neu.id), schritt: 'endgueltig', weg: 'version' }),
+        await this.loeschKontext(benutzerId, { ausloeser: 'automatisch' }));
+    }
     if (neu.ocr?.stand !== 'fertig' && Dienst.volltextAn(typ, reg.key)) {
       await this.repo.ocrEinreihen([neu.id]);
       this.ocr?.anstossen();

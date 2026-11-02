@@ -31,7 +31,7 @@ export function postFotografieren(ziel?: KameraZiel) {
 export const istTouch = () => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
 
 const LAENGSTE = 2400;
-async function verkleinere(f: File): Promise<Blob> {
+export async function verkleinere(f: File): Promise<Blob> {
   try {
     const bmp = await createImageBitmap(f, { imageOrientation: 'from-image' });
     const k = Math.min(1, LAENGSTE / Math.max(bmp.width, bmp.height));

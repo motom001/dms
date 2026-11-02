@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { api, type OrdnerStand, type Schwelle, type SpeicherplatzEinstellung, type SpeicherplatzStand } from '../api';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
@@ -10,7 +10,7 @@ import { AutomatischVerkleinern, GrossePdfsVerkleinern } from './Verkleinern';
 /**
  * Werkbank → Wartung und Fehlersuche → Systemzustand (#408, früher Einstellungen → Speicherplatz, #116):
  * oben Warnschwelle und Grenze, darunter belegt/frei je fester Ordner (#115). An der Grenze startet
- * der Wartungsmodus von selbst; beenden muss ihn ein Administrator. Auslastung folgt (#409).
+ * der Wartungsmodus von selbst; beenden muss ihn ein Administrator. Darunter die Auslastung (#409, `Auslastung.tsx`).
  */
 
 const GB = 1024 ** 3;
@@ -72,7 +72,7 @@ function SchwelleFeld({ name, wert, aendern, hilfe }: { name: string; wert: Schw
   );
 }
 
-export function SpeicherplatzPanel({ z, nachAenderung }: { z: SpeicherplatzZustand; nachAenderung?: () => void }) {
+export function SpeicherplatzPanel({ z, nachAenderung, auslastung }: { z: SpeicherplatzZustand; nachAenderung?: () => void; auslastung?: ReactNode }) {
   const s = z.stand;
   const [e, setE] = useState<SpeicherplatzEinstellung | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
@@ -125,6 +125,9 @@ export function SpeicherplatzPanel({ z, nachAenderung }: { z: SpeicherplatzZusta
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         <Speicherleiste ent={ent} gegenstand="Schwellen" sendet={laeuft} />
       </form>
+
+      {/* Auslastung (#409): unter den Schwellen, über den Ordnern. */}
+      {auslastung}
 
       <section className="blatt" id="ordner">
         <h2 className="h3">Ordner</h2>

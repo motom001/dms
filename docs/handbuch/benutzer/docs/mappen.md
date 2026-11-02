@@ -8,7 +8,7 @@ Eine Mappe sammelt alles zu einer Sache: die Angaben, die Dokumente und die Verb
 
 Oben steht der **Titel** der Mappe. Ihn musst du nicht selbst schreiben: Das DMS setzt ihn aus den Angaben zusammen, zum Beispiel aus Rechnungsnummer und Datum – „R-2026-117 vom 02.03.2026“. Ändert sich eine Angabe, ändert sich der Titel mit.
 
-Darunter stehen die **Indexwerte**, die jede Mappe hat: wann und von wem sie angelegt und zuletzt geändert wurde. Als Änderung zählen auch hochgeladene und entfernte Dokumente, nicht aber Notizen oder Aufgaben. Ein Klick auf einen Namen öffnet die Mappe dieses Benutzers. Mit dem **Stern ☆** rechts neben dem Titel merkst du dir die Mappe als [Favorit](ablage.md#favoriten).
+Darunter stehen die **Indexwerte**, die jede Mappe hat: wann und von wem sie angelegt und zuletzt geändert wurde. Als Änderung zählen auch hochgeladene und entfernte Dokumente, nicht aber Notizen oder Aufgaben. Ein Klick auf einen Namen öffnet die Mappe dieses Benutzers. Mit dem **Stern** rechts neben dem Titel merkst du dir die Mappe als [Favorit](ablage.md#favoriten).
 
 Darunter folgen die **Register** – die Trennblätter der Mappe. Es gibt vier Arten:
 
@@ -41,6 +41,18 @@ Hinter Dokumenten- und Verknüpfungsregistern steht, wie viel darin liegt. Ein r
 
 Stimmt etwas nicht – ein Pflichtfeld ist leer, eine Zahl zu groß, eine Nummer schon vergeben –, steht der Grund direkt am Feld, und es wird nichts gespeichert.
 
+### Aus Dokument ausfüllen
+
+Hast du eine **Visitenkarte**, einen Kassenbon oder einen Brief vor dir, musst du nicht abtippen: Oben in der Mappe (neu oder bestehend) steht **Aus Dokument ausfüllen** – bei manchen Mappentypen mit eigenem Namen, z. B. **Visitenkarte scannen**.
+
+1. Tippe auf den Knopf. Am Handy öffnet **Foto aufnehmen** direkt die Kamera; **Weiteres Foto** nimmt z. B. die Rückseite dazu. Am Rechner wählst du eine Datei – ein Foto, ein PDF oder eine vCard (`.vcf`). In einer bestehenden Mappe geht auch ein Dokument, das schon darin liegt.
+2. **Angaben erkennen.** Das DMS liest den Text (offline, ohne KI) und sucht passende Angaben: Name, Funktion, Telefon, Mobil, E-Mail, Internetseite, Anschrift, Datum, Betrag, Nummern.
+3. **Verstanden – bitte prüfen und speichern.** Leere Felder sind jetzt als **Vorschlag** ausgefüllt; darunter steht, wie sicher der Wert ist und an welcher Textstelle er stand. **Zurücknehmen** leert das Feld wieder. Ist ein Feld schon ausgefüllt, bleibt dein Wert stehen – darunter steht **Im Dokument** der andere Wert mit **Übernehmen**; **Alle Alternativen übernehmen** tut das für alle.
+4. **Verweise**, z. B. *Organisation* bei einer Person: Gibt es die Firma schon (erkannt an Name, Internetseite oder E-Mail-Domain), ist sie vorgeschlagen. Gibt es sie noch nicht, legt **„Organisation“ mit diesen Angaben anlegen** sie nach einer Rückfrage an.
+5. **Mappe speichern.** Erst jetzt ist etwas gespeichert. Das Foto bzw. die Datei liegt dann im Dokumentenregister der Mappe – außer, du hast den Haken „im Register … ablegen“ abgewählt.
+
+Welche Felder die Erkennung füllt, legt der Administrator am Mappentyp fest; Passwortfelder füllt sie nie. Geht etwas schief (unscharfes Foto, kein Text), steht der Grund im Kasten – versuch es mit mehr Licht und gerade gehaltener Karte.
+
 ### Die Felder
 
 | Feld | So gibst du es ein |
@@ -54,6 +66,8 @@ Stimmt etwas nicht – ein Pflichtfeld ist leer, eine Zahl zu groß, eine Nummer
 | Auswahlliste | einen Wert (oder mehrere) aus der Liste wählen |
 | Verweis | eine andere Mappe suchen und wählen (siehe unten) |
 | Passwort | eintippen; gespeichert wird es verschlüsselt (siehe unten) |
+
+Manche Textfelder haben ein **Format**: E-Mail, Telefon, Internetseite, IBAN oder PLZ. Am Handy erscheint dann die passende Tastatur, und offensichtlich falsche Angaben – etwa Buchstaben in einer Telefonnummer – lehnt das DMS mit einem Hinweis ab, was zu tun ist. Neben einer E-Mail-Adresse, Telefonnummer oder Internetseite steht ein Knopf, mit dem du gleich schreibst, anrufst oder die Seite öffnest. Eine IBAN steht in Vierergruppen; eine deutsche PLZ hat genau 5 Ziffern, für andere Länder trägst du das Land ein. Manche Datumsfelder haben Grenzen, ein Geburtstag darf zum Beispiel nicht in der Zukunft liegen. Was schon gespeichert ist, bleibt, bis du das Feld änderst.
 
 ### Formatierter Text
 
@@ -111,6 +125,8 @@ Bei einer neuen Mappe ist das Register noch leer: Verknüpfungen entstehen erst,
 ## Löschen
 
 Unten links in der Mappe steht **Mappe löschen**. Nach einer Rückfrage kommt die Mappe mit ihren Dokumenten in den [Papierkorb](ablage.md#papierkorb); dort lässt sie sich eine Zeit lang wiederherstellen. Ist der Papierkorb ausgeschaltet, ist sie sofort endgültig weg.
+
+In der Rückfrage wählst du den **Grund** – *Nicht mehr nötig*, *Frist abgelaufen*, *Auf Verlangen der betroffenen Person* oder *Sonstiges* – und kannst eine kurze Anmerkung dazuschreiben. Beides steht im Löschprotokoll, mit dem dein Administrator nachweisen kann, dass und warum gelöscht wurde; Titel und Inhalte der Mappe stehen dort nicht. Schreib in die Anmerkung deshalb keine Namen.
 
 Geht Löschen gerade nicht, ist der Knopf ausgegraut, und daneben steht **Warum nicht?**. Ein Klick darauf klappt die Begründung direkt am Knopf auf:
 

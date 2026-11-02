@@ -1,5 +1,6 @@
 import { DateienPruefen } from './Archiv';
 import { NummernNachtragen } from './Nummernkreise';
+import { FormateUnpassend } from './FormateUnpassend';
 import { AbsenderBereinigen } from './AbsenderBereinigen';
 import { useCallback, useEffect, useState } from 'react';
 import { OCR_STAENDE, type OcrStandArt } from '../../../shared/src/model';
@@ -253,6 +254,7 @@ export function WartungPanel({ t, wartungAn }: { t: TexterkennungZustand; wartun
       <DateienPruefen />
       <NummernNachtragen />
       <AbsenderBereinigen />
+      <FormateUnpassend />
     </div>
   );
 }

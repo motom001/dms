@@ -11,7 +11,7 @@ Das DMS läuft – **empfohlen** – als zwei Container: die Anwendung (`ghcr.io
 
 ## Der Einrichtungsassistent
 
-Beim ersten Aufruf führt ein Assistent in neun Schritten durch die Einrichtung. Jeder Schritt hat oben ein **?**, das genau den passenden Abschnitt hier öffnet. Übersprungenes lässt sich in der Werkbank nachholen; die Übersicht erinnert daran.
+Beim ersten Aufruf führt ein Assistent in zehn Schritten durch die Einrichtung. Jeder Schritt hat oben ein **?**, das genau den passenden Abschnitt hier öffnet. Übersprungenes lässt sich in der Werkbank nachholen; die Übersicht erinnert daran.
 
 ### Einrichtungscode
 
@@ -61,6 +61,19 @@ Administratoren richten ein, arbeiten aber nicht in der Ablage. Lege deshalb ein
 ![Schlüssel und Notfallblatt](bilder/einrichtung-schluessel.png)
 
 Der Schlüssel verschlüsselt gespeicherte Passwörter und alle Sicherungen (siehe [Verschlüsselung](verschluesselung.md)); das [Notfallblatt](sicherung.md#notfallblatt) enthält ihn zum Ausdrucken. Druck es aus und leg es zu deinen wichtigen Unterlagen – ohne Schlüssel lässt sich keine Sicherung zurückholen.
+
+### Pakete dazuholen
+
+![Pakete dazuholen](bilder/einrichtung-pakete.png)
+
+Erst in diesem Schritt fragt das DMS den [offiziellen Paketkatalog](pakete.md) ab – vorher baut es keine Verbindung dafür auf. Die Liste zeigt je Paket Name, Beschreibung und was es darf: Pakete ohne Code legen nur Mappentypen und Ansichten an; bei Paketen mit Code zeigt **Was darf das Paket?** die [Rechte](pakete.md#rechte-eines-pakets).
+
+- **Texterkennung ist vorausgewählt** – ohne sie werden gescannte Dokumente nicht durchsuchbar. Alles andere kreuzt du an.
+- **Abhängigkeiten kommen mit**, z. B. „Basis“ für „Haushalt“; sie sind mit „kommt mit – gebraucht von …“ markiert.
+- Danach installiert das DMS die Pakete **nacheinander**, Abhängigkeiten zuerst. Jedes zeigt seine eigene Vorschau; ein Paket mit Code installierst du erst, wenn du **seine** Rechte bestätigt hast – eine Sammelbestätigung gibt es nicht. Mit **Auslassen** überspringst du ein einzelnes Paket.
+- **Überspringen** geht jederzeit; Pakete holst du später unter **Werkbank → [Pakete](pakete.md)**.
+
+Ist der Katalog nicht erreichbar (kein Internet), sagt der Schritt das deutlich: Es fehlen dann die Pakete, etwa die Texterkennung. Dann lädst du hier eine **Sammeldatei** hoch, die du an einem anderen Gerät auf der Katalog-Webseite zusammengestellt hast (siehe [Pakete ohne Internet installieren](pakete.md#pakete-ohne-internet-installieren)) – oder du überspringst den Schritt und holst die Pakete später nach.
 
 ### Optionales
 
@@ -188,7 +201,7 @@ Der Proxy leitet jede Anfrage an das DMS weiter. Für das DMS sieht sie deshalb 
 | **Sperre nach falschen Passwörtern** ([Anmeldeschutz](anmeldeschutz.md), je E-Mail-Adresse und IP sowie je IP) | trifft nur das Gerät, von dem die Fehlversuche kamen | trifft alle Geräte: Fehlversuche von außen sperren die Anmeldung auch zu Hause |
 | **HTTPS erkennen**, solange keine Adresse gepflegt ist | Cookie nur über HTTPS, Links mit `https://` | Cookie auch über HTTP, Links mit der internen `http://`-Adresse |
 
-Seit Version 0.43.0 nimmt das DMS diese Angaben **von selbst** an, wenn der Proxy im eigenen Rechner oder in einem privaten Netz sitzt (`127.0.0.1`, `10.x.x.x`, `172.16–31.x.x`, `192.168.x.x` und die entsprechenden IPv6-Netze). Das trifft auf einen Proxy-Container neben dem DMS und auf den Proxy eines NAS praktisch immer zu. Anfragen direkt aus dem Internet können so keine fremde IP und kein HTTPS vortäuschen. Unter **Wartung und Fehlersuche → Technik** steht bei `TRUST_PROXY`, was gerade gilt.
+Seit Version 0.43.0 nimmt das DMS diese Angaben **von selbst** an, wenn der Proxy im eigenen Rechner oder in einem privaten Netz sitzt (`127.0.0.1`, `10.x.x.x`, `172.16–31.x.x`, `192.168.x.x` und die entsprechenden IPv6-Netze). Das trifft auf einen Proxy-Container neben dem DMS und auf den Proxy eines NAS praktisch immer zu. Anfragen direkt aus dem Internet können so keine fremde IP und kein HTTPS vortäuschen. Unter **Einstellungen → Technik** steht bei `TRUST_PROXY`, was gerade gilt.
 
 !!! note "Wann `TRUST_PROXY` doch setzen?"
     - `TRUST_PROXY: "false"`: Wenn du ganz ausschließen willst, dass ein Gerät **in deinem Heimnetz**, das das DMS direkt über Port 8080 erreicht, eine andere IP-Adresse vortäuscht. Die IP-Adressen und die Sperre verhalten sich dann wie in der rechten Spalte oben.
