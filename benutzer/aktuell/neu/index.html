@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.108/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.109/neu/">
       
       
         <link rel="prev" href="../original/">
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-0108" class="md-skip">
+        <a href="#neu-in-version-0109" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -419,15 +419,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#01080" class="md-nav__link">
+  <a href="#01090" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.108.0
+        0.109.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.108.0">
+    <nav class="md-nav" aria-label="0.109.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -435,6 +435,17 @@
     <span class="md-ellipsis">
       
         Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#technik" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technik
       
     </span>
   </a>
@@ -1138,15 +1149,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#01080" class="md-nav__link">
+  <a href="#01090" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.108.0
+        0.109.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.108.0">
+    <nav class="md-nav" aria-label="0.109.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1154,6 +1165,17 @@
     <span class="md-ellipsis">
       
         Neu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#technik" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technik
       
     </span>
   </a>
@@ -1196,22 +1218,29 @@
   
 
 
-<h1 id="neu-in-version-0108">Neu in Version 0.108<a class="headerlink" href="#neu-in-version-0108" title="Permanent link">&para;</a></h1>
-<h2 id="01080">0.108.0<a class="headerlink" href="#01080" title="Permanent link">&para;</a></h2>
+<h1 id="neu-in-version-0109">Neu in Version 0.109<a class="headerlink" href="#neu-in-version-0109" title="Permanent link">&para;</a></h1>
+<h2 id="01090">0.109.0<a class="headerlink" href="#01090" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Löschkonzept aus dem DMS erzeugen</strong> (#469): unter <strong>Werkbank → Datenschutz → Löschkonzept</strong> als PDF oder Word-Datei (.docx), gegliedert wie die Vorlage im Administratorhandbuch (Abschnitte 1–9).</li>
-<li><strong>Abschnitt 2 „Datenarten und Fristen“</strong> kommt aus deinen Mappentypen: alle, die eine Person betreffen, auf eine solche verweisen (z. B. Rechnung → Kunde) oder einen Zweck haben – mit Betroffenen, Zweck, Frist und Stichtag aus dem Archivmodus, Sperre im DMS und Löschweg („Darf weg“ → Papierkorb → endgültig nach … Tagen).</li>
-<li>Weitere Abschnitte mit deinen Einstellungen vorbelegt: Verantwortlicher, DMS-Version, Papierkorb, Historie gelöschter Mappen, Aufbewahrung der Sicherungen.</li>
-<li>Was das DMS nicht wissen kann, bleibt als <strong>[eckige Klammer]</strong> zum Ergänzen (in Word gelb markiert).</li>
-<li><strong>Lücken</strong> zeigt die Werkbank und das Dokument: Mappentyp mit Personenbezug ohne Zweck oder ohne Frist, kein Verantwortlicher.</li>
-<li>Nichts aus den Mappen selbst – nur Typen, Einstellungen und Fristen.</li>
-<li>Schnittstelle: <code>GET /werkbank/datenschutz/loeschkonzept?format=pdf|docx</code>; die Lücken stehen in <code>GET /werkbank/datenschutz</code>.</li>
-<li>Administratorhandbuch: <em>Löschkonzept (Vorlage)</em> um <strong>Aus dem DMS erzeugen</strong> ergänzt.</li>
+<li><strong>Löschprotokoll</strong> (#470): unter <strong>Werkbank → Datenschutz → Löschprotokoll</strong> weist du nach, dass und wann Mappen und Dokumente gelöscht wurden – ohne die gelöschten Daten selbst.</li>
+<li>Je Mappe: Mappentyp, Id, <strong>Nummer</strong> aus dem Nummernkreis, Anzahl Dokumente, ältere Versionen, Notizen und entfernte Verweise. Je Dokument (auch ältere Versionen): <strong>Prüfsumme (SHA-256)</strong>, Größe, Dateityp, Seitenzahl, Archivnummer. <strong>Keine Titel, Feldwerte oder Dateinamen.</strong></li>
+<li>Dazu wann, von wem (Benutzer, Schnittstelle, Paket oder automatisch), wie und <strong>warum</strong>, und der Vorgang beim Löschen mit verknüpften Mappen (mit Start-Mappe).</li>
+<li>Jeder Schritt ein Eintrag: <strong>in den Papierkorb</strong>, <strong>endgültig gelöscht</strong> (von Hand, Papierkorb geleert, beim Abmelden, nach Ablauf, Papierkorb ausgeschaltet), <strong>wiederhergestellt</strong>. Erfasst werden alle Löschwege: einzeln, mehrere, mit verknüpften Mappen, „Darf weg“, einzelne Dokumente (auch beim Ersetzen oder Bearbeiten von PDFs), ältere Versionen über die eingestellte Anzahl hinaus, Schnittstelle und Pakete.</li>
+<li><strong>Grund beim Löschen:</strong> Die Rückfrage fragt nach <em>Nicht mehr nötig</em>, <em>Frist abgelaufen („Darf weg“)</em>, <em>Auf Verlangen der betroffenen Person</em> oder <em>Sonstiges</em> und einer optionalen Anmerkung ohne Personenbezug; über die Schnittstelle mit <code>grund</code> und <code>grundText</code>.</li>
+<li><strong>Filter</strong> nach Zeitraum, Mappentyp, Grund, Schritt und Vorgang; <strong>Suche</strong> nach Nummer oder Prüfsumme – auch per Datei („Wurde dieses Dokument gelöscht?“, die Prüfsumme rechnet dein Browser).</li>
+<li>Ausgabe als <strong>PDF</strong> (Nachweis) und <strong>CSV</strong>.</li>
+<li><strong>Nicht änderbar</strong> (auch nicht für Administratoren, die Datenbank verhindert es), eigene <strong>Aufbewahrung</strong> (Standard 10 Jahre, einstellbar), in Sicherung und Vollexport (<code>daten/loeschprotokoll.csv</code>).</li>
+<li>Das erzeugte Löschkonzept verweist in Abschnitt 8 „Nachweis“ darauf.</li>
+<li>Schnittstelle: <code>GET /werkbank/loeschprotokoll</code>, <code>GET /werkbank/loeschprotokoll/datei?format=pdf|csv</code>, <code>PUT /werkbank/loeschprotokoll/einstellungen</code>.</li>
+<li>Administratorhandbuch: <em>Datenschutz im DMS</em> → <strong>Löschprotokoll</strong> (mit „Wann ist gelöscht wirklich gelöscht?“ und der Prüfsumme als pseudonymem Datum); Vorlage Löschkonzept, Abschnitt 8.</li>
+</ul>
+<h3 id="technik">Technik<a class="headerlink" href="#technik" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Migration <code>044_loeschprotokoll.sql</code>: Tabelle <code>loeschprotokoll</code> mit Auslöser, der Ändern und Löschen verhindert (nur das Aufräumen nach der Aufbewahrung darf löschen).</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.107.1 im Detail: <a href="https://github.com/motom001/dms/compare/v0.107.1...v0.108.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.108.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.108.0...v0.109.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 

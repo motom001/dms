@@ -1,0 +1,3180 @@
+
+<!doctype html>
+<html lang="de" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Einrichten, betreiben und erweitern des DMS">
+      
+      
+      
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.109/datenschutz/">
+      
+      
+        <link rel="prev" href="../archiv/">
+      
+      
+        <link rel="next" href="../loeschkonzept/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Datenschutz im DMS - DMS – Administratorhandbuch</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#datenschutz-im-dms" class="md-skip">
+          Zum Inhalt
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+          <aside class="md-banner md-banner--warning">
+            <div class="md-banner__inner md-grid md-typeset">
+              
+  Du liest nicht das Handbuch zur neuesten Version des DMS.
+  <a href="../.."><strong>Zur aktuellen Version</strong></a>
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL(".."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
+          </aside>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Kopfzeile">
+    <a href=".." title="DMS – Administratorhandbuch" class="md-header__button md-logo" aria-label="DMS – Administratorhandbuch" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DMS – Administratorhandbuch
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Datenschutz im DMS
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dunkle Darstellung"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dunkle Darstellung" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Helle Darstellung"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Helle Darstellung" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Suche" placeholder="Suche" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Suche">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Zurücksetzen" aria-label="Zurücksetzen" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Suche wird initialisiert
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/motom001/dms" title="Zum Repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    motom001/dms
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="DMS – Administratorhandbuch" class="md-nav__button md-logo" aria-label="DMS – Administratorhandbuch" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DMS – Administratorhandbuch
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/motom001/dms" title="Zum Repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    motom001/dms
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Überblick
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../neu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Neu in dieser Version
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation und Betrieb
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation und Betrieb
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Einrichtung und Betrieb
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/installieren/aktuell/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wie komme ich an ein DMS?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aktualisieren/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aktualisieren und Sichern
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wachsen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wachsen und umziehen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verschluesselung/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verschlüsselung
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Einrichten in der Werkbank
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Einrichten in der Werkbank
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../uebersicht/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Werkbank und Übersicht
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mappentypen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mappentypen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sichten/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ansichten
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nummernkreise/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Nummernkreise
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pakete/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pakete
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../archiv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Archivmodus und Aufbewahrung
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datenschutz im DMS
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datenschutz im DMS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Inhaltsverzeichnis">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Inhaltsverzeichnis
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#datenschutz-eingebaut" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Datenschutz eingebaut
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#keine-telemetrie" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keine Telemetrie
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grenzen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Was du selbst regeln musst
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schritt-fur-schritt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schritt für Schritt
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Schritt für Schritt">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auskunft-an-einen-benutzer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auskunft an einen Benutzer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auskunft-an-eine-person-die-kein-benutzer-ist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auskunft an eine Person, die kein Benutzer ist
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loschen-auf-verlangen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Löschen auf Verlangen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sperr-und-loschkonzept-aufsetzen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sperr- und Löschkonzept aufsetzen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auskunft-erteilen-werkbank-datenschutz" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auskunft erteilen: Werkbank → Datenschutz
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Auskunft erteilen: Werkbank → Datenschutz">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#einstellungen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Einstellungen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anrede" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anrede in Unterlagen für Dritte: du oder Sie
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auskunft-nach-art-15-dsgvo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auskunft nach Art. 15 DSGVO
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Auskunft nach Art. 15 DSGVO">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#warum-keine-volltext-suche" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Warum keine Volltext-Suche?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#was-die-zip-datei-enthalt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Was die ZIP-Datei enthält
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nachweis-und-aufbewahrung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nachweis und Aufbewahrung
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wer-darf-das" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wer darf das?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auskunft-zustellen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auskunft zustellen
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Auskunft zustellen">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#weg-1-per-e-mail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weg 1: per E-Mail
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#weg-2-abruf-link-mit-abrufcode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weg 2: Abruf-Link mit Abrufcode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sicherheit-der-abrufseite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheit der Abrufseite
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#erreichbarkeit-aus-dem-internet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Erreichbarkeit aus dem Internet
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mit-verknupften-mappen-loschen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Löschen mit verknüpften Mappen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loschprotokoll" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Löschprotokoll
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Löschprotokoll">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#was-drinsteht" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Was drinsteht
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wann-ist-geloscht-wirklich-geloscht" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wann ist „gelöscht“ wirklich gelöscht?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ansehen-und-ausgeben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ansehen und ausgeben
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nicht-anderbar-eigene-aufbewahrung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nicht änderbar, eigene Aufbewahrung
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schnittstelle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schnittstelle
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../loeschkonzept/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Löschkonzept (Vorlage)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stempel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stempel beim Weitergeben
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../direktlinks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Links über Feldwerte
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benutzer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benutzer und Rollen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../anmeldeschutz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anmeldeschutz
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../berechtigungen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Berechtigungen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../designs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Designs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aufgaben/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aufgaben
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../papierkorb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Papierkorb
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../texterkennung/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Texterkennung und Wartung
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../eingangsordner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Eingangsordner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../postfaecher/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Postfächer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../webdav/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WebDAV-Laufwerk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo-Daten
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wartung und Notfall
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Wartung und Notfall
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sicherung/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sicherung
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../export/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Daten exportieren
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wiederherstellen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wiederherstellen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wartungsmodus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wartungsmodus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../speicherplatz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systemzustand
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../notfall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notfall: kein Admin mehr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../konsole/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Konsole: Befehl dms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../verfahrensdokumentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verfahrensdokumentation (Vorlage)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fehlersuche und Support
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Fehlersuche und Support
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fehlersuche/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protokoll, Datenbank, Technik
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schnittstelle (API)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hintergrund
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hintergrund
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technik/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Technik
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../entscheidungen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entscheidungen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/benutzer/aktuell/begriffe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Begriffe (Glossar)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Weiteres
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Weiteres
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/motom001/dms/releases" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Was ist neu? (Changelog)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/benutzer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benutzerhandbuch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/installieren/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wie komme ich an ein DMS?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/entwickler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entwicklerhandbuch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Inhaltsverzeichnis">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Inhaltsverzeichnis
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#datenschutz-eingebaut" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Datenschutz eingebaut
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#keine-telemetrie" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keine Telemetrie
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grenzen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Was du selbst regeln musst
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schritt-fur-schritt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schritt für Schritt
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Schritt für Schritt">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#auskunft-an-einen-benutzer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auskunft an einen Benutzer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#auskunft-an-eine-person-die-kein-benutzer-ist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auskunft an eine Person, die kein Benutzer ist
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loschen-auf-verlangen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Löschen auf Verlangen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sperr-und-loschkonzept-aufsetzen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sperr- und Löschkonzept aufsetzen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auskunft-erteilen-werkbank-datenschutz" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auskunft erteilen: Werkbank → Datenschutz
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Auskunft erteilen: Werkbank → Datenschutz">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#einstellungen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Einstellungen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anrede" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anrede in Unterlagen für Dritte: du oder Sie
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auskunft-nach-art-15-dsgvo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auskunft nach Art. 15 DSGVO
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Auskunft nach Art. 15 DSGVO">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#warum-keine-volltext-suche" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Warum keine Volltext-Suche?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#was-die-zip-datei-enthalt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Was die ZIP-Datei enthält
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nachweis-und-aufbewahrung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nachweis und Aufbewahrung
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wer-darf-das" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wer darf das?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auskunft-zustellen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auskunft zustellen
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Auskunft zustellen">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#weg-1-per-e-mail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weg 1: per E-Mail
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#weg-2-abruf-link-mit-abrufcode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weg 2: Abruf-Link mit Abrufcode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sicherheit-der-abrufseite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sicherheit der Abrufseite
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#erreichbarkeit-aus-dem-internet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Erreichbarkeit aus dem Internet
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mit-verknupften-mappen-loschen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Löschen mit verknüpften Mappen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loschprotokoll" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Löschprotokoll
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Löschprotokoll">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#was-drinsteht" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Was drinsteht
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wann-ist-geloscht-wirklich-geloscht" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wann ist „gelöscht“ wirklich gelöscht?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ansehen-und-ausgeben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ansehen und ausgeben
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nicht-anderbar-eigene-aufbewahrung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nicht änderbar, eigene Aufbewahrung
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schnittstelle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schnittstelle
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="datenschutz-im-dms">Datenschutz im DMS<a class="headerlink" href="#datenschutz-im-dms" title="Permanent link">&para;</a></h1>
+<p>Das DMS ist <strong>auf Datenschutz ausgelegt</strong> – „Datenschutz durch Technikgestaltung und datenschutzfreundliche Voreinstellungen“ heißt das in Art. 25 DSGVO. Es läuft bei dir, sendet nichts nach Hause und bringt Werkzeuge mit, mit denen du Auskunft gibst, Aufbewahrungsfristen einhältst und löschst. So legst du Daten von Familie, Mietern und Kunden guten Gewissens darin ab. Diese Seite zeigt, was es dafür gibt und wo du es findest, was du selbst regeln musst und wie du bei einer Anfrage Schritt für Schritt vorgehst.</p>
+<div class="admonition note">
+<p class="admonition-title">Unterstützt – ersetzt nichts. Keine Rechtsberatung.</p>
+<p>Eine Software allein ist nie „DSGVO-konform“, und ein Siegel dafür hat das DMS nicht. Datenschutzgerecht wird es erst durch <strong>Software, deine Abläufe und deine Dokumentation zusammen</strong> – wie bei der <a href="../verfahrensdokumentation/">Verfahrensdokumentation</a> nach GoBD. Das DMS stellt Daten zusammen, sperrt und löscht und hält fest, was geschah. Ob und was du herausgeben, aufbewahren oder löschen musst, entscheidest du – im Zweifel mit deinem Datenschutzbeauftragten oder einer Rechtsberatung. Diese Seite ist keine Rechtsberatung.</p>
+</div>
+<h2 id="datenschutz-eingebaut">Datenschutz eingebaut<a class="headerlink" href="#datenschutz-eingebaut" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>DSGVO</th>
+<th>Was das DMS dafür hat</th>
+<th>Wo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Art. 5 Abs. 1 c und Art. 25 – Datenminimierung, datenschutzfreundliche Voreinstellungen</td>
+<td><strong>Selbst gehostet:</strong> Die Daten liegen nur auf deinem Gerät – oder bei einem <a href="https://motom001.github.io/dms/installieren/aktuell/anbieter/">Anbieter</a>, den du selbst wählst. <a href="#keine-telemetrie">Keine Telemetrie</a>, kein Tracking, keine Werbung, keine KI im Kern; die Texterkennung läuft lokal. KI-Funktionen kommen als Pakete und laufen ebenfalls lokal – ein externer KI-Dienst wird nur angebunden, wenn du ihn ausdrücklich als Paket installierst und ihm den Netzzugriff bei der Installation bestätigst. Wer was sehen darf, regeln Rechte je Mappentyp mit Regeln.</td>
+<td>Werkbank → Mappentypen → <a href="../berechtigungen/">Berechtigungen</a></td>
+</tr>
+<tr>
+<td>Art. 5 Abs. 1 e – Speicherbegrenzung; Art. 17 – Löschen</td>
+<td><a href="../archiv/">Archivmodus</a> mit Aufbewahrungsfrist und der Liste <strong>Darf weg</strong>; <a href="../papierkorb/">Papierkorb</a> für Mappen und Dokumente mit endgültigem Löschen; die Historie gelöschter Mappen fällt nach einer einstellbaren Zeit weg</td>
+<td>Werkbank → Mappentypen → Archivmodus, Werkbank → Darf weg, Werkbank → Papierkorb</td>
+</tr>
+<tr>
+<td>Art. 18 – Einschränkung (Sperren)</td>
+<td><strong>Löschsperre bis Fristende</strong> im Archivmodus – der erste Baustein eines <a href="#sperr-und-loschkonzept-aufsetzen">Sperr- und Löschkonzepts</a>; den Zugriff schränkst du über Berechtigungen ein</td>
+<td>Werkbank → Mappentypen</td>
+</tr>
+<tr>
+<td>Art. 15 – Auskunft</td>
+<td><a href="#auskunft-nach-art-15-dsgvo">Auskunft</a> als ZIP mit Deckblatt, Prüfliste und Nachweis; <a href="#auskunft-zustellen">zustellen</a> per Abruf-Link oder E-Mail</td>
+<td>Werkbank → Datenschutz</td>
+</tr>
+<tr>
+<td>Art. 20 – Datenübertragbarkeit</td>
+<td><strong>Persönlicher Export</strong> für jeden Benutzer, <strong>Vollexport</strong> aller Daten – beides in offenen Formaten (CSV, JSON, Excel, Dokumente im Original)</td>
+<td>Profil → Konto → Meine Daten exportieren; Werkbank → Vollexport (<a href="../export/">Daten exportieren</a>)</td>
+</tr>
+<tr>
+<td>Art. 5 Abs. 2 – Rechenschaft; Art. 30 – Nachweis</td>
+<td><strong>Historie</strong> jeder Mappe (wer hat wann was geändert), <a href="../fehlersuche/#protokoll">Protokoll</a>, Nachweis jeder Auskunft in der Historie der Person, <a href="#loschprotokoll">Löschprotokoll</a> mit Prüfsummen ohne Inhalte; <a href="../loeschkonzept/">Löschkonzept</a> aus dem DMS erzeugen und Vorlage <a href="../verfahrensdokumentation/">Verfahrensdokumentation</a></td>
+<td>Register <em>Historie</em> an jeder Mappe, Werkbank → Protokoll, Werkbank → Datenschutz</td>
+</tr>
+<tr>
+<td>Art. 32 – Sicherheit</td>
+<td><a href="../verschluesselung/">Verschlüsselte</a> Passwortfelder und Zugangsdaten, verschlüsselte <a href="../sicherung/">Sicherung</a> mit <a href="../wiederherstellen/#probe-wiederherstellung">Probe-Wiederherstellung</a>, <a href="../anmeldeschutz/">Anmeldeschutz und Zwei-Faktor-Anmeldung</a>, Prüfwerte für jede Datei, Hinweise zu <a href="../installation/#https-und-zertifikate">HTTPS</a></td>
+<td>Werkbank → Verschlüsselung, Sicherung, Anmeldeschutz</td>
+</tr>
+</tbody>
+</table>
+<h2 id="keine-telemetrie">Keine Telemetrie<a class="headerlink" href="#keine-telemetrie" title="Permanent link">&para;</a></h2>
+<p>Das DMS sendet <strong>keine Nutzungsdaten</strong> – weder an das Projekt noch an sonst jemanden: keine anonymen Statistiken, keine regelmäßigen „Lebenszeichen“, keine Absturzberichte, kein Tracking in der Oberfläche. Die Oberfläche lädt von Haus aus nichts von fremden Servern – keine Schriften, Skripte oder Bilder.</p>
+<p><strong>Von sich aus baut das DMS keine Verbindung ins Internet auf.</strong> Eine automatische Suche nach neuen Versionen gibt es nicht – also auch nichts abzuschalten. Nach außen geht es nur, wenn du es auslöst oder einrichtest:</p>
+<table>
+<thead>
+<tr>
+<th>Verbindung</th>
+<th>Wann</th>
+<th>Wohin, was</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Versionsabgleich</strong></td>
+<td>nur auf Knopfdruck unter <strong>Werkbank → Technik</strong></td>
+<td>GitHub (Stand des DMS), endoflife.date (Node.js, PostgreSQL, Alpine), npm-Registry (Bibliotheken). Die Anfrage an GitHub enthält die Commit-Kennung deiner Version, damit sich die Änderungen seitdem zählen lassen – keine Daten aus deiner Ablage. Siehe <a href="../technik/#versionen-und-aktualisierung">Technik</a>.</td>
+</tr>
+<tr>
+<td><strong>Paketkatalog</strong></td>
+<td>auf Knopfdruck unter <strong>Werkbank → Pakete</strong> (Katalog abrufen, auf neue Versionen prüfen) und wenn du einen Installationslink aus dem Katalog öffnest</td>
+<td>GitHub (<a href="../pakete/">Pakete</a>); weitere Kataloge nur, wenn du sie einträgst</td>
+</tr>
+<tr>
+<td><strong>E-Mail</strong></td>
+<td>wenn du den E-Mail-Versand oder <a href="../postfaecher/">Postfächer</a> einrichtest</td>
+<td>dein Mailserver</td>
+</tr>
+<tr>
+<td><strong>Anmeldung über einen Anbieter</strong></td>
+<td>wenn du sie <a href="../anmeldeschutz/#anmeldung-uber-einen-anbieter-openid-connect">einrichtest</a></td>
+<td>dein Anbieter (OpenID Connect)</td>
+</tr>
+<tr>
+<td><strong>Pakete mit Code</strong></td>
+<td>nur, wenn ein Paket es braucht und du es bei der Installation bestätigst</td>
+<td>nur die Adressen, die das Paket angibt (<a href="../pakete/#recht-netzwerk-und-internet">Rechte eines Pakets</a>)</td>
+</tr>
+<tr>
+<td><strong>Handbuch</strong></td>
+<td>wenn du auf <strong>Hilfe</strong> oder ein <strong>?</strong> klickst</td>
+<td>Das mitgelieferte Handbuch unter <code>/hilfe/</code> kommt ohne Internet aus (<a href="../technik/#hilfe-ohne-internet">Hilfe ohne Internet</a>); Links auf das Online-Handbuch öffnet dein Browser.</td>
+</tr>
+</tbody>
+</table>
+<p>Wer dem Projekt sagen möchte, dass und wie er das DMS nutzt, tut das bewusst und selbst – über die Mitmach-Seite <a href="https://github.com/motom001/dms/issues?q=label%3Anutzt-das-dms">Wer nutzt das DMS?</a> mit dem Formular <a href="https://github.com/motom001/dms/issues/new?template=ich-nutze-das-dms.yml">Ich nutze das DMS</a>. Das DMS meldet nichts.</p>
+<h2 id="grenzen">Was du selbst regeln musst<a class="headerlink" href="#grenzen" title="Permanent link">&para;</a></h2>
+<p>Das DMS gibt dir Werkzeuge. Diese Punkte bleiben bei dir als Verantwortlichem:</p>
+<ul>
+<li><strong>Verzeichnis der Verarbeitungstätigkeiten</strong> (Art. 30), <strong>Rechtsgrundlagen und Informationspflichten</strong> (Art. 13, 14) – etwa der Datenschutzhinweis im Mietvertrag. Die Angaben dafür stehen im DMS: Mappentypen, Zwecke aus den <a href="#einstellungen">Einstellungen</a>, Fristen aus dem Archivmodus.</li>
+<li><strong>Welche Frist gilt:</strong> Aufbewahrungsfristen klärst du mit deiner Steuerberatung; das DMS setzt um, was du einträgst.</li>
+<li><strong>Löschen nach Fristende:</strong> Das DMS löscht nie von selbst. Du prüfst <strong>Darf weg</strong> regelmäßig.</li>
+<li><strong>Kopien außerhalb der Ablage:</strong> Gelöschtes steckt noch in älteren <a href="../sicherung/#zeitplan-und-aufbewahrung">Sicherungen</a>, bis sie nach deiner Aufbewahrung wegfallen (Standard: bis zu 12 Monate; von Hand angelegte bleiben, bis du sie löschst), in Vollexporten und persönlichen Exporten unter <code>export/</code>, in Kopien außer Haus, heruntergeladenen Dateien und Ausdrucken.</li>
+<li><strong>Wer Zugriff hat:</strong> Administratoren sehen alles. Rollen und Berechtigungen richtest du ein; Zugänge von Personen, die gehen, <a href="../benutzer/#zugang-sperren">deaktivierst</a> du.</li>
+<li><strong>Die Umgebung:</strong> Gerät und Festplatten, Netzwerk, HTTPS, Updates, Kopie der Sicherungen außer Haus – und Verträge zur Auftragsverarbeitung mit Dienstleistern, etwa dem Mailanbieter. Läuft dein DMS <a href="https://motom001.github.io/dms/installieren/aktuell/anbieter/">bei einem Anbieter</a>, brauchst du als Vermieter oder Betrieb mit ihm einen <strong>AV-Vertrag</strong>; dort steht auch, worauf du bei der Wahl achtest.</li>
+<li><strong>Datenpannen</strong> melden (Art. 33, 34) und, wo vorgeschrieben, einen Datenschutzbeauftragten benennen.</li>
+</ul>
+<h2 id="schritt-fur-schritt">Schritt für Schritt<a class="headerlink" href="#schritt-fur-schritt" title="Permanent link">&para;</a></h2>
+<h3 id="auskunft-an-einen-benutzer">Auskunft an einen Benutzer<a class="headerlink" href="#auskunft-an-einen-benutzer" title="Permanent link">&para;</a></h3>
+<p>Ein Familienmitglied oder jemand aus dem Betrieb, der ein Konto im DMS hat, möchte wissen, was über ihn gespeichert ist.</p>
+<ol>
+<li><strong>Selbst exportieren lassen:</strong> Unter <strong>Profil → Konto → Meine Daten exportieren</strong> bekommt er alles, was er lesen darf – Mappen mit Dokumenten, seine Aufgaben, Erinnerungen, Favoriten und seinen Papierkorb, sein Benutzerkonto ohne Passwort (<a href="../export/#meine-daten-exportieren">Meine Daten exportieren</a>). Prüfe vorher unter <strong>Werkbank → Vollexport</strong>, ob der persönliche Export eingeschaltet ist.</li>
+<li><strong>Was darin fehlt, ergänzt du:</strong> Mappen über ihn, die er nicht lesen darf (z. B. eine Personalakte), und Einträge im <a href="../fehlersuche/#protokoll">Protokoll</a> (Anmeldungen, Fehler). Ist er auch als Person erfasst – etwa als Mappe <em>Mitarbeiter</em> –, erteile dafür eine <a href="#auskunft-an-eine-person-die-kein-benutzer-ist">Auskunft wie für eine Person, die kein Benutzer ist</a>.</li>
+<li><strong>Ehemalige Benutzer</strong> können sich nicht mehr anmelden und also nicht selbst exportieren. Nimm dann die Angaben aus einem <a href="../export/">Vollexport</a>: das Benutzerkonto unter <code>struktur/</code>, seine Einträge in <code>daten/historie.jsonl</code> und die Mappen, die ihn betreffen.</li>
+<li><strong>Frist:</strong> Antworte innerhalb eines Monats (Art. 12 Abs. 3 DSGVO).</li>
+</ol>
+<h3 id="auskunft-an-eine-person-die-kein-benutzer-ist">Auskunft an eine Person, die kein Benutzer ist<a class="headerlink" href="#auskunft-an-eine-person-die-kein-benutzer-ist" title="Permanent link">&para;</a></h3>
+<p>Ein Mieter, Kunde oder Kontakt fragt nach seinen Daten. Das erledigt <strong>Werkbank → Datenschutz</strong>; die Einzelheiten stehen <a href="#auskunft-nach-art-15-dsgvo">weiter unten</a>.</p>
+<ol>
+<li><strong>Einmal einrichten:</strong> Verantwortlicher, Empfänger und die Mappentypen, die eine Person betreffen, jeweils mit Zweck (<a href="#einstellungen">Einstellungen</a>).</li>
+<li><strong>Person wählen</strong> – oder an ihrer Mappe <strong>Mappe ▾ → Auskunft erstellen …</strong> – und den Eingang der Anfrage eintragen. <strong>Frist als Aufgabe anlegen</strong> erinnert dich unter „Zu erledigen“.</li>
+<li><strong>Sammeln:</strong> Das DMS folgt den Verweisen von der Mappe der Person aus (Mietvertrag, Abrechnungen, Wohnung) – vollständig nur, was über eine <strong>Zugehörigkeit</strong> zu ihr gehört. Mappen, in denen sie nur über einen <strong>Bezug</strong> genannt ist (z. B. als Ansprechpartner), stehen ohne ihre Inhalte da (<a href="#zugehorigkeit-oder-bezug">Zugehörigkeit oder Bezug</a>).</li>
+<li><strong>Weitersuchen</strong>, wenn die Person auch anderswo vorkommt: Eine Volltext-Suche macht das DMS bewusst nicht (<a href="#warum-keine-volltext-suche">warum</a>). Such selbst in der Ablage mit der <a href="https://motom001.github.io/dms/benutzer/aktuell/ablage/#erweiterte-suche">erweiterten Suche</a> ohne gewählten Mappentyp, mit <strong>Volltext</strong> auch in Dokumenten und Notizen. Was wirklich zur Person gehört, verknüpfst du mit ihrer Mappe (als Zugehörigkeit) und sammelst neu.</li>
+<li><strong>Prüfen und schwärzen:</strong> Nur Angehaktes geht hinaus; Angaben zu anderen Personen schwärzt du vorher.</li>
+<li><strong>Erzeugen und zustellen:</strong> am besten mit Passwort, dann per <a href="#auskunft-zustellen">Abruf-Link oder E-Mail</a>. Der Nachweis steht in der Historie der Person.</li>
+</ol>
+<h3 id="loschen-auf-verlangen">Löschen auf Verlangen<a class="headerlink" href="#loschen-auf-verlangen" title="Permanent link">&para;</a></h3>
+<p>Jemand verlangt, dass seine Daten gelöscht werden (Art. 17 DSGVO).</p>
+<ol>
+<li><strong>Finden, was zur Person gehört:</strong> wie bei der Auskunft – die Prüfliste unter <strong>Werkbank → Datenschutz</strong> zeigt alle Mappen, die zur Person gehören, und die, in denen sie nur genannt ist. Erzeugen musst du dafür nichts.</li>
+<li><strong>Prüfen, ob eine Aufbewahrungsfrist entgegensteht</strong> (Art. 17 Abs. 3): Mappen eines Mappentyps im <a href="../archiv/">Archivmodus</a> tragen <strong>Archiv · aufbewahren bis …</strong> und lassen sich vor Fristende ohnehin nicht löschen – auch nicht von Administratoren. Prüfe auch Mappen ohne Archivmodus: Rechnungen oder Verträge können Fristen haben, die du (noch) nicht eingetragen hast.</li>
+<li><strong>Frist steht entgegen → sperren statt löschen.</strong> Die Mappe bleibt bis Fristende; benutze sie nur noch dafür, wofür du sie aufbewahren musst.<ul>
+<li><strong>Zugriff einschränken:</strong> Gib dem Mappentyp ein Ja/Nein-Feld wie <em>Gesperrt</em> und lege in den <a href="../berechtigungen/#bedingungen">Berechtigungen</a> eine Regel an: Wenn „Gesperrt ist ja“, dann Lesen und Bearbeiten nur für eine Rolle wie <em>Datenschutz</em>. Administratoren sehen weiter alles.</li>
+<li><strong>Vermerken:</strong> eine Notiz an der Mappe, z. B. „Gesperrt auf Verlangen vom 03.11.2026 – löschen nach Fristende“.</li>
+<li><strong>Nach Fristende</strong> steht die Mappe unter <strong>Werkbank → Darf weg</strong>; dann löschst du sie wie unten.</li>
+<li>Sag der Person, dass und bis wann ihre Daten gesperrt bleiben und warum.</li>
+</ul>
+</li>
+<li><strong>Keine Frist → löschen:</strong><ul>
+<li>In der Ablage die Mappen löschen – einzeln oder über die <a href="https://motom001.github.io/dms/benutzer/aktuell/ablage/#mehrere-mappen-loschen">Mehrfachauswahl</a>; einzelne Dokumente an der Dokumentzeile. Wähle beim Löschen den Grund <strong>Auf Verlangen der betroffenen Person</strong> – er steht im <a href="#loschprotokoll">Löschprotokoll</a>. Eine Mappe, auf die noch andere verweisen, lässt sich nicht löschen: Entferne zuerst den Verweis oder lösche die verweisende Mappe mit, wenn auch sie weg soll.</li>
+<li>Unter <strong>Werkbank → Papierkorb</strong> die Mappen und Dokumente wählen und <strong>endgültig löschen</strong> (oder den ganzen Papierkorb leeren). Erst dann sind auch Dateien und Volltext weg.</li>
+</ul>
+</li>
+<li><strong>Was danach noch bleibt</strong> – sag es der Person, wenn sie fragt:<ul>
+<li>die <strong>Historie der gelöschten Mappen</strong> für die eingestellte Zeit (Standard 365 Tage, <a href="../papierkorb/#historie-endgultig-geloschter-mappen">einstellbar</a>; 0 löscht sie sofort mit – das gilt dann für alle Mappen),</li>
+<li>ältere <strong>Sicherungen</strong>, bis sie nach der Aufbewahrung wegfallen,</li>
+<li><strong>Exporte</strong> unter <code>export/</code>, bereitliegende <strong>Auskünfte</strong> (höchstens 7 Tage oder bis ein Abruf-Link abläuft) und Kopien außerhalb des DMS.</li>
+</ul>
+</li>
+<li><strong>Festhalten, dass gelöscht wurde:</strong> Das macht das <a href="#loschprotokoll">Löschprotokoll</a> – mit Grund, Mappentyp, Nummer und den Prüfsummen der Dokumente, ohne die Daten selbst. Filter nach dem Tag und dem Grund <em>Auf Verlangen der betroffenen Person</em> und gib es als PDF aus, wenn die Person oder eine Aufsichtsbehörde einen Nachweis möchte.</li>
+</ol>
+<p>Hat die Person ein <strong>Benutzerkonto</strong>, das schon benutzt wurde, <a href="../benutzer/#zugang-sperren">deaktivierst</a> du es: Das DMS löscht solche Konten nicht, damit „angelegt von“ und Verweise stimmen. Ihr Name bleibt dort stehen.</p>
+<h3 id="sperr-und-loschkonzept-aufsetzen">Sperr- und Löschkonzept aufsetzen<a class="headerlink" href="#sperr-und-loschkonzept-aufsetzen" title="Permanent link">&para;</a></h3>
+<p>Für Vermieter, Selbständige und Betriebe: einmal festlegen, wie lange welche Daten bleiben, und das DMS so einrichten, dass es dich daran hält.</p>
+<ol>
+<li><strong>Datenarten erfassen:</strong> Jeder Mappentyp ist eine Datenart – Mieter, Mietvertrag, Rechnung, Kunde, Bewerbung … Markiere unter <strong>Werkbank → Datenschutz → Einstellungen</strong>, welche eine Person betreffen, und trage je Mappentyp den Zweck ein. Daraus <a href="../loeschkonzept/#aus-dem-dms-erzeugen">erzeugt das DMS das Löschkonzept</a> mit ausgefüllter Tabelle „Datenarten und Fristen“ – oder du füllst die <a href="../loeschkonzept/#die-vorlage">Vorlage</a> von Hand aus.</li>
+<li><strong>Fristen festlegen</strong> – mit deiner Steuerberatung: z. B. Buchungsbelege 8 Jahre, Geschäftsbriefe 6 Jahre, Bewerbungen ohne Zusage 6 Monate.</li>
+<li><strong>Archivmodus einschalten</strong> für jeden Mappentyp mit gesetzlicher Frist: Frist in Jahren und Stichtag (z. B. Rechnungsdatum). Bis Fristende ist die Mappe gegen Löschen gesperrt; danach steht sie unter <strong>Darf weg</strong>. Siehe <a href="../archiv/#einschalten">Archivmodus</a>.</li>
+<li><strong>Kürzere Fristen ohne Archivmodus</strong> (z. B. Interessenten, Bewerbungen): Lege eine <a href="../sichten/">Ansicht</a> an, die die fälligen Mappen nach einem Datumsfeld zeigt, und schau sie regelmäßig durch.</li>
+<li><strong>Wie lange Gelöschtes nachwirkt:</strong> Aufbewahrung des <a href="../papierkorb/#aufbewahrung">Papierkorbs</a> (Standard 30 Tage), Historie gelöschter Mappen (Standard 365 Tage) und Aufbewahrung der <a href="../sicherung/#zeitplan-und-aufbewahrung">Sicherungen</a> passend zu deinem Konzept einstellen.</li>
+<li><strong>Regelmäßig prüfen:</strong> z. B. jedes Jahr im Januar <strong>Werkbank → Darf weg</strong> durchgehen und löschen, was weg darf – einen Kunden oder Vertragspartner samt allem, was dranhängt, mit <a href="#mit-verknupften-mappen-loschen">Mit verknüpften Mappen löschen</a>. Gelöscht wird nie automatisch.</li>
+<li><strong>Sperren auf Verlangen</strong> wie unter <a href="#loschen-auf-verlangen">Löschen auf Verlangen</a> beschrieben.</li>
+<li><strong>Dokumentieren:</strong> Erzeuge das Löschkonzept unter <strong>Werkbank → Datenschutz → Löschkonzept</strong> (PDF oder Word), ergänze die [eckigen Klammern] und lege es als Mappe im DMS ab. Ändern sich Mappentypen oder Fristen, erzeugst du es neu.</li>
+</ol>
+<h2 id="auskunft-erteilen-werkbank-datenschutz">Auskunft erteilen: Werkbank → Datenschutz<a class="headerlink" href="#auskunft-erteilen-werkbank-datenschutz" title="Permanent link">&para;</a></h2>
+<p>Wer Daten von Kunden, Mietern oder Kontakten verwaltet, muss auf Anfrage sagen können, was er über sie gespeichert hat – und das in einer Form, die die Person mitnehmen kann. Unter <strong>Werkbank → Datenschutz</strong> erledigt das DMS das in wenigen Minuten.</p>
+<div class="admonition tip">
+<p class="admonition-title">Bereich nicht in der Leiste?</p>
+<p>Dieser Bereich gehört zur Werkbank-Vorlage <strong>Betrieb</strong>. In der Vorlage <em>Haushalt</em>, mit der neue Installationen beginnen, ist er ausgeblendet. Einblenden kannst du ihn unter <a href="https://motom001.github.io/dms/admin/aktuell/uebersicht/#werkbank-anpassen">Werkbank anpassen</a>, für alle oder nur für dich. <strong>Ausgeblendet heißt nicht abgeschaltet:</strong> Der Bereich arbeitet weiter, und seine Hinweise stehen immer in der Übersicht.</p>
+</div>
+<p><img alt="Werkbank → Datenschutz" src="../bilder/werkbank-datenschutz.png" /></p>
+<h3 id="einstellungen">Einstellungen<a class="headerlink" href="#einstellungen" title="Permanent link">&para;</a></h3>
+<p>Einmal einrichten, unten auf der Seite unter <strong>Einstellungen</strong>:</p>
+<ul>
+<li><strong>Verantwortlicher:</strong> Name und Anschrift – steht als Absender auf dem Deckblatt.</li>
+<li><strong>Empfänger:</strong> an wen du Daten weitergibst (z. B. Steuerberatung, Hausmeisterdienst). Das ist der Vorschlag für jede Auskunft; du kannst ihn je Auskunft ändern.</li>
+<li><strong>Rechte der Person:</strong> der Text auf dem Deckblatt (Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerspruch, Beschwerde). Ein Vorschlag steht schon drin – in der eingestellten <a href="#anrede">Anrede</a>. Du kannst den Text hier anpassen; einen eigenen Text ändert das DMS beim Wechsel der Anrede nicht.</li>
+<li><strong>Anrede in Unterlagen für Dritte:</strong> siehe <a href="#anrede">unten</a>.</li>
+<li><strong>Mappentypen:</strong> Hake an, welche Mappentypen <strong>eine Person betreffen</strong> – z. B. Mieter, Kunde, Vertragspartner, Kontakt. Nur Mappen dieser Typen lassen sich als Betroffene wählen. Je Mappentyp trägst du den <strong>Zweck</strong> ein (z. B. „Durchführung des Mietverhältnisses“); er steht auf dem Deckblatt bei jeder Art von Daten, die herausgeht.</li>
+</ul>
+<p>Die <strong>Speicherdauer</strong> auf dem Deckblatt kommt aus dem <a href="../archiv/">Archivmodus</a>: Hat ein Mappentyp eine Aufbewahrungsfrist, steht sie dort mit dem spätesten „aufbewahren bis“; sonst „solange für den Zweck nötig“.</p>
+<h3 id="anrede">Anrede in Unterlagen für Dritte: du oder Sie<a class="headerlink" href="#anrede" title="Permanent link">&para;</a></h3>
+<p>Das DMS spricht dich mit „du“ an – und standardmäßig auch die Personen, an die eine Auskunft geht. Schreibst du deinen Mietern oder Kunden sonst mit „Sie“, stellst du unter <strong>Einstellungen → Anrede in Unterlagen für Dritte</strong> auf <strong>Sie</strong> um. Ein Beispielsatz zeigt beide Formen nebeneinander; wirksam wird die Wahl mit <strong>Speichern</strong>. Sie gilt für die ganze Installation und für alles, was an Personen <strong>außerhalb</strong> des DMS geht:</p>
+<table>
+<thead>
+<tr>
+<th>Was</th>
+<th>Wo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Deckblatt, Übersicht und LIESMICH der Auskunft</td>
+<td>in der ZIP-Datei, beim nächsten Erzeugen</td>
+</tr>
+<tr>
+<td>Vorlage für die E-Mail mit der ZIP-Datei und die E-Mail mit dem Abruf-Link</td>
+<td><a href="#auskunft-zustellen">Auskunft zustellen</a></td>
+</tr>
+<tr>
+<td>Abrufseite mit ihren Meldungen (falscher Code, Link abgelaufen …)</td>
+<td><code>/abruf</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Die Oberfläche bleibt in jedem Fall beim „du“</strong> – auch für dich als Administrator. Ändert sich die Anrede, gilt sie für alle danach erzeugten Auskünfte und verschickten E-Mails; schon erzeugte ZIP-Dateien und verschickte E-Mails bleiben, wie sie sind. Die Abrufseite zeigt immer die aktuelle Einstellung.</p>
+<p>E-Mails mit Mappen und Dokumenten (<em>Per E-Mail versenden</em>) schreibst du selbst – das DMS gibt dort nur den Betreff „Mappentyp: Titel“ vor, ohne Anrede.</p>
+<h2 id="auskunft-nach-art-15-dsgvo">Auskunft nach Art. 15 DSGVO<a class="headerlink" href="#auskunft-nach-art-15-dsgvo" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Person wählen:</strong> Art (einer der markierten Mappentypen) und Name suchen – oder direkt an der Mappe unter <strong>Mappe ▾ → Auskunft erstellen …</strong> (nur für Administratoren und nur bei Mappentypen, die eine Person betreffen).</li>
+<li><strong>Frist:</strong> Trage ein, wann die Anfrage eingegangen ist, und lege mit <strong>Frist als Aufgabe anlegen</strong> eine Aufgabe für dich an – „Auskunft nach Art. 15 DSGVO an … bis …“, fällig einen Monat nach Eingang (Art. 12 Abs. 3 DSGVO). Sie steht wie jede Aufgabe unter „Zu erledigen“.</li>
+<li><strong>Sammeln:</strong> Das DMS folgt den Verweisen von der Mappe der Person aus – <strong>Mappen, die darauf verweisen</strong> (Mietvertrag → Nebenkostenabrechnungen) und <strong>Mappen, auf die sie verweist</strong> (Wohnung, Arbeitgeber). Die <strong>Tiefe</strong> stellst du ein (Vorgabe 2: Vertrag und dessen Rechnungen). Kreise (zwei Verträge, die aufeinander verweisen) werden erkannt; jede Mappe steht nur einmal da. Benutzer und Rollen sind nie dabei.<ul>
+<li><strong>Richtung:</strong> Nach unten (Mappen, die zur Person gehören) sammelt das DMS alles, über mehrere Stufen. Nach oben (Person → Firma → Muttergesellschaft) geht es nur weiter nach oben, <strong>nie wieder hinunter</strong>: Von der Wohnung aus sammelt es nicht die anderen Mieter, von der Firma aus nicht deren Verträge.</li>
+<li><a id="zugehorigkeit-oder-bezug"></a><strong>Zugehörigkeit oder Bezug:</strong> Vollständig – mit Dokumenten, Notizen und allen Angaben – kommt nur, was über einen Verweis der <a href="../mappentypen/#verweise-mappen-verbinden">Verweisart</a> <strong>Zugehörigkeit</strong> verbunden ist. Ist die Person in einer Mappe nur über einen <strong>Bezug</strong> eingetragen – z. B. ein Wartungsvertrag mit ihr als <em>Ansprechpartner</em>, Post mit <em>Zugeordnet zu</em> –, steht die Mappe in der Prüfliste als „als Ansprechpartner eingetragen in Wartungsvertrag „W-1““: In die Auskunft geht nur das – Art, Titel und Feld –, <strong>ohne ihre Dokumente, Notizen und übrigen Angaben</strong>, und über sie sammelt das DMS nicht weiter. Gehört sie doch ganz dazu, setzt du <strong>ganz aufnehmen</strong> (Vorgabe: aus). Prüfe darum die Verweisart deiner Felder: Soll Post zur Person ganz hinausgehen, nimm sie bewusst auf oder verknüpfe sie über ein Feld der Art Zugehörigkeit.</li>
+</ul>
+</li>
+<li><strong>Prüfen:</strong> Die Liste zeigt den Baum mit Häkchen je <strong>Mappe</strong>, <strong>Dokument</strong>, <strong>Notiz</strong> und <strong>Historie</strong>. Nur Angehaktes geht hinaus, und erst wenn du <strong>„Ich habe die Auswahl geprüft“</strong> bestätigst, lässt sich die Auskunft erzeugen.<ul>
+<li><strong>Daten Dritter?</strong> Ist eine Mappe noch mit anderen Personen verbunden (Mappen eines Typs, der eine Person betrifft – z. B. eine Wohnung, in der auch andere Mieter wohnen), steht das dabei. Enthält ein Dokument Angaben zu anderen Personen, öffne es über <strong>schwärzen …</strong> in einem neuen Tab, schwärze die Stellen (<a href="https://motom001.github.io/dms/benutzer/aktuell/dokumente/">Schwärzen</a>) und sammle neu: Die <strong>geschwärzte Fassung</strong> ist dann angehakt, das Original nicht.</li>
+<li><strong>Notizen</strong> sind vorgewählt. Hältst du eine zurück (z. B. eine interne Bewertung), ist eine <strong>Begründung Pflicht</strong>; sie steht im Nachweis, nicht in der Auskunft.</li>
+</ul>
+</li>
+<li><strong>Erzeugen:</strong> Empfänger und eine Anmerkung fürs Deckblatt, optional ein <strong>Passwort</strong> (mindestens 10 Zeichen, „Vorschlagen“ erzeugt eines). Die Auskunft entsteht im Hintergrund; danach erscheint <strong>Herunterladen</strong>.</li>
+</ol>
+<h3 id="warum-keine-volltext-suche">Warum keine Volltext-Suche?<a class="headerlink" href="#warum-keine-volltext-suche" title="Permanent link">&para;</a></h3>
+<p>Früher schlug die Prüfliste auch Mappen vor, in denen Name, E-Mail-Adresse, Kundennummer oder IBAN irgendwo im Text vorkamen. Das gibt es nicht mehr, auch nicht zum Einschalten: Zu oft trifft die Suche die Falschen („Meissner“ und „Meißner“), und zu leicht gingen fremde Inhalte hinaus – etwa ein internes Besprechungsprotokoll, in dem die Person nur erwähnt ist. In die Auskunft kommt nur, was über Verweise mit der Person verbunden ist. Kommt sie anderswo vor, suchst du selbst und verknüpfst, was dazugehört.</p>
+<h3 id="was-die-zip-datei-enthalt">Was die ZIP-Datei enthält<a class="headerlink" href="#was-die-zip-datei-enthalt" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Datei/Ordner</th>
+<th>Inhalt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Deckblatt.pdf</code></td>
+<td>„Auskunft nach Art. 15 DSGVO“ mit Absender: welche Daten (Arten und Felder), Zwecke, Herkunft (Kanäle der Post: E-Mail, Scan …), Empfänger, Speicherdauer, Rechte der Person</td>
+</tr>
+<tr>
+<td><code>Uebersicht.html</code></td>
+<td>alle Mappen mit ihren Angaben und Links zu den Dokumenten, dazu „Hier bist du genannt“ (bzw. „Hier sind Sie genannt“) mit den Bezug-Mappen (nur Art, Titel und Feld) – im Browser zu öffnen</td>
+</tr>
+<tr>
+<td><code>Uebersicht.csv</code></td>
+<td>dasselbe als Tabelle</td>
+</tr>
+<tr>
+<td><code>ablage/&lt;Art&gt;/&lt;Titel&gt;/</code></td>
+<td>je Mappe die Dokumente im Original (bzw. geschwärzt), dazu <code>mappe.pdf</code> und <code>mappe.json</code></td>
+</tr>
+<tr>
+<td><code>daten/</code>, <code>struktur/</code>, <code>manifest.json</code></td>
+<td>maschinenlesbar im Format des <a href="../export/">Vollexports</a> (CSV, JSON Lines, Excel) – deckt auch die Datenübertragbarkeit (Art. 20) ab</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Nie enthalten</strong> sind Passwortfelder (weder Wert noch Feld) und andere verschlüsselte Werte, ältere Versionen von Dokumenten (sie könnten ungeschwärzt sein), Aufgaben, Benutzerkonten und Berechtigungen. Hältst du eine Notiz zurück, fehlen in der Historie dieser Mappe auch die Einträge zu Notizen (sie nennen deren Text).</p>
+<p><strong>Mit Passwort</strong> liegt die Auskunft als <code>Auskunft.zip</code> in einer mit AES-256 verschlüsselten ZIP-Datei – so sind auch die Dateinamen (z. B. der Name der Person) nicht zu sehen. Öffnen lässt sie sich z. B. mit 7-Zip, WinZip oder Keka (macOS), <strong>nicht</strong> mit dem eingebauten Entpacken von Windows. Teile das Passwort getrennt von der Datei mit, z. B. per Telefon oder SMS.</p>
+<h3 id="nachweis-und-aufbewahrung">Nachweis und Aufbewahrung<a class="headerlink" href="#nachweis-und-aufbewahrung" title="Permanent link">&para;</a></h3>
+<ul>
+<li>In der <strong>Historie der Person</strong> steht „Auskunft erteilt“ mit Zeit, wer sie erstellt hat, Anzahl Mappen, Dokumente und Notizen, ob mit Passwort und die Begründungen zurückgehaltener Notizen – <strong>ohne Inhalte</strong>. Dasselbe steht ohne Begründungen im <a href="../fehlersuche/#protokoll">Protokoll</a> (Modul „datenschutz“).</li>
+<li>Die ZIP-Datei liegt unter <strong>Bereitliegende Auskünfte</strong>, bis du sie <strong>herunterlädst</strong> – danach wird sie gelöscht –, höchstens <strong>7 Tage</strong>. Mit einem gültigen <a href="#auskunft-zustellen">Abruf-Link</a> bleibt sie, bis die Person sie so oft abgerufen hat wie vorgesehen oder der Link abläuft. Gespeichert wird sie neben den Exporten (<code>export/auskunft/</code> im Sicherungsordner, ohne Sicherungsordner im temporären Ordner des Containers); sie ist nicht Teil der Sicherung.</li>
+<li>Brauchst du sie noch einmal, erzeuge sie neu.</li>
+</ul>
+<h3 id="wer-darf-das">Wer darf das?<a class="headerlink" href="#wer-darf-das" title="Permanent link">&para;</a></h3>
+<p>Nur <strong>Administratoren</strong>. Ein eigenes Recht „Auskunft erteilen“ gibt es (noch) nicht: Die <a href="../berechtigungen/">Berechtigungen</a> regeln je Mappentyp Anlegen, Lesen, Bearbeiten, Löschen und Passwörter – eine Auskunft greift über alle Mappentypen. Abgestufte Rechte für Administratoren kommen später.</p>
+<h2 id="auskunft-zustellen">Auskunft zustellen<a class="headerlink" href="#auskunft-zustellen" title="Permanent link">&para;</a></h2>
+<p>Die fertige Auskunft schickst du direkt aus dem DMS – unter <strong>Bereitliegende Auskünfte</strong> mit <strong>Zustellen …</strong> (oder gleich nach dem Erzeugen). Kommst du von der Mappe der Person (<em>Mappe ▾ → Auskunft erstellen …</em>), stehen ihre Auskünfte oben. Zwei Wege:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Abruf-Link mit Abrufcode</th>
+<th>ZIP per E-Mail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Wie</strong></td>
+<td>Die Person bekommt einen Link auf eine schlichte Seite deines DMS und lädt die Datei dort mit einem Abrufcode herunter.</td>
+<td>Die ZIP-Datei geht als Anhang über den <a href="../installation/#e-mail-und-adresse">E-Mail-Versand</a> des DMS.</td>
+</tr>
+<tr>
+<td><strong>Voraussetzung</strong></td>
+<td>Dein DMS ist <strong>aus dem Internet erreichbar</strong>.</td>
+<td>Die Auskunft ist <strong>mit Passwort</strong> erzeugt; höchstens 50 MB (viele Mailserver nehmen nur 10–25 MB).</td>
+</tr>
+<tr>
+<td><strong>Nachweis</strong></td>
+<td>Jeder Abruf mit Zeitpunkt, „abgerufen am …“, Benachrichtigung</td>
+<td>„per E-Mail gesendet an … am …“</td>
+</tr>
+<tr>
+<td><strong>Zweiter Weg</strong></td>
+<td>Abrufcode per Brief, Telefon oder SMS</td>
+<td>Passwort per Telefon, SMS oder Brief</td>
+</tr>
+</tbody>
+</table>
+<p>Vorgeschlagen ist der Abruf-Link, wenn die <a href="../installation/#e-mail-und-adresse">Adresse des DMS</a> nach Internet aussieht – sonst (z. B. <code>http://192.168.…</code>, <code>localhost</code>, <code>nas.local</code>) die E-Mail.</p>
+<h3 id="weg-1-per-e-mail">Weg 1: per E-Mail<a class="headerlink" href="#weg-1-per-e-mail" title="Permanent link">&para;</a></h3>
+<p>Nur für Auskünfte <strong>mit Passwort</strong> – unverschlüsselt geht keine Auskunft per E-Mail hinaus. Gib die Adresse ein; Betreff und Text sind vorbereitet (in der eingestellten <a href="#anrede">Anrede</a>) und lassen sich ändern. <strong>Das Passwort steht nie in der E-Mail</strong> – das DMS kennt es nach dem Erzeugen gar nicht mehr. Teile es auf einem anderen Weg mit. Antworten gehen an deine Adresse. In der Historie der Person steht „Auskunft per E-Mail gesendet an …“.</p>
+<h3 id="weg-2-abruf-link-mit-abrufcode">Weg 2: Abruf-Link mit Abrufcode<a class="headerlink" href="#weg-2-abruf-link-mit-abrufcode" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Adresse der Person</strong> (optional): Mit <strong>Link per E-Mail an diese Adresse schicken</strong> verschickt das DMS den Link – ohne Code. Ohne E-Mail-Versand kopierst du den Link und schickst ihn selbst.</li>
+<li><strong>Gültig</strong> (Vorgabe 30 Tage, höchstens 90) und <strong>Abrufe</strong> (Vorgabe 3, höchstens 10).</li>
+<li><strong>Abrufcode:</strong> Am besten <strong>vom DMS erzeugen</strong> (8 Zeichen ohne Verwechsler wie 0/O und 1/I). Alternativ ein <strong>eigener Code</strong>, den nur die Person kennt – z. B. die Vertragsnummer (mindestens 6 Zeichen). Eine <strong>Kundennummer allein ist schwach</strong>: Sie steht oft auf Briefen und Rechnungen.</li>
+<li><strong>Abruf-Link erstellen:</strong> Link und Code stehen <strong>nur jetzt</strong> auf dem Bildschirm. Teile den Code auf einem anderen Weg mit – per Brief, Telefon oder SMS, <strong>nie in derselben E-Mail wie den Link</strong>. Geht er verloren, erstelle einen neuen Link; der alte gilt dann nicht mehr.</li>
+</ol>
+<p>Die Person öffnet den Link und sieht nur: „Du hast eine Auskunft nach Art. 15 DSGVO über die hier gespeicherten Daten angefordert. Zur Sicherheit gib bitte deinen Abrufcode ein.“ (mit der <a href="#anrede">Anrede</a> „Sie“: „Sie haben … Zur Sicherheit geben Sie bitte Ihren Abrufcode ein.“) – kein Menü, kein Logo, kein Name des Haushalts, keine Anmeldung. Mit dem richtigen Code startet der Download.</p>
+<p><img alt="Öffentliche Abrufseite einer Auskunft" src="../bilder/abrufseite.png" /></p>
+<p>Unter <strong>Abruf-Links</strong> stehen alle Links mit Stand (<em>aktiv</em>, <em>abgelaufen</em>, <em>alle Abrufe verbraucht</em>, <em>gesperrt nach Fehlversuchen</em>, <em>zurückgezogen</em>), Abrufen, „zuletzt abgerufen am …“ und falschen Codes – auch, wenn die ZIP-Datei längst gelöscht ist. <strong>Zurückziehen</strong> macht einen Link sofort ungültig; für die ZIP-Datei gilt dann wieder das Ende 7 Tage nach dem Erstellen.</p>
+<p><img alt="Zustellen an einer bereitliegenden Auskunft" src="../bilder/werkbank-datenschutz-zustellen.png" /></p>
+<p><strong>Nachweis und Benachrichtigung:</strong> Jeder Abruf und jeder falsche Code steht in der <strong>Historie der Person</strong> (Zeitpunkt, erfolgreich oder nicht – <strong>ohne IP-Adresse</strong>, ohne Code). Wer den Link oder die Auskunft erstellt hat und wer die Person als <strong>Favorit</strong> (★) hat – sofern er die Benachrichtigung für diesen Favoriten nicht abgeschaltet hat (<a href="https://motom001.github.io/dms/benutzer/aktuell/ablage/#favoriten-als-abo">Favorit = Abo</a>) –, bekommt unter „Zu erledigen“ die Aufgabe <strong>Auskunft</strong> – „Auskunft an … wurde abgerufen“. Solange sie offen ist, kommt für denselben Link keine zweite. Sind alle Abrufe verbraucht, wird die ZIP-Datei gelöscht.</p>
+<h3 id="sicherheit-der-abrufseite">Sicherheit der Abrufseite<a class="headerlink" href="#sicherheit-der-abrufseite" title="Permanent link">&para;</a></h3>
+<p>Die Abrufseite ist der <strong>einzige</strong> Weg, ohne Anmeldung an Daten im DMS zu kommen. Darum:</p>
+<ul>
+<li><strong>Nicht zu erraten:</strong> Der Link enthält nur einen Zufallsschlüssel mit 256 Bit, sonst nichts – keine Id, keinen Namen. Er steht hinter dem <code>#</code> (<code>/abruf#…</code>): Diesen Teil schickt der Browser nie mit, er landet also in keinem Zugriffsprotokoll (auch nicht beim Reverse-Proxy) und in keinem Referer.</li>
+<li><strong>Zwei Faktoren:</strong> Link (E-Mail) und Abrufcode (anderer Weg). Gespeichert sind nur Hashes – der Schlüssel als SHA-256, der Code wie ein Passwort (scrypt); verglichen wird in konstanter Zeit.</li>
+<li><strong>Keine Auskunft über Links:</strong> Ein unbekannter Link, ein falscher Code und ein gesperrter Link ergeben dieselbe Meldung in derselben Zeit. Erst mit richtigem Code erfährt die Person, dass ihr Link abgelaufen, verbraucht oder zurückgezogen ist.</li>
+<li><strong>Sperre:</strong> Nach <strong>10 falschen Codes</strong> ist der Link gesperrt – dann hilft auch der richtige nicht mehr; du erfährst es über die Aufgabe <em>Auskunft</em>. Zusätzlich zählt der <a href="../anmeldeschutz/">Anmeldeschutz</a> Fehlversuche je IP-Adresse (Vorgabe: 5 je Minute, 30 je Stunde über alle Links und Anmeldungen).</li>
+<li><strong>Download über ein Einmal-Ticket:</strong> Nach dem richtigen Code gibt es ein Ticket für genau einen Download, zwei Minuten gültig. Gezählt wird beim Start des Downloads; ein abgebrochener Download steht als <em>abgebrochen</em> in der Historie.</li>
+<li><strong>Protokoll ohne Geheimnisse:</strong> Im <a href="../fehlersuche/#protokoll">Protokoll</a> (Modul „datenschutz“) stehen Abrufe und Fehlversuche mit <strong>gekürzter IP</strong> (z. B. <code>203.0.113.0</code>), nie Schlüssel oder Code.</li>
+<li>Die Anfrage mit dem Code braucht die Kennung der eigenen Oberfläche (Schutz vor fremden Seiten, CSRF); die Seite lädt sonst nur die eingestellte <a href="#anrede">Anrede</a> aus dem DMS (keinen Kontostatus, kein Design).</li>
+</ul>
+<h3 id="erreichbarkeit-aus-dem-internet">Erreichbarkeit aus dem Internet<a class="headerlink" href="#erreichbarkeit-aus-dem-internet" title="Permanent link">&para;</a></h3>
+<p>Der Abruf-Link funktioniert nur, wenn die Person dein DMS von außen erreicht. Viele Installationen zu Hause sind das nicht – dann nimm den Weg per E-Mail. Soll das DMS erreichbar sein, geht das über einen <a href="../installation/#hinter-einem-reverse-proxy">Reverse-Proxy</a> mit HTTPS (z. B. auf dem NAS mit Portfreigabe), einen Tunnel (z. B. Cloudflare Tunnel, Tailscale Funnel) oder <a href="https://motom001.github.io/dms/installieren/aktuell/anbieter/">bei einem Anbieter</a>. Trage unter <a href="../installation/#e-mail-und-adresse">E-Mail und Adresse</a> die Adresse ein, unter der es von außen erreichbar ist – sie steht im Link. Wer nur die Abrufseite nach außen geben will, gibt am Proxy <code>/abruf</code>, <code>/api/abruf</code>, <code>/api/abruf/anrede</code>, <code>/api/abruf/datei</code> und die Dateien der Oberfläche (<code>/assets/</code>) frei.</p>
+<h2 id="mit-verknupften-mappen-loschen">Löschen mit verknüpften Mappen<a class="headerlink" href="#mit-verknupften-mappen-loschen" title="Permanent link">&para;</a></h2>
+<p>Der dritte Baustein eines <a href="#sperr-und-loschkonzept-aufsetzen">Sperr- und Löschkonzepts</a> neben Archivmodus und <strong>Darf weg</strong>: An einer Mappe, z. B. einem Kunden oder Vertragspartner ohne Aktivität seit Jahren, löscht <strong>Mappe ▾ → Mit verknüpften Mappen löschen …</strong> die Mappe mit Verträgen, Rechnungen, Post und Dokumenten – nach einer Vorschau als Baum (<a href="https://motom001.github.io/dms/benutzer/aktuell/mappen/#mit-verknupften-mappen-loschen">Benutzerhandbuch</a>).</p>
+<p>Dabei gilt:</p>
+<ul>
+<li><strong>Nur nach unten:</strong> Mitgelöscht werden Mappen, die auf die gelöschte verweisen (Rechnung → Vertrag → Vertragspartner: Wer den Vertragspartner löscht, löscht Verträge und Rechnungen mit). Was nach oben zeigt, bleibt – auch nicht über ein Kind seitwärts zu dessen anderen Eltern: Löschst du eine Rechnung, geht der Lieferschein mit, der auf sie verweist; sein Verweis auf den Vertragspartner wird nicht verfolgt. Jede Mappe zählt nur einmal (Kreise).</li>
+<li><strong>Nur über Zugehörigkeit:</strong> Mitgelöscht und weitergesammelt wird nur über Verweisfelder der <a href="../mappentypen/#verweise-mappen-verbinden">Verweisart</a> <strong>Zugehörigkeit</strong>. Hängt eine Mappe nur über einen <strong>Bezug</strong> dran (📎, z. B. <em>Ansprechpartner</em>, <em>Für</em>, <em>Zugeordnet zu</em>), wird nur der Verweis entfernt; die Mappe bleibt, und was an ihr hängt, wird nicht gesammelt. Prüfe darum die Verweisart deiner Felder: Soll ein Vertrag mit dem Vertragspartner gehen, muss sein Feld <em>Vertragspartner</em> eine Zugehörigkeit sein.</li>
+<li><strong>Fristen werden nie übergangen.</strong> Eine Mappe in der Aufbewahrungsfrist (🔒) bleibt – und mit ihr alles, worauf sie verweist (ihr Vertrag, der Vertragspartner), damit sie nachvollziehbar bleibt. Verweise einer gesperrten Mappe werden nicht entfernt.</li>
+<li><strong>Erinnerung zum Fristende:</strong> Bleibt die Start-Mappe deshalb stehen, bekommt, wer gelöscht hat, an ihr eine Erinnerung zum Tag nach dem spätesten Fristende („… kann ab … gelöscht werden – Mit verknüpften Mappen löschen erneut ausführen“). Sie steht dann unter „Zu erledigen“; bis dahin bleiben die Daten normal sichtbar. Sperren statt löschen (Art. 18 DSGVO) kommt später.</li>
+<li><strong>Nur im Rahmen der Rechte:</strong> Mappen ohne Löschrecht (⛔) bleiben, ebenso Mappen, die der Benutzer nicht sehen darf oder die außerhalb der Vorschau noch darauf verweisen.</li>
+<li><strong>Geteilte Mappen werden nur entkoppelt:</strong> Hängt eine Mappe auch an einer anderen (🔗, z. B. eine Rechnung zu zwei Verträgen), wird nur der Verweis entfernt; die Mappe bleibt.</li>
+<li><strong>Alles über den Papierkorb:</strong> Als ein Vorgang, gemeinsam wiederherstellbar. Endgültig weg ist es nach der <a href="../papierkorb/#aufbewahrung">Aufbewahrung des Papierkorbs</a> oder mit <em>Papierkorb leeren</em>; ist der Papierkorb ausgeschaltet, sofort.</li>
+<li><strong>Nachvollziehbar, ohne Inhalte:</strong> Die Historie jeder Mappe hält „in den Papierkorb gelegt – mit verknüpften Mappen gelöscht“ mit der Zahl der Mappen und Dokumente fest, die Start-Mappe auch, wie viele aus welchem Grund blieben. Das <a href="../fehlersuche/#protokoll">Protokoll</a> (Modul „ablage“) nennt wer, Start-Mappe und Vorgang (als Id), Anzahl Mappen, Dokumente, entfernte Verweise und was warum blieb – keine Titel oder Feldwerte. Nach dem endgültigen Löschen bleibt die Historie so lange, wie unter <a href="../papierkorb/#historie-endgultig-geloschter-mappen">Historie endgültig gelöschter Mappen</a> eingestellt.</li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Löschkonzept dokumentieren</p>
+<p>Halte in deiner <a href="../verfahrensdokumentation/">Verfahrensdokumentation</a> fest, welche Fristen je Mappentyp gelten, wer wann prüft, was weg darf (z. B. einmal im Jahr über <em>Darf weg</em>), und dass dabei „Mit verknüpften Mappen löschen“ verwendet wird.</p>
+</div>
+<h2 id="loschprotokoll">Löschprotokoll<a class="headerlink" href="#loschprotokoll" title="Permanent link">&para;</a></h2>
+<p><strong>Werkbank → Datenschutz → Löschprotokoll</strong> weist nach, <strong>dass</strong> und <strong>wann</strong> du gelöscht hast (Rechenschaftspflicht, Art. 5 Abs. 2 DSGVO) – ohne dass das Protokoll selbst wieder die gelöschten Daten enthält. Die Historie einer Mappe reicht dafür nicht: Sie geht mit der Mappe, und das technische <a href="../fehlersuche/#protokoll">Protokoll</a> läuft nach 24 Stunden ab.</p>
+<h3 id="was-drinsteht">Was drinsteht<a class="headerlink" href="#was-drinsteht" title="Permanent link">&para;</a></h3>
+<p>Jeder Schritt ist ein eigener Eintrag: <strong>in den Papierkorb</strong>, <strong>endgültig gelöscht</strong>, <strong>wiederhergestellt</strong> – verbunden über die Id der Mappe bzw. des Dokuments.</p>
+<table>
+<thead>
+<tr>
+<th>Je Mappe</th>
+<th>Je Dokument (auch ältere Versionen)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mappentyp, Mappen-Id, <strong>Nummer</strong> aus dem <a href="../nummernkreise/">Nummernkreis</a> (falls vorhanden)</td>
+<td><strong>Prüfsumme (SHA-256)</strong>, Größe, Dateityp, Seitenzahl, Archivnummer</td>
+</tr>
+<tr>
+<td>Anzahl Dokumente, ältere Versionen, Notizen, entfernte Verweise</td>
+<td>zu welcher Mappe (Id, Nummer, Mappentyp)</td>
+</tr>
+</tbody>
+</table>
+<p>Dazu bei jedem Eintrag: <strong>wann</strong>, <strong>von wem</strong> (Benutzer; <em>Schnittstelle</em> bei einem API-Schlüssel, <em>Paket</em> beim Dienstkonto eines Pakets, <em>DMS</em> bei automatischem Löschen), <strong>wie</strong> (einzeln, mehrere, mit verknüpften Mappen, aus dem Papierkorb, Papierkorb geleert, Aufbewahrung abgelaufen …), <strong>warum</strong> und der <strong>Vorgang</strong> beim <a href="#mit-verknupften-mappen-loschen">Löschen mit verknüpften Mappen</a> – alle Mappen eines Vorgangs mit gemeinsamer Id und der Start-Mappe.</p>
+<p><strong>Nie drin:</strong> Titel, Feldwerte, Dateinamen, Notizen – die sind personenbezogen und sollen ja weg.</p>
+<p><strong>Warum:</strong> Beim Löschen fragt das DMS nach dem Grund – <em>Frist abgelaufen („Darf weg“)</em>, <em>Auf Verlangen der betroffenen Person</em>, <em>Nicht mehr nötig</em> oder <em>Sonstiges</em> – und optional nach einer kurzen Anmerkung. Schreib dort <strong>keine Namen</strong> hinein: Das Löschprotokoll bleibt, wenn die Daten weg sind. Beim endgültigen Löschen aus dem Papierkorb übernimmt das DMS den Grund vom Schritt „in den Papierkorb“. Über die Schnittstelle gibst du ihn mit <code>grund</code> und <code>grundText</code> an.</p>
+<h3 id="wann-ist-geloscht-wirklich-geloscht">Wann ist „gelöscht“ wirklich gelöscht?<a class="headerlink" href="#wann-ist-geloscht-wirklich-geloscht" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>In den Papierkorb:</strong> Die Mappe ist aus Ablage, Suche und Schnittstelle verschwunden, liegt aber vollständig im Papierkorb – mit Feldwerten, Dokumenten, Volltext und Notizen – und lässt sich wiederherstellen.</li>
+<li><strong>Endgültig gelöscht:</strong> nach der <a href="../papierkorb/#aufbewahrung">Aufbewahrung des Papierkorbs</a>, mit <em>Endgültig löschen</em> oder <em>Papierkorb leeren</em>, sofort bei ausgeschaltetem Papierkorb. Dann sind Mappe, Dokumente, Volltext und Notizen aus der Datenbank entfernt, und die <strong>Datei</strong> ist vom Speicher gelöscht – es sei denn, ein anderes Dokument hat genau dieselbe Datei (gleiche Prüfsumme); sie ist ja nur einmal gespeichert.</li>
+<li><strong>Was danach noch bleibt:</strong> die Historie gelöschter Mappen für ihre eingestellte Zeit, ältere Sicherungen bis zu ihrer Aufbewahrung, Exporte und Kopien außerhalb des DMS (siehe <a href="#loschen-auf-verlangen">Löschen auf Verlangen</a>). Das Löschprotokoll hält den Zeitpunkt des endgültigen Löschens fest; diese Fristen ergänzt du im <a href="../loeschkonzept/">Löschkonzept</a>.</li>
+</ul>
+<p>Erfasst werden alle Wege: einzeln, mehrere ausgewählt, mit verknüpften Mappen, „Darf weg“, einzelne Dokumente (auch beim Ersetzen, Bearbeiten und Zusammenfügen von PDFs), ältere Versionen über die eingestellte Anzahl hinaus, der Papierkorb (von Hand, geleert, beim Abmelden geleert, Aufbewahrung abgelaufen, ausgeschaltet), Schnittstelle und Pakete. Nicht erfasst werden <a href="../demo/">Demo-Mappen</a> – sie enthalten keine echten Daten.</p>
+<h3 id="ansehen-und-ausgeben">Ansehen und ausgeben<a class="headerlink" href="#ansehen-und-ausgeben" title="Permanent link">&para;</a></h3>
+<p><img alt="Werkbank → Datenschutz → Löschprotokoll mit Filtern, Suche per Datei und Einträgen" src="../bilder/werkbank-loeschprotokoll.png" /></p>
+<ul>
+<li><strong>Filter:</strong> Zeitraum, Mappentyp, Grund, Schritt; ein Klick auf einen Vorgang zeigt alle Mappen und Dokumente dieses Vorgangs.</li>
+<li><strong>Suche nach Nummer</strong> (Nummernkreis oder Archivnummer) oder <strong>Prüfsumme</strong>.</li>
+<li><strong>„Wurde dieses Dokument gelöscht?“</strong> Zieh die Datei auf das Feld: Dein Browser rechnet die Prüfsumme, das DMS sucht sie. Die Datei selbst wird nicht hochgeladen.</li>
+<li><strong>Als PDF</strong> (Nachweis, mit Filter und Stand im Kopf) oder <strong>als CSV</strong> – jeweils mit dem gewählten Filter.</li>
+</ul>
+<div class="admonition info">
+<p class="admonition-title">Prüfsumme und Datenschutz</p>
+<p>Die Prüfsumme (SHA-256) ist ein Fingerabdruck der Datei: Aus ihr lässt sich der Inhalt nicht zurückgewinnen. Wer die Datei aber noch hat, kann zeigen, dass genau sie im DMS war und wann sie gelöscht wurde – genau das ist der Zweck. Die Prüfsumme ist damit ein <strong>pseudonymes</strong> Datum; behandle das Löschprotokoll wie andere Nachweise vertraulich.</p>
+</div>
+<h3 id="nicht-anderbar-eigene-aufbewahrung">Nicht änderbar, eigene Aufbewahrung<a class="headerlink" href="#nicht-anderbar-eigene-aufbewahrung" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Einträge lassen sich <strong>weder ändern noch löschen</strong> – auch nicht von Administratoren oder über die Schnittstelle; die Datenbank selbst verhindert es.</li>
+<li>Eigene <strong>Aufbewahrung</strong>: Standard <strong>10 Jahre</strong>, einstellbar von 1 bis 30 Jahren unter dem Löschprotokoll. Ältere Einträge fallen beim stündlichen Aufräumen automatisch weg.</li>
+<li>Das Löschprotokoll ist in jeder <a href="../sicherung/">Sicherung</a> und im <a href="../export/">Vollexport</a> (<code>daten/loeschprotokoll.csv</code>) enthalten.</li>
+<li>Abschnitt 8 „Nachweis“ des <a href="../loeschkonzept/#aus-dem-dms-erzeugen">Löschkonzepts</a> verweist darauf.</li>
+</ul>
+<h2 id="schnittstelle">Schnittstelle<a class="headerlink" href="#schnittstelle" title="Permanent link">&para;</a></h2>
+<p>Alles geht auch über die <a href="../api/">API</a>: <code>POST /api/v1/werkbank/auskunft/vorschau</code> (Prüfliste), <code>POST /api/v1/werkbank/auskunft</code> (erzeugen, Hintergrundauftrag), <code>GET /api/v1/werkbank/auskunft/{id}/zip</code>, <code>POST /api/v1/werkbank/auskunft/frist</code>, <code>GET</code>/<code>PUT /api/v1/werkbank/datenschutz</code> und <code>GET /api/v1/werkbank/datenschutz/loeschkonzept?format=pdf|docx</code> (Löschkonzept), <code>GET /api/v1/werkbank/loeschprotokoll</code> mit denselben Filtern wie in der Werkbank, <code>GET /api/v1/werkbank/loeschprotokoll/datei?format=pdf|csv</code> und <code>PUT /api/v1/werkbank/loeschprotokoll/einstellungen</code> (Aufbewahrung); zum Zustellen <code>POST /api/v1/werkbank/auskunft/{id}/email</code>, <code>POST /api/v1/werkbank/auskunft/{id}/link</code> und <code>POST /api/v1/werkbank/auskunft/link/{id}/widerrufen</code>. Die Abrufseite selbst (<code>POST /api/abruf</code>, <code>GET /api/abruf/datei</code>) gehört nicht zur API. Die Sammlung über Verweise selbst steht jedem Benutzer mit seinen Rechten unter <code>GET /api/v1/mappen/{id}/baum</code> zur Verfügung. Für das Löschkonzept: <code>GET /api/v1/mappen/{id}/loeschvorschau</code> (Vorschau mit Vorschlag), <code>POST /api/v1/mappen/{id}/mit-verknuepften-loeschen</code> (ausführen, mit denselben Prüfungen) und <code>POST /api/v1/papierkorb/vorgang/{id}/wiederherstellen</code>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Zurück zum Seitenanfang
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Fußzeile" >
+        
+          
+          <a href="../archiv/" class="md-footer__link md-footer__link--prev" aria-label="Zurück: Archivmodus und Aufbewahrung">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Zurück
+              </span>
+              <div class="md-ellipsis">
+                Archivmodus und Aufbewahrung
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../loeschkonzept/" class="md-footer__link md-footer__link--next" aria-label="Weiter: Löschkonzept (Vorlage)">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Weiter
+              </span>
+              <div class="md-ellipsis">
+                Löschkonzept (Vorlage)
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      DMS steht unter der Apache-2.0 · <a href="https://github.com/sponsors/motom001">Projekt unterstützen</a>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/sponsors/motom001" target="_blank" rel="noopener" title="Projekt unterstützen (GitHub Sponsors)" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="m241 87.1 15 20.7 15-20.7C296 52.5 336.2 32 378.9 32 452.4 32 512 91.6 512 165.1v2.6c0 112.2-139.9 242.5-212.9 298.2-12.4 9.4-27.6 14.1-43.1 14.1s-30.8-4.6-43.1-14.1C139.9 410.2 0 279.9 0 167.7v-2.6C0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://github.com/motom001/dms" target="_blank" rel="noopener" title="Quellcode auf GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "In Zwischenablage kopiert", "clipboard.copy": "In Zwischenablage kopieren", "search.result.more.one": "1 weiteres Suchergebnis auf dieser Seite", "search.result.more.other": "# weitere Suchergebnisse auf dieser Seite", "search.result.none": "Keine Suchergebnisse", "search.result.one": "1 Suchergebnis", "search.result.other": "# Suchergebnisse", "search.result.placeholder": "Suchbegriff eingeben", "search.result.term.missing": "Es fehlt", "select.version": "Version ausw\u00e4hlen"}, "version": {"alias": true, "default": "aktuell", "provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>
