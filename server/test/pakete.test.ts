@@ -10,7 +10,7 @@ import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
-import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
+import { liesPaket, liesZip, Paketverwaltung, type Sammeldatei } from '../src/pakete';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo-speicher';
 import { zipPuffer } from '../src/zip';
@@ -49,6 +49,22 @@ function ordner(pfad: string, vor = ''): Record<string, string> {
 }
 const archiv = (d: Record<string, string>) => zipPuffer(Object.entries(d).map(([name, inhalt]) => ({ name, daten: Buffer.from(inhalt) })));
 const sha = (b: Buffer) => createHash('sha256').update(b).digest('hex');
+
+/** Sammeldatei (#461) wie von der Katalog-Webseite: Verzeichnis und Paket-Archive; aendern: Dateien danach verändern. */
+function sammeldatei(pakete: Array<Record<string, string>>, aendern: (d: Map<string, Buffer>, vz: Record<string, unknown>) => void = () => {}) {
+  const d = new Map<string, Buffer>();
+  const eintraege = pakete.map((p) => {
+    const id = /^id: (\S+)$/m.exec(p['manifest.yaml'])![1], version = /^version: (\S+)$/m.exec(p['manifest.yaml'])![1];
+    const b = archiv(p);
+    d.set(`pakete/${id}-${version}.zip`, b);
+    return { id, version, name: id, archiv: `pakete/${id}-${version}.zip`, sha256: sha(b), groesse: b.length, gewaehlt: true };
+  });
+  const vz: Record<string, unknown> = { format: 1, art: 'dms-sammeldatei', erstellt: '2026-11-01T12:00:00Z', quelle: 'https://github.com/motom001/dms-registry', katalog: KATALOG, dms: '0.107.1', pakete: eintraege };
+  aendern(d, vz);
+  d.set('sammeldatei.json', Buffer.from(JSON.stringify(vz)));
+  return zipPuffer([...d].map(([name, daten]) => ({ name, daten })));
+}
+const gruende = (re: RegExp) => (e: unknown) => e instanceof Fachfehler && ((e.details as { gruende?: string[] })?.gruende ?? [e.message]).some((g) => re.test(g));
 
 /** Kleiner Katalog im Arbeitsspeicher: Archive je Paket und Version. */
 function katalog(eintraege: Array<{ dateien: Record<string, string>; falscheSumme?: boolean }>, url = KATALOG, daten = new Map<string, Buffer>()) {
@@ -351,6 +367,69 @@ function faelle(pg: boolean) {
       assert.equal(n.installiert, inst.installiert);
       assert.ok((await d.listeTypen()).find((t) => t.id === n.typen.organisation)!.felder.some((f) => f.key === 'steuernummer'));
       assert.equal((await d.listeTypen()).filter((t) => t.schluessel === 'basis_organisation').length, 1);
+    });
+
+    it('Sammeldatei: prüft alles vorher, ordnet nach Abhängigkeiten, installiert Paket für Paket (#461)', async () => {
+      const { d, p } = await aufbau([]);
+      // Verträge steht vorn, braucht aber Basis: Basis kommt zuerst.
+      const r = await p.hochladenDatei(sammeldatei([vertraege, basis]), ICH);
+      assert.ok('sammeldatei' in r);
+      const s: Sammeldatei = r.sammeldatei;
+      assert.deepEqual(s.pakete.map((x) => `${x.id}@${x.version}:${x.stand}:${x.katalog}`), ['basis@1.0.0:neu:unbekannt', 'vertraege@1.0.0:neu:unbekannt']);
+      assert.equal(s.datei.dms, '0.107.1');
+      assert.match(s.datei.sha256, /^[0-9a-f]{64}$/);
+      // Je Paket: Herkunft bestätigen wie beim einzelnen Hochladen; installiert wird einzeln.
+      await assert.rejects(p.installiere({ upload: s.pakete[0].upload }, ICH), /nicht vom DMS-Projekt geprüft/);
+      const b = await p.installiere({ upload: s.pakete[0].upload, bestaetigt: true }, ICH);
+      assert.equal(b.herkunft.art, 'hochgeladen');
+      assert.equal((await p.vorschau({ upload: s.pakete[1].upload })).abhaengigkeiten[0].installiert, '1.0.0');
+      const v = await p.installiere({ upload: s.pakete[1].upload, bestaetigt: true }, ICH);
+      assert.equal(v.id, 'vertraege');
+      assert.equal(v.herkunft.art === 'hochgeladen' && v.herkunft.von, ICH.email);
+      // Noch einmal dieselbe Datei: alles schon da.
+      const nochmal = await p.hochladenDatei(sammeldatei([basis, vertraege]), ICH);
+      assert.ok('sammeldatei' in nochmal && nochmal.sammeldatei.pakete.every((x) => x.stand === 'gleich'));
+      // Ein einzelnes Paket geht weiter über denselben Weg.
+      const einzeln = await p.hochladenDatei(archiv(basis11), ICH);
+      assert.ok('upload' in einzeln && einzeln.vorschau.update);
+      assert.ok((await d.listePakete()).length === 2);
+    });
+
+    it('Sammeldatei: verändert, unvollständig oder mit fremden Dateien – nichts wird angenommen (#461)', async () => {
+      const { p } = await aufbau([]);
+      const anzahl = (p as unknown as { uploads: Map<string, unknown> }).uploads;
+      // Ein Byte im Archiv verändert, Verzeichnis nicht: Prüfsumme passt nicht.
+      await assert.rejects(p.hochladenDatei(sammeldatei([basis], (dd) => { const b = Buffer.from(dd.get('pakete/basis-1.0.0.zip')!); b[40] ^= 1; dd.set('pakete/basis-1.0.0.zip', b); }), ICH), gruende(/Prüfsumme passt nicht zum Verzeichnis/));
+      // Archiv ausgetauscht und Verzeichnis passend geändert, aber anderer Inhalt als angegeben.
+      await assert.rejects(p.hochladenDatei(sammeldatei([basis], (dd, vz) => {
+        const fremd = archiv(basis11); dd.delete('pakete/basis-1.0.0.zip'); dd.set('pakete/basis-1.0.0.zip', fremd);
+        Object.assign((vz.pakete as Array<Record<string, unknown>>)[0], { sha256: sha(fremd), groesse: fremd.length });
+      }), ICH), /enthält basis 1\.1\.0/);
+      await assert.rejects(p.hochladenDatei(sammeldatei([basis], (dd) => dd.set('skript.sh', Buffer.from('rm -rf /'))), ICH), gruende(/skript\.sh: steht nicht im Verzeichnis/));
+      await assert.rejects(p.hochladenDatei(sammeldatei([basis], (dd) => dd.delete('pakete/basis-1.0.0.zip')), ICH), gruende(/basis-1\.0\.0\.zip fehlt/));
+      await assert.rejects(p.hochladenDatei(sammeldatei([basis], (_, vz) => { vz.format = 2; }), ICH), gruende(/Format 2/));
+      await assert.rejects(p.hochladenDatei(sammeldatei([basis], (_, vz) => { (vz.pakete as unknown[]).push({ ...(vz.pakete as object[])[0] }); }), ICH), gruende(/zweimal/));
+      await assert.rejects(p.hochladenDatei(sammeldatei([basis], (_, vz) => { (vz.pakete as Array<Record<string, unknown>>)[0].archiv = '../basis.zip'; }), ICH), gruende(/muss pakete\/basis-1\.0\.0\.zip heißen/));
+      // Ein ungültiges Paket darin: ganze Sammeldatei abgelehnt, mit Namen.
+      const kaputt = { ...vertraege, 'inhalt/sichten.yaml': '- { schluessel: X, name: "" }\n' };
+      await assert.rejects(p.hochladenDatei(sammeldatei([basis, kaputt]), ICH), /vertraege 1\.0\.0 in der Sammeldatei: Das Paket ist ungültig/);
+      assert.equal(anzahl.size, 0, 'keine Upload-Kennungen nach einer abgelehnten Sammeldatei');
+      // Kreis in den Abhängigkeiten.
+      const a = { 'manifest.yaml': basis['manifest.yaml'].replace('id: basis', 'id: aaa').replace('abhaengigkeiten: {}', 'abhaengigkeiten:\n  bbb: ">=1.0.0"') };
+      const bb = { 'manifest.yaml': basis['manifest.yaml'].replace('id: basis', 'id: bbb').replace('abhaengigkeiten: {}', 'abhaengigkeiten:\n  aaa: ">=1.0.0"') };
+      await assert.rejects(p.hochladenDatei(sammeldatei([{ ...basis, ...a }, { ...basis, ...bb }]), ICH), /Kreis/);
+      // Entpackt-Budget über alle Pakete (Schutz gegen ZIP-Bomben verteilt auf viele Archive).
+      assert.throws(() => liesZip(archiv(basis), { dateien: 500, entpackt: 1e9, budget: { rest: 10 } }), /zusammen zu groß/);
+    });
+
+    it('Sammeldatei: Abgleich mit dem offiziellen Katalog, wenn er schon abgerufen ist (#461)', async () => {
+      const { p } = await aufbau([{ dateien: basis }]);
+      await p.katalog();
+      const ok = await p.hochladenDatei(sammeldatei([basis]), ICH);
+      assert.ok('sammeldatei' in ok && ok.sammeldatei.pakete[0].katalog === 'gleich');
+      // Gleiche Id und Version, anderer Inhalt als im offiziellen Katalog: abgelehnt.
+      const anders = { ...basis, 'README.md': 'verändert' };
+      await assert.rejects(p.hochladenDatei(sammeldatei([anders]), ICH), gruende(/passt nicht zum offiziellen Katalog/));
     });
   });
 }
