@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/entwickler/v0.109/leistung/">
+        <link rel="canonical" href="https://motom001.github.io/dms/entwickler/v0.110/leistung/">
       
       
         <link rel="prev" href="../pakete/">
@@ -580,6 +580,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#zahlen-der-ansichten-512" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zahlen der Ansichten (#512)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#regeln" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -878,6 +889,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#zahlen-der-ansichten-512" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zahlen der Ansichten (#512)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#regeln" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -987,6 +1009,10 @@
 <tr>
 <td><code>gesamt</code></td>
 <td>Eingang bis <code>onSend</code></td>
+</tr>
+<tr>
+<td><code>zs</code></td>
+<td>Nur bei Anfragen, die die Zahlen der Ansichten brauchen (#512): Dauer und in <code>desc</code> <code>treffer</code> (Zwischenspeicher) oder <code>neu</code> (gezählt)</td>
 </tr>
 </tbody>
 </table>
@@ -1099,7 +1125,142 @@
 <li><code>/api/anstehend</code> lud <strong>alle</strong> Mappen jedes Typs mit Fristfeldern und filterte das Datum im Arbeitsspeicher. Jetzt holt <code>mappenMitDatum</code> nur Mappen mit einem Datum im Zeitraum (einzeln gemessen etwa 250 → 30 ms).</li>
 <li><code>/api/sichten</code> zählte den Eingang mit einem <code>EXISTS</code> je Mappe; für Mitglieder mit Lesefilter lief der ganze Zähler dafür <strong>ein zweites Mal</strong> ohne Filter. Jetzt zählt eine Abfrage über die offenen Aufgaben den Eingang, einmal für alle.</li>
 </ul>
-<p>Zielwert: Ein Mitglied lädt Startseite und Ablage bei gleichen Daten höchstens 10 % langsamer als der Administrator – erfüllt (sogar schneller, weil für den Administrator auch Fristen ohne Empfänger anstehen). Die Verzögerung der Ereignisschleife blieb bei 99 % unter 16 ms. Größter Posten ist jetzt <code>/api/sichten</code> (Zähler je Typ und Ansicht, 150–230 ms bei 50.000 Mappen, für alle Benutzer gleich).</p>
+<p>Zielwert: Ein Mitglied lädt Startseite und Ablage bei gleichen Daten höchstens 10 % langsamer als der Administrator – erfüllt (sogar schneller, weil für den Administrator auch Fristen ohne Empfänger anstehen). Die Verzögerung der Ereignisschleife blieb bei 99 % unter 16 ms. Größter Posten ist jetzt <code>/api/sichten</code> (Zähler je Typ und Ansicht, 150–230 ms bei 50.000 Mappen, für alle Benutzer gleich). Das behebt #512 (nächster Abschnitt).</p>
+<h2 id="zahlen-der-ansichten-512">Zahlen der Ansichten (#512)<a class="headerlink" href="#zahlen-der-ansichten-512" title="Permanent link">&para;</a></h2>
+<p>Die Zahlen neben den Ansichten (<code>GET /api/sichten</code> → <code>Dienst.zaehler</code>) zählen mit <strong>einer</strong> Abfrage alle sichtbaren Ansichten per <code>count(*) FILTER (WHERE …)</code> über alle Mappen des Haushalts, dazu Typen, Eingang, Favoriten und Papierkorb – bei 50.000 Mappen 120–150 ms allein, unter Last der Seite 150–260 ms. Zwei Mittel:</p>
+<ol>
+<li><strong>Nicht blockieren.</strong> Die Oberfläche (<code>web/src/daten.tsx</code>) lädt Typen, Personen, Ansichten und den Rahmen (<code>GET /api/sichten/rahmen</code>: Papierkorb-Tage, Ansicht „Neue Post“ – ohne Zählen) und zeigt die Ablage; die Zahlen kommen danach (<code>zahlenDa</code>). Bis dahin steht an ihrer Stelle „…“ (<code>ZahlWarte</code>, Kacheln der Startseite ebenso), es springt nichts. Beim Neuladen bleiben die alten Zahlen stehen, bis die neuen da sind. Was aus den Zahlen etwas ableitet (Suchfeld der Liste, Belegung beim Entfernen eines Feldes), wartet nicht auf sie.</li>
+<li><strong>Zwischenspeichern</strong> (<code>server/src/zaehlerspeicher.ts</code>). Der <strong>Stand des Haushalts</strong> (<code>Haushaltsstand</code>) zählt hoch, sobald eine ändernde Methode des Repos fertig ist – der <code>Dienst</code> umhüllt sein Repo damit (<code>transaktion</code> zählt als Ganzes). Lesende und folgenlose Methoden (Historie, Ereignisse, Texterkennung, „gesehen“ …) stehen in <code>OHNE_FOLGEN</code>; eine neue Methode zählt, bis sie dort steht. Der Schlüssel je Eintrag: Benutzer, Rolle und ein Fingerabdruck von Lesefilter, verborgenen Ansichten und eigenen Rollen; gültig bei gleichem Stand und gleichem <code>heute</code>, also höchstens bis Mitternacht. Ansichten mit Datumsbezug (<code>heute</code>, Monat, Jahr, Frist) gelten höchstens 5 Minuten (<code>ZEITABHAENGIG_MS</code>), alle anderen höchstens 30 Minuten (<code>HOECHSTENS_MS</code>, Sicherheitsnetz für Änderungen an der Datenbank vorbei, etwa von Hand). Gleichzeitige Anfragen mit gleichem Schlüssel warten auf dieselbe Zählung. Ein Treffer kostet etwa 7 ms (Sitzung, Rechte, Ansichten laden), neu zählen 110–150 ms.</li>
+</ol>
+<p><strong>Messung zu #512</strong> (dieselben Daten wie #477, <code>server/test/ladezeiten.mjs</code>, Median aus 5 Ladevorgängen, davon der Median aus drei abwechselnden Durchgängen; im Lauf trifft der Zwischenspeicher bei allen Ladevorgängen nach dem ersten):</p>
+<table>
+<thead>
+<tr>
+<th>Seite</th>
+<th>Wer</th>
+<th style="text-align: right;">Sichtbar vorher</th>
+<th style="text-align: right;">Sichtbar nachher</th>
+<th style="text-align: right;">Zahlen da vorher</th>
+<th style="text-align: right;">Zahlen da nachher</th>
+<th style="text-align: right;"><code>/api/sichten</code> vorher</th>
+<th style="text-align: right;"><code>/api/sichten</code> nachher</th>
+<th style="text-align: right;">Laden vorher</th>
+<th style="text-align: right;">Laden nachher</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Startseite</td>
+<td>Administrator</td>
+<td style="text-align: right;">388</td>
+<td style="text-align: right;">273</td>
+<td style="text-align: right;">337</td>
+<td style="text-align: right;">176</td>
+<td style="text-align: right;">213</td>
+<td style="text-align: right;">56</td>
+<td style="text-align: right;">460</td>
+<td style="text-align: right;">312</td>
+</tr>
+<tr>
+<td>Startseite</td>
+<td>Mitglied mit Rolle</td>
+<td style="text-align: right;">381</td>
+<td style="text-align: right;">269</td>
+<td style="text-align: right;">310</td>
+<td style="text-align: right;">182</td>
+<td style="text-align: right;">185</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">388</td>
+<td style="text-align: right;">255</td>
+</tr>
+<tr>
+<td>Startseite</td>
+<td>Mitglied ohne Rolle</td>
+<td style="text-align: right;">344</td>
+<td style="text-align: right;">247</td>
+<td style="text-align: right;">263</td>
+<td style="text-align: right;">165</td>
+<td style="text-align: right;">144</td>
+<td style="text-align: right;">54</td>
+<td style="text-align: right;">335</td>
+<td style="text-align: right;">219</td>
+</tr>
+<tr>
+<td>Liste Rechnungen</td>
+<td>Administrator</td>
+<td style="text-align: right;">392</td>
+<td style="text-align: right;">277</td>
+<td style="text-align: right;">303</td>
+<td style="text-align: right;">237</td>
+<td style="text-align: right;">201</td>
+<td style="text-align: right;">80</td>
+<td style="text-align: right;">427</td>
+<td style="text-align: right;">396</td>
+</tr>
+<tr>
+<td>Liste Rechnungen</td>
+<td>Mitglied mit Rolle</td>
+<td style="text-align: right;">385</td>
+<td style="text-align: right;">263</td>
+<td style="text-align: right;">302</td>
+<td style="text-align: right;">141</td>
+<td style="text-align: right;">189</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">405</td>
+<td style="text-align: right;">226</td>
+</tr>
+<tr>
+<td>Liste Rechnungen</td>
+<td>Mitglied ohne Rolle</td>
+<td style="text-align: right;">312</td>
+<td style="text-align: right;">271</td>
+<td style="text-align: right;">264</td>
+<td style="text-align: right;">155</td>
+<td style="text-align: right;">146</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">374</td>
+<td style="text-align: right;">261</td>
+</tr>
+<tr>
+<td>Mappe öffnen</td>
+<td>Administrator</td>
+<td style="text-align: right;">875</td>
+<td style="text-align: right;">284</td>
+<td style="text-align: right;">305</td>
+<td style="text-align: right;">134</td>
+<td style="text-align: right;">201</td>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">445</td>
+<td style="text-align: right;">282</td>
+</tr>
+<tr>
+<td>Mappe öffnen</td>
+<td>Mitglied mit Rolle</td>
+<td style="text-align: right;">882</td>
+<td style="text-align: right;">324</td>
+<td style="text-align: right;">302</td>
+<td style="text-align: right;">165</td>
+<td style="text-align: right;">179</td>
+<td style="text-align: right;">43</td>
+<td style="text-align: right;">409</td>
+<td style="text-align: right;">282</td>
+</tr>
+<tr>
+<td>Mappe öffnen</td>
+<td>Mitglied ohne Rolle</td>
+<td style="text-align: right;">487</td>
+<td style="text-align: right;">283</td>
+<td style="text-align: right;">293</td>
+<td style="text-align: right;">153</td>
+<td style="text-align: right;">173</td>
+<td style="text-align: right;">33</td>
+<td style="text-align: right;">439</td>
+<td style="text-align: right;">268</td>
+</tr>
+</tbody>
+</table>
+<p><em>Sichtbar</em> = bis Kacheln, erste Zeile der Liste bzw. Kopf der Mappe zu sehen sind; <em>Zahlen da</em> = bis die Antwort von <code>/api/sichten</code> im Browser ist; <code>/api/sichten</code> = Server-Zeit dieser Anfrage (unter Last der Seite; allein 6–9 ms bei einem Treffer); <em>Laden</em> = bis keine Anfrage mehr läuft. Alle Werte in ms, lokaler Rechner. „Sichtbar“ schwankt bei „Mappe öffnen“ stark (einzelne Läufe um 870 ms in beiden Fassungen).</p>
+<p>Nicht umgesetzt: <strong>nur zählen, was zu sehen ist</strong> (eingeklappte Gruppen, geschlossene Ansicht-Auswahl am Handy) – mit 1 und 2 wartet die Ablage nicht mehr auf die Zahlen, und ein Treffer kostet einstellige Millisekunden; ein Teilzählen würde den Zwischenspeicher nur aufsplitten. Auch ein <strong>Index</strong> für einzelne Bedingungen lohnt nicht: Die eine Abfrage liest ohnehin alle Mappen des Haushalts einmal (Seq Scan), und sie läuft nur noch nach Änderungen.</p>
 <h2 id="regeln">Regeln<a class="headerlink" href="#regeln" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Kein <code>SELECT *</code> auf Tabellen mit großen Spalten.</strong> Dokumente immer mit <code>DOKUMENT_SPALTEN</code>; den Volltext nur über <code>volltext(id)</code> oder gebündelt über <code>volltexte(ids)</code> lesen. EXPLAIN zeigt das nicht: Der Volltext liegt ausgelagert (TOAST) und wird erst beim Senden an den Server entpackt.</li>

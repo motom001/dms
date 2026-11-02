@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.109/neu/">
+        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.110/neu/">
       
       
         <link rel="prev" href="../original/">
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-0109" class="md-skip">
+        <a href="#neu-in-version-0110" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -419,33 +419,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#01090" class="md-nav__link">
+  <a href="#01100" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.109.0
+        0.110.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.109.0">
+    <nav class="md-nav" aria-label="0.110.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#neu" class="md-nav__link">
+  <a href="#geandert" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Neu
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#technik" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Technik
+        Geändert
       
     </span>
   </a>
@@ -1149,33 +1138,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#01090" class="md-nav__link">
+  <a href="#01100" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.109.0
+        0.110.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.109.0">
+    <nav class="md-nav" aria-label="0.110.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#neu" class="md-nav__link">
+  <a href="#geandert" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Neu
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#technik" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Technik
+        Geändert
       
     </span>
   </a>
@@ -1218,29 +1196,78 @@
   
 
 
-<h1 id="neu-in-version-0109">Neu in Version 0.109<a class="headerlink" href="#neu-in-version-0109" title="Permanent link">&para;</a></h1>
-<h2 id="01090">0.109.0<a class="headerlink" href="#01090" title="Permanent link">&para;</a></h2>
-<h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
+<h1 id="neu-in-version-0110">Neu in Version 0.110<a class="headerlink" href="#neu-in-version-0110" title="Permanent link">&para;</a></h1>
+<h2 id="01100">0.110.0<a class="headerlink" href="#01100" title="Permanent link">&para;</a></h2>
+<h3 id="geandert">Geändert<a class="headerlink" href="#geandert" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Löschprotokoll</strong> (#470): unter <strong>Werkbank → Datenschutz → Löschprotokoll</strong> weist du nach, dass und wann Mappen und Dokumente gelöscht wurden – ohne die gelöschten Daten selbst.</li>
-<li>Je Mappe: Mappentyp, Id, <strong>Nummer</strong> aus dem Nummernkreis, Anzahl Dokumente, ältere Versionen, Notizen und entfernte Verweise. Je Dokument (auch ältere Versionen): <strong>Prüfsumme (SHA-256)</strong>, Größe, Dateityp, Seitenzahl, Archivnummer. <strong>Keine Titel, Feldwerte oder Dateinamen.</strong></li>
-<li>Dazu wann, von wem (Benutzer, Schnittstelle, Paket oder automatisch), wie und <strong>warum</strong>, und der Vorgang beim Löschen mit verknüpften Mappen (mit Start-Mappe).</li>
-<li>Jeder Schritt ein Eintrag: <strong>in den Papierkorb</strong>, <strong>endgültig gelöscht</strong> (von Hand, Papierkorb geleert, beim Abmelden, nach Ablauf, Papierkorb ausgeschaltet), <strong>wiederhergestellt</strong>. Erfasst werden alle Löschwege: einzeln, mehrere, mit verknüpften Mappen, „Darf weg“, einzelne Dokumente (auch beim Ersetzen oder Bearbeiten von PDFs), ältere Versionen über die eingestellte Anzahl hinaus, Schnittstelle und Pakete.</li>
-<li><strong>Grund beim Löschen:</strong> Die Rückfrage fragt nach <em>Nicht mehr nötig</em>, <em>Frist abgelaufen („Darf weg“)</em>, <em>Auf Verlangen der betroffenen Person</em> oder <em>Sonstiges</em> und einer optionalen Anmerkung ohne Personenbezug; über die Schnittstelle mit <code>grund</code> und <code>grundText</code>.</li>
-<li><strong>Filter</strong> nach Zeitraum, Mappentyp, Grund, Schritt und Vorgang; <strong>Suche</strong> nach Nummer oder Prüfsumme – auch per Datei („Wurde dieses Dokument gelöscht?“, die Prüfsumme rechnet dein Browser).</li>
-<li>Ausgabe als <strong>PDF</strong> (Nachweis) und <strong>CSV</strong>.</li>
-<li><strong>Nicht änderbar</strong> (auch nicht für Administratoren, die Datenbank verhindert es), eigene <strong>Aufbewahrung</strong> (Standard 10 Jahre, einstellbar), in Sicherung und Vollexport (<code>daten/loeschprotokoll.csv</code>).</li>
-<li>Das erzeugte Löschkonzept verweist in Abschnitt 8 „Nachweis“ darauf.</li>
-<li>Schnittstelle: <code>GET /werkbank/loeschprotokoll</code>, <code>GET /werkbank/loeschprotokoll/datei?format=pdf|csv</code>, <code>PUT /werkbank/loeschprotokoll/einstellungen</code>.</li>
-<li>Administratorhandbuch: <em>Datenschutz im DMS</em> → <strong>Löschprotokoll</strong> (mit „Wann ist gelöscht wirklich gelöscht?“ und der Prüfsumme als pseudonymem Datum); Vorlage Löschkonzept, Abschnitt 8.</li>
+<li><strong>Ablage erscheint ohne Warten auf die Zahlen</strong> (#512): Startseite, Listen und linke Spalte zeigen sich sofort; die Zahlen neben den Ansichten kommen kurz danach und füllen sich an ihrer Stelle ein (bis dahin „…“). Der Server merkt sich die Zahlen je Benutzer und zählt erst nach einer Änderung im Haushalt neu (Mappen, Aufgaben, Ansichten, Rechte, Favoriten, Papierkorb). Ansichten mit Datumsbezug zählt er spätestens nach 5 Minuten und um Mitternacht neu. Im Header <code>Server-Timing</code> zeigt <code>zs</code>, ob die Zahlen aus dem Zwischenspeicher kamen (<code>treffer</code>) oder neu gezählt wurden (<code>neu</code>).</li>
 </ul>
-<h3 id="technik">Technik<a class="headerlink" href="#technik" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Migration <code>044_loeschprotokoll.sql</code>: Tabelle <code>loeschprotokoll</code> mit Auslöser, der Ändern und Löschen verhindert (nur das Aufräumen nach der Aufbewahrung darf löschen).</li>
-</ul>
+<p>Gemessen mit 50.000 Demo-Mappen (Median, ms; <em>sichtbar</em> = Kacheln, erste Zeile bzw. Kopf der Mappe zu sehen, <em>Zahlen</em> = Server-Zeit von <code>/api/sichten</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Seite</th>
+<th>Wer</th>
+<th style="text-align: right;">sichtbar vorher</th>
+<th style="text-align: right;">sichtbar nachher</th>
+<th style="text-align: right;">Zahlen vorher</th>
+<th style="text-align: right;">Zahlen nachher</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Startseite</td>
+<td>Administrator</td>
+<td style="text-align: right;">388</td>
+<td style="text-align: right;">273</td>
+<td style="text-align: right;">213</td>
+<td style="text-align: right;">56</td>
+</tr>
+<tr>
+<td>Startseite</td>
+<td>Mitglied ohne Rolle</td>
+<td style="text-align: right;">344</td>
+<td style="text-align: right;">247</td>
+<td style="text-align: right;">144</td>
+<td style="text-align: right;">54</td>
+</tr>
+<tr>
+<td>Liste (Rechnungen)</td>
+<td>Administrator</td>
+<td style="text-align: right;">392</td>
+<td style="text-align: right;">277</td>
+<td style="text-align: right;">201</td>
+<td style="text-align: right;">80</td>
+</tr>
+<tr>
+<td>Liste (Rechnungen)</td>
+<td>Mitglied mit Rolle</td>
+<td style="text-align: right;">385</td>
+<td style="text-align: right;">263</td>
+<td style="text-align: right;">189</td>
+<td style="text-align: right;">36</td>
+</tr>
+<tr>
+<td>Mappe öffnen</td>
+<td>Mitglied mit Rolle</td>
+<td style="text-align: right;">882</td>
+<td style="text-align: right;">324</td>
+<td style="text-align: right;">179</td>
+<td style="text-align: right;">43</td>
+</tr>
+<tr>
+<td>Mappe öffnen</td>
+<td>Mitglied ohne Rolle</td>
+<td style="text-align: right;">487</td>
+<td style="text-align: right;">283</td>
+<td style="text-align: right;">173</td>
+<td style="text-align: right;">33</td>
+</tr>
+</tbody>
+</table>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.108.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.108.0...v0.109.0">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.109.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.109.0...v0.110.0">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 </ul>
 

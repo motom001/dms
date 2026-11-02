@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.109/fehlersuche/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.110/fehlersuche/">
       
       
         <link rel="prev" href="../verfahrensdokumentation/">
@@ -2235,7 +2235,7 @@
 </tr>
 </tbody>
 </table>
-<p>Die Werte kommen vom Server im Header <code>Server-Timing</code> (<code>vor</code>, <code>app</code>, <code>db</code>, <code>rechte</code>, <code>json</code>, <code>gesamt</code>) und aus der Zeitmessung des Browsers.</p>
+<p>Die Werte kommen vom Server im Header <code>Server-Timing</code> (<code>vor</code>, <code>app</code>, <code>db</code>, <code>rechte</code>, <code>json</code>, <code>gesamt</code>) und aus der Zeitmessung des Browsers. Bei den Zahlen der Ansichten (<code>/api/sichten</code>) steht dort zusätzlich <code>zs</code>: <code>treffer</code>, wenn sie aus dem Zwischenspeicher kamen, <code>neu</code>, wenn sie gezählt wurden – gezählt wird nach jeder Änderung im Haushalt, sonst spätestens nach 5 Minuten (Ansichten mit Datumsbezug) bzw. 30 Minuten und um Mitternacht.</p>
 <h2 id="technik">Technik<a class="headerlink" href="#technik" title="Permanent link">&para;</a></h2>
 <p><strong>Werkbank → Technik</strong> zeigt im Abschnitt <strong>Installiert</strong> (unter <em>Neuere Versionen</em>), was installiert ist: Version und Stand des DMS, Laufzeit (Node.js, Betriebssystem), Datenbank, Bibliotheken und Oberfläche.</p>
 <p><img alt="Technik und Versionen" src="../bilder/werkbank-technik.png" /></p>
