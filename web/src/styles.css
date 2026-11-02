@@ -1460,3 +1460,11 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .pk-postliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .pk-postliste .knopf { width: 100%; justify-content: space-between; white-space: normal; text-align: left; min-height: 44px; }
 .pk-postname { overflow-wrap: anywhere; }
+/* Schnell finden auf der Startseite (#497). Präfix ss-. */
+.ss-suche { display: flex; flex-direction: column; gap: 16px; }
+.ss-suche form { display: flex; flex-direction: column; gap: 6px; }
+.ss-feld { font-size: calc(16px * var(--skala, 1)); padding: 11px 14px; border-radius: 10px; border-width: 1.5px; }
+.ss-volltext { align-self: flex-start; }
+.ss-treffer { display: flex; flex-direction: column; gap: 12px; }
+.ss-gruppe .ueber { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.ss-mark { background: var(--warn-zart); color: inherit; border-radius: 2px; padding: 0 1px; }
