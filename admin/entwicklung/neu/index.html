@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#neu-in-version-0103" class="md-skip">
+        <a href="#neu-in-version-0104" class="md-skip">
           Zum Inhalt
         </a>
       
@@ -363,15 +363,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#01030" class="md-nav__link">
+  <a href="#01040" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.103.0
+        0.104.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.103.0">
+    <nav class="md-nav" aria-label="0.104.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -379,17 +379,6 @@
     <span class="md-ellipsis">
       
         Neu
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#geandert" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Geändert
       
     </span>
   </a>
@@ -2004,15 +1993,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#01030" class="md-nav__link">
+  <a href="#01040" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.103.0
+        0.104.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="0.103.0">
+    <nav class="md-nav" aria-label="0.104.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2020,17 +2009,6 @@
     <span class="md-ellipsis">
       
         Neu
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#geandert" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Geändert
       
     </span>
   </a>
@@ -2073,26 +2051,19 @@
   
 
 
-<h1 id="neu-in-version-0103">Neu in Version 0.103<a class="headerlink" href="#neu-in-version-0103" title="Permanent link">&para;</a></h1>
+<h1 id="neu-in-version-0104">Neu in Version 0.104<a class="headerlink" href="#neu-in-version-0104" title="Permanent link">&para;</a></h1>
 <div class="admonition info">
 <p class="admonition-title">Entwicklungsstand</p>
 <p>Dieses Handbuch beschreibt den Stand von <code>main</code> – manches davon ist noch in keinem Release.</p>
 </div>
-<h2 id="01030">0.103.0<a class="headerlink" href="#01030" title="Permanent link">&para;</a></h2>
+<h2 id="01040">0.104.0<a class="headerlink" href="#01040" title="Permanent link">&para;</a></h2>
 <h3 id="neu">Neu<a class="headerlink" href="#neu" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Post fotografieren am Handy</strong> (#490): großer Knopf auf der Startseite und erster Eintrag unter <strong>+ Neu</strong>. Er öffnet <strong>direkt die Kamera</strong> – ohne die Auswahl „Mediathek / Foto aufnehmen / Datei“. Nach jedem Foto <strong>Weitere Seite</strong> (selber Brief) oder <strong>Fertig</strong>: Aus allen Seiten wird <strong>ein PDF</strong> und <strong>eine Post</strong>, Betreff „Post vom 01.11.2026, 20:52“ statt „image“. Danach <strong>Nächsten Beleg fotografieren</strong>, <strong>Jetzt zuordnen</strong> oder <strong>Fertig</strong> („3 Belege erfasst – liegen unter Neue Post“) – mehrere Briefe hintereinander, ohne eine Mappe zu öffnen. Schließt du die Kamera ohne Foto, bleibst du im Erfassen-Schritt. Fotos werden vor dem Hochladen verkleinert.</li>
-<li><strong>Seite hinzufügen</strong> (#490): In einer Post am Handy hängt die Kamera weitere Seiten ans PDF an.</li>
-<li><strong>Mit anderer Post zusammenlegen …</strong> (#490): Die Seiten einer zweiten Post (PDFs und Fotos) kommen ans Ende des PDFs, die zweite Post kommt in den Papierkorb – für die Rückseite, die als eigene Post gelandet ist.</li>
-<li>Schnittstelle: <code>POST /fotostapel</code> (ein Foto, JPEG/PNG, roh), <code>POST /post/fotos</code> (<code>stapel</code>, <code>betreff</code>), <code>POST /mappen/{id}/fotos</code> (<code>stapel</code>, <code>dokument</code>) und <code>POST /post/{id}/zusammenlegen</code> (<code>quelle</code>) (#490).</li>
-</ul>
-<h3 id="geandert">Geändert<a class="headerlink" href="#geandert" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Am Rechner bleibt <strong>+ Neu → Post</strong> beim Dateien-Auswählen und Ziehen wie bisher (#490).</li>
+<li><strong>Schnell finden auf der Startseite</strong> (#497): Ganz oben steht ein Suchfeld („Suchen – Name, Nummer, Kennzeichen …“), das beim Tippen über <strong>alle Mappen sucht, die du lesen darfst</strong> – Titel und Feldwerte, auf Wunsch <strong>auch in Dokumenten</strong>. Treffer nach Mappentyp gruppiert, Titeltreffer zuerst, und unter jedem Treffer das passende Feld mit hervorgehobenem Begriff („Vertragsnummer: KV-123456“). Eine Archivnummer mit Enter springt wie gewohnt zum Dokument. Am Handy groß, mit Such-Taste und Diktieren über die Tastatur. Die erweiterte Suche bleibt für genaue Bedingungen.</li>
 </ul>
 <h2 id="altere-versionen">Ältere Versionen<a class="headerlink" href="#altere-versionen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Alle Änderungen seit 0.102.4 im Detail: <a href="https://github.com/motom001/dms/compare/v0.102.4...main">Vergleich auf GitHub</a></li>
+<li>Alle Änderungen seit 0.103.0 im Detail: <a href="https://github.com/motom001/dms/compare/v0.103.0...main">Vergleich auf GitHub</a></li>
 <li>Alle Versionen mit ihren Änderungen: <a href="https://github.com/motom001/dms/releases">Releases auf GitHub</a></li>
 <li>Was deine Installation seit ihrer Version verpasst hat, verlinkt <strong>Werkbank → Technik</strong>.</li>
 </ul>
