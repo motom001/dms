@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.107/datenschutz/">
+        <link rel="canonical" href="https://motom001.github.io/dms/admin/v0.108/datenschutz/">
       
       
         <link rel="prev" href="../archiv/">
@@ -2686,14 +2686,14 @@
 <h3 id="sperr-und-loschkonzept-aufsetzen">Sperr- und Löschkonzept aufsetzen<a class="headerlink" href="#sperr-und-loschkonzept-aufsetzen" title="Permanent link">&para;</a></h3>
 <p>Für Vermieter, Selbständige und Betriebe: einmal festlegen, wie lange welche Daten bleiben, und das DMS so einrichten, dass es dich daran hält.</p>
 <ol>
-<li><strong>Datenarten erfassen:</strong> Jeder Mappentyp ist eine Datenart – Mieter, Mietvertrag, Rechnung, Kunde, Bewerbung … Trage sie in die <a href="../loeschkonzept/">Vorlage Löschkonzept</a> ein, mit Zweck und Grund für die Aufbewahrung.</li>
+<li><strong>Datenarten erfassen:</strong> Jeder Mappentyp ist eine Datenart – Mieter, Mietvertrag, Rechnung, Kunde, Bewerbung … Markiere unter <strong>Werkbank → Datenschutz → Einstellungen</strong>, welche eine Person betreffen, und trage je Mappentyp den Zweck ein. Daraus <a href="../loeschkonzept/#aus-dem-dms-erzeugen">erzeugt das DMS das Löschkonzept</a> mit ausgefüllter Tabelle „Datenarten und Fristen“ – oder du füllst die <a href="../loeschkonzept/#die-vorlage">Vorlage</a> von Hand aus.</li>
 <li><strong>Fristen festlegen</strong> – mit deiner Steuerberatung: z. B. Buchungsbelege 8 Jahre, Geschäftsbriefe 6 Jahre, Bewerbungen ohne Zusage 6 Monate.</li>
 <li><strong>Archivmodus einschalten</strong> für jeden Mappentyp mit gesetzlicher Frist: Frist in Jahren und Stichtag (z. B. Rechnungsdatum). Bis Fristende ist die Mappe gegen Löschen gesperrt; danach steht sie unter <strong>Darf weg</strong>. Siehe <a href="../archiv/#einschalten">Archivmodus</a>.</li>
 <li><strong>Kürzere Fristen ohne Archivmodus</strong> (z. B. Interessenten, Bewerbungen): Lege eine <a href="../sichten/">Ansicht</a> an, die die fälligen Mappen nach einem Datumsfeld zeigt, und schau sie regelmäßig durch.</li>
 <li><strong>Wie lange Gelöschtes nachwirkt:</strong> Aufbewahrung des <a href="../papierkorb/#aufbewahrung">Papierkorbs</a> (Standard 30 Tage), Historie gelöschter Mappen (Standard 365 Tage) und Aufbewahrung der <a href="../sicherung/#zeitplan-und-aufbewahrung">Sicherungen</a> passend zu deinem Konzept einstellen.</li>
 <li><strong>Regelmäßig prüfen:</strong> z. B. jedes Jahr im Januar <strong>Werkbank → Darf weg</strong> durchgehen und löschen, was weg darf – einen Kunden oder Vertragspartner samt allem, was dranhängt, mit <a href="#mit-verknupften-mappen-loschen">Mit verknüpften Mappen löschen</a>. Gelöscht wird nie automatisch.</li>
 <li><strong>Sperren auf Verlangen</strong> wie unter <a href="#loschen-auf-verlangen">Löschen auf Verlangen</a> beschrieben.</li>
-<li><strong>Dokumentieren:</strong> Das ausgefüllte Löschkonzept legst du selbst als Mappe im DMS ab und hältst es aktuell.</li>
+<li><strong>Dokumentieren:</strong> Erzeuge das Löschkonzept unter <strong>Werkbank → Datenschutz → Löschkonzept</strong> (PDF oder Word), ergänze die [eckigen Klammern] und lege es als Mappe im DMS ab. Ändern sich Mappentypen oder Fristen, erzeugst du es neu.</li>
 </ol>
 <h2 id="auskunft-erteilen-werkbank-datenschutz">Auskunft erteilen: Werkbank → Datenschutz<a class="headerlink" href="#auskunft-erteilen-werkbank-datenschutz" title="Permanent link">&para;</a></h2>
 <p>Wer Daten von Kunden, Mietern oder Kontakten verwaltet, muss auf Anfrage sagen können, was er über sie gespeichert hat – und das in einer Form, die die Person mitnehmen kann. Unter <strong>Werkbank → Datenschutz</strong> erledigt das DMS das in wenigen Minuten.</p>
@@ -2876,7 +2876,7 @@
 <p>Halte in deiner <a href="../verfahrensdokumentation/">Verfahrensdokumentation</a> fest, welche Fristen je Mappentyp gelten, wer wann prüft, was weg darf (z. B. einmal im Jahr über <em>Darf weg</em>), und dass dabei „Mit verknüpften Mappen löschen“ verwendet wird.</p>
 </div>
 <h2 id="schnittstelle">Schnittstelle<a class="headerlink" href="#schnittstelle" title="Permanent link">&para;</a></h2>
-<p>Alles geht auch über die <a href="../api/">API</a>: <code>POST /api/v1/werkbank/auskunft/vorschau</code> (Prüfliste), <code>POST /api/v1/werkbank/auskunft</code> (erzeugen, Hintergrundauftrag), <code>GET /api/v1/werkbank/auskunft/{id}/zip</code>, <code>POST /api/v1/werkbank/auskunft/frist</code> und <code>GET</code>/<code>PUT /api/v1/werkbank/datenschutz</code>; zum Zustellen <code>POST /api/v1/werkbank/auskunft/{id}/email</code>, <code>POST /api/v1/werkbank/auskunft/{id}/link</code> und <code>POST /api/v1/werkbank/auskunft/link/{id}/widerrufen</code>. Die Abrufseite selbst (<code>POST /api/abruf</code>, <code>GET /api/abruf/datei</code>) gehört nicht zur API. Die Sammlung über Verweise selbst steht jedem Benutzer mit seinen Rechten unter <code>GET /api/v1/mappen/{id}/baum</code> zur Verfügung. Für das Löschkonzept: <code>GET /api/v1/mappen/{id}/loeschvorschau</code> (Vorschau mit Vorschlag), <code>POST /api/v1/mappen/{id}/mit-verknuepften-loeschen</code> (ausführen, mit denselben Prüfungen) und <code>POST /api/v1/papierkorb/vorgang/{id}/wiederherstellen</code>.</p>
+<p>Alles geht auch über die <a href="../api/">API</a>: <code>POST /api/v1/werkbank/auskunft/vorschau</code> (Prüfliste), <code>POST /api/v1/werkbank/auskunft</code> (erzeugen, Hintergrundauftrag), <code>GET /api/v1/werkbank/auskunft/{id}/zip</code>, <code>POST /api/v1/werkbank/auskunft/frist</code>, <code>GET</code>/<code>PUT /api/v1/werkbank/datenschutz</code> und <code>GET /api/v1/werkbank/datenschutz/loeschkonzept?format=pdf|docx</code> (Löschkonzept); zum Zustellen <code>POST /api/v1/werkbank/auskunft/{id}/email</code>, <code>POST /api/v1/werkbank/auskunft/{id}/link</code> und <code>POST /api/v1/werkbank/auskunft/link/{id}/widerrufen</code>. Die Abrufseite selbst (<code>POST /api/abruf</code>, <code>GET /api/abruf/datei</code>) gehört nicht zur API. Die Sammlung über Verweise selbst steht jedem Benutzer mit seinen Rechten unter <code>GET /api/v1/mappen/{id}/baum</code> zur Verfügung. Für das Löschkonzept: <code>GET /api/v1/mappen/{id}/loeschvorschau</code> (Vorschau mit Vorschlag), <code>POST /api/v1/mappen/{id}/mit-verknuepften-loeschen</code> (ausführen, mit denselben Prüfungen) und <code>POST /api/v1/papierkorb/vorgang/{id}/wiederherstellen</code>.</p>
 
 
 
