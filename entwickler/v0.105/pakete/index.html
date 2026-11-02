@@ -1,0 +1,1275 @@
+
+<!doctype html>
+<html lang="de" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Mitmachen beim DMS: Arbeitsweise, Entwicklung, Aufbau und Release">
+      
+      
+      
+        <link rel="canonical" href="https://motom001.github.io/dms/entwickler/v0.105/pakete/">
+      
+      
+        <link rel="prev" href="../release/">
+      
+      
+        <link rel="next" href="../leistung/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Pakete entwickeln - DMS – Entwicklerhandbuch</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue-grey" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#pakete-entwickeln" class="md-skip">
+          Zum Inhalt
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+          <aside class="md-banner md-banner--warning">
+            <div class="md-banner__inner md-grid md-typeset">
+              
+  Du liest nicht das Handbuch zur neuesten Version des DMS.
+  <a href="../.."><strong>Zur aktuellen Version</strong></a>
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL(".."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
+          </aside>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Kopfzeile">
+    <a href=".." title="DMS – Entwicklerhandbuch" class="md-header__button md-logo" aria-label="DMS – Entwicklerhandbuch" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DMS – Entwicklerhandbuch
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Pakete entwickeln
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue-grey" data-md-color-accent="indigo"  aria-label="Dunkle Darstellung"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dunkle Darstellung" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue-grey" data-md-color-accent="indigo"  aria-label="Helle Darstellung"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Helle Darstellung" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Suche" placeholder="Suche" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Suche">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Zurücksetzen" aria-label="Zurücksetzen" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Suche wird initialisiert
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/motom001/dms" title="Zum Repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    motom001/dms
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="DMS – Entwicklerhandbuch" class="md-nav__button md-logo" aria-label="DMS – Entwicklerhandbuch" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DMS – Entwicklerhandbuch
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/motom001/dms" title="Zum Repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    motom001/dms
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mitmachen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../personas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Für wen wir bauen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../loslegen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loslegen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aufbau/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aufbau
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../beitrag/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Beitrag einreichen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pakete entwickeln
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pakete entwickeln
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Inhaltsverzeichnis">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Inhaltsverzeichnis
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#wo-pakete-liegen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wo Pakete liegen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ein-paket-anlegen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ein Paket anlegen
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ein Paket anlegen">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#paket-aus-deinem-dms-erstellen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paket aus deinem DMS erstellen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#paketformat-verbindlich" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paketformat (verbindlich)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#einstellungen-beschreiben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Einstellungen beschreiben
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prufen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prüfen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pull-request-und-katalog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pull Request und Katalog
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#eigenes-paket-testen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Eigenes Paket testen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ausblick" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ausblick
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../leistung/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Leistung
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pakete-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pakete mit Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Weiteres
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Weiteres
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/benutzer/aktuell/begriffe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Begriffe (Glossar)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/motom001/dms/issues" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Issues auf GitHub
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/admin/aktuell/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Administratorhandbuch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/installieren/aktuell/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wie komme ich an ein DMS?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Inhaltsverzeichnis">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Inhaltsverzeichnis
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#wo-pakete-liegen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wo Pakete liegen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ein-paket-anlegen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ein Paket anlegen
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ein Paket anlegen">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#paket-aus-deinem-dms-erstellen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paket aus deinem DMS erstellen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#paketformat-verbindlich" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paketformat (verbindlich)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#einstellungen-beschreiben" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Einstellungen beschreiben
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prufen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prüfen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pull-request-und-katalog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pull Request und Katalog
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#eigenes-paket-testen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Eigenes Paket testen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ausblick" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ausblick
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="pakete-entwickeln">Pakete entwickeln<a class="headerlink" href="#pakete-entwickeln" title="Permanent link">&para;</a></h1>
+<p>Pakete erweitern das DMS um fertige Mappentypen, Ansichten und Beispiel-Mappen. Administratoren installieren sie unter <strong>Werkbank → Pakete</strong> aus dem offiziellen Katalog (siehe <a href="https://motom001.github.io/dms/admin/aktuell/pakete/">Administratorhandbuch → Pakete</a>).</p>
+<h2 id="wo-pakete-liegen">Wo Pakete liegen<a class="headerlink" href="#wo-pakete-liegen" title="Permanent link">&para;</a></h2>
+<p>Alle offiziellen Pakete liegen im Repository <strong><a href="https://github.com/motom001/dms-registry">motom001/dms-registry</a></strong>, ein Ordner je Paket unter <code>pakete/&lt;id&gt;/</code>. Dort gelten dieselben Regeln wie im DMS: erst ein Issue als User Story, umgesetzt wird nach dem Label <code>freigegeben</code>. Die Regeln für Pakete (Lizenzen, Verbotenes, Namen) stehen in <a href="https://github.com/motom001/dms-registry/blob/main/REGELN.md">REGELN.md</a>.</p>
+<h2 id="ein-paket-anlegen">Ein Paket anlegen<a class="headerlink" href="#ein-paket-anlegen" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/&lt;du&gt;/dms-registry<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>dms-registry
+werkzeuge/neues-paket.sh<span class="w"> </span>mein_paket<span class="w"> </span><span class="s2">"Mein Paket"</span><span class="w">   </span><span class="c1"># kopiert vorlage/ nach pakete/mein_paket/</span>
+</code></pre></div>
+<p>Dann ausfüllen:</p>
+<table>
+<thead>
+<tr>
+<th>Datei</th>
+<th>Inhalt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>manifest.yaml</code></td>
+<td><code>schema: 1</code> (Pflicht), Id, Name, Version (SemVer), Beschreibung, Autor, Lizenz, nötige DMS-Version (z. B. <code>"&gt;=0.63.0"</code>), Abhängigkeiten, <code>inhalt</code> mit den Pfaden der Inhaltsdateien (z. B. <code>mappentypen: inhalt/mappentypen.yaml</code>), optional <code>code</code></td>
+</tr>
+<tr>
+<td><code>inhalt/mappentypen.yaml</code></td>
+<td>Mappentypen mit Feldern, Registern, Titel und Trefferliste</td>
+</tr>
+<tr>
+<td><code>inhalt/sichten.yaml</code></td>
+<td>Ansichten mit Elternansicht, Mappentypen und Bedingungen</td>
+</tr>
+<tr>
+<td><code>inhalt/beispiele.yaml</code></td>
+<td>optional: Beispiel-Mappen mit erfundenen Daten</td>
+</tr>
+<tr>
+<td><code>README.md</code>, <code>LICENSE</code>, <code>CHANGELOG.md</code></td>
+<td>Beschreibung, Lizenztext, Änderungen je Version</td>
+</tr>
+<tr>
+<td><code>tests/erwartung.yaml</code></td>
+<td>was nach der Installation da sein muss</td>
+</tr>
+</tbody>
+</table>
+<h3 id="paket-aus-deinem-dms-erstellen">Paket aus deinem DMS erstellen<a class="headerlink" href="#paket-aus-deinem-dms-erstellen" title="Permanent link">&para;</a></h3>
+<p>Statt mit der Vorlage zu beginnen, kannst du Mappentypen und Ansichten, die du in einem DMS gebaut hast, unter <strong>Werkbank → Pakete → Paket erstellen</strong> exportieren (ab DMS 0.86.0, siehe <a href="https://motom001.github.io/dms/admin/aktuell/pakete/#paket-aus-deinem-dms-erstellen">Administratorhandbuch → Paket aus deinem DMS erstellen</a>). Das Ergebnis ist ein ZIP mit einem Ordner <code>&lt;id&gt;/</code> im Format der Registry – <code>manifest.yaml</code>, <code>inhalt/mappentypen.yaml</code>, <code>inhalt/sichten.yaml</code>, ggf. <code>inhalt/beispiele.yaml</code>, <code>README.md</code> aus der Beschreibung, <code>CHANGELOG.md</code>, <code>LICENSE</code> mit dem vollen Lizenztext und <code>tests/erwartung.yaml</code>. Es besteht <code>werkzeuge/pruefen.py</code>; entpackt unter <code>pakete/</code> ist es ein fertiger Paketordner für einen Pull Request (README und Beschreibung lohnt es sich noch auszubauen).</p>
+<p>So bildet der Export das DMS auf das Paketformat ab:</p>
+<table>
+<thead>
+<tr>
+<th>Im DMS</th>
+<th>Im Paket</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>eigener Mappentyp</td>
+<td>Eintrag in <code>mappentypen.yaml</code>; Kennung aus der Kennung des Typs, bleibt über Versionen gleich (gemerkt)</td>
+</tr>
+<tr>
+<td>Typ oder Ansicht aus einem installierten Paket</td>
+<td>nicht kopiert, sondern <code>abhaengigkeiten: { &lt;paket&gt;: "&gt;=&lt;installierte Version&gt;" }</code>, Verweise als <code>&lt;paket&gt;:&lt;kennung&gt;</code></td>
+</tr>
+<tr>
+<td>Verweis auf Benutzer, Rolle, Ablageort</td>
+<td><code>dms:benutzer</code>, <code>dms:rolle</code>, <code>dms:ablageort</code> (dann <code>dms</code> mindestens <code>&gt;=0.75.0</code>)</td>
+</tr>
+<tr>
+<td>Standard-Trefferliste</td>
+<td><code>trefferliste</code>; weitere Trefferlisten fehlen</td>
+</tr>
+<tr>
+<td>Bedingung auf ein Feld</td>
+<td><code>{ feld, operator, wert }</code>, dynamische Werte (heute, ich …) als Objekt; Bedingungen auf Anzahlen, Favoriten, Fristen und auf feste Mappen fehlen</td>
+</tr>
+<tr>
+<td>gewählte Beispiel-Mappen</td>
+<td><code>beispiele.yaml</code> mit <code>schluessel</code> und <code>{ beispiel: … }</code> für Verweise untereinander; ohne Passwörter, Dokumente und Verweise auf nicht gewählte Mappen</td>
+</tr>
+<tr>
+<td>Nummernkreis am Feld, Berechtigungen, Archivmodus</td>
+<td>fehlen (das Format kennt sie nicht); die Prüfung nennt sie</td>
+</tr>
+</tbody>
+</table>
+<h2 id="paketformat-verbindlich">Paketformat (verbindlich)<a class="headerlink" href="#paketformat-verbindlich" title="Permanent link">&para;</a></h2>
+<p>Das Format beschreiben die JSON-Schemas in der Registry: <a href="https://github.com/motom001/dms-registry/blob/main/schema/manifest.schema.json"><code>schema/manifest.schema.json</code></a> und <a href="https://github.com/motom001/dms-registry/blob/main/schema/inhalt.schema.json"><code>schema/inhalt.schema.json</code></a>. Die Vorlage zeigt jede Angabe mit Kommentar. Das DMS liest genau dieses Format:</p>
+<ul>
+<li><strong>Manifest:</strong> <code>schema: 1</code> ist Pflicht; ein anderer Wert wird abgelehnt. <code>inhalt</code> nennt die Dateien mit <code>mappentypen</code>, <code>sichten</code> und <code>beispiele</code> (Pfade relativ zum Paketordner). Das Schema kennt außerdem <code>inhalt.rollen</code>; das DMS liest es nicht.</li>
+<li><strong>Kennungen</strong> (<code>schluessel</code> bei Mappentypen und Ansichten, <code>key</code> bei Feldern und Registern) sind im Paket lokal. Das DMS legt Mappentypen als <code>&lt;paket&gt;_&lt;schluessel&gt;</code> an.</li>
+<li><strong>Felder</strong> wie in der Werkbank: <code>key</code>, <code>label</code>, <code>typ</code> (text, langtext, formatiert, zahl, betrag, datum, janein, auswahl, referenz, passwort) und die üblichen Eigenschaften (<code>pflicht</code>, <code>eindeutig</code>, <code>hilfe</code>, <code>standard</code>, <code>minLen</code>, <code>maxLen</code>, <code>muster</code>, <code>min</code>, <code>max</code>, <code>nachkomma</code>, <code>waehrung</code>, <code>optionen</code>, <code>mehrfach</code>, <code>verweisart</code>, <code>frist</code>).</li>
+<li><strong>Verweise</strong> (<code>ziel</code> bei Verweisfeldern, <code>quellen[].typ</code> bei Verknüpfungsregistern): <code>schluessel</code> für einen Mappentyp dieses Pakets, <code>&lt;paket&gt;:&lt;schluessel&gt;</code> für den Mappentyp eines anderen Pakets. Das andere Paket steht dann unter <code>abhaengigkeiten</code>. Mappentypen eines Pakets dürfen auch im Kreis aufeinander verweisen.</li>
+<li><strong>Verweise auf Mappentypen des DMS</strong> (seit 0.75.0): <code>dms:ablageort</code> (Ablageort, z. B. für das Feld <code>verbleib_original</code> „Verbleib Originaldokumente“), <code>dms:benutzer</code> und <code>dms:rolle</code> (z. B. für „Verantwortlich“). Erlaubt in <code>ziel</code>, <code>quellen[].typ</code> und <code>typen</code> einer Ansicht. Andere Typen des DMS (z. B. Post) gehen nicht; die Id <code>dms</code> ist für Pakete gesperrt. Ein Paket mit solchen Verweisen gibt im Manifest <code>dms: "&gt;=0.75.0"</code> an; ein älteres DMS lehnt es mit einer verständlichen Meldung ab. Die Vorschau zeigt die Typen als „Ablageort (aus dem DMS)“.</li>
+<li><strong>Ansichten:</strong> <code>eltern</code> ist die lokale Kennung einer anderen Ansicht des Pakets. <code>bedingungen</code> sind <code>{ feld, operator, wert }</code> mit den Operatoren der Werkbank (<code>gleich</code>, <code>enthaelt</code>, <code>kleiner</code>, <code>groesser</code>, <code>zwischen</code>, <code>ausserhalb</code>, <code>imZeitraum</code>, <code>einerVon</code>, <code>zeigtAuf</code>, <code>leer</code>, <code>nichtLeer</code>, <code>ja</code>, <code>nein</code>); bei <code>zwischen</code> und <code>ausserhalb</code> ist <code>wert</code> eine Liste mit zwei Werten.</li>
+<li><strong>Beispiele:</strong> <code>{ typ, werte }</code>; Beträge dürfen als Zahl stehen. Ab DMS 0.79.0 (#347) zusätzlich:<ul>
+<li><code>schluessel</code> (optional, Kleinbuchstaben, Ziffern, <code>_</code>; eindeutig im Paket) – damit andere Beispiele auf diese Mappe zeigen können.</li>
+<li>Ein Verweisfeld darf <code>{ beispiel: strom }</code> sein (bei <code>mehrfach</code> auch eine Liste davon), auf ein Beispiel einer <strong>Abhängigkeit</strong> mit Präfix: <code>{ beispiel: "basis:stadtwerke" }</code>.</li>
+<li>Das DMS legt die Beispiele so an, dass Ziele vorher da sind; die Reihenfolge in der Datei ist egal. Kreise (A → B → A), unbekannte Schlüssel und Präfixe, die nicht unter <code>abhaengigkeiten</code> stehen, lehnt es beim Lesen ab.</li>
+<li>Werden die Beispiele installiert, kommen auch die der Abhängigkeiten mit, die dabei neu installiert werden. Ist eine Abhängigkeit schon <strong>ohne</strong> Beispiele installiert, bleiben Verweise darauf leer; die Vorschau sagt das. Das DMS merkt sich die Mappen der Beispiele mit Schlüssel am installierten Paket (<code>beispiele</code>).</li>
+<li>Beim Update entstehen keine Beispiele – wie bisher.</li>
+<li>Pakete, die das nutzen, verlangen im Manifest <code>dms: "&gt;=0.79.0"</code>.</li>
+</ul>
+</li>
+<li><strong>Versionen:</strong> <code>dms</code> und <code>abhaengigkeiten</code> nehmen Bereiche: <code>&gt;=1.2.0</code>, <code>&gt;1.2.0</code>, <code>1.2.0</code> bzw. <code>=1.2.0</code>, <code>^1.2.0</code> (gleiche Hauptversion), <code>~1.2.0</code> (gleiche Nebenversion), optional mit Obergrenze <code>&lt;2.0.0</code>. Bei <code>0.x</code> heißt <code>^</code> gleiche Nebenversion: <code>^0.63.0</code> passt nur zu 0.63.x. Für die DMS-Version deshalb <code>&gt;=0.63.0</code> (bzw. die eigene Mindestversion) schreiben.</li>
+</ul>
+<p>Bei einem <strong>Update</strong> ergänzt das DMS nur: neue Mappentypen, Felder, Register und Ansichten. Felder, Register oder Ansichten zu entfernen oder umzubenennen hat auf installierte DMS keine Wirkung – plane das Format deshalb vorher. Mappentypen und Ansichten, die ein Administrator gelöscht hat, legt ein Update nicht neu an.</p>
+<h2 id="einstellungen-beschreiben">Einstellungen beschreiben<a class="headerlink" href="#einstellungen-beschreiben" title="Permanent link">&para;</a></h2>
+<p>Braucht dein Paket (mit Code) Einstellungen, beschreibst du sie im Manifest unter <code>code.einstellungen</code> – eine eigene Oberfläche bringt ein Paket nicht mit. Das DMS zeigt das Formular, prüft und speichert die Werte (Teil der Sicherung) und gibt sie dem Paket.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">code</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">einstellungen</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">abschnitt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Allgemein</span>
+<span class="w">      </span><span class="nt">felder</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> schluessel</span><span class="p">:</span><span class="w"> </span><span class="nv">aktiv</span><span class="p p-Indicator">,</span><span class="nt"> name</span><span class="p">:</span><span class="w"> </span><span class="nv">Regeln automatisch anwenden</span><span class="p p-Indicator">,</span><span class="nt"> typ</span><span class="p">:</span><span class="w"> </span><span class="nv">janein</span><span class="p p-Indicator">,</span><span class="nt"> standard</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> schluessel</span><span class="p">:</span><span class="w"> </span><span class="nv">token</span><span class="p p-Indicator">,</span><span class="nt"> name</span><span class="p">:</span><span class="w"> </span><span class="nv">API-Schlüssel</span><span class="p p-Indicator">,</span><span class="nt"> typ</span><span class="p">:</span><span class="w"> </span><span class="nv">geheim</span><span class="p p-Indicator">,</span><span class="nt"> pflicht</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">liste</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">regeln</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Regeln</span>
+<span class="w">      </span><span class="nt">eintrag</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Regel</span>
+<span class="w">      </span><span class="nt">sortierbar</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="nt">felder</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> schluessel</span><span class="p">:</span><span class="w"> </span><span class="nv">absender</span><span class="p p-Indicator">,</span><span class="nt"> name</span><span class="p">:</span><span class="w"> </span><span class="nv">Absender enthält</span><span class="p p-Indicator">,</span><span class="nt"> typ</span><span class="p">:</span><span class="w"> </span><span class="nv">text</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> schluessel</span><span class="p">:</span><span class="w"> </span><span class="nv">ziel</span><span class="p p-Indicator">,</span><span class="nt"> name</span><span class="p">:</span><span class="w"> </span><span class="nv">Mappentyp</span><span class="p p-Indicator">,</span><span class="nt"> typ</span><span class="p">:</span><span class="w"> </span><span class="nv">mappentyp</span><span class="p p-Indicator">,</span><span class="nt"> pflicht</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">aktionen</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> schluessel</span><span class="p">:</span><span class="w"> </span><span class="nv">anwenden</span><span class="p p-Indicator">,</span><span class="nt"> name</span><span class="p">:</span><span class="w"> </span><span class="nv">Regeln jetzt auf neue Post anwenden</span><span class="p p-Indicator">,</span><span class="nt"> bestaetigen</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="w"> </span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<ul>
+<li>Höchstens <strong>zwei Ebenen</strong>: Abschnitte (<code>abschnitt</code>, <code>hilfe</code>, <code>felder</code>) und Listen (<code>liste</code>, <code>name</code>, <code>eintrag</code>, <code>hilfe</code>, <code>sortierbar</code>, <code>felder</code>).</li>
+<li><strong>Typen:</strong> <code>text</code>, <code>mehrzeilig</code>, <code>zahl</code> (<code>min</code>/<code>max</code>), <code>janein</code>, <code>datum</code>, <code>auswahl</code> und <code>mehrfachauswahl</code> (<code>optionen</code>), <code>geheim</code>, Verweise <code>mappentyp</code>, <code>feld</code> (mit <code>mappentyp:</code>), <code>benutzer</code>, <code>rolle</code>, <code>sicht</code>.</li>
+<li><strong>Werte</strong>, wie das Paket sie bekommt: Abschnittsfelder unter ihrer Kennung, Listen als Liste von Objekten (mit <code>_id</code> je Eintrag). Verweise sind Ids (bei <code>feld</code>: <code>{ typ, feld }</code>), Geheimnisse im Klartext – nur für das eigene Paket.</li>
+<li>Zu <code>code</code> gehören außerdem <code>sprache</code>, <code>quelle</code>, <code>ereignisse</code>, <code>rechte</code> und <code>netz</code> (siehe <a href="../pakete-code/#im-manifest">Pakete mit Code</a>); das Beispiel oben zeigt nur Einstellungen und Aktionen.</li>
+<li><strong>Zugangsdaten nur als <code>geheim</code></strong>, nie als <code>text</code> und nie mit <code>standard</code>.</li>
+<li>Bei einem <strong>Update</strong> bekommen neue Felder ihre Vorgabe, vorhandene Werte bleiben, wegfallende werden entfernt.</li>
+</ul>
+<p><code>werkzeuge/pruefen.py</code> prüft Kennungen, Vorgaben, Optionen, Geheimnisse und Verweise. Zum Ausprobieren eignet sich der Expertenmodus mit <strong>Paket hochladen</strong>.</p>
+<p>Was das Paket mit den Einstellungen macht und welche Rechte es braucht, beschreibt <a href="../pakete-code/">Pakete mit Code</a>.</p>
+<h2 id="prufen">Prüfen<a class="headerlink" href="#prufen" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pyyaml<span class="w"> </span>jsonschema
+python3<span class="w"> </span>werkzeuge/pruefen.py<span class="w"> </span>pakete/mein_paket<span class="w">      </span><span class="c1"># Schema, Pflichtdateien, Verweise, Lizenz, Changelog</span>
+python3<span class="w"> </span>werkzeuge/katalog.py<span class="w"> </span>--probe<span class="w"> </span>/tmp/katalog<span class="w">    </span><span class="c1"># lässt sich der Katalog bauen?</span>
+</code></pre></div>
+<p>Dieselben Prüfungen laufen im Pull Request. Ein veröffentlichtes Paket ändert sich nie: Jede Änderung braucht eine höhere Version und einen Eintrag im <code>CHANGELOG.md</code>.</p>
+<h2 id="pull-request-und-katalog">Pull Request und Katalog<a class="headerlink" href="#pull-request-und-katalog" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Pull Request mit <code>Closes #…</code>; jeder Commit trägt ein <code>Signed-off-by:</code> (<code>git commit -s</code>).</li>
+<li>Nach dem Merge baut die CI je Paketversion ein Archiv <code>&lt;id&gt;-&lt;version&gt;.zip</code> und den Katalog <code>katalog.json</code> mit SHA-256 und legt beides auf den Branch <code>gh-pages</code>. Das DMS findet das Paket beim nächsten <strong>Katalog abrufen</strong>.</li>
+</ol>
+<h2 id="eigenes-paket-testen">Eigenes Paket testen<a class="headerlink" href="#eigenes-paket-testen" title="Permanent link">&para;</a></h2>
+<p>Bevor dein Paket in den Katalog kommt, probierst du es im eigenen DMS aus – am besten in einem Test-DMS (z. B. mit <a href="https://motom001.github.io/dms/admin/aktuell/demo/">Demo-Daten</a>):</p>
+<ol>
+<li><strong>Werkbank → Pakete → ▸ Expertenmodus</strong> aufklappen.</li>
+<li>Den Paketordner als ZIP packen, z. B. <code>cd pakete/mein_paket &amp;&amp; zip -r ../../mein_paket.zip .</code>, und unter <strong>Paket hochladen</strong> wählen. Ein Ordner vor <code>manifest.yaml</code> (z. B. <code>mein_paket/manifest.yaml</code>) stört nicht. Das DMS prüft das Paket wie ein Katalogpaket und zeigt die Vorschau; Fehler im Format stehen dort gesammelt.<ul>
+<li><strong>Grenzen:</strong> höchstens 10 MB als ZIP, entpackt höchstens 20 MB (ohne <code>code/</code>; dafür gelten 32 MB) und 500 Dateien. Ein hochgeladenes Paket bleibt 30 Minuten zum Installieren bereit; danach erneut hochladen.</li>
+</ul>
+</li>
+<li>Installieren (Herkunft bestätigen), ansehen, ändern. Für ein Update die <strong>Version erhöhen</strong> und erneut hochladen – das DMS aktualisiert wie bei einem Update aus dem Katalog (nur ergänzen). Zum Neuanfang das Paket entfernen (geht, solange es keine Mappen seiner Mappentypen gibt).</li>
+</ol>
+<p>Mehrere Pakete testest du auch als eigenen Katalog: <code>python3 werkzeuge/katalog.py &lt;ordner&gt;</code> baut <code>katalog.json</code> und die Archive; leg den Ordner auf einen HTTPS-Server und trage die Adresse von <code>katalog.json</code> im Expertenmodus unter <strong>Weitere Quellen</strong> ein.</p>
+<h2 id="ausblick">Ausblick<a class="headerlink" href="#ausblick" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Pakete mit Code</strong> gibt es seit 0.88.0: WebAssembly-Module, die auf Ereignisse reagieren und mit bestätigten Rechten über die API arbeiten – siehe <a href="../pakete-code/">Pakete mit Code</a>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Zurück zum Seitenanfang
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Fußzeile" >
+        
+          
+          <a href="../release/" class="md-footer__link md-footer__link--prev" aria-label="Zurück: Release">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Zurück
+              </span>
+              <div class="md-ellipsis">
+                Release
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../leistung/" class="md-footer__link md-footer__link--next" aria-label="Weiter: Leistung">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Weiter
+              </span>
+              <div class="md-ellipsis">
+                Leistung
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      DMS steht unter der Apache-2.0 · <a href="https://github.com/sponsors/motom001">Projekt unterstützen</a>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/sponsors/motom001" target="_blank" rel="noopener" title="Projekt unterstützen (GitHub Sponsors)" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="m241 87.1 15 20.7 15-20.7C296 52.5 336.2 32 378.9 32 452.4 32 512 91.6 512 165.1v2.6c0 112.2-139.9 242.5-212.9 298.2-12.4 9.4-27.6 14.1-43.1 14.1s-30.8-4.6-43.1-14.1C139.9 410.2 0 279.9 0 167.7v-2.6C0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://github.com/motom001/dms" target="_blank" rel="noopener" title="Quellcode auf GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "In Zwischenablage kopiert", "clipboard.copy": "In Zwischenablage kopieren", "search.result.more.one": "1 weiteres Suchergebnis auf dieser Seite", "search.result.more.other": "# weitere Suchergebnisse auf dieser Seite", "search.result.none": "Keine Suchergebnisse", "search.result.one": "1 Suchergebnis", "search.result.other": "# Suchergebnisse", "search.result.placeholder": "Suchbegriff eingeben", "search.result.term.missing": "Es fehlt", "select.version": "Version ausw\u00e4hlen"}, "version": {"alias": true, "default": "aktuell", "provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

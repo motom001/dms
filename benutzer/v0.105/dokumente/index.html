@@ -1,0 +1,1704 @@
+
+<!doctype html>
+<html lang="de" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Arbeiten mit dem DMS – Mappen, Dokumente, Suche und Profil">
+      
+      
+      
+        <link rel="canonical" href="https://motom001.github.io/dms/benutzer/v0.105/dokumente/">
+      
+      
+        <link rel="prev" href="../mappen/">
+      
+      
+        <link rel="next" href="../versionen/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Dokumente - DMS – Benutzerhandbuch</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/selbstcheck.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#dokumente" class="md-skip">
+          Zum Inhalt
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+          <aside class="md-banner md-banner--warning">
+            <div class="md-banner__inner md-grid md-typeset">
+              
+  Du liest nicht das Handbuch zur neuesten Version des DMS.
+  <a href="../.."><strong>Zur aktuellen Version</strong></a>
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL(".."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
+          </aside>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Kopfzeile">
+    <a href=".." title="DMS – Benutzerhandbuch" class="md-header__button md-logo" aria-label="DMS – Benutzerhandbuch" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DMS – Benutzerhandbuch
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Dokumente
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="indigo"  aria-label="Dunkle Darstellung"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dunkle Darstellung" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="indigo"  aria-label="Helle Darstellung"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Helle Darstellung" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Suche" placeholder="Suche" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Suche">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Zurücksetzen" aria-label="Zurücksetzen" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Suche wird initialisiert
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/motom001/dms" title="Zum Repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    motom001/dms
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="DMS – Benutzerhandbuch" class="md-nav__button md-logo" aria-label="DMS – Benutzerhandbuch" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    DMS – Benutzerhandbuch
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/motom001/dms" title="Zum Repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    motom001/dms
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Willkommen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wofuer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wofür ein DMS?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../original/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Original behalten oder vernichten?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../neu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Neu in dieser Version
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../erste-schritte/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Erste Schritte
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arbeiten in der Ablage
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Arbeiten in der Ablage
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../startseite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startseite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ablage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ansichten und Listen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../post/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Post
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mappen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mappen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dokumente
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dokumente
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Inhaltsverzeichnis">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Inhaltsverzeichnis
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#hochladen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hochladen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ansehen-und-herunterladen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ansehen und herunterladen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sortieren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sortieren
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mehrere-auf-einmal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mehrere auf einmal
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pdf-bearbeiten" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PDF bearbeiten
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pdf-verkleinern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PDF verkleinern
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schwaerzen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schwärzen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#volltext" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Volltext
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#versionen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Versionen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#archivnummer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Archivnummer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#entfernen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entfernen
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../versionen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Versionen verstehen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../eingang/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Zu erledigen und Aufgaben
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../zusammenarbeit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notizen, Erwähnungen, Historie
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../versenden/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    E-Mail, PDF, Link und Stempel
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../laufwerk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Als Laufwerk einbinden
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benutzer-und-rollen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benutzer und Rollen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../profil/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profil und Einstellungen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fragen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Häufige Fragen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../begriffe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Begriffe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Weiteres
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Weiteres
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/motom001/dms/releases" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Was ist neu? (Changelog)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/admin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Administratorhandbuch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/installieren/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wie komme ich an ein DMS?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://motom001.github.io/dms/entwickler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entwicklerhandbuch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Inhaltsverzeichnis">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Inhaltsverzeichnis
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#hochladen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hochladen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ansehen-und-herunterladen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ansehen und herunterladen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sortieren" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sortieren
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mehrere-auf-einmal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mehrere auf einmal
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pdf-bearbeiten" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PDF bearbeiten
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pdf-verkleinern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PDF verkleinern
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schwaerzen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schwärzen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#volltext" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Volltext
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#versionen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Versionen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#archivnummer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Archivnummer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#entfernen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entfernen
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="dokumente">Dokumente<a class="headerlink" href="#dokumente" title="Permanent link">&para;</a></h1>
+<p>Dokumente liegen in den <strong>Dokumentenregistern</strong> einer Mappe – beim Vertrag zum Beispiel unter „Vertragsunterlagen“.</p>
+<p><img alt="Dokumente einer Mappe" src="../bilder/dokumente.png" /></p>
+<h2 id="hochladen">Hochladen<a class="headerlink" href="#hochladen" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Öffne die Mappe und das Dokumentenregister.</li>
+<li>Zieh Dateien in das Feld <strong>Dateien hierher ziehen</strong> oder klicke auf <strong>auswählen</strong>.</li>
+<li>Die Dateien stehen nun mit dem Hinweis „wird beim Speichern hochgeladen“ in der Liste.</li>
+<li>Klicke auf <strong>Mappe speichern</strong>.</li>
+</ol>
+<p>Erst beim Speichern werden die Dateien hochgeladen – genau wie die übrigen Angaben. Verwirfst du die Änderungen, wird auch nichts hochgeladen.</p>
+<p>Eine Datei darf bis zu 100 MB groß sein.</p>
+<div class="admonition tip">
+<p class="admonition-title">Darf das Papier jetzt weg?</p>
+<p>Was du nach dem Einscannen vernichten darfst und was du besser im Original behältst: <a href="../original/">Original behalten oder vernichten?</a></p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Gleiche Datei schon abgelegt?</p>
+<p>Liegt genau diese Datei schon in einer anderen Mappe, die du sehen darfst, steht das <strong>sofort</strong> an der neuen Datei – noch vor dem Speichern: „Diese Datei liegt schon in <em>Stromvertrag Haus</em> (Vertrag, Register Dokumente, „Scan.pdf“, hochgeladen am …)“, mit Link dorthin. Du entscheidest: <strong>Mappe speichern</strong> legt sie trotzdem ab, <strong>Nicht hochladen</strong> lässt sie weg, der Link führt zur vorhandenen Mappe. Gespeichert wird der Inhalt in jedem Fall nur einmal.</p>
+<p>Das DMS vergleicht den <strong>Prüfwert</strong> der Datei – nur exakt gleiche Dateien zählen, nicht ein zweiter Scan desselben Briefs. Liegt die Datei nur in Mappen, die du nicht sehen darfst, gibt es keinen Hinweis: Das DMS verrät nichts über Mappen, die dir verborgen sind.</p>
+</div>
+<h2 id="ansehen-und-herunterladen">Ansehen und herunterladen<a class="headerlink" href="#ansehen-und-herunterladen" title="Permanent link">&para;</a></h2>
+<p>Neben jedem PDF und Bild (JPEG, PNG) steht ein <strong>kleines Vorschaubild der ersten Seite</strong>. So erkennst du auch bei nichtssagenden Namen wie „Scan_2026-10-12.pdf“ oder „IMG_4711.jpg“ auf einen Blick, welches die Rechnung und welches das Foto des Zählers ist. Das Bild entsteht kurz nach dem Hochladen im Hintergrund; bis dahin – und bei anderen Dateien wie Word oder Excel – steht dort die Dateiendung. Das Vorschaubild sieht nur, wer auch das Dokument sehen darf. Auch beim <strong>Zuordnen einer Post</strong> stehen die Vorschaubilder neben den Dokumenten.</p>
+<ul>
+<li><strong>PDFs und Bilder:</strong> Ein Klick irgendwo auf die Zeile zeigt das Dokument <strong>direkt darunter</strong> an, ein zweiter Klick schließt es. Es ist immer nur ein Dokument offen. Per Tastatur: mit Tab auf den Namen, dann Enter. Das Symbol <strong>↗</strong> öffnet es in einem neuen Browser-Tab.</li>
+<li><strong>Alle anderen Dateien</strong> (z. B. Word, Excel) lassen sich nur herunterladen und dann in ihrem Programm öffnen.</li>
+</ul>
+<p><strong>Herunterladen</strong> speichert jede Datei unverändert auf deinem Gerät. Neben jedem Dokument steht, wie groß es ist und wer es wann hochgeladen hat.</p>
+<p><img alt="Dokument direkt unter seiner Zeile" src="../bilder/dokumente.png" /></p>
+<h2 id="sortieren">Sortieren<a class="headerlink" href="#sortieren" title="Permanent link">&para;</a></h2>
+<p>Über der Liste wählst du die Reihenfolge: <strong>Name A–Z</strong> (Standard), <strong>Name Z–A</strong>, <strong>Neueste zuerst</strong>, <strong>Älteste zuerst</strong> (nach dem Hochladen) oder <strong>Größte zuerst</strong>. Namen werden „natürlich“ sortiert – „Rechnung 2“ vor „Rechnung 10“, ohne Rücksicht auf Groß- und Kleinschreibung. Die Wahl gilt für alle Dokumentenregister und für dich auf allen Geräten. Noch nicht gespeicherte Dateien stehen immer oben.</p>
+<h2 id="mehrere-auf-einmal">Mehrere auf einmal<a class="headerlink" href="#mehrere-auf-einmal" title="Permanent link">&para;</a></h2>
+<p>Jede Zeile hat ein Kästchen; <strong>Alle auswählen</strong> über der Liste wählt alle (und wieder ab). Mit <strong>Umschalt + Klick</strong> wählst du einen ganzen Bereich. Für die Auswahl gibt es dann:</p>
+<ul>
+<li><strong>Herunterladen</strong> – lädt die Dokumente nacheinander unter ihrem Namen herunter. Beim ersten Mal fragt der Browser womöglich, ob die Seite mehrere Dateien herunterladen darf – erlaube es.</li>
+<li><strong>Zusammenfügen</strong> – nur bei zwei oder mehr PDFs: hängt sie zu einem neuen PDF aneinander (siehe <a href="#pdf-bearbeiten">PDF bearbeiten</a>).</li>
+<li><strong>Löschen</strong> – markiert sie zum Löschen, wie beim einzelnen Dokument (siehe unten).</li>
+</ul>
+<p>Die Auswahl gilt nur für das Register, in dem du gerade bist.</p>
+<h2 id="pdf-bearbeiten">PDF bearbeiten<a class="headerlink" href="#pdf-bearbeiten" title="Permanent link">&para;</a></h2>
+<p>Schief gescannt, eine leere Rückseite zu viel, drei Briefe in einem Scan? Das richtest du direkt im DMS – ohne anderes Programm.</p>
+<p><strong>Seiten</strong> neben einem PDF öffnet darunter die Seitenansicht mit einem kleinen Bild jeder Seite. Je Seite gibt es:</p>
+<ul>
+<li><strong>↺ / ↻</strong> – um 90 Grad nach links oder rechts drehen</li>
+<li><strong>Löschen</strong> – die Seite fällt weg (<strong>Behalten</strong> holt sie zurück)</li>
+<li><strong>← / →</strong> – nach vorn oder hinten verschieben. Du kannst Seiten auch mit der Maus an eine andere Stelle <strong>ziehen</strong> oder per Tastatur: Seite mit Tab anwählen, dann <strong>Alt + Pfeiltaste</strong>.</li>
+<li><strong>Teilen ab hier</strong> – mit dieser Seite beginnt ein neuer Teil</li>
+</ul>
+<p><img alt="Seiten eines PDFs bearbeiten: Seite 2 gedreht, ab Seite 3 ein neuer Teil" src="../bilder/pdf-bearbeiten.png" /></p>
+<p>Unten steht, was herauskommt („3 von 5 Seiten · 1 gedreht · 2 Teile“). Erst <strong>Übernehmen</strong> speichert – sofort, ohne „Mappe speichern“. <strong>Abbrechen</strong> lässt alles, wie es war.</p>
+<p>Was beim Übernehmen passiert:</p>
+<table>
+<thead>
+<tr>
+<th>Was</th>
+<th>Mit Versionierung</th>
+<th>Ohne Versionierung</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Drehen, löschen, umsortieren</td>
+<td>neue <strong>Version</strong> des Dokuments; die bisherige bleibt als ältere Version erhalten</td>
+<td>nach Rückfrage ersetzt das Ergebnis das Dokument; das bisherige kommt in den <a href="../ablage/#papierkorb">Papierkorb</a></td>
+</tr>
+<tr>
+<td>Teilen in einer Mappe</td>
+<td>Teil 1 wird die neue Version („Scan (Teil 1).pdf“), die weiteren Teile werden eigene Dokumente im selben Register („Scan (Teil 2).pdf“ …)</td>
+<td>ebenso, Teil 1 nach Rückfrage</td>
+</tr>
+<tr>
+<td>Teilen bei <a href="../post/#sammelscan-teilen">Post</a></td>
+<td>je Teil eine <strong>neue Post</strong> – die Ausgangspost bleibt unverändert und wird erledigt</td>
+<td>ebenso</td>
+</tr>
+</tbody>
+</table>
+<p>Im <strong>Archivmodus</strong> ist die Versionierung immer an – das Original bleibt also auch dort erhalten. Für das Ergebnis läuft die <a href="#volltext">Texterkennung</a> neu, das Vorschaubild entsteht neu. In der Historie der Mappe steht „PDF bearbeitet“ mit dem, was sich geändert hat.</p>
+<p><strong>Zusammenfügen:</strong> Wähle mit den Kästchen zwei oder mehr PDFs und klicke auf <strong>Zusammenfügen</strong>. Das DMS hängt sie in der Reihenfolge der Liste aneinander (sortiere vorher, wenn nötig) und legt das Ergebnis als <strong>neues Dokument</strong> in dieses Register; den Namen kannst du ändern. Die Ausgangsdokumente bleiben, außer du hakst <strong>Ausgangsdokumente in den Papierkorb legen</strong> an.</p>
+<p>Bearbeiten lassen sich nur PDFs, keine Bilder oder Word-Dateien, und nur mit dem Recht „Bearbeiten“ an der Mappe. Ein PDF mit Passwortschutz lässt das DMS unverändert. Bilder gibt es für die ersten 400 Seiten; bei sehr langen PDFs stehen danach nur die Seitennummern.</p>
+<h2 id="pdf-verkleinern">PDF verkleinern<a class="headerlink" href="#pdf-verkleinern" title="Permanent link">&para;</a></h2>
+<p>Ein Scan mit 600 dpi oder ein Foto-PDF vom Handy ist schnell 20 MB groß – zu groß für viele E-Mail-Anbieter (oft 10 bis 25 MB) und unnötig viel für Speicher und Sicherung. <strong>Verkleinern</strong> neben einem PDF (ab etwa 0,5 MB) rechnet die Bilder darin auf eine sinnvolle Auflösung herunter und komprimiert sie neu.</p>
+<p><img alt="PDF verkleinern: drei Stufen mit geschätzter Größe" src="../bilder/pdf-verkleinern.png" /></p>
+<p>Du wählst eine von drei <strong>Stufen</strong>; neben jeder steht die geschätzte Größe danach:</p>
+<table>
+<thead>
+<tr>
+<th>Stufe</th>
+<th>Bilder mit etwa</th>
+<th>Wofür</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Bildschirm</strong></td>
+<td>100 dpi</td>
+<td>Lesen am Bildschirm, Verschicken – am kleinsten</td>
+</tr>
+<tr>
+<td><strong>Standard</strong> (Vorgabe)</td>
+<td>150 dpi</td>
+<td>gut lesbar und ordentlich druckbar</td>
+</tr>
+<tr>
+<td><strong>Druck</strong></td>
+<td>300 dpi</td>
+<td>für den Druck; kleiner werden nur sehr fein gescannte Seiten</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Als neue Version speichern</strong> – das verkleinerte PDF wird die neue <a href="#versionen">Version</a> des Dokuments, das Original bleibt als ältere Version erhalten. Ohne Versionierung heißt der Knopf <strong>Verkleinern und ersetzen</strong>: Nach einer Rückfrage ersetzt das verkleinerte PDF das bisherige, das bisherige kommt in den <a href="../ablage/#papierkorb">Papierkorb</a> – wie bei <a href="#pdf-bearbeiten">PDF bearbeiten</a>.</li>
+<li><strong>Verkleinert herunterladen</strong> – nur eine verkleinerte Kopie auf deinen Rechner; das Dokument im DMS bleibt, wie es ist. Das geht auch mit dem Recht „Lesen“.</li>
+</ul>
+<p>Danach steht dort, wie viel es gebracht hat, z. B. „verkleinert von 18,4 MB auf 2,1 MB (−89 %)“. Die Historie der Mappe vermerkt es unter „PDF bearbeitet“.</p>
+<p>Gut zu wissen:</p>
+<ul>
+<li><strong>Text bleibt Text.</strong> Nur die Bilder werden neu berechnet. Eine Textebene (aus dem Scanner oder der Texterkennung) bleibt unverändert, der <a href="#volltext">Volltext</a> auch – die Texterkennung läuft dafür nicht neu.</li>
+<li><strong>Bringt es weniger als 10 %</strong>, bleibt das Dokument unverändert, und du bekommst eine Meldung. Das ist bei PDFs ohne große Bilder (z. B. Rechnungen direkt aus einem Programm) der Normalfall.</li>
+<li>Schwarz-Weiß-Scans (1 Bit) und Bilder mit Sonderfarben bleiben, wie sie sind – dort wäre ein JPEG größer oder unschärfer.</li>
+<li>Verschlüsselte PDFs lassen sich nicht verkleinern.</li>
+<li>Beim <strong>Weitergeben</strong> (E-Mail, Export, Herunterladen mit Stempel) gibt es zusätzlich das Kästchen <strong>PDFs verkleinert senden</strong> – siehe <a href="../versenden/#verkleinert-weitergeben">Verkleinert weitergeben</a>. Große PDFs auf einmal verkleinert der Administrator in der Werkbank.</li>
+</ul>
+<h2 id="schwaerzen">Schwärzen<a class="headerlink" href="#schwaerzen" title="Permanent link">&para;</a></h2>
+<p>Bevor du einen Kontoauszug an die Familienkasse, eine Gehaltsabrechnung an den Vermieter oder einen Beleg an einen Kunden gibst, willst du manches unkenntlich machen: Kontonummer, Gehalt, Gesundheitsangaben, Namen anderer Leute. <strong>Schwärzen</strong> neben einem PDF oder Bild (JPEG, PNG) macht daraus eine <strong>geschwärzte Kopie</strong>, in der diese Stellen wirklich fehlen – nicht nur schwarz überdeckt.</p>
+<p><img alt="Schwärzen: Suchbegriff und IBAN-Vorschlag, Vorschau der schwarzen Bereiche" src="../bilder/schwaerzen.png" /></p>
+<p>So wählst du aus, was schwarz wird:</p>
+<ul>
+<li><strong>Bereiche aufziehen</strong> – mit der Maus (oder dem Finger) ein Rechteck über die Stelle ziehen. Ein <strong>Wort antippen</strong> schwärzt genau dieses Wort; einen eigenen Bereich nochmal antippen nimmt ihn wieder weg. Am Handy schaltest du mit <strong>✎ Aufziehen an/aus</strong> zwischen Aufziehen und Blättern um.</li>
+<li><strong>Überall schwärzen</strong> – einen Suchbegriff eingeben, z. B. einen Namen oder eine IBAN, und <strong>Hinzufügen</strong>: Er wird auf allen Seiten geschwärzt, egal ob groß oder klein geschrieben und auch mit oder ohne Leerzeichen („DE89 3704“ findet „DE893704“). Daneben steht, wie oft er vorkommt.</li>
+<li><strong>Vorschläge</strong> – das DMS sucht selbst nach <strong>IBAN</strong>, <strong>Steuer-Id</strong>, <strong>Geburtsdatum</strong> (ein Datum mit „geb.“ davor), <strong>E-Mail</strong> und <strong>Telefon</strong> und listet die Fundstellen zum Anhaken auf. Das passiert auf deinem Rechner bzw. im DMS, ohne Internet. IBAN und Steuer-Id werden mit ihrer Prüfziffer geprüft, Telefonnummern können auch einmal danebenliegen – sieh dir die Liste an.</li>
+<li><strong>Vorschau</strong> zeigt die Seiten so, wie sie danach aussehen. <strong>Textstellen zeigen</strong> blendet ein, wo das DMS Text erkannt hat – so siehst du, ob die Textebene genau über dem sichtbaren Text liegt.</li>
+</ul>
+<p>Mit <strong>Geschwärzt speichern</strong> kommt eine Rückfrage: Schwärzen lässt sich nicht rückgängig machen. Danach liegt im selben Register ein neues Dokument <strong>„… (geschwärzt)“</strong>; das Original bleibt unverändert in der Mappe. Ist für das Register die <a href="#versionen">Versionierung</a> an, kannst du stattdessen <strong>Neue Version</strong> wählen – dann bleibt die ungeschwärzte Fassung als ältere Version erhalten und ist für alle mit Leserecht weiter zu sehen. Zum Weitergeben ist die Kopie meist besser.</p>
+<p>Was dabei passiert:</p>
+<ul>
+<li><strong>Alle Seiten</strong> werden neu als Bild aufgebaut (150 dpi), die Bereiche in den Bildpunkten schwarz gefüllt. Aus dem Original kommt nichts mit: keine Textebene darunter, keine Anmerkungen, Formularfelder, Lesezeichen, eingebetteten Dateien, Autor, Titel oder andere Metadaten. Bilder bleiben Bilder desselben Typs, ohne EXIF-Daten (z. B. Aufnahmeort).</li>
+<li>Die <strong>Textebene</strong> entsteht neu – ohne die geschwärzten Wörter. Die Kopie bleibt also durchsuchbar und kopierbar, nur die Stellen nicht; der <a href="#volltext">Volltext</a> der Kopie enthält sie nicht, die Suche findet sie dort nicht.</li>
+<li>Ein Wort, das ein Bereich auch nur teilweise berührt, fehlt in der Textebene ganz.</li>
+<li>Die Historie der Mappe vermerkt „geschwärzte Fassung erstellt“ mit der Zahl der Stellen – nie die Suchbegriffe oder den geschwärzten Text.</li>
+</ul>
+<p>Gut zu wissen:</p>
+<ul>
+<li>Bei <strong>Scans ohne Textebene</strong> liest die Texterkennung die Seiten zuerst; das dauert etwas. Ohne Texterkennung gehen nur Bereiche, keine Suchbegriffe und Vorschläge.</li>
+<li>Vektortext wird dabei zu einem Bild – die Kopie ist meist etwas größer und nicht ganz so scharf wie ein PDF direkt aus einem Programm.</li>
+<li>Schwärzen geht mit dem Recht „Bearbeiten“ an der Mappe, für höchstens 300 Seiten auf einmal (längere PDFs vorher <a href="#pdf-bearbeiten">teilen</a>), nicht bei PDFs mit Passwortschutz.</li>
+<li>Das <strong>Original</strong> enthält weiterhin alles. Gib die geschwärzte Kopie weiter – per <a href="../versenden/">E-Mail, Export oder Link</a>.</li>
+</ul>
+<h2 id="volltext">Volltext<a class="headerlink" href="#volltext" title="Permanent link">&para;</a></h2>
+<p>Damit die <a href="../ablage/#im-text-der-dokumente-suchen">Volltextsuche</a> ein Dokument findet, liest das DMS nach dem Hochladen im Hintergrund seinen Text: bei PDFs die Textebene, bei Scans und Fotos per Texterkennung. Neben dem Dokument steht, wie weit es ist:</p>
+<table>
+<thead>
+<tr>
+<th>Anzeige</th>
+<th>Bedeutung</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>Volltext: wartet</em> / <em>läuft</em></td>
+<td>Der Text wird gerade gelesen; meist dauert das Sekunden, bei langen Scans einige Minuten.</td>
+</tr>
+<tr>
+<td><em>Volltext: fertig</em></td>
+<td>Das Dokument ist durchsuchbar. <strong>Text anzeigen</strong> zeigt, was erkannt wurde.</td>
+</tr>
+<tr>
+<td><em>Volltext: Fehler</em></td>
+<td>Etwas ging schief, z. B. eine beschädigte Datei. <strong>Erneut versuchen</strong> stellt es noch einmal an.</td>
+</tr>
+<tr>
+<td><em>Volltext: ausgelassen</em></td>
+<td>Für diesen Dateityp (z. B. Word, Excel) oder diese Größe gibt es keinen Volltext.</td>
+</tr>
+</tbody>
+</table>
+<p>Erkannter Text aus Scans ist nicht immer fehlerfrei – je besser die Vorlage, desto besser das Ergebnis.</p>
+<h2 id="versionen">Versionen<a class="headerlink" href="#versionen" title="Permanent link">&para;</a></h2>
+<p>Warum du im DMS nichts mehr in <code>_v2</code> oder <code>_final</code> umbenennen musst, erklärt mit Bildern die Seite <a href="../versionen/">Versionen verstehen</a>. Kurz:</p>
+<p>Ist an einem Dokumentenregister die <strong>Versionierung</strong> eingeschaltet (das macht ein Administrator), bleibt beim Ersetzen die alte Fassung erhalten:</p>
+<ul>
+<li><strong>Ersetzen</strong> neben einem Dokument lädt eine neue Datei als <strong>neue Version</strong> hoch – sofort, ohne „Mappe speichern“. Name und Dateityp dürfen sich ändern, z. B. <code>Kassenbon.jpg</code> → <code>Kassenbon.pdf</code>. Die Mappe zeigt danach nur die neueste Version.</li>
+<li>Am Dokument steht <strong>Version 3</strong>. Ein Klick darauf zeigt alle Versionen mit Datum, wer sie gespeichert hat, Herkunft, Dateiname und Größe. Jede ältere Version lässt sich ansehen (↗) und herunterladen.</li>
+<li><strong>Zurückholen</strong> übernimmt eine ältere Version als neue, höchste Version – aus Version 1 wird z. B. Version 4. Die bisherigen Versionen bleiben dabei stehen.</li>
+<li>Die Volltextsuche findet nur die aktuelle Version.</li>
+<li>Hat der Administrator <strong>nur die letzten … Versionen behalten</strong> eingestellt, löscht das DMS ältere Versionen darüber hinaus von selbst – sie lassen sich dann nicht mehr zurückholen.</li>
+<li>In der Historie der Mappe steht jede neue Version, z. B. „Version 3 (ersetzt Kassenbon.jpg)“ oder „Version 1 zurückgeholt“.</li>
+</ul>
+<p><strong>Gleicher Dateiname beim Hochladen:</strong> Gibt es im Register schon ein Dokument mit demselben Namen, fragt das DMS in der Liste nach:</p>
+<ul>
+<li>mit Versionierung: <strong>als neue Version</strong> speichern (vorausgewählt) oder <strong>als eigenes Dokument mit Zähler</strong>, z. B. <code>Rechnung (2).pdf</code></li>
+<li>ohne Versionierung: <strong>als eigenes Dokument mit Zähler</strong> (vorausgewählt) oder <strong>altes Dokument löschen und neues hochladen</strong> – das Löschen ist endgültig</li>
+</ul>
+<h2 id="archivnummer">Archivnummer<a class="headerlink" href="#archivnummer" title="Permanent link">&para;</a></h2>
+<p>Bewahrst du Papieroriginale auf, verbindet die <strong>Archivnummer</strong> das Papier mit dem Dokument im DMS: Auf das Blatt kommt ein Aufkleber mit Barcode und Nummer (z. B. <code>A-000123</code>), am Dokument steht dieselbe Nummer. So findest du zum Dokument das Papier – und vom Papier zum Dokument.</p>
+<ul>
+<li><strong>Eintragen:</strong> <strong>Archivnummer</strong> neben dem Dokument, Nummer eintippen oder mit einem Handscanner einscannen, <strong>Übernehmen</strong>. Das gilt sofort, ohne „Mappe speichern“. Danach steht „Archivnummer A-000123“ unter dem Namen; <strong>ändern</strong> – auch leeren – geht dort.</li>
+<li><strong>Jede Nummer gibt es nur einmal.</strong> Hat ein anderes Dokument sie schon, sagt das DMS das und trägt nichts ein – dann klebt wohl ein falscher Aufkleber.</li>
+<li><strong>Finden:</strong> Tippe die Nummer ins <strong>Suchfeld</strong> einer Liste und drücke <span class="keys"><kbd class="key-enter">Enter</kbd></span> – oder scanne den Aufkleber mit einem Handscanner (er tippt wie eine Tastatur und drückt selbst <span class="keys"><kbd class="key-enter">Enter</kbd></span>). Das DMS öffnet die Mappe mit dem Register und zeigt das Dokument an. Ist es eine Mappe, die du nicht sehen darfst, sucht es normal weiter.</li>
+<li>In der <a href="../zusammenarbeit/#historie">Historie</a> der Mappe steht jede Änderung der Archivnummer.</li>
+</ul>
+<p>Die Aufkleber druckt ein Administrator (Werkbank → Nummernkreise → <em>Archivnummer</em>). Das Feld für die Nummer gehört zum <strong>Dokument</strong>, nicht zur Mappe: Eine Mappe kann mehrere Papiere haben.</p>
+<div class="admonition tip">
+<p class="admonition-title">Zusammen mit dem Ablageort</p>
+<p>Der <a href="../original/">Ablageort</a> sagt, <strong>wo</strong> das Papier liegt („Kiste 2026“), die Archivnummer, <strong>welches</strong> Blatt. Schreib auf die Kiste, welche Nummern drin sind – z. B. „Kiste 2026: A-000100 bis A-000180“ – dann findest du jedes Original mit einem Griff.</p>
+</div>
+<h2 id="entfernen">Entfernen<a class="headerlink" href="#entfernen" title="Permanent link">&para;</a></h2>
+<p>Ein Klick auf <strong>Löschen</strong> neben einem Dokument markiert es mit „wird beim Speichern gelöscht“. Erst <strong>Mappe speichern</strong> löscht es; <strong>Behalten</strong> oder <strong>Änderungen verwerfen</strong> holt es zurück. Noch nicht gespeicherte Dateien nimmst du mit <strong>Nicht hochladen</strong> wieder aus der Liste.</p>
+<p>Ein gelöschtes Dokument kommt beim Speichern mit allen seinen Versionen in den <a href="../ablage/#papierkorb">Papierkorb</a> – ein falscher Klick ist also nicht gleich endgültig. Dort steht es unter <strong>Dokumente</strong> mit der Mappe und dem Register, aus dem es kam; <strong>Wiederherstellen</strong> legt es genau dorthin zurück. Hat es ältere Versionen, fragt das DMS vorher nach und nennt ihre Zahl. Löschst du eine ganze Mappe, kommen ihre Dokumente mit ihr in den Papierkorb.</p>
+<p>Ist der Papierkorb ausgeschaltet (Werkbank), ist ein gelöschtes Dokument sofort endgültig weg – die Zeile sagt dann „wird beim Speichern endgültig gelöscht“.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Zurück zum Seitenanfang
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Fußzeile" >
+        
+          
+          <a href="../mappen/" class="md-footer__link md-footer__link--prev" aria-label="Zurück: Mappen">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Zurück
+              </span>
+              <div class="md-ellipsis">
+                Mappen
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../versionen/" class="md-footer__link md-footer__link--next" aria-label="Weiter: Versionen verstehen">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Weiter
+              </span>
+              <div class="md-ellipsis">
+                Versionen verstehen
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      DMS steht unter der Apache-2.0 · <a href="https://github.com/sponsors/motom001">Projekt unterstützen</a>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/sponsors/motom001" target="_blank" rel="noopener" title="Projekt unterstützen (GitHub Sponsors)" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="m241 87.1 15 20.7 15-20.7C296 52.5 336.2 32 378.9 32 452.4 32 512 91.6 512 165.1v2.6c0 112.2-139.9 242.5-212.9 298.2-12.4 9.4-27.6 14.1-43.1 14.1s-30.8-4.6-43.1-14.1C139.9 410.2 0 279.9 0 167.7v-2.6C0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://github.com/motom001/dms" target="_blank" rel="noopener" title="Quellcode auf GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "In Zwischenablage kopiert", "clipboard.copy": "In Zwischenablage kopieren", "search.result.more.one": "1 weiteres Suchergebnis auf dieser Seite", "search.result.more.other": "# weitere Suchergebnisse auf dieser Seite", "search.result.none": "Keine Suchergebnisse", "search.result.one": "1 Suchergebnis", "search.result.other": "# Suchergebnisse", "search.result.placeholder": "Suchbegriff eingeben", "search.result.term.missing": "Es fehlt", "select.version": "Version ausw\u00e4hlen"}, "version": {"alias": true, "default": "aktuell", "provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+        <script src="../javascripts/selbstcheck.js"></script>
+      
+    
+  </body>
+</html>
