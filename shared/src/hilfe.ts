@@ -23,6 +23,7 @@ export const HILFE = {
   'einrichtung.administrator': admin('installation/', 'Administrator', 'administrator'),
   'einrichtung.benutzer': admin('installation/', 'Erster Benutzer', 'erster-benutzer'),
   'einrichtung.schluessel': admin('installation/', 'Schlüssel und Notfallblatt', 'schlussel-und-notfallblatt'),
+  'einrichtung.pakete': admin('installation/', 'Pakete dazuholen', 'pakete-dazuholen'),
   'einrichtung.optional': admin('installation/', 'Optionales', 'optionales'),
   'einrichtung.fertig': admin('installation/', 'Fertig', 'fertig'),
   'werkbank.uebersicht': admin('uebersicht/', 'Übersicht', 'ubersicht'),

@@ -958,6 +958,8 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
 .assistent-schritte li.aktiv .nr { background: var(--akzent); color: var(--akzent-tinte); }
 .assistent-schritte li.aktiv .name { color: var(--text, inherit); font-weight: 600; }
 @media (max-width: 640px) { .assistent-schritte li:not(.aktiv) .name { display: none; } }
+/* Zehn Schritte (#460): lange Namen am Rechner mit Trennstrich statt mitten im Wort umbrechen. */
+@media (min-width: 641px) { .assistent-schritte .name { hyphens: auto; } }
 .karte.assistent .knoepfe .knopf.primaer { width: auto; }
 .karte.assistent .knoepfe { justify-content: flex-end; }
 .wahlkarten { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 12px 0; }
@@ -1161,6 +1163,17 @@ a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
 .paketname { display: grid; gap: 4px; }
 .paketname > span:first-child { font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
 .paketname input { width: 100%; min-width: 0; }
+/* Pakete dazuholen (#460, #461): Auswahl mit Abhängigkeiten, danach Paket für Paket. */
+.pd-liste { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 8px; }
+.pd-liste > li { border: 1px solid var(--linie); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.pd-liste > li.an { border-color: var(--akzent); }
+.pd-liste .chip { white-space: normal; }
+.pd-darf { margin: 4px 0 0 26px; overflow-wrap: anywhere; }
+.pd-rechte { margin: 4px 0 0 26px; }
+.pd-rechte ul { margin: 4px 0; padding-left: 18px; }
+.pd-fortschritt { margin: 0; padding-left: 20px; display: grid; gap: 2px; font-size: calc(13px * var(--skala, 1)); color: var(--leise); }
+.pd-fortschritt li.aktiv { color: inherit; font-weight: 600; }
+.pd-fortschritt li.installiert::marker { color: var(--gruen); }
 .umbrechen { overflow-wrap: anywhere; }
 
 /* Einrichtungsassistent (#278): Hilfe je Schritt, gut sichtbar oben rechts */
