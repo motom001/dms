@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 750" width="640" height="750" role="img" aria-label="Früher: viele Dateien mit Zusätzen wie v2, alt und final im Dateimanager. Heute: ein Dokument in der Mappe, darunter seine Versionen 1 bis 4 mit Datum und wer sie gespeichert hat." style="font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<title>Versionen: früher und heute</title>
+<rect x="0.5" y="0.5" width="639" height="749" rx="14" fill="#ffffff" stroke="#dde2e6"/>
+<text x="28" y="48" font-size="19" fill="#1c2328" font-weight="700">Versionen: früher und heute</text>
+<text x="28" y="72" font-size="13.5" fill="#5b6670">Statt immer neuer Dateinamen: ein Dokument, alle Fassungen darunter.</text>
+<rect x="28" y="96" width="584" height="268" rx="10" fill="#fdecea" stroke="#c62828" stroke-opacity=".35"/>
+<rect x="28" y="96" width="584" height="40" rx="10" fill="#c62828" stroke="none"/>
+<rect x="28" y="121" width="584" height="15" rx="0" fill="#c62828" stroke="none"/>
+<text x="46" y="123" font-size="16" fill="#ffffff" font-weight="700" text-anchor="start">Früher: im Dateimanager</text>
+<path d="M50 160h14l4 5h22v16h-40z" fill="#f9a825"/>
+<text x="100" y="178" font-size="15" fill="#1c2328" font-weight="700" text-anchor="start">Wohnung</text>
+<path d="M78 198h11l5 5v15h-16z" fill="#fff" stroke="#c62828" stroke-width="1.4"/>
+<text x="104" y="212" font-size="14" fill="#1c2328" font-weight="400" text-anchor="start" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Mietvertrag.pdf</text>
+<path d="M78 224h11l5 5v15h-16z" fill="#fff" stroke="#c62828" stroke-width="1.4"/>
+<text x="104" y="238" font-size="14" fill="#1c2328" font-weight="400" text-anchor="start" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Mietvertrag_v2.pdf</text>
+<path d="M78 250h11l5 5v15h-16z" fill="#fff" stroke="#c62828" stroke-width="1.4"/>
+<text x="104" y="264" font-size="14" fill="#1c2328" font-weight="400" text-anchor="start" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Mietvertrag_alt.pdf</text>
+<path d="M78 276h11l5 5v15h-16z" fill="#fff" stroke="#c62828" stroke-width="1.4"/>
+<text x="104" y="290" font-size="14" fill="#1c2328" font-weight="400" text-anchor="start" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Mietvertrag_final.pdf</text>
+<path d="M78 302h11l5 5v15h-16z" fill="#fff" stroke="#c62828" stroke-width="1.4"/>
+<text x="104" y="316" font-size="14" fill="#1c2328" font-weight="400" text-anchor="start" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Mietvertrag_final_NEU.pdf</text>
+<text x="46" y="348" font-size="13.5" fill="#5b6670" font-weight="400" text-anchor="start">Welche ist die richtige? Gleicher Name überschreibt die alte Datei.</text>
+<rect x="28" y="390" width="584" height="334" rx="10" fill="#e8f5e9" stroke="#2e7d32" stroke-opacity=".35"/>
+<rect x="28" y="390" width="584" height="40" rx="10" fill="#2e7d32" stroke="none"/>
+<rect x="28" y="415" width="584" height="15" rx="0" fill="#2e7d32" stroke="none"/>
+<text x="46" y="417" font-size="16" fill="#ffffff" font-weight="700" text-anchor="start">Heute: im DMS</text>
+<rect x="48" y="446" width="544" height="258" rx="10" fill="#ffffff" stroke="#c8d3cc"/>
+<text x="66" y="476" font-size="15" fill="#1c2328" font-weight="700" text-anchor="start">Mappe „Mietvertrag Wohnung“</text>
+<text x="66" y="498" font-size="13.5" fill="#5b6670" font-weight="400" text-anchor="start">Register „Dokumente“</text>
+<rect x="66" y="510" width="508" height="42" rx="8" fill="#f1f8f2" stroke="#a5d6a7"/>
+<path d="M80 523h11l5 5v15h-16z" fill="#fff" stroke="#2e7d32" stroke-width="1.4"/>
+<text x="106" y="537" font-size="14" fill="#1c2328" font-weight="400" text-anchor="start" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">Mietvertrag.pdf</text>
+<rect x="460" y="520" width="98" height="24" rx="12" fill="#2e7d32" stroke="none"/>
+<text x="509" y="537" font-size="13" fill="#ffffff" font-weight="700" text-anchor="middle">Version 4</text>
+<line x1="86" y1="560" x2="86" y2="592" stroke="#a5d6a7" stroke-width="2"/>
+<circle cx="86" cy="576" r="6" fill="#2e7d32" stroke="#2e7d32" stroke-width="2"/>
+<text x="104" y="582" font-size="14" fill="#1c2328" font-weight="700" text-anchor="start">Version 4</text>
+<text x="196" y="582" font-size="13.5" fill="#5b6670" font-weight="400" text-anchor="start">12.03.2026 · Anna</text>
+<text x="352" y="582" font-size="13.5" fill="#1c2328" font-weight="400" text-anchor="start">neueste – wird angezeigt</text>
+<line x1="86" y1="594" x2="86" y2="626" stroke="#a5d6a7" stroke-width="2"/>
+<circle cx="86" cy="610" r="6" fill="#ffffff" stroke="#2e7d32" stroke-width="2"/>
+<text x="104" y="616" font-size="14" fill="#1c2328" font-weight="400" text-anchor="start">Version 3</text>
+<text x="196" y="616" font-size="13.5" fill="#5b6670" font-weight="400" text-anchor="start">02.03.2026 · Thomas</text>
+<text x="352" y="616" font-size="13.5" fill="#5b6670" font-weight="400" text-anchor="start">Nachtrag unterschrieben</text>
+<line x1="86" y1="628" x2="86" y2="660" stroke="#a5d6a7" stroke-width="2"/>
+<circle cx="86" cy="644" r="6" fill="#ffffff" stroke="#2e7d32" stroke-width="2"/>
+<text x="104" y="650" font-size="14" fill="#1c2328" font-weight="400" text-anchor="start">Version 2</text>
+<text x="196" y="650" font-size="13.5" fill="#5b6670" font-weight="400" text-anchor="start">15.02.2026 · Anna</text>
+<text x="352" y="650" font-size="13.5" fill="#5b6670" font-weight="400" text-anchor="start">ersetzt</text>
+<circle cx="86" cy="678" r="6" fill="#ffffff" stroke="#2e7d32" stroke-width="2"/>
+<text x="104" y="684" font-size="14" fill="#1c2328" font-weight="400" text-anchor="start">Version 1</text>
+<text x="196" y="684" font-size="13.5" fill="#5b6670" font-weight="400" text-anchor="start">01.02.2026 · Thomas</text>
+<text x="352" y="684" font-size="13.5" fill="#5b6670" font-weight="400" text-anchor="start">erster Scan</text>
+<text x="46" y="742" font-size="14" fill="#5b6670" font-weight="400" text-anchor="start"></text>
+</svg>
