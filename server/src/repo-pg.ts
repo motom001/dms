@@ -1453,6 +1453,34 @@ export function pgRepo(sql: Sql, haushaltId: string): Repo {
       for (const z of await sql`SELECT id, volltext FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[]) AND volltext IS NOT NULL`) r.set(z.id as string, z.volltext as string);
       return r;
     },
+    async fragenFundstellen(o) {
+      const woerter = o.woerter.filter((w) => /^[\p{L}\p{N}]{2,40}$/u.test(w)).slice(0, 12);
+      if (!woerter.length) return { dokumente: [], mappen: [] };
+      const lesen = o.lesen ? sql`AND ${lesefilterSql(sql, o.lesen)}` : sql``;
+      // Ein Wort genügt (ODER); Füllwörter entfernt die deutsche Konfiguration. Erst die besten Dokumente, dann
+      // nur für sie die Ausschnitte (ts_headline ist teuer).
+      const q = woerter.join(' | ');
+      const dokumente = o.dokumente < 1 ? [] : await sql`
+        WITH beste AS (
+          SELECT d.id, d.mappe_id, d.name, ts_rank_cd(to_tsvector('german', coalesce(d.volltext, '')), q) AS rang
+          FROM dokumente d JOIN mappen ON mappen.id = d.mappe_id AND mappen.haushalt_id = ${haushaltId}, to_tsquery('german', ${q}::text) q
+          WHERE d.haushalt_id = ${haushaltId} AND to_tsvector('german', coalesce(d.volltext, '')) @@ q ${lesen}
+          ORDER BY rang DESC, d.id LIMIT ${o.dokumente})
+        SELECT b.id, b.mappe_id, b.name, b.rang, ts_headline('german', d.volltext, to_tsquery('german', ${q}::text),
+          'MaxFragments=3, MaxWords=40, MinWords=15, ShortWord=2, StartSel="", StopSel="", FragmentDelimiter=" … "') AS text
+        FROM beste b JOIN dokumente d ON d.id = b.id ORDER BY b.rang DESC, b.id`;
+      const muster = woerter.map((w) => `%${w}%`);
+      const mappen = o.mappen < 1 ? [] : await sql`
+        SELECT * FROM (
+          SELECT mappen.*, (SELECT count(*) FROM unnest(${muster}::text[]) w
+            WHERE mappen.titel ILIKE w OR EXISTS (SELECT 1 FROM jsonb_each_text(mappen.werte) e WHERE e.value ILIKE w AND e.value NOT LIKE 'dms1$%')) AS punkte
+          FROM mappen WHERE haushalt_id = ${haushaltId} ${lesen}) x
+        WHERE punkte > 0 ORDER BY punkte DESC, geaendert DESC, id LIMIT ${o.mappen}`;
+      return {
+        dokumente: dokumente.map((z) => ({ id: z.id as string, mappeId: z.mappe_id as string, name: z.name as string, text: String(z.text ?? '') })),
+        mappen: mappen.map(alsMappe),
+      };
+    },
 
     /* ---------- Aufgaben (#54) ---------- */
     async aufgabenZurPassung(liste) {

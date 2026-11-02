@@ -105,6 +105,7 @@ Manche Pakete brauchen Einstellungen – etwa Regeln, nach denen sie Post zuordn
 
 - **Abschnitte** mit Feldern und **Listen** gleich aufgebauter Einträge (z. B. eine Regel je Eintrag) mit **+ Eintrag**, Löschen und – wenn das Paket es erlaubt – Sortieren mit ↑/↓.
 - **Felder** wie bei den Mappentypen: Text, mehrzeiliger Text, Zahl, Ja/Nein, Datum, Auswahl, Mehrfachauswahl und **Verweise** auf einen Mappentyp, ein Feld eines Mappentyps, einen Benutzer, eine Rolle oder eine Ansicht. Verweise wählst du aus Listen; gespeichert wird die feste Id, nicht der Name – Umbenennen schadet also nicht.
+- **Dienst-Adresse** (z. B. eines KI-Dienstes): Die einzige Adresse, zu der das Paket außer den festen Adressen aus seinem Manifest ins Netz darf – siehe [Dienst-Adresse](#dienst-adresse). Sie ist nie voreingestellt; im leeren Feld steht höchstens ein Beispiel. Beim Speichern einer neuen oder geänderten Adresse fragt das DMS nach und zeigt, wohin Daten gehen.
 - **Geheimnisse** (z. B. Zugangsdaten) verschlüsselt das DMS mit seinem Schlüssel (siehe [Verschlüsselung](verschluesselung.md)). Nach dem Speichern zeigt es sie nie wieder an, nur **gesetzt** mit **Ändern** und **Löschen**.
 - Beim **Speichern** prüft das DMS Mappentyp, Pflichtfelder, Auswahlwerte und ob Verweise existieren, und zeigt Fehler am Feld.
 - **Aktionen** des Pakets erscheinen als Knöpfe (z. B. „Regeln jetzt anwenden“), die Antwort des Pakets steht darüber. Eine Zeitgrenze verhindert, dass ein Knopf hängt.
@@ -122,7 +123,7 @@ Die Einstellungen sind **Teil der Sicherung**; Geheimnisse bleiben dabei verschl
 
 Manche Pakete bringen **Code** mit – etwa eine eigene Texterkennung oder Regeln, die neue Post zuordnen. Der Code reagiert auf Ereignisse (neue Post, hochgeladenes Dokument, fertige Texterkennung, fertiger Volltext, geänderte Einstellungen) und auf die **Aktionen** im Reiter „Einstellungen“. Das DMS führt ihn im **Paket-Läufer** aus:
 
-- **Abgeschottet:** Der Code ist WebAssembly und läuft in einem eigenen Prozess des DMS, ohne Zugriff auf Dateien, Schlüssel oder Datenbank. Netzwerk und Internet erreicht er nur unter den Adressen, die das Paket angibt – meist gar nicht.
+- **Abgeschottet:** Der Code ist WebAssembly und läuft in einem eigenen Prozess des DMS, ohne Zugriff auf Dateien, Schlüssel oder Datenbank. Netzwerk und Internet erreicht er nur unter den Adressen, die das Paket angibt, und unter der [Dienst-Adresse](#dienst-adresse), die du in seinen Einstellungen einträgst – meist gar nicht.
 - **Nur bestätigte Rechte:** Vor der Installation zeigt die Vorschau, was der Code darf – welche Mappentypen er lesen bzw. anlegen und ändern darf, ob er Dokumente lesen oder schreiben darf, ob er aufs Netzwerk oder Internet zugreifen darf und auf welche Ereignisse er reagiert (siehe [Rechte eines Pakets](#rechte-eines-pakets) und [Ereignisse](#ereignisse)). Erst wenn du das bestätigst, installiert das DMS. Will ein **Update** mehr Rechte oder andere Adressen, fragt das DMS erneut.
 - **Dienstkonto:** Für jedes Paket mit Code legt das DMS ein Dienstkonto „Paket *Name*“ an. Mit ihm arbeitet der Code über die API; die Historie zeigt deshalb, was ein Paket geändert hat. Dienstkonten erscheinen nicht unter **Benutzer**, melden sich nie an und können **nie löschen** – auch nicht mit Rechten auf alle Mappentypen. Benutzer und Passwörter sehen sie nicht.
 - **Grenzen:** Jeder Aufruf hat höchstens 256 MB Speicher und 2 Minuten Zeit; es laufen höchstens zwei Aufrufe gleichzeitig. Was die Grenzen reißt, bricht ab, ohne das DMS zu stören.
@@ -178,6 +179,42 @@ Steht keins von beiden in der Liste, sieht der Code keine Dokumente.
 - **„Zugriff auf Netzwerk/Internet nur zu: *Adressen*“** – Der Code darf nur diese Adressen erreichen (immer `https://`, auch Pfade darunter), z. B. einen Dienst im Internet oder ein Gerät in deinem Netzwerk. Alles andere sperrt der Paket-Läufer, auch Weiterleitungen. Wozu das Paket die Adressen braucht, erklärt sein README – was du dorthin schickst, verlässt dein DMS.
 
 Will ein Update andere Adressen, fragt das DMS erneut.
+
+- **„… zu: der Adresse aus der Einstellung „*Name*“ (trägst du ein und bestätigst sie)“** – Das Paket bringt keine feste Adresse mit, sondern fragt nach einer [Dienst-Adresse](#dienst-adresse), etwa der deines KI-Dienstes. Erst wenn du sie in den Einstellungen einträgst und bestätigst, erreicht der Code genau diese Adresse.
+
+#### Fragen an die Ablage beantworten { #recht-antworten }
+
+**„Fragen an die Ablage beantworten („Frag deine Ablage“) – nur aus Ausschnitten, die das DMS mitgibt (dms:antworten)“** – Mit diesem Recht erscheint in der Ablage das Feld [Frag deine Ablage](#frag-deine-ablage). Das Paket bekommt je Frage nur die Frage, den bisherigen Chat und wenige Ausschnitte, die das DMS selbst herausgesucht hat – **mit den Rechten des Fragenden**. Es liest dabei nichts selbst aus der Ablage (dafür bräuchte es die Rechte oben) und kann nichts ändern: Das DMS zeigt nur seinen Text und prüft die Quellen.
+
+### Dienst-Adresse { #dienst-adresse }
+
+Ein Paket wie **KI-Assistent** rechnet nicht selbst, sondern fragt einen Dienst, den du betreibst oder wählst – z. B. **Ollama** auf deinem Heimserver. Die Adresse dieses Dienstes trägst du in den **Einstellungen** des Pakets ein (Werkbank → Pakete → *Paket* → Reiter „Einstellungen“):
+
+- **Nie voreingestellt.** Im leeren Feld steht höchstens ein Beispiel wie `http://ollama:11434/v1` – gespeichert ist nichts, bis du eine Adresse einträgst.
+- **Bestätigen.** Beim Speichern einer neuen oder geänderten Adresse fragt das DMS **„Daten an diese Adresse schicken?“** und nennt sie. Erst mit **Adresse bestätigen und speichern** gilt sie; das Protokoll vermerkt „Dienst-Adresse von Paket … bestätigt“ mit der Adresse.
+- **Nur dorthin.** Der Paket-Läufer erlaubt Netz nur zu dieser Adresse und Pfaden darunter (gleicher Rechner, gleicher Port), ohne Weiterleitungen. Weil Dienste im Heimnetz selten HTTPS sprechen, ist hier auch `http://` erlaubt. Zugangsdaten gehören nicht in die Adresse, sondern in ein eigenes Feld (Geheimnis).
+- **Betrieb und Hosting dieses Dienstes liegen außerhalb des DMS.** Läuft er bei dir im eigenen Netz, verlassen die Daten das Haus nicht. Gehört er einem anderen Anbieter, ist das eine **Vertrauensbeziehung zu diesem Dienstleister** – wie beim Hosten des DMS selbst: Standort, Auftragsverarbeitung, Speicherung, Nutzung zum Training. Diese Entscheidung triffst du mit dem Eintragen und Bestätigen; das DMS hat dafür keinen weiteren Schalter. Den Hinweis zeigt es auch schon in der Vorschau vor der Installation.
+
+### Frag deine Ablage { #frag-deine-ablage }
+
+Ist ein Paket mit dem Recht [Fragen an die Ablage beantworten](#recht-antworten) installiert und geladen, steht auf der Startseite der Ablage das Feld **„Frag deine Ablage“** (siehe [Benutzerhandbuch](https://motom001.github.io/dms/benutzer/aktuell/startseite/#frag-deine-ablage)). So läuft eine Frage ab:
+
+1. Der Browser schickt die Frage und den bisherigen Chat an das DMS.
+2. Das DMS sucht **selbst** passende Stellen – im Volltext der Dokumente, in Titel und Feldern der Mappen und, wenn ein Paket mit [Vektoren](#recht-vektoren) da ist, nach Ähnlichkeit –, **nur in Mappen, die der Fragende lesen darf**. Passwortfelder und Benutzer sind nie dabei.
+3. Es schneidet höchstens so viele **Ausschnitte** heraus, wie unten eingestellt, und gibt sie mit der Frage dem Paket – als **Daten gekennzeichnet**, mit dem Hinweis an den KI-Dienst, darin stehende Anweisungen nicht zu befolgen.
+4. Das Paket fragt den Dienst unter der [Dienst-Adresse](#dienst-adresse) und gibt die Antwort Stück für Stück zurück.
+5. Das DMS zeigt die Antwort als **Text** (nichts davon wird ausgeführt oder gespeichert) und darunter die genannten **Quellen** – nur Mappen aus den mitgegebenen Ausschnitten, noch einmal auf Lesbarkeit geprüft. Unter jeder Antwort steht aufklappbar **„An die KI geschickt: n Ausschnitte aus m Mappen“** mit genau diesen Stellen.
+
+**Werkbank → Pakete → *Paket*** zeigt im Abschnitt **Frag deine Ablage** die **Höchstmenge je Frage**:
+
+| Einstellung | Bereich | Standard |
+|---|---|---|
+| **Höchstens Ausschnitte je Frage** | 1 bis 20 | 8 |
+| **Höchstens Zeichen je Frage** (alle Ausschnitte zusammen) | 500 bis 30 000 | 6 000 |
+
+Ein einzelner Ausschnitt ist höchstens 1 500 Zeichen lang. Weniger heißt: weniger Daten an den Dienst und schnellere Antworten, aber eher „steht nicht in den Ausschnitten“.
+
+**Kein Protokoll der Inhalte:** Den Chat hält nur der Browser (bis zum Neuladen); der Server speichert weder Fragen noch Ausschnitte noch Antworten. Das Protokoll des DMS vermerkt nur „Frage an die Ablage gestellt“ mit Anzahl der Ausschnitte und Dauer, die Werkbank beim Paket nur „Frage beantwortet“ mit der Länge der Antwort. Je Benutzer läuft eine Frage zur Zeit, im ganzen DMS höchstens vier.
 
 ### Ereignisse { #ereignisse }
 

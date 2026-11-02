@@ -16,7 +16,7 @@ import { parse as yamlLesen } from 'yaml';
 import { istLeer, type Feld, type Mappentyp, type Register } from '../../shared/src/model';
 import { BEREICH, CODE_MAX, DMS_RECHTE_TYPEN, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../shared/src/pakete';
 import { kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
-import { EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand } from '../../shared/src/paketeinstellungen';
+import { adressfelder, EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand } from '../../shared/src/paketeinstellungen';
 import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
@@ -1159,9 +1159,20 @@ export class Paketverwaltung {
     }
     if (Object.keys(r.fehler).length) throw new Fachfehler(422, 'Bitte die markierten Einstellungen prüfen.', { felderFehler: r.fehler, gruende: Object.values(r.fehler) });
     const geaendert = Object.keys(r.werte).filter((k) => JSON.stringify(r.werte[k]) !== JSON.stringify(alt.werte[k]));
+    // Dienst-Adresse (#444): Eine neue oder geänderte Adresse gilt erst, wenn der Administrator den Hinweis bestätigt –
+    // dorthin schickt das Paket Daten. Gespeichert wird nur eine bestätigte Adresse; nur zu ihr lässt der Läufer Netz zu.
+    const adressen = adressfelder(b).filter((f) => geaendert.includes(f.schluessel) && r.werte[f.schluessel]);
+    if (adressen.length && (eingabe as { adresseBestaetigt?: unknown } | null)?.adresseBestaetigt !== true) {
+      throw new Fachfehler(409, `Bitte die Adresse bestätigen: „${p.name}“ schickt Daten an ${adressen.map((f) => String(r.werte[f.schluessel])).join(', ')}.`, { adresse: adressen.map((f) => ({ feld: f.name, wert: r.werte[f.schluessel] })) });
+    }
     await this.d.setzePaketEinstellungen(id, { ...alt, werte: r.werte });
     if (geaendert.length) {
       log.info(`Einstellungen von Paket ${p.name} geändert (Felder ${geaendert.join(', ')})`, { von: von.email, paket: id, felder: geaendert });
+      for (const f of adressfelder(b).filter((x) => geaendert.includes(x.schluessel))) {
+        log.info(`Dienst-Adresse von Paket ${p.name} ${r.werte[f.schluessel] ? 'bestätigt' : 'entfernt'}`, { von: von.email, paket: id, feld: f.schluessel, adresse: r.werte[f.schluessel] ?? null });
+      }
+      // Der Läufer bekommt die erlaubten Adressen neu (Netz nur zur bestätigten Adresse).
+      if (adressfelder(b).some((x) => geaendert.includes(x.schluessel))) await this.o.laeufer?.codeGeaendert?.();
       try { this.o.laeufer?.ereignis?.(id, 'paket.einstellungen_geaendert', geaendert); } catch { /* das Paket entscheidet selbst */ }
     }
     return this.einstellungen(id);

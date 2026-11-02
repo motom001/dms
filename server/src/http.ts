@@ -198,6 +198,12 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
           for (const [k, v] of Object.entries({ ...dateiKoepfe(antwort.datei), ...antwort.datei.koepfe })) reply.header(k, v);
           return reply.send(antwort.datei.inhalt);
         }
+        // Stück für Stück (#444): ohne Länge, nicht zwischenspeichern (auch nicht in nginx: X-Accel-Buffering).
+        if (antwort.strom) {
+          reply.header('content-type', 'application/x-ndjson; charset=utf-8').header('cache-control', 'no-store').header('x-accel-buffering', 'no').header('x-content-type-options', 'nosniff');
+          zeit.senden = performance.now();
+          return reply.code(200).send(antwort.strom);
+        }
         reply.header('cache-control', 'no-store');
         reply.code(antwort.status ?? 200);
         zeit.senden = performance.now();

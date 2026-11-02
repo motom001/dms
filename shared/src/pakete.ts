@@ -237,10 +237,19 @@ export type EreignisArt = keyof typeof EREIGNISSE;
  */
 export const SCHNITTSTELLEN = {
   'dms:vektoren': 'Vektoren zu Dokumenten speichern und ähnliche Dokumente finden',
+  'dms:antworten': 'Fragen an die Ablage beantworten („Frag deine Ablage“) – nur aus Ausschnitten, die das DMS mitgibt',
 } as const;
 export type Schnittstelle = keyof typeof SCHNITTSTELLEN;
 /** Ab dieser Version kennt das DMS `code.rechte.schnittstellen` und das Ereignis `volltext.fertig` (#442). */
 export const DMS_VEKTOREN_AB = '0.120.0';
+/**
+ * Ab dieser Version kennt das DMS die Schnittstelle `dms:antworten`, die Einstellung vom Typ `adresse`
+ * (Dienst-Adresse, zu der allein das Paket ins Netz darf) und die Funktionen `netz_strom`, `netz_weiter`
+ * und `teil` des Läufers (#444).
+ */
+export const DMS_ANTWORTEN_AB = '0.124.0';
+/** Hilfe-Ort je Schnittstelle (Administratorhandbuch, Pakete mit Code). */
+export const SCHNITTSTELLE_HILFE: Record<Schnittstelle, Hilfeort> = { 'dms:vektoren': 'pakete.recht.vektoren', 'dms:antworten': 'pakete.recht.antworten' };
 /** Alle Mappentypen (außer Benutzer) – für Pakete wie die Texterkennung, die an jedes Dokument müssen. */
 export const ALLE_TYPEN = '*';
 
@@ -251,6 +260,11 @@ export interface PaketCode {
   rechte: { lesen: string[]; schreiben: string[]; dokumente: DokumentRecht; schnittstellen?: Schnittstelle[] };
   /** Erlaubte Adressen (https://host…); alles andere ist gesperrt. */
   netz: string[];
+  /**
+   * Einstellungen vom Typ „adresse“ (#444): Dorthin darf das Paket zusätzlich ins Netz – zu der Adresse, die der
+   * Administrator einträgt und bestätigt. Steht hier, damit die Rückfrage bei der Installation sie nennt.
+   */
+  adressen?: Array<{ schluessel: string; name: string }>;
   /** Das WebAssembly-Modul (code/modul.wasm) und Daten (code/daten/…), nur im installierten Paket. */
   modul?: { sha256: string; groesse: number };
   daten?: string[];
@@ -310,9 +324,14 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
     try { const u = new URL(n); ok = u.protocol === 'https:' && !u.username && !u.password && !u.search && !u.hash; } catch { /* unten */ }
     if (!ok) fehler.push(`code.netz: „${n}“ ist keine erlaubte Adresse (nur https://…, ohne Zugangsdaten).`);
   }
+  // Dienst-Adresse als Einstellung (#444): Felder vom Typ adresse in den Abschnitten (geprüft in paketeinstellungen.ts).
+  const adressen = (Array.isArray(x.einstellungen) ? x.einstellungen : []).flatMap((b) => (b && typeof b === 'object' && !Array.isArray(b) && Array.isArray((b as Record<string, unknown>).felder) && (b as Record<string, unknown>).liste === undefined
+    ? ((b as Record<string, unknown>).felder as unknown[]).filter((f): f is Record<string, unknown> => !!f && typeof f === 'object' && (f as Record<string, unknown>).typ === 'adresse')
+      .map((f) => ({ schluessel: String(f.schluessel ?? ''), name: String(f.name ?? '') || String(f.schluessel ?? '') }))
+    : []));
   // Schreiben setzt Lesen voraus.
   const lesenAlle = [...new Set([...lesen, ...schreiben])];
-  return { code: fehler.length ? null : { sprache, ereignisse: ereignisse as EreignisArt[], rechte: { lesen: lesenAlle, schreiben, dokumente, ...(schnittstellen.length ? { schnittstellen: schnittstellen as Schnittstelle[] } : {}) }, netz }, fehler };
+  return { code: fehler.length ? null : { sprache, ereignisse: ereignisse as EreignisArt[], rechte: { lesen: lesenAlle, schreiben, dokumente, ...(schnittstellen.length ? { schnittstellen: schnittstellen as Schnittstelle[] } : {}) }, netz, ...(adressen.length ? { adressen } : {}) }, fehler };
 }
 
 /** Zustand des Paket-Läufers (#403): aus (kein Paket mit Code), startet, bereit, neustart (nach Absturz), pausiert (Wartung). */
@@ -334,9 +353,14 @@ export function laeuferZustandText(
   return { text: x.paket.aufrufe ? 'bereit' : 'bereit – wartet auf das erste Ereignis', fehler: false, wartet: false };
 }
 
-/** Netzwerkzugriff eines Pakets mit Code (#449) – so in der Vorschau, im Handbuch und auf der Katalog-Webseite. */
-export function netzText(netz: string[]): string {
-  return netz.length ? `Zugriff auf Netzwerk/Internet nur zu: ${netz.join(', ')}` : 'kein Zugriff auf Netzwerk und Internet';
+/**
+ * Netzwerkzugriff eines Pakets mit Code (#449) – so in der Vorschau, im Handbuch und auf der Katalog-Webseite.
+ * adressen: Namen der Einstellungen vom Typ „adresse“ (#444), deren Wert der Administrator einträgt und bestätigt.
+ */
+export function netzText(netz: string[], adressen: string[] = []): string {
+  const einst = adressen.map((a) => `der Adresse aus der Einstellung „${a}“ (trägst du ein und bestätigst sie)`);
+  if (!netz.length && !einst.length) return 'kein Zugriff auf Netzwerk und Internet';
+  return `Zugriff auf Netzwerk/Internet nur zu: ${[...netz, ...einst].join(', ')}`;
 }
 
 /** Hilfe-Ort im Administratorhandbuch (Pakete mit Code) je Ereignis (#449); Schlüssel wie in shared/src/hilfe.ts. */
@@ -358,8 +382,8 @@ export function rechtePunkte(c: PaketCode, typName: (verweis: string) => string)
   if (c.rechte.lesen.length) z.push({ text: `Mappen lesen: ${t(c.rechte.lesen)}`, hilfe: 'pakete.recht.lesen' });
   if (c.rechte.schreiben.length) z.push({ text: `Mappen anlegen und ändern: ${t(c.rechte.schreiben)}`, hilfe: 'pakete.recht.schreiben' });
   if (c.rechte.dokumente !== 'keine') z.push({ text: DOKUMENT_RECHTE[c.rechte.dokumente], hilfe: 'pakete.recht.dokumente' });
-  for (const s of c.rechte.schnittstellen ?? []) z.push({ text: `${SCHNITTSTELLEN[s]} (${s})`, hilfe: 'pakete.recht.vektoren' });
-  z.push({ text: netzText(c.netz), hilfe: 'pakete.recht.netz' });
+  for (const s of c.rechte.schnittstellen ?? []) z.push({ text: `${SCHNITTSTELLEN[s]} (${s})`, hilfe: SCHNITTSTELLE_HILFE[s] });
+  z.push({ text: netzText(c.netz, (c.adressen ?? []).map((a) => a.name)), hilfe: c.adressen?.length ? 'pakete.recht.adresse' : 'pakete.recht.netz' });
   if (c.ereignisse.length) z.push({ text: 'Reagiert auf diese Ereignisse:', hilfe: 'pakete.ereignisse', unter: c.ereignisse.map((e) => ({ text: EREIGNISSE[e], hilfe: EREIGNIS_HILFE[e] })) });
   return z;
 }
@@ -372,7 +396,7 @@ export const rechteText = (c: PaketCode, typName: (verweis: string) => string): 
 /** Gleiche Rechte und gleicher Netzwerkzugriff? (Sonst muss ein Update neu bestätigt werden.) */
 export const gleicheRechte = (a: PaketCode | undefined, b: PaketCode | undefined) =>
   JSON.stringify(rechteSchluessel(a)) === JSON.stringify(rechteSchluessel(b));
-const rechteSchluessel = (c: PaketCode | undefined) => c ? [[...c.rechte.lesen].sort(), [...c.rechte.schreiben].sort(), c.rechte.dokumente, [...c.netz].sort(), ...(c.rechte.schnittstellen?.length ? [[...c.rechte.schnittstellen].sort()] : [])] : null;
+const rechteSchluessel = (c: PaketCode | undefined) => c ? [[...c.rechte.lesen].sort(), [...c.rechte.schreiben].sort(), c.rechte.dokumente, [...c.netz].sort(), ...(c.rechte.schnittstellen?.length ? [[...c.rechte.schnittstellen].sort()] : []), ...(c.adressen?.length ? [c.adressen.map((a) => a.schluessel).sort()] : [])] : null;
 /** Darf das Paket diese Schnittstelle des Kerns nutzen (#442)? */
 export const hatSchnittstelle = (c: PaketCode | undefined, s: Schnittstelle) => !!c?.rechte.schnittstellen?.includes(s);
 

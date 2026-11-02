@@ -1,4 +1,4 @@
-import type { Readable } from 'node:stream';
+import { PassThrough, type Readable } from 'node:stream';
 import { MAX_DATEIGROESSE, POST_KANAL, type Benutzer, type Mappe, type Mappentyp } from '../../shared/src/model';
 import { type Recht } from '../../shared/src/rechte';
 import { ladeBeispiele } from './beispiele';
@@ -113,6 +113,8 @@ export interface Antwort {
   weiterleiten?: string;
   /** Weitere Cookies (Set-Cookie). */
   cookies?: string[];
+  /** Antwort Stück für Stück (#444): NDJSON, eine Zeile je Ereignis, ohne Zwischenspeicher im Proxy. */
+  strom?: Readable;
 }
 export interface Route {
   methode: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -1021,6 +1023,23 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/werkbank/pakete/laeufer', zugang: 'admin', handler: async () => ok(x.paketlaeufer ? await x.paketlaeufer.uebersicht() : null) },
     // Vektoren (#442): Stand der Berechnung, Einstellung „Ähnliche Treffer in der Suche“, neu berechnen.
     { methode: 'GET', pfad: '/api/werkbank/vektoren', zugang: 'admin', handler: async () => ok(await dienst.vektorStand()) },
+    // „Frag deine Ablage“ (#444): Höchstmenge je Frage (Ausschnitte, Zeichen).
+    { methode: 'GET', pfad: '/api/werkbank/fragen', zugang: 'admin', handler: async () => ok(await dienst.fragen.stand()) },
+    { methode: 'PUT', pfad: '/api/werkbank/fragen', zugang: 'admin', handler: async (a) => { await dienst.fragen.setzeGrenzen(a.body); return ok(await dienst.fragen.stand()); } },
+    { methode: 'GET', pfad: '/api/fragen', zugang: 'angemeldet', handler: async () => { const s = await dienst.fragen.stand(); return ok({ verfuegbar: s.verfuegbar, paket: s.paket }); } },
+    // Frage stellen: Antwort als NDJSON-Strom (Ausschnitte, Teile, fertig/fehler). Inhalt steht nirgends im Protokoll.
+    { methode: 'POST', pfad: '/api/fragen', zugang: 'angemeldet', handler: async (a) => {
+      const z = await zg(a);
+      const strom = new PassThrough();
+      const zeile = (x: unknown) => { if (!strom.destroyed && !strom.writableEnded) strom.write(`${JSON.stringify(x)}\n`); };
+      // Fehler vor dem ersten Ausschnitt (keine Frage, kein Paket, schon eine Frage offen) kommen als normale Antwort.
+      let erste: (() => void) | null = null;
+      const bereit = new Promise<void>((ok) => { erste = ok; });
+      const lauf = dienst.fragen.frage(z, a.body, (x) => { zeile(x); erste?.(); erste = null; });
+      await Promise.race([bereit, lauf]);
+      void lauf.catch(() => {}).finally(() => { if (!strom.destroyed) strom.end(); });
+      return { strom };
+    } },
     { methode: 'PUT', pfad: '/api/werkbank/vektoren', zugang: 'admin', handler: async (a) => { await dienst.setzeVektorEinstellung(a.body); return ok(await dienst.vektorStand()); } },
     { methode: 'POST', pfad: '/api/werkbank/vektoren/neu', zugang: 'admin', handler: async () => {
       if (!x.paketlaeufer) throw new Fachfehler(404, 'Pakete mit Code laufen in diesem DMS nicht.');

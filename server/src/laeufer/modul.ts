@@ -10,7 +10,8 @@
  */
 
 export const SEITE = 65536;
-export const DMS_FUNKTIONEN = ['api', 'api_binaer', 'netz', 'datei', 'antwort_laenge', 'antwort_lesen', 'ergebnis', 'log', 'speicher_lesen', 'speicher_schreiben'] as const;
+/** netz_strom, netz_weiter und teil seit DMS 0.124.0 (#444): Antworten Stück für Stück lesen und weitergeben. */
+export const DMS_FUNKTIONEN = ['api', 'api_binaer', 'netz', 'netz_strom', 'netz_weiter', 'teil', 'datei', 'antwort_laenge', 'antwort_lesen', 'ergebnis', 'log', 'speicher_lesen', 'speicher_schreiben'] as const;
 export type DmsFunktion = typeof DMS_FUNKTIONEN[number];
 
 export interface Modulpruefung {

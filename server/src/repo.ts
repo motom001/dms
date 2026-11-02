@@ -378,6 +378,12 @@ export interface Repo {
   volltext(id: string): Promise<string | null>;
   /** Volltexte mehrerer Dokumente (#367); Dokumente ohne Volltext fehlen. Listen lesen ihn nie mit. */
   volltexte(ids: string[]): Promise<Map<string, string>>;
+  /**
+   * „Frag deine Ablage“ (#444): Fundstellen zu Suchwörtern – nur in Mappen, die `lesen` erlaubt. dokumente: beste
+   * Dokumente (Volltext, ein Wort genügt) mit Ausschnitten um die Treffer; mappen: Mappen, deren Titel oder Werte
+   * Wörter enthalten (meiste Wörter zuerst). woerter: nur Buchstaben und Ziffern (frageWoerter).
+   */
+  fragenFundstellen(o: { woerter: string[]; lesen: Lesefilter | null; dokumente: number; mappen: number }): Promise<{ dokumente: Array<{ id: string; mappeId: string; name: string; text: string }>; mappen: Mappe[] }>;
 
   /* ---------- Aufgaben (#54) ---------- */
   /** Passung → Aufgaben: offene „passt nicht“-Aufgabe anlegen oder Text nachziehen; passt sie, erledigt. */

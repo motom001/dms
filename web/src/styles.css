@@ -1667,3 +1667,20 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .aehnl-liste li { min-width: 0; overflow-wrap: anywhere; }
 .aehnl-unter { display: block; }
 .aehnl-fortschritt { width: min(12rem, 100%); vertical-align: middle; }
+
+/* „Frag deine Ablage“ (#444) */
+.frag { margin-bottom: 1rem; }
+.frag h2 { display: flex; align-items: center; gap: 0.4rem; }
+.frag-form { display: flex; flex-direction: column; gap: 0.5rem; }
+.frag-feld { width: 100%; resize: vertical; min-height: 2.6rem; }
+.frag-chat { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+.frag-runde { display: grid; gap: 0.4rem; min-width: 0; }
+.frag-frage { justify-self: end; max-width: 85%; margin: 0; padding: 0.45rem 0.75rem; border-radius: var(--r); background: var(--auswahl, var(--linie)); overflow-wrap: anywhere; white-space: pre-wrap; }
+.frag-antwort { display: grid; gap: 0.35rem; min-width: 0; }
+.frag-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.frag-quellen { margin: 0; overflow-wrap: anywhere; }
+.frag-stellen summary { cursor: pointer; }
+.frag-ausschnitte { margin: 0.4rem 0 0; padding-left: 1.6rem; display: grid; gap: 0.6rem; }
+.frag-ausschnitte li { min-width: 0; overflow-wrap: anywhere; }
+.frag-zitat { margin: 0.25rem 0 0; padding: 0.35rem 0.6rem; border-left: 3px solid var(--linie); white-space: pre-wrap; max-height: 14rem; overflow: auto; }
+.frag-grenzen { display: grid; gap: 0.6rem; max-width: 28rem; }

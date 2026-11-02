@@ -7,7 +7,8 @@ import { fork, type ChildProcess } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import type { Benutzer } from '../../../shared/src/model';
-import { hatSchnittstelle, type InstalliertesPaket, type LaeuferZustand } from '../../../shared/src/pakete';
+import { hatSchnittstelle, type InstalliertesPaket, type LaeuferZustand, type Schnittstelle } from '../../../shared/src/pakete';
+import { adressfelder, pruefeAdresse } from '../../../shared/src/paketeinstellungen';
 import { liesModell, liesVektor, SCHWELLE_STANDARD } from '../vektoren';
 import type { ApiSchluesselDienst } from '../apischluessel';
 import type { Dienst } from '../dienst';
@@ -62,7 +63,7 @@ export interface PaketStand {
   protokoll: Array<{ zeit: string; stufe: number; text: string }>;
 }
 
-interface Aufruf { ok: (r: Extract<VomLaeufer, { art: 'ergebnis' }>) => void }
+interface Aufruf { ok: (r: Extract<VomLaeufer, { art: 'ergebnis' }>) => void; teil?: (text: string) => void }
 type Ergebnis = Extract<VomLaeufer, { art: 'ergebnis' }> & { ohneVersuch?: boolean };
 /** Ergebnis ohne Aufruf (Läufer beendet, abgestürzt, Zeit abgelaufen). ohneVersuch: zählt nicht als Versuch des Ereignisses. */
 const abbruch = (fehler: string, ohneVersuch = false): Ergebnis => ({ art: 'ergebnis', nr: 0, paket: '', ok: false, rc: null, text: '', ms: 0, speicherMB: 0, fehler, ohneVersuch });
@@ -101,6 +102,11 @@ export class Paketlaeufer implements PaketLaeufer {
     o.dienst.ereignisWecker = () => void this.stelleZu();
     // Vektoren (#442): Der Kern fragt das Paket mit dms:vektoren nach dem Vektor eines Suchbegriffs.
     o.dienst.vektorAnbieter = { paket: () => this.vektorPaket(), vektorFuer: (t, ms) => this.vektorFuer(t, ms) };
+    // „Frag deine Ablage“ (#444): Das Paket mit dms:antworten beantwortet Fragen aus den Ausschnitten des Kerns.
+    o.dienst.fragen.anbieter = {
+      paket: () => this.paketMit('dms:antworten'),
+      antworte: (paket, eingang, teil) => this.schnittstelle(paket, 'dms:antworten', eingang, { bezeichnung: 'Frage beantwortet', teil }),
+    };
   }
 
   /** Startet den Läufer, wenn es Pakete mit Code gibt; sonst erst, wenn eins installiert wird. */
@@ -184,16 +190,27 @@ export class Paketlaeufer implements PaketLaeufer {
     const behalten: string[] = [];
     const gesendet = new Map<string, string>();
     for (const p of this.pakete) {
-      const stand = JSON.stringify([p.version, p.laeufer!.modul, p.laeufer!.daten ?? [], p.laeufer!.netz, p.aktualisiert ?? p.installiert]);
+      const adressen = await this.adressen(p);
+      const stand = JSON.stringify([p.version, p.laeufer!.modul, p.laeufer!.daten ?? [], p.laeufer!.netz, adressen, p.aktualisiert ?? p.installiert]);
       if (this.gesendet.get(p.id) === stand) { behalten.push(p.id); gesendet.set(p.id, stand); continue; }
       const code = await this.o.dienst.paketCode(p.id);
       const modul = code.find((d) => d.name === 'modul.wasm');
       if (!modul) { this.ladefehler.set(p.id, 'Der Code fehlt (nach einer Wiederherstellung bitte das Paket neu installieren).'); continue; }
-      liste.push({ id: p.id, version: p.version, modul: new Uint8Array(modul.inhalt), daten: code.filter((d) => d.name.startsWith('daten/')).map((d) => ({ name: d.name.slice('daten/'.length), inhalt: new Uint8Array(d.inhalt) })), netz: p.laeufer!.netz });
+      liste.push({ id: p.id, version: p.version, modul: new Uint8Array(modul.inhalt), daten: code.filter((d) => d.name.startsWith('daten/')).map((d) => ({ name: d.name.slice('daten/'.length), inhalt: new Uint8Array(d.inhalt) })), netz: p.laeufer!.netz, adressen });
       gesendet.set(p.id, stand);
     }
     this.gesendet = gesendet;
     this.sende({ art: 'pakete', pakete: liste, behalten, grenzen: this.grenzen });
+  }
+
+  /**
+   * Bestätigte Dienst-Adressen eines Pakets (#444): Werte der Einstellungen vom Typ adresse. Gespeichert wird eine
+   * Adresse nur nach Bestätigung (Paketverwaltung); hier wird sie zur Sicherheit noch einmal geprüft.
+   */
+  private async adressen(p: InstalliertesPaket): Promise<string[]> {
+    if (!p.einstellungen || !p.laeufer?.adressen?.length) return [];
+    const werte = await this.o.einstellungen(p.id).catch(() => ({} as Record<string, unknown>));
+    return adressfelder(p.einstellungen).map((f) => werte[f.schluessel]).filter((v): v is string => typeof v === 'string' && !!v && !pruefeAdresse(v));
   }
 
   /** Prozess-Id des Läufers, solange er läuft – für den Systemzustand (#409). */
@@ -247,6 +264,7 @@ export class Paketlaeufer implements PaketLaeufer {
         return;
       case 'log': this.notiere(m.paket, { stufe: m.stufe, text: m.text }); return;
       case 'ergebnis': { const a = this.aufrufe.get(m.nr); this.aufrufe.delete(m.nr); a?.ok(m); return; }
+      case 'teil': { try { this.aufrufe.get(m.nr)?.teil?.(m.text); } catch { /* Empfänger weg */ } return; }
       case 'frage': this.sende({ art: 'antwort', nr: m.nr, antwort: await this.beantworte(m.paket, m.anfrage).catch((e) => ({ status: 500, body: new TextEncoder().encode((e as Error).message) })) }); return;
     }
   }
@@ -370,8 +388,28 @@ export class Paketlaeufer implements PaketLaeufer {
     return r;
   }
 
+  /* ---------- Antworten (#444) und Erkennen (#511) ---------- */
+
+  /** Das Paket mit dieser Schnittstelle (bei mehreren das erste nach Id), sobald der Läufer es fehlerfrei geladen hat. */
+  paketMit(s: Schnittstelle): { id: string; name: string } | null {
+    const p = this.pakete.filter((x) => hatSchnittstelle(x.laeufer, s) && this.ladefehler.has(x.id) && !this.ladefehler.get(x.id)).sort((a, b) => a.id.localeCompare(b.id))[0];
+    return p ? { id: p.id, name: p.name } : null;
+  }
+
+  /**
+   * Ruft eine Schnittstelle eines Pakets auf (Aktion `dms:antworten` bzw. `dms:erkennen`): Eingang als JSON, Teile
+   * der Antwort an `teil`, Ergebnis als Text. Ohne Inhalt in der Werkbank. Wirft mit verständlicher Meldung.
+   */
+  async schnittstelle(paket: string, aktion: string, eingang: Record<string, unknown>, opt: { bezeichnung: string; teil?: (text: string) => void; ms?: number }): Promise<{ text: string; ms: number }> {
+    if (this.o.pausiert?.()) throw new Error('Während der Wartung laufen keine Pakete.');
+    if (!this.laeuft()) throw new Error('Der Paket-Läufer läuft gerade nicht.');
+    const r = await this.rufe(paket, 'aktion', { ...eingang, aktion }, { vorrang: true, ohneInhalt: true, bezeichnung: opt.bezeichnung, ...(opt.teil ? { teil: opt.teil } : {}), ...(opt.ms ? { ms: opt.ms } : {}) });
+    if (!r.ok) throw new Error(r.fehler ?? 'Das Paket hat nicht geantwortet.');
+    return { text: r.text, ms: r.ms };
+  }
+
   /** Einen Aufruf ausführen und auf das Ergebnis warten. ms: eigene, kürzere Wartezeit; vorrang: vor die Warteschlange. */
-  private async rufe(paket: string, art: 'ereignis' | 'aktion', eingang: Record<string, unknown>, opt: { ms?: number; vorrang?: boolean; bezeichnung?: string } = {}): Promise<Ergebnis> {
+  private async rufe(paket: string, art: 'ereignis' | 'aktion', eingang: Record<string, unknown>, opt: { ms?: number; vorrang?: boolean; bezeichnung?: string; teil?: (text: string) => void; ohneInhalt?: boolean } = {}): Promise<Ergebnis> {
     if (!this.kind || !this.bereit) return abbruch('Der Paket-Läufer läuft gerade nicht.', true);
     const p = this.pakete.find((x) => x.id === paket);
     if (!p) throw new Error('Dieses Paket hat keinen Code.');
@@ -381,14 +419,16 @@ export class Paketlaeufer implements PaketLaeufer {
     const r = await new Promise<Ergebnis>((ok) => {
       const uhr = setTimeout(() => { if (this.aufrufe.delete(nr)) ok(abbruch(opt.ms ? `Keine Antwort innerhalb von ${opt.ms} ms.` : 'Der Paket-Läufer hat nicht geantwortet.')); }, opt.ms ?? this.grenzen.sekunden * 1000 + 15_000);
       uhr.unref?.();
-      this.aufrufe.set(nr, { ok: (x) => { clearTimeout(uhr); ok(x); } });
+      this.aufrufe.set(nr, { ok: (x) => { clearTimeout(uhr); ok(x); }, ...(opt.teil ? { teil: opt.teil } : {}) });
       this.sende({ art: 'aufruf', nr, paket, eingang: { art, json }, ...(opt.vorrang ? { vorrang: true } : {}) });
     });
     const s = this.standVon(paket);
     s.aufrufe++; if (!r.ok) s.fehlgeschlagen++;
     s.letzterAufruf = new Date().toISOString(); s.dauerMs = r.ms; s.speicherMB = r.speicherMB;
     // Das Ergebnis kann lang sein (Vektor als JSON, #442): in der Werkbank nur der Anfang.
-    s.letzte.push({ zeit: s.letzterAufruf, art: opt.bezeichnung ?? (art === 'aktion' ? `Aktion ${String(eingang.aktion)}` : String(eingang.art)), ok: r.ok, text: (r.ok ? r.text : (r.fehler ?? '')).slice(0, 300) });
+    // ohneInhalt (#444): Fragen und Antworten stehen nirgends – in der Werkbank nur Länge bzw. Fehler.
+    const anzeige = opt.ohneInhalt && r.ok ? `${r.text.length} Zeichen` : (r.ok ? r.text : (r.fehler ?? ''));
+    s.letzte.push({ zeit: s.letzterAufruf, art: opt.bezeichnung ?? (art === 'aktion' ? `Aktion ${String(eingang.aktion)}` : String(eingang.art)), ok: r.ok, text: anzeige.slice(0, 300) });
     if (s.letzte.length > LETZTE) s.letzte.splice(0, s.letzte.length - LETZTE);
     if (!r.ok) log.warn(`Paket ${paket}: Aufruf fehlgeschlagen`, { paket, art, fehler: r.fehler, ms: r.ms });
     return r;

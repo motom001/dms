@@ -3,6 +3,7 @@ import { abschnittsfelder, EINTRAG_ID, listen, type EinstellungBlock, type Einst
 import { api, ApiFehler, type PaketEinstellungenStand } from '../api';
 import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
+import { t } from '../sprache';
 
 /**
  * Werkbank → Pakete → Paket → Einstellungen (#197): Formular aus der Beschreibung im Manifest.
@@ -42,14 +43,21 @@ export function PaketEinstellungen({ id, gespeichert }: { id: string; gespeicher
   }, [id]);
   if (!stand) return meldung ? <div className="hinweis schlecht"><p>{meldung.text}</p></div> : <p className="leise">Lade …</p>;
 
-  async function speichern() {
+  async function speichern(adresseBestaetigt = false) {
     setLaeuft(true); setMeldung(undefined); setFehler({});
     try {
-      const s = await api.paketEinstellungenSpeichern(id, werte);
+      const s = await api.paketEinstellungenSpeichern(id, werte, adresseBestaetigt);
       setStand(s); setWerte(zumFormular(s));
       setMeldung({ art: 'gut', text: 'Gespeichert.' });
       gespeichert?.();
     } catch (e) {
+      // Dienst-Adresse (#444): erst bestätigen – dorthin schickt das Paket Daten.
+      const adresse = e instanceof ApiFehler && e.status === 409 ? (e.details as { adresse?: Array<{ feld: string; wert: string }> } | undefined)?.adresse : undefined;
+      if (adresse?.length && !adresseBestaetigt) {
+        setLaeuft(false);
+        if (await rueckfrage({ titel: t('fragen.adresse.titel'), text: t('fragen.adresse.text', { adresse: adresse.map((a) => a.wert).join(', ') }), ja: t('fragen.adresse.ja') })) await speichern(true);
+        return;
+      }
       const ff = e instanceof ApiFehler ? (e.details as { felderFehler?: Record<string, string> } | undefined)?.felderFehler : undefined;
       if (ff) setFehler(ff);
       setMeldung({ art: 'schlecht', text: (e as Error).message });
@@ -141,6 +149,8 @@ function Eingabe({ f, wert, setze, fehler, auswahl, id }: { f: EinstellungFeld; 
   );
   switch (f.typ) {
     case 'text': ctl = <input id={id} type="text" value={String(wert ?? '')} onChange={(e) => setze(e.target.value)} />; break;
+    // Dienst-Adresse (#444): nie voreingestellt, nur ein Beispiel im leeren Feld; beim Speichern bestätigen.
+    case 'adresse': ctl = <><input id={id} type="url" inputMode="url" autoComplete="off" spellCheck={false} placeholder={f.beispiel} value={String(wert ?? '')} onChange={(e) => setze(e.target.value || null)} /><small className="leise">{t('fragen.adresse.feld')}</small></>; break;
     case 'mehrzeilig': ctl = <textarea id={id} rows={4} value={String(wert ?? '')} onChange={(e) => setze(e.target.value)} />; break;
     case 'zahl': ctl = <input id={id} type="text" inputMode="decimal" value={wert == null ? '' : String(wert)} onChange={(e) => setze(e.target.value)} />; break;
     case 'datum': ctl = <input id={id} type="date" value={String(wert ?? '')} onChange={(e) => setze(e.target.value || null)} />; break;

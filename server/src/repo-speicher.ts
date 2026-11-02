@@ -518,6 +518,21 @@ export function speicherRepo(): Repo {
       for (const id of ids) { const t = texte.get(id); if (t != null) r.set(id, t); }
       return r;
     },
+    async fragenFundstellen(o) {
+      const woerter = o.woerter.map((w) => w.toLowerCase());
+      if (!woerter.length) return { dokumente: [], mappen: [] };
+      const darf = (m: Mappe | undefined) => !!m && lesbar(o.lesen ?? null, m, zaehl);
+      const zaehleIn = (t: string) => woerter.filter((w) => t.toLowerCase().includes(w)).length;
+      const docs = [...dokumente.values()]
+        .map((d) => ({ d, n: zaehleIn(texte.get(d.id) ?? '') }))
+        .filter((x) => x.n > 0 && darf(mappen.get(x.d.mappeId)))
+        .sort((a, b) => b.n - a.n || a.d.id.localeCompare(b.d.id)).slice(0, Math.max(0, o.dokumente))
+        .map((x) => ({ id: x.d.id, mappeId: x.d.mappeId, name: x.d.name, text: texte.get(x.d.id) ?? '' }));
+      const treffer = [...mappen.values()].filter((m) => darf(m))
+        .map((m) => ({ m, n: woerter.filter((w) => (m.titel ?? '').toLowerCase().includes(w) || Object.values(m.werte).some((v) => !(typeof v === 'string' && v.startsWith('dms1$')) && (typeof v === 'object' ? JSON.stringify(v) : String(v)).toLowerCase().includes(w))).length }))
+        .filter((x) => x.n > 0).sort((a, b) => b.n - a.n || b.m.geaendert.localeCompare(a.m.geaendert)).slice(0, Math.max(0, o.mappen)).map((x) => kopie(x.m));
+      return { dokumente: docs, mappen: treffer };
+    },
     async aufgabenZurPassung(liste) {
       for (const { id, problem } of liste) {
         const offen = [...aufgaben.values()].find((a) => a.mappeId === id && a.art === 'passung' && !a.erledigt);

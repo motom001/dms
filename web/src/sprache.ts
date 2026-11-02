@@ -8,9 +8,10 @@ import aehnlich from '../../shared/src/sprachen/de/aehnlich.json';
 import anmeldung from '../../shared/src/sprachen/de/anmeldung.json';
 import pakete from '../../shared/src/sprachen/de/pakete.json';
 import felder from '../../shared/src/sprachen/de/felder.json';
+import fragen from '../../shared/src/sprachen/de/fragen.json';
 import profil from '../../shared/src/sprachen/de/profil.json';
 import spalten from '../../shared/src/sprachen/de/spalten.json';
 import systemzustand from '../../shared/src/sprachen/de/systemzustand.json';
 import werkbank from '../../shared/src/sprachen/de/werkbank.json';
 
-export const t = uebersetzer({ aehnlich, anmeldung, felder, pakete, profil, spalten, systemzustand, werkbank });
+export const t = uebersetzer({ aehnlich, anmeldung, felder, fragen, pakete, profil, spalten, systemzustand, werkbank });

@@ -9,6 +9,7 @@ export const EINSTELLUNG_TYPEN = {
   text: 'Text', mehrzeilig: 'Mehrzeiliger Text', zahl: 'Zahl', janein: 'Ja/Nein', datum: 'Datum',
   auswahl: 'Auswahl', mehrfachauswahl: 'Mehrfachauswahl', geheim: 'Geheimnis',
   mappentyp: 'Mappentyp', feld: 'Feld eines Mappentyps', benutzer: 'Benutzer', rolle: 'Rolle', sicht: 'Ansicht',
+  adresse: 'Dienst-Adresse',
 } as const;
 export type EinstellungTyp = keyof typeof EINSTELLUNG_TYPEN;
 const VERWEISE: EinstellungTyp[] = ['mappentyp', 'feld', 'benutzer', 'rolle', 'sicht'];
@@ -18,7 +19,27 @@ export interface EinstellungFeld {
   hilfe?: string; pflicht?: boolean; standard?: unknown; optionen?: string[]; min?: number; max?: number;
   /** Beim Typ feld: Mappentyp (lokal oder <paket>:<schluessel>), aus dem ein Feld gewählt wird. */
   mappentyp?: string;
+  /** Beim Typ adresse (#444): Beispiel im leeren Feld, z. B. „http://ollama:11434/v1“ – nie ein gespeicherter Wert. */
+  beispiel?: string;
 }
+
+/**
+ * Dienst-Adresse (#444): Ein Paket mit Code darf zusätzlich zu `code.netz` nur zu der Adresse ins Netz, die der
+ * Administrator in dieser Einstellung einträgt und bestätigt. http ist erlaubt (Dienste im Heimnetz wie Ollama);
+ * keine Zugangsdaten, keine Parameter. Höchstens eine je Paket, nur in Abschnitten, ohne Vorgabe.
+ */
+export const ADRESSE_MAX = 500;
+export function pruefeAdresse(v: string): string | null {
+  if (v.length > ADRESSE_MAX) return 'Zu lang.';
+  let u: URL;
+  try { u = new URL(v); } catch { return 'Keine gültige Adresse – z. B. http://ollama:11434/v1.'; }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return 'Nur http:// oder https://.';
+  if (u.username || u.password) return 'Bitte ohne Zugangsdaten in der Adresse – einen Schlüssel trägst du im eigenen Feld ein.';
+  if (u.search || u.hash) return 'Bitte ohne ? und # in der Adresse.';
+  return null;
+}
+/** Die Einstellungen vom Typ adresse (Abschnitte). */
+export const adressfelder = (b: Einstellungsbeschreibung) => abschnittsfelder(b).filter((f) => f.typ === 'adresse');
 export type EinstellungBlock =
   | { art: 'abschnitt'; titel: string; hilfe?: string; felder: EinstellungFeld[] }
   | { art: 'liste'; schluessel: string; name: string; eintrag: string; hilfe?: string; sortierbar: boolean; felder: EinstellungFeld[] };
@@ -50,10 +71,14 @@ export function liesBeschreibung(code: unknown): { beschreibung: Einstellungsbes
     if (!(typ in EINSTELLUNG_TYPEN)) { fehler.push(`${wo}/${str(f.schluessel)}: unbekannter Typ „${typ}“.`); return null; }
     if ((typ === 'auswahl' || typ === 'mehrfachauswahl') && !(Array.isArray(f.optionen) && f.optionen.length)) fehler.push(`${wo}/${str(f.schluessel)}: ${typ} braucht optionen.`);
     if (typ === 'geheim' && f.standard !== undefined) fehler.push(`${wo}/${str(f.schluessel)}: geheim hat keine Vorgabe.`);
+    // Dienst-Adresse (#444): nie voreingestellt – der Administrator trägt sie selbst ein und bestätigt sie.
+    if (typ === 'adresse' && f.standard !== undefined) fehler.push(`${wo}/${str(f.schluessel)}: adresse hat keine Vorgabe (höchstens ein beispiel, das im leeren Feld steht).`);
+    if (typ === 'adresse' && f.beispiel !== undefined && (typeof f.beispiel !== 'string' || pruefeAdresse(f.beispiel))) fehler.push(`${wo}/${str(f.schluessel)}: beispiel ist keine gültige Adresse.`);
     return {
       schluessel: str(f.schluessel), name: str(f.name) || str(f.schluessel), typ,
       ...(f.hilfe ? { hilfe: str(f.hilfe) } : {}), ...(f.pflicht === true ? { pflicht: true } : {}),
-      ...(f.standard !== undefined && typ !== 'geheim' && !VERWEISE.includes(typ) ? { standard: f.standard } : {}),
+      ...(f.standard !== undefined && typ !== 'geheim' && typ !== 'adresse' && !VERWEISE.includes(typ) ? { standard: f.standard } : {}),
+      ...(typ === 'adresse' && typeof f.beispiel === 'string' ? { beispiel: f.beispiel } : {}),
       ...(Array.isArray(f.optionen) ? { optionen: f.optionen.map(str) } : {}),
       ...(typeof f.min === 'number' ? { min: f.min } : {}), ...(typeof f.max === 'number' ? { max: f.max } : {}),
       ...(typ === 'feld' && f.mappentyp ? { mappentyp: str(f.mappentyp) } : {}),
@@ -70,12 +95,14 @@ export function liesBeschreibung(code: unknown): { beschreibung: Einstellungsbes
       einmal(str(b.liste), oben, 'einstellungen');
       const innen = new Set<string>();
       for (const f of felder) einmal(f.schluessel, innen, `Liste ${str(b.liste)}`);
+      for (const f of felder) if (f.typ === 'adresse') fehler.push(`Liste ${str(b.liste)}/${f.schluessel}: adresse geht nur in einem Abschnitt, nicht in einer Liste.`);
       bloecke.push({ art: 'liste', schluessel: str(b.liste), name: str(b.name) || str(b.liste), eintrag: str(b.eintrag) || 'Eintrag', ...(b.hilfe ? { hilfe: str(b.hilfe) } : {}), sortierbar: b.sortierbar === true, felder });
     } else {
       for (const f of felder) einmal(f.schluessel, oben, 'einstellungen');
       bloecke.push({ art: 'abschnitt', titel: str(b.abschnitt), ...(b.hilfe ? { hilfe: str(b.hilfe) } : {}), felder });
     }
   }
+  if (bloecke.flatMap((x) => (x.art === 'abschnitt' ? x.felder : [])).filter((f) => f.typ === 'adresse').length > 1) fehler.push('einstellungen: höchstens eine Einstellung vom Typ adresse je Paket.');
   const aktionen: PaketAktion[] = [];
   const ak = new Set<string>();
   for (const a of Array.isArray(code.aktionen) ? code.aktionen : []) {
@@ -175,6 +202,12 @@ export function pruefeWerte(b: Einstellungsbeschreibung, eingabe: unknown, q: Ve
         if (typeof v !== 'string') { fehler[pfad] = 'Text erwartet.'; return null; }
         if (v.length > (f.typ === 'text' ? 500 : 10000)) { fehler[pfad] = 'Zu lang.'; return null; }
         return f.typ === 'text' ? v.trim() : v;
+      }
+      case 'adresse': {
+        const a = typeof v === 'string' ? v.trim() : '';
+        const falsch = typeof v !== 'string' ? 'Text erwartet.' : pruefeAdresse(a);
+        if (falsch) { fehler[pfad] = falsch; return null; }
+        return a;
       }
       case 'zahl': {
         const n = typeof v === 'number' ? v : Number(String(v).replace(',', '.'));

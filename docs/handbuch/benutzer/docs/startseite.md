@@ -16,6 +16,18 @@ Mit **auch in Dokumenten** und einem Paket wie **KI lokal – Ähnlichkeit** ste
 
 Am Handy kannst du auch **diktieren** (Mikrofon der Tastatur). Tippst du eine **Archivnummer** und dann Enter bzw. „Suchen“, springst du direkt zum Dokument – wie in den Ansichten. Leerst du das Feld, erscheinen wieder die Kacheln.
 
+## Frag deine Ablage { #frag-deine-ablage }
+
+Hat dein Administrator ein Paket wie **KI-Assistent** eingerichtet, steht unter dem Suchfeld ein zweites Feld: **„Frag deine Ablage“**. Hier stellst du eine Frage in eigenen Worten – zum Beispiel „Wann läuft die Kfz-Versicherung aus?“ – und bekommst eine Antwort mit Links zu den passenden Mappen. Ohne ein solches Paket gibt es das Feld nicht.
+
+- **Fragen:** Frage eintippen, dann **Fragen** oder Enter (neue Zeile mit Umschalt + Enter). Die Antwort entsteht beim Schreiben; mit **Abbrechen** hörst du auf.
+- **Quellen:** Unter der Antwort stehen die Mappen, aus denen sie stammt, als Links. Die Nummern in eckigen Klammern, z. B. „[2]“, zeigen auf die Stellen darunter.
+- **„An die KI geschickt: n Ausschnitte aus m Mappen“:** Aufgeklappt siehst du genau die Stellen, die an den KI-Dienst gingen – nie mehr als das, nie deine ganze Ablage. Gesucht wird nur in Mappen, die **du** lesen darfst; Passwörter sind nie dabei.
+- **Nachfragen:** Du kannst im selben Chat weiterfragen („Und wann ist die Kündigungsfrist?“). Für jede Frage sucht das DMS neue Stellen. **Neuer Chat** fängt von vorn an.
+- **Nichts wird gespeichert.** Der Chat bleibt nur in diesem Browser-Fenster und ist beim Neuladen weg. Im Protokoll des DMS steht nur, *dass* gefragt wurde – nicht was.
+
+Die Antwort schreibt ein KI-Dienst. Er kann sich irren oder etwas nicht finden – prüfe Wichtiges in den Quellen. Die Antwort ist nur Text: Sie ändert nichts in deiner Ablage. Wohin die Ausschnitte gehen (eigener Rechner im Heimnetz oder ein Anbieter), weiß dein Administrator.
+
 ## Die Kacheln
 
 | Kachel | Zahl | Klick öffnet |

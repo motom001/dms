@@ -7,6 +7,7 @@ import { Hilfe } from '../Hilfe';
 import { darfVerlassen, geheZu, Link } from '../ort';
 import { PaketEinstellungen } from './PaketEinstellungen';
 import { VektorStandBlock } from '../ablage/Aehnlich';
+import { FragenGrenzenBlock } from './FragenGrenzen';
 import { PaketErstellen } from './PaketErstellen';
 import { rueckfrage } from '../rueckfrage';
 import { useKonto } from '../konto';
@@ -399,6 +400,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         </dl>
         {inst?.laeufer && <LaeuferStand paket={inst.id} />}
         {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:vektoren') && <VektorStandBlock />}
+        {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:antworten') && <FragenGrenzenBlock />}
         {inst && (
           <>
             <h2 className="h3">Gehört dazu</h2>
@@ -523,6 +525,8 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
           {v.laeufer.bestaetigen
             ? <label className="haken"><input type="checkbox" checked={rechteOk} onChange={(e) => setRechteOk(e.target.checked)} /><span>{v.update ? 'Die Rechte haben sich geändert. Ich erlaube sie.' : 'Ich erlaube dem Paket diese Rechte.'}</span></label>
             : <p className="leise">Die Rechte sind dieselben wie bisher.</p>}
+          {/* Dienst-Adresse (#444): Hinweis auf die Vertrauensbeziehung schon bei der Installation. */}
+          {v.laeufer.rechte.some((r) => r.hilfe === 'pakete.recht.adresse') && <p>{tx('fragen.adresse.installation')}</p>}
         </div>
       )}
       {v.probleme.length > 0 && <div className="hinweis schlecht"><ul>{v.probleme.map((p) => <li key={p}>{p}</li>)}</ul></div>}

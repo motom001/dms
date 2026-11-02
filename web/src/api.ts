@@ -23,6 +23,7 @@ import type { Luecke } from '../../shared/src/loeschkonzept';
 import type { LoeschAnlass, LoeschEintrag } from '../../shared/src/loeschprotokoll';
 import type { Sicherheit } from '../../shared/src/erkennung';
 import type { Entscheidung, UmwandlungsFeld, Umwandlungsvorgang, UmwandlungsVorschau } from '../../shared/src/umwandlung';
+import type { FrageZeile, FragenGrenzen, VerlaufEintrag } from '../../shared/src/fragen';
 
 /** Vorschläge beim Zuordnen (#336), wie GET /api/mappen/:id/erkennung sie liefert. */
 export interface ErkFund<T = string> { wert: T; sicherheit: Sicherheit; fundstelle: string }
@@ -143,6 +144,43 @@ export type Bezuege = Record<string, MappenBezug>;
 export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; /** Favoriten des Benutzers unter den Mappen dieser Seite (#62). */ favoriten?: string[]; /** Von anderen geändert seit dem letzten Sehen (#422). */ geaendert?: string[]; /** Favoriten ohne Benachrichtigung (#422, nur Favoritenliste). */ stumm?: string[]; /** Ähnliche Treffer (#442): nur in der Suche über alle Mappen mit Volltext. */ aehnlich?: AehnlicheMappe[] }
 /** Eine Mappe mit einem ähnlichen Dokument (#442); aehnlichkeit = Kosinus (0 bis 1). */
 export interface AehnlicheMappe { id: string; titel: string; typId: string; dokument: { id: string; name: string }; aehnlichkeit: number }
+/** „Frag deine Ablage“ (#444): Werkbank (Höchstmenge) und Frage stellen (Antwort als NDJSON-Strom). */
+export interface FragenStand { verfuegbar: boolean; paket: string | null; grenzen: FragenGrenzen }
+
+/**
+ * Frage stellen (#444): Die Antwort kommt Zeile für Zeile (NDJSON) – erst die Ausschnitte, dann Teile, zum Schluss
+ * „fertig“ oder „fehler“. Fehler vor dem Start (keine Frage, kein Paket) kommen als ApiFehler.
+ */
+export async function frageStellen(frage: string, verlauf: VerlaufEintrag[], zeile: (z: FrageZeile) => void, signal?: AbortSignal): Promise<void> {
+  let r: Response;
+  try {
+    r = await fetch('/api/fragen', { method: 'POST', credentials: 'same-origin', signal, headers: { 'x-dms': '1', 'content-type': 'application/json' }, body: JSON.stringify({ frage, verlauf }) });
+  } catch (e) {
+    if ((e as Error).name === 'AbortError') throw e;
+    erreichbarkeit.ausfall();
+    throw new ApiFehler(0, NICHT_ERREICHBAR);
+  }
+  if (!r.ok || !r.body) {
+    const d = await r.json().catch(() => null) as { fehler?: string; details?: unknown } | null;
+    if (r.status === 401) dispatchEvent(new Event(ABGEMELDET));
+    throw new ApiFehler(r.status, d?.fehler ?? `Fehler ${r.status}`, d?.details);
+  }
+  const leser = r.body.pipeThrough(new TextDecoderStream()).getReader();
+  let rest = '';
+  for (;;) {
+    const { done, value } = await leser.read();
+    if (value) rest += value;
+    let i: number;
+    while ((i = rest.indexOf('\n')) >= 0) {
+      const z = rest.slice(0, i).trim();
+      rest = rest.slice(i + 1);
+      if (z) zeile(JSON.parse(z) as FrageZeile);
+    }
+    if (done) break;
+  }
+  if (rest.trim()) zeile(JSON.parse(rest) as FrageZeile);
+}
+
 /** Vektoren in der Werkbank (#442). */
 export interface VektorStand { paket: string | null; modell: string | null; mitVektor: number; mitVolltext: number; modelle: Array<{ paket: string; modell: string; anzahl: number }>; suche: boolean; zwischenspeicherMB: number | null }
 /** Texterkennung (#45): Stand, Werkzeuge und Einstellungen für die Werkbank. */
@@ -547,10 +585,15 @@ export const api = {
   vektorStand: () => anfrage<VektorStand>('GET', '/api/werkbank/vektoren'),
   vektorSuche: (suche: boolean) => anfrage<VektorStand>('PUT', '/api/werkbank/vektoren', { suche }),
   vektorenNeu: () => anfrage<{ entfernt: number }>('POST', '/api/werkbank/vektoren/neu'),
+  /* „Frag deine Ablage“ (#444) */
+  fragenVerfuegbar: () => anfrage<{ verfuegbar: boolean; paket: string | null }>('GET', '/api/fragen'),
+  fragenStand: () => anfrage<FragenStand>('GET', '/api/werkbank/fragen'),
+  fragenGrenzen: (g: FragenGrenzen) => anfrage<FragenStand>('PUT', '/api/werkbank/fragen', g),
   aehnlicheZurMappe: (id: string) => anfrage<{ verfuegbar: boolean; berechnet: boolean; mappen: AehnlicheMappe[] }>('GET', `/api/mappen/${id}/aehnliche`),
   paketEntfernen: (id: string, einstellungenBehalten = false) => anfrage<void>('DELETE', `/api/werkbank/pakete/${encodeURIComponent(id)}${einstellungenBehalten ? '?einstellungenBehalten=1' : ''}`),
   paketEinstellungen: (id: string) => anfrage<PaketEinstellungenStand>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`),
-  paketEinstellungenSpeichern: (id: string, werte: Record<string, unknown>) => anfrage<PaketEinstellungenStand>('PUT', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`, { werte }),
+  /** adresseBestaetigt (#444): Hinweis zur Dienst-Adresse bestätigt – sonst 409, wenn sich eine Adresse ändert. */
+  paketEinstellungenSpeichern: (id: string, werte: Record<string, unknown>, adresseBestaetigt = false) => anfrage<PaketEinstellungenStand>('PUT', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`, { werte, ...(adresseBestaetigt ? { adresseBestaetigt: true } : {}) }),
   /* Paket-Update: Text in Verweis umwandeln (#534) */
   paketUmwandlungen: (id: string) => anfrage<{ felder: UmwandlungsFeld[]; vorgaenge: Umwandlungsvorgang[] }>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/umwandlungen`),
   paketUmwandlungVorschau: (id: string, typId: string, feldKey: string) => anfrage<UmwandlungsVorschau>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/umwandlungen/vorschau`, { typId, feldKey }),

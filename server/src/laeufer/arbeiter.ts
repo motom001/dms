@@ -23,15 +23,19 @@ export interface ArbeiterDaten {
 /** Anfrage des Moduls an den Läufer; die Antwort kommt als { status, body } zurück. */
 export type Hostanfrage =
   | { art: 'api'; json: string; body?: Uint8Array }
-  | { art: 'netz'; json: string; body?: Uint8Array }
+  | { art: 'netz'; json: string; body?: Uint8Array; strom?: boolean }
+  /** Nächstes Stück einer mit netz_strom geöffneten Antwort (#444). */
+  | { art: 'netz_weiter' }
   | { art: 'datei'; name: string }
   | { art: 'speicher_lesen'; schluessel: string }
   | { art: 'speicher_schreiben'; schluessel: string; wert: Uint8Array };
 export interface Hostantwort { status: number; body: Uint8Array }
-export type ArbeiterMeldung = { art: 'log'; stufe: number; text: string } | { art: 'ende'; rc: number | null; ergebnis: string; speicher: number; fehler?: string };
+export type ArbeiterMeldung = { art: 'log'; stufe: number; text: string } | { art: 'teil'; text: string } | { art: 'ende'; rc: number | null; ergebnis: string; speicher: number; fehler?: string };
 
 /** Ergebnis eines Aufrufs (Zeichen): genug für einen Vektor als JSON (#442); die Werkbank zeigt davon nur den Anfang. */
 const MAX_ERGEBNIS = 64_000;
+/** Teile einer Antwort (#444, dms.teil): je Teil und zusammen höchstens so viele Zeichen. */
+const MAX_TEIL = 8_000;
 
 function lauf(d: ArbeiterDaten) {
   const sig = new Int32Array(d.signal);
@@ -39,6 +43,7 @@ function lauf(d: ArbeiterDaten) {
   let speicher: WebAssembly.Memory | null = null;
   let antwort: Uint8Array = new Uint8Array(0);
   let ergebnis = '';
+  let teile = 0;
   const melde = (m: ArbeiterMeldung) => d.port.postMessage(m);
   const bytes = (p: number, l: number) => {
     if (!speicher || p < 0 || l < 0 || p + l > speicher.buffer.byteLength) throw new Error('Zeiger außerhalb des Speichers.');
@@ -60,6 +65,18 @@ function lauf(d: ArbeiterDaten) {
     api: (p, l) => merke(frage({ art: 'api', json: text(p, l) })),
     api_binaer: (p, l, bp, bl) => merke(frage({ art: 'api', json: text(p, l), body: kopie(bp, bl) })),
     netz: (p, l, bp, bl) => merke(frage({ art: 'netz', json: text(p, l), ...(bl > 0 ? { body: kopie(bp, bl) } : {}) })),
+    // Antwort Stück für Stück (#444): netz_strom liefert den Status, netz_weiter je Aufruf das nächste Stück
+    // (Länge; 0 = Ende, < 0 = Fehler), lesbar mit antwort_lesen.
+    netz_strom: (p, l, bp, bl) => merke(frage({ art: 'netz', strom: true, json: text(p, l), ...(bl > 0 ? { body: kopie(bp, bl) } : {}) })),
+    netz_weiter: () => { const r = frage({ art: 'netz_weiter' }); antwort = r.body; return r.status === 200 ? r.body.length : r.status === 0 ? 0 : r.status < 0 ? r.status : -1; },
+    // Teil einer Antwort an das DMS (#444) – z. B. für die Anzeige beim Schreiben; das Ergebnis bleibt maßgeblich.
+    teil: (p, l) => {
+      const t = text(p, Math.min(l, MAX_TEIL * 4)).slice(0, MAX_TEIL);
+      if (teile + t.length > MAX_ERGEBNIS) return -1;
+      teile += t.length;
+      if (t) melde({ art: 'teil', text: t });
+      return 0;
+    },
     datei: (p, l) => { const r = frage({ art: 'datei', name: text(p, l) }); antwort = r.body; return r.status === 200 ? r.body.length : -1; },
     antwort_laenge: () => antwort.length,
     antwort_lesen: (p, max) => { const n = Math.min(antwort.length, max); bytes(p, n).set(antwort.subarray(0, n)); return n; },

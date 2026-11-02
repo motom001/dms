@@ -58,6 +58,7 @@ import { abfrageAus, liesSuche } from '../../shared/src/erweitertesuche';
 import type { Lesefilter } from '../../shared/src/rechte';
 import { liesAusDokument, liesFeldErkennung, type AusDokument } from '../../shared/src/erkennung';
 import { gleicheFormateAn, hatVorgaben, HEUTE, pruefeFormate, unpassendeAngaben, type Feldformat } from '../../shared/src/feldformate';
+import { FragenAnDieAblage } from './fragen';
 import { Erkennung, sichereZuordnung, type PostErkennung } from './erkennung';
 import { favoritenErlaubt, freigabeZumSpeichern, liesFavoritenFreigabe, type FavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
 import { t } from './sprache';
@@ -443,11 +444,14 @@ export class Dienst {
     this.tresor?.registriereBestand(() => this.repo.verschluesselteFundstellen(), ['passwortfeld', 'mail']);
     // Erkennung (#336): rechnet, sobald der Volltext eines Dokuments fertig ist – egal, wer ihn geliefert hat.
     this.erkennung = new Erkennung(this, () => this.repo);
+    this.fragen = new FragenAnDieAblage(this, () => this.repo, () => this.einstellungen);
     this.beiVolltextFertig(async (e) => { await this.erkennung.nachVolltext(e); });
   }
 
   /** Erkennung im Kern (#336, #391): Vorschläge aus dem Volltext. */
   readonly erkennung: Erkennung;
+  /** „Frag deine Ablage“ (#444): Ausschnitte suchen, Antwort-Paket fragen, Quellen prüfen. */
+  readonly fragen: FragenAnDieAblage;
   private volltextHoerer: Array<(e: { dokument: string; mappe: string }) => Promise<void>> = [];
   /** Internes Ereignis „Volltext fertig“ abonnieren (#336). */
   beiVolltextFertig(f: (e: { dokument: string; mappe: string }) => Promise<void>) { this.volltextHoerer.push(f); }
@@ -651,6 +655,21 @@ export class Dienst {
       treffer = treffer.filter((t) => opt.typen!.has(b.get(t.mappeId)?.typId ?? ''));
     }
     return this.trefferMitTitel(treffer.slice(0, opt.anzahl ?? 5));
+  }
+
+  /**
+   * Ähnliche Dokumente zu einem freien Text (#444, „Frag deine Ablage“): das Paket liefert den Vektor (mit
+   * Zeitgrenze), der Kern vergleicht – nur lesbare Mappen, je Mappe das beste Dokument. Leer ohne Paket.
+   */
+  async aehnlicheZuText(z: Zugriff | undefined, text: string, anzahl: number, ms: number): Promise<Treffer[]> {
+    if (!this.vektorAnbieter?.paket() || text.trim().length < 3) return [];
+    const q = await this.vektorAnbieter.vektorFuer(text, ms).catch(() => null);
+    if (!q) return [];
+    await this.merkeVektorModell(q.paket, q.modell);
+    if (!this.vektorGeladen.has(q.modell)) return [];
+    const index = await this.vektorIndex(q.modell);
+    if (!index || index.dimension !== q.vektor.length) return [];
+    return this.lesbareTreffer(z, index, q.vektor, anzahl, { schwelle: q.schwelle, jeMappe: true });
   }
 
   /** Für die Werkbank: Vektoren je Modell, Dokumente mit Volltext, Einstellung. */

@@ -86,7 +86,7 @@ code:
 ```
 
 - Höchstens **zwei Ebenen**: Abschnitte (`abschnitt`, `hilfe`, `felder`) und Listen (`liste`, `name`, `eintrag`, `hilfe`, `sortierbar`, `felder`).
-- **Typen:** `text`, `mehrzeilig`, `zahl` (`min`/`max`), `janein`, `datum`, `auswahl` und `mehrfachauswahl` (`optionen`), `geheim`, Verweise `mappentyp`, `feld` (mit `mappentyp:`), `benutzer`, `rolle`, `sicht`.
+- **Typen:** `text`, `mehrzeilig`, `zahl` (`min`/`max`), `janein`, `datum`, `auswahl` und `mehrfachauswahl` (`optionen`), `geheim`, Verweise `mappentyp`, `feld` (mit `mappentyp:`), `benutzer`, `rolle`, `sicht`, und seit DMS 0.124.0 `adresse` – die Dienst-Adresse, zu der allein das Paket ins Netz darf (ohne `standard`, höchstens mit `beispiel`; siehe [Pakete mit Code](pakete-code.md#im-manifest)).
 - **Werte**, wie das Paket sie bekommt: Abschnittsfelder unter ihrer Kennung, Listen als Liste von Objekten (mit `_id` je Eintrag). Verweise sind Ids (bei `feld`: `{ typ, feld }`), Geheimnisse im Klartext – nur für das eigene Paket.
 - Zu `code` gehören außerdem `sprache`, `quelle`, `ereignisse`, `rechte` und `netz` (siehe [Pakete mit Code](pakete-code.md#im-manifest)); das Beispiel oben zeigt nur Einstellungen und Aktionen.
 - **Zugangsdaten nur als `geheim`**, nie als `text` und nie mit `standard`.
