@@ -9,6 +9,18 @@ Thank you for your interest in the DMS! **Issues and pull requests are welcome i
 3. **Only issues labelled `freigegeben` (approved) get implemented.** This label is set by the maintainer ([@motom001](https://github.com/motom001)) alone. Pull requests for issues that are not approved will not be merged.
 4. **Pull request** with `Closes #…`, tests, an updated manual and, for a new version, release notes. Only the maintainer merges.
 
+## New dependencies only with a reason
+
+The DMS gets by with very little third-party code – this protects against supply-chain attacks and keeps maintenance and the image small. A **new runtime dependency** (an npm package under `dependencies`, or an Alpine package via `apk add` in the `Dockerfile`) is therefore only accepted with a reason given in the pull request:
+
+- **What for** is it needed?
+- **Why not** with what Node.js already provides, or with the dependencies and tools already in use?
+- **Licence** – compatible with Apache-2.0?
+- **Maintenance** – latest release, number of maintainers?
+- **Its own dependencies** – what else does it bring into the image?
+
+The pull request template asks for this; the "Abhängigkeiten" (dependencies) check points out new dependencies in the PR. The current list with the purpose of each is in the [developer manual](https://motom001.github.io/dms/entwickler/aktuell/aufbau/#abhaengigkeiten) (German).
+
 By contributing, you license your contribution under the [Apache-2.0](LICENSE). Please do not commit real documents or personal data.
 
 The DMS itself, its user interface and its manuals are in German; an English user interface and manual are planned (#357). You do not need to speak German to report a bug, suggest a feature or send a pull request.

@@ -1,6 +1,8 @@
 # Abhängigkeiten in Pull Requests prüfen (Orga, 01.11.2026 – Checkliste Repository-Einstellungen).
 # Meldet neue oder geänderte Abhängigkeiten mit bekannten Sicherheitslücken (ab „hoch“)
 # und unverträglichen Lizenzen direkt im PR. Noch keine Pflicht-Prüfung im Ruleset.
+# Dazu ein Hinweis (keine Sperre) auf neue Laufzeit-Abhängigkeiten – npm und `apk add` im
+# Dockerfile –, die im PR begründet werden müssen (#543, CONTRIBUTING.md).
 name: Abhängigkeiten
 
 on:
@@ -20,6 +22,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # Merge-Commit des PR und sein erster Elternteil (Stand von main) für den Vergleich.
+          fetch-depth: 2
+      - name: Neue Abhängigkeiten melden (#543)
+        run: python3 .github/werkzeuge/abhaengigkeiten-hinweis.py HEAD^1 HEAD
       - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
         with:
           fail-on-severity: high

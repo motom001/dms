@@ -6,6 +6,7 @@
 - Ein eigener Branch, z. B. `abwesenheit-vertreter`, von aktuellem `main`.
 - **Tests** für das Neue, im Arbeitsspeicher und, wo Daten gespeichert werden, auch gegen PostgreSQL.
 - `npm test` und `npm run typecheck` laufen lokal durch.
+- **Keine neue Abhängigkeit ohne Begründung:** Wer ein npm-Paket unter `dependencies` oder ein Alpine-Paket im `Dockerfile` ergänzt, beantwortet in der PR-Beschreibung die Fragen unter [Aufbau → Abhängigkeiten](aufbau.md#abhaengigkeiten). Die Prüfung im PR weist darauf hin.
 - **Handbuch** angepasst, wo sich etwas Sichtbares ändert: Benutzer-, Administrator- oder Installationshandbuch. Neue ?-Symbole brauchen einen Eintrag in `shared/src/hilfe.ts`.
 - **Release-Notizen:** Für eine neue Version die Nummer in den drei `package.json` erhöhen und `docs/releases/v<version>.md` schreiben, aus dem Blick der Nutzer. Kleine Korrekturen ohne neue Nummer landen nur im Image `main`. Mit dem Maintainer im Issue klären, welche Nummer passt.
 
