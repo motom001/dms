@@ -4,6 +4,7 @@ import { fortschrittText } from '../../../shared/src/auftrag';
 import { ANREDE_BEISPIEL, ANREDE_NAME, ANREDEN, textDritte, type Anrede } from '../../../shared/src/anrede';
 import { AUSKUNFT_PASSWORT_MIN, erwaehnungText, GRUND_MIN, istRechteStandard, personenTypen, rechteStandard, type AuskunftAuswahl, type AuskunftMappe, type AuskunftStand, type AuskunftVorschau, type Datenschutz } from '../../../shared/src/auskunft';
 import { Zustellen, Zustellungen } from './Zustellen';
+import { LoeschkonzeptBlatt } from './Loeschkonzept';
 import { BAUM_RICHTUNGEN, kinderVon, type BaumKnoten, type BaumRichtung } from '../../../shared/src/baum';
 import { datumText } from '../../../shared/src/archiv';
 import { api, type Auftrag, type DatenschutzStand } from '../api';
@@ -21,7 +22,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
  *      Mappe, Dokument, Notiz, Historie; Bezug-Mappen nur als Erwähnung, bewusst ganz aufnehmbar (#472)
  *   3. Erzeugen als Hintergrundauftrag, optional mit Passwort (AES); Download, danach gelöscht
  *   4. Zustellen (#455): per E-Mail (nur verschlüsselt) oder als Abruf-Link mit Abrufcode
- * Unten: bereitliegende Auskünfte, Abruf-Links (Nachweis) und die Einstellungen (Absender, Rechte, Zwecke je Mappentyp).
+ * Unten: bereitliegende Auskünfte, Abruf-Links (Nachweis), Löschkonzept erzeugen (#469) und die Einstellungen (Absender, Rechte, Zwecke je Mappentyp).
  */
 
 const groesse = (b: number) => (b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);
@@ -53,6 +54,7 @@ export function DatenschutzPanel({ z }: { z: DatenschutzZustand }) {
       <AuskunftErteilen einstellung={s.einstellung} nachher={z.laden} zustellen={oeffne} />
       <Bereitliegend z={z} offen={zustellen} setOffen={setZustellen} />
       <Zustellungen z={z} />
+      <LoeschkonzeptBlatt luecken={s.loeschkonzept?.luecken ?? []} />
       <Einstellungen z={z} />
     </div>
   );
