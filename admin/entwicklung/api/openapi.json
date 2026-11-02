@@ -5922,6 +5922,60 @@
         }
       }
     },
+    "/werkbank/datenschutz/loeschkonzept": {
+      "get": {
+        "tags": [
+          "Werkbank"
+        ],
+        "summary": "Löschkonzept erzeugen (Administrator)",
+        "description": "Löschkonzept (#469) wie die Vorlage im Administratorhandbuch, Abschnitt 2 „Datenarten und Fristen“ aus den Mappentypen mit Personenbezug, Zweck und Archivmodus; weitere Abschnitte mit den Einstellungen (Papierkorb, Sicherungen). Was das DMS nicht weiß, steht in [eckigen Klammern]. Nur Typen, Einstellungen und Fristen – nichts aus Mappen. Lücken liefert GET /werkbank/datenschutz unter loeschkonzept.luecken.",
+        "operationId": "getWerkbankDatenschutzLoeschkonzept",
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "description": "pdf (Standard) oder docx",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Erfolg",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Nicht angemeldet oder Schlüssel ungültig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Nur für Administratoren; oder Schlüssel nur zum Lesen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fehler"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/werkbank/auskunft/vorschau": {
       "post": {
         "tags": [
