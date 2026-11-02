@@ -1629,3 +1629,13 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .lp-jahre-feld { display: inline-flex; align-items: center; gap: 6px; }
 .lp-jahre-feld input { width: 80px; }
 @media (max-width: 600px) { .lp-filter .lp-suche { grid-column: 1 / -1; } }
+
+/* Paket-Update: Text in Verweis umwandeln (#534) */
+.umw-felder { list-style: none; margin: 0; padding: 0; }
+.umw-feld { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
+.umw-feld > span { min-width: 0; overflow-wrap: anywhere; }
+.umw-vorschau { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--linie); }
+.umw-zeilen { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.umw-zeile { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; }
+.umw-zeile > span { min-width: 0; overflow-wrap: anywhere; }
+.umw-wahl { width: 100%; max-width: 22rem; min-width: 0; }

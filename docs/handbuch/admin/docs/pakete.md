@@ -64,6 +64,32 @@ Ein Update **ergänzt nur**:
 
 Es **löscht nichts** und **überschreibt nichts**, was du selbst geändert hast: Hast du einen Mappentyp umbenannt, Felder ergänzt oder eine Ansicht gelöscht, bleibt das so.
 
+## Text in Verweise umwandeln { #text-in-verweise-umwandeln }
+
+Manche Pakete hatten früher ein **Textfeld**, wo eigentlich ein **Verweis** hingehört – zum Beispiel „Halter: Lena Muster“ am Fahrzeug statt eines Verweises auf die **Person** Lena Muster. Eine neuere Version des Pakets bringt dafür ein Verweisfeld mit und sagt, aus welchem Textfeld es sich füllen lässt. **Updates ändern nichts heimlich:**
+
+- Das Update legt das Verweisfeld **zusätzlich** an. Das alte Textfeld bleibt mit allen Werten, nichts wird umgeschrieben. Die Vorschau des Updates sagt schon, wie viele Angaben sich danach umwandeln lassen.
+- Danach steht im Paket unter **Text in Verweise umwandeln**, was offen ist, etwa „Fahrzeug – Halter: 3 Angaben in „Halter“ (Text) können Verweise auf Person werden“.
+
+**Vorschau …** zeigt je Name einen Vorschlag, den du in jeder Zeile ändern kannst:
+
+- **vorhandene Person:** gleicher Name, ohne Groß- und Kleinschreibung und Leerzeichen („lena muster“ = „Lena Muster“, auch „Muster Lena“). Passen mehrere, steht das dabei – wähle dann die richtige.
+- **Neu anlegen:** legt eine Person mit Vor- und Nachname an. Vorgeschlagen, wenn der Text wie ein Name aussieht.
+- **Überspringen:** Der Text bleibt, z. B. bei „Familie“ oder „Auto MU-ST 123“.
+
+Darf ein Feld mehrere Verweise haben (Inhaber eines Kontos, Versicherte), teilt das DMS den Text an „und“, Komma, Schrägstrich oder „&“: „Lena und Tom Muster“ wird zu „Lena Muster“ und „Tom Muster“. Umgewandelt wird eine Mappe nur, wenn **jeder** ihrer Namen eine Person bekommt.
+
+**Ausgelassen** werden Mappen, die du nicht bearbeiten darfst, Mappen im [Archivmodus](archiv.md) innerhalb der Aufbewahrungsfrist und Mappen, deren Verweis schon gesetzt ist. Die Vorschau nennt jede mit Grund.
+
+**Umwandeln** setzt den Verweis und leert das Textfeld. Jede Änderung steht in der **Historie** der Mappe („Paket-Update: Text in Verweis umgewandelt“). Außerdem:
+
+- Das alte Textfeld ist keine Pflicht mehr. Ist es leer, zeigt die Ablage es in der Mappe nicht mehr.
+- Titel-Vorlage und Trefferlisten zeigen den Verweis statt des Texts, das Verweisfeld rückt an die Stelle des Textfelds. Mappen, die du übersprungen hast, zeigen dort weiter ihren Text.
+
+**Rückgängig …** unter „Bisherige Umwandlungen“ nimmt einen ganzen Vorgang zurück: Text zurück, Verweis leer, neu angelegte Personen in den Papierkorb, sofern nichts anderes mehr auf sie verweist, Mappentyp wie vorher. Was seit der Umwandlung jemand geändert hat, bleibt und wird genannt. Die Vorgänge sind Teil der [Sicherung](sicherung.md).
+
+Für Paket-Autoren steht das Format (`aus_text`) in den [Regeln der Registry](https://github.com/motom001/dms-registry/blob/main/REGELN.md#text-in-verweis-umwandeln).
+
 ## Entfernen
 
 **Entfernen** löscht die Mappentypen und Ansichten des Pakets und seinen Eintrag. Das geht nur,

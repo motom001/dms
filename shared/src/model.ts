@@ -64,6 +64,11 @@ export interface Feld {
   auswahlFilter?: import('./sichten').Feldbedingung[];
   /** Für die Erkennung nutzen (#336, #391): vorhanden = an, mit Art und Erkennungshinweis. */
   erkennung?: import('./erkennung').FeldErkennung | null;
+  /**
+   * Verweisfeld aus einem Paket-Update (#534): Kennung des bisherigen Textfelds, aus dem es sich füllen lässt
+   * (`aus_text` im Paket). Solange der Verweis leer ist, zeigen Titel und Trefferliste den alten Text.
+   */
+  ausText?: string;
 }
 
 export const REGISTERARTEN = {
@@ -643,6 +648,21 @@ export function wirksameVorlage(t: Pick<Mappentyp, 'felder' | 'titelVorlage'>): 
   return f ? `{${f.key}}` : '';
 }
 
+/**
+ * Textfeld, aus dem ein Verweisfeld nach einem Paket-Update gefüllt wird (#534): nur Text oder Langtext
+ * desselben Mappentyps; sonst undefined.
+ */
+export function altesTextfeldVon(t: Pick<Mappentyp, 'felder'>, f: Feld): Feld | undefined {
+  if (f.typ !== 'referenz' || !f.ausText || f.ausText === f.key) return undefined;
+  const alt = t.felder.find((x) => x.key === f.ausText);
+  return alt && (alt.typ === 'text' || alt.typ === 'langtext') ? alt : undefined;
+}
+
+/** Ist dieses Feld das alte Textfeld eines Verweisfelds (#534)? Dann das Verweisfeld. */
+export function verweisAusText(t: Pick<Mappentyp, 'felder'>, f: Feld): Feld | undefined {
+  return t.felder.find((x) => x.key !== f.key && altesTextfeldVon(t, x)?.key === f.key);
+}
+
 /** Titel einer Mappe aus der Vorlage; Platzhalter werden formatiert eingesetzt. Deaktivierte Benutzer heißen „… (ehemalig)“. */
 export function titelAus(t: Pick<Mappentyp, 'felder' | 'titelVorlage'> & Pick<Partial<Mappentyp>, 'system'> | undefined, werte: Werte, titelVon: (id: string) => string = (id) => id, index: Indexwerte = {}): string {
   if (!t) return '';
@@ -665,6 +685,9 @@ function titelAusVorlage(t: Pick<Mappentyp, 'felder' | 'titelVorlage'>, werte: W
         const f = t.felder.find((x) => x.key === k);
         // Passwörter nie im Titel – auch nicht, wenn eine ältere Vorlage sie noch nennt.
         if (f && f.typ !== 'passwort') { text = formatiere(f, werte[k], titelVon); roh = werte[k]; art = f.typ; }
+        // Verweis noch leer, alter Text da (#534): bis zur Umwandlung zählt der Text.
+        const alt = f ? altesTextfeldVon(t, f) : undefined;
+        if (alt && istLeer(werte[k]) && !istLeer(werte[alt.key])) { text = formatiere(alt, werte[alt.key], titelVon); roh = werte[alt.key]; art = alt.typ; }
       }
       const mitFiltern = wendeFilterAn(text, roh, art, liesFilter(kette));
       // Leere Teile fallen samt Trenner weg („Strom –  – 2026“ wird „Strom – 2026“).

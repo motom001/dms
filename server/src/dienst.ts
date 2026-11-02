@@ -2,7 +2,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_AUSWAHL, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
-  REGISTERARTEN, ROLLEN, freierSchluessel, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon,
+  REGISTERARTEN, ROLLEN, freierSchluessel, schluesselAus, standardRegister, systemfelder, systemrolleKennung, titelAus, verweiseVon, verweisAusText,
   AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type Aufgabenart, type Benutzer, type Dokument, type DokumentVersion, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Werte,
 } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
@@ -142,6 +142,8 @@ export function bereinigeFeld(e: unknown): Feld {
     ...(typ === 'datum' && bereinigeFrist(f.frist) ? { frist: bereinigeFrist(f.frist) } : {}),
     // Für die Erkennung nutzen (#336): Art und Erkennungshinweis; nur bei geeigneten Feldarten.
     ...(liesFeldErkennung(f.erkennung, typ) ? { erkennung: liesFeldErkennung(f.erkennung, typ) } : {}),
+    // Paket-Update (#534): Verweisfeld, das sich aus einem alten Textfeld füllen lässt.
+    ...(typ === 'referenz' && /^[a-z][a-z0-9_]{0,39}$/.test(text(f.ausText)) && text(f.ausText) !== text(f.key) ? { ausText: text(f.ausText) } : {}),
   };
 }
 
@@ -1454,9 +1456,11 @@ export class Dienst {
       const t = formatiere(f, v, (id) => titel.get(id) || 'Ohne Titel');
       return t.length > 500 ? `${t.slice(0, 497)} …` : t;
     };
+    // Altes Textfeld neben seinem Verweis (#534): „Halter (Text)“ statt zweimal „Halter“.
+    const label = (f: Feld) => (verweisAusText(typ, f) ? t('pakete.historie.alttext', { label: f.label }) : f.label);
     return felder.map((f) => (f.typ === 'passwort'
-      ? { feld: f.key, label: f.label, geheim: true }
-      : { feld: f.key, label: f.label, alt: lesbar(f, alt[f.key]), neu: lesbar(f, neu[f.key]) }));
+      ? { feld: f.key, label: label(f), geheim: true }
+      : { feld: f.key, label: label(f), alt: lesbar(f, alt[f.key]), neu: lesbar(f, neu[f.key]) }));
   }
 
   /** Historie einer Mappe (auch im Papierkorb). */
@@ -2505,6 +2509,16 @@ export class Dienst {
     await this.einstellungen.schreibe('paket_kataloge', liste.length ? liste : null);
   }
 
+  /** Umwandlungen Text → Verweis nach Paket-Updates (#534): die letzten Vorgänge zum Rückgängigmachen (Einstellung, Teil der Sicherung). */
+  async paketUmwandlungen(): Promise<unknown[]> {
+    const v = await this.einstellungen?.lies('paket_umwandlungen');
+    return Array.isArray(v) ? v : [];
+  }
+  async setzePaketUmwandlungen(liste: unknown[]) {
+    if (!this.einstellungen) throw new Fachfehler(404, 'Einstellungen sind nicht eingerichtet.');
+    await this.einstellungen.schreibe('paket_umwandlungen', liste.length ? liste : null);
+  }
+
   /** Selbst erstellte Pakete (#374): Angaben des letzten Exports je Paket-Id (Einstellung, Teil der Sicherung). */
   async paketEntwuerfe(): Promise<PaketEntwurf[]> {
     const v = await this.einstellungen?.lies('paket_entwuerfe');
@@ -2867,7 +2881,8 @@ export class Dienst {
     return this.rechteAn(z, { ...m, werte });
   }
 
-  async aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null, z?: Zugriff): Promise<Mappe & { hinweis?: string }> {
+  /** `anlass`: steht zusätzlich im Eintrag der Historie, z. B. die Umwandlung nach einem Paket-Update (#534). */
+  async aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null, z?: Zugriff, anlass?: Record<string, unknown>): Promise<Mappe & { hinweis?: string }> {
     const m = z ? await this.pruefeRecht(z, id, 'U') : await this.repo.holeMappe(id);
     if (!m) throw new Fachfehler(404, 'Diese Mappe gibt es nicht.');
     const typ = await this.repo.holeTyp(m.typId);
@@ -2887,7 +2902,7 @@ export class Dienst {
     const bisAlt = aufbewahrenBis(typ.archiv, m), bisNeu = aufbewahrenBis(typ.archiv, { ...m, werte });
     if (bisAlt !== bisNeu) aenderungen.push({ feld: '_aufbewahrenBis', label: 'Aufbewahren bis', alt: bisAlt ? datumText(bisAlt) : '', neu: bisNeu ? datumText(bisNeu) : '' });
     const neu = await this.repo.aendereMappe(id, werte, verweiseVon(typ, werte), benutzerId);
-    if (aenderungen.length) await this.notiere(id, benutzerId, 'geaendert', { aenderungen });
+    if (aenderungen.length) await this.notiere(id, benutzerId, 'geaendert', { ...anlass, aenderungen });
     // Gespeichert heißt: passt wieder – eine „passt nicht“-Aufgabe ist damit erledigt.
     await this.passungsAufgaben([{ id, problem: null }]);
     await this.pruefeErwaehnungen(typ, id, m.werte, werte, benutzerId);

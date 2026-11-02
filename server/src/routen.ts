@@ -31,6 +31,7 @@ import type { Messung } from './messung';
 import type { Vorschaubilder } from './vorschau';
 import { Paketverwaltung, SAMMEL_MAX, type InstallierenEingabe } from './pakete';
 import { Paketerstellung } from './paketerstellung';
+import { Umwandlung } from './umwandlung';
 import type { Paketlaeufer } from './laeufer/verwaltung';
 import { eigeneVersion, standKennung, uebersicht, versionsabgleich, type SystemQuelle } from './system';
 import type { Fehlermeldungen } from './fehlermeldungen';
@@ -229,6 +230,7 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
   const log = x.log ?? ((m: string) => L.mail.warn(m));
   const pakete = x.pakete ?? new Paketverwaltung(dienst, { version: eigeneVersion, benutzer: async () => (await konten.listeBenutzer()).filter((b) => b.aktiv !== false).map((b) => ({ id: b.id, name: b.name || b.email })) });
   const paketerstellung = new Paketerstellung(dienst, { version: eigeneVersion });
+  const umwandlung = new Umwandlung(dienst);
   const wer = (a: Anfrage) => ({ id: a.benutzer?.id ?? null, email: a.benutzer?.email ?? null });
   /**
    * Ist ein Abruf ein Weitergeben (#394)? Herunterladen (?herunterladen), Stempel-Parameter oder ein API-Schlüssel
@@ -1019,6 +1021,11 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     { methode: 'GET', pfad: '/api/werkbank/pakete/laeufer', zugang: 'admin', handler: async () => ok(x.paketlaeufer ? await x.paketlaeufer.uebersicht() : null) },
     { methode: 'DELETE', pfad: '/api/werkbank/pakete/:id', zugang: 'admin', handler: async (a) => { await pakete.entferne(a.params.id, wer(a), a.query.einstellungenBehalten === '1'); return leer; } },
     // Paket-Einstellungen (#197): nur Administratoren, nicht über die API v1.
+    // Paket-Update: Text in Verweis umwandeln (#534) – Vorschau, Umwandeln, Rückgängig.
+    { methode: 'GET', pfad: '/api/werkbank/pakete/:id/umwandlungen', zugang: 'admin', handler: async (a) => ok(await umwandlung.liste(a.params.id)) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/:id/umwandlungen/vorschau', zugang: 'admin', lesend: true, handler: async (a) => ok(await umwandlung.vorschau(a.params.id, (a.body ?? {}) as { typId?: unknown; feldKey?: unknown }, await zg(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/:id/umwandlungen', zugang: 'admin', handler: async (a) => ok(await umwandlung.umwandeln(a.params.id, (a.body ?? {}) as { typId?: unknown; feldKey?: unknown; entscheidungen?: unknown }, wer(a), await zg(a))) },
+    { methode: 'POST', pfad: '/api/werkbank/pakete/:id/umwandlungen/:vorgang/rueckgaengig', zugang: 'admin', handler: async (a) => ok(await umwandlung.rueckgaengig(a.params.vorgang, wer(a), await zg(a))) },
     { methode: 'GET', pfad: '/api/werkbank/pakete/:id/einstellungen', zugang: 'admin', handler: async (a) => ok(await pakete.einstellungen(a.params.id)) },
     { methode: 'PUT', pfad: '/api/werkbank/pakete/:id/einstellungen', zugang: 'admin', handler: async (a) => ok(await pakete.speichereEinstellungen(a.params.id, a.body, wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktionen/:aktion', zugang: 'admin', handler: async (a) => ok(await pakete.aktion(a.params.id, a.params.aktion, wer(a))) },

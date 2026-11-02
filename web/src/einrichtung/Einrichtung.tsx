@@ -17,6 +17,7 @@ import { geheZu, Link, loeseWache } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { titelOder } from '../seiten';
 import { Hilfe } from '../Hilfe';
+import { t as tx } from '../sprache';
 import { FRISTEN, JAHRE_MAX, type Archiv } from '../../../shared/src/archiv';
 import { STEMPEL_MODI, type StempelModus, type StempelTyp } from '../../../shared/src/stempel';
 import { useStempelVorlagen } from '../ablage/Stempel';
@@ -462,6 +463,8 @@ function FeldZeile(p: {
   if (f.mehrfach && (f.typ === 'auswahl' || f.typ === 'referenz')) chips.push('mehrfach');
   if (p.feldregister.length > 1) chips.push(`Register: ${p.feldregister.find((r) => r.key === f._register)?.name ?? '–'}`);
   if (f.erkennung && ERKENNUNG_FELDTYPEN.includes(f.typ)) chips.push('Erkennung');
+  // Paket-Update (#534): Verweisfeld, das sich aus einem alten Textfeld füllen lässt.
+  if (f.typ === 'referenz' && f.ausText) chips.push(tx('pakete.typ.austext', { aus: p.alleFelder.find((x) => x.key === f.ausText)?.label ?? f.ausText }));
   if (f.typ === 'datum' && f.frist) chips.push(`erinnert ${f.frist.vorlauf} ${VORLAUF_EINHEITEN[f.frist.einheit]} vorher${f.frist.wiederholung ? ` · ${wiederholungText(f.frist.wiederholung)}` : ''}`);
 
   const zahl = (prop: Zahlprop, label: string, platzhalter: string) => (

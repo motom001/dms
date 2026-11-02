@@ -22,6 +22,7 @@ import type { LoeschAktion, LoeschPlan, LoeschVorschau } from '../../shared/src/
 import type { Luecke } from '../../shared/src/loeschkonzept';
 import type { LoeschAnlass, LoeschEintrag } from '../../shared/src/loeschprotokoll';
 import type { Sicherheit } from '../../shared/src/erkennung';
+import type { Entscheidung, UmwandlungsFeld, Umwandlungsvorgang, UmwandlungsVorschau } from '../../shared/src/umwandlung';
 
 /** Vorschläge beim Zuordnen (#336), wie GET /api/mappen/:id/erkennung sie liefert. */
 export interface ErkFund<T = string> { wert: T; sicherheit: Sicherheit; fundstelle: string }
@@ -541,6 +542,11 @@ export const api = {
   paketEntfernen: (id: string, einstellungenBehalten = false) => anfrage<void>('DELETE', `/api/werkbank/pakete/${encodeURIComponent(id)}${einstellungenBehalten ? '?einstellungenBehalten=1' : ''}`),
   paketEinstellungen: (id: string) => anfrage<PaketEinstellungenStand>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`),
   paketEinstellungenSpeichern: (id: string, werte: Record<string, unknown>) => anfrage<PaketEinstellungenStand>('PUT', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`, { werte }),
+  /* Paket-Update: Text in Verweis umwandeln (#534) */
+  paketUmwandlungen: (id: string) => anfrage<{ felder: UmwandlungsFeld[]; vorgaenge: Umwandlungsvorgang[] }>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/umwandlungen`),
+  paketUmwandlungVorschau: (id: string, typId: string, feldKey: string) => anfrage<UmwandlungsVorschau>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/umwandlungen/vorschau`, { typId, feldKey }),
+  paketUmwandeln: (id: string, typId: string, feldKey: string, entscheidungen: Record<string, Entscheidung>) => anfrage<{ umgewandelt: number; neuePersonen: number; ausgelassen: UmwandlungsVorschau['ausgelassen'] }>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/umwandlungen`, { typId, feldKey, entscheidungen }),
+  paketUmwandlungZurueck: (id: string, vorgang: string) => anfrage<{ zurueck: number; ausgelassen: UmwandlungsVorschau['ausgelassen']; personenBehalten: number }>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/umwandlungen/${encodeURIComponent(vorgang)}/rueckgaengig`),
   paketAktion: (id: string, aktion: string) => anfrage<{ ok: boolean; text: string }>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/aktionen/${encodeURIComponent(aktion)}`),
   /* Paket selbst erstellen (#374) */
   paketErstellenStand: () => anfrage<ErstellenStand>('GET', '/api/werkbank/pakete/erstellen'),
@@ -714,7 +720,7 @@ export interface PaketVorschau {
   paket: { id: string; name: string; version: string; beschreibung: string; lizenz: string; autor: { name: string; github: string }; dms: string; abhaengigkeiten: Record<string, string>; readme: string | null; changelog: string | null; quelle: string | null };
   dmsVersion: string; dmsOk: boolean; installiert: string | null; update: boolean; herkunft: InstalliertesPaket['herkunft'] | null;
   abhaengigkeiten: Array<{ id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null }>;
-  typen: Array<{ schluessel: string; dmsSchluessel: string; name: string; felder: number; vorhanden: boolean; neueFelder: string[]; neueRegister: string[]; erkennung?: string[]; konflikt: string | null; vorschlag: string | null; geloescht?: boolean }>;
+  typen: Array<{ schluessel: string; dmsSchluessel: string; name: string; felder: number; vorhanden: boolean; neueFelder: string[]; neueRegister: string[]; erkennung?: string[]; umwandeln?: Array<{ feld: string; aus: string; anzahl: number }>; konflikt: string | null; vorschlag: string | null; geloescht?: boolean }>;
   sichten: Array<{ schluessel: string; name: string; eltern: string | null; vorhanden: boolean; konflikt: string | null; vorschlag: string | null }>;
   beispiele: number; probleme: string[]; hinweise: string[]; einstellungen: { neu: string[]; weg: string[] } | null;
   /** Paket mit Code (#338): Rechte, Netzwerkzugriff und Ereignisse (#449); bestaetigen = muss ausdrücklich erlaubt werden. */

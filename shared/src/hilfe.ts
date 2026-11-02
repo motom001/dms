@@ -53,6 +53,7 @@ export const HILFE = {
   'werkbank.pakete': admin('pakete/', 'Pakete'),
   'werkbank.pakete.sammeldatei': admin('pakete/', 'Pakete ohne Internet installieren', 'pakete-ohne-internet-installieren'),
   'werkbank.pakete.erstellen': admin('pakete/', 'Paket aus deinem DMS erstellen', 'paket-aus-deinem-dms-erstellen'),
+  'werkbank.pakete.umwandeln': admin('pakete/', 'Text in Verweise umwandeln', 'text-in-verweise-umwandeln'),
   // Rechte-Vorschau eines Pakets mit Code (#449): je Recht und je Ereignis ein Abschnitt.
   'pakete.recht.lesen': admin('pakete/', 'dem Recht „Mappen lesen“', 'recht-mappen-lesen'),
   'pakete.recht.schreiben': admin('pakete/', 'dem Recht „Mappen anlegen und ändern“', 'recht-mappen-anlegen-und-andern'),

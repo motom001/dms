@@ -4,7 +4,7 @@ import { Stern } from './Stern';
 import { spaltenName, zelle } from './spalten';
 import { eigeneFelderIm, vorbelegungAus } from '../../../shared/src/sichten';
 import { datumText, inFrist } from '../../../shared/src/archiv';
-import { darfErstellen, darfLoeschen, formatiere, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, VERWEISARTEN, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register, type Wert, type Werte } from '../../../shared/src/model';
+import { darfErstellen, darfLoeschen, formatiere, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, VERWEISARTEN, verweisAusText, type Dokument, type Feld, type Mappe, type Mappentyp, type Pruefergebnis, type Register, type Wert, type Werte } from '../../../shared/src/model';
 import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -27,6 +27,8 @@ import { mitGrund } from './Loeschgrund';
 import { AusDokument, type AusDokumentErgebnis } from './AusDokument';
 import { ausDokumentKnopf, type Sicherheit } from '../../../shared/src/erkennung';
 import type { TypVorschlaege } from '../api';
+import { altesFeldAusblenden } from '../../../shared/src/umwandlung';
+import { t } from '../sprache';
 
 const zeit = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -374,6 +376,15 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     return <p className="ad-hinweis"><span className="chip">Im Dokument</span> <strong>{text}</strong> <span className="leise">({sicher})</span> <button type="button" className="textknopf klein" onClick={() => alternativeUebernehmen(f.key)}>Übernehmen</button> <button type="button" className="textknopf klein" onClick={() => vorschlagZuruecknehmen(f.key)}>Verwerfen</button></p>;
   }
   const alternativen = Object.entries(vorschlaege).filter(([, v]) => v.art === 'alternative').map(([k]) => k);
+  /** Altes Textfeld nach einem Paket-Update (#534): leer ausgeblendet, sonst mit Hinweis auf die Umwandlung. */
+  const altesFeld = (f: Feld) => verweisAusText(typ, f);
+  const sichtbar = (f: Feld) => !altesFeldAusblenden(f, mappe?.werte[f.key], altesFeld(f));
+  function hinweisAm(f: Feld): ReactNode {
+    const v = altesFeld(f);
+    const zusatz = vorschlagAm(f);
+    if (!v || istLeer(mappe?.werte[f.key])) return zusatz;
+    return <>{zusatz}<small className="hilfe">{t('pakete.formular.alttext', { feld: v.label })}</small></>;
+  }
 
   function zeigeFehler(p: Pruefergebnis) {
     setFehler(p);
@@ -472,11 +483,11 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   let inhalt: ReactNode = null;
   if (!reg) inhalt = <p className="leise">Dieser Mappentyp hat keine Register.</p>;
   else if (reg.art === 'felder') {
-    const felder = felderAuf(reg);
+    const felder = felderAuf(reg).filter(sichtbar);
     inhalt = felder.length
       ? <div className="formular">{felder.map((f) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke}
           typId={typ.id} unpassend={details?.unpassend?.[f.key]} eigene={eigeneWerte(f)}
-          gesperrt={geschuetzt[f.key] ?? (nurLesen && f.typ !== 'passwort' ? '' : undefined)} nurLesen={nurLesen} passwortSehen={!rechte || rechte.P} zusatz={vorschlagAm(f)} />)}</div>
+          gesperrt={geschuetzt[f.key] ?? (nurLesen && f.typ !== 'passwort' ? '' : undefined)} nurLesen={nurLesen} passwortSehen={!rechte || rechte.P} zusatz={hinweisAm(f)} />)}</div>
       : <p className="leise">Auf diesem Register liegen keine Felder.</p>;
   } else if (reg.art === 'dokumente') {
     inhalt = mappe && !details ? <p className="leise">Lade …</p> : (

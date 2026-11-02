@@ -10,6 +10,8 @@ import { PaketErstellen } from './PaketErstellen';
 import { rueckfrage } from '../rueckfrage';
 import { useKonto } from '../konto';
 import { sammelSeite, SammeldateiAnsicht, SammeldateiWahl } from './PaketeDazuholen';
+import { PaketUmwandeln } from './PaketUmwandeln';
+import { t as tx } from '../sprache';
 
 /**
  * Werkbank → Pakete (#188): Konfigurationspakete aus dem offiziellen Katalog.
@@ -423,6 +425,8 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         )}
       </section>
 
+      {inst && <PaketUmwandeln key={`${inst.id}|${inst.version}`} paket={inst.id} />}
+
       {vorschau && (
         <VorschauBlock v={vorschau} warnung={offiziell ? null : `Aus dem Katalog ${inst?.herkunft.art === 'katalog' ? inst.herkunft.url : quelle}`} abbrechen={() => setVorschau(null)}
           los={(x) => tu(async () => {
@@ -538,6 +542,8 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
                   <input value={namen[t.schluessel] ?? t.name} aria-label={`Name für ${t.name}`} onChange={(e) => setNamen({ ...namen, [t.schluessel]: e.target.value })} />
                   {t.konflikt && (namen[t.schluessel] ?? '').trim().toLowerCase() === t.name.toLowerCase() && <span className="fehlertext klein">{t.konflikt}</span>}
                 </label>}
+            {/* Text → Verweis (#534): Das Update ändert vorhandene Angaben nicht; umgewandelt wird danach mit Vorschau. */}
+            {t.vorhanden && t.umwandeln?.filter((u) => u.anzahl > 0).map((u) => <p key={u.feld} className="leise klein">{tx('pakete.update.umwandeln', { feld: u.feld, aus: u.aus, anzahl: u.anzahl })}</p>)}
           </li>
         ))}
       </ul>

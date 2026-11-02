@@ -12,7 +12,7 @@ import { liesFeldErkennung, type FeldErkennung } from '../../shared/src/erkennun
 import { createHash, randomUUID } from 'node:crypto';
 import { inflateRawSync } from 'node:zlib';
 import { parse as yamlLesen } from 'yaml';
-import type { Feld, Mappentyp, Register } from '../../shared/src/model';
+import { istLeer, type Feld, type Mappentyp, type Register } from '../../shared/src/model';
 import { BEREICH, CODE_MAX, DMS_RECHTE_TYPEN, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../shared/src/pakete';
 import { kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
 import { EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand } from '../../shared/src/paketeinstellungen';
@@ -206,6 +206,17 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     for (const f of felder) {
       if (!SCHLUESSEL.test(str(f.key))) fehler.push(`${wo}: Feld mit ungültiger Kennung „${str(f.key)}“.`);
       if (f.ziel !== undefined && !TYPVERWEIS.test(str(f.ziel))) fehler.push(`${wo}: Feld „${f.key}“ verweist ungültig auf „${str(f.ziel)}“.`);
+      // Text → Verweis (#534): aus_text nennt das bisherige Textfeld; das DMS speichert es als ausText.
+      const roh = f as unknown as Record<string, unknown>;
+      if (roh.aus_text !== undefined) {
+        const quelle = felder.find((x) => x.key === roh.aus_text);
+        if (f.typ !== 'referenz') fehler.push(`${wo}: Feld „${f.key}“: aus_text gibt es nur bei Verweisfeldern (typ: referenz).`);
+        else if (!SCHLUESSEL.test(str(roh.aus_text)) || roh.aus_text === f.key) fehler.push(`${wo}: Feld „${f.key}“: aus_text muss die Kennung eines anderen Felds sein.`);
+        else if (quelle && quelle.typ !== 'text' && quelle.typ !== 'langtext') fehler.push(`${wo}: Feld „${f.key}“: aus_text „${str(roh.aus_text)}“ ist kein Textfeld.`);
+        else if (f.pflicht) fehler.push(`${wo}: Feld „${f.key}“: Ein Verweisfeld mit aus_text darf keine Pflicht sein – sonst passen vorhandene Mappen nach dem Update nicht mehr.`);
+        else f.ausText = str(roh.aus_text);
+        delete roh.aus_text;
+      }
     }
     if (!register.length) fehler.push(`${wo}: mindestens ein Register nötig.`);
     return { schluessel: str(t.schluessel), name: str(t.name).trim(), beschreibung: str(t.beschreibung), titelVorlage: t.titelVorlage ? str(t.titelVorlage) : undefined, felder, register, trefferliste: Array.isArray(t.trefferliste) ? t.trefferliste.map(str) : undefined };
@@ -290,6 +301,8 @@ export interface TypPlan {
   vorhanden: boolean; neueFelder: string[]; neueRegister: string[];
   /** Bei Update (#336): vorhandene Felder, die das Paket jetzt „für die Erkennung“ markiert (nur wo noch nichts eingestellt ist). */
   erkennung?: string[];
+  /** Bei Update (#534): Verweisfelder mit aus_text und wie viele Angaben im alten Textfeld danach umgewandelt werden können. */
+  umwandeln?: Array<{ feld: string; aus: string; anzahl: number }>;
   /** Name schon vergeben (von einem anderen Typ) – mit Vorschlag. */
   konflikt: string | null; vorschlag: string | null;
   /** Fehlt im DMS, obwohl das Paket ihn installiert hatte (gelöscht) – wird nicht neu angelegt. */
@@ -725,7 +738,19 @@ export class Paketverwaltung {
       if (a.installiert && !a.ok) probleme.push(`„${a.id}“ ist in Version ${a.installiert} installiert, das Paket braucht ${a.bereich}. Bitte „${a.id}“ zuerst aktualisieren.`);
     }
     const belegt = new Set(typen.map((t) => t.name.trim().toLowerCase()));
-    const typPlaene = paket.typen.map((t): TypPlan => {
+    // Text → Verweis (#534): Angaben im alten Textfeld, deren Verweis noch leer ist.
+    const umwandelbar = async (t: PaketTyp) => {
+      const typ = typen.find((x) => x.id === ich?.typen[t.schluessel]);
+      const erg: Array<{ feld: string; aus: string; anzahl: number }> = [];
+      for (const f of t.felder) {
+        const alt = f.ausText ? typ?.felder.find((x) => x.key === f.ausText && (x.typ === 'text' || x.typ === 'langtext')) : undefined;
+        if (!typ || !alt) continue;
+        const anzahl = (await this.d.listeMappen(typ.id)).filter((m) => !istLeer(m.werte[alt.key]) && istLeer(m.werte[f.key])).length;
+        erg.push({ feld: typ.felder.find((x) => x.key === f.key)?.label ?? f.label, aus: alt.label, anzahl });
+      }
+      return erg;
+    };
+    const typPlaene = await Promise.all(paket.typen.map(async (t): Promise<TypPlan> => {
       const dmsSchluessel = `${m.id}_${t.schluessel}`;
       const vorhandenId = ich?.typen[t.schluessel];
       const vorhanden = vorhandenId ? typen.find((x) => x.id === vorhandenId) : undefined;
@@ -735,6 +760,7 @@ export class Paketverwaltung {
           neueFelder: t.felder.filter((f) => !vorhanden.felder.some((g) => g.key === f.key)).map((f) => f.label),
           neueRegister: t.register.filter((r) => !vorhanden.register.some((g) => g.key === r.key)).map((r) => r.name),
           erkennung: erkennungNeu(t, vorhanden).map((f) => f.label),
+          umwandeln: await umwandelbar(t),
           konflikt: null, vorschlag: null,
         };
       }
@@ -745,7 +771,7 @@ export class Paketverwaltung {
       const vorschlag = konflikt ? freierName(name, m.name, belegt) : null;
       belegt.add(name.toLowerCase());
       return { schluessel: t.schluessel, dmsSchluessel, name, felder: t.felder.length, vorhanden: false, neueFelder: [], neueRegister: [], konflikt, vorschlag };
-    });
+    }));
     const sichtPlaene = paket.sichten.map((s): SichtPlan => {
       const vorhandenId = ich?.sichten[s.schluessel];
       const vorhanden = vorhandenId ? sichten.find((x) => x.id === vorhandenId) : undefined;
