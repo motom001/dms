@@ -533,6 +533,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pakete-dazuholen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pakete dazuholen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#optionales" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2283,6 +2294,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pakete-dazuholen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pakete dazuholen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#optionales" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2463,7 +2485,7 @@
 <p>Mach das DMS erst über einen Reverse-Proxy oder Port-Freigabe erreichbar, wenn die Einrichtung abgeschlossen ist. Der Einrichtungscode schützt zwar davor, dass ein Fremder sie übernimmt – sicherer ist es trotzdem.</p>
 </div>
 <h2 id="der-einrichtungsassistent">Der Einrichtungsassistent<a class="headerlink" href="#der-einrichtungsassistent" title="Permanent link">&para;</a></h2>
-<p>Beim ersten Aufruf führt ein Assistent in neun Schritten durch die Einrichtung. Jeder Schritt hat oben ein <strong>?</strong>, das genau den passenden Abschnitt hier öffnet. Übersprungenes lässt sich in der Werkbank nachholen; die Übersicht erinnert daran.</p>
+<p>Beim ersten Aufruf führt ein Assistent in zehn Schritten durch die Einrichtung. Jeder Schritt hat oben ein <strong>?</strong>, das genau den passenden Abschnitt hier öffnet. Übersprungenes lässt sich in der Werkbank nachholen; die Übersicht erinnert daran.</p>
 <h3 id="einrichtungscode">Einrichtungscode<a class="headerlink" href="#einrichtungscode" title="Permanent link">&para;</a></h3>
 <p><img alt="Einrichtungscode" src="../bilder/einrichtung-code.png" /></p>
 <p>Damit niemand sonst im Netz das DMS einrichtet, fragt es zuerst nach einem Code wie <code>K7PX-3MNA-Q9TR</code>. Er steht an zwei Stellen:</p>
@@ -2491,6 +2513,16 @@
 <h3 id="schlussel-und-notfallblatt">Schlüssel und Notfallblatt<a class="headerlink" href="#schlussel-und-notfallblatt" title="Permanent link">&para;</a></h3>
 <p><img alt="Schlüssel und Notfallblatt" src="../bilder/einrichtung-schluessel.png" /></p>
 <p>Der Schlüssel verschlüsselt gespeicherte Passwörter und alle Sicherungen (siehe <a href="../verschluesselung/">Verschlüsselung</a>); das <a href="../sicherung/#notfallblatt">Notfallblatt</a> enthält ihn zum Ausdrucken. Druck es aus und leg es zu deinen wichtigen Unterlagen – ohne Schlüssel lässt sich keine Sicherung zurückholen.</p>
+<h3 id="pakete-dazuholen">Pakete dazuholen<a class="headerlink" href="#pakete-dazuholen" title="Permanent link">&para;</a></h3>
+<p><img alt="Pakete dazuholen" src="../bilder/einrichtung-pakete.png" /></p>
+<p>Erst in diesem Schritt fragt das DMS den <a href="../pakete/">offiziellen Paketkatalog</a> ab – vorher baut es keine Verbindung dafür auf. Die Liste zeigt je Paket Name, Beschreibung und was es darf: Pakete ohne Code legen nur Mappentypen und Ansichten an; bei Paketen mit Code zeigt <strong>Was darf das Paket?</strong> die <a href="../pakete/#rechte-eines-pakets">Rechte</a>.</p>
+<ul>
+<li><strong>Texterkennung ist vorausgewählt</strong> – ohne sie werden gescannte Dokumente nicht durchsuchbar. Alles andere kreuzt du an.</li>
+<li><strong>Abhängigkeiten kommen mit</strong>, z. B. „Basis“ für „Haushalt“; sie sind mit „kommt mit – gebraucht von …“ markiert.</li>
+<li>Danach installiert das DMS die Pakete <strong>nacheinander</strong>, Abhängigkeiten zuerst. Jedes zeigt seine eigene Vorschau; ein Paket mit Code installierst du erst, wenn du <strong>seine</strong> Rechte bestätigt hast – eine Sammelbestätigung gibt es nicht. Mit <strong>Auslassen</strong> überspringst du ein einzelnes Paket.</li>
+<li><strong>Überspringen</strong> geht jederzeit; Pakete holst du später unter <strong>Werkbank → <a href="../pakete/">Pakete</a></strong>.</li>
+</ul>
+<p>Ist der Katalog nicht erreichbar (kein Internet), sagt der Schritt das deutlich: Es fehlen dann die Pakete, etwa die Texterkennung. Überspringe ihn und hol die Pakete später nach.</p>
 <h3 id="optionales">Optionales<a class="headerlink" href="#optionales" title="Permanent link">&para;</a></h3>
 <p><img alt="Optionales" src="../bilder/einrichtung-optional.png" /></p>
 <p>Adresse des DMS (vorbelegt mit der Adresse im Browser), Bundesland für Feiertage, Beispiel-Mappentypen und der E-Mail-Versand. Alles lässt sich auch später in der Werkbank einstellen.</p>
