@@ -30,7 +30,8 @@ import type { Baum } from '../../shared/src/baum';
 import type { LoeschAktion, LoeschPlan, LoeschVorschau } from '../../shared/src/loeschbaum';
 import type { Luecke } from '../../shared/src/loeschkonzept';
 import type { LoeschAnlass, LoeschEintrag } from '../../shared/src/loeschprotokoll';
-import type { Abgleich, Sicherheit, TypFund } from '../../shared/src/erkennung';
+import type { Abgleich, Sicherheit, TypFund, Vorschlag } from '../../shared/src/erkennung';
+import type { Klassifizierung } from '../../shared/src/klassifizierung';
 import type { WortSeite } from '../../shared/src/archivfassung';
 import type { Entscheidung, UmwandlungsFeld, Umwandlungsvorgang, UmwandlungsVorschau } from '../../shared/src/umwandlung';
 import type { FrageZeile, FragenGrenzen, VerlaufEintrag } from '../../shared/src/fragen';
@@ -52,7 +53,7 @@ export interface PostErkennung {
 
 /** „Aus Dokument ausfüllen“ (#391), wie POST /api/typen/:id/vorschlaege sie liefert. */
 export interface TypVorschlaege {
-  vorschlaege: Record<string, { wert: Wert; sicherheit: Sicherheit; fundstelle: string }>;
+  vorschlaege: Record<string, { wert: Wert; sicherheit: Sicherheit; fundstelle: string; stelle?: Vorschlag['stelle'] }>;
   bezuege: Bezuege;
   neu: Record<string, { typId: string; werte: Record<string, string>; fundstelle: string }>;
   verworfen: number; zeichen: number;
@@ -731,6 +732,8 @@ export const api = {
     anfrage<{ post: Mappe; ziel: Mappe; aufgeloest: boolean; papierkorb?: boolean; abgetrennt?: Mappe; hinweis?: string }>('POST', `/api/mappen/${postId}/zuordnen`, e),
   /** „Dokument übernehmen“ (#934): Abgleich mit vorhandenen Mappen, Folgedokumente abtrennen, Wörter mit Lage. */
   abgleich: (e: { dokumente: string[]; typ?: string }) => anfrage<Abgleich & { bezuege: Bezuege; ohneText: string[]; typ?: TypFund | null }>('POST', '/api/abgleich', e),
+  /** „Wohin gehört das?“ mehrstufig (#939): Pakete, Kern-Erkennung und Abgleich – ein Vorschlag mit Belegen. */
+  klassifizieren: (e: { dokumente: string[] }) => anfrage<Klassifizierung & { bezuege: Bezuege }>('POST', '/api/klassifizieren', e),
   postAbtrennen: (postId: string, dokumente: string[]) => anfrage<{ post: Mappe; neu: Mappe }>('POST', `/api/mappen/${postId}/abtrennen`, { dokumente }),
   wortpositionen: (id: string) => anfrage<{ quelle: 'original' | 'lesefassung'; mime: string; vollstaendig: boolean; seiten: WortSeite[] }>('GET', `/api/dokumente/${id}/wortpositionen`),
   /** „Aus Dokument ausfüllen“ (#391): Vorschläge aus Text bzw. Dokumenten; aus einer Datei (Foto, PDF, vCard) mit dem gelesenen Text. */

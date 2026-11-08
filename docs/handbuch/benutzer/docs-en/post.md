@@ -85,7 +85,14 @@ When you click a post in **New post**, the page **Take over document** opens –
 
 ### Where does this belong? { #wohin-gehort-das }
 
-Above the folder you choose the **folder type**, e.g. *Invoice*. If its name appears as a heading in the document (say "Invoice" at the top of the letter or in the subject line), Ablago suggests it and says how it recognised it; otherwise it shows **Choose folder type …**. **Change** opens the list with a search. Only folder types that can be created from post and in which you may create folders are offered – never users, roles or post. Choosing another type replaces the folder below.
+Above the folder you choose the **folder type**, e.g. *Invoice*. Ablago suggests one and says below it how it recognises it – with a confidence in per cent:
+
+- The name of the folder type appears as a **heading** in the document (say "Invoice" at the top of the letter or in the subject line).
+- An **existing folder** that this folder type links to appears in the document – such as the contract number of your maintenance contract on an invoice.
+- With an **AI package** that your administrator has set up: a reason and a quote from the document.
+- With **Local AI – similarity**: which folder types similar documents you may read are in.
+
+If several folder types come into question, the others are listed under **Also possible:** – one click chooses one of them. If Ablago finds nothing, it shows **Choose folder type …**. **Change** opens the list with a search. Only folder types that can be created from post and in which you may create folders are offered – never users, roles or post. Choosing another type replaces the folder below.
 
 Below that:
 

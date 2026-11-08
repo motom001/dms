@@ -1,6 +1,6 @@
 # KI lokal betreiben
 
-Mit dem Paket **KI-Assistent** beantwortet Ablago Fragen an die Ablage ([Frag deine Ablage](pakete.md#frag-deine-ablage)) und füllt Felder aus Dokumenten ([Aus Dokument ausfüllen](pakete.md#erkennung-durch-ein-paket)). Das Paket rechnet nicht selbst – es fragt einen **KI-Dienst**. Läuft dieser Dienst bei dir zu Hause, etwa auf deinem NAS, brauchst du **keine Cloud**: Die Daten verlassen das Haus nicht.
+Mit dem Paket **KI-Assistent** beantwortet Ablago Fragen an die Ablage ([Frag deine Ablage](pakete.md#frag-deine-ablage)) und füllt Felder aus Dokumenten ([Aus Dokument ausfüllen](pakete.md#erkennung-durch-ein-paket)); ab Version 1.3.0 schlägt es auch vor, wohin neue Post gehört ([Wohin gehört das?](pakete.md#wohin-gehoert-das)). Das Paket rechnet nicht selbst – es fragt einen **KI-Dienst**. Läuft dieser Dienst bei dir zu Hause, etwa auf deinem NAS, brauchst du **keine Cloud**: Die Daten verlassen das Haus nicht.
 
 Für den Dienst gibt es ein fertiges Beispiel mit **[Ollama](https://ollama.com)** (MIT-Lizenz): [`deploy/beispiele/ki-ollama/`](https://github.com/motom001/dms/tree/main/deploy/beispiele/ki-ollama). Es startet mit `docker compose up -d`, lädt das Modell beim ersten Start selbst und ist **von außen nicht erreichbar** – nur Ablago spricht mit ihm.
 

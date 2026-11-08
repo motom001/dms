@@ -2229,6 +2229,8 @@ main.rumpf[tabindex="-1"]:focus { outline: none; }
 .ue-wohin .feldkopf .label { font-weight: 700; }
 .ue-typ { display: inline; overflow-wrap: anywhere; }
 .ue-wohin-fuss { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+.ue-typbelege p, .ue-andere, .ue-weg-hinweis { margin: 0; }
+.ue-typbelege ul { margin: 2px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
 .ue-vorhanden { display: flex; flex-direction: column; gap: 6px; padding-top: 6px; border-top: 1px solid var(--linie); }
 .ue-passt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 4px 0; }
 .ue-passt p { margin: 0; flex: 1 1 14rem; }

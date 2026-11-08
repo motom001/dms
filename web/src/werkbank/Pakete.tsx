@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Symbol } from '../Symbol';
-import { ergaenzungenVon, hatSchnittstelle, inMB, istKiPaket, legtEtwasAn, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, vergleicheVersion, type AblaufErgebnis, type HerkunftPruefung, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
+import { ergaenzungenVon, hatNetz, hatSchnittstelle, inMB, istKiPaket, legtEtwasAn, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, vergleicheVersion, type AblaufErgebnis, type HerkunftPruefung, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
 import { api, ApiFehler, type BeispielBehalten, type PaketlaeuferStand, type PaketQuelle, type PaketVorschau, type Sammeldatei } from '../api';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
@@ -9,7 +9,7 @@ import { darfVerlassen, geheZu, Link } from '../ort';
 import { PaketEinstellungen } from './PaketEinstellungen';
 import { VektorStandBlock } from '../ablage/Aehnlich';
 import { FragenGrenzenBlock } from './FragenGrenzen';
-import { ErkennungPaketBlock } from './ErkennungPaket';
+import { ErkennungPaketBlock, KlassifizierenBlock } from './ErkennungPaket';
 import { KiTypenBlock } from './KiTypen';
 import { PaketErstellen, SELBST } from './PaketErstellen';
 import { SelbstErstelltAnsicht } from './SelbstErstellt';
@@ -525,6 +525,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:vektoren') && <VektorStandBlock />}
         {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:antworten') && <FragenGrenzenBlock />}
         {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:erkennen') && <ErkennungPaketBlock paket={inst.id} />}
+        {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:klassifizieren') && <KlassifizierenBlock netz={hatNetz(inst.laeufer)} />}
         {/* KI-Dienste (#796): welche Mappentypen das Paket bekommt; zulassen und sperren. */}
         {inst?.laeufer && istKiPaket(inst.laeufer) && <KiTypenBlock paket={inst.id} />}
         {inst && (Object.keys(inst.typen).length > 0 || Object.keys(inst.sichten).length > 0) && (

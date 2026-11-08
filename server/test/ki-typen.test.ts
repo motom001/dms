@@ -143,6 +143,13 @@ describe('KI-Dienste (#796): Sperre im Kern', () => {
     assert.deepEqual((await x.d.kiUebersicht()).pakete.find((p) => p.id === 'melder')?.bekommt, [x.vertrag.id]);
   });
 
+  it('„Wohin gehört das?“ (#939): Ein KI-Paket mit dms:klassifizieren bekommt Text aus allen zugelassenen Typen – auch ohne Leserecht', async () => {
+    const x = await aufbau();
+    await x.d.speicherePaket(paket('sortierer', code({ rechte: { schnittstellen: ['dms:klassifizieren'] }, netz: ['https://ki.example.org/v1'] })));
+    await x.d.setzeKiTyp(x.vertrag.id, true, null);
+    assert.deepEqual((await x.d.kiUebersicht()).pakete.find((p) => p.id === 'sortierer')?.bekommt, [x.vertrag.id], 'zugelassene Typen, nicht der gesperrte');
+  });
+
   it('Aufträge (datei.volltext) und Nachberechnung der Vektoren: nichts aus gesperrten Typen', async () => {
     const x = await aufbau();
     await x.d.setzeKiTyp(x.vertrag.id, true, null);

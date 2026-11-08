@@ -38,3 +38,16 @@ export function ErkennungPaketBlock({ paket }: { paket: string }) {
     </>
   );
 }
+
+/**
+ * Werkbank → Pakete → Paket mit dms:klassifizieren (#939): wann es bei „Wohin gehört das?“ mitredet. Ein Paket mit Netz
+ * nur, wenn es oben als Standard für „Aus Dokument ausfüllen“ gewählt ist (mit bestätigtem Datenabfluss); ohne Netz immer.
+ */
+export function KlassifizierenBlock({ netz }: { netz: boolean }) {
+  return (
+    <>
+      <h2 className="h3">{t('erkennung.klassifizieren.titel')} <Hilfe ort="pakete.klassifizieren" /></h2>
+      <p className="leise klein">{netz ? t('erkennung.klassifizieren.netz') : t('erkennung.klassifizieren.lokal')}</p>
+    </>
+  );
+}

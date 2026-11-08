@@ -253,6 +253,10 @@ Will ein Update andere Adressen, fragt Ablago erneut.
 
 **„Felder aus Dokumenten vorschlagen („Aus Dokument ausfüllen“) – nur aus dem Text, den Ablago mitgibt (dms:erkennen)“** – Das Paket kann statt der eingebauten Erkennung die Felder beim Knopf **Aus Dokument ausfüllen** vorschlagen, wenn du es wählst (siehe [Erkennung durch ein Paket](#erkennung-durch-ein-paket)). Es bekommt dabei nur den Text des Dokuments und die Beschreibung der Felder – keine Rechte an Mappen oder Dokumenten. Was es liefert, prüft Ablago und zeigt es nur als Vorschlag.
 
+#### Mappentyp vorschlagen { #recht-klassifizieren }
+
+**„Mappentyp vorschlagen („Wohin gehört das?“) – nur aus dem Anfang des Dokuments und der Liste der Mappentypen, die Ablago mitgibt (dms:klassifizieren)“** – Das Paket schlägt auf der Seite *Dokument übernehmen* vor, zu welchem Mappentyp neue Post gehört (siehe [Wohin gehört das? durch Pakete](#wohin-gehoert-das)). Es bekommt nur den Anfang des Dokuments und Name, Kurzbeschreibung und „Woran man ihn erkennt“ der Mappentypen, die in Frage kommen und für KI-Dienste zugelassen sind – keine Mappen. Was es liefert, prüft Ablago und zeigt es nur als Vorschlag.
+
 #### Inhalte übersetzen { #recht-uebersetzen }
 
 **„Inhalte übersetzen – auf Knopfdruck bekommt das Paket einen einzelnen Text (Feld, Notiz oder Volltext), den die Person lesen darf, und gibt die Übersetzung zurück; ändern oder speichern kann es nichts (dms:uebersetzen)“** – Seit Version 0.204. Das Paket übersetzt, wenn jemand **Übersetzung anzeigen** drückt (siehe [Sprachen → Inhalte übersetzen](sprachen.md#inhalte-ubersetzen)). Es bekommt dabei nur diesen einen Text und die Sprachen – keine Rechte an Mappen oder Dokumenten. Darf das Paket außerdem ins Netz, nimmt Ablago es nur, wenn du es ausdrücklich wählst und den Datenabfluss bestätigst.
@@ -308,6 +312,7 @@ Ein KI-Paket bekommt **nur Inhalte aus Mappentypen, die für KI-Dienste zugelass
 | Frag deine Ablage | Keine Ausschnitte aus diesem Mappentyp, auch keine Titel verknüpfter Mappen daraus. |
 | Aus Dokument ausfüllen | Ist der Ziel-Mappentyp oder der eines Quelldokuments gesperrt, geht nichts an das Paket; die eingebaute Erkennung übernimmt mit Hinweis. |
 | Übersetzung anzeigen | Abgelehnt mit Hinweis – nichts geht an das Paket. |
+| Wohin gehört das? (Mappentyp vorschlagen) | Ein gesperrter Mappentyp steht nicht in der Liste, die an das Paket geht – weder Name noch Beschreibung –, und ein Vorschlag dafür wird abgelehnt. Liegt das Dokument selbst in einem gesperrten Mappentyp (etwa *Post*), geht an kein Paket etwas – hier auch nicht an Pakete ohne Netz wie *KI lokal – Ähnlichkeit*. |
 
 Nicht betroffen: Suchbegriffe, die für die Ähnlichkeitssuche an ein Vektor-Paket gehen, gehören zu keinem Mappentyp.
 
@@ -336,6 +341,25 @@ So prüfst du ein Paket, dem du vertraut hast: wann es wie viel an welchen Diens
 **Wenn das Paket nicht antwortet** (läuft nicht, Dienst nicht erreichbar, keine Antwort nach 60 Sekunden, Antwort unbrauchbar), übernimmt die eingebaute Erkennung; der Benutzer sieht einen Hinweis darauf. Antwortet es, aber ohne einen Wert, der die Prüfung besteht, heißt der Hinweis „*Paket* hat nichts Brauchbares geliefert“ – auch dann übernimmt die eingebaute Erkennung.
 
 **Gekürzter Text:** Liest das Paket nur einen Teil des Texts – weil Ablago höchstens 50 000 Zeichen mitgibt oder das Paket für seinen KI-Dienst kürzt (beim KI-Assistenten: Einstellung *Kontextlänge*, siehe [KI lokal betreiben](ki-lokal.md#kontext-speicher)) –, steht unter dem Ergebnis „Dokumenttext gekürzt“. Angaben weiter hinten im Dokument fehlen dann vielleicht.
+
+**Fundstellen:** Ein Paket nennt zu jedem Wert die Stelle im Text, an der es ihn gefunden hat. Ablago übernimmt sie nur, wenn sie **wörtlich im Dokument steht** (bis auf Leerraum und Groß-/Kleinschreibung), und sucht sie in der Textebene bzw. der Texterkennung – daraus entstehen auf der Seite *Dokument übernehmen* die farbigen Rahmen. Steht die Fundstelle nicht im Dokument, fällt sie weg; der Wert bleibt, nur ohne Rahmen (Protokoll: „Fundstellen aus Paket verworfen“, mit Anzahl, ohne Werte). Pakete ohne Fundstellen laufen unverändert weiter.
+
+### Wohin gehört das? durch Pakete { #wohin-gehoert-das }
+
+Auf der Seite *Dokument übernehmen* schlägt Ablago unter **Wohin gehört das?** einen Mappentyp vor. Dafür verbindet es bis zu vier Wege zu **einem** Vorschlag und zeigt die Belege jedes Wegs („Woran Ablago das erkennt“):
+
+| Weg | Woher | Was geht hinaus? |
+|---|---|---|
+| **KI** (Sprachmodell) | ein Paket mit [Mappentyp vorschlagen](#recht-klassifizieren) **und Netz**, z. B. *KI-Assistent* – nur, wenn es unter [Erkennung durch ein Paket](#erkennung-durch-ein-paket) als **Standard für alle Mappentypen** gewählt und der Datenabfluss bestätigt ist | der Anfang des Dokuments (höchstens 6 000 Zeichen) und die Liste der Mappentypen (siehe unten) |
+| **Ähnliche Dokumente** | ein Paket mit *Mappentyp vorschlagen* **ohne Netz**, das auch die [Vektoren](#recht-vektoren) liefert, z. B. *KI lokal – Ähnlichkeit* | dazu, in welchen Mappentypen die ähnlichsten abgelegten Dokumente liegen – **nur Typ und Maß der Ähnlichkeit**, keine Titel, keine Inhalte. Gezählt werden nur Mappen, die die Person **und** das Paket lesen dürfen. |
+| **Überschrift** | eingebaut: Der Name eines Mappentyps steht als Überschrift im Text („Rechnung“) | nichts |
+| **Abgleich** | eingebaut: Eine vorhandene Mappe findet sich über [Zum Wiederfinden nutzen](mappentypen.md#zum-wiederfinden-nutzen) im Text, und ein Verweisfeld des Mappentyps zeigt auf ihren Typ (eine *Rechnung* zum *Vertrag* WV-1043) | nichts |
+
+**Die Liste der Mappentypen** für Pakete enthält nur Mappentypen mit [Kann aus Post angelegt werden](mappentypen.md#dokument-ubernehmen), in denen die Person Mappen anlegen darf, **und die für [KI-Dienste](#ki-dienste) zugelassen sind** – je Mappentyp Kennung, Name, die ersten 200 Zeichen der Beschreibung und von „Woran man ihn erkennt“. Mappen, Felder oder Werte gehen nie mit.
+
+**Was Ablago mit der Antwort macht:** Die Antwort hat ein festes Format (JSON Schema): höchstens drei Mappentypen mit Sicherheit (0–1), einer kurzen Begründung und einem Zitat. Ablago prüft sie streng – ein Mappentyp, der nicht in der Liste stand, wird abgelehnt; ein Zitat, das nicht im Dokument steht, fällt weg. Ist die Antwort ungültig oder bleibt nichts übrig, steht unter dem Vorschlag „*Paket* hat nichts Brauchbares geliefert“; antwortet ein Paket nicht (45 Sekunden), „*Paket* hat nicht geantwortet“. In beiden Fällen gelten die übrigen Wege. Abgelehntes steht im [Protokoll](fehlersuche.md#protokoll) mit Grund, ohne Werte; die Netzaufrufe des Pakets im [Protokoll des Pakets](#netzaufrufe).
+
+**Nur ein Vorschlag:** Ablago speichert nichts und das Paket schreibt nichts. Wechselt die Person den Mappentyp, fragt Ablago nur noch die Felder des neuen Typs ab ([Erkennung](#erkennung-durch-ein-paket)), nicht noch einmal den Typ.
 
 ### Frag deine Ablage { #frag-deine-ablage }
 
