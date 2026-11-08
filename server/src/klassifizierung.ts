@@ -10,8 +10,8 @@
  * - Abgleich über „Zum Wiederfinden nutzen“ (#938): wiedergefundene Mappen stärken Typen, deren Verweisfelder auf sie zeigen.
  *
  * Kandidaten für Pakete: Typen mit „Kann aus Post angelegt werden“, in denen die Person anlegen darf (#937) – und die für
- * KI-Dienste zugelassen sind (#796), für jedes Paket. Ist ein Quelldokument aus einem nicht zugelassenen Typ, geht an ein
- * Paket mit Netz nichts. Jede Antwort wird streng geprüft (Schema, nur angebotene Typen, Zitat im Dokument); Ungültiges
+ * KI-Dienste zugelassen sind (#796), für jedes Paket. Ist ein Quelldokument aus einem nicht zugelassenen Typ, geht an kein
+ * Paket etwas – auch nicht an eines ohne Netz. Jede Antwort wird streng geprüft (Schema, nur angebotene Typen, Zitat im Dokument); Ungültiges
  * fällt mit Hinweis weg. Es wird nichts gespeichert und nichts geschrieben: Das Ergebnis ist ein Vorschlag.
  * Netzaufrufe der Pakete protokolliert der Paket-Läufer (#807).
  */
@@ -100,7 +100,7 @@ export class Klassifizierung {
   /**
    * Pakete mit dms:klassifizieren fragen (gleichzeitig, mit Zeitgrenze). Kandidaten nur aus zugelassenen Typen; Text nur
    * der Anfang. Ein Paket mit Netz nur, wenn es als Standard für „Aus Dokument ausfüllen“ gewählt und der Datenabfluss
-   * bestätigt ist – und nur, wenn alle Quelldokumente aus zugelassenen Typen stammen.
+   * bestätigt ist. Jedes Paket (mit oder ohne Netz) nur, wenn alle Quelldokumente aus zugelassenen Typen stammen.
    */
   private async perPaketen(text: string, ziele: Mappentyp[], quellTypen: Set<string>, z?: Zugriff): Promise<{ belege: Array<Klassbeleg & { typId: string }>; wege: Wegstand[] }> {
     const pakete = this.anbieter?.pakete() ?? [];
@@ -119,13 +119,11 @@ export class Klassifizierung {
       const weg = p.netz ? 'ki' as const : 'aehnlichkeit' as const;
       if (p.netz && !(wahl.paket === p.id && wahl.abfluss)) { wege.push({ weg, paket, stand: 'aus' }); return; }
       if (!kandidaten.length) { wege.push({ weg, paket, stand: 'gesperrt', hinweis: t('meldungen.klassifizierung.keine-zugelassenen', { name: p.name }) }); return; }
-      if (p.netz) {
-        const gesperrt = await this.d.kiSperreFuer(p.id);
-        if ([...quellTypen].some((x) => gesperrt(x))) {
-          log.info('Klassifizieren nicht an Paket gegeben (Quelle nicht für KI-Dienste zugelassen)', { paket: p.id });
-          wege.push({ weg, paket, stand: 'gesperrt', hinweis: t('meldungen.klassifizierung.quelle-gesperrt', { name: p.name }) });
-          return;
-        }
+      // Quelle aus einem nicht zugelassenen Mappentyp: nichts an das Paket – für alle Pakete, auch ohne Netz (wie die Kandidaten).
+      if ([...quellTypen].some((x) => !zugelassen.has(x))) {
+        log.info('Klassifizieren nicht an Paket gegeben (Quelle nicht für KI-Dienste zugelassen)', { paket: p.id });
+        wege.push({ weg, paket, stand: 'gesperrt', hinweis: t('meldungen.klassifizierung.quelle-gesperrt', { name: p.name }) });
+        return;
       }
       const eingang: Record<string, unknown> = { typen: kandidaten, schema: klassifizierSchema([...ids]), text: anfang, hinweis: KLASSIFIZIEREN_HINWEIS, sprache: 'de' };
       // Ähnlichkeit: nur ein Paket ohne Netz, das selbst die Vektoren liefert – nur Typ und Maß, mit den Rechten beider.

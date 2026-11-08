@@ -891,7 +891,7 @@ code:
     schnittstellen: ["dms:klassifizieren"]
 ```
 
-**Wann Ablago fragt:** ein Paket **mit Netz** nur, wenn der Administrator es als Standard für *Aus Dokument ausfüllen* gewählt und den Datenabfluss bestätigt hat; ein Paket **ohne Netz** immer. Ein Paket mit Netz ist ein [KI-Paket](#ki-pakete): Liegt ein Dokument in einem Mappentyp, der nicht für KI-Dienste zugelassen ist, wird es dafür nicht aufgerufen.
+**Wann Ablago fragt:** ein Paket **mit Netz** nur, wenn der Administrator es als Standard für *Aus Dokument ausfüllen* gewählt und den Datenabfluss bestätigt hat; ein Paket **ohne Netz** immer. Ein Paket mit Netz ist ein [KI-Paket](#ki-pakete). Liegt ein Dokument in einem Mappentyp, der nicht für KI-Dienste zugelassen ist, ruft Ablago dafür **kein** Paket mit `dms:klassifizieren` auf – auch keines ohne Netz.
 
 **Aufruf:** `dms_aktion` mit
 

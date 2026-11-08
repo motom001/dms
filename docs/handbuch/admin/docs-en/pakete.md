@@ -310,7 +310,7 @@ An AI package **only receives content from folder types that are allowed for AI 
 | Ask your library | No excerpts from this folder type, nor titles of linked folders from it. |
 | Fill in from document | If the target folder type or that of a source document is blocked, nothing goes to the package; the built-in recognition takes over with a notice. |
 | Show translation | Refused with a notice – nothing goes to the package. |
-| Where does this belong? (suggest a folder type) | A blocked folder type is not in the list that goes to the package – neither name nor description – and a suggestion for it is refused. If the document itself is in a blocked folder type (such as *Post*), nothing goes to a package with network access. Here this also applies to packages without network access such as *Local AI – similarity*. |
+| Where does this belong? (suggest a folder type) | A blocked folder type is not in the list that goes to the package – neither name nor description – and a suggestion for it is refused. If the document itself is in a blocked folder type (such as *Post*), nothing goes to any package – here not even to packages without network access such as *Local AI – similarity*. |
 
 Not affected: search terms sent to a vector package for the similarity search don't belong to any folder type.
 

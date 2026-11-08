@@ -891,7 +891,7 @@ code:
     schnittstellen: ["dms:klassifizieren"]
 ```
 
-**When Ablago asks:** a package **with network access** only if the administrator has chosen it as the standard for *Fill in from document* and confirmed the data transfer; a package **without network access** always. A package with network access is an [AI package](#ki-pakete): if a document is in a folder type not allowed for AI services, it isn't called for it.
+**When Ablago asks:** a package **with network access** only if the administrator has chosen it as the standard for *Fill in from document* and confirmed the data transfer; a package **without network access** always. A package with network access is an [AI package](#ki-pakete). If a document is in a folder type not allowed for AI services, Ablago calls **no** package with `dms:klassifizieren` for it – not even one without network access.
 
 **Call:** `dms_aktion` with
 

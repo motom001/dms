@@ -312,7 +312,7 @@ Ein KI-Paket bekommt **nur Inhalte aus Mappentypen, die für KI-Dienste zugelass
 | Frag deine Ablage | Keine Ausschnitte aus diesem Mappentyp, auch keine Titel verknüpfter Mappen daraus. |
 | Aus Dokument ausfüllen | Ist der Ziel-Mappentyp oder der eines Quelldokuments gesperrt, geht nichts an das Paket; die eingebaute Erkennung übernimmt mit Hinweis. |
 | Übersetzung anzeigen | Abgelehnt mit Hinweis – nichts geht an das Paket. |
-| Wohin gehört das? (Mappentyp vorschlagen) | Ein gesperrter Mappentyp steht nicht in der Liste, die an das Paket geht – weder Name noch Beschreibung –, und ein Vorschlag dafür wird abgelehnt. Liegt das Dokument selbst in einem gesperrten Mappentyp (etwa *Post*), geht an ein Paket mit Netz nichts. Das gilt hier auch für Pakete ohne Netz wie *KI lokal – Ähnlichkeit*. |
+| Wohin gehört das? (Mappentyp vorschlagen) | Ein gesperrter Mappentyp steht nicht in der Liste, die an das Paket geht – weder Name noch Beschreibung –, und ein Vorschlag dafür wird abgelehnt. Liegt das Dokument selbst in einem gesperrten Mappentyp (etwa *Post*), geht an kein Paket etwas – hier auch nicht an Pakete ohne Netz wie *KI lokal – Ähnlichkeit*. |
 
 Nicht betroffen: Suchbegriffe, die für die Ähnlichkeitssuche an ein Vektor-Paket gehen, gehören zu keinem Mappentyp.
 

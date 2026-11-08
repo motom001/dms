@@ -184,6 +184,16 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     assert.ok(!('aehnliche' in x.eingaenge.find((e) => e.paket === 'ki_assistent')!.e), 'das Sprachmodell bekommt keine Ähnlichkeit');
   });
 
+  it('Paket ohne Netz: Dokument aus gesperrtem Mappentyp geht nicht hinaus (Quelle geprüft wie bei Paketen mit Netz)', async () => {
+    const x = await aufbau();
+    await x.d.erkennung.setzeStandard({ paket: null });
+    await x.d.setzeKiTyp(x.postTyp.id, false, null);
+    const r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
+    assert.equal(x.eingaenge.length, 0, 'KI lokal – Ähnlichkeit bekommt weder Text noch ähnliche Typen');
+    const w = r.wege.find((y) => y.paket?.id === 'ki_aehnlich')!;
+    assert.equal(w.stand, 'gesperrt'); assert.match(String(w.hinweis), /KI lokal – Ähnlichkeit.*nicht für KI-Dienste zugelassen/);
+  });
+
   it('Ähnlichkeit: nur Typ und Maß, nur Mappen, die Person und Paket lesen dürfen, aus zugelassenen Typen', async () => {
     const x = await aufbau();
     await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
@@ -249,20 +259,23 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     assert.deepEqual(new Set(r.vorschlag!.belege.map((b) => b.weg)), new Set(['kern', 'abgleich']));
   });
 
-  it('Paket mit Netz nur als gewählter Standard mit bestätigtem Abfluss; Dokument aus gesperrtem Typ geht nicht hinaus', async () => {
+  it('Paket mit Netz nur als gewählter Standard mit bestätigtem Abfluss; Dokument aus gesperrtem Typ geht an kein Paket, auch ohne Netz', async () => {
     const x = await aufbau();
     await x.d.erkennung.setzeStandard({ paket: null });
     let r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
     assert.deepEqual(x.eingaenge.map((e) => e.paket), ['ki_aehnlich'], 'nicht gewählt: nicht gefragt');
     assert.equal(r.wege.find((w) => w.paket?.id === 'ki_assistent')!.stand, 'aus');
     await x.d.erkennung.setzeStandard({ paket: 'ki_assistent', abfluss: true });
-    // Die Post ist nicht mehr für KI-Dienste zugelassen: an das Paket mit Netz geht nichts.
+    // Die Post ist nicht mehr für KI-Dienste zugelassen: an kein Paket geht etwas – auch nicht an das ohne Netz.
     await x.d.setzeKiTyp(x.postTyp.id, false, null);
     x.eingaenge.length = 0;
     r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
-    assert.deepEqual(x.eingaenge.map((e) => e.paket), ['ki_aehnlich']);
-    const w = r.wege.find((y) => y.paket?.id === 'ki_assistent')!;
-    assert.equal(w.stand, 'gesperrt'); assert.match(String(w.hinweis), /nicht für KI-Dienste zugelassen/);
+    assert.deepEqual(x.eingaenge.map((e) => e.paket), [], 'weder das Paket mit Netz noch KI lokal – Ähnlichkeit');
+    for (const id of ['ki_assistent', 'ki_aehnlich']) {
+      const w = r.wege.find((y) => y.paket?.id === id)!;
+      assert.equal(w.stand, 'gesperrt', id); assert.match(String(w.hinweis), /nicht für KI-Dienste zugelassen/);
+    }
+    assert.equal(r.vorschlag?.typId, x.rechnung.id, 'Überschrift und Abgleich tragen weiter');
     // Kein Kandidat zugelassen: kein Paket wird gefragt; Überschrift und Abgleich bleiben.
     await x.d.setzeKiTyp(x.postTyp.id, true, null);
     for (const t of [x.rechnung.id, x.vertrag.id]) await x.d.setzeKiTyp(t, false, null);
