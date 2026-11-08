@@ -85,7 +85,14 @@ Klickst du in **Neue Post** eine Post an, öffnet sich die Seite **Dokument übe
 
 ### Wohin gehört das? { #wohin-gehort-das }
 
-Über der Mappe wählst du den **Mappentyp**, z. B. *Rechnung*. Steht sein Name als Überschrift im Dokument (etwa „Rechnung“ oben im Brief oder in der Betreffzeile), schlägt Ablago ihn vor und sagt, woran es das erkennt; sonst steht dort **Mappentyp wählen …**. **Ändern** öffnet die Liste mit Suche. Zur Wahl stehen nur Mappentypen, die man aus Post anlegen kann und in denen du Mappen anlegen darfst – nie Benutzer, Rollen oder Post. Ein anderer Typ tauscht die Mappe darunter aus.
+Über der Mappe wählst du den **Mappentyp**, z. B. *Rechnung*. Ablago schlägt einen vor und sagt darunter, woran es das erkennt – mit einer Sicherheit in Prozent:
+
+- Der Name des Mappentyps steht als **Überschrift** im Dokument (etwa „Rechnung“ oben im Brief oder in der Betreffzeile).
+- Eine **vorhandene Mappe** steht im Dokument, auf die dieser Mappentyp verweist – etwa die Vertragsnummer deines Wartungsvertrags auf einer Rechnung.
+- Mit einem **KI-Paket**, das dein Administrator eingerichtet hat: Begründung und ein Zitat aus dem Dokument.
+- Mit **KI lokal – Ähnlichkeit**: in welchen Mappentypen ähnliche Dokumente liegen, die du lesen darfst.
+
+Kommen mehrere Mappentypen in Frage, stehen die anderen unter **Auch möglich:** – ein Klick wählt einen davon. Findet Ablago nichts, steht dort **Mappentyp wählen …**. **Ändern** öffnet die Liste mit Suche. Zur Wahl stehen nur Mappentypen, die man aus Post anlegen kann und in denen du Mappen anlegen darfst – nie Benutzer, Rollen oder Post. Ein anderer Typ tauscht die Mappe darunter aus.
 
 Darunter:
 

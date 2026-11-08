@@ -156,6 +156,7 @@ Hier steht, was sich an der API v1 so geändert hat, dass bestehende Programme e
 
 | Seit | Änderung | Was tun? |
 | --- | --- | --- |
+| #939 (Fundstellen) | **Fundstellen aus Paketen nur noch aus dem Dokument.** In `POST /api/v1/typen/{id}/vorschlaege` ist `fundstelle` eines Werts, den ein Paket geliefert hat, jetzt leer, wenn der Ausschnitt nicht wörtlich im Dokument steht. Neu daneben `stelle` (Dokument, Seite, Rahmen). Neuer Aufruf `POST /api/v1/klassifizieren` für „Wohin gehört das?“. | Nichts, wenn eine leere `fundstelle` erlaubt ist. Wer Rahmen zeichnet, kann `stelle` nehmen, statt selbst zu suchen. |
 | #725 (Navigation verschlankt) | **„Anstehend“ gibt es nicht mehr.** `GET /api/v1/anstehend` ist entfallen; der [Zähler](#zaehler) und die [Webhooks](webhooks.md) liefern kein Feld `anstehend` mehr. Erinnerungen an Fristen kommen über Automatisierungen zum richtigen Zeitpunkt als Aufgabe – sie stehen dann in `zuErledigen` bzw. `GET /api/v1/aufgaben`. | Statt `anstehend` `zuErledigen` oder `ueberfaellig` anzeigen. Wer die Zahlen streng prüft (z. B. ein JSON-Schema mit `required`), entfernt `anstehend`. |
 
 ## Regeln

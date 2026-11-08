@@ -182,6 +182,11 @@ export class Paketlaeufer implements PaketLaeufer {
         .map((x) => ({ id: x.id, name: x.name, netz: hatNetz(x.laeufer) })),
       erkenne: (paket, eingang, ms) => this.schnittstelle(paket, 'dms:erkennen', eingang, { bezeichnung: t('meldungen.verwaltung.felder-erkannt'), ms }),
     };
+    // „Wohin gehört das?“ (#939): Pakete mit dms:klassifizieren, mit Zeitlimit; kein Inhalt in der Werkbank.
+    o.dienst.erkennung.klassifizierung.anbieter = {
+      pakete: () => this.klassifizierPakete(),
+      klassifiziere: (paket, eingang, ms) => this.schnittstelle(paket, 'dms:klassifizieren', eingang, { bezeichnung: t('meldungen.verwaltung.typ-vorgeschlagen'), ms }),
+    };
     // Inhalte übersetzen (#732): Pakete mit dms:uebersetzen, je Abschnitt ein Aufruf mit Zeitlimit; kein Inhalt in der Werkbank.
     o.dienst.uebersetzung.anbieter = {
       pakete: () => this.uebersetzPakete(),
@@ -477,6 +482,12 @@ export class Paketlaeufer implements PaketLaeufer {
 
   /* ---------- Antworten (#444) und Erkennen (#511) ---------- */
 
+  /** Geladene Pakete mit dms:klassifizieren (#939); vektoren: liefert auch die Vektoren (Ähnlichkeit). */
+  klassifizierPakete(): Array<{ id: string; name: string; netz: boolean; vektoren: boolean }> {
+    return this.pakete.filter((x) => hatSchnittstelle(x.laeufer, 'dms:klassifizieren') && this.ladefehler.has(x.id) && !this.ladefehler.get(x.id))
+      .map((x) => ({ id: x.id, name: x.name, netz: hatNetz(x.laeufer), vektoren: hatSchnittstelle(x.laeufer, 'dms:vektoren') }));
+  }
+
   /** Geladene Pakete mit dms:uebersetzen (#732). */
   uebersetzPakete(): Array<{ id: string; name: string; version: string; netz: boolean }> {
     return this.pakete.filter((x) => hatSchnittstelle(x.laeufer, 'dms:uebersetzen') && this.ladefehler.has(x.id) && !this.ladefehler.get(x.id))
@@ -490,7 +501,7 @@ export class Paketlaeufer implements PaketLaeufer {
   }
 
   /**
-   * Ruft eine Schnittstelle eines Pakets auf (Aktion `dms:antworten`, `dms:erkennen` bzw. `dms:uebersetzen`): Eingang als JSON, Teile
+   * Ruft eine Schnittstelle eines Pakets auf (Aktion `dms:antworten`, `dms:erkennen`, `dms:klassifizieren` bzw. `dms:uebersetzen`): Eingang als JSON, Teile
    * der Antwort an `teil`, Ergebnis als Text. Ohne Inhalt in der Werkbank. Wirft mit verständlicher Meldung.
    */
   async schnittstelle(paket: string, aktion: string, eingang: Record<string, unknown>, opt: { bezeichnung: string; teil?: (text: string) => void; ms?: number }): Promise<{ text: string; ms: number }> {

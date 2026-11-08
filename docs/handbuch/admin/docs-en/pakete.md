@@ -251,6 +251,10 @@ If an update wants other addresses, Ablago asks again.
 
 **"Suggest fields from documents ("Fill in from document") – only from the text that Ablago passes along (dms:erkennen)"** – instead of the built-in recognition, the package can suggest the fields for the button **Fill in from document** if you choose it (see [Recognition by a package](#erkennung-durch-ein-paket)). It only gets the document's text and the description of the fields – no permissions on folders or documents. Ablago checks what it supplies and only shows it as a suggestion.
 
+#### Suggest a folder type { #recht-klassifizieren }
+
+**"Suggest a folder type ("Where does this belong?") – only from the start of the document and the list of folder types that Ablago provides (dms:klassifizieren)"** – on the page *Take over document*, the package suggests which folder type new post belongs to (see [Where does this belong? by packages](#wohin-gehoert-das)). It only gets the start of the document and the name, short description and "How to recognise it" of the folder types that come into question and are allowed for AI services – no folders. Ablago checks what it supplies and only shows it as a suggestion.
+
 #### Translate content { #recht-uebersetzen }
 
 **"Translate content – at the press of a button the package gets a single text (field, note or full text) the person may read and returns the translation; it can’t change or store anything (dms:uebersetzen)"** – since version 0.204. The package translates when someone presses **Show translation** (see [Languages → Translate content](sprachen.md#inhalte-ubersetzen)). It only gets this one text and the languages – no permissions on folders or documents. If the package may also access the network, Ablago only uses it if you choose it explicitly and confirm the data transfer.
@@ -306,6 +310,7 @@ An AI package **only receives content from folder types that are allowed for AI 
 | Ask your library | No excerpts from this folder type, nor titles of linked folders from it. |
 | Fill in from document | If the target folder type or that of a source document is blocked, nothing goes to the package; the built-in recognition takes over with a notice. |
 | Show translation | Refused with a notice – nothing goes to the package. |
+| Where does this belong? (suggest a folder type) | A blocked folder type is not in the list that goes to the package – neither name nor description – and a suggestion for it is refused. If the document itself is in a blocked folder type (such as *Post*), nothing goes to a package with network access. Here this also applies to packages without network access such as *Local AI – similarity*. |
 
 Not affected: search terms sent to a vector package for the similarity search don't belong to any folder type.
 
@@ -334,6 +339,25 @@ This is how you check a package you trusted: when it sent how much to which serv
 **If the package doesn't answer** (not running, service can't be reached, no answer after 60 seconds, answer unusable), the built-in recognition takes over; the user sees a notice about this. If it answers, but without any value that passes the check, the notice says "*package* returned nothing usable" – then too the built-in recognition takes over.
 
 **Shortened text:** if the package only reads part of the text – because Ablago passes at most 50,000 characters or the package shortens for its AI service (with the AI assistant: setting *Context length*, see [Running AI locally](ki-lokal.md#kontext-speicher)) –, below the result it says "Document text shortened". Details further back in the document may then be missing.
+
+**Where it was found:** a package names, for each value, the place in the text where it found it. Ablago only takes it over if it **appears word for word in the document** (apart from spacing and upper/lower case), and searches for it in the text layer or the text recognition – this produces the coloured frames on the page *Take over document*. If the place is not in the document, it is dropped; the value stays, only without a frame (log: "Fundstellen aus Paket verworfen", with the number, without values). Packages without these places keep working as before.
+
+### Where does this belong? by packages { #wohin-gehoert-das }
+
+On the page *Take over document*, Ablago suggests a folder type under **Where does this belong?**. To do so it combines up to four sources into **one** suggestion and shows the evidence of each ("How Ablago recognises it"):
+
+| Source | From | What goes out? |
+|---|---|---|
+| **AI** (language model) | a package with [Suggest a folder type](#recht-klassifizieren) **and network access**, e.g. *AI assistant* – only if it is chosen as the **standard for all folder types** under [Recognition by a package](#erkennung-durch-ein-paket) and the data transfer is confirmed | the start of the document (at most 6,000 characters) and the list of folder types (see below) |
+| **Similar documents** | a package with *Suggest a folder type* **without network access** that also supplies the [vectors](#recht-vektoren), e.g. *Local AI – similarity* | in addition, which folder types the most similar filed documents are in – **only the type and a measure of similarity**, no titles, no content. Only folders that the person **and** the package may read count. |
+| **Heading** | built in: the name of a folder type is a heading in the text ("Invoice") | nothing |
+| **Matching** | built in: an existing folder is found in the text via [Use to find existing folders](mappentypen.md#zum-wiederfinden-nutzen), and a link field of the folder type points to its type (an *Invoice* for *Contract* WV-1043) | nothing |
+
+**The list of folder types** for packages only contains folder types with [Can be created from post](mappentypen.md#dokument-ubernehmen) in which the person may create folders, **and that are allowed for [AI services](#ki-dienste)** – per folder type the key, name and the first 200 characters of the description and of "How to recognise it". Folders, fields or values never go along.
+
+**What Ablago does with the answer:** the answer has a fixed format (JSON schema): at most three folder types with a confidence (0–1), a short reason and a quote. Ablago checks it strictly – a folder type that wasn't in the list is refused; a quote that isn't in the document is dropped. If the answer is invalid or nothing is left, below the suggestion it says "*Package* didn’t deliver anything usable"; if a package doesn't answer (45 seconds), "*Package* didn’t answer". In both cases the other sources apply. What was refused is in the [log](fehlersuche.md#protokoll) with the reason, without values; the package's network calls are in the [package's log](#netzaufrufe).
+
+**Only a suggestion:** Ablago stores nothing and the package writes nothing. If the person changes the folder type, Ablago only asks for the fields of the new type ([recognition](#erkennung-durch-ein-paket)), not for the type again.
 
 ### Ask your library { #frag-deine-ablage }
 

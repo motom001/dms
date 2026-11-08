@@ -1,6 +1,6 @@
 # Running AI locally {#ki-lokal-betreiben}
 
-With the package **AI assistant**, Ablago answers questions about your Library ([Ask your library](pakete.md#frag-deine-ablage)) and fills in fields from documents ([Fill in from document](pakete.md#erkennung-durch-ein-paket)). The package doesn't compute anything itself – it asks an **AI service**. If this service runs at your home, for instance on your NAS, you need **no cloud**: the data doesn't leave the house.
+With the package **AI assistant**, Ablago answers questions about your Library ([Ask your library](pakete.md#frag-deine-ablage)) and fills in fields from documents ([Fill in from document](pakete.md#erkennung-durch-ein-paket)); from version 1.3.0 it also suggests where new post belongs ([Where does this belong?](pakete.md#wohin-gehoert-das)). The package doesn't compute anything itself – it asks an **AI service**. If this service runs at your home, for instance on your NAS, you need **no cloud**: the data doesn't leave the house.
 
 For the service there is a ready-made example with **[Ollama](https://ollama.com)** (MIT licence): [`deploy/beispiele/ki-ollama/`](https://github.com/motom001/dms/tree/main/deploy/beispiele/ki-ollama). It starts with `docker compose up -d`, downloads the model by itself at the first start and **can't be reached from outside** – only Ablago talks to it.
 

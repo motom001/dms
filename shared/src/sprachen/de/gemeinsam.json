@@ -471,6 +471,7 @@
   "pakete.vektoren-zu-dokumenten-speichern": "Vektoren zu Dokumenten speichern und ähnliche Dokumente finden",
   "pakete.fragen-an-die-ablage": "Fragen an die Ablage beantworten („Frag deine Ablage“) – nur aus Ausschnitten, die Ablago mitgibt",
   "pakete.felder-aus-dokumenten-vorschlagen": "Felder aus Dokumenten vorschlagen („Aus Dokument ausfüllen“) – nur aus dem Text, den Ablago mitgibt",
+  "pakete.mappentyp-vorschlagen": "Mappentyp vorschlagen („Wohin gehört das?“) – nur aus dem Anfang des Dokuments und der Liste der Mappentypen, die Ablago mitgibt",
   "pakete.texterkennung-fuer-scans-und": "Texterkennung für Scans und Bilder übernehmen – Ablago meldet Dokumente ohne Text und zeigt „wartet auf Texterkennung“, bis das Paket den Volltext schreibt",
   "pakete.dateien-umwandeln-die-ablago": "Dateien umwandeln, die Ablago nicht selbst lesen kann – das Paket liest die Originaldatei und liefert eine Fassung (PDF, PNG oder JPEG) für Vorschaubild und Volltext; das Original bleibt unverändert",
   "pakete.die-verschluesselte-sicherung-lesen": "Die verschlüsselte Sicherung lesen, um sie außer Haus zu kopieren – kann sie nicht öffnen (kein Schlüssel, keine Inhalte)",

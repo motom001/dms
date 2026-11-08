@@ -85,6 +85,8 @@ export const HILFE = {
   'pakete.recht.antworten': admin('pakete/', 'dem Recht „Fragen an die Ablage beantworten“', 'recht-antworten'),
   'pakete.recht.erkennen': admin('pakete/', 'dem Recht „Felder aus Dokumenten vorschlagen“', 'recht-erkennen'),
   'pakete.recht.uebersetzen': admin('pakete/', 'dem Recht „Inhalte übersetzen“', 'recht-uebersetzen'),
+  'pakete.recht.klassifizieren': admin('pakete/', 'dem Recht „Mappentyp vorschlagen“', 'recht-klassifizieren'),
+  'pakete.klassifizieren': admin('pakete/', 'dem Vorschlag „Wohin gehört das?“ durch Pakete', 'wohin-gehoert-das'),
   'werkbank.uebersetzen': admin('sprachen/', 'Inhalte übersetzen', 'inhalte-ubersetzen'),
   'pakete.recht.texterkennung': admin('pakete/', 'dem Recht „Texterkennung übernehmen“', 'recht-texterkennung'),
   'pakete.recht.umwandeln': admin('pakete/', 'dem Recht „Dateien umwandeln“', 'recht-umwandeln'),

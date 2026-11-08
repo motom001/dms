@@ -499,6 +499,8 @@ rauchtest('Dokument übernehmen: Typ erkannt, Folgedokument abtrennen (#934)', {
   const mappe = s.getByRole('region', { name: 'Mappe' });
   // „Rechnung“ steht als Überschrift im ersten Dokument: vorgeschlagen, mit Grund.
   await mappe.getByText(/^Vorschlag, weil „Rechnung“ im Dokument steht/).waitFor();
+  // Klassifizierung mehrstufig (#939): ein Vorschlag mit Sicherheit und den Belegen der Wege.
+  await mappe.getByText(/^Vorschlag \(\d+ %\) – woran Ablago das erkennt:$/).waitFor();
   await mappe.getByText('Eingegangene Rechnung, gehört zu einem Vertrag oder steht für sich').waitFor();
   // Das zweite Dokument passt eher zu „Vertrag“: abtrennen.
   const dokument = s.getByRole('region', { name: 'Dokument' });

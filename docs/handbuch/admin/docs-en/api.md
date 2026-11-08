@@ -156,6 +156,7 @@ Here is what has changed in API v1 in a way that existing programs notice. New f
 
 | Since | Change | What to do? |
 | --- | --- | --- |
+| #939 (places found) | **Places from packages only from the document.** In `POST /api/v1/typen/{id}/vorschlaege`, the `fundstelle` of a value supplied by a package is now empty if the excerpt isn't word for word in the document. New next to it: `stelle` (document, page, frame). New call `POST /api/v1/klassifizieren` for "Where does this belong?". | Nothing, if an empty `fundstelle` is allowed. Whoever draws frames can use `stelle` instead of searching themselves. |
 | #725 (navigation slimmed down) | **"Upcoming" no longer exists.** `GET /api/v1/anstehend` has been dropped; the [counter](#zaehler) and the [webhooks](webhooks.md) no longer return a field `anstehend`. Reminders of deadlines come via automations at the right time as a task – they are then in `zuErledigen` or `GET /api/v1/aufgaben`. | Show `zuErledigen` or `ueberfaellig` instead of `anstehend`. Whoever checks the numbers strictly (e.g. a JSON schema with `required`) removes `anstehend`. |
 
 ## Rules {#regeln}

@@ -471,6 +471,7 @@
   "pakete.vektoren-zu-dokumenten-speichern": "Store vectors for documents and find similar documents",
   "pakete.fragen-an-die-ablage": "Answer questions about the library (“Ask your library”) – only from excerpts that Ablago provides",
   "pakete.felder-aus-dokumenten-vorschlagen": "Suggest fields from documents (“Fill in from document”) – only from the text that Ablago provides",
+  "pakete.mappentyp-vorschlagen": "Suggest a folder type (“Where does this belong?”) – only from the start of the document and the list of folder types that Ablago provides",
   "pakete.texterkennung-fuer-scans-und": "Take over text recognition for scans and images – Ablago reports documents without text and shows “waiting for text recognition” until the package writes the full text",
   "pakete.dateien-umwandeln-die-ablago": "Convert files Ablago can’t read itself – the package reads the original file and provides a version (PDF, PNG or JPEG) for thumbnail and full text; the original stays unchanged",
   "pakete.die-verschluesselte-sicherung-lesen": "Read the encrypted backup to copy it off-site – can’t open it (no key, no contents)",

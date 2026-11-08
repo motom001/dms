@@ -1,7 +1,7 @@
 /**
  * Paket-Läufer bei mehreren Prozessen (#745): Er läuft genau einmal, im Leiter – er hält die API-Schlüssel der Pakete,
  * und die verlassen diesen Prozess nie. Die anderen Prozesse fragen ihn über den Verbund (`prozesse.ts`): Aktionen,
- * Vektoren für die Suche, „Frag deine Ablage“ (mit Teilen der Antwort), „Aus Dokument ausfüllen“, „Übersetzung anzeigen“ (#732), Übersicht für die
+ * Vektoren für die Suche, „Frag deine Ablage“ (mit Teilen der Antwort), „Aus Dokument ausfüllen“, „Wohin gehört das?“ (#939), „Übersetzung anzeigen“ (#732), Übersicht für die
  * Werkbank. Was sie ohne Warten wissen müssen (welches Paket Vektoren, Antworten, Erkennen anbietet, Dienstkonten der
  * Pakete), schickt der Leiter bei jeder Änderung an alle ({@link LaeuferSchnappschuss}).
  */
@@ -15,6 +15,8 @@ export interface LaeuferSchnappschuss {
   vektorPaket: string | null;
   antworten: { id: string; name: string } | null;
   erkennen: Array<{ id: string; name: string; netz: boolean }>;
+  /** „Wohin gehört das?“ (#939): geladene Pakete mit dms:klassifizieren. */
+  klassifizieren?: Array<{ id: string; name: string; netz: boolean; vektoren: boolean }>;
   /** Inhalte übersetzen (#732): geladene Pakete mit dms:uebersetzen. */
   uebersetzen: Array<{ id: string; name: string; version: string; netz: boolean }>;
   /** Dienstkonto → Paket (auch entfernter Pakete, für die Herkunft von Änderungen). */
@@ -22,7 +24,7 @@ export interface LaeuferSchnappschuss {
   pid: number | null;
 }
 
-const LEER: LaeuferSchnappschuss = { vektorPaket: null, antworten: null, erkennen: [], uebersetzen: [], paketKonten: [], pid: null };
+const LEER: LaeuferSchnappschuss = { vektorPaket: null, antworten: null, erkennen: [], klassifizieren: [], uebersetzen: [], paketKonten: [], pid: null };
 /** So oft vergleicht der Leiter den Schnappschuss und schickt ihn bei einer Änderung. */
 export const SCHNAPPSCHUSS_MS = 2000;
 
@@ -37,7 +39,7 @@ export interface LaeuferSicht {
 export function schnappschuss(l: Paketlaeufer, d: Dienst): LaeuferSchnappschuss {
   return {
     vektorPaket: l.vektorPaket(), antworten: l.paketMit('dms:antworten'),
-    erkennen: d.erkennung.anbieter?.pakete() ?? [], uebersetzen: d.uebersetzung.anbieter?.pakete() ?? [], paketKonten: [...d.paketKonten.entries()], pid: l.pid,
+    erkennen: d.erkennung.anbieter?.pakete() ?? [], klassifizieren: d.erkennung.klassifizierung.anbieter?.pakete() ?? [], uebersetzen: d.uebersetzung.anbieter?.pakete() ?? [], paketKonten: [...d.paketKonten.entries()], pid: l.pid,
   };
 }
 
@@ -81,6 +83,10 @@ export class Fernlaeufer implements PaketLaeufer, LaeuferSicht {
     dienst.erkennung.anbieter = {
       pakete: () => this.z.erkennen,
       erkenne: (paket, eingang, ms) => v.rufe('laeufer.schnittstelle', [paket, 'dms:erkennen', eingang, { bezeichnung: 'Felder erkannt', ms }], { ms: ms + 5000 }),
+    };
+    dienst.erkennung.klassifizierung.anbieter = {
+      pakete: () => this.z.klassifizieren ?? [],
+      klassifiziere: (paket, eingang, ms) => v.rufe('laeufer.schnittstelle', [paket, 'dms:klassifizieren', eingang, { bezeichnung: 'Mappentyp vorgeschlagen', ms }], { ms: ms + 5000 }),
     };
     dienst.uebersetzung.anbieter = {
       pakete: () => this.z.uebersetzen ?? [],

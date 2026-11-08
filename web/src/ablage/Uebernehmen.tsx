@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { feldLabel, typBeschreibung, typName } from '../../../shared/src/beschriftung';
-import type { Abgleich, Abgleichtreffer, TypFund } from '../../../shared/src/erkennung';
+import type { Abgleich, Abgleichtreffer } from '../../../shared/src/erkennung';
+import type { Einschaetzung, Klassbeleg, Klassifizierung } from '../../../shared/src/klassifizierung';
 import { auswahlText, darfErstellen, formatiere, istVersendet, kannAusPost, POST_STAND, titelAus, type Dokument, type Feld, type Mappentyp, type Wert, type Werte } from '../../../shared/src/model';
 import { kannSchwaerzen, type Bereich, type SchwaerzSeite } from '../../../shared/src/schwaerzen';
 import { textformen, stelleVon, wertAusText } from '../../../shared/src/uebernehmen';
@@ -95,20 +96,21 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   const erkennKey = erkennDoks.map((x) => x.id).join(',');
 
   // „Wohin gehört das?“ (nur Post): Typen mit „Kann aus Post angelegt werden“, in denen ich anlegen darf (#937).
+  // Vorschlag aus allen Wegen (#939): Pakete mit dms:klassifizieren, Überschrift im Text, Abgleich. Einmal je Dokumentstand –
+  // wechselt die Person den Typ, läuft nur die Erkennung der Felder neu.
   const ziele = useMemo(() => d.typen.filter((x) => kannAusPost(x) && darfErstellen(x)), [d.typen]);
-  const [typFund, setTypFund] = useState<TypFund | null | undefined>(post ? undefined : null);
+  const [klass, setKlass] = useState<(Klassifizierung & { bezuege: Bezuege }) | null | undefined>(post ? undefined : null);
   const [zielId, setZielId] = useState<string | null>(post ? null : typ.id);
   const [gewaehlt, setGewaehlt] = useState(false);
   useEffect(() => {
     if (!post || gewaehlt) return;
-    if (!erkennKey) { setTypFund(null); return; }
+    if (!erkennKey) { setKlass(null); return; }
     let aktuell = true;
-    api.abgleich({ dokumente: erkennKey.split(',') }).then((r) => {
+    api.klassifizieren({ dokumente: erkennKey.split(',') }).then((r) => {
       if (!aktuell) return;
-      const f = r.typ && ziele.some((x) => x.id === r.typ!.typId) ? r.typ : null;
-      setTypFund(f);
-      if (f) setZielId(f.typId);
-    }, () => aktuell && setTypFund(null));
+      setKlass(r);
+      if (r.vorschlag && ziele.some((x) => x.id === r.vorschlag!.typId)) setZielId(r.vorschlag.typId);
+    }, () => aktuell && setKlass(null));
     return () => { aktuell = false; };
   }, [post, erkennKey, gewaehlt, ziele]);
   const zielTyp = zielId ? d.typ(zielId) : undefined;
@@ -198,7 +200,8 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
         continue;
       }
       if (!v) continue;
-      const s = stelle(textformen(f, v.wert), v.fundstelle);
+      // Stelle vom Server (#939: Fundstelle in der Textebene gesucht), sonst hier gesucht.
+      const s = v.stelle && doks.some((x) => x.id === v.stelle!.dokument) ? { dokId: v.stelle.dokument, bereiche: v.stelle.bereiche } : stelle(textformen(f, v.wert), v.fundstelle);
       if (s) liste.push({ nr: liste.length + 1, feldKey: f.key, ...s, sicherheit: v.sicherheit, nutzlast: { text: formatiere(f, v.wert), wert: v.wert, feldTyp: f.typ } });
     }
     return liste;
@@ -382,7 +385,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
 
         <section className="spalte mappe ue-rechts" aria-label={t('ablage.ablage.mappe')} data-anker="mappe">
           {post && <AufloesungHinweis postId={m.id} />}
-          {post && <WohinGehoert ziele={ziele} zielTyp={zielTyp} fund={typFund} waehle={(x) => { setGewaehlt(true); setZielId(x); }}
+          {post && <WohinGehoert ziele={ziele} zielTyp={zielTyp} klass={klass} waehle={(x) => { setGewaehlt(true); setZielId(x); }}
             kopieren={kopieren} setKopieren={details.dokumente.length ? setKopieren : undefined} inVorhandene={(z) => void inVorhandene(z)} ohneMappe={() => void ohneMappe()} alsPost={`/ablage/${sicht}/${m.id}?als=post`} />}
           {doppelt.length > 0 && zielTyp && <DoppeltWarnung liste={doppelt} bezuege={erkannt!.abgleich!.bezuege} post={post} legen={(x) => void inVorhandene(x)} />}
           {ohneRegister && <div className="hinweis warn"><p>{t('ablage.uebernehmen.ohne-dokumentenregister', { typ: typName(zielTyp!) })}</p></div>}
@@ -418,8 +421,8 @@ function NeuKopf({ typ, werte, bekannt }: { typ: Mappentyp; werte: Werte; bekann
  * „Wohin gehört das?“ (nur Post) in der Optik eines Verweisfelds: gewählter Typ mit Kurzbeschreibung und „Ändern“,
  * sonst Suche und Liste. Ohne Erkennung „Mappentyp wählen …“. Darunter, was es sonst noch gibt.
  */
-function WohinGehoert({ ziele, zielTyp, fund, waehle, kopieren, setKopieren, inVorhandene, ohneMappe, alsPost }: {
-  ziele: Mappentyp[]; zielTyp?: Mappentyp; fund: TypFund | null | undefined; waehle(id: string): void;
+function WohinGehoert({ ziele, zielTyp, klass, waehle, kopieren, setKopieren, inVorhandene, ohneMappe, alsPost }: {
+  ziele: Mappentyp[]; zielTyp?: Mappentyp; klass: (Klassifizierung & { bezuege: Bezuege }) | null | undefined; waehle(id: string): void;
   kopieren: boolean; setKopieren?: (an: boolean) => void;
   inVorhandene(z: { id: string; typId: string; titel: string }): void; ohneMappe(): void; alsPost: string;
 }) {
@@ -432,14 +435,18 @@ function WohinGehoert({ ziele, zielTyp, fund, waehle, kopieren, setKopieren, inV
   const kurzText = (x: Mappentyp) => { const b = typBeschreibung(x); const s = b.split(/(?<=[.!?])\s/)[0] ?? ''; return kurz(s, 90); };
   const such = eingabe.trim().toLocaleLowerCase('de-DE');
   const liste = ziele.filter((x) => !such || typName(x).toLocaleLowerCase('de-DE').includes(such) || typBeschreibung(x).toLocaleLowerCase('de-DE').includes(such));
-  const vorgeschlagen = !!fund && fund.typId === zielTyp?.id;
+  const vorgeschlagen = !!klass?.vorschlag && klass.vorschlag.typId === zielTyp?.id;
+  // Belege des gewählten Typs (auch, wenn er nicht der Vorschlag war) und die anderen in Frage kommenden Typen.
+  const einschaetzung = klass?.typen.find((x) => x.typId === zielTyp?.id);
+  const andere = (klass?.typen ?? []).filter((x) => x.typId !== zielTyp?.id && ziele.some((z) => z.id === x.typId));
+  const hinweise = (klass?.wege ?? []).filter((w) => w.hinweis);
   return (
     <section className="ue-wohin feld" aria-labelledby="ue-wohin-titel" data-anker="uebernehmen.wohin">
       <div className="feldkopf">
         <span className="label" id="ue-wohin-titel">{t('ablage.uebernehmen.wohin')}</span>
         {vorgeschlagen && <span className="chip">{t('ablage.mappeformular.vorschlag')}</span>}
       </div>
-      {fund === undefined && !zielTyp
+      {klass === undefined && !zielTyp
         ? <p className="leise klein">{t('ablage.uebernehmen.erkenne')}</p>
         : <Mehrfachauswahl name={t('ablage.uebernehmen.wohin')} eingabeLabel={t('ablage.uebernehmen.wohin')} platzhalter={zielTyp ? t('ablage.uebernehmen.typ-suchen') : t('ablage.uebernehmen.typ-waehlen')}
             eingabe={eingabe} setEingabe={setEingabe} offen={offen} setOffen={setOffen} schliessen={() => setAendern(false)} ohneSuche={!!zielTyp && !aendern}
@@ -453,7 +460,12 @@ function WohinGehoert({ ziele, zielTyp, fund, waehle, kopieren, setKopieren, inV
               entfernenText: t('ablage.uebernehmen.typ-entfernen'),
             }] : []}
             entferne={() => { setAendern(true); setOffen(true); }} />}
-      {vorgeschlagen && <p className="leise klein">{t('ablage.uebernehmen.weil', { wort: fund!.wort, fundstelle: fund!.fundstelle })}</p>}
+      {einschaetzung && <TypBelege e={einschaetzung} vorgeschlagen={vorgeschlagen} bezuege={klass!.bezuege} />}
+      {andere.length > 0 && <p className="leise klein ue-andere">{t('ablage.uebernehmen.auch-moeglich')}{' '}{andere.map((x, i) => {
+        const zt = ziele.find((z) => z.id === x.typId)!;
+        return <span key={x.typId}>{i > 0 && ', '}<button type="button" className="textknopf klein" onClick={() => waehle(x.typId)}>{t('ablage.uebernehmen.typ-mit-sicherheit', { typ: typName(zt), prozent: Math.round(x.sicherheit * 100) })}</button></span>;
+      })}</p>}
+      {hinweise.map((w, i) => <p key={`h${i}`} className="leise klein ue-weg-hinweis">{w.hinweis}</p>)}
       <div className="ue-wohin-fuss klein">
         {setKopieren && <label className="haken klein"><input type="checkbox" checked={kopieren} onChange={(e) => setKopieren(e.target.checked)} /><span>{t('ablage.post.kopie-in-der-post')}</span></label>}
         {zielTyp && <button type="button" className={`textknopf klein ${vorhanden ? 'an' : ''}`} aria-expanded={vorhanden} onClick={() => setVorhanden(!vorhanden)}>{t('ablage.uebernehmen.in-vorhandene', { typ: typName(zielTyp) })}</button>}
@@ -471,6 +483,24 @@ function WohinGehoert({ ziele, zielTyp, fund, waehle, kopieren, setKopieren, inV
         </div>
       )}
     </section>
+  );
+}
+
+/** Woran Ablago den Typ erkennt (#939): je Weg ein Beleg – Paket mit Begründung und Zitat, Überschrift, wiedergefundene Mappe. */
+function TypBelege({ e, vorgeschlagen, bezuege }: { e: Einschaetzung; vorgeschlagen: boolean; bezuege: Bezuege }) {
+  const text = (b: Klassbeleg) => {
+    switch (b.weg) {
+      case 'kern': return t('ablage.uebernehmen.weil', { wort: b.wort ?? '', fundstelle: b.fundstelle ?? '' });
+      case 'ki': return t('ablage.uebernehmen.beleg-ki', { paket: b.paket?.name ?? '', begruendung: b.begruendung || t('ablage.uebernehmen.ohne-begruendung') });
+      case 'aehnlichkeit': return t('ablage.uebernehmen.beleg-aehnlich', { paket: b.paket?.name ?? '', begruendung: b.begruendung || t('ablage.uebernehmen.ohne-begruendung') });
+      case 'abgleich': return t('ablage.uebernehmen.beleg-abgleich', { feld: b.feld ?? '', titel: titelOder(b.mappeId ? bezuege[b.mappeId]?.titel : ''), merkmal: b.merkmal ?? '' });
+    }
+  };
+  return (
+    <div className="ue-typbelege leise klein" aria-label={t('ablage.uebernehmen.woran-typ')}>
+      <p>{vorgeschlagen ? t('ablage.uebernehmen.vorschlag-sicherheit', { prozent: Math.round(e.sicherheit * 100) }) : t('ablage.uebernehmen.woran-typ')}</p>
+      <ul>{e.belege.map((b, i) => <li key={`${b.weg}:${i}`}>{text(b)}{b.zitat && <> {t('ablage.uebernehmen.beleg-zitat', { zitat: b.zitat })}</>}</li>)}</ul>
+    </div>
   );
 }
 

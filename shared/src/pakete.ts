@@ -426,6 +426,7 @@ export const SCHNITTSTELLEN = {
   'dms:volltext': t('gemeinsam.pakete.volltext-fuer-dateien-liefern'),
   'dms:archivfassung': t('gemeinsam.pakete.archivfassung-pdf-a-ablegen'),
   'dms:uebersetzen': t('gemeinsam.pakete.inhalte-uebersetzen'),
+  'dms:klassifizieren': t('gemeinsam.pakete.mappentyp-vorschlagen'),
 } as const;
 export type Schnittstelle = keyof typeof SCHNITTSTELLEN;
 /** Ab dieser Version kennt das DMS `code.rechte.schnittstellen` und das Ereignis `volltext.fertig` (#442). */
@@ -437,7 +438,7 @@ export const DMS_VEKTOREN_AB = '0.120.0';
  */
 export const DMS_ANTWORTEN_AB = '0.124.0';
 /** Hilfe-Ort je Schnittstelle (Administratorhandbuch, Pakete mit Code). */
-export const SCHNITTSTELLE_HILFE: Record<Schnittstelle, Hilfeort> = { 'dms:vektoren': 'pakete.recht.vektoren', 'dms:antworten': 'pakete.recht.antworten', 'dms:erkennen': 'pakete.recht.erkennen', 'dms:texterkennung': 'pakete.recht.texterkennung', 'dms:umwandeln': 'pakete.recht.umwandeln', 'dms:sicherung-lesen': 'pakete.recht.sicherung', 'dms:volltext': 'pakete.recht.volltext', 'dms:archivfassung': 'pakete.recht.archivfassung', 'dms:uebersetzen': 'pakete.recht.uebersetzen' };
+export const SCHNITTSTELLE_HILFE: Record<Schnittstelle, Hilfeort> = { 'dms:vektoren': 'pakete.recht.vektoren', 'dms:antworten': 'pakete.recht.antworten', 'dms:erkennen': 'pakete.recht.erkennen', 'dms:texterkennung': 'pakete.recht.texterkennung', 'dms:umwandeln': 'pakete.recht.umwandeln', 'dms:sicherung-lesen': 'pakete.recht.sicherung', 'dms:volltext': 'pakete.recht.volltext', 'dms:archivfassung': 'pakete.recht.archivfassung', 'dms:uebersetzen': 'pakete.recht.uebersetzen', 'dms:klassifizieren': 'pakete.recht.klassifizieren' };
 /**
  * Ab dieser Version (#585) kennt das DMS das Ereignis `sicherung.fertig` und die Schnittstelle `dms:sicherung-lesen`:
  * Ein Paket liest die verschlüsselte Sicherung in Stücken, kopiert sie außer Haus und meldet je Sicherung zurück.
@@ -482,7 +483,7 @@ export const hatNetz = (c: PaketCode | undefined) => !!c && (c.netz.length > 0 |
 export const EREIGNISSE_OHNE_INHALT: readonly EreignisArt[] = ['sicherung.fertig', 'paket.einstellungen_geaendert'];
 /** Ereignisse, mit denen ein Paket etwas aus der Ablage erfährt (#796): alle außer {@link EREIGNISSE_OHNE_INHALT}. */
 export const INHALT_EREIGNISSE: readonly EreignisArt[] = (Object.keys(EREIGNISSE) as EreignisArt[]).filter((e) => !EREIGNISSE_OHNE_INHALT.includes(e));
-export const INHALT_SCHNITTSTELLEN: readonly Schnittstelle[] = ['dms:antworten', 'dms:erkennen', 'dms:uebersetzen', 'dms:vektoren', 'dms:texterkennung', 'dms:volltext', 'dms:umwandeln', 'dms:archivfassung'];
+export const INHALT_SCHNITTSTELLEN: readonly Schnittstelle[] = ['dms:antworten', 'dms:erkennen', 'dms:klassifizieren', 'dms:uebersetzen', 'dms:vektoren', 'dms:texterkennung', 'dms:volltext', 'dms:umwandeln', 'dms:archivfassung'];
 /**
  * KI-Paket bzw. „KI-Dienst“ (#796): ein Paket, das Inhalte lesen oder bekommen kann (Mappen, Dokumente, Volltext,
  * Ausschnitte) und ins Netz darf. Es bekommt nur Inhalte aus Mappentypen, die der Administrator für KI-Dienste

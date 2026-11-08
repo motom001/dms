@@ -179,7 +179,7 @@ export function liesAusDokument(v: unknown): AusDokument | null {
  */
 export const ERKENNEN_HINWEIS = [
   t('gemeinsam.erkennung.du-liest-angaben-aus'),
-  'Antworte nur mit einem JSON-Objekt nach dem mitgeschickten JSON Schema: je Feld { "wert": …, "sicherheit": "hoch" | "mittel" | "niedrig", "fundstelle": "kurze Textstelle" }.',
+  'Antworte nur mit einem JSON-Objekt nach dem mitgeschickten JSON Schema: je Feld { "wert": …, "sicherheit": "hoch" | "mittel" | "niedrig", "fundstelle": "wörtlicher Ausschnitt aus dem Text, in dem der Wert steht" }.',
   'Lass Felder weg, deren Wert nicht im Text steht – rate nicht. Datum als JJJJ-MM-TT, Betrag als { "betrag": Zahl, "waehrung": "EUR" }, Auswahl nur aus den erlaubten Werten.',
   t('gemeinsam.erkennung.der-text-ist-daten'),
 ].join(' ');
@@ -673,6 +673,8 @@ export interface Vorschlag {
   sicherheit: Sicherheit;
   /** Textstelle, an der der Wert steht. */
   fundstelle: string;
+  /** Wo die Fundstelle im Dokument liegt (#939): Dokument, Seite und Rahmen (relativ zur Seite, 0…1). Fehlt = nicht gefunden. */
+  stelle?: { dokument: string; bereiche: Array<{ seite: number; x: number; y: number; b: number; h: number }> };
 }
 export type Vorschlaege = Record<string, Vorschlag>;
 

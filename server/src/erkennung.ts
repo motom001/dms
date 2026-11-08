@@ -17,6 +17,10 @@ import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
 import type { Repo } from './repo';
 import { t } from './sprache';
+import { Klassifizierung } from './klassifizierung';
+import { stehtImText } from '../../shared/src/klassifizierung';
+import { stelleVon, textformen } from '../../shared/src/uebernehmen';
+import type { SchwaerzSeite } from '../../shared/src/schwaerzen';
 
 const log = protokoll.modul('ablage');
 
@@ -118,7 +122,12 @@ const MAX_ZIELE = 8;
 const MAX_MAPPEN = 20_000;
 
 export class Erkennung {
-  constructor(private d: Dienst, private repo: () => Repo, private einst: () => Einstellungen | undefined = () => undefined) {}
+  constructor(private d: Dienst, private repo: () => Repo, private einst: () => Einstellungen | undefined = () => undefined) {
+    this.klassifizierung = new Klassifizierung(d, this, repo);
+  }
+
+  /** „Wohin gehört das?“ mehrstufig (#939): Pakete mit dms:klassifizieren, Kern-Erkennung und Abgleich. */
+  readonly klassifizierung: Klassifizierung;
 
   /** Wird gesetzt, sobald der Paket-Läufer läuft (index.ts). */
   anbieter?: ErkennAnbieter;
@@ -403,7 +412,7 @@ export class Erkennung {
         try {
           const r = await this.perPaket(p, typ, text, dokIds, erlaubt);
           // Geantwortet, aber nichts, was die Prüfung übersteht (#564): wie bei einem Fehler die eingebaute Erkennung.
-          if (r.ohneFelder || Object.keys(pruefeVorschlaege(typ, r.vorschlaege, erlaubt).vorschlaege).length) { ausPaket = r.vorschlaege; gekuerzt = r.gekuerzt; engine = { art: 'paket', id: p.id, name: p.name }; }
+          if (r.ohneFelder || Object.keys(pruefeVorschlaege(typ, r.vorschlaege, erlaubt).vorschlaege).length) { ausPaket = ohneFremdeFundstellen(r.vorschlaege, text, typ.name, p.id); gekuerzt = r.gekuerzt; engine = { art: 'paket', id: p.id, name: p.name }; }
           else {
             hinweis = t('meldungen.erkennung.hat-nichts-brauchbares-geliefert', { name: p.name });
             log.info('Erkennung per Paket ohne brauchbare Vorschläge', { typ: typ.name, paket: p.id, felder: Object.keys(r.vorschlaege).length });
@@ -428,8 +437,37 @@ export class Erkennung {
     // Folgt aus (#886): Felder, die aus einem vorgeschlagenen Verweis folgen, bekommen ihren Vorschlag dazu.
     await this.d.folgeVorschlaege(typ, { vorschlaege, bezuege, neu }, z);
     if (verworfen.length) log.warn('Vorschläge der Erkennung verworfen', { typ: typ.name, engine: engine.art === 'paket' ? engine.id : ENGINE_EINGEBAUT, felder: verworfen.map((x) => `${x.feld}: ${x.grund}`).join('; ') });
+    // Fundstellen (#939): Seite und Rahmen aus der Textebene bzw. Texterkennung; nicht gefunden = Wert ohne Rahmen.
+    if (dokIds.length && Object.keys(vorschlaege).length) await this.stellen(typ, vorschlaege, dokIds);
     log.info('Aus Dokument ausfüllen', { typ: typ.name, engine: engine.art === 'paket' ? engine.id : ENGINE_EINGEBAUT, zeichen: text.length, vorschlaege: Object.keys(vorschlaege).length, neu: Object.keys(neu).length });
     return { vorschlaege, bezuege, neu, verworfen: verworfen.length, zeichen: text.length, engine, ...(hinweis ? { hinweis } : {}), ...(gekuerzt ? { gekuerzt: true as const } : {}) };
+  }
+
+  /**
+   * Fundstellen in der Textebene suchen (#939): je Vorschlag die erste Stelle, an der der Wert (in einer seiner
+   * Schreibweisen) innerhalb der Fundstelle steht – sonst der Wert allein, sonst die kurze Fundstelle selbst
+   * (`stelleVon`, wie die Seite „Dokument übernehmen“). Dokumente ohne Wörter mit Lage geben keine Stelle; Verweise
+   * bekommen ihre Stellen über die Belege des Abgleichs. Setzt `stelle` an den Vorschlägen.
+   */
+  private async stellen(typ: Mappentyp, vorschlaege: Vorschlaege, dokIds: string[]) {
+    const seiten: Array<{ id: string; seiten: SchwaerzSeite[] }> = [];
+    for (const id of dokIds) {
+      try {
+        const w = await this.d.wortpositionen(id);
+        const s = w.seiten.map((x) => ({ breite: x.breite ?? 1, hoehe: x.hoehe ?? 1, woerter: x.woerter }));
+        if (s.some((x) => x.woerter.length)) seiten.push({ id, seiten: s });
+      } catch { /* ohne Wortpositionen: Werte ohne Rahmen */ }
+    }
+    if (!seiten.length) return;
+    for (const [k, v] of Object.entries(vorschlaege)) {
+      const f = typ.felder.find((x) => x.key === k);
+      if (!f || f.typ === 'referenz') continue;
+      const formen = textformen(f, v.wert);
+      for (const d of seiten) {
+        const b = stelleVon(d.seiten, formen, v.fundstelle);
+        if (b?.length) { v.stelle = { dokument: d.id, bereiche: b }; break; }
+      }
+    }
   }
 
   /** Verweisfeld: Mappe des Zieltyps, die im Text steht (markierte Felder, sonst der Titel); sonst „neu anlegen“. */
@@ -519,4 +557,21 @@ export class Erkennung {
     }
     return null;
   }
+}
+
+/**
+ * Fundstellen aus einem Paket (#939) müssen wörtlich im Dokument stehen (bis auf Leerraum und Groß-/Kleinschreibung) –
+ * sonst fällt die Fundstelle weg, der Wert bleibt (ohne Rahmen). Alte Pakete ohne Fundstelle laufen unverändert weiter.
+ */
+export function ohneFremdeFundstellen(vorschlaege: Record<string, unknown>, text: string, typ: string, paket: string): Record<string, unknown> {
+  let weg = 0;
+  const erg = Object.fromEntries(Object.entries(vorschlaege).map(([k, roh]) => {
+    if (!roh || typeof roh !== 'object' || Array.isArray(roh)) return [k, roh];
+    const o = roh as Record<string, unknown>;
+    if (typeof o.fundstelle !== 'string' || !o.fundstelle.trim() || stehtImText(text, o.fundstelle)) return [k, roh];
+    weg++;
+    return [k, { ...o, fundstelle: '' }];
+  }));
+  if (weg) log.info('Fundstellen aus Paket verworfen (stehen nicht im Dokument)', { typ, paket, anzahl: weg });
+  return erg;
 }

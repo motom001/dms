@@ -2354,6 +2354,8 @@ export function routen(dienst: Dienst, konten: Konten, x: RoutenExtras = {}): Ro
     // „Dokument übernehmen“ (#934): Folgedokumente als neue Post abtrennen; Abgleich mit vorhandenen Mappen (Belege, Doppelte, Typ).
     { methode: 'POST', pfad: '/api/mappen/:id/abtrennen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.trennePostAb(a.params.id, b(a), ich(a).id, await zg(a))) },
     { methode: 'POST', pfad: '/api/abgleich', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erkennung.abgleichDokumente(b(a), await zg(a))) },
+    // „Wohin gehört das?“ mehrstufig (#939): Pakete mit dms:klassifizieren, Kern-Erkennung und Abgleich – ein Vorschlag mit Belegen.
+    { methode: 'POST', pfad: '/api/klassifizieren', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erkennung.klassifizierung.klassifiziere(b(a), await zg(a))) },
     // „Aus Dokument ausfüllen“ (#391): Vorschläge für die Felder eines Mappentyps aus Text, Dokumenten oder einer Datei.
     { methode: 'POST', pfad: '/api/typen/:id/vorschlaege', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erkennung.fuerTyp(a.params.id, b(a), await zg(a))) },
     { methode: 'POST', pfad: '/api/typen/:id/vorschlaege/datei', zugang: 'angemeldet', lesend: true, roh: 30 * 1024 * 1024, handler: async (a) => {

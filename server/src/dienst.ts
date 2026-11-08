@@ -1169,6 +1169,35 @@ export class Dienst {
     return this.lesbareTreffer(z, index, q.vektor, anzahl, { schwelle: q.schwelle, jeMappe: true });
   }
 
+  /**
+   * Ähnlichkeit für „Wohin gehört das?“ (#939, dms-registry#142): die Mappentypen der ähnlichsten abgelegten Dokumente
+   * zu einem Text – nur Mappen, die die Person **und** der Benutzer des Pakets lesen dürfen, und nur Typen aus `typen`
+   * (Kandidaten: „Kann aus Post angelegt werden“, Anlegerecht, für KI-Dienste zugelassen). Je Mappe das beste Dokument,
+   * höchstens `anzahl`. Heraus gehen nur Typ und Ähnlichkeit – keine Ids, Titel oder Inhalte. null: kein Paket mit
+   * dms:vektoren (bzw. ein anderes als `paket`), keine Antwort in `ms` oder der Zwischenspeicher lädt noch.
+   */
+  async aehnlicheTypen(z: Zugriff | undefined, paket: string, text: string, typen: ReadonlySet<string>, anzahl: number, ms: number): Promise<Array<{ typ: string; aehnlichkeit: number }> | null> {
+    if (this.vektorAnbieter?.paket() !== paket || text.trim().length < 3 || !typen.size) return null;
+    const start = Date.now();
+    const q = await this.vektorAnbieter.vektorFuer(text, ms).catch(() => null);
+    if (!q || q.paket !== paket) return null;
+    await this.merkeVektorModell(q.paket, q.modell);
+    if (!this.vektorGeladen.has(q.modell)) {
+      const rest = Math.max(0, ms - (Date.now() - start));
+      await Promise.race([this.vektorIndex(q.modell).catch(() => null), new Promise((ok) => setTimeout(ok, rest).unref?.())]);
+      if (!this.vektorGeladen.has(q.modell)) return null;
+    }
+    const index = await this.vektorIndex(q.modell);
+    if (!index || index.dimension !== q.vektor.length) return null;
+    const konto = (await this.konten?.dienstkonten?.())?.find((b) => b.paketId === paket);
+    const zp = await this.zugriff({ id: konto?.id ?? `paket:${paket}`, rolle: 'mitglied', art: 'dienst', paketId: paket });
+    const roh = index.suche(q.vektor, Math.min(index.anzahl, Math.max(200, anzahl * 20)), { schwelle: q.schwelle });
+    const ids = [...new Set(roh.map((x) => x.mappeId))];
+    const [person, paketDarf, bezuege] = await Promise.all([this.lesbare(z, ids), this.lesbare(zp, ids), this.repo.bezuege(ids)]);
+    const ok = roh.filter((x) => person.has(x.mappeId) && paketDarf.has(x.mappeId) && typen.has(bezuege.get(x.mappeId)?.typId ?? ''));
+    return jeMappe(ok, anzahl).map((x) => ({ typ: bezuege.get(x.mappeId)!.typId, aehnlichkeit: Math.round(x.aehnlichkeit * 100) / 100 }));
+  }
+
   /** Für die Werkbank: Vektoren je Modell, Dokumente mit Volltext, Einstellung. */
   async vektorStand(): Promise<{ paket: string | null; modell: string | null; mitVektor: number; mitVolltext: number; modelle: Array<{ paket: string; modell: string; anzahl: number }>; suche: boolean; zwischenspeicherMB: number | null }> {
     const paket = this.vektorAnbieter?.paket() ?? null;
