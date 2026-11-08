@@ -38,7 +38,9 @@ describe('Tresor (#39)', () => {
     assert.ok(istVerschluesselt(a));
     assert.notEqual(a, b, 'eigene Nonce je Wert');
     assert.equal(t.entschluessele(a), 'geheim');
-    assert.equal(t.entschluessele(a.slice(0, -2) + 'AA'), null, 'manipuliert = nicht lesbar');
+    // Ein Zeichen in der Mitte sicher ändern (am Ende wären 'AA' schon möglich oder nur ungenutzte Bits betroffen).
+    const m = Math.floor(a.length / 2); const neu = a[m] === 'A' ? 'B' : 'A';
+    assert.equal(t.entschluessele(a.slice(0, m) + neu + a.slice(m + 1)), null, 'manipuliert = nicht lesbar');
     await assert.rejects(t.erzeuge(), /schon einen Schlüssel/);
 
     // Neustart: Schlüssel wird aus der Datei gelesen.
