@@ -211,8 +211,8 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   useEffect(() => { if (!meldung) return; const z = window.setTimeout(() => setMeldung(null), 5000); return () => window.clearTimeout(z); }, [meldung]);
   const anschluss = useRef<FormularAnschluss | null>(null);
   const anschliessen = useCallback((a: FormularAnschluss) => { anschluss.current = a; return () => { if (anschluss.current === a) anschluss.current = null; }; }, []);
-  const nimm = useCallback((f: Feld, n: Nutzlast) => {
-    const a = anschluss.current;
+  const nimm = useCallback((f: Feld, n: Nutzlast, ziel?: FormularAnschluss) => {
+    const a = ziel ?? anschluss.current;
     if (!a) return;
     let wert: Wert | null = null;
     let bezug: { id: string; titel: string; typId: string } | undefined;
@@ -227,8 +227,15 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
     a.setze(f.key, wert, bezug);
     setMeldung({ art: 'gut', text: t('ablage.uebernehmen.uebernommen', { text: kurz(n.text), feld: feldLabel(f) }) });
   }, []);
+  // Fenster „+ … anlegen“ (#935): Solange es offen ist, gehen Rahmen und markierter Text dorthin.
+  const fensterZiel = useRef<((n: Nutzlast) => boolean) | null>(null);
+  const fenster = useCallback((z: ((n: Nutzlast) => boolean) | null) => { fensterZiel.current = z; }, []);
   /** Rahmen angeklickt bzw. Text markiert: ins zuletzt gewählte Feld; ohne gewähltes Feld zeigt der Rahmen sein Feld. */
   const insAktive = useCallback((n: Nutzlast, eigenesFeld?: string) => {
+    if (fensterZiel.current) {
+      if (!fensterZiel.current(n)) setMeldung({ art: 'warn', text: t('ablage.uebernehmen.erst-feld-waehlen', { text: kurz(n.text) }) });
+      return;
+    }
     const f = aktiv ? zielTyp?.felder.find((x) => x.key === aktiv) : undefined;
     if (f) { nimm(f, n); return; }
     if (eigenesFeld) { anschluss.current?.zeige(eigenesFeld); setHervor(eigenesFeld); return; }
@@ -241,7 +248,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
     return <VerweisBelege f={f} liste={liste} bezuege={erkannt.abgleich.bezuege} marken={marken.filter((x) => x.feldKey === f.key)}
       nehmen={(x) => nimm(f, { text: erkannt.abgleich!.bezuege[x.mappeId]?.titel ?? '', mappeId: x.mappeId, typId: x.typId, titel: erkannt.abgleich!.bezuege[x.mappeId]?.titel ?? '' })} />;
   }, [erkannt, marken, nimm]);
-  const bruecke = useMemo<Bruecke>(() => ({ marken, hervor, setHervor, aktiv, setAktiv, nimm, anschliessen, unterFeld }), [marken, hervor, aktiv, nimm, anschliessen, unterFeld]);
+  const bruecke = useMemo<Bruecke>(() => ({ marken, hervor, setHervor, aktiv, setAktiv, nimm, anschliessen, unterFeld, fenster }), [marken, hervor, aktiv, nimm, anschliessen, unterFeld, fenster]);
 
   /* ---------- Post: abtrennen, weitere Dokumente, ohne Mappe ---------- */
   const [kopieren, setKopieren] = useState(false);

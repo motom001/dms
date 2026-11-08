@@ -329,6 +329,7 @@
   "dienst.bitte-die-markierten-felder": "Bitte die markierten Felder prüfen: {namen}.",
   "dienst.bitte-die-markierten-felder-2": "Bitte die markierten Felder prüfen.",
   "dienst.unbekannter-mappentyp": "Unbekannter Mappentyp.",
+  "dienst.folgt-aus": "aus {feld}",
   "dienst.benutzer-legt-ein-administrator": " Benutzer legt ein Administrator in der Benutzerverwaltung an.",
   "dienst.mappen-vom-typ-lassen": "Mappen vom Typ „{name}“ lassen sich in der Ablage nicht anlegen.{wert}",
   "dienst.mappen-vom-typ-mit": "Mappen vom Typ „{name}“ mit diesen Angaben darfst du nicht anlegen.",

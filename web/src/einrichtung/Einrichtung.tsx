@@ -1,5 +1,6 @@
 import { AuswahlFilter } from '../werkbank/Sichten';
 import { kreisImStandard } from '../../../shared/src/nummernkreis';
+import { moeglicheQuellen, moeglicheZielFelder } from '../../../shared/src/folgtaus';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import {
@@ -566,6 +567,7 @@ function FeldZeile(p: {
   if (f.erkennung && ERKENNUNG_FELDTYPEN.includes(f.typ)) chips.push(t('mappentypen.editor.chip.aus-dokument'));
   if (f.wiederfinden && WIEDERFINDEN_FELDTYPEN.includes(f.typ)) chips.push(t('mappentypen.editor.chip.wiederfinden'));
   // Paket-Update (#534): Verweisfeld, das sich aus einem alten Textfeld füllen lässt.
+  if (f.typ === 'referenz' && f.folgtAus) chips.push(t('mappentypen.editor.folgt-aus-chip', { feld: p.alleFelder.find((x) => x.key === f.folgtAus!.feld)?.label ?? f.folgtAus.feld }));
   if (f.typ === 'referenz' && f.ausText) chips.push(tx('pakete.typ.austext', { aus: p.alleFelder.find((x) => x.key === f.ausText)?.label ?? f.ausText }));
   // Format und Datumsgrenzen (#535).
   if (f.typ === 'text' && istFeldformat(f.format)) chips.push(t('felder.editor.chip.format', { format: formatName(f.format) }));
@@ -619,6 +621,8 @@ function FeldZeile(p: {
     return ziel ? <div><AuswahlFilter ziel={ziel} bedingungen={f.auswahlFilter ?? []} setze={(b) => setze({ auswahlFilter: b })} eigeneFelder={p.alleFelder} feldKey={f.key} /></div>
       : f.zielTyp === p.eigeneId ? <p className="leise klein">{t('mappentypen.editor.einen-auswahlfilter-auf-diesen')}</p> : null;
   })()}
+  {/* Folgt aus (#886): nur bei festem Ziel-Mappentyp. */}
+  {f.zielTyp && f.zielTyp !== '*' && <FolgtAusEditor f={f} id={id} setze={setze} alleFelder={p.alleFelder} felderVon={(x) => (x === p.eigeneId ? p.alleFelder : p.typen.find((y) => y.id === x)?.felder)} />}
   </>;
 
   let standard = null;
@@ -1360,6 +1364,43 @@ function StempelEinstellung({ stempel, setze }: { stempel: StempelTyp | null; se
         ? t('mappentypen.editor.pflicht-dokumente-dieses-mappentyps')
         : modus === 'vorschlag' ? t('mappentypen.editor.vorschlag-beim-weitergeben-ist')
         : t('mappentypen.editor.kein-stempel-vorgegeben-benutzer')}</p>
+    </div>
+  );
+}
+
+/**
+ * Folgt aus (#886): Das Verweisfeld füllt sich aus einem anderen Verweisfeld dieser Mappe – über ein Verweisfeld der
+ * Mappe, auf die jenes zeigt (z. B. Organisation aus Niederlassung → Organisation). Nur ein leeres Feld, keine Sperre.
+ */
+function FolgtAusEditor({ f, id, setze, alleFelder, felderVon }: {
+  f: EntwurfFeld; id: (x: string) => string; setze(patch: Partial<EntwurfFeld>): void;
+  alleFelder: Feld[]; felderVon(typId: string): Feld[] | undefined;
+}) {
+  const quellen = moeglicheQuellen(alleFelder, f);
+  if (!quellen.length && !f.folgtAus) return null;
+  const quelle = f.folgtAus ? alleFelder.find((x) => x.key === f.folgtAus!.feld) : undefined;
+  const zielFelder = quelle?.zielTyp ? moeglicheZielFelder(felderVon(quelle.zielTyp) ?? [], f) : [];
+  const waehleQuelle = (k: string) => {
+    if (!k) { setze({ folgtAus: undefined }); return; }
+    const q = alleFelder.find((x) => x.key === k);
+    const z = q?.zielTyp ? moeglicheZielFelder(felderVon(q.zielTyp) ?? [], f) : [];
+    setze({ folgtAus: { feld: k, zielFeld: z[0]?.key ?? '' } });
+  };
+  return (
+    <div className="raster folgtaus">
+      <label className="eigenschaft" htmlFor={id('folgt')}><span>{t('mappentypen.editor.folgt-aus')}</span>
+        <select id={id('folgt')} value={f.folgtAus?.feld ?? ''} onChange={(e) => waehleQuelle(e.target.value)}>
+          <option value="">{t('mappentypen.editor.folgt-aus-nicht')}</option>
+          {quellen.map((x) => <option key={x.key} value={x.key}>{x.label || x.key}</option>)}
+          {f.folgtAus && !quellen.some((x) => x.key === f.folgtAus!.feld) && <option value={f.folgtAus.feld}>{f.folgtAus.feld}</option>}
+        </select>
+        <small className="hilfe">{t('mappentypen.editor.folgt-aus-hilfe')}</small></label>
+      {f.folgtAus && <label className="eigenschaft" htmlFor={id('folgt-ziel')}><span>{t('mappentypen.editor.folgt-aus-ueber', { feld: quelle?.label || f.folgtAus.feld })}</span>
+        <select id={id('folgt-ziel')} value={f.folgtAus.zielFeld} onChange={(e) => setze({ folgtAus: { feld: f.folgtAus!.feld, zielFeld: e.target.value } })}>
+          {!zielFelder.some((x) => x.key === f.folgtAus!.zielFeld) && <option value={f.folgtAus.zielFeld}>{f.folgtAus.zielFeld || t('mappentypen.editor.bitte-waehlen')}</option>}
+          {zielFelder.map((x) => <option key={x.key} value={x.key}>{x.label || x.key}</option>)}
+        </select>
+        {!zielFelder.length && <small className="hilfe">{t('mappentypen.editor.folgt-aus-kein-ziel')}</small>}</label>}
     </div>
   );
 }

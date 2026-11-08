@@ -162,19 +162,32 @@ Ein Feld der Feldart **Verweis** zeigt auf Mappen eines anderen Mappentyps (oder
 
 In der Zeile unter Ziel-Mappentyp, Art des Verweises und *Mehrere Mappen erlaubt* legst du mit **Nur Mappen, die …** fest, welche Mappen das Feld anbietet – etwa beim Feld *Arzt* im Arztbericht nur Vertragspartner mit *Art = Arzt*. Die Bedingungen funktionieren wie bei [Ansichten](sichten.md): Felder des Zieltyps und Systemwerte (angelegt, geändert, von wem), feste und dynamische Werte (heute ± n, aktueller Benutzer, seine Rollen). Mehrere Bedingungen gelten zusammen. Darunter steht, wie viele Mappen passen, z. B. „12 von 85 Vertragspartner passen“.
 
-- In der Mappe bietet die Suche im Feld nur passende Mappen an – und nur solche, die der Benutzer lesen darf. **+ … anlegen** belegt die neue Mappe mit dem vor, was sich eindeutig aus dem Filter ergibt (z. B. *Art = Arzt*).
+- In der Mappe bietet die Suche im Feld nur passende Mappen an – und nur solche, die der Benutzer lesen darf. **+ … anlegen** öffnet ein Fenster für die neue Mappe und belegt sie mit dem vor, was sich eindeutig aus dem Filter ergibt (z. B. *Art = Arzt*).
 - **Streng:** Ein neuer oder geänderter Wert muss passen, sonst lehnt Ablago das Speichern ab – auch über die [Schnittstelle](api.md).
-- **Bestehende Werte bleiben gültig**, auch wenn die Ziel-Mappe später nicht mehr passt oder du den Filter änderst. Am Feld steht dann „passt nicht mehr zum Filter“.
+- **Bestehende Werte bleiben gültig**, auch wenn die Ziel-Mappe später nicht mehr passt oder du den Filter änderst. Am Feld steht dann gelb, womit sie nicht passt: „passt nicht zu „Organisation““, wenn der Filter einen Wert dieser Mappe nimmt (siehe unten), sonst „passt nicht zur Auswahlregel dieses Felds“. Wer die Mappe bearbeiten darf, sieht über den Registern außerdem die Zeile „Achtung: Niederlassung passt nicht zu „Organisation“.“ – ein Klick springt zum Feld; sie verschwindet, sobald es passt. Speichern bleibt möglich. Über die [Schnittstelle](api.md) liefert die Mappe dasselbe unter `konflikte`.
 - Beim Speichern des Mappentyps meldet Ablago Bedingungen auf Felder, die es im Zieltyp nicht (mehr) gibt.
 - Nicht bei Feldern, die auf jede Mappe zeigen.
 
 **Werte aus dieser Mappe:** Statt eines festen Werts kann eine Bedingung einen Wert der eigenen Mappe nehmen – Haken **Wert aus dieser Mappe** und das Feld wählen. Beispiele: *Fachgebiet* (am Arzt) *ist einer von* **Fachgebiet dieser Mappe**; *Vertragspartner* (am Vertrag) *zeigt auf* **Vertragspartner dieser Mappe**.
 
 - Angeboten werden nur Felder mit passender Feldart: Text zu Text, Zahl zu Zahl, Datum zu Datum, ein Auswahlfeld, dessen Werte es auch am Ziel gibt, ein Verweisfeld auf denselben Mappentyp. Das Verweisfeld selbst geht nicht.
-- Ändert man in der Mappe das eigene Feld, filtert die Auswahl sofort neu. Passt eine schon gewählte Mappe nicht mehr, steht der Hinweis „passt nicht mehr zum Filter“ schon vor dem Speichern am Feld.
+- Ändert man in der Mappe das eigene Feld, filtert die Auswahl sofort neu. Passt eine schon gewählte Mappe nicht mehr, steht der Hinweis mit dem Namen des eigenen Felds schon vor dem Speichern am Feld.
 - **Ist das eigene Feld leer**, gilt die Bedingung nicht – dann werden alle angeboten, die die übrigen Bedingungen erfüllen.
 - Ablago prüft beim Speichern mit den Werten, die gespeichert werden sollen – auch wenn beide Felder im selben Zug geändert werden.
-- Werte aus Mappen, auf die diese Mappe verweist (eine Ebene weiter), gibt es nicht.
+- Werte aus Mappen, auf die diese Mappe verweist (eine Ebene weiter), gibt es nicht – dafür gibt es **Folgt aus** (nächster Abschnitt).
+
+#### Folgt aus
+
+Manche Verweise ergeben sich aus einem anderen: Eine Niederlassung gehört zu genau einer Organisation, eine Wohnung zu einem Objekt, ein Vertrag zu seinem Vertragspartner. Unter **Folgt aus** wählst du ein anderes Verweisfeld dieser Mappe und darunter, welche **Angabe** der Mappe dort übernommen wird – etwa bei der Person: *Organisation* folgt aus *Niederlassung*, Angabe *Organisation*. Zusammen mit einem Auswahlfilter (Niederlassung *Organisation* zeigt auf **Organisation dieser Mappe**) geht es in beide Richtungen: Niederlassung gewählt → die Organisation füllt sich; Organisation gewählt → nur ihre Niederlassungen.
+
+- **Nur ein leeres Feld** füllt sich, markiert mit „aus Niederlassung“. Steht schon etwas anderes darin, fragt Ablago: „Organisation ändern?“ – still überschrieben wird nie.
+- **Eine Vorbelegung, keine Sperre:** Von Hand lässt sich jederzeit etwas anderes eintragen. Passt die Quelle dann nicht mehr, fragt Ablago, ob sie geleert werden soll („Niederlassung leeren?“) – mit **Behalten** bleibt alles, wie es ist, und am Feld steht der gelbe Hinweis. Ein Auswahlfilter auf dem anderen Feld bleibt streng: Eine **neu** gewählte Mappe, die nicht dazu passt, nimmt Ablago weiterhin nicht an.
+- **Hat das Ziel keinen Wert** (eine Niederlassung ohne Organisation), passiert nichts.
+- **Nur, was man lesen darf:** Darf die Person die Organisation nicht lesen, füllt sich nichts.
+- **Bestehende Mappen** schreibt Ablago nicht um. Passen ihre Angaben nicht zusammen, zeigt die Mappe die gelbe Zeile über den Registern.
+- **Überall gleich:** in der Oberfläche, über die [Schnittstelle](api.md) (Ablago füllt beim Speichern, wenn die Anfrage das Feld nicht selbst nennt) und bei **Aus Dokument ausfüllen** – erkennt Ablago die Niederlassung, kommt die Organisation als Vorschlag dazu.
+- Beim Speichern des Mappentyps prüft Ablago: Beide Felder gibt es, die Quelle ist ein Verweisfeld mit **einer** Mappe, die Angabe zeigt auf denselben Mappentyp wie dieses Feld, und kein Feld folgt im Kreis aus einem anderen. Ketten gehen (Ansprechpartner → Organisation, Vertrag → Ansprechpartner).
+- In [Paketen](pakete.md) heißt die Eigenschaft `folgtAus: { feld: niederlassung, zielFeld: organisation }` (ab Ablago 0.225).
 
 Auf eine Mappe, auf die noch verwiesen wird, kann niemand sie löschen.
 

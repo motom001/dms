@@ -7,7 +7,7 @@ import { spaltenName, zelle } from './spalten';
 import { eigeneFelderIm, vorbelegungAus } from '../../../shared/src/sichten';
 import { datumText, inFrist } from '../../../shared/src/archiv';
 import { deutschePlz, eingabemodus, formatFehler, mitSchema, pruefeFormate, telefonLink } from '../../../shared/src/feldformate';
-import { darfErstellen, darfLoeschen, formatiere, istVersendet, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, VERWEISARTEN, verweisAusText, type Dokument, type Feld, type Mappe, type Abschnitt, type Mappenkonflikt, type Mappentyp, type Pruefergebnis, type Register, type Wert, type Werte } from '../../../shared/src/model';
+import { darfErstellen, darfLoeschen, formatiere, istVersendet, trefferlistenVon, geschuetzteFelder, istLeer, istOk,  standardRegister, titelAus, VERWEISARTEN, verweisAusText, type Verweiskonflikt, type Dokument, type Feld, type Mappe, type Abschnitt, type Mappenkonflikt, type Mappentyp, type Pruefergebnis, type Register, type Wert, type Werte } from '../../../shared/src/model';
 import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -35,6 +35,8 @@ import { ausDokumentKnopf, type Sicherheit } from '../../../shared/src/erkennung
 import type { TypVorschlaege } from '../api';
 import { farbeVon, liesNutzlast, useBruecke, ziehtWert } from './bruecke';
 import { altesFeldAusblenden } from '../../../shared/src/umwandlung';
+import { enthaeltId, ersteId } from '../../../shared/src/folgtaus';
+import { VerweisFenster } from './VerweisFenster';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 
@@ -77,6 +79,17 @@ function useAufloesung(z: ZuordnenNachher | undefined) {
   return x;
 }
 
+/** Vorbelegung einer neuen Mappe (#172, #935): Auswahlfilter, erkannte Angaben – nur, was zur Feldart passt. */
+function belegeVor(typ: Mappentyp, start: RohWerte, werte: Record<string, unknown>) {
+  for (const [k, v] of Object.entries(werte)) {
+    const f = typ.felder.find((x) => x.key === k);
+    if (!f || f.typ === 'passwort' || f.typ === 'betrag' || f.ausgeblendet) continue;
+    if (f.typ === 'janein' && typeof v === 'boolean') start[k] = v;
+    else if (Array.isArray(v) && f.mehrfach) start[k] = v.map(String);
+    else if (typeof v === 'string' && !f.mehrfach) start[k] = v;
+  }
+}
+
 export function NeueMappe({ typ, verweis, sicht, zuordnen, vorbelegen, vorschlagStart, kopf }: {
   typ: Mappentyp; verweis?: string; sicht: string; zuordnen?: ZuordnenNachher; vorbelegen?: string;
   /** Seite „Dokument übernehmen“ (#934): Vorschläge aus dem Dokument und ein eigener Kopf (Titel, wie er nach dem Speichern heißt). */
@@ -84,15 +97,7 @@ export function NeueMappe({ typ, verweis, sicht, zuordnen, vorbelegen, vorschlag
 }) {
   const start = standardRoh(typ);
   // ?vorbelegen={…} (#172): was sich aus dem Auswahlfilter eines Referenzfelds ergibt, z. B. Art = Arzt.
-  try {
-    for (const [k, v] of Object.entries(vorbelegen ? JSON.parse(vorbelegen) as Record<string, unknown> : {})) {
-      const f = typ.felder.find((x) => x.key === k);
-      if (!f || f.typ === 'passwort' || f.typ === 'betrag') continue;
-      if (f.typ === 'janein' && typeof v === 'boolean') start[k] = v;
-      else if (Array.isArray(v) && f.mehrfach) start[k] = v.map(String);
-      else if (typeof v === 'string' && !f.mehrfach) start[k] = v;
-    }
-  } catch { /* ohne Vorbelegung */ }
+  try { belegeVor(typ, start, vorbelegen ? JSON.parse(vorbelegen) as Record<string, unknown> : {}); } catch { /* ohne Vorbelegung */ }
   // Vorschläge aus der Post (Betreff, Datum) und aus der Erkennung (#336: Betrag, Nummern, Verweis auf den Absender).
   const vorbelegt: string[] = [];
   for (const [k, v] of Object.entries(zuordnen?.vorschlag ?? {})) {
@@ -280,6 +285,15 @@ function LinkKopiert({ link, ok, schliessen }: { link: string; ok: boolean; schl
 
 let zaehler = 0;
 
+/** Felder, die aus diesem Verweisfeld folgen (#886). */
+const folgendeAus = (typ: Mappentyp, key: string) => typ.felder.filter((x) => x.typ === 'referenz' && x.folgtAus?.feld === key).map((x) => x.key);
+
+/** „passt nicht zu „Organisation““ bzw. „passt nicht zur Auswahlregel dieses Felds“ (#887) – nie „Filter“. */
+export function unpassendText(felder: Feld[], keys: string[]): string {
+  const namen = keys.map((k) => felder.find((f) => f.key === k)).filter((f): f is Feld => !!f).map((f) => `„${feldLabel(f)}“`);
+  return namen.length ? t('felder.verweis.unpassend', { felder: new Intl.ListFormat(gebietsschema(), { type: 'conjunction' }).format(namen) }) : t('felder.verweis.unpassend.regel');
+}
+
 /** Mappen, die laut Register hierher verweisen (alle oder nur gewählte Quellen). */
 function verknuepfungsGruppen(d: ReturnType<typeof useDaten>, mappe: Mappe | undefined, typId: string, register: Register, details?: MappeDetails | null) {
   const gewaehlt = register.quellen ?? [];
@@ -294,8 +308,10 @@ function verknuepfungsGruppen(d: ReturnType<typeof useDaten>, mappe: Mappe | und
     })));
 }
 
-function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zuordnen, registerWunsch, mitVerknuepften, loeschWunsch = 0, vorschlagStart, kopf }: {
+function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zuordnen, registerWunsch, mitVerknuepften, loeschWunsch = 0, vorschlagStart, kopf, imFenster }: {
   typ: Mappentyp; mappe?: Mappe; start: RohWerte; sicht: string; anhang?: string; details?: MappeDetails | null; neuLaden?: () => Promise<void>; zuordnen?: ZuordnenNachher;
+  /** Fenster „+ … anlegen“ (#935): nach dem Speichern die neue Mappe zurückgeben statt die Seite zu wechseln; „Abbrechen“ schließt. */
+  imFenster?: { gespeichert(m: Mappe): void; abbrechen(): void };
   /** Seite „Dokument übernehmen“ (#934): Vorschläge aus dem Dokument, eingetragen wie bei „Aus Dokument ausfüllen“. */
   vorschlagStart?: TypVorschlaege;
   /** Kopf über dem Formular mit den aktuellen Werten (neue Mappe auf der Seite „Dokument übernehmen“). */
@@ -349,7 +365,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   // „Aus Dokument ausfüllen“ (#391): Vorschläge je Feld – eingetragen (Feld war leer) oder als Alternative.
   const bruecke = useBruecke();
   // Auf der Seite „Dokument übernehmen“ (#934) steht „Aus Dokument ausfüllen“ nicht – das Dokument ist schon da.
-  const knopf = nurLesen || bruecke ? null : ausDokumentKnopf(typ);
+  const knopf = nurLesen || bruecke || imFenster ? null : ausDokumentKnopf(typ);
   // Hat die Mappe ein Dokument mit Text, öffnet der Knopf die Seite mit diesem Dokument in der Mitte (#934); sonst der Dialog (Foto, Datei).
   const mitText = mappe ? (details?.dokumente ?? []).filter((x) => x.ocr?.stand === 'fertig') : [];
   const [adOffen, setAdOffen] = useState(false);
@@ -360,6 +376,11 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   const [bekannt, setBekannt] = useState<Bezuege>(details?.bezuege ?? {});
   useEffect(() => { if (details) setBekannt((b) => ({ ...b, ...details.bezuege })); }, [details]);
   const merke = (id: string, b: { titel: string; typId: string }) => setBekannt((x) => (x[id]?.titel === b.titel ? x : { ...x, [id]: b }));
+  // Folgt aus (#886): für Rückfragen nach einer Antwort des Servers immer der aktuelle Stand.
+  const rohRef = useRef(roh); rohRef.current = roh;
+  const bekanntRef = useRef(bekannt); bekanntRef.current = bekannt;
+  /** Felder, die sich aus ihrer Quelle gefüllt haben (#886) – markiert „aus …“, solange der Wert so bleibt. */
+  const [gefolgt, setGefolgt] = useState<Record<string, { quelle: string; wert: string }>>({});
   const werteGeaendert = JSON.stringify(roh) !== basis;
   // Hat sich die Mappe anderswo geändert (z. B. „Datum auf … setzen“, #130) und ist hier nichts ungespeichert: übernehmen.
   const startJson = JSON.stringify(start);
@@ -380,7 +401,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     return undefined;
   };
   const verwerfen = () => {
-    setKonflikt(undefined); setRoh(JSON.parse(vorschlagStart && !mappe ? startJson : basis)); setNeueDateien([]); setEntfernt([]); setFehler(null); setMeldung(undefined); setHinweise([]); setVorschlaege({}); setAdNeu({}); setAdMeldung(undefined);
+    setKonflikt(undefined); setRoh(JSON.parse(vorschlagStart && !mappe ? startJson : basis)); setNeueDateien([]); setEntfernt([]); setFehler(null); setMeldung(undefined); setHinweise([]); setVorschlaege({}); setAdNeu({}); setAdMeldung(undefined); setGefolgt({});
     // Seite „Dokument übernehmen“ (#934): zurück auf die Vorschläge aus dem Dokument.
     if (vorschlagStart) setVorschlagRunde((n) => n + 1);
   };
@@ -434,9 +455,12 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   };
   const alleAbschnitte = useMemo(() => new Map(registerVon(typ).flatMap((r) => (r.abschnitte ?? []).map((a) => [abschnittId(r.key, a), a] as const))), [typ]);
 
-  /** Auswahlfilter mit Werten dieser Mappe (#173): nur die Felder, von denen er abhängt. */
+  /**
+   * Werte dieser Mappe, mit denen ein Verweis zusammenpassen muss: die Felder, aus denen der Auswahlfilter Werte nimmt
+   * (#173), und die Felder, die aus diesem Verweis folgen (#886).
+   */
   const eigeneWerte = (f: Feld): Werte | undefined => {
-    const keys = eigeneFelderIm(f.auswahlFilter);
+    const keys = [...new Set([...eigeneFelderIm(f.auswahlFilter), ...folgendeAus(typ, f.key)])];
     if (!keys.length) return undefined;
     const w = werteAusRoh(typ, roh);
     return Object.fromEntries(keys.map((k) => [k, w[k] ?? null]));
@@ -444,7 +468,63 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   const setze = (k: string, v: Roh) => {
     setRoh((r) => ({ ...r, [k]: v }));
     if (fehler?.felder[k]) setFehler((f) => f && { ...f, felder: Object.fromEntries(Object.entries(f.felder).filter(([x]) => x !== k)) });
+    void folge(k, v);
   };
+
+  /**
+   * Folgt aus (#886) nach einer Eingabe von Hand (Auswahl, Ziehen, Anklicken) – nie beim Öffnen und nie durch
+   * Vorschläge. Quelle gewählt: ein leeres Feld, das aus ihr folgt, füllt sich und ist markiert; steht dort etwas
+   * anderes, erst nach Rückfrage. Ein solches Feld von Hand geändert und die Quelle passt nicht mehr: Rückfrage, ob die
+   * Quelle geleert werden soll – nie still löschen. Hat das Ziel keinen Wert oder darf man es nicht lesen: nichts.
+   */
+  async function folge(k: string, v: Roh, vonHand = true) {
+    const f = typ.felder.find((x) => x.key === k);
+    if (!f || f.typ !== 'referenz' || nurLesen) return;
+    if (vonHand) setGefolgt((g) => (g[k] ? Object.fromEntries(Object.entries(g).filter(([x]) => x !== k)) : g));
+    const id = ersteId(ausRoh(f, v));
+    if (!id) return;
+    const titel = (x: string) => titelOder(bekanntRef.current[x]?.titel);
+    const ziele = typ.felder.filter((x) => x.typ === 'referenz' && x.folgtAus?.feld === k && geschuetzt[x.key] === undefined && !ausgeblendet.has(x.key));
+    if (ziele.length) {
+      const r = await api.folgen(typ.id, { [k]: id }).catch(() => null);
+      if (!r || ersteId(ausRoh(f, rohRef.current[k])) !== id) return;
+      for (const z of ziele) {
+        const e = r.felder[z.key];
+        if (!e?.wert) continue;
+        const soll = e.wert;
+        merke(soll, { titel: e.titel ?? '', typId: e.typId ?? '' });
+        const jetzt = ausRoh(z, rohRef.current[z.key]);
+        if (enthaeltId(jetzt, soll)) continue;
+        if (!istLeer(jetzt)) {
+          const ok = await rueckfrage({
+            titel: t('ablage.folgen.aendern-titel', { feld: feldLabel(z) }),
+            text: t('ablage.folgen.aendern-text', { quelle: feldLabel(f), quelleTitel: titel(id), titel: titelOder(e.titel), jetzt: titel(ersteId(jetzt)) }),
+            ja: t('ablage.folgen.aendern-ja', { feld: feldLabel(z) }), nein: t('ablage.folgen.lassen'),
+          });
+          if (!ok || ersteId(ausRoh(f, rohRef.current[k])) !== id) continue;
+        }
+        const neu: Roh = z.mehrfach ? [...new Set([...(Array.isArray(rohRef.current[z.key]) ? rohRef.current[z.key] as string[] : []), soll])] : soll;
+        setRoh((x) => ({ ...x, [z.key]: neu }));
+        setGefolgt((g) => ({ ...g, [z.key]: { quelle: k, wert: soll } }));
+        oeffneAbschnitte([z.key]);
+        // Eine Kette (a aus b, b aus c) füllt sich weiter.
+        void folge(z.key, neu, false);
+      }
+    }
+    const qf = vonHand && f.folgtAus ? typ.felder.find((x) => x.key === f.folgtAus!.feld && x.typ === 'referenz') : undefined;
+    if (!qf || geschuetzt[qf.key] !== undefined) return;
+    const qid = ersteId(ausRoh(qf, rohRef.current[qf.key]));
+    if (!qid) return;
+    const r = await api.folgen(typ.id, { [qf.key]: qid }).catch(() => null);
+    const soll = r?.felder[k]?.wert;
+    if (!soll || enthaeltId(ausRoh(f, rohRef.current[k]), soll) || ersteId(ausRoh(qf, rohRef.current[qf.key])) !== qid) return;
+    const ok = await rueckfrage({
+      titel: t('ablage.folgen.leeren-titel', { quelle: feldLabel(qf) }),
+      text: t('ablage.folgen.leeren-text', { quelle: feldLabel(qf), quelleTitel: titel(qid), soll: titelOder(r!.felder[k].titel), neu: titel(id) }),
+      ja: t('ablage.folgen.leeren-ja', { quelle: feldLabel(qf) }), nein: t('ablage.folgen.behalten'),
+    });
+    if (ok && ersteId(ausRoh(qf, rohRef.current[qf.key])) === qid) setRoh((x) => ({ ...x, [qf.key]: '' }));
+  }
 
   /** Vorschläge eintragen (#391): leere Felder bekommen den Wert, gefüllte eine Alternative; nichts ist gespeichert. */
   function uebernimmVorschlaege({ r, dateien, ablegen }: AusDokumentErgebnis): RohWerte {
@@ -499,21 +579,22 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     if (!mappe) setBasis(JSON.stringify({ ...roh, ...werte }));
   }, [vorschlagStart, vorschlagRunde]); // eslint-disable-line react-hooks/exhaustive-deps
   // Die Brücke setzt Werte vom Dokument und zeigt Felder; über Refs immer mit dem aktuellen Stand.
-  const anschluss = useRef({ roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler });
-  anschluss.current = { roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler };
+  const anschluss = useRef({ roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, folge });
+  anschluss.current = { roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, folge };
   useEffect(() => bruecke?.anschliessen({
     setze(k, wert, bezug) {
       const a = anschluss.current;
       const f = typ.felder.find((x) => x.key === k);
       if (!f || a.nurLesen || a.geschuetzt[k] !== undefined) return;
       if (bezug) a.merke(bezug.id, { titel: bezug.titel, typId: bezug.typId });
-      setRoh((r) => {
-        const neu = zuRoh(f, wert);
-        const alt = r[k];
-        // Mehrfachfelder: dazunehmen statt ersetzen.
-        return { ...r, [k]: f.mehrfach && Array.isArray(alt) && Array.isArray(neu) ? [...new Set([...alt as string[], ...neu as string[]])] : neu };
-      });
+      const neu = zuRoh(f, wert);
+      const alt = a.roh[k];
+      // Mehrfachfelder: dazunehmen statt ersetzen.
+      const roh = f.mehrfach && Array.isArray(alt) && Array.isArray(neu) ? [...new Set([...alt as string[], ...neu as string[]])] : neu;
+      setRoh((r) => ({ ...r, [k]: roh }));
       a.setFehler((x) => x && x.felder[k] ? { ...x, felder: Object.fromEntries(Object.entries(x.felder).filter(([y]) => y !== k)) } : x);
+      // Folgt aus (#886): wie bei einer Eingabe von Hand.
+      void a.folge(k, roh);
     },
     zeige(k) {
       const a = anschluss.current;
@@ -557,9 +638,23 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   const sichtbar = (f: Feld) => !altesFeldAusblenden(f, mappe?.werte[f.key], altesFeld(f));
   function hinweisAm(f: Feld): ReactNode {
     const v = altesFeld(f);
-    const zusatz = vorschlagAm(f);
+    const g = gefolgt[f.key];
+    const q = g && enthaeltId(ausRoh(f, roh[f.key]), g.wert) ? typ.felder.find((x) => x.key === g.quelle) : undefined;
+    const zusatz = <>{vorschlagAm(f)}{q && <p className="ad-hinweis folgt"><span className="chip">{t('ablage.folgen.aus', { feld: feldLabel(q) })}</span></p>}</>;
     if (!v || istLeer(mappe?.werte[f.key])) return zusatz;
     return <>{zusatz}<small className="hilfe">{t('pakete.formular.alttext', { feld: v.label })}</small></>;
+  }
+
+  /** Hinweiszeile (#887): ins Register des Felds, Abschnitt auf, hinrollen und den Fokus aufs Feld. */
+  function springeZu(k: string) {
+    const r = register.find((x) => x.art === 'felder' && felderAuf(x).some((f) => f.key === k));
+    if (r) setAktiv(r.key);
+    oeffneAbschnitte([k]);
+    window.setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(`form.mitregistern [data-anker="mappe.feld:${k}"]`);
+      el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el?.querySelector<HTMLElement>('input, select, textarea, button, a')?.focus({ preventScroll: true });
+    }, 40);
   }
 
   function zeigeFehler(p: Pruefergebnis) {
@@ -648,7 +743,9 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
       try { await api.dokumentLoeschen(id); } catch (e) { nichtEntfernt.push(id); neu.push({ art: 'schlecht', text: (e as Error).message }); }
     }
     setNeueDateien(offen); setEntfernt(nichtEntfernt); setHinweise(neu);
-    setVorschlaege({}); setAdNeu({}); setAdMeldung(undefined);
+    setVorschlaege({}); setAdNeu({}); setAdMeldung(undefined); setGefolgt({});
+    // Fenster „+ … anlegen“ (#935): die neue Mappe geht ans Verweisfeld; die Mappe dahinter bleibt, wie sie ist.
+    if (imFenster && gespeichert) { await d.neuLaden(); setSendet(false); imFenster.gespeichert(gespeichert); return; }
     if (!offen.length && !nichtEntfernt.length) loeseWache();
     // Lesen verloren (#126): zurück zur Liste, mit Hinweis.
     const verloren = gespeichert?.hinweis?.includes('nicht mehr sehen');
@@ -707,7 +804,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   else if (reg.art === 'felder') {
     const r = reg;
     const eingabe = (f: Feld) => <FeldEingabe key={f.key} feld={f} roh={roh[f.key]} fehler={fehler?.felder[f.key]?.[0]} setze={(v) => setze(f.key, v)} eigeneId={mappe?.id} bekannt={bekannt} merke={merke}
-      typId={typ.id} unpassend={details?.unpassend?.[f.key]} eigene={eigeneWerte(f)}
+      typId={typ.id} typFelder={typ.felder} unpassend={details?.unpassend?.[f.key]} gruende={grundAus(details?.konflikte, f.key)} eigene={eigeneWerte(f)}
+      neu={f.typ === 'referenz' && adNeu[f.key]?.typId === f.zielTyp ? adNeu[f.key].werte : undefined}
       gesperrt={geschuetzt[f.key] ?? (nurLesen && f.typ !== 'passwort' ? '' : undefined)} nurLesen={nurLesen} plzDeutsch={f.format === 'plz' ? deutschePlz(f, typ.felder, roh as Werte) : undefined} passwortSehen={!rechte || rechte.P} zusatz={hinweisAm(f)} gespeichert={mappe ? mappe.werte[f.key] : undefined} />;
     // Abschnitte (#890): jede Gruppe ein eigenes Raster – so beginnt nach jedem Abschnitt eine neue Zeile.
     const gruppen = gruppiere(r.abschnitte, alleAuf(r), (f) => !ausgeblendet.has(f.key) && sichtbar(f));
@@ -782,6 +880,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
       </div>
     )}
     <form className="blatt mitregistern" onSubmit={(e) => { e.preventDefault(); void speichern(); }} noValidate>
+      {mappe && !nurLesen && <KonfliktZeile konflikte={(details?.konflikte ?? []).filter((k) => JSON.stringify(roh[k.feld] ?? null) === JSON.stringify(basisRoh[k.feld] ?? null))} felder={typ.felder} zeige={springeZu} />}
       <RegisterReihe aktiv={reg?.key}>
         {register.map((r) => {
           const n = fehlerAuf(r);
@@ -812,6 +911,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
         <div className="knoepfe">
           {mappe
             ? <button type="button" className="knopf" disabled={!(werteGeaendert || dokumenteGeaendert) || sendet} onClick={verwerfen}><span className="hy-nur-breit">{t('ablage.mappeformular.aenderungen-verwerfen')}</span><span className="hy-nur-schmal">{t('ablage.mappeformular.verwerfen')}</span></button>
+            : imFenster ? <button type="button" className="knopf" disabled={sendet} onClick={imFenster.abbrechen}>{t('ablage.mappeformular.abbrechen')}</button>
             : kopf ? <button type="button" className="knopf" disabled={sendet} onClick={verwerfen}><span className="hy-nur-breit">{t('ablage.mappeformular.aenderungen-verwerfen')}</span><span className="hy-nur-schmal">{t('ablage.mappeformular.verwerfen')}</span></button>
             : <Link to={`/ablage/${sicht}`} className="knopf">{t('ablage.mappeformular.abbrechen')}</Link>}
           <button type="submit" className="knopf gruen" disabled={sendet}>{sendet ? t('ablage.mappeformular.speichere') : <><span className="hy-nur-breit">{t('ablage.mappeformular.mappe-speichern')}</span><span className="hy-nur-schmal">{t('ablage.mappeformular.speichern')}</span></>}</button>
@@ -819,6 +919,31 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
       </div>}
     </form>
     </>
+  );
+}
+
+/** Gründe je unpassender Mappe aus den Konflikten der gespeicherten Mappe (#887). */
+const grundAus = (k: Verweiskonflikt[] | undefined, feld: string): Record<string, string[]> | undefined => {
+  const x = k?.find((y) => y.feld === feld);
+  return x ? Object.fromEntries(x.ids.map((id) => [id, x.eigeneFelder])) : undefined;
+};
+
+/**
+ * Hinweiszeile über den Registern (#887): Verweise, die nicht zu anderen Angaben der Mappe passen – gelb, ein Hinweis
+ * und kein Fehler; ein Klick springt zum Feld. Nur für Personen, die die Mappe bearbeiten dürfen; sie verschwindet,
+ * sobald es passt (nach dem Speichern) oder solange man das Feld gerade ändert.
+ */
+function KonfliktZeile({ konflikte, felder, zeige }: { konflikte: Verweiskonflikt[]; felder: Feld[]; zeige(k: string): void }) {
+  if (!konflikte.length) return null;
+  const knopf = (k: Verweiskonflikt) => {
+    const f = felder.find((x) => x.key === k.feld);
+    return <button type="button" className="textknopf" onClick={() => zeige(k.feld)}>{t('ablage.konflikt.zeile', { feld: f ? feldLabel(f) : k.feld, grund: unpassendText(felder, k.eigeneFelder) })}</button>;
+  };
+  return (
+    <div className="hinweis warn konfliktzeile" role="group" aria-label={t('ablage.konflikt.titel')} data-anker="mappe.konflikte">
+      <Symbol name="warnung" />
+      {konflikte.length === 1 ? <p>{knopf(konflikte[0])}</p> : <ul>{konflikte.map((k) => <li key={k.feld}>{knopf(k)}</li>)}</ul>}
+    </div>
   );
 }
 
@@ -876,7 +1001,7 @@ function Konfliktfrage({ konflikt, ich, sendet, waehle, speichern, abbrechen }: 
 /** Ein Vorschlag aus „Aus Dokument ausfüllen“ (#391) am Feld. */
 interface FeldVorschlag { wert: Wert; sicherheit: Sicherheit; fundstelle: string; art: 'eingetragen' | 'alternative'; vorher?: Roh }
 
-function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, gesperrt, nurLesen, passwortSehen = true, typId, unpassend, eigene, zusatz, plzDeutsch, gespeichert }: {
+function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, gesperrt, nurLesen, passwortSehen = true, typId, typFelder = [], unpassend, gruende, eigene, neu, zusatz, plzDeutsch, gespeichert }: {
   feld: Feld; roh: Roh | undefined; fehler?: string; setze: (v: Roh) => void; eigeneId?: string;
   /** Gespeicherter Wert (#732): Übersetzt wird immer nur er, nie die Eingabe. */
   gespeichert?: Wert;
@@ -884,8 +1009,12 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
   plzDeutsch?: boolean;
   /** Unter dem Feld, z. B. ein Vorschlag aus „Aus Dokument ausfüllen“ (#391). */
   zusatz?: ReactNode;
-  /** Typ der Mappe und Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */
-  typId?: string; unpassend?: string[];
+  /** Typ der Mappe und Verweise, die nicht (mehr) zum Auswahlfilter passen (#172); Felder des Typs für den Grund (#887). */
+  typId?: string; typFelder?: Feld[]; unpassend?: string[];
+  /** Je unpassender Mappe die eigenen Felder, mit denen sie nicht zusammenpasst (#887). */
+  gruende?: Record<string, string[]>;
+  /** Erkannte Angaben für eine neue Mappe des Zieltyps (#935): füllen das Fenster „+ … anlegen“ vor. */
+  neu?: Record<string, unknown>;
   /** Werte dieser Mappe, von denen der Auswahlfilter abhängt (#173). */
   eigene?: Werte;
   bekannt: Bezuege; merke: (id: string, b: { titel: string; typId: string }) => void;
@@ -911,7 +1040,9 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
     const ids = f.typ === 'referenz' ? (Array.isArray(roh) ? roh as string[] : roh ? [String(roh)] : []) : [];
     ctl = <div className="festwert" title={gesperrt}>{
       f.typ === 'referenz'
-        ? <ul>{ids.map((x) => <li key={x}>{bekannt[x]?.typId && !bekannt[x].verborgen ? <Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis"><Ehemalig id={x}>{titelOder(bekannt[x].titel)}</Ehemalig></Link> : <span className={bekannt[x]?.verborgen ? 'verborgen-titel' : ''}>{titelOder(bekannt[x]?.titel)}</span>}</li>)}</ul>
+        ? <ul>{ids.map((x) => <li key={x}>{bekannt[x]?.typId && !bekannt[x].verborgen ? <Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis"><Ehemalig id={x}>{titelOder(bekannt[x].titel)}</Ehemalig></Link> : <span className={bekannt[x]?.verborgen ? 'verborgen-titel' : ''}>{titelOder(bekannt[x]?.titel)}</span>}
+            {/* Wer nur liest, sieht die Markierung am Feld, aber keine Aufforderung (#887). */}
+            {unpassend?.includes(x) && <> <span className="chip warn" title={t('felder.verweis.unpassend.titel')}>{unpassendText(typFelder, gruende?.[x] ?? [])}</span></>}</li>)}</ul>
         : f.typ === 'janein' ? (roh ? t('ablage.mappeformular.ja') : t('ablage.mappeformular.nein')) : f.typ === 'formatiert' ? <Formatiert text={String(roh ?? '')} />
         : f.typ === 'datum' ? formatiere(f, String(roh ?? '')) : f.typ === 'langtext' ? <span className="mehrzeilig">{String(roh ?? '')}</span>
         : f.typ === 'text' && f.format ? <FormatWert f={f} wert={String(roh ?? '')} /> : String(roh ?? '')
@@ -978,8 +1109,9 @@ function FeldEingabe({ feld: f, roh, fehler, setze, eigeneId, bekannt, merke, ge
       ctl = <MappenWahl id={id} ziel={ziel} mehrfach={!!f.mehrfach} wert={roh as string | string[] | undefined} eigeneId={eigeneId}
         bekannt={bekannt} merke={merke} setze={setze}
         sicht={f.auswahlFilter?.length && typId ? `feld:${typId}:${f.key}` : undefined}
-        vorbelegen={f.auswahlFilter?.length ? vorbelegungAus(f.auswahlFilter, ziel) : undefined}
-        unpassend={unpassend} eigene={eigene} />;
+        pruefen={typId && (f.auswahlFilter?.length || typFelder.some((x) => x.folgtAus?.feld === f.key)) ? { typId, feldKey: f.key } : undefined}
+        vorbelegen={{ ...neu, ...(f.auswahlFilter?.length ? vorbelegungAus(f.auswahlFilter, ziel) : {}) }}
+        unpassend={unpassend} gruende={gruende} eigene={eigene} typFelder={typFelder} />;
       break;
     }
     case 'formatiert':
@@ -1249,11 +1381,13 @@ function Trefferliste({ treffer }: { treffer: Rueckverweis[] }) {
 
 /* ---------- Auswahl verwiesener Mappen (mit Suche statt langer Klappliste) ---------- */
 
-export function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze, sicht, vorbelegen, unpassend: vomServer = [], eigene, ohneAnlegen, platzhalter, quelle, leer }: {
+export function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke, setze, sicht, pruefen, vorbelegen, unpassend: vomServer = [], gruende: gruendeVomServer, eigene, typFelder = [], ohneAnlegen, platzhalter, quelle, leer }: {
   id: string; ziel: Mappentyp; mehrfach: boolean; wert: string | string[] | undefined; eigeneId?: string;
   bekannt: Bezuege; merke: (id: string, b: { titel: string; typId: string }) => void; setze: (v: Roh) => void;
-  /** Auswahlfilter (#172): Sicht „feld:<typ>:<feld>“ und Vorbelegung für „+ anlegen“. */
+  /** Auswahlfilter (#172): Sicht „feld:<typ>:<feld>“; Vorbelegung für „+ anlegen“ (Auswahlfilter, erkannte Angaben #935). */
   sicht?: string; vorbelegen?: Record<string, unknown>; unpassend?: string[]; eigene?: Werte;
+  /** Gewählte Mappen schon vor dem Speichern prüfen (#173, #886): Typ und Feld; mit den Gründen (#887). */
+  pruefen?: { typId: string; feldKey: string }; gruende?: Record<string, string[]>; typFelder?: Feld[];
   /** Ohne „+ … anlegen“, z. B. im Testlauf der Werkbank (#371). */
   ohneAnlegen?: boolean;
   /** Eigener Platzhalter statt „<Typ> suchen …“, z. B. „Mappe suchen …“ für die Testmappe (#710). */
@@ -1289,17 +1423,25 @@ export function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke,
     return () => { aktuell = false; clearTimeout(timer); };
   }, [offen, eingabe, ziel.id, sicht, eigeneText, quelle]);
 
-  // Passen die gewählten Mappen noch zu den Werten dieser Mappe (#173)? Hinweis schon vor dem Speichern.
+  // Passen die gewählten Mappen noch zu den Werten dieser Mappe (#173, #886)? Hinweis mit Grund (#887) schon vor dem Speichern.
   const gewaehltText = gewaehlt.join(',');
-  const [live, setLive] = useState<string[] | null>(null);
+  const [live, setLive] = useState<{ unpassend: string[]; gruende: Record<string, string[]> } | null>(null);
+  const pruefTyp = pruefen?.typId ?? (sicht?.startsWith('feld:') ? sicht.split(':')[1] : undefined);
+  const pruefFeld = pruefen?.feldKey ?? (sicht?.startsWith('feld:') ? sicht.split(':')[2] : undefined);
   useEffect(() => {
-    if (!sicht || !gewaehltText) { setLive(null); return; }
-    const [, typId, feldKey] = sicht.split(':');
+    if (!pruefTyp || !pruefFeld || !gewaehltText) { setLive(null); return; }
     let aktuell = true;
-    const timer = setTimeout(() => { api.auswahlPruefen(typId, feldKey, gewaehltText.split(','), eigeneText ? JSON.parse(eigeneText) as Werte : {}).then((r) => aktuell && setLive(r.unpassend)).catch(() => {}); }, 300);
+    const timer = setTimeout(() => { api.auswahlPruefen(pruefTyp, pruefFeld, gewaehltText.split(','), eigeneText ? JSON.parse(eigeneText) as Werte : {}).then((r) => aktuell && setLive({ unpassend: r.unpassend, gruende: r.gruende ?? {} })).catch(() => {}); }, 300);
     return () => { aktuell = false; clearTimeout(timer); };
-  }, [sicht, gewaehltText, eigeneText]);
-  const unpassend = live ?? vomServer;
+  }, [pruefTyp, pruefFeld, gewaehltText, eigeneText]);
+  const unpassend = live?.unpassend ?? vomServer;
+  const gruende = live?.gruende ?? gruendeVomServer ?? {};
+
+  // „+ … anlegen“ (#935): im verschiebbaren Fenster statt auf einer neuen Seite; danach steht die Mappe im Feld.
+  const [fenster, setFenster] = useState(false);
+  const [angelegt, setAngelegt] = useState<string>();
+  useEffect(() => { if (!angelegt) return; const z = window.setTimeout(() => setAngelegt(undefined), 6000); return () => window.clearTimeout(z); }, [angelegt]);
+  const anlegenRef = useRef<HTMLButtonElement>(null);
 
   function waehle(m: Mappe) {
     merke(m.id, { titel: m.titel ?? '', typId: m.typId });
@@ -1307,8 +1449,9 @@ export function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke,
     setEingabe(''); setOffen(false); setAendern(false);
   }
   const auswahl = (treffer ?? []).filter((m) => m.id !== eigeneId && !gewaehlt.includes(m.id));
-  const vor = vorbelegen && Object.keys(vorbelegen).length ? `?vorbelegen=${encodeURIComponent(JSON.stringify(vorbelegen))}` : '';
-  const anlegen = !ohneAnlegen && darfErstellen(ziel) ? <Link to={`/ablage/${ziel.id}/neu${vor}`} className="verweis klein">{t('ablage.mappeformular.anlegen-2', { name: typName(ziel) })}</Link> : null;
+  // Rechte wie sonst: nur, wenn die Person im Zieltyp anlegen darf.
+  const anlegen = !ohneAnlegen && darfErstellen(ziel) ? <button ref={anlegenRef} type="button" className="textknopf klein" aria-haspopup="dialog" aria-expanded={fenster} onClick={() => setFenster(true)}>{t('ablage.mappeformular.anlegen-2', { name: typName(ziel) })}</button> : null;
+  const start = useMemo(() => { const r = standardRoh(ziel); belegeVor(ziel, r, vorbelegen ?? {}); return r; }, [ziel, fenster]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Mehrfachauswahl id={id} name={t('felder.verweis.gewaehlt')} platzhalter={platzhalter ?? t('felder.verweis.suchen', { typ: typName(ziel) })}
@@ -1320,11 +1463,32 @@ export function MappenWahl({ id, ziel, mehrfach, wert, eigeneId, bekannt, merke,
       gewaehlt={gewaehlt.map((x) => ({
         id: x,
         inhalt: bekannt[x]?.typId && !bekannt[x].verborgen ? <Link to={`/ablage/${bekannt[x].typId}/${x}`} className="verweis"><Ehemalig id={x}>{titelOder(bekannt[x].titel)}</Ehemalig></Link> : <span className={bekannt[x]?.verborgen ? 'verborgen-titel' : 'leise'}>{bekannt[x]?.titel ?? t('felder.auswahl.lade')}</span>,
-        zusatz: unpassend.includes(x) && <span className="chip warn" title={t('felder.verweis.unpassend.titel')}>{t('felder.verweis.unpassend')}</span>,
+        zusatz: unpassend.includes(x) && <span className="chip warn" title={t('felder.verweis.unpassend.titel')}>{unpassendText(typFelder, gruende[x] ?? [])}</span>,
         aktionen: !mehrfach && !aendern && <button type="button" className="textknopf klein" onClick={() => { setAendern(true); setOffen(true); }}>{t('felder.verweis.aendern')}</button>,
         entfernenText: bekannt[x] ? t('felder.verweis.entfernen', { titel: titelOder(bekannt[x].titel) }) : t('felder.verweis.entfernen.ohne'),
       }))}
       entferne={(x) => setze(mehrfach ? gewaehlt.filter((y) => y !== x) : '')}
-      darunter={anlegen && <div className="zeile">{anlegen}</div>} />
+      darunter={<>
+        {anlegen && <div className="zeile">{anlegen}</div>}
+        {angelegt && <p className="hinweis gut klein vf-angelegt" role="status">{t('ablage.fenster.angelegt', { titel: angelegt })}</p>}
+        {fenster && <VerweisFenster ziel={ziel} zurueck={anlegenRef} schliessen={() => setFenster(false)}>
+          <Formular typ={ziel} start={start} sicht={ziel.id} kopf={(w, b) => <FensterKopf typ={ziel} werte={w} bekannt={b} />}
+            imFenster={{
+              gespeichert: (m) => { waehle(m); setAngelegt(titelOder(m.titel)); setFenster(false); },
+              abbrechen: () => setFenster(false),
+            }} />
+        </VerweisFenster>}
+      </>} />
+  );
+}
+
+/** Kopf der neuen Mappe im Fenster (#935): Typ und Titel, wie er nach dem Speichern heißt. */
+function FensterKopf({ typ, werte, bekannt }: { typ: Mappentyp; werte: Werte; bekannt: Bezuege }) {
+  const titel = titelAus(typ, werte, (id) => bekannt[id]?.titel ?? '');
+  return (
+    <div className="mappenkopf">
+      <p className="ueber">{typName(typ)}</p>
+      <p className={`vf-mappentitel${titel ? '' : ' leise'}`}>{titel || t('ablage.mappeformular.neue-mappe')}</p>
+    </div>
   );
 }

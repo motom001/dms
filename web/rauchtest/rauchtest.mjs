@@ -83,9 +83,9 @@ async function einrichtungscode() {
   throw new Error(`Einrichtungscode nicht gefunden (${datei}).`);
 }
 
-/** Kleines, gültiges PDF mit einer Zeile Text. */
+/** Kleines, gültiges PDF mit einer Zeile Text (mehrere Zeilen mit \n getrennt). */
 function beispielPdf(zeile) {
-  const inhalt = `BT /F1 18 Tf 60 760 Td (${zeile}) Tj ET`;
+  const inhalt = `BT /F1 18 Tf 60 760 Td ${zeile.split('\n').map((z) => `(${z}) Tj`).join(' 0 -28 Td ')} ET`;
   const objekte = [
     '<< /Type /Catalog /Pages 2 0 R >>',
     '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
@@ -465,13 +465,28 @@ rauchtest('Handy: Suche', { handy: true, als: LENA }, async (s) => {
   await keineWaagerechteRolle(s);
 });
 
+// #935: „+ … anlegen“ öffnet am Handy dasselbe Fenster – unten, so breit wie der Bildschirm; Esc schließt es.
+rauchtest('Handy: Fenster „+ … anlegen“ passt auf den Bildschirm (#935)', { handy: true, als: LENA }, async (s) => {
+  const typen = (await api('GET', '/api/typen', { cookie: await sitzung(LENA) })).daten;
+  await s.goto(BASIS + `/ablage/${typen.find((x) => x.name === 'Rechnung').id}/neu`);
+  const feld = s.locator('[data-anker="mappe.feld:aussteller"]');
+  await feld.getByRole('button', { name: '+ Vertragspartner anlegen' }).click();
+  const fenster = s.getByRole('dialog', { name: 'Vertragspartner anlegen' });
+  await fenster.getByRole('textbox', { name: 'Name*' }).waitFor();
+  const box = await fenster.boundingBox();
+  assert.ok(box && box.x >= 0 && box.x + box.width <= 390, `Fenster breiter als der Bildschirm (${JSON.stringify(box)})`);
+  await keineWaagerechteRolle(s);
+  await s.keyboard.press('Escape');
+  await fenster.waitFor({ state: 'detached' });
+});
+
 /* ---------- Zum Schluss: Wege, die den gemeinsamen Zustand ändern ---------- */
 
 /** Eigene Post für einen Test am Ende: Briefe als PDFs mit einer Zeile Text (die Textebene liest Ablago selbst). */
 async function eigenePost(betreff, zeilen = [betreff]) {
   const cookie = await sitzung(LENA);
   const brief = (await api('POST', '/api/post', { cookie, body: { betreff } })).daten;
-  for (const z of zeilen) await api('POST', `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent(`${z}.pdf`)}&typ=application/pdf`, { cookie, body: beispielPdf(z), roh: true });
+  for (const z of zeilen) await api('POST', `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent(`${z.split('\n')[0]}.pdf`)}&typ=application/pdf`, { cookie, body: beispielPdf(z), roh: true });
   return brief;
 }
 
@@ -550,6 +565,101 @@ rauchtest('Dokument übernehmen: in eine vorhandene Mappe legen, auch dann wird 
   await mappe.getByRole('tab', { name: 'Vertragsunterlagen 1' }).waitFor();
   await s.goto(BASIS + `/ablage/papierkorb/${daten.brief.id}`);
   await s.getByText(/^Aufgelöst in Vertrag „Stromvertrag Haus“\. Dokumente und Historie liegen dort/).waitFor();
+});
+
+// #935: Steht am Ende – legt einen Vertragspartner an. Die Mappe dahinter (aus der Post) bleibt ungespeichert offen.
+rauchtest('Verweisfeld: „+ … anlegen“ im Fenster, mit Werten vom Dokument (#935)', { als: LENA }, async (s) => {
+  const brief = await eigenePost('Heizungsbau Rechnung', ['Rechnung R-2027-55\nHeizungsbau Muster KG · Musterweg 1 · 01234 Musterstadt\nKundennummer K-4711']);
+  await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
+  await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
+  const mappe = s.getByRole('region', { name: 'Mappe' });
+  const dokument = s.getByRole('region', { name: 'Dokument' });
+  await mappe.getByText(/^Vorschlag, weil „Rechnung“ im Dokument steht/).waitFor();
+  await dokument.getByRole('img', { name: 'Seite 1' }).waitFor();
+  const aussteller = mappe.locator('[data-anker="mappe.feld:aussteller"]');
+  const anlegen = aussteller.getByRole('button', { name: '+ Vertragspartner anlegen' });
+  // Abbrechen und Esc schließen ohne Änderung; danach steht der Fokus wieder am Verweisfeld.
+  await anlegen.click();
+  const fenster = s.getByRole('dialog', { name: 'Vertragspartner anlegen' });
+  await fenster.getByRole('button', { name: 'Abbrechen' }).click();
+  await fenster.waitFor({ state: 'detached' });
+  await anlegen.click();
+  await fenster.getByRole('textbox', { name: 'Name*' }).waitFor();
+  await s.waitForFunction(() => document.activeElement?.closest('[role="dialog"]'));
+  await s.keyboard.press('Escape');
+  await fenster.waitFor({ state: 'detached' });
+  await s.waitForFunction(() => document.activeElement?.textContent === '+ Vertragspartner anlegen');
+  // Wie die rechte Spalte einer Mappe: Kopf, Register, Felder, Speicherleiste – vorausgefüllt mit dem Briefkopf.
+  await anlegen.click();
+  await fenster.getByText('Neue Mappe').or(fenster.getByText('Heizungsbau Muster KG', { exact: true })).first().waitFor();
+  await fenster.getByRole('tab', { name: 'Stammdaten' }).waitFor();
+  await fenster.getByRole('button', { name: 'Mappe speichern' }).waitFor();
+  const name = fenster.getByRole('textbox', { name: 'Name*' });
+  if (!(await name.inputValue())) await name.fill('Heizungsbau Muster KG');
+  // Anklicken vom Dokument geht auch im Fenster: Feld wählen, Text markieren – er landet im Fenster.
+  await fenster.getByRole('textbox', { name: 'Kundennummer' }).click();
+  const wort = dokument.locator('.ue-wort').last();
+  await wort.hover();
+  await s.mouse.down();
+  await s.mouse.up();
+  await s.waitForFunction(() => document.querySelector('[role="dialog"] #feld-kundennummer')?.value === 'K-4711');
+  await fenster.getByRole('button', { name: 'Mappe speichern' }).click();
+  await fenster.waitFor({ state: 'detached' });
+  // Im Feld steht die neue Mappe, mit kurzer Bestätigung; die Mappe dahinter ist noch nicht gespeichert.
+  await aussteller.getByRole('link', { name: 'Heizungsbau Muster KG' }).waitFor();
+  await aussteller.getByText('„Heizungsbau Muster KG“ angelegt und eingetragen.').waitFor();
+  assert.match(s.url(), new RegExp(`/${brief.id}/uebernehmen$`));
+  await mappe.getByText('Beim Speichern wandern Dokumente und Historie der Post hierher, die Post kommt in den Papierkorb.').waitFor();
+});
+
+// #886, #887: Steht am Ende – stellt im Mappentyp Rechnung ein, dass der Aussteller aus dem Vertrag folgt, und legt eine Rechnung an.
+rauchtest('Verweisfeld folgt aus einem anderen; passt es nicht, sagt die Mappe womit (#886, #887)', { als: LENA }, async (s) => {
+  // Im Mappentyp-Editor: Aussteller → „Folgt aus“ Vertrag, Angabe Vertragspartner.
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.getByRole('complementary', { name: 'Bereiche' }).getByRole('link', { name: /^Mappentypen/ }).click();
+  await s.getByRole('link', { name: /^Rechnung \d+ Felder/ }).click();
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByRole('heading', { name: 'Rechnung', level: 1 }).waitFor();
+  const felder = bearbeitung.getByRole('region', { name: 'Felder' });
+  await felder.getByRole('button', { name: 'Felder' }).click();
+  await felder.getByRole('button', { name: /^Aussteller aussteller/ }).click();
+  await felder.getByLabel('Folgt aus').selectOption({ label: 'Vertrag' });
+  assert.equal(await felder.getByLabel('Angabe aus „Vertrag“').inputValue(), 'vertragspartner');
+  await bearbeitung.getByRole('button', { name: 'Mappentyp speichern' }).click();
+  await bearbeitung.getByRole('button', { name: 'Mappentyp speichern', disabled: true }).waitFor();
+  await felder.getByText('folgt aus Vertrag').waitFor();
+  await s.getByRole('button', { name: 'Verwaltung beenden' }).click();
+  await s.getByRole('region', { name: 'Du verwaltest gerade Ablago.' }).waitFor({ state: 'detached' });
+  const rechnung = (await api('GET', '/api/typen', { cookie: await sitzung(LENA) })).daten.find((x) => x.name === 'Rechnung');
+  assert.deepEqual(rechnung.felder.find((f) => f.key === 'aussteller').folgtAus, { feld: 'vertrag', zielFeld: 'vertragspartner' });
+  await s.goto(BASIS + `/ablage/${rechnung.id}/neu`);
+  const mappe = s.getByRole('region', { name: 'Mappe' });
+  await mappe.getByRole('heading', { name: 'Neue Mappe', level: 1 }).waitFor();
+  await mappe.getByRole('textbox', { name: 'Rechnungsnummer*' }).fill('R-2027-88');
+  await mappe.getByLabel('Rechnungsdatum*').fill('2027-01-15');
+  await mappe.getByRole('textbox', { name: 'Rechnungsbetrag*' }).fill('120,00');
+  // Vertrag gewählt → der Aussteller füllt sich und ist markiert.
+  const vertrag = mappe.locator('[data-anker="mappe.feld:vertrag"]');
+  await vertrag.getByRole('combobox').fill('Wartungsvertrag');
+  await vertrag.getByRole('option', { name: 'Wartungsvertrag Heizung' }).click();
+  const aussteller = mappe.locator('[data-anker="mappe.feld:aussteller"]');
+  await aussteller.getByRole('link', { name: 'Heizungsbau Beispiel GmbH' }).waitFor();
+  await aussteller.getByText('aus Vertrag').waitFor();
+  // Von Hand etwas anderes: keine Sperre, aber die Frage, ob der Vertrag geleert werden soll – „Behalten“.
+  await aussteller.getByRole('button', { name: 'Ändern' }).click();
+  await aussteller.getByRole('combobox').fill('Stadtwerke');
+  await aussteller.getByRole('option', { name: 'Stadtwerke Musterstadt' }).click();
+  const frage = s.getByRole('alertdialog', { name: 'Vertrag leeren?' });
+  await frage.getByText('Vertrag „Wartungsvertrag Heizung“ gehört zu „Heizungsbau Beispiel GmbH“, nicht zu „Stadtwerke Musterstadt“.').waitFor();
+  await frage.getByRole('button', { name: 'Behalten' }).click();
+  // Gelb am Feld, mit dem Grund statt „Filter“; Speichern geht trotzdem.
+  await vertrag.getByText('passt nicht zu „Aussteller“').waitFor();
+  await mappe.getByRole('button', { name: 'Mappe speichern' }).click();
+  await mappe.getByRole('heading', { name: /^R-2027-88/, level: 1 }).waitFor();
+  // Über den Registern die Zeile; ein Klick springt ins Register zum Feld.
+  await mappe.getByRole('button', { name: 'Achtung: Vertrag passt nicht zu „Aussteller“.' }).click();
+  await s.waitForFunction(() => document.activeElement?.closest('[data-anker="mappe.feld:vertrag"]'));
 });
 
 /* ---------- Hilfen ---------- */

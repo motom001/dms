@@ -329,6 +329,7 @@
   "dienst.bitte-die-markierten-felder": "Please check the marked fields: {namen}.",
   "dienst.bitte-die-markierten-felder-2": "Please check the marked fields.",
   "dienst.unbekannter-mappentyp": "Unknown folder type.",
+  "dienst.folgt-aus": "from {feld}",
   "dienst.benutzer-legt-ein-administrator": " Users are created by an administrator in user management.",
   "dienst.mappen-vom-typ-lassen": "Folders of the type “{name}” can’t be created in the library.{wert}",
   "dienst.mappen-vom-typ-mit": "You may not create folders of the type “{name}” with these details.",

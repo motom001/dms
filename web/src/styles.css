@@ -2246,3 +2246,25 @@ main.rumpf[tabindex="-1"]:focus { outline: none; }
   .drei[data-ebene="uebernehmen"] .spalte.mappe { overflow: visible; min-height: auto; }
   .ue-ansicht iframe { height: 60vh; }
 }
+
+/* Fenster „+ … anlegen“ (#935): klein, verschiebbar, über der Seite; darin die Mappe wie rechts in der Ablage. */
+.verweisfenster { position: fixed; z-index: 45; right: max(24px, env(safe-area-inset-right)); top: 72px; width: min(560px, calc(100vw - 16px)); max-height: calc(100vh - 96px); max-height: calc(100dvh - 96px); display: flex; flex-direction: column; background: var(--grund); border: 1px solid var(--linie-stark); border-radius: 10px; box-shadow: 0 16px 48px rgb(15 23 42 / .28); overflow: hidden; }
+.verweisfenster.verschoben { right: auto; }
+.verweisfenster:focus { outline: none; }
+.vf-griff { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; background: var(--flaeche); border-bottom: 1px solid var(--linie); cursor: move; touch-action: none; user-select: none; }
+.vf-titel { flex: 1; min-width: 0; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vf-zu { flex: none; display: inline-grid; place-items: center; width: 32px; height: 32px; cursor: pointer; }
+.vf-inhalt.spalte { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px 16px 32px; }
+.vf-mappentitel { margin: 0; font-size: calc(18px * var(--skala, 1)); font-weight: 700; overflow-wrap: anywhere; }
+.vf-angelegt { margin: 4px 0 0; }
+@media (max-width: 600px) {
+  .verweisfenster:not(.verschoben) { left: 8px; right: 8px; top: auto; bottom: max(8px, env(safe-area-inset-bottom)); width: auto; max-height: 85vh; max-height: 85dvh; }
+  .vf-inhalt.spalte { padding: 12px 12px 32px; }
+}
+/* Verweis passt nicht (#887): gelbe Zeile über den Registern, ein Klick springt zum Feld. */
+.konfliktzeile { justify-content: flex-start; align-items: flex-start; flex-wrap: nowrap; }
+.konfliktzeile > .sym { flex: none; margin-top: 2px; }
+.konfliktzeile p, .konfliktzeile ul { margin: 0; }
+.konfliktzeile ul { padding-left: 1.1em; display: flex; flex-direction: column; gap: 2px; }
+.konfliktzeile .textknopf { color: inherit; text-align: left; text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
+.ad-hinweis.folgt .chip { background: var(--akzent-zart); color: var(--akzent); }

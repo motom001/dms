@@ -47,8 +47,14 @@ export interface Bruecke {
   setHervor(feldKey: string | null): void;
   aktiv: string | null;
   setAktiv(feldKey: string | null): void;
-  nimm(f: Feld, n: Nutzlast): void;
+  /** Wert vom Dokument in ein Feld; `ziel`: ein anderes Formular als das der Seite (Fenster „+ … anlegen“, #935). */
+  nimm(f: Feld, n: Nutzlast, ziel?: FormularAnschluss): void;
   anschliessen(a: FormularAnschluss): () => void;
+  /**
+   * Fenster „+ … anlegen“ (#935) über der Seite: Solange eins offen ist, gehen angeklickte Rahmen und markierter Text
+   * in dessen zuletzt gewähltes Feld (`nimm` liefert false, wenn dort keins gewählt ist). null meldet es wieder ab.
+   */
+  fenster(nimm: ((n: Nutzlast) => boolean) | null): void;
   /** Unter einem Feld, z. B. die Belege eines Verweisfelds. */
   unterFeld(f: Feld): ReactNode;
 }

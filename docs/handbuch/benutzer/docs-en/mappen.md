@@ -32,7 +32,7 @@ After document and link tabs it says how much is in them. A red dot shows on whi
     If a folder shows **Archive · keep until 31.12.YYYY**, it must be kept until then: until that day, neither the folder nor its documents can be deleted; you replace documents as a new version. After that, whoever has the permission may delete it; administrators find all expired folders collected under **Workbench → Retention expired**.
 
 !!! info "Only matching folders"
-    Some link fields only offer certain folders, e.g. for the field *Doctor* only contract partners who are doctors. If "no longer matches the filter" appears next to a chosen folder, it remains valid; you can only newly choose what matches.
+    Some link fields only offer certain folders, e.g. for the field *Doctor* only contract partners who are doctors, or for a person only the branches of the chosen organisation. If a chosen folder shows in yellow what it doesn't match – such as "doesn’t match “Organisation”" or "doesn’t match this field’s selection rule" –, it remains valid and you can still save; you can only newly choose what matches. If you may edit the folder, "Note: Branch doesn’t match “Organisation”." also appears above the tabs – a click takes you to the field.
 
 !!! info "Sequential numbers"
     If a field says "Assigned on saving", the folder automatically gets the next number there when saved, e.g. an invoice number. The number can't be changed afterwards.
@@ -97,7 +97,9 @@ A **link** connects two folders – the invoice with its contract, the contract 
 
 For fields that allow **several links** (e.g. *For invoices* on a payment), you repeat this. The search field stays at the top directly below the label; the chosen folders appear **below it**, each with **Remove**. This is how you choose several entries from a list everywhere, including the folder types in the [advanced search](ablage.md#erweiterte-suche).
 
-If the folder doesn't exist yet, **+ Create …** below the field leads directly to creating it.
+If the folder doesn't exist yet, **+ Create …** below the field opens a small window over the page – with header, tabs, fields and save bar like any folder. Drag it aside by its header to see what's behind it. **Save folder** creates the new folder, closes the window and fills it into the field; the folder you are working on stays open and unsaved. **Cancel**, ✕ or **Esc** close the window without changes, and the cursor is back at the field. The entry is only there if you may create folders of this type.
+
+**Fields that follow from another one:** some links follow from another – if you choose the branch for a person, the organisation it belongs to fills in, with "from Branch" below it. That only happens if the field is empty; if another organisation is already there, Ablago asks "Change Organisation?". If you enter a different organisation by hand, Ablago asks whether to clear the branch – with **Keep** it stays and the field shows the yellow notice. Which fields are connected like this is set by the administrator.
 
 A click on a link that has been set opens the other folder.
 

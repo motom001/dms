@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { auswahlText, darfErstellen, formatiere, POST_STAND, vorlageFelder, type Feld, type Mappe, type Mappentyp, type Wert, type Werte } from '../../../shared/src/model';
+import { auswahlText, darfErstellen, formatiere, POST_STAND, type Feld, type Mappe, type Mappentyp, type Wert, type Werte } from '../../../shared/src/model';
 import { api, type MappeDetails, type PostErkennung } from '../api';
 import { artVon } from '../../../shared/src/erkennung';
+import { betreffFeld } from '../../../shared/src/uebernehmen';
 import { useDaten } from '../daten';
 import { Link } from '../ort';
 import { titelOder } from '../seiten';
@@ -154,9 +155,8 @@ export function vorschlagFuer(ziel: Mappentyp, post: Werte, e?: PostErkennung | 
   const v: Record<string, Wert> = {};
   const betreff = auswahlText(post.betreff);
   const datum = e?.angaben.datum?.wert ?? auswahlText(post.datum);
-  // Das erste Textfeld der Titel-Vorlage, sonst das erste Textfeld überhaupt.
-  const imTitel = vorlageFelder(ziel.titelVorlage ?? '');
-  const text = ziel.felder.find((f) => f.typ === 'text' && imTitel.includes(f.key) && !f.eindeutig) ?? ziel.felder.find((f) => f.typ === 'text' && !f.eindeutig);
+  // Betreff (#934, Patch): nur ins erste Titelfeld und nur, wenn es ein Textfeld ohne festes Format ist – sonst bleibt es leer.
+  const text = betreffFeld(ziel);
   if (text && betreff) v[text.key] = betreff.slice(0, text.maxLen ?? 250);
   const dat = ziel.felder.find((f) => f.typ === 'datum');
   if (dat && datum) v[dat.key] = datum;
