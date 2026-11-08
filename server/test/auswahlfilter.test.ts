@@ -123,6 +123,6 @@ describe('Auswahlfilter mit Werten der eigenen Mappe (#173)', () => {
     // Nur das Fachgebiet geändert: bestehender Arzt bleibt, Hinweis
     await d.aendereMappe(b.id, { werte: { gebiet: 'Kardiologie', arzt: knie.id } });
     assert.deepEqual((await d.holeMappe(b.id)).unpassend, { arzt: [knie.id] });
-    assert.deepEqual(await d.auswahlPruefen({ typId: bericht.id, feldKey: 'arzt', ids: [knie.id, herz.id], werte: { gebiet: 'Kardiologie' } }, ICH.id), { unpassend: [knie.id] });
+    assert.deepEqual(await d.auswahlPruefen({ typId: bericht.id, feldKey: 'arzt', ids: [knie.id, herz.id], werte: { gebiet: 'Kardiologie' } }, ICH.id), { unpassend: [knie.id], gruende: { [knie.id]: ['gebiet'] } });
   });
 });

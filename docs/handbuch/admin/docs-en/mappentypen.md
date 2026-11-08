@@ -162,19 +162,32 @@ A field of the field kind **Link** points to folders of another folder type (or 
 
 In the line below target folder type, kind of link and *Several folders allowed* you decide with **Only folders that …** which folders the field offers – for instance for the field *Doctor* in the medical report only contract partners with *Kind = Doctor*. The conditions work as with [views](sichten.md): fields of the target type and system values (created, changed, by whom), fixed and dynamic values (today ± n, current user, their roles). Several conditions apply together. Below it says how many folders fit, e.g. "12 of 85 contract partners fit".
 
-- In the folder, the search in the field only offers fitting folders – and only those the user may read. **+ Create …** pre-fills the new folder with whatever follows unambiguously from the filter (e.g. *Kind = Doctor*).
+- In the folder, the search in the field only offers fitting folders – and only those the user may read. **+ Create …** opens a window for the new folder and pre-fills it with whatever follows unambiguously from the filter (e.g. *Kind = Doctor*).
 - **Strict:** a new or changed value must fit, otherwise Ablago refuses to save – also via the [interface](api.md).
-- **Existing values stay valid**, even if the target folder no longer fits later or you change the filter. The field then says "no longer fits the filter".
+- **Existing values stay valid**, even if the target folder no longer fits later or you change the filter. The field then says in yellow what it doesn't match: "doesn't match “Organisation”" if the filter takes a value of this folder (see below), otherwise "doesn't match this field’s selection rule". Whoever may edit the folder also sees the line "Note: Branch doesn't match “Organisation”." above the tabs – a click jumps to the field; it disappears as soon as it fits. Saving stays possible. Via the [interface](api.md) the folder returns the same under `konflikte`.
 - When saving the folder type, Ablago reports conditions on fields that don't exist (any more) in the target type.
 - Not for fields that point to any folder.
 
 **Values from this folder:** instead of a fixed value, a condition can take a value of the folder itself – tick **Value from this folder** and choose the field. Examples: *Speciality* (on the doctor) *is one of* **speciality of this folder**; *Contract partner* (on the contract) *points to* **contract partner of this folder**.
 
 - Only fields with a matching field kind are offered: text to text, number to number, date to date, a choice field whose values also exist on the target, a link field to the same folder type. The link field itself doesn't work.
-- If you change the field of your own in the folder, the choice filters anew immediately. If an already chosen folder no longer fits, the notice "no longer fits the filter" appears on the field even before saving.
+- If you change the field of your own in the folder, the choice filters anew immediately. If an already chosen folder no longer fits, the notice with the name of the folder's own field appears on the field even before saving.
 - **If the folder's own field is empty**, the condition doesn't apply – then all that meet the remaining conditions are offered.
 - Ablago checks on saving with the values that are to be saved – even if both fields are changed in the same go.
-- Values from folders this folder links to (one level further) don't exist.
+- Values from folders this folder links to (one level further) don't exist – that's what **Follows from** is for (next section).
+
+#### Follows from { #folgt-aus }
+
+Some links follow from another one: a branch belongs to exactly one organisation, a flat to one property, a contract to its contract partner. Under **Follows from** you choose another link field of this folder and below it which **value** of the folder there is taken over – for a person, for instance: *Organisation* follows from *Branch*, value *Organisation*. Together with a selection filter (branch *Organisation* points to **Organisation of this folder**) it works both ways: branch chosen → the organisation fills in; organisation chosen → only its branches.
+
+- **Only an empty field** fills in, marked "from Branch". If something else is already there, Ablago asks: "Change Organisation?" – nothing is ever overwritten silently.
+- **A pre-fill, not a lock:** you can always enter something else by hand. If the source then no longer fits, Ablago asks whether to clear it ("Clear Branch?") – with **Keep** everything stays as it is and the field shows the yellow notice. A selection filter on the other field stays strict: Ablago still doesn't accept a **newly** chosen folder that doesn't match.
+- **If the target has no value** (a branch without an organisation), nothing happens.
+- **Only what you may read:** if the person may not read the organisation, nothing fills in.
+- **Existing folders** aren't rewritten. If their details don't match, the folder shows the yellow line above the tabs.
+- **The same everywhere:** in the interface, via the [API](api.md) (Ablago fills in on saving if the request doesn't name the field itself) and with **Fill in from document** – if Ablago recognises the branch, the organisation comes along as a suggestion.
+- When saving the folder type Ablago checks: both fields exist, the source is a link field with **one** folder, the value points to the same folder type as this field, and no field follows from another in a circle. Chains work (contact → organisation, contract → contact).
+- In [packages](pakete.md) the property is called `folgtAus: { feld: niederlassung, zielFeld: organisation }` (from Ablago 0.225).
 
 Nobody can delete a folder that is still linked to.
 

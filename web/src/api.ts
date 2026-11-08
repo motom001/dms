@@ -13,7 +13,7 @@ import type { Akzeptiert, Schwere } from '../../shared/src/meldungen';
 import type { SystemkontoFehler } from '../../shared/src/systemkonten';
 import type { GemerktesPasswort, PdfSchutz } from '../../shared/src/entsperren';
 import type { UebersetzenAngebot, UebersetzenEinstellung, Uebersetzt, Uebersetzungsquelle } from '../../shared/src/uebersetzung';
-import type { Abwesenheit, Aufgabe, Ausschnitt, FallOhneLeserecht, Benutzer, Dokument, DokumentVersion, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Wert, Werte } from '../../shared/src/model';
+import type { Verweiskonflikt, Abwesenheit, Aufgabe, Ausschnitt, FallOhneLeserecht, Benutzer, Dokument, DokumentVersion, Historieneintrag, Notiz, Mappe, MappenBezug, Mappentyp, OcrStandArt, Pruefergebnis, Rolle, Sitzung, Sortierung, Vertretung, Wert, Werte } from '../../shared/src/model';
 import type { Feldbedingung, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ergebnis, Recht, Rechte, Regelwerk } from '../../shared/src/rechte';
 import type { AblaufEingabe, AblaufErgebnis, AblaufInstallation, AblaufPlan, Ergaenzung, HerkunftPruefung, InstalliertesPaket, Katalog, KiUebersicht, LaeuferZustand, RechtePunkt } from '../../shared/src/pakete';
@@ -816,7 +816,9 @@ export const api = {
   demoEntfernen: () => anfrage<Auftrag>('DELETE', '/api/werkbank/demo'),
   auftrag: () => anfrage<Auftrag | null>('GET', '/api/werkbank/auftrag'),
   /** Auswahlfilter (#172, #173): welche gewählten Mappen passen zu den aktuellen Werten nicht? */
-  auswahlPruefen: (typId: string, feldKey: string, ids: string[], werte: Werte) => anfrage<{ unpassend: string[] }>('POST', '/api/mappen/auswahl-pruefen', { typId, feldKey, ids, werte }),
+  auswahlPruefen: (typId: string, feldKey: string, ids: string[], werte: Werte) => anfrage<{ unpassend: string[]; gruende: Record<string, string[]> }>('POST', '/api/mappen/auswahl-pruefen', { typId, feldKey, ids, werte }),
+  /** Folgt aus (#886): was aus den Quellen in `werte` folgt – je Feld die Mappe oder null. */
+  folgen: (typId: string, werte: Werte) => anfrage<{ felder: Record<string, { quelle: string; wert: string | null; titel?: string; typId?: string }> }>('POST', '/api/mappen/folgen', { typId, werte }),
   /** Auswahlfilter am Referenzfeld (#172): wie viele Mappen passen? */
   auswahlZaehlen: (zielTyp: string, bedingungen: Feldbedingung[]) => anfrage<{ passen: number; gesamt: number; probleme: string[] }>('POST', '/api/werkbank/auswahlfilter/zaehlen', { zielTyp, bedingungen }),
   /* Nummernkreise (#171) */
@@ -1155,7 +1157,7 @@ export const verborgeneAufgaben = (x: unknown): Aufgabe[] | null => {
   const d = x instanceof ApiFehler && x.status === 404 ? x.details as { verborgen?: boolean; aufgaben?: Aufgabe[] } | undefined : undefined;
   return d?.verborgen ? d.aufgaben ?? [] : null;
 };
-export interface MappeDetails { /** #820: ohne Verwaltungsmodus nicht lesbar – steht in der Historie. */ nurImVerwaltungsmodus?: boolean; /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter passen (#172). */ unpassend?: Record<string, string[]>; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean; /** Auskunft nach Art. 15 DSGVO möglich (#396, Administratoren). */ auskunft?: boolean }
+export interface MappeDetails { /** #820: ohne Verwaltungsmodus nicht lesbar – steht in der Historie. */ nurImVerwaltungsmodus?: boolean; /** Wirksame Rechte an der Mappe (#126). */ rechte?: Rechte; mappe: Mappe; favorit?: boolean; /** Noch nicht fällige Erinnerungen (#131). */ erinnerungen?: Erinnerung[]; rueckverweise: Rueckverweis[]; loeschbar?: { ok: boolean; grund?: string; rueckverweise?: Rueckverweis[] }; dokumente: Dokument[]; notizen: Notiz[]; aufgaben: Aufgabe[]; bezuege: Bezuege; /** Verweise, die nicht (mehr) zum Auswahlfilter oder zu einem Feld passen, das aus ihnen folgt (#172, #886). */ unpassend?: Record<string, string[]>; /** Dasselbe je Feld mit den eigenen Feldern (#887). */ konflikte?: Verweiskonflikt[]; /** Archivmodus (#212). */ aufbewahrenBis?: string | null; /** Exportrecht (#294): darf als PDF exportiert werden. */ exportierbar?: boolean; /** Auskunft nach Art. 15 DSGVO möglich (#396, Administratoren). */ auskunft?: boolean }
 /** Werkbank → Datenschutz (#396, #455). */
 export interface DatenschutzStand { einstellung: Datenschutz; auskuenfte: AuskunftStand[]; /** #668 */ verzeichnis: AuskunftEintrag[]; tage: number; links: AuskunftLink[]; adresse: string; oeffentlich: boolean; mail: boolean; /** #469 */ loeschkonzept?: { luecken: Luecke[] } }
 export interface Hochgeladen { dokument: Dokument; gleicherInhalt: Array<{ mappeId: string; name: string; titel?: string; typId?: string }> }

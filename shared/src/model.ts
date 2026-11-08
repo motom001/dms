@@ -10,6 +10,7 @@
 import { LEER, liesFilter, ohneLeereTeile, PLATZHALTER_MIT_FILTERN, pruefeFilter, wendeFilterAn } from './titelfilter';
 import { alsText } from './markdown';
 import { kreisImStandard, kreisVon } from './nummernkreis';
+import { folgtAusKreis, folgtAusProbleme } from './folgtaus';
 import { ibanGruppen, pruefeFormatDefinition } from './feldformate';
 import { datumsformat } from './region';
 import { t, t as tx } from './texte';
@@ -70,6 +71,11 @@ export interface Feld {
   frist?: import('./fristen').FristEinstellung | null;
   /** Referenzfeld (#172): nur Mappen des Zieltyps, die alle Bedingungen erfüllen. */
   auswahlFilter?: import('./sichten').Feldbedingung[];
+  /**
+   * Referenzfeld (#886): „folgt aus“ einem anderen Verweisfeld dieser Mappe über ein Verweisfeld von dessen Ziel, z. B.
+   * Organisation aus Niederlassung → Organisation. Füllt nur ein leeres Feld (Vorbelegung, keine Sperre).
+   */
+  folgtAus?: import('./folgtaus').FolgtAus;
   /**
    * „Aus Dokument füllen“ (#336, #391; bis #938 „Für die Erkennung nutzen“): vorhanden = an, mit Art und
    * Erkennungshinweis. Der Name im Code bleibt `erkennung` – gespeicherte Daten und Pakete ändern sich nicht.
@@ -658,6 +664,8 @@ export function pruefeMappentyp(mappentypDaten: MappentypDaten, ctx: TypKontext)
         const ziel = f.zielTyp === ctx.eigeneId ? mappentypDaten.felder : ctx.felderVon?.(f.zielTyp);
         if (ziel) for (const x of ctx.auswahlProbleme(f.auswahlFilter, ziel, { felder: mappentypDaten.felder, feldKey: f.key })) m.push(`Auswahlfilter: ${x}`);
       }
+      // Folgt aus (#886): Quelle und Zielfeld gibt es und sie passen; Kreise meldet die Prüfung unten.
+      if (f.folgtAus) m.push(...folgtAusProbleme(mappentypDaten.felder, f, (id) => (id === ctx.eigeneId ? mappentypDaten.felder : ctx.felderVon?.(id))));
     }
     if (f.typ === 'auswahl' && !(f.optionen ?? []).length) m.push(t('gemeinsam.model.mindestens-einen-auswahlwert'));
     if ((f.typ === 'text' || f.typ === 'langtext' || f.typ === 'formatiert') && f.minLen != null && f.maxLen != null && f.minLen > f.maxLen)
@@ -677,6 +685,12 @@ export function pruefeMappentyp(mappentypDaten: MappentypDaten, ctx: TypKontext)
     }
     if (m.length) p.felder[String(i)] = m;
   });
+  // Folgt aus (#886): keine Kreise (Organisation aus Niederlassung und Niederlassung aus Organisation).
+  const kreis = folgtAusKreis(mappentypDaten.felder);
+  if (kreis.length) {
+    const namen = kreis.map((k) => `„${mappentypDaten.felder.find((f) => f.key === k)?.label || k}“`).join(', ');
+    mappentypDaten.felder.forEach((f, i) => { if (kreis.includes(f.key)) (p.felder[String(i)] ??= []).push(t('gemeinsam.folgtaus.kreis', { felder: namen })); });
+  }
   return p;
 }
 
@@ -1074,6 +1088,13 @@ export interface Feldkonflikt {
   /** Wer das Feld zuletzt geändert hat (null = das DMS selbst) und wann. */
   von: string | null; name: string; zeit: string;
 }
+/**
+ * Verweis passt nicht (#887): Die Mappe im Verweisfeld `feld` passt nicht zu den eigenen Feldern `eigeneFelder` – über
+ * den Auswahlfilter mit Werten dieser Mappe (#173) oder weil eines davon aus `feld` folgt (#886). Leer und `regel`:
+ * passt nur nicht zu den festen Bedingungen des Auswahlfilters. Ein Hinweis, kein Fehler: Speichern bleibt möglich.
+ */
+export interface Verweiskonflikt { feld: string; eigeneFelder: string[]; regel?: boolean; ids: string[] }
+
 export interface Mappenkonflikt {
   /** Aktueller Stand der Mappe – damit noch einmal senden, um die eigenen Werte zu übernehmen. */
   stand: string;

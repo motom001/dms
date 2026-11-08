@@ -3,7 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   darfErstellen, ERKENNBAR_AN_MAX, kannAusPost, darfLoeschen, ersterGrund, FELDTYPEN, formatiere, geschuetzteFelder, istLeer, istPasswortWert, istSystemspalte, sortierbar, istOk, leseZahl, MAX_AUSWAHL, MAX_DATEIGROESSE, pruefeMappe, pruefeMappentyp,
   REGISTERARTEN, REGISTERNAMEN, ABRUF_ART, type Abrufweg, type Abruffassung, historienartenVon, historiengruppenVon, istHistoriengruppe, SYSTEMTYPEN, ROLLEN, FRUEHERE_ADMINROLLE, type Modusspur, KONTOROLLEN, kontorolleKennung, type Kontorolle, type Systemkonto, freierSchluessel, schluesselAus, standardRegister, systemfelder, systemBeschriftung, systemrolleKennung, titelAus, verweiseVon, verweisAusText,
-  AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type AufgabenAnlass, type FallEnde, type FallOhneLeserecht, type Aufgabenart, type Benutzer, type Dokument, type DokumentVersion, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Feldkonflikt, type Mappenkonflikt, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Werte,
+  AUFGABE_MAX, fotoBetreff, istVersendet, istEmail, NOTIZ_MAX, POST_KANAL, POST_RICHTUNG, POST_STAND, auswahlText, darfPostAnlegen, abwesenheitWirkt, VERTRETER_SCHRITTE, type Abwesenheit, type Aufgabe, type AufgabenAnlass, type FallEnde, type FallOhneLeserecht, type Aufgabenart, type Benutzer, type Dokument, type DokumentVersion, type Herkunft, type Vertretung, type Feld, type Feldaenderung, type Feldkonflikt, type Mappenkonflikt, type Verweiskonflikt, type Notiz, type Historienart, type Historieneintrag, type Mappe, type Mappentyp, type MappentypDaten, type MappenBezug, type Quelle, type Register, type Trefferliste, trefferlistenVon, standardliste, type Rolle, type Systemtyp, type Wert, type Werte,
 } from '../../shared/src/model';
 import { DateiFehlt, type Dateispeicher } from './dateispeicher';
 import type { Mailer } from './mail';
@@ -35,6 +35,7 @@ import {
   type Aufloesung, type Bedingung, type Klausel, type Sicht, type SichtDaten,
 } from '../../shared/src/sichten';
 import type { Readable } from 'node:stream';
+import { bereinigeFolgtAus, enthaeltId, ersteId, folgeReihenfolge } from '../../shared/src/folgtaus';
 import { aufbewahrenBis, datumText, inFrist, JAHRE_MAX } from '../../shared/src/archiv';
 import type { ExportQuelle } from './vollexport';
 import { sammleBaum, type BaumQuelle } from './baum';
@@ -286,6 +287,8 @@ export function bereinigeFeld(e: unknown): Feld {
     zielTyp: typ === 'referenz' ? text(f.zielTyp) : '',
     // Auswahlfilter (#172): nur an Referenzfeldern mit festem Zieltyp.
     ...(typ === 'referenz' && text(f.zielTyp) && text(f.zielTyp) !== '*' && bereinigeAuswahlfilter(f.auswahlFilter).length ? { auswahlFilter: bereinigeAuswahlfilter(f.auswahlFilter) } : {}),
+    // Folgt aus (#886): nur an Verweisfeldern mit festem Zieltyp; geprüft wird im Mappentyp.
+    ...(typ === 'referenz' && text(f.zielTyp) && text(f.zielTyp) !== '*' && bereinigeFolgtAus(f.folgtAus) ? { folgtAus: bereinigeFolgtAus(f.folgtAus) } : {}),
     verweisart: f.verweisart === 'zugehoerigkeit' ? 'zugehoerigkeit' : 'bezug',
     // Fristen (#129): nur an Datumsfeldern.
     ...(typ === 'datum' && bereinigeFrist(f.frist) ? { frist: bereinigeFrist(f.frist) } : {}),
@@ -695,6 +698,9 @@ function bereinigeWerte(typ: Mappentyp, eingabe: unknown, bisher: Werte = {}, ve
   // Feldformate (#535): geänderte Eingaben angleichen (https:// ergänzen, IBAN in Vierergruppen).
   return gleicheFormateAn(typ, werte, bisher);
 }
+
+/** Felder, die eine Anfrage selbst setzt – auch leer. „Folgt aus“ (#886) füllt sie nicht. */
+const gesendeteFelder = (w: unknown) => new Set(w && typeof w === 'object' && !Array.isArray(w) ? Object.keys(w) : []);
 
 const keinSchluessel = (): never => {
   throw new Fachfehler(409, t('meldungen.dienst.passwoerter-lassen-sich-erst'));
@@ -3500,7 +3506,7 @@ export class Dienst {
       this.repo.rueckverweise(id), this.repo.bezuege(ziele),
       this.repo.listeDokumente(id).then((d) => this.mitArchivStand(d)).then((d) => this.mitPdfSchutz(d)),
       this.repo.notizen(id), this.repo.erinnerungen({ mappeId: id }),
-      this.unpassendeVerweise(typ, mappe.werte, z?.ich.id ?? '', alleTypen && z?.a ? { typen: alleTypen, a: z.a } : undefined),
+      this.verweiskonflikte(typ, mappe.werte, z?.ich.id ?? '', alleTypen && z?.a ? { typen: alleTypen, a: z.a } : undefined, z),
       z?.admin ? this.datenschutz() : Promise.resolve(null),
     ]);
     // Lesbar (#124, #126): verweisende und verwiesene Mappen in einem Zugriff.
@@ -3525,8 +3531,10 @@ export class Dienst {
       erinnerungen,
       /** Titel und Typ der Mappen, auf die diese verweist (nicht lesbare ohne Titel). */
       bezuege: maskiert(roheBezuege, sichtbar),
-      /** Verweise, die nicht (mehr) zum Auswahlfilter ihres Felds passen (#172). */
-      unpassend,
+      /** Verweise, die nicht (mehr) zum Auswahlfilter oder zu einem Feld passen, das aus ihnen folgt (#172, #886). */
+      unpassend: unpassend.unpassend,
+      /** Dasselbe je Verweisfeld mit den eigenen Feldern, mit denen es nicht zusammenpasst (#887). */
+      konflikte: unpassend.konflikte,
       /** Archivmodus (#212): aufbewahren bis (JJJJ-12-31) oder null. */
       aufbewahrenBis: aufbewahrenBis(typ?.archiv, mappe),
       /** Auskunft nach Art. 15 DSGVO (#396): Administratoren, Mappentyp „betrifft eine Person“. */
@@ -5269,6 +5277,8 @@ export class Dienst {
       const fehlt = nummern.find((n) => !da.has(n.kreis));
       if (fehlt) throw new Fachfehler(409, t('meldungen.dienst.den-nummernkreis-fuer-gibt', { kreis: fehlt.kreis, label: String(typ.felder.find((f) => f.key === fehlt.feldKey)?.label) }));
     }
+    // Folgt aus (#886): leere Felder füllen sich aus ihrer Quelle – was die Anfrage selbst setzt, bleibt.
+    await this.folgeFuellen(typ, werte, {}, gesendeteFelder(e.werte), z);
     await this.pruefeVerweisziele(z, typ, werte, {});
     await this.pruefeAuswahlfilter(typ, werte, {}, benutzerId);
     await this.pruefeWerte(typ, werte, undefined, undefined, z);
@@ -5314,25 +5324,67 @@ export class Dienst {
     if (Object.keys(fehler).length) throw new Fachfehler(422, t('meldungen.dienst.bitte-die-markierten-felder-2'), { allgemein: [], felder: fehler });
   }
 
-  /** Auswahlfilter (#172): bestehende Verweise, die nicht (mehr) zum Filter passen – für einen Hinweis am Feld. */
-  private async unpassendeVerweise(typ: Mappentyp | undefined, werte: Werte, benutzerId: string, schon?: { typen: Mappentyp[]; a: Aufloesung }): Promise<Record<string, string[]>> {
-    const mitFilter = typ?.felder.filter((f) => f.typ === 'referenz' && f.auswahlFilter?.length) ?? [];
-    if (!mitFilter.length) return {};
+  /**
+   * Verweise, die nicht (mehr) zu dieser Mappe passen – für den Hinweis am Feld und die Zeile über den Registern (#172,
+   * #886, #887): je Verweisfeld die unpassenden Mappen (`unpassend`) und je Feld die eigenen Felder, mit denen es nicht
+   * zusammenpasst (`konflikte`). Bestehende Werte bleiben gültig – das ist nur ein Hinweis.
+   */
+  private async verweiskonflikte(typ: Mappentyp | undefined, werte: Werte, benutzerId: string, schon?: { typen: Mappentyp[]; a: Aufloesung }, z?: Zugriff): Promise<{ unpassend: Record<string, string[]>; konflikte: Verweiskonflikt[] }> {
+    const felder = typ?.felder.filter((f) => f.typ === 'referenz' && (f.auswahlFilter?.length || typ.felder.some((x) => x.folgtAus?.feld === f.key))) ?? [];
+    if (!typ || !felder.length) return { unpassend: {}, konflikte: [] };
     const typen = new Map((schon?.typen ?? await this.repo.listeTypen()).map((t) => [t.id, t] as const));
     const a = schon?.a ?? await this.aufloesung(benutzerId);
-    const erg: Record<string, string[]> = {};
-    for (const f of mitFilter) {
-      const ziel = typen.get(f.zielTyp ?? '');
+    const unpassend: Record<string, string[]> = {};
+    const konflikte: Verweiskonflikt[] = [];
+    for (const f of felder) {
       const ids = (Array.isArray(werte[f.key]) ? werte[f.key] as string[] : werte[f.key] ? [String(werte[f.key])] : []).filter(istUuid);
-      if (!ziel || !ids.length) continue;
-      const k = auswahlKlausel(setzeEigeneWerte(f.auswahlFilter!, werte), ziel, a);
-      const x = (await this.repo.holeMappen(ids)).filter((m) => !erfuellt(m, k.filter, KEINE_ZAEHLUNG)).map((m) => m.id);
-      if (x.length) erg[f.key] = x;
+      if (!ids.length) continue;
+      const gruende = await this.verweisGruende(typ, f, await this.repo.holeMappen(ids), werte, typen.get(f.zielTyp ?? ''), a, z);
+      const falsch = ids.filter((id) => gruende[id]);
+      if (!falsch.length) continue;
+      unpassend[f.key] = falsch;
+      const eigene = [...new Set(falsch.flatMap((id) => gruende[id]))];
+      konflikte.push({ feld: f.key, eigeneFelder: eigene, ...(falsch.some((id) => !gruende[id].length) ? { regel: true } : {}), ids: falsch });
     }
-    return erg;
+    return { unpassend, konflikte };
   }
 
-  /** Auswahlfilter (#172, #173) beim Ausfüllen: welche der gewählten Mappen passen zu den aktuellen Werten nicht? */
+  /**
+   * Passen gewählte Mappen eines Verweisfelds zu den übrigen Werten dieser Mappe (#172, #173, #886, #887)? Je unpassender
+   * Mappe die eigenen Felder, mit denen sie nicht zusammenpasst: Felder, aus denen der Auswahlfilter Werte nimmt, und
+   * Felder, die aus diesem Feld folgen und etwas anderes enthalten. Eine leere Liste heißt: passt nur nicht zu den festen
+   * Bedingungen des Auswahlfilters. Was folgt, zählt nur mit Mappen, die die Person lesen darf.
+   */
+  private async verweisGruende(typ: Mappentyp, f: Feld, mappen: Mappe[], werte: Werte, ziel: Mappentyp | undefined, a: Aufloesung, z?: Zugriff): Promise<Record<string, string[]>> {
+    const gruende: Record<string, string[]> = {};
+    const dazu = (id: string, k?: string) => { const g = (gruende[id] ??= []); if (k && !g.includes(k)) g.push(k); };
+    if (ziel && f.auswahlFilter?.length) {
+      const k = auswahlKlausel(setzeEigeneWerte(f.auswahlFilter, werte), ziel, a);
+      const eigene = f.auswahlFilter.filter((b) => b.wert?.art === 'eigenesFeld');
+      for (const m of mappen) {
+        if (m.typId === ziel.id && erfuellt(m, k.filter, KEINE_ZAEHLUNG)) continue;
+        dazu(m.id);
+        for (const b of eigene) {
+          const kb = auswahlKlausel(setzeEigeneWerte([b], werte), ziel, a);
+          if (!erfuellt(m, kb.filter, KEINE_ZAEHLUNG)) dazu(m.id, (b.wert as { feld: string }).feld);
+        }
+      }
+    }
+    const folgen = typ.felder.filter((x) => x.typ === 'referenz' && x.folgtAus?.feld === f.key && !istLeer(werte[x.key]));
+    if (folgen.length) {
+      const lesbar = await this.lesbare(z, mappen.map((m) => m.id));
+      for (const m of mappen) {
+        if (!lesbar.has(m.id) || m.typId !== f.zielTyp) continue;
+        for (const x of folgen) {
+          const soll = ersteId(m.werte[x.folgtAus!.zielFeld]);
+          if (istUuid(soll) && !enthaeltId(werte[x.key], soll)) dazu(m.id, x.key);
+        }
+      }
+    }
+    return gruende;
+  }
+
+  /** Auswahlfilter (#172, #173) und „folgt aus“ (#886) beim Ausfüllen: welche der gewählten Mappen passen nicht, und womit nicht? */
   async auswahlPruefen(e: unknown, benutzerId: string, z?: Zugriff) {
     const x = (e ?? {}) as { typId?: unknown; feldKey?: unknown; ids?: unknown; werte?: unknown };
     const typ = istUuid(x.typId) ? await this.repo.holeTyp(x.typId) : undefined;
@@ -5342,10 +5394,75 @@ export class Dienst {
     const roh = (Array.isArray(x.ids) ? x.ids : []).map(String).filter(istUuid).slice(0, 200);
     const lesbar = await this.lesbare(z, roh);
     const ids = roh.filter((id) => lesbar.has(id));
-    if (!f || !ziel || !f.auswahlFilter?.length || !ids.length) return { unpassend: [] as string[] };
+    const leer = { unpassend: [] as string[], gruende: {} as Record<string, string[]> };
+    if (!typ || !f || !ziel || !ids.length || !(f.auswahlFilter?.length || typ.felder.some((y) => y.folgtAus?.feld === f.key))) return leer;
     const werte = x.werte && typeof x.werte === 'object' ? x.werte as Werte : {};
-    const k = auswahlKlausel(setzeEigeneWerte(f.auswahlFilter, werte), ziel, await this.aufloesung(benutzerId));
-    return { unpassend: (await this.repo.holeMappen(ids)).filter((m) => !erfuellt(m, k.filter, KEINE_ZAEHLUNG)).map((m) => m.id) };
+    const gruende = await this.verweisGruende(typ, f, await this.repo.holeMappen(ids), werte, ziel, await this.aufloesung(benutzerId), z);
+    return { unpassend: ids.filter((id) => gruende[id]), gruende };
+  }
+
+  /**
+   * Folgt aus (#886) beim Speichern: Ein leeres Verweisfeld mit „folgt aus“ füllt sich aus dem Ziel seiner Quelle – nur,
+   * wenn die Quelle neu gesetzt oder geändert ist, die Anfrage das Feld nicht selbst setzt (auch nicht leer) und die
+   * Person beide Mappen lesen darf. Was schon drinsteht, überschreibt das nie; hat das Ziel keinen Wert, bleibt alles.
+   */
+  private async folgeFuellen(typ: Mappentyp, werte: Werte, alt: Werte, gesendet: Set<string>, z?: Zugriff): Promise<void> {
+    for (const { feld: f, quelle, zielFeld } of folgeReihenfolge(typ.felder)) {
+      if (gesendet.has(f.key) || !istLeer(werte[f.key])) continue;
+      const q = ersteId(werte[quelle.key]);
+      if (!istUuid(q) || q === ersteId(alt[quelle.key])) continue;
+      const m = await this.folgeWert(quelle, zielFeld, f, q, z);
+      if (m) werte[f.key] = f.mehrfach ? [m.id] : m.id;
+    }
+  }
+
+  /** Was aus der Quelle folgt: die Mappe im Feld `zielFeld` der Mappe `q` – vom passenden Typ und für die Person lesbar. */
+  private async folgeWert(quelle: Feld, zielFeld: string, f: Feld, q: string, z?: Zugriff): Promise<Mappe | null> {
+    const m = await this.repo.holeMappe(q);
+    if (!m || m.typId !== quelle.zielTyp) return null;
+    const id = ersteId(m.werte[zielFeld]);
+    if (!istUuid(id)) return null;
+    const ziel = await this.repo.holeMappe(id);
+    if (!ziel || ziel.typId !== f.zielTyp) return null;
+    const lesbar = await this.lesbare(z, [q, id]);
+    return lesbar.has(q) && lesbar.has(id) ? ziel : null;
+  }
+
+  /**
+   * Folgt aus (#886) für die Oberfläche: Was folgt aus den Quellen in `werte`? Je Feld mit „folgt aus“, dessen Quelle
+   * einen Wert hat, die Mappe (mit Titel) oder null (das Ziel hat keinen Wert oder ist nicht lesbar).
+   */
+  async folgen(e: unknown, z?: Zugriff) {
+    const x = (e ?? {}) as { typId?: unknown; werte?: unknown };
+    const typ = istUuid(x.typId) ? await this.repo.holeTyp(x.typId) : undefined;
+    if (!typ || (z && !z.admin && z.typen && !z.typen.has(typ.id))) throw new Fachfehler(422, t('meldungen.dienst.unbekannter-mappentyp'));
+    const werte = x.werte && typeof x.werte === 'object' ? x.werte as Werte : {};
+    const felder: Record<string, { quelle: string; wert: string | null; titel?: string; typId?: string }> = {};
+    for (const { feld: f, quelle, zielFeld } of folgeReihenfolge(typ.felder)) {
+      const q = ersteId(werte[quelle.key]);
+      if (!istUuid(q)) continue;
+      const m = await this.folgeWert(quelle, zielFeld, f, q, z);
+      felder[f.key] = m ? { quelle: quelle.key, wert: m.id, titel: m.titel ?? '', typId: m.typId } : { quelle: quelle.key, wert: null };
+    }
+    return { felder };
+  }
+
+  /**
+   * Folgt aus (#886) beim Ausfüllen aus Dokumenten: Hat die Erkennung eine Quelle vorgeschlagen, kommt für das Feld, das
+   * daraus folgt, ein Vorschlag dazu (wenn es selbst keinen hat) – mit derselben Sicherheit und „aus …“ als Fundstelle.
+   */
+  async folgeVorschlaege(typ: Mappentyp, v: { vorschlaege: Record<string, { wert: Wert; sicherheit: 'hoch' | 'mittel' | 'niedrig'; fundstelle: string }>; bezuege: Record<string, MappenBezug>; neu: Record<string, unknown> }, z?: Zugriff): Promise<void> {
+    for (const { feld: f, quelle, zielFeld } of folgeReihenfolge(typ.felder)) {
+      if (v.vorschlaege[f.key]) continue;
+      const vq = v.vorschlaege[quelle.key];
+      const q = ersteId(vq?.wert);
+      if (!vq || !istUuid(q)) continue;
+      const m = await this.folgeWert(quelle, zielFeld, f, q, z);
+      if (!m) continue;
+      v.vorschlaege[f.key] = { wert: f.mehrfach ? [m.id] : m.id, sicherheit: vq.sicherheit, fundstelle: t('meldungen.dienst.folgt-aus', { feld: quelle.label || quelle.key }) };
+      v.bezuege[m.id] = { titel: m.titel ?? '', typId: m.typId };
+      delete v.neu[f.key];
+    }
   }
 
   /** Auswahlfilter (#172) in der Werkbank: wie viele Mappen des Zieltyps passen? */
@@ -5476,6 +5593,7 @@ export class Dienst {
         throw new Fachfehler(403, t('meldungen.dienst.laesst-sich-hier-nicht', { wert: typ.felder.find((f) => f.key === k)?.label ?? k, grund }));
       }
     }
+    await this.folgeFuellen(typ, werte, m.werte, gesendeteFelder(e.werte), z);
     await this.pruefeVerweisziele(z, typ, werte, m.werte);
     await this.pruefeAuswahlfilter(typ, werte, m.werte, benutzerId);
     await this.pruefeWerte(typ, werte, id, m.werte, z);

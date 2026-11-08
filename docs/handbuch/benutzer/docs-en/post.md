@@ -96,12 +96,14 @@ Below that:
 
 ### Taking values from the document { #werte-ubernehmen }
 
-The folder is already filled in: dates, amounts, numbers and links (e.g. the issuer) that Ablago found in the text, plus the post's subject and date. Each value is marked as a **Suggestion** at the field, with how certain it is and where it was found; **Take back** empties the field again.
+The folder is already filled in: dates, amounts, numbers and links (e.g. the issuer) that Ablago found in the text, plus the post's date. Ablago only suggests the post's subject for the first field of the title, and only if free text belongs there (e.g. *Description* for a contract) – never for a number such as the invoice number. Each value is marked as a **Suggestion** at the field, with how certain it is and where it was found; **Take back** empties the field again. If a link follows from another one (such as the issuer from the contract), it comes along with "from Contract".
 
 - **Frames:** where a recognised value appears in the document, it has a coloured, numbered frame; the same number appears at the field. When you move the mouse over a frame, the field lights up – and the other way round.
 - **Drag:** you can drag a frame into any field, including a link field.
 - **Choose a field, then click:** click into a field and then on a frame – the field takes the value.
 - **Select:** if the document has text (a PDF with text or text from text recognition), you select words with the mouse. The field you chose last takes them; Ablago reads dates and amounts correctly, e.g. "03.11.2026" or "1.284,20 €".
+
+If a folder for a link field is missing, **+ Create …** opens the [window for a new folder](mappen.md#auf-andere-mappen-verweisen) – here already filled with what Ablago recognised in the document, such as name, address and customer number from the letterhead. Dragging, clicking and selecting also work into the window: click into a field of the window and then onto the document. After **Save folder** the new folder is in the field and you carry on with the post.
 
 Below a **link field** you see **How Ablago recognises "…"**, e.g. "Contract number WV-1043" or "Customer number 100-4711 (via contract partner)" – values from fields with *Use to find existing folders*, with frames in the document. If Ablago finds several matching folders, **Also found: "…" take this instead** appears below.
 

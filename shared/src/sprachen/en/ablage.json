@@ -1227,5 +1227,19 @@
   "uebernehmen.stattdessen-nehmen": "take this instead",
   "uebernehmen.aus-der-post": "from the post",
   "uebernehmen.nach-dem-speichern": "Available after saving",
-  "uebernehmen.foto-oder-datei": "Photo or file …"
+  "uebernehmen.foto-oder-datei": "Photo or file …",
+  "folgen.aus": "from {feld}",
+  "folgen.aendern-titel": "Change {feld}?",
+  "folgen.aendern-text": "{quelle} “{quelleTitel}” belongs to “{titel}”. The entry is “{jetzt}”.",
+  "folgen.aendern-ja": "Change {feld}",
+  "folgen.lassen": "Leave as it is",
+  "folgen.leeren-titel": "Clear {quelle}?",
+  "folgen.leeren-text": "{quelle} “{quelleTitel}” belongs to “{soll}”, not to “{neu}”.",
+  "folgen.leeren-ja": "Clear {quelle}",
+  "folgen.behalten": "Keep",
+  "konflikt.titel": "Details that don’t match",
+  "konflikt.zeile": "Note: {feld} {grund}.",
+  "fenster.titel": "Create {typ}",
+  "fenster.verschieben": "Drag here to move",
+  "fenster.angelegt": "“{titel}” created and filled in."
 }

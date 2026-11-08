@@ -1227,5 +1227,19 @@
   "uebernehmen.stattdessen-nehmen": "stattdessen nehmen",
   "uebernehmen.aus-der-post": "aus der Post",
   "uebernehmen.nach-dem-speichern": "Geht nach dem Speichern",
-  "uebernehmen.foto-oder-datei": "Foto oder Datei …"
+  "uebernehmen.foto-oder-datei": "Foto oder Datei …",
+  "folgen.aus": "aus {feld}",
+  "folgen.aendern-titel": "{feld} ändern?",
+  "folgen.aendern-text": "{quelle} „{quelleTitel}“ gehört zu „{titel}“. Eingetragen ist „{jetzt}“.",
+  "folgen.aendern-ja": "{feld} ändern",
+  "folgen.lassen": "So lassen",
+  "folgen.leeren-titel": "{quelle} leeren?",
+  "folgen.leeren-text": "{quelle} „{quelleTitel}“ gehört zu „{soll}“, nicht zu „{neu}“.",
+  "folgen.leeren-ja": "{quelle} leeren",
+  "folgen.behalten": "Behalten",
+  "konflikt.titel": "Angaben, die nicht zusammenpassen",
+  "konflikt.zeile": "Achtung: {feld} {grund}.",
+  "fenster.titel": "{typ} anlegen",
+  "fenster.verschieben": "Zum Verschieben hier ziehen",
+  "fenster.angelegt": "„{titel}“ angelegt und eingetragen."
 }

@@ -32,7 +32,7 @@ Hinter Dokumenten- und Verknüpfungsregistern steht, wie viel darin liegt. Ein r
     Steht an einer Mappe **Archiv · aufbewahren bis 31.12.JJJJ**, muss sie bis dahin aufbewahrt werden: Bis zu diesem Tag lassen sich weder die Mappe noch ihre Dokumente löschen; Dokumente ersetzt du als neue Version. Danach darf sie löschen, wer das Recht dazu hat; Administratoren finden alle abgelaufenen Mappen gesammelt unter **Werkbank → Aufbewahrung abgelaufen**.
 
 !!! info "Nur passende Mappen"
-    Manche Verweisfelder bieten nur bestimmte Mappen an, z. B. beim Feld *Arzt* nur Vertragspartner, die Ärzte sind. Steht neben einer gewählten Mappe „passt nicht mehr zum Filter“, bleibt sie gültig; neu wählen kannst du nur, was passt.
+    Manche Verweisfelder bieten nur bestimmte Mappen an, z. B. beim Feld *Arzt* nur Vertragspartner, die Ärzte sind, oder bei einer Person nur die Niederlassungen der gewählten Organisation. Steht neben einer gewählten Mappe gelb, womit sie nicht passt – etwa „passt nicht zu „Organisation““ oder „passt nicht zur Auswahlregel dieses Felds“ –, bleibt sie gültig, und speichern kannst du trotzdem; neu wählen kannst du nur, was passt. Darfst du die Mappe bearbeiten, steht über den Registern außerdem „Achtung: Niederlassung passt nicht zu „Organisation“.“ – ein Klick führt zum Feld.
 
 !!! info "Fortlaufende Nummern"
     Steht an einem Feld „Wird beim Speichern vergeben“, bekommt die Mappe dort beim Speichern automatisch die nächste Nummer, z. B. eine Rechnungsnummer. Die Nummer lässt sich danach nicht mehr ändern.
@@ -97,7 +97,9 @@ Ein **Verweis** verbindet zwei Mappen – die Rechnung mit ihrem Vertrag, den Ve
 
 Bei Feldern, die **mehrere Verweise** erlauben (z. B. *Für Rechnungen* bei einer Zahlung), wiederholst du das. Das Suchfeld bleibt oben direkt unter der Beschriftung; die gewählten Mappen stehen **darunter**, jede mit **Entfernen**. So wählst du überall mehrere Einträge aus einer Liste, auch die Mappentypen in der [Erweiterten Suche](ablage.md#erweiterte-suche).
 
-Gibt es die Mappe noch nicht, führt **+ … anlegen** unter dem Feld direkt zum Anlegen.
+Gibt es die Mappe noch nicht, öffnet **+ … anlegen** unter dem Feld ein kleines Fenster über der Seite – mit Kopf, Registern, Feldern und Speicherleiste wie jede Mappe. Am Kopf ziehst du es beiseite, damit du siehst, was dahinter steht. **Mappe speichern** legt die neue Mappe an, schließt das Fenster und trägt sie ins Feld ein; die Mappe, an der du gerade arbeitest, bleibt ungespeichert offen. **Abbrechen**, ✕ oder **Esc** schließen das Fenster ohne Änderung, danach steht der Cursor wieder am Feld. Den Eintrag gibt es nur, wenn du Mappen dieses Typs anlegen darfst.
+
+**Felder, die aus einem anderen folgen:** Manche Verweise ergeben sich aus einem anderen – wählst du bei einer Person die Niederlassung, füllt sich die Organisation, zu der sie gehört, und darunter steht „aus Niederlassung“. Das geschieht nur, wenn das Feld leer ist; steht schon eine andere Organisation darin, fragt Ablago „Organisation ändern?“. Trägst du von Hand eine andere Organisation ein, fragt Ablago, ob die Niederlassung geleert werden soll – mit **Behalten** bleibt sie, und am Feld steht der gelbe Hinweis. Welche Felder so zusammenhängen, legt der Administrator fest.
 
 Ein Klick auf einen gesetzten Verweis öffnet die andere Mappe.
 

@@ -9,7 +9,9 @@
  * Wörter mit Lage kommen aus der Textebene des PDFs bzw. der Texterkennung (`GET /dokumente/{id}/wortpositionen`).
  */
 import { optionTexte } from './beschriftung';
-import type { Betrag, Feld, Wert } from './model';
+import { artVon, type Erkennungsart } from './erkennung';
+import { vorlageFelder, wirksameVorlage, type Betrag, type Feld, type Mappentyp, type Wert } from './model';
+import { kreisVon } from './nummernkreis';
 import { bereicheVon, findeBegriff, type Bereich, type SchwaerzSeite } from './schwaerzen';
 
 const MONATE: Record<string, number> = {
@@ -132,4 +134,21 @@ export function wertAusText(f: Pick<Feld, 'typ' | 'optionen' | 'beschriftungen' 
     }
     default: return null;
   }
+}
+
+/** Arten mit festem Aufbau (#934): Nummern, Kontodaten, Kontakt, Anschrift in Ziffern – dort hat ein Betreff nichts zu suchen. */
+const FESTE_ARTEN: Erkennungsart[] = ['nummer', 'iban', 'ustid', 'email', 'internet', 'telefon', 'mobil', 'fax', 'plz', 'hausnummer', 'datum', 'betrag'];
+
+/**
+ * Feld für den Betreff der Post als schwachen Vorschlag (#934, Thomas 08.11.2026): das **erste Feld der Titel-Vorlage**,
+ * aber nur, wenn es ein Textfeld ohne festes Format ist – kein Nummernkreis, kein Format, kein Muster, nicht eindeutig,
+ * nicht ausgeblendet und keine Nummer (Rechnungsnummer, Kennzeichen …). Sonst keins: Der Betreff einer Rechnung landet
+ * so nicht in der Rechnungsnummer. Zahl, Datum, Auswahl und Verweis sind ohnehin keine Textfelder.
+ */
+export function betreffFeld(typ: Pick<Mappentyp, 'felder' | 'titelVorlage'>): Feld | undefined {
+  const erstes = vorlageFelder(wirksameVorlage(typ))[0];
+  const f = typ.felder.find((x) => x.key === erstes);
+  if (!f || f.typ !== 'text' || f.format || f.muster || kreisVon(f) || f.eindeutig || f.ausgeblendet) return undefined;
+  const art = artVon(f);
+  return art && FESTE_ARTEN.includes(art) ? undefined : f;
 }

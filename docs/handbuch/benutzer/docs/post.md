@@ -96,12 +96,14 @@ Darunter:
 
 ### Werte vom Dokument übernehmen { #werte-ubernehmen }
 
-Die Mappe ist schon vorausgefüllt: Datum, Betrag, Nummern und Verweise (z. B. der Aussteller), die Ablago im Text gefunden hat, dazu Betreff und Datum der Post. Jeder Wert steht als **Vorschlag** am Feld, mit Sicherheit und Fundstelle; **Zurücknehmen** leert das Feld wieder.
+Die Mappe ist schon vorausgefüllt: Datum, Betrag, Nummern und Verweise (z. B. der Aussteller), die Ablago im Text gefunden hat, dazu das Datum der Post. Den Betreff der Post schlägt Ablago nur für das erste Feld des Titels vor und nur, wenn dort freier Text hingehört (z. B. *Bezeichnung* beim Vertrag) – nie für eine Nummer wie die Rechnungsnummer. Jeder Wert steht als **Vorschlag** am Feld, mit Sicherheit und Fundstelle; **Zurücknehmen** leert das Feld wieder. Folgt ein Verweis aus einem anderen (etwa der Aussteller aus dem Vertrag), kommt er mit „aus Vertrag“ dazu.
 
 - **Rahmen:** Wo ein erkannter Wert im Dokument steht, ist er farbig umrahmt und nummeriert; dieselbe Nummer steht am Feld. Fährst du über einen Rahmen, leuchtet das Feld auf – und umgekehrt.
 - **Ziehen:** Einen Rahmen ziehst du in ein beliebiges Feld, auch in ein Verweisfeld.
 - **Feld wählen, dann klicken:** Klick in ein Feld und dann auf einen Rahmen – das Feld übernimmt den Wert.
 - **Markieren:** Hat das Dokument Text (ein PDF mit Text oder Text aus der Texterkennung), markierst du Wörter mit der Maus. Das zuletzt gewählte Feld übernimmt sie; Datum und Betrag liest Ablago dabei richtig, z. B. „03.11.2026“ oder „1.284,20 €“.
+
+Fehlt eine Mappe für ein Verweisfeld, öffnet **+ … anlegen** das [Fenster für eine neue Mappe](mappen.md#auf-andere-mappen-verweisen) – hier schon mit dem gefüllt, was Ablago im Dokument erkannt hat, etwa Name, Anschrift und Kundennummer aus dem Briefkopf. Ziehen, Anklicken und Markieren gehen auch ins Fenster: Klick in ein Feld des Fensters und dann aufs Dokument. Nach **Mappe speichern** steht die neue Mappe im Feld, und du machst mit der Post weiter.
 
 Unter einem **Verweisfeld** steht **Woran Ablago „…“ erkennt**, etwa „Vertragsnummer WV-1043“ oder „Kundennummer 100-4711 (über Vertragspartner)“ – Werte aus Feldern mit *Zum Wiederfinden nutzen*, mit Rahmen im Dokument. Findet Ablago mehrere passende Mappen, steht darunter **Auch gefunden: „…“ stattdessen nehmen**.
 
