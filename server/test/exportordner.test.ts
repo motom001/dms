@@ -269,6 +269,8 @@ describe('Export-Ordner (#797): Werkbank und Herunterladen', () => {
     const s = (await rufe(jonas, 'GET', '/api/konto/export')).body as { fertig: { bis: string } | null };
     assert.ok(s.fertig && new Date(s.fertig.bis).getTime() > Date.now() + 6 * TAG);
     await leer((await rufe(jonas, 'GET', '/api/konto/export/zip')).datei!.inhalt);
+    // Gelöscht wird nach dem Ende des Stroms – unter Last kann das ein paar Millisekunden dauern (wie oben).
+    for (let i = 0; i < 100 && (await da(ordner)); i++) await new Promise((r) => setTimeout(r, 20));
     assert.equal(await da(ordner), false);
     assert.equal(((await rufe(jonas, 'GET', '/api/konto/export')).body as { fertig: unknown }).fertig, null);
   });
