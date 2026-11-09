@@ -12,7 +12,7 @@ services:
   ollama:
     # Ollama in einer festen Version. Beim Aktualisieren die Nummer in allen Dateien dieses Ordners ändern
     # (hier zweimal, dazu amd.yml und intel-grafik.yml) – Dependabot schlägt neue Versionen hier vor.
-    image: ollama/ollama:0.40.13
+    image: ollama/ollama:0.40.15
     restart: unless-stopped
     environment:
       # Keine Cloud-Funktionen von Ollama (Rechnen bei Ollama im Internet, Websuche) – alles bleibt im Haus.
@@ -49,7 +49,7 @@ services:
   # Lädt das Modell beim ersten Start und beendet sich dann („Beendet“ ist hier also richtig).
   # Ist das Modell schon da, lädt es nichts.
   modell-laden:
-    image: ollama/ollama:0.40.13
+    image: ollama/ollama:0.40.15
     restart: "no"
     depends_on:
       ollama:
