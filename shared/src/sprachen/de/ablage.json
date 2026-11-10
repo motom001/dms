@@ -1238,6 +1238,7 @@
   "uebernehmen.nach-dem-speichern": "Geht nach dem Speichern",
   "uebernehmen.foto-oder-datei": "Foto oder Datei …",
   "folgen.aus": "aus {feld}",
+  "vorbelegen.aus": "vorgeschlagen aus {feld} {titel}",
   "folgen.aendern-titel": "{feld} ändern?",
   "folgen.aendern-text": "{quelle} „{quelleTitel}“ gehört zu „{titel}“. Eingetragen ist „{jetzt}“.",
   "folgen.aendern-ja": "{feld} ändern",

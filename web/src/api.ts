@@ -54,7 +54,7 @@ export interface PostErkennung {
 
 /** „Aus Dokument ausfüllen“ (#391), wie POST /api/typen/:id/vorschlaege sie liefert. */
 export interface TypVorschlaege {
-  vorschlaege: Record<string, { wert: Wert; sicherheit: Sicherheit; fundstelle: string; stelle?: Vorschlag['stelle'] }>;
+  vorschlaege: Record<string, { wert: Wert; sicherheit: Sicherheit; fundstelle: string; stelle?: Vorschlag['stelle']; aus?: Vorschlag['aus'] }>;
   bezuege: Bezuege;
   neu: Record<string, { typId: string; werte: Record<string, string>; fundstelle: string }>;
   verworfen: number; zeichen: number;
@@ -830,6 +830,8 @@ export const api = {
   /** Auswahlfilter (#172, #173): welche gewählten Mappen passen zu den aktuellen Werten nicht? */
   auswahlPruefen: (typId: string, feldKey: string, ids: string[], werte: Werte) => anfrage<{ unpassend: string[]; gruende: Record<string, string[]> }>('POST', '/api/mappen/auswahl-pruefen', { typId, feldKey, ids, werte }),
   /** Folgt aus (#886): was aus den Quellen in `werte` folgt – je Feld die Mappe oder null. */
+  /** Beim Auswählen übernehmen (#1037): Werte der Mappe `id` für die Felder, die das Verweisfeld `feldKey` vorbelegt. */
+  vorbelegen: (typId: string, feldKey: string, id: string) => anfrage<{ felder: Record<string, Wert>; titel: string; typId: string; bezuege: Bezuege }>('POST', '/api/mappen/vorbelegen', { typId, feldKey, id }),
   folgen: (typId: string, werte: Werte) => anfrage<{ felder: Record<string, { quelle: string; wert: string | null; titel?: string; typId?: string }> }>('POST', '/api/mappen/folgen', { typId, werte }),
   /** Auswahlfilter am Referenzfeld (#172): wie viele Mappen passen? */
   auswahlZaehlen: (zielTypen: string[], bedingungen: Feldbedingung[]) => anfrage<{ passen: number; gesamt: number; probleme: string[] }>('POST', '/api/werkbank/auswahlfilter/zaehlen', { zielTypen, bedingungen }),
@@ -1138,7 +1140,7 @@ export interface PaketVorschau {
   /** Was die Signatur über die Herkunft sagt (#594). */
   pruefung?: HerkunftPruefung | null;
   abhaengigkeiten: Array<{ id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null }>;
-  typen: Array<{ schluessel: string; dmsSchluessel: string; name: string; felder: number; vorhanden: boolean; neueFelder: string[]; neueRegister: string[]; erkennung?: string[]; wiederfinden?: string[]; typAngaben?: boolean; formate?: string[]; beschriftungen?: number; abschnitte?: string[]; umwandeln?: Array<{ feld: string; aus: string; anzahl: number }>; konflikt: string | null; vorschlag: string | null; geloescht?: boolean }>;
+  typen: Array<{ schluessel: string; dmsSchluessel: string; name: string; felder: number; vorhanden: boolean; neueFelder: string[]; neueRegister: string[]; erkennung?: string[]; wiederfinden?: string[]; vorbelegen?: string[]; typAngaben?: boolean; formate?: string[]; beschriftungen?: number; abschnitte?: string[]; umwandeln?: Array<{ feld: string; aus: string; anzahl: number }>; konflikt: string | null; vorschlag: string | null; geloescht?: boolean }>;
   sichten: Array<{ schluessel: string; name: string; eltern: string | null; vorhanden: boolean; konflikt: string | null; vorschlag: string | null; ausgelassen?: string | null; ohne?: string[] }>;
   beispiele: number; probleme: string[]; fehlercodes?: string[]; hinweise: string[]; einstellungen: { neu: string[]; weg: string[] } | null;
   /** Beispiel-Dokumente zu den Beispielen (#878). */

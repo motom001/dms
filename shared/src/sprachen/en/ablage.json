@@ -1238,6 +1238,7 @@
   "uebernehmen.nach-dem-speichern": "Available after saving",
   "uebernehmen.foto-oder-datei": "Photo or file …",
   "folgen.aus": "from {feld}",
+  "vorbelegen.aus": "suggested from {feld} {titel}",
   "folgen.aendern-titel": "Change {feld}?",
   "folgen.aendern-text": "{quelle} “{quelleTitel}” belongs to “{titel}”. The entry is “{jetzt}”.",
   "folgen.aendern-ja": "Change {feld}",

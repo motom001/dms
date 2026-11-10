@@ -931,6 +931,9 @@ export class Dienst {
   auswahlPruefen(e: unknown, benutzerId: string, z?: Zugriff) { return this.mappenEingaben.auswahlPruefen(e, benutzerId, z); }
   folgen(e: unknown, z?: Zugriff) { return this.mappenEingaben.folgen(e, z); }
   folgeVorschlaege(typ: Mappentyp, v: { vorschlaege: Record<string, { wert: Wert; sicherheit: 'hoch' | 'mittel' | 'niedrig'; fundstelle: string }>; bezuege: Record<string, MappenBezug>; neu: Record<string, unknown> }, z?: Zugriff): Promise<void> { return this.mappenEingaben.folgeVorschlaege(typ, v, z); }
+  /** Beim Auswählen übernehmen (#1037): Vorschläge aus der gewählten Mappe, mit den Rechten der Person. */
+  vorbelegen(e: unknown, z?: Zugriff) { return this.mappenEingaben.vorbelegen(e, z); }
+  vorbelegenVorschlaege(...a: Parameters<MappenEingaben['vorbelegenVorschlaege']>): Promise<void> { return this.mappenEingaben.vorbelegenVorschlaege(...a); }
   zaehleAuswahl(e: unknown, benutzerId: string) { return this.mappenEingaben.zaehleAuswahl(e, benutzerId); }
   rechteVorschau(id: string, eingabe: unknown, z: Zugriff): Promise<Rechte> { return this.mappenEingaben.rechteVorschau(id, eingabe, z); }
   aendereMappe(id: string, eingabe: unknown, benutzerId: string | null = null, z?: Zugriff, anlass?: Record<string, unknown>): Promise<Mappe & { hinweis?: string }> { return this.mappen.aendereMappe(id, eingabe, benutzerId, z, anlass); }

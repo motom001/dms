@@ -244,6 +244,8 @@ async function vorbereiten(cookie) {
   await api('POST', '/api/werkbank/automatisierungen', { cookie, body: { name: 'Rauchtest Vertrag angelegt', wenn: { art: 'mappe.angelegt', typ: vertrag.id }, dann: [{ id: 's', art: 'stopp' }] } });
   // Feldart Tabelle (#1030): Auftrag mit Positionen – eigene Typen, damit die Beispiele unverändert bleiben.
   daten.tabelle = await tabellenDaten(cookie);
+  // Beim Auswählen übernehmen (#1037): Tarifart mit üblichen Angaben, Abo übernimmt sie.
+  daten.vorbelegen = await vorbelegenDaten(cookie);
   const einladung = (await api('POST', '/api/benutzer',{ cookie, body: { email: JONAS.email, name: JONAS.name, rolle: 'mitglied', rollen: [] } })).daten;
   await api('POST', '/api/konto/passwort-setzen', { body: { schluessel: einladung.link.split('/passwort/')[1], passwort: JONAS.passwort } });
 }
@@ -262,6 +264,21 @@ async function tabellenDaten(cookie) {
     await api('POST', '/api/mappen', { cookie, body: { typId: position.id, werte: { auftrag: mappe.id, nr, beschreibung, menge, preis: { betrag, waehrung: 'EUR' } } } });
   }
   return { auftrag, position, mappe };
+}
+
+/** Typen „Tarifart“ (mit Frist und Hinweis) und „Abo“, das beides beim Auswählen übernimmt; zwei Tarifarten (#1037). */
+async function vorbelegenDaten(cookie) {
+  const tarifart = (await api('POST', '/api/typen', { cookie, body: { name: 'Tarifart', schluessel: 'tarifart', titelVorlage: '{name}', felder: [
+    { key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'frist', label: 'Kündigungsfrist', typ: 'zeitraum' }, { key: 'hinweis', label: 'Hinweis', typ: 'text' },
+  ] } })).daten;
+  const abo = (await api('POST', '/api/typen', { cookie, body: { name: 'Abo', schluessel: 'abo', titelVorlage: '{bezeichnung}', felder: [
+    { key: 'bezeichnung', label: 'Bezeichnung', typ: 'text', pflicht: true },
+    { key: 'tarifart', label: 'Tarifart', typ: 'referenz', zielTypen: [tarifart.id], vorbelegen: [{ von: 'frist', nach: 'frist' }, { von: 'hinweis', nach: 'notiz' }] },
+    { key: 'frist', label: 'Kündigungsfrist', typ: 'zeitraum' }, { key: 'notiz', label: 'Notiz', typ: 'text' },
+  ] } })).daten;
+  const mobilfunk = (await api('POST', '/api/mappen', { cookie, body: { typId: tarifart.id, werte: { name: 'Mobilfunk', frist: 'P3M', hinweis: 'Rufnummer mitnehmen' } } })).daten;
+  const strom = (await api('POST', '/api/mappen', { cookie, body: { typId: tarifart.id, werte: { name: 'Strom', frist: 'P2W', hinweis: 'Zählerstand notieren' } } })).daten;
+  return { tarifart, abo, mobilfunk, strom };
 }
 
 /* ---------- Desktop ---------- */
@@ -985,6 +1002,36 @@ rauchtest('Ablage und Werkbank: Die Seite rollt nicht unter der Dreiteilung, ver
   assert.ok(kasten && kasten.width <= 1 && kasten.height <= 1, `Die Beschriftung „Mappe suchen …“ ist zu sehen (${JSON.stringify(kasten)})`);
   assert.equal(await suche.count(), 1, 'Das Suchfeld ist über seine versteckte Beschriftung zu finden');
   await s.getByRole('banner').getByRole('link', { name: /– Startseite$/ }).waitFor();
+});
+
+// #1037: Beim Auswählen übernehmen – Vorschläge nur in leere Felder, markiert; eine andere Wahl ersetzt nur Unberührtes.
+rauchtest('Werte aus der gewählten Mappe vorschlagen (#1037)', { als: LENA }, async (s) => {
+  const { abo } = daten.vorbelegen;
+  await s.goto(BASIS + `/ablage/${abo.id}/neu`);
+  const mappe = s.getByRole('region', { name: 'Mappe' });
+  await mappe.getByRole('heading', { name: 'Neue Mappe', level: 1 }).waitFor();
+  await mappe.getByRole('textbox', { name: 'Bezeichnung*' }).fill('Handy Lena');
+  const tarifart = mappe.locator('[data-anker="mappe.feld:tarifart"]');
+  await tarifart.getByRole('combobox').fill('Mobil');
+  await tarifart.getByRole('option', { name: 'Mobilfunk' }).click();
+  const notiz = mappe.locator('[data-anker="mappe.feld:notiz"]');
+  const frist = mappe.locator('[data-anker="mappe.feld:frist"]');
+  await notiz.getByText('vorgeschlagen aus Tarifart Mobilfunk').waitFor();
+  await frist.getByText('vorgeschlagen aus Tarifart Mobilfunk').waitFor();
+  assert.equal(await notiz.getByRole('textbox').inputValue(), 'Rufnummer mitnehmen');
+  // Selbst geändert: bleibt, auch wenn eine andere Tarifart kommt; die unberührte Frist wechselt.
+  await notiz.getByRole('textbox').fill('Vertrag läuft über Jonas');
+  await notiz.getByText('vorgeschlagen aus Tarifart Mobilfunk').waitFor({ state: 'detached' });
+  await tarifart.getByRole('button', { name: 'Ändern' }).click();
+  await tarifart.getByRole('combobox').fill('Strom');
+  await tarifart.getByRole('option', { name: 'Strom' }).click();
+  await frist.getByText('vorgeschlagen aus Tarifart Strom').waitFor();
+  assert.equal(await notiz.getByRole('textbox').inputValue(), 'Vertrag läuft über Jonas');
+  await mappe.getByRole('button', { name: 'Mappe speichern' }).click();
+  await s.waitForURL(new RegExp(`/ablage/${abo.id}/[0-9a-f-]{36}$`));
+  const id = s.url().split('/').pop();
+  const gespeichert = (await api('GET', `/api/mappen/${id}`, { cookie: await sitzung(LENA) })).daten.mappe.werte;
+  assert.deepEqual([gespeichert.frist, gespeichert.notiz], [{ anzahl: 2, einheit: 'wochen' }, 'Vertrag läuft über Jonas']);
 });
 
 /* ---------- Hilfen ---------- */

@@ -34,6 +34,9 @@ After document and link tabs it says how much is in them. A red dot shows on whi
 !!! info "Only matching folders"
     Some link fields only offer certain folders, e.g. for the field *Doctor* only contract partners who are doctors, or for a person only the branches of the chosen organisation. If a chosen folder shows in yellow what it doesn't match – such as "doesn’t match “Organisation”" or "doesn’t match this field’s selection rule" –, it remains valid and you can still save; you can only newly choose what matches. If you may edit the folder, "Note: Branch doesn’t match “Organisation”." also appears above the tabs – a click takes you to the field.
 
+!!! info "Suggested from …"
+    Some link fields bring details along: if you choose the *Contract type* "Mobile" for a contract, the usual notice periods are already in empty fields, marked **suggested from Contract type Mobile**. Check them and change whatever is different for you; **Take back** clears the field again. Anything you have already entered always stays. If you choose another contract type before saving, Ablago replaces the suggestions you haven't touched with those of the new one. The same applies with **Fill in from document** and on the page **Take over document**. You only see values you may read.
+
 !!! info "Sequential numbers"
     If a field says "Assigned on saving", the folder automatically gets the next number there when saved, e.g. an invoice number. The number can't be changed afterwards.
 

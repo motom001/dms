@@ -1,7 +1,7 @@
 /**
  * Eingaben an Mappen prüfen (#1074 aus dienst.ts): Werte bereinigen und prüfen, Formate (#535), Auswahlfilter (#172,
  * #173), „folgt aus“ (#886), Verweisziele, Rechte vor und nach dem Speichern (#126), Konflikte beim gleichzeitigen
- * Bearbeiten (#609). Die Eingabe-Hilfen der Mappentypen liegen in mappentypen/eingabe.ts. Schicht 2.
+ * Bearbeiten (#609), „beim Auswählen übernehmen“ (#1037). Die Eingabe-Hilfen der Mappentypen liegen in mappentypen/eingabe.ts. Schicht 2.
  */
 import { vonAussenFuellbar } from '../../../shared/src/berechnet';
 import { ausgeblendeteFelder } from '../../../shared/src/darstellung';
@@ -10,7 +10,9 @@ import { leseProzent, leseZeitraum } from '../../../shared/src/feldarten';
 import { wertfelder } from '../../../shared/src/tabelle';
 import { gleicheFormateAn, hatVorgaben, pruefeFormate, unpassendeAngaben } from '../../../shared/src/feldformate';
 import { enthaeltId, ersteId, folgeReihenfolge } from '../../../shared/src/folgtaus';
-import { einzigesZiel, type Feld, type Feldkonflikt, formatiere, gemeinsameFelder, type Historieneintrag, istLeer, istOk, type Mappe, type MappenBezug, type Mappentyp, verweiseVon, type Verweiskonflikt, type Wert, type Werte, zieleVon, zielTypenAus } from '../../../shared/src/model';
+import { passtZusammen } from '../../../shared/src/vorbelegen';
+import type { Vorschlaege } from '../../../shared/src/erkennung';
+import { einzigesZiel, type Feld, pruefeMappe, zielErlaubt, type Feldkonflikt, formatiere, gemeinsameFelder, type Historieneintrag, istLeer, istOk, type Mappe, type MappenBezug, type Mappentyp, verweiseVon, type Verweiskonflikt, type Wert, type Werte, zieleVon, zielTypenAus } from '../../../shared/src/model';
 import type { Rechte } from '../../../shared/src/rechte';
 import { type Aufloesung, auswahlKlausel, auswahlProbleme, bereinigeAuswahlfilter, erfuellt, heuteIn, setzeEigeneWerte } from '../../../shared/src/sichten';
 import { Fachfehler } from '../fehler';
@@ -307,6 +309,84 @@ export class MappenEingaben {
     }
   }
 
+  /**
+   * Beim Auswählen übernehmen (#1037): Was schlägt die Mappe `id` im Verweisfeld `f` für diese Mappe vor? Je Paar der
+   * Wert aus der verwiesenen Mappe – nur, wenn die Person sie lesen darf, das Quellfeld im Typ der Mappe passt, das
+   * Zielfeld von außen füllbar ist (nicht berechnet, #1034), nie aus oder in Passwortfelder und nur gültige Werte. Verweise
+   * darin nur auf Mappen, die die Person ebenfalls lesen darf. Leere Werte schlagen nichts vor; welche Felder leer sind,
+   * entscheidet der Aufrufer (nie überschreiben).
+   */
+  private async vorbelegteWerte(typ: Mappentyp, f: Feld, id: string, z?: Zugriff): Promise<{ mappe: Mappe; werte: Record<string, Wert>; bezuege: Record<string, MappenBezug> } | null> {
+    const q = f.typ === 'referenz' && f.vorbelegen?.length ? await this.lesbareQuelle(f, id, z) : null;
+    if (!q) return null;
+    const { mappe: m, typ: quellTyp } = q;
+    const roh = quellwerte(typ, f, quellTyp, m.werte);
+    // Verweise in den Werten: nur auf lesbare Mappen (sonst verriete der Vorschlag deren Titel).
+    const ids = [...new Set(roh.filter((x) => x.nach.typ === 'referenz').flatMap((x) => idsIn(x.wert)))].filter(istUuid);
+    const lesbar = await this.lesbare(z, ids);
+    const typVon = ids.length ? await this.repo.typenVon(ids) : new Map<string, string>();
+    const titel = ids.length ? await this.repo.titelVon(ids) : new Map<string, string>();
+    const werte: Record<string, Wert> = {};
+    const bezuege: Record<string, MappenBezug> = {};
+    for (const { nach, wert } of roh) {
+      const w = nach.typ === 'referenz' ? nurLesbare(nach, wert, lesbar) : wert;
+      // Gültig für das Zielfeld (Länge, Muster, Grenzen, Auswahl, Verweisziel); „eindeutig“ prüft erst das Speichern.
+      if (w === null || !istOk(pruefeMappe({ felder: [nach] }, { [nach.key]: w }, { typVon: (x) => typVon.get(x), doppelt: () => undefined }))) continue;
+      werte[nach.key] = w;
+      for (const x of nach.typ === 'referenz' ? idsIn(w) : []) bezuege[x] = { titel: titel.get(x) ?? '', typId: typVon.get(x) ?? '' };
+    }
+    return { mappe: m, werte, bezuege };
+  }
+
+  /** Die Mappe `id` als Quelle für `f` (#1037): vom passenden Typ und mit dem Zugriff der Person lesbar – sonst null. */
+  private async lesbareQuelle(f: Feld, id: string, z?: Zugriff): Promise<{ mappe: Mappe; typ: Mappentyp } | null> {
+    const m = istUuid(id) ? await this.repo.holeMappe(id) : undefined;
+    if (!m || !zielErlaubt(f, m.typId)) return null;
+    if (z && !z.admin && z.typen && !z.typen.has(m.typId)) return null;
+    if (!(await this.lesbare(z, [m.id])).has(m.id)) return null;
+    const typ = z?.typen?.get(m.typId) ?? await this.repo.holeTyp(m.typId);
+    return typ ? { mappe: m, typ } : null;
+  }
+
+  /**
+   * Beim Auswählen übernehmen (#1037) für die Oberfläche: Vorschläge der Mappe `id` im Verweisfeld `feldKey` des Typs
+   * `typId` – je Zielfeld der Wert, dazu Titel und Typ der Mappe für die Kennzeichnung „vorgeschlagen aus …“ und die
+   * Titel der Mappen in vorgeschlagenen Verweisen. Nicht lesbar oder unpassend: keine Felder.
+   */
+  async vorbelegen(e: unknown, z?: Zugriff): Promise<{ felder: Record<string, Wert>; titel: string; typId: string; bezuege: Record<string, MappenBezug> }> {
+    const x = (e ?? {}) as { typId?: unknown; feldKey?: unknown; id?: unknown };
+    const typ = istUuid(x.typId) ? await this.repo.holeTyp(x.typId) : undefined;
+    if (!typ || (z && !z.admin && z.typen && !z.typen.has(typ.id))) throw new Fachfehler(422, t('meldungen.dienst.unbekannter-mappentyp'));
+    const f = typ.felder.find((y) => y.key === x.feldKey && y.typ === 'referenz');
+    const r = f && typeof x.id === 'string' ? await this.vorbelegteWerte(typ, f, x.id, z) : null;
+    return r ? { felder: r.werte, titel: r.mappe.titel ?? '', typId: r.mappe.typId, bezuege: r.bezuege } : { felder: {}, titel: '', typId: '', bezuege: {} };
+  }
+
+  /**
+   * Beim Auswählen übernehmen (#1037) beim Ausfüllen aus Dokumenten und auf „Dokument übernehmen“: Hat die Erkennung
+   * für ein Verweisfeld eine Mappe vorgeschlagen, kommen deren Werte als Vorschlag dazu – nur für Felder ohne eigenen
+   * Vorschlag aus dem Dokument (das Dokument geht vor), die `erlaubt` sind und in der Mappe `mappe` (beim Bearbeiten)
+   * leer stehen. Läuft nach einer Erkennung per Paket: Diese Werte gehen nie an ein KI-Paket (#796).
+   */
+  async vorbelegenVorschlaege(typ: Mappentyp, v: { vorschlaege: Vorschlaege; bezuege: Record<string, MappenBezug>; neu: Record<string, unknown> }, erlaubt: (f: Feld) => boolean, mappe?: Mappe, z?: Zugriff): Promise<void> {
+    for (const f of typ.felder) {
+      if (f.typ !== 'referenz' || !f.vorbelegen?.length) continue;
+      const vq = v.vorschlaege[f.key];
+      const id = ersteId(vq?.wert);
+      if (!vq || !istUuid(id)) continue;
+      const r = await this.vorbelegteWerte(typ, f, id, z);
+      if (!r) continue;
+      const text = t('meldungen.dienst.vorbelegen-aus', { feld: f.label || f.key, titel: r.mappe.titel || t('meldungen.dienst.ohne-titel') });
+      for (const [k, wert] of Object.entries(r.werte)) {
+        const nach = typ.felder.find((x) => x.key === k);
+        if (!nach || v.vorschlaege[k] || !erlaubt(nach) || (mappe && !istLeer(mappe.werte[k]))) continue;
+        v.vorschlaege[k] = { wert, sicherheit: vq.sicherheit, fundstelle: text, aus: { feld: f.key, mappe: r.mappe.id } };
+        delete v.neu[k];
+      }
+      Object.assign(v.bezuege, r.bezuege);
+    }
+  }
+
   /** Auswahlfilter (#172) in der Werkbank: wie viele Mappen der Zieltypen passen? `zielTypen` (#1036) oder wie bisher `zielTyp`. */
   async zaehleAuswahl(e: unknown, benutzerId: string) {
     const x = (e ?? {}) as { zielTyp?: unknown; zielTypen?: unknown; bedingungen?: unknown };
@@ -385,4 +465,31 @@ export class MappenEingaben {
 /** Die Ziel-Mappentypen eines Verweisfelds, die es gibt (#1036). */
 function zieltypenIn(f: Feld, typen: Map<string, Mappentyp>): Mappentyp[] {
   return zieleVon(f).map((id) => typen.get(id)).filter((x): x is Mappentyp => !!x);
+}
+
+/** Ids in einem Verweiswert (eine oder mehrere). */
+const idsIn = (w: Wert): string[] => (Array.isArray(w) ? w : [w]).map(String);
+
+/** Nur die lesbaren Mappen eines Verweiswerts (#1037); keine = null. */
+function nurLesbare(f: Feld, w: Wert, lesbar: Set<string>): Wert | null {
+  const l = idsIn(w).filter((x) => lesbar.has(x));
+  return !l.length ? null : f.mehrfach ? l : l[0];
+}
+
+/**
+ * Beim Auswählen übernehmen (#1037): je Paar des Verweisfelds `f` der Wert aus `werte` (Mappe vom Typ `quellTyp`) für
+ * das Zielfeld – nur, wo beide Felder passen (passtZusammen, nie Passwörter), das Ziel von außen füllbar ist (nicht
+ * berechnet) und etwas drinsteht. Ja/Nein „nein“ ist der Ausgangswert und schlägt nichts vor.
+ */
+function quellwerte(typ: Mappentyp, f: Feld, quellTyp: Mappentyp, werte: Werte): Array<{ nach: Feld; wert: Wert }> {
+  const aus: Array<{ nach: Feld; wert: Wert }> = [];
+  for (const p of f.vorbelegen ?? []) {
+    const nach = typ.felder.find((x) => x.key === p.nach);
+    const von = quellTyp.felder.find((x) => x.key === p.von);
+    if (!nach || !von || nach.key === f.key || !passtZusammen(von, nach) || !vonAussenFuellbar(nach)) continue;
+    const v = werte[von.key];
+    if (istLeer(v) || v === false) continue;
+    aus.push({ nach, wert: nach.mehrfach && !Array.isArray(v) ? [v as string] : v as Wert });
+  }
+  return aus;
 }

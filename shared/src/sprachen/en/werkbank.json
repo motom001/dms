@@ -1780,6 +1780,7 @@
   "pakete.neu": "new: {wert}",
   "pakete.aus-dokument-fuellen": "“Fill from document”: {map}",
   "pakete.zum-wiederfinden": "“Use to find existing folders”: {map}",
+  "pakete.vorbelegen": "“Copy when selected”: {map}",
   "pakete.dokument-uebernehmen": "“Can be created from post” or “How to recognise it”",
   "pakete.keine-aenderung": "no change",
   "pakete.hast-du-geloescht-bleibt": "{name}: you deleted it – stays gone.",

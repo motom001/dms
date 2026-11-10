@@ -34,6 +34,9 @@ Hinter Dokumenten- und Verknüpfungsregistern steht, wie viel darin liegt. Ein r
 !!! info "Nur passende Mappen"
     Manche Verweisfelder bieten nur bestimmte Mappen an, z. B. beim Feld *Arzt* nur Vertragspartner, die Ärzte sind, oder bei einer Person nur die Niederlassungen der gewählten Organisation. Steht neben einer gewählten Mappe gelb, womit sie nicht passt – etwa „passt nicht zu „Organisation““ oder „passt nicht zur Auswahlregel dieses Felds“ –, bleibt sie gültig, und speichern kannst du trotzdem; neu wählen kannst du nur, was passt. Darfst du die Mappe bearbeiten, steht über den Registern außerdem „Achtung: Niederlassung passt nicht zu „Organisation“.“ – ein Klick führt zum Feld.
 
+!!! info "Vorgeschlagen aus …"
+    Manche Verweisfelder bringen Angaben mit: Wählst du bei einem Vertrag die *Vertragsart* „Mobilfunk“, stehen in leeren Feldern schon die üblichen Fristen, markiert mit **vorgeschlagen aus Vertragsart Mobilfunk**. Prüfe sie und ändere, was bei dir anders ist; **Zurücknehmen** leert das Feld wieder. Was du schon eingetragen hast, bleibt immer stehen. Wählst du vor dem Speichern eine andere Vertragsart, ersetzt Ablago die Vorschläge, die du noch nicht angefasst hast, durch die der neuen. Das gilt auch bei **Aus Dokument ausfüllen** und auf der Seite **Dokument übernehmen**. Du siehst nur Werte, die du lesen darfst.
+
 !!! info "Fortlaufende Nummern"
     Steht an einem Feld „Wird beim Speichern vergeben“, bekommt die Mappe dort beim Speichern automatisch die nächste Nummer, z. B. eine Rechnungsnummer. Die Nummer lässt sich danach nicht mehr ändern.
 

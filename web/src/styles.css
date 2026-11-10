@@ -2245,3 +2245,13 @@ main.rumpf[tabindex="-1"]:focus { outline: none; }
 .pakethinweise p, .pakethinweise li { overflow-wrap: anywhere; }
 .paketmarke { display: inline-flex; align-items: center; gap: 4px; padding: 0 7px; border: 1px solid currentColor; border-radius: 999px; font-size: .85em; font-weight: 600; white-space: nowrap; vertical-align: baseline; }
 .pakettext { font-style: normal; }
+
+/* Beim Auswählen übernehmen (#1037): Paare „Feld dort → Feld hier“ im Feld-Editor; am Handy untereinander. Die
+   Kennzeichnung in der Mappe ist ein Chip wie im Einrichtungsassistenten und darf umbrechen. */
+.vorbelegen { display: flex; flex-direction: column; gap: 8px; }
+.vorbelegen-paar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 4px 10px; }
+.vorbelegen-paar .vorbelegen-wahl { flex: 1 1 200px; min-width: 0; }
+.vorbelegen-paar .pfeil { padding-bottom: 10px; color: var(--leise); }
+.vorbelegen-paar > .chip { white-space: normal; }
+.ad-hinweis.vorbelegt .chip { white-space: normal; text-align: left; }
+@media (max-width: 600px) { .vorbelegen-paar .pfeil { display: none; } }

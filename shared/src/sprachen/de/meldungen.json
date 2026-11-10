@@ -331,6 +331,7 @@
   "dienst.bitte-die-markierten-felder-2": "Bitte die markierten Felder prüfen.",
   "dienst.unbekannter-mappentyp": "Unbekannter Mappentyp.",
   "dienst.folgt-aus": "aus {feld}",
+  "dienst.vorbelegen-aus": "vorgeschlagen aus {feld} {titel}",
   "dienst.benutzer-legt-ein-administrator": " Benutzer legt ein Administrator in der Benutzerverwaltung an.",
   "dienst.mappen-vom-typ-lassen": "Mappen vom Typ „{name}“ lassen sich in der Ablage nicht anlegen.{wert}",
   "dienst.mappen-vom-typ-mit": "Mappen vom Typ „{name}“ mit diesen Angaben darfst du nicht anlegen.",
@@ -1755,5 +1756,6 @@
   "pakete.tabelle-typ": "mappentypen: „{typ}“ → Feld „{feld}“: Die Tabelle zeigt Mappen vom Typ „{quelle}“, den das Paket nicht mitbringt.",
   "pakete.tabelle-feld": "mappentypen: „{typ}“ → Feld „{feld}“: Das Feld „{quellfeld}“ von „{quelle}“ ist kein Verweisfeld auf diesen Typ – die Tabelle zeigt nur Mappen, die über ein solches Feld hierher verweisen.",
   "paketerstellung.tabelle": "Feldart Tabelle",
+  "paketerstellung.vorbelegen": "„Beim Auswählen übernehmen“ an Verweisfeldern",
   "paketerstellung.tabelle-liste": "{wo}: Die Tabelle zeigt eine andere Trefferliste von „{name}“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten."
 }

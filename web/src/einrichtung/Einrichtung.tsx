@@ -1,6 +1,7 @@
 import { AuswahlFilter } from '../werkbank/Sichten';
 import { AnzeigeChip, AnzeigeEditor } from './Anzeige';
 import { TabellenEditor } from './Tabelle';
+import { VorbelegenEditor } from './Vorbelegen';
 import { kreisImStandard } from '../../../shared/src/nummernkreis';
 import { moeglicheQuellen, moeglicheZielFelder } from '../../../shared/src/folgtaus';
 import { type ChangeEvent, Fragment, useEffect, useRef, useState } from 'react';
@@ -607,6 +608,7 @@ function FeldZeile(p: {
   if (f.wiederfinden && WIEDERFINDEN_FELDTYPEN.includes(f.typ)) chips.push(t('mappentypen.editor.chip.wiederfinden'));
   // Paket-Update (#534): Verweisfeld, das sich aus einem alten Textfeld füllen lässt.
   if (f.typ === 'referenz' && f.folgtAus) chips.push(t('mappentypen.editor.folgt-aus-chip', { feld: p.alleFelder.find((x) => x.key === f.folgtAus!.feld)?.label ?? f.folgtAus.feld }));
+  if (f.typ === 'referenz' && f.vorbelegen?.length) chips.push(t('mappentypen.editor.vorbelegen-chip', { anzahl: f.vorbelegen.length }));
   if (f.typ === 'referenz' && f.ausText) chips.push(tx('pakete.typ.austext', { aus: p.alleFelder.find((x) => x.key === f.ausText)?.label ?? f.ausText }));
   // Format und Datumsgrenzen (#535).
   if (f.typ === 'text' && istFeldformat(f.format)) chips.push(t('felder.editor.chip.format', { format: formatName(f.format) }));
@@ -670,6 +672,8 @@ function FeldZeile(p: {
   })()}
   {/* Folgt aus (#886): nur bei genau einem Ziel-Mappentyp. */}
   {!!einzigesZiel(f) && <FolgtAusEditor f={f} id={id} setze={setze} alleFelder={p.alleFelder} felderVon={(x) => (x === p.eigeneId ? p.alleFelder : p.typen.find((y) => y.id === x)?.felder)} />}
+  {/* Beim Auswählen übernehmen (#1037): auch mit mehreren Zieltypen – je Typ, der das Feld hat. */}
+  {!jedeMappe(f) && ziele.length > 0 && <VorbelegenEditor f={f} id={id} setze={setze} alleFelder={p.alleFelder} zielListen={ziele.map((x) => (x === p.eigeneId ? p.alleFelder : p.typen.find((y) => y.id === x)?.felder)).filter((x): x is Feld[] => !!x)} />}
   </>;
 
   let standard = null;

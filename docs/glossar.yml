@@ -515,6 +515,14 @@ begriffe:
     begegnet: admin
     verwandt: [Aus Dokument füllen]
     code: Feld.wiederfinden
+  - begriff: Beim Auswählen übernehmen
+    bereich: werkbank
+    beschreibung: Einstellung an einem Verweisfeld (#1037) – Paare „Feld der verwiesenen Mappe → Feld dieser Mappe“. Wählt man eine Mappe, schlägt Ablago deren Werte in leeren Feldern vor, markiert „vorgeschlagen aus …“ (z. B. Kündigungsfrist aus der Vertragsart). Nie überschreiben, nie Passwörter, nur Werte, die man lesen darf.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Vorbelegen (in der Oberfläche), Erben]
+    verwandt: [Aus Dokument füllen]
+    code: Feld.vorbelegen
   - begriff: Administrator
     bereich: werkbank
     beschreibung: Ein Benutzer mit Zugang zur Werkbank. Für ihn gelten keine Einschränkungen durch Berechtigungen.
