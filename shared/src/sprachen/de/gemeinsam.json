@@ -788,6 +788,7 @@
   "model.feldart.passwort": "Passwort",
   "model.feldart.zeitraum": "Zeitraum",
   "model.feldart.prozent": "Prozent",
+  "model.feldart.tabelle": "Tabelle",
   "model.kennung-nur-kleinbuchstaben-ziffern": "Kennung: nur Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben (höchstens 60 Zeichen).",
   "model.kennung-kommt-doppelt-vor": "Kennung „{key}“ kommt doppelt vor.",
   "model.kennung-ist-fuer-den": "Kennung „{key}“ ist für den Indexwert „{INDEXPLATZHALTER}“ reserviert.",

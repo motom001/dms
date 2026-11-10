@@ -788,6 +788,7 @@
   "model.feldart.passwort": "Password",
   "model.feldart.zeitraum": "Period",
   "model.feldart.prozent": "Percentage",
+  "model.feldart.tabelle": "Table",
   "model.kennung-nur-kleinbuchstaben-ziffern": "Key: only lower-case letters, digits and _, starting with a letter (at most 60 characters).",
   "model.kennung-kommt-doppelt-vor": "Key “{key}” occurs twice.",
   "model.kennung-ist-fuer-den": "Key “{key}” is reserved for the index value “{INDEXPLATZHALTER}”.",
