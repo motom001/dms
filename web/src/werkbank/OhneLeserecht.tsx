@@ -95,7 +95,7 @@ export function OhneLeserechtPanel({ nachher }: { nachher?: () => Promise<void> 
               <table className="tabelle klein">
                 <thead><tr>
                   <th>{t('werkbank.ohne-leserecht.spalte.zeitraum')}</th><th>{t('werkbank.ohne-leserecht.spalte.person')}</th>
-                  <th>{t('werkbank.ohne-leserecht.spalte.mappe')}</th><th>{t('werkbank.ohne-leserecht.spalte.leserecht')}</th><th><span className="sr-only">{t('werkbank.ohne-leserecht.spalte.spruenge')}</span></th>
+                  <th>{t('werkbank.ohne-leserecht.spalte.mappe')}</th><th>{t('werkbank.ohne-leserecht.spalte.leserecht')}</th><th><span className="sr">{t('werkbank.ohne-leserecht.spalte.spruenge')}</span></th>
                 </tr></thead>
                 <tbody>
                   {s.vergangen.map((f) => (

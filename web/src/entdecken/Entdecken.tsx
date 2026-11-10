@@ -47,7 +47,7 @@ export function Entdecken() {
           <h2 id="ent-tipps" className="h3">{t('entdecken.seite.tipps')}</h2>
           {d.einstellungen.tipps === false && <p className="leise klein">{t('entdecken.seite.aus')}</p>}
           {stand.tipps.length > 0 && (
-            <label className="ent-suche"><span className="sr-only">{t('entdecken.seite.suche')}</span>
+            <label className="ent-suche"><span className="sr">{t('entdecken.seite.suche')}</span>
               <input type="search" value={such} onChange={(e) => setSuch(e.target.value)} placeholder={t('entdecken.seite.suche')} autoComplete="off" /></label>
           )}
           {!stand.tipps.length ? <p className="leise">{t('entdecken.seite.keine-tipps')}</p>

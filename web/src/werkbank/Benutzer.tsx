@@ -410,7 +410,7 @@ function Verwaltungsrecht({ b, aktion }: { b: Benutzer; aktion: (fn: () => Promi
       <p className="leise">{t('werkbank.verwaltungsrecht.text')}</p>
       {!darfAendern && <p className="hinweis info"><span>{t('werkbank.verwaltungsrecht.nurGesamt')}</span></p>}
       <fieldset disabled={!darfAendern || sendet} className="wahl">
-        <legend className="sr-only">{t('werkbank.verwaltungsrecht.titel')}</legend>
+        <legend className="sr">{t('werkbank.verwaltungsrecht.titel')}</legend>
         <label className="haken"><input id="darf-verwalten" type="checkbox" checked={an} onChange={(e) => setWahl(e.target.checked ? [GESAMT] : [])} /><span><strong>{t('werkbank.verwaltungsrecht.darf')}</strong></span></label>
         {an && <div className="verwaltungsbaum">
           <label className="haken"><input id="gesamte-verwaltung" type="checkbox" checked={gesamt} onChange={(e) => setWahl(e.target.checked ? [GESAMT] : baum.flatMap((a) => a.bereiche.map((x) => x.pfad)))} />

@@ -24,7 +24,7 @@ export function Ehemalig({ id, children }: { id: string | null | undefined; chil
   const d = useDaten();
   const p = id ? d.personen.find((x) => x.id === id) : undefined;
   if (!p || !istDeaktiviert(p)) return <>{children}</>;
-  return <span className="person-ehemalig" title={deaktiviertTitel(p)}>{children}<span className="sr-only">{t('konten.deaktiviert.vorlesen')}</span></span>;
+  return <span className="person-ehemalig" title={deaktiviertTitel(p)}>{children}<span className="sr">{t('konten.deaktiviert.vorlesen')}</span></span>;
 }
 
 /**
@@ -42,7 +42,7 @@ export function Person({ id, ersatz, vor = '', className }: { id: string | null 
   // Systemkonto (#673), z. B. „Automatisierung“: ebenso ohne Mappe.
   if (p.art === 'system') return <span className={`person paket ${className ?? ''}`} title={t('konten.systemkonten.rolle.systemkonto')}>{vor}{p.name}</span>;
   const typ = d.typen.find((mappentyp) => mappentyp.system === 'benutzer');
-  const name = istDeaktiviert(p) ? <span className="person-ehemalig" title={deaktiviertTitel(p)}>{p.name}<span className="sr-only">{t('konten.deaktiviert.vorlesen')}</span></span> : p.name;
+  const name = istDeaktiviert(p) ? <span className="person-ehemalig" title={deaktiviertTitel(p)}>{p.name}<span className="sr">{t('konten.deaktiviert.vorlesen')}</span></span> : p.name;
   if (!typ || ohneLinks) return <span className={className}>{vor}{name}</span>;
   return <Link to={`/ablage/${typ.id}/${id}`} className={`person ${className ?? ''}`} title={t('oberflaeche.person.mappe-von-oeffnen', { name: p.name, wert: istDeaktiviert(p) ? ` – ${deaktiviertTitel(p)}` : p.abwesend ? ` – ${abwesenheitText(p)}` : '' })}>{vor}{name}</Link>;
 }

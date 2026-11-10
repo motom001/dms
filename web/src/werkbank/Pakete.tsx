@@ -499,7 +499,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
       {inst?.einstellungen && (
         <div className="registertaben" role="tablist" aria-label={t('werkbank.pakete.paket')}>
           <button type="button" role="tab" aria-selected={reiter === 'uebersicht'} className={`registertab ${reiter === 'uebersicht' ? 'an' : ''}`} onClick={() => void darfVerlassen().then((ok) => { if (ok) setReiter('uebersicht'); })}>{t('werkbank.pakete.uebersicht')}</button>
-          <button type="button" role="tab" aria-selected={reiter === 'einstellungen'} className={`registertab ${reiter === 'einstellungen' ? 'an' : ''}`} onClick={() => setReiter('einstellungen')}>{t('werkbank.pakete.einstellungen')}{inst.einstellungenNoetig && <> <Symbol name="warnung" className="sym-warn" /><span className="sr-only">{t('werkbank.pakete.einstellungen-noetig-2')}</span></>}</button>
+          <button type="button" role="tab" aria-selected={reiter === 'einstellungen'} className={`registertab ${reiter === 'einstellungen' ? 'an' : ''}`} onClick={() => setReiter('einstellungen')}>{t('werkbank.pakete.einstellungen')}{inst.einstellungenNoetig && <> <Symbol name="warnung" className="sym-warn" /><span className="sr">{t('werkbank.pakete.einstellungen-noetig-2')}</span></>}</button>
         </div>
       )}
       {inst?.einstellungen && reiter === 'einstellungen' ? <PaketEinstellungen id={id} gespeichert={() => void z.laden()} /> : <>
