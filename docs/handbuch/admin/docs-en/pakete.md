@@ -15,6 +15,16 @@ A click on a package shows name, description, version, licence, author, the requ
 
 Ablago loads the catalogue from `https://catalog.ablago.app/katalog.json` and checks its **signature** (see [Origin](#herkunft-signiert-oder-nicht)). It only follows redirects to `https://` addresses. For this, Ablago itself must be able to reach the internet. Ablago can't configure a proxy for outgoing requests. Without internet access you upload a package as a file (see [Expert mode](#expertenmodus-weitere-kataloge-und-hochladen)).
 
+If you only let Ablago reach certain addresses (firewall list, outgoing filter on the NAS), it needs these three:
+
+- `catalog.ablago.app`: catalogue and signature
+- `github.com`: package files are release files on GitHub; GitHub redirects once from there
+- `release-assets.githubusercontent.com`: target of that redirect
+
+GitHub may change the redirect target. In that case, the address Ablago names in the error message when loading is what counts. Each package's checksum is in the signed catalogue; where the file lives doesn't change the check.
+
+GitHub counts how often a release file is downloaded; the numbers in the catalogue come from there. Ablago sends nothing for this: no identifier, no version, only a fixed user agent.
+
 ## Installing { #installieren }
 
 1. Choose a package under **Available** and, if needed, an older version.
