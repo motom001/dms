@@ -21,14 +21,14 @@ Ablago ist ein **modularer Monolith**: ein Prozess, eine Datenbank. Server und O
 | `konten/` | Benutzer, Rollen, Vertretung, API-Schlüssel |
 | `mappentypen/` | Mappentypen, ihr Archiv, Berechtigungen |
 | `werkbank/` | Werkbank-Übersicht, Designs, Region, Sprachen, Protokoll, Verwaltungsmodus |
-| `ausgang/` | Export (Werkbank und Mein Konto) |
+| `ausgang/` | Export (Werkbank und Mein Konto); seit #1077 die [Wege nach draußen](#ausgang) |
 | `datenschutz/` | Auskünfte, Löschkonzept, Abrufseite |
 | `pakete/` | Pakete, Katalog, Paket-Einstellungen |
 | `suche/` | Suche, Frag deine Ablage |
 | `wartung/` | Wartungsmodus |
 | `sicherung/` | Sicherung, Wiederherstellen, Notfallblatt, Schlüssel |
 | `system/` | Betrieb, Systemzustand, Anbindung, Anmeldeschutz, Eingangsordner, WebDAV, Fehlermeldungen |
-| `post/` | Postfächer und andere Eingangskanäle |
+| `post/` | Postfächer und andere Eingangskanäle; seit #1077 die [Post](#post) |
 | `automatisierung/` | Automatisierungen |
 | `webhooks/` | Webhooks (Werkbank und Mein Konto) |
 | `sichten/` | Ansichten, Mappenlisten, Startseite |
@@ -46,6 +46,7 @@ Daneben, ohne Routen:
 | `zugriff/` | [Rechte prüfen](#zugriff) (#1072) |
 | `systemausstattung/` | die [Systemausstattung](#systemausstattung) (#963) |
 | `http/` | Hilfen der HTTP-Schicht – nur für Routen (geprüft mit `npm run lint:abh`) |
+| `pdf-bearbeiten/` | [PDF bearbeiten](#pdf-bearbeiten) (#1077): Seiten, Verkleinern, Schwärzen, Stempel-Vorlagen |
 | `pdf/`, `arbeit/` | [PDF-Stelle](#pdf-stelle), [Arbeiter-Pool](#arbeiter-pool) |
 | `laeufer/` | Paket-Läufer |
 - **Werkbank-Routen** (`zugang: 'admin'`, #818/#819) gehen nur im **Verwaltungsmodus** (Zustand der Sitzung, `Konten.modusPruefen`) und nur mit Recht auf ihren Bereich. Jede neue Route braucht einen Eintrag in `server/src/verwaltungsbereiche.ts` (`bereicheDerRoute`) – sonst dürfen sie nur Personen mit „Gesamte Verwaltung“, und der Test `verwaltungsmodus.test.ts` schlägt fehl. Heikle Handlungen mit Pflicht zur frischen Anmeldung stehen dort in `heikleHandlung`. `benutzer.rolle` ist die **wirksame** Rolle der Anfrage (`admin` nur im Modus); das gespeicherte Recht steht in `benutzer.verwaltung` (`shared/src/verwaltungsrecht.ts`). API-Schlüssel bekommen nie `admin`.
@@ -135,7 +136,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 
 - **Tür:** `mappentypen/index.ts`; die Routen (`mappentypen.routen.ts`) holt nur `routen.ts` direkt.
 - **Bekommt den Kern**, `TypPakete` und `Systemtypen` dazu die [Rechteprüfung](#zugriff), und je Klasse einen Anschluss für das, was noch im Dienst liegt (Stempel, Erkennung und Berechtigungen am Typ, Aufgaben, Titel, Aufträge, Systemmappen schreiben).
-- **Noch im Dienst:** Stempel am Typ (`mitStempel`) und `ausPostZiele` (#937). `berechtigungenAusEingabe` liegt seit #1076 in den [Berechtigungen](#berechtigungen) und kommt weiter über den Anschluss. `titel` liegt seit #1074 bei den [Mappen](#mappen) (`titel.ts`).
+- **Noch im Dienst:** `ausPostZiele` (#937). Den Stempel am Typ (`mitStempel`) rechnet seit #1077 der [Ausgang](#ausgang), Prüfen und Speichern die Stempel-Vorlagen in [PDF bearbeiten](#pdf-bearbeiten) – beides über den Anschluss. `berechtigungenAusEingabe` liegt seit #1076 in den [Berechtigungen](#berechtigungen) und kommt weiter über den Anschluss. `titel` liegt seit #1074 bei den [Mappen](#mappen) (`titel.ts`).
 
 ## Mappen (#1074) { #mappen }
 
@@ -171,7 +172,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 - **Tür:** `dokumente/index.ts`; die Routen (`dokumente.routen.ts`) holt nur `routen.ts` direkt. Die Technik der Fassungen (`dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`) bleibt außerhalb und ist für Fachordner ein Werkzeug (siehe [Schichten](#schichten)).
 - **Bekommt den Kern** und die Teile dieses Ordners, die eine Klasse ruft, und je Klasse einen Anschluss für das, was noch im Dienst liegt oder im Kreis liefe (Ereignis und Titel über die Fassade, Archivmodus, Verkleinern, Volltext, Aufträge an Pakete, Paket-Einstellungen, Mappentypen, Texterkennung).
 - **Reihenfolge:** `ladeHoch` schreibt Historie, „zuletzt geändert“, Dokument, Volltext und `dokument.hochgeladen` in einer Transaktion, Vorschau, Umwandeln und Entsperren laufen danach; `nachFassung`, `nachEntsperren`, `archivNachVolltext` und `nachNeuerVersion` sind unverändert und werden an denselben Stellen gerufen.
-- **Noch im Dienst:** PDF bearbeiten, Verkleinern und Schwärzen, `entsperrtZu`. Den Volltext (`volltextFertig`, `volltextAn`) rufen die Dokumente seit #1076 über ihren Anschluss am Dienst im [Volltext](#volltext).
+- **Noch im Dienst:** `entsperrtZu`. PDF bearbeiten, Verkleinern und Schwärzen liegen seit #1077 in [PDF bearbeiten](#pdf-bearbeiten). Den Volltext (`volltextFertig`, `volltextAn`) rufen die Dokumente seit #1076 über ihren Anschluss am Dienst im [Volltext](#volltext).
 
 ## Sichten (#1076) { #sichten }
 
@@ -209,6 +210,52 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 - **Bekommt den Kern** und die Dokumente (Texterkennung, Umwandeln, Archivfassung), dazu einen Anschluss für Ereignis (Fassade), Aufträge, `paketVolltext` und die Sicherung außer Haus.
 - **Reihenfolge:** `volltextFertig` legt erst `volltext.fertig` in den Ausgangskorb, meldet dann die Archivfassung und ruft nur mit Text die Hörer (Erkennung) nacheinander; `nachTexterkennungsEreignis` verteilt wie bisher an Umwandeln, Archivfassung, Volltext aus Paketen und Sicherung.
 
+## Post (#1077) { #post }
+
+`server/src/post/` (Schicht 3) bündelt, was hereinkommt – je Thema eine Klasse, die den Kern bekommt; der Dienst baut sie (`bauePdfPostAusgang()`) und behält für jede Methode eine einzeilige Weiterleitung:
+
+| Datei | Klasse (im Dienst) | Inhalt |
+|---|---|---|
+| `post.dienst.ts` | `PostDienst` (`dienst.post`) | `legePostAn`, `ordneZu` (#192), `automatischZuordnen`, `automatikRueckgaengig` (#337), `postAufgaben` („Post für dich“) |
+| `aufloesen.ts` | `PostAufloesen` (`dienst.postAufloesen`) | Post auflösen und abtrennen (#934, #936): `loesePostAuf`, `trennePostAb`, `verschiebeInRegister` |
+| `systemmappen.ts` | `PostSystemmappen` (`dienst.postSystemmappen`) | `schreibeSystemMappe`, `spiegleBenutzer`, `gleicheBenutzerAb`, Rollen, Systemkonten (#673); `SystemkontoEintrag` |
+| `eingangskanaele.ts` | `Eingangskanaele` (`dienst.eingangskanaele`) | was Eingangsordner und Postfächer brauchen (#195, #196), gleiche Dateien und `fundstellen` (#333); `Fundstelle` |
+| `foto.ts` | `PostFotos` (`dienst.postFotos`) | Post fotografieren (#490): `postAusFotos`, `fotosAnMappe`, `legePostZusammen` |
+
+- **Tür:** `post/index.ts`; die Routen der Postfächer (`post.routen.ts`) holt nur `routen.ts` direkt. `wandleZuPost` und `ergaenzeSystemfelder` liegen seit #1073 bei den [Mappentypen](#mappentypen).
+- **Bekommt den Kern**, die [Rechteprüfung](#zugriff), [Mappentypen](#mappentypen), [Mappen](#mappen), [Dokumente](#dokumente) und die Teile dieses Ordners, `PostFotos` dazu [PDF bearbeiten](#pdf-bearbeiten). Über den Anschluss: Ereignis (Fassade), `meldeVerknuepft`, Aufgaben, Konten, Passung, Systemausstattung, Mappen löschen und `sichereZuordnung` aus `erkennung.ts` (die Erkennung bekommt noch den ganzen Dienst und liegt darum nicht unter Schicht 3).
+- **Reihenfolge:** `legePostAn` schreibt Mappe, Historie, Titel, „Post für dich“, `post.angelegt` und die Verknüpfungen in einer Transaktion; der Empfänger `post.aufgaben` am Anschlusspunkt `mappeGeaendert` bleibt der letzte in der Reihe und ruft `postAufgaben` über die Fassade.
+
+## Ausgang (#1077) { #ausgang }
+
+`server/src/ausgang/` (Schicht 3) bündelt die [Wege nach draußen](#wege-nach-draussen), auf denen Dateien und Daten Ablago verlassen – Herunterladen, E-Mail, Export, WebDAV-Laufwerk – und ihre **gemeinsame Prüfstelle** (#723):
+
+| Datei | Klasse (im Dienst) | Inhalt |
+|---|---|---|
+| `pruefstelle.ts` | – | die Regel „R heißt ansehen, E heißt mitnehmen“ (früher `ausgang.ts`): `mitnehmbar`, `pruefeAlle`, Meldungen |
+| `ausgang.dienst.ts` | `AusgangDienst` (`dienst.ausgang`) | `exportierbar` (#294), `mitnehmbar`, `pruefeAusgang`; Stempel (`mitStempel`, `stempelPlan`, `laufwerkStempel`, `laufwerkAusgabe`), `notiereWeitergabe`, Original oder Archivfassung, `dokumentFuerAusgabe`, `fassungFuerAusgabe`, `gestempelteSeiten` (#799) |
+| `email.ts` | `AusgangEmail` (`dienst.ausgangEmail`) | `versendeMappen`, `versendeMappe` (#58, #151), `emailKopf` (auch für Auskünfte) |
+| `export.ts` | `AusgangExport` (`dienst.ausgangExport`) | `exportiere` (#152, #153) |
+
+- **Tür:** `ausgang/index.ts`; die Routen (`ausgang.routen.ts`) holt nur `routen.ts` direkt.
+- **Eine Prüfstelle:** Jeder Weg fragt `dienst.pruefeAusgang` bzw. `dienst.mitnehmbar` über die Fassade – Routen (`http/routen-kontext.ts`, `sichten.routen.ts`), `webdav.ts` und auch E-Mail und Export in diesem Ordner (über ihren Anschluss). `ausgang.test.ts` ersetzt die beiden am Dienst und prüft, dass Herunterladen, E-Mail (eine, mehrere), Export und Laufwerk sie fragen. Ein neuer Weg nach draußen fragt sie, bevor irgendetwas geschieht.
+- **Bekommt den Kern**, die Rechteprüfung, Mappentypen, Mappen, Dokumente, die [Sichten](#sichten), die Stempel-Vorlagen ([PDF bearbeiten](#pdf-bearbeiten)) und – für die E-Mail – die Systemmappen der [Post](#post); `entsperrtZu` über den Anschluss.
+
+## PDF bearbeiten (#1077) { #pdf-bearbeiten }
+
+`server/src/pdf-bearbeiten/` (Schicht 3) ist die Fachlogik rund um PDFs; die [PDF-Stelle](#pdf-stelle) `pdf/` mit pdf-lib bleibt Technik und unverändert:
+
+| Datei | Klasse (im Dienst) | Inhalt |
+|---|---|---|
+| `pdf-bearbeiten.dienst.ts` | `PdfBearbeiten` (`dienst.pdfBearbeiten`) | Seitenbilder, `seiteAlsGraubild` (#338), `pdfSeiten`, `bearbeitePdf` (teilen, bei Post je Teil eine Post, #335), `fuegePdfZusammen` |
+| `verkleinern.ts` | `PdfVerkleinern` (`dienst.pdfVerkleinern`) | PDF verkleinern (#393): Vorschau, am Dokument, automatisch, große Dokumente; `VERKLEINERN_STANDARD`, `GROSSE_MAX` |
+| `schwaerzen.ts` | `Schwaerzen` (`dienst.schwaerzen`) | Schwärzen (#392, #459), Seitenbilder auch der Archivfassung (#934) |
+| `stempelvorlagen.ts` | `Stempelvorlagen` (`dienst.stempelvorlagen`) | Stempel-Vorlagen und Stempel je Mappentyp (#394) |
+
+- **Tür:** `pdf-bearbeiten/index.ts`; die Routen stehen bei den Dokumenten.
+- **Warum ein eigener Ordner:** `pdf/` ist von der Regel `fachordner` ausgenommen (`TECHNIK`), läuft im Arbeiter-Pool und wird von den Dokumenten (Schicht 2) eingebunden. Klassen mit Kern, Mappen und Dokumenten dort hätten die Regel aufgeweicht und einen Kreis über `pdf/index.ts` gebaut.
+- **Bekommt den Kern**, die Rechteprüfung, Mappen und Dokumente. Die Post (neue Post beim Teilen, Systemmappe, „Post für dich“) kommt über den Anschluss am Dienst – `post/` hängt Fotos mit `pdfVon` an, andersherum liefe es im Kreis.
+
 ### Schichten { #schichten }
 
 Fachordner rufen nur nach unten; in derselben Schicht dürfen sie einander nutzen (Kreisläufe verbietet `kein-kreislauf`). Die Liste steht zentral in `.dependency-cruiser.cjs` (`SCHICHTEN`) – ein Ordner, den es noch nicht gibt, ist damit schon eingeordnet:
@@ -218,9 +265,9 @@ Fachordner rufen nur nach unten; in derselben Schicht dürfen sie einander nutze
 | 0 | `kern/` – nur sich selbst, `shared/` und die Basis |
 | 1 | `zugriff/` |
 | 2 | `mappentypen/`, `mappen/`, `dokumente/`, `berechtigungen/` |
-| 3 | alle übrigen Fachordner (`suche/`, `sichten/`, `volltext/`, `post/`, `aufgaben/` …) |
+| 3 | alle übrigen Fachordner (`suche/`, `sichten/`, `volltext/`, `post/`, `ausgang/`, `pdf-bearbeiten/`, `aufgaben/` …) |
 
-Ohne Fachlogik und nicht in den Schichten (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Fachordner ab Schicht 1 dürfen außer Kern und Basis die Werkzeuge `messung.ts`, `vektoren.ts`, die Technik der Dateien (`hochladen.ts`, `verkleinern.ts`, `dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`, `paketvolltext.ts`, #1075), `pdf/` und `arbeit/` einbinden, nie `dienst.ts`. Routen (`*.routen.ts`) gehören zur HTTP-Schicht: Sie dürfen den Dienst und ihren eigenen Fachordner einbinden; `routen.ts` holt sie direkt.
+Ohne Fachlogik und nicht in den Schichten (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Fachordner ab Schicht 1 dürfen außer Kern und Basis die Werkzeuge `messung.ts`, `vektoren.ts`, die Technik der Dateien (`hochladen.ts`, `verkleinern.ts`, `dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`, `paketvolltext.ts`, #1075), die Technik für Post, Ausgang und PDF bearbeiten (`pdfseiten.ts`, `graubild.ts`, `schwaerzen.ts`, `ausgabe.ts`, `export.ts`, `xlsx.ts`, `zip.ts`, `mail.ts`, #1077), `pdf/` und `arbeit/` einbinden, nie `dienst.ts`. Routen (`*.routen.ts`) gehören zur HTTP-Schicht: Sie dürfen den Dienst und ihren eigenen Fachordner einbinden; `routen.ts` holt sie direkt.
 
 ## Abhängigkeiten { #abhaengigkeiten }
 
@@ -771,6 +818,8 @@ Ablago baut **von sich aus keine Verbindung** ins Internet auf. Jeder Weg nach d
 | Webhooks | Administrator gibt Ziel frei, Benutzer legt an | nur Zahlen, signiert | `server/src/webhook.ts` |
 | Paket-Netz | Administrator bestätigt bei der Installation | nur an die Adressen aus Manifest bzw. Dienst-Adresse | Paket-Läufer, Recht `netzwerk` |
 | Abruf-Links (Auskunft) | Administrator erzeugt den Link | die Auskunft, nur nach Abrufcode | `server/src/abruf.ts` |
+
+Herunterladen, E-Mail, Export und das WebDAV-Laufwerk fragen eine **gemeinsame Prüfstelle** in `server/src/ausgang/` (#723, [Ausgang](#ausgang)): Lesen und Exportrecht je Mappe, über die Fassade `dienst.pruefeAusgang` bzw. `dienst.mitnehmbar`.
 
 **Regel für neue Wege:** Ein neuer Weg nach draußen braucht ein freigegebenes Issue, ist **ausgeschaltet**, bis ihn jemand ausdrücklich einschaltet, schickt so wenig wie möglich (Zahlen statt Inhalte, wo es reicht), steht in dieser Tabelle und in der Übersicht im Administratorhandbuch und wird von Sicherheit geprüft.
 
